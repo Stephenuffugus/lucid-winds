@@ -64,12 +64,12 @@ canvas#gl{position:absolute; inset:0; width:540px; height:960px; display:block; 
 .forge-wallet{font-size:20px; font-weight:800; color:#ffd76a}
 .forge-sub{font-size:12px; color:#bdb8d4; line-height:1.4; margin-bottom:12px; text-shadow:0 1px 3px #000,0 0 8px rgba(0,0,0,.7)}   /* reads on the painted sky behind it, not only on today's dark one */
 #forge-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-.fcard{background:linear-gradient(180deg,#211d33,#17131f); border:1px solid var(--line); border-radius:14px; padding:10px 8px; text-align:center; cursor:pointer; transition:transform .06s ease}
+.fcard{display:block; width:100%; font:inherit; color:inherit; -webkit-appearance:none; appearance:none; background:linear-gradient(180deg,#211d33,#17131f); border:1px solid var(--line); border-radius:14px; padding:10px 8px; text-align:center; cursor:pointer; transition:transform .06s ease}
 .fcard:active{transform:scale(0.97)}
 .fcard.eq{border-color:#ffd76a; box-shadow:0 0 0 1px #ffd76a inset}
 .ficon{width:120px; height:70px; max-width:100%; display:block; margin:0 auto 6px}
-.fname{font-size:13px; font-weight:700; color:var(--ink)}
-.fstat{font-size:12px; margin-top:3px; color:var(--muted)}
+.fname{display:block; font-size:13px; font-weight:700; color:var(--ink)}
+.fstat{display:block; font-size:12px; margin-top:3px; color:var(--muted)}
 #forge-toast{position:absolute; left:0; right:0; bottom:96px; text-align:center; font-size:15px; font-weight:700; color:#ffd76a; text-shadow:0 2px 8px #000c; opacity:0; pointer-events:none; transition:opacity .2s}
 #forge-toast.show{opacity:1}
 /* ⛔ 72px minimums are STAGE px: the 540x960 stage scales ~0.72 on phones, so
@@ -195,6 +195,20 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 @keyframes popFade{ 0%{opacity:0} 15%{opacity:1} 100%{opacity:0} }
 #go-badge{display:none; align-items:center; justify-content:center; gap:10px; margin-top:10px; font-size:17px; font-weight:800; letter-spacing:2px; color:#f2a8d8; text-transform:uppercase}
 #go-badge.on{display:flex} #go-badge img{width:56px; height:56px; object-fit:contain}
+/* ---- Part C (2026-10-23): the forge preview (SS17); the list scrolls between it and Done ---- */
+.forge-pad{overflow:hidden}
+.forge-list{flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; margin:0 -8px; padding:2px 8px 8px}
+#forge-pv{display:flex; align-items:center; gap:12px; min-height:236px; margin:8px 0 10px; padding:10px 12px; border-radius:16px;   /* one height for every knife: the list never jumps */
+  background:rgba(14,10,24,0.66); border:1px solid rgba(255,215,106,0.24)}
+#forge-pvc{flex:0 0 250px; width:250px; height:164px}
+.pv-info{flex:1; min-width:0; text-align:left}
+.pv-name{font-size:22px; font-weight:800; color:var(--ink); line-height:1.15}
+.pv-story{font-size:17px; color:#d8d4ea; line-height:1.3; margin-top:4px}
+.pv-rule{font-size:17px; font-weight:700; color:#8de8ff; margin-top:6px; line-height:1.25}
+.pv-rule:empty{display:none}
+.pv-act{min-height:72px; margin-top:8px; width:100%; font-size:20px}
+.pv-act[aria-disabled="true"]{background:transparent; border:2px solid rgba(255,215,106,0.6); color:#ffd76a; box-shadow:none; cursor:default; transform:none; filter:none}   /* a state, not a button */
+.fcard.sel{outline:2px solid #f2f0fa; outline-offset:2px}
 </style>
 <meta name="description" content="One knife, every counter: journey the 3D forest, climb the wall, dive the pits, or fall forever.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/slice-3d/">
@@ -278,8 +292,21 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   </div></div>
 
   <!-- KNIFE FORGE -->
-  <div class="screen" id="s-forge"><div class="pad">
+  <div class="screen" id="s-forge"><div class="pad forge-pad">
     <div class="forge-head"><h2 class="sc-h" style="margin:0">Knife Forge</h2><div class="forge-wallet"><span id="forge-wallet-ic">&#9670;</span> <span id="forge-bal">0</span></div></div>
+    <!-- Part C (SS17): the chosen knife on Astra's plinth (a slow turn, one full flip, one sample cut of an apple every
+         4 s; a still with reduced motion), its story, and Equip or Unlock beside its price or trophy rule. A tap on a card
+         chooses it; only the button below spends slivers. -->
+    <div id="forge-pv">
+      <canvas id="forge-pvc" width="520" height="340" aria-hidden="true"></canvas>
+      <div class="pv-info">
+        <div class="pv-name" id="pv-name"></div>
+        <div class="pv-story" id="pv-story"></div>
+        <div class="pv-rule" id="pv-rule" aria-live="polite"></div>
+        <button class="btn primary pv-act" id="forge-act">Equip</button>
+      </div>
+    </div>
+    <div class="forge-list">
     <!-- ⛔ CLASS 9 (a stated promise that is not true). This line used to read "Each one
          is pure style and never changes how you play." It is not: measureKnife() reads
          the equipped recipe at paint time and feeds KLEN into kReachX, which is what
@@ -290,6 +317,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
          is DRAWN, which is the bug Stephen reported on 8/01. Say what is actually true. -->
     <div class="forge-sub">Earn slivers every dive, then unlock knives and swords. Each blade is measured exactly as it is drawn, so a longer sword really does reach a little further and contact always fires where you see the edge.</div>
     <div id="forge-grid"></div>
+    </div>
     <div id="forge-toast"></div>
     <button class="btn primary" id="forge-back" style="max-width:400px;margin:10px auto 0">Done</button>
   </div></div>
@@ -331,7 +359,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v6.2";
+var BUILD="v6.3";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -387,7 +415,7 @@ if(!(PROG.endlessBest>=0))PROG.endlessBest=0;
    saves last erases the other's level, bests and unlocks. Counters ADD, bests MAX.
    Re-read what is on disk NOW and merge into it rather than overwriting it. */
 var _PROG_MAX=['level','ffLevel','climbLevel','climbBest','endlessBest','bestCombo'];
-var _PROG_ADD=['slabsCut','cleanDives'];
+var _PROG_ADD=['slabsCut','cleanDives','tideClean'];   /* tideClean: clean Deep Tide dives (Rubber Duke, Part C) */
 function saveProg(){
   var disk=readObj('s3d_prog');
   if(disk){
@@ -401,12 +429,15 @@ function saveProg(){
   }
   /* the _b* merge baselines are this tab's bookkeeping, not save data — keep them
      out of the file so a future reader never mistakes one for progress */
-  var bs=PROG._bslabsCut, bc=PROG._bcleanDives;
-  delete PROG._bslabsCut; delete PROG._bcleanDives;
+  var j;
+  for(j=0;j<_PROG_ADD.length;j++)delete PROG['_b'+_PROG_ADD[j]];
   LS.s('s3d_prog', JSON.stringify(PROG));
-  PROG._bslabsCut=bs; PROG._bcleanDives=bc;
+  /* what is on disk now IS each counter's total, so that is the next merge's baseline. (Restoring the old baselines
+     double counted a first save: with no file yet the merge was skipped, the baseline stayed 0, and the next save added
+     the whole run again.) */
+  for(j=0;j<_PROG_ADD.length;j++)PROG['_b'+_PROG_ADD[j]]=PROG[_PROG_ADD[j]]||0;
 }
-PROG._bslabsCut=PROG.slabsCut||0; PROG._bcleanDives=PROG.cleanDives||0;
+(function(){ for(var j=0;j<_PROG_ADD.length;j++)PROG['_b'+_PROG_ADD[j]]=PROG[_PROG_ADD[j]]||0; })();
 
 /* ---------- audio (the sfx Stephen loves, embellished) ---------- */
 var AC=null;
@@ -873,6 +904,10 @@ function stdGrip(woodC,bandC,guardC){
   return o;
 }
 function bladeMesh(w,h,d,mat){ var m=kbox(w,h,d,mat,-1.6,0); return m; }
+/* Part C (SS16): the ten new personalities are cosmetic. Each is the Classic Chef's recipe box for box (blade, edge, tip,
+   grip), so its collider, reach, mass and flip are the starter knife's to the digit; only the colours of the code look
+   (shown until its painting loads) are its own. Blade b, edge e, tip t, handle w, bands n, guard g. */
+function chefRig(b,e,t,w,n,g){ return [ bladeMesh(6.4,1.7,0.5,km(b)), kbox(6.4,0.34,0.56,km(e),-1.6,-0.85), kbox(1.1,1.1,0.5,km(t),-5.1,-0.15,Math.PI/4) ].concat(stdGrip(w,n,g)); }
 // each skin.make() returns body meshes (meshes[0] is the blade); blade points -x, grip +x
 var SKINS={
   classic:{name:'Classic Chef',tier:'starter',price:0,icon:{b:'#cfd6e4',h:'#8a5a30',a:'#d8a437'},make:function(){
@@ -925,9 +960,42 @@ var SKINS={
   conductor:{name:'Combo Conductor',tier:'trophy',price:-1,earn:'land a x25 combo',icon:{b:'#ffe27a',h:'#3a2a08',a:'#fff2b8'},make:function(){
     return [ bladeMesh(6.8,0.9,0.4,km(0xffe27a,0x4a3800)), kbox(6.8,0.2,0.46,km(0xfff2b8,0x6a5200),-1.6,-0.5), kbox(0.34,1.3,0.6,km(0xfff2b8,0x6a5200),-3.9,0), kbox(0.34,1.3,0.6,km(0xfff2b8,0x6a5200),-2.2,0), kbox(1.0,1.0,0.42,km(0xffffff,0x6a5200),-5.3,0,Math.PI/4) ].concat(stdGrip(0x3a2a08,0x241a04,0xfff2b8)); }},
   groundskeeper:{name:"Groundskeeper's Spade",tier:'trophy',price:-1,earn:'cut 100 slabs in Free Fall',icon:{b:'#8a9078',h:'#5c421e',a:'#c8b48a'},make:function(){
-    return [ bladeMesh(5.0,2.4,0.55,km(0x8a9078)), kbox(5.0,0.3,0.6,km(0xc8d0b8),-1.6,-1.2), kbox(1.6,0.5,0.58,km(0x6e7460),-3.4,0.7), kbox(1.2,1.2,0.5,km(0x8a9078),-4.2,-0.2,Math.PI/4) ].concat(stdGrip(0x5c421e,0x3e2c12,0xc8b48a)); }}
+    return [ bladeMesh(5.0,2.4,0.55,km(0x8a9078)), kbox(5.0,0.3,0.6,km(0xc8d0b8),-1.6,-1.2), kbox(1.6,0.5,0.58,km(0x6e7460),-3.4,0.7), kbox(1.2,1.2,0.5,km(0x8a9078),-4.2,-0.2,Math.PI/4) ].concat(stdGrip(0x5c421e,0x3e2c12,0xc8b48a)); }},
+  /* ── the third shelf (Part C, Astra's ten personalities, 2026-10-23) ──────────────
+     price:null = earned in the Forge once HE prices it, so it stays out of SKIN_ORDER (one line each to flip: a price
+     here and the key in the order). The two trophies are live. Tea Rex and Cosmic Custodian wait for the supporter
+     shelf (Part F, his call). */
+  socktopus:{name:'Socktopus',tier:'common',price:null,icon:{b:'#c8ccd4',h:'#7a4aa0',a:'#e8d8e0'},make:function(){ return chefRig(0xc8ccd4,0xeef2f8,0xc8ccd4,0x7a4aa0,0x9ab08a,0xe8d8e0); }},
+  butterbuddy:{name:'Butter Buddy',tier:'common',price:null,icon:{b:'#d8dce4',h:'#f2d66a',a:'#e8b46a'},make:function(){ return chefRig(0xd8dce4,0xf4f6fa,0xd8dce4,0xf2d66a,0xe0c050,0xe8b46a); }},
+  spatulot:{name:'Sir Spatulot',tier:'rare',price:null,icon:{b:'#b8bcc4',h:'#24305e',a:'#a8acb4'},make:function(){ return chefRig(0xb8bcc4,0xe4e8ee,0xb8bcc4,0x24305e,0x18204a,0xa8acb4); }},
+  pencil:{name:'Pencil Pusher',tier:'rare',price:null,icon:{b:'#b8bcc4',h:'#f2b42a',a:'#f08a9a'},make:function(){ return chefRig(0xb8bcc4,0xe4e8ee,0xb8bcc4,0xf2b42a,0xa8acb4,0xf08a9a); }},
+  discopickle:{name:'Disco Pickle',tier:'epic',price:null,icon:{b:'#d8dce8',h:'#5a8a2a',a:'#d8a437'},make:function(){ return chefRig(0xd8dce8,0xffffff,0xd8dce8,0x5a8a2a,0x3e6a1a,0xd8a437); }},
+  croissant:{name:'Cloud Croissant',tier:'epic',price:null,icon:{b:'#e8e4dc',h:'#f4f0ea',a:'#d8a437'},make:function(){ return chefRig(0xe8e4dc,0xfff8ec,0xe8e4dc,0xf4f0ea,0xd8a437,0xd8a437); }},
+  rubberduke:{name:'Rubber Duke',tier:'trophy',price:-1,earn:'3 clean Deep Tide dives',earnLong:'3 clean dives in Deep Tide (Freefall 31 to 35)',icon:{b:'#c8ccd4',h:'#f2c42a',a:'#f08a2a'},make:function(){ return chefRig(0xc8ccd4,0xeef2f8,0xc8ccd4,0xf2c42a,0xd8a020,0xf08a2a); }},
+  boomerang:{name:'Banana Boomerang',tier:'trophy',price:-1,earn:'12 bounces in one Journey level',earnLong:'12 handle bounces off the wall in one Journey level',icon:{b:'#b8bcc4',h:'#f2c42a',a:'#e8d07a'},make:function(){ return chefRig(0xb8bcc4,0xe4e8ee,0xb8bcc4,0xf2c42a,0xd8a020,0x9a9ea8); }},
+  tearex:{name:'Tea Rex',tier:'support',price:-2,premium:true,icon:{b:'#d8dce4',h:'#8ac8a8',a:'#d8a437'},make:function(){ return chefRig(0xd8dce4,0xf4f6fa,0xd8dce4,0x8ac8a8,0x6aa888,0xd8a437); }},
+  custodian:{name:'Cosmic Custodian',tier:'support',price:-2,premium:true,icon:{b:'#d8dce8',h:'#1a2348',a:'#d8a437'},make:function(){ return chefRig(0xd8dce8,0xffffff,0xd8dce8,0x1a2348,0x0e1430,0xd8a437); }}
 };
-var SKIN_ORDER=['classic','cleaver','paintbrush','bamboo','trowel','quill','katana','crystal','obsidian','icicle','tuningfork','gold','emberfang','prism','scythe','cosmicedge','wallbreaker','depthdiver','conductor','groundskeeper','starforge','wolffang'];
+/* Astra's story line for every knife (BUILD_NOTES "Knife personalities"), shown under its name in the Forge. Each one's
+   slice effect is its painted trail (knife/<key>_trail), so a skin's look and its effect arrive together. */
+var SKIN_STORY={ classic:'The first good flip starts here.', cleaver:'Heavy on looks, light on excuses.',
+  paintbrush:'A fresh color hides inside every cut.', bamboo:'A quiet tool for loud discoveries.',
+  trowel:'Retired from digging, promoted to flipping.', quill:'Writes a very short story about fruit.',
+  katana:'A quiet edge with excellent timing.', crystal:'A cave kept its brightest piece for you.',
+  obsidian:'A tiny piece of a very dramatic mountain.', icicle:'Always cool about a close call.',
+  tuningfork:'Every clean cut finds another note.', gold:'Luck looks better when you practice.',
+  emberfang:'Keeps the kiln warm on its day off.', prism:'One edge, several opinions about color.',
+  scythe:'Harvests applause after sunset.', cosmicedge:'Fifty clean dives left a little starlight.',
+  wallbreaker:'The wall remembers that landing.', depthdiver:'Brings a little sunlight to the bottom.',
+  conductor:'Twenty five cuts, one excellent phrase.', groundskeeper:'A hundred slabs now have better interiors.',
+  starforge:'A thank you forged in starlight.', wolffang:'For the pack that keeps the lights on.',
+  socktopus:'Eight arms, one missing sock.', butterbuddy:'Very serious about spreading good cheer.',
+  spatulot:'Knight of the slightly round table.', pencil:'Erases nothing, commits to every flip.',
+  discopickle:'Brings its own crunch to the dance floor.', croissant:'Flaky plans, remarkably clean execution.',
+  rubberduke:'A noble reward for a wonderfully tidy dive.', boomerang:'Keeps coming back to the point.',
+  tearex:'Short arms, impeccable tea manners.', custodian:'Someone has to sweep up all those stars.' };
+(function(){ for(var k in SKIN_STORY)if(SKIN_STORY.hasOwnProperty(k)&&SKINS[k])SKINS[k].story=SKIN_STORY[k]; })();
+var SKIN_ORDER=['classic','cleaver','paintbrush','bamboo','trowel','quill','katana','crystal','obsidian','icicle','tuningfork','gold','emberfang','prism','scythe','cosmicedge','wallbreaker','depthdiver','conductor','groundskeeper','rubberduke','boomerang','starforge','wolffang'];
 /* ⛔ one door for every trophy, because a trophy granted INVISIBLY is a bug we
    already shipped once (Cosmic Edge, fixed v5.3). grantTrophy returns the name
    to print, or an empty string, so the caller cannot forget to say so. */
@@ -2220,8 +2288,10 @@ function spawnChunk(x,y,w,h,inner,outer,vx,spin,mOut,mIn){
   scene.add(m);
   chunks.push({mesh:m, vx:vx, vy:5+Math.random()*5, vr:spin, life:1.4});
 }
+var SPARK_CAP=160;   /* SS18: the particle budget; the crash ring, the burst words and every hazard cue are not particles */
 function spawnSparks(x,y,color,n){
   if(SET.rp)n=Math.ceil(n/3);   /* fewer particles (settings) */
+  if(n>SPARK_CAP-sparks.length)n=SPARK_CAP-sparks.length; if(n<=0)return;
   for(var i=0;i<n;i++){
     var m=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.4), new THREE.MeshBasicMaterial({color:color}));
     m.position.set(x+(Math.random()*2-1)*1, y+(Math.random()*2-1)*0.6, 1+Math.random()*2);
@@ -2701,8 +2771,9 @@ function stepWorld(dt){
         }
         G.grounded=false;
         G.shake=0.3; SFX.wood();
+        if(!G.climbWall)G.handles=(G.handles||0)+1;   /* Banana Boomerang counts these (Part C) */
         spawnSparks(G.world.wallX,G.y,WOOD,6);
-        popup('handle!',G.x-1,G.y+2,'#e8b46a');
+        popup((G.handles>1&&!G.climbWall)?'handle x'+G.handles:'handle!',G.x-1,G.y+2,'#e8b46a');   /* the count shows from the second */
         if(!G.handleCoached){ G.handleCoached=true; popup('lead with the blade',G.x-4,G.y+4.4,'#ffd76a'); }
       }
     }
@@ -2855,6 +2926,10 @@ function runTrophies(){
   if((G.comboBest||0)>25-1){ var c=grantTrophy('conductor'); if(c)won.push(c); }
   if((PROG.slabsCut||0)>=100){ var g=grantTrophy('groundskeeper'); if(g)won.push(g); }
   if((PROG.endlessBest||0)>=150){ var d=grantTrophy('depthdiver'); if(d)won.push(d); }
+  /* Part C (SS25): Rubber Duke for three clean Deep Tide dives; Banana Boomerang for twelve handle bounces in one
+     COMPLETED Journey run (a crash does not count) */
+  if((PROG.tideClean||0)>=3){ var rd=grantTrophy('rubberduke'); if(rd)won.push(rd); }
+  if(G.mode!=='ff'&&!G.climbWall&&G.done&&!G.failed&&(G.handles||0)>=12){ var bb=grantTrophy('boomerang'); if(bb)won.push(bb); }
   if((G.comboBest||0)>(PROG.bestCombo||0)) PROG.bestCombo=G.comboBest;
   saveProg();
   if(won.length){ SFX.unlock(); return ' · ' + won.join(' + ') + ' UNLOCKED'; }
@@ -2920,7 +2995,7 @@ function finishLevel(){
     if(G.score>(PROG.best[bkeyC]||0))PROG.best[bkeyC]=G.score;
     if(lvl>=(PROG.climbLevel||1))PROG.climbLevel=lvl+1;
     var earnedWB=false;
-    if(G.mult>=30 && SKN.owned.indexOf('wallbreaker')<0){ SKN.owned.push('wallbreaker'); saveSkins(); earnedWB=true; }
+    if(G.mult>=30)earnedWB=!!grantTrophy('wallbreaker');   /* one door for every trophy */
     saveProg();
     /* Stars used to be a fraction of the wall's top multiplier. On an endless wall
        the top is x900 and nobody is getting near it, so that would have handed out
@@ -2953,7 +3028,8 @@ function finishLevel(){
   var chips=G.chips||0, cleanBonus=0, earnedCE=false;
   if(ff && chips===0 && G.score>0){ cleanBonus=Math.round(G.score*0.25)+200; G.score+=cleanBonus;
     PROG.cleanDives=(PROG.cleanDives||0)+1;
-    if(PROG.cleanDives>=50 && SKN.owned.indexOf('cosmicedge')<0){ SKN.owned.push('cosmicedge'); saveSkins(); earnedCE=true; }
+    if(G.world&&G.world.ws&&G.world.ws.id==='deep_tide')PROG.tideClean=(PROG.tideClean||0)+1;   /* Rubber Duke's count */
+    if(PROG.cleanDives>=50)earnedCE=!!grantTrophy('cosmicedge');   /* one door for every trophy */
   }
   var bkey=(ff?'f':'l')+lvl;
   var best=PROG.best[bkey]||0, nb=G.score>best;
@@ -2991,7 +3067,7 @@ function finishLevel(){
   if(ff){
     $('go-detail').textContent=G.slices+' sliced · '+(chips===0?'clean dive ✦':(chips+' chip'+(chips===1?'':'s')))+' · best combo x'+Math.max(1,G.comboBest)+(earnedCE?' · COSMIC EDGE PICK UNLOCKED':'')+runTrophies();
   } else {
-    $('go-detail').textContent=G.slices+' sliced · best combo x'+Math.max(1,G.comboBest)+' · '+G.taps+' flips';
+    $('go-detail').textContent=G.slices+' sliced · best combo x'+Math.max(1,G.comboBest)+' · '+G.taps+' flips'+runTrophies();
   }
   var sb=0;
   if(sbSession<12){ try{ if(window._sbCapEarn){ sb=window._sbCapEarn(2,'slice3d:level')||0; sbSession+=sb; } }catch(e){} }
@@ -3019,6 +3095,7 @@ function show(id){
   curScreen=id;
   if(id!=='s-play'){ running=false; try{ hideClimbToggle(); }catch(e){} }   /* Wall Climb's scheme pill belongs to play only */
   if(id==='s-title')startAttract(); else attractOn=false;
+  if(id==='s-forge')pvStart(); else pvStop();
   /* behind How and the Forge: the menu's still frame, current (a painting may have landed since it was drawn) */
   if((id==='s-how'||id==='s-forge'||id==='s-set')&&UIART.title&&worldIsAttract&&renderer){ try{ attractCam(); renderer.render(scene,camera); }catch(e){} }
 }
@@ -3058,7 +3135,8 @@ tap('b-ff',function(){ newFF(PROG.ffLevel); });
 tap('b-endless',function(){ newEndless(); });
 tap('b-climb',function(){ newClimb(PROG.climbLevel||1); });
 tap('b-classic',function(){ location.href='/satellites/slice-master/'; });
-tap('b-forge',function(){ renderForge(); show('s-forge'); });
+tap('b-forge',function(){ FSEL=SKN.equip; renderForge(); show('s-forge'); });   /* the Forge opens on the knife you carry */
+tap('forge-act',function(){ forgeTap(FSEL||SKN.equip); });
 tap('forge-back',function(){ show('s-title'); });
 function drawSkinIcon(sk,cvs){
   var g=cvs.getContext('2d'), W=cvs.width, H=cvs.height, cy=H*0.5; g.clearRect(0,0,W,H);
@@ -3072,9 +3150,11 @@ function popupForge(msg){ var t=$('forge-toast'); if(!t)return; t.textContent=ms
 function renderForge(){
   var b=$('forge-bal'); if(b)b.textContent=SLIV;
   var wrap=$('forge-grid'); if(!wrap)return; wrap.innerHTML='';
+  if(!FSEL||!SKINS[FSEL])FSEL=SKN.equip;
   for(var i=0;i<SKIN_ORDER.length;i++){ (function(key){
     var sk=SKINS[key], owned=ownsSkin(key), equipped=SKN.equip===key;
-    var card=document.createElement('div'); card.className='fcard'+(equipped?' eq':'')+(UIART.frame?' painted':'');
+    var card=document.createElement('button'); card.type='button'; card.className='fcard'+(equipped?' eq':'')+(key===FSEL?' sel':'')+(UIART.frame?' painted':'');
+    card.setAttribute('data-key', key); card.setAttribute('aria-pressed', key===FSEL?'true':'false');   /* a real button: chosen = pressed */
     var KA=ART.j&&ART.j.knives&&ART.j.knives[key];
     /* today's drawn icon first; the painted one takes its place once it has loaded (straight away if it already has) */
     var cv=document.createElement('canvas'); cv.width=120; cv.height=70; cv.className='ficon'; drawSkinIcon(sk,cv);
@@ -3082,27 +3162,133 @@ function renderForge(){
       if(im.complete&&im.naturalWidth)card.appendChild(im);
       else { card.appendChild(cv); im.onload=function(){ if(cv.parentNode)cv.parentNode.replaceChild(im,cv); }; } }
     else card.appendChild(cv);
-    var nm=document.createElement('div'); nm.className='fname'; nm.textContent=sk.name; card.appendChild(nm);
-    var st=document.createElement('div'); st.className='fstat';
+    var nm=document.createElement('span'); nm.className='fname'; nm.textContent=sk.name; card.appendChild(nm);
+    var st=document.createElement('span'); st.className='fstat';
     if(equipped){ st.textContent='EQUIPPED'; st.style.color='#ffd76a'; }
-    else if(owned){ st.textContent='Tap to equip'; st.style.color=''; }
+    else if(owned){ st.textContent='Owned'; st.style.color=''; }
     else if(sk.premium){ st.textContent='Support the Studio'; st.style.color='#f2a8d8'; }
     else if(sk.price<0){ st.textContent=sk.earn||'Locked'; st.style.color='#8de8ff'; }
     else { st.innerHTML=slivIcon()+' '+(sk.price|0); st.style.color=(SLIV>=sk.price)?'#8fe08a':'#c98a8a'; }
     card.appendChild(st);
-    card.onclick=function(){ forgeTap(key); };
+    card.onclick=function(){ forgeSelect(key); };   /* a tap chooses; only the button under the preview spends */
     wrap.appendChild(card);
   })(SKIN_ORDER[i]); }
+  pvInfo();
 }
+/* the button under the preview: equip what you own, unlock what you can afford */
 function forgeTap(key){
-  var sk=SKINS[key];
+  var sk=SKINS[key]; if(!sk||sk.price==null)return;   /* an unpriced knife is never on the shelf */
+  FSEL=key; if(SKN.equip===key)return;   /* "Equipped" is a state, not an action */
   if(ownsSkin(key)){ applySkin(key); renderForge(); ac(); SFX.flip(); return; }
   if(sk.premium){ popupForge('Support the Studio to unlock this blade'); return; }
   if(sk.price<0){ popupForge('Unlock by earning: '+(sk.earn||'special')); return; }
-  if(SLIV>=sk.price){ SLIV-=sk.price; saveSliv(); SKN.owned.push(key); saveSkins(); applySkin(key); renderForge(); ac(); SFX.unlock(); popupForge(sk.name+' forged!'); }
-  else { popupForge('Need '+(sk.price-SLIV)+' more slivers'); }
+  if(SLIV>=sk.price){ SLIV-=sk.price; saveSliv(); SKN.owned.push(key); saveSkins(); applySkin(key); renderForge(); ac(); SFX.unlock(); popupForge(sk.name+' forged'); }
+  else { popupForge(needSliv(sk.price-SLIV)); }
 }
-window._S3forge={ renderForge:renderForge, forgeTap:forgeTap, sliv:function(){return SLIV;}, setSliv:function(n){SLIV=n;saveSliv();}, equip:function(){return SKN.equip;}, apply:applySkin, owned:function(){return SKN.owned.slice();} };
+function forgeSelect(key){
+  if(!SKINS[key])return; FSEL=key; PV.t0=performance.now();
+  var cs=$('forge-grid')?$('forge-grid').children:[];
+  for(var i=0;i<cs.length;i++){ var on=cs[i].getAttribute('data-key')===key; cs[i].classList.toggle('sel',on); cs[i].setAttribute('aria-pressed',on?'true':'false'); }
+  pvLoad(key); pvInfo(); if(!PV.raf)pvDraw(PV.t0);
+}
+function pvInfo(){
+  var key=FSEL||SKN.equip, sk=SKINS[key]||SKINS.classic, act=$('forge-act'), rule=$('pv-rule'); if(!act||!rule)return;
+  $('pv-name').textContent=sk.name; $('pv-story').textContent=sk.story||'';
+  act.style.display=''; act.setAttribute('aria-disabled','false'); rule.textContent=''; rule.style.color='';
+  if(SKN.equip===key){ act.textContent='Equipped'; act.setAttribute('aria-disabled','true'); }   /* a state; it keeps focus */
+  else if(ownsSkin(key)){ act.textContent='Equip'; }
+  else if(sk.premium){ act.style.display='none'; rule.textContent='Support the Studio'; rule.style.color='#f2a8d8'; }
+  else if(!(sk.price>0)){ act.style.display='none'; rule.textContent='Earn it: '+earnRule(key, sk); }   /* the card has room for the short rule, the preview for the whole one */
+  else { act.innerHTML='Unlock '+slivIcon()+' '+(sk.price|0);
+    if(SLIV<sk.price){ rule.textContent=needSliv(sk.price-SLIV); rule.style.color='#c98a8a'; } }
+}
+function needSliv(n){ return 'Need '+n+' more sliver'+(n===1?'':'s'); }
+/* Deep Tide comes round every 40 dives (levels 31 to 35, 71 to 75 ...) and a dive is only ever your next one: name the
+   band this player can still reach */
+function earnRule(key, sk){
+  if(key==='rubberduke'){ var f=PROG.ffLevel||1, b=Math.floor((f-1)/40)*40+31; if(f>b+4)b+=40;
+    return '3 clean dives in Deep Tide (Freefall '+b+' to '+(b+4)+')'; }
+  return sk.earnLong||sk.earn||'special';
+}
+/* ---------- the forge preview (Part C, SS17) ----------
+   The chosen knife on Astra's plinth: a slow turn, one full flip, then one sample cut of an apple, every 4 s; reduced
+   motion shows the still. A 2D canvas: the knife is a flat painting in the game as well (a plane over its collider), so
+   a turn is its width going through cos, and the Forge spends no second WebGL context. Before the paintings are in (or
+   with ?noart=1) it draws the knife in its icon colours, a stone disc and a red apple. */
+var FSEL=null, PV={ on:false, raf:0, t0:0, last:0, img:{}, trail:{}, plinth:null, cards:null, halves:null, want:{}, ar:{}, pend:0 };
+function pvLoad(key){
+  if(!ART.j){ if(!PV.pend){ PV.pend=1; artJson(function(){ PV.pend=0; pvLoad(FSEL||SKN.equip); }); } return; }   /* one waiter, as knifeArt does */
+  function img(id, rel, put){ if(!rel||PV.want[id])return; PV.want[id]=1; var tries=0;
+    (function go(){ var im=new Image(); im.onload=function(){ put(im); if(PV.on&&!PV.raf)pvDraw(performance.now()); };
+      im.onerror=function(){ if(++tries<3)setTimeout(go, 3000*tries); };   /* the worker answers a slow miss with an error: ask again */
+      im.src=artUrl(rel)+(tries?'&r='+tries:''); })(); }
+  var A=ART.j.knives&&ART.j.knives[key], FA=ART.j.fruitAtlas;
+  if(A){ img('k:'+key, A.file, function(im){ PV.img[key]=im; }); img('t:'+key, A.trail, function(im){ PV.trail[key]=im; }); }
+  if(ART.j.ui)img('plinth', ART.j.ui.plinth, function(im){ PV.plinth=im; });
+  if(FA){ img('cards', FA.cards, function(im){ PV.cards=im; }); img('halves', FA.halves, function(im){ PV.halves=im; }); }
+}
+function pvStart(){ if(!PV)return; PV.on=true; PV.t0=performance.now(); pvLoad(FSEL||SKN.equip);
+  if(SET.rm){ pvDraw(PV.t0); return; } if(!PV.raf)PV.raf=requestAnimationFrame(pvLoop); }
+function pvStop(){ if(!PV)return; PV.on=false; if(PV.raf){ cancelAnimationFrame(PV.raf); PV.raf=0; } }
+function pvLoop(now){ if(!PV.on||SET.rm){ PV.raf=0; return; } PV.raf=requestAnimationFrame(pvLoop); if(now-PV.last<33)return; PV.last=now; pvDraw(now); }
+function pvEase(u){ u=Math.max(0,Math.min(1,u)); return u*u*(3-2*u); }
+/* the knife as drawn in the game: its painting (blade left, grip right) centred at x,y, turned rot, its width through sx */
+function pvKnife(c, key, x, y, len, rot, sx){
+  var sk=SKINS[key]||SKINS.classic, im=PV.img[key], A=ART.j&&ART.j.knives&&ART.j.knives[key];
+  c.save(); c.translate(x,y); c.rotate(rot); c.scale(sx,1);
+  if(im&&A){ var r=PV.ar[key];
+    if(r==null){ var ms=sk.make(), sp=recipeSpan(ms); for(var i=0;i<ms.length;i++)disposeMesh(ms[i]);
+      r=PV.ar[key]=Math.min(A.h/A.w, 2*Math.max(0.8,sp.ho)/(sp.hi-sp.lo)); }   /* the height knifeArt allows: what you carry */
+    var h=len*r; c.drawImage(im, -len/2, -h/2, len, h); }
+  else { var t=len*0.17;
+    c.fillStyle=sk.icon.b; c.beginPath(); c.moveTo(-len/2,0); c.lineTo(-len*0.03,-t/2); c.lineTo(-len*0.03,t/2); c.closePath(); c.fill();
+    c.fillStyle=sk.icon.a; c.fillRect(-len*0.03,-t*0.75,len*0.04,t*1.5);
+    c.fillStyle=sk.icon.h; c.fillRect(len*0.01,-t*0.32,len*0.47,t*0.64); }
+  c.restore();
+}
+/* the apple from the fruit atlas (whole, or one half: side -1 left, +1 right), its fruit d across, centred at x,y */
+function pvApple(c, side, x, y, d, rot, alpha){
+  var F=ART.j&&ART.j.fruit&&ART.j.fruit.apple;
+  c.save(); c.globalAlpha=alpha; c.translate(x,y); c.rotate(rot);
+  if(!side&&F&&PV.cards){ var b=F.cardBox, k=d/(b[2]-b[0]), cl=F.card;
+    c.drawImage(PV.cards, cl[0], cl[1], cl[2], cl[3], -((b[0]+b[2])/2)*k, -((b[1]+b[3])/2)*k, cl[2]*k, cl[3]*k); }
+  else if(side&&F&&PV.halves){ var hc=side<0?F.halfL:F.halfR, hb=side<0?F.halfLBox:F.halfRBox, kh=d/Math.max(1,hb[3]-hb[1]);
+    c.drawImage(PV.halves, hc[0], hc[1], hc[2], hc[3], -((hb[0]+hb[2])/2)*kh, -((hb[1]+hb[3])/2)*kh, hc[2]*kh, hc[3]*kh); }
+  else { c.fillStyle='#e8343a'; c.beginPath();
+    if(side)c.arc(0,0,d/2,side<0?Math.PI/2:-Math.PI/2,side<0?Math.PI*1.5:Math.PI/2); else c.arc(0,0,d/2,0,Math.PI*2);
+    c.fill(); if(side){ c.fillStyle='#f6e7c8'; c.fillRect(side<0?-2:0,-d/2+3,2,d-6); } }
+  c.restore();
+}
+function pvDraw(now){
+  var cv=$('forge-pvc'); if(!cv)return; var c=cv.getContext('2d'), W=cv.width, H=cv.height, key=FSEL||SKN.equip;
+  var T=SET.rm?3.8:((((now-PV.t0)/1000)%4)+4)%4;
+  c.clearRect(0,0,W,H);
+  var pw=W*0.6, ph=PV.plinth?pw*PV.plinth.height/PV.plinth.width:pw*0.5, py=H-ph-2;
+  if(PV.plinth)c.drawImage(PV.plinth,(W-pw)/2,py,pw,ph);
+  else { c.fillStyle='#3a3446'; c.beginPath(); c.ellipse(W/2,py+ph*0.55,pw*0.47,ph*0.3,0,0,Math.PI*2); c.fill(); }
+  var len=W*0.52, rx=W/2, ry=H*0.43, d=H*0.25, ax=W/2, ay=py+ph*0.44-d/2;   /* rest pose (an upright knife still fits); the apple sits on the plinth's top */
+  var kx=rx, ky=ry, rot=0, sx=1, kl=len, LC=len*0.8, sA=0, DX=-Math.SQRT1_2, DY=Math.SQRT1_2, SPLIT=2.6;   /* the slash runs down and left, blade first, the knife a little smaller so all of it stays in frame */
+  if(T<1.6){ var ut=T/1.6; sx=Math.cos(ut*Math.PI*2); ky=ry+Math.sin(ut*Math.PI*2)*3; }                     /* a slow turn */
+  else if(T<2.3){ var uf=(T-1.6)/0.7; rot=-Math.PI*2*pvEase(uf); }                                          /* one full flip, in place */
+  else if(T<3.3){                                                                                          /* one sample cut */
+    var s0=-d/2, s1=0.3*LC, a0x=ax+DX*s0-DX*LC/2, a0y=ay+DY*s0-DY*LC/2; sA=s0;   /* s: the tip's place on the cut line, 0 at the apple's centre */
+    if(T<2.5){ var uw=pvEase((T-2.3)/0.2); kx=rx+(a0x-rx)*uw; ky=ry+(a0y-ry)*uw; rot=-Math.PI/4*uw; kl=len+(LC-len)*uw; }
+    else if(T<2.68){ var us=(T-2.5)/0.18; sA=s0+(s1-s0)*us*us; kx=ax+DX*sA-DX*LC/2; ky=ay+DY*sA-DY*LC/2; rot=-Math.PI/4; kl=LC; }
+    else { var ub=pvEase((T-2.68)/0.62), e1x=ax+DX*s1-DX*LC/2, e1y=ay+DY*s1-DY*LC/2; sA=s1;
+      kx=e1x+(rx-e1x)*ub; ky=e1y+(ry-e1y)*ub; rot=-Math.PI/4*(1-ub); kl=LC+(len-LC)*ub; }
+  }
+  if(!SET.rm&&T>=2.22&&T<SPLIT)pvApple(c, 0, ax, ay, d, 0, Math.min(1,(T-2.22)/0.16));   /* the apple lands as the flip ends */
+  if(!SET.rm&&T>=SPLIT&&T<3.2){ var th=T-SPLIT, fa=Math.max(0,1-th/0.6);   /* gone before they reach the frame's foot */
+    pvApple(c, -1, ax-d*0.12-th*W*0.28, ay-th*H*0.55+th*th*H*1.4, d, -th*3, fa);
+    pvApple(c, 1, ax+d*0.12+th*W*0.28, ay-th*H*0.45+th*th*H*1.4, d, th*3, fa); }
+  /* the slice effect: the knife's own painted trail lies along the cut it has just made and fades as the knife lifts away */
+  var tr=PV.trail[key]; if(tr&&!SET.rm&&T>=2.5&&T<3.18){ c.save(); c.globalAlpha=T<2.68?0.75:0.75*(1-(T-2.68)/0.5);
+    c.translate(ax+DX*sA, ay+DY*sA); c.rotate(-Math.PI/4); c.drawImage(tr, 0, LC*(PV.ar[key]||0.2)*0.3, LC*0.9, LC*0.25); c.restore(); }   /* under the edge, as the game hangs it */
+  pvKnife(c, key, kx, ky, kl, rot, sx);
+}
+window._S3forge={ renderForge:renderForge, forgeTap:forgeTap, sliv:function(){return SLIV;}, setSliv:function(n){SLIV=n;saveSliv();}, equip:function(){return SKN.equip;}, apply:applySkin, owned:function(){return SKN.owned.slice();},
+  /* the preview drawn at moment T of its 4 s cycle for knife key (the suite's frame check); pvReady says its images are in */
+  pvAt:function(key, T){ FSEL=key; pvLoad(key); var now=performance.now(); PV.t0=now-T*1000; pvDraw(now); }, pvReady:function(key){ return !!(PV.img[key]&&PV.trail[key]&&PV.plinth&&PV.cards&&PV.halves); } };
 tap('b-how',function(){ show('s-how'); });
 /* ---------- settings screen (Part B, SS34) ---------- */
 /* the music level IS the fleet player's (one soundtrack across the studio's games): read its saved level, set it through
@@ -3219,7 +3405,7 @@ if(/[?&]dev=1/.test(location.search)){
 })();
 
 /* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=66'); }catch(e){} }
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=67'); }catch(e){} }
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the
