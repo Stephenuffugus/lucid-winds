@@ -65,6 +65,29 @@ rates) are proposals; the gates below are what counts.
   controlled, old cache swept, title painted, no page errors. Gates: suite 51 of 51, measureKnife identical for 22
   skins, frame time art on = off (102 ms, five alternating pairs). The local zip is deleted (its sha256 matched the
   vault's SHA256SUMS.txt first); re-extract from the vault release if the drop's docs are needed. NEXT: Part B.
+- 2026-10-23 (Opus): **PART B LIVE as v6.2** (deploy `9ef56a438` on main, from add-sproing-jumper `0c446448b`). Proven
+  live: both origins serve BUILD v6.2, worker `sw.js?v=66`, cache `slice3d-v68`, portal card `?v=20261023b`; the
+  persistent profiles that held v6.1 now run v6.2, controlled, title painted, no page errors. Gates: suite 79 of 79
+  (28 new rows, each watched red first), numbered Freefall/Journey/Climb layouts identical to v6.1 (96 of 96 fields),
+  every mode smoke run clean. A four lens review (fixed step, Endless, menu and settings, regressions; skeptic on each)
+  found 20 real issues, all fixed before shipping. What they protect, for whoever touches this next:
+  - drawFrame: the camera reads the DRAWN knife (`ix`,`iy`), never G.x/G.y, in the live branches; the angle lerps the
+    short way round (G.ang is never wrapped); the freeze refreshes G.px/py/pa; drawFrame gets `min(el, STEP*STEPMAX)`.
+    Row [15] measures all of it (screen wobble, freeze pose, stick angle, Journey crash framing via `_S3.view()`).
+  - A failed non-Freefall run (Journey crystal) is framed at the crash, not at the score wall.
+  - Endless chunks: segments run to 6 m above the chunk line and a stack there is cut short at 1.6 m (`ffSegments`'
+    8th argument `yCap`, passed ONLY by endlessChunk; the skn draw still happens, so numbered dives keep their stream).
+    The 18 m margin had left a 20 to 34 m hole every 100 m. Row [10] also asserts the scene stays bounded.
+  - The viewport's TOP RIGHT is the fleet's (feedback chip home, a deep link's arcade exit chip): the soundtrack sits
+    beside the gear (`#b-music{left:92px}`). Row [14] boots `?mode=ff`, returns to the menu, probes centre and corners.
+  - New copy is 17 stage px (11 rendered at 360); identity lines are ONE line each (measured 141 to 150 of 176 px);
+    cards 116 tall; the Forge row ends at stage 575, the song sheet starts at 615 at 360x640.
+  - Climb's control pill hides on every screen but play; slider grab boxes are 72 stage px; the music row hides where a
+    page cannot set media volume (iOS); reduced motion also stills the menu drift, the combo pop, the soundtrack glow.
+  OFF THE PLAN, on purpose (tell him): four chunks live, not three (the camera rides 10 m above the knife); no origin
+  rebasing (camera relative draw, float64 physics); STEPMAX 6, not 4 (v6.0's 50 ms clamp).
+  STILL CARRIED: dispose world textures (to Part E, where bosses add the stages files); slim knife paintings (his call);
+  Journey's code trees beside the painted props. NEXT: Part C (knives and the forge).
 
 ---
 
