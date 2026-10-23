@@ -1,5 +1,7 @@
 # START HERE
 
+**🗒 23 Oct ~15:25 UTC HIS WORDS: "oh i think we should also make all new assets for our chess game. i think they should go through meshy and be made 3D and we really flesh our chess game out too. we have to wait for both astra and meshy to refresh but you can always make a fun asset list and maybe leave it a little open ended for chat gpt to take some creative freedom to make a few sets of pieces that it thinks would be popular or draw people to play more like a jimothy set."** = CHESS: new 3D assets through MESHY (Astra/ChatGPT designs, Meshy models), flesh the game out, ONE open ended Doc for Astra with creative freedom on themed piece sets (a Jimothy set named).
+
 **🗒 23 Oct ~15:15 UTC HIS WORDS: "she could give it to her class and their parents can use it if they want. thats all i was thinking"** = Pixel Petri promo codes to Penny's class, redeemed by parents on their own accounts (no Families work needed). Lead builds the handout page; he makes the codes in the Console.
 
 **🗒 23 Oct ~15:05 UTC HIS WORDS: "i need to get the ability to gift people apps. i thought about getting the pixel petri however we would gift it and then giving penny the ability to give it to her whole class or something. i thought that could be a good start"** = GIFTING ON PLAY: the answer is Play PROMO CODES (Console, per app, one use each, up to 500 per app per quarter as far as I know; free to make). Open: the class's ages vs Pixel Petri's 13+ listing.
