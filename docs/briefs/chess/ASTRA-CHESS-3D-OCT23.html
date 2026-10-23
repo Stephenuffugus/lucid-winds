@@ -1,0 +1,61 @@
+<h1>Chess, the 3D courts: check the design, grow it, and draw the piece sets (for Astra first, then Meshy)</h1>
+<p><b>Stephen: paste this whole document to Astra. Nothing else is needed. Come back with the two things in section 1.</b></p>
+<p>Sky Wolf Studio, 23 October 2026. One ask, one document back, one zip back. Read all of it once, then work top to bottom. You design and draw; Meshy turns your drawings into 3D models afterwards, so every picture here is drawn FOR Meshy.</p>
+
+<h2>1. What to send back</h2>
+<ol>
+<li><b>ONE document</b> called <b>Chess 3D Design Review</b>: (a) a verdict on every design piece in section 3, keep, change or kill, one paragraph each; (b) your own additions in the strict format of section 5; (c) the court bible: every piece set you propose, each with a name, a two line pitch, a palette, a material note, and the one reason a stranger would download the game for it; (d) a json block at the end.</li>
+<li><b>ONE zip</b> called <b>chess-3d-concepts.zip</b> holding every file in section 4 in the folders named there, plus a <b>manifest.txt</b> at the root listing every file with its pixel size, and a MISSING section for anything you could not make. Never files one at a time. If the zip must split, split by set folder into chess-3d-concepts-1.zip and -2.zip, never a set in half.</li>
+<li><b>Creative freedom is the point of this ask.</b> Section 4A names four sets we need. Beyond those, propose the sets YOU believe would be popular, the ones that make a stranger stop scrolling and a player come back to collect. Three to six of your own. Say why for each.</li>
+</ol>
+
+<h2>2. The game in two minutes</h2>
+<p><b>What exists.</b> Grove Chess lives in the studio's arcade at lucidwinds.com/play/chess.html, a phone first page. The rules are complete: castling, en passant, promotion, stalemate, the fifty move rule, threefold repetition, insufficient material. The computer has four levels (Seedling, Sapling, Old Growth, Ancient) with opening books and a positional search. There is undo, a lifetime win loss draw record, and fourteen courts (piece sets): a painted Grove Classic plus thirteen themed sets (Deep Sea, Cosmic Cadets, Dino Dig, Candy Kingdom, Friendly Manor, Forest Court, Food Truck, Stained Glass, Painted Pottery, Pool Party, Origami Zoo, Royal Papercut, Cardboard Bots). Finishing a game can unlock a song.</p>
+<p><b>What is weak, honestly.</b> The pieces are flat pictures on a flat board. The classic set is a grid of painted square tiles, so the board reads as cards, not chessmen. The themed courts are cutouts with no depth, no shadow, no table. There is no two player mode, no clock, no hints, no puzzles inside the game, no coach line explaining a move, no captured pieces tray, no move list. The computer is the best thing in the game and nothing on screen tells you that.</p>
+<p><b>The plan.</b> Rebuild the board as a real 3D scene in three.js: a table, a board with depth, pieces as models with shadows, a camera you can tilt a little, tap to move with the same highlights as today. The courts become the collection: real 3D sets you earn by playing. Meshy makes the models from your concept images. The game logic stays; the body is new.</p>
+<p><b>Who Jimothy is.</b> Jimothy is the studio's raccoon, the hero of Jumping Jimothy (Steam and Google Play), a bright platformer with a cast of woodland characters, treasure and bouncy hazards. A Jimothy court is required (4A).</p>
+
+<h2>3. The design to check and grow</h2>
+<ol>
+<li><b>A 3D board that still plays like a phone game.</b> Portrait, the board fills the width, camera slightly raised and tilted toward the player, a small drag tilts it a few degrees and a two finger pinch zooms a little. Tap a piece, legal squares light up on the board surface, tap to move, the piece glides. No free camera. Verdict and improvements wanted.</li>
+<li><b>Courts as the collection loop.</b> Every court is a full 3D set. A player starts with two. The rest unlock by play: games finished, puzzles solved, the first win against each level, a daily streak. A court screen shows each set on a turntable with its name and how to earn it. Nothing in the collection is bought with real money. Verdict wanted, and your order of unlocks.</li>
+<li><b>Modes.</b> Versus the computer at four levels (exists). Pass and play on one phone (new, the board flips or stays by setting). Daily puzzle: mate in one, two or three, the same puzzle for everyone each day, streak counted. Clocks: blitz three minutes plus two seconds, rapid ten minutes, or none. Verdict wanted.</li>
+<li><b>Help that teaches.</b> A hint button that lights one good move. A one line coach note after the computer moves ("it attacks your queen"). Takebacks allowed against the computer, counted. Verdict wanted.</li>
+<li><b>The table around the board.</b> Captured pieces lie in a tray beside the board as their own 3D models, the move list scrolls under it, check pulses the king's square, checkmate drops the losing king on its side with a soft puff. Verdict wanted.</li>
+<li><b>Feel.</b> A sound family per set (a glass set clinks, a candy set squishes), a short haptic on capture, a quiet bed of room tone. Reduce motion turns the glide into a hop.</li>
+<li><b>Accessibility.</b> Colour blind safe highlights (shape and brightness, never colour alone), a big piece mode, the whole game playable with taps only, text never under 0.7 rem.</li>
+<li><b>Stores.</b> One price across stores, the same as the studio's other small games. A Play listing needs five shots and a feature graphic, so the court bible should name which set is the cover.</li>
+</ol>
+
+<h2>4. The asset pack</h2>
+<p><b>Drawn for Meshy.</b> Meshy makes one 3D model from one image. It wants a single object, a three quarter front view, a plain flat background (mid grey, no gradient, no floor shadow), the whole object in frame with margin, a strong readable silhouette, no text, no second object, no base clutter. Give every piece exactly that. Meshy outputs a textured GLB; the studio sets scale, colour variants and polish afterwards. The studio's Meshy allowance is small (the free plan, about ten models a month), so the <b>order of sets matters</b>: the first set in your order is the one that gets built first.</p>
+<h3>4A. Piece sets (courts). Folder sets/[set-name]/</h3>
+<p>Required sets: <b>jimothy</b> (the raccoon's cast; Jimothy as the king is one answer, not the only one), <b>greenhouse</b> (the studio's own world: ancient tree, bloom queen, lantern rooks, hare knights, mushroom bishops, seedling pawns, in the midnight greenhouse palette of deep black, sage #7ab356, gold #c8a84b, cream #e8dcc8), <b>staunton</b> (the classic set done beautifully, turned wood, because many players only want this one), and <b>petri</b> (Pixel Petri, the studio's dish of tiny creatures). Then three to six sets of your own choosing with the reason each would draw players.</p>
+<p>For EVERY set deliver:</p>
+<ul>
+<li><b>style.png</b>, 2048 x 1024: one sheet with all six pieces side by side at true relative height, the palette swatches, and the material in one word (wood, glass, clay, metal, candy, felt). This is the scale reference: king tallest, then queen, bishop, knight, rook, pawn shortest, roughly 10 : 9 : 7 : 7 : 6 : 5.</li>
+<li><b>Six Meshy images</b>, 1024 x 1024 PNG each, named king.png queen.png rook.png bishop.png knight.png pawn.png: one piece per image, three quarter front view, plain mid grey background, the WHITE side's colouring. Each piece must be told apart by silhouette alone at thumbnail size.</li>
+<li><b>dark.png</b>, 1024 x 1024: the king again in the DARK side's colouring, so the studio can derive the second material. Dark is never just black: a dark wood, a deep blue glass, a burnt caramel.</li>
+<li><b>hero.png</b>, 1024 x 1024: the court's picker card, the whole set staged on a corner of its board, the one picture that sells the set.</li>
+<li>A six line note in the court bible: name, pitch, palette, material, sound word, cover or not.</li>
+</ul>
+<h3>4B. Boards. Folder boards/</h3>
+<p>One board per set is too many. Make four boards that many sets can share, each as [name]-light.png and [name]-dark.png square textures 1024 x 1024 (one square each, seamless when tiled) plus [name]-frame.png 2048 x 512, the rim's material strip: <b>walnut</b> (turned wood, warm), <b>slate</b> (stone, cool), <b>glass</b> (frosted, lit from below), <b>greenhouse</b> (mossy stone and brass). In the court bible say which board each set sits on by default.</p>
+<h3>4C. The room. Folder rooms/</h3>
+<p>Three wide plates for behind the board, 2048 x 1024 each, soft focus, no sharp detail: study.png (a lamp lit desk at night), greenhouse.png (the studio's glass house at midnight), open.png (a plain dark gradient for players who want nothing). Light comes from the upper left in all of them.</p>
+<h3>4D. Interface. Folder ui/</h3>
+<ul>
+<li><b>icon-512.png</b>: the new game icon, one piece from the cover set, no text.</li>
+<li><b>feature-1024x500.png</b>: a Play feature graphic concept, the cover set on its board, room for the word Chess on the left third.</li>
+<li><b>mode icons</b>, 256 x 256 each, flat on transparent: mode-computer.png mode-passplay.png mode-puzzle.png mode-clock.png mode-courts.png mode-hint.png.</li>
+<li><b>fx-sheet.png</b>, 2048 x 512: four small 2D effects in a strip for the studio to cut: capture puff, check pulse ring, mate confetti, unlock sparkle.</li>
+</ul>
+<h3>4E. Sounds (a list, not files)</h3>
+<p>In the court bible, one line per set naming the sound family (wood tock, glass clink, clay thud, candy squish, felt pat, metal ring). The studio records or synthesises them.</p>
+
+<h2>5. The bar and the format</h2>
+<p><b>The bar:</b> portrait phone, 412 x 915 primary (also 360 and 375 wide); touch targets at least 48 px; no text under 0.7 rem; player copy never uses dashes of any kind; courts are earned, never bought; one page of vanilla JavaScript with vendored three.js; colour blind safe (never colour alone); 60 fps on a mid phone, which means pieces under 8,000 triangles each with one 1024 texture; generated art is never called hand painted; no real trademarks, no other studios' characters.</p>
+<p><b>Format for every direction, strictly:</b> one numbered block: <b>Title</b> / What and why (3 lines max) / Which mode or screen / Effort S, M or L / Priority 1 to 3. Group under: Board and camera, Courts and collection, Modes, Help and coaching, Table and feel, Accessibility, Stores. End the document with a json block: an array of objects with keys id, title, group, effort, priority, summary, and a second array called sets with keys name, pitch, palette, material, board, sound, cover, order. No prose after the json.</p>
+
+<h2>6. In one line</h2>
+<p>Check and grow the design of a 3D chess rebuild, then draw ten or so piece sets the way Meshy needs them, four of ours and the rest your call, ordered by which would make a stranger download the game, and send ONE review document and ONE zip back.</p>
