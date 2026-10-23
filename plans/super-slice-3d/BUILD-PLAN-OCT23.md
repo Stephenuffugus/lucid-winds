@@ -59,6 +59,12 @@ rates) are proposals; the gates below are what counts.
   - Slim knife paintings (Tuning Fork 0.40 of 1.00 KHH, Wallbreaker 0.52 of 1.02, Combo Conductor 0.30 of 0.72, Midnight
     Katana 0.49 of 0.80) sit inside their colliders, so a steep handle bounce shows a gap (about 7 px in Climb). Closing it
     means stretching Astra's art or changing KHH (forbidden): HIS call or a wider repaint from Astra, not a code fix.
+- 2026-10-23 (Opus): **PART A LIVE as v6.1** (deploy `bd83a5cd7` on main, from add-sproing-jumper `4def3e5c8`). Proven
+  live: both origins serve BUILD v6.1, worker `sw.js?v=65`, cache `slice3d-v67`, art as image/webp at the exact byte
+  sizes, portal card `?v=20261023a`; the persistent profiles that held the v6.0 worker (v=64, cache v66) now run v6.1,
+  controlled, old cache swept, title painted, no page errors. Gates: suite 51 of 51, measureKnife identical for 22
+  skins, frame time art on = off (102 ms, five alternating pairs). The local zip is deleted (its sha256 matched the
+  vault's SHA256SUMS.txt first); re-extract from the vault release if the drop's docs are needed. NEXT: Part B.
 
 ---
 
