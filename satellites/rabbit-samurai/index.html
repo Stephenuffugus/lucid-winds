@@ -101,6 +101,8 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .dojocell{min-height:72px; border-radius:14px; border:1px solid var(--line); background:#171210; color:var(--cream);
   cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-weight:800; font-size:18px}
 .dojocell .st{font-size:12px; letter-spacing:2px; color:#ffd77a}
+.dojocell{position:relative}
+.dojocell .jb{position:absolute; top:5px; right:8px; font-size:14px; color:var(--gold)}
 .dojocell.locked{opacity:.35; pointer-events:none}
 .dojocell.next{border-color:var(--gold); box-shadow:0 0 12px rgba(200,168,75,.35)}
 .dojocell:active{transform:scale(.97)}
@@ -358,7 +360,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v2.13';
+var BUILD='v2.14';
 var TESTMODE=/[?&]rstest=1/.test(location.search);
 
 /* ---------- world constants ---------- */
@@ -396,6 +398,7 @@ var PROG={ bestScore:0, bestLevel:0, totalMice:0, bank:0, up:{vine:0,fling:0,hea
   if(typeof PROG.bank!=='number'||!(PROG.bank>=0))PROG.bank=0;
   if(!PROG.stars||typeof PROG.stars!=='object')PROG.stars={};
   if(typeof PROG.cleared!=='number'||!(PROG.cleared>=0))PROG.cleared=0;
+  if(!PROG.jobs||typeof PROG.jobs!=='object')PROG.jobs={};
   /* saves from the 6 dojo build: bestLevel was the deepest dojo REACHED */
   if(!PROG.cleared && PROG.bestLevel>0)PROG.cleared=Math.min(6,PROG.bestLevel); })();
 function save(){ try{ LS.set('rabbitsamurai_save', JSON.stringify(PROG)); }catch(e){} }
@@ -869,6 +872,36 @@ function genSeg(li,seg,last){
   return lvl;
 }
 
+/* ---------- one job per dojo (2026-10-23, LEVEL-BUILDOUT-PLAN Part D; Astra RR14 to RR17) ----------
+   Each dojo names one thing to do besides reaching the diamond. A job is a BADGE, not a fourth star (the stars stay
+   clear + every mouse + 80 percent of the carrots): done once, the badge shows on the dojo map and 10 carrots go to
+   the bank, once. Six kinds rotate and ramp, never the same twice in a row; the cut and swing counts grow with the
+   worlds, par is the solver's time through that dojo x 1.6, rounded up to 5 s. ("Collect every carrot" is held: about
+   one carrot in five sits on a bonus ledge only a nearby cannon reaches, and a job must always be doable.) */
+var JOBS=[ {k:'mice'},{k:'heart'},{k:'hogs',n:3},{k:'swing',n:2},{k:'par'},{k:'safe'},
+           {k:'hogs',n:3},{k:'swing',n:2},{k:'mice'},{k:'par'},{k:'heart'},{k:'safe'},
+           {k:'swing',n:2},{k:'hogs',n:4},{k:'par'},{k:'safe'},{k:'mice'},{k:'heart'},
+           {k:'hogs',n:5},{k:'swing',n:3},{k:'par'},{k:'heart'},{k:'hogs',n:6},{k:'safe'} ];
+var PAR=[50,60,70,80,100,105,55,70,95,90,120,120,70,75,90,105,110,120,80,95,110,110,120,155];
+function jobOf(li){ return JOBS[li]||JOBS[0]; }
+/* the job in words: whole (the card, the tally) and short (the HUD line) */
+function jobText(li){ var j=jobOf(li);
+  if(j.k==='mice')return 'free every mouse'; if(j.k==='safe')return 'free every mouse without losing a heart';
+  if(j.k==='par')return 'reach the diamond inside '+PAR[li]+' seconds'; if(j.k==='swing')return 'swing '+j.n+' rings in a row without touching the ground';
+  if(j.k==='hogs')return 'cut '+j.n+' hedgehogs'; return 'clear the dojo without losing a heart'; }
+/* where the job stands right now: done (already met), lost (can no longer be met), and the short line */
+function jobNow(){ var j=G.job, all=G.lvl.cells.length, li=G.li;
+  if(j.k==='mice')return { done:G.mice>=all, lost:false, line:'free every mouse '+G.mice+'/'+all };
+  if(j.k==='safe')return { done:G.mice>=all&&!G.lostLife, lost:G.lostLife, line:G.lostLife?'every mouse, no heart lost: missed':'every mouse, no heart lost '+G.mice+'/'+all };
+  if(j.k==='par')return { done:false, lost:G.t>PAR[li], line:G.t>PAR[li]?'diamond inside '+PAR[li]+' s: missed':'diamond inside '+PAR[li]+' s · '+Math.floor(G.t)+' s' };
+  if(j.k==='swing')return { done:G.swingBest>=j.n, lost:false, line:j.n+' rings in a row · best '+Math.min(G.swingBest,j.n) };
+  if(j.k==='hogs')return { done:G.hogsCut>=j.n, lost:false, line:'cut '+j.n+' hedgehogs '+Math.min(G.hogsCut,j.n)+'/'+j.n };
+  return { done:false, lost:G.lostLife, line:G.lostLife?'no heart lost: missed':'no heart lost so far' }; }
+/* at the diamond: did it get done? */
+function jobDone(){ var j=G.job, all=G.lvl.cells.length;
+  if(j.k==='mice')return G.mice>=all; if(j.k==='safe')return G.mice>=all&&!G.lostLife; if(j.k==='par')return G.t<=PAR[G.li];
+  if(j.k==='swing')return G.swingBest>=j.n; if(j.k==='hogs')return G.hogsCut>=j.n; return !G.lostLife; }
+
 /* ---------- start / state ---------- */
 function startRun(){ var li=Math.min(PROG.cleared||0, LEVELS-1); runStory(storyCards(li), function(){ startLevel(li, true); }); }
 function startLevel(li, freshRun){
@@ -886,6 +919,7 @@ function startLevel(li, freshRun){
     lives:keepLives, score:keepScore, carrots:0, mice:0, miceTotal:keepMice,
     invuln:0, cam:0, trail:[], followers:[], parts:[], floats:[],
     clearT:0, moleY:0, sunAmt:(G&&!freshRun)?(G.sunAmt||0):0,
+    job:jobOf(li), jobT:3.6, lostLife:false, hogsCut:0, airSwings:0, swingBest:0, lastNode:null,
     levelsCleared:(G&&!freshRun)?(G.levelsCleared||0):0 };
   toPlay();
 }
@@ -930,7 +964,10 @@ function tryGrapple(){ if(G.rope.attached)return false;
   if(!best)return false;
   var ddx=best.x-G.bx, ddy=best.y-G.by, bd=ddx*ddx+ddy*ddy;
   var dd=Math.sqrt(bd)||1; G.rope.attached=true; G.rope.node=best; G.dashed=false; G.dashT=0;
-  G.rope.len=Math.max(ROPE_MIN,Math.min(RM,dd)); G.throwT=0.2; sfx('rope'); haptic(10); tutDone('vine'); return true;
+  G.rope.len=Math.max(ROPE_MIN,Math.min(RM,dd)); G.throwT=0.2; sfx('rope'); haptic(10); tutDone('vine');
+  if(G.onGround){ G.airSwings=0; G.lastNode=null; }
+  if(best!==G.lastNode){ G.airSwings++; G.lastNode=best; if(G.airSwings>G.swingBest)G.swingBest=G.airSwings; }
+  return true;
 }
 function releaseRope(hop){ if(!G.rope.attached)return false; G.rope.attached=false; G.rope.node=null;
   if(hop){ G.vy-=flingHop(); sfx('fling'); haptic(14); tutDone('fling'); }
@@ -990,7 +1027,7 @@ function interact(dt){
   for(i=0;i<L.hogs.length;i++){ var hg2=L.hogs[i]; if(hg2.dead)continue;
     if(!ovl(G.bx,G.by,HW,HH,hg2.x,hg2.y,16,14)) continue;
     var stomp = !G.rope.attached && G.vy>250 && G.by<hg2.y-8;
-    if(slicing||stomp){ hg2.dead=true; hg2.deadT=0.45; if(dashing)dashKill(hg2.x,hg2.y,30); else G.score+=30; sfx('slash'); haptic(14);
+    if(slicing||stomp){ hg2.dead=true; hg2.deadT=0.45; G.hogsCut++; if(dashing)dashKill(hg2.x,hg2.y,30); else G.score+=30; sfx('slash'); haptic(14);
       floatUp(hg2.x,hg2.y-20,'slash!'); burst(hg2.x,hg2.y,'#d9cfe6',10);
       if(stomp){ G.vy=-460; G.onGround=false; } }
     else if(G.invuln<=0) hurt();
@@ -1027,7 +1064,7 @@ function interact(dt){
   /* fell in a pit */
   if(G.by-HH>(G.lvl.H)*T+50) hurt();
 }
-function hurt(){ if(G.invuln>0||G.phase!=='play')return; if(TESTMODE&&window.__rrNoHurt)return;   /* test builds: shots from a spot a hedgehog walks through */ G.lives--; G.hurtT=0.4; sfx('hurt'); haptic([20,40,20]);
+function hurt(){ if(G.invuln>0||G.phase!=='play')return; if(TESTMODE&&window.__rrNoHurt)return;   /* test builds: shots from a spot a hedgehog walks through */ G.lostLife=true; G.lives--; G.hurtT=0.4; sfx('hurt'); haptic([20,40,20]);
   if(TESTMODE){ try{ window.__lastHurt={x:Math.round(G.bx),y:Math.round(G.by),vy:Math.round(G.vy),ground:G.onGround,where:String((new Error()).stack).split('\n').slice(1,4).join(' | ')}; }catch(e){} }
   releaseRope(false);
   if(G.lives<=0){ /* Jessie: dying restarts THIS level, not the whole game — keep your run score/progress */
@@ -1051,6 +1088,9 @@ function levelClear(){ if(G.phase!=='play')return; G.phase='clear'; G.clearT=2.0
   var totC=G.lvl.carrots.length;
   G.clearStars=1+(G.mice>=G.lvl.cells.length?1:0)+((totC>0&&G.carrots>=Math.ceil(totC*0.8))?1:0);
   if(G.clearStars>(PROG.stars[G.li]||0))PROG.stars[G.li]=G.clearStars;
+  /* the dojo's job (Part D): a badge, and 10 carrots the first time */
+  G.jobOk=jobDone(); G.jobNew=false;
+  if(G.jobOk&&!PROG.jobs[G.li]){ PROG.jobs[G.li]=1; PROG.bank=(PROG.bank||0)+10; G.jobNew=true; }   /* the clear banner says it */
   var hadDash=dashUnlocked();
   PROG.cleared=Math.max(PROG.cleared||0, G.li+1);
   /* the sixth clear used to float "DASH learned"; the sword card (STORY.md) does that now,
@@ -1316,6 +1356,7 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.t+=dt;
     G.by+=G.vy*dt; resolveAxis('y',G.vy>0?1:(G.vy<0?-1:0));
     if(G.onGround)G.dashed=false;
     if(G.onGround && !wasGround && fallV>300) G.landT=0.16;
+    if(G.onGround){ G.airSwings=0; G.lastNode=null; }   /* touching the ground ends a run of rings (Part D) */
     if(G.onGround){ G.coyote=0.1; if(G.jumpBuf>0){ G.jumpBuf=0; G.vy=-JUMP; G.onGround=false; G.coyote=0; sfx('jump'); haptic(8); tutDone('jump'); } }
     else { if(G.coyote>0)G.coyote-=dt; if(G.jumpBuf>0)G.jumpBuf-=dt; }
     if(G.bx<HW){ G.bx=HW; G.vx=0; }
@@ -2033,6 +2074,9 @@ function drawHUD(){
   for(var i=0;i<mh;i++){ drawHeart(VW-30-i*30, 22, i<G.lives); }
   /* score */
   ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 16px system-ui'; ctx.fillText('score '+G.score, VW-16, 52);
+  /* the dojo's job, live (Part D) */
+  if(G.job&&G.phase==='play'){ var jn=jobNow(); ctx.textAlign='left'; ctx.font='800 13px system-ui';
+    ctx.fillStyle=jn.done?'#c6f090':(jn.lost?'#9a9178':'#ffe9a8'); ctx.fillText((jn.done?'✓ job: ':'job: ')+jn.line, 62, 74); }
   /* pause button */
   hudBtn(PAUSE,'‹');
   if(ART.ui.hud_pause){ ctx.fillStyle='rgba(20,15,12,0.72)'; roundRect(PAUSE.x,PAUSE.y,PAUSE.w,PAUSE.h,10); ctx.fill(); ctx.drawImage(ART.ui.hud_pause,PAUSE.x+8,PAUSE.y+6,28,28); }
@@ -2089,6 +2133,7 @@ function drawControls(){ if(G.phase!=='play'&&G.phase!=='clear')return;
       ctx.fillStyle='#ffe9a8'; ctx.font='800 13px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('tap DASH',px,py); ctx.textBaseline='alphabetic'; ctx.globalAlpha=1; }
   }
   drawTut();
+  drawJobCard();
   if(G.rope.attached){ ctx.globalAlpha=0.5+0.3*Math.sin(G.t*10); ctx.fillStyle='#e6cd6a'; ctx.font='700 13px system-ui'; ctx.textAlign='center'; ctx.fillText('drag to swing · release to fling', VW/2, VH-24); ctx.globalAlpha=1; ctx.textAlign='left'; }
 }
 function padBtn(b,label,active,tint,art){ var cx=b.x+b.w/2, cy=b.y+b.h/2, r=b.w/2;
@@ -2100,14 +2145,32 @@ function padBtn(b,label,active,tint,art){ var cx=b.x+b.w/2, cy=b.y+b.h/2, r=b.w/
   ctx.globalAlpha=1; ctx.fillStyle='#f3ebdc'; ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.font=(label.length>2?'800 18px system-ui':'800 34px system-ui'); ctx.fillText(label,cx,cy+1); ctx.textBaseline='alphabetic'; }
 function hudBtn(b,glyph){ ctx.fillStyle='rgba(20,15,12,0.72)'; roundRect(b.x,b.y,b.w,b.h,10); ctx.fill(); ctx.strokeStyle='rgba(200,168,75,0.5)'; ctx.lineWidth=1.5; roundRect(b.x,b.y,b.w,b.h,10); ctx.stroke(); ctx.fillStyle='#e8dcc8'; ctx.font='800 26px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(glyph,b.x+b.w/2,b.y+b.h/2+1); ctx.textBaseline='alphabetic'; }
-function drawClearBanner(){ ctx.fillStyle='rgba(10,12,8,0.55)'; ctx.fillRect(0,VH*0.28,VW,150);
+function drawClearBanner(){ ctx.fillStyle='rgba(10,12,8,0.55)'; ctx.fillRect(0,VH*0.28,VW,G.job?206:150);
   ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='800 34px system-ui'; ctx.fillText('Dojo '+(G.li+1)+' cleared!', VW/2, VH*0.28+46);
   var st='', k; for(k=0;k<3;k++)st+=(k<(G.clearStars||1)?'★':'☆');
   ctx.fillStyle='#ffd77a'; ctx.font='800 30px system-ui'; ctx.fillText(st, VW/2, VH*0.28+84);
   var totC=G.lvl.carrots.length;
   ctx.fillStyle='#e8dcc8'; ctx.font='700 15px system-ui';
   ctx.fillText('mice '+G.mice+'/'+G.lvl.cells.length+' · carrots '+G.carrots+'/'+totC, VW/2, VH*0.28+112);
+  if(G.job){ ctx.font='800 16px system-ui'; ctx.fillStyle=G.jobOk?'#c6f090':'#9a9178';
+    ctx.fillText(G.jobOk?('✓ Job done'+(G.jobNew?' · +10 carrots':' · badge kept')):'Job missed', VW/2, VH*0.28+142);
+    ctx.font='700 13px system-ui'; ctx.fillStyle='#e8dcc8'; var tl=wrapText(jobText(G.li),VW-60);
+    for(var q=0;q<tl.length;q++)ctx.fillText(tl[q], VW/2, VH*0.28+164+q*18); }
   ctx.textAlign='left'; }
+/* the dojo card (Part D): which dojo, and its job. Drawn over the play for a few seconds and never holds the
+   controls (the first input is live from the first frame). */
+function drawJobCard(){ if(!G.job||G.jobT<=0||G.phase!=='play')return; G.jobT-=1/60;
+  var a=Math.min(1,G.jobT/0.6,(3.6-G.jobT)/0.25); if(a<=0)return; var wd=worldOf(G.li), cy=VH*0.17, had=PROG.jobs[G.li];
+  ctx.font='700 15px system-ui'; var jl=wrapText('Your job: '+jobText(G.li),352), hgt=62+jl.length*20+(had?16:0);
+  ctx.globalAlpha=0.9*a; ctx.fillStyle='rgba(16,12,10,0.86)'; roundRect(VW/2-196,cy-34,392,hgt,16); ctx.fill();
+  ctx.strokeStyle='rgba(200,168,75,0.6)'; ctx.lineWidth=1.5; roundRect(VW/2-196,cy-34,392,hgt,16); ctx.stroke();
+  ctx.globalAlpha=a; ctx.textAlign='center'; ctx.fillStyle='#c8a84b'; ctx.font='800 19px system-ui'; ctx.fillText('Dojo '+(G.li+1)+' · '+wd.name, VW/2, cy-6);
+  ctx.fillStyle='#f3ebdc'; ctx.font='700 15px system-ui'; for(var q=0;q<jl.length;q++)ctx.fillText(jl[q], VW/2, cy+20+q*20);
+  if(had){ ctx.fillStyle='#9a9178'; ctx.font='700 12px system-ui'; ctx.fillText('badge already earned', VW/2, cy+22+jl.length*20); }
+  ctx.globalAlpha=1; ctx.textAlign='left'; }
+/* split a line in two at the space nearest its middle when it is wider than w (the current ctx.font) */
+function wrapText(s,w){ if(ctx.measureText(s).width<=w)return [s]; var m=s.length>>1, i=s.lastIndexOf(' ',m), j=s.indexOf(' ',m), k=(i<0)?j:((j<0)?i:((m-i<=j-m)?i:j));
+  return k<0?[s]:[s.slice(0,k),s.slice(k+1)]; }
 function roundRect(x,y,w,h,r){ if(w<r*2)r=w/2; if(h<r*2)r=h/2; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
 /* ---------- pointer input ---------- */
@@ -2226,7 +2289,7 @@ function renderSelect(){
       var unlocked=li2<=(PROG.cleared||0);
       var stx='', k2; for(k2=0;k2<3;k2++)stx+=(k2<(PROG.stars[li2]||0)?'★':'☆');
       html+='<button class="dojocell'+(unlocked?'':' locked')+(li2===(PROG.cleared||0)?' next':'')+'" data-dojo="'+li2+'">'
-        +(li2+1)+'<span class="st">'+(unlocked?stx:'🔒')+'</span></button>';
+        +(li2+1)+'<span class="st">'+(unlocked?stx:'🔒')+'</span>'+(PROG.jobs[li2]?'<span class="jb" aria-label="job badge">✦</span>':'')+'</button>';
     }
     html+='</div></div>';
   }
@@ -2304,6 +2367,7 @@ if(TESTMODE){
     state:function(){ return snap(); },
     full:function(){ return G; },
     alpha:function(){ return _ALPHA; },   /* the measured art margins (test builds) */
+    job:function(){ return G?{ job:G.job, now:jobNow(), lost:G.lostLife, cut:G.hogsCut, best:G.swingBest, t:G.t, ok:G.jobOk, isNew:G.jobNew, bank:PROG.bank, badge:!!PROG.jobs[G.li] }:null; },
     renderMs:function(n){ n=n||60; var t0=performance.now(); for(var q=0;q<n;q++){ render(); ctx.getImageData(0,0,1,1); } return (performance.now()-t0)/n; },   /* the light's cost (Part B gate) */
     story:{ cards:storyCards, next:storyNext, prog:function(){ return PROG; }, set:SET, screen:function(){ return curScreen; },
       clear:function(){ levelClear(); return snap(); }, advance:function(){ advanceLevel(); return curScreen; } },
