@@ -13,6 +13,7 @@
  *   - piGameApprove / piGameComplete / piGameStatus (v2 onCall) — the satellite games on Pi Network
  *                                      (TUMBLE first; one Pi app and one secret per game, see ./piGames.js)
  *   - piGameTestPay    (v2 onCall)    — test Pi to the Pioneers who signed into a game's Testnet copy (./piGameTestPay.js)
+ *   - rrLevels         (v2 onRequest) — Rabbit Ronin's hand made dojos: the level editor's drafts + published levels (./rrLevels.js)
  *
  * Pi and web rails share entitlement logic via ./fulfill.js (applyFulfillment).
  *
@@ -44,5 +45,6 @@ export { stripeWebhook } from './stripeWebhook.js'
 export { partyComplete } from './partyComplete.js'
 export { portalPing, portalStats } from './portalTraffic.js'
 export { gutenbergText } from './gutenberg.js'
+export { rrLevels } from './rrLevels.js'
 export { piGameApprove, piGameComplete, piGameStatus } from './piGames.js'
 export { piGameTestPay } from './piGameTestPay.js'
