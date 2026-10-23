@@ -45,8 +45,19 @@ shipped v2.3 to v2.9 while every fact was fresh. Everything in section 2 was run
   done by real swinging in dojos 4, 8, 13, 20; first input under the card moved at 125 ms, jumped at 165 ms; solver 24/24.
   HELD: the "collect every carrot" kind (about 1 carrot in 5 sits on a bonus ledge at rows 10 to 13 that only a nearby
   cannon or a pad then ring chain reaches; not provable reachable everywhere, and a job must always be doable).
-- Part A: LIVE. Part B: LIVE. Part C: LIVE. Part D: LIVE. A review of B, C and D is running (05:00); its confirmed
-  faults get their own deploy.
+- 2026-10-23 05:33 UTC: **v2.15 LIVE, the Parts B to D review's fixes + two plan gaps** (card `?v=20261023j`, main `45409c229`).
+  Review (two lenses) found seven faults, no crash: a floor seam in the dark hours (play wash a row short), the HUD's grey
+  "missed" line unreadable on bright skies (HUD scrim + backing pill), the dojo card counting frames (1.8 s on 120 Hz; now
+  `G.jobT-=dt` in step), ring chain A,B,A counting 3 (`G.chain`), the moon sliding off screen (no camera drift on bodies),
+  atlas frame bleed on lone pieces (`tilePiece` insets 2 px), the "+N banked" float on the job line (banner line instead).
+  Plan gaps: the Approach is the carrot run in 24 of 24 dojos (was 13); Gallery cages up high 67 of 72 (was 60; a ledge
+  three rows up when a ringed ledge has no room). Redrawn: Cairn Tower (flat stones), Lantern Tree (layered crown, lanterns).
+- **FINAL (05:35 UTC): all four parts live, two review rounds folded in. Nothing in a working tree.** Open for his call:
+  section E; the held "collect every carrot" kind (a fraction instead?); Gallery cages in dojos 1, 2, 15 (no room for a
+  ledge between the swings); Astra painting the twelve landmarks. Scratch tools of this run (solver sweep with per segment
+  retry maps, scan, cage probe with a planted control, review rules, landmark scan, job gate, swing chain proof, paired
+  perf, shots) were in the session scratchpad `rr/`; rebuild from the descriptions above if needed.
+- Part A: LIVE. Part B: LIVE. Part C: LIVE. Part D: LIVE.
 
 ## 1. What Stephen asked for, verbatim, and what "good" means
 
