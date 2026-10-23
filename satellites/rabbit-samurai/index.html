@@ -360,7 +360,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v2.14';
+var BUILD='v2.15';
 var TESTMODE=/[?&]rstest=1/.test(location.search);
 
 /* ---------- world constants ---------- */
@@ -606,7 +606,7 @@ function genSeg(li,seg,last){
      Peaks 6 in the solver with no structures at all, so the rhythm stays; the worlds past the
      yards only dig fewer of the small hop pits, and the structures below take whatever flat
      ground is left with a full run-up before every swing lip. */
-  var smallP=wIx===0?0.26:(wIx===1?0.14:0.20), isl=0, nSmall=0, smallMax=beat===1?1:99;
+  var smallP=wIx===0?0.26:(wIx===1?0.14:0.20), isl=0, nSmall=0, smallMax=beat===1?1:99, smallPits=[];
   while(c<W-10){
     if(wideLeft>0 && c>=wideAt){
       var pw=wideW-Math.floor(rng()*2);
@@ -614,7 +614,7 @@ function genSeg(li,seg,last){
       widePits.push({c:c,w:pw}); wideLeft--; c+=pw+4+isl; wideAt=c+Math.floor(rng()*2);
     } else if(nSmall<smallMax && !calmAt(c) && !(beat===2&&widePits.length>0&&wideLeft>0) && rng()<smallP){
       for(k=0;k<2;k++){ if(c+k<W-6){ grid[22][c+k]=false; grid[23][c+k]=false; } }
-      nSmall++; c+=2+3+Math.floor(isl/2);
+      smallPits.push(c); nSmall++; c+=2+3+Math.floor(isl/2);
     } else c+=1+Math.floor(rng()*3);
   }
   for(c=0;c<6;c++){ grid[22][c]=true; grid[23][c]=true; }
@@ -743,6 +743,12 @@ function genSeg(li,seg,last){
   var carP=[0.8,0.45,0.35,0.35,0.5][beat];
   for(c=4;c<W-4;c+=2){ if(gt[c]>0 && rng()<carP) lvl.carrots.push({ x:c*T+T/2, y:(gt[c]-1)*T-4, got:false }); }
   for(i=0;i<plats.length;i++){ var p=plats[i]; for(k=0;k<p.w;k+=2){ lvl.carrots.push({ x:(p.c+k)*T+T/2, y:(p.r-1)*T+T/2, got:false }); } }
+  /* the Approach is the carrot run (the plan's "the most carrots"): a hop arc over every small pit, and an arc under
+     each practice ring like the Gallery's (no dice, so nothing else moves) */
+  if(beat===0){ for(i=0;i<smallPits.length;i++){ var sp0=smallPits[i]; if(gt[sp0-1]!==22||gt[sp0+2]!==22)continue;
+      lvl.carrots.push({ x:(sp0-0.5)*T+T/2, y:20*T, got:false }, { x:(sp0+1)*T, y:19*T, got:false }, { x:(sp0+2.5)*T-T/2, y:20*T, got:false }); }
+    for(i=0;i<lvl.porcs.length;i++){ var pr0=lvl.porcs[i]; if(pr0.y<12*T)continue;
+      for(k=-2;k<=2;k++){ var ab=k*0.42; lvl.carrots.push({ x:pr0.x+Math.sin(ab)*150, y:pr0.y+40+Math.cos(ab)*135-T, got:false }); } } }
   /* a carrot on every other step of the stair, so the way up reads */
   for(i=0;i<climbs.length;i++){ var cl2=climbs[i];
     for(k=0;k<cl2.nt;k++){ for(c=cl2.s+3*k+1;c<=cl2.s+3*k+3;c+=2) lvl.carrots.push({ x:c*T+T/2, y:(19-2*k)*T+T/2, got:false }); }
@@ -772,7 +778,13 @@ function genSeg(li,seg,last){
         for(k=0;k<used.length&&ok;k++){ if(Math.abs(used[k]-c)<6)ok=false; }
         if(ok&&!anchorClear((c+CAGE_AOFF)*T+T/2,14*T+T/2))ok=false;
         if(ok){ bd=d0; best=c; } }
-      if(best<0)continue;
+      if(best<0){ /* no room for a ring: a ledge three rows up (one jump reaches it), so the cage still hangs off the ground */
+        for(c=2;c<W-8;c++){ var d1=Math.abs(c-tgt); if(d1>=bd)continue; var ok1=true; for(k=-1;k<=4;k++){ if(gt[c+k]!==22){ ok1=false; break; } }
+          for(k=0;k<used.length&&ok1;k++){ if(Math.abs(used[k]-c)<6)ok1=false; }
+          for(k=0;k<lvl.porcs.length&&ok1;k++){ if(Math.abs(lvl.porcs[k].x/T-(c+1.5))<2.5&&lvl.porcs[k].y>17*T)ok1=false; }
+          if(ok1){ bd=d1; best=c; } }
+        if(best<0)continue;
+        used.push(best); for(k=0;k<3;k++)grid[19][best+k]=2; cageAt(best+1,18*T); continue; }
       used.push(best);
       for(k=0;k<3;k++)grid[CAGE_ROW][best+k]=2;
       lvl.porcs.push({ x:(best+CAGE_AOFF)*T+T/2, y:14*T+T/2, spin:rng()*6.28, dir:rng()<0.5?1:-1 });
@@ -919,7 +931,7 @@ function startLevel(li, freshRun){
     lives:keepLives, score:keepScore, carrots:0, mice:0, miceTotal:keepMice,
     invuln:0, cam:0, trail:[], followers:[], parts:[], floats:[],
     clearT:0, moleY:0, sunAmt:(G&&!freshRun)?(G.sunAmt||0):0,
-    job:jobOf(li), jobT:3.6, lostLife:false, hogsCut:0, airSwings:0, swingBest:0, lastNode:null,
+    job:jobOf(li), jobT:3.6, lostLife:false, hogsCut:0, airSwings:0, swingBest:0, chain:[],
     levelsCleared:(G&&!freshRun)?(G.levelsCleared||0):0 };
   toPlay();
 }
@@ -965,8 +977,8 @@ function tryGrapple(){ if(G.rope.attached)return false;
   var ddx=best.x-G.bx, ddy=best.y-G.by, bd=ddx*ddx+ddy*ddy;
   var dd=Math.sqrt(bd)||1; G.rope.attached=true; G.rope.node=best; G.dashed=false; G.dashT=0;
   G.rope.len=Math.max(ROPE_MIN,Math.min(RM,dd)); G.throwT=0.2; sfx('rope'); haptic(10); tutDone('vine');
-  if(G.onGround){ G.airSwings=0; G.lastNode=null; }
-  if(best!==G.lastNode){ G.airSwings++; G.lastNode=best; if(G.airSwings>G.swingBest)G.swingBest=G.airSwings; }
+  if(G.onGround)G.chain.length=0;
+  if(G.chain.indexOf(best)<0){ G.chain.push(best); G.airSwings=G.chain.length; if(G.airSwings>G.swingBest)G.swingBest=G.airSwings; }   /* a ring counts once per chain (review: A, B, A counted three) */
   return true;
 }
 function releaseRope(hop){ if(!G.rope.attached)return false; G.rope.attached=false; G.rope.node=null;
@@ -1070,7 +1082,7 @@ function hurt(){ if(G.invuln>0||G.phase!=='play')return; if(TESTMODE&&window.__r
   if(G.lives<=0){ /* Jessie: dying restarts THIS level, not the whole game — keep your run score/progress */
     G.lives=maxLives(); startLevel(G.li,false); floatUp(G.bx,G.by-30,'try again!'); return; }
   /* respawn at level start, keep collected progress */
-  G.bx=G.cpX||G.lvl.spawn.x; G.by=G.cpY||G.lvl.spawn.y; G.vx=0; G.vy=0; G.invuln=1.4; G.followers=[]; G.trail=[];
+  G.bx=G.cpX||G.lvl.spawn.x; G.by=G.cpY||G.lvl.spawn.y; G.vx=0; G.vy=0; G.invuln=1.4; G.followers=[]; G.trail=[]; G.airSwings=0; G.chain.length=0;
   floatUp(G.bx,G.by-30,'ouch!');
 }
 
@@ -1081,8 +1093,7 @@ function levelClear(){ if(G.phase!=='play')return; G.phase='clear'; G.clearT=2.0
   if(G.li>(PROG.bestLevel||0))PROG.bestLevel=G.li;
   PROG.totalMice=(PROG.totalMice||0)+G.mice;
   /* carrots carried out of a cleared dojo become shop coin */
-  PROG.bank=(PROG.bank||0)+G.carrots;
-  floatUp(G.bx,G.by-46,'+'+G.carrots+' banked');
+  PROG.bank=(PROG.bank||0)+G.carrots;   /* the banner says what was banked (a float here sat on the job line) */
   /* objectives: clear the dojo, free every mouse, carry 80 percent of the
      carrots. Three stars on the dojo map. */
   var totC=G.lvl.carrots.length;
@@ -1329,6 +1340,7 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.t+=dt;
   if(G.phase!=='play')return;
 
   if(G.invuln>0)G.invuln-=dt;
+  if(G.jobT>0)G.jobT-=dt;   /* the dojo card's clock runs on time, not frames (review: 1.8 s on a 120 Hz screen) */
   if(G.hurtT>0)G.hurtT-=dt; if(G.throwT>0)G.throwT-=dt; if(G.landT>0)G.landT-=dt;
   var wasGround=G.onGround, fallV=G.vy;
   if(G.dashCd>0){ G.dashCd-=dt; if(G.dashCd<=0&&!G.dashHit)G.dashChain=0; }
@@ -1356,7 +1368,7 @@ function step(dt){ if(!G)return; if(dt>0.05)dt=0.05; G.t+=dt;
     G.by+=G.vy*dt; resolveAxis('y',G.vy>0?1:(G.vy<0?-1:0));
     if(G.onGround)G.dashed=false;
     if(G.onGround && !wasGround && fallV>300) G.landT=0.16;
-    if(G.onGround){ G.airSwings=0; G.lastNode=null; }   /* touching the ground ends a run of rings (Part D) */
+    if(G.onGround){ G.airSwings=0; G.chain.length=0; }   /* touching the ground ends a run of rings (Part D) */
     if(G.onGround){ G.coyote=0.1; if(G.jumpBuf>0){ G.jumpBuf=0; G.vy=-JUMP; G.onGround=false; G.coyote=0; sfx('jump'); haptic(8); tutDone('jump'); } }
     else { if(G.coyote>0)G.coyote-=dt; if(G.jumpBuf>0)G.jumpBuf-=dt; }
     if(G.bx<HW){ G.bx=HW; G.vx=0; }
@@ -1474,11 +1486,11 @@ function rgba(c,a){ return 'rgba('+Math.round(c[0])+','+Math.round(c[1])+','+Mat
    a sun is a soft glow and a disc; the moon is the painted moon. The sun sets behind the skyline while the moon rises. */
 function drawBody(LT,cam){ if(G.lvl.theme==='burrow')return;
   var s=LT.sun, m=LT.moon, x, y, r;
-  if(s[3]>0.02){ x=s[0]*VW-cam*0.02; y=s[1]; r=s[2];
+  if(s[3]>0.02){ x=s[0]*VW; y=s[1]; r=s[2];
     var gl=sunGlow(LT.sc); ctx.globalAlpha=s[3]; ctx.drawImage(gl,x-r*3.6,y-r*3.6,r*7.2,r*7.2); ctx.globalAlpha=1;
     ctx.fillStyle=rgba(LT.sc,s[3]); ctx.beginPath(); ctx.arc(x,y,r,0,6.28); ctx.fill();
     ctx.fillStyle=rgba([255,255,250],0.7*s[3]); ctx.beginPath(); ctx.arc(x,y,r*0.62,0,6.28); ctx.fill(); }
-  if(m[2]>0.02){ x=m[0]*VW-cam*0.02; y=m[1];
+  if(m[2]>0.02){ x=m[0]*VW; y=m[1];
     if(ART.ui.moon){ ctx.globalAlpha=m[2]; ctx.drawImage(ART.ui.moon,x-42,y-42,84,84); ctx.globalAlpha=1; }
     else { ctx.fillStyle=rgba([239,230,214],0.8*m[2]); ctx.beginPath(); ctx.arc(x,y,26,0,6.28); ctx.fill(); } } }
 /* the sun's glow, drawn once per colour (rounded) into a small sprite: a radial gradient that size, every frame,
@@ -1660,7 +1672,7 @@ function render(){ if(!ctx||!G)return; var L=G.lvl, cam=G.cam, i, LT=lightNow(),
   /* mole rat on clear */
   if(G.phase==='clear'){ var mc0=colAt(L.diamond.x-46); drawMole(L.diamond.x, ((L.gt&&L.gt[mc0]>0)?L.gt[mc0]:22)*T, G.moleY); }   /* the mole comes up on the dais */
   /* the hour over the play (lighter than the scenery's), then the lanterns' glow on top of it */
-  if(lit&&LT.play[3]>0.003){ ctx.fillStyle=rgba(LT.play); ctx.fillRect(cam-60,viewY()/ZOOM-60,VW/ZOOM+120,23*T-viewY()/ZOOM+60); }   /* down to the floor's second row: under it the floor fade covers */
+  if(lit&&LT.play[3]>0.003){ ctx.fillStyle=rgba(LT.play); ctx.fillRect(cam-60,viewY()/ZOOM-60,VW/ZOOM+120,VH/ZOOM+120); }   /* every floor row too (stopping at row 23 left a seam in the dark hours: review) */
   if(lit)drawLights(LT); else LIGHTS.length=0;
   /* particles */
   for(i=0;i<G.parts.length;i++){ var pt=G.parts[i]; ctx.globalAlpha=Math.max(0,pt.life); ctx.fillStyle=pt.col; ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.r,0,6.28); ctx.fill(); } ctx.globalAlpha=1;
@@ -1695,7 +1707,7 @@ var LANDMARK_SHORT={ crate:['Torii','Mast','Bridge'], burrow:['Arch','Ring','Bur
 function landmarkOf(li,i){ var th0=worldOf(li).theme, k=(li+i)%3; return { theme:th0, k:k, name:LANDMARKS[th0][k], short:LANDMARK_SHORT[th0][k] }; }
 /* one atlas tile piece drawn at (x,y) size w by h (its own transparent band measured like the floor tiles) */
 function tilePiece(theme,piece,x,y,w,h,alpha){ var st=ART.ok&&artSet('tiles',theme+'/'+piece); if(!st)return false;
-  if(alpha!=null)ctx.globalAlpha=alpha; ctx.drawImage(ART.img.tiles, st.f[0][0],st.f[0][1],st.cw,st.ch, x,y,w,h); ctx.globalAlpha=1; return true; }
+  if(alpha!=null)ctx.globalAlpha=alpha; ctx.drawImage(ART.img.tiles, st.f[0][0]+2,st.f[0][1]+2,st.cw-4,st.ch-4, x,y,w,h); ctx.globalAlpha=1; return true; }
 function drawLandmark(cp,LT){ var x=cp.x, gy=22*T, t=noMotion()?0:G.t, k=cp.lm.k, th0=cp.lm.theme, i;
   ctx.save();
   if(th0==='crate'){
@@ -1749,12 +1761,16 @@ function drawLandmark(cp,LT){ var x=cp.x, gy=22*T, t=noMotion()?0:G.t, k=cp.lm.k
       ctx.strokeStyle='#c8b27a'; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(x-46,gy-104); ctx.quadraticCurveTo(x,gy-88,x+42,gy-104); ctx.stroke();
       ctx.fillStyle='#efe6d6'; for(i=-1;i<=1;i++){ var px2=x+i*22; ctx.beginPath(); ctx.moveTo(px2,gy-96); ctx.lineTo(px2+5,gy-86); ctx.lineTo(px2-1,gy-83); ctx.lineTo(px2+4,gy-72); ctx.lineTo(px2-3,gy-80); ctx.closePath(); ctx.fill(); }
       tilePiece('grove','fern',x+30,gy-44,46,46); tilePiece('grove','fern',x-84,gy-38,40,40); }
-    else if(k===1){ /* the Lantern Tree: a trunk, a dark crown, three small lanterns in its branches */
-      ctx.fillStyle='#3e2c1c'; ctx.beginPath(); ctx.moveTo(x-16,gy); ctx.lineTo(x-10,gy-110); ctx.lineTo(x-38,gy-150); ctx.lineTo(x-30,gy-154); ctx.lineTo(x-2,gy-122); ctx.lineTo(x+20,gy-158); ctx.lineTo(x+28,gy-152); ctx.lineTo(x+12,gy-110); ctx.lineTo(x+18,gy); ctx.closePath(); ctx.fill();
-      ctx.fillStyle='#1c3a22'; for(i=0;i<6;i++){ ctx.beginPath(); ctx.arc(x-60+i*24,gy-136-((i*37)%3)*6,28,0,6.283); ctx.fill(); }
-      for(i=0;i<3;i++){ var lx2=x-48+i*46, ly2=gy-118+(i%2)*10, sw2=Math.sin(t*1.1+i*2)*2;
-        ctx.strokeStyle='#2a1c10'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(lx2,ly2-22); ctx.lineTo(lx2+sw2,ly2-10); ctx.stroke();
-        ctx.fillStyle='#f0c060'; ctx.globalAlpha=0.85; ctx.fillRect(lx2+sw2-5,ly2-10,10,13); ctx.globalAlpha=1; addLight(lx2+sw2,ly2-4,30); } }
+    else if(k===1){ /* the Lantern Tree: a gnarled trunk, a crown in three greens, three paper lanterns that glow at dusk */
+      ctx.fillStyle='#2e2016'; ctx.beginPath(); ctx.moveTo(x-18,gy); ctx.quadraticCurveTo(x-6,gy-60,x-12,gy-108); ctx.lineTo(x-44,gy-140); ctx.lineTo(x-34,gy-146); ctx.lineTo(x-2,gy-120); ctx.lineTo(x+22,gy-150); ctx.lineTo(x+31,gy-144); ctx.lineTo(x+12,gy-108); ctx.quadraticCurveTo(x+8,gy-50,x+22,gy); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='rgba(200,160,110,0.25)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x-10,gy-6); ctx.quadraticCurveTo(x-2,gy-60,x-6,gy-104); ctx.stroke();
+      var CR=[[-62,-132,26,'#12291a'],[-30,-150,30,'#12291a'],[8,-152,30,'#12291a'],[44,-136,26,'#12291a'],[-44,-128,22,'#1d4428'],[-8,-142,26,'#1d4428'],[28,-130,22,'#1d4428'],[-24,-156,14,'#2c6236'],[14,-160,13,'#2c6236'],[-52,-142,10,'#2c6236']];
+      for(i=0;i<CR.length;i++){ ctx.fillStyle=CR[i][3]; ctx.beginPath(); ctx.arc(x+CR[i][0],gy+CR[i][1],CR[i][2],0,6.283); ctx.fill(); }
+      for(i=0;i<3;i++){ var lx2=x-48+i*46, ly2=gy-104+(i%2)*10, sw2=Math.sin(t*1.1+i*2)*2;
+        ctx.strokeStyle='#2a1c10'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(lx2,ly2-20); ctx.lineTo(lx2+sw2,ly2-10); ctx.stroke();
+        ctx.fillStyle='#d08a30'; ctx.beginPath(); ctx.ellipse(lx2+sw2,ly2,8,10,0,0,6.283); ctx.fill();
+        ctx.fillStyle='#f6c868'; ctx.beginPath(); ctx.ellipse(lx2+sw2,ly2,5,8,0,0,6.283); ctx.fill();
+        ctx.fillStyle='#2a1c10'; ctx.fillRect(lx2+sw2-4,ly2-11,8,3); ctx.fillRect(lx2+sw2-4,ly2+9,8,2); addLight(lx2+sw2,ly2,34); } }
     else { /* the Falls: a cliff of rock with a ribbon of water falling into a pool, mist at its foot */
       ctx.fillStyle='#3a4640'; ctx.beginPath(); ctx.moveTo(x-120,gy); ctx.lineTo(x-108,gy-150); ctx.lineTo(x-60,gy-178); ctx.lineTo(x+40,gy-172); ctx.lineTo(x+112,gy-140); ctx.lineTo(x+124,gy); ctx.closePath(); ctx.fill();
       var wg=ctx.createLinearGradient(0,gy-170,0,gy); wg.addColorStop(0,'rgba(170,215,230,0.85)'); wg.addColorStop(1,'rgba(220,240,245,0.95)');
@@ -1762,8 +1778,13 @@ function drawLandmark(cp,LT){ var x=cp.x, gy=22*T, t=noMotion()?0:G.t, k=cp.lm.k
       ctx.strokeStyle='rgba(255,255,255,0.55)'; ctx.lineWidth=2; for(i=0;i<5;i++){ var sy=gy-170+((t*90+i*34)%170); ctx.beginPath(); ctx.moveTo(x-16+i*8,sy); ctx.lineTo(x-16+i*8,sy+18); ctx.stroke(); }
       ctx.fillStyle='rgba(235,245,250,0.35)'; ctx.beginPath(); ctx.ellipse(x,gy-6,60,14,0,0,6.283); ctx.fill(); } }
   else {
-    if(k===0){ /* the Cairn Tower: cairns stacked into a tower, smallest at the top */
-      var yy=gy; for(i=0;i<5;i++){ var cw=64-i*9; if(!tilePiece('peak','cairn',x-cw/2,yy-cw,cw,cw)){ ctx.fillStyle='#6a7488'; ctx.beginPath(); ctx.ellipse(x,yy-cw/2,cw/2,cw/3,0,0,6.283); ctx.fill(); } yy-=cw*0.62; } }
+    if(k===0){ /* the Cairn Tower: flat stones balanced into a tower, each a little off the one under it, snow on a few */
+      var yy=gy, SZ=[60,52,56,46,48,38,40,30,22], OX=[0,5,-3,6,-4,3,-2,2,0], SC=['#5e6676','#6e7686','#56606e'];
+      for(i=0;i<SZ.length;i++){ var sw3=SZ[i], sh3=12+(i%3)*3, cx3=x+OX[i];
+        ctx.fillStyle=SC[i%3]; ctx.beginPath(); ctx.ellipse(cx3,yy-sh3/2,sw3/2,sh3/2,0,0,6.283); ctx.fill();
+        ctx.fillStyle='rgba(10,14,24,0.3)'; ctx.beginPath(); ctx.ellipse(cx3,yy-sh3*0.3,sw3/2-2,sh3*0.3,0,0,3.1416); ctx.fill();
+        if(i%3===1||i===SZ.length-1){ ctx.fillStyle='#e8eef7'; ctx.beginPath(); ctx.ellipse(cx3,yy-sh3+3,sw3/2-5,5,0,3.1416,0); ctx.fill(); }
+        yy-=sh3-1; } }
     else if(k===1){ /* the Lone Pine: a dark pine in tiers, snow on every tier */
       ctx.fillStyle='#3a2a1c'; ctx.fillRect(x-7,gy-40,14,40);
       for(i=0;i<4;i++){ var tw2=104-i*22, ty2=gy-30-i*32;
@@ -2064,6 +2085,9 @@ function drawBunny(){ var x=G.bx, y=G.by, f=G.facing;
 
 /* ---------- HUD + controls ---------- */
 function drawHUD(){
+  /* the HUD was set for dark skies; Part B brought noon and dawn: a scrim under the top lines keeps them readable */
+  var hs=ctx.createLinearGradient(0,0,0,104); hs.addColorStop(0,'rgba(8,8,6,0.58)'); hs.addColorStop(0.72,'rgba(8,8,6,0.38)'); hs.addColorStop(1,'rgba(8,8,6,0)');
+  ctx.fillStyle=hs; ctx.fillRect(0,0,VW,104);
   ctx.textAlign='left'; ctx.fillStyle='#f3ebdc'; ctx.font='800 20px system-ui'; ctx.fillText('Dojo '+(G.li+1)+' / '+LEVELS+' · '+(G.lvl.name||''), 62, 30);
   /* carrots + mice */
   ctx.font='800 17px system-ui'; ctx.fillStyle='#e08a2a';
@@ -2075,8 +2099,9 @@ function drawHUD(){
   /* score */
   ctx.textAlign='right'; ctx.fillStyle='#c8a84b'; ctx.font='800 16px system-ui'; ctx.fillText('score '+G.score, VW-16, 52);
   /* the dojo's job, live (Part D) */
-  if(G.job&&G.phase==='play'){ var jn=jobNow(); ctx.textAlign='left'; ctx.font='800 13px system-ui';
-    ctx.fillStyle=jn.done?'#c6f090':(jn.lost?'#9a9178':'#ffe9a8'); ctx.fillText((jn.done?'✓ job: ':'job: ')+jn.line, 62, 74); }
+  if(G.job&&G.phase==='play'){ var jn=jobNow(), jt=(jn.done?'✓ job: ':'job: ')+jn.line; ctx.textAlign='left'; ctx.font='800 13px system-ui';
+    ctx.fillStyle='rgba(16,12,10,0.55)'; roundRect(56,62,ctx.measureText(jt).width+12,18,9); ctx.fill();
+    ctx.fillStyle=jn.done?'#c6f090':(jn.lost?'#cfc4a8':'#ffe9a8'); ctx.fillText(jt, 62, 75); }
   /* pause button */
   hudBtn(PAUSE,'‹');
   if(ART.ui.hud_pause){ ctx.fillStyle='rgba(20,15,12,0.72)'; roundRect(PAUSE.x,PAUSE.y,PAUSE.w,PAUSE.h,10); ctx.fill(); ctx.drawImage(ART.ui.hud_pause,PAUSE.x+8,PAUSE.y+6,28,28); }
@@ -2151,7 +2176,7 @@ function drawClearBanner(){ ctx.fillStyle='rgba(10,12,8,0.55)'; ctx.fillRect(0,V
   ctx.fillStyle='#ffd77a'; ctx.font='800 30px system-ui'; ctx.fillText(st, VW/2, VH*0.28+84);
   var totC=G.lvl.carrots.length;
   ctx.fillStyle='#e8dcc8'; ctx.font='700 15px system-ui';
-  ctx.fillText('mice '+G.mice+'/'+G.lvl.cells.length+' · carrots '+G.carrots+'/'+totC, VW/2, VH*0.28+112);
+  ctx.fillText('mice '+G.mice+'/'+G.lvl.cells.length+' · carrots '+G.carrots+'/'+totC+' · +'+(G.carrots+(G.jobNew?10:0))+' banked', VW/2, VH*0.28+112);
   if(G.job){ ctx.font='800 16px system-ui'; ctx.fillStyle=G.jobOk?'#c6f090':'#9a9178';
     ctx.fillText(G.jobOk?('✓ Job done'+(G.jobNew?' · +10 carrots':' · badge kept')):'Job missed', VW/2, VH*0.28+142);
     ctx.font='700 13px system-ui'; ctx.fillStyle='#e8dcc8'; var tl=wrapText(jobText(G.li),VW-60);
@@ -2159,7 +2184,7 @@ function drawClearBanner(){ ctx.fillStyle='rgba(10,12,8,0.55)'; ctx.fillRect(0,V
   ctx.textAlign='left'; }
 /* the dojo card (Part D): which dojo, and its job. Drawn over the play for a few seconds and never holds the
    controls (the first input is live from the first frame). */
-function drawJobCard(){ if(!G.job||G.jobT<=0||G.phase!=='play')return; G.jobT-=1/60;
+function drawJobCard(){ if(!G.job||G.jobT<=0||G.phase!=='play')return;
   var a=Math.min(1,G.jobT/0.6,(3.6-G.jobT)/0.25); if(a<=0)return; var wd=worldOf(G.li), cy=VH*0.17, had=PROG.jobs[G.li];
   ctx.font='700 15px system-ui'; var jl=wrapText('Your job: '+jobText(G.li),352), hgt=62+jl.length*20+(had?16:0);
   ctx.globalAlpha=0.9*a; ctx.fillStyle='rgba(16,12,10,0.86)'; roundRect(VW/2-196,cy-34,392,hgt,16); ctx.fill();
