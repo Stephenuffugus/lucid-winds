@@ -88,6 +88,26 @@ rates) are proposals; the gates below are what counts.
   rebasing (camera relative draw, float64 physics); STEPMAX 6, not 4 (v6.0's 50 ms clamp).
   STILL CARRIED: dispose world textures (to Part E, where bosses add the stages files); slim knife paintings (his call);
   Journey's code trees beside the painted props. NEXT: Part C (knives and the forge).
+- 2026-10-23 (Opus): **PART C LIVE as v6.3** (deploy `cfc66623c` on main, from add-sproing-jumper `bb6f30eb5`). Suite 92
+  of 92 (row [16], 13 rows, each watched red on a copy with its rule broken). Astra's names, stories and slice effects
+  came from BUILD_NOTES.md "Knife personalities" in the vaulted zip (docs only re-extracted to /tmp/claude-1000/ssdocs/x).
+  What it built and the laws it set, for whoever touches this next:
+  - The ten new knives use `chefRig()`, the Classic Chef recipe box for box: reach identical, so no new knife buys an
+    advantage. Their slice effect IS their painted trail (art/knife/<key>_trail). `SKIN_STORY` holds all 32 stories.
+  - Off the shelf until HE prices them: socktopus, butterbuddy, spatulot, pencil, discopickle, croissant (`price:null`);
+    tearex, custodian (`premium`, Part F's supporter shelf). To ship one: a price on its SKINS entry and its key in
+    SKIN_ORDER. Row [16] pins the shelf at 24, the 15 prices, and the eight hidden.
+  - Trophies: ONE door, `grantTrophy` (row [16] counts four `owned.push` sites: grantTrophy, boot repair, tab merge,
+    purchase). Rubber Duke = PROG.tideClean >= 3 (clean numbered dive with `G.world.ws.id==='deep_tide'`: levels 31 to 35,
+    71 to 75 ...; the Forge names the band the player can still reach). Banana Boomerang = G.handles >= 12 in one finished
+    Journey level (the score wall's handle thunk; Climb's do not count). runTrophies now runs at Journey's end too.
+  - saveProg: after a write, every `_PROG_ADD` baseline = the total just written (a first save used to be counted twice).
+  - The Forge: a tap on a card (a real button, aria-pressed) only chooses; `#forge-act` equips or buys. The preview is a
+    2D canvas (`pvDraw`, no second WebGL context), drawn at the game's own clamped painting height; `_S3forge.pvAt(key,T)`
+    draws any moment; row [16] samples 1200 moments to prove nothing leaves the frame.
+  HIS CALLS from Part C: prices for the six (and whether they go on the shelf at all); Cloud Croissant's painting is
+  squashed to 74 percent of its height in play (KHH clamp on the shared rig; Banana Boomerang 90, Prism Edge 86): leave
+  it, or ask Astra for a slimmer croissant. NEXT: Part D (world verbs).
 
 ---
 
