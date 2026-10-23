@@ -1,0 +1,17 @@
+import {createRequire} from 'node:module';
+const require = createRequire('/workspaces/lucid-winds/x.js');
+const puppeteer = require('puppeteer');
+const LAUNCH = { headless: 'new', protocolTimeout: 300000, args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'] };
+const b = await puppeteer.launch(LAUNCH); const p = await b.newPage();
+await p.setViewport({ width: 360, height: 640, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+await p.evaluateOnNewDocument(() => { try { localStorage.setItem('lwfb_explained', '1'); } catch (e) {} });
+await p.goto('http://127.0.0.1:8777/satellites/slice-3d/?dev=1', { waitUntil: 'domcontentloaded', timeout: 60000 }); await new Promise(r => setTimeout(r, 5000));
+const tapAt = async sel => { const c = await p.evaluate(s => { const e = document.querySelector(s); const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; }, sel); await p.touchscreen.tap(c.x, c.y); };
+await tapAt('#b-forge'); await new Promise(r => setTimeout(r, 2500));
+await p.evaluate(() => document.querySelector('#forge-grid .fcard[data-key="rubberduke"]').scrollIntoView({ block: 'center' }));
+await new Promise(r => setTimeout(r, 800));
+await tapAt('#forge-grid .fcard[data-key="boomerang"]'); await new Promise(r => setTimeout(r, 1300));
+await p.screenshot({ path: '/tmp/claude-1000/ssb/c2/trophies360.png' });
+const fit = await p.evaluate(() => [...document.querySelectorAll('#forge-grid .fstat')].map(e => ({ t: e.textContent, over: e.scrollWidth > e.clientWidth + 1, h: Math.round(e.getBoundingClientRect().height) })).filter(x => x.over || x.h > 24));
+console.log(JSON.stringify(fit));
+await b.close();

@@ -132,6 +132,41 @@ rates) are proposals; the gates below are what counts.
   replaces (score, combo, the Groundskeeper count): scale them up? The chime's five is a skill shot (hold right a beat
   before the bar): keep or loosen? Astra asks: a frost bumper and a loaf painting (both code look today) and a clean
   slab_dust. NEXT: Part E (bosses, Clean Slice, Daily, discoveries, settlement).
+- 2026-10-23 late (Opus, codespace closing): **PART E SPLIT INTO FOUR DEPLOYS** (a stop costs at most the step in
+  progress; each one its own review, gates, looks, deploy). NOTHING OF PART E IS CODED YET. Test tools saved to
+  `tools/slice-3d-tests/` (README there: restore to /tmp/claude-1000/ssb, re-prime the old-worker profiles on the live
+  v6.4 BEFORE the next deploy). The design worked out so far, binding unless the code proves it wrong:
+  - **E1 (v6.5): the stack-wall fix + Slivers paid once.** (a) The slab bonk (stepWorld, `nx=sl.x+pshs*(sl.w/2+KR)`):
+    clamp to `±(SW-kReachX(G.ang))` and bonk once per contact (`sl.inside`, cleared when not touching), the verb rule
+    from Part D. Check: a stack at x 5.7, a handle down knife at 8.3: at most 2 wood sounds, max x 8.49 (v6.4: a bonk every
+    step, pushed to 8.9). (b) SS27: `G.runId` at every run start; `awardSlivers` settles once per runId (`PROG.settled`, a
+    ring of the last 20, merged as a union in saveProg; write settled, then slivers). Checks: finishLevel twice pays once;
+    a reload replaying the same runId pays 0; a fail still pays.
+  - **E2 (v6.6): Clean Slice + discoveries + results + budget.** SS23: required = the STACKS on one hazard free line,
+    chained top down (the next stack is required only if the lateral move from the last required one fits the vertical
+    gap with margin, and the corridor between them holds no pad, wasp lane, crystal, thorn or gourd); every slab of a
+    required stack is an ID. Fruit, golden, pinata, swing fruit and the world verb are extras (never in the denominator).
+    Required stacks wear a visible gold band on the top slab, so the player knows the line. PROVE IT before shipping: run
+    the REAL ffSegments with THREE stubbed in a vm (rev/seg.js shows how) plus the real step (fix/harness2.js) and a
+    near human controller over many seeds; every required line must be cleared. Results (SS24): completion, "Clean Slice
+    N of M" (badge_clean_slice art when M of M), one discovery. SS06: one discovery slab per numbered dive, inside a
+    required stack; a code drawn seed with a world hat pops out (no such art in Astra's drop: an ask); `s3d_dex`, shown
+    on results the first time. SS35: debris pool 24, particles 120 (SPARK_CAP is 160), dispose inactive world textures
+    (the carried item), draw calls per frame in ?dev=1.
+  - **E3 (v6.7): the Daily (SS22).** A UTC day seed {utcDate, seed, generatorVersion:1, physicsVersion:1, mode, world,
+    difficulty}; Practice unlimited and unscored; one scored attempt consumed on the first simulation tick (never when
+    the card opens), stored; a local countdown to the UTC reset; results labelled personal; badge_daily on the day's
+    first completion. Where the Daily entry sits on the title is open: keep every control in the top 60 percent (row [8]).
+  - **E4 (v6.8): bosses (SS04)** at the END of each world, levels 5, 10 ... 40, finite Freefall only. Art (looked at all
+    eight): boss.webp IS stages cell 1 (the whole boss); cell 2 is cracked; cell 3 splits open on a tiny hatted
+    character (the reveal). States: 0 = cell 1; after hit 1 = cell 1 with a code crack overlay; after hit 2 = cell 2;
+    after hit 3 = cell 3, held, then cleared. Inset the cell UVs a few percent: the stages cells carry edge slivers of
+    their neighbours. Chamber above the floor: the boss in the middle lane; two bumpers that, while it lives, LOB the
+    knife back up beside it so it comes down on it blade first (the Part D ice lesson: never require a turn the time
+    does not allow); a hit = a blade facing contact, once per contact, never reset by a bounce; the boss moves lane
+    after each hit (each stage opens the next approach); one completion reward; a visible skip rope at the side that
+    drops the bumpers (the course ends, Clean Slice forfeited). Prove with the harness: three hits exactly, no softlock,
+    the rope always reachable, a restart resets it.
 
 ---
 
