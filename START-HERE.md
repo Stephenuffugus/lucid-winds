@@ -1,5 +1,7 @@
 # START HERE
 
+**✅ 23 Oct ~11:10 UTC SACCADE (the speed reader) LIVE IN THE STUDIO: https://skywolfstudio.com/saccade/ (hub: Body and Mind; SWS-apps main 0850a66 + the v2 follow up).** Astra's v0.2 demo built in: fonts self hosted (offline law), studio head + footer + privacy + manifest with a SHARE TARGET + service worker, icons and a PLACEHOLDER thumbnail drawn in the app's look (Astra art owed), Reset settings, grapheme safe pivot, 16 px text, 44 px targets. Two demo bugs fixed: the sheets were never actually hidden outside the preview wrapper; the play button never turned into a pause button (SVG has no hidden property). LIBRARY WORKS: a new Firebase function `gutenbergText` (lucid-winds functions/gutenberg.js, deployed, on main 77f774554) relays Project Gutenberg text with CORS and keeps nothing; Pride and Prejudice loads on the live site in 0.7 s (127,360 words). Tests: 18 engine cases + a real browser smoke (14 checks) green; I looked at portrait, Style sheet, landscape and the live book. HIS OPEN CALLS from the handoff §14: the NAME (Saccade, or Glimpse / Flashread / Pivot), chapters + shelf (v1.1), trainer mode, the speed ceiling 1500. Play listing when he calls it (one a week).
+
 **📋 23 Oct ~09:45 UTC HIS LIST, VERBATIM ("Here's some of the list with rough notes"):**
 - Sixfold (needs polished and assets)
 - Music studio (could use graphics or no)
