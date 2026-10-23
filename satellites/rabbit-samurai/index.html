@@ -360,7 +360,7 @@ h2.sc-h{font-size:30px; color:var(--gold); font-weight:800; margin-bottom:4px}
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 var VW=540, VH=960, DPR=Math.min(2,window.devicePixelRatio||1);
-var BUILD='v2.15';
+var BUILD='v2.16';
 var TESTMODE=/[?&]rstest=1/.test(location.search);
 
 /* ---------- world constants ---------- */
@@ -548,10 +548,18 @@ function genLevel(li){
     if(i<SEGS-1) lvl.checkpoints.push({ x:sg.diamond.x+dx, y:sg.diamond.y, got:false, lm:landmarkOf(li,i) });
     else lvl.diamond={ x:sg.diamond.x+dx, y:sg.diamond.y, got:false };
     ox+=sg.W; }
+  /* 2026-10-23 (Stephen: "the hedgehogs and mice are still floating"): the segment code set ground hogs 28 px over the
+     floor with a 14 px half box, cages 40 over with a 26 px half, toads 26 over with a 15 px half, so every one stood
+     11 to 14 px in the air, art and hit box alike. Each now rests on the first surface under it (within a tile and a
+     half, so nothing placed in the air on purpose falls): its box bottom IS the floor, and the draws put feet there. */
+  function rest(list,hh){ for(var q=0;q<list.length;q++){ var o=list[q], cc=Math.floor(o.x/T), rr;
+      for(rr=Math.max(1,Math.floor(o.y/T));rr<ROWS;rr++){ if(grid[rr][cc]&&!grid[rr-1][cc])break; }
+      if(rr<ROWS && rr*T-o.y>=0 && rr*T-o.y<=1.5*T) o.y=rr*T-hh; } }
+  rest(lvl.hogs,14); rest(lvl.spits,15); rest(lvl.cells,26);
   return lvl;
 }
 /* segment seeds the solver could not clear get a retry offset (refilled for the beats, 2026-10-23) */
-var SEG_RETRY={ '13:1':2, '16:3':1, '20:4':3, '21:3':3, '22:2':5, '10:1':2, '15:4':1, '23:4':2 };   /* li:seg (0 based) = retry offset, 2026-10-23 (after the review fixes): five Gauntlets (grove and peaks, spitters) the solver could not clear alone (115 of 120 did), three whose dojo ran out of hearts end to end */
+var SEG_RETRY={ '13:1':2, '16:3':1, '20:4':3, '21:3':3, '22:2':5, '10:1':2, '15:4':1, '23:4':2, '15:2':2 };   /* li:seg (0 based) = retry offset; '15:2' added v2.16 (the hogs resting on the floor shifted the bot's timing and dojo 16 ran out of hearts at a Gallery crow), 2026-10-23 (after the review fixes): five Gauntlets (grove and peaks, spitters) the solver could not clear alone (115 of 120 did), three whose dojo ran out of hearts end to end */
 (function(){ try{ if(TESTMODE){ var rm=JSON.parse(LS.get('rs_retry_map')||'null'); if(rm){ for(var k in rm){ if(rm.hasOwnProperty(k))SEG_RETRY[k]=rm[k]; } } } }catch(e){} })();   /* test builds: try retry seeds per segment in a whole dojo */
 /* the Gallery's high cages: a three tile ledge four rows up, its ring above the tile before it, so a swing to the right carries you on */
 var CAGE_ROW=18, CAGE_AOFF=-0.5;
@@ -1665,7 +1673,7 @@ function render(){ if(!ctx||!G)return; var L=G.lvl, cam=G.cam, i, LT=lightNow(),
       ctx.fillStyle='#7ab356'; ctx.beginPath(); ctx.ellipse(lx+3,ly-2,4.5,2.2,-0.6+vt,0,6.28); ctx.fill(); }
   }
   /* followers (mice) */
-  for(i=0;i<G.followers.length;i++){ var fo=G.followers[i], fo2=G.trail[Math.min(G.trail.length-1,fo.delay+4)]; drawMouse(fo.x,fo.y,G.t+i,(fo2&&fo2.x>fo.x)?-1:1); }
+  for(i=0;i<G.followers.length;i++){ var fo=G.followers[i], fo2=G.trail[Math.min(G.trail.length-1,fo.delay+4)]; drawMouse(fo.x,fo.y+HH-12,G.t+i,   /* feet on the trail of the rabbit's feet, not its middle */ (fo2&&fo2.x>fo.x)?-1:1); }
   /* bunny */
   drawGhosts();
   drawBunny();
@@ -1818,9 +1826,42 @@ function alphaMargin(img,sx,sy,sw,sh,fromBottom,key,dense){
   }catch(e){ m=0; }
   _ALPHA[key]=m; return m;
 }
+/* columns from one side before half the lower rows are solid: how far a lip tile's painted cliff sits inside its cell */
+var _SIDE={};
+function alphaSide(img,sx,sy,sw,sh,fromRight,key){
+  if(key in _SIDE) return _SIDE[key];
+  var m=0;
+  try{ var c=document.createElement('canvas'); c.width=sw; c.height=sh; var k=c.getContext('2d');
+    k.drawImage(img,sx,sy,sw,sh,0,0,sw,sh); var d=k.getImageData(0,0,sw,sh).data, y0=sh>>1, x, y, n;
+    for(x=0;x<sw;x++){ var xx=fromRight?(sw-1-x):x; n=0;
+      for(y=y0;y<sh;y++){ if(d[(y*sw+xx)*4+3]>128) n++; }
+      if(n>=(sh-y0)*0.5) break; m=x+1; }
+  }catch(e){ m=0; }
+  if(m>=sw) m=0;
+  _SIDE[key]=m; return m;
+}
+/* 2026-10-23 (Stephen: "a stupid ditch all over in the land that just looks dumb and you float over it"): Astra's
+   pit_edge_left is the LEFT LIP of a pit, ground painted on the left half of the cell (0 to ~64 of 128) and its cliff
+   facing right; the draw had the two lips swapped, so beside every pit and on every one tile pillar half a cell of
+   nothing showed over solid ground, a ditch you walked across. Each lip now goes on its own side of the pit and is slid
+   so its painted cliff IS the physics edge, with ground_top filling the cell behind it. */
+function drawLip(x,y,theme,leftOpen,rightOpen,ts){
+  var g=artSet('tiles',theme+'/ground_top'), lp=artSet('tiles',theme+'/pit_edge_left'), rp=artSet('tiles',theme+'/pit_edge_right'), im=ART.img.tiles;
+  if(!g||!lp||!rp) return false;
+  function lift(st,nm){ return alphaMargin(im, st.f[0][0],st.f[0][1],st.cw,st.ch,false,'t:'+theme+'/'+nm,true)*ts; }
+  var gl=lift(g,'ground_top'), a=0, b=g.cw, mL=0, mR=0;
+  if(leftOpen){ mL=alphaSide(im, rp.f[0][0],rp.f[0][1],rp.cw,rp.ch,false,'s:'+theme+'/r'); a=Math.max(0,rp.cw-mL-16); }
+  if(rightOpen){ mR=alphaSide(im, lp.f[0][0],lp.f[0][1],lp.cw,lp.ch,true,'s:'+theme+'/l'); b=Math.min(g.cw,mR+16); }
+  if(b>a) ctx.drawImage(im, g.f[0][0]+a,g.f[0][1],b-a,g.ch, x+a*ts,y-gl,(b-a)*ts+0.5,T+0.5+gl);
+  var l;
+  if(leftOpen){ l=lift(rp,'pit_edge_right'); ctx.drawImage(im, rp.f[0][0],rp.f[0][1],rp.cw,rp.ch, x-mL*ts,y-l,T+0.5,T+0.5+l); }
+  if(rightOpen){ l=lift(lp,'pit_edge_left'); ctx.drawImage(im, lp.f[0][0],lp.f[0][1],lp.cw,lp.ch, x+mR*ts,y-l,T+0.5,T+0.5+l); }
+  return true;
+}
 function drawTile(x,y,theme,capped,openBelow,leftOpen,rightOpen){
   var v=th(x/T|0,y/T|0);
   if(ART.ok){ var piece, ts=T/128;
+    if(!capped && !openBelow && (leftOpen||rightOpen) && drawLip(x,y,theme,leftOpen,rightOpen,ts)) return;
     if(!capped){ if(openBelow) piece=(leftOpen&&rightOpen)?'platform_mid':(leftOpen?'platform_left':(rightOpen?'platform_right':'platform_mid'));
       else piece=leftOpen?'pit_edge_left':(rightOpen?'pit_edge_right':'ground_top'); }
     else if(openBelow) piece='roof_underside';
@@ -1893,8 +1934,8 @@ function drawPorc(o){
   ctx.restore();
   ctx.globalAlpha=0.5+0.3*Math.sin(G.t*4); ctx.strokeStyle='#c8a84b'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(o.x,o.y,ROPE_MIN*0.5,0,6.28); ctx.stroke(); ctx.globalAlpha=1; }
 function drawHog(o){
-  if(ART.ok){ if(o.dead){ if(o.deadT>0) spr('sprites','hedgehog_death',Math.min(3,Math.floor((0.45-o.deadT)/0.45*4)),o.x,o.y+13,0.40,o.dir); return; }
-    if(spr('sprites','hedgehog_walk',Math.floor(G.t*10+o.x/50),o.x,o.y+13,0.40,o.dir)) return; }
+  if(ART.ok){ if(o.dead){ if(o.deadT>0) spr('sprites','hedgehog_death',Math.min(3,Math.floor((0.45-o.deadT)/0.45*4)),o.x,o.y+14,0.40,o.dir); return; }
+    if(spr('sprites','hedgehog_walk',Math.floor(G.t*10+o.x/50),o.x,o.y+14,0.40,o.dir)) return; }
   ctx.save(); ctx.translate(o.x,o.y); ctx.scale(o.dir,1);
   var wob=Math.sin(G.t*10+o.x)*1.2;
   /* spiny back */
@@ -1928,10 +1969,10 @@ function drawCrow(o){
   ctx.restore(); }
 function drawSpit(o){
   var faceS=(G.bx<o.x)?-1:1;
-  if(ART.ok){ if(o.dead){ if(o.deadT>0) spr('sprites','toad_death',Math.min(3,Math.floor((0.45-o.deadT)/0.45*4)),o.x,o.y+13,0.39,faceS); return; }
+  if(ART.ok){ if(o.dead){ if(o.deadT>0) spr('sprites','toad_death',Math.min(3,Math.floor((0.45-o.deadT)/0.45*4)),o.x,o.y+15,0.39,faceS); return; }
     var lobbing=o.cd<0.5&&o.cd>-0.2;
-    if(lobbing ? spr('sprites','toad_lob',Math.min(5,Math.floor((0.5-o.cd)/0.5*6)),o.x,o.y+13,0.39,faceS)
-               : spr('sprites','toad_idle',Math.floor(G.t*4+o.x/60),o.x,o.y+13,0.39,faceS)) return; }
+    if(lobbing ? spr('sprites','toad_lob',Math.min(5,Math.floor((0.5-o.cd)/0.5*6)),o.x,o.y+15,0.39,faceS)
+               : spr('sprites','toad_idle',Math.floor(G.t*4+o.x/60),o.x,o.y+15,0.39,faceS)) return; }
   ctx.save(); ctx.translate(o.x,o.y);
   var puff=o.cd<0.5?1+(0.5-o.cd)*0.7:1;   /* throat sac swells before the lob */
   /* squat horned toad */
