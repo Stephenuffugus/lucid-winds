@@ -1,5 +1,7 @@
 # START HERE
 
+**🗒 23 Oct ~19:55 UTC HIS WORDS: "i can refresh and let it build all night if it has a good plan"** = OPUS RUNS THE RR LEVEL PLAN OVERNIGHT, all four parts, with the overnight rules in the plan (ship each part when green, three attempts then move on, six hour budget, morning report at the top of this file). Lead session closes.
+
 **📐 23 Oct ~19:45 UTC RABBIT RONIN LEVEL BUILD OUT PLAN WRITTEN FOR OPUS: `plans/rabbit-ronin/LEVEL-BUILDOUT-PLAN.md`** (on the branch). Four parts, each its own deploy with gates: A five BEATS per dojo (Approach, Works, Gallery, Climb, Gauntlet; the order rotates by dojo; the pit rhythm untouched; solver sweep + refilled SEG_RETRY), B the LIGHT shifts across a dojo (G.hour, one arc per world), C a LANDMARK at every rest post (named, from existing art first), D one JOB per dojo (a badge, 10 carrots once). Do not touch list and the deploy recipe inside. HOW TO START IT: open an Opus session in this repo and say "build the Rabbit Ronin levels".
 
 **🗒 23 Oct ~19:25 UTC HIS WORDS: "We could design a large level development build out and have opus do the build."** = the pipeline: lead writes the LEVEL BUILD OUT PLAN (Rabbit Ronin), Opus builds it in its own session. Lead writes the packet now so it is ready for tomorrow.

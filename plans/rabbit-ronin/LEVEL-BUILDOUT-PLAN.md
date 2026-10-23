@@ -133,6 +133,22 @@ the level select and bank 10 carrots for it (`PROG.bank`), once.
 After each part: write the state block, then the board (`START-HERE.md`, top, dated), then memory
 (`project_rabbit_ronin_astra_oct22.md`) and push both. Report to Stephen with what you SAW in the shots, not what you wired.
 
+## 4b. Overnight rules (Stephen, 23 Oct: "i can refresh and let it build all night if it has a good plan")
+
+Nobody is watching. So:
+- Work the parts in order and ship each one the moment its gates are green. A part that is live at 03:00 is worth
+  more than four parts in a working tree at 07:00.
+- A gate that is still red after THREE honest attempts is not a fifth attempt: write what failed and why into the state
+  block, leave that part unshipped (revert the working tree to the last commit for that file), and go on to the next part
+  only if it does not depend on the failed one (B and C do not depend on A; D does not either).
+- Never leave main in a state a phone cannot play. Every deploy is files only, probed on both origins, with the BUILD
+  string read back live. If a probe fails, the next action is the fix, not the next part.
+- No other game, no other file. Rabbit Ronin's `index.html`, the portal card line, this plan, the board, memory.
+- Budget: stop after Part D ships or after six hours of wall clock from your first command, whichever is first, and
+  write the final state block. Then write the morning report at the top of `START-HERE.md`: what is live, what you saw in
+  the shots, what you left unshipped and why, in that order. He reads that first.
+- If the box restarts mid run, the next session reads the state block and continues from the last unfinished part.
+
 ## 5. Do not touch
 
 Physics constants (`GRAV, MOVE, ACCEL, FRIC, JUMP, BOUNCE, CANNON`), the floating stick (`STICK_*`, `applyPointers`), the
