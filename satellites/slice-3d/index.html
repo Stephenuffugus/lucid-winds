@@ -64,12 +64,12 @@ canvas#gl{position:absolute; inset:0; width:540px; height:960px; display:block; 
 .forge-wallet{font-size:20px; font-weight:800; color:#ffd76a}
 .forge-sub{font-size:12px; color:#bdb8d4; line-height:1.4; margin-bottom:12px; text-shadow:0 1px 3px #000,0 0 8px rgba(0,0,0,.7)}   /* reads on the painted sky behind it, not only on today's dark one */
 #forge-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-.fcard{background:linear-gradient(180deg,#211d33,#17131f); border:1px solid var(--line); border-radius:14px; padding:10px 8px; text-align:center; cursor:pointer; transition:transform .06s ease}
+.fcard{display:block; width:100%; font:inherit; color:inherit; -webkit-appearance:none; appearance:none; background:linear-gradient(180deg,#211d33,#17131f); border:1px solid var(--line); border-radius:14px; padding:10px 8px; text-align:center; cursor:pointer; transition:transform .06s ease}
 .fcard:active{transform:scale(0.97)}
 .fcard.eq{border-color:#ffd76a; box-shadow:0 0 0 1px #ffd76a inset}
 .ficon{width:120px; height:70px; max-width:100%; display:block; margin:0 auto 6px}
-.fname{font-size:13px; font-weight:700; color:var(--ink)}
-.fstat{font-size:12px; margin-top:3px; color:var(--muted)}
+.fname{display:block; font-size:13px; font-weight:700; color:var(--ink)}
+.fstat{display:block; font-size:12px; margin-top:3px; color:var(--muted)}
 #forge-toast{position:absolute; left:0; right:0; bottom:96px; text-align:center; font-size:15px; font-weight:700; color:#ffd76a; text-shadow:0 2px 8px #000c; opacity:0; pointer-events:none; transition:opacity .2s}
 #forge-toast.show{opacity:1}
 /* ⛔ 72px minimums are STAGE px: the 540x960 stage scales ~0.72 on phones, so
@@ -207,7 +207,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .pv-rule{font-size:17px; font-weight:700; color:#8de8ff; margin-top:6px; line-height:1.25}
 .pv-rule:empty{display:none}
 .pv-act{min-height:72px; margin-top:8px; width:100%; font-size:20px}
-.pv-act[disabled]{background:transparent; border:2px solid rgba(255,215,106,0.6); color:#ffd76a; box-shadow:none; cursor:default; transform:none; filter:none}   /* a state, not a button */
+.pv-act[aria-disabled="true"]{background:transparent; border:2px solid rgba(255,215,106,0.6); color:#ffd76a; box-shadow:none; cursor:default; transform:none; filter:none}   /* a state, not a button */
 .fcard.sel{outline:2px solid #f2f0fa; outline-offset:2px}
 </style>
 <meta name="description" content="One knife, every counter: journey the 3D forest, climb the wall, dive the pits, or fall forever.">
@@ -302,7 +302,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       <div class="pv-info">
         <div class="pv-name" id="pv-name"></div>
         <div class="pv-story" id="pv-story"></div>
-        <div class="pv-rule" id="pv-rule"></div>
+        <div class="pv-rule" id="pv-rule" aria-live="polite"></div>
         <button class="btn primary pv-act" id="forge-act">Equip</button>
       </div>
     </div>
@@ -429,10 +429,13 @@ function saveProg(){
   }
   /* the _b* merge baselines are this tab's bookkeeping, not save data — keep them
      out of the file so a future reader never mistakes one for progress */
-  var keep={}, j;
-  for(j=0;j<_PROG_ADD.length;j++){ keep[_PROG_ADD[j]]=PROG['_b'+_PROG_ADD[j]]; delete PROG['_b'+_PROG_ADD[j]]; }
+  var j;
+  for(j=0;j<_PROG_ADD.length;j++)delete PROG['_b'+_PROG_ADD[j]];
   LS.s('s3d_prog', JSON.stringify(PROG));
-  for(j=0;j<_PROG_ADD.length;j++)PROG['_b'+_PROG_ADD[j]]=keep[_PROG_ADD[j]];
+  /* what is on disk now IS each counter's total, so that is the next merge's baseline. (Restoring the old baselines
+     double counted a first save: with no file yet the merge was skipped, the baseline stayed 0, and the next save added
+     the whole run again.) */
+  for(j=0;j<_PROG_ADD.length;j++)PROG['_b'+_PROG_ADD[j]]=PROG[_PROG_ADD[j]]||0;
 }
 (function(){ for(var j=0;j<_PROG_ADD.length;j++)PROG['_b'+_PROG_ADD[j]]=PROG[_PROG_ADD[j]]||0; })();
 
@@ -969,7 +972,7 @@ var SKINS={
   discopickle:{name:'Disco Pickle',tier:'epic',price:null,icon:{b:'#d8dce8',h:'#5a8a2a',a:'#d8a437'},make:function(){ return chefRig(0xd8dce8,0xffffff,0xd8dce8,0x5a8a2a,0x3e6a1a,0xd8a437); }},
   croissant:{name:'Cloud Croissant',tier:'epic',price:null,icon:{b:'#e8e4dc',h:'#f4f0ea',a:'#d8a437'},make:function(){ return chefRig(0xe8e4dc,0xfff8ec,0xe8e4dc,0xf4f0ea,0xd8a437,0xd8a437); }},
   rubberduke:{name:'Rubber Duke',tier:'trophy',price:-1,earn:'3 clean Deep Tide dives',earnLong:'3 clean dives in Deep Tide (Freefall 31 to 35)',icon:{b:'#c8ccd4',h:'#f2c42a',a:'#f08a2a'},make:function(){ return chefRig(0xc8ccd4,0xeef2f8,0xc8ccd4,0xf2c42a,0xd8a020,0xf08a2a); }},
-  boomerang:{name:'Banana Boomerang',tier:'trophy',price:-1,earn:'12 handle bounces in Journey',earnLong:'12 handle bounces in one Journey run',icon:{b:'#b8bcc4',h:'#f2c42a',a:'#e8d07a'},make:function(){ return chefRig(0xb8bcc4,0xe4e8ee,0xb8bcc4,0xf2c42a,0xd8a020,0x9a9ea8); }},
+  boomerang:{name:'Banana Boomerang',tier:'trophy',price:-1,earn:'12 bounces in one Journey level',earnLong:'12 handle bounces off the wall in one Journey level',icon:{b:'#b8bcc4',h:'#f2c42a',a:'#e8d07a'},make:function(){ return chefRig(0xb8bcc4,0xe4e8ee,0xb8bcc4,0xf2c42a,0xd8a020,0x9a9ea8); }},
   tearex:{name:'Tea Rex',tier:'support',price:-2,premium:true,icon:{b:'#d8dce4',h:'#8ac8a8',a:'#d8a437'},make:function(){ return chefRig(0xd8dce4,0xf4f6fa,0xd8dce4,0x8ac8a8,0x6aa888,0xd8a437); }},
   custodian:{name:'Cosmic Custodian',tier:'support',price:-2,premium:true,icon:{b:'#d8dce8',h:'#1a2348',a:'#d8a437'},make:function(){ return chefRig(0xd8dce8,0xffffff,0xd8dce8,0x1a2348,0x0e1430,0xd8a437); }}
 };
@@ -2770,7 +2773,7 @@ function stepWorld(dt){
         G.shake=0.3; SFX.wood();
         if(!G.climbWall)G.handles=(G.handles||0)+1;   /* Banana Boomerang counts these (Part C) */
         spawnSparks(G.world.wallX,G.y,WOOD,6);
-        popup('handle!',G.x-1,G.y+2,'#e8b46a');
+        popup((G.handles>1&&!G.climbWall)?'handle x'+G.handles:'handle!',G.x-1,G.y+2,'#e8b46a');   /* the count shows from the second */
         if(!G.handleCoached){ G.handleCoached=true; popup('lead with the blade',G.x-4,G.y+4.4,'#ffd76a'); }
       }
     }
@@ -3150,8 +3153,8 @@ function renderForge(){
   if(!FSEL||!SKINS[FSEL])FSEL=SKN.equip;
   for(var i=0;i<SKIN_ORDER.length;i++){ (function(key){
     var sk=SKINS[key], owned=ownsSkin(key), equipped=SKN.equip===key;
-    var card=document.createElement('div'); card.className='fcard'+(equipped?' eq':'')+(key===FSEL?' sel':'')+(UIART.frame?' painted':'');
-    card.setAttribute('data-key', key);
+    var card=document.createElement('button'); card.type='button'; card.className='fcard'+(equipped?' eq':'')+(key===FSEL?' sel':'')+(UIART.frame?' painted':'');
+    card.setAttribute('data-key', key); card.setAttribute('aria-pressed', key===FSEL?'true':'false');   /* a real button: chosen = pressed */
     var KA=ART.j&&ART.j.knives&&ART.j.knives[key];
     /* today's drawn icon first; the painted one takes its place once it has loaded (straight away if it already has) */
     var cv=document.createElement('canvas'); cv.width=120; cv.height=70; cv.className='ficon'; drawSkinIcon(sk,cv);
@@ -3159,8 +3162,8 @@ function renderForge(){
       if(im.complete&&im.naturalWidth)card.appendChild(im);
       else { card.appendChild(cv); im.onload=function(){ if(cv.parentNode)cv.parentNode.replaceChild(im,cv); }; } }
     else card.appendChild(cv);
-    var nm=document.createElement('div'); nm.className='fname'; nm.textContent=sk.name; card.appendChild(nm);
-    var st=document.createElement('div'); st.className='fstat';
+    var nm=document.createElement('span'); nm.className='fname'; nm.textContent=sk.name; card.appendChild(nm);
+    var st=document.createElement('span'); st.className='fstat';
     if(equipped){ st.textContent='EQUIPPED'; st.style.color='#ffd76a'; }
     else if(owned){ st.textContent='Owned'; st.style.color=''; }
     else if(sk.premium){ st.textContent='Support the Studio'; st.style.color='#f2a8d8'; }
@@ -3175,38 +3178,46 @@ function renderForge(){
 /* the button under the preview: equip what you own, unlock what you can afford */
 function forgeTap(key){
   var sk=SKINS[key]; if(!sk||sk.price==null)return;   /* an unpriced knife is never on the shelf */
-  FSEL=key;
+  FSEL=key; if(SKN.equip===key)return;   /* "Equipped" is a state, not an action */
   if(ownsSkin(key)){ applySkin(key); renderForge(); ac(); SFX.flip(); return; }
   if(sk.premium){ popupForge('Support the Studio to unlock this blade'); return; }
   if(sk.price<0){ popupForge('Unlock by earning: '+(sk.earn||'special')); return; }
   if(SLIV>=sk.price){ SLIV-=sk.price; saveSliv(); SKN.owned.push(key); saveSkins(); applySkin(key); renderForge(); ac(); SFX.unlock(); popupForge(sk.name+' forged'); }
-  else { popupForge('Need '+(sk.price-SLIV)+' more slivers'); }
+  else { popupForge(needSliv(sk.price-SLIV)); }
 }
 function forgeSelect(key){
   if(!SKINS[key])return; FSEL=key; PV.t0=performance.now();
   var cs=$('forge-grid')?$('forge-grid').children:[];
-  for(var i=0;i<cs.length;i++){ if(cs[i].getAttribute('data-key')===key)cs[i].classList.add('sel'); else cs[i].classList.remove('sel'); }
+  for(var i=0;i<cs.length;i++){ var on=cs[i].getAttribute('data-key')===key; cs[i].classList.toggle('sel',on); cs[i].setAttribute('aria-pressed',on?'true':'false'); }
   pvLoad(key); pvInfo(); if(!PV.raf)pvDraw(PV.t0);
 }
 function pvInfo(){
   var key=FSEL||SKN.equip, sk=SKINS[key]||SKINS.classic, act=$('forge-act'), rule=$('pv-rule'); if(!act||!rule)return;
   $('pv-name').textContent=sk.name; $('pv-story').textContent=sk.story||'';
-  act.style.display=''; act.disabled=false; rule.textContent=''; rule.style.color='';
-  if(SKN.equip===key){ act.textContent='Equipped'; act.disabled=true; }
+  act.style.display=''; act.setAttribute('aria-disabled','false'); rule.textContent=''; rule.style.color='';
+  if(SKN.equip===key){ act.textContent='Equipped'; act.setAttribute('aria-disabled','true'); }   /* a state; it keeps focus */
   else if(ownsSkin(key)){ act.textContent='Equip'; }
   else if(sk.premium){ act.style.display='none'; rule.textContent='Support the Studio'; rule.style.color='#f2a8d8'; }
-  else if(!(sk.price>0)){ act.style.display='none'; rule.textContent='Earn it: '+(sk.earnLong||sk.earn||'special'); }   /* the card has room for the short rule, the preview for the whole one */
+  else if(!(sk.price>0)){ act.style.display='none'; rule.textContent='Earn it: '+earnRule(key, sk); }   /* the card has room for the short rule, the preview for the whole one */
   else { act.innerHTML='Unlock '+slivIcon()+' '+(sk.price|0);
-    if(SLIV<sk.price){ rule.textContent='Need '+(sk.price-SLIV)+' more slivers'; rule.style.color='#c98a8a'; } }
+    if(SLIV<sk.price){ rule.textContent=needSliv(sk.price-SLIV); rule.style.color='#c98a8a'; } }
+}
+function needSliv(n){ return 'Need '+n+' more sliver'+(n===1?'':'s'); }
+/* Deep Tide comes round every 40 dives (levels 31 to 35, 71 to 75 ...) and a dive is only ever your next one: name the
+   band this player can still reach */
+function earnRule(key, sk){
+  if(key==='rubberduke'){ var f=PROG.ffLevel||1, b=Math.floor((f-1)/40)*40+31; if(f>b+4)b+=40;
+    return '3 clean dives in Deep Tide (Freefall '+b+' to '+(b+4)+')'; }
+  return sk.earnLong||sk.earn||'special';
 }
 /* ---------- the forge preview (Part C, SS17) ----------
    The chosen knife on Astra's plinth: a slow turn, one full flip, then one sample cut of an apple, every 4 s; reduced
    motion shows the still. A 2D canvas: the knife is a flat painting in the game as well (a plane over its collider), so
    a turn is its width going through cos, and the Forge spends no second WebGL context. Before the paintings are in (or
    with ?noart=1) it draws the knife in its icon colours, a stone disc and a red apple. */
-var FSEL=null, PV={ on:false, raf:0, t0:0, last:0, img:{}, trail:{}, plinth:null, cards:null, halves:null, want:{} };
+var FSEL=null, PV={ on:false, raf:0, t0:0, last:0, img:{}, trail:{}, plinth:null, cards:null, halves:null, want:{}, ar:{}, pend:0 };
 function pvLoad(key){
-  if(!ART.j){ artJson(function(){ pvLoad(key); }); return; }
+  if(!ART.j){ if(!PV.pend){ PV.pend=1; artJson(function(){ PV.pend=0; pvLoad(FSEL||SKN.equip); }); } return; }   /* one waiter, as knifeArt does */
   function img(id, rel, put){ if(!rel||PV.want[id])return; PV.want[id]=1; var tries=0;
     (function go(){ var im=new Image(); im.onload=function(){ put(im); if(PV.on&&!PV.raf)pvDraw(performance.now()); };
       im.onerror=function(){ if(++tries<3)setTimeout(go, 3000*tries); };   /* the worker answers a slow miss with an error: ask again */
@@ -3225,7 +3236,10 @@ function pvEase(u){ u=Math.max(0,Math.min(1,u)); return u*u*(3-2*u); }
 function pvKnife(c, key, x, y, len, rot, sx){
   var sk=SKINS[key]||SKINS.classic, im=PV.img[key], A=ART.j&&ART.j.knives&&ART.j.knives[key];
   c.save(); c.translate(x,y); c.rotate(rot); c.scale(sx,1);
-  if(im&&A){ var h=len*A.h/A.w; c.drawImage(im, -len/2, -h/2, len, h); }
+  if(im&&A){ var r=PV.ar[key];
+    if(r==null){ var ms=sk.make(), sp=recipeSpan(ms); for(var i=0;i<ms.length;i++)disposeMesh(ms[i]);
+      r=PV.ar[key]=Math.min(A.h/A.w, 2*Math.max(0.8,sp.ho)/(sp.hi-sp.lo)); }   /* the height knifeArt allows: what you carry */
+    var h=len*r; c.drawImage(im, -len/2, -h/2, len, h); }
   else { var t=len*0.17;
     c.fillStyle=sk.icon.b; c.beginPath(); c.moveTo(-len/2,0); c.lineTo(-len*0.03,-t/2); c.lineTo(-len*0.03,t/2); c.closePath(); c.fill();
     c.fillStyle=sk.icon.a; c.fillRect(-len*0.03,-t*0.75,len*0.04,t*1.5);
@@ -3252,26 +3266,29 @@ function pvDraw(now){
   var pw=W*0.6, ph=PV.plinth?pw*PV.plinth.height/PV.plinth.width:pw*0.5, py=H-ph-2;
   if(PV.plinth)c.drawImage(PV.plinth,(W-pw)/2,py,pw,ph);
   else { c.fillStyle='#3a3446'; c.beginPath(); c.ellipse(W/2,py+ph*0.55,pw*0.47,ph*0.3,0,0,Math.PI*2); c.fill(); }
-  var len=W*0.54, rx=W/2, ry=H*0.42, d=H*0.25, ax=W/2, ay=py+ph*0.44-d/2;   /* rest pose (an upright knife still fits); the apple sits on the plinth's top */
-  var kx=rx, ky=ry, rot=0, sx=1, DX=-Math.SQRT1_2, DY=Math.SQRT1_2, SPLIT=2.6;   /* the slash runs down and left, blade first */
+  var len=W*0.52, rx=W/2, ry=H*0.43, d=H*0.25, ax=W/2, ay=py+ph*0.44-d/2;   /* rest pose (an upright knife still fits); the apple sits on the plinth's top */
+  var kx=rx, ky=ry, rot=0, sx=1, kl=len, LC=len*0.8, sA=0, DX=-Math.SQRT1_2, DY=Math.SQRT1_2, SPLIT=2.6;   /* the slash runs down and left, blade first, the knife a little smaller so all of it stays in frame */
   if(T<1.6){ var ut=T/1.6; sx=Math.cos(ut*Math.PI*2); ky=ry+Math.sin(ut*Math.PI*2)*3; }                     /* a slow turn */
   else if(T<2.3){ var uf=(T-1.6)/0.7; rot=-Math.PI*2*pvEase(uf); }                                          /* one full flip, in place */
   else if(T<3.3){                                                                                          /* one sample cut */
-    var s0=-0.3*len, s1=0.3*len, sA=s0, a0x=ax+DX*s0-DX*len/2, a0y=ay+DY*s0-DY*len/2;
-    if(T<2.5){ var uw=pvEase((T-2.3)/0.2); kx=rx+(a0x-rx)*uw; ky=ry+(a0y-ry)*uw; rot=-Math.PI/4*uw; }
-    else if(T<2.68){ var us=(T-2.5)/0.18; sA=s0+(s1-s0)*us*us; kx=ax+DX*sA-DX*len/2; ky=ay+DY*sA-DY*len/2; rot=-Math.PI/4;
-      var tr=PV.trail[key]; if(tr){ c.save(); c.globalAlpha=0.75; c.translate(ax+DX*sA, ay+DY*sA); c.rotate(-Math.PI/4);
-        c.drawImage(tr, 0, -len*0.125, len*0.9, len*0.25); c.restore(); } }
-    else { var ub=pvEase((T-2.68)/0.62), e1x=ax+DX*s1-DX*len/2, e1y=ay+DY*s1-DY*len/2;
-      kx=e1x+(rx-e1x)*ub; ky=e1y+(ry-e1y)*ub; rot=-Math.PI/4*(1-ub); }
+    var s0=-d/2, s1=0.3*LC, a0x=ax+DX*s0-DX*LC/2, a0y=ay+DY*s0-DY*LC/2; sA=s0;   /* s: the tip's place on the cut line, 0 at the apple's centre */
+    if(T<2.5){ var uw=pvEase((T-2.3)/0.2); kx=rx+(a0x-rx)*uw; ky=ry+(a0y-ry)*uw; rot=-Math.PI/4*uw; kl=len+(LC-len)*uw; }
+    else if(T<2.68){ var us=(T-2.5)/0.18; sA=s0+(s1-s0)*us*us; kx=ax+DX*sA-DX*LC/2; ky=ay+DY*sA-DY*LC/2; rot=-Math.PI/4; kl=LC; }
+    else { var ub=pvEase((T-2.68)/0.62), e1x=ax+DX*s1-DX*LC/2, e1y=ay+DY*s1-DY*LC/2; sA=s1;
+      kx=e1x+(rx-e1x)*ub; ky=e1y+(ry-e1y)*ub; rot=-Math.PI/4*(1-ub); kl=LC+(len-LC)*ub; }
   }
   if(!SET.rm&&T>=2.22&&T<SPLIT)pvApple(c, 0, ax, ay, d, 0, Math.min(1,(T-2.22)/0.16));   /* the apple lands as the flip ends */
-  if(!SET.rm&&T>=SPLIT&&T<3.6){ var th=T-SPLIT, fa=Math.max(0,1-th/1.0);
+  if(!SET.rm&&T>=SPLIT&&T<3.2){ var th=T-SPLIT, fa=Math.max(0,1-th/0.6);   /* gone before they reach the frame's foot */
     pvApple(c, -1, ax-d*0.12-th*W*0.28, ay-th*H*0.55+th*th*H*1.4, d, -th*3, fa);
     pvApple(c, 1, ax+d*0.12+th*W*0.28, ay-th*H*0.45+th*th*H*1.4, d, th*3, fa); }
-  pvKnife(c, key, kx, ky, len, rot, sx);
+  /* the slice effect: the knife's own painted trail lies along the cut it has just made and fades as the knife lifts away */
+  var tr=PV.trail[key]; if(tr&&!SET.rm&&T>=2.5&&T<3.18){ c.save(); c.globalAlpha=T<2.68?0.75:0.75*(1-(T-2.68)/0.5);
+    c.translate(ax+DX*sA, ay+DY*sA); c.rotate(-Math.PI/4); c.drawImage(tr, 0, LC*(PV.ar[key]||0.2)*0.3, LC*0.9, LC*0.25); c.restore(); }   /* under the edge, as the game hangs it */
+  pvKnife(c, key, kx, ky, kl, rot, sx);
 }
-window._S3forge={ renderForge:renderForge, forgeTap:forgeTap, sliv:function(){return SLIV;}, setSliv:function(n){SLIV=n;saveSliv();}, equip:function(){return SKN.equip;}, apply:applySkin, owned:function(){return SKN.owned.slice();} };
+window._S3forge={ renderForge:renderForge, forgeTap:forgeTap, sliv:function(){return SLIV;}, setSliv:function(n){SLIV=n;saveSliv();}, equip:function(){return SKN.equip;}, apply:applySkin, owned:function(){return SKN.owned.slice();},
+  /* the preview drawn at moment T of its 4 s cycle for knife key (the suite's frame check); pvReady says its images are in */
+  pvAt:function(key, T){ FSEL=key; pvLoad(key); var now=performance.now(); PV.t0=now-T*1000; pvDraw(now); }, pvReady:function(key){ return !!(PV.img[key]&&PV.trail[key]&&PV.plinth&&PV.cards&&PV.halves); } };
 tap('b-how',function(){ show('s-how'); });
 /* ---------- settings screen (Part B, SS34) ---------- */
 /* the music level IS the fleet player's (one soundtrack across the studio's games): read its saved level, set it through

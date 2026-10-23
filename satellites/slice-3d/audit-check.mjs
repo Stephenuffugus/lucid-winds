@@ -715,12 +715,28 @@ console.log('\n[16] Part C: knives and the forge');
     await clickCentre(q, '#b-forge'); await new Promise(res => setTimeout(res, 1200));
     const c1 = await snap(); await new Promise(res => setTimeout(res, 600)); const c2 = await snap();
     await q.evaluate(() => { window._S3.set().rm = false; });
-    f = { a1, a2, sel, buy, b1, b3, c1, c2, errs: b2.errs };
+    /* the whole cycle stays inside its frame: no painted pixel on the preview's 2 px border at any moment, for the
+       longest, tallest and widest paintings (the first cut's windup sheared a quarter of the grip off the top) */
+    const frame = await q.evaluate(async () => {
+      const F = window._S3forge, c = document.getElementById('forge-pvc'), g = c.getContext('2d'), out = { bad: [], frames: 0, notReady: [] };
+      for (const k of ['classic', 'katana', 'prism', 'croissant', 'boomerang', 'wolffang']) {
+        F.pvAt(k, 0); const t0 = Date.now(); while (!F.pvReady(k) && Date.now() - t0 < 8000) await new Promise(r => setTimeout(r, 100));
+        if (!F.pvReady(k)) { out.notReady.push(k); continue; }
+        for (let T = 0; T < 4; T += 0.02) { F.pvAt(k, T); out.frames++;
+          const d = g.getImageData(0, 0, c.width, c.height).data, W = c.width, H = c.height; let edge = 0;
+          for (let x = 0; x < W; x++) for (const y of [0, 1, H - 2, H - 1]) if (d[(y * W + x) * 4 + 3] > 24) edge++;
+          for (let y = 0; y < H; y++) for (const x of [0, 1, W - 2, W - 1]) if (d[(y * W + x) * 4 + 3] > 24) edge++;
+          if (edge) out.bad.push(k + '@' + T.toFixed(2) + ':' + edge); }
+      }
+      return out; });
+    f = { a1, a2, sel, buy, b1, b3, c1, c2, frame, errs: b2.errs };
   } catch (e) { f = { error: String(e).slice(0, 200) }; }
   ok('the preview draws and moves while the Forge is up', !!f.a1 && f.a1.n > 2000 && f.a1.h !== f.a2.h, JSON.stringify({ a1: f.a1, a2: f.a2, error: f.error }));
   ok('it stops when the Forge closes, and holds a still with reduced motion', !!f.b1 && f.b1.h === f.b3.h && f.c1.n > 2000 && f.c1.h === f.c2.h, JSON.stringify({ b1: f.b1, b3: f.b3, c1: f.c1, c2: f.c2 }));
   ok('a tap on a card chooses and spends nothing; Unlock under the preview buys it', !!f.sel && f.sel.sliv === 600 && !f.sel.owned && f.sel.name === 'Midnight Katana' && /Unlock/.test(f.sel.act)
     && f.buy.sliv === 100 && f.buy.owned && f.buy.equip === 'katana', JSON.stringify({ sel: f.sel, buy: f.buy }));
+  ok('the preview never leaves its frame at any moment of the cycle', !!f.frame && f.frame.frames >= 1000 && f.frame.bad.length === 0 && f.frame.notReady.length === 0,
+    JSON.stringify(f.frame && { frames: f.frame.frames, bad: f.frame.bad.slice(0, 8), n: f.frame.bad.length, notReady: f.frame.notReady }));
   ok('no page errors in the Forge', !!f.errs && f.errs.length === 0, JSON.stringify(f.errs));
   await b2.ctx.close();
 }
