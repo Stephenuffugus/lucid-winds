@@ -7,6 +7,19 @@ ruleset are done and were measured in July (memory `project_chaff_wars_jul19`); 
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- **2026-10-24 20:30 (Opus): PART 0 LIVE as v1.7** (main `0d841452e`, both origins proven from old-worker profiles; gate
+  `tools/chaff-wars-tests/p0_gate.mjs` 11, `fwrun.mjs` 9 red). The dt audit: in tickField, resolveTick, decayFall, the AI
+  and update every timer is milliseconds and right (power cooldown, shake, the 110 ms gravity wait, the AI timer, fall decay,
+  floats, the rotate tween) except HYPE and the rival's chainGlow, now fixed. CORRECTIONS: the whole game is inside a
+  strict IIFE, so gates reach it only through `CW_DEV` (`CW_DEV.match()` added; `CW_DEV.start` stops the loop on purpose,
+  `beginStage` starts a match as the game does); the held repeat is proven on the page's own `hold()` with a fake clock
+  (the swiftshader page holds its main thread ~40 ms, too coarse for 105 vs 138). FOUND AND FIXED: a soft drop spent the
+  gravity time saved at the slow rate (up to 20 rows in a frame); the clamp sits BEFORE the frame is added (the review's
+  catch: after it, the soft drop ran 25 percent slow and every stage up to 10 percent slow). With HYPE alive the ALL CITY
+  HYPE float (life 1.4) popped to 73 px and 750 px wide: big floats are capped, fitted, stacked. Lock mid drag clears the
+  soft drop only when the drag set it (a Part 2a held button must carry over). HIS CALLS on the board: the +500 HYPE bonus
+  now pays; the 105 ms tap window; the floats' exclamation marks.
+
 - 2026-10-24 (Fable): plan written, nothing built. Astra's zip at `assets/pop-n-lock-assets.zip` (vaulted
   `vault-20261024-pop-n-lock-astra`); extract to `/tmp` with `python3 -I`, read `extras/` as data, never run it.
 
