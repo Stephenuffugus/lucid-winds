@@ -88,6 +88,11 @@ console.log('\n[16] Part C: knives and the forge');
     out.unpriced = Object.keys(cat).every(k => cat[k].price !== null);   /* nothing left unpriced: every knife is priced, earned (-1) or a supporter (-2) */
     out.support = ['tearex', 'custodian'].every(k => cat[k].premium === true);
     out.prices = Object.keys(PRICES).filter(k => !cat[k] || cat[k].price !== PRICES[k]);
+    /* G2 (24 Oct): the shelf reads as the ladder. Prices come from this test's table, only the order from the page */
+    out.shelf = ord.filter(k => PRICES[k] !== undefined).map(k => PRICES[k]);
+    out.ladderBad = out.shelf.filter((v, i) => i > 0 && v < out.shelf[i - 1]).length;
+    const lastPriced = Math.max.apply(null, ord.map((k, i) => PRICES[k] !== undefined ? i : -1)), firstOther = ord.findIndex(k => PRICES[k] === undefined);
+    out.pricedFirst = firstOther < 0 || lastPriced < firstOther;
     out.noStory = Object.keys(cat).filter(k => !cat[k].story);
     S.applySkin('classic'); const ref = JSON.stringify(S.reach()); const sk = S.skins();
     out.rigOff = NEW.filter(k => { if (sk.owned.indexOf(k) < 0) sk.owned.push(k); S.applySkin(k); return JSON.stringify(S.reach()) !== ref; });
@@ -116,6 +121,7 @@ console.log('\n[16] Part C: knives and the forge');
   ok('the shelf is the 22 of v6.2, Rubber Duke and Banana Boomerang, and the six F4 priced knives (32 in the catalogue)', r.cat === 32 && r.ord === 30 && r.oldKept && r.newOn, JSON.stringify({ cat: r.cat, ord: r.ord, error: r.error }));
   ok('the two supporter knives are kept off the shelf, and no knife is left unpriced', r.hiddenOff && r.unpriced && r.support, JSON.stringify({ h: r.hiddenOff, u: r.unpriced, s: r.support }));
   ok('the twenty prices are the F4 ladder', r.prices && r.prices.length === 0, JSON.stringify(r.prices));
+  ok('the shelf reads as a price ladder: each priced knife costs no less than the one before it, all before the trophies (G2)', r.ladderBad === 0 && r.shelf && r.shelf.length === 21 && r.pricedFirst, JSON.stringify({ shelf: r.shelf, first: r.pricedFirst, error: r.error }));
   ok('every knife has its story', r.noStory && r.noStory.length === 0, JSON.stringify(r.noStory));
   ok('every new knife is the Classic Chef rig (same reach)', r.rigOff && r.rigOff.length === 0, JSON.stringify(r.rigOff));
   ok('a trophy only arrives through grantTrophy (four owned.push sites: grantTrophy, the boot repair, the tab merge, a purchase)', pushes === 4, 'sites=' + pushes);

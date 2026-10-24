@@ -392,7 +392,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v7.2";
+var BUILD="v7.3";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -656,7 +656,7 @@ var GRAV=52, TAPVY=18.2, RUNVX=9.5, TAPW=-12.5, KR=1.5;
    KSCALE in now, so contact fires exactly where the knife is DRAWN — which is
    also the frame the stick poses (wallX-2.3, SW-2.8) were authored against. */
 var KSCALE=0.55;                 // knife group scale; the drawn size IS the hit size
-var KLEN=6.0*KSCALE, KHH=1.3*KSCALE, KLO=KLEN, KHI=KLEN;   /* KLO, KHI: each end's own reach (the drawn knife over the ground, 24 Oct) */
+var KLEN=6.0*KSCALE, KHH=1.3*KSCALE, KLO=KLEN, KHI=KLEN, KDHH=KHH;   /* KLO, KHI: each end's own reach (the drawn knife over the ground, 24 Oct); KDHH: the DRAWN half height (Part G1) */
 function kReachX(ang){ return KLEN*Math.abs(Math.cos(ang))+KHH*Math.abs(Math.sin(ang)); }
 function measureKnife(meshes){
   var lo=0, hi=0, ho=0, i, m, g, w, h;
@@ -674,6 +674,7 @@ function measureKnife(meshes){
   KLEN=Math.max(4.0, Math.abs(lo), hi)*KSCALE;
   KHH=Math.max(0.8, ho)*KSCALE;
   KLO=Math.abs(lo)*KSCALE; KHI=hi*KSCALE;
+  KDHH=KHH;   /* drawn by the recipe until its painting lands (knifeArt): the box bounds every part of it */
 }
 // Wall Climb spin control (Stephen: slow it so you can time the blade). Tap gives a
 // slower, readable flip; HOLD brakes the spin and eases the blade to face the wall.
@@ -1082,7 +1083,8 @@ var SKIN_STORY={ classic:'The first good flip starts here.', cleaver:'Heavy on l
   rubberduke:'A noble reward for a wonderfully tidy dive.', boomerang:'Keeps coming back to the point.',
   tearex:'Short arms, impeccable tea manners.', custodian:'Someone has to sweep up all those stars.' };
 (function(){ for(var k in SKIN_STORY)if(SKIN_STORY.hasOwnProperty(k)&&SKINS[k])SKINS[k].story=SKIN_STORY[k]; })();
-var SKIN_ORDER=['classic','cleaver','paintbrush','bamboo','trowel','quill','socktopus','butterbuddy','katana','crystal','obsidian','icicle','tuningfork','spatulot','pencil','gold','emberfang','prism','scythe','discopickle','croissant','cosmicedge','wallbreaker','depthdiver','conductor','groundskeeper','rubberduke','boomerang','starforge','wolffang'];
+/* 24 Oct (Part G2): each tier in price order, so the shelf reads as the F4 ladder; then the trophies and the supporters */
+var SKIN_ORDER=['classic','cleaver','socktopus','bamboo','butterbuddy','trowel','paintbrush','quill','katana','pencil','obsidian','spatulot','icicle','crystal','tuningfork','gold','emberfang','discopickle','prism','croissant','scythe','cosmicedge','wallbreaker','depthdiver','conductor','groundskeeper','rubberduke','boomerang','starforge','wolffang'];
 /* ⛔ one door for every trophy, because a trophy granted INVISIBLY is a bug we
    already shipped once (Cosmic Edge, fixed v5.3). grantTrophy returns the name
    to print, or an empty string, so the caller cannot forget to say so. */
@@ -1140,7 +1142,7 @@ function recipeSpan(ms){ var lo=0, hi=0, ho=0, i, m, g, w, h;
   return { lo:lo, hi:hi, ho:ho }; }
 function knifeArt(key, ms){
   var my=++_kPaint;
-  if(KART){ knife.remove(KART); KART.geometry.dispose(); KART.material.dispose(); KART=null; }
+  if(KART){ knife.remove(KART); KART.geometry.dispose(); KART.material.dispose(); KART=null; KDHH=KHH; }
   /* the trail goes back to today's streak until this knife's own trail is in: never the last knife's painting */
   if(trail&&trail.material.map){ trail.geometry.dispose(); trail.geometry=new THREE.BoxGeometry(8.2,0.24,0.22);
     trail.material.map=null; trail.material.color.setHex(0xdfe9ff); trail.material.needsUpdate=true; trail.position.set(-1.4,-1.05,0); }
@@ -1155,6 +1157,7 @@ function knifeArt(key, ms){
     var mat=new THREE.MeshBasicMaterial({map:t, transparent:true, depthWrite:false, side:THREE.DoubleSide});
     KART=new THREE.Mesh(new THREE.PlaneGeometry(w,h), mat);
     KART.position.set((sp.lo+sp.hi)/2, 0, 0.9); KART.renderOrder=3;
+    KDHH=h/2*KSCALE;   /* Part G1: the painting is often slimmer than the recipe box (Classic Chef 0.60 against 0.715) */
     knife.add(KART); artUp(t);
     for(var i=0;i<ms.length;i++)ms[i].visible=false;   /* still measured, never drawn */
   });
@@ -1217,14 +1220,14 @@ function woodBox(x,y,w,h){
   m.position.set(x+w/2,y+h/2,0); if(BW)boxUV(m,3);
   var top=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,0.3,6.2), BW?codeMat(BW,'jtop',WOOD_D,'ledge',{repeat:true}):new THREE.MeshLambertMaterial({color:WOOD_D})));
   top.position.set(x+w/2,y+h,0); if(BW)boxUV(top,3);
-  return {x:x,y:y,w:w,h:h,solid:true,spring:false};
+  return {x:x,y:y,w:w,h:h,solid:true,spring:false,vt:0.15};   /* vt: the cap's top over the collider's (Part G1) */
 }
 function stump(x,h){
   var m=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(1.7,2,h,10), new THREE.MeshLambertMaterial({color:WOOD})));
   m.position.set(x,h/2,0);
   var ring=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(1.75,1.75,0.25,10), new THREE.MeshLambertMaterial({color:0xc9a06a})));
   ring.position.set(x,h,0);
-  return {x:x-1.8,y:0,w:3.6,h:h,solid:true,spring:false};
+  return {x:x-1.8,y:0,w:3.6,h:h,solid:true,spring:false,vt:0.125};   /* the ring's top (Part G1) */
 }
 function mushroom(x){
   var st=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.9,2.2,8), new THREE.MeshLambertMaterial({color:0xe8dcc0})));
@@ -1412,7 +1415,7 @@ function table(x,blocks){
   top.position.set(x+w/2, topY+0.35, 0.8); if(BW)boxUV(top,3);
   var trim=addMesh(new THREE.Mesh(new THREE.BoxGeometry(w,0.16,5.6), new THREE.MeshLambertMaterial({color:WOOD_D})));
   trim.position.set(x+w/2, topY+0.72, 0.8);
-  blocks.push({x:x,y:topY,w:w,h:0.7,solid:true,spring:false});
+  blocks.push({x:x,y:topY,w:w,h:0.7,solid:true,spring:false,vt:0.1});   /* the trim's top (Part G1) */
   return {x:x,w:w,topY:topY+0.7};
 }
 /* pergola arch: posts stand BESIDE the path (depth axis, visual only) so the
@@ -2836,7 +2839,7 @@ function newClimb(lvl){
       ? 'Circle your finger to spin. Bounce up the wall.'
       : 'Tap to flip. Stick the blade HIGH.');
   }catch(e){} }, 600);
-  knife.position.set(G.x,G.y,0); knife.rotation.z=0;
+  knife.position.set(G.x,G.y,0); knife.rotation.z=0; KDRAW.sink=0;
   camera.position.set(-10, 18, 40);
   $('h-score').textContent='0';
   $('h-lvl').textContent='WALL CLIMB '+lvl;
@@ -2862,7 +2865,7 @@ function newGame(lvl){
       x:2, y:6, vx:0, vy:0, ang:0, w:0, grounded:false,
       score:0, combo:0, comboBest:0, slices:0, taps:0,
       done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1, runId:newRunId() };
-  knife.position.set(G.x,G.y,0); knife.rotation.z=0;
+  knife.position.set(G.x,G.y,0); knife.rotation.z=0; KDRAW.sink=0;
   camera.position.set(-10, 18, 38); // intro sweep reels in via the chase lerp
   $('h-score').textContent='0';
   $('h-lvl').textContent='LEVEL '+lvl;
@@ -2894,7 +2897,7 @@ function newFF(lvl, endless, salt){   /* salt: the Daily's seed (Part E3) */
       x:0, y:4, vx:0, vy:0, ang:0, w:0, grounded:false,
       score:0, combo:0, comboBest:0, slices:0, taps:0, depth:0,
       done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1, runId:newRunId() };
-  knife.position.set(G.x,G.y,0); knife.rotation.z=0;
+  knife.position.set(G.x,G.y,0); knife.rotation.z=0; KDRAW.sink=0;
   camera.position.set(0, 30, 44);
   $('h-score').textContent='0';
   $('h-lvl').textContent=endless?'ENDLESS':('FREEFALL '+lvl);
@@ -3610,9 +3613,11 @@ function stepWorld(dt){
 }
 /* the surface under a point on the ground modes: the ground (0) or the highest standing block top within reach below it
    (the landing shadow's rule) */
-var KDRAW={ lift:0, surf:null };
-function kSurf(x, y){ var gY=0, bl=G.world.blocks, i, b;
-  for(i=0;i<bl.length;i++){ b=bl[i]; if(!b.gone&&x>b.x-0.5&&x<b.x+b.w+0.5&&b.y+b.h<=y+0.4&&b.y+b.h>gY)gY=b.y+b.h; }
+var KDRAW={ lift:0, surf:null, sink:0, drawn:0, vt:0, rise:false, y0:0, s0:0 }, KSINK_IN=12, KSINK_OUT=30, KSINK_RISE=1.0;
+var GRASS_TOP=0.25;   /* the grass you see: the lip box (0.5 tall, centred on the ground, buildLevel and buildClimb) */
+function kSurf(x, y){ var gY=0, vt=GRASS_TOP, bl=G.world.blocks, i, b;
+  for(i=0;i<bl.length;i++){ b=bl[i]; if(!b.gone&&x>b.x-0.5&&x<b.x+b.w+0.5&&b.y+b.h<=y+0.4&&b.y+b.h>gY){ gY=b.y+b.h; vt=b.vt||0; } }
+  KDRAW.vt=vt;   /* how far above the collider its drawn top is (a crate's cap, a stump's ring, the grass lip) */
   return gY; }
 /* one drawn frame: the HUD, the knife between its last two steps, the effects, the camera, the render */
 function drawFrame(dt){
@@ -3634,10 +3639,33 @@ function drawFrame(dt){
      circle), so a steep landing sank the handle or the blade up to 1.7 u into the grass. On the ground modes the DRAWN
      knife never dips below the surface under it: a steep landing stands on its end and tips over as it settles. Drawing
      only: the step, the hops, the wall and every score are as they were */
-  KDRAW.lift=0; KDRAW.surf=null;
+  KDRAW.lift=0; KDRAW.surf=null; KDRAW.drawn=0;
   if(G.mode!=='ff'){ var sY=kSurf(knife.position.x, knife.position.y), rz=knife.rotation.z, sn=Math.sin(rz);
-    var low=knife.position.y+Math.min(KHI*sn, -KLO*sn)-KHH*Math.abs(Math.cos(rz));
-    KDRAW.surf=sY; if(low<sY){ KDRAW.lift=sY-low; knife.position.y+=KDRAW.lift; } }
+    var low=knife.position.y+Math.min(KHI*sn, -KLO*sn)-KDHH*Math.abs(Math.cos(rz));   /* the knife as DRAWN (G1) */
+    var yP=knife.position.y;   /* the pose between its two steps, before any lift */
+    KDRAW.surf=sY; if(low<sY){ KDRAW.lift=sY-low; knife.position.y+=KDRAW.lift; low=sY; }
+    /* 24 Oct (Part G1), the other half: the step rests the knife's centre KR above the collider, the drawing is KDHH half
+       high (the painting's own height, often slimmer than the recipe box) and the surface you SEE stands KDRAW.vt above
+       the collider (the grass lip 0.25, a crate's cap 0.15), so a knife lying flat was drawn 0.5 to 0.9 u over the grass.
+       On the ground the drawing settles onto the drawn surface (never below it, never more than the flat gap), easing in
+       over a quarter second; a take off lets it go over the first KSINK_RISE u of the rise (by height, never a jump in one
+       frame); a fall from rest (off an edge, a dropped shelf, the step to step contact flicker on some tops) keeps it, so
+       the knife falls from where it was drawn and meets the next surface as the step does. Applied just before the
+       render: the camera, the shadow and the step read the pose without it */
+    var gap=low-(sY+KDRAW.vt);
+    if(!frozen){
+      /* resting: grounded, or within a hair of resting on this surface and barely moving (some tops do not round trip their
+         own landing height in floating point, so the contact drops out every other step while the knife lies still) */
+      var onIt=G.grounded||(Math.abs(G.vy)<1.5&&Math.abs(G.y-KR-sY)<0.05);
+      if(onIt&&!G.done){ var want=Math.max(0,Math.min(gap, KR-KDHH-KDRAW.vt)); KDRAW.rise=false;
+        KDRAW.sink=want>KDRAW.sink?KDRAW.sink+(want-KDRAW.sink)*Math.min(1,dt*KSINK_IN):want; }
+      else if(G.done) KDRAW.sink-=KDRAW.sink*Math.min(1,dt*KSINK_OUT);
+      else if(G.vy>0){ if(!KDRAW.rise){ KDRAW.rise=true; KDRAW.y0=yP; KDRAW.s0=KDRAW.sink; }
+        KDRAW.sink=KDRAW.s0*Math.max(0, 1-(yP-KDRAW.y0)/KSINK_RISE); }
+      else KDRAW.rise=false;
+      if(KDRAW.sink<0.005)KDRAW.sink=0; }
+    KDRAW.drawn=Math.max(0,Math.min(KDRAW.sink, gap)); }
+  else KDRAW.sink=0;
   var ix=knife.position.x, iy=knife.position.y;   // the camera follows the drawn knife, so the two share one clock
   if(trail)trail.material.opacity=Math.min(0.6, Math.abs(G.w)*0.05);
   // landing shadow: finds the surface under the knife, fades with height
@@ -3727,6 +3755,7 @@ function drawFrame(dt){
     scene.fog.color.lerp(G.world.bandFog[bfi],Math.min(1,dt*1.2));
     if(scene.background&&scene.background.isColor)scene.background.copy(scene.fog.color); }
   if(G.world.skyFollow)G.world.skyFollow.position.y=camera.position.y+8;   /* Climb: the sky is far, it rises with you */
+  knife.position.y-=KDRAW.drawn;   /* G1: the resting knife on the grass, drawing only (set back by the next frame) */
 
   if(!window._S3skiprender){ renderer.render(scene,camera); LAST_CALLS=renderer.info.render.calls; if(DRAWS)DRAWS.textContent=LAST_CALLS+' draws'; }
 }
@@ -4273,7 +4302,8 @@ if(/[?&]dev=1/.test(location.search)){
     asked:function(rel){ return !!ART.tex[rel]; }, grav:function(){ return ffGrav(); }, deepGrav:function(v){ if(v!=null)DEEP_TIDE_GRAV=v; return DEEP_TIDE_GRAV; },
     proj:function(x,y,z){ camera.updateMatrixWorld(); var V=new THREE.Vector3(x,y,z||0).project(camera); return [V.x,V.y]; },
     /* where the drawn knife and the newest crash ring sit on screen (-1..1), for the drawn-frame rows */
-    kpose:function(){ return { x:knife.position.x, y:knife.position.y, rz:knife.rotation.z, lo:KLO, hi:KHI, hh:KHH, lift:KDRAW.lift, surf:KDRAW.surf, gy:G?G.y:null }; },
+    kpose:function(){ return { x:knife.position.x, y:knife.position.y, rz:knife.rotation.z, lo:KLO, hi:KHI, hh:KHH, lift:KDRAW.lift, sink:KDRAW.drawn, surf:KDRAW.surf, gy:G?G.y:null, gr:G?!!G.grounded:false, dhh:KDHH }; },
+    knifeParts:function(){ return { body:knifeBody, art:KART }; }, scene3:function(){ return scene; },   /* the meshes the knife is drawn with (the suite measures them itself) */
     view:function(){ var V=new THREE.Vector3(), o; camera.updateMatrixWorld(); V.copy(knife.position).project(camera);
       o={ k:[V.x,V.y], kx:knife.position.x, ky:knife.position.y, rz:knife.rotation.z, r:null }; if(RINGS.length){ V.copy(RINGS[RINGS.length-1].mesh.position).project(camera); o.r=[V.x,V.y]; } return o; } };
 }
@@ -4296,7 +4326,7 @@ if(/[?&]dev=1/.test(location.search)){
 })();
 
 /* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=76'); }catch(e){} }
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=77'); }catch(e){} }
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the

@@ -75,3 +75,18 @@ zipfile, docs only) to `/tmp/claude-1000/ssdocs/x`.
 - `ctl3.js` + `prove3.js <lvlFrom> <lvlTo> <seeds>`: the near human controller (decides every ~0.1 s, commits to a plan,
   hold edges blurred 2 steps, sees bumpers, crystals, thorns, gourds and each wasp in time) driving real dives down the line.
 
+
+## Part G (2026-10-24, v7.3)
+
+`fix/fwrun_g.js [group]`: nine broken copies over rows [22] and [16] (the G1 lowering taken out, capped short, halved, applied
+in the air, applied on Freefall, not clamped at the surface; the v7.2 shelf, two neighbours swapped, a trophy among the
+priced knives). Run `mkslices.js` first. All nine went red.
+
+`g3/` (Endless survival, node only, seconds per dive):
+- `sight.mjs [depths]` (browser): how much shaft the phone shows BELOW a falling knife (the canvas's bottom edge on the knife's
+  plane, bisected on the real camera at 412 x 915): 30.2 u at 20 u/s, 33.4 at 30, 40.3 at 47, 45.4 at 60.
+- `ctlE.js`: e2/ctl3.js (the near human controller) with the fall's gravity and terminal speed as parameters (`PH`).
+- `survive.js [seeds] [maxDepth]`: the controller in calm mode (blade down, off the walls, out of the hazards) drives the REAL
+  Endless build and step (buildEndless + the chunk ring + stepWorld in the e4 vm). It sees only what is on screen and reacts
+  0.25 s after a hazard comes into view (env SIGHTK, RT; `SIGHTK=99 RT=0` sees everything). SRCF=<copy> measures another build
+  (a sed of END_TERM_SLOPE2 into a scratch copy is how the slope table was made).
