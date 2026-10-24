@@ -1431,7 +1431,7 @@ function arch(x,blocks){
   }
   var beam=addMesh(new THREE.Mesh(new THREE.BoxGeometry(span+1.6,0.8,6.4), BW?BW.shelf:new THREE.MeshLambertMaterial({color:WOOD})));
   beam.position.set(x+span/2, h+0.4, 0); if(BW)boxUV(beam,3);
-  blocks.push({x:x-0.8,y:h,w:span+1.6,h:0.8,solid:true,spring:false});
+  blocks.push({x:x-0.8,y:h,w:span+1.6,h:0.8,solid:true,spring:false,vt:0.89});   /* the ivy's top at the knife's depth (Part G1) */
   var ivy=addMesh(new THREE.Mesh(new THREE.SphereGeometry(1.1,7,6), new THREE.MeshLambertMaterial({color:0x3f7a38})));
   ivy.position.set(x+span/2, h+1.1, 0); ivy.scale.set(2.6,0.6,1);
   return {x:x,span:span,beamY:h};
@@ -3615,6 +3615,12 @@ function stepWorld(dt){
    (the landing shadow's rule) */
 var KDRAW={ lift:0, surf:null, sink:0, drawn:0, vt:0, rise:false, y0:0, s0:0 }, KSINK_IN=12, KSINK_OUT=30, KSINK_RISE=1.0;
 var GRASS_TOP=0.25;   /* the grass you see: the lip box (0.5 tall, centred on the ground, buildLevel and buildClimb) */
+/* the top the STEP stands a resting knife on: its middle KR over a top, any block within KR either side (kSurf reads the
+   middle within 0.5 of a block, so a knife resting near an edge read the surface below it: Part G review) */
+function kSupport(){ var y=G.y-KR, bl=G.world.blocks, i, b;
+  if(Math.abs(y)<0.05)return { y:0, vt:GRASS_TOP, near:true };
+  for(i=0;i<bl.length;i++){ b=bl[i]; if(!b.gone&&Math.abs(b.y+b.h-y)<0.05&&G.x>b.x-KR&&G.x<b.x+b.w+KR)return { y:b.y+b.h, vt:b.vt||0, near:true }; }
+  return { y:y, vt:0, near:false }; }
 function kSurf(x, y){ var gY=0, vt=GRASS_TOP, bl=G.world.blocks, i, b;
   for(i=0;i<bl.length;i++){ b=bl[i]; if(!b.gone&&x>b.x-0.5&&x<b.x+b.w+0.5&&b.y+b.h<=y+0.4&&b.y+b.h>gY){ gY=b.y+b.h; vt=b.vt||0; } }
   KDRAW.vt=vt;   /* how far above the collider its drawn top is (a crate's cap, a stump's ring, the grass lip) */
@@ -3641,9 +3647,16 @@ function drawFrame(dt){
      only: the step, the hops, the wall and every score are as they were */
   KDRAW.lift=0; KDRAW.surf=null; KDRAW.drawn=0;
   if(G.mode!=='ff'){ var sY=kSurf(knife.position.x, knife.position.y), rz=knife.rotation.z, sn=Math.sin(rz);
+    /* resting: grounded, or within a hair of a top and barely moving (some tops do not round trip their own landing
+       height in floating point, so the contact drops out every other step while the knife lies still); a resting knife
+       is drawn against the top the step stands it on */
+    var sup=kSupport(), onIt=G.grounded||(Math.abs(G.vy)<1.5&&sup.near);
+    if(onIt&&sup.near&&!G.done){ sY=sup.y; KDRAW.vt=sup.vt; }
     var low=knife.position.y+Math.min(KHI*sn, -KLO*sn)-KDHH*Math.abs(Math.cos(rz));   /* the knife as DRAWN (G1) */
     var yP=knife.position.y;   /* the pose between its two steps, before any lift */
-    KDRAW.surf=sY; if(low<sY){ KDRAW.lift=sY-low; knife.position.y+=KDRAW.lift; low=sY; }
+    /* the lift floors the drawing on the surface you SEE (sY+vt), so a knife tumbling on the ground never draws its end
+       inside the grass lip or a crate's cap (Part G review: with the painting's own height it sat 0.25 in) */
+    KDRAW.surf=sY; if(low<sY+KDRAW.vt){ KDRAW.lift=sY+KDRAW.vt-low; knife.position.y+=KDRAW.lift; low=sY+KDRAW.vt; }
     /* 24 Oct (Part G1), the other half: the step rests the knife's centre KR above the collider, the drawing is KDHH half
        high (the painting's own height, often slimmer than the recipe box) and the surface you SEE stands KDRAW.vt above
        the collider (the grass lip 0.25, a crate's cap 0.15), so a knife lying flat was drawn 0.5 to 0.9 u over the grass.
@@ -3654,9 +3667,6 @@ function drawFrame(dt){
        render: the camera, the shadow and the step read the pose without it */
     var gap=low-(sY+KDRAW.vt);
     if(!frozen){
-      /* resting: grounded, or within a hair of resting on this surface and barely moving (some tops do not round trip their
-         own landing height in floating point, so the contact drops out every other step while the knife lies still) */
-      var onIt=G.grounded||(Math.abs(G.vy)<1.5&&Math.abs(G.y-KR-sY)<0.05);
       if(onIt&&!G.done){ var want=Math.max(0,Math.min(gap, KR-KDHH-KDRAW.vt)); KDRAW.rise=false;
         KDRAW.sink=want>KDRAW.sink?KDRAW.sink+(want-KDRAW.sink)*Math.min(1,dt*KSINK_IN):want; }
       else if(G.done) KDRAW.sink-=KDRAW.sink*Math.min(1,dt*KSINK_OUT);
