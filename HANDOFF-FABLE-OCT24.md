@@ -145,8 +145,8 @@ Then check the trigger works: `plans/BUILD-ORDER-OCT24.md` exists on the branch 
 ## 6. Laws every plan carries (Opus will follow what the plan says, so say these)
 
 - **Deploys:** a files only commit on main built in a PRIVATE index from main's tree plus the game's own paths
-  (template: memory `scripts/files-only-deploy-bubblenaut.sh`; Super Slice's version was in the last session's
-  scratchpad, so rebuild it from the template), then merge main back into the branch. Never push the branch to main
+  (Super Slice's: `tools/slice-3d-tests/deploy/deploy.sh` + its README; other games: the memory template
+  `scripts/files-only-deploy-bubblenaut.sh`), then merge main back into the branch. Never push the branch to main
   (it carries unapproved work). Two sessions share one git index: commit with `-- <paths>`.
 - **Stamps:** bump every version stamp a game has in the deploy commit (Super Slice: `BUILD`, `sw.js?v=`, the sw
   `CACHE`, the portal card `?v=`).
