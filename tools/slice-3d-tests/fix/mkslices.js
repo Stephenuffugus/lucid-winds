@@ -13,7 +13,9 @@ if (head.indexOf('process.env.PAGE') < 0) throw new Error('URL line');
 const helpers = s.slice(ib, ice) + '\n', foot = s.slice(iEnd);
 fs.writeFileSync(D + 'row17.mjs', head + helpers + s.slice(i17, iLate) + foot);
 fs.writeFileSync(D + 'late.mjs', head + helpers + s.slice(iLate, i18) + foot);
-fs.writeFileSync(D + 'row18.mjs', head + helpers + s.slice(i18, iEnd) + foot);   /* Part E1 (and the reload check after it) */
+const i19 = s.indexOf('/* ---- 19. Part E2'); if (i19 < 0) throw new Error('row 19 marker');
+fs.writeFileSync(D + 'row18.mjs', head + helpers + s.slice(i18, i19) + foot);   /* Part E1 (and the reload check after it) */
+fs.writeFileSync(D + 'row19.mjs', head + helpers + s.slice(i19, iEnd) + foot);   /* Part E2 (and the paint check after it) */
 const i2 = s.indexOf('/* ---- 2. the core loop'); if (i2 < 0) throw new Error('row 2 marker');
 fs.writeFileSync(D + 'row1.mjs', head + s.slice(i1, i2) + foot);   /* the corrupt save boots (Part E1 added two) */
 console.log('slices written');

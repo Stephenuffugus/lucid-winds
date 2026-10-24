@@ -195,6 +195,12 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 @keyframes popFade{ 0%{opacity:0} 15%{opacity:1} 100%{opacity:0} }
 #go-badge{display:none; align-items:center; justify-content:center; gap:10px; margin-top:10px; font-size:17px; font-weight:800; letter-spacing:2px; color:#f2a8d8; text-transform:uppercase}
 #go-badge.on{display:flex} #go-badge img{width:56px; height:56px; object-fit:contain}
+/* ---- Part E2 (2026-10-24): the Clean Slice line's result and the dive's find on the end panel (SS23, SS06, SS24) ---- */
+#go-clean{display:none; align-items:center; justify-content:center; gap:10px; margin-top:8px; font-size:17px; font-weight:800; letter-spacing:1px; color:#ece8f6}
+#go-clean.on{display:flex} #go-clean.won{color:#ffd76a; letter-spacing:2px; text-transform:uppercase}
+#go-clean img{width:52px; height:52px; object-fit:contain; display:none} #go-clean.won img.ok{display:block}
+#go-find{display:none; margin-top:6px; font-size:17px; font-weight:700; color:#8de8ff}
+#go-find.on{display:block}
 /* ---- Part C (2026-10-23): the forge preview (SS17); the list scrolls between it and Done ---- */
 .forge-pad{overflow:hidden}
 .forge-list{flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; margin:0 -8px; padding:2px 8px 8px}
@@ -285,7 +291,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
     <div class="helprow"><div class="hi">&#9650;</div><div><b style="color:#3ecc8e">SUPER SLICE WALL CLIMB, one wall and no level ceiling.</b> Same flipping rules as the normal run, but there is no course: you flip straight UP the face of one enormous wall and the height you stick at IS your score. Every run gets the whole ladder, all 34 bands up to x900, so your level never caps you and only your throw decides where you stop. On the climb screen you can switch to <b style="color:#3ecc8e">Be the Blade</b>: hold and circle your finger and the knife spins with you, and handle bounces off the wall ride that spin upward. Glancing blade touches scrape off, so only a committed blade angle sticks.</div></div>
 
-    <div class="helprow"><div class="hi">&#9660;</div><div><b style="color:#8fd8f2">SUPER SLICE FREE FALL, which plays differently.</b> You are falling down a shaft, not travelling along the ground, and you steer by <b>holding the LEFT or RIGHT side of the screen</b> to drift that way. Carve down through the tall brown slab stacks: each one you cut opens in a burst of colour and chains your combo. Keep the <b>handle</b> pointed at the side walls: a handle bounce is clean, but <b style="color:#ff6a5a">a blade into the wall sticks you and ends the dive</b>. Pink crystals down here shove you rather than kill. Free Fall comes in two versions: authored <b>levels</b>, and the <b>endless</b> drop where the only score is how deep you get.</div></div>
+    <div class="helprow"><div class="hi">&#9660;</div><div><b style="color:#8fd8f2">SUPER SLICE FREE FALL, which plays differently.</b> You are falling down a shaft, not travelling along the ground, and you steer by <b>holding the LEFT or RIGHT side of the screen</b> to drift that way. Carve down through the tall brown slab stacks: each one you cut opens in a burst of colour and chains your combo. When a dive has stacks with a <b style="color:var(--gold)">gold band</b> on top, they are its Clean Slice line: carve every slab of them and land on the floor to earn the Clean Slice badge. Keep the <b>handle</b> pointed at the side walls: a handle bounce is clean, but <b style="color:#ff6a5a">a blade into the wall sticks you and ends the dive</b>. Pink crystals down here shove you rather than kill. Free Fall comes in two versions: authored <b>levels</b>, and the <b>endless</b> drop where the only score is how deep you get.</div></div>
 
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
@@ -344,6 +350,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="go-lab" id="go-lab">points</div>
     <div class="go-lab" id="go-detail" style="margin-top:10px;text-transform:none;letter-spacing:0"></div>
     <div id="go-badge"><img id="go-badge-img" alt="" style="display:none"><span>Pit conquered</span></div>
+    <div id="go-clean"><img id="go-clean-img" alt=""><span id="go-clean-t"></span></div>
+    <div id="go-find"></div>
     <div class="foot" id="go-sun" style="margin-top:14px;font-size:16px;color:var(--gold)"></div>
     <div style="flex:1"></div>
     <div class="stack">
@@ -899,6 +907,7 @@ artJson(function(j){ var U=j.ui||{}, root=document.documentElement;
   if(U.forge_frame)uiPreload(U.forge_frame, function(u){ root.style.setProperty('--forge-frame',u); UIART.frame=true; if(curScreen==='s-forge')renderForge(); });
   if(U.sliver)uiPreload(U.sliver, function(u){ UIART.sliv=u.slice(4,-1); var fb=$('forge-wallet-ic'); if(fb)fb.innerHTML=slivIcon(); });
   if(U.badge_pit_conquered)uiPreload(U.badge_pit_conquered, function(u){ var bi=$('go-badge-img'); if(bi){ bi.src=u.slice(4,-1); bi.style.display=''; } });
+  if(U.badge_clean_slice)uiPreload(U.badge_clean_slice, function(u){ var ci=$('go-clean-img'); if(ci){ ci.src=u.slice(4,-1); ci.classList.add('ok'); } });   /* Part E2 */
   /* the worlds the menu buttons start, and the knife in your hand, are asked for now */
   warmWorld('orchard_loft'); warmWorld('mossy_canyon'); warmWorld('clockwork_well');
   warmWorld(WORLD_IDS[Math.floor(((PROG.ffLevel||1)-1)/5)%WORLD_IDS.length]);
@@ -1155,6 +1164,7 @@ function clearWorld(){
   for(i=0;i<chunks.length;i++){ scene.remove(chunks[i].mesh); disposeMesh(chunks[i].mesh); }
   for(i=0;i<sparks.length;i++){ scene.remove(sparks[i].mesh); disposeMesh(sparks[i].mesh); }
   meshes=[]; chunks=[]; sparks=[];
+  for(i=0;i<FINDS.length;i++)findDrop(FINDS[i]); FINDS=[];   /* Part E2 */
   for(i=0;i<RINGS.length;i++){ scene.remove(RINGS[i].mesh); disposeMesh(RINGS[i].mesh); RINGS[i].mesh.material.dispose(); }
   RINGS=[];
   verbClear();
@@ -1759,7 +1769,7 @@ function verbClear(){ var i; for(i=0;i<FXB.length;i++){ scene.remove(FXB[i].sp);
 /* a mesh let go as falling debris (never a collider): a copy flies off with the chunks, the original leaves the scene */
 function looseMesh(m, vx, vy, spin, life){
   if(!m)return; var c=new THREE.Mesh(m.geometry.clone(), m.material); c.position.copy(m.position); c.rotation.copy(m.rotation); c.scale.copy(m.scale);
-  if(m.parent)m.parent.remove(m); scene.add(c); chunks.push({mesh:c, vx:vx, vy:vy, vr:spin, life:life||1.2});
+  if(m.parent)m.parent.remove(m); scene.add(c); pushChunk({mesh:c, vx:vx, vy:vy, vr:spin, life:life||1.2});
 }
 
 /* ---- Orchard Loft: the five rod chime (SS07). Five brass tubes on cords of rising length hang from a bar under the
@@ -1998,7 +2008,7 @@ function ripBanner(e){
   for(var s=0;s<2;s++){ var g=new THREE.PlaneGeometry(w/2,h), U=g.attributes.uv;
     for(var i=0;i<U.count;i++)U.setX(i, U.getX(i)*0.5+(s?0.5:0)); U.needsUpdate=true;
     var half=new THREE.Mesh(g, e.mesh.material); half.position.set(e.mesh.position.x+(s?w/4:-w/4), e.y, 0.2); scene.add(half);
-    chunks.push({mesh:half, vx:s?2.5:-2.5, vy:3, vr:s?-2.5:2.5, life:1.2}); }
+    pushChunk({mesh:half, vx:s?2.5:-2.5, vy:3, vr:s?-2.5:2.5, life:1.2}); }
   if(e.mesh.parent)e.mesh.parent.remove(e.mesh);
   SFX.rip(); fxBurst('rope_cut', e.x1-1.3, e.y, 3);
   G.slivBonus=(G.slivBonus||0)+5; popup('+5 slivers', e.x1-1.3, e.y+1.6, '#ffd76a'); verbLog('banner');
@@ -2176,6 +2186,123 @@ function ffSegments(rng, lvl, SW, wsAt, y, yEnd, A, yCap, vb){   /* yCap (Endles
     y-=8.5+rng()*5;
   }
 }
+/* =====================================================================
+   CLEAN SLICE (Part E2, 2026-10-24: SS23, SS06, SS24)
+   A numbered dive names its REQUIRED stacks as it is built: the stacks (columns of two or more slabs; a gate's slabs, the
+   world's verb, fruit, the golden fruit and the pinata never count) on one line down the shaft that a player can carve one
+   after the other. Top down, a stack joins the line when the knife can get from the last one on the line (or the start) to
+   it blade down in the room between them (the CL tables: what a two hold program reaches with the game's own fall, cut
+   back for a thumb; tools/slice-3d-tests/e2/feas*.js) and nothing that knocks a knife whatever its angle (a bumper, a
+   crystal, thorns, a gourd, the ice, the loaf) sits on the way. A wasp is not on that list: it patrols, and a player
+   times it. Every slab of a stack on the line is a target; Clean Slice is the floor reached with every target cut. The
+   proof (tools/slice-3d-tests/e2/prove3.js + attempts.js): a near human controller (decides every ~0.1 s, commits to a
+   plan, hold edges blurred 2 steps) drove 320 real dives down their lines; every line was carved, the hardest on a fourth
+   try. About six dives in ten get a line. A looser corridor (only a stack's own entry clear) gave every dive one, but 5 of
+   80 of its lines were never carved in six tries: not shipped. No rng() of the dive's own is drawn here, so a level is still
+   the level it was.
+   ===================================================================== */
+var CL_CARVE=[[4.8,1.0],[8,1.4],[20,1.75],[30,2.1],[40,3.8],[60,5.2],[90,7.0]];   /* [room, widest move] after a carve; the
+   room is the fall from the last slab of one stack to the first of the next, slab middle to slab middle */
+var CL_START=[[8,1.5,4],[18,1.5,5],[36,0,6],[54,-2,7],[66,-3.5,7.5]];   /* [fall from the start, nearest, farthest]: the knife
+   starts flat with its blade to the left and a hold turns it and moves it together, so turning the blade down moves it RIGHT */
+/* the room a move needs (the first row of its table that allows it), or -1 when even the whole room is not enough */
+function clNeed(room, dx, first){
+  var T=first?CL_START:CL_CARVE, i, r;
+  for(i=0;i<T.length;i++){ r=T[i]; if(r[0]>room)break; if(first?(dx>=r[1]&&dx<=r[2]):(Math.abs(dx)<=r[1]))return r[0]; }
+  return -1;
+}
+/* is a blocker box (already grown by the knife's KR) anywhere in [xa,xb] x [ya,yb]? */
+function clHit(B, xa, xb, ya, yb){ for(var i=0;i<B.length;i++){ var b=B[i]; if(b.y1>=ya&&b.y0<=yb&&b.x1>=xa&&b.x0<=xb)return true; } return false; }
+/* can the knife get from (x0,y0) down to (x1,y1) with nothing knocking it? It falls straight at x0, makes its move in `need`
+   of the room at some height, then falls straight at x1: some height must leave all three stretches clear */
+function clClear(B, x0, y0, x1, y1, need){
+  var d=Math.abs(x1-x0), ms=0.6, m=1.6+0.4*d, xa=Math.min(x0,x1)-m, xb=Math.max(x0,x1)+m, ym;
+  if(d<=0.8)return !clHit(B, Math.min(x0,x1)-ms, Math.max(x0,x1)+ms, y1-1, y0+1);
+  for(ym=y1; ym+need<=y0+1e-9; ym+=2){
+    if(!clHit(B, x1-ms, x1+ms, y1-1, ym)&&!clHit(B, xa, xb, ym-1, ym+need+1)&&!clHit(B, x0-ms, x0+ms, ym+need, y0+1))return true; }
+  return false;
+}
+/* the dive's stacks (columns, top first) and the blockers */
+function clParts(A, SW){
+  var cols=[], byStk=[], i, j, s, B=[], K=KR, C=[];
+  for(i=0;i<A.slabs.length;i++){ s=A.slabs[i]; if(!s.stk)continue; j=byStk.indexOf(s.stk);
+    if(j<0){ byStk.push(s.stk); cols.push([s]); } else cols[j].push(s); }
+  for(i=0;i<cols.length;i++){ var a=cols[i]; a.sort(function(u,v){ return v.y-u.y; });
+    if(a.length>=2)C.push({x:a[0].x, top:a[0], last:a[a.length-1], slabs:a}); }   /* a gate's one slab stacks: a blade down knife cuts through */
+  C.sort(function(a,b){ return b.top.y-a.top.y; });
+  for(i=0;i<A.pads.length;i++){ s=A.pads[i]; B.push({x0:s.x-s.r-K, x1:s.x+s.r+K, y0:s.y-s.r-K, y1:s.y+s.r+K}); }
+  for(i=0;i<A.crystals.length;i++){ s=A.crystals[i]; B.push({x0:s.x-1.1-K, x1:s.x+1.1+K, y0:s.y-K, y1:s.y+s.h+K}); }
+  for(i=0;i<A.thorns.length;i++){ s=A.thorns[i]; B.push({x0:s.x-s.r-K, x1:s.x+s.r+K, y0:s.y-s.r-K, y1:s.y+s.r+K}); }
+  for(i=0;i<A.items.length;i++){ s=A.items[i]; if(s.boom)B.push({x0:s.x-s.r-K, x1:s.x+s.r+K, y0:s.y-s.r-K, y1:s.y+s.r+K}); }
+  for(i=0;i<A.verbs.length;i++){ s=A.verbs[i]; if(s.kind==='ice'||s.kind==='loaf')B.push({x0:s.x-s.w/2-0.3-K, x1:s.x+s.w/2+0.3+K, y0:s.y-s.h/2-K, y1:s.y+s.h/2+K}); }
+  return {C:C, B:B};
+}
+function cleanLine(A, SW){
+  var P=clParts(A, SW), C=P.C, req=[], x0=0, y0=4, first=true, i, c, y1, room, need;
+  for(i=0;i<C.length;i++){ c=C[i]; y1=c.top.y+2.075;   /* the knife meets a stack's first slab with its middle 2.075 above it */
+    room=first?(4-y1):(y0-c.top.y);
+    need=clNeed(room, c.x-x0, first);
+    if(need>=0&&clClear(P.B, x0, first?4:y0+2.075, c.x, y1, need)){ req.push(c); x0=c.x; y0=c.last.y; first=false; } }
+  return req;
+}
+/* the gold band on a line stack's top slab (it goes with the slab when that is cut), so the player can see the line: a
+   collar round the slab's top edge, its top just under the slab's own top face, so the painting stays on top (the first
+   cut stood above the face and read as a flat yellow lid from the falling camera) */
+var CLGOLD=null;
+function clBand(sl){ if(!CLGOLD)CLGOLD=new THREE.MeshLambertMaterial({color:0xffd76a, emissive:0x7a5600});
+  var b=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.7,0.3,4.5), CLGOLD)); b.position.set(sl.x, sl.y+0.375, 0); sl.band=b; }
+/* SS06: each world hides one find (no art for these in Astra's drop: drawn in code, an ask). One slab of a line stack holds
+   the dive's find; cut it and a little seed in its world's hat pops out and floats up. Kept in s3d_dex, told once. */
+var FIND={ mossy_canyon:{n:'a crowned seed', hat:'crown', c:0xffd24a}, frost_chasm:{n:'a seed snowman in earmuffs', hat:'muffs', c:0xf2f8ff},
+  ember_kiln:{n:'a seed in a chef hat', hat:'chef', c:0xffffff}, glowcave:{n:'a seed in a geode cap', hat:'cap', c:0xb48cff},
+  orchard_loft:{n:'a seed in a farmer cap', hat:'brim', c:0xd8483a}, lantern_night:{n:'a seed with a lantern tassel', hat:'tassel', c:0xff9a3c},
+  deep_tide:{n:'a pearl in a shell hat', hat:'shell', c:0xff9ab4, pearl:true}, clockwork_well:{n:'a seed in a bell cap', hat:'bell', c:0xd8b45a} };
+var DEX=readObj('s3d_dex')||{};
+(function(){ for(var k in DEX)if(DEX.hasOwnProperty(k)&&!(FIND[k]&&DEX[k]===1))delete DEX[k]; })();   /* only known finds, as 1 */
+function saveDex(){ var d=readObj('s3d_dex'), k; if(d)for(k in d)if(d.hasOwnProperty(k)&&FIND[k]&&d[k]===1)DEX[k]=1; LS.s('s3d_dex', JSON.stringify(DEX)); }   /* a set: joined with the other tab's */
+var FINDS=[];
+function findPop(x, y, id){
+  var f=FIND[id]; if(!f||typeof THREE==='undefined')return;
+  var g=new THREE.Group(), hm=new THREE.MeshLambertMaterial({color:f.c, emissive:0x221a10}), add=function(geo, mat, px, py, pz, sx, sy, sz){ var m=new THREE.Mesh(geo, mat); m.position.set(px, py, pz||0); if(sx)m.scale.set(sx, sy, sz); g.add(m); return m; };
+  add(new THREE.SphereGeometry(0.45,10,8), new THREE.MeshLambertMaterial({color:f.pearl?0xf4f0ea:0x8a5a2e, emissive:f.pearl?0x2a2622:0x1a0e04}), 0, 0, 0, 0.82, 1.1, 0.82);
+  if(f.hat==='crown'){ for(var i=0;i<5;i++){ var a=i/5*6.283; add(new THREE.ConeGeometry(0.1,0.28,4), hm, Math.cos(a)*0.24, 0.62, Math.sin(a)*0.24); } add(new THREE.CylinderGeometry(0.3,0.3,0.1,10), hm, 0, 0.48); }
+  else if(f.hat==='muffs'){ add(new THREE.SphereGeometry(0.16,8,6), hm, -0.4, 0.25); add(new THREE.SphereGeometry(0.16,8,6), hm, 0.4, 0.25); add(new THREE.TorusGeometry(0.4,0.04,5,12,Math.PI), hm, 0, 0.25); }
+  else if(f.hat==='chef'){ add(new THREE.CylinderGeometry(0.26,0.26,0.24,10), hm, 0, 0.55); add(new THREE.SphereGeometry(0.34,10,8), hm, 0, 0.82, 0, 1, 0.7, 1); }
+  else if(f.hat==='brim'){ add(new THREE.CylinderGeometry(0.5,0.5,0.05,12), hm, 0, 0.45); add(new THREE.SphereGeometry(0.3,10,6,0,6.283,0,1.6), hm, 0, 0.45); }
+  else if(f.hat==='tassel'){ add(new THREE.ConeGeometry(0.32,0.4,10), hm, 0, 0.66); add(new THREE.CylinderGeometry(0.03,0.03,0.35,4), hm, 0.3, 0.5); }
+  else if(f.hat==='shell'){ add(new THREE.ConeGeometry(0.34,0.36,8), hm, 0, 0.62); }
+  else if(f.hat==='bell'){ add(new THREE.SphereGeometry(0.34,10,6,0,6.283,0,1.6), hm, 0, 0.42); add(new THREE.SphereGeometry(0.08,6,5), hm, 0, 0.8); }
+  else { add(new THREE.SphereGeometry(0.34,10,6,0,6.283,0,1.6), hm, 0, 0.42); }
+  g.position.set(x, y+0.8, 3.0); g.scale.set(1.6,1.6,1.6); scene.add(g);   /* above the slab and in front of its debris */
+  FINDS.push({g:g, t:0});
+  popup('a find', x, y+2.2, '#8de8ff'); SFX.milestone(5);
+}
+/* the finds float up and go after 1.8 s (reduced motion: no turn) */
+function findsDraw(dt){ for(var i=FINDS.length-1;i>=0;i--){ var f=FINDS[i]; f.t+=dt; f.g.position.y+=Math.max(0, 3.5-f.t*2.5)*dt; if(!SET.rm)f.g.rotation.y+=dt*2.2;
+  if(f.t>1.8){ findDrop(f); FINDS.splice(i,1); } } }
+function findDrop(f){ scene.remove(f.g); f.g.traverse(function(o){ if(o.geometry)o.geometry.dispose(); if(o.material&&o.material!==CLGOLD)o.material.dispose(); }); }
+/* the end panel: the line's count (the badge when every target is cut and the floor reached) and the find, the first time */
+function cleanHide(){ var el=$('go-clean'), fe=$('go-find'); if(el)el.classList.remove('on','won'); if(fe)fe.classList.remove('on'); }
+function cleanResults(fin){
+  cleanHide();
+  var C=G.world&&G.world.clean, el=$('go-clean'), fe=$('go-find'); if(!C||!C.M||!el)return false;
+  var n=G.cleanN||0, won=!!fin&&n>=C.M;
+  $('go-clean-t').textContent=won?'Clean Slice':('Clean Slice '+n+' of '+C.M);
+  el.classList.add('on'); if(won)el.classList.add('won');
+  if(G.found&&FIND[G.found]&&DEX[G.found]!==1){ DEX[G.found]=1; saveDex(); if(fe){ fe.textContent='New find: '+FIND[G.found].n; fe.classList.add('on'); } }
+  return won;
+}
+/* SS35: a world's big paintings leave the GPU when a run starts that cannot show that world (three.js uploads a texture
+   again the next time it is drawn, so nothing goes missing). The hazard paintings stay: Orchard's wasp and the canyon's
+   thorn pod are drawn in other worlds too. */
+function worldEvict(keep){
+  var n=0, id, s, L, i, t, p;
+  for(id in WSET){ if(!WSET.hasOwnProperty(id)||keep.indexOf(id)>=0)continue; s=WSET[id];
+    L=[s.wall,s.wallR,s.ledge,s.shelf,s.slab,s.inside,s.back,s.sky];
+    for(p in s.props)if(s.props.hasOwnProperty(p)&&p!=='hazard')L.push(s.props[p].mat);
+    for(i=0;i<L.length;i++){ t=L[i]&&L[i].map; if(t&&t.userData&&t.userData.ok&&t.userData.gpu!==s){ t.dispose(); t.userData.gpu=s; n++; } } }
+  ART.evicted=(ART.evicted||0)+n; return n;
+}
 function buildFreefall(lvl){
   clearWorld();
   var rng=mulberry32(((((lvl*1597334677)>>>0)^0xFA11)^G_FFSALT)>>>0);
@@ -2205,6 +2332,11 @@ function buildFreefall(lvl){
   var vk=VERBS_OFF?null:VERB_OF[WS.id];   /* Part D: this world's verb, in the first host slot past a fifth of the shaft */
   ffSegments(rng, lvl, SW, wsAt, -4, floorY+14, A, null, vk?{kind:vk, minY:-4-depth*0.2, done:false}:null);
   for(var dj=1; 4-100*dj>floorY+20; dj++)depthRing(WS, SW, 4-100*dj);   /* SS03: a band round the shaft every 100 m */
+  /* Part E2: the Clean Slice line (gold bands) and the dive's find, in one line slab (its own stream, not the dive's) */
+  var CL=cleanLine(A, SW), clM=0, ci, cj;
+  for(ci=0;ci<CL.length;ci++){ for(cj=0;cj<CL[ci].slabs.length;cj++){ CL[ci].slabs[cj].req=true; clM++; } clBand(CL[ci].top); }
+  if(CL.length){ var drn=mulberry32((((lvl*2246822519)>>>0)^G_FFSALT^0xD15C)>>>0), dco=CL[Math.floor(drn()*CL.length)];
+    dco.slabs[Math.floor(drn()*dco.slabs.length)].disc=WS.id; }
   // THE BULLSEYE FLOOR — stick the middle for the big multiplier
   // strips laid side by side (overlapping boxes z-fight into rainbow noise)
   var zones=[[10,1.7,0xffd76a],[5,3.6,0xb44fe0],[3,5.4,0x3f83c9],[2,7.2,0x2aa88f],[1,SW+0.4,0x6f7482]];
@@ -2238,7 +2370,7 @@ function buildFreefall(lvl){
   var bed=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2+8, 3, 13), new THREE.MeshLambertMaterial({color:0x3a2c20})));
   bed.position.set(0, floorY-3.6, 0);
   HZ=null; SLB=null;
-  return {ff:true, ws:WS, bandFog:null, len:depth, SW:SW, floorY:floorY, blocks:A.blocks, items:A.items, crystals:A.crystals, pads:A.pads, slabs:A.slabs, verbs:A.verbs,
+  return {ff:true, ws:WS, bandFog:null, len:depth, SW:SW, floorY:floorY, blocks:A.blocks, items:A.items, crystals:A.crystals, pads:A.pads, slabs:A.slabs, verbs:A.verbs, clean:{M:clM, stacks:CL.length},
     wasps:A.wasps, planks:A.planks, thorns:A.thorns,
     zones:zones, zoneMats:zoneMats, wallX:1e9, bands:[[1,0]], bandMats:[]};
 }
@@ -2315,6 +2447,10 @@ function endlessDrop(W, k){
 function endlessRing(W, kNow){
   var E=W.end, ks=[], k, i;
   E.k=kNow;
+  /* SS35: the paintings of the bands the ring holds and the next stay; the rest leave the GPU */
+  var b0=Math.floor(Math.max(0,kNow-1)*ECH_H/ENDLESS_BAND), b1=Math.floor((kNow+3)*ECH_H/ENDLESS_BAND)+1, keep=['orchard_loft','mossy_canyon'];
+  for(i=b0;i<=b1;i++)keep.push(WORLD_IDS[(E.fwi+i)%WORLD_IDS.length]);
+  worldEvict(keep);
   for(k in E.live)if(E.live.hasOwnProperty(k))ks.push(+k);
   for(i=0;i<ks.length;i++)if(ks[i]<kNow-1||ks[i]>kNow+2)endlessDrop(W, ks[i]);
   for(k=Math.max(0,kNow-1);k<=kNow+2;k++)if(!E.live[k])endlessChunk(W, k);
@@ -2445,6 +2581,7 @@ function newClimb(lvl){
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
   attractOn=false; worldIsAttract=false;
   lvl=lvl||1;
+  worldEvict(['clockwork_well']);   /* SS35 */
   var built=buildClimb(lvl);
   G={ mode:'run', climbWall:true, lvl:lvl, world:built,
       x:2, y:6, vx:0, vy:0, ang:0, w:0, grounded:false,
@@ -2476,6 +2613,7 @@ function newGame(lvl){
   try{ hideClimbToggle(); }catch(e){}
   if(!initGL()){ alert('This device does not support 3D (WebGL).'); return; }
   attractOn=false; worldIsAttract=false;
+  worldEvict(['orchard_loft']);   /* SS35 */
   var built=buildLevel(lvl);
   G={ mode:'run', lvl:lvl, world:built,
       x:2, y:6, vx:0, vy:0, ang:0, w:0, grounded:false,
@@ -2505,6 +2643,7 @@ function newFF(lvl, endless){
   attractOn=false; worldIsAttract=false;
   G_FFSALT=(FFSALT_FORCE!=null)?FFSALT_FORCE:((Math.random()*4294967295)>>>0);   /* every dive gets a fresh shaft (a test may pin it) */
   if(!endless)warmWorld(WORLD_IDS[Math.floor(lvl/5)%WORLD_IDS.length]);   /* the next level's world, ahead of time */
+  if(!endless)worldEvict([WORLD_IDS[Math.floor((lvl-1)/5)%WORLD_IDS.length], WORLD_IDS[Math.floor(lvl/5)%WORLD_IDS.length], 'mossy_canyon', 'orchard_loft']);   /* SS35 */
   G_ENDLESS = !!endless;
   var built=buildFreefall(lvl);
   G_ENDLESS = false;
@@ -2636,7 +2775,7 @@ function spawnHalf(x,y,r,inner,outer,dir,spin){
   g.add(face);
   g.position.set(x,y,0);
   scene.add(g);
-  chunks.push({mesh:g, vx:dir*(6+Math.random()*4), vy:5+Math.random()*5, vr:spin, life:1.4});
+  pushChunk({mesh:g, vx:dir*(6+Math.random()*4), vy:5+Math.random()*5, vr:spin, life:1.4});
 }
 /* a painted half: a plane cut from the halves atlas, sized from its measured box so it matches the whole fruit */
 function spawnHalfArt(it, dir, spin){
@@ -2651,7 +2790,7 @@ function spawnHalfArt(it, dir, spin){
   var m=new THREE.Mesh(g, FRUITART.halfMat); m.renderOrder=1;
   m.position.set(it.x+dir*f.r*0.3, it.y, 0.2);
   scene.add(m);
-  chunks.push({mesh:m, vx:dir*(6+Math.random()*4), vy:5+Math.random()*5, vr:spin, life:1.4});
+  pushChunk({mesh:m, vx:dir*(6+Math.random()*4), vy:5+Math.random()*5, vr:spin, life:1.4});
   return true;
 }
 function spawnChunk(x,y,w,h,inner,outer,vx,spin,mOut,mIn){
@@ -2659,7 +2798,7 @@ function spawnChunk(x,y,w,h,inner,outer,vx,spin,mOut,mIn){
     var pm=[mOut,mOut,mOut,mIn,mIn,mOut]; pm[vx<0?0:1]=mIn;
     var pmesh=new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.6,w),Math.max(0.6,h),Math.max(0.6,w)), pm);
     pmesh.position.set(x,y,0); scene.add(pmesh);
-    chunks.push({mesh:pmesh, vx:vx, vy:5+Math.random()*5, vr:spin, life:1.4});
+    pushChunk({mesh:pmesh, vx:vx, vy:5+Math.random()*5, vr:spin, life:1.4});
     return;
   }
   var mats=[
@@ -2674,9 +2813,11 @@ function spawnChunk(x,y,w,h,inner,outer,vx,spin,mOut,mIn){
   var m=new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.6,w),Math.max(0.6,h),Math.max(0.6,w)), mats);
   m.position.set(x,y,0);
   scene.add(m);
-  chunks.push({mesh:m, vx:vx, vy:5+Math.random()*5, vr:spin, life:1.4});
+  pushChunk({mesh:m, vx:vx, vy:5+Math.random()*5, vr:spin, life:1.4});
 }
-var SPARK_CAP=160;   /* SS18: the particle budget; the crash ring, the burst words and every hazard cue are not particles */
+var SPARK_CAP=120;   /* SS18, SS35 (Part E2: 160 to 120): the particle budget; the crash ring, the burst words and every hazard cue are not particles */
+var CHUNK_CAP=24;    /* SS35 (Part E2): the debris budget; a new piece past it lets the oldest go */
+function pushChunk(o){ chunks.push(o); while(chunks.length>CHUNK_CAP){ var q=chunks.shift(); scene.remove(q.mesh); disposeMesh(q.mesh); } }
 function spawnSparks(x,y,color,n){
   if(SET.rp)n=Math.ceil(n/3);   /* fewer particles (settings) */
   if(n>SPARK_CAP-sparks.length)n=SPARK_CAP-sparks.length; if(n<=0)return;
@@ -2837,6 +2978,9 @@ function sliceSlab(sl){
   sl.cut=true;
   if(sl.mesh){ if(sl.mesh.parent)sl.mesh.parent.remove(sl.mesh); else scene.remove(sl.mesh); disposeMesh(sl.mesh); }
   if(sl.gline){ scene.remove(sl.gline); disposeMesh(sl.gline); }
+  if(sl.band){ if(sl.band.parent)sl.band.parent.remove(sl.band); disposeMesh(sl.band); sl.band=null; }   /* Part E2 */
+  if(sl.req)G.cleanN=(G.cleanN||0)+1;
+  if(sl.disc){ G.found=sl.disc; findPop(sl.x, sl.y, sl.disc); }
   var ws=sl.ws||G.world.ws, mo=ws&&artLoaded(ws.slab.map)?ws.slab:null, mi=ws&&artLoaded(ws.inside.map)?ws.inside:null;
   spawnChunk(sl.x-sl.w*0.25, sl.y, sl.w*0.5, sl.h, sl.inner, sl.col, -5-Math.random()*3, -(2+Math.random()*3), mo, mi);
   spawnChunk(sl.x+sl.w*0.25, sl.y, sl.w*0.5, sl.h, sl.inner, sl.col, 5+Math.random()*3, (2+Math.random()*3), mo, mi);
@@ -3261,6 +3405,7 @@ function drawFrame(dt){
       ch.mesh.rotation.z+=ch.vr*dt; ch.life-=dt;
       if(ch.life<=0){ scene.remove(ch.mesh); disposeMesh(ch.mesh); chunks.splice(c,1); }
     }
+    findsDraw(dt);   /* Part E2 */
     for(c=sparks.length-1;c>=0;c--){
       var sp=sparks[c];
       sp.vy-=42*dt; sp.mesh.position.x+=sp.vx*dt; sp.mesh.position.y+=sp.vy*dt; sp.mesh.position.z+=sp.vz*dt;
@@ -3322,8 +3467,13 @@ function drawFrame(dt){
     if(scene.background&&scene.background.isColor)scene.background.copy(scene.fog.color); }
   if(G.world.skyFollow)G.world.skyFollow.position.y=camera.position.y+8;   /* Climb: the sky is far, it rises with you */
 
-  if(!window._S3skiprender)renderer.render(scene,camera);
+  if(!window._S3skiprender){ renderer.render(scene,camera); LAST_CALLS=renderer.info.render.calls; if(DRAWS)DRAWS.textContent=LAST_CALLS+' draws'; }
 }
+/* SS35: draw calls per frame. _S3.calls() in ?dev=1; ?dev=1&draws=1 also prints them on screen */
+var LAST_CALLS=0, DRAWS=null;
+if(/[?&]dev=1/.test(location.search)&&/[?&]draws=1/.test(location.search)){ DRAWS=document.createElement('div');
+  DRAWS.style.cssText='position:fixed;left:6px;bottom:6px;z-index:99;font:12px monospace;color:#8de8ff;background:rgba(0,0,0,.6);padding:2px 6px;pointer-events:none';
+  document.body.appendChild(DRAWS); }
 /* SS31: a held side never outlives the finger. It is dropped when the page loses focus or hides, and the clock restarts on
    the way back, so a dive resumes where it was instead of jumping the time it was away. */
 function dropHeld(){ if(G){ G.holding=false; G.hold=0; G.bladeDrag=null; } }
@@ -3368,6 +3518,7 @@ function runTrophies(){
 }
 function failLevel(){
   var gb=$('go-badge'); if(gb)gb.classList.remove('on');
+  cleanHide(); if(G.mode==='ff'&&!G.endless)cleanResults(false);   /* Part E2: the line's count and the find on a failed dive too */
   var depthM=Math.round(G.depth||Math.max(0,4-G.y));
   if(G.endless){
     // endless payoff: score folds in a depth bonus; best depth saved
@@ -3422,6 +3573,7 @@ function finishLevel(){
      trophy counts, Sunbeams, Slivers) */
   if(G.ended){ show('s-go'); return; }
   G.ended=true;
+  cleanHide();
   if(G.failed){ return failLevel(); }
   var gbx=$('go-badge'); if(gbx)gbx.classList.remove('on');
   if(G.climbWall){
@@ -3500,6 +3652,7 @@ function finishLevel(){
     } })(); }
   $('go-lab').textContent=(nb?'★ new best · ':'')+'stuck the '+(ff?'floor':'wall')+' at x'+G.mult+(cleanBonus>0?(' · +'+cleanBonus+' clean dive'):'');
   if(ff&&gbx)gbx.classList.add('on');   /* SS21/SS20: reaching a numbered dive's floor is conquering the pit */
+  if(ff)cleanResults(true);   /* Part E2: the line's count, the badge, the find */
   if(ff){
     $('go-detail').textContent=G.slices+' sliced · '+(chips===0?'clean dive ✦':(chips+' chip'+(chips===1?'':'s')))+' · best combo x'+Math.max(1,G.comboBest)+(earnedCE?' · COSMIC EDGE PICK UNLOCKED':'')+runTrophies();
   } else {
@@ -3826,6 +3979,14 @@ if(/[?&]dev=1/.test(location.search)){
     verbs:function(){ return (G&&G.world&&G.world.verbs)||[]; }, verbLog:function(){ return (G&&G.verbLog)||{}; },
     verbsOff:function(b){ VERBS_OFF=!!b; }, fxCount:function(){ return FXB.length; }, fxBurst:fxBurst,
     fx:function(){ return FXB.map(function(f){ return { still:!!f.still, hold:!!f.hold, off:f.tx.offset.x, op:f.sp.material.opacity }; }); },
+    /* Part E2: the Clean Slice line, the finds, the budget */
+    clean:function(){ var W=G&&G.world, M=W&&W.clean?W.clean.M:0, sl=(W&&W.slabs)||[], r=[], d=null, i;
+      for(i=0;i<sl.length;i++){ if(sl[i].req)r.push(sl[i]); if(sl[i].disc)d=sl[i]; }
+      return { M:M, stacks:W&&W.clean?W.clean.stacks:0, n:G?(G.cleanN||0):0, req:r, disc:d, found:G?G.found||null:null }; },
+    dex:function(){ return DEX; }, finds:function(){ return FINDS.length; }, calls:function(){ return LAST_CALLS; },
+    evicted:function(){ return ART.evicted||0; }, chunkN:function(){ return chunks.length; }, sparkN:function(){ return sparks.length; },
+    caps:function(){ return { chunk:CHUNK_CAP, spark:SPARK_CAP }; }, cleanLine:function(){ return G&&G.world?cleanLine(G.world, G.world.SW):[]; },
+    gpuTex:function(){ return renderer?renderer.info.memory.textures:0; },
     asked:function(rel){ return !!ART.tex[rel]; }, grav:function(){ return ffGrav(); }, deepGrav:function(v){ if(v!=null)DEEP_TIDE_GRAV=v; return DEEP_TIDE_GRAV; },
     proj:function(x,y,z){ camera.updateMatrixWorld(); var V=new THREE.Vector3(x,y,z||0).project(camera); return [V.x,V.y]; },
     /* where the drawn knife and the newest crash ring sit on screen (-1..1), for the drawn-frame rows */

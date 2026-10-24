@@ -6,7 +6,7 @@ var DT=1/120, TICK=12, HOR=3.0, K1=[0,1,2,3,4,6,8,11,15,20,25], K2=[0,1,2,3,5,8,
 function h(v,l){ return v>l?(v-l)*(v-l):0; }
 function arriveCost(a, tx, wx){ var dx=Math.abs(a.x-tx), s=Math.sin(a.ang);
   return h(dx,0.8)*20*wx + (s<0.9?(0.9-s)*(0.9-s)*400+(s<0?50:0):0) + h(Math.abs(a.w),1.8)*20 + h(Math.abs(a.vx),2.8)*10; }
-function calmCost(a){ var s=Math.sin(a.ang); return (s<0.5?(0.5-s)*40:0) + h(Math.abs(a.w),3)*4 + h(Math.abs(a.vx),6)*2; }
+function calmCost(a, tx, wx){ var s=Math.sin(a.ang); return (s<0.5?(0.5-s)*40:0) + h(Math.abs(a.w),3)*4 + h(Math.abs(a.vx),6)*2 + 0*tx*wx; }
 function kin(st, prog, untilY, Hz, t0, maxN){
   var x=st.x, y=st.y, vx=st.vx, vy=st.vy, w=st.w, ang=st.ang, i=0, hit=0, n=prog.length, lim=maxN||4000;
   while(y>untilY && i<lim){ var hd=i<n?prog[i]:0; vy-=21*DT; if(vy<-19)vy=-19;
@@ -20,7 +20,7 @@ function kin(st, prog, untilY, Hz, t0, maxN){
 }
 function timeTo(st, ty){ var y=st.y, vy=st.vy, t=0; while(y>ty&&t<30){ vy-=21*DT; if(vy<-19)vy=-19; y+=vy*DT; t+=DT; } return t; }
 function score(st, p, tx, ty, Hz, t0, wx, far){ var a=far?kin(st,p,-1e9,Hz,t0,Math.round(HOR/DT)):kin(st,p,ty,Hz,t0);
-  return a.wall?1e6:(far?calmCost(a):arriveCost(a,tx,wx))+a.hit*300; }
+  return a.wall?1e6:(far?calmCost(a,tx,wx):arriveCost(a,tx,wx))+a.hit*300; }
 function progOf(k1,s1,m1,k2,s2,m2){ var p=[], i; for(i=0;i<k1*TICK;i++)p.push(0); for(i=0;i<m1*TICK;i++)p.push(s1); for(i=0;i<k2*TICK;i++)p.push(0); for(i=0;i<m2*TICK;i++)p.push(s2); return p; }
 function plan(st, tx, ty, Hz, t0, wx){
   var far=timeTo(st,ty)>HOR, best=[], bc=score(st,[],tx,ty,Hz,t0,wx,far), ii, jj, s1, m1, s2, m2, c, p;

@@ -36,8 +36,10 @@ vm.runInContext('var ENDLESS_BAND=300, ECH_H=100, LANTERN_DELAY=0.12, DEEP_TIDE_
  'chimeAt','lanternLineAt','iceAt','loafAt','ropeY','vmats','verbLog','verbCut','verbAward','cutTube','cutRope','cutLoaf','iceStage','verbStep','verbTick',
  'stepWorld','kReachX','ffGrav','ffWall','ffPad','sliceSlab','sliceFruit','ffBonk','boomGourd','hitCrystal','hitSting'].forEach(function(n){
   try{ vm.runInContext(grab(n), ctx); }catch(e){ if(/^no /.test(e.message))console.error('missing', n); else throw e; } });
-// Part E2 functions are pulled when they exist, so this harness runs on v6.5 and on the E2 build alike
-['cleanLine','markLine'].forEach(function(n){ if(SRC.indexOf('function '+n+'(')>=0)vm.runInContext(grab(n), ctx); });
+// Part E2 (Clean Slice): the game's own rule is pulled when it exists, so this harness runs on v6.5 and on the E2 build alike
+ctx.clBand=function(sl){ sl.band={}; }; ctx.findPop=function(){}; ctx.CLGOLD=null;
+if(SRC.indexOf('function cleanLine(')>=0){ ['CL_CARVE','CL_START'].forEach(function(n){ vm.runInContext(grabVar(n), ctx); });
+  ['clNeed','clHit','clClear','clParts','cleanLine'].forEach(function(n){ vm.runInContext(grab(n), ctx); }); }
 function dive(lvl, salt){
   ctx.G_FFSALT=salt>>>0; ctx.G_ENDLESS=false; ctx.__finished=false;
   var W=vm.runInContext('buildFreefall('+lvl+')', ctx);
