@@ -94,12 +94,14 @@ try {
       await new Promise(r => setTimeout(r, 250)); c2.drawImage = orig;
       const g = (x, y) => [].slice.call(c2.getImageData(x, y, 1, 1).data, 0, 3);
       const strip = y => { const d = c2.getImageData(366, y, 8, 1).data; let m = 0; for (let i = 0; i < 8; i++)m = Math.max(m, d[i * 4], d[i * 4 + 1], d[i * 4 + 2]); return m; };   /* the line wiggles a pixel or two */
-      return { next: g(404, 213), neon: [strip(150), strip(300), strip(600)], calls }; });
+      /* six points in the window's opening beside the pair (x 402 to 446, y 210 to 268; the pair holds x 413 to 435) */
+      const next = [[404, 215], [404, 240], [404, 262], [444, 215], [444, 240], [444, 262]].map(([x, y]) => g(x, y));
+      return { next, neon: [strip(150), strip(300), strip(600)], calls }; });
     const lum = c => Math.max(...c);
     const chaff = px.calls.filter(c => c.src === 'pods/chaff.webp' && c.a.length === 4 && c.a[2] < 16);
     const pl = chaff.filter(c => c.a[1] < 200), rv = chaff.filter(c => c.a[1] >= 200);
     const tl = px.calls.find(c => c.src === 'board/frame.webp' && c.a.length === 8 && c.a[0] === 0 && c.a[1] === 0);
-    ok('the next window\'s opening is near black behind the pair (it showed the alley graffiti)', lum(px.next) < 45, JSON.stringify(px.next));
+    ok('the next window\'s opening is near black behind the pair at six points (it showed the alley graffiti)', px.next.every(c => Math.abs(c[0] - 22) <= 14 && Math.abs(c[1] - 18) <= 14 && Math.abs(c[2] - 7) <= 14), JSON.stringify(px.next));
     ok('the painted frame\'s right neon line shows beside the HYPE meter at three heights (the meter covered it)', px.neon.every(v => v >= 90), JSON.stringify(px.neon));
     const nx = a => new Set(a.map(c => c.a[0].toFixed(1))).size;
     ok('the incoming Chaff rows sit above the frames (player under y 84 right of the score, rival under y 336)', nx(pl) === 10 && nx(rv) === 8 && pl.every(c => c.a[1] + c.a[3] <= 84 && c.a[0] >= 200 && c.a[0] + c.a[2] <= 380) && rv.every(c => c.a[1] + c.a[3] <= 336.5 && c.a[0] + c.a[2] <= 540),
