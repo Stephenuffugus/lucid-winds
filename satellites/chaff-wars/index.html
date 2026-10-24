@@ -385,7 +385,7 @@ window.addEventListener('resize',fit); window.addEventListener('orientationchang
 
 /* ---------- storage ---------- */
 var LS={ g:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, s:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
-var SET={ sound:true, ghost:true, big:false, tags:true, relaxed:false, flick:false, mirror:false };   /* v1.9: Relaxed held moves, the hard drop flick (off), Drop on the left */
+var SET={ sound:true, ghost:true, bigTray:false, tags:true, relaxed:false, flick:false, mirror:false };   /* v1.9: bigTray, a NEW key: v1.8 saved big:true for anyone who touched any setting */   /* v1.9: Relaxed held moves, the hard drop flick (off), Drop on the left */
 (function(){ try{ var s=JSON.parse(LS.g('cw_set')||'{}'),k; for(k in SET)if(SET.hasOwnProperty(k)&&typeof s[k]==='boolean')SET[k]=s[k]; }catch(e){} })();
 function saveSet(){ LS.s('cw_set', JSON.stringify(SET)); }
 var PROG={ unlocked:0, beaten:{}, done:false, secret:false, soloBest:0 };
@@ -1532,7 +1532,7 @@ var TRAY_TOUCH={};   /* pointers that went down on a tray button: only these rol
 document.addEventListener('pointerup',function(e){ delete TRAY_TOUCH[e.pointerId]; },true);
 document.addEventListener('pointercancel',function(e){ delete TRAY_TOUCH[e.pointerId]; },true);
 function holdBtn(id,down,up,roll){ var el=$(id),pid=null; if(!el)return;
-  function press(e){ e.preventDefault(); ac(); pid=e.pointerId; TRAY_TOUCH[e.pointerId]=1; try{ el.releasePointerCapture(e.pointerId); }catch(err){} down(); }
+  function press(e){ e.preventDefault(); ac(); pid=e.pointerId; if(roll)TRAY_TOUCH[e.pointerId]=1; try{ el.releasePointerCapture(e.pointerId); }catch(err){} down(); }
   el.addEventListener('pointerdown',press);
   if(roll)el.addEventListener('pointerenter',function(e){ if(pid===null&&TRAY_TOUCH[e.pointerId])press(e); });
   function rel(e){ if(pid===null||e.pointerId!==pid)return; pid=null; up(); }
@@ -1543,14 +1543,15 @@ holdBtn('c-down',function(){ hap(6); softSet('btn',true); },function(){ softSet(
 holdBtn('c-rotccw',function(){ rotPress(-1); },function(){});   /* turns on the press, like the arrows */
 holdBtn('c-rot',function(){ rotPress(1); },function(){});
 /* DROP (v1.9 review): its own press and release, never a 'click' (a phone makes no click for a tap while another finger
-   is down, so two thumb play lost its drops). It drops on the release (a thumb resting on it never drops), only the pair
-   that was in play at the press (a tap that straddles a landing lock never slams the NEXT pair), and a press that slides
-   off the button or is cancelled drops nothing */
+   is down, so two thumb play lost its drops). It drops on the release (a thumb resting on it never drops) within 16 px
+   of the button (a slip past the edge still drops, a slide away cancels; the touch keeps its capture so the release
+   comes here), only the pair that was in play at the press (a tap that straddles a landing lock never slams the NEXT
+   pair), and never on a cancel */
 (function(){ var el=$('dropbtn'), pid=null, pair=null; if(!el)return;
-  el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); pid=e.pointerId; pair=playable()?pf().cur:null; try{ el.releasePointerCapture(e.pointerId); }catch(err){} });
-  el.addEventListener('pointerup',function(e){ if(pid===null||e.pointerId!==pid)return; pid=null; if(pair&&playable()&&pf().cur===pair){ hap(16); hardDrop(pf()); } pair=null; });
-  function off(e){ if(pid===null||e.pointerId!==pid)return; pid=null; pair=null; }
-  el.addEventListener('pointercancel',off); el.addEventListener('pointerleave',off); })();
+  el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); pid=e.pointerId; pair=playable()?pf().cur:null; });
+  el.addEventListener('pointerup',function(e){ if(pid===null||e.pointerId!==pid)return; pid=null; var b=el.getBoundingClientRect(), near=e.clientX>=b.left-16&&e.clientX<=b.right+16&&e.clientY>=b.top-16&&e.clientY<=b.bottom+16;
+    if(near&&pair&&playable()&&pf().cur===pair){ hap(16); hardDrop(pf()); } pair=null; });
+  el.addEventListener('pointercancel',function(e){ if(pid===null||e.pointerId!==pid)return; pid=null; pair=null; }); })();
 /* ---- Board touch: Block Drop's scheme, Stephen's ask 2026-07-27, with an INTENT (v1.9, PNL-006) ----
    A touch on your board commits to an axis once it has moved 12 CSS px with one axis 1.5 times the other (a diagonal
    that never settles takes its larger axis at 36 px). SIDEWAYS: the pair follows your finger column by column. DOWN: a
@@ -1612,7 +1613,7 @@ function show(id){ var s=document.querySelectorAll('.screen'),i; for(i=0;i<s.len
   if(id!=='s-play'){ running=false; } applyBig(); paintTitle(); clearHolds();
   if(id==='s-play')document.body.classList.add('playing'); else document.body.classList.remove('playing'); fit();   /* v1.9: the tray shows in a match */
   var bp=$('b-power'); if(bp)bp.style.display=(id==='s-play'&&MATCH.powers)?'flex':'none'; }
-function applyBig(){ try{ var B=document.body.classList; if(SET.big)B.add('bigctrl'); else B.remove('bigctrl'); if(SET.mirror)B.add('mirror'); else B.remove('mirror'); }catch(e){} }
+function applyBig(){ try{ var B=document.body.classList; if(SET.bigTray)B.add('bigctrl'); else B.remove('bigctrl'); if(SET.mirror)B.add('mirror'); else B.remove('mirror'); }catch(e){} }
 function paintTitle(){ var cp=$('c-prog'); if(cp){ var n=0,k; for(k in PROG.beaten)n++; cp.textContent='· '+n+'/'+ROSTER.length+' beaten'; } }
 
 function buildLadder(){ var lad=$('ladder'); if(!lad)return; lad.innerHTML=''; var i;
@@ -1646,7 +1647,7 @@ tap('set-reset',function(){ if(confirm('Reset all campaign progress? This cannot
 
 function wireToggle(id,key){ var el=$(id); if(!el)return; function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
   el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); SFX.ui(); }); }
-wireToggle('tg-sound','sound'); wireToggle('tg-ghost','ghost'); wireToggle('tg-big','big'); wireToggle('tg-tags','tags');
+wireToggle('tg-sound','sound'); wireToggle('tg-ghost','ghost'); wireToggle('tg-big','bigTray'); wireToggle('tg-tags','tags');
 wireToggle('tg-relaxed','relaxed'); wireToggle('tg-flick','flick'); wireToggle('tg-mirror','mirror');
 $('buildstamp').textContent='Pop N Lock '+BUILD;
 

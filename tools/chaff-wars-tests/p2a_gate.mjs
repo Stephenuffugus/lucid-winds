@@ -189,12 +189,35 @@ try {
     await p.keyboard.down('ArrowLeft'); for (let w = 0; w < 80; w++) { await sleep(100); if (await p.evaluate(() => window.CW_DEV.match().phase === 'fight')) break; }
     await p.evaluate(() => { window.CW_DEV.match().pf.gravMs = 1e9; }); await sleep(500); const kb = await cur(p); await p.keyboard.up('ArrowLeft'); await sleep(60); const kb2 = await cur(p);
     ok('an arrow key held through the count moves the pair once it starts (to the wall), and letting go stops it', kb.c === 0 && kb2.dir === 0, JSON.stringify({ kb, kb2: kb2.dir })); }
+  // 8c2. the second review: a ROTATE tap that drifts up onto SOFT neither soft drops nor moves; DROP slips 10 px past
+  // its left edge and still drops, and a slide well onto ROTATE R cancels
+  { await fresh(p); const a = await cur(p);
+    await T('touchStart', [[R['c-rot'].x, R['c-rot'].y, 31]]); await sleep(40);
+    for (let k = 1; k <= 4; k++) { await T('touchMove', [[R['c-rot'].x, R['c-rot'].y + (R['c-down'].y - R['c-rot'].y) * k / 4, 31]]); await sleep(25); } await sleep(80);
+    const rr = await cur(p); await T('touchEnd', []); await sleep(60);
+    ok('a ROTATE tap that drifts up onto SOFT turns the pair once and neither soft drops nor moves it', rr.rot === a.rot + 1 && !rr.soft && rr.c === a.c && rr.dir === 0, JSON.stringify({ a, rr }));
+    const left = R['dropbtn'].x - R['dropbtn'].w / 2;
+    await fresh(p); const d0 = await cur(p);
+    await T('touchStart', [[R['dropbtn'].x, R['dropbtn'].y, 32]]); await sleep(30);
+    for (let k = 1; k <= 3; k++) { await T('touchMove', [[R['dropbtn'].x + (left - 10 - R['dropbtn'].x) * k / 3, R['dropbtn'].y, 32]]); await sleep(25); } await sleep(40);
+    await T('touchEnd', [[left - 10, R['dropbtn'].y, 32]]); await sleep(150); const d1 = await cur(p);
+    await fresh(p); const e0 = await cur(p);
+    await T('touchStart', [[R['dropbtn'].x, R['dropbtn'].y, 33]]); await sleep(30);
+    for (let k = 1; k <= 3; k++) { await T('touchMove', [[R['dropbtn'].x + (R['c-rot'].x - R['dropbtn'].x) * k / 3, R['dropbtn'].y, 33]]); await sleep(25); } await sleep(40);
+    await T('touchEnd', [[R['c-rot'].x, R['dropbtn'].y, 33]]); await sleep(150); const e1 = await cur(p);
+    ok('a DROP that slips 10 px past its edge still drops; one slid well onto ROTATE R drops nothing', d1.pods === d0.pods + 2 && e1.pods === e0.pods && e1.r === e0.r, JSON.stringify({ d0: d0.pods, d1: d1.pods, e0: e0.pods, e1: { pods: e1.pods, r: e1.r } })); }
   // 8d. 56 px rows by default (64 is Big controls)
   { R = await rects(p); ok('the tray rows are 56 px by default (Big controls makes them 64)', Math.abs(R['c-left'].h - 56) < 1, R['c-left'].h); }
   // 9. the mirrored tray
   { const m = await p.evaluate(() => { window.CW_DEV.setting('mirror', true); const d = document.getElementById('dropbtn').getBoundingClientRect().left, l = document.getElementById('c-rotccw').getBoundingClientRect().left; window.CW_DEV.setting('mirror', false); const d2 = document.getElementById('dropbtn').getBoundingClientRect().left; return { d, l, d2 }; });
     ok('Drop button on the left puts DROP first in its row, and back', m.d < m.l && m.d2 > m.l, JSON.stringify(m)); }
   ok('no page errors', errs.length === 0, JSON.stringify(errs));
+  // a v1.8 player who saved any setting (v1.8 saved the whole object, big:true included) gets the 56 px rows
+  { const q = await b.newPage(); await q.setViewport({ width: 412, height: 915, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    await q.evaluateOnNewDocument(() => { try { localStorage.setItem('lwfb_explained', '1'); localStorage.setItem('cw_set', JSON.stringify({ sound: false, ghost: true, big: true, tags: true })); } catch (e) {} });
+    await q.goto(`http://127.0.0.1:${PORT}/${PAGE}?cwdev=1`, { waitUntil: 'domcontentloaded', timeout: 60000 }); await q.waitForFunction(() => window.CW_DEV && document.readyState === 'complete', { timeout: 60000 });
+    await fresh(q); const h = await q.evaluate(() => document.getElementById('c-left').getBoundingClientRect().height); await q.close();
+    ok('a v1.8 player\'s saved settings (big:true for everyone who touched any setting) still get the 56 px rows', Math.abs(h - 56) < 1, h); }
   // [C] thumb shots
   if (SHOTS) for (const [w, h] of [[412, 915], [360, 780]]) { const o = w === 412 ? { p } : await open(w, h); await fresh(o.p); const Rr = await rects(o.p);
     await o.p.evaluate((x, y) => { const d = document.createElement('div'); d.style.cssText = 'position:fixed;z-index:99;pointer-events:none;width:46px;height:58px;border-radius:50%;background:rgba(232,190,160,.55);border:2px solid rgba(120,80,60,.6);left:' + (x - 23) + 'px;top:' + (y - 22) + 'px;transform:rotate(-24deg)'; document.body.appendChild(d); }, Rr['dropbtn'].x + 6, Rr['dropbtn'].y + 6);
