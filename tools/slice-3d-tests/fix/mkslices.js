@@ -21,6 +21,8 @@ if (i20 >= 0) fs.writeFileSync(D + 'row20.mjs', head + helpers + s.slice(i20, e2
 if (i21 >= 0) fs.writeFileSync(D + 'row21.mjs', head + helpers + s.slice(i21, iEnd) + foot);   /* Part E4, the bosses */
 const i8 = s.indexOf("console.log('\\n[8]"), i9 = s.indexOf('/* ---- 9.');
 if (i8 >= 0 && i9 > i8) fs.writeFileSync(D + 'row8.mjs', head + helpers + s.slice(i8, i9) + foot);   /* the title layout */
+const i10 = s.indexOf('/* ---- 10. SS21'), i11 = s.indexOf('/* ---- 11. SS21/SS20');
+if (i10 >= 0 && i11 > i10) fs.writeFileSync(D + 'row10.mjs', head + helpers + s.slice(i10, i11) + foot);   /* Endless: no floor, the ring, the ramp (24 Oct) */
 const i2 = s.indexOf('/* ---- 2. the core loop'); if (i2 < 0) throw new Error('row 2 marker');
 fs.writeFileSync(D + 'row1.mjs', head + s.slice(i1, i2) + foot);   /* the corrupt save boots (Part E1 added two) */
 console.log('slices written');

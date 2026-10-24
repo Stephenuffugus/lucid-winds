@@ -490,6 +490,7 @@ console.log('\n[10] Part B: Endless has no floor and keeps a bounded ring');
 {
   const { ctx, p } = await boot();
   let r; try { r = await p.evaluate(() => {
+    /* since 24 Oct the chunks deepen (row [10b]); a straight blade down dive still meets no floor and no wall */
     const S = window._S3; S.salt(99); S.newEndless(); const G = S.g();
     const base = S.endless().kids;   // chunks 0 to 2 live, none let go yet
     let maxLive = 0, maxKids = 0;
@@ -509,6 +510,47 @@ console.log('\n[10] Part B: Endless has no floor and keeps a bounded ring');
   ok('Endless has no floor 6 km down', !r.farDone && !!r.far && r.far.k >= 59, JSON.stringify(r.far));
   ok('Endless lets every dropped chunk leave the scene', !!r.far && r.base > 0 && r.far.kids <= 1.6 * r.base,
     JSON.stringify({ base: r.base, far: r.far && r.far.kids }));
+  await ctx.close();
+}
+
+/* ---- 10b. 24 Oct: Endless gets harder the deeper you go (Jessie went forever: every chunk had level 1's bag and the fall
+   stopped speeding up at 30). Chunk k builds at level k+1's bag up to level 7 at 600 m: the first chunk has no crystal, wasp or
+   thorn; past 600 m every chunk's bag takes more of them (one each, again every 400 m, four each by 1800 m), so 2000 to 2400 m
+   holds more of them than 600 to 1000 m; the level's own planks and bumpers come by 600 m too. The fall keeps speeding up past 900 m, measured on the knife itself (a
+   step from far too fast, the hazards cleared so nothing but the cap touches it): 29.8 at 900 m as before, over 42 at 2500 m, 60 by 5 km
+   and never past it. Seeds 99, 7 and 31. */
+console.log('\n[10b] Endless ramps: harder chunks, a fall that keeps speeding up');
+{
+  const { ctx, p } = await boot();
+  let r; try { r = await p.evaluate(() => {
+    const S = window._S3, out = { seeds: [] }, L = ['crystals', 'wasps', 'thorns'];
+    for (const seed of [99, 7, 31]) {
+      S.salt(seed); S.newEndless(); const G = S.g(), W = G.world, n = {};
+      for (let k = 0; k <= 23; k++) {
+        S.endRing(k);
+        for (const nm of L.concat(['planks', 'pads'])) for (const e of W[nm]) { const key = nm + e.ck; n[key] = n[key] || {}; n[key][e.x + ',' + e.y] = 1; }
+      }
+      const c = (nm, k0, k1) => { let t = 0; for (let k = k0; k <= k1; k++) t += Object.keys(n[nm + k] || {}).length; return t; };
+      const term = {};
+      for (const d of [0, 900, 2500, 5000, 9000]) {
+        G.y = 4 - d; G.depth = d; G.x = 0; G.vx = 0; G.w = 0; G.ang = Math.PI / 2; S.hold(0); S.stepN(1, 1000 / 120);
+        for (const nm of ['blocks', 'items', 'crystals', 'pads', 'slabs', 'wasps', 'planks', 'thorns', 'verbs']) if (W[nm]) W[nm].length = 0;
+        G.done = false; G.y = 4 - d; G.depth = d; G.x = 0; G.vx = 0; G.vy = -500; G.w = 0; G.ang = Math.PI / 2; S.stepN(1, 1000 / 120);
+        term[d] = Math.round(-G.vy * 10) / 10;
+      }
+      const hz = (k0, k1) => c('crystals', k0, k1) + c('wasps', k0, k1) + c('thorns', k0, k1);
+      out.seeds.push({ seed, first: hz(0, 0), mid: hz(6, 9), deep: hz(20, 23),
+        kinds: [c('crystals', 6, 23), c('wasps', 6, 23), c('thorns', 6, 23)], lvlOwn: c('planks', 6, 9) + c('pads', 6, 9), lvlTop: c('planks', 0, 1) + c('pads', 0, 0), term });
+    }
+    S.salt(null); return out;
+  }); } catch (e) { r = { error: String(e).slice(0, 160) }; }
+  const sd = r.seeds || [];
+  ok('Endless: the first chunk has no crystal, wasp or thorn', sd.length === 3 && sd.every(s => s.first === 0), JSON.stringify(r));
+  ok('Endless: past 600 m crystals, wasps and thorns all come, and 2000 to 2400 m holds more of them than 600 to 1000 m', sd.length === 3 && sd.every(s => s.mid > 0 && s.deep > s.mid * 1.5 && s.kinds.every(n => n > 0)), JSON.stringify(sd.map(s => ({ mid: s.mid, deep: s.deep, kinds: s.kinds }))));
+  ok("Endless: the level's own pieces come with depth (planks and bumpers, which the extra hazards never add)", sd.length === 3 && sd.every(s => s.lvlTop === 0 && s.lvlOwn > 0), JSON.stringify(sd.map(s => [s.lvlTop, s.lvlOwn])));
+  ok('Endless: the fall is 19 at the top and 29.8 at 900 m, as it always was', sd.length === 3 && sd.every(s => Math.abs(s.term[0] - 19) < 0.05 && Math.abs(s.term[900] - 29.8) < 0.05), JSON.stringify(sd.map(s => s.term)));
+  ok('Endless: the fall keeps speeding up past 900 m (over 42 at 2500 m)', sd.length === 3 && sd.every(s => s.term[2500] > 42 && s.term[5000] > s.term[2500]), JSON.stringify(sd.map(s => s.term)));
+  ok('Endless: the fall never passes 60', sd.length === 3 && sd.every(s => Math.abs(s.term[5000] - 60) < 0.2 && Math.abs(s.term[9000] - 60) < 0.2), JSON.stringify(sd.map(s => s.term)));
   await ctx.close();
 }
 

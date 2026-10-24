@@ -316,7 +316,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
     <div class="helprow"><div class="hi">&#9650;</div><div><b style="color:#3ecc8e">SUPER SLICE WALL CLIMB, one wall and no level ceiling.</b> Same flipping rules as the normal run, but there is no course: you flip straight UP the face of one enormous wall and the height you stick at IS your score. Every run gets the whole ladder, all 34 bands up to x900, so your level never caps you and only your throw decides where you stop. On the climb screen you can switch to <b style="color:#3ecc8e">Be the Blade</b>: hold and circle your finger and the knife spins with you, and handle bounces off the wall ride that spin upward. Glancing blade touches scrape off, so only a committed blade angle sticks.</div></div>
 
-    <div class="helprow"><div class="hi">&#9660;</div><div><b style="color:#8fd8f2">SUPER SLICE FREE FALL, which plays differently.</b> You are falling down a shaft, not travelling along the ground, and you steer by <b>holding the LEFT or RIGHT side of the screen</b> to drift that way. Carve down through the tall brown slab stacks: each one you cut opens in a burst of colour and chains your combo. When a dive has stacks with a <b style="color:var(--gold)">gold band</b> on top, they are its Clean Slice line: carve every slab of them and land on the floor to earn the Clean Slice badge. Every fifth level ends at a <b style="color:var(--gold)">boss</b> over a net: fall onto it blade first and keep the blade down, and each time it hops the net lobs you back onto it (the net aims for you, so steer lightly). Three hits and it opens. Cut a rope or miss three lobs to skip it, which costs the Clean Slice. Keep the <b>handle</b> pointed at the side walls: a handle bounce is clean, but <b style="color:#ff6a5a">a blade into the wall sticks you and ends the dive</b>. Pink crystals down here shove you rather than kill. Free Fall comes in two versions: authored <b>levels</b>, and the <b>endless</b> drop where the only score is how deep you get.</div></div>
+    <div class="helprow"><div class="hi">&#9660;</div><div><b style="color:#8fd8f2">SUPER SLICE FREE FALL, which plays differently.</b> You are falling down a shaft, not travelling along the ground, and you steer by <b>holding the LEFT or RIGHT side of the screen</b> to drift that way. Carve down through the tall brown slab stacks: each one you cut opens in a burst of colour and chains your combo. When a dive has stacks with a <b style="color:var(--gold)">gold band</b> on top, they are its Clean Slice line: carve every slab of them and land on the floor to earn the Clean Slice badge. Every fifth level ends at a <b style="color:var(--gold)">boss</b> over a net: fall onto it blade first and keep the blade down, and each time it hops the net lobs you back onto it (the net aims for you, so steer lightly). Three hits and it opens. Cut a rope or miss three lobs to skip it, which costs the Clean Slice. Keep the <b>handle</b> pointed at the side walls: a handle bounce is clean, but <b style="color:#ff6a5a">a blade into the wall sticks you and ends the dive</b>. Pink crystals down here shove you rather than kill. Free Fall comes in two versions: authored <b>levels</b>, and the <b>endless</b> drop where the only score is how deep you get. The endless drop grows busier and faster the deeper you go, until no thumb can keep up.</div></div>
 
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
@@ -393,7 +393,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v6.8";
+var BUILD="v6.9";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -689,6 +689,18 @@ var chunks=[], sparks=[], meshes=[];
 var sbSession=0; // sunbeams earned this play session; 12/run cap must persist across levels
 var G_ENDLESS=false; // set while building an endless pit
 var ENDLESS_BAND=300; // Endless changes world every 300 m on the way down (Part A, 2026-10-23)
+/* Endless gets harder the deeper you go (24 Oct: Jessie "went forever", it was too easy). Every 100 m chunk was built
+   at level 1's bag (no crystals, wasps, thorns or gates) and the fall stopped speeding up at 30 near 900 m, where a
+   hazard shows about 0.6 s before you reach it, a pace a thumb learns. Now chunk k builds at level k+1 until the whole
+   bag is in at 600 m (and more hazards past it, endlessExtra), and past 917 m the fall keeps speeding up: about 0.4 s of warning at 2500 m, 0.3 s near 3500 m,
+   which no thumb keeps up with. The cap only guards the physics step (0.5 u a step at 60). */
+var ENDLESS_LVL_MAX=7, END_TERM_SLOPE=0.012, END_TERM_SLOPE2=0.008, END_TERM_KNEE=(30-FF_TERM)/END_TERM_SLOPE, END_TERM_MAX=60;   /* the knee: where the old fall stopped at 30 (917 m) */
+function endlessLvl(k){ return Math.min(ENDLESS_LVL_MAX, 1+Math.max(0,k)); }
+/* past 600 m every chunk's bag takes one more crystal, wasp and thorn, again every 400 m, up to four of each (1800 m) */
+function endlessExtra(k){ var x=[], n=k<6?0:Math.min(4, 1+Math.floor((k-6)/4)), i;
+  for(i=0;i<n;i++)x.push('crystal','wasp','thorn'); return x; }
+function endlessTerm(d){ d=Math.max(0,d||0);
+  return Math.min(END_TERM_MAX, FF_TERM+Math.min(d,END_TERM_KNEE)*END_TERM_SLOPE+Math.max(0,d-END_TERM_KNEE)*END_TERM_SLOPE2); }
 var SLB=null;         // the world whose slab painting the swinging planks wear in the current build
 function disposeMesh(m){
   if(m.geometry&&!m.isSprite)m.geometry.dispose();
@@ -2041,7 +2053,7 @@ function ripBanner(e){
   G.slivBonus=(G.slivBonus||0)+5; popup('+5 slivers', e.x1-1.3, e.y+1.6, '#ffd76a'); verbLog('banner');
 }
 
-function ffSegments(rng, lvl, SW, wsAt, y, yEnd, A, yCap, vb){   /* yCap (Endless only): no slab hangs below it; vb: this stretch's world verb {kind, minY} */
+function ffSegments(rng, lvl, SW, wsAt, y, yEnd, A, yCap, vb, xo){   /* yCap (Endless only): no slab hangs below it; vb: this stretch's world verb {kind, minY}; xo (Endless only): {extra, first}, see endlessChunk */
   var blocks=A.blocks, items=A.items, crystals=A.crystals, pads=A.pads, slabs=A.slabs, wasps=A.wasps, planks=A.planks, thorns=A.thorns;
   var SLAB_IN=[0xff6d7e,0xffd76a,0x8de8ff,0x8fe08a,0xc56bf0,0xff9a3c,0x5ad1c8];
   // a stack of BROWN slabs: cut with the blade and each reveals a bright color
@@ -2075,7 +2087,9 @@ function ffSegments(rng, lvl, SW, wsAt, y, yEnd, A, yCap, vb){   /* yCap (Endles
     if(lvl>=5)bag.push('thorn','gourd','wasp');
     if(lvl>=6)bag.push('melonwall','pinata');
     if(lvl>=7)bag.push('plank','thorn','gate');
+    if(xo&&xo.extra)for(var xi=0;xi<xo.extra.length;xi++)bag.push(xo.extra[xi]);
     for(var bi=bag.length-1;bi>0;bi--){ var bj=Math.floor(rng()*(bi+1)); var bt=bag[bi]; bag[bi]=bag[bj]; bag[bj]=bt; }
+    if(xo&&xo.first&&!xo.used){ xo.used=true; bag.push(xo.first); }   /* popped first: the band's verb finds its host at the chunk's top */
     return bag;
   }
   var bag=[];
@@ -2636,7 +2650,11 @@ function endlessChunk(W, k){
        chime and lantern bands had none). The chunk that took it is kept, so a chunk built again builds the same */
     var vkE=VERBS_OFF?null:VERB_OF[WORLD_IDS[wi]], vK=E.vbK||(E.vbK={}), vbE=null;
     if(vkE&&k>=1&&(vK[band]==null||vK[band]===k))vbE={kind:vkE, minY:top-4, done:false};
-    ffSegments(rng, 1, SW, function(){ return ws; }, (k===0)?-4:top-4, bot+6, W, bot+1.6, vbE);
+    /* a chunk draws about seven pieces from a fresh bag, so a deep chunk's bigger bag would often miss the one branch or
+       stack a band's verb needs (4 in 10 Orchard Loft bands lost the chime): while the band still owes its verb, the host
+       is drawn first. Past the full bag, the deeper the chunk the more hazards in it (endlessExtra) */
+    ffSegments(rng, endlessLvl(k), SW, function(){ return ws; }, (k===0)?-4:top-4, bot+6, W, bot+1.6, vbE,
+      { extra:endlessExtra(k), first:vbE?VERB_HOST[vbE.kind]:null });
     if(vbE&&vbE.done)vK[band]=k;
     if(k>=1)depthRing(ws, SW, top);   /* SS03: the 100 m line itself */
   } finally { MESHSINK=keep; HZ=null; SLB=null; }
@@ -3245,7 +3263,7 @@ function stepWorld(dt){
       // FREEFALL: hold a side to STEER across the pit and FLIP the blade;
       // release to settle the spin so your orientation holds while you aim
       var hd = G.holding ? (G.hold||G.lastSide||0) : 0;
-      var term = G.endless ? Math.min(30, FF_TERM + (G.depth||0)*0.012) : FF_TERM;
+      var term = G.endless ? endlessTerm(G.depth) : FF_TERM;
       G.vy -= ffGrav()*dt; if(G.vy < -term) G.vy = -term;   /* SS05: one named constant, HIS call */
       if(hd!==0){
         G.vx += hd*FF_STEER*dt;
@@ -4191,6 +4209,7 @@ if(/[?&]dev=1/.test(location.search)){
     warm:function(id){ warmWorld(id); }, worldIds:function(){ return WORLD_IDS.slice(); },
     /* Part B: pin the dive seed (null = random again), read the Endless ring, read the settings and the stepper */
     salt:function(n){ FFSALT_FORCE=(n==null)?null:(n>>>0); },
+    endRing:function(k){ var W=G&&G.world; if(W&&W.end)endlessRing(W,k); },
     endless:function(){ var W=G&&G.world; if(!W||!W.end)return null; var ks=[], k; for(k in W.end.live)if(W.end.live.hasOwnProperty(k))ks.push(+k);
       return { k:W.end.k, live:ks.sort(function(x,y){ return x-y; }), sceneKids:scene.children.length, kids:scene.children.length-sparks.length-chunks.length-RINGS.length, items:W.items.length, slabs:W.slabs.length, mile:G.mile||0 }; },
     set:function(){ return SET; }, step:function(){ return { STEP:STEP, STEPMAX:STEPMAX, ACC:ACC }; }, rings:function(){ return RINGS.length; },
@@ -4236,7 +4255,7 @@ if(/[?&]dev=1/.test(location.search)){
 })();
 
 /* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=72'); }catch(e){} }
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=73'); }catch(e){} }
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the
