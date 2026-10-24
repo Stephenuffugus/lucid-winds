@@ -54,6 +54,36 @@ try {
   ok('a time trial leaves the wear as it was', B.ttWas && B.tt.before === B.tt.after, JSON.stringify(B.tt));
   const wb = JSON.parse(B.race.before), wa = JSON.parse(B.race.after);
   ok('a free race adds wear to every bought part equipped (eng1, tir1, grs1, brk1)', B.raceWas && ['eng1', 'tir1', 'grs1', 'brk1'].every(k => (wa[k] || 0) > (wb[k] || 0)), JSON.stringify(B.race));
+  console.log('[D] the review (v1.9): restart a career round from the pause menu, a newer physics record, the Daily ghost');
+  if (process.env.SKIPD !== '1') {
+    const cdp = await p.target().createCDPSession();
+    const tapId = async id => { const r = await p.evaluate(i => { const e = document.getElementById(i).getBoundingClientRect(); return { x: e.left + e.width / 2, y: e.top + e.height / 2 }; }, id);
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: r.x, y: r.y, id: 9 }] }); await sleep(60); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(250); };
+    /* this fixture is a v1.7 save, so v1.9 offers the new throttle once: answer it like a player (a real tap) */
+    if (await p.evaluate(() => document.getElementById('ctl-card') && document.getElementById('ctl-card').classList.contains('show'))) await tapId('ctl-keep');
+    const D0 = await p.evaluate(() => { const H = window.__PBR, S = H.S; S.G.wallet = 5000; H.startRace(4, 0, { career: true, quick: true }); return { career: S.race.career, wallet: S.G.wallet, rival: !!S.bikes.find(b => b.rival) }; });
+    await sleep(2500); const tRun = await p.evaluate(() => window.__PBR.S.race.t);
+    await tapId('btn-pause'); const pausedNow = await p.evaluate(() => window.__PBR.S.paused);
+    await tapId('pause-restart'); await sleep(150);
+    const D1 = await p.evaluate(() => { const S = window.__PBR.S; return { t: S.race.t, countdown: S.race.countdown, career: S.race.career, fee: S.race.fee, wallet: S.G.wallet, disk: JSON.parse(localStorage.getItem('skywolf.pitbikerally.save.v1')).wallet, rival: !!S.bikes.find(b => b.rival), active: S.race.active }; });
+    ok('pause, RESTART RACE (real taps) in a career round restarts it as the same career round: no fee, the rival kept', D0.career && pausedNow === true && tRun > 0.5 && D1.t < 0.3 && D1.career && D1.fee === 0 && D1.wallet === 5000 && D1.rival && D1.active, JSON.stringify({ D0, tRun, pausedNow, D1 }));
+    const E = await p.evaluate(() => { const H = window.__PBR, S = H.S, G = S.G, key = '1:0';   /* track 1: [C] times track 0 */
+      G.tt[key] = { best: 12000, medals: ['bronze'], pv: 2 }; G.ghosts[key] = { ms: 12000, hz: 10, pts: [1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 0, 5, 5, 0, 6, 6, 0], pv: 2 };
+      G.best[key] = 40000; G.bestPv[key] = 2;
+      H.startRace(1, 0, { tt: true, quick: true }); const ghostRaced = !!S.race.ghost; const q = S.bikes[0]; q.bestLap = 14.0; q.bestLapStream = Array(30).fill(1); H.finishRace();
+      H.startRace(1, 0, { quick: true }); const r = S.bikes[0]; r.finished = true; r.finishTime = 55; r.bestLap = 14.5; r.bestLapStream = Array(30).fill(2); H.finishRace();
+      return { ghostRaced, tt: G.tt[key], ghost: { ms: G.ghosts[key].ms, pv: G.ghosts[key].pv }, best: G.best[key], bestPv: G.bestPv[key] }; });
+    ok('a record set under newer physics (a phone back on this page) is never raced, beaten or overwritten', !E.ghostRaced && E.tt.best === 12000 && E.tt.pv === 2 && E.ghost.ms === 12000 && E.ghost.pv === 2 && E.best === 40000 && E.bestPv === 2, JSON.stringify(E));
+    /* the Daily: yesterday's lap stored under its one key, then a real tap on RACE THE DAILY (it installs today's track) */
+    await p.evaluate(() => { const H = window.__PBR, S = H.S; S.race.active = false; S.G.ghosts['12:0'] = { ms: 9000, hz: 10, pts: Array(30).fill(3), pv: 1 }; H.setScreen('tracks'); });
+    await sleep(400);
+    const db = await p.evaluate(() => { const e = document.querySelector('[data-daily]'); if (!e) return null; e.scrollIntoView({ block: 'center' }); const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    if (db) { await sleep(300); await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: db.x, y: db.y, id: 12 }] }); await sleep(60); await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(600); }
+    const F = await p.evaluate(() => { const S = window.__PBR.S; return { button: true, daily: !!(S.track && S.track.def && S.track.def.daily), active: S.race.active, ghost: !!S.race.ghost }; });
+    if (!db) F.button = false;
+    ok('the Daily (a real tap on RACE THE DAILY) never races yesterday\'s ghost (one key for every day\'s track)', F.button && F.daily === true && F.active && F.ghost === false, JSON.stringify(F));
+    await p.evaluate(() => { const S = window.__PBR.S; S.race.active = false; window.__PBR.setScreen('menu'); });
+  }
   if (process.env.SKIPC !== '1') {
   console.log('[C] the real thing: an autopilot time trial and an autopilot career race');
   const C1 = await p.evaluate(async () => { const H = window.__PBR, S = H.S; H.autopilot = true;
