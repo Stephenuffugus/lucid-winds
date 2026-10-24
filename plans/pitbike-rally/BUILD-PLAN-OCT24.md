@@ -5,6 +5,10 @@ section 7 and nothing under his calls (section 8) without his word.
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- **2026-10-24 20:35 (Opus): PART 1 LIVE as v1.9** (upstream `2a467b7`, vendored `src-2a467b7`, main `ff1162426`; both
+  origins byte compared, `src-b19774b` still served; live smoke boots it). Gates p0 14, p1 39 (real CDP touches; shaped
+  gestures sent a frame apart, `burst()`, because Chrome merges moves inside a frame); fwrun p0 7 and p1 14 red.
+
 - **2026-10-24 (Opus): PART 0 LIVE as v1.8** (upstream `b19774b`, vendored `src-b19774b`, main `2475b12b1`; byte
   compared on both origins, the old `src-5dbb16b` still served; a live smoke boots with the save at v3). The career wears
   nothing (`if (!race.career) applyRaceWear`; trials never reached it); save v3 with `physV`, `bestPv`, `pv` on tt bests and
