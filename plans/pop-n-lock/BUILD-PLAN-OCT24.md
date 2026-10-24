@@ -7,6 +7,18 @@ ruleset are done and were measured in July (memory `project_chaff_wars_jul19`); 
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- **2026-10-24 21:33 (Opus): PART 1 LIVE as v1.8** (main `30e027b49`, both origins proven from old-worker profiles; gate
+  `tools/chaff-wars-tests/p1_gate.mjs` 15, `fwrun.mjs p1` 14 red). art/pnl2 = 104 WebP, 4.0 MB, cut by
+  `satellites/chaff-wars/tools/cut_art.py` (python3 -I, the zip extracted; art.json is the contract: sizes, the nine slice
+  and aperture geometry, frame.slice [90,70,90,70] so the speakers keep one scale, dance timings, ONE render box per
+  character = the union of its painted frames). CORRECTIONS from the review (one lens, live code harnesses): Astra's
+  next window opening is clear (fill it); the HYPE meter sat on the frame's right neon line (now x 374, the rim); the
+  incoming rows sat on the frames' top bands (player's now in the header x 206, rival's beside RIVAL; Part 2b redraws);
+  the chain 5 freeze rewound the loop (the loop now plays once and HOLDS d6 until finishResolve on the rival calls
+  railChainEnd; 5+ stops the dance clock 240 ms plus a flash); every pest's July portraits stayed decoded (cwRelease).
+  The Keeper's rail waits for Part 3's layout. HIS CALLS on the board: a face on the painted Chaff; the marks swapped
+  (red diamond, purple star) and Tag shapes inert with her pods; six pests without a dance.
+
 - **2026-10-24 20:30 (Opus): PART 0 LIVE as v1.7** (main `0d841452e`, both origins proven from old-worker profiles; gate
   `tools/chaff-wars-tests/p0_gate.mjs` 11, `fwrun.mjs` 9 red). The dt audit: in tickField, resolveTick, decayFall, the AI
   and update every timer is milliseconds and right (power cooldown, shake, the 110 ms gravity wait, the AI timer, fall decay,
