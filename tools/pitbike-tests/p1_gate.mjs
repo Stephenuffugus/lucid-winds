@@ -28,6 +28,9 @@ async function open(w, h, save) {
   return { p, errs, cdp };
 }
 const T = (cdp, type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y, id]) => ({ x, y, id, radiusX: 9, radiusY: 9, force: 1 })) });
+/* moves one frame apart (17 ms) without waiting on each round trip: every point arrives as its own touchmove (Chrome
+   merges moves inside one frame, and an awaited CDP call costs ~50 ms here, which reads as a slow thumb) */
+const burst = (cdp, id, x, ys, y0) => Promise.all(ys.map((d, i) => new Promise(res => setTimeout(() => res(T(cdp, 'touchMove', [[x, y0 + d, id]])), 17 * i))));
 const race = p => p.evaluate(async () => { const H = window.__PBR, S = H.S; H.startRace(0, 0, { tt: true, quick: true }); H.setScreen('race');
   const t0 = performance.now(); while (!S.race.started && performance.now() - t0 < 8000) await new Promise(r => setTimeout(r, 50));
   S.bikes[0].nitro = 3; return S.race.started; });
@@ -53,19 +56,20 @@ try {
     await T(cdp, 'touchMove', [[X, Y + 56, 1]]); await sleep(120); const a56 = await bike(p);
     ok('a 56 px pull reads full throttle', a56.th === 1, JSON.stringify(a56));
     // a flick up from the gas and back: nitro once, no brake on any frame, the gas where the thumb settles
-    await T(cdp, 'touchMove', [[X, Y + 40, 1]]); await sleep(200);
+    for (const d of [52, 48, 44, 40]) { await T(cdp, 'touchMove', [[X, Y + d, 1]]); await sleep(80); }   /* a slow drift up the gas side first */
+    await sleep(200);
     const n0 = (await bike(p)).n, w = watch(p, 700);
     /* a quick thumb flick: 80 px up as fast as the events go (no sleeps: on a loaded box sleeps stretch a flick into a
        push), then back down to the gas; the page's own sample times are reported */
     await p.evaluate(() => { window.__flk = performance.now(); });
-    await Promise.all([20, 0, -20, -40].map(d => T(cdp, 'touchMove', [[X, Y + d, 1]])));   /* sent back to back, not one round trip each */
-    await sleep(60); for (const d of [0, 20, 40]) { await T(cdp, 'touchMove', [[X, Y + d, 1]]); await sleep(16); }
+    await Promise.all([20, 0, -20, -40, -20].map(d => T(cdp, 'touchMove', [[X, Y + d, 1]])));   /* up and the turn, back to back: a real thumb turns within a frame */
+    for (const d of [0, 20, 40]) { await T(cdp, 'touchMove', [[X, Y + d, 1]]); await sleep(16); }
     const fw = await w; await sleep(100); const af = await bike(p);
     const seen = await p.evaluate(async () => { const m = await import(document.querySelector('script[type=module]').src.replace(/main\.js.*$/, 'input.js'));   /* src/ upstream, src-<hash>/ vendored */ return { flicks: m.thrState.flicks, smp: m.thrState.smp.filter(q => q.t * 1000 >= window.__flk - 5).map(q => Math.round(q.t * 1000 - window.__flk) + 'ms:' + Math.round(q.y)) }; });
     ok('a flick up from the gas fires nitro once and never brakes', af.n === n0 - 1 && af.nT > 0 && fw.maxBrake === 0, JSON.stringify({ n0, af, fw, seen }));
     ok('after the flick the gas is back where the thumb settled (40 px)', Math.abs(af.th - Math.pow((40 - 8) / 48, 1.2)) < 0.02, JSON.stringify(af));
     // a slow push up held 200 ms: the brake, and no nitro
-    await p.evaluate(() => { window.__PBR.S.bikes[0].nitroT = 0; });
+    await p.evaluate(() => { const b = window.__PBR.S.bikes[0]; b.nitroT = 0; b.nitro = 3; });
     const n1 = (await bike(p)).n;
     for (let d = 40; d >= -40; d -= 5) { await T(cdp, 'touchMove', [[X, Y + d, 1]]); await sleep(20); }
     await sleep(200); const ab = await bike(p);
@@ -73,7 +77,7 @@ try {
     await T(cdp, 'touchEnd', [[X, Y - 40, 1]]); await sleep(120); const a0 = await bike(p);
     ok('lifting the thumb: no gas, no brake', a0.th === 0 && a0.br === 0, JSON.stringify(a0));
     /* the review's misfires (v1.9 rebuild): fast moves that STAY are a brake or a coast, never nitro */
-    const gesture = async (from, moves, holdMs) => { await p.evaluate(() => { const b = window.__PBR.S.bikes[0]; b.nitroT = 0; });
+    const gesture = async (from, moves, holdMs) => { await p.evaluate(() => { const b = window.__PBR.S.bikes[0]; b.nitroT = 0; b.nitro = 3; });
       await T(cdp, 'touchStart', [[X, Y, 5]]); await sleep(40); for (let d = 10; d <= from; d += 10) { await T(cdp, 'touchMove', [[X, Y + d, 5]]); await sleep(16); }
       await sleep(150); const nA = (await bike(p)).n; const w = watch(p, holdMs + 200);
       await Promise.all(moves.map(d => T(cdp, 'touchMove', [[X, Y + d, 5]]))); await sleep(holdMs);
@@ -82,19 +86,41 @@ try {
     ok('a fast move from gas to brake that is HELD brakes and never fires nitro (the review: it fired nitro and locked the brake out)', hb.mid.n === hb.nA && hb.mid.br > 0.5 && hb.mid.th === 0, JSON.stringify(hb));
     const lc = await gesture(56, [40, 20, 0], 250);
     ok('a quick lift from full gas to the middle coasts and never fires nitro', lc.mid.n === lc.nA && lc.mid.th === 0 && lc.mid.br === 0, JSON.stringify(lc));
-    const wg = await (async () => { await p.evaluate(() => { const b = window.__PBR.S.bikes[0]; b.nitroT = 0; });
+    /* the re-review's cases: a hard brake whose thumb relaxes, a brake dab that rests at its top, the lightest brake */
+    const twoPhase = async (from, fast, slow, holdMs) => { await p.evaluate(() => { const b = window.__PBR.S.bikes[0]; b.nitroT = 0; b.nitro = 3; });
+      await T(cdp, 'touchStart', [[X, Y, 5]]); await sleep(40); for (let d = 10; d <= from; d += 10) { await T(cdp, 'touchMove', [[X, Y + d, 5]]); await sleep(16); }
+      await sleep(150); const nA = (await bike(p)).n; const w = watch(p, holdMs + 400);
+      await Promise.all(fast.map(d => T(cdp, 'touchMove', [[X, Y + d, 5]])));
+      for (const [d, ms] of slow) { await sleep(ms); await T(cdp, 'touchMove', [[X, Y + d, 5]]); }
+      await sleep(holdMs); const mid = await bike(p), fw = await w; await T(cdp, 'touchEnd', []); await sleep(100); return { nA, mid, fw }; };
+    const rx = await twoPhase(56, [20, -20, -60, -75], [[-70, 30], [-65, 30], [-60, 30], [-57, 30]], 300);
+    ok('a hard brake whose thumb relaxes 18 px while still braking fires no nitro (the re-review: 116 of 400 did)', rx.mid.n === rx.nA && rx.mid.br > 0.5, JSON.stringify(rx));
+    const dab = await twoPhase(40, [20, 0, -20, -45], [[-45, 150], [-20, 30], [10, 30], [40, 30]], 150);
+    ok('a brake dab that rests 150 ms at the top brakes and fires no nitro', dab.mid.n === dab.nA && dab.fw.maxBrake > 0.3, JSON.stringify(dab));
+    { const fsm = require('fs'), srcDir = fsm.existsSync(DIR + '/src/physics.js') ? DIR + '/src' : DIR + '/' + fsm.readFileSync(DIR + '/index.html', 'utf8').match(/(src-[a-z0-9]+)\/main\.js/)[1];
+      const phys = fsm.readFileSync(srcDir + '/physics.js', 'utf8');   /* the deceleration constants, read from the game's own physics file */
+      const kB = +phys.match(/b\.speed - (\d+) \* \(1 \+ \(st\.brake/)[1], kC = +phys.match(/b\.speed = Math\.max\(0, b\.speed - (\d+) \* dt\)/)[1];
+      await p.evaluate(() => { const b = window.__PBR.S.bikes[0]; b.nitroT = 0; b.nitro = 3; }); await T(cdp, 'touchStart', [[X, Y, 9]]); await sleep(40);
+      for (const d of [-4, -8, -11]) { await T(cdp, 'touchMove', [[X, Y + d, 9]]); await sleep(40); } await sleep(260);
+      const lb = await bike(p); await T(cdp, 'touchEnd', []); await sleep(80);
+      ok(`the lightest brake (11 px up) slows at least as hard as letting go: brake x ${kB} >= the ${kC} coast (physics.js)`, lb.br > 0 && lb.br * kB >= kC - 0.5, JSON.stringify({ lb, kB, kC })); }
+    const wg = await (async () => { await p.evaluate(() => { const b = window.__PBR.S.bikes[0]; b.nitroT = 0; b.nitro = 3; });
       await T(cdp, 'touchStart', [[X, Y, 5]]); await sleep(40); for (let d = 10; d <= 90; d += 10) { await T(cdp, 'touchMove', [[X, Y + d, 5]]); await sleep(16); }
       await sleep(150); const nA = (await bike(p)).n; const w = watch(p, 500);
-      await Promise.all([60, 30].map(d => T(cdp, 'touchMove', [[X, Y + d, 5]]))); await sleep(60);   /* fast up, staying on the gas side */
-      for (const d of [40, 50]) { await T(cdp, 'touchMove', [[X, Y + d, 5]]); await sleep(16); } await sleep(200);   /* and back down */
+      await burst(cdp, 5, X, [60, 30, 40, 50], Y); await sleep(200);   /* fast up, the turn at once, back down: all on the gas side */
       const mid = await bike(p), fw = await w; await T(cdp, 'touchEnd', []); await sleep(100); return { nA, mid, fw }; })();
     ok('a fast wiggle that stays on the gas side (90, 30, back to 50) never fires nitro', wg.mid.n === wg.nA && wg.mid.th > 0.4 && wg.mid.br === 0, JSON.stringify(wg));
+    const os9 = await (async () => { await p.evaluate(() => { const b = window.__PBR.S.bikes[0]; b.nitroT = 0; b.nitro = 3; });
+      await T(cdp, 'touchStart', [[X, Y, 5]]); await sleep(40); for (let d = 10; d <= 50; d += 10) { await T(cdp, 'touchMove', [[X, Y + d, 5]]); await sleep(16); }
+      await sleep(150); const nA = (await bike(p)).n; await burst(cdp, 5, X, [30, 10, -9, -5], Y); await sleep(250);
+      const mid = await bike(p); await T(cdp, 'touchEnd', []); await sleep(100); return { nA, mid }; })();
+    ok('a quick lift that overshoots the middle by 9 px and settles back 4 px coasts and never fires nitro', os9.mid.n === os9.nA, JSON.stringify(os9));
     const ov = await gesture(80, [60, 40, 30], 250);
     ok('easing a fast overshoot back to half gas never fires nitro', ov.mid.n === ov.nA && ov.mid.th > 0.2 && ov.mid.br === 0, JSON.stringify(ov));
-    { await p.evaluate(() => { const b = window.__PBR.S.bikes[0]; b.nitroT = 0; }); await T(cdp, 'touchStart', [[X, Y, 6]]); await sleep(40);
+    { await p.evaluate(() => { const b = window.__PBR.S.bikes[0]; b.nitroT = 0; b.nitro = 3; }); await T(cdp, 'touchStart', [[X, Y, 6]]); await sleep(40);
       for (let d = 10; d <= 40; d += 10) { await T(cdp, 'touchMove', [[X, Y + d, 6]]); await sleep(16); } await sleep(150);
-      const nA = (await bike(p)).n; await Promise.all([20, 0, -20, -40].map(d => T(cdp, 'touchMove', [[X, Y + d, 6]])));
-      for (const d of [-30, -15, 0, 15, 30, 40]) { await T(cdp, 'touchMove', [[X, Y + d, 6]]); await sleep(45); }   /* a slow, gentle return */
+      const nA = (await bike(p)).n; await Promise.all([20, 0, -20, -40, -32].map(d => T(cdp, 'touchMove', [[X, Y + d, 6]])));   /* up, and the turn at once */
+      for (const d of [-22, -12, -4, 6, 20, 40]) { await sleep(45); await T(cdp, 'touchMove', [[X, Y + d, 6]]); }   /* then a slow, gentle way back */
       await sleep(80); const fr = await bike(p); await T(cdp, 'touchEnd', []); await sleep(80);
       ok('a flick followed by a slow return still fires nitro, once (the review: it braked instead)', fr.n === nA - 1, JSON.stringify({ nA, fr })); }
     /* a thumb landing low: the full pull fits above the bottom edge */
@@ -105,18 +131,18 @@ try {
     /* no nitro while paused: the right thumb stays on the stick, another finger taps pause, then the stick thumb flicks (a
        touch's moves keep going to the element it started on, under the pause card) */
     { const pb = await p.evaluate(() => { const r = document.getElementById('btn-pause').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
-      await p.evaluate(() => { window.__PBR.S.bikes[0].nitroT = 0; });
+      await p.evaluate(() => { const b = window.__PBR.S.bikes[0]; b.nitroT = 0; b.nitro = 3; });
       await T(cdp, 'touchStart', [[X, Y, 10]]); await sleep(40); for (let d = 10; d <= 40; d += 10) { await T(cdp, 'touchMove', [[X, Y + d, 10]]); await sleep(16); }
       /* Chrome makes no click from a second finger's tap while another finger is down, so pause the way the II button does */
       await p.evaluate(() => { window.__PBR.S.paused = true; document.getElementById('pause-ov').classList.add('show'); }); await sleep(200);
       const paused = await p.evaluate(() => window.__PBR.S.paused), nP = (await bike(p)).n;
-      await Promise.all([20, 0, -20, -40].map(d => T(cdp, 'touchMove', [[X, Y + d, 10]]))); await sleep(40);
-      for (const d of [-20, 0, 20, 40]) { await T(cdp, 'touchMove', [[X, Y + d, 10]]); await sleep(20); } await sleep(120);
+      await Promise.all([20, 0, -20, -40, -20].map(d => T(cdp, 'touchMove', [[X, Y + d, 10]])));
+      for (const d of [0, 20, 40]) { await T(cdp, 'touchMove', [[X, Y + d, 10]]); await sleep(20); } await sleep(120);
       const nQ = (await bike(p)).n; await T(cdp, 'touchEnd', []); await sleep(80);
       ok('a flick while the race is paused (the thumb kept on the stick under the pause card) fires no nitro', paused === true && nQ === nP, JSON.stringify({ paused, nP, nQ }));
       await p.evaluate(() => { const S = window.__PBR.S; S.paused = false; document.getElementById('pause-ov').classList.remove('show'); }); }
     // the left NITRO while the right thumb holds full gas: two touches at once
-    await p.evaluate(() => { window.__PBR.S.bikes[0].nitroT = 0; });
+    await p.evaluate(() => { const b = window.__PBR.S.bikes[0]; b.nitroT = 0; b.nitro = 3; });
     await T(cdp, 'touchStart', [[X, Y, 2]]); await sleep(40);
     for (let d = 10; d <= 60; d += 10) { await T(cdp, 'touchMove', [[X, Y + d, 2]]); await sleep(16); }
     await sleep(100);

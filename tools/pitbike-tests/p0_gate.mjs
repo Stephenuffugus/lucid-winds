@@ -67,6 +67,12 @@ try {
     await tapId('pause-restart'); await sleep(150);
     const D1 = await p.evaluate(() => { const S = window.__PBR.S; return { t: S.race.t, countdown: S.race.countdown, career: S.race.career, fee: S.race.fee, wallet: S.G.wallet, disk: JSON.parse(localStorage.getItem('skywolf.pitbikerally.save.v1')).wallet, rival: !!S.bikes.find(b => b.rival), active: S.race.active }; });
     ok('pause, RESTART RACE (real taps) in a career round restarts it as the same career round: no fee, the rival kept', D0.career && pausedNow === true && tRun > 0.5 && D1.t < 0.3 && D1.career && D1.fee === 0 && D1.wallet === 5000 && D1.rival && D1.active, JSON.stringify({ D0, tRun, pausedNow, D1 }));
+    /* a featured race restarted from the pause menu keeps today's 2x (the re-review: it dropped it) */
+    const fz0 = await p.evaluate(() => { const H = window.__PBR, S = H.S; S.race.active = false; H.startRace(0, 3, { featured: true, quick: true }); return S.race.featured; });
+    await sleep(1500); await tapId('btn-pause'); await tapId('pause-restart'); await sleep(200);
+    const fz1 = await p.evaluate(() => { const S = window.__PBR.S; return { featured: S.race.featured, t: S.race.t, active: S.race.active }; });
+    ok('a featured race restarted from the pause menu (real taps) keeps its 2x', fz0 === true && fz1.featured === true && fz1.t < 0.3 && fz1.active, JSON.stringify({ fz0, fz1 }));
+    await p.evaluate(() => { window.__PBR.S.race.active = false; });
     const E = await p.evaluate(() => { const H = window.__PBR, S = H.S, G = S.G, key = '1:0';   /* track 1: [C] times track 0 */
       G.tt[key] = { best: 12000, medals: ['bronze'], pv: 2 }; G.ghosts[key] = { ms: 12000, hz: 10, pts: [1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 0, 5, 5, 0, 6, 6, 0], pv: 2 };
       G.best[key] = 40000; G.bestPv[key] = 2;
