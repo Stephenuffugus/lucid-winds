@@ -1,0 +1,101 @@
+/* localStorage persistence. Versioned schema + migrations + export/import. */
+import { S } from './state.js';
+import { PHYS_V } from './physics.js';
+
+export const SAVE_KEY = 'skywolf.pitbikerally.save.v1';
+
+function defaults() {
+  return {
+    v: 3,
+    physV: PHYS_V,     // v3: the physics these records were set under (records carry pv; a missing pv reads as 1)
+    wallet: S.DATA.economy.startWallet,
+    owned: ['eng0', 'exh0', 'crb0', 'tir0', 'sus0', 'grs0', 'frm0', 'brk0', 'nit0', 'arm0'],
+    equipped: {
+      engine: 'eng0', exhaust: 'exh0', carb: 'crb0', tires: 'tir0', susp: 'sus0',
+      gears: 'grs0', frame: 'frm0', brakes: 'brk0', nitro: 'nit0', armor: 'arm0',
+    },
+    ownedColors: ['red', 'blue', 'green'],
+    color: 'green',
+    plate: 7,
+    skin: 'base',
+    best: {},          // configKey -> ms
+    bestPv: {},        // configKey -> the physics version of that best (v3; missing reads as 1)
+    medals: {},        // configKey -> ['gold','silver','bronze'] earned
+    wear: {},          // partId -> 0..100
+    ghosts: {},        // configKey -> {ms, hz, pts:[x,y,heading]*n} best-lap stream
+    tt: {},            // configKey -> {best: lap ms, medals: ['bronze','silver','gold','platinum']}
+    career: null,      // active season: {id, round, pts:[you, rival, a, b], log:[place...]}
+    trophies: {},      // seasonId -> best final place (1..4)
+    wins: 0, races: 0, earnings: 0,
+    trackIndex: 0, variant: 0,
+    muted: false,
+    sunbeamDay: '', sunbeamEarnedToday: 0,
+    dailyLast: '', dailyStreak: 0, title: '',
+    ctl: 'analog',     // v1.9 controls: 'analog' (the stick under the right thumb) or 'classic' (the GAS button)
+    ctlAsk: false,     // v1.9: a save from before it keeps Classic and is offered the new throttle once
+  };
+}
+
+function migrate(raw) {
+  if (raw.v === 1) {
+    // v1 -> v2: 10 slots, wear, medals, variants, ghosts, skins.
+    const d = defaults();
+    raw.owned = Array.from(new Set([...(raw.owned || []), ...d.owned]));
+    raw.equipped = Object.assign({}, d.equipped, raw.equipped || {});
+    raw.skin = raw.skin || 'base';
+    raw.medals = raw.medals || {};
+    raw.wear = raw.wear || {};
+    raw.ghosts = raw.ghosts || {};
+    raw.variant = raw.variant || 0;
+    // v1 bests were keyed by bare trackIndex; v2 keys are "trackIndex:variant"
+    const bests = {};
+    for (const k in (raw.best || {})) bests[k.includes(':') ? k : k + ':0'] = raw.best[k];
+    raw.best = bests;
+    raw.v = 2;
+  }
+  if (raw.v === 2) {
+    // v2 -> v3 (v1.8): every record so far was set under physics 1; nothing else changes, byte for byte
+    raw.physV = 1;
+    raw.bestPv = raw.bestPv || {};
+    raw.v = 3;
+  }
+  return raw;
+}
+
+export function loadSave() {
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { /* corrupt */ }
+  const d = defaults();
+  const old = !!(raw && raw.v && raw.ctl === undefined);
+  const g = raw && raw.v ? Object.assign(d, migrate(raw)) : d;
+  if (old) { g.ctl = 'classic'; g.ctlAsk = true; }
+  g.tt = g.tt || {};
+  g.bestPv = g.bestPv || {};
+  g.trophies = g.trophies || {};
+  if (g.career === undefined) g.career = null;
+  // Sets don't survive JSON; keep arrays in storage, Sets in memory
+  g.owned = new Set(g.owned);
+  g.ownedColors = new Set(g.ownedColors);
+  S.G = g;
+  return g;
+}
+
+export function saveNow() {
+  const g = S.G;
+  const out = Object.assign({}, g, {
+    owned: Array.from(g.owned),
+    ownedColors: Array.from(g.ownedColors),
+  });
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(out)); } catch (e) { /* quota/private */ }
+}
+
+export function exportSave() {
+  return localStorage.getItem(SAVE_KEY) || '';
+}
+
+export function importSave(text) {
+  const parsed = JSON.parse(text);      // throws on bad input — caller handles
+  if (!parsed || !parsed.v || parsed.v > 3) throw new Error('unsupported save version');
+  localStorage.setItem(SAVE_KEY, JSON.stringify(parsed));
+  return loadSave();
+}
