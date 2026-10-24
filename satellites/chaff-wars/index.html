@@ -336,7 +336,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 <script>
 (function(){
 "use strict";
-var BUILD="v1.6";
+var BUILD="v1.7";
 /* screen shake: shake(amp,ms) — decays in update(), applied as a canvas translate in render() */
 var SHAKE={t:0,dur:1,amp:0};
 function shake(a,ms){ if(a>SHAKE.amp||SHAKE.t<=0){ SHAKE.amp=a; SHAKE.t=ms; SHAKE.dur=ms; } }
@@ -698,6 +698,7 @@ function spawnPiece(f){ if(!f.next)f.next=newPiece(f); var p=f.next; f.next=newP
 
 function lockPiece(f){ var cs=pieceCells(f.cur),i; for(i=0;i<2;i++){ if(cs[i].r<0){ f.dead=true; } else f.grid[cs[i].r][cs[i].c]=cs[i].col; }
   f.cur=null; SFX.lock(); startResolve(f);
+  if(f===MATCH.pf&&dragSt){ if(dragSt.soft)f.softHold=false; dragSt=null; }   /* v1.7: a lock ends the drag that steered it (and the soft drop it set) */
   if(MATCH.mode==='versus'&&f===MATCH.pf)_mpPub(true); }
 
 function hardDrop(f){ if(!f.cur)return; while(true){ var nx={r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,nx))f.cur.r++; else break; } SFX.drop(); lockPiece(f); }
@@ -748,7 +749,7 @@ function finishResolve(f){ var R=f.res; f.score+=R.score;
   if(R.chain>0)addHype(f, R.chain*13 + R.cleared*1.1);
   if(MATCH.powers)addSap(f,R.cleared*SAP_PER_BEAN+R.chain*SAP_PER_CHAIN);
   /* outgoing Chaff from this chain */
-  var pts=R.score + f.carry; if(f.allBonus){ pts+=TARGET_POINTS*ALLCLEAR_NUIS; f.allBonus=false; }
+  var pts=R.score + f.carry; if(f.allBonus&&R.chain>0){ pts+=TARGET_POINTS*ALLCLEAR_NUIS; f.allBonus=false; }   /* v1.7: spent on a chain, never on a plain lock */
   var out=Math.floor(pts/TARGET_POINTS); f.carry=pts-out*TARGET_POINTS;
   if(f.hcap&&f.hcap!==1)out=Math.round(out*f.hcap);
   if(!RULES.classic && R.chain>0 && boardEmpty(f.grid)){ f.allBonus=true; SFX.allclear(); f.floats.push({x:0,y:0,txt:'ALL CITY!',life:1.4,big:true,fld:f}); }
@@ -1013,13 +1014,16 @@ function tickField(f,dt,isAI){ if(!f)return; if(f.powerCd>0)f.powerCd-=dt;
   decayFall(f,dt);
   for(var i=f.floats.length-1;i>=0;i--){ f.floats[i].life-=dt/900; if(f.floats[i].life<=0)f.floats.splice(i,1); }
   if(f.flashDanger>0)f.flashDanger-=dt;
-  if(f.chainGlow>0)f.chainGlow=Math.max(0,f.chainGlow-dt*1.1);
+  if(f.chainGlow>0)f.chainGlow=Math.max(0,f.chainGlow-dt/1000*1.1);   /* v1.7: dt is ms (it read seconds and the glow lasted 1 ms) */
   if(f.cur&&f.cur.rotT>0)f.cur.rotT=Math.max(0,f.cur.rotT-dt/90);   /* rotation tween (~90ms) */
-  if(f===MATCH.pf && f.hype>0 && MATCH.phase==='fight'){ f.hype=Math.max(0,f.hype-dt*1.3); var htd=hypeTierOf(f.hype); if(htd<f.hypeTier)f.hypeTier=htd; }
+  if(f===MATCH.pf && f.hype>0 && MATCH.phase==='fight'){ f.hype=Math.max(0,f.hype-dt/1000*1.3);   /* v1.7: 1.3 a second (it drained 80 HYPE in 61 ms, so the meter never showed) */ var htd=hypeTierOf(f.hype); if(htd<f.hypeTier)f.hypeTier=htd; }
   if(f.remote)return;   /* versus: the rival board is a remote display, driven by snapshots */
   if(f.state==='play'){
     if(isAI){ aiUpdate(f,dt); }
-    else { f.gravAcc+=dt; var g=f.softHold? Math.min(f.gravMs,40):f.gravMs; while(f.gravAcc>=g){ f.gravAcc-=g; gravityStep(f); if(f.state!=='play')break; } }
+    else { var g=f.softHold? Math.min(f.gravMs,40):f.gravMs;
+      if(f.gravAcc>g)f.gravAcc=g;   /* v1.7: a soft drop speeds the fall from now on and never spends the time saved up at the slow rate (up to 20 rows in one frame on an early stage); clamped BEFORE this frame is added, so no frame's time is ever thrown away and every rate is v1.6's */
+      f.gravAcc+=dt;
+      while(f.gravAcc>=g){ f.gravAcc-=g; gravityStep(f); if(f.state!=='play')break; } }
     /* danger flash when spawn column stacking high */
     var h=colHeights(f.grid); if(h[SPAWN_COL]>=VISROWS-2 && f.flashDanger<=0)f.flashDanger=400;
   } else if(f.state==='resolve'){ resolveTick(f,dt); }
@@ -1053,6 +1057,7 @@ setInterval(function(){ if(!running)return; var n=Date.now();
    Cut by scripts/cut_popnlock.py. Bump CW_ART_V to bust the ?v= cache.
    ===================================================================== */
 var CW_ART_V='pnl1';
+var NEXTWIN={ w:52, h:86, aw:62, ah:98, pod:22, gap:3 };   /* the painted window's opening is ~33 x 51 px at this size: the pair is 47 tall */   /* the next window: one rectangle for the frame, its painting and the pair (v1.7) */
 /* Pod/piece art (sheet 10). Procedural throwies are the default; when the pod
    sprites (assets/pods/pod-0..4.png + chaff.png) land, flip CW_POD_ART=true and
    drawPod/drawChaff use the sprite body behind an image-loaded check (eyes/gaze
@@ -1256,9 +1261,10 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     ctx.textAlign='left';
   }
   /* next piece preview in the rail */
-  if(MATCH.pf&&MATCH.pf.next){ var nx=398, ny=196; ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('NEXT',nx,ny-6);
-    if(!cwFit('ui/next-window', nx+26, ny+43, 62, 98, 1)){ ctx.fillStyle='#161207'; rr(nx,ny,52,86,8); ctx.fill(); ctx.strokeStyle='#33301f'; ctx.lineWidth=1.5; rr(nx,ny,52,86,8); ctx.stroke(); }
-    drawPod(nx+11,ny+8,30,MATCH.pf.next.c2-1,{x:0,y:0.35},1,1); drawPod(nx+11,ny+42,30,MATCH.pf.next.c1-1,{x:0,y:0.35},1,1); }
+  if(MATCH.pf&&MATCH.pf.next){ var nx=398, ny=196, NW=NEXTWIN, ncx=nx+NW.w/2, ncy=ny+NW.h/2; ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('NEXT',nx,ny-6);
+    /* v1.7: ONE rectangle (NEXTWIN) places the painted window, its fallback and the pair, all on its centre */
+    if(!cwFit('ui/next-window', ncx, ncy, NW.aw, NW.ah, 1)){ ctx.fillStyle='#161207'; rr(nx,ny,NW.w,NW.h,8); ctx.fill(); ctx.strokeStyle='#33301f'; ctx.lineWidth=1.5; rr(nx,ny,NW.w,NW.h,8); ctx.stroke(); }
+    drawPod(ncx-NW.pod/2,ncy-NW.pod-NW.gap/2,NW.pod,MATCH.pf.next.c2-1,{x:0,y:0.35},1,1); drawPod(ncx-NW.pod/2,ncy+NW.gap/2,NW.pod,MATCH.pf.next.c1-1,{x:0,y:0.35},1,1); }
 
   drawBoardFrame(PF,'you','#4c9a2e'); drawField(MATCH.pf,PF,false);
   /* THE HYPE METER: a slim neon bar hugging the board's right edge */
@@ -1356,9 +1362,10 @@ function floatColor(t){ if(t.indexOf('ALL')>=0)return '#ffd21a'; if(t.indexOf('D
   if(t.indexOf('ILL')===0)return '#ff2fb9'; if(t.indexOf('DOPE')===0)return '#c24bff'; if(t.indexOf('DEF')===0)return '#ffd21a';
   if(t.indexOf('FRESH')===0)return '#39ff14'; if(t.indexOf('SOLVENT')>=0)return '#7ec850'; return '#fff8dc'; }
 function drawFloats(f,F){ if(!f)return; var i; ctx.textAlign='center'; for(i=0;i<f.floats.length;i++){ var fl=f.floats[i]; var a=Math.min(1,fl.life); ctx.globalAlpha=a;
-  var fs=(F===PF?28:14); var punch=Math.max(0,fl.life-0.82)/0.18; fs=Math.round(fs*(1+punch*0.5));
+  var fs=(F===PF?28:14); var punch=Math.min(1,Math.max(0,fl.life-0.82)/0.18); fs=Math.round(fs*(1+punch*0.5));   /* v1.7: a long lived float (ALL CITY HYPE, life 1.4) no longer pops to 73 px */
   ctx.font='italic 800 '+fs+'px system-ui';
-  var yy=F.y+ (F===PF?300:90) - (1-fl.life)*30; var xx=F.x+COLS*F.cell/2;
+  var mw=ctx.measureText(fl.txt).width, lim=COLS*F.cell+20; if(mw>lim){ fs=Math.max(10,Math.floor(fs*lim/mw)); ctx.font='italic 800 '+fs+'px system-ui'; }   /* fits the board */
+  var yy=F.y+ (F===PF?300:90) - (1-fl.life)*30 + i*Math.round(fs*1.1); var xx=F.x+COLS*F.cell/2;   /* floats alive together stack, never overprint */
   ctx.lineWidth=Math.max(2,fs*0.18); ctx.strokeStyle='#0c0a06'; ctx.strokeText(fl.txt, xx, yy);
   ctx.fillStyle=floatColor(fl.txt); ctx.fillText(fl.txt, xx, yy); }
   ctx.globalAlpha=1; ctx.textAlign='left'; }
@@ -1376,7 +1383,7 @@ function hold(id,fn,first){ var el=$(id),t=null,r=null; if(!el)return;
        play on higher difficulties without having to slowly wait or fumble." Was
        DAS 170ms / ARR 70ms. Now 105 / 33 — a single tap still moves exactly one
        column, but a held press crosses the 6-wide board in ~0.2s, not ~0.5s. */
-    t=setTimeout(function(){ r=setInterval(fn,33); },first||105); });
+    t=setTimeout(function(){ fn(); r=setInterval(fn,33); },first||105); });   /* v1.7: the first repeat AT 105 ms */
   el.addEventListener('pointerup',stop); el.addEventListener('pointercancel',stop); el.addEventListener('pointerleave',stop); }
 hold('c-left',function(){ if(playable())moveP(pf(),-1); });
 hold('c-right',function(){ if(playable())moveP(pf(),1); });
@@ -1419,7 +1426,9 @@ function dragEnd(e){ if(!dragSt || (e.pointerId!==undefined && e.pointerId!==dra
   }
   dragSt=null; }
 cv.addEventListener('pointerup',dragEnd,{passive:false});
-cv.addEventListener('pointercancel',dragEnd,{passive:false});
+/* v1.7: a cancelled pointer (a system gesture, a palm, the browser taking it) only lets go: never a rotate or a hard drop */
+function dragCancel(e){ if(!dragSt || (e.pointerId!==undefined && e.pointerId!==dragSt.pid))return; if(dragSt.soft && pf())pf().softHold=false; dragSt=null; }
+cv.addEventListener('pointercancel',dragCancel,{passive:false});
 document.addEventListener('keydown',function(e){ if(curScreen!=='s-play'||!playable())return;
   if(e.key==='ArrowLeft'){ e.preventDefault(); moveP(pf(),-1); }
   else if(e.key==='ArrowRight'){ e.preventDefault(); moveP(pf(),1); }
@@ -1477,7 +1486,7 @@ $('buildstamp').textContent='Pop N Lock '+BUILD;
 
 /* ---------- add to home screen ---------- */
 (function(){ var btn=$('b-install'); if(!btn)return;
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=11'); }catch(e){} }
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=12'); }catch(e){} }
   function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
   if(standalone()){ btn.style.display='none'; return; }
   var deferred=null; window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
@@ -1791,6 +1800,7 @@ if(/[?&]cwdev=1/.test(location.search)){
       pf:{score:MATCH.pf.score,pending:MATCH.pf.pending,state:MATCH.pf.state,dead:MATCH.pf.dead,carry:MATCH.pf.carry},
       of:MATCH.of?{score:MATCH.of.score,pending:MATCH.of.pending,state:MATCH.of.state,dead:MATCH.of.dead}:null }; },
     grid:function(who){ var f=(who==='of')?MATCH.of:MATCH.pf; return f.grid.map(function(r){ return r.slice(); }); },
+    match:function(){ return MATCH; },   /* v1.7 gates: the live match (the falling piece, softHold, hype) */
     resolve:function(g){ return computeResolve(g||MATCH.pf.grid); },
     /* simulate a full match: player bot vs AI, up to N turns; returns outcome */
     sim:function(stage,seed,maxTurns){ this.start(stage,seed); var turns=0,mt=maxTurns||300;
