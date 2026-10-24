@@ -5,6 +5,26 @@ section 7 and nothing under his calls (section 8) without his word.
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- **2026-10-24 (Opus): PART 0 LIVE as v1.8** (upstream `b19774b`, vendored `src-b19774b`, main `2475b12b1`; byte
+  compared on both origins, the old `src-5dbb16b` still served; a live smoke boots with the save at v3). The career wears
+  nothing (`if (!race.career) applyRaceWear`; trials never reached it); save v3 with `physV`, `bestPv`, `pv` on tt bests and
+  ghosts. Gate `tools/pitbike-tests/p0_gate.mjs` (README beside it). **The independent review (two lenses) found:** a real
+  fault older than v1.8 (pause, RESTART RACE in a career round started a PAID free race with wear and no points), the
+  Daily racing yesterday's ghost on today's track (one key `12:0`), and the version check comparing with `!==` (an older
+  cached page would overwrite a newer record). All three are fixed in v1.9 with checks. **HIS CALL (a question):** worn
+  parts still slow the bike in the career and trials (`bikeStats` applies `wearFactor` everywhere); "no wear" stopped new
+  wear, as the plan's table says; should worn parts carry no penalty there too?
+- **2026-10-24 (Opus): PART 1 (v1.9) BUILT, REBUILT AFTER REVIEW, NOT YET LIVE.** Section 3 as written, with these
+  CORRECTIONS from the review (all now checks in `p1_gate.mjs`, real CDP touches): (1) a flick is a fast move (48 px inside
+  80 ms) from the gas side to above the centre that COMES BACK DOWN 16 px within 300 ms of turning fast; the plan's "fast
+  and over within 150 ms" fired nitro on a hard gas to brake move and on a quick lift to coast, and locked the brake out;
+  (2) a flick is timed from turning fast (a slow drift just before it hid the flick); (3) the stick's centre is clamped
+  so a full pull fits above the bottom edge (a thumb landing 40 px up was capped at 0.62 gas); (4) the nitro pips sit
+  under the left NITRO and the HUD row lives between the corner buttons (at 667 and 740 wide the row ran under restart
+  and, with 4 to 6 pips, under the pips); (5) no nitro while paused; left button mouse only. Harness lessons: a CDP
+  `touchEnd` lifts every finger; an awaited CDP event costs ~50 ms here, so a flick is sent back to back; Chrome makes no
+  click from a second finger's tap while another is down.
+
 - 2026-10-24 (Fable): plan written, nothing built. Live is **v1.7** (upstream `/workspaces/skywolf-pitbike-rally`
   at `5dbb16b`, vendored as `satellites/pitbike-rally/src-5dbb16b/`, portal card `/satellites/pitbike-rally/` with no
   `?v=`; cache safety is the hashed `src-<sha>/` folder and `?v=<sha>` on css, json and images, see
