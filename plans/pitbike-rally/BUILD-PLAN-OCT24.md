@@ -14,6 +14,23 @@ section 7 and nothing under his calls (section 8) without his word.
   cached page would overwrite a newer record). All three are fixed in v1.9 with checks. **HIS CALL (a question):** worn
   parts still slow the bike in the career and trials (`bikeStats` applies `wearFactor` everywhere); "no wear" stopped new
   wear, as the plan's table says; should worn parts carry no penalty there too?
+- **2026-10-24 ~20:10 (Opus): PART 1 ROUND 3 after a re-review** (upstream `2a467b7`): a flick's return must reach the gas
+  side (a hard brake that eased 16 px fired nitro in 116 of 400 natural holds), a run resting at its top over 80 ms is a
+  brake dab (judged from when the thumb LEAVES the top: a still thumb sends no events), FLICK_TOTAL 0.4, the brake starts
+  at 0.27 so the lightest push slows like coasting (520 x 0.27 = the 140 coast; it rolled further), both restarts keep
+  today's featured 2x. Kept on purpose: a still thumb reads as having stayed put, so a flick from rest measures fast; a
+  push slowed by a stalled frame can read fast too (the samples cannot tell them apart; using real elapsed time broke every
+  flick from rest). The reviewer's measured trade-off: brake dabs with almost no rest still fire about a quarter of the
+  time (a dab with no rest IS a flick); his left NITRO is the unambiguous way. **HIS CALLS / QUESTIONS (on the board):** a
+  flick that lifts off the glass does not fire (nitro without gas does nothing, so the hint now says "flick up and back");
+  Daily medals pay once ever, not once a day (older than this build); the first PHYS_V bump must wait until v1.8 pages are
+  gone (v1.8 compared with !==).
+- **2026-10-24 (Opus): PART 2 BLOCKED ON HIS CALL (and Parts 3 and 4 lean on it).** Spec trials need medal times on the
+  stock loan bike from RECORDED laps. The only recorded stock laps are the autopilot's (Rookie 13.0 s ... Wolf's Den 22.0 s,
+  memory project_oct22_brother_visit_next_moves): bronze 1.08x and silver 0.93x of them are today's ladder, but gold and
+  platinum come from mid and maxed bike laps a stock bike cannot reach. A recorded skilled lap per track on the loan bike
+  (his or the brother's, on a test build), or his ratio for gold and platinum, unblocks it. The Spec Cup (Part 3) and the
+  mastery star's silver spec trial (Part 4) wait with it; Part 5's presets and next ride card are next in line after.
 - **2026-10-24 (Opus): PART 1 (v1.9) BUILT, REBUILT AFTER REVIEW, NOT YET LIVE.** Section 3 as written, with these
   CORRECTIONS from the review (all now checks in `p1_gate.mjs`, real CDP touches): (1) a flick is a fast move (48 px inside
   80 ms) from the gas side to above the centre that COMES BACK DOWN 16 px within 300 ms of turning fast; the plan's "fast
