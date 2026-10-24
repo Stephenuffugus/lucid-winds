@@ -10,6 +10,26 @@ rates) are proposals; the gates below are what counts.
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- **2026-10-24 (Opus): PART G LIVE as v7.3** (deploy `21c12a052`, both origins proven from old-worker profiles; suite 236;
+  `fix/fwrun_g.js` 16 groups red). G2 the shelf in price order, as written. G3 measured, nothing tuned (`g3/survive.js`:
+  phone sight measured by `g3/sight.mjs`, 30 u below the knife at 20 u/s to 45 u at 60, reaction 0.25 s): 5 seeds died at
+  283, 1,329, 3,878, 4,732, 4,869 m (2 of 5 past 4 km, so not the plan's 3 of 5); 20 seeds median 4,732 m, 10 of 20 past
+  4 km, none alive at 12 km; a weaker thumb (60 percent sight, 0.35 s) median 1,070 m; seeing the whole shaft barely helps
+  (4,526 m): deaths are shoves, not surprises. Slope table for HIS call: END_TERM_SLOPE2 0.012 median 2,682 m (7 of 20 past
+  4 km), 0.016 2,382 m (one alive at 12 km), 0.024 2,291 m: the 60 u/s cap (5.1 km) and endlessExtra's 4 per chunk (from
+  1.8 km) bound the difficulty, not the slope. **G1 CORRECTIONS TO THIS PLAN** (an independent review found five real
+  faults in the first cut, all fixed, each now a check): the grass you SEE is the lip box, top 0.25 over the collider
+  (`GRASS_TOP`), a woodBox cap +0.15, a stump ring +0.125, a table trim +0.1 (`vt` on the block, `KDRAW.vt` from kSurf);
+  the painting is often slimmer than the recipe box (`KDHH` = the painting's half height once it lands, KHH while the recipe
+  draws; F2's lift uses it too); the lowering eases in over a quarter second, is let go over the first metre of a RISE (by
+  height), is HELD while falling from rest (a slide off an edge, a dropped shelf: letting go there drew the knife jumping
+  up 0.72 u) and counts a knife within 0.05 of resting and barely moving as resting (some tops do not round trip their own
+  landing height in floating point: the contact flickers every step). Row [22] measures the drawn meshes (THREE.Box3) and
+  the surface by raycasting the scene, never the page's numbers. Round 3 (a re-review): a resting knife reads the top the STEP stands it on (`kSupport`, within KR of a block, not kSurf's
+  0.5), the lift floors at sY+vt, the pergola beam's ivy is its top (vt 0.89). Left: a flat knife sliding into the score
+  wall at ground level pops about 0.7 u in the impact frame (the stick's tilt; v7.2 0.2); the landing shadow sits at
+  gY+0.14, under the 0.25 lip, so it has never shown on the ground modes (his look first).
+
 - **2026-10-24 (Fable): Parts A to F are LIVE (v6.1 to v7.2). Part F was reviewed after the fact
   (`REVIEW-PART-F-OCT24.md`): three small faults became PART G, section 9 at the end of this file. Build Part G next,
   one deploy (v7.3), then nothing else in this game without his word (his list on the board: a rung under 2,000, the
