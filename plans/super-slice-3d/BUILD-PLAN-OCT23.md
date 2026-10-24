@@ -216,6 +216,21 @@ rates) are proposals; the gates below are what counts.
     `worldEvict` (GPU only; three re-uploads on next use; a per call stamp), `_S3.calls()` (?dev=1&draws=1 on screen).
   E3 (the Daily) and E4 (bosses) are BUILT AS PATCHES and tested (row [20] 25 checks, row [21] 11, fail watches); see the
   next entries as they ship. Scripts: /tmp/claude-1000/ssb/e3 and e4 (copied into tools/slice-3d-tests when they ship).
+- 2026-10-24 (Opus): **PART E3 LIVE as v6.7** (deploy `366daab0b` on main, from add-sproing-jumper `2c24b9ecd`). Proven live
+  on both origins (BUILD v6.7, worker `sw.js?v=71`, cache `slice3d-v73`, card `?v=20261024c`); the profiles that held v6.6
+  now run v6.7. Suite 183 of 183 on E3, then rows 1, 19 and 20 after the residuals; `fix/fwrun_e3.js` 23 groups, each red on
+  its check. Review: two lenses (the Daily, the tests), a skeptic per finding: 7 confirmed, all folded in. Built and laws:
+  - SS08 the Daily: `dailySpec(t)` (FNV of `day:g1:p1`, day = the UTC date; level 5+((n*13)%31) in the day's world);
+    `s3d_daily` {day, gen, used, done, score}, `okDly` checks every field's type. Bump DAILY_GEN when the shaft builder
+    changes what a seed builds, DAILY_PHYS when the fall changes. One SCORED dive, spent on its first simulation tick
+    (never by opening the card); PRACTICE scores nothing; `newDaily` re-reads the disk before a scored dive (another tab);
+    `saveDaily` merges (used and done ORed, score the max); the result is filed under `G.dailyDay` (the day it began).
+  - ⛔ A Daily moves NEITHER level. The review's HIGH: E3 first wrote `if(ff&&!G.daily){...ffLevel} else {...level}`, so
+    every Daily landing fell into the JOURNEY branch. Adding `&&!X` to an `if` that has an `else` hands X to the else.
+  - Found, not fixed: two tabs that BOTH tap Scored before either's first tick both get a scored dive (the first tick write
+    is not a compare and set; needs two tabs inside about a second). Results are personal: a shared day board needs a server.
+  - Also shipped here, the E2 review's residual: the wasp entry window reaches 8.5 (a piece sits 8.5 to 13.5 under a wasp;
+    16 stacks in 17,200 dives leave a line, 0 of the 228 proven dives change; 45.400 pinned).
 ---
 
 ## 1. What Stephen asked for, verbatim, and what "good" means
