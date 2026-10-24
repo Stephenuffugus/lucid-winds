@@ -1513,5 +1513,38 @@ console.log('\n[21] Part E4: a boss at the end of every world');
   await ctx.close();
 }
 
+/* ---- 22. Part F2 (24 Oct, Jessie: "the handles go through the ground"): the ground and a stump's top meet only the
+   knife's middle, so a steep landing drew the handle up to 1.7 u into the grass. The DRAWN knife on the ground modes never
+   dips below the surface under it (the drawing only: kpose reads the knife as drawn). Journey 1, 3 and 6 and a climb, a tap
+   whenever grounded every 14 frames, every frame checked; the lift must have been needed (a run that never lands proves
+   nothing) and the drawing must sit on the stepped knife whenever no lift is needed. Watched red with the lift taken out. */
+console.log('\n[22] Part F2: the drawn knife never sinks into the ground');
+{
+  const { ctx, p, errs } = await boot();
+  let r; try { r = await p.evaluate(() => {
+    const S = window._S3, out = {};
+    for (const [kind, lvl] of [['j', 1], ['j', 3], ['j', 6], ['c', 1]]) {
+      S.salt(31); if (kind === 'j') S.newGame(lvl); else S.newClimb(lvl);
+      let worst = 9, maxLift = 0, off = 0, frames = 0, blocks = 0;
+      for (let f = 0; f < 900; f++) { const G = S.g(); if (!G || G.done) break; if (G.grounded && f % 14 === 3) S.tap(1); S.stepN(1, 16);
+        const k = S.kpose(); if (k.surf == null) continue; frames++; const sn = Math.sin(k.rz), y0 = k.y - k.lift;
+        /* the surface worked out here from the level's own blocks, never read back from the page (a wrong surface in the
+           page agreed with itself and the check could not fail) */
+        let su = 0; for (const b of S.world().blocks) if (!b.gone && k.x > b.x - 0.5 && k.x < b.x + b.w + 0.5 && b.y + b.h <= y0 + 0.4 && b.y + b.h > su) su = b.y + b.h;
+        const low = k.y + Math.min(k.hi * sn, -k.lo * sn) - k.hh * Math.abs(Math.cos(k.rz)) - su;
+        worst = Math.min(worst, low); maxLift = Math.max(maxLift, k.lift); if (su > 0) blocks++;
+        if (k.lift === 0 && Math.abs(k.y - S.g().y) > 0.6) off++; }
+      out[kind + lvl] = { frames, worst: +worst.toFixed(3), maxLift: +maxLift.toFixed(2), blocks, off };
+    }
+    S.salt(null); return out;
+  }); } catch (e) { r = { error: String(e).slice(0, 200) }; }
+  const v = Object.values(r || {});
+  ok('the drawn knife never dips below the ground or a stump top under it (Journey 1, 3, 6, a climb)', v.length === 4 && v.every(x => x.frames > 200 && x.worst >= -0.01) && v.some(x => x.blocks > 20), JSON.stringify(r));
+  ok('a landing needed the lift (the knife really landed steep)', v.length === 4 && v.filter(x => x.maxLift > 0.5).length >= 3, JSON.stringify(r));
+  ok('with no lift needed the knife is drawn on its stepped pose', v.length === 4 && v.every(x => x.off === 0), JSON.stringify(r));
+  ok('no page errors through Part F2', errs.length === 0, JSON.stringify(errs));
+  await ctx.close();
+}
+
 console.log('\n=== slice-3d: ' + pass + ' passed, ' + fail + ' failed ===');
 process.exit(fail ? 1 : 0);
