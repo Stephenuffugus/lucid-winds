@@ -32,7 +32,7 @@ grep -qF "$WANT" "$T/want.js"
 git cat-file -e "$C:satellites/pitbike-rally/data/seasons.json"
 git show "$C:satellites/pitbike-rally/data/economy.json" > "$T/economy.json"
 grep -q '"tt"' "$T/economy.json"
-for old in dly17 60146e4 5dbb16b; do git cat-file -e "$C:satellites/pitbike-rally/src-$old/main.js"; done   # cached index pages keep working
+for old in dly17 60146e4 5dbb16b b19774b; do git cat-file -e "$C:satellites/pitbike-rally/src-$old/main.js"; done   # cached index pages keep working
 echo "deploy commit $C verified; pushing to main"
 git push origin "$C:main"
 echo "$C" > "$SP/deploy.sha"
