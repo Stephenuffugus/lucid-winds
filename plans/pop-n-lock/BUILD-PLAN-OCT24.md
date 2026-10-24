@@ -7,6 +7,18 @@ ruleset are done and were measured in July (memory `project_chaff_wars_jul19`); 
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- **2026-10-24 23:24 (Opus): PART 2b LIVE as v1.10** (main `bf807d7a4`, both origins proven from old-worker profiles; gate
+  `tools/chaff-wars-tests/p2b_gate.mjs` 12 (300 seeded boards for the guide against the real landing, the 30 cap, a mutual
+  top out, 60 vs 120 Hz falls, the drain, a hidden Campaign match through its count with real input refused), `fwrun.mjs
+  p2b` 14 red). Pause on hide for Solo and Campaign with a three count that holds the controls; the background watchdog for
+  Versus only; afterTurn marks MATCH.judge and judgeTick ends the match at the end of update() (a mutual top out = 'draw',
+  DRAW stamp, no series point, SERIES.draws counts the round); guideCells/colTop (Outline, Solid, Off; SET.guide); the
+  queue as a number plus row rocks and "N cancelled"; falls on a clock (fallDur 110 to 180, eased; the outro drain 90 ms
+  straight, chosen at setFall by a negative duration), an 80 ms squash on every landing, only FALLING cells clipped to the
+  well. NOT DONE (said plainly): PNL-012's save of board, queue, seed and clocks for a page the phone kills (the pause is in
+  memory); the queue's label sizes and the rival's 14 px number wait for Part 3; Astra's squash-before-pop order is HIS CALL
+  (as built the pop starts with the squash, about 80 ms quicker per link). NEXT: Part 3 (layout and the launch gate).
+
 - **2026-10-24 22:43 (Opus): PART 2a LIVE as v1.9** (main `57c949749`, both origins proven from old-worker profiles; gate
   `tools/chaff-wars-tests/p2a_gate.mjs` 37 (a vm harness on the page's own repeat scheduler, buffer, kick table and
   landing window; real CDP touches for every tray button and gesture; thumb shots), `fwrun.mjs p2a` 28 red. The tray is
