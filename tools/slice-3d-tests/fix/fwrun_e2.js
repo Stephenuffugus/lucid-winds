@@ -27,7 +27,8 @@ const G = {
   FLOOR: { want: 'under the floor', why: 'a stack under the floor allowed on the line', muts: [ ['    if(floorY!=null&&c.last.y+0.575<=floorY)continue;', ''] ] },
   STAMP: { want: 'leave again the second time', why: "the review's first cut: a world evicted once a session", muts: [ ['t.userData.gpu!==stamp){ t.dispose(); t.userData.gpu=stamp;', 't.userData.gpu!==s){ t.dispose(); t.userData.gpu=s;'] ] },
   JOIN: { want: 'the other tab already told', why: "another tab's find told again", muts: [ ['  joinDex();   /* another tab may have found it since this one booted: told once across tabs */\n', ''] ] },
-  WASP: { want: 'pinned dives name', why: 'a wasp at a stack entry ignored', muts: [ ['&&!clHit(P.W, c.x-0.6, c.x+0.6, y1-1, y1+8)', ''] ] },
+  WASP: { want: 'pinned dives name', why: 'a wasp at a stack entry ignored', muts: [ ['&&!clHit(P.W, c.x-0.6, c.x+0.6, y1-1, y1+8.5)', ''] ] },
+  W85: { want: 'pinned dives name', why: 'the entry window short of the segment spacing (the review: y1+8)', muts: [ ['y1-1, y1+8.5)', 'y1-1, y1+8)'] ] },
   GOURD: { want: 'pinned dives name', why: "a gourd boxed short of its reach", muts: [ ['if(s.boom)B.push({x0:s.x-s.r-K-0.6, x1:s.x+s.r+K+0.6, y0:s.y-s.r-K-0.6, y1:s.y+s.r+K+0.6}); }', 'if(s.boom)B.push({x0:s.x-s.r-K, x1:s.x+s.r+K, y0:s.y-s.r-K, y1:s.y+s.r+K}); }'] ] },
   LOOSE: { want: 'pinned dives name', why: 'the looser corridor the proof rejected', muts: [ ['  if(d<=0.8)return !clHit(B, Math.min(x0,x1)-ms, Math.max(x0,x1)+ms, y1-1, y0+1);', '  if(clHit(B, x1-ms, x1+ms, y1-1, Math.min(y0, y1+8)))return false; return true;'] ] },
   COUNTALL: { want: 'off the line counts nothing', why: 'every slab cut counted', muts: [ ['  if(sl.req)G.cleanN=(G.cleanN||0)+1;', '  G.cleanN=(G.cleanN||0)+1;'] ] }
