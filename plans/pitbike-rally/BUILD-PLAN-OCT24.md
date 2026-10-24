@@ -5,7 +5,7 @@ section 7 and nothing under his calls (section 8) without his word.
 
 ## 0. State block (update IN THE TURN you finish a part)
 
-- **2026-10-24 20:35 (Opus): PART 1 LIVE as v1.9** (upstream `2a467b7`, vendored `src-2a467b7`, main `ff1162426`; both
+- **2026-10-24 20:25 (Opus): PART 1 LIVE as v1.9** (upstream `2a467b7`, vendored `src-2a467b7`, main `ff1162426`; both
   origins byte compared, `src-b19774b` still served; live smoke boots it). Gates p0 14, p1 39 (real CDP touches; shaped
   gestures sent a frame apart, `burst()`, because Chrome merges moves inside a frame); fwrun p0 7 and p1 14 red.
 
