@@ -1,15 +1,19 @@
-// Builds the row 17 slice and the late art.json slice from the suite, with PAGE (a page path) settable for the fail-watch
+// Builds the row 17, late art.json and row 18 slices from the suite, with PAGE (a page path) settable for the fail-watch
 const fs = require('fs'), D = __dirname + '/';
 const s = fs.readFileSync('/workspaces/lucid-winds/satellites/slice-3d/audit-check.mjs', 'utf8');
 const i1 = s.indexOf('/* ---- 1. corrupt save');
 const i17 = s.lastIndexOf('/*', s.indexOf("console.log('\\n[17]"));
 const iLate = s.indexOf('/* SS08 with a late art.json');
 const iEnd = s.indexOf("console.log('\\n=== slice-3d");
+const i18 = s.indexOf('/* ---- 18. Part E1');
 const ib = s.indexOf('async function bootAt'), ibe = s.indexOf('async function clickCentre'), ice = s.indexOf('\n}\n', ibe) + 3;
-if ([i1, i17, iLate, iEnd, ib].some(v => v < 0)) throw new Error('markers');
+if ([i1, i17, iLate, iEnd, ib, i18].some(v => v < 0)) throw new Error('markers');
 let head = s.slice(0, i1).replace("const URL = BASE + '/satellites/slice-3d/?dev=1';", "const URL = BASE + (process.env.PAGE || '/satellites/slice-3d/') + '?dev=1';");
 if (head.indexOf('process.env.PAGE') < 0) throw new Error('URL line');
 const helpers = s.slice(ib, ice) + '\n', foot = s.slice(iEnd);
 fs.writeFileSync(D + 'row17.mjs', head + helpers + s.slice(i17, iLate) + foot);
-fs.writeFileSync(D + 'late.mjs', head + helpers + s.slice(iLate, iEnd) + foot);
+fs.writeFileSync(D + 'late.mjs', head + helpers + s.slice(iLate, i18) + foot);
+fs.writeFileSync(D + 'row18.mjs', head + helpers + s.slice(i18, iEnd) + foot);   /* Part E1 (and the reload check after it) */
+const i2 = s.indexOf('/* ---- 2. the core loop'); if (i2 < 0) throw new Error('row 2 marker');
+fs.writeFileSync(D + 'row1.mjs', head + s.slice(i1, i2) + foot);   /* the corrupt save boots (Part E1 added two) */
 console.log('slices written');

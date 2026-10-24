@@ -1,4 +1,4 @@
-// The Part D review's harness, moved onto the fixed code: the REAL contact functions from index.html in a vm, and a
+// The Part D review's harness (slab contact updated for Part E1), moved onto the fixed code: the REAL contact functions from index.html in a vm, and a
 // line-for-line copy of stepWorld's freefall branch (checked against the source so it cannot drift silently).
 var fs=require('fs'), vm=require('vm');
 var SRC=fs.readFileSync('/workspaces/lucid-winds/satellites/slice-3d/index.html','utf8');
@@ -31,11 +31,18 @@ var stepSrc=grab('stepWorld');
  'if(nx-rchW<-SW){ nx=-SW+rchW; if(!(G.wallCd>0)){ G.wallCd=0.22; ffWall(nx,ny,-1); nx=G.x; } }',
  'var pd=pds[ip]; if(pd.gone)continue;',
  'if(pdx*pdx+pdy*pdy < (pd.r+KR)*(pd.r+KR)) ffPad(pd);',
- 'if(vbs){ for(ivb=0;ivb<vbs.length;ivb++){ if(!vbs[ivb].done)nx=verbStep(vbs[ivb], nx, ny); } }'
+ 'if(vbs){ for(ivb=0;ivb<vbs.length;ivb++){ if(!vbs[ivb].done)nx=verbStep(vbs[ivb], nx, ny); } }',
+ /* Part E1: the slab contact (once per stack contact, clamped to the wall's reach) and the step number it reads */
+ 'G.t+=dt; G.stepK=(G.stepK||0)+1;',
+ 'var stk=sl.stk||sl; if(!(stk.k>=G.stepK-1))stk.inside=false; stk.k=G.stepK;',
+ 'if((sl.x-G.x)*bXs+(sl.y-G.y)*bYs > 0) sliceSlab(sl);',
+ 'else if(!stk.inside){ // handle hit: deflect off the stack, keep sinking, lose combo',
+ 'var pshs=(G.x<sl.x)?-1:1, tgt=sl.x+pshs*(sl.w/2+KR); nx=Math.max(-SW+rchW, Math.min(SW-rchW, tgt)); stk.inside=(nx!==tgt);',
+ 'G.vx=pshs*Math.max(4.5,Math.abs(G.vx)); if(G.vy>-3)G.vy=-3;'
 ].forEach(function(s){ if(stepSrc.indexOf(s)<0)throw new Error('step drift: '+s); });
 vm.runInContext(
 "function ffStep(dt){\n"+
-"  G.px=G.x; G.py=G.y; G.pa=G.ang; G.t+=dt;\n"+
+"  G.px=G.x; G.py=G.y; G.pa=G.ang; G.t+=dt; G.stepK=(G.stepK||0)+1;\n"+
 "  if(G.done)return;\n"+
 "  var hd = G.holding ? (G.hold||G.lastSide||0) : 0;\n"+
 "  var term = G.endless ? Math.min(30, FF_TERM + (G.depth||0)*0.012) : FF_TERM;\n"+
@@ -55,9 +62,10 @@ vm.runInContext(
 "  var sls=G.world.slabs, isl;\n"+
 "  if(sls){ for(isl=0;isl<sls.length;isl++){ var sl=sls[isl]; if(sl.cut)continue;\n"+
 "    if(nx+KR>sl.x-sl.w/2 && nx-KR<sl.x+sl.w/2 && ny+KR>sl.y-sl.h/2 && ny-KR<sl.y+sl.h/2){\n"+
+"      var stk=sl.stk||sl; if(!(stk.k>=G.stepK-1))stk.inside=false; stk.k=G.stepK;\n"+
 "      var bXs=-Math.cos(G.ang), bYs=-Math.sin(G.ang);\n"+
 "      if((sl.x-G.x)*bXs+(sl.y-G.y)*bYs > 0){ sl.cut=true; G.slabCuts=(G.slabCuts||0)+1; G.combo=Math.min(G.combo+1,30); }\n"+
-"      else { var pshs=(G.x<sl.x)?-1:1; nx=sl.x+pshs*(sl.w/2+KR); G.vx=pshs*Math.max(4.5,Math.abs(G.vx)); if(G.vy>-3)G.vy=-3; G.combo=0; G.slabBonks=(G.slabBonks||0)+1; G.lastBonkT=G.t; }\n"+
+"      else if(!stk.inside){ var pshs=(G.x<sl.x)?-1:1, tgt=sl.x+pshs*(sl.w/2+KR); nx=Math.max(-SW+rchW, Math.min(SW-rchW, tgt)); stk.inside=(nx!==tgt); G.vx=pshs*Math.max(4.5,Math.abs(G.vx)); if(G.vy>-3)G.vy=-3; G.combo=0; G.slabBonks=(G.slabBonks||0)+1; G.lastBonkT=G.t; }\n"+
 "    } } }\n"+
 "  var vbs=G.world.verbs, ivb;\n"+
 "  if(vbs){ for(ivb=0;ivb<vbs.length;ivb++){ if(!vbs[ivb].done)nx=verbStep(vbs[ivb], nx, ny); } }\n"+

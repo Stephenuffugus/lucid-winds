@@ -359,7 +359,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v6.4";
+var BUILD="v6.5";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -411,6 +411,12 @@ if(!(PROG.climbBest>=0))PROG.climbBest=0;
 if(PROG.clControl!=='blade')PROG.clControl='tap';   // climb scheme: 'tap' | 'blade' (Be the Blade)
 if(!(PROG.climbLevel>0))PROG.climbLevel=1;
 if(!(PROG.endlessBest>=0))PROG.endlessBest=0;
+/* SS27 (Part E1): the runs whose slivers are paid, in the order they were paid, the last 20 (see awardSlivers). Anything
+   that is not a short string is thrown away, the same as every other field here. */
+function okId(s){ return typeof s==='string'&&s.length>0&&s.length<40; }
+if(!okArr(PROG.settled))PROG.settled=[];
+PROG.settled=PROG.settled.filter(okId).slice(-20);
+var STL_NEW=[];   /* the runs this page has paid since its last save, which the save appends to the list on disk */
 /* ⛔ Two tabs clobber a save written wholesale from a boot snapshot: whichever tab
    saves last erases the other's level, bests and unlocks. Counters ADD, bests MAX.
    Re-read what is on disk NOW and merge into it rather than overwriting it. */
@@ -426,12 +432,20 @@ function saveProg(){
       var mine=PROG[k]||0, base=PROG['_b'+k]||0, theirs=disk[k]||0;
       PROG[k]=theirs+Math.max(0,mine-base); PROG['_b'+k]=PROG[k]; }
     if(okObj(disk.best)){ for(k in disk.best){ if(!(PROG.best[k]>disk.best[k])) PROG.best[k]=disk.best[k]; } }
+    /* settled runs: the list on disk as it stands (another tab's runs included, in the order they were paid), then the runs
+       this page paid since its last save, the last 20. A run is always last in the save that records it, whatever the
+       clock says or when it started (the review's first cut kept the 20 newest START times, so a run begun in a tab left
+       in the background lost its own record in the very save that wrote it), and a run another tab trimmed stays trimmed. */
+    if(okArr(disk.settled)){ var L=[]; for(i=0;i<disk.settled.length;i++)if(okId(disk.settled[i])&&L.indexOf(disk.settled[i])<0)L.push(disk.settled[i]);
+      for(i=0;i<STL_NEW.length;i++)if(L.indexOf(STL_NEW[i])<0)L.push(STL_NEW[i]);
+      PROG.settled=L; }
   }
+  PROG.settled=PROG.settled.slice(-20);
   /* the _b* merge baselines are this tab's bookkeeping, not save data — keep them
      out of the file so a future reader never mistakes one for progress */
   var j;
   for(j=0;j<_PROG_ADD.length;j++)delete PROG['_b'+_PROG_ADD[j]];
-  LS.s('s3d_prog', JSON.stringify(PROG));
+  LS.s('s3d_prog', JSON.stringify(PROG)); STL_NEW=[];
   /* what is on disk now IS each counter's total, so that is the next merge's baseline. (Restoring the old baselines
      double counted a first save: with no file yet the merge was skipped, the baseline stayed 0, and the next save added
      the whole run again.) */
@@ -1995,13 +2009,14 @@ function ffSegments(rng, lvl, SW, wsAt, y, yEnd, A, yCap, vb){   /* yCap (Endles
   var SLAB_IN=[0xff6d7e,0xffd76a,0x8de8ff,0x8fe08a,0xc56bf0,0xff9a3c,0x5ad1c8];
   // a stack of BROWN slabs: cut with the blade and each reveals a bright color
   function stackAt(px,py,n){
+    var stk={};   /* Part E1: a stack's slabs are ONE thing to bounce off (the slab contact in stepWorld); no rng() is drawn */
     for(var sk=0;sk<n;sk++){
       var ic=SLAB_IN[Math.floor(rng()*SLAB_IN.length)], sws=wsAt(py-sk*1.32);
       var m=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.4,1.15,4.2), sws.slab));
       m.position.set(px,py-sk*1.32,0); slabUV(m,1.15,1.15,1.15);   /* one painted square per unit of height: a row of crates, logs, ice blocks */
       var grn=addMesh(new THREE.Mesh(new THREE.BoxGeometry(3.5,0.12,4.3), sws.trim));
       grn.position.set(px,py-sk*1.32+0.62,0);
-      slabs.push({x:px,y:py-sk*1.32,w:3.4,h:1.15,col:0x7a5230,inner:ic,mesh:m,gline:grn,cut:false,ws:sws});
+      slabs.push({x:px,y:py-sk*1.32,w:3.4,h:1.15,col:0x7a5230,inner:ic,mesh:m,gline:grn,cut:false,ws:sws,stk:stk});
     }
   }
   // a bright cushion you WANT to hit handle-first: bounce + bonus (blade chips)
@@ -2434,7 +2449,7 @@ function newClimb(lvl){
   G={ mode:'run', climbWall:true, lvl:lvl, world:built,
       x:2, y:6, vx:0, vy:0, ang:0, w:0, grounded:false,
       score:0, combo:0, comboBest:0, slices:0, taps:0,
-      done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1 };
+      done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1, runId:newRunId() };
   ensureClimbToggle();
   setTimeout(function(){ try{
     popupForge(PROG.clControl==='blade'
@@ -2465,7 +2480,7 @@ function newGame(lvl){
   G={ mode:'run', lvl:lvl, world:built,
       x:2, y:6, vx:0, vy:0, ang:0, w:0, grounded:false,
       score:0, combo:0, comboBest:0, slices:0, taps:0,
-      done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1 };
+      done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1, runId:newRunId() };
   knife.position.set(G.x,G.y,0); knife.rotation.z=0;
   camera.position.set(-10, 18, 38); // intro sweep reels in via the chase lerp
   $('h-score').textContent='0';
@@ -2496,7 +2511,7 @@ function newFF(lvl, endless){
   G={ mode:'ff', endless:!!endless, lvl:lvl, world:built,
       x:0, y:4, vx:0, vy:0, ang:0, w:0, grounded:false,
       score:0, combo:0, comboBest:0, slices:0, taps:0, depth:0,
-      done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1 };
+      done:false, doneT:0, counted:false, mult:0, stuckY:0, shake:0, holdT:0, holding:false, t:0, lastSide:1, runId:newRunId() };
   knife.position.set(G.x,G.y,0); knife.rotation.z=0;
   camera.position.set(0, 30, 44);
   $('h-score').textContent='0';
@@ -2871,7 +2886,7 @@ function loop(ts){
 function stepWorld(dt){
   if(G.freezeT>0){ G.freezeT-=dt; G.px=G.x; G.py=G.y; G.pa=G.ang; return; }   // SS32: a crash holds the world still (and the drawn pose with it)
   G.px=G.x; G.py=G.y; G.pa=G.ang;            // the pose before this step: drawFrame draws between the two
-  G.t+=dt;
+  G.t+=dt; G.stepK=(G.stepK||0)+1;            // stepK: the step's number, for contacts that last (a stack's, Part E1)
 
   if(!G.done){
     if(G.mode==='ff'){
@@ -2955,13 +2970,24 @@ function stepWorld(dt){
         if(pdx*pdx+pdy*pdy < (pd.r+KR)*(pd.r+KR)) ffPad(pd);
       } }
       // brown slab stacks: blade cuts through (reveal color + chain), handle bonks off
+      /* Part E1: a handle bonk never pushes the knife past where it can be by the wall (rchW, this step's reach), and when
+         that clamp bites, the bonk holds the STACK's contact open (its slabs share sl.stk; the contact lasts while any of
+         them is touched, step after step), so it bonks once, not every step. A stack hugging a wall leaves a lane narrower
+         than the knife: v6.0 to v6.4 bonked a knife there every step, out past the wall's reach, and the wall pushed it back
+         to be bonked again (89 bonks in one fall by a stack at x 5.7; out past the wall in 2,550 of 80,028 no input falls
+         past one stack, tools/slice-3d-tests/fix/stackwall.js + outcheck.js). Now one bonk, the wall's bounce, and the
+         blade cuts the slabs it passes. A bonk the clamp did not touch opens no contact and acts as it always did: the
+         review's first cut held every bonk's contact open, and a knife thrown between two gate slabs (one slab stacks,
+         1.4 u apart) slid through the first one's body into the wall and stuck where v6.4 had bounced it clear. A blade cut
+         never opens a contact either, so carving down a stack and meeting the next slab handle first still bonks. */
       var sls=G.world.slabs, isl;
       if(sls){ for(isl=0;isl<sls.length;isl++){ var sl=sls[isl]; if(sl.cut)continue;
         if(nx+KR>sl.x-sl.w/2 && nx-KR<sl.x+sl.w/2 && ny+KR>sl.y-sl.h/2 && ny-KR<sl.y+sl.h/2){
+          var stk=sl.stk||sl; if(!(stk.k>=G.stepK-1))stk.inside=false; stk.k=G.stepK;   /* untouched last step: a new contact */
           var bXs=-Math.cos(G.ang), bYs=-Math.sin(G.ang);
           if((sl.x-G.x)*bXs+(sl.y-G.y)*bYs > 0) sliceSlab(sl);
-          else { // handle hit: deflect off the slab, keep sinking, lose combo
-            var pshs=(G.x<sl.x)?-1:1; nx=sl.x+pshs*(sl.w/2+KR);
+          else if(!stk.inside){ // handle hit: deflect off the stack, keep sinking, lose combo
+            var pshs=(G.x<sl.x)?-1:1, tgt=sl.x+pshs*(sl.w/2+KR); nx=Math.max(-SW+rchW, Math.min(SW-rchW, tgt)); stk.inside=(nx!==tgt);
             G.vx=pshs*Math.max(4.5,Math.abs(G.vx)); if(G.vy>-3)G.vy=-3;
             SFX.wood(); G.shake=Math.max(G.shake,0.12);
             G.combo=0; var ces=$('h-combo'); if(ces)ces.classList.remove('on');
@@ -3311,7 +3337,19 @@ function slivPayout(){
   else if((G.chips||0)===0 && !G.failed) base+=30;
   return Math.max(G.failed?6:15, base)+(G.slivBonus||0);   /* Part D: Wall Climb's banners, banked with the run */
 }
-function awardSlivers(){ var n=slivPayout(); SLIV+=n; saveSliv(); var e=$('t-sliv'); if(e)e.textContent=SLIV; return n; }
+/* SS27 (Part E1): a run's slivers settle ONCE. Every run start draws a fresh id; paying writes the id into PROG.settled
+   (and the save) BEFORE the slivers, so a run finished twice, a replayed id or a second tab pays nothing more, and a page
+   that dies between the two writes loses one run's slivers instead of paying one twice. A settled run answers with what
+   this page paid it (the end panel shows the same number), elsewhere 0. */
+function newRunId(){ return Date.now().toString(36)+'.'+((Math.random()*2176782336)>>>0).toString(36); }
+function awardSlivers(){
+  if(!G.runId)G.runId=newRunId();
+  if(PROG.settled.indexOf(G.runId)>=0)return G.slivPaid||0;
+  var n=slivPayout();
+  PROG.settled.push(G.runId); STL_NEW.push(G.runId); saveProg();
+  SLIV+=n; saveSliv(); G.slivPaid=n;
+  var e=$('t-sliv'); if(e)e.textContent=SLIV; return n;
+}
 /* the run-agnostic trophies, checked once wherever a run ends. Returns the
    suffix to append to the end panel so nothing is ever granted in silence. */
 function runTrophies(){
@@ -3380,6 +3418,10 @@ function failLevel(){
 }
 function finishLevel(){
   var lvl=G.lvl, ff=G.mode==='ff';
+  /* SS27: a run ends once. Asked again, its end panel shows again; nothing is counted or paid twice (clean dives, the
+     trophy counts, Sunbeams, Slivers) */
+  if(G.ended){ show('s-go'); return; }
+  G.ended=true;
   if(G.failed){ return failLevel(); }
   var gbx=$('go-badge'); if(gbx)gbx.classList.remove('on');
   if(G.climbWall){
@@ -3419,10 +3461,11 @@ function finishLevel(){
   $('go-next').textContent = ff ? 'Next Dive' : 'Next Level';
   // clean-dive payoff: keeping the blade off the walls all the way down pays
   var chips=G.chips||0, cleanBonus=0, earnedCE=false;
+  var fresh=!G.runId||PROG.settled.indexOf(G.runId)<0;   /* SS27: a run already settled counts no clean dive and pays no Sunbeams again */
   if(ff && chips===0 && G.score>0){ cleanBonus=Math.round(G.score*0.25)+200; G.score+=cleanBonus;
-    PROG.cleanDives=(PROG.cleanDives||0)+1;
-    if(G.world&&G.world.ws&&G.world.ws.id==='deep_tide')PROG.tideClean=(PROG.tideClean||0)+1;   /* Rubber Duke's count */
-    if(PROG.cleanDives>=50)earnedCE=!!grantTrophy('cosmicedge');   /* one door for every trophy */
+    if(fresh){ PROG.cleanDives=(PROG.cleanDives||0)+1;
+      if(G.world&&G.world.ws&&G.world.ws.id==='deep_tide')PROG.tideClean=(PROG.tideClean||0)+1;   /* Rubber Duke's count */
+      if(PROG.cleanDives>=50)earnedCE=!!grantTrophy('cosmicedge'); }   /* one door for every trophy */
   }
   var bkey=(ff?'f':'l')+lvl;
   var best=PROG.best[bkey]||0, nb=G.score>best;
@@ -3463,7 +3506,7 @@ function finishLevel(){
     $('go-detail').textContent=G.slices+' sliced · best combo x'+Math.max(1,G.comboBest)+' · '+G.taps+' flips'+runTrophies();
   }
   var sb=0;
-  if(sbSession<12){ try{ if(window._sbCapEarn){ sb=window._sbCapEarn(2,'slice3d:level')||0; sbSession+=sb; } }catch(e){} }
+  if(fresh&&sbSession<12){ try{ if(window._sbCapEarn){ sb=window._sbCapEarn(2,'slice3d:level')||0; sbSession+=sb; } }catch(e){} }
   var svw=awardSlivers();
   $('go-sun').innerHTML = (sb>0?('☀ +'+(sb|0)+'&nbsp;&nbsp; '):'')+slivLine(svw|0);
   $('t-lvl').textContent=PROG.level;
@@ -3712,7 +3755,11 @@ tap('b-set',function(){ renderSet(); show('s-set'); });
 tap('set-back',function(){ show('s-title'); });
 applySet();
 tap('how-back',function(){ show('s-title'); });
-tap('b-home',function(){ running=false; show('s-title'); });
+/* SS27: a run already decided (stuck, landed or crashed, its end wobble playing) is not thrown away by the back button: it
+   finishes at once, paid, and its end panel shows (Menu is one tap from there). A run still in play is left as before. */
+tap('b-home',function(){
+  if(running&&G&&G.done&&!G.ended){ for(var n=0;running&&!G.ended&&n<1200;n++)stepWorld(STEP); if(G.ended)return; }
+  running=false; show('s-title'); });
 tap('go-next',function(){ if(G&&G.climbWall)newClimb(PROG.climbLevel||1);
   else if(G&&G.endless)newEndless(); else if(G&&G.mode==='ff')newFF((G&&G.failed)?G.lvl:PROG.ffLevel); else newGame(PROG.level); });
 tap('go-retry',function(){ if(G&&G.climbWall)newClimb(G.lvl);
@@ -3804,7 +3851,7 @@ if(/[?&]dev=1/.test(location.search)){
 })();
 
 /* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=68'); }catch(e){} }
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=69'); }catch(e){} }
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the

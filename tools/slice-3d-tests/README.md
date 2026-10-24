@@ -49,3 +49,29 @@ zipfile, docs only) to `/tmp/claude-1000/ssdocs/x`.
 - `salt3.mjs`, `loafdbg.mjs`: one-off probes (row [3]'s seeds, a knife over the loaf).
 
 `rev/`: the Part D reviewers' harnesses (`seg.js` replays ffSegments; useful for Part E's Clean Slice route proof).
+
+## Part E1 (2026-10-24) and the E2 work in progress
+
+`fix/` (node only):
+- `stackwall.js`: no input falls past one 10 slab stack through harness2's real contact code, the slab branch swapped for
+  models (v64, slab, stack, stackAny, clamp). `outcheck.js`: falls with a LIVE step past the wall's reach (v6.4 2,550 of
+  80,028, shipped 0). `stackwall_live.js`: the shipped step (harness2, drift checked) equals the `clamp` model.
+- `gatecheck.js [still|spin] [u]`: gate falls, shipped vs v6.4 vs the review's first cut, watched [u] below the gate. Watch
+  40, not 6: a knife drifting at a wall blade first sticks a moment later on every rule (the review's "64 new sticks" were a
+  6 u window). What the first cut really did: carried knives inside gate slabs (2,588 falls; v6.4 and shipped 0).
+- `fwrun_e1.js [group]`: 22 mutation groups over row [18] and row [1], each must go RED on its check. Run `mkslices.js`
+  first (it writes the row1/row17/late/row18 slices; they are generated, not committed).
+
+`ssb/`: `fw/lanefilm.mjs <outdir> [side]` films a knife falling into the stack-wall lane (a frame per wood and cut);
+`gateprobe.mjs` traces the suite's gate fall on PAGE.
+
+`e2/` (Clean Slice, not shipped yet; node only, CPU heavy, one at a time):
+- `world.js`: the REAL buildFreefall (with ffSegments, every piece builder, the verbs) and the REAL stepWorld pulled out of
+  index.html into a vm, every drawing/sound/DOM call stubbed. It reproduces the suite's fact that a no input level 1 dive
+  lands clean on exactly 11 of 40 seeds.
+- `carvecal.js`: which arrival states carve a whole column (within 1 u, blade within ~25 degrees of down: 36 of 36).
+- `feas*.js` + `ctl.js`: the reach tables (room vs lateral move) a two hold program achieves, from a finished carve and from
+  the flat start. `cleanline.es5.js`: the Clean Slice rule drafted as game ES5.
+- `ctl3.js` + `prove3.js <lvlFrom> <lvlTo> <seeds>`: the near human controller (decides every ~0.1 s, commits to a plan,
+  hold edges blurred 2 steps, sees bumpers, crystals, thorns, gourds and each wasp in time) driving real dives down the line.
+
