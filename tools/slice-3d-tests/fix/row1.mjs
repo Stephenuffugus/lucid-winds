@@ -88,7 +88,7 @@ for (const [k, v] of POISON) {
     } catch (e) { out.threw = e.message.slice(0, 90); }
     return out;
   });
-  ok(`${k}=${v}`, r.boot && r.started && r.cards === 24 && r.progSane && r.skinSane && r.slivSane && !r.threw && !errs.length,
+  ok(`${k}=${v}`, r.boot && r.started && r.cards === 30 &&   /* the Forge's shelf: 24, and the six F4 priced knives since 24 Oct */ r.progSane && r.skinSane && r.slivSane && !r.threw && !errs.length,
     JSON.stringify(r) + (errs.length ? ' err:' + errs[0] : ''));
   if (k === 's3d_dex') ok(`${k}=${v} leaves the finds an empty set`, r.dexEmpty === true, JSON.stringify(r));
   if (k === 's3d_daily') ok(`${k}=${v} opens the Daily card on a fresh record for today`, r.dailySane === true && !r.threw && !errs.length, JSON.stringify(r) + (errs.length ? ' err:' + errs[0] : ''));

@@ -23,7 +23,9 @@ const i8 = s.indexOf("console.log('\\n[8]"), i9 = s.indexOf('/* ---- 9.');
 if (i8 >= 0 && i9 > i8) fs.writeFileSync(D + 'row8.mjs', head + helpers + s.slice(i8, i9) + foot);   /* the title layout */
 const i10 = s.indexOf('/* ---- 10. SS21'), i11 = s.indexOf('/* ---- 11. SS21/SS20');
 if (i10 >= 0 && i11 > i10) fs.writeFileSync(D + 'row10.mjs', head + helpers + s.slice(i10, i11) + foot);   /* Endless: no floor, the ring, the ramp (24 Oct) */
-const i23 = s.indexOf('/* ---- 23. Part F3'); if (i23 >= 0) fs.writeFileSync(D + 'row23.mjs', head + helpers + s.slice(i23, s.indexOf('/* ---- 22. Part F2')) + foot);   /* Part F3, the boss lob and pay */
+const i23 = s.indexOf('/* ---- 23. Part F3'); if (i23 >= 0) fs.writeFileSync(D + 'row23.mjs', head + helpers + s.slice(i23, s.indexOf('/* ---- 24. Part F4') >= 0 ? s.indexOf('/* ---- 24. Part F4') : s.indexOf('/* ---- 22. Part F2')) + foot);   /* Part F3, the boss lob and pay */
+const i24 = s.indexOf('/* ---- 24. Part F4'); if (i24 >= 0) fs.writeFileSync(D + 'row24.mjs', head + helpers + s.slice(i24, s.indexOf('/* ---- 22. Part F2')) + foot);   /* Part F4, Slivers and prices */
+const i16 = s.indexOf('/* ---- 16. Part C'), e16 = s.indexOf('/* ---- 17'); if (i16 >= 0 && e16 > i16) fs.writeFileSync(D + 'row16.mjs', head + helpers + s.slice(i16, e16) + foot);   /* Part C: the shelf and its prices */
 const i22 = s.indexOf('/* ---- 22. Part F2');
 if (i22 >= 0) fs.writeFileSync(D + 'row22.mjs', head + helpers + s.slice(i22, iEnd) + foot);   /* Part F2, the knife over the ground */
 const i2 = s.indexOf('/* ---- 2. the core loop'); if (i2 < 0) throw new Error('row 2 marker');
