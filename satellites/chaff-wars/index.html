@@ -137,7 +137,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
    Drop on the left is a setting (left thumbs). The tray takes every touch on it, gaps too: a touch between two buttons
    used to land on the canvas and steer the pair. */
 .tray{position:fixed; left:0; right:0; bottom:0; z-index:5; max-width:540px; margin:0 auto; display:flex; flex-direction:column;
-  gap:8px; padding:10px 10px calc(10px + var(--sab)); visibility:hidden; touch-action:none;
+  gap:8px; padding:8px 10px calc(8px + var(--sab)); visibility:hidden; touch-action:none;
   background:linear-gradient(180deg,rgba(8,6,10,0),rgba(8,6,10,.78) 22%,rgba(8,6,10,.92))}
 body.playing .tray{visibility:visible}
 .trow{display:flex; gap:8px}
@@ -303,7 +303,7 @@ body.mirror #dropbtn{order:-1}
     <div style="height:8px"></div>
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Ghost drop guide</span><div class="toggle on" id="tg-ghost"><b></b></div></div>
-    <div class="settingline"><span>Big controls</span><div class="toggle on" id="tg-big"><b></b></div></div>
+    <div class="settingline"><span>Big controls</span><div class="toggle" id="tg-big"><b></b></div></div>
     <div class="settingline"><span>Relaxed held moves</span><div class="toggle" id="tg-relaxed"><b></b></div></div>
     <div class="settingline"><span>Flick up to drop</span><div class="toggle" id="tg-flick"><b></b></div></div>
     <div class="settingline"><span>Drop button on the left</span><div class="toggle" id="tg-mirror"><b></b></div></div>
@@ -385,7 +385,7 @@ window.addEventListener('resize',fit); window.addEventListener('orientationchang
 
 /* ---------- storage ---------- */
 var LS={ g:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, s:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
-var SET={ sound:true, ghost:true, big:true, tags:true, relaxed:false, flick:false, mirror:false };   /* v1.9: Relaxed held moves, the hard drop flick (off), Drop on the left */
+var SET={ sound:true, ghost:true, big:false, tags:true, relaxed:false, flick:false, mirror:false };   /* v1.9: Relaxed held moves, the hard drop flick (off), Drop on the left */
 (function(){ try{ var s=JSON.parse(LS.g('cw_set')||'{}'),k; for(k in SET)if(SET.hasOwnProperty(k)&&typeof s[k]==='boolean')SET[k]=s[k]; }catch(e){} })();
 function saveSet(){ LS.s('cw_set', JSON.stringify(SET)); }
 var PROG={ unlocked:0, beaten:{}, done:false, secret:false, soloBest:0 };
@@ -829,7 +829,9 @@ function tryRotate(f,dir){ if(f.state!=='play'||!f.cur)return false; var oldRot=
    while it is down starts the wait again, twice a pair at most, and however it is moved it locks 650 ms after it first
    touched down at its lowest row: a pair that walks off a ledge and lands LOWER gets a fresh window, a floor kick does
    not. A held soft drop locks it 40 ms after touchdown (its old feel), Drop at once. The player's own pair only: the
-   rival's AI places by hard drop and a versus rival is a picture. */
+   rival's AI places by hard drop and a versus rival is a picture. The wait is never shorter than the stage's own fall
+   (the review: a flat 300 ms locked stage 1's pairs four times sooner than v1.8, a whole 1250 ms fall); the cap moves
+   with it. */
 var LAND_MS=300, LAND_RESETS=2, LAND_CAP=650, LAND_SOFT=40;
 function onGround(f){ return !fits(f.grid,{r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}); }
 function lowRow(cur){ return Math.max(cur.r, partnerOf(cur).r); }
@@ -837,7 +839,8 @@ function landTick(f,dt){ var L=f.land, on=onGround(f);
   if(on){ var low=lowRow(f.cur); if(L.age<0||low>L.low){ L.age=0; L.t=0; L.low=low; } }   /* a first touchdown, or one lower than before */
   if(L.age>=0){ L.age+=dt; if(on)L.t+=dt; }
   L.on=on;
-  if(on&&(L.t>=(f.softHold?LAND_SOFT:LAND_MS)||L.age>=LAND_CAP))lockPiece(f); }
+  var w=Math.max(LAND_MS,f.gravMs);
+  if(on&&(L.t>=(f.softHold?LAND_SOFT:w)||L.age>=Math.max(LAND_CAP,w+350)))lockPiece(f); }
 function landReset(f){ var L=f.land; if(L&&L.on&&L.resets<LAND_RESETS){ L.t=0; L.resets++; } }
 function softStep(f){ if(f.state!=='play'||!f.cur)return; var n={r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n)){ f.cur.r++; f.gravAcc=0; } else { lockPiece(f); } }
 function ghostY(f){ if(!f.cur)return f.cur; var y=f.cur.r; while(true){ var n={r:y+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n))y++; else break; } return y; }
@@ -1522,17 +1525,32 @@ function clearHolds(){ INP.l=INP.r=false; INP.dir=0; INP.t=0; INP.n=0; INP.buf=n
   if(MATCH.pf)MATCH.pf.softHold=false; dragSt=null; }
 window.addEventListener('blur',clearHolds); window.addEventListener('pagehide',clearHolds);
 document.addEventListener('visibilitychange',function(){ if(document.hidden)clearHolds(); });
-/* a tray button: down on pointerdown, up on up, cancel or leave of the pointer that pressed it */
-function holdBtn(id,down,up){ var el=$(id),pid=null; if(!el)return;
-  el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); pid=e.pointerId; down(); });
+/* a tray button: down on pointerdown, up on up, cancel or leave of the pointer that pressed it. A touch is captured by the
+   button it lands on, so the capture is released: a thumb that slides off lets go (it kept holding), and with roll a
+   thumb rolled onto the button presses it (LEFT to SOFT to RIGHT in one movement) */
+var TRAY_TOUCH={};   /* pointers that went down on a tray button: only these roll onto another (a touch ENTERS before it goes down) */
+document.addEventListener('pointerup',function(e){ delete TRAY_TOUCH[e.pointerId]; },true);
+document.addEventListener('pointercancel',function(e){ delete TRAY_TOUCH[e.pointerId]; },true);
+function holdBtn(id,down,up,roll){ var el=$(id),pid=null; if(!el)return;
+  function press(e){ e.preventDefault(); ac(); pid=e.pointerId; TRAY_TOUCH[e.pointerId]=1; try{ el.releasePointerCapture(e.pointerId); }catch(err){} down(); }
+  el.addEventListener('pointerdown',press);
+  if(roll)el.addEventListener('pointerenter',function(e){ if(pid===null&&TRAY_TOUCH[e.pointerId])press(e); });
   function rel(e){ if(pid===null||e.pointerId!==pid)return; pid=null; up(); }
   el.addEventListener('pointerup',rel); el.addEventListener('pointercancel',rel); el.addEventListener('pointerleave',rel); }
-holdBtn('c-left',function(){ hap(8); repPress(-1); },function(){ repRelease(-1); });
-holdBtn('c-right',function(){ hap(8); repPress(1); },function(){ repRelease(1); });
-holdBtn('c-down',function(){ hap(6); softSet('btn',true); },function(){ softSet('btn',false); });
+holdBtn('c-left',function(){ hap(8); repPress(-1); },function(){ repRelease(-1); },true);
+holdBtn('c-right',function(){ hap(8); repPress(1); },function(){ repRelease(1); },true);
+holdBtn('c-down',function(){ hap(6); softSet('btn',true); },function(){ softSet('btn',false); },true);
 holdBtn('c-rotccw',function(){ rotPress(-1); },function(){});   /* turns on the press, like the arrows */
 holdBtn('c-rot',function(){ rotPress(1); },function(){});
-tap('dropbtn',function(){ if(playable()){ hap(16); hardDrop(pf()); } });   /* Drop stays on the release: a thumb resting on it never drops */
+/* DROP (v1.9 review): its own press and release, never a 'click' (a phone makes no click for a tap while another finger
+   is down, so two thumb play lost its drops). It drops on the release (a thumb resting on it never drops), only the pair
+   that was in play at the press (a tap that straddles a landing lock never slams the NEXT pair), and a press that slides
+   off the button or is cancelled drops nothing */
+(function(){ var el=$('dropbtn'), pid=null, pair=null; if(!el)return;
+  el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); pid=e.pointerId; pair=playable()?pf().cur:null; try{ el.releasePointerCapture(e.pointerId); }catch(err){} });
+  el.addEventListener('pointerup',function(e){ if(pid===null||e.pointerId!==pid)return; pid=null; if(pair&&playable()&&pf().cur===pair){ hap(16); hardDrop(pf()); } pair=null; });
+  function off(e){ if(pid===null||e.pointerId!==pid)return; pid=null; pair=null; }
+  el.addEventListener('pointercancel',off); el.addEventListener('pointerleave',off); })();
 /* ---- Board touch: Block Drop's scheme, Stephen's ask 2026-07-27, with an INTENT (v1.9, PNL-006) ----
    A touch on your board commits to an axis once it has moved 12 CSS px with one axis 1.5 times the other (a diagonal
    that never settles takes its larger axis at 36 px). SIDEWAYS: the pair follows your finger column by column. DOWN: a
@@ -1573,9 +1591,10 @@ function dragCancel(e){ if(!dragSt || (e.pointerId!==undefined && e.pointerId!==
 cv.addEventListener('pointercancel',dragCancel,{passive:false});
 /* v1.9: the arrows go through the one repeat scheduler (the system's key repeat is ignored), down is a held soft drop,
    and a held turn or drop key acts once */
-document.addEventListener('keydown',function(e){ if(curScreen!=='s-play'||MATCH.phase!=='fight')return; var k=e.key;
-  if(k==='ArrowLeft'||k==='ArrowRight'){ e.preventDefault(); if(!e.repeat)repPress(k==='ArrowLeft'?-1:1); return; }
+document.addEventListener('keydown',function(e){ if(curScreen!=='s-play')return; var k=e.key;
+  if(k==='ArrowLeft'||k==='ArrowRight'){ e.preventDefault(); var sd=(k==='ArrowLeft')?-1:1; if(!(sd<0?INP.l:INP.r))repPress(sd); return; }   /* held through GO it still counts */
   if(k==='ArrowDown'){ e.preventDefault(); softSet('key',true); return; }
+  if(MATCH.phase!=='fight')return;
   if(k==='ArrowUp'||k==='x'||k==='X'){ e.preventDefault(); if(!e.repeat)rotPress(1); }
   else if(k==='z'||k==='Z'){ e.preventDefault(); if(!e.repeat)rotPress(-1); }
   else if(k===' '){ e.preventDefault(); if(!e.repeat&&playable())hardDrop(pf()); }

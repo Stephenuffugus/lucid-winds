@@ -59,7 +59,7 @@ function fieldCtx() { const locks = []; const ctx = { Math, locks, T: 0, ROWS, C
   for (const v of ['KICKS', 'LAND_MS']) vm.runInContext(grabVar(v), ctx);
   for (const f of ['partnerOf', 'pieceCells', 'cellFree', 'fits', 'moveP', 'tryRotate', 'onGround', 'lowRow', 'landTick', 'landReset', 'tickField']) vm.runInContext(grab(f), ctx);
   return ctx; }
-const field = (g, cur, o) => Object.assign({ grid: g, cur, state: 'play', ai: false, softHold: false, gravMs: 1e9, gravAcc: 0, floats: [], flashDanger: 0, chainGlow: 0, hype: 0, land: { on: false, t: 0, age: -1, low: -1, resets: 0 } }, o || {});
+const field = (g, cur, o) => Object.assign({ grid: g, cur, state: 'play', ai: false, softHold: false, gravMs: 250, gravAcc: 0, floats: [], flashDanger: 0, chainGlow: 0, hype: 0, land: { on: false, t: 0, age: -1, low: -1, resets: 0 } }, o || {});
 { const cases = [
     ['the left wall: turning the second pod left shoves the pair one column right', grid(), { r: 6, c: 0, rot: 0 }, -1, { r: 6, c: 1, rot: 3 }],
     ['the right wall: turning it right shoves the pair one column left', grid(), { r: 6, c: 5, rot: 0 }, 1, { r: 6, c: 4, rot: 1 }],
@@ -88,6 +88,8 @@ const field = (g, cur, o) => Object.assign({ grid: g, cur, state: 'play', ai: fa
   ok('two moves while it is down restart the wait (100, 200: locks at 500); a third does not', two === 500, two);
   ok('however it is moved it locks 650 ms after its first touchdown (moves at 250 and 500 would have run to 800)', cap === 650, cap);
   ok('a held soft drop locks it 40 ms after touchdown', soft === 40, soft);
+  const slow = run(floor(), at, { gravMs: 1250 }, {}, 3000);
+  ok('on a slow stage (a row every 1250 ms) the wait is the stage\'s own fall, as v1.8 gave it: locks at 1250, not 300', slow === 1250, slow);
   const lower = run(fill(grid(), 3, 8), { r: 7, c: 3, rot: 0 }, { gravMs: 50 }, { 200: (c, f) => c.moveP(f, -1) }, 3000);
   ok('walking off a ledge and landing lower gives a fresh window (it lands about 450 and locks 300 later, past the old 650)', lower > 700 && lower < 820, lower);
   /* a turn every 40 ms: a floor kick, then a hop off the floor and a landing every 160 ms, faster than the 300 ms wait */
@@ -163,6 +165,32 @@ try {
     await p.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); delete document.hidden; });
     const s2 = await cur(p); await T('touchEnd', []); await sleep(60);
     ok('a held RIGHT stops when the window loses focus; a held SOFT lets go when the page hides', before.dir === 1 && after.dir === 0 && after.c === c0 && s1.soft && !s2.soft, JSON.stringify({ before: before.dir, after, c0, s1: s1.soft, s2: s2.soft })); }
+  // 8b. the review: DROP with another finger down; a DROP pressed on one pair and released after it locked; a thumb that
+  // slides off SOFT; a thumb rolled from LEFT onto SOFT
+  { await fresh(p); const a = await cur(p);
+    await T('touchStart', [[R['c-left'].x, R['c-left'].y, 21]]); await sleep(40);
+    await T('touchStart', [[R['c-left'].x, R['c-left'].y, 21], [R['dropbtn'].x, R['dropbtn'].y, 22]]); await sleep(60);
+    await T('touchEnd', [[R['dropbtn'].x, R['dropbtn'].y, 22]]); await sleep(120); const two = await cur(p); await T('touchEnd', []); await sleep(60);   /* CDP: touchEnd lists the points LIFTED */
+    await fresh(p); const p0 = await cur(p);
+    await T('touchStart', [[R['dropbtn'].x, R['dropbtn'].y, 23]]); await sleep(40);
+    await p.evaluate(() => { const M = window.CW_DEV.match(); window.CW_DEV.drop(M.pf); });   /* pair A locks while the finger is down */
+    for (let w = 0; w < 30; w++) { await sleep(50); if (await p.evaluate(() => window.CW_DEV.match().pf.state === 'play')) break; }
+    await p.evaluate(() => { window.CW_DEV.match().pf.gravMs = 1e9; }); const bSpawn = await cur(p);
+    await T('touchEnd', []); await sleep(150); const bAfter = await cur(p);
+    await fresh(p); await T('touchStart', [[R['c-down'].x, R['c-down'].y, 24]]); await sleep(60); const sd1 = await cur(p);
+    for (let k = 1; k <= 4; k++) { await T('touchMove', [[R['c-down'].x, R['c-down'].y - 40 * k, 24]]); await sleep(25); } await sleep(60); const sd2 = await cur(p); await T('touchEnd', []); await sleep(60);
+    await fresh(p); await T('touchStart', [[R['c-left'].x, R['c-left'].y, 25]]); await sleep(60); const ro1 = await cur(p);
+    for (let k = 1; k <= 4; k++) { await T('touchMove', [[R['c-left'].x + (R['c-down'].x - R['c-left'].x) * k / 4, R['c-left'].y, 25]]); await sleep(25); } await sleep(60); const ro2 = await cur(p); await T('touchEnd', []); await sleep(60);
+    ok('DROP tapped while LEFT is held drops (no click comes with a second finger down)', two.pods === a.pods + 2, JSON.stringify({ a: a.pods, two: two.pods }));
+    ok('a DROP pressed on one pair and let go after that pair locked never slams the next pair', bSpawn.state === 'play' && bAfter.r === bSpawn.r && bAfter.pods === bSpawn.pods, JSON.stringify({ bSpawn, bAfter }));
+    ok('a thumb that slides off SOFT lets go of the soft drop; one rolled from LEFT onto SOFT lets go of LEFT and soft drops', sd1.soft && !sd2.soft && ro1.dir === -1 && ro2.dir === 0 && ro2.soft, JSON.stringify({ sd1: sd1.soft, sd2: sd2.soft, ro1: ro1.dir, ro2: { dir: ro2.dir, soft: ro2.soft } })); }
+  // 8c. the keyboard: left held through GO moves the pair once the match starts
+  { await p.evaluate(() => { window.CW_DEV.beginStage(0); }); for (let w = 0; w < 80; w++) { await sleep(100); if (await p.evaluate(() => window.CW_DEV.match().phase === 'count')) break; }
+    await p.keyboard.down('ArrowLeft'); for (let w = 0; w < 80; w++) { await sleep(100); if (await p.evaluate(() => window.CW_DEV.match().phase === 'fight')) break; }
+    await p.evaluate(() => { window.CW_DEV.match().pf.gravMs = 1e9; }); await sleep(500); const kb = await cur(p); await p.keyboard.up('ArrowLeft'); await sleep(60); const kb2 = await cur(p);
+    ok('an arrow key held through the count moves the pair once it starts (to the wall), and letting go stops it', kb.c === 0 && kb2.dir === 0, JSON.stringify({ kb, kb2: kb2.dir })); }
+  // 8d. 56 px rows by default (64 is Big controls)
+  { R = await rects(p); ok('the tray rows are 56 px by default (Big controls makes them 64)', Math.abs(R['c-left'].h - 56) < 1, R['c-left'].h); }
   // 9. the mirrored tray
   { const m = await p.evaluate(() => { window.CW_DEV.setting('mirror', true); const d = document.getElementById('dropbtn').getBoundingClientRect().left, l = document.getElementById('c-rotccw').getBoundingClientRect().left; window.CW_DEV.setting('mirror', false); const d2 = document.getElementById('dropbtn').getBoundingClientRect().left; return { d, l, d2 }; });
     ok('Drop button on the left puts DROP first in its row, and back', m.d < m.l && m.d2 > m.l, JSON.stringify(m)); }
