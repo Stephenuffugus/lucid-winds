@@ -199,7 +199,7 @@ rates) are proposals; the gates below are what counts.
 
 - 2026-10-24 (Opus): **PART E2 LIVE as v6.6** (deploy `916f58eb2` on main, from add-sproing-jumper `445e49c7f`). Proven
   live on both origins (BUILD v6.6, worker `sw.js?v=70`, cache `slice3d-v72`, card `?v=20261024b`); the profiles that held
-  v6.5 now run v6.6. Suite 159 of 159 (row [19]); `fix/fwrun_e2.js`: 32 groups, each red on its check. Review: three lenses,
+  v6.5 now run v6.6. Suite 159 of 159 (row [19]); `fix/fwrun_e2.js`: 25 groups (a count of 32 written here first was wrong), each red on its check. Review: three lenses,
   a skeptic per finding; everything found folded in before the ship. What it built and the laws:
   - SS23 Clean Slice: `cleanLine` (CL_CARVE/CL_START reach tables + `clClear` corridor against hard blockers: bumpers,
     crystals, thorns, gourds at their real reach, the ice, the loaf) names whole stacks (2+ slabs) top down; a stack whose
@@ -218,7 +218,7 @@ rates) are proposals; the gates below are what counts.
   next entries as they ship. Scripts: /tmp/claude-1000/ssb/e3 and e4 (copied into tools/slice-3d-tests when they ship).
 - 2026-10-24 (Opus): **PART E3 LIVE as v6.7** (deploy `366daab0b` on main, from add-sproing-jumper `2c24b9ecd`). Proven live
   on both origins (BUILD v6.7, worker `sw.js?v=71`, cache `slice3d-v73`, card `?v=20261024c`); the profiles that held v6.6
-  now run v6.7. Suite 183 of 183 on E3, then rows 1, 19 and 20 after the residuals; `fix/fwrun_e3.js` 23 groups, each red on
+  now run v6.7. Suite 183 of 183 on E3, then rows 1, 19 and 20 after the residuals; `fix/fwrun_e3.js` 22 groups (E2 W85 one more), each red on
   its check. Review: two lenses (the Daily, the tests), a skeptic per finding: 7 confirmed, all folded in. Built and laws:
   - SS08 the Daily: `dailySpec(t)` (FNV of `day:g1:p1`, day = the UTC date; level 5+((n*13)%31) in the day's world);
     `s3d_daily` {day, gen, used, done, score}, `okDly` checks every field's type. Bump DAILY_GEN when the shaft builder
@@ -231,6 +231,29 @@ rates) are proposals; the gates below are what counts.
     is not a compare and set; needs two tabs inside about a second). Results are personal: a shared day board needs a server.
   - Also shipped here, the E2 review's residual: the wasp entry window reaches 8.5 (a piece sits 8.5 to 13.5 under a wasp;
     16 stacks in 17,200 dives leave a line, 0 of the 228 proven dives change; 45.400 pinned).
+- 2026-10-24 (Opus): **PART E4 LIVE as v6.8** (deploy `468221c63` on main, from add-sproing-jumper `bfbbd2863`). PART E IS DONE.
+  Proven live on both origins (BUILD v6.8, worker `sw.js?v=72`, cache `slice3d-v74`, card `?v=20261024d`); the profiles that
+  held v6.7 now run v6.8. Suite green (row [21]: 17 checks); `fix/fwrun_e4.js` 28 groups, each red on its check. Review: two
+  lenses (the chamber, the tests), a skeptic per finding; folded in before the ship. Built and laws:
+  - SS04 bosses at levels 5, 10 ... 40 (finite Freefall). A chamber of BOSS_H 36 u BELOW the old floor: the shaft above
+    uses `segDepth`, so its pieces, rng() draws and Clean Slice line are the very same (the chamber's ledges draw their own
+    stream). DEVIATION from the plan's "two bumpers that lob": a NET across the chamber lobs every landing (no knife falls
+    past the boss to the floor before the fight is decided); the lob is AIMED at the boss's lane (vx solved against the
+    drag: (tx-x)*ln2/(1-0.5^T)). Contact only while falling; a hit bites (vx*0.25, w*0.3) and the boss hops ONE lane (middle,
+    a side, the middle); a handle pops (vy 9) toward the middle from a side lane; three lobs without a hit and the net gives
+    way; a hit resets the count; 600 once at the third hit (multiplied by the landing like every in dive reward).
+  - ⛔ The ropes: cut only by a knife IN the fight (a lob or hit first), RISING, and never the rope on the boss's side while
+    it sits in a side lane (the review: a tap toward the boss's new lane carried the knife into its rope, 35 of 40 played
+    fights skipped; a hit leaves the knife falling beside the rope). A skipped boss (rope or give way) is out of the fight
+    and forfeits Clean Slice. ⛔ The pop toward a wall juggled a knife for ever between a side lane boss and the padded wall.
+  - Padding: `y<bw.y+14+KR` (the old floor's catch line; at +12 the chamber's top 2 u killed). No art: the code boss,
+    with its crack; the reveal never fades a mapless sprite (it flashed a white square).
+  - Measured (node, the real step; tools/slice-3d-tests/e4): left alone 48 of 48 levels clear; taps of 0.1 s or less after
+    each lob clear every fight; a player holding 0.15 s or more toward the boss on EVERY lob overshoots every time (the give
+    way ends it); correcting only when a lob would miss clears 200 of 200. No deaths in the chamber; no fight never ends
+    (4,176 constructed juggles, 440 played). HIS CALLS: that feel; the x10 bullseye after a win (the third hit is always in
+    the middle lane; the skeptic refuted it as a defect: about 10 percent more score when the player aims anyway); whether
+    the give way should forfeit Clean Slice (the plan names only the rope; the boss is optional in its definition).
 ---
 
 ## 1. What Stephen asked for, verbatim, and what "good" means
