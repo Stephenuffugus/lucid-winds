@@ -10,6 +10,12 @@ rates) are proposals; the gates below are what counts.
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- **2026-10-24 (Fable): Parts A to F are LIVE (v6.1 to v7.2). Part F was reviewed after the fact
+  (`REVIEW-PART-F-OCT24.md`): three small faults became PART G, section 9 at the end of this file. Build Part G next,
+  one deploy (v7.3), then nothing else in this game without his word (his list on the board: a rung under 2,000, the
+  Journey pay factor, the ropes; Astra's Journey kit when its zip lands becomes Part H).** The deploy script for this
+  game is now in the repo: `tools/slice-3d-tests/deploy/deploy.sh` (README beside it).
+
 - 2026-10-23 (Fable): plan written. Nothing built. Live is **v6.0** (portal card `/satellites/slice-3d/?v=20260821a`,
   sw `sw.js`). Astra's zip is at `assets/Super_Slice_Dev_Handoff.zip` (git ignored, 86 MB) and vaulted as
   `vault-20261023-super-slice-astra` in the PRIVATE repo `Stephenuffugus/lucid-winds-vault` (SHA256SUMS.txt beside it).
@@ -523,3 +529,44 @@ marks in anything a player reads. Nothing sold for money anywhere in this plan.
 Lead with what is live and the proof. One paragraph per part. Name the three things you saw wrong in your own shots
 before he does. Put his words on the board verbatim the moment he gives any. When all five parts are live, the morning
 report also lists section 3.4 as his calls, one line each.
+
+## 9. Part G (24 Oct, after the Part F review): three small fixes, one deploy, v7.3
+
+Read `REVIEW-PART-F-OCT24.md` first. Part G is drawing, ordering and one measurement; the physics, the prices, the pay
+curve, the boss and the Daily do not change. Stamps: `BUILD` v7.3, `sw.js?v=77`, `CACHE` slice3d-v79, the card
+`?v=20261024i` (or the next free letter), all in the one deploy commit.
+
+### G1. The resting knife is drawn on the grass (drawing only)
+The stepped knife rests with its centre `KR` (1.5) above the ground and its drawn half height is `KHH` (0.715), so a
+knife lying flat is drawn 0.78 u above the grass (the `f2/ground.mjs` trace: every grounded frame reads `low 0.78`).
+F2's lift only raises the drawing. Add the other half in `drawFrame`, ground modes only: when `G.grounded` and the
+drawn knife's lowest point sits above the surface under it (`kSurf`), lower the DRAWING by that gap, capped at
+`KR-KHH`, so the body touches the grass. Never on Freefall, never the stepped pose, never while airborne (the lift for
+steep landings stays as it is). **Look first:** shoot the resting knife at 412 x 915 before and after; if the shadow
+already sells the contact and the lowered knife looks sunk, stop and say so instead of shipping it.
+Gate: row [22] gains a check that a grounded flat knife's drawn lowest point is within 0.05 of its surface (the trace
+read 0.78 before), computed from the level's blocks in the test, never read back from the page; red with the lowering
+taken out.
+
+### G2. The Forge shelf reads as a price ladder
+`SKIN_ORDER` slots the six Astra knives after their tier's originals (2,000, 3,000, 2,400, 2,800, 3,400, 2,200, 2,600,
+6,000...). Order each tier by price: classic, cleaver 2,000, socktopus 2,200, bamboo 2,400, butterbuddy 2,600, trowel
+2,800, paintbrush 3,000, quill 3,400, katana 6,000, pencil 6,400, obsidian 6,800, spatulot 7,200, icicle 7,600, crystal
+8,000, tuningfork 9,000, gold 15,000, emberfang 16,000, discopickle 17,500, prism 19,000, croissant 20,000, scythe
+22,000, then the trophies and the two supporter knives as they are. Row [1] (30 cards) and row [16] (the ladder's
+prices) stay as they are; row [16] gains: every priced knife's price is not below the one before it on the shelf.
+Look: the Forge at 412 wide, the top and the middle of the shelf.
+
+### G3. Measure how deep Endless lets a good player go (measurement, no tuning without his number)
+The films show 300 m and 1,500 m killing a no input knife; 3,000 m was not shown to kill anything. Build
+`tools/slice-3d-tests/g3/survive.js` on the e2 near human controller in "calm" mode (keep the blade down, stay out of
+hazards, no line to carve) driving the real Endless build and step (`e2/world.js` + the chunk builder as `f1/band.js`
+pulls it), five seeds, and report the depth each dies at and the fall speed there. Put the five depths in the state
+block and on the board. If three of five pass 4,000 m, write that as HIS call to raise `END_TERM_SLOPE2` (today 0.008)
+with the number that would end them near 3,000 m; do not change the constant yourself.
+
+### Gates, look, deploy
+Row [22] and [16] extended and watched red (`fix/mkslices.js`, a `fwrun_g.js` with one group per change). The full
+suite green. Shots of G1 and G2 looked at, three things named. Deploy with `tools/slice-3d-tests/deploy/deploy.sh`,
+prime the old worker profiles on live v7.2 BEFORE the deploy, check both origins after. Then the state block, the
+board, and one line to him.

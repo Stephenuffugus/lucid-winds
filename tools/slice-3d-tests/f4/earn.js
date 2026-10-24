@@ -11,6 +11,7 @@ fs.writeFileSync(path.join(__dirname,'prove3b.js'), src);
 var W=require('../e4/world.js'), P=require('./prove3b.js'), vm=W.vm, ctx=W.ctx;
 ctx.setInterval=function(){ return 0; }; ctx.clearInterval=function(){}; ctx.setTimeout=function(){ return 0; };   /* the landing's count up sound */
 var a=process.argv.slice(2).map(Number), L0=a[0]||1, L1=a[1]||40, NS=a[2]||3;
+var mk=W.SRC.match(/var SLIV_K=[0-9.]+;/); if(mk)vm.runInContext(mk[0], ctx);   /* F4: the payout's constant */
 var m=W.SRC.match(/function slivPayout\(\)\{[\s\S]*?\n\}/); if(!m)throw new Error('slivPayout moved'); vm.runInContext(m[0], ctx);
 function line(G){ ctx.__A=G.world; try{ return vm.runInContext('cleanLine(__A, 9.2, __A.floorY)', ctx); }catch(e){ return []; } }
 var rows=[], band={};
