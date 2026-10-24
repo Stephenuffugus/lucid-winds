@@ -43,6 +43,10 @@ console.log('[A] the page\'s own functions, in a node vm');
     if (!want[0] || !want[1] || changed !== 2) bad.push(JSON.stringify({ n, cur, guide }));
   }
   ok(`the landing guide marks exactly the two cells each pod ends in, on 300 seeded boards (${split} split landings, ${stacked} stacked)`, bad.length === 0 && split > 20 && stacked > 20, bad.slice(0, 2).join(' | ')); }
+{ /* the power button (Powers mode) is held by the pause, like the Q key */
+  const ctx = { Math, MATCH: { powers: true, paused: true }, POWERS: { k: { cost: 10 } } }; vm.createContext(ctx); vm.runInContext(grab('powerReady'), ctx);
+  const f = { powerId: 'k', powerCast: false, powerCd: 0, sap: 50 }; const held = ctx.powerReady(f); ctx.MATCH.paused = false; const free = ctx.powerReady(f);
+  ok('Powers mode: the power is not ready while the match is paused (the button fired during 3, 2, 1)', held === false && free === true, JSON.stringify({ held, free })); }
 { /* 31 queued: 30 land (the cap is per landing), 1 stays */
   const ctx = { Math, ROWS, COLS, CHAFF, GARBAGE_CAP: 30, MATCH: { pf: null, of: null }, SFX: new Proxy({}, { get: () => () => {} }), railHit: () => {}, shake: () => {}, hypeTierOf: () => 0, setFall: () => 0, afterTurn: () => {} };
   vm.createContext(ctx); vm.runInContext(grab('dropPending'), ctx);
@@ -64,6 +68,10 @@ console.log('[A] the page\'s own functions, in a node vm');
     while (t + dt <= at + 1e-9) { ctx.decayFall(f, dt); t += dt; } off = f.fall ? f.fall[12][0] : 0; return { dur, off, sq: f.squash ? f.squash[12][0] : 0 }; };
   const a60 = run(60, 6, 50), a120 = run(120, 6, 50), one = run(60, 1, 0), all = run(60, 12, 0), land = run(120, 1, 120);
   ctx.MATCH.phase = 'done'; const drain = run(200, 1, 45); ctx.MATCH.phase = 'fight';   /* 5 ms ticks land on 45 exactly */
+  /* a chain fall in flight when the match ends keeps its eased curve (it switched to straight mid fall and jumped) */
+  const mid = (() => { const f = {}; ctx.MATCH.pf = f; ctx.MATCH.phase = 'fight'; ctx.setFall(f, [{ c: 0, from: 6, to: 12 }]); for (let i = 0; i < 14; i++) ctx.decayFall(f, 5);
+    ctx.MATCH.phase = 'done'; ctx.decayFall(f, 5); const got = f.fall[12][0]; ctx.MATCH.phase = 'fight'; const p = 75 / ctx.fallDur(6); return { got, want: 6 * 58 * (1 - p * p) }; })();
+  ok('a fall in flight when the match ends keeps its eased curve (no jump onto the straight drain curve)', Math.abs(mid.got - mid.want) < 0.5, JSON.stringify(mid));
   ok('the outro\'s drain (a row every 95 ms) falls straight in 90 ms: half way at 45 ms (the eased fall restarted every step and juddered)', drain.dur === 90 && Math.abs(drain.off - 29) < 0.6, JSON.stringify(drain));
   ok('a fall runs on time: the same height at 50 ms at 60 and 120 Hz; 110 ms for one row, 180 for the well; the pod squashes 80 ms as it lands',
     Math.abs(a60.off - a120.off) < 0.5 && one.dur === 110 && all.dur === 180 && land.off === 0 && land.sq > 60 && land.sq <= 80, JSON.stringify({ a60, a120, one: one.dur, all: all.dur, land })); }
@@ -106,6 +114,13 @@ try {
     await hide(); await sleep(150); const st2 = await p.evaluate(() => ({ paused: window.CW_DEV.match().paused, resumeT: window.CW_DEV.match().resumeT }));
     await show(); await sleep(150); const st3 = await p.evaluate(() => ({ count: window.CW_DEV.match().count })); await sleep(2400);
     ok('during the three count a real Space and a real DROP tap do nothing, and hiding again mid count goes back to PAUSED and counts from 3', t0 === t1 && st1.paused && st2.paused && st2.resumeT === -1 && st3.count === 3, JSON.stringify({ same: t0 === t1, st1, st2, st3 })); }
+  /* only a FALLING cell is clipped to the well: a settled board draws no well clip (the review: a clip every frame cut the
+     pop splats flat at the walls and the floor) */
+  { await p.evaluate(() => { const M = window.CW_DEV.match(); M.pf.gravMs = 1e9; M.of.react = 1e9; }); await sleep(1500);   /* nothing falls on either board */
+    const n = await p.evaluate(async () => { const c2 = document.getElementById('game').getContext('2d'), orig = c2.rect; let k = 0;
+      c2.rect = function (x, y, w, h) { if (Math.abs(w - (6 * 58 + 12)) < 0.01 || Math.abs(w - (6 * 21 + 12)) < 0.01) k++; return orig.apply(this, arguments); };
+      await new Promise(r => setTimeout(r, 300)); c2.rect = orig; return k; });
+    ok('a settled board draws no well clip (only falling cells are clipped, so splats spill over the walls as before)', n === 0, n); }
   ok('no page errors', errs.length === 0, JSON.stringify(errs));
   if (SHOTS) { /* a chain mid pop: four reds at the bottom left, the pair dropped elsewhere, the shot 120 ms into the pop */
     await p.evaluate(() => { const M = window.CW_DEV.match(), g = M.pf.grid; M.pf.gravMs = 1e9; M.of.react = 1e9;

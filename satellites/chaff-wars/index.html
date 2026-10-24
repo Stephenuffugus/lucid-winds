@@ -701,7 +701,7 @@ var POWERS={
     apply:function(f){ var r,c,n=0; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ if(f.grid[r][c]===CHAFF){ f.grid[r][c]=0; n++; } }
       if(n){ applyGravity(f.grid); f.floats.push({x:0,y:0,txt:'SOLVENT!',life:1.1,big:true,fld:f}); if(SFX.allclear)SFX.allclear(); } return n; } }
 };
-function powerReady(f){ return !!(MATCH.powers && f && f.powerId && !f.powerCast && (f.powerCd||0)<=0 && (f.sap||0)>=POWERS[f.powerId].cost); }
+function powerReady(f){ return !!(MATCH.powers && !MATCH.paused && f && f.powerId && !f.powerCast && (f.powerCd||0)<=0 && (f.sap||0)>=POWERS[f.powerId].cost); }
 function firePower(f){ if(!powerReady(f))return false; var P=POWERS[f.powerId]; f.sap-=P.cost; f.powerCd=P.cd; try{ P.apply(f); }catch(e){} if(typeof hap==='function')hap(20); return true; }
 
 function fieldPiece(f){ var n=(f.rng()* f.colors)|0; if(n>=f.colors)n=f.colors-1; return n; }
@@ -731,12 +731,12 @@ var FALL_MIN=110, FALL_MAX=180, SQUASH_MS=80;
 function fallDur(rows){ return FALL_MIN+(FALL_MAX-FALL_MIN)*Math.min(1,Math.max(0,rows-1)/(VISROWS-1)); }
 function fallLayers(f){ if(!f.fall){ f.fall=newLayer(); f.fall0=newLayer(); f.fallD=newLayer(); f.fallS=newLayer(); f.squash=newLayer(); } f.fallClk=f.fallClk||0; }
 function setFall(f,moves){ fallLayers(f); var i, cell=(f===MATCH.pf?PF.cell:OF.cell), mx=0;
-  for(i=0;i<moves.length;i++){ var m=moves[i], rows=m.to-m.from, d=MATCH.phase==='done'?90:fallDur(rows);   /* the outro drain steps every 95 ms */ f.fall[m.to][m.c]=f.fall0[m.to][m.c]=rows*cell; f.fallD[m.to][m.c]=d; f.fallS[m.to][m.c]=f.fallClk; if(d>mx)mx=d; }
+  for(i=0;i<moves.length;i++){ var m=moves[i], rows=m.to-m.from, d=MATCH.phase==='done'?90:fallDur(rows);   /* the outro drain steps every 95 ms; a negative duration marks its straight fall, chosen once */ f.fall[m.to][m.c]=f.fall0[m.to][m.c]=rows*cell; f.fallD[m.to][m.c]=MATCH.phase==='done'?-d:d; f.fallS[m.to][m.c]=f.fallClk; if(d>mx)mx=d; }
   return mx; }
 function squashAt(f,r,c){ if(r<0)return; fallLayers(f); f.squash[r][c]=SQUASH_MS; }
 function decayFall(f,dt){ if(!f.fall)return; f.fallClk+=dt; var r,c,any=false;
   for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){
-    if(f.fall[r][c]>0){ var p=Math.min(1,(f.fallClk-f.fallS[r][c])/f.fallD[r][c]); f.fall[r][c]=f.fall0[r][c]*(1-(MATCH.phase==='done'?p:p*p)); any=true;
+    if(f.fall[r][c]>0){ var fd=f.fallD[r][c], p=Math.min(1,(f.fallClk-f.fallS[r][c])/Math.abs(fd)); f.fall[r][c]=f.fall0[r][c]*(1-(fd<0?p:p*p)); any=true;   /* a fall in flight at the match end keeps its curve */
       if(p>=1){ f.fall[r][c]=0; f.squash[r][c]=SQUASH_MS; } }
     else if(f.squash[r][c]>0){ f.squash[r][c]=Math.max(0,f.squash[r][c]-dt); if(f.squash[r][c]>0)any=true; } }
   if(!any)f.fall=null; }
@@ -1330,8 +1330,8 @@ function drawJoins(f,F){ var J=A2.j; if(!J)return; var r,c,v,k; A2.joins=[];
       ctx.restore(); A2.joins.push([r,c,r2,c2]); } } }
 function drawField(f,F,mini){ if(!f)return; var r,c;
   if(!mini)drawJoins(f,F);   /* v1.8: under the pods */
-  ctx.save(); ctx.beginPath(); ctx.rect(F.x-6, F.y-1, COLS*F.cell+12, VISROWS*F.cell+12); ctx.clip();   /* v1.10 review: falling Chaff stays inside the well */
   for(r=1;r<ROWS;r++)for(c=0;c<COLS;c++){ var v=f.grid[r][c]; if(v===0)continue; var p=cellPx(F,r,c); var off=(f.fall&&f.fall[r]?f.fall[r][c]:0)||0;
+    if(off>0){ ctx.save(); ctx.beginPath(); ctx.rect(F.x-6, F.y-1, COLS*F.cell+12, VISROWS*F.cell+12); ctx.clip(); }   /* v1.10 review: a FALLING cell stays inside the well (dropped Chaff starts a cell above it); pops and splats spill as before */
     var scale=1, alpha=1; if(f.pop&&f.pop[r][c]){ var pr=Math.min(1,f.res? f.res.t/230:0); scale=1+pr*0.35; alpha=1-pr*0.7; }
     var yy=p.y-off, sq=(f.fall&&f.squash&&f.squash[r][c]>0)?f.squash[r][c]/SQUASH_MS:0;   /* v1.10: the landing squash, on the cell's floor */
     if(sq>0){ ctx.save(); ctx.translate(p.x+F.cell/2, yy+F.cell); ctx.scale(1+0.1*sq, 1-0.16*sq); ctx.translate(-(p.x+F.cell/2), -(yy+F.cell)); }
@@ -1340,8 +1340,8 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
     /* splat FX over a popping cell: colored pops tint the neutral splat; chaff shatters grey */
     if(!mini && f.pop && f.pop[r][c]){ var pr2=Math.min(1,f.res?f.res.t/230:0), fr=Math.min(4,1+((pr2*4)|0)), sc=F.cell/2;
       if(f.pop[r][c]===2)cwFx('fx/chaff-splat-'+fr,null, p.x+sc, yy+sc, F.cell*1.7,F.cell*1.7, 0.9*(1-pr2*0.35));
-      else cwFx('fx/pop-splat-'+fr, PAL[v-1]?PAL[v-1].bs:'#ffffff', p.x+sc, yy+sc, F.cell*1.7,F.cell*1.7, 0.95*(1-pr2*0.25)); } }
-  ctx.restore();
+      else cwFx('fx/pop-splat-'+fr, PAL[v-1]?PAL[v-1].bs:'#ffffff', p.x+sc, yy+sc, F.cell*1.7,F.cell*1.7, 0.95*(1-pr2*0.25)); }
+    if(off>0)ctx.restore(); }
   /* falling piece + ghost */
   if(f.cur && (f.state==='play')){ var cs=pieceCells(f.cur),i;
     /* Stephen 7/28: "its hard to see what piece your even working with". The ghost

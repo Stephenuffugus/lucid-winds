@@ -68,6 +68,8 @@ try {
     (function f() { const fr = D.art2().frame; seen.push(fr); if (performance.now() - tStart < 900) requestAnimationFrame(f); else res(seen); })(); }));
   const frames = [...new Set(dance.filter(Boolean))];
   ok('a chain of 2 on the rival\'s board plays its six dance frames, once, then back to the idle portrait', frames.length >= 5 && frames.every(f => /^dance\/aphid-swarm\//.test(f)) && dance[dance.length - 1] === null, JSON.stringify({ n: frames.length, last: dance[dance.length - 1] }));
+  await p.evaluate(() => { window.CW_DEV.match().of.react = 1e9; });   /* the live rival could drop a pair into the filled column, top out and end the match */
+  for (let w = 0; w < 40; w++) { await sleep(100); if (await p.evaluate(() => window.CW_DEV.match().of.state === 'play')) break; }
   const hd = await p.evaluate(async () => { const D = window.CW_DEV; D.railHit(); const a = D.art2().frame; await new Promise(r => setTimeout(r, 300)); const b2 = D.art2().frame;
     const M = D.match(), g = M.of.grid; for (let r = 2; r < 13; r++) g[r][2] = 6; await new Promise(r => setTimeout(r, 300)); const c = D.art2().frame;
     for (let r = 0; r < 13; r++) g[r][2] = 0; await new Promise(r => setTimeout(r, 300)); const d = D.art2().frame; return { a, b: b2, c, d }; });
