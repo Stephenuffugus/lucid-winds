@@ -86,14 +86,15 @@ console.log('\n[21] Part E4: a boss at the end of every world');
         if (B.lobs > l0) { log.push('lob'); lobN = n; side = B.tx > G.x ? 1 : -1; }
         if (pin && B.hits === 1 && held === null) { held = 0; for (let k = 0; k < 10; k++) { G.x = B.x; G.y = B.y + 0.5; G.vx = 0; G.vy = -0.2; S.stepN(1, D); } held = B.hits; } }
       S.hold(0); return { hits: B.hits, held, tx, pay, rope: !!B.ropeCut, cleared: B.cleared, skipped: B.skipped, net: B.netOn, done: G.done, failed: !!G.failed, t: +G.t.toFixed(1), log: log.join(' '), lab: document.getElementById('go-lab').textContent, name: B.name }; };
-    /* left alone (nothing teleported): three hits, one lane over each time (a side, then the middle), 600 paid once, at the third */
+    /* left alone (nothing teleported): three hits, one lane over each time (a side, then the middle), paid once, at the third
+       (600 x5 since 24 Oct: no miss, the flawless grade) */
     out.win = fight(Math.PI / 2);
     for (let n = 0; n < 600 && !document.getElementById('s-go').classList.contains('on'); n++) S.stepN(1, D);
     out.win.panel = document.getElementById('go-lab').textContent;
     out.held = fight(Math.PI / 2, null, true);
     out.handle = fight(-Math.PI / 2);
-    /* as played: a 0.1 s tap toward the boss 0.1 s after every lob clears the fight (two dives); a 0.25 s hold overshoots and
-       never cuts a rope (the review: a tap toward the boss's new lane cut its rope in 35 of 40 fights) */
+    /* as played: a 0.1 s tap toward the boss 0.1 s after every lob clears the fight (two dives); a 0.25 s hold never cuts a
+       rope (the review: a tap toward the boss's new lane cut its rope in 35 of 40 fights), and since 24 Oct it clears too */
     const tap = (R, T) => (m, lobN, side) => (lobN >= 0 && m >= R && m < R + T) ? side : 0;
     out.taps = [77, 5].map(sd => fight(Math.PI / 2, tap(12, 12), false, sd));
     out.heavy = fight(Math.PI / 2, tap(12, 30));
@@ -142,11 +143,11 @@ console.log('\n[21] Part E4: a boss at the end of every world');
   const L = r.levels || {}, w = r.win || {};
   ok('a boss closes levels 5, 10, 15 ... and no other dive (not 4, not 6, not Endless)', L[5] && L[10] && L[15] && L[40] && !L[4] && !L[6] && !L.endless, JSON.stringify(L));
   ok('the shaft above the chamber is the very dive it was: its pieces and its Clean Slice line, member by member', !!r.same && r.same.pieces && r.same.line && r.same.deeper, JSON.stringify(r.same));
-  ok('a blade down knife left alone: three hits, the net lobs it each time, one lane over each time, 600 paid once at the third, the boss down, the floor', w.hits === 3 && w.cleared && !w.skipped && !w.net && w.done && !w.failed && /^hit1 lob hit2 lob hit3$/.test(w.log) && Array.isArray(w.tx) && Math.abs(w.tx[0]) === 4.8 && w.tx[1] === 0 && (w.pay || []).join() === '0,0,600', JSON.stringify(w));
+  ok('a blade down knife left alone: three hits, the net lobs it each time, one lane over each time, 3000 (600 x5, flawless) paid once at the third, the boss down, the floor', w.hits === 3 && w.cleared && !w.skipped && !w.net && w.done && !w.failed && /^hit1 lob hit2 lob hit3$/.test(w.log) && Array.isArray(w.tx) && Math.abs(w.tx[0]) === 4.8 && w.tx[1] === 0 && (w.pay || []).join() === '0,0,3000', JSON.stringify(w));
   ok('a knife held inside the boss after a hit counts it once', !!r.held && r.held.held === 1 && r.held.done && !r.held.failed, JSON.stringify(r.held));
   ok('the end panel names the boss', !!r.win && new RegExp(r.win.name + ' down').test(r.win.panel || ''), JSON.stringify(r.win && r.win.panel));
   ok('a handle down knife never hits; the net gives way at its fourth landing (three lobs) and the dive goes on to the floor', !!r.handle && r.handle.hits === 0 && r.handle.skipped && !r.handle.net && r.handle.done && !r.handle.failed && r.handle.log === 'lob lob lob lob', JSON.stringify(r.handle));
-  ok('as played: a 0.1 s tap toward the boss after each lob clears the fight; a 0.25 s hold never cuts a rope and the dive ends', Array.isArray(r.taps) && r.taps.every(o => o.cleared && !o.skipped && !o.rope && o.done && !o.failed) && !!r.heavy && !r.heavy.rope && r.heavy.done && !r.heavy.failed, JSON.stringify([r.taps, r.heavy]));
+  ok('as played: a 0.1 s tap toward the boss after each lob clears the fight; a 0.25 s hold never cuts a rope and the dive ends', Array.isArray(r.taps) && r.taps.every(o => o.cleared && !o.skipped && !o.rope && o.done && !o.failed) && !!r.heavy && !r.heavy.rope && r.heavy.cleared && r.heavy.done && !r.heavy.failed, JSON.stringify([r.taps, r.heavy]));
   ok("the review's trap (a handle first knife between a side lane boss and the wall) ends", !!r.trap && r.trap.done && !r.trap.failed, JSON.stringify(r.trap));
   ok('a hit resets the lob count (the next landing is lob one, not the give way)', !!r.reset && r.reset.hits === 1 && r.reset.after === 0 && r.reset.lobs === 1 && !r.reset.skipped, JSON.stringify(r.reset));
   ok('a restart resets the chamber', !!r.restart && r.restart.hits === 0 && r.restart.net && r.restart.lobs === 0, JSON.stringify(r.restart));

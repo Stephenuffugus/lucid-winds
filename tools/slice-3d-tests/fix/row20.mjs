@@ -74,33 +74,33 @@ const clockAt = iso => `(()=>{ const T0=Date.parse(${JSON.stringify(iso)}), P0=p
       L.forEach(n => (W[n] || []).forEach(e => parts.push(n[0], Math.round((e.x != null ? e.x : e.cx || 0) * 1000), Math.round((e.y || 0) * 1000), Math.round((e.w || e.r || 0) * 1000))));
       return parts.join(',').length + ':' + parts.reduce((h, v) => (Math.imul(h ^ String(v).length, 16777619) + (+v || 0)) >>> 0, 0x811c9dc5); };
     const a = S.daily(Date.parse('2026-10-24T00:00:01Z')), b = S.daily(Date.parse('2026-10-24T23:59:59Z')), c = S.daily(Date.parse('2026-10-25T00:00:01Z'));
-    out.spec = { same: JSON.stringify(a) === JSON.stringify(b), next: a.seed !== c.seed && a.utcDate !== c.utcDate, lvl: a.level >= 5 && a.level <= 35 && c.level >= 5 && c.level <= 35, gen: a.generatorVersion === 1 && a.physicsVersion === 1, a };
+    out.spec = { same: JSON.stringify(a) === JSON.stringify(b), next: a.seed !== c.seed && a.utcDate !== c.utcDate, lvl: a.level >= 5 && a.level <= 35 && c.level >= 5 && c.level <= 35, gen: a.generatorVersion === 1 && a.physicsVersion === 2, a };   /* PHYS 2 since 24 Oct: the boss's forgiving lob */
     /* the same day builds the same dive and the same Clean Slice line */
     S.newDaily(false); const f1 = fp(S.world()), l1 = S.clean().req.map(s => s.x.toFixed(2) + '@' + s.y.toFixed(2)).join('|');
     S.newDaily(false); const f2 = fp(S.world()), l2 = S.clean().req.map(s => s.x.toFixed(2) + '@' + s.y.toFixed(2)).join('|');
     out.stable = { same: f1 === f2 && l1 === l2, lvl: S.g().lvl === a.level, salted: true };
     /* opening the card and practising spend nothing; the scored dive is spent on its first simulation tick */
     localStorage.removeItem('s3d_daily'); S.showDaily(); out.card = { used: S.dly().used, shown: document.getElementById('s-daily').classList.contains('on'), go: document.getElementById('dly-go').getAttribute('aria-disabled') };
-    S.newDaily(false); for (let n = 0; n < 30; n++) S.stepN(1, D); out.practice = { used: S.dly().used, daily: S.g().daily };
+    /* no practice since 24 Oct (his call): the card offers one dive and nothing else */
+    out.noPractice = !document.getElementById('dly-practice') && !/practi[cs]e/i.test(document.getElementById('s-daily').textContent);
     S.newDaily(true); out.beforeTick = S.dly().used; S.stepN(1, D); out.afterClock = S.dly().used; S.stepN(1, D);
     out.afterTick = { used: S.dly().used, disk: JSON.parse(localStorage.getItem('s3d_daily') || 'null') };
     /* a failed scored dive: its score, personal, no badge; the card shows it spent */
     const G = S.g(); G.score = 321; G.done = true; G.failed = true; G.doneT = 3; S.finishLevel();
-    const dl = document.getElementById('go-daily'); out.failPanel = { on: dl.classList.contains('on'), won: dl.classList.contains('won'), text: document.getElementById('go-daily-t').textContent, next: document.getElementById('go-next').textContent, retry: document.getElementById('go-retry').textContent };
+    const dl = document.getElementById('go-daily'); out.failPanel = { on: dl.classList.contains('on'), won: dl.classList.contains('won'), text: document.getElementById('go-daily-t').textContent, next: document.getElementById('go-next').textContent, retry: getComputedStyle(document.getElementById('go-retry')).display };
     S.showDaily(); out.spent = { go: document.getElementById('dly-go').getAttribute('aria-disabled'), res: document.getElementById('dly-res').textContent };
     const ff0 = S.prog().ffLevel, g0 = S.g(); S.newDaily(true); out.noSecond = S.g() === g0 && document.getElementById('s-daily').classList.contains('on');
-    /* practice reaching the floor: not scored, no badge, the Freefall level unmoved */
-    const lv0 = S.prog().level; S.newDaily(false); { const g = S.g(), W = S.world(); g.score = 5000; g.x = 0; g.y = W.floorY + 3; g.vx = 0; g.vy = -10; g.w = 0; g.ang = Math.PI / 2; S.hold(0);
-      const go = document.getElementById('s-go'); go.classList.remove('on'); for (let n = 0; n < 700 && !go.classList.contains('on'); n++) S.stepN(1, D);
-      out.practiceFloor = { done: g.done, failed: !!g.failed, text: document.getElementById('go-daily-t').textContent, won: dl.classList.contains('won'), ff: S.prog().ffLevel === ff0, best: S.prog().best['f' + g.lvl] || 0, journey: S.prog().level === lv0 }; }
+    /* the next ordinary dive's end panel has its Replay back (the Daily hid it) */
+    S.newFF(2); { const g = S.g(); g.score = 10; g.done = true; g.failed = true; g.doneT = 3; S.finishLevel();
+      const rb = document.getElementById('go-retry'); out.after = { retry: getComputedStyle(rb).display, text: rb.textContent, daily: dl.classList.contains('on') }; }
     out.countdown = (S.showDaily(), document.getElementById('dly-clock').textContent);
     window._S3skiprender = false; return out; }); } catch (e) { r = { error: String(e).slice(0, 200) }; }
   ok("the day's dive is fixed by the UTC date (and the versions), a new one each day, levels 5 to 35", !!r.spec && r.spec.same && r.spec.next && r.spec.lvl && r.spec.gen, JSON.stringify(r.spec || r));
   ok('the same day builds the same dive and the same Clean Slice line', !!r.stable && r.stable.same && r.stable.lvl, JSON.stringify(r.stable));
-  ok('opening the Daily card and practising spend nothing', !!r.card && r.card.shown && !r.card.used && r.card.go === null && !!r.practice && !r.practice.used && r.practice.daily === 'practice', JSON.stringify({ c: r.card, p: r.practice }));
+  ok('opening the Daily card spends nothing, and it offers no practice', !!r.card && r.card.shown && !r.card.used && r.card.go === null && r.noPractice === true, JSON.stringify({ c: r.card, p: r.noPractice }));
   ok('the scored dive is spent on its first simulation tick, and on disk', r.beforeTick === false && r.afterClock === false && !!r.afterTick && r.afterTick.used && !!r.afterTick.disk && r.afterTick.disk.used === true && r.afterTick.disk.day === '2026-10-24', JSON.stringify({ b: r.beforeTick, c: r.afterClock, t: r.afterTick }));
-  ok('a failed scored dive: a personal result, no badge; the card shows it spent and no second scored dive starts', !!r.failPanel && r.failPanel.on && !r.failPanel.won && /personal result/.test(r.failPanel.text) && r.failPanel.next === 'Daily' && r.failPanel.retry === 'Practice' && !!r.spent && r.spent.go === 'true' && /321/.test(r.spent.res) && r.noSecond, JSON.stringify({ f: r.failPanel, s: r.spent, n: r.noSecond }));
-  ok('practice reaching the floor: not scored, no badge, no level (Freefall or Journey) and no best moved', !!r.practiceFloor && r.practiceFloor.done && !r.practiceFloor.failed && /practice, not scored/.test(r.practiceFloor.text) && !r.practiceFloor.won && r.practiceFloor.ff && r.practiceFloor.best === 0 && r.practiceFloor.journey, JSON.stringify(r.practiceFloor));
+  ok('a failed scored dive: a personal result, no badge; the card shows it spent and no second scored dive starts', !!r.failPanel && r.failPanel.on && !r.failPanel.won && /personal result/.test(r.failPanel.text) && r.failPanel.next === 'Daily' && r.failPanel.retry === 'none' && !!r.spent && r.spent.go === 'true' && /321/.test(r.spent.res) && r.noSecond, JSON.stringify({ f: r.failPanel, s: r.spent, n: r.noSecond }));
+  ok('a Daily end panel has no Replay; the next ordinary dive has it back', !!r.after && r.after.retry !== 'none' && r.after.text === 'Replay' && !r.after.daily, JSON.stringify(r.after));
   ok('the countdown runs to the UTC midnight (09:00 UTC: 15 hours left)', /^A new dive in 1[45]h \d+m$/.test(r.countdown || ''), JSON.stringify(r.countdown));
   ok('no page errors through the Daily', errs.length === 0, JSON.stringify(errs));
   await ctx.close();
@@ -161,18 +161,14 @@ const clockAt = iso => `(()=>{ const T0=Date.parse(${JSON.stringify(iso)}), P0=p
   await t4.browser.close();
   const t5 = await tzBoot('2026-10-24T13:00:00Z', null, "(()=>{try{localStorage.removeItem('s3d_daily');}catch(e){}})()");
   let z5 = {}; try {
-    await t5.p.evaluate(() => window._S3.showDaily()); await clickCentre(t5.p, '#dly-practice'); await new Promise(q => setTimeout(q, 600));
-    z5.practice = await t5.p.evaluate(() => { const g = window._S3.g(); return !!g && g.daily === 'practice' && document.getElementById('s-play').classList.contains('on'); });
+    await t5.p.evaluate(() => window._S3.showDaily()); await clickCentre(t5.p, '#dly-go'); await new Promise(q => setTimeout(q, 900));
+    z5.scored = await t5.p.evaluate(() => { const g = window._S3.g(); return !!g && g.daily === 'scored' && document.getElementById('s-play').classList.contains('on'); });
     await t5.p.evaluate(() => { const S = window._S3, g = S.g(); g.done = true; g.failed = true; g.doneT = 3; g.score = 10; S.finishLevel(); });
+    z5.noReplay = await t5.p.evaluate(() => getComputedStyle(document.getElementById('go-retry')).display === 'none');
     await clickCentre(t5.p, '#go-next'); await new Promise(q => setTimeout(q, 600));
-    z5.backToCard = await t5.p.evaluate(() => document.getElementById('s-daily').classList.contains('on'));
-    await clickCentre(t5.p, '#dly-go'); await new Promise(q => setTimeout(q, 900));
-    z5.scored = await t5.p.evaluate(() => { const g = window._S3.g(); return !!g && g.daily === 'scored'; });
-    await t5.p.evaluate(() => { const S = window._S3, g = S.g(); g.done = true; g.failed = true; g.doneT = 3; g.score = 10; S.finishLevel(); });
-    await clickCentre(t5.p, '#go-retry'); await new Promise(q => setTimeout(q, 600));
-    z5.retryIsPractice = await t5.p.evaluate(() => { const g = window._S3.g(); return !!g && g.daily === 'practice'; });
+    z5.backToCard = await t5.p.evaluate(() => document.getElementById('s-daily').classList.contains('on') && document.getElementById('dly-go').getAttribute('aria-disabled') === 'true');
   } catch (e) { z5.error = String(e).slice(0, 200); }
-  ok('the real buttons: Practice starts a practice dive, Daily on the end panel goes back to the card, Scored dive starts the scored one, Practice on the end panel practises', z5.practice && z5.backToCard && z5.scored && z5.retryIsPractice && t5.errs.length === 0, JSON.stringify({ z5, e: t5.errs }));
+  ok("the real buttons: Today's dive starts the scored one, its end panel has no Replay, Daily goes back to the card, spent", z5.scored && z5.noReplay && z5.backToCard && t5.errs.length === 0, JSON.stringify({ z5, e: t5.errs }));
   await t5.browser.close();
 }
 /* a scored dive begun before the UTC midnight and landed after it keeps its result under the day it began */

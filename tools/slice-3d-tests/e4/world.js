@@ -42,7 +42,9 @@ ctx.clBand=function(sl){ sl.band={}; }; ctx.findPop=function(){}; ctx.CLGOLD=nul
 if(SRC.indexOf('function bossChamber(')>=0){ ['BOSS_H','BOSS_LANES','BOSS_NAME','BOSS_COL'].forEach(function(n){ vm.runInContext(grabVar(n), ctx); });
   vm.runInContext('var BOSS_ON=true, BOSS_R=2.3, BOSS_LOBS=3, _crackTex=null;', ctx);
   var m=SRC.match(/var BOSS_LANES=\[[^\]]*\], BOSS_R=([0-9.]+), BOSS_LOBS=(\d+);/); if(!m||m[1]!=='2.3'||m[2]!=='3')throw new Error('boss constants moved');
-  ['bossCrack','bossChamber','bossCell','bossNetDrop','bossStep','bossDraw'].forEach(function(n){ vm.runInContext(grab(n), ctx); }); }
+  ['bossCrack','bossChamber','bossCell','bossNetDrop','bossStep','bossDraw'].forEach(function(n){ vm.runInContext(grab(n), ctx); });
+  /* Part F3 (24 Oct): the forgiving lob and the graded pay, pulled when they exist */
+  var mF=SRC.match(/var BOSS_PTS=\d+, LOB_SPIN=[0-9.]+;/); if(mF){ vm.runInContext(mF[0], ctx); ['lobOn','lobSpin','lobAim'].forEach(function(n){ vm.runInContext(grab(n), ctx); }); } }
 if(SRC.indexOf('function cleanLine(')>=0){ ['CL_CARVE','CL_START'].forEach(function(n){ vm.runInContext(grabVar(n), ctx); });
   ['clNeed','clHit','clClear','clParts','cleanLine'].forEach(function(n){ vm.runInContext(grab(n), ctx); }); }
 function dive(lvl, salt){

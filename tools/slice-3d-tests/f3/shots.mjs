@@ -1,0 +1,32 @@
+// Part F3 look: the Daily card, a Daily's end panel, the boss's hit popup, its win popup, the boss dive's end panel, the How
+// page's boss line. 412x915 DPR 2 (his phone width).  node shots.mjs <outdir>
+import { createRequire } from 'node:module';
+const require = createRequire('/workspaces/lucid-winds/x.js');
+const puppeteer = require('puppeteer');
+const [out] = process.argv.slice(2);
+const BASE = process.env.BASE || 'http://127.0.0.1:8777';
+const sleep = t => new Promise(r => setTimeout(r, t));
+const b = await puppeteer.launch({ headless: 'new', protocolTimeout: 300000, args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'] });
+const p = await b.newPage(); const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 200)));
+await p.setViewport({ width: 412, height: 915, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+await p.evaluateOnNewDocument(() => { try { localStorage.setItem('sws_dev_ok', '1'); localStorage.setItem('lwfb_explained', '1'); localStorage.removeItem('s3d_daily'); } catch (e) {} });
+await p.goto(BASE + '/satellites/slice-3d/?dev=1', { waitUntil: 'domcontentloaded', timeout: 60000 });
+await p.waitForFunction(() => window._S3 && window._S3.art && window._S3.art().json && document.readyState === 'complete', { timeout: 30000 });
+await sleep(1500);
+const settle = async () => { const t0 = Date.now(); while (Date.now() - t0 < 20000) { const a = await p.evaluate(() => window._S3.art()); if (a.asked > 0 && a.loaded + a.failed >= a.asked) break; await sleep(400); } };
+await p.evaluate(n => { window.__PW = n; }, +(process.env.POPWAIT || 30)); if (process.env.POPFREEZE) await p.evaluate(() => { window.__FREEZE = true; }); await p.evaluate(() => window._S3.showDaily()); await sleep(800); await p.screenshot({ path: out + '/1-daily-card.png' });
+await p.evaluate(() => { const S = window._S3; S.newDaily(true); S.stepN(3, 16); const g = S.g(); g.score = 1234; g.done = true; g.failed = true; g.doneT = 3; S.finishLevel(); });
+await sleep(900); await p.screenshot({ path: out + '/2-daily-end.png' });
+await p.evaluate(() => window._S3.showDaily()); await sleep(600); await p.screenshot({ path: out + '/3-daily-spent.png' });
+await p.evaluate(() => { window._S3.salt(77); window._S3.newFF(5); }); await settle(); await p.evaluate(() => { window._S3.salt(77); window._S3.newFF(5); }); await settle();
+const shotAt = async (name, until) => { await p.evaluate((u) => { const S = window._S3, G = S.g(), B = S.boss(); const f = new Function('G', 'B', 'return ' + u);
+  for (let n = 0; n < 4000 && !f(G, B); n++) S.stepN(1, 1000 / 120); for (let n = 0; n < +(window.__PW || 30); n++) S.stepN(1, 1000 / 120);
+  if (window.__FREEZE) document.querySelectorAll('.pop3d').forEach(e => { const c = e.cloneNode(true); c.style.animation = 'none'; c.style.opacity = '1'; e.parentNode.appendChild(c); }); }, until); await sleep(+(process.env.POPSLEEP || 200)); await p.screenshot({ path: out + '/' + name + '.png' }); };
+await p.evaluate(() => { const S = window._S3, G = S.g(), B = S.boss(); G.x = 0.3; G.y = B.y + 20; G.vx = 0; G.vy = -19; G.w = 0; G.ang = Math.PI / 2; S.hold(0); });
+await shotAt('4-boss-hit1', 'B.hits>=1'); await shotAt('5-boss-win', 'B.hits>=3');
+await p.evaluate(() => { const S = window._S3; for (let n = 0; n < 2000 && !document.getElementById('s-go').classList.contains('on'); n++) S.stepN(1, 1000 / 120); });
+await sleep(1200); await p.screenshot({ path: out + '/6-boss-end.png' });
+await p.evaluate(() => { window._S3.salt(null); document.querySelector('#b-how') && document.querySelector('#b-how').click(); }); await sleep(700);
+await p.evaluate(() => { const h = [...document.querySelectorAll('.helprow')].find(n => /boss/.test(n.textContent)); if (h) h.scrollIntoView({ block: 'center' }); }); await sleep(400);
+await p.screenshot({ path: out + '/7-how-boss.png' });
+console.log('errs', errs.join(' | ') || 'none'); await b.close();

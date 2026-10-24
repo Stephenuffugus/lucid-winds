@@ -1283,33 +1283,33 @@ const clockAt = iso => `(()=>{ const T0=Date.parse(${JSON.stringify(iso)}), P0=p
       L.forEach(n => (W[n] || []).forEach(e => parts.push(n[0], Math.round((e.x != null ? e.x : e.cx || 0) * 1000), Math.round((e.y || 0) * 1000), Math.round((e.w || e.r || 0) * 1000))));
       return parts.join(',').length + ':' + parts.reduce((h, v) => (Math.imul(h ^ String(v).length, 16777619) + (+v || 0)) >>> 0, 0x811c9dc5); };
     const a = S.daily(Date.parse('2026-10-24T00:00:01Z')), b = S.daily(Date.parse('2026-10-24T23:59:59Z')), c = S.daily(Date.parse('2026-10-25T00:00:01Z'));
-    out.spec = { same: JSON.stringify(a) === JSON.stringify(b), next: a.seed !== c.seed && a.utcDate !== c.utcDate, lvl: a.level >= 5 && a.level <= 35 && c.level >= 5 && c.level <= 35, gen: a.generatorVersion === 1 && a.physicsVersion === 1, a };
+    out.spec = { same: JSON.stringify(a) === JSON.stringify(b), next: a.seed !== c.seed && a.utcDate !== c.utcDate, lvl: a.level >= 5 && a.level <= 35 && c.level >= 5 && c.level <= 35, gen: a.generatorVersion === 1 && a.physicsVersion === 2, a };   /* PHYS 2 since 24 Oct: the boss's forgiving lob */
     /* the same day builds the same dive and the same Clean Slice line */
     S.newDaily(false); const f1 = fp(S.world()), l1 = S.clean().req.map(s => s.x.toFixed(2) + '@' + s.y.toFixed(2)).join('|');
     S.newDaily(false); const f2 = fp(S.world()), l2 = S.clean().req.map(s => s.x.toFixed(2) + '@' + s.y.toFixed(2)).join('|');
     out.stable = { same: f1 === f2 && l1 === l2, lvl: S.g().lvl === a.level, salted: true };
     /* opening the card and practising spend nothing; the scored dive is spent on its first simulation tick */
     localStorage.removeItem('s3d_daily'); S.showDaily(); out.card = { used: S.dly().used, shown: document.getElementById('s-daily').classList.contains('on'), go: document.getElementById('dly-go').getAttribute('aria-disabled') };
-    S.newDaily(false); for (let n = 0; n < 30; n++) S.stepN(1, D); out.practice = { used: S.dly().used, daily: S.g().daily };
+    /* no practice since 24 Oct (his call): the card offers one dive and nothing else */
+    out.noPractice = !document.getElementById('dly-practice') && !/practi[cs]e/i.test(document.getElementById('s-daily').textContent);
     S.newDaily(true); out.beforeTick = S.dly().used; S.stepN(1, D); out.afterClock = S.dly().used; S.stepN(1, D);
     out.afterTick = { used: S.dly().used, disk: JSON.parse(localStorage.getItem('s3d_daily') || 'null') };
     /* a failed scored dive: its score, personal, no badge; the card shows it spent */
     const G = S.g(); G.score = 321; G.done = true; G.failed = true; G.doneT = 3; S.finishLevel();
-    const dl = document.getElementById('go-daily'); out.failPanel = { on: dl.classList.contains('on'), won: dl.classList.contains('won'), text: document.getElementById('go-daily-t').textContent, next: document.getElementById('go-next').textContent, retry: document.getElementById('go-retry').textContent };
+    const dl = document.getElementById('go-daily'); out.failPanel = { on: dl.classList.contains('on'), won: dl.classList.contains('won'), text: document.getElementById('go-daily-t').textContent, next: document.getElementById('go-next').textContent, retry: getComputedStyle(document.getElementById('go-retry')).display };
     S.showDaily(); out.spent = { go: document.getElementById('dly-go').getAttribute('aria-disabled'), res: document.getElementById('dly-res').textContent };
     const ff0 = S.prog().ffLevel, g0 = S.g(); S.newDaily(true); out.noSecond = S.g() === g0 && document.getElementById('s-daily').classList.contains('on');
-    /* practice reaching the floor: not scored, no badge, the Freefall level unmoved */
-    const lv0 = S.prog().level; S.newDaily(false); { const g = S.g(), W = S.world(); g.score = 5000; g.x = 0; g.y = W.floorY + 3; g.vx = 0; g.vy = -10; g.w = 0; g.ang = Math.PI / 2; S.hold(0);
-      const go = document.getElementById('s-go'); go.classList.remove('on'); for (let n = 0; n < 700 && !go.classList.contains('on'); n++) S.stepN(1, D);
-      out.practiceFloor = { done: g.done, failed: !!g.failed, text: document.getElementById('go-daily-t').textContent, won: dl.classList.contains('won'), ff: S.prog().ffLevel === ff0, best: S.prog().best['f' + g.lvl] || 0, journey: S.prog().level === lv0 }; }
+    /* the next ordinary dive's end panel has its Replay back (the Daily hid it) */
+    S.newFF(2); { const g = S.g(); g.score = 10; g.done = true; g.failed = true; g.doneT = 3; S.finishLevel();
+      const rb = document.getElementById('go-retry'); out.after = { retry: getComputedStyle(rb).display, text: rb.textContent, daily: dl.classList.contains('on') }; }
     out.countdown = (S.showDaily(), document.getElementById('dly-clock').textContent);
     window._S3skiprender = false; return out; }); } catch (e) { r = { error: String(e).slice(0, 200) }; }
   ok("the day's dive is fixed by the UTC date (and the versions), a new one each day, levels 5 to 35", !!r.spec && r.spec.same && r.spec.next && r.spec.lvl && r.spec.gen, JSON.stringify(r.spec || r));
   ok('the same day builds the same dive and the same Clean Slice line', !!r.stable && r.stable.same && r.stable.lvl, JSON.stringify(r.stable));
-  ok('opening the Daily card and practising spend nothing', !!r.card && r.card.shown && !r.card.used && r.card.go === null && !!r.practice && !r.practice.used && r.practice.daily === 'practice', JSON.stringify({ c: r.card, p: r.practice }));
+  ok('opening the Daily card spends nothing, and it offers no practice', !!r.card && r.card.shown && !r.card.used && r.card.go === null && r.noPractice === true, JSON.stringify({ c: r.card, p: r.noPractice }));
   ok('the scored dive is spent on its first simulation tick, and on disk', r.beforeTick === false && r.afterClock === false && !!r.afterTick && r.afterTick.used && !!r.afterTick.disk && r.afterTick.disk.used === true && r.afterTick.disk.day === '2026-10-24', JSON.stringify({ b: r.beforeTick, c: r.afterClock, t: r.afterTick }));
-  ok('a failed scored dive: a personal result, no badge; the card shows it spent and no second scored dive starts', !!r.failPanel && r.failPanel.on && !r.failPanel.won && /personal result/.test(r.failPanel.text) && r.failPanel.next === 'Daily' && r.failPanel.retry === 'Practice' && !!r.spent && r.spent.go === 'true' && /321/.test(r.spent.res) && r.noSecond, JSON.stringify({ f: r.failPanel, s: r.spent, n: r.noSecond }));
-  ok('practice reaching the floor: not scored, no badge, no level (Freefall or Journey) and no best moved', !!r.practiceFloor && r.practiceFloor.done && !r.practiceFloor.failed && /practice, not scored/.test(r.practiceFloor.text) && !r.practiceFloor.won && r.practiceFloor.ff && r.practiceFloor.best === 0 && r.practiceFloor.journey, JSON.stringify(r.practiceFloor));
+  ok('a failed scored dive: a personal result, no badge; the card shows it spent and no second scored dive starts', !!r.failPanel && r.failPanel.on && !r.failPanel.won && /personal result/.test(r.failPanel.text) && r.failPanel.next === 'Daily' && r.failPanel.retry === 'none' && !!r.spent && r.spent.go === 'true' && /321/.test(r.spent.res) && r.noSecond, JSON.stringify({ f: r.failPanel, s: r.spent, n: r.noSecond }));
+  ok('a Daily end panel has no Replay; the next ordinary dive has it back', !!r.after && r.after.retry !== 'none' && r.after.text === 'Replay' && !r.after.daily, JSON.stringify(r.after));
   ok('the countdown runs to the UTC midnight (09:00 UTC: 15 hours left)', /^A new dive in 1[45]h \d+m$/.test(r.countdown || ''), JSON.stringify(r.countdown));
   ok('no page errors through the Daily', errs.length === 0, JSON.stringify(errs));
   await ctx.close();
@@ -1370,18 +1370,14 @@ const clockAt = iso => `(()=>{ const T0=Date.parse(${JSON.stringify(iso)}), P0=p
   await t4.browser.close();
   const t5 = await tzBoot('2026-10-24T13:00:00Z', null, "(()=>{try{localStorage.removeItem('s3d_daily');}catch(e){}})()");
   let z5 = {}; try {
-    await t5.p.evaluate(() => window._S3.showDaily()); await clickCentre(t5.p, '#dly-practice'); await new Promise(q => setTimeout(q, 600));
-    z5.practice = await t5.p.evaluate(() => { const g = window._S3.g(); return !!g && g.daily === 'practice' && document.getElementById('s-play').classList.contains('on'); });
+    await t5.p.evaluate(() => window._S3.showDaily()); await clickCentre(t5.p, '#dly-go'); await new Promise(q => setTimeout(q, 900));
+    z5.scored = await t5.p.evaluate(() => { const g = window._S3.g(); return !!g && g.daily === 'scored' && document.getElementById('s-play').classList.contains('on'); });
     await t5.p.evaluate(() => { const S = window._S3, g = S.g(); g.done = true; g.failed = true; g.doneT = 3; g.score = 10; S.finishLevel(); });
+    z5.noReplay = await t5.p.evaluate(() => getComputedStyle(document.getElementById('go-retry')).display === 'none');
     await clickCentre(t5.p, '#go-next'); await new Promise(q => setTimeout(q, 600));
-    z5.backToCard = await t5.p.evaluate(() => document.getElementById('s-daily').classList.contains('on'));
-    await clickCentre(t5.p, '#dly-go'); await new Promise(q => setTimeout(q, 900));
-    z5.scored = await t5.p.evaluate(() => { const g = window._S3.g(); return !!g && g.daily === 'scored'; });
-    await t5.p.evaluate(() => { const S = window._S3, g = S.g(); g.done = true; g.failed = true; g.doneT = 3; g.score = 10; S.finishLevel(); });
-    await clickCentre(t5.p, '#go-retry'); await new Promise(q => setTimeout(q, 600));
-    z5.retryIsPractice = await t5.p.evaluate(() => { const g = window._S3.g(); return !!g && g.daily === 'practice'; });
+    z5.backToCard = await t5.p.evaluate(() => document.getElementById('s-daily').classList.contains('on') && document.getElementById('dly-go').getAttribute('aria-disabled') === 'true');
   } catch (e) { z5.error = String(e).slice(0, 200); }
-  ok('the real buttons: Practice starts a practice dive, Daily on the end panel goes back to the card, Scored dive starts the scored one, Practice on the end panel practises', z5.practice && z5.backToCard && z5.scored && z5.retryIsPractice && t5.errs.length === 0, JSON.stringify({ z5, e: t5.errs }));
+  ok("the real buttons: Today's dive starts the scored one, its end panel has no Replay, Daily goes back to the card, spent", z5.scored && z5.noReplay && z5.backToCard && t5.errs.length === 0, JSON.stringify({ z5, e: t5.errs }));
   await t5.browser.close();
 }
 /* a scored dive begun before the UTC midnight and landed after it keeps its result under the day it began */
@@ -1428,14 +1424,15 @@ console.log('\n[21] Part E4: a boss at the end of every world');
         if (B.lobs > l0) { log.push('lob'); lobN = n; side = B.tx > G.x ? 1 : -1; }
         if (pin && B.hits === 1 && held === null) { held = 0; for (let k = 0; k < 10; k++) { G.x = B.x; G.y = B.y + 0.5; G.vx = 0; G.vy = -0.2; S.stepN(1, D); } held = B.hits; } }
       S.hold(0); return { hits: B.hits, held, tx, pay, rope: !!B.ropeCut, cleared: B.cleared, skipped: B.skipped, net: B.netOn, done: G.done, failed: !!G.failed, t: +G.t.toFixed(1), log: log.join(' '), lab: document.getElementById('go-lab').textContent, name: B.name }; };
-    /* left alone (nothing teleported): three hits, one lane over each time (a side, then the middle), 600 paid once, at the third */
+    /* left alone (nothing teleported): three hits, one lane over each time (a side, then the middle), paid once, at the third
+       (600 x5 since 24 Oct: no miss, the flawless grade) */
     out.win = fight(Math.PI / 2);
     for (let n = 0; n < 600 && !document.getElementById('s-go').classList.contains('on'); n++) S.stepN(1, D);
     out.win.panel = document.getElementById('go-lab').textContent;
     out.held = fight(Math.PI / 2, null, true);
     out.handle = fight(-Math.PI / 2);
-    /* as played: a 0.1 s tap toward the boss 0.1 s after every lob clears the fight (two dives); a 0.25 s hold overshoots and
-       never cuts a rope (the review: a tap toward the boss's new lane cut its rope in 35 of 40 fights) */
+    /* as played: a 0.1 s tap toward the boss 0.1 s after every lob clears the fight (two dives); a 0.25 s hold never cuts a
+       rope (the review: a tap toward the boss's new lane cut its rope in 35 of 40 fights), and since 24 Oct it clears too */
     const tap = (R, T) => (m, lobN, side) => (lobN >= 0 && m >= R && m < R + T) ? side : 0;
     out.taps = [77, 5].map(sd => fight(Math.PI / 2, tap(12, 12), false, sd));
     out.heavy = fight(Math.PI / 2, tap(12, 30));
@@ -1484,11 +1481,11 @@ console.log('\n[21] Part E4: a boss at the end of every world');
   const L = r.levels || {}, w = r.win || {};
   ok('a boss closes levels 5, 10, 15 ... and no other dive (not 4, not 6, not Endless)', L[5] && L[10] && L[15] && L[40] && !L[4] && !L[6] && !L.endless, JSON.stringify(L));
   ok('the shaft above the chamber is the very dive it was: its pieces and its Clean Slice line, member by member', !!r.same && r.same.pieces && r.same.line && r.same.deeper, JSON.stringify(r.same));
-  ok('a blade down knife left alone: three hits, the net lobs it each time, one lane over each time, 600 paid once at the third, the boss down, the floor', w.hits === 3 && w.cleared && !w.skipped && !w.net && w.done && !w.failed && /^hit1 lob hit2 lob hit3$/.test(w.log) && Array.isArray(w.tx) && Math.abs(w.tx[0]) === 4.8 && w.tx[1] === 0 && (w.pay || []).join() === '0,0,600', JSON.stringify(w));
+  ok('a blade down knife left alone: three hits, the net lobs it each time, one lane over each time, 3000 (600 x5, flawless) paid once at the third, the boss down, the floor', w.hits === 3 && w.cleared && !w.skipped && !w.net && w.done && !w.failed && /^hit1 lob hit2 lob hit3$/.test(w.log) && Array.isArray(w.tx) && Math.abs(w.tx[0]) === 4.8 && w.tx[1] === 0 && (w.pay || []).join() === '0,0,3000', JSON.stringify(w));
   ok('a knife held inside the boss after a hit counts it once', !!r.held && r.held.held === 1 && r.held.done && !r.held.failed, JSON.stringify(r.held));
   ok('the end panel names the boss', !!r.win && new RegExp(r.win.name + ' down').test(r.win.panel || ''), JSON.stringify(r.win && r.win.panel));
   ok('a handle down knife never hits; the net gives way at its fourth landing (three lobs) and the dive goes on to the floor', !!r.handle && r.handle.hits === 0 && r.handle.skipped && !r.handle.net && r.handle.done && !r.handle.failed && r.handle.log === 'lob lob lob lob', JSON.stringify(r.handle));
-  ok('as played: a 0.1 s tap toward the boss after each lob clears the fight; a 0.25 s hold never cuts a rope and the dive ends', Array.isArray(r.taps) && r.taps.every(o => o.cleared && !o.skipped && !o.rope && o.done && !o.failed) && !!r.heavy && !r.heavy.rope && r.heavy.done && !r.heavy.failed, JSON.stringify([r.taps, r.heavy]));
+  ok('as played: a 0.1 s tap toward the boss after each lob clears the fight; a 0.25 s hold never cuts a rope and the dive ends', Array.isArray(r.taps) && r.taps.every(o => o.cleared && !o.skipped && !o.rope && o.done && !o.failed) && !!r.heavy && !r.heavy.rope && r.heavy.cleared && r.heavy.done && !r.heavy.failed, JSON.stringify([r.taps, r.heavy]));
   ok("the review's trap (a handle first knife between a side lane boss and the wall) ends", !!r.trap && r.trap.done && !r.trap.failed, JSON.stringify(r.trap));
   ok('a hit resets the lob count (the next landing is lob one, not the give way)', !!r.reset && r.reset.hits === 1 && r.reset.after === 0 && r.reset.lobs === 1 && !r.reset.skipped, JSON.stringify(r.reset));
   ok('a restart resets the chamber', !!r.restart && r.restart.hits === 0 && r.restart.net && r.restart.lobs === 0, JSON.stringify(r.restart));
@@ -1510,6 +1507,31 @@ console.log('\n[21] Part E4: a boss at the end of every world');
     out.seen = seen; window._S3skiprender = false; return out; }); } catch (e) { r = { error: String(e).slice(0, 200) }; }
   ok("the boss wears Astra's stages: cell 1, a drawn crack after the first hit, cell 2 after the second, the reveal after the third", !!r && r.loaded && !r.code && r.c1 === 0.01 && r.seen[1].off === 0.01 && r.seen[1].crack > 0.5 && r.seen[2].off === +((1.03) / 3).toFixed(3) && r.seen[3].off === +((2.03) / 3).toFixed(3) && r.seen[2].crack === 0 && r.seen[3].crack === 0, JSON.stringify(r));
   ok('no page errors with the boss painted', errs.length === 0, JSON.stringify(errs));
+  await ctx.close();
+}
+
+/* ---- 23. Part F3 (24 Oct, his calls): the boss's lob forgives a steering thumb, the boss pays by how well you fought and
+   apart from the landing's multiplier. A hold toward the boss on every lob of 0.5 s or 1.2 s (v6.8 missed every fight
+   from 0.15 s) clears it; a knife that enters past the boss pays x3 for its one miss; the landing multiplies the dive's
+   score but never the boss's pay (v6.8 paid 600 x10 on the bullseye the knife always dropped onto). Measured over 300
+   fights in tools/slice-3d-tests/f3/steer.js. Watched red with the aim cap and the separate pay taken out. */
+console.log('\n[23] Part F3: a forgiving lob, a graded boss pay outside the multiplier');
+{
+  const { ctx, p, errs } = await boot();
+  let r; try { r = await p.evaluate(() => {
+    const S = window._S3, D = 1000 / 120, out = {}; window._S3skiprender = true;
+    const run = (x0, holdSteps) => { S.salt(77); S.newFF(5); const G = S.g(), B = S.boss(); G.x = x0; G.y = B.y + 20; G.vx = 0; G.vy = -19; G.w = 0; G.ang = Math.PI / 2;
+      let lobN = -1, side = 0, pre = null;
+      for (let n = 0; n < 9000 && !G.counted; n++) { const l0 = B.lobs; S.hold(lobN >= 0 && n >= lobN + 12 && n < lobN + 12 + holdSteps ? side : 0); if (!G.counted) pre = G.score; S.stepN(1, D);
+        if (B.lobs > l0) { lobN = n; side = B.tx > G.x ? 1 : -1; } }
+      S.hold(0); return { cleared: B.cleared, skipped: B.skipped, miss: B.miss || 0, pts: G.bossPts || 0, grade: G.bossGrade || 0, pre, final: G.score, mult: G.mult, failed: !!G.failed }; };
+    out.h05 = run(0.3, 60); out.h12 = run(0.3, 144); out.past = run(7, 0); out.alone = run(0.3, 0);
+    window._S3skiprender = false; S.salt(null); return out;
+  }); } catch (e) { r = { error: String(e).slice(0, 200) }; }
+  ok('a hold toward the boss of 0.5 s or 1.2 s on every lob still clears the fight', !!r.h05 && r.h05.cleared && !r.h05.skipped && !r.h05.failed && !!r.h12 && r.h12.cleared && !r.h12.skipped && !r.h12.failed, JSON.stringify([r.h05, r.h12]));
+  ok('the boss pays by the misses: none x5 (3000); a knife that enters past it, one miss, x3 (1800)', !!r.alone && r.alone.miss === 0 && r.alone.pts === 3000 && !!r.past && r.past.cleared && r.past.miss === 1 && r.past.pts === 1800, JSON.stringify([r.alone, r.past]));
+  ok("the landing multiplies the dive's score but never the boss's pay", [r.alone, r.past].every(o => !!o && o.mult > 1 && o.final === (o.pre - o.pts) * o.mult + o.pts), JSON.stringify([r.alone, r.past]));
+  ok('no page errors through Part F3', errs.length === 0, JSON.stringify(errs));
   await ctx.close();
 }
 
