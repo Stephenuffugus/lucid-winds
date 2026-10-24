@@ -167,6 +167,35 @@ rates) are proposals; the gates below are what counts.
     after each hit (each stage opens the next approach); one completion reward; a visible skip rope at the side that
     drops the bumpers (the course ends, Clean Slice forfeited). Prove with the harness: three hits exactly, no softlock,
     the rope always reachable, a restart resets it.
+- 2026-10-24 (Opus): **PART E1 LIVE as v6.5** (deploy `b9c5b1e1f` on main, from add-sproing-jumper `80b275f9c`). Proven
+  live: both origins serve BUILD v6.5, worker `sw.js?v=69`, cache `slice3d-v71`, portal card `?v=20261024a`; the profiles
+  that held v6.4 (v=68, cache v70) now run v6.5, controlled, no page errors. Suite 131 of 131 (row [18], 17 checks; row [1]
+  four poison cases more); `tools/slice-3d-tests/fix/fwrun_e1.js`: 22 mutation groups, each red on its check. A three lens
+  review with a skeptic per finding: 10 findings, 3 survived, all folded in. What it built and the laws it set:
+  - The slab bonk is clamped to +-(SW-rchW). When the clamp bites, the STACK's contact stays open (its slabs share `sl.stk`;
+    the contact lasts while any slab of it is touched, step after step, by `G.stepK`), so a knife in the lane by a wall
+    hugging stack is bonked once, not every step. A bonk the clamp did not touch opens no contact and acts as v6.4; a cut
+    never opens one. The review's first cut held EVERY bonk's contact open: knives were carried inside gate slabs (2,588 of
+    48,672 gate falls) and some spinning ones stuck. Shipped rule: gate outcomes identical to v6.4, 0 inside, 0 past the wall.
+  - WATCH A FALL LONG ENOUGH: the review's "64 new sticks in gates, v6.4 survived" came from stopping 6 u below the gate; at
+    40 u every one of them sticks on v6.4 too (the knife drifts at a wall blade first). `gatecheck.js [still|spin] [u]`.
+  - SS27: every run start sets `G.runId`; `awardSlivers` pays once per id: the id goes into `PROG.settled` and `STL_NEW`,
+    saveProg writes it, THEN the slivers. The settled list is the last 20 in the order PAID (saveProg rebuilds it from the
+    disk list plus this page's STL_NEW), never sorted by id (an id carries its START time: the first cut dropped a run begun in
+    a background tab in the very save that recorded it). finishLevel starts with a run ends once guard (`G.ended`: shows the
+    panel again, counts nothing); `fresh` keeps a settled run's clean dive counts and Sunbeams from counting again.
+  - The in-play back button during a decided run's end wobble now finishes it (stepWorld until G.ended): paid, end panel up.
+    During play it leaves unpaid, as before.
+  FOUND, NOT FIXED (pre-existing, his to know): (1) a knife falling into the 1.4 u gap between two gate slabs is bonked every
+  step until it cuts one (up to about 28 wood sounds in 0.23 s); a fix must never carry it inside a slab. (2) A knife that
+  sticks in a wall can still be nudged about 0.1 u by a slab bonk later in the same step. (3) The lane fall now carves the
+  whole column with its combo (about 660 points, x10, for a no input fall; v6.4's every step bonks reset it to x1).
+  E2 STARTED (nothing in index.html yet): `tools/slice-3d-tests/e2/` holds the real game in a vm (`world.js`), the reach tables
+  a two hold program achieves (after a carve: room 4.8 u reaches 1.5 u sideways, 20 u 2.5, 40 u 5.5, 60 u 7.5; from the flat
+  start the blade turns down only by moving RIGHT: a hold turns and moves the knife together, about 5.9 u of eventual drift
+  per radian), a draft rule (`cleanline.es5.js`) and the near human controller (`ctl3.js`, `prove3.js`). A controller that
+  re-plans every tick dithers (many programs score 0); it must COMMIT to a plan and re-plan only when it stops arriving well.
+  NEXT: E2 (Clean Slice line, discoveries, results, budget).
 
 ---
 
