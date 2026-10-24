@@ -197,6 +197,25 @@ rates) are proposals; the gates below are what counts.
   re-plans every tick dithers (many programs score 0); it must COMMIT to a plan and re-plan only when it stops arriving well.
   NEXT: E2 (Clean Slice line, discoveries, results, budget).
 
+- 2026-10-24 (Opus): **PART E2 LIVE as v6.6** (deploy `916f58eb2` on main, from add-sproing-jumper `445e49c7f`). Proven
+  live on both origins (BUILD v6.6, worker `sw.js?v=70`, cache `slice3d-v72`, card `?v=20261024b`); the profiles that held
+  v6.5 now run v6.6. Suite 159 of 159 (row [19]); `fix/fwrun_e2.js`: 32 groups, each red on its check. Review: three lenses,
+  a skeptic per finding; everything found folded in before the ship. What it built and the laws:
+  - SS23 Clean Slice: `cleanLine` (CL_CARVE/CL_START reach tables + `clClear` corridor against hard blockers: bumpers,
+    crystals, thorns, gourds at their real reach, the ice, the loaf) names whole stacks (2+ slabs) top down; a stack whose
+    last slab is under the floor is never on it; a WASP is checked where it will be when a knife falling from the start
+    reaches it (the fall all but fixes the time), at a stack's entry only. Gold collar on each line stack's top slab.
+    PROOF: the near human controller (e2/ctl3.js: ~0.1 s decisions, commits to a plan, hold edges blurred 2 steps, sees
+    hazards in time) carved every line: the first rule over 320 dives, the final rule over 160 (98 lines, 6 on a retry).
+    About half of dives get a line (final rule, 400 dives: 3,878 targets, 166 without one). A looser corridor gave every dive
+    a line but 5 of 80 lines were never carved: NOT shipped. ⛔ A controller re-planning every tick with a flat zero cost
+    dithers; it must commit. ⛔ Layout fingerprints (e2/fp.js) prove E2 drew no rng() of the dive's own.
+  - SS06 finds: one line slab per dive (its own stream) holds a code drawn seed in its world's hat (Astra drew none: an ask);
+    `s3d_dex` {world:1}, told once across tabs (`joinDex` before telling), `OWN.call` so {"hasOwnProperty":1} cannot kill
+    the boot. SS24: #go-clean (N of M, the badge only with the floor), #go-find. SS35: CHUNK_CAP 24, SPARK_CAP 120,
+    `worldEvict` (GPU only; three re-uploads on next use; a per call stamp), `_S3.calls()` (?dev=1&draws=1 on screen).
+  E3 (the Daily) and E4 (bosses) are BUILT AS PATCHES and tested (row [20] 25 checks, row [21] 11, fail watches); see the
+  next entries as they ship. Scripts: /tmp/claude-1000/ssb/e3 and e4 (copied into tools/slice-3d-tests when they ship).
 ---
 
 ## 1. What Stephen asked for, verbatim, and what "good" means
