@@ -33,6 +33,7 @@ grep -qF "$(cat $SP/want_cache)" "$T/sw.js"
 grep -qF "$(cat $SP/want_card)" "$T/portal.html"
 grep -qF "$(cat $SP/want_card)" "$T/catalog.json"
 grep -qF "$(cat $SP/want_code)" "$T/page.html"
+if [ -f "$SP/want_file" ]; then git cat-file -e "$C:$(cat $SP/want_file)"; fi   # a file this build must carry (art.json)
 echo "deploy commit $C verified; pushing to main"
 git push origin "$C:main"
 echo "$C" > "$SP/deploy.sha"

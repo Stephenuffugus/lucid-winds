@@ -15,6 +15,15 @@ const G = {
     CLAMPAFTER: { want: 'falls a row every 40 ms', muts: [['      if(f.gravAcc>g)f.gravAcc=g;', '      f.gravAcc+=dt; if(f.gravAcc>g)f.gravAcc=g; f.gravAcc-=dt;'], ['      f.gravAcc+=dt;\n      while(f.gravAcc>=g)', '      f.gravAcc+=dt; if(f.gravAcc>g)f.gravAcc=g;\n      while(f.gravAcc>=g)']] },
     FLOATFIT: { want: 'banner fits the board', muts: [["var punch=Math.min(1,Math.max(0,fl.life-0.82)/0.18);", "var punch=Math.max(0,fl.life-0.82)/0.18;"], ["if(mw>lim){ fs=Math.max(10,Math.floor(fs*lim/mw)); ctx.font='italic 800 '+fs+'px system-ui'; }", ""]] },
   },
+  p1: {
+    JOINANY: { want: 'joins are exactly', muts: [['if(r2>=ROWS||c2>=COLS||f.grid[r2][c2]!==v)continue;', 'if(r2>=ROWS||c2>=COLS||!f.grid[r2][c2])continue;']] },
+    JOINDIAG: { want: 'joins are exactly', muts: [['for(k=0;k<2;k++){ var r2=r+k, c2=c+(1-k);', 'for(k=0;k<2;k++){ var r2=r+k, c2=c+1;']] },
+    NORELEASE: { want: 'holds only those', muts: [["for(k in A2.im)if(A2.im.hasOwnProperty(k)&&/^(dance|react)\\//.test(k)&&!keep[k]){ A2.im[k].src=''; delete A2.im[k]; }", '']] },
+    ASKALL: { want: 'exactly the Aphid Swarm', muts: [['  a2Im(J.board.frame.file); a2Im(J.board.rival.file); a2Im(J.board.next.file); if(A2.who)a2Char(A2.who); }', '  a2Im(J.board.frame.file); a2Im(J.board.rival.file); a2Im(J.board.next.file); for(k in J.dance)if(J.dance.hasOwnProperty(k))a2Im(J.dance[k].frames[0]); if(A2.who)a2Char(A2.who); }']] },
+    NODANCE: { want: 'six dance frames, once', muts: [['function railChain(n){ var t=CW_T; if(n===2)RAIL.danceT=t;', 'function railChain(n){ var t=CW_T; if(n===9)RAIL.danceT=t;']] },
+    HITLONG: { want: 'hit frame for 180 ms', muts: [['if(R&&R.hit&&t-RAIL.hitT<0.18)return R.hit;', 'if(R&&R.hit&&t-RAIL.hitT<0.5)return R.hit;']] },
+    DANGER12: { want: 'danger holds while', muts: [['if(!RAIL.danger&&h>=10)RAIL.danger=true;', 'if(!RAIL.danger&&h>=12)RAIL.danger=true;']] },
+  },
 };
 let bad = 0;
 for (const [k, g] of Object.entries(G[part])) {

@@ -336,7 +336,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 <script>
 (function(){
 "use strict";
-var BUILD="v1.7";
+var BUILD="v1.8";
 /* screen shake: shake(amp,ms) — decays in update(), applied as a canvas translate in render() */
 var SHAKE={t:0,dur:1,amp:0};
 function shake(a,ms){ if(a>SHAKE.amp||SHAKE.t<=0){ SHAKE.amp=a; SHAKE.t=ms; SHAKE.dur=ms; } }
@@ -713,7 +713,7 @@ function resolveTick(f,dt){ var R=f.res; R.t+=dt;
   if(R.sub==='grav'){ var moves=applyGravityMoves(f.grid); if(moves.length){ setFall(f,moves); R.sub='gravwait'; R.t=0; } else { R.sub='scan'; } }
   else if(R.sub==='gravwait'){ if(R.t>110){ R.sub='scan'; } }
   else if(R.sub==='scan'){ var groups=findGroups(f.grid); if(!groups.length){ finishResolve(f); return; }
-    R.chain++; var cset={},gb=0,cl=0,i,j; f.pop=newLayer(); var chf={};
+    R.chain++; if(f===MATCH.of)railChain(R.chain); var cset={},gb=0,cl=0,i,j; f.pop=newLayer(); var chf={};
     for(i=0;i<groups.length;i++){ var gr=groups[i]; cset[gr.color]=1; gb+=groupBonus(gr.cells.length); cl+=gr.cells.length;
       for(j=0;j<gr.cells.length;j++){ var cc=gr.cells[j]; f.pop[cc.r][cc.c]=1; markChaffAround(f.grid,cc.r,cc.c,chf); } }
     var kk,nchf=0; for(kk in chf){ var pc=chf[kk]; f.pop[pc.r][pc.c]=2; nchf++; }
@@ -766,7 +766,7 @@ function finishResolve(f){ var R=f.res; f.score+=R.score;
 }
 
 function dropPending(f){ if(f.pending<=0){ afterTurn(f); return; }
-  var drop=Math.min(f.pending,GARBAGE_CAP); f.pending-=drop;
+  var drop=Math.min(f.pending,GARBAGE_CAP); f.pending-=drop; if(f===MATCH.of&&drop>0)railHit();
   var cols=[],i,c; var full=Math.floor(drop/COLS), rem=drop%COLS;
   for(i=0;i<full;i++)for(c=0;c<COLS;c++)cols.push(c);
   var pool=[0,1,2,3,4,5]; for(i=0;i<rem;i++){ var idx=(f.rng()*pool.length)|0; cols.push(pool[idx]); pool.splice(idx,1); }
@@ -825,7 +825,7 @@ function startMatch(stageIndex,mode){ MATCH.mode=mode||'campaign'; MATCH.stage=s
     if(MATCH.powers)MATCH.pf.powerId='keeper-solvent';
     MATCH.phase='count'; MATCH.t=0; MATCH.count=3; MATCH.result=null; MATCH.soloLevel=1; MATCH.soloClears=0;
     spawnPiece(MATCH.pf); MATCH.pf.state='wait'; show('s-play'); running=true; SFX.count(); return; }
-  var st=ROSTER[stageIndex]; cwPrefetch(st.id);
+  var st=ROSTER[stageIndex]; cwPrefetch(st.id); a2Char(st.id); railReset(st.id);   /* v1.8: only this opponent's frames are held */
   MATCH.pf=makeField(st.colors,false); MATCH.pf.gravMs=1000/st.fall;
   if(MATCH.powers)MATCH.pf.powerId='keeper-solvent';
   MATCH.of=makeField(st.colors,true,st.q,st.react,st.hcap); MATCH.of.gravMs=1000/st.fall;
@@ -1003,7 +1003,7 @@ function update(dt){ if(SHAKE.t>0){ SHAKE.t-=dt; if(SHAKE.t<0)SHAKE.t=0; }
   if(MATCH.phase==='count'){ MATCH.t+=dt; if(MATCH.t>=700){ MATCH.t=0; MATCH.count--; if(MATCH.count>0)SFX.count(); else { SFX.go(); MATCH.phase='fight'; if(MATCH.pf)MATCH.pf.state='play'; if(MATCH.of)MATCH.of.state='play'; } } return; }
   if(MATCH.phase!=='fight')return;
   tickField(MATCH.pf,dt,false);
-  if(MATCH.of)tickField(MATCH.of,dt,true);
+  if(MATCH.of){ tickField(MATCH.of,dt,true); railTick(); }
   if(MATCH.mode==='versus'){ var nowT=Date.now();
     if(nowT-MP.lastPub>900)_mpPub(true);                             /* heartbeat */
     if(MP.oppLastT && nowT-MP.oppLastT>15000 && MATCH.phase==='fight'){ MP.forfeit=true; if(MATCH.of)MATCH.of.dead=true; endMatch('win'); } }
@@ -1056,13 +1056,55 @@ setInterval(function(){ if(!running)return; var n=Date.now();
    is the permanent fallback, so the game is identical with zero art files.
    Cut by scripts/cut_popnlock.py. Bump CW_ART_V to bust the ?v= cache.
    ===================================================================== */
-var CW_ART_V='pnl1';
+var CW_ART_V='pnl2';
 var NEXTWIN={ w:52, h:86, aw:62, ah:98, pod:22, gap:3 };   /* the painted window's opening is ~33 x 51 px at this size: the pair is 47 tall */   /* the next window: one rectangle for the frame, its painting and the pair (v1.7) */
 /* Pod/piece art (sheet 10). Procedural throwies are the default; when the pod
    sprites (assets/pods/pod-0..4.png + chaff.png) land, flip CW_POD_ART=true and
    drawPod/drawChaff use the sprite body behind an image-loaded check (eyes/gaze
    still drawn on top for pods). CW_POD_BOX tunes the draw box vs the pod radius. */
 var CW_POD_ART=false, CW_POD_BOX=2.36;
+/* v1.8 (Part 1): Astra's return, cut by tools/cut_art.py into art/pnl2 with art.json as the contract. Every draw stays
+   behind a loaded check, so with no files the game is v1.7 exactly. Pods, joins and frames are small and always asked
+   for; a character's dance and reaction frames (512 x 512, about 1 MiB each decoded) only for the opponent in the match,
+   released on the next stage (A2.live counts what is held). */
+var A2={ dir:'art/pnl2/', j:null, req:0, im:{}, asked:0, who:null };
+function a2Json(){ if(A2.j||A2.req)return; A2.req=1; var x=new XMLHttpRequest(), tries=0;
+  function go(){ try{ x.open('GET',A2.dir+'art.json?v='+CW_ART_V); x.onload=function(){ try{ if(x.status===200){ A2.j=JSON.parse(x.responseText); a2Base(); return; } }catch(e){} again(); };
+    x.onerror=again; x.send(); }catch(e){ again(); } }
+  function again(){ if(++tries<3)setTimeout(function(){ x=new XMLHttpRequest(); go(); },3000*tries); else A2.req=0; }
+  go(); }
+function a2Im(rel){ var im=A2.im[rel]; if(!im){ im=new Image(); im.src=A2.dir+rel+'?v='+CW_ART_V; A2.im[rel]=im; A2.asked++; } return im; }
+function a2Ok(rel){ var im=rel&&A2.im[rel]; return !!(im&&im.complete&&im.naturalWidth>0); }
+function a2Base(){ var J=A2.j,k; if(!J)return; for(k in J.pods)if(J.pods.hasOwnProperty(k)){ var p=J.pods[k]; if(typeof p==='string')a2Im(p); else { a2Im(p.body); a2Im(p.h); a2Im(p.v); } }
+  a2Im(J.board.frame.file); a2Im(J.board.rival.file); a2Im(J.board.next.file); if(A2.who)a2Char(A2.who); }
+/* the opponent's frames, and nobody else's (a stage change releases the last opponent's) */
+function a2Char(id){ A2.who=id; var J=A2.j; if(!J)return; var keep={},k,i;
+  if(J.dance[id])for(i=0;i<J.dance[id].frames.length;i++)keep[J.dance[id].frames[i]]=1;
+  if(J.react[id])for(k in J.react[id])if(J.react[id].hasOwnProperty(k))keep[J.react[id][k]]=1;
+  for(k in A2.im)if(A2.im.hasOwnProperty(k)&&/^(dance|react)\//.test(k)&&!keep[k]){ A2.im[k].src=''; delete A2.im[k]; }
+  for(k in keep)if(keep.hasOwnProperty(k))a2Im(k); }
+var RAIL={ id:null, hitT:-9, danceT:-9, beatT:-9, freezeT:-9, danger:false };
+var RAIL_RM=false; try{ RAIL_RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){}
+function railReset(id){ RAIL.id=id; RAIL.hitT=RAIL.danceT=RAIL.beatT=RAIL.freezeT=-9; RAIL.danger=false; }
+/* PNL-046: the six frame signature plays once at chain 2, a beat accent at 3 and 4, a 240 ms freeze at 5 and up */
+function railChain(n){ var t=CW_T; if(n===2)RAIL.danceT=t; else if(n===3||n===4){ RAIL.beatT=t; if(t-RAIL.danceT>0.6)RAIL.danceT=t; } else if(n>=5)RAIL.freezeT=t; }
+function railHit(){ RAIL.hitT=CW_T; }
+/* PNL-047: danger enters at the spawn column's height 10 and leaves at 8 */
+function railTick(){ var f=MATCH.of; if(!f||!f.grid)return; var h=colHeights(f.grid)[SPAWN_COL]; if(!RAIL.danger&&h>=10)RAIL.danger=true; else if(RAIL.danger&&h<=8)RAIL.danger=false; }
+function railFrame(){ var J=A2.j, id=RAIL.id, t=CW_T; if(!J||!id)return null; var R=J.react[id], D=J.dance[id];
+  if(R&&R.hit&&t-RAIL.hitT<0.18)return R.hit;   /* a hit, 180 ms, then back to whatever it was doing */
+  if(D){ var hold=(t-RAIL.freezeT<0.24)?0.24:0, e=(t-RAIL.danceT-hold)*1000, i, acc=0;
+    if(t-RAIL.danceT<0.6+hold){ if(RAIL_RM)return D.frames[0]; if(e<0)e=0; for(i=0;i<6;i++){ acc+=D.ms[i]; if(e<acc)return D.frames[i]; } return D.frames[5]; } }
+  if(R&&R.danger&&RAIL.danger)return R.danger;
+  return null; }
+/* ONE render box per character for every dance and reaction frame: art.json's box, the union of that character's painted
+   areas in the 512 canvas, contain fit in the card with the feet on its floor, so the figure is as big as the card allows
+   and every frame keeps its own size inside the loop (the jumps are the moves) */
+function railDraw(cx,cy,w,h){ var rel=railFrame(); if(!rel||!a2Ok(rel))return false; var im=A2.im[rel], t=CW_T;
+  var bx=(A2.j.box&&A2.j.box[RAIL.id])||[0,0,512,512], bw=bx[2]-bx[0], bh=bx[3]-bx[1];
+  var k=Math.min(w/bw,h/bh)*((!RAIL_RM&&t-RAIL.beatT<0.15)?1+0.08*(1-(t-RAIL.beatT)/0.15):1);
+  try{ ctx.drawImage(im, cx-(bx[0]+bw/2)*k, cy+h/2-bx[3]*k, 512*k, 512*k); }catch(e){} return true; }
+function a2Live(){ var n=0,k; for(k in A2.im)if(A2.im.hasOwnProperty(k)&&/^(dance|react)\//.test(k))n++; return n; }
 var CW_T=0; /* animation clock (seconds), advanced every frame in loop() */
 var _cwCache={};
 function _cwLoad(src){ var im=new Image(); im._cwsrc=src; try{ im.src=src+'?v='+CW_ART_V; }catch(e){} return im; }
@@ -1119,6 +1161,11 @@ function _goBanner(kind){ var img=$('go-banner'); if(!img)return;
 /* =====================================================================
    RENDER
    ===================================================================== */
+/* nine slice: ins = the source border [L,T,R,B]; (x,y,w,h) = the rect the frame's opening goes around; k scales the borders */
+function drawNine(im,ins,x,y,w,h,k){ var iw=im.naturalWidth, ih=im.naturalHeight, L=ins[0],T=ins[1],R=ins[2],B=ins[3], i, j;
+  var sx=[0,L,iw-R,iw], sy=[0,T,ih-B,ih], dx=[x-L*k,x,x+w,x+w+R*k], dy=[y-T*k,y,y+h,y+h+B*k];
+  for(j=0;j<3;j++)for(i=0;i<3;i++){ if(i===1&&j===1)continue; var sw=sx[i+1]-sx[i], sh=sy[j+1]-sy[j], dw=dx[i+1]-dx[i], dh=dy[j+1]-dy[j];
+    if(sw>0&&sh>0&&dw>0&&dh>0){ try{ ctx.drawImage(im,sx[i],sy[j],sw,sh,dx[i],dy[j],dw,dh); }catch(e){} } } }
 function cellPx(F,r,c){ return {x:F.x+c*F.cell, y:F.y+(r-1)*F.cell}; }
 
 function drawBoardFrame(F,label,accent){ var w=COLS*F.cell,h=VISROWS*F.cell;
@@ -1128,7 +1175,9 @@ function drawBoardFrame(F,label,accent){ var w=COLS*F.cell,h=VISROWS*F.cell;
   ctx.strokeStyle='rgba(255,255,255,0.045)'; ctx.lineWidth=1; var i;
   for(i=1;i<COLS;i++){ ctx.beginPath(); ctx.moveTo(F.x+i*F.cell,F.y); ctx.lineTo(F.x+i*F.cell,F.y+h); ctx.stroke(); }
   for(i=1;i<VISROWS;i++){ ctx.beginPath(); ctx.moveTo(F.x,F.y+i*F.cell); ctx.lineTo(F.x+w,F.y+i*F.cell); ctx.stroke(); }
-  ctx.strokeStyle=accent||'#33301f'; ctx.lineWidth=2.5; rr(F.x-4,F.y-4,w+8,h+8,10); ctx.stroke();
+  var fr=A2.j?(F===PF?A2.j.board.frame:A2.j.board.rival):null;
+  if(fr&&a2Ok(fr.file))drawNine(A2.im[fr.file], fr.nine_slice, F.x, F.y, w, h, F===PF?0.4:0.5);   /* v1.8: the painted frame (Part 3 may give it full width) */
+  else { ctx.strokeStyle=accent||'#33301f'; ctx.lineWidth=2.5; rr(F.x-4,F.y-4,w+8,h+8,10); ctx.stroke(); }
   /* spawn column marker */
   ctx.fillStyle='rgba(232,193,90,0.10)'; ctx.fillRect(F.x+SPAWN_COL*F.cell,F.y,F.cell,6);
 }
@@ -1152,8 +1201,10 @@ function drawPod(x,y,s,ci,gaze,scale,alpha){ var pal=PAL[ci]; var cx=x+s/2, cy=y
   var ph=x*0.11+y*0.15, br=live?Math.sin(CW_T*1.05+ph):0, blink=live?((((CW_T*0.3+ph*1.7)%6.0)<0.14)?1:0):0;
   ctx.save();
   if(live){ ctx.translate(cx,cy+br*r*0.03); ctx.scale(1+br*0.05,1-br*0.05); ctx.translate(-cx,-cy); }
-  var _spr=CW_POD_ART?cwSpr('pods/pod-'+ci):null;
-  if(_spr&&_cwReady(_spr)){ var _d=r*CW_POD_BOX; try{ ctx.drawImage(_spr,cx-_d/2,cy-_d/2,_d,_d); }catch(e){} }
+  var _spr=CW_POD_ART?cwSpr('pods/pod-'+ci):null, _ab=A2.j&&A2.j.pods[ci+1]?A2.j.pods[ci+1].body:null;
+  var _artB=a2Ok(_ab);
+  if(_artB){ var _ad=r*2.5; try{ ctx.drawImage(A2.im[_ab],cx-_ad/2,cy-_ad/2,_ad,_ad); }catch(e){} }   /* v1.8: the body fills 0.8 of its sprite, so 2.5 r draws a 2 r body; its shape mark is painted in */
+  else if(_spr&&_cwReady(_spr)){ var _d=r*CW_POD_BOX; try{ ctx.drawImage(_spr,cx-_d/2,cy-_d/2,_d,_d); }catch(e){} }
   else {
     var g=ctx.createRadialGradient(cx-r*0.32,cy-r*0.4,r*0.15,cx,cy,r*1.15); g.addColorStop(0,pal.lt); g.addColorStop(0.62,pal.bs); g.addColorStop(1,pal.dk);
     ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.2832); ctx.fill();
@@ -1166,13 +1217,15 @@ function drawPod(x,y,s,ci,gaze,scale,alpha){ var pal=PAL[ci]; var cx=x+s/2, cy=y
       if(blink){ ctx.strokeStyle='#15170e'; ctx.lineWidth=Math.max(1.4,er*0.5); ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(eyx-er*0.7,eyy); ctx.lineTo(eyx+er*0.7,eyy); ctx.stroke(); }
       else { ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(eyx,eyy,er,0,6.2832); ctx.fill();
         ctx.fillStyle='#15170e'; ctx.beginPath(); ctx.arc(eyx+gx*er*0.42,eyy+gy*er*0.42,er*0.5,0,6.2832); ctx.fill(); } }
-    ctx.strokeStyle='rgba(18,20,12,0.65)'; ctx.lineWidth=Math.max(1,r*0.11); ctx.beginPath(); ctx.arc(cx,cy+r*0.5,r*0.22,0.16*Math.PI,0.84*Math.PI); ctx.stroke();
+    var _my=_artB?0.36:0.5, _mr=_artB?0.16:0.22;   /* v1.8: over a painted body the mouth sits higher and smaller, so the shape mark below it shows (PNL-055) */
+    ctx.strokeStyle='rgba(18,20,12,0.65)'; ctx.lineWidth=Math.max(1,r*0.11); ctx.beginPath(); ctx.arc(cx,cy+r*_my,r*_mr,0.16*Math.PI,0.84*Math.PI); ctx.stroke();
   }
   ctx.restore();
   if(alpha!=null)ctx.globalAlpha=1;
 }
 function drawChaff(x,y,s,scale,alpha){ var cx=x+s/2, cy=y+s/2, r=s*0.44*(scale||1); if(alpha!=null)ctx.globalAlpha=alpha;
-  var _cspr=CW_POD_ART?cwSpr('pods/chaff'):null;
+  var _cspr=CW_POD_ART?cwSpr('pods/chaff'):null, _ac=A2.j?A2.j.pods.chaff:null;
+  if(a2Ok(_ac)){ var _acd=r*2.5; try{ ctx.drawImage(A2.im[_ac],cx-_acd/2,cy-_acd/2,_acd,_acd); }catch(e){} if(alpha!=null)ctx.globalAlpha=1; return; }
   if(_cspr&&_cwReady(_cspr)){ var _cd=r*CW_POD_BOX; try{ ctx.drawImage(_cspr,cx-_cd/2,cy-_cd/2,_cd,_cd); }catch(e){} if(alpha!=null)ctx.globalAlpha=1; return; }
   var g=ctx.createRadialGradient(cx-r*0.3,cy-r*0.35,r*0.15,cx,cy,r*1.1); g.addColorStop(0,CHAFF_PAL.lt); g.addColorStop(0.7,CHAFF_PAL.bs); g.addColorStop(1,CHAFF_PAL.dk);
   ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.2832); ctx.fill();
@@ -1182,7 +1235,18 @@ function drawChaff(x,y,s,scale,alpha){ var cx=x+s/2, cy=y+s/2, r=s*0.44*(scale||
   if(alpha!=null)ctx.globalAlpha=1;
 }
 
+function drawJoins(f,F){ var J=A2.j; if(!J)return; var r,c,v,k; A2.joins=[];
+  for(r=1;r<ROWS;r++)for(c=0;c<COLS;c++){ v=f.grid[r][c]; if(v<1||v>5)continue; var P=J.pods[v]; if(!P)continue;
+    if((f.fall&&f.fall[r]&&f.fall[r][c])||(f.pop&&f.pop[r][c]))continue;
+    for(k=0;k<2;k++){ var r2=r+k, c2=c+(1-k); if(r2>=ROWS||c2>=COLS||f.grid[r2][c2]!==v)continue;
+      if((f.fall&&f.fall[r2]&&f.fall[r2][c2])||(f.pop&&f.pop[r2][c2]))continue;
+      var rel=k?P.v:P.h; if(!a2Ok(rel))continue; var a=cellPx(F,r,c), s=F.cell;
+      var x0=a.x, y0=a.y, w=k?s:2*s, h=k?2*s:s;   /* the two cells */
+      ctx.save(); ctx.beginPath(); ctx.rect(x0,y0,w,h); ctx.clip();
+      if(k)ctx.drawImage(A2.im[rel], a.x+s/2-s*0.28, a.y+s/2, s*0.56, s); else ctx.drawImage(A2.im[rel], a.x+s/2, a.y+s/2-s*0.28, s, s*0.56);
+      ctx.restore(); A2.joins.push([r,c,r2,c2]); } } }
 function drawField(f,F,mini){ if(!f)return; var r,c;
+  if(!mini)drawJoins(f,F);   /* v1.8: under the pods */
   for(r=1;r<ROWS;r++)for(c=0;c<COLS;c++){ var v=f.grid[r][c]; if(v===0)continue; var p=cellPx(F,r,c); var off=(f.fall&&f.fall[r]?f.fall[r][c]:0)||0;
     var scale=1, alpha=1; if(f.pop&&f.pop[r][c]){ var pr=Math.min(1,f.res? f.res.t/230:0); scale=1+pr*0.35; alpha=1-pr*0.7; }
     var yy=p.y-off;
@@ -1252,7 +1316,7 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     /* opponent b-boy portrait: idle in play, and on the result screen the pest is
        'lose' when you won / 'win' when you lost. Emoji is the fallback. */
     var opose=(MATCH.phase==='done'&&MATCH.result)?(MATCH.result==='win'?'lose':'win'):'idle';
-    if(!cwPortrait(st.id,opose, ox+ow/2, oy+2+(oh-26)/2, ow-8, oh-26, 1)){
+    if(!(opose==='idle'&&railDraw(ox+ow/2, oy+2+(oh-26)/2, ow-8, oh-26))&&!cwPortrait(st.id,opose, ox+ow/2, oy+2+(oh-26)/2, ow-8, oh-26, 1)){
       ctx.textAlign='center'; ctx.font='34px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(st.em, ox+ow/2, oy+46); }
     ctx.fillStyle='rgba(10,8,4,0.78)'; ctx.fillRect(ox, oy+oh-24, ow, 24);
     ctx.restore();
@@ -1263,7 +1327,9 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
   /* next piece preview in the rail */
   if(MATCH.pf&&MATCH.pf.next){ var nx=398, ny=196, NW=NEXTWIN, ncx=nx+NW.w/2, ncy=ny+NW.h/2; ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('NEXT',nx,ny-6);
     /* v1.7: ONE rectangle (NEXTWIN) places the painted window, its fallback and the pair, all on its centre */
-    if(!cwFit('ui/next-window', ncx, ncy, NW.aw, NW.ah, 1)){ ctx.fillStyle='#161207'; rr(nx,ny,NW.w,NW.h,8); ctx.fill(); ctx.strokeStyle='#33301f'; ctx.lineWidth=1.5; rr(nx,ny,NW.w,NW.h,8); ctx.stroke(); }
+    var nw=A2.j?A2.j.board.next:null, nws=nw?(NW.pod*2+NW.gap+12)/nw.aperture[3]:0;   /* v1.8: the opening holds the pair with 6 px to spare */
+    if(nw&&a2Ok(nw.file)){ try{ ctx.drawImage(A2.im[nw.file], ncx-(nw.aperture[0]+nw.aperture[2]/2)*nws, ncy-(nw.aperture[1]+nw.aperture[3]/2)*nws, nw.size[0]*nws, nw.size[1]*nws); }catch(e){} }
+    else if(!cwFit('ui/next-window', ncx, ncy, NW.aw, NW.ah, 1)){ ctx.fillStyle='#161207'; rr(nx,ny,NW.w,NW.h,8); ctx.fill(); ctx.strokeStyle='#33301f'; ctx.lineWidth=1.5; rr(nx,ny,NW.w,NW.h,8); ctx.stroke(); }
     drawPod(ncx-NW.pod/2,ncy-NW.pod-NW.gap/2,NW.pod,MATCH.pf.next.c2-1,{x:0,y:0.35},1,1); drawPod(ncx-NW.pod/2,ncy+NW.gap/2,NW.pod,MATCH.pf.next.c1-1,{x:0,y:0.35},1,1); }
 
   drawBoardFrame(PF,'you','#4c9a2e'); drawField(MATCH.pf,PF,false);
@@ -1486,7 +1552,7 @@ $('buildstamp').textContent='Pop N Lock '+BUILD;
 
 /* ---------- add to home screen ---------- */
 (function(){ var btn=$('b-install'); if(!btn)return;
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=12'); }catch(e){} }
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=13'); }catch(e){} }
   function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
   if(standalone()){ btn.style.display='none'; return; }
   var deferred=null; window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
@@ -1705,7 +1771,7 @@ tap('vs-back',function(){ SFX.ui(); _mpLeave(); show('s-title'); });
 tap('b-vs-create',function(){ SFX.ui(); _vsCreate(); });
 tap('b-vs-join',function(){ SFX.ui(); _vsJoin(); });
 
-fit(); paintTitle(); requestAnimationFrame(loop);
+fit(); paintTitle(); requestAnimationFrame(loop); a2Json();   /* v1.8: Astra's art (art/pnl2) */
 
 /* =====================================================================
    HEADLESS DEV HOOK + BOT  (only with ?cwdev=1)
@@ -1801,6 +1867,8 @@ if(/[?&]cwdev=1/.test(location.search)){
       of:MATCH.of?{score:MATCH.of.score,pending:MATCH.of.pending,state:MATCH.of.state,dead:MATCH.of.dead}:null }; },
     grid:function(who){ var f=(who==='of')?MATCH.of:MATCH.pf; return f.grid.map(function(r){ return r.slice(); }); },
     match:function(){ return MATCH; },   /* v1.7 gates: the live match (the falling piece, softHold, hype) */
+    art2:function(){ return { j:!!A2.j, asked:A2.asked, live:a2Live(), who:A2.who, joins:A2.joins||[], rail:RAIL, frame:railFrame() }; },   /* v1.8 gates */
+    railChain:function(n){ railChain(n); }, railHit:function(){ railHit(); },   /* the hooks a real chain step and a Chaff landing call */
     resolve:function(g){ return computeResolve(g||MATCH.pf.grid); },
     /* simulate a full match: player bot vs AI, up to N turns; returns outcome */
     sim:function(stage,seed,maxTurns){ this.start(stage,seed); var turns=0,mt=maxTurns||300;
