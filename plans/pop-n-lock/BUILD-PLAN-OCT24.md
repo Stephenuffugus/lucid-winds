@@ -7,6 +7,18 @@ ruleset are done and were measured in July (memory `project_chaff_wars_jul19`); 
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- **2026-10-24 22:43 (Opus): PART 2a LIVE as v1.9** (main `57c949749`, both origins proven from old-worker profiles; gate
+  `tools/chaff-wars-tests/p2a_gate.mjs` 37 (a vm harness on the page's own repeat scheduler, buffer, kick table and
+  landing window; real CDP touches for every tray button and gesture; thumb shots), `fwrun.mjs p2a` 28 red. The tray is
+  OUTSIDE the scaled stage in CSS px and fit() keeps the board (BOARD_FOOT 840) above it. CORRECTIONS from two reviews:
+  DROP must not be a click (a phone sends no click for a tap while another finger is down) and must drop only the pair in
+  play at its press (a tap straddling a landing lock slammed the next pair); a touch is captured by its button and ENTERS
+  before it goes down (release the capture, roll only for a pointer that went down on the arrow row); the landing wait is
+  max(300, the stage's fall) because a flat 300 locked stage 1 four times sooner than v1.8 (HIS CALL to flip); v1.8
+  saved big:true for everyone, so the tray size is a new key (bigTray). Gate scars: CDP touchEnd lists the points LIFTED;
+  a broken copy that does not parse proves nothing (fwrun parses first). Not done: the settings rows' text is still under
+  12 px at 360 (Part 3); iPhone Safari retargeting after releasePointerCapture is unmeasured.
+
 - **2026-10-24 21:33 (Opus): PART 1 LIVE as v1.8** (main `30e027b49`, both origins proven from old-worker profiles; gate
   `tools/chaff-wars-tests/p1_gate.mjs` 15, `fwrun.mjs p1` 14 red). art/pnl2 = 104 WebP, 4.0 MB, cut by
   `satellites/chaff-wars/tools/cut_art.py` (python3 -I, the zip extracted; art.json is the contract: sizes, the nine slice
