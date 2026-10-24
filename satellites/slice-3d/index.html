@@ -367,7 +367,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v6.5";
+var BUILD="v6.6";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -2224,7 +2224,7 @@ function clClear(B, x0, y0, x1, y1, need){
 }
 /* the dive's stacks (columns, top first) and the blockers */
 function clParts(A, SW){
-  var cols=[], byStk=[], i, j, s, B=[], K=KR, C=[];
+  var cols=[], byStk=[], i, j, s, B=[], Wb=[], K=KR, C=[];
   for(i=0;i<A.slabs.length;i++){ s=A.slabs[i]; if(!s.stk)continue; j=byStk.indexOf(s.stk);
     if(j<0){ byStk.push(s.stk); cols.push([s]); } else cols[j].push(s); }
   for(i=0;i<cols.length;i++){ var a=cols[i]; a.sort(function(u,v){ return v.y-u.y; });
@@ -2233,16 +2233,22 @@ function clParts(A, SW){
   for(i=0;i<A.pads.length;i++){ s=A.pads[i]; B.push({x0:s.x-s.r-K, x1:s.x+s.r+K, y0:s.y-s.r-K, y1:s.y+s.r+K}); }
   for(i=0;i<A.crystals.length;i++){ s=A.crystals[i]; B.push({x0:s.x-1.1-K, x1:s.x+1.1+K, y0:s.y-K, y1:s.y+s.h+K}); }
   for(i=0;i<A.thorns.length;i++){ s=A.thorns[i]; B.push({x0:s.x-s.r-K, x1:s.x+s.r+K, y0:s.y-s.r-K, y1:s.y+s.r+K}); }
-  for(i=0;i<A.items.length;i++){ s=A.items[i]; if(s.boom)B.push({x0:s.x-s.r-K, x1:s.x+s.r+K, y0:s.y-s.r-K, y1:s.y+s.r+K}); }
+  for(i=0;i<A.items.length;i++){ s=A.items[i]; if(s.boom)B.push({x0:s.x-s.r-K-0.6, x1:s.x+s.r+K+0.6, y0:s.y-s.r-K-0.6, y1:s.y+s.r+K+0.6}); }   /* the fruit sweep reaches r+KR+0.6 */
+  /* a wasp patrols, but a knife falling from the start passes its height at a time the fall all but fixes (gravity to the
+     terminal speed): where the wasp will be then, give or take a tenth of a second of its patrol, closes a line stack's
+     entry (the review: a stack a wasp crosses as every knife arrives). Kept apart (W): it is checked at an entry only */
+  for(i=0;i<A.wasps.length;i++){ s=A.wasps[i]; var fd=Math.max(0,4-s.y), vt=FF_TERM, ga=GRAV_FF, da=vt*vt/(2*ga), tw=fd<=da?Math.sqrt(2*fd/ga):vt/ga+(fd-da)/vt;
+    var wx=s.cx+Math.sin(tw*s.speed+s.phase)*s.range, sl=s.range*s.speed*0.1+0.4; Wb.push({x0:wx-s.r-K-sl, x1:wx+s.r+K+sl, y0:s.y-s.r-K, y1:s.y+s.r+K}); }
   for(i=0;i<A.verbs.length;i++){ s=A.verbs[i]; if(s.kind==='ice'||s.kind==='loaf')B.push({x0:s.x-s.w/2-0.3-K, x1:s.x+s.w/2+0.3+K, y0:s.y-s.h/2-K, y1:s.y+s.h/2+K}); }
-  return {C:C, B:B};
+  return {C:C, B:B, W:Wb};
 }
-function cleanLine(A, SW){
+function cleanLine(A, SW, floorY){
   var P=clParts(A, SW), C=P.C, req=[], x0=0, y0=4, first=true, i, c, y1, room, need;
   for(i=0;i<C.length;i++){ c=C[i]; y1=c.top.y+2.075;   /* the knife meets a stack's first slab with its middle 2.075 above it */
+    if(floorY!=null&&c.last.y+0.575<=floorY)continue;   /* its last slab under the floor: the knife lands before it (the review's find) */
     room=first?(4-y1):(y0-c.top.y);
     need=clNeed(room, c.x-x0, first);
-    if(need>=0&&clClear(P.B, x0, first?4:y0+2.075, c.x, y1, need)){ req.push(c); x0=c.x; y0=c.last.y; first=false; } }
+    if(need>=0&&clClear(P.B, x0, first?4:y0+2.075, c.x, y1, need)&&!clHit(P.W, c.x-0.6, c.x+0.6, y1-1, y1+8)){ req.push(c); x0=c.x; y0=c.last.y; first=false; } }
   return req;
 }
 /* the gold band on a line stack's top slab (it goes with the slab when that is cut), so the player can see the line: a
@@ -2258,8 +2264,10 @@ var FIND={ mossy_canyon:{n:'a crowned seed', hat:'crown', c:0xffd24a}, frost_cha
   orchard_loft:{n:'a seed in a farmer cap', hat:'brim', c:0xd8483a}, lantern_night:{n:'a seed with a lantern tassel', hat:'tassel', c:0xff9a3c},
   deep_tide:{n:'a pearl in a shell hat', hat:'shell', c:0xff9ab4, pearl:true}, clockwork_well:{n:'a seed in a bell cap', hat:'bell', c:0xd8b45a} };
 var DEX=readObj('s3d_dex')||{};
-(function(){ for(var k in DEX)if(DEX.hasOwnProperty(k)&&!(FIND[k]&&DEX[k]===1))delete DEX[k]; })();   /* only known finds, as 1 */
-function saveDex(){ var d=readObj('s3d_dex'), k; if(d)for(k in d)if(d.hasOwnProperty(k)&&FIND[k]&&d[k]===1)DEX[k]=1; LS.s('s3d_dex', JSON.stringify(DEX)); }   /* a set: joined with the other tab's */
+var OWN=Object.prototype.hasOwnProperty;   /* a save holding {"hasOwnProperty":1} must not throw (the review's find) */
+(function(){ for(var k in DEX)if(OWN.call(DEX,k)&&!(OWN.call(FIND,k)&&DEX[k]===1))delete DEX[k]; })();   /* only known finds, as 1 */
+function joinDex(){ var d=readObj('s3d_dex'), k; if(d)for(k in d)if(OWN.call(d,k)&&OWN.call(FIND,k)&&d[k]===1)DEX[k]=1; }   /* a set: the other tab's finds join */
+function saveDex(){ joinDex(); LS.s('s3d_dex', JSON.stringify(DEX)); }
 var FINDS=[];
 function findPop(x, y, id){
   var f=FIND[id]; if(!f||typeof THREE==='undefined')return;
@@ -2289,18 +2297,19 @@ function cleanResults(fin){
   var n=G.cleanN||0, won=!!fin&&n>=C.M;
   $('go-clean-t').textContent=won?'Clean Slice':('Clean Slice '+n+' of '+C.M);
   el.classList.add('on'); if(won)el.classList.add('won');
-  if(G.found&&FIND[G.found]&&DEX[G.found]!==1){ DEX[G.found]=1; saveDex(); if(fe){ fe.textContent='New find: '+FIND[G.found].n; fe.classList.add('on'); } }
+  joinDex();   /* another tab may have found it since this one booted: told once across tabs */
+  if(G.found&&OWN.call(FIND,G.found)&&DEX[G.found]!==1){ DEX[G.found]=1; saveDex(); if(fe){ fe.textContent='New find: '+FIND[G.found].n; fe.classList.add('on'); } }
   return won;
 }
 /* SS35: a world's big paintings leave the GPU when a run starts that cannot show that world (three.js uploads a texture
    again the next time it is drawn, so nothing goes missing). The hazard paintings stay: Orchard's wasp and the canyon's
    thorn pod are drawn in other worlds too. */
 function worldEvict(keep){
-  var n=0, id, s, L, i, t, p;
+  var n=0, id, s, L, i, t, p, stamp={};   /* one call's own mark: a texture shared by two materials goes once (the first cut marked it for good) */
   for(id in WSET){ if(!WSET.hasOwnProperty(id)||keep.indexOf(id)>=0)continue; s=WSET[id];
     L=[s.wall,s.wallR,s.ledge,s.shelf,s.slab,s.inside,s.back,s.sky];
     for(p in s.props)if(s.props.hasOwnProperty(p)&&p!=='hazard')L.push(s.props[p].mat);
-    for(i=0;i<L.length;i++){ t=L[i]&&L[i].map; if(t&&t.userData&&t.userData.ok&&t.userData.gpu!==s){ t.dispose(); t.userData.gpu=s; n++; } } }
+    for(i=0;i<L.length;i++){ t=L[i]&&L[i].map; if(t&&t.userData&&t.userData.ok&&t.userData.gpu!==stamp){ t.dispose(); t.userData.gpu=stamp; n++; } } }
   ART.evicted=(ART.evicted||0)+n; return n;
 }
 function buildFreefall(lvl){
@@ -2333,7 +2342,7 @@ function buildFreefall(lvl){
   ffSegments(rng, lvl, SW, wsAt, -4, floorY+14, A, null, vk?{kind:vk, minY:-4-depth*0.2, done:false}:null);
   for(var dj=1; 4-100*dj>floorY+20; dj++)depthRing(WS, SW, 4-100*dj);   /* SS03: a band round the shaft every 100 m */
   /* Part E2: the Clean Slice line (gold bands) and the dive's find, in one line slab (its own stream, not the dive's) */
-  var CL=cleanLine(A, SW), clM=0, ci, cj;
+  var CL=cleanLine(A, SW, floorY), clM=0, ci, cj;
   for(ci=0;ci<CL.length;ci++){ for(cj=0;cj<CL[ci].slabs.length;cj++){ CL[ci].slabs[cj].req=true; clM++; } clBand(CL[ci].top); }
   if(CL.length){ var drn=mulberry32((((lvl*2246822519)>>>0)^G_FFSALT^0xD15C)>>>0), dco=CL[Math.floor(drn()*CL.length)];
     dco.slabs[Math.floor(drn()*dco.slabs.length)].disc=WS.id; }
@@ -3985,7 +3994,7 @@ if(/[?&]dev=1/.test(location.search)){
       return { M:M, stacks:W&&W.clean?W.clean.stacks:0, n:G?(G.cleanN||0):0, req:r, disc:d, found:G?G.found||null:null }; },
     dex:function(){ return DEX; }, finds:function(){ return FINDS.length; }, calls:function(){ return LAST_CALLS; },
     evicted:function(){ return ART.evicted||0; }, chunkN:function(){ return chunks.length; }, sparkN:function(){ return sparks.length; },
-    caps:function(){ return { chunk:CHUNK_CAP, spark:SPARK_CAP }; }, cleanLine:function(){ return G&&G.world?cleanLine(G.world, G.world.SW):[]; },
+    caps:function(){ return { chunk:CHUNK_CAP, spark:SPARK_CAP }; }, cleanLine:function(){ return G&&G.world?cleanLine(G.world, G.world.SW, G.world.floorY):[]; },
     gpuTex:function(){ return renderer?renderer.info.memory.textures:0; },
     asked:function(rel){ return !!ART.tex[rel]; }, grav:function(){ return ffGrav(); }, deepGrav:function(v){ if(v!=null)DEEP_TIDE_GRAV=v; return DEEP_TIDE_GRAV; },
     proj:function(x,y,z){ camera.updateMatrixWorld(); var V=new THREE.Vector3(x,y,z||0).project(camera); return [V.x,V.y]; },
@@ -4012,7 +4021,7 @@ if(/[?&]dev=1/.test(location.search)){
 })();
 
 /* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=69'); }catch(e){} }
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=70'); }catch(e){} }
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the

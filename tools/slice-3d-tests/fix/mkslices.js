@@ -15,7 +15,11 @@ fs.writeFileSync(D + 'row17.mjs', head + helpers + s.slice(i17, iLate) + foot);
 fs.writeFileSync(D + 'late.mjs', head + helpers + s.slice(iLate, i18) + foot);
 const i19 = s.indexOf('/* ---- 19. Part E2'); if (i19 < 0) throw new Error('row 19 marker');
 fs.writeFileSync(D + 'row18.mjs', head + helpers + s.slice(i18, i19) + foot);   /* Part E1 (and the reload check after it) */
-fs.writeFileSync(D + 'row19.mjs', head + helpers + s.slice(i19, iEnd) + foot);   /* Part E2 (and the paint check after it) */
+const i20 = s.indexOf('/* ---- 20. Part E3'), e19 = i20 >= 0 ? i20 : iEnd;
+fs.writeFileSync(D + 'row19.mjs', head + helpers + s.slice(i19, e19) + foot);   /* Part E2 (and the paint check after it) */
+if (i20 >= 0) fs.writeFileSync(D + 'row20.mjs', head + helpers + s.slice(i20, iEnd) + foot);   /* Part E3, the Daily */
+const i8 = s.indexOf("console.log('\\n[8]"), i9 = s.indexOf('/* ---- 9.');
+if (i8 >= 0 && i9 > i8) fs.writeFileSync(D + 'row8.mjs', head + helpers + s.slice(i8, i9) + foot);   /* the title layout */
 const i2 = s.indexOf('/* ---- 2. the core loop'); if (i2 < 0) throw new Error('row 2 marker');
 fs.writeFileSync(D + 'row1.mjs', head + s.slice(i1, i2) + foot);   /* the corrupt save boots (Part E1 added two) */
 console.log('slices written');
