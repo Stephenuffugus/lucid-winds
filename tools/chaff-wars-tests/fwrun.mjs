@@ -20,9 +20,16 @@ const G = {
     JOINDIAG: { want: 'joins are exactly', muts: [['for(k=0;k<2;k++){ var r2=r+k, c2=c+(1-k);', 'for(k=0;k<2;k++){ var r2=r+k, c2=c+1;']] },
     NORELEASE: { want: 'holds only those', muts: [["for(k in A2.im)if(A2.im.hasOwnProperty(k)&&/^(dance|react)\\//.test(k)&&!keep[k]){ A2.im[k].src=''; delete A2.im[k]; }", '']] },
     ASKALL: { want: 'exactly the Aphid Swarm', muts: [['  a2Im(J.board.frame.file); a2Im(J.board.rival.file); a2Im(J.board.next.file); if(A2.who)a2Char(A2.who); }', '  a2Im(J.board.frame.file); a2Im(J.board.rival.file); a2Im(J.board.next.file); for(k in J.dance)if(J.dance.hasOwnProperty(k))a2Im(J.dance[k].frames[0]); if(A2.who)a2Char(A2.who); }']] },
-    NODANCE: { want: 'six dance frames, once', muts: [['function railChain(n){ var t=CW_T; if(n===2)RAIL.danceT=t;', 'function railChain(n){ var t=CW_T; if(n===9)RAIL.danceT=t;']] },
+    NODANCE: { want: 'six dance frames, once', muts: [['  if(n===2){ RAIL.danceT=t; RAIL.frozen=0; RAIL.freezeT=-9; }', '  if(n===9){ RAIL.danceT=t; RAIL.frozen=0; RAIL.freezeT=-9; }']] },
     HITLONG: { want: 'hit frame for 180 ms', muts: [['if(R&&R.hit&&t-RAIL.hitT<0.18)return R.hit;', 'if(R&&R.hit&&t-RAIL.hitT<0.5)return R.hit;']] },
     DANGER12: { want: 'danger holds while', muts: [['if(!RAIL.danger&&h>=10)RAIL.danger=true;', 'if(!RAIL.danger&&h>=12)RAIL.danger=true;']] },
+    RAILREPLAY: { want: 'chain of 5 plays the dance once', muts: [['  else if(n===3||n===4)RAIL.beatT=t;', '  else if(n===3||n===4){ RAIL.beatT=t; if(t-RAIL.danceT>0.6)RAIL.danceT=t; }']] },
+    RAILIDLE: { want: 'chain of 5 plays the dance once', muts: [['    else if(RAIL.chain)return RAIL_RM?D.frames[0]:D.frames[5]; }', '    }']] },
+    NEXTCLEAR: { want: 'opening is near black', muts: [["var apw=nw.aperture[2]*nws, aph=nw.aperture[3]*nws; ctx.fillStyle='#161207'; rr(ncx-apw/2, ncy-aph/2, apw, aph, 6); ctx.fill();", '']] },
+    METER369: { want: 'right neon line shows', muts: [['    var mx=374, mw=6, mh=VISROWS*PF.cell, my=PF.y;', '    var mx=369, mw=7, mh=VISROWS*PF.cell, my=PF.y;']] },
+    PENDTOP: { want: 'incoming Chaff rows sit above', muts: [['var bx=mini?440:206; var by=mini?F.y-51:66;', 'var bx=F.x; var by=F.y-(mini?16:26);']] },
+    SLICE: { want: 'corner speaker draws at one scale', muts: [['F===PF?0.4:0.5, fr.slice);', 'F===PF?0.4:0.5);']] },
+    NORELEASE2: { want: 'only the Gnat King Cole', muts: [["function cwRelease(keepId){ var k; for(k in _cwCache)", "function cwRelease(keepId){ return; var k; for(k in _cwCache)"]] },
   },
 };
 let bad = 0;

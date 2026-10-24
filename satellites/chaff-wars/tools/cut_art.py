@@ -45,6 +45,7 @@ def main():
     # the board frames (nine sliced around the play rects) and the next window, with their geometry
     for key, f, meta in (('frame', 'board_frame', 'board_frame'), ('rival', 'board_frame_rival', 'board_frame_rival'), ('next', 'next_window', 'next_window')):
         J['board'][key] = dict(integ[meta], file=put('board/%s.png' % f, 'board/%s.webp' % key))
+    J['board']['frame']['slice'] = [90, 70, 90, 70]   # the corner slices enclose the speakers (source x 6 to 88), so they keep one scale
     J['hud']['hype'] = dict(integ['hype_frame'], file=put('hud/hype_frame.png', 'hud/hype.webp'))
     # characters: dance (six frames, their own timings) and reactions (hit, danger), one 512 canvas each
     D = integ['dance']

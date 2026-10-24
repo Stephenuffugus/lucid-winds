@@ -745,7 +745,7 @@ function addHype(f,n){ if(f!==MATCH.pf)return; f.hype=Math.max(0,Math.min(100,(f
     f.floats.push({x:0,y:0,txt:'ALL CITY HYPE! +500',life:1.4,big:true,fld:f});
     SFX.allclear(); shake(6,260);
   } }
-function finishResolve(f){ var R=f.res; f.score+=R.score;
+function finishResolve(f){ var R=f.res; f.score+=R.score; if(f===MATCH.of)railChainEnd();
   if(R.chain>0)addHype(f, R.chain*13 + R.cleared*1.1);
   if(MATCH.powers)addSap(f,R.cleared*SAP_PER_BEAN+R.chain*SAP_PER_CHAIN);
   /* outgoing Chaff from this chain */
@@ -821,11 +821,11 @@ function preDropPods(f,n){ var i; for(i=0;i<n;i++){ var c=(Math.random()*COLS)|0
 
 function startMatch(stageIndex,mode){ MATCH.mode=mode||'campaign'; MATCH.stage=stageIndex;
   MATCH.powers=/[?&]powers=1/.test(location.search);
-  if(MATCH.mode==='solo'){ MATCH.pf=makeField(4,false); MATCH.pf.gravMs=1000/1.3; MATCH.of=null;
+  if(MATCH.mode==='solo'){ cwRelease(null); a2Char(null); railReset(null); MATCH.pf=makeField(4,false); MATCH.pf.gravMs=1000/1.3; MATCH.of=null;
     if(MATCH.powers)MATCH.pf.powerId='keeper-solvent';
     MATCH.phase='count'; MATCH.t=0; MATCH.count=3; MATCH.result=null; MATCH.soloLevel=1; MATCH.soloClears=0;
     spawnPiece(MATCH.pf); MATCH.pf.state='wait'; show('s-play'); running=true; SFX.count(); return; }
-  var st=ROSTER[stageIndex]; cwPrefetch(st.id); a2Char(st.id); railReset(st.id);   /* v1.8: only this opponent's frames are held */
+  var st=ROSTER[stageIndex]; cwRelease(st.id); cwPrefetch(st.id); a2Char(st.id); railReset(st.id);   /* v1.8: only this opponent's frames are held */
   MATCH.pf=makeField(st.colors,false); MATCH.pf.gravMs=1000/st.fall;
   if(MATCH.powers)MATCH.pf.powerId='keeper-solvent';
   MATCH.of=makeField(st.colors,true,st.q,st.react,st.hcap); MATCH.of.gravMs=1000/st.fall;
@@ -1083,18 +1083,26 @@ function a2Char(id){ A2.who=id; var J=A2.j; if(!J)return; var keep={},k,i;
   if(J.react[id])for(k in J.react[id])if(J.react[id].hasOwnProperty(k))keep[J.react[id][k]]=1;
   for(k in A2.im)if(A2.im.hasOwnProperty(k)&&/^(dance|react)\//.test(k)&&!keep[k]){ A2.im[k].src=''; delete A2.im[k]; }
   for(k in keep)if(keep.hasOwnProperty(k))a2Im(k); }
-var RAIL={ id:null, hitT:-9, danceT:-9, beatT:-9, freezeT:-9, danger:false };
+var RAIL={ id:null, hitT:-9, danceT:-9, beatT:-9, freezeT:-9, frozen:0, danger:false, chain:false };
 var RAIL_RM=false; try{ RAIL_RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){}
-function railReset(id){ RAIL.id=id; RAIL.hitT=RAIL.danceT=RAIL.beatT=RAIL.freezeT=-9; RAIL.danger=false; }
-/* PNL-046: the six frame signature plays once at chain 2, a beat accent at 3 and 4, a 240 ms freeze at 5 and up */
-function railChain(n){ var t=CW_T; if(n===2)RAIL.danceT=t; else if(n===3||n===4){ RAIL.beatT=t; if(t-RAIL.danceT>0.6)RAIL.danceT=t; } else if(n>=5)RAIL.freezeT=t; }
+function railReset(id){ RAIL.id=id; RAIL.hitT=RAIL.danceT=RAIL.beatT=RAIL.freezeT=-9; RAIL.frozen=0; RAIL.danger=false; RAIL.chain=false; }
+/* PNL-046: the six frame signature plays ONCE at chain 2 and the dancer holds its last pose while the chain runs (no idle
+   flash, no replay); a beat accent at 3 and 4; at 5 and up the dance clock stops for 240 ms with a flash (a freeze alone
+   under reduced motion). Chain steps are 340 ms or more apart, so freezes never overlap. The chain's end lets go. */
+function railChain(n){ var t=CW_T; if(n<2)return; RAIL.chain=true;
+  if(n===2){ RAIL.danceT=t; RAIL.frozen=0; RAIL.freezeT=-9; }
+  else if(n===3||n===4)RAIL.beatT=t;
+  else if(n>=5){ if(RAIL.freezeT>=RAIL.danceT)RAIL.frozen+=0.24; RAIL.freezeT=t; } }
+function railChainEnd(){ RAIL.chain=false; }
 function railHit(){ RAIL.hitT=CW_T; }
 /* PNL-047: danger enters at the spawn column's height 10 and leaves at 8 */
 function railTick(){ var f=MATCH.of; if(!f||!f.grid)return; var h=colHeights(f.grid)[SPAWN_COL]; if(!RAIL.danger&&h>=10)RAIL.danger=true; else if(RAIL.danger&&h<=8)RAIL.danger=false; }
 function railFrame(){ var J=A2.j, id=RAIL.id, t=CW_T; if(!J||!id)return null; var R=J.react[id], D=J.dance[id];
   if(R&&R.hit&&t-RAIL.hitT<0.18)return R.hit;   /* a hit, 180 ms, then back to whatever it was doing */
-  if(D){ var hold=(t-RAIL.freezeT<0.24)?0.24:0, e=(t-RAIL.danceT-hold)*1000, i, acc=0;
-    if(t-RAIL.danceT<0.6+hold){ if(RAIL_RM)return D.frames[0]; if(e<0)e=0; for(i=0;i<6;i++){ acc+=D.ms[i]; if(e<acc)return D.frames[i]; } return D.frames[5]; } }
+  if(D&&RAIL.danceT>=0){ var fz=RAIL.frozen+(RAIL.freezeT>=RAIL.danceT?Math.min(0.24,Math.max(0,t-RAIL.freezeT)):0), e=(t-RAIL.danceT-fz)*1000, i, acc=0, len=0;
+    for(i=0;i<6;i++)len+=D.ms[i];
+    if(e<len){ if(RAIL_RM)return D.frames[0]; for(i=0;i<6;i++){ acc+=D.ms[i]; if(e<acc)return D.frames[i]; } }
+    else if(RAIL.chain)return RAIL_RM?D.frames[0]:D.frames[5]; }
   if(R&&R.danger&&RAIL.danger)return R.danger;
   return null; }
 /* ONE render box per character for every dance and reaction frame: art.json's box, the union of that character's painted
@@ -1103,7 +1111,9 @@ function railFrame(){ var J=A2.j, id=RAIL.id, t=CW_T; if(!J||!id)return null; va
 function railDraw(cx,cy,w,h){ var rel=railFrame(); if(!rel||!a2Ok(rel))return false; var im=A2.im[rel], t=CW_T;
   var bx=(A2.j.box&&A2.j.box[RAIL.id])||[0,0,512,512], bw=bx[2]-bx[0], bh=bx[3]-bx[1];
   var k=Math.min(w/bw,h/bh)*((!RAIL_RM&&t-RAIL.beatT<0.15)?1+0.08*(1-(t-RAIL.beatT)/0.15):1);
-  try{ ctx.drawImage(im, cx-(bx[0]+bw/2)*k, cy+h/2-bx[3]*k, 512*k, 512*k); }catch(e){} return true; }
+  try{ ctx.drawImage(im, cx-(bx[0]+bw/2)*k, cy+h/2-bx[3]*k, 512*k, 512*k);
+    if(!RAIL_RM&&t-RAIL.freezeT<0.16){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.55*(1-(t-RAIL.freezeT)/0.16); ctx.drawImage(im, cx-(bx[0]+bw/2)*k, cy+h/2-bx[3]*k, 512*k, 512*k); }   /* the chain 5+ flash */
+  }catch(e){} ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1; return true; }
 function a2Live(){ var n=0,k; for(k in A2.im)if(A2.im.hasOwnProperty(k)&&/^(dance|react)\//.test(k))n++; return n; }
 var CW_T=0; /* animation clock (seconds), advanced every frame in loop() */
 var _cwCache={};
@@ -1143,6 +1153,8 @@ function cwPortrait(id,pose,cx,cy,w,h,alpha){ if(cwFit('char/'+id+'-'+pose,cx,cy
   if(pose!=='idle'&&cwFit('char/'+id+'-idle',cx,cy,w,h,alpha))return true; return false; }
 /* warm the sprites we know we'll need for a stage the instant a match starts */
 function cwPrefetch(id){ if(!id)return; ['idle','win','lose'].forEach(function(p){ cwSpr('char/'+id+'-'+p); }); }
+/* v1.8 review: every pest's July portraits stayed decoded (42 images, 19 MiB after the ladder): a match keeps only its opponent's (and the Keeper's) */
+function cwRelease(keepId){ var k; for(k in _cwCache)if(_cwCache.hasOwnProperty(k)&&/^char\//.test(k)&&!(keepId&&k.indexOf('char/'+keepId+'-')===0)&&k.indexOf('char/keeper-')!==0){ try{ _cwCache[k].src=''; }catch(e){} delete _cwCache[k]; } }
 /* result-screen portrait (DOM <img>); id=null hides it and restores the emoji. */
 function _goPortrait(id,pose){ var img=$('go-portrait'), em=$('go-emoji');
   if(!img)return;
@@ -1161,9 +1173,11 @@ function _goBanner(kind){ var img=$('go-banner'); if(!img)return;
 /* =====================================================================
    RENDER
    ===================================================================== */
-/* nine slice: ins = the source border [L,T,R,B]; (x,y,w,h) = the rect the frame's opening goes around; k scales the borders */
-function drawNine(im,ins,x,y,w,h,k){ var iw=im.naturalWidth, ih=im.naturalHeight, L=ins[0],T=ins[1],R=ins[2],B=ins[3], i, j;
-  var sx=[0,L,iw-R,iw], sy=[0,T,ih-B,ih], dx=[x-L*k,x,x+w,x+w+R*k], dy=[y-T*k,y,y+h,y+h+B*k];
+/* nine slice: ins = the opening's inset in the source [L,T,R,B], which places the frame around (x,y,w,h); sl = the slice
+   insets (default ins), wider where a corner holds a picture (the player frame's speakers) so the corners keep one scale k */
+function drawNine(im,ins,x,y,w,h,k,sl){ var iw=im.naturalWidth, ih=im.naturalHeight, L=ins[0],T=ins[1],R=ins[2],B=ins[3], i, j; sl=sl||ins;
+  var x0=x-L*k, y0=y-T*k, x3=x+w+R*k, y3=y+h+B*k;
+  var sx=[0,sl[0],iw-sl[2],iw], sy=[0,sl[1],ih-sl[3],ih], dx=[x0,x0+sl[0]*k,x3-sl[2]*k,x3], dy=[y0,y0+sl[1]*k,y3-sl[3]*k,y3];
   for(j=0;j<3;j++)for(i=0;i<3;i++){ if(i===1&&j===1)continue; var sw=sx[i+1]-sx[i], sh=sy[j+1]-sy[j], dw=dx[i+1]-dx[i], dh=dy[j+1]-dy[j];
     if(sw>0&&sh>0&&dw>0&&dh>0){ try{ ctx.drawImage(im,sx[i],sy[j],sw,sh,dx[i],dy[j],dw,dh); }catch(e){} } } }
 function cellPx(F,r,c){ return {x:F.x+c*F.cell, y:F.y+(r-1)*F.cell}; }
@@ -1176,7 +1190,7 @@ function drawBoardFrame(F,label,accent){ var w=COLS*F.cell,h=VISROWS*F.cell;
   for(i=1;i<COLS;i++){ ctx.beginPath(); ctx.moveTo(F.x+i*F.cell,F.y); ctx.lineTo(F.x+i*F.cell,F.y+h); ctx.stroke(); }
   for(i=1;i<VISROWS;i++){ ctx.beginPath(); ctx.moveTo(F.x,F.y+i*F.cell); ctx.lineTo(F.x+w,F.y+i*F.cell); ctx.stroke(); }
   var fr=A2.j?(F===PF?A2.j.board.frame:A2.j.board.rival):null;
-  if(fr&&a2Ok(fr.file))drawNine(A2.im[fr.file], fr.nine_slice, F.x, F.y, w, h, F===PF?0.4:0.5);   /* v1.8: the painted frame (Part 3 may give it full width) */
+  if(fr&&a2Ok(fr.file))drawNine(A2.im[fr.file], fr.nine_slice, F.x, F.y, w, h, F===PF?0.4:0.5, fr.slice);   /* v1.8: the painted frame (Part 3 may give it full width) */
   else { ctx.strokeStyle=accent||'#33301f'; ctx.lineWidth=2.5; rr(F.x-4,F.y-4,w+8,h+8,10); ctx.stroke(); }
   /* spawn column marker */
   ctx.fillStyle='rgba(232,193,90,0.10)'; ctx.fillRect(F.x+SPAWN_COL*F.cell,F.y,F.cell,6);
@@ -1225,7 +1239,7 @@ function drawPod(x,y,s,ci,gaze,scale,alpha){ var pal=PAL[ci]; var cx=x+s/2, cy=y
 }
 function drawChaff(x,y,s,scale,alpha){ var cx=x+s/2, cy=y+s/2, r=s*0.44*(scale||1); if(alpha!=null)ctx.globalAlpha=alpha;
   var _cspr=CW_POD_ART?cwSpr('pods/chaff'):null, _ac=A2.j?A2.j.pods.chaff:null;
-  if(a2Ok(_ac)){ var _acd=r*2.5; try{ ctx.drawImage(A2.im[_ac],cx-_acd/2,cy-_acd/2,_acd,_acd); }catch(e){} if(alpha!=null)ctx.globalAlpha=1; return; }
+  if(a2Ok(_ac)){ var _acd=r*2.5; try{ ctx.drawImage(A2.im[_ac],cx-_acd/2,cy-_acd/2,_acd,_acd); }catch(e){} if(alpha!=null)ctx.globalAlpha=1; return; }   /* the painted rock has a crater where a face would go and dark eyes vanish in it: a face on it is his and Astra's call */
   if(_cspr&&_cwReady(_cspr)){ var _cd=r*CW_POD_BOX; try{ ctx.drawImage(_cspr,cx-_cd/2,cy-_cd/2,_cd,_cd); }catch(e){} if(alpha!=null)ctx.globalAlpha=1; return; }
   var g=ctx.createRadialGradient(cx-r*0.3,cy-r*0.35,r*0.15,cx,cy,r*1.1); g.addColorStop(0,CHAFF_PAL.lt); g.addColorStop(0.7,CHAFF_PAL.bs); g.addColorStop(1,CHAFF_PAL.dk);
   ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,6.2832); ctx.fill();
@@ -1288,7 +1302,9 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
       drawPod(dx,dy,F.cell,cs[i].col-1,{x:0,y:0.35},1,1); }
     ctx.restore(); }
   /* pending Chaff warning row above the board */
-  var pw=f.pending; if(pw>0){ var ics=Math.min(pw, mini?12:12); var iw=mini?9:13; var bx=F.x; var by=F.y-(mini?16:26);
+  /* v1.8: the incoming row sat on the painted frame's top band and speaker; the player's moves into the header right of
+     the score (x 206 to 375), the rival's beside its RIVAL label (x 440 to 540). Part 2b redraws it as a number */
+  var pw=f.pending; if(pw>0){ var ics=Math.min(pw, mini?8:10); var iw=mini?9:13; var bx=mini?440:206; var by=mini?F.y-51:66;
     for(i=0;i<ics;i++){ drawChaff(bx+i*(iw+1), by, iw, 1, 0.9); } if(pw>ics){ ctx.fillStyle='#e0685f'; ctx.font='700 '+(mini?9:12)+'px system-ui'; ctx.fillText('+'+(pw-ics), bx+ics*(iw+1)+2, by+iw*0.75); } }
   /* danger flash */
   if(f.flashDanger>0){ ctx.globalAlpha=Math.min(0.4,f.flashDanger/1000); ctx.fillStyle='#e0433f'; ctx.fillRect(F.x,F.y,COLS*F.cell,F.cell*2); ctx.globalAlpha=1; }
@@ -1328,14 +1344,15 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
   if(MATCH.pf&&MATCH.pf.next){ var nx=398, ny=196, NW=NEXTWIN, ncx=nx+NW.w/2, ncy=ny+NW.h/2; ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('NEXT',nx,ny-6);
     /* v1.7: ONE rectangle (NEXTWIN) places the painted window, its fallback and the pair, all on its centre */
     var nw=A2.j?A2.j.board.next:null, nws=nw?(NW.pod*2+NW.gap+12)/nw.aperture[3]:0;   /* v1.8: the opening holds the pair with 6 px to spare */
-    if(nw&&a2Ok(nw.file)){ try{ ctx.drawImage(A2.im[nw.file], ncx-(nw.aperture[0]+nw.aperture[2]/2)*nws, ncy-(nw.aperture[1]+nw.aperture[3]/2)*nws, nw.size[0]*nws, nw.size[1]*nws); }catch(e){} }
+    if(nw&&a2Ok(nw.file)){ var apw=nw.aperture[2]*nws, aph=nw.aperture[3]*nws; ctx.fillStyle='#161207'; rr(ncx-apw/2, ncy-aph/2, apw, aph, 6); ctx.fill();   /* her opening is clear: the July window's near black behind the pair */
+      try{ ctx.drawImage(A2.im[nw.file], ncx-(nw.aperture[0]+nw.aperture[2]/2)*nws, ncy-(nw.aperture[1]+nw.aperture[3]/2)*nws, nw.size[0]*nws, nw.size[1]*nws); }catch(e){} }
     else if(!cwFit('ui/next-window', ncx, ncy, NW.aw, NW.ah, 1)){ ctx.fillStyle='#161207'; rr(nx,ny,NW.w,NW.h,8); ctx.fill(); ctx.strokeStyle='#33301f'; ctx.lineWidth=1.5; rr(nx,ny,NW.w,NW.h,8); ctx.stroke(); }
     drawPod(ncx-NW.pod/2,ncy-NW.pod-NW.gap/2,NW.pod,MATCH.pf.next.c2-1,{x:0,y:0.35},1,1); drawPod(ncx-NW.pod/2,ncy+NW.gap/2,NW.pod,MATCH.pf.next.c1-1,{x:0,y:0.35},1,1); }
 
   drawBoardFrame(PF,'you','#4c9a2e'); drawField(MATCH.pf,PF,false);
   /* THE HYPE METER: a slim neon bar hugging the board's right edge */
   if(MATCH.pf && MATCH.phase!=='none'){ var hm=MATCH.pf.hype||0, ht=MATCH.pf.hypeTier||0;
-    var mx=369, mw=7, mh=VISROWS*PF.cell, my=PF.y;
+    var mx=374, mw=6, mh=VISROWS*PF.cell, my=PF.y;   /* v1.8: right of the painted frame's neon line (369.6 to 373.2), on its rim */
     ctx.fillStyle='#12100a'; ctx.fillRect(mx,my,mw,mh);
     ctx.strokeStyle='#0c0a06'; ctx.lineWidth=1.5; ctx.strokeRect(mx,my,mw,mh);
     if(hm>0){ var fh=mh*hm/100;
@@ -1687,7 +1704,7 @@ function _mpOnOpp(s){ if(!s||MATCH.mode!=='versus')return; MP.oppLastT=Date.now(
   var evts=s.e||[],i; for(i=0;i<evts.length;i++){ if(evts[i]&&evts[i].i>MP.lastEvtIn){ MP.lastEvtIn=evts[i].i; if(MATCH.pf&&MATCH.phase==='fight'){ MATCH.pf.pending+=(+evts[i].n||0); SFX.warn(); } } }
   if(s.d&&MATCH.phase==='fight'){ if(MATCH.of)MATCH.of.dead=true; endMatch('win'); } }
 
-function startVersus(){ MATCH.mode='versus'; MATCH.stage=-2; MATCH.powers=false; MATCH.result=null;
+function startVersus(){ MATCH.mode='versus'; MATCH.stage=-2; MATCH.powers=false; MATCH.result=null; cwRelease(null); a2Char(null); railReset(null);
   MATCH.pf=makeField(4,false); MATCH.pf.gravMs=1000/2.4; MATCH.pf.rng=mulberry32(MP.seed>>>0);
   MATCH.of=makeField(4,false); MATCH.of.remote=true;
   spawnPiece(MATCH.pf); MATCH.pf.state='wait'; MATCH.of.state='play';
@@ -1869,6 +1886,7 @@ if(/[?&]cwdev=1/.test(location.search)){
     match:function(){ return MATCH; },   /* v1.7 gates: the live match (the falling piece, softHold, hype) */
     art2:function(){ return { j:!!A2.j, asked:A2.asked, live:a2Live(), who:A2.who, joins:A2.joins||[], rail:RAIL, frame:railFrame() }; },   /* v1.8 gates */
     railChain:function(n){ railChain(n); }, railHit:function(){ railHit(); },   /* the hooks a real chain step and a Chaff landing call */
+    railChainEnd:function(){ railChainEnd(); }, cwKeys:function(){ var a=[],k; for(k in _cwCache)if(_cwCache.hasOwnProperty(k))a.push(k); return a; },
     resolve:function(g){ return computeResolve(g||MATCH.pf.grid); },
     /* simulate a full match: player bot vs AI, up to N turns; returns outcome */
     sim:function(stage,seed,maxTurns){ this.start(stage,seed); var turns=0,mt=maxTurns||300;
