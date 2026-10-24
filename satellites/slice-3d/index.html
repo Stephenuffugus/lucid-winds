@@ -316,7 +316,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
     <div class="helprow"><div class="hi">&#9650;</div><div><b style="color:#3ecc8e">SUPER SLICE WALL CLIMB, one wall and no level ceiling.</b> Same flipping rules as the normal run, but there is no course: you flip straight UP the face of one enormous wall and the height you stick at IS your score. Every run gets the whole ladder, all 34 bands up to x900, so your level never caps you and only your throw decides where you stop. On the climb screen you can switch to <b style="color:#3ecc8e">Be the Blade</b>: hold and circle your finger and the knife spins with you, and handle bounces off the wall ride that spin upward. Glancing blade touches scrape off, so only a committed blade angle sticks.</div></div>
 
-    <div class="helprow"><div class="hi">&#9660;</div><div><b style="color:#8fd8f2">SUPER SLICE FREE FALL, which plays differently.</b> You are falling down a shaft, not travelling along the ground, and you steer by <b>holding the LEFT or RIGHT side of the screen</b> to drift that way. Carve down through the tall brown slab stacks: each one you cut opens in a burst of colour and chains your combo. When a dive has stacks with a <b style="color:var(--gold)">gold band</b> on top, they are its Clean Slice line: carve every slab of them and land on the floor to earn the Clean Slice badge. Keep the <b>handle</b> pointed at the side walls: a handle bounce is clean, but <b style="color:#ff6a5a">a blade into the wall sticks you and ends the dive</b>. Pink crystals down here shove you rather than kill. Free Fall comes in two versions: authored <b>levels</b>, and the <b>endless</b> drop where the only score is how deep you get.</div></div>
+    <div class="helprow"><div class="hi">&#9660;</div><div><b style="color:#8fd8f2">SUPER SLICE FREE FALL, which plays differently.</b> You are falling down a shaft, not travelling along the ground, and you steer by <b>holding the LEFT or RIGHT side of the screen</b> to drift that way. Carve down through the tall brown slab stacks: each one you cut opens in a burst of colour and chains your combo. When a dive has stacks with a <b style="color:var(--gold)">gold band</b> on top, they are its Clean Slice line: carve every slab of them and land on the floor to earn the Clean Slice badge. Every fifth level ends at a <b style="color:var(--gold)">boss</b> over a net: fall onto it blade first and keep the blade down, and each time it hops the net lobs you back onto it (the net aims for you, so steer lightly). Three hits and it opens. Cut a rope or miss three lobs to skip it, which costs the Clean Slice. Keep the <b>handle</b> pointed at the side walls: a handle bounce is clean, but <b style="color:#ff6a5a">a blade into the wall sticks you and ends the dive</b>. Pink crystals down here shove you rather than kill. Free Fall comes in two versions: authored <b>levels</b>, and the <b>endless</b> drop where the only score is how deep you get.</div></div>
 
     <div style="height:18px"></div>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
@@ -393,7 +393,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v6.7";
+var BUILD="v6.8";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -2321,8 +2321,8 @@ function cleanHide(){ var el=$('go-clean'), fe=$('go-find'); if(el)el.classList.
 function cleanResults(fin){
   cleanHide();
   var C=G.world&&G.world.clean, el=$('go-clean'), fe=$('go-find'); if(!C||!C.M||!el)return false;
-  var n=G.cleanN||0, won=!!fin&&n>=C.M;
-  $('go-clean-t').textContent=won?'Clean Slice':('Clean Slice '+n+' of '+C.M);
+  var n=G.cleanN||0, won=!!fin&&n>=C.M&&!G.cleanForfeit;   /* Part E4: a skipped boss forfeits it */
+  $('go-clean-t').textContent=won?'Clean Slice':('Clean Slice '+n+' of '+C.M+(G.cleanForfeit?', boss skipped':''));
   el.classList.add('on'); if(won)el.classList.add('won');
   joinDex();   /* another tab may have found it since this one booted: told once across tabs */
   if(G.found&&OWN.call(FIND,G.found)&&DEX[G.found]!==1){ DEX[G.found]=1; saveDex(); if(fe){ fe.textContent='New find: '+FIND[G.found].n; fe.classList.add('on'); } }
@@ -2403,6 +2403,106 @@ function dailyResults(fin){
   el.classList.add('on'); if(first)el.classList.add('won');
   $('go-next').textContent='Daily'; $('go-retry').textContent='Practice';
 }
+/* =====================================================================
+   BOSSES (Part E4, 2026-10-24: SS04)
+   Each world's last numbered dive (levels 5, 10, 15 ...) ends in a chamber built BELOW the shaft it always had (the shaft
+   above is the very same: its pieces, its rng() draws, its Clean Slice line). The world's boss hangs over the chamber in
+   one of three lanes; a net spans the chamber below it. While the boss stands, the net throws any landing straight back up
+   (no chip, the knife's angle kept, its drift damped), high enough to come down past the boss again: a return route, never
+   a softlock. A hit is a blade facing contact, once per contact, never undone by a bounce; after each hit the boss hops to
+   the lane beside (middle, a side, the middle), and the net's lob carries the knife there: what the player brings is a
+   blade that stays down (the lob keeps the knife's angle; a handle down knife bounces off the boss and lobs again). Three hits: Astra's three stages (its own cell 1 with a drawn crack, cell 2, then cell
+   3, the reveal, held), one reward, and the net drops to the floor. A rope down the right side drops the net if cut, and the
+   net gives way by itself after three lobs without a hit: either way the dive goes on to the floor and Clean Slice is
+   forfeited. The chamber's walls are padded (a blade there bounces, never sticks), so a boss fight, a skip or a bounce off
+   the floor is never lost to a wall. The ropes hang above the boss, where only a lob reaches them. The boss is optional: never in Clean Slice's count.
+   ===================================================================== */
+var BOSS_H=36, BOSS_ON=true;   /* the chamber's height under the old floor; BOSS_ON: dev switch (_S3.bossOff builds without) */
+var BOSS_LANES=[0,-4.8,4.8], BOSS_R=2.3, BOSS_LOBS=3;   /* lanes 4.8 apart: a lob straight up misses, one tap toward the next lane lands (e4 tune.js) */
+var BOSS_NAME={ mossy_canyon:'Crown Gourd', frost_chasm:'Sir Shivers', ember_kiln:'Chef Char', glowcave:'Disco Dragon', orchard_loft:'Mayor Mac',
+  lantern_night:'Lord Lumen', deep_tide:'Count Coconut', clockwork_well:'Tick Tock Pom' };
+var BOSS_COL={ mossy_canyon:0xe8902a, frost_chasm:0xc8f0b0, ember_kiln:0xf2c84a, glowcave:0xc056d8, orchard_loft:0xd8302a, lantern_night:0xff8a2a, deep_tide:0x8a5a3a, clockwork_well:0xb82a3a };
+var _crackTex=null;
+function bossCrack(){ if(_crackTex)return _crackTex; var cv=document.createElement('canvas'); cv.width=cv.height=128; var g=cv.getContext('2d');
+  g.strokeStyle='rgba(20,10,6,0.85)'; g.lineWidth=5; g.lineCap='round'; g.beginPath();
+  g.moveTo(64,10); g.lineTo(56,40); g.lineTo(70,62); g.lineTo(58,92); g.lineTo(66,120); g.moveTo(56,40); g.lineTo(32,52); g.moveTo(70,62); g.lineTo(98,70); g.stroke();
+  return (_crackTex=new THREE.CanvasTexture(cv)); }
+/* the chamber: boss, net and rope, its own stream for the lanes (the dive's rng() is never touched) */
+function bossChamber(ws, SW, floorY, lvl){
+  var b={ id:ws.id, name:BOSS_NAME[ws.id]||'The boss', x:0, tx:0, y:floorY+22, r:BOSS_R, hits:0, inside:false, lobs:0, netOn:true, cleared:false, skipped:false,
+    netY:floorY+6, ropes:[-(SW-2.2), SW-2.2], ropeTop:floorY+30, ropeBot:floorY+23, ropeCut:false, revealT:-1, hop:0, rng:mulberry32((((lvl*2654435761)>>>0)^G_FFSALT^0xB055)>>>0) };
+  var g=new THREE.Group(); g.position.set(0, b.y, 0.6); addMesh(g); b.grp=g;
+  b.code=new THREE.Mesh(new THREE.SphereGeometry(b.r,16,12), new THREE.MeshLambertMaterial({color:BOSS_COL[ws.id]||0xe8902a, emissive:0x1a1006})); g.add(b.code);
+  b.sp=new THREE.Sprite(new THREE.SpriteMaterial({color:0xffffff, transparent:true, depthWrite:false, opacity:0})); b.sp.scale.set(6.4,6.4,1); g.add(b.sp);
+  b.crack=new THREE.Sprite(new THREE.SpriteMaterial({map:bossCrack(), transparent:true, depthWrite:false, opacity:0})); b.crack.scale.set(4.2,4.2,1); b.crack.position.z=0.2; g.add(b.crack);
+  /* Astra's stages strip: cell 1 is the whole boss (and boss.webp itself), cell 2 cracked, cell 3 the reveal. Each cell is
+     drawn inset 3 percent each side: the cells carry slivers of their neighbours at their edges */
+  artJson(function(j){ var A=j.worlds[ws.id], P=A&&A.props&&A.props.stages; if(!P)return;
+    artTex(P.file, function(t){ if(!b.grp.parent)return; var tx=t.clone(); tx.needsUpdate=true; b.cells=P.cells||3; b.tex=tx; b.sp.material.map=tx; b.sp.material.needsUpdate=true;
+      bossCell(b); b.sp.material.opacity=1; b.code.visible=false; artUp(t); }); });
+  /* the net: an open lattice of cords across the chamber (the first cut, a solid bar, read as a white plank) */
+  var nm=new THREE.MeshLambertMaterial({color:0xc8a878, emissive:0x2a1e10}); b.net=[];
+  for(var k=-7;k<=7;k++){ var cord=addMesh(new THREE.Mesh(new THREE.BoxGeometry(0.09,0.09,3.4), nm)); cord.position.set(k*1.2,b.netY,0); b.net.push(cord); }
+  for(var kz=-1;kz<=1;kz++){ var rail=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2,0.09,0.09), nm)); rail.position.set(0,b.netY+0.02,kz*1.6); b.net.push(rail); }
+  /* a rope down each side, with a gold tag: cut either to drop the net (one is always within a tap of every lane) */
+  var rm=new THREE.MeshLambertMaterial({color:0xc8a878, emissive:0x2a1e10}), tm=new THREE.MeshLambertMaterial({color:0xffd76a, emissive:0x8a6000}); b.ropeM=[];
+  for(var ri=0;ri<b.ropes.length;ri++){ var rp=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,b.ropeTop-b.ropeBot,8), rm)); rp.position.set(b.ropes[ri],(b.ropeTop+b.ropeBot)/2,0.4);
+    var tg=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.1,1.4,0.3), tm)); tg.position.set(b.ropes[ri],(b.ropeTop+b.ropeBot)/2,0.7); b.ropeM.push(rp, tg); }
+  return b;
+}
+function bossCell(b){ b.crack.material.opacity=(b.hits===1)?0.9:0; if(!b.tex)return; var c=b.hits>=3?2:(b.hits>=2?1:0), n=b.cells||3, ins=0.03;
+  b.tex.repeat.set((1-2*ins)/n,1); b.tex.offset.set((c+ins)/n,0); }
+function bossNetDrop(b){ b.netOn=false; for(var i=0;i<b.net.length;i++)looseMesh(b.net[i], (Math.random()*2-1)*2, -2, (Math.random()*2-1), 1.4); b.net=[]; }
+/* one step of the chamber (Freefall): returns the knife's x, pushed out on a handle bonk */
+function bossStep(b, nx, ny){
+  var bX=-Math.cos(G.ang), bY=-Math.sin(G.ang);
+  if(!b.cleared&&!b.skipped){
+    var dx=nx-b.x, dy=ny-b.y, touch=G.vy<=0&&dx*dx+dy*dy<(b.r+KR)*(b.r+KR);   /* struck from above: a knife rising off the net passes */
+    if(!touch)b.inside=false;
+    else if(!b.inside){ b.inside=true;
+      if((b.x-G.x)*bX+(b.y-G.y)*bY>0){ b.hits++; b.lobs=0; G.bossHits=b.hits;
+        G.vx*=0.25; G.w*=0.3;   /* the cut bites: the knife drops to the net instead of sliding on into a wall */
+        SFX.slab(Math.min(30,(G.combo||0)+4)); spawnSparks(b.x, b.y, BOSS_COL[b.id]||0xffd76a, 12); G.shake=Math.max(G.shake,0.3);
+        if(b.hits>=3){ b.cleared=true; b.revealT=0; G.bossDown=true; var pts=600; G.score+=pts; $('h-score').textContent=G.score.toLocaleString();
+          popup(b.name+' down +'+pts, b.x, b.y+4, '#ffd76a'); SFX.jackpot(); if(b.netOn)bossNetDrop(b); }
+        else { popup('hit '+b.hits+' of 3', b.x, b.y+3.4, '#ffe9a8');
+          b.tx=(b.tx===0)?(b.rng()<0.5?-4.8:4.8):0; b.hop=0; }   /* one lane over, never two: a lane two over is a turn the lob does not allow */
+        bossCell(b);
+      } else {   /* the handle: a bounce up off the boss (as off a bumper), never a hit, never a chip, never a shove at a wall */
+        G.vy=9; G.vx=G.vx*0.3+((b.x>0||(b.x===0&&dx<0))?-1.5:1.5); G.w*=0.5;   /* toward the middle from a side lane: between a boss and a wall it juggled for ever (the review) */ SFX.wood(); G.combo=0; var ce=$('h-combo'); if(ce)ce.classList.remove('on');
+      }
+    }
+  }
+  if(b.netOn){
+    /* the ropes: a blade facing one cuts it; the net drops and Clean Slice is forfeited. Only once the knife is in the fight
+       (after its first lob or hit: a knife spinning down past one on its way in never cuts it by chance), only by a knife
+       RISING on a lob (a hit leaves the knife beside the rope, falling), and never the rope on the side the boss has hopped
+       to (a tap toward the boss carried the knife into it: the review). With the boss in the middle both ropes are live;
+       the net's give way after three lobs is the skip that never needs one */
+    for(var ri=0;ri<b.ropes.length;ri++){ var rx=b.ropes[ri];
+      if((b.lobs>0||b.hits>0)&&G.vy>0&&(b.tx===0||(rx>0)!==(b.tx>0))&&Math.abs(nx-rx)<KR*0.7&&ny<b.ropeTop&&ny>b.ropeBot&&(rx-G.x)*bX>0.2){ b.ropeCut=true; b.skipped=true; G.cleanForfeit=true;
+        G.vx=0; G.w*=0.2;   /* the cut bites: the knife drops to the floor instead of carrying on into the wall */
+        for(var rj=0;rj<b.ropeM.length;rj++)looseMesh(b.ropeM[rj], (Math.random()*2-1), -3, 1, 1.2); b.ropeM=[];
+        popup('net dropped', rx-Math.sign(rx), ny+2, '#c8bfa8'); SFX.wood(); bossNetDrop(b); return nx; } }
+    /* the net: any landing goes straight back up, high enough to come down past the boss, its angle kept */
+    if(ny-KR*0.6<=b.netY&&G.vy<0){
+      b.lobs++;
+      if(b.lobs>BOSS_LOBS){ b.skipped=true; G.cleanForfeit=true; popup('the net gives way', nx, b.netY+3, '#c8bfa8'); bossNetDrop(b); return nx; }
+      /* the lob: up to 5 u over the boss, and across to its lane: the drag halves vx each second, so the drift by the time T
+         the knife is back down at the boss is vx*(1-0.5^T)/ln2, solved for vx (the plan: lob it back so it comes down on it) */
+      var gF=ffGrav(), rise=(b.y+5)-b.netY, v0=Math.sqrt(2*gF*rise), T=v0/gF+Math.sqrt(2*3/gF);
+      G.vy=v0; G.vx=(b.tx-nx)*Math.LN2/(1-Math.pow(0.5,T)); G.y=b.netY+KR*0.6; spawnSparks(nx, b.netY, 0xe8dcc0, 5); SFX.spring();
+      b.inside=false;
+    }
+  }
+  return nx;
+}
+/* the drawn side, once a frame: the boss hops to its lane, the reveal holds then fades */
+function bossDraw(dt){ var b=G&&G.world&&G.world.boss; if(!b||!b.grp)return;
+  if(b.x!==b.tx){ var d=b.tx-b.x, st=Math.min(Math.abs(d), dt*9); b.x+=d>0?st:-st; b.hop+=dt; }
+  b.grp.position.set(b.x, b.y+(b.x!==b.tx&&!SET.rm?Math.sin(Math.min(1,b.hop*2.5)*Math.PI)*1.2:0), 0.6);
+  if(b.revealT>=0){ b.revealT+=dt; if(b.revealT>1.2){ var k=Math.max(0,1-(b.revealT-1.2)/0.8); if(b.tex)b.sp.material.opacity=k; b.code.visible=false; if(k<=0&&b.grp.parent){ b.grp.parent.remove(b.grp); } } }
+}
 function buildFreefall(lvl){
   clearWorld();
   var rng=mulberry32(((((lvl*1597334677)>>>0)^0xFA11)^G_FFSALT)>>>0);
@@ -2414,6 +2514,8 @@ function buildFreefall(lvl){
   if(G_ENDLESS)return buildEndless(FWI, WS, SW);   /* SS21: no floor; the shaft is built 100 m at a time as you fall */
   function wsAt(){ return WS; }                 /* a numbered dive is one world */
   var depth=170+Math.min(lvl,45)*26;            // much longer dives
+  var segDepth=depth, boss=BOSS_ON&&lvl%5===0;   /* Part E4: a boss chamber under the old floor; the shaft above uses segDepth */
+  if(boss)depth+=BOSS_H;
   var floorY=-depth;
   // canyon back wall: the world's strata painting, a step darker than the walls you can touch, y 43 down to -depth-27
   var back=addMesh(backPlane(WS, SW*2+8, depth+70)); back.position.set(0, (43-depth-27)/2, -6.8);
@@ -2422,7 +2524,7 @@ function buildFreefall(lvl){
   for(var side=-1;side<=1;side+=2){
     var wallM=addMesh(new THREE.Mesh(new THREE.BoxGeometry(6, depth+34, 13), side<0?WS.wall:WS.wallR));
     wallM.position.set(side*(SW+3), (26-depth-8)/2, 0); boxUV(wallM,6);
-    for(var wy=4;wy>-depth-2;wy-=9+rng()*6){
+    for(var wy=4;wy>-segDepth-2;wy-=9+rng()*6){
       var ledge=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.6,0.8+rng()*1.4,10+rng()*2), WS.ledge));
       ledge.position.set(side*(SW+0.4), wy, 0); boxUV(ledge,3);
     }
@@ -2430,7 +2532,11 @@ function buildFreefall(lvl){
   ffDecor(WS, SW, mulberry32((((lvl*69069)>>>0)^G_FFSALT^0xDEC0)>>>0), -14, floorY+10);
   var A={blocks:[], items:[], crystals:[], pads:[], slabs:[], wasps:[], planks:[], thorns:[], verbs:[]};
   var vk=VERBS_OFF?null:VERB_OF[WS.id];   /* Part D: this world's verb, in the first host slot past a fifth of the shaft */
-  ffSegments(rng, lvl, SW, wsAt, -4, floorY+14, A, null, vk?{kind:vk, minY:-4-depth*0.2, done:false}:null);
+  ffSegments(rng, lvl, SW, wsAt, -4, -segDepth+14, A, null, vk?{kind:vk, minY:-4-segDepth*0.2, done:false}:null);
+  var BC=null;
+  if(boss){ var crng=mulberry32((((lvl*40503)>>>0)^G_FFSALT^0xCA4B)>>>0);   /* the chamber's ledges, from its own stream */
+    for(var cs=-1;cs<=1;cs+=2)for(var cy=-segDepth-6;cy>floorY+2;cy-=9+crng()*6){ var cl=addMesh(new THREE.Mesh(new THREE.BoxGeometry(1.6,0.8+crng()*1.4,10+crng()*2), WS.ledge)); cl.position.set(cs*(SW+0.4), cy, 0); boxUV(cl,3); }
+    BC=bossChamber(WS, SW, floorY, lvl); }
   for(var dj=1; 4-100*dj>floorY+20; dj++)depthRing(WS, SW, 4-100*dj);   /* SS03: a band round the shaft every 100 m */
   /* Part E2: the Clean Slice line (gold bands) and the dive's find, in one line slab (its own stream, not the dive's) */
   var CL=cleanLine(A, SW, floorY), clM=0, ci, cj;
@@ -2470,7 +2576,7 @@ function buildFreefall(lvl){
   var bed=addMesh(new THREE.Mesh(new THREE.BoxGeometry(SW*2+8, 3, 13), new THREE.MeshLambertMaterial({color:0x3a2c20})));
   bed.position.set(0, floorY-3.6, 0);
   HZ=null; SLB=null;
-  return {ff:true, ws:WS, bandFog:null, len:depth, SW:SW, floorY:floorY, blocks:A.blocks, items:A.items, crystals:A.crystals, pads:A.pads, slabs:A.slabs, verbs:A.verbs, clean:{M:clM, stacks:CL.length},
+  return {ff:true, ws:WS, bandFog:null, len:depth, SW:SW, floorY:floorY, blocks:A.blocks, items:A.items, crystals:A.crystals, pads:A.pads, slabs:A.slabs, verbs:A.verbs, clean:{M:clM, stacks:CL.length}, boss:BC,
     wasps:A.wasps, planks:A.planks, thorns:A.thorns,
     zones:zones, zoneMats:zoneMats, wallX:1e9, bands:[[1,0]], bandMats:[]};
 }
@@ -2997,6 +3103,7 @@ function ffWall(x,y,dir){
   var SW=G.world.SW;
   var bladeX=-Math.cos(G.ang);
   var bladeIntoWall = dir<0 ? (bladeX < -0.35) : (bladeX > 0.35);
+  var bw=G.world.boss; if(bw&&y<bw.y+14+KR)bladeIntoWall=false;   /* Part E4: the boss chamber's walls are padded */
   var away = -dir; // +1 = push right off the left wall, -1 = push left off the right wall
   if(bladeIntoWall){
     // FAIL: the blade bites into the wall, the knife sticks and the dive ends.
@@ -3242,6 +3349,7 @@ function stepWorld(dt){
       // Part D: the world's verb (chime tubes, lantern rope, ice parcel, loaf)
       var vbs=G.world.verbs, ivb;
       if(vbs){ for(ivb=0;ivb<vbs.length;ivb++){ if(!vbs[ivb].done)nx=verbStep(vbs[ivb], nx, ny); } }
+      if(G.world.boss){ nx=bossStep(G.world.boss, nx, ny); if(G.world.boss.netOn&&G.vy>0&&ny<G.world.boss.netY+KR*0.6)ny=G.world.boss.netY+KR*0.6; }   /* Part E4 */
       // swinging planks: blade CUTS through (points), handle bonks off
       var pks=G.world.planks, ipk;
       if(pks){ for(ipk=0;ipk<pks.length;ipk++){ var pk=pks[ipk]; if(pk.cut)continue;
@@ -3507,6 +3615,7 @@ function drawFrame(dt){
       if(ch.life<=0){ scene.remove(ch.mesh); disposeMesh(ch.mesh); chunks.splice(c,1); }
     }
     findsDraw(dt);   /* Part E2 */
+    bossDraw(dt);    /* Part E4 */
     for(c=sparks.length-1;c>=0;c--){
       var sp=sparks[c];
       sp.vy-=42*dt; sp.mesh.position.x+=sp.vx*dt; sp.mesh.position.y+=sp.vy*dt; sp.mesh.position.z+=sp.vz*dt;
@@ -3755,6 +3864,7 @@ function finishLevel(){
     } })(); }
   $('go-lab').textContent=(nb?'★ new best · ':'')+'stuck the '+(ff?'floor':'wall')+' at x'+G.mult+(cleanBonus>0?(' · +'+cleanBonus+' clean dive'):'');
   if(ff&&gbx)gbx.classList.add('on');   /* SS21/SS20: reaching a numbered dive's floor is conquering the pit */
+  if(ff&&G.world.boss&&G.bossDown)$('go-lab').textContent+=' \u00b7 '+G.world.boss.name+' down';   /* Part E4 */
   if(ff)cleanResults(true);   /* Part E2: the line's count, the badge, the find */
   if(ff)dailyResults(true);   /* Part E3 */
   if(ff){
@@ -4097,6 +4207,8 @@ if(/[?&]dev=1/.test(location.search)){
     evicted:function(){ return ART.evicted||0; }, chunkN:function(){ return chunks.length; }, sparkN:function(){ return sparks.length; },
     caps:function(){ return { chunk:CHUNK_CAP, spark:SPARK_CAP }; }, cleanLine:function(){ return G&&G.world?cleanLine(G.world, G.world.SW, G.world.floorY):[]; },
     gpuTex:function(){ return renderer?renderer.info.memory.textures:0; },
+    /* Part E4: the boss chamber */
+    boss:function(){ return G&&G.world?G.world.boss:null; }, bossOff:function(v){ BOSS_ON=!v; }, bossStep:function(){ return bossStep; },
     /* Part E3: the Daily */
     daily:function(t){ return dailySpec(t==null?Date.now():t); }, dly:function(){ dlyToday(); return DLY; }, newDaily:newDaily, showDaily:showDaily,
     asked:function(rel){ return !!ART.tex[rel]; }, grav:function(){ return ffGrav(); }, deepGrav:function(v){ if(v!=null)DEEP_TIDE_GRAV=v; return DEEP_TIDE_GRAV; },
@@ -4124,7 +4236,7 @@ if(/[?&]dev=1/.test(location.search)){
 })();
 
 /* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=71'); }catch(e){} }
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=72'); }catch(e){} }
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the
