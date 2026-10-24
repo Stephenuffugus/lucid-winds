@@ -24,11 +24,13 @@ function grabVar(name) { const m = SRC.match(new RegExp('var ' + name + '=[^;]*;
 
 console.log('[A] the page\'s own tick and resolve functions, in a node vm');
 { const ctx = { Math, MATCH: null, RULES: { classic: false }, SFX: new Proxy({}, { get: () => () => {} }), _mpGarbage: () => {}, dropPending: () => {},
-    boardEmpty: () => false, aiUpdate: () => {}, gravityStep: () => {}, resolveTick: () => {}, colHeights: () => [0, 0, 0, 0, 0, 0], SPAWN_COL: 2, VISROWS: 12,
-    ROWS: 13, COLS: 6, addSap: () => {} };
+    boardEmpty: () => false, aiUpdate: () => {}, resolveTick: () => {}, colHeights: () => [0, 0, 0, 0, 0, 0], SPAWN_COL: 2, VISROWS: 12,
+    ROWS: 13, COLS: 6, addSap: () => {}, railChainEnd: () => {}, lockPiece: () => {} };
   vm.createContext(ctx);
-  for (const v of ['HYPE_TIERS', 'TARGET_POINTS', 'ALLCLEAR_NUIS']) vm.runInContext(grabVar(v), ctx);
-  for (const f of ['hypeTierOf', 'addHype', 'decayFall', 'tickField', 'finishResolve']) vm.runInContext(grab(f), ctx);
+  for (const v of ['HYPE_TIERS', 'TARGET_POINTS', 'ALLCLEAR_NUIS', 'LAND_MS']) vm.runInContext(grabVar(v), ctx);
+  for (const f of ['hypeTierOf', 'addHype', 'decayFall', 'tickField', 'finishResolve', 'partnerOf', 'pieceCells', 'cellFree', 'fits', 'onGround', 'lowRow', 'landTick']) vm.runInContext(grab(f), ctx);
+  /* v1.9: a pair high in a tall empty well, so the gravity checks count the rows it falls (the landing window never fires) */
+  const tall = () => Array.from({ length: 13 }, () => Array(6).fill(0)), air = () => ({ r: -400, c: 2, rot: 0, c1: 1, c2: 1 });
   const field = o => Object.assign({ floats: [], hype: 0, hypeTier: 0, chainGlow: 0, flashDanger: 0, state: 'idle', score: 0, carry: 0, pending: 0, allBonus: false, grid: [] }, o);
   const pf = field({ hype: 80 }), of = field({ chainGlow: 1 });
   ctx.MATCH = { pf, of, phase: 'fight', mode: 'campaign', powers: false }; pf.hypeTier = ctx.hypeTierOf(80);
@@ -43,27 +45,25 @@ console.log('[A] the page\'s own tick and resolve functions, in a node vm');
   a.res = { score: 40, chain: 1, cleared: 4 }; ctx.finishResolve(a); const after2 = b.pending;
   const bonus = ctx.TARGET_POINTS * ctx.ALLCLEAR_NUIS / ctx.TARGET_POINTS;
   // the soft drop backlog: 600 ms saved up on an 833 ms stage, then the soft drop engages
-  { let steps = 0; ctx.gravityStep = () => { steps++; }; const g = field({ state: 'play', gravMs: 833, gravAcc: 600, softHold: true, cur: { r: 0 } });
-    ctx.MATCH = { pf: g, of: null, phase: 'fight', mode: 'campaign', powers: false }; ctx.tickField(g, 16, false);
+  { const g = field({ state: 'play', gravMs: 833, gravAcc: 600, softHold: true, cur: air(), grid: tall(), land: { on: false, t: 0, age: -1, low: -1, resets: 0 } }); const r0 = g.cur.r;
+    ctx.MATCH = { pf: g, of: null, phase: 'fight', mode: 'campaign', powers: false }; ctx.tickField(g, 16, false); const steps = g.cur.r - r0;
     ok('starting a soft drop drops at most one row at once, then speeds the fall (it spent 600 ms of slow fall as 15 rows in one frame)', steps === 1, steps); }
   // the review: the clamp must never throw a frame's time away (the soft drop at 40 ms a row, every stage's own rate)
-  { const rate = (gravMs, soft, frames) => { let n = 0; ctx.gravityStep = () => { n++; }; const g = field({ state: 'play', gravMs, gravAcc: 0, softHold: soft, cur: { r: 0 } });
-      ctx.MATCH = { pf: g, of: null, phase: 'fight', mode: 'campaign', powers: false }; for (let i = 0; i < frames; i++) ctx.tickField(g, 1000 / 60, false); return n; };
+  { const rate = (gravMs, soft, frames) => { const g = field({ state: 'play', gravMs, gravAcc: 0, softHold: soft, cur: air(), grid: tall(), land: { on: false, t: 0, age: -1, low: -1, resets: 0 } }); const r0 = g.cur.r;
+      ctx.MATCH = { pf: g, of: null, phase: 'fight', mode: 'campaign', powers: false }; for (let i = 0; i < frames; i++) ctx.tickField(g, 1000 / 60, false); return g.cur.r - r0; };
     const soft = rate(833, true, 60), st11 = rate(151.5, false, 600);
     ok('a held soft drop falls a row every 40 ms at 60 Hz (25 a second) and stage 11 keeps its 151.5 ms row (66 in 10 s)', soft >= 24 && soft <= 26 && st11 >= 65 && st11 <= 67, JSON.stringify({ soft, st11 })); }
   ok('an All Clear bonus survives a lock with no clear and is spent once, on the next chain', keep && after0 === 0 && spent && after1 >= bonus && after2 - after1 < bonus,
     JSON.stringify({ keep, after0, spent, after1, after2, bonus })); }
 
-{ /* the page's own hold() with a fake clock: the press moves at once, the first repeat lands AT the delay, then every 33 ms */
-  const timers = []; let now = 0, calls = [];
-  const el = { ls: {}, addEventListener(k, f) { this.ls[k] = f; } };
-  const ctx = { $: () => el, ac: () => {}, hap: () => {}, clearTimeout: () => {}, clearInterval: () => {},
-    setTimeout: (f, d) => { timers.push({ at: now + d, f, every: 0 }); return timers.length; }, setInterval: (f, d) => { timers.push({ at: now + d, f, every: d }); return timers.length; } };
-  vm.createContext(ctx); vm.runInContext(grab('hold'), ctx);
-  ctx.hold('c-right', () => calls.push(now));
-  el.ls.pointerdown({ preventDefault() {} });
-  for (now = 0; now <= 200; now++) for (const t of timers) if (t.at === now) { t.f(); if (t.every) t.at += t.every; }
-  ok('a held arrow moves at once, repeats first AT 105 ms (it waited 138), then every 33 ms (the page\'s hold, a fake clock)', JSON.stringify(calls.slice(0, 4)) === JSON.stringify([0, 105, 138, 171]), JSON.stringify(calls)); }
+{ /* v1.9: the held arrow runs on the ONE repeat scheduler (simulation time). The v1.7 claim still holds: the press moves at
+     once, the first repeat lands AT 105 ms (it waited 138), then every 33 ms */
+  const calls = []; let now = 0;
+  const ctx = { Math, SET: { relaxed: false }, playable: () => true, pf: () => ({}), moveP: () => { calls.push(now); return true; } };
+  vm.createContext(ctx); vm.runInContext(grabVar('REP_FAST') + grabVar('INP'), ctx);
+  for (const f of ['repProfile', 'repPress', 'repRelease', 'repTick']) vm.runInContext(grab(f), ctx);
+  ctx.repPress(1); for (now = 1; now <= 200; now++) ctx.repTick(1);
+  ok('a held arrow moves at once, repeats first AT 105 ms (it waited 138), then every 33 ms (the page\'s scheduler, simulation time)', JSON.stringify(calls.slice(0, 4)) === JSON.stringify([0, 105, 138, 171]), JSON.stringify(calls)); }
 
 console.log('[B] the page, with real touches');
 const PORT = 8840 + Math.floor(Math.random() * 100);

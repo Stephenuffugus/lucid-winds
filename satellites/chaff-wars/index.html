@@ -33,8 +33,8 @@
 <style>
 :root{ --bg:#12100c; --panel:#1c1a12; --line:#33301f; --ink:#f0e9d8; --muted:#9a9078;
   --gold:#e8c15a; --sprout:#7ec850; --crimson:#e0433f; --dew:#4f9ee8; --shade:#b06fe0;
-  --sab:env(safe-area-inset-bottom,0px); --ch:90px; --cfs:31px; --dfs:19px; }
-body.bigctrl{ --ch:116px; --cfs:40px; --dfs:24px; }
+  --sab:env(safe-area-inset-bottom,0px); --th:56px; }
+body.bigctrl{ --th:64px; }
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 14px rgba(255,215,106,.4)}
 #b-bgm.playing{border-color:#ff5db1; box-shadow:0 0 0 2px rgba(255,93,177,.3),0 0 16px rgba(255,93,177,.45)}
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
@@ -118,8 +118,8 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 #b-home{left:10px}
 /* the way home, on the TITLE screen only. The portal opens this card as a top
    level navigation, so nothing outside the page offers a way back. Top left of
-   the title, which is empty art: the play chrome (#b-home, power, ctrlbar) all
-   lives on #s-play and can never collide with it. */
+   the title, which is empty art: the play chrome (#b-home, power) lives on
+   #s-play and the control tray only shows in a match, so neither can collide with it. */
 .swsback{position:absolute; left:10px; top:calc(env(safe-area-inset-top,0px) + 10px); z-index:31;
   min-height:48px; padding:0 15px; border-radius:14px; border:1px solid var(--line);
   background:rgba(18,16,12,0.82); color:var(--muted); font-size:12.5px; font-weight:700;
@@ -131,24 +131,25 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
   color:transparent; background:url('assets/ui/power-unlit.png?v=pnl1') center/contain no-repeat, rgba(18,16,12,0.55)}
 .tbtn.pwr.ready{opacity:1; box-shadow:0 0 0 2px rgba(126,200,80,.4),0 0 18px rgba(126,200,80,.6); border-color:#a6e07a;
   background:url('assets/ui/power-lit.png?v=pnl1') center/contain no-repeat, rgba(18,16,12,0.25)}
-/* responsive thumb-friendly control bar: never overlaps, scales to any phone */
-.ctrlbar{position:absolute; left:0; right:0; bottom:0; z-index:30; display:flex; align-items:flex-end; gap:9px;
-  padding:0 9px calc(11px + var(--sab)); pointer-events:none}
-.ctrlbar .cc{display:flex; gap:9px; flex:1 1 0; min-width:0}
-.ctrlbar .cc:last-child{justify-content:flex-end}
-.cbtn{pointer-events:auto; flex:1 1 0; min-width:0; height:var(--ch); border-radius:18px; border:1px solid var(--line);
-  background:linear-gradient(180deg,rgba(42,36,22,.96),rgba(24,21,12,.96)); color:var(--ink); font-size:var(--cfs);
-  display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; -webkit-user-select:none;
-  touch-action:manipulation; box-shadow:0 3px 0 #0007, 0 6px 14px #0005; transition:filter .05s, transform .05s}
+/* v1.9 (Part 2a, PNL-007): the control tray is Astra's match concept, two rows: left, soft drop, right; turn left, turn
+   right, Drop. It lives OUTSIDE the scaled stage, in CSS px, so every button is 56 px tall (64 with Big controls) on
+   every phone, where the old one row bar inside the stage came out 52 px on a 360 phone. fit() keeps the board above it.
+   Drop on the left is a setting (left thumbs). The tray takes every touch on it, gaps too: a touch between two buttons
+   used to land on the canvas and steer the pair. */
+.tray{position:fixed; left:0; right:0; bottom:0; z-index:5; max-width:540px; margin:0 auto; display:flex; flex-direction:column;
+  gap:8px; padding:10px 10px calc(10px + var(--sab)); visibility:hidden; touch-action:none;
+  background:linear-gradient(180deg,rgba(8,6,10,0),rgba(8,6,10,.78) 22%,rgba(8,6,10,.92))}
+body.playing .tray{visibility:visible}
+.trow{display:flex; gap:8px}
+.cbtn{flex:1 1 0; min-width:0; height:var(--th); border-radius:16px; border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(42,36,22,.96),rgba(24,21,12,.96)); color:var(--ink); font-size:22px; line-height:1;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; user-select:none; -webkit-user-select:none;
+  touch-action:none; box-shadow:0 3px 0 #0007, 0 6px 14px #0005; transition:filter .05s, transform .05s}
+.cbtn small{font-size:12px; font-weight:800; letter-spacing:1px; color:var(--muted)}
 .cbtn:active{filter:brightness(1.4); transform:translateY(2px); box-shadow:0 1px 0 #0007}
-/* soft-drop + the two rotate buttons are compact so movement + DROP stay the
-   biggest targets even with six buttons on the bar */
-/* fixed stage units, NOT vw: 14vw of a 390w phone is 54.6 stage px which the
-   stage scale then shrinks to 39 real px (under the 48px rule). 78 stage px
-   = 56 real px on a 390w phone, 52 on 360w. */
-.cbtn.soft,.cbtn.rotbtn{flex:0 0 78px}
-#dropbtn.drop{flex:1.55 1 0; border:1px solid #a6e07a; background:linear-gradient(180deg,#7ec850,#4c9a2e);
-  color:#0f1a06; font-size:var(--dfs); font-weight:800; letter-spacing:2px; box-shadow:0 4px 0 #356b1e, 0 7px 16px #0006}
+body.mirror #dropbtn{order:-1}
+#dropbtn.drop{border:1px solid #a6e07a; background:linear-gradient(180deg,#7ec850,#4c9a2e);
+  color:#0f1a06; font-size:19px; font-weight:800; letter-spacing:2px; box-shadow:0 4px 0 #356b1e, 0 7px 16px #0006}
 #dropbtn.drop:active{transform:translateY(3px); box-shadow:0 1px 0 #356b1e; filter:brightness(1.05)}
 .go-score{font-size:56px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
@@ -196,6 +197,19 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">Pop N Lock</h1>
+<!-- v1.9 (Part 2a): the control tray, outside the scaled stage (CSS px); it shows in a match and fit() keeps the board above it -->
+<div class="tray" id="tray">
+  <div class="trow">
+    <button class="cbtn" id="c-left" aria-label="Move left">◀<small>LEFT</small></button>
+    <button class="cbtn" id="c-down" aria-label="Soft drop">▼<small>SOFT</small></button>
+    <button class="cbtn" id="c-right" aria-label="Move right">▶<small>RIGHT</small></button>
+  </div>
+  <div class="trow">
+    <button class="cbtn" id="c-rotccw" aria-label="Rotate left">↺<small>ROTATE L</small></button>
+    <button class="cbtn" id="c-rot" aria-label="Rotate right">↻<small>ROTATE R</small></button>
+    <button class="cbtn drop" id="dropbtn" aria-label="Drop">DROP</button>
+  </div>
+</div>
 <div id="wrap"><div id="stage">
   <canvas id="game" width="540" height="960"></canvas>
 
@@ -240,17 +254,6 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
   <div class="screen" id="s-play">
     <button class="tbtn" id="b-home" aria-label="Back to menu">‹</button>
     <button class="tbtn pwr" id="b-power" aria-label="Fire power (Solvent)" style="display:none">⚡</button>
-    <div class="ctrlbar">
-      <div class="cc">
-        <button class="cbtn" id="c-left"  aria-label="Move left">◀</button>
-        <button class="cbtn" id="c-right" aria-label="Move right">▶</button>
-      </div>
-      <button class="cbtn rotbtn" id="c-rotccw" aria-label="Rotate left">↺</button>
-      <button class="cbtn rotbtn" id="c-rot"    aria-label="Rotate right">↻</button>
-      <div class="cc">
-        <button class="cbtn drop" id="dropbtn" aria-label="Hard drop">DROP</button>
-      </div>
-    </div>
   </div>
 
   <!-- HOW -->
@@ -285,7 +288,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">1</div><div>Seedpods fall two at a time. Move them with ◀ ▶, spin either way with ↺ ↻ or by tapping the board, and press <b style="color:var(--sprout)">DROP</b> to slam a pod down instantly.</div></div>
+    <div class="helprow"><div class="hi">1</div><div>Seedpods fall two at a time. Move them with ◀ ▶ or by dragging across the board, spin either way with ↺ ↻ or a tap on the board, hold <b>▼ SOFT</b> or drag down to bring them down faster, and press <b style="color:var(--sprout)">DROP</b> to slam them down at once.</div></div>
     <div class="helprow"><div class="hi">2</div><div>Line up <b>four or more of the same color</b> touching side to side or top to bottom and they pop. Pods above fall into the gap, so one clear can trigger the next for a <b style="color:var(--gold)">chain</b>.</div></div>
     <div class="helprow"><div class="hi">3</div><div>Every chain drops grey <b>Chaff</b> on your rival. The bigger the chain, the more Chaff you send. Chaff never pops on its own, but it shatters when a colored group right next to it clears.</div></div>
     <div class="helprow"><div class="hi">4</div><div>Send Chaff while Chaff is falling toward you and the two cancel out, so a well timed chain is also a shield. Whoever gets stacked up to the top first loses.</div></div>
@@ -301,6 +304,9 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
     <div class="settingline"><span>Ghost drop guide</span><div class="toggle on" id="tg-ghost"><b></b></div></div>
     <div class="settingline"><span>Big controls</span><div class="toggle on" id="tg-big"><b></b></div></div>
+    <div class="settingline"><span>Relaxed held moves</span><div class="toggle" id="tg-relaxed"><b></b></div></div>
+    <div class="settingline"><span>Flick up to drop</span><div class="toggle" id="tg-flick"><b></b></div></div>
+    <div class="settingline"><span>Drop button on the left</span><div class="toggle" id="tg-mirror"><b></b></div></div>
     <div class="settingline"><span>Fullscreen</span><div class="toggle" id="tg-full"><b></b></div></div>
     <div class="settingline"><span>Tag shapes <span style="color:var(--muted);font-size:11px">(color-blind aid)</span></span><div class="toggle on" id="tg-tags"><b></b></div></div>
     <div style="height:8px"></div>
@@ -336,7 +342,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 <script>
 (function(){
 "use strict";
-var BUILD="v1.8";
+var BUILD="v1.9";
 /* screen shake: shake(amp,ms) — decays in update(), applied as a canvas translate in render() */
 var SHAKE={t:0,dur:1,amp:0};
 function shake(a,ms){ if(a>SHAKE.amp||SHAKE.t<=0){ SHAKE.amp=a; SHAKE.t=ms; SHAKE.dur=ms; } }
@@ -366,13 +372,21 @@ function _vvH(){ var vv=window.visualViewport; return (vv&&vv.height)||window.in
   window.visualViewport.addEventListener('resize', _vvFire);
   window.visualViewport.addEventListener('scroll', _vvFire);
 })();
-function fit(){ var iw=_vvW(), ih=_vvH(); var s=Math.min(iw/VW, ih/VH); $('stage').style.transform='translateZ(0) scale('+s+')'; }
+/* v1.9 (Part 2a): in a match the control tray sits UNDER the stage in CSS px, and the stage keeps the board, down to
+   BOARD_FOOT (the painted frame's foot), above it. At 412 x 915, 375 x 812 and 360 x 780 that is the same scale and
+   place as v1.8 (his board, untouched); a short phone shrinks the match as little as it must and lifts it toward the
+   top. The menus are fitted whole, as before. */
+var BOARD_FOOT=840;
+function fit(){ var iw=_vvW(), ih=_vvH(), s=Math.min(iw/VW, ih/VH), top=(ih-VH*s)/2, tr=$('tray');
+  if(curScreen==='s-play'&&tr){ var th=tr.getBoundingClientRect().height; s=Math.min(iw/VW, (ih-th)/BOARD_FOOT);
+    top=Math.max(0, Math.min((ih-VH*s)/2, ih-th-BOARD_FOOT*s)); }
+  $('stage').style.transform='translateZ(0) translateY('+(top-(ih-VH*s)/2)+'px) scale('+s+')'; }
 window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
 
 /* ---------- storage ---------- */
 var LS={ g:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, s:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
-var SET={ sound:true, ghost:true, big:true, tags:true };
-(function(){ try{ var s=JSON.parse(LS.g('cw_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.ghost==='boolean')SET.ghost=s.ghost; if(typeof s.big==='boolean')SET.big=s.big; if(typeof s.tags==='boolean')SET.tags=s.tags; }catch(e){} })();
+var SET={ sound:true, ghost:true, big:true, tags:true, relaxed:false, flick:false, mirror:false };   /* v1.9: Relaxed held moves, the hard drop flick (off), Drop on the left */
+(function(){ try{ var s=JSON.parse(LS.g('cw_set')||'{}'),k; for(k in SET)if(SET.hasOwnProperty(k)&&typeof s[k]==='boolean')SET[k]=s[k]; }catch(e){} })();
 function saveSet(){ LS.s('cw_set', JSON.stringify(SET)); }
 var PROG={ unlocked:0, beaten:{}, done:false, secret:false, soloBest:0 };
 (function(){ try{ var p=JSON.parse(LS.g('cw_prog')||'{}'); var k; for(k in PROG) if(p[k]!=null)PROG[k]=p[k]; }catch(e){} })();
@@ -692,13 +706,14 @@ function newPiece(f){ return {c1:fieldPiece(f)+1, c2:fieldPiece(f)+1}; }
 function spawnPiece(f){ if(!f.next)f.next=newPiece(f); var p=f.next; f.next=newPiece(f);
   f.cur={r:1,c:SPAWN_COL,rot:0,c1:p.c1,c2:p.c2};
   if(!fits(f.grid,f.cur)){ f.cur=null; f.state='over'; f.dead=true; return false; }
-  f.state='play'; f.gravAcc=0;
+  f.state='play'; f.gravAcc=0; f.land={on:false, t:0, age:-1, low:-1, resets:0};
   if(f.ai){ planAI(f); }
+  if(f===MATCH.pf)rotBuffered(f);   /* v1.9: a turn pressed in the 120 ms before this spawn */
   return true; }
 
 function lockPiece(f){ var cs=pieceCells(f.cur),i; for(i=0;i<2;i++){ if(cs[i].r<0){ f.dead=true; } else f.grid[cs[i].r][cs[i].c]=cs[i].col; }
   f.cur=null; SFX.lock(); startResolve(f);
-  if(f===MATCH.pf&&dragSt){ if(dragSt.soft)f.softHold=false; dragSt=null; }   /* v1.7: a lock ends the drag that steered it (and the soft drop it set) */
+  if(f===MATCH.pf){ dragSt=null; softSet('drag',false); }   /* v1.7: a lock ends the drag that steered it and the soft drop it set; v1.9: a held SOFT button or down key carries on */
   if(MATCH.mode==='versus'&&f===MATCH.pf)_mpPub(true); }
 
 function hardDrop(f){ if(!f.cur)return; while(true){ var nx={r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,nx))f.cur.r++; else break; } SFX.drop(); lockPiece(f); }
@@ -797,13 +812,34 @@ function aiUpdate(f,dt){ if(f.state!=='play'||!f.cur||!f.aiTarget)return; f.aiTi
 }
 
 /* ---- shared movement ---- */
-function moveP(f,dc){ if(f.state!=='play'||!f.cur)return false; var n={r:f.cur.r,c:f.cur.c+dc,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n)){ f.cur.c+=dc; if(!f.ai)SFX.move(); return true; } return false; }
-function tryRotate(f,dir){ if(f.state!=='play'||!f.cur)return false; var oldRot=f.cur.rot, nr=(f.cur.rot+(dir||1)+4)%4;
-  var kicks=[[0,0],[-1,0],[1,0],[0,-1],[-1,-1],[1,-1],[0,1]],i;
-  for(i=0;i<kicks.length;i++){ var t={r:f.cur.r+kicks[i][1],c:f.cur.c+kicks[i][0],rot:nr,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,t)){ f.cur.rot=nr; f.cur.c=t.c; f.cur.r=t.r; f.cur.rotFrom=oldRot; f.cur.rotT=1; if(!f.ai)SFX.rot(); return true; } }
+function moveP(f,dc){ if(f.state!=='play'||!f.cur)return false; var n={r:f.cur.r,c:f.cur.c+dc,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n)){ f.cur.c+=dc; if(!f.ai)SFX.move(); landReset(f); return true; } return false; }
+/* THE KICK TABLE (v1.9, PNL-004). The pair turns around its first pod and the collision is checked at once (the 90 ms
+   turn is a picture only). Where a turn is blocked it tries ONE shove, one cell, straight away from what blocked it:
+     the second pod goes up:     stay (nothing settled can sit above a falling pair: every column is a stack)
+     the second pod goes right:  stay, else one column left    (the right wall, or a taller column)
+     the second pod goes down:   stay, else one row up         (the floor or the stack below: the floor kick)
+     the second pod goes left:   stay, else one column right
+   Never diagonal, never two cells, never a climb onto a neighbour (v1.8 tried seven shoves and could hop a pair up a
+   wall): in a one column shaft a sideways turn fails. A quick 180 turn is a Standard rules idea, his call. */
+var KICKS=[ [[0,0]], [[0,0],[-1,0]], [[0,0],[0,-1]], [[0,0],[1,0]] ];   /* by the new rotation: [column, row] shoves */
+function tryRotate(f,dir){ if(f.state!=='play'||!f.cur)return false; var oldRot=f.cur.rot, nr=(f.cur.rot+(dir||1)+4)%4, kicks=KICKS[nr], i;
+  for(i=0;i<kicks.length;i++){ var t={r:f.cur.r+kicks[i][1],c:f.cur.c+kicks[i][0],rot:nr,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,t)){ f.cur.rot=nr; f.cur.c=t.c; f.cur.r=t.r; f.cur.rotFrom=oldRot; f.cur.rotT=1; if(!f.ai)SFX.rot(); landReset(f); return true; } }
   return false; }
+/* THE LANDING WINDOW (v1.9, PNL-003). A pair that touches down waits 300 ms, then locks. A move or a turn that works
+   while it is down starts the wait again, twice a pair at most, and however it is moved it locks 650 ms after it first
+   touched down at its lowest row: a pair that walks off a ledge and lands LOWER gets a fresh window, a floor kick does
+   not. A held soft drop locks it 40 ms after touchdown (its old feel), Drop at once. The player's own pair only: the
+   rival's AI places by hard drop and a versus rival is a picture. */
+var LAND_MS=300, LAND_RESETS=2, LAND_CAP=650, LAND_SOFT=40;
+function onGround(f){ return !fits(f.grid,{r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}); }
+function lowRow(cur){ return Math.max(cur.r, partnerOf(cur).r); }
+function landTick(f,dt){ var L=f.land, on=onGround(f);
+  if(on){ var low=lowRow(f.cur); if(L.age<0||low>L.low){ L.age=0; L.t=0; L.low=low; } }   /* a first touchdown, or one lower than before */
+  if(L.age>=0){ L.age+=dt; if(on)L.t+=dt; }
+  L.on=on;
+  if(on&&(L.t>=(f.softHold?LAND_SOFT:LAND_MS)||L.age>=LAND_CAP))lockPiece(f); }
+function landReset(f){ var L=f.land; if(L&&L.on&&L.resets<LAND_RESETS){ L.t=0; L.resets++; } }
 function softStep(f){ if(f.state!=='play'||!f.cur)return; var n={r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n)){ f.cur.r++; f.gravAcc=0; } else { lockPiece(f); } }
-function gravityStep(f){ var n={r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n))f.cur.r++; else lockPiece(f); }
 function ghostY(f){ if(!f.cur)return f.cur; var y=f.cur.r; while(true){ var n={r:y+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n))y++; else break; } return y; }
 
 /* =====================================================================
@@ -909,7 +945,7 @@ function _outHandoff(){ if(MATCH.mode==='versus'){ versusResult(MATCH.result); r
   if(MATCH.mode==='solo'){ soloResult(); return; }
   matchResult(MATCH.result); }
 
-function endMatch(result){ if(MATCH.phase==='done')return; MATCH.phase='done'; MATCH.result=result;
+function endMatch(result){ if(MATCH.phase==='done')return; MATCH.phase='done'; MATCH.result=result; clearHolds();
   if(MATCH.pf)MATCH.pf.state='over'; if(MATCH.of)MATCH.of.state='over';
   if(MATCH.mode==='versus')_mpPub(true);
   if(MATCH.mode==='solo' && MATCH.pf && MATCH.pf.score>PROG.soloBest){ PROG.soloBest=MATCH.pf.score; saveProg(); }
@@ -1002,6 +1038,7 @@ function update(dt){ if(SHAKE.t>0){ SHAKE.t-=dt; if(SHAKE.t<0)SHAKE.t=0; }
   if(MATCH.phase==='intro'){ MATCH.t+=dt; if(MATCH.t>=1700){ MATCH.t=0; MATCH.phase='count'; SFX.count(); } return; }
   if(MATCH.phase==='count'){ MATCH.t+=dt; if(MATCH.t>=700){ MATCH.t=0; MATCH.count--; if(MATCH.count>0)SFX.count(); else { SFX.go(); MATCH.phase='fight'; if(MATCH.pf)MATCH.pf.state='play'; if(MATCH.of)MATCH.of.state='play'; } } return; }
   if(MATCH.phase!=='fight')return;
+  INP.clock+=dt; repTick(dt);   /* v1.9: held moves on simulation time, before the player's field ticks */
   tickField(MATCH.pf,dt,false);
   if(MATCH.of){ tickField(MATCH.of,dt,true); railTick(); }
   if(MATCH.mode==='versus'){ var nowT=Date.now();
@@ -1020,10 +1057,11 @@ function tickField(f,dt,isAI){ if(!f)return; if(f.powerCd>0)f.powerCd-=dt;
   if(f.remote)return;   /* versus: the rival board is a remote display, driven by snapshots */
   if(f.state==='play'){
     if(isAI){ aiUpdate(f,dt); }
-    else { var g=f.softHold? Math.min(f.gravMs,40):f.gravMs;
+    else if(f.cur){ var g=f.softHold? Math.min(f.gravMs,40):f.gravMs;   /* v1.9: the landing window reads the pair every frame, so no pair, no tick (a throw here stops the game loop) */
       if(f.gravAcc>g)f.gravAcc=g;   /* v1.7: a soft drop speeds the fall from now on and never spends the time saved up at the slow rate (up to 20 rows in one frame on an early stage); clamped BEFORE this frame is added, so no frame's time is ever thrown away and every rate is v1.6's */
       f.gravAcc+=dt;
-      while(f.gravAcc>=g){ f.gravAcc-=g; gravityStep(f); if(f.state!=='play')break; } }
+      while(f.gravAcc>=g){ if(onGround(f)){ f.gravAcc=0; break; } f.gravAcc-=g; f.cur.r++; }   /* v1.9: gravity only moves the pair down; */
+      landTick(f,dt); }                                                                       /* the landing window locks it */
     /* danger flash when spawn column stacking high */
     var h=colHeights(f.grid); if(h[SPAWN_COL]>=VISROWS-2 && f.flashDanger<=0)f.flashDanger=400;
   } else if(f.state==='resolve'){ resolveTick(f,dt); }
@@ -1456,71 +1494,95 @@ function wrapText(txt,x,y,maxW,lh){ var words=txt.split(' '),line='',i,yy=y; for
 function rr(x,y,w,h,rad){ ctx.beginPath(); ctx.moveTo(x+rad,y); ctx.arcTo(x+w,y,x+w,y+h,rad); ctx.arcTo(x+w,y+h,x,y+h,rad); ctx.arcTo(x,y+h,x,y,rad); ctx.arcTo(x,y,x+w,y,rad); ctx.closePath(); }
 
 /* =====================================================================
-   INPUT
+   INPUT  (v1.9, Part 2a: one repeat scheduler, the SOFT button, drag intent, one turn buffered across a spawn, every
+   hold let go on cancel, blur, hide, a screen change and the match end. The landing window lives in tickField.)
    ===================================================================== */
 function pf(){ return MATCH.pf; }
-function hold(id,fn,first){ var el=$(id),t=null,r=null; if(!el)return;
-  function stop(){ if(t){clearTimeout(t);t=null;} if(r){clearInterval(r);r=null;} }
-  el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); hap(8); fn();
-    /* Stephen 7/28: "i really just need to be able to move my pieces faster so i can
-       play on higher difficulties without having to slowly wait or fumble." Was
-       DAS 170ms / ARR 70ms. Now 105 / 33 — a single tap still moves exactly one
-       column, but a held press crosses the 6-wide board in ~0.2s, not ~0.5s. */
-    t=setTimeout(function(){ fn(); r=setInterval(fn,33); },first||105); });   /* v1.7: the first repeat AT 105 ms */
-  el.addEventListener('pointerup',stop); el.addEventListener('pointercancel',stop); el.addEventListener('pointerleave',stop); }
-hold('c-left',function(){ if(playable())moveP(pf(),-1); });
-hold('c-right',function(){ if(playable())moveP(pf(),1); });
-(function(){ var el=$('c-down'); if(!el)return; el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); hap(6); if(pf())pf().softHold=true; }); function up(){ if(pf())pf().softHold=false; } el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up); el.addEventListener('pointerleave',up); })();
-tap('c-rot',function(){ if(playable()){ hap(8); tryRotate(pf(),1); } });
-tap('c-rotccw',function(){ if(playable()){ hap(8); tryRotate(pf(),-1); } });
-tap('dropbtn',function(){ if(playable()){ hap(16); hardDrop(pf()); } });
-/* ---- Board touch: Block Drop's scheme, Stephen's ask 2026-07-27 ----
-   Drag on your board = the pair follows your finger column by column.
-   Tap (no real movement) = rotate. Drag down = soft drop while held.
-   Quick flick up = hard drop. The side buttons + DROP all still work. */
-var dragSt=null;
+/* ONE repeat scheduler for every held move (the tray's arrows and the keyboard's) on SIMULATION time: update() runs it
+   before the player's field ticks, so a held move repeats exactly on time, never doubles in a slow frame and never runs
+   while the match does not. Fast is the July ruling (Stephen 7/28: "i really just need to be able to move my pieces
+   faster so i can play on higher difficulties without having to slowly wait or fumble"): the first repeat AT 105 ms,
+   then every 33 ms; a tap still moves exactly one column. Relaxed, a setting: 160 and 50. The last pressed side wins and
+   letting it go hands back to the other side if that is still held (a fresh delay). A hold carries through a spawn, so
+   the next pair slides at once. */
+var REP_FAST={first:105, every:33}, REP_RELAXED={first:160, every:50}, ROT_BUF_MS=120;
+var INP={ l:false, r:false, dir:0, t:0, n:0, soft:{btn:false, drag:false, key:false}, buf:null, clock:0 };
+function repProfile(){ return SET.relaxed?REP_RELAXED:REP_FAST; }
+function repPress(side){ if(side<0)INP.l=true; else INP.r=true; INP.dir=side; INP.t=0; INP.n=0; if(playable())moveP(pf(),side); }
+function repRelease(side){ if(side<0)INP.l=false; else INP.r=false; if(INP.dir===side){ INP.dir=INP.l?-1:(INP.r?1:0); INP.t=0; INP.n=0; } }
+function repTick(dt){ if(!INP.dir)return; var P=repProfile(); INP.t+=dt;
+  while(INP.t>=P.first+INP.n*P.every){ INP.n++; if(playable())moveP(pf(),INP.dir); } }
+/* the soft drop has three sources (the SOFT button, a drag down the board, the down key) and is on while any is held */
+function softSet(src,on){ INP.soft[src]=!!on; var f=pf(); if(f)f.softHold=INP.soft.btn||INP.soft.drag||INP.soft.key; }
+/* a turn pressed while there is no pair (a lock, a chain) turns the next pair if it appears within 120 ms. Drop is never held over */
+function rotPress(dir){ if(playable()){ hap(8); tryRotate(pf(),dir); return; } if(MATCH.phase==='fight'&&pf())INP.buf={dir:dir, t:INP.clock}; }
+function rotBuffered(f){ var b=INP.buf; INP.buf=null; if(b&&INP.clock-b.t<=ROT_BUF_MS)tryRotate(f,b.dir); }
+/* let go of everything: the window losing focus, the page hidden, a screen change, the match over */
+function clearHolds(){ INP.l=INP.r=false; INP.dir=0; INP.t=0; INP.n=0; INP.buf=null; INP.soft.btn=INP.soft.drag=INP.soft.key=false;
+  if(MATCH.pf)MATCH.pf.softHold=false; dragSt=null; }
+window.addEventListener('blur',clearHolds); window.addEventListener('pagehide',clearHolds);
+document.addEventListener('visibilitychange',function(){ if(document.hidden)clearHolds(); });
+/* a tray button: down on pointerdown, up on up, cancel or leave of the pointer that pressed it */
+function holdBtn(id,down,up){ var el=$(id),pid=null; if(!el)return;
+  el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); pid=e.pointerId; down(); });
+  function rel(e){ if(pid===null||e.pointerId!==pid)return; pid=null; up(); }
+  el.addEventListener('pointerup',rel); el.addEventListener('pointercancel',rel); el.addEventListener('pointerleave',rel); }
+holdBtn('c-left',function(){ hap(8); repPress(-1); },function(){ repRelease(-1); });
+holdBtn('c-right',function(){ hap(8); repPress(1); },function(){ repRelease(1); });
+holdBtn('c-down',function(){ hap(6); softSet('btn',true); },function(){ softSet('btn',false); });
+holdBtn('c-rotccw',function(){ rotPress(-1); },function(){});   /* turns on the press, like the arrows */
+holdBtn('c-rot',function(){ rotPress(1); },function(){});
+tap('dropbtn',function(){ if(playable()){ hap(16); hardDrop(pf()); } });   /* Drop stays on the release: a thumb resting on it never drops */
+/* ---- Board touch: Block Drop's scheme, Stephen's ask 2026-07-27, with an INTENT (v1.9, PNL-006) ----
+   A touch on your board commits to an axis once it has moved 12 CSS px with one axis 1.5 times the other (a diagonal
+   that never settles takes its larger axis at 36 px). SIDEWAYS: the pair follows your finger column by column. DOWN: a
+   soft drop while held, up again lets go. A tap that never commits (under 400 ms) turns the pair, or the next pair
+   within 120 ms. A quick flick up hard drops only with the setting on (off by default: a slipped thumb dropped pairs).
+   A touch that began with no pair in play can only tap: it never steers the pair that spawns under it. */
+var dragSt=null, DRAG_COMMIT=12, DRAG_RATIO=1.5;
 cv.addEventListener('pointerdown',function(e){ if(curScreen!=='s-play')return;
   if(MATCH.phase==='intro'){ e.preventDefault(); MATCH.t=0; MATCH.phase='count'; SFX.count(); return; }
   /* outro: first tap finishes the collapse and jumps to the reveal, second tap
      hands off to the summary. Nobody gets held hostage by the celebration. */
   if(MATCH.phase==='done'){ if(MATCH.out){ e.preventDefault(); outSkip(); } return; }
   if(MATCH.phase!=='fight')return; var rect=cv.getBoundingClientRect(); var x=(e.clientX-rect.left)/(rect.width/VW);
-  if(x<PF.x+COLS*PF.cell+8 && playable()){ e.preventDefault(); ac();
-    dragSt={x0:e.clientX,y0:e.clientY,t0:Date.now(),cells:0,soft:false,pid:e.pointerId,
+  if(x<PF.x+COLS*PF.cell+8 && pf() && !pf().dead){ e.preventDefault(); ac();
+    dragSt={x0:e.clientX,y0:e.clientY,t0:Date.now(),cells:0,soft:false,pid:e.pointerId,axis:null,pre:!playable(),
             cw:Math.max(14, PF.cell*(rect.width/VW))};
     try{ cv.setPointerCapture(e.pointerId); }catch(err){}
   } },{passive:false});
 cv.addEventListener('pointermove',function(e){ if(!dragSt||e.pointerId!==dragSt.pid)return;
-  if(!playable()){ dragSt=null; return; }
-  e.preventDefault();
-  var dx=e.clientX-dragSt.x0, dy=e.clientY-dragSt.y0;
-  var cellDx=Math.round(dx/dragSt.cw), guard=0;
-  while(cellDx>dragSt.cells && guard++<COLS){ moveP(pf(),1); dragSt.cells++; }
-  while(cellDx<dragSt.cells && guard++<COLS){ moveP(pf(),-1); dragSt.cells--; }
-  if(dy>dragSt.cw*1.5 && !dragSt.soft){ dragSt.soft=true; pf().softHold=true; }
-  else if(dy<=dragSt.cw*1.2 && dragSt.soft){ dragSt.soft=false; pf().softHold=false; }
+  e.preventDefault(); if(dragSt.pre||!playable())return;
+  var d=dragSt, dx=e.clientX-d.x0, dy=e.clientY-d.y0, ax=Math.abs(dx), ay=Math.abs(dy);
+  if(!d.axis){ if(ax<DRAG_COMMIT&&ay<DRAG_COMMIT)return;
+    if(ax>=ay*DRAG_RATIO)d.axis='h'; else if(ay>=ax*DRAG_RATIO)d.axis='v'; else if(Math.max(ax,ay)>=DRAG_COMMIT*3)d.axis=(ax>ay?'h':'v'); else return; }
+  if(d.axis==='h'){ var cellDx=Math.round(dx/d.cw), guard=0;
+    while(cellDx>d.cells && guard++<COLS){ moveP(pf(),1); d.cells++; }
+    while(cellDx<d.cells && guard++<COLS){ moveP(pf(),-1); d.cells--; } }
+  else if(dy>d.cw*1.5 && !d.soft){ d.soft=true; softSet('drag',true); }
+  else if(dy<=d.cw*1.2 && d.soft){ d.soft=false; softSet('drag',false); }
 },{passive:false});
 function dragEnd(e){ if(!dragSt || (e.pointerId!==undefined && e.pointerId!==dragSt.pid))return;
-  var dx=e.clientX-dragSt.x0, dy=e.clientY-dragSt.y0, dur=Date.now()-dragSt.t0;
-  if(dragSt.soft && pf())pf().softHold=false;
-  if(playable()){
-    if(Math.abs(dx)<12 && Math.abs(dy)<12 && dur<400){ hap(8); tryRotate(pf(),1); }
-    else if(dy<-40 && dur<280){ hap(16); hardDrop(pf()); }
-  }
-  dragSt=null; }
+  var d=dragSt, dx=e.clientX-d.x0, dy=e.clientY-d.y0, dur=Date.now()-d.t0; dragSt=null;
+  if(d.soft)softSet('drag',false);
+  if(!d.axis && Math.abs(dx)<DRAG_COMMIT && Math.abs(dy)<DRAG_COMMIT && dur<400){ rotPress(1); return; }
+  if(SET.flick && d.axis==='v' && dy<-40 && dur<280 && playable()){ hap(16); hardDrop(pf()); } }
 cv.addEventListener('pointerup',dragEnd,{passive:false});
 /* v1.7: a cancelled pointer (a system gesture, a palm, the browser taking it) only lets go: never a rotate or a hard drop */
-function dragCancel(e){ if(!dragSt || (e.pointerId!==undefined && e.pointerId!==dragSt.pid))return; if(dragSt.soft && pf())pf().softHold=false; dragSt=null; }
+function dragCancel(e){ if(!dragSt || (e.pointerId!==undefined && e.pointerId!==dragSt.pid))return; if(dragSt.soft)softSet('drag',false); dragSt=null; }
 cv.addEventListener('pointercancel',dragCancel,{passive:false});
-document.addEventListener('keydown',function(e){ if(curScreen!=='s-play'||!playable())return;
-  if(e.key==='ArrowLeft'){ e.preventDefault(); moveP(pf(),-1); }
-  else if(e.key==='ArrowRight'){ e.preventDefault(); moveP(pf(),1); }
-  else if(e.key==='ArrowUp'||e.key==='x'||e.key==='X'){ e.preventDefault(); tryRotate(pf(),1); }
-  else if(e.key==='q'||e.key==='Q'){ e.preventDefault(); firePower(pf()); }
-  else if(e.key==='z'||e.key==='Z'){ e.preventDefault(); tryRotate(pf(),-1); }
-  else if(e.key==='ArrowDown'){ e.preventDefault(); softStep(pf()); }
-  else if(e.key===' '){ e.preventDefault(); hardDrop(pf()); }
+/* v1.9: the arrows go through the one repeat scheduler (the system's key repeat is ignored), down is a held soft drop,
+   and a held turn or drop key acts once */
+document.addEventListener('keydown',function(e){ if(curScreen!=='s-play'||MATCH.phase!=='fight')return; var k=e.key;
+  if(k==='ArrowLeft'||k==='ArrowRight'){ e.preventDefault(); if(!e.repeat)repPress(k==='ArrowLeft'?-1:1); return; }
+  if(k==='ArrowDown'){ e.preventDefault(); softSet('key',true); return; }
+  if(k==='ArrowUp'||k==='x'||k==='X'){ e.preventDefault(); if(!e.repeat)rotPress(1); }
+  else if(k==='z'||k==='Z'){ e.preventDefault(); if(!e.repeat)rotPress(-1); }
+  else if(k===' '){ e.preventDefault(); if(!e.repeat&&playable())hardDrop(pf()); }
+  else if((k==='q'||k==='Q')&&playable()){ e.preventDefault(); firePower(pf()); }
 });
+document.addEventListener('keyup',function(e){ var k=e.key;
+  if(k==='ArrowLeft')repRelease(-1); else if(k==='ArrowRight')repRelease(1); else if(k==='ArrowDown')softSet('key',false); });
 function playable(){ return MATCH.phase==='fight' && pf() && pf().state==='play' && pf().cur; }
 
 /* =====================================================================
@@ -1528,9 +1590,10 @@ function playable(){ return MATCH.phase==='fight' && pf() && pf().state==='play'
    ===================================================================== */
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'),i; for(i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id;
-  if(id!=='s-play'){ running=false; } applyBig(); paintTitle();
+  if(id!=='s-play'){ running=false; } applyBig(); paintTitle(); clearHolds();
+  if(id==='s-play')document.body.classList.add('playing'); else document.body.classList.remove('playing'); fit();   /* v1.9: the tray shows in a match */
   var bp=$('b-power'); if(bp)bp.style.display=(id==='s-play'&&MATCH.powers)?'flex':'none'; }
-function applyBig(){ try{ if(SET.big)document.body.classList.add('bigctrl'); else document.body.classList.remove('bigctrl'); }catch(e){} }
+function applyBig(){ try{ var B=document.body.classList; if(SET.big)B.add('bigctrl'); else B.remove('bigctrl'); if(SET.mirror)B.add('mirror'); else B.remove('mirror'); }catch(e){} }
 function paintTitle(){ var cp=$('c-prog'); if(cp){ var n=0,k; for(k in PROG.beaten)n++; cp.textContent='· '+n+'/'+ROSTER.length+' beaten'; } }
 
 function buildLadder(){ var lad=$('ladder'); if(!lad)return; lad.innerHTML=''; var i;
@@ -1565,11 +1628,12 @@ tap('set-reset',function(){ if(confirm('Reset all campaign progress? This cannot
 function wireToggle(id,key){ var el=$(id); if(!el)return; function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
   el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); SFX.ui(); }); }
 wireToggle('tg-sound','sound'); wireToggle('tg-ghost','ghost'); wireToggle('tg-big','big'); wireToggle('tg-tags','tags');
+wireToggle('tg-relaxed','relaxed'); wireToggle('tg-flick','flick'); wireToggle('tg-mirror','mirror');
 $('buildstamp').textContent='Pop N Lock '+BUILD;
 
 /* ---------- add to home screen ---------- */
 (function(){ var btn=$('b-install'); if(!btn)return;
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=13'); }catch(e){} }
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=14'); }catch(e){} }
   function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
   if(standalone()){ btn.style.display='none'; return; }
   var deferred=null; window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
@@ -1885,6 +1949,7 @@ if(/[?&]cwdev=1/.test(location.search)){
     grid:function(who){ var f=(who==='of')?MATCH.of:MATCH.pf; return f.grid.map(function(r){ return r.slice(); }); },
     match:function(){ return MATCH; },   /* v1.7 gates: the live match (the falling piece, softHold, hype) */
     art2:function(){ return { j:!!A2.j, asked:A2.asked, live:a2Live(), who:A2.who, joins:A2.joins||[], rail:RAIL, frame:railFrame() }; },   /* v1.8 gates */
+    inp:function(){ return INP; }, setting:function(k,v){ SET[k]=v; applyBig(); fit(); return SET[k]; },   /* v1.9 gates */
     railChain:function(n){ railChain(n); }, railHit:function(){ railHit(); },   /* the hooks a real chain step and a Chaff landing call */
     railChainEnd:function(){ railChainEnd(); }, cwKeys:function(){ var a=[],k; for(k in _cwCache)if(_cwCache.hasOwnProperty(k))a.push(k); return a; },
     resolve:function(g){ return computeResolve(g||MATCH.pf.grid); },

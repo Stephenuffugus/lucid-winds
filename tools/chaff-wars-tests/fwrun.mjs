@@ -10,7 +10,7 @@ const G = {
     ALLBONUS: { want: 'All Clear bonus survives', muts: [['if(f.allBonus&&R.chain>0){', 'if(f.allBonus){']] },
     CANCEL: { want: 'cancelled 10 px, 100 ms touch', muts: [["cv.addEventListener('pointercancel',dragCancel,{passive:false});", "cv.addEventListener('pointercancel',dragEnd,{passive:false});"]] },
     LOCKDRAG: { want: 'lock in the middle of a soft drop', muts: [['  if(f===MATCH.pf&&dragSt){ if(dragSt.soft)f.softHold=false; dragSt=null; }', '']] },
-    REPEAT: { want: 'held arrow moves at once', muts: [['t=setTimeout(function(){ fn(); r=setInterval(fn,33); },first||105);', 't=setTimeout(function(){ r=setInterval(fn,33); },first||105);']] },
+    REPEAT: { want: 'held arrow moves at once', muts: [['var REP_FAST={first:105, every:33}', 'var REP_FAST={first:138, every:33}']] },   /* v1.9: the one scheduler (v1.7 mutated hold()) */
     BACKLOG: { want: 'starting a soft drop drops at most one row', muts: [['      if(f.gravAcc>g)f.gravAcc=g;', '']] },
     CLAMPAFTER: { want: 'falls a row every 40 ms', muts: [['      if(f.gravAcc>g)f.gravAcc=g;', '      f.gravAcc+=dt; if(f.gravAcc>g)f.gravAcc=g; f.gravAcc-=dt;'], ['      f.gravAcc+=dt;\n      while(f.gravAcc>=g)', '      f.gravAcc+=dt; if(f.gravAcc>g)f.gravAcc=g;\n      while(f.gravAcc>=g)']] },
     FLOATFIT: { want: 'banner fits the board', muts: [["var punch=Math.min(1,Math.max(0,fl.life-0.82)/0.18);", "var punch=Math.max(0,fl.life-0.82)/0.18;"], ["if(mw>lim){ fs=Math.max(10,Math.floor(fs*lim/mw)); ctx.font='italic 800 '+fs+'px system-ui'; }", ""]] },
@@ -31,6 +31,25 @@ const G = {
     SLICE: { want: 'corner speaker draws at one scale', muts: [['F===PF?0.4:0.5, fr.slice);', 'F===PF?0.4:0.5);']] },
     NORELEASE2: { want: 'only the Gnat King Cole', muts: [["function cwRelease(keepId){ var k; for(k in _cwCache)", "function cwRelease(keepId){ return; var k; for(k in _cwCache)"]] },
   },
+  p2a: {
+    FIRST138: { want: 'held arrow moves at once, then at 105', muts: [['var REP_FAST={first:105, every:33}', 'var REP_FAST={first:138, every:33}']] },
+    RELAXEDSAME: { want: 'Relaxed held moves', muts: [['REP_RELAXED={first:160, every:50}', 'REP_RELAXED={first:105, every:33}']] },
+    NOHANDBACK: { want: 'last pressed side wins', muts: [['if(INP.dir===side){ INP.dir=INP.l?-1:(INP.r?1:0); INP.t=0; INP.n=0; }', 'if(INP.dir===side){ INP.dir=0; }']] },
+    NOBUF: { want: 'turns the next pair if it spawns within 120', muts: [['function rotBuffered(f){ var b=INP.buf; INP.buf=null; if(b&&INP.clock-b.t<=ROT_BUF_MS)tryRotate(f,b.dir); }', 'function rotBuffered(f){ INP.buf=null; }']] },
+    CLIMB: { want: 'the kick table', muts: [['var KICKS=[ [[0,0]], [[0,0],[-1,0]], [[0,0],[0,-1]], [[0,0],[1,0]] ];', 'var KICKS=[ [[0,0]], [[0,0],[-1,0],[0,-1]], [[0,0],[0,-1]], [[0,0],[1,0],[0,-1]] ];']] },
+    NOFLOORKICK: { want: 'the kick table', muts: [['[[0,0],[0,-1]], [[0,0],[1,0]] ];', '[[0,0]], [[0,0],[1,0]] ];']] },
+    LOCKNOW: { want: 'locks 300 ms later', muts: [['var LAND_MS=300, LAND_RESETS=2,', 'var LAND_MS=0, LAND_RESETS=2,']] },
+    NORESET: { want: 'two moves while it is down', muts: [['function landReset(f){ var L=f.land; if(L&&L.on&&L.resets<LAND_RESETS){ L.t=0; L.resets++; } }', 'function landReset(f){ }']] },
+    NOCAP: { want: 'however it is moved it locks 650', muts: [['LAND_CAP=650,', 'LAND_CAP=99999,']] },
+    FRESHEVERY: { want: 'never buys a fresh window', muts: [['if(L.age<0||low>L.low){ L.age=0; L.t=0; L.low=low; }', 'if(!L.on){ L.age=0; L.t=0; L.low=low; }']] },
+    NOINTENT: { want: 'a 40 px drag down with 24 px of wobble moves no column', muts: [["if(ax>=ay*DRAG_RATIO)d.axis='h'; else if(ay>=ax*DRAG_RATIO)d.axis='v';", "d.axis='h';"]] },
+    FLICKON: { want: 'a flick up drops nothing by default', muts: [['relaxed:false, flick:false, mirror:false };', 'relaxed:false, flick:true, mirror:false };']] },
+    BLURKEEP: { want: 'stops when the window loses focus', muts: [["window.addEventListener('blur',clearHolds); ", '']] },
+    SMALLTRAY: { want: 'all six tray buttons are at least 56', muts: [['--sab:env(safe-area-inset-bottom,0px); --th:56px; }\nbody.bigctrl{ --th:64px; }', '--sab:env(safe-area-inset-bottom,0px); --th:44px; }\nbody.bigctrl{ --th:44px; }']] },
+    FITOLD: { want: "board's frame foot is above the tray", muts: [["  if(curScreen==='s-play'&&tr){", "  if(false&&tr){"]] },
+    NOGUARD: { want: 'ticks without a throw', muts: [['    else if(f.cur){ var g=f.softHold?', '    else { var g=f.softHold?']] },
+    NOSOFT: { want: 'a held SOFT drops the pair fast', muts: [["holdBtn('c-down',function(){ hap(6); softSet('btn',true); },function(){ softSet('btn',false); });", '']] },
+  },
 };
 let bad = 0;
 for (const [k, g] of Object.entries(G[part])) {
@@ -39,7 +58,7 @@ for (const [k, g] of Object.entries(G[part])) {
   for (const [a, b] of g.muts) { const n = html.split(a).length - 1; if (n !== 1) { console.log(k, 'MUTATION DOES NOT BIND (' + n + '):', a.slice(0, 80)); process.exit(2); } html = html.replace(a, b); }
   if (fs.existsSync(TMP)) { console.log('refusing: ' + TMP + ' exists'); process.exit(3); }
   fs.writeFileSync(TMP, html); let out = '';
-  try { out = execSync('timeout 900 node /workspaces/lucid-winds/tools/chaff-wars-tests/' + part + '_gate.mjs index-fw.html /tmp/claude-1000/pnl/fw', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 24 }); }
+  try { out = execSync('timeout 900 node /workspaces/lucid-winds/tools/chaff-wars-tests/' + part + '_gate.mjs index-fw.html /tmp/claude-1000/pnl/fw x', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 24 }); }
   catch (e) { out = (e.stdout || '') + (e.stderr || ''); }
   finally { fs.unlinkSync(TMP); }
   const fails = out.split('\n').filter(l => /FAIL/.test(l)), hit = fails.some(l => new RegExp(g.want).test(l));
