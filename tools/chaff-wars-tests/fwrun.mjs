@@ -2,6 +2,7 @@
 // URL keeps working), runs the gate on it, must go RED on the check it names, then deletes it. node fwrun.mjs p0 [group ...]
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
+import vm from 'node:vm';
 const DIR = '/workspaces/lucid-winds/satellites/chaff-wars/', TMP = DIR + 'index-fw.html', [part, ...only] = process.argv.slice(2);
 const G = {
   p0: {
@@ -42,7 +43,7 @@ const G = {
     NORESET: { want: 'two moves while it is down', muts: [['function landReset(f){ var L=f.land; if(L&&L.on&&L.resets<LAND_RESETS){ L.t=0; L.resets++; } }', 'function landReset(f){ }']] },
     NOCAP: { want: 'however it is moved it locks 650', muts: [['LAND_CAP=650,', 'LAND_CAP=99999,']] },
     FRESHEVERY: { want: 'never buys a fresh window', muts: [['if(L.age<0||low>L.low){ L.age=0; L.t=0; L.low=low; }', 'if(!L.on){ L.age=0; L.t=0; L.low=low; }']] },
-    NOINTENT: { want: 'a 40 px drag down with 24 px of wobble moves no column', muts: [["if(ax>=ay*DRAG_RATIO)d.axis='h'; else if(ay>=ax*DRAG_RATIO)d.axis='v';", "d.axis='h';"]] },
+    NOINTENT: { want: 'a 50 px drag down with 30 px of wobble moves no column', muts: [["if(ax>=ay*DRAG_RATIO)d.axis='h'; else if(ay>=ax*DRAG_RATIO)d.axis='v';", "if(true)d.axis='h'; else if(ay>=ax*DRAG_RATIO)d.axis='v';"]] },   /* a parsing copy: every drag commits sideways */
     FLICKON: { want: 'a flick up drops nothing by default', muts: [['relaxed:false, flick:false, mirror:false };', 'relaxed:false, flick:true, mirror:false };']] },
     BLURKEEP: { want: 'stops when the window loses focus', muts: [["window.addEventListener('blur',clearHolds); ", '']] },
     SMALLTRAY: { want: 'all six tray buttons are at least 56', muts: [['--sab:env(safe-area-inset-bottom,0px); --th:56px; }\nbody.bigctrl{ --th:64px; }', '--sab:env(safe-area-inset-bottom,0px); --th:44px; }\nbody.bigctrl{ --th:44px; }']] },
@@ -56,6 +57,8 @@ for (const [k, g] of Object.entries(G[part])) {
   if (only.length && !only.includes(k)) continue;
   let html = fs.readFileSync(DIR + 'index.html', 'utf8');
   for (const [a, b] of g.muts) { const n = html.split(a).length - 1; if (n !== 1) { console.log(k, 'MUTATION DOES NOT BIND (' + n + '):', a.slice(0, 80)); process.exit(2); } html = html.replace(a, b); }
+  /* a copy that does not parse kills the whole game and proves nothing about the check it names */
+  { const re = /<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/g; let m2; while ((m2 = re.exec(html))) { try { new vm.Script(m2[1]); } catch (e) { console.log(k, 'MUTATION DOES NOT PARSE:', String(e).slice(0, 120)); process.exit(4); } } }
   if (fs.existsSync(TMP)) { console.log('refusing: ' + TMP + ' exists'); process.exit(3); }
   fs.writeFileSync(TMP, html); let out = '';
   try { out = execSync('timeout 900 node /workspaces/lucid-winds/tools/chaff-wars-tests/' + part + '_gate.mjs index-fw.html /tmp/claude-1000/pnl/fw x', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 24 }); }

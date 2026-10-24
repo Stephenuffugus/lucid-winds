@@ -90,8 +90,10 @@ const field = (g, cur, o) => Object.assign({ grid: g, cur, state: 'play', ai: fa
   ok('a held soft drop locks it 40 ms after touchdown', soft === 40, soft);
   const lower = run(fill(grid(), 3, 8), { r: 7, c: 3, rot: 0 }, { gravMs: 50 }, { 200: (c, f) => c.moveP(f, -1) }, 3000);
   ok('walking off a ledge and landing lower gives a fresh window (it lands about 450 and locks 300 later, past the old 650)', lower > 700 && lower < 820, lower);
-  const kick = run(floor(), { r: 12, c: 2, rot: 1 }, { gravMs: 50 }, { 100: (c, f) => c.tryRotate(f, 1), 200: (c, f) => c.tryRotate(f, 1), 300: (c, f) => c.tryRotate(f, 1), 400: (c, f) => c.tryRotate(f, 1), 500: (c, f) => c.tryRotate(f, 1), 600: (c, f) => c.tryRotate(f, 1) }, 3000);
-  ok('turning it over and over on the floor (floor kicks, hops) never buys a fresh window: locked by 650', kick != null && kick <= 650, kick);
+  /* a turn every 40 ms: a floor kick, then a hop off the floor and a landing every 160 ms, faster than the 300 ms wait */
+  const spam = {}; for (let t = 40; t <= 2600; t += 40) spam[t] = (c, f) => c.tryRotate(f, 1);
+  const kick = run(floor(), { r: 12, c: 2, rot: 1 }, { gravMs: 50 }, spam, 3000);
+  ok('turning it over and over on the floor (floor kicks, hops every 160 ms) never buys a fresh window: locked by 700', kick != null && kick <= 700, kick);
   /* a player board in play with no pair (a fixture, a dev hook) must not throw: a throw in update() stops the game loop for good */
   { const ctx = fieldCtx(), f = field(grid(), null); ctx.MATCH.pf = f; let err = null; try { ctx.tickField(f, 16, false); } catch (e) { err = String(e); }
     ok('a board in play with no pair ticks without a throw (the landing window read a null pair and froze the game loop)', err === null, err); } }
@@ -144,8 +146,9 @@ try {
   // 6. the board: a tap turns, a sideways drag follows, a mostly vertical drag with sideways wobble never moves a column
   { await fresh(p); const a = await cur(p); await tapAt(T, R.board.x, R.board.y, 60); const t1 = await cur(p);
     await T('touchStart', [[R.board.x, R.board.y, 5]]); for (let k = 1; k <= 6; k++) { await T('touchMove', [[R.board.x - R.cell * 2.2 * k / 6, R.board.y, 5]]); await sleep(20); } await T('touchEnd', []); await sleep(80); const d1 = await cur(p);
-    await T('touchStart', [[R.board.x, R.board.y, 6]]); for (let k = 1; k <= 6; k++) { await T('touchMove', [[R.board.x + 24 * k / 6, R.board.y + 40 * k / 6, 6]]); await sleep(20); } await T('touchEnd', []); await sleep(80); const d2 = await cur(p);
-    ok('on the board a tap turns the pair, a sideways drag of 2.2 cells moves it 2 columns, and a 40 px drag down with 24 px of wobble moves no column', t1.rot === a.rot + 1 && d1.c === a.c - 2 && d2.c === d1.c, JSON.stringify({ a, t1: t1.rot, d1: d1.c, d2: d2.c })); }
+    /* 30 px of wobble is 0.68 of a cell at 412: without the intent the pair moves a column by the fifth step */
+    await T('touchStart', [[R.board.x, R.board.y, 6]]); for (let k = 1; k <= 6; k++) { await T('touchMove', [[R.board.x + 30 * k / 6, R.board.y + 50 * k / 6, 6]]); await sleep(25); } await sleep(60); await T('touchEnd', []); await sleep(80); const d2 = await cur(p);
+    ok('on the board a tap turns the pair, a sideways drag of 2.2 cells moves it 2 columns, and a 50 px drag down with 30 px of wobble moves no column', t1.rot === a.rot + 1 && d1.c === a.c - 2 && d2.c === d1.c, JSON.stringify({ a, t1: t1.rot, d1: d1.c, d2: d2.c })); }
   // 7. a long drag down soft drops while held; the flick up does nothing unless the setting is on
   { await fresh(p); await T('touchStart', [[R.board.x, R.board.y, 8]]); for (let k = 1; k <= 6; k++) { await T('touchMove', [[R.board.x, R.board.y + R.cell * 2 * k / 6, 8]]); await sleep(20); } const mid = await cur(p); await T('touchEnd', []); await sleep(80); const aft = await cur(p);
     await fresh(p); const f0 = await cur(p); await T('touchStart', [[R.board.x, R.board.y, 9]]); for (let k = 1; k <= 4; k++) { await T('touchMove', [[R.board.x, R.board.y - 18 * k, 9]]); await sleep(15); } await T('touchEnd', []); await sleep(200); const f1 = await cur(p);
