@@ -63,6 +63,8 @@ console.log('[A] the page\'s own functions, in a node vm');
   const run = (hz, rows, at) => { const f = {}; ctx.MATCH.pf = f; const dur = ctx.setFall(f, [{ c: 0, from: 12 - rows, to: 12 }]); const dt = 1000 / hz; let t = 0, off = null;
     while (t + dt <= at + 1e-9) { ctx.decayFall(f, dt); t += dt; } off = f.fall ? f.fall[12][0] : 0; return { dur, off, sq: f.squash ? f.squash[12][0] : 0 }; };
   const a60 = run(60, 6, 50), a120 = run(120, 6, 50), one = run(60, 1, 0), all = run(60, 12, 0), land = run(120, 1, 120);
+  ctx.MATCH.phase = 'done'; const drain = run(200, 1, 45); ctx.MATCH.phase = 'fight';   /* 5 ms ticks land on 45 exactly */
+  ok('the outro\'s drain (a row every 95 ms) falls straight in 90 ms: half way at 45 ms (the eased fall restarted every step and juddered)', drain.dur === 90 && Math.abs(drain.off - 29) < 0.6, JSON.stringify(drain));
   ok('a fall runs on time: the same height at 50 ms at 60 and 120 Hz; 110 ms for one row, 180 for the well; the pod squashes 80 ms as it lands',
     Math.abs(a60.off - a120.off) < 0.5 && one.dur === 110 && all.dur === 180 && land.off === 0 && land.sq > 60 && land.sq <= 80, JSON.stringify({ a60, a120, one: one.dur, all: all.dur, land })); }
 
@@ -90,6 +92,20 @@ try {
   const mid = await p.evaluate(() => ({ paused: window.CW_DEV.match().paused, count: window.CW_DEV.match().count })); const s2 = await snap(); await sleep(1700);
   const back = await p.evaluate(() => ({ paused: window.CW_DEV.match().paused, phase: window.CW_DEV.match().phase }));
   ok('a hidden Campaign match stays exactly as it was for 2.5 s, then comes back through a three count (still held a second in) and plays on', paused === true && s0 === s1 && s1 === s2 && c0.paused === true && c0.count === 3 && mid.paused === true && mid.count >= 1 && mid.count <= 2 && back.paused === false && back.phase === 'fight', JSON.stringify({ same: s0 === s1, held: s1 === s2, paused, c0, mid, back }));
+  /* the review: the count holds the controls (a real Space and a real DROP tap do nothing), and hiding again mid count
+     restarts it from PAUSED */
+  { const cdp = await p.target().createCDPSession();
+    const T = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts.map(([x, y, id]) => ({ x, y, id, radiusX: 8, radiusY: 8, force: 1 })) });
+    const hide = () => p.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
+    const show = () => p.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); });
+    await p.evaluate(() => { window.CW_DEV.match().pf.gravMs = 1e9; }); await hide(); await sleep(200); await show(); await sleep(300);
+    const t0 = await snap(); await p.keyboard.press('Space');
+    const db = await p.evaluate(() => { const r = document.getElementById('dropbtn').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+    await T('touchStart', [[db[0], db[1], 41]]); await sleep(40); await T('touchEnd', []); await sleep(200); const t1 = await snap();
+    const st1 = await p.evaluate(() => ({ paused: window.CW_DEV.match().paused, count: window.CW_DEV.match().count }));
+    await hide(); await sleep(150); const st2 = await p.evaluate(() => ({ paused: window.CW_DEV.match().paused, resumeT: window.CW_DEV.match().resumeT }));
+    await show(); await sleep(150); const st3 = await p.evaluate(() => ({ count: window.CW_DEV.match().count })); await sleep(2400);
+    ok('during the three count a real Space and a real DROP tap do nothing, and hiding again mid count goes back to PAUSED and counts from 3', t0 === t1 && st1.paused && st2.paused && st2.resumeT === -1 && st3.count === 3, JSON.stringify({ same: t0 === t1, st1, st2, st3 })); }
   ok('no page errors', errs.length === 0, JSON.stringify(errs));
   if (SHOTS) { /* a chain mid pop: four reds at the bottom left, the pair dropped elsewhere, the shot 120 ms into the pop */
     await p.evaluate(() => { const M = window.CW_DEV.match(), g = M.pf.grid; M.pf.gravMs = 1e9; M.of.react = 1e9;
@@ -100,6 +116,10 @@ try {
     for (let w = 0; w < 30; w++) { await sleep(100); if (await p.evaluate(() => window.CW_DEV.match().pf.state === 'play')) break; }
     await p.evaluate(() => { const M = window.CW_DEV.match(); M.pf.gravMs = 1e9; M.pf.pending = 14; M.pf.cur.c = 3; M.pf.cur.rot = 1; M.pf.cur.r = 3; });   /* a split landing: column 3 is three high, column 4 empty */
     await sleep(200); await p.screenshot({ path: OUT + '/guide-queue.png' }); }
+  { const q = await b.newPage(); await q.setViewport({ width: 360, height: 780, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    await q.goto(`http://127.0.0.1:${PORT}/${PAGE}?cwdev=1`, { waitUntil: 'domcontentloaded', timeout: 60000 }); await q.waitForFunction(() => window.CW_DEV && document.readyState === 'complete', { timeout: 60000 });
+    const gh = await q.evaluate(() => { document.querySelectorAll('.screen').forEach(e => e.classList.remove('on')); document.getElementById('s-set').classList.add('on'); return document.getElementById('sl-guide').getBoundingClientRect().height; });
+    await q.close(); ok('the Landing guide row, the whole row its button, is a 48 px target at 360 wide', gh >= 47.5, gh); }
 } finally { await b.close(); srv.kill(); }
 console.log(`\n=== pop n lock p2b: ${pass} passed, ${fail} failed ===`);
 process.exit(fail ? 1 : 0);

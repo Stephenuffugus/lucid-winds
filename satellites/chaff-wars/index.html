@@ -103,7 +103,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 .helprow .hi{font-size:16px; font-weight:800; width:32px; height:32px; line-height:30px; text-align:center; flex:none; color:var(--gold); background:#14110a; border:1px solid var(--sprout); border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#161309}
 .setval{min-width:84px; text-align:right; color:var(--gold); font-weight:800; font-size:15px}
-#sl-guide{cursor:pointer}
+#sl-guide{cursor:pointer; min-height:72px}   /* the whole row is the target: 48 CSS px at 360 wide */
 .toggle{width:64px; height:36px; border-radius:20px; background:#2a2618; position:relative; cursor:pointer; border:1px solid var(--line)}
 /* invisible tap-zone extension to 72x72 stage px; the switch art stays 64x36 */
 .toggle::after{content:""; position:absolute; left:-4px; right:-4px; top:-18px; bottom:-18px}
@@ -731,12 +731,12 @@ var FALL_MIN=110, FALL_MAX=180, SQUASH_MS=80;
 function fallDur(rows){ return FALL_MIN+(FALL_MAX-FALL_MIN)*Math.min(1,Math.max(0,rows-1)/(VISROWS-1)); }
 function fallLayers(f){ if(!f.fall){ f.fall=newLayer(); f.fall0=newLayer(); f.fallD=newLayer(); f.fallS=newLayer(); f.squash=newLayer(); } f.fallClk=f.fallClk||0; }
 function setFall(f,moves){ fallLayers(f); var i, cell=(f===MATCH.pf?PF.cell:OF.cell), mx=0;
-  for(i=0;i<moves.length;i++){ var m=moves[i], rows=m.to-m.from, d=fallDur(rows); f.fall[m.to][m.c]=f.fall0[m.to][m.c]=rows*cell; f.fallD[m.to][m.c]=d; f.fallS[m.to][m.c]=f.fallClk; if(d>mx)mx=d; }
+  for(i=0;i<moves.length;i++){ var m=moves[i], rows=m.to-m.from, d=MATCH.phase==='done'?90:fallDur(rows);   /* the outro drain steps every 95 ms */ f.fall[m.to][m.c]=f.fall0[m.to][m.c]=rows*cell; f.fallD[m.to][m.c]=d; f.fallS[m.to][m.c]=f.fallClk; if(d>mx)mx=d; }
   return mx; }
 function squashAt(f,r,c){ if(r<0)return; fallLayers(f); f.squash[r][c]=SQUASH_MS; }
 function decayFall(f,dt){ if(!f.fall)return; f.fallClk+=dt; var r,c,any=false;
   for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){
-    if(f.fall[r][c]>0){ var p=Math.min(1,(f.fallClk-f.fallS[r][c])/f.fallD[r][c]); f.fall[r][c]=f.fall0[r][c]*(1-p*p); any=true;
+    if(f.fall[r][c]>0){ var p=Math.min(1,(f.fallClk-f.fallS[r][c])/f.fallD[r][c]); f.fall[r][c]=f.fall0[r][c]*(1-(MATCH.phase==='done'?p:p*p)); any=true;
       if(p>=1){ f.fall[r][c]=0; f.squash[r][c]=SQUASH_MS; } }
     else if(f.squash[r][c]>0){ f.squash[r][c]=Math.max(0,f.squash[r][c]-dt); if(f.squash[r][c]>0)any=true; } }
   if(!any)f.fall=null; }
@@ -895,7 +895,7 @@ function startMatch(stageIndex,mode){ MATCH.mode=mode||'campaign'; MATCH.stage=s
   MATCH.of=makeField(st.colors,true,st.q,st.react,st.hcap); MATCH.of.gravMs=1000/st.fall;
   if(st.startChaff>0)preDropChaff(MATCH.pf,st.startChaff);
   if(st.scatter){ preDropPods(MATCH.pf,st.scatter); preDropPods(MATCH.of,st.scatter); }
-  if(st.boss||st.secret){ if(!SERIES||SERIES.stage!==stageIndex)SERIES={stage:stageIndex,me:0,them:0}; } else SERIES=null;
+  if(st.boss||st.secret){ if(!SERIES||SERIES.stage!==stageIndex)SERIES={stage:stageIndex,me:0,them:0,draws:0}; } else SERIES=null;
   spawnPiece(MATCH.pf); MATCH.pf.state='wait';
   spawnPiece(MATCH.of); MATCH.of.state='wait';
   MATCH.phase='intro'; MATCH.t=0; MATCH.count=3; MATCH.result=null;
@@ -1005,7 +1005,7 @@ tap('go-share',function(){ SFX.ui(); doShare(); });
 var _sunToast='';
 function matchResult(result){ if(_devSweep)return; var st=ROSTER[MATCH.stage];
   /* best-of-3 series (boss + secret): interim round screens until someone takes 2 */
-  if(SERIES&&SERIES.stage===MATCH.stage){ if(result==='win')SERIES.me++; else if(result!=='draw')SERIES.them++;   /* v1.10: a draw scores for nobody */
+  if(SERIES&&SERIES.stage===MATCH.stage){ if(result==='win')SERIES.me++; else if(result!=='draw')SERIES.them++; else SERIES.draws=(SERIES.draws||0)+1;   /* v1.10: a draw scores for nobody, and still counts as a round played */
     if(SERIES.me<2&&SERIES.them<2){
       $('go-emoji').textContent=st.em; _goPortrait(st.id, result==='win'?'lose':'win'); _goBanner(result==='win'?'win':'lose');
       $('go-title').textContent=(result==='win')?'Round won':(result==='draw'?'Round drawn':'Round lost');
@@ -1330,6 +1330,7 @@ function drawJoins(f,F){ var J=A2.j; if(!J)return; var r,c,v,k; A2.joins=[];
       ctx.restore(); A2.joins.push([r,c,r2,c2]); } } }
 function drawField(f,F,mini){ if(!f)return; var r,c;
   if(!mini)drawJoins(f,F);   /* v1.8: under the pods */
+  ctx.save(); ctx.beginPath(); ctx.rect(F.x-6, F.y-1, COLS*F.cell+12, VISROWS*F.cell+12); ctx.clip();   /* v1.10 review: falling Chaff stays inside the well */
   for(r=1;r<ROWS;r++)for(c=0;c<COLS;c++){ var v=f.grid[r][c]; if(v===0)continue; var p=cellPx(F,r,c); var off=(f.fall&&f.fall[r]?f.fall[r][c]:0)||0;
     var scale=1, alpha=1; if(f.pop&&f.pop[r][c]){ var pr=Math.min(1,f.res? f.res.t/230:0); scale=1+pr*0.35; alpha=1-pr*0.7; }
     var yy=p.y-off, sq=(f.fall&&f.squash&&f.squash[r][c]>0)?f.squash[r][c]/SQUASH_MS:0;   /* v1.10: the landing squash, on the cell's floor */
@@ -1340,6 +1341,7 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
     if(!mini && f.pop && f.pop[r][c]){ var pr2=Math.min(1,f.res?f.res.t/230:0), fr=Math.min(4,1+((pr2*4)|0)), sc=F.cell/2;
       if(f.pop[r][c]===2)cwFx('fx/chaff-splat-'+fr,null, p.x+sc, yy+sc, F.cell*1.7,F.cell*1.7, 0.9*(1-pr2*0.35));
       else cwFx('fx/pop-splat-'+fr, PAL[v-1]?PAL[v-1].bs:'#ffffff', p.x+sc, yy+sc, F.cell*1.7,F.cell*1.7, 0.95*(1-pr2*0.25)); } }
+  ctx.restore();
   /* falling piece + ghost */
   if(f.cur && (f.state==='play')){ var cs=pieceCells(f.cur),i;
     /* Stephen 7/28: "its hard to see what piece your even working with". The ghost
@@ -1387,7 +1389,7 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
     var big=Math.floor(pw/COLS), sm=pw%COLS, bw=mini?11:16, sw2=mini?7:10, lim=mini?535:375;
     for(i=0;i<big&&nx+bw<=lim;i++){ drawChaff(nx, by-1, bw, 1, 0.95); nx+=bw+1; }
     for(i=0;i<sm&&nx+sw2<=lim;i++){ drawChaff(nx, by+(bw-sw2)/2, sw2, 1, 0.9); nx+=sw2+1; } }
-  if(f.cancelT>0&&!mini){ ctx.globalAlpha=Math.min(1,f.cancelT/300); ctx.fillStyle='#7ec850'; ctx.font='800 16px system-ui'; ctx.textAlign='left';
+  if(f.cancelT>0&&!mini){ ctx.globalAlpha=Math.min(1,f.cancelT/300); ctx.fillStyle='#7ec850'; ctx.font='800 18px system-ui'; ctx.textAlign='left';
     ctx.fillText(f.cancelN+' cancelled', bx, by-6); ctx.globalAlpha=1; }   /* the line above the queue */
   /* danger flash */
   if(f.flashDanger>0){ ctx.globalAlpha=Math.min(0.4,f.flashDanger/1000); ctx.fillStyle='#e0433f'; ctx.fillRect(F.x,F.y,COLS*F.cell,F.cell*2); ctx.globalAlpha=1; }
@@ -1478,7 +1480,7 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     ctx.globalAlpha=0.15; ctx.fillStyle=ist.ac; ctx.fillRect(0,VH/2-186,VW,320); ctx.globalAlpha=1;
     ctx.textAlign='center';
     var tag=ist.boss?'FINAL BOSS':ist.secret?'SECRET DUEL':'STAGE '+(MATCH.stage+1);
-    if(SERIES&&(SERIES.me+SERIES.them)>0)tag+=' · ROUND '+(SERIES.me+SERIES.them+1);
+    if(SERIES&&(SERIES.me+SERIES.them+(SERIES.draws||0))>0)tag+=' · ROUND '+(SERIES.me+SERIES.them+(SERIES.draws||0)+1);
     ctx.font='800 15px system-ui'; ctx.fillStyle='#9a9078'; ctx.fillText(tag, VW/2, VH/2-176);
     /* the pest gets a big entrance portrait (b-boy, parachute pants and all) */
     if(!cwPortrait(ist.id,'idle', VW/2, VH/2-36, 300, 238, 1)){ ctx.font='72px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(ist.em, VW/2, VH/2-24); }
@@ -1510,8 +1512,9 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
       cwFit('ui/banner-'+(gwin?'win':'lose'), 0, 0, 430, 210, al);
       ctx.textAlign='center'; ctx.globalAlpha=al;
       ctx.font='italic 800 62px system-ui'; ctx.lineWidth=11; ctx.strokeStyle='#0c0a06';
-      ctx.strokeText(gwin?'VICTORY':'DEFEAT', 0, 22);
-      ctx.fillStyle=gwin?'#39ff14':'#9a9078'; ctx.fillText(gwin?'VICTORY':'DEFEAT', 0, 22);
+      var gst=gwin?'VICTORY':(MATCH.result==='draw'?'DRAW':'DEFEAT');   /* v1.10: a mutual top out */
+      ctx.strokeText(gst, 0, 22);
+      ctx.fillStyle=gwin?'#39ff14':'#9a9078'; ctx.fillText(gst, 0, 22);
       ctx.globalAlpha=1; ctx.restore();
       /* the pest reacts and says its piece once the banner has settled */
       if(MATCH.mode==='campaign' && MATCH.stage>=0){ var gst=ROSTER[MATCH.stage];
@@ -1563,7 +1566,7 @@ function repTick(dt){ if(!INP.dir)return; var P=repProfile(); INP.t+=dt;
 /* the soft drop has three sources (the SOFT button, a drag down the board, the down key) and is on while any is held */
 function softSet(src,on){ INP.soft[src]=!!on; var f=pf(); if(f)f.softHold=INP.soft.btn||INP.soft.drag||INP.soft.key; }
 /* a turn pressed while there is no pair (a lock, a chain) turns the next pair if it appears within 120 ms. Drop is never held over */
-function rotPress(dir){ if(playable()){ hap(8); tryRotate(pf(),dir); return; } if(MATCH.phase==='fight'&&pf())INP.buf={dir:dir, t:INP.clock}; }
+function rotPress(dir){ if(playable()){ hap(8); tryRotate(pf(),dir); return; } if(MATCH.phase==='fight'&&!MATCH.paused&&pf())INP.buf={dir:dir, t:INP.clock}; }
 function rotBuffered(f){ var b=INP.buf; INP.buf=null; if(b&&INP.clock-b.t<=ROT_BUF_MS)tryRotate(f,b.dir); }
 /* let go of everything: the window losing focus, the page hidden, a screen change, the match over */
 function clearHolds(){ INP.l=INP.r=false; INP.dir=0; INP.t=0; INP.n=0; INP.buf=null; INP.soft.btn=INP.soft.drag=INP.soft.key=false;
@@ -1573,7 +1576,7 @@ document.addEventListener('visibilitychange',function(){ if(document.hidden){ cl
 /* v1.10 (PNL-012): Solo and Campaign PAUSE when the page hides (the background watchdog used to play the match on without
    you, and a switch to another app could lose it) and come back through a three count. Versus keeps running: the rival is
    a real player. */
-function pauseMatch(){ if(MATCH.mode==='versus'||MATCH.phase!=='fight'||MATCH.paused)return; MATCH.paused=true; MATCH.resumeT=-1; }
+function pauseMatch(){ if(MATCH.mode==='versus'||MATCH.phase!=='fight')return; MATCH.paused=true; MATCH.resumeT=-1; }   /* hidden again mid count: a full count next time */
 function resumeMatch(){ if(!MATCH.paused||MATCH.resumeT>=0)return; MATCH.resumeT=0; MATCH.count=3; SFX.count(); }
 /* a tray button: down on pointerdown, up on up, cancel or leave of the pointer that pressed it. A touch is captured by the
    button it lands on, so the capture is released: a thumb that slides off lets go (it kept holding), and with roll a
@@ -1614,7 +1617,7 @@ cv.addEventListener('pointerdown',function(e){ if(curScreen!=='s-play')return;
   /* outro: first tap finishes the collapse and jumps to the reveal, second tap
      hands off to the summary. Nobody gets held hostage by the celebration. */
   if(MATCH.phase==='done'){ if(MATCH.out){ e.preventDefault(); outSkip(); } return; }
-  if(MATCH.phase!=='fight')return; var rect=cv.getBoundingClientRect(); var x=(e.clientX-rect.left)/(rect.width/VW);
+  if(MATCH.phase!=='fight'||MATCH.paused)return; var rect=cv.getBoundingClientRect(); var x=(e.clientX-rect.left)/(rect.width/VW);
   if(x<PF.x+COLS*PF.cell+8 && pf() && !pf().dead){ e.preventDefault(); ac();
     dragSt={x0:e.clientX,y0:e.clientY,t0:Date.now(),cells:0,soft:false,pid:e.pointerId,axis:null,pre:!playable(),
             cw:Math.max(14, PF.cell*(rect.width/VW))};
@@ -1653,7 +1656,7 @@ document.addEventListener('keydown',function(e){ if(curScreen!=='s-play')return;
 });
 document.addEventListener('keyup',function(e){ var k=e.key;
   if(k==='ArrowLeft')repRelease(-1); else if(k==='ArrowRight')repRelease(1); else if(k==='ArrowDown')softSet('key',false); });
-function playable(){ return MATCH.phase==='fight' && pf() && pf().state==='play' && pf().cur; }
+function playable(){ return MATCH.phase==='fight' && !MATCH.paused && pf() && pf().state==='play' && pf().cur; }   /* v1.10 review: the pause and its count hold the controls */
 
 /* =====================================================================
    SCREENS + WIRING
@@ -1938,7 +1941,7 @@ if(/[?&]cwdev=1/.test(location.search)){
     guard=0; while(f.cur.c<mv.col && guard++<7){ if(!moveP(f,1))break; }
     guard=0; while(f.cur.c>mv.col && guard++<7){ if(!moveP(f,-1))break; }
     hardDrop(f); return true; }
-  function pump(f,ms){ /* advance a field through resolve/drop synchronously */ var guard=0; while(f.state==='resolve'&&guard++<400){ resolveTick(f,240); } }
+  function pump(f,ms){ /* advance a field through resolve/drop synchronously */ var guard=0; while(f.state==='resolve'&&f.res&&guard++<400){ resolveTick(f,240); } judgeTick(); }   /* v1.10: a top out is judged at the end of a tick */
   var _devSweep=false;
   var _refBlunder=0;                     /* yardstick imperfection: 0=flawless, ~0.15=competent human */
   /* refMove = the reference "competent player" for winnability sweeps. It shares
