@@ -28,7 +28,7 @@ const G = {
     RAILIDLE: { want: 'chain of 5 plays the dance once', muts: [['    else if(RAIL.chain)return RAIL_RM?D.frames[0]:D.frames[5]; }', '    }']] },
     NEXTCLEAR: { want: 'opening is near black', muts: [["var apw=nw.aperture[2]*nws, aph=nw.aperture[3]*nws; ctx.fillStyle='#161207'; rr(ncx-apw/2, ncy-aph/2, apw, aph, 6); ctx.fill();", '']] },
     METER369: { want: 'right neon line shows', muts: [['    var mx=374, mw=6, mh=VISROWS*PF.cell, my=PF.y;', '    var mx=369, mw=7, mh=VISROWS*PF.cell, my=PF.y;']] },
-    PENDTOP: { want: 'incoming Chaff rows sit above', muts: [['var bx=mini?440:206; var by=mini?F.y-51:66;', 'var bx=F.x; var by=F.y-(mini?16:26);']] },
+    PENDTOP: { want: 'incoming Chaff rows sit above', muts: [['var pw=f.pending, bx=mini?440:206, by=mini?F.y-51:66,', 'var pw=f.pending, bx=F.x, by=F.y-(mini?16:26),']] },   /* v1.10's queue line */
     SLICE: { want: 'corner speaker draws at one scale', muts: [['F===PF?0.4:0.5, fr.slice);', 'F===PF?0.4:0.5);']] },
     NORELEASE2: { want: 'only the Gnat King Cole', muts: [["function cwRelease(keepId){ var k; for(k in _cwCache)", "function cwRelease(keepId){ return; var k; for(k in _cwCache)"]] },
   },

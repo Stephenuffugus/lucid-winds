@@ -98,13 +98,14 @@ try {
       const next = [[404, 215], [404, 240], [404, 262], [444, 215], [444, 240], [444, 262]].map(([x, y]) => g(x, y));
       return { next, neon: [strip(150), strip(300), strip(600)], calls }; });
     const lum = c => Math.max(...c);
-    const chaff = px.calls.filter(c => c.src === 'pods/chaff.webp' && c.a.length === 4 && c.a[2] < 16);
+    /* v1.10 draws the queue as a number, a big rock per row and small ones; the rocks are the header's small chaff draws */
+    const chaff = px.calls.filter(c => c.src === 'pods/chaff.webp' && c.a.length === 4 && c.a[2] < 20 && c.a[1] < 336);
     const pl = chaff.filter(c => c.a[1] < 200), rv = chaff.filter(c => c.a[1] >= 200);
     const tl = px.calls.find(c => c.src === 'board/frame.webp' && c.a.length === 8 && c.a[0] === 0 && c.a[1] === 0);
     ok('the next window\'s opening is near black behind the pair at six points (it showed the alley graffiti)', px.next.every(c => Math.abs(c[0] - 22) <= 14 && Math.abs(c[1] - 18) <= 14 && Math.abs(c[2] - 7) <= 14), JSON.stringify(px.next));
     ok('the painted frame\'s right neon line shows beside the HYPE meter at three heights (the meter covered it)', px.neon.every(v => v >= 90), JSON.stringify(px.neon));
     const nx = a => new Set(a.map(c => c.a[0].toFixed(1))).size;
-    ok('the incoming Chaff rows sit above the frames (player under y 84 right of the score, rival under y 336)', nx(pl) === 10 && nx(rv) === 8 && pl.every(c => c.a[1] + c.a[3] <= 84 && c.a[0] >= 200 && c.a[0] + c.a[2] <= 380) && rv.every(c => c.a[1] + c.a[3] <= 336.5 && c.a[0] + c.a[2] <= 540),
+    ok('the incoming Chaff rows sit above the frames (player under y 84 right of the score, rival under y 336)', nx(pl) >= 3 && nx(rv) >= 3 && pl.every(c => c.a[1] + c.a[3] <= 84 && c.a[0] >= 200 && c.a[0] + c.a[2] <= 380) && rv.every(c => c.a[1] + c.a[3] <= 336.5 && c.a[0] + c.a[2] <= 540),
       JSON.stringify({ pl: pl.slice(0, 2).map(c => c.a), rv: rv.slice(0, 2).map(c => c.a), n: [nx(pl), nx(rv)] }));
     ok('the frame\'s corner speaker draws at one scale (its 90 x 70 corner slice keeps its shape)', !!tl && tl.a[2] === 90 && tl.a[3] === 70 && Math.abs(tl.a[6] / tl.a[7] - 90 / 70) < 0.01, JSON.stringify(tl && tl.a)); }
   // memory: a new opponent leaves only its own July portraits (and the Keeper's); Solo holds no dance frames
