@@ -721,6 +721,11 @@ console.log('\n[16] Part C: knives and the forge');
     out.unpriced = Object.keys(cat).every(k => cat[k].price !== null);   /* nothing left unpriced: every knife is priced, earned (-1) or a supporter (-2) */
     out.support = ['tearex', 'custodian'].every(k => cat[k].premium === true);
     out.prices = Object.keys(PRICES).filter(k => !cat[k] || cat[k].price !== PRICES[k]);
+    /* G2 (24 Oct): the shelf reads as the ladder. Prices come from this test's table, only the order from the page */
+    out.shelf = ord.filter(k => PRICES[k] !== undefined).map(k => PRICES[k]);
+    out.ladderBad = out.shelf.filter((v, i) => i > 0 && v < out.shelf[i - 1]).length;
+    const lastPriced = Math.max.apply(null, ord.map((k, i) => PRICES[k] !== undefined ? i : -1)), firstOther = ord.findIndex(k => PRICES[k] === undefined);
+    out.pricedFirst = firstOther < 0 || lastPriced < firstOther;
     out.noStory = Object.keys(cat).filter(k => !cat[k].story);
     S.applySkin('classic'); const ref = JSON.stringify(S.reach()); const sk = S.skins();
     out.rigOff = NEW.filter(k => { if (sk.owned.indexOf(k) < 0) sk.owned.push(k); S.applySkin(k); return JSON.stringify(S.reach()) !== ref; });
@@ -749,6 +754,7 @@ console.log('\n[16] Part C: knives and the forge');
   ok('the shelf is the 22 of v6.2, Rubber Duke and Banana Boomerang, and the six F4 priced knives (32 in the catalogue)', r.cat === 32 && r.ord === 30 && r.oldKept && r.newOn, JSON.stringify({ cat: r.cat, ord: r.ord, error: r.error }));
   ok('the two supporter knives are kept off the shelf, and no knife is left unpriced', r.hiddenOff && r.unpriced && r.support, JSON.stringify({ h: r.hiddenOff, u: r.unpriced, s: r.support }));
   ok('the twenty prices are the F4 ladder', r.prices && r.prices.length === 0, JSON.stringify(r.prices));
+  ok('the shelf reads as a price ladder: each priced knife costs no less than the one before it, all before the trophies (G2)', r.ladderBad === 0 && r.shelf && r.shelf.length === 21 && r.pricedFirst, JSON.stringify({ shelf: r.shelf, first: r.pricedFirst, error: r.error }));
   ok('every knife has its story', r.noStory && r.noStory.length === 0, JSON.stringify(r.noStory));
   ok('every new knife is the Classic Chef rig (same reach)', r.rigOff && r.rigOff.length === 0, JSON.stringify(r.rigOff));
   ok('a trophy only arrives through grantTrophy (four owned.push sites: grantTrophy, the boot repair, the tab merge, a purchase)', pushes === 4, 'sites=' + pushes);
@@ -1569,30 +1575,121 @@ console.log('\n[24] Part F4: Slivers by the square root of the score, prices to 
    dips below the surface under it (the drawing only: kpose reads the knife as drawn). Journey 1, 3 and 6 and a climb, a tap
    whenever grounded every 14 frames, every frame checked; the lift must have been needed (a run that never lands proves
    nothing) and the drawing must sit on the stepped knife whenever no lift is needed. Watched red with the lift taken out. */
-console.log('\n[22] Part F2: the drawn knife never sinks into the ground');
+console.log('\n[22] Part F2 + G1: the drawn knife never sinks into the ground, and rests on it');
 {
   const { ctx, p, errs } = await boot();
-  let r; try { r = await p.evaluate(() => {
-    const S = window._S3, out = {};
+  let r; try { await p.evaluate(() => {
+    const S = window._S3; window._S3skiprender = true;   /* drawFrame still runs every frame; only the GPU draw is skipped */
+    /* the knife's lowest DRAWN point, measured on the meshes it is drawn with (the painting, or the recipe while the
+       painting is not in): world bounding boxes from three.js, nothing the page works out (Part G review: the page's KHH
+       is the recipe box, taller than the painting, and a check reading it agreed with itself) */
+    const drawnLow = () => { const P = S.knifeParts(), ms = (P.art ? [P.art] : []).concat(P.body.filter(m => m.visible)), K = ms[0].parent;
+      K.updateMatrixWorld(true); let lo = Infinity; for (const m of ms) { const bb = new THREE.Box3().setFromObject(m); if (bb.min.y < lo) lo = bb.min.y; } return lo; };
+    /* the surface you SEE under the knife: rays straight down onto every drawn mesh but the knife's own, at the painting's
+       depth, a little either side of the middle (the grass lip stands 0.25 over the ground's collider, a crate's cap 0.15) */
+    const visTop = () => { const P = S.knifeParts(), K = (P.art || P.body[0]).parent, own = new Set(); K.traverse(o => own.add(o));
+      const rc = new THREE.Raycaster(), meshes = []; let top = -Infinity; S.scene3().updateMatrixWorld(true);
+      S.scene3().traverseVisible(o => { if (o.isMesh && !own.has(o)) meshes.push(o); });   /* drawn meshes only (sprites need a camera) */
+      for (let i = -2; i <= 2; i++) { rc.set(new THREE.Vector3(K.position.x + i * 0.6, K.position.y, 0.5), new THREE.Vector3(0, -1, 0));   /* from the knife's middle down */
+        const h = rc.intersectObjects(meshes, false)[0]; if (h && h.point.y > top) top = h.point.y; }
+      return top; };
+    /* the painting's lowest corner (its four vertices in world space) and the drawn surface straight under that corner */
+    const cornerGap = () => { const P = S.knifeParts(); if (!P.art) return null; const K = P.art.parent, own = new Set(); K.traverse(o => own.add(o)); K.updateMatrixWorld(true);
+      const a = P.art.geometry.attributes.position; let lo = null; for (let i = 0; i < a.count; i++) { const v = new THREE.Vector3().fromBufferAttribute(a, i).applyMatrix4(P.art.matrixWorld); if (!lo || v.y < lo.y) lo = v; }
+      const meshes = []; S.scene3().updateMatrixWorld(true);   /* the render is skipped: world matrices are only current if asked for */
+      S.scene3().traverseVisible(o => { if (o.isMesh && !own.has(o)) meshes.push(o); });
+      /* from just over the corner: a corner beside a stump (the drawn knife is longer than its collider) is inside the stump,
+         where the ray sees no faces and finds the ground the corner is on */
+      const rc = new THREE.Raycaster(new THREE.Vector3(lo.x, lo.y + 0.35, 0.5), new THREE.Vector3(0, -1, 0)); const h = rc.intersectObjects(meshes, false)[0];
+      return h ? { gap: lo.y - h.point.y, hit: h.point.y } : null; };
+    window.__g1 = { drawnLow, visTop, cornerGap };
+  });
+  const lands = await p.evaluate(() => {
+    const S = window._S3, out = {}, { drawnLow, cornerGap } = window.__g1;
     for (const [kind, lvl] of [['j', 1], ['j', 3], ['j', 6], ['c', 1]]) {
       S.salt(31); if (kind === 'j') S.newGame(lvl); else S.newClimb(lvl);
-      let worst = 9, maxLift = 0, off = 0, frames = 0, blocks = 0;
+      let worst = 9, maxLift = 0, off = 0, frames = 0, blocks = 0, air = 0, airSunk = 0, prev = null, upFall = 0, seenGap = 9, gapN = 0;
       for (let f = 0; f < 900; f++) { const G = S.g(); if (!G || G.done) break; if (G.grounded && f % 14 === 3) S.tap(1); S.stepN(1, 16);
-        const k = S.kpose(); if (k.surf == null) continue; frames++; const sn = Math.sin(k.rz), y0 = k.y - k.lift;
+        const k = S.kpose(); if (k.surf == null) continue; frames++; const y0 = k.y - k.lift + k.sink;
         /* the surface worked out here from the level's own blocks, never read back from the page (a wrong surface in the
            page agreed with itself and the check could not fail) */
         let su = 0; for (const b of S.world().blocks) if (!b.gone && k.x > b.x - 0.5 && k.x < b.x + b.w + 0.5 && b.y + b.h <= y0 + 0.4 && b.y + b.h > su) su = b.y + b.h;
-        const low = k.y + Math.min(k.hi * sn, -k.lo * sn) - k.hh * Math.abs(Math.cos(k.rz)) - su;
+        const low = drawnLow() - su;
         worst = Math.min(worst, low); maxLift = Math.max(maxLift, k.lift); if (su > 0) blocks++;
-        if (k.lift === 0 && Math.abs(k.y - S.g().y) > 0.6) off++; }
-      out[kind + lvl] = { frames, worst: +worst.toFixed(3), maxLift: +maxLift.toFixed(2), blocks, off };
+        if (k.lift === 0 && Math.abs(k.y + k.sink - S.g().y) > 0.6) off++;
+        const g = S.g(); air = (!g.grounded && g.vy > 0) ? air + 1 : 0; if (air > 8 && k.sink > 0.001) airSunk++;   /* rising after a take off */
+        /* tumbling or lying on what it stands on: only a corner over that surface counts (a knife is longer than its collider,
+           so an end can reach over a stump beside it; that overlap is older than Part G and not this check) */
+        if (g.grounded && f % 3 === 0) { const cg = cornerGap(); if (cg && Math.abs(cg.hit - (g.y - 1.5)) <= 0.35) { seenGap = Math.min(seenGap, cg.gap); gapN++; } }
+        const falling = !g.grounded && g.vy <= 0 && !g.done && k.lift === 0; if (falling && prev && prev.falling) upFall = Math.max(upFall, k.y - prev.y); prev = { y: k.y, falling }; }
+      out[kind + lvl] = { frames, worst: +worst.toFixed(3), maxLift: +maxLift.toFixed(2), blocks, off, airSunk, upFall: +upFall.toFixed(3), seenGap: +seenGap.toFixed(3), gapN };
     }
-    S.salt(null); return out;
-  }); } catch (e) { r = { error: String(e).slice(0, 200) }; }
+    return out;
+  });
+  const restR = await p.evaluate(async () => {
+    const S = window._S3, { drawnLow, visTop } = window.__g1;
+    /* G1 (24 Oct): a knife at REST is drawn on its surface, the ground and a block top. The surface is worked out here from
+       the level's blocks and the stepped pose, never read back from the page */
+    const rest = [];
+    /* three knives whose paintings sit very differently in their recipe boxes (the review's worst cases), each with its
+       painting in */
+    for (const [skin, kind, lvl] of [['classic', 'j', 1], ['classic', 'c', 1], ['classic', 'j', 3], ['classic', 'j', 6], ['tuningfork', 'j', 3], ['wallbreaker', 'j', 6]]) {
+      if (S.skins().owned.indexOf(skin) < 0) S.skins().owned.push(skin); S.applySkin(skin);
+      for (let w = 0; w < 100 && !S.knifeParts().art; w++) await new Promise(res => setTimeout(res, 100));
+      S.salt(31); if (kind === 'j') S.newGame(lvl); else S.newClimb(lvl);
+      const W = S.world(), spots = [{ x: S.g().x, top: 0 }];
+      const st = W.blocks.find(b => !b.gone && !b.spring && !b.crumble && b.w >= 1.2 && b.y + b.h > 0.5 && b.x > 6 && b.x < W.wallX - 6);
+      if (st) { spots.push({ x: st.x + st.w / 2, top: st.y + st.h }); spots.push({ x: st.x + st.w + 1.0, top: st.y + st.h, edge: true }); }
+      for (const sp of spots) {
+        let G = S.g(); G.x = sp.x; G.y = sp.top + 1.8; G.vx = 0; G.vy = 0; G.w = 0; G.ang = 0; G.px = G.x; G.py = G.y; G.pa = 0;
+        for (let i = 0; i < 60; i++) S.stepN(1, 16);
+        G = S.g(); const k = S.kpose(), vis = visTop();
+        const low = drawnLow() - vis;
+        rest.push({ at: skin + ' ' + kind + lvl + (sp.edge ? ' edge' : ''), edge: !!sp.edge, onTop: Math.abs(G.y - 1.5 - sp.top) < 0.05, top: +sp.top.toFixed(2), vis: +vis.toFixed(3), gr: !!G.grounded, done: !!G.done, rz: +k.rz.toFixed(3), low: +low.toFixed(3), art: !!S.knifeParts().art });
+      }
+    }
+    S.applySkin('classic'); return rest;
+  });
+  const tail = await p.evaluate(() => {
+    const S = window._S3, { drawnLow, visTop } = window.__g1;
+    /* the Part G review's cases. A fall from rest (a nudge off a block's edge) never draws the knife going UP; a top whose
+       landing height does not round trip in floating point (its contact drops out every other step) holds the knife still */
+    const falls = [], flick = [];
+    for (const lvl of [1, 3, 6, 9, 12]) {
+      S.salt(31); S.newGame(lvl); const W = S.world();
+      /* a block with open air for 8 u past its right edge, so the nudge really drops the knife off it */
+      const b = W.blocks.find(b => !b.gone && !b.spring && !b.crumble && b.w >= 1.2 && b.y + b.h > 1.5 && b.x > 6 && b.x < W.wallX - 14 &&
+        !W.blocks.some(c => c !== b && c.x < b.x + b.w + 8 && c.x + c.w > b.x + b.w - 0.01 && c.y < b.y + b.h + 4));
+      if (b) { let G = S.g(); G.x = b.x + b.w - 0.2; G.y = b.y + b.h + 1.8; G.vx = 0; G.vy = 0; G.w = 0; G.ang = 0; G.px = G.x; G.py = G.y; G.pa = 0;
+        for (let i = 0; i < 40; i++) S.stepN(1, 16);
+        G = S.g(); G.vx = 6; let prev = null, up = 0, fell = 0;
+        for (let i = 0; i < 90 && !S.g().done; i++) { S.stepN(1, 16); const g = S.g(), k = S.kpose(), falling = !g.grounded && g.vy <= 0 && k.lift === 0;
+          if (falling) fell++; if (falling && prev && prev.falling) up = Math.max(up, k.y - prev.y); prev = { y: k.y, falling }; }
+        falls.push({ lvl, fell, up: +up.toFixed(3) }); }
+      S.salt(31); S.newGame(lvl); const W2 = S.world();   /* a fresh run: the nudge above may have ended this one */
+      const fb = W2.blocks.find(b => !b.gone && !b.spring && !b.crumble && b.w >= 1.2 && b.x > 6 && b.x < W2.wallX - 6 && ((b.y + b.h + 1.5) - 1.5) > b.y + b.h);   /* KR 1.5 */
+      if (fb) { let G = S.g(); G.x = fb.x + fb.w / 2; G.y = fb.y + fb.h + 1.8; G.vx = 0; G.vy = 0; G.w = 0; G.ang = 0; G.px = G.x; G.py = G.y; G.pa = 0;
+        for (let i = 0; i < 60; i++) S.stepN(1, 16);
+        let lo = Infinity, hi = -Infinity; for (let i = 0; i < 40; i++) { S.stepN(1, 16 + (i % 3)); const y = drawnLow(); lo = Math.min(lo, y); hi = Math.max(hi, y); }
+        flick.push({ lvl, top: +(fb.y + fb.h).toFixed(4), range: +(hi - lo).toFixed(3), low: +(drawnLow() - visTop()).toFixed(3), done: !!S.g().done }); }
+    }
+    /* never on Freefall */
+    S.salt(31); S.newFF(1); let ffSink = 0; for (let i = 0; i < 150; i++) { S.hold(i % 40 < 12 ? 1 : 0); S.stepN(1, 16); ffSink = Math.max(ffSink, S.kpose().sink); } S.hold(0);
+    S.salt(null); window._S3skiprender = false; return { ffSink, falls, flick };
+  });
+  r = { lands, rest: restR, ffSink: tail.ffSink, falls: tail.falls, flick: tail.flick }; } catch (e) { r = { error: String(e).slice(0, 200) }; }
+  const rest = (r && r.rest) || [], ffSink = r ? r.ffSink : null, falls = (r && r.falls) || [], flick = (r && r.flick) || []; r = (r && r.lands) || r;
   const v = Object.values(r || {});
   ok('the drawn knife never dips below the ground or a stump top under it (Journey 1, 3, 6, a climb)', v.length === 4 && v.every(x => x.frames > 200 && x.worst >= -0.01) && v.some(x => x.blocks > 20), JSON.stringify(r));
   ok('a landing needed the lift (the knife really landed steep)', v.length === 4 && v.filter(x => x.maxLift > 0.5).length >= 3, JSON.stringify(r));
   ok('with no lift needed the knife is drawn on its stepped pose', v.length === 4 && v.every(x => x.off === 0), JSON.stringify(r));
+  const restOk = rest.filter(x => x.gr && !x.done && x.art && Math.abs(Math.sin(x.rz)) < 0.02 && (!x.edge || x.onTop));
+  ok('a knife at rest lies ON the surface you see (the grass lip, a block\'s top), within 0.06, for three paintings (G1; v7.2 drew Classic Chef 0.65 over the grass)',
+    restOk.length >= 9 && restOk.filter(x => x.top > 0 && !x.edge).length >= 3 && restOk.filter(x => x.edge).length >= 3 && ['classic', 'tuningfork', 'wallbreaker'].every(k => restOk.some(x => x.at.indexOf(k) === 0)) && restOk.every(x => Math.abs(x.low) <= 0.06), JSON.stringify(rest));
+  ok('a knife tumbling or lying on the ground never draws its lowest corner inside the surface you see under it, within 0.06 (the ground stripes stand 0.05 over the lip; the review: 0.25 into the lip)', v.length === 4 && v.every(x => x.gapN > 3 && x.seenGap >= -0.06), JSON.stringify(v.map(x => ({ gap: x.seenGap, n: x.gapN }))));
+  ok('the drawing is let go over the first metre of a take off, and never lowered on Freefall', v.length === 4 && v.every(x => x.airSunk === 0) && ffSink === 0, JSON.stringify({ air: v.map(x => x.airSunk), ffSink }));
+  ok('a fall from rest (nudged off a block, and every fall while playing) never draws the knife going up (the review: 0.72)', falls.length >= 3 && falls.every(f => f.fell > 5 && f.up <= 0.01) && v.every(x => x.upFall <= 0.01), JSON.stringify({ falls, play: v.map(x => x.upFall) }));
+  ok('on a top whose contact flickers every step the knife lies still on it (the review: 0.11 to 0.55 u of shake)', flick.length >= 1 && flick.every(f => !f.done && f.range <= 0.02 && Math.abs(f.low) <= 0.06), JSON.stringify(flick));
   ok('no page errors through Part F2', errs.length === 0, JSON.stringify(errs));
   await ctx.close();
 }
