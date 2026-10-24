@@ -102,6 +102,8 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 .helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:14px; line-height:1.5}
 .helprow .hi{font-size:16px; font-weight:800; width:32px; height:32px; line-height:30px; text-align:center; flex:none; color:var(--gold); background:#14110a; border:1px solid var(--sprout); border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#161309}
+.setval{min-width:84px; text-align:right; color:var(--gold); font-weight:800; font-size:15px}
+#sl-guide{cursor:pointer}
 .toggle{width:64px; height:36px; border-radius:20px; background:#2a2618; position:relative; cursor:pointer; border:1px solid var(--line)}
 /* invisible tap-zone extension to 72x72 stage px; the switch art stays 64x36 */
 .toggle::after{content:""; position:absolute; left:-4px; right:-4px; top:-18px; bottom:-18px}
@@ -302,7 +304,7 @@ body.mirror #dropbtn{order:-1}
     <h2 class="sc-h">Settings</h2>
     <div style="height:8px"></div>
     <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
-    <div class="settingline"><span>Ghost drop guide</span><div class="toggle on" id="tg-ghost"><b></b></div></div>
+    <div class="settingline" id="sl-guide"><span>Landing guide</span><b class="setval" id="tg-guide">Outline</b></div>
     <div class="settingline"><span>Big controls</span><div class="toggle" id="tg-big"><b></b></div></div>
     <div class="settingline"><span>Relaxed held moves</span><div class="toggle" id="tg-relaxed"><b></b></div></div>
     <div class="settingline"><span>Flick up to drop</span><div class="toggle" id="tg-flick"><b></b></div></div>
@@ -342,7 +344,7 @@ body.mirror #dropbtn{order:-1}
 <script>
 (function(){
 "use strict";
-var BUILD="v1.9";
+var BUILD="v1.10";
 /* screen shake: shake(amp,ms) — decays in update(), applied as a canvas translate in render() */
 var SHAKE={t:0,dur:1,amp:0};
 function shake(a,ms){ if(a>SHAKE.amp||SHAKE.t<=0){ SHAKE.amp=a; SHAKE.t=ms; SHAKE.dur=ms; } }
@@ -385,8 +387,9 @@ window.addEventListener('resize',fit); window.addEventListener('orientationchang
 
 /* ---------- storage ---------- */
 var LS={ g:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, s:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
-var SET={ sound:true, ghost:true, bigTray:false, tags:true, relaxed:false, flick:false, mirror:false };   /* v1.9: bigTray, a NEW key: v1.8 saved big:true for anyone who touched any setting */   /* v1.9: Relaxed held moves, the hard drop flick (off), Drop on the left */
-(function(){ try{ var s=JSON.parse(LS.g('cw_set')||'{}'),k; for(k in SET)if(SET.hasOwnProperty(k)&&typeof s[k]==='boolean')SET[k]=s[k]; }catch(e){} })();
+var SET={ sound:true, ghost:true, bigTray:false, tags:true, relaxed:false, flick:false, mirror:false, guide:'outline' };   /* v1.9: bigTray, a NEW key (v1.8 saved big:true for anyone who touched any setting); v1.10: the landing guide Outline, Solid or Off */   /* v1.9: Relaxed held moves, the hard drop flick (off), Drop on the left */
+(function(){ try{ var s=JSON.parse(LS.g('cw_set')||'{}'),k; for(k in SET)if(SET.hasOwnProperty(k)&&typeof s[k]===typeof SET[k])SET[k]=s[k];
+  if(s.guide==null&&s.ghost===false)SET.guide='off'; if(SET.guide!=='outline'&&SET.guide!=='solid'&&SET.guide!=='off')SET.guide='outline'; }catch(e){} })();
 function saveSet(){ LS.s('cw_set', JSON.stringify(SET)); }
 var PROG={ unlocked:0, beaten:{}, done:false, secret:false, soloBest:0 };
 (function(){ try{ var p=JSON.parse(LS.g('cw_prog')||'{}'); var k; for(k in PROG) if(p[k]!=null)PROG[k]=p[k]; }catch(e){} })();
@@ -711,7 +714,7 @@ function spawnPiece(f){ if(!f.next)f.next=newPiece(f); var p=f.next; f.next=newP
   if(f===MATCH.pf)rotBuffered(f);   /* v1.9: a turn pressed in the 120 ms before this spawn */
   return true; }
 
-function lockPiece(f){ var cs=pieceCells(f.cur),i; for(i=0;i<2;i++){ if(cs[i].r<0){ f.dead=true; } else f.grid[cs[i].r][cs[i].c]=cs[i].col; }
+function lockPiece(f){ var cs=pieceCells(f.cur),i; for(i=0;i<2;i++){ if(cs[i].r<0){ f.dead=true; } else { f.grid[cs[i].r][cs[i].c]=cs[i].col; squashAt(f,cs[i].r,cs[i].c); } }   /* v1.10: the pair squashes as it lands */
   f.cur=null; SFX.lock(); startResolve(f);
   if(f===MATCH.pf){ dragSt=null; softSet('drag',false); }   /* v1.7: a lock ends the drag that steered it and the soft drop it set; v1.9: a held SOFT button or down key carries on */
   if(MATCH.mode==='versus'&&f===MATCH.pf)_mpPub(true); }
@@ -721,12 +724,26 @@ function hardDrop(f){ if(!f.cur)return; while(true){ var nx={r:f.cur.r+1,c:f.cur
 /* ---- resolution state machine (animated, live) ---- */
 function startResolve(f){ f.state='resolve'; f.res={sub:'grav',t:0,chain:0,score:0,cleared:0,chaff:0}; f.pop=null; }
 function newLayer(){ var a=[],r,c; for(r=0;r<ROWS;r++){ a[r]=[]; for(c=0;c<COLS;c++)a[r][c]=0; } return a; }
-function setFall(f,moves){ if(!f.fall)f.fall=newLayer(); var i,cell= (f===MATCH.pf?PF.cell:OF.cell); for(i=0;i<moves.length;i++){ var m=moves[i]; f.fall[m.to][m.c]=(m.to-m.from)*cell; } }
-function decayFall(f,dt){ if(!f.fall)return; var r,c,any=false; var sp=Math.max(0.14, dt/90); for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ if(f.fall[r][c]>0){ f.fall[r][c]*= (1-sp); if(f.fall[r][c]<0.6)f.fall[r][c]=0; else any=true; } } if(!any)f.fall=null; }
+/* THE CHAIN RHYTHM (v1.10, PNL-010). A fall takes 110 ms for one row up to 180 ms for the whole well, accelerating like
+   a drop, on TIME (v1.9 shaved a share off the offset every frame, so a 120 Hz phone played every chain slower than a 60
+   Hz one); the next scan waits for the longest fall. Every landing squashes the pod for 80 ms; a pop takes 230 ms. */
+var FALL_MIN=110, FALL_MAX=180, SQUASH_MS=80;
+function fallDur(rows){ return FALL_MIN+(FALL_MAX-FALL_MIN)*Math.min(1,Math.max(0,rows-1)/(VISROWS-1)); }
+function fallLayers(f){ if(!f.fall){ f.fall=newLayer(); f.fall0=newLayer(); f.fallD=newLayer(); f.fallS=newLayer(); f.squash=newLayer(); } f.fallClk=f.fallClk||0; }
+function setFall(f,moves){ fallLayers(f); var i, cell=(f===MATCH.pf?PF.cell:OF.cell), mx=0;
+  for(i=0;i<moves.length;i++){ var m=moves[i], rows=m.to-m.from, d=fallDur(rows); f.fall[m.to][m.c]=f.fall0[m.to][m.c]=rows*cell; f.fallD[m.to][m.c]=d; f.fallS[m.to][m.c]=f.fallClk; if(d>mx)mx=d; }
+  return mx; }
+function squashAt(f,r,c){ if(r<0)return; fallLayers(f); f.squash[r][c]=SQUASH_MS; }
+function decayFall(f,dt){ if(!f.fall)return; f.fallClk+=dt; var r,c,any=false;
+  for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){
+    if(f.fall[r][c]>0){ var p=Math.min(1,(f.fallClk-f.fallS[r][c])/f.fallD[r][c]); f.fall[r][c]=f.fall0[r][c]*(1-p*p); any=true;
+      if(p>=1){ f.fall[r][c]=0; f.squash[r][c]=SQUASH_MS; } }
+    else if(f.squash[r][c]>0){ f.squash[r][c]=Math.max(0,f.squash[r][c]-dt); if(f.squash[r][c]>0)any=true; } }
+  if(!any)f.fall=null; }
 
 function resolveTick(f,dt){ var R=f.res; R.t+=dt;
-  if(R.sub==='grav'){ var moves=applyGravityMoves(f.grid); if(moves.length){ setFall(f,moves); R.sub='gravwait'; R.t=0; } else { R.sub='scan'; } }
-  else if(R.sub==='gravwait'){ if(R.t>110){ R.sub='scan'; } }
+  if(R.sub==='grav'){ var moves=applyGravityMoves(f.grid); if(moves.length){ R.wait=setFall(f,moves); R.sub='gravwait'; R.t=0; } else { R.sub='scan'; } }
+  else if(R.sub==='gravwait'){ if(R.t>=(R.wait||FALL_MIN)){ R.sub='scan'; } }   /* v1.10: the settle waits for the longest fall, 110 to 180 ms */
   else if(R.sub==='scan'){ var groups=findGroups(f.grid); if(!groups.length){ finishResolve(f); return; }
     R.chain++; if(f===MATCH.of)railChain(R.chain); var cset={},gb=0,cl=0,i,j; f.pop=newLayer(); var chf={};
     for(i=0;i<groups.length;i++){ var gr=groups[i]; cset[gr.color]=1; gb+=groupBonus(gr.cells.length); cl+=gr.cells.length;
@@ -771,7 +788,7 @@ function finishResolve(f){ var R=f.res; f.score+=R.score; if(f===MATCH.of)railCh
   /* counter: in Tsu, offset against own pending first, remainder to opponent.
      in classic (MBM/Puyo-1) there is NO offsetting — garbage always lands. */
   var opp=(f===MATCH.pf)?MATCH.of:MATCH.pf;
-  if(out>0){ if(!RULES.classic && f.pending>0){ var off=Math.min(f.pending,out); f.pending-=off; out-=off;
+  if(out>0){ if(!RULES.classic && f.pending>0){ var off=Math.min(f.pending,out); f.pending-=off; out-=off; if(off>0){ f.cancelN=off; f.cancelT=1600; }   /* v1.10: shown beside the queue */
       if(off>0){ f.floats.push({x:0,y:0,txt:'DENIED!',life:1.0,big:true,fld:f}); addHype(f,10); } }
     if(out>0){ if(MATCH.mode==='versus'&&f===MATCH.pf){ _mpGarbage(out); }
       else if(opp){ opp.pending+=out; SFX.warn(); } } }
@@ -791,10 +808,12 @@ function dropPending(f){ if(f.pending<=0){ afterTurn(f); return; }
   afterTurn(f);
 }
 
-function afterTurn(f){ /* spawn next piece; top-out ends the match */
-  if(f.dead){ endMatch(f===MATCH.pf?'lose':'win'); return; }
-  if(!spawnPiece(f)){ endMatch(f===MATCH.pf?'lose':'win'); return; }
+function afterTurn(f){ /* spawn next piece; a top out is JUDGED at the end of the tick (v1.10, PNL-011: both boards commit first) */
+  if(f.dead||!spawnPiece(f)){ f.dead=true; MATCH.judge=MATCH.judge||{}; MATCH.judge[f===MATCH.pf?'pf':'of']=true; }
 }
+/* the end of a tick: a board that topped out loses; both on the same tick is a draw (the stage is replayed, like a loss) */
+function judgeTick(){ var J=MATCH.judge; if(!J)return; MATCH.judge=null;
+  if(J.pf&&J.of)endMatch('draw'); else if(J.pf)endMatch('lose'); else if(J.of)endMatch('win'); }
 
 /* ---- AI control ---- */
 function planAI(f){ f.aiTarget=pestChooseMove(f); f.aiTimer=0; f.aiStep=0; }
@@ -843,6 +862,12 @@ function landTick(f,dt){ var L=f.land, on=onGround(f);
   if(on&&(L.t>=(f.softHold?LAND_SOFT:w)||L.age>=Math.max(LAND_CAP,w+350)))lockPiece(f); }
 function landReset(f){ var L=f.land; if(L&&L.on&&L.resets<LAND_RESETS){ L.t=0; L.resets++; } }
 function softStep(f){ if(f.state!=='play'||!f.cur)return; var n={r:f.cur.r+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n)){ f.cur.r++; f.gravAcc=0; } else { lockPiece(f); } }
+/* THE LANDING GUIDE (v1.10, PNL-009): where each pod ENDS after the lock and the fall that follows it. A pair across two
+   columns of different heights splits and each pod lands on its own column; a pair in one column stacks. */
+function colTop(g,c){ var r=0; while(r<ROWS&&g[r][c]===0)r++; return r-1; }   /* the lowest empty row of a column (-1: full) */
+function guideCells(f){ var cur=f.cur, p=partnerOf(cur), t;
+  if(cur.c===p.c){ t=colTop(f.grid,cur.c); return cur.r>p.r ? [{r:t,c:cur.c,col:cur.c1,pivot:true},{r:t-1,c:cur.c,col:cur.c2}] : [{r:t-1,c:cur.c,col:cur.c1,pivot:true},{r:t,c:cur.c,col:cur.c2}]; }
+  return [{r:colTop(f.grid,cur.c),c:cur.c,col:cur.c1,pivot:true},{r:colTop(f.grid,p.c),c:p.c,col:cur.c2}]; }
 function ghostY(f){ if(!f.cur)return f.cur; var y=f.cur.r; while(true){ var n={r:y+1,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; if(fits(f.grid,n))y++; else break; } return y; }
 
 /* =====================================================================
@@ -858,7 +883,7 @@ function preDropChaff(f,rows){ var i,c; for(i=0;i<rows;i++)for(c=0;c<COLS;c++){ 
 function preDropPods(f,n){ var i; for(i=0;i<n;i++){ var c=(Math.random()*COLS)|0, col=1+((Math.random()*f.colors)|0);
   var r=0; while(r<ROWS&&f.grid[r][c]===0)r++; var t=r-1; if(t>=2)f.grid[t][c]=col; } }
 
-function startMatch(stageIndex,mode){ MATCH.mode=mode||'campaign'; MATCH.stage=stageIndex;
+function startMatch(stageIndex,mode){ MATCH.mode=mode||'campaign'; MATCH.stage=stageIndex; MATCH.paused=false; MATCH.resumeT=-1; MATCH.judge=null;
   MATCH.powers=/[?&]powers=1/.test(location.search);
   if(MATCH.mode==='solo'){ cwRelease(null); a2Char(null); railReset(null); MATCH.pf=makeField(4,false); MATCH.pf.gravMs=1000/1.3; MATCH.of=null;
     if(MATCH.powers)MATCH.pf.powerId='keeper-solvent';
@@ -980,10 +1005,10 @@ tap('go-share',function(){ SFX.ui(); doShare(); });
 var _sunToast='';
 function matchResult(result){ if(_devSweep)return; var st=ROSTER[MATCH.stage];
   /* best-of-3 series (boss + secret): interim round screens until someone takes 2 */
-  if(SERIES&&SERIES.stage===MATCH.stage){ if(result==='win')SERIES.me++; else SERIES.them++;
+  if(SERIES&&SERIES.stage===MATCH.stage){ if(result==='win')SERIES.me++; else if(result!=='draw')SERIES.them++;   /* v1.10: a draw scores for nobody */
     if(SERIES.me<2&&SERIES.them<2){
       $('go-emoji').textContent=st.em; _goPortrait(st.id, result==='win'?'lose':'win'); _goBanner(result==='win'?'win':'lose');
-      $('go-title').textContent=(result==='win')?'Round won':'Round lost';
+      $('go-title').textContent=(result==='win')?'Round won':(result==='draw'?'Round drawn':'Round lost');
       $('go-title').style.color=(result==='win')?'#2ff0e0':'#9a9078';
       $('go-lab').textContent='Best of 3 · you '+SERIES.me+' · them '+SERIES.them;
       $('go-line').textContent=(result==='win')?('"'+st.lose+'"'):('"'+st.taunt+'"');
@@ -995,7 +1020,7 @@ function matchResult(result){ if(_devSweep)return; var st=ROSTER[MATCH.stage];
     result=(SERIES.me>=2)?'win':'lose'; SERIES=null; }
   $('go-next').textContent='Next ▶'; var _gr0=$('go-retry'); if(_gr0)_gr0.style.display='';
   $('go-emoji').textContent = result==='win'? (st.em) : '🥀'; _goPortrait(st.id, result==='win'?'lose':'win'); _goBanner(result==='win'?'win':'lose');
-  $('go-title').textContent = result==='win'? 'Victory' : 'Defeat';
+  $('go-title').textContent = result==='win'? 'Victory' : (result==='draw'?'Draw':'Defeat');
   $('go-title').style.color = result==='win'? '#2ff0e0' : '#9a9078';
   $('go-lab').textContent = st.nm;
   $('go-line').textContent = result==='win'? ('"'+st.lose+'"') : ('"'+st.taunt+'"');
@@ -1041,9 +1066,12 @@ function update(dt){ if(SHAKE.t>0){ SHAKE.t-=dt; if(SHAKE.t<0)SHAKE.t=0; }
   if(MATCH.phase==='intro'){ MATCH.t+=dt; if(MATCH.t>=1700){ MATCH.t=0; MATCH.phase='count'; SFX.count(); } return; }
   if(MATCH.phase==='count'){ MATCH.t+=dt; if(MATCH.t>=700){ MATCH.t=0; MATCH.count--; if(MATCH.count>0)SFX.count(); else { SFX.go(); MATCH.phase='fight'; if(MATCH.pf)MATCH.pf.state='play'; if(MATCH.of)MATCH.of.state='play'; } } return; }
   if(MATCH.phase!=='fight')return;
+  if(MATCH.paused){ if(MATCH.resumeT<0)return; MATCH.resumeT+=dt;   /* the three count back in: 3, 2, 1, then play */
+    if(MATCH.resumeT>=700){ MATCH.resumeT=0; MATCH.count--; if(MATCH.count>0)SFX.count(); else { SFX.go(); MATCH.paused=false; MATCH.resumeT=-1; } } return; }
   INP.clock+=dt; repTick(dt);   /* v1.9: held moves on simulation time, before the player's field ticks */
   tickField(MATCH.pf,dt,false);
   if(MATCH.of){ tickField(MATCH.of,dt,true); railTick(); }
+  judgeTick();
   if(MATCH.mode==='versus'){ var nowT=Date.now();
     if(nowT-MP.lastPub>900)_mpPub(true);                             /* heartbeat */
     if(MP.oppLastT && nowT-MP.oppLastT>15000 && MATCH.phase==='fight'){ MP.forfeit=true; if(MATCH.of)MATCH.of.dead=true; endMatch('win'); } }
@@ -1053,7 +1081,7 @@ function update(dt){ if(SHAKE.t>0){ SHAKE.t-=dt; if(SHAKE.t<0)SHAKE.t=0; }
 function tickField(f,dt,isAI){ if(!f)return; if(f.powerCd>0)f.powerCd-=dt;
   decayFall(f,dt);
   for(var i=f.floats.length-1;i>=0;i--){ f.floats[i].life-=dt/900; if(f.floats[i].life<=0)f.floats.splice(i,1); }
-  if(f.flashDanger>0)f.flashDanger-=dt;
+  if(f.flashDanger>0)f.flashDanger-=dt; if(f.cancelT>0)f.cancelT-=dt;
   if(f.chainGlow>0)f.chainGlow=Math.max(0,f.chainGlow-dt/1000*1.1);   /* v1.7: dt is ms (it read seconds and the glow lasted 1 ms) */
   if(f.cur&&f.cur.rotT>0)f.cur.rotT=Math.max(0,f.cur.rotT-dt/90);   /* rotation tween (~90ms) */
   if(f===MATCH.pf && f.hype>0 && MATCH.phase==='fight'){ f.hype=Math.max(0,f.hype-dt/1000*1.3);   /* v1.7: 1.3 a second (it drained 80 HYPE in 61 ms, so the meter never showed) */ var htd=hypeTierOf(f.hype); if(htd<f.hypeTier)f.hypeTier=htd; }
@@ -1085,7 +1113,7 @@ function loop(t){ if(!lastT)lastT=t; var dt=t-lastT; lastT=t; if(dt>60)dt=60; CW
    ticked for 250ms, advance the sim by REAL elapsed time in 50ms steps so
    gameplay and heartbeats keep flowing. Foreground rAF is untouched. */
 var _bgLast=0;
-setInterval(function(){ if(!running)return; var n=Date.now();
+setInterval(function(){ if(!running||MATCH.mode!=='versus')return; var n=Date.now();   /* v1.10 (PNL-012): Versus only; Solo and Campaign PAUSE when hidden */
   if(n-_rafWall<250){ _bgLast=0; return; }
   if(!_bgLast)_bgLast=n; var d=n-_bgLast; _bgLast=n;
   var steps=Math.min(20,Math.floor(d/50)); while(steps-->0)update(50);
@@ -1304,8 +1332,10 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
   if(!mini)drawJoins(f,F);   /* v1.8: under the pods */
   for(r=1;r<ROWS;r++)for(c=0;c<COLS;c++){ var v=f.grid[r][c]; if(v===0)continue; var p=cellPx(F,r,c); var off=(f.fall&&f.fall[r]?f.fall[r][c]:0)||0;
     var scale=1, alpha=1; if(f.pop&&f.pop[r][c]){ var pr=Math.min(1,f.res? f.res.t/230:0); scale=1+pr*0.35; alpha=1-pr*0.7; }
-    var yy=p.y-off;
+    var yy=p.y-off, sq=(f.fall&&f.squash&&f.squash[r][c]>0)?f.squash[r][c]/SQUASH_MS:0;   /* v1.10: the landing squash, on the cell's floor */
+    if(sq>0){ ctx.save(); ctx.translate(p.x+F.cell/2, yy+F.cell); ctx.scale(1+0.1*sq, 1-0.16*sq); ctx.translate(-(p.x+F.cell/2), -(yy+F.cell)); }
     if(v===CHAFF)drawChaff(p.x,yy,F.cell,scale,alpha); else drawPod(p.x,yy,F.cell,v-1, mini?null:gazeFor(f,r,c),scale,alpha);
+    if(sq>0)ctx.restore();
     /* splat FX over a popping cell: colored pops tint the neutral splat; chaff shatters grey */
     if(!mini && f.pop && f.pop[r][c]){ var pr2=Math.min(1,f.res?f.res.t/230:0), fr=Math.min(4,1+((pr2*4)|0)), sc=F.cell/2;
       if(f.pop[r][c]===2)cwFx('fx/chaff-splat-'+fr,null, p.x+sc, yy+sc, F.cell*1.7,F.cell*1.7, 0.9*(1-pr2*0.35));
@@ -1317,12 +1347,16 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
        WHICH pair it is — and the top pod spawns in the hidden row (see below), so
        for the first row of fall there was nothing to read at all. The ghost now
        carries each pod's own colour. */
-    if(!mini && SET.ghost){ var gy=ghostY(f); var gcur={r:gy,c:f.cur.c,rot:f.cur.rot,c1:f.cur.c1,c2:f.cur.c2}; var gcs=pieceCells(gcur);
+    if(!mini && SET.guide!=='off'){ var gcs=guideCells(f), gsol=SET.guide==='solid';   /* v1.10: each pod where it ENDS (split landings), Outline or Solid */
+      if(gcs[0].r>=1&&gcs[1].r>=1){ var ga=cellPx(F,gcs[0].r,gcs[0].c), gb=cellPx(F,gcs[1].r,gcs[1].c);   /* a faint connector: one pair */
+        ctx.strokeStyle='rgba(240,233,216,0.28)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(ga.x+F.cell/2,ga.y+F.cell/2); ctx.lineTo(gb.x+F.cell/2,gb.y+F.cell/2); ctx.stroke(); }
       for(i=0;i<2;i++){ if(gcs[i].r<1)continue; var gp=cellPx(F,gcs[i].r,gcs[i].c);
         var gpal=PAL[gcs[i].col-1];
-        ctx.strokeStyle=gpal?gpal.bs:'rgba(255,255,255,0.28)'; ctx.globalAlpha=0.55; ctx.lineWidth=2.5;
-        ctx.beginPath(); ctx.arc(gp.x+F.cell/2,gp.y+F.cell/2,F.cell*0.42,0,6.2832); ctx.stroke();
-        ctx.globalAlpha=0.16; ctx.fillStyle=gpal?gpal.bs:'#fff'; ctx.fill(); ctx.globalAlpha=1; } }
+        if(gsol){ drawPod(gp.x,gp.y,F.cell,gcs[i].col-1,null,0.9,0.42); }
+        else { ctx.strokeStyle=gpal?gpal.bs:'rgba(255,255,255,0.28)'; ctx.globalAlpha=0.55; ctx.lineWidth=2.5;
+          ctx.beginPath(); ctx.arc(gp.x+F.cell/2,gp.y+F.cell/2,F.cell*0.42,0,6.2832); ctx.stroke();
+          ctx.globalAlpha=0.16; ctx.fillStyle=gpal?gpal.bs:'#fff'; ctx.fill(); ctx.globalAlpha=1; }
+        if(gcs[i].pivot){ ctx.fillStyle='rgba(240,233,216,0.5)'; ctx.beginPath(); ctx.arc(gp.x+F.cell/2,gp.y+F.cell*0.88,2.5,0,6.2832); ctx.fill(); } } }   /* the pivot's dot */
     /* smooth glide: interpolate the active piece between grid rows using how far
        it is through the current gravity step (render-only; logic still steps rows).
        No offset when the cell below is blocked, so it never overlaps a resting pod. */
@@ -1345,8 +1379,16 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
   /* pending Chaff warning row above the board */
   /* v1.8: the incoming row sat on the painted frame's top band and speaker; the player's moves into the header right of
      the score (x 206 to 375), the rival's beside its RIVAL label (x 440 to 540). Part 2b redraws it as a number */
-  var pw=f.pending; if(pw>0){ var ics=Math.min(pw, mini?8:10); var iw=mini?9:13; var bx=mini?440:206; var by=mini?F.y-51:66;
-    for(i=0;i<ics;i++){ drawChaff(bx+i*(iw+1), by, iw, 1, 0.9); } if(pw>ics){ ctx.fillStyle='#e0685f'; ctx.font='700 '+(mini?9:12)+'px system-ui'; ctx.fillText('+'+(pw-ics), bx+ics*(iw+1)+2, by+iw*0.75); } }
+  /* v1.10 (PNL-011): the incoming Chaff as a NUMBER, then a big rock per full row of six and a small one per single; a
+     chain that cancels some shows the cancelled amount beside it for a moment. The player's sits in the header (x 206 to
+     375), the rival's beside RIVAL (x 440 to 535). At most 30 land per turn; the rest stays queued. */
+  var pw=f.pending, bx=mini?440:206, by=mini?F.y-51:66, fs=mini?14:18;   /* 18 stage px is 12 CSS px at 360 wide (Part 3 sets the rest of the labels) */
+  if(pw>0){ ctx.fillStyle='#e0685f'; ctx.font='800 '+fs+'px system-ui'; ctx.textAlign='left'; ctx.fillText(''+pw, bx, by+fs*0.85); var nx=bx+ctx.measureText(''+pw).width+5;
+    var big=Math.floor(pw/COLS), sm=pw%COLS, bw=mini?11:16, sw2=mini?7:10, lim=mini?535:375;
+    for(i=0;i<big&&nx+bw<=lim;i++){ drawChaff(nx, by-1, bw, 1, 0.95); nx+=bw+1; }
+    for(i=0;i<sm&&nx+sw2<=lim;i++){ drawChaff(nx, by+(bw-sw2)/2, sw2, 1, 0.9); nx+=sw2+1; } }
+  if(f.cancelT>0&&!mini){ ctx.globalAlpha=Math.min(1,f.cancelT/300); ctx.fillStyle='#7ec850'; ctx.font='800 16px system-ui'; ctx.textAlign='left';
+    ctx.fillText(f.cancelN+' cancelled', bx, by-6); ctx.globalAlpha=1; }   /* the line above the queue */
   /* danger flash */
   if(f.flashDanger>0){ ctx.globalAlpha=Math.min(0.4,f.flashDanger/1000); ctx.fillStyle='#e0433f'; ctx.fillRect(F.x,F.y,COLS*F.cell,F.cell*2); ctx.globalAlpha=1; }
 }
@@ -1417,7 +1459,10 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
   /* chain floats */
   drawFloats(MATCH.pf,PF); if(MATCH.of)drawFloats(MATCH.of,OF);
 
-  /* countdown overlay */
+  /* countdown overlay (and the three count back from a pause) */
+  if(MATCH.phase==='fight'&&MATCH.paused){ ctx.fillStyle='rgba(10,8,4,0.62)'; ctx.fillRect(0,0,VW,VH); ctx.textAlign='center';
+    ctx.font='italic 800 '+(MATCH.resumeT<0?'48':'104')+'px system-ui'; var pTxt=MATCH.resumeT<0?'PAUSED':(''+Math.max(1,MATCH.count));
+    ctx.lineWidth=10; ctx.strokeStyle='#0c0a06'; ctx.strokeText(pTxt, VW/2, VH/2+30); ctx.fillStyle='#2ff0e0'; ctx.fillText(pTxt, VW/2, VH/2+30); ctx.textAlign='left'; }
   if(MATCH.phase==='count'){ ctx.fillStyle='rgba(10,8,4,0.55)'; ctx.fillRect(0,0,VW,VH); ctx.textAlign='center';
     var cTxt=MATCH.count>0?(''+MATCH.count):'GO';
     /* escalating spray-burst behind the numeral (3->burst-1 ... GO->burst-go) */
@@ -1524,7 +1569,12 @@ function rotBuffered(f){ var b=INP.buf; INP.buf=null; if(b&&INP.clock-b.t<=ROT_B
 function clearHolds(){ INP.l=INP.r=false; INP.dir=0; INP.t=0; INP.n=0; INP.buf=null; INP.soft.btn=INP.soft.drag=INP.soft.key=false;
   if(MATCH.pf)MATCH.pf.softHold=false; dragSt=null; }
 window.addEventListener('blur',clearHolds); window.addEventListener('pagehide',clearHolds);
-document.addEventListener('visibilitychange',function(){ if(document.hidden)clearHolds(); });
+document.addEventListener('visibilitychange',function(){ if(document.hidden){ clearHolds(); pauseMatch(); } else resumeMatch(); });
+/* v1.10 (PNL-012): Solo and Campaign PAUSE when the page hides (the background watchdog used to play the match on without
+   you, and a switch to another app could lose it) and come back through a three count. Versus keeps running: the rival is
+   a real player. */
+function pauseMatch(){ if(MATCH.mode==='versus'||MATCH.phase!=='fight'||MATCH.paused)return; MATCH.paused=true; MATCH.resumeT=-1; }
+function resumeMatch(){ if(!MATCH.paused||MATCH.resumeT>=0)return; MATCH.resumeT=0; MATCH.count=3; SFX.count(); }
 /* a tray button: down on pointerdown, up on up, cancel or leave of the pointer that pressed it. A touch is captured by the
    button it lands on, so the capture is released: a thumb that slides off lets go (it kept holding), and with roll a
    thumb rolled onto the button presses it (LEFT to SOFT to RIGHT in one movement) */
@@ -1647,13 +1697,17 @@ tap('set-reset',function(){ if(confirm('Reset all campaign progress? This cannot
 
 function wireToggle(id,key){ var el=$(id); if(!el)return; function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
   el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); SFX.ui(); }); }
-wireToggle('tg-sound','sound'); wireToggle('tg-ghost','ghost'); wireToggle('tg-big','bigTray'); wireToggle('tg-tags','tags');
+wireToggle('tg-sound','sound'); wireToggle('tg-big','bigTray'); wireToggle('tg-tags','tags');
+/* v1.10: the landing guide cycles Outline, Solid, Off; the whole row is the target */
+(function(){ var row=$('sl-guide'), v=$('tg-guide'), N={outline:'Outline',solid:'Solid',off:'Off'}, NX={outline:'solid',solid:'off',off:'outline'}; if(!row||!v)return;
+  function paint(){ v.textContent=N[SET.guide]||'Outline'; } paint();
+  row.addEventListener('click',function(e){ e.preventDefault(); SET.guide=NX[SET.guide]||'outline'; paint(); saveSet(); SFX.ui(); }); })();
 wireToggle('tg-relaxed','relaxed'); wireToggle('tg-flick','flick'); wireToggle('tg-mirror','mirror');
 $('buildstamp').textContent='Pop N Lock '+BUILD;
 
 /* ---------- add to home screen ---------- */
 (function(){ var btn=$('b-install'); if(!btn)return;
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=14'); }catch(e){} }
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=15'); }catch(e){} }
   function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
   if(standalone()){ btn.style.display='none'; return; }
   var deferred=null; window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
@@ -1788,7 +1842,7 @@ function _mpOnOpp(s){ if(!s||MATCH.mode!=='versus')return; MP.oppLastT=Date.now(
   var evts=s.e||[],i; for(i=0;i<evts.length;i++){ if(evts[i]&&evts[i].i>MP.lastEvtIn){ MP.lastEvtIn=evts[i].i; if(MATCH.pf&&MATCH.phase==='fight'){ MATCH.pf.pending+=(+evts[i].n||0); SFX.warn(); } } }
   if(s.d&&MATCH.phase==='fight'){ if(MATCH.of)MATCH.of.dead=true; endMatch('win'); } }
 
-function startVersus(){ MATCH.mode='versus'; MATCH.stage=-2; MATCH.powers=false; MATCH.result=null; cwRelease(null); a2Char(null); railReset(null);
+function startVersus(){ MATCH.mode='versus'; MATCH.stage=-2; MATCH.powers=false; MATCH.result=null; MATCH.paused=false; MATCH.resumeT=-1; MATCH.judge=null; cwRelease(null); a2Char(null); railReset(null);
   MATCH.pf=makeField(4,false); MATCH.pf.gravMs=1000/2.4; MATCH.pf.rng=mulberry32(MP.seed>>>0);
   MATCH.of=makeField(4,false); MATCH.of.remote=true;
   spawnPiece(MATCH.pf); MATCH.pf.state='wait'; MATCH.of.state='play';
