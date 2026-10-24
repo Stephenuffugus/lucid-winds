@@ -88,7 +88,7 @@ for (const [k, v] of POISON) {
     } catch (e) { out.threw = e.message.slice(0, 90); }
     return out;
   });
-  ok(`${k}=${v}`, r.boot && r.started && r.cards === 24 && r.progSane && r.skinSane && r.slivSane && !r.threw && !errs.length,
+  ok(`${k}=${v}`, r.boot && r.started && r.cards === 30 &&   /* the Forge's shelf: 24, and the six F4 priced knives since 24 Oct */ r.progSane && r.skinSane && r.slivSane && !r.threw && !errs.length,
     JSON.stringify(r) + (errs.length ? ' err:' + errs[0] : ''));
   if (k === 's3d_dex') ok(`${k}=${v} leaves the finds an empty set`, r.dexEmpty === true, JSON.stringify(r));
   if (k === 's3d_daily') ok(`${k}=${v} opens the Daily card on a fresh record for today`, r.dailySane === true && !r.threw && !errs.length, JSON.stringify(r) + (errs.length ? ' err:' + errs[0] : ''));
@@ -695,18 +695,19 @@ console.log('\n[15] Part B: the drawn frame holds together');
   await ctx.close();
 }
 
-/* ---- 16. Part C: knives and the forge (SS16, SS17, SS25, SS26). The shelf is the 22 of v6.2 plus the two new trophies;
-   the six Astra knives HE has not priced and the two supporter knives are in the catalogue but never on the shelf; the
-   fifteen prices are exactly what they were; every new knife is the Classic Chef's rig (same reach to the digit); a
+/* ---- 16. Part C: knives and the forge (SS16, SS17, SS25, SS26). The shelf is the 22 of v6.2 plus the two new trophies
+   and, since 24 Oct (Part F4, his call "prices need to be so much higher"), the six Astra knives priced on the new ladder;
+   the two supporter knives are in the catalogue but never on the shelf; the twenty prices are the F4 ladder; every new knife is the Classic Chef's rig (same reach to the digit); a
    trophy only arrives through grantTrophy, and the two new rules grant on exactly their condition; the preview turns,
    flips and cuts while the Forge is up, stops when it is not, holds still with reduced motion; a tap on a card spends
    nothing and the button under the preview does. */
 console.log('\n[16] Part C: knives and the forge');
 {
   const NEW = ['socktopus', 'butterbuddy', 'spatulot', 'pencil', 'discopickle', 'croissant', 'rubberduke', 'boomerang', 'tearex', 'custodian'];
-  const HIDDEN = ['socktopus', 'butterbuddy', 'spatulot', 'pencil', 'discopickle', 'croissant', 'tearex', 'custodian'];
-  const PRICES = { classic: 0, cleaver: 150, paintbrush: 300, katana: 500, crystal: 800, gold: 1500, bamboo: 200, trowel: 280, quill: 350,
-    obsidian: 620, icicle: 760, tuningfork: 900, emberfang: 1600, prism: 1900, scythe: 2200 };
+  const HIDDEN = ['tearex', 'custodian'];
+  const PRICES = { classic: 0, cleaver: 2000, socktopus: 2200, bamboo: 2400, butterbuddy: 2600, trowel: 2800, paintbrush: 3000, quill: 3400,
+    katana: 6000, pencil: 6400, obsidian: 6800, spatulot: 7200, icicle: 7600, crystal: 8000, tuningfork: 9000,
+    gold: 15000, emberfang: 16000, discopickle: 17500, prism: 19000, croissant: 20000, scythe: 22000 };   /* Part F4, 24 Oct */
   const OLD = ['classic', 'cleaver', 'paintbrush', 'bamboo', 'trowel', 'quill', 'katana', 'crystal', 'obsidian', 'icicle', 'tuningfork', 'gold', 'emberfang',
     'prism', 'scythe', 'cosmicedge', 'wallbreaker', 'depthdiver', 'conductor', 'groundskeeper', 'starforge', 'wolffang'];
   const html = await (await fetch(URL)).text();
@@ -715,9 +716,9 @@ console.log('\n[16] Part C: knives and the forge');
   let r; try { r = await p.evaluate((NEW, HIDDEN, PRICES, OLD) => {
     const S = window._S3, cat = S.catalog(), ord = S.skinOrder(), out = {};
     out.cat = Object.keys(cat).length; out.ord = ord.length;
-    out.oldKept = OLD.every(k => ord.indexOf(k) >= 0); out.newOn = ord.indexOf('rubberduke') >= 0 && ord.indexOf('boomerang') >= 0;
+    out.oldKept = OLD.every(k => ord.indexOf(k) >= 0); out.newOn = ['rubberduke', 'boomerang', 'socktopus', 'butterbuddy', 'spatulot', 'pencil', 'discopickle', 'croissant'].every(k => ord.indexOf(k) >= 0);
     out.hiddenOff = HIDDEN.every(k => cat[k] && ord.indexOf(k) < 0);
-    out.unpriced = ['socktopus', 'butterbuddy', 'spatulot', 'pencil', 'discopickle', 'croissant'].every(k => cat[k].price === null);
+    out.unpriced = Object.keys(cat).every(k => cat[k].price !== null);   /* nothing left unpriced: every knife is priced, earned (-1) or a supporter (-2) */
     out.support = ['tearex', 'custodian'].every(k => cat[k].premium === true);
     out.prices = Object.keys(PRICES).filter(k => !cat[k] || cat[k].price !== PRICES[k]);
     out.noStory = Object.keys(cat).filter(k => !cat[k].story);
@@ -745,9 +746,9 @@ console.log('\n[16] Part C: knives and the forge');
     finishJourney(12); out.boomAt12 = owns('boomerang'); out.boomSaid = /BANANA BOOMERANG UNLOCKED/.test(detail());
     S.salt(null); return out;
   }, NEW, HIDDEN, PRICES, OLD); } catch (e) { r = { error: String(e).slice(0, 200) }; }
-  ok('the shelf is the 22 of v6.2 plus Rubber Duke and Banana Boomerang (32 in the catalogue)', r.cat === 32 && r.ord === 24 && r.oldKept && r.newOn, JSON.stringify({ cat: r.cat, ord: r.ord, error: r.error }));
-  ok('the six unpriced and the two supporter knives are kept off the shelf', r.hiddenOff && r.unpriced && r.support, JSON.stringify({ h: r.hiddenOff, u: r.unpriced, s: r.support }));
-  ok('the fifteen prices are untouched', r.prices && r.prices.length === 0, JSON.stringify(r.prices));
+  ok('the shelf is the 22 of v6.2, Rubber Duke and Banana Boomerang, and the six F4 priced knives (32 in the catalogue)', r.cat === 32 && r.ord === 30 && r.oldKept && r.newOn, JSON.stringify({ cat: r.cat, ord: r.ord, error: r.error }));
+  ok('the two supporter knives are kept off the shelf, and no knife is left unpriced', r.hiddenOff && r.unpriced && r.support, JSON.stringify({ h: r.hiddenOff, u: r.unpriced, s: r.support }));
+  ok('the twenty prices are the F4 ladder', r.prices && r.prices.length === 0, JSON.stringify(r.prices));
   ok('every knife has its story', r.noStory && r.noStory.length === 0, JSON.stringify(r.noStory));
   ok('every new knife is the Classic Chef rig (same reach)', r.rigOff && r.rigOff.length === 0, JSON.stringify(r.rigOff));
   ok('a trophy only arrives through grantTrophy (four owned.push sites: grantTrophy, the boot repair, the tab merge, a purchase)', pushes === 4, 'sites=' + pushes);
@@ -757,7 +758,7 @@ console.log('\n[16] Part C: knives and the forge');
   /* the preview and the two step flow, by real pointer */
   const b2 = await bootAt(412, 915), q = b2.p;
   let f; try {
-    await q.evaluate(() => window._S3forge.setSliv(600));
+    await q.evaluate(() => window._S3forge.setSliv(6100));   /* the Midnight Katana costs 6,000 since Part F4 (it cost 500) */
     await clickCentre(q, '#b-forge'); await new Promise(res => setTimeout(res, 1500));
     const snap = () => q.evaluate(() => { const c = document.getElementById('forge-pvc'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0, n = 0;
       for (let i = 0; i < d.length; i += 16) { h = (h * 31 + d[i] + d[i + 3]) % 1000000007; if (d[i + 3] > 20) n++; } return { h, n }; });
@@ -792,7 +793,7 @@ console.log('\n[16] Part C: knives and the forge');
   } catch (e) { f = { error: String(e).slice(0, 200) }; }
   ok('the preview draws and moves while the Forge is up', !!f.a1 && f.a1.n > 2000 && f.a1.h !== f.a2.h, JSON.stringify({ a1: f.a1, a2: f.a2, error: f.error }));
   ok('it stops when the Forge closes, and holds a still with reduced motion', !!f.b1 && f.b1.h === f.b3.h && f.c1.n > 2000 && f.c1.h === f.c2.h, JSON.stringify({ b1: f.b1, b3: f.b3, c1: f.c1, c2: f.c2 }));
-  ok('a tap on a card chooses and spends nothing; Unlock under the preview buys it', !!f.sel && f.sel.sliv === 600 && !f.sel.owned && f.sel.name === 'Midnight Katana' && /Unlock/.test(f.sel.act)
+  ok('a tap on a card chooses and spends nothing; Unlock under the preview buys it', !!f.sel && f.sel.sliv === 6100 && !f.sel.owned && f.sel.name === 'Midnight Katana' && /Unlock/.test(f.sel.act)
     && f.buy.sliv === 100 && f.buy.owned && f.buy.equip === 'katana', JSON.stringify({ sel: f.sel, buy: f.buy }));
   ok('the preview never leaves its frame at any moment of the cycle', !!f.frame && f.frame.frames >= 1000 && f.frame.bad.length === 0 && f.frame.notReady.length === 0,
     JSON.stringify(f.frame && { frames: f.frame.frames, bad: f.frame.bad.slice(0, 8), n: f.frame.bad.length, notReady: f.frame.notReady }));
@@ -1532,6 +1533,34 @@ console.log('\n[23] Part F3: a forgiving lob, a graded boss pay outside the mult
   ok('the boss pays by the misses: none x5 (3000); a knife that enters past it, one miss, x3 (1800)', !!r.alone && r.alone.miss === 0 && r.alone.pts === 3000 && !!r.past && r.past.cleared && r.past.miss === 1 && r.past.pts === 1800, JSON.stringify([r.alone, r.past]));
   ok("the landing multiplies the dive's score but never the boss's pay", [r.alone, r.past].every(o => !!o && o.mult > 1 && o.final === (o.pre - o.pts) * o.mult + o.pts), JSON.stringify([r.alone, r.past]));
   ok('no page errors through Part F3', errs.length === 0, JSON.stringify(errs));
+  await ctx.close();
+}
+
+/* ---- 24. Part F4 (24 Oct, his call: "prices need to be so much higher ... it needs to be balanced"). A run pays
+   0.5 x the square root of its final score (+30 for a clean numbered dive; Endless one per 8 m), so a good dive pays near one rate
+   at every level (score/45 paid 1,000 to 3,500 a dive). Paid through the game's own finish, read off the balance. The
+   cheapest knife needs real play: more than ten good numbered dives. Watched red with score/45 and depth/4 put back. */
+console.log('\n[24] Part F4: Slivers by the square root of the score, prices to match');
+{
+  const { ctx, p, errs } = await boot();
+  let r; try { r = await p.evaluate(() => {
+    const S = window._S3, F = window._S3forge, out = {}; window._S3skiprender = true;
+    const pay = (start, set) => { F.setSliv(0); start(); S.stepN(2, 16); const G = S.g(); set(G); G.done = true; G.doneT = 3; G.counted = true;
+      if (G.failed) S.failLevel(); else S.finishLevel(); return { paid: F.sliv(), score: G.score, depth: G.depth || 0 }; };
+    out.dive = pay(() => S.newFF(3), G => { G.score = 40000; G.chips = 0; G.failed = false; });
+    out.big = pay(() => S.newFF(25), G => { G.score = 160000; G.chips = 2; G.failed = false; });
+    out.fail = pay(() => S.newFF(3), G => { G.score = 100; G.failed = true; });
+    out.journey = pay(() => S.newGame(1), G => { G.score = 2500; G.chips = 0; G.failed = false; G.mult = 2; G.stuckY = 6; });
+    out.endless = pay(() => S.newEndless(), G => { G.depth = 1600; G.score = 10000; G.failed = true; });
+    const cat = S.catalog(); out.cheapest = Math.min(...Object.keys(cat).map(k => cat[k].price).filter(v => v > 0));
+    window._S3skiprender = false; return out;
+  }); } catch (e) { r = { error: String(e).slice(0, 200) }; }
+  const sq = sc => Math.round(Math.sqrt(sc) * 0.5);
+  ok('a clean numbered dive pays the square root of its final score (its clean bonus already in) and 30 more; one of 160,000 with chips pays 200', !!r.dive && r.dive.score > 40000 && r.dive.paid === sq(r.dive.score) + 30 && !!r.big && r.big.paid === 200, JSON.stringify([r.dive, r.big]));
+  ok('a failed dive still pays its floor of 6; a clean Journey level of 2,500 pays 55', !!r.fail && r.fail.paid === 6 && !!r.journey && r.journey.paid === 55, JSON.stringify([r.fail, r.journey]));
+  ok('Endless pays the square root of its score and one per 8 m', !!r.endless && r.endless.paid === sq(r.endless.score) + Math.round(r.endless.depth / 8) && r.endless.paid < 400, JSON.stringify(r.endless));
+  ok('the cheapest knife costs more than ten good numbered dives', !!r.dive && r.cheapest > 10 * r.dive.paid, JSON.stringify({ cheapest: r.cheapest, dive: r.dive && r.dive.paid }));
+  ok('no page errors through Part F4', errs.length === 0, JSON.stringify(errs));
   await ctx.close();
 }
 

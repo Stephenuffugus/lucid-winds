@@ -392,7 +392,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v7.1";
+var BUILD="v7.2";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -999,15 +999,15 @@ function chefRig(b,e,t,w,n,g){ return [ bladeMesh(6.4,1.7,0.5,km(b)), kbox(6.4,0
 var SKINS={
   classic:{name:'Classic Chef',tier:'starter',price:0,icon:{b:'#cfd6e4',h:'#8a5a30',a:'#d8a437'},make:function(){
     return [ bladeMesh(6.4,1.7,0.5,km(0xcfd6e4)), kbox(6.4,0.34,0.56,km(0xf4f8ff),-1.6,-0.85), kbox(1.1,1.1,0.5,km(0xcfd6e4),-5.1,-0.15,Math.PI/4) ].concat(stdGrip(0x8a5a30,0x6e4423,0xd8a437)); }},
-  cleaver:{name:'Iron Cleaver',tier:'common',price:150,icon:{b:'#9aa4b2',h:'#2a2a2e',a:'#5a5a60'},make:function(){
+  cleaver:{name:'Iron Cleaver',tier:'common',price:2000,icon:{b:'#9aa4b2',h:'#2a2a2e',a:'#5a5a60'},make:function(){
     return [ bladeMesh(6.0,2.5,0.6,km(0x9aa4b2)), kbox(6.0,0.34,0.66,km(0xdfe6ef),-1.6,-1.25), kbox(0.8,3.0,1.0,km(0x3a3a40),1.9,0) ].concat([ kbox(3.2,1.5,0.9,km(0x24242a),3.9,0), kbox(0.9,1.6,0.95,km(0x111114),3.0,0), kbox(0.9,1.6,0.95,km(0x111114),4.6,0) ]); }},
-  paintbrush:{name:'Rainbow Brush',tier:'common',price:300,icon:{b:'#ff5aa8',h:'#c07a2a',a:'#ffd76a'},make:function(){
+  paintbrush:{name:'Rainbow Brush',tier:'common',price:3000,icon:{b:'#ff5aa8',h:'#c07a2a',a:'#ffd76a'},make:function(){
     return [ bladeMesh(5.4,1.8,0.5,km(0xff5aa8)), kbox(1.6,2.1,0.62,km(0x8de8ff),-4.6,0), kbox(1.0,1.0,0.55,km(0xffd76a),-5.4,0,Math.PI/4) ].concat(stdGrip(0xc07a2a,0x8a561e,0xffd76a)); }},
-  katana:{name:'Midnight Katana',tier:'rare',price:500,icon:{b:'#c8d0dc',h:'#7a1420',a:'#141418'},make:function(){
+  katana:{name:'Midnight Katana',tier:'rare',price:6000,icon:{b:'#c8d0dc',h:'#7a1420',a:'#141418'},make:function(){
     return [ bladeMesh(7.6,0.95,0.34,km(0xc8d0dc)), kbox(7.6,0.28,0.4,km(0xffffff),-1.9,-0.5), kbox(1.2,1.2,0.42,km(0xe6ebf2),-5.9,0,Math.PI/4), kbox(0.5,2.9,1.0,km(0x141418),1.6,0) ].concat([ kbox(3.9,1.15,0.75,km(0x7a1420),4.1,0), kbox(0.28,1.2,0.8,km(0xd8a437),2.9,0), kbox(0.28,1.2,0.8,km(0xd8a437),4.0,0), kbox(0.28,1.2,0.8,km(0xd8a437),5.1,0) ]); }},
-  crystal:{name:'Crystal Shard',tier:'rare',price:800,icon:{b:'#8de8ff',h:'#dfe9ff',a:'#ffffff'},make:function(){
+  crystal:{name:'Crystal Shard',tier:'rare',price:8000,icon:{b:'#8de8ff',h:'#dfe9ff',a:'#ffffff'},make:function(){
     return [ bladeMesh(6.6,1.9,0.5,km(0x8de8ff,0x123a44,0.72)), kbox(6.6,0.34,0.56,km(0xffffff,0x2a5a66),-1.6,-0.95), kbox(1.2,1.2,0.5,km(0xbdf2ff,0x2a5a66),-5.2,-0.1,Math.PI/4) ].concat(stdGrip(0xbfe6ef,0x8fb8c4,0xffffff)); }},
-  gold:{name:'Golden Fortune',tier:'epic',price:1500,icon:{b:'#ffd24a',h:'#b8801e',a:'#fff2a8'},make:function(){
+  gold:{name:'Golden Fortune',tier:'epic',price:15000,icon:{b:'#ffd24a',h:'#b8801e',a:'#fff2a8'},make:function(){
     return [ bladeMesh(6.6,1.9,0.5,km(0xffd24a,0x3a2a00)), kbox(6.6,0.36,0.58,km(0xfff2a8,0x4a3800),-1.6,-0.9), kbox(1.2,1.2,0.5,km(0xffe27a,0x4a3800),-5.2,-0.1,Math.PI/4) ].concat(stdGrip(0xb8801e,0x8a5e14,0xfff2a8)); }},
   cosmicedge:{name:'Cosmic Edge',tier:'trophy',price:-1,earn:'50 clean dives',icon:{b:'#c56bf0',h:'#3a1a5e',a:'#ff8ac2'},make:function(){
     return [ bladeMesh(6.8,1.9,0.5,km(0xc56bf0,0x3a0a5a)), kbox(6.8,0.4,0.6,km(0xff8ac2,0x5a0a3a),-1.6,-0.9), kbox(1.3,1.3,0.5,km(0xe0a8ff,0x5a1a7a),-5.3,-0.1,Math.PI/4) ].concat(stdGrip(0x3a1a5e,0x24103a,0xff8ac2)); }},
@@ -1024,23 +1024,23 @@ var SKINS={
      numbers here are RECIPE units and get multiplied by KSCALE (0.55) before
      they ever touch a wall test. A blade of 6.0 here reaches 3.3 on screen.
      Never hand a raw recipe number to a collision test. */
-  bamboo:{name:'Bamboo Splitter',tier:'common',price:200,icon:{b:'#9ad46a',h:'#7a5a2e',a:'#d8c07a'},make:function(){
+  bamboo:{name:'Bamboo Splitter',tier:'common',price:2400,icon:{b:'#9ad46a',h:'#7a5a2e',a:'#d8c07a'},make:function(){
     return [ bladeMesh(6.2,1.5,0.5,km(0x9ad46a)), kbox(0.3,1.7,0.56,km(0x6ea83e),-3.2,0), kbox(0.3,1.7,0.56,km(0x6ea83e),-0.6,0), kbox(1.0,1.0,0.5,km(0xbfe89a),-4.9,-0.1,Math.PI/4) ].concat(stdGrip(0x7a5a2e,0x5c421e,0xd8c07a)); }},
-  trowel:{name:'Garden Trowel',tier:'common',price:280,icon:{b:'#b8bcc4',h:'#b5613a',a:'#e8c65a'},make:function(){
+  trowel:{name:'Garden Trowel',tier:'common',price:2800,icon:{b:'#b8bcc4',h:'#b5613a',a:'#e8c65a'},make:function(){
     return [ bladeMesh(4.6,2.6,0.55,km(0xb8bcc4)), kbox(4.6,0.3,0.6,km(0xe8ecf2),-1.6,-1.3), kbox(1.2,1.2,0.5,km(0xb8bcc4),-4.1,-0.2,Math.PI/4) ].concat(stdGrip(0xb5613a,0x8a4527,0xe8c65a)); }},
-  quill:{name:'Feather Quill',tier:'common',price:350,icon:{b:'#f2f4f8',h:'#2a3a5e',a:'#cfd8e8'},make:function(){
+  quill:{name:'Feather Quill',tier:'common',price:3400,icon:{b:'#f2f4f8',h:'#2a3a5e',a:'#cfd8e8'},make:function(){
     return [ bladeMesh(6.6,1.2,0.4,km(0xf2f4f8)), kbox(6.6,0.22,0.46,km(0xffffff),-1.6,-0.62), kbox(1.1,1.1,0.42,km(0xdfe6ef),-5.2,-0.05,Math.PI/4), kbox(1.4,1.4,1.0,km(0x141c34),5.0,0) ].concat(stdGrip(0x2a3a5e,0x1a2340,0xcfd8e8)); }},
-  obsidian:{name:'Obsidian Flake',tier:'rare',price:620,icon:{b:'#2a2732',h:'#3a2c20',a:'#8a7f9a'},make:function(){
+  obsidian:{name:'Obsidian Flake',tier:'rare',price:6800,icon:{b:'#2a2732',h:'#3a2c20',a:'#8a7f9a'},make:function(){
     return [ bladeMesh(6.0,1.9,0.42,km(0x1c1a22)), kbox(2.0,1.1,0.44,km(0x2a2732),-3.6,0.5,0.18), kbox(6.0,0.26,0.48,km(0x6a5f7a),-1.6,-0.95), kbox(1.1,1.1,0.42,km(0x3a3446),-4.9,-0.1,Math.PI/4) ].concat(stdGrip(0x3a2c20,0x241c14,0x8a7f9a)); }},
-  icicle:{name:'Icicle',tier:'rare',price:760,icon:{b:'#d8f0ff',h:'#a8c8d8',a:'#ffffff'},make:function(){
+  icicle:{name:'Icicle',tier:'rare',price:7600,icon:{b:'#d8f0ff',h:'#a8c8d8',a:'#ffffff'},make:function(){
     return [ bladeMesh(6.8,1.7,0.46,km(0xd8f0ff,0x2a4a5a,0.78)), kbox(6.8,0.3,0.52,km(0xffffff,0x3a6a7a),-1.6,-0.85), kbox(1.2,1.2,0.46,km(0xeafaff,0x3a6a7a),-5.3,-0.1,Math.PI/4) ].concat(stdGrip(0xa8c8d8,0x7a9aac,0xffffff)); }},
-  tuningfork:{name:'Tuning Fork',tier:'rare',price:900,icon:{b:'#c8ccd4',h:'#24242a',a:'#8a8f9e'},make:function(){
+  tuningfork:{name:'Tuning Fork',tier:'rare',price:9000,icon:{b:'#c8ccd4',h:'#24242a',a:'#8a8f9e'},make:function(){
     return [ bladeMesh(6.4,0.7,0.4,km(0xc8ccd4)), kbox(6.4,0.7,0.4,km(0xc8ccd4),-1.6,1.05), kbox(0.8,2.6,0.5,km(0xa8acb4),1.2,0.52) ].concat(stdGrip(0x24242a,0x14141a,0x8a8f9e)); }},
-  emberfang:{name:'Ember Fang',tier:'epic',price:1600,icon:{b:'#ff7a2a',h:'#3a2018',a:'#ff8a3a'},make:function(){
+  emberfang:{name:'Ember Fang',tier:'epic',price:16000,icon:{b:'#ff7a2a',h:'#3a2018',a:'#ff8a3a'},make:function(){
     return [ bladeMesh(6.6,1.8,0.5,km(0x2a1a14)), kbox(6.6,0.34,0.56,km(0xff7a2a,0x8a2a00),-1.6,-0.9), kbox(1.2,1.2,0.5,km(0xff9a4a,0x8a3a00),-5.2,-0.1,Math.PI/4) ].concat(stdGrip(0x3a2018,0x241009,0xff8a3a)); }},
-  prism:{name:'Prism Edge',tier:'epic',price:1900,icon:{b:'#4ac86a',h:'#e8e2d0',a:'#ffffff'},make:function(){
+  prism:{name:'Prism Edge',tier:'epic',price:19000,icon:{b:'#4ac86a',h:'#e8e2d0',a:'#ffffff'},make:function(){
     return [ bladeMesh(6.6,0.4,0.5,km(0xff5a5a)), kbox(6.6,0.4,0.5,km(0xffd24a),-1.6,0.42), kbox(6.6,0.4,0.5,km(0x4ac86a),-1.6,0.84), kbox(6.6,0.4,0.5,km(0x4a9ad8),-1.6,-0.42), kbox(6.6,0.4,0.5,km(0xc56bf0),-1.6,-0.84), kbox(1.2,1.2,0.5,km(0xffffff),-5.2,0,Math.PI/4) ].concat(stdGrip(0xe8e2d0,0xb8b2a0,0xffffff)); }},
-  scythe:{name:'Moonlit Scythe',tier:'epic',price:2200,icon:{b:'#d8dce4',h:'#2a2a34',a:'#a8b0c0'},make:function(){
+  scythe:{name:'Moonlit Scythe',tier:'epic',price:22000,icon:{b:'#d8dce4',h:'#2a2a34',a:'#a8b0c0'},make:function(){
     return [ bladeMesh(6.0,1.4,0.46,km(0xd8dce4)), kbox(2.2,1.2,0.48,km(0xd8dce4),-4.3,0.9,0.5), kbox(6.0,0.26,0.5,km(0xffffff),-1.6,-0.72), kbox(1.0,1.0,0.46,km(0xe8ecf2),-4.9,0.2,Math.PI/4) ].concat(stdGrip(0x2a2a34,0x18181f,0xa8b0c0)); }},
   depthdiver:{name:'Depth Diver',tier:'trophy',price:-1,earn:'reach 150m in Endless Fall',icon:{b:'#2ad8c0',h:'#0e2a34',a:'#8de8ff'},make:function(){
     return [ bladeMesh(6.6,1.7,0.48,km(0x18a89a,0x063038)), kbox(6.6,0.3,0.54,km(0x2ad8c0,0x0a5a5a),-1.6,-0.85), kbox(0.5,0.5,0.6,km(0x8de8ff,0x2a7a8a),-3.8,0.5), kbox(0.5,0.5,0.6,km(0x8de8ff,0x2a7a8a),-1.2,-0.5), kbox(1.2,1.2,0.48,km(0x5ae8d8,0x0a5a5a),-5.2,-0.1,Math.PI/4) ].concat(stdGrip(0x0e2a34,0x081a22,0x8de8ff)); }},
@@ -1049,15 +1049,15 @@ var SKINS={
   groundskeeper:{name:"Groundskeeper's Spade",tier:'trophy',price:-1,earn:'cut 100 slabs in Free Fall',icon:{b:'#8a9078',h:'#5c421e',a:'#c8b48a'},make:function(){
     return [ bladeMesh(5.0,2.4,0.55,km(0x8a9078)), kbox(5.0,0.3,0.6,km(0xc8d0b8),-1.6,-1.2), kbox(1.6,0.5,0.58,km(0x6e7460),-3.4,0.7), kbox(1.2,1.2,0.5,km(0x8a9078),-4.2,-0.2,Math.PI/4) ].concat(stdGrip(0x5c421e,0x3e2c12,0xc8b48a)); }},
   /* ── the third shelf (Part C, Astra's ten personalities, 2026-10-23) ──────────────
-     price:null = earned in the Forge once HE prices it, so it stays out of SKIN_ORDER (one line each to flip: a price
-     here and the key in the order). The two trophies are live. Tea Rex and Cosmic Custodian wait for the supporter
-     shelf (Part F, his call). */
-  socktopus:{name:'Socktopus',tier:'common',price:null,icon:{b:'#c8ccd4',h:'#7a4aa0',a:'#e8d8e0'},make:function(){ return chefRig(0xc8ccd4,0xeef2f8,0xc8ccd4,0x7a4aa0,0x9ab08a,0xe8d8e0); }},
-  butterbuddy:{name:'Butter Buddy',tier:'common',price:null,icon:{b:'#d8dce4',h:'#f2d66a',a:'#e8b46a'},make:function(){ return chefRig(0xd8dce4,0xf4f6fa,0xd8dce4,0xf2d66a,0xe0c050,0xe8b46a); }},
-  spatulot:{name:'Sir Spatulot',tier:'rare',price:null,icon:{b:'#b8bcc4',h:'#24305e',a:'#a8acb4'},make:function(){ return chefRig(0xb8bcc4,0xe4e8ee,0xb8bcc4,0x24305e,0x18204a,0xa8acb4); }},
-  pencil:{name:'Pencil Pusher',tier:'rare',price:null,icon:{b:'#b8bcc4',h:'#f2b42a',a:'#f08a9a'},make:function(){ return chefRig(0xb8bcc4,0xe4e8ee,0xb8bcc4,0xf2b42a,0xa8acb4,0xf08a9a); }},
-  discopickle:{name:'Disco Pickle',tier:'epic',price:null,icon:{b:'#d8dce8',h:'#5a8a2a',a:'#d8a437'},make:function(){ return chefRig(0xd8dce8,0xffffff,0xd8dce8,0x5a8a2a,0x3e6a1a,0xd8a437); }},
-  croissant:{name:'Cloud Croissant',tier:'epic',price:null,icon:{b:'#e8e4dc',h:'#f4f0ea',a:'#d8a437'},make:function(){ return chefRig(0xe8e4dc,0xfff8ec,0xe8e4dc,0xf4f0ea,0xd8a437,0xd8a437); }},
+     Priced 24 Oct with the whole shelf (his call: "prices need to be so much higher ... it needs to be balanced"; see
+     slivPayout) and on the shelf. The two trophies are live. Tea Rex and Cosmic Custodian wait for the supporter shelf
+     (Part F, his call). */
+  socktopus:{name:'Socktopus',tier:'common',price:2200,icon:{b:'#c8ccd4',h:'#7a4aa0',a:'#e8d8e0'},make:function(){ return chefRig(0xc8ccd4,0xeef2f8,0xc8ccd4,0x7a4aa0,0x9ab08a,0xe8d8e0); }},
+  butterbuddy:{name:'Butter Buddy',tier:'common',price:2600,icon:{b:'#d8dce4',h:'#f2d66a',a:'#e8b46a'},make:function(){ return chefRig(0xd8dce4,0xf4f6fa,0xd8dce4,0xf2d66a,0xe0c050,0xe8b46a); }},
+  spatulot:{name:'Sir Spatulot',tier:'rare',price:7200,icon:{b:'#b8bcc4',h:'#24305e',a:'#a8acb4'},make:function(){ return chefRig(0xb8bcc4,0xe4e8ee,0xb8bcc4,0x24305e,0x18204a,0xa8acb4); }},
+  pencil:{name:'Pencil Pusher',tier:'rare',price:6400,icon:{b:'#b8bcc4',h:'#f2b42a',a:'#f08a9a'},make:function(){ return chefRig(0xb8bcc4,0xe4e8ee,0xb8bcc4,0xf2b42a,0xa8acb4,0xf08a9a); }},
+  discopickle:{name:'Disco Pickle',tier:'epic',price:17500,icon:{b:'#d8dce8',h:'#5a8a2a',a:'#d8a437'},make:function(){ return chefRig(0xd8dce8,0xffffff,0xd8dce8,0x5a8a2a,0x3e6a1a,0xd8a437); }},
+  croissant:{name:'Cloud Croissant',tier:'epic',price:20000,icon:{b:'#e8e4dc',h:'#f4f0ea',a:'#d8a437'},make:function(){ return chefRig(0xe8e4dc,0xfff8ec,0xe8e4dc,0xf4f0ea,0xd8a437,0xd8a437); }},
   rubberduke:{name:'Rubber Duke',tier:'trophy',price:-1,earn:'3 clean Deep Tide dives',earnLong:'3 clean dives in Deep Tide (Freefall 31 to 35)',icon:{b:'#c8ccd4',h:'#f2c42a',a:'#f08a2a'},make:function(){ return chefRig(0xc8ccd4,0xeef2f8,0xc8ccd4,0xf2c42a,0xd8a020,0xf08a2a); }},
   boomerang:{name:'Banana Boomerang',tier:'trophy',price:-1,earn:'12 bounces in one Journey level',earnLong:'12 handle bounces off the wall in one Journey level',icon:{b:'#b8bcc4',h:'#f2c42a',a:'#e8d07a'},make:function(){ return chefRig(0xb8bcc4,0xe4e8ee,0xb8bcc4,0xf2c42a,0xd8a020,0x9a9ea8); }},
   tearex:{name:'Tea Rex',tier:'support',price:-2,premium:true,icon:{b:'#d8dce4',h:'#8ac8a8',a:'#d8a437'},make:function(){ return chefRig(0xd8dce4,0xf4f6fa,0xd8dce4,0x8ac8a8,0x6aa888,0xd8a437); }},
@@ -1082,7 +1082,7 @@ var SKIN_STORY={ classic:'The first good flip starts here.', cleaver:'Heavy on l
   rubberduke:'A noble reward for a wonderfully tidy dive.', boomerang:'Keeps coming back to the point.',
   tearex:'Short arms, impeccable tea manners.', custodian:'Someone has to sweep up all those stars.' };
 (function(){ for(var k in SKIN_STORY)if(SKIN_STORY.hasOwnProperty(k)&&SKINS[k])SKINS[k].story=SKIN_STORY[k]; })();
-var SKIN_ORDER=['classic','cleaver','paintbrush','bamboo','trowel','quill','katana','crystal','obsidian','icicle','tuningfork','gold','emberfang','prism','scythe','cosmicedge','wallbreaker','depthdiver','conductor','groundskeeper','rubberduke','boomerang','starforge','wolffang'];
+var SKIN_ORDER=['classic','cleaver','paintbrush','bamboo','trowel','quill','socktopus','butterbuddy','katana','crystal','obsidian','icicle','tuningfork','spatulot','pencil','gold','emberfang','prism','scythe','discopickle','croissant','cosmicedge','wallbreaker','depthdiver','conductor','groundskeeper','rubberduke','boomerang','starforge','wolffang'];
 /* ⛔ one door for every trophy, because a trophy granted INVISIBLY is a bug we
    already shipped once (Cosmic Edge, fixed v5.3). grantTrophy returns the name
    to print, or an empty string, so the caller cannot forget to say so. */
@@ -3742,9 +3742,17 @@ window.addEventListener('blur', dropHeld);
 document.addEventListener('visibilitychange', function(){ dropHeld(); lastTs=0; ACC=0; });
 
 /* ---------- finish ---------- */
+/* 24 Oct (his call: "i was basically able to play a few games and then unlock everything ... it needs to be balanced").
+   Measured (tools/slice-3d-tests/f4/earn.js, the near human controller on the real build): a good numbered dive scores
+   45,000 to 155,000 (combos times the landing), so score/45 paid 1,000 to 3,500 Slivers a dive, 2,400 to 4,500 a minute,
+   and the whole shelf (12,060) cost about twelve dives; a Journey level paid a twentieth of that a minute. The square root
+   keeps a better run paying more while every mode lands near one rate: 180 to 270 a minute for a good diver at every
+   level, a good Journey run 70 to 95. Endless pays one per 8 m (it paid one per 4 m with no end to the fall). Prices
+   were raised to match: a first common knife in about ten minutes of good play, the whole priced shelf in about 14 hours */
+var SLIV_K=0.5;
 function slivPayout(){
-  var base=Math.round(G.score/45);
-  if(G.endless) base+=Math.round((G.depth||0)/4);
+  var base=Math.round(Math.sqrt(Math.max(0,G.score||0))*SLIV_K);
+  if(G.endless) base+=Math.round((G.depth||0)/8);
   else if((G.chips||0)===0 && !G.failed) base+=30;
   return Math.max(G.failed?6:15, base)+(G.slivBonus||0);   /* Part D: Wall Climb's banners, banked with the run */
 }
@@ -3759,7 +3767,7 @@ function awardSlivers(){
   var n=slivPayout();
   PROG.settled.push(G.runId); STL_NEW.push(G.runId); saveProg();
   SLIV+=n; saveSliv(); G.slivPaid=n;
-  var e=$('t-sliv'); if(e)e.textContent=SLIV; return n;
+  var e=$('t-sliv'); if(e)e.textContent=SLIV.toLocaleString(); return n;
 }
 /* the run-agnostic trophies, checked once wherever a run ends. Returns the
    suffix to append to the end panel so nothing is ever granted in silence. */
@@ -4002,7 +4010,7 @@ function drawSkinIcon(sk,cvs){
 }
 function popupForge(msg){ var t=$('forge-toast'); if(!t)return; t.textContent=msg; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); },1400); }
 function renderForge(){
-  var b=$('forge-bal'); if(b)b.textContent=SLIV;
+  var b=$('forge-bal'); if(b)b.textContent=SLIV.toLocaleString();
   var wrap=$('forge-grid'); if(!wrap)return; wrap.innerHTML='';
   if(!FSEL||!SKINS[FSEL])FSEL=SKN.equip;
   for(var i=0;i<SKIN_ORDER.length;i++){ (function(key){
@@ -4022,7 +4030,7 @@ function renderForge(){
     else if(owned){ st.textContent='Owned'; st.style.color=''; }
     else if(sk.premium){ st.textContent='Support the Studio'; st.style.color='#f2a8d8'; }
     else if(sk.price<0){ st.textContent=sk.earn||'Locked'; st.style.color='#8de8ff'; }
-    else { st.innerHTML=slivIcon()+' '+(sk.price|0); st.style.color=(SLIV>=sk.price)?'#8fe08a':'#c98a8a'; }
+    else { st.innerHTML=slivIcon()+' '+(sk.price|0).toLocaleString(); st.style.color=(SLIV>=sk.price)?'#8fe08a':'#c98a8a'; }
     card.appendChild(st);
     card.onclick=function(){ forgeSelect(key); };   /* a tap chooses; only the button under the preview spends */
     wrap.appendChild(card);
@@ -4053,10 +4061,10 @@ function pvInfo(){
   else if(ownsSkin(key)){ act.textContent='Equip'; }
   else if(sk.premium){ act.style.display='none'; rule.textContent='Support the Studio'; rule.style.color='#f2a8d8'; }
   else if(!(sk.price>0)){ act.style.display='none'; rule.textContent='Earn it: '+earnRule(key, sk); }   /* the card has room for the short rule, the preview for the whole one */
-  else { act.innerHTML='Unlock '+slivIcon()+' '+(sk.price|0);
+  else { act.innerHTML='Unlock '+slivIcon()+' '+(sk.price|0).toLocaleString();
     if(SLIV<sk.price){ rule.textContent=needSliv(sk.price-SLIV); rule.style.color='#c98a8a'; } }
 }
-function needSliv(n){ return 'Need '+n+' more sliver'+(n===1?'':'s'); }
+function needSliv(n){ return 'Need '+n.toLocaleString()+' more sliver'+(n===1?'':'s'); }
 /* Deep Tide comes round every 40 dives (levels 31 to 35, 71 to 75 ...) and a dive is only ever your next one: name the
    band this player can still reach */
 function earnRule(key, sk){
@@ -4288,7 +4296,7 @@ if(/[?&]dev=1/.test(location.search)){
 })();
 
 /* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=75'); }catch(e){} }
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=76'); }catch(e){} }
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the
