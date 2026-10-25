@@ -1,5 +1,12 @@
 # BUILD ORDER, 25 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT25.md"
 
+> **STATE 25 Oct 14:45 UTC (Fable).** Lap 1 is LIVE and proven: Tally Parts 0, 1 and 2 (t2), Shell Shuffle Parts 0 and 1 (v1.2),
+> plus a Grove Chess engine fix (pawn attacks read backwards, perft proven). Super Slice Part H is built and HELD on its branch
+> (frame time, his call). **Lap 2 order:** Shell Shuffle Part 2 (v1.3) then Part 3 (v1.4); Tally Parts 3 and 4; then chess once he
+> has ruled on the stamp loop and dropped the first pack. Read the top of `START-HERE.md` first: the 25 Oct entries hold the proofs,
+> the gate tools that changed (`tools/tally-tests/worlds.mjs` measures the text's own line box and a bare strip of plate), and his
+> open calls (the Tally orb number on light skins, Super Slice H, the chess stamp loop, underpromotion).
+
 You are Opus, the Lead Developer, in a fresh session after a codespace restart. Stephen is the Director. Read this page,
 then the plan it points you at, then build. ONE GAME AT A TIME, each part its own deploy, each deploy proven and looked
 at before the next part. Never ask whether to deploy: closed green work goes live, then you tell him.
