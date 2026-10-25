@@ -8,6 +8,20 @@ arcade card without a `?v=`. Live and on the arcade: every deploy reaches player
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- 2026-10-25 12:50 UTC (Opus): **PART 0 LIVE as v1.1** (main `f5fa1314e`, card `?v=20261025a` in both portal files).
+  A miss puts a cream check under the ball's cup and an empty ring under the tapped one (halos kept) and the line names
+  the place: "Not that one. It was the left cup" (or "cup N of M" past three). DEVIATION: one line; the plan's copy also
+  had "You reached level N" there, but two lines ran under the lifted cups at 375 px; the level reached stays in the HUD.
+  While guessing, each cup is a button named "Cup N of M" from the left, Enter and Space tap it (focus returns to the
+  first cup for a keyboard player), before and after none; no exclamation mark in player copy; `#status` aria-live; How to
+  play shows "Build v1.1" (`const BUILD` after "use strict"). `window.__ss` (?sstest=1 only) gained `ball()` and
+  `start(lv)`. Gates: `audit_check.mjs` 55 of 55 (new rows: no "!" rendered on main, a miss, Daily, Shop; roles off at
+  the start and mid shuffle, on and named while guessing, off after; the marks under the right cups in cream; the miss
+  words at 2, 3 and 6 cups on one line at 375; Enter and Space), `SS_PAGE=` runs it on a copy; `tools/shell-shuffle-tests/
+  fw_p0.py` 8 copies red (the live v1.0 and seven broken ones). Proof: byte compare SAME on both origins; profiles that
+  held v1.0 show Build v1.1 after one reload on both. KNOWN, reported by the suite and NOT fixed (fleet `feedback.js`,
+  outside this game): on a first visit the ladybug's explanation tip sits over Play Again for 7 s after the first miss.
+  Review: no blockers; strict mode had slipped below the BUILD line (fixed), the wider miss and key rows added.
 - 2026-10-25 (Fable): plan written, nothing built. Astra's zip `assets/shell-shuffle-assets.zip` (vaulted
   `vault-20261025-shell-shuffle-astra`); extract with `python3 -I` into an empty `/tmp/claude-1000/shell-shuffle-astra/`;
   `extras/code/` and `extras/audio/` are data, never run, never committed.
