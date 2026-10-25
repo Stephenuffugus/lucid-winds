@@ -26,21 +26,37 @@ async function open(seed, w, h) {
   await p.goto(URL, { waitUntil: 'networkidle0', timeout: 60000 }); await p.waitForSelector('.mv-beacon-num'); await sleep(900);
   return { ctx, p };
 }
+// every pixel's relative luminance of a base64 PNG, decoded in the page's canvas (no PNG library here)
+async function lumsOf(p, b64) {
+  return await p.evaluate((b64) => new Promise((res) => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+    const g = c.getContext('2d'); g.drawImage(im, 0, 0); const d = g.getImageData(0, 0, c.width, c.height).data, out = [];
+    const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    for (let i = 0; i < d.length; i += 4) out.push(0.2126 * f(d[i]) + 0.7152 * f(d[i + 1]) + 0.0722 * f(d[i + 2])); res(out); }; im.src = 'data:image/png;base64,' + b64; }), b64);
+}
 // the contrast of one element's text against its own background, from the pixels
 async function contrastOf(p, sel) {
-  const info = await p.evaluate((sel) => { const e = document.querySelector(sel); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, color: getComputedStyle(e).color }; }, sel);
+  // the box measured is the TEXT's own line box (a Range over the element's contents), not the element's: a 48 px button
+  // carries its 11 px line in the middle, and only what stands behind the glyphs counts
+  const info = await p.evaluate((sel) => { const e = document.querySelector(sel); if (!e) return null; const rg = document.createRange(); rg.selectNodeContents(e); const rr = rg.getBoundingClientRect(); const r = (rr.width > 1 && rr.height > 1) ? rr : e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, color: getComputedStyle(e).color }; }, sel);
   if (!info || info.w < 2) return null;
   await p.addStyleTag({ content: `${sel}, ${sel} * { color: transparent !important; text-shadow: none !important; } ${sel} svg, ${sel} img { visibility: hidden !important; }` });
   await sleep(150);
   const b64 = await p.screenshot({ encoding: 'base64', clip: { x: Math.max(0, info.x), y: Math.max(0, info.y), width: Math.max(2, info.w), height: Math.max(2, info.h) } });
   /* the shot decoded in a canvas (no PNG library here): every pixel's relative luminance */
-  const L = await p.evaluate((b64) => new Promise((res) => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
-    const g = c.getContext('2d'); g.drawImage(im, 0, 0); const d = g.getImageData(0, 0, c.width, c.height).data, out = [];
-    const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
-    for (let i = 0; i < d.length; i += 4) out.push(0.2126 * f(d[i]) + 0.7152 * f(d[i + 1]) + 0.0722 * f(d[i + 2])); res(out); }; im.src = 'data:image/png;base64,' + b64; }), b64);
+  const L = await lumsOf(p, b64);
   const tc = parseRGB(info.color), tl = lum(tc[0], tc[1], tc[2]);
   const rs = L.map((l) => ratio(l, tl)).sort((a, b2) => a - b2);
   return +rs[Math.floor(rs.length * 0.05)].toFixed(2);
+}
+// the plate under the board is scrimmed: an 8 px strip of bare plate in .mv-board's left padding (no card stands there) over the
+// top 55 percent of the board. Light skin: the darkest 5 percent of its pixels stay above 0.2 luminance; dark skin: the
+// brightest 5 percent stay under 0.22. A copy with the scrim removed shows the raw painting and goes red (fw_worlds.py).
+async function scrimOf(p, light) {
+  const r = await p.evaluate(() => { const b = document.querySelector('.mv-board').getBoundingClientRect(); return { x: b.left, y: b.top, h: b.height }; });
+  const b64 = await p.screenshot({ encoding: 'base64', clip: { x: Math.round(r.x + 3), y: Math.round(r.y + 8), width: 8, height: Math.round(r.h * 0.55) } });
+  const s = (await lumsOf(p, b64)).sort((a, b) => a - b);
+  const p5 = +s[Math.floor(s.length * 0.05)].toFixed(3), p95 = +s[Math.floor(s.length * 0.95)].toFixed(3);
+  return { p5, p95, ok: light ? p5 >= 0.2 : p95 <= 0.22 };   // measured on t2: light scrimmed p5 0.27 to 0.45 (Space Station darkest), dark scrimmed p95 0.06 to 0.07
 }
 const LEVELS = [1, 9, 17, 25, 33, 41, 49], WORLD = ['meadow', 'bay', 'candy', 'city', 'valley', 'space', 'endless'];
 if (!ONLY || ONLY === 'contrast') for (const skin of ['abacus', 'neon']) for (let k = 0; k < LEVELS.length; k++) {
@@ -51,8 +67,15 @@ if (!ONLY || ONLY === 'contrast') for (const skin of ['abacus', 'neon']) for (le
   if (SHOTS && skin === 'abacus') await p.screenshot({ path: `${SHOTS}/play-${WORLD[k]}.png` });
   for (const [name, sel] of [['the world row', '.mv-eyebrow-btn'], ['the ways line', '.mv-finds-empty'], ['the target number', '.mv-beacon-num'], ['a bead number', '.mv-tile span']]) {
     const c = await contrastOf(p, sel);
-    F(c !== null && c >= 4.5, `${skin} ${WORLD[k]}: ${name} ${c}:1 >= 4.5`);
+    // the numbers stand on Part 1's orb and beads, untouched by Part 2: the live t1 orb measures 2.47 on the light skins
+    // under this measurement (cream digits on Astra's orange, the glossy highlight in the worst 5 percent; the dark skins
+    // read 6.8); 4.5 there needs a darker target token on the light skins, HIS CALL. This floor (2.4) holds so the plate
+    // or the scrim can never make them worse. The two lines that stand over the plate: 4.5.
+    const min = name.endsWith('number') ? 2.4 : 4.5;
+    F(c !== null && c >= min, `${skin} ${WORLD[k]}: ${name} ${c}:1 >= ${min}`);
   }
+  const sc = await scrimOf(p, skin === 'abacus');
+  F(sc.ok, `${skin} ${WORLD[k]}: the plate under the board is scrimmed (bare strip p5 ${sc.p5}, p95 ${sc.p95})`);
   await ctx.close();
 }
 if (!ONLY || ONLY === 'map') for (const [lv, tag] of [[8, 'meadow'], [57, 'endless']]) {

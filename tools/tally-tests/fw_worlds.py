@@ -4,7 +4,8 @@ python3 -I tools/tally-tests/fw_worlds.py <dist dir>   (serves each copy on 8779
 import glob, os, shutil, subprocess, sys, time
 DIST = sys.argv[1]
 M = [
- ("the scrim removed (the plate bare under the text)", [('"color-mix(in srgb, var(--bg) "+(', '"transparent"||(')]   # the minified form: the scrim becomes transparent, "contrast", "space"),
+ # the minified form: the scrim becomes transparent; the scrim strip check must go red on Space Station (the darkest plate)
+ ("the scrim removed (the plate bare under the board)", [('"color-mix(in srgb, var(--bg) "+(', '"transparent"||(')], "contrast", "space: the plate under the board is scrimmed"),
  ("the map buttons 40 px", [(".mv-lvl { position: absolute; width: 56px; height: 56px;", ".mv-lvl { position: absolute; width: 40px; height: 40px;")], "map", "48 or more"),
 ]
 ok = True
