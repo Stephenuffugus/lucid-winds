@@ -10,11 +10,11 @@ const G = {
     GLOWDT: { want: 'chain glow 1 after 16 ms', muts: [['f.chainGlow=Math.max(0,f.chainGlow-dt/1000*1.1);', 'f.chainGlow=Math.max(0,f.chainGlow-dt*1.1);']] },
     ALLBONUS: { want: 'All Clear bonus survives', muts: [['if(f.allBonus&&R.chain>0){', 'if(f.allBonus){']] },
     CANCEL: { want: 'cancelled 10 px, 100 ms touch', muts: [["cv.addEventListener('pointercancel',dragCancel,{passive:false});", "cv.addEventListener('pointercancel',dragEnd,{passive:false});"]] },
-    LOCKDRAG: { want: 'lock in the middle of a soft drop', muts: [['  if(f===MATCH.pf&&dragSt){ if(dragSt.soft)f.softHold=false; dragSt=null; }', '']] },
+    LOCKDRAG: { want: 'lock in the middle of a soft drop', muts: [["  if(f===MATCH.pf){ dragSt=null; softSet('drag',false); }", '']] },   /* v1.9's lock line */
     REPEAT: { want: 'held arrow moves at once', muts: [['var REP_FAST={first:105, every:33}', 'var REP_FAST={first:138, every:33}']] },   /* v1.9: the one scheduler (v1.7 mutated hold()) */
     BACKLOG: { want: 'starting a soft drop drops at most one row', muts: [['      if(f.gravAcc>g)f.gravAcc=g;', '']] },
     CLAMPAFTER: { want: 'falls a row every 40 ms', muts: [['      if(f.gravAcc>g)f.gravAcc=g;', '      f.gravAcc+=dt; if(f.gravAcc>g)f.gravAcc=g; f.gravAcc-=dt;'], ['      f.gravAcc+=dt;\n      while(f.gravAcc>=g)', '      f.gravAcc+=dt; if(f.gravAcc>g)f.gravAcc=g;\n      while(f.gravAcc>=g)']] },
-    FLOATFIT: { want: 'banner fits the board', muts: [["var punch=Math.min(1,Math.max(0,fl.life-0.82)/0.18);", "var punch=Math.max(0,fl.life-0.82)/0.18;"], ["if(mw>lim){ fs=Math.max(10,Math.floor(fs*lim/mw)); ctx.font='italic 800 '+fs+'px system-ui'; }", ""]] },
+    FLOATFIT: { want: 'banner fits the board', muts: [["var punch=CALM?0:Math.min(1,Math.max(0,fl.life-0.82)/0.18);", "var punch=CALM?0:Math.max(0,fl.life-0.82)/0.18;"], ["if(mw>lim){ fs=Math.max(lab(10),Math.floor(fs*lim/mw)); ctx.font='italic 800 '+fs+'px system-ui'; }", ""]] },
   },
   p1: {
     JOINANY: { want: 'joins are exactly', muts: [['if(r2>=ROWS||c2>=COLS||f.grid[r2][c2]!==v)continue;', 'if(r2>=ROWS||c2>=COLS||!f.grid[r2][c2])continue;']] },
@@ -28,7 +28,7 @@ const G = {
     RAILIDLE: { want: 'chain of 5 plays the dance once', muts: [['    else if(RAIL.chain)return CALM?D.frames[0]:D.frames[5]; }', '    }']] },   /* v1.11: RAIL_RM became CALM */
     NEXTCLEAR: { want: 'opening is near black', muts: [["var apw=nw.aperture[2]*nws, aph=nw.aperture[3]*nws; ctx.fillStyle='#161207'; rr(ncx-apw/2, ncy-aph/2, apw, aph, 6); ctx.fill();", '']] },
     METER369: { want: 'right neon line shows', muts: [['    var mx=374, mw=6, mh=VISROWS*PF.cell, my=PF.y;', '    var mx=369, mw=7, mh=VISROWS*PF.cell, my=PF.y;']] },
-    PENDTOP: { want: 'incoming Chaff rows sit above', muts: [['var pw=f.pending, bx=mini?440:206, by=mini?F.y-51:66,', 'var pw=f.pending, bx=F.x, by=F.y-(mini?16:26),']] },   /* v1.10's queue line */
+    PENDTOP: { want: 'incoming Chaff rows sit above', muts: [['  var fs=mini?lab(10):lab(18), bx=mini?388:Math.max(206, 66+HUD.w+16), base=mini?280+Math.round(lab(10)*0.95)+Math.round(lab(10)*1.25):82, pw=f.pending;', '  var fs=mini?lab(10):lab(18), bx=F.x, base=F.y+(mini?8:20), pw=f.pending;']] },   /* v1.11's queue line: onto the frames */
     SLICE: { want: 'corner speaker draws at one scale', muts: [['F===PF?0.4:0.5, fr.slice);', 'F===PF?0.4:0.5);']] },
     NORELEASE2: { want: 'only the Gnat King Cole', muts: [["function cwRelease(keepId){ var k; for(k in _cwCache)", "function cwRelease(keepId){ return; var k; for(k in _cwCache)"]] },
   },
@@ -44,23 +44,23 @@ const G = {
     NOCAP: { want: 'however it is moved it locks 650', muts: [['LAND_CAP=650,', 'LAND_CAP=99999,']] },
     FRESHEVERY: { want: 'never buys a fresh window', muts: [['if(L.age<0||low>L.low){ L.age=0; L.t=0; L.low=low; }', 'if(!L.on){ L.age=0; L.t=0; L.low=low; }']] },
     NOINTENT: { want: 'a 50 px drag down with 30 px of wobble moves no column', muts: [["if(ax>=ay*DRAG_RATIO)d.axis='h'; else if(ay>=ax*DRAG_RATIO)d.axis='v';", "if(true)d.axis='h'; else if(ay>=ax*DRAG_RATIO)d.axis='v';"]] },   /* a parsing copy: every drag commits sideways */
-    FLICKON: { want: 'a flick up drops nothing by default', muts: [['relaxed:false, flick:false, mirror:false };', 'relaxed:false, flick:true, mirror:false };']] },
+    FLICKON: { want: 'a flick up drops nothing by default', muts: [['relaxed:false, flick:false, mirror:false,', 'relaxed:false, flick:true, mirror:false,']] },
     BLURKEEP: { want: 'stops when the window loses focus', muts: [["window.addEventListener('blur',clearHolds); ", '']] },
     SMALLTRAY: { want: 'all six tray buttons are at least 56', muts: [['--sab:env(safe-area-inset-bottom,0px); --th:56px; }\nbody.bigctrl{ --th:64px; }', '--sab:env(safe-area-inset-bottom,0px); --th:44px; }\nbody.bigctrl{ --th:44px; }']] },
     FITOLD: { want: "board's frame foot is above the tray", muts: [["  if(curScreen==='s-play'&&tr){", "  if(false&&tr){"]] },
     NOGUARD: { want: 'ticks without a throw', muts: [['    else if(f.cur){ var g=f.softHold?', '    else { var g=f.softHold?']] },
     DROPCLICK: { want: 'DROP tapped while LEFT is held drops', muts: [["(function(){ var el=$('dropbtn'), pid=null, pair=null; if(!el)return;", "tap('dropbtn',function(){ if(playable()){ hap(16); hardDrop(pf()); } }); (function(){ var el=null, pid=null, pair=null; if(!el)return;"]] },
-    DROPANY: { want: 'never slams the next pair', muts: [['if(pair&&playable()&&pf().cur===pair){ hap(16); hardDrop(pf()); }', 'if(playable()){ hap(16); hardDrop(pf()); }']] },
+    DROPANY: { want: 'never slams the next pair', muts: [['if(near&&pair&&playable()&&pf().cur===pair){ hap(16); hardDrop(pf()); }', 'if(near&&playable()){ hap(16); hardDrop(pf()); }']] },
     KEEPCAPTURE: { want: 'a thumb that slides off SOFT lets go', muts: [['pid=e.pointerId; if(roll)TRAY_TOUCH[e.pointerId]=1; try{ el.releasePointerCapture(e.pointerId); }catch(err){} down(); }', 'pid=e.pointerId; if(roll)TRAY_TOUCH[e.pointerId]=1; down(); }']] },
     NOROLL: { want: 'one rolled from LEFT onto SOFT', muts: [["if(roll)el.addEventListener('pointerenter',", "if(false)el.addEventListener('pointerenter',"]] },
     DOUBLEPRESS: { want: 'LEFT and RIGHT taps move exactly one column', muts: [['if(pid===null&&TRAY_TOUCH[e.pointerId])press(e);', 'if(pid===null&&e.buttons)press(e);']] },
     FLAT300: { want: 'on a slow stage', muts: [['  var w=Math.max(LAND_MS,f.gravMs);', '  var w=LAND_MS;']] },
     KEYREPEAT: { want: 'an arrow key held through the count', muts: [["document.addEventListener('keydown',function(e){ if(curScreen!=='s-play')return; var k=e.key;", "document.addEventListener('keydown',function(e){ if(curScreen!=='s-play'||MATCH.phase!=='fight')return; var k=e.key;"], ['if(!(sd<0?INP.l:INP.r))repPress(sd);', 'if(!e.repeat)repPress(sd);']] },
     BIG64: { want: 'the tray rows are 56 px by default', muts: [['var SET={ sound:true, ghost:true, bigTray:false,', 'var SET={ sound:true, ghost:true, bigTray:true,']] },
-    OLDKEY: { want: 'a v1.8 player\'s saved settings', muts: [["wireToggle('tg-big','bigTray');", "wireToggle('tg-big','bigTray'); SET.bigTray=(function(){ try{ return JSON.parse(LS.g('cw_set')||'{}').big!==false; }catch(e){ return false; } })(); applyBig();"]] },
+    OLDKEY: { want: 'a v1.8 player\'s saved settings', muts: [["wireToggle('tg-big','bigTray',applyBig);", "wireToggle('tg-big','bigTray',applyBig); SET.bigTray=(function(){ try{ return JSON.parse(LS.g('cw_set')||'{}').big!==false; }catch(e){ return false; } })(); applyBig();"]] },
     ROTROLL: { want: 'a ROTATE tap that drifts up onto SOFT', muts: [['pid=e.pointerId; if(roll)TRAY_TOUCH[e.pointerId]=1;', 'pid=e.pointerId; TRAY_TOUCH[e.pointerId]=1;']] },
     DROPSLIP: { want: 'a DROP that slips 10 px past its edge', muts: [['var b=el.getBoundingClientRect(), near=e.clientX>=b.left-16&&e.clientX<=b.right+16&&e.clientY>=b.top-16&&e.clientY<=b.bottom+16;', 'var b=el.getBoundingClientRect(), near=e.clientX>=b.left&&e.clientX<=b.right&&e.clientY>=b.top&&e.clientY<=b.bottom;']] },
-    NOSOFT: { want: 'a held SOFT drops the pair fast', muts: [["holdBtn('c-down',function(){ hap(6); softSet('btn',true); },function(){ softSet('btn',false); });", '']] },
+    NOSOFT: { want: 'a held SOFT drops the pair fast', muts: [["holdBtn('c-down',function(){ hap(6); softSet('btn',true); },function(){ softSet('btn',false); },true);", '']] },
   },
   p2b: {
     GUIDEUNIT: { want: 'the landing guide marks exactly', muts: [['  return [{r:colTop(f.grid,cur.c),c:cur.c,col:cur.c1,pivot:true},{r:colTop(f.grid,p.c),c:p.c,col:cur.c2}]; }', '  t=Math.min(colTop(f.grid,cur.c),colTop(f.grid,p.c)); return [{r:t,c:cur.c,col:cur.c1,pivot:true},{r:t,c:p.c,col:cur.c2}]; }']] },
@@ -79,9 +79,9 @@ const G = {
     NOCOUNT: { want: 'a hidden Campaign match stays exactly', muts: [['    if(MATCH.resumeT>=700){ MATCH.resumeT=0; MATCH.count--;', '    if(MATCH.resumeT>=0){ MATCH.resumeT=0; MATCH.count=0;']] },
   },
   p3a: {
-    FONTSMALL: { want: 'every line of copy on every screen', muts: [['--fs:calc(max(18px, calc(12px * var(--k))) * var(--tx));', '--fs:calc(15px * var(--tx));']] },
-    HITSMALL: { want: 'every line of copy on every screen', muts: [['--hit:max(72px, calc(48px * var(--k)));', '--hit:60px;']] },
-    ROWSMALL: { want: 'every line of copy on every screen', muts: [['--row:max(84px, calc(56px * var(--k)))}', '--row:66px}']] },
+    FONTSMALL: { want: 'every line of copy on every screen', muts: [['  #stage{--fs:calc(max(18px, calc(12px * var(--k))) * var(--tx));', '  #stage{--fs:calc(15px * var(--tx));']] },
+    HITSMALL: { want: 'every line of copy on every screen', muts: [[' --hit:max(72px, calc(48px * var(--k)));', ' --hit:60px;']] },
+    ROWSMALL: { want: 'every line of copy on every screen', muts: [[' --row:max(84px, calc(56px * var(--k)))}', ' --row:66px}']] },
     ROWNOTTARGET: { want: 'a real tap on a settings row', muts: [["  row.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key];", "  el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key];"]] },
     CALMSHAKE: { want: 'the screen shakes by default', muts: [['function shake(a,ms){ if(CALM||!SET.shake)return;', 'function shake(a,ms){ if(false)return;']] },
     NOHAPGATE: { want: 'Vibration off stops every buzz', muts: [['function hap(ms){ if(SET.haptics&&navigator.vibrate){', 'function hap(ms){ if(navigator.vibrate){']] },
@@ -95,7 +95,18 @@ const G = {
     ROWROLE: { want: 'a settings row is a switch', muts: [["var row=el.parentNode; row.setAttribute('role','switch'); rowKeys(row);", 'var row=el.parentNode;']] },
     BEATWORDS: { want: 'the 80s beat button says what a tap does', muts: [["b.textContent=B.on?'\\u266B Stop beat':'\\u266B Play beat'; ", '']] },
     CALMCLASS: { want: 'Reduce motion cycles to On', muts: [["if(CALM)B.add('calm'); else B.remove('calm');", '']] },
-    BIGTEXTVAR: { want: 'Larger text grows the copy', muts: [['body.bigtext #stage{--tx:1.25}', '']] },
+    BIGTEXTVAR: { want: 'Larger text grows the copy', muts: [['body.bigtext #stage{--tx:1.25; --fs:22.5px}', 'body.bigtext #stage{--fs:22.5px}']] },
+  },
+  p3b: {
+    LABFLOOR: { want: 'every canvas text in a live match', muts: [['function lab(d){ return Math.round(Math.max(d, Math.ceil(12/STAGE_S))*(SET.bigText?1.25:1)); }', 'function lab(d){ return d; }']] },
+    LOCKX: { want: 'no two HUD labels overlap', muts: [["var lockX=66+ctx.measureText('POP N ').width;", 'var lockX=122;']] },
+    HEADERFIXED: { want: 'no two HUD labels overlap', muts: [["ctx.fillText('YOUR PLOT', 66, ypY);", "ctx.fillText('YOUR PLOT', 66, 72);"]] },
+    RIVALPILE: { want: 'no two HUD labels overlap', muts: [['ctx.fillText((MATCH.of.score).toLocaleString(),530,ry1);', 'ctx.fillText((MATCH.of.score).toLocaleString(),400,ry1);']] },
+    HYPETEXT: { want: 'the HYPE readout names its tier', muts: [['    ctx.fillStyle=(ht===0?\'#9a9078\':htc); ctx.fillText(HYPE_TIERS[ht][1], 390, hpY+hpH-22);', '']] },
+    NOX: { want: 'the HYPE readout names its tier', muts: [['  if(f.flashDanger>0||(CALM&&dangerNow(f))){ var dc=cellPx(F,1,SPAWN_COL),', '  if(false){ var dc=cellPx(F,1,SPAWN_COL),']] },
+    FLOATSMALL: { want: 'every canvas text in a live match', muts: [['  var fs=(F===PF?Math.max(28,lab(16)+8):lab(14));', '  var fs=(F===PF?Math.max(28,lab(16)+8):14);'], ['fs=Math.max(lab(10),Math.floor(fs*lim/mw));', 'fs=Math.max(10,Math.floor(fs*lim/mw));']] },
+    OVERLAYSMALL: { want: 'the intro card, the countdown and the outro', muts: [["    ctx.fillStyle='#f0e9d8'; ctx.font='italic '+lab(16)+'px system-ui'; wrapText('\"'+ist.taunt+'\"'", "    ctx.fillStyle='#f0e9d8'; ctx.font='italic 16px system-ui'; wrapText('\"'+ist.taunt+'\"'"]] },
+    ROWWRAP: { want: 'at 200 percent text no menu row', muts: [['.row{display:flex; flex-wrap:wrap; gap:12px; width:100%}', '.row{display:flex; gap:12px; width:100%}'], ['.row>.btn{flex:1 1 auto}', '.row>.btn{flex:1}']] },
   },
 };
 let bad = 0;
