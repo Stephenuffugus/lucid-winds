@@ -44,4 +44,4 @@ console.log(phase, origin, JSON.stringify({ ...r, build }), 'errs', JSON.stringi
 // stay open a moment, as a phone does: a stale-while-revalidate index refreshes in the background, and closing at once cuts it off
 await sleep(8000);
 await b.close();
-process.exit(want && build !== want ? 1 : 0);
+process.exit(want && build !== want && build !== 'Build ' + want ? 1 : 0);   // the line reads "Build t2"; "t2" or "Build t2" both prove it
