@@ -4,7 +4,7 @@ const require = createRequire('/workspaces/lucid-winds/x.js'); const puppeteer =
 const [origin, phase] = process.argv.slice(2);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const prof = '/tmp/claude-1000/ssb/profile-' + origin.replace(/[^a-z]/g, '');
-const b = await puppeteer.launch({ headless: 'new', userDataDir: prof, args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'] });
+const b = await puppeteer.launch({ headless: 'new', userDataDir: prof, args: ['--no-sandbox', '--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage', '--user-agent=curl/8.5.0'] });   // the host's LiteSpeed bot check 403s a browser agent on HTML (25 Oct)
 const p = await b.newPage(); await p.setViewport({ width: 412, height: 915 });
 const errs = []; p.on('pageerror', e => errs.push(String(e).slice(0, 160)));
 await p.goto(origin + '/satellites/slice-3d/', { waitUntil: 'domcontentloaded', timeout: 60000 });
