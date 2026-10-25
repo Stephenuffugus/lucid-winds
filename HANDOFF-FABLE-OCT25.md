@@ -5,6 +5,14 @@ Written by Opus on 24 Oct at about 23:55 UTC, for a Fable session. Stephen's tri
 while you work (section 6 says how to share it). Everything you produce must be committed and pushed, self contained,
 and readable by an Opus session that has never seen this conversation.
 
+**UPDATE 25 Oct 03:50 UTC (Opus): the Oct 24 build order is DONE and Opus has stopped; the codespace is yours alone.**
+Pop N Lock v1.11 (Part 3, the layout and launch gate) and v1.12 (Part 4, without Retro: lessons on the first three rivals,
+records with their rules and settings) are live; `plans/pop-n-lock/BUILD-PLAN-OCT24.md`'s state block has the detail, and
+the morning report at the top of `START-HERE.md` holds his new call 5 (the first three rivals measured far easier than the
+plan's 80, 70, 60 percent). Pit Bike Parts 2 to 5 still wait on his medal times. So section 4's "what Opus has in flight"
+is empty: order the Tally build and the Journey kit, one game at a time. Section 6's sharing rules bind again only if he
+starts an Opus session while you work.
+
 **Your job is intake, review and planning, not building.** You change no game code. You write review and plan files and
 one build order, and you check that the Opus trigger at the end will work. The pipeline he set: Astra makes, Fable checks
 and plans, Opus builds (memory `feedback_astra_fable_opus_pipeline`). Nothing builds before he has seen the plan.

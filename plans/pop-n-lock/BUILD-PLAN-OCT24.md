@@ -7,6 +7,24 @@ ruleset are done and were measured in July (memory `project_chaff_wars_jul19`); 
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- **2026-10-25 03:47 (Opus): PART 4 LIVE as v1.12, WITHOUT RETRO (his call)** (main `3626ffe42`, both origins proven from
+  old-worker profiles: v1.12 under sw.js?v=17, cache chaff-wars-v18; gate `p4_gate.mjs` 24, `fwrun.mjs p4` 19 broken
+  copies red, p3b 75, p3a 22, p2b 12, p2a 37, p1 13, p0 11; two review lenses found 2 faults, both fixed: Reset campaign
+  progress rebuilt PROG without the new keys and froze the next match; the cancel lesson named the NEXT pair, which can
+  never cancel). RECORDS: `recMeta` on a stage's first win (`PROG.recs[id]`) and a solo best (`PROG.recs.solo`): rules
+  ('standard', 'retro' only if RULES.classic), powers, input {rep, flick, mirror, big, guide}, the rival's {fall, q, react,
+  hcap, colors} or {mode}, BUILD, time; old clears get none. LESSONS (PNL-050): pop, chain, cancel on stages 1 to 3
+  (`LESSONS`, `lessonFor` skips a rival already beaten and the cancel under Retro, `lessonSeen` for the player only and
+  never in the dev sweep): the intro card (STAGE n · LESSON, held 4.8 s or to the tap; the text shrinks to stay above the
+  tray), the count, and the result after a loss ("Try this: ..."). The result screen's name and line paint above the
+  banner (the name on its own plate). MEASURED (PNL-053, `p4_measure.mjs`, 200 seeded matches a rival a profile, the July
+  reference player with its own gravity off, Math.random seeded; the table reproduces): July yardstick (430 ms, 15 percent
+  blunders) 100, 100, 100; casual (800 ms, 30) 100, 99.5, 99; beginner (1200 ms, 45) 97.5, 94.5, 81.5. Against the plan's
+  80, 70 and 60 percent targets the first three rivals are FAR easier for every bot; human rates are unknown, and no bot
+  reads a lesson. Making them harder means ROSTER or AI_TUNE (do not touch): HIS CALL. Fixed seed regression: two
+  baselines in p4_gate (the yardstick on stages 1 to 3, the beginner on stage 3 where the rival's Chaff arrives). NOT
+  DONE: Retro (his call); the input device in records (INP has none); a save that survives the phone killing the game.
+  THE POP N LOCK BUILD ORDER IS COMPLETE (Parts 0 to 4).
 - **2026-10-25 03:05 (Opus): PART 3 LIVE as v1.11** (main `c0815c91b`, both origins proven from old-worker profiles: v1.11
   under sw.js?v=16, cache chaff-wars-v17; gates `p3a_gate.mjs` 22 and `p3b_gate.mjs` 75, `fwrun.mjs p3a` 20 and `p3b` 21
   broken copies red, p2b 12, p2a 37, p1 13, p0 11 pass; two review rounds, the second found 2 faults per lens, all fixed).
