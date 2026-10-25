@@ -13,7 +13,7 @@ async function open(seed, w, h) { const ctx = await b.createBrowserContext(); co
   await p.evaluateOnNewDocument((s) => { try { localStorage.setItem('lwfb_explained', '1'); localStorage.setItem('tally:v1', s); } catch (e) {} }, JSON.stringify(seed));   // the save the app reads (storage.js STORE_KEY)
   await p.goto(URL + '?sstest=1', { waitUntil: 'domcontentloaded' }); return { ctx, p }; }
 for (const [w, h] of [[412, 915], [360, 640]]) {
-  const { ctx, p } = await open({ seenIntro: true }, w, h);
+  const { ctx, p } = await open({ seenIntro: true, guideDone: true }, w, h);
   const plateAt0 = await p.evaluate(() => { const e = document.getElementById('mv-splashplate'); return e ? getComputedStyle(e).opacity : 'gone'; });
   if (SHOTS && w === 412) await p.screenshot({ path: `${SHOTS}/splash-0ms-${w}.png` });
   F(plateAt0 !== 'gone', `splash plate present at 0 ms (${plateAt0})`);
@@ -51,6 +51,18 @@ for (const [w, h] of [[412, 915], [360, 640]]) {
   const lay = await p.evaluate(() => { const tiles = [...document.querySelectorAll('.mv-tile')].map((t) => t.getBoundingClientRect().bottom); const ctrls = [...document.querySelectorAll('.mv-ctrl')].map((c) => c.getBoundingClientRect()); return { beadBottom: Math.max(...tiles), ctrlTop: Math.min(...ctrls.map((r) => r.top)), ctrlBottom: Math.max(...ctrls.map((r) => r.bottom)), H: innerHeight }; });
   F(lay.beadBottom <= lay.ctrlTop + 1 && lay.ctrlBottom <= lay.H, `${w}: on the daily the beads clear the controls and the controls are in view (${JSON.stringify(lay)})`);
   if (SHOTS) await p.screenshot({ path: `${SHOTS}/daily-${w}.png` });
+  await ctx.close();
+}
+
+{ // Part 4: the guide for a fresh save at 360 x 640: the pointed bead and the Skip button inside the viewport, Skip 48 px
+  const { ctx, p } = await open({ seenIntro: true }, 360, 640);
+  await p.waitForSelector('.mv-beacon-num', { timeout: 15000 }); await sleep(900);
+  const g = await p.evaluate(() => { const t = document.querySelector('.guide-target'), sk = document.querySelector('.mv-guideskip'), ln = document.querySelector('.mv-guideline');
+    const r = (e) => { if (!e) return null; const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)]; };
+    return { target: t && t.textContent, tr: r(t), skip: r(sk), line: ln && ln.textContent, H: innerHeight, W: innerWidth }; });
+  F(g.target === '2' && g.tr && g.tr[1] >= 0 && g.tr[1] + g.tr[3] <= g.H, `guide at 360: the pointer is on the 2 and in view (${JSON.stringify(g)})`);
+  F(g.skip && g.skip[3] >= 48 && g.skip[2] >= 48 && g.skip[1] + g.skip[3] <= g.H && g.skip[0] + g.skip[2] <= g.W, `guide at 360: Skip is 48 px and in view (${JSON.stringify(g.skip)})`);
+  if (SHOTS) await p.screenshot({ path: `${SHOTS}/guide-360.png` });
   await ctx.close();
 }
 await b.close();
