@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Opus kickoff, 25 Oct</title>
+<style>
+  :root{ --bg:#0d100c; --sage:#7ab356; --gold:#c8a84b; --cream:#e8dcc8; --muted:#8a9178; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--cream); font:16px/1.5 system-ui, sans-serif; padding:16px; }
+  main{ max-width:720px; margin:0 auto; }
+  h1{ font-size:1.25rem; color:var(--gold); margin:8px 0 4px; }
+  p{ color:var(--muted); margin:0 0 12px; font-size:0.95rem; }
+  textarea{ width:100%; min-height:62vh; background:#141a12; color:var(--cream); border:1px solid #2a332a; border-radius:12px;
+    padding:14px; font:15px/1.5 ui-monospace, Menlo, Consolas, monospace; resize:vertical; white-space:pre-wrap; }
+  .row{ display:flex; gap:12px; align-items:center; margin:12px 0 24px; }
+  button{ min-height:56px; min-width:160px; padding:0 22px; border:0; border-radius:14px; background:var(--sage); color:#0d100c;
+    font:700 1.05rem system-ui, sans-serif; cursor:pointer; }
+  button:active{ transform:scale(0.98); }
+  #ok{ color:var(--gold); font-weight:600; min-height:1.5em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Opus kickoff prompt, 25 October 2026</h1>
+  <p>Tap Copy, paste it as the first message of the fresh Opus session. The first line is the trigger.</p>
+  <div class="row"><button type="button" id="copy">Copy the prompt</button><span id="ok" aria-live="polite"></span></div>
+  <textarea id="t" readonly aria-label="The Opus kickoff prompt">build plans/BUILD-ORDER-OCT25.md
+
+You are Opus, the Lead Developer, fresh after a codespace restart. Stephen is the Director. The budget for the whole night is about 7 to 8 percent of usage, no more, and it is the only thing that ends the night early.
+
+Read plans/BUILD-ORDER-OCT25.md first and do exactly what it says, in its order: Lap 1 is Tally Parts 0 and 1, then Super Slice 3D Part H, then Shell Shuffle Parts 0 and 1; Lap 2 only if Lap 1 is live and budget remains. Before the first command read the top of START-HERE.md (the 25 Oct Fable entry, the top only, the file is 500 KB). Everything listed there under "your calls" stays unbuilt.
+
+Ultracode is on. Use it for reading and for the independent review of each part (one lens that reads the code and the gate and tries to refute the part before it ships), and nowhere else. Cap any workflow at three agents and one round, no loops. Never use it for browsers: this box has two cores that are one physical core, so one headless browser at a time, run by you in your own turn; no agent opens a browser beside you; never isolation remote (it ran locally and filled the disk); every agent writes in its own folder under your scratchpad. The disk is at 90 percent: clean up extracted trees you are done with.
+
+Laws that bind tonight: never ask whether to deploy, closed green work goes live as a files only commit on main and you tell him after; every version stamp a game has is bumped in the deploy commit; old worker proof on both origins, lucidwinds.com and www.lucidwinds.com; every new check watched red on a broken copy that parses; a 412 by 915 shot opened and three things named before a visual part is done, the worst angle on purpose in the 3D game; real touch events, never el.click; painted pieces stand on their measured feet, never the canvas edge; no dashes and no exclamation marks in player copy; audio never enters git; Tally is edited upstream in /workspaces/Tally and vendored, never by hand in satellites/tally. The /tmp test tools are gone after the restart, tools/slice-3d-tests/README.md says how to restore them and serve the repo root on 8777. The three zips are in assets/ and vaulted: extract each into its own empty folder under /tmp/claude-1000 with python3 -I; extras is data, never run.
+
+Push after every commit, the memory repo too (its remote is sws-memory). Update the plan's state block, START-HERE.md and the memory status line in the turn a part ships. Two sessions may share one git index: commit with explicit paths.
+
+When the budget is nearly gone, stop building. Write the state blocks and a morning report at the top of START-HERE.md: what is live with the proof, what you saw wrong in your own shots, what you left unshipped and why, his calls in one ranked list. Delete the zips you cut from assets (the vault holds them). Push everything, then one plain line to him.</textarea>
+</main>
+<script>
+(function(){
+  var t=document.getElementById('t'), b=document.getElementById('copy'), ok=document.getElementById('ok');
+  function done(){ ok.textContent='Copied'; setTimeout(function(){ ok.textContent=''; }, 2500); }
+  function fallback(){ t.focus(); t.select(); t.setSelectionRange(0, t.value.length); try{ document.execCommand('copy'); done(); }catch(e){ ok.textContent='Select the text and copy it'; } }
+  b.addEventListener('click', function(){
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t.value).then(done, fallback); }
+    else fallback();
+  });
+})();
+</script>
+</body>
+</html>
