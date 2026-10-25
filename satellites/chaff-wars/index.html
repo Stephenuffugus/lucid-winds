@@ -55,6 +55,13 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
 #wrap::after{content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
   background:radial-gradient(120% 70% at 50% 50%, transparent 46%, rgba(4,3,8,.82) 100%)}
 #stage{z-index:1}
+/* v1.11 (Part 3a): sizes in REAL px. fit() writes --k = 1/s (s = the stage's scale), so a stage size of N*k renders N CSS px
+   at any scale. --fs: every line of copy, 12 CSS px at least (18 stage px is that at 360 wide, more on a short phone or a
+   phone in Safari with its bars); --hit: a control, 48 CSS px; --row: a settings row, 56 CSS px. Larger text multiplies
+   the copy by 1.25. */
+#stage{--k:1; --tx:1; --fs:calc(max(18px, calc(12px * var(--k))) * var(--tx)); --hit:max(72px, calc(48px * var(--k))); --row:max(84px, calc(56px * var(--k)))}
+body.bigtext #stage{--tx:1.25}
+body.bigtext .cbtn small{font-size:15px}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:var(--bg); overflow:hidden; box-shadow:0 0 60px #000a}
 canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
 /* menu screens sit on the "menu-wall" burner backdrop (assets/bg/menu-wall.jpg);
@@ -78,19 +85,19 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .title-word .w2{color:#2ff0e0; text-shadow:3px 3px 0 #0c0a06, -2px -2px 0 #0c0a06, 2px -2px 0 #0c0a06, -2px 2px 0 #0c0a06, 0 0 20px rgba(47,240,224,0.65), 0 0 42px rgba(255,47,185,0.4)}
 .pnl-logo{display:none; width:86%; max-width:400px; margin:0 auto 2px; image-rendering:auto;
   filter:drop-shadow(0 4px 22px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(255,47,185,0.25))}
-.title-sub{color:var(--muted); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
-.ribbon{margin-top:14px; color:var(--ink); font-size:14px; opacity:.9; max-width:410px; line-height:1.55}
+.title-sub{color:var(--muted); font-size:var(--fs); letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.ribbon{margin-top:14px; color:var(--ink); font-size:var(--fs); opacity:.9; max-width:410px; line-height:1.5}
 /* 48px touch targets (studio rule 11, sweep 2026-07-26): the 540x960 stage is
    SCALED to the phone (390w = x0.722), so stage px shrink on screen. 72 stage
    px = 52px real on a 390w phone, 48px on a 360w phone. The old 60/50 stage-px
    buttons landed at 43/36 real px. min-width keeps content-hugging result
    buttons (Again / Menu) wide enough too. */
-.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%; min-width:96px;
+.btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:var(--hit); width:100%; min-width:96px;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#241f14,#191509); color:var(--ink);
-  font-size:18px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+  font-size:var(--fs); font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.25)}
 .btn.primary{background:linear-gradient(180deg,#ff2fb9,#b81f86); color:#1c0413; border-color:#ff8ad4; box-shadow:0 4px 0 #7a1257, 0 8px 22px rgba(255,47,185,0.35), 0 8px 20px #0006}
-.btn.sm{min-height:72px; font-size:15px; border-color:#3d3550}
+.btn.sm{min-height:var(--hit); font-size:var(--fs); border-color:#3d3550}
 .btn.sm:active{box-shadow:0 0 14px rgba(47,240,224,0.35)}
 #go-share{border-color:#1d6b63; color:#2ff0e0; text-shadow:0 0 12px rgba(47,240,224,0.35)}
 .btn.ghost{background:#161309; color:var(--muted)}
@@ -99,32 +106,35 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
 h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; letter-spacing:1px; margin-bottom:4px;
   text-shadow:2px 2px 0 #0c0a06, 0 0 14px rgba(47,240,224,0.45)}
-.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:14px; line-height:1.5}
-.helprow .hi{font-size:16px; font-weight:800; width:32px; height:32px; line-height:30px; text-align:center; flex:none; color:var(--gold); background:#14110a; border:1px solid var(--sprout); border-radius:50%}
-.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:14px 16px; border:1px solid var(--line); border-radius:14px; background:#161309}
-.setval{min-width:84px; text-align:right; color:var(--gold); font-weight:800; font-size:15px}
-#sl-guide{cursor:pointer; min-height:72px}   /* the whole row is the target: 48 CSS px at 360 wide */
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:var(--fs); line-height:1.45}
+.helprow .hi{font-size:var(--fs); font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--gold); background:#14110a; border:1px solid var(--sprout); border-radius:50%}
+.settingline{display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; max-width:420px; margin:0 auto 12px; padding:10px 16px; border:1px solid var(--line); border-radius:14px; background:#161309; min-height:var(--row); cursor:pointer}   /* v1.11: every row is its own button, 56 CSS px */
+.settingline>span{font-size:var(--fs); text-align:left}
+.setnote{display:block; color:var(--muted); font-size:var(--fs); font-weight:400}
+.setval{min-width:84px; text-align:right; color:var(--gold); font-weight:800; font-size:var(--fs)}
 .toggle{width:64px; height:36px; border-radius:20px; background:#2a2618; position:relative; cursor:pointer; border:1px solid var(--line)}
 /* invisible tap-zone extension to 72x72 stage px; the switch art stays 64x36 */
 .toggle::after{content:""; position:absolute; left:-4px; right:-4px; top:-18px; bottom:-18px}
 .toggle.on{background:#a3237c; border-color:#ff5db1}
 .toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--ink); transition:left .15s}
 .toggle.on b{left:31px; background:#e6ffcf}
-.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
-.tbtn{position:absolute; top:calc(env(safe-area-inset-top,0px) + 10px); width:48px; height:48px; border-radius:12px;
+.foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:var(--fs)}
+.tbtn{position:absolute; top:10px; width:48px; height:48px; border-radius:12px;
   border:1px solid var(--line); background:rgba(18,16,12,0.78); color:var(--ink); font-size:20px; cursor:pointer;
   display:flex; align-items:center; justify-content:center; z-index:30}
 /* invisible tap-zone extension to 72x72 stage px (52px real on a 390w phone);
    the visible 48px chip stays. Home and power sit in opposite corners, safe. */
 .tbtn::after{content:""; position:absolute; left:-12px; right:-12px; top:-12px; bottom:-12px}
 #b-home{left:10px}
+/* v1.11: the way back in a match is a 48 CSS px target on every phone, kept inside the stage (its old zone was clipped) */
+#b-home::after{left:-10px; top:-10px; right:auto; bottom:auto; width:max(82px, calc(52px * var(--k))); height:max(82px, calc(52px * var(--k)))}
 /* the way home, on the TITLE screen only. The portal opens this card as a top
    level navigation, so nothing outside the page offers a way back. Top left of
    the title, which is empty art: the play chrome (#b-home, power) lives on
    #s-play and the control tray only shows in a match, so neither can collide with it. */
-.swsback{position:absolute; left:10px; top:calc(env(safe-area-inset-top,0px) + 10px); z-index:31;
-  min-height:48px; padding:0 15px; border-radius:14px; border:1px solid var(--line);
-  background:rgba(18,16,12,0.82); color:var(--muted); font-size:12.5px; font-weight:700;
+.swsback{position:absolute; left:10px; top:10px; z-index:31;
+  min-height:var(--hit); padding:0 18px; border-radius:14px; border:1px solid var(--line);
+  background:rgba(18,16,12,0.82); color:var(--muted); font-size:var(--fs); font-weight:700;
   letter-spacing:.5px; display:flex; align-items:center; gap:7px; cursor:pointer}
 .swsback:active{filter:brightness(1.35)}
 .vs-code{font-size:64px; font-weight:800; letter-spacing:14px; font-style:italic; color:#2ff0e0; text-indent:14px;
@@ -154,8 +164,8 @@ body.mirror #dropbtn{order:-1}
   color:#0f1a06; font-size:19px; font-weight:800; letter-spacing:2px; box-shadow:0 4px 0 #356b1e, 0 7px 16px #0006}
 #dropbtn.drop:active{transform:translateY(3px); box-shadow:0 1px 0 #356b1e; filter:brightness(1.05)}
 .go-score{font-size:56px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
-.go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
-.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#211d11; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
+.go-lab{font-size:var(--fs); letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
+.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#211d11; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:var(--fs); margin-top:8px}
 /* ---- result screen: it EASES in, one row at a time. It is the tail of the
    canvas outro, not a page swap. Stephen 8/01: the summary used to arrive
    complete and instant, which is most of why the whole thing read like a
@@ -173,17 +183,24 @@ body.mirror #dropbtn{order:-1}
 #s-go.on #go-line{animation:goIn .42s .36s ease-out both}
 #s-go.on #go-reward{animation:goPop .46s .52s cubic-bezier(.2,1.6,.4,1) both}
 #s-go.on .stack{animation:goBtns .46s .48s ease-out both}
+/* v1.11: Reduce motion: the result screen fades in place, no slides and no bounces; the music button's attract pulse stops */
+@keyframes goFade{ from{opacity:0} to{opacity:1} }
+@keyframes goBtnsFade{ from{opacity:0; pointer-events:none} 70%{pointer-events:none} to{opacity:1; pointer-events:auto} }
+body.calm #s-go.on, body.calm #s-go.on #go-portrait, body.calm #s-go.on #go-emoji, body.calm #s-go.on .go-plate,
+body.calm #s-go.on #go-lab, body.calm #s-go.on #go-line, body.calm #s-go.on #go-reward{animation-name:goFade; animation-timing-function:ease-out}
+body.calm #s-go.on .stack{animation-name:goBtnsFade}
+body.calm #b-music{animation:none !important}
 /* campaign ladder */
 #ladder{display:flex; flex-direction:column; gap:10px; width:100%; max-width:440px; margin:0 auto}
-.foe{display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:#171308; cursor:pointer; min-height:72px}
+.foe{display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:#171308; cursor:pointer; min-height:var(--hit)}
 .foe .fem{position:relative; font-size:30px; width:52px; height:52px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:12px; background:#221c10; overflow:hidden}
 .foe .fem img{position:absolute; inset:2px; width:calc(100% - 4px); height:calc(100% - 4px); object-fit:contain; display:none}
 .foe .fem img.ok{display:block}
 .foe.beaten .fem img{filter:saturate(0.5) brightness(0.82)}
 .foe .fmid{flex:1; text-align:left; min-width:0}
-.foe .fnm{font-weight:800; font-size:16px; color:var(--ink)}
-.foe .fds{font-size:12px; color:var(--muted); line-height:1.35; margin-top:2px}
-.foe .fno{font-weight:800; color:var(--gold); font-size:15px; width:26px; flex:none; text-align:center}
+.foe .fnm{font-weight:800; font-size:var(--fs); color:var(--ink)}
+.foe .fds{font-size:var(--fs); color:var(--muted); line-height:1.35; margin-top:2px}
+.foe .fno{font-weight:800; color:var(--gold); font-size:var(--fs); width:32px; flex:none; text-align:center}
 .foe{border-left:4px solid var(--line)}
 .foe.locked{opacity:.42; cursor:default}
 .foe.beaten{filter:saturate(0.55)}
@@ -193,7 +210,7 @@ body.mirror #dropbtn{order:-1}
 .foe.beaten{border-color:#3f6a2e}
 .foe.beaten .fno::after{content:" ✓"; color:var(--sprout)}
 </style>
-<meta name="description" content="A neon 80s puzzle battle where you bury rival b-boy pests in worthless grey Chaff.">
+<meta name="description" content="A neon 80s puzzle battle where you bury rival breakdancing pests in worthless grey Chaff.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/chaff-wars/">
 <script src="/music-unlocks.js" defer></script>
 </head>
@@ -212,6 +229,7 @@ body.mirror #dropbtn{order:-1}
     <button class="cbtn drop" id="dropbtn" aria-label="Drop">DROP</button>
   </div>
 </div>
+<div id="sat-probe" aria-hidden="true" style="position:fixed; top:0; left:0; width:0; height:0; padding-top:env(safe-area-inset-top,0px); visibility:hidden; pointer-events:none"></div>
 <div id="wrap"><div id="stage">
   <canvas id="game" width="540" height="960"></canvas>
 
@@ -226,7 +244,7 @@ body.mirror #dropbtn{order:-1}
     <div class="ribbon">Clear falling <b style="color:var(--sprout)">seedpods</b> in groups of four or more. Set off big <b style="color:var(--gold)">chains</b> and every pop buries your rival pest in worthless grey <b>Chaff</b>. Top out and you lose the plot.</div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="b-campaign">Campaign <span id="c-prog" style="font-weight:600;font-size:14px;opacity:.85"></span></button>
+      <button class="btn primary" id="b-campaign">Campaign <span id="c-prog" style="font-weight:600;opacity:.85"></span></button>
       <div class="row">
         <button class="btn sm" id="b-versus">🕺 Versus</button>
         <button class="btn sm" id="b-solo">Solo Endless</button>
@@ -246,7 +264,7 @@ body.mirror #dropbtn{order:-1}
   <!-- CAMPAIGN SELECT -->
   <div class="screen" id="s-select"><div class="pad">
     <h2 class="sc-h">Keeper's Stand</h2>
-    <div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px">Beat each garden pest to unlock the next. Match their color count and out chain them before your plot fills with Chaff.</div>
+    <div style="font-size:var(--fs);color:var(--muted);line-height:1.45;margin-bottom:14px">Beat each garden pest to unlock the next. Match their color count and out chain them before your plot fills with Chaff.</div>
     <div id="ladder"></div>
     <div style="height:14px"></div>
     <button class="btn ghost sm" id="sel-back" style="max-width:420px;margin:0 auto">◄ Back</button>
@@ -264,7 +282,7 @@ body.mirror #dropbtn{order:-1}
     <h2 class="sc-h">Versus</h2>
     <p class="ribbon" style="margin-top:6px">Battle a friend live. One of you creates the room, the other joins with the code. Both players get the exact same pods. Chains you pop drop grey Chaff on their board.</p>
     <div style="height:10px"></div>
-    <div id="vs-auth" style="display:none; border:1px solid var(--line); border-radius:14px; padding:14px 16px; background:#1a1410; color:var(--gold); font-size:14px; line-height:1.5">Online rooms need a free Sky Wolf Studio account. It unlocks online features in all of our games. Sign in on the portal first, then come back and battle.</div>
+    <div id="vs-auth" style="display:none; border:1px solid var(--line); border-radius:14px; padding:14px 16px; background:#1a1410; color:var(--gold); font-size:var(--fs); line-height:1.45">Online rooms need a free Sky Wolf Studio account. It unlocks online features in all of our games. Sign in on the portal first, then come back and battle.</div>
     <div id="vs-lobby">
       <button class="btn primary" id="b-vs-create">Create Room</button>
       <div style="height:12px"></div>
@@ -274,16 +292,16 @@ body.mirror #dropbtn{order:-1}
       </div>
     </div>
     <div id="vs-wait" style="display:none; text-align:center">
-      <div style="color:var(--muted); font-size:13px; letter-spacing:3px; text-transform:uppercase; margin-bottom:8px">Room code</div>
+      <div style="color:var(--muted); font-size:var(--fs); letter-spacing:3px; text-transform:uppercase; margin-bottom:8px">Room code</div>
       <!-- the code prints onto the cassette's blank label (room-card sprite); if the
            image is missing the wrapper is just padding and the code still shows -->
-      <div id="vs-cassette" style="position:relative; width:300px; max-width:82vw; aspect-ratio:296/219; min-height:150px; margin:0 auto; background:url('assets/ui/room-card.png?v=pnl1') center/contain no-repeat">
+      <div id="vs-cassette" style="position:relative; width:300px; aspect-ratio:296/219; min-height:150px; margin:0 auto; background:url('assets/ui/room-card.png?v=pnl1') center/contain no-repeat">
         <div class="vs-code" id="vs-code" style="position:absolute; left:0; right:0; top:20.8%; transform:translateY(-50%); text-align:center; text-indent:10px; font-size:38px; letter-spacing:10px; color:#241a2e; text-shadow:none">····</div>
       </div>
-      <div id="vs-status" style="color:var(--muted); font-size:14px; margin-top:14px">Waiting for a rival to join…</div>
+      <div id="vs-status" style="color:var(--muted); font-size:var(--fs); margin-top:14px">Waiting for a rival to join…</div>
     </div>
     <div style="height:14px"></div>
-    <div id="vs-msg" style="color:#ff8a72; font-size:13px; min-height:18px; text-align:center"></div>
+    <div id="vs-msg" style="color:#ff8a72; font-size:var(--fs); min-height:calc(var(--fs) * 1.4); text-align:center"></div>
     <div style="flex:1"></div>
     <button class="btn ghost sm" id="vs-back" style="max-width:400px;margin:0 auto">◄ Back</button>
   </div></div>
@@ -310,7 +328,11 @@ body.mirror #dropbtn{order:-1}
     <div class="settingline"><span>Flick up to drop</span><div class="toggle" id="tg-flick"><b></b></div></div>
     <div class="settingline"><span>Drop button on the left</span><div class="toggle" id="tg-mirror"><b></b></div></div>
     <div class="settingline"><span>Fullscreen</span><div class="toggle" id="tg-full"><b></b></div></div>
-    <div class="settingline"><span>Tag shapes <span style="color:var(--muted);font-size:11px">(color-blind aid)</span></span><div class="toggle on" id="tg-tags"><b></b></div></div>
+    <div class="settingline"><span>Tag shapes<span class="setnote">a color blind aid</span></span><div class="toggle on" id="tg-tags"><b></b></div></div>
+    <div class="settingline" id="sl-motion"><span>Reduce motion<span class="setnote">Auto follows your phone</span></span><b class="setval" id="tg-motion">Auto</b></div>
+    <div class="settingline"><span>Screen shake</span><div class="toggle on" id="tg-shake"><b></b></div></div>
+    <div class="settingline"><span>Larger text</span><div class="toggle" id="tg-bigtext"><b></b></div></div>
+    <div class="settingline" id="sl-vibe"><span>Vibration</span><div class="toggle on" id="tg-haptics"><b></b></div></div>
     <div style="height:8px"></div>
     <button class="btn sm" id="b-install" style="max-width:400px;margin:0 auto 8px">Add to Home Screen</button>
     <button class="btn ghost sm" id="set-reset" style="max-width:400px;margin:0 auto 8px">Reset campaign progress</button>
@@ -327,7 +349,7 @@ body.mirror #dropbtn{order:-1}
       <div class="go-score" id="go-title" style="position:relative; z-index:1; padding:0 14px">Win</div>
     </div>
     <div class="go-lab" id="go-lab">result</div>
-    <div id="go-line" style="margin:12px auto 0;max-width:360px;font-size:15px;line-height:1.5;color:var(--ink);font-style:italic"></div>
+    <div id="go-line" style="margin:12px auto 0;max-width:400px;font-size:var(--fs);line-height:1.45;color:var(--ink);font-style:italic"></div>
     <div class="pill" id="go-reward" style="display:none"></div>
     <div style="flex:1"></div>
     <div class="stack">
@@ -344,10 +366,10 @@ body.mirror #dropbtn{order:-1}
 <script>
 (function(){
 "use strict";
-var BUILD="v1.10";
+var BUILD="v1.11";
 /* screen shake: shake(amp,ms) — decays in update(), applied as a canvas translate in render() */
 var SHAKE={t:0,dur:1,amp:0};
-function shake(a,ms){ if(a>SHAKE.amp||SHAKE.t<=0){ SHAKE.amp=a; SHAKE.t=ms; SHAKE.dur=ms; } }
+function shake(a,ms){ if(CALM||!SET.shake)return; if(a>SHAKE.amp||SHAKE.t<=0){ SHAKE.amp=a; SHAKE.t=ms; SHAKE.dur=ms; } }   /* v1.11: Screen shake and Reduce motion */
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -378,18 +400,32 @@ function _vvH(){ var vv=window.visualViewport; return (vv&&vv.height)||window.in
    BOARD_FOOT (the painted frame's foot), above it. At 412 x 915, 375 x 812 and 360 x 780 that is the same scale and
    place as v1.8 (his board, untouched); a short phone shrinks the match as little as it must and lifts it toward the
    top. The menus are fitted whole, as before. */
-var BOARD_FOOT=840;
-function fit(){ var iw=_vvW(), ih=_vvH(), s=Math.min(iw/VW, ih/VH), top=(ih-VH*s)/2, tr=$('tray');
-  if(curScreen==='s-play'&&tr){ var th=tr.getBoundingClientRect().height; s=Math.min(iw/VW, (ih-th)/BOARD_FOOT);
-    top=Math.max(0, Math.min((ih-VH*s)/2, ih-th-BOARD_FOOT*s)); }
+var BOARD_FOOT=840, STAGE_S=1;
+/* v1.11: a phone's top safe area (a notch, a translucent status bar on the home screen) is kept OUT of the stage: the env()
+   inset used to be applied inside the scaled stage, so it shrank with the scale and the back button sat under the notch */
+function safeTop(){ var p=$('sat-probe'); if(!p)return 0; try{ return parseFloat(getComputedStyle(p).paddingTop)||0; }catch(e){ return 0; } }
+function fit(){ var iw=_vvW(), ih=_vvH(), sat=safeTop(), s=Math.min(iw/VW, (ih-sat)/VH), top=Math.max(sat,(ih-VH*s)/2), tr=$('tray');
+  if(curScreen==='s-play'&&tr){ var th=tr.getBoundingClientRect().height; s=Math.min(iw/VW, (ih-th-sat)/BOARD_FOOT);
+    top=Math.max(sat, Math.min((ih-VH*s)/2, ih-th-BOARD_FOOT*s)); }
+  STAGE_S=s; $('stage').style.setProperty('--k',(1/s).toFixed(4));   /* v1.11: sizes in real px (the CSS above, lab() on the canvas) */
   $('stage').style.transform='translateZ(0) translateY('+(top-(ih-VH*s)/2)+'px) scale('+s+')'; }
 window.addEventListener('resize',fit); window.addEventListener('orientationchange',function(){ setTimeout(fit,200); });
 
 /* ---------- storage ---------- */
 var LS={ g:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, s:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
-var SET={ sound:true, ghost:true, bigTray:false, tags:true, relaxed:false, flick:false, mirror:false, guide:'outline' };   /* v1.9: bigTray, a NEW key (v1.8 saved big:true for anyone who touched any setting); v1.10: the landing guide Outline, Solid or Off */   /* v1.9: Relaxed held moves, the hard drop flick (off), Drop on the left */
+var SET={ sound:true, ghost:true, bigTray:false, tags:true, relaxed:false, flick:false, mirror:false, guide:'outline', motion:'auto', shake:true, bigText:false, haptics:true };   /* v1.11: Reduce motion (Auto follows the phone), Screen shake, Larger text, Vibration */   /* v1.9: bigTray, a NEW key (v1.8 saved big:true for anyone who touched any setting); v1.10: the landing guide Outline, Solid or Off */   /* v1.9: Relaxed held moves, the hard drop flick (off), Drop on the left */
 (function(){ try{ var s=JSON.parse(LS.g('cw_set')||'{}'),k; for(k in SET)if(SET.hasOwnProperty(k)&&typeof s[k]===typeof SET[k])SET[k]=s[k];
-  if(s.guide==null&&s.ghost===false)SET.guide='off'; if(SET.guide!=='outline'&&SET.guide!=='solid'&&SET.guide!=='off')SET.guide='outline'; }catch(e){} })();
+  if(s.guide==null&&s.ghost===false)SET.guide='off'; if(SET.guide!=='outline'&&SET.guide!=='solid'&&SET.guide!=='off')SET.guide='outline';
+  if(SET.motion!=='auto'&&SET.motion!=='on'&&SET.motion!=='off')SET.motion='auto'; }catch(e){} })();
+/* v1.11 (PNL-058): CALM is Reduce motion in force: the setting, or Auto and the phone's own reduced motion. It stops the
+   motion that plays by itself (shake, the pop swell, the squash, the pods' idle life, the floats' punch and rise, the end
+   card's punch, the win's pod rain, the rival's dance); it never stops the motion that carries the game (the falling pair,
+   its glide and turn, the falls after a pop), which would be harsher, not calmer. */
+var MQ_RM=null; try{ MQ_RM=window.matchMedia?matchMedia('(prefers-reduced-motion: reduce)'):null; }catch(e){}
+var CALM=false;
+function calmNow(){ return SET.motion==='on'||(SET.motion==='auto'&&!!(MQ_RM&&MQ_RM.matches)); }
+CALM=calmNow();
+try{ if(MQ_RM){ var _mqf=function(){ CALM=calmNow(); applyBig(); }; if(MQ_RM.addEventListener)MQ_RM.addEventListener('change',_mqf); else if(MQ_RM.addListener)MQ_RM.addListener(_mqf); } }catch(e){}
 function saveSet(){ LS.s('cw_set', JSON.stringify(SET)); }
 var PROG={ unlocked:0, beaten:{}, done:false, secret:false, soloBest:0 };
 (function(){ try{ var p=JSON.parse(LS.g('cw_prog')||'{}'); var k; for(k in PROG) if(p[k]!=null)PROG[k]=p[k]; }catch(e){} })();
@@ -398,7 +434,7 @@ function saveProg(){ LS.s('cw_prog', JSON.stringify(PROG)); }
 /* ---------- audio ---------- */
 var AC=null;
 function ac(){ if(!SET.sound)return null; try{ if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){AC=null;} return AC; }
-function hap(ms){ if(navigator.vibrate){ try{ navigator.vibrate(ms||10); }catch(e){} } }
+function hap(ms){ if(SET.haptics&&navigator.vibrate){ try{ navigator.vibrate(ms||10); }catch(e){} } }   /* v1.11: the Vibration setting */
 function beep(f,d,t,g,slide){ var c=ac(); if(!c)return; try{ var o=c.createOscillator(), v=c.createGain();
   o.type=t||'triangle'; o.frequency.value=f; if(slide)o.frequency.exponentialRampToValueAtTime(slide,c.currentTime+d);
   v.gain.value=g||0.07; v.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+d);
@@ -699,7 +735,7 @@ function addSap(f,n){ f.sap=Math.max(0,Math.min(SAP_MAX,(f.sap||0)+n)); }
 var POWERS={
   'keeper-solvent':{ name:'Solvent', cost:35, cd:9000, tint:'#7ec850',
     apply:function(f){ var r,c,n=0; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ if(f.grid[r][c]===CHAFF){ f.grid[r][c]=0; n++; } }
-      if(n){ applyGravity(f.grid); f.floats.push({x:0,y:0,txt:'SOLVENT!',life:1.1,big:true,fld:f}); if(SFX.allclear)SFX.allclear(); } return n; } }
+      if(n){ applyGravity(f.grid); f.floats.push({x:0,y:0,txt:'SOLVENT',life:1.1,big:true,fld:f}); if(SFX.allclear)SFX.allclear(); } return n; } }
 };
 function powerReady(f){ return !!(MATCH.powers && !MATCH.paused && f && f.powerId && !f.powerCast && (f.powerCd||0)<=0 && (f.sap||0)>=POWERS[f.powerId].cost); }
 function firePower(f){ if(!powerReady(f))return false; var P=POWERS[f.powerId]; f.sap-=P.cost; f.powerCd=P.cd; try{ P.apply(f); }catch(e){} if(typeof hap==='function')hap(20); return true; }
@@ -754,7 +790,7 @@ function resolveTick(f,dt){ var R=f.res; R.t+=dt;
     if(f===MATCH.of){ SFX.popRival(R.chain); f.chainGlow=1; }
     else { SFX.pop(R.chain); if(R.chain>=2)shake(2+R.chain*1.6, 220); }
     if(nchf)SFX.shatter();
-    if(R.chain>=2)f.floats.push({x:0,y:0,txt:(R.chain>=5?'ILL! ':R.chain>=4?'DOPE! ':R.chain>=3?'DEF! ':'FRESH! ')+'x'+R.chain,life:1.0,big:true,fld:f});
+    if(R.chain>=2)f.floats.push({x:0,y:0,txt:(R.chain>=5?'ILL ':R.chain>=4?'DOPE ':R.chain>=3?'DEF ':'FRESH ')+'x'+R.chain,life:1.0,big:true,fld:f});
     R.sub='pop'; R.t=0; R._chf=chf; }
   else if(R.sub==='pop'){ if(R.t>230){ var r,c; for(r=0;r<ROWS;r++)for(c=0;c<COLS;c++){ if(f.pop[r][c])f.grid[r][c]=0; } f.pop=null; R.sub='grav'; R.t=0; } }
 }
@@ -769,12 +805,12 @@ function hypeTierOf(h){ var t=0,i; for(i=0;i<HYPE_TIERS.length;i++){ if(h>=HYPE_
 function addHype(f,n){ if(f!==MATCH.pf)return; f.hype=Math.max(0,Math.min(100,(f.hype||0)+n));
   var nt=hypeTierOf(f.hype);
   if(nt>f.hypeTier){ f.hypeTier=nt;
-    if(nt>=2){ f.floats.push({x:0,y:0,txt:'HYPE: '+HYPE_TIERS[nt][1]+'!',life:0.9,big:true,fld:f}); SFX.hype(nt); }
+    if(nt>=2){ f.floats.push({x:0,y:0,txt:'HYPE: '+HYPE_TIERS[nt][1],life:0.9,big:true,fld:f}); SFX.hype(nt); }
   } else if(nt<f.hypeTier) f.hypeTier=nt;
   if(f.hype>=100){ f.hype=45; f.hypeTier=hypeTierOf(45);
     f.score+=500;   /* score is drawn on canvas each frame; no DOM node (the old
                        $('h-score') set threw on every ALL CITY HYPE — element never existed) */
-    f.floats.push({x:0,y:0,txt:'ALL CITY HYPE! +500',life:1.4,big:true,fld:f});
+    f.floats.push({x:0,y:0,txt:'ALL CITY HYPE +500',life:1.4,big:true,fld:f});
     SFX.allclear(); shake(6,260);
   } }
 function finishResolve(f){ var R=f.res; f.score+=R.score; if(f===MATCH.of)railChainEnd();
@@ -784,12 +820,12 @@ function finishResolve(f){ var R=f.res; f.score+=R.score; if(f===MATCH.of)railCh
   var pts=R.score + f.carry; if(f.allBonus&&R.chain>0){ pts+=TARGET_POINTS*ALLCLEAR_NUIS; f.allBonus=false; }   /* v1.7: spent on a chain, never on a plain lock */
   var out=Math.floor(pts/TARGET_POINTS); f.carry=pts-out*TARGET_POINTS;
   if(f.hcap&&f.hcap!==1)out=Math.round(out*f.hcap);
-  if(!RULES.classic && R.chain>0 && boardEmpty(f.grid)){ f.allBonus=true; SFX.allclear(); f.floats.push({x:0,y:0,txt:'ALL CITY!',life:1.4,big:true,fld:f}); }
+  if(!RULES.classic && R.chain>0 && boardEmpty(f.grid)){ f.allBonus=true; SFX.allclear(); f.floats.push({x:0,y:0,txt:'ALL CITY',life:1.4,big:true,fld:f}); }
   /* counter: in Tsu, offset against own pending first, remainder to opponent.
      in classic (MBM/Puyo-1) there is NO offsetting — garbage always lands. */
   var opp=(f===MATCH.pf)?MATCH.of:MATCH.pf;
   if(out>0){ if(!RULES.classic && f.pending>0){ var off=Math.min(f.pending,out); f.pending-=off; out-=off; if(off>0){ f.cancelN=off; f.cancelT=1600; }   /* v1.10: shown beside the queue */
-      if(off>0){ f.floats.push({x:0,y:0,txt:'DENIED!',life:1.0,big:true,fld:f}); addHype(f,10); } }
+      if(off>0){ f.floats.push({x:0,y:0,txt:'DENIED',life:1.0,big:true,fld:f}); addHype(f,10); } }
     if(out>0){ if(MATCH.mode==='versus'&&f===MATCH.pf){ _mpGarbage(out); }
       else if(opp){ opp.pending+=out; SFX.warn(); } } }
   f.res=null;
@@ -956,7 +992,7 @@ function outUpdate(dt){ var O=MATCH.out; if(!O)return; O.t+=dt;
     if(MATCH.result==='win'){ SFX.win(); shake(9,340); hap(40); }
     else { SFX.lose(); shake(5,260); hap(20); } }
   /* pod rain on a win: the hold is a celebration, not a pause */
-  if(O.stamped && MATCH.result==='win'){ O.cf+=dt;
+  if(O.stamped && MATCH.result==='win' && !CALM){ O.cf+=dt;   /* v1.11: no pod rain under Reduce motion */
     while(O.cf>=64 && O.conf.length<70){ O.cf-=64;
       O.conf.push({ x:10+Math.random()*(VW-52), y:-30, vy:0.10+Math.random()*0.12,
         vx:(Math.random()-0.5)*0.06, s:15+Math.random()*17, ci:(Math.random()*5)|0 }); } }
@@ -993,10 +1029,10 @@ function setShare(brag){ var b=$('go-share'); if(!b)return; _shareBrag=brag||'';
   b.textContent=SHARE_LABEL; b.style.display=brag?'flex':'none'; }
 function _legacyCopy(s){ try{ var ta=document.createElement('textarea'); ta.value=s; ta.style.position='fixed'; ta.style.opacity='0';
   document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }catch(e){} }
-function doShare(){ var text=_shareBrag||'I just won in Pop N Lock!';
+function doShare(){ var text=_shareBrag||'I just won in Pop N Lock.';
   if(navigator.share){ try{ navigator.share({title:'Pop N Lock', text:text, url:SHARE_URL})['catch'](function(){}); return; }catch(e){} }
   var full=text+' '+SHARE_URL;
-  function ok(){ var b=$('go-share'); if(!b)return; b.textContent='Copied!';
+  function ok(){ var b=$('go-share'); if(!b)return; b.textContent='Copied';
     setTimeout(function(){ var b2=$('go-share'); if(b2)b2.textContent=SHARE_LABEL; },1600); }
   if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(full).then(ok,function(){ _legacyCopy(full); ok(); }); }
   else { _legacyCopy(full); ok(); } }
@@ -1041,7 +1077,7 @@ function matchResult(result){ if(_devSweep)return; var st=ROSTER[MATCH.stage];
   /* next button: show if there is an unlocked next stage */
   var nb=$('go-next'); var hasNext=(result==='win' && MATCH.stage+1<ROSTER.length && (MATCH.stage+1<=PROG.unlocked || (ROSTER[MATCH.stage+1].secret&&PROG.secret)));
   nb.style.display=hasNext?'flex':'none';
-  setShare(result==='win' ? ('I just beat '+st.nm+' in Pop N Lock!') : null);
+  setShare(result==='win' ? ('I just beat '+st.nm+' in Pop N Lock.') : null);
   show('s-go');
 }
 function soloResult(){ if(_devSweep)return; $('go-title').style.color=''; $('go-emoji').textContent='🌱'; _goPortrait(null); _goBanner('allclear'); $('go-title').textContent=MATCH.pf.score.toLocaleString(); $('go-lab').textContent='solo score';
@@ -1153,7 +1189,6 @@ function a2Char(id){ A2.who=id; var J=A2.j; if(!J)return; var keep={},k,i;
   for(k in A2.im)if(A2.im.hasOwnProperty(k)&&/^(dance|react)\//.test(k)&&!keep[k]){ A2.im[k].src=''; delete A2.im[k]; }
   for(k in keep)if(keep.hasOwnProperty(k))a2Im(k); }
 var RAIL={ id:null, hitT:-9, danceT:-9, beatT:-9, freezeT:-9, frozen:0, danger:false, chain:false };
-var RAIL_RM=false; try{ RAIL_RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){}
 function railReset(id){ RAIL.id=id; RAIL.hitT=RAIL.danceT=RAIL.beatT=RAIL.freezeT=-9; RAIL.frozen=0; RAIL.danger=false; RAIL.chain=false; }
 /* PNL-046: the six frame signature plays ONCE at chain 2 and the dancer holds its last pose while the chain runs (no idle
    flash, no replay); a beat accent at 3 and 4; at 5 and up the dance clock stops for 240 ms with a flash (a freeze alone
@@ -1170,8 +1205,8 @@ function railFrame(){ var J=A2.j, id=RAIL.id, t=CW_T; if(!J||!id)return null; va
   if(R&&R.hit&&t-RAIL.hitT<0.18)return R.hit;   /* a hit, 180 ms, then back to whatever it was doing */
   if(D&&RAIL.danceT>=0){ var fz=RAIL.frozen+(RAIL.freezeT>=RAIL.danceT?Math.min(0.24,Math.max(0,t-RAIL.freezeT)):0), e=(t-RAIL.danceT-fz)*1000, i, acc=0, len=0;
     for(i=0;i<6;i++)len+=D.ms[i];
-    if(e<len){ if(RAIL_RM)return D.frames[0]; for(i=0;i<6;i++){ acc+=D.ms[i]; if(e<acc)return D.frames[i]; } }
-    else if(RAIL.chain)return RAIL_RM?D.frames[0]:D.frames[5]; }
+    if(e<len){ if(CALM)return D.frames[0]; for(i=0;i<6;i++){ acc+=D.ms[i]; if(e<acc)return D.frames[i]; } }
+    else if(RAIL.chain)return CALM?D.frames[0]:D.frames[5]; }
   if(R&&R.danger&&RAIL.danger)return R.danger;
   return null; }
 /* ONE render box per character for every dance and reaction frame: art.json's box, the union of that character's painted
@@ -1179,9 +1214,9 @@ function railFrame(){ var J=A2.j, id=RAIL.id, t=CW_T; if(!J||!id)return null; va
    and every frame keeps its own size inside the loop (the jumps are the moves) */
 function railDraw(cx,cy,w,h){ var rel=railFrame(); if(!rel||!a2Ok(rel))return false; var im=A2.im[rel], t=CW_T;
   var bx=(A2.j.box&&A2.j.box[RAIL.id])||[0,0,512,512], bw=bx[2]-bx[0], bh=bx[3]-bx[1];
-  var k=Math.min(w/bw,h/bh)*((!RAIL_RM&&t-RAIL.beatT<0.15)?1+0.08*(1-(t-RAIL.beatT)/0.15):1);
+  var k=Math.min(w/bw,h/bh)*((!CALM&&t-RAIL.beatT<0.15)?1+0.08*(1-(t-RAIL.beatT)/0.15):1);
   try{ ctx.drawImage(im, cx-(bx[0]+bw/2)*k, cy+h/2-bx[3]*k, 512*k, 512*k);
-    if(!RAIL_RM&&t-RAIL.freezeT<0.16){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.55*(1-(t-RAIL.freezeT)/0.16); ctx.drawImage(im, cx-(bx[0]+bw/2)*k, cy+h/2-bx[3]*k, 512*k, 512*k); }   /* the chain 5+ flash */
+    if(!CALM&&t-RAIL.freezeT<0.16){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=0.55*(1-(t-RAIL.freezeT)/0.16); ctx.drawImage(im, cx-(bx[0]+bw/2)*k, cy+h/2-bx[3]*k, 512*k, 512*k); }   /* the chain 5+ flash */
   }catch(e){} ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1; return true; }
 function a2Live(){ var n=0,k; for(k in A2.im)if(A2.im.hasOwnProperty(k)&&/^(dance|react)\//.test(k))n++; return n; }
 var CW_T=0; /* animation clock (seconds), advanced every frame in loop() */
@@ -1280,7 +1315,7 @@ function podGlyph(ci,gx,gy,gr,col){ ctx.save(); ctx.translate(gx,gy); ctx.fillSt
   ctx.stroke(); ctx.fill(); ctx.restore(); }
 function drawPod(x,y,s,ci,gaze,scale,alpha){ var pal=PAL[ci]; var cx=x+s/2, cy=y+s/2, r=s*0.45*(scale||1); if(alpha!=null)ctx.globalAlpha=alpha;
   /* idle life: gentle breathe/squash + occasional blink + eye drift (skip on tiny minis and mid-pop) */
-  var live = s>=16 && (scale==null||scale===1);
+  var live = !CALM && s>=16 && (scale==null||scale===1);   /* v1.11: the pods' breathing, blinks and eye drift stop under Reduce motion */
   var ph=x*0.11+y*0.15, br=live?Math.sin(CW_T*1.05+ph):0, blink=live?((((CW_T*0.3+ph*1.7)%6.0)<0.14)?1:0):0;
   ctx.save();
   if(live){ ctx.translate(cx,cy+br*r*0.03); ctx.scale(1+br*0.05,1-br*0.05); ctx.translate(-cx,-cy); }
@@ -1332,8 +1367,8 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
   if(!mini)drawJoins(f,F);   /* v1.8: under the pods */
   for(r=1;r<ROWS;r++)for(c=0;c<COLS;c++){ var v=f.grid[r][c]; if(v===0)continue; var p=cellPx(F,r,c); var off=(f.fall&&f.fall[r]?f.fall[r][c]:0)||0;
     if(off>0){ ctx.save(); ctx.beginPath(); ctx.rect(F.x-6, F.y-1, COLS*F.cell+12, VISROWS*F.cell+12); ctx.clip(); }   /* v1.10 review: a FALLING cell stays inside the well (dropped Chaff starts a cell above it); pops and splats spill as before */
-    var scale=1, alpha=1; if(f.pop&&f.pop[r][c]){ var pr=Math.min(1,f.res? f.res.t/230:0); scale=1+pr*0.35; alpha=1-pr*0.7; }
-    var yy=p.y-off, sq=(f.fall&&f.squash&&f.squash[r][c]>0)?f.squash[r][c]/SQUASH_MS:0;   /* v1.10: the landing squash, on the cell's floor */
+    var scale=1, alpha=1; if(f.pop&&f.pop[r][c]){ var pr=Math.min(1,f.res? f.res.t/230:0); scale=CALM?1:1+pr*0.35; alpha=1-pr*0.7; }
+    var yy=p.y-off, sq=(!CALM&&f.fall&&f.squash&&f.squash[r][c]>0)?f.squash[r][c]/SQUASH_MS:0;   /* v1.10: the landing squash, on the cell's floor */
     if(sq>0){ ctx.save(); ctx.translate(p.x+F.cell/2, yy+F.cell); ctx.scale(1+0.1*sq, 1-0.16*sq); ctx.translate(-(p.x+F.cell/2), -(yy+F.cell)); }
     if(v===CHAFF)drawChaff(p.x,yy,F.cell,scale,alpha); else drawPod(p.x,yy,F.cell,v-1, mini?null:gazeFor(f,r,c),scale,alpha);
     if(sq>0)ctx.restore();
@@ -1392,7 +1427,7 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
   if(f.cancelT>0&&!mini){ ctx.globalAlpha=Math.min(1,f.cancelT/300); ctx.fillStyle='#7ec850'; ctx.font='800 18px system-ui'; ctx.textAlign='left';
     ctx.fillText(f.cancelN+' cancelled', bx, by-6); ctx.globalAlpha=1; }   /* the line above the queue */
   /* danger flash */
-  if(f.flashDanger>0){ ctx.globalAlpha=Math.min(0.4,f.flashDanger/1000); ctx.fillStyle='#e0433f'; ctx.fillRect(F.x,F.y,COLS*F.cell,F.cell*2); ctx.globalAlpha=1; }
+  if(f.flashDanger>0){ ctx.globalAlpha=CALM?0.3:Math.min(0.4,f.flashDanger/1000);   /* v1.11: steady, not a 2.5 Hz pulse, under Reduce motion */ ctx.fillStyle='#e0433f'; ctx.fillRect(F.x,F.y,COLS*F.cell,F.cell*2); ctx.globalAlpha=1; }
 }
 
 function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRect(0,0,VW,VH);
@@ -1443,7 +1478,7 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     if(hm>0){ var fh=mh*hm/100;
       var hc=HYPE_TIERS[ht][2];
       ctx.fillStyle='#'+('00000'+hc.toString(16)).slice(-6);
-      if(ht>=5){ ctx.globalAlpha=0.75+Math.sin(Date.now()/120)*0.25; }
+      if(ht>=5&&!CALM){ ctx.globalAlpha=0.75+Math.sin(Date.now()/120)*0.25; }
       ctx.fillRect(mx+1, my+mh-fh, mw-2, fh);
       ctx.globalAlpha=1; }
     for(var htk=1;htk<HYPE_TIERS.length;htk++){ var ty=my+mh-mh*HYPE_TIERS[htk][0]/100;
@@ -1496,7 +1531,7 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     var stampAt=OUT.hit+OUT.drain, oi, op;
     /* the blow lands: the loser's board takes a white flash under the shake */
     if(O.t<OUT.hit){ var LF=gwin?OF:PF;
-      if(outLoser()){ ctx.globalAlpha=0.55*(1-O.t/OUT.hit); ctx.fillStyle='#fff8dc';
+      if(outLoser()){ ctx.globalAlpha=(CALM?0.25:0.55)*(1-O.t/OUT.hit); ctx.fillStyle='#fff8dc';
         ctx.fillRect(LF.x-4, LF.y-4, COLS*LF.cell+8, VISROWS*LF.cell+8); ctx.globalAlpha=1; } }
     /* the yard only dims at the END of the collapse - dim it any earlier and
        you cannot see the boards drain, which is the part worth watching */
@@ -1505,9 +1540,9 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     for(oi=0;oi<O.conf.length;oi++){ op=O.conf[oi]; drawPod(op.x,op.y,op.s,op.ci,{x:0,y:0.3},1,0.92); }
     if(O.t>=stampAt){
       var sp=Math.min(1,(O.t-stampAt)/OUT.stamp);          /* 0..1 punch-in     */
-      var sc=1+0.7*(1-sp)*(1-sp);                          /* 1.7x settling to 1 */
+      var sc=CALM?1:1+0.7*(1-sp)*(1-sp);                   /* 1.7x settling to 1 (none under Reduce motion) */
       var al=Math.min(1,sp*2.2);
-      var br=1+Math.sin((O.t-stampAt)/300)*0.018;          /* it never sits still */
+      var br=CALM?1:1+Math.sin((O.t-stampAt)/300)*0.018;   /* it never sits still (it does under Reduce motion) */
       ctx.save(); ctx.translate(VW/2,326); ctx.scale(sc*br,sc*br);
       cwFit('ui/banner-'+(gwin?'win':'lose'), 0, 0, 430, 210, al);
       ctx.textAlign='center'; ctx.globalAlpha=al;
@@ -1534,10 +1569,10 @@ function floatColor(t){ if(t.indexOf('ALL')>=0)return '#ffd21a'; if(t.indexOf('D
   if(t.indexOf('ILL')===0)return '#ff2fb9'; if(t.indexOf('DOPE')===0)return '#c24bff'; if(t.indexOf('DEF')===0)return '#ffd21a';
   if(t.indexOf('FRESH')===0)return '#39ff14'; if(t.indexOf('SOLVENT')>=0)return '#7ec850'; return '#fff8dc'; }
 function drawFloats(f,F){ if(!f)return; var i; ctx.textAlign='center'; for(i=0;i<f.floats.length;i++){ var fl=f.floats[i]; var a=Math.min(1,fl.life); ctx.globalAlpha=a;
-  var fs=(F===PF?28:14); var punch=Math.min(1,Math.max(0,fl.life-0.82)/0.18); fs=Math.round(fs*(1+punch*0.5));   /* v1.7: a long lived float (ALL CITY HYPE, life 1.4) no longer pops to 73 px */
+  var fs=(F===PF?28:14); var punch=CALM?0:Math.min(1,Math.max(0,fl.life-0.82)/0.18); fs=Math.round(fs*(1+punch*0.5));   /* v1.7: a long lived float (ALL CITY HYPE, life 1.4) no longer pops to 73 px */
   ctx.font='italic 800 '+fs+'px system-ui';
   var mw=ctx.measureText(fl.txt).width, lim=COLS*F.cell+20; if(mw>lim){ fs=Math.max(10,Math.floor(fs*lim/mw)); ctx.font='italic 800 '+fs+'px system-ui'; }   /* fits the board */
-  var yy=F.y+ (F===PF?300:90) - (1-fl.life)*30 + i*Math.round(fs*1.1); var xx=F.x+COLS*F.cell/2;   /* floats alive together stack, never overprint */
+  var yy=F.y+ (F===PF?300:90) - (CALM?0:(1-fl.life)*30) + i*Math.round(fs*1.1); var xx=F.x+COLS*F.cell/2;   /* floats alive together stack, never overprint */
   ctx.lineWidth=Math.max(2,fs*0.18); ctx.strokeStyle='#0c0a06'; ctx.strokeText(fl.txt, xx, yy);
   ctx.fillStyle=floatColor(fl.txt); ctx.fillText(fl.txt, xx, yy); }
   ctx.globalAlpha=1; ctx.textAlign='left'; }
@@ -1665,8 +1700,10 @@ var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'),i; for(i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id;
   if(id!=='s-play'){ running=false; } applyBig(); paintTitle(); clearHolds();
   if(id==='s-play')document.body.classList.add('playing'); else document.body.classList.remove('playing'); fit();   /* v1.9: the tray shows in a match */
+  try{ if(window.SWSMusic&&SWSMusic.hold)SWSMusic.hold(id==='s-play'); }catch(e){}   /* v1.11: no song card or pill over the tray in a match; they wait for the menus */
   var bp=$('b-power'); if(bp)bp.style.display=(id==='s-play'&&MATCH.powers)?'flex':'none'; }
-function applyBig(){ try{ var B=document.body.classList; if(SET.bigTray)B.add('bigctrl'); else B.remove('bigctrl'); if(SET.mirror)B.add('mirror'); else B.remove('mirror'); }catch(e){} }
+function applyBig(){ CALM=calmNow(); try{ var B=document.body.classList; if(SET.bigTray)B.add('bigctrl'); else B.remove('bigctrl'); if(SET.mirror)B.add('mirror'); else B.remove('mirror');
+  if(SET.bigText)B.add('bigtext'); else B.remove('bigtext'); if(CALM)B.add('calm'); else B.remove('calm'); }catch(e){} }
 function paintTitle(){ var cp=$('c-prog'); if(cp){ var n=0,k; for(k in PROG.beaten)n++; cp.textContent='· '+n+'/'+ROSTER.length+' beaten'; } }
 
 function buildLadder(){ var lad=$('ladder'); if(!lad)return; lad.innerHTML=''; var i;
@@ -1698,19 +1735,27 @@ tap('go-next',function(){ SFX.ui();
 var _returnScreen='s-title'; function curReturn(){ return _returnScreen; }
 tap('set-reset',function(){ if(confirm('Reset all campaign progress? This cannot be undone.')){ PROG={unlocked:0,beaten:{},done:false,secret:false,soloBest:PROG.soloBest}; saveProg(); SFX.ui(); paintTitle(); alert('Campaign progress reset.'); } });
 
-function wireToggle(id,key){ var el=$(id); if(!el)return; function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
-  el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); SFX.ui(); }); }
-wireToggle('tg-sound','sound'); wireToggle('tg-big','bigTray'); wireToggle('tg-tags','tags');
+/* v1.11: the whole ROW is a setting's button (only the 64 x 36 switch answered a tap); after flips the effect */
+function wireToggle(id,key,after){ var el=$(id); if(!el)return; var row=el.parentNode; function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
+  row.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); SFX.ui(); if(after)after(); }); }
+wireToggle('tg-sound','sound'); wireToggle('tg-big','bigTray',applyBig); wireToggle('tg-tags','tags');
+wireToggle('tg-shake','shake'); wireToggle('tg-bigtext','bigText',function(){ applyBig(); fit(); });
+wireToggle('tg-haptics','haptics',function(){ if(SET.haptics)hap(20); });   /* switching it on buzzes once, so it is felt */
+(function(){ var r=$('sl-vibe'); if(r&&!navigator.vibrate)r.style.display='none'; })();   /* a phone with no vibration (an iPhone) has no row */
+/* Reduce motion cycles Auto, On, Off; Auto follows the phone's own setting */
+(function(){ var row=$('sl-motion'), v=$('tg-motion'), N={auto:'Auto',on:'On',off:'Off'}, NX={auto:'on',on:'off',off:'auto'}; if(!row||!v)return;
+  function paint(){ v.textContent=N[SET.motion]||'Auto'; } paint();
+  row.addEventListener('click',function(e){ e.preventDefault(); SET.motion=NX[SET.motion]||'auto'; paint(); saveSet(); applyBig(); SFX.ui(); }); })();
 /* v1.10: the landing guide cycles Outline, Solid, Off; the whole row is the target */
 (function(){ var row=$('sl-guide'), v=$('tg-guide'), N={outline:'Outline',solid:'Solid',off:'Off'}, NX={outline:'solid',solid:'off',off:'outline'}; if(!row||!v)return;
   function paint(){ v.textContent=N[SET.guide]||'Outline'; } paint();
   row.addEventListener('click',function(e){ e.preventDefault(); SET.guide=NX[SET.guide]||'outline'; paint(); saveSet(); SFX.ui(); }); })();
-wireToggle('tg-relaxed','relaxed'); wireToggle('tg-flick','flick'); wireToggle('tg-mirror','mirror');
+wireToggle('tg-relaxed','relaxed'); wireToggle('tg-flick','flick'); wireToggle('tg-mirror','mirror',applyBig);
 $('buildstamp').textContent='Pop N Lock '+BUILD;
 
 /* ---------- add to home screen ---------- */
 (function(){ var btn=$('b-install'); if(!btn)return;
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=15'); }catch(e){} }
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=16'); }catch(e){} }
   function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
   if(standalone()){ btn.style.display='none'; return; }
   var deferred=null; window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
@@ -1720,10 +1765,10 @@ $('buildstamp').textContent='Pop N Lock '+BUILD;
 })();
 
 /* ---------- fullscreen toggle (Android/desktop; iOS uses Add to Home Screen) ---------- */
-(function(){ var el=$('tg-full'); if(!el)return;
+(function(){ var el=$('tg-full'); if(!el)return; var row=el.parentNode;   /* v1.11: the row is the button */
   function isFull(){ return !!(document.fullscreenElement||document.webkitFullscreenElement); }
   function paint(){ if(isFull())el.classList.add('on'); else el.classList.remove('on'); }
-  el.addEventListener('click',function(e){ e.preventDefault(); SFX.ui();
+  row.addEventListener('click',function(e){ e.preventDefault(); SFX.ui();
     try{ if(isFull()){ (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document); }
       else { var d=document.documentElement; (d.requestFullscreen||d.webkitRequestFullscreen||function(){}).call(d); } }catch(err){}
     setTimeout(paint,150); });
@@ -1797,7 +1842,7 @@ window._sbCapEarn=function(n,tag){ var grant=0; try{ var k='sw_sb_chaffwars'; va
       if(i===4)noiseHit(ctx,B.next,0.16,1200,0.45,B.master);   /* snare backbeat */
       noiseHit(ctx,B.next,0.03,7000,i%2?0.09:0.15,B.master);   /* hi-hats */
       B.next+=SPB;B.step++; } }
-  function paint(){ var b=$('b-bgm'); if(b)b.classList.toggle('playing',B.on); }
+  function paint(){ var b=$('b-bgm'); if(b){ b.classList.toggle('playing',B.on); b.textContent=B.on?'\u266B Beat on':'\u266B Beat off'; b.setAttribute('aria-pressed',B.on?'true':'false'); } }   /* v1.11: the state in words, not a border colour */
   function start(){ B.on=true; try{localStorage.setItem('cw_bgm','1');}catch(e){}
     B.step=0;B.next=0; if(B.timer)clearInterval(B.timer); B.timer=setInterval(schedule,60); schedule(); paint(); }
   function stop(){ B.on=false; try{localStorage.setItem('cw_bgm','0');}catch(e){}
@@ -1863,7 +1908,7 @@ function versusResult(result){ if(_devSweep)return;
   var rw=$('go-reward'); if(rw)rw.style.display='none';   /* no sunbeams in versus (farmable) */
   $('go-next').style.display='none';
   var gr=$('go-retry'); if(gr)gr.style.display='none';
-  setShare(result==='win' ? 'I just won a versus battle in Pop N Lock!' : null);
+  setShare(result==='win' ? 'I just won a versus battle in Pop N Lock.' : null);
   show('s-go'); }
 
 /* ---- local transport (BroadcastChannel: same-browser tabs, dev bots) ---- */
@@ -1929,7 +1974,7 @@ tap('vs-back',function(){ SFX.ui(); _mpLeave(); show('s-title'); });
 tap('b-vs-create',function(){ SFX.ui(); _vsCreate(); });
 tap('b-vs-join',function(){ SFX.ui(); _vsJoin(); });
 
-fit(); paintTitle(); requestAnimationFrame(loop); a2Json();   /* v1.8: Astra's art (art/pnl2) */
+applyBig(); fit(); paintTitle(); requestAnimationFrame(loop);   /* v1.11: the stored Larger text, Reduce motion and tray settings apply from the first frame, not the first screen change */ a2Json();   /* v1.8: Astra's art (art/pnl2) */
 
 /* =====================================================================
    HEADLESS DEV HOOK + BOT  (only with ?cwdev=1)
@@ -2027,6 +2072,7 @@ if(/[?&]cwdev=1/.test(location.search)){
     match:function(){ return MATCH; },   /* v1.7 gates: the live match (the falling piece, softHold, hype) */
     art2:function(){ return { j:!!A2.j, asked:A2.asked, live:a2Live(), who:A2.who, joins:A2.joins||[], rail:RAIL, frame:railFrame() }; },   /* v1.8 gates */
     inp:function(){ return INP; }, setting:function(k,v){ SET[k]=v; applyBig(); fit(); return SET[k]; },   /* v1.9 gates */
+    comfort:function(){ return { calm:CALM, s:STAGE_S, shakeT:SHAKE.t, set:SET }; },   /* v1.11 gates */
     railChain:function(n){ railChain(n); }, railHit:function(){ railHit(); },   /* the hooks a real chain step and a Chaff landing call */
     railChainEnd:function(){ railChainEnd(); }, cwKeys:function(){ var a=[],k; for(k in _cwCache)if(_cwCache.hasOwnProperty(k))a.push(k); return a; },
     resolve:function(g){ return computeResolve(g||MATCH.pf.grid); },

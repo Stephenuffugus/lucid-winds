@@ -75,8 +75,24 @@ const G = {
     PAUSEINPUT: { want: 'during the three count a real Space', muts: [["function playable(){ return MATCH.phase==='fight' && !MATCH.paused && pf()", "function playable(){ return MATCH.phase==='fight' && pf()"]] },
     REPAUSE: { want: 'during the three count a real Space', muts: [["function pauseMatch(){ if(MATCH.mode==='versus'||MATCH.phase!=='fight')return;", "function pauseMatch(){ if(MATCH.mode==='versus'||MATCH.phase!=='fight'||MATCH.paused)return;"]] },
     DRAINEASE: { want: "the outro's drain", muts: [["d=MATCH.phase==='done'?90:fallDur(rows);", 'd=fallDur(rows);'], ["(1-(fd<0?p:p*p))", '(1-p*p)']] },
-    GUIDEROW: { want: 'the Landing guide row', muts: [['#sl-guide{cursor:pointer; min-height:72px}', '#sl-guide{cursor:pointer}']] },
+    GUIDEROW: { want: 'the Landing guide row', muts: [['background:#161309; min-height:var(--row); cursor:pointer}', 'background:#161309; cursor:pointer}']] },   /* v1.11: the shared row rule */
     NOCOUNT: { want: 'a hidden Campaign match stays exactly', muts: [['    if(MATCH.resumeT>=700){ MATCH.resumeT=0; MATCH.count--;', '    if(MATCH.resumeT>=0){ MATCH.resumeT=0; MATCH.count=0;']] },
+  },
+  p3a: {
+    FONTSMALL: { want: 'every line of copy on every screen', muts: [['--fs:calc(max(18px, calc(12px * var(--k))) * var(--tx));', '--fs:calc(15px * var(--tx));']] },
+    HITSMALL: { want: 'every line of copy on every screen', muts: [['--hit:max(72px, calc(48px * var(--k)));', '--hit:60px;']] },
+    ROWSMALL: { want: 'every line of copy on every screen', muts: [['--row:max(84px, calc(56px * var(--k)))}', '--row:66px}']] },
+    ROWNOTTARGET: { want: 'a real tap on a settings row', muts: [["  row.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key];", "  el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key];"]] },
+    CALMSHAKE: { want: 'the screen shakes by default', muts: [['function shake(a,ms){ if(CALM||!SET.shake)return;', 'function shake(a,ms){ if(false)return;']] },
+    NOHAPGATE: { want: 'Vibration off stops every buzz', muts: [['function hap(ms){ if(SET.haptics&&navigator.vibrate){', 'function hap(ms){ if(navigator.vibrate){']] },
+    NOHOLD: { want: 'a match holds the fleet', muts: [["  try{ if(window.SWSMusic&&SWSMusic.hold)SWSMusic.hold(id==='s-play'); }catch(e){}", '']] },
+    BANG: { want: 'no quoted player string', muts: [["txt:'DENIED',", "txt:'DENIED!',"]] },
+    SAFEAREA: { want: 'a 40 px top safe area', muts: [['var iw=_vvW(), ih=_vvH(), sat=safeTop(),', 'var iw=_vvW(), ih=_vvH(), sat=0,']] },
+    BOOTAPPLY: { want: 'applied on the first load', muts: [['applyBig(); fit(); paintTitle(); requestAnimationFrame(loop);', 'fit(); paintTitle(); requestAnimationFrame(loop);']] },
+    HOMEZONE: { want: 'at 360 wide the back button answers', muts: [['#b-home::after{left:-10px; top:-10px; right:auto; bottom:auto; width:max(82px, calc(52px * var(--k))); height:max(82px, calc(52px * var(--k)))}', '']] },
+    BEATWORDS: { want: 'the 80s beat button says its state', muts: [["b.textContent=B.on?'\\u266B Beat on':'\\u266B Beat off'; ", '']] },
+    CALMCLASS: { want: 'Reduce motion cycles to On', muts: [["if(CALM)B.add('calm'); else B.remove('calm');", '']] },
+    BIGTEXTVAR: { want: 'Larger text grows the copy', muts: [['body.bigtext #stage{--tx:1.25}', '']] },
   },
 };
 let bad = 0;
