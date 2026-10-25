@@ -1694,5 +1694,8 @@ console.log('\n[22] Part F2 + G1: the drawn knife never sinks into the ground, a
   await ctx.close();
 }
 
+/* [24] Part H: its own file, so the fail watch (tools/slice-3d-tests/fix/fwrun_h.js) can run it alone */
+await (await import('./audit-h.mjs')).rowH({ puppeteer, LAUNCH, URL, ok });
+
 console.log('\n=== slice-3d: ' + pass + ' passed, ' + fail + ' failed ===');
 process.exit(fail ? 1 : 0);

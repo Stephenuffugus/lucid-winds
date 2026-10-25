@@ -392,7 +392,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script>
 (function(){
 "use strict";
-var BUILD="v7.3";
+var BUILD="v7.4";
 function $(id){ return document.getElementById(id); }
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
@@ -778,8 +778,11 @@ function artOn(mat, rel, opt){
     if(opt.repeat){ t.wrapS=t.wrapT=THREE.RepeatWrapping; }
     if(opt.mirrorV){ t.wrapS=THREE.RepeatWrapping; t.wrapT=THREE.MirroredRepeatWrapping; }
     if(opt.mirrorS){ t.wrapS=THREE.MirroredRepeatWrapping; }
+    if(opt.mirror){ t.wrapS=t.wrapT=THREE.MirroredRepeatWrapping; }   /* Part H: the Journey grass, mirrored both ways */
+    if(opt.repeatS){ t.wrapS=THREE.RepeatWrapping; }                    /* Part H: along x only (soil, hills) */
     /* a second material on the same file asks for the same wrap: only a real change re-uploads it */
-    if(t.wrapS!==ws||t.wrapT!==wt||t.anisotropy!==ART.aniso){ t.anisotropy=ART.aniso; t.needsUpdate=true; }
+    var an=opt.aniso||ART.aniso;   /* Part H: the Journey kit samples once (software GL paid for 4x over most of the screen) */
+    if(t.wrapS!==ws||t.wrapT!==wt||t.anisotropy!==an){ t.anisotropy=an; t.needsUpdate=true; }
     mat.map=t; if(mat.color)mat.color.setHex(opt.tint!=null?opt.tint:0xffffff);
     if(opt.then)opt.then(t);
     mat.needsUpdate=true;
@@ -878,6 +881,50 @@ function propSprite(set, name, x, y, z, h){
   var p=set&&set.props[name]; if(!p)return null;
   var sp=new THREE.Sprite(p.mat); var w=h*(p.w/p.h);
   sp.scale.set(w,h,1); sp.center.set(0.5,0); sp.position.set(x,y,z); return sp;
+}
+/* Part H: a cut out whose PAINTED feet stand on yFoot (never its canvas edge): the canvas bottom goes (1 - foot) * h
+   below. propStandW fits it by width. */
+function propStand(set, name, x, yFoot, z, h){
+  var p=set&&set.props[name]; if(!p)return null;
+  return propSprite(set, name, x, yFoot-(1-p.foot)*h, z, h);
+}
+function propStandW(set, name, x, yFoot, z, w){ var p=set&&set.props[name]; return p?propStand(set, name, x, yFoot, z, w*p.h/p.w):null; }
+/* Part H: the code mesh a painted piece replaces hides when that piece's file is in, and not before (until then, and
+   with ?noart=1, the code look stays). `key` is the prop or tile name; codeHideAll runs when it lands. */
+function codeHide(set, key, mesh, ready){
+  if(!set||!mesh)return mesh;
+  if(ready===undefined)ready=propReady(set, key);
+  if(ready){ mesh.visible=false; return mesh; }
+  var L=set.hide||(set.hide={}); (L[key]||(L[key]=[])).push(mesh); return mesh;
+}
+function codeHideAll(set, key){ var L=set.hide&&set.hide[key]; if(!L)return; for(var i=0;i<L.length;i++)L[i].visible=false; set.hide[key]=[]; }
+/* Part H: the Journey counter (and the Climb's floor): grass on the lip's and the counter's tops (one mirrored tile per 8
+   units: at 6 its diagonal band read as stripes from the player's camera, plan section 10), the soil face on their fronts with the tile's height over the lip plus the counter front (3.5 units, so the
+   painted overhang row lands at the grass line). Sides, bottoms and backs keep the code colours. No box moves. */
+function journeyCounter(set, g, lip){
+  if(!set||set.id!=='orchard_loft')return;
+  var top=codeMat(set,'jgrass',0x557a48,'j_grass',{mirror:true, tint:0xc9d3c4, aniso:1, then:function(){ codeHideAll(set,'j_grass'); }});   /* tint: a little toward 0x3c5a34 */
+  var sL=codeMat(set,'jsoilL',0x557a48,'j_soil',{repeatS:true, aniso:1}), sG=codeMat(set,'jsoilG',0x3c5a34,'j_soil',{repeatS:true, aniso:1});
+  lip.material=[lip.material, lip.material, top, lip.material, sL, lip.material];
+  g.material=[g.material, g.material, top, g.material, sG, g.material];
+  for(var k=0;k<2;k++){ var m=k?g:lip; boxUV(m, 8);
+    var P=m.geometry.attributes.position, N=m.geometry.attributes.normal, U=m.geometry.attributes.uv;
+    for(var i=0;i<P.count;i++) if(N.getZ(i)>0.5) U.setXY(i, (P.getX(i)+m.position.x)/14, (P.getY(i)+m.position.y+3.25)/3.5);
+    U.needsUpdate=true; }
+}
+function jReady(set, name){ return !!(set&&set[name]&&artLoaded(set[name].map)); }
+/* Part H: the Journey kit's cut outs, asked for only when Journey builds (Endless, Freefall and the Climb make the orchard
+   set too, for its wasp, its band and its floor, and never draw them). They write depth (trees occlude each other) and
+   cut on alpha, the back row a step greyer; `foot` is the painted bottom as a fraction of the height (propStand). */
+function jKit(s){
+  if(s.jkit)return; s.jkit=true;
+  artJson(function(j){ var A=j.worlds[s.id], P=(A&&A.props)||{}, n;
+    for(n in P){ if(P.hasOwnProperty(n)&&P[n].file&&/^j_\w+$/.test(n)&&n!=='j_flag'&&!s.props[n]){ (function(n,p){
+      var m=new THREE.SpriteMaterial({color:n==='j_tree_far'?0xd8dde0:0xffffff, transparent:true, depthWrite:true, alphaTest:0.35, fog:true, opacity:0});
+      s.props[n]={ mat:m, w:p.w||256, h:p.h||256, foot:p.foot||1 };
+      artOn(m, p.file, {aniso:1, then:function(){ m.opacity=1; codeHideAll(s, n); }});
+    })(n,P[n]); } }
+  });
 }
 /* a world prop CENTRED on (x, y), fitted so its larger side is `size` units (hazards over their hit circle) */
 function propCentred(set, name, x, y, z, size){
@@ -1223,9 +1270,14 @@ function woodBox(x,y,w,h){
   return {x:x,y:y,w:w,h:h,solid:true,spring:false,vt:0.15};   /* vt: the cap's top over the collider's (Part G1) */
 }
 function stump(x,h){
-  var m=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(1.7,2,h,10), new THREE.MeshLambertMaterial({color:WOOD})));
+  var J=BW&&BW.id==='orchard_loft';
+  var cg=new THREE.CylinderGeometry(1.7,2,h,10);
+  if(J){ var U=cg.attributes.uv; for(var i=0;i<U.count;i++)U.setXY(i, U.getX(i)*2, U.getY(i)*h/2); U.needsUpdate=true; }   /* Part H: bark twice round, a tile per 2 units up */
+  var m=addMesh(new THREE.Mesh(cg, J?codeMat(BW,'jbark',WOOD,'j_bark',{repeatS:true, mirrorV:true}):new THREE.MeshLambertMaterial({color:WOOD})));
   m.position.set(x,h/2,0);
-  var ring=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(1.75,1.75,0.25,10), new THREE.MeshLambertMaterial({color:0xc9a06a})));
+  var rm=new THREE.MeshLambertMaterial({color:0xc9a06a});
+  var ring=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(1.75,1.75,0.25,10),
+    J?[codeMat(BW,'jbarkR',0xc9a06a,'j_bark',{repeatS:true, mirrorV:true}), codeMat(BW,'jtop',0xc9a06a,'j_stump_top',{}), rm]:rm));
   ring.position.set(x,h,0);
   return {x:x-1.8,y:0,w:3.6,h:h,solid:true,spring:false,vt:0.125};   /* the ring's top (Part G1) */
 }
@@ -1234,6 +1286,7 @@ function mushroom(x){
   st.position.set(x,1.1,0);
   var cap=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2.2,12,8,0,Math.PI*2,0,Math.PI/2), new THREE.MeshLambertMaterial({color:CAP})));
   cap.position.set(x,2.2,0);
+  if(BW&&BW.id==='orchard_loft'){ var ms=propStandW(BW,'j_mushroom',x,0,-0.6,4.4); if(ms){ addMesh(ms); codeHide(BW,'j_mushroom',st); codeHide(BW,'j_mushroom',cap); } }   /* Part H */
   return {x:x-2.1,y:0,w:4.2,h:2.9,solid:true,spring:true};
 }
 /* The painted fruit (Astra's cards): one atlas, one shared sprite material per kind. The visible fruit inside its
@@ -1311,6 +1364,8 @@ function branchOver(x0,x1,y){
   var lf=addMesh(new THREE.Mesh(new THREE.SphereGeometry(1.4,7,6), new THREE.MeshLambertMaterial({color:0x3f7a38})));
   lf.position.set(x1+2, y+0.6, 0);
   lf.scale.set(1.6,0.7,1);
+  var bp=BW&&BW.id==='orchard_loft'&&BW.props.j_branch;   /* Part H: the painted branch, w wide and w/4 tall, centred where the code one lies */
+  if(bp){ var bs=new THREE.Sprite(bp.mat); bs.scale.set(w,w/4,1); bs.center.set(0.5,0.5); bs.position.set((x0+x1)/2,y,-0.6); addMesh(bs); codeHide(BW,'j_branch',br); codeHide(BW,'j_branch',lf); }
 }
 function crystal(x,y){
   var m=addMesh(new THREE.Mesh(new THREE.ConeGeometry(1.1,3.2,5), new THREE.MeshLambertMaterial({color:CRYSTAL, emissive:0x551133})));
@@ -1466,6 +1521,7 @@ function buildLevel(lvl){
   var rng=mulberry32(((lvl*2654435761)>>>0)^0x51C3D);
   var len=90+Math.min(lvl,40)*14;
   var WSJ=worldSet('orchard_loft'); BW=WSJ; HZ=worldSet('mossy_canyon');   /* Journey's thorns are the canyon's thorn pods */
+  jKit(WSJ);   /* Part H: the painted orchard's cut outs (Journey only) */
   // sky backdrop: the Orchard Loft's painted morning (today's gradient until it lands)
   var sky=addMesh(skyPlane(WSJ, len+260, 110, modeSky(WSJ,'skyJ',SKY_J,SKY_J_AT))); sky.position.set(len/2,34,-34);
   var sunD=addMesh(new THREE.Mesh(new THREE.CircleGeometry(7,24), new THREE.MeshBasicMaterial({color:0xfff2c0, fog:false, transparent:true, opacity:0.9})));
@@ -1484,22 +1540,37 @@ function buildLevel(lvl){
   soil.position.set(len/2,-2.6,0);
   var lip=addMesh(new THREE.Mesh(new THREE.BoxGeometry(len+70,0.5,14.4), new THREE.MeshLambertMaterial({color:0x557a48})));
   lip.position.set(len/2,0,0);
-  // ground stripes every 8 units: scale + speed read
+  WSJ.hide={}; journeyCounter(WSJ, g, lip);   /* Part H: the painted grass and soil (the boxes unmoved) */
+  // the far hills (Part H): between the sky and the back row, clear until the painting is in
+  /* an opaque cut out, not a blended layer (cheaper to fill), invisible until its file is in */
+  var hm=WSJ.jhills||(WSJ.jhills=(function(){ var m=new THREE.MeshBasicMaterial({color:0xffffff, alphaTest:0.4, visible:false});
+    artJson(function(j){ var A=j.worlds.orchard_loft; if(A&&A.j_hills)artOn(m, A.j_hills, {repeatS:true, aniso:1, then:function(){ m.visible=true; }}); }); return m; })());
+  /* 30 tall from y -8 (the plan said 24 from -1: from the player's camera the line over the counter's back edge meets
+     z -30 near y -7, so the sky showed under the hills); its 4:1 tile keeps its shape at one repeat per 120 units */
+  var hg=new THREE.PlaneGeometry(len+260,30), hu=hg.attributes.uv; for(var hi=0;hi<hu.count;hi++)hu.setX(hi, hu.getX(hi)*(len+260)/120); hu.needsUpdate=true;
+  var hills=addMesh(new THREE.Mesh(hg, hm)); hills.position.set(len/2,7,-30);
+  // ground stripes every 8 units: scale + speed read (they step aside when the painted grass is in)
   for(var sx=0;sx<len+20;sx+=8){
     var stp=addMesh(new THREE.Mesh(new THREE.BoxGeometry(4,0.08,13.6), new THREE.MeshLambertMaterial({color:0x628a54})));
-    stp.position.set(sx+2,0.26,0);
+    stp.position.set(sx+2,0.26,0); codeHide(WSJ,'j_grass',stp,jReady(WSJ,'jgrass'));
   }
   // grass tufts + tiny flowers, sparse, front edge biased
   for(var gx=2;gx<len+10;gx+=3+rng()*4){
     if(rng()<0.6){
-      var tuft=addMesh(new THREE.Mesh(new THREE.ConeGeometry(0.28,0.9+rng()*0.6,5), new THREE.MeshLambertMaterial({color:0x6fae58})));
+      var tdr=rng();   /* the cone's height draw, kept in its place; it also picks the painted tuft (Part H, no new draw) */
+      var tuft=addMesh(new THREE.Mesh(new THREE.ConeGeometry(0.28,0.9+tdr*0.6,5), new THREE.MeshLambertMaterial({color:0x6fae58})));
       tuft.position.set(gx, 0.6, 3.5+rng()*2.5);
+      var tk=tdr<0.5?'j_tuft_a':'j_tuft_b', ts=propStand(WSJ,tk,gx,GRASS_TOP,tuft.position.z,1);
+      if(ts){ addMesh(ts); codeHide(WSJ,tk,tuft); }
     }
     if(rng()<0.22){
       var stem=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.9,4), new THREE.MeshLambertMaterial({color:0x5a8a48})));
       stem.position.set(gx+1, 0.7, -3-rng()*2);
-      var bloom=addMesh(new THREE.Mesh(new THREE.SphereGeometry(0.24,6,5), new THREE.MeshLambertMaterial({color:rng()<0.5?0xf2e6c0:0xe8a0b8})));
+      var fdr=rng();   /* the bloom colour draw, kept in its place; it picks the painted flower too */
+      var bloom=addMesh(new THREE.Mesh(new THREE.SphereGeometry(0.24,6,5), new THREE.MeshLambertMaterial({color:fdr<0.5?0xf2e6c0:0xe8a0b8})));
       bloom.position.set(gx+1, 1.2, stem.position.z);
+      var fk=fdr<0.5?'j_flower_a':'j_flower_b', fs=propStand(WSJ,fk,gx+1,GRASS_TOP,stem.position.z,1);
+      if(fs){ addMesh(fs); codeHide(WSJ,fk,stem); codeHide(WSJ,fk,bloom); }
     }
   }
   // backdrop trees for depth (two rows, varied greens)
@@ -1507,15 +1578,21 @@ function buildLevel(lvl){
     var th=8+rng()*10;
     var tr=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.8,1.1,th,7), new THREE.MeshLambertMaterial({color:WOOD_D})));
     tr.position.set(tx,-1+th/2,-9-rng()*6);
-    var crCol=[0x3f7a38,0x4a8a3e,0x37683a][Math.floor(rng()*3)];
+    var crd=rng(), crCol=[0x3f7a38,0x4a8a3e,0x37683a][Math.floor(crd*3)];   /* the crown colour draw also picks the painted tree */
     var cr=addMesh(new THREE.Mesh(new THREE.SphereGeometry(2.6+rng()*2.4,9,7), new THREE.MeshLambertMaterial({color:crCol})));
     cr.position.set(tx,-1+th+1.5,tr.position.z);
+    var tz=tr.position.z, tn=tz>-12?['j_tree_apple','j_tree_pear','j_tree_plum','j_tree_poplar'][Math.floor(crd*4)]:'j_tree_far';
+    var tsp=propStand(WSJ,tn,tx,-1,tz,th+1.5);   /* Part H: the painted tree, its feet on the trunk's base */
+    if(tsp){ addMesh(tsp); codeHide(WSJ,tn,tr); codeHide(WSJ,tn,cr); }
   }
   // near bushes for the front parallax band
   for(var bx=0;bx<len+20;bx+=14+rng()*12){
-    var bh=addMesh(new THREE.Mesh(new THREE.SphereGeometry(1.2+rng()*0.8,7,6), new THREE.MeshLambertMaterial({color:0x2f5a30})));
+    var bdr=rng();   /* the radius draw, kept in its place; it picks the painted bush too */
+    var bh=addMesh(new THREE.Mesh(new THREE.SphereGeometry(1.2+bdr*0.8,7,6), new THREE.MeshLambertMaterial({color:0x2f5a30})));
     bh.position.set(bx, -0.2, 6.4+rng()*1.2);
     bh.scale.set(1.5,0.8,1);
+    var bk=bdr<0.5?'j_bush_a':'j_bush_b', bsp=propStandW(WSJ,bk,bx,GRASS_TOP,bh.position.z,2*(1.2+bdr*0.8));
+    if(bsp){ addMesh(bsp); codeHide(WSJ,bk,bh); }
   }
   var blocks=[], items=[], crystals=[], thorns=[], wasps=[];
   var x=14;
@@ -1623,10 +1700,10 @@ function buildLevel(lvl){
       x+=9.5+rng()*2;
     } else if(seg==='crumble'){         // cracked shelf: one bounce and it drops
       var chh=3+Math.floor(rng()*2)*1.6, cw=3.4;
-      var cmesh=addMesh(new THREE.Mesh(new THREE.BoxGeometry(cw,0.9,6), new THREE.MeshLambertMaterial({color:0x9a7a4a})));
-      cmesh.position.set(x+cw/2, chh+0.45, 0);
+      var cmesh=addMesh(new THREE.Mesh(new THREE.BoxGeometry(cw,0.9,6), codeMat(WSJ,'jshelf',0x9a7a4a,'j_shelf',{then:function(){ codeHideAll(WSJ,'j_shelf'); }})));
+      cmesh.position.set(x+cw/2, chh+0.45, 0);   /* Part H: the painted cracked shelf, once per shelf (the box's own UVs) */
       var crk=addMesh(new THREE.Mesh(new THREE.BoxGeometry(cw+0.1,0.14,6.1), new THREE.MeshLambertMaterial({color:0x4a2f18})));
-      crk.position.set(x+cw/2, chh+0.62, 0); crk.rotation.z=0.05;
+      crk.position.set(x+cw/2, chh+0.62, 0); crk.rotation.z=0.05; codeHide(WSJ,'j_shelf',crk,jReady(WSJ,'jshelf'));
       var cleg=addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.36,chh,6), new THREE.MeshLambertMaterial({color:WOOD_D})));
       cleg.position.set(x+cw/2, chh/2, 0);
       blocks.push({x:x,y:chh,w:cw,h:0.9,solid:true,spring:false,crumble:true,mesh:cmesh,mesh2:crk});
@@ -1677,6 +1754,10 @@ function buildLevel(lvl){
   pole2.position.set(wallX+1.5,26,0);
   var flag=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(3.4,2.2), new THREE.MeshLambertMaterial({color:0xffd76a, side:THREE.DoubleSide})));
   flag.position.set(wallX-0.4,27.6,0);
+  var fm=WSJ.jflag||(WSJ.jflag=(function(){ var m=new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0, side:THREE.DoubleSide, alphaTest:0.35});
+    artJson(function(j){ var A=j.worlds.orchard_loft, p=A&&A.props&&A.props.j_flag; if(p)artOn(m, p.file, {then:function(){ m.opacity=1; codeHideAll(WSJ,'j_flag'); }}); }); return m; })());
+  var pflag=addMesh(new THREE.Mesh(new THREE.PlaneGeometry(3.4,2.2), fm)); pflag.position.copy(flag.position); pflag.name='jflag';   /* Part H */
+  codeHide(WSJ,'j_flag',flag,jReady(WSJ,'jflag'));
   return {len:len, blocks:blocks, items:items, crystals:crystals, thorns:thorns, wasps:wasps, wallX:wallX, bands:bands, bandMats:bandMats};
 }
 
@@ -2757,9 +2838,10 @@ function buildClimb(lvl){
   soil.position.set(len/2,-2.6,0);
   var lip=addMesh(new THREE.Mesh(new THREE.BoxGeometry(len+70,0.5,14.4), new THREE.MeshLambertMaterial({color:0x557a48})));
   lip.position.set(len/2,0,0);
+  var WJ=worldSet('orchard_loft'); WJ.hide={}; journeyCounter(WJ, g, lip);   /* Part H: the Climb's floor is the Journey's grass too */
   for(var sx=0;sx<len+8;sx+=8){
     var stp=addMesh(new THREE.Mesh(new THREE.BoxGeometry(4,0.08,13.6), new THREE.MeshLambertMaterial({color:0x628a54})));
-    stp.position.set(sx+2,0.26,0);
+    stp.position.set(sx+2,0.26,0); codeHide(WJ,'j_grass',stp,jReady(WJ,'jgrass'));
   }
   for(var gx=3;gx<len;gx+=3+rng()*4){
     if(rng()<0.6){
@@ -4336,7 +4418,7 @@ if(/[?&]dev=1/.test(location.search)){
 })();
 
 /* ---------- service worker ---------- */
-if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=77'); }catch(e){} }
+if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=78'); }catch(e){} }
 })();
 </script>
 <script>/* shared arcade exit (2026-07-28): 30 satellites had no way back to the

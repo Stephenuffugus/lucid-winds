@@ -5,6 +5,7 @@ Cuts Astra's Super Slice handoff (Super_Slice_Dev_Handoff.zip, vaulted as vault-
 small WebP files the game loads, plus art/art.json describing them. Run with python3 -I (the zip is outside data):
 
     python3 -I satellites/slice-3d/tools/cut_art.py --src /tmp/claude-1000/ss/drop --out satellites/slice-3d/art
+    python3 -I satellites/slice-3d/tools/cut_art.py --journey /tmp/claude-1000/journey-kit --out satellites/slice-3d/art   (Part H)
 
 --src is the EXTRACTED zip (unzip once to the big /tmp disk; it is wiped at every codespace stop, re-extract from the
 zip in assets/ or from the vault release). The script never edits the originals and fails over budget.
@@ -121,10 +122,78 @@ class Out:
         self.sizes[rel] = os.path.getsize(p)
         return rel
 
+# ---------------------------------------------------------------- Part H: the Journey kit (Astra, 25 Oct 2026)
+# tiles: key -> (source, size, wrapped axes 'x'/'y'); cut outs: key -> (source, size)
+J_TILES = {'j_grass': ('ground/grass_top.png', (512, 512), 'xy'), 'j_soil': ('ground/soil_face.png', (512, 128), 'x'),
+           'j_bark': ('pieces/stump_bark.png', (256, 128), 'x'),   # up the trunk it MIRRORS (its rows do not wrap: 36 vs 5) 'j_stump_top': ('pieces/stump_top.png', (128, 128), ''),
+           'j_shelf': ('pieces/shelf_cracked.png', (256, 64), ''), 'j_vine': ('pieces/vine.png', (32, 256), 'y'),
+           'j_hills': ('backdrop/hills_far.png', (1024, 256), 'x')}
+J_PROPS = {'j_tree_apple': ('trees/tree_apple.png', (384, 512)), 'j_tree_pear': ('trees/tree_pear.png', (384, 512)),
+           'j_tree_plum': ('trees/tree_plum.png', (384, 512)), 'j_tree_poplar': ('trees/tree_poplar.png', (256, 512)),
+           'j_tree_far': ('trees/tree_far.png', (384, 512)), 'j_bush_a': ('plants/bush_a.png', (256, 160)),
+           'j_bush_b': ('plants/bush_b.png', (256, 160)), 'j_tuft_a': ('plants/tuft_a.png', (64, 64)),
+           'j_tuft_b': ('plants/tuft_b.png', (64, 64)), 'j_flower_a': ('plants/flower_a.png', (64, 64)),
+           'j_flower_b': ('plants/flower_b.png', (64, 64)), 'j_mushroom': ('pieces/mushroom.png', (256, 256)),
+           'j_branch': ('pieces/branch.png', (512, 128)), 'j_flag': ('pieces/flag.png', (256, 160))}
+
+def seam(im, axis):
+    """The wrap check: the step from the last line back to the first, against the mean step between neighbours."""
+    a = im.convert('L'); w, h = a.size; px = a.load()
+    line = (lambda i: [px[i, y] for y in range(h)]) if axis == 'x' else (lambda i: [px[x, i] for x in range(w)])
+    n = w if axis == 'x' else h
+    d = lambda u, v: sum(abs(p - q) for p, q in zip(u, v)) / len(u)
+    steps = [d(line(i), line(i + 1)) for i in range(0, n - 1, max(1, (n - 1) // 64))]
+    return d(line(n - 1), line(0)), sum(steps) / len(steps)
+
+def journey(kit, O, J):
+    W = J['worlds'].setdefault('orchard_loft', {}); P = W.setdefault('props', {}); d = 'w/orchard_loft/'; bad = []
+    for k, (f, size, wrap) in J_TILES.items():
+        im = Image.open(os.path.join(kit, f)); alpha = im.mode == 'RGBA'; im = im.convert('RGBA' if alpha else 'RGB')
+        # the intake measured each wrapped edge's first and last lines identical: one line off, so the repeat has no double line
+        im = im.crop((0, 0, im.width - (1 if 'x' in wrap else 0), im.height - (1 if 'y' in wrap else 0)))
+        if k == 'j_soil':    # its top 16 to 18 rows are the pale background behind the painted overhang: a grey line at the grass edge
+            im = im.crop((0, 18, im.width, im.height))
+        if k == 'j_grass':   # a saturated yellow green (mean 153,182,43) that out shouts the painted orchard: a step duller
+            im = dull(im, 0.9, 0.72)
+        im = im.resize(size, Image.LANCZOS)
+        for ax in wrap:
+            e, m = seam(im, ax); print('%-12s wrap %s: last to first %.1f, neighbours %.1f' % (k, ax, e, m))
+            if e > 4 * max(m, 1): bad.append('%s %s seam %.1f vs %.1f' % (k, ax, e, m))
+        W[k] = O.save(im, d + k + '.webp', q=85, alpha=alpha)
+    for k, (f, size) in J_PROPS.items():
+        im = bleed(Image.open(os.path.join(kit, f))).resize(size, Image.LANCZOS)
+        rel = O.save(im, d + k + '.webp', q=85)
+        b = bbox(Image.open(os.path.join(O.root, rel)).convert('RGBA'))   # measured on the file as saved (lossy alpha can move a row)
+        P[k] = {'file': rel, 'w': im.width, 'h': im.height, 'box': list(b), 'foot': round(b[3] / im.height, 4)}
+    return bad
+
+def journey_only(kit, out):
+    """Part H on its own: add the kit to the art.json already cut (the original handoff need not be re-extracted)."""
+    with open(os.path.join(out, 'art.json')) as fh:
+        J = json.load(fh)
+    O = Out(out); bad = journey(kit, O, J)
+    tot = 0
+    for root, _, files in os.walk(os.path.join(out, 'w', 'orchard_loft')):
+        tot += sum(os.path.getsize(os.path.join(root, f)) for f in files)
+    J['worlds']['orchard_loft']['bytes'] = tot
+    J['totalBytes'] = sum(os.path.getsize(os.path.join(r, f)) for r, _, fs in os.walk(out) for f in fs if f.endswith('.webp'))
+    J['journeyKit'] = 'super-slice-journey-kit.zip (Astra, 25 Oct 2026)'
+    with open(os.path.join(out, 'art.json'), 'w') as fh:
+        json.dump(J, fh, separators=(',', ':'), sort_keys=True)
+    for k, v in sorted(O.sizes.items()): print('%7.1f KB  %s' % (v / 1024, k))
+    print('orchard_loft %.1f KB (budget %.0f KB)' % (tot / 1024, BUDGET_WORLD / 1024))
+    if tot > BUDGET_WORLD: bad.append('orchard_loft %.2f MB over budget' % (tot / 1048576))
+    if bad:
+        print('FAIL: ' + '; '.join(bad)); sys.exit(1)
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--src', required=True); ap.add_argument('--out', required=True)
+    ap.add_argument('--src'); ap.add_argument('--out', required=True); ap.add_argument('--journey')
     args = ap.parse_args()
+    if args.journey and not args.src:
+        return journey_only(args.journey, args.out)
+    if not args.src:
+        ap.error('--src is required (or --journey alone to add the Journey kit)')
     S = args.src; O = Out(args.out)
     J = {'version': 1, 'source': 'Super_Slice_Dev_Handoff.zip (Astra, 23 Oct 2026)', 'worlds': {}, 'fruit': {}, 'knives': {}, 'fx': {}, 'ui': {}}
     src = lambda *p: os.path.join(S, *p)
@@ -236,6 +305,9 @@ def main():
     sp = bleed(Image.open(src('ui', 'sliver_spin_strip.png')))
     J['ui']['sliver_spin'] = {'file': O.save(sp, 'ui/sliver_spin.webp'), 'cells': 6, 'cw': sp.width // 6, 'ch': sp.height}
 
+    if args.journey:
+        jb = journey(args.journey, O, J)
+        if jb: print('FAIL: ' + '; '.join(jb)); sys.exit(1)
     # ---------------------------------------------------------------- budget + manifest
     over = []
     for w in WORLDS:
