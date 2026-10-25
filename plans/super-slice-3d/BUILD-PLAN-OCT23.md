@@ -286,6 +286,34 @@ rates) are proposals; the gates below are what counts.
     (4,176 constructed juggles, 440 played). HIS CALLS: that feel; the x10 bullseye after a win (the third hit is always in
     the middle lane; the skeptic refuted it as a defect: about 10 percent more score when the player aims anyway); whether
     the give way should forfeit Clean Slice (the plan names only the rope; the boss is optional in its definition).
+- 2026-10-25 06:59 UTC (Opus): **PART H BUILT, NOT SHIPPED: the frame time gate is red.** The whole part sits on the
+  pushed branch `super-slice-part-h-wip` (commit `6aca8d556`, from add-sproing-jumper `4e1885f1c`), stamps v7.4 /
+  `sw.js?v=78` / slice3d-v80 / card `?v=20261025a` in, ready for `tools/slice-3d-tests/deploy/deploy.sh` (the `want_*`
+  files are in `/tmp/claude-1000/ss-deploy`, gone after a stop: one line each, section 10's Deploy). The working tree of
+  add-sproing-jumper is back on live v7.3. **What passed:** the cut (`cut_art.py --journey`, standalone beside `--src`;
+  orchard_loft 673 KB of 2.5 MB); row [24] (`audit-h.mjs`, run by audit-check.mjs and alone by `fix/runh.mjs`) 11 of 11:
+  the lip and GRASS_TOP at 0.25 (read from the served source), the grass mirrored one tile per 8 units, no code trunk,
+  crown, tuft, bloom, stripe, mushroom stem or cap, branch blob or shelf crack drawn with the art in (levels 3, 4, 5, 6,
+  9), every tree's painted foot within 0.02 of y -1 and every bush, tuft and flower within 0.1 of 0.25 FROM THEIR OWN
+  PIXELS, the mushroom centred and 4.4 wide, the pennant on the flag, `?noart=1` the full code look, the same layout of
+  blocks and items with paint and without (no rng draw moved), a broken grass file keeping the stripes; `fix/fwrun_h.js`
+  11 broken copies each red on its own check; the look (`ssb/lookH.mjs`, player camera and worst angles: grass height,
+  under the counter, the back row and hills, the branch, a stump, a shelf about to crumble); an independent review with
+  no blockers (its fixes in: the kit loads for Journey only, not for Endless, Freefall or the Climb; the cap and crack
+  surveyed; feet measured on the saved files; the layout guard). Rows 1 to 19 of the full suite passed before the run was
+  stopped for those fixes; the full suite was NOT run on the final code. **What failed:** `ssb/perfH.mjs`, Journey level
+  3 with art, v7.3 against v7.4 on this box's software GL, three alternating pairs: +31.0 ms a frame as first built
+  (128 to 159 ms); the split (switching each piece off in one page) put about 23 ms on the 15 tree sprites, 29 on the
+  hills plane, 29 on the grass and soil textures (they overlap); anisotropy 1 on the kit and the hills as an opaque cut
+  out brought it to **+12.9 ms (126.5 to 139.4)**, against the plan's "no more than 1 ms". Part A's art was measured on the
+  same pair and REPORTED, not gated ("software GL"); a textured foreground cannot add under 1 ms of software fill.
+  **Deviations, said plainly:** grass one tile per 8 with a tint and a duller cut (at 6, saturated yellow green with a
+  diagonal band from the player's camera); the soil tile's top 18 rows cropped (pale background, a grey line at the
+  grass edge); the hills 30 tall from y -8 (at 24 from -1 the sky showed under them); the bark mirrors up the trunk (its
+  rows do not wrap, 36 against 5); the vine keeps its code colour (two pixels at the camera). Seen wrong in the shots:
+  the grass's faint mirrored swirl up close; the sky under the counter at the worst angle (older than Part H); the
+  stump's painted top reads as planks. **His call:** ship it at +12.9 ms on software GL (a phone's GPU pays a fraction
+  of that), or hold it for a cheaper look (no hills, or smaller trees). The Journey kit zip left `assets/` (vaulted).
 ---
 
 ## 1. What Stephen asked for, verbatim, and what "good" means
