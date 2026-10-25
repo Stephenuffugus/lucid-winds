@@ -59,8 +59,12 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
    at any scale. --fs: every line of copy, 12 CSS px at least (18 stage px is that at 360 wide, more on a short phone or a
    phone in Safari with its bars); --hit: a control, 48 CSS px; --row: a settings row, 56 CSS px. Larger text multiplies
    the copy by 1.25. */
-#stage{--k:1; --tx:1; --fs:calc(max(18px, calc(12px * var(--k))) * var(--tx)); --hit:max(72px, calc(48px * var(--k))); --row:max(84px, calc(56px * var(--k)))}
-body.bigtext #stage{--tx:1.25}
+#stage{--k:1; --tx:1; --fs:18px; --hit:72px; --row:84px}
+body.bigtext #stage{--tx:1.25; --fs:22.5px}
+@supports (width:max(1px,2px)){
+  #stage{--fs:calc(max(18px, calc(12px * var(--k))) * var(--tx)); --hit:max(72px, calc(48px * var(--k))); --row:max(84px, calc(56px * var(--k)))}
+  body.bigtext #stage{--fs:calc(max(18px, calc(12px * var(--k))) * var(--tx))}
+}
 body.bigtext .cbtn small{font-size:15px}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:var(--bg); overflow:hidden; box-shadow:0 0 60px #000a}
 canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
@@ -80,13 +84,15 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 #s-play .tbtn,#s-play .cbtn,#s-play #dropbtn{pointer-events:auto}
 .pad{padding:26px; flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch}
 .center{align-items:center; justify-content:center; text-align:center}
+.pad.center{justify-content:flex-start}   /* v1.11: the flex spacers centre it; a column taller than the screen scrolls from its top */
+#s-title>.pad{padding-top:calc(var(--hit) + 22px)}   /* clears the back button at any text size */
 .title-word{font-size:56px; line-height:1.0; font-weight:800; letter-spacing:2px; font-style:italic; color:#ff2fb9;
   text-shadow:3px 3px 0 #0c0a06, -2px -2px 0 #0c0a06, 2px -2px 0 #0c0a06, -2px 2px 0 #0c0a06, 0 0 20px rgba(255,47,185,0.65), 0 0 42px rgba(47,240,224,0.4)}
 .title-word .w2{color:#2ff0e0; text-shadow:3px 3px 0 #0c0a06, -2px -2px 0 #0c0a06, 2px -2px 0 #0c0a06, -2px 2px 0 #0c0a06, 0 0 20px rgba(47,240,224,0.65), 0 0 42px rgba(255,47,185,0.4)}
 .pnl-logo{display:none; width:86%; max-width:400px; margin:0 auto 2px; image-rendering:auto;
   filter:drop-shadow(0 4px 22px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(255,47,185,0.25))}
 .title-sub{color:var(--muted); font-size:var(--fs); letter-spacing:4px; margin-top:10px; text-transform:uppercase}
-.ribbon{margin-top:14px; color:var(--ink); font-size:var(--fs); opacity:.9; max-width:410px; line-height:1.5}
+.ribbon{margin-top:14px; color:var(--ink); font-size:var(--fs); opacity:.95; max-width:410px; line-height:1.5; text-shadow:0 1px 2px #000, 0 0 10px rgba(0,0,0,.85)}
 /* 48px touch targets (studio rule 11, sweep 2026-07-26): the 540x960 stage is
    SCALED to the phone (390w = x0.722), so stage px shrink on screen. 72 stage
    px = 52px real on a 390w phone, 48px on a 360w phone. The old 60/50 stage-px
@@ -101,12 +107,12 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .btn.sm:active{box-shadow:0 0 14px rgba(47,240,224,0.35)}
 #go-share{border-color:#1d6b63; color:#2ff0e0; text-shadow:0 0 12px rgba(47,240,224,0.35)}
 .btn.ghost{background:#161309; color:var(--muted)}
-.row{display:flex; gap:12px; width:100%}
-.row>.btn{flex:1}
+.row{display:flex; flex-wrap:wrap; gap:12px; width:100%}
+.row>.btn{flex:1 1 auto}   /* v1.11: a button whose words outgrow its share wraps to a new line instead of spilling */
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
 h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; letter-spacing:1px; margin-bottom:4px;
   text-shadow:2px 2px 0 #0c0a06, 0 0 14px rgba(47,240,224,0.45)}
-.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:var(--fs); line-height:1.45}
+.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:var(--fs); line-height:1.45; text-shadow:0 1px 2px #000, 0 0 10px rgba(0,0,0,.85)}
 .helprow .hi{font-size:var(--fs); font-weight:800; width:36px; height:36px; line-height:34px; text-align:center; flex:none; color:var(--gold); background:#14110a; border:1px solid var(--sprout); border-radius:50%}
 .settingline{display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; max-width:420px; margin:0 auto 12px; padding:10px 16px; border:1px solid var(--line); border-radius:14px; background:#161309; min-height:var(--row); cursor:pointer}   /* v1.11: every row is its own button, 56 CSS px */
 .settingline>span{font-size:var(--fs); text-align:left}
@@ -127,7 +133,7 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 .tbtn::after{content:""; position:absolute; left:-12px; right:-12px; top:-12px; bottom:-12px}
 #b-home{left:10px}
 /* v1.11: the way back in a match is a 48 CSS px target on every phone, kept inside the stage (its old zone was clipped) */
-#b-home::after{left:-10px; top:-10px; right:auto; bottom:auto; width:max(82px, calc(52px * var(--k))); height:max(82px, calc(52px * var(--k)))}
+#b-home::after{left:-10px; top:-10px; right:auto; bottom:auto; width:max(82px, calc(52px * var(--k))); height:min(max(82px, calc(52px * var(--k))), 100px)}   /* never over the well */
 /* the way home, on the TITLE screen only. The portal opens this card as a top
    level navigation, so nothing outside the page offers a way back. Top left of
    the title, which is empty art: the play chrome (#b-home, power) lives on
@@ -190,6 +196,11 @@ body.calm #s-go.on, body.calm #s-go.on #go-portrait, body.calm #s-go.on #go-emoj
 body.calm #s-go.on #go-lab, body.calm #s-go.on #go-line, body.calm #s-go.on #go-reward{animation-name:goFade; animation-timing-function:ease-out}
 body.calm #s-go.on .stack{animation-name:goBtnsFade}
 body.calm #b-music{animation:none !important}
+/* v1.11: the fleet's song card, pill, toast and chip sit over the tray in a match: hidden while one runs, back on the
+   menus as they were (SWSMusic.hold would close a waiting card as seen and lose the song) */
+body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-music-toast, body.playing #sws-music-chip{display:none !important}
+/* the soundtrack button says it is playing in words, not a gold border alone */
+#b-music.playing::after{content:"\00a0on"}
 /* campaign ladder */
 #ladder{display:flex; flex-direction:column; gap:10px; width:100%; max-width:440px; margin:0 auto}
 .foe{display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:#171308; cursor:pointer; min-height:var(--hit)}
@@ -200,7 +211,7 @@ body.calm #b-music{animation:none !important}
 .foe .fmid{flex:1; text-align:left; min-width:0}
 .foe .fnm{font-weight:800; font-size:var(--fs); color:var(--ink)}
 .foe .fds{font-size:var(--fs); color:var(--muted); line-height:1.35; margin-top:2px}
-.foe .fno{font-weight:800; color:var(--gold); font-size:var(--fs); width:32px; flex:none; text-align:center}
+.foe .fno{font-weight:800; color:var(--gold); font-size:var(--fs); min-width:32px; flex:none; text-align:center; white-space:nowrap}
 .foe{border-left:4px solid var(--line)}
 .foe.locked{opacity:.42; cursor:default}
 .foe.beaten{filter:saturate(0.55)}
@@ -308,7 +319,7 @@ body.calm #b-music{animation:none !important}
 
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">1</div><div>Seedpods fall two at a time. Move them with ◀ ▶ or by dragging across the board, spin either way with ↺ ↻ or a tap on the board, hold <b>▼ SOFT</b> or drag down to bring them down faster, and press <b style="color:var(--sprout)">DROP</b> to slam them down at once.</div></div>
+    <div class="helprow"><div class="hi">1</div><div>Seedpods fall two at a time. Move them with <span style="white-space:nowrap">◀ ▶</span> or by dragging across the board, spin either way with <span style="white-space:nowrap">↺ ↻</span> or a tap on the board, hold <b style="white-space:nowrap">▼ SOFT</b> or drag down to bring them down faster, and press <b style="color:var(--sprout)">DROP</b> to slam them down at once.</div></div>
     <div class="helprow"><div class="hi">2</div><div>Line up <b>four or more of the same color</b> touching side to side or top to bottom and they pop. Pods above fall into the gap, so one clear can trigger the next for a <b style="color:var(--gold)">chain</b>.</div></div>
     <div class="helprow"><div class="hi">3</div><div>Every chain drops grey <b>Chaff</b> on your rival. The bigger the chain, the more Chaff you send. Chaff never pops on its own, but it shatters when a colored group right next to it clears.</div></div>
     <div class="helprow"><div class="hi">4</div><div>Send Chaff while Chaff is falling toward you and the two cancel out, so a well timed chain is also a shield. Whoever gets stacked up to the top first loses.</div></div>
@@ -1284,6 +1295,12 @@ function drawNine(im,ins,x,y,w,h,k,sl){ var iw=im.naturalWidth, ih=im.naturalHei
   var sx=[0,sl[0],iw-sl[2],iw], sy=[0,sl[1],ih-sl[3],ih], dx=[x0,x0+sl[0]*k,x3-sl[2]*k,x3], dy=[y0,y0+sl[1]*k,y3-sl[3]*k,y3];
   for(j=0;j<3;j++)for(i=0;i<3;i++){ if(i===1&&j===1)continue; var sw=sx[i+1]-sx[i], sh=sy[j+1]-sy[j], dw=dx[i+1]-dx[i], dh=dy[j+1]-dy[j];
     if(sw>0&&sh>0&&dw>0&&dh>0){ try{ ctx.drawImage(im,sx[i],sy[j],sw,sh,dx[i],dy[j],dw,dh); }catch(e){} } } }
+/* v1.11 (Part 3b): a canvas label's size in stage px so it renders 12 CSS px at least on this phone (STAGE_S is the stage's
+   scale, from fit()), a quarter bigger with Larger text. d is the size the 412 wide layout was drawn at. */
+function lab(d){ return Math.round(Math.max(d, Math.ceil(12/STAGE_S))*(SET.bigText?1.25:1)); }
+/* the words of txt in lines no wider than maxW at the current font (no trailing space) */
+function wrapLines(txt,maxW){ var words=txt.split(' '), out=[], line='', i; for(i=0;i<words.length;i++){ var t=line?line+' '+words[i]:words[i]; if(line&&ctx.measureText(t).width>maxW){ out.push(line); line=words[i]; } else line=t; } if(line)out.push(line); return out; }
+var HUD={ w:0, rivalW:0, tier:'', pips:0, dangerX:0 };   /* the header's left column width; what the HUD last drew (the gates read it) */
 function cellPx(F,r,c){ return {x:F.x+c*F.cell, y:F.y+(r-1)*F.cell}; }
 
 function drawBoardFrame(F,label,accent){ var w=COLS*F.cell,h=VISROWS*F.cell;
@@ -1363,7 +1380,12 @@ function drawJoins(f,F){ var J=A2.j; if(!J)return; var r,c,v,k; A2.joins=[];
       ctx.save(); ctx.beginPath(); ctx.rect(x0,y0,w,h); ctx.clip();
       if(k)ctx.drawImage(A2.im[rel], a.x+s/2-s*0.28, a.y+s/2, s*0.56, s); else ctx.drawImage(A2.im[rel], a.x+s/2, a.y+s/2-s*0.28, s, s*0.56);
       ctx.restore(); A2.joins.push([r,c,r2,c2]); } } }
+function dangerNow(f){ return !!(f.grid&&colHeights(f.grid)[SPAWN_COL]>=VISROWS-2); }   /* the spawn column is two rows from the top */
 function drawField(f,F,mini){ if(!f)return; var r,c;
+  if(f.flashDanger>0||(CALM&&dangerNow(f))){ var dc=cellPx(F,1,SPAWN_COL), di=F.cell*0.22, dk;   /* v1.11 (PNL-059): danger is an X where the next pair spawns */
+    for(dk=0;dk<2;dk++){ ctx.lineCap='round'; ctx.strokeStyle=dk?'#f0e9d8':'#0c0a06'; ctx.lineWidth=dk?Math.max(2,F.cell*0.09):Math.max(3,F.cell*0.16);
+      ctx.beginPath(); ctx.moveTo(dc.x+di,dc.y+di); ctx.lineTo(dc.x+F.cell-di,dc.y+F.cell-di); ctx.moveTo(dc.x+F.cell-di,dc.y+di); ctx.lineTo(dc.x+di,dc.y+F.cell-di); ctx.stroke(); }
+    ctx.lineCap='butt'; if(!mini)HUD.dangerX++; }
   if(!mini)drawJoins(f,F);   /* v1.8: under the pods */
   for(r=1;r<ROWS;r++)for(c=0;c<COLS;c++){ var v=f.grid[r][c]; if(v===0)continue; var p=cellPx(F,r,c); var off=(f.fall&&f.fall[r]?f.fall[r][c]:0)||0;
     if(off>0){ ctx.save(); ctx.beginPath(); ctx.rect(F.x-6, F.y-1, COLS*F.cell+12, VISROWS*F.cell+12); ctx.clip(); }   /* v1.10 review: a FALLING cell stays inside the well (dropped Chaff starts a cell above it); pops and splats spill as before */
@@ -1419,15 +1441,18 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
   /* v1.10 (PNL-011): the incoming Chaff as a NUMBER, then a big rock per full row of six and a small one per single; a
      chain that cancels some shows the cancelled amount beside it for a moment. The player's sits in the header (x 206 to
      375), the rival's beside RIVAL (x 440 to 535). At most 30 land per turn; the rest stays queued. */
-  var pw=f.pending, bx=mini?440:206, by=mini?F.y-51:66, fs=mini?14:18;   /* 18 stage px is 12 CSS px at 360 wide (Part 3 sets the rest of the labels) */
-  if(pw>0){ ctx.fillStyle='#e0685f'; ctx.font='800 '+fs+'px system-ui'; ctx.textAlign='left'; ctx.fillText(''+pw, bx, by+fs*0.85); var nx=bx+ctx.measureText(''+pw).width+5;
-    var big=Math.floor(pw/COLS), sm=pw%COLS, bw=mini?11:16, sw2=mini?7:10, lim=mini?535:375;
-    for(i=0;i<big&&nx+bw<=lim;i++){ drawChaff(nx, by-1, bw, 1, 0.95); nx+=bw+1; }
-    for(i=0;i<sm&&nx+sw2<=lim;i++){ drawChaff(nx, by+(bw-sw2)/2, sw2, 1, 0.9); nx+=sw2+1; } }
-  if(f.cancelT>0&&!mini){ ctx.globalAlpha=Math.min(1,f.cancelT/300); ctx.fillStyle='#7ec850'; ctx.font='800 18px system-ui'; ctx.textAlign='left';
-    ctx.fillText(f.cancelN+' cancelled', bx, by-6); ctx.globalAlpha=1; }   /* the line above the queue */
+  /* v1.11: a falling triangle (it comes down on you), the number, then the rocks, all sized in real px. The player's sits
+     after the header's widest label; the rival's on line 2 of its plate */
+  var fs=mini?lab(10):lab(18), bx=mini?388:Math.max(206, 66+HUD.w+16), base=mini?280+Math.round(lab(10)*0.95)+Math.round(lab(10)*1.25):82, pw=f.pending;
+  if(pw>0){ var tw=Math.round(fs*0.6); ctx.fillStyle='#e0685f'; ctx.beginPath(); ctx.moveTo(bx,base-fs*0.62); ctx.lineTo(bx+tw,base-fs*0.62); ctx.lineTo(bx+tw/2,base); ctx.closePath(); ctx.fill();
+    ctx.font='800 '+fs+'px system-ui'; ctx.textAlign='left'; ctx.fillText(''+pw, bx+tw+4, base); var nx=bx+tw+4+ctx.measureText(''+pw).width+5;
+    var big=Math.floor(pw/COLS), sm=pw%COLS, bw=Math.round(fs*(mini?0.7:0.85)), sw2=Math.round(bw*0.62), lim=mini?532:375;
+    for(i=0;i<big&&nx+bw<=lim;i++){ drawChaff(nx, base-bw, bw, 1, 0.95); nx+=bw+1; }
+    for(i=0;i<sm&&nx+sw2<=lim;i++){ drawChaff(nx, base-sw2, sw2, 1, 0.9); nx+=sw2+1; } }
+  if(f.cancelT>0&&!mini){ ctx.globalAlpha=Math.min(1,f.cancelT/300); ctx.fillStyle='#7ec850'; ctx.font='800 '+lab(18)+'px system-ui'; ctx.textAlign='left';
+    ctx.fillText(f.cancelN+' cancelled', bx, base-fs-6); ctx.globalAlpha=1; }   /* the line above the queue */
   /* danger flash */
-  if(f.flashDanger>0){ ctx.globalAlpha=CALM?0.3:Math.min(0.4,f.flashDanger/1000);   /* v1.11: steady, not a 2.5 Hz pulse, under Reduce motion */ ctx.fillStyle='#e0433f'; ctx.fillRect(F.x,F.y,COLS*F.cell,F.cell*2); ctx.globalAlpha=1; }
+  if(f.flashDanger>0||(CALM&&dangerNow(f))){ ctx.globalAlpha=CALM?0.3:Math.min(0.4,f.flashDanger/1000);   /* v1.11: steady, not a 2.5 Hz pulse, under Reduce motion */ ctx.fillStyle='#e0433f'; ctx.fillRect(F.x,F.y,COLS*F.cell,F.cell*2); ctx.globalAlpha=1; }
 }
 
 function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRect(0,0,VW,VH);
@@ -1438,30 +1463,36 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
   var shx=0,shy=0; if(SHAKE.t>0){ var shk=SHAKE.amp*(SHAKE.t/SHAKE.dur); shx=(Math.random()*2-1)*shk; shy=(Math.random()*2-1)*shk; }
   ctx.save(); ctx.translate(shx,shy);
   /* header band: two-tone neon wordmark */
-  ctx.font='italic 800 15px system-ui'; ctx.textAlign='left';
-  ctx.lineWidth=3; ctx.strokeStyle='#0c0a06'; ctx.strokeText('POP N', 66, 34); ctx.strokeText('LOCK', 122, 34);
-  ctx.fillStyle='#ff2fb9'; ctx.fillText('POP N', 66, 34); ctx.fillStyle='#2ff0e0'; ctx.fillText('LOCK', 122, 34);
+  ctx.font='italic 800 '+lab(15)+'px system-ui'; ctx.textAlign='left'; var lockX=66+ctx.measureText('POP N ').width;   /* v1.11: LOCK follows POP N at any size */
+  ctx.lineWidth=3; ctx.strokeStyle='#0c0a06'; ctx.strokeText('POP N', 66, 34); ctx.strokeText('LOCK', lockX, 34);
+  ctx.fillStyle='#ff2fb9'; ctx.fillText('POP N', 66, 34); ctx.fillStyle='#2ff0e0'; ctx.fillText('LOCK', lockX, 34);
   /* player score inline with the wordmark, top-left */
-  ctx.fillStyle='#9a9078'; ctx.font='600 11px system-ui'; ctx.textAlign='left'; ctx.fillText('YOUR PLOT', 66, 56);
-  ctx.fillStyle='#f0e9d8'; ctx.font='800 26px system-ui'; ctx.fillText((MATCH.pf?MATCH.pf.score:0).toLocaleString(), 66, 84);
+  /* v1.11: YOUR PLOT sits just under the wordmark, and the score takes the room left above the frame (y 84), never under 12 CSS px */
+  var wmS=lab(15), ypS=lab(11), ypY=Math.round(34+0.2*wmS+0.78*ypS+2), scS=Math.max(Math.ceil(12/STAGE_S), Math.min(Math.max(26,lab(16)+4), Math.floor((84-(ypY+0.2*ypS)-1)/0.78)));
+  ctx.fillStyle='#9a9078'; ctx.font='600 '+ypS+'px system-ui'; ctx.textAlign='left'; ctx.fillText('YOUR PLOT', 66, ypY); HUD.w=ctx.measureText('YOUR PLOT').width;
+  var scTxt=(MATCH.pf?MATCH.pf.score:0).toLocaleString(); ctx.fillStyle='#f0e9d8'; ctx.font='800 '+scS+'px system-ui'; ctx.fillText(scTxt, 66, 84); HUD.w=Math.max(HUD.w, ctx.measureText(scTxt).width);
   /* right rail: opponent card, NEXT, rival board */
   if(MATCH.mode==='campaign' && MATCH.stage>=0){ var st=ROSTER[MATCH.stage];
-    var ox=380, oy=60, ow=148, oh=116;
+    var ox=380, oy=54, ow=156, oh=140, ob=48;   /* v1.11: a 48 px name band, two lines from its foot */
     ctx.fillStyle='#120f07'; rr(ox,oy,ow,oh,12); ctx.fill();
     ctx.save(); rr(ox,oy,ow,oh,12); ctx.clip();
     /* opponent b-boy portrait: idle in play, and on the result screen the pest is
        'lose' when you won / 'win' when you lost. Emoji is the fallback. */
     var opose=(MATCH.phase==='done'&&MATCH.result)?(MATCH.result==='win'?'lose':'win'):'idle';
-    if(!(opose==='idle'&&railDraw(ox+ow/2, oy+2+(oh-26)/2, ow-8, oh-26))&&!cwPortrait(st.id,opose, ox+ow/2, oy+2+(oh-26)/2, ow-8, oh-26, 1)){
+    if(!(opose==='idle'&&railDraw(ox+ow/2, oy+2+(oh-ob)/2, ow-8, oh-ob))&&!cwPortrait(st.id,opose, ox+ow/2, oy+2+(oh-ob)/2, ow-8, oh-ob, 1)){
       ctx.textAlign='center'; ctx.font='34px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(st.em, ox+ow/2, oy+46); }
-    ctx.fillStyle='rgba(10,8,4,0.78)'; ctx.fillRect(ox, oy+oh-24, ow, 24);
+    ctx.fillStyle='rgba(10,8,4,0.82)'; ctx.fillRect(ox, oy+oh-ob, ow, ob);
     ctx.restore();
     ctx.strokeStyle=st.ac; ctx.lineWidth=2; rr(ox,oy,ow,oh,12); ctx.stroke();
-    ctx.textAlign='center'; ctx.fillStyle='#f0e9d8'; ctx.font='700 12px system-ui'; wrapText(st.nm, ox+ow/2, oy+oh-8, ow-8, 13);
+    /* the name: as large as two lines allow, never under 12 CSS px; its last line on the band's foot */
+    var nmf=lab(12), nml; ctx.font='700 '+nmf+'px system-ui'; nml=wrapLines(st.nm, ow-10);
+    while(nml.length>2&&nmf>Math.ceil(12/STAGE_S)){ nmf--; ctx.font='700 '+nmf+'px system-ui'; nml=wrapLines(st.nm, ow-10); }
+    ctx.textAlign='center'; ctx.fillStyle='#f0e9d8'; var nmy=oy+oh-8, nk;
+    for(nk=nml.length-1;nk>=0;nk--){ ctx.fillText(nml[nk], ox+ow/2, nmy); nmy-=Math.round(nmf*1.08); }
     ctx.textAlign='left';
   }
   /* next piece preview in the rail */
-  if(MATCH.pf&&MATCH.pf.next){ var nx=398, ny=196, NW=NEXTWIN, ncx=nx+NW.w/2, ncy=ny+NW.h/2; ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('NEXT',nx,ny-6);
+  if(MATCH.pf&&MATCH.pf.next){ var nx=398, ny=196, NW=NEXTWIN, ncx=nx+NW.w/2, ncy=ny+NW.h/2; ctx.font='600 '+lab(10)+'px system-ui'; ctx.lineWidth=4; ctx.strokeStyle='#0c0a06'; ctx.strokeText('NEXT',460,236); ctx.fillStyle='#d8cfb8'; ctx.fillText('NEXT',460,236);   /* v1.11: beside the window (the card needs the space above it) */
     /* v1.7: ONE rectangle (NEXTWIN) places the painted window, its fallback and the pair, all on its centre */
     var nw=A2.j?A2.j.board.next:null, nws=nw?(NW.pod*2+NW.gap+12)/nw.aperture[3]:0;   /* v1.8: the opening holds the pair with 6 px to spare */
     if(nw&&a2Ok(nw.file)){ var apw=nw.aperture[2]*nws, aph=nw.aperture[3]*nws; ctx.fillStyle='#161207'; rr(ncx-apw/2, ncy-aph/2, apw, aph, 6); ctx.fill();   /* her opening is clear: the July window's near black behind the pair */
@@ -1482,9 +1513,21 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
       ctx.fillRect(mx+1, my+mh-fh, mw-2, fh);
       ctx.globalAlpha=1; }
     for(var htk=1;htk<HYPE_TIERS.length;htk++){ var ty=my+mh-mh*HYPE_TIERS[htk][0]/100;
-      ctx.fillStyle='rgba(12,10,6,0.8)'; ctx.fillRect(mx,ty,mw,1); } }
-  if(MATCH.of){ ctx.fillStyle='#9a9078'; ctx.font='600 10px system-ui'; ctx.fillText('RIVAL',OF.x,OF.y-42);
-    ctx.fillStyle='#f0e9d8'; ctx.font='700 14px system-ui'; ctx.fillText((MATCH.of.score).toLocaleString(),OF.x,OF.y-26);
+      ctx.fillStyle='rgba(12,10,6,0.8)'; ctx.fillRect(mx,ty,mw,2); }
+    /* v1.11 (PNL-059): the readout in the rail's foot says it in words and in shape, never colour alone: HYPE, the tier's
+       name (WACK, WARM, FRESH, DEF, DOPE, ILL) and five diamond pips filled to the tier */
+    var hpY=748, hpH=84, hl=lab(16), htc='#'+('00000'+HYPE_TIERS[ht][2].toString(16)).slice(-6), hpi;
+    ctx.fillStyle='rgba(10,8,4,0.88)'; rr(382,hpY,154,hpH,8); ctx.fill();
+    ctx.textAlign='left'; ctx.fillStyle='#9a9078'; ctx.font='600 '+hl+'px system-ui'; ctx.fillText('HYPE', 390, hpY+4+hl*0.82);
+    ctx.font='italic 800 '+(hl+4)+'px system-ui'; ctx.lineWidth=4; ctx.strokeStyle='#0c0a06'; ctx.strokeText(HYPE_TIERS[ht][1], 390, hpY+hpH-22);
+    ctx.fillStyle=(ht===0?'#9a9078':htc); ctx.fillText(HYPE_TIERS[ht][1], 390, hpY+hpH-22);
+    for(hpi=0;hpi<5;hpi++){ var px0=390+hpi*16+6, py0=hpY+hpH-10; ctx.beginPath(); ctx.moveTo(px0,py0-6); ctx.lineTo(px0+6,py0); ctx.lineTo(px0,py0+6); ctx.lineTo(px0-6,py0); ctx.closePath();
+      if(hpi<ht){ ctx.fillStyle=htc; ctx.fill(); } ctx.strokeStyle='#9a9078'; ctx.lineWidth=1.5; ctx.stroke(); }
+    HUD.tier=HYPE_TIERS[ht][1]; HUD.pips=ht; }
+  if(MATCH.of){ var rl=lab(10), ry1=280+Math.round(rl*0.95);   /* v1.11: RIVAL and the score on line 1, the incoming queue on line 2, on a dark plate */
+    ctx.fillStyle='rgba(10,8,4,0.88)'; rr(382,280,154,58,8); ctx.fill();
+    ctx.textAlign='left'; ctx.fillStyle='#9a9078'; ctx.font='600 '+rl+'px system-ui'; ctx.fillText('RIVAL',388,ry1); HUD.rivalW=ctx.measureText('RIVAL').width;
+    ctx.textAlign='right'; ctx.fillStyle='#f0e9d8'; ctx.font='700 '+rl+'px system-ui'; ctx.fillText((MATCH.of.score).toLocaleString(),530,ry1); ctx.textAlign='left';
     var rivAc=MATCH.stage>=0?ROSTER[MATCH.stage].ac:(MATCH.mode==='versus'?'#2ff0e0':'#33301f');
     drawBoardFrame(OF,'rival', rivAc); drawField(MATCH.of,OF,true);
     /* rival combo telegraph: their frame flares while their chain is popping */
@@ -1507,7 +1550,7 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     ctx.font='italic 800 104px system-ui';
     ctx.lineWidth=10; ctx.strokeStyle='#0c0a06'; ctx.strokeText(cTxt, VW/2, VH/2+30);
     ctx.fillStyle=MATCH.count>0?'#ff2fb9':'#39ff14'; ctx.fillText(cTxt, VW/2, VH/2+30);
-    if(MATCH.mode==='campaign'&&MATCH.stage>=0){ ctx.fillStyle='#f0e9d8'; ctx.font='italic 16px system-ui'; wrapText('"'+ROSTER[MATCH.stage].taunt+'"', VW/2, VH/2+80, 380, 22); }
+    if(MATCH.mode==='campaign'&&MATCH.stage>=0){ ctx.fillStyle='#f0e9d8'; ctx.font='italic '+lab(16)+'px system-ui'; wrapText('"'+ROSTER[MATCH.stage].taunt+'"', VW/2, VH/2+80, 380, Math.round(lab(16)*1.3), 5); }
     ctx.textAlign='left'; }
   /* stage-intro card (campaign): the pest gets an entrance */
   if(MATCH.phase==='intro' && MATCH.mode==='campaign' && MATCH.stage>=0){ var ist=ROSTER[MATCH.stage];
@@ -1516,13 +1559,13 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     ctx.textAlign='center';
     var tag=ist.boss?'FINAL BOSS':ist.secret?'SECRET DUEL':'STAGE '+(MATCH.stage+1);
     if(SERIES&&(SERIES.me+SERIES.them+(SERIES.draws||0))>0)tag+=' · ROUND '+(SERIES.me+SERIES.them+(SERIES.draws||0)+1);
-    ctx.font='800 15px system-ui'; ctx.fillStyle='#9a9078'; ctx.fillText(tag, VW/2, VH/2-176);
+    ctx.font='800 '+lab(15)+'px system-ui'; ctx.fillStyle='#9a9078'; ctx.fillText(tag, VW/2, VH/2-176);
     /* the pest gets a big entrance portrait (b-boy, parachute pants and all) */
     if(!cwPortrait(ist.id,'idle', VW/2, VH/2-36, 300, 238, 1)){ ctx.font='72px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(ist.em, VW/2, VH/2-24); }
     ctx.font='italic 800 30px system-ui'; ctx.lineWidth=6; ctx.strokeStyle='#0c0a06'; ctx.strokeText(ist.nm, VW/2, VH/2+108);
     ctx.fillStyle=ist.ac; ctx.fillText(ist.nm, VW/2, VH/2+108);
-    ctx.fillStyle='#f0e9d8'; ctx.font='italic 16px system-ui'; wrapText('"'+ist.taunt+'"', VW/2, VH/2+144, 400, 22);
-    ctx.fillStyle='#6a6152'; ctx.font='600 12px system-ui'; ctx.fillText('tap to start', VW/2, VH/2+196);
+    ctx.fillStyle='#f0e9d8'; ctx.font='italic '+lab(16)+'px system-ui'; wrapText('"'+ist.taunt+'"', VW/2, VH/2+144, 400, Math.round(lab(16)*1.3));
+    ctx.fillStyle='#9a9078'; ctx.font='600 '+lab(12)+'px system-ui'; ctx.fillText('tap to start', VW/2, VH/2+210);
     ctx.textAlign='left'; }
   /* ---- outro overlay: the reveal you are meant to sit in (see THE OUTRO).
      The control bar eats the bottom ~130px of the 960 stage, so everything
@@ -1557,11 +1600,11 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
         if(ga>0){ ctx.textAlign='center';
           if(!cwPortrait(gst.id, gwin?'lose':'win', VW/2, 566, 250, 210, ga)){
             ctx.globalAlpha=ga; ctx.font='84px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(gst.em, VW/2, 590); ctx.globalAlpha=1; }
-          ctx.globalAlpha=ga; ctx.fillStyle='#f0e9d8'; ctx.font='italic 17px system-ui';
-          wrapText('"'+(gwin?gst.lose:gst.taunt)+'"', VW/2, 706, 400, 23); ctx.globalAlpha=1; } }
+          ctx.globalAlpha=ga; ctx.fillStyle='#f0e9d8'; ctx.font='italic '+lab(17)+'px system-ui';
+          wrapText('"'+(gwin?gst.lose:gst.taunt)+'"', VW/2, 706, 400, Math.round(lab(17)*1.3)); ctx.globalAlpha=1; } }
       /* skip hint, but only after you have had the moment */
-      if(O.t>stampAt+OUT.stamp+500){ ctx.textAlign='center'; ctx.fillStyle='#6a6152';
-        ctx.font='600 12px system-ui'; ctx.fillText('tap to continue', VW/2, 800); }
+      if(O.t>stampAt+OUT.stamp+500){ ctx.textAlign='center'; ctx.fillStyle='#9a9078';
+        ctx.font='600 '+lab(12)+'px system-ui'; ctx.fillText('tap to continue', VW/2, 800); }
       ctx.textAlign='left'; } }
   ctx.restore();
 }
@@ -1569,14 +1612,14 @@ function floatColor(t){ if(t.indexOf('ALL')>=0)return '#ffd21a'; if(t.indexOf('D
   if(t.indexOf('ILL')===0)return '#ff2fb9'; if(t.indexOf('DOPE')===0)return '#c24bff'; if(t.indexOf('DEF')===0)return '#ffd21a';
   if(t.indexOf('FRESH')===0)return '#39ff14'; if(t.indexOf('SOLVENT')>=0)return '#7ec850'; return '#fff8dc'; }
 function drawFloats(f,F){ if(!f)return; var i; ctx.textAlign='center'; for(i=0;i<f.floats.length;i++){ var fl=f.floats[i]; var a=Math.min(1,fl.life); ctx.globalAlpha=a;
-  var fs=(F===PF?28:14); var punch=CALM?0:Math.min(1,Math.max(0,fl.life-0.82)/0.18); fs=Math.round(fs*(1+punch*0.5));   /* v1.7: a long lived float (ALL CITY HYPE, life 1.4) no longer pops to 73 px */
+  var fs=(F===PF?Math.max(28,lab(16)+8):lab(14)); var punch=CALM?0:Math.min(1,Math.max(0,fl.life-0.82)/0.18); fs=Math.round(fs*(1+punch*0.5));   /* v1.7: a long lived float (ALL CITY HYPE, life 1.4) no longer pops to 73 px */
   ctx.font='italic 800 '+fs+'px system-ui';
-  var mw=ctx.measureText(fl.txt).width, lim=COLS*F.cell+20; if(mw>lim){ fs=Math.max(10,Math.floor(fs*lim/mw)); ctx.font='italic 800 '+fs+'px system-ui'; }   /* fits the board */
+  var mw=ctx.measureText(fl.txt).width, lim=COLS*F.cell+20; if(mw>lim){ fs=Math.max(lab(10),Math.floor(fs*lim/mw)); ctx.font='italic 800 '+fs+'px system-ui'; }   /* fits the board (never under 12 CSS px) */
   var yy=F.y+ (F===PF?300:90) - (CALM?0:(1-fl.life)*30) + i*Math.round(fs*1.1); var xx=F.x+COLS*F.cell/2;   /* floats alive together stack, never overprint */
   ctx.lineWidth=Math.max(2,fs*0.18); ctx.strokeStyle='#0c0a06'; ctx.strokeText(fl.txt, xx, yy);
   ctx.fillStyle=floatColor(fl.txt); ctx.fillText(fl.txt, xx, yy); }
   ctx.globalAlpha=1; ctx.textAlign='left'; }
-function wrapText(txt,x,y,maxW,lh){ var words=txt.split(' '),line='',i,yy=y; for(i=0;i<words.length;i++){ var test=line+words[i]+' '; if(ctx.measureText(test).width>maxW&&line){ ctx.fillText(line,x,yy); line=words[i]+' '; yy+=lh; } else line=test; } ctx.fillText(line,x,yy); }
+function wrapText(txt,x,y,maxW,lh,stroke){ var L=wrapLines(txt,maxW),i; for(i=0;i<L.length;i++){ if(stroke){ ctx.lineWidth=stroke; ctx.strokeStyle='#0c0a06'; ctx.strokeText(L[i],x,y+i*lh); } ctx.fillText(L[i],x,y+i*lh); } }   /* v1.11: an optional dark stroke for text over art */
 function rr(x,y,w,h,rad){ ctx.beginPath(); ctx.moveTo(x+rad,y); ctx.arcTo(x+w,y,x+w,y+h,rad); ctx.arcTo(x+w,y+h,x,y+h,rad); ctx.arcTo(x,y+h,x,y,rad); ctx.arcTo(x,y,x+w,y,rad); ctx.closePath(); }
 
 /* =====================================================================
@@ -1700,7 +1743,6 @@ var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'),i; for(i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id;
   if(id!=='s-play'){ running=false; } applyBig(); paintTitle(); clearHolds();
   if(id==='s-play')document.body.classList.add('playing'); else document.body.classList.remove('playing'); fit();   /* v1.9: the tray shows in a match */
-  try{ if(window.SWSMusic&&SWSMusic.hold)SWSMusic.hold(id==='s-play'); }catch(e){}   /* v1.11: no song card or pill over the tray in a match; they wait for the menus */
   var bp=$('b-power'); if(bp)bp.style.display=(id==='s-play'&&MATCH.powers)?'flex':'none'; }
 function applyBig(){ CALM=calmNow(); try{ var B=document.body.classList; if(SET.bigTray)B.add('bigctrl'); else B.remove('bigctrl'); if(SET.mirror)B.add('mirror'); else B.remove('mirror');
   if(SET.bigText)B.add('bigtext'); else B.remove('bigtext'); if(CALM)B.add('calm'); else B.remove('calm'); }catch(e){} }
@@ -1736,18 +1778,20 @@ var _returnScreen='s-title'; function curReturn(){ return _returnScreen; }
 tap('set-reset',function(){ if(confirm('Reset all campaign progress? This cannot be undone.')){ PROG={unlocked:0,beaten:{},done:false,secret:false,soloBest:PROG.soloBest}; saveProg(); SFX.ui(); paintTitle(); alert('Campaign progress reset.'); } });
 
 /* v1.11: the whole ROW is a setting's button (only the 64 x 36 switch answered a tap); after flips the effect */
-function wireToggle(id,key,after){ var el=$(id); if(!el)return; var row=el.parentNode; function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); } paint();
+function rowKeys(row){ row.setAttribute('tabindex','0'); row.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); row.click(); } }); }
+function wireToggle(id,key,after){ var el=$(id); if(!el)return; var row=el.parentNode; row.setAttribute('role','switch'); rowKeys(row);
+  function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); row.setAttribute('aria-checked',SET[key]?'true':'false'); } paint();
   row.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); SFX.ui(); if(after)after(); }); }
 wireToggle('tg-sound','sound'); wireToggle('tg-big','bigTray',applyBig); wireToggle('tg-tags','tags');
 wireToggle('tg-shake','shake'); wireToggle('tg-bigtext','bigText',function(){ applyBig(); fit(); });
 wireToggle('tg-haptics','haptics',function(){ if(SET.haptics)hap(20); });   /* switching it on buzzes once, so it is felt */
 (function(){ var r=$('sl-vibe'); if(r&&!navigator.vibrate)r.style.display='none'; })();   /* a phone with no vibration (an iPhone) has no row */
 /* Reduce motion cycles Auto, On, Off; Auto follows the phone's own setting */
-(function(){ var row=$('sl-motion'), v=$('tg-motion'), N={auto:'Auto',on:'On',off:'Off'}, NX={auto:'on',on:'off',off:'auto'}; if(!row||!v)return;
+(function(){ var row=$('sl-motion'), v=$('tg-motion'), N={auto:'Auto',on:'On',off:'Off'}, NX={auto:'on',on:'off',off:'auto'}; if(!row||!v)return; row.setAttribute('role','button'); rowKeys(row);
   function paint(){ v.textContent=N[SET.motion]||'Auto'; } paint();
   row.addEventListener('click',function(e){ e.preventDefault(); SET.motion=NX[SET.motion]||'auto'; paint(); saveSet(); applyBig(); SFX.ui(); }); })();
 /* v1.10: the landing guide cycles Outline, Solid, Off; the whole row is the target */
-(function(){ var row=$('sl-guide'), v=$('tg-guide'), N={outline:'Outline',solid:'Solid',off:'Off'}, NX={outline:'solid',solid:'off',off:'outline'}; if(!row||!v)return;
+(function(){ var row=$('sl-guide'), v=$('tg-guide'), N={outline:'Outline',solid:'Solid',off:'Off'}, NX={outline:'solid',solid:'off',off:'outline'}; if(!row||!v)return; row.setAttribute('role','button'); rowKeys(row);
   function paint(){ v.textContent=N[SET.guide]||'Outline'; } paint();
   row.addEventListener('click',function(e){ e.preventDefault(); SET.guide=NX[SET.guide]||'outline'; paint(); saveSet(); SFX.ui(); }); })();
 wireToggle('tg-relaxed','relaxed'); wireToggle('tg-flick','flick'); wireToggle('tg-mirror','mirror',applyBig);
@@ -1766,6 +1810,8 @@ $('buildstamp').textContent='Pop N Lock '+BUILD;
 
 /* ---------- fullscreen toggle (Android/desktop; iOS uses Add to Home Screen) ---------- */
 (function(){ var el=$('tg-full'); if(!el)return; var row=el.parentNode;   /* v1.11: the row is the button */
+  var dE=document.documentElement; if(!(dE.requestFullscreen||dE.webkitRequestFullscreen)){ row.style.display='none'; return; }
+  row.setAttribute('role','switch'); rowKeys(row);
   function isFull(){ return !!(document.fullscreenElement||document.webkitFullscreenElement); }
   function paint(){ if(isFull())el.classList.add('on'); else el.classList.remove('on'); }
   row.addEventListener('click',function(e){ e.preventDefault(); SFX.ui();
@@ -1842,7 +1888,7 @@ window._sbCapEarn=function(n,tag){ var grant=0; try{ var k='sw_sb_chaffwars'; va
       if(i===4)noiseHit(ctx,B.next,0.16,1200,0.45,B.master);   /* snare backbeat */
       noiseHit(ctx,B.next,0.03,7000,i%2?0.09:0.15,B.master);   /* hi-hats */
       B.next+=SPB;B.step++; } }
-  function paint(){ var b=$('b-bgm'); if(b){ b.classList.toggle('playing',B.on); b.textContent=B.on?'\u266B Beat on':'\u266B Beat off'; b.setAttribute('aria-pressed',B.on?'true':'false'); } }   /* v1.11: the state in words, not a border colour */
+  function paint(){ var b=$('b-bgm'); if(b){ b.classList.toggle('playing',B.on); b.textContent=B.on?'\u266B Stop beat':'\u266B Play beat'; b.setAttribute('aria-pressed',B.on?'true':'false'); } }   /* v1.11: the state in words, not a border colour */
   function start(){ B.on=true; try{localStorage.setItem('cw_bgm','1');}catch(e){}
     B.step=0;B.next=0; if(B.timer)clearInterval(B.timer); B.timer=setInterval(schedule,60); schedule(); paint(); }
   function stop(){ B.on=false; try{localStorage.setItem('cw_bgm','0');}catch(e){}
@@ -2073,6 +2119,7 @@ if(/[?&]cwdev=1/.test(location.search)){
     art2:function(){ return { j:!!A2.j, asked:A2.asked, live:a2Live(), who:A2.who, joins:A2.joins||[], rail:RAIL, frame:railFrame() }; },   /* v1.8 gates */
     inp:function(){ return INP; }, setting:function(k,v){ SET[k]=v; applyBig(); fit(); return SET[k]; },   /* v1.9 gates */
     comfort:function(){ return { calm:CALM, s:STAGE_S, shakeT:SHAKE.t, set:SET }; },   /* v1.11 gates */
+    hud:function(){ return HUD; }, lab:function(d){ return lab(d); },   /* v1.11 gates (3b) */
     railChain:function(n){ railChain(n); }, railHit:function(){ railHit(); },   /* the hooks a real chain step and a Chaff landing call */
     railChainEnd:function(){ railChainEnd(); }, cwKeys:function(){ var a=[],k; for(k in _cwCache)if(_cwCache.hasOwnProperty(k))a.push(k); return a; },
     resolve:function(g){ return computeResolve(g||MATCH.pf.grid); },

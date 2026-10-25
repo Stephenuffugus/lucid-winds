@@ -41,7 +41,7 @@ async function open(w, h, pre) { const p = await b.newPage(); const errs = []; p
   await p.setViewport({ width: w, height: h, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await p.evaluateOnNewDocument((pre) => { try { localStorage.setItem('lwfb_explained', '1'); if (pre) localStorage.setItem('cw_set', pre); } catch (e) {}
     if (!pre) { try { localStorage.removeItem('cw_set'); } catch (e) {} }   /* one browser shares localStorage: a page with no settings starts clean */
-    window.__hold = []; window.SWSMusic = { hold: on => window.__hold.push(on) }; }, pre || null);
+  }, pre || null);
   await p.goto(`http://127.0.0.1:${PORT}/${PAGE}?cwdev=1`, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await p.waitForFunction(() => window.CW_DEV && document.readyState === 'complete', { timeout: 60000 });
   const cdp = await p.target().createCDPSession();
@@ -89,21 +89,36 @@ try {
   // the back button's zone in a match: a 48 CSS px square from its corner answers
   { await p.evaluate(() => window.CW_DEV.beginStage(0)); for (let w = 0; w < 80; w++) { await sleep(100); if (await p.evaluate(() => window.CW_DEV.match().phase === 'fight')) break; }
     const z = await p.evaluate(() => { const b = document.getElementById('b-home'), st = document.getElementById('stage').getBoundingClientRect(); const x = st.left + 47, y = st.top + 47, el = document.elementFromPoint(x, y); return { hit: el && el.id, x, y }; });
-    const hold = await p.evaluate(() => window.__hold.slice());
     ok('in a match the back button answers anywhere in a 48 CSS px square at the stage\'s corner', z.hit === 'b-home', JSON.stringify(z));
-    ok('a match holds the fleet\'s music card and pill off the tray, and the menus let them back', hold.length >= 1 && hold[hold.length - 1] === true, JSON.stringify(hold));
+    /* the fleet's song card and pill: hidden while the match runs, untouched (never held, which loses the song), back on the menus */
+    const mu = await p.evaluate(async () => { const mk = id => { const d = document.createElement('div'); d.id = id; d.textContent = 'song'; d.style.cssText = 'position:fixed;left:8px;bottom:8px;display:block'; document.body.appendChild(d); return d; };
+      const card = mk('sws-music-card'), pill = mk('sws-music-pill'); const inMatch = [getComputedStyle(card).display, getComputedStyle(pill).display];
+      document.body.classList.remove('playing'); const onMenu = [getComputedStyle(card).display, getComputedStyle(pill).display]; document.body.classList.add('playing'); card.remove(); pill.remove(); return { inMatch, onMenu }; });
+    ok('a match hides the fleet\'s song card and pill off the tray, and the menus show them again (nothing is closed or lost)', mu.inMatch.every(d => d === 'none') && mu.onMenu.every(d => d === 'block'), JSON.stringify(mu));
     await p.evaluate(() => window.CW_DEV.match() && 0); }
   // the safe area: a 40 px top inset keeps the stage (and the back button in it) below the notch
-  { const sa = await p.evaluate(async () => { const st = document.createElement('style'); st.textContent = '#sat-probe{padding-top:40px !important}'; document.head.appendChild(st); window.dispatchEvent(new Event('resize'));
+  { const o375 = await open(375, 667); await o375.p.evaluate(() => window.CW_DEV.beginStage(0)); for (let w = 0; w < 80; w++) { await sleep(100); if (await o375.p.evaluate(() => window.CW_DEV.match().phase === 'fight')) break; }
+    const sa = await o375.p.evaluate(async () => { const st = document.createElement('style'); st.textContent = '#sat-probe{padding-top:40px !important}'; document.head.appendChild(st); window.dispatchEvent(new Event('resize'));
       await new Promise(r => setTimeout(r, 100)); const a = document.getElementById('stage').getBoundingClientRect().top, bh = document.getElementById('b-home').getBoundingClientRect().top; st.remove(); window.dispatchEvent(new Event('resize')); return { stageTop: a, home: bh }; });
-    ok('a 40 px top safe area keeps the stage and the back button below it', sa.stageTop >= 39.5 && sa.home >= 40, JSON.stringify(sa)); }
+    await o375.p.close();
+    ok('a 40 px top safe area keeps the stage and the back button below it (a 375 x 667 match, where the stage meets the top)', sa.stageTop >= 39.5 && sa.home >= 40, JSON.stringify(sa)); }
   { const bt = await p.evaluate(() => ({ t: document.getElementById('b-bgm').textContent, a: document.getElementById('b-bgm').getAttribute('aria-pressed') }));
-    ok('the 80s beat button says its state in words', /Beat off/.test(bt.t) && bt.a === 'false', JSON.stringify(bt)); }
+    ok('the 80s beat button says what a tap does, in words (Play beat), and its state for a screen reader', /Play beat/.test(bt.t) && bt.a === 'false', JSON.stringify(bt)); }
   ok('no page errors', errs.length === 0, JSON.stringify(errs));
   /* the back button's zone at 360 wide, where the old clipped zone reached only 46.7 CSS px */
   { const o = await open(360, 780); await o.p.evaluate(() => window.CW_DEV.beginStage(0)); for (let w = 0; w < 80; w++) { await sleep(100); if (await o.p.evaluate(() => window.CW_DEV.match().phase === 'fight')) break; }
     const z = await o.p.evaluate(() => { const st = document.getElementById('stage').getBoundingClientRect(); const el = document.elementFromPoint(st.left + 47.5, st.top + 47.5); return el && el.id; }); await o.p.close();
     ok('at 360 wide the back button answers 47.5 CSS px from the stage\'s corner (its old zone was clipped to 46.7)', z === 'b-home', z); }
+  { const o = await open(320, 460); await o.p.evaluate(() => window.CW_DEV.beginStage(0)); for (let w = 0; w < 80; w++) { await sleep(100); if (await o.p.evaluate(() => window.CW_DEV.match().phase === 'fight')) break; }
+    const zw = await o.p.evaluate(() => { const st = document.getElementById('stage').getBoundingClientRect(), S = window.CW_DEV.comfort().s; const el = document.elementFromPoint(st.left + 40 * S, st.top + 116 * S); return { hit: el && el.id, S }; }); await o.p.close();
+    ok('on a tiny stage (320 x 460) the back zone stops above the well: a tap in the top row is the board\'s', zw.hit === 'game', JSON.stringify(zw)); }
+  { const o = await open(360, 780, JSON.stringify({ bigText: true })); const lc = await o.p.evaluate(() => { const back = document.getElementById('sws-back').getBoundingClientRect().bottom; let top = 1e9;
+      for (const el of document.querySelectorAll('#s-title > .pad > *')) { const cs = getComputedStyle(el); if (cs.display === 'none' || el.getBoundingClientRect().height < 4 || el.style.flex) continue; top = Math.min(top, el.getBoundingClientRect().top); } return { back, top }; }); await o.p.close();
+    ok('with Larger text at 360 the title\'s logo starts below the back button (it covered the logo)', lc.top >= lc.back, JSON.stringify(lc)); }
+  { const o = await open(412, 915); const kb = await o.p.evaluate(() => { document.querySelectorAll('.screen').forEach(e => e.classList.remove('on')); document.getElementById('s-set').classList.add('on');
+      const row = document.getElementById('tg-sound').parentNode; row.focus(); return { role: row.getAttribute('role'), tab: row.getAttribute('tabindex'), checked: row.getAttribute('aria-checked'), was: window.CW_DEV.comfort().set.sound, focused: document.activeElement === row }; });
+    await o.p.keyboard.press('Enter'); await sleep(100); const after = await o.p.evaluate(() => ({ now: window.CW_DEV.comfort().set.sound, checked: document.getElementById('tg-sound').parentNode.getAttribute('aria-checked') })); await o.p.close();
+    ok('a settings row is a switch a keyboard and a screen reader can use (role, focus, Enter, aria-checked)', kb.role === 'switch' && kb.tab === '0' && kb.focused && after.now === !kb.was && after.checked === String(after.now), JSON.stringify({ kb, after })); }
   /* a stored Larger text and Reduce motion apply on the first load, before any screen change */
   { const o = await open(412, 915, JSON.stringify({ bigText: true, motion: 'on' })); const at = await o.p.evaluate(() => ({ big: document.body.classList.contains('bigtext'), calm: document.body.classList.contains('calm') })); await o.p.close();
     ok('stored Larger text and Reduce motion are applied on the first load (they waited for a screen change)', at.big && at.calm, JSON.stringify(at)); }
