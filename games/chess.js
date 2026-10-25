@@ -9,6 +9,14 @@ function GCH(a){
   // ── Courts (Jul 17 art drop: 13 themed sets cut from art-asset-lists/Chess zip) ──
   var CH_COURTS=[
     ['classic','Grove Classic'],
+    // the first pack (25 Oct 2026, scripts/cut_chess_pack.py): the painted courts, white side cut from the concept plates,
+    // dark side the dark king's own palette carried onto the white pieces; Jimothy waits for his real raccoon art
+    ['walnut','Quiet Walnut'],
+    ['cats','Velvet Paw Court'],
+    ['dogs','Good Dog Guild'],
+    ['greenhouse','Midnight Greenhouse'],
+    ['petri','Pixel Petri Colony'],
+    ['dragonlings','Emberling Keep'],
     ['deepsea','Deep Sea'],
     ['cosmic','Cosmic Cadets'],
     ['dino','Dino Dig'],
@@ -57,8 +65,9 @@ function GCH(a){
       var dir=_chArt+'courts/'+_chCourt+'/';
       for(i=0;i<types.length;i++){t=types[i];
         var h=_CH_LADDER[t];
-        ps[t]='<img src="'+dir+'w'+t+'.png" style="width:92%;height:'+h+'%;object-fit:contain;pointer-events:none">';
-        as[t]='<img src="'+dir+'b'+t+'.png" style="width:92%;height:'+h+'%;object-fit:contain;pointer-events:none">';
+        // a soft drop shadow under every painted piece: a pale piece on a pale square and a dark piece on a dark square both keep an edge (25 Oct 2026)
+        ps[t]='<img src="'+dir+'w'+t+'.png" style="width:92%;height:'+h+'%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.55))">';
+        as[t]='<img src="'+dir+'b'+t+'.png" style="width:92%;height:'+h+'%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.55))">';
       }
       _skinChess.themed=true;
       _skinChess.tileL=dir+'tileL.jpg';_skinChess.tileD=dir+'tileD.jpg';
