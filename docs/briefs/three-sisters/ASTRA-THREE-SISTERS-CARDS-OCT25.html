@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Three Sisters for Astra, round two: premium crops that still read, varied faces, more tables, the next decks (25 Oct 2026)</title>
+<style>body{font-family:Georgia,serif;max-width:860px;margin:24px auto;padding:0 16px;line-height:1.45;color:#222}h1{font-size:1.5em}h2{margin-top:1.5em}h3{margin-top:1.1em}code{background:#eee;padding:1px 4px}table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:4px 8px;text-align:left;vertical-align:top}</style></head>
+<body>
+<h1>Three Sisters for Astra, round two: premium crops that still read, varied faces, more tables, the next decks</h1>
+<p>Sky Wolf Studio, 25 October 2026. One document, everything in it. Reply with one zip and one PDF.</p>
+
+<h2>1. What happened with your first pack</h2>
+<p>It shipped the same day. The standalone game now plays on your Seed Catalogue deck: the painted face with the colour seal fixed in the corner, one to three glyphs on the quiet paper backing, the check and the lift when a card is chosen, your table with the deck tin and the found pile, a found trio flying to the pile, a wrong trio kept on the table and explained by the trait that failed, the Daily ending on your results card, and the settings you specified (the three inks, plain surfaces, larger cards, full labels, reduced motion, sound). Your readability rules were followed to the letter and they hold: every trait reads at 40 px, the seals carry colour as a second channel, and the four cues are made in the page from your WAV references. Thank you. The review was the most useful part of the pack.</p>
+<p>Then the Director played it and said this, verbatim: "What are these images on the cards? I want them to look really premium and artist but way easy to distinguish and recognize." He is not arguing with your readability rule. He is asking for the symbols themselves to be beautiful without losing it. Today the frame is painted and the crop inside it is a flat ink silhouette, and on a phone that reads as a premium frame around a plain sign. This round is about closing that gap.</p>
+
+<h2>2. What to send back (read this first)</h2>
+<ul>
+<li><b>One review PDF:</b> which painted treatment you would ship and why, with your own 40 px greyscale contact sheet for each candidate so the fill cue is proven, not promised. Say plainly where a premium look costs readability and where it does not.</li>
+<li><b>One zip:</b> the painted glyph treatment you recommend in full (27 glyphs plus a fill key), the other candidates as nine-glyph samples, the varied faces, the richer seals, the alternate tables, and the next decks if you have room (section 5). A <code>manifest.json</code> at the root as before, now with a <code>variants</code> array (section 6). No text in pictures. Names exactly as listed. Under 150 MB.</li>
+<li>Do not redraw what shipped. The Seed Catalogue files in the first pack stay as the fallback look. Everything here is added beside them.</li>
+</ul>
+
+<h2>3. The hard rule stays the hard rule</h2>
+<p>Four traits, each with three values, each readable on its own at 40 px with twelve cards on a 360 px phone, in greyscale. Shape by silhouette, fill by full / hatched / hollow, count by repetition, colour by ink plus the seal. A painted crop that makes a hatched squash look like a solid squash has failed, however beautiful. Your fill key sheet is the test; run it on every candidate before you send it.</p>
+
+<h2>4. The brainstorm: how a crop can be premium and still read</h2>
+<p>Pick the two or three you believe in, prove them, recommend one. These are starting points, not orders.</p>
+<table>
+<tr><th>Treatment</th><th>Solid</th><th>Striped</th><th>Empty</th><th>Why it might work</th></tr>
+<tr><td><b>Painted botanical</b></td><td>a small painted crop with volume and one light direction, fully coloured in the ink</td><td>the same painting with broad painted bands or visible engraved hatching across it, the gaps showing paper</td><td>a confident ink line drawing of the same crop, no colour inside</td><td>closest to the store card; the fill cue is a painting technique, not a texture</td></tr>
+<tr><td><b>Seed catalogue woodcut</b></td><td>a bold engraved block print in the ink</td><td>the block cut with wide parallel lines</td><td>the outline cut only</td><td>engraving is hatching by nature; period-true for a seed catalogue; reads tiny</td></tr>
+<tr><td><b>Gold foil and emboss</b></td><td>foil-stamped solid crop</td><td>foil in broad diagonal bands</td><td>a debossed outline in the paper</td><td>the most premium feel; test hard, embossing is subtle at 40 px</td></tr>
+<tr><td><b>Watercolour</b></td><td>a loose wash fully inside a firm outline</td><td>striped wash</td><td>outline only</td><td>softest and warmest; the risk is the hatch melting into the wash</td></tr>
+</table>
+<p>Whatever you choose: the three shapes keep their silhouettes (tall husked corn, curved diagonal bean, round lobed squash), one object per file, the same canvas and occupied bounds as the first pack so the code places them unchanged, and the three colours stay the ink pair you set (deep gold, blue, rose, with the seals).</p>
+
+<h2>5. The list</h2>
+<h3>5.1 Painted glyphs (the main ask)</h3>
+<ul>
+<li><b>glyphs/&lt;treatment&gt;/</b> the recommended treatment in full: 27 files, 400 x 400, <code>&lt;shape&gt;_&lt;colour&gt;_&lt;fill&gt;.png</code>, occupied bounds inside 32 to 368 as before, plus <code>fill_key.png</code> (900 x 300) and <code>greyscale_40px.png</code> (your contact sheet of all 27 at 40 px in greyscale).</li>
+<li><b>glyphs/&lt;other treatment&gt;/</b> for each other candidate: nine files, one shape in all three colours and fills, plus its greyscale sheet.</li>
+</ul>
+<h3>5.2 Varied faces (the Director's "more variable")</h3>
+<ul>
+<li><b>cards/seed_catalogue/</b> four face variants <code>card_face_a.png</code> to <code>card_face_d.png</code> (600 x 840) in one family: the same paper, border weight and seal corner, different scrollwork and corner ornaments, so twelve cards are not twelve copies. No crop motifs in the corners (your own rule). Each with its selected twin <code>card_selected_a.png</code> to <code>_d.png</code>. One shared <code>card_back.png</code> stays.</li>
+<li><b>ui/seals/</b> the three seals as painted medallions at two sizes, <code>seal_gold_64.png</code> and <code>seal_gold_128.png</code> and the same for blue and rose: still sun, wave and leaf, still equal in size and weight, richer than the flat icon.</li>
+<li><b>ui/</b> <code>found_glow.png</code> (600 x 840, a soft light plate for a found card), <code>deck_tin_open.png</code> (300 x 400, the tin with the lid off for a dealt deck).</li>
+</ul>
+<h3>5.3 Alternate tables for the Seed Catalogue</h3>
+<ul>
+<li><b>table/seed_catalogue/</b> two more scenes at 900 x 1600 portrait with the same safe grid box as the first: <code>table_morning.jpg</code> (a bright potting bench by a window) and <code>table_rain.jpg</code> (evening, rain on the glass, the lamp warm). Each with its own <code>lamp_glow</code> if the light differs.</li>
+</ul>
+<h3>5.4 The next decks, in your order, only if you have room</h3>
+<ul>
+<li><b>Stained Glass Chapel</b> then <b>The Observatory</b>, each complete or not at all: 27 glyphs in the treatment you recommend, a fill key and greyscale sheet, the face family (four faces plus selected twins, one back), the seals if the deck wants its own, <code>table_main.jpg</code>, the deck tin and the found pile. The quiet pale panel under the symbols stays even on slate or midnight cards.</li>
+</ul>
+
+<h2>6. The manifest</h2>
+<p><code>manifest.json</code> at the root: every file with its size and sha256, the <code>themes</code> array as before, and a <code>variants</code> array: per glyph folder its id, display name, the treatment in one line, and <code>recommended: true</code> on the one you would ship. Example:</p>
+<pre>{"variants":[{"id":"painted","name":"Painted botanical","treatment":"small painted crops, hatching painted as bands","recommended":true},
+ {"id":"woodcut","name":"Seed catalogue woodcut","treatment":"engraved block print","sample":true}],
+ "faces":{"seed_catalogue":["card_face_a","card_face_b","card_face_c","card_face_d"]}}</pre>
+<p>That is everything. Make the crop as beautiful as the frame, prove it still reads, and tell us which one.</p>
+</body></html>
