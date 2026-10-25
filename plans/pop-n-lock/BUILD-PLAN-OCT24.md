@@ -7,6 +7,23 @@ ruleset are done and were measured in July (memory `project_chaff_wars_jul19`); 
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- **2026-10-25 03:05 (Opus): PART 3 LIVE as v1.11** (main `c0815c91b`, both origins proven from old-worker profiles: v1.11
+  under sw.js?v=16, cache chaff-wars-v17; gates `p3a_gate.mjs` 22 and `p3b_gate.mjs` 75, `fwrun.mjs p3a` 20 and `p3b` 21
+  broken copies red, p2b 12, p2a 37, p1 13, p0 11 pass; two review rounds, the second found 2 faults per lens, all fixed).
+  The page in real px: fit() writes `--k`, every menu text and every canvas text 12 CSS px or more (`lab(d)`), buttons 48,
+  settings rows 56, fixed sizes for engines without max(). Comfort settings: Reduce motion (Auto, On, Off), Screen shake,
+  Larger text (x1.25), Vibration. The HUD lays itself out: the header keeps the score at full size (YOUR PLOT and the
+  wordmark give way and climb), "N cancelled" left of the card and clear of LOCK, NEXT and RIVAL on plates, a six digit
+  rival score beside RIVAL where it fits or on its own line with the rival board stepped down (OF.y set in render, decided
+  by the size, never the live score), pest names via `cardName` (shrink, then two balanced lines narrowed, band grows),
+  the danger X over the spawning pair (`dangerX`, pixel checked), intro and outro hints a line below the taunt. Title rows
+  share their line (`flex:1 1 0; min-width:fit-content`). The fleet song card is HIDDEN in a match by CSS (never
+  SWSMusic.hold: it marks a waiting card seen and the song is lost). NOT DONE (said plainly): a song earned mid match
+  shows at the next boot, not at the result screen (a reveal there would re-offer any pending song after every match:
+  his call); the soundtrack button says "on" (a state) beside "Play beat" (an action); the fleet's music-player.js has
+  a dash in its playlist line (a fleet file, not this game); buttons have no side padding (`*{padding:0}`), so Larger
+  text fills a third of a row edge to edge. NEXT: Part 4 without Retro (his call): the records carry ruleset, input and
+  difficulty; the first three rivals measured (200 expert rounds, fixed seed suites), their speeds unchanged.
 - **2026-10-24 23:24 (Opus): PART 2b LIVE as v1.10** (main `bf807d7a4`, both origins proven from old-worker profiles; gate
   `tools/chaff-wars-tests/p2b_gate.mjs` 12 (300 seeded boards for the guide against the real landing, the 30 cap, a mutual
   top out, 60 vs 120 Hz falls, the drain, a hidden Campaign match through its count with real input refused), `fwrun.mjs
