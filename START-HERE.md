@@ -1,6 +1,6 @@
 # START HERE
 
-## 🦊 25 Oct 06:50 UTC (Opus, overnight) TALLY PART 1 LIVE: 0.3.0, build t1, ASTRA'S PAINTED PALS AND BEADS (main `49d0e4b38`, upstream `8c7546d`)
+## 🦊 25 Oct 05:58 UTC (Opus, overnight) TALLY PART 1 LIVE: 0.3.0, build t1, ASTRA'S PAINTED PALS AND BEADS (main `49d0e4b38`, upstream `8c7546d`)
 The equipped pal is her painted character on her slow cadence (cheers on a bank, wins on the results, thinks after a quiet 18 s), standing on its own painted feet; the shop shows her portraits; the beads and the target are her paint tinted by each skin. Returning players now get the new page (the worker had been handing them a day old copy). Proof: both origins byte identical; old worker profiles reached Build t1 on both. Seen wrong: Bolt the cream robot is faint on the cream board (your call: a plate behind every pal, or only on light skins); on a small phone with five beads the speech bubble usually stays quiet because there is no free spot. Next: Super Slice 3D Part H.
 
 ## 🧮 25 Oct 05:40 UTC (Opus, overnight) TALLY PART 0 LIVE: 0.2.0, build t0 (main `936ea9d08`, upstream `6e0fd96`)

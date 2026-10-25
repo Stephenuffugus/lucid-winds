@@ -13,7 +13,7 @@ deploy reaches players.
 
 ## 0. State block (update IN THE TURN you finish a part)
 
-- 2026-10-25 06:50 UTC (Opus): **PART 1 LIVE**, Tally 0.3.0 build t1, upstream `8c7546d`, main `49d0e4b38`. Her ten pals
+- 2026-10-25 05:58 UTC (Opus): **PART 1 LIVE**, Tally 0.3.0 build t1, upstream `8c7546d`, main `49d0e4b38`. Her ten pals
   cut by `tools/cut_art.py` (one box per pal = the union of its 16 frames, feet on the box bottom; 1.48 MB; art.json also
   written to `src/art-t1.json` for the bundle); `src/palAnim.js` plays her cadence (tests/pal.test.mjs, 8 on a fake
   clock, 9 broken copies red); the bubble is placed by measurement so it never covers a bead or control (beside the pal,
