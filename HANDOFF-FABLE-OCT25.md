@@ -37,6 +37,13 @@ and plans, Opus builds (memory `feedback_astra_fable_opus_pipeline`). Nothing bu
 
 ## 1. Where the returns are, and the intake (do this first)
 
+**Done already (Opus, 25 Oct 00:20 UTC): the Super Slice Journey kit is TAKEN IN.** It is in
+`assets/super-slice-journey-kit.zip`, vaulted as `vault-20261025-super-slice-journey-kit` (downloaded back, sha256
+matched), and assessed in `docs/briefs/super-slice-3d/JOURNEY-KIT-INTAKE-OCT25.md` (21 of 21, sizes and transparency as
+asked, the painted margins, the seams measured, three things to judge in the game, her numbers to verify). Read that
+note and go straight to job 2; do not vault it again. **The Tally return is still coming** (he uploads it from his
+computer, the files are too large for his phone): take it in as below when it lands.
+
 Stephen uploads them into `/workspaces/lucid-winds/assets/`, like `pop-n-lock-assets.zip` on 24 Oct. Expect:
 - Tally: one review document (Google Doc export, PDF or .md, named something like `Tally Review` or `Tally_Review.pdf`)
   and `tally-assets.zip` (or `tally-assets-1.zip` and `-2.zip`).
