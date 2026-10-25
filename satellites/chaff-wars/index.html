@@ -172,6 +172,9 @@ body.mirror #dropbtn{order:-1}
 #dropbtn.drop:active{transform:translateY(3px); box-shadow:0 1px 0 #356b1e; filter:brightness(1.05)}
 .go-score{font-size:56px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
 .go-lab{font-size:var(--fs); letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
+#go-lab, #go-line, #go-reward{position:relative; z-index:1}   /* v1.12: above the banner art (positioned at z 0, it painted over them) */
+#go-lab, #go-line{text-shadow:0 1px 2px #000, 0 0 10px rgba(0,0,0,.9)}   /* readable on the bright wall */
+#go-lab{display:table; margin:6px auto 0; padding:3px 12px; border-radius:10px; background:rgba(10,8,4,.82)}   /* the name sits on the banner's border: its own plate */
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#211d11; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:var(--fs); margin-top:8px}
 /* ---- result screen: it EASES in, one row at a time. It is the tail of the
    canvas outro, not a page swap. Stephen 8/01: the summary used to arrive
@@ -378,7 +381,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 <script>
 (function(){
 "use strict";
-var BUILD="v1.11";
+var BUILD="v1.12";
 /* screen shake: shake(amp,ms) — decays in update(), applied as a canvas translate in render() */
 var SHAKE={t:0,dur:1,amp:0};
 function shake(a,ms){ if(CALM||!SET.shake)return; if(a>SHAKE.amp||SHAKE.t<=0){ SHAKE.amp=a; SHAKE.t=ms; SHAKE.dur=ms; } }   /* v1.11: Screen shake and Reduce motion */
@@ -439,9 +442,22 @@ function calmNow(){ return SET.motion==='on'||(SET.motion==='auto'&&!!(MQ_RM&&MQ
 CALM=calmNow();
 try{ if(MQ_RM){ var _mqf=function(){ CALM=calmNow(); applyBig(); }; if(MQ_RM.addEventListener)MQ_RM.addEventListener('change',_mqf); else if(MQ_RM.addListener)MQ_RM.addListener(_mqf); } }catch(e){}
 function saveSet(){ LS.s('cw_set', JSON.stringify(SET)); }
-var PROG={ unlocked:0, beaten:{}, done:false, secret:false, soloBest:0 };
+var PROG={ unlocked:0, beaten:{}, done:false, secret:false, soloBest:0, recs:{}, lessons:{} };   /* v1.12: recs = each record's rules, input and difficulty; lessons = skills shown */
 (function(){ try{ var p=JSON.parse(LS.g('cw_prog')||'{}'); var k; for(k in PROG) if(p[k]!=null)PROG[k]=p[k]; }catch(e){} })();
 function saveProg(){ LS.s('cw_prog', JSON.stringify(PROG)); }
+/* v1.12 (PNL-002): every record carries the rules it was set under, the input profile and the difficulty */
+function recMeta(score){ var st=(MATCH.mode==='campaign'&&MATCH.stage>=0)?ROSTER[MATCH.stage]:null;
+  return { score:score||0, rules:RULES.classic?'retro':'standard', powers:!!MATCH.powers, input:{ rep:SET.relaxed?'relaxed':'fast', flick:!!SET.flick, mirror:!!SET.mirror, big:!!SET.bigTray, guide:SET.guide },
+    diff:st?{ stage:st.id, fall:st.fall, q:st.q, react:st.react, hcap:st.hcap, colors:st.colors }:{ mode:MATCH.mode }, v:BUILD, at:Date.now() }; }
+/* v1.12 (PNL-050): the first three rivals are lessons. Each names one skill on its intro card, in the count and after a
+   loss, until the player has shown that skill once in any match or has beaten that rival; then the pest's own lines come back */
+var LESSONS={ 'aphid-swarm':{ k:'pop', t:'Join four or more pods of one color to pop them.' },
+  'gnat-king-cole':{ k:'chain', t:'Stack so one pop drops pods into another group of four or more. That chain hits hardest.' },
+  'cabbage-moth':{ k:'cancel', t:'The \u25BC number by your score is Chaff coming. Chain or pop big with your falling pair to cancel some.' } };   /* queued Chaff lands when the pair in play locks: only that pair can cancel it */
+function lessonFor(st){ var L=st&&LESSONS[st.id]; if(!L||(PROG.beaten&&PROG.beaten[st.id])||(PROG.lessons&&PROG.lessons[L.k]))return null;
+  if(L.k==='cancel'&&RULES.classic)return null;   /* Retro has no cancelling */
+  return L; }
+function lessonSeen(k){ if(_devSweep)return; if(!PROG.lessons)PROG.lessons={}; if(!PROG.lessons[k]){ PROG.lessons[k]=true; saveProg(); } }
 
 /* ---------- audio ---------- */
 var AC=null;
@@ -793,7 +809,7 @@ function resolveTick(f,dt){ var R=f.res; R.t+=dt;
   if(R.sub==='grav'){ var moves=applyGravityMoves(f.grid); if(moves.length){ R.wait=setFall(f,moves); R.sub='gravwait'; R.t=0; } else { R.sub='scan'; } }
   else if(R.sub==='gravwait'){ if(R.t>=(R.wait||FALL_MIN)){ R.sub='scan'; } }   /* v1.10: the settle waits for the longest fall, 110 to 180 ms */
   else if(R.sub==='scan'){ var groups=findGroups(f.grid); if(!groups.length){ finishResolve(f); return; }
-    R.chain++; if(f===MATCH.of)railChain(R.chain); var cset={},gb=0,cl=0,i,j; f.pop=newLayer(); var chf={};
+    R.chain++; if(f===MATCH.of)railChain(R.chain); if(f===MATCH.pf){ lessonSeen('pop'); if(R.chain>=2)lessonSeen('chain'); } var cset={},gb=0,cl=0,i,j; f.pop=newLayer(); var chf={};
     for(i=0;i<groups.length;i++){ var gr=groups[i]; cset[gr.color]=1; gb+=groupBonus(gr.cells.length); cl+=gr.cells.length;
       for(j=0;j<gr.cells.length;j++){ var cc=gr.cells[j]; f.pop[cc.r][cc.c]=1; markChaffAround(f.grid,cc.r,cc.c,chf); } }
     var kk,nchf=0; for(kk in chf){ var pc=chf[kk]; f.pop[pc.r][pc.c]=2; nchf++; }
@@ -837,7 +853,7 @@ function finishResolve(f){ var R=f.res; f.score+=R.score; if(f===MATCH.of)railCh
      in classic (MBM/Puyo-1) there is NO offsetting — garbage always lands. */
   var opp=(f===MATCH.pf)?MATCH.of:MATCH.pf;
   if(out>0){ if(!RULES.classic && f.pending>0){ var off=Math.min(f.pending,out); f.pending-=off; out-=off; if(off>0){ f.cancelN=off; f.cancelT=1600; }   /* v1.10: shown beside the queue */
-      if(off>0){ f.floats.push({x:0,y:0,txt:'DENIED',life:1.0,big:true,fld:f}); addHype(f,10); } }
+      if(off>0){ f.floats.push({x:0,y:0,txt:'DENIED',life:1.0,big:true,fld:f}); addHype(f,10); if(f===MATCH.pf)lessonSeen('cancel'); } }
     if(out>0){ if(MATCH.mode==='versus'&&f===MATCH.pf){ _mpGarbage(out); }
       else if(opp){ opp.pending+=out; SFX.warn(); } } }
   f.res=null;
@@ -1024,7 +1040,7 @@ function _outHandoff(){ if(MATCH.mode==='versus'){ versusResult(MATCH.result); r
 function endMatch(result){ if(MATCH.phase==='done')return; MATCH.phase='done'; MATCH.result=result; clearHolds();
   if(MATCH.pf)MATCH.pf.state='over'; if(MATCH.of)MATCH.of.state='over';
   if(MATCH.mode==='versus')_mpPub(true);
-  if(MATCH.mode==='solo' && MATCH.pf && MATCH.pf.score>PROG.soloBest){ PROG.soloBest=MATCH.pf.score; saveProg(); }
+  if(MATCH.mode==='solo' && MATCH.pf && MATCH.pf.score>PROG.soloBest){ PROG.soloBest=MATCH.pf.score; (PROG.recs||(PROG.recs={})).solo=recMeta(MATCH.pf.score); saveProg(); }
   /* the headless sweep (and any end that happens off the play screen) skips the
      theatre entirely and hands off instantly, exactly like the old code did. */
   if(_devSweep || curScreen!=='s-play'){ running=false; MATCH.out=null; _outHandoff(); return; }
@@ -1071,10 +1087,11 @@ function matchResult(result){ if(_devSweep)return; var st=ROSTER[MATCH.stage];
   $('go-title').textContent = result==='win'? 'Victory' : (result==='draw'?'Draw':'Defeat');
   $('go-title').style.color = result==='win'? '#2ff0e0' : '#9a9078';
   $('go-lab').textContent = st.nm;
-  $('go-line').textContent = result==='win'? ('"'+st.lose+'"') : ('"'+st.taunt+'"');
+  var gl=(result!=='win')?lessonFor(st):null;   /* v1.12: a loss while the lesson is still to learn: the lesson, not the taunt */
+  $('go-line').textContent = result==='win'? ('"'+st.lose+'"') : gl? ('Try this: '+gl.t) : ('"'+st.taunt+'"');
   var rw=$('go-reward'); rw.style.display='none'; _sunToast='';
   if(result==='win'){ var firstTime=!PROG.beaten[st.id];
-    if(firstTime){ PROG.beaten[st.id]=true;
+    if(firstTime){ PROG.beaten[st.id]=true; (PROG.recs||(PROG.recs={}))[st.id]=recMeta(MATCH.pf?MATCH.pf.score:0);
       if(!st.secret && MATCH.stage>=PROG.unlocked)PROG.unlocked=Math.min(ROSTER.length-1,MATCH.stage+1);
       var sun=0; if(MATCH.stage<=10)sun=2; else if(MATCH.stage<=12)sun=3; else sun=0;
       /* campaign completion bonus after beating Baron Greymould (index 12) */
@@ -1111,7 +1128,7 @@ var running=false, lastT=0, _devLost=false;
 
 function update(dt){ if(SHAKE.t>0){ SHAKE.t-=dt; if(SHAKE.t<0)SHAKE.t=0; }
   if(MATCH.phase==='done'){ if(MATCH.out)outUpdate(dt); return; }
-  if(MATCH.phase==='intro'){ MATCH.t+=dt; if(MATCH.t>=1700){ MATCH.t=0; MATCH.phase='count'; SFX.count(); } return; }
+  if(MATCH.phase==='intro'){ MATCH.t+=dt; if(MATCH.t>=((MATCH.stage>=0&&lessonFor(ROSTER[MATCH.stage]))?4800:1700)){ MATCH.t=0; MATCH.phase='count'; SFX.count(); } return; }   /* v1.12: a lesson gets time to be read */
   if(MATCH.phase==='count'){ MATCH.t+=dt; if(MATCH.t>=700){ MATCH.t=0; MATCH.count--; if(MATCH.count>0)SFX.count(); else { SFX.go(); MATCH.phase='fight'; if(MATCH.pf)MATCH.pf.state='play'; if(MATCH.of)MATCH.of.state='play'; } } return; }
   if(MATCH.phase!=='fight')return;
   if(MATCH.paused){ if(MATCH.resumeT<0)return; MATCH.resumeT+=dt;   /* the three count back in: 3, 2, 1, then play */
@@ -1576,21 +1593,25 @@ function render(){ HUD.dangerX=0; ctx.clearRect(0,0,VW,VH);   /* what THIS frame
     ctx.font='italic 800 104px system-ui';
     ctx.lineWidth=10; ctx.strokeStyle='#0c0a06'; ctx.strokeText(cTxt, VW/2, VH/2+30);
     ctx.fillStyle=MATCH.count>0?'#ff2fb9':'#39ff14'; ctx.fillText(cTxt, VW/2, VH/2+30);
-    if(MATCH.mode==='campaign'&&MATCH.stage>=0){ ctx.fillStyle='#f0e9d8'; ctx.font='italic '+lab(16)+'px system-ui'; wrapText('"'+ROSTER[MATCH.stage].taunt+'"', VW/2, VH/2+80, 380, Math.round(lab(16)*1.3), 5); }
+    if(MATCH.mode==='campaign'&&MATCH.stage>=0){ var cles=lessonFor(ROSTER[MATCH.stage]), ctTxt=cles?cles.t:('"'+ROSTER[MATCH.stage].taunt+'"'), ctf=lab(16), ctMin=Math.ceil(12/STAGE_S);   /* v1.12: the lesson while it is still to learn, above the tray */
+      for(;;){ ctx.font=(cles?'600 ':'italic ')+ctf+'px system-ui'; if(wrapLines(ctTxt,380).length*Math.round(ctf*1.3)<=270||ctf<=ctMin)break; ctf--; }
+      ctx.fillStyle='#f0e9d8'; wrapText(ctTxt, VW/2, VH/2+80, 380, Math.round(ctf*1.3), 5); }
     ctx.textAlign='left'; }
   /* stage-intro card (campaign): the pest gets an entrance */
   if(MATCH.phase==='intro' && MATCH.mode==='campaign' && MATCH.stage>=0){ var ist=ROSTER[MATCH.stage];
     ctx.fillStyle='rgba(8,6,4,0.93)'; ctx.fillRect(0,0,VW,VH);
     ctx.globalAlpha=0.15; ctx.fillStyle=ist.ac; ctx.fillRect(0,VH/2-186,VW,320); ctx.globalAlpha=1;
     ctx.textAlign='center';
-    var tag=ist.boss?'FINAL BOSS':ist.secret?'SECRET DUEL':'STAGE '+(MATCH.stage+1);
+    var tag=ist.boss?'FINAL BOSS':ist.secret?'SECRET DUEL':'STAGE '+(MATCH.stage+1), iles=lessonFor(ist); if(iles)tag+=' · LESSON';
     if(SERIES&&(SERIES.me+SERIES.them+(SERIES.draws||0))>0)tag+=' · ROUND '+(SERIES.me+SERIES.them+(SERIES.draws||0)+1);
     ctx.font='800 '+lab(15)+'px system-ui'; ctx.fillStyle='#9a9078'; ctx.fillText(tag, VW/2, VH/2-176);
     /* the pest gets a big entrance portrait (b-boy, parachute pants and all) */
     if(!cwPortrait(ist.id,'idle', VW/2, VH/2-36, 300, 238, 1)){ ctx.font='72px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(ist.em, VW/2, VH/2-24); }
     ctx.font='italic 800 30px system-ui'; ctx.lineWidth=6; ctx.strokeStyle='#0c0a06'; ctx.strokeText(ist.nm, VW/2, VH/2+108);
     ctx.fillStyle=ist.ac; ctx.fillText(ist.nm, VW/2, VH/2+108);
-    var itl=Math.round(lab(16)*1.3); ctx.fillStyle='#f0e9d8'; ctx.font='italic '+lab(16)+'px system-ui'; var itn=wrapText('"'+ist.taunt+'"', VW/2, VH/2+144, 400, itl);
+    var itTxt=iles?iles.t:('"'+ist.taunt+'"'), itf=lab(16), itl, itMin=Math.ceil(12/STAGE_S);   /* v1.12: the hint stays at y 832 or above */
+    for(;;){ ctx.font=(iles?'600 ':'italic ')+itf+'px system-ui'; itl=Math.round(itf*1.3); if(wrapLines(itTxt,400).length<=Math.max(1,Math.floor(208/itl-0.2))||itf<=itMin)break; itf--; }
+    ctx.fillStyle='#f0e9d8'; var itn=wrapText(itTxt, VW/2, VH/2+144, 400, itl);
     ctx.fillStyle='#9a9078'; ctx.font='600 '+lab(12)+'px system-ui'; ctx.fillText('tap to start', VW/2, Math.max(VH/2+210, VH/2+144+(itn-1)*itl+Math.round(itl*1.2)));   /* v1.11: a line below the taunt */
     ctx.textAlign='left'; }
   /* ---- outro overlay: the reveal you are meant to sit in (see THE OUTRO).
@@ -1801,7 +1822,7 @@ tap('go-next',function(){ SFX.ui();
   if(SERIES&&SERIES.stage===MATCH.stage&&SERIES.me<2&&SERIES.them<2){ startMatch(SERIES.stage,'campaign'); return; }
   var n=MATCH.stage+1; if(n<ROSTER.length)startMatch(n,'campaign'); else { buildLadder(); show('s-select'); } });
 var _returnScreen='s-title'; function curReturn(){ return _returnScreen; }
-tap('set-reset',function(){ if(confirm('Reset all campaign progress? This cannot be undone.')){ PROG={unlocked:0,beaten:{},done:false,secret:false,soloBest:PROG.soloBest}; saveProg(); SFX.ui(); paintTitle(); alert('Campaign progress reset.'); } });
+tap('set-reset',function(){ if(confirm('Reset all campaign progress? This cannot be undone.')){ PROG={unlocked:0,beaten:{},done:false,secret:false,soloBest:PROG.soloBest,recs:(PROG.recs&&PROG.recs.solo)?{solo:PROG.recs.solo}:{},lessons:PROG.lessons||{}}; saveProg();   /* v1.12: every key, or a reader throws and the game freezes */ SFX.ui(); paintTitle(); alert('Campaign progress reset.'); } });
 
 /* v1.11: the whole ROW is a setting's button (only the 64 x 36 switch answered a tap); after flips the effect */
 function rowKeys(row){ row.setAttribute('tabindex','0'); row.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); if(!e.repeat)row.click(); } }); }   /* a held key flips it once */
@@ -1825,7 +1846,7 @@ $('buildstamp').textContent='Pop N Lock '+BUILD;
 
 /* ---------- add to home screen ---------- */
 (function(){ var btn=$('b-install'); if(!btn)return;
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=16'); }catch(e){} }
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=17'); }catch(e){} }
   function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
   if(standalone()){ btn.style.display='none'; return; }
   var deferred=null; window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); deferred=e; });
@@ -2133,7 +2154,7 @@ if(/[?&]cwdev=1/.test(location.search)){
       pf:MATCH.pf.score, of:MATCH.of?MATCH.of.score:0,
       pfPend:MATCH.pf.pending, ofPend:MATCH.of?MATCH.of.pending:0 }; }
   window.CW_DEV={
-    roster:function(){ return ROSTER.map(function(s){ return {id:s.id,colors:s.colors,q:s.q,react:s.react,startChaff:s.startChaff,hcap:s.hcap}; }); },
+    roster:function(){ return ROSTER.map(function(s){ return {id:s.id,colors:s.colors,q:s.q,react:s.react,startChaff:s.startChaff,hcap:s.hcap,fall:s.fall}; }); },
     start:function(stage,seed){ startMatch(stage==null?0:stage,'campaign'); MATCH.phase='fight'; MATCH.pf.state='play'; MATCH.of.state='play';
       if(seed!=null){ var rp=mulberry32(seed),ro=mulberry32(seed*7+3); MATCH.pf.rng=rp; MATCH.of.rng=ro; MATCH.pf.next=newPiece(MATCH.pf); MATCH.of.next=newPiece(MATCH.of); MATCH.pf.cur=null; MATCH.of.cur=null; spawnPiece(MATCH.pf); spawnPiece(MATCH.of); }
       running=false; return this.state(); },
@@ -2145,7 +2166,7 @@ if(/[?&]cwdev=1/.test(location.search)){
     art2:function(){ return { j:!!A2.j, asked:A2.asked, live:a2Live(), who:A2.who, joins:A2.joins||[], rail:RAIL, frame:railFrame() }; },   /* v1.8 gates */
     inp:function(){ return INP; }, setting:function(k,v){ SET[k]=v; applyBig(); fit(); return SET[k]; },   /* v1.9 gates */
     comfort:function(){ return { calm:CALM, s:STAGE_S, shakeT:SHAKE.t, set:SET }; },   /* v1.11 gates */
-    hud:function(){ return HUD; }, lab:function(d){ return lab(d); }, nameFit:function(i){ return cardName(ROSTER[i].nm, 156); }, words:function(i){ var r=ROSTER[i]; return r?{ nm:r.nm, taunt:r.taunt, lose:r.lose }:null; },   /* v1.11 gates (3b) */
+    hud:function(){ return HUD; }, lab:function(d){ return lab(d); }, nameFit:function(i){ return cardName(ROSTER[i].nm, 156); }, prog:function(){ return JSON.parse(JSON.stringify(PROG)); }, lesson:function(i){ return lessonFor(ROSTER[i]); }, words:function(i){ var r=ROSTER[i]; return r?{ nm:r.nm, taunt:r.taunt, lose:r.lose }:null; },   /* v1.11 gates (3b) */
     railChain:function(n){ railChain(n); }, railHit:function(){ railHit(); },   /* the hooks a real chain step and a Chaff landing call */
     railChainEnd:function(){ railChainEnd(); }, cwKeys:function(){ var a=[],k; for(k in _cwCache)if(_cwCache.hasOwnProperty(k))a.push(k); return a; },
     resolve:function(g){ return computeResolve(g||MATCH.pf.grid); },
