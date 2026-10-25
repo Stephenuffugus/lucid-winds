@@ -1,5 +1,8 @@
 # START HERE
 
+## 🦊 25 Oct 06:50 UTC (Opus, overnight) TALLY PART 1 LIVE: 0.3.0, build t1, ASTRA'S PAINTED PALS AND BEADS (main `49d0e4b38`, upstream `8c7546d`)
+The equipped pal is her painted character on her slow cadence (cheers on a bank, wins on the results, thinks after a quiet 18 s), standing on its own painted feet; the shop shows her portraits; the beads and the target are her paint tinted by each skin. Returning players now get the new page (the worker had been handing them a day old copy). Proof: both origins byte identical; old worker profiles reached Build t1 on both. Seen wrong: Bolt the cream robot is faint on the cream board (your call: a plate behind every pal, or only on light skins); on a small phone with five beads the speech bubble usually stays quiet because there is no free spot. Next: Super Slice 3D Part H.
+
 ## 🧮 25 Oct 05:40 UTC (Opus, overnight) TALLY PART 0 LIVE: 0.2.0, build t0 (main `936ea9d08`, upstream `6e0fd96`)
 The results tell the truth (star 2 and star 3 name the rule each puzzle uses; Stars +N; the bank line), every button a real 48 px target (hit tested), the header fits on a 360 phone with a streak and Double Coins, the install bar no longer covers Undo, Clear, Hint or Next, no exclamation marks or dashes, Astra's pal lines. Proof: both origins byte identical, fresh profiles show Build t0 on both. Found: Tally's worker serves a day old page to returning players (it reads the HTTP cache; fixed in Part 1). Old bundles now stay on the server so a stale page never goes blank. State block: `plans/tally/BUILD-PLAN-OCT25.md` section 0. Next: Tally Part 1 (the painted pals and beads).
 

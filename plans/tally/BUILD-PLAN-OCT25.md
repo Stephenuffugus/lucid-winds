@@ -13,6 +13,26 @@ deploy reaches players.
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- 2026-10-25 06:50 UTC (Opus): **PART 1 LIVE**, Tally 0.3.0 build t1, upstream `8c7546d`, main `49d0e4b38`. Her ten pals
+  cut by `tools/cut_art.py` (one box per pal = the union of its 16 frames, feet on the box bottom; 1.48 MB; art.json also
+  written to `src/art-t1.json` for the bundle); `src/palAnim.js` plays her cadence (tests/pal.test.mjs, 8 on a fake
+  clock, 9 broken copies red); the bubble is placed by measurement so it never covers a bead or control (beside the pal,
+  else two narrow lines above, else quiet: on a 360 phone with five beads it is usually quiet); shop and preview show
+  her portraits; beads wear `bead_shade` over the skin `tile`; the target is `target_orb` multiplied over `--target`
+  plus a CSS highlight (multiply loses her painted one), the glow keeps its whole canvas (cropped, it drew a square).
+  `sw.js` navigations refetch with `cache: "no-cache"`. Deviations, said plainly: the pal sits at left 4, bottom 64 (122
+  with the install bar) so it clears bead 15 on five bead levels; only the TALLEST pal is 74 px (the others keep her
+  relative sizes); `scripts/dom-smoke.mjs` was extended (the plan's gate asks for it though section 7 lists `scripts/`).
+  Gates: dom-smoke 40 (5 wiring checks red on 5 broken copies), `tools/tally-tests/pal.mjs` (both sizes: no scroll,
+  pal misses every bead and control, painted feet on the box within 1.5 px from the pixels, one box at every swap,
+  bubble inside the board and over nothing, fresh load 390 KB), `fw_pal.py` 3 broken copies red. Proof: byte compare
+  SAME on both origins; the old worker profiles (Part 0's worker, a stale page) went old page then Build t1 on the new
+  worker (sw.js?v=3, tally-v3) on both origins. Look, three things: Bolt (cream) on the cream Abacus board is low
+  contrast even with the shadow (his call: a plate behind every pal); the 412 bubble speaks beside the pal's feet when a
+  bead is near its head; the think pose was not watched in a shot (18 s; the fake clock test covers it).
+  Review: no blockers; its should fix items (stale bubble measurement, a hardcoded shadow colour, a box check that could
+  not fail, missing wiring checks, a cheer lost during the preload) all fixed before the ship. Nits left: reduced
+  motion is read at render (no live listener); Shuffle, Hint and Clear on an empty builder do not restart the think clock.
 - 2026-10-25 05:40 UTC (Opus): **PART 0 LIVE**, Tally 0.2.0 build t0, upstream `6e0fd96`, main `936ea9d08`. Star 2 and
   star 3 lines name the rule the puzzle uses; "Stars +N" and "Paid at the bank" (only when a way was banked); every
   rendered button a real 48 px target (hit tested, not only measured: `tools/tally-tests/targets.mjs`, 572 buttons, two
