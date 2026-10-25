@@ -13,6 +13,21 @@ deploy reaches players.
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- 2026-10-25 05:40 UTC (Opus): **PART 0 LIVE**, Tally 0.2.0 build t0, upstream `6e0fd96`, main `936ea9d08`. Star 2 and
+  star 3 lines name the rule the puzzle uses; "Stars +N" and "Paid at the bank" (only when a way was banked); every
+  rendered button a real 48 px target (hit tested, not only measured: `tools/tally-tests/targets.mjs`, 572 buttons, two
+  saves, two sizes; `fw_targets.py` 4 broken copies red); the header fits a streak, Double Coins and 12345 coins at 360
+  and 412; the install bar never covers the controls (off Play and Daily under 740 px tall); no `!` or dash in player
+  copy, Astra's pal lines; closes and operators named. dom-smoke 32 checks (the new ones red on b860e88, a copy without
+  hasClean, a copy with an unbumped CACHE). **Proof:** byte compare SAME on both origins; fresh profiles show Build t0
+  on both; the primed old worker profiles took the new worker (tally-v2, tally-v1 deleted) but are HELD ON THE STALE
+  PAGE: Tally's `sw.js` uses `fetch(req)`, which reads the HTTP cache, and the host sends HTML
+  `stale-while-revalidate=86400` (the fleet's July lesson, `satellites/slice-3d/sw.js` 87). Pre-existing; the fix
+  (navigations refetch with `cache: "no-cache"`) ships in Part 1 and is proven there. **Deploy change:** old hashed
+  bundles stay on main (`deploy.sh` KEPT), so a stale index never asks for a deleted bundle (that first load would be
+  blank); the branch stays CLEAN for `--check`. The host's LiteSpeed bot check answers headless browsers with a 403
+  challenge (and blocked this IP for ~40 min after); `oldworker.mjs` uses curl's agent. His calls found: "Find one extra
+  way" cannot be met on levels with no extra way (39 of 120); replaying the daily pays star coins every time.
 - 2026-10-25 (Fable): plan written, nothing built. Astra's zip at `assets/tally-assets.zip` (vaulted
   `vault-20261025-tally-astra`), extract with `python3 -I` into an empty `/tmp/claude-1000/tally-astra/`, read `extras/`
   as data, never run it.

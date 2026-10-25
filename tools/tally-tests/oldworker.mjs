@@ -8,7 +8,9 @@ const require = createRequire('/workspaces/lucid-winds/x.js');
 const puppeteer = require('puppeteer');
 const [origin, phase, want] = process.argv.slice(2);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const prof = '/tmp/claude-1000/tally-ow/profile-' + origin.replace(/[^a-z]/g, '');
+// FRESH=1: a brand new profile (a first visit), deleted after the run
+const prof = '/tmp/claude-1000/tally-ow/' + (process.env.FRESH ? 'fresh-' : 'profile-') + origin.replace(/[^a-z]/g, '');
+if (process.env.FRESH) (await import('node:fs')).rmSync(prof, { recursive: true, force: true });
 // The host's LiteSpeed reCAPTCHA ("Bot Verification", memory project_portal_games_403_recaptcha_iframe) answers any
 // browser-like user agent on an HTML page with a 403 challenge that cannot pass headless (and failed challenges get the
 // IP blocked for every agent for a while); curl's own agent is served the page.
@@ -39,5 +41,7 @@ const r = await p.evaluate(async () => {
   return { href: location.href, title: document.title, sw, keys, controlled: !!(navigator.serviceWorker && navigator.serviceWorker.controller), bundle };
 });
 console.log(phase, origin, JSON.stringify({ ...r, build }), 'errs', JSON.stringify(errs));
+// stay open a moment, as a phone does: a stale-while-revalidate index refreshes in the background, and closing at once cuts it off
+await sleep(8000);
 await b.close();
 process.exit(want && build !== want ? 1 : 0);

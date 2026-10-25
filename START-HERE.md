@@ -1,5 +1,8 @@
 # START HERE
 
+## 🧮 25 Oct 05:40 UTC (Opus, overnight) TALLY PART 0 LIVE: 0.2.0, build t0 (main `936ea9d08`, upstream `6e0fd96`)
+The results tell the truth (star 2 and star 3 name the rule each puzzle uses; Stars +N; the bank line), every button a real 48 px target (hit tested), the header fits on a 360 phone with a streak and Double Coins, the install bar no longer covers Undo, Clear, Hint or Next, no exclamation marks or dashes, Astra's pal lines. Proof: both origins byte identical, fresh profiles show Build t0 on both. Found: Tally's worker serves a day old page to returning players (it reads the HTTP cache; fixed in Part 1). Old bundles now stay on the server so a stale page never goes blank. State block: `plans/tally/BUILD-PLAN-OCT25.md` section 0. Next: Tally Part 1 (the painted pals and beads).
+
 ## 🗒 25 Oct (~04:45 UTC) HIS WORDS, VERBATIM: "okay we have about 7 or 8 % usage to run opus 5.5 on ultracode all night. give me the prompt to kick it off and i will copy, close the codespace and restart ti so it will survive the night, and then ill paste the prompt"
 Sort: the overnight build runs on OPUS 5.5 WITH ULTRACODE on 7 to 8 percent (not 9); he restarts the codespace first. The kickoff prompt is on a copy page: https://lucidwinds.com/docs/briefs/opus-kickoff-oct25/ (first line = the trigger "build plans/BUILD-ORDER-OCT25.md"; ultracode capped to reviews, three agents, one round, one browser). Nothing else changed.
 
