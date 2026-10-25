@@ -10,6 +10,12 @@ rates) are proposals; the gates below are what counts.
 
 ## 0. State block (update IN THE TURN you finish a part)
 
+- **2026-10-25 (Fable): PART H PLANNED, nothing built** (section 10 at the end of this file; the review
+  `ART-REVIEW-JOURNEY-OCT25.md`, the intake `docs/briefs/super-slice-3d/JOURNEY-KIT-INTAKE-OCT25.md`). Astra's Journey
+  kit (21 files) is `assets/super-slice-journey-kit.zip`, vaulted `vault-20261025-super-slice-journey-kit`; extract with
+  `python3 -I` into `/tmp/claude-1000/ssjk/zip/`. One deploy, v7.4: the tiles and the cut outs over the SAME boxes and
+  positions, `GRASS_TOP` unchanged, every code mesh kept as the fallback until its painting is in.
+
 - **2026-10-24 (Opus): PART G LIVE as v7.3** (deploy `21c12a052`, both origins proven from old-worker profiles; suite 236;
   `fix/fwrun_g.js` 16 groups red). G2 the shelf in price order, as written. G3 measured, nothing tuned (`g3/survive.js`:
   phone sight measured by `g3/sight.mjs`, 30 u below the knife at 20 u/s to 45 u at 60, reaction 0.25 s): 5 seeds died at
@@ -590,3 +596,100 @@ Row [22] and [16] extended and watched red (`fix/mkslices.js`, a `fwrun_g.js` wi
 suite green. Shots of G1 and G2 looked at, three things named. Deploy with `tools/slice-3d-tests/deploy/deploy.sh`,
 prime the old worker profiles on live v7.2 BEFORE the deploy, check both origins after. Then the state block, the
 board, and one line to him.
+
+## 10. Part H (25 Oct, Fable): the painted Journey orchard, one deploy, v7.4
+
+Read `ART-REVIEW-JOURNEY-OCT25.md` and `docs/briefs/super-slice-3d/JOURNEY-KIT-INTAKE-OCT25.md` first. Part H is paint
+over shapes that already exist: no collider, no constant, no rng draw and no price changes. The Part A rule binds
+(section 3.3 and the comment at index.html 736: nothing here moves a collider; every material keeps its code look until
+its texture has landed; `?noart=1` is the code look). Stamps in the one deploy commit: `BUILD` v7.4, `sw.js?v=78`,
+`CACHE` slice3d-v80, the card `?v=20261025a` in `portal/index.html` (the deploy script's `want_*` files).
+
+### H0. The cut (extend `satellites/slice-3d/tools/cut_art.py`, never a second script)
+A `--journey <extracted kit>` input beside `--src`, writing into `art/w/orchard_loft/` with a `j_` prefix and listing
+every file in `art/art.json` under `worlds.orchard_loft` (tiles as keys like `ledge` is today: `j_grass`, `j_soil`,
+`j_bark`, `j_stump_top`, `j_shelf`, `j_vine`, `j_hills`; cut outs under `props` with `w`, `h` AND `box` = the visible
+alpha bounds inside the cut file and `foot` = the bottom of that box as a 0..1 fraction of the height, so the engine can
+stand the painted feet on the ground and never the canvas edge). Sizes (WebP q85, alpha where the source has it, the
+Part A bleed on every cut out): grass 512 square, soil 512 x 128, bark 256 x 128, stump top 128, shelf 256 x 64, vine 32
+x 256, hills 1024 x 256; trees 384 x 512 (poplar 256 x 512), bushes 256 x 160, tufts and flowers 64, mushroom 256,
+branch 512 x 128, flag 256 x 160. **Trim one column (or row) off every tile's wrapped edge** before resizing (the intake
+measured the first and last lines identical), then check the repeat 3 x 3 in the script (edge difference between the last
+and the first line must be of the same order as between neighbouring lines, printed). Budget: `orchard_loft` stays under
+`BUDGET_WORLD` 2.5 MB (300 KB today; the kit at these sizes is about 0.6 MB); the script prints every size and fails
+over budget. After the cut is committed, delete `assets/super-slice-journey-kit.zip` (the vault holds it).
+
+### H1. The tiles (the counter, the Climb floor, the stump, the shelf, the vine)
+- `buildLevel` (1481 to 1485) and `buildClimb` (2754 to 2758): the lip box's top face and the counter `g`'s top wear
+  `j_grass` through a `codeMat(BW, 'jgrass', 0x557a48, 'j_grass', {repeat:true, mirror:true})` (add a `mirror` option to
+  `artOn`: `MirroredRepeatWrapping` on S and T), UVs in world units with `boxUV(m, 6)` (one tile per 6 units; the
+  grass tile's diagonal band is the risk named in the review: if the shot stripes or shimmers at the player's camera,
+  go to 8 and tint toward `0x3c5a34` with `artOn`'s `tint`, and say what you saw). The lip's and `g`'s front faces wear
+  `j_soil` with the tile's HEIGHT mapped to the lip plus the counter front (3.5 units: the overhang row lands at the
+  grass line, never a unit below it); the `soil` box below keeps its code colour (it is the shadow under the counter).
+  The eight unit stripe boxes (`stp`, y 0.26) hide when the grass texture lands (an `artOn` `then`), their rng draws
+  untouched. **`GRASS_TOP` stays 0.25 and no box moves**: the knife still rests on the lip (row [22]).
+- `stump(x,h)`: the trunk cylinder wears `j_bark` (CylinderGeometry UVs wrap once around: `repeat.set(2, h/2)`), the
+  ring's top cap wears `j_stump_top` (the cap's UVs are a unit circle; a second material index for the cap, the side
+  keeps bark). `vt 0.125` unchanged.
+- The crumble shelf: `cmesh` wears `j_shelf` with ONE repeat per shelf (3.4 units), the dark `crk` box hides when it
+  lands; the leg wears `j_bark` or stays WOOD_D (look). The block stays `{crumble:true}` as it is.
+- The vine: the `str` cylinder in `fruitAt`'s vine branch (1300) wears `j_vine` repeated along its length (1 per 2
+  units) only if the look shows it; a 0.06 radius cylinder is two pixels at the camera, so the code colour is a fine
+  fallback. Say which.
+
+### H2. The cut outs (trees, hills, bushes, tufts and flowers, the mushroom, the branch, the flag)
+- Every cut out is a sprite like `propSprite(WSJ, name, x, y, z, h)` (`sp.center` 0.5, 0 puts the sprite's CANVAS
+  bottom edge at y), but the painted feet sit `(1 - foot) * h` above the canvas bottom (`foot` = the painted bottom as a
+  fraction of the height from the top, from art.json; trees 1019/1024). So the canvas bottom goes at
+  `yFoot - (1 - foot) * h` and the painted feet land on `yFoot`. Write that once as `propStand(set, name, x, yFoot, z,
+  h)` and use it for every cut out; the test checks the painted foot, never the canvas edge. Trees: the two rows at the SAME `tx`, `z` the
+  rng draws today (1505 to 1512); the near row (z above -12) draws apple, pear, plum or poplar by a rng draw taken from
+  the SAME stream position as today's crown colour draw (one draw, mapped to four), the back row (z -12 to -15) draws
+  `j_tree_far`; height `th + 1.5` (trunk plus the crown's half as today), feet at y -1 (the trunk base today), fog on;
+  the trunk and crown meshes hide when the sprite material is in. Hills: a plane `len + 260` wide and 24 tall at z -30
+  (between the sky at -34 and the back row), bottom at y -1, `j_hills` repeated along x once per 96 units
+  (`RepeatWrapping` on S only), transparent, `MeshBasicMaterial`, fog on. Bushes: at the sphere positions (1514 to
+  1518), width = the sphere's scaled width (2.4 to 4 units), feet on 0.25 (the grass top; the sphere sat sunk at -0.2),
+  `j_bush_a` or `_b` chosen from the fraction of the radius draw already taken (never a new draw). Tufts and
+  flowers: at the cone and stem positions, 1 unit tall, feet on 0.25; the cones, stems and blooms hide. The mushroom
+  (`mushroom(x)`): a sprite 4.4 wide, height from the painting's aspect, feet at y 0, centred on x; the stem and cap
+  meshes hide; the block `{w 4.2, h 2.9, spring}` is untouched. The branch (`branchOver`): a sprite `w` wide ((x1-x0)+4)
+  and `w/4` tall centred at ((x0+x1)/2, y), the cylinder and the leaf blob hide. The flag: the existing plane keeps its
+  3.4 x 2.2 and position, gets `j_flag` as a `MeshBasicMaterial` map (alpha, DoubleSide, unlit so it is never dark);
+  if the first shot shows it edge on from the player's camera, turn it to face the approach like the x10 labels do
+  (`rotation.y = -Math.PI/2`) and say so.
+- Depth and sprites: THREE.Sprite always faces the camera (the brief asked for exactly that); keep `depthWrite` true so
+  trees occlude each other; the back row a touch desaturated (`color` 0xd8dde0) so the far tree reads far.
+
+### Gate (row [24] in `audit-check.mjs`, watched red; `fix/fwrun_h.js` one group per change)
+Computed in the test, never read back from the page's own numbers: with art in, the lip box's top is 0.25 and
+`GRASS_TOP` is 0.25 (a copy with 0.4 fails) and row [22] stays green; the grass material carries a map with mirrored
+wrap and a repeat of `len/6` along x (from the level's `len`); after the orchard set's textures land, no visible mesh
+of a trunk, crown, tuft cone, bloom, stripe, mushroom stem or branch blob remains (count by geometry type and
+visibility; before the textures, more than zero); every tree sprite's painted foot is within 0.1 of y -1 and every bush,
+tuft and flower within 0.1 of 0.25 (a copy anchoring the canvas bottom instead of the painted foot, the rabbit float,
+fails); the mushroom sprite's centre x equals its block's centre and its width is 4.4; the flag plane carries the pennant
+map; one texture URL broken on purpose leaves that code mesh visible and the page without errors; `?noart=1` builds the
+full code look with zero errors; the paired frame time measure (the existing `noart` pair) adds no more than 1 ms to the
+median on this box. The full suite green (about 30 minutes).
+
+### Look (CLAUDE.md "LOOKING IS PART OF THE JOB")
+At 412 x 915: Journey level 1 at the start from the player's camera; mid course by a stump and a mushroom; the finish
+wall with the flag; Wall Climb's floor. Then the worst angles on purpose: the camera dropped to grass height looking
+along the counter (the stripes question), under the counter's front (the soil face and its overhang line), the back
+row through the fog with the hills behind, the branch and vine at distance, a shelf about to crumble. Open every image
+and name three things wrong before he does. If the grass stripes, the far hills float, or the branch reads as a stick,
+say so in the state block and do not ship that piece: keep its code look and list it for an Astra repaint.
+
+### Deploy
+`tools/slice-3d-tests/deploy/deploy.sh` with `want_build` `var BUILD="v7.4";`, `want_swreg` `register('sw.js?v=78')`,
+`want_cache` `var CACHE = "slice3d-v80";`, `want_card` `url:"/satellites/slice-3d/?v=20261025a"`, `want_code` one line
+only H has (`propStand`). Prime `ssb/oldworker.mjs` on both origins on live v7.3 BEFORE, check after, byte compare with
+a random query one probe at a time, merge main back, the state block, the board and memory in the turn, one line to
+him with the three things you saw.
+
+### Do not touch (Part H)
+Every collider and block size, `GRASS_TOP`, `kSurf`, `kSupport`, the rng streams in `buildLevel` and `buildClimb`
+(no draw added, removed or reordered), the Orchard Loft set already in (`decor1..4`, sky, wall, ledge), the prices,
+`three.min.js`, the assertions already in the suite (extend only).
