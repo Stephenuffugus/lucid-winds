@@ -123,6 +123,7 @@ const DASH_PROBE = `(() => {
 const server = await serve();
 const PORT = server.address().port;
 /* SS_PAGE=<file> runs the suite against a copy beside index.html (the fail watch: a broken copy must go red) */
+const BUILD_WANT = 'v1.2';   /* the build this suite was written for: bump with the page's BUILD */
 const DIRURL = `http://127.0.0.1:${PORT}/satellites/shell-shuffle/`;
 const URL0 = DIRURL + (process.env.SS_PAGE || '');
 const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox','--disable-dev-shm-usage'] });
@@ -412,9 +413,65 @@ for (const [name, poison] of Object.entries(POISONS)) {
   ok('Part 0: after the guess the cups stop being buttons', Array.isArray(r.afterRoles) && r.afterRoles.length >= 2 && r.afterRoles.every(w => !w.role && !w.tab), JSON.stringify(r.afterRoles));
   ok('Part 0: Enter on a focused cup makes the guess', r.guessing2 && r.enterResolved, JSON.stringify({ g: r.guessing2, e: r.enterResolved }));
   ok('Part 0: Space makes the guess, and a miss at 3 and at 6 cups says where in words, on one line at 375', Array.isArray(r.more) && r.more.length === 2 && r.more[0].n === 3 && r.more[1].n === 6 && r.more.every(m => m.g && m.got === m.want && m.one), JSON.stringify(r.more));
-  ok('Part 0: How to play shows the build', await page.evaluate(() => (document.getElementById('buildLine') || {}).textContent === 'Build v1.1'));
+  ok('Part 0: How to play shows the build', await page.evaluate((b) => (document.getElementById('buildLine') || {}).textContent === 'Build ' + b, BUILD_WANT));
   ok('Part 0: no page errors', errs.length === 0, errs[0]);
   await ctx.close();
+}
+// ---- Part 1 (25 Oct): Astra's Midnight Cabinet. Values worked out here: the plate's file and BUILD, 70 percent of the
+//      height for the cups' painted feet (read from the cup's own pixels), 48 px hit boxes, the saves' cups.
+{
+  const feetAt = async (page) => page.evaluate(() => new Promise((res) => {   /* a cup that is standing (a lifted one is not on the line) */
+    const im = [...document.querySelectorAll('#playfield .cup-body:not(.lifted) .cup-img')][0]; if (!im) return res(null);
+    const go = () => { const cv = document.createElement('canvas'), g = cv.getContext('2d'); cv.width = im.naturalWidth; cv.height = im.naturalHeight; g.drawImage(im, 0, 0);
+      const d = g.getImageData(0, 0, cv.width, cv.height).data; let low = -1;
+      for (let y = cv.height - 1; y >= 0 && low < 0; y--) for (let x = 0; x < cv.width; x++) if (d[(y * cv.width + x) * 4 + 3] > 24) { low = y; break; }
+      const r = im.getBoundingClientRect(); res({ feet: r.top + (low + 1) / cv.height * r.height, H: innerHeight, w: r.width }); };
+    if (im.complete && im.naturalWidth) go(); else im.onload = go; }));
+  const roundAt = async (page, lv) => { await page.evaluate(l => window.__ss.start(l), lv);
+    const t0 = Date.now(); while (Date.now() - t0 < 40000 && !(await page.evaluate(() => window.__ss.ball().phase === 'guessing'))) await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 700)); };   /* the last swap's transition settles (a loaded box lags the timers) */
+  const out = {};
+  for (const [w, h] of [[375, 667], [412, 915], [360, 640], [1024, 768]]) {
+    const { ctx, page, errs } = await open('?sstest=1', { lwfb_explained: '1' });
+    await page.setViewport({ width: w, height: h, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }); await new Promise(r => setTimeout(r, 600));
+    try {
+      if (w === 375) out.bg = await page.evaluate(() => { const cs = getComputedStyle(document.body); return { img: cs.backgroundImage, posY: cs.backgroundPositionY.split(',')[0].trim() }; });
+      await roundAt(page, 2); out['f' + w] = await feetAt(page);
+      if (w === 375 || w === 360) {   /* a real tap on a cup; then the idle state, the logo back: the line and no scroll */
+        /* a cup known to be WRONG: a right guess rolls into the next level by itself (a second round on top of it
+           shuffled the same cups twice over and read as an overlap) */
+        const c = await page.evaluate(() => { const bl = window.__ss.ball(), wr = bl.order.find(id => id !== bl.ballCup);
+          const r = document.querySelector('#playfield .cup-wrap[data-id="' + wr + '"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+        await page.touchscreen.tap(c.x, c.y);
+        const t0 = Date.now(); while (Date.now() - t0 < 6000 && (await page.evaluate(() => window.__ss.ball().phase)) !== 'idle') await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 500));
+        out['i' + w] = await feetAt(page); out['s' + w] = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight); }
+      if (w === 360) {
+        await roundAt(page, 5);
+        out.six = await page.evaluate(() => { const r = [...document.querySelectorAll('#playfield .cup-wrap')].map(e => { const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, w: b.width, h: b.height }; }).sort((a, b) => a.l - b.l);
+          return { n: r.length, minW: Math.min(...r.map(x => x.w)), minH: Math.min(...r.map(x => x.h)), overlap: r.some((x, i) => i && x.l < r[i - 1].r - 0.5), inView: r.every(x => x.l >= -0.5 && x.r <= innerWidth + 0.5),
+            boxes: r.map(x => Math.round(x.l) + '-' + Math.round(x.r)).join(' '), phase: window.__ss.ball().phase }; }); }
+      out['e' + w] = errs.slice(0, 2);
+    } catch (e) { out['x' + w] = String(e).slice(0, 160); }
+    await ctx.close();
+  }
+  ok('Part 1: the page stands on the painted plate (table_main, the 2x file, ?v=BUILD), its 70 percent line on the screen\'s', out.bg && out.bg.img.indexOf('art/s1/scene/table_main.webp?v=' + BUILD_WANT) >= 0 && out.bg.posY === '70%', JSON.stringify(out.bg).slice(0, 200));
+  const near = (f) => f && Math.abs(f.feet - 0.70 * f.H) <= 0.02 * f.H;
+  ok('Part 1: the cups stand their painted feet on 70 percent of the height, within 2 percent (375 x 667, 412 x 915, 360 x 640, a 1024 x 768 tablet)', near(out.f375) && near(out.f412) && near(out.f360) && near(out.f1024), JSON.stringify({ a: out.f375, b: out.f412, c: out.f360, d: out.f1024 }));
+  ok('Part 1: after a miss the standing cup stays on the line and the page does not scroll (375, 360)', near(out.i375) && near(out.i360) && out.s375 <= 0 && out.s360 <= 0, JSON.stringify({ a: out.i375, b: out.i360, s: [out.s375, out.s360] }));
+  ok('Part 1: three cups are 100 to 110 px wide at 375 and 412', out.f375 && out.f412 && [out.f375.w, out.f412.w].every(x => x >= 100 && x <= 110), JSON.stringify([out.f375 && out.f375.w, out.f412 && out.f412.w]));
+  ok('Part 1: six cups at 360 wide: every hit box 48 or more, none overlapping, all in view', out.six && out.six.n === 6 && out.six.minW >= 48 && out.six.minH >= 48 && !out.six.overlap && out.six.inView, JSON.stringify(out.six));
+  ok('Part 1: no page errors in the scene runs', ['e375', 'e412', 'e360', 'e1024'].every(k => Array.isArray(out[k]) && out[k].length === 0) && !out.x375 && !out.x412 && !out.x360 && !out.x1024, JSON.stringify(out).slice(0, 300));
+  /* the saves: a fresh one starts on the house cup, an existing one keeps its cup */
+  { const a = await open('?sstest=1'); const fresh = await a.page.evaluate(() => window.__ss.state().selectedCup); await a.ctx.close();
+    const keep = await open('?sstest=1', { 'shellshuffle:v1': JSON.stringify({ coins: 5, owned: ['classic'], selected: 'classic', selectedCup: 'moonlit', ownedCups: ['sunset', 'moonlit', 'forest'] }) });
+    const kept = await keep.page.evaluate(() => ({ sel: window.__ss.state().selectedCup, owned: window.__ss.state().ownedCups.slice() })); await keep.ctx.close();
+    ok('Part 1: a fresh save starts on the house cup; a save on Moonlit keeps Moonlit and its own rotation (no house added)', fresh === 'house' && kept.sel === 'moonlit' && kept.owned.indexOf('house') < 0 && ['sunset', 'moonlit', 'forest'].every(c => kept.owned.indexOf(c) >= 0), JSON.stringify({ fresh, kept })); }
+  /* the old cups left the page: none of the three redrawn cups' base64 (each one's own prefix from v1.1) */
+  { const src = fs.readFileSync(path.join(ROOT, 'satellites/shell-shuffle', process.env.SS_PAGE || 'index.html'), 'utf8');
+    const left = { sunset: 'UklGRhINAABXRUJQVlA4WAoAAAAQAAAAWQAAZwAA', moonlit: 'UklGRkgNAABXRUJQVlA4WAoAAAAQAAAAWQAAZQAA', forest: 'UklGRpINAABXRUJQVlA4WAoAAAAQAAAAWQAAZQAA' };
+    const still = Object.keys(left).filter(k => src.indexOf(left[k]) >= 0);
+    ok('Part 1: the three redrawn cups left the page as base64 (sunset, moonlit, forest)', still.length === 0, still.join(', ') + ' bytes ' + src.length); }
 }
 /* KNOWN, reported, not counted (feedback.js is the fleet's, outside this game's parts): on a FIRST visit the ladybug's
    explanation tip sits over Play Again for 7 s after the first miss, and a tap there lands on the tip */
