@@ -272,6 +272,13 @@
   .day.plated .d img{ width:13px; height:13px; vertical-align:-2px; }
   .day.plated.done{ opacity:1; }
   .streak-hero .flame img{ width:46px; height:46px; vertical-align:middle; }
+  /* Part 3: the settings sheet, the pause count */
+  .setrow{ display:flex; justify-content:space-between; align-items:center; gap:10px; min-height:56px; padding:6px 6px 6px 14px; background:rgba(255,255,255,.06); border-radius:14px; margin-bottom:8px; font-weight:800; font-size:16px; }
+  .tg{ min-width:84px; min-height:48px; padding:0 16px; border-radius:24px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.1); color:var(--cream); font:inherit; font-weight:800; font-size:15px; cursor:pointer; }
+  .tg[aria-pressed="true"]{ background:linear-gradient(180deg,#ffe08a,#f5c451); color:#3a230a; border-color:transparent; }
+  .tg.wide{ min-width:150px; }
+  .setnote{ color:var(--muted); font-size:13px; font-weight:700; margin:10px 4px 0; line-height:1.4; }
+  .paused-overlay .count{ font-family:'Fredoka',sans-serif; font-size:64px; line-height:1; min-height:70px; color:var(--gold); }
 </style>
 <link rel="canonical" href="https://lucidwinds.com/satellites/shell-shuffle/">
 <script src="/music-unlocks.js" defer></script>
@@ -305,6 +312,7 @@
   <div class="hint" id="hint">Each round adds a cup, shuffles faster, and pays more coins.</div>
   <button id="openHelp" style="display:block;margin:8px auto 0;min-height:48px;padding:8px 18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:14px;color:var(--cream);font:inherit;font-weight:800;font-size:14px;cursor:pointer;">? How to play</button>
   <button id="exitPortal" style="display:block;margin:6px auto 0;min-height:48px;padding:10px 18px;background:none;border:none;color:rgba(255,255,255,.55);font:inherit;font-weight:700;font-size:14px;cursor:pointer;">← All Sky Wolf games</button>
+  <button id="openSettings" style="display:block;margin:4px auto 0;min-height:48px;padding:8px 18px;background:none;border:none;color:rgba(255,255,255,.7);font:inherit;font-weight:700;font-size:14px;cursor:pointer;">⚙ Settings</button>
   <div id="rowSpacer" aria-hidden="true"></div>
 </div>
 
@@ -325,6 +333,7 @@
 <!-- PAUSED -->
 <div class="paused-overlay" id="pausedOv">
   <h2>Paused</h2>
+  <div class="count" id="pausedCount" aria-live="assertive"></div>
   <button class="btn" id="resumeBtn">Resume</button>
   <button class="btn" id="pausedExit" style="opacity:.8">← All Sky Wolf games</button>
 </div>
@@ -395,6 +404,21 @@
   </div>
 </div>
 
+<!-- SETTINGS (Part 3) -->
+<div class="shop" id="settings" role="dialog" aria-label="Settings">
+  <div class="shop-inner">
+    <div class="shop-head">
+      <h2>Settings</h2>
+      <button class="x" id="closeSettings" aria-label="Close settings">✕</button>
+    </div>
+    <div class="setrow"><span>Sound</span><button class="tg" id="tgSound" aria-pressed="true">On</button></div>
+    <div class="setrow"><span>Vibration</span><button class="tg" id="tgVibe" aria-pressed="true">On</button></div>
+    <div class="setrow"><span>Motion</span><button class="tg wide" id="tgMotion">Follows the phone</button></div>
+    <p class="setnote">Reduced motion turns off the reveal frames and the confetti. The cups still shuffle. Sounds are made in the page, nothing is downloaded.</p>
+    <p class="setnote" id="buildLine2"></p>
+  </div>
+</div>
+
 <!-- RESULTS (Part 2): the run's ending on Astra's card -->
 <div class="shop" id="results" role="dialog" aria-label="Round over">
   <div class="shop-inner" style="display:flex;align-items:center;justify-content:center;">
@@ -422,14 +446,14 @@
 <script>
 (function(){
   "use strict";
-  const BUILD='v1.3';   /* shown small in How to play, so a phone can prove which build it holds; every art URL carries it */
+  const BUILD='v1.4';   /* shown small in How to play, so a phone can prove which build it holds; every art URL carries it */
   /* Astra's Midnight Cabinet (Part 1): art/s1, cut by tools/cut_art.py. The painted cups are 260 x 300 with their feet
      at 0.95 of the canvas (measured on the saved files, art/s1/art.json), so they stand on the line, never on the margin */
   const artUrl = rel => 'art/s1/'+rel+'?v='+BUILD;
   const CUP_ASPECT = 300/260, CUP_FOOT = 0.95;
   const $ = id => document.getElementById(id);
   const delay = ms => new Promise(r=>setTimeout(r,ms));
-  const vibe = p => { try{ if(navigator.vibrate) navigator.vibrate(p);}catch(e){} };
+  const vibe = p => { try{ if(state&&state.settings&&state.settings.vibe===false) return; if(navigator.vibrate) navigator.vibrate(p);}catch(e){} };
 
   const MAX_CUPS = 6;
   const CUPS = [
@@ -700,11 +724,13 @@
       ownedCups:['house','sunset','moonlit','forest'],
       custom:{color:'#ff5a5f', color2:'#ffe14d', pattern:'solid'},
       level:1, streak:0, bestLevel:1, phase:'idle',
-      daily:{last:null,streak:0,best:0,week:null,weekDays:0,weekStreak:0,nextReminderAt:null,reminderOptIn:false}
+      daily:{last:null,streak:0,best:0,week:null,weekDays:0,weekStreak:0,nextReminderAt:null,reminderOptIn:false},
+      settings:{sound:true,vibe:true,motion:'auto'}   /* Part 3; a corrupt value falls back to these */
     };
     if(!d||typeof d!=='object'||Array.isArray(d)) return out;
     out.coins=Math.max(0,int(d.coins,0));
     out.bestLevel=Math.max(1,int(d.bestLevel,1));
+    if(d.settings&&typeof d.settings==='object'&&!Array.isArray(d.settings)){ out.settings.sound=d.settings.sound!==false; out.settings.vibe=d.settings.vibe!==false; out.settings.motion=['auto','on','off'].indexOf(d.settings.motion)>=0?d.settings.motion:'auto'; }
     out.owned=idList(d.owned,BALLS,['classic']);
     out.ownedCups=idList(d.ownedCups,CUPS,['sunset','moonlit','forest']);   /* an existing save: the v1.1 free cups, never the house cup unasked */
     if(d.custom&&typeof d.custom==='object'&&!Array.isArray(d.custom)){
@@ -737,7 +763,7 @@
     const v=await readDisk();
     Object.assign(state, {coins:v.coins, owned:v.owned, selected:v.selected,
       selectedCup:v.selectedCup, ownedCups:v.ownedCups, custom:v.custom,
-      bestLevel:v.bestLevel, daily:v.daily});
+      bestLevel:v.bestLevel, daily:v.daily, settings:v.settings||{sound:true,vibe:true,motion:'auto'}});
     CUPS.forEach(c=>{ if(cupPrice(c.id)===0 && c.id!=='house' && !state.ownedCups.includes(c.id)) state.ownedCups.push(c.id); });   /* house: fresh saves only (free in the shop) */
     if(!state.ownedCups.includes(state.selectedCup)) state.selectedCup = state.ownedCups[0] || 'sunset';
     saveBase={coins:state.coins};
@@ -764,7 +790,8 @@
         weekStreak:Math.max(disk.daily.weekStreak, state.daily.weekStreak),
         nextReminderAt:state.daily.nextReminderAt||disk.daily.nextReminderAt,
         reminderOptIn:state.daily.reminderOptIn||disk.daily.reminderOptIn
-      }
+      },
+      settings:{ sound:state.settings.sound!==false, vibe:state.settings.vibe!==false, motion:state.settings.motion||'auto' }
     };
     for(const id of disk.owned) if(!d.owned.includes(id)) d.owned.push(id);
     for(const id of disk.ownedCups) if(!d.ownedCups.includes(id)) d.ownedCups.push(id);
@@ -931,32 +958,76 @@
     if(state.phase==='play') app.classList.add('started');
     if(!was && app.classList.contains('started')) placeRow(); }   /* the title's logo leaves: the row is placed again */
   $('pauseBtn').onclick=()=>{ if(state.phase==='play'){ paused=true; $('pausedOv').classList.add('open'); } };
-  $('resumeBtn').onclick=()=>{ paused=false; $('pausedOv').classList.remove('open'); };
+  $('resumeBtn').onclick=async()=>{ if(counting) return;
+    if(hidPaused){ counting=true; hidPaused=false; const c=$('pausedCount'); for(const n of [3,2,1]){ c.textContent=n; SFX.tap(); await delay(600); } c.textContent=''; counting=false; }
+    paused=false; $('pausedOv').classList.remove('open'); };
 
   // ---------- game loop ----------
+  /* ---------- Part 3: the synth (no audio files, the fleet law; Astra's WAVs are the reference for pitch and length), the settings, pause on hide ---------- */
+  const SFX={ ctx:null, created:0, started:0,
+    ensure(){ if(this.ctx) return this.ctx; try{ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return null; this.ctx=new AC(); this.created++; }catch(e){ return null; } return this.ctx; },
+    on(){ return !!(state.settings&&state.settings.sound!==false); },
+    live(){ if(!this.on()) return null; const c=this.ensure(); if(!c) return null; if(c.state==='suspended'){ try{ c.resume(); }catch(e){} } return c; },
+    tone(f0,f1,ms,type,gain,when){ const c=this.live(); if(!c) return; const t=c.currentTime+(when||0), o=c.createOscillator(), g=c.createGain();
+      o.type=type||'sine'; o.frequency.setValueAtTime(f0,t); if(f1&&f1!==f0) o.frequency.exponentialRampToValueAtTime(f1,t+ms/1000);
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(gain||0.18,t+0.008); g.gain.exponentialRampToValueAtTime(0.0001,t+ms/1000);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+ms/1000+0.02); this.started++; },
+    noise(ms,center,gain){ const c=this.live(); if(!c) return; const n=Math.floor(c.sampleRate*ms/1000), b=c.createBuffer(1,n,c.sampleRate), d=b.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+      const src=c.createBufferSource(), f=c.createBiquadFilter(), g=c.createGain(); src.buffer=b; f.type='bandpass'; f.frequency.value=center; f.Q.value=1.2; g.gain.value=gain||0.12;
+      src.connect(f); f.connect(g); g.connect(c.destination); src.start(); this.started++; },
+    /* the cues: ui_tap 620 Hz 85 ms; cup_lift 383 Hz 180 ms; cup_slide a 2.3 kHz hiss 180 ms; cup_settle 183 Hz 120 ms; reveal_win 517 to 800 Hz 880 ms;
+       reveal_miss 383 to 350 Hz 720 ms; coin_award 1040 Hz 250 ms; collection_unlock 383 to 1040 Hz 1.08 s (measured on her files) */
+    tap(){ this.tone(620,620,85,'sine',0.12); },
+    lift(){ this.tone(383,383,180,'triangle',0.12); },
+    slide(){ this.noise(180,2300,0.09); },
+    settle(){ this.tone(183,120,120,'sine',0.18); },
+    win(){ this.tone(517,800,880,'triangle',0.18); this.tone(1034,1600,500,'sine',0.05,0.08); },
+    miss(){ this.tone(383,350,720,'sine',0.1); },
+    coin(){ this.tone(1040,1040,250,'sine',0.14); this.tone(1560,1560,120,'sine',0.05,0.05); },
+    unlock(){ this.tone(383,1040,1080,'triangle',0.18); }
+  };
+  /* the context is made on the first gesture only, inside its handler, so the browser lets it run */
+  const _firstGesture=()=>{ document.removeEventListener('pointerdown',_firstGesture,true); document.removeEventListener('keydown',_firstGesture,true); if(SFX.on()){ const c=SFX.ensure(); if(c&&c.state==='suspended'){ try{ c.resume(); }catch(e){} } } };
+  document.addEventListener('pointerdown',_firstGesture,true); document.addEventListener('keydown',_firstGesture,true);
+  document.addEventListener('click',e=>{ if(e.target.closest&&e.target.closest('.btn, .tg, .x, .pill')) SFX.tap(); },true);
+  function motionLabel(){ const m=state.settings.motion; return m==='off'?'Reduced':m==='on'?'Full':'Follows the phone'; }
+  function paintSettings(){
+    const sd=$('tgSound'), vb=$('tgVibe'), mo=$('tgMotion');
+    sd.setAttribute('aria-pressed', state.settings.sound!==false?'true':'false'); sd.textContent=state.settings.sound!==false?'On':'Off';
+    vb.setAttribute('aria-pressed', state.settings.vibe!==false?'true':'false'); vb.textContent=state.settings.vibe!==false?'On':'Off';
+    mo.textContent=motionLabel(); mo.setAttribute('aria-label','Motion: '+motionLabel()+', tap to change');
+    $('buildLine2').textContent='Build '+BUILD;
+  }
+  function openSettings(){ paintSettings(); $('settings').classList.add('open'); }
+  function closeSettings(){ $('settings').classList.remove('open'); }
+  let hidPaused=false, counting=false;
+  document.addEventListener('visibilitychange',()=>{   /* a hide mid shuffle pauses where it is; a hide while guessing does nothing (the guess is untimed) */
+    if(document.visibilityState==='hidden' && state.phase==='play' && !paused){ paused=true; hidPaused=true; $('pausedCount').textContent=''; $('pausedOv').classList.add('open'); }
+  });
   async function round(){
     state.phase='play'; hideBtn(); clearGlow(); hud(); updatePause(); preloadFx();
     buildCups(cupCount());
     setStatus('Watch the ball…');
     await gate(); await delay(400);
-    for(const id in bodies) bodies[id].classList.add('lifted');
+    SFX.lift(); for(const id in bodies) bodies[id].classList.add('lifted');
     ballEl.classList.add('show');
     await gate(); await delay(1100);
     ballEl.classList.remove('show');
-    for(const id in bodies) bodies[id].classList.remove('lifted');
+    for(const id in bodies) bodies[id].classList.remove('lifted'); SFX.settle();
     await gate(); await delay(480);
 
     setStatus('Shuffling…');
     pf.style.setProperty('--swap', swapDur()+'ms');
     const n=shuffleCount();
-    for(let i=0;i<n;i++){ await gate(); doSwap(); await delay(swapDur()+25); }
+    for(let i=0;i<n;i++){ await gate(); doSwap(); SFX.slide(); await delay(swapDur()+25); }
 
     setStatus('Where is the ball? Tap a cup');
     state.phase='guessing'; updatePause(); cupsAsButtons(true);
     const guess = await waitGuess();
     state.phase='reveal'; updatePause(); cupsAsButtons(false);
     const correct = (guess===ballCup);
-    bodies[guess].classList.add('lifted');
+    bodies[guess].classList.add('lifted'); SFX.lift();
     wraps[guess].classList.add(correct?'good':'bad');
     if(correct) ballEl.classList.add('show');
 
@@ -965,7 +1036,7 @@
       state.coins+=r; state.streak++; runCoins+=r; runBest=Math.max(runBest,state.streak);
       const newBest = state.level>state.bestLevel;
       if(newBest) state.bestLevel=state.level;
-      markCup(guess,'ok'); playFx(guess,'win'); if(newBest) confetti();
+      markCup(guess,'ok'); playFx(guess,'win'); if(newBest) confetti(); SFX.win(); setTimeout(()=>SFX.coin(),420);   /* one coin cue a round, never one per coin */
       setStatus('Found it, +'+r, 'win'); vibe(35); hud(); save();
       window._sbCapEarn&&window._sbCapEarn(3, "shell-shuffle:level_complete");/* 30/day cap */
       state.level++;
@@ -974,7 +1045,7 @@
     }else{
       await delay(360);
       bodies[ballCup].classList.add('lifted'); wraps[ballCup].classList.add('good');
-      ballEl.classList.add('show'); markCup(ballCup,'ok'); markCup(guess,'ring'); playFx(guess,'miss');
+      ballEl.classList.add('show'); markCup(ballCup,'ok'); markCup(guess,'ring'); playFx(guess,'miss'); SFX.miss();
       /* one line: two wrapped under the lifted cups at 375 px; the level reached stays in the HUD (#lvl) */
       setStatus('Not that one. It was '+whereWords(ballCup), 'lose'); vibe([25,60,25]);
       if(state.level>state.bestLevel) state.bestLevel=state.level;
@@ -986,7 +1057,7 @@
   }
 
   /* ---------- Part 2: the reveal frames, the confetti, the results sheet ---------- */
-  function motionOff(){ try{ return pf.classList.contains('no-anim') || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
+  function motionOff(){ try{ const m=state.settings&&state.settings.motion; if(m==='off') return true; if(m==='on') return false; return pf.classList.contains('no-anim') || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
   function playFrames(img, name, n, ms){ let i=1; img.src=artUrl('fx/'+name+'_01.webp');
     const t=setInterval(()=>{ i++; if(i>n){ clearInterval(t); img.remove(); return; } img.src=artUrl('fx/'+name+'_'+String(i).padStart(2,'0')+'.webp'); }, ms); }
   function playFx(id, kind){ if(motionOff()||!wraps[id]) return; const img=document.createElement('img'); img.className='fx'; img.alt=''; img.draggable=false;
@@ -1195,7 +1266,7 @@
   function doClaim(){
     const res=claimDaily(); if(!res) return;
     let note='+'+res.coins+' coins';
-    if(res.unlocked.length) note+='  🎉 Unlocked '+res.unlocked.map(nameOf).join(', ');
+    if(res.unlocked.length){ note+='  🎉 Unlocked '+res.unlocked.map(nameOf).join(', '); SFX.unlock(); }
     $('claimNote').textContent=note; vibe([20,40,20]);
     renderDaily();
     // Retention hook: after the first claim (a smart, earned moment) ask to remind; otherwise reschedule.
@@ -1223,6 +1294,11 @@
   $('rIcoCoin').src=artUrl('ui/coin.webp'); $('rIcoStreak').src=artUrl('ui/streak_flame.webp'); $('rIcoGift').src=artUrl('ui/gift.webp');
   $('rDaily').onclick=()=>{ closeResults(); openDaily(); }; $('rShop').onclick=()=>{ closeResults(); openShop(); };
   $('rShare').onclick=share; $('rClose').onclick=closeResults;
+  /* Part 3 wiring */
+  $('openSettings').onclick=openSettings; $('closeSettings').onclick=closeSettings;
+  $('tgSound').onclick=()=>{ state.settings.sound=!(state.settings.sound!==false); save(); paintSettings(); if(state.settings.sound) SFX.tap(); };
+  $('tgVibe').onclick=()=>{ state.settings.vibe=!(state.settings.vibe!==false); save(); paintSettings(); if(state.settings.vibe) vibe(30); };
+  $('tgMotion').onclick=()=>{ const m=state.settings.motion; state.settings.motion = m==='auto'?'off':m==='off'?'on':'auto'; save(); paintSettings(); };
   { const fl=document.querySelector('.streak-hero .flame'); if(fl){ const im=new Image(); im.alt=''; im.draggable=false; im.onload=()=>{ fl.textContent=''; fl.appendChild(im); }; im.src=artUrl('ui/streak_flame.webp'); } }
   $('remindBtn').onclick=askNotify;
 
@@ -1261,7 +1337,7 @@
      difficulty curve is unobservable from outside without this. Gated on a
      query flag so it never ships to a player. */
   if(/[?&]sstest=1(&|$)/.test(location.search)){
-    window.__ss={ shareText, runCoins:()=>runCoins, fxCount:()=>document.querySelectorAll('.fx,.confetti').length, results:()=>({ open:$('results').classList.contains('open'), title:$('rTitle').textContent, best:$('rBest').textContent, coins:$('rCoins').textContent, streak:$('rStreak').textContent, next:$('rNext').textContent, again:$('rAgain').textContent }), state:()=>state,
+    window.__ss={ shareText, audio:()=>({ created:SFX.created, started:SFX.started, ctx:!!SFX.ctx }), settings:()=>state.settings, setSettings(o){ Object.assign(state.settings,o); save(); paintSettings(); }, paused:()=>paused, order:()=>order.slice(), hide(){ Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'hidden'}); document.dispatchEvent(new Event('visibilitychange')); }, show(){ Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>'visible'}); document.dispatchEvent(new Event('visibilitychange')); }, runCoins:()=>runCoins, fxCount:()=>document.querySelectorAll('.fx,.confetti').length, results:()=>({ open:$('results').classList.contains('open'), title:$('rTitle').textContent, best:$('rBest').textContent, coins:$('rCoins').textContent, streak:$('rStreak').textContent, next:$('rNext').textContent, again:$('rAgain').textContent }), state:()=>state,
       at(lv){ const keep=state.level; state.level=lv;
         const out={ level:lv, cups:cupCount(), shuffles:shuffleCount(), dur:swapDur(),
                     dbl:doubleChance(), reward:reward(), hint:hintText() };
