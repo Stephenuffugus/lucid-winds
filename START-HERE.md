@@ -1,5 +1,14 @@
 # START HERE
 
+## 🛑 25 Oct ~13:40 UTC STATE AT SHUTDOWN (Opus; he is handing to Fable with new chess and Astra assets)
+**Live:** Tally Part 0 (t0) and Part 1 (t1, painted pals), Shell Shuffle Part 0 (v1.1). All proven on both origins.
+**Built, saved, NOT deployed (each needs its last gates, then its deploy):**
+1. **Shell Shuffle Part 1** (v1.2, the Midnight Cabinet): committed on `add-sproing-jumper` `8f3b2f925` (page, art/s1, cut tool, og card, card `?v=20261025b`). Suite `audit_check.mjs` 63 of 63; `tools/shell-shuffle-tests/fw_p1.py` 6 copies red; the review's three new rows (`fw_p1b.py`) were mid run when stopped: rerun it, prime `tools/shell-shuffle-tests/oldworker.mjs` on both origins (live is v1.1), then `BUILD=v1.2 CARD=20261025b tools/shell-shuffle-tests/deploy.sh` (write `/tmp/claude-1000/ss-lead/portal.diff.sha` and `deploy-msg.txt` first, as in the script's header). Seen: the fleet music chip can cover the leftmost cup's reveal mark on short phones (music-unlocks.js, not this game).
+2. **Tally Part 2** (0.4.0, t2, the seven world plates and the painted map): on the UPSTREAM branch `part2-wip` (`9c475ac`, Stephenuffugus/Tally; NOT main, so GitHub Pages is untouched). dom-smoke 43 of 43. Still to do: `tools/tally-tests/worlds.mjs` (contrast from pixels over every plate, the map at 360), `fw_worlds.py`, the look, a review, then merge to Tally main, `npm run test:all`, push, `vendor_satellites.mjs --vendor tally`, `--check`, `tools/tally-tests/deploy.sh` (BUILD=t2 CACHE=tally-v4 SWV=4, a new card stamp).
+3. **Super Slice Part H**: branch `super-slice-part-h-wip` (`6aca8d556`); every gate green except the frame time (+12.9 ms on software GL against the plan's 1 ms): HIS CALL.
+**Not started:** Tally Parts 3 and 4, Shell Shuffle Parts 2 and 3.
+**His calls:** the ranked list in the morning report below stands.
+
 ## 🥤 25 Oct 12:50 UTC (Opus, back on after your note) SHELL SHUFFLE PART 0 LIVE: v1.1 (main `f5fa1314e`)
 A miss now shows a cream check under the ball's cup and a ring under the cup you tapped, and says where it was ("Not that one. It was the left cup"); the cups work as buttons for a screen reader or keyboard only while you guess; no exclamation marks; How to play shows the build. Both origins byte identical; old pages pick it up on one reload. Seen: on a first visit the ladybug's tip covers Play Again for 7 seconds (shared feedback.js, not this game's file). Next: Shell Shuffle Part 1 (the Midnight Cabinet scene), then Lap 2.
 
