@@ -103,6 +103,7 @@ function GCH(a){
   var gameOver=false;
   var history=[];    // for undo: {board,turn,castling,epSquare,moveCount,halfmove,capturedW,capturedB,lastMove}
   var moveLog=[];    // sequence of moves as "frfctrtc" strings for opening book
+  var uciLog=[];     // the same moves as UCI with promotion suffixes: what the engine worker is sent (25 Oct 2026)
   var posHistory={};  // position key → count for threefold repetition
 
   function initBoard(){
@@ -121,7 +122,7 @@ function GCH(a){
     turn=W;castling={wK:true,wQ:true,bK:true,bQ:true};
     epSquare=null;moveCount=0;halfmove=0;lastMove=null;
     selSq=null;legalMoves=[];capturedW=[];capturedB=[];
-    gameOver=false;history=[];moveLog=[];posHistory={};
+    gameOver=false;history=[];moveLog=[];uciLog=[];posHistory={};_sfRev++;
     posHistory[posKey(board,turn,castling,epSquare)]=1;   // the start position is an occurrence too (25 Oct 2026: two cycles of Nf3 Nf6 Ng1 Ng8 are a threefold)
     _lastAIComment='';_pieceMovedOnce={};
   }
@@ -306,7 +307,7 @@ function GCH(a){
     else epSquare=null;
     updateCastlingRights(m);
     lastMove={fr:m.fr,fc:m.fc,tr:m.tr,tc:m.tc};
-    moveLog.push(''+m.fr+m.fc+m.tr+m.tc);
+    moveLog.push(''+m.fr+m.fc+m.tr+m.tc);uciLog.push(_toUci(m));
     if(turn===B)moveCount++;
     turn=turn===W?B:W;
     // Track position for threefold repetition
@@ -323,9 +324,10 @@ function GCH(a){
     board=s.board;turn=s.turn;castling=s.castling;
     epSquare=s.epSquare;moveCount=s.moveCount;halfmove=s.halfmove;
     capturedW=s.capturedW;capturedB=s.capturedB;lastMove=s.lastMove;
-    moveLog.pop();
+    moveLog.pop();uciLog.pop();
     return true;
   }
+  function _toUci(m){ return 'abcdefgh'.charAt(m.fc)+(8-m.fr)+'abcdefgh'.charAt(m.tc)+(8-m.tr)+(m.promo?String(m.promo).toLowerCase():''); }
 
   // Position key for repetition detection
   function posKey(b,t,cas,ep){
@@ -653,7 +655,7 @@ function GCH(a){
     // Capture analysis
     if(captured){
       if(capturedVal >= myVal + 150) return prefix + 'Wins material';
-      if(capturedVal <= myVal - 200) return prefix + 'Sacrifice';
+      if(capturedVal <= myVal - 200) return prefix + (isAttacked(postB, mv.tr, mv.tc, piece && piece.color===W ? B : W) ? 'Sacrifice' : 'Captures');   // a queen taking a free pawn is not a sacrifice (25 Oct 2026)
       if(Math.abs(capturedVal - myVal) < 60) return prefix + 'Trade';
       return prefix + 'Captures';
     }
@@ -1035,22 +1037,28 @@ function GCH(a){
 
   // Quiescence search — extends captures/promotions to avoid horizon effect
   function quiesce(b,alpha,beta,isMax,cas,ep,qdepth){
-    var standPat=evaluate(b);
-    if(qdepth<=0)return standPat;
-    if(isMax){
-      if(standPat>=beta)return beta;
-      if(standPat>alpha)alpha=standPat;
-    }else{
-      if(standPat<=alpha)return alpha;
-      if(standPat<beta)beta=standPat;
-    }
     var col=isMax?W:B;
     var moves=getLegalMoves(b,col,cas,ep);
+    if(!moves.length)return inCheck(b,col)?(isMax?-99999:99999):0;   // a terminal leaf is mate or stalemate, never a quiet score (25 Oct 2026)
+    var checked=inCheck(b,col);
+    var standPat=evaluate(b);
+    if(qdepth<=0)return standPat;
     var captures=[];
-    for(var i=0;i<moves.length;i++){
-      if(b[moves[i].tr][moves[i].tc]||moves[i].ep||moves[i].promo)captures.push(moves[i]);
+    if(checked){
+      captures=moves;   // in check there is no standing pat: every evasion is searched, a quiet escape or a block included
+    }else{
+      if(isMax){
+        if(standPat>=beta)return beta;
+        if(standPat>alpha)alpha=standPat;
+      }else{
+        if(standPat<=alpha)return alpha;
+        if(standPat<beta)beta=standPat;
+      }
+      for(var i=0;i<moves.length;i++){
+        if(b[moves[i].tr][moves[i].tc]||moves[i].ep||moves[i].promo)captures.push(moves[i]);
+      }
+      if(!captures.length)return isMax?alpha:beta;
     }
-    if(!captures.length)return isMax?alpha:beta;
     captures=orderMoves(b,captures);
     for(var j=0;j<captures.length;j++){
       var nb=cloneBoard(b);
@@ -1073,8 +1081,11 @@ function GCH(a){
     return isMax?alpha:beta;
   }
 
+  var _searchDeadline=0,_searchNodes=0,_searchAbort=false;   // checked inside the recursion, every 512 nodes (25 Oct 2026)
   function minimax(b,depth,alpha,beta,isMax,cas,ep,ply){
     if(typeof ply!=='number')ply=0;
+    if((++_searchNodes&511)===0&&Date.now()>_searchDeadline)_searchAbort=true;
+    if(_searchAbort)return 0;   // the root discards this whole iteration
     var turnCol=isMax?W:B;
     // TT probe — use stored score/bound if depth is sufficient, and in
     // any case pull out the stored best move to lead the ordering.
@@ -1149,8 +1160,8 @@ function GCH(a){
         }
       }
     }
-    // Store to TT. Skip mate scores (distance-from-root dependent).
-    if(Math.abs(best)<90000){
+    // Store to TT. Skip mate scores (distance-from-root dependent) and anything from an aborted iteration.
+    if(!_searchAbort&&Math.abs(best)<90000){
       var flag;
       if(best<=origAlpha)flag=2;         // upper bound (fail-low)
       else if(best>=origBeta)flag=1;     // lower bound (fail-high)
@@ -1160,7 +1171,7 @@ function GCH(a){
     return best;
   }
 
-  // ── Stockfish integration (lazy-loaded for Old Growth + Ancient tiers) ──
+  // ── Stockfish integration (lazy-loaded for tier 3 Old Growth, skill 8, and tier 4 Ancient, skill 20; the selector is the truth) ──
   // The hand-rolled minimax below stays the engine for Seedling/Sapling so
   // casual players never pay the ~1MB asm.js download. When the player
   // picks tier 3 or 4 we fetch stockfish.js from jsDelivr, instantiate it
@@ -1168,6 +1179,16 @@ function GCH(a){
   // and delegate move selection. On any failure we fall back silently to
   // the local engine so chess never breaks.
   var _sfWorker=null,_sfReady=false,_sfLoading=false,_sfCallback=null;
+  var _sfRev=0;        // the position revision: a new game, an undo or a new search bumps it; a result from an older revision is discarded
+  var _sfPending=[];   // searches in flight, oldest first: UCI answers bestmove in order, so each answer pairs with the oldest
+  function _sfSearch(skill,movetime,cb){   // one serialised search: stop whatever runs, then position + go; cb only for the current revision
+    if(_sfPending.length)_sfWorker.postMessage('stop');
+    var rev=++_sfRev,gen=_chGen;
+    _sfPending.push(function(uci){ if(rev!==_sfRev||gen!==_chGen)return; cb(uci); });
+    _sfWorker.postMessage('setoption name Skill Level value '+skill);
+    _sfWorker.postMessage(uciLog.length?('position startpos moves '+uciLog.join(' ')):'position startpos');
+    _sfWorker.postMessage('go movetime '+movetime);
+  }
   function _loadStockfish(cb){
     if(_sfReady){cb();return;}
     if(_sfLoading){setTimeout(function(){_loadStockfish(cb);},250);return;}
@@ -1184,7 +1205,8 @@ function GCH(a){
           else if(line==='readyok'){_sfReady=true;_sfLoading=false;cb();}
           else if(line.indexOf('bestmove')===0){
             var mv=line.split(' ')[1];
-            if(_sfCallback){var c=_sfCallback;_sfCallback=null;c(mv);}
+            var pend=_sfPending.shift(); if(pend)pend(mv);
+            else if(_sfCallback){var c=_sfCallback;_sfCallback=null;c(mv);}
           }
         };
         _sfWorker.onerror=function(){_sfLoading=false;cb('error');};
@@ -1234,11 +1256,11 @@ function GCH(a){
   }
   function _aiMoveStockfish(skill){
     if(gameOver||turn!==B)return;
-    // Personality opening: Ancient Oak (skill 8) plays the Magnus book
-    // for its first 10 moves before Stockfish takes over. Old Growth
-    // (skill 20) stays pure engine — no personality, just crush. This
+    // Personality opening: Old Growth (tier 3, skill 8) plays the Magnus book
+    // for its first 10 moves before Stockfish takes over. Ancient (tier 4,
+    // skill 20) stays pure engine — no personality, just crush. This
     // is what gives Grove Chess a recognizable Magnus-flavored voice
-    // at the second-highest tier without sacrificing Old Growth's edge.
+    // at the second-highest tier without sacrificing Ancient's edge.
     if(skill<=10&&moveLog.length<=20){
       var bookKey=moveLog.join(' ');
       var bm=_chBookMagnus[bookKey];
@@ -1251,7 +1273,7 @@ function GCH(a){
             var _sfBp=board[legal[bi].fr][legal[bi].fc];
             makeMove(legal[bi]);
             _lastAIComment=_classifyMove(legal[bi],_sfPreBB,board,_sfBp,true,'Magnus line',3);
-            checkGameState();render();return;
+            _aiCommitted();return;
           }
         }
       }
@@ -1264,9 +1286,8 @@ function GCH(a){
       }
       // Re-check turn in case player exited / undid during async load
       if(gameOver||turn!==B)return;
-      _sfWorker.postMessage('setoption name Skill Level value '+skill);
-      _sfWorker.postMessage('position fen '+_boardToFEN());
-      _sfCallback=function(uciMove){
+      // the whole game from the start position, so the engine keeps the repetition history and promotion identity
+      _sfSearch(skill,(skill>=15?1500:800),function(uciMove){
         if(turn!==B||gameOver)return;
         var mv=_uciToMove(uciMove);
         if(!mv){_aiMoveLocal();return;}
@@ -1276,12 +1297,11 @@ function GCH(a){
         // Stockfish tier gets a neutral "Engine" prefix but still shows
         // the move shape so the player learns patterns.
         var _sfTag=_classifyMove(mv,_sfPre,board,_sfPc,false,null,skill>=15?5:4);
-        // Override the 🌳 prefix for pure-engine tier (Old Growth)
+        // Override the 🌳 prefix for the pure engine tier (Ancient, skill 20)
         if(skill>=15) _sfTag=_sfTag.replace(/^🌳 /,'♛ ');
         _lastAIComment=_sfTag;
-        checkGameState();render();
-      };
-      _sfWorker.postMessage('go movetime '+(skill>=15?1500:800));
+        _aiCommitted();
+      });
     });
   }
 
@@ -1316,7 +1336,7 @@ function GCH(a){
           var _bp=board[legal[bi].fr][legal[bi].fc];
           makeMove(legal[bi]);
           _lastAIComment=_classifyMove(legal[bi],_preBB,board,_bp,true,_bookFlavor,_diffTier);
-          checkGameState();render();return;
+          _aiCommitted();return;
         }
       }
     }
@@ -1328,49 +1348,56 @@ function GCH(a){
     _TT={};_TTCount=0;_killers=[];
     for(var hk in _history)_history[hk]=_history[hk]>>1;
     moves=orderMoves(board,moves,0,null);
-    var bestMove=moves[0];
-    var bestVal=100000;
-    // Iterative deepening with time limit (1.5s for mobile safety)
-    var t0=Date.now();
-    var maxTime=1500;
     var pieceCount=0;
     for(var r=0;r<8;r++)for(var c=0;c<8;c++)if(board[r][c])pieceCount++;
     var _chDepMap={1:2,2:3,3:4,4:5};
     var _chDep=_chDepMap[parseInt((document.getElementById('CHd')||{}).value)]||3;
     var maxDepth=_chDep+(pieceCount<14?1:0);
-    for(var depth=1;depth<=maxDepth;depth++){
-      var depthBest=moves[0];
-      var depthVal=100000;
-      var timedOut=false;
-      for(var i=0;i<moves.length;i++){
-        if(Date.now()-t0>maxTime){timedOut=true;break;}
-        var nb=cloneBoard(board);
-        var ncas={wK:castling.wK,wQ:castling.wQ,bK:castling.bK,bQ:castling.bQ};
-        var piece=nb[moves[i].fr][moves[i].fc];
-        applyMove(nb,moves[i],ncas,epSquare);_updateCas(moves[i],ncas);
-        var nep=null;
-        if(piece.type===PAWN&&Math.abs(moves[i].tr-moves[i].fr)===2)nep=[(moves[i].fr+moves[i].tr)/2,moves[i].fc];
-        // Pass ply=1 — root children live at ply 1 in the killer table.
-        var val=minimax(nb,depth-1,-100000,100000,true,ncas,nep,1);
-        if(val<depthVal){depthVal=val;depthBest=moves[i];}
-      }
-      if(!timedOut){
-        bestMove=depthBest;bestVal=depthVal;
-        // Pre-seed the next iteration's ordering with best-so-far.
-        // Move depthBest to front for depth+1 to hit TT PV faster.
-        for(var pi=0;pi<moves.length;pi++){
-          if(_sameMove(moves[pi],depthBest)){
-            moves.splice(pi,1);moves.unshift(depthBest);break;
-          }
-        }
-      }
-      if(Date.now()-t0>maxTime)break;
+    // Iterative deepening with a 1.5 s budget, one depth per timer tick so the page can paint between depths;
+    // the deadline is checked inside the recursion, so a long line cannot run past it (25 Oct 2026).
+    var state={moves:moves,bestMove:moves[0],depth:1,maxDepth:maxDepth,t0:Date.now(),maxTime:1500,rev:_sfRev,gen:_chGen,tier:_diffTier};
+    _searchDeadline=state.t0+state.maxTime;_searchNodes=0;_searchAbort=false;
+    setTimeout(function(){_aiLocalStep(state);},0);
+  }
+  function _aiLocalStep(st){
+    if(st.rev!==_sfRev||st.gen!==_chGen||gameOver||turn!==B)return;   // the game moved on under the search: abandon it
+    var depthBest=st.moves[0],depthVal=100000,timedOut=false,i;
+    for(i=0;i<st.moves.length;i++){
+      if(Date.now()-st.t0>st.maxTime||_searchAbort){timedOut=true;break;}
+      var nb=cloneBoard(board);
+      var ncas={wK:castling.wK,wQ:castling.wQ,bK:castling.bK,bQ:castling.bQ};
+      var piece=nb[st.moves[i].fr][st.moves[i].fc];
+      applyMove(nb,st.moves[i],ncas,epSquare);_updateCas(st.moves[i],ncas);
+      var nep=null;
+      if(piece.type===PAWN&&Math.abs(st.moves[i].tr-st.moves[i].fr)===2)nep=[(st.moves[i].fr+st.moves[i].tr)/2,st.moves[i].fc];
+      // Pass ply=1 — root children live at ply 1 in the killer table.
+      var val=minimax(nb,st.depth-1,-100000,100000,true,ncas,nep,1);
+      if(_searchAbort){timedOut=true;break;}
+      if(val<depthVal){depthVal=val;depthBest=st.moves[i];}
     }
+    if(!timedOut){
+      st.bestMove=depthBest;
+      // Pre-seed the next iteration's ordering with best-so-far.
+      for(var pi=0;pi<st.moves.length;pi++){
+        if(_sameMove(st.moves[pi],depthBest)){st.moves.splice(pi,1);st.moves.unshift(depthBest);break;}
+      }
+    }
+    st.depth++;
+    if(!timedOut&&st.depth<=st.maxDepth&&Date.now()-st.t0<=st.maxTime){setTimeout(function(){_aiLocalStep(st);},0);return;}
+    var bestMove=st.bestMove;
     var _preB=cloneBoard(board);
     var _pc=board[bestMove.fr][bestMove.fc];
     makeMove(bestMove);
-    _lastAIComment=_classifyMove(bestMove,_preB,board,_pc,false,null,_diffTier);
+    _lastAIComment=_classifyMove(bestMove,_preB,board,_pc,false,null,st.tier);
+    _aiCommitted();
+  }
+  // Every computer move ends here, book, local search or engine worker: the state check, the sounds for the move that
+  // was actually made (never for a search that only started), the paint (25 Oct 2026).
+  function _aiCommitted(){
     checkGameState();
+    var aiCheck=!gameOver&&inCheck(board,W);
+    if(board._lastCap)_play('dig');else _play('tap');
+    if(aiCheck)setTimeout(function(){_play('lose')},200);
     render();
   }
 
@@ -1457,11 +1484,11 @@ function GCH(a){
     // Build captured rows (themed courts get their capture-chip marker up front)
     var capBHtml='<div class="ch-cap-row">';
     if(sk.themed&&capturedW.length)capBHtml+='<img class="ch-chip" src="'+sk.capB+'">';
-    for(var ci=0;ci<capturedW.length;ci++)capBHtml+=_skinChess.aiPieces[capturedW[ci]]||'';
+    for(var ci=0;ci<capturedW.length;ci++)capBHtml+=_skinChess.playerPieces[capturedW[ci]]||'';   // white pieces the computer took, drawn as white (25 Oct 2026)
     capBHtml+='</div>';
     var capWHtml='<div class="ch-cap-row">';
     if(sk.themed&&capturedB.length)capWHtml+='<img class="ch-chip" src="'+sk.capW+'">';
-    for(var cj=0;cj<capturedB.length;cj++)capWHtml+=_skinChess.playerPieces[capturedB[cj]]||'';
+    for(var cj=0;cj<capturedB.length;cj++)capWHtml+=_skinChess.aiPieces[capturedB[cj]]||'';   // black pieces the player took, drawn as black
     capWHtml+='</div>';
     // Board
     var bHtml=sk.themed
@@ -1516,10 +1543,7 @@ function GCH(a){
     var g=_chGen;
     if(!gameOver&&turn===B)setTimeout(function(){if(g!==_chGen)return;sm('Computer thinking...');render();setTimeout(function(){
       if(g!==_chGen)return;
-      aiMove();
-      var aiCheck=inCheck(board,W);
-      if(board._lastCap)_play('dig');else _play('tap');
-      if(aiCheck)setTimeout(function(){_play('lose')},200);
+      aiMove();   // the sounds play in _aiCommitted, after the move the computer actually made
     },50);},350);
   }
   window._CHPromo=function(type){
@@ -1603,7 +1627,7 @@ function GCH(a){
     if(_chPendingPromo){_chPendingPromo=null;selSq=null;render();return;}
     if(gameOver||turn!==W||history.length<2)return;
     // Undo AI move + player move
-    undoMove();undoMove();
+    undoMove();undoMove();_sfRev++;_searchAbort=true;
     gameOver=false;
     selSq=null;
     checkGameState();
@@ -1623,7 +1647,7 @@ function GCH(a){
   // otherwise it keeps burning CPU until page reload.
   if(window._lwRegisterGameCleanup)window._lwRegisterGameCleanup(function(){
     _chGen++;
-    if(_sfWorker){try{_sfWorker.terminate();}catch(e){}_sfWorker=null;_sfReady=false;_sfLoading=false;_sfCallback=null;}
+    if(_sfWorker){try{_sfWorker.terminate();}catch(e){}_sfWorker=null;_sfReady=false;_sfLoading=false;_sfCallback=null;_sfPending=[];}
     var ov=document.getElementById('chCourtOv');
     if(ov&&ov.parentNode)ov.parentNode.removeChild(ov);
   });
