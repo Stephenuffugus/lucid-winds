@@ -102,8 +102,17 @@ try {
       await new Promise(r => setTimeout(r, 100)); const a = document.getElementById('stage').getBoundingClientRect().top, bh = document.getElementById('b-home').getBoundingClientRect().top; st.remove(); window.dispatchEvent(new Event('resize')); return { stageTop: a, home: bh }; });
     await o375.p.close();
     ok('a 40 px top safe area keeps the stage and the back button below it (a 375 x 667 match, where the stage meets the top)', sa.stageTop >= 39.5 && sa.home >= 40, JSON.stringify(sa)); }
-  { const bt = await p.evaluate(() => ({ t: document.getElementById('b-bgm').textContent, a: document.getElementById('b-bgm').getAttribute('aria-pressed') }));
-    ok('the 80s beat button says what a tap does, in words (Play beat), and its state for a screen reader', /Play beat/.test(bt.t) && bt.a === 'false', JSON.stringify(bt)); }
+  { const bt = await p.evaluate(() => { const e = document.getElementById('b-bgm'); return { t: e.textContent, label: e.getAttribute('aria-label'), pressed: e.getAttribute('aria-pressed') }; });
+    ok('the 80s beat button says what a tap does, in words (Play beat), and those words are its name (no aria-label or aria-pressed over them)', /Play beat/.test(bt.t) && bt.label === null && bt.pressed === null, JSON.stringify(bt));
+    /* a returning player who left the beat on: nothing plays before a touch, so the button must not say Stop; real taps on it play and stop it */
+    const o = await open(412, 915); await o.p.evaluate(() => localStorage.setItem('cw_bgm', '1')); await o.p.reload({ waitUntil: 'domcontentloaded' });
+    await o.p.waitForFunction(() => window.CW_DEV && document.readyState === 'complete', { timeout: 60000 });
+    const at = () => o.p.evaluate(() => { const e = document.getElementById('b-bgm'); e.scrollIntoView({ block: 'center' }); const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+    const txt = () => o.p.evaluate(() => document.getElementById('b-bgm').textContent);
+    const tap = async (xy, id) => { await o.T('touchStart', [[xy[0], xy[1], id]]); await sleep(40); await o.T('touchEnd', [[xy[0], xy[1], id]]); await sleep(200); };
+    const t0 = await txt(); await tap(await at(), 61); const t1 = await txt(); await tap(await at(), 62); const t2 = await txt();
+    await o.p.evaluate(() => localStorage.setItem('cw_bgm', '0')); await o.p.close();
+    ok('a returning player who left the beat on sees Play beat before anything plays, and real taps on it play and stop it', /Play beat/.test(t0) && /Stop beat/.test(t1) && /Play beat/.test(t2), JSON.stringify([t0, t1, t2])); }
   ok('no page errors', errs.length === 0, JSON.stringify(errs));
   /* the back button's zone at 360 wide, where the old clipped zone reached only 46.7 CSS px */
   { const o = await open(360, 780); await o.p.evaluate(() => window.CW_DEV.beginStage(0)); for (let w = 0; w < 80; w++) { await sleep(100); if (await o.p.evaluate(() => window.CW_DEV.match().phase === 'fight')) break; }

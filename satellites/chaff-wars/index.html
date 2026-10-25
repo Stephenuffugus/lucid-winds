@@ -91,7 +91,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .title-word .w2{color:#2ff0e0; text-shadow:3px 3px 0 #0c0a06, -2px -2px 0 #0c0a06, 2px -2px 0 #0c0a06, -2px 2px 0 #0c0a06, 0 0 20px rgba(47,240,224,0.65), 0 0 42px rgba(255,47,185,0.4)}
 .pnl-logo{display:none; width:86%; max-width:400px; margin:0 auto 2px; image-rendering:auto;
   filter:drop-shadow(0 4px 22px rgba(0,0,0,0.6)) drop-shadow(0 0 20px rgba(255,47,185,0.25))}
-.title-sub{color:var(--muted); font-size:var(--fs); letter-spacing:4px; margin-top:10px; text-transform:uppercase}
+.title-sub{color:var(--muted); font-size:var(--fs); letter-spacing:4px; margin-top:10px; text-transform:uppercase; text-shadow:0 1px 2px #000, 0 0 10px rgba(0,0,0,.9)}
 .ribbon{margin-top:14px; color:var(--ink); font-size:var(--fs); opacity:.95; max-width:410px; line-height:1.5; text-shadow:0 1px 2px #000, 0 0 10px rgba(0,0,0,.85)}
 /* 48px touch targets (studio rule 11, sweep 2026-07-26): the 540x960 stage is
    SCALED to the phone (390w = x0.722), so stage px shrink on screen. 72 stage
@@ -108,7 +108,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 #go-share{border-color:#1d6b63; color:#2ff0e0; text-shadow:0 0 12px rgba(47,240,224,0.35)}
 .btn.ghost{background:#161309; color:var(--muted)}
 .row{display:flex; flex-wrap:wrap; gap:12px; width:100%}
-.row>.btn{flex:1 1 auto}   /* v1.11: a button whose words outgrow its share wraps to a new line instead of spilling */
+.row>.btn{flex:1 1 0; min-width:-webkit-fit-content; min-width:-moz-fit-content; min-width:fit-content}   /* v1.11: equal shares on one line while the words fit; a button whose words outgrow its share wraps to a new line instead of spilling */
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
 h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; letter-spacing:1px; margin-bottom:4px;
   text-shadow:2px 2px 0 #0c0a06, 0 0 14px rgba(47,240,224,0.45)}
@@ -133,7 +133,8 @@ h2.sc-h{font-size:26px; color:#2ff0e0; font-weight:800; font-style:italic; lette
 .tbtn::after{content:""; position:absolute; left:-12px; right:-12px; top:-12px; bottom:-12px}
 #b-home{left:10px}
 /* v1.11: the way back in a match is a 48 CSS px target on every phone, kept inside the stage (its old zone was clipped) */
-#b-home::after{left:-10px; top:-10px; right:auto; bottom:auto; width:max(82px, calc(52px * var(--k))); height:min(max(82px, calc(52px * var(--k))), 100px)}   /* never over the well */
+#b-home::after{left:-10px; top:-10px; right:auto; bottom:auto; width:82px; height:82px}
+@supports (width:max(1px,2px)){ #b-home::after{width:max(82px, calc(52px * var(--k))); height:min(max(82px, calc(52px * var(--k))), 100px)} }   /* never over the well */
 /* the way home, on the TITLE screen only. The portal opens this card as a top
    level navigation, so nothing outside the page offers a way back. Top left of
    the title, which is empty art: the play chrome (#b-home, power) lives on
@@ -266,7 +267,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       <div class="row">
         <button class="btn sm" id="b-set">⚙ Settings</button>
         <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
-        <button class="btn sm" id="b-bgm" title="80s beat" aria-label="Toggle 80s background beat" onclick="cwBgmToggle()">&#9835; Beat</button>
+        <button class="btn sm" id="b-bgm" title="80s beat" onclick="cwBgmToggle()">&#9835; Play beat</button>
       </div>
     </div>
     <div class="foot" id="buildstamp"></div>
@@ -1300,7 +1301,7 @@ function drawNine(im,ins,x,y,w,h,k,sl){ var iw=im.naturalWidth, ih=im.naturalHei
 function lab(d){ return Math.round(Math.max(d, Math.ceil(12/STAGE_S))*(SET.bigText?1.25:1)); }
 /* the words of txt in lines no wider than maxW at the current font (no trailing space) */
 function wrapLines(txt,maxW){ var words=txt.split(' '), out=[], line='', i; for(i=0;i<words.length;i++){ var t=line?line+' '+words[i]:words[i]; if(line&&ctx.measureText(t).width>maxW){ out.push(line); line=words[i]; } else line=t; } if(line)out.push(line); return out; }
-var HUD={ w:0, rivalW:0, tier:'', pips:0, dangerX:0 };   /* the header's left column width; what the HUD last drew (the gates read it) */
+var HUD={ w:0, rivalW:0, tier:'', pips:0, dangerX:0, rl:0, ry2:0, ofY:352, rTall:false, wmR:0, wmY:34, wmS:15 };   /* the header's left column width; what the HUD last drew (the gates read it) */
 function cellPx(F,r,c){ return {x:F.x+c*F.cell, y:F.y+(r-1)*F.cell}; }
 
 function drawBoardFrame(F,label,accent){ var w=COLS*F.cell,h=VISROWS*F.cell;
@@ -1380,12 +1381,21 @@ function drawJoins(f,F){ var J=A2.j; if(!J)return; var r,c,v,k; A2.joins=[];
       ctx.save(); ctx.beginPath(); ctx.rect(x0,y0,w,h); ctx.clip();
       if(k)ctx.drawImage(A2.im[rel], a.x+s/2-s*0.28, a.y+s/2, s*0.56, s); else ctx.drawImage(A2.im[rel], a.x+s/2, a.y+s/2-s*0.28, s, s*0.56);
       ctx.restore(); A2.joins.push([r,c,r2,c2]); } } }
+/* v1.11: the rival card's name: as large as two lines allow and never wider than the card, never under 12 CSS px. At the
+   floor a long name is set on two balanced lines (drawn narrowed to the card); the band under the dancer grows to hold it */
+function cardName(nm,ow){ var f=lab(12), flo=Math.ceil(12/STAGE_S), L, w, q;
+  function fit(){ ctx.font='700 '+f+'px system-ui'; L=wrapLines(nm, ow-10); w=0; for(q=0;q<L.length;q++)w=Math.max(w,ctx.measureText(L[q]).width); }
+  fit(); while((L.length>2||w>ow-10)&&f>flo){ f--; fit(); }
+  if(L.length>2){ var wd=nm.split(' '), bi=1, bw=1e9, a, b; for(q=1;q<wd.length;q++){ a=ctx.measureText(wd.slice(0,q).join(' ')).width; b=ctx.measureText(wd.slice(q).join(' ')).width; if(Math.max(a,b)<bw){ bw=Math.max(a,b); bi=q; } }
+    L=[wd.slice(0,bi).join(' '), wd.slice(bi).join(' ')]; w=bw; }
+  var lh=Math.round(f*1.08); return { f:f, L:L, w:w, lh:lh, ob:Math.max(48, Math.round(12+0.78*f+(L.length-1)*lh)) }; }
+/* v1.11 (PNL-059): danger is an X where the next pair spawns, drawn over the pods so the pair that spawns there never hides it */
+function dangerX(F,mini){ var dc=cellPx(F,1,SPAWN_COL), di=F.cell*0.22, dk;
+  for(dk=0;dk<2;dk++){ ctx.lineCap='round'; ctx.strokeStyle=dk?'#f0e9d8':'#0c0a06'; ctx.lineWidth=dk?Math.max(2,F.cell*0.09):Math.max(3,F.cell*0.16);
+    ctx.beginPath(); ctx.moveTo(dc.x+di,dc.y+di); ctx.lineTo(dc.x+F.cell-di,dc.y+F.cell-di); ctx.moveTo(dc.x+F.cell-di,dc.y+di); ctx.lineTo(dc.x+di,dc.y+F.cell-di); ctx.stroke(); }
+  ctx.lineCap='butt'; if(!mini)HUD.dangerX++; }
 function dangerNow(f){ return !!(f.grid&&colHeights(f.grid)[SPAWN_COL]>=VISROWS-2); }   /* the spawn column is two rows from the top */
 function drawField(f,F,mini){ if(!f)return; var r,c;
-  if(f.flashDanger>0||(CALM&&dangerNow(f))){ var dc=cellPx(F,1,SPAWN_COL), di=F.cell*0.22, dk;   /* v1.11 (PNL-059): danger is an X where the next pair spawns */
-    for(dk=0;dk<2;dk++){ ctx.lineCap='round'; ctx.strokeStyle=dk?'#f0e9d8':'#0c0a06'; ctx.lineWidth=dk?Math.max(2,F.cell*0.09):Math.max(3,F.cell*0.16);
-      ctx.beginPath(); ctx.moveTo(dc.x+di,dc.y+di); ctx.lineTo(dc.x+F.cell-di,dc.y+F.cell-di); ctx.moveTo(dc.x+F.cell-di,dc.y+di); ctx.lineTo(dc.x+di,dc.y+F.cell-di); ctx.stroke(); }
-    ctx.lineCap='butt'; if(!mini)HUD.dangerX++; }
   if(!mini)drawJoins(f,F);   /* v1.8: under the pods */
   for(r=1;r<ROWS;r++)for(c=0;c<COLS;c++){ var v=f.grid[r][c]; if(v===0)continue; var p=cellPx(F,r,c); var off=(f.fall&&f.fall[r]?f.fall[r][c]:0)||0;
     if(off>0){ ctx.save(); ctx.beginPath(); ctx.rect(F.x-6, F.y-1, COLS*F.cell+12, VISROWS*F.cell+12); ctx.clip(); }   /* v1.10 review: a FALLING cell stays inside the well (dropped Chaff starts a cell above it); pops and splats spill as before */
@@ -1443,56 +1453,64 @@ function drawField(f,F,mini){ if(!f)return; var r,c;
      375), the rival's beside RIVAL (x 440 to 535). At most 30 land per turn; the rest stays queued. */
   /* v1.11: a falling triangle (it comes down on you), the number, then the rocks, all sized in real px. The player's sits
      after the header's widest label; the rival's on line 2 of its plate */
-  var fs=mini?lab(10):lab(18), bx=mini?388:Math.max(206, 66+HUD.w+16), base=mini?280+Math.round(lab(10)*0.95)+Math.round(lab(10)*1.25):82, pw=f.pending;
+  var fs=mini?(HUD.rl||lab(10)):lab(18), bx=mini?388:Math.max(206, 66+HUD.w+16), base=mini?(HUD.ry2||(280+Math.round(lab(10)*2.2))):82, pw=f.pending;   /* the rival's: line 2 of its plate */
   if(pw>0){ var tw=Math.round(fs*0.6); ctx.fillStyle='#e0685f'; ctx.beginPath(); ctx.moveTo(bx,base-fs*0.62); ctx.lineTo(bx+tw,base-fs*0.62); ctx.lineTo(bx+tw/2,base); ctx.closePath(); ctx.fill();
     ctx.font='800 '+fs+'px system-ui'; ctx.textAlign='left'; ctx.fillText(''+pw, bx+tw+4, base); var nx=bx+tw+4+ctx.measureText(''+pw).width+5;
     var big=Math.floor(pw/COLS), sm=pw%COLS, bw=Math.round(fs*(mini?0.7:0.85)), sw2=Math.round(bw*0.62), lim=mini?532:375;
     for(i=0;i<big&&nx+bw<=lim;i++){ drawChaff(nx, base-bw, bw, 1, 0.95); nx+=bw+1; }
     for(i=0;i<sm&&nx+sw2<=lim;i++){ drawChaff(nx, base-sw2, sw2, 1, 0.9); nx+=sw2+1; } }
-  if(f.cancelT>0&&!mini){ ctx.globalAlpha=Math.min(1,f.cancelT/300); ctx.fillStyle='#7ec850'; ctx.font='800 '+lab(18)+'px system-ui'; ctx.textAlign='left';
-    ctx.fillText(f.cancelN+' cancelled', bx, base-fs-6); ctx.globalAlpha=1; }   /* the line above the queue */
+  if(f.cancelT>0&&!mini){ var cTxt=f.cancelN+' cancelled', cfs=lab(18), cY=base-fs-6, cX=bx;   /* the line above the queue, left of the rival card (x 376) */
+    if(cY-0.78*cfs<HUD.wmY+0.2*HUD.wmS+2)cX=Math.max(cX, HUD.wmR+12);   /* at the wordmark's height it starts after LOCK */
+    ctx.font='800 '+cfs+'px system-ui'; while(ctx.measureText(cTxt).width>376-cX&&cfs>Math.ceil(12/STAGE_S)){ cfs--; ctx.font='800 '+cfs+'px system-ui'; }
+    ctx.globalAlpha=Math.min(1,f.cancelT/300); ctx.fillStyle='#7ec850'; ctx.textAlign='left'; ctx.fillText(cTxt, cX, cY, 376-cX); ctx.globalAlpha=1; }   /* never under 12 CSS px; narrowed past that */
   /* danger flash */
-  if(f.flashDanger>0||(CALM&&dangerNow(f))){ ctx.globalAlpha=CALM?0.3:Math.min(0.4,f.flashDanger/1000);   /* v1.11: steady, not a 2.5 Hz pulse, under Reduce motion */ ctx.fillStyle='#e0433f'; ctx.fillRect(F.x,F.y,COLS*F.cell,F.cell*2); ctx.globalAlpha=1; }
+  var dz=f.flashDanger>0||((CALM||f.remote)&&dangerNow(f));   /* a remote rival is never ticked here: its grid says it, at any motion setting */
+  if(dz){ ctx.globalAlpha=(CALM||!(f.flashDanger>0))?0.3:Math.min(0.4,f.flashDanger/1000);   /* v1.11: steady, not a 2.5 Hz pulse, under Reduce motion */ ctx.fillStyle='#e0433f'; ctx.fillRect(F.x,F.y,COLS*F.cell,F.cell*2); ctx.globalAlpha=1;
+    dangerX(F,mini); }
 }
 
-function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRect(0,0,VW,VH);
+function render(){ HUD.dangerX=0; ctx.clearRect(0,0,VW,VH);   /* what THIS frame drew */ ctx.fillStyle='#12100c'; ctx.fillRect(0,0,VW,VH);
   if(curScreen!=='s-play'){ return; }
   /* battle-alley backdrop under both boards (procedural flat fill is the fallback);
      drawn before the shake transform so the alley holds still while the boards shake */
   cwCover(cwBg('battle-alley'),0,0,VW,VH);
   var shx=0,shy=0; if(SHAKE.t>0){ var shk=SHAKE.amp*(SHAKE.t/SHAKE.dur); shx=(Math.random()*2-1)*shk; shy=(Math.random()*2-1)*shk; }
   ctx.save(); ctx.translate(shx,shy);
+  /* v1.11: the header column: the wordmark, YOUR PLOT under it, the score on the frame's top (y 84) at its full size. When the
+     three outgrow the band (Larger text, a small phone) the labels give way first, down to 12 CSS px, and climb; the score
+     is never smaller than its label */
+  var hFlo=Math.ceil(12/STAGE_S), wmS=lab(15), ypS=lab(11), scS=Math.max(26,lab(16)+4), wmY=34, ypY=Math.round(34+0.2*wmS+0.78*ypS+2);
+  if(ypY+0.2*ypS+2+0.78*scS>84){ for(;;){ ypY=Math.round(84-0.78*scS-2-0.2*ypS); wmY=Math.min(34,Math.round(ypY-0.78*ypS-2-0.2*wmS));
+      if(wmY-0.78*wmS>=2)break; if(ypS>hFlo)ypS--; else if(wmS>hFlo)wmS--; else if(scS>Math.max(hFlo,ypS))scS--; else break; } }
   /* header band: two-tone neon wordmark */
-  ctx.font='italic 800 '+lab(15)+'px system-ui'; ctx.textAlign='left'; var lockX=66+ctx.measureText('POP N ').width;   /* v1.11: LOCK follows POP N at any size */
-  ctx.lineWidth=3; ctx.strokeStyle='#0c0a06'; ctx.strokeText('POP N', 66, 34); ctx.strokeText('LOCK', lockX, 34);
-  ctx.fillStyle='#ff2fb9'; ctx.fillText('POP N', 66, 34); ctx.fillStyle='#2ff0e0'; ctx.fillText('LOCK', lockX, 34);
-  /* player score inline with the wordmark, top-left */
-  /* v1.11: YOUR PLOT sits just under the wordmark, and the score takes the room left above the frame (y 84), never under 12 CSS px */
-  var wmS=lab(15), ypS=lab(11), ypY=Math.round(34+0.2*wmS+0.78*ypS+2), scS=Math.max(Math.ceil(12/STAGE_S), Math.min(Math.max(26,lab(16)+4), Math.floor((84-(ypY+0.2*ypS)-1)/0.78)));
+  ctx.font='italic 800 '+wmS+'px system-ui'; ctx.textAlign='left'; var lockX=66+ctx.measureText('POP N ').width;   /* v1.11: LOCK follows POP N at any size */
+  ctx.lineWidth=3; ctx.strokeStyle='#0c0a06'; ctx.strokeText('POP N', 66, wmY); ctx.strokeText('LOCK', lockX, wmY);
+  ctx.fillStyle='#ff2fb9'; ctx.fillText('POP N', 66, wmY); ctx.fillStyle='#2ff0e0'; ctx.fillText('LOCK', lockX, wmY);
+  HUD.wmR=lockX+ctx.measureText('LOCK').width; HUD.wmY=wmY; HUD.wmS=wmS;   /* the cancel line keeps clear of it */
   ctx.fillStyle='#9a9078'; ctx.font='600 '+ypS+'px system-ui'; ctx.textAlign='left'; ctx.fillText('YOUR PLOT', 66, ypY); HUD.w=ctx.measureText('YOUR PLOT').width;
   var scTxt=(MATCH.pf?MATCH.pf.score:0).toLocaleString(); ctx.fillStyle='#f0e9d8'; ctx.font='800 '+scS+'px system-ui'; ctx.fillText(scTxt, 66, 84); HUD.w=Math.max(HUD.w, ctx.measureText(scTxt).width);
   /* right rail: opponent card, NEXT, rival board */
   if(MATCH.mode==='campaign' && MATCH.stage>=0){ var st=ROSTER[MATCH.stage];
-    var ox=380, oy=54, ow=156, oh=140, ob=48;   /* v1.11: a 48 px name band, two lines from its foot */
+    var ox=380, oy=MATCH.powers?60:54, ow=156, oh=MATCH.powers?134:140;   /* v1.11: the card ends at y 194; with Powers on its chip keeps v1.10's corner */
+    var NM=cardName(st.nm, ow), ob=NM.ob;   /* the name band: 48 px, more when the name needs it */
     ctx.fillStyle='#120f07'; rr(ox,oy,ow,oh,12); ctx.fill();
     ctx.save(); rr(ox,oy,ow,oh,12); ctx.clip();
     /* opponent b-boy portrait: idle in play, and on the result screen the pest is
        'lose' when you won / 'win' when you lost. Emoji is the fallback. */
     var opose=(MATCH.phase==='done'&&MATCH.result)?(MATCH.result==='win'?'lose':'win'):'idle';
-    if(!(opose==='idle'&&railDraw(ox+ow/2, oy+2+(oh-ob)/2, ow-8, oh-ob))&&!cwPortrait(st.id,opose, ox+ow/2, oy+2+(oh-ob)/2, ow-8, oh-ob, 1)){
+    if(!(opose==='idle'&&railDraw(ox+ow/2, oy+2+(oh-ob-2)/2, ow-8, oh-ob-2))&&!cwPortrait(st.id,opose, ox+ow/2, oy+2+(oh-ob-2)/2, ow-8, oh-ob-2, 1)){
       ctx.textAlign='center'; ctx.font='34px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(st.em, ox+ow/2, oy+46); }
     ctx.fillStyle='rgba(10,8,4,0.82)'; ctx.fillRect(ox, oy+oh-ob, ow, ob);
     ctx.restore();
     ctx.strokeStyle=st.ac; ctx.lineWidth=2; rr(ox,oy,ow,oh,12); ctx.stroke();
-    /* the name: as large as two lines allow, never under 12 CSS px; its last line on the band's foot */
-    var nmf=lab(12), nml; ctx.font='700 '+nmf+'px system-ui'; nml=wrapLines(st.nm, ow-10);
-    while(nml.length>2&&nmf>Math.ceil(12/STAGE_S)){ nmf--; ctx.font='700 '+nmf+'px system-ui'; nml=wrapLines(st.nm, ow-10); }
-    ctx.textAlign='center'; ctx.fillStyle='#f0e9d8'; var nmy=oy+oh-8, nk;
-    for(nk=nml.length-1;nk>=0;nk--){ ctx.fillText(nml[nk], ox+ow/2, nmy); nmy-=Math.round(nmf*1.08); }
+    /* the name: its last line on the band's foot; a line still too wide at 12 CSS px is narrowed to the card, never cut */
+    ctx.font='700 '+NM.f+'px system-ui'; ctx.textAlign='center'; ctx.fillStyle='#f0e9d8'; var nmy=oy+oh-8, nk;
+    for(nk=NM.L.length-1;nk>=0;nk--){ ctx.fillText(NM.L[nk], ox+ow/2, nmy, ow-10); nmy-=NM.lh; }
     ctx.textAlign='left';
   }
   /* next piece preview in the rail */
-  if(MATCH.pf&&MATCH.pf.next){ var nx=398, ny=196, NW=NEXTWIN, ncx=nx+NW.w/2, ncy=ny+NW.h/2; ctx.font='600 '+lab(10)+'px system-ui'; ctx.lineWidth=4; ctx.strokeStyle='#0c0a06'; ctx.strokeText('NEXT',460,236); ctx.fillStyle='#d8cfb8'; ctx.fillText('NEXT',460,236);   /* v1.11: beside the window (the card needs the space above it) */
+  if(MATCH.pf&&MATCH.pf.next){ var nx=398, ny=196, NW=NEXTWIN, ncx=nx+NW.w/2, ncy=ny+NW.h/2; var nxl=lab(10); ctx.font='600 '+nxl+'px system-ui'; var nxw=Math.min(ctx.measureText('NEXT').width, 66);   /* v1.11: beside the window on a dark plate (the card needs the space above it) */
+    ctx.fillStyle='rgba(10,8,4,0.88)'; rr(456, 236-Math.round(nxl*0.95)-3, nxw+12, Math.round(nxl*1.25)+5, 6); ctx.fill(); ctx.textAlign='left'; ctx.fillStyle='#d8cfb8'; ctx.fillText('NEXT', 462, 236, 66);
     /* v1.7: ONE rectangle (NEXTWIN) places the painted window, its fallback and the pair, all on its centre */
     var nw=A2.j?A2.j.board.next:null, nws=nw?(NW.pod*2+NW.gap+12)/nw.aperture[3]:0;   /* v1.8: the opening holds the pair with 6 px to spare */
     if(nw&&a2Ok(nw.file)){ var apw=nw.aperture[2]*nws, aph=nw.aperture[3]*nws; ctx.fillStyle='#161207'; rr(ncx-apw/2, ncy-aph/2, apw, aph, 6); ctx.fill();   /* her opening is clear: the July window's near black behind the pair */
@@ -1524,10 +1542,18 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     for(hpi=0;hpi<5;hpi++){ var px0=390+hpi*16+6, py0=hpY+hpH-10; ctx.beginPath(); ctx.moveTo(px0,py0-6); ctx.lineTo(px0+6,py0); ctx.lineTo(px0,py0+6); ctx.lineTo(px0-6,py0); ctx.closePath();
       if(hpi<ht){ ctx.fillStyle=htc; ctx.fill(); } ctx.strokeStyle='#9a9078'; ctx.lineWidth=1.5; ctx.stroke(); }
     HUD.tier=HYPE_TIERS[ht][1]; HUD.pips=ht; }
-  if(MATCH.of){ var rl=lab(10), ry1=280+Math.round(rl*0.95);   /* v1.11: RIVAL and the score on line 1, the incoming queue on line 2, on a dark plate */
-    ctx.fillStyle='rgba(10,8,4,0.88)'; rr(382,280,154,58,8); ctx.fill();
-    ctx.textAlign='left'; ctx.fillStyle='#9a9078'; ctx.font='600 '+rl+'px system-ui'; ctx.fillText('RIVAL',388,ry1); HUD.rivalW=ctx.measureText('RIVAL').width;
-    ctx.textAlign='right'; ctx.fillStyle='#f0e9d8'; ctx.font='700 '+rl+'px system-ui'; ctx.fillText((MATCH.of.score).toLocaleString(),530,ry1); ctx.textAlign='left';
+  if(MATCH.of){   /* v1.11: RIVAL and the score on line 1, the incoming queue under them, on a dark plate. Where a six digit score
+       cannot sit beside RIVAL at this size the score takes a line of its own, and the rival's board steps down for the room */
+    var rmin=Math.ceil(12/STAGE_S), rl0=Math.max(rmin,Math.min(lab(10),28)), rl=rl0, rsc=(MATCH.of.score).toLocaleString(), rwL, rwS, rShow=true;
+    var rFit=function(t){ ctx.font='600 '+rl+'px system-ui'; rwL=ctx.measureText('RIVAL').width; ctx.font='700 '+rl+'px system-ui'; rwS=ctx.measureText(t).width; };
+    rFit((888888).toLocaleString()); var rTall=388+rwL+8>530-rwS;   /* decided by the size, never by the live score: the board never jumps as it grows */
+    var rlh=Math.round(rl0*1.25), ry1=280+Math.round(rl0*0.95), rys=rTall?ry1+rlh:ry1, ry2=rys+rlh;
+    OF.y=Math.max(352, Math.ceil(ry2+rl0*0.2+18)); HUD.ofY=OF.y; HUD.rTall=rTall;   /* its frame's top band starts 15.5 above the well */
+    rFit(rsc); if(!rTall&&388+rwL+8>530-rwS)rShow=false;   /* beside RIVAL it is already at 12 CSS px: a seven digit score has RIVAL step aside */
+    HUD.rl=rl0; HUD.ry2=ry2; HUD.rivalW=rShow?rwL:0;
+    ctx.fillStyle='rgba(10,8,4,0.88)'; rr(382,280,154,Math.max(58,OF.y-14-280),8); ctx.fill();
+    if(rShow){ ctx.textAlign='left'; ctx.fillStyle='#9a9078'; ctx.font='600 '+rl+'px system-ui'; ctx.fillText('RIVAL',388,ry1); }
+    ctx.textAlign=rTall?'left':'right'; ctx.fillStyle='#f0e9d8'; ctx.font='700 '+rl+'px system-ui'; ctx.fillText(rsc,rTall?388:530,rys,142); ctx.textAlign='left';
     var rivAc=MATCH.stage>=0?ROSTER[MATCH.stage].ac:(MATCH.mode==='versus'?'#2ff0e0':'#33301f');
     drawBoardFrame(OF,'rival', rivAc); drawField(MATCH.of,OF,true);
     /* rival combo telegraph: their frame flares while their chain is popping */
@@ -1564,8 +1590,8 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
     if(!cwPortrait(ist.id,'idle', VW/2, VH/2-36, 300, 238, 1)){ ctx.font='72px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(ist.em, VW/2, VH/2-24); }
     ctx.font='italic 800 30px system-ui'; ctx.lineWidth=6; ctx.strokeStyle='#0c0a06'; ctx.strokeText(ist.nm, VW/2, VH/2+108);
     ctx.fillStyle=ist.ac; ctx.fillText(ist.nm, VW/2, VH/2+108);
-    ctx.fillStyle='#f0e9d8'; ctx.font='italic '+lab(16)+'px system-ui'; wrapText('"'+ist.taunt+'"', VW/2, VH/2+144, 400, Math.round(lab(16)*1.3));
-    ctx.fillStyle='#9a9078'; ctx.font='600 '+lab(12)+'px system-ui'; ctx.fillText('tap to start', VW/2, VH/2+210);
+    var itl=Math.round(lab(16)*1.3); ctx.fillStyle='#f0e9d8'; ctx.font='italic '+lab(16)+'px system-ui'; var itn=wrapText('"'+ist.taunt+'"', VW/2, VH/2+144, 400, itl);
+    ctx.fillStyle='#9a9078'; ctx.font='600 '+lab(12)+'px system-ui'; ctx.fillText('tap to start', VW/2, Math.max(VH/2+210, VH/2+144+(itn-1)*itl+Math.round(itl*1.2)));   /* v1.11: a line below the taunt */
     ctx.textAlign='left'; }
   /* ---- outro overlay: the reveal you are meant to sit in (see THE OUTRO).
      The control bar eats the bottom ~130px of the 960 stage, so everything
@@ -1601,10 +1627,10 @@ function render(){ ctx.clearRect(0,0,VW,VH); ctx.fillStyle='#12100c'; ctx.fillRe
           if(!cwPortrait(gst.id, gwin?'lose':'win', VW/2, 566, 250, 210, ga)){
             ctx.globalAlpha=ga; ctx.font='84px system-ui'; ctx.fillStyle='#fff'; ctx.fillText(gst.em, VW/2, 590); ctx.globalAlpha=1; }
           ctx.globalAlpha=ga; ctx.fillStyle='#f0e9d8'; ctx.font='italic '+lab(17)+'px system-ui';
-          wrapText('"'+(gwin?gst.lose:gst.taunt)+'"', VW/2, 706, 400, Math.round(lab(17)*1.3)); ctx.globalAlpha=1; } }
+          var otl=Math.round(lab(17)*1.3), otn=wrapText('"'+(gwin?gst.lose:gst.taunt)+'"', VW/2, 706, 400, otl); O.hintY=Math.min(832, Math.max(800, 706+(otn-1)*otl+Math.round(otl*1.2))); ctx.globalAlpha=1; } }
       /* skip hint, but only after you have had the moment */
       if(O.t>stampAt+OUT.stamp+500){ ctx.textAlign='center'; ctx.fillStyle='#9a9078';
-        ctx.font='600 '+lab(12)+'px system-ui'; ctx.fillText('tap to continue', VW/2, 800); }
+        ctx.font='600 '+lab(12)+'px system-ui'; ctx.fillText('tap to continue', VW/2, O.hintY||800); }   /* v1.11: a line below the taunt, above the tray */
       ctx.textAlign='left'; } }
   ctx.restore();
 }
@@ -1619,7 +1645,7 @@ function drawFloats(f,F){ if(!f)return; var i; ctx.textAlign='center'; for(i=0;i
   ctx.lineWidth=Math.max(2,fs*0.18); ctx.strokeStyle='#0c0a06'; ctx.strokeText(fl.txt, xx, yy);
   ctx.fillStyle=floatColor(fl.txt); ctx.fillText(fl.txt, xx, yy); }
   ctx.globalAlpha=1; ctx.textAlign='left'; }
-function wrapText(txt,x,y,maxW,lh,stroke){ var L=wrapLines(txt,maxW),i; for(i=0;i<L.length;i++){ if(stroke){ ctx.lineWidth=stroke; ctx.strokeStyle='#0c0a06'; ctx.strokeText(L[i],x,y+i*lh); } ctx.fillText(L[i],x,y+i*lh); } }   /* v1.11: an optional dark stroke for text over art */
+function wrapText(txt,x,y,maxW,lh,stroke){ var L=wrapLines(txt,maxW),i; for(i=0;i<L.length;i++){ if(stroke){ ctx.lineWidth=stroke; ctx.strokeStyle='#0c0a06'; ctx.strokeText(L[i],x,y+i*lh); } ctx.fillText(L[i],x,y+i*lh); } return L.length; }   /* v1.11: the number of lines drawn; an optional dark stroke for text over art */
 function rr(x,y,w,h,rad){ ctx.beginPath(); ctx.moveTo(x+rad,y); ctx.arcTo(x+w,y,x+w,y+h,rad); ctx.arcTo(x+w,y+h,x,y+h,rad); ctx.arcTo(x,y+h,x,y,rad); ctx.arcTo(x,y,x+w,y,rad); ctx.closePath(); }
 
 /* =====================================================================
@@ -1778,7 +1804,7 @@ var _returnScreen='s-title'; function curReturn(){ return _returnScreen; }
 tap('set-reset',function(){ if(confirm('Reset all campaign progress? This cannot be undone.')){ PROG={unlocked:0,beaten:{},done:false,secret:false,soloBest:PROG.soloBest}; saveProg(); SFX.ui(); paintTitle(); alert('Campaign progress reset.'); } });
 
 /* v1.11: the whole ROW is a setting's button (only the 64 x 36 switch answered a tap); after flips the effect */
-function rowKeys(row){ row.setAttribute('tabindex','0'); row.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); row.click(); } }); }
+function rowKeys(row){ row.setAttribute('tabindex','0'); row.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); if(!e.repeat)row.click(); } }); }   /* a held key flips it once */
 function wireToggle(id,key,after){ var el=$(id); if(!el)return; var row=el.parentNode; row.setAttribute('role','switch'); rowKeys(row);
   function paint(){ if(SET[key])el.classList.add('on'); else el.classList.remove('on'); row.setAttribute('aria-checked',SET[key]?'true':'false'); } paint();
   row.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); SFX.ui(); if(after)after(); }); }
@@ -1813,7 +1839,7 @@ $('buildstamp').textContent='Pop N Lock '+BUILD;
   var dE=document.documentElement; if(!(dE.requestFullscreen||dE.webkitRequestFullscreen)){ row.style.display='none'; return; }
   row.setAttribute('role','switch'); rowKeys(row);
   function isFull(){ return !!(document.fullscreenElement||document.webkitFullscreenElement); }
-  function paint(){ if(isFull())el.classList.add('on'); else el.classList.remove('on'); }
+  function paint(){ if(isFull())el.classList.add('on'); else el.classList.remove('on'); row.setAttribute('aria-checked',isFull()?'true':'false'); }
   row.addEventListener('click',function(e){ e.preventDefault(); SFX.ui();
     try{ if(isFull()){ (document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document); }
       else { var d=document.documentElement; (d.requestFullscreen||d.webkitRequestFullscreen||function(){}).call(d); } }catch(err){}
@@ -1888,7 +1914,7 @@ window._sbCapEarn=function(n,tag){ var grant=0; try{ var k='sw_sb_chaffwars'; va
       if(i===4)noiseHit(ctx,B.next,0.16,1200,0.45,B.master);   /* snare backbeat */
       noiseHit(ctx,B.next,0.03,7000,i%2?0.09:0.15,B.master);   /* hi-hats */
       B.next+=SPB;B.step++; } }
-  function paint(){ var b=$('b-bgm'); if(b){ b.classList.toggle('playing',B.on); b.textContent=B.on?'\u266B Stop beat':'\u266B Play beat'; b.setAttribute('aria-pressed',B.on?'true':'false'); } }   /* v1.11: the state in words, not a border colour */
+  function paint(){ var b=$('b-bgm'); if(b){ b.classList.toggle('playing',B.on); b.textContent=B.on?'\u266B Stop beat':'\u266B Play beat'; } }   /* v1.11: what a tap does, in words (its name for a screen reader too), not a border colour */
   function start(){ B.on=true; try{localStorage.setItem('cw_bgm','1');}catch(e){}
     B.step=0;B.next=0; if(B.timer)clearInterval(B.timer); B.timer=setInterval(schedule,60); schedule(); paint(); }
   function stop(){ B.on=false; try{localStorage.setItem('cw_bgm','0');}catch(e){}
@@ -1896,7 +1922,7 @@ window._sbCapEarn=function(n,tag){ var grant=0; try{ var k='sw_sb_chaffwars'; va
   window.cwBgmToggle=function(){ if(B.on)stop(); else start(); };
   paint();
   /* persisted on -> arm a one-shot gesture (mobile autoplay policy) */
-  if(B.on){ B.on=false; var k=function(){ document.removeEventListener('pointerdown',k,true); start(); };
+  if(B.on){ B.on=false; paint(); var k=function(e){ document.removeEventListener('pointerdown',k,true); if(e&&e.target&&e.target.closest&&e.target.closest('#b-bgm'))return; start(); };   /* a first touch on the button itself: its own tap starts it */
     document.addEventListener('pointerdown',k,true); }
 })();
 
@@ -2119,7 +2145,7 @@ if(/[?&]cwdev=1/.test(location.search)){
     art2:function(){ return { j:!!A2.j, asked:A2.asked, live:a2Live(), who:A2.who, joins:A2.joins||[], rail:RAIL, frame:railFrame() }; },   /* v1.8 gates */
     inp:function(){ return INP; }, setting:function(k,v){ SET[k]=v; applyBig(); fit(); return SET[k]; },   /* v1.9 gates */
     comfort:function(){ return { calm:CALM, s:STAGE_S, shakeT:SHAKE.t, set:SET }; },   /* v1.11 gates */
-    hud:function(){ return HUD; }, lab:function(d){ return lab(d); },   /* v1.11 gates (3b) */
+    hud:function(){ return HUD; }, lab:function(d){ return lab(d); }, nameFit:function(i){ return cardName(ROSTER[i].nm, 156); }, words:function(i){ var r=ROSTER[i]; return r?{ nm:r.nm, taunt:r.taunt, lose:r.lose }:null; },   /* v1.11 gates (3b) */
     railChain:function(n){ railChain(n); }, railHit:function(){ railHit(); },   /* the hooks a real chain step and a Chaff landing call */
     railChainEnd:function(){ railChainEnd(); }, cwKeys:function(){ var a=[],k; for(k in _cwCache)if(_cwCache.hasOwnProperty(k))a.push(k); return a; },
     resolve:function(g){ return computeResolve(g||MATCH.pf.grid); },

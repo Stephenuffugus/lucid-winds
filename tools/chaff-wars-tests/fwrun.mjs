@@ -93,20 +93,35 @@ const G = {
     ZONEWELL: { want: 'the back zone stops above the well', muts: [['height:min(max(82px, calc(52px * var(--k))), 100px)}', 'height:max(82px, calc(52px * var(--k)))}']] },
     LOGOCLEAR: { want: 'the title\'s logo starts below the back button', muts: [['#s-title>.pad{padding-top:calc(var(--hit) + 22px)}', '']] },
     ROWROLE: { want: 'a settings row is a switch', muts: [["var row=el.parentNode; row.setAttribute('role','switch'); rowKeys(row);", 'var row=el.parentNode;']] },
-    BEATWORDS: { want: 'the 80s beat button says what a tap does', muts: [["b.textContent=B.on?'\\u266B Stop beat':'\\u266B Play beat'; ", '']] },
+    BEATWORDS: { want: 'real taps on it play and stop it', muts: [["b.textContent=B.on?'\\u266B Stop beat':'\\u266B Play beat'; ", '']] },
+    BEATSTALE: { want: 'sees Play beat before anything plays', muts: [['  if(B.on){ B.on=false; paint(); var k=', '  if(B.on){ B.on=false; var k=']] },
+    BEATFIRST: { want: 'real taps on it play and stop it', muts: [["if(e&&e.target&&e.target.closest&&e.target.closest('#b-bgm'))return; start(); };", 'start(); };']] },
+    BEATLABEL: { want: 'those words are its name', muts: [['<button class="btn sm" id="b-bgm" title="80s beat" onclick=', '<button class="btn sm" id="b-bgm" title="80s beat" aria-label="Toggle 80s background beat" onclick=']] },
     CALMCLASS: { want: 'Reduce motion cycles to On', muts: [["if(CALM)B.add('calm'); else B.remove('calm');", '']] },
     BIGTEXTVAR: { want: 'Larger text grows the copy', muts: [['body.bigtext #stage{--tx:1.25; --fs:22.5px}', 'body.bigtext #stage{--fs:22.5px}']] },
   },
   p3b: {
-    LABFLOOR: { want: 'every canvas text in a live match', muts: [['function lab(d){ return Math.round(Math.max(d, Math.ceil(12/STAGE_S))*(SET.bigText?1.25:1)); }', 'function lab(d){ return d; }']] },
-    LOCKX: { want: 'no two HUD labels overlap', muts: [["var lockX=66+ctx.measureText('POP N ').width;", 'var lockX=122;']] },
-    HEADERFIXED: { want: 'no two HUD labels overlap', muts: [["ctx.fillText('YOUR PLOT', 66, ypY);", "ctx.fillText('YOUR PLOT', 66, 72);"]] },
-    RIVALPILE: { want: 'no two HUD labels overlap', muts: [['ctx.fillText((MATCH.of.score).toLocaleString(),530,ry1);', 'ctx.fillText((MATCH.of.score).toLocaleString(),400,ry1);']] },
-    HYPETEXT: { want: 'the HYPE readout names its tier', muts: [['    ctx.fillStyle=(ht===0?\'#9a9078\':htc); ctx.fillText(HYPE_TIERS[ht][1], 390, hpY+hpH-22);', '']] },
-    NOX: { want: 'the HYPE readout names its tier', muts: [['  if(f.flashDanger>0||(CALM&&dangerNow(f))){ var dc=cellPx(F,1,SPAWN_COL),', '  if(false){ var dc=cellPx(F,1,SPAWN_COL),']] },
-    FLOATSMALL: { want: 'every canvas text in a live match', muts: [['  var fs=(F===PF?Math.max(28,lab(16)+8):lab(14));', '  var fs=(F===PF?Math.max(28,lab(16)+8):14);'], ['fs=Math.max(lab(10),Math.floor(fs*lim/mw));', 'fs=Math.max(10,Math.floor(fs*lim/mw));']] },
-    OVERLAYSMALL: { want: 'the intro card, the countdown and the outro', muts: [["    ctx.fillStyle='#f0e9d8'; ctx.font='italic '+lab(16)+'px system-ui'; wrapText('\"'+ist.taunt+'\"'", "    ctx.fillStyle='#f0e9d8'; ctx.font='italic 16px system-ui'; wrapText('\"'+ist.taunt+'\"'"]] },
-    ROWWRAP: { want: 'at 200 percent text no menu row', muts: [['.row{display:flex; flex-wrap:wrap; gap:12px; width:100%}', '.row{display:flex; gap:12px; width:100%}'], ['.row>.btn{flex:1 1 auto}', '.row>.btn{flex:1}']] },
+    LABFLOOR: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '360x780' }, want: 'every canvas text in a live match', muts: [['function lab(d){ return Math.round(Math.max(d, Math.ceil(12/STAGE_S))*(SET.bigText?1.25:1)); }', 'function lab(d){ return d; }']] },
+    LOCKX: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '360x780b' }, want: 'no two HUD labels overlap', muts: [["var lockX=66+ctx.measureText('POP N ').width;", 'var lockX=122;']] },
+    HEADERFIXED: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '412x915' }, want: 'no two HUD labels overlap', muts: [["ctx.fillText('YOUR PLOT', 66, ypY);", "ctx.fillText('YOUR PLOT', 66, 72);"]] },
+    SCORESHRINK: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '375x548b' }, want: 'the score is never smaller than its label', muts: [['  if(ypY+0.2*ypS+2+0.78*scS>84){ for(;;){', '  scS=Math.max(hFlo, Math.min(scS, Math.floor((84-(ypY+0.2*ypS)-1)/0.78))); if(false){ for(;;){']] },
+    CANCELWIDE: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '375x548' }, want: 'the header ends left of the rival card', muts: [["while(ctx.measureText(cTxt).width>376-cX&&cfs>Math.ceil(12/STAGE_S)){ cfs--; ctx.font='800 '+cfs+'px system-ui'; }", ''], ['ctx.fillText(cTxt, cX, cY, 376-cX);', 'ctx.fillText(cTxt, cX, cY);']] },
+    CANCELWM: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '375x548b' }, want: 'no two HUD labels overlap', muts: [['if(cY-0.78*cfs<HUD.wmY+0.2*HUD.wmS+2)cX=Math.max(cX, HUD.wmR+12);', '']] },
+    RIVALPILE: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '412x915' }, want: 'no two HUD labels overlap|names its rival beside', muts: [['ctx.fillText(rsc,rTall?388:530,rys,142);', 'ctx.fillText(rsc,400,ry1);']] },
+    RIVALTALL: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '390x664' }, want: 'names its rival beside or over', muts: [['var rTall=388+rwL+8>530-rwS;', 'var rTall=false;']] },
+    RIVALHIDE: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '412x915' }, want: 'a rival score too long to sit beside RIVAL never prints over it', muts: [['rFit(rsc); if(!rTall&&388+rwL+8>530-rwS)rShow=false;', 'rFit(rsc);']] },
+    OFFIXED: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '390x664' }, want: 'the rival plate.s lines end above', muts: [['    OF.y=Math.max(352, Math.ceil(ry2+rl0*0.2+18)); HUD.ofY=OF.y;', '    HUD.ofY=OF.y;']] },
+    NAMEFIT: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '360x780b' }, want: 'every rival name fits its card', muts: [['fit(); while((L.length>2||w>ow-10)&&f>flo){ f--; fit(); }', 'fit(); while(L.length>2&&f>flo){ f--; fit(); }']] },
+    NAMETHREE: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '375x548' }, want: 'every rival name fits its card', muts: [["  if(L.length>2){ var wd=nm.split(' ')", "  if(false){ var wd=nm.split(' ')"]] },
+    HYPETEXT: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '412x915' }, want: 'the HYPE readout names its tier', muts: [['    ctx.fillStyle=(ht===0?\'#9a9078\':htc); ctx.fillText(HYPE_TIERS[ht][1], 390, hpY+hpH-22);', '']] },
+    NOX: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '412x915' }, want: 'the HYPE readout names its tier', muts: [['    dangerX(F,mini); }', '    }']] },
+    XUNDER: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '412x915' }, want: 'the danger X shows over the pair', muts: [['    dangerX(F,mini); }', '    }'], ['function drawField(f,F,mini){ if(!f)return; var r,c;', 'function drawField(f,F,mini){ if(!f)return; var r,c; if(f.flashDanger>0)dangerX(F,mini);']] },
+    FLOATSMALL: { env: { P3B_BLOCKS: 'A', P3B_SWEEP: '360x780' }, want: 'every canvas text in a live match', muts: [['  var fs=(F===PF?Math.max(28,lab(16)+8):lab(14));', '  var fs=(F===PF?Math.max(28,lab(16)+8):14);'], ['fs=Math.max(lab(10),Math.floor(fs*lim/mw));', 'fs=Math.max(10,Math.floor(fs*lim/mw));']] },
+    OVERLAYSMALL: { env: { P3B_BLOCKS: 'B' }, want: 'the intro card, the countdown and the outro', muts: [["ctx.font='italic '+lab(16)+'px system-ui'; var itn=wrapText(", "ctx.font='italic 16px system-ui'; var itn=wrapText("]] },
+    HINTFIXED: { env: { P3B_BLOCKS: 'B' }, want: 'Larger text: the intro.s hint sits clear', muts: [["ctx.fillText('tap to start', VW/2, Math.max(VH/2+210, VH/2+144+(itn-1)*itl+Math.round(itl*1.2)));", "ctx.fillText('tap to start', VW/2, VH/2+210);"]] },
+    OUTHINTFIXED: { env: { P3B_BLOCKS: 'B' }, want: '375x548 Larger text: the outro.s hint sits clear', muts: [["ctx.fillText('tap to continue', VW/2, O.hintY||800);", "ctx.fillText('tap to continue', VW/2, 800);"]] },
+    ROWWRAP: { env: { P3B_BLOCKS: 'C' }, want: 'at 200 percent text no menu row', muts: [['.row{display:flex; flex-wrap:wrap; gap:12px; width:100%}', '.row{display:flex; gap:12px; width:100%}'], ['.row>.btn{flex:1 1 0; min-width:-webkit-fit-content; min-width:-moz-fit-content; min-width:fit-content}', '.row>.btn{flex:1}']] },
+    ROWSTACK: { env: { P3B_BLOCKS: 'C' }, want: 'keep their button rows side by side', muts: [['.row>.btn{flex:1 1 0; min-width:-webkit-fit-content; min-width:-moz-fit-content; min-width:fit-content}', '.row>.btn{flex:1 1 auto}']] },
   },
 };
 let bad = 0;
@@ -118,7 +133,7 @@ for (const [k, g] of Object.entries(G[part])) {
   { const re = /<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/g; let m2; while ((m2 = re.exec(html))) { try { new vm.Script(m2[1]); } catch (e) { console.log(k, 'MUTATION DOES NOT PARSE:', String(e).slice(0, 120)); process.exit(4); } } }
   if (fs.existsSync(TMP)) { console.log('refusing: ' + TMP + ' exists'); process.exit(3); }
   fs.writeFileSync(TMP, html); let out = '';
-  try { out = execSync('timeout 900 node /workspaces/lucid-winds/tools/chaff-wars-tests/' + part + '_gate.mjs index-fw.html /tmp/claude-1000/pnl/fw x', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 24 }); }
+  try { out = execSync('timeout 900 node /workspaces/lucid-winds/tools/chaff-wars-tests/' + part + '_gate.mjs index-fw.html /tmp/claude-1000/pnl/fw x', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 24, env: Object.assign({}, process.env, g.env || {}) }); }   /* g.env: the one block and size the check can fail at */
   catch (e) { out = (e.stdout || '') + (e.stderr || ''); }
   finally { fs.unlinkSync(TMP); }
   const fails = out.split('\n').filter(l => /FAIL/.test(l)), hit = fails.some(l => new RegExp(g.want).test(l));
