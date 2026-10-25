@@ -1,5 +1,8 @@
 # START HERE
 
+## 🗒 25 Oct (~00:16 UTC) HIS WORDS, VERBATIM: "Here's the super slice assets I have to upload all of the tally work from my computer cuz the files are too large to do it from my phone. Don't jump into this work. You can assess it and we will have Fable analyze and put together the work and I will have him make a handoff to get back to you to actually do the physical coding cutting and labor"
+Sort: the JOURNEY KIT arrived (super-slice-journey-kit.zip); ASSESS ONLY, no build. Done 00:20: vaulted (`vault-20261025-super-slice-journey-kit`, downloaded back and matched), copied to `assets/`, assessed in `docs/briefs/super-slice-3d/JOURNEY-KIT-INTAKE-OCT25.md` (21 of 21 at the asked sizes; three things to judge in game: the grass's diagonal stripes, the shelf crack repeating, a slim branch). TALLY: still coming from his computer. FABLE plans both and hands back to Opus for the cutting and coding.
+
 ## 🗒 24 Oct (~23:50 UTC) HIS WORDS, VERBATIM: "You can keep working. I have all the tally work for Fable and the extra super slice assets"
 Sort: (1) KEEP WORKING past the stop: Opus continues the build order, Pop N Lock Part 3 next (the layout pass and the launch gate). (2) Astra's TALLY return and the SUPER SLICE JOURNEY KIT are ready on his side, for FABLE. Done at 23:58: `HANDOFF-FABLE-OCT25.md` (intake, vault, review, the Tally plan, Super Slice Part H, the next build order, how to share the box with a running Opus); he uploads the files into `assets/`, opens a second session on Fable and says "read HANDOFF-FABLE-OCT25.md and do it".
 
