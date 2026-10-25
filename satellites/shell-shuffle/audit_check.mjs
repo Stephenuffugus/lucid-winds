@@ -123,7 +123,7 @@ const DASH_PROBE = `(() => {
 const server = await serve();
 const PORT = server.address().port;
 /* SS_PAGE=<file> runs the suite against a copy beside index.html (the fail watch: a broken copy must go red) */
-const BUILD_WANT = 'v1.2';   /* the build this suite was written for: bump with the page's BUILD */
+const BUILD_WANT = 'v1.3';   /* the build this suite was written for: bump with the page's BUILD */
 const DIRURL = `http://127.0.0.1:${PORT}/satellites/shell-shuffle/`;
 const URL0 = DIRURL + (process.env.SS_PAGE || '');
 const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox','--disable-dev-shm-usage'] });
@@ -489,6 +489,62 @@ for (const [name, poison] of Object.entries(POISONS)) {
   } catch (e) { k = { error: String(e).slice(0, 120) }; }
   console.log('  ' + (k && k.onButton ? '(known fault now gone: Play Again is clear on a first visit)' : '! KNOWN (feedback.js): on a first visit the ladybug tip covers Play Again after the first miss  ->  ' + JSON.stringify(k)));
   await ctx.close();
+}
+
+// ---- Part 2: the results sheet, the reveal frames, the painted toys (plans/shell-shuffle/BUILD-PLAN-OCT25.md)
+{
+  const SEED = { 'shellshuffle:v1': JSON.stringify({ coins: 100, bestLevel: 6, owned: ['classic'], ownedCups: ['house'], selected: 'classic', selectedCup: 'house',
+    daily: { last: null, streak: 0, best: 0, week: null, weekDays: 0, weekStreak: 0 } }) };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const until = async (page, fn, ms) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await page.evaluate(fn)) return true; await sleep(100); } return false; };
+  const out = { fxMiss: 0, fxReduced: 0 };
+  // a. a seeded miss: the sheet's numbers come from the seeded state (level set to 4 while guessing, best 6, 100 coins, no win this run)
+  const { ctx, page, errs } = await open('?sstest=1', SEED);
+  try {
+    const c = await page.evaluate(() => { const r = document.getElementById('actBtn').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    await page.touchscreen.tap(c.x, c.y);
+    out.guessing = await until(page, () => window.__ss.ball().phase === 'guessing', 20000);
+    await page.evaluate(() => { window.__ss.state().level = 4; });
+    out.coinsBefore = await page.evaluate(() => window.__ss.state().coins);
+    const b = await page.evaluate(() => window.__ss.ball()), wrong = b.order.find(id => id !== b.ballCup);
+    await page.click('#playfield .cup-wrap[data-id="' + wrong + '"]');
+    for (let i = 0; i < 12; i++) { out.fxMiss = Math.max(out.fxMiss, await page.evaluate(() => window.__ss.fxCount())); await sleep(50); }
+    out.sheet = await until(page, () => window.__ss.results().open, 4000);
+    out.r = await page.evaluate(() => window.__ss.results());
+    out.coinsAfter = await page.evaluate(() => window.__ss.state().coins);
+    out.share = await page.evaluate(() => window.__ss.shareText());
+    await page.click('#rAgain'); await sleep(400);
+    out.after = await page.evaluate(() => ({ level: window.__ss.state().level, phase: window.__ss.state().phase, open: window.__ss.results().open }));
+    out.toys = await page.evaluate(async () => { const names = ['toy_car', 'toy_dino', 'toy_alien', 'robot', 'rubber_duck', 'champion_cup']; const r = [];
+      for (const n of names) { try { const res = await fetch('art/s1/toys/' + n + '.webp'); const bm = res.ok ? await createImageBitmap(await res.blob()) : null; r.push(bm ? bm.width : 0); } catch (e) { r.push(-1); } } return r; });
+  } catch (e) { out.error = String(e).slice(0, 160); }
+  await ctx.close();
+  // b. under reduced motion a win on a new best shows no frame and no confetti
+  const two = await open('?sstest=1', SEED);
+  try {
+    await two.page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+    await two.page.reload({ waitUntil: 'load' }); await sleep(600);
+    const c = await two.page.evaluate(() => { const r = document.getElementById('actBtn').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    await two.page.touchscreen.tap(c.x, c.y);
+    await until(two.page, () => window.__ss.ball().phase === 'guessing', 20000);
+    await two.page.evaluate(() => { window.__ss.state().bestLevel = 0; });
+    const b = await two.page.evaluate(() => window.__ss.ball());
+    await two.page.click('#playfield .cup-wrap[data-id="' + b.ballCup + '"]');
+    for (let i = 0; i < 12; i++) { out.fxReduced = Math.max(out.fxReduced, await two.page.evaluate(() => window.__ss.fxCount())); await sleep(50); }
+    out.won = await two.page.evaluate(() => window.__ss.state().streak === 1);
+  } catch (e) { out.error2 = String(e).slice(0, 160); }
+  await two.ctx.close();
+  const src = fs.readFileSync(path.join(ROOT, 'satellites', SLUG, process.env.SS_PAGE || 'index.html'), 'utf8');
+  ok('Part 2: a seeded miss shows the sheet with the numbers of the seeded state (level 4, best 6, 0 coins this run, streak 0, +15 waiting)',
+    out.sheet && out.r && out.r.title === 'Level 4' && out.r.best === '6' && out.r.coins === '0' && out.r.streak === '0' && out.r.next === '+15 coins waiting' && out.r.again === 'Play again (Lv 3)', JSON.stringify(out.r) + (out.error || ''));
+  ok('Part 2: the sheet pays nothing (coins before the reveal equal coins after the sheet)', out.coinsBefore === 100 && out.coinsAfter === 100, out.coinsBefore + ' -> ' + out.coinsAfter);
+  ok('Part 2: Play again starts one level lower and closes the sheet', out.after && out.after.level === 3 && out.after.phase === 'play' && out.after.open === false, JSON.stringify(out.after));
+  ok('Part 2: the share text has no dashes and no exclamation marks', typeof out.share === 'string' && /^Shell Shuffle: level \d+, best \d+$/.test(out.share) && !/[-!—–]/.test(out.share), out.share);
+  ok('Part 2: the miss shows a reveal frame over the tapped cup', out.fxMiss >= 1, 'frames seen ' + out.fxMiss);
+  ok('Part 2: no frames under reduced motion (a win on a new best: no reveal frame, no confetti)', out.won === true && out.fxReduced === 0, 'won ' + out.won + ' frames ' + out.fxReduced + (out.error2 || ''));
+  ok('Part 2: the six painted toys resolve (createImageBitmap width > 0)', Array.isArray(out.toys) && out.toys.length === 6 && out.toys.every(w => w > 0), JSON.stringify(out.toys));
+  ok('Part 2: the five SVG toys left the page as base64', !/id:"(toycar|toydino|toyalien|toyrobot|toyduck)",[^\n]*uri:"data:/.test(src));
+  ok('Part 2: no page errors in the two runs', errs.length === 0 && two.errs.length === 0, JSON.stringify(errs.concat(two.errs)).slice(0, 200));
 }
 
 await browser.close();

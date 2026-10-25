@@ -56,6 +56,21 @@ tp = Image.open(src('ui', 'title_plate.jpg')).convert('RGB'); w = tp.width; h = 
 og = os.path.join(OUT, '..', '..', 'og', 'card-s1.jpg'); os.makedirs(os.path.dirname(og), exist_ok=True)
 tp.crop((0, top, w, top + h)).resize((1200, 630), Image.LANCZOS).save(og, 'JPEG', quality=84, optimize=True, progressive=True)
 
+# ── Part 2 (plans/shell-shuffle/BUILD-PLAN-OCT25.md): the reveal frames, the confetti, her six toys, the calendar plates, the
+# results card, the coin, the gift, the streak flame, the shop shelf and the two treasures. None of these load at boot.
+art['fx'], art['toys'], art['ui'] = {}, {}, {}
+for n, cnt, px in (('reveal_win', 6, 220), ('reveal_miss', 4, 220), ('confetti', 6, 600)):   # soft edged effects: no bleed, the whole canvas
+    art['fx'][n] = [save(Image.open(src('fx', '%s_%02d.png' % (n, i))).convert('RGBA').resize((px, px), Image.LANCZOS), 'fx/%s_%02d.webp' % (n, i), q=85 if px < 600 else 80) for i in range(1, cnt + 1)]
+for t in ('champion_cup', 'robot', 'rubber_duck', 'toy_alien', 'toy_car', 'toy_dino'):   # painted cut outs: the Part A bleed
+    rel = save(bleed(Image.open(src('toys', t + '.png'))).resize((192, 192), Image.LANCZOS), 'toys/%s.webp' % t, q=85)
+    art['toys'][t] = {'file': rel, 'box': list(bbox(Image.open(os.path.join(OUT, rel)).convert('RGBA')))}
+for n, px in (('calendar_day', 96), ('calendar_day_done', 96), ('coin', 64), ('gift', 64), ('streak_flame', 64)):
+    art['ui'][n] = save(Image.open(src('ui', n + '.png')).convert('RGBA').resize((px, px), Image.LANCZOS), 'ui/%s.webp' % n, q=85)
+art['ui']['results_card'] = save(Image.open(src('ui', 'results_card.png')).convert('RGBA').resize((540, 660), Image.LANCZOS), 'ui/results_card.webp', q=85)
+art['ui']['shop_shelf'] = save(Image.open(src('ui', 'shop_shelf.png')).convert('RGBA').resize((600, 200), Image.LANCZOS), 'ui/shop_shelf.webp', q=85)
+for n in ('treasure_acorn', 'treasure_star'):   # alternate hidden objects (SS-19): cut, not wired, his call
+    art['ui'][n] = save(bleed(Image.open(src('extras', 'treasures', n + '.png'))).resize((96, 96), Image.LANCZOS), 'balls/%s.webp' % n, q=85)
+
 with open(os.path.join(OUT, 'art.json'), 'w') as fh:
     json.dump(art, fh, indent=1, sort_keys=True)
 boot = ['scene/table_main.webp', 'scene/mat.webp', 'scene/lamp_glow.webp', 'cups/house.webp', 'balls/house.webp', 'ui/logo.webp']
