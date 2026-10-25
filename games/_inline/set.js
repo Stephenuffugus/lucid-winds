@@ -9,7 +9,7 @@
 (function(){
   'use strict';
   var G = window._G;
-  var _e = G.e, _playWin = G.playWin, _st = G.st, ms = G.ms, mm = G.mm, mc = G.mc, sm = G.sm, _sr = G.sr;
+  var _e = G.e, _st = G.st, ms = G.ms, mm = G.mm, mc = G.mc, sm = G.sm, _sr = G.sr;
 
   var BUILD = 't1.0';                                   // shown in Settings; every art URL carries it
   var ART = '/assets/games/set/t1/';
@@ -53,6 +53,7 @@
     try{ navigator.clipboard.writeText(text+'\n'+url).then(function(){ sm('Copied to the clipboard.'); },function(){}); return; }catch(e){}
     sm('Long press to copy: '+text);
   }
+  function trios(n){ return n + (n === 1 ? ' trio' : ' trios'); }
   function describe(card) {   // the accessible name, count spoken explicitly, colour with its seal
     return card.number + ' ' + SHAPES[card.shape] + (card.number > 1 ? ' shapes' : '') + ', ' + COLOURS[card.color] + ' (' + SEALS[COLOURS[card.color]] + ' seal), ' + card.shading + ' fill';
   }
@@ -122,10 +123,10 @@
     '.ts-tg[aria-pressed="true"]{background:linear-gradient(180deg,#ffe08a,#f5c451);color:#3a230a;border-color:transparent}',
     '.ts-tg.wide{min-width:150px}',
     '.ts-note{color:#8a9178;font-size:.85rem;margin:8px 4px 0;line-height:1.4}',
-    '.ts-results{position:relative;width:min(92vw,360px);aspect-ratio:450/550;margin:0 auto;background:url("' + art('ui/results_card.webp') + '") center/100% 100% no-repeat;display:flex;flex-direction:column;align-items:center;padding:18% 10% 8%;box-sizing:border-box;color:#e8dcc8;text-align:center}',
-    '.ts-results h3{margin:0;font-size:1.45rem;color:#c8a84b;font-family:Georgia,serif}',
-    '.ts-results .big{font-size:2.2rem;font-weight:700;color:#fff;margin:6px 0 2px}',
-    '.ts-results .sub{color:#8a9178;font-size:.9rem;margin-bottom:auto}',
+    '.ts-results{position:relative;width:min(92vw,360px);aspect-ratio:450/550;margin:0 auto;background:url("' + art('ui/results_card.webp') + '") center/100% 100% no-repeat;display:flex;flex-direction:column;align-items:center;padding:18% 10% 8%;box-sizing:border-box;color:#18291f;text-align:center}',
+    '.ts-results h3{margin:0;font-size:1.45rem;color:#856000;font-family:Georgia,serif}',
+    '.ts-results .big{font-size:2.1rem;font-weight:700;color:#18291f;margin:6px 0 2px}',
+    '.ts-results .sub{color:#4a5a44;font-size:.9rem;margin-bottom:auto}',
     '.ts-results .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}',
     '.ts-confetti{position:fixed;left:50%;top:50%;width:min(100vw,450px);aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;z-index:61}'
   ].join('\n');
@@ -252,18 +253,18 @@
       stopTimer(); won = true;
       var secs = Math.max(1, Math.round((Date.now() - startAt) / 1000)), rec = dailyLoad(), first = !(rec && rec.done);
       if (first) dailySave({ day: todayKey(), num: dayNum(), secs: secs, trios: found, done: true });
-      var text = 'Three Sisters Daily #' + dayNum() + ': ' + found + ' trios in ' + fmtSecs(secs) + '. Can you beat my time?';
+      var text = 'Three Sisters Daily #' + dayNum() + ': ' + trios(found) + ' in ' + fmtSecs(secs) + '. Can you beat my time?';
       results.querySelector('#ts-r-share').onclick = function(){ shareResult(text, 'https://lucidwinds.com/play/set.html'); };
-      _e('game_win'); _playWin(); _sr('set', { w: true, s: found }); SFX.daily(); paintModes();
+      _e('game_win'); G.play('win'); _sr('set', { w: true, s: found }); SFX.daily(); paintModes();
       if (!motionOff()) { var cf = document.createElement('img'); cf.className = 'ts-confetti'; cf.alt = ''; document.body.appendChild(cf); var i = 1; cf.src = art('fx/daily_done_01.webp'); var t = setInterval(function(){ i++; if (i > 6) { clearInterval(t); cf.remove(); return; } cf.src = art('fx/daily_done_0' + i + '.webp'); }, 90); }
-      openResults('Daily Trio #' + dayNum(), found + ' trios in ' + fmtSecs(secs), first ? 'Locked in. Come back tomorrow.' : 'A practice run. Today already counted.', window._setDaily);
-      say('Daily done: ' + found + ' trios in ' + fmtSecs(secs) + (first ? ', locked in.' : ' (practice).'));
+      openResults('Daily Trio #' + dayNum(), trios(found) + ' in ' + fmtSecs(secs), first ? 'Locked in. Come back tomorrow.' : 'A practice run. Today already counted.', window._setDaily);
+      say('Daily done: ' + trios(found) + ' in ' + fmtSecs(secs) + (first ? ', locked in.' : ' (practice).'));
     }
     function finishClassic(){
-      won = true; _e('game_win'); _playWin(); _sr('set', { w: true, s: found }); SFX.daily();
-      results.querySelector('#ts-r-share').onclick = function(){ shareResult('Three Sisters: the whole deck, ' + found + ' trios found.', 'https://lucidwinds.com/play/set.html'); };
-      openResults('Board cleared', found + ' trios found', 'The whole deck, well seen.', window._setNew);
-      say('Board cleared. ' + found + ' trios found.');
+      won = true; _e('game_win'); G.play('win'); _sr('set', { w: true, s: found }); SFX.daily();
+      results.querySelector('#ts-r-share').onclick = function(){ shareResult('Three Sisters: the whole deck, ' + trios(found) + ' found.', 'https://lucidwinds.com/play/set.html'); };
+      openResults('Board cleared', trios(found) + ' found', 'The whole deck, well seen.', window._setNew);
+      say('Board cleared. ' + trios(found) + ' found.');
     }
     function startRound(m){
       mode = m; deck = (m === 'daily') ? createDeck(mulberry32(dayNum() + 77001)) : createDeck();

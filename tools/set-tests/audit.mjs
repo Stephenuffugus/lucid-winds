@@ -62,7 +62,7 @@ const BAD = /[!‐-―]|[A-Za-z]-[A-Za-z]| - /;
   if (SHOTS) await p.screenshot({ path: `${SHOTS}/daily-360.png` });
   const trio = await p.evaluate(() => window.__ts.trio()); for (const i of trio) { await tapCard(p, i); await sleep(120); } await sleep(1100);
   const r = await p.evaluate(() => ({ open: document.getElementById('ts-results').classList.contains('open'), title: document.getElementById('ts-r-title').textContent, big: document.getElementById('ts-r-big').textContent, rec: JSON.parse(localStorage.getItem('lw_set_daily') || 'null') }));
-  F(r.open && /^Daily Trio #\d+$/.test(r.title) && /^1 trios in \d+:\d\d$/.test(r.big) && r.rec && r.rec.done === true && r.rec.trios === 1, `the Daily ends on the results card, locked in (${JSON.stringify(r)})`);
+  F(r.open && /^Daily Trio #\d+$/.test(r.title) && /^1 trio in \d+:\d\d$/.test(r.big) && r.rec && r.rec.done === true && r.rec.trios === 1, `the Daily ends on the results card, locked in (${JSON.stringify(r)})`);
   if (SHOTS) await p.screenshot({ path: `${SHOTS}/results-360.png` });
   await ctx.close(); }
 await b.close();
