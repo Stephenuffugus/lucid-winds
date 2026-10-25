@@ -122,7 +122,9 @@ const DASH_PROBE = `(() => {
 
 const server = await serve();
 const PORT = server.address().port;
-const URL0 = `http://127.0.0.1:${PORT}/satellites/shell-shuffle/`;
+/* SS_PAGE=<file> runs the suite against a copy beside index.html (the fail watch: a broken copy must go red) */
+const DIRURL = `http://127.0.0.1:${PORT}/satellites/shell-shuffle/`;
+const URL0 = DIRURL + (process.env.SS_PAGE || '');
 const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox','--disable-dev-shm-usage'] });
 
 async function open(query = '', seed = null){
@@ -278,7 +280,7 @@ for (const [name, poison] of Object.entries(POISONS)) {
   // key collapsed to the fleet-wide 'sw_sb_index.html' bucket
   const p2 = await ctx.newPage();
   await p2.setViewport({ width: 375, height: 667 });
-  await p2.goto(URL0 + 'index.html', { waitUntil: 'load' });
+  await p2.goto(DIRURL + (process.env.SS_PAGE || 'index.html'), { waitUntil: 'load' });
   await new Promise(r => setTimeout(r, 500));
   const keys2 = await p2.evaluate(() => { window._sbCapEarn(3, 'probe'); return Object.keys(localStorage).filter(k => k.indexOf('sw_sb_') === 0); });
   ok('served as /index.html the bucket is still this game', keys2.indexOf('sw_sb_shell-shuffle') >= 0, JSON.stringify(keys2));
@@ -325,6 +327,110 @@ for (const [name, poison] of Object.entries(POISONS)) {
   await new Promise(r => setTimeout(r, 2600));
   hits = await page.evaluate(FAB_PROBE + '(' + JSON.stringify(box) + ')');
   ok('daily sheet: nothing tappable under the feedback fab', hits.mounted && !hits.eats, JSON.stringify(hits).slice(0, 260));
+  await ctx.close();
+}
+
+// ---- Part 0 (25 Oct): calm copy, the reveal says where the ball was (marks and words), the cups are buttons only while
+//      a guess is wanted. Real touches (CDP touch events), never el.click(); expected values worked out here.
+{
+  /* lwfb_explained: the ladybug's once-per-device tip has been seen (fresh, it sits over Play Again for 7 s: feedback.js, reported) */
+  const { ctx, page, errs } = await open('?sstest=1', { lwfb_explained: '1' });
+  /* every RENDERED text node (an element with boxes, not inside a closed sheet) that holds an exclamation mark */
+  const BANG = () => page.evaluate(() => { const out = [], w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    while (w.nextNode()) { const n = w.currentNode, p = n.parentElement; if (!p || /^(SCRIPT|STYLE)$/.test(p.tagName) || !p.getClientRects().length) continue;
+      const cs = getComputedStyle(p); if (cs.visibility === 'hidden' || +cs.opacity === 0) continue;
+      const t = n.data.trim(); if (t.indexOf('!') >= 0) out.push(t.slice(0, 60)); } return out; });
+  const touch = async (sel) => { const c = await page.evaluate(s => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); return r.width ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null; }, sel);
+    if (!c) return false; await page.touchscreen.tap(c.x, c.y); return true; };
+  const until = async (fn, ms) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await page.evaluate(fn)) return true; await new Promise(r => setTimeout(r, 100)); } return false; };
+  const roles = () => page.evaluate(() => [...document.querySelectorAll('#playfield .cup-wrap')].map(w => ({ id: +w.dataset.id, role: w.getAttribute('role'), tab: w.getAttribute('tabindex'), name: w.getAttribute('aria-label') })));
+  let r = {};
+  try {
+    r.mainBang = await BANG();
+    r.started = await touch('#actBtn');
+    await until(() => window.__ss && window.__ss.ball().phase === 'play', 4000);
+    r.playRoles = await roles();
+    await until(() => /Shuffling/.test(document.getElementById('status').textContent), 6000); await new Promise(res => setTimeout(res, 250));
+    r.playRoles = r.playRoles.concat(await roles());   /* and again in the middle of the swaps */
+    r.guessing = await until(() => window.__ss.ball().phase === 'guessing', 20000);
+    const b = await page.evaluate(() => window.__ss.ball());
+    r.guessRoles = await roles(); r.ball = b;
+    /* the names by position from the left, worked out from the order (never read from the page's own labels) */
+    r.namesOk = b.order.every((id, s) => { const w = r.guessRoles.find(x => x.id === id); return w && w.role === 'button' && w.tab === '0' && w.name === 'Cup ' + (s + 1) + ' of ' + b.n; });
+    const wrong = b.order.find(id => id !== b.ballCup);
+    r.tapped = wrong; await touch('#playfield .cup-wrap[data-id="' + wrong + '"]');
+    await until(() => window.__ss.ball().phase === 'idle', 4000); await new Promise(res => setTimeout(res, 300));
+    const s = b.order.indexOf(b.ballCup);
+    const where = b.n <= 3 ? 'the ' + (s === 0 ? 'left' : (s === b.n - 1 ? 'right' : 'middle')) + ' cup' : 'cup ' + (s + 1) + ' of ' + b.n;
+    r.wantStatus = 'Not that one. It was ' + where;
+    r.miss = await page.evaluate((ballCup, tapped) => {
+      const at = id => document.querySelector('#playfield .cup-wrap[data-id="' + id + '"]');
+      const ok = at(ballCup) && at(ballCup).querySelector('.cup-mark.ok'), ring = at(tapped) && at(tapped).querySelector('.cup-mark.ring');
+      const under = (m, w) => { if (!m || !w) return false; const a = m.getBoundingClientRect(), c = w.getBoundingClientRect(); return Math.abs((a.left + a.right) / 2 - (c.left + c.right) / 2) < 3 && a.top >= c.bottom - 12 && a.width >= 20; };
+      const okCs = ok && getComputedStyle(ok);
+      const st = document.getElementById('status'), lh = parseFloat(getComputedStyle(st).lineHeight) || 24;
+      return { status: st.textContent, oneLine: st.getBoundingClientRect().height < lh * 1.6, okUnder: under(ok, at(ballCup)), ringUnder: under(ring, at(tapped)),
+        okCream: !!okCs && okCs.backgroundColor === 'rgb(246, 239, 228)',   /* the cream #f6efe4, written here */
+        okCount: document.querySelectorAll('#playfield .cup-mark.ok').length, ringCount: document.querySelectorAll('#playfield .cup-mark.ring').length };
+    }, b.ballCup, wrong);
+    r.afterRoles = await roles();
+    r.missBang = await BANG();
+    /* Enter on a focused cup resolves the guess */
+    await touch('#actBtn');
+    r.guessing2 = await until(() => window.__ss.ball().phase === 'guessing', 20000);
+    await page.evaluate(() => { const w = document.querySelector('#playfield .cup-wrap[role="button"]'); if (w) w.focus(); });
+    await page.keyboard.press('Enter');
+    r.enterResolved = await until(() => window.__ss.ball().phase !== 'guessing', 1500);
+    await until(() => window.__ss.ball().phase === 'idle' || window.__ss.ball().phase === 'play', 4000);
+    /* a miss at 3 cups and at 6 cups, on purpose, each line worked out here from the ball's place */
+    r.more = [];
+    for (const lv of [2, 5]) {
+      await until(() => window.__ss.ball().phase === 'idle', 15000);
+      const started = await page.evaluate(l => window.__ss.start(l), lv);   /* exactly this level (the rig, ?sstest=1 only) */
+      const g = await until(() => window.__ss.ball().phase === 'guessing', 30000);
+      const bb = await page.evaluate(() => window.__ss.ball());
+      const wr = bb.order.find(id => id !== bb.ballCup), s2 = bb.order.indexOf(bb.ballCup);
+      /* Space this time, on the wrong cup */
+      await page.evaluate(id => document.querySelector('#playfield .cup-wrap[data-id="' + id + '"]').focus(), wr);
+      await page.keyboard.press('Space');
+      await until(() => window.__ss.ball().phase === 'idle', 5000);
+      const want = 'Not that one. It was ' + (bb.n <= 3 ? 'the ' + (s2 === 0 ? 'left' : (s2 === bb.n - 1 ? 'right' : 'middle')) + ' cup' : 'cup ' + (s2 + 1) + ' of ' + bb.n);
+      const got = await page.evaluate(() => { const st = document.getElementById('status'), lh = parseFloat(getComputedStyle(st).lineHeight) || 24; return { t: st.textContent, one: st.getBoundingClientRect().height < lh * 1.6 }; });
+      r.more.push({ lv, n: bb.n, g, started, want, got: got.t, one: got.one });
+    }
+    await page.evaluate(() => { const o = document.getElementById('pausedOv'); if (o) o.classList.remove('open'); });
+    await touch('#openDaily'); await new Promise(res => setTimeout(res, 2600)); r.dailyBang = await BANG();
+    await page.evaluate(() => { const c = document.getElementById('closeDaily'); if (c) c.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    await new Promise(res => setTimeout(res, 600));
+    await touch('#openShop'); await new Promise(res => setTimeout(res, 2600)); r.shopBang = await BANG();
+  } catch (e) { r.error = String(e).slice(0, 200); }
+  ok('Part 0: no rendered text holds an exclamation mark (main, a miss, the Daily sheet, the Shop)', !r.error && [r.mainBang, r.missBang, r.dailyBang, r.shopBang].every(a => Array.isArray(a) && a.length === 0), JSON.stringify({ e: r.error, m: r.mainBang, x: r.missBang, d: r.dailyBang, s: r.shopBang }));
+  ok('Part 0: while the cups shuffle they are not buttons', Array.isArray(r.playRoles) && r.playRoles.length >= 2 && r.playRoles.every(w => !w.role && !w.tab && !w.name), JSON.stringify(r.playRoles));
+  ok('Part 0: while a guess is wanted every cup is a button named by its place ("Cup N of M")', r.guessing && r.namesOk === true, JSON.stringify(r.guessRoles));
+  ok('Part 0: a miss marks the ball\'s cup with a cream check under it and the tapped cup with a ring', r.miss && r.miss.okUnder && r.miss.ringUnder && r.miss.okCream && r.miss.okCount === 1 && r.miss.ringCount === 1, JSON.stringify(r.miss));
+  ok('Part 0: the miss line says where the ball was, in words, worked out from its place, on one line', r.miss && r.miss.status === r.wantStatus && r.miss.oneLine, JSON.stringify({ got: r.miss && r.miss.status, want: r.wantStatus, oneLine: r.miss && r.miss.oneLine }));
+  ok('Part 0: after the guess the cups stop being buttons', Array.isArray(r.afterRoles) && r.afterRoles.length >= 2 && r.afterRoles.every(w => !w.role && !w.tab), JSON.stringify(r.afterRoles));
+  ok('Part 0: Enter on a focused cup makes the guess', r.guessing2 && r.enterResolved, JSON.stringify({ g: r.guessing2, e: r.enterResolved }));
+  ok('Part 0: Space makes the guess, and a miss at 3 and at 6 cups says where in words, on one line at 375', Array.isArray(r.more) && r.more.length === 2 && r.more[0].n === 3 && r.more[1].n === 6 && r.more.every(m => m.g && m.got === m.want && m.one), JSON.stringify(r.more));
+  ok('Part 0: How to play shows the build', await page.evaluate(() => (document.getElementById('buildLine') || {}).textContent === 'Build v1.1'));
+  ok('Part 0: no page errors', errs.length === 0, errs[0]);
+  await ctx.close();
+}
+/* KNOWN, reported, not counted (feedback.js is the fleet's, outside this game's parts): on a FIRST visit the ladybug's
+   explanation tip sits over Play Again for 7 s after the first miss, and a tap there lands on the tip */
+{
+  const { ctx, page } = await open('?sstest=1');
+  let k = null;
+  try {
+    const c = await page.evaluate(() => { const r = document.getElementById('actBtn').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    await page.touchscreen.tap(c.x, c.y);
+    const t0 = Date.now(); while (Date.now() - t0 < 20000 && !(await page.evaluate(() => window.__ss.ball().phase === 'guessing'))) await new Promise(r => setTimeout(r, 100));
+    const b = await page.evaluate(() => window.__ss.ball()), wr = b.order.find(id => id !== b.ballCup);
+    await page.evaluate(id => document.querySelector('#playfield .cup-wrap[data-id="' + id + '"]').dispatchEvent(new MouseEvent('click', { bubbles: true })), wr);
+    await new Promise(r => setTimeout(r, 1200));
+    k = await page.evaluate(() => { const e = document.getElementById('actBtn'), r = e.getBoundingClientRect(), h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return { onButton: !!h && e.contains(h), hit: h && (h.id || h.className) }; });
+  } catch (e) { k = { error: String(e).slice(0, 120) }; }
+  console.log('  ' + (k && k.onButton ? '(known fault now gone: Play Again is clear on a first visit)' : '! KNOWN (feedback.js): on a first visit the ladybug tip covers Play Again after the first miss  ->  ' + JSON.stringify(k)));
   await ctx.close();
 }
 

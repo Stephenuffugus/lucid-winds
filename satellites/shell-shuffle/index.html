@@ -114,6 +114,12 @@
     -webkit-user-drag:none; user-select:none; filter:drop-shadow(0 8px 9px rgba(0,0,0,.45)); }
   .cup-wrap.good .cup-body{ filter:drop-shadow(0 0 5px var(--good)) drop-shadow(0 0 10px var(--good)); }
   .cup-wrap.bad .cup-body{ filter:drop-shadow(0 0 5px var(--bad)) drop-shadow(0 0 10px var(--bad)); }
+  /* the reveal's marks, in cream so they never rest on hue alone: a check under the ball's cup, an empty ring under a wrong tap */
+  .cup-mark{ position:absolute; left:50%; bottom:-18px; transform:translateX(-50%); width:24px; height:24px; border-radius:50%;
+    z-index:4; display:none; pointer-events:none; box-sizing:border-box; }
+  .cup-mark.ok{ display:flex; align-items:center; justify-content:center; background:var(--cream); color:#2a1b10; font:800 15px/1 system-ui,sans-serif; }
+  .cup-mark.ring{ display:block; border:3px solid var(--cream); }
+  .cup-wrap[role="button"]:focus-visible .cup-body{ outline:3px solid var(--cream); outline-offset:4px; border-radius:12px; }
 
   .ball{ position:absolute; bottom:14px; left:0; border-radius:50%; z-index:1;
     visibility:hidden;
@@ -244,7 +250,7 @@
     <!-- build 20 -->
   </header>
 
-  <div class="status" id="status">Tap Start and find the ball!</div>
+  <div class="status" id="status" aria-live="polite">Tap Start and find the ball</div>
   <div class="streak" id="streakEl"></div>
 
   <div class="stage">
@@ -270,6 +276,7 @@
     <p style="margin:0 0 12px;">3. When they stop, tap the cup you think hides the ball.</p>
     <p style="margin:0 0 12px;">4. Guess right to win coins. Each round adds a cup, shuffles faster, and pays more.</p>
     <p style="margin:0;">Spend coins in the <b>Shop</b> on new balls and cups. Come back daily to build your streak and unlock exclusives.</p>
+    <p id="buildLine" style="margin:14px 0 0;font-size:12px;font-weight:600;opacity:.6;"></p>
   </div>
   <button class="btn" id="closeHelp">Got it</button>
 </div>
@@ -331,7 +338,7 @@
     <div class="streak-hero">
       <div class="flame">🔥</div>
       <div class="streak-big"><span id="hStreak">0</span> <small>day streak</small></div>
-      <div class="streak-best">Best <span id="hBest">0</span> · 🔥 keep it going!</div>
+      <div class="streak-best">Best <span id="hBest">0</span> · 🔥 keep it going</div>
     </div>
 
     <div class="cal" id="cal"></div>
@@ -350,6 +357,7 @@
 <script>
 (function(){
   "use strict";
+  const BUILD='v1.1';   /* shown small in How to play, so a phone can prove which build it holds */
   const $ = id => document.getElementById(id);
   const delay = ms => new Promise(r=>setTimeout(r,ms));
   const vibe = p => { try{ if(navigator.vibrate) navigator.vibrate(p);}catch(e){} };
@@ -702,7 +710,7 @@
     const bv=$('bestv'); if(bv) bv.textContent=state.bestLevel;
     $('dstreak').textContent=state.daily.streak;
     $('dbadge').style.display = dailyAvailable() ? 'inline-block' : 'none';
-    $('streakEl').textContent = state.streak>1 ? ('🔥 '+state.streak+' in a row!') : '';
+    $('streakEl').textContent = state.streak>1 ? ('🔥 '+state.streak+' in a row') : '';
     const ht=$('hint'); if(ht) ht.textContent=hintText();
   }
   function setStatus(t,cls){ const s=$('status'); s.textContent=t; s.className='status'+(cls?' '+cls:''); }
@@ -775,7 +783,8 @@
       const shadow=document.createElement('div'); shadow.className='cup-shadow';
       const body=document.createElement('div'); body.className='cup-body';
       body.innerHTML='<img class="cup-img" src="'+curCup().uri+'" draggable="false" alt="">';
-      wrap.appendChild(shadow); wrap.appendChild(body); pf.appendChild(wrap);
+      const mark=document.createElement('div'); mark.className='cup-mark'; mark.setAttribute('aria-hidden','true');
+      wrap.appendChild(shadow); wrap.appendChild(body); wrap.appendChild(mark); pf.appendChild(wrap);
       wraps[i]=wrap; bodies[i]=body;
     }
     ballEl=document.createElement('div'); ballEl.className='ball'; decorateBall(ballEl, state.selected);
@@ -799,11 +808,32 @@
     }
     applyTransforms();
   }
-  function clearGlow(){ for(const id in wraps){ wraps[id].classList.remove('good','bad'); bodies[id].classList.remove('lifted'); } }
+  function clearGlow(){ for(const id in wraps){ wraps[id].classList.remove('good','bad'); bodies[id].classList.remove('lifted');
+    const m=wraps[id].querySelector('.cup-mark'); if(m){ m.className='cup-mark'; m.textContent=''; } } }
+  function markCup(id, kind){ const m=wraps[id]&&wraps[id].querySelector('.cup-mark'); if(!m) return; m.className='cup-mark '+kind; m.textContent=kind==='ok'?'✓':''; }
+  /* where the ball was, in words: left, middle, right for up to three cups, then "cup N of M" counted from the left */
+  function whereWords(id){ const n=order.length, s=order.indexOf(id);
+    if(n<=3) return 'the '+(s===0?'left':(s===n-1?'right':'middle'))+' cup';
+    return 'cup '+(s+1)+' of '+n; }
+  /* while a guess is wanted the cups are buttons (a name by position, never by contents; Enter and Space tap); otherwise not */
+  let keyGuess=false;   /* the last guess came from a key: the next guess puts focus on the first cup */
+  function cupsAsButtons(on){ const n=order.length;
+    for(let s=0;s<n;s++){ const w=wraps[order[s]]; if(!w) continue;
+      if(on){ w.setAttribute('role','button'); w.tabIndex=0; w.setAttribute('aria-label','Cup '+(s+1)+' of '+n); }
+      else { w.removeAttribute('role'); w.removeAttribute('tabindex'); w.removeAttribute('aria-label'); } }
+    if(on && keyGuess && wraps[order[0]]) wraps[order[0]].focus(); }
 
   pf.addEventListener('click', e=>{
     if(state.phase!=='guessing') return;
     const wrap=e.target.closest('.cup-wrap'); if(!wrap) return;
+    keyGuess=false;
+    const id=parseInt(wrap.dataset.id,10);
+    if(guessResolver){ const r=guessResolver; guessResolver=null; r(id); }
+  });
+  pf.addEventListener('keydown', e=>{
+    if(state.phase!=='guessing' || (e.key!=='Enter' && e.key!==' ')) return;
+    const wrap=e.target.closest('.cup-wrap'); if(!wrap) return;
+    e.preventDefault(); keyGuess=true;
     const id=parseInt(wrap.dataset.id,10);
     if(guessResolver){ const r=guessResolver; guessResolver=null; r(id); }
   });
@@ -837,10 +867,10 @@
     const n=shuffleCount();
     for(let i=0;i<n;i++){ await gate(); doSwap(); await delay(swapDur()+25); }
 
-    setStatus("Where's the ball? Tap a cup!");
-    state.phase='guessing'; updatePause();
+    setStatus('Where is the ball? Tap a cup');
+    state.phase='guessing'; updatePause(); cupsAsButtons(true);
     const guess = await waitGuess();
-    state.phase='reveal'; updatePause();
+    state.phase='reveal'; updatePause(); cupsAsButtons(false);
     const correct = (guess===ballCup);
     bodies[guess].classList.add('lifted');
     wraps[guess].classList.add(correct?'good':'bad');
@@ -850,7 +880,8 @@
       const r=reward();
       state.coins+=r; state.streak++;
       if(state.level>state.bestLevel) state.bestLevel=state.level;
-      setStatus('Nailed it!  +'+r, 'win'); vibe(35); hud(); save();
+      markCup(guess,'ok');
+      setStatus('Found it, +'+r, 'win'); vibe(35); hud(); save();
       window._sbCapEarn&&window._sbCapEarn(3, "shell-shuffle:level_complete");/* 30/day cap */
       state.level++;
       await delay(1500);
@@ -858,8 +889,9 @@
     }else{
       await delay(360);
       bodies[ballCup].classList.add('lifted'); wraps[ballCup].classList.add('good');
-      ballEl.classList.add('show');
-      setStatus('Wrong cup! Reached level '+state.level+'.', 'lose'); vibe([25,60,25]);
+      ballEl.classList.add('show'); markCup(ballCup,'ok'); markCup(guess,'ring');
+      /* one line: two wrapped under the lifted cups at 375 px; the level reached stays in the HUD (#lvl) */
+      setStatus('Not that one. It was '+whereWords(ballCup), 'lose'); vibe([25,60,25]);
       if(state.level>state.bestLevel) state.bestLevel=state.level;
       state.streak=0; state.phase='idle'; hud(); save(); updatePause();
       const back = Math.max(1, state.level - 1);
@@ -967,10 +999,10 @@
     const cb=$('claimBtn');
     if(dailyAvailable()){ cb.disabled=false; cb.textContent='Claim today  +'+DAILY_COINS[nextIdx]+' coins'; cb.onclick=doClaim; }
     else { cb.disabled=true; cb.textContent='Claimed ✓  come back tomorrow'; cb.onclick=null;
-      if(!$('claimNote').textContent) $('claimNote').textContent='See you tomorrow to keep the streak alive!'; }
+      if(!$('claimNote').textContent) $('claimNote').textContent='Come back tomorrow to keep the streak'; }
     const wd=Math.min(state.daily.weekDays,7);
     $('wFill').style.width=Math.min(100,(wd/WEEK_GOAL)*100)+'%';
-    $('wText').textContent=wd+' / '+WEEK_GOAL+' days'+(wd>=WEEK_GOAL?'  ✓ goal met!':'');
+    $('wText').textContent=wd+' / '+WEEK_GOAL+' days'+(wd>=WEEK_GOAL?'  ✓ goal met':'');
     renderExclusive();
   }
   // ---------- streak reminders ----------
@@ -986,10 +1018,10 @@
   function reminderText(){
     const s = state.daily.streak;
     const fig = STREAK_UNLOCK[s+1];
-    if(fig) return {title:'Shell Shuffle 🔥', body:`1 more day for the ${FIGURE_NAME[fig]}! Don't let your ${s}-day streak slip.`};
-    if(s>=2)   return {title:'Shell Shuffle 🔥', body:`Keep your ${s}-day streak alive. Play today!`};
-    if(s===1)  return {title:'Shell Shuffle 🎁', body:`Your streak just started. Come back for day 2!`};
-    return {title:'Shell Shuffle 🎁', body:`Your daily reward is ready. Tap to play!`};
+    if(fig) return {title:'Shell Shuffle 🔥', body:`1 more day for the ${FIGURE_NAME[fig]}. Keep your ${s} day streak going.`};
+    if(s>=2)   return {title:'Shell Shuffle 🔥', body:`Keep your ${s} day streak going. Play today`};
+    if(s===1)  return {title:'Shell Shuffle 🎁', body:`Your streak just started. Come back for day 2`};
+    return {title:'Shell Shuffle 🎁', body:`Your daily reward is ready. Tap to play`};
   }
   function nextReminderTime(){
     const n=new Date();
@@ -1036,7 +1068,7 @@
       if(p!=='granted') return false;
     }
     state.daily.reminderOptIn=true; save();
-    await showNote('Reminders on! 🔔', {body:`We'll nudge you around 7pm so your streak stays alive.`});
+    await showNote('Reminders on 🔔', {body:`We'll nudge you around 7pm so your streak stays alive.`});
     await scheduleReminder();
     syncRemindBtn();
     return true;
@@ -1051,7 +1083,7 @@
   function doClaim(){
     const res=claimDaily(); if(!res) return;
     let note='+'+res.coins+' coins';
-    if(res.unlocked.length) note+='  🎉 Unlocked '+res.unlocked.map(nameOf).join(', ')+'!';
+    if(res.unlocked.length) note+='  🎉 Unlocked '+res.unlocked.map(nameOf).join(', ');
     $('claimNote').textContent=note; vibe([20,40,20]);
     renderDaily();
     // Retention hook: after the first claim (a smart, earned moment) ask to remind; otherwise reschedule.
@@ -1061,6 +1093,7 @@
   }
   function openDaily(){ refreshWeek(); save(); $('claimNote').textContent=''; renderDaily(); syncRemindBtn(); $('daily').classList.add('open'); }
   function closeDaily(){ $('daily').classList.remove('open'); }
+  $('buildLine').textContent='Build '+BUILD;
   $('openHelp').onclick=()=>$('helpOv').classList.add('open');
   $('closeHelp').onclick=()=>$('helpOv').classList.remove('open');
   $('openDaily').onclick=openDaily;
@@ -1108,6 +1141,8 @@
                     dbl:doubleChance(), reward:reward(), hint:hintText() };
         state.level=keep; return out; },
       setLevel(lv){ state.level=lv; hud(); return hintText(); },
+      ball(){ return { ballCup, order: order.slice(), n: order.length, phase: state.phase }; },
+      start(lv){ startAt(lv); return true; },
       state(){ return state; }
     };
   }
