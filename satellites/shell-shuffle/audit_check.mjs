@@ -123,7 +123,7 @@ const DASH_PROBE = `(() => {
 const server = await serve();
 const PORT = server.address().port;
 /* SS_PAGE=<file> runs the suite against a copy beside index.html (the fail watch: a broken copy must go red) */
-const BUILD_WANT = 'v1.3';   /* the build this suite was written for: bump with the page's BUILD */
+const BUILD_WANT = 'v1.4';   /* the build this suite was written for: bump with the page's BUILD */
 const DIRURL = `http://127.0.0.1:${PORT}/satellites/shell-shuffle/`;
 const URL0 = DIRURL + (process.env.SS_PAGE || '');
 const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox','--disable-dev-shm-usage'] });
@@ -545,6 +545,60 @@ for (const [name, poison] of Object.entries(POISONS)) {
   ok('Part 2: the six painted toys resolve (createImageBitmap width > 0)', Array.isArray(out.toys) && out.toys.length === 6 && out.toys.every(w => w > 0), JSON.stringify(out.toys));
   ok('Part 2: the five SVG toys left the page as base64', !/id:"(toycar|toydino|toyalien|toyrobot|toyduck)",[^\n]*uri:"data:/.test(src));
   ok('Part 2: no page errors in the two runs', errs.length === 0 && two.errs.length === 0, JSON.stringify(errs.concat(two.errs)).slice(0, 200));
+}
+
+// ---- Part 3: the synth, the settings, pause on hide (plans/shell-shuffle/BUILD-PLAN-OCT25.md)
+{
+  const SEED = { 'shellshuffle:v1': JSON.stringify({ coins: 50, bestLevel: 3, owned: ['classic'], ownedCups: ['house'], selected: 'classic', selectedCup: 'house',
+    daily: { last: null, streak: 0, best: 0, week: null, weekDays: 0, weekStreak: 0 } }) };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const until = async (page, fn, ms) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await page.evaluate(fn)) return true; await sleep(100); } return false; };
+  const tapStart = async (page) => { const c = await page.evaluate(() => { const r = document.getElementById('actBtn').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }); await page.touchscreen.tap(c.x, c.y); };
+  const out = {};
+  const { ctx, page, errs } = await open('?sstest=1', SEED);
+  try {
+    out.before = await page.evaluate(() => window.__ss.audio());
+    await tapStart(page);
+    out.guessing = await until(page, () => window.__ss.ball().phase === 'guessing', 20000);
+    out.afterRound = await page.evaluate(() => window.__ss.audio());
+    // a miss, then Play again: the next shuffle is where the hide lands
+    const b = await page.evaluate(() => window.__ss.ball()), wrong = b.order.find(id => id !== b.ballCup);
+    await page.click('#playfield .cup-wrap[data-id="' + wrong + '"]');
+    await until(page, () => window.__ss.results().open, 4000); await page.click('#rAgain');
+    out.shuffling = await until(page, () => window.__ss.ball().phase === 'play' && document.getElementById('status').textContent.indexOf('Shuffling') === 0, 8000);
+    await page.evaluate(() => window.__ss.hide());
+    await sleep(700);   // the swap in flight lands, then nothing may move
+    const o1 = await page.evaluate(() => window.__ss.order().join(','));
+    await sleep(1000);
+    const o2 = await page.evaluate(() => window.__ss.order().join(','));
+    out.frozen = { paused: await page.evaluate(() => window.__ss.paused()), sheet: await page.evaluate(() => document.getElementById('pausedOv').classList.contains('open')), same: o1 === o2, o1, o2 };
+    await page.evaluate(() => window.__ss.show());
+    await page.click('#resumeBtn'); await sleep(700);
+    out.count = await page.evaluate(() => document.getElementById('pausedCount').textContent);
+    out.resumed = await until(page, () => !window.__ss.paused(), 4000);
+    out.guessingAgain = await until(page, () => window.__ss.ball().phase === 'guessing', 20000);
+    // sound off, vibration off, motion reduced: kept across a reload; a round then starts no audio node; the sheet says Reduced
+    await page.evaluate(() => window.__ss.setSettings({ sound: false, vibe: false, motion: 'off' })); await sleep(400);
+    await page.reload({ waitUntil: 'load' }); await sleep(700);
+    out.reloaded = await page.evaluate(() => window.__ss.settings());
+    const s0 = await page.evaluate(() => window.__ss.audio().started);
+    await tapStart(page); await until(page, () => window.__ss.ball().phase === 'guessing', 20000);
+    out.offStarted = (await page.evaluate(() => window.__ss.audio().started)) - s0;
+    await page.click('#openSettings'); await sleep(300);
+    out.sheet = await page.evaluate(() => ({ open: document.getElementById('settings').classList.contains('open'), motion: document.getElementById('tgMotion').textContent, sound: document.getElementById('tgSound').textContent }));
+    // a corrupt value falls back to the defaults
+    await page.evaluate(() => { const d = JSON.parse(localStorage['shellshuffle:v1']); d.settings = { sound: 'x', vibe: 3, motion: 'sideways' }; localStorage['shellshuffle:v1'] = JSON.stringify(d); });
+    await page.reload({ waitUntil: 'load' }); await sleep(700);
+    out.corrupt = await page.evaluate(() => window.__ss.settings());
+  } catch (e) { out.error = String(e).slice(0, 200); }
+  await ctx.close();
+  ok('Part 3: no audio context before a gesture; one after the first tap, and the round starts its cues', out.before && out.before.created === 0 && out.afterRound && out.afterRound.created === 1 && out.afterRound.started > 0, JSON.stringify([out.before, out.afterRound]) + (out.error || ''));
+  ok('Part 3: a hide mid shuffle pauses where it is: the pause sheet opens and the cup order does not change while hidden', out.frozen && out.frozen.paused && out.frozen.sheet && out.frozen.same, JSON.stringify(out.frozen));
+  ok('Part 3: Resume counts 3, 2, 1, then the shuffle goes on to the guess', ['3', '2', '1'].indexOf(out.count) >= 0 && out.resumed && out.guessingAgain, 'count ' + JSON.stringify(out.count) + ' resumed ' + out.resumed + ' guessing ' + out.guessingAgain);
+  ok('Part 3: settings survive a reload (sound off, vibration off, motion reduced) and the sheet shows them', out.reloaded && out.reloaded.sound === false && out.reloaded.vibe === false && out.reloaded.motion === 'off' && out.sheet && out.sheet.open && out.sheet.motion === 'Reduced' && out.sheet.sound === 'Off', JSON.stringify([out.reloaded, out.sheet]));
+  ok('Part 3: with sound off a round starts no audio node', out.offStarted === 0, 'started ' + out.offStarted);
+  ok('Part 3: a corrupt settings value falls back to the defaults', out.corrupt && out.corrupt.sound === true && out.corrupt.vibe === true && out.corrupt.motion === 'auto', JSON.stringify(out.corrupt));
+  ok('Part 3: no page errors', errs.length === 0, JSON.stringify(errs).slice(0, 200));
 }
 
 await browser.close();
