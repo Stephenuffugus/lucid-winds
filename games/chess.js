@@ -9,6 +9,14 @@ function GCH(a){
   // ── Courts (Jul 17 art drop: 13 themed sets cut from art-asset-lists/Chess zip) ──
   var CH_COURTS=[
     ['classic','Grove Classic'],
+    // the first pack (25 Oct 2026, scripts/cut_chess_pack.py): the painted courts, white side cut from the concept plates,
+    // dark side the dark king's own palette carried onto the white pieces; Jimothy waits for his real raccoon art
+    ['walnut','Quiet Walnut'],
+    ['cats','Velvet Paw Court'],
+    ['dogs','Good Dog Guild'],
+    ['greenhouse','Midnight Greenhouse'],
+    ['petri','Pixel Petri Colony'],
+    ['dragonlings','Emberling Keep'],
     ['deepsea','Deep Sea'],
     ['cosmic','Cosmic Cadets'],
     ['dino','Dino Dig'],
