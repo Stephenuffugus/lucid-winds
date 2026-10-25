@@ -250,7 +250,7 @@
 </style>
 <style>
   /* Part 2 (plans/shell-shuffle/BUILD-PLAN-OCT25.md): the results sheet on Astra's card, the reveal frames, the painted calendar plates */
-  .results-card{ width:min(92vw,360px); aspect-ratio:540/660; margin:0 auto; background:center/100% 100% no-repeat; display:flex; flex-direction:column; align-items:center; padding:17% 9% 6%; box-sizing:border-box; color:var(--cream); }
+  .results-card{ width:min(92vw,360px); aspect-ratio:540/660; margin:0 auto; background:center/100% 100% no-repeat; display:flex; flex-direction:column; align-items:center; padding:23% 9% 6%; box-sizing:border-box; color:var(--cream); }
   .results-card h2{ font-family:'Fredoka',sans-serif; margin:0; font-size:26px; color:var(--gold); line-height:1.1; }
   .results-card .rsub{ font-size:14px; font-weight:700; color:var(--muted); margin:2px 0 8px; }
   .rrows{ width:100%; display:grid; gap:6px; margin-bottom:auto; }
@@ -265,7 +265,11 @@
   .rnote{ min-height:18px; text-align:center; font-size:12.5px; font-weight:700; color:var(--gold); margin-top:5px; }
   .fx{ position:absolute; left:50%; bottom:0; width:180%; aspect-ratio:1; transform:translate(-50%,8%); pointer-events:none; z-index:6; }
   .confetti{ position:absolute; left:50%; top:50%; width:min(100%,520px); aspect-ratio:1; transform:translate(-50%,-50%); pointer-events:none; z-index:7; object-fit:contain; }
-  .day.plated{ border-color:transparent; background-color:transparent; }
+  .day.plated{ border-color:transparent; background-color:transparent; aspect-ratio:1; padding:5px 1px 2px; display:flex; flex-direction:column; justify-content:flex-start; gap:0; line-height:1.15; background-size:100% 100%; background-position:center; background-repeat:no-repeat; }
+  .day.plated .d{ font-size:9.5px; }
+  .day.plated .c{ font-size:11px; }
+  .day.plated.big .c{ font-size:11.5px; }
+  .day.plated .d img{ width:13px; height:13px; vertical-align:-2px; }
   .day.plated.done{ opacity:1; }
   .streak-hero .flame img{ width:46px; height:46px; vertical-align:middle; }
 </style>
@@ -1101,7 +1105,7 @@
       if(i===(claimedToday?lastIdx:nextIdx)) cls+=' today';
       d.className=cls+' plated';
       d.style.backgroundImage='url("'+artUrl(cls.indexOf(' done')>=0?'ui/calendar_day_done.webp':'ui/calendar_day.webp')+'")';
-      d.innerHTML='<div class="d">Day '+(i+1)+'</div><div class="c">+'+DAILY_COINS[i]+'</div>'+(i===6?'<div class="d"><img src="'+artUrl('ui/gift.webp')+'" alt="gift" width="16" height="16" draggable="false"></div>':'');
+      d.innerHTML='<div class="d">Day '+(i+1)+'</div><div class="c">+'+DAILY_COINS[i]+'</div>'+(i===6?'<div class="d"><img src="'+artUrl('ui/gift.webp')+'" alt="gift" width="13" height="13" draggable="false"></div>':'');
       cal.appendChild(d);
     }
     const cb=$('claimBtn');

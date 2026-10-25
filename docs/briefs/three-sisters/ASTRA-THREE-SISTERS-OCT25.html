@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Three Sisters for Astra: the first game, taken to a whole other level (25 Oct 2026)</title>
+<style>body{font-family:Georgia,serif;max-width:860px;margin:24px auto;padding:0 16px;line-height:1.45;color:#222}h1{font-size:1.6em}h2{margin-top:1.6em}h3{margin-top:1.2em}code{background:#eee;padding:1px 4px}table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:4px 8px;text-align:left;vertical-align:top}</style></head>
+<body>
+<h1>Three Sisters for Astra: the first game, taken to a whole other level</h1>
+<p>Sky Wolf Studio, 25 October 2026. One document, everything in it. Read section 1 first, then the rest in order. Reply with one zip and one PDF, nothing else.</p>
+
+<h2>1. What to send back (read this first)</h2>
+<ul>
+<li><b>One review PDF</b> (section 4): your verdict on the themes, which three you would build first and why, what you would change in the game's feel, and anything in this brief you disagree with. Say it plainly. We change the plan on your word.</li>
+<li><b>One zip</b> (section 5): the art pack for the first theme in full, plus the shared table, cards, UI and effects. A second and third theme only if you have room, each complete or not at all. A <code>manifest.json</code> at the root (section 5.5) and a <code>prompts.json</code> with every prompt you used. Under 150 MB.</li>
+<li>No text drawn into any picture. No trademarked characters, no stock. Say which tool made each file. Names in lower snake case, exactly as listed. Do not rename anything in section 5.3; the code reads those names.</li>
+</ul>
+
+<h2>2. The game in two minutes</h2>
+<p>Three Sisters is the game the whole studio grew from. It is the classic trio matching game: 81 cards, each with four traits, each trait one of three values.</p>
+<table>
+<tr><th>Trait</th><th>Three values</th><th>Today</th></tr>
+<tr><td>Shape</td><td>three shapes</td><td>clover, pot, droplet (the "grow" set; the hub also has diamond/oval/squiggle, triangle/circle/square, crescent/rune/star)</td></tr>
+<tr><td>Colour</td><td>three colours</td><td>blue #5b8fb9, gold #c8a84b, rose #c07070</td></tr>
+<tr><td>Fill</td><td>solid, striped, empty</td><td>flat SVG: full, hatched lines, outline</td></tr>
+<tr><td>Count</td><td>one, two, three</td><td>the shape repeated in a row</td></tr>
+</table>
+<p>A <b>trio</b> is three cards where every trait is all the same or all different. Twelve cards lie on the board; tap three; a right trio flies off and three new cards fill the gaps. Two modes: <b>Classic</b> (the whole deck, with Hint and Restart) and <b>Daily Trio #N</b> (a seeded board, ten trios against a stopwatch, a share line "Three Sisters Daily #N, 10 trios, 1:42"). In the Lucid Winds hub it is the entry game: trios earn Sunbeams, 30 Sunbeams mint a plant, and it has a practice mode and an interactive tutorial. It also stands alone at lucidwinds.com/play/set.html with the same rules.</p>
+<p>The name is the companion planting: corn, beans and squash grown together. The store picture already promises that: a vintage botanical card with a corn ear, bean pods and a squash on parchment with gold filigree. The game under it does not deliver that picture yet. That gap is this brief.</p>
+
+<h2>3. What is weak, honestly (go past these)</h2>
+<ul>
+<li>The cards are flat dark rectangles with vector shapes. Nothing is painted. Nothing has thickness, a shadow or a table under it.</li>
+<li>The striped fill reads badly at phone size; players confuse striped with solid in the rose colour. The three fills must be unmistakable at 40 px.</li>
+<li>Colour is the only thing that separates the three colour values, so colourblind players get small text badges ("B", "G", "R") as a crutch. A painted theme can carry the colour value in the object itself (a second channel), so the badge stops being needed.</li>
+<li>Finding a trio has no moment: the cards vanish. A wrong trio shakes. The Daily ends on a text line. There is no sound of any kind.</li>
+<li>The standalone's buttons are filled slabs with inline styles. Rule for the whole studio: no filled button slabs over painted art; buttons stand on painted pills or on a plate.</li>
+<li>The hub and the standalone look different. They must share one look.</li>
+</ul>
+
+<h2>4. Part one: the review and the themes</h2>
+<p>We want Three Sisters to feel like a real deck on a real table: painted cards with edges, a surface they lie on, light from somewhere, cards that lift when touched and fly to a pile when they match. Not a 3D engine. Painted art plus perspective, shadows and motion in the page. The bar is the Shell Shuffle cabinet you painted: a scene, every piece drawn, every state drawn.</p>
+<p>The one hard rule of this game: the four traits must stay instantly readable, at 40 px, with 12 cards on a phone. A theme that is beautiful but makes a striped bean look like a solid bean is a failed theme. Readability first, then beauty.</p>
+<h3>4.1 Six themes to judge (pick three, in order; say why)</h3>
+<ol>
+<li><b>The Seed Catalogue</b> (the brand; our first choice). Parchment seed packet cards on a potting bench. The three shapes are the three sisters: a corn ear, a bean pod, a squash. The three colours are three ink tints on the paper: sun gold, sky blue, rose. The three fills: full ink, engraved hatching, outline only. Gold filigree border from the store card. A potting bench table with a lamp, soil in a tray, the deck in a seed tin.</li>
+<li><b>Victorian Herbarium.</b> Pressed plants on cream card with handwritten labels (no readable text), gold foil fills, a desk with a magnifying glass and a brass lamp. Fills: pressed (solid), skeleton leaf (striped), chalk outline (empty).</li>
+<li><b>Stained Glass Chapel.</b> Leaded glass shapes on dark slate cards; light from behind. Fills: coloured glass, frosted glass, clear leaded outline. The table is a stone sill with candles.</li>
+<li><b>Tide Pool.</b> Shell, starfish, kelp on sea washed wood cards. Fills: wet, dry, sand outline. A driftwood table, a lantern, sea glass.</li>
+<li><b>Night Market Lanterns.</b> Paper lanterns in three shapes on red lacquer cards. Fills: lit, paper, wire frame. A market stall table at night.</li>
+<li><b>The Observatory.</b> Brass instruments and constellations on midnight cards. Fills: solid brass, engraved, star outline. A map table with a telescope and a candle.</li>
+</ol>
+<p>Each theme is a <b>deck</b>. The first ships as the default. The others are earned in play (never bought), the way Shell Shuffle earns cups and the chess game earns courts. Pick with the store in mind: which deck makes the best first screenshot, and which reads best at 40 px.</p>
+<h3>4.2 The 3D feel, what we will build from your art</h3>
+<ul>
+<li>Every card is a face plate plus a painted edge, so it has thickness; a soft shadow plate under it; a back for the deal.</li>
+<li>A tap tilts the card toward the thumb (perspective in the page) and lifts it 6 px with a longer shadow. Three selected cards hover.</li>
+<li>A right trio: the three cards flip, a burst plays over them, they fly to the found pile at the top. A wrong trio: a gentle settle, no punishment.</li>
+<li>The table is a painted scene in portrait, dark at the top under the header, the deck and the found pile painted on it, a lamp glow over the board. The phone's tilt moves the scene a few pixels (optional, off under reduced motion).</li>
+<li>The Daily ends on a painted results card with the time, the trios and a share button; a new best gets petals.</li>
+</ul>
+<p>Tell us in the review what you would do differently. If you think a dealer, hands, or a 3D rendered deck would be better, say so and say why; we have Meshy credits for a few objects (section 5.4).</p>
+
+<h2>5. Part two: the art pack</h2>
+<h3>5.1 Style</h3>
+<p>Painted, warm, lit from one lamp, the midnight greenhouse palette of the studio where the theme allows: deep blacks, sage greens, gold, cream. Objects with real volume and a cast shadow. No outlines unless the theme is engraving. The hub shows this art on a near black page; the standalone on a dark green one; both must work.</p>
+<h3>5.2 Rules for every file</h3>
+<ul>
+<li>PNG with transparency for everything that is cut out; JPG only for the full scenes. Sizes exactly as listed; we cut them down ourselves.</li>
+<li>A cut out sits centred with a 6 percent margin and its base at the same height across its set, so cards and glyphs line up when the code places them.</li>
+<li>Glyphs (the shapes) are drawn once per shape per colour per fill: 27 files per theme. Count is the code repeating the glyph, so draw ONE object per file. All 27 must share one silhouette size and base line.</li>
+<li>No text, no numbers, no logos inside pictures. The wordmark is its own file.</li>
+<li>Never change a picture under an old name; a changed picture gets a new name with a version suffix.</li>
+</ul>
+<h3>5.3 The list (the first theme in full; the same list again per extra theme under its own folder)</h3>
+<ul>
+<li><b>glyphs/&lt;theme&gt;/</b> 27 files, 400 x 400: <code>&lt;shape&gt;_&lt;colour&gt;_&lt;fill&gt;.png</code> with shape in {a, b, c} as you name them in the manifest (for the Seed Catalogue: corn, bean, squash), colour in {gold, blue, rose}, fill in {solid, striped, empty}. Example: <code>corn_gold_striped.png</code>. Plus <code>fill_key.png</code> (900 x 300): the three fills side by side so we can test readability.</li>
+<li><b>cards/&lt;theme&gt;/</b> <code>card_face.png</code> (600 x 840, the blank face a glyph sits on), <code>card_back.png</code> (600 x 840), <code>card_edge.png</code> (600 x 40, the painted thickness seen when a card tilts), <code>card_shadow.png</code> (720 x 960, soft, transparent), <code>card_selected.png</code> (600 x 840, the lifted or glowing state of the face, same art, lit).</li>
+<li><b>table/&lt;theme&gt;/</b> <code>table_main.jpg</code> (900 x 1600 portrait: the surface the cards lie on, dark in the top 20 percent for the header, the centre clear for a 3 by 4 grid, the deck pile and the found pile painted at the top corners), <code>deck_pile.png</code> (300 x 400, the remaining deck as a stack), <code>found_pile.png</code> (300 x 400, found trios stacked), <code>lamp_glow.png</code> (900 x 900, a soft overlay), <code>mat.png</code> (840 x 240, if the theme has a cloth under the grid).</li>
+<li><b>ui/</b> (shared across themes) <code>logo.png</code> (1200 x 500, the Three Sisters wordmark, transparent), <code>title_plate.jpg</code> (900 x 1600, the title screen with empty space at the top for the logo), <code>results_card.png</code> (900 x 1100, the Daily's ending surface, empty inside), <code>button_pill.png</code> (600 x 160, a painted pill buttons sit on, no text), <code>button_pill_quiet.png</code> (600 x 160, the secondary one), <code>hint_lens.png</code>, <code>timer_hourglass.png</code>, <code>trio_badge.png</code>, <code>share_leaf.png</code> (all 128 x 128), <code>mode_classic.png</code> and <code>mode_daily.png</code> (256 x 256 emblems, no text), <code>sunbeam.png</code> (128 x 128, the hub's currency, warm).</li>
+<li><b>fx/</b> <code>trio_found_01</code> to <code>_06</code> (512 x 512, a burst of light and petals over three cards), <code>wrong_01</code> to <code>_03</code> (512 x 512, a soft settle, not a punishment), <code>daily_done_01</code> to <code>_06</code> (900 x 900, petals falling for a finished Daily), <code>deal_01</code> to <code>_04</code> (512 x 512, a card arriving).</li>
+<li><b>tutorial/</b> three pictures 900 x 600 for the three lesson beats: same shapes different colours; all three different; the one that is wrong (two the same, one different), each with the trio marked by light, not by text.</li>
+<li><b>store/</b> <code>feature_graphic.jpg</code> (1024 x 500, no text), <code>icon_1024.png</code>, <code>icon_maskable_1024.png</code> (subject inside the centre 66 percent).</li>
+</ul>
+<h3>5.4 Meshy ready drawings (3D, optional, for later)</h3>
+<p>Only if you have room after the pack: three objects for the first theme drawn FOR Meshy, each alone on a plain mid grey #808080 background, no cast shadow, no text, 1024 x 1024, four views (front, side, back, three quarter): the deck tin or box, the lamp, and one hero object from the theme (the squash for the Seed Catalogue). We turn these into models for the table scene. Thin parts fused, no transparency.</p>
+<h3>5.5 The manifest</h3>
+<p>At the zip root, <code>manifest.json</code>: every file with its pixel size and sha256; a <code>themes</code> array with, per theme, its id, display name, the three shape names in order, the three colour names in order with hex, the three fill names in order, the table's safe grid box as fractions of the picture (left, top, width, height), and the deck and found pile boxes the same way. Example:</p>
+<pre>{"themes":[{"id":"seed_catalogue","name":"The Seed Catalogue","shapes":["corn","bean","squash"],
+ "colours":[["gold","#c8a84b"],["blue","#5b8fb9"],["rose","#c07070"]],"fills":["solid","striped","empty"],
+ "grid":[0.06,0.22,0.88,0.62],"deck":[0.06,0.05,0.2,0.14],"found":[0.74,0.05,0.2,0.14]}]}</pre>
+<p>That is everything. Pick the three themes, paint the first in full, and tell us what we got wrong.</p>
+</body></html>
