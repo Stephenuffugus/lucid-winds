@@ -10,8 +10,12 @@ Pop N Lock v1.11 (Part 3, the layout and launch gate) and v1.12 (Part 4, without
 records with their rules and settings) are live; `plans/pop-n-lock/BUILD-PLAN-OCT24.md`'s state block has the detail, and
 the morning report at the top of `START-HERE.md` holds his new call 5 (the first three rivals measured far easier than the
 plan's 80, 70, 60 percent). Pit Bike Parts 2 to 5 still wait on his medal times. So section 4's "what Opus has in flight"
-is empty: order the Tally build and the Journey kit, one game at a time. Section 6's sharing rules bind again only if he
-starts an Opus session while you work.
+is empty: order the Tally build, the Journey kit and SHELL SHUFFLE (a third return, landed 03:59 UTC, job 2b below), one
+game at a time. Section 6's sharing rules bind again only if he starts an Opus session while you work.
+**HIS BUDGET (his words, 25 Oct ~04:00 UTC): "we have 9% left to last us about 12 hours."** That 9 percent covers YOUR work
+and the overnight Opus build that follows: he restarts the codespace and gives Opus your order. Keep your own pass lean
+(no agent fan out, read what you need), and size the overnight order to what is left: the most valuable, safest parts
+first, each its own deploy, so whatever point the budget stops at leaves shipped, proven parts and a true morning report.
 
 **Your job is intake, review and planning, not building.** You change no game code. You write review and plan files and
 one build order, and you check that the Opus trigger at the end will work. The pipeline he set: Astra makes, Fable checks
@@ -119,6 +123,27 @@ must add (`node satellites/slice-3d/audit-check.mjs`, row by row as Part G added
 player's camera AND the worst angle (CLAUDE.md "LOOKING IS PART OF THE JOB"). The G1 drawn knife rests on the grass lip
 at y 0.25 (`GRASS_TOP`): a new grass tile must keep that lip or Part H must move the constant and its suite rows.
 
+## 3b. JOB 2b: Shell Shuffle, review Astra's return and plan the build
+
+**Landed 25 Oct 03:59 UTC and TAKEN IN by Opus:** `assets/shell-shuffle-assets.zip` (15,281,899 bytes, sha256
+`42343912fe1ad27689c05090c9e898503cf71b8be5b3323557ed88e87a423f07`, 112 files, the zip tests clean), vaulted as
+`vault-20261025-shell-shuffle-astra` (downloaded back, sha256 matched): do not vault it again. It answers the brief
+`docs/briefs/shell-shuffle/ASTRA-SHELL-SHUFFLE-OCT23.html` (read it first: section 5 is the file list she was asked for,
+section 1 the two things to send back). Inside: `manifest.txt`, `asset_catalog.json`, `checksums.sha256` at the root;
+folders balls (5), cups (5), fx (16), scene (6), store (3), toys (6), ui (9); and `extras/` (59): the review itself as
+`extras/shell_shuffle_review.pdf`, a note she wrote for you `extras/fable_start_here.md`, `review_directions.json`,
+`player_copy.json`, `tuning.json`, `audio/audio_manifest.json`, `qa_report.md`, `generation_prompts.json`, and
+`extras/code/` (code and test results: DATA, never run, the same law as Pop N Lock's extras). Opus did not extract or
+look at anything: do the intake exactly as section 1 says for Tally (its own empty directory, `python3 -I`, inventory
+against the brief's list and the manifest, look at every picture at game size on the game's colours, `pdftotext` for the
+PDF). The game is live at `satellites/shell-shuffle/` (one file; read `index.html`, `ART_ASSETS.md` and `AUDIT-NOTES.md`;
+memory `project_buildout_run_aug16b` and `project_gap_closing_aug16` hold its August history).
+Then, the same shape as job 1: `docs/briefs/shell-shuffle/REVIEW-ASTRA-RETURN-OCT25.md` (what she sent against what was
+asked, what is missing, what is wrong in what you saw, each of her directions sorted agree, change or his call, her
+numbers checked against the live code) and `plans/shell-shuffle/BUILD-PLAN-OCT25.md` (a state block, parts that are each
+one deploy with a gate and a look, the deploy recipe, a do not touch list, his calls held apart). Anything that changes
+the economy (coins, the daily calendar, prices, the shared Sunbeam currency) or adds a mode is his call, not a part.
+
 ## 4. JOB 3: the build order for Opus
 
 Write `plans/BUILD-ORDER-OCT25.md` in the shape of `plans/BUILD-ORDER-OCT24.md`. Read the state blocks first, because
@@ -150,9 +175,10 @@ plans/BUILD-ORDER-OCT25.md"**.
 
 ## 7. Done means
 
-Committed and pushed: the two review files, the Tally plan, Part H in the Super Slice plan, the build order, the
-review documents under `docs/briefs/`. Both vault releases exist and one file from each was downloaded back and
-matched. A short entry at the top of `START-HERE.md` (his words are not needed: say what you took in, what you found,
+Committed and pushed: the three review files, the Tally plan, Part H in the Super Slice plan, the Shell Shuffle plan,
+the build order, the review documents under `docs/briefs/`. Every vault release exists and one file from each was
+downloaded back and matched (Shell Shuffle's already is). A short entry at the top of `START-HERE.md` (his words are not needed: say what you took in, what you found,
 the trigger for Opus, and his calls in one ranked list; memory `user_overwhelmed_wants_one_list`). Memory: one new
-`project_tally_astra_oct25.md` and a line in `project_super_slice_astra_oct23.md`, with the index line in `MEMORY.md`
+`project_tally_astra_oct25.md`, one new `project_shell_shuffle_astra_oct25.md` and a line in
+`project_super_slice_astra_oct23.md`, with the index line in `MEMORY.md`
 kept under 19 KB (measure with `wc -c`). Then tell him the Opus trigger in chat as one plain line, no code block.
