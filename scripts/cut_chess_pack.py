@@ -111,9 +111,12 @@ for src_set, cid in COURTS.items():
         retint(whites[code], src_rng, lutp).save(os.path.join(d, "b" + code + ".png"), optimize=True)
     chip(whites["P"]).save(os.path.join(d, "capW.png")); chip(retint(whites["P"], src_rng, lutp)).save(os.path.join(d, "capB.png"))
     board = BOARDS.get(src_set, "walnut")
-    for tile, nm in (("light", "tileL"), ("dark", "tileD")):
-        t = Image.open(os.path.join(SRC, "boards", board + "-" + tile + ".png")).convert("RGB").resize((256, 256), Image.LANCZOS)
-        t.save(os.path.join(d, nm + ".jpg"), "JPEG", quality=86, optimize=True)
+    # the squares: the light tile as painted; the dark tile lifted 30 percent toward the light one, so a dark piece still
+    # reads on a dark square at 45 px (seen on the live board, 25 Oct 2026)
+    tl = Image.open(os.path.join(SRC, "boards", board + "-light.png")).convert("RGB").resize((256, 256), Image.LANCZOS)
+    td = Image.open(os.path.join(SRC, "boards", board + "-dark.png")).convert("RGB").resize((256, 256), Image.LANCZOS)
+    tl.save(os.path.join(d, "tileL.jpg"), "JPEG", quality=86, optimize=True)
+    Image.blend(td, tl, 0.30).save(os.path.join(d, "tileD.jpg"), "JPEG", quality=86, optimize=True)
     total = sum(os.path.getsize(os.path.join(d, f)) for f in os.listdir(d))
     sizes[cid] = total
     print("%-12s board %-10s white king luminance %s, dark king span %s  %d KB" % (cid, board, src_rng, (lutp[1], lutp[2]), total // 1024))

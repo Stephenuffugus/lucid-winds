@@ -65,8 +65,9 @@ function GCH(a){
       var dir=_chArt+'courts/'+_chCourt+'/';
       for(i=0;i<types.length;i++){t=types[i];
         var h=_CH_LADDER[t];
-        ps[t]='<img src="'+dir+'w'+t+'.png" style="width:92%;height:'+h+'%;object-fit:contain;pointer-events:none">';
-        as[t]='<img src="'+dir+'b'+t+'.png" style="width:92%;height:'+h+'%;object-fit:contain;pointer-events:none">';
+        // a soft drop shadow under every painted piece: a pale piece on a pale square and a dark piece on a dark square both keep an edge (25 Oct 2026)
+        ps[t]='<img src="'+dir+'w'+t+'.png" style="width:92%;height:'+h+'%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.55))">';
+        as[t]='<img src="'+dir+'b'+t+'.png" style="width:92%;height:'+h+'%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.55))">';
       }
       _skinChess.themed=true;
       _skinChess.tileL=dir+'tileL.jpg';_skinChess.tileD=dir+'tileD.jpg';

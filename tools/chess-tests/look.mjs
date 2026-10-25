@@ -8,7 +8,7 @@ const b = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--di
 for (const court of COURTS) {
   const ctx = await b.createBrowserContext(); const p = await ctx.newPage();
   await p.setViewport({ width: 412, height: 915, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
-  await p.evaluateOnNewDocument((c) => { try { localStorage.setItem('lwfb_explained', '1'); localStorage.setItem('lw_chess_court', c); } catch (e) {} }, court);
+  await p.evaluateOnNewDocument((c) => { try { localStorage.setItem('lwfb_explained', '1'); localStorage.setItem('lw_chess_court', c); localStorage.setItem('sws_dir_chess', '1'); } catch (e) {} }, court);
   const errs = []; p.on('pageerror', (e) => errs.push(String(e.message || e).slice(0, 120)));
   await p.goto('http://127.0.0.1:8777/play/chess.html', { waitUntil: 'networkidle0', timeout: 60000 }); await sleep(1200);
   // a first visit opens the shell's rules card: tap LET'S PLAY (a real tap, by its rect)
