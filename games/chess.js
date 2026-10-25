@@ -122,6 +122,7 @@ function GCH(a){
     epSquare=null;moveCount=0;halfmove=0;lastMove=null;
     selSq=null;legalMoves=[];capturedW=[];capturedB=[];
     gameOver=false;history=[];moveLog=[];posHistory={};
+    posHistory[posKey(board,turn,castling,epSquare)]=1;   // the start position is an occurrence too (25 Oct 2026: two cycles of Nf3 Nf6 Ng1 Ng8 are a threefold)
     _lastAIComment='';_pieceMovedOnce={};
   }
 
@@ -331,10 +332,16 @@ function GCH(a){
     var k='';
     for(var r=0;r<8;r++)for(var c=0;c<8;c++){var p=b[r][c];k+=p?(p.color+p.type):'.';}
     k+=t+(cas.wK?1:0)+(cas.wQ?1:0)+(cas.bK?1:0)+(cas.bQ?1:0);
-    if(ep)k+=ep[0]+''+ep[1];
+    if(ep&&epCapturable(b,t,cas,ep))k+=ep[0]+''+ep[1];   // a bare target never splits two otherwise identical positions (FIDE 9.2)
     return k;
   }
 
+  // Is there a LEGAL en passant capture of the target for the side to move (the king safety check included)?
+  function epCapturable(b,t,cas,ep){
+    var ms=getLegalMoves(b,t,cas,ep);
+    for(var i=0;i<ms.length;i++)if(ms[i].ep)return true;
+    return false;
+  }
   // Insufficient material detection
   function insufficientMaterial(b){
     var wPieces=[],bPieces=[];
@@ -351,6 +358,14 @@ function GCH(a){
     if(bPieces.length===1&&wPieces.length===2){
       if(wPieces.indexOf(BISHOP)>=0||wPieces.indexOf(KNIGHT)>=0)return true;
     }
+    // kings and bishops only, every bishop on one square colour (either side, any number): no mate is possible (25 Oct 2026)
+    var sq=null,onlyKB=true;
+    for(var r2=0;r2<8;r2++)for(var c2=0;c2<8;c2++){
+      var q=b[r2][c2];if(!q||q.type===KING)continue;
+      if(q.type!==BISHOP){onlyKB=false;break;}
+      var col=(r2+c2)%2;if(sq===null)sq=col;else if(sq!==col){onlyKB=false;break;}
+    }
+    if(onlyKB&&sq!==null)return true;
     return false;
   }
 
@@ -1198,7 +1213,7 @@ function GCH(a){
     if(!cas)cas='-';
     var ep='-';
     if(epSquare){ep='abcdefgh'.charAt(epSquare[1])+(8-epSquare[0]);}
-    return rows.join('/')+' '+turn+' '+cas+' '+ep+' '+halfmove+' '+(Math.floor(moveCount/2)+1);
+    return rows.join('/')+' '+turn+' '+cas+' '+ep+' '+halfmove+' '+(moveCount+1);   // moveCount advances after Black's move, so it is the number of completed full moves (25 Oct 2026)
   }
   function _uciToMove(uci){
     if(!uci||uci.length<4)return null;
