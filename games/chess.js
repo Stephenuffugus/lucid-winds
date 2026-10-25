@@ -154,8 +154,9 @@ function GCH(a){
     // Bishop/Queen (diagonals)
     var bd=[[1,1],[1,-1],[-1,1],[-1,-1]];
     for(i=0;i<bd.length;i++){dr=bd[i][0];dc=bd[i][1];tr=r+dr;tc=c+dc;while(tr>=0&&tr<8&&tc>=0&&tc<8){p=b[tr][tc];if(p){if(p.color===by&&(p.type===BISHOP||p.type===QUEEN))return true;break;}tr+=dr;tc+=dc;}}
-    // Pawn attacks
-    var pd=by===W?-1:1;
+    // Pawn attacks: a white pawn stands one row BELOW the square it attacks (row+1), a black pawn one row above.
+    // (Was inverted until 25 Oct 2026: kings could step beside an enemy pawn, pawn checks went unseen; perft proved it.)
+    var pd=by===W?1:-1;
     if(r+pd>=0&&r+pd<8){if(c-1>=0){p=b[r+pd][c-1];if(p&&p.color===by&&p.type===PAWN)return true;}if(c+1<8){p=b[r+pd][c+1];if(p&&p.color===by&&p.type===PAWN)return true;}}
     // King attacks
     for(dr=-1;dr<=1;dr++)for(dc=-1;dc<=1;dc++){if(!dr&&!dc)continue;tr=r+dr;tc=c+dc;if(tr>=0&&tr<8&&tc>=0&&tc<8){p=b[tr][tc];if(p&&p.color===by&&p.type===KING)return true;}}
