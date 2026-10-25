@@ -41,8 +41,11 @@ and plans, Opus builds (memory `feedback_astra_fable_opus_pipeline`). Nothing bu
 `assets/super-slice-journey-kit.zip`, vaulted as `vault-20261025-super-slice-journey-kit` (downloaded back, sha256
 matched), and assessed in `docs/briefs/super-slice-3d/JOURNEY-KIT-INTAKE-OCT25.md` (21 of 21, sizes and transparency as
 asked, the painted margins, the seams measured, three things to judge in the game, her numbers to verify). Read that
-note and go straight to job 2; do not vault it again. **The Tally return is still coming** (he uploads it from his
-computer, the files are too large for his phone): take it in as below when it lands.
+note and go straight to job 2; do not vault it again. **The Tally return LANDED 25 Oct 01:00 UTC** and is untouched:
+`assets/Tally_Review.pdf` (490,096 bytes, sha256 `c174720ee2acff47880271b3a5d990cb4a86c6035a491e76b592b1e07ebb7035`) and
+`assets/tally-assets.zip` (76,535,537 bytes, sha256 `2099f167058fb2e06d20991a36ae5c448a39f5c0df22232339db6cbc972eebfc`). His
+words: "heres is everything for tally thats been made so far" (so check it against the brief's list and say what is
+missing). Take it in as below: vault both, inventory, look, then job 1.
 
 Stephen uploads them into `/workspaces/lucid-winds/assets/`, like `pop-n-lock-assets.zip` on 24 Oct. Expect:
 - Tally: one review document (Google Doc export, PDF or .md, named something like `Tally Review` or `Tally_Review.pdf`)

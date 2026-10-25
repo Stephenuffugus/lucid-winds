@@ -1,5 +1,8 @@
 # START HERE
 
+## 🗒 25 Oct (~01:00 UTC) HIS WORDS, VERBATIM: "'/workspaces/lucid-winds/assets/Tally_Review.pdf' '/workspaces/lucid-winds/assets/tally-assets.zip' heres is everything for tally thats been made so far. dont interrupt your work and you dont need to start ti now i just wanted to get it in and when youre completely done we can make a hand off for fable to look it over and design the implementation and fable can design the build and make a hand off to give back to opus to do the coding."
+Sort: the TALLY return landed (review PDF 490 KB, assets zip 76.5 MB, hashes in `HANDOFF-FABLE-OCT25.md`); NOT started, his word. Opus keeps building (Pop N Lock Part 3). When Opus is done: Fable runs `HANDOFF-FABLE-OCT25.md` (intake, vault, review, the Tally plan, Super Slice Part H, the next build order), then hands back to Opus for the coding.
+
 ## 🗒 25 Oct (~00:16 UTC) HIS WORDS, VERBATIM: "Here's the super slice assets I have to upload all of the tally work from my computer cuz the files are too large to do it from my phone. Don't jump into this work. You can assess it and we will have Fable analyze and put together the work and I will have him make a handoff to get back to you to actually do the physical coding cutting and labor"
 Sort: the JOURNEY KIT arrived (super-slice-journey-kit.zip); ASSESS ONLY, no build. Done 00:20: vaulted (`vault-20261025-super-slice-journey-kit`, downloaded back and matched), copied to `assets/`, assessed in `docs/briefs/super-slice-3d/JOURNEY-KIT-INTAKE-OCT25.md` (21 of 21 at the asked sizes; three things to judge in game: the grass's diagonal stripes, the shelf crack repeating, a slim branch). TALLY: still coming from his computer. FABLE plans both and hands back to Opus for the cutting and coding.
 
