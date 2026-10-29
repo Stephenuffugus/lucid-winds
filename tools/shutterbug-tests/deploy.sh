@@ -2,9 +2,11 @@
 # Shutterbug files only deploy to main (from the Tally recipe tools/tally-tests/deploy.sh, 29 Oct 2026).
 #
 # main's tree + exactly the SERVED set of satellites/shutterbug from the branch, built in a PRIVATE index (another
-# session may share the working index). Served set: index.html, manifest.json, sw.js, icons/, music/. The docs,
-# harness.js, fixtures/ and tools/ never leave the branch. Every step gates the next. Checks read blobs from files,
-# never `git show | grep -q`. A blob that is not on the branch becomes a removal on main.
+# session may share the working index). Served set: index.html, manifest.json, sw.js, icons/. The docs, harness.js,
+# fixtures/ and tools/ never leave the branch. Music never enters git: .gitignore ignores every directory named
+# music/, and the soundtrack lives in its own private repo that Hostinger deploys to /music/ on the host (an M3
+# question for Stephen). Every step gates the next. Checks read blobs from files, never `git show | grep -q`. A blob
+# that is not on the branch becomes a removal on main.
 #
 # Usage: BUILD=sb-m0-1 CACHE=shutterbug-v1 SWV=1 tools/shutterbug-tests/deploy.sh
 #   BUILD  a stamp that must appear verbatim in index.html (the page's own BUILD constant)
@@ -24,7 +26,7 @@ git fetch -q origin main
 [ "$(git rev-list --count HEAD..origin/main)" = "0" ] || { echo "STOP: main has commits the branch lacks; merge origin/main first"; exit 1; }
 BR=$(git rev-parse HEAD); MAIN=$(git rev-parse origin/main); SHORT=$(git rev-parse --short=9 HEAD)
 SERVED=(satellites/shutterbug/index.html satellites/shutterbug/manifest.json satellites/shutterbug/sw.js
-        satellites/shutterbug/icons satellites/shutterbug/music)
+        satellites/shutterbug/icons)
 mapfile -t PATHS < <(git diff --name-only "$MAIN" "$BR" -- "${SERVED[@]}")
 [ "${#PATHS[@]}" -gt 0 ] || { echo "nothing to deploy: the served set on main already equals the branch"; exit 0; }
 echo "deploy set: ${#PATHS[@]} files"; printf '  %s\n' "${PATHS[@]}"
@@ -44,7 +46,7 @@ diff <(git diff --name-only "$MAIN" "$C" | sort) <(printf '%s\n' "${PATHS[@]}" |
 for f in $(git ls-tree -r --name-only "$BR" -- "${SERVED[@]}"); do
   [ "$(git rev-parse "$C:$f")" = "$(git rev-parse "$BR:$f")" ] || { echo "STOP: $f differs between the deploy and the branch"; exit 1; }
 done
-if git diff --name-only "$MAIN" "$C" | grep -v -E '^satellites/shutterbug/(index\.html|manifest\.json|sw\.js|icons/|music/)' ; then
+if git diff --name-only "$MAIN" "$C" | grep -v -E '^satellites/shutterbug/(index\.html|manifest\.json|sw\.js|icons/)' ; then
   echo "STOP: a file outside the served set is in the deploy"; exit 1; fi
 T=$L/deploy-check; rm -rf "$T"; mkdir -p "$T"
 git show "$C:satellites/shutterbug/index.html" > "$T/page.html"

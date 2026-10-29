@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Opus kickoff, 29 Oct</title>
+<style>
+  :root{ --bg:#0d100c; --sage:#7ab356; --gold:#c8a84b; --cream:#e8dcc8; --muted:#8a9178; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--cream); font:16px/1.5 system-ui, sans-serif; padding:16px; }
+  main{ max-width:720px; margin:0 auto; }
+  h1{ font-size:1.25rem; color:var(--gold); margin:8px 0 4px; }
+  p{ color:var(--muted); margin:0 0 12px; font-size:0.95rem; }
+  textarea{ width:100%; min-height:62vh; background:#141a12; color:var(--cream); border:1px solid #2a332a; border-radius:12px;
+    padding:14px; font:15px/1.5 ui-monospace, Menlo, Consolas, monospace; resize:vertical; white-space:pre-wrap; }
+  .row{ display:flex; gap:12px; align-items:center; margin:12px 0 24px; }
+  button{ min-height:56px; min-width:160px; padding:0 22px; border:0; border-radius:14px; background:var(--sage); color:#0d100c;
+    font:700 1.05rem system-ui, sans-serif; cursor:pointer; }
+  button:active{ transform:scale(0.98); }
+  #ok{ color:var(--gold); font-weight:600; min-height:1.5em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Opus kickoff prompt, 29 October 2026</h1>
+  <p>Tap Copy, paste it as the first message of the fresh Opus session. The first line is the trigger.</p>
+  <div class="row"><button type="button" id="copy">Copy the prompt</button><span id="ok" aria-live="polite"></span></div>
+  <textarea id="t" readonly aria-label="The Opus kickoff prompt">build plans/BUILD-ORDER-OCT29.md
+
+You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is one game from zero: Shutterbug, a photo of a room becomes a pixel platformer level, at satellites/shutterbug/ in this repo. Fable wrote the design plan today; you write every line of the code, autonomously, through the night.
+
+Read plans/BUILD-ORDER-OCT29.md first and do exactly what it says in its order: the setup, then Lap 1, the M0 tasks of satellites/shutterbug/BUILD-PLAN.md in plan order, then Lap 2, the M1 tasks the plan marks SAFE, and nothing from M2 or M3. Before the first task read satellites/shutterbug/HANDOFF.md, then DESIGN.md once in full, then BUILD-PLAN.md and QUESTIONS.md. The plan is built on the recommendation under each question: build to that recommendation and never wait for Stephen. The top of START-HERE.md (the 29 Oct Fable entry, the top only, the file is large) says what happened today.
+
+Ultracode is on. Use it only for the independent reviews the build order names (one lens that reads the code and the harness and tries to refute the work before it deploys), capped at three agents and one round, no loops. Never for browsers: this box has two cores that are one physical core, so one headless browser at a time, run by you in your own turn; no agent opens a browser beside you; never isolation remote; every agent writes in its own folder under your scratchpad.
+
+Laws that bind tonight: the core is pure and deterministic and shared verbatim with harness.js; every tunable number lives in TUNING; photos never persist; no network at runtime; never ask whether to deploy, the first deploy goes live the moment the sample room climb is playable, harness green and shot, as a files only commit on main through tools/shutterbug-tests/deploy.sh, and you tell him after; every stamp bumped in the deploy commit; host proof on both origins with curl, one probe at a time; every new check watched red on a broken copy that parses; a 412 by 915 shot and a 360 wide shot opened and three things named before a visual task is done; real touch events, never el.click; no dashes and no exclamation marks in player copy; audio never enters git, sound is synthesised; never the portal card, never another game or file, never a codespace command.
+
+Push after every commit. Update the plan's State block, PROGRESS.md and START-HERE.md in the turn a task ships. Push memory only if ~/.config/gh/hosts.yml exists, otherwise say so in the morning report.
+
+When the budget is nearly gone, stop building. Write the State block and a morning report at the top of START-HERE.md: what is live with the proof, what you saw wrong in your own shots, what you left unshipped and why, his calls in one ranked list. Push everything, then one plain line to him.</textarea>
+</main>
+<script>
+(function(){
+  var t=document.getElementById('t'), b=document.getElementById('copy'), ok=document.getElementById('ok');
+  function done(){ ok.textContent='Copied'; setTimeout(function(){ ok.textContent=''; }, 2500); }
+  function fallback(){ t.focus(); t.select(); t.setSelectionRange(0, t.value.length); try{ document.execCommand('copy'); done(); }catch(e){ ok.textContent='Select the text and copy it'; } }
+  b.addEventListener('click', function(){
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(t.value).then(done, fallback); }
+    else fallback();
+  });
+})();
+</script>
+</body>
+</html>
