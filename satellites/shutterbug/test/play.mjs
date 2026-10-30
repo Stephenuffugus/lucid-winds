@@ -64,6 +64,21 @@ try {
   R.say(words === total, 'the recorder kept one word per step (' + words + ')');
   const clearBox = await centre(page, '#clear');
   R.say(!!clearBox && clearBox.onTop, 'the clear card is painted and on top');
+  /* the beacon pulses by the clock, never by drawn frames (a 120 Hz screen must not blink it twice as fast): with the
+     loop held and the hero on the exit, the room is drawn with performance.now pinned to t, t + 399 and t + 400 ms */
+  const pulse = await page.evaluate(() => {
+    const cv = document.getElementById('view'), cx = cv.getContext('2d'), real = performance.now;
+    const shot = t => {
+      performance.now = () => t;
+      try { window.SB_DEV.step(0); } finally { performance.now = real; }
+      const d = cx.getImageData(0, 0, cv.width, cv.height).data; let h = 0;
+      for (let i = 0; i < d.length; i++) h = (h * 31 + d[i]) | 0;
+      return h;
+    };
+    return [shot(400000), shot(400399), shot(400400)];
+  });
+  R.say(pulse[0] === pulse[1], 'the beacon pulses by the clock: drawn at t and at t + 399 ms the frame is the same');
+  R.say(pulse[2] !== pulse[0], 'and drawn at t + 400 ms the exit\'s outline has changed colour');
   await tap(page, '#again');
   const after = await page.evaluate(() => {
     const view = document.getElementById('view').getBoundingClientRect();
@@ -81,6 +96,12 @@ try {
   await page.waitForFunction(() => window.__t.length >= 3, { timeout: 30000, polling: 20 });
   const a0 = await page.evaluate(() => { window.__m0 = window.__t.length; window.SB_DEV.hold(false); const p = window.SB_DEV.perf(); return { f: window.SB_DEV.frames(), loop: p.loop }; });
   await page.keyboard.down('ArrowLeft');
+  /* two long tasks of the test's own, so the window has a frame owing two or more steps and one over the 100 ms clamp
+     (a stall), whatever the machine's own frame rate: the accumulator's every path is exercised */
+  await page.waitForFunction(f => window.SB_DEV.frames() >= f + 6, { timeout: 30000, polling: 20 }, a0.f);
+  await page.evaluate(() => { const t = performance.now(); while (performance.now() - t < 45); });
+  await page.waitForFunction(f => window.SB_DEV.frames() >= f + 12, { timeout: 30000, polling: 20 }, a0.f);
+  await page.evaluate(() => { const t = performance.now(); while (performance.now() - t < 140); });
   await page.waitForFunction(f => window.SB_DEV.frames() >= f + 40, { timeout: 60000, polling: 20 }, a0.f);
   await page.keyboard.up('ArrowLeft');
   const a1 = await page.evaluate(() => { window.SB_DEV.hold(true); window.__log = false; const p = window.SB_DEV.perf(); return { f: window.SB_DEV.frames(), loop: p.loop, t: window.__t.slice(), m0: window.__m0, m1: window.__t.length, rec: window.SB_DEV.recording() }; });
@@ -100,6 +121,8 @@ try {
     want += n;
   }
   const span = a1.t[a1.m1 - 1] - a1.t[a1.m0 - 1];
+  const dts = []; for (let i = a1.m0; i < a1.m1; i++) dts.push(a1.t[i] - a1.t[i - 1]);
+  R.say(dts.some(d => d > 100) && dts.some(d => d >= 2 * STEP && d <= 100), 'the window holds a frame over the 100 ms clamp and one owing two or more steps (longest ' + Math.max(...dts).toFixed(0) + ' ms)');
   R.say(Math.abs(a1.loop.stepMs - STEP) < 1e-9, 'the step is 16.667 ms (1000 / 60, computed here): the page says ' + a1.loop.stepMs);
   R.say(dSteps === want, 'the loop ran exactly the steps the accumulator owes on the test\'s own frame log: ' + dSteps + ' steps, ' + want + ' owed over ' + (a1.m1 - a1.m0) + ' frames, ' + span.toFixed(0) + ' ms');
   const flat = a1.rec.flatMap(([n, w]) => Array(n).fill(w));
@@ -120,7 +143,7 @@ try {
       const v = document.getElementById('view').getBoundingClientRect(), st = document.getElementById('strip').getBoundingClientRect();
       return { cssW: v.width, canvasBottom: v.bottom, stripH: st.height, stripBottom: st.bottom, inner: innerHeight, scroll: document.documentElement.scrollHeight };
     });
-    R.say(m.cssW === want, w + 'x' + h + ': the canvas is ' + m.cssW + ' CSS px wide (' + (want === 384 ? '1x: 2x would not fit the height' : '2x') + ')');
+    R.say(m.cssW === want, w + 'x' + h + ': the canvas is ' + (want === 384 ? '1x, 384 CSS px wide (2x would not fit the height)' : '2x, 768 CSS px wide') + ' (measured ' + m.cssW + ')');
     R.say(m.stripBottom <= m.inner + 0.5 && m.stripH >= 168 && m.scroll <= m.inner + 1, w + 'x' + h + ': the top strip, the play area and a ' + Math.round(m.stripH) + ' px control strip fit the window (scroll height ' + m.scroll + ' of ' + m.inner + ')');
     R.say(errors.length === 0, w + 'x' + h + ': zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();

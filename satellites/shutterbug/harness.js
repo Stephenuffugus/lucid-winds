@@ -713,17 +713,22 @@ group('H-pipe-12', 'the light is the cluster with the brightest cell; the beacon
   const two = SB.pipeline.build(labRecord({ 0: '444444444444445555554444', 1: '444666444444445555554444', 2: '444666444444445555554444', 3: '444333444444443333334444' }), {});
   const exitX = two.exit % 24;
   t.ok(exitX >= 3 && exitX <= 5, 'a 3x2 Glare lamp beats a bigger 6x3 Paper patch: the light is the lamp (exit at x ' + exitX + ', Q59)');
-  /* ties: two clusters both peaking at Glare, the larger wins; at equal size the one with the lower first cell */
-  const tie = SB.pipeline.build(labRecord({ 1: '466444444445555566444444', 2: '466444444445555555444444', 3: '433444444443333333444444' }), {});
-  t.ok(tie.exit % 24 >= 11 && tie.exit % 24 <= 17, 'two clusters that both peak at Glare: the larger (a Paper patch with a Glare corner) is the light (exit x ' + (tie.exit % 24) + ')');
-  const twin = SB.pipeline.build(labRecord({ 1: '466444444444444664444444', 2: '466444444444444664444444', 3: '433444444444444334444444' }), {});
-  t.ok(twin.exit % 24 <= 2, 'two equal Glare lamps: the one whose first cell comes first is the light (exit x ' + (twin.exit % 24) + ')');
-  /* the window is the top EXIT_ROWS (4) rows: a lamp in row 4 is not a ceiling light */
-  const low = SB.pipeline.build(labRecord({ 4: '444444466444444444444444', 5: '444444433444444444444444', 3: '444444444444444442222244' }), {});
+  /* ties: two standable clusters both peaking at Glare (each 3 or more wide over a Pewter shadow, so the light's choice
+     decides the exit): the larger wins; at equal size the one with the lower first cell */
+  const tie = SB.pipeline.build(labRecord({ 1: '466644444445555566444444', 2: '466644444445555555444444', 3: '433344444443333333444444' }), {});
+  t.ok(tie.exit >= 0 && tie.exit % 24 >= 11 && tie.exit % 24 <= 17, 'two clusters that both peak at Glare: the larger (a 7x2 Paper patch with a Glare corner, not the 3x2 lamp) is the light (exit x ' + (tie.exit % 24) + ')');
+  const twin = SB.pipeline.build(labRecord({ 1: '466644444444446664444444', 2: '466644444444446664444444', 3: '433344444444443334444444' }), {});
+  t.ok(twin.exit >= 0 && twin.exit % 24 >= 1 && twin.exit % 24 <= 3, 'two equal 3x2 Glare lamps: the one whose first cell comes first is the light (exit x ' + (twin.exit % 24) + ')');
+  /* the window is the top EXIT_ROWS (4) rows: a standable lamp in row 4 is not a ceiling light; the exit falls back to
+     the Ash shelf (17, 2) */
+  const low = SB.pipeline.build(labRecord({ 4: '444444466644444444444444', 5: '444444433344444444444444', 3: '444444444444444442222244' }), {});
   t.eq(low.beacon.cells.length, 0, 'a Glare lamp in row 4, under the top four rows, is not the light (no cells relit)');
-  /* no light at all: of the standable top row cells the brightest is the exit */
-  const dim = SB.pipeline.build(labRecord({ 2: '444444444444444444444444', 3: '222222444444444222222444' }), {});
-  t.ok(dim.exit >= 0 && SB.palette.L[dim.rec.pal[dim.exit]] === Math.max(...[...Array(24).keys()].map(x => 2 * 24 + x).filter(i => standableIn(dim, i)).map(i => SB.palette.L[dim.rec.pal[i]])), 'with no light, the exit is a brightest standable cell of the first row that has one');
+  t.eq(low.exit, 2 * 24 + 17, 'and the exit is the fallback, the shelf at (17, 2), not the lamp');
+  /* no light at all: of the standable cells in the first row that has one, the brightest (Ash 199 over the right block,
+     not Pewter 139 over the left one) */
+  const dim = SB.pipeline.build(labRecord({ 2: '333333444444444444444444', 3: '111111444444444111111444', 4: '111111444444444111111444', 5: '111111444444444111111444' }), {});
+  t.ok(dim.exit >= 0 && Math.floor(dim.exit / 24) === 2 && SB.palette.L[dim.rec.pal[dim.exit]] === 199, 'with no light, the exit is the brightest standable cell of the first row that has one (Ash, L ' + (dim.exit >= 0 ? SB.palette.L[dim.rec.pal[dim.exit]] : '-') + ')');
+  t.eq(dim.exit, pipeRef.exitOf(dim), 'and it equals the test\'s own rule');
   /* the fixtures where peaks tie: the test's own rule picks the same exit */
   for (const name of ['all-light', 'checkerboard', 'sample-room']) {
     const lv = buildFx(fixture(name), 0);
