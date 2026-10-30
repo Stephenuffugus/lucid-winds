@@ -745,25 +745,37 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       if (peak > bestPeak) { bestPeak = peak; light = lights[i]; }
     }
     var standable = function (c) { return c + w < n && !solid[c] && (solid[c + w] || plat[c + w]); };
-    var exit = -1;
-    /* the light's lowest standable row, then the lowest index in it (section 3.7: ties to the lowest index) */
-    if (light) for (q = 0; q < light.length; q++) if (standable(light[q]) && (exit < 0 || Math.floor(light[q] / w) > Math.floor(exit / w))) exit = light[q];
+    var z = function () { return new Uint8Array(n); };
+    var level = {
+      rec: rec, pal: pal, w: w, h: h, seed: SB.record.seedOf(rec), biome: opts.biome === undefined || opts.biome === null ? 0 : opts.biome,
+      negative: negative, L: L, solid: solid, plat: plat, tab: z(), slick: z(), sticky: z(), trap: z(),
+      otsuT: otsuT, landmarks: landmarks, spawn: spawn, exit: -1, beacon: { idx: -1, cells: new Int32Array(0) },
+      features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null },
+      repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false
+    };
+
+    /* the exit (section 3.7, DESIGN 6.6): the reachable standable cell of the top EXIT_ROWS rows with the greatest
+       reach distance from spawn, except that the light wins when its farthest reachable cell is within
+       EXIT_LIGHT_SLACK of that (Q11); every tie to the lowest index. A room whose top rows nothing reaches keeps the
+       light's lowest standable row, else the brightest standable cell of the first top row with one, until repair
+       (T0.11a) lays the tabs that reach it. */
+    var exit = -1, d = SB.reach.distances(SB.reach.graph(level), spawn), maxD = -1;
+    for (i = 0; i < T.EXIT_ROWS * w && i < n; i++) if (standable(i) && d[i] > maxD) { maxD = d[i]; exit = i; }
+    if (exit >= 0 && light) {
+      var lit = Array.from(light).sort(function (a, b) { return a - b; }), lc = -1;
+      for (q = 0; q < lit.length; q++) if (standable(lit[q]) && d[lit[q]] >= 0 && (lc < 0 || d[lit[q]] > d[lc])) lc = lit[q];
+      if (lc >= 0 && d[lc] >= maxD - T.EXIT_LIGHT_SLACK) exit = lc;
+    }
+    if (exit < 0 && light) for (q = 0; q < light.length; q++) if (standable(light[q]) && (exit < 0 || Math.floor(light[q] / w) > Math.floor(exit / w) || (Math.floor(light[q] / w) === Math.floor(exit / w) && light[q] < exit))) exit = light[q];
     if (exit < 0) for (y = 0; y < T.EXIT_ROWS && exit < 0; y++) {
       var bl = -1;
       for (x = 0; x < w; x++) { var c2 = y * w + x; if (standable(c2) && (bl < 0 || L[c2] > L[bl])) bl = c2; }
       exit = bl;
     }
-
-    var z = function () { return new Uint8Array(n); };
-    return {
-      rec: rec, pal: pal, w: w, h: h, seed: SB.record.seedOf(rec), biome: opts.biome === undefined || opts.biome === null ? 0 : opts.biome,
-      negative: negative, L: L, solid: solid, plat: plat, tab: z(), slick: z(), sticky: z(), trap: z(),
-      otsuT: otsuT, landmarks: landmarks, spawn: spawn, exit: exit,
-      /* section 3.7: when the exit is the light the light's cells are relit around it; otherwise the light stays backdrop */
-      beacon: { idx: exit, cells: light && exit >= 0 && light.indexOf(exit) >= 0 ? Int32Array.from(light) : new Int32Array(0) },
-      features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null },
-      repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false
-    };
+    level.exit = exit;
+    /* when the exit is the light the light's cells are relit around it; otherwise the light stays backdrop */
+    level.beacon = { idx: exit, cells: light && exit >= 0 && light.indexOf(exit) >= 0 ? Int32Array.from(light) : new Int32Array(0) };
+    return level;
   }
 
   /* The room as text, one line per row: # solid, = one way, ~ slick, | sticky, . open, S spawn, X exit, T film tab,
@@ -913,9 +925,27 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         if (!seen[key]) { seen[key] = 1; list.push([cx, -cy - 1]); }
       }
     };
-    for (var f = 0; f <= last; f++) { add(a[f].x, f === last ? -rowsUp * C : a[f].y); if (f > 0) add(a[f].x, a[f].py); }
-    list.sort(function (p, q) { return p[0] - q[0] || p[1] - q[1]; });
+    /* the sim moves x at the previous height, then y: the old height first, in the order the box enters cells */
+    for (var f = 0; f <= last; f++) { if (f > 0) add(a[f].x, a[f].py); add(a[f].x, f === last ? -rowsUp * C : a[f].y); }
     return list;
+  }
+  /* the one way tops the descent crosses before the landing step, with LAND_OVERLAP of overlap: [k, r] names the cell
+     whose top it is (r rows above the takeoff row's support); a one way there catches the hero first (section 3.3) */
+  function catches(K, a, last) {
+    var C = K.CELL_SUB, out = [], seen = {};
+    for (var f = 1; f < last; f++) {
+      if (a[f].vy <= 0) continue;
+      for (var j = Math.ceil(-a[f].y / C); j <= Math.floor(-a[f - 1].y / C); j++) {
+        var top = -j * C;
+        if (!(a[f - 1].y <= top && a[f].y > top)) continue;
+        for (var c = Math.floor(a[f].x / C); c <= Math.floor((a[f].x + K.HERO_W_SUB - 1) / C); c++) {
+          if (overlap(K, a[f].x, c) < K.OVERLAP_SUB) continue;
+          var key = c + ',' + (j - 1);
+          if (!seen[key]) { seen[key] = 1; out.push([c, j - 1]); }
+        }
+      }
+    }
+    return out;
   }
   /* a path to (dx, rowsUp): the smallest hold from `delay` whose landing box and resting box both overlap the target
      column by LAND_OVERLAP */
@@ -927,8 +957,19 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     for (var h = 0; h <= MAX_STEPS; h++) {
       var a = arc(K, profile, deep, delay, h, land), f = land;
       if (overlap(K, a[f].x, dx) >= K.OVERLAP_SUB && overlap(K, restX(K, a, f, delay, h), dx) >= K.OVERLAP_SUB)
-        return { delay: delay, hold: h, land: f, cells: sweep(K, a, f, rowsUp) };
+        return { delay: delay, hold: h, land: f, cells: sweep(K, a, f, rowsUp), catches: catches(K, a, f) };
       if (a[f].x > (dx + 1) * K.CELL_SUB) return null;
+    }
+    return null;
+  }
+  /* a walk off to (d, rows down): the ledge walk depends on the hold, so each hold is stepped whole */
+  function fallPath(K, deep, d, rows) {
+    for (var h = 1; h <= MAX_STEPS; h++) {
+      var a = arc(K, 'WALK', deep, 0, h), f = crossing(a, -rows, K);
+      if (f < 0) continue;
+      if (overlap(K, a[f].x, d) >= K.OVERLAP_SUB && overlap(K, restX(K, a, f, 0, h), d) >= K.OVERLAP_SUB)
+        return { delay: 0, hold: h, land: f, cells: sweep(K, a, f, -rows), catches: catches(K, a, f) };
+      if (a[f].x > (d + 1) * K.CELL_SUB) return null;
     }
     return null;
   }
@@ -990,11 +1031,176 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     for (var r = 1; r <= FALL_ROWS; r++) { var fw = crossing(w, -r, K); out.fall[r] = fw < 0 ? -1 : farCell(K, w[fw].x); }
     for (r = 1; r <= DOWN_ROWS; r++) { var fj = crossing(j, -r, K); out.down[r] = fj < 0 ? -1 : farCell(K, j[fj].x); }
     out.fall[0] = -1; out.down[0] = -1;
+    /* the walk off paths (d 1..fall[r]) and the jump down paths (FULL, dx 0..down[r]), with corridors and catches */
+    out.fallPaths = {}; out.downPaths = {};
+    for (r = 1; r <= FALL_ROWS; r++) for (dx = 1; dx <= out.fall[r]; dx++) { var fp = fallPath(K, deep, dx, r); if (fp) out.fallPaths[dx + ',' + r] = fp; }
+    for (r = 1; r <= DOWN_ROWS; r++) for (dx = 0; dx <= out.down[r]; dx++) { var dp = path(K, 'FULL', deep, dx, -r, 0); if (dp) out.downPaths[dx + ',' + r] = dp; }
+    /* the touch scans: the farthest FULL path of each height, the farthest walk off of each depth */
+    out.touchJumps = []; out.touchFalls = [];
+    var fu = out.profiles.FULL;
+    for (dy = 0; dy <= ROWS; dy++) if (fu.maxAcross[dy] >= 0 && (fu.paths[fu.maxAcross[dy] + ',' + dy] || []).length) out.touchJumps.push(fu.paths[fu.maxAcross[dy] + ',' + dy][0]);
+    for (r = 1; r <= FALL_ROWS; r++) if (out.fallPaths[out.fall[r] + ',' + r]) out.touchFalls.push(out.fallPaths[out.fall[r] + ',' + r]);
     memo[key] = out;
     return out;
   }
 
-  SB.reach = { PROFILES: PROFILES, arc: arc, crossing: crossing, farCell: farCell, tables: tables };
+
+  /* ---------------------------------------------------------------- the graph (sections 3.1, 3.3 to 3.6) */
+  /* Nodes: a standable cell is its index i; a contact in cell i is n + 2i (a wall on the left) or n + 2i + 1 (on the
+     right). Every edge is { from, to, kind, profile, dir, dx, dy, cost }. Out of bounds is solid, the top row open. */
+  var KINDS = ['WALK', 'JUMP', 'JUMP_DOWN', 'FALL', 'WALLTOUCH', 'SLIDE', 'WALLJUMP', 'STICKYUP', 'STICKYTOP', 'LET_GO'];
+  function graph(lv) {
+    var K = SB.K, T = SB.TUNING, w = lv.w, h = lv.h, n = w * h, solid = lv.solid, plat = lv.plat, i, x, y;
+    var sticky = lv.sticky || new Uint8Array(n), slick = lv.slick || new Uint8Array(n), tb = tables(K, lv.biome | 0);
+    var S = function (cx, cy) { return cx < 0 || cx >= w || cy < 0 || cy >= h || solid[cy * w + cx] === 1; };
+    var P = function (cx, cy) { return cx >= 0 && cx < w && cy >= 0 && cy < h && plat[cy * w + cx] === 1; };
+    var stand = new Uint8Array(n), contact = new Uint8Array(2 * n), sticks = new Uint8Array(2 * n), standN = 0;
+    for (i = 0; i < n - w; i++) if (!solid[i] && (solid[i + w] || plat[i + w])) stand[i] = 1;
+    /* Frost: the two end cells of a slick run are not standable for the model (the slide carries the hero off them) */
+    for (i = w; i < n; i++) if (slick[i]) {
+      x = i % w;
+      if ((x === 0 || !slick[i - 1]) || (x === w - 1 || !slick[i + 1])) stand[i - w] = 0;
+    }
+    for (i = 0; i < n; i++) {
+      if (stand[i]) standN++;
+      if (solid[i] || stand[i]) continue;
+      x = i % w; y = (i - x) / w;
+      for (var sd = 0; sd < 2; sd++) {
+        var ox = x + (sd ? 1 : -1);
+        if (!S(ox, y)) continue;
+        contact[2 * i + sd] = 1;
+        if (ox >= 0 && ox < w && sticky[y * w + ox]) sticks[2 * i + sd] = 1;
+      }
+    }
+    var adj = [], edges = 0;
+    var add = function (from, to, kind, profile, dir, dx, dy, cost) {
+      (adj[from] || (adj[from] = [])).push({ from: from, to: to, kind: kind, profile: profile, dir: dir, dx: dx, dy: dy, cost: cost });
+      edges++;
+    };
+    var cnode = function (c, side) { return n + 2 * c + (side > 0 ? 1 : 0); };
+    /* a path from (sx, sy) in dir: every corridor cell open, no one way catching the descent first */
+    var clear = function (p, sx, sy, dir) {
+      for (var k = 0; k < p.cells.length; k++) if (S(sx + dir * p.cells[k][0], sy - p.cells[k][1])) return false;
+      for (k = 0; k < p.catches.length; k++) if (P(sx + dir * p.catches[k][0], sy - p.catches[k][1])) return false;
+      return true;
+    };
+    /* the wall contacts a path touches before anything stops it: cells in the order the box enters them, up to the first
+       solid; a contact counts when the wall it touches lies ahead in the travel direction */
+    var touches = function (p, sx, sy, dir, out) {
+      for (var k = 0; k < p.cells.length; k++) {
+        var cx = sx + dir * p.cells[k][0], cy = sy - p.cells[k][1];
+        if (S(cx, cy)) return;
+        var c = cy * w + cx, sd = dir > 0 ? 1 : 0;
+        if (contact[2 * c + sd]) out[cnode(c, dir)] = 1;
+      }
+    };
+    var JP = ['FULL', 'MID', 'TAP'], up = lv.biome === 2 ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;
+    for (var s = 0; s < n; s++) {
+      if (!stand[s]) continue;
+      var sx = s % w, sy = (s - sx) / w;
+      for (var dir = -1; dir <= 1; dir += 2) {
+        /* WALK */
+        if (sx + dir >= 0 && sx + dir < w && stand[s + dir]) add(s, s + dir, 'WALK', null, dir, 1, 0, 1);
+        /* JUMP: FULL, MID, TAP in turn, the first whose corridor clears; straight up only onto a one way */
+        for (var dy = 0; dy <= up; dy++) for (var dx = 0; dx <= T.JUMP_ACROSS; dx++) {
+          if ((dx === 0 && dy === 0) || (dx === 0 && dir > 0)) continue;
+          var tx = sx + dir * dx, ty = sy - dy;
+          if (tx < 0 || tx >= w || ty < 0 || !stand[ty * w + tx]) continue;
+          if (dx === 0 && !P(tx, ty + 1)) continue;
+          for (var q = 0; q < JP.length; q++) {
+            var pr = tb.profiles[JP[q]];
+            if (pr.maxAcross[dy] < dx) continue;
+            var cands = pr.paths[dx + ',' + dy] || [], ok = false;
+            for (var c = 0; c < cands.length && !ok; c++) ok = clear(cands[c], sx, sy, dir);
+            if (!ok) continue;
+            var edge = dx === pr.maxAcross[dy] || dy + 1 > up || pr.maxAcross[dy + 1] < dx;
+            add(s, ty * w + tx, 'JUMP', JP[q], dir, dx, dy, 2 + dy + dx / 2 + (edge ? 3 : 0));
+            break;
+          }
+        }
+        /* JUMP_DOWN: the FULL arc continued below the takeoff row */
+        for (var r = 1; r < tb.down.length; r++) for (dx = (dir < 0 ? 0 : 1); dx <= tb.down[r]; dx++) {
+          tx = sx + dir * dx; ty = sy + r;
+          if (tx < 0 || tx >= w || ty >= h || !stand[ty * w + tx]) continue;
+          var dp = tb.downPaths[dx + ',' + r];
+          if (dp && clear(dp, sx, sy, dir)) add(s, ty * w + tx, 'JUMP_DOWN', 'FULL', dir, dx, -r, 2 + dx / 2);
+        }
+        /* FALL: walk off the edge with the rocker held (the ledge must end: the next cell is not standable) */
+        if (!(sx + dir >= 0 && sx + dir < w && (stand[s + dir] || S(sx + dir, sy)))) {
+          for (r = 1; r < tb.fall.length; r++) for (dx = 1; dx <= tb.fall[r]; dx++) {
+            tx = sx + dir * dx; ty = sy + r;
+            if (tx < 0 || tx >= w || ty >= h || !stand[ty * w + tx]) continue;
+            var fp = tb.fallPaths[dx + ',' + r];
+            if (fp && clear(fp, sx, sy, dir)) add(s, ty * w + tx, 'FALL', null, dir, dx, -r, 1 + r / 4);
+          }
+        }
+        /* WALLTOUCH: a contact the farthest FULL jump of each height, or the farthest walk off of each depth, reaches
+           while holding toward the wall (a nearer arc of the same height touches nothing the farthest misses before it
+           stops; scanning only these keeps the graph inside its budget, and can only make the model stingier) */
+        var seen = {}, key;
+        for (var t2 = 0; t2 < tb.touchJumps.length; t2++) touches(tb.touchJumps[t2], sx, sy, dir, seen);
+        if (!(sx + dir >= 0 && sx + dir < w && (stand[s + dir] || S(sx + dir, sy)))) for (t2 = 0; t2 < tb.touchFalls.length; t2++) touches(tb.touchFalls[t2], sx, sy, dir, seen);
+        for (key in seen) add(s, +key, 'WALLTOUCH', null, dir, 0, 0, 3);
+      }
+      /* FALL straight down: a dive through the one way under the feet, landing on each standable cell below in turn */
+      if (P(sx, sy + 1)) for (ty = sy + 1; ty < h && !S(sx, ty); ty++) if (stand[ty * w + sx]) add(s, ty * w + sx, 'FALL', null, 0, 0, sy - ty, 1 + (ty - sy) / 4);
+    }
+    /* the contact nodes: SLIDE down the wall, WALLJUMP away (and the chain to the far wall), the sticky moves */
+    for (i = 0; i < n; i++) for (var sd2 = 0; sd2 < 2; sd2++) {
+      if (!contact[2 * i + sd2]) continue;
+      var side = sd2 ? 1 : -1, cx = i % w, cy = (i - cx) / w, from = cnode(i, side);
+      if (sticks[2 * i + sd2]) {
+        /* STICKYUP to the contacts above on the same vine within STICKY_UP; STICKYTOP over the top; LET_GO straight down */
+        for (var k2 = 1; k2 <= T.STICKY_UP && cy - k2 >= 0 && !S(cx, cy - k2); k2++) {
+          var c2 = (cy - k2) * w + cx;
+          if (sticks[2 * c2 + sd2]) add(from, cnode(c2, side), 'STICKYUP', 'STICKY', 0, 0, k2, 2);
+          else {
+            var topx = cx + side, topy = cy - k2;
+            if (topy >= 0 && topx >= 0 && topx < w && stand[topy * w + topx]) add(from, topy * w + topx, 'STICKYTOP', 'STICKY', side, 1, k2, 3);
+            break;
+          }
+        }
+        for (ty = cy + 1; ty < h && !S(cx, ty); ty++) if (stand[ty * w + cx]) { add(from, ty * w + cx, 'LET_GO', null, 0, 0, cy - ty, 1 + (ty - cy) / 4); break; }
+        continue;
+      }
+      for (ty = cy + 1; ty < h && !S(cx, ty); ty++) {
+        var c3 = ty * w + cx;
+        if (stand[c3]) { add(from, c3, 'SLIDE', null, side, 0, cy - ty, ty - cy); break; }
+        if (!contact[2 * c3 + sd2]) break;
+        add(from, cnode(c3, side), 'SLIDE', null, side, 0, cy - ty, ty - cy);
+      }
+      var wp = tb.profiles.WALL, away = -side, far = {};
+      for (dy = 0; dy <= T.WALL_UP; dy++) for (dx = 1; dx <= wp.maxAcross[dy]; dx++) {
+        var cand2 = wp.paths[dx + ',' + dy] || [];
+        if (!cand2.length) continue;
+        touches(cand2[0], cx, cy, away, far);
+        tx = cx + away * dx; ty = cy - dy;
+        if (tx < 0 || tx >= w || ty < 0 || !stand[ty * w + tx]) continue;
+        if (clear(cand2[0], cx, cy, away)) add(from, ty * w + tx, 'WALLJUMP', 'WALL', away, dx, dy, 3 + dy);
+      }
+      for (key in far) if (+key !== from) add(from, +key, 'WALLJUMP', 'WALL', away, 0, 0, 4);
+    }
+    return { w: w, h: h, n: n, stand: stand, contact: contact, sticky: sticks, standN: standN, adj: adj, edges: edges };
+  }
+  /* breadth first from a cell: distance in edges to every node (-1 unreachable) */
+  function distances(g, from) {
+    var d = new Int32Array(3 * g.n).fill(-1), q = [from], head = 0;
+    d[from] = 0;
+    while (head < q.length) {
+      var u = q[head++], es = g.adj[u];
+      if (!es) continue;
+      for (var k = 0; k < es.length; k++) if (d[es[k].to] < 0) { d[es[k].to] = d[u] + 1; q.push(es[k].to); }
+    }
+    return d;
+  }
+  /* the share of standable cells reached */
+  function reachableFrac(g, d) {
+    var r = 0;
+    for (var i = 0; i < g.n; i++) if (g.stand[i] && d[i] >= 0) r++;
+    return g.standN ? r / g.standN : 0;
+  }
+
+  SB.reach = { PROFILES: PROFILES, KINDS: KINDS, arc: arc, crossing: crossing, farCell: farCell, tables: tables, graph: graph, distances: distances, reachableFrac: reachableFrac };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-features" data-core>
