@@ -4152,6 +4152,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     setInstall: 'Install to the home screen to keep your rooms', install: 'Install',
     setExport: 'Your save', setCopy: 'Copy the save', setImportBox: 'Paste a save here', setImportGo: 'Load the pasted save',
     importConfirm: 'Replace your save?', importBad: 'That save did not open.', perf: 'Performance', perfHash: 'last room',
+    perfNone: 'not measured yet', perfHashNone: 'not played yet',
     codeBad: 'That code did not open. Check it and try again.',
     codeNewer: 'This room was made by a newer Shutterbug. Update and try again.',
     nextRoom: 'Shoot the next room',
@@ -4385,6 +4386,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     SB.perfLog.pipeline = opts.level ? (opts.ms || 0) : performance.now() - t0;
     if (lv.needsCrop) return false;
     G.record = record; G.level = lv; G.name = name; G.mode = opts.mode || 'free';
+    G.notFirst = !!opts.notFirst;   /* Again and Play it again keep the room's origin: a link stays a link (the M1 review) */
     G.state = SB.sim.create(lv, {}); G.banked = false;
     if (!opts.notFirst && !ui.firstRoomDone) { ui.firstRoomDone = true; SB.save.doc.onboarding.firstRoomDone = true; SB.save.commit(); }
     else if (!opts.notFirst) ui.firstRoomDone = true;
@@ -4402,8 +4404,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the sheets (T1.6) are views of the sim's state: the offer while state.scrollsOffered holds two stats, the slip while
      the chest's compare is open; their taps only queue a CHOICE (SB.input.choose); the Dead pixel count follows the room */
   var STAT_KEY = ['', 'vigor', 'focus', 'grit'], shownOffer = '', shownDp = -1;
+  /* one sheet at a time, in the order the sim answers them (the offer first, the chest's compare after it), and none
+     over a dead room: a hit on the step a sheet opens ends the room under it (the M1 review: the slip covered the
+     offer, and either covered the death card's Again and Title on a short phone) */
   ui.sheets = function (st) {
-    var off = st.scrollsOffered, key = off ? off.join() : '';
+    var dead = !!st.room.dead, off = dead ? null : st.scrollsOffered, key = off ? off.join() : '';
     if (key !== shownOffer) {
       shownOffer = key;
       document.getElementById('offer').classList.toggle('on', !!off);
@@ -4412,7 +4417,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
         b.querySelector('.ico').className = 'ico ' + sk; b.querySelector('b').textContent = ui.COPY[sk]; b.querySelector('small').textContent = ui.COPY[sk + 'Says'];
       });
     }
-    document.getElementById('slip').classList.toggle('on', !!st.room.compare);
+    document.getElementById('slip').classList.toggle('on', !!st.room.compare && !off && !dead);
     if (st.room.dp !== shownDp) { shownDp = st.room.dp; document.getElementById('dpn').textContent = String(st.room.dp); }
   };
   /* the share sheet (T1.8, section 1.5): the record's grid on a 192x384 canvas (8 px a cell), the link from the page's
@@ -4507,8 +4512,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('setmotion').value = st.reducedMotion === null ? 'os' : st.reducedMotion ? 'on' : 'off';
     document.getElementById('setdamaged').hidden = !SB.save.quarantined;
     document.getElementById('setexport').value = SB.save.exportText();
-    var fr = SB.perfLog.frames.slice(-300);   /* no frames yet (a held loop): a dash, not a 0.0 that reads as a measure (t110) */
-    document.getElementById('setperf').textContent = ui.COPY.perf + ': ' + (fr.length ? p95(fr).toFixed(1) + ' ms p95' : '-') + ', ' + ui.COPY.perfHash + ' ' + (ui.lastHash || '-');
+    /* the p95 of a step plus the p95 of a draw over the last 300 of each (section 5.10's measure, the sprites gate's sum;
+       perfLog.frames holds [now, steps] pairs, which threw here once a room had run: the M1 review). No step yet (a
+       held loop): words, not a 0.0 that reads as a measure (t110), and never a dash (player copy) */
+    var pl = SB.perfLog, ms = pl.step.length ? p95(pl.step.slice(-300)) + p95(pl.draw.slice(-300)) : -1;
+    document.getElementById('setperf').textContent = ui.COPY.perf + ': ' + (ms >= 0 ? ms.toFixed(1) + ' ms p95' : ui.COPY.perfNone) + ', ' + ui.COPY.perfHash + ' ' + (ui.lastHash || ui.COPY.perfHashNone);
     document.getElementById('setbuild').textContent = ui.COPY.build + ' ' + SB.BUILD.replace(/-/g, ' ');
   }
   ui.applySettings = function () {
@@ -4525,10 +4533,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (SB.save.doc) { SB.save.doc.stats.deaths++; SB.save.commit(); ui.lastHash = SB.sim.hash(G.state); }
     var hd = SB.render.drawn.hero, cv = document.getElementById('view');
     document.getElementById('death').classList.toggle('low', !!hd && hd.key !== null && hd.y + hd.h / 2 < cv.height / 2);
+    document.getElementById('offer').classList.remove('on'); document.getElementById('slip').classList.remove('on'); shownOffer = '';
     document.getElementById('death').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'dead'; document.body.classList.remove('playing'); };
   ui.hideDeath = function () { document.getElementById('death').classList.remove('on'); };
   /* free play restarts the room with the same record and seed, the reveal skipped */
-  ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true }); };
+  ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true, notFirst: G.notFirst, mode: G.mode }); };
   /* the hint glyphs, once each a session (onboarding.hints, T1.10 keeps them): the rocker and A at the first standing
      moment, B the first time the hero is airborne above a dive target (a one way within 8 rows under its column) */
   ui.hinted = { rocker: false, A: false, B: false, stood: false };
@@ -4554,7 +4563,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.sampleRecord = function () {
     return SB.record.fromJSON({ v: 1, w: SB.GRID.W, h: SB.GRID.H, mode: 0, focal: null, rows: Array.from(SB.SAMPLE_ROOM), rows2: null });
   };
-  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level }); };
+  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, notFirst: G.notFirst, mode: G.mode }); };
 
   /* the clear (T1.13), once a room: its Dead pixels banked at the mode's rate (free play and Level code x0.5, DESIGN 8,
      floored: QUESTIONS Q85), the room written to Recent rooms, first_clear announced to the host (once a save, only

@@ -22,6 +22,8 @@ try {
   await page.evaluate(() => localStorage.clear()); await page.reload(); await ready(page);
 
   await tap(page, '#settingsbtn');
+  const fresh = await page.evaluate(() => document.getElementById('setperf').textContent);
+  R.say(fresh === 'Performance: not measured yet, last room not played yet', 'a fresh Settings says so in words, no dash: "' + fresh + '"');
   await tap(page, '#setmirror');
   await tap(page, '#settitle');
   await page.reload(); await ready(page);

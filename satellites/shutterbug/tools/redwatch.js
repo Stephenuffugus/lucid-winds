@@ -698,7 +698,19 @@ const MUTANTS = [
   { name: 'TWIST_IN_FIRST_ROOM', task: 'T1.5', file: 'page', find: 'level.twistOff = opts.firstRoom && (level.biome === 1 || level.biome === 2 || level.biome === 3) ? 1 : 0;', repl: 'level.twistOff = 0;',
     gates: [{ gate: 'harness', only: 'H-sim-16', expect: 'the first ever room has no ice' }] },
   { name: 'MODEL_DEEP_IGNORES_TWISTOFF', task: 'T1.5', file: 'page', edits: [['tb = tables(K, lv.twistOff ? 0 : lv.biome | 0)', 'tb = tables(K, lv.biome | 0)'], ['up = lv.biome === 2 && !lv.twistOff ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;', 'up = lv.biome === 2 ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;']],
-    gates: [{ gate: 'harness', only: 'H-sim-17', expect: 'under twistOff (the first ever room) neither the sim nor the model reaches it' }] }
+    gates: [{ gate: 'harness', only: 'H-sim-17', expect: 'under twistOff (the first ever room) neither the sim nor the model reaches it' }] },
+
+  /* the M1 review (30 Oct, before the M1 deploy): each confirmed finding's fix, watched red */
+  { name: 'PERF_OVER_PAIRS', task: 'M1R', file: 'page', find: 'ms = pl.step.length ? p95(pl.step.slice(-300)) + p95(pl.draw.slice(-300)) : -1;', repl: 'ms = pl.frames.length ? p95(pl.frames.slice(-300)).toFixed(1) * 1 : -1;',
+    gates: [{ gate: 'loop', expect: 'Settings opens after a room ran unheld' }] },
+  { name: 'PERF_DASH', task: 'M1R', file: 'page', find: "(ms >= 0 ? ms.toFixed(1) + ' ms p95' : ui.COPY.perfNone)", repl: "(ms >= 0 ? ms.toFixed(1) + ' ms p95' : '-')",
+    gates: [{ gate: 'save', expect: 'a fresh Settings says so in words, no dash' }] },
+  { name: 'LINK_TAKES_FIRST_ROOM', task: 'M1R', file: 'page', find: "ui.startRoom(rec, ui.COPY.sharedRoom, { mode: 'code', notFirst: true })", repl: "ui.startRoom(rec, ui.COPY.sharedRoom, { mode: 'code' })",
+    gates: [{ gate: 'share', expect: 'a fresh profile opens the link to the sharer' }] },
+  { name: 'AGAIN_FORGETS_LINK', task: 'M1R', file: 'page', find: '{ level: G.level, noReveal: true, notFirst: G.notFirst, mode: G.mode }', repl: '{ level: G.level, noReveal: true }',
+    gates: [{ gate: 'share', expect: "its death card's Again keeps it a link" }] },
+  { name: 'PLAY_AGAIN_FORGETS_LINK', task: 'M1R', file: 'page', find: 'ui.startRoom(G.record, G.name, { level: G.level, notFirst: G.notFirst, mode: G.mode }); };', repl: 'ui.startRoom(G.record, G.name, { level: G.level }); };',
+    gates: [{ gate: 'share', expect: "its clear card's Play it again keeps it a link" }] }
 ];
 
 /* ---------------------------------------------------------------- run */

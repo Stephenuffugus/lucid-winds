@@ -10,8 +10,13 @@
  * 3 CSS px a module at 412 and at 360 wide and on screen; a Double Exposure room gets `Long code, the link is easier.`
  * instead of a symbol.
  *
- * Watched red by SHARE_DROPS_FOCAL and PREFIX_CHECK_DROPPED through H-share-1 and H-share-2 (Node), QUIET_ZONE_0, and
- * by this gate's own checks. */
+ * Q32 in a profile of its own (the M1 review): a link to a room whose first room build differs (trap-pattern) opens
+ * in a fresh profile to the sharer's level with the first room not spent; the death card's Again and the clear card's
+ * Play it again keep it a link and unspent; the player's own first room comes after. The Level code field: a typed code
+ * and a real tap on Play open the card and the same level; garbage says so on the title.
+ *
+ * Watched red by SHARE_DROPS_FOCAL and PREFIX_CHECK_DROPPED through H-share-1 and H-share-2 (Node), QUIET_ZONE_0,
+ * LINK_TAKES_FIRST_ROOM, AGAIN_FORGETS_LINK, PLAY_AGAIN_FORGETS_LINK and by this gate's own checks. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, GAME, GAME_PATH } from './harness.mjs';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -48,6 +53,57 @@ try {
   let hashB = null; for (let k = 0; k < 30 && !hashB; k++) { await new Promise(r => setTimeout(r, 100)); hashB = await b.page.evaluate(() => { const l = window.SB_DEV.level(); return l ? l.hash : null; }); }
   R.say(hashB === hashA, 'a real tap develops the same level (' + hashB + ', the first page ' + hashA + ')');
   R.say(b.errors.length === 0, 'the opened page has zero page errors' + (b.errors.length ? ' (' + b.errors.join(' ; ') + ')' : ''));
+
+  /* Q32 in a profile of its own (the M1 review: the check above shares page A's save, past its first room, and the
+     sample room builds the same either way). The sharer, past its first room, shares trap-pattern, whose first room
+     build differs from its later build. A fresh profile opens the link: the same level, and the first room not spent;
+     dies and taps Again, clears and taps Play it again: still a link, still not spent. Its own first room comes after. */
+  const tp = JSON.parse(readFileSync(join(GAME, 'fixtures', 'synthetic', 'trap-pattern.json'), 'utf8')).record;
+  const sh = await newPage(browser, { width: 412, height: 915 });   /* page A's profile, past its first room */
+  await gotoGame(sh.page, srv.base); await ready(sh.page);
+  await sh.page.evaluate(() => window.SB_DEV.hold(true));
+  const shared = await sh.page.evaluate(j => { window.SB_DEV.loadRecord(JSON.stringify(j)); const SB = window.SB;
+    const first = SB.pipeline.levelHash(SB.pipeline.build(SB.game.record, { firstRoom: true }));
+    return { hash: window.SB_DEV.level().hash, first, link: SB.record.linkOf(location.origin, location.pathname, SB.game.record), code: SB.record.encode(SB.game.record) }; }, tp);
+  await sh.page.close();
+  const fc = await browser.createBrowserContext();
+  const f = await newPage(fc, { width: 412, height: 915 });
+  await f.page.goto(shared.link); await ready(f.page);
+  await f.page.evaluate(() => window.SB_DEV.hold(true));
+  await tap(f.page, '#devtap');
+  const fl = () => f.page.evaluate(() => ({ hash: window.SB_DEV.level() ? window.SB_DEV.level().hash : null, screen: window.SB_DEV.screen(), mode: window.SB.game.mode,
+    spent: !!window.SB.save.doc.onboarding.firstRoomDone, ui: window.SB.ui.firstRoomDone }));
+  let fs = await fl();
+  R.say(shared.first !== shared.hash && fs.hash === shared.hash && fs.mode === 'code' && !fs.spent && !fs.ui,
+    'a fresh profile opens the link to the sharer\'s level (' + fs.hash + ', the sharer ' + shared.hash + ', a first room build ' + shared.first + ') and its first room is not spent');
+  /* the room ended by hand (no fixture's moths reach an idle bug): the state marked dead, the next step shows the card */
+  await f.page.evaluate(() => { window.SB.game.state.room.dead = 1; window.SB_DEV.step(1); });
+  await tap(f.page, '#deathagain');
+  fs = await fl();
+  R.say(fs.screen === 'play' && fs.hash === shared.hash && fs.mode === 'code' && !fs.spent && !fs.ui, 'its death card\'s Again keeps it a link (mode ' + fs.mode + ') and the first room unspent (' + fs.spent + ')');
+  await f.page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(2); });
+  await tap(f.page, '#again');
+  fs = await fl();
+  R.say(fs.screen === 'play' && fs.hash === shared.hash && fs.mode === 'code' && !fs.spent && !fs.ui, 'its clear card\'s Play it again keeps it a link (mode ' + fs.mode + ') and the first room unspent (' + fs.spent + ')');
+  await tap(f.page, '#back');
+  await tap(f.page, '#sample');
+  fs = await fl();
+  R.say(fs.spent && fs.ui && fs.mode === 'free', 'the player\'s own first room comes after and spends it (' + fs.spent + ')');
+  /* the Level code field, a returning player's: a pasted code opens on the card, garbage says so */
+  await tap(f.page, '#back');
+  await f.page.evaluate(code => { document.getElementById('levelcode').value = code; }, shared.code);
+  await tap(f.page, '#playcode');
+  const fcard = await f.page.evaluate(() => document.getElementById('devcard').classList.contains('on'));
+  await tap(f.page, '#devtap');
+  fs = await fl();
+  R.say(fcard && fs.hash === shared.hash && fs.mode === 'code', 'a code typed in the Level code field and a real tap on Play open the card, then the same level (' + fs.hash + ')');
+  await tap(f.page, '#back');
+  await f.page.evaluate(() => { document.getElementById('levelcode').value = 'v1.not-a-room'; });
+  await tap(f.page, '#playcode');
+  const fbad = await f.page.evaluate(() => ({ shown: !document.getElementById('codemsg').hidden, text: document.getElementById('codemsg').textContent, card: document.getElementById('devcard').classList.contains('on') }));
+  R.say(fbad.shown && fbad.text === 'That code did not open. Check it and try again.' && !fbad.card, 'garbage in the field says so on the title (' + fbad.text + ')');
+  R.say(f.errors.length === 0, 'the fresh profile has zero page errors' + (f.errors.length ? ' (' + f.errors.join(' ; ') + ')' : ''));
+  await fc.close();
 
   /* a garbage code */
   const c = await newPage(browser, { width: 360, height: 780 });

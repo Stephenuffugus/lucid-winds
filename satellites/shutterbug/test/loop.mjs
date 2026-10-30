@@ -147,10 +147,19 @@ try {
   R.say(l.screen === 'play' && !l.on.includes('sharesheet') && mid === 'stage', 'the next room opens with no share sheet over it (on: ' + (l.on.join(' ') || 'nothing') + ', a thumb mid room lands on ' + mid + ')');
   await tap(page, '#back');
 
-  /* settings and back */
+  /* settings and back, after a room that ran unheld (the M1 review: the Performance line ran its p95 over the frame
+     log's [now, steps] pairs and threw, so Settings never opened again once a room had run) */
+  await tap(page, '#sample');
+  await page.evaluate(() => window.SB_DEV.hold(false));
+  await sleep(900);
+  await page.evaluate(() => window.SB_DEV.hold(true));
+  const ran = await page.evaluate(() => ({ frames: window.SB_DEV.perf().frames.length, screen: window.SB_DEV.screen() }));   /* the frame log fills only while the loop runs unheld */
+  await tap(page, ran.screen === 'dead' ? '#deathtitle' : '#back');
   await tap(page, '#settingsbtn');
   l = await look();
-  R.say(l.screen === 'settings', 'Settings opens');
+  const perfLine = await page.evaluate(() => document.getElementById('setperf').textContent);
+  R.say(ran.frames > 20 && l.screen === 'settings' && /^Performance: \d+\.\d ms p95, last room [0-9a-f]{16}$/.test(perfLine),
+    'Settings opens after a room ran unheld (' + ran.frames + ' frames) and its Performance line reads "' + perfLine + '"');
   await tap(page, '#settitle');
   await clean('the settings\' Title');
   l = await look();
