@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 4227;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 4269;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -2100,6 +2100,32 @@ group('H-reach-11', 'the exact wall touch (T0.13a, Q65): the model lists the con
   }
 });
 
+/* section 3.3's costs, recomputed from the edge's own fields and the oracle's tables (the third review: every cost
+   weight but the +3 could change and every gate stayed green; the planner's choice among routes rests on them) */
+group('H-reach-12', 'every edge\'s cost is section 3.3\'s formula', t => {
+  const want = (g, e) => {
+    const cellOf = v => (v < g.n ? v : (v - g.n) >> 1), fy = Math.floor(cellOf(e.from) / g.w), fx = cellOf(e.from) % g.w, ty = Math.floor(cellOf(e.to) / g.w), tx = cellOf(e.to) % g.w;
+    if (e.kind === 'WALK') return 1;
+    if (e.kind === 'JUMP') { const m = ORACLE.clipped(e.profile, false); const edge = e.dx === m[e.dy] || e.dy + 1 >= m.length || m[e.dy + 1] < e.dx; return 2 + e.dy + e.dx / 2 + (edge ? 3 : 0); }
+    if (e.kind === 'JUMP_DOWN') return 2 + e.dx / 2;
+    if (e.kind === 'FALL' || e.kind === 'LET_GO') return 1 + (ty - fy) / 4;
+    if (e.kind === 'SLIDE') return ty - fy;
+    if (e.kind === 'STICKYUP') return 2;
+    if (e.kind === 'STICKYTOP') return 3;
+    if (e.kind === 'WALLTOUCH') { const up = fy - ty, across = Math.abs(tx - fx); return (up >= 0 ? 2 + up + across / 2 : 1 + (ty - fy) / 4) + 1; }
+    if (e.kind === 'WALLJUMP') { if (e.dx === 0) return 4; const m = ORACLE.clipped('WALL', false); const edge = e.dx === m[e.dy] || e.dy + 1 > SB.TUNING.WALL_UP || m[e.dy + 1] < e.dx; return 3 + e.dy + (edge ? 3 : 0); }
+    return null;
+  };
+  const rooms = [['sample-room', buildFx(fixture('sample-room'), 0)], ['shelves-a', buildFx(fixture('shelves-a'), 0)], ['noise-s2', buildFx(fixture('noise-s2'), 0)]];
+  const v = LABS.room(['', '.......#', '......|', '......|', '......|', '......|', '......|', '......|.==', '......|', '......|', '......|', '......|', '', '', FLOOR], { biome: 3 });
+  rooms.push(['a vine room', v]);
+  for (const [name, lv] of rooms) {
+    const g = SB.reach.graph(lv), bad = [], kinds = new Set(); let n = 0;
+    for (const es of g.adj) for (const e of es || []) { n++; kinds.add(e.kind); const w = want(g, e); if (w === null || Math.abs(w - e.cost) > 1e-9) bad.push(e.kind + ' ' + e.dx + ',' + e.dy + ' cost ' + e.cost + ' want ' + w); }
+    t.ok(bad.length === 0, name + ': all ' + n + ' edges (' + [...kinds].join(', ') + ') cost what section 3.3 says' + (bad.length ? ' (' + bad.length + ' do not: ' + bad.slice(0, 4).join('; ') + ')' : ''));
+  }
+});
+
 group('H-reach-4', 'every edge\'s corridor is open, rechecked from the oracle\'s own paths on every fixture', t => {
   const S = (lv, x, y) => x < 0 || x >= lv.w || y < 0 || y >= lv.h || lv.solid[y * lv.w + x] === 1;
   /* the oracle's rightward path, mapped by the edge's direction (every start is centred, so the arcs mirror exactly) */
@@ -2316,6 +2342,19 @@ group('H-rep-1', 'the corpus result table: every fixture builds or returns needs
   t.ok(Array.from(sl.beacon.cells).includes(sl.exit), 'the slack lab: the lamp is the exit inside EXIT_LIGHT_SLACK, though the plank is farther (exit (' + sl.exit % 24 + ', ' + Math.floor(sl.exit / 24) + '))');
 });
 
+group('H-rep-1b', 'the exit rule at its boundaries (the third review): the light inside EXIT_LIGHT_SLACK and just past it; never below the top EXIT_ROWS', t => {
+  /* a room of standable cells along row 2 and row 4 (one ways under them), the light at (3, 2); distances set by hand */
+  const lv = LABS.room(['', '', '', '========================', '', '========================'].concat(Array(41).fill(''), [FLOOR]));
+  const T = SB.TUNING, light = Int32Array.from([2 * 24 + 3]), mk = set => { const d = new Int32Array(3 * lv.w * lv.h).fill(-1); for (const [x, y, v] of set) d[y * lv.w + x] = v; return d; };
+  const at = e => (e % lv.w) + ',' + Math.floor(e / lv.w);
+  const inside = SB.pipeline.exitByReach(lv, light, mk([[3, 2, 10], [12, 2, 10 + T.EXIT_LIGHT_SLACK]]));
+  t.eq(at(inside), '3,2', 'a cell exactly EXIT_LIGHT_SLACK (' + T.EXIT_LIGHT_SLACK + ') edges farther than the light leaves the light the exit');
+  const past = SB.pipeline.exitByReach(lv, light, mk([[3, 2, 10], [12, 2, 11 + T.EXIT_LIGHT_SLACK]]));
+  t.eq(at(past), '12,2', 'one edge more, and the farther cell is the exit');
+  const low = SB.pipeline.exitByReach(lv, null, mk([[3, 2, 10], [12, T.EXIT_ROWS, 30]]));
+  t.eq(at(low), '3,2', 'a reached cell on row EXIT_ROWS (' + T.EXIT_ROWS + '), farther than every top row cell, is never the exit');
+});
+
 group('H-rep-2', 'tabs never on a landmark cell nor within 1 cell of a landmark top', t => {
   for (const f of FIXTURES) for (const mode of MODES) {
     const lv = buildFx(f, mode);
@@ -2343,6 +2382,27 @@ group('H-rep-4', 'every built level reaches its exit and at least 40% of its sta
     t.ok(lv.exit >= 0 && d[lv.exit] >= 0, f.name + ' mode ' + mode + ': the exit (' + lv.exit % lv.w + ', ' + Math.floor(lv.exit / lv.w) + ') is reached from spawn');
     t.ok(frac >= SB.TUNING.REPAIR_REACH_FRAC, f.name + ' mode ' + mode + ': ' + Math.round(frac * 100) + '% of the standable cells reached (at least 40%)');
   }
+});
+
+group('H-rep-7', 'the tabs repair lays keep the one way rules: never directly on another one way, never under a solid, never in a landmark', t => {
+  /* the third review: H-pipe-4 holds these on pipeline A only, so a stair rule dropped passed every gate */
+  let levels = 0, tabsSeen = 0;
+  for (const f of FIXTURES) for (const mode of MODES) {
+    const lv = buildFx(f, mode);
+    if (lv.needsCrop) continue;
+    levels++;
+    const bad = { onOneWay: [], underSolid: [], inLandmark: [] }, lm = new Set(lv.landmarks.flatMap(l => Array.from(l.cells)));
+    for (let i = 0; i < lv.w * lv.h; i++) if (lv.tab[i]) {
+      tabsSeen++;
+      const x = i % lv.w, y = Math.floor(i / lv.w);
+      if (y + 1 < lv.h && lv.plat[i + lv.w] && !lv.tab[i + lv.w]) bad.onOneWay.push(x + ',' + y);
+      if (y + 1 < lv.h && lv.tab[i + lv.w]) bad.onOneWay.push(x + ',' + y);
+      if (y > 0 && lv.solid[i - lv.w]) bad.underSolid.push(x + ',' + y);
+      if (lm.has(i)) bad.inLandmark.push(x + ',' + y);
+    }
+    t.ok(!bad.onOneWay.length && !bad.underSolid.length && !bad.inLandmark.length, f.name + ' mode ' + mode + ': its ' + lv.repair.tabs + ' tabs keep the rules' + (bad.onOneWay.length + bad.underSolid.length + bad.inLandmark.length ? ' (on a one way ' + bad.onOneWay.join(' ') + '; under a solid ' + bad.underSolid.join(' ') + '; in a landmark ' + bad.inLandmark.join(' ') + ')' : ''));
+  }
+  console.log('  info  H-rep-7: ' + tabsSeen + ' tab cells over ' + levels + ' built levels; repair\'s 15% cap cannot bind at TAB_MAX ' + SB.TUNING.TAB_MAX + ' by ' + SB.TUNING.REPAIR_PASSES + ' passes (at most ' + (100 * 2 * SB.TUNING.TAB_MAX * SB.TUNING.REPAIR_PASSES / (SB.GRID.W * SB.GRID.H)).toFixed(1) + '% of the cells; Q66)');
 });
 
 group('H-rep-5', 'repair is idempotent: two builds lay the same tabs', t => {
@@ -2419,6 +2479,19 @@ group('H-route-3', 'the filters, each in its lab: max-range, wall-chain, safe-ca
   { const lines = ['......X', '......#'].concat([...Array(14)].map(() => '.....|')).concat(['', '', '.......S', FLOOR]);
     const lv = LABS.room(lines, { exit: true, biome: 3 }); const sc = reason(lv);
     t.ok(!sc.ok && /^safe-cadence/.test(sc.reasons[0]), 'a 13 row sheer vine climb fails with safe-cadence (' + sc.reasons.join('; ') + ')'); }
+  /* max-range's WALLJUMP clause (the third review: no lab could fail on it): a wall from row 20 to the floor, the exit
+     on a one way 3 across and 3 up from the highest contact a floor jump arms, the WALL table's corner: no slack */
+  { const lines = []; for (let r = 20; r <= 46; r++) { const row = '.'.repeat(24).split(''); row[5] = '#'; if (r === 39) row[9] = 'X'; if (r === 40) row[9] = '='; if (r === 46) row[8] = 'S'; lines.push(row.join('')); }
+    const lv = LABS.room(lines.concat([FLOOR]), { exit: true }), g = SB.reach.graph(lv), a = SB.reach.mainAscent(g, lv), sc = SB.reach.routeScore(lv, g, a);
+    const skip = SB.reach.mainAscent(g, lv, { skip: 'max-range' });
+    t.ok(!sc.ok && /^max-range/.test(sc.reasons[0] || '') && !!skip.edges && skip.edges.some(e => e.kind === 'WALLJUMP' && e.dx === 3 && e.dy === 3),
+      'the corner wall jump (3 across 3 up, no slack) is cut by max-range, which reasons[0] names (' + JSON.stringify(sc.reasons) + '; skipped, the route is ' + (skip.edges ? skip.edges.map(e => e.kind + ' ' + e.dx + ',' + e.dy).join(' ') : 'none') + ')'); }
+  /* the cadence's boundary (the third review: '>=' passed): a vine 8 rows tall from the floor, its top the exit, so the
+     climb between the floor and the safe cell on top is exactly ROUTE_SAFE_EVERY_ROWS rows, which the filter allows */
+  { const lv = LABS.room(['', '......X', ...[...Array(8)].map(() => '......|'), FLOOR], { exit: true, biome: 3 });
+    const sp = 46 * 24 + 8; lv.spawn = sp;
+    const sc = reason(lv);
+    t.ok(sc.ok && sc.safeGapRows === SB.TUNING.ROUTE_SAFE_EVERY_ROWS, 'a vine climb of exactly ' + SB.TUNING.ROUTE_SAFE_EVERY_ROWS + ' rows between safe cells passes the cadence (ok ' + sc.ok + ', the largest safe gap ' + sc.safeGapRows + ' rows' + (sc.reasons.length ? '; ' + sc.reasons.join('; ') : '') + ')'); }
 });
 
 group('H-route-4', 'tight-gap gets a tab stair, and its ascent stands on it', t => {
@@ -2453,6 +2526,10 @@ group('H-onb-1', 'the sample room teaches: a forgiving jump onto a landmark, a w
   t.ok([...kinds].every(k => k === 'WALK' || k === 'JUMP' || k === 'FALL'), '(i) the main ascent uses WALK, JUMP and FALL only (' + [...kinds].join(', ') + ')');
   const lmTop = new Set(); for (const lm of lv.landmarks) for (const c of lm.cells) if (c >= w && !lv.solid[c - w]) lmTop.add(c - w);
   t.ok(a.edges.some(e => e.kind === 'JUMP' && e.dy >= 0 && e.dy <= 2 && lmTop.has(e.to)), '(i) and a JUMP of at most 2 up onto a landmark top');
+  /* (i) forgiving: no jump of the ascent at the clipped cone's edge, judged by the oracle's tables (section 3.3's +3;
+     the third review: dropping it put four edge jumps on this ascent and every gate stayed green) */
+  const atEdge = a.edges.filter(e => e.kind === 'JUMP').filter(e => { const m = ORACLE.clipped(e.profile, false); return e.dx === m[e.dy] || e.dy + 1 >= m.length || m[e.dy + 1] < e.dx; });
+  t.eq(atEdge.length, 0, '(i) and none of its jumps sits at the clipped cone\'s edge (' + atEdge.map(e => e.profile + ' ' + e.dx + ' across ' + e.dy + ' up').join(', ') + ')');
   /* (ii) a WALLTOUCH then a WALLJUMP from the ascent that rejoins it at least 3 rows higher */
   let branch = null;
   for (const u of onA) for (const e1 of (g.adj[u] || []).filter(e => e.kind === 'WALLTOUCH')) for (const e2 of (g.adj[e1.to] || []).filter(e => e.kind === 'WALLJUMP' && e.to < n))
@@ -2824,8 +2901,8 @@ group('H-bot-1c', 'every edge of the hand rooms (vines under Overgrowth, a ceili
   /* shelves-a with its pillar a vine */
   const sa = buildFx(fixture('shelves-a'), 0), vine = Object.assign({}, sa, { biome: 3, sticky: Uint8Array.from(sa.solid.map((v, i) => (v && i % 24 >= 20 && i % 24 <= 21 && Math.floor(i / 24) < 47 ? 1 : 0))), exit: -1 });
   levelEdges(vine, 'shelves-a, its pillar a vine', 0, out, memo, stats);
-  /* a 12 tall vine with a one way beside it and a ceiling 2 rows over its top's contact column */
-  const v2 = LABS.room(['', '.......###', '', '', '......|', '......|', '......|', '......|', '......|', '......|.==', '......|', '......|', '......|', '......|', '......|', '......|', '', '', FLOOR], { biome: 3 });
+  /* a 12 tall vine with a one way beside it, and a ceiling cell beside the cell over its top: no pop over there */
+  const v2 = LABS.room(['', '.......#', '......|', '......|', '......|', '......|', '......|', '......|.==', '......|', '......|', '......|', '......|', '......|', '......|', '', '', FLOOR], { biome: 3 });
   levelEdges(v2, 'a vine under a ceiling', 0, out, memo, stats);
   /* ledges and a wall: planks ending in the open, a pillar with a shelf beside it */
   const l3 = LABS.room(['', '', '...======.........#....', '...................#....', '...................#....', '.........====......#....', '...................#....', '...................#....', '..=====............#....', '...................#....', '...............===.#....', '...................#....', '...................#....', FLOOR]);

@@ -173,7 +173,7 @@ Plan assumes: (a).
 ## Q25. The wall jump's horizontal lock
 
 DESIGN 4.2 gives "4 across away from the wall" but not how long the rocker is ignored (a player holding toward the wall at the jump would re stick at once).
-Recommendation: `WALL_JUMP_LOCK: 10` frames of locked push away, then normal air control; proven by the WALL labs. FEEL.
+Recommendation: `WALL_JUMP_LOCK: 10` frames of locked push away, then normal air control; proven by H-sim-15 (the push lasts exactly the lock, the third review: the WALL labs hold the rocker away through the lock and cannot see its length). FEEL.
 Plan assumes: 10 frames.
 
 ## Q26. Corner forgiveness (the ledge nudge)
@@ -443,3 +443,11 @@ The bot (section 3.9's generosity assertion) found two places where the model pr
 Options: (a) as built; (b) keep the old touch and teach the sim to arm on any cell beside a wall (a slide from mid air with the wall 6 px away: no); (c) leave the footing and cut the walk off table for one way ledges (a table per support type, stingier than the solid case for no reason a player would feel).
 Recommendation: (a).
 Plan assumes: section 3.3's WALLTOUCH as "a contact the farthest FULL jump of each height, or the farthest walk off of each depth, reaches"; the build is (a), with the bot proving every listed touch.
+(The third review, 30 Oct.) The contact's row is now the first whose stance (the box exactly in the row, where the WALL arc starts) is at or below the hero: named by the box's centre, a hero could hang up to half a cell under the stance its wall jump assumes, which no wait on the wall can raise; at or above, a wait slides it down to the stance. The sample room's wardrobe touch is then (18, 25), the wall jump to shelf E 3 away and 2 up. And the bot found two more promises on vines (the hand rooms of H-bot-1c, since no M0 room has a vine): a STICKYUP of 1 row (the shortest sticky jump, a tap of 31.4 px, re sticks at its apex, a row up only from within 0.6 px of the stance) and a STICKYUP to a contact with a solid right over it (the hero bonks there and sinks before it sticks, a row lower). The model lists neither now.
+
+## Q66. Repair's 15% cap cannot bind, and its 40% branch has no room yet (the builder, 30 Oct, from the third review)
+
+At TAB_MAX 12 a pass and REPAIR_PASSES 4, repair lays at most 48 tabs, 96 of 1152 cells, 8.3%, so DESIGN 6.7's "if repair would alter more than 15% of cells, needsCrop" never fires: the passes run out first (H-rep-7 prints the bound). And no room of the corpus has its exit reached with under REPAIR_REACH_FRAC (40%) of its standable cells, so repair's "toward the largest unreached mass" branch runs in no test tonight.
+Options: (a) as built: the cap stays as the guard for a larger grid or a retune (grid B's 24x96 halves the bound to 4.2%), the 40% branch gets its lab with the first real photos (T1.x) or a hand room; (b) read TAB_MAX as the whole repair's limit, which makes 15% bind never either; (c) count the 15% over the stair's whole footprint (each tab's corridor), which can bind.
+Recommendation: (a), with the lab owed and named here.
+Plan assumes: DESIGN 6.7 verbatim; the build is (a).

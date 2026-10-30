@@ -1022,7 +1022,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   function levelHash(lv) { return SB.rng.hashWords(serialize(lv)); }
 
   SB.pipeline = { toText: toText, otsu: otsu, smooth: smooth, components: components, build: build,
-    FIELDS: FIELDS, serialize: serialize, levelHash: levelHash };
+    FIELDS: FIELDS, serialize: serialize, levelHash: levelHash, exitByReach: exitByReach };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-reach" data-core>
@@ -1419,8 +1419,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         for (var k2 = 1; k2 <= T.STICKY_UP && cy - k2 >= 0 && !S(cx, cy - k2); k2++) {
           var c2 = (cy - k2) * w + cx;
           /* never 1 row: the shortest sticky jump (a tap, 31.4 px) re sticks at its apex, a row up only from within 0.6
-             px of the stance (the bot found the 1 row STICKYUPs promised and none performed, T0.13a) */
-          if (sticks[2 * c2 + sd2]) { if (k2 >= 2) add(from, cnode(c2, side), 'STICKYUP', 'STICKY', 0, 0, k2, 2); }
+             px of the stance; never to a contact with a solid right over it: the hero bonks there and sinks before it
+             sticks, a row lower (the bot found both promised and none performed, T0.13a) */
+          if (sticks[2 * c2 + sd2]) { if (k2 >= 2 && !S(cx, cy - k2 - 1)) add(from, cnode(c2, side), 'STICKYUP', 'STICKY', 0, 0, k2, 2); }
           else {
             var topx = cx + side, topy = cy - k2;
             if (topy >= 0 && topx >= 0 && topx < w && stand[topy * w + topx]) add(from, topy * w + topx, 'STICKYTOP', 'STICKY', side, 1, k2, 3);
@@ -1533,6 +1534,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       /* the filters ordered by the row they cut at, the highest first (ties in the filters' order) */
       var filters = ['max-range', 'wall-chain', 'safe-cadence'].filter(function (f) { return ascent && ascent.cut && ascent.cut[f] < Infinity; });
       filters.sort(function (a, b) { return ascent.cut[a] - ascent.cut[b]; });
+      /* reasons[0] is the first of them whose switching off alone reaches the exit (the third review: the highest cut
+         alone named wall-chain in a room only max-range blocked); the rest stay in the order of the rows they cut */
+      for (var q = 0; q < filters.length; q++) { var alt = mainAscent(g, level, { skip: filters[q] }); if (alt && alt.nodes) { filters.unshift(filters.splice(q, 1)[0]); break; } }
       for (var f = 0; f < filters.length; f++) out.reasons.push(filters[f] + ' (cut on row ' + ascent.cut[filters[f]] + '; the frontier reached row ' + ascent.top + ')');
       if (!out.reasons.length) out.reasons.push('unreached (nothing filtered: no route at all)');
       return out;
