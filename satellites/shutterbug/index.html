@@ -1295,7 +1295,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        stepped as the sim steps it: x at the old height, clamped flush against the first solid it runs into, then y,
        ending at a landing (a solid, or a one way it crosses with LAND_OVERLAP) or a head bonk (the 2 px nudge left out,
        so the model is the stingier); every step it is flush with HERO_H - CORNER_PX of wall beside it (a plain wall
-       outside the wall jump's lock, a sticky one going down) arms the contact in the row holding the box's centre,
+       outside the wall jump's lock, a sticky one going down) arms the contact whose stance is at or below the box,
        costed as the jump or fall to it plus one (section 3.3); the scan ends at the first armed step going down (the
        SLIDE edges go on), or 6 rows below the takeoff. Stepping starts two steps before the first solid or one way
        in the trajectory's sweep: before it the box is in open cells, where nothing stops or arms it. */
@@ -1351,7 +1351,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         }
         var armed = (p.vy > 0 && ovS >= need) || (f >= lockSteps && ovP >= need);
         if (!armed) continue;
-        var fc = floor((ny - (HHs >> 1)) / C) * w + (col - dir), node = cnode(fc, dir);   /* the row holding the box's centre */
+        /* the contact's row: the first whose stance (the box exactly in it, the WALL arc's start) is at or below the
+           hero, so the hero is never under the stance its wall jump assumes, and a wait on the wall reaches it */
+        var fc = floor((ny - HHs + C - 1) / C) * w + (col - dir), node = cnode(fc, dir);
         if (fc >= 0 && fc < n && contact[2 * fc + (dir > 0 ? 1 : 0)]) {
           var tdy = sy - floor(fc / w), tdx = mabs(fc % w - sx), cost = chain ? 4 : (tdy >= 0 ? 2 + tdy + tdx / 2 : 1 - tdy / 4) + 1;
           if (out[node] === undefined || cost < out[node]) out[node] = cost;
@@ -1416,7 +1418,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         /* STICKYUP to the contacts above on the same vine within STICKY_UP; STICKYTOP over the top; LET_GO straight down */
         for (var k2 = 1; k2 <= T.STICKY_UP && cy - k2 >= 0 && !S(cx, cy - k2); k2++) {
           var c2 = (cy - k2) * w + cx;
-          if (sticks[2 * c2 + sd2]) add(from, cnode(c2, side), 'STICKYUP', 'STICKY', 0, 0, k2, 2);
+          /* never 1 row: the shortest sticky jump (a tap, 31.4 px) re sticks at its apex, a row up only from within 0.6
+             px of the stance (the bot found the 1 row STICKYUPs promised and none performed, T0.13a) */
+          if (sticks[2 * c2 + sd2]) { if (k2 >= 2) add(from, cnode(c2, side), 'STICKYUP', 'STICKY', 0, 0, k2, 2); }
           else {
             var topx = cx + side, topy = cy - k2;
             if (topy >= 0 && topx >= 0 && topx < w && stand[topy * w + topx]) add(from, topy * w + topx, 'STICKYTOP', 'STICKY', side, 1, k2, 3);

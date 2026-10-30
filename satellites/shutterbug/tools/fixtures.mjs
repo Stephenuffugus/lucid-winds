@@ -212,7 +212,7 @@ function sampleRoom() {
     expect: { biome: 'attic', needsCrop: false, tabsMax: 0, exitIsLight: true, platformsMin: 14, landmarksMin: 3,
       beats: [
         { kind: 'JUMP', from: [8, 46], to: [5, 44], why: 'the forgiving jump onto the bed, a photo landmark (2 up)' },
-        { kind: 'WALLJUMP', from: [16, 29], contact: [18, 26], to: [15, 23], why: 'off the desk shelf, touch the wardrobe, wall jump to shelf E, skipping shelf D (6 rows up; shelf E reaches x 15 since T0.12a, 3 away from the wardrobe, the wall jump\'s reach at 3 up)' },
+        { kind: 'WALLJUMP', from: [16, 29], contact: [18, 25], to: [15, 23], why: 'off the desk shelf, touch the wardrobe, wall jump to shelf E, skipping shelf D (6 rows up; shelf E reaches x 15 since T0.12a, 3 away from the wardrobe; the touch arms rising with the box 2 to 6 px above row 25, the contact its stance names since T0.13a, so the wall jump is 3 away 2 up)' },
         { kind: 'FALL', from: [6, 26], to: [4, 33], why: 'walk off shelf D and drop seven rows onto the speck beside the bookshelf' },
         { kind: 'SPECK', at: [8, 20], why: 'the reward above: a Sun speck on shelf F, row 20' }
       ] } };

@@ -1135,8 +1135,11 @@ group('H-sim-10', 'the slide falls a third of the unarmed fall, step for step', 
   }
   t.eq(off, -1, 'while the unarmed fall is airborne (' + steps + ' steps) the armed slide moves floor(that fall / 3) each step (the first step that does not)');
   t.ok(most <= Math.floor(SB.K.TERM / 3), 'capped at TERMINAL / 3: the slide never moves more than ' + Math.floor(SB.K.TERM / 3) + ' a step (most ' + most + ')');
-  SB.sim.step(a, 0);
+  const lastSlide = a.hero.y; SB.sim.step(a, 0);
   t.eq(a.hero.wall, 0, 'releasing the rocker unarms it');
+  /* and the fall goes on from the slide's speed, gaining a step's gravity at a time, never jumping to the unarmed fall */
+  const after = [a.hero.y - lastSlide]; for (let k = 0; k < 3; k++) { const y = a.hero.y; SB.sim.step(a, 0); after.push(a.hero.y - y); }
+  t.ok(after.every((m, k) => k === 0 || m - after[k - 1] <= K.G), 'after the release the fall continues from the slide\'s third, one step\'s gravity at a time (' + after.map(m => (m / 256).toFixed(2)).join(' ') + ' px)');
 });
 
 group('H-sim-11', 'the corner rule: 2 px of side overlap never arms a slide; 14 px does', t => {
@@ -1180,6 +1183,10 @@ group('H-sim-12', 'vines: the fall stops within a step of a descending contact; 
   t.ok(apex >= 69 * 256, 'A gives ' + (apex / 256).toFixed(1) + ' px straight up (at least 69)');
   t.ok(reStick > 0 && !risingStick, 'it re sticks on a descending step (step ' + reStick + '), never a rising one');
   t.eq(s2.hero.x, 3 * CS, 'and never moved sideways (no push off)');
+  /* section 3.8 item 4: the rocker away lets go too */
+  const s3 = placed(lv, 3 * CS, (v1 - 2) * CS); for (let k = 0; k < 5 && !s3.hero.sticky; k++) SB.sim.step(s3, 0);
+  SB.sim.step(s3, IN.R);
+  t.ok(s3.hero.sticky === 0 && s3.hero.wall === 0, 'the rocker away from the vine lets go (sticky ' + s3.hero.sticky + ')');
 });
 
 group('H-sim-15', 'facing: a wall jump faces away from the wall; a rocker tap sets it', t => {
@@ -1193,6 +1200,12 @@ group('H-sim-15', 'facing: a wall jump faces away from the wall; a rocker tap se
   for (let k = 0; k < 5; k++) { SB.sim.step(s, IN.L | IN.A); if (s.hero.wall !== 0) rearmed = true; }
   t.ok(!rearmed && s.hero.x > xJump, 'held toward the wall, the lock carries the hero away (' + ((s.hero.x - xJump) / 256).toFixed(1) + ' px in 5 steps) and never re arms the slide');
   t.eq(s.hero.facing, 1, 'held toward the wall through the lock, the facing stays away (the third review: it flipped back on the step after the jump)');
+  /* the lock's length (the third review: nothing pinned 10): held toward the wall, the hero moves away on exactly the
+     jump step and the next WALL_JUMP_LOCK - 1, and turns back on the step after */
+  const s4 = placed(lv, 3 * CS, 36 * CS); SB.sim.step(s4, IN.L); SB.sim.step(s4, IN.L | IN.A | IN.A_TAP);
+  const vxs = [s4.hero.vx]; for (let k = 0; k < SB.TUNING.WALL_JUMP_LOCK + 1; k++) { SB.sim.step(s4, IN.L | IN.A); vxs.push(s4.hero.vx); }
+  const away = vxs.slice(0, SB.TUNING.WALL_JUMP_LOCK), back = vxs[SB.TUNING.WALL_JUMP_LOCK];
+  t.ok(away.every(v => v > 0) && back < 0, 'held toward the wall, the push away lasts exactly WALL_JUMP_LOCK (' + SB.TUNING.WALL_JUMP_LOCK + ') steps, then the rocker turns the hero (vx ' + vxs.map(v => v / 256).join(' ') + ')');
   const s2 = placed(lv, 3 * CS, 36 * CS); SB.sim.step(s2, IN.L); SB.sim.step(s2, IN.L | IN.A | IN.A_TAP);
   const faced = []; for (let k = 0; k < SB.TUNING.WALL_JUMP_LOCK - 1; k++) { SB.sim.step(s2, IN.L | IN.A); faced.push(s2.hero.facing); }
   t.ok(faced.every(f => f === 1), 'on every lock step with the rocker toward the wall the facing is away (' + faced.join(' ') + ')');
@@ -1341,6 +1354,34 @@ group('H-sim-13', 'the dive: a tap dive lands on the first one way, a hold dive 
   }
 });
 
+group('H-sim-13b', 'the dive ends as DESIGN 4.3 says (the third review): from a running jump it drops its column; no coyote jump out of it; the shake runs down; beside a wall it never slides', t => {
+  const floorLv = LABS.room(['', '', '', '', '', '', '', '', '', '', FLOOR]);
+  /* a running jump, then B with the rocker released: vx 0 on the press step, the same column to the landing */
+  { const s = placed(floorLv, 3 * CS + 2 * 256, 46 * CS); SB.sim.step(s, 0); SB.sim.step(s, 0);
+    for (let k = 0; k < 6; k++) SB.sim.step(s, IN.R);
+    SB.sim.step(s, IN.R | IN.A | IN.A_TAP); for (let k = 0; k < 8; k++) SB.sim.step(s, IN.R | IN.A);
+    const vxBefore = s.hero.vx; SB.sim.step(s, IN.B | IN.B_TAP);
+    const x0 = s.hero.x, vxPress = s.hero.vx; let drift = 0;
+    for (let k = 0; k < 80 && !s.hero.ground; k++) { SB.sim.step(s, 0); drift = Math.max(drift, Math.abs(s.hero.x - x0)); }
+    t.ok(vxBefore === K.RUN && vxPress === 0 && drift === 0 && s.hero.ground === 1, 'a dive from a running jump (vx ' + vxBefore + ') zeroes vx on the press step (' + vxPress + ') and drops straight down its column (drift ' + (drift / 256).toFixed(2) + ' px)'); }
+  /* walk off a ledge, B on the second airborne step, A on the next: still diving, no jump out of coyote time */
+  { const lv = LABS.room(['', '.S.', '###', '', '', '', '', '', FLOOR]), s = SB.sim.create(lv); for (let k = 0; k < 3; k++) SB.sim.step(s, 0);
+    let air = 0; for (let k = 0; k < 40 && air < 2; k++) { SB.sim.step(s, IN.R); if (!s.hero.ground) air++; }
+    SB.sim.step(s, IN.B | IN.B_TAP); SB.sim.step(s, IN.A | IN.A_TAP);
+    t.ok(s.hero.dive > 0 && s.hero.vy === K.TERM, 'A pressed in coyote time after a dive does not jump out of it (dive ' + s.hero.dive + ', vy ' + s.hero.vy + ')'); }
+  /* the shake: SHAKE_F on the landing step, then one less a step to 0 */
+  { const s = placed(floorLv, 3 * CS + 2 * 256, 40 * CS); SB.sim.step(s, IN.B | IN.B_TAP);
+    for (let k = 0; k < 80 && !s.hero.ground; k++) SB.sim.step(s, 0);
+    const seq = [s.hero.shake]; for (let k = 0; k < K.SHAKE_F + 2; k++) { SB.sim.step(s, 0); seq.push(s.hero.shake); }
+    const want = Array.from({ length: K.SHAKE_F + 3 }, (_, k) => Math.max(0, K.SHAKE_F - k));
+    t.same(seq, want, 'the dive landing\'s shake counts down from SHAKE_F to 0, one a step'); }
+  /* a dive flush against a wall with the rocker toward it falls at terminal, never a slide */
+  { const lines = []; for (let r = 20; r <= 46; r++) lines.push('..#'); const lv = LABS.room(lines.concat([FLOOR]));
+    const s = placed(lv, 3 * CS, 24 * CS); SB.sim.step(s, IN.L); SB.sim.step(s, IN.L | IN.B | IN.B_TAP);
+    const moves = []; for (let k = 0; k < 6; k++) { const y = s.hero.y; SB.sim.step(s, IN.L); moves.push(s.hero.y - y); }
+    t.ok(moves.every(m => m === K.TERM) && s.hero.wall === 0, 'a dive beside a wall, the rocker toward it, falls at terminal (' + moves.map(m => m / 256).join(' ') + ' px a step) and never arms a slide'); }
+});
+
 group('H-sim-14', 'the dash: 48 px in 8 steps, i frames for exactly 4, never off a platform\'s edge, only from a fresh ground press', t => {
   const lv = LABS.room([FLOOR]), s = placed(lv, 4 * CS + 2 * 256, 46 * CS);
   SB.sim.step(s, 0); SB.sim.step(s, 0);
@@ -1359,6 +1400,16 @@ group('H-sim-14', 'the dash: 48 px in 8 steps, i frames for exactly 4, never off
       t.ok(h.hero.x === want && h.hero.ground === 1 && restRow(h) === 39, 'a dash ' + (dir > 0 ? 'right' : 'left') + ' on a ' + kind + ' platform stops with the leading foot on it (x ' + (h.hero.x / 256).toFixed(2) + ' px, the edge at ' + (want / 256).toFixed(2) + ', rests on row ' + restRow(h) + ')');
     }
   }
+  /* the rocker reversed from the dash's third step: the dash still covers 48 px in its facing (DESIGN 4.3) */
+  { const h = placed(lv, 4 * CS + 2 * 256, 46 * CS); SB.sim.step(h, 0); SB.sim.step(h, 0);
+    const x0 = h.hero.x; SB.sim.step(h, IN.R | IN.B | IN.B_TAP); SB.sim.step(h, 0);
+    for (let k = 0; k < 6; k++) SB.sim.step(h, IN.L);
+    t.eq((h.hero.x - x0) / 256, 48, 'the rocker reversed mid dash, the dash still covers 48 px in its facing'); }
+  /* a dash into a wall ends on the step it meets the wall */
+  { const wl = LABS.room(['.........#', FLOOR]), h = placed(wl, 7 * CS + 2 * 256, 46 * CS); SB.sim.step(h, 0); SB.sim.step(h, 0);
+    SB.sim.step(h, IN.R | IN.B | IN.B_TAP); let ended = -1;
+    for (let k = 0; k < 10 && ended < 0; k++) { const x = h.hero.x; SB.sim.step(h, 0); if (h.hero.dash === 0) ended = k; if (h.hero.x === x && h.hero.dash > 0) { ended = -2; break; } }
+    t.ok(ended >= 0 && h.hero.x === 9 * CS - HW, 'a dash into a wall stops flush and ends on that step (ended after ' + ended + ' more steps, x ' + (h.hero.x / 256).toFixed(1) + ')'); }
   /* the third review: a dash that cannot move is no dash (no i frames to drum for at a wall), and a foot already past
      an edge gets no dash, not a hop over a one cell gap */
   { const wl = LABS.room(['......#', FLOOR]), h = placed(wl, 6 * CS - HW, 46 * CS); SB.sim.step(h, 0); SB.sim.step(h, 0);
@@ -1887,7 +1938,7 @@ group('H-reach-1', 'reach.tables equals the harness\'s own stepped tables (the o
     t.same(c.down, o.down, tag + 'the jump down table down[1..8]: the core equals the oracle');
     /* each corridor in the cone: the core's immediate path sweeps exactly the cells of the oracle's canonical hold */
     const ct = SB.reach.tables(SB.K, deep ? 2 : 0);
-    let n = 0, firstOff = null;
+    let n = 0, firstOff = null, catchOff = null, catchN = 0;
     for (const p of REACH_PROFILES) {
       const clip = ORACLE.clipped(p, deep);
       for (let dy = 0; dy <= 5; dy++) for (let dx = 0; dx <= clip[dy]; dx++) {
@@ -1895,9 +1946,27 @@ group('H-reach-1', 'reach.tables equals the harness\'s own stepped tables (the o
         const want = can ? [...ORACLE.corridor(can, 1)].sort().join(' ') : 'none', got = mine ? mine.cells.map(q => q[0] + ',' + q[1]).sort().join(' ') : 'none';
         n++;
         if (want !== got && !firstOff) firstOff = tag + p + ' dx' + dx + ' dy' + dy + ': core [' + got + '] oracle [' + want + ']';
+        /* the catch list (section 3.3: no one way may catch the hero first), against the oracle's own descent crossings
+           (the third review: nothing checked it, so a row off or a dropped overlap test passed every gate) */
+        const late = (ct.profiles[p].paths[dx + ',' + dy] || [])[1], lateCan = late ? ORACLE.lateCanonical(p, 1, dx, dy, { deep }) : null;
+        for (const [label, c, m] of [['', can, mine], [' late', lateCan, late]]) {
+          if (!c || !m || p === 'WALL' || p === 'STICKY') continue;
+          catchN++;
+          const wantC = oracleCatches(c).sort().join(' '), gotC = m.catches.map(q => q[0] + ',' + q[1]).sort().join(' ');
+          if (wantC !== gotC && !catchOff) catchOff = tag + p + label + ' dx' + dx + ' dy' + dy + ': core [' + gotC + '] oracle [' + wantC + ']';
+        }
       }
     }
+    /* the walk offs and the jump downs too */
+    for (const [kind, table, profile] of [['walk off', ct.fallPaths, 'WALK'], ['jump down', ct.downPaths, 'FULL']]) for (const key of Object.keys(table)) {
+      const [dx, r] = key.split(',').map(Number), c = ORACLE.canonical(profile, 1, dx, -r, { deep });
+      if (!c) { if (!catchOff) catchOff = tag + kind + ' ' + key + ': the oracle has no canonical path'; continue; }
+      catchN++;
+      const wantC = oracleCatches(c).sort().join(' '), gotC = table[key].catches.map(q => q[0] + ',' + q[1]).sort().join(' ');
+      if (wantC !== gotC && !catchOff) catchOff = tag + kind + ' ' + key + ': core [' + gotC + '] oracle [' + wantC + ']';
+    }
     t.ok(!firstOff, tag + 'all ' + n + ' corridors in the cone: the core\'s immediate path equals the oracle\'s canonical corridor' + (firstOff ? ' (first: ' + firstOff + ')' : ''));
+    t.ok(!catchOff, tag + 'all ' + catchN + ' catch lists in the cone equal the oracle\'s descent crossings' + (catchOff ? ' (first: ' + catchOff + ')' : ''));
   }
 });
 
@@ -2005,7 +2074,7 @@ function simArmsRight(lv, sx, sy) {
     for (let k = 0; k < 3; k++) SB.sim.step(s, 0);
     for (let k = 0; k < 120; k++) {
       SB.sim.step(s, (p !== 'WALKOFF' && k < A_FRAMES[p] ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k >= delay ? IN.R : 0));
-      if (s.hero.wall === 1) out.add(Math.floor((s.hero.x + (HW >> 1)) / CS) + ',' + Math.floor((s.hero.y + (HH >> 1)) / CS));
+      if (s.hero.wall === 1) out.add(Math.floor((s.hero.x + (HW >> 1)) / CS) + ',' + Math.floor((s.hero.y + CS - 1) / CS));
       if (s.hero.ground && k > 12) break;
     }
   }
@@ -2017,7 +2086,9 @@ group('H-reach-11', 'the exact wall touch (T0.13a, Q65): the model lists the con
   /* shelves-a: from S2's middle no jump meets the pillar; from (15, 39) on, every contact the model lists is one the sim arms */
   { const lv = buildFx(fixture('shelves-a'), 0), g = SB.reach.graph(lv);
     for (const sx of [11, 12, 13, 14]) t.same(modelTouches(lv, g, sx, 39), [], 'shelves-a: from (' + sx + ', 39) the model lists no touch on the pillar (the sim arms none: ' + [...simArms(lv, sx, 39)].join(' ') + ')');
-    for (const sx of [15, 16, 17, 18]) {
+    /* from (15, 39) the jump meets the pillar with the box 0.1 px under row 36's stance, and row 37 has no wall: no contact */
+    t.same(modelTouches(lv, g, 15, 39), [], 'shelves-a: from (15, 39) the model lists no touch (the sim arms only under row 36\'s stance: ' + [...simArms(lv, 15, 39)].join(' ') + ')');
+    for (const sx of [16, 17, 18]) {
       const sim = simArms(lv, sx, 39), model = modelTouches(lv, g, sx, 39);
       t.ok(model.length > 0 && model.every(c => sim.has(c)), 'shelves-a: from (' + sx + ', 39) the model lists ' + model.join(' ') + ', each armed by the sim (' + [...sim].join(' ') + ')');
     }
@@ -2080,8 +2151,9 @@ group('H-reach-5', 'the lab rooms: gaps, ledges, a ceiling, one ways, a shaft an
   /* a one way in the descending part of a long jump cuts it, and the model reaches that one way instead: ledges at
      row 41 (x 0..2 and 7..9), the jump 5 across from (2, 40), a one way planted at the model's farthest catch */
   /* (the one way must catch every profile that reaches 5 across, FULL and MID, or the next profile takes the edge) */
-  { const tb5 = SB.reach.tables(SB.K, 0), keyOf = q => q[0] + ',' + q[1];
-    const each = ['FULL', 'MID', 'TAP'].map(p => (tb5.profiles[p].paths['5,0'] || [])).filter(ps => ps.length).map(ps => new Set(ps.flatMap(q => q.catches.map(keyOf))));
+  /* the catches planted from the oracle's own arcs (the third review: planting from the core's catch lists let a wrong
+     list plant its own one way and pass); a profile with no oracle path to 5 across is skipped */
+  { const each = ['FULL', 'MID', 'TAP'].map(p => [ORACLE.canonical(p, 1, 5, 0), ORACLE.lateCanonical(p, 1, 5, 0)].filter(Boolean)).filter(cs => cs.length).map(cs => new Set(cs.flatMap(oracleCatches)));
     const common = [...each[0]].filter(k => each.every(st => st.has(k))).map(k => k.split(',').map(Number));
     const [ck, cr] = common.sort((a, b) => b[0] - a[0] || b[1] - a[1])[0];
     const px = 2 + ck, py = 40 - cr, base = ['===....===', '', '', '', '', '', FLOOR];
@@ -2162,6 +2234,18 @@ function firstLanding(lab, profile, dir, hold) {
   const words = M_JUMP(profile, dir, hold);
   for (let k = 0; k < words.length; k++) { SB.sim.step(s, words[k]); if (k > 0 && s.hero.ground) return { row: Math.floor((s.hero.y + HH - 1) / CS), step: k }; }
   return { row: -1, step: -1 };
+}
+/* the oracle's catch list for a canonical path: the one way tops its descent crosses before the landing step with
+   LAND_OVERLAP of the box over the column, named as the core names them, [column, rows above the takeoff's support - 1] */
+function oracleCatches(can) {
+  const out = new Set(), a = can.a;
+  for (let f = 1; f < can.land; f++) for (let j = -30; j <= 8; j++) {   /* walk offs fall up to 24 rows */
+    const top = -j * CS;
+    if (!(a[f - 1].y <= top && a[f].y > top)) continue;
+    for (let col = Math.floor(a[f].x / CS); col <= Math.floor((a[f].x + HW - 1) / CS); col++)
+      if (Math.min(a[f].x + HW, (col + 1) * CS) - Math.max(a[f].x, col * CS) >= K.OVERLAP_SUB) out.add(col + ',' + (j - 1));
+  }
+  return [...out];
 }
 group('H-lab-4', 'LAB-ONEWAY: one ways in the descent catch the hero where the model says; one ways in the rise do not', t => {
   let caught = 0, through = 0, cases = 0;
@@ -2466,7 +2550,7 @@ const BOT = (() => {
   const stopDist = v => { let d = 0; v = Math.abs(v); while (v > 0) { v = Math.max(0, v - K.DECEL); d += v; } return d; };
   const TAP_MOVE = K.RUN + stopDist(K.RUN);           /* one step of the rocker from rest, then the decel: 6.56 px */
   const centreCol = s => Math.floor((s.hero.x + (HW >> 1)) / CS), feetRow = s => Math.floor((s.hero.y + HH - 1) / CS);
-  const centreRow = s => Math.floor((s.hero.y + (HH >> 1)) / CS);   /* a contact's row is the row holding the box's centre (core-reach's scan) */
+  const centreRow = s => Math.floor((s.hero.y + CS - 1) / CS);   /* a contact's row: the first whose stance is at or below the box (core-reach's scan) */
   /* settle (section 5.2 step 3): from rest, a step of the rocker toward the cell's centre while that tap would end
      nearer than staying; while moving toward it, the rocker held until the decel's stop comes within 2 px; moving
      away, released. Done when grounded and still with the centre within half a tap of the cell's centre; at most 30
@@ -2691,7 +2775,15 @@ function botEdges(sample) {
   const memo = new Map(), stats = { tries: 0, found: 0, memo: 0, memoMiss: 0 };
   for (const run of botWalks().runs) {
     if (run.skipped || run.same) continue;
-    const lv = run.lv, g = SB.reach.graph(lv);
+    levelEdges(run.lv, run.tag, sample, out, memo, stats);
+  }
+  out.stats = stats;
+  return out;
+}
+/* every edge of one level's graph (or `sample` of them), each from the hero placed on its source */
+function levelEdges(lv, tag, sample, out, memo, stats) {
+  {
+    const g = SB.reach.graph(lv), run = { tag };
     let list = [];
     for (let v = 0; v < g.adj.length; v++) for (const e of g.adj[v] || []) list.push(e);
     if (sample) {
@@ -2715,8 +2807,6 @@ function botEdges(sample) {
       out.misses.push(run.tag + ': ' + kind + (e.profile ? ' ' + e.profile : '') + ' dir ' + e.dir + ' dx ' + e.dx + ' dy ' + e.dy + ' from ' + (src.contact ? 'c' : '') + '(' + src.cx + ', ' + src.cy + ') to ' + (t.contact ? 'c' : '') + '(' + t.cx + ', ' + t.cy + '), ' + r.tried + ' candidates');
     }
   }
-  out.stats = stats;
-  return out;
 }
 function reportEdges(t, res, what) {
   const kinds = Object.entries(res.byKind).map(([k, v]) => k + ' ' + v.ok + '/' + v.tried).join(', ');
@@ -2727,6 +2817,24 @@ function reportEdges(t, res, what) {
 group('H-bot-1b', '20 random edges per level drawn from the whole graph, each performed from the hero placed on its source', t => {
   reportEdges(t, botEdges(20), 'the random edges');
 });
+/* the edges the corpus does not hold (the third review: no M0 room has a vine, so no check could fail on a generous
+   STICKYUP, STICKYTOP or LET_GO): every edge of a few hand rooms, each from the hero placed on its source */
+group('H-bot-1c', 'every edge of the hand rooms (vines under Overgrowth, a ceiling over a vine, ledges and walls) has a macro', t => {
+  const out = { tried: 0, ok: 0, misses: [], placeMiss: [], byKind: {}, levels: 0 }, memo = new Map(), stats = { tries: 0, found: 0, memo: 0, memoMiss: 0 };
+  /* shelves-a with its pillar a vine */
+  const sa = buildFx(fixture('shelves-a'), 0), vine = Object.assign({}, sa, { biome: 3, sticky: Uint8Array.from(sa.solid.map((v, i) => (v && i % 24 >= 20 && i % 24 <= 21 && Math.floor(i / 24) < 47 ? 1 : 0))), exit: -1 });
+  levelEdges(vine, 'shelves-a, its pillar a vine', 0, out, memo, stats);
+  /* a 12 tall vine with a one way beside it and a ceiling 2 rows over its top's contact column */
+  const v2 = LABS.room(['', '.......###', '', '', '......|', '......|', '......|', '......|', '......|', '......|.==', '......|', '......|', '......|', '......|', '......|', '......|', '', '', FLOOR], { biome: 3 });
+  levelEdges(v2, 'a vine under a ceiling', 0, out, memo, stats);
+  /* ledges and a wall: planks ending in the open, a pillar with a shelf beside it */
+  const l3 = LABS.room(['', '', '...======.........#....', '...................#....', '...................#....', '.........====......#....', '...................#....', '...................#....', '..=====............#....', '...................#....', '...............===.#....', '...................#....', '...................#....', FLOOR]);
+  levelEdges(l3, 'ledges and a wall', 0, out, memo, stats);
+  out.stats = stats;
+  reportEdges(t, out, 'the hand rooms');
+  t.ok(['STICKYUP', 'STICKYTOP', 'LET_GO', 'WALLTOUCH', 'WALLJUMP', 'SLIDE', 'FALL'].every(k => out.byKind[k] && out.byKind[k].tried > 0), 'the hand rooms hold every vine and wall edge kind (' + Object.keys(out.byKind).join(', ') + ')');
+});
+
 if (flag('all-edges')) group('H-bot-6', 'every edge of every graph has a macro (--all-edges)', t => {
   reportEdges(t, botEdges(0), 'every edge');
 });
