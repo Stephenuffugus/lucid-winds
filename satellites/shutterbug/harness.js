@@ -1232,6 +1232,120 @@ group('H-lab-6', 'WALLTOUCH, SLIDE, STICKYUP, STICKYTOP and LET_GO in the sim', 
     t.ok(s4.hero.ground === 1 && Math.floor((s4.hero.y + HH - 1) / CS) === 46, 'LET_GO: B lets go of the vine, and the fall reaches the floor without sticking again (' + k4 + ' steps)'); }
 });
 
+/* ================================================================ the dive and the dash (T0.12b) */
+/* M_DIVE hops (A for one step, when `hop`), then presses B on the next step and holds it `hold` steps from there
+   (hold 0: a tap shorter than a step, B_TAP alone); M_DASH presses B with the rocker in dir on one grounded step */
+const M_DIVE = (hold, hop = true, len = 200) => { const off = hop ? 1 : 0; return Array.from({ length: len }, (_, k) =>
+  (hop && k === 0 ? IN.A | IN.A_TAP : 0) | (k === off ? IN.B_TAP : 0) | (k >= off && k < off + hold ? IN.B : 0)); };
+const M_DASH = (dir, len = 40) => Array.from({ length: len }, (_, k) => (k === 0 ? rockerOf(dir) | IN.B | IN.B_TAP : 0));
+const restRow = s => Math.floor((s.hero.y + HH - 1) / CS);
+
+group('H-sim-13', 'the dive: a tap dive lands on the first one way, a hold dive passes three one ways to the floor, a dive begun in the air never dashes on landing', t => {
+  /* three full width one ways at rows 20, 26 and 32, the floor below; the hero falling from row 10, centred in column 11 */
+  const lines = []; for (let r = 10; r <= 46; r++) lines.push(r === 20 || r === 26 || r === 32 ? '='.repeat(24) : '');
+  const lv = LABS.room(lines.concat([FLOOR])), x0 = 11 * CS + 2 * 256;
+  { const s = placed(lv, x0, 10 * CS);
+    SB.sim.step(s, IN.B_TAP | IN.R);
+    t.ok(s.hero.vy === K.TERM && s.hero.vx === 0 && s.hero.dive === 1, 'the press snaps vy to terminal (' + s.hero.vy + ', TERM ' + K.TERM + ') and vx to zero (' + s.hero.vx + ') with the rocker held');
+    let k = 0; while (!s.hero.ground && k < 120) { SB.sim.step(s, IN.R); k++; }
+    t.ok(restRow(s) === 19 && s.hero.x === x0, 'a tap dive (B_TAP alone) lands on the first one way (rests on row ' + restRow(s) + ', 19) straight down, the rocker held (x moved ' + (s.hero.x - x0) / 256 + ' px)');
+    t.eq(s.hero.shake, K.SHAKE_F, 'its landing sets the shake counter to SHAKE_F');
+  }
+  { const s = placed(lv, x0, 10 * CS); let k = 0, dashed = 0;
+    SB.sim.step(s, IN.B_TAP | IN.B);
+    t.eq(s.hero.dive, 2, 'B held makes it a hold dive (dive 2)');
+    while (!s.hero.ground && k < 200) { SB.sim.step(s, IN.B); k++; }
+    t.eq(restRow(s), 46, 'a hold dive passes the three one ways to the floor');
+    const xl = s.hero.x;
+    for (let j = 0; j < 30; j++) { SB.sim.step(s, IN.B); if (s.hero.dash > 0) dashed++; }
+    t.ok(dashed === 0 && s.hero.x === xl, 'held through the landing and 30 steps more, the dive never becomes a dash (' + dashed + ' dash steps, x moved ' + (s.hero.x - xl) / 256 + ' px)');
+  }
+  /* a press on the very step the hero lands began in the air: a dive, and no dash follows; a plain landing never shakes */
+  { const floorLv = LABS.room([FLOOR]), probe = placed(floorLv, x0, 40 * CS); let n = 0;
+    while (!probe.hero.ground && n < 100) { SB.sim.step(probe, 0); n++; }
+    t.eq(probe.hero.shake, 0, 'a plain fall\'s landing leaves the shake at 0');
+    const s = placed(floorLv, x0, 40 * CS); for (let j = 0; j < n - 1; j++) SB.sim.step(s, 0);
+    SB.sim.step(s, IN.B_TAP | IN.B);
+    let dashed = 0; const xl = s.hero.x;
+    for (let j = 0; j < 30; j++) { SB.sim.step(s, IN.B); if (s.hero.dash > 0) dashed++; }
+    t.ok(s.hero.ground === 1 && dashed === 0 && s.hero.x === xl, 'B pressed on the landing step (step ' + n + ') is a dive: it lands, and held 30 steps more never dashes (' + dashed + ')');
+  }
+});
+
+group('H-sim-14', 'the dash: 48 px in 8 steps, i frames for exactly 4, never off a platform\'s edge, only from a fresh ground press', t => {
+  const lv = LABS.room([FLOOR]), s = placed(lv, 4 * CS + 2 * 256, 46 * CS);
+  SB.sim.step(s, 0); SB.sim.step(s, 0);
+  const x0 = s.hero.x, words = M_DASH(1, 30); let dashSteps = 0, iSteps = 0, x8 = null;
+  for (let k = 0; k < words.length; k++) { SB.sim.step(s, words[k]); if (s.hero.dash > 0) dashSteps++; if (s.hero.dashI > 0) iSteps++; if (k === 7) x8 = s.hero.x; }
+  t.eq((x8 - x0) / 256, 48, 'a dash covers 48 px in its 8 steps');
+  t.ok(dashSteps === 8 && s.hero.x === x8 && s.hero.ground === 1, 'the dash runs exactly 8 steps (' + dashSteps + ') and stops there, grounded (no slide after it)');
+  t.eq(iSteps, 4, 'i frames for exactly 4 steps');
+  /* the edge: a 5 cell platform (columns 2 to 6) at row 40, solid and then one way, the floor far below */
+  for (const [kind, ch] of [['solid', '#'], ['one way', '=']]) {
+    const lines = ['..' + ch.repeat(5)].concat(Array(6).fill(''), [FLOOR]);
+    const pl = LABS.room(lines);
+    for (const [dir, col, want] of [[1, 4, 7 * CS - HW], [-1, 4, 2 * CS]]) {
+      const h = placed(pl, col * CS + 2 * 256, 39 * CS); SB.sim.step(h, 0); SB.sim.step(h, 0);
+      const w = M_DASH(dir, 40); for (const word of w) SB.sim.step(h, word);
+      t.ok(h.hero.x === want && h.hero.ground === 1 && restRow(h) === 39, 'a dash ' + (dir > 0 ? 'right' : 'left') + ' on a ' + kind + ' platform stops with the leading foot on it (x ' + (h.hero.x / 256).toFixed(2) + ' px, the edge at ' + (want / 256).toFixed(2) + ', rests on row ' + restRow(h) + ')');
+    }
+  }
+  /* only a fresh ground press: B held on the ground with no new press does nothing */
+  { const h = placed(lv, 4 * CS + 2 * 256, 46 * CS); SB.sim.step(h, 0); SB.sim.step(h, 0);
+    const xs = h.hero.x; let dashed = 0; for (let k = 0; k < 20; k++) { SB.sim.step(h, IN.B | IN.R * 0); if (h.hero.dash > 0) dashed++; }
+    t.ok(dashed === 0 && h.hero.x === xs, 'B held on the ground with no fresh press never dashes (' + dashed + ')'); }
+  /* a jump ends a dash: A on its third step leaves the ground with run speed, not the dash's */
+  { const h = placed(lv, 4 * CS + 2 * 256, 46 * CS); SB.sim.step(h, 0); SB.sim.step(h, 0);
+    SB.sim.step(h, IN.R | IN.B | IN.B_TAP); SB.sim.step(h, 0); SB.sim.step(h, IN.A | IN.A_TAP | IN.R);
+    t.ok(h.hero.dash === 0 && h.hero.vx === K.RUN && h.hero.ground === 0, 'A during a dash jumps and ends it (dash ' + h.hero.dash + ', vx ' + h.hero.vx + ', run ' + K.RUN + ')'); }
+});
+
+/* LAB-EDGE and LAB-CLEAR for the dive (the model's FALL straight down, section 3.3): standing on a 3 wide one way at row 20
+   (the hero at (11, 19)), a hop, then B held through the one way under the feet and every one way above the target,
+   released for the target to catch it. The tap dive is the shortest hold (the next surface); a hold dive goes deeper. */
+function diveLab(oneWays, solidRow, extraSolid) {
+  const W = SB.GRID.W, H = SB.GRID.H, g = Array.from({ length: H }, () => Array(W).fill('.'));
+  g[H - 1] = Array(W).fill('#');
+  for (const r of [20].concat(oneWays)) for (let c = 10; c <= 12; c++) g[r][c] = '=';
+  if (solidRow) for (let c = 10; c <= 12; c++) g[solidRow][c] = '#';
+  if (extraSolid) for (const [ex, ey] of extraSolid) if (g[ey] && g[ey][ex] === '.') g[ey][ex] = '#';
+  g[19][11] = 'S';
+  return LABS.room(g.map(r => r.join('')));
+}
+function runDive(lv, hold) {
+  const s = SB.sim.create(lv); SB.sim.step(s, 0); SB.sim.step(s, 0);
+  const words = M_DIVE(hold);
+  for (let k = 0; k < words.length; k++) { SB.sim.step(s, words[k]); if (k > hold + 1 && s.hero.ground) break; }
+  return { ok: s.hero.ground === 1, row: restRow(s), col: Math.floor((s.hero.x + (HW >> 1)) / CS) };
+}
+group('H-lab-7', 'LAB-EDGE and LAB-CLEAR for the dive: every FALL straight down the model lists lands by its shortest hold, the dive reaches nothing else, and no cell beside its column stops it', t => {
+  let clearRuns = 0, clearFails = 0;
+  for (const [name, oneWays, solidRow] of [['two one ways and the floor', [26, 32], 0], ['two one ways and a solid shelf', [26, 32], 38], ['adjacent one ways', [26, 27], 0]]) {
+    const lv = diveLab(oneWays, solidRow), g = SB.reach.graph(lv), start = 19 * 24 + 11;
+    const model = (g.adj[start] || []).filter(e => e.kind === 'FALL' && e.dir === 0).map(e => Math.floor(e.to / 24)).sort((a, b) => a - b);
+    const byHold = new Map();
+    for (let hold = 0; hold <= 40; hold++) { const r = runDive(lv, hold); if (r.ok && r.col === 11 && r.row !== 19 && !byHold.has(r.row)) byHold.set(r.row, hold); }
+    const reached = [...byHold.keys()].sort((a, b) => a - b);
+    console.log("  info  " + name + ": model " + JSON.stringify(model) + ", the sim by hold " + [...byHold].map(([r, h]) => r + ":" + h).join(" "));
+    t.same(reached, model, name + ': the rows the dive rests on by some hold equal the model\'s FALL straight down targets (holds ' + [...byHold].map(([r, h]) => r + ':' + h).join(' ') + ')');
+    for (const row of model) {
+      const hold = byHold.get(row); if (hold === undefined) continue;
+      const bad = [];
+      for (const col of [10, 12]) for (let r = 17; r <= row + 1; r++) {
+        if (r === 20 || oneWays.includes(r) || r === solidRow) continue;
+        clearRuns++;
+        const res = runDive(diveLab(oneWays, solidRow, [[col, r]]), hold);
+        if (!(res.ok && res.row === row && res.col === 11)) { clearFails++; bad.push(col + ',' + r); }
+      }
+      clearRuns++;
+      const top = runDive(diveLab(oneWays, solidRow, [[11, 17]]), hold);
+      if (!(top.ok && top.row === row)) { clearFails++; bad.push('11,17'); }
+      t.ok(bad.length === 0, name + ': to row ' + row + ' by hold ' + hold + ', ' + (bad.length ? 'a solid at ' + bad.join(' ') + ' (beside the column) stops it' : 'no solid beside the column or above the hop matters'));
+    }
+  }
+  console.log('  info  the dive labs: ' + clearRuns + ' single solid runs beside the dive\'s column, ' + clearFails + ' stopped it');
+});
+
 group('H-sim-18', 'air control: the rocker at takeoff equals a running start; L and R together decelerate to rest', t => {
   const lv = LABS.room(['', 'S.......................', FLOOR]);
   const flight = run => {

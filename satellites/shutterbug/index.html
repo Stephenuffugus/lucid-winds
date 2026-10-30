@@ -195,6 +195,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     DASH_CELLS: 3, DASH_FRAMES: 8, DASH_IFRAMES: 4,
     // 4.4 feel
     SQUASH_PX: 2, STRETCH_PX: 2, ANIM_FPS: 12, SHAKE_MAX_PX: 2, IDLE_WOBBLE_PX: 1,
+    SHAKE_S: 0.15 /* the dive landing's shake (DESIGN 4.4 gives its 2 px, not its length; T0.12b, 9 steps): FEEL */,
     // 3 screen and camera
     CAM_HERO_FRAC: 0.6, TOP_STRIP: 36, CONTROL_STRIP: 168, VIEW_ROWS_MIN: 20 /* Q6: 22 rows on a 320x568 SE */, SCALE2_MIN_W: 768,
     CHIP_RESERVE_PX: 120 /* the fleet music chip's bottom left box, kept empty by the strip, Q48 */,
@@ -1476,8 +1477,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
      One step, in this order (the order is what the plan's measured numbers rest on: the 69.6 px apex in 34 frames
      needs the jump's velocity set before gravity is added in the same step; the 31.4 px one frame tap needs the
      release cap applied before gravity, and never on the jump step itself):
-       1. the word: the rocker's direction (L and R together read as neutral), facing, the A press edge;
-       2. the jump: on the ground or inside coyote time, a press or a buffered press jumps;
+       1. the word: the rocker's direction (L and R together read as neutral), facing, the A and B press edges; the
+          dash, its i frames and the shake count down;
+       2. the jump: on the ground or inside coyote time, a press or a buffered press jumps; then B: the dive or the dash;
        3. run: full speed at once in the rocker's direction, ground or air (AIR_CONTROL 1), or the 4 frame decel;
        4. the variable jump: rising from a jump with A released, the climb is capped at JUMP_CUT_V;
        5. gravity to terminal; 6. move x, then y, resolving against solid cells and one way tops;
@@ -1551,6 +1553,19 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     }
     return ov >= K.HERO_H_SUB - K.CORNER_SUB ? 1 : 0;
   }
+  /* the dash's edge (DESIGN 4.3, section 3.8 item 8): the step's travel `vx`, cut so the leading foot (the box's last
+     pixel in the dash's direction) stays over a solid or one way top in the row under the feet; never backward, and
+     none when that foot already hangs past the edge. DASH_V is under a cell, so the foot crosses at most one column. */
+  function dashClamp(h, lv, K, vx) {
+    var CS = K.CELL_SUB, HW = K.HERO_W_SUB, row = (h.y + K.HERO_H_SUB) / CS, d = vx > 0 ? 1 : -1;
+    if (row !== Math.floor(row)) return vx;
+    var lead = d > 0 ? h.x + HW - 1 : h.x, c = Math.floor((lead + vx) / CS), cur = Math.floor(lead / CS);
+    if (solidAt(lv, c, row) || platAt(lv, c, row)) return vx;
+    if (!(solidAt(lv, cur, row) || platAt(lv, cur, row))) return 0;
+    var t = (d > 0 ? (cur + 1) * CS - HW : cur * CS) - h.x;
+    return d > 0 ? Math.max(0, Math.min(vx, t)) : Math.min(0, Math.max(vx, t));
+  }
+
   /* returns 1 when the hero lands this step; `dy` is the step's travel (an armed slide travels a third of vy) */
   function moveY(h, lv, K, dy) {
     var CS = K.CELL_SUB, HH = K.HERO_H_SUB, HW = K.HERO_W_SUB;
@@ -1561,8 +1576,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       var feet = h.y + HH, row = Math.floor((feet - 1) / CS), landed = false;
       for (cx = cx0; cx <= cx1 && !landed; cx++) if (solidAt(lv, cx, row)) landed = true;
       var top = row * CS;
-      /* a one way top catches only a descending hero whose feet were at or above it, with LAND_OVERLAP of overlap */
-      if (!landed && prevFeet <= top && feet > top) {
+      /* a one way top catches only a descending hero whose feet were at or above it, with LAND_OVERLAP of overlap,
+         and never a hold dive (B held) */
+      if (!landed && prevFeet <= top && feet > top && h.dive !== 2) {
         for (cx = cx0; cx <= cx1 && !landed; cx++) {
           if (!platAt(lv, cx, row)) continue;
           var ov = Math.min(h.x + HW, (cx + 1) * CS) - Math.max(h.x, cx * CS);
@@ -1592,8 +1608,14 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     /* 1. the word */
     var dir = ((word & IN.R) ? 1 : 0) - ((word & IN.L) ? 1 : 0);
     var held = (word & IN.A) ? 1 : 0, pressed = (word & IN.A_TAP) !== 0;
-    if (dir !== 0) h.facing = dir;
-    var startedGrounded = h.ground, dove = (word & IN.B_TAP) !== 0;
+    var bHeld = (word & IN.B) ? 1 : 0, bPressed = (word & IN.B_TAP) !== 0;
+    /* the counters run down first, so a dash's press step is the first of DASH_FRAMES moving steps and of DASH_IFRAMES
+       invulnerable ones, and a dive landing leaves SHAKE_F steps of shake; a dash holds the facing */
+    if (h.dash > 0) { h.dash--; if (h.dash === 0) h.vx = 0; }
+    if (h.dashI > 0) h.dashI--;
+    if (h.shake > 0) h.shake--;
+    if (dir !== 0 && h.dash === 0) h.facing = dir;
+    var startedGrounded = h.ground, dove = bPressed && !startedGrounded;
 
     /* 2. the jumps. From a sticky wall (DESIGN 4.2): A is STICKY_JUMP_V straight up with no push off; B, or the
        rocker away from the wall, lets go into a plain fall. From an armed wall slide: A is the wall jump, WALL_V up and
@@ -1602,7 +1624,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var jumped = 0, stickyJump = 0;
     if (h.sticky) {
       if (pressed) { h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0; h.rising = 1; jumped = 1; stickyJump = 1; h.squash = -SQUASH_FRAMES; }
-      else if (dove || (dir !== 0 && dir === -h.wall)) { h.sticky = 0; h.wall = 0; if (dove) h.dive = 1; }   /* B lets go as a dive: no vine catches a dive */
+      else if (dove || (dir !== 0 && dir === -h.wall)) { h.sticky = 0; h.wall = 0; }   /* B lets go into the dive below: no vine catches a dive */
     } else if (h.wall !== 0 && pressed && !h.ground) {
       h.vy = -K.WALL_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.facing = -h.wall; h.wall = 0; h.rising = 1; jumped = 1; h.squash = -SQUASH_FRAMES;
     } else if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0)) {
@@ -1610,10 +1632,24 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       h.squash = -SQUASH_FRAMES;
     } else if (pressed) h.buffer = K.BUFFER + 1;   /* counts this step; see the end of the step */
 
+    /* 2b. B (DESIGN 4.3, section 3.8 items 7 and 8). A press in the air dives: vy snaps to terminal, vx to zero, the
+       rocker is ignored to the landing (a vine or a wall slide lets go into it; no coyote jump out of it); while B is
+       held the dive drops through one ways (dive 2), released the next surface catches it (dive 1). A fresh press on
+       the ground dashes DASH_V in the facing for DASH_FRAMES steps, never off a platform's edge (dashClamp). A press
+       that began in the air stays a dive through its landing and never becomes a dash; a jump wins over B and ends a
+       dash. */
+    if (jumped) { if (h.dash > 0) { h.dash = 0; h.vx = 0; } }
+    else if (dove) { h.dive = 1; h.vy = K.TERM; h.vx = 0; h.lock = 0; h.wall = 0; h.sticky = 0; h.rising = 0; h.coyote = 0; }
+    else if (bPressed && startedGrounded && h.dash === 0) { h.dash = K.DASH_FRAMES; h.dashI = K.DASH_IFRAMES; }
+    if (h.dive) h.dive = bHeld ? 2 : 1;
+
     /* 3. run: instant full speed, or the decel toward rest (the same in the air: AIR_CONTROL 1); the wall jump's lock
        pushes away whatever the rocker says; a sticky wall and the sticky jump's first step have no push (air control
        from the second step) */
-    if (h.lock !== 0) { h.vx = (h.lock > 0 ? 1 : -1) * K.WALL_PUSH; h.lock -= h.lock > 0 ? 1 : -1; }
+    var dashCut = 0;
+    if (h.dive) h.vx = 0;
+    else if (h.dash > 0) { var dv = dashClamp(h, lv, K, h.facing * K.DASH_V); dashCut = dv !== h.facing * K.DASH_V ? 1 : 0; h.vx = dv; }
+    else if (h.lock !== 0) { h.vx = (h.lock > 0 ? 1 : -1) * K.WALL_PUSH; h.lock -= h.lock > 0 ? 1 : -1; }
     else if (stickyJump || h.sticky) h.vx = 0;
     else if (dir !== 0) h.vx = dir * K.RUN;
     else if (h.vx > 0) h.vx = Math.max(0, h.vx - K.DECEL);
@@ -1630,19 +1666,20 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     /* 6. move: an armed slide falls a third of vy (vy keeps the unarmed fall, so the slide's speed is always a third
        of what the fall would be at the same step, capped at TERMINAL / 3; section 3.8 item 4) */
     moveX(h, lv, K);
+    if (h.dash > 0 && (dashCut || h.vx === 0)) { h.dash = 0; h.vx = 0; }   /* stopped at the edge, or by a wall */
     var landed = moveY(h, lv, K, h.wall !== 0 && !h.sticky && h.vy > 0 ? Math.floor(h.vy / K.WALL_SLIDE_DIV) : h.vy);
 
     /* 7. the walls: on the ground nothing clings; in the air a full height contact on the rocker's side arms the slide
        (DESIGN 4.2, outside the wall jump's lock); a sticky contact on either side arms only on a descending step after
        an airborne one and stops the fall without the rocker (section 3.8 item 4); leaving the slide hands the fall its
        third */
-    if (landed) { h.wall = 0; h.sticky = 0; h.lock = 0; h.dive = 0; }
+    if (landed) { if (h.dive) h.shake = K.SHAKE_F; h.wall = 0; h.sticky = 0; h.lock = 0; h.dive = 0; }
     else if (!h.sticky) {
       var side = 0;
       if (h.vy > 0 && !startedGrounded && h.dive === 0) side = contactAt(h, lv, K, 1, true) ? 1 : contactAt(h, lv, K, -1, true) ? -1 : 0;
       if (side !== 0) { h.sticky = 1; h.wall = side; h.vy = 0; h.lock = 0; }
       else {
-        var armed = dir !== 0 && h.lock === 0 && contactAt(h, lv, K, dir, false) ? dir : 0;
+        var armed = dir !== 0 && h.lock === 0 && h.dive === 0 && contactAt(h, lv, K, dir, false) ? dir : 0;
         if (h.wall !== 0 && armed === 0 && h.vy > 0) h.vy = Math.floor(h.vy / K.WALL_SLIDE_DIV);
         h.wall = armed;
       }
@@ -1910,6 +1947,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var heroY = s.hero.y >> 8, heroX = s.hero.x >> 8;
     var cam = heroY + (K.HERO_H >> 1) - Math.round(viewH * SB.TUNING.CAM_HERO_FRAC);
     cam = Math.max(0, Math.min(worldH - viewH, cam));
+    /* the dive landing's shake (DESIGN 4.4: at most SHAKE_MAX_PX, only on dive landings and boss hits): while the
+       state's counter runs the camera lifts on alternate steps, by the full height in the first half */
+    if (s.hero.shake > 0 && (s.hero.shake & 1)) cam = Math.max(0, cam - (s.hero.shake > (K.SHAKE_F >> 1) ? SB.TUNING.SHAKE_MAX_PX : 1));
     R.camY = cam;
     /* the crop alternative follows the hero sideways inside the 24 px the screen lacks; the default never moves */
     var camX = R.crop ? Math.max(0, Math.min(K.WORLD_W - R.viewW, heroX + (K.HERO_W >> 1) - (R.viewW >> 1))) : 0;
@@ -1940,7 +1980,14 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        body pressed flat against the wall; one column in, the eye (the slide faces the wall) sat on the old bar and the
        pose read as the letter i in t12-cling */
     if (s.hero.wall !== 0) { ctx.fillStyle = css(P.I.INK); ctx.fillRect(s.hero.wall > 0 ? heroX + K.HERO_W - 3 : heroX, hy, 3, K.HERO_H); }
-    ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(heroX + (s.hero.facing > 0 ? K.HERO_W - 4 : 2), hy + 4, 2, 2);
+    /* the dive pose (the sprite is T0.17): three Ink speed lines trailing above the box and the eye low, looking down;
+       the dash: two Ink streaks trailing behind at mid height */
+    if (s.hero.dive) { ctx.fillStyle = css(P.I.INK); ctx.fillRect(heroX + 2, hy - 5, 1, 4); ctx.fillRect(heroX + 6, hy - 7, 1, 6); ctx.fillRect(heroX + 9, hy - 5, 1, 4); }
+    if (s.hero.dash > 0) {
+      var tx = s.hero.facing > 0 ? heroX - 7 : heroX + K.HERO_W + 1;
+      ctx.fillStyle = css(P.I.INK); ctx.fillRect(tx, hy + 5, 6, 1); ctx.fillRect(tx + (s.hero.facing > 0 ? 2 : 0), hy + 10, 4, 1);
+    }
+    ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(heroX + (s.hero.facing > 0 ? K.HERO_W - 4 : 2), hy + (s.hero.dive ? K.HERO_H - 7 : 4), 2, 2);
     ctx.restore();
   };
 })(window.SB);
