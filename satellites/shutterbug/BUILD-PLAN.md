@@ -46,6 +46,7 @@ The builder updates this table in the same commit that ships the task (law 8: th
 | T0.7b | shipped | `4aedc3e2d` | H-sim-6..8, H-lab-1 (250 cases), H-lab-2 (9300 runs, none stopped), H-lab-3 warn: nothing beyond; LAB-CLEAR green at the first run, no retune; HASH_SKIPS_RNG, ONEWAY_FROM_BELOW_BLOCKS, FLOAT_LEAK RED | (harness task) |
 | T0.2b | shipped | `662edc9c1` | boot journey C green (ready twice, SWS_EMBED, close once); the one CORE_RE lint rule watched red by hand on drifted copies; READY_NEVER_POSTED RED | (gate task) |
 | T0.5b | shipped | `ed63ecbfa` (with autosave `e5bb78cd2`) | make gate green: H-cap-1 worst 1; the sample room photo round trips 1131/1152 and builds; the overlay checked on canvas and on screen; MAKE_RE_DRIFT, BITMAP_LEAK, CAPTURE_BGR, OVERLAY_NO_HASH, CROP_SHADOW_UNCLIPPED RED | previews and Download below the fold; noisy hatching, the exit outline too small; found by looking: a black overlay and a page wide dark veil (fixed, gated) |
+| T0.4b | shipped | `c2e1c1857` | H-pal-3 (150 pairs, weakest edge 4.38:1, hero 3.63:1), H-pal-4 green; GLARE_DARKENED RED | Ink and Soot read alike; Film and Paper read alike; the hero on Sun's blend held by its outline |
 
 Status is one of `shipped`, `shipped with xfail Qn`, `BLOCKED on <assertion> Qn`, `skipped (budget)`. The night's last row is `T0.18 deploy` with the deploy commit and the two origin hashes, or `NOT LIVE` and why.
 
