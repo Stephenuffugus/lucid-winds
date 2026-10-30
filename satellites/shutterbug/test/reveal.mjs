@@ -38,11 +38,14 @@ try {
     R.say(after[1] === 1 && (after[0] === 'running' || after[0] === 'suspended'), 'exactly one AudioContext after the tap, ' + after[0] + ' (' + after[1] + ' made)');
     R.say(seq.includes('reveal') && seq[seq.length - 1] === 'play' && seq.indexOf('reveal') < seq.indexOf('play'), 'the screen passes through reveal, then play (' + seq.join(' to ') + ')');
     const m = await page.evaluate(() => window.SB_DEV.perf().reveal);
+    /* a mark is the first frame at or past its beat; the beat fell inside the gap to the frame before, so each beat is
+       held to 50 ms plus the gaps at its two ends (16 ms on a phone; swiftshader stalls up to 400 ms just after a room
+       starts, with or without the reveal, measured T0.14) */
     const hold = m.hold - m.start, resolve = m.resolve - m.hold, light = m.end - m.resolve, total = m.end - m.start;
-    R.say(Math.abs(hold - T.hold) <= SLACK, 'the hold beat ' + hold.toFixed(0) + ' ms (300, within 50; the build ' + m.build.toFixed(1) + ' ms inside it)');
-    R.say(Math.abs(resolve - T.resolve) <= SLACK, 'the resolve beat ' + resolve.toFixed(0) + ' ms (800, within 50)');
-    R.say(Math.abs(light - T.light) <= SLACK, 'the light up beat ' + light.toFixed(0) + ' ms (500, within 50)');
-    R.say(total <= 1600 + SLACK, 'the tap to the hero\'s drop ' + total.toFixed(0) + ' ms (at most 1.6 s, including the build)');
+    R.say(Math.abs(hold - T.hold) <= SLACK + m.holdGap, 'the hold beat ' + hold.toFixed(0) + ' ms (300, within 50 + the frame gap ' + m.holdGap.toFixed(0) + '; the build ' + m.build.toFixed(1) + ' ms inside it)');
+    R.say(Math.abs(resolve - T.resolve) <= SLACK + m.holdGap + m.resolveGap, 'the resolve beat ' + resolve.toFixed(0) + ' ms (800, within 50 + the gaps ' + m.holdGap.toFixed(0) + ' and ' + m.resolveGap.toFixed(0) + ')');
+    R.say(Math.abs(light - T.light) <= SLACK + m.resolveGap + m.endGap, 'the light up beat ' + light.toFixed(0) + ' ms (500, within 50 + the gaps ' + m.resolveGap.toFixed(0) + ' and ' + m.endGap.toFixed(0) + ')');
+    R.say(total <= 1600 + SLACK + m.endGap, 'the tap to the hero\'s drop ' + total.toFixed(0) + ' ms (at most 1.6 s, including the build, plus the last frame gap ' + m.endGap.toFixed(0) + ')');
     R.say(await page.evaluate(() => window.SB_DEV.staticBuilds()) === 1, 'the static layer is built once for the reveal and the play');
     R.say(m.skipped === false, 'the first reveal was not skipped');
     /* a second room: the reveal is seen, a real tap on the canvas skips it */

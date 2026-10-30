@@ -2393,9 +2393,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
      length at any frame rate and a slow frame skips rows. A tap skips it once one reveal has been seen
      (onboarding.revealSeen, kept for the session until the save of T1.10). The static layer built at the room's start
      serves the reveal and the play alike: it is never built twice. */
-  var RV = ui.reveal = { on: false, t: 0, start: 0, lv: null, reduced: false, rows: 0, tabs: 0, marks: null, seen: false, devSkip: false };
+  var RV = ui.reveal = { on: false, t: 0, start: 0, prev: 0, lv: null, reduced: false, rows: 0, tabs: 0, marks: null, seen: false, devSkip: false };
   function startReveal(lv, t0) {
-    RV.on = true; RV.start = t0; RV.t = performance.now() - t0; RV.lv = lv; RV.rows = 0; RV.tabs = 0;
+    RV.on = true; RV.start = t0; RV.t = performance.now() - t0; RV.prev = t0; RV.lv = lv; RV.rows = 0; RV.tabs = 0;
     RV.reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     RV.marks = { start: t0, build: SB.perfLog.pipeline, reduced: RV.reduced, skipped: false };
     SB.render.buildPhoto(lv);
@@ -2411,10 +2411,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       var p = SB.render.revealProgress(RV.lv, RV.t);
       if ((p.rows >> 2) > (RV.rows >> 2) || p.tabs > RV.tabs) SB.audio.tick();
       RV.rows = p.rows; RV.tabs = p.tabs;
-      if (RV.t >= hold && RV.marks.hold === undefined) RV.marks.hold = now;
-      if (RV.t >= hold + res && RV.marks.resolve === undefined) RV.marks.resolve = now;
+      /* each mark is the first frame at or past its beat, with the gap to the frame before it: the beat fell inside
+         that gap (a slow frame widens it; the clock itself is the timestamp's, never a frame count) */
+      if (RV.t >= hold && RV.marks.hold === undefined) { RV.marks.hold = now; RV.marks.holdGap = now - RV.prev; }
+      if (RV.t >= hold + res && RV.marks.resolve === undefined) { RV.marks.resolve = now; RV.marks.resolveGap = now - RV.prev; }
     }
-    if (RV.t >= end) { ui.endReveal(now); return; }
+    if (RV.t >= end) { RV.marks.endGap = now - RV.prev; ui.endReveal(now); return; }
+    RV.prev = now;
     SB.render.drawReveal(RV.lv, G.state.hero.y >> 8, RV.t, RV.reduced);
   };
   ui.endReveal = function (now) {
