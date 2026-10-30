@@ -3562,10 +3562,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 </script>
 <script id="shell-audio">
 (function (SB) { 'use strict';
-  /* shell-audio (DESIGN 5.2, BUILD-PLAN T0.14): every sound is synthesised, none is a file. The AudioContext is created
-     and resumed inside the first pointerdown anywhere (the title tap), never before; muted by the sound setting (the
-     settings screen writes A.muted, T1.10); never required for play: any failure is silent. */
-  var A = SB.audio = { ctx: null, made: 0, muted: false };
+  /* shell-audio (DESIGN 5.2 and 11, BUILD-PLAN T0.14, T1.7): every sound is synthesised, none is a file. The AudioContext
+     is created and resumed inside the first pointerdown anywhere (the title tap), never before. Every sound goes through
+     one play(name): the sound setting (A.setSound, the settings screen's toggle from T1.10) sets the master gain and
+     schedules nothing when off; a name plays at most VOICES_PER_NAME voices in any VOICE_WINDOW_S of the audio clock;
+     the music bus exists, silent, under the master. Never required for play: any failure is silent. */
+  var A = SB.audio = { ctx: null, made: 0, muted: false, master: null, music: null, events: [] };
+  var VOICES_PER_NAME = 4, VOICE_WINDOW_S = 0.1;
   A.state = function () { return A.ctx ? A.ctx.state : 'none'; };
   function unlock() {
     if (A.ctx) return;
@@ -3573,11 +3576,16 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       var AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       A.ctx = new AC(); A.made++;
+      A.master = A.ctx.createGain(); A.master.gain.value = A.muted ? 0 : 1; A.master.connect(A.ctx.destination);
+      A.music = A.ctx.createGain(); A.music.gain.value = 0; A.music.connect(A.master);   /* the music bus: silence until the music lands */
       if (A.ctx.state === 'suspended' && A.ctx.resume) A.ctx.resume().catch(function () {});
     } catch (e) { A.ctx = null; }
   }
   A.init = function () { document.addEventListener('pointerdown', unlock, { capture: true, once: true }); };
   var live = function () { return !!A.ctx && !A.muted && A.ctx.state === 'running'; };
+  /* the sound setting: off mutes the master and schedules nothing */
+  A.setSound = function (on) { A.muted = !on; if (A.master) A.master.gain.value = on ? 1 : 0; return !A.muted; };
+  var out = function () { return A.master || A.ctx.destination; };
   /* one click: a 12 ms white noise burst through a 2 kHz band pass, decaying over 60 ms */
   function click(at) {
     var c = A.ctx, len = Math.ceil(c.sampleRate * 0.012), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
@@ -3585,16 +3593,14 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
     src.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = 2000; bp.Q.value = 1.2;
     g.gain.setValueAtTime(0.5, at); g.gain.exponentialRampToValueAtTime(0.001, at + 0.06);
-    src.connect(bp); bp.connect(g); g.connect(c.destination); src.start(at); src.stop(at + 0.07);
+    src.connect(bp); bp.connect(g); g.connect(out()); src.start(at); src.stop(at + 0.07);
   }
-  /* the shutter on the reveal's first beat: two clicks 40 ms apart */
-  A.shutter = function () { if (!live()) return; try { var t = A.ctx.currentTime; click(t); click(t + 0.04); } catch (e) { /* silent */ } };
   /* a tone: one oscillator gliding f0 to f1 over dur seconds, its gain falling from vol */
   function tone(type, f0, f1, dur, vol, at) {
     var c = A.ctx, o = c.createOscillator(), g = c.createGain();
     o.type = type; o.frequency.setValueAtTime(f0, at); o.frequency.exponentialRampToValueAtTime(f1, at + dur);
     g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(0.001, at + dur);
-    o.connect(g); g.connect(c.destination); o.start(at); o.stop(at + dur + 0.01);
+    o.connect(g); g.connect(out()); o.start(at); o.stop(at + dur + 0.01);
   }
   /* a thud: white noise through a low pass at f, decaying over dur */
   function thud(f, dur, vol, at) {
@@ -3603,11 +3609,15 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var src = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain();
     src.buffer = buf; lp.type = 'lowpass'; lp.frequency.value = f;
     g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(0.001, at + dur);
-    src.connect(lp); lp.connect(g); g.connect(c.destination); src.start(at); src.stop(at + dur + 0.01);
+    src.connect(lp); lp.connect(g); g.connect(out()); src.start(at); src.stop(at + dur + 0.01);
   }
-  /* the game's nine: jump, wall jump, dive, land (heavier after a dive), hit, the beacon (T0.16); pickup, chest and the
-     scroll's pick (T1.6) */
+  /* DESIGN 11's fourteen: the shutter (two clicks 40 ms apart, the reveal's first beat) and the develop tick (a 5 ms
+     blip at 3.2 kHz: the resolve's rows, each tab of the light up; T0.14); jump, wall jump, dive, land (heavier after a
+     dive), hit, the beacon (T0.16); pickup, chest and the scroll's pick (T1.6); the door, the boss's intro and a hit on
+     the boss (T1.7, ready for M2 and M3) */
   var SFX = {
+    shutter: function (t) { click(t); click(t + 0.04); },
+    tick: function (t) { tone('square', 3200, 3200, 0.005, 0.05, t); },
     jump: function (t) { tone('square', 330, 660, 0.09, 0.06, t); },
     walljump: function (t) { tone('square', 440, 700, 0.05, 0.06, t); tone('square', 700, 990, 0.06, 0.05, t + 0.045); },
     dive: function (t) { tone('triangle', 880, 180, 0.14, 0.09, t); },
@@ -3616,24 +3626,29 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     beacon: function (t) { tone('triangle', 660, 660, 0.25, 0.08, t); tone('triangle', 880, 880, 0.25, 0.08, t + 0.09); tone('triangle', 1320, 1320, 0.35, 0.08, t + 0.18); },
     pickup: function (t) { tone('square', 990, 1320, 0.06, 0.05, t); },
     chest: function (t) { tone('triangle', 523, 523, 0.12, 0.08, t); tone('triangle', 659, 659, 0.12, 0.08, t + 0.07); tone('triangle', 784, 784, 0.2, 0.08, t + 0.14); },
-    pick: function (t) { tone('square', 660, 880, 0.08, 0.05, t); tone('square', 880, 1175, 0.1, 0.05, t + 0.06); }
+    pick: function (t) { tone('square', 660, 880, 0.08, 0.05, t); tone('square', 880, 1175, 0.1, 0.05, t + 0.06); },
+    door: function (t) { thud(600, 0.06, 0.2, t); tone('triangle', 392, 523, 0.18, 0.06, t + 0.05); },
+    bossIntro: function (t) { tone('sawtooth', 110, 82, 0.6, 0.08, t); tone('sawtooth', 165, 123, 0.6, 0.05, t + 0.15); },
+    bossHit: function (t) { tone('square', 520, 260, 0.1, 0.07, t); thud(1400, 0.05, 0.2, t); }
   };
-  A.played = {};   /* counts per sound, for the gates (SB_DEV.audioPlayed) */
-  A.sfx = function (name, heavy) {
+  A.played = {};   /* counts per sound asked for, for the gates (SB_DEV.audioPlayed) */
+  var recent = {};  /* per name, the audio clock times of its voices in the last VOICE_WINDOW_S */
+  /* the one entry: counted when asked; scheduled (one voice, logged in A.events for SB_DEV.audioEvents) only when the
+     sound is on, the context runs and the name has fewer than VOICES_PER_NAME voices in the window */
+  A.play = function (name, heavy) {
     A.played[name] = (A.played[name] || 0) + 1;
-    if (!live()) return;
-    try { SFX[name](A.ctx.currentTime, heavy); } catch (e) { /* silent */ }
+    if (!live() || !SFX[name]) return false;
+    var t = A.ctx.currentTime, r = recent[name] || (recent[name] = []);
+    while (r.length && r[0] <= t - VOICE_WINDOW_S) r.shift();
+    if (r.length >= VOICES_PER_NAME) return false;
+    try { SFX[name](t, heavy); } catch (e) { return false; }
+    r.push(t); A.events.push({ name: name, at: t });
+    if (A.events.length > 400) A.events.shift();
+    return true;
   };
-  /* a develop tick: a 5 ms blip at 3.2 kHz, quiet (the resolve's rows, each tab of the light up) */
-  A.tick = function () {
-    if (!live()) return;
-    try {
-      var c = A.ctx, t = c.currentTime, o = c.createOscillator(), g = c.createGain();
-      o.type = 'square'; o.frequency.value = 3200;
-      g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.005);
-      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.01);
-    } catch (e) { /* silent */ }
-  };
+  A.sfx = A.play;
+  A.shutter = function () { return A.play('shutter'); };
+  A.tick = function () { return A.play('tick'); };
 })(window.SB);
 </script>
 <script id="shell-save">
@@ -4114,6 +4129,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     },
     audioMade: function () { return SB.audio.made; },
     audioPlayed: function () { return Object.assign({}, SB.audio.played); },
+    audioEvents: function () { return SB.audio.events.map(function (e) { return { name: e.name, at: e.at }; }); },
     hinted: function () { return Object.assign({}, SB.ui.hinted); },
     heroShown: function () { return SB.render.heroShown; },
     heroFrame: function () { return SB.render.drawn.hero.key; },

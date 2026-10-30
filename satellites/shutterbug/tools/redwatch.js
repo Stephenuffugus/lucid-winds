@@ -604,7 +604,14 @@ const MUTANTS = [
   { name: 'SPECK_DP_FIXED', task: 'T1.6', file: 'page', find: 's.room.dp += T8.DP_SPECK[0] + SB.rng.stepU32(s, \'rng\') % (T8.DP_SPECK[1] - T8.DP_SPECK[0] + 1);', repl: 's.room.dp += T8.DP_SPECK[0];',
     gates: [{ gate: 'harness', only: 'H-loot-1', expect: 'the walk banks' }] },
   { name: 'OFFER_UNBIASED', task: 'T1.6', file: 'page', find: 'var bias = STAT_OF_BIOME[s.biome] || VIGOR,', repl: 'var bias = VIGOR,',
-    gates: [{ gate: 'harness', only: 'H-loot-3', expect: 'the biome\'s stat first in' }] }
+    gates: [{ gate: 'harness', only: 'H-loot-3', expect: 'the biome\'s stat first in' }] },
+  /* T1.7: the SFX set */
+  { name: 'LAND_EVERY_FRAME', task: 'T1.7', file: 'page', edits: [["      if (ev & EV.LAND) au.sfx('land', G.state.hero.shake > 0);\n", ''], ['    SB.ui.sheets(G.state);\n', "    if (G.state.hero.ground) au.sfx('land', G.state.hero.shake > 0);\n    SB.ui.sheets(G.state);\n"]], find: null, repl: null,
+    gates: [{ gate: 'audio', expect: 'a dive landing schedules two voices' }] },
+  { name: 'SETTING_IGNORED', task: 'T1.7', file: 'page', find: "var live = function () { return !!A.ctx && !A.muted && A.ctx.state === 'running'; };", repl: "var live = function () { return !!A.ctx && A.ctx.state === 'running'; };",
+    gates: [{ gate: 'audio', expect: 'with the sound off a jump is asked for and nothing is scheduled' }] },
+  { name: 'AUDIO_FILE_REQUEST', task: 'T1.7', file: 'page', find: "A.init = function () { document.addEventListener('pointerdown', unlock, { capture: true, once: true }); };", repl: "A.init = function () { try { new Audio('sfx/jump.mp3').load(); } catch (e) {} document.addEventListener('pointerdown', unlock, { capture: true, once: true }); };",
+    gates: [{ gate: 'audio', expect: 'no <audio> element' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
