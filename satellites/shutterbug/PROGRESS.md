@@ -8,3 +8,10 @@ gates: none yet (no game code); the browser pipe proven by shoot.mjs on the kick
 shots: /tmp/claude-1000/-workspaces-lucid-winds/6ae42b7a-b033-4fe6-9515-ad54b1a93aeb/scratchpad/shots-kickoff/shot-412x915.png (the kickoff page): 1. the heading wraps to two lines at 412 wide 2. the box shows the first third of the prompt only, by design 3. nothing else
 in flight: none; the code starts with the Opus session the build order describes (T0.0 appends the next entry here)
 blocked: none for the night. Stephen's approval of the plan (HANDOFF section 4) is stood in for by his ruling that Opus builds M0 and the SAFE M1 tasks autonomously; he redlines in the morning. Real fixtures wait on fixtures/make.html (T0.5b) and his photos; the night runs on the sample room and the synthetic corpus.
+
+### 2026-10-30 01:42 UTC  T0.0  Branch, push proof, the docs seeded (Opus, night one started, plan sb-m0)
+shipped: night one started on add-sproing-jumper (0 commits behind origin/main, node 24.21.0); setup proven: the test server on 8777, Chrome from /workspaces/sws-tools shot the kickoff page at 412x915 and 360x780 with no page errors, the autosave running (tools/shutterbug-tests/autosave.sh, nohup, PID 7375); BUILD-PLAN.md and QUESTIONS.md were already tracked; tools/shutterbug-tests/board.mjs added (rewrites the one live Opus entry at the top of START-HERE.md without reading the 560 KB file)
+gates: none (no page yet)
+shots: /tmp/claude-1000/shutterbug-shots/setup/shot-412x915.png (the kickoff page, the Chrome proof): 1. the heading wraps to two lines at 412 2. the prompt box cuts mid sentence at the fold, by design 3. a third of the screen below the box is empty
+in flight: T0.1
+blocked: none. ~/.config/gh/hosts.yml is absent on this box, so memory is written locally and not pushed (scripts/memory-sync.sh cannot reach the private repo); said again in the morning report.
