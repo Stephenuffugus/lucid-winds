@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 4813;              /* raised per task: the count a full run must reach (4813 after T1.10, 30 Oct) */
+const ASSERT_FLOOR = 4860;              /* raised per task: the count a full run must reach (4860 after T1.9a, 30 Oct) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -4195,6 +4195,129 @@ group('H-save-1', 'the save\'s pure validator (section 2.4): a v 2 save is left 
   const q = R.loadSave('{not json');
   t.ok(q.quarantined && q.write && q.doc.quarantine === '{not json' && JSON.stringify(Object.assign({}, q.doc, { quarantine: null })) === JSON.stringify(d), 'an unreadable string is set aside in quarantine of a fresh document, written under the same key');
   t.ok(JSON.stringify(R.loadSave(null).doc) === JSON.stringify(d) && JSON.stringify(R.validateSave(R.validateSave(doc))) === JSON.stringify(R.validateSave(doc)), 'no save gives the defaults; validating twice changes nothing');
+});
+
+/* ================================================================ the QR encoder (T1.9a) */
+/* The test's own reading of a symbol, written again from the spec rather than taken from the encoder: the function
+   modules of a version (finders with their separators, timing, the alignment row typed below, both format areas with
+   the dark module, both version areas), the eight mask conditions, and the zigzag (column pairs from the right edge,
+   upward first, the vertical timing column skipped, function modules passed over). */
+const QR_AL = { 1: [], 20: [6, 34, 62, 90] };
+const QR_MASK = [(x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, (x, y) => x % 3 === 0, (x, y) => (x + y) % 3 === 0,
+  (x, y) => (Math.floor(y / 2) + Math.floor(x / 3)) % 2 === 0, (x, y) => (x * y) % 2 + (x * y) % 3 === 0,
+  (x, y) => ((x * y) % 2 + (x * y) % 3) % 2 === 0, (x, y) => ((x + y) % 2 + (x * y) % 3) % 2 === 0];
+/* level L's format strings for masks 0 to 7, as published (thonky.com's format information table) */
+const QR_FMT = ['111011111000100', '111001011110011', '111110110101010', '111100010011101', '110011000101111', '110001100011000', '110110001000001', '110100101110110'];
+function qrFunctions(v) {
+  const n = 4 * v + 17, f = new Uint8Array(n * n), mark = (x, y) => { if (x >= 0 && y >= 0 && x < n && y < n) f[y * n + x] = 1; }, al = QR_AL[v], last = al[al.length - 1];
+  for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { mark(x, y); mark(n - 1 - x, y); mark(x, n - 1 - y); }
+  for (let i = 0; i < n; i++) { mark(6, i); mark(i, 6); }
+  for (const ay of al) for (const ax of al) {
+    if ((ax === 6 && ay === 6) || (ax === 6 && ay === last) || (ax === last && ay === 6)) continue;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) mark(ax + dx, ay + dy);
+  }
+  for (let i = 0; i < 9; i++) { mark(8, i); mark(i, 8); }
+  for (let i = 0; i < 8; i++) { mark(n - 1 - i, 8); mark(8, n - 1 - i); }
+  if (v >= 7) for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) { mark(n - 11 + j, i); mark(i, n - 11 + j); }
+  return f;
+}
+function qrRead(s, f) {
+  const n = s.size, hit = QR_MASK[s.mask], bits = [];
+  let up = true;
+  for (let col = n - 1; col > 0; col -= 2) {
+    if (col === 6) col--;
+    for (let k = 0; k < n; k++) {
+      const y = up ? n - 1 - k : k;
+      for (const x of [col, col - 1]) if (!f[y * n + x]) bits.push(s.modules[y * n + x] ^ (hit(x, y) ? 1 : 0));
+    }
+    up = !up;
+  }
+  return bits;
+}
+const qrBytes = (bits, count) => { const out = []; for (let i = 0; i < count; i++) { let b = 0; for (let k = 0; k < 8; k++) b = b << 1 | bits[i * 8 + k]; out.push(b); } return out; };
+/* the format string as the spec places it: copy one along row 8 (columns 0 to 5, 7, 8) then up column 8 (rows 7,
+   5 to 0); copy two up column 8 from the bottom (7 bits) then along row 8 to the right edge (8 bits) */
+function qrFormats(s) {
+  const n = s.size, M = (x, y) => String(s.modules[y * n + x]), a = [], b = [];
+  for (const x of [0, 1, 2, 3, 4, 5, 7, 8]) a.push(M(x, 8));
+  for (const y of [7, 5, 4, 3, 2, 1, 0]) a.push(M(8, y));
+  for (let i = 0; i < 7; i++) b.push(M(8, n - 1 - i));
+  for (let i = 8; i >= 1; i--) b.push(M(n - i, 8));
+  return [a.join(''), b.join('')];
+}
+const qrHex = a => Array.from(a, v => v.toString(16).padStart(2, '0')).join(' ');
+const QR_LINK = () => SB.record.linkOf('https://lucidwinds.com', '/satellites/shutterbug/', SB.record.fromJSON(fixture('sample-room').fx.record));
+
+group('H-qr-1', 'the Reed Solomon stage against two published known answers (the 1-M "HELLO WORLD" of thonky.com\'s QR tutorial and the 1-M byte mode "hello world" of Wikiversity\'s Reed Solomon codes for coders; BUILD-PLAN typed the second one\'s EC under the first one\'s data, QUESTIONS Q86), the eight level L format strings, three version strings and seven alignment rows as published', t => {
+  const Q = SB.qr;
+  t.eq(qrHex(Q.rs([0x20, 0x5b, 0x0b, 0x78, 0xd1, 0x72, 0xdc, 0x4d, 0x43, 0x40, 0xec, 0x11, 0xec, 0x11, 0xec, 0x11], 10)), 'c4 23 27 77 eb d7 e7 e2 5d 17', 'HELLO WORLD 1-M: its 10 published EC codewords (196 35 39 119 235 215 231 226 93 23)');
+  t.eq(qrHex(Q.rs([0x40, 0xd2, 0x75, 0x47, 0x76, 0x17, 0x32, 0x06, 0x27, 0x26, 0x96, 0xc6, 0xc6, 0x96, 0x70, 0xec], 10)), 'bc 2a 90 13 6b af ef fd 4b e0', 'hello world, byte mode 1-M: its 10 published EC codewords');
+  for (let k = 0; k < 8; k++) t.eq(Q.formatBits(k).toString(2).padStart(15, '0'), QR_FMT[k], 'the format string for level L, mask ' + k);
+  for (const [v, str] of [[7, '000111110010010100'], [20, '010100100110100110'], [40, '101000110001101001']]) t.eq(Q.versionBits(v).toString(2).padStart(18, '0'), str, 'the version string for version ' + v);
+  for (const [v, row] of [[1, ''], [2, '6,18'], [7, '6,22,38'], [15, '6,26,48,70'], [20, '6,34,62,90'], [32, '6,34,60,86,112,138'], [40, '6,30,58,86,114,142,170']]) t.eq(Array.from(Q.alignment(v)).join(), row, 'the alignment row for version ' + v);
+});
+
+group('H-qr-2', 'the version 1 symbol for "shutterbug": the finders, separators, timing, dark module and both format copies where the test puts them, 208 data modules (26 codewords), and the codewords read back through the test\'s own zigzag and mask: 0100, the count 10, the bytes, the terminator, the pads, and the EC the Reed Solomon of the data', t => {
+  const Q = SB.qr, s = Q.encode('shutterbug'), n = s.size, M = (x, y) => s.modules[y * n + x];
+  t.ok(s.version === 1 && n === 21, 'version 1, 21 modules a side (got ' + s.version + ', ' + n + ')');
+  let bad = 0;
+  for (const [fx, fy] of [[0, 0], [n - 7, 0], [0, n - 7]]) for (let dy = 0; dy < 7; dy++) for (let dx = 0; dx < 7; dx++) if (M(fx + dx, fy + dy) !== (Math.max(Math.abs(dx - 3), Math.abs(dy - 3)) === 2 ? 0 : 1)) bad++;
+  t.eq(bad, 0, 'three finders, each a dark border, a light ring and a dark 3x3 core');
+  bad = 0;
+  for (let i = 0; i < 8; i++) { if (M(i, 7) || M(7, i) || M(n - 1 - i, 7) || M(n - 8, i) || M(i, n - 8) || M(7, n - 1 - i)) bad++; }
+  t.eq(bad, 0, 'the separators beside the three finders are light');
+  bad = 0;
+  for (let i = 8; i <= n - 9; i++) { if (M(i, 6) !== (i % 2 === 0 ? 1 : 0)) bad++; if (M(6, i) !== (i % 2 === 0 ? 1 : 0)) bad++; }
+  t.eq(bad, 0, 'row 6 and column 6 alternate between the finders, dark on even');
+  t.eq(M(8, 4 * 1 + 9), 1, 'the dark module at column 8, row 13');
+  const fm = qrFormats(s);
+  t.ok(fm[0] === QR_FMT[s.mask] && fm[1] === QR_FMT[s.mask], 'both format copies read ' + QR_FMT[s.mask] + ', level L and mask ' + s.mask + ' (got ' + fm.join(', ') + ')');
+  const f = qrFunctions(1); let data = 0;
+  for (let i = 0; i < n * n; i++) if (!f[i]) data++;
+  t.eq(data, 208, 'the modules outside the test\'s function map: 26 codewords of 8 bits, no remainder');
+  const cw = qrBytes(qrRead(s, f), 26), want = [0x40, 0xa7, 0x36, 0x87, 0x57, 0x47, 0x46, 0x57, 0x26, 0x27, 0x56, 0x70, 0xec, 0x11, 0xec, 0x11, 0xec, 0x11, 0xec];
+  t.eq(qrHex(cw.slice(0, 19)), qrHex(want), 'the 19 data codewords: 0100, the count 10, "shutterbug", 0000, then EC 11 to the end');
+  t.eq(qrHex(cw.slice(19)), qrHex(Q.rs(want, 7)), 'the 7 EC codewords are the Reed Solomon of the data');
+});
+
+group('H-qr-3', 'the sample room\'s live link is version 20 (97 modules) and reads back through the test\'s own zigzag, de-interleaved by the published block row (3 blocks of 107 and 5 of 108, 28 EC each), every block\'s EC its Reed Solomon, both version copies the published string; the capacity at L of every version 1 to 40 as published; 1593 characters take version 29, 2953 version 40, 2954 none', t => {
+  const Q = SB.qr, link = QR_LINK(), s = Q.encode(link), n = s.size;
+  t.ok(link.length === 825 && s.version === 20 && n === 97, 'the ' + link.length + ' character link is version ' + s.version + ', ' + n + ' modules a side (want 825, 20, 97)');
+  const f = qrFunctions(20); let data = 0;
+  for (let i = 0; i < n * n; i++) if (!f[i]) data++;
+  t.eq(data, 1085 * 8 + 3, 'the modules outside the test\'s function map: the published 1085 codewords and 3 remainder bits');
+  const cw = qrBytes(qrRead(s, f), 1085), sizes = [107, 107, 107, 108, 108, 108, 108, 108], blocks = sizes.map(() => []), ecs = sizes.map(() => []);
+  let p = 0;
+  for (let j = 0; j < 108; j++) for (let b = 0; b < 8; b++) if (j < sizes[b]) blocks[b].push(cw[p++]);
+  for (let j = 0; j < 28; j++) for (let b = 0; b < 8; b++) ecs[b].push(cw[p++]);
+  t.ok(blocks.every((bl, b) => qrHex(Q.rs(bl, 28)) === qrHex(ecs[b])), 'each of the 8 blocks\' 28 EC codewords is the Reed Solomon of its data');
+  const bits = []; for (const v of [].concat(...blocks)) for (let k = 7; k >= 0; k--) bits.push(v >> k & 1);
+  const num = (at, len) => { let x = 0; for (let k = 0; k < len; k++) x = x * 2 + bits[at + k]; return x; };
+  let text = ''; for (let i = 0; i < num(4, 16); i++) text += String.fromCharCode(num(20 + i * 8, 8));
+  t.ok(num(0, 4) === 4 && text === link, 'the data reads byte mode, the count ' + num(4, 16) + ' and the link itself');
+  const vstr = [], vstr2 = [];
+  for (let i = 17; i >= 0; i--) { vstr.push(s.modules[Math.floor(i / 3) * n + n - 11 + i % 3]); vstr2.push(s.modules[(n - 11 + i % 3) * n + Math.floor(i / 3)]); }
+  t.ok(vstr.join('') === '010100100110100110' && vstr2.join('') === '010100100110100110', 'both version copies read 010100100110100110 (got ' + vstr.join('') + ', ' + vstr2.join('') + ')');
+  const CAP = [17, 32, 53, 78, 106, 134, 154, 192, 230, 271, 321, 367, 425, 458, 520, 586, 644, 718, 792, 858, 929, 1003, 1091, 1171, 1273, 1367, 1465, 1528, 1628, 1732, 1840, 1952, 2068, 2188, 2303, 2431, 2563, 2699, 2809, 2953];
+  const caps = []; for (let v = 1; v <= 40; v++) caps.push(Q.capacity(v));
+  t.same(caps, CAP, 'the byte capacity at L of versions 1 to 40, as published');
+  const tot = []; for (let v = 1; v <= 40; v++) if (Math.floor(Q.rawModules(v) / 8) !== Q.dataCodewords(v) + Q.ecCodewords(v)) tot.push(v);
+  t.eq(tot.join(), '', 'every version\'s block table spends exactly its data modules');
+  const l29 = Q.encode('x'.repeat(1593)), l40 = Q.encode('x'.repeat(2953));
+  t.ok(l29.version === 29 && l29.size === 133 && l40.version === 40 && Q.encode('x'.repeat(2954)) === null, '1593 characters take version 29 (133 modules), 2953 version 40, 2954 none');
+});
+
+group('H-qr-4', 'the chosen mask\'s penalty is the lowest of the eight, each recounted by the penalty rules on its own symbol, for the sample link, "shutterbug", 1593 characters and three fixtures\' links; the chosen masks are not all mask 0', t => {
+  const Q = SB.qr, texts = [QR_LINK(), 'shutterbug', 'x'.repeat(1593)];
+  for (const name of ['shelves-a', 'noise-s1', 'checkerboard']) { const fx = fixture(name); t.ok(!!fx, 'the fixture ' + name + ' is there'); if (fx) texts.push(SB.record.linkOf('https://lucidwinds.com', '/satellites/shutterbug/', SB.record.fromJSON(fx.fx.record))); }
+  const chosen = [];
+  for (const text of texts) {
+    const s = Q.encode(text), each = [];
+    for (let k = 0; k < 8; k++) { const m = Q.encode(text, { mask: k }); each.push(Q.penalty(m.modules, m.size)); }
+    chosen.push(s.mask);
+    t.ok(s.penalty === Q.penalty(s.modules, s.size) && s.penalty === Math.min(...each) && each.indexOf(s.penalty) === s.mask, 'a ' + text.length + ' character text: mask ' + s.mask + ' scores ' + s.penalty + ', the lowest of [' + each.join(', ') + ']');
+  }
+  t.ok(chosen.some(k => k !== 0), 'the chosen masks are not all mask 0 (' + chosen.join(', ') + '), so a mask never scored would show');
 });
 
 /* ================================================================ sprites (T0.17) */

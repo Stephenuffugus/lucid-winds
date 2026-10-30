@@ -645,7 +645,20 @@ const MUTANTS = [
   { name: 'BANK_FULL_RATE', task: 'T1.13', file: 'page', find: 'var n = Math.floor(G.state.room.dp * SB.TUNING.DP_FREE_PLAY_MULT)', repl: 'var n = Math.floor(G.state.room.dp)',
     gates: [{ gate: 'loop', expect: 'round 1: banked at x0.5 floored' }] },
   { name: 'SHARE_CLOSE_TO_PLAY', task: 'T1.13', file: 'page', find: "if (ui.screen === 'share') ui.screen = ui.shareFrom || 'play';", repl: "if (ui.screen === 'share') ui.screen = 'play';",
-    gates: [{ gate: 'loop', expect: 'round 1: the share sheet over the clear screen' }] }
+    gates: [{ gate: 'loop', expect: 'round 1: the share sheet over the clear screen' }] },
+  /* T1.9a: the QR encoder */
+  { name: 'RS_WRONG_POLY', task: 'T1.9a', file: 'page', find: 'var POLY = 0x11d, EXP = new Uint8Array(512)', repl: 'var POLY = 0x12d, EXP = new Uint8Array(512)',
+    gates: [{ gate: 'harness', only: 'H-qr-1', expect: 'HELLO WORLD 1-M: its 10 published EC codewords' }] },
+  { name: 'MASK_UNSCORED', task: 'T1.9a', file: 'page', find: 'if (!best || p < best.penalty) best = { version: v', repl: 'if (!best) best = { version: v',
+    gates: [{ gate: 'harness', only: 'H-qr-4', expect: 'the chosen masks are not all mask 0' }] },
+  { name: 'FORMAT_UNMASKED', task: 'T1.9a', file: 'page', find: 'return (d << 10 | r) ^ 0x5412;', repl: 'return d << 10 | r;',
+    gates: [{ gate: 'harness', only: 'H-qr-1', expect: 'the format string for level L, mask 0' }] },
+  { name: 'NO_INTERLEAVE', task: 'T1.9a', file: 'page', find: 'for (j = 0; j <= b[2]; j++) for (i = 0; i < nb; i++) if (j < blocks[i].length) out.push(blocks[i][j]);', repl: 'for (i = 0; i < nb; i++) for (j = 0; j < blocks[i].length; j++) out.push(blocks[i][j]);',
+    gates: [{ gate: 'harness', only: 'H-qr-3', expect: 'Reed Solomon of its data' }] },
+  { name: 'COLUMN_6_NOT_SKIPPED', task: 'T1.9a', file: 'page', find: '        if (right === 6) right = 5;\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-qr-2', expect: 'the 7 EC codewords are the Reed Solomon of the data' }] },
+  { name: 'VERSION_ONE_COPY', task: 'T1.9a', file: 'page', find: 'this.set(a, b, dark); this.set(b, a, dark); }', repl: 'this.set(a, b, dark); }',
+    gates: [{ gate: 'harness', only: 'H-qr-3', expect: 'both version copies read 010100100110100110' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

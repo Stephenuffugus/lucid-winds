@@ -603,3 +603,11 @@ As built (T1.13): a moment is marked in the save only when it is announced, so a
 Options for the moment: (a) as built; (b) marked on the first occurrence, framed or not (the host never hears of a first clear made outside the portal). For the bank: (a) floored; (b) rounded half up; (c) the half kept in the save as a remainder. For the card: (a) as built; (b) `Banked 2 of 5 dead pixels`; (c) a line saying free play pays half.
 Recommendation: (a), (a) and (b): the half is invisible today, and the strip's 5 beside a banked 2 reads as a loss nobody explained.
 Plan assumes: the three (a)s; the loop gate pins the moment rule (unframed clears mark nothing) and the floor.
+
+## Q86. T1.9a's known answer crossed two published examples (the builder, 30 Oct, T1.9a)
+
+BUILD-PLAN T1.9a's H-qr-1 types the 16 data codewords of the 1-M "HELLO WORLD" example (`20 5b 0b 78 d1 72 dc 4d 43 40 ec 11 ec 11 ec 11`, thonky.com's QR tutorial, alphanumeric mode) and expects `bc 2a 90 13 6b af ef fd 4b e0`. Those are the EC codewords of a different published example: the 1-M byte mode "hello world" of Wikiversity's Reed Solomon codes for coders (data `40 d2 75 47 76 17 32 06 27 26 96 c6 c6 96 70 ec`). The HELLO WORLD data's own published EC is `c4 23 27 77 eb d7 e7 e2 5d 17` (196 35 39 119 235 215 231 226 93 23). Computed: GF(256) over 0x11d with the standard generator gives each example's own EC, so no encoder could meet the plan's line as typed.
+As built (T1.9a): H-qr-1 checks both published pairs, each as published; the plan's accept line carries the correction.
+Options: (a) as built; (b) only one of the two examples.
+Recommendation: (a).
+Plan assumes: (a).
