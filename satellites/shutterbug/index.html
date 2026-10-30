@@ -73,7 +73,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #stage { flex: 0 0 auto; display: flex; justify-content: center; position: relative; touch-action: none; }
 #view { display: block; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; background: var(--ink); }
 #strip { flex: 1 1 auto; min-height: 168px; position: relative; padding-bottom: var(--sab); touch-action: none; }
-#back { position: absolute; top: 8px; right: calc(8px + var(--sar)); min-width: 64px; min-height: 48px; padding: 0 12px;
+#back { position: absolute; top: 0; left: calc(6px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;
   border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
 #clear { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
@@ -85,6 +85,38 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #cleartitle { background: transparent; color: var(--ink); }
 #safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 var(--sab) 0; }
 #vhprobe { position: fixed; left: 0; top: 0; width: 0; height: 100vh; height: 100dvh; visibility: hidden; pointer-events: none; }
+
+/* the control strip: the bottom left 120x120 belongs to the fleet's music chip (the reserved box: transparent,
+   borderless, textless, handlerless, the top hit at every point of it); the rocker from x 120 with a 16 px visible
+   neutral gap; A outer and B inner at the right. Every hit area is the strip's full height; the drawn glyphs sit at
+   the bottom, semi transparent on the film. 64 px verbs on phones 390 and wider, 56 below (DESIGN 4.1's minimum). */
+#strip { --btn: 64px; --res: 120px; }
+#reserve { position: absolute; left: 0; bottom: 0; width: var(--res); height: var(--res); }
+#rocker { position: absolute; left: var(--res); top: 0; bottom: 0; right: calc(2 * var(--btn) + var(--edge)); display: flex; align-items: flex-end;
+  padding: 0 0 calc(10px + var(--sab)) 0; touch-action: none; }
+#rocker .zone { flex: 1 1 0; height: var(--btn); border-radius: 12px; border: 2px solid rgba(11,10,15,0.35);
+  background: rgba(11,10,15,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: rgba(11,10,15,0.55); }
+#rocker .gap { flex: 0 0 16px; }
+.verb { position: absolute; top: 0; bottom: 0; width: var(--btn); display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: calc(10px + var(--sab)); touch-action: none; }
+.verb .glyph { width: calc(var(--btn) - 6px); height: calc(var(--btn) - 6px); border-radius: 50%; border: 2px solid rgba(11,10,15,0.35);
+  background: rgba(11,10,15,0.06); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: rgba(11,10,15,0.6); }
+#btnA { right: calc(var(--sar) + var(--edge)); }
+#btnB { right: calc(var(--btn) + var(--sar) + var(--edge)); }
+#rocker .zone.on, .verb.on .glyph { background: rgba(11,10,15,0.28); border-color: rgba(11,10,15,0.7); color: var(--ink); }
+#strip.mirror #rocker { left: calc(var(--res) + 2 * var(--btn)); right: calc(var(--sar) + var(--edge)); }
+#strip.mirror #btnA { right: auto; left: var(--res); }
+#strip.mirror #btnB { right: auto; left: calc(var(--res) + var(--btn)); }
+@media (max-width: 389px) { #strip { --btn: 56px; } }
+@media (max-width: 359px) { #strip { --res: 0px; } #reserve { display: none; } }
+/* Q62's alternative, ?edge=1: on phones 412 wide and over the verbs (and the mirrored rocker) keep 32 px off the right
+   edge, out of Android's back swipe strip; the rocker zones stay over 56 px */
+#strip { --edge: 0px; }
+@media (min-width: 412px) { #strip.edge { --edge: 32px; } }
+/* the fleet's floating chrome (song card, pill, toast, chip) can sit on the strip in play (its drag is saved for every
+   game on the domain): hidden while a room runs and back on the title and the clear card as it was (Q48's addendum;
+   Chaff Wars v1.11's rule, since SWSMusic.hold would close a waiting card as seen) */
+body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-music-toast, body.playing #sws-music-chip { display: none !important; }
 
 /* the rotate card: a phone held sideways; a desktop window (a fine pointer) never gets it (QUESTIONS Q40) */
 #rotate { display: none; position: fixed; inset: 0; z-index: 1000; background: var(--soot); color: var(--paper);
@@ -115,7 +147,12 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       <button id="again" type="button" data-copy="again"></button>
       <button id="cleartitle" type="button" data-copy="toTitle"></button></div>
   </div>
-  <div id="strip"><button id="back" type="button" data-copy="toTitle"></button></div>
+  <div id="strip"><button id="back" type="button" data-copy="toTitle"></button>
+    <div id="reserve" aria-hidden="true"></div>
+    <div id="rocker" data-aria="move"><i class="zone zl" data-copy="left"></i><i class="gap"></i><i class="zone zr" data-copy="right"></i></div>
+    <div id="btnB" class="verb" role="button" data-aria="dive"><span class="glyph" data-copy="btnB"></span></div>
+    <div id="btnA" class="verb" role="button" data-aria="jump"><span class="glyph" data-copy="btnA"></span></div>
+  </div>
 </main>
 <div id="safeprobe"></div>
 <div id="vhprobe"></div>
@@ -255,7 +292,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m0-1';
+  SB.BUILD = 'sb-m0-2';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -709,7 +746,8 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     }
     var standable = function (c) { return c + w < n && !solid[c] && (solid[c + w] || plat[c + w]); };
     var exit = -1;
-    if (light) for (q = light.length - 1; q >= 0 && exit < 0; q--) if (standable(light[q])) exit = light[q];
+    /* the light's lowest standable row, then the lowest index in it (section 3.7: ties to the lowest index) */
+    if (light) for (q = 0; q < light.length; q++) if (standable(light[q]) && (exit < 0 || Math.floor(light[q] / w) > Math.floor(exit / w))) exit = light[q];
     if (exit < 0) for (y = 0; y < T.EXIT_ROWS && exit < 0; y++) {
       var bl = -1;
       for (x = 0; x < w; x++) { var c2 = y * w + x; if (standable(c2) && (bl < 0 || L[c2] > L[bl])) bl = c2; }
@@ -1047,7 +1085,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
      enlarges by an integer (1x, 2x at 768 CSS px and wider) or, under 384 CSS px, shrinks to the screen width, the
      one exception (QUESTIONS Q5). The static layer is built once per level; each frame is one blit of it at the
      camera plus the sprites. The camera is render state, recomputed from the hero every frame, never in the sim. */
-  var R = SB.render = { camY: 0, viewRows: 40, scale: 1, cssW: 384, builds: 0 };
+  var R = SB.render = { camY: 0, camX: 0, viewRows: 40, viewW: 384, scale: 1, cssW: 384, crop: false, builds: 0 };
   var canvas, ctx, stat, sctx, worldH = 0, viewH = 640, pulse = 0;
 
   R.init = function () {
@@ -1072,12 +1110,14 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     var safe = R.safe(), avail = vh - safe.top - safe.bottom;
     /* 2x only when the minimum view still fits the height at 2x; a short laptop window keeps 1x, still an integer */
     var fits2 = avail >= T.TOP_STRIP + T.VIEW_ROWS_MIN * K.CELL * 2 + T.CONTROL_STRIP;
+    R.crop = /[?&]fit=crop(&|$)/.test(location.search) && vw < K.WORLD_W;
     R.cssW = vw >= T.SCALE2_MIN_W && fits2 ? K.WORLD_W * 2 : vw >= K.WORLD_W ? K.WORLD_W : vw;
-    R.scale = R.cssW / K.WORLD_W;
+    R.viewW = R.crop ? vw : K.WORLD_W;
+    R.scale = R.crop ? 1 : R.cssW / K.WORLD_W;
     var rowPx = K.CELL * Math.max(1, R.scale);
     R.viewRows = Math.max(T.VIEW_ROWS_MIN, Math.min(SB.GRID.VIEW_ROWS, Math.floor((avail - T.TOP_STRIP - T.CONTROL_STRIP) / rowPx)));
     viewH = R.viewRows * K.CELL;
-    if (canvas.width !== K.WORLD_W) canvas.width = K.WORLD_W;
+    if (canvas.width !== R.viewW) canvas.width = R.viewW;
     if (canvas.height !== viewH) canvas.height = viewH;
     canvas.style.width = R.cssW + 'px';
     canvas.style.height = (viewH * R.scale) + 'px';
@@ -1130,6 +1170,10 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     var cam = heroY + (K.HERO_H >> 1) - Math.round(viewH * SB.TUNING.CAM_HERO_FRAC);
     cam = Math.max(0, Math.min(worldH - viewH, cam));
     R.camY = cam;
+    /* the crop alternative follows the hero sideways inside the 24 px the screen lacks; the default never moves */
+    var camX = R.crop ? Math.max(0, Math.min(K.WORLD_W - R.viewW, heroX + (K.HERO_W >> 1) - (R.viewW >> 1))) : 0;
+    R.camX = camX;
+    ctx.save(); ctx.translate(-camX, 0);
     ctx.drawImage(stat, 0, cam, K.WORLD_W, viewH, 0, 0, K.WORLD_W, viewH);
     if (lv.exit >= 0) {
       /* the light, relit (section 3.7): the beacon's cells at full palette colour over the dimmed photo, so the goal
@@ -1152,6 +1196,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     ctx.fillStyle = css(P.I.INK); ctx.fillRect(heroX, hy, K.HERO_W, K.HERO_H);
     ctx.fillStyle = css(SB.TUNING.HERO_BODY); ctx.fillRect(heroX + 1, hy + 1, K.HERO_W - 2, K.HERO_H - 3);
     ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(heroX + (s.hero.facing > 0 ? K.HERO_W - 4 : 2), hy + 4, 2, 2);
+    ctx.restore();
   };
 })(window.SB);
 </script>
@@ -1170,7 +1215,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     down[verb][source] = 1;
   };
   I.release = function (verb, source) { delete down[verb][source]; };
-  I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {} }; };
+  I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {} }; if (I._stripReset) I._stripReset(); };
 
   I.sample = function () {
     var IN = SB.sim.IN;
@@ -1182,6 +1227,79 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   I.last = function () { return last; };
   I.recording = function () { return SB.sim.rle.encode(rec); };
   I.resetRecording = function () { rec = []; edge.A = 0; edge.B = 0; };
+
+  /* the control strip (T0.8b, section 1.5): DOM, not canvas, so a gate can measure it and press it with real touches.
+     The rocker maps the pointer's CURRENT x to left, neutral or right, so a thumb slides between zones without
+     lifting; A and B track their own pointers, so a second finger never releases the first. */
+  I.initStrip = function () {
+    var rocker = document.getElementById('rocker'), zl = rocker.querySelector('.zl'), zr = rocker.querySelector('.zr');
+    var rockerPtrs = [], rockerX = {}, rockerVerb = null;   /* the pointers down on the rocker, first first: the first rules it */
+    var paint = function () { zl.classList.toggle('on', rockerVerb === 'L'); zr.classList.toggle('on', rockerVerb === 'R'); };
+    var zoneOf = function (x) {
+      var a = zl.getBoundingClientRect(), b = zr.getBoundingClientRect();
+      if (x < a.right) return 'L';
+      if (x >= b.left) return 'R';
+      return null;                       /* the visible neutral gap */
+    };
+    var setRocker = function (v) {
+      if (v === rockerVerb) return;
+      if (rockerVerb) I.release(rockerVerb, 'rocker');
+      rockerVerb = v;
+      if (v) I.press(v, 'rocker');
+      paint();
+    };
+    rocker.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      rockerPtrs.push(e.pointerId); rockerX[e.pointerId] = e.clientX;
+      try { rocker.setPointerCapture(e.pointerId); } catch (err) { /* already captured */ }
+      if (rockerPtrs[0] === e.pointerId) setRocker(zoneOf(e.clientX));      /* one thumb rules; a later one waits */
+    });
+    rocker.addEventListener('pointermove', function (e) {
+      if (!(e.pointerId in rockerX)) return;
+      rockerX[e.pointerId] = e.clientX;
+      if (rockerPtrs[0] === e.pointerId) setRocker(zoneOf(e.clientX));
+    });
+    /* the ruling pointer gone, the next still down takes the rocker where it rests (a palm cancelled under a thumb) */
+    var endRocker = function (e) {
+      var k = rockerPtrs.indexOf(e.pointerId);
+      if (k < 0) return;
+      rockerPtrs.splice(k, 1); delete rockerX[e.pointerId];
+      setRocker(rockerPtrs.length ? zoneOf(rockerX[rockerPtrs[0]]) : null);
+    };
+    rocker.addEventListener('pointerup', endRocker);
+    rocker.addEventListener('pointercancel', endRocker);
+    rocker.addEventListener('lostpointercapture', endRocker);
+
+    var button = function (el, verb) {
+      var ptrs = {};
+      el.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        ptrs[e.pointerId] = 1;
+        try { el.setPointerCapture(e.pointerId); } catch (err) { /* already captured */ }
+        I.press(verb, 'ptr' + e.pointerId);
+        el.classList.add('on');
+      });
+      var end = function (e) {
+        if (!ptrs[e.pointerId]) return;
+        delete ptrs[e.pointerId];
+        I.release(verb, 'ptr' + e.pointerId);
+        if (!Object.keys(ptrs).length) el.classList.remove('on');
+      };
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+      el.addEventListener('lostpointercapture', end);
+      return function () { ptrs = {}; el.classList.remove('on'); };
+    };
+    var btnA = button(document.getElementById('btnA'), 'A'), btnB = button(document.getElementById('btnB'), 'B');
+    /* releaseAll (Title, blur, hidden) clears the latch; the strip forgets what it showed pressed too, and a thumb still
+       on the rocker presses again on its next move */
+    I._stripReset = function () { rockerVerb = null; paint(); btnA(); btnB(); };
+    var strip = document.getElementById('strip');
+    strip.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    document.getElementById('view').addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    strip.classList.toggle('mirror', !!(SB.settings && SB.settings.mirror));
+    strip.classList.toggle('edge', /[?&]edge=1(&|$)/.test(location.search));
+  };
 
   I.init = function () {
     window.addEventListener('keydown', function (e) {
@@ -1223,6 +1341,13 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     roomClear: 'Room clear',
     again: 'Again',
     toTitle: 'Title',
+    left: '\u25c0',
+    right: '\u25b6',
+    btnA: 'A',
+    btnB: 'B',
+    move: 'Move',
+    jump: 'Jump',
+    dive: 'Dive',
     build: 'build',
     rotate: 'Turn your phone upright to play.'
   });
@@ -1235,6 +1360,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     var all = document.querySelectorAll('.screen');
     for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === name);
     ui.screen = name;
+    document.body.classList.toggle('playing', name === 'play');
     if (name === 'play') SB.render.fit();
   };
 
@@ -1244,6 +1370,12 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       var k = els[i].getAttribute('data-copy');
       if (ui.COPY[k] === undefined) throw new Error('no copy for ' + k);
       els[i].textContent = ui.COPY[k];
+    }
+    var labs = (root || document).querySelectorAll('[data-aria]');
+    for (var j = 0; j < labs.length; j++) {
+      var a = labs[j].getAttribute('data-aria');
+      if (ui.COPY[a] === undefined) throw new Error('no copy for ' + a);
+      labs[j].setAttribute('aria-label', ui.COPY[a]);
     }
     /* the stamp's hyphens render as spaces: a dash on screen is player copy */
     document.getElementById('build').textContent = ui.COPY.build + ' ' + SB.BUILD.replace(/-/g, ' ');
@@ -1276,7 +1408,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   };
   ui.again = function () { if (G.record) ui.startRoom(G.record, G.name); };
 
-  ui.showClear = function () { document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; };
+  ui.showClear = function () { document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; document.body.classList.remove('playing'); };
   ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); document.getElementById('back').hidden = false; };
   /* every in game back is an internal screen switch that hides every overlay it can sit over */
   ui.toTitle = function () { ui.hideClear(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
@@ -1309,9 +1441,13 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
      clamped to 100 ms (a tab switch never produces a catch up storm); at most four steps run; if time is still owed
      after four the frame is a stall and the debt is dropped. The sim never sees time, only steps. */
   var STEP_MS = 1000 / SB.TUNING.STEP_HZ, MAX_STEPS = 4, DT_MAX = 100;
-  var G = SB.game, held = false, last = -1, acc = 0;
-  var loop = { raf: 0, steps: 0, accSteps: 0, consumed: 0, dropped: 0, clamped: 0, stalls: 0, maxSteps: 0 };
-  var perf = SB.perfLog = { step: [], draw: [], pipeline: 0 };
+  /* each run starts the accumulator a quarter step off the frame boundary (PHASE), and a stall puts it back there: a
+     display at 60 or 120 Hz adds whole or half steps, and frame times are never exact (coarsened to 0.1 or 1 ms), so an
+     accumulator sitting ON the boundary flips frames between 0 and 2 steps; a quarter step clears that jitter */
+  var PHASE = STEP_MS / 4;
+  var G = SB.game, held = false, last = -1, acc = 0, running = false;
+  var loop = { raf: 0, steps: 0, accSteps: 0, consumed: 0, dropped: 0, clamped: 0, stalls: 0, maxSteps: 0, seeded: 0 };
+  var perf = SB.perfLog = { step: [], draw: [], frames: [], pipeline: 0 };
   var keep = function (a, v) { a.push(v); if (a.length > 300) a.shift(); };
 
   function stepOnce() {
@@ -1332,19 +1468,24 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     var raw = last < 0 ? 0 : now - last, dt = Math.min(raw, DT_MAX);
     last = now;
     loop.raf++;
-    if (!held && G.state && SB.ui.screen === 'play') {
+    var run = !held && !!G.state && SB.ui.screen === 'play';
+    if (run) {
+      if (!running) { loop.dropped += acc; acc = PHASE; loop.seeded += PHASE; }
       acc += dt; loop.consumed += dt; loop.clamped += raw - dt;
       var n = 0;
       while (acc >= STEP_MS && n < MAX_STEPS) { stepOnce(); acc -= STEP_MS; n++; loop.accSteps++; }
-      if (acc >= STEP_MS) { loop.dropped += acc; acc = 0; loop.stalls++; }
+      if (acc >= STEP_MS) { loop.dropped += acc; acc = PHASE; loop.seeded += PHASE; loop.stalls++; }
       if (n > loop.maxSteps) loop.maxSteps = n;
+      keep(perf.frames, [now, n]);
     }
+    running = run;
     draw(now);
   }
 
   SB.render.init();
   SB.input.init();
   SB.ui.init();
+  SB.input.initStrip();
   window.addEventListener('resize', function () { if (SB.ui.screen === 'play' || SB.ui.screen === 'clear') { SB.render.fit(); draw(); } });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { if (G.state) { SB.render.fit(); draw(); } });
   requestAnimationFrame(frame);
@@ -1362,7 +1503,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       return { w: lv.w, h: lv.h, spawn: lv.spawn, exit: lv.exit, otsuT: lv.otsuT, hash: SB.pipeline.levelHash(lv), code: SB.record.encode(lv.rec),
         viewRows: SB.render.viewRows, camY: SB.render.camY, cssW: SB.render.cssW };
     },
-    perf: function () { return { now: performance.now(), step: perf.step.slice(), draw: perf.draw.slice(), pipeline: perf.pipeline, loop: Object.assign({ acc: acc, stepMs: STEP_MS }, loop) }; },
+    perf: function () { return { now: performance.now(), step: perf.step.slice(), draw: perf.draw.slice(), frames: perf.frames.slice(), pipeline: perf.pipeline, loop: Object.assign({ acc: acc, stepMs: STEP_MS }, loop) }; },
     lastInput: function () { return SB.input.last(); },
     recording: function () { return SB.input.recording(); },
     staticBuilds: function () { return SB.render.builds; },
