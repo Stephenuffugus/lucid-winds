@@ -1,9 +1,9 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 06:56 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
+> **STATE 30 Oct 08:09 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
 > night one order, the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after T0.8a, sb-m0-2 after
 > T0.8b, sb-m0-3 when M0 is complete. **LIVE: sb-m0-2** (deploy `945b541b5`, both origins proven by curl 04:53:54 UTC):
-> the thumbs climb on a phone. **Last shipped: T0.12b (dive and dash: B in the air dives, held through one ways; a fresh B on the ground dashes 3 cells, never off an edge; the dive landing's shake; H-sim-13, 14, H-lab-7; DASH_OFF_EDGE, DIVE_CHAINS_DASH, HOLD_DIVE_CAUGHT RED).** Gates: check --fast green (lint, harness 4150 assertions in 81 groups, redwatch, boot, play, make, input, layout). Red: nothing. Next: the third independent review (three lenses, one round), then T0.13a (the bot). Autosave running.
+> the thumbs climb on a phone. **Last shipped: T0.13a (the bot: every main ascent edge of every built level has a macro and every walk clears its room; every edge of every graph, 43303 of 43303, under the new slow gate harness-all; the model's wall touch made exact and one way footing fixed where the bot found them apart, Q65; the third review's fidelity lens fixed: no wall ladder, no mid air second jump, the facing held through the lock, no i frames from a dash that cannot move).** Gates: check --fast green (lint, harness 4213 assertions in 86 groups, redwatch 77 rows, boot, play, make, input, layout) and harness-all green. Red: nothing. Next: the third review's harness and model lenses (still running), then T0.13b (the goldens, the bit flip, BOT-EXPLORE). Autosave running.
 
 You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is ONE game from zero:
 Shutterbug, a photo of a room becomes a pixel platformer level (`satellites/shutterbug/DESIGN.md`). Fable wrote the
