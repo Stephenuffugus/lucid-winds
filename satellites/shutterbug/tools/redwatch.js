@@ -19,7 +19,7 @@ const fs = require('node:fs'), path = require('node:path'), { spawnSync } = requ
 
 const GAME = path.join(__dirname, '..');
 const OUT = '/tmp/claude-1000/shutterbug-redwatch';
-const BROWSER = new Set(['boot', 'play', 'input', 'layout', 'reveal', 'capture', 'sprites', 'make', 'loot', 'audio', 'share', 'save', 'pwa', 'loop', 'onboard']);
+const BROWSER = new Set(['boot', 'play', 'input', 'layout', 'reveal', 'capture', 'death', 'sprites', 'make', 'loot', 'audio', 'share', 'save', 'pwa', 'loop', 'onboard']);
 
 const CORE_SIM_OPEN = "<script id=\"core-sim\" data-core>\n(function (SB) { 'use strict';\n";
 
@@ -299,10 +299,30 @@ const MUTANTS = [
   /* T0.16: moths, hearts */
   { name: 'IFRAMES_ZERO', task: 'T0.16', file: 'page', find: 'h.iframes = K.HIT_IFRAMES_F;', repl: 'h.iframes = 0;',
     gates: [{ gate: 'harness', only: 'H-en-2', expect: 'inside the i frames a second contact removes nothing' }] },
+  /* H-en-3's mortal walk takes no hit at 1 cell per second (the bot is quicker than a moth): moths eight times faster
+     catch it, and it stops (2026-10-30: at edge 10 with 1 heart) */
+  { name: 'MOTH_SPEED_X8', task: 'T0.16', file: 'page', find: 'en.vx = (K.MOTH_V * mdx / md) | 0; en.vy = (K.MOTH_V * mdy / md) | 0;', repl: 'en.vx = (8 * K.MOTH_V * mdx / md) | 0; en.vy = (8 * K.MOTH_V * mdy / md) | 0;',
+    gates: [{ gate: 'harness', only: 'H-en-3', expect: 'the mortal walk on the sample room' }] },
   { name: 'MOTH_ON_SAFE_CELL', task: 'T0.16', file: 'page', find: '      for (var q = 0; q < safe.length; q++) if (cheb(c, safe[q], w) < T.ROUTE_SAFE_ENEMY_DIST) return false;\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-route-6', expect: 'a cluster beside an ascent cell' }] },
   { name: 'MOTH_NEAR_SPAWN', task: 'T0.16', file: 'page', find: '      if (cheb(c, level.spawn, w) <= T.ENEMY_SPAWN_CLEAR) return false;\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-en-1', expect: 'a cluster beside spawn' }] },
+  { name: 'EV_NO_LAND', task: 'T0.16', file: 'page', find: '{ h.squash = K.SQUASH_F; s.ev |= EV.LAND; }', repl: '{ h.squash = K.SQUASH_F; }',
+    gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'its landing sets LAND once' }] },
+  { name: 'MOTH_SPEED_X2', task: 'T0.16', file: 'page', find: 'en.vx = (K.MOTH_V * mdx / md) | 0; en.vy = (K.MOTH_V * mdy / md) | 0;', repl: 'en.vx = (2 * K.MOTH_V * mdx / md) | 0; en.vy = (2 * K.MOTH_V * mdy / md) | 0;',
+    gates: [{ gate: 'harness', only: 'H-en-4', expect: 'it reaches the column in' }] },
+  { name: 'KNOCK_TOWARD', task: 'T0.16', file: 'page', find: 'h.knock = (mdx < 0 ? -1 : 1) * K.KNOCK_FRAMES;', repl: 'h.knock = (mdx < 0 ? 1 : -1) * K.KNOCK_FRAMES;',
+    gates: [{ gate: 'harness', only: 'H-en-2', expect: 'the knockback carries the hero away' }] },
+  /* T0.16: the death gate */
+  { name: 'RESTART_REVEALS', task: 'T0.16', file: 'page', find: "ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true }); };",
+    repl: "ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level }); };",
+    gates: [{ gate: 'death', expect: 'Again restarts straight into play' }] },
+  { name: 'DEATH_NO_CARD', task: 'T0.16', file: 'page', find: "    else if (G.state.room.dead && SB.ui.screen === 'play') SB.ui.showDeath();\n", repl: '',
+    gates: [{ gate: 'death', expect: 'the last heart ends the room' }] },
+  { name: 'BLINK_NONE', task: 'T0.16', file: 'page', find: 'R.heroShown = !(s.hero.iframes > 0 && ((s.hero.iframes >> 3) & 1));', repl: 'R.heroShown = true;',
+    gates: [{ gate: 'death', expect: 'the hero blinks through the i frames' }] },
+  { name: 'HEARTS_STALE', task: 'T0.16', file: 'page', find: "if (ev & EV.HIT) { au.sfx('hit'); SB.ui.hearts(G.state.hero.hearts); }", repl: "if (ev & EV.HIT) { au.sfx('hit'); }",
+    gates: [{ gate: 'death', expect: 'the top strip shows' }] },
   /* T0.15: capture */
   { name: 'OVERLAY_STALE', task: 'T0.15', file: 'page', edits: [['if (gest.moved > 8) { CR.crop = SB.capture.move(gest.crop, dx, dy, CR.bw, CR.bh); layoutCrop(); schedule(); }', 'if (gest.moved > 8) { CR.crop = SB.capture.move(gest.crop, dx, dy, CR.bw, CR.bh); layoutCrop(); }'],
     ['CR.crop = SB.capture.pinch(gest.crop, s, gest.mid.x, gest.mid.y, CR.bw, CR.bh); layoutCrop(); schedule();', 'CR.crop = SB.capture.pinch(gest.crop, s, gest.mid.x, gest.mid.y, CR.bw, CR.bh); layoutCrop();']],

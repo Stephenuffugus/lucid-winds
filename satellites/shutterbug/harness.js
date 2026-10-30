@@ -3142,6 +3142,40 @@ group('H-en-2', 'contact: one heart, 60 i frames, nothing more inside them, knoc
   t.ok(dead > 0 && d.hero.hearts === 0 && d.room.deaths === 1, 'the last heart ends the room (dead at step ' + dead + ')');
 });
 
+group('H-sim-21', 'the step\'s event word (s.ev, what the sounds read): each event on exactly the step it happens, cleared the next', t => {
+  const EV = SB.sim.EV, log = (s, word) => { SB.sim.step(s, word); return s.ev; };
+  { const lv = LABS.room(['', '..S...........', FLOOR]), s = SB.sim.create(lv, {}); let k = 0;
+    while (!s.hero.ground && k < 60) { SB.sim.step(s, 0); k++; }
+    const e1 = log(s, IN.A | IN.A_TAP), e2 = log(s, IN.A);
+    t.ok((e1 & EV.JUMP) && !(e2 & EV.JUMP), 'a jump sets JUMP on its takeoff step only (' + e1 + ', then ' + e2 + ')');
+    let land = -1, lands = 0; for (k = 0; k < 120; k++) { const e = log(s, 0); if (e & EV.LAND) { lands++; if (land < 0) land = k; } }
+    t.ok(land > 0 && lands === 1 && s.hero.ground, 'its landing sets LAND once (' + lands + ' times, step ' + land + ')');
+  }
+  { const lines = []; for (let r = 30; r <= 46; r++) lines.push('..#');
+    const s = placed(LABS.room(lines.concat([FLOOR])), 3 * CS, 36 * CS);
+    SB.sim.step(s, IN.L);
+    const e = log(s, IN.A | IN.A_TAP);
+    t.ok((e & EV.WALLJUMP) && !(e & EV.JUMP), 'a wall jump sets WALLJUMP, not JUMP (' + e + ')');
+  }
+  { const lines = []; for (let r = 10; r <= 46; r++) lines.push('');
+    const s = placed(LABS.room(lines.concat([FLOOR])), 11 * CS, 10 * CS);
+    const e = log(s, IN.B_TAP | IN.B); let land = 0;
+    for (let k = 0; k < 200 && !land; k++) land = log(s, IN.B) & EV.LAND;
+    t.ok((e & EV.DIVE) && land && s.hero.shake === K.SHAKE_F, 'a dive sets DIVE, its landing LAND with the shake running (the heavy land)');
+  }
+  { const lv = LABS.room(['', '.....S..........', FLOOR]);
+    lv.features = { enemies: [{ kind: SB.features.MOTH, idx: 46 * 24 + 8 }] };
+    const s = SB.sim.create(lv, { hearts: 2 }); let hits = 0, dead = 0, both = 0;
+    for (let k = 0; k < 900 && !s.room.dead; k++) { const e = log(s, 0); if (e & EV.HIT) hits++; if (e & EV.DEAD) { dead++; if (e & EV.HIT) both++; } }
+    t.ok(hits === 2 && dead === 1 && both === 1, 'two hits set HIT twice, the last with DEAD (' + hits + ' hits, ' + dead + ' dead)');
+    t.eq(log(s, 0), 0, 'a dead room\'s steps carry no event');
+  }
+  { const lv = LABS.room(['', '..S..X........', FLOOR], { exit: true }), s = SB.sim.create(lv, {}); let clear = -1, n = 0;
+    for (let k = 0; k < 300; k++) { const e = log(s, IN.R); if (e & EV.CLEAR) { n++; if (clear < 0) clear = k; } }
+    t.ok(clear >= 0 && n === 1 && s.room.cleared, 'reaching the exit sets CLEAR once (step ' + clear + ', ' + n + ' times)');
+  }
+});
+
 group('H-en-4', 'a moth 10 cells away reaches the hero\'s column in about 600 frames (1 cell per second, through furniture)', t => {
   const lv = LABS.room(['', '.......#..........', '..S....#..........', FLOOR]);
   lv.features = { enemies: [{ kind: SB.features.MOTH, idx: 45 * 24 + 12 }] };

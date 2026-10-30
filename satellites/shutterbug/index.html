@@ -1688,7 +1688,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var hearts = opts.hearts || SB.TUNING.HEARTS_BASE;
     return {
       v: 1, frame: 0, rng: (level.seed ^ 0x9e3779b9) >>> 0, biome: level.biome | 0, negative: level.negative ? 1 : 0,
-      firstRoom: opts.firstRoom ? 1 : 0, lastRoom: opts.lastRoom ? 1 : 0, immortal: opts.immortal ? 1 : 0,
+      firstRoom: opts.firstRoom ? 1 : 0, lastRoom: opts.lastRoom ? 1 : 0, immortal: opts.immortal ? 1 : 0, ev: 0,
       hero: { x: hx, y: hy, vx: 0, vy: 0, facing: 1, ground: 0, wall: 0, sticky: 0, lock: 0, spent: 0, knock: 0, coyote: 0, buffer: 0, held: 0, rising: 0,
         dive: 0, dash: 0, dashI: 0, iframes: 0, hearts: hearts, heartsMax: hearts, vigor: 0, focus: 0, grit: 0, scrolls: 0,
         slots: [0, 0, 0], cd: [0, 0, 0], squash: 0, anim: 0, lastStand: level.spawn | 0, secondWind: 0, thickSkin: 0, shake: 0 },
@@ -1795,9 +1795,12 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     return 0;
   }
 
+  /* the step's events (s.ev, cleared at every step's start): what the shell's sounds and hints read, never the sim */
+  var EV = { JUMP: 1, WALLJUMP: 2, DIVE: 4, LAND: 8, HIT: 16, CLEAR: 32, DEAD: 64 };
   function step(s, word) {
     var K = SB.K, h = s.hero, lv = s.level || null;
     if (!lv) throw new Error('sim.step: the state carries no level (attach with sim.attach)');
+    s.ev = 0;
     if (s.room.cleared || s.room.dead) { s.frame++; return s; }
 
     /* 1. the word */
@@ -1819,13 +1822,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        press on the ground or inside coyote time. */
     var jumped = 0, stickyJump = 0, dashStart = 0;
     if (h.sticky) {
-      if (pressed) { h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; stickyJump = 1; h.squash = -K.SQUASH_F; }
+      if (pressed) { h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; stickyJump = 1; h.squash = -K.SQUASH_F; s.ev |= EV.JUMP; }
       else if (dove || (dir !== 0 && dir === -h.wall)) { h.sticky = 0; h.wall = 0; }   /* B lets go into the dive below: no vine catches a dive */
     } else if (h.wall !== 0 && pressed && !h.ground) {
-      h.vy = -K.WALL_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.facing = -h.wall; h.spent = h.wall; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; h.squash = -K.SQUASH_F;
+      h.vy = -K.WALL_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.facing = -h.wall; h.spent = h.wall; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; h.squash = -K.SQUASH_F; s.ev |= EV.WALLJUMP;
     } else if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0)) {
       h.vy = -K.JUMP_V; h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;
-      h.squash = -K.SQUASH_F;
+      h.squash = -K.SQUASH_F; s.ev |= EV.JUMP;
     } else if (pressed) h.buffer = K.BUFFER + 1;   /* counts this step; see the end of the step */
 
     /* 2b. B (DESIGN 4.3, section 3.8 items 7 and 8). A press in the air dives: vy snaps to terminal, vx to zero, the
@@ -1835,7 +1838,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        that began in the air stays a dive through its landing and never becomes a dash; a jump wins over B and ends a
        dash. */
     if (jumped) { if (h.dash > 0) { h.dash = 0; h.vx = 0; } }
-    else if (dove) { h.dive = 1; h.vy = K.TERM; h.vx = 0; h.lock = 0; h.wall = 0; h.sticky = 0; h.rising = 0; h.coyote = 0; }
+    else if (dove) { h.dive = 1; h.vy = K.TERM; h.vx = 0; h.lock = 0; h.wall = 0; h.sticky = 0; h.rising = 0; h.coyote = 0; s.ev |= EV.DIVE; }
     else if (bPressed && startedGrounded && h.dash === 0) { h.dash = K.DASH_FRAMES; h.dashI = K.DASH_IFRAMES; dashStart = 1; }
     if (h.dive) h.dive = bHeld ? 2 : 1;
 
@@ -1889,7 +1892,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     }
 
     /* ground, coyote, buffer */
-    if (landed && !startedGrounded && !jumped) h.squash = K.SQUASH_F;
+    if (landed && !startedGrounded && !jumped) { h.squash = K.SQUASH_F; s.ev |= EV.LAND; }
     h.ground = landed;
     if (h.ground) {
       h.coyote = K.COYOTE; h.rising = 0;
@@ -1916,8 +1919,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         h.hearts = Math.max(0, h.hearts - SB.TUNING.HIT_HEARTS);
         h.iframes = K.HIT_IFRAMES_F;
         h.knock = (mdx < 0 ? -1 : 1) * K.KNOCK_FRAMES;
-        h.lock = 0; h.dash = 0;
-        if (h.hearts === 0) { s.room.dead = 1; s.room.deaths++; }
+        h.lock = 0; h.dash = 0; s.ev |= EV.HIT;
+        if (h.hearts === 0) { s.room.dead = 1; s.room.deaths++; s.ev |= EV.DEAD; }
       }
     }
 
@@ -1925,7 +1928,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     if (lv.exit >= 0) {
       var CS2 = K.CELL_SUB, ex = lv.exit % lv.w, ey = (lv.exit - ex) / lv.w;
       if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB > ex * CS2 && h.y < (ey + 1) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {
-        s.room.cleared = 1; s.room.exitLit = 1;
+        s.room.cleared = 1; s.room.exitLit = 1; s.ev |= EV.CLEAR;
       }
     }
     s.frame++;
@@ -1947,7 +1950,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   var PROJ = [['kind', 'i32'], ['x', 'i32'], ['y', 'i32'], ['vx', 'i32'], ['vy', 'i32'], ['ttl', 'i32'], ['dmg', 'i32'], ['live', 'bool']];
   var LOOT = [['kind', 'i32'], ['idx', 'i32'], ['taken', 'bool']];
   var BOSS = [['cells', 'i32[]'], ['hp', 'i32'], ['hpMax', 'i32'], ['phase', 'i32'], ['timer', 'i32'], ['intro', 'i32'], ['telegraph', 'i32']];
-  var FIELDS = [['v', 'i32'], ['frame', 'i32'], ['rng', 'u32'], ['biome', 'i32'], ['negative', 'bool'], ['firstRoom', 'bool'], ['lastRoom', 'bool'], ['immortal', 'bool'],
+  var FIELDS = [['v', 'i32'], ['frame', 'i32'], ['rng', 'u32'], ['biome', 'i32'], ['negative', 'bool'], ['firstRoom', 'bool'], ['lastRoom', 'bool'], ['immortal', 'bool'], ['ev', 'i32'],
     ['hero', 'obj', HERO], ['enemies', 'obj[]', ENEMY], ['proj', 'obj[]', PROJ], ['loot', 'obj[]', LOOT],
     ['chest', 'obj', [['idx', 'i32'], ['open', 'bool']]], ['scrollsOffered', 'i32[]?'],
     ['door', 'obj', [['idx', 'i32'], ['entered', 'bool']]], ['traps', 'obj', [['phase', 'i32']]], ['boss', 'obj?', BOSS],
@@ -1993,7 +1996,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     }
   };
 
-  SB.sim = { IN: IN, rle: rle, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
+  SB.sim = { IN: IN, EV: EV, rle: rle, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
     FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
@@ -2285,6 +2288,14 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       ctx.fillStyle = css((pulse & 1) ? P.I.GLARE : P.I.SUN);
       ctx.fillRect(ex - 2, ey - 2, C + 4, 2); ctx.fillRect(ex - 2, ey + C, C + 4, 2);
       ctx.fillRect(ex - 2, ey, 2, C); ctx.fillRect(ex + C, ey, 2, C);
+      /* the beacon v0 (T0.16; the pixel sprite is T0.17): the ceiling light in the exit cell, a cord, the shade, the
+         bulb, and four rays on alternate pulses */
+      ctx.fillStyle = css(P.I.INK);
+      ctx.fillRect(ex + 7, ey, 2, 4); ctx.fillRect(ex + 4, ey + 4, 8, 1); ctx.fillRect(ex + 3, ey + 5, 1, 1); ctx.fillRect(ex + 12, ey + 5, 1, 1);
+      ctx.fillRect(ex + 2, ey + 6, 1, 2); ctx.fillRect(ex + 13, ey + 6, 1, 2); ctx.fillRect(ex + 1, ey + 8, 14, 1);
+      ctx.fillStyle = css(P.I.SUN); ctx.fillRect(ex + 4, ey + 5, 8, 1); ctx.fillRect(ex + 3, ey + 6, 10, 2);
+      ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(ex + 6, ey + 9, 4, 3);
+      if (pulse & 1) { ctx.fillRect(ex + 2, ey + 11, 2, 1); ctx.fillRect(ex + 12, ey + 11, 2, 1); ctx.fillRect(ex + 4, ey + 13, 1, 2); ctx.fillRect(ex + 11, ey + 13, 1, 2); }
     }
     /* the moths (rectangles until T0.17's sprites): a body and two wings that flutter, up and down every 8 steps */
     for (var m = 0; m < s.enemies.length; m++) {
@@ -2297,7 +2308,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     }
     var hy = heroY - cam;
     /* a hit's i frames blink the hero at about 4 Hz (8 steps on, 8 off) */
-    if (s.hero.iframes > 0 && ((s.hero.iframes >> 3) & 1)) { ctx.restore(); return; }
+    R.heroShown = !(s.hero.iframes > 0 && ((s.hero.iframes >> 3) & 1));
+    if (!R.heroShown) { ctx.restore(); return; }
     ctx.fillStyle = css(P.I.INK); ctx.fillRect(heroX, hy, K.HERO_W, K.HERO_H);
     ctx.fillStyle = css(SB.TUNING.HERO_BODY); ctx.fillRect(heroX + 1, hy + 1, K.HERO_W - 2, K.HERO_H - 3);
     /* the cling pose (an armed slide or a sticky wall; the sprite is T0.17): the wall side thickened to 3 px of Ink, the
@@ -2459,6 +2471,37 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   }
   /* the shutter on the reveal's first beat: two clicks 40 ms apart */
   A.shutter = function () { if (!live()) return; try { var t = A.ctx.currentTime; click(t); click(t + 0.04); } catch (e) { /* silent */ } };
+  /* a tone: one oscillator gliding f0 to f1 over dur seconds, its gain falling from vol */
+  function tone(type, f0, f1, dur, vol, at) {
+    var c = A.ctx, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, at); o.frequency.exponentialRampToValueAtTime(f1, at + dur);
+    g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(0.001, at + dur);
+    o.connect(g); g.connect(c.destination); o.start(at); o.stop(at + dur + 0.01);
+  }
+  /* a thud: white noise through a low pass at f, decaying over dur */
+  function thud(f, dur, vol, at) {
+    var c = A.ctx, len = Math.ceil(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    var src = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = buf; lp.type = 'lowpass'; lp.frequency.value = f;
+    g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(0.001, at + dur);
+    src.connect(lp); lp.connect(g); g.connect(c.destination); src.start(at); src.stop(at + dur + 0.01);
+  }
+  /* the game's six (T0.16): jump, wall jump, dive, land (heavier after a dive), hit, the beacon */
+  var SFX = {
+    jump: function (t) { tone('square', 330, 660, 0.09, 0.06, t); },
+    walljump: function (t) { tone('square', 440, 700, 0.05, 0.06, t); tone('square', 700, 990, 0.06, 0.05, t + 0.045); },
+    dive: function (t) { tone('triangle', 880, 180, 0.14, 0.09, t); },
+    land: function (t, heavy) { thud(heavy ? 260 : 420, heavy ? 0.12 : 0.05, heavy ? 0.4 : 0.18, t); },
+    hit: function (t) { tone('sawtooth', 240, 70, 0.2, 0.09, t); thud(900, 0.08, 0.25, t); },
+    beacon: function (t) { tone('triangle', 660, 660, 0.25, 0.08, t); tone('triangle', 880, 880, 0.25, 0.08, t + 0.09); tone('triangle', 1320, 1320, 0.35, 0.08, t + 0.18); }
+  };
+  A.played = {};   /* counts per sound, for the gates (SB_DEV.audioPlayed) */
+  A.sfx = function (name, heavy) {
+    A.played[name] = (A.played[name] || 0) + 1;
+    if (!live()) return;
+    try { SFX[name](A.ctx.currentTime, heavy); } catch (e) { /* silent */ }
+  };
   /* a develop tick: a 5 ms blip at 3.2 kHz, quiet (the resolve's rows, each tab of the light up) */
   A.tick = function () {
     if (!live()) return;
@@ -2634,7 +2677,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   }
   function rebuild(full) {
     if (!CR.src) return;
-    var t0 = performance.now(), rec = recordOfCrop(), a = SB.pipeline.build(rec, { stage: 'A' }), lv = full ? SB.pipeline.build(rec, {}) : null;
+    var t0 = performance.now(), rec = recordOfCrop(), a = SB.pipeline.build(rec, { stage: 'A' }), lv = full ? SB.pipeline.build(rec, { firstRoom: !ui.firstRoomDone }) : null;
     CR.builds++; CR.ms = performance.now() - t0; CR.lastRec = rec; CR.lastA = a; CR.full = !!full; CR.last = full ? lv : null;
     drawOverlay(full && !lv.needsCrop ? lv : a, full && !lv.needsCrop);
     document.getElementById('tighter').hidden = !(full && lv.needsCrop);
@@ -2721,11 +2764,12 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     opts = opts || {};
     var t0 = performance.now();
     if (window.performance && performance.mark) performance.mark('sb-reveal-start');
-    var lv = opts.level || SB.pipeline.build(record, {});
+    var lv = opts.level || SB.pipeline.build(record, { firstRoom: !ui.firstRoomDone });
     SB.perfLog.pipeline = opts.level ? (opts.ms || 0) : performance.now() - t0;
     if (lv.needsCrop) return false;
     G.record = record; G.level = lv; G.name = name;
     G.state = SB.sim.create(lv, {});
+    ui.firstRoomDone = true;
     SB.render.buildStatic(lv);
     SB.input.resetRecording();
     document.getElementById('roomname').textContent = name;
@@ -2742,7 +2786,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   ui.showDeath = function () { document.getElementById('death').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'dead'; document.body.classList.remove('playing'); };
   ui.hideDeath = function () { document.getElementById('death').classList.remove('on'); };
   /* free play restarts the room with the same record and seed, the reveal skipped */
-  ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { noReveal: true }); };
+  ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true }); };
   /* the hint glyphs, once each a session (onboarding.hints, T1.10 keeps them): the rocker and A at the first standing
      moment, B the first time the hero is airborne above a dive target (a one way within 8 rows under its column) */
   ui.hinted = { rocker: false, A: false, B: false, stood: false };
@@ -2758,7 +2802,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   ui.sampleRecord = function () {
     return SB.record.fromJSON({ v: 1, w: SB.GRID.W, h: SB.GRID.H, mode: 0, focal: null, rows: Array.from(SB.SAMPLE_ROOM), rows2: null });
   };
-  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name); };
+  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level }); };
 
   ui.showClear = function () { document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; document.body.classList.remove('playing'); };
   ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); document.getElementById('back').hidden = false; };
@@ -2777,7 +2821,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     });
     document.getElementById('sample').addEventListener('click', function () { ui.startRoom(ui.sampleRecord(), ui.COPY.sampleRoom); });
     document.getElementById('again').addEventListener('click', function () { ui.again(); });
-    document.getElementById('nextroom').addEventListener('click', function () { ui.hideClear(); G.state = null; ui.show('title'); document.getElementById('fileshoot').click(); });
+    /* the next room: back to the title under the camera's picker (a cancelled picker leaves the title) */
+    document.getElementById('nextroom').addEventListener('click', function () { ui.toTitle(); openPicker('fileshoot'); });
     document.getElementById('deathagain').addEventListener('click', function () { ui.restart(); });
     document.getElementById('deathtitle').addEventListener('click', function () { ui.hideDeath(); ui.toTitle(); });
     document.getElementById('cleartitle').addEventListener('click', ui.toTitle);
@@ -2814,12 +2859,24 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   var perf = SB.perfLog = { step: [], draw: [], frames: [], pipeline: 0 };
   var keep = function (a, v) { a.push(v); if (a.length > 300) a.shift(); };
 
+  var EV = SB.sim.EV;
   function stepOnce() {
     var t0 = performance.now();
     SB.sim.step(G.state, SB.input.sample());
     keep(perf.step, performance.now() - t0);
     loop.steps++;
+    var ev = G.state.ev, au = SB.audio;
+    if (ev) {
+      if (ev & EV.JUMP) au.sfx('jump');
+      if (ev & EV.WALLJUMP) au.sfx('walljump');
+      if (ev & EV.DIVE) au.sfx('dive');
+      if (ev & EV.LAND) au.sfx('land', G.state.hero.shake > 0);
+      if (ev & EV.HIT) { au.sfx('hit'); SB.ui.hearts(G.state.hero.hearts); }
+      if (ev & EV.CLEAR) au.sfx('beacon');
+    }
+    SB.ui.hints(G.state, G.level);
     if (G.state.room.cleared && SB.ui.screen === 'play') SB.ui.showClear();
+    else if (G.state.room.dead && SB.ui.screen === 'play') SB.ui.showDeath();
   }
   function draw(now) {
     if (!G.state) return;
@@ -2852,7 +2909,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   SB.audio.init();
   SB.ui.init();
   SB.input.initStrip();
-  window.addEventListener('resize', function () { if (SB.ui.screen === 'play' || SB.ui.screen === 'clear') { SB.render.fit(); draw(); } });
+  window.addEventListener('resize', function () { if (SB.ui.screen === 'play' || SB.ui.screen === 'clear' || SB.ui.screen === 'dead') { SB.render.fit(); draw(); } });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { if (G.state) { SB.render.fit(); draw(); } });
   requestAnimationFrame(frame);
 
@@ -2880,6 +2937,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       return { builds: CR.builds, solids: n, full: CR.full, needsCrop: CR.last ? !!CR.last.needsCrop : null, ms: CR.ms, focal: CR.focal, crop: CR.crop };
     },
     audioMade: function () { return SB.audio.made; },
+    audioPlayed: function () { return Object.assign({}, SB.audio.played); },
+    hinted: function () { return Object.assign({}, SB.ui.hinted); },
+    heroShown: function () { return SB.render.heroShown; },
     /* the reveal's liberties: skip it for the gates that test something else, and hold it at t ms for the shots */
     revealSkip: function (on) { SB.ui.reveal.devSkip = !!on; return SB.ui.reveal.devSkip; },
     revealAt: function (ms) { var RV = SB.ui.reveal; if (!RV.on) return false; RV.t = ms; RV.start = performance.now() - ms; SB.ui.revealFrame(performance.now(), true); return true; },
