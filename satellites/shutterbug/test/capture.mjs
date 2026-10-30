@@ -60,9 +60,11 @@ try {
   await f.end();
   await sleep(200);
   R.say(o2.builds > o1.builds && o2.solids !== o1.solids && o2.full === false, 'dragging the box rebuilds the overlay as it moves, before the finger lifts, and its solid count changes (' + o1.solids + ' to ' + o2.solids + ', ' + o2.builds + ' builds, the box at x ' + o2.crop.x + ')');
-  /* the same photo chosen again: the default crop, the room as painted */
+  /* the same photo chosen again: the default crop, the room as painted. The wait is on the decode landing (the drag's
+     own last rebuild satisfied a wait on builds, and Develop then raced the decode: 3 runs in 6 failed on 30 Oct) */
+  const d0 = await page.evaluate(() => window.SB_DEV.overlay().decodes);
   await input.uploadFile(PHOTO);
-  await page.waitForFunction(n => window.SB_DEV.overlay().builds > n && window.SB_DEV.overlay().full, { timeout: 10000 }, o2.builds).catch(() => {});
+  await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d0).catch(() => {});
   await tap(page, '#develop');
   await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 8000 }).catch(() => {});
   const lv = await page.evaluate(() => ({ s: window.SB_DEV.screen(), l: window.SB_DEV.level(), alive: window.SB_DEV.photoAlive(), tabs: window.SB_DEV.tabs() }));
@@ -74,6 +76,18 @@ try {
   R.say(node && node.valid === true && node.exit === lv.l.exit && node.tabs === lv.tabs, 'the record validates and, built in Node, gives the page\'s exit and tabs (Node ' + JSON.stringify(node) + ', page exit ' + lv.l.exit + ' tabs ' + lv.tabs + ')');
   const store = await page.evaluate(() => { const out = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i), v = localStorage.getItem(k) || ''; out.push([k, v.length, v.includes('data:image')]); } return out; });
   R.say(store.every(([, n, img]) => n <= 8192 && !img), 'no localStorage value holds an image or is over 8 KB (' + (store.map(([k, n]) => k + ' ' + n).join(', ') || 'none stored') + ')');
+  /* the race itself, forced: a retake whose decode lands after Develop is dropped, never pulling the player back to the
+     crop nor releasing the photo the reveal shows */
+  await tap(page, '#back');
+  await page.waitForFunction(() => window.SB_DEV.screen() === 'title', { timeout: 5000 }).catch(() => {});
+  const d1 = await page.evaluate(() => window.SB_DEV.overlay().decodes);
+  await input.uploadFile(PHOTO);
+  await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d1).catch(() => {});
+  await page.evaluate(() => { const dec = window.SB.capture.decode; window.SB.capture.decode = f => new Promise(r => setTimeout(r, 600)).then(() => dec(f)); });
+  await input.uploadFile(PHOTO);
+  await tap(page, '#develop');
+  const raced = await page.evaluate(() => new Promise(r => setTimeout(() => r({ s: window.SB_DEV.screen(), alive: window.SB_DEV.photoAlive(), decodes: window.SB_DEV.overlay().decodes }), 1200)));
+  R.say(raced.s !== 'crop' && raced.s !== 'title' && raced.decodes === d1 + 1, 'a retake decoding past Develop is dropped: the screen stays ' + raced.s + ' (not the crop), the late decode not shown (' + (raced.decodes - d1) + ' landed)');
   R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
   await page.close();
 } finally {

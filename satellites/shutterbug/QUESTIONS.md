@@ -466,3 +466,20 @@ Measured tonight: no room of the corpus, in either mode, changes its ascent, tab
 Options: (a) the plan's reading, as built: the main ascent stays forgiving, two wall jumps in a row are a branch; (b) DESIGN's letter: count the wall jumps only (the lab's CHAIN_3 then needs a third wall jump to fail).
 Recommendation: (a) for the first rooms; Stephen's thumbs on a real shaft decide.
 Plan assumes: (a); section 3.7, T0.11b.
+
+## Q69. The bot's wait for a clear corridor cannot pass with homing moths (the builder, 30 Oct, T0.16)
+
+Section 5.2 step 5: before each edge the bot waits up to 600 frames for no enemy within 2 cells of the source and the corridor, and a timeout FAILS. Moths home on the hero (DESIGN 7, Q29), so a moth near the source only gets nearer while the bot waits: the rule as written turns every moth that reaches the hero into a FAIL, the opposite of what H-en-3 asks (the walker reaches the exit with moths live).
+As built: the route walks are immortal (Q30) and never wait. The mortal walk (H-en-3 only) runs each edge at once; when every candidate fails it waits for the moth's hit and runs the edge inside the hit's i frames, then waits 20 to 600 frames and retries, and only then fails. Tonight the mortal walk on the sample room takes no hit at all (the bot outruns 1 cell per second), so the fallback is exercised only by moths eight times faster (MOTH_SPEED_X8, RED).
+Found on the way: the bot's attempts used to stand on the target until the trailing held A ended, a hero parked in a moth's path; an attempt now ends at rest after its last word that moves the hero.
+Options: (a) as built; (b) the plan's letter, with the moths frozen while the bot waits; (c) the bot avoids moths (a planner, M2's patrol enemies want one anyway).
+Recommendation: (a) for M0 and M1's fodder; (c) when T1.1's patrol and hop enemies make contact routes matter.
+Plan assumes: (a); section 5.2 step 5 reads "the bot waits for the hit" until (c).
+
+## Q70. The moth's contact core and its drift (the builder, 30 Oct, T0.16)
+
+DESIGN 7 gives the moth's speed (1 cell per second, through furniture) and the contact rule (1 heart, 1 s of i frames, 2 cell knockback away), not its hitbox nor how a diagonal drift is measured.
+As built: the moth's contact box is its cell less 2 px each side (12 by 12 of the 16 by 16 sprite, the same forgiveness as the corner rule); the drift moves the larger axis at MOTH_V and the other in proportion (a diagonal moth closes about 1.4 cells per second); a dash's i frames protect as a hit's do; the knockback is 8 steps at a fixed speed, the rocker ignored (HIT_KNOCKBACK_FRAMES 8, in TUNING); a knockback into a wall stops there.
+Options: (a) as built; (b) the full 16 px box; (c) a Euclidean drift (1 cell per second on every heading).
+Recommendation: (a): a forgiving core is the genre's habit, and the drift is a feel number Stephen tunes on the phone.
+Plan assumes: (a).

@@ -324,6 +324,8 @@ const MUTANTS = [
   { name: 'HEARTS_STALE', task: 'T0.16', file: 'page', find: "if (ev & EV.HIT) { au.sfx('hit'); SB.ui.hearts(G.state.hero.hearts); }", repl: "if (ev & EV.HIT) { au.sfx('hit'); }",
     gates: [{ gate: 'death', expect: 'the top strip shows' }] },
   /* T0.15: capture */
+  { name: 'DECODE_NO_GUARD', task: 'T0.16', file: 'page', find: "      if (stale()) { if (bm && bm.close) bm.close(); return; }\n", repl: '',
+    gates: [{ gate: 'capture', expect: 'a retake decoding past Develop is dropped' }] },
   { name: 'OVERLAY_STALE', task: 'T0.15', file: 'page', edits: [['if (gest.moved > 8) { CR.crop = SB.capture.move(gest.crop, dx, dy, CR.bw, CR.bh); layoutCrop(); schedule(); }', 'if (gest.moved > 8) { CR.crop = SB.capture.move(gest.crop, dx, dy, CR.bw, CR.bh); layoutCrop(); }'],
     ['CR.crop = SB.capture.pinch(gest.crop, s, gest.mid.x, gest.mid.y, CR.bw, CR.bh); layoutCrop(); schedule();', 'CR.crop = SB.capture.pinch(gest.crop, s, gest.mid.x, gest.mid.y, CR.bw, CR.bh); layoutCrop();']],
     gates: [{ gate: 'capture', expect: 'dragging the box rebuilds the overlay as it moves' }] },

@@ -37,10 +37,10 @@ try {
     let k = 0;
     for (; k < 6000 && window.SB_DEV.state().hero.hearts === full; k += 30) window.SB_DEV.step(30);
     const st = window.SB_DEV.state();
-    return { k, hearts: st.hero.hearts, iframes: st.hero.iframes, strip: document.querySelectorAll('#hearts i').length, played: window.SB_DEV.audioPlayed() };
+    return { k, hearts: st.hero.hearts, iframes: st.hero.iframes, strip: document.querySelectorAll('#hearts i:not(.lost)').length, lost: document.querySelectorAll('#hearts i.lost').length, played: window.SB_DEV.audioPlayed() };
   }, full);
   R.say(hit.hearts === full - 1 && hit.iframes > 0, 'standing still, a moth takes one heart within ' + hit.k + ' steps (' + hit.hearts + ' left, ' + hit.iframes + ' i frames)');
-  R.say(hit.strip === hit.hearts, 'the top strip shows ' + hit.strip + ' hearts (the state has ' + hit.hearts + ')');
+  R.say(hit.strip === hit.hearts && hit.lost === full - hit.hearts, 'the top strip shows ' + hit.strip + ' hearts and ' + hit.lost + ' emptied (the state has ' + hit.hearts + ')');
   R.say((hit.played.hit || 0) >= 1, 'the hit is heard (the hit sound played ' + (hit.played.hit || 0) + ' times)');
 
   /* the blink: through the i frames the hero is drawn on some steps and not on others; after them, always */
@@ -61,9 +61,11 @@ try {
     const card = document.getElementById('death'), h2 = card.querySelector('h2'), btns = [...card.querySelectorAll('button')];
     const r = el => el.getBoundingClientRect();
     return { k, screen: window.SB_DEV.screen(), on: card.classList.contains('on'), text: h2.textContent, buttons: btns.map(b => [b.id, b.textContent, r(b).width, r(b).height]),
-      playing: document.body.classList.contains('playing'), hearts: window.SB_DEV.state().hero.hearts, dead: window.SB_DEV.state().room.dead };
+      playing: document.body.classList.contains('playing'), hearts: window.SB_DEV.state().hero.hearts, dead: window.SB_DEV.state().room.dead,
+      shown: window.SB_DEV.heroShown(), lost: document.querySelectorAll('#hearts i.lost').length };
   });
   R.say(dead.screen === 'dead' && dead.on && dead.dead === 1 && dead.hearts === 0, 'the last heart ends the room in ' + dead.k + ' more steps: the death card is up');
+  R.say(dead.shown && dead.lost === full, 'the fallen hero is drawn (no blink under the card) and the strip shows ' + dead.lost + ' empty hearts');
   R.say(dead.text === 'The bug fell out of the picture', 'the card says "' + dead.text + '"');
   R.say(dead.buttons.length === 2 && dead.buttons[0][1] === 'Again' && dead.buttons.every(b => b[2] >= 48 && b[3] >= 48), 'its buttons: ' + dead.buttons.map(b => b[1] + ' ' + b[2].toFixed(0) + 'x' + b[3].toFixed(0)).join(', '));
 
@@ -71,7 +73,7 @@ try {
   await page.evaluate(() => window.SB_DEV.revealSkip(false));
   await tap(page, '#deathagain');
   const again = await page.evaluate(() => ({ screen: window.SB_DEV.screen(), st: window.SB_DEV.state(), hash: window.SB_DEV.level().hash,
-    card: document.getElementById('death').classList.contains('on'), strip: document.querySelectorAll('#hearts i').length }));
+    card: document.getElementById('death').classList.contains('on'), strip: document.querySelectorAll('#hearts i:not(.lost)').length }));
   R.say(again.screen === 'play' && !again.card, 'Again restarts straight into play (screen ' + again.screen + ', the reveal skipped)');
   R.say(again.hash === s0.hash, 'the same room: the level hash ' + again.hash + ' equals the first');
   R.say(again.st.hero.hearts === full && again.strip === full && again.st.room.dead === 0, 'full hearts again (' + again.st.hero.hearts + ', the strip ' + again.strip + ')');
