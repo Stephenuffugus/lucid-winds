@@ -73,7 +73,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #stage { flex: 0 0 auto; display: flex; justify-content: center; position: relative; touch-action: none; }
 #view { display: block; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; background: var(--ink); }
 #strip { flex: 1 1 auto; min-height: 168px; position: relative; padding-bottom: var(--sab); touch-action: none; }
-#back { position: absolute; top: 8px; right: calc(8px + var(--sar)); min-width: 64px; min-height: 48px; padding: 0 12px;
+#back { position: absolute; top: 0; left: calc(6px + var(--sal)); min-width: 64px; min-height: 48px; padding: 0 12px;
   border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
 #clear { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
@@ -85,6 +85,30 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #cleartitle { background: transparent; color: var(--ink); }
 #safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 var(--sab) 0; }
 #vhprobe { position: fixed; left: 0; top: 0; width: 0; height: 100vh; height: 100dvh; visibility: hidden; pointer-events: none; }
+
+/* the control strip: the bottom left 120x120 belongs to the fleet's music chip (the reserved box: transparent,
+   borderless, textless, handlerless, the top hit at every point of it); the rocker from x 120 with a 16 px visible
+   neutral gap; A outer and B inner at the right. Every hit area is the strip's full height; the drawn glyphs sit at
+   the bottom, semi transparent on the film. 64 px verbs on phones 390 and wider, 56 below (DESIGN 4.1's minimum). */
+#strip { --btn: 64px; --res: 120px; }
+#reserve { position: absolute; left: 0; bottom: 0; width: var(--res); height: var(--res); }
+#rocker { position: absolute; left: var(--res); top: 0; bottom: 0; right: calc(2 * var(--btn)); display: flex; align-items: flex-end;
+  padding: 0 0 calc(10px + var(--sab)) 0; touch-action: none; }
+#rocker .zone { flex: 1 1 0; height: var(--btn); border-radius: 12px; border: 2px solid rgba(11,10,15,0.35);
+  background: rgba(11,10,15,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: rgba(11,10,15,0.55); }
+#rocker .gap { flex: 0 0 16px; }
+.verb { position: absolute; top: 0; bottom: 0; width: var(--btn); display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: calc(10px + var(--sab)); touch-action: none; }
+.verb .glyph { width: calc(var(--btn) - 6px); height: calc(var(--btn) - 6px); border-radius: 50%; border: 2px solid rgba(11,10,15,0.35);
+  background: rgba(11,10,15,0.06); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: rgba(11,10,15,0.6); }
+#btnA { right: var(--sar); }
+#btnB { right: calc(var(--btn) + var(--sar)); }
+#rocker .zone.on, .verb.on .glyph { background: rgba(11,10,15,0.28); border-color: rgba(11,10,15,0.7); color: var(--ink); }
+#strip.mirror #rocker { left: calc(var(--res) + 2 * var(--btn)); right: var(--sar); }
+#strip.mirror #btnA { right: auto; left: var(--res); }
+#strip.mirror #btnB { right: auto; left: calc(var(--res) + var(--btn)); }
+@media (max-width: 389px) { #strip { --btn: 56px; } }
+@media (max-width: 359px) { #strip { --res: 0px; } #reserve { display: none; } }
 
 /* the rotate card: a phone held sideways; a desktop window (a fine pointer) never gets it (QUESTIONS Q40) */
 #rotate { display: none; position: fixed; inset: 0; z-index: 1000; background: var(--soot); color: var(--paper);
@@ -115,7 +139,12 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       <button id="again" type="button" data-copy="again"></button>
       <button id="cleartitle" type="button" data-copy="toTitle"></button></div>
   </div>
-  <div id="strip"><button id="back" type="button" data-copy="toTitle"></button></div>
+  <div id="strip"><button id="back" type="button" data-copy="toTitle"></button>
+    <div id="reserve" aria-hidden="true"></div>
+    <div id="rocker" data-aria="move"><i class="zone zl" data-copy="left"></i><i class="gap"></i><i class="zone zr" data-copy="right"></i></div>
+    <div id="btnB" class="verb" role="button" data-aria="dive"><span class="glyph" data-copy="btnB"></span></div>
+    <div id="btnA" class="verb" role="button" data-aria="jump"><span class="glyph" data-copy="btnA"></span></div>
+  </div>
 </main>
 <div id="safeprobe"></div>
 <div id="vhprobe"></div>
@@ -1047,7 +1076,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
      enlarges by an integer (1x, 2x at 768 CSS px and wider) or, under 384 CSS px, shrinks to the screen width, the
      one exception (QUESTIONS Q5). The static layer is built once per level; each frame is one blit of it at the
      camera plus the sprites. The camera is render state, recomputed from the hero every frame, never in the sim. */
-  var R = SB.render = { camY: 0, viewRows: 40, scale: 1, cssW: 384, builds: 0 };
+  var R = SB.render = { camY: 0, camX: 0, viewRows: 40, viewW: 384, scale: 1, cssW: 384, crop: false, builds: 0 };
   var canvas, ctx, stat, sctx, worldH = 0, viewH = 640, pulse = 0;
 
   R.init = function () {
@@ -1072,12 +1101,14 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     var safe = R.safe(), avail = vh - safe.top - safe.bottom;
     /* 2x only when the minimum view still fits the height at 2x; a short laptop window keeps 1x, still an integer */
     var fits2 = avail >= T.TOP_STRIP + T.VIEW_ROWS_MIN * K.CELL * 2 + T.CONTROL_STRIP;
+    R.crop = /[?&]fit=crop(&|$)/.test(location.search) && vw < K.WORLD_W;
     R.cssW = vw >= T.SCALE2_MIN_W && fits2 ? K.WORLD_W * 2 : vw >= K.WORLD_W ? K.WORLD_W : vw;
-    R.scale = R.cssW / K.WORLD_W;
+    R.viewW = R.crop ? vw : K.WORLD_W;
+    R.scale = R.crop ? 1 : R.cssW / K.WORLD_W;
     var rowPx = K.CELL * Math.max(1, R.scale);
     R.viewRows = Math.max(T.VIEW_ROWS_MIN, Math.min(SB.GRID.VIEW_ROWS, Math.floor((avail - T.TOP_STRIP - T.CONTROL_STRIP) / rowPx)));
     viewH = R.viewRows * K.CELL;
-    if (canvas.width !== K.WORLD_W) canvas.width = K.WORLD_W;
+    if (canvas.width !== R.viewW) canvas.width = R.viewW;
     if (canvas.height !== viewH) canvas.height = viewH;
     canvas.style.width = R.cssW + 'px';
     canvas.style.height = (viewH * R.scale) + 'px';
@@ -1130,6 +1161,10 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     var cam = heroY + (K.HERO_H >> 1) - Math.round(viewH * SB.TUNING.CAM_HERO_FRAC);
     cam = Math.max(0, Math.min(worldH - viewH, cam));
     R.camY = cam;
+    /* the crop alternative follows the hero sideways inside the 24 px the screen lacks; the default never moves */
+    var camX = R.crop ? Math.max(0, Math.min(K.WORLD_W - R.viewW, heroX + (K.HERO_W >> 1) - (R.viewW >> 1))) : 0;
+    R.camX = camX;
+    ctx.save(); ctx.translate(-camX, 0);
     ctx.drawImage(stat, 0, cam, K.WORLD_W, viewH, 0, 0, K.WORLD_W, viewH);
     if (lv.exit >= 0) {
       /* the light, relit (section 3.7): the beacon's cells at full palette colour over the dimmed photo, so the goal
@@ -1152,6 +1187,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     ctx.fillStyle = css(P.I.INK); ctx.fillRect(heroX, hy, K.HERO_W, K.HERO_H);
     ctx.fillStyle = css(SB.TUNING.HERO_BODY); ctx.fillRect(heroX + 1, hy + 1, K.HERO_W - 2, K.HERO_H - 3);
     ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(heroX + (s.hero.facing > 0 ? K.HERO_W - 4 : 2), hy + 4, 2, 2);
+    ctx.restore();
   };
 })(window.SB);
 </script>
@@ -1182,6 +1218,66 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   I.last = function () { return last; };
   I.recording = function () { return SB.sim.rle.encode(rec); };
   I.resetRecording = function () { rec = []; edge.A = 0; edge.B = 0; };
+
+  /* the control strip (T0.8b, section 1.5): DOM, not canvas, so a gate can measure it and press it with real touches.
+     The rocker maps the pointer's CURRENT x to left, neutral or right, so a thumb slides between zones without
+     lifting; A and B track their own pointers, so a second finger never releases the first. */
+  I.initStrip = function () {
+    var rocker = document.getElementById('rocker'), zl = rocker.querySelector('.zl'), zr = rocker.querySelector('.zr');
+    var rockerPtr = null, rockerVerb = null;
+    var paint = function () { zl.classList.toggle('on', rockerVerb === 'L'); zr.classList.toggle('on', rockerVerb === 'R'); };
+    var zoneOf = function (x) {
+      var a = zl.getBoundingClientRect(), b = zr.getBoundingClientRect();
+      if (x < a.right) return 'L';
+      if (x >= b.left) return 'R';
+      return null;                       /* the visible neutral gap */
+    };
+    var setRocker = function (v) {
+      if (v === rockerVerb) return;
+      if (rockerVerb) I.release(rockerVerb, 'rocker');
+      rockerVerb = v;
+      if (v) I.press(v, 'rocker');
+      paint();
+    };
+    rocker.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      if (rockerPtr !== null) return;    /* one thumb on the rocker */
+      rockerPtr = e.pointerId;
+      try { rocker.setPointerCapture(e.pointerId); } catch (err) { /* already captured */ }
+      setRocker(zoneOf(e.clientX));
+    });
+    rocker.addEventListener('pointermove', function (e) { if (e.pointerId === rockerPtr) setRocker(zoneOf(e.clientX)); });
+    var endRocker = function (e) { if (e.pointerId !== rockerPtr) return; rockerPtr = null; setRocker(null); };
+    rocker.addEventListener('pointerup', endRocker);
+    rocker.addEventListener('pointercancel', endRocker);
+    rocker.addEventListener('lostpointercapture', endRocker);
+
+    var button = function (el, verb) {
+      var ptrs = {};
+      el.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        ptrs[e.pointerId] = 1;
+        try { el.setPointerCapture(e.pointerId); } catch (err) { /* already captured */ }
+        I.press(verb, 'ptr' + e.pointerId);
+        el.classList.add('on');
+      });
+      var end = function (e) {
+        if (!ptrs[e.pointerId]) return;
+        delete ptrs[e.pointerId];
+        I.release(verb, 'ptr' + e.pointerId);
+        if (!Object.keys(ptrs).length) el.classList.remove('on');
+      };
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+      el.addEventListener('lostpointercapture', end);
+    };
+    button(document.getElementById('btnA'), 'A');
+    button(document.getElementById('btnB'), 'B');
+    var strip = document.getElementById('strip');
+    strip.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    document.getElementById('view').addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    strip.classList.toggle('mirror', !!(SB.settings && SB.settings.mirror));
+  };
 
   I.init = function () {
     window.addEventListener('keydown', function (e) {
@@ -1223,6 +1319,13 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     roomClear: 'Room clear',
     again: 'Again',
     toTitle: 'Title',
+    left: '\u25c0',
+    right: '\u25b6',
+    btnA: 'A',
+    btnB: 'B',
+    move: 'Move',
+    jump: 'Jump',
+    dive: 'Dive',
     build: 'build',
     rotate: 'Turn your phone upright to play.'
   });
@@ -1244,6 +1347,12 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       var k = els[i].getAttribute('data-copy');
       if (ui.COPY[k] === undefined) throw new Error('no copy for ' + k);
       els[i].textContent = ui.COPY[k];
+    }
+    var labs = (root || document).querySelectorAll('[data-aria]');
+    for (var j = 0; j < labs.length; j++) {
+      var a = labs[j].getAttribute('data-aria');
+      if (ui.COPY[a] === undefined) throw new Error('no copy for ' + a);
+      labs[j].setAttribute('aria-label', ui.COPY[a]);
     }
     /* the stamp's hyphens render as spaces: a dash on screen is player copy */
     document.getElementById('build').textContent = ui.COPY.build + ' ' + SB.BUILD.replace(/-/g, ' ');
@@ -1345,6 +1454,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   SB.render.init();
   SB.input.init();
   SB.ui.init();
+  SB.input.initStrip();
   window.addEventListener('resize', function () { if (SB.ui.screen === 'play' || SB.ui.screen === 'clear') { SB.render.fit(); draw(); } });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { if (G.state) { SB.render.fit(); draw(); } });
   requestAnimationFrame(frame);

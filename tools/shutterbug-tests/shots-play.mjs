@@ -5,7 +5,8 @@
  * THEN OPEN THE IMAGES AND LOOK.
  *
  *   node tools/shutterbug-tests/shots-play.mjs <outdir> <name>:<step> [<name>:<step> ...] [--sizes=412x915,360x780]
- *        [--query=fit=crop] [--strip=R,A]   (--strip: after stepping, hold those strip controls with real touches)
+ *        [--query=fit=crop] [--strip=R,A] [--dpr=2.625]   (--strip: after stepping, hold those strip controls with real
+ *        touches; --dpr: the device pixel ratio, 3 by default, 2.625 for a Pixel 9)
  * Serve the repo root first: (cd /workspaces/lucid-winds && python3 -m http.server 8777 >/dev/null 2>&1 &) */
 import { createRequire } from 'node:module';
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -18,6 +19,7 @@ const marks = args.slice(1).filter(a => !a.startsWith('--')).map(a => { const [n
 const sizes = ((args.find(a => a.startsWith('--sizes=')) || '--sizes=412x915,360x780').slice(8)).split(',').map(s => s.split('x').map(Number));
 const query = (args.find(a => a.startsWith('--query=')) || '').slice(8);
 const strip = (args.find(a => a.startsWith('--strip=')) || '').slice(8).split(',').filter(Boolean);
+const dpr = Number((args.find(a => a.startsWith('--dpr=')) || '--dpr=3').slice(6));
 const climb = JSON.parse(readFileSync('/workspaces/lucid-winds/satellites/shutterbug/test/climb-sample-room.json', 'utf8'));
 const KEYS = { 1: 'ArrowLeft', 2: 'ArrowRight', 4: 'KeyZ' };
 mkdirSync(out, { recursive: true });
@@ -31,7 +33,7 @@ try {
       const errors = [];
       page.on('pageerror', e => errors.push('pageerror: ' + e.message));
       page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
-      await page.setViewport({ width: w, height: h, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+      await page.setViewport({ width: w, height: h, deviceScaleFactor: dpr, isMobile: true, hasTouch: true });
       await page.goto('http://localhost:8777/satellites/shutterbug/' + (query ? '?' + query : ''), { waitUntil: 'networkidle0', timeout: 30000 });
       await page.waitForFunction(() => window.SB_DEV, { timeout: 20000 });
       await page.evaluate(() => window.SB_DEV.hold(true));
@@ -60,7 +62,7 @@ try {
         const b = el.getBoundingClientRect();
         return Math.round(b.left) + ',' + Math.round(b.top) + ' ' + Math.round(b.width) + 'x' + Math.round(b.height);
       });
-      const file = `${out}/${mark.name}-${w}x${h}.png`;
+      const file = `${out}/${mark.name}-${w}x${h}${dpr !== 3 ? '-dpr' + dpr : ''}.png`;
       await page.screenshot({ path: file });
       for (const f of fingers) await f.end();
       if (errors.length) failed = true;

@@ -128,7 +128,11 @@ const MUTANTS = [
     gates: [{ gate: 'play', expect: 'the step is 16.667 ms' }] },
   { name: 'JOURNEY_A_REPLACES', task: 'T0.8a review', file: 'page', find: "    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) history.back();",
     repl: "    if (document.referrer.indexOf('/portal') >= 0 && history.length > 9) history.back();",
-    gates: [{ gate: 'boot', expect: 'journey A: a real touch on the exit returned' }] }
+    gates: [{ gate: 'boot', expect: 'journey A: a real touch on the exit returned' }] },
+
+  { name: 'SECOND_FINGER_RELEASES_FIRST', task: 'T0.8b', file: 'page', find: '        e.preventDefault();\n        ptrs[e.pointerId] = 1;',
+    repl: '        e.preventDefault();\n        I.releaseAll();\n        ptrs[e.pointerId] = 1;',
+    gates: [{ gate: 'play', expect: 'a second finger on A during a rocker hold: both register' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

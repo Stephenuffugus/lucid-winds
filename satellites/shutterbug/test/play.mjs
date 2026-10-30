@@ -8,7 +8,8 @@
  * books balance (steps x 16.67 ms + what is owed + what stalls dropped = the frame time it was given).
  *
  * Watched red by CLEAR_NO_RESTART (Again leaves the card painted) and ACCUMULATOR_DT_FLOAT (the loop steps by the raw
- * frame delta). T0.8b extends this gate with the same climb by real touches on the strip. */
+ * frame delta), and by SECOND_FINGER_RELEASES_FIRST (T0.8b: the same climb by real touches on the strip, and one real
+ * event per control: the rocker moves the hero, A rises, a second finger on A leaves the rocker held). */
 import { readFileSync } from 'node:fs';
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, centre } from './harness.mjs';
 
@@ -112,6 +113,75 @@ try {
     R.say(m.cssW === want, w + 'x' + h + ': the canvas is ' + m.cssW + ' CSS px wide (' + (want === 384 ? '1x: 2x would not fit the height' : '2x') + ')');
     R.say(m.stripBottom <= m.inner + 0.5 && m.stripH >= 168 && m.scroll <= m.inner + 1, w + 'x' + h + ': the top strip, the play area and a ' + Math.round(m.stripH) + ' px control strip fit the window (scroll height ' + m.scroll + ' of ' + m.inner + ')');
     R.say(errors.length === 0, w + 'x' + h + ': zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
+  /* T0.8b: the same climb by real touches on the strip, timed by SB_DEV.step: one finger on the rocker (lifted and
+     pressed again when the direction changes: Chrome may coalesce a moving touch; the slide itself is T0.9's), one
+     finger on A. Then one real event per control proves the mapping without the script. */
+  {
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base);
+    await ready(page);
+    await page.evaluate(() => window.SB_DEV.hold(true));
+    await tap(page, '#sample');
+    const at = await page.evaluate(() => {
+      const c = el => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+      return { L: c(document.querySelector('#rocker .zl')), R: c(document.querySelector('#rocker .zr')), A: c(document.querySelector('#btnA .glyph')) };
+    });
+    let rf = null, rdir = null, af = null;
+    for (const [n, mask] of climb.runs) {
+      const dir = mask & 1 ? 'L' : mask & 2 ? 'R' : null;
+      if (rf && dir !== rdir) { await rf.end(); rf = null; rdir = null; }
+      if (dir && !rf) { rf = await page.touchscreen.touchStart(at[dir].x, at[dir].y); rdir = dir; }
+      if ((mask & 4) && !af) af = await page.touchscreen.touchStart(at.A.x, at.A.y);
+      else if (!(mask & 4) && af) { await af.end(); af = null; }
+      await page.evaluate(n => window.SB_DEV.step(n), n);
+    }
+    if (rf) await rf.end();
+    if (af) await af.end();
+    const st = await page.evaluate(() => ({ s: window.SB_DEV.state(), screen: window.SB_DEV.screen() }));
+    R.say(st.s && st.s.room.cleared === 1 && st.screen === 'clear', 'the climb by real touches on the rocker and A reaches the lamp (screen ' + st.screen + ')');
+
+    /* the per control checks start from a fresh room whatever the climb did (the goto liberty; Again's own real touch
+       is proven in the keyboard pass), so each runs and names its own failure */
+    await page.evaluate(() => window.SB_DEV.goto('sample'));
+    for (let k = 0; k < 4; k++) await page.evaluate(() => window.SB_DEV.step(1));
+    const x0 = await page.evaluate(() => window.SB_DEV.state().hero.x);
+    let f = await page.touchscreen.touchStart(at.R.x, at.R.y);
+    await page.evaluate(() => window.SB_DEV.step(1));
+    const x1 = await page.evaluate(() => window.SB_DEV.state().hero.x);
+    await f.end();
+    R.say(x1 > x0, 'a real touch on the rocker\'s right zone moves the hero on the next step (' + x0 + ' to ' + x1 + ')');
+    for (let k = 0; k < 8; k++) await page.evaluate(() => window.SB_DEV.step(1));
+    f = await page.touchscreen.touchStart(at.A.x, at.A.y);
+    await f.end();
+    await page.evaluate(() => window.SB_DEV.step(1));
+    const vy = await page.evaluate(() => window.SB_DEV.state().hero.vy);
+    R.say(vy < 0, 'a real tap on A makes the hero rise on the next step (vy ' + vy + ')');
+    for (let k = 0; k < 60; k++) await page.evaluate(() => window.SB_DEV.step(1));
+    const thumb = await page.touchscreen.touchStart(at.L.x, at.L.y);
+    await page.evaluate(() => window.SB_DEV.step(2));
+    const second = await page.touchscreen.touchStart(at.A.x, at.A.y);
+    await page.evaluate(() => window.SB_DEV.step(1));
+    const both = await page.evaluate(() => window.SB_DEV.lastInput());
+    await second.end();
+    await page.evaluate(() => window.SB_DEV.step(1));
+    const after = await page.evaluate(() => window.SB_DEV.lastInput());
+    await thumb.end();
+    await page.evaluate(() => window.SB_DEV.step(1));
+    const none = await page.evaluate(() => window.SB_DEV.lastInput());
+    R.say((both & 1) && (both & 4), 'a second finger on A during a rocker hold: both register (word ' + both + ')');
+    R.say((after & 1) && !(after & 4), 'lifting the second finger leaves the rocker held (word ' + after + ')');
+    R.say(none === 0, 'lifting the thumb releases the rocker (word ' + none + ')');
+    /* a thumb reaching high for jump, at the top of A's full height hit area, jumps and never leaves the play screen */
+    const high = await page.evaluate(() => { const r = document.getElementById('btnA').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 6 }; });
+    for (let k = 0; k < 60; k++) await page.evaluate(() => window.SB_DEV.step(1));
+    const hf = await page.touchscreen.touchStart(high.x, high.y);
+    await page.evaluate(() => window.SB_DEV.step(1));
+    const hv = await page.evaluate(() => ({ vy: window.SB_DEV.state().hero.vy, screen: window.SB_DEV.screen() }));
+    await hf.end();
+    R.say(hv.vy < 0 && hv.screen === 'play', 'a touch at the very top of A\'s hit area jumps and stays on the play screen (vy ' + hv.vy + ', screen ' + hv.screen + ')');
+    R.say(errors.length === 0, 'touch pass: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
 } finally {
