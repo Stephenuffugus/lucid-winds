@@ -45,6 +45,11 @@ nothing); `--preset B` writes the same designs for the 36x64 fallback into `fixt
 - `trap-pattern` a 6x6 two cell repeat: the trap field candidate
 - `saturated-blobs` saturated clusters of 3, 8 and 14 cells: enemy spawns and a boss candidate
 - `tight-gap` a room whose only way up needs repair: the stair assertion
+- `biome-attic` shelves-a tinted warm (Amber, Walnut): detected Attic (T1.1)
+- `biome-frost` shelves-a in greys only, bright: detected Frost by the bright room rule (T1.1)
+- `biome-deep` shelves-a tinted blue (Teal, Lapis): detected Deep (T1.1)
+- `biome-green` shelves-a tinted Moss: detected Overgrowth (T1.1)
+- `biome-ember` shelves-a tinted red (Magenta, Brick): detected Ember (T1.1)
 
-Twenty one records (twenty synthetic plus the sample room) since T0.5c; T1.1 adds the five biome tints, T3.1a the
-double exposure sample. Authored needsCrop: all-dark and gradient-v (at most 2 over the corpus, H-rep-1).
+Twenty six records (twenty five synthetic plus the sample room) since T1.1, which added the five biome tints; T3.1a
+adds the double exposure sample. Authored needsCrop: all-dark and gradient-v (at most 2 over the corpus, H-rep-1).

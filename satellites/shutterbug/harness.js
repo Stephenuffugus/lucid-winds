@@ -874,6 +874,91 @@ function jumpRef(v0, holdFrames) {
   }
 }
 
+/* ================================================================ biomes (T1.1) */
+const BIOME_IDX = { attic: 0, frost: 1, deep: 2, overgrowth: 3, ember: 4 };
+const detected = f => SB.pipeline.biomeOf(SB.record.fromJSON(f.fx.record).pal, SB.GRID.W * SB.GRID.H);
+group('H-bio-1', 'biome detection by palette index: each tinted copy of shelves-a is its biome, and every fixture is the biome its author wrote', t => {
+  for (const [name, want] of [['biome-attic', 0], ['biome-frost', 1], ['biome-deep', 2], ['biome-green', 3], ['biome-ember', 4]]) {
+    const f = FIXTURES.find(x => x.name === name);
+    if (!f) { t.ok(false, name + ' is in the corpus'); continue; }
+    const lv = buildFx(f, 0);
+    t.ok(detected(f) === want && (lv.needsCrop || lv.biome === want), name + ' detects ' + SB.palette.BIOMES[want] + ' (the record gives ' + SB.palette.BIOMES[detected(f)] + (lv.needsCrop ? ', needsCrop' : ', the build ' + SB.palette.BIOMES[lv.biome]) + ')');
+  }
+  const off = [];
+  for (const f of FIXTURES) { const e = f.fx.expect && f.fx.expect.biome; if (e && BIOME_IDX[e] !== detected(f)) off.push(f.name + ' (wrote ' + e + ', detected ' + SB.palette.BIOMES[detected(f)] + ')'); }
+  t.eq(off.length, 0, 'every fixture with an authored biome detects it' + (off.length ? ': ' + off.join('; ') : ''));
+});
+group('H-bio-2', 'the sample room is Attic, in both modes', t => {
+  const f = FIXTURES.find(x => x.name === 'sample-room');
+  t.eq(detected(f), 0, 'the sample room\'s grid detects Attic');
+  /* pipeline A in both modes: the Negative inverts solidity, never the palette, and its full build is an honest
+     needsCrop (no tab fits on the stair), which carries no biome */
+  for (const mode of MODES) t.eq(buildA(f, mode).biome, 0, 'the sample room mode ' + mode + ' builds as Attic (pipeline A)');
+  t.eq(buildFx(f, 0).biome, 0, 'the sample room\'s full build is Attic');
+});
+group('H-bio-3', 'the bright room rule (Q4): all-light is Frost, all-dark is Attic, and the threshold is FROST_MEAN_L', t => {
+  t.eq(detected(FIXTURES.find(x => x.name === 'all-light')), 1, 'all-light detects Frost');
+  t.eq(detected(FIXTURES.find(x => x.name === 'all-dark')), 0, 'all-dark detects Attic');
+  /* two unsaturated grids either side of the threshold, computed here from the palette's L */
+  const n = SB.GRID.W * SB.GRID.H, P = SB.palette, T = SB.TUNING;
+  const grey = [0, 1, 2, 3, 4, 5, 6].sort((a, b) => P.L[a] - P.L[b]), above = grey.find(i => P.L[i] > T.FROST_MEAN_L), below = grey.filter(i => P.L[i] <= T.FROST_MEAN_L).pop();
+  t.eq(SB.pipeline.biomeOf(new Uint8Array(n).fill(above), n), 1, 'an all ' + P.NAMES[above] + ' grid (L ' + P.L[above] + ', over ' + T.FROST_MEAN_L + ') is Frost');
+  t.eq(SB.pipeline.biomeOf(new Uint8Array(n).fill(below), n), 0, 'an all ' + P.NAMES[below] + ' grid (L ' + P.L[below] + ') is Attic');
+  /* the saturated fraction's edge: just under BIOME_MIN_FRAC of Lapis on a bright grid stays Frost; at it, Deep */
+  const k = Math.ceil(T.BIOME_MIN_FRAC * n), g1 = new Uint8Array(n).fill(above), g2 = new Uint8Array(n).fill(above);
+  for (let i = 0; i < k - 1; i++) g1[i] = P.I.LAPIS;
+  for (let i = 0; i < k; i++) g2[i] = P.I.LAPIS;
+  t.ok(SB.pipeline.biomeOf(g1, n) === 1 && SB.pipeline.biomeOf(g2, n) === 2, (k - 1) + ' Lapis cells on a bright grid stay Frost; ' + k + ' make it Deep');
+});
+group('H-bio-4', 'slick only on Frost (one way runs of FROST_SLICK_MIN_W), sticky only on Overgrowth and Deep (1 wide solid runs of STICKY_RUN_MIN), at most CAP_STICKY runs', t => {
+  const T = SB.TUNING; let slickLevels = 0, stickyLevels = 0, bad = [];
+  for (const f of FIXTURES) for (const mode of MODES) for (const biome of [0, 1, 2, 3, 4]) {
+    const lv = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode })), { biome, stage: 'A' });
+    if (lv.needsCrop) continue;
+    const tag = f.name + ' mode ' + mode + ' ' + SB.palette.BIOMES[biome], w = lv.w;
+    let slick = 0, sticky = 0, runs = 0;
+    for (let i = 0; i < lv.slick.length; i++) {
+      if (lv.slick[i]) { slick++; if (!lv.plat[i]) bad.push(tag + ': slick off a one way at ' + i); }
+      if (lv.sticky[i]) { sticky++; if (!lv.solid[i]) bad.push(tag + ': sticky off a solid at ' + i); if (i < w || !lv.sticky[i - w]) runs++; }
+    }
+    if (slick && biome !== 1) bad.push(tag + ': ' + slick + ' slick cells outside Frost');
+    if (sticky && biome !== 2 && biome !== 3) bad.push(tag + ': ' + sticky + ' sticky cells outside Overgrowth and Deep');
+    if (runs > T.CAP_STICKY) bad.push(tag + ': ' + runs + ' sticky runs (cap ' + T.CAP_STICKY + ')');
+    /* the sticky set recomputed here: vertical runs of solid cells with no solid beside them (the frame is no
+       neighbour), STICKY_RUN_MIN or taller, the first CAP_STICKY by their top cell in row major order */
+    if (biome === 2 || biome === 3) {
+      const S = lv.solid, h = lv.h, lone = (x, y) => S[y * w + x] && !(x > 0 && S[y * w + x - 1]) && !(x < w - 1 && S[y * w + x + 1]), want = [];
+      for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) { if (!lone(x, y) || (y > 0 && lone(x, y - 1))) continue; let e = y; while (e + 1 < h && lone(x, e + 1)) e++; if (e - y + 1 >= T.STICKY_RUN_MIN) want.push([y * w + x, x, y, e]); }
+      want.sort((a, b) => a[0] - b[0]);
+      const exp = new Uint8Array(w * h);
+      for (const [, x, y0, y1] of want.slice(0, T.CAP_STICKY)) for (let y = y0; y <= y1; y++) exp[y * w + x] = 1;
+      for (let i = 0; i < exp.length; i++) if (exp[i] !== lv.sticky[i]) { bad.push(tag + ': sticky at (' + (i % w) + ', ' + Math.floor(i / w) + ') is ' + lv.sticky[i] + ', the test wants ' + exp[i]); break; }
+    }
+    /* slick exactly the one way runs of FROST_SLICK_MIN_W or more */
+    if (biome === 1) for (let y = 0; y < lv.h; y++) { let x = 0; while (x < w) { if (!lv.plat[y * w + x]) { x++; continue; } let e = x; while (e + 1 < w && lv.plat[y * w + e + 1]) e++; const want = e - x + 1 >= T.FROST_SLICK_MIN_W; for (let k = x; k <= e; k++) if (!!lv.slick[y * w + k] !== want) { bad.push(tag + ': the run at (' + x + '..' + e + ', ' + y + ') is ' + (want ? 'not ' : '') + 'slick'); break; } x = e + 1; } }
+    if (slick) slickLevels++;
+    if (sticky) stickyLevels++;
+  }
+  t.eq(bad.length, 0, 'the surfaces keep to their biomes' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
+  t.ok(slickLevels > 0 && stickyLevels > 0, 'the rules bite: ' + slickLevels + ' Frost levels hold slick runs, ' + stickyLevels + ' Overgrowth or Deep levels hold sticky runs');
+});
+group('H-bio-5', 'the Frost landing rule (section 3.5, Q74): no edge lands on a slick run\'s end moving off it; a landing the slide cannot carry off stays', t => {
+  const W = SB.GRID.W, H = SB.GRID.H, FLOOR = '#'.repeat(W), y = H - 5;
+  const into = (lv, x, dir) => { const g = SB.reach.graph(lv), to = y * W + x; let c = 0; for (const es of g.adj) if (es) for (const e of es) if (e.to === to && e.dx > 0 && e.dir === dir) c++; return c; };
+  /* six slick cells (x 7..12) four rows over the floor with a drop at both ends; the same run with a wall beside its
+     right end. The hero stands on row H-5. */
+  const open = LABS.room(['', '.......~~~~~~...........', '', '', FLOOR], { biome: 1 });
+  const wall = LABS.room(['.............#..........', '.......~~~~~~#..........', '', '', FLOOR], { biome: 1 });
+  let c = into(open, 12, 1); t.eq(c, 0, 'a landing on the right end moving right (the slide would carry the hero off) is no edge (' + c + ' found)');
+  c = into(open, 12, -1); t.ok(c > 0, 'a landing on the right end moving left stays (' + c + ' edges)');
+  c = into(open, 7, -1); t.eq(c, 0, 'a landing on the left end moving left is no edge (' + c + ' found)');
+  c = into(open, 7, 1); t.ok(c > 0, 'a landing on the left end moving right stays (' + c + ' edges)');
+  t.ok(into(open, 9, 1) > 0 && into(open, 9, -1) > 0, 'an inner cell of the run keeps its landings from both sides');
+  c = into(wall, 12, 1); t.ok(c > 0, 'beside a wall the right end keeps its landings moving right: the wall stops the slide (' + c + ' edges)');
+  const g = SB.reach.graph(open);
+  t.ok(g.stand[y * W + 7] === 1 && g.stand[y * W + 12] === 1, 'both end cells are standable (T0.10b\'s placeholder refused them outright)');
+});
+
 group('H-sim-1', 'the jump: apex, tap, air time and reach, against the test\'s own stepping', t => {
   const lv = LABS.room(['', '..........S.............', FLOOR]);
   const measure = (words, n) => {
@@ -2326,7 +2411,7 @@ group('H-rep-1', 'the corpus result table: every fixture builds or returns needs
     rows.push(f.name.padEnd(20) + cells.map(c => ('mode ' + c.mode + ': ' + c.text).padEnd(22)).join(''));
     const lv = cells[0].lv;
     if (e.needsCrop !== null) t.eq(!!lv.needsCrop, e.needsCrop, f.name + ': ' + (e.needsCrop ? 'needsCrop' : 'builds') + ' as its expect says' + (lv.needsCrop ? ' (' + lv.detail + ')' : ''));
-    if (!lv.needsCrop) t.ok(lv.repair.tabs <= e.tabsMax, f.name + ': ' + lv.repair.tabs + ' tabs (at most ' + e.tabsMax + ')');
+    if (!lv.needsCrop && e.tabsMax !== null) t.ok(lv.repair.tabs <= e.tabsMax, f.name + ': ' + lv.repair.tabs + ' tabs (at most ' + e.tabsMax + ')');
     if (!lv.needsCrop && e.exitIsLight !== null) t.eq(Array.from(lv.beacon.cells).includes(lv.exit), e.exitIsLight, f.name + ': the exit ' + (e.exitIsLight ? 'is' : 'is not') + ' the light');
   }
   console.log('  info  the corpus (built with its tabs, or needsCrop):\n' + rows.map(r => '        ' + r).join('\n'));
@@ -2812,7 +2897,8 @@ const BOT = (() => {
 })();
 
 /* every built level of the corpus for the walk: (fixture, mode, biome) with the Deep override skipped by name until
-   H-sim-17 (T1.5); "as detected" is the build's own biome (Attic in M0). A biome whose level has the same cells, the
+   H-sim-17 (T1.5); "as detected" is the build's own biome (detected since T1.1; a room detected Deep is skipped by
+   name with the override, the DEEP tables being more generous than the sim until T1.5). A biome whose level has the same cells, the
    same spawn and exit, the same tables and the same sticky rule as one already walked is the same walk: it is reported
    as such, not walked twice. */
 const BOT_BIOMES = [[null, 'as detected'], [1, 'frost'], [3, 'overgrowth'], [4, 'ember']];
@@ -2824,6 +2910,7 @@ function botWalks() {
     const lv = biome === null ? buildFx(f, mode) : SB.pipeline.build(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode })), { biome });
     const tag = f.name + ' mode ' + mode + ' ' + bname;
     if (lv.needsCrop) { runs.push({ tag, f, mode, biome, skipped: 'needsCrop (' + lv.why + ')' }); continue; }
+    if (biome === null && lv.biome === 2) { runs.push({ tag, f, mode, biome, skipped: 'detected Deep', deep: true }); continue; }
     const sig = [Buffer.from(lv.solid).toString('base64'), Buffer.from(lv.plat).toString('base64'), Buffer.from(lv.sticky).toString('base64'), Buffer.from(lv.slick).toString('base64'),
       lv.spawn, lv.exit, lv.biome === 2, (lv.biome === 2 || lv.biome === 3) && lv.sticky.some(Boolean)].join('/');
     if (seen.has(sig)) { runs.push({ tag, f, mode, biome, same: seen.get(sig) }); continue; }
@@ -2837,8 +2924,9 @@ function botWalks() {
 
 group('H-bot-1', 'the generosity assertion: every main ascent edge of every built level has a macro the sim performs (BOT-ASCENT)', t => {
   const { runs, stats } = botWalks();
-  let walked = 0, edges = 0, same = 0, skipped = 0;
+  let walked = 0, edges = 0, same = 0, skipped = 0, deep = [];
   for (const run of runs) {
+    if (run.deep) { deep.push(run.tag); continue; }
     if (run.skipped) { skipped++; continue; }
     if (run.same) { same++; continue; }
     walked++; edges += run.r.edges;
@@ -2846,7 +2934,7 @@ group('H-bot-1', 'the generosity assertion: every main ascent edge of every buil
     t.ok(!m, run.tag + ': ' + (m ? 'edge ' + m.i + ' of ' + run.lv.ascent.edges.length + ' has no macro: ' + m.e.kind + (m.e.profile ? ' ' + m.e.profile : '') + ' dir ' + m.e.dir + ' dx ' + m.e.dx + ' dy ' + m.e.dy + ' from ' + (m.src.contact ? 'the contact' : 'the cell') + ' (' + m.src.cx + ', ' + m.src.cy + ') to ' + (m.t.contact ? 'the contact' : 'the cell') + ' (' + m.t.cx + ', ' + m.t.cy + '); ' + m.tried + ' candidates, the prior\'s best rests at (' + m.rest.join(', ') + ')' + (m.wall ? ' armed ' + m.wall : '') : 'every one of its ' + run.lv.ascent.edges.length + ' ascent edges has a macro'),
       m ? SB.pipeline.toText(run.lv) : undefined);
   }
-  console.log('  info  the bot walked ' + walked + ' levels (' + edges + ' ascent edges; ' + same + ' biome overrides share a walked level\'s cells and rules; ' + skipped + ' needsCrop); the Deep override skipped by name until H-sim-17 (T1.5)');
+  console.log('  info  the bot walked ' + walked + ' levels (' + edges + ' ascent edges; ' + same + ' biome overrides share a walked level\'s cells and rules; ' + skipped + ' needsCrop); the Deep override skipped by name until H-sim-17 (T1.5)' + (deep.length ? ', and the rooms detected Deep: ' + deep.join(', ') : ''));
   console.log('  info  the macro search: ' + stats.tries + ' candidates run, ' + stats.found + ' found by search, ' + stats.memo + ' by the memo (' + stats.memoMiss + ' memo misses fell back to the search)');
 });
 

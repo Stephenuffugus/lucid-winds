@@ -153,8 +153,8 @@ SYNTH.push(() => {
   const g = grid(C.ASH);
   rect(g, 0, 20, 0, 27, C.SOOT); rect(g, W - 1, 30, W - 1, 37, C.SOOT); rect(g, 10, 14, 12, 40, C.SOOT);
   return fixture('pillars', 'synthetic',
-    'Three vertical solid runs: one wide and 8 tall against the left edge (rows 20..27) and against the right edge (rows 30..37), and a 3 wide pillar in the middle (x 10..12, rows 14..40). One wide runs survive the smoothing only at the room\'s edge (an out of bounds neighbour votes like the cell), which is why these two stand on the frame: sticky candidates for Overgrowth and Deep (T1.1). Landmarks: the middle pillar and the floor (the edge runs are 8 cells, so three).',
-    g, { biome: 'attic', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 0, landmarksMin: 3 });
+    'Three vertical solid runs: one wide and 8 tall against the left edge (rows 20..27) and against the right edge (rows 30..37), and a 3 wide pillar in the middle (x 10..12, rows 14..40). One wide runs survive the smoothing only at the room\'s edge (an out of bounds neighbour votes like the cell), which is why these two stand on the frame: sticky candidates for Overgrowth and Deep (T1.1). Landmarks: the middle pillar and the floor (the edge runs are 8 cells, so three). Ash walls and Soot runs, no saturated cell and a mean L over FROST_MEAN_L: Frost by the bright room rule (Q4); the first draft said attic, corrected at T1.1 by H-bio-1.',
+    g, { biome: 'frost', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 0, landmarksMin: 3 });
 });
 
 SYNTH.push(() => {
@@ -202,6 +202,33 @@ SYNTH.push(() => {
     'A room whose only way up needs a jump the model will not admit on the main ascent: the floor area is two dark blocks with a pit between, and a tall dark mass on the right (x 13..23, rows 20..46) whose top (row 20) is 23 rows above the left block; nothing joins them but tab stairs. Repair must lay a stair from the left block toward the mass (H-route-4, T0.11b). Mean L about 135: Attic.',
     g, { biome: 'attic', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 0, landmarksMin: 2 });
 });
+
+/* ---------------------------------------------------------------- T1.1: shelves-a tinted into each biome */
+/* shelves-a's planks, pillar and floor recoloured, the wall (Ash) and the lit plank tops (Paper) kept: the shadow rows
+   (76 cells), the pillar (26) and the floor row (24) carry the band, 126 of 1152 cells saturated (10.9%, over
+   BIOME_MIN_FRAC), so the band decides (section 7.2). Frost keeps every cell grey (the bright room rule, Q4). The
+   geometry is not shelves-a's: with the Soot gone Otsu's split moves above the tinted shadows (their L is 74 to 147,
+   against the wall's 199), so the shadow rows read solid and the planks become thin shelves; each copy is its own room,
+   asserted for its biome and that it builds. */
+function shelvesGrid(shadow, pillar, floor) {
+  const g = grid(C.ASH);
+  rect(g, 0, H - 1, W - 1, H - 1, floor);
+  const pl = (x0, x1, row) => { rect(g, x0, row - 1, x1, row - 1, C.PAPER); rect(g, x0, row, x1, row, shadow); };
+  pl(0, sx(9), sy(43)); pl(sx(11), sx(19), sy(40));
+  rect(g, sx(20), sy(26), sx(21), sy(38), pillar);
+  pl(sx(8), sx(17), sy(33)); pl(0, sx(14), sy(29)); pl(sx(3), sx(22), sy(25)); pl(0, sx(11), sy(20));
+  return g;
+}
+const TINTS = [
+  ['biome-attic', 'attic', C.AMBER, C.WALNUT, C.WALNUT, 'Amber shadows (L 143), a Walnut pillar and floor (L 74): the warm band (Walnut, Amber, Sun) holds all 126 saturated cells.'],
+  ['biome-frost', 'frost', C.PEWTER, C.SLATE, C.SLATE, 'Every cell grey: Pewter shadows, a Slate pillar and floor (L 74, so still solid). No saturated cell and a mean L of 192 (over FROST_MEAN_L 170): Frost by the bright room rule (Q4).'],
+  ['biome-deep', 'deep', C.TEAL, C.LAPIS, C.LAPIS, 'Teal shadows (L 147), a Lapis pillar and floor (L 94): the blue band (Lapis, Teal) holds all 126 saturated cells. Deep: its walk waits for the sim\'s Deep gravity (T1.5).'],
+  ['biome-green', 'overgrowth', C.MOSS, C.MOSS, C.MOSS, 'Moss shadows, pillar and floor (L 116): the green band (Moss) holds all 126 saturated cells. The pillar is 2 wide, so no vine (sticky walls are 1 wide).'],
+  ['biome-ember', 'ember', C.MAGENTA, C.BRICK, C.BRICK, 'Magenta shadows (L 116), a Brick pillar and floor (L 93): the red band (Brick, Magenta) holds all 126 saturated cells.']
+];
+for (const [name, biome, shadow, pillar, floor, why] of TINTS) SYNTH.push(() => fixture(name, 'synthetic',
+  'shelves-a tinted (T1.1): ' + why + ' The planks and the pillar stand where shelves-a has them; the shadow rows read solid here (see the block note), so the room is its own and only its biome and that it builds are asserted.',
+  shelvesGrid(shadow, pillar, floor), { biome, needsCrop: false, tabsMax: null, exitIsLight: null, platformsMin: null, landmarksMin: null }));
 
 /* ---------------------------------------------------------------- the sample room (grid A only) */
 function sampleRoom() {

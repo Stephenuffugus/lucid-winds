@@ -727,6 +727,53 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   }
 
   /* Pipeline A: luminance, solidity, Negative, platforms, landmarks, spawn, the light and the exit candidate. */
+  /* DESIGN 6.10 by palette index (section 7.2, T1.1): every cell whose entry is in SAT votes its band (Attic: Walnut,
+     Amber, Sun; Deep: Lapis, Teal; Overgrowth: Moss; Ember: Brick, Magenta); fewer than BIOME_MIN_FRAC of the cells
+     saturated, Frost when the mean L of all cells exceeds FROST_MEAN_L, else Attic (QUESTIONS Q4). The dominant band
+     wins; a tie goes to the lower band index (Attic 0, Deep 2, Overgrowth 3, Ember 4). */
+  function biomeOf(pal, n) {
+    var T = SB.TUNING, P = SB.palette, votes = [0, 0, 0, 0, 0], sat = 0, sumL = 0, i, b;
+    for (i = 0; i < n; i++) { sumL += P.L[pal[i]]; b = P.BAND[pal[i]]; if (b >= 0) { votes[b]++; sat++; } }
+    if (sat < T.BIOME_MIN_FRAC * n) return sumL > T.FROST_MEAN_L * n ? 1 : 0;
+    var best = 0;
+    for (b = 1; b < votes.length; b++) if (votes[b] > votes[best]) best = b;
+    return best;
+  }
+  /* Frost (DESIGN 7): a one way run of FROST_SLICK_MIN_W or more cells is slick, its ice edge drawn (the slide is the
+     sim's, T1.5, a WAITS task; until then the graph keeps the run's two end cells off the standable set, section 3.5);
+     film tabs come later in repair and are never slick */
+  function markSlick(level) {
+    var T = SB.TUNING, w = level.w, h = level.h;
+    for (var y = 0; y < h; y++) {
+      var x = 0;
+      while (x < w) {
+        if (!level.plat[y * w + x]) { x++; continue; }
+        var e = x; while (e + 1 < w && level.plat[y * w + e + 1]) e++;
+        if (e - x + 1 >= T.FROST_SLICK_MIN_W) for (var k = x; k <= e; k++) level.slick[y * w + k] = 1;
+        x = e + 1;
+      }
+    }
+  }
+  /* Overgrowth and Deep (DESIGN 6.11): a vertical solid run at least STICKY_RUN_MIN tall and one cell wide (no solid
+     cell beside any of its cells; the frame is not a neighbour, so a run on the room's edge counts) is a vine or a
+     pipe; at most CAP_STICKY runs, in scan order of their top cells (row major). The sim makes them sticky only in
+     those two biomes (core-sim's contact test). */
+  function markSticky(level) {
+    var T = SB.TUNING, w = level.w, h = level.h, S = level.solid, runs = [], x, y;
+    var lone = function (cx, cy) { var i = cy * w + cx; return S[i] && !(cx > 0 && S[i - 1]) && !(cx < w - 1 && S[i + 1]); };
+    for (x = 0; x < w; x++) {
+      y = 0;
+      while (y < h) {
+        if (!lone(x, y)) { y++; continue; }
+        var e = y; while (e + 1 < h && lone(x, e + 1)) e++;
+        if (e - y + 1 >= T.STICKY_RUN_MIN) runs.push([y * w + x, x, y, e]);
+        y = e + 1;
+      }
+    }
+    runs.sort(function (a, b) { return a[0] - b[0]; });
+    for (var r = 0; r < runs.length && r < T.CAP_STICKY; r++) for (y = runs[r][2]; y <= runs[r][3]; y++) level.sticky[y * w + runs[r][1]] = 1;
+  }
+
   function build(rec, opts) {
     opts = opts || {};
     var T = SB.TUNING, P = SB.palette, w = rec.w, h = rec.h, pal = rec.pal, i, x, y;
@@ -796,12 +843,15 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var standable = function (c) { return c + w < n && !solid[c] && (solid[c + w] || plat[c + w]); };
     var z = function () { return new Uint8Array(n); };
     var level = {
-      rec: rec, pal: pal, w: w, h: h, seed: SB.record.seedOf(rec), biome: opts.biome === undefined || opts.biome === null ? 0 : opts.biome,
+      rec: rec, pal: pal, w: w, h: h, seed: SB.record.seedOf(rec), biome: opts.biome === undefined || opts.biome === null ? biomeOf(pal, n) : opts.biome,
       negative: negative, L: L, solid: solid, plat: plat, tab: z(), slick: z(), sticky: z(), trap: z(),
       otsuT: otsuT, landmarks: landmarks, spawn: spawn, exit: -1, beacon: { idx: -1, cells: new Int32Array(0) },
       features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null },
       repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false
     };
+    /* the biome's surfaces (T1.1), before the reach graph reads them */
+    if (level.biome === 1) markSlick(level);
+    if (level.biome === 2 || level.biome === 3) markSticky(level);
 
     /* opts.stage 'A' (the harness's pipeline A groups): the level before repair, its exit by reach distance where the
        top rows are reached, else the light rule */
@@ -1070,7 +1120,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   }
   function levelHash(lv) { return SB.rng.hashWords(serialize(lv)); }
 
-  SB.pipeline = { toText: toText, otsu: otsu, smooth: smooth, components: components, build: build,
+  SB.pipeline = { toText: toText, otsu: otsu, smooth: smooth, components: components, build: build, biomeOf: biomeOf,
     FIELDS: FIELDS, serialize: serialize, levelHash: levelHash, exitByReach: exitByReach };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
@@ -1311,11 +1361,6 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var P = function (cx, cy) { return cx >= 0 && cx < w && cy >= 0 && cy < h && plat[cy * w + cx] === 1; };
     var stand = new Uint8Array(n), contact = new Uint8Array(2 * n), sticks = new Uint8Array(2 * n), standN = 0;
     for (i = 0; i < n - w; i++) if (!solid[i] && (solid[i + w] || plat[i + w])) stand[i] = 1;
-    /* Frost: the two end cells of a slick run are not standable for the model (the slide carries the hero off them) */
-    for (i = w; i < n; i++) if (slick[i]) {
-      x = i % w;
-      if ((x === 0 || !slick[i - 1]) || (x === w - 1 || !slick[i + 1])) stand[i - w] = 0;
-    }
     for (i = 0; i < n; i++) {
       if (stand[i]) standN++;
       if (solid[i] || stand[i]) continue;
@@ -1328,7 +1373,18 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       }
     }
     var adj = [], edges = 0;
+    /* Frost (section 3.5, QUESTIONS Q74): a landing on a slick cell stands only when the sim's one cell slide cannot
+       carry the hero off it: the cell beyond it in the edge's direction is standable (the run goes on) or solid or the
+       frame (the wall stops the slide), or the edge moves straight down (dx 0). Since T1.1, which marks slick; it
+       replaced T0.10b's placeholder (both end cells of every slick run unstandable), which refused landings that cannot
+       slide off, made shelves-a needsCrop and left contacts standing on one ways. */
+    var slides = function (to, dir, dx) {
+      if (to >= n || !slick[to + w] || dx === 0 || dir === 0) return false;
+      var x2 = to % w + dir;
+      return x2 >= 0 && x2 < w && !stand[to + dir] && !solid[to + dir];
+    };
     var add = function (from, to, kind, profile, dir, dx, dy, cost) {
+      if (slides(to, dir, dx)) return;
       (adj[from] || (adj[from] = [])).push({ from: from, to: to, kind: kind, profile: profile, dir: dir, dx: dx, dy: dy, cost: cost });
       edges++;
     };
@@ -1534,7 +1590,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   var RELAXED = { WALK: 1, SLIDE: 1, FALL: 1, JUMP_DOWN: 1, STICKYUP: 1, STICKYTOP: 1, LET_GO: 1 };
   /* mainAscent(graph, level, opts): the least cost path from spawn to the exit by Dijkstra over (node, wallChain,
      rowsSinceSafe) with the filters max-range, wall-chain and safe-cadence (opts.skip names one to switch off, for the
-     reasons); safe in M0 is any standable cell that is not a slick end (every standable cell of the graph). Returns
+     reasons); safe in M0 is any standable cell of the graph (a slick end included: a landing that would slide off it
+     is no edge, Q74). Returns
      { nodes, edges, cost } or { nodes: null, top } with the highest row its frontier reached. */
   function mainAscent(g, level, opts) {
     var T = SB.TUNING, o = opts || {}, both = o.both === undefined ? T.ROUTE_SLACK_BOTH_AXES : o.both;
