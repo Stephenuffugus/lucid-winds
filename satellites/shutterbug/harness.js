@@ -3103,17 +3103,17 @@ group('H-en-1', 'moth spawns: on open cells, clear of spawn, at most 4 (2 in a f
   t.ok(m.every(e => cheb(e.idx, near.spawn, near.w) > SB.TUNING.ENEMY_SPAWN_CLEAR), 'a cluster beside spawn (' + near.spawn % 24 + ', ' + Math.floor(near.spawn / 24) + ') spawns its moth more than ENEMY_SPAWN_CLEAR away (' + m.map(e => e.idx % 24 + ',' + Math.floor(e.idx / 24)).join(' ') + ')');
 });
 
-group('H-route-6', 'the main ascent\'s safe cells respect the moths: every cell it stands on is ROUTE_SAFE_ENEMY_DIST from every moth', t => {
+group('H-route-6', 'the main ascent\'s safe cells respect the moths: every cell it stands on is more than ROUTE_SAFE_ENEMY_DIST from every moth (DESIGN 6.9)', t => {
   for (const f of FIXTURES) for (const mode of MODES) {
     const lv = buildFx(f, mode);
     if (lv.needsCrop) continue;
     const stands = lv.ascent.nodes.filter(v => v < lv.w * lv.h), close = [];
-    for (const e of lv.features.enemies) for (const v of stands) if (cheb(e.idx, v, lv.w) < SB.TUNING.ROUTE_SAFE_ENEMY_DIST) close.push(e.idx + '/' + v);
+    for (const e of lv.features.enemies) for (const v of stands) if (cheb(e.idx, v, lv.w) <= SB.TUNING.ROUTE_SAFE_ENEMY_DIST) close.push(e.idx + '/' + v);
     t.eq(close.length, 0, f.name + ' mode ' + mode + ': moths within ROUTE_SAFE_ENEMY_DIST of an ascent cell');
   }
   /* the rule alone: a cluster beside a cell the ascent stands on (set by hand) spawns its moth out of reach of it */
   const lab = mothLab([[6, 20]]), stand = 21 * 24 + 6, m = SB.features.moths(Object.assign({}, lab, { ascent: { nodes: [lab.spawn, stand] } }), {});
-  t.ok(m.length > 0 && m.every(e => cheb(e.idx, stand, 24) >= SB.TUNING.ROUTE_SAFE_ENEMY_DIST), 'a cluster beside an ascent cell (6, 21) puts its moth ROUTE_SAFE_ENEMY_DIST from it (' + m.map(e => e.idx % 24 + ',' + Math.floor(e.idx / 24)).join(' ') + ')');
+  t.ok(m.length > 0 && m.every(e => cheb(e.idx, stand, 24) > SB.TUNING.ROUTE_SAFE_ENEMY_DIST), 'a cluster beside an ascent cell (6, 21) puts its moth more than ROUTE_SAFE_ENEMY_DIST from it (DESIGN 6.9: no spawn within 3) (' + m.map(e => e.idx % 24 + ',' + Math.floor(e.idx / 24)).join(' ') + ')');
 });
 
 group('H-en-2', 'contact: one heart, 60 i frames, nothing more inside them, knockback away from the moth', t => {
@@ -3124,7 +3124,9 @@ group('H-en-2', 'contact: one heart, 60 i frames, nothing more inside them, knoc
   for (; k < 600 && hitAt < 0; k++) { x0 = s.hero.x; SB.sim.step(s, 0); if (s.hero.hearts < SB.TUNING.HEARTS_BASE) hitAt = k; }
   t.ok(hitAt > 0 && s.hero.hearts === SB.TUNING.HEARTS_BASE - SB.TUNING.HIT_HEARTS && s.hero.iframes === K.HIT_IFRAMES_F, 'the moth reaches the hero (step ' + hitAt + '): one heart lost (' + s.hero.hearts + ' left) and ' + s.hero.iframes + ' i frames (HIT_IFRAMES ' + K.HIT_IFRAMES_F + ')');
   const xHit = s.hero.x; for (let j = 0; j < K.KNOCK_FRAMES; j++) SB.sim.step(s, 0);
-  t.ok(s.hero.x < xHit && xHit - s.hero.x >= (SB.TUNING.HIT_KNOCKBACK_CELLS * CS) - K.KNOCK_V, 'the knockback carries the hero away from the moth, ' + ((xHit - s.hero.x) / 256).toFixed(1) + ' px over ' + K.KNOCK_FRAMES + ' steps');
+  t.ok(s.hero.x < xHit && xHit - s.hero.x === SB.TUNING.HIT_KNOCKBACK_CELLS * CS, 'the knockback carries the hero away from the moth, exactly HIT_KNOCKBACK_CELLS: ' + ((xHit - s.hero.x) / 256).toFixed(1) + ' px over ' + K.KNOCK_FRAMES + ' steps');
+  const xEnd = s.hero.x; SB.sim.step(s, 0); SB.sim.step(s, 0);
+  t.ok(s.hero.vx === 0 && s.hero.x === xEnd, 'the knockback ends at rest: vx ' + s.hero.vx + ', ' + ((xEnd - s.hero.x) / 256).toFixed(1) + ' px more in the two steps after it (DESIGN 7: 2 cells)');
   /* walk back into the moth while the i frames last: the boxes overlap, and no heart goes (the knockback alone parts
      them for longer than the i frames, so the test makes the second contact itself) */
   let lost = 0, touched = 0; const h0 = s.hero.hearts;
@@ -3140,6 +3142,30 @@ group('H-en-2', 'contact: one heart, 60 i frames, nothing more inside them, knoc
   const d = SB.sim.create(lv, { hearts: 1 }); let dead = -1;
   for (let j = 0; j < 600 && dead < 0; j++) { SB.sim.step(d, 0); if (d.room.dead) dead = j; }
   t.ok(dead > 0 && d.hero.hearts === 0 && d.room.deaths === 1, 'the last heart ends the room (dead at step ' + dead + ')');
+});
+
+group('H-en-2b', 'a hit on a vine lets go of it: the hero is never held sticky away from a sticky wall (the fourth review)', t => {
+  /* an Overgrowth lab: a vine at x 3 from row 20 to 46, the hero in the air flush against its right face, a moth to
+     the right; the moth drifts through furniture, so it reaches the hero from either side */
+  const lines = []; for (let r = 20; r <= 46; r++) lines.push('...|');
+  const lv = LABS.room(lines.concat([FLOOR]), { biome: 3 });
+  lv.features = { enemies: [{ kind: SB.features.MOTH, idx: 30 * 24 + 9 }] };
+  const s = SB.sim.create(lv, { at: { x: 4 * CS, y: 28 * CS } });
+  s.hero.ground = 0;
+  let hits = 0, stuckHits = 0, bad = '';
+  for (let k = 0; k < 600 && !s.room.dead; k++) {
+    const wasSticky = s.hero.sticky;
+    SB.sim.step(s, 0);
+    const h = s.hero;
+    if (s.ev & SB.sim.EV.HIT) { hits++; if (wasSticky) stuckHits++; }
+    if (h.sticky && !bad) {
+      /* flush: the box's side on a cell boundary, and the cell beyond it at the hero's middle row a sticky cell */
+      const edge = h.wall < 0 ? h.x : h.x + HW, col = h.wall < 0 ? h.x / CS - 1 : (h.x + HW) / CS, row = Math.floor((h.y + (HH >> 1)) / CS);
+      if (edge % CS !== 0 || !Number.isInteger(col) || col < 0 || col >= lv.w || !lv.sticky[row * lv.w + col]) bad = 'step ' + k + ': sticky at x ' + (h.x / 256).toFixed(1) + ' px, wall ' + h.wall + ', not flush against the vine';
+    }
+  }
+  t.ok(stuckHits > 0, 'the moth hits the hero while it clings (' + stuckHits + ' of ' + hits + ' hits)');
+  t.ok(!bad, 'the hero is never held sticky away from the vine' + (bad ? ': ' + bad : ''));
 });
 
 group('H-sim-21', 'the step\'s event word (s.ev, what the sounds read): each event on exactly the step it happens, cleared the next', t => {
@@ -3173,6 +3199,17 @@ group('H-sim-21', 'the step\'s event word (s.ev, what the sounds read): each eve
   { const lv = LABS.room(['', '..S..X........', FLOOR], { exit: true }), s = SB.sim.create(lv, {}); let clear = -1, n = 0;
     for (let k = 0; k < 300; k++) { const e = log(s, IN.R); if (e & EV.CLEAR) { n++; if (clear < 0) clear = k; } }
     t.ok(clear >= 0 && n === 1 && s.room.cleared, 'reaching the exit sets CLEAR once (step ' + clear + ', ' + n + ' times)');
+  }
+  /* the shared step (QUESTIONS Q72): a moth reaching the hero on its last heart on the very step it touches the exit
+     (found by the fourth review: a moth homed at (11, 45), the rocker right from step 19, both on step 62) */
+  {
+    const lv2 = LABS.room(['', '..S.......X.............', FLOOR], { exit: true });
+    lv2.exit = lv2.target;
+    lv2.features = { enemies: [{ kind: SB.features.MOTH, idx: 45 * 24 + 11 }] };
+    const s2 = SB.sim.create(lv2, { hearts: 1 });
+    let k = 0;
+    for (; k < 600 && !s2.room.cleared && !s2.room.dead; k++) SB.sim.step(s2, k < 19 ? 0 : IN.R);
+    t.ok(s2.room.cleared === 1 && s2.room.dead === 0 && s2.hero.hearts === 1 && !(s2.ev & EV.HIT), 'a moth on the step the hero touches the exit: the clear wins (step ' + (k - 1) + ': cleared ' + s2.room.cleared + ', dead ' + s2.room.dead + ', hearts ' + s2.hero.hearts + ', ev ' + s2.ev + ')');
   }
 });
 

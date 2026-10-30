@@ -303,7 +303,7 @@ const MUTANTS = [
      catch it, and it stops (2026-10-30: at edge 10 with 1 heart) */
   { name: 'MOTH_SPEED_X8', task: 'T0.16', file: 'page', find: 'en.vx = (K.MOTH_V * mdx / md) | 0; en.vy = (K.MOTH_V * mdy / md) | 0;', repl: 'en.vx = (8 * K.MOTH_V * mdx / md) | 0; en.vy = (8 * K.MOTH_V * mdy / md) | 0;',
     gates: [{ gate: 'harness', only: 'H-en-3', expect: 'the mortal walk on the sample room' }] },
-  { name: 'MOTH_ON_SAFE_CELL', task: 'T0.16', file: 'page', find: '      for (var q = 0; q < safe.length; q++) if (cheb(c, safe[q], w) < T.ROUTE_SAFE_ENEMY_DIST) return false;\n', repl: '',
+  { name: 'MOTH_ON_SAFE_CELL', task: 'T0.16', file: 'page', find: '      for (var q = 0; q < safe.length; q++) if (cheb(c, safe[q], w) <= T.ROUTE_SAFE_ENEMY_DIST) return false;\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-route-6', expect: 'a cluster beside an ascent cell' }] },
   { name: 'MOTH_NEAR_SPAWN', task: 'T0.16', file: 'page', find: '      if (cheb(c, level.spawn, w) <= T.ENEMY_SPAWN_CLEAR) return false;\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-en-1', expect: 'a cluster beside spawn' }] },
@@ -322,6 +322,17 @@ const MUTANTS = [
     gates: [{ gate: 'sprites', expect: 'a dash draws the Glare hero' }] },
   { name: 'SPRITE_ROW_SHORT', task: 'T0.17', file: 'page', find: "a: 'ffffffffffffffff/ff0fff0fff0fff0f/", repl: "a: 'fffffffffffffff/ff0fff0fff0fff0f/",
     gates: [{ gate: 'lint', expect: 'tab.a row 0 is 15 wide' }, { gate: 'harness', only: 'H-spr-1', expect: 'tab.a decodes to 16x5' }] },
+  /* the fourth review (T0.16, T0.17), before sb-m0-3 */
+  { name: 'MOTH_AT_THREE', task: 'review 4', file: 'page', find: 'if (cheb(c, safe[q], w) <= T.ROUTE_SAFE_ENEMY_DIST) return false;', repl: 'if (cheb(c, safe[q], w) < T.ROUTE_SAFE_ENEMY_DIST) return false;',
+    gates: [{ gate: 'harness', only: 'H-route-6', expect: 'saturated-blobs mode 0: moths within ROUTE_SAFE_ENEMY_DIST of an ascent cell' }] },
+  { name: 'KNOCK_RUNS_ON', task: 'review 4', file: 'page', find: '    if (knocked && h.knock === 0) h.vx = 0;', repl: '',
+    gates: [{ gate: 'harness', only: 'H-en-2', expect: 'the knockback ends at rest' }] },
+  { name: 'HIT_KEEPS_CLING', task: 'review 4', file: 'page', find: 'h.lock = 0; h.dash = 0; h.sticky = 0; h.wall = 0; s.ev |= EV.HIT;', repl: 'h.lock = 0; h.dash = 0; s.ev |= EV.HIT;',
+    gates: [{ gate: 'harness', only: 'H-en-2b', expect: 'never held sticky away from the vine' }] },
+  { name: 'DEATH_AND_CLEAR', task: 'review 4', file: 'page', find: '      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && ', repl: '      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && ',
+    gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the clear wins' }] },
+  { name: 'HINT_STAYS', task: 'review 4', file: 'page', find: "clearTimeout(el.sbHintT); el.sbHintT = setTimeout(function () { el.classList.remove('hint'); }, HINT_MS);", repl: '',
+    gates: [{ gate: 'death', expect: 'under reduced motion the hint outline leaves' }] },
   /* T0.16: the death gate */
   { name: 'RESTART_REVEALS', task: 'T0.16', file: 'page', find: "ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true }); };",
     repl: "ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level }); };",

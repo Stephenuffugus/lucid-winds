@@ -91,6 +91,27 @@ try {
   R.say(names[0] === 'Shoot the next room' && names[1] === 'Play it again' && clear.every(b => b[2] >= 48 && b[3] >= 48), 'the clear card offers ' + names.join(', ') + ', each 48 px or more');
   R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
   await page.close();
+
+  /* under reduced motion the hint is a still outline, with no animation to end: it must still leave after the pulse
+     (the fourth review: it stayed for the session). A fresh page, the sample room, the first standing moment. */
+  const rm = await newPage(browser, { width: 412, height: 915 });
+  await rm.page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+  await gotoGame(rm.page, srv.base);
+  await ready(rm.page);
+  await rm.page.evaluate(() => window.SB_DEV.hold(true));
+  await tap(rm.page, '#sample');
+  const on = await rm.page.evaluate(() => {
+    for (let k = 0; k < 120 && !window.SB_DEV.state().hero.ground; k++) window.SB_DEV.step(1);
+    window.SB_DEV.step(1);
+    const z = document.querySelector('#rocker .zone');
+    return { cls: document.querySelector('#rocker').classList.contains('hint'), outline: getComputedStyle(z).outlineStyle };
+  });
+  await new Promise(r => setTimeout(r, 2600));
+  const off = await rm.page.evaluate(() => ({ cls: document.querySelector('#rocker').classList.contains('hint'), A: document.querySelector('#btnA').classList.contains('hint'), outline: getComputedStyle(document.querySelector('#rocker .zone')).outlineStyle }));
+  R.say(on.cls && on.outline === 'solid', 'under reduced motion the hint is a still outline at the first standing moment (outline ' + on.outline + ')');
+  R.say(!off.cls && !off.A && off.outline !== 'solid', 'under reduced motion the hint outline leaves after the pulse (2.6 s on: rocker ' + off.cls + ', A ' + off.A + ', outline ' + off.outline + ')');
+  R.say(rm.errors.length === 0, 'the reduced motion page has zero page errors');
+  await rm.page.close();
 } finally {
   await browser.close();
   await srv.close();

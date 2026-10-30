@@ -1613,7 +1613,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
      the specks, every solid landmark's cells: none of them is a nest), clustered 4 connected; a cluster of
      FODDER_CELLS (2 to 5) cells is a moth's spawn, on its lowest open cell that keeps the rules, or, a cluster wholly
      solid, on the nearest standable open cell that does. The rules: never within ENEMY_SPAWN_CLEAR of spawn, never within
-     ROUTE_SAFE_ENEMY_DIST of a cell the main ascent stands on (so the ascent's safe cells stay safe, H-route-6). At most
+     ROUTE_SAFE_ENEMY_DIST of a cell the main ascent stands on, that distance included (DESIGN 6.9 "within 3", section
+     3.7 "more than"; so the ascent's safe cells stay safe, H-route-6). At most
      FIRST_ROOM_MAX_FODDER in the first ever free play room and 4 otherwise, picked by the level's seed. */
   var MOTH = 1;
   function cheb(a, b, w) { return Math.max(Math.abs(a % w - b % w), Math.abs(Math.floor(a / w) - Math.floor(b / w))); }
@@ -1630,7 +1631,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var ok = function (c) {
       if (level.solid[c] || c < w || c >= n - w) return false;
       if (cheb(c, level.spawn, w) <= T.ENEMY_SPAWN_CLEAR) return false;
-      for (var q = 0; q < safe.length; q++) if (cheb(c, safe[q], w) < T.ROUTE_SAFE_ENEMY_DIST) return false;
+      for (var q = 0; q < safe.length; q++) if (cheb(c, safe[q], w) <= T.ROUTE_SAFE_ENEMY_DIST) return false;
       return true;
     };
     var standable = function (c) { return c + w < n && !level.solid[c] && (level.solid[c + w] || level.plat[c + w]); };
@@ -1853,7 +1854,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     /* 3. run: instant full speed, or the decel toward rest (the same in the air: AIR_CONTROL 1); the wall jump's lock
        pushes away whatever the rocker says; a sticky wall and the sticky jump's first step have no push (air control
        from the second step) */
-    var dashCut = 0;
+    var dashCut = 0, knocked = h.knock !== 0;
     if (h.knock !== 0) { h.vx = (h.knock > 0 ? 1 : -1) * K.KNOCK_V; h.knock -= h.knock > 0 ? 1 : -1; }   /* a hit's knockback, the rocker ignored */
     else if (h.dive) h.vx = 0;
     else if (h.dash > 0) { var dv = dashClamp(h, lv, K, h.facing * K.DASH_V); dashCut = dv !== h.facing * K.DASH_V ? 1 : 0; h.vx = dv; }
@@ -1875,6 +1876,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        of what the fall would be at the same step, capped at TERMINAL / 3; section 3.8 item 4) */
     var xBefore = h.x;
     moveX(h, lv, K);
+    if (knocked && h.knock === 0) h.vx = 0;   /* the knockback's last push spent: it ends at rest, 2 cells in KNOCK_FRAMES (the fourth review: vx ran on and the hero slid 42 px) */
     /* stopped at the edge, or by a wall; a press that cannot move at all is no dash, and keeps no i frames (the third
        review: a hero drumming B at a wall was invulnerable in place) */
     if (h.dash > 0 && (dashCut || h.vx === 0)) { if (dashStart && h.x === xBefore) h.dashI = 0; h.dash = 0; h.vx = 0; }
@@ -1912,6 +1914,16 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     if (h.squash > 0) h.squash--; else if (h.squash < 0) h.squash++;
     h.anim = (dir !== 0 && h.ground) ? h.anim + 1 : 0;
 
+    /* 8. the exit, before the moths (QUESTIONS Q72): the hero's box touching the exit cell clears the room, and the
+       moths' contact waits on !cleared, so the step that touches the lamp is never also the step a moth takes the
+       last heart (the fourth review found both on one step: the clear card over a fallen bug) */
+    if (lv.exit >= 0) {
+      var CS2 = K.CELL_SUB, ex = lv.exit % lv.w, ey = (lv.exit - ex) / lv.w;
+      if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB > ex * CS2 && h.y < (ey + 1) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {
+        s.room.cleared = 1; s.room.exitLit = 1; s.ev |= EV.CLEAR;
+      }
+    }
+
     /* 8a. the moths (DESIGN 7, QUESTIONS Q29): each drifts toward the hero at MOTH_V through furniture (the larger axis at
        full speed, the other in proportion); a moth's 12 px core touching the hero costs HIT_HEARTS, unless i frames
        (a hit's or a dash's) run or the state is immortal (the bot's route walks, Q30): then HIT_IFRAMES of i frames and
@@ -1927,18 +1939,11 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         h.hearts = Math.max(0, h.hearts - SB.TUNING.HIT_HEARTS);
         h.iframes = K.HIT_IFRAMES_F;
         h.knock = (mdx < 0 ? -1 : 1) * K.KNOCK_FRAMES;
-        h.lock = 0; h.dash = 0; s.ev |= EV.HIT;
+        h.lock = 0; h.dash = 0; h.sticky = 0; h.wall = 0; s.ev |= EV.HIT;
         if (h.hearts === 0) { s.room.dead = 1; s.room.deaths++; s.ev |= EV.DEAD; }
       }
     }
 
-    /* 8. the exit: the hero's box touching the exit cell clears the room */
-    if (lv.exit >= 0) {
-      var CS2 = K.CELL_SUB, ex = lv.exit % lv.w, ey = (lv.exit - ex) / lv.w;
-      if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB > ex * CS2 && h.y < (ey + 1) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {
-        s.room.cleared = 1; s.room.exitLit = 1; s.ev |= EV.CLEAR;
-      }
-    }
     s.frame++;
     return s;
   }
@@ -2954,7 +2959,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   /* the hint glyphs, once each a session (onboarding.hints, T1.10 keeps them): the rocker and A at the first standing
      moment, B the first time the hero is airborne above a dive target (a one way within 8 rows under its column) */
   ui.hinted = { rocker: false, A: false, B: false, stood: false };
-  function pulse(id) { var el = document.getElementById(id); el.classList.remove('hint'); void el.offsetWidth; el.classList.add('hint'); }
+  /* the pulse is sbhint, 0.7 s three times; then the class leaves, so the reduced motion outline (no animation to end)
+     goes with it (the fourth review: it stayed for the session) */
+  var HINT_MS = 2100;
+  function pulse(id) {
+    var el = document.getElementById(id); el.classList.remove('hint'); void el.offsetWidth; el.classList.add('hint');
+    clearTimeout(el.sbHintT); el.sbHintT = setTimeout(function () { el.classList.remove('hint'); }, HINT_MS);
+  }
   ui.hints = function (st, lv) {
     var h = st.hero, H = ui.hinted;
     if (h.ground && !H.stood) { H.stood = true; if (!H.rocker) { H.rocker = true; pulse('rocker'); } if (!H.A) { H.A = true; pulse('btnA'); } }
