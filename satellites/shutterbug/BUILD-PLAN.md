@@ -35,6 +35,7 @@ The builder updates this table in the same commit that ships the task (law 8: th
 | T0.1 | shipped | `7a90e4a4d` | check.js header `browser gates: RUN (puppeteer from /workspaces/sws-tools)`; two placeholder PNGs, no page errors | t01 360: white not Soot; nothing names the game; no viewport meta |
 | T0.2 | shipped | `60142de02` | `check --fast --gate boot` green; exit audit PASS; music include ALREADY; 5 mutants watched red by hand | t02c: dashed buttons still invite a tap; blank black polaroid; tall gap under the exit |
 | T0.3 | shipped | `874f3553e` | `SHUTTERBUG HARNESS OK` 490 assertions; redwatch 7 RED + 3 browser RED, NOOP green; ci-twelve --only=shutterbug pass | no shot (harness task) |
+| T0.4a | shipped | `a46001f7d` | H-pal-1, 2, 5, 6 green (626 assertions); QUANT_UNWEIGHTED RED via the 20000 colour oracle | no shot (harness task) |
 
 Status is one of `shipped`, `shipped with xfail Qn`, `BLOCKED on <assertion> Qn`, `skipped (budget)`. The night's last row is `T0.18 deploy` with the deploy commit and the two origin hashes, or `NOT LIVE` and why.
 

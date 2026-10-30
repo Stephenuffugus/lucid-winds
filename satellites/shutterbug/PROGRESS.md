@@ -51,3 +51,11 @@ watched RED (tools/redwatch.js, the table):
 shots: none (harness task)
 in flight: T0.4a
 blocked: none
+
+### 2026-10-30 03:12 UTC  T0.4a  Palette: the sixteen, L S H, nearest, the bands  commit a46001f7d
+shipped: core-palette (the sixteen of section 7.1 as RGB, L by 299/587/114 integer weights, S in thousandths, H in whole degrees; SAT = 7..14 explicit; BAND per index (Attic Walnut Amber Sun, Ember Brick Magenta, Deep Lapis Teal, Overgrowth Moss, the rest never vote); TINT solid, open and line per biome from section 7.3; nearest over 0..14 by 30/59/11 weighted distance, ties to the lowest; mix, openColour, solidColour, hex). The WCAG helpers moved to the harness side (T0.4b): relative luminance needs x to the 2.4, and the core forbids Math.pow.
+gates: check --fast --gate boot green; harness 626 assertions (ASSERT_FLOOR 620); H-pal-1 (16, hex round trip), H-pal-2 (L, S, H recomputed by the test's own formulas and DESIGN 11's list counted from the values: 2 near blacks, 2 near whites, 3 greys, one each brown, orange, red, magenta, blue, teal, green, yellow, the cream at index 15), H-pal-5 (idempotent, never 15, red Brick, white Glare, black Ink, the ramp, and 20000 seeded colours against the test's own weighted distance), H-pal-6 (SAT equals S over 0.35, bands follow the hues)
+watched RED: QUANT_UNWEIGHTED (H-pal-5: "20000 seeded colours: nearest equals the test's weighted distance (first miss 69,3,125 core 2 test 1) (got 15618, want 20000)"). FINDING: the plan's rationale for this mutant ("the ramp breaks") does not hold: measured in plain Node, a 64 step grey ramp quantizes monotonically through the seven greys under BOTH metrics (the ramp assertion stayed green under the mutant). The metrics disagree on 4368 of 20000 seeded colours, so H-pal-5 carries that oracle and the mutant is genuinely red.
+shots: none (harness task)
+in flight: T0.5
+blocked: none

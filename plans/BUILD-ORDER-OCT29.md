@@ -1,10 +1,10 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 02:58 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
+> **STATE 30 Oct 03:12 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
 > night one order, the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after T0.8a, sb-m0-2 after
-> T0.8b, sb-m0-3 when M0 is complete. **Last shipped: T0.3** (`874f3553e`, harness.js v0 and redwatch v0; shutterbug is
-> in the fleet CI list). Gates: lint, harness (490 assertions), redwatch (9 mutants RED, NOOP green), boot. Deployed:
-> nothing; Shutterbug is not live. Red: nothing. Autosave running (PID 7375). Next: T0.4a, the palette.
+> T0.8b, sb-m0-3 when M0 is complete. **Last shipped: T0.4a** (`a46001f7d`, the palette). Gates: lint, harness (626
+> assertions), redwatch (10 rows RED, NOOP green), boot. Deployed: nothing; Shutterbug is not live. Red: nothing.
+> Autosave running (PID 7375). Next: T0.5, the sample room and the first six synthetic fixtures.
 
 You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is ONE game from zero:
 Shutterbug, a photo of a room becomes a pixel platformer level (`satellites/shutterbug/DESIGN.md`). Fable wrote the
