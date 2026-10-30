@@ -1256,7 +1256,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         var cx = sx + dir * p.cells[k][0], cy = sy - p.cells[k][1];
         if (S(cx, cy)) return;
         var c = cy * w + cx, sd = dir > 0 ? 1 : 0;
-        if (contact[2 * c + sd]) out[cnode(c, dir)] = 1;
+        /* the touch costs what the jump or the fall to it costs, plus one (section 3.3) */
+        if (contact[2 * c + sd] && !out[cnode(c, dir)]) { var tdy = sy - cy, tdx = Math.abs(cx - sx); out[cnode(c, dir)] = (tdy >= 0 ? 2 + tdy + tdx / 2 : 1 - tdy / 4) + 1; }
       }
     };
     var JP = ['FULL', 'MID', 'TAP'], up = lv.biome === 2 ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;
@@ -1305,7 +1306,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         var seen = {}, key;
         for (var t2 = 0; t2 < tb.touchJumps.length; t2++) touches(tb.touchJumps[t2], sx, sy, dir, seen);
         if (!(sx + dir >= 0 && sx + dir < w && (stand[s + dir] || S(sx + dir, sy)))) for (t2 = 0; t2 < tb.touchFalls.length; t2++) touches(tb.touchFalls[t2], sx, sy, dir, seen);
-        for (key in seen) add(s, +key, 'WALLTOUCH', null, dir, 0, 0, 3);
+        for (key in seen) add(s, +key, 'WALLTOUCH', null, dir, 0, 0, seen[key]);
       }
       /* FALL straight down: a dive through the one way under the feet, landing on each standable cell below in turn */
       if (P(sx, sy + 1)) for (ty = sy + 1; ty < h && !S(sx, ty); ty++) if (stand[ty * w + sx]) add(s, ty * w + sx, 'FALL', null, 0, 0, sy - ty, 1 + (ty - sy) / 4);
@@ -1365,7 +1366,85 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     return g.standN ? r / g.standN : 0;
   }
 
-  SB.reach = { PROFILES: PROFILES, KINDS: KINDS, arc: arc, crossing: crossing, farCell: farCell, tables: tables, graph: graph, distances: distances, reachableFrac: reachableFrac };
+
+  /* ---------------------------------------------------------------- the main ascent and the route score (section 3.7) */
+  /* the clipped table's slack for an edge: one cell to spare on height or distance (both under ROUTE_SLACK_BOTH_AXES) */
+  function slackOk(tb, e, both) {
+    var T = SB.TUNING, s = T.ROUTE_SLACK, m = tb.profiles[e.profile] ? tb.profiles[e.profile].maxAcross : null;
+    if (!m || e.dy < 0 || e.dy > 5) return true;
+    var maxUp = -1; for (var dy = 0; dy < m.length; dy++) if (m[dy] >= e.dx) maxUp = dy;
+    var upOk = e.dy + s <= maxUp, acrossOk = e.dy + 0 < m.length && e.dx + s <= m[e.dy];
+    return both ? upOk && acrossOk : upOk || acrossOk;
+  }
+  var RELAXED = { WALK: 1, SLIDE: 1, FALL: 1, JUMP_DOWN: 1, STICKYUP: 1, STICKYTOP: 1, LET_GO: 1 };
+  /* mainAscent(graph, level, opts): the least cost path from spawn to the exit by Dijkstra over (node, wallChain,
+     rowsSinceSafe) with the filters max-range, wall-chain and safe-cadence (opts.skip names one to switch off, for the
+     reasons); safe in M0 is any standable cell that is not a slick end (every standable cell of the graph). Returns
+     { nodes, edges, cost } or { nodes: null, top } with the highest row its frontier reached. */
+  function mainAscent(g, level, opts) {
+    var T = SB.TUNING, o = opts || {}, both = o.both === undefined ? T.ROUTE_SLACK_BOTH_AXES : o.both;
+    var tb = tables(SB.K, level.biome | 0), w = g.w, n = g.n, CH = T.ROUTE_MAX_WALL_CHAIN + 1, RS = T.ROUTE_SAFE_EVERY_ROWS + 1;
+    var states = 3 * n * CH * RS, dist = new Float64Array(states).fill(Infinity), prev = new Int32Array(states).fill(-1), via = [];
+    var key = function (v, c, r) { return (v * CH + c) * RS + r; };
+    var rowOf = function (v) { return Math.floor((v < n ? v : (v - n) >> 1) / w); };
+    var start = key(level.spawn, 0, 0), goal = -1, top = rowOf(level.spawn);
+    dist[start] = 0;
+    /* a binary heap of [cost, state] */
+    var heap = [[0, start]];
+    var push = function (it) { heap.push(it); var i = heap.length - 1; while (i > 0) { var p = (i - 1) >> 1; if (heap[p][0] <= it[0]) break; heap[i] = heap[p]; i = p; } heap[i] = it; };
+    var pop = function () { var top0 = heap[0], last = heap.pop(); if (heap.length) { var i = 0; for (;;) { var l = 2 * i + 1, r = l + 1, m = i; if (l < heap.length && heap[l][0] < (m === i ? last[0] : heap[m][0])) m = l; if (r < heap.length && heap[r][0] < (m === i ? last[0] : heap[m][0])) m = r; if (m === i) break; heap[i] = heap[m]; i = m; } heap[i] = last; } return top0; };
+    while (heap.length) {
+      var it = pop(), sk = it[1];
+      if (it[0] > dist[sk]) continue;
+      var r0 = sk % RS, c0 = ((sk - r0) / RS) % CH, v = (sk - r0 - c0 * RS) / (RS * CH);
+      if (rowOf(v) < top) top = rowOf(v);
+      if (v === level.exit) { goal = sk; break; }
+      var es = g.adj[v];
+      if (!es) continue;
+      for (var k = 0; k < es.length; k++) {
+        var e = es[k], u = e.to;
+        if (o.skip !== 'max-range' && (e.kind === 'JUMP' || (e.kind === 'WALLJUMP' && e.dx > 0)) && !slackOk(tb, e, both)) continue;
+        var wallish = e.kind === 'WALLJUMP' || e.kind === 'WALLTOUCH';
+        var ch = u < n ? 0 : wallish ? c0 + 1 : c0;
+        if (u >= n && wallish && c0 + 1 > T.ROUTE_MAX_WALL_CHAIN) { if (o.skip !== 'wall-chain') continue; ch = T.ROUTE_MAX_WALL_CHAIN; }
+        if (u < n && wallish && c0 + 1 > T.ROUTE_MAX_WALL_CHAIN && o.skip !== 'wall-chain') continue;
+        var climbed = Math.max(0, rowOf(v) - rowOf(u)), rs = u < n && g.stand[u] ? 0 : r0 + climbed;
+        if (rs > T.ROUTE_SAFE_EVERY_ROWS) { if (o.skip !== 'safe-cadence') continue; rs = T.ROUTE_SAFE_EVERY_ROWS; }
+        if (u < n && g.stand[u] && r0 + climbed > T.ROUTE_SAFE_EVERY_ROWS && o.skip !== 'safe-cadence') continue;
+        var nk = key(u, ch, rs), nd = it[0] + e.cost;
+        if (nd < dist[nk]) { dist[nk] = nd; prev[nk] = sk; via[nk] = e; push([nd, nk]); }
+      }
+    }
+    if (goal < 0) return { nodes: null, edges: null, cost: Infinity, top: top };
+    var nodes = [], edges = [];
+    for (var s = goal; s >= 0; s = prev[s]) { var rr = s % RS, cc = ((s - rr) / RS) % CH; nodes.unshift((s - rr - cc * RS) / (RS * CH)); if (via[s]) edges.unshift(via[s]); }
+    return { nodes: nodes, edges: edges, cost: dist[goal], top: top };
+  }
+  /* routeScore(level, graph, ascent): { ok, reasons, ascentLength, maxJump, wallChains, safeGapRows, hardBranches };
+     reasons[0] names the first filter whose switching off alone reaches the exit, and the row the filtered frontier died
+     on (section 3.7) */
+  function routeScore(level, g, ascent) {
+    var T = SB.TUNING, w = g.w, n = g.n, out = { ok: !!(ascent && ascent.nodes), reasons: [], ascentLength: 0, maxJump: { dx: 0, dy: 0 }, wallChains: 0, safeGapRows: 0, hardBranches: 0 };
+    var rowOf = function (v) { return Math.floor((v < n ? v : (v - n) >> 1) / w); };
+    if (!out.ok) {
+      var filters = ['max-range', 'wall-chain', 'safe-cadence'];
+      for (var f = 0; f < filters.length; f++) if (mainAscent(g, level, { skip: filters[f] }).nodes) { out.reasons.push(filters[f] + ' (the frontier died on row ' + (ascent ? ascent.top : '?') + ')'); break; }
+      if (!out.reasons.length) out.reasons.push('unreached (no route even unfiltered)');
+      return out;
+    }
+    out.ascentLength = ascent.edges.length;
+    var chain = 0, lastSafe = rowOf(ascent.nodes[0]);
+    for (var k = 0; k < ascent.edges.length; k++) {
+      var e = ascent.edges[k];
+      if ((e.kind === 'JUMP' || e.kind === 'WALLJUMP') && (e.dy > out.maxJump.dy || (e.dy === out.maxJump.dy && e.dx > out.maxJump.dx))) out.maxJump = { dx: e.dx, dy: e.dy };
+      if (e.kind === 'WALLJUMP' || e.kind === 'WALLTOUCH') { chain++; if (chain > out.wallChains) out.wallChains = chain; }
+      if (e.to < n && g.stand[e.to]) { chain = 0; var gap = lastSafe - rowOf(e.to); if (gap > out.safeGapRows) out.safeGapRows = gap; lastSafe = Math.min(lastSafe, rowOf(e.to)); }
+    }
+    return out;
+  }
+
+  SB.reach = { PROFILES: PROFILES, KINDS: KINDS, arc: arc, crossing: crossing, farCell: farCell, tables: tables, graph: graph, distances: distances, reachableFrac: reachableFrac,
+    slackOk: slackOk, mainAscent: mainAscent, routeScore: routeScore };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-features" data-core>
