@@ -451,3 +451,10 @@ At TAB_MAX 12 a pass and REPAIR_PASSES 4, repair lays at most 48 tabs, 96 of 115
 Options: (a) as built: the cap stays as the guard for a larger grid or a retune (grid B's 24x96 halves the bound to 4.2%), the 40% branch gets its lab with the first real photos (T1.x) or a hand room; (b) read TAB_MAX as the whole repair's limit, which makes 15% bind never either; (c) count the 15% over the stair's whole footprint (each tab's corridor), which can bind.
 Recommendation: (a), with the lab owed and named here.
 Plan assumes: DESIGN 6.7 verbatim; the build is (a).
+
+## Q67. One needsCrop message for every cause (the builder, 30 Oct, T0.15)
+
+DESIGN 5.1 and T0.15 give one sentence, Try a tighter crop, but the pipeline says why it cannot build (no open cell above the floor, unreachable, the route's filters, repair too large). On a black or an all window photo a tighter crop does not help.
+Options: (a) one sentence, as built; (b) a sentence per cause: Too dark to find a floor. / Nothing to stand on here. / Try a tighter crop. (the route's causes); (c) (b) plus the overlay marking where the climb stops (the route score's frontier row).
+Recommendation: (b) in M1 with the copy law (no dashes, no exclamation marks); (c) later if photos stall players.
+Plan assumes: (a).
