@@ -9,8 +9,10 @@
  * reveal is a crossfade; a real jump is asked for and schedules no voice; the export text, pasted into a wiped save
  * and loaded with a real tap, brings the same document back, and garbage is refused in place.
  *
- * Watched red by SECOND_KEY, WRITE_25_ROOMS, SETITEM_UNGUARDED, SOUND_TOGGLE_MISWIRED, MOTION_IGNORED and
- * IMPORT_REFUSES. */
+ * Every Settings control is 48 px tall or more.
+ *
+ * Watched red by SECOND_KEY, WRITE_25_ROOMS, SETITEM_UNGUARDED, SOUND_TOGGLE_MISWIRED, MOTION_IGNORED, IMPORT_REFUSES
+ * and SELECT_44PX. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, GAME } from './harness.mjs';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -33,6 +35,9 @@ try {
   /* the sound and the reduced motion override, by real input too (the M1 review: only the mirror was ever driven, and
      the audio gate turned the sound off through SB.audio.setSound) */
   await tap(page, '#setsound');
+  /* every control on Settings is a 48 px target (the M1 review: the Reduced motion select was 44) */
+  const short = await page.evaluate(() => [...document.querySelectorAll('#settings button, #settings select, #settings label.row')].filter(el => !el.hidden && el.getBoundingClientRect().height > 0 && el.getBoundingClientRect().height < 48).map(el => (el.id || el.tagName) + ' ' + el.getBoundingClientRect().height.toFixed(0)));
+  R.say(short.length === 0, 'every Settings control is 48 px tall or more' + (short.length ? ' (' + short.join(', ') + ')' : ''));
   await page.evaluate(() => document.getElementById('setmotion').scrollIntoView({ block: 'center' }));
   await page.select('#setmotion', 'on');
   await tap(page, '#settitle');

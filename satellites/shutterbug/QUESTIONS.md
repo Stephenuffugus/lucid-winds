@@ -631,3 +631,18 @@ The shots name three faults: the ice edge is a hairline at phone size; the vine'
 Options: (a) Astra draws the three rows, at the sizes now fixed in SPRITES (vine and pipe 16x16, the ice edge 16 wide by up to 4 tall); (b) keep the placeholders.
 Recommendation: (a). Rule the three rows READY at those sizes in Astra's next session; the cutter takes vine and pipe as existing keys.
 Plan assumes: (a).
+
+## Q89. The M1 review's calls (the builder, 30 Oct, before the M1 deploy)
+
+An independent review (three lenses, fidelity to DESIGN, the harness and the phone, each finding then put to a skeptic) confirmed 34 findings and refuted 3 before sb-m1-1. Every confirmed one is fixed and watched red. Six of the fixes made a call DESIGN does not:
+- The pocket's loot. DESIGN 6.11's "loot at the back" (Q34: specks) had never been placed. It is one speck on the hollow's back cell, counted inside CAP_SPECK (the table's 6 is per level), never the scroll or the blueprint.
+- The death card on a short screen (700 px tall or less). Again and Title sit side by side and the heading is 1rem, so the card stays under half the stage. The dock is measured: the card goes low when the top dock would reach the bug's box (the stage's halfway line let the top card cover a bug just below it).
+- The fleet's chrome (the music chip, pill, card and toast) is hidden under the death card too, as in play: at 320x568 the chip, seated on the title, sat on the low docked card's Again. Q48's addendum gives it back on the title and the clear card, and the clear card keeps it.
+- A link that arrives by hashchange during play holds the room under the Tap to develop card (a screen named code). A code that does not open still drops the room to the title, where the refusal now sits above the buttons.
+- The placeholder sprites take section 7.3's colours: the speck Amber with a Glare glint (it was Film), the open chest's slip Paper (Film), the spark outlined in Ink. H-spr-1 now holds Film to the film tab, the speck to Amber and Glare, and every danger to an Ink outline. Astra's brief already says not to copy the placeholders.
+- The share sheet keeps its stage bounds, so the strip's Title under an open sheet stays the rule the loop gate holds. The card it opened over hides under it, and on a small phone Copy link stays a scroll away, as T1.13 accepted.
+
+Refused by the skeptics, kept as notes: the Deep WALL and STICKY profiles in no lab (harness-all walks every one of their edges before a deploy); H-bot-7 reading a walk with no miss as performed (H-bot-2 asserts the same walks arrive, in the same run); the strip's Share inside the rocker's top band (the drawn zones sit 46 px or more below it; T1.14 should add #share to the layout gate when it moves the strip).
+Options: (a) as built; (b) the pocket's speck outside the cap; (c) the fleet's chrome left on the death card.
+Recommendation: (a).
+Plan assumes: (a).

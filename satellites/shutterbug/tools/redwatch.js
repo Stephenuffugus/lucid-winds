@@ -324,7 +324,7 @@ const MUTANTS = [
   { name: 'SPRITE_ROW_SHORT', task: 'T0.17', file: 'page', find: "a: 'ffffffffffffffff/ff0fff0fff0fff0f/", repl: "a: 'fffffffffffffff/ff0fff0fff0fff0f/",
     gates: [{ gate: 'lint', expect: 'tab.a row 0 is 15 wide' }, { gate: 'harness', only: 'H-spr-1', expect: 'tab.a decodes to 16x5' }] },
   /* T1.2b: features, part two */
-  { name: 'SPECK_CAP_7', task: 'T1.2b', file: 'page', find: 'var cap = T.CAP_SPECK + (level.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0);', repl: 'var cap = T.CAP_SPECK + 1 + (level.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0);',
+  { name: 'SPECK_CAP_7', task: 'T1.2b', file: 'page', find: 'var cap = T.CAP_SPECK + (level.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0) - (pl >= 0 ? 1 : 0);', repl: 'var cap = T.CAP_SPECK + 1 + (level.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0) - (pl >= 0 ? 1 : 0);',   /* re anchored after the M1 review's pocket speck */
     gates: [{ gate: 'harness', only: 'H-feat-2', expect: 'eight isolated Sun specks within reach give CAP_SPECK' }] },
   { name: 'TRAP_ON_ASCENT', task: 'T1.2b', file: 'page', edits: [['if (taken[c]) { clash = true; break; } ', ''], ['      if (!trapOk(level, cells)) continue;\n', '']], find: null, repl: null,
     /* since T1.3 the second round catches a field on the ascent and the ladder removes it, so the lab names the loss */
@@ -564,7 +564,7 @@ const MUTANTS = [
   /* T1.4: the enemy sim */
   { name: 'ICICLE_RANGE_3', task: 'T1.4', file: 'page', find: 'if (Math.abs(hc - ic) <= T.ICICLE_TRIGGER_COLS && h.y > en.y)', repl: 'if (Math.abs(hc - ic) <= T.ICICLE_TRIGGER_COLS + 1 && h.y > en.y)',
     gates: [{ gate: 'harness', only: 'H-en-5', expect: 'columns off drops it' }] },
-  { name: 'CRAWLER_FALLS_OFF', task: 'T1.4', file: 'page', find: 'var x0 = a * CS, x1 = Math.max(x0, (b + 1) * CS - sz);', repl: 'var x0 = a * CS, x1 = Math.max(x0, (b + 2) * CS - sz);',
+  { name: 'CRAWLER_FALLS_OFF', task: 'T1.4', file: 'page', find: 'var x0 = a * CS, x1 = Math.max(x0, (b + 1) * CS - sz), pr = ', repl: 'var x0 = a * CS, x1 = Math.max(x0, (b + 2) * CS - sz), pr = ',   /* re anchored after the M1 review's pocket turn */
     gates: [{ gate: 'harness', only: 'H-en-6', expect: 'over 900 steps it spans' }] },
   { name: 'SPARK_HOPS_INTO_WALL', task: 'T1.4', file: 'page', find: 'if (env[q] !== here && standCell(lv, env[q])) cands.push(env[q]);', repl: 'if (env[q] !== here) cands.push(env[q]);',
     gates: [{ gate: 'harness', only: 'H-en-7', expect: 'every landing a standable cell' }] },
@@ -790,7 +790,9 @@ const MUTANTS = [
   { name: 'SPECK_IN_FILM', task: 'M1R', file: 'page', find: "......0860....../...0008888000.../...0888868880...", repl: "......0f60....../...0008888000.../...0888868880...",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'speck.a holds no Film' }] },
   { name: 'SPARK_UNOUTLINED', task: 'M1R', file: 'page', find: "      a: '.......0......../......090......./...0.09990.0..../..09009990090.../...090969090..../...009969900..../..09996669990.../...009969900..../...090969090..../..09009990090.../...0.09990.0..../......090......./.......0......../................/................/................',", repl: "      a: '................/.......9......../......999......./...9..999..9..../....9.969.9...../.....99699....../...999666999..../.....99699....../....9.969.9...../...9..999..9..../......999......./.......9......../................/................/................/................',",
-    gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'spark.a has its Ink outline' }] }
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'spark.a has its Ink outline' }] },
+  { name: 'SELECT_44PX', task: 'M1R', file: 'page', find: '#settings select { min-height: 48px; margin-left: auto; }', repl: '#settings select { min-height: 44px; margin-left: auto; }',
+    gates: [{ gate: 'save', expect: 'every Settings control is 48 px tall or more' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
