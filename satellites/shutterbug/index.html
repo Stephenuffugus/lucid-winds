@@ -412,6 +412,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
     K.KNOCK_FRAMES = T.HIT_KNOCKBACK_FRAMES;
     K.DEEP_FALL_G = Math.round(K.G * T.DEEP_FALL_MULT);
     K.DEEP_TERM = Math.round(K.TERM * T.DEEP_FALL_MULT);
+    /* the Frost slide (section 3.5, T1.5): the smallest whole decel whose stop from RUN covers at most
+       FROST_SLIDE_CELLS cells (51: 4095 sub, 15.996 px in 13 steps; the plain DECEL stops in 3.94 px) */
+    K.SLICK_DECEL = (function () {
+      var lim = T.FROST_SLIDE_CELLS * K.CELL_SUB, d, v, sum;
+      for (d = 1; ; d++) { sum = 0; for (v = K.RUN - d; v > 0; v -= d) sum += v; if (sum <= lim) return d; }
+    })();
     K.MOTH_V = Math.round(T.MOTH_SPEED * G.CELL * SUB / HZ);
     K.CRAWLER_V = Math.round(T.CRAWLER_SPEED * G.CELL * SUB / HZ);
     K.JELLY_V = Math.round(T.JELLY_SPEED * G.CELL * SUB / HZ);
@@ -1220,9 +1226,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
       repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false
     };
     level.light = light ? Int32Array.from(light) : new Int32Array(0);
-    /* the biome's surfaces (T1.1), before the reach graph reads them */
-    if (level.biome === 1) markSlick(level);
-    if (level.biome === 2 || level.biome === 3) markSticky(level);
+    /* the biome's surfaces (T1.1), before the reach graph reads them. The first ever free play room runs without its
+       biome's movement twist (DESIGN 5.3, T1.5): twistOff marks no slick and no sticky cells, and the reach model and
+       the sim both drop Deep's tables and gravity for it (one flag on the level, so the model is never more generous
+       than the sim); Attic and Ember have no movement twist, so their first rooms are unchanged */
+    level.twistOff = opts.firstRoom && (level.biome === 1 || level.biome === 2 || level.biome === 3) ? 1 : 0;
+    if (level.biome === 1 && !level.twistOff) markSlick(level);
+    if ((level.biome === 2 || level.biome === 3) && !level.twistOff) markSticky(level);
 
     /* opts.stage 'A' (the harness's pipeline A groups): the level before repair, its exit by reach distance where the
        top rows are reached, else the light rule */
@@ -1370,7 +1380,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var free = function (cx, cy) { return cx >= 0 && cx < w && cy >= 1 && cy < h - 1 && !level.solid[cy * w + cx] && !level.plat[cy * w + cx] && !level.plat[(cy + 1) * w + cx] && !near[cy * w + cx]; };
     /* a hop the reach model itself admits (FULL, MID, TAP; the immediate or the late corridor open, no one way catching
        its descent first), so every stair is a chain of graph edges by construction */
-    var tb = SB.reach.tables(SB.K, level.biome | 0), JP = ['FULL', 'MID', 'TAP'];
+    var tb = SB.reach.tables(SB.K, level.twistOff ? 0 : level.biome | 0), JP = ['FULL', 'MID', 'TAP'];
     var S = function (cx, cy) { return cx < 0 || cx >= w || cy < 0 || cy >= h || level.solid[cy * w + cx] === 1; };
     var hop = function (sx, sy, dd, ax, ay) {
       for (var q = 0; q < JP.length; q++) {
@@ -1554,7 +1564,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      as itself, a byte grid or a cell list as its length then its items, a missing structure as -1), and levelHash is
      the same two FNV passes as the sim's state hash. H-pipe-8 perturbs each field and asserts the hash moves. */
   var FIELDS = [
-    ['w', 'i32'], ['h', 'i32'], ['seed', 'i32'], ['biome', 'i32'], ['negative', 'i32'], ['otsuT', 'i32'],
+    ['w', 'i32'], ['h', 'i32'], ['seed', 'i32'], ['biome', 'i32'], ['twistOff', 'i32'], ['negative', 'i32'], ['otsuT', 'i32'],
     ['solid', 'grid'], ['plat', 'grid'], ['tab', 'grid'], ['slick', 'grid'], ['sticky', 'grid'], ['trap', 'grid'],
     ['spawn', 'i32'], ['exit', 'i32'], ['beacon.idx', 'i32'], ['beacon.cells', 'list'],
     ['landmarks', 'lists'], ['ascent.nodes', 'list'],
@@ -1820,7 +1830,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function graph(lv) {
     var K = SB.K, T = SB.TUNING, w = lv.w, h = lv.h, n = w * h, solid = lv.solid, plat = lv.plat, i, x, y;
     /* sticky walls are Overgrowth's vines and Deep's pipes: under any other biome a sticky cell is a plain wall */
-    var sticky = (lv.biome === 2 || lv.biome === 3) && lv.sticky ? lv.sticky : new Uint8Array(n), slick = lv.slick || new Uint8Array(n), tb = tables(K, lv.biome | 0);
+    var sticky = (lv.biome === 2 || lv.biome === 3) && lv.sticky ? lv.sticky : new Uint8Array(n), slick = lv.slick || new Uint8Array(n), tb = tables(K, lv.twistOff ? 0 : lv.biome | 0);
     var S = function (cx, cy) { return cx < 0 || cx >= w || cy < 0 || cy >= h || solid[cy * w + cx] === 1; };
     var P = function (cx, cy) { return cx >= 0 && cx < w && cy >= 0 && cy < h && plat[cy * w + cx] === 1; };
     var stand = new Uint8Array(n), contact = new Uint8Array(2 * n), sticks = new Uint8Array(2 * n), standN = 0;
@@ -1844,8 +1854,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
        slide off, made shelves-a needsCrop and left contacts standing on one ways. */
     var slides = function (to, dir, dx) {
       if (to >= n || !slick[to + w] || dx === 0 || dir === 0) return false;
-      var x2 = to % w + dir;
-      return x2 >= 0 && x2 < w && !stand[to + dir] && !solid[to + dir];
+      /* the slide covers FROST_SLIDE_CELLS cells at most (the sim's SLICK_DECEL): each cell it can reach is standable,
+         or a solid or the frame stops it first */
+      for (var k = 1; k <= SB.TUNING.FROST_SLIDE_CELLS; k++) {
+        var x2 = to % w + k * dir, c = to + k * dir;
+        if (x2 < 0 || x2 >= w || solid[c]) return false;
+        if (!stand[c]) return true;
+      }
+      return false;
     };
     var add = function (from, to, kind, profile, dir, dx, dy, cost) {
       if (slides(to, dir, dx)) return;
@@ -1930,7 +1946,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
         if (p.vy > 0) return;
       }
     };
-    var JP = ['FULL', 'MID', 'TAP'], up = lv.biome === 2 ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;
+    var JP = ['FULL', 'MID', 'TAP'], up = lv.biome === 2 && !lv.twistOff ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;
     for (var s = 0; s < n; s++) {
       if (!stand[s]) continue;
       var sx = s % w, sy = (s - sx) / w;
@@ -2060,7 +2076,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      { nodes, edges, cost } or { nodes: null, top } with the highest row its frontier reached. */
   function mainAscent(g, level, opts) {
     var T = SB.TUNING, o = opts || {}, both = o.both === undefined ? T.ROUTE_SLACK_BOTH_AXES : o.both, safe = o.safe || g.stand;
-    var tb = tables(SB.K, level.biome | 0), w = g.w, n = g.n, CH = T.ROUTE_MAX_WALL_CHAIN + 1, RS = T.ROUTE_SAFE_EVERY_ROWS + 1;
+    var tb = tables(SB.K, level.twistOff ? 0 : level.biome | 0), w = g.w, n = g.n, CH = T.ROUTE_MAX_WALL_CHAIN + 1, RS = T.ROUTE_SAFE_EVERY_ROWS + 1;
     var states = 3 * n * CH * RS, dist = new Float64Array(states).fill(Infinity), prev = new Int32Array(states).fill(-1), via = [];
     var key = function (v, c, r) { return (v * CH + c) * RS + r; };
     var rowOf = function (v) { return Math.floor((v < n ? v : (v - n) >> 1) / w); };
@@ -2900,6 +2916,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return lv.solid[cy * lv.w + cx] === 1;
   }
   function platAt(lv, cx, cy) { return cx >= 0 && cx < lv.w && cy >= 0 && cy < lv.h && lv.plat[cy * lv.w + cx] === 1; }
+  /* the Frost slide (section 3.5, T1.5): a slick cell anywhere in the row under the feet (lv.slick, a subset of the
+     one ways; it is empty outside Frost and in the first ever room) */
+  function slickUnder(h, lv, K) {
+    var CS = K.CELL_SUB, row = (h.y + K.HERO_H_SUB) / CS;
+    if (!lv.slick || row % 1 !== 0 || row >= lv.h) return false;
+    for (var cx = Math.max(0, Math.floor(h.x / CS)); cx <= Math.min(lv.w - 1, Math.floor((h.x + K.HERO_W_SUB - 1) / CS)); cx++) if (lv.slick[row * lv.w + cx] === 1) return true;
+    return false;
+  }
 
   function moveX(h, lv, K) {
     if (h.vx === 0) return;
@@ -3015,6 +3039,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (h.iframes > 0) h.iframes--;
     if (dir !== 0 && h.dash === 0 && h.lock === 0) h.facing = dir;   /* a dash and the wall jump's lock hold the facing */
     var startedGrounded = h.ground, dove = bPressed && !startedGrounded;
+    /* Deep (section 3.5, T1.5): the ground jump at DEEP_JUMP_V, the fall at DEEP_FALL_G to DEEP_TERM, as the DEEP
+       tables plan it (reach.arc): base gravity while rising and on a walk off's first airborne step */
+    var deep = lv.biome === 2 && !lv.twistOff;
 
     /* 2. the jumps. From a sticky wall (DESIGN 4.2): A is STICKY_JUMP_V straight up with no push off; B, or the
        rocker away from the wall, lets go into a plain fall. From an armed wall slide: A is the wall jump, WALL_V up and
@@ -3027,7 +3054,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     } else if (h.wall !== 0 && pressed && !h.ground) {
       h.vy = -K.WALL_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.facing = -h.wall; h.spent = h.wall; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; h.squash = -K.SQUASH_F; s.ev |= EV.WALLJUMP;
     } else if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0)) {
-      h.vy = -K.JUMP_V; h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;
+      h.vy = deep ? -K.DEEP_JUMP_V : -K.JUMP_V; h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;
       h.squash = -K.SQUASH_F; s.ev |= EV.JUMP;
     } else if (pressed) h.buffer = K.BUFFER + 1;   /* counts this step; see the end of the step */
 
@@ -3038,7 +3065,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        that began in the air stays a dive through its landing and never becomes a dash; a jump wins over B and ends a
        dash. */
     if (jumped) { if (h.dash > 0) { h.dash = 0; h.vx = 0; } }
-    else if (dove) { h.dive = 1; h.vy = K.TERM; h.vx = 0; h.lock = 0; h.wall = 0; h.sticky = 0; h.rising = 0; h.coyote = 0; s.ev |= EV.DIVE; }
+    else if (dove) { h.dive = 1; h.vy = deep ? K.DEEP_TERM : K.TERM; h.vx = 0; h.lock = 0; h.wall = 0; h.sticky = 0; h.rising = 0; h.coyote = 0; s.ev |= EV.DIVE; }
     else if (bPressed && startedGrounded && h.dash === 0) { h.dash = K.DASH_FRAMES; h.dashI = K.DASH_IFRAMES; dashStart = 1; }
     if (h.dive) h.dive = bHeld ? 2 : 1;
 
@@ -3052,14 +3079,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
     else if (h.lock !== 0) { h.vx = (h.lock > 0 ? 1 : -1) * K.WALL_PUSH; h.lock -= h.lock > 0 ? 1 : -1; }
     else if (stickyJump || h.sticky) h.vx = 0;
     else if (dir !== 0) h.vx = dir * K.RUN;
-    else if (h.vx > 0) h.vx = Math.max(0, h.vx - K.DECEL);
-    else if (h.vx < 0) h.vx = Math.min(0, h.vx + K.DECEL);
+    else if (h.vx > 0) h.vx = Math.max(0, h.vx - (h.ground && slickUnder(h, lv, K) ? K.SLICK_DECEL : K.DECEL));
+    else if (h.vx < 0) h.vx = Math.min(0, h.vx + (h.ground && slickUnder(h, lv, K) ? K.SLICK_DECEL : K.DECEL));
 
     /* 4. the variable jump: the release cap, never on the jump step itself (a sub step tap is a one frame jump) */
     if (h.rising && !held && !jumped && h.vy < -K.CUT_V) h.vy = -K.CUT_V;
 
     /* 5. gravity to terminal; a sticky wall holds the hero still */
     if (h.sticky) h.vy = 0;
+    else if (deep) h.vy = Math.min(K.DEEP_TERM, h.vy + (h.vy >= 0 && !startedGrounded ? K.DEEP_FALL_G : K.G));
     else h.vy = Math.min(K.TERM, h.vy + K.G);
     if (h.vy >= 0) h.rising = 0;
 
