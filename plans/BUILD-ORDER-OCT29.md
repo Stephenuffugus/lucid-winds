@@ -41,6 +41,10 @@ stop building, write the State block and the morning report (section "Done means
    this box (the ambient token is scoped to this repo); write memory files locally anyway and say so in the report.
 6. Never run a `gh codespace` command of any kind, never touch the box named didactic tribble: it is Stephen's to
    open and rescue, and the standing rule is that no model deletes a codespace.
+7. Start the autosave, once, and leave it running all night: `mkdir -p /tmp/claude-1000/shutterbug-lead && nohup
+   tools/shutterbug-tests/autosave.sh >/tmp/claude-1000/shutterbug-lead/autosave.log 2>&1 &`. Every ten minutes it
+   commits whatever changed under the Shutterbug paths as a WIP commit and pushes the branch, so the box closing
+   itself (it stops after about twelve hours) can never strand work. Your own task commits and deploys are unchanged.
 
 ## Lap 1 (the night): M0, the vertical slice, in plan order
 
