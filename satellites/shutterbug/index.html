@@ -2214,7 +2214,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   /* one sprite at the integer place (and size: the squash and the stretch), from the atlas */
   function spr(c2, key, dx, dy, dw, dh) { var r = A[key]; c2.drawImage(atlas, r.x, r.y, r.w, r.h, dx, dy, dw || r.w, dh || r.h); }
   R.opaque = function (key, sx, sy) { var r = A[key]; return atlasData[((r.y + sy) * R.atlasW + r.x + sx) * 4 + 3] === 255; };
-  /* the hero's frame (T0.17): dead, dive, cling, jump or fall in the air, the landing, the run (four frames, each held
+  /* the hero's frame (T0.17): dead, dive, cling, jump or fall in the air, the dash, the landing, the run (four frames, each held
      STEP_HZ / ANIM_FPS steps: 12 fps), the idle with its 1 px wobble every 30 steps */
   R.heroFrame = function (s) {
     var h = s.hero, T = SB.TUNING, hold = Math.round(T.STEP_HZ / T.ANIM_FPS);
@@ -2222,6 +2222,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     if (h.dive) return 'dive';
     if (h.wall !== 0 || h.sticky) return 'cling';
     if (!h.ground) return h.vy < 0 ? 'jump' : 'fall';
+    if (h.dash > 0) return 'run1';   /* the dash: mid stride, not the idle it starts from */
     if (h.squash > 0) return 'land';
     if (h.anim > 0) return 'run' + (Math.floor((h.anim - 1) / hold) % 4);
     return 'idle' + (Math.floor(s.frame / (hold * 6)) % 2);
@@ -2363,7 +2364,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     R.camY = cam;
     /* the crop alternative follows the hero sideways inside the 24 px the screen lacks; the default never moves */
     var camX = R.crop ? Math.max(0, Math.min(K.WORLD_W - R.viewW, heroX + (K.HERO_W >> 1) - (R.viewW >> 1))) : 0;
-    R.camX = camX;
+    R.camX = camX; R.drawn.cam = cam; R.drawn.camX = camX;
     ctx.save(); ctx.translate(-camX, 0);
     ctx.drawImage(stat, 0, cam, K.WORLD_W, viewH, 0, 0, K.WORLD_W, viewH);
     if (lv.exit >= 0) {
@@ -2416,8 +2417,69 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     if (h.squash > 0) { dx -= 1; dw += 2; dy += T.SQUASH_PX; dh -= T.SQUASH_PX; }
     else if (h.squash < 0) { dx += 1; dw -= 2; dy -= T.STRETCH_PX; dh += T.STRETCH_PX; }
     spr(ctx, key, dx, dy, dw, dh);
-    hd.key = key; hd.x = dx - camX; hd.y = dy; hd.w = dw; hd.h = dh; R.drawn.cam = cam; R.drawn.camX = camX;
+    hd.key = key; hd.x = dx - camX; hd.y = dy; hd.w = dw; hd.h = dh;
     ctx.restore();
+  };
+
+  /* the dev side of the sprites gate (section 1.7, T0.17; SB_DEV only, never the game): the rects the last frame drew
+     (the hero, every live moth, the beacon, every platform top edge row and every film tab in view, canvas px), n pixels
+     from inside them where a sprite is opaque (read from the canvas), and one backdrop pixel away from all of them */
+  R.rects = function (lv) {
+    var C = SB.K.CELL, cam = R.drawn.cam, camX = R.drawn.camX, out = { hero: null, enemies: [], beacon: null, edges: [], tabs: [] };
+    if (R.drawn.hero.key) out.hero = R.drawn.hero;
+    out.enemies = R.drawn.moths.slice(); out.beacon = R.drawn.beacon;
+    if (!lv) return out;
+    var r0 = Math.max(0, Math.floor(cam / C)), r1 = Math.min(lv.h - 1, Math.floor((cam + viewH - 1) / C));
+    for (var y = r0; y <= r1; y++) for (var x = 0; x < lv.w; x++) {
+      var i = y * lv.w + x, top = y * C - cam;
+      if (top < 0 || top >= viewH) continue;
+      if (lv.tab && lv.tab[i] && lv.plat[i]) { if (top + 5 <= viewH) out.tabs.push({ key: 'tab.a', x: x * C - camX, y: top, w: C, h: 5 }); }
+      else if (lv.plat[i] || (lv.solid[i] && y > 0 && !lv.solid[i - lv.w])) out.edges.push({ x: x * C - camX, y: top, w: C, h: 1 });
+    }
+    return out;
+  };
+  R.samplePixels = function (lv, n) {
+    var rc = R.rects(lv), W = canvas.width, H = canvas.height, kinds = [], k, j;
+    var inView = function (x, y) { return x >= 0 && y >= 0 && x < W && y < H; };
+    var opaqueIn = function (d) {
+      var pts = [], r = A[d.key];
+      for (var yy = 0; yy < d.h; yy++) for (var xx = 0; xx < d.w; xx++) {
+        var sx = Math.floor(xx * r.w / d.w), sy = Math.floor(yy * r.h / d.h);
+        if (R.opaque(d.key, sx, sy) && inView(d.x + xx, d.y + yy)) pts.push([d.x + xx, d.y + yy]);
+      }
+      return pts;
+    };
+    if (rc.hero) kinds.push(['hero', opaqueIn(rc.hero)]);
+    var ms = []; for (k = 0; k < rc.enemies.length; k++) ms = ms.concat(opaqueIn(rc.enemies[k])); if (ms.length) kinds.push(['enemy', ms]);
+    if (rc.beacon) { var bp = opaqueIn(rc.beacon); if (bp.length) kinds.push(['beacon', bp]); }
+    var es = []; for (k = 0; k < rc.edges.length; k++) for (j = 0; j < rc.edges[k].w; j++) if (inView(rc.edges[k].x + j, rc.edges[k].y)) es.push([rc.edges[k].x + j, rc.edges[k].y]);
+    if (es.length) kinds.push(['edge', es]);
+    var ts = []; for (k = 0; k < rc.tabs.length; k++) ts = ts.concat(opaqueIn(rc.tabs[k])); if (ts.length) kinds.push(['tab', ts]);
+    var img = ctx.getImageData(0, 0, W, H).data, out = [], per = Math.ceil(n / Math.max(1, kinds.length));
+    for (k = 0; k < kinds.length && out.length < n; k++) {
+      var pts = kinds[k][1], take = Math.min(per, pts.length, n - out.length);
+      for (j = 0; j < take; j++) {
+        var pt = pts[Math.floor((j + 0.5) * pts.length / take)], o = (pt[1] * W + pt[0]) * 4;
+        out.push({ kind: kinds[k][0], x: pt[0], y: pt[1], hex: SB.palette.hex([img[o], img[o + 1], img[o + 2]]) });
+      }
+    }
+    return out;
+  };
+  R.backdropProbe = function (lv) {
+    if (!lv) return null;
+    var C = SB.K.CELL, cam = R.drawn.cam, camX = R.drawn.camX, rc = R.rects(lv), boxes = [];
+    if (rc.hero) boxes.push(rc.hero);
+    if (rc.beacon) boxes.push({ x: rc.beacon.x - 4, y: rc.beacon.y - 4, w: C + 8, h: C + 8 });
+    boxes = boxes.concat(rc.enemies);
+    var hit = function (x, y) { for (var q = 0; q < boxes.length; q++) { var b = boxes[q]; if (x >= b.x - 2 && x < b.x + b.w + 2 && y >= b.y - 2 && y < b.y + b.h + 2) return true; } return false; };
+    for (var y = lv.h - 1; y >= 0; y--) for (var x = 0; x < lv.w; x++) {
+      var i = y * lv.w + x, px = x * C - camX + (C >> 1), py = y * C - cam + (C >> 1);
+      if (lv.solid[i] || lv.plat[i] || py < 0 || py >= viewH || px < 0 || px >= canvas.width || hit(px, py)) continue;
+      if (lv.beacon && lv.beacon.cells && Array.prototype.indexOf.call(lv.beacon.cells, i) >= 0) continue;
+      var d = ctx.getImageData(px, py, 1, 1).data;
+      return { x: px, y: py, cell: i, idx: lv.pal[i], biome: lv.biome | 0, hex: SB.palette.hex([d[0], d[1], d[2]]) };
+    }
+    return null;
   };
 })(window.SB);
 </script>
@@ -3042,6 +3104,11 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     audioPlayed: function () { return Object.assign({}, SB.audio.played); },
     hinted: function () { return Object.assign({}, SB.ui.hinted); },
     heroShown: function () { return SB.render.heroShown; },
+    heroFrame: function () { return SB.render.drawn.hero.key; },
+    spriteRects: function () { return SB.render.rects(G.level); },
+    samplePixels: function (n) { return SB.render.samplePixels(G.level, n || 64); },
+    backdropProbe: function () { return SB.render.backdropProbe(G.level); },
+    atlas: function () { var o = {}; for (var k in SB.render.atlas) o[k] = SB.render.atlas[k]; return o; },
     /* the reveal's liberties: skip it for the gates that test something else, and hold it at t ms for the shots */
     revealSkip: function (on) { SB.ui.reveal.devSkip = !!on; return SB.ui.reveal.devSkip; },
     revealAt: function (ms) { var RV = SB.ui.reveal; if (!RV.on) return false; RV.t = ms; RV.start = performance.now() - ms; SB.ui.revealFrame(performance.now(), true); return true; },

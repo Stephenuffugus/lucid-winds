@@ -313,6 +313,15 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-en-4', expect: 'it reaches the column in' }] },
   { name: 'KNOCK_TOWARD', task: 'T0.16', file: 'page', find: 'h.knock = (mdx < 0 ? -1 : 1) * K.KNOCK_FRAMES;', repl: 'h.knock = (mdx < 0 ? 1 : -1) * K.KNOCK_FRAMES;',
     gates: [{ gate: 'harness', only: 'H-en-2', expect: 'the knockback carries the hero away' }] },
+  /* T0.17: the sprites */
+  { name: 'OFF_PALETTE_PIXEL', task: 'T0.17', file: 'page', find: 'd[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;', repl: 'd[o] = c[0] ^ 1; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;',
+    gates: [{ gate: 'sprites', expect: '64 pixels sampled from' }] },
+  { name: 'ANIM_AT_60', task: 'T0.17', file: 'page', find: "if (h.anim > 0) return 'run' + (Math.floor((h.anim - 1) / hold) % 4);", repl: "if (h.anim > 0) return 'run' + ((h.anim - 1) % 4);",
+    gates: [{ gate: 'sprites', expect: 'running, each frame holds 5 steps' }] },
+  { name: 'DASH_NO_FLASH', task: 'T0.17', file: 'page', find: "(h.dashI > 0 ? '*' : '')", repl: "''",
+    gates: [{ gate: 'sprites', expect: 'a dash draws the Glare hero' }] },
+  { name: 'SPRITE_ROW_SHORT', task: 'T0.17', file: 'page', find: "a: 'ffffffffffffffff/ff0fff0fff0fff0f/", repl: "a: 'fffffffffffffff/ff0fff0fff0fff0f/",
+    gates: [{ gate: 'lint', expect: 'tab.a row 0 is 15 wide' }, { gate: 'harness', only: 'H-spr-1', expect: 'tab.a decodes to 16x5' }] },
   /* T0.16: the death gate */
   { name: 'RESTART_REVEALS', task: 'T0.16', file: 'page', find: "ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true }); };",
     repl: "ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level }); };",

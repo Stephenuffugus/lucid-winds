@@ -275,6 +275,30 @@ for (const fm of html.matchAll(/font-size\s*:\s*([0-9.]+)\s*(rem|em|px)|fontSize
   if (px < 11.2 - 1e-9) fail('FONT', 'line ' + lineOf(fm.index) + ': "' + fm[0] + '" is under 0.7rem');
 }
 
+/* rule (T0.17, section 1.7): the sprites. Under 40 names (frames unlimited); every frame's rows as many as its h, each
+   as wide as its w, every character in the key ('.' and the sixteen palette digits) */
+{
+  const rb = inline.find(b => b.id === 'shell-render');
+  const sm = rb && rb.src.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//);
+  if (!sm) fail('SPRITES', 'shell-render holds no /* SPRITES BEGIN */ ... /* SPRITES END */ fence');
+  else {
+    let S = null;
+    try { S = vm.runInNewContext(sm[1] + '\n;SPRITES'); } catch (e) { fail('SPRITES', 'the SPRITES literal does not evaluate: ' + e.message); }
+    if (S) {
+      const names = Object.keys(S);
+      if (names.length >= 40) fail('SPRITES', names.length + ' named sprites (under 40)');
+      for (const name of names) for (const [f, str] of Object.entries(S[name].frames || {})) {
+        const rows = String(str).split('/');
+        if (rows.length !== S[name].h) fail('SPRITES', name + '.' + f + ' has ' + rows.length + ' rows, not ' + S[name].h);
+        rows.forEach((r, i) => {
+          if (r.length !== S[name].w) fail('SPRITES', name + '.' + f + ' row ' + i + ' is ' + r.length + ' wide, not ' + S[name].w);
+          if (/[^.0-9a-f]/.test(r)) fail('SPRITES', name + '.' + f + ' row ' + i + ' holds a character outside the key');
+        });
+      }
+    }
+  }
+}
+
 /* rule: the build stamp deploy.sh greps */
 const bm = html.match(/SB\.BUILD\s*=\s*'([^']*)'/);
 if (!bm) fail('BUILD', 'no SB.BUILD = \'...\' in the page');

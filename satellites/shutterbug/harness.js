@@ -3193,6 +3193,31 @@ group('H-en-3', 'the walks with moths live: the bot\'s (immortal) and a mortal o
   t.ok(r.ok && r.s.hero.hearts >= 1, 'the mortal walk on the sample room (' + lv.features.enemies.length + ' moths, the first room cap) reaches the exit with ' + r.s.hero.hearts + ' hearts' + (r.ok ? '' : ' (' + (r.why || 'stopped at edge ' + (r.miss && r.miss.i)) + ')'));
 });
 
+/* ================================================================ sprites (T0.17) */
+group('H-spr-1', 'every sprite string decodes to its declared size in the key; the hero is 12x16 with an Ink feet row in every frame; Sun belongs to the hero and the beacon only', t => {
+  const m = fs.readFileSync(PAGE, 'utf8').match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//);
+  t.ok(!!m, 'the page holds the SPRITES fence in shell-render');
+  if (!m) return;
+  let S = null;
+  try { S = require('node:vm').runInNewContext(m[1] + '\n;SPRITES'); } catch (e) { t.ok(false, 'the SPRITES literal evaluates (' + e.message + ')'); return; }
+  const names = Object.keys(S), SUN = SB.palette.I.SUN.toString(16), INK = SB.palette.I.INK.toString(16);
+  t.ok(names.length > 0 && names.length < 40, names.length + ' named sprites (under 40; frames are unlimited)');
+  let frames = 0;
+  for (const name of names) {
+    const sp = S[name];
+    for (const [f, str] of Object.entries(sp.frames)) {
+      frames++;
+      const rows = str.split('/'), bad = [];
+      if (rows.length !== sp.h) bad.push(rows.length + ' rows, not ' + sp.h);
+      rows.forEach((r, i) => { if (r.length !== sp.w) bad.push('row ' + i + ' is ' + r.length + ' wide'); const c = r.replace(/[.0-9a-f]/g, ''); if (c) bad.push('row ' + i + ' holds ' + JSON.stringify(c)); });
+      t.ok(bad.length === 0, name + '.' + f + ' decodes to ' + sp.w + 'x' + sp.h + ', every pixel clear or a palette index' + (bad.length ? ' (' + bad.join('; ') + ')' : ''));
+      if (name === 'hero') t.ok(sp.w === K.HERO_W && sp.h === K.HERO_H && rows[sp.h - 1].includes(INK), 'hero.' + f + ' is the hitbox\'s size and its bottom row holds Ink (the feet row, section 7.3)');
+      else if (name !== 'beacon') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour)');
+    }
+  }
+  console.log('  info  H-spr-1: ' + names.length + ' sprites, ' + frames + ' frames');
+});
+
 /* ================================================================ run */
 const t0 = Date.now();
 const chosen = ONLY ? GROUPS.filter(g => g.id.startsWith(ONLY)) : GROUPS;
