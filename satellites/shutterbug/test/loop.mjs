@@ -90,6 +90,10 @@ try {
     l = await look();
     R.say(l.screen === 'play' && l.st.frame === 0 && l.on.length === 0 && l.fab !== 'none', 'round ' + round + ': ' + (round === 1 ? 'Try the sample room' : 'Play it again') + ' opens the room at frame 0 with nothing over it (fab ' + l.fab + ')');
     if (round === 1) {
+      /* the sheet over the play screen comes before the A tap below: that tap first proves a thumb lands on A, so a fab
+         left showing over the sheet threw there before this check could name it (FAB_OVER_SHEET read WRONG REASON in
+         the sb-m1-1 full check). It opens and closes the sheet and never steps the held sim, so what follows is as before. */
+      await sheetOver('play', 'round 1');
       /* a thumb on A while the sheet is up is never banked into a jump at Close (the M1 review: the strip under the
          sheet stays live, and its press edge fired on the next step) */
       const g0 = await page.evaluate(() => { for (let k = 0; k < 120 && !window.SB_DEV.state().hero.ground; k++) window.SB_DEV.step(1); window.SB_DEV.step(2); return window.SB_DEV.state().hero; });
@@ -98,7 +102,6 @@ try {
       R.say(g0.ground && g1.ground && g1.y === g0.y, 'round 1: a tap on A under the open share sheet does not jump at Close (on the ground ' + g1.ground + ', y ' + (g0.y / 256) + ' then ' + (g1.y / 256) + ' px)');
     }
     await page.evaluate(() => { window.SB_DEV.goto('speck'); window.SB_DEV.step(2); });
-    if (round === 1) await sheetOver('play', 'round 1');
     const c = await clearRoom(), want = Math.floor(c.dp * 0.5);
     banked += want;
     R.say(c.dp > 0 && c.after.screen === 'clear' && c.after.on.includes('clear') && c.after.fab === 'none', 'round ' + round + ': a speck taken (' + c.dp + ' Dead pixels in the room) and the clear card up; the fab hides under it');

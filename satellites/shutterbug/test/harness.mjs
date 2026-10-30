@@ -84,9 +84,11 @@ export async function serve() {
   return { server, requests, base: 'http://localhost:' + port, close: () => new Promise(r => server.close(r)) };
 }
 
+/* timeout: the first launch after a box restart reads Chrome off a cold disk, and the sb-m1-1 full check's boot gate
+   (the first browser gate) timed out at puppeteer's default 30 s while every later gate launched in seconds. */
 export async function launch() {
   return puppeteer.launch({
-    headless: true, protocolTimeout: 180000,
+    headless: true, protocolTimeout: 180000, timeout: 120000,
     args: ['--no-sandbox', '--disable-dev-shm-usage', '--use-gl=angle', '--use-angle=swiftshader',
       '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required']
   });
