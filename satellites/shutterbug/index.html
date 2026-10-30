@@ -2449,7 +2449,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var opaqueIn = function (d) {
       var pts = [], r = A[d.key];
       for (var yy = 0; yy < d.h; yy++) for (var xx = 0; xx < d.w; xx++) {
-        var sx = Math.floor(xx * r.w / d.w), sy = Math.floor(yy * r.h / d.h);
+        /* the canvas's nearest neighbour maps a drawn pixel's centre to the sprite (the fourth review: the corner map
+           sampled transparent pixels of the squash and the stretch as opaque, and read the backdrop) */
+        var sx = Math.floor((xx + 0.5) * r.w / d.w), sy = Math.floor((yy + 0.5) * r.h / d.h);
         if (R.opaque(d.key, sx, sy) && inView(d.x + xx, d.y + yy)) pts.push([d.x + xx, d.y + yy]);
       }
       return pts;

@@ -336,7 +336,7 @@ const MUTANTS = [
   { name: 'FLASH_UNDRAWN', task: 'review 4', file: 'page', find: '        if (it[5] && (idx === P.I.SUN || idx === P.I.WALNUT)) idx = P.I.GLARE;\n', repl: '',
     gates: [{ gate: 'sprites', expect: 'on the canvas the hero shows no Sun through the dash i frames' }] },
   { name: 'SQUASH_SMOOTHED', task: 'review 4', file: 'page', find: '    spr(ctx, key, dx, dy, dw, dh);\n', repl: '    ctx.imageSmoothingEnabled = h.squash !== 0; spr(ctx, key, dx, dy, dw, dh); ctx.imageSmoothingEnabled = false;\n',
-    gates: [{ gate: 'sprites', expect: 'draw only palette pixels' }] },
+    gates: [{ gate: 'sprites', expect: 'the stretch (' }] },
   { name: 'MOTH_AT_THREE', task: 'review 4', file: 'page', find: 'if (cheb(c, safe[q], w) <= T.ROUTE_SAFE_ENEMY_DIST) return false;', repl: 'if (cheb(c, safe[q], w) < T.ROUTE_SAFE_ENEMY_DIST) return false;',
     gates: [{ gate: 'harness', only: 'H-route-6', expect: 'saturated-blobs mode 0: moths within ROUTE_SAFE_ENEMY_DIST of an ascent cell' }] },
   { name: 'KNOCK_RUNS_ON', task: 'review 4', file: 'page', find: '    if (knocked && h.knock === 0) h.vx = 0;', repl: '',
