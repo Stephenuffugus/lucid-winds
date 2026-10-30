@@ -75,6 +75,39 @@ try {
   const litN = lit.filter(Boolean).length, first = lit.indexOf(true), contiguous = lit.slice(first, first + litN).every(Boolean);
   R.say(first === 0 && litN === 4 && contiguous, 'a dash draws the Glare hero for exactly its 4 i frames from its first step (' + dash.map(f => f.replace('hero.', '')).join(' ') + ')');
 
+  /* the same, read from the canvas (the fourth review: the key alone passed a flash the atlas never drew): the hero's
+     opaque pixels hold no Sun through the 4 i frames, and Sun again after them */
+  await page.evaluate(() => window.SB_DEV.step(40));
+  await page.keyboard.down('KeyX'); await page.evaluate(() => window.SB_DEV.step(1)); await page.keyboard.up('KeyX');
+  const glow = await page.evaluate(sun => {
+    const out = [];
+    for (let k = 0; k < 8; k++) {
+      const hp = window.SB_DEV.samplePixels(64).filter(p => p.kind === 'hero');
+      out.push({ lit: window.SB_DEV.heroFrame().endsWith('*'), sun: hp.filter(p => p.hex === sun).length, n: hp.length });
+      window.SB_DEV.step(1);
+    }
+    return out;
+  }, '#' + HEX[14]);
+  const litPx = glow.filter(g => g.lit), plainPx = glow.filter(g => !g.lit);
+  R.say(litPx.length === 4 && litPx.every(g => g.n > 0 && g.sun === 0) && plainPx.length > 0 && plainPx.every(g => g.sun > 0),
+    'on the canvas the hero shows no Sun through the dash i frames, and Sun again after them (' + glow.map(g => (g.lit ? '*' : '') + g.sun + '/' + g.n).join(' ') + ')');
+
+  /* the landing squash and the takeoff stretch are scaled draws: their pixels stay on the palette too */
+  await page.evaluate(() => window.SB_DEV.step(30));
+  await page.keyboard.down('KeyZ');
+  const sq = await page.evaluate(() => {
+    const out = [];
+    for (let k = 0; k < 90; k++) {
+      window.SB_DEV.step(1);
+      const s = window.SB_DEV.state();
+      if (s.hero.squash !== 0) out.push({ squash: s.hero.squash, px: window.SB_DEV.samplePixels(64).filter(p => p.kind === 'hero') });
+    }
+    return out;
+  });
+  await page.keyboard.up('KeyZ');
+  const stretch = sq.filter(f => f.squash < 0), squash = sq.filter(f => f.squash > 0), offSq = sq.flatMap(f => f.px.filter(p => !ON.has(p.hex)));
+  R.say(stretch.length > 0 && squash.length > 0 && offSq.length === 0, 'the stretch (' + stretch.length + ' frames) and the squash (' + squash.length + ' frames) draw only palette pixels (' + sq.reduce((a, f) => a + f.px.length, 0) + ' sampled' + (offSq.length ? ', off: ' + offSq.slice(0, 4).map(p => p.hex).join(' ') : '') + ')');
+
   /* the perf guard, the loop running with the moth live */
   await page.evaluate(() => window.SB_DEV.hold(false));
   await new Promise(r => setTimeout(r, 3000));

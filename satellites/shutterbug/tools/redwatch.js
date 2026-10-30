@@ -323,6 +323,20 @@ const MUTANTS = [
   { name: 'SPRITE_ROW_SHORT', task: 'T0.17', file: 'page', find: "a: 'ffffffffffffffff/ff0fff0fff0fff0f/", repl: "a: 'fffffffffffffff/ff0fff0fff0fff0f/",
     gates: [{ gate: 'lint', expect: 'tab.a row 0 is 15 wide' }, { gate: 'harness', only: 'H-spr-1', expect: 'tab.a decodes to 16x5' }] },
   /* the fourth review (T0.16, T0.17), before sb-m0-3 */
+  { name: 'KNOCK_ALWAYS_LEFT', task: 'review 4', file: 'page', find: 'h.knock = (mdx < 0 ? -1 : 1) * K.KNOCK_FRAMES;', repl: 'h.knock = -K.KNOCK_FRAMES;',
+    gates: [{ gate: 'harness', only: 'H-en-2c', expect: 'a moth on the left: the hero is knocked' }] },
+  { name: 'IFRAMES_HALF', task: 'review 4', file: 'page', find: '    if (h.iframes > 0) h.iframes--;', repl: '    if (h.iframes > 0) h.iframes = Math.max(0, h.iframes - 2);',
+    gates: [{ gate: 'harness', only: 'H-en-2d', expect: 'exactly HIT_IFRAMES_S after the first' }] },
+  { name: 'DASH_UNPROTECTED', task: 'review 4', file: 'page', find: '      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && ', repl: '      if (!s.immortal && h.iframes === 0 && !s.room.cleared && ',
+    gates: [{ gate: 'harness', only: 'H-en-2e', expect: 'a dash from point blank through a moth keeps every heart' }] },
+  { name: 'CORE_3PX', task: 'review 4', file: 'page', find: 'var core = 2 * K.SUB, mx0 = en.x + core,', repl: 'var core = 3 * K.SUB, mx0 = en.x + core,',
+    gates: [{ gate: 'harness', only: 'H-en-2f', expect: '1 px into the hero hits on that step' }] },
+  { name: 'CORE_1PX', task: 'review 4', file: 'page', find: 'var core = 2 * K.SUB, mx0 = en.x + core,', repl: 'var core = 1 * K.SUB, mx0 = en.x + core,',
+    gates: [{ gate: 'harness', only: 'H-en-2f', expect: 'only touches the hero\'s edge does not' }] },
+  { name: 'FLASH_UNDRAWN', task: 'review 4', file: 'page', find: '        if (it[5] && (idx === P.I.SUN || idx === P.I.WALNUT)) idx = P.I.GLARE;\n', repl: '',
+    gates: [{ gate: 'sprites', expect: 'on the canvas the hero shows no Sun through the dash i frames' }] },
+  { name: 'SQUASH_SMOOTHED', task: 'review 4', file: 'page', find: '    spr(ctx, key, dx, dy, dw, dh);\n', repl: '    ctx.imageSmoothingEnabled = h.squash !== 0; spr(ctx, key, dx, dy, dw, dh); ctx.imageSmoothingEnabled = false;\n',
+    gates: [{ gate: 'sprites', expect: 'draw only palette pixels' }] },
   { name: 'MOTH_AT_THREE', task: 'review 4', file: 'page', find: 'if (cheb(c, safe[q], w) <= T.ROUTE_SAFE_ENEMY_DIST) return false;', repl: 'if (cheb(c, safe[q], w) < T.ROUTE_SAFE_ENEMY_DIST) return false;',
     gates: [{ gate: 'harness', only: 'H-route-6', expect: 'saturated-blobs mode 0: moths within ROUTE_SAFE_ENEMY_DIST of an ascent cell' }] },
   { name: 'KNOCK_RUNS_ON', task: 'review 4', file: 'page', find: '    if (knocked && h.knock === 0) h.vx = 0;', repl: '',
@@ -436,10 +450,27 @@ if (unknown.length) { console.log('no mutant named ' + unknown.join(', ')); proc
 const isBrowserRow = g => BROWSER.has(g.gate);
 
 fs.mkdirSync(OUT, { recursive: true });
+/* a row's anchors, counted without running anything: 'ok', or ANCHOR LOST with the count */
+function anchorOf(m) {
+  const isFx = m.file.startsWith('fixture:');
+  const src = m.file === 'harness' ? path.join(GAME, 'harness.js') : isFx ? path.join(GAME, 'fixtures', m.file.slice(8))
+    : m.file === 'make' ? path.join(GAME, 'fixtures', 'make.html') : path.join(GAME, 'index.html');
+  let text = fs.readFileSync(src, 'utf8');
+  for (const [find, repl] of (m.edits || (m.find !== null ? [[m.find, m.repl]] : []))) {
+    const count = text.split(find).length - 1;
+    if (count !== 1) return 'ANCHOR LOST (find matches ' + count + ' times)';
+    text = text.replace(find, () => repl);
+  }
+  return 'ok';
+}
 const rows = [];
 for (const m of MUTANTS) {
   if (names.length && !names.includes(m.name)) continue;
   const gates = m.gates.filter(g => names.length ? true : BROWSER_ONLY ? isBrowserRow(g) : WITH_BROWSER ? true : !isBrowserRow(g));
+  /* the browser rows this run skips still have their anchors counted, so an edit that drifts one turns check --fast
+     red on the commit that drifts it (the fourth review: four rows drifted unseen from T0.15 to the deploy's check) */
+  const unrun = names.length || BROWSER_ONLY ? [] : m.gates.filter(g => !gates.includes(g));
+  if (unrun.length) { const a = anchorOf(m); if (a !== 'ok') for (const g of unrun) rows.push({ m, g, result: a + ', counted without the browser' }); }
   if (!gates.length) continue;
   const dir = path.join(OUT, m.name);
   fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });

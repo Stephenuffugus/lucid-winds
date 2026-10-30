@@ -202,7 +202,8 @@ group('H-ns-1', 'K recomputed in the test from TUNING, and the known integers of
     WALL_PUSH: T.WALL_JUMP_PUSH * 256, STICKY_V: T.STICKY_JUMP_V * 256, DASH_V: T.DASH_CELLS * G.CELL * 256 / T.DASH_FRAMES,
     DEEP_JUMP_V: T.DEEP_JUMP_V * 256, DEEP_FALL_G: Math.round(T.GRAVITY * 256 * T.DEEP_FALL_MULT),
     DEEP_TERM: Math.round(T.TERMINAL * 256 * T.DEEP_FALL_MULT), MOTH_V: Math.round(T.MOTH_SPEED * G.CELL * 256 / 60),
-    CRAWLER_V: Math.round(T.CRAWLER_SPEED * G.CELL * 256 / 60), WORLD_W: G.W * G.CELL, WORLD_H: G.H * G.CELL
+    CRAWLER_V: Math.round(T.CRAWLER_SPEED * G.CELL * 256 / 60), WORLD_W: G.W * G.CELL, WORLD_H: G.H * G.CELL,
+    KNOCK_V: T.HIT_KNOCKBACK_CELLS * G.CELL * 256 / T.HIT_KNOCKBACK_FRAMES, KNOCK_FRAMES: T.HIT_KNOCKBACK_FRAMES
   };
   for (const k of Object.keys(T)) if (k.endsWith('_S') && typeof T[k] === 'number') want[k.slice(0, -2) + '_F'] = Math.round(T[k] * 60);
   for (const k of Object.keys(want)) t.eq(K[k], want[k], 'K.' + k + ' recomputed from TUNING');
@@ -210,7 +211,7 @@ group('H-ns-1', 'K recomputed in the test from TUNING, and the known integers of
   const KNOWN = { SUB: 256, CELL_SUB: 4096, RUN: 672, DECEL: 168, G: 128, JUMP_V: 2200, CUT_V: 1300, TERM: 3072, WALL_V: 1950,
     WALL_PUSH: 672, DASH_V: 1536, DEEP_JUMP_V: 2432, DEEP_FALL_G: 102, DEEP_TERM: 2458, MOTH_V: 68, CRAWLER_V: 137,
     WORLD_W: 384, WORLD_H: 768, HIT_IFRAMES_F: 60, ICICLE_RESPAWN_F: 360, SPARK_HOP_F: 90, TRAP_PERIOD_F: 90,
-    JUMP_SLOT_CD_F: 36, BOSS_TELEGRAPH_F: 48, BOSS_INTRO_F: 120 };
+    JUMP_SLOT_CD_F: 36, BOSS_TELEGRAPH_F: 48, BOSS_INTRO_F: 120, KNOCK_V: 1024, KNOCK_FRAMES: 8 };
   for (const k of Object.keys(KNOWN)) t.eq(K[k], KNOWN[k], 'K.' + k + ' known answer');
   for (const k of Object.keys(K)) if (typeof K[k] === 'number') t.ok(Number.isInteger(K[k]), 'K.' + k + ' is an integer (' + K[k] + ')');
   t.same(SB.derive(T, G), K, 'derive is pure: a second call equals K');
@@ -3144,6 +3145,66 @@ group('H-en-2', 'contact: one heart, 60 i frames, nothing more inside them, knoc
   t.ok(dead > 0 && d.hero.hearts === 0 && d.room.deaths === 1, 'the last heart ends the room (dead at step ' + dead + ')');
 });
 
+group('H-en-2c', 'the knockback is away from the moth on either side, exactly HIT_KNOCKBACK_CELLS over HIT_KNOCKBACK_FRAMES, then at rest (from TUNING, here)', t => {
+  const T = SB.TUNING, want = T.HIT_KNOCKBACK_CELLS * SB.GRID.CELL * 256, frames = T.HIT_KNOCKBACK_FRAMES;
+  for (const [mx, side] of [[8, 'right'], [2, 'left']]) {
+    const lv = LABS.room(['', '.....S..........', FLOOR]);
+    lv.features = { enemies: [{ kind: SB.features.MOTH, idx: 46 * 24 + mx }] };
+    const s = SB.sim.create(lv); let hit = -1;
+    for (let k = 0; k < 600 && hit < 0; k++) { SB.sim.step(s, 0); if (s.ev & SB.sim.EV.HIT) hit = k; }
+    const x0 = s.hero.x; for (let j = 0; j < frames; j++) SB.sim.step(s, 0);
+    const moved = s.hero.x - x0, x1 = s.hero.x; SB.sim.step(s, 0); SB.sim.step(s, 0);
+    const away = side === 'right' ? -1 : 1;
+    t.ok(hit > 0 && moved === away * want && s.hero.x === x1 && s.hero.vx === 0, 'a moth on the ' + side + ': the hero is knocked ' + (moved / 256) + ' px over ' + frames + ' steps (want ' + (away * want / 256) + '), then at rest (vx ' + s.hero.vx + ')');
+  }
+});
+
+group('H-en-2d', 'the i frames last exactly HIT_IFRAMES_S: a moth held on the hero takes nothing until they run out, then the next heart', t => {
+  const win = Math.round(SB.TUNING.HIT_IFRAMES_S * 60);
+  const lv = LABS.room(['', '.....S..........', FLOOR]);
+  lv.features = { enemies: [{ kind: SB.features.MOTH, idx: 46 * 24 + 8 }] };
+  const s = SB.sim.create(lv); let first = -1, second = -1;
+  for (let k = 0; k < 2000 && second < 0; k++) {
+    /* once hit, the moth is held centred on the hero (no drift: md 0), so every step after the first is a contact */
+    if (first >= 0) { const e = s.enemies[0], h = s.hero; e.x = h.x + (HW >> 1) - (CS >> 1); e.y = h.y + (HH >> 1) - (CS >> 1); }
+    SB.sim.step(s, 0);
+    if (s.ev & SB.sim.EV.HIT) { if (first < 0) first = k; else second = k; }
+  }
+  t.eq(second - first, win, 'held on the hero, the moth takes the next heart exactly HIT_IFRAMES_S after the first (' + (second - first) + ' steps, want ' + win + ')');
+});
+
+group('H-en-2e', 'a dash\'s i frames protect (QUESTIONS Q47, Q70): a dash from point blank through a moth costs no heart', t => {
+  const lv = LABS.room(['', '.....S..................', FLOOR]);
+  lv.features = { enemies: [{ kind: SB.features.MOTH, idx: 2 * 24 + 20 }] };
+  const s = SB.sim.create(lv);
+  for (let k = 0; k < 30 && !s.hero.ground; k++) SB.sim.step(s, 0);
+  s.hero.facing = 1;
+  const e = s.enemies[0], h = s.hero, h0 = h.hearts;
+  e.x = h.x + HW - (CS >> 1); e.y = h.y + (HH >> 1) - (CS >> 1);   /* the moth's centre on the hero's leading edge: overlapping now */
+  SB.sim.step(s, IN.B | IN.B_TAP);
+  const dashed = s.hero.dash > 0 && s.hero.dashI > 0;
+  for (let k = 0; k < 12; k++) SB.sim.step(s, 0);
+  t.ok(dashed && s.hero.hearts === h0, 'a dash from point blank through a moth keeps every heart (' + s.hero.hearts + ' of ' + h0 + (dashed ? '' : '; no dash started') + ')');
+});
+
+group('H-en-2f', 'the moth\'s contact core is its cell less 2 px a side (QUESTIONS Q70): 1 px into it hits, touching its edge does not', t => {
+  const run = inside => {
+    const lv = LABS.room(['', '.....S..................', FLOOR]);
+    lv.features = { enemies: [{ kind: SB.features.MOTH, idx: 2 * 24 + 20 }] };
+    const s = SB.sim.create(lv);
+    for (let k = 0; k < 30 && !s.hero.ground; k++) SB.sim.step(s, 0);
+    const e = s.enemies[0], h = s.hero, core = 2 * 256;
+    /* level with the hero's middle, to its right: after its drift of MOTH_V the core's left edge sits 1 px inside the
+       hero's right edge, or exactly on it */
+    e.y = h.y + (HH >> 1) - (CS >> 1);
+    e.x = h.x + HW - core + K.MOTH_V - (inside ? 256 : 0);
+    SB.sim.step(s, 0);
+    return !!(s.ev & SB.sim.EV.HIT);
+  };
+  t.ok(run(true), 'a moth whose core reaches 1 px into the hero hits on that step');
+  t.ok(!run(false), 'a moth whose core only touches the hero\'s edge does not');
+});
+
 group('H-en-2b', 'a hit on a vine lets go of it: the hero is never held sticky away from a sticky wall (the fourth review)', t => {
   /* an Overgrowth lab: a vine at x 3 from row 20 to 46, the hero in the air flush against its right face, a moth to
      the right; the moth drifts through furniture, so it reaches the hero from either side */
@@ -3200,7 +3261,7 @@ group('H-sim-21', 'the step\'s event word (s.ev, what the sounds read): each eve
     for (let k = 0; k < 300; k++) { const e = log(s, IN.R); if (e & EV.CLEAR) { n++; if (clear < 0) clear = k; } }
     t.ok(clear >= 0 && n === 1 && s.room.cleared, 'reaching the exit sets CLEAR once (step ' + clear + ', ' + n + ' times)');
   }
-  /* the shared step (QUESTIONS Q72): a moth reaching the hero on its last heart on the very step it touches the exit
+  /* the shared step (QUESTIONS Q71): a moth reaching the hero on its last heart on the very step it touches the exit
      (found by the fourth review: a moth homed at (11, 45), the rocker right from step 19, both on step 62) */
   {
     const lv2 = LABS.room(['', '..S.......X.............', FLOOR], { exit: true });
