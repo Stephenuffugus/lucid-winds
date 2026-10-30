@@ -177,10 +177,12 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-rep-1', expect: 'the sample room needs zero tabs' }] },
   /* the sim alone stingier than the model (TUNING's 8 would move the tables with it, and the bot then agrees): the
      ascent keeps a cell of slack, so it is the every edge gate that meets the table's edge jumps (46 fail) */
+  { name: 'REPLAY_HASH_IGNORES_FRAME', task: 'T0.13b', file: 'page', find: "var FIELDS = [['v', 'i32'], ['frame', 'i32'], ", repl: "var FIELDS = [['v', 'i32'], ",
+    gates: [{ gate: 'harness', only: 'H-bot-3', expect: 'the frame is in the hash' }] },
   { name: 'OVERLAP_8', task: 'T0.13a', file: 'page', find: 'if (ov >= K.OVERLAP_SUB || (h.ground && ov > 0)) landed = true;', repl: 'if (ov >= 8 * 256 || (h.ground && ov > 0)) landed = true;',
     gates: [{ gate: 'harness', only: 'H-bot-6', args: ['--all-edges'], expect: 'every edge has a macro' }] },
   { name: 'TOUCH_HEAD_ROW', task: 'T0.13a', file: 'page', find: 'var fc = floor((ny - (HHs >> 1)) / C) * w + (col - dir)', repl: 'var fc = floor((ny - HHs) / C) * w + (col - dir)',
-    gates: [{ gate: 'harness', only: 'H-bot-5', expect: 'every edge has a macro' }] },
+    gates: [{ gate: 'harness', only: 'H-bot-1b', expect: 'every edge has a macro' }] },
   { name: 'FOOTING_2PX', task: 'T0.13a', file: 'page', find: 'if (ov >= K.OVERLAP_SUB || (h.ground && ov > 0)) landed = true;', repl: 'if (ov >= K.OVERLAP_SUB) landed = true;',
     gates: [{ gate: 'harness', only: 'H-sim-4', expect: 'walking off a one way plank the hero stands while its box overlaps it' }] },
   { name: 'TOUCH_CLAMP_STICKS', task: 'T0.13a', file: 'page', find: '        X += dir * (p.x - a[f - 1].x);',

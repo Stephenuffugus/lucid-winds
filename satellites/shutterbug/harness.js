@@ -32,8 +32,7 @@ const FAST = flag('fast');
 const ONLY = opt('only');
 const ASSERT_FLOOR = 4213;              /* raised per task: the count a full run must reach */
 
-const LATER = { 'record-json': 'T0.15', replay: 'T0.13b', record: 'T0.13b',
-  regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
+const LATER = { 'record-json': 'T0.15', economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
 
 /* Marked failures, by the start of the assertion's text, each with its QUESTIONS.md entry. */
@@ -2723,12 +2722,134 @@ function reportEdges(t, res, what) {
   t.ok(res.placeMiss.length === 0, what + ': every source the edges leave from can be placed (' + res.placeMiss.length + ' cannot' + (res.placeMiss.length ? ': ' + res.placeMiss.slice(0, 4).join('; ') : '') + ')');
   t.ok(res.misses.length === 0, what + ': every edge has a macro (' + res.misses.length + ' have none' + (res.misses.length ? ': ' + res.misses.slice(0, 6).join('; ') + (res.misses.length > 6 ? '; ...' : '') : '') + ')');
 }
-group('H-bot-5', '20 random edges per level drawn from the whole graph, each performed from the hero placed on its source', t => {
+group('H-bot-1b', '20 random edges per level drawn from the whole graph, each performed from the hero placed on its source', t => {
   reportEdges(t, botEdges(20), 'the random edges');
 });
 if (flag('all-edges')) group('H-bot-6', 'every edge of every graph has a macro (--all-edges)', t => {
   reportEdges(t, botEdges(0), 'every edge');
 });
+
+/* ================================================================ replays and goldens (T0.13b, section 2.6) */
+/* A replay is the bot's walk on one fixture, mode and biome, as runs of words, padded with 300 quiet steps past the
+   clear (the frame counter alone then moves the hash, which H-bot-3 needs), with a golden: the state hash at its end.
+   --record <fixture> writes one, --replay <file> plays one, --regold --why ".." rewrites every golden with its why. */
+const REPLAY_DIR = path.join(FIXDIR, 'replays'), REPLAY_PAD = 300;
+function replayLevel(j, core) {
+  const S = core || SB, f = fixture(j.fixture);
+  if (!f) throw new Error('replay: no fixture named ' + j.fixture);
+  return S.pipeline.build(S.record.fromJSON(Object.assign({}, f.fx.record, { mode: j.mode })), j.biome === null ? {} : { biome: j.biome });
+}
+function runReplay(j, core, marks) {
+  const S = core || SB, lv = replayLevel(j, S), s = S.sim.create(lv, j.opts && j.opts.hearts ? { hearts: j.opts.hearts } : {}), words = S.sim.rle.decode(j.runs), at = {};
+  for (let k = 0; k < words.length; k++) { S.sim.step(s, words[k]); if (marks && marks.includes(k + 1)) at[k + 1] = S.sim.hash(s); }
+  return { s, hash: S.sim.hash(s), at, words, cleared: s.room.cleared };
+}
+const hex = h => String(h);   /* sim.hash is a 16 hex digit string (section 2.5: two FNV passes) */
+function recordReplay(name, mode, biome, why) {
+  const f = fixture(name);
+  if (!f) throw new Error('--record: no fixture named ' + name);
+  const lv = biome === null ? buildFx(f, mode) : SB.pipeline.build(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode })), { biome });
+  if (lv.needsCrop) throw new Error('--record: ' + name + ' mode ' + mode + ' is needsCrop');
+  const r = BOT.walk(lv, new Map(), { tries: 0, found: 0, memo: 0, memoMiss: 0 });
+  if (!r.ok) throw new Error('--record: the bot does not clear ' + name + ' (' + (r.why || 'a miss at edge ' + (r.miss && r.miss.i)) + ')');
+  const words = r.words.concat(Array(REPLAY_PAD).fill(0));
+  const j = { v: 1, fixture: name, mode, biome, opts: { hearts: SB.TUNING.HEARTS_BASE, loadout: null }, steps: words.length, runs: SB.sim.rle.encode(words) };
+  j.golden = { hash: hex(runReplay(j).hash), at: words.length, why: why };
+  return j;
+}
+if (opt('record')) {
+  const name = opt('record'), mode = Number(opt('mode') || 0), biome = opt('biome') === null ? null : Number(opt('biome'));
+  const j = recordReplay(name, mode, biome, opt('why') || 'recorded ' + new Date().toISOString().slice(0, 10) + ' by --record');
+  fs.mkdirSync(REPLAY_DIR, { recursive: true });
+  const file = path.join(REPLAY_DIR, name + (mode ? '-mode' + mode : '') + (biome !== null ? '-biome' + biome : '') + '.json');
+  fs.writeFileSync(file, JSON.stringify(j) + '\n');
+  console.log('recorded ' + file + ': ' + j.steps + ' steps (' + j.runs.length + ' runs), golden ' + j.golden.hash);
+  process.exit(0);
+}
+if (opt('replay')) {
+  const file = path.resolve(opt('replay')), j = JSON.parse(fs.readFileSync(file, 'utf8')), r = runReplay(j);
+  const ok = hex(r.hash) === j.golden.hash;
+  console.log(path.basename(file) + ': ' + j.steps + ' steps, ' + (r.cleared ? 'cleared' : 'NOT cleared') + ', hash ' + hex(r.hash) + ', golden ' + j.golden.hash + ' (' + j.golden.why + '): ' + (ok ? 'equal' : 'DIFFERENT'));
+  process.exit(ok && r.cleared ? 0 : 1);
+}
+if (flag('regold')) {
+  const why = opt('why');
+  if (!why) { console.log('--regold needs --why "the reason the hashes moved" (it lands in each file and in PROGRESS.md)'); process.exit(2); }
+  for (const name of fs.readdirSync(REPLAY_DIR).filter(n => n.endsWith('.json'))) {
+    const file = path.join(REPLAY_DIR, name), j = JSON.parse(fs.readFileSync(file, 'utf8')), r = runReplay(j), was = j.golden.hash;
+    j.golden = { hash: hex(r.hash), at: j.steps, why: why };
+    fs.writeFileSync(file, JSON.stringify(j) + '\n');
+    console.log(name + ': ' + was + ' -> ' + j.golden.hash + (r.cleared ? '' : '  (WARNING: the replay no longer clears its room: --record it again)'));
+  }
+  process.exit(0);
+}
+const replays = () => fs.existsSync(REPLAY_DIR) ? fs.readdirSync(REPLAY_DIR).filter(n => n.endsWith('.json')).sort().map(n => ({ name: n, j: JSON.parse(fs.readFileSync(path.join(REPLAY_DIR, n), 'utf8')) })) : [];
+
+group('H-bot-5', 'the goldens: each replay in fixtures/replays clears its room and ends on its golden hash', t => {
+  const list = replays();
+  t.ok(['sample-room.json', 'shelves-a.json'].every(n => list.some(r => r.name === n)), 'the sample room and shelves-a have replays (' + list.map(r => r.name).join(', ') + ')');
+  for (const { name, j } of list) {
+    const r = runReplay(j);
+    t.ok(r.cleared === 1, name + ': its ' + j.steps + ' steps clear the room (else --record it again)');
+    t.eq(hex(r.hash), j.golden.hash, name + ': the hash at step ' + j.golden.at + ' is the golden (' + j.golden.why + '; an intended change: --regold --why "..")');
+  }
+});
+
+group('H-bot-3', 'determinism: the sample room\'s replay hashes alike twice and in two fresh contexts at frames 300, 900, 1800 and the end; the frame moves the hash', t => {
+  const j = replays().find(r => r.name === 'sample-room.json');
+  if (!t.ok(!!j, 'the sample room replay exists')) return;
+  const marks = [300, 900, 1800, j.j.steps - 60, j.j.steps];
+  const a = runReplay(j.j, SB, marks), b = runReplay(j.j, SB, marks);
+  const ctxA = loadCoreFull(PAGE).SB, ctxB = loadCoreFull(PAGE).SB;
+  const c = runReplay(j.j, ctxA, marks), d = runReplay(j.j, ctxB, marks);
+  t.same(marks.map(m => a.at[m]), marks.map(m => b.at[m]), 'two runs in one context hash alike at ' + marks.join(', '));
+  t.same(marks.map(m => c.at[m]), marks.map(m => d.at[m]), 'two fresh contexts hash alike at ' + marks.join(', '));
+  t.same(marks.map(m => c.at[m]), marks.map(m => a.at[m]), 'and alike with the harness\'s own context');
+  /* after the clear the state stands still but for the frame: a hash that ignored the frame would repeat here */
+  t.ok(a.cleared === 1 && a.at[j.j.steps - 60] !== a.at[j.j.steps], 'past the clear, 60 quiet steps apart, the hashes differ (' + hex(a.at[j.j.steps - 60]) + ', ' + hex(a.at[j.j.steps]) + '): the frame is in the hash');
+});
+
+group('H-bot-4', 'the bit flip: one input bit changed at frame 100 changes the final hash', t => {
+  const j = replays().find(r => r.name === 'sample-room.json');
+  if (!t.ok(!!j, 'the sample room replay exists')) return;
+  const base = runReplay(j.j).hash;
+  /* the bits whose flip leaves a lasting change at frame 100, where the walk stands still in a held A's tail: the
+     rocker either way, and B's press (a dash, 3 cells); A there is a jump straight up that lands where it left, and
+     the walk rightly ends the same */
+  for (const bit of [IN.L, IN.R, IN.B_TAP]) {
+    const words = SB.sim.rle.decode(j.j.runs); words[99] ^= bit;
+    const flipped = runReplay(Object.assign({}, j.j, { runs: SB.sim.rle.encode(words) })).hash;
+    t.ok(flipped !== base, 'flipping bit ' + bit + ' at frame 100 changes the final hash (' + hex(base) + ' to ' + hex(flipped) + ')');
+  }
+});
+
+/* BOT-EXPLORE (report only, --explore <fixture>): from every standable cell, every JUMP one beyond the model's table
+   (one cell farther at each height, and one row higher at each distance) whose target is standable, searched by the
+   bot's JUMP candidates; the extra edges the sim allowed say how much slack a thumb has past the model */
+if (opt('explore')) {
+  const f = fixture(opt('explore'));
+  if (!f) { console.log('--explore: no fixture named ' + opt('explore')); process.exit(2); }
+  const lv = buildFx(f, Number(opt('mode') || 0)), g = SB.reach.graph(lv), tb = SB.reach.tables(SB.K, lv.biome | 0);
+  const m = tb.profiles.FULL.maxAcross, up = m.reduce((u, v, dy) => (v >= 0 ? dy : u), -1), tried = {}, allowed = {};
+  const memo = new Map(), stats = { tries: 0, found: 0, memo: 0, memoMiss: 0 };
+  const beyond = []; for (let dy = 0; dy <= up; dy++) beyond.push([m[dy] + 1, dy]); for (let dx = 0; dx <= m[0]; dx++) { let u = -1; for (let dy = 0; dy < m.length; dy++) if (m[dy] >= dx) u = dy; beyond.push([dx, u + 1]); }
+  for (let v = 0; v < g.n; v++) {
+    if (!g.stand[v]) continue;
+    const sx = v % lv.w, sy = Math.floor(v / lv.w);
+    for (const dir of [1, -1]) for (const [dx, dy] of beyond) {
+      if (dx === 0 && dir < 0) continue;
+      const tx = sx + dir * dx, ty = sy - dy;
+      if (tx < 0 || tx >= lv.w || ty < 0 || !g.stand[ty * lv.w + tx]) continue;
+      const key = dx + ' across ' + dy + ' up'; tried[key] = (tried[key] || 0) + 1;
+      const s0 = BOT.place(lv, g, v); if (!s0) continue;
+      const r = BOT.solve(s0, { kind: 'JUMP', profile: 'FULL', dir, dx, dy, from: v, to: ty * lv.w + tx }, g, memo, stats);
+      if (r.ok) allowed[key] = (allowed[key] || 0) + 1;
+    }
+  }
+  console.log('BOT-EXPLORE ' + f.name + ' mode ' + (opt('mode') || 0) + ': jumps one beyond the model (FULL table ' + JSON.stringify(m) + '), from every standable cell to every standable target');
+  for (const key of Object.keys(tried)) console.log('  ' + key.padEnd(16) + ' ' + String(allowed[key] || 0).padStart(4) + ' of ' + String(tried[key]).padStart(4) + ' the sim allowed');
+  process.exit(0);
+}
 
 /* ================================================================ run */
 const t0 = Date.now();
