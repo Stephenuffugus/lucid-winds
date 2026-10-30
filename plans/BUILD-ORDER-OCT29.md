@@ -1,13 +1,13 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 14:30 UTC (Opus, building).** His word: NO budget, NO usage checks; Lap 2, the M1 SAFE list in order.
+> **STATE 30 Oct 19:00 UTC (Opus, building).** His word: NO budget, NO usage checks; Lap 2, the M1 SAFE list in order.
 > **LIVE: sb-m0-3** (deploy `c2ffcf5bc`, tag sb-m0-3, both origins proven by curl 12:44:42 UTC): M0 complete. On the
-> branch since: T1.1 `8201817b1`, T1.2a `97675f87c`, T1.2b `18d5e7ffd`, and a fifth review of T1.1 and T1.2a with its
-> fixes `b2dc98e84` (the chest past the exit or in a pit, the door's floor carved by a pocket, nine untested guards;
-> Q78, Q79). WAITS list so far: T1.5 must land before any M1 deploy (a room detected Deep is planned on the DEEP
-> tables, which the M0 sim cannot climb; the review's verifier ruled it planned). Gates: check --fast green at
-> `b2dc98e84`. Red: nothing. Next: T1.3. Side job for Stephen: the Astra asset brief (a Claude Doc, a background
-> workflow is filling it). Autosave running.
+> branch since, each pushed with check --fast green: T1.1 `8201817b1`, T1.2a `97675f87c`, T1.2b `18d5e7ffd`, review 5
+> `b2dc98e84`, T1.3 `c17697fc1`, T1.4 `6f13bb390`, T1.4b `11af73578`, T1.6 `376888c2f`, T1.7 `ede64bc06`, T1.8
+> `b53c5da78`. Next: T1.10, T1.11, T1.13, T1.9a, T1.9b, then stop before the WAITS tasks. WAITS list so far: T1.5 must
+> land before any M1 deploy (a room detected Deep is planned on the DEEP tables, which the M0 sim cannot climb). Red:
+> nothing. Side job for Stephen, done: the Astra asset brief, a Claude Doc (its completeness critic still running;
+> fixes land as edits). Autosave running.
 
 You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is ONE game from zero:
 Shutterbug, a photo of a room becomes a pixel platformer level (`satellites/shutterbug/DESIGN.md`). Fable wrote the
