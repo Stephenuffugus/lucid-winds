@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 1821;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 2320;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', retable: 'T0.10a', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -609,6 +609,8 @@ group('H-pipe-3', 'all-dark and all-light stand on row h-2; the threshold is the
   }
   for (const f of FIXTURES) {
     const lv = buildFx(f, 0), want = pipeRef.solidity(f.fx.record, 0).T;
+    /* a needsCrop result carries no level; it must be one the fixture's author designed (H-pipe-9 says so for the rest) */
+    if (lv.needsCrop) { t.ok(f.fx.expect.needsCrop === true, f.name + ': needsCrop (' + lv.why + ') as its expect authors it'); continue; }
     t.ok(lv.otsuT >= 70 && lv.otsuT <= 140, f.name + ': threshold ' + lv.otsuT + ' inside DESIGN 6.3\'s clamp [70, 140]');
     t.eq(lv.otsuT, want, f.name + ': threshold equals the test\'s exact Otsu');
   }
@@ -728,6 +730,8 @@ group('H-pipe-9', 'every fixture\'s authored platformsMin and landmarksMin hold'
   for (const f of FIXTURES) {
     const e = f.fx.expect, lv = buildFx(f, 0);
     if (e.needsCrop) continue;
+    /* authored to build: a needsCrop here is a design the pipeline refused, named, never a throw */
+    if (lv.needsCrop) { t.ok(e.needsCrop === null, f.name + ': its expect says it builds, but the pipeline says needsCrop (' + lv.why + ')'); continue; }
     if (e.platformsMin !== null) t.ok(platformRuns(lv) >= e.platformsMin, f.name + ': ' + platformRuns(lv) + ' one way runs (at least ' + e.platformsMin + ')', SB.pipeline.toText(lv));
     if (e.landmarksMin !== null) t.ok(lv.landmarks.length >= e.landmarksMin, f.name + ': ' + lv.landmarks.length + ' landmarks (at least ' + e.landmarksMin + ')', SB.pipeline.toText(lv));
   }
@@ -1435,7 +1439,7 @@ group('H-fix-2', 'SB.SAMPLE_ROOM is the sample room fixture', t => {
 group('H-fix-3', 'the corpus holds every record fixtures/README.md lists; names unique; seeds distinct', t => {
   const readme = fs.readFileSync(path.join(__dirname, 'fixtures', 'README.md'), 'utf8');
   const listed = [...readme.matchAll(/^- `([a-z0-9-]+)`/gm)].map(m => m[1]);
-  t.ok(listed.length >= 7, 'the README lists at least 7 fixtures (' + listed.length + ')');
+  t.ok(listed.length >= 21, 'the README lists at least 21 fixtures (' + listed.length + '; T0.5c)');
   for (const n of listed) t.ok(!!fixture(n), 'the corpus holds ' + n);
   const names = FIXTURES.map(f => f.name);
   t.eq(new Set(names).size, names.length, 'fixture names are unique');

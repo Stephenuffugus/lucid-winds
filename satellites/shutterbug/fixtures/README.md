@@ -31,5 +31,20 @@ nothing); `--preset B` writes the same designs for the 36x64 fallback into `fixt
 - `checkerboard` a photographed checkerboard (10% noise): the smoothing
 - `one-giant-landmark` one 12x30 Soot block: landmarks, repair beside a landmark
 - `shelves-a` six one way planks and a pillar: the reach edges
+- `stripes-h` thin dark rows every fourth row: erased solids, a full width plank ladder
+- `stripes-v` thin dark columns every fourth column: erased solids, a bare wall
+- `gradient-v` Glare at the top to Ink at the bottom: a solid lower mass, an honest needsCrop
+- `gradient-h` dark to light across: a solid left wall, the rest open
+- `noise-s1` Ink and Soot specks at 15%: smoothed nearly bare
+- `noise-s2` the same at 35%: scattered blobs
+- `noise-s3` the same at 55%: a mostly solid mass (needsCrop not asserted)
+- `shelves-b` a plank every third row: a ladder of one ways climbed by jumps alone
+- `pillars` three vertical solid runs, two of them one wide and 8 tall on the frame: sticky candidates
+- `ladder-stack` four one ways within 3 rows of each other: a ladder zone
+- `bright-door` a 4x4 Glare block over a plank: the Darkroom door candidate
+- `trap-pattern` a 6x6 two cell repeat: the trap field candidate
+- `saturated-blobs` saturated clusters of 3, 8 and 14 cells: enemy spawns and a boss candidate
+- `tight-gap` a room whose only way up needs repair: the stair assertion
 
-Seven tonight; T0.5c adds fourteen more (21 in all), T1.1 the five biome tints, T3.1a the double exposure sample.
+Twenty one records (twenty synthetic plus the sample room) since T0.5c; T1.1 adds the five biome tints, T3.1a the
+double exposure sample. Authored needsCrop: all-dark and gradient-v (at most 2 over the corpus, H-rep-1).

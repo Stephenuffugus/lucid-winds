@@ -98,6 +98,111 @@ SYNTH.push(() => {
     g, { biome: 'frost', needsCrop: false, tabsMax: 12, exitIsLight: false, platformsMin: 6, landmarksMin: 1 });
 });
 
+/* ---------------------------------------------------------------- T0.5c: the rest of the synthetic corpus */
+/* Each expect is authored from its design; the notes say why. Coordinates are grid A's. */
+
+SYNTH.push(() => {
+  const g = grid(C.ASH);
+  for (let y = 2; y < H - 1; y += 4) rect(g, 0, y, W - 1, y, C.INK);
+  return fixture('stripes-h', 'synthetic',
+    'Thin dark horizontal stripes every fourth row on Ash: one row solids that the smoothing erases (a one row run sees at most three solids of nine), leaving a bare wall; but each Ash row above a stripe drops by 188 to the Ink below, and with the stripe open again after smoothing those are full width one way platforms every four rows: a ladder of planks. No landmark: nothing solid survives but the forced floor, and the floor row is never a landmark (Q58). Mean L about 152, nothing saturated: Attic.',
+    g, { biome: 'attic', needsCrop: false, tabsMax: 0, exitIsLight: false, platformsMin: 10, landmarksMin: 0 });
+});
+
+SYNTH.push(() => {
+  const g = grid(C.ASH);
+  for (let x = 1; x < W; x += 4) rect(g, x, 0, x, H - 2, C.INK);
+  return fixture('stripes-v', 'synthetic',
+    'Thin dark vertical stripes every fourth column: one column solids the smoothing erases everywhere (a one wide run sees three of nine), so the room is a bare wall with dark lines in the photo; no drop runs horizontally across three cells (the stripes are one cell), so no platforms. The default spread climbs it. No landmark: nothing solid survives but the forced floor, and the floor row is never a landmark (Q58). Mean L about 151: Attic.',
+    g, { biome: 'attic', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 0, landmarksMin: 0 });
+});
+
+SYNTH.push(() => {
+  const g = grid(C.ASH), ramp = [C.GLARE, C.PAPER, C.ASH, C.PEWTER, C.SLATE, C.SOOT, C.INK];
+  for (let y = 0; y < H; y++) { const k = Math.min(ramp.length - 1, Math.floor(y * ramp.length / H)); rect(g, 0, y, W - 1, y, ramp[k]); }
+  return fixture('gradient-v', 'synthetic',
+    'A vertical light to dark gradient, Glare at the top to Ink at the bottom in seven bands. Otsu splits the dark bottom bands (Slate, Soot, Ink) from the light ones, so the lower three sevenths are one solid mass with the forced floor; the light upper rooms float over it. The band edges where a drop exceeds 60 (Paper 239 over Ash 199 does not; Ash over Pewter 60 does not; Pewter over Slate 64 does) make one full width surface over solid: the mass\'s top. The hero spawns... nowhere: the standing row is solid. needsCrop (unreachable).',
+    g, { biome: 'attic', needsCrop: true, tabsMax: 0, exitIsLight: null, platformsMin: null, landmarksMin: 1 });
+});
+
+SYNTH.push(() => {
+  const g = grid(C.ASH), ramp = [C.INK, C.SOOT, C.SLATE, C.PEWTER, C.ASH, C.PAPER];
+  for (let x = 0; x < W; x++) { const k = Math.floor(x * ramp.length / W); rect(g, x, 0, x, H - 1, ramp[k]); }
+  return fixture('gradient-h', 'synthetic',
+    'A horizontal dark to light gradient in six bands of four columns: the left eight columns (Ink, Soot) are solid from top to bottom, a wall; the rest open. No horizontal drops, no platforms. The hero spawns in the open right part and climbs by tabs; the dark wall on the left is a long contact surface (wall jumps arrive in T0.12a). Mean L about 128: Attic.',
+    g, { biome: 'attic', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 0, landmarksMin: 1 });
+});
+
+for (const [name, p] of [['noise-s1', 0.15], ['noise-s2', 0.35], ['noise-s3', 0.55]]) SYNTH.push(() => {
+  const g = grid(C.ASH), r = noise(name);
+  for (let y = 0; y < H - 1; y++) for (let x = 0; x < W; x++) if (r() < p) g[y][x] = r() < 0.5 ? C.INK : C.SOOT;
+  return fixture(name, 'synthetic',
+    'Seeded salt and pepper of Ink and Soot on Ash at ' + Math.round(p * 100) + '% density. ' + (p < 0.3 ? 'Sparse: the smoothing clears almost all of it, a nearly bare wall, climbed by tabs.' : p < 0.5 ? 'Middling: the smoothing leaves scattered blobs, some standable, gaps repaired by tabs.' : 'Dense: the smoothing grows it into a mostly solid mass with open pockets; whether a route exists is not designed, so needsCrop is not asserted here (null) and the corpus count of authored needsCrop stays honest.') + ' Nothing saturated, mean L from about 175 down to 100: ' + (p < 0.2 ? 'Frost (mean L over 170).' : 'Attic.'),
+    g, { biome: p < 0.2 ? 'frost' : 'attic', needsCrop: p > 0.5 ? null : false, tabsMax: 16, exitIsLight: false, platformsMin: null, landmarksMin: null });
+});
+
+SYNTH.push(() => {
+  const g = grid(C.ASH);
+  for (let row = 5; row < H - 2; row += 3) { const x0 = (row * 7) % 12, x1 = Math.min(W - 1, x0 + 9); rect(g, x0, row - 1, x1, row - 1, C.PAPER); rect(g, x0, row, x1, row, C.PEWTER); }
+  return fixture('shelves-b', 'synthetic',
+    'A plank every third row (Paper over Pewter, ten wide, staggered): a ladder of one ways three rows apart all the way up, climbable by jumps alone. The top plank is at row 5; the exit stands on it. Each plank\'s Pewter row is a one row solid line at the clamped threshold (139 under 140), which the smoothing erases, so each plank is a one way. No landmark: nothing solid survives but the forced floor, and the floor row is never a landmark (Q58). Mean L about 190, nothing saturated: Frost.',
+    g, { biome: 'frost', needsCrop: false, tabsMax: 0, exitIsLight: false, platformsMin: 14, landmarksMin: 0 });
+});
+
+SYNTH.push(() => {
+  const g = grid(C.ASH);
+  rect(g, 0, 20, 0, 27, C.SOOT); rect(g, W - 1, 30, W - 1, 37, C.SOOT); rect(g, 10, 14, 12, 40, C.SOOT);
+  return fixture('pillars', 'synthetic',
+    'Three vertical solid runs: one wide and 8 tall against the left edge (rows 20..27) and against the right edge (rows 30..37), and a 3 wide pillar in the middle (x 10..12, rows 14..40). One wide runs survive the smoothing only at the room\'s edge (an out of bounds neighbour votes like the cell), which is why these two stand on the frame: sticky candidates for Overgrowth and Deep (T1.1). Landmarks: the middle pillar and the floor (the edge runs are 8 cells, so three).',
+    g, { biome: 'attic', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 0, landmarksMin: 3 });
+});
+
+SYNTH.push(() => {
+  const g = grid(C.ASH);
+  plank(g, 6, 15, 44); plank(g, 8, 17, 41); plank(g, 6, 15, 38); plank(g, 8, 17, 35);
+  return fixture('ladder-stack', 'synthetic',
+    'Four one ways stacked three rows apart (rows 35, 38, 41, 44, ten wide, offset by two): a ladder zone (DESIGN 6.11: three or more stacked within 3 rows) with its chest at the top in M1. Above it the room is bare and climbed by tabs. No landmark: nothing solid survives but the forced floor, and the floor row is never a landmark (Q58). Frost (mean L about 194, nothing saturated).',
+    g, { biome: 'frost', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 4, landmarksMin: 0 });
+});
+
+SYNTH.push(() => {
+  const g = grid(C.ASH);
+  rect(g, 9, 18, 12, 21, C.GLARE);
+  plank(g, 4, 18, 23);
+  return fixture('bright-door', 'synthetic',
+    'An Ash wall with one 4x4 Glare block (x 9..12, rows 18..21): the largest bright rectangle, the Darkroom door candidate (M1), with a plank under it (row 23: Paper over Pewter) so standable cells sit in front of its bottom row. The darkest colour present is the plank\'s Pewter (139), and Otsu splitting 139 from the rest lands at the clamp, 140, so the plank\'s lower row is a thin solid line the smoothing erases and the plank is a one way; Ash is open. (First authored on a Pewter wall, which the clamp at 140 makes solid from edge to edge: L 139 is one under the threshold, an unclimbable room.) Mean L about 199, nothing saturated: Frost.',
+    g, { biome: 'frost', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 1, landmarksMin: 0 });
+});
+
+SYNTH.push(() => {
+  const g = grid(C.ASH);
+  for (let y = 30; y < 36; y++) for (let x = 12; x < 18; x++) g[y][x] = ((x + y) & 1) ? C.BRICK : C.PAPER;
+  plank(g, 2, 9, 38);
+  return fixture('trap-pattern', 'synthetic',
+    'A 6x6 two cell repeating pattern (Brick and Paper checks, x 12..17, rows 30..35): the trap field candidate (DESIGN 6.11: a repeating 2 cell pattern at least 4x4), in M1 spikes in Attic. Brick (93) is solid at this room\'s clamped threshold (140), and a checkerboard is a fixed point of the 3x3 majority, so the field\'s inside stays a solid check of single cells joined only at corners: standable tops, no landmark (4 connected components of one cell; DESIGN 6.5). (First authored with Brick open and the floor as a landmark; the clamp and Q58 say otherwise.) A plank at row 38 on the left. Saturated cells 18 of 1152 (under 10%): mean L about 192, Frost.',
+    g, { biome: 'frost', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 1, landmarksMin: 0 });
+});
+
+SYNTH.push(() => {
+  const g = grid(C.ASH);
+  rect(g, 3, 40, 3, 42, C.BRICK);                         /* 3 cells: fodder */
+  rect(g, 16, 30, 17, 33, C.MAGENTA);                     /* 8 cells: an elite */
+  rect(g, 6, 14, 9, 16, C.BRICK); rect(g, 7, 17, 8, 17, C.BRICK);   /* 14 cells: a boss candidate */
+  plank(g, 2, 8, 44); plank(g, 12, 20, 36); plank(g, 4, 11, 20);
+  return fixture('saturated-blobs', 'synthetic',
+    'Three saturated clusters of 3, 8 and 14 cells (Brick, Magenta, Brick) on Ash: a fodder spawn, an elite, and in a house run\'s last room the boss (12 or more). At this room\'s clamped threshold (140) Brick and Magenta are solid; two 3x3 majority passes erase any block two wide (the first pass leaves its middle rows, the second a 2x2 that votes itself away), so the 3 and the 8 vanish and only the 14 (four wide) keeps a core: one landmark. (First authored as two; the 8 is two wide.) Three planks. 25 of 1152 saturated (2%): mean L about 193, Frost.',
+    g, { biome: 'frost', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 3, landmarksMin: 1 });
+});
+
+SYNTH.push(() => {
+  const g = grid(C.ASH);
+  rect(g, 0, 43, 8, 46, C.SOOT); rect(g, 13, 43, 23, 46, C.SOOT);
+  rect(g, 13, 20, 23, 42, C.SOOT);
+  return fixture('tight-gap', 'synthetic',
+    'A room whose only way up needs a jump the model will not admit on the main ascent: the floor area is two dark blocks with a pit between, and a tall dark mass on the right (x 13..23, rows 20..46) whose top (row 20) is 23 rows above the left block; nothing joins them but tab stairs. Repair must lay a stair from the left block toward the mass (H-route-4, T0.11b). Mean L about 135: Attic.',
+    g, { biome: 'attic', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 0, landmarksMin: 2 });
+});
+
 /* ---------------------------------------------------------------- the sample room (grid A only) */
 function sampleRoom() {
   const rows = readFileSync(join(GAME, 'tools', 'sample-room.txt'), 'utf8').trim().split('\n');
