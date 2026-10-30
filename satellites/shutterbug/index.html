@@ -1032,6 +1032,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
      own step order (the jump sets vy, the release cap from the second step, gravity, x at the old height, then y). */
   var PROFILES = ['FULL', 'MID', 'TAP', 'WALL', 'STICKY'];
   var NEVER = 1e9;                                   /* a hold that never ends */
+  var TOUCH_ROWS = 6;                                /* a touch trajectory is scanned to 6 rows below its takeoff (stingier below) */
   var A_HOLD = { FULL: NEVER, MID: 4, TAP: 1, WALL: NEVER, STICKY: NEVER, WALK: 0 };
   var MAX_STEPS = 400, ROWS = 5, FALL_ROWS = 24, DOWN_ROWS = 8;
 
@@ -1215,8 +1216,29 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        the bot hold it: FULL from step 0, 3 and 6 (a later start rises higher before it meets the wall), MID and TAP
        from step 0, the walk off; and the wall jump's flight to a far wall (the rocker away after the lock). The graph
        steps each one against the room (scan, below). */
-    out.touchArcs = [arc(K, 'FULL', deep, 0, NEVER), arc(K, 'FULL', deep, 3, NEVER), arc(K, 'FULL', deep, 6, NEVER), arc(K, 'MID', deep, 0, NEVER), arc(K, 'TAP', deep, 0, NEVER)];
-    out.walkArc = w; out.wallArc = arc(K, 'WALL', deep, 0, NEVER);
+    var cap = function (a) { var o = []; for (var f = 0; f < a.length && a[f].y <= TOUCH_ROWS * K.CELL_SUB; f++) o.push(a[f]); return o; };
+    var reachOf = function (a) { var m = 0; for (var f = 0; f < a.length; f++) m = Math.max(m, Math.ceil((a[f].x + K.HERO_W_SUB) / K.CELL_SUB)); return m; };
+    /* each trajectory with its sweep per direction: the cells its box enters, step by step (x at the old height, then
+       y), first entry only, as [column offset, row offset, step]; a source checks these until the first solid or one
+       way and steps the trajectory from just before it (an open sweep cannot touch anything) */
+    var withSweep = function (a) {
+      var C = K.CELL_SUB, HWs = K.HERO_W_SUB, HHs = K.HERO_H_SUB, sw = { '1': [], '-1': [] };
+      for (var d = -1; d <= 1; d += 2) {
+        var seen = {}, list = sw[d];
+        var add = function (x0, y, f) {
+          for (var c = Math.floor(x0 / C); c <= Math.floor((x0 + HWs - 1) / C); c++) for (var r = Math.floor((y - HHs) / C); r <= Math.floor((y - 1) / C); r++) {
+            var key = c + ',' + r; if (!seen[key]) { seen[key] = 1; list.push([c, r + 1, f]); }
+          }
+        };
+        for (var f = 1; f < a.length; f++) {
+          var x0 = d > 0 ? a[f].x : C - a[f].x - HWs;
+          add(x0, a[f].py, f); add(x0, a[f].y, f);
+        }
+      }
+      return { a: a, sweep: sw };
+    };
+    out.touchArcs = [withSweep(cap(arc(K, 'FULL', deep, 0, NEVER))), withSweep(cap(arc(K, 'FULL', deep, 3, NEVER))), withSweep(cap(arc(K, 'MID', deep, 0, NEVER)))];
+    out.walkArc = withSweep(cap(w)); out.wallArc = withSweep(cap(arc(K, 'WALL', deep, 0, NEVER)));
     memo[key] = out;
     return out;
   }
@@ -1267,11 +1289,16 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        stepped as the sim steps it: x at the old height, clamped flush against the first solid it runs into, then y,
        ending at a landing (a solid, or a one way it crosses with LAND_OVERLAP) or a head bonk (the 2 px nudge left out,
        so the model is the stingier); every step it is flush with HERO_H - CORNER_PX of wall beside it (a plain wall
-       outside the wall jump's lock, a sticky one going down) arms the contact at its feet, costed as the jump or fall
-       to it plus one (section 3.3); the scan ends at the first armed step going down (the SLIDE edges go on). */
-    var scan = function (a, sx, sy, dir, out, lockSteps, chain) {
+       outside the wall jump's lock, a sticky one going down) arms the contact in the row holding the box's centre,
+       costed as the jump or fall to it plus one (section 3.3); the scan ends at the first armed step going down (the
+       SLIDE edges go on), or 6 rows below the takeoff. Stepping starts two steps before the first solid or one way
+       in the trajectory's sweep: before it the box is in open cells, where nothing stops or arms it. */
+    var scan = function (t, sx, sy, dir, out, lockSteps, chain) {
+      var a = t.a, sw = t.sweep[dir], f0 = -1;
+      for (var q = 0; q < sw.length; q++) { var ec = sx + sw[q][0], er = sy + sw[q][1]; if (S(ec, er) || P(ec, er)) { f0 = Math.max(1, sw[q][2] - 2); break; } }
+      if (f0 < 0) return;
       var C = K.CELL_SUB, HWs = K.HERO_W_SUB, HHs = K.HERO_H_SUB, base = (sy + 1) * C, clamp = null, need = HHs - K.CORNER_SUB;
-      for (var f = 1; f < a.length; f++) {
+      for (var f = f0; f < a.length; f++) {
         var p = a[f];
         if (p.vy === 0 && p.y === 0) continue;                       /* still on the ledge of a walk off */
         var py = base + p.py, ny = base + p.y, X = clamp !== null ? clamp : (dir > 0 ? sx * C + p.x : (sx + 1) * C - p.x - HWs);
@@ -1298,7 +1325,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         }
         var armed = (p.vy > 0 && ovS >= need) || (f >= lockSteps && ovP >= need);
         if (!armed) continue;
-        var fc = Math.floor((ny - 1) / C) * w + (col - dir), node = cnode(fc, dir);
+        var fc = Math.floor((ny - (HHs >> 1)) / C) * w + (col - dir), node = cnode(fc, dir);   /* the row holding the box's centre */
         if (fc >= 0 && fc < n && contact[2 * fc + (dir > 0 ? 1 : 0)]) {
           var tdy = sy - Math.floor(fc / w), tdx = Math.abs(fc % w - sx), cost = chain ? 4 : (tdy >= 0 ? 2 + tdy + tdx / 2 : 1 - tdy / 4) + 1;
           if (out[node] === undefined || cost < out[node]) out[node] = cost;
