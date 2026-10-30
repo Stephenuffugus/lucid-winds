@@ -80,7 +80,7 @@ try {
   const back = await page.evaluate(() => JSON.stringify(window.SB.save.doc));
   R.say(wiped === 0 && back === JSON.stringify(JSON.parse(exp).save), 'the export text pasted into a wiped save and loaded with a real tap brings the same document back (' + JSON.parse(back).recent.length + ' recent rooms, ' + back.length + ' bytes)');
   await tap(page, '#settingsbtn');
-  await page.evaluate(() => { document.getElementById('setimport').value = 'not a save'; document.getElementById('setimportgo').scrollIntoView({ block: 'center' }); });
+  await page.evaluate(() => { window.confirm = () => true; document.getElementById('setimport').value = 'not a save'; document.getElementById('setimportgo').scrollIntoView({ block: 'center' }); });
   await tap(page, '#setimportgo');
   const refused = await page.evaluate(() => ({ text: document.getElementById('setimport').value, screen: window.SB_DEV.screen(), recent: window.SB.save.doc.recent.length }));
   R.say(refused.text === 'That save did not open.' && refused.screen === 'settings' && refused.recent === JSON.parse(back).recent.length, 'garbage pasted and loaded is refused in place (' + refused.text + '), the save untouched');

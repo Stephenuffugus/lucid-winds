@@ -55,9 +55,10 @@ try {
       const s = window.SB.sim.attach(structuredClone(window.__s0), window.SB.game.level);
       for (const wd of words) window.SB.sim.step(s, wd);
       return { offer: st.scrollsOffered, on: document.getElementById('offer').classList.contains('on'), stats: st.hero.vigor + st.hero.focus + st.hero.grit, scrolls: st.hero.scrolls,
-        played: window.SB_DEV.audioPlayed(), choice: words.filter(wd => ((wd >> 6) & 15) === 1).length, same: window.SB.sim.hash(s) === window.SB_DEV.hash() };
+        heard: window.SB_DEV.audioEvents().filter(e => e.name === 'pick').length, ctx: window.SB_DEV.audioState(), choice: words.filter(wd => ((wd >> 6) & 15) === 1).length, same: window.SB.sim.hash(s) === window.SB_DEV.hash() };
     });
-    R.say(!after.offer && !after.on && after.stats === 1 && after.scrolls === 1 && (after.played.pick || 0) >= 1, w + ': the tap picks: the offer closes, one stat and one scroll more, the pick is heard');
+    /* heard: a pick voice scheduled, not an ask counted (the M1 review: audioPlayed counts before the sound is live) */
+    R.say(!after.offer && !after.on && after.stats === 1 && after.scrolls === 1 && after.heard >= 1, w + ': the tap picks: the offer closes, one stat and one scroll more, the pick is heard (' + after.heard + ' pick voice, the context ' + after.ctx + ')');
     R.say(after.choice === 1 && after.same, w + ': the recorded script carries the CHOICE word (' + after.choice + ') and replays on the room\'s first state to the live hash (' + after.same + ')');
     R.say(errors.length === 0, w + ': no page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
     await page.close();

@@ -4105,6 +4105,25 @@ group('H-sim-21', 'the step\'s event word (s.ev, what the sounds read): each eve
     for (let k = 0; k < 300; k++) { const e = log(s, IN.R); if (e & EV.CLEAR) { n++; if (clear < 0) clear = k; } }
     t.ok(clear >= 0 && n === 1 && s.room.cleared, 'reaching the exit sets CLEAR once (step ' + clear + ', ' + n + ' times)');
   }
+  /* the loot's events, the sounds of T1.6 (the M1 review: none was asserted, and a sim that dropped PICKUP and CHEST
+     passed): a walk over a speck, the scroll and the chest, answering each sheet; each event set on exactly the steps
+     the state shows its change (a loot taken, the chest opened, the offer opened, a sheet answered: the scroll's pick
+     and the slip's TAKE), and nowhere else */
+  { const { s } = lootLab({ specks: [46 * 24 + 5], scroll: 46 * 24 + 8, chest: 46 * 24 + 14 });
+    const want = { PICKUP: [], CHEST: [], OFFER: [], PICK: [] }, got = { PICKUP: [], CHEST: [], OFFER: [], PICK: [] };
+    for (let k = 0; k < 240; k++) {
+      const taken0 = s.loot.filter(l => l.taken).length, open0 = s.chest.open, offer0 = !!s.scrollsOffered, compare0 = !!s.room.compare;
+      const e = log(s, s.scrollsOffered ? SB.sim.CHOICE.A * IN.CHOICE : s.room.compare ? SB.sim.CHOICE.TAKE * IN.CHOICE : IN.R);
+      if (s.loot.filter(l => l.taken).length > taken0) want.PICKUP.push(k);
+      if (s.chest.open && !open0) want.CHEST.push(k);
+      if (!!s.scrollsOffered && !offer0) want.OFFER.push(k);
+      if ((offer0 && !s.scrollsOffered) || (compare0 && !s.room.compare)) want.PICK.push(k);
+      for (const name of Object.keys(got)) if (e & EV[name]) got[name].push(k);
+    }
+    const shown = o => Object.keys(o).map(n => n + ' ' + (o[n].join(' ') || 'never')).join(', ');
+    t.ok(want.PICKUP.length === 2 && want.CHEST.length === 1 && want.OFFER.length === 1 && want.PICK.length === 2 && JSON.stringify(got) === JSON.stringify(want),
+      'the loot sets PICKUP, CHEST, OFFER and PICK each on exactly its step (' + shown(got) + '; the state changed at ' + shown(want) + ')');
+  }
   /* the shared step (QUESTIONS Q71): a moth reaching the hero on its last heart on the very step it touches the exit
      (found by the fourth review: a moth homed at (11, 45), the rocker right from step 19, both on step 62) */
   {
@@ -4354,9 +4373,9 @@ group('H-save-1', 'the save\'s pure validator (section 2.4): a v 2 save is left 
   const newer = R.loadSave(JSON.stringify({ v: 2, dp: 99 }));
   t.ok(newer.readOnly && newer.newer && newer.doc.dp === 0 && !newer.write, 'a v 2 save runs on the defaults and is left untouched (nothing written)');
   const rec = R.toJSON(R.fromJSON(fixture('sample-room').fx.record));
-  const part = R.loadSave(JSON.stringify({ v: 1, dp: 7, settings: { mirror: true }, junk: 1, recent: Array(25).fill(rec).concat([{ bad: 1 }]), pool: { jump: [1, 2, 3, 4, 5, 6] }, moments: { first_clear: true, weird: 3 } })), doc = part.doc;
-  t.ok(doc.dp === 7 && doc.settings.mirror === true && doc.settings.sound === true && doc.settings.reducedMotion === null && !('junk' in doc) && doc.recent.length === 20 && doc.pool.jump.length === 4 && doc.pool.dive.length === 0 && doc.moments.first_clear === true && !('weird' in doc.moments) && doc.onboarding.hints.rocker === false && part.write,
-    'a save missing keys is repaired: kept values stay, missing ones take the defaults, unknown keys drop, recent keeps 20 valid records and the pool 4 a slot');
+  const part = R.loadSave(JSON.stringify({ v: 1, dp: 7, settings: { mirror: true }, junk: 1, recent: [{ bad: 1 }].concat(Array(25).fill(rec)), pool: { jump: [1, 2, 3, 4, 5, 6] }, moments: { first_clear: true, weird: 3 } })), doc = part.doc;
+  t.ok(doc.dp === 7 && doc.settings.mirror === true && doc.settings.sound === true && doc.settings.reducedMotion === null && !('junk' in doc) && doc.recent.length === 20 && doc.recent.every(r => { try { return !!R.fromJSON(r); } catch (e) { return false; } }) && doc.pool.jump.length === 4 && doc.pool.dive.length === 0 && doc.moments.first_clear === true && !('weird' in doc.moments) && doc.onboarding.hints.rocker === false && part.write,
+    'a save missing keys is repaired: kept values stay, missing ones take the defaults, unknown keys drop, recent keeps 20 valid records (the bad one first, so the filter and not the slice drops it: the M1 review) and the pool 4 a slot');
   const q = R.loadSave('{not json');
   t.ok(q.quarantined && q.write && q.doc.quarantine === '{not json' && JSON.stringify(Object.assign({}, q.doc, { quarantine: null })) === JSON.stringify(d), 'an unreadable string is set aside in quarantine of a fresh document, written under the same key');
   t.ok(JSON.stringify(R.loadSave(null).doc) === JSON.stringify(d) && JSON.stringify(R.validateSave(R.validateSave(doc))) === JSON.stringify(R.validateSave(doc)), 'no save gives the defaults; validating twice changes nothing');
@@ -4472,15 +4491,41 @@ group('H-qr-3', 'the sample room\'s live link is version 20 (97 modules) and rea
   t.ok(l29.version === 29 && l29.size === 133 && l40.version === 40 && Q.encode('x'.repeat(2954)) === null, '1593 characters take version 29 (133 modules), 2953 version 40, 2954 none');
 });
 
-group('H-qr-4', 'the chosen mask\'s penalty is the lowest of the eight, each recounted by the penalty rules on its own symbol, for the sample link, "shutterbug", 1593 characters and three fixtures\' links; the chosen masks are not all mask 0', t => {
+/* the four penalty rules of ISO/IEC 18004 7.8.3, written here as runs (the M1 review: H-qr-4 recounted each mask with
+   the encoder's own Q.penalty, and two rule mutants passed while changing the masks chosen). N1: a run of five or more
+   modules of one colour in a row or a column, 3 and 1 for each module past five. N2: each 2x2 block of one colour, 3.
+   N3: dark, light, dark, light, dark runs of u, u, 3u, u, u (any scale u) with light runs on both sides, one of them 4u
+   or more, 40 for each side that is; the light beyond the symbol is light (its quiet zone). N4: 10 for each 5% step
+   the dark share strays from 50% beyond the first (45% to 55% scores 0; an odd count of modules never sits at 50%) */
+function qrPenalty(m, n) {
+  let score = 0, dark = 0;
+  for (let col = 0; col < 2; col++) for (let k = 0; k < n; k++) {
+    const runs = [];
+    for (let i = 0; i < n; i++) { const c = col ? m[i * n + k] : m[k * n + i]; if (runs.length && runs[runs.length - 1][0] === c) runs[runs.length - 1][1]++; else runs.push([c, 1]); }
+    for (const [, len] of runs) if (len >= 5) score += 3 + len - 5;
+    const R = runs.map(r => r.slice());
+    if (R[0][0] === 0) R[0][1] = Infinity; else R.unshift([0, Infinity]);
+    if (R[R.length - 1][0] === 0) R[R.length - 1][1] = Infinity; else R.push([0, Infinity]);
+    for (let j = 1; j + 5 < R.length; j++) {
+      const u = R[j][1];
+      if (R[j][0] !== 1 || R[j + 1][1] !== u || R[j + 2][1] !== 3 * u || R[j + 3][1] !== u || R[j + 4][1] !== u) continue;
+      const before = R[j - 1][1], after = R[j + 5][1];
+      score += 40 * ((before >= 4 * u && after >= u ? 1 : 0) + (after >= 4 * u && before >= u ? 1 : 0));
+    }
+  }
+  for (let y = 0; y + 1 < n; y++) for (let x = 0; x + 1 < n; x++) { const c = m[y * n + x]; if (m[y * n + x + 1] === c && m[(y + 1) * n + x] === c && m[(y + 1) * n + x + 1] === c) score += 3; }
+  for (let i = 0; i < n * n; i++) dark += m[i];
+  return score + (Math.ceil(Math.abs(dark * 100 / (n * n) - 50) / 5) - 1) * 10;
+}
+group('H-qr-4', 'the chosen mask\'s penalty is the lowest of the eight, each recounted by the test\'s own penalty rules (qrPenalty) on its own symbol, for the sample link, "shutterbug", 1593 characters and three fixtures\' links; the chosen masks are not all mask 0', t => {
   const Q = SB.qr, texts = [QR_LINK(), 'shutterbug', 'x'.repeat(1593)];
   for (const name of ['shelves-a', 'noise-s1', 'checkerboard']) { const fx = fixture(name); t.ok(!!fx, 'the fixture ' + name + ' is there'); if (fx) texts.push(SB.record.linkOf('https://lucidwinds.com', '/satellites/shutterbug/', SB.record.fromJSON(fx.fx.record))); }
   const chosen = [];
   for (const text of texts) {
     const s = Q.encode(text), each = [];
-    for (let k = 0; k < 8; k++) { const m = Q.encode(text, { mask: k }); each.push(Q.penalty(m.modules, m.size)); }
+    for (let k = 0; k < 8; k++) { const m = Q.encode(text, { mask: k }); each.push(qrPenalty(m.modules, m.size)); }
     chosen.push(s.mask);
-    t.ok(s.penalty === Q.penalty(s.modules, s.size) && s.penalty === Math.min(...each) && each.indexOf(s.penalty) === s.mask, 'a ' + text.length + ' character text: mask ' + s.mask + ' scores ' + s.penalty + ', the lowest of [' + each.join(', ') + ']');
+    t.ok(s.penalty === qrPenalty(s.modules, s.size) && s.penalty === Math.min(...each) && each.indexOf(s.penalty) === s.mask, 'a ' + text.length + ' character text: mask ' + s.mask + ' scores ' + s.penalty + ', the lowest of the test\'s own [' + each.join(', ') + ']');
   }
   t.ok(chosen.some(k => k !== 0), 'the chosen masks are not all mask 0 (' + chosen.join(', ') + '), so a mask never scored would show');
 });

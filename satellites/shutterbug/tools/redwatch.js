@@ -629,11 +629,14 @@ const MUTANTS = [
   { name: 'REGISTER_WHEN_EMBEDDED', task: 'T1.11', file: 'page', find: "if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load',", repl: "if (navigator.serviceWorker) window.addEventListener('load',",
     gates: [{ gate: 'pwa', expect: 'with ?embed=1 and inside the wrapper iframe no worker registers' }] },
   { name: 'SW_WIPES_OTHER_CACHES', task: 'T1.11', file: 'sw', find: "return k.indexOf('shutterbug-') === 0 && k !== CACHE;", repl: 'return k !== CACHE;',
-    gates: [{ gate: 'lint', expect: 'SW_DELETE' }] },
+    gates: [{ gate: 'lint', expect: 'SW_DELETE' }, { gate: 'pwa', expect: "the update leaves another game's cache on the origin alone" }] },
+  /* the M1 review: the lint's rule is textual, and this one token slip passes it; only the pwa gate's planted cache sees it */
+  { name: 'SW_WIPES_PAST_THE_PREFIX', task: 'M1R', file: 'sw', find: "return k.indexOf('shutterbug-') === 0 && k !== CACHE;", repl: "return (k.indexOf('shutterbug-') === 0 || k.length > 0) && k !== CACHE;",
+    gates: [{ gate: 'pwa', expect: "the update leaves another game's cache on the origin alone" }] },
   { name: 'SW_CACHES_ROOT_FILES', task: 'T1.11', file: 'sw', find: '  if (!req.url.startsWith(self.registration.scope)) return;\n', repl: '',
-    gates: [{ gate: 'lint', expect: 'SW_SCOPE' }] },
+    gates: [{ gate: 'lint', expect: 'SW_SCOPE' }, { gate: 'pwa', expect: "under the worker the fleet's root files come from the network, never the worker" }] },
   { name: 'RELOAD_ON_CONTROLLERCHANGE', task: 'T1.11', file: 'page', find: "  window.addEventListener('beforeinstallprompt',", repl: "  if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', function () { location.reload(); });\n  window.addEventListener('beforeinstallprompt',",
-    gates: [{ gate: 'lint', expect: 'RELOAD' }] },
+    gates: [{ gate: 'lint', expect: 'RELOAD' }, { gate: 'pwa', expect: 'the new worker causes no navigation of its own' }] },
   { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=1')", repl: "register('./sw.js?v=2')",
     gates: [{ gate: 'lint', expect: 'STAMP' }] },
   /* T1.13: the free play loop, the Wallet moments, the fab insurance */
@@ -725,7 +728,39 @@ const MUTANTS = [
   { name: 'REVEAL_SEEN_NOT_SAVED', task: 'M1R', file: 'page', find: '    if (!RV.seen && SB.save.doc && !SB.save.doc.onboarding.revealSeen) { SB.save.doc.onboarding.revealSeen = true; SB.save.commit(); }\n', repl: '',
     gates: [{ gate: 'reveal', expect: 'a new session skips its first reveal on a tap' }] },
   { name: 'REVEAL_SEEN_NOT_LOADED', task: 'M1R', file: 'page', find: '  SB.ui.reveal.seen = !!SB.save.doc.onboarding.revealSeen;\n', repl: '',
-    gates: [{ gate: 'reveal', expect: 'a new session skips its first reveal on a tap' }] }
+    gates: [{ gate: 'reveal', expect: 'a new session skips its first reveal on a tap' }] },
+  { name: 'POCKET_CRAWLER_PARKS', task: 'M1R', file: 'page', find: '      if (pr) { x0 = Math.max(x0, pr.rect[0] * CS); x1 = Math.max(x0, Math.min(x1, (pr.rect[2] + 1) * CS - sz)); }\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-en-9', expect: 'crawler elites over the corpus patrol their hollow wall to wall' }] },
+  { name: 'POCKET_EMPTY', task: 'M1R', file: 'page', find: '    if (pl >= 0) { cand.push(pl); cand.sort(function (a, b) { return a - b; }); }\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-feat-2', expect: 'the pocket holds no loot at its back' }] },
+  { name: 'LADDER_TAKES_ELITE', task: 'M1R', file: 'page', find: '      if (es[k].elite && pk && pk.cells.indexOf(es[k].idx) >= 0) continue;\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-route-10', expect: "a pocket's elite nearer the climb than a moth that breaks it" }] },
+  { name: 'KIND_TABLE_SWAPPED', task: 'M1R', file: 'page', find: 'KIND_OF_BIOME = [MOTH, ICICLE, JELLY, CRAWLER, SPARK];', repl: 'KIND_OF_BIOME = [MOTH, JELLY, ICICLE, CRAWLER, SPARK];',
+    gates: [{ gate: 'harness', only: 'H-feat-6', expect: ' in frost' }, { gate: 'harness', only: 'H-en-1', expect: "enemies of its biome's kind" }] },
+  { name: 'STAT_TABLE_SWAPPED', task: 'M1R', file: 'page', find: 'STAT_OF_BIOME = [VIGOR, FOCUS, FOCUS, GRIT, VIGOR];', repl: 'STAT_OF_BIOME = [VIGOR, GRIT, GRIT, FOCUS, FOCUS];',
+    gates: [{ gate: 'harness', only: 'H-loot-3', expect: "the biome's stat first in" }] },
+  { name: 'STICKY_IN_FIRST_ROOM', task: 'M1R', file: 'page', find: 'if ((level.biome === 2 || level.biome === 3) && !level.twistOff) markSticky(level);', repl: 'if (level.biome === 2 || level.biome === 3) markSticky(level);',
+    gates: [{ gate: 'harness', only: 'H-sim-17', expect: 'the first ever room in Deep and Overgrowth' }] },
+  { name: 'TWISTOFF_FROST_ONLY', task: 'M1R', file: 'page', find: 'level.twistOff = opts.firstRoom && (level.biome === 1 || level.biome === 2 || level.biome === 3) ? 1 : 0;', repl: 'level.twistOff = opts.firstRoom && level.biome === 1 ? 1 : 0;',
+    gates: [{ gate: 'harness', only: 'H-sim-17', expect: 'the first ever room in Deep and Overgrowth' }] },
+  { name: 'NO_PICKUP_EVENT', task: 'M1R', file: 'page', find: 'lt.taken = 1; s.ev |= EV.PICKUP;', repl: 'lt.taken = 1;',
+    gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the loot sets PICKUP, CHEST, OFFER and PICK each on exactly its step' }] },
+  { name: 'NO_CHEST_EVENT', task: 'M1R', file: 'page', find: 's.room.compare = 1; s.ev |= EV.CHEST; }', repl: 's.room.compare = 1; }',
+    gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the loot sets PICKUP, CHEST, OFFER and PICK each on exactly its step' }] },
+  { name: 'QR_RULE2_ZERO', task: 'M1R', file: 'page', find: 'if (c === m[y * n + x + 1] && c === m[(y + 1) * n + x] && c === m[(y + 1) * n + x + 1]) score += 3;', repl: 'if (c === m[y * n + x + 1] && c === m[(y + 1) * n + x] && c === m[(y + 1) * n + x + 1]) score += 0;',
+    gates: [{ gate: 'harness', only: 'H-qr-4', expect: "the lowest of the test's own" }] },
+  { name: 'QR_RULE3_ZERO', task: 'M1R', file: 'page', edits: [['if (!color) score += count(hist) * 40;', 'if (!color) score += count(hist) * 0;'], ['add(run + n, hist); score += count(hist) * 40;', 'add(run + n, hist); score += count(hist) * 0;']],
+    gates: [{ gate: 'harness', only: 'H-qr-4', expect: "the lowest of the test's own" }] },
+  { name: 'RECENT_UNFILTERED', task: 'M1R', file: 'page', find: 'd.recent = d.recent.filter(function (r) { try { return !!fromJSON(r); } catch (e) { return false; } }).slice(0, 20);', repl: 'd.recent = d.recent.slice(0, 20);',
+    gates: [{ gate: 'harness', only: 'H-save-1', expect: 'recent keeps 20 valid records' }] },
+  { name: 'SYNTH_THROWS', task: 'M1R', file: 'page', find: "    chest: function (t) { tone('triangle', 523, 523", repl: "    chest: function (t) { undefinedSynth(); tone('triangle', 523, 523",
+    gates: [{ gate: 'audio', expect: 'each of the 11 sounds the shell asks for schedules one voice' }] },
+  { name: 'SOUND_TOGGLE_MISWIRED', task: 'M1R', file: 'page', find: "setBool('setsound', 'sound');", repl: "setBool('setsound', 'music');",
+    gates: [{ gate: 'save', expect: 'mirror on, sound off and reduced motion On' }] },
+  { name: 'MOTION_IGNORED', task: 'M1R', file: 'page', find: "SB.save.doc.settings.reducedMotion = this.value === 'os' ? null : this.value === 'on'; SB.save.commit();", repl: 'SB.save.commit();',
+    gates: [{ gate: 'save', expect: 'mirror on, sound off and reduced motion On' }] },
+  { name: 'IMPORT_REFUSES', task: 'M1R', file: 'page', find: "if (!o || o.app !== 'shutterbug' || o.v !== 1 || !o.save || typeof o.save !== 'object') return false;", repl: 'return false;',
+    gates: [{ gate: 'save', expect: 'the export text pasted into a wiped save' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
@@ -809,7 +844,11 @@ for (const m of MUTANTS) {
     fs.writeFileSync(path.join(dir, g.gate + '.out'), out);
     let result;
     if (r.status === 0) result = 'STAYED GREEN';
-    else if (g.expect === null || [].concat(g.expect).some(e => out.includes(BROWSER.has(g.gate) || g.gate === 'astra' ? 'FAIL  ' + e : e))) result = 'RED';
+    /* a browser or astra row's text opens a FAIL line; a harness row's text sits in an assertion's FAIL line (two
+       spaces; the group's summary line, one space, carries its title on every run, so a match there proved only that
+       something in the group failed: the M1 review); the lint's anywhere in its output */
+    else if (g.expect === null || [].concat(g.expect).some(e => BROWSER.has(g.gate) || g.gate === 'astra' ? out.includes('FAIL  ' + e)
+      : g.gate === 'harness' ? out.split('\n').some(l => l.startsWith('FAIL  ') && l.includes(e)) : out.includes(e))) result = 'RED';
     else result = 'WRONG REASON';
     rows.push({ m, g, result, why: result === 'WRONG REASON' ? (out.split('\n').find(l => /FAIL|Error/.test(l)) || '').trim().slice(0, 120) : '' });
   }
