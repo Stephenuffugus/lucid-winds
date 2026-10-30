@@ -26,13 +26,16 @@ if (gi >= 0 && !ONE) { console.log('usage: --gate <name>'); process.exit(2); }
 
 /* Gates that need no browser. `slow` gates are skipped by --fast (and said). */
 const GATES = [
-  { name: 'lint',     cmd: ['tools/lint.mjs'],  need: 'LINT OK' }
+  { name: 'lint',     cmd: ['tools/lint.mjs'],  need: 'LINT OK' },
+  { name: 'harness',  cmd: ['harness.js', '--fast'], need: 'SHUTTERBUG HARNESS OK' },
+  { name: 'redwatch', cmd: ['tools/redwatch.js', '--check'], need: 'REDWATCH OK' }
 ];
 
 /* Browser gates drive the real page in a real Chrome with real touch events. Skipped with the reason, never failed,
    when the browser is absent; a failure here is rerun ALONE, twice, before it is believed (two cores, swiftshader). */
 const BROWSER_GATES = [
-  { name: 'boot',     cmd: ['test/boot.mjs'],   need: 'BOOT OK' }
+  { name: 'boot',     cmd: ['test/boot.mjs'],   need: 'BOOT OK' },
+  { name: 'redwatch-browser', cmd: ['tools/redwatch.js', '--check', '--browser-only'], need: 'REDWATCH OK', slow: true }
 ];
 
 let browserWhy = '', puppeteerDir = '';
@@ -60,10 +63,10 @@ for (const g of all) {
   if (g.browser) {
     if (ONE && oneIsBrowser && g.name !== ONE) continue;                 // the per task run: one browser gate only
     if (ONE && !oneIsBrowser) continue;
-    if (browserWhy) { skipped.push(g.name + ' (' + browserWhy + ')'); console.log(g.name.padEnd(14) + 'skip'); continue; }
+    if (browserWhy) { skipped.push(g.name + ' (' + browserWhy + ')'); console.log(g.name.padEnd(18) + 'skip'); continue; }
   }
-  if (FAST && g.slow && g.name !== ONE) { skipped.push(g.name + ' (slow, --fast)'); console.log(g.name.padEnd(14) + 'skip  (slow)'); continue; }
-  process.stdout.write(g.name.padEnd(14));
+  if (FAST && g.slow && g.name !== ONE) { skipped.push(g.name + ' (slow, --fast)'); console.log(g.name.padEnd(18) + 'skip  (slow)'); continue; }
+  process.stdout.write(g.name.padEnd(18));
   const t0 = Date.now();
   let out = '', code = 0;
   try {

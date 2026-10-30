@@ -32,7 +32,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
    log sees the same twelve in the same order they see everywhere else. */
 const TWELVE = ['fathom', 'asterism', 'swell', 'wardian', 'doohickey', 'airworthy',
   'windup', 'inkswing', 'gerplunk', 'whistlestop', 'updraft', 'strata',
-  'marrowdeep'];   // thirteen now; the name of the list is older than the list
+  'marrowdeep', 'shutterbug'];   // fourteen now; the name of the list is older than the list
 
 const FAST = process.argv.includes('--fast');
 const only = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7);

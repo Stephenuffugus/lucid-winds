@@ -1,0 +1,119 @@
+'use strict';
+/* Red watch: every check watched failing, mechanically (BUILD-PLAN.md section 5.5).
+ *
+ *   node tools/redwatch.js                  every mutant that needs no browser, then the table
+ *   node tools/redwatch.js NAME [NAME..]    only those
+ *   node tools/redwatch.js --browser        also the browser mutants (each serves its copy through SB_PAGE and runs
+ *                                           the one browser gate it names; one Chrome at a time)
+ *   node tools/redwatch.js --browser-only   only the browser mutants
+ *   node tools/redwatch.js --check          the gate form tools/check.js runs: exit 0 iff every row has its expected
+ *                                           result (every mutant RED, NOOP stayed green) and REDWATCH OK is printed
+ *
+ * A mutant is a name, the file it breaks (the page, or harness.js for a harness only mutant), a find (it must match
+ * exactly once in the current file, or the row is ANCHOR LOST: the mutant has drifted from the code it breaks) and a
+ * replacement, and the gates that must fail with the text each failure must name. A row is RED only when the gate
+ * fails AND names that text; a gate that fails for some other reason is WRONG REASON, and one that passes STAYED
+ * GREEN. NOOP changes nothing and must stay green: the tool proves it can see a green. Without --check the exit is
+ * nonzero when any mutant stayed green, NOOP included (so `node tools/redwatch.js NOOP` exits nonzero by design). */
+const fs = require('node:fs'), path = require('node:path'), { spawnSync } = require('node:child_process');
+
+const GAME = path.join(__dirname, '..');
+const OUT = '/tmp/claude-1000/shutterbug-redwatch';
+const BROWSER = new Set(['boot', 'play', 'input', 'layout', 'reveal', 'capture', 'sprites', 'make', 'loot', 'audio', 'share', 'save', 'pwa', 'loop', 'onboard']);
+
+const CORE_SIM_OPEN = "<script id=\"core-sim\" data-core>\n(function (SB) { 'use strict';\n";
+
+/* One row per mutant, grouped by the task that added it. `only` narrows the harness to the group that must fail. */
+const MUTANTS = [
+  { name: 'NOOP', task: 'T0.3', file: 'page', find: null, repl: null, gates: [{ gate: 'harness', only: 'H-core', expect: null }] },
+
+  { name: 'PURITY_DATE', task: 'T0.2', file: 'page', find: CORE_SIM_OPEN, repl: CORE_SIM_OPEN + '  SB.t0 = Date.now();\n',
+    gates: [{ gate: 'lint', expect: 'forbidden token "Date"' }, { gate: 'harness', only: 'H-core', expect: 'core touched Date' }] },
+  { name: 'INCLUDE_MISSING', task: 'T0.2', file: 'page', find: '<script src="/music-unlocks.js" defer></script>\n', repl: '',
+    gates: [{ gate: 'lint', expect: 'the fleet include appears 0 times' }] },
+  { name: 'STYLE_COMMENT_EATS', task: 'T0.2', file: 'page', find: '#exit { align-self', repl: '/* the exit control\n#exit { align-self',
+    gates: [{ gate: 'lint', expect: '"/*" against' }, { gate: 'boot', expect: '#exit measures' }] },
+  { name: 'EXIT_UNCALLED', task: 'T0.2', file: 'page', find: '      window.SWS_EXIT();\n', repl: '',
+    gates: [{ gate: 'boot', expect: 'journey A: a real touch on the exit returned' }] },
+  { name: 'BUTTON_32PX', task: 'T0.2', file: 'page', find: '#choose { background: var(--paper); color: var(--ink); }',
+    repl: '#choose { background: var(--paper); color: var(--ink); min-height: 32px; height: 32px; }',
+    gates: [{ gate: 'boot', expect: '#choose measures' }] },
+
+  { name: 'FNV_PRIME_FLIPPED', task: 'T0.3', file: 'page', find: 'FNV_PRIME = 0x01000193', repl: 'FNV_PRIME = 0x01000197',
+    gates: [{ gate: 'harness', only: 'H-rng-1', expect: 'H-rng-1 fnv1a32Str("a")' }] },
+  { name: 'B64_PAD', task: 'T0.3', file: 'page', find: "    return out;\n  }\n\n  /* null on any character", repl: "    return out + '=';\n  }\n\n  /* null on any character",
+    gates: [{ gate: 'harness', only: 'H-rec-2', expect: 'share string length' }] },
+  { name: 'NIBBLE_15_ACCEPTED', task: 'T0.3', file: 'page', find: '        if (hi === 15 || lo === 15) return null;\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-rec-3', expect: 'decode refuses: a high nibble of 15' }] }
+];
+
+/* ---------------------------------------------------------------- run */
+const args = process.argv.slice(2);
+const CHECK = args.includes('--check'), WITH_BROWSER = args.includes('--browser'), BROWSER_ONLY = args.includes('--browser-only');
+const names = args.filter(a => !a.startsWith('--'));
+const unknown = names.filter(n => !MUTANTS.some(m => m.name === n));
+if (unknown.length) { console.log('no mutant named ' + unknown.join(', ')); process.exit(2); }
+const isBrowserRow = g => BROWSER.has(g.gate);
+
+fs.mkdirSync(OUT, { recursive: true });
+const rows = [];
+for (const m of MUTANTS) {
+  if (names.length && !names.includes(m.name)) continue;
+  const gates = m.gates.filter(g => names.length ? true : BROWSER_ONLY ? isBrowserRow(g) : WITH_BROWSER ? true : !isBrowserRow(g));
+  if (!gates.length) continue;
+  const dir = path.join(OUT, m.name);
+  fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
+  /* the copy: the page, or a harness tree whose harness.js is the mutated one (tools/ and fixtures/ linked) */
+  const srcFile = m.file === 'harness' ? path.join(GAME, 'harness.js') : path.join(GAME, 'index.html');
+  const text = fs.readFileSync(srcFile, 'utf8');
+  let mutated = text, anchor = 'ok';
+  if (m.find !== null) {
+    const count = text.split(m.find).length - 1;
+    if (count !== 1) anchor = 'ANCHOR LOST (find matches ' + count + ' times)';
+    else mutated = text.replace(m.find, () => m.repl);
+  }
+  const page = path.join(dir, 'index.html');
+  let harness = path.join(GAME, 'harness.js');
+  if (m.file === 'harness') {
+    fs.writeFileSync(path.join(dir, 'harness.js'), mutated);
+    fs.copyFileSync(path.join(GAME, 'index.html'), page);
+    for (const sub of ['tools', 'fixtures']) if (fs.existsSync(path.join(GAME, sub))) fs.symlinkSync(path.join(GAME, sub), path.join(dir, sub));
+    harness = path.join(dir, 'harness.js');
+  } else fs.writeFileSync(page, mutated);
+
+  for (const g of gates) {
+    if (anchor !== 'ok') { rows.push({ m, g, result: anchor }); continue; }
+    let cmd, env = Object.assign({}, process.env);
+    if (g.gate === 'lint') cmd = ['tools/lint.mjs', '--page', page];
+    else if (g.gate === 'harness') cmd = [harness, '--page', page].concat(g.only ? ['--only', g.only] : []);
+    else if (BROWSER.has(g.gate)) { cmd = ['test/' + g.gate + '.mjs']; env.SB_PAGE = page; }
+    else { rows.push({ m, g, result: 'UNKNOWN GATE' }); continue; }
+    const r = spawnSync('node', cmd, { cwd: GAME, encoding: 'utf8', env, maxBuffer: 64 * 1024 * 1024, timeout: 15 * 60 * 1000 });
+    const out = (r.stdout || '') + (r.stderr || '');
+    fs.writeFileSync(path.join(dir, g.gate + '.out'), out);
+    let result;
+    if (r.status === 0) result = 'STAYED GREEN';
+    else if (g.expect === null || out.includes(g.expect)) result = 'RED';
+    else result = 'WRONG REASON';
+    rows.push({ m, g, result, why: result === 'WRONG REASON' ? (out.split('\n').find(l => /FAIL|Error/.test(l)) || '').trim().slice(0, 120) : '' });
+  }
+}
+
+/* ---------------------------------------------------------------- the table */
+const pad = (s, n) => (s + ' '.repeat(n)).slice(0, n);
+console.log(pad('mutant', 30) + pad('task', 7) + pad('gate', 10) + pad('expected text', 48) + 'result');
+for (const r of rows) {
+  const want = r.m.name === 'NOOP' ? '(must stay green)' : r.g.expect || '';
+  const shown = r.m.name === 'NOOP' && r.result === 'STAYED GREEN' ? 'stayed green (as it must)' : r.result;
+  console.log(pad(r.m.name, 30) + pad(r.m.task, 7) + pad(r.g.gate, 10) + pad(want, 48) + shown + (r.why ? '  [' + r.why + ']' : ''));
+}
+const expected = r => (r.m.name === 'NOOP' ? r.result === 'STAYED GREEN' : r.result === 'RED');
+const bad = rows.filter(r => !expected(r));
+const red = rows.filter(r => r.result === 'RED').length;
+const greens = rows.filter(r => r.result === 'STAYED GREEN').length;
+console.log('\n' + rows.length + ' rows: ' + red + ' RED, ' + greens + ' stayed green, ' + (rows.length - red - greens) + ' other');
+if (!rows.length) { console.log('no rows ran'); process.exit(1); }
+if (bad.length) console.log('NOT AS EXPECTED: ' + bad.map(r => r.m.name + '@' + r.g.gate + ' ' + r.result).join(', '));
+else console.log('REDWATCH OK: every mutant RED' + (rows.some(r => r.m.name === 'NOOP') ? ', NOOP stayed green' : ''));
+if (CHECK) process.exit(bad.length ? 1 : 0);
+process.exit(greens ? 1 : (bad.length ? 1 : 0));
