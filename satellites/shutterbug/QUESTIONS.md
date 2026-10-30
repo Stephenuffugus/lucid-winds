@@ -596,3 +596,10 @@ Options: (a) as built; (b) another table of biome to stat; (c) the biased stat f
 Recommendation: (a) until his play; the table is one line (STAT_OF_BIOME).
 Plan assumes: (a); T2.5 gives the stats their effects.
 
+## Q85. A Wallet moment outside the portal, the free play bank's rounding, and what the clear card says (the builder, 30 Oct, T1.13)
+
+Section 1.6 says the Wallet announces first time moments to the parent only when framed, deduplicated in the save; it does not say whether a moment that happens outside a frame (the bare URL, the installed app) still counts as spent. DESIGN 8 gives free play and Level code x0.5 Dead pixels with no rounding rule.
+As built (T1.13): a moment is marked in the save only when it is announced, so a player who clears a room in the installed app and later opens Shutterbug from the portal still sends first_clear on that first framed clear (once a save after that); the bank is the room's Dead pixels times 0.5, floored (a speck of 5 banks 2); the clear card says `Banked 2 dead pixels` while the strip's counter still reads the room's 5 under it.
+Options for the moment: (a) as built; (b) marked on the first occurrence, framed or not (the host never hears of a first clear made outside the portal). For the bank: (a) floored; (b) rounded half up; (c) the half kept in the save as a remainder. For the card: (a) as built; (b) `Banked 2 of 5 dead pixels`; (c) a line saying free play pays half.
+Recommendation: (a), (a) and (b): the half is invisible today, and the strip's 5 beside a banked 2 reads as a loss nobody explained.
+Plan assumes: the three (a)s; the loop gate pins the moment rule (unframed clears mark nothing) and the floor.
