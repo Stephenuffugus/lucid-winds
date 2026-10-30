@@ -231,6 +231,9 @@ const MUTANTS = [
   { name: 'RESERVE_FILLED', task: 'T0.9', file: 'page', find: '#reserve { position: absolute; left: 0; bottom: 0; width: var(--res); height: var(--res); }',
     repl: '#reserve { position: absolute; left: 0; bottom: 0; width: var(--res); height: var(--res); background: #c8302f; }',
     gates: [{ gate: 'layout', expect: '412x915: the reserved box is transparent' }] },
+  /* named by T0.8b and left to the layout gate, entered at T0.13b's audit of the plan's list */
+  { name: 'ROCKER_AT_X0', task: 'T0.8b', file: 'page', find: '#rocker { position: absolute; left: var(--res); top: 0;', repl: '#rocker { position: absolute; left: 0; top: 0;',
+    gates: [{ gate: 'layout', expect: '412x915: left zone is clear of the canvas and the reserved box' }] },
   { name: 'MIRROR_OVERLAPS_CANVAS', task: 'T0.9', file: 'page', find: '#strip.mirror #rocker { left: calc(var(--res) + 2 * var(--btn)); right: calc(var(--sar) + var(--edge)); }',
     repl: '#strip.mirror #rocker { left: calc(var(--res) + 2 * var(--btn)); right: calc(var(--sar) + var(--edge)); top: -160px; }',
     gates: [{ gate: 'layout', expect: '412x915 mirrored: the rocker, A and B are disjoint and clear of the canvas' }] },

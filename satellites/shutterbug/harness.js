@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 4213;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 4227;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -2700,9 +2700,11 @@ function botEdges(sample) {
       list = pick;
     }
     out.levels++;
-    const placed = new Map();
+    /* an edge alone runs in the room without its exit: a room that clears on the way would count the edge done (the
+       walk keeps the exit, where clearing is arrival) */
+    const placed = new Map(), lvNoExit = Object.assign({}, lv, { exit: -1 });
     for (const e of list) {
-      if (!placed.has(e.from)) placed.set(e.from, BOT.place(lv, g, e.from));
+      if (!placed.has(e.from)) placed.set(e.from, BOT.place(lvNoExit, g, e.from));
       const s0 = placed.get(e.from), kind = e.kind + (e.kind === 'FALL' && e.dir === 0 ? ' (dive)' : '');
       const bk = out.byKind[kind] || (out.byKind[kind] = { tried: 0, ok: 0 });
       out.tried++; bk.tried++;
@@ -2841,7 +2843,7 @@ if (opt('explore')) {
       const tx = sx + dir * dx, ty = sy - dy;
       if (tx < 0 || tx >= lv.w || ty < 0 || !g.stand[ty * lv.w + tx]) continue;
       const key = dx + ' across ' + dy + ' up'; tried[key] = (tried[key] || 0) + 1;
-      const s0 = BOT.place(lv, g, v); if (!s0) continue;
+      const s0 = BOT.place(Object.assign({}, lv, { exit: -1 }), g, v); if (!s0) continue;   /* no exit: a clear is not a jump */
       const r = BOT.solve(s0, { kind: 'JUMP', profile: 'FULL', dir, dx, dy, from: v, to: ty * lv.w + tx }, g, memo, stats);
       if (r.ok) allowed[key] = (allowed[key] || 0) + 1;
     }
