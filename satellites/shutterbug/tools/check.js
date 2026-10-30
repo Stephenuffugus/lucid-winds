@@ -26,11 +26,13 @@ if (gi >= 0 && !ONE) { console.log('usage: --gate <name>'); process.exit(2); }
 
 /* Gates that need no browser. `slow` gates are skipped by --fast (and said). */
 const GATES = [
+  { name: 'lint',     cmd: ['tools/lint.mjs'],  need: 'LINT OK' }
 ];
 
 /* Browser gates drive the real page in a real Chrome with real touch events. Skipped with the reason, never failed,
    when the browser is absent; a failure here is rerun ALONE, twice, before it is believed (two cores, swiftshader). */
 const BROWSER_GATES = [
+  { name: 'boot',     cmd: ['test/boot.mjs'],   need: 'BOOT OK' }
 ];
 
 let browserWhy = '', puppeteerDir = '';
