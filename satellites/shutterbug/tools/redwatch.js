@@ -80,8 +80,8 @@ const MUTANTS = [
     /* one step per frame whatever the frame owes: the test's own replay of the logged frames disagrees frame by frame
        (the rate checks it was first watched on became that replay in the second review) */
     gates: [{ gate: 'play', expect: ['frame by frame the page ran the steps the accumulator owes', 'the loop ran exactly the steps the accumulator owes'] }] },
-  { name: 'CLEAR_NO_RESTART', task: 'T0.8a', file: 'page', find: "  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name); };",
-    repl: "  ui.again = function () { if (G.record) { var keep = document.getElementById('clear').className; ui.startRoom(G.record, G.name); document.getElementById('clear').className = keep; } };",
+  { name: 'CLEAR_NO_RESTART', task: 'T0.8a', file: 'page', find: "  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level }); };",
+    repl: "  ui.again = function () { if (G.record) { var keep = document.getElementById('clear').className; ui.startRoom(G.record, G.name, { level: G.level }); document.getElementById('clear').className = keep; } };",
     gates: [{ gate: 'play', expect: 'Again leaves nothing painted over the play area' }] },
 
   /* the review of 30 Oct (fidelity lens) */
@@ -328,9 +328,9 @@ const MUTANTS = [
     gates: [{ gate: 'death', expect: 'Again restarts straight into play' }] },
   { name: 'DEATH_NO_CARD', task: 'T0.16', file: 'page', find: "    else if (G.state.room.dead && SB.ui.screen === 'play') SB.ui.showDeath();\n", repl: '',
     gates: [{ gate: 'death', expect: 'the last heart ends the room' }] },
-  { name: 'BLINK_NONE', task: 'T0.16', file: 'page', find: 'R.heroShown = !(s.hero.iframes > 0 && ((s.hero.iframes >> 3) & 1));', repl: 'R.heroShown = true;',
+  { name: 'BLINK_NONE', task: 'T0.16', file: 'page', find: 'R.heroShown = s.room.dead || !(h.iframes > 0 && ((h.iframes >> 3) & 1));', repl: 'R.heroShown = true;',
     gates: [{ gate: 'death', expect: 'the hero blinks through the i frames' }] },
-  { name: 'HEARTS_STALE', task: 'T0.16', file: 'page', find: "if (ev & EV.HIT) { au.sfx('hit'); SB.ui.hearts(G.state.hero.hearts); }", repl: "if (ev & EV.HIT) { au.sfx('hit'); }",
+  { name: 'HEARTS_STALE', task: 'T0.16', file: 'page', find: "if (ev & EV.HIT) { au.sfx('hit'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); }", repl: "if (ev & EV.HIT) { au.sfx('hit'); }",
     gates: [{ gate: 'death', expect: 'the top strip shows' }] },
   /* T0.15: capture */
   { name: 'DECODE_NO_GUARD', task: 'T0.16', file: 'page', find: "      if (stale()) { if (bm && bm.close) bm.close(); return; }\n", repl: '',
@@ -383,7 +383,7 @@ const MUTANTS = [
     gates: [{ gate: 'play', expect: 'frame by frame the page ran the steps the accumulator owes' }] },
   { name: 'ROCKER_NO_ADOPT', task: 'T0.8b review', file: 'page', find: '      setRocker(rockerPtrs.length ? zoneOf(rockerX[rockerPtrs[0]]) : null);', repl: '      setRocker(null);',
     gates: [{ gate: 'play', expect: 'the first lifted, the pointer still down takes the rocker' }] },
-  { name: 'CHIP_OVER_PLAY', task: 'T0.8b review', file: 'page', find: "    document.body.classList.toggle('playing', name === 'play');", repl: '',
+  { name: 'CHIP_OVER_PLAY', task: 'T0.8b review', file: 'page', find: "    document.body.classList.toggle('playing', name === 'play' || name === 'crop');", repl: '',
     gates: [{ gate: 'play', expect: "in play the fleet's chip, pill, card and toast are hidden" }] },
   { name: 'BEACON_PULSE_BY_FRAME', task: 'T0.8b review', file: 'page', find: 'pulse = ((now === undefined ? performance.now() : now) / 400) | 0;', repl: 'pulse = (pulse + 1) | 0;',
     gates: [{ gate: 'play', expect: 'the beacon pulses by the clock' }] },
