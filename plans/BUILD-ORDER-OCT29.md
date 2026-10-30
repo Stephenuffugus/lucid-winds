@@ -42,28 +42,35 @@ stop building, write the State block and the morning report (section "Done means
 ## Lap 1 (the night): M0, the vertical slice, in plan order
 
 `BUILD-PLAN.md` section 4.0 is the procedure for every task (read it before T0.0: the gate budget, the overrun rule, the
-wall clock, the stop line) and section 4 M0 is the list. Twenty tasks, this order, each its own commit, pushed:
+wall clock, the stop line) and section 4 M0 is the list; 4.0's paragraph "Night one target, and the execution order"
+is the order, restated here (revised 2026-10-30 after four reviews of the plan: the list is in id order in the plan and
+runs in THIS order, which puts the climb first). Each task its own commit, pushed:
 
-T0.0 branch and push proof, the docs seeded · T0.1 prove the browser pipe · T0.2 the skeleton (seventeen blocks, the
-fleet protocol, the title, the lint, the boot gate) · T0.3 harness.js v0 (the loader, ns, rng, the record codec) ·
-T0.4 the palette and the contrast gate · T0.5 the sample room and the synthetic fixture corpus · T0.5b the capture
-block and fixtures/make.html · T0.6 pipeline A (luminance, solidity, Negative, platforms, landmarks, spawn, exit
-candidates) · T0.7 sim part one (run, gravity, variable jump, coyote, buffer, collisions, one ways, the hash) ·
-**T0.8 the first playable climb** (render v0, the loop, keyboard and the touch strip) · T0.9 the input gate and the
-layout gate at four sizes · T0.10 the reach graph, the tables, the lab rooms · T0.11 exit by distance, repair,
-needsCrop, route score v0 · T0.12 sim part two (wall slide, wall jump, the corner rule, sticky walls, dive, dash) ·
-T0.13 the bot, the generosity assertion, the goldens, the red watch tool · T0.14 the develop reveal and the first
-sounds · T0.15 capture (photo input, camera roll, the crop with the live overlay, the focal tap) · T0.16 moths,
-hearts, death and restart, the beacon, hint glyphs · T0.17 sprites, terrain dressing, the frame, the on palette gate,
-the perf guard · T0.18 the stop line deploy and the morning report (runs whenever the budget ends, on the last green
-commit).
+T0.0 branch and push proof, the plan files added if still untracked, PROGRESS.md appended · T0.1 prove the browser
+pipe · T0.2 the skeleton (seventeen blocks, the fleet protocol, the title, the lint, the boot gate) · T0.3 harness.js
+v0 (the loader, ns, rng, the record codec, redwatch v0) · T0.4a the palette (the sixteen, L S H, nearest, the bands) ·
+T0.5 the sample room and the first six synthetic fixtures · T0.6 pipeline A (luminance, solidity, Negative, platforms,
+landmarks, spawn, exit candidates) · T0.7a sim part one (run, gravity, variable jump, coyote, buffer, collisions, one
+ways, the state and its hash) · **T0.8a the first playable climb** (render v0, the loop, keyboard) · **T0.18 as
+`sb-m0-1`** · T0.8b the touch strip and the 360 wide alternative · T0.18 as `sb-m0-2` at the cut. Then, as the clock
+allows, night two's order: T0.7b sim part one proven (determinism, coverage, the stepped tables, the jump labs) · T0.2b
+journey C and the remaining lint rules · T0.5b the capture block and fixtures/make.html · T0.4b the contrast gate and the
+swatch sheet · T0.5c the rest of the synthetic corpus · T0.9 the input gate and the layout gate at four sizes · T0.10a
+the reach tables and corridors · T0.10b the reach graph, distances, the lab rooms · T0.11a exit by distance, repair,
+needsCrop, the default spread · T0.11b the main ascent, route score v0, the onboarding assertion · T0.12a sim part two
+(wall slide, wall jump, the corner rule, sticky walls) · T0.12b dive and dash · T0.13a the bot, the generosity
+assertion, the route walk · T0.13b the goldens, the bit flip, BOT-EXPLORE · T0.14 the develop reveal and the first
+sounds · T0.15 capture (photo input, camera roll, the crop with the live overlay, the focal tap) · T0.16 moths, hearts,
+death and restart, the beacon, hint glyphs · T0.17 sprites, terrain dressing, the frame, the on palette gate, the perf
+guard · T0.18 the deploy and the morning report (runs whenever the budget ends, on the last green commit).
 
-The plan's own night one target is T0.0 to T0.8 with T0.18 at the cut; the honest cut lands near T0.7 or T0.8. Tasks
+The plan's own night one target is T0.0 to T0.8b with the two T0.18 deploys (the keyboard climb at about 6 h 50 m at
+the estimates, the thumbs climb at about 8 h 30 m); T0.7b is night two's first task unless the clock allows. Tasks
 marked FEEL build the numbers DESIGN states and leave them in `TUNING`; they are his to tune in the morning.
 
-**The first deploy** comes the moment T0.8 is green and shot: the sample room climb playable end to end at both
-phone sizes (title, the Sample room button, the climb to the exit on the touch strip and on the keyboard), the harness
-green and watched red, the shots opened and three things named. `BUILD=sb-m0-1 tools/shutterbug-tests/deploy.sh`
+**The first deploy** comes the moment T0.8a is green and shot: the sample room climb playable end to end at both
+phone sizes (title, the Sample room link, the climb to the exit on the keyboard; the touch strip follows in T0.8b and
+rides the cut deploy), the harness green and watched red, the shots opened and three things named. `BUILD=sb-m0-1 tools/shutterbug-tests/deploy.sh`
 (M0 has no `sw.js`, so `CACHE` and `SWV` are not needed yet), then the host proof in the header of `deploy.sh`, one
 probe at a time, both origins; write the line into the State block and go on. T0.18 is the plan's stop line deploy:
 whenever the budget ends it deploys the last green commit as the next stamp (`sb-m0-2`, and so on) and writes the
@@ -72,11 +79,13 @@ morning report. Two deploys at least, then; never a deploy of a red tree.
 ## Lap 2 (only if Lap 1 is live and budget remains): M1, the tasks the plan marks SAFE, in plan order
 
 The SAFE sequence of section 4 M1, in the plan's order, each its own commit: T1.1 biome detection and the Frost rule ·
-T1.2 feature detection with caps and envelopes · T1.3 route score with enemies, traps and envelopes · T1.4 enemy sim
-(icicle, jelly, thorn crawler, spark, elites) · T1.6 loot (specks, the chest, scroll pick one of two, hearts growth,
-DP) · T1.7 the SFX set · T1.8 share (the link, the code, the preview sheet, opening from the hash) · T1.10 the save
-v1, recent rooms, settings · T1.11 the PWA (manifest, icons, service worker, the embed skip, offline and network
-gates) · T1.13 the free play loop end to end · T1.9 the QR encoder and drawer (last; if it slips, ship M1 without it
+T1.2a feature detection, part one (the claim order, ladder, pocket, door, beacon, the chest) · T1.2b feature detection,
+part two (specks, scrolls, enemy clusters, the trap field, envelopes) · T1.3 route score with enemies, traps and
+envelopes · T1.4 enemy sim (icicle, jelly, thorn crawler, spark, elites) · T1.4b trap sim and sprites · T1.6 loot
+(specks, the chest, scroll pick one of two, hearts growth, DP) · T1.7 the SFX set · T1.8 share (the link, the code, the
+preview sheet, opening from the hash) · T1.10 the save v1, recent rooms, settings (the mirror layout toggle is SAFE) ·
+T1.11 the PWA (manifest, icons, service worker, the embed skip, offline and network gates) · T1.13 the free play loop
+end to end · T1.9a the QR encoder and its known answers · T1.9b the QR drawer (last; if the QR slips, ship M1 without it
 and say so). Then stop, and write the WAITS list into the morning report.
 
 The tasks the plan marks WAITS never start tonight: they wait on Stephen's M0 play (HANDOFF section 3, "Stephen plays
@@ -85,7 +94,7 @@ later deploy bumps all three in the same commit (new files under an old stamp sp
 
 ## Every task, the plan's way
 
-Section 4.0 of the plan binds: `node tools/check.js --fast` green at the start (or the known state in PROGRESS.md);
+Section 4.0 of the plan binds: `node tools/check.js --fast --gate <the previous task's gate>` green at the start (or the known state in PROGRESS.md);
 build the scope inside the module boundary the task names; add its assertions and watch each go RED through
 `tools/redwatch.js` before green counts; run only the ONE browser gate the task names (the full `check.js` at a
 milestone end and before every deploy); for a shell task shoot 412 x 915 and 360 x 780 with
@@ -95,8 +104,8 @@ PROGRESS.md entry in the template of section 5.11. The overrun rule of 4.0 repla
 gate still red at twice the estimate, or one assertion red for 45 minutes, is committed green with the red assertion
 marked `xfail` by name, a QUESTIONS.md entry, a `BLOCKED` row, and the next task that does not depend on it.
 
-**Independent review, three times, not per task:** after T0.12 (the hero complete), before the T0.8 deploy, before
-the T0.18 deploy. This is the one exception to "no agent fan out": one workflow, three agents, one round, no loops:
+**Independent review, three times, not per task:** before the T0.8a deploy, before the cut deploy, and after T0.12b
+(the hero complete, night two). This is the one exception to "no agent fan out": one workflow, three agents, one round, no loops:
 a fidelity lens (the code against DESIGN section by section), a harness lens (can each assertion fail; what is
 asserted that is not computed), a phone lens (360 wide layout, 48 px targets, the strip under the thumb). Fix what
 they find before the deploy. No agent opens a browser; every agent writes in its own folder under your scratchpad.
