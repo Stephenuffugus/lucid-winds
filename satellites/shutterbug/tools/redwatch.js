@@ -68,7 +68,12 @@ const MUTANTS = [
   { name: 'NEG_AFTER_PLATFORMS', task: 'T0.6', file: 'page', edits: [
       ['    if (negative) for (i = 0; i < n; i++) solid[i] = solid[i] ? 0 : 1;   /* after smoothing, before the frame rules (Q20) */\n', ''],
       ['    var comps = components(solid, w, h), landmarks = [];', '    if (negative) for (i = 0; i < n; i++) solid[i] = solid[i] ? 0 : 1;\n    var comps = components(solid, w, h), landmarks = [];']],
-    gates: [{ gate: 'harness', only: 'H-pipe-7', expect: 'H-pipe-7' }] }
+    gates: [{ gate: 'harness', only: 'H-pipe-7', expect: 'H-pipe-7' }] },
+
+  { name: 'JUMP_V_LOW', task: 'T0.7a', file: 'page', find: 'JUMP_V: 8.59375 /* 2200/256 */', repl: 'JUMP_V: 8.1640625 /* 2090/256, 5% low */',
+    gates: [{ gate: 'harness', only: 'H-sim-1', expect: 'a full hold from rest peaks at' }] },
+  { name: 'GRAVITY_X2', task: 'T0.7a', file: 'page', find: 'GRAVITY: 0.5, JUMP_V', repl: 'GRAVITY: 1, JUMP_V',
+    gates: [{ gate: 'harness', only: 'H-sim-1', expect: 'a full hold from rest peaks at' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

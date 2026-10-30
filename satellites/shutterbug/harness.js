@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 930;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 965;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', retable: 'T0.10a', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -683,6 +683,193 @@ group('H-pipe-11', 'ties break to the lowest: Otsu, landmarks, spawn runs, neare
   t.eq(sp.spawn, 46 * 24 + 2, 'spawn: of two equal widest runs (x 0..4 and 19..23), the first, centred at x 2');
   /* nearest: the exact midpoint of Ink and Soot is equidistant; Ink, the lower index, wins */
   t.eq(SB.palette.nearest(21, 18, 22), 0, 'nearest: equidistant to Ink and Soot, Ink wins');
+});
+
+/* ================================================================ the sim, part one */
+/* LABS.room(lines): a Level built straight from text, bypassing the pipeline, so a claim is tested on a room a person
+   can read (section 3.9): # solid, = one way top, | sticky (solid), ~ slick one way, . open, S start, X target.
+   The lines sit at the bottom of a 24 x 48 grid with open rows above; a line shorter than 24 is padded open. */
+const LABS = {
+  room(lines, opts = {}) {
+    const W = SB.GRID.W, H = SB.GRID.H;
+    const rows = Array(H - lines.length).fill('').concat(lines).map(l => (l + '.'.repeat(W)).slice(0, W));
+    const n = W * H, z = () => new Uint8Array(n), solid = z(), plat = z(), sticky = z(), slick = z();
+    let S = -1, X = -1;
+    rows.forEach((row, y) => [...row].forEach((c, x) => {
+      const i = y * W + x;
+      if (c === '#') solid[i] = 1; else if (c === '=') plat[i] = 1; else if (c === '|') { solid[i] = 1; sticky[i] = 1; }
+      else if (c === '~') { plat[i] = 1; slick[i] = 1; } else if (c === 'S') S = i; else if (c === 'X') X = i;
+    }));
+    return { w: W, h: H, solid, plat, tab: z(), slick, sticky, trap: z(), spawn: S, exit: opts.exit ? X : -1, target: X,
+      seed: 1, biome: opts.biome || 0, negative: 0, rows };
+  },
+  cell(lv, i) { return [i % lv.w, Math.floor(i / lv.w)]; }
+};
+const IN = SB.sim.IN, K = SB.K, CS = K.CELL_SUB, HW = K.HERO_W_SUB, HH = K.HERO_H_SUB;
+const FLOOR = '#'.repeat(24);
+/* run a script of words (a function of the step index) and record what the test needs */
+function play(lv, words, n, opts) {
+  const s = SB.sim.create(lv, opts || {}), trace = [];
+  for (let f = 0; f < n; f++) {
+    const before = { x: s.hero.x, y: s.hero.y, vy: s.hero.vy, ground: s.hero.ground };
+    SB.sim.step(s, words(f));
+    trace.push({ f, before, x: s.hero.x, y: s.hero.y, vx: s.hero.vx, vy: s.hero.vy, ground: s.hero.ground });
+  }
+  return { s, trace };
+}
+const settle = lv => { const s = SB.sim.create(lv); for (let k = 0; k < 4; k++) SB.sim.step(s, 0); return s; };
+
+/* the test's own jump, stepped from TUNING by the plan's sentence (v += g, then y += v), not from the sim */
+function jumpRef(v0, holdFrames) {
+  const T = SB.TUNING, g = T.GRAVITY * 256, cut = T.JUMP_CUT_V * 256, term = T.TERMINAL * 256;
+  let vy = -v0 * 256, y = 0, top = 0, f = 0;
+  for (;;) {
+    if (f > 0 && f >= holdFrames && vy < -cut) vy = -cut;
+    vy = Math.min(term, vy + g); y += vy; f++;
+    if (y < top) top = y;
+    if (y >= 0) return { apex: -top / 256, frames: f };
+  }
+}
+
+group('H-sim-1', 'the jump: apex, tap, air time and reach, against the test\'s own stepping', t => {
+  const lv = LABS.room(['', '..........S.............', FLOOR]);
+  const measure = (words, n) => {
+    const s = settle(lv), y0 = s.hero.y, x0 = s.hero.x; let top = y0, landed = -1;
+    for (let f = 0; f < n; f++) { SB.sim.step(s, words(f)); if (s.hero.y < top) top = s.hero.y; if (f > 0 && s.hero.ground && landed < 0) { landed = f + 1; break; } }
+    return { apex: (y0 - top) / 256, frames: landed, dx: (s.hero.x - x0) / 256 };
+  };
+  const full = measure(f => (f === 0 ? IN.A | IN.A_TAP : IN.A), 90);
+  const tap = measure(f => (f === 0 ? IN.A | IN.A_TAP : 0), 90);
+  const run = measure(f => (f === 0 ? IN.A | IN.A_TAP : IN.A) | IN.R, 90);
+  const refFull = jumpRef(SB.TUNING.JUMP_V, 999), refTap = jumpRef(SB.TUNING.JUMP_V, 1);
+  t.ok(full.apex >= 69 && full.apex <= 72, 'a full hold from rest peaks at ' + full.apex + ' px (69..72)');
+  t.eq(full.apex, refFull.apex, 'the full hold apex equals the test\'s own stepping');
+  t.ok(tap.apex >= 30 && tap.apex <= 33, 'a one frame tap peaks at ' + tap.apex + ' px (30..33)');
+  t.eq(tap.apex, refTap.apex, 'the tap apex equals the test\'s own stepping');
+  t.ok(full.frames >= 33 && full.frames <= 35, 'a full jump lands on step ' + full.frames + ' (33..35)');
+  t.eq(full.frames, refFull.frames, 'the full jump\'s air time equals the test\'s own stepping');
+  t.ok(run.dx >= 80, 'a full jump at full run covers ' + run.dx + ' px across at dy 0 (at least 80)');
+  t.eq(run.dx, refFull.frames * SB.TUNING.RUN, 'the run jump covers exactly its frames times RUN');
+  const sub = measure(f => (f === 0 ? IN.A_TAP : 0), 90);
+  t.eq(sub.apex, tap.apex, 'a sub step tap (the edge bit with A already up) is a one frame jump');
+});
+
+group('H-sim-2', 'coyote: a press on the 6th airborne frame after walking off jumps; the 7th does not', t => {
+  const lv = LABS.room(['', 'S.......................', '#####...................', '#####...................', '#####...................', FLOOR]);
+  const walk = () => { const s = SB.sim.create(lv); for (let k = 0; k < 3; k++) SB.sim.step(s, 0); return s; };
+  const s0 = walk(); let W = -1;
+  for (let f = 0; f < 120 && W < 0; f++) { SB.sim.step(s0, IN.R); if (!s0.hero.ground) W = f; }
+  t.ok(W > 0, 'the hero walks off the ledge (step ' + W + ')');
+  for (const [k, want] of [[1, true], [6, true], [7, false], [8, false]]) {
+    const s = walk(); let jumped = false;
+    for (let f = 0; f <= W + k; f++) {
+      SB.sim.step(s, IN.R | (f === W + k ? IN.A | IN.A_TAP : 0));
+      if (f === W + k) jumped = s.hero.vy < 0;
+    }
+    t.eq(jumped, want, 'a press on airborne frame ' + k + (want ? ' jumps' : ' does not jump'));
+  }
+});
+
+group('H-sim-3', 'buffer: a press 6 steps before the first grounded step jumps on landing; 7 does not', t => {
+  const lv = LABS.room(['', '..........S.............', '', '', '', '', '', '', FLOOR]);
+  const s0 = SB.sim.create(lv); let Lf = -1;
+  for (let f = 0; f < 200 && Lf < 0; f++) { if (s0.hero.ground) Lf = f; SB.sim.step(s0, 0); }
+  t.ok(Lf > 8, 'the dropped hero first starts a step grounded at step ' + Lf);
+  for (const [m, want] of [[1, true], [6, true], [7, false], [9, false]]) {
+    const s = SB.sim.create(lv); let jumped = false;
+    for (let f = 0; f <= Lf; f++) {
+      SB.sim.step(s, f === Lf - m ? IN.A | IN.A_TAP : 0);
+      if (f === Lf) jumped = s.hero.vy < 0;
+    }
+    t.eq(jumped, want, 'a press ' + m + ' steps before landing ' + (want ? 'jumps on the landing step' : 'does not jump'));
+  }
+});
+
+group('H-sim-4', 'one way tops: rising never lands; descending lands with 2 px of overlap and misses with 1', t => {
+  const lv = LABS.room(['', '.........===............', '', '..........S.............', FLOOR]);
+  const r = play(lv, f => (f === 0 ? IN.A | IN.A_TAP : IN.A), 60);
+  t.ok(r.trace.every(p => !(p.before.vy < 0 && p.ground)), 'rising through the one way, the hero never lands');
+  t.eq(Math.floor((r.s.hero.y + HH - 1) / CS), lv.h - 5, 'after the arc the hero stands on the one way (row 43, above the plank in row 44)');
+  const drop = lv2 => LABS.room(['..........S.............', '', '', '', '', '', '...........===..........', '', FLOOR]);
+  for (const [px, want] of [[2, true], [1, false], [3, true]]) {
+    const lv2 = drop();
+    const plankRow = lv2.h - 3, cellLeft = 11 * CS;
+    const s = SB.sim.create(lv2, { at: { x: cellLeft - HW + px * 256, y: (lv2.h - 9) * CS } });
+    for (let f = 0; f < 80; f++) SB.sim.step(s, 0);
+    const standRow = Math.floor((s.hero.y + HH - 1) / CS);
+    t.eq(standRow === plankRow - 1, want, 'a hero overlapping the plank by ' + px + ' px ' + (want ? 'lands on it' : 'falls past it') + ' (stands on row ' + standRow + ')');
+  }
+});
+
+group('H-sim-5', 'the head bonk zeroes vy; the 2 px ledge nudge slides the hero clear', t => {
+  /* a solid ceiling with one row of headroom over the hero (row 44; the hero stands in row 46) */
+  const lv = LABS.room(['', '########################', '', '...S....................', FLOOR]);
+  const r = play(lv, f => (f === 0 ? IN.A | IN.A_TAP : IN.A), 40);
+  const ceilBottom = (lv.h - 3) * CS;
+  t.ok(r.trace.every(p => p.y >= ceilBottom), 'the head never enters the ceiling row (it stops at its bottom edge)');
+  t.ok(r.trace.some(p => p.y === ceilBottom), 'the head reaches the ceiling\'s bottom edge');
+  const bonked = r.trace.find(p => p.before.vy < 0 && p.vy >= 0 && p.vy <= K.G);
+  t.ok(!!bonked, 'the rising hero stops dead at the ceiling (vy zeroed, then gravity)');
+  /* the nudge: one solid cell above, the hero's box over its right edge by k px */
+  for (const [px, passes] of [[2, true], [3, false]]) {
+    const lv2 = LABS.room(['', '', '.....#..................', '', '', FLOOR]);
+    const cellRight = 6 * CS, y0 = (lv2.h - 2) * CS;
+    const s = SB.sim.create(lv2, { at: { x: cellRight - px * 256, y: y0 } });
+    SB.sim.step(s, 0); SB.sim.step(s, 0);
+    let top = s.hero.y;
+    for (let f = 0; f < 40; f++) { SB.sim.step(s, f === 0 ? IN.A | IN.A_TAP : IN.A); top = Math.min(top, s.hero.y); }
+    const cellBottom = (lv2.h - 5) * CS;
+    t.eq(top < cellBottom, passes, 'overlapping a solid corner by ' + px + ' px the rise ' + (passes ? 'is nudged past it' : 'bonks under it'));
+  }
+});
+
+group('H-sim-18', 'air control: the rocker at takeoff equals a running start; L and R together decelerate to rest', t => {
+  const lv = LABS.room(['', 'S.......................', FLOOR]);
+  const flight = run => {
+    const s = settle(lv); let x0 = null;
+    for (let f = 0; f < 120; f++) {
+      const jumpAt = run ? 12 : 0;
+      if (f === jumpAt) x0 = s.hero.x;
+      SB.sim.step(s, IN.R | (f === jumpAt ? IN.A | IN.A_TAP : f > jumpAt ? IN.A : 0));
+      if (f > jumpAt && s.hero.ground) return s.hero.x - x0;
+    }
+    return null;
+  };
+  t.eq(flight(false), flight(true), 'a jump with the rocker pressed on its takeoff step covers what a running start covers');
+  const s = settle(lv);
+  for (let f = 0; f < 6; f++) SB.sim.step(s, IN.R);
+  const vs = [];
+  for (let f = 0; f < 5; f++) { SB.sim.step(s, IN.L | IN.R); vs.push(s.hero.vx); }
+  t.same(vs, [K.RUN - K.DECEL, K.RUN - 2 * K.DECEL, K.RUN - 3 * K.DECEL, 0, 0], 'L and R together read as neutral: the 4 frame decel to rest');
+  t.eq(s.hero.facing, 1, 'a neutral word keeps the facing');
+});
+
+group('H-fuzz-1', '2000 seeded random frames per fixture: never in a solid, never below the floor or outside, never standing on nothing', t => {
+  for (const f of FIXTURES) {
+    const lv = buildFx(f, 0);
+    if (lv.needsCrop) continue;
+    const s = SB.sim.create(lv), r = hrand(SB.record.seedOf(lv.rec));
+    let held = 0, inSolid = 0, out = 0, floating = 0, first = '';
+    for (let k = 0; k < 2000; k++) {
+      if (r.int(8) === 0) held = r.int(16);
+      const prevA = s._prevA || 0, a = held & IN.A;
+      SB.sim.step(s, held | (a && !prevA ? IN.A_TAP : 0) | (held & IN.B && r.int(3) === 0 ? IN.B_TAP : 0));
+      Object.defineProperty(s, '_prevA', { value: a, enumerable: false, writable: true, configurable: true });
+      const h = s.hero, cx0 = Math.floor(h.x / CS), cx1 = Math.floor((h.x + HW - 1) / CS), cy0 = Math.floor(h.y / CS), cy1 = Math.floor((h.y + HH - 1) / CS);
+      if (h.x < 0 || h.x + HW > lv.w * CS || h.y + HH > (lv.h - 1) * CS || h.y < -CS) { out++; if (!first) first = 'outside at step ' + k; }
+      for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) if (cx >= 0 && cx < lv.w && cy >= 0 && cy < lv.h && lv.solid[cy * lv.w + cx]) { inSolid++; if (!first) first = 'in a solid at step ' + k; }
+      if (h.ground) {
+        const feet = h.y + HH, row = feet / CS;
+        let support = false;
+        if (Number.isInteger(row)) for (let cx = cx0; cx <= cx1; cx++) {
+          if (row >= lv.h || lv.solid[row * lv.w + cx]) support = true;
+          else if (lv.plat[row * lv.w + cx] && Math.min(h.x + HW, (cx + 1) * CS) - Math.max(h.x, cx * CS) >= K.OVERLAP_SUB) support = true;
+        }
+        if (!support) { floating++; if (!first) first = 'standing on nothing at step ' + k; }
+      }
+    }
+    t.ok(inSolid + out + floating === 0, f.name + ': 2000 random frames, ' + inSolid + ' in a solid, ' + out + ' outside, ' + floating + ' standing on nothing' + (first ? ' (first: ' + first + ')' : ''), first ? SB.pipeline.toText(lv) : undefined);
+  }
 });
 
 /* ================================================================ one room */
