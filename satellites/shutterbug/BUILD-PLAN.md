@@ -31,7 +31,7 @@ The builder updates this table in the same commit that ships the task (law 8: th
 
 | Task | Status | Commit | Proof | Seen wrong in the shot |
 | --- | --- | --- | --- | --- |
-| (no rows yet; the first row is T0.0) | | | | |
+| T0.0 | shipped | `7d394bafa` | `git ls-remote --heads origin add-sproing-jumper` = local HEAD `7d394bafa` | no shot (git task) |
 
 Status is one of `shipped`, `shipped with xfail Qn`, `BLOCKED on <assertion> Qn`, `skipped (budget)`. The night's last row is `T0.18 deploy` with the deploy commit and the two origin hashes, or `NOT LIVE` and why.
 

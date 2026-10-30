@@ -1,14 +1,11 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 01:40 UTC (Fable). His word tonight: NO budget, NO usage checks, NO 8 hour clock (the reset is Sunday
-> noon). Run the night one order, then the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after
-> T0.8a, sb-m0-2 after T0.8b, sb-m0-3 when M0 is complete; stop only when Lap 2 is done or the session must end, then
-> the morning report. Every budget line below is void.** Nothing of Shutterbug is live. `satellites/shutterbug/` holds the docs only
-> (DESIGN.md, HANDOFF.md, BUILD-PLAN.md, QUESTIONS.md, and PROGRESS.md with the lead's entry, so T0.0 appends
-> rather than creates); no game code exists. The tools are proven on this
-> box: `tools/shutterbug-tests/shoot.mjs` shot a real page at both phone sizes, `tools/shutterbug-tests/deploy.sh` is
-> the Tally recipe with the Shutterbug served set. **Opus: rewrite this block the turn a task ships** (task id, harness
-> assertion count, the stamp if deployed, what is red), so that a session that starts cold reads the truth here.
+> **STATE 30 Oct 01:45 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
+> night one order, the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after T0.8a, sb-m0-2 after
+> T0.8b, sb-m0-3 when M0 is complete. **Last shipped: T0.0** (`7d394bafa`, the push proven non interactive, remote head
+> equals local). Harness: none yet (no page). Deployed: nothing; Shutterbug is not live. Red: nothing. Autosave
+> running (PID 7375, log `/tmp/claude-1000/shutterbug-lead/autosave.log`). Next: T0.1, the browser pipe. Opus rewrites
+> this block the turn a task ships (task id, harness assertion count, the stamp if deployed, what is red).
 
 You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is ONE game from zero:
 Shutterbug, a photo of a room becomes a pixel platformer level (`satellites/shutterbug/DESIGN.md`). Fable wrote the
