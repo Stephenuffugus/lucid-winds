@@ -93,14 +93,19 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #strip { flex: 1 1 auto; min-height: 168px; position: relative; padding-bottom: var(--sab); touch-action: none; }
 #back { position: absolute; top: 0; left: calc(6px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;
   border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
-#clear { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
+#clear, #death { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
   display: none; flex-direction: column; gap: 12px; align-items: stretch; text-align: center; z-index: 10; }
-#clear.on { display: flex; }
-#clear h2 { margin: 0 0 4px; font-size: 1.3rem; }
-#clear button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
-#again { background: var(--sun); color: var(--ink); }
-#cleartitle { background: transparent; color: var(--ink); }
+#clear.on, #death.on { display: flex; }
+#clear h2, #death h2 { margin: 0 0 4px; font-size: 1.3rem; }
+#clear button, #death button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
+#nextroom, #deathagain { background: var(--sun); color: var(--ink); }
+#again { background: var(--paper); color: var(--ink); }
+#cleartitle, #deathtitle { background: transparent; color: var(--ink); }
+/* the hint glyphs (T0.16): a control pulses once, the first time it is the move to make */
+@keyframes sbhint { 0%, 100% { box-shadow: 0 0 0 0 rgba(242,209,63,0); } 50% { box-shadow: 0 0 0 6px rgba(242,209,63,0.9); } }
+.hint { animation: sbhint 0.7s ease-in-out 3; }
+@media (prefers-reduced-motion: reduce) { .hint { animation: none; outline: 4px solid var(--sun); } }
 #safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 var(--sab) 0; }
 #vhprobe { position: fixed; left: 0; top: 0; width: 0; height: 100vh; height: 100dvh; visibility: hidden; pointer-events: none; }
 
@@ -171,8 +176,12 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   <div id="top"><span id="roomname"></span><span id="hearts" aria-label="Hearts"></span></div>
   <div id="stage"><canvas id="view" width="384" height="640"></canvas>
     <div id="clear" role="dialog" aria-label="Room clear"><h2 data-copy="roomClear"></h2>
-      <button id="again" type="button" data-copy="again"></button>
+      <button id="nextroom" type="button" data-copy="nextRoom"></button>
+      <button id="again" type="button" data-copy="playAgain"></button>
       <button id="cleartitle" type="button" data-copy="toTitle"></button></div>
+    <div id="death" role="dialog" aria-label="The bug fell"><h2 data-copy="death"></h2>
+      <button id="deathagain" type="button" data-copy="again"></button>
+      <button id="deathtitle" type="button" data-copy="toTitle"></button></div>
   </div>
   <div id="strip"><button id="back" type="button" data-copy="toTitle"></button>
     <div id="reserve" aria-hidden="true"></div>
@@ -246,7 +255,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     // 7 biomes and enemies
     FROST_SLICK_MIN_W: 5, FROST_SLIDE_CELLS: 1, DEEP_FALL_MULT: 0.8, DEEP_JUMP_V: 9.5 /* gives the +1 cell apex, section 3.2 */,
     MOTH_SPEED: 1, ICICLE_TRIGGER_COLS: 2, ICICLE_RESPAWN_S: 6, JELLY_BOB_CELLS: 2, JELLY_HP: 2, CRAWLER_SPEED: 2, CRAWLER_HP: 2, SPARK_HOP_S: 1.5,
-    HIT_HEARTS: 1, HIT_IFRAMES_S: 1, HIT_KNOCKBACK_CELLS: 2,
+    HIT_HEARTS: 1, HIT_IFRAMES_S: 1, HIT_KNOCKBACK_CELLS: 2, HIT_KNOCKBACK_FRAMES: 8 /* T0.16's "over 8 frames" */,
     BOSS_INTRO_S: 2, BOSS_TELEGRAPH_S: 0.8, BOSS_SAFE_LEDGE_CELLS: 6, BOSS_WEAK_MIN: 3, BOSS_OUTLINE_UNTIL: 0.25, BOSS_FALLBACK_HP: 20,
     BOSS_MOTH_EVERY_S: 4, BOSS_MOTH_COUNT: 3, BOSS_ICICLE_TELEGRAPH_S: 3, BOSS_RING_EVERY_S: 5, BOSS_RING_CELLS: 4, BOSS_SPARK_TELEGRAPH_S: 2,
     // 9 weapons, stats, economy
@@ -290,6 +299,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     };
     K.DECEL = Math.round(K.RUN / T.DECEL_FRAMES);
     K.DASH_V = Math.round(T.DASH_CELLS * G.CELL * SUB / T.DASH_FRAMES);
+    K.KNOCK_V = Math.round(T.HIT_KNOCKBACK_CELLS * G.CELL * SUB / T.HIT_KNOCKBACK_FRAMES);
+    K.KNOCK_FRAMES = T.HIT_KNOCKBACK_FRAMES;
     K.DEEP_FALL_G = Math.round(K.G * T.DEEP_FALL_MULT);
     K.DEEP_TERM = Math.round(K.TERM * T.DEEP_FALL_MULT);
     K.MOTH_V = Math.round(T.MOTH_SPEED * G.CELL * SUB / HZ);
@@ -806,6 +817,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     level.ascent = { nodes: fixed.ascent.nodes, edges: fixed.ascent.edges, score: SB.reach.routeScore(level, fixed.g, fixed.ascent) };
     /* when the exit is the light the light's cells are relit around it; otherwise the light stays backdrop */
     level.beacon = { idx: exit, cells: light && exit >= 0 && light.indexOf(exit) >= 0 ? Int32Array.from(light) : new Int32Array(0) };
+    /* the moths (T0.16), placed after the ascent so they keep clear of its safe cells */
+    level.features.enemies = SB.features.moths(level, opts);
     return level;
   }
 
@@ -1587,6 +1600,61 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 </script>
 <script id="core-features" data-core>
 (function (SB) { 'use strict';
+  /* core-features (DESIGN 6.11, BUILD-PLAN T0.16: moths only tonight; the full placement, elites and the rest are
+     T1.2a and T1.2b). The saturated cells less the claims of QUESTIONS Q50 (the beacon's cells, the door candidates,
+     the specks, every solid landmark's cells: none of them is a nest), clustered 4 connected; a cluster of
+     FODDER_CELLS (2 to 5) cells is a moth's spawn, on its lowest open cell that keeps the rules, or, a cluster wholly
+     solid, on the nearest standable open cell that does. The rules: never within ENEMY_SPAWN_CLEAR of spawn, never within
+     ROUTE_SAFE_ENEMY_DIST of a cell the main ascent stands on (so the ascent's safe cells stay safe, H-route-6). At most
+     FIRST_ROOM_MAX_FODDER in the first ever free play room and 4 otherwise, picked by the level's seed. */
+  var MOTH = 1;
+  function cheb(a, b, w) { return Math.max(Math.abs(a % w - b % w), Math.abs(Math.floor(a / w) - Math.floor(b / w))); }
+  function moths(level, opts) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k;
+    var sat = new Uint8Array(n), satIdx = {};
+    for (k = 0; k < SB.palette.SAT.length; k++) satIdx[SB.palette.SAT[k]] = 1;
+    for (i = 0; i < n; i++) if (satIdx[level.pal[i]]) sat[i] = 1;
+    var cells = level.beacon && level.beacon.cells ? level.beacon.cells : [];
+    for (k = 0; k < cells.length; k++) sat[cells[k]] = 0;
+    for (k = 0; k < level.landmarks.length; k++) for (i = 0; i < level.landmarks[k].cells.length; i++) sat[level.landmarks[k].cells[i]] = 0;
+    var safe = [];
+    if (level.ascent && level.ascent.nodes) for (k = 0; k < level.ascent.nodes.length; k++) if (level.ascent.nodes[k] < n) safe.push(level.ascent.nodes[k]);
+    var ok = function (c) {
+      if (level.solid[c] || c < w || c >= n - w) return false;
+      if (cheb(c, level.spawn, w) <= T.ENEMY_SPAWN_CLEAR) return false;
+      for (var q = 0; q < safe.length; q++) if (cheb(c, safe[q], w) < T.ROUTE_SAFE_ENEMY_DIST) return false;
+      return true;
+    };
+    var standable = function (c) { return c + w < n && !level.solid[c] && (level.solid[c + w] || level.plat[c + w]); };
+    var comps = SB.pipeline.components(sat, w, h), spots = [];
+    for (k = 0; k < comps.length; k++) {
+      var comp = comps[k];
+      if (comp.length < T.FODDER_CELLS[0] || comp.length > T.FODDER_CELLS[1]) continue;
+      var spot = -1;
+      for (i = 0; i < comp.length && spot < 0; i++) if (ok(comp[i])) spot = comp[i];
+      if (spot < 0) {
+        /* the nearest standable open cell keeping the rules, by Chebyshev distance from the cluster, ties to the lowest */
+        var best = -1, bd = 1e9;
+        for (i = 0; i < n; i++) {
+          if (!standable(i) || !ok(i)) continue;
+          var d = 1e9; for (var q = 0; q < comp.length; q++) d = Math.min(d, cheb(i, comp[q], w));
+          if (d < bd) { bd = d; best = i; }
+        }
+        spot = best;
+      }
+      if (spot >= 0 && spots.indexOf(spot) < 0) spots.push(spot);
+    }
+    var cap = opts && opts.firstRoom ? T.FIRST_ROOM_MAX_FODDER : 4;
+    if (spots.length > cap) {
+      spots.sort(function (a, b) { return a - b; });
+      var r = SB.rng.mulberry32((level.seed ^ 0x6d07a5) >>> 0);
+      for (i = spots.length - 1; i > 0; i--) { var j = r.int(i + 1), tmp = spots[i]; spots[i] = spots[j]; spots[j] = tmp; }
+      spots = spots.slice(0, cap);
+    }
+    spots.sort(function (a, b) { return a - b; });
+    return spots.map(function (c) { return { kind: MOTH, idx: c }; });
+  }
+  SB.features = { MOTH: MOTH, moths: moths };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-sim" data-core>
@@ -1620,11 +1688,15 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var hearts = opts.hearts || SB.TUNING.HEARTS_BASE;
     return {
       v: 1, frame: 0, rng: (level.seed ^ 0x9e3779b9) >>> 0, biome: level.biome | 0, negative: level.negative ? 1 : 0,
-      firstRoom: opts.firstRoom ? 1 : 0, lastRoom: opts.lastRoom ? 1 : 0,
-      hero: { x: hx, y: hy, vx: 0, vy: 0, facing: 1, ground: 0, wall: 0, sticky: 0, lock: 0, spent: 0, coyote: 0, buffer: 0, held: 0, rising: 0,
+      firstRoom: opts.firstRoom ? 1 : 0, lastRoom: opts.lastRoom ? 1 : 0, immortal: opts.immortal ? 1 : 0,
+      hero: { x: hx, y: hy, vx: 0, vy: 0, facing: 1, ground: 0, wall: 0, sticky: 0, lock: 0, spent: 0, knock: 0, coyote: 0, buffer: 0, held: 0, rising: 0,
         dive: 0, dash: 0, dashI: 0, iframes: 0, hearts: hearts, heartsMax: hearts, vigor: 0, focus: 0, grit: 0, scrolls: 0,
         slots: [0, 0, 0], cd: [0, 0, 0], squash: 0, anim: 0, lastStand: level.spawn | 0, secondWind: 0, thickSkin: 0, shake: 0 },
-      enemies: [], proj: [], loot: [], chest: { idx: -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
+      enemies: ((level.features && level.features.enemies) || []).map(function (e) {
+        var ex = e.idx % w, ey = (e.idx - ex) / w;
+        return { kind: e.kind, x: ex * CS, y: ey * CS, vx: 0, vy: 0, hp: 1, state: 0, timer: 0, dir: 1, home: e.idx, elite: 0, frozen: 0, stunned: 0 };
+      }),
+      proj: [], loot: [], chest: { idx: -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
       traps: { phase: 0 }, boss: null,
       room: { dp: 0, blueprints: [], exitLit: 0, cleared: 0, dead: 0, deaths: 0 }
     };
@@ -1737,6 +1809,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     if (h.dash > 0) { h.dash--; if (h.dash === 0) h.vx = 0; }
     if (h.dashI > 0) h.dashI--;
     if (h.shake > 0) h.shake--;
+    if (h.iframes > 0) h.iframes--;
     if (dir !== 0 && h.dash === 0 && h.lock === 0) h.facing = dir;   /* a dash and the wall jump's lock hold the facing */
     var startedGrounded = h.ground, dove = bPressed && !startedGrounded;
 
@@ -1770,7 +1843,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        pushes away whatever the rocker says; a sticky wall and the sticky jump's first step have no push (air control
        from the second step) */
     var dashCut = 0;
-    if (h.dive) h.vx = 0;
+    if (h.knock !== 0) { h.vx = (h.knock > 0 ? 1 : -1) * K.KNOCK_V; h.knock -= h.knock > 0 ? 1 : -1; }   /* a hit's knockback, the rocker ignored */
+    else if (h.dive) h.vx = 0;
     else if (h.dash > 0) { var dv = dashClamp(h, lv, K, h.facing * K.DASH_V); dashCut = dv !== h.facing * K.DASH_V ? 1 : 0; h.vx = dv; }
     else if (h.lock !== 0) { h.vx = (h.lock > 0 ? 1 : -1) * K.WALL_PUSH; h.lock -= h.lock > 0 ? 1 : -1; }
     else if (stickyJump || h.sticky) h.vx = 0;
@@ -1827,6 +1901,26 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     if (h.squash > 0) h.squash--; else if (h.squash < 0) h.squash++;
     h.anim = (dir !== 0 && h.ground) ? h.anim + 1 : 0;
 
+    /* 8a. the moths (DESIGN 7, QUESTIONS Q29): each drifts toward the hero at MOTH_V through furniture (the larger axis at
+       full speed, the other in proportion); a moth's 12 px core touching the hero costs HIT_HEARTS, unless i frames
+       (a hit's or a dash's) run or the state is immortal (the bot's route walks, Q30): then HIT_IFRAMES of i frames and
+       KNOCK_FRAMES of knockback away from the moth; the last heart ends the room */
+    for (var m = 0; m < s.enemies.length; m++) {
+      var en = s.enemies[m];
+      if (en.hp <= 0) continue;
+      var mdx = (h.x + (K.HERO_W_SUB >> 1)) - (en.x + (K.CELL_SUB >> 1)), mdy = (h.y + (K.HERO_H_SUB >> 1)) - (en.y + (K.CELL_SUB >> 1)), md = Math.max(Math.abs(mdx), Math.abs(mdy));
+      if (md > 0) { en.vx = (K.MOTH_V * mdx / md) | 0; en.vy = (K.MOTH_V * mdy / md) | 0; en.x += en.vx; en.y += en.vy; en.dir = en.vx < 0 ? -1 : 1; }
+      en.timer++;
+      var core = 2 * K.SUB, mx0 = en.x + core, my0 = en.y + core, mx1 = en.x + K.CELL_SUB - core, my1 = en.y + K.CELL_SUB - core;
+      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && h.x < mx1 && h.x + K.HERO_W_SUB > mx0 && h.y < my1 && h.y + K.HERO_H_SUB > my0) {
+        h.hearts = Math.max(0, h.hearts - SB.TUNING.HIT_HEARTS);
+        h.iframes = K.HIT_IFRAMES_F;
+        h.knock = (mdx < 0 ? -1 : 1) * K.KNOCK_FRAMES;
+        h.lock = 0; h.dash = 0;
+        if (h.hearts === 0) { s.room.dead = 1; s.room.deaths++; }
+      }
+    }
+
     /* 8. the exit: the hero's box touching the exit cell clears the room */
     if (lv.exit >= 0) {
       var CS2 = K.CELL_SUB, ex = lv.exit % lv.w, ey = (lv.exit - ex) / lv.w;
@@ -1844,7 +1938,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 
   /* section 2.5: the declared, ordered schema of the whole state */
   var HERO = [['x', 'i32'], ['y', 'i32'], ['vx', 'i32'], ['vy', 'i32'], ['facing', 'i32'], ['ground', 'bool'], ['wall', 'i32'],
-    ['sticky', 'bool'], ['lock', 'i32'], ['spent', 'i32'], ['coyote', 'i32'], ['buffer', 'i32'], ['held', 'bool'], ['rising', 'bool'], ['dive', 'i32'], ['dash', 'i32'],
+    ['sticky', 'bool'], ['lock', 'i32'], ['spent', 'i32'], ['knock', 'i32'], ['coyote', 'i32'], ['buffer', 'i32'], ['held', 'bool'], ['rising', 'bool'], ['dive', 'i32'], ['dash', 'i32'],
     ['dashI', 'i32'], ['iframes', 'i32'], ['hearts', 'i32'], ['heartsMax', 'i32'], ['vigor', 'i32'], ['focus', 'i32'], ['grit', 'i32'],
     ['scrolls', 'i32'], ['slots', 'i32[]'], ['cd', 'i32[]'], ['squash', 'i32'], ['anim', 'i32'], ['lastStand', 'i32'],
     ['secondWind', 'bool'], ['thickSkin', 'bool'], ['shake', 'i32']];
@@ -1853,7 +1947,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   var PROJ = [['kind', 'i32'], ['x', 'i32'], ['y', 'i32'], ['vx', 'i32'], ['vy', 'i32'], ['ttl', 'i32'], ['dmg', 'i32'], ['live', 'bool']];
   var LOOT = [['kind', 'i32'], ['idx', 'i32'], ['taken', 'bool']];
   var BOSS = [['cells', 'i32[]'], ['hp', 'i32'], ['hpMax', 'i32'], ['phase', 'i32'], ['timer', 'i32'], ['intro', 'i32'], ['telegraph', 'i32']];
-  var FIELDS = [['v', 'i32'], ['frame', 'i32'], ['rng', 'u32'], ['biome', 'i32'], ['negative', 'bool'], ['firstRoom', 'bool'], ['lastRoom', 'bool'],
+  var FIELDS = [['v', 'i32'], ['frame', 'i32'], ['rng', 'u32'], ['biome', 'i32'], ['negative', 'bool'], ['firstRoom', 'bool'], ['lastRoom', 'bool'], ['immortal', 'bool'],
     ['hero', 'obj', HERO], ['enemies', 'obj[]', ENEMY], ['proj', 'obj[]', PROJ], ['loot', 'obj[]', LOOT],
     ['chest', 'obj', [['idx', 'i32'], ['open', 'bool']]], ['scrollsOffered', 'i32[]?'],
     ['door', 'obj', [['idx', 'i32'], ['entered', 'bool']]], ['traps', 'obj', [['phase', 'i32']]], ['boss', 'obj?', BOSS],
@@ -2192,7 +2286,18 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       ctx.fillRect(ex - 2, ey - 2, C + 4, 2); ctx.fillRect(ex - 2, ey + C, C + 4, 2);
       ctx.fillRect(ex - 2, ey, 2, C); ctx.fillRect(ex + C, ey, 2, C);
     }
+    /* the moths (rectangles until T0.17's sprites): a body and two wings that flutter, up and down every 8 steps */
+    for (var m = 0; m < s.enemies.length; m++) {
+      var en = s.enemies[m]; if (en.hp <= 0) continue;
+      var mx = en.x >> 8, my = (en.y >> 8) - cam, up = (en.timer >> 3) & 1;
+      if (my < -16 || my > viewH) continue;
+      ctx.fillStyle = css(P.I.INK); ctx.fillRect(mx, my + (up ? 1 : 5), 6, 6); ctx.fillRect(mx + 10, my + (up ? 1 : 5), 6, 6); ctx.fillRect(mx + 5, my + 3, 6, 11);
+      ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(mx + 1, my + (up ? 2 : 6), 4, 4); ctx.fillRect(mx + 11, my + (up ? 2 : 6), 4, 4);
+      ctx.fillStyle = css(P.I.PEWTER); ctx.fillRect(mx + 6, my + 4, 4, 9);
+    }
     var hy = heroY - cam;
+    /* a hit's i frames blink the hero at about 4 Hz (8 steps on, 8 off) */
+    if (s.hero.iframes > 0 && ((s.hero.iframes >> 3) & 1)) { ctx.restore(); return; }
     ctx.fillStyle = css(P.I.INK); ctx.fillRect(heroX, hy, K.HERO_W, K.HERO_H);
     ctx.fillStyle = css(SB.TUNING.HERO_BODY); ctx.fillRect(heroX + 1, hy + 1, K.HERO_W - 2, K.HERO_H - 3);
     /* the cling pose (an armed slide or a sticky wall; the sprite is T0.17): the wall side thickened to 3 px of Ink, the
@@ -2401,7 +2506,10 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     tighter: 'Try a tighter crop',
     cropHint: 'Drag and pinch to frame the room. Tap a shape to hide the chest there.',
     badPhoto: 'That photo did not open. Try another.',
-    photoRoom: 'Your room'
+    photoRoom: 'Your room',
+    death: 'The bug fell out of the picture',
+    nextRoom: 'Shoot the next room',
+    playAgain: 'Play it again'
   });
 
   /* the game: the record, the built level, the live sim state, the room's name */
@@ -2624,9 +2732,28 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     hearts(G.state.hero.hearts);
     ui.hideClear();
     ui.show('play');
-    if (!RV.devSkip) startReveal(lv, t0, opts.photo || null);
+    ui.hideDeath(); ui.hinted.stood = false;
+    if (!RV.devSkip && !opts.noReveal) startReveal(lv, t0, opts.photo || null);
     else ui.releasePhoto();
     return true;
+  };
+  ui.firstRoomDone = false;   /* the first ever free play room runs with at most FIRST_ROOM_MAX_FODDER moths (T1.10 keeps it) */
+  ui.hearts = hearts;
+  ui.showDeath = function () { document.getElementById('death').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'dead'; document.body.classList.remove('playing'); };
+  ui.hideDeath = function () { document.getElementById('death').classList.remove('on'); };
+  /* free play restarts the room with the same record and seed, the reveal skipped */
+  ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { noReveal: true }); };
+  /* the hint glyphs, once each a session (onboarding.hints, T1.10 keeps them): the rocker and A at the first standing
+     moment, B the first time the hero is airborne above a dive target (a one way within 8 rows under its column) */
+  ui.hinted = { rocker: false, A: false, B: false, stood: false };
+  function pulse(id) { var el = document.getElementById(id); el.classList.remove('hint'); void el.offsetWidth; el.classList.add('hint'); }
+  ui.hints = function (st, lv) {
+    var h = st.hero, H = ui.hinted;
+    if (h.ground && !H.stood) { H.stood = true; if (!H.rocker) { H.rocker = true; pulse('rocker'); } if (!H.A) { H.A = true; pulse('btnA'); } }
+    if (!H.B && !h.ground && h.vy > 0) {
+      var C = SB.K.CELL_SUB, cx = Math.floor((h.x + (SB.K.HERO_W_SUB >> 1)) / C), cy = Math.floor((h.y + SB.K.HERO_H_SUB) / C);
+      for (var r = cy; r < Math.min(lv.h, cy + 8); r++) if (lv.plat[r * lv.w + cx]) { H.B = true; pulse('btnB'); break; }
+    }
   };
   ui.sampleRecord = function () {
     return SB.record.fromJSON({ v: 1, w: SB.GRID.W, h: SB.GRID.H, mode: 0, focal: null, rows: Array.from(SB.SAMPLE_ROOM), rows2: null });
@@ -2636,7 +2763,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   ui.showClear = function () { document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; document.body.classList.remove('playing'); };
   ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); document.getElementById('back').hidden = false; };
   /* every in game back is an internal screen switch that hides every overlay it can sit over */
-  ui.toTitle = function () { RV.on = false; ui.releasePhoto(); ui.hideClear(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
+  ui.toTitle = function () { RV.on = false; ui.releasePhoto(); ui.hideClear(); ui.hideDeath(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
 
   ui.init = function () {
     ui.fillCopy();
@@ -2650,6 +2777,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     });
     document.getElementById('sample').addEventListener('click', function () { ui.startRoom(ui.sampleRecord(), ui.COPY.sampleRoom); });
     document.getElementById('again').addEventListener('click', function () { ui.again(); });
+    document.getElementById('nextroom').addEventListener('click', function () { ui.hideClear(); G.state = null; ui.show('title'); document.getElementById('fileshoot').click(); });
+    document.getElementById('deathagain').addEventListener('click', function () { ui.restart(); });
+    document.getElementById('deathtitle').addEventListener('click', function () { ui.hideDeath(); ui.toTitle(); });
     document.getElementById('cleartitle').addEventListener('click', ui.toTitle);
     document.getElementById('back').addEventListener('click', ui.toTitle);
     ui.initCrop();

@@ -2661,14 +2661,17 @@ const BOT = (() => {
     /* a macro is a word list, or a function of the state and the step (a player watching the hero to time a release);
        a function runs for up to its .len steps */
     const fn = typeof words === 'function', n = fn ? words.len : words.length;
-    let last = 0; if (!fn) for (let k = 0; k < n; k++) if (words[k]) last = k;
+    /* the last word that moves the hero: A held alone moves nothing once it has landed (no press, no rise), so a jump's
+       trailing held A never keeps the hero standing on its target (a moth would reach it there) */
+    const MOVES = IN.L | IN.R | IN.B | IN.A_TAP | IN.B_TAP;
+    let last = 0; if (!fn) for (let k = 0; k < n; k++) if (words[k] & MOVES) last = k;
     for (let k = 0; k < n; k++) {
       const word = fn ? words(s, k) : words[k];
       SB.sim.step(s, word); used.push(word);
       if (fn && word) last = k;
       if (s.room.cleared) return { ok: true, s, used };
       if (t.contact) { if (atContact(s, t)) return { ok: true, s, used }; continue; }
-      if (k >= last && s.hero.ground && s.hero.vx === 0) break;
+      if (k >= last && k > 0 && s.hero.ground && s.hero.vx === 0) break;
     }
     if (t.contact) return { ok: false, s, used };
     for (let k = 0; k < 120 && !(s.hero.ground && s.hero.vx === 0); k++) { SB.sim.step(s, 0); used.push(0); if (s.room.cleared) return { ok: true, s, used }; }
@@ -2747,12 +2750,26 @@ const BOT = (() => {
       if (r.ok) { memo.set(key, cands[i]); stats.found++; return r; }
       if (!first) first = r;
     }
+    /* a mortal walk (H-en-3) whose moths block the edge: wait (a moth that reaches the hero hits it, and its i frames
+       let the hero pass through), settle back on the source and try again, up to 600 steps (section 5.2 step 5's wait;
+       homing moths never clear a corridor by themselves); a timeout fails */
+    if (!s.immortal && !src.contact) for (const wait of ['hit', 20, 40, 60, 90, 120, 180, 240, 300, 400, 500, 600]) {
+      /* 'hit': until a moth has hit and the knockback is spent, so the edge runs inside the i frames that remain */
+      const w0 = cloneState(s), pre = [], h0 = w0.hero.hearts;
+      if (wait === 'hit') { for (let k = 0; k < 600 && !w0.room.dead && !(w0.hero.hearts < h0 && w0.hero.knock === 0); k++) { SB.sim.step(w0, 0); pre.push(0); } if (!(w0.hero.hearts < h0)) continue; }
+      else for (let k = 0; k < wait && !w0.room.dead; k++) { SB.sim.step(w0, 0); pre.push(0); }
+      if (w0.room.dead || !settle(w0, src.v, pre)) continue;
+      for (let i = 0; i < cands.length; i++) {
+        const r = attempt(w0, cands[i], t); stats.tries++;
+        if (r.ok && !r.s.room.dead) { stats.found++; return Object.assign(r, { used: pre.concat(r.used) }); }
+      }
+    }
     return first ? Object.assign(first, { ok: false, tried: cands.length }) : { ok: false, s, used: [], tried: 0 };
   }
   /* the walk: settle at spawn, then each ascent edge's macro in turn; arrival is the room clearing */
-  function walk(lv, memo, stats) {
+  function walk(lv, memo, stats, opts) {
     const g = SB.reach.graph(lv), asc = lv.ascent;
-    let s = SB.sim.create(lv);
+    let s = SB.sim.create(lv, { immortal: !opts || !opts.mortal });   /* the route walk is immortal (QUESTIONS Q30); H-en-3 walks mortal */
     const words = [];
     for (let k = 0; k < 10 && !s.hero.ground; k++) { SB.sim.step(s, 0); words.push(0); }
     if (!settle(s, lv.spawn, words)) return { ok: false, why: 'the hero cannot settle at spawn', edges: 0, words, s };
@@ -2774,18 +2791,18 @@ const BOT = (() => {
   function place(lv, g, v) {
     const src = nodeInfo(g, v);
     if (!src.contact) {
-      const s = SB.sim.create(lv, { at: { x: src.cx * CS + ((CS - HW) >> 1), y: src.cy * CS } }), w = [];
+      const s = SB.sim.create(lv, { at: { x: src.cx * CS + ((CS - HW) >> 1), y: src.cy * CS }, immortal: true }), w = [];
       for (let k = 0; k < 4; k++) SB.sim.step(s, 0);
       return settle(s, v, w) ? s : null;
     }
     const x = src.side > 0 ? (src.cx + 1) * CS - HW : src.cx * CS;
     if (src.sticky) {
-      const s = SB.sim.create(lv, { at: { x, y: (src.cy + 1) * CS - HH - 4 * 256 - K.G } });
+      const s = SB.sim.create(lv, { at: { x, y: (src.cy + 1) * CS - HH - 4 * 256 - K.G }, immortal: true });
       s.hero.ground = 0; s.hero.coyote = 0;
       for (let k = 0; k < 8 && !atContact(s, src); k++) SB.sim.step(s, 0);
       return atContact(s, src) ? s : null;
     }
-    const s = SB.sim.create(lv, { at: { x, y: (src.cy + 1) * CS - HH - K.G } });
+    const s = SB.sim.create(lv, { at: { x, y: (src.cy + 1) * CS - HH - K.G }, immortal: true });
     s.hero.ground = 0; s.hero.coyote = 0;
     SB.sim.step(s, rockerOf(src.side));
     return atContact(s, src) ? s : null;
@@ -2945,7 +2962,7 @@ function replayLevel(j, core) {
   return S.pipeline.build(S.record.fromJSON(Object.assign({}, f.fx.record, { mode: j.mode })), j.biome === null ? {} : { biome: j.biome });
 }
 function runReplay(j, core, marks) {
-  const S = core || SB, lv = replayLevel(j, S), s = S.sim.create(lv, j.opts && j.opts.hearts ? { hearts: j.opts.hearts } : {}), words = S.sim.rle.decode(j.runs), at = {};
+  const S = core || SB, lv = replayLevel(j, S), s = S.sim.create(lv, { hearts: j.opts && j.opts.hearts, immortal: !!(j.opts && j.opts.immortal) }), words = S.sim.rle.decode(j.runs), at = {};
   for (let k = 0; k < words.length; k++) { S.sim.step(s, words[k]); if (marks && marks.includes(k + 1)) at[k + 1] = S.sim.hash(s); }
   return { s, hash: S.sim.hash(s), at, words, cleared: s.room.cleared };
 }
@@ -2958,7 +2975,7 @@ function recordReplay(name, mode, biome, why) {
   const r = BOT.walk(lv, new Map(), { tries: 0, found: 0, memo: 0, memoMiss: 0 });
   if (!r.ok) throw new Error('--record: the bot does not clear ' + name + ' (' + (r.why || 'a miss at edge ' + (r.miss && r.miss.i)) + ')');
   const words = r.words.concat(Array(REPLAY_PAD).fill(0));
-  const j = { v: 1, fixture: name, mode, biome, opts: { hearts: SB.TUNING.HEARTS_BASE, loadout: null }, steps: words.length, runs: SB.sim.rle.encode(words) };
+  const j = { v: 1, fixture: name, mode, biome, opts: { hearts: SB.TUNING.HEARTS_BASE, loadout: null, immortal: true }, steps: words.length, runs: SB.sim.rle.encode(words) };
   j.golden = { hash: hex(runReplay(j).hash), at: words.length, why: why };
   return j;
 }
@@ -3055,6 +3072,92 @@ if (opt('explore')) {
   for (const key of Object.keys(tried)) console.log('  ' + key.padEnd(16) + ' ' + String(allowed[key] || 0).padStart(4) + ' of ' + String(tried[key]).padStart(4) + ' the sim allowed');
   process.exit(0);
 }
+
+/* ================================================================ moths, hearts, death (T0.16) */
+/* a lab level with saturated two cell clusters (palette 9) at the given cells, built whole */
+function mothLab(spots) {
+  const rows = {};
+  for (const [x, y] of spots) { const r = (rows[y] || '4'.repeat(24)).split(''); r[x] = '9'; r[x + 1] = '9'; rows[y] = r.join(''); }
+  return SB.pipeline.build(labRecord(rows), {});
+}
+const cheb = (a, b, w) => Math.max(Math.abs(a % w - b % w), Math.abs(Math.floor(a / w) - Math.floor(b / w)));
+
+group('H-en-1', 'moth spawns: on open cells, clear of spawn, at most 4 (2 in a first room), picked by the seed, never on a claimed cell', t => {
+  let levels = 0, moths = 0;
+  for (const f of FIXTURES) for (const mode of MODES) {
+    const lv = buildFx(f, mode);
+    if (lv.needsCrop) continue;
+    levels++;
+    const es = lv.features.enemies, lm = new Set(lv.landmarks.flatMap(l => Array.from(l.cells))), beacon = new Set(Array.from(lv.beacon.cells));
+    moths += es.length;
+    const bad = es.filter(e => lv.solid[e.idx] || cheb(e.idx, lv.spawn, lv.w) <= SB.TUNING.ENEMY_SPAWN_CLEAR || lm.has(e.idx) || beacon.has(e.idx));
+    t.ok(es.length <= 4 && bad.length === 0 && es.every(e => e.kind === SB.features.MOTH), f.name + ' mode ' + mode + ': ' + es.length + ' moths, every one on an open cell, clear of spawn and of the claimed cells' + (bad.length ? ' (bad: ' + bad.map(e => e.idx % 24 + ',' + Math.floor(e.idx / 24)).join(' ') + ')' : ''));
+  }
+  console.log('  info  H-en-1: ' + moths + ' moths over ' + levels + ' built levels');
+  /* six clusters: the cap and the first room cap, the same pick twice */
+  const six = mothLab([[2, 10], [8, 14], [14, 18], [3, 22], [10, 26], [16, 30]]);
+  const all = SB.features.moths(six, {}), first = SB.features.moths(six, { firstRoom: true }), again = SB.features.moths(six, {});
+  t.ok(all.length === 4 && first.length === SB.TUNING.FIRST_ROOM_MAX_FODDER && JSON.stringify(all) === JSON.stringify(again), 'six clusters give 4 moths, 2 in a first room, and the same 4 every time (' + all.map(e => e.idx).join(' ') + ')');
+  /* the spawn rule alone (the ascent's cells set aside): a cluster beside spawn never spawns within ENEMY_SPAWN_CLEAR */
+  const near = mothLab([[12, 44]]), bare = Object.assign({}, near, { ascent: { nodes: [] } }), m = SB.features.moths(bare, {});
+  t.ok(m.every(e => cheb(e.idx, near.spawn, near.w) > SB.TUNING.ENEMY_SPAWN_CLEAR), 'a cluster beside spawn (' + near.spawn % 24 + ', ' + Math.floor(near.spawn / 24) + ') spawns its moth more than ENEMY_SPAWN_CLEAR away (' + m.map(e => e.idx % 24 + ',' + Math.floor(e.idx / 24)).join(' ') + ')');
+});
+
+group('H-route-6', 'the main ascent\'s safe cells respect the moths: every cell it stands on is ROUTE_SAFE_ENEMY_DIST from every moth', t => {
+  for (const f of FIXTURES) for (const mode of MODES) {
+    const lv = buildFx(f, mode);
+    if (lv.needsCrop) continue;
+    const stands = lv.ascent.nodes.filter(v => v < lv.w * lv.h), close = [];
+    for (const e of lv.features.enemies) for (const v of stands) if (cheb(e.idx, v, lv.w) < SB.TUNING.ROUTE_SAFE_ENEMY_DIST) close.push(e.idx + '/' + v);
+    t.eq(close.length, 0, f.name + ' mode ' + mode + ': moths within ROUTE_SAFE_ENEMY_DIST of an ascent cell');
+  }
+  /* the rule alone: a cluster beside a cell the ascent stands on (set by hand) spawns its moth out of reach of it */
+  const lab = mothLab([[6, 20]]), stand = 21 * 24 + 6, m = SB.features.moths(Object.assign({}, lab, { ascent: { nodes: [lab.spawn, stand] } }), {});
+  t.ok(m.length > 0 && m.every(e => cheb(e.idx, stand, 24) >= SB.TUNING.ROUTE_SAFE_ENEMY_DIST), 'a cluster beside an ascent cell (6, 21) puts its moth ROUTE_SAFE_ENEMY_DIST from it (' + m.map(e => e.idx % 24 + ',' + Math.floor(e.idx / 24)).join(' ') + ')');
+});
+
+group('H-en-2', 'contact: one heart, 60 i frames, nothing more inside them, knockback away from the moth', t => {
+  const lv = LABS.room(['', '.....S..........', FLOOR]);
+  lv.features = { enemies: [{ kind: SB.features.MOTH, idx: 46 * 24 + 8 }] };
+  const s = SB.sim.create(lv);
+  let hitAt = -1, x0 = 0, k = 0;
+  for (; k < 600 && hitAt < 0; k++) { x0 = s.hero.x; SB.sim.step(s, 0); if (s.hero.hearts < SB.TUNING.HEARTS_BASE) hitAt = k; }
+  t.ok(hitAt > 0 && s.hero.hearts === SB.TUNING.HEARTS_BASE - SB.TUNING.HIT_HEARTS && s.hero.iframes === K.HIT_IFRAMES_F, 'the moth reaches the hero (step ' + hitAt + '): one heart lost (' + s.hero.hearts + ' left) and ' + s.hero.iframes + ' i frames (HIT_IFRAMES ' + K.HIT_IFRAMES_F + ')');
+  const xHit = s.hero.x; for (let j = 0; j < K.KNOCK_FRAMES; j++) SB.sim.step(s, 0);
+  t.ok(s.hero.x < xHit && xHit - s.hero.x >= (SB.TUNING.HIT_KNOCKBACK_CELLS * CS) - K.KNOCK_V, 'the knockback carries the hero away from the moth, ' + ((xHit - s.hero.x) / 256).toFixed(1) + ' px over ' + K.KNOCK_FRAMES + ' steps');
+  /* walk back into the moth while the i frames last: the boxes overlap, and no heart goes (the knockback alone parts
+     them for longer than the i frames, so the test makes the second contact itself) */
+  let lost = 0, touched = 0; const h0 = s.hero.hearts;
+  for (let j = 0; j < K.HIT_IFRAMES_F - K.KNOCK_FRAMES - 2; j++) {
+    SB.sim.step(s, IN.R);
+    const e = s.enemies[0]; if (s.hero.x < e.x + CS - 512 && s.hero.x + HW > e.x + 512 && s.hero.y < e.y + CS - 512 && s.hero.y + HH > e.y + 512) touched++;
+    if (s.hero.hearts < h0) lost++;
+  }
+  t.ok(touched > 0 && lost === 0, 'inside the i frames a second contact removes nothing (' + touched + ' steps of overlap with the moth, ' + lost + ' hearts lost)');
+  const imm = SB.sim.create(lv, { immortal: true }); for (let j = 0; j < 600; j++) SB.sim.step(imm, 0);
+  t.eq(imm.hero.hearts, SB.TUNING.HEARTS_BASE, 'an immortal state (the bot\'s route walks, Q30) loses no heart to a moth');
+  /* the last heart ends the room */
+  const d = SB.sim.create(lv, { hearts: 1 }); let dead = -1;
+  for (let j = 0; j < 600 && dead < 0; j++) { SB.sim.step(d, 0); if (d.room.dead) dead = j; }
+  t.ok(dead > 0 && d.hero.hearts === 0 && d.room.deaths === 1, 'the last heart ends the room (dead at step ' + dead + ')');
+});
+
+group('H-en-4', 'a moth 10 cells away reaches the hero\'s column in about 600 frames (1 cell per second, through furniture)', t => {
+  const lv = LABS.room(['', '.......#..........', '..S....#..........', FLOOR]);
+  lv.features = { enemies: [{ kind: SB.features.MOTH, idx: 45 * 24 + 12 }] };
+  const s = SB.sim.create(lv, { immortal: true }); let at = -1;
+  for (let k = 0; k < 1200 && at < 0; k++) { SB.sim.step(s, 0); const m = s.enemies[0]; if (Math.floor((m.x + (CS >> 1)) / CS) === Math.floor((s.hero.x + (HW >> 1)) / CS)) at = k; }
+  t.ok(at >= 540 && at <= 660, 'it reaches the column in ' + at + ' frames (about 600), through the wall between');
+});
+
+group('H-en-3', 'the walks with moths live: the bot\'s (immortal) and a mortal one on the sample room with the first room cap, which keeps a heart', t => {
+  const { runs } = botWalks();
+  const withMoths = runs.filter(r => r.lv && r.lv.features && r.lv.features.enemies.length);
+  t.ok(withMoths.length > 0 && withMoths.every(r => r.r.ok), 'every walked level with moths is walked to its exit (' + withMoths.map(r => r.tag + ' ' + r.lv.features.enemies.length).join(', ') + ')');
+  const lv = SB.pipeline.build(SB.record.fromJSON(fixture('sample-room').fx.record), { firstRoom: true });
+  const r = BOT.walk(lv, new Map(), { tries: 0, found: 0, memo: 0, memoMiss: 0 }, { mortal: true });
+  t.ok(r.ok && r.s.hero.hearts >= 1, 'the mortal walk on the sample room (' + lv.features.enemies.length + ' moths, the first room cap) reaches the exit with ' + r.s.hero.hearts + ' hearts' + (r.ok ? '' : ' (' + (r.why || 'stopped at edge ' + (r.miss && r.miss.i)) + ')'));
+});
 
 /* ================================================================ run */
 const t0 = Date.now();

@@ -296,6 +296,13 @@ const MUTANTS = [
     gates: [{ gate: 'reveal', expect: 'no AudioContext before the first tap' }] },
   { name: 'REVEAL_NO_SKIP', task: 'T0.14', file: 'page', find: "if (ui.screen !== 'reveal' || !RV.seen || e.target.closest('#back, #exit')) return;", repl: 'if (true) return;',
     gates: [{ gate: 'reveal', expect: 'a second room skips on a tap' }] },
+  /* T0.16: moths, hearts */
+  { name: 'IFRAMES_ZERO', task: 'T0.16', file: 'page', find: 'h.iframes = K.HIT_IFRAMES_F;', repl: 'h.iframes = 0;',
+    gates: [{ gate: 'harness', only: 'H-en-2', expect: 'inside the i frames a second contact removes nothing' }] },
+  { name: 'MOTH_ON_SAFE_CELL', task: 'T0.16', file: 'page', find: '      for (var q = 0; q < safe.length; q++) if (cheb(c, safe[q], w) < T.ROUTE_SAFE_ENEMY_DIST) return false;\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-route-6', expect: 'a cluster beside an ascent cell' }] },
+  { name: 'MOTH_NEAR_SPAWN', task: 'T0.16', file: 'page', find: '      if (cheb(c, level.spawn, w) <= T.ENEMY_SPAWN_CLEAR) return false;\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-en-1', expect: 'a cluster beside spawn' }] },
   /* T0.15: capture */
   { name: 'OVERLAY_STALE', task: 'T0.15', file: 'page', edits: [['if (gest.moved > 8) { CR.crop = SB.capture.move(gest.crop, dx, dy, CR.bw, CR.bh); layoutCrop(); schedule(); }', 'if (gest.moved > 8) { CR.crop = SB.capture.move(gest.crop, dx, dy, CR.bw, CR.bh); layoutCrop(); }'],
     ['CR.crop = SB.capture.pinch(gest.crop, s, gest.mid.x, gest.mid.y, CR.bw, CR.bh); layoutCrop(); schedule();', 'CR.crop = SB.capture.pinch(gest.crop, s, gest.mid.x, gest.mid.y, CR.bw, CR.bh); layoutCrop();']],
