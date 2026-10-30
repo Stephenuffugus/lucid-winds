@@ -264,6 +264,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     // 7 biomes and enemies
     FROST_SLICK_MIN_W: 5, FROST_SLIDE_CELLS: 1, DEEP_FALL_MULT: 0.8, DEEP_JUMP_V: 9.5 /* gives the +1 cell apex, section 3.2 */,
     MOTH_SPEED: 1, ICICLE_TRIGGER_COLS: 2, ICICLE_RESPAWN_S: 6, JELLY_BOB_CELLS: 2, JELLY_HP: 2, CRAWLER_SPEED: 2, CRAWLER_HP: 2, SPARK_HOP_S: 1.5,
+    JELLY_SPEED: 1 /* T1.4: the bob's cells per second */, SPARK_AIR_S: 0.2 /* a hop's flight */, ELITE_SIZE_CELLS: 1.5 /* 24 px (Q51) */,
     HIT_HEARTS: 1, HIT_IFRAMES_S: 1, HIT_KNOCKBACK_CELLS: 2, HIT_KNOCKBACK_FRAMES: 8 /* T0.16's "over 8 frames" */,
     BOSS_INTRO_S: 2, BOSS_TELEGRAPH_S: 0.8, BOSS_SAFE_LEDGE_CELLS: 6, BOSS_WEAK_MIN: 3, BOSS_OUTLINE_UNTIL: 0.25, BOSS_FALLBACK_HP: 20,
     BOSS_MOTH_EVERY_S: 4, BOSS_MOTH_COUNT: 3, BOSS_ICICLE_TELEGRAPH_S: 3, BOSS_RING_EVERY_S: 5, BOSS_RING_CELLS: 4, BOSS_SPARK_TELEGRAPH_S: 2,
@@ -314,6 +315,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     K.DEEP_TERM = Math.round(K.TERM * T.DEEP_FALL_MULT);
     K.MOTH_V = Math.round(T.MOTH_SPEED * G.CELL * SUB / HZ);
     K.CRAWLER_V = Math.round(T.CRAWLER_SPEED * G.CELL * SUB / HZ);
+    K.JELLY_V = Math.round(T.JELLY_SPEED * G.CELL * SUB / HZ);
+    K.ELITE_SUB = Math.round(T.ELITE_SIZE_CELLS * G.CELL * SUB); K.ELITE_PX = Math.round(T.ELITE_SIZE_CELLS * G.CELL);
     /* every seconds value as frames: X_S -> X_F */
     var keys = Object.keys(T);
     for (var i = 0; i < keys.length; i++) {
@@ -2235,7 +2238,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     mark(level.spawn, T.ENEMY_SPAWN_CLEAR);
     for (k = 0; k < stands.length; k++) mark(stands[k], T.ROUTE_SAFE_ENEMY_DIST);
     var ok = function (c) {
-      if (c < w || c >= n - w || level.solid[c] || level.trap[c] || inPocket[c] || near[c]) return false;
+      if (c < w || c >= n - w || level.solid[c] || level.plat[c] || level.trap[c] || inPocket[c] || near[c]) return false;   /* a one way's own cell is drawn as the plank's body (T1.4's shots: a jelly inside a plank) */
       if (kind === CRAWLER || kind === SPARK) { if (!standable(level, c)) return false; }
       else if (kind === ICICLE && !(level.solid[c - w] || level.plat[c - w])) return false;   /* hangs below a solid or a one way's body */
       return true;
@@ -2370,14 +2373,115 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       hero: { x: hx, y: hy, vx: 0, vy: 0, facing: 1, ground: 0, wall: 0, sticky: 0, lock: 0, spent: 0, knock: 0, coyote: 0, buffer: 0, held: 0, rising: 0,
         dive: 0, dash: 0, dashI: 0, iframes: 0, hearts: hearts, heartsMax: hearts, vigor: 0, focus: 0, grit: 0, scrolls: 0,
         slots: [0, 0, 0], cd: [0, 0, 0], squash: 0, anim: 0, lastStand: level.spawn | 0, secondWind: 0, thickSkin: 0, shake: 0 },
+      /* the enemies (T1.4): each kind's HP (an elite's ELITE_HP_MULT times, its box ELITE_SIZE_CELLS a side, centred on
+         its cell; QUESTIONS Q51); the pocket's elite starts asleep (stunned -1) until the hero enters its pocket (Q75) */
       enemies: ((level.features && level.features.enemies) || []).map(function (e) {
-        var ex = e.idx % w, ey = (e.idx - ex) / w;
-        return { kind: e.kind, x: ex * CS, y: ey * CS, vx: 0, vy: 0, hp: 1, state: 0, timer: 0, dir: 1, home: e.idx, elite: 0, frozen: 0, stunned: 0 };
+        var ex = e.idx % w, ey = (e.idx - ex) / w, el = e.elite ? 1 : 0, off = (CS - (el ? K.ELITE_SUB : CS)) >> 1;
+        return { kind: e.kind, x: ex * CS + off, y: ey * CS + off, vx: 0, vy: 0, hp: hpOf(e.kind, el), state: 0, timer: 0, dir: 1, home: e.idx, elite: el, frozen: 0,
+          stunned: el && pocketOf(level, e.idx) ? -1 : 0 };
       }),
       proj: [], loot: [], chest: { idx: -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
       traps: { phase: 0 }, boss: null,
       room: { dp: 0, blueprints: [], exitLit: 0, cleared: 0, dead: 0, deaths: 0 }
     };
+  }
+
+  /* the enemies' rules (DESIGN 7, T1.4). The kinds are core-features' (MOTH 1, ICICLE 2, JELLY 3, CRAWLER 4,
+     SPARK 5); an icicle's state is 0 hanging, 1 falling, 2 shattered (back home ICICLE_RESPAWN_F steps later); a
+     spark's 0 resting, 1 in a hop (vx the cell it left, vy the cell it lands on); timer counts the steps in the state */
+  var ICICLE_HANG = 0, ICICLE_FALL = 1, ICICLE_GONE = 2;
+  function hpOf(kind, elite) {
+    var T = SB.TUNING, F = SB.features, hp = kind === F.JELLY ? T.JELLY_HP : kind === F.CRAWLER ? T.CRAWLER_HP : 1;
+    return elite ? hp * T.ELITE_HP_MULT : hp;
+  }
+  /* the pocket of the pocket's elite (its cell one of the pocket's), else null */
+  function pocketOf(lv, home) {
+    var pk = lv.features && lv.features.pocket;
+    return pk && pk.cells.indexOf(home) >= 0 ? pk : null;
+  }
+  function standCell(lv, c) { var w = lv.w; return c >= 0 && c + w < lv.w * lv.h && !lv.solid[c] && (lv.solid[c + w] === 1 || lv.plat[c + w] === 1); }
+  /* an enemy's box (sz a side) on a cell: centred across, its foot on the cell's floor */
+  function footX(lv, c, sz) { return (c % lv.w) * SB.K.CELL_SUB + ((SB.K.CELL_SUB - sz) >> 1); }
+  function footY(lv, c, sz) { return ((c - c % lv.w) / lv.w + 1) * SB.K.CELL_SUB - sz; }
+  /* live: it can be touched (a shattered icicle cannot) */
+  function liveEnemy(en) { return en.hp > 0 && !(en.kind === SB.features.ICICLE && en.state === ICICLE_GONE); }
+  function moveEnemy(s, lv, en) {
+    var K = SB.K, T = SB.TUNING, F = SB.features, CS = K.CELL_SUB, h = s.hero, w = lv.w, sz = en.elite ? K.ELITE_SUB : CS;
+    var col = en.home % w, row = (en.home - col) / w, hx = col * CS + ((CS - sz) >> 1), hy = row * CS + ((CS - sz) >> 1);
+    if (en.hp <= 0) return;
+    if (en.kind === F.MOTH) {
+      /* homes in at MOTH_V through furniture (Q29): the larger axis at full speed, the other in proportion */
+      var mdx = (h.x + (K.HERO_W_SUB >> 1)) - (en.x + (sz >> 1)), mdy = (h.y + (K.HERO_H_SUB >> 1)) - (en.y + (sz >> 1)), md = Math.max(Math.abs(mdx), Math.abs(mdy));
+      if (md > 0) { en.vx = (K.MOTH_V * mdx / md) | 0; en.vy = (K.MOTH_V * mdy / md) | 0; en.x += en.vx; en.y += en.vy; en.dir = en.vx < 0 ? -1 : 1; }
+    } else if (en.kind === F.ICICLE) {
+      if (en.state === ICICLE_GONE) { if (en.timer >= K.ICICLE_RESPAWN_F) { en.state = ICICLE_HANG; en.timer = 0; en.x = hx; en.y = hy; en.vy = 0; } return; }
+      if (en.state === ICICLE_HANG) {
+        /* it drops when the hero's middle column is within ICICLE_TRIGGER_COLS of its own and the hero is below it */
+        var hc = Math.floor((h.x + (K.HERO_W_SUB >> 1)) / CS), ic = Math.floor((en.x + (sz >> 1)) / CS);
+        if (Math.abs(hc - ic) <= T.ICICLE_TRIGGER_COLS && h.y > en.y) { en.state = ICICLE_FALL; en.timer = 0; en.vy = 0; }
+        return;
+      }
+      /* falling: gravity to terminal; the first solid or one way cell under its middle shatters it */
+      en.vy = Math.min(K.TERM, en.vy + K.G); en.y += en.vy;
+      var fc = Math.floor((en.x + (sz >> 1)) / CS), fr = Math.floor((en.y + sz - 1) / CS);
+      if (fr > row && (solidAt(lv, fc, fr) || platAt(lv, fc, fr))) { en.state = ICICLE_GONE; en.timer = 0; en.vy = 0; }
+    } else if (en.kind === F.JELLY) {
+      /* the bob: JELLY_V up and down between JELLY_BOB_CELLS above and below home, an integer triangle; a solid cell or a
+         one way's (drawn as the plank's body) in the column shortens the throw: an enemy never enters either */
+      var up = 0, dn = 0;
+      while (up < T.JELLY_BOB_CELLS && !solidAt(lv, col, row - up - 1) && !platAt(lv, col, row - up - 1)) up++;
+      while (dn < T.JELLY_BOB_CELLS && !solidAt(lv, col, row + dn + 1) && !platAt(lv, col, row + dn + 1)) dn++;
+      var y0 = hy - up * CS, y1 = hy + dn * CS;
+      en.vy = en.dir * K.JELLY_V; en.y += en.vy;
+      if (en.y <= y0) { en.y = y0; en.dir = 1; } else if (en.y >= y1) { en.y = y1; en.dir = -1; }
+    } else if (en.kind === F.CRAWLER) {
+      /* the patrol: CRAWLER_V along the standable run of its home row, turning at the run's last cell, never off it */
+      var a = col, b = col;
+      while (a > 0 && standCell(lv, row * w + a - 1)) a--;
+      while (b < w - 1 && standCell(lv, row * w + b + 1)) b++;
+      var x0 = a * CS, x1 = Math.max(x0, (b + 1) * CS - sz);
+      en.vx = en.dir * K.CRAWLER_V; en.x += en.vx;
+      if (en.x <= x0) { en.x = x0; en.dir = 1; } else if (en.x >= x1) { en.x = x1; en.dir = -1; }
+      en.y = footY(lv, en.home, sz);
+    } else if (en.kind === F.SPARK) {
+      /* the hop: SPARK_HOP_F steps a cycle; it rests, then flies SPARK_AIR_F steps through a one cell arc onto a
+         standable cell of its envelope (core-features'), drawn from the state's generator */
+      if (en.state === 0) {
+        if (en.timer < K.SPARK_HOP_F - K.SPARK_AIR_F) return;
+        var env = envOf(lv, en.home), here = Math.floor((en.y + sz - 1) / CS) * w + Math.floor((en.x + (sz >> 1)) / CS), cands = [];
+        for (var q = 0; q < env.length; q++) if (env[q] !== here && standCell(lv, env[q])) cands.push(env[q]);
+        en.timer = 0;
+        if (!cands.length) return;
+        en.vx = here; en.vy = cands[SB.rng.stepU32(s, 'rng') % cands.length]; en.state = 1;
+        en.dir = en.vy % w < here % w ? -1 : 1;
+        return;
+      }
+      var t = en.timer, A = K.SPARK_AIR_F, fx = footX(lv, en.vx, sz), fy = footY(lv, en.vx, sz), tx = footX(lv, en.vy, sz), ty = footY(lv, en.vy, sz);
+      if (t >= A) { en.x = tx; en.y = ty; en.state = 0; en.timer = 0; }
+      else { en.x = fx + (((tx - fx) * t / A) | 0); en.y = fy + (((ty - fy) * t / A) | 0) - ((4 * CS * t * (A - t) / (A * A)) | 0); }
+    }
+    /* the pocket's elite never leaves its pocket (Q75): its box held inside the hollow */
+    var pk = en.elite ? pocketOf(lv, en.home) : null;
+    if (pk) {
+      var r = pk.rect;
+      en.x = Math.max(r[0] * CS, Math.min((r[2] + 1) * CS - sz, en.x));
+      en.y = Math.max(r[1] * CS, Math.min((r[3] + 1) * CS - sz, en.y));
+    }
+  }
+  /* the envelope placement gave the enemy on this cell (section 3.7) */
+  function envOf(lv, home) {
+    var es = (lv.features && lv.features.enemies) || [];
+    for (var k = 0; k < es.length; k++) if (es[k].idx === home) return es[k].env || [];
+    return [];
+  }
+  /* a weapon's hit (M2): dmg off the enemy's HP; at 0 it dies (an icicle too: only a fallen one comes back) and the
+     room banks its Dead Pixels, DP_FODDER or DP_ELITE (DESIGN 9.3); returns the HP left */
+  function hurt(s, m, dmg) {
+    var en = s.enemies[m], T = SB.TUNING;
+    if (!en || en.hp <= 0) return 0;
+    en.hp = Math.max(0, en.hp - dmg);
+    if (en.hp === 0) s.room.dp += en.elite ? T.DP_ELITE : T.DP_FODDER;
+    return en.hp;
   }
 
   /* the world: out of bounds is solid (walls both sides, a ceiling above row 0, rock below the floor) */
@@ -2593,17 +2697,26 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       }
     }
 
-    /* 8a. the moths (DESIGN 7, QUESTIONS Q29): each drifts toward the hero at MOTH_V through furniture (the larger axis at
-       full speed, the other in proportion); a moth's 12 px core touching the hero costs HIT_HEARTS, unless i frames
-       (a hit's or a dash's) run or the state is immortal (the bot's route walks, Q30): then HIT_IFRAMES of i frames and
-       KNOCK_FRAMES of knockback away from the moth; the last heart ends the room */
+    /* 8a. the enemies (DESIGN 7; T0.16's moths, T1.4's four more and the elites): each moves by its kind's rule
+       (moveEnemy) unless a weapon holds it (frozen or stunned, M2; the pocket's elite sleeps, stunned -1, until the hero
+       enters its pocket): held, it neither moves nor harms (QUESTIONS Q81). A live enemy's core (2 px inside its box:
+       12 px, an elite's 20) touching the hero costs HIT_HEARTS, unless i frames (a hit's or a dash's) run or the state
+       is immortal (the bot's route walks, Q30): then HIT_IFRAMES of i frames and KNOCK_FRAMES of knockback away from
+       it; the last heart ends the room */
     for (var m = 0; m < s.enemies.length; m++) {
-      var en = s.enemies[m];
-      if (en.hp <= 0) continue;
-      var mdx = (h.x + (K.HERO_W_SUB >> 1)) - (en.x + (K.CELL_SUB >> 1)), mdy = (h.y + (K.HERO_H_SUB >> 1)) - (en.y + (K.CELL_SUB >> 1)), md = Math.max(Math.abs(mdx), Math.abs(mdy));
-      if (md > 0) { en.vx = (K.MOTH_V * mdx / md) | 0; en.vy = (K.MOTH_V * mdy / md) | 0; en.x += en.vx; en.y += en.vy; en.dir = en.vx < 0 ? -1 : 1; }
+      var en = s.enemies[m], esz = en.elite ? K.ELITE_SUB : K.CELL_SUB;
+      if (en.stunned < 0) {
+        var pk = pocketOf(lv, en.home), pr = pk ? pk.rect : null;
+        if (!pr || (h.x < (pr[2] + 1) * K.CELL_SUB && h.x + K.HERO_W_SUB > pr[0] * K.CELL_SUB && h.y < (pr[3] + 1) * K.CELL_SUB && h.y + K.HERO_H_SUB > pr[1] * K.CELL_SUB)) en.stunned = 0;
+      }
+      if (en.frozen > 0) en.frozen--;
+      if (en.stunned > 0) en.stunned--;
+      if (en.hp <= 0 && !(en.kind === SB.features.ICICLE && en.state === ICICLE_GONE)) continue;
+      var held = en.frozen > 0 || en.stunned !== 0, mdx = (h.x + (K.HERO_W_SUB >> 1)) - (en.x + (esz >> 1));   /* the knockback's side, taken before it moves (T0.16's order) */
+      if (!held) moveEnemy(s, lv, en);
       en.timer++;
-      var core = 2 * K.SUB, mx0 = en.x + core, my0 = en.y + core, mx1 = en.x + K.CELL_SUB - core, my1 = en.y + K.CELL_SUB - core;
+      if (held || !liveEnemy(en)) continue;
+      var core = 2 * K.SUB, mx0 = en.x + core, my0 = en.y + core, mx1 = en.x + esz - core, my1 = en.y + esz - core;
       if (!s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && h.x < mx1 && h.x + K.HERO_W_SUB > mx0 && h.y < my1 && h.y + K.HERO_H_SUB > my0) {
         h.hearts = Math.max(0, h.hearts - SB.TUNING.HIT_HEARTS);
         h.iframes = K.HIT_IFRAMES_F;
@@ -2679,7 +2792,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   };
 
   SB.sim = { IN: IN, EV: EV, rle: rle, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
-    FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt };
+    FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="shell-capture" data-tool>
@@ -2841,6 +2954,25 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     moth: { w: 16, h: 16, frames: {
       a: '................/.....0....0...../......0..0....../.0000.0330.0000./0444400330044440/0464440330444640/0444440330444440/.04444033044440./..000003300000../...0440330440.../...0440330440.../....00033000..../.......00......./................/................/................',
       b: '................/................/.....0....0...../......0..0....../......0330....../..000.0330.000../.04440033004440./0446440330446440/0444440330444440/.04444033044440./..000003300000../...0440330440.../....00033000..../.......00......./................/................'
+    } },
+    /* T1.4's four (section 7.3): the Frost icicle, Ash with Glare tips under an Ink rim; the Deep jelly, Teal with a
+       Magenta core; the Overgrowth thorn crawler, Moss with Brick thorns and Glare tips; the Ember spark, Brick with a
+       Glare core. Two frames each at 12 fps; an elite is the same art drawn ELITE_SIZE_CELLS a side */
+    icicle: { w: 16, h: 16, frames: {
+      a: '..000000000000../..044464444440../...0446444440.../...0446444440.../....04644440..../....04644440..../.....046440...../.....046440...../......0640....../......0640....../.......06......./.......00......./................/................/................/................',
+      b: '..000000000000../..044444464440../...0444446440.../...0444446440.../....04446440..../....04446440..../.....044640...../.....044640...../......0460....../......0460....../.......06......./.......00......./................/................/................/................'
+    } },
+    jelly: { w: 16, h: 16, frames: {
+      a: '................/.....000000...../...00cccccc00.../..0cc6ccccccc0../..0c6ccaacccc0../.0ccccaaaacccc0./.0cccccaaccccc0./.0cccccccccccc0./..000000000000../...0c.0c.0c.0.../...0c.0c.0c.0.../....0..0..0.0.../...0c.0c.0c...../...0..0..0....../................/................',
+      b: '................/................/.....000000...../...00cccccc00.../..0cc6ccccccc0../.0cc6ccaacccc0../.0ccccaaaaccccc0/.0cccccaaccccc0./..000000000000../..0c.0c.0c.0c.../...0..0..0..0.../...0c.0c.0c.0c../....0..0..0..0../................/................/................'
+    } },
+    crawler: { w: 16, h: 16, frames: {
+      a: '................/................/................/................/....6..6..6...../....9..9..9...../...0900900900.../..0dd9dd9dd9d0../.0ddddddddddd60./.0dddddddddd600./.0ddddddddddddd0/..0000000000000./..0.0..0..0..0../.0..0..0..0..0../................/................',
+      b: '................/................/................/................/.....6..6..6..../.....9..9..9..../...00900900900../..0d9dd9dd9dd0../.0ddddddddddd60./.0dddddddddd600./.0ddddddddddddd0/..0000000000000./...0..0..0..0.../...0..0..0..0.../................/................'
+    } },
+    spark: { w: 16, h: 16, frames: {
+      a: '................/.......9......../......999......./...9..999..9..../....9.969.9...../.....99699....../...999666999..../.....99699....../....9.969.9...../...9..999..9..../......999......./.......9......../................/................/................/................',
+      b: '................/................/.......9......../.....9.9.9....../......969......./....9966699...../..9.9666669.9.../....9966699...../......969......./.....9.9.9....../.......9......../................/................/................/................/................'
     } },
     /* the beacon: the ceiling light, a cord, a Glare shade with an Ink rim, a Sun bulb; Glare rays on the second frame */
     beacon: { w: 16, h: 16, frames: {
@@ -3062,15 +3194,16 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       spr(ctx, bk, ex, ey);
       R.drawn.beacon = { key: bk, x: ex - camX, y: ey, w: C, h: C };
     } else R.drawn.beacon = null;
-    /* the moths: the sprite's two flutter frames, a beat every 8 steps */
-    var md = R.drawn.moths; md.length = 0;
+    /* the enemies: each kind's two frames at 12 fps (the moth's flutter beats on its own timer: the fourth review found
+       it at 7.5), facing its way; an elite drawn ELITE_PX a side; a shattered icicle is not drawn */
+    var md = R.drawn.moths, KINDS = ['', 'moth', 'icicle', 'jelly', 'crawler', 'spark'], beat = Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS); md.length = 0;
     for (var m = 0; m < s.enemies.length; m++) {
-      var en = s.enemies[m]; if (en.hp <= 0) continue;
-      var mx = en.x >> 8, my = (en.y >> 8) - cam;
-      if (my < -16 || my > viewH) continue;
-      var mk = (Math.floor(en.timer / Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS)) & 1) ? 'moth.a' : 'moth.b';   /* 12 fps (the fourth review: it ran at 7.5) */
-      spr(ctx, mk, mx, my);
-      md.push({ key: mk, x: mx - camX, y: my, w: 16, h: 16 });
+      var en = s.enemies[m]; if (!SB.sim.liveEnemy(en)) continue;
+      var es = en.elite ? K.ELITE_PX : C, mx = en.x >> 8, my = (en.y >> 8) - cam;
+      if (my < -es || my > viewH) continue;
+      var clock = en.kind === 1 ? en.timer : s.frame, mk = (KINDS[en.kind] || 'moth') + ((Math.floor(clock / beat) & 1) ? '.a' : '.b') + (en.dir < 0 && en.kind === 4 ? '<' : '');
+      spr(ctx, mk, mx, my, es, es);
+      md.push({ key: mk, x: mx - camX, y: my, w: es, h: es });
     }
     var hy = heroY - cam, h = s.hero, T = SB.TUNING, hd = R.drawn.hero;
     /* a hit's i frames blink the hero at about 4 Hz (8 steps on, 8 off) */

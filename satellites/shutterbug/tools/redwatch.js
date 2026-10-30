@@ -362,7 +362,7 @@ const MUTANTS = [
     gates: [{ gate: 'death', expect: 'a death high in the room' }] },
   { name: 'ROTATE_RUNS', task: 'review 4', file: 'page', find: "    var run = !held && !SIDEWAYS.matches && !!G.state && SB.ui.screen === 'play';", repl: "    var run = !held && !!G.state && SB.ui.screen === 'play';",
     gates: [{ gate: 'layout', expect: 'turned sideways mid room the loop holds' }] },
-  { name: 'MOTH_AT_7_5', task: 'review 4', file: 'page', find: "var mk = (Math.floor(en.timer / Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS)) & 1) ? 'moth.a' : 'moth.b';", repl: "var mk = ((en.timer >> 3) & 1) ? 'moth.a' : 'moth.b';",
+  { name: 'MOTH_AT_7_5', task: 'review 4', file: 'page', find: "((Math.floor(clock / beat) & 1) ? '.a' : '.b')", repl: "(((clock >> 3) & 1) ? '.a' : '.b')",   /* re-anchored on T1.4's per kind beat */
     gates: [{ gate: 'sprites', expect: 'the moth flutters at 12 fps' }] },
   { name: 'KNOCK_ALWAYS_LEFT', task: 'review 4', file: 'page', find: 'h.knock = (mdx < 0 ? -1 : 1) * K.KNOCK_FRAMES;', repl: 'h.knock = -K.KNOCK_FRAMES;',
     gates: [{ gate: 'harness', only: 'H-en-2c', expect: 'a moth on the left: the hero is knocked' }] },
@@ -559,7 +559,24 @@ const MUTANTS = [
   { name: 'ROUND_TWO_SKIPPED', task: 'T1.3', file: 'page', find: '    if (check()) return null;\n    var k = nearestEnemy(level);', repl: '    return null;\n    var k = nearestEnemy(level);',
     gates: [{ gate: 'harness', only: 'H-route-10', expect: 'a moth between two planks' }] },
   { name: 'LADDER_SKIPS_THE_TRAP', task: 'T1.3', file: 'page', find: '    if (f.trap) {\n      for (var q = 0; q < f.trap.length; q++) level.trap[f.trap[q]] = 0;', repl: '    if (false) {\n      for (var q = 0; q < f.trap.length; q++) level.trap[f.trap[q]] = 0;',
-    gates: [{ gate: 'harness', only: 'H-route-10', expect: 'a trap band across the room' }] }
+    gates: [{ gate: 'harness', only: 'H-route-10', expect: 'a trap band across the room' }] },
+  /* T1.4: the enemy sim */
+  { name: 'ICICLE_RANGE_3', task: 'T1.4', file: 'page', find: 'if (Math.abs(hc - ic) <= T.ICICLE_TRIGGER_COLS && h.y > en.y)', repl: 'if (Math.abs(hc - ic) <= T.ICICLE_TRIGGER_COLS + 1 && h.y > en.y)',
+    gates: [{ gate: 'harness', only: 'H-en-5', expect: 'columns off drops it' }] },
+  { name: 'CRAWLER_FALLS_OFF', task: 'T1.4', file: 'page', find: 'var x0 = a * CS, x1 = Math.max(x0, (b + 1) * CS - sz);', repl: 'var x0 = a * CS, x1 = Math.max(x0, (b + 2) * CS - sz);',
+    gates: [{ gate: 'harness', only: 'H-en-6', expect: 'over 900 steps it spans' }] },
+  { name: 'SPARK_HOPS_INTO_WALL', task: 'T1.4', file: 'page', find: 'if (env[q] !== here && standCell(lv, env[q])) cands.push(env[q]);', repl: 'if (env[q] !== here) cands.push(env[q]);',
+    gates: [{ gate: 'harness', only: 'H-en-7', expect: 'every landing a standable cell' }] },
+  { name: 'JELLY_THROUGH_CEILING', task: 'T1.4', file: 'page', find: 'while (up < T.JELLY_BOB_CELLS && !solidAt(lv, col, row - up - 1)) up++;', repl: 'while (up < T.JELLY_BOB_CELLS) up++;',
+    gates: [{ gate: 'harness', only: 'H-en-8', expect: 'in an open column its extremes' }] },
+  { name: 'ELITE_HP_SINGLE', task: 'T1.4', file: 'page', find: 'return elite ? hp * T.ELITE_HP_MULT : hp;', repl: 'return hp;',
+    gates: [{ gate: 'harness', only: 'H-en-9', expect: 'elite has ELITE_HP_MULT times its HP' }] },
+  { name: 'POCKET_ELITE_ROAMS', task: 'T1.4', file: 'page', find: '    if (pk) {\n      var r = pk.rect;', repl: '    if (false) {\n      var r = pk.rect;',
+    gates: [{ gate: 'harness', only: 'H-en-9', expect: 'the pocket\'s elite sleeps' }] },
+  { name: 'POCKET_ELITE_AWAKE', task: 'T1.4', file: 'page', find: 'stunned: el && pocketOf(level, e.idx) ? -1 : 0 };', repl: 'stunned: 0 };',
+    gates: [{ gate: 'harness', only: 'H-en-9', expect: 'the pocket\'s elite sleeps' }] },
+  { name: 'HELD_STILL_HARMS', task: 'T1.4', file: 'page', find: '      if (held || !liveEnemy(en)) continue;', repl: '      if (!liveEnemy(en)) continue;',
+    gates: [{ gate: 'harness', only: 'H-en-9', expect: 'a frozen moth on the hero' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

@@ -203,7 +203,8 @@ group('H-ns-1', 'K recomputed in the test from TUNING, and the known integers of
     DEEP_JUMP_V: T.DEEP_JUMP_V * 256, DEEP_FALL_G: Math.round(T.GRAVITY * 256 * T.DEEP_FALL_MULT),
     DEEP_TERM: Math.round(T.TERMINAL * 256 * T.DEEP_FALL_MULT), MOTH_V: Math.round(T.MOTH_SPEED * G.CELL * 256 / 60),
     CRAWLER_V: Math.round(T.CRAWLER_SPEED * G.CELL * 256 / 60), WORLD_W: G.W * G.CELL, WORLD_H: G.H * G.CELL,
-    KNOCK_V: T.HIT_KNOCKBACK_CELLS * G.CELL * 256 / T.HIT_KNOCKBACK_FRAMES, KNOCK_FRAMES: T.HIT_KNOCKBACK_FRAMES
+    KNOCK_V: T.HIT_KNOCKBACK_CELLS * G.CELL * 256 / T.HIT_KNOCKBACK_FRAMES, KNOCK_FRAMES: T.HIT_KNOCKBACK_FRAMES,
+    JELLY_V: Math.round(T.JELLY_SPEED * G.CELL * 256 / 60), ELITE_SUB: T.ELITE_SIZE_CELLS * G.CELL * 256, ELITE_PX: T.ELITE_SIZE_CELLS * G.CELL
   };
   for (const k of Object.keys(T)) if (k.endsWith('_S') && typeof T[k] === 'number') want[k.slice(0, -2) + '_F'] = Math.round(T[k] * 60);
   for (const k of Object.keys(want)) t.eq(K[k], want[k], 'K.' + k + ' recomputed from TUNING');
@@ -211,7 +212,8 @@ group('H-ns-1', 'K recomputed in the test from TUNING, and the known integers of
   const KNOWN = { SUB: 256, CELL_SUB: 4096, RUN: 672, DECEL: 168, G: 128, JUMP_V: 2200, CUT_V: 1300, TERM: 3072, WALL_V: 1950,
     WALL_PUSH: 672, DASH_V: 1536, DEEP_JUMP_V: 2432, DEEP_FALL_G: 102, DEEP_TERM: 2458, MOTH_V: 68, CRAWLER_V: 137,
     WORLD_W: 384, WORLD_H: 768, HIT_IFRAMES_F: 60, ICICLE_RESPAWN_F: 360, SPARK_HOP_F: 90, TRAP_PERIOD_F: 90,
-    JUMP_SLOT_CD_F: 36, BOSS_TELEGRAPH_F: 48, BOSS_INTRO_F: 120, KNOCK_V: 1024, KNOCK_FRAMES: 8 };
+    JUMP_SLOT_CD_F: 36, BOSS_TELEGRAPH_F: 48, BOSS_INTRO_F: 120, KNOCK_V: 1024, KNOCK_FRAMES: 8,
+    JELLY_V: 68, ELITE_SUB: 6144, ELITE_PX: 24, SPARK_AIR_F: 12 };
   for (const k of Object.keys(KNOWN)) t.eq(K[k], KNOWN[k], 'K.' + k + ' known answer');
   for (const k of Object.keys(K)) if (typeof K[k] === 'number') t.ok(Number.isInteger(K[k]), 'K.' + k + ' is an integer (' + K[k] + ')');
   t.same(SB.derive(T, G), K, 'derive is pure: a second call equals K');
@@ -3202,7 +3204,7 @@ group('H-feat-6', 'enemies: their biome\'s kind, on cells that keep the rules (o
       count++; if (e.elite) elites++; kinds[KIND_NAME[e.kind]] = (kinds[KIND_NAME[e.kind]] || 0) + 1;
       const c = e.idx, at = '(' + c % w + ', ' + Math.floor(c / w) + ')', pocketElite = !!(f.pocket && e.elite && f.pocket.cells.includes(c));
       if (e.kind !== want && !(e.kind === SB.features.MOTH && lv.repair.spread)) bad.push(tag + ': a ' + KIND_NAME[e.kind] + ' in ' + SB.palette.BIOMES[lv.biome]);
-      if (lv.solid[c] || lv.trap[c]) bad.push(tag + ': an enemy on a solid or trap cell ' + at);
+      if (lv.solid[c] || lv.trap[c] || lv.plat[c]) bad.push(tag + ': an enemy on a solid, one way or trap cell ' + at);
       if (cheb(c, lv.spawn, w) <= T.ENEMY_SPAWN_CLEAR) bad.push(tag + ': an enemy within ENEMY_SPAWN_CLEAR of spawn ' + at);
       if (!pocketElite && stands.some(v => cheb(c, v, w) <= T.ROUTE_SAFE_ENEMY_DIST)) bad.push(tag + ': an enemy within ROUTE_SAFE_ENEMY_DIST of the ascent ' + at);
       if (!pocketElite && f.pocket && f.pocket.cells.includes(c)) bad.push(tag + ': an enemy in the pocket ' + at);
@@ -3975,6 +3977,92 @@ group('H-en-3', 'the walks with moths live: the bot\'s (immortal) and a mortal o
   const lv = SB.pipeline.build(SB.record.fromJSON(fixture('sample-room').fx.record), { firstRoom: true });
   const r = BOT.walk(lv, new Map(), { tries: 0, found: 0, memo: 0, memoMiss: 0 }, { mortal: true });
   t.ok(r.ok && r.s.hero.hearts >= 1, 'the mortal walk on the sample room (' + lv.features.enemies.length + ' moths, the first room cap) reaches the exit with ' + r.s.hero.hearts + ' hearts' + (r.ok ? '' : ' (' + (r.why || 'stopped at edge ' + (r.miss && r.miss.i)) + ')'));
+});
+
+/* ================================================================ the enemy sim (T1.4) */
+/* a lab state: the room, one enemy of a kind on a cell (its envelope given, or none), the hero standing on the floor in
+   column hc (or wherever opts says); immortal unless asked */
+function enemyLab(lines, kind, cell, opts = {}) {
+  const lv = LABS.room(lines, opts.room || {});
+  lv.features = { pocket: null, enemies: [{ kind, idx: cell, elite: !!opts.elite, env: opts.env ? Int32Array.from(opts.env) : Int32Array.of(cell) }] };
+  const hc = opts.hc === undefined ? 20 : opts.hc;
+  const s = SB.sim.create(lv, { at: { x: hc * CS + ((CS - HW) >> 1), y: 46 * CS }, immortal: opts.mortal ? false : true });
+  return { lv, s };
+}
+group('H-en-5', 'the icicle (DESIGN 7): it drops when the hero is within ICICLE_TRIGGER_COLS columns below it and not one further; it shatters on the floor and hangs again ICICLE_RESPAWN_F steps later', t => {
+  const lines = ['........========', '', '', '', '', '', FLOOR], cell = 41 * 24 + 12, T = SB.TUNING;   /* a one way at x 8..15 on row 41, the icicle under it at (12, 42) */
+  const at2 = enemyLab(lines, SB.features.ICICLE, 42 * 24 + 12, { hc: 12 + T.ICICLE_TRIGGER_COLS }), at3 = enemyLab(lines, SB.features.ICICLE, 42 * 24 + 12, { hc: 12 + T.ICICLE_TRIGGER_COLS + 1 });
+  SB.sim.step(at2.s, 0); SB.sim.step(at3.s, 0);
+  t.ok(at2.s.enemies[0].state === 1 && at3.s.enemies[0].state === 0, 'the hero ' + T.ICICLE_TRIGGER_COLS + ' columns off drops it (state ' + at2.s.enemies[0].state + '), ' + (T.ICICLE_TRIGGER_COLS + 1) + ' columns off does not (state ' + at3.s.enemies[0].state + ')');
+  const s = at2.s, e = s.enemies[0], y0 = 42 * CS; let k = 0;
+  while (e.state === 1 && k < 300) { SB.sim.step(s, 0); k++; }
+  const landed = e.state === 2 && e.y + CS - 1 >= 46 * CS, back = []; let n = 0;
+  while (e.state === 2 && n < 1000) { SB.sim.step(s, 0); n++; }
+  back.push(e.state, e.x === 12 * CS, e.y === y0);
+  t.ok(landed && n === K.ICICLE_RESPAWN_F && back.join() === '0,true,true', 'it shatters on the floor after ' + k + ' steps and hangs at home again ' + n + ' steps later (ICICLE_RESPAWN_F ' + K.ICICLE_RESPAWN_F + ')');
+});
+group('H-en-6', 'the thorn crawler (DESIGN 7): it patrols its one way run at CRAWLER_V, turns at the run\'s last cell and never walks off', t => {
+  const { s } = enemyLab(['..========', '', '', '', '', FLOOR], SB.features.CRAWLER, 41 * 24 + 5);   /* a run of x 2..9 on row 42 */
+  const e = s.enemies[0]; let lo = Infinity, hi = -Infinity, turns = 0, dir = e.dir, ys = new Set(), steps = new Set();
+  for (let k = 0; k < 900; k++) { const x0 = e.x; SB.sim.step(s, 0); lo = Math.min(lo, e.x); hi = Math.max(hi, e.x); ys.add(e.y); if (e.dir !== dir) { turns++; dir = e.dir; } if (e.x !== x0) steps.add(Math.abs(e.x - x0)); }
+  t.ok(lo === 2 * CS && hi === 9 * CS && ys.size === 1 && ys.has(41 * CS) && turns >= 4 && Math.max(...steps) === K.CRAWLER_V, 'over 900 steps it spans x ' + lo / CS + ' to ' + hi / CS + ' cells (the run is 2 to 9), on row ' + [...ys].map(y => y / CS).join() + ', turning ' + turns + ' times at CRAWLER_V');
+});
+group('H-en-7', 'the spark (DESIGN 7): every SPARK_HOP_F steps it hops onto a standable cell of its envelope, never into a wall or the air, the cell drawn from the state\'s generator', t => {
+  /* rows 38 to 47: a one way at x 12..15 on row 40 (its standing row 39), a wall at x 9..10 on rows 41..42, a one way
+     at x 4..7 on row 43 (standing row 42); the envelope given holds both planks' standing cells, a wall cell and an
+     air cell */
+  const lines = ['', '', '............====', '.........##.....', '.........##.....', '....====', '', '', '', FLOOR];
+  const plankA = [4, 5, 6, 7].map(x => 42 * 24 + x), plankB = [12, 13, 14, 15].map(x => 39 * 24 + x), env = plankA.concat(plankB, [41 * 24 + 9, 30 * 24 + 6]);
+  const { lv, s } = enemyLab(lines, SB.features.SPARK, 42 * 24 + 5, { env });
+  const e = s.enemies[0], g = SB.reach.graph(lv), lands = [], at = []; let st = e.state;
+  for (let k = 0; k < 40 * K.SPARK_HOP_F; k++) {
+    SB.sim.step(s, 0);
+    if (st === 1 && e.state === 0) { const c = Math.floor((e.y + CS - 1) / CS) * 24 + Math.floor((e.x + (CS >> 1)) / CS); lands.push(c); at.push(k); }
+    st = e.state;
+  }
+  const gaps = at.slice(1).map((v, i) => v - at[i]), distinct = new Set(lands);
+  t.ok(lands.length >= 30 && lands.every(c => g.stand[c] && env.includes(c)) && gaps.every(d => d === K.SPARK_HOP_F) && distinct.size >= 3, lands.length + ' hops, every landing a standable cell of the envelope (' + [...distinct].map(c => '(' + c % 24 + ', ' + Math.floor(c / 24) + ')').join(' ') + '), one every ' + [...new Set(gaps)].join(' or ') + ' steps');
+});
+group('H-en-8', 'the jelly (DESIGN 7): it bobs JELLY_BOB_CELLS above and below home on an integer triangle at JELLY_V, and a solid cell above shortens the throw (an enemy never enters a solid cell)', t => {
+  const span = lines => { const { s } = enemyLab(lines, SB.features.JELLY, 30 * 24 + 12); const e = s.enemies[0]; let lo = Infinity, hi = -Infinity; for (let k = 0; k < 900; k++) { SB.sim.step(s, 0); lo = Math.min(lo, e.y); hi = Math.max(hi, e.y); } return [lo / CS, hi / CS]; };
+  const open = span([...Array(17)].map(() => '').concat([FLOOR])), roofed = span(['............#'].concat([...Array(18)].map(() => ''), [FLOOR]));   /* 20 lines: rows 28..47, the solid at (12, 28) */
+  const planked = span(['..........=====', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', FLOOR]);   /* a one way at x 10..14 on row 28 */
+  t.ok(open.join() === '28,32' && roofed.join() === '29,32' && planked.join() === '29,32', 'in an open column its extremes are rows ' + open.join(' and ') + ' (home 30); with a solid cell at (12, 28) they are ' + roofed.join(' and ') + ', under a one way on row 28 ' + planked.join(' and '));
+});
+group('H-en-9', 'the elites (Q51): ELITE_HP_MULT times their kind\'s HP, ELITE_SIZE_CELLS a side; the pocket\'s elite sleeps until the hero enters its pocket and never leaves it (Q75); a kill banks DP_FODDER or DP_ELITE', t => {
+  const T = SB.TUNING, F = SB.features, kinds = [F.MOTH, F.ICICLE, F.JELLY, F.CRAWLER, F.SPARK];
+  t.ok(kinds.every(k => SB.sim.hpOf(k, 1) === T.ELITE_HP_MULT * SB.sim.hpOf(k, 0)) && SB.sim.hpOf(F.JELLY, 0) === T.JELLY_HP && SB.sim.hpOf(F.CRAWLER, 0) === T.CRAWLER_HP && SB.sim.hpOf(F.MOTH, 0) === 1,
+    'every kind\'s elite has ELITE_HP_MULT times its HP (' + kinds.map(k => SB.sim.hpOf(k, 0) + '/' + SB.sim.hpOf(k, 1)).join(' ') + ')');
+  /* the corpus' elites start with that HP and a box ELITE_SIZE_CELLS a side centred on their cell */
+  const bad = []; let elites = 0;
+  for (const { tag, lv } of featBuilds()) {
+    const s = SB.sim.create(lv, {});
+    lv.features.enemies.forEach((e, i) => { const en = s.enemies[i]; if (!e.elite) return; elites++; const off = (CS - K.ELITE_SUB) >> 1; if (en.hp !== SB.sim.hpOf(e.kind, 1) || en.x !== (e.idx % 24) * CS + off || en.y !== Math.floor(e.idx / 24) * CS + off) bad.push(tag + ' ' + e.idx); });
+  }
+  t.ok(elites > 0 && bad.length === 0, elites + ' elites over the corpus start with their HP and a ' + K.ELITE_PX + ' px box centred on their cell' + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
+  /* the pocket's elite: the Walnut seam lab of H-en-1b (its one enemy is the pocket's elite, a moth) */
+  const pc = {};
+  for (let y = 38; y <= 46; y++) pc[y] = '44' + ([39, 42, 45].includes(y) ? '77777777' : '11111111') + '4'.repeat(14);
+  pc[39] = pc[39].slice(0, 16) + '5555' + pc[39].slice(20); pc[40] = pc[40].slice(0, 16) + '3333' + pc[40].slice(20);
+  const lv = SB.pipeline.build(labRecord(pc), { biome: 0 }), pk = lv.needsCrop ? null : lv.features.pocket;
+  if (!pk || lv.features.enemies.length !== 1) { t.ok(false, 'the pocket lab builds with its elite (' + (lv.needsCrop ? lv.why : lv.features.enemies.length + ' enemies') + ')'); return; }
+  const s = SB.sim.create(lv, { immortal: true }), e = s.enemies[0], r = pk.rect, x0 = e.x, y0 = e.y;
+  for (let k = 0; k < 120; k++) SB.sim.step(s, 0);
+  const slept = e.x === x0 && e.y === y0 && e.stunned === -1;
+  s.hero.x = (r[0] + 1) * CS + ((CS - HW) >> 1); s.hero.y = (r[1] + 2) * CS; SB.sim.step(s, 0);
+  const woke = e.stunned === 0;
+  s.hero.x = 20 * CS; s.hero.y = 30 * CS; s.hero.vx = 0; s.hero.vy = 0;
+  let inside = true; for (let k = 0; k < 400; k++) { SB.sim.step(s, 0); if (e.x < r[0] * CS || e.y < r[1] * CS || e.x + K.ELITE_SUB > (r[2] + 1) * CS || e.y + K.ELITE_SUB > (r[3] + 1) * CS) inside = false; }
+  t.ok(e.elite === 1 && slept && woke && inside, 'the pocket\'s elite sleeps while the hero is out (' + slept + '), wakes when it enters (' + woke + ') and stays in its hollow while the hero waits far off (' + inside + ')');
+  const dp0 = s.room.dp; SB.sim.hurt(s, 0, 99);
+  const lab = enemyLab(['', FLOOR], F.MOTH, 30 * 24 + 4), dp1 = lab.s.room.dp; SB.sim.hurt(lab.s, 0, 1);
+  t.ok(e.hp === 0 && s.room.dp - dp0 === T.DP_ELITE && lab.s.room.dp - dp1 === T.DP_FODDER && !SB.sim.liveEnemy(lab.s.enemies[0]), 'a kill banks DP_ELITE for an elite (' + (s.room.dp - dp0) + ') and DP_FODDER for fodder (' + (lab.s.room.dp - dp1) + ')');
+  /* held (Q81): a frozen moth on the hero neither moves nor hits until its timer runs out */
+  const hl = enemyLab(['', FLOOR], F.MOTH, 46 * 24 + 4, { hc: 4, mortal: true }), he = hl.s.enemies[0], hx0 = he.x; he.frozen = 30;
+  for (let k = 0; k < 29; k++) SB.sim.step(hl.s, 0);
+  const stillHeld = he.x === hx0 && hl.s.hero.hearts === hl.s.hero.heartsMax;
+  for (let k = 0; k < 5; k++) SB.sim.step(hl.s, 0);
+  t.ok(stillHeld && hl.s.hero.hearts < hl.s.hero.heartsMax, 'a frozen moth on the hero neither moves nor hits for its 30 steps, then hits (held ' + stillHeld + ', hearts ' + hl.s.hero.hearts + ')');
 });
 
 /* ================================================================ sprites (T0.17) */
