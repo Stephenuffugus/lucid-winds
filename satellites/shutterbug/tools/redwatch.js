@@ -77,8 +77,9 @@ const MUTANTS = [
 
   { name: 'ACCUMULATOR_DT_FLOAT', task: 'T0.8a', file: 'page', find: 'while (acc >= STEP_MS && n < MAX_STEPS) { stepOnce(); acc -= STEP_MS; n++; loop.accSteps++; }',
     repl: 'if (acc > 0) { stepOnce(); loop.dropped += acc - STEP_MS; acc = 0; n++; loop.accSteps++; }',
-    /* one step per frame is faster than real time on a fast frame rate and slower on a slow one: either rate check */
-    gates: [{ gate: 'play', expect: ['never faster than real time', 'never slower than real time'] }] },
+    /* one step per frame whatever the frame owes: the test's own replay of the logged frames disagrees frame by frame
+       (the rate checks it was first watched on became that replay in the second review) */
+    gates: [{ gate: 'play', expect: ['frame by frame the page ran the steps the accumulator owes', 'the loop ran exactly the steps the accumulator owes'] }] },
   { name: 'CLEAR_NO_RESTART', task: 'T0.8a', file: 'page', find: "  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name); };",
     repl: "  ui.again = function () { if (G.record) { var keep = document.getElementById('clear').className; ui.startRoom(G.record, G.name); document.getElementById('clear').className = keep; } };",
     gates: [{ gate: 'play', expect: 'Again leaves nothing painted over the play area' }] },

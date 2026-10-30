@@ -9,7 +9,11 @@
  *
  * Watched red by CLEAR_NO_RESTART (Again leaves the card painted) and ACCUMULATOR_DT_FLOAT (the loop steps by the raw
  * frame delta), and by SECOND_FINGER_RELEASES_FIRST (T0.8b: the same climb by real touches on the strip, and one real
- * event per control: the rocker moves the hero, A rises, a second finger on A leaves the rocker held). */
+ * event per control: the rocker moves the hero, A rises, a second finger on A leaves the rocker held). The second review
+ * (30 Oct, before sb-m0-2) added MAX_STEPS_1, DT_MAX_20 and PHASE_ZERO (the test's own replay of its logged frames, total
+ * and frame by frame), SLIDE_KEEPS_OLD and GAP_IS_LEFT (the slide), STRIP_KEEPS_PRESSED (a blur), ROCKER_NO_ADOPT (the
+ * pointer still down takes the rocker), TITLE_UNDER_ROCKER (Title at 320x568), CHIP_OVER_PLAY (the fleet's chrome
+ * hidden in play), FITS2_NO_STRIP (1366x843 and 844), CANVAS_TAKES_POINTERS (Again) and BEACON_PULSE_BY_FRAME. */
 import { readFileSync } from 'node:fs';
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, centre } from './harness.mjs';
 
