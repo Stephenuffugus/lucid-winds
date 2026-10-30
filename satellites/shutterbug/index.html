@@ -70,8 +70,8 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   padding: 0 calc(12px + var(--sar)) 0 calc(12px + var(--sal)); font-weight: 700; font-size: 0.95rem; }
 #hearts { display: flex; gap: 4px; }
 #hearts i { width: 12px; height: 11px; background: var(--brick); border: 1px solid var(--ink); display: block; }
-#stage { flex: 0 0 auto; display: flex; justify-content: center; position: relative; }
-#view { display: block; image-rendering: pixelated; image-rendering: crisp-edges; touch-action: none; background: var(--ink); }
+#stage { flex: 0 0 auto; display: flex; justify-content: center; position: relative; touch-action: none; }
+#view { display: block; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; background: var(--ink); }
 #strip { flex: 1 1 auto; min-height: 168px; position: relative; padding-bottom: var(--sab); touch-action: none; }
 #back { position: absolute; top: 8px; right: calc(8px + var(--sar)); min-width: 64px; min-height: 48px; padding: 0 12px;
   border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
@@ -84,6 +84,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #again { background: var(--sun); color: var(--ink); }
 #cleartitle { background: transparent; color: var(--ink); }
 #safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 var(--sab) 0; }
+#vhprobe { position: fixed; left: 0; top: 0; width: 0; height: 100vh; height: 100dvh; visibility: hidden; pointer-events: none; }
 
 /* the rotate card: a phone held sideways; a desktop window (a fine pointer) never gets it (QUESTIONS Q40) */
 #rotate { display: none; position: fixed; inset: 0; z-index: 1000; background: var(--soot); color: var(--paper);
@@ -117,6 +118,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   <div id="strip"><button id="back" type="button" data-copy="toTitle"></button></div>
 </main>
 <div id="safeprobe"></div>
+<div id="vhprobe"></div>
 <div id="rotate" role="alert" data-copy="rotate"></div>
 
 <script id="core-ns" data-core>
@@ -1065,7 +1067,8 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   R.fit = function () {
     var K = SB.K, T = SB.TUNING;
     var vw = document.documentElement.clientWidth || window.innerWidth;
-    var vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    /* the height the screen fills: a 100dvh probe (the visual viewport shrinks under a pinch zoom; it only triggers) */
+    var vh = document.getElementById('vhprobe').getBoundingClientRect().height || window.innerHeight;
     var safe = R.safe(), avail = vh - safe.top - safe.bottom;
     /* 2x only when the minimum view still fits the height at 2x; a short laptop window keeps 1x, still an integer */
     var fits2 = avail >= T.TOP_STRIP + T.VIEW_ROWS_MIN * K.CELL * 2 + T.CONTROL_STRIP;
@@ -1120,7 +1123,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   };
 
   /* one frame: the blit at the camera, the beacon, the hero (a Sun rectangle with an Ink outline until T0.17) */
-  R.draw = function (s, lv) {
+  R.draw = function (s, lv, now) {
     var K = SB.K, P = SB.palette, C = K.CELL;
     if (!s || !lv) return;
     var heroY = s.hero.y >> 8, heroX = s.hero.x >> 8;
@@ -1131,7 +1134,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     if (lv.exit >= 0) {
       /* the light, relit (section 3.7): the beacon's cells at full palette colour over the dimmed photo, so the goal
          is the brightest thing in the room; then the exit cell's pulsing outline (the beacon sprite is T0.16) */
-      pulse = (pulse + 1) % 48;
+      pulse = ((now === undefined ? performance.now() : now) / 400) | 0;
       var cells = lv.beacon && lv.beacon.cells ? lv.beacon.cells : [];
       for (var b = 0; b < cells.length; b++) {
         ctx.fillStyle = css(lv.pal[cells[b]]);
@@ -1141,7 +1144,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       ctx.fillStyle = css(P.I.INK);
       ctx.fillRect(ex - 3, ey - 3, C + 6, 1); ctx.fillRect(ex - 3, ey + C + 2, C + 6, 1);
       ctx.fillRect(ex - 3, ey - 3, 1, C + 6); ctx.fillRect(ex + C + 2, ey - 3, 1, C + 6);
-      ctx.fillStyle = css(pulse < 24 ? P.I.SUN : P.I.GLARE);
+      ctx.fillStyle = css((pulse & 1) ? P.I.GLARE : P.I.SUN);
       ctx.fillRect(ex - 2, ey - 2, C + 4, 2); ctx.fillRect(ex - 2, ey + C, C + 4, 2);
       ctx.fillRect(ex - 2, ey, 2, C); ctx.fillRect(ex + C, ey, 2, C);
     }
@@ -1318,10 +1321,10 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     loop.steps++;
     if (G.state.room.cleared && SB.ui.screen === 'play') SB.ui.showClear();
   }
-  function draw() {
+  function draw(now) {
     if (!G.state) return;
     var t0 = performance.now();
-    SB.render.draw(G.state, G.level);
+    SB.render.draw(G.state, G.level, now === undefined ? t0 : now);
     keep(perf.draw, performance.now() - t0);
   }
   function frame(now) {
@@ -1336,7 +1339,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       if (acc >= STEP_MS) { loop.dropped += acc; acc = 0; loop.stalls++; }
       if (n > loop.maxSteps) loop.maxSteps = n;
     }
-    draw();
+    draw(now);
   }
 
   SB.render.init();

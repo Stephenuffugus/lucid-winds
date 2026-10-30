@@ -66,9 +66,10 @@ try {
   await tap(page, '#again');
   const after = await page.evaluate(() => {
     const view = document.getElementById('view').getBoundingClientRect();
+    /* the canvas takes no pointer events, so a thumb on the play area lands on its stage; nothing of the card may be there */
     const top = document.elementFromPoint(view.left + view.width / 2, view.top + view.height * 0.35);
     const card = getComputedStyle(document.getElementById('clear'));
-    return { screen: window.SB_DEV.screen(), frame: window.SB_DEV.state().frame, onCanvas: top && top.id === 'view', cardShown: card.display !== 'none' };
+    return { screen: window.SB_DEV.screen(), frame: window.SB_DEV.state().frame, onCanvas: !!top && (top.id === 'stage' || top.id === 'view'), cardShown: card.display !== 'none' };
   });
   R.say(after.screen === 'play' && after.frame === 0, 'a real touch on Again restarts the room (screen ' + after.screen + ', frame ' + after.frame + ')');
   R.say(!after.cardShown && after.onCanvas, 'Again leaves nothing painted over the play area');
