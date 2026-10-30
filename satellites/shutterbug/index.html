@@ -87,12 +87,224 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 
 <script id="core-ns" data-core>
 (function (SB) { 'use strict';
-  /* core-ns: the namespace, the build stamp. GRID, TUNING and K arrive in T0.3. */
+  /* core-ns (BUILD-PLAN.md section 1.4): the namespace, the grid, every tunable number, the integer constants derived
+     from them, the build stamp. Everything here is deep frozen: Object.freeze is shallow, and
+     TUNING.FODDER_CELLS[0] = 9 must throw in strict mode (H-ns-2). */
+  function deepFreeze(o) {
+    var keys = Object.keys(o);
+    for (var i = 0; i < keys.length; i++) {
+      var v = o[keys[i]];
+      if (v && typeof v === 'object' && !Object.isFrozen(v)) deepFreeze(v);
+    }
+    return Object.freeze(o);
+  }
+  SB.deepFreeze = deepFreeze;
+
+  /* The single grid constant DESIGN 3 asks for. A level carries its own w and h (48, or 96 for Double Exposure);
+     every core function reads w, h from the level, never from GRID, except capture and the record validator. */
+  SB.GRID_PRESETS = deepFreeze({
+    A: { W: 24, H: 48, CELL: 16, HERO_W: 12, HERO_H: 16, VIEW_ROWS: 40 },   /* ruled */
+    B: { W: 36, H: 64, CELL: 10, HERO_W: 8, HERO_H: 12, VIEW_ROWS: 64 }     /* the fallback, Stephen's call only */
+  });
+  SB.GRID = SB.GRID_PRESETS.A;
+
+  /* Every number in DESIGN by name, in DESIGN's units (cells, px per frame, frames, seconds), grouped by DESIGN
+     section. Movement constants are exact multiples of 1/256 so derive never rounds them (H-ns-1). */
+  SB.TUNING = deepFreeze({
+    // the loop: the fixed sim step (HANDOFF rule 3)
+    STEP_HZ: 60,
+    // 4.1 / 4.2 movement, px per frame at 60 Hz unless stated. FEEL: Stephen's thumbs judge these.
+    RUN: 2.625, DECEL_FRAMES: 4, AIR_CONTROL: 1 /* 1 = full run speed steering in the air at once, QUESTIONS Q23 */,
+    GRAVITY: 0.5, JUMP_V: 8.59375 /* 2200/256 */, JUMP_CUT_V: 5.078125 /* 1300/256 */, TERMINAL: 12,
+    COYOTE: 6, BUFFER: 6, WALL_SLIDE_DIV: 3, WALL_JUMP_V: 7.6171875 /* 1950/256 */, WALL_JUMP_LOCK: 10, WALL_JUMP_PUSH: 2.625,
+    CORNER_PX: 2, LEDGE_NUDGE_PX: 2, LAND_OVERLAP_PX: 2, STICKY_JUMP_V: 8.59375,
+    // 4.3 dive and dash
+    DASH_CELLS: 3, DASH_FRAMES: 8, DASH_IFRAMES: 4,
+    // 4.4 feel
+    SQUASH_PX: 2, STRETCH_PX: 2, ANIM_FPS: 12, SHAKE_MAX_PX: 2, IDLE_WOBBLE_PX: 1,
+    // 3 screen and camera
+    CAM_HERO_FRAC: 0.6, TOP_STRIP: 36, CONTROL_STRIP: 168, VIEW_ROWS_MIN: 20 /* Q6: 22 rows on a 320x568 SE */, SCALE2_MIN_W: 768,
+    CHIP_RESERVE_PX: 120 /* the fleet music chip's bottom left box, kept empty by the strip, Q48 */,
+    // 5.2 develop reveal, seconds
+    REVEAL_HOLD: 0.3, REVEAL_RESOLVE: 0.8, REVEAL_LIGHT: 0.5,
+    // 6 pipeline
+    OTSU_MIN: 70, OTSU_MAX: 140, SMOOTH_PASSES: 2, PLATFORM_RUN_MIN: 3, EDGE_DROP_L: 60,
+    LANDMARK_MIN: 8, LANDMARK_COUNT: 3, SPAWN_ROW_FROM_BOTTOM: 2, EXIT_ROWS: 4, CEILING_LIGHT_L: 200, EXIT_LIGHT_SLACK: 2 /* Q11 */,
+    REPAIR_REACH_FRAC: 0.4, TAB_W: 2, TAB_MAX: 12, TAB_STAIR_ACROSS: 3, TAB_STAIR_UP: 3, REPAIR_PASSES: 4, REPAIR_MAX_CHANGE: 0.15,
+    BIOME_SAT: 0.35, BIOME_MIN_FRAC: 0.10, FROST_MEAN_L: 170 /* Q4 */, PIPELINE_BUDGET_MS: 50,
+    // 6.8 reach cone caps (the derived tables are clipped to these)
+    JUMP_UP: 4, JUMP_ACROSS: 5, WALL_UP: 3, WALL_ACROSS: 4, STICKY_UP: 4, DEEP_EXTRA_UP: 1,
+    // 6.9 route score
+    ROUTE_MAX_WALL_CHAIN: 2, ROUTE_SLACK: 1, ROUTE_SLACK_BOTH_AXES: false /* Q8 */, ROUTE_SAFE_EVERY_ROWS: 8, ROUTE_SAFE_ENEMY_DIST: 3,
+    // 6.11 feature caps and thresholds
+    CAP_LADDER: 1, CAP_POCKET: 1, CAP_DOOR: 1, CAP_SPECK: 6, CAP_STICKY: 3, CAP_ENEMY: 4, CAP_ELITE: 1, CAP_TRAP: 1,
+    LADDER_STACK_ROWS: 3, POCKET_LANDMARK_MIN: 20, DOOR_L: 200, DOOR_MIN: 3, SPECK_S: 0.5, SPECK_L: 150,
+    STICKY_RUN_MIN: 6, FODDER_CELLS: [2, 5], ELITE_CELLS: [6, 11], ELITE_HP_MULT: 2 /* Q51 */, BOSS_CELLS: 12, TRAP_MIN: 4, TRAP_PERIOD_S: 1.5,
+    ENEMY_SPAWN_CLEAR: 2, BLUEPRINT_CHANCE: 0.25, EMBER_EXTRA_ENEMY: 1, EMBER_EXTRA_SPECKS: 2,
+    // 7 biomes and enemies
+    FROST_SLICK_MIN_W: 5, FROST_SLIDE_CELLS: 1, DEEP_FALL_MULT: 0.8, DEEP_JUMP_V: 9.5 /* gives the +1 cell apex, section 3.2 */,
+    MOTH_SPEED: 1, ICICLE_TRIGGER_COLS: 2, ICICLE_RESPAWN_S: 6, JELLY_BOB_CELLS: 2, JELLY_HP: 2, CRAWLER_SPEED: 2, CRAWLER_HP: 2, SPARK_HOP_S: 1.5,
+    HIT_HEARTS: 1, HIT_IFRAMES_S: 1, HIT_KNOCKBACK_CELLS: 2,
+    BOSS_INTRO_S: 2, BOSS_TELEGRAPH_S: 0.8, BOSS_SAFE_LEDGE_CELLS: 6, BOSS_WEAK_MIN: 3, BOSS_OUTLINE_UNTIL: 0.25, BOSS_FALLBACK_HP: 20,
+    BOSS_MOTH_EVERY_S: 4, BOSS_MOTH_COUNT: 3, BOSS_ICICLE_TELEGRAPH_S: 3, BOSS_RING_EVERY_S: 5, BOSS_RING_CELLS: 4, BOSS_SPARK_TELEGRAPH_S: 2,
+    // 9 weapons, stats, economy
+    JUMP_SLOT_CD_S: 0.6, VIGOR_PCT: 25, FOCUS_PCT: 25, HEARTS_BASE: 4, HEARTS_CAP: 8, SCROLLS_PER_HEART: 3, POOL_PER_SLOT: 4, PROJ_MAX: 16,
+    DP_FODDER: 3, DP_ELITE: 10, DP_BOSS: 60, DP_SPECK: [2, 6], DP_CHEST: 15, DP_FREE_PLAY_MULT: 0.5, DP_OPEN_HOUSE_MULT: 1.5,
+    PRICE_DEVELOP: [30, 100, 300], PRICE_REROLL: 20 /* Q52 */, PRICE_START_PICK: 200, PRICE_NEGATIVE: 400, PRICE_DOUBLE: 600, PRICE_OPEN_HOUSE: 600,
+    REPEAT_DECAY: 0 /* off by default, 9.3 */,
+    WEAPON_TIER: { 1: ['J1', 'J5', 'D1', 'D6', 'C1', 'C2'], 2: ['J2', 'J3', 'J6', 'D2', 'D4', 'D5', 'C3', 'C4', 'C6'], 3: ['J4', 'J7', 'J8', 'D3', 'D7', 'D8', 'C5', 'C7', 'C8'] } /* Q52 */,
+    WEAPONS: { /* DESIGN 9.1's cells, damage, seconds and caps by id */
+      J1: { cells: 5, dmg: 1 }, J2: { count: 3, burnS: 1.5, dmg: 1 }, J3: { cells: 2, dmg: 2 }, J4: { radius: 2, dmg: 1, stunS: 1 },
+      J5: { cells: 4, dmg: 1 }, J6: { cells: 6, dmg: 1 }, J7: { cells: 3, freezeS: 0.5 }, J8: { extraUpCells: 1 },
+      D1: { cells: 3, dmg: 2 }, D2: { cells: 2, freezeS: 2 }, D3: { dmg: 2, bounceCells: 2 }, D4: { dp: [1, 3], dmg: 1 },
+      D5: { burnS: 2, dmg: 1, everyS: 0.5 }, D6: { cells: 5, dmg: 1 }, D7: { dmg: 3 }, D8: { cells: 3, dmg: 1 },
+      C1: { cells: 1, dps: 1, gritDps: 0.5, dpsCap: 3 }, C2: { cells: 4, gritCells: 1, cellsCap: 8 }, C3: {}, C4: {},
+      C5: { slideDiv: 5, wallAcross: 5 }, C6: {}, C7: { pct: 20, gritPct: 5, pctCap: 40 }, C8: {}
+    },
+    // 8 runs, 12 persistence
+    HOUSE_ROOMS: 5, OPEN_HOUSE_ROOMS: 8, RECENT_ROOMS: 20,
+    // 5.3 onboarding
+    FIRST_ROOM_MAX_FODDER: 2,
+    // 11 art: the hero's body colour, one palette index (section 7.4)
+    HERO_BODY: 14
+  });
+
+  /* K = derive(TUNING, GRID): integers only, frozen. Positions and velocities are subpixels (SUB per game px), timers
+     are frames. Pure, so the harness recomputes it in the test and asserts equality (H-ns-1). Math.round is used only
+     for the products and the frames; the movement constants are exact multiples of 1/256 and never round. */
+  SB.derive = function (T, G) {
+    var SUB = 256, HZ = T.STEP_HZ;
+    var sub = function (v) { return Math.round(v * SUB); };
+    var K = {
+      SUB: SUB, HZ: HZ, CELL: G.CELL, CELL_SUB: G.CELL * SUB, W: G.W, H: G.H,
+      WORLD_W: G.W * G.CELL, WORLD_H: G.H * G.CELL,
+      HERO_W: G.HERO_W, HERO_H: G.HERO_H, HERO_W_SUB: G.HERO_W * SUB, HERO_H_SUB: G.HERO_H * SUB,
+      RUN: sub(T.RUN), G: sub(T.GRAVITY), JUMP_V: sub(T.JUMP_V), CUT_V: sub(T.JUMP_CUT_V), TERM: sub(T.TERMINAL),
+      WALL_V: sub(T.WALL_JUMP_V), WALL_PUSH: sub(T.WALL_JUMP_PUSH), STICKY_V: sub(T.STICKY_JUMP_V), DEEP_JUMP_V: sub(T.DEEP_JUMP_V),
+      COYOTE: T.COYOTE, BUFFER: T.BUFFER, DECEL_FRAMES: T.DECEL_FRAMES, WALL_SLIDE_DIV: T.WALL_SLIDE_DIV,
+      WALL_JUMP_LOCK: T.WALL_JUMP_LOCK, DASH_FRAMES: T.DASH_FRAMES, DASH_IFRAMES: T.DASH_IFRAMES,
+      CORNER_SUB: T.CORNER_PX * SUB, NUDGE_SUB: T.LEDGE_NUDGE_PX * SUB, OVERLAP_SUB: T.LAND_OVERLAP_PX * SUB,
+      AIR_CONTROL: T.AIR_CONTROL
+    };
+    K.DECEL = Math.round(K.RUN / T.DECEL_FRAMES);
+    K.DASH_V = Math.round(T.DASH_CELLS * G.CELL * SUB / T.DASH_FRAMES);
+    K.DEEP_FALL_G = Math.round(K.G * T.DEEP_FALL_MULT);
+    K.DEEP_TERM = Math.round(K.TERM * T.DEEP_FALL_MULT);
+    K.MOTH_V = Math.round(T.MOTH_SPEED * G.CELL * SUB / HZ);
+    K.CRAWLER_V = Math.round(T.CRAWLER_SPEED * G.CELL * SUB / HZ);
+    /* every seconds value as frames: X_S -> X_F */
+    var keys = Object.keys(T);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      if (k.length > 2 && k.slice(-2) === '_S' && typeof T[k] === 'number') K[k.slice(0, -2) + '_F'] = Math.round(T[k] * HZ);
+    }
+    return deepFreeze(K);
+  };
+  SB.K = SB.derive(SB.TUNING, SB.GRID);
+
   SB.BUILD = 'sb-m0-0';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
 (function (SB) { 'use strict';
+  /* core-rng (section 1.1 row 2, section 2.1, section 2.5): hashing, the seeded generator, base64url by hand (no btoa,
+     so the harness and the page encode identically), and the two pass hash over 32 bit words. */
+  var FNV_BASIS = 0x811c9dc5, FNV_PRIME = 0x01000193, PASS2_BASIS = 0x050c5d1f;
+
+  /* FNV-1a 32 over bytes, from a starting hash h0, so one hash continues over a second buffer. */
+  function fnv1a32(bytes, h0) {
+    var h = (h0 === undefined ? FNV_BASIS : h0) >>> 0;
+    for (var i = 0; i < bytes.length; i++) {
+      h ^= bytes[i] & 0xff;
+      h = Math.imul(h, FNV_PRIME) >>> 0;
+    }
+    return h >>> 0;
+  }
+
+  /* The same over a string's char codes; callers pass ASCII only, and anything else is refused. */
+  function fnv1a32Str(str, h0) {
+    var h = (h0 === undefined ? FNV_BASIS : h0) >>> 0;
+    for (var i = 0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      if (c > 0x7f) throw new Error('fnv1a32Str: non ASCII character at ' + i);
+      h ^= c;
+      h = Math.imul(h, FNV_PRIME) >>> 0;
+    }
+    return h >>> 0;
+  }
+
+  /* mulberry32: next() in [0, 1), state() and seed(s) so a generator's position is plain data. */
+  function mulberry32(seed) {
+    var a = seed >>> 0;
+    return {
+      next: function () {
+        a = (a + 0x6D2B79F5) >>> 0;
+        var t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      },
+      int: function (n) { return Math.floor(this.next() * n); },
+      state: function () { return a; },
+      seed: function (s) { a = s >>> 0; }
+    };
+  }
+
+  /* The same step on a state field: advances s[key] (a uint32 in State) and returns a uint32. The sim keeps its
+     generator as one integer field, so the hash covers it (section 2.5). */
+  function stepU32(s, key) {
+    var a = (s[key] + 0x6D2B79F5) >>> 0;
+    s[key] = a;
+    var t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return (t ^ (t >>> 14)) >>> 0;
+  }
+
+  /* base64url, RFC 4648 section 5, no padding. */
+  var B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  var B64_INV = new Int16Array(128).fill(-1);
+  for (var i = 0; i < 64; i++) B64_INV[B64.charCodeAt(i)] = i;
+
+  function b64urlEncode(bytes) {
+    var out = '', n = bytes.length, i = 0;
+    for (; i + 2 < n; i += 3) {
+      var v = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
+      out += B64[(v >>> 18) & 63] + B64[(v >>> 12) & 63] + B64[(v >>> 6) & 63] + B64[v & 63];
+    }
+    if (n - i === 1) { var a1 = bytes[i] << 16; out += B64[(a1 >>> 18) & 63] + B64[(a1 >>> 12) & 63]; }
+    else if (n - i === 2) { var a2 = (bytes[i] << 16) | (bytes[i + 1] << 8); out += B64[(a2 >>> 18) & 63] + B64[(a2 >>> 12) & 63] + B64[(a2 >>> 6) & 63]; }
+    return out;
+  }
+
+  /* null on any character outside the alphabet or an impossible length (n % 4 === 1); never throws. */
+  function b64urlDecode(str) {
+    if (typeof str !== 'string' || str.length % 4 === 1) return null;
+    var n = str.length, out = new Uint8Array(Math.floor(n * 6 / 8)), o = 0, acc = 0, bits = 0;
+    for (var i = 0; i < n; i++) {
+      var c = str.charCodeAt(i);
+      var v = c < 128 ? B64_INV[c] : -1;
+      if (v < 0) return null;
+      acc = ((acc << 6) | v) & 0xffffff;
+      bits += 6;
+      if (bits >= 8) { bits -= 8; out[o++] = (acc >>> bits) & 0xff; }
+    }
+    return out;
+  }
+
+  var hex8 = function (h) { return ('00000000' + (h >>> 0).toString(16)).slice(-8); };
+
+  /* The two pass hash of section 2.5 over a list of 32 bit integers, written little endian through one DataView. */
+  function hashWords(words) {
+    var buf = new ArrayBuffer(words.length * 4), dv = new DataView(buf);
+    for (var i = 0; i < words.length; i++) dv.setInt32(i * 4, words[i], true);
+    var bytes = new Uint8Array(buf);
+    return hex8(fnv1a32(bytes, FNV_BASIS)) + hex8(fnv1a32(bytes, PASS2_BASIS));
+  }
+
+  SB.rng = { fnv1a32: fnv1a32, fnv1a32Str: fnv1a32Str, mulberry32: mulberry32, stepU32: stepU32,
+    b64urlEncode: b64urlEncode, b64urlDecode: b64urlDecode, hashWords: hashWords, hex8: hex8,
+    FNV_BASIS: FNV_BASIS, PASS2_BASIS: PASS2_BASIS };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-palette" data-core>
@@ -101,10 +313,174 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 </script>
 <script id="core-record" data-core>
 (function (SB) { 'use strict';
+  /* core-record (section 2.1): the level record v1, the only thing ever persisted or shared.
+       { v: 1, w, h, mode: 0 normal | 1 Negative | 2 Double Exposure, focal: null | cell index, pal: Uint8Array(w*h), pal2 }
+     pal[i] in 0..14, row major, row 0 the top of the room. Index 15 (Film, the repair colour) never appears in a
+     record (QUESTIONS Q13). JSON form: rows of lowercase hex, one string per row. Packed form: a 6 byte header
+     (v, w, h, mode, focal + 1 as a big endian uint16) then two cells per byte, high nibble first. */
+  var V = 1, HEADER = 6, HEX = '0123456789abcdef';
+
+  function hexVal(c) {
+    if (c >= 48 && c <= 57) return c - 48;
+    if (c >= 97 && c <= 102) return c - 87;
+    return -1;
+  }
+
+  function rowsToPal(rows, w, h) {
+    var pal = new Uint8Array(w * h);
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) pal[y * w + x] = hexVal(rows[y].charCodeAt(x));
+    return pal;
+  }
+
+  function palToRows(pal, w, h) {
+    var rows = [];
+    for (var y = 0; y < h; y++) {
+      var s = '';
+      for (var x = 0; x < w; x++) s += HEX[pal[y * w + x]];
+      rows.push(s);
+    }
+    return rows;
+  }
+
+  function rowsProblem(rows, w, h, name) {
+    if (!Array.isArray(rows) || rows.length !== h) return name + ' must be ' + h + ' strings';
+    for (var y = 0; y < h; y++) {
+      var r = rows[y];
+      if (typeof r !== 'string' || r.length !== w) return name + '[' + y + '] must be ' + w + ' hex digits';
+      for (var x = 0; x < w; x++) {
+        var v = hexVal(r.charCodeAt(x));
+        if (v < 0) return name + '[' + y + '] holds a character that is not lowercase hex';
+        if (v === 15) return name + '[' + y + '] holds index 15 (reserved for repairs)';
+      }
+    }
+    return null;
+  }
+
+  /* null when the JSON form is a valid v1 record, else the reason in plain words. */
+  function validate(j) {
+    var G = SB.GRID;
+    if (!j || typeof j !== 'object') return 'not an object';
+    if (j.v !== V) return 'v must be 1';
+    if (j.w !== G.W || j.h !== G.H) return 'w and h must be ' + G.W + ' and ' + G.H;
+    if (j.mode !== 0 && j.mode !== 1 && j.mode !== 2) return 'mode must be 0, 1 or 2';
+    if (j.focal !== null && !(Number.isInteger(j.focal) && j.focal >= 0 && j.focal < j.w * j.h)) return 'focal must be null or a cell index';
+    var p = rowsProblem(j.rows, j.w, j.h, 'rows');
+    if (p) return p;
+    if (j.mode === 2) { p = rowsProblem(j.rows2, j.w, j.h, 'rows2'); if (p) return p; }
+    else if (j.rows2 !== null && j.rows2 !== undefined) return 'rows2 only in mode 2';
+    return null;
+  }
+
+  /* Builds the typed arrays inside the core's realm (section 1.3). Throws on an invalid record. */
+  function fromJSON(j) {
+    var why = validate(j);
+    if (why) throw new Error('invalid level record: ' + why);
+    return { v: V, w: j.w, h: j.h, mode: j.mode, focal: j.focal,
+      pal: rowsToPal(j.rows, j.w, j.h), pal2: j.mode === 2 ? rowsToPal(j.rows2, j.w, j.h) : null };
+  }
+
+  function toJSON(r) {
+    return { v: r.v, w: r.w, h: r.h, mode: r.mode, focal: r.focal,
+      rows: palToRows(r.pal, r.w, r.h), rows2: r.mode === 2 ? palToRows(r.pal2, r.w, r.h) : null };
+  }
+
+  function pack(r) {
+    var n = r.w * r.h, grids = r.mode === 2 ? 2 : 1;
+    var out = new Uint8Array(HEADER + grids * (n >>> 1));
+    out[0] = r.v; out[1] = r.w; out[2] = r.h; out[3] = r.mode;
+    var f = r.focal === null ? 0 : r.focal + 1;
+    out[4] = (f >>> 8) & 0xff; out[5] = f & 0xff;
+    for (var g = 0; g < grids; g++) {
+      var pal = g === 0 ? r.pal : r.pal2, base = HEADER + g * (n >>> 1);
+      for (var k = 0; k < (n >>> 1); k++) out[base + k] = (pal[2 * k] << 4) | pal[2 * k + 1];
+    }
+    return out;
+  }
+
+  /* null on anything but a valid packed v1 record: never a partial record, never a throw. */
+  function unpack(b) {
+    var G = SB.GRID;
+    if (!b || b.length < HEADER) return null;
+    var v = b[0], w = b[1], h = b[2], mode = b[3], f = (b[4] << 8) | b[5];
+    if (v !== V || w !== G.W || h !== G.H || mode > 2) return null;
+    var n = w * h, grids = mode === 2 ? 2 : 1;
+    if (b.length !== HEADER + grids * (n >>> 1)) return null;
+    if (f > n) return null;
+    var r = { v: v, w: w, h: h, mode: mode, focal: f === 0 ? null : f - 1, pal: new Uint8Array(n), pal2: mode === 2 ? new Uint8Array(n) : null };
+    for (var g = 0; g < grids; g++) {
+      var pal = g === 0 ? r.pal : r.pal2, base = HEADER + g * (n >>> 1);
+      for (var k = 0; k < (n >>> 1); k++) {
+        var hi = b[base + k] >>> 4, lo = b[base + k] & 15;
+        if (hi === 15 || lo === 15) return null;
+        pal[2 * k] = hi; pal[2 * k + 1] = lo;
+      }
+    }
+    return r;
+  }
+
+  /* The share string: v1. then base64url of the packed record. */
+  function encode(r) { return 'v' + V + '.' + SB.rng.b64urlEncode(pack(r)); }
+
+  /* A share string back to a record, or null. Accepts the bare payload too; another version prefix is refused. */
+  function decode(s) {
+    if (typeof s !== 'string') return null;
+    var p = s;
+    if (p.slice(0, 3) === 'v' + V + '.') p = p.slice(3);
+    else if (p.indexOf('.') >= 0) return null;
+    var bytes = SB.rng.b64urlDecode(p);
+    return bytes ? unpack(bytes) : null;
+  }
+
+  /* DESIGN 6.12: the seed is FNV-1a over the raw index bytes (pal, then pal2 in mode 2) and nothing else, so mode and
+     focal change the build and never the seed. */
+  function seedOf(r) {
+    var h = SB.rng.fnv1a32(r.pal);
+    return r.mode === 2 && r.pal2 ? SB.rng.fnv1a32(r.pal2, h) : h;
+  }
+
+  SB.record = { V: V, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
+    encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-pipeline" data-core>
 (function (SB) { 'use strict';
+  /* core-pipeline (DESIGN 6.3 to 6.7, 6.10, 6.12; section 1.1 row 5). T0.3 brings toText; the build arrives in T0.6. */
+
+  /* The room as text, one line per row: # solid, = one way, ~ slick, | sticky, . open, S spawn, X exit, T film tab,
+     * ascent, e enemy, ^ trap, $ loot, L a landmark's top edge. Printed beside every harness failure. */
+  function toText(level, ascent) {
+    var w = level.w, h = level.h, n = w * h, g = new Array(n), i, k;
+    for (i = 0; i < n; i++) {
+      var c = '.';
+      if (level.solid && level.solid[i]) c = '#';
+      if (level.sticky && level.sticky[i]) c = '|';
+      if (level.plat && level.plat[i]) c = level.tab && level.tab[i] ? 'T' : level.slick && level.slick[i] ? '~' : '=';
+      if (level.trap && level.trap[i]) c = '^';
+      g[i] = c;
+    }
+    var lms = level.landmarks || [];
+    for (k = 0; k < lms.length; k++) {
+      var cells = lms[k].cells;
+      for (var j = 0; j < cells.length; j++) {
+        var q = cells[j];
+        if (g[q] === '#' && (q < w || !level.solid[q - w])) g[q] = 'L';
+      }
+    }
+    var nodes = ascent && ascent.nodes ? ascent.nodes : [];
+    for (k = 0; k < nodes.length; k++) if (g[nodes[k]] === '.' || g[nodes[k]] === '=') g[nodes[k]] = '*';
+    var f = level.features || {};
+    var specks = f.specks || [];
+    for (k = 0; k < specks.length; k++) g[specks[k].idx === undefined ? specks[k] : specks[k].idx] = '$';
+    var en = f.enemies || [];
+    for (k = 0; k < en.length; k++) g[en[k].idx === undefined ? en[k] : en[k].idx] = 'e';
+    if (level.spawn >= 0 && level.spawn !== undefined) g[level.spawn] = 'S';
+    if (level.exit >= 0 && level.exit !== undefined) g[level.exit] = 'X';
+    var out = [];
+    for (var y = 0; y < h; y++) out.push(g.slice(y * w, y * w + w).join(''));
+    return out.join('\n');
+  }
+
+  SB.pipeline = { toText: toText };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-reach" data-core>

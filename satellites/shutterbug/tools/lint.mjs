@@ -129,8 +129,19 @@ for (const b of core) {
   while ((mm = mre.exec(body))) if (!mm[2] || !MATH_OK.has(mm[2])) fail('PURITY', where(mm.index) + ': Math' + (mm[2] ? '.' + mm[2] : '[...]') + ' is not allowed in the core (not correctly rounded across engines, or random)');
   if (/\*\*/.test(body)) fail('PURITY', where(body.indexOf('**')) + ': the ** operator (Math.pow by another name)');
   if (/\btoLocale/.test(body)) fail('PURITY', where(body.search(/\btoLocale/)) + ': toLocale*');
+  /* bare grid derived sizes: legal only inside GRID_PRESETS and the TUNING literal (DESIGN's own 768, the 2x width) */
+  let gridScan = body;
+  if (b.id === 'core-ns') {
+    for (const lit of ['SB.TUNING = deepFreeze(', 'SB.GRID_PRESETS = deepFreeze(']) {
+      const at = gridScan.indexOf(lit);
+      if (at < 0) continue;
+      let depth = 0, k = at + lit.length - 1;
+      for (; k < gridScan.length; k++) { if (gridScan[k] === '(') depth++; else if (gridScan[k] === ')') { depth--; if (depth === 0) break; } }
+      gridScan = gridScan.slice(0, at) + gridScan.slice(at, k + 1).replace(/[^\n]/g, ' ') + gridScan.slice(k + 1);
+    }
+  }
   const g = /(^|[^\w$.])(1152|384|768)(?![\w$.])/g;
-  while ((mm = g.exec(body))) fail('GRID', where(mm.index) + ': bare ' + mm[2] + ' in a core block (derive it from SB.GRID)');
+  while ((mm = g.exec(gridScan))) fail('GRID', where(mm.index) + ': bare ' + mm[2] + ' in a core block (derive it from SB.GRID)');
   if (['core-sim', 'core-pipeline', 'core-reach', 'core-features'].includes(b.id)) {
     const nre = /(^|[^\w$.])(\d+(?:\.\d+)?)(?![\w$.x])/g; const big = [];
     while ((mm = nre.exec(body))) { const v = Number(mm[2]); if (v > 16 && v !== 256) big.push(mm[2] + ' (' + where(mm.index) + ')'); }
