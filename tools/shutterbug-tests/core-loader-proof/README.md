@@ -5,7 +5,9 @@ two blocks: the harness reads `index.html` as text, extracts every `<script id="
 regular expression in document order, asserts the order and that no block contains `</script`, and runs each block
 as its own `vm.Script` (with `lineOffset`, so a stack trace points at the real line of the page) in ONE fresh
 `vm.createContext({})` that a poison prelude has made hostile: `Math.random` and `Date` throw, and `document`,
-`window`, `setTimeout`, `console` simply do not exist. Every block attaches to `globalThis.SB`, which is `window.SB`
+`window`, `setTimeout` simply do not exist. (Correction 2026-10-30: `console` DOES exist in a fresh context, V8 supplies
+one, `typeof console === 'object'`; the plan's prelude poisons it as it poisons `Date`. A structured clone passed from
+the harness realm into the core fails `instanceof Uint8Array` there too, so core never uses `instanceof`.) Every block attaches to `globalThis.SB`, which is `window.SB`
 in the browser and `ctx.SB` in the harness. Typed arrays made inside the context are another realm's (`instanceof`
 is false in the harness; compare by length and bytes, never by class).
 
