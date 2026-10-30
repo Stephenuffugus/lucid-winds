@@ -854,13 +854,14 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
      the feet (0 the takeoff surface, up negative), py the feet one step before (the sim moves x at that height). The
      rocker is held in the jump direction for `hold` steps from step `delay` (after the wall jump's locked push), then
      the decel. WALK runs off the ledge: on the support until the box has fully left the takeoff cell, then falls. */
-  function arc(K, profile, deep, delay, hold) {
+  function arc(K, profile, deep, delay, hold, upTo) {
     var GF = deep ? K.DEEP_FALL_G : K.G, TERM = deep ? K.DEEP_TERM : K.TERM, walk = profile === 'WALK';
     var vy = walk ? 0 : profile === 'WALL' ? -K.WALL_V : profile === 'STICKY' ? -K.STICKY_V : -(deep ? K.DEEP_JUMP_V : K.JUMP_V);
     var aHold = A_HOLD[profile], lock = profile === 'WALL' ? K.WALL_JUMP_LOCK : 0, ledge = walk;
     var x = (K.CELL_SUB - K.HERO_W_SUB) >> 1, y = 0, vx = 0, rising = !walk, out = [{ x: x, y: 0, py: 0, vy: vy, vx: 0 }];
     if (profile === 'STICKY') hold = 0;
-    for (var f = 1; f < MAX_STEPS; f++) {
+    var end = upTo === undefined ? MAX_STEPS : upTo + 1;
+    for (var f = 1; f < end; f++) {
       if (f > aHold && rising && vy < -K.CUT_V) vy = -K.CUT_V;
       if (f <= lock) vx = K.WALL_PUSH;
       else if (f > delay && f <= delay + hold) vx = K.RUN;
@@ -919,9 +920,12 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   /* a path to (dx, rowsUp): the smallest hold from `delay` whose landing box and resting box both overlap the target
      column by LAND_OVERLAP */
   function path(K, profile, deep, dx, rowsUp, delay) {
+    /* the rise and fall never depend on the rocker, so the landing step is the same for every hold: each hold is
+       stepped only that far */
+    var land = crossing(arc(K, profile, deep, delay, 0), rowsUp, K);
+    if (land < 0) return null;
     for (var h = 0; h <= MAX_STEPS; h++) {
-      var a = arc(K, profile, deep, delay, h), f = crossing(a, rowsUp, K);
-      if (f < 0) return null;
+      var a = arc(K, profile, deep, delay, h, land), f = land;
       if (overlap(K, a[f].x, dx) >= K.OVERLAP_SUB && overlap(K, restX(K, a, f, delay, h), dx) >= K.OVERLAP_SUB)
         return { delay: delay, hold: h, land: f, cells: sweep(K, a, f, rowsUp) };
       if (a[f].x > (dx + 1) * K.CELL_SUB) return null;

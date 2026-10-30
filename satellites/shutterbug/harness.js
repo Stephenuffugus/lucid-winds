@@ -30,9 +30,9 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 2320;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 2418;              /* raised per task: the count a full run must reach */
 
-const LATER = { 'record-json': 'T0.15', retable: 'T0.10a', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
+const LATER = { 'record-json': 'T0.15', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
 
@@ -1264,7 +1264,7 @@ const ORACLE = (() => {
     }
     return out;
   }
-  const below = (profile, rows) => { const a = arc(profile, 1, Infinity), out = [-1]; for (let d = 1; d <= rows; d++) { const f = crossing(a, -d); out.push(f < 0 ? -1 : farCell(a[f].x, 1)); } return out; };
+  const below = (profile, rows, deep) => { const a = arc(profile, 1, Infinity, { deep }), out = [-1]; for (let d = 1; d <= rows; d++) { const f = crossing(a, -d); out.push(f < 0 ? -1 : farCell(a[f].x, 1)); } return out; };
   /* after landing at step f the ground decel runs out; where does the box rest? */
   function restX(a, f, hold, dir) {
     const RUN = r(T.RUN), DECEL = Math.round(RUN / T.DECEL_FRAMES);
@@ -1303,7 +1303,7 @@ const ORACLE = (() => {
     }
     return cells;
   }
-  return { arc, crossing, table, clipped, caps, apex, air, cols, fall: () => below('WALK', 24), down: () => below('FULL', 8), canonical, corridor, CSZ, OV };
+  return { arc, crossing, table, clipped, caps, apex, air, cols, fall: deep => below('WALK', 24, deep), down: deep => below('FULL', 8, deep), canonical, corridor, CSZ, OV };
 })();
 
 /* A lab room for one jump: the takeoff cell on a solid support, the target on a solid or one way support, everything
@@ -1417,6 +1417,125 @@ group('H-lab-3', 'LAB-NOT (a warning tonight): one beyond the table in height an
   }
   console.log('  ' + (warn.length ? 'WARN  LAB-NOT: the sim reaches beyond its table at ' + warn.join(', ') : 'info  LAB-NOT: nothing beyond the tables is reached'));
   t.ok(true, 'LAB-NOT ran (a warning until M3, T3.5)');
+});
+
+/* ================================================================ the reach tables (T0.10a, section 3.2) */
+const TABLES_JSON = path.join(__dirname, 'fixtures', 'tables.json'), REACH_PROFILES = ['FULL', 'MID', 'TAP', 'WALL', 'STICKY'];
+/* the harness's own tables, from the ORACLE (never from the core): what --retable writes into fixtures/tables.json */
+function oracleTables() {
+  const one = deep => ({
+    profiles: Object.fromEntries(REACH_PROFILES.map(p => [p, { apex: ORACLE.apex(p, deep), air: ORACLE.air(p, deep), raw: ORACLE.table(p, deep), maxAcross: ORACLE.clipped(p, deep), cols: ORACLE.cols(p, deep) }])),
+    fall: ORACLE.fall(deep), down: ORACLE.down(deep) });
+  return { base: one(false), deep: one(true) };
+}
+const coreTables = deep => {
+  const t = SB.reach.tables(SB.K, deep ? 2 : 0);
+  return { profiles: Object.fromEntries(REACH_PROFILES.map(p => [p, { apex: t.profiles[p].apex, air: t.profiles[p].air, raw: Array.from(t.profiles[p].raw), maxAcross: Array.from(t.profiles[p].maxAcross), cols: Array.from(t.profiles[p].cols, c => Array.from(c)) }])),
+    fall: Array.from(t.fall), down: Array.from(t.down) };
+};
+/* --retable --why "...": the only way fixtures/tables.json changes; it prints what moved, and the why goes in PROGRESS */
+if (ARGS.includes('--retable')) {
+  const why = opt('why');
+  if (!why) { console.log('FAIL  --retable needs --why "the reason" (it goes in PROGRESS.md)'); process.exit(1); }
+  const next = Object.assign({ v: 1, why }, oracleTables());
+  let old = null; try { old = JSON.parse(fs.readFileSync(TABLES_JSON, 'utf8')); } catch (e) { /* a first table */ }
+  const flat = (o, pre = '') => Object.entries(o || {}).flatMap(([k, v]) => (v && typeof v === 'object' && !Array.isArray(v) ? flat(v, pre + k + '.') : [[pre + k, JSON.stringify(v)]]));
+  const a = new Map(flat(old)), b = new Map(flat(next));
+  const moved = [...new Set([...a.keys(), ...b.keys()])].filter(k => k !== 'why' && a.get(k) !== b.get(k));
+  console.log(old ? 'retable: ' + moved.length + ' entries moved' : 'retable: the first tables');
+  for (const k of moved) console.log('  ' + k + ': ' + (a.get(k) || '(none)') + ' -> ' + (b.get(k) || '(none)'));
+  fs.writeFileSync(TABLES_JSON, JSON.stringify(next, null, 1).replace(/\[\s+([-0-9,\s]+?)\s+\]/g, (m, inner) => '[' + inner.replace(/\s+/g, '') + ']') + '\n');
+  console.log('RETABLE written: ' + TABLES_JSON + ' (why: ' + why + ')');
+  process.exit(0);
+}
+
+group('H-reach-1', 'reach.tables equals the harness\'s own stepped tables (the oracle of T0.7b): every profile, both biomes, every corridor', t => {
+  for (const deep of [false, true]) {
+    const o = oracleTables()[deep ? 'deep' : 'base'], c = coreTables(deep), tag = deep ? 'Deep ' : '';
+    for (const p of REACH_PROFILES) for (const f of ['apex', 'air', 'raw', 'maxAcross', 'cols'])
+      t.same(c.profiles[p][f], o.profiles[p][f], tag + p + ' ' + f + ': the core equals the oracle');
+    t.same(c.fall, o.fall, tag + 'the walk off table fall[1..24]: the core equals the oracle');
+    t.same(c.down, o.down, tag + 'the jump down table down[1..8]: the core equals the oracle');
+    /* each corridor in the cone: the core's immediate path sweeps exactly the cells of the oracle's canonical hold */
+    const ct = SB.reach.tables(SB.K, deep ? 2 : 0);
+    let n = 0, firstOff = null;
+    for (const p of REACH_PROFILES) {
+      const clip = ORACLE.clipped(p, deep);
+      for (let dy = 0; dy <= 5; dy++) for (let dx = 0; dx <= clip[dy]; dx++) {
+        const can = ORACLE.canonical(p, 1, dx, dy, { deep }), mine = (ct.profiles[p].paths[dx + ',' + dy] || [])[0];
+        const want = can ? [...ORACLE.corridor(can, 1)].sort().join(' ') : 'none', got = mine ? mine.cells.map(q => q[0] + ',' + q[1]).sort().join(' ') : 'none';
+        n++;
+        if (want !== got && !firstOff) firstOff = tag + p + ' dx' + dx + ' dy' + dy + ': core [' + got + '] oracle [' + want + ']';
+      }
+    }
+    t.ok(!firstOff, tag + 'all ' + n + ' corridors in the cone: the core\'s immediate path equals the oracle\'s canonical corridor' + (firstOff ? ' (first: ' + firstOff + ')' : ''));
+  }
+});
+
+group('H-reach-1b', 'the known answers: fixtures/tables.json equals the oracle, and both carry section 3.2\'s numbers', t => {
+  let j = null; try { j = JSON.parse(fs.readFileSync(TABLES_JSON, 'utf8')); } catch (e) { /* missing */ }
+  t.ok(!!j && typeof j.why === 'string' && j.why.length > 0, 'fixtures/tables.json exists with its why (written only by --retable)');
+  if (!j) return;
+  const o = oracleTables();
+  for (const b of ['base', 'deep']) t.same(JSON.parse(JSON.stringify({ profiles: j[b].profiles, fall: j[b].fall, down: j[b].down })), JSON.parse(JSON.stringify(o[b])), 'tables.json ' + b + ' equals the oracle (else: --retable --why)');
+  /* section 3.2's table, typed here from the plan: apex in px to 0.1, the air in steps, the raw table by dy 0..5 */
+  const PLAN = { FULL: [69.6, 34, [6, 6, 5, 5, 4, -1]], MID: [52.7, 29, [5, 5, 4, 3, -1, -1]], TAP: [31.4, 22, [4, 3, -1, -1, -1, -1]],
+    WALL: [54.3, 30, [5, 5, 4, 4, -1, -1]], STICKY: [69.6, 34, [0, 0, 0, 0, 0, -1]] };
+  const PLAN_DEEP = { FULL: [85.5, 40, [7, 6, 6, 6, 5, 4]], WALL: [54.3, 32, [6, 5, 5, 4, -1, -1]] };
+  for (const [set, plan] of [['base', PLAN], ['deep', PLAN_DEEP]]) for (const [p, [apex, air, raw]] of Object.entries(plan)) {
+    const e = j[set].profiles[p];
+    t.eq(Math.round(e.apex / 25.6) / 10, apex, (set === 'deep' ? 'Deep ' : '') + p + ': apex ' + apex + ' px (section 3.2)');
+    t.eq(e.air, air, (set === 'deep' ? 'Deep ' : '') + p + ': air ' + air + ' steps (section 3.2)');
+    t.same(e.raw, raw, (set === 'deep' ? 'Deep ' : '') + p + ': the raw table by dy 0..5 (section 3.2)');
+  }
+  /* the whole arc's column spans (section 3.2's corridor paragraph); FULL's k2 is 2..5 where the plan prints 3..5: at
+     step 7 the box (x 20.4 px) overlaps column 2 by 0.4 px, which the sim's collision counts and the plan's per pixel
+     formula drops (QUESTIONS Q64: the model may be stingier than the sim, never more generous) */
+  const PLAN_COLS = { FULL: [[0, 3], [0, 4], [2, 5], [3, 5], [1, 5], [0, 3], [0, 1]], MID: [[0, 3], [0, 4], [2, 4], [1, 4], [0, 3], [0, 1]],
+    TAP: [[0, 2], [0, 2], [1, 2], [0, 2], [0, 1]], WALL: [[0, 2], [0, 4], [2, 4], [2, 4], [0, 3], [0, 2]] };
+  for (const [p, cols] of Object.entries(PLAN_COLS)) t.same(j.base.profiles[p].cols, cols, p + ': the whole arc\'s rows per column (section 3.2' + (p === 'FULL' ? ', k2 per Q64' : '') + ')');
+  t.same([1, 4, 8].map(d => j.base.down[d]), [6, 7, 8], 'the jump down table: dx 6 at one row down, 7 at four, 8 at eight (section 3.2)');
+  /* the walk off table: section 3.2 prints a fall that starts at once from the takeoff spot (2 at 1 to 2 rows, 3 at 3 to
+     4, 4 at 6 to 8, 5 at 12, 6 at 16, 7 at 24); the sim walks until the box leaves the ledge first, which reaches one
+     column further at 2, 4, 7, 8, 12 and 24 rows (the T0.7b labs land those walk offs): the model takes the sim's walk
+     (QUESTIONS Q64) */
+  t.same([1, 2, 3, 4, 6, 7, 8, 12, 16, 24].map(d => j.base.fall[d]), [2, 3, 3, 4, 4, 5, 5, 6, 6, 8], 'the walk off table at 1, 2, 3, 4, 6, 7, 8, 12, 16 and 24 rows (the sim\'s walk, Q64)');
+});
+
+group('H-reach-2', 'the clip: no entry exceeds DESIGN\'s cone caps, and none exceeds the raw table', t => {
+  const T = SB.TUNING;
+  for (const deep of [false, true]) {
+    const tb = SB.reach.tables(SB.K, deep ? 2 : 0);
+    for (const p of REACH_PROFILES) {
+      const [up, across] = ORACLE.caps(p, deep), m = tb.profiles[p].maxAcross, raw = tb.profiles[p].raw;
+      let bad = '';
+      for (let dy = 0; dy <= 5; dy++) {
+        if (dy > up && m[dy] !== -1) bad += ' dy' + dy + ' above the up cap ' + up;
+        if (m[dy] > across) bad += ' dy' + dy + ' across ' + m[dy] + ' over ' + across;
+        if (m[dy] > raw[dy]) bad += ' dy' + dy + ' clipped ' + m[dy] + ' over raw ' + raw[dy];
+      }
+      t.ok(!bad, (deep ? 'Deep ' : '') + p + ': within up ' + up + ' and across ' + across + (bad ? ' (' + bad.trim() + ')' : ''));
+    }
+  }
+  t.eq(SB.reach.tables(SB.K, 0).profiles.FULL.maxAcross[4], T.JUMP_UP, 'DESIGN\'s 4 up reaches 4 across, not 5: the cone is a bounding box (Q7)');
+});
+
+group('H-reach-10', 'the sample room\'s beats against the tables (a warning tonight; T0.11b asserts its ascent)', t => {
+  const tb = SB.reach.tables(SB.K, 0), beats = fixture('sample-room').fx.expect.beats, warn = [], seen = [];
+  for (const b of beats) {
+    if (b.kind === 'JUMP') {
+      const dy = b.from[1] - b.to[1], dx = Math.abs(b.to[0] - b.from[0]), by = ['FULL', 'MID', 'TAP'].find(p => dy >= 0 && dy <= 5 && tb.profiles[p].maxAcross[dy] >= dx);
+      (by ? seen : warn).push('JUMP ' + dx + ' across ' + dy + ' up' + (by ? ' (' + by + ')' : ''));
+    } else if (b.kind === 'WALLJUMP') {
+      const dy = b.contact[1] - b.to[1], dx = Math.abs(b.to[0] - b.contact[0]), ok = dy >= 0 && dy <= 5 && tb.profiles.WALL.maxAcross[dy] >= dx;
+      (ok ? seen : warn).push('WALLJUMP ' + dx + ' away ' + dy + ' up');
+    } else if (b.kind === 'FALL') {
+      const down = b.to[1] - b.from[1], dx = Math.abs(b.to[0] - b.from[0]), ok = down >= 1 && down <= 24 && tb.fall[down] >= dx;
+      (ok ? seen : warn).push('FALL ' + dx + ' across ' + down + ' down');
+    }
+  }
+  console.log('  ' + (warn.length ? 'WARN  H-reach-10 beats outside the tables: ' + warn.join('; ') : 'info  H-reach-10 every beat is inside the tables: ' + seen.join('; ')));
+  t.ok(true, 'H-reach-10 ran (a warning until T0.11b)');
 });
 
 /* ================================================================ one room */
