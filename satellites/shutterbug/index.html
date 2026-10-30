@@ -26,7 +26,7 @@
 /* Shutterbug. Colours are the palette's (BUILD-PLAN section 7): Ink #0b0a0f, Soot #1f1a1d, Slate #4a4a52,
    Pewter #8a8a90, Ash #c9c7c0, Paper #f2efe6, Glare #fbfbff, Amber #e07a2b, Sun #f2d13f, Film #f0dcb0. */
 :root { --ink: #0b0a0f; --soot: #1f1a1d; --slate: #4a4a52; --pewter: #8a8a90; --ash: #c9c7c0; --paper: #f2efe6;
-  --glare: #fbfbff; --amber: #e07a2b; --sun: #f2d13f; --film: #f0dcb0; --brick: #c8302f;
+  --glare: #fbfbff; --amber: #e07a2b; --sun: #f2d13f; --film: #f0dcb0; --brick: #c8302f; --lapis: #2f5fd0;
   --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px); }
 * { box-sizing: border-box; }
@@ -61,6 +61,24 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   color: var(--film); text-decoration: underline; font-size: 0.85rem; }
 #build { margin-top: auto; padding-top: 18px; align-self: flex-end; color: var(--pewter); font-size: 0.7rem; letter-spacing: 0.04em; }
 
+/* the crop screen (T0.15): the photo fitted, the 1:2 box over it with the pipeline's overlay, one finger drags, two
+   pinch; Retake and Develop under it */
+#crop { flex-direction: column; align-items: stretch; background: var(--ink);
+  padding: var(--sat) var(--sar) var(--sab) var(--sal); }
+#croptop { display: flex; align-items: center; gap: 10px; padding: 6px 10px; min-height: 60px; }
+#croptitle { min-height: 48px; min-width: 64px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--slate); background: transparent; color: var(--ash); }
+#crophint { margin: 0; color: var(--ash); font-size: 0.85rem; }
+#cropstage { position: relative; flex: 1 1 auto; overflow: hidden; touch-action: none; }
+#cropview { position: absolute; left: 0; top: 0; }
+#cropbox { position: absolute; border: 3px solid var(--sun); box-shadow: 0 0 0 2000px rgba(11,10,15,0.55); pointer-events: none; }
+#overlay { width: 100%; height: 100%; display: block; image-rendering: pixelated; opacity: 0.8; }
+#tighter { position: absolute; left: 0; right: 0; top: 40%; margin: 0; padding: 10px; text-align: center; background: var(--brick); color: var(--glare); font-weight: 700; }
+#cropbar { display: flex; gap: 12px; padding: 10px 16px 14px; }
+#retake { min-height: 56px; flex: 0 0 auto; padding: 0 20px; border-radius: 12px; border: 2px solid var(--slate); background: transparent; color: var(--paper); font-weight: 700; }
+#develop { flex: 1 1 auto; background: var(--sun); color: var(--ink); }
+#crop.stuck #develop { background: transparent; color: var(--ash); border: 2px dashed var(--slate); }
+#cropsay { margin: 0 16px 8px; min-height: 1em; color: var(--pewter); font-size: 0.75rem; }
+
 /* the play screen: an instant film frame (Paper, a faint grain) around the photo; the top strip holds the room name
    and the hearts, the thick bottom strip holds the controls; the frame yields to the controls, never the reverse */
 #play { flex-direction: column; align-items: stretch; color: var(--ink);
@@ -68,21 +86,34 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   padding-top: var(--sat); }
 #top { flex: 0 0 36px; height: 36px; display: flex; align-items: center; justify-content: space-between;
   padding: 0 calc(12px + var(--sar)) 0 calc(12px + var(--sal)); font-weight: 700; font-size: 0.95rem; }
-#hearts { display: flex; gap: 4px; }
-#hearts i { width: 12px; height: 11px; background: var(--brick); border: 1px solid var(--ink); display: block; }
+#hearts { display: flex; gap: 5px; }
+/* a pixel heart (9 by 8), Ink with a Brick heart inset in it; a lost heart keeps its outline and empties to Paper */
+#hearts i { width: 18px; height: 16px; display: block; position: relative; background: var(--ink); clip-path: polygon(11.1% 0%, 33.3% 0%, 33.3% 12.5%, 44.4% 12.5%, 44.4% 25%, 55.6% 25%, 55.6% 12.5%, 66.7% 12.5%, 66.7% 0%, 88.9% 0%, 88.9% 12.5%, 100% 12.5%, 100% 50%, 88.9% 50%, 88.9% 62.5%, 77.8% 62.5%, 77.8% 75%, 66.7% 75%, 66.7% 87.5%, 55.6% 87.5%, 55.6% 100%, 44.4% 100%, 44.4% 87.5%, 33.3% 87.5%, 33.3% 75%, 22.2% 75%, 22.2% 62.5%, 11.1% 62.5%, 11.1% 50%, 0% 50%, 0% 12.5%, 11.1% 12.5%); }
+#hearts i::after { content: ''; position: absolute; left: 3px; top: 3px; right: 3px; bottom: 3px; background: var(--brick); clip-path: polygon(11.1% 0%, 33.3% 0%, 33.3% 12.5%, 44.4% 12.5%, 44.4% 25%, 55.6% 25%, 55.6% 12.5%, 66.7% 12.5%, 66.7% 0%, 88.9% 0%, 88.9% 12.5%, 100% 12.5%, 100% 50%, 88.9% 50%, 88.9% 62.5%, 77.8% 62.5%, 77.8% 75%, 66.7% 75%, 66.7% 87.5%, 55.6% 87.5%, 55.6% 100%, 44.4% 100%, 44.4% 87.5%, 33.3% 87.5%, 33.3% 75%, 22.2% 75%, 22.2% 62.5%, 11.1% 62.5%, 11.1% 50%, 0% 50%, 0% 12.5%, 11.1% 12.5%); }
+#hearts i.lost::after { background: var(--paper); }
 #stage { flex: 0 0 auto; display: flex; justify-content: center; position: relative; touch-action: none; }
 #view { display: block; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; background: var(--ink); }
 #strip { flex: 1 1 auto; min-height: 168px; position: relative; padding-bottom: var(--sab); touch-action: none; }
+/* the frame's Dead Pixel count, handwritten in Lapis (ballpoint on film) in the strip's corner (DESIGN 2, 11; a
+   placeholder at 0 until T2.6's economy) */
+#dp { position: absolute; top: 10px; right: calc(14px + var(--sar)); margin: 0; color: var(--lapis); pointer-events: none;
+  font-family: 'Segoe Print', 'Bradley Hand', 'Chalkboard SE', 'Comic Sans MS', cursive; font-size: 1.05rem; transform: rotate(-4deg); }
 #back { position: absolute; top: 0; left: calc(6px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;
   border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
-#clear { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
+#clear, #death { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
   display: none; flex-direction: column; gap: 12px; align-items: stretch; text-align: center; z-index: 10; }
-#clear.on { display: flex; }
-#clear h2 { margin: 0 0 4px; font-size: 1.3rem; }
-#clear button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
-#again { background: var(--sun); color: var(--ink); }
-#cleartitle { background: transparent; color: var(--ink); }
+#clear.on, #death.on { display: flex; }
+#death { top: 3%; } #death.low { top: auto; bottom: 3%; }
+#clear h2, #death h2 { margin: 0 0 4px; font-size: 1.3rem; }
+#clear button, #death button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
+#nextroom, #deathagain { background: var(--sun); color: var(--ink); }
+#again { background: var(--paper); color: var(--ink); }
+#cleartitle, #deathtitle { background: transparent; color: var(--ink); }
+/* the hint glyphs (T0.16): a control pulses once, the first time it is the move to make */
+@keyframes sbhint { 0%, 100% { box-shadow: 0 0 0 0 rgba(242,209,63,0); } 50% { box-shadow: 0 0 0 6px rgba(242,209,63,0.9); } }
+#rocker.hint .zone, .verb.hint .glyph { animation: sbhint 0.7s ease-in-out 3; }
+@media (prefers-reduced-motion: reduce) { #rocker.hint .zone, .verb.hint .glyph { animation: none; outline: 4px solid var(--sun); } }
 #safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 var(--sab) 0; }
 #vhprobe { position: fixed; left: 0; top: 0; width: 0; height: 100vh; height: 100dvh; visibility: hidden; pointer-events: none; }
 
@@ -133,21 +164,35 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     <p class="tag" data-copy="tagline"></p>
   </div>
   <div class="actions">
-    <button id="shoot" class="big" type="button" disabled data-copy="shoot"></button>
-    <button id="choose" class="big" type="button" disabled data-copy="choose"></button>
-    <p id="soon" data-copy="soon"></p>
+    <button id="shoot" class="big" type="button" data-copy="shoot"></button>
+    <button id="choose" class="big" type="button" data-copy="choose"></button>
+    <p id="soon" role="status" hidden></p>
     <button id="sample" type="button" data-copy="sample"></button>
   </div>
   <p id="build"></p>
 </main>
+<main id="crop" class="screen" aria-label="Crop">
+  <div id="croptop"><button id="croptitle" type="button" data-copy="toTitle"></button><p id="crophint" data-copy="cropHint"></p></div>
+  <div id="cropstage"><canvas id="cropview"></canvas>
+    <div id="cropbox"><canvas id="overlay" width="96" height="192"></canvas><p id="tighter" data-copy="tighter" hidden></p></div></div>
+  <div id="cropbar"><button id="retake" type="button" data-copy="retake"></button><button id="develop" class="big" type="button" data-copy="develop"></button></div>
+  <p id="cropsay" aria-live="polite"></p>
+</main>
+<input id="fileshoot" type="file" accept="image/*" capture="environment" hidden>
+<input id="filechoose" type="file" accept="image/*" hidden>
 <main id="play" class="screen" aria-label="Play">
   <div id="top"><span id="roomname"></span><span id="hearts" aria-label="Hearts"></span></div>
   <div id="stage"><canvas id="view" width="384" height="640"></canvas>
-    <div id="clear" role="dialog" aria-label="Room clear"><h2 data-copy="roomClear"></h2>
-      <button id="again" type="button" data-copy="again"></button>
+    <div id="clear" role="dialog" data-aria="roomClear"><h2 data-copy="roomClear"></h2>
+      <button id="nextroom" type="button" data-copy="nextRoom"></button>
+      <button id="again" type="button" data-copy="playAgain"></button>
       <button id="cleartitle" type="button" data-copy="toTitle"></button></div>
+    <div id="death" role="dialog" data-aria="death"><h2 data-copy="death"></h2>
+      <button id="deathagain" type="button" data-copy="again"></button>
+      <button id="deathtitle" type="button" data-copy="toTitle"></button></div>
   </div>
   <div id="strip"><button id="back" type="button" data-copy="toTitle"></button>
+    <p id="dp"><span data-copy="dp"></span> <span id="dpn">0</span></p>
     <div id="reserve" aria-hidden="true"></div>
     <div id="rocker" data-aria="move"><i class="zone zl" data-copy="left"></i><i class="gap"></i><i class="zone zr" data-copy="right"></i></div>
     <div id="btnB" class="verb" role="button" data-aria="dive"><span class="glyph" data-copy="btnB"></span></div>
@@ -195,6 +240,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     DASH_CELLS: 3, DASH_FRAMES: 8, DASH_IFRAMES: 4,
     // 4.4 feel
     SQUASH_PX: 2, STRETCH_PX: 2, ANIM_FPS: 12, SHAKE_MAX_PX: 2, IDLE_WOBBLE_PX: 1,
+    SHAKE_S: 0.15 /* the dive landing's shake (DESIGN 4.4 gives its 2 px, not its length; T0.12b, 9 steps): FEEL */,
+    SQUASH_S: 0.1 /* the landing squash and the takeoff stretch counters, 6 steps (was a literal in core-sim; the third review) */,
     // 3 screen and camera
     CAM_HERO_FRAC: 0.6, TOP_STRIP: 36, CONTROL_STRIP: 168, VIEW_ROWS_MIN: 20 /* Q6: 22 rows on a 320x568 SE */, SCALE2_MIN_W: 768,
     CHIP_RESERVE_PX: 120 /* the fleet music chip's bottom left box, kept empty by the strip, Q48 */,
@@ -217,7 +264,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     // 7 biomes and enemies
     FROST_SLICK_MIN_W: 5, FROST_SLIDE_CELLS: 1, DEEP_FALL_MULT: 0.8, DEEP_JUMP_V: 9.5 /* gives the +1 cell apex, section 3.2 */,
     MOTH_SPEED: 1, ICICLE_TRIGGER_COLS: 2, ICICLE_RESPAWN_S: 6, JELLY_BOB_CELLS: 2, JELLY_HP: 2, CRAWLER_SPEED: 2, CRAWLER_HP: 2, SPARK_HOP_S: 1.5,
-    HIT_HEARTS: 1, HIT_IFRAMES_S: 1, HIT_KNOCKBACK_CELLS: 2,
+    HIT_HEARTS: 1, HIT_IFRAMES_S: 1, HIT_KNOCKBACK_CELLS: 2, HIT_KNOCKBACK_FRAMES: 8 /* T0.16's "over 8 frames" */,
     BOSS_INTRO_S: 2, BOSS_TELEGRAPH_S: 0.8, BOSS_SAFE_LEDGE_CELLS: 6, BOSS_WEAK_MIN: 3, BOSS_OUTLINE_UNTIL: 0.25, BOSS_FALLBACK_HP: 20,
     BOSS_MOTH_EVERY_S: 4, BOSS_MOTH_COUNT: 3, BOSS_ICICLE_TELEGRAPH_S: 3, BOSS_RING_EVERY_S: 5, BOSS_RING_CELLS: 4, BOSS_SPARK_TELEGRAPH_S: 2,
     // 9 weapons, stats, economy
@@ -261,6 +308,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     };
     K.DECEL = Math.round(K.RUN / T.DECEL_FRAMES);
     K.DASH_V = Math.round(T.DASH_CELLS * G.CELL * SUB / T.DASH_FRAMES);
+    K.KNOCK_V = Math.round(T.HIT_KNOCKBACK_CELLS * G.CELL * SUB / T.HIT_KNOCKBACK_FRAMES);
+    K.KNOCK_FRAMES = T.HIT_KNOCKBACK_FRAMES;
     K.DEEP_FALL_G = Math.round(K.G * T.DEEP_FALL_MULT);
     K.DEEP_TERM = Math.round(K.TERM * T.DEEP_FALL_MULT);
     K.MOTH_V = Math.round(T.MOTH_SPEED * G.CELL * SUB / HZ);
@@ -283,8 +332,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     '444444444444455554455554', '444444444444433334465664', '444444444444444444465664', '444444444444444444555554',
     '444884444444444444333334', '444444444444444444444444', '444884444444444444444444', '444444444444444444477777',
     '444444444444444444477777', '444444444444445555477117', '444444444444443333477117', '444444444444444444477117',
-    '44444445e555444444477117', '444444433333444444477117', '444444444444444444477117', '444444444445555444477117',
-    '444444444443333444477117', '444444444444444444477117', '444444555544444444477117', '777444333344444444477117',
+    '44444445e555444444477117', '444444433333444444477117', '444444444444444444477117', '444444444445555544477117',
+    '444444444443333344477117', '444444444444444444477117', '444444555544444444477117', '777444333344444444477117',
     '191444444444484844478117', '111444444444555554477117', '444444444444333334477117', '777444444444444444477117',
     '000444455554444444477117', 'b005e5433334444444477117', '444333444444444444477117', '777444444444555544477117',
     '117444444444333344477117', '111444444444322344477117', '777444455554344344477117', '444444433334344344477777',
@@ -292,7 +341,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m0-2';
+  SB.BUILD = 'sb-m0-3';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -745,29 +794,203 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       if (peak > bestPeak) { bestPeak = peak; light = lights[i]; }
     }
     var standable = function (c) { return c + w < n && !solid[c] && (solid[c + w] || plat[c + w]); };
-    var exit = -1;
-    /* the light's lowest standable row, then the lowest index in it (section 3.7: ties to the lowest index) */
-    if (light) for (q = 0; q < light.length; q++) if (standable(light[q]) && (exit < 0 || Math.floor(light[q] / w) > Math.floor(exit / w))) exit = light[q];
-    if (exit < 0) for (y = 0; y < T.EXIT_ROWS && exit < 0; y++) {
-      var bl = -1;
-      for (x = 0; x < w; x++) { var c2 = y * w + x; if (standable(c2) && (bl < 0 || L[c2] > L[bl])) bl = c2; }
-      exit = bl;
-    }
-
     var z = function () { return new Uint8Array(n); };
-    return {
+    var level = {
       rec: rec, pal: pal, w: w, h: h, seed: SB.record.seedOf(rec), biome: opts.biome === undefined || opts.biome === null ? 0 : opts.biome,
       negative: negative, L: L, solid: solid, plat: plat, tab: z(), slick: z(), sticky: z(), trap: z(),
-      otsuT: otsuT, landmarks: landmarks, spawn: spawn, exit: exit,
-      /* section 3.7: when the exit is the light the light's cells are relit around it; otherwise the light stays backdrop */
-      beacon: { idx: exit, cells: light && exit >= 0 && light.indexOf(exit) >= 0 ? Int32Array.from(light) : new Int32Array(0) },
+      otsuT: otsuT, landmarks: landmarks, spawn: spawn, exit: -1, beacon: { idx: -1, cells: new Int32Array(0) },
       features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null },
       repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false
     };
+
+    /* opts.stage 'A' (the harness's pipeline A groups): the level before repair, its exit by reach distance where the
+       top rows are reached, else the light rule */
+    if (opts.stage === 'A') {
+      var exA = exitByReach(level, light, SB.reach.distances(SB.reach.graph(level), spawn));
+      level.exit = exA >= 0 ? exA : lightExit(level, light);
+      level.beacon = { idx: level.exit, cells: light && level.exit >= 0 && light.indexOf(level.exit) >= 0 ? Int32Array.from(light) : new Int32Array(0) };
+      return level;
+    }
+    /* DESIGN 6.7: repair with film tabs until the exit is reached and REPAIR_REACH_FRAC of the standable cells are;
+       the exit then by reach distance (section 3.7). A room that cannot be repaired is an honest needsCrop. */
+    var bare = landmarks.length === 0, anyPlat = false;
+    for (i = 0; i < n && !anyPlat; i++) if (plat[i]) anyPlat = true;
+    var fixed = repair(level, light, landmarks);
+    if (fixed.needsCrop) return fixed;
+    var exit = fixed.exit;
+    /* the default spread (DESIGN 6.11): a room with no landmark and no platform got its climb from the stair's two
+       legs; a speck slot and a fodder slot are reserved as data for M1 */
+    if (bare && !anyPlat) level.repair.spread = spreadSlots(level, fixed.d);
+    level.exit = exit;
+    /* the main ascent and its route score, stored on the level (section 3.7; the nodes are hashed, FIELDS ascent.nodes) */
+    level.ascent = { nodes: fixed.ascent.nodes, edges: fixed.ascent.edges, score: SB.reach.routeScore(level, fixed.g, fixed.ascent) };
+    /* when the exit is the light the light's cells are relit around it; otherwise the light stays backdrop */
+    level.beacon = { idx: exit, cells: light && exit >= 0 && light.indexOf(exit) >= 0 ? Int32Array.from(light) : new Int32Array(0) };
+    /* the moths (T0.16), placed after the ascent so they keep clear of its safe cells */
+    level.features.enemies = SB.features.moths(level, opts);
+    return level;
+  }
+
+  /* the exit (section 3.7, DESIGN 6.6): the reachable standable cell of the top EXIT_ROWS rows with the greatest
+     reach distance from spawn, the light winning when its own farthest reachable cell is within EXIT_LIGHT_SLACK (Q11);
+     every tie to the lowest index; -1 when the top rows hold no reached standable cell */
+  function exitByReach(level, light, d) {
+    var T = SB.TUNING, w = level.w, exit = -1, maxD = -1, i, q;
+    for (i = 0; i < T.EXIT_ROWS * w; i++) if (standableIn(level, i) && d[i] > maxD) { maxD = d[i]; exit = i; }
+    if (exit >= 0 && light) {
+      var lit = Array.from(light).sort(function (a, b) { return a - b; }), lc = -1;
+      for (q = 0; q < lit.length; q++) if (standableIn(level, lit[q]) && d[lit[q]] >= 0 && (lc < 0 || d[lit[q]] > d[lc])) lc = lit[q];
+      if (lc >= 0 && d[lc] >= maxD - T.EXIT_LIGHT_SLACK) exit = lc;
+    }
+    return exit;
+  }
+  /* a room whose top rows nothing reaches (before repair): the light's lowest standable row at its lowest index, else
+     the brightest standable cell of the first top row that has one (ties to the lowest index) */
+  function lightExit(level, light) {
+    var T = SB.TUNING, w = level.w, exit = -1, q, x, y;
+    if (light) for (q = 0; q < light.length; q++) if (standableIn(level, light[q]) && (exit < 0 || Math.floor(light[q] / w) > Math.floor(exit / w) || (Math.floor(light[q] / w) === Math.floor(exit / w) && light[q] < exit))) exit = light[q];
+    for (y = 0; y < T.EXIT_ROWS && exit < 0; y++) {
+      var bl = -1;
+      for (x = 0; x < w; x++) { var c = y * w + x; if (standableIn(level, c) && (bl < 0 || level.L[c] > level.L[bl])) bl = c; }
+      exit = bl;
+    }
+    return exit;
+  }
+  function standableIn(level, c) { var w = level.w; return c >= 0 && c + w < w * level.h && !level.solid[c] && (level.solid[c + w] === 1 || level.plat[c + w] === 1); }
+
+  /* DESIGN 6.7 and section 3.7: each pass lays at most TAB_MAX film tabs (2 wide one ways) along a stair, TAB_STAIR_ACROSS
+     across and TAB_STAIR_UP up per step, turning back at the room's sides, from the reached standable cell nearest the
+     target: an unreached exit candidate (the light's, else the highest), or the top rows when none is standable, or the
+     largest unreached mass when too little is reached. Never on a landmark cell nor within 1 cell of a landmark top. Up
+     to REPAIR_PASSES passes (each pass's 12 is DESIGN's "max 12 tabs"; the 15% cap bounds the total); needsCrop when the
+     tabs would change more than REPAIR_MAX_CHANGE of the cells or the passes run out. */
+  function repair(level, light, landmarks) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k, pass, tabs = 0;
+    var near = new Uint8Array(n);                     /* landmark cells and every cell within 1 of a landmark top */
+    for (k = 0; k < landmarks.length; k++) for (var j = 0; j < landmarks[k].cells.length; j++) {
+      var c = landmarks[k].cells[j], cx = c % w, cy = (c - cx) / w;
+      near[c] = 1;
+      if (cy === 0 || !level.solid[c - w]) for (var ox = -1; ox <= 1; ox++) for (var oy = -1; oy <= 1; oy++) {
+        var xx = cx + ox, yy = cy + oy; if (xx >= 0 && xx < w && yy >= 0 && yy < h) near[yy * w + xx] = 1;
+      }
+    }
+    for (pass = 0; ; pass++) {
+      var g = SB.reach.graph(level), d = SB.reach.distances(g, level.spawn), frac = SB.reach.reachableFrac(g, d);
+      var exit = exitByReach(level, light, d), ascent = null;
+      if (exit >= 0 && frac >= T.REPAIR_REACH_FRAC) {
+        /* the route score (section 3.7): a reached exit whose only way needs a hard jump is repaired, not pointed elsewhere */
+        level.exit = exit;
+        ascent = SB.reach.mainAscent(g, level);
+        if (ascent.nodes) {
+          level.repair.tabs = tabs; level.repair.passes = pass; level.repair.changedFrac = 2 * tabs / n;
+          return { exit: exit, d: d, g: g, ascent: ascent };
+        }
+      }
+      if (pass >= T.REPAIR_PASSES) return { needsCrop: true, why: ascent ? 'route' : 'unreachable', detail: 'repair ran ' + pass + ' passes, ' + tabs + ' tabs, and the exit is ' + (exit < 0 ? 'unreached' : ascent ? 'reached, but the route fails: ' + SB.reach.routeScore(level, g, ascent).reasons.join('; ') : 'reached with ' + Math.round(frac * 100) + '% of the room') };
+      /* the target */
+      var tx = -1, ty = -1, best = -1;
+      if (exit >= 0 && frac >= T.REPAIR_REACH_FRAC) { tx = exit % w; ty = (exit - tx) / w; }
+      else if (exit < 0) {
+        if (light) for (k = 0; k < light.length; k++) if (standableIn(level, light[k]) && d[light[k]] < 0 && (best < 0 || light[k] < best)) best = light[k];
+        for (i = 0; i < T.EXIT_ROWS * w && best < 0; i++) if (standableIn(level, i) && d[i] < 0) best = i;
+        if (best >= 0) { tx = best % w; ty = (best - tx) / w; } else ty = T.EXIT_ROWS - 1;
+      } else {
+        var mass = largestUnreached(level, d);
+        tx = mass % w; ty = (mass - tx) / w;
+      }
+      /* the frontier: the reached standable cell nearest the target (to the top rows: the highest, then the lowest
+         index); when no hop fits from it (a cell under an overhang), the next nearest, and so on */
+      var fronts = [];
+      for (i = 0; i < n; i++) {
+        if (!(standableIn(level, i) && d[i] >= 0)) continue;
+        var ix = i % w, iy = (i - ix) / w;
+        fronts.push([tx < 0 ? iy : (ix - tx) * (ix - tx) + (iy - ty) * (iy - ty), i]);
+      }
+      if (!fronts.length) return { needsCrop: true, why: 'unreachable', detail: 'nothing is reached from spawn' };
+      fronts.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+      var laid = 0, fr = -1;
+      for (k = 0; k < fronts.length && !laid; k++) { fr = fronts[k][1]; laid = stair(level, near, fr % w, Math.floor(fr / w), tx, ty); }
+      tabs += laid;
+      if (2 * tabs / n > T.REPAIR_MAX_CHANGE) return { needsCrop: true, why: 'unreachable', detail: 'repair would change ' + Math.round(200 * tabs / n) + '% of the cells' };
+      if (!laid) return { needsCrop: true, why: 'unreachable', detail: 'no tab fits on the stair from the frontier' };
+    }
+  }
+  /* the largest connected mass of unreached standable cells (4 connected through standable cells; ties to the lowest
+     first cell): its lowest index */
+  function largestUnreached(level, d) {
+    var w = level.w, n = w * level.h, seen = new Uint8Array(n), bestN = 0, bestC = -1, i;
+    for (i = 0; i < n; i++) {
+      if (seen[i] || d[i] >= 0 || !standableIn(level, i)) continue;
+      var stack = [i], cnt = 0; seen[i] = 1;
+      while (stack.length) {
+        var c = stack.pop(), x = c % w; cnt++;
+        var nb = [x > 0 ? c - 1 : -1, x < w - 1 ? c + 1 : -1, c - w, c + w];
+        for (var k = 0; k < 4; k++) { var q = nb[k]; if (q >= 0 && q < n && !seen[q] && d[q] < 0 && standableIn(level, q)) { seen[q] = 1; stack.push(q); } }
+      }
+      if (cnt > bestN) { bestN = cnt; bestC = i; }
+    }
+    return bestC;
+  }
+  /* one pass's stair from (x, y) toward (tx, ty) (tx -1: up for the top rows), at most TAB_MAX tabs; returns the number
+     laid. A tab is two one way cells under the next standing cell, along the travel direction. Each step tries the
+     stair's own hop (TAB_STAIR_ACROSS across, TAB_STAIR_UP up) first, then nearer hops inside the forgiving cone, the
+     other way when the way on is walled (a block, a landmark or a room side): the stair turns back like a zig zag. */
+  var HOPS = [[3, 3], [2, 3], [4, 3], [3, 2], [2, 2], [4, 2], [1, 3], [1, 2], [5, 2], [0, 3], [0, 2]];
+  function stair(level, near, x, y, tx, ty) {
+    var T = SB.TUNING, w = level.w, h = level.h, laid = 0, dir = tx < 0 ? (x < w / 2 ? 1 : -1) : tx > x ? 1 : tx < x ? -1 : (x < w / 2 ? 1 : -1);
+    /* a tab cell: open, not already a one way, not on or by a landmark top, and never directly on another one way */
+    var free = function (cx, cy) { return cx >= 0 && cx < w && cy >= 1 && cy < h - 1 && !level.solid[cy * w + cx] && !level.plat[cy * w + cx] && !level.plat[(cy + 1) * w + cx] && !near[cy * w + cx]; };
+    /* a hop the reach model itself admits (FULL, MID, TAP; the immediate or the late corridor open, no one way catching
+       its descent first), so every stair is a chain of graph edges by construction */
+    var tb = SB.reach.tables(SB.K, level.biome | 0), JP = ['FULL', 'MID', 'TAP'];
+    var S = function (cx, cy) { return cx < 0 || cx >= w || cy < 0 || cy >= h || level.solid[cy * w + cx] === 1; };
+    var hop = function (sx, sy, dd, ax, ay) {
+      for (var q = 0; q < JP.length; q++) {
+        var pr = tb.profiles[JP[q]], cands = pr.maxAcross[ay] >= ax ? pr.paths[ax + ',' + ay] || [] : [];
+        for (var c = 0; c < cands.length; c++) {
+          var p = cands[c], ok = true, k;
+          for (k = 0; k < p.cells.length && ok; k++) if (S(sx + dd * p.cells[k][0], sy - p.cells[k][1])) ok = false;
+          for (k = 0; k < p.catches.length && ok; k++) { var qx = sx + dd * p.catches[k][0], qy = sy - p.catches[k][1]; if (qx >= 0 && qx < w && qy >= 0 && qy < h && level.plat[qy * w + qx]) ok = false; }
+          if (ok) return true;
+        }
+      }
+      return false;
+    };
+    while (laid < T.TAB_MAX && y > ty) {
+      if (tx >= 0 && Math.abs(tx - x) <= T.TAB_STAIR_ACROSS && y - ty <= T.TAB_STAIR_UP) break;   /* the target is one hop away */
+      var placed = false;
+      for (var turn = 0; turn < 2 && !placed; turn++) {
+        var dd = turn ? -dir : dir;
+        for (var hh = 0; hh < HOPS.length && !placed; hh++) {
+          var ax = HOPS[hh][0] * (T.TAB_STAIR_ACROSS / 3), ay = HOPS[hh][1] * (T.TAB_STAIR_UP / 3);
+          var px = x + dd * ax, py = Math.max(ty, y - ay);
+          if (px < 0 || px >= w || py < 0 || py >= y || level.solid[py * w + px] || level.plat[py * w + px]) continue;   /* never inside another tab */
+          var second = px + dd >= 0 && px + dd < w ? px + dd : px - dd;
+          if (!free(px, py + 1) || !free(second, py + 1) || S(second, py) || level.plat[py * w + second]) continue;
+          if (!hop(x, y, ax === 0 ? -1 : dd, ax, y - py)) continue;
+          level.plat[(py + 1) * w + px] = 1; level.tab[(py + 1) * w + px] = 1;
+          level.plat[(py + 1) * w + second] = 1; level.tab[(py + 1) * w + second] = 1;
+          x = px; y = py; dir = dd; laid++; placed = true;
+        }
+      }
+      if (!placed) break;
+    }
+    return laid;
+  }
+  /* the default spread's reserved slots: a speck on the middle tab of the stair, fodder on the reached floor cell
+     farthest from spawn */
+  function spreadSlots(level, d) {
+    var w = level.w, n = w * level.h, tops = [], fod = -1, i;
+    for (i = 0; i < n - w; i++) if (level.tab[i + w] && !level.tab[i] && standableIn(level, i) && d[i] >= 0 && (i % w === 0 || !level.tab[i + w - 1] || tops.indexOf(i - 1) < 0)) tops.push(i);
+    var sy = Math.floor(level.spawn / w) * w;
+    for (i = sy; i < sy + w; i++) if (standableIn(level, i) && d[i] >= 0 && i !== level.spawn && (fod < 0 || Math.abs(i - level.spawn) > Math.abs(fod - level.spawn))) fod = i;
+    return { speck: tops.length ? tops[tops.length >> 1] : -1, fodder: fod };
   }
 
   /* The room as text, one line per row: # solid, = one way, ~ slick, | sticky, . open, S spawn, X exit, T film tab,
-     * ascent, e enemy, ^ trap, $ loot, L a landmark's top edge. Printed beside every harness failure. */
+     * ascent, e enemy, ^ trap, $ loot, L a landmark's top edge, o an open standable cell the reach model reaches from
+     spawn, < > a wall contact it reaches and ( ) one it does not (the wall on that side). Printed beside every harness
+     failure. */
   function toText(level, ascent) {
     var w = level.w, h = level.h, n = w * h, g = new Array(n), i, k;
     for (i = 0; i < n; i++) {
@@ -786,8 +1009,20 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         if (g[q] === '#' && (q < w || !level.solid[q - w])) g[q] = 'L';
       }
     }
+    if (ascent === undefined) ascent = level.ascent || null;
     var nodes = ascent && ascent.nodes ? ascent.nodes : [];
-    for (k = 0; k < nodes.length; k++) if (g[nodes[k]] === '.' || g[nodes[k]] === '=') g[nodes[k]] = '*';
+    for (k = 0; k < nodes.length; k++) if (nodes[k] < n && (g[nodes[k]] === '.' || g[nodes[k]] === '=')) g[nodes[k]] = '*';
+    if (level.solid && level.spawn >= 0 && SB.reach && SB.reach.graph) {
+      var gr = SB.reach.graph(level), d = SB.reach.distances(gr, level.spawn);
+      for (i = 0; i < n; i++) {
+        if (g[i] !== '.') continue;
+        if (gr.stand[i] && d[i] >= 0) g[i] = 'o';
+        else if (d[n + 2 * i] >= 0) g[i] = '<';
+        else if (d[n + 2 * i + 1] >= 0) g[i] = '>';
+        else if (gr.contact[2 * i]) g[i] = '(';
+        else if (gr.contact[2 * i + 1]) g[i] = ')';
+      }
+    }
     var f = level.features || {};
     var specks = f.specks || [];
     for (k = 0; k < specks.length; k++) g[specks[k].idx === undefined ? specks[k] : specks[k].idx] = '$';
@@ -836,15 +1071,600 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   function levelHash(lv) { return SB.rng.hashWords(serialize(lv)); }
 
   SB.pipeline = { toText: toText, otsu: otsu, smooth: smooth, components: components, build: build,
-    FIELDS: FIELDS, serialize: serialize, levelHash: levelHash };
+    FIELDS: FIELDS, serialize: serialize, levelHash: levelHash, exitByReach: exitByReach };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-reach" data-core>
 (function (SB) { 'use strict';
+  /* core-reach (BUILD-PLAN.md section 3): the reach model that repair, the exit choice, the route score and the bot all
+     read. The sim must be at least as generous; the model may be stingier, never more. T0.10a: the stepped arcs, the
+     landing tables (clipped to DESIGN's cone), the fall and jump down tables and the corridors, all from K by the sim's
+     own step order (the jump sets vy, the release cap from the second step, gravity, x at the old height, then y). */
+  var PROFILES = ['FULL', 'MID', 'TAP', 'WALL', 'STICKY'];
+  var NEVER = 1e9;                                   /* a hold that never ends */
+  var TOUCH_ROWS = 6;                                /* a touch trajectory is scanned to 6 rows below its takeoff (stingier below) */
+  var A_HOLD = { FULL: NEVER, MID: 4, TAP: 1, WALL: NEVER, STICKY: NEVER, WALK: 0 };
+  var MAX_STEPS = 400, ROWS = 5, FALL_ROWS = 24, DOWN_ROWS = 8;
+
+  /* one flight in subpixels relative to the takeoff cell: x the box's left edge (centred: (CELL - HERO_W) / 2 in), y
+     the feet (0 the takeoff surface, up negative), py the feet one step before (the sim moves x at that height). The
+     rocker is held in the jump direction for `hold` steps from step `delay` (after the wall jump's locked push), then
+     the decel. WALK runs off the ledge: on the support until the box has fully left the takeoff cell, then falls. */
+  function arc(K, profile, deep, delay, hold, upTo) {
+    var GF = deep ? K.DEEP_FALL_G : K.G, TERM = deep ? K.DEEP_TERM : K.TERM, walk = profile === 'WALK';
+    var vy = walk ? 0 : profile === 'WALL' ? -K.WALL_V : profile === 'STICKY' ? -K.STICKY_V : -(deep ? K.DEEP_JUMP_V : K.JUMP_V);
+    var aHold = A_HOLD[profile], lock = profile === 'WALL' ? K.WALL_JUMP_LOCK : 0, ledge = walk;
+    /* the stance (section 3.1): centred in the cell, but a wall jump starts touching the wall it leaves (flush on the
+       left, since the arc runs to the right) */
+    var x = profile === 'WALL' ? 0 : (K.CELL_SUB - K.HERO_W_SUB) >> 1, y = 0, vx = 0, rising = !walk, out = [{ x: x, y: 0, py: 0, vy: vy, vx: 0 }];
+    if (profile === 'STICKY') hold = 0;
+    var end = upTo === undefined ? MAX_STEPS : upTo + 1;
+    for (var f = 1; f < end; f++) {
+      if (f > aHold && rising && vy < -K.CUT_V) vy = -K.CUT_V;
+      if (f <= lock) vx = K.WALL_PUSH;
+      else if (f > delay && f <= delay + hold) vx = K.RUN;
+      else if (vx > 0) vx = Math.max(0, vx - K.DECEL);
+      var py = y;
+      if (ledge) {
+        x += vx;
+        if (x < K.CELL_SUB) { out.push({ x: x, y: 0, py: 0, vy: 0, vx: vx }); continue; }
+        ledge = false;
+        vy = Math.min(TERM, vy + K.G); y += vy;
+        out.push({ x: x, y: y, py: py, vy: vy, vx: vx });
+        continue;
+      }
+      vy = Math.min(TERM, vy + (vy >= 0 ? GF : K.G));
+      if (vy >= 0) rising = false;
+      x += vx; y += vy;
+      out.push({ x: x, y: y, py: py, vy: vy, vx: vx });
+      if (y > (FALL_ROWS + 2) * K.CELL_SUB) break;
+    }
+    return out;
+  }
+  /* the first descending step whose previous feet were at or above a top `rowsUp` rows up (negative: below) and whose
+     feet are now below it: the one way landing rule, which a solid top meets on the same step */
+  function crossing(a, rowsUp, K) {
+    var top = -rowsUp * K.CELL_SUB;
+    for (var f = 1; f < a.length; f++) if (a[f].vy > 0 && a[f - 1].y <= top && a[f].y > top) return f;
+    return -1;
+  }
+  function overlap(K, x, c) { return Math.min(x + K.HERO_W_SUB, (c + 1) * K.CELL_SUB) - Math.max(x, c * K.CELL_SUB); }
+  /* the farthest column the box overlaps by LAND_OVERLAP at x */
+  function farCell(K, x) { return Math.floor((x + K.HERO_W_SUB - K.OVERLAP_SUB) / K.CELL_SUB); }
+  /* where the box comes to rest after the landing step (the decel, or the rocker still held to `delay + hold`) */
+  function restX(K, a, f, delay, hold) {
+    var x = a[f].x, vx = a[f].vx;
+    for (var k = f + 1; k < f + MAX_STEPS; k++) {
+      if (k > delay && k <= delay + hold) vx = K.RUN; else if (vx > 0) vx = Math.max(0, vx - K.DECEL); else break;
+      x += vx;
+    }
+    return x;
+  }
+  /* the cells the box sweeps from takeoff to the landing step, as [k, r] (k columns in the jump direction, r rows above
+     the takeoff row): at (x, y) and at (x, the previous y); the landing step's box snapped onto the target's top */
+  function sweep(K, a, last, rowsUp) {
+    var C = K.CELL_SUB, seen = {}, list = [];
+    var add = function (x, y) {
+      var x0 = Math.floor(x / C), x1 = Math.floor((x + K.HERO_W_SUB - 1) / C), y0 = Math.floor((y - K.HERO_H_SUB) / C), y1 = Math.floor((y - 1) / C);
+      for (var cx = x0; cx <= x1; cx++) for (var cy = y0; cy <= y1; cy++) {
+        var key = cx + ',' + (-cy - 1);
+        if (!seen[key]) { seen[key] = 1; list.push([cx, -cy - 1]); }
+      }
+    };
+    /* the sim moves x at the previous height, then y: the old height first, in the order the box enters cells */
+    for (var f = 0; f <= last; f++) { if (f > 0) add(a[f].x, a[f].py); add(a[f].x, f === last ? -rowsUp * C : a[f].y); }
+    return list;
+  }
+  /* the one way tops the descent crosses before the landing step, with LAND_OVERLAP of overlap: [k, r] names the cell
+     whose top it is (r rows above the takeoff row's support); a one way there catches the hero first (section 3.3) */
+  function catches(K, a, last) {
+    var C = K.CELL_SUB, out = [], seen = {};
+    for (var f = 1; f < last; f++) {
+      if (a[f].vy <= 0) continue;
+      for (var j = Math.ceil(-a[f].y / C); j <= Math.floor(-a[f - 1].y / C); j++) {
+        var top = -j * C;
+        if (!(a[f - 1].y <= top && a[f].y > top)) continue;
+        for (var c = Math.floor(a[f].x / C); c <= Math.floor((a[f].x + K.HERO_W_SUB - 1) / C); c++) {
+          if (overlap(K, a[f].x, c) < K.OVERLAP_SUB) continue;
+          var key = c + ',' + (j - 1);
+          if (!seen[key]) { seen[key] = 1; out.push([c, j - 1]); }
+        }
+      }
+    }
+    return out;
+  }
+  /* a path to (dx, rowsUp): the smallest hold from `delay` whose landing box and resting box both overlap the target
+     column by LAND_OVERLAP */
+  function path(K, profile, deep, dx, rowsUp, delay) {
+    /* the rise and fall never depend on the rocker, so the landing step is the same for every hold: each hold is
+       stepped only that far */
+    var land = crossing(arc(K, profile, deep, delay, 0), rowsUp, K);
+    if (land < 0) return null;
+    for (var h = 0; h <= MAX_STEPS; h++) {
+      var a = arc(K, profile, deep, delay, h, land), f = land;
+      if (overlap(K, a[f].x, dx) >= K.OVERLAP_SUB && overlap(K, restX(K, a, f, delay, h), dx) >= K.OVERLAP_SUB)
+        return { delay: delay, hold: h, land: f, cells: sweep(K, a, f, rowsUp), catches: catches(K, a, f) };
+      if (a[f].x > (dx + 1) * K.CELL_SUB) return null;
+    }
+    return null;
+  }
+  /* a walk off to (d, rows down): the ledge walk depends on the hold, so each hold is stepped whole */
+  function fallPath(K, deep, d, rows) {
+    for (var h = 1; h <= MAX_STEPS; h++) {
+      var a = arc(K, 'WALK', deep, 0, h), f = crossing(a, -rows, K);
+      if (f < 0) continue;
+      if (overlap(K, a[f].x, d) >= K.OVERLAP_SUB && overlap(K, restX(K, a, f, 0, h), d) >= K.OVERLAP_SUB)
+        return { delay: 0, hold: h, land: f, cells: sweep(K, a, f, -rows), catches: catches(K, a, f) };
+      if (a[f].x > (d + 1) * K.CELL_SUB) return null;
+    }
+    return null;
+  }
+  /* the late path starts the rocker once the feet are above the target's top: it climbs onto a block beside the
+     takeoff that the immediate path would run into */
+  function lateDelay(K, profile, deep, rowsUp) {
+    var a = arc(K, profile, deep, NEVER, 0), top = -rowsUp * K.CELL_SUB;
+    for (var f = 1; f < a.length; f++) if (a[f].y <= top) return f;
+    return -1;
+  }
+  /* the whole arc, takeoff to the landing back at the takeoff height (snapped onto it), as each column's row span:
+     columns floor((cx - 6) / 16) to floor((cx + 5) / 16), rows floor(feet / 16) to floor((feet + 15) / 16) (section 3.2) */
+  function cols(K, a, last) {
+    var out = [], C = K.CELL_SUB;
+    for (var f = 0; f <= last; f++) {
+      var cx = a[f].x + (K.HERO_W_SUB >> 1), feet = f === last ? 0 : -a[f].y;
+      for (var k = Math.floor((cx - (K.HERO_W_SUB >> 1)) / C); k <= Math.floor((cx + (K.HERO_W_SUB >> 1) - 1) / C); k++)
+        for (var r = Math.floor(feet / C); r <= Math.floor((feet + K.HERO_H_SUB - 1) / C); r++) {
+          if (!out[k]) out[k] = [r, r];
+          if (r < out[k][0]) out[k][0] = r;
+          if (r > out[k][1]) out[k][1] = r;
+        }
+    }
+    return out;
+  }
+
+  /* tables(K, biome): per profile the apex (subpixels), the air (steps to land back at the takeoff height), the raw
+     landing table maxAcross by dy 0..5 (-1 none), the table clipped to DESIGN's cone, the whole arc's columns, and per
+     (dx, dy) in the cone the candidate paths (immediate, then late) with their corridors; the walk off table fall[r]
+     and the jump down table down[r]. Deep (biome 2) behind the same call. Memoised per K and Deep. */
+  var memo = {};
+  function tables(K, biome) {
+    var T = SB.TUNING, deep = biome === 2;
+    var key = (deep ? 'deep,' : 'base,') + [K.JUMP_V, K.G, K.RUN, K.WALL_V, K.STICKY_V, K.TERM, K.CUT_V, K.DECEL, K.DEEP_JUMP_V, K.DEEP_FALL_G].join(',');
+    if (memo[key]) return memo[key];
+    var out = { deep: deep, profiles: {}, fall: [], down: [] }, p, dy, dx, k;
+    for (p = 0; p < PROFILES.length; p++) {
+      var name = PROFILES[p], a = arc(K, name, deep, 0, NEVER), raw = [], clip = [], apex = 0;
+      var up = name === 'WALL' ? T.WALL_UP : name === 'STICKY' ? T.STICKY_UP : deep ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;
+      var across = name === 'WALL' ? T.WALL_ACROSS : name === 'STICKY' ? 0 : T.JUMP_ACROSS;
+      for (k = 0; k < a.length; k++) if (-a[k].y > apex) apex = -a[k].y;
+      for (dy = 0; dy <= ROWS; dy++) {
+        var f = crossing(a, dy, K), dxm = f < 0 ? -1 : name === 'STICKY' ? 0 : farCell(K, a[f].x);
+        raw.push(dxm);
+        clip.push(dxm < 0 || dy > up ? -1 : Math.min(dxm, across));
+      }
+      var paths = {};
+      for (dy = 0; dy <= ROWS; dy++) for (dx = 0; dx <= clip[dy]; dx++) {
+        var c = [], im = path(K, name, deep, dx, dy, 0);
+        if (im) c.push(im);
+        /* a late start of one step is the immediate path again (every jump at the takeoff height): no second candidate */
+        var ld = name === 'WALL' || name === 'STICKY' ? -1 : lateDelay(K, name, deep, dy);
+        if (ld > 1) { var lt = path(K, name, deep, dx, dy, ld); if (lt) c.push(lt); }
+        paths[dx + ',' + dy] = c;
+      }
+      var air = crossing(a, 0, K);
+      out.profiles[name] = { apex: apex, air: air, raw: raw, maxAcross: clip, cols: cols(K, a, air), paths: paths };
+    }
+    var w = arc(K, 'WALK', deep, 0, NEVER), j = arc(K, 'FULL', deep, 0, NEVER);
+    for (var r = 1; r <= FALL_ROWS; r++) { var fw = crossing(w, -r, K); out.fall[r] = fw < 0 ? -1 : farCell(K, w[fw].x); }
+    for (r = 1; r <= DOWN_ROWS; r++) { var fj = crossing(j, -r, K); out.down[r] = fj < 0 ? -1 : farCell(K, j[fj].x); }
+    out.fall[0] = -1; out.down[0] = -1;
+    /* the walk off paths (d 1..fall[r]) and the jump down paths (FULL, dx 0..down[r]), with corridors and catches */
+    out.fallPaths = {}; out.downPaths = {};
+    for (r = 1; r <= FALL_ROWS; r++) for (dx = 1; dx <= out.fall[r]; dx++) { var fp = fallPath(K, deep, dx, r); if (fp) out.fallPaths[dx + ',' + r] = fp; }
+    for (r = 1; r <= DOWN_ROWS; r++) for (dx = 0; dx <= out.down[r]; dx++) { var dp = path(K, 'FULL', deep, dx, -r, 0); if (dp) out.downPaths[dx + ',' + r] = dp; }
+    /* the touch trajectories (T0.13a): section 3.3's pair, the FULL jump and the walk off, with the rocker held toward
+       the wall from the takeoff to the touch, as a player and the bot hold it; and the wall jump's flight to a far wall
+       (the rocker away after the lock). The graph steps each one against the room (scan, below). */
+    var cap = function (a) { var o = []; for (var f = 0; f < a.length && a[f].y <= TOUCH_ROWS * K.CELL_SUB; f++) o.push(a[f]); return o; };
+    var reachOf = function (a) { var m = 0; for (var f = 0; f < a.length; f++) m = Math.max(m, Math.ceil((a[f].x + K.HERO_W_SUB) / K.CELL_SUB)); return m; };
+    /* each trajectory with its sweep per direction: the cells its box enters, step by step (x at the old height, then
+       y), first entry only, as [column offset, row offset, step]; a source checks these until the first solid or one
+       way and steps the trajectory from just before it (an open sweep cannot touch anything) */
+    var withSweep = function (a) {
+      var C = K.CELL_SUB, HWs = K.HERO_W_SUB, HHs = K.HERO_H_SUB, sw = { '1': [], '-1': [] };
+      for (var d = -1; d <= 1; d += 2) {
+        var seen = {}, list = sw[d];
+        var add = function (x0, y, f) {
+          for (var c = Math.floor(x0 / C); c <= Math.floor((x0 + HWs - 1) / C); c++) for (var r = Math.floor((y - HHs) / C); r <= Math.floor((y - 1) / C); r++) {
+            var key = c + ',' + r; if (!seen[key]) { seen[key] = 1; list.push([c, r + 1, f]); }
+          }
+        };
+        for (var f = 1; f < a.length; f++) {
+          var x0 = d > 0 ? a[f].x : C - a[f].x - HWs;
+          add(x0, a[f].py, f); add(x0, a[f].y, f);
+        }
+      }
+      return { a: a, sweep: sw };
+    };
+    out.touchArcs = [withSweep(cap(arc(K, 'FULL', deep, 0, NEVER)))];
+    out.walkArc = withSweep(cap(w)); out.wallArc = withSweep(cap(arc(K, 'WALL', deep, 0, NEVER)));
+    /* the box a touch trajectory can be beside a wall in: columns 1 to touchReach ahead, rows from its apex to TOUCH_ROWS
+       below (a source with no solid there arms nothing and is not scanned) */
+    var span = function (t) { var m = 0, up = 0; for (var f = 0; f < t.a.length; f++) { m = Math.max(m, Math.ceil((t.a[f].x + K.HERO_W_SUB) / K.CELL_SUB)); up = Math.max(up, Math.ceil((K.HERO_H_SUB - t.a[f].y) / K.CELL_SUB)); } return [m, up]; };
+    var all = out.touchArcs.concat([out.walkArc, out.wallArc]).map(span);
+    out.touchReach = Math.max.apply(null, all.map(function (q) { return q[0]; }));
+    out.touchUp = Math.max.apply(null, all.map(function (q) { return q[1]; }));
+    memo[key] = out;
+    return out;
+  }
+
+
+  /* ---------------------------------------------------------------- the graph (sections 3.1, 3.3 to 3.6) */
+  /* Nodes: a standable cell is its index i; a contact in cell i is n + 2i (a wall on the left) or n + 2i + 1 (on the
+     right). Every edge is { from, to, kind, profile, dir, dx, dy, cost }. Out of bounds is solid, the top row open. */
+  var KINDS = ['WALK', 'JUMP', 'JUMP_DOWN', 'FALL', 'WALLTOUCH', 'SLIDE', 'WALLJUMP', 'STICKYUP', 'STICKYTOP', 'LET_GO'];
+  function graph(lv) {
+    var K = SB.K, T = SB.TUNING, w = lv.w, h = lv.h, n = w * h, solid = lv.solid, plat = lv.plat, i, x, y;
+    /* sticky walls are Overgrowth's vines and Deep's pipes: under any other biome a sticky cell is a plain wall */
+    var sticky = (lv.biome === 2 || lv.biome === 3) && lv.sticky ? lv.sticky : new Uint8Array(n), slick = lv.slick || new Uint8Array(n), tb = tables(K, lv.biome | 0);
+    var S = function (cx, cy) { return cx < 0 || cx >= w || cy < 0 || cy >= h || solid[cy * w + cx] === 1; };
+    var P = function (cx, cy) { return cx >= 0 && cx < w && cy >= 0 && cy < h && plat[cy * w + cx] === 1; };
+    var stand = new Uint8Array(n), contact = new Uint8Array(2 * n), sticks = new Uint8Array(2 * n), standN = 0;
+    for (i = 0; i < n - w; i++) if (!solid[i] && (solid[i + w] || plat[i + w])) stand[i] = 1;
+    /* Frost: the two end cells of a slick run are not standable for the model (the slide carries the hero off them) */
+    for (i = w; i < n; i++) if (slick[i]) {
+      x = i % w;
+      if ((x === 0 || !slick[i - 1]) || (x === w - 1 || !slick[i + 1])) stand[i - w] = 0;
+    }
+    for (i = 0; i < n; i++) {
+      if (stand[i]) standN++;
+      if (solid[i] || stand[i]) continue;
+      x = i % w; y = (i - x) / w;
+      for (var sd = 0; sd < 2; sd++) {
+        var ox = x + (sd ? 1 : -1);
+        if (!S(ox, y)) continue;
+        contact[2 * i + sd] = 1;
+        if (ox >= 0 && ox < w && sticky[y * w + ox]) sticks[2 * i + sd] = 1;
+      }
+    }
+    var adj = [], edges = 0;
+    var add = function (from, to, kind, profile, dir, dx, dy, cost) {
+      (adj[from] || (adj[from] = [])).push({ from: from, to: to, kind: kind, profile: profile, dir: dir, dx: dx, dy: dy, cost: cost });
+      edges++;
+    };
+    var cnode = function (c, side) { return n + 2 * c + (side > 0 ? 1 : 0); };
+    /* a path from (sx, sy) in dir: every corridor cell open, no one way catching the descent first */
+    var clear = function (p, sx, sy, dir) {
+      for (var k = 0; k < p.cells.length; k++) if (S(sx + dir * p.cells[k][0], sy - p.cells[k][1])) return false;
+      for (k = 0; k < p.catches.length; k++) if (P(sx + dir * p.catches[k][0], sy - p.catches[k][1])) return false;
+      return true;
+    };
+    /* the touch scan (T0.13a: the bot found the cell list generous, a contact counted for any cell the box passed
+       through beside a wall, where the sim arms only flush against it). A trajectory `a` from (sx, sy) in `dir` is
+       stepped as the sim steps it: x at the old height, clamped flush against the first solid it runs into, then y,
+       ending at a landing (a solid, or a one way it crosses with LAND_OVERLAP) or a head bonk (the 2 px nudge left out,
+       so the model is the stingier); every step it is flush with HERO_H - CORNER_PX of wall beside it (a plain wall
+       outside the wall jump's lock, a sticky one going down) arms the contact whose stance is at or below the box,
+       costed as the jump or fall to it plus one (section 3.3); the scan ends at the first armed step going down (the
+       SLIDE edges go on), or 6 rows below the takeoff. Stepping starts two steps before the first solid or one way
+       in the trajectory's sweep: before it the box is in open cells, where nothing stops or arms it. */
+    /* is any solid where a touch trajectory from (sx, sy) in dir could be beside it? Columns 1 to touchReach ahead (the
+       frame's sides beyond the grid count), rows from the apex to TOUCH_ROWS below, never the ceiling or the floor row
+       (neither can be beside the box); a prefix sum of the room's solids answers it in one look */
+    /* the touch scan's arithmetic through locals: the harness's purity prelude rewrites Math, which leaves every
+       Math.floor looked up the slow way, three times the cost of the scan in the harness's context (the page's is not) */
+    var floor = Math.floor, mmin = Math.min, mmax = Math.max, mabs = Math.abs;
+    var ps = new Int32Array((h + 1) * (w + 1));
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) ps[(y + 1) * (w + 1) + x + 1] = ps[y * (w + 1) + x + 1] + ps[(y + 1) * (w + 1) + x] - ps[y * (w + 1) + x] + (solid[y * w + x] ? 1 : 0);
+    var wallNear = function (sx, sy, dir) {
+      var y0 = mmax(0, sy + 1 - tb.touchUp), y1 = mmin(h - 2, sy + TOUCH_ROWS + 1);
+      if (y0 > y1) return false;
+      var x0 = dir > 0 ? sx + 1 : sx - tb.touchReach, x1 = dir > 0 ? sx + tb.touchReach : sx - 1;
+      if (x0 < 0 || x1 > w - 1) return true;
+      return ps[(y1 + 1) * (w + 1) + x1 + 1] - ps[y0 * (w + 1) + x1 + 1] - ps[(y1 + 1) * (w + 1) + x0] + ps[y0 * (w + 1) + x0] > 0;
+    };
+    var scan = function (t, sx, sy, dir, out, lockSteps, chain) {
+      if (!wallNear(sx, sy, dir)) return;
+      var a = t.a, sw = t.sweep[dir], f0 = -1;
+      for (var q = 0; q < sw.length; q++) { var ec = sx + sw[q][0], er = sy + sw[q][1]; if (S(ec, er) || P(ec, er)) { f0 = mmax(1, sw[q][2] - 2); break; } }
+      if (f0 < 0) return;
+      var C = K.CELL_SUB, HWs = K.HERO_W_SUB, HHs = K.HERO_H_SUB, base = (sy + 1) * C, need = HHs - K.CORNER_SUB;
+      /* x is carried step by step (the arc's travel, clamped flush each step a solid stands in the leading column at the
+         old height, as moveX does: a box that brushes a wall's corner loses that step and then moves on) */
+      var X = dir > 0 ? sx * C + a[f0 - 1].x : (sx + 1) * C - a[f0 - 1].x - HWs;
+      for (var f = f0; f < a.length; f++) {
+        var p = a[f];
+        X += dir * (p.x - a[f - 1].x);
+        if (p.vy === 0 && p.y === 0) continue;                       /* still on the ledge of a walk off */
+        var py = base + p.py, ny = base + p.y;
+        if (p.x !== a[f - 1].x) {
+          var lead = dir > 0 ? floor((X + HWs - 1) / C) : floor(X / C);
+          for (var r = floor((py - HHs) / C); r <= floor((py - 1) / C); r++) if (S(lead, r)) { X = dir > 0 ? lead * C - HWs : (lead + 1) * C; break; }
+        }
+        var c0 = floor(X / C), c1 = floor((X + HWs - 1) / C), cx;
+        if (p.vy > 0) {
+          var row = floor((ny - 1) / C), top = row * C;
+          for (cx = c0; cx <= c1; cx++) if (S(cx, row)) return;
+          if (py <= top && ny > top) for (cx = c0; cx <= c1; cx++) if (P(cx, row) && mmin(X + HWs, (cx + 1) * C) - mmax(X, cx * C) >= K.OVERLAP_SUB) return;
+        } else if (p.vy < 0) {
+          var hr = floor((ny - HHs) / C);
+          for (cx = c0; cx <= c1; cx++) if (S(cx, hr)) return;
+        }
+        var edgeX = dir > 0 ? X + HWs : X;
+        if (edgeX % C !== 0) continue;
+        var col = dir > 0 ? edgeX / C : edgeX / C - 1, ovP = 0, ovS = 0;
+        for (var rr = floor((ny - HHs) / C); rr <= floor((ny - 1) / C); rr++) {
+          if (!S(col, rr)) continue;
+          var ov = mmin(ny, (rr + 1) * C) - mmax(ny - HHs, rr * C);
+          if (col >= 0 && col < w && rr >= 0 && rr < h && sticky[rr * w + col]) ovS += ov; else ovP += ov;
+        }
+        var armed = (p.vy > 0 && ovS >= need) || (f >= lockSteps && ovP >= need);
+        if (!armed) continue;
+        /* the contact's row: the first whose stance (the box exactly in it, the WALL arc's start) is at or below the
+           hero, so the hero is never under the stance its wall jump assumes, and a wait on the wall reaches it */
+        var fc = floor((ny - HHs + C - 1) / C) * w + (col - dir), node = cnode(fc, dir);
+        if (fc >= 0 && fc < n && contact[2 * fc + (dir > 0 ? 1 : 0)]) {
+          var tdy = sy - floor(fc / w), tdx = mabs(fc % w - sx), cost = chain ? 4 : (tdy >= 0 ? 2 + tdy + tdx / 2 : 1 - tdy / 4) + 1;
+          if (out[node] === undefined || cost < out[node]) out[node] = cost;
+        }
+        if (p.vy > 0) return;
+      }
+    };
+    var JP = ['FULL', 'MID', 'TAP'], up = lv.biome === 2 ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;
+    for (var s = 0; s < n; s++) {
+      if (!stand[s]) continue;
+      var sx = s % w, sy = (s - sx) / w;
+      for (var dir = -1; dir <= 1; dir += 2) {
+        /* WALK */
+        if (sx + dir >= 0 && sx + dir < w && stand[s + dir]) add(s, s + dir, 'WALK', null, dir, 1, 0, 1);
+        /* JUMP: FULL, MID, TAP in turn, the first whose corridor clears; straight up only onto a one way */
+        for (var dy = 0; dy <= up; dy++) for (var dx = 0; dx <= T.JUMP_ACROSS; dx++) {
+          if ((dx === 0 && dy === 0) || (dx === 0 && dir > 0)) continue;
+          var tx = sx + dir * dx, ty = sy - dy;
+          if (tx < 0 || tx >= w || ty < 0 || !stand[ty * w + tx]) continue;
+          if (dx === 0 && !P(tx, ty + 1)) continue;
+          for (var q = 0; q < JP.length; q++) {
+            var pr = tb.profiles[JP[q]];
+            if (pr.maxAcross[dy] < dx) continue;
+            var cands = pr.paths[dx + ',' + dy] || [], ok = false;
+            for (var c = 0; c < cands.length && !ok; c++) ok = clear(cands[c], sx, sy, dir);
+            if (!ok) continue;
+            var edge = dx === pr.maxAcross[dy] || dy + 1 > up || pr.maxAcross[dy + 1] < dx;
+            add(s, ty * w + tx, 'JUMP', JP[q], dir, dx, dy, 2 + dy + dx / 2 + (edge ? 3 : 0));
+            break;
+          }
+        }
+        /* JUMP_DOWN: the FULL arc continued below the takeoff row */
+        for (var r = 1; r < tb.down.length; r++) for (dx = (dir < 0 ? 0 : 1); dx <= tb.down[r]; dx++) {
+          tx = sx + dir * dx; ty = sy + r;
+          if (tx < 0 || tx >= w || ty >= h || !stand[ty * w + tx]) continue;
+          var dp = tb.downPaths[dx + ',' + r];
+          if (dp && clear(dp, sx, sy, dir)) add(s, ty * w + tx, 'JUMP_DOWN', 'FULL', dir, dx, -r, 2 + dx / 2);
+        }
+        /* FALL: walk off the edge with the rocker held (the ledge must end: the next cell is not standable) */
+        if (!(sx + dir >= 0 && sx + dir < w && (stand[s + dir] || S(sx + dir, sy)))) {
+          for (r = 1; r < tb.fall.length; r++) for (dx = 1; dx <= tb.fall[r]; dx++) {
+            tx = sx + dir * dx; ty = sy + r;
+            if (tx < 0 || tx >= w || ty >= h || !stand[ty * w + tx]) continue;
+            var fp = tb.fallPaths[dx + ',' + r];
+            if (fp && clear(fp, sx, sy, dir)) add(s, ty * w + tx, 'FALL', null, dir, dx, -r, 1 + r / 4);
+          }
+        }
+        /* WALLTOUCH: every contact a touch trajectory arms, stepped against the room as the sim steps it (scan) */
+        var seen = {}, key;
+        for (var t2 = 0; t2 < tb.touchArcs.length; t2++) scan(tb.touchArcs[t2], sx, sy, dir, seen, 0, false);
+        if (!(sx + dir >= 0 && sx + dir < w && (stand[s + dir] || S(sx + dir, sy)))) scan(tb.walkArc, sx, sy, dir, seen, 0, false);
+        for (key in seen) add(s, +key, 'WALLTOUCH', null, dir, 0, 0, seen[key]);
+      }
+      /* FALL straight down: a dive through the one way under the feet, landing on each standable cell below in turn */
+      if (P(sx, sy + 1)) for (ty = sy + 1; ty < h && !S(sx, ty); ty++) if (stand[ty * w + sx]) add(s, ty * w + sx, 'FALL', null, 0, 0, sy - ty, 1 + (ty - sy) / 4);
+    }
+    /* the contact nodes: SLIDE down the wall, WALLJUMP away (and the chain to the far wall), the sticky moves */
+    for (i = 0; i < n; i++) for (var sd2 = 0; sd2 < 2; sd2++) {
+      if (!contact[2 * i + sd2]) continue;
+      var side = sd2 ? 1 : -1, cx = i % w, cy = (i - cx) / w, from = cnode(i, side);
+      if (sticks[2 * i + sd2]) {
+        /* STICKYUP to the contacts above on the same vine within STICKY_UP; STICKYTOP over the top; LET_GO straight down */
+        for (var k2 = 1; k2 <= T.STICKY_UP && cy - k2 >= 0 && !S(cx, cy - k2); k2++) {
+          var c2 = (cy - k2) * w + cx;
+          /* never 1 row: the shortest sticky jump (a tap, 31.4 px) re sticks at its apex, a row up only from within 0.6
+             px of the stance; never to a contact with a solid right over it: the hero bonks there and sinks before it
+             sticks, a row lower (the bot found both promised and none performed, T0.13a) */
+          if (sticks[2 * c2 + sd2]) { if (k2 >= 2 && !S(cx, cy - k2 - 1)) add(from, cnode(c2, side), 'STICKYUP', 'STICKY', 0, 0, k2, 2); }
+          else {
+            var topx = cx + side, topy = cy - k2;
+            /* headroom over the target: into a one row slot under a solid the box fits at one exact height only (the
+               third review's model lens: 204 of 2846 such STICKYTOPs never performed) */
+            if (topy >= 1 && topx >= 0 && topx < w && stand[topy * w + topx] && !S(topx, topy - 1)) add(from, topy * w + topx, 'STICKYTOP', 'STICKY', side, 1, k2, 3);
+            break;
+          }
+        }
+        for (ty = cy + 1; ty < h && !S(cx, ty); ty++) if (stand[ty * w + cx]) { add(from, ty * w + cx, 'LET_GO', null, 0, 0, cy - ty, 1 + (ty - cy) / 4); break; }
+        continue;
+      }
+      for (ty = cy + 1; ty < h && !S(cx, ty); ty++) {
+        var c3 = ty * w + cx;
+        if (stand[c3]) { add(from, c3, 'SLIDE', null, side, 0, cy - ty, ty - cy); break; }
+        if (!contact[2 * c3 + sd2]) break;
+        add(from, cnode(c3, side), 'SLIDE', null, side, 0, cy - ty, ty - cy);
+      }
+      var wp = tb.profiles.WALL, away = -side, far = {};
+      for (dy = 0; dy <= T.WALL_UP; dy++) for (dx = 1; dx <= wp.maxAcross[dy]; dx++) {
+        var cand2 = wp.paths[dx + ',' + dy] || [];
+        if (!cand2.length) continue;
+        tx = cx + away * dx; ty = cy - dy;
+        if (tx < 0 || tx >= w || ty < 0 || !stand[ty * w + tx]) continue;
+        /* plus 3 at the WALL table's edge, as a JUMP's (the planner prefers forgiving moves; section 3.3 extended) */
+        var wedge = dx === wp.maxAcross[dy] || dy + 1 > T.WALL_UP || wp.maxAcross[dy + 1] < dx;
+        if (clear(cand2[0], cx, cy, away)) add(from, ty * w + tx, 'WALLJUMP', 'WALL', away, dx, dy, 3 + dy + (wedge ? 3 : 0));
+      }
+      scan(tb.wallArc, cx, cy, away, far, T.WALL_JUMP_LOCK, true);
+      for (key in far) if (+key !== from) add(from, +key, 'WALLJUMP', 'WALL', away, 0, 0, far[key]);
+    }
+    return { w: w, h: h, n: n, stand: stand, contact: contact, sticky: sticks, standN: standN, adj: adj, edges: edges };
+  }
+  /* breadth first from a cell: distance in edges to every node (-1 unreachable) */
+  function distances(g, from) {
+    var d = new Int32Array(3 * g.n).fill(-1), q = [from], head = 0;
+    d[from] = 0;
+    while (head < q.length) {
+      var u = q[head++], es = g.adj[u];
+      if (!es) continue;
+      for (var k = 0; k < es.length; k++) if (d[es[k].to] < 0) { d[es[k].to] = d[u] + 1; q.push(es[k].to); }
+    }
+    return d;
+  }
+  /* the share of standable cells reached */
+  function reachableFrac(g, d) {
+    var r = 0;
+    for (var i = 0; i < g.n; i++) if (g.stand[i] && d[i] >= 0) r++;
+    return g.standN ? r / g.standN : 0;
+  }
+
+
+  /* ---------------------------------------------------------------- the main ascent and the route score (section 3.7) */
+  /* the clipped table's slack for an edge: one cell to spare on height or distance (both under ROUTE_SLACK_BOTH_AXES) */
+  function slackOk(tb, e, both) {
+    var T = SB.TUNING, s = T.ROUTE_SLACK, m = tb.profiles[e.profile] ? tb.profiles[e.profile].maxAcross : null;
+    if (!m || e.dy < 0 || e.dy > 5) return true;
+    var maxUp = -1; for (var dy = 0; dy < m.length; dy++) if (m[dy] >= e.dx) maxUp = dy;
+    var upOk = e.dy + s <= maxUp, acrossOk = e.dy + 0 < m.length && e.dx + s <= m[e.dy];
+    return both ? upOk && acrossOk : upOk || acrossOk;
+  }
+  var RELAXED = { WALK: 1, SLIDE: 1, FALL: 1, JUMP_DOWN: 1, STICKYUP: 1, STICKYTOP: 1, LET_GO: 1 };
+  /* mainAscent(graph, level, opts): the least cost path from spawn to the exit by Dijkstra over (node, wallChain,
+     rowsSinceSafe) with the filters max-range, wall-chain and safe-cadence (opts.skip names one to switch off, for the
+     reasons); safe in M0 is any standable cell that is not a slick end (every standable cell of the graph). Returns
+     { nodes, edges, cost } or { nodes: null, top } with the highest row its frontier reached. */
+  function mainAscent(g, level, opts) {
+    var T = SB.TUNING, o = opts || {}, both = o.both === undefined ? T.ROUTE_SLACK_BOTH_AXES : o.both;
+    var tb = tables(SB.K, level.biome | 0), w = g.w, n = g.n, CH = T.ROUTE_MAX_WALL_CHAIN + 1, RS = T.ROUTE_SAFE_EVERY_ROWS + 1;
+    var states = 3 * n * CH * RS, dist = new Float64Array(states).fill(Infinity), prev = new Int32Array(states).fill(-1), via = [];
+    var key = function (v, c, r) { return (v * CH + c) * RS + r; };
+    var rowOf = function (v) { return Math.floor((v < n ? v : (v - n) >> 1) / w); };
+    var start = key(level.spawn, 0, 0), goal = -1, top = rowOf(level.spawn), cut = { 'max-range': Infinity, 'wall-chain': Infinity, 'safe-cadence': Infinity };
+    dist[start] = 0;
+    /* a binary heap of [cost, state] */
+    var heap = [[0, start]];
+    var push = function (it) { heap.push(it); var i = heap.length - 1; while (i > 0) { var p = (i - 1) >> 1; if (heap[p][0] <= it[0]) break; heap[i] = heap[p]; i = p; } heap[i] = it; };
+    var pop = function () { var top0 = heap[0], last = heap.pop(); if (heap.length) { var i = 0; for (;;) { var l = 2 * i + 1, r = l + 1, m = i; if (l < heap.length && heap[l][0] < (m === i ? last[0] : heap[m][0])) m = l; if (r < heap.length && heap[r][0] < (m === i ? last[0] : heap[m][0])) m = r; if (m === i) break; heap[i] = heap[m]; i = m; } heap[i] = last; } return top0; };
+    while (heap.length) {
+      var it = pop(), sk = it[1];
+      if (it[0] > dist[sk]) continue;
+      var r0 = sk % RS, c0 = ((sk - r0) / RS) % CH, v = (sk - r0 - c0 * RS) / (RS * CH);
+      if (rowOf(v) < top) top = rowOf(v);
+      if (v === level.exit) { goal = sk; break; }
+      var es = g.adj[v];
+      if (!es) continue;
+      for (var k = 0; k < es.length; k++) {
+        var e = es[k], u = e.to;
+        /* each filter that cuts an edge notes the row it cut at; the highest cut names the route's reason */
+        var rv = rowOf(v);
+        if (o.skip !== 'max-range' && (e.kind === 'JUMP' || (e.kind === 'WALLJUMP' && e.dx > 0)) && !slackOk(tb, e, both)) { if (rv < cut['max-range']) cut['max-range'] = rv; continue; }
+        var wallish = e.kind === 'WALLJUMP' || e.kind === 'WALLTOUCH';
+        var ch = u < n ? 0 : wallish ? c0 + 1 : c0;
+        if (wallish && c0 + 1 > T.ROUTE_MAX_WALL_CHAIN) { if (o.skip !== 'wall-chain') { if (rv < cut['wall-chain']) cut['wall-chain'] = rv; continue; } ch = T.ROUTE_MAX_WALL_CHAIN; }
+        var climbed = Math.max(0, rv - rowOf(u)), rs = u < n && g.stand[u] ? 0 : r0 + climbed;
+        if (r0 + climbed > T.ROUTE_SAFE_EVERY_ROWS) { if (o.skip !== 'safe-cadence') { if (rv < cut['safe-cadence']) cut['safe-cadence'] = rv; continue; } rs = Math.min(rs, T.ROUTE_SAFE_EVERY_ROWS); }
+        var nk = key(u, ch, rs), nd = it[0] + e.cost;
+        if (nd < dist[nk]) { dist[nk] = nd; prev[nk] = sk; via[nk] = e; push([nd, nk]); }
+      }
+    }
+    if (goal < 0) return { nodes: null, edges: null, cost: Infinity, top: top, cut: cut };
+    var nodes = [], edges = [];
+    for (var s = goal; s >= 0; s = prev[s]) { var rr = s % RS, cc = ((s - rr) / RS) % CH; nodes.unshift((s - rr - cc * RS) / (RS * CH)); if (via[s]) edges.unshift(via[s]); }
+    return { nodes: nodes, edges: edges, cost: dist[goal], top: top };
+  }
+  /* routeScore(level, graph, ascent): { ok, reasons, ascentLength, maxJump, wallChains, safeGapRows, hardBranches };
+     reasons[0] names the first filter whose switching off alone reaches the exit, and the row the filtered frontier died
+     on (section 3.7) */
+  function routeScore(level, g, ascent) {
+    var T = SB.TUNING, w = g.w, n = g.n, out = { ok: !!(ascent && ascent.nodes), reasons: [], ascentLength: 0, maxJump: { dx: 0, dy: 0 }, wallChains: 0, safeGapRows: 0, hardBranches: 0 };
+    var rowOf = function (v) { return Math.floor((v < n ? v : (v - n) >> 1) / w); };
+    if (!out.ok) {
+      /* the filters ordered by the row they cut at, the highest first (ties in the filters' order) */
+      var filters = ['max-range', 'wall-chain', 'safe-cadence'].filter(function (f) { return ascent && ascent.cut && ascent.cut[f] < Infinity; });
+      filters.sort(function (a, b) { return ascent.cut[a] - ascent.cut[b]; });
+      /* reasons[0] is the first of them whose switching off alone reaches the exit (the third review: the highest cut
+         alone named wall-chain in a room only max-range blocked); the rest stay in the order of the rows they cut */
+      for (var q = 0; q < filters.length; q++) { var alt = mainAscent(g, level, { skip: filters[q] }); if (alt && alt.nodes) { filters.unshift(filters.splice(q, 1)[0]); break; } }
+      for (var f = 0; f < filters.length; f++) out.reasons.push(filters[f] + ' (cut on row ' + ascent.cut[filters[f]] + '; the frontier reached row ' + ascent.top + ')');
+      if (!out.reasons.length) out.reasons.push('unreached (nothing filtered: no route at all)');
+      return out;
+    }
+    out.ascentLength = ascent.edges.length;
+    var chain = 0, lastSafe = rowOf(ascent.nodes[0]);
+    for (var k = 0; k < ascent.edges.length; k++) {
+      var e = ascent.edges[k];
+      if ((e.kind === 'JUMP' || e.kind === 'WALLJUMP') && (e.dy > out.maxJump.dy || (e.dy === out.maxJump.dy && e.dx > out.maxJump.dx))) out.maxJump = { dx: e.dx, dy: e.dy };
+      if (e.kind === 'WALLJUMP' || e.kind === 'WALLTOUCH') { chain++; if (chain > out.wallChains) out.wallChains = chain; }
+      if (e.to < n && g.stand[e.to]) { chain = 0; var gap = lastSafe - rowOf(e.to); if (gap > out.safeGapRows) out.safeGapRows = gap; lastSafe = Math.min(lastSafe, rowOf(e.to)); }
+    }
+    return out;
+  }
+
+  SB.reach = { PROFILES: PROFILES, KINDS: KINDS, arc: arc, crossing: crossing, farCell: farCell, tables: tables, graph: graph, distances: distances, reachableFrac: reachableFrac,
+    slackOk: slackOk, mainAscent: mainAscent, routeScore: routeScore };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-features" data-core>
 (function (SB) { 'use strict';
+  /* core-features (DESIGN 6.11, BUILD-PLAN T0.16: moths only tonight; the full placement, elites and the rest are
+     T1.2a and T1.2b). The saturated cells less the claims of QUESTIONS Q50 (the beacon's cells, the door candidates,
+     the specks, every solid landmark's cells: none of them is a nest), clustered 4 connected; a cluster of
+     FODDER_CELLS (2 to 5) cells is a moth's spawn, on its lowest open cell that keeps the rules, or, a cluster wholly
+     solid, on the nearest standable open cell that does. The rules: never within ENEMY_SPAWN_CLEAR of spawn, never within
+     ROUTE_SAFE_ENEMY_DIST of a cell the main ascent stands on, that distance included (DESIGN 6.9 "within 3", section
+     3.7 "more than"; so the ascent's safe cells stay safe, H-route-6). At most
+     FIRST_ROOM_MAX_FODDER in the first ever free play room and 4 otherwise, picked by the level's seed. */
+  var MOTH = 1;
+  function cheb(a, b, w) { return Math.max(Math.abs(a % w - b % w), Math.abs(Math.floor(a / w) - Math.floor(b / w))); }
+  function moths(level, opts) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k;
+    var sat = new Uint8Array(n), satIdx = {};
+    for (k = 0; k < SB.palette.SAT.length; k++) satIdx[SB.palette.SAT[k]] = 1;
+    for (i = 0; i < n; i++) if (satIdx[level.pal[i]]) sat[i] = 1;
+    var cells = level.beacon && level.beacon.cells ? level.beacon.cells : [];
+    for (k = 0; k < cells.length; k++) sat[cells[k]] = 0;
+    for (k = 0; k < level.landmarks.length; k++) for (i = 0; i < level.landmarks[k].cells.length; i++) sat[level.landmarks[k].cells[i]] = 0;
+    var safe = [];
+    if (level.ascent && level.ascent.nodes) for (k = 0; k < level.ascent.nodes.length; k++) if (level.ascent.nodes[k] < n) safe.push(level.ascent.nodes[k]);
+    var ok = function (c) {
+      if (level.solid[c] || c < w || c >= n - w) return false;
+      if (cheb(c, level.spawn, w) <= T.ENEMY_SPAWN_CLEAR) return false;
+      for (var q = 0; q < safe.length; q++) if (cheb(c, safe[q], w) <= T.ROUTE_SAFE_ENEMY_DIST) return false;
+      return true;
+    };
+    var standable = function (c) { return c + w < n && !level.solid[c] && (level.solid[c + w] || level.plat[c + w]); };
+    var comps = SB.pipeline.components(sat, w, h), spots = [];
+    for (k = 0; k < comps.length; k++) {
+      var comp = comps[k];
+      if (comp.length < T.FODDER_CELLS[0] || comp.length > T.FODDER_CELLS[1]) continue;
+      var spot = -1;
+      for (i = 0; i < comp.length && spot < 0; i++) if (ok(comp[i])) spot = comp[i];
+      if (spot < 0) {
+        /* the nearest standable open cell keeping the rules, by Chebyshev distance from the cluster, ties to the lowest */
+        var best = -1, bd = 1e9;
+        for (i = 0; i < n; i++) {
+          if (!standable(i) || !ok(i)) continue;
+          var d = 1e9; for (var q = 0; q < comp.length; q++) d = Math.min(d, cheb(i, comp[q], w));
+          if (d < bd) { bd = d; best = i; }
+        }
+        spot = best;
+      }
+      if (spot >= 0 && spots.indexOf(spot) < 0) spots.push(spot);
+    }
+    var cap = opts && opts.firstRoom ? T.FIRST_ROOM_MAX_FODDER : 4;
+    if (spots.length > cap) {
+      spots.sort(function (a, b) { return a - b; });
+      var r = SB.rng.mulberry32((level.seed ^ 0x6d07a5) >>> 0);
+      for (i = spots.length - 1; i > 0; i--) { var j = r.int(i + 1), tmp = spots[i]; spots[i] = spots[j]; spots[j] = tmp; }
+      spots = spots.slice(0, cap);
+    }
+    spots.sort(function (a, b) { return a - b; });
+    return spots.map(function (c) { return { kind: MOTH, idx: c }; });
+  }
+  SB.features = { MOTH: MOTH, moths: moths };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-sim" data-core>
@@ -857,14 +1677,14 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
      One step, in this order (the order is what the plan's measured numbers rest on: the 69.6 px apex in 34 frames
      needs the jump's velocity set before gravity is added in the same step; the 31.4 px one frame tap needs the
      release cap applied before gravity, and never on the jump step itself):
-       1. the word: the rocker's direction (L and R together read as neutral), facing, the A press edge;
-       2. the jump: on the ground or inside coyote time, a press or a buffered press jumps;
+       1. the word: the rocker's direction (L and R together read as neutral), facing, the A and B press edges; the
+          dash, its i frames and the shake count down;
+       2. the jump: on the ground or inside coyote time, a press or a buffered press jumps; then B: the dive or the dash;
        3. run: full speed at once in the rocker's direction, ground or air (AIR_CONTROL 1), or the 4 frame decel;
        4. the variable jump: rising from a jump with A released, the climb is capped at JUMP_CUT_V;
        5. gravity to terminal; 6. move x, then y, resolving against solid cells and one way tops;
        7. ground, coyote and buffer bookkeeping; 8. the exit; 9. the frame count. */
   var IN = { L: 1, R: 2, A: 4, B: 8, A_TAP: 16, B_TAP: 32 };
-  var SQUASH_FRAMES = 6;      /* render counters: squash after a landing, stretch (negative) after a takeoff */
 
   function create(level, opts) {
     opts = opts || {};
@@ -878,11 +1698,15 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var hearts = opts.hearts || SB.TUNING.HEARTS_BASE;
     return {
       v: 1, frame: 0, rng: (level.seed ^ 0x9e3779b9) >>> 0, biome: level.biome | 0, negative: level.negative ? 1 : 0,
-      firstRoom: opts.firstRoom ? 1 : 0, lastRoom: opts.lastRoom ? 1 : 0,
-      hero: { x: hx, y: hy, vx: 0, vy: 0, facing: 1, ground: 0, wall: 0, sticky: 0, coyote: 0, buffer: 0, held: 0, rising: 0,
+      firstRoom: opts.firstRoom ? 1 : 0, lastRoom: opts.lastRoom ? 1 : 0, immortal: opts.immortal ? 1 : 0, ev: 0,
+      hero: { x: hx, y: hy, vx: 0, vy: 0, facing: 1, ground: 0, wall: 0, sticky: 0, lock: 0, spent: 0, knock: 0, coyote: 0, buffer: 0, held: 0, rising: 0,
         dive: 0, dash: 0, dashI: 0, iframes: 0, hearts: hearts, heartsMax: hearts, vigor: 0, focus: 0, grit: 0, scrolls: 0,
         slots: [0, 0, 0], cd: [0, 0, 0], squash: 0, anim: 0, lastStand: level.spawn | 0, secondWind: 0, thickSkin: 0, shake: 0 },
-      enemies: [], proj: [], loot: [], chest: { idx: -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
+      enemies: ((level.features && level.features.enemies) || []).map(function (e) {
+        var ex = e.idx % w, ey = (e.idx - ex) / w;
+        return { kind: e.kind, x: ex * CS, y: ey * CS, vx: 0, vy: 0, hp: 1, state: 0, timer: 0, dir: 1, home: e.idx, elite: 0, frozen: 0, stunned: 0 };
+      }),
+      proj: [], loot: [], chest: { idx: -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
       traps: { phase: 0 }, boss: null,
       room: { dp: 0, blueprints: [], exitLit: 0, cleared: 0, dead: 0, deaths: 0 }
     };
@@ -918,22 +1742,52 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     return true;
   }
 
-  /* returns 1 when the hero lands this step */
-  function moveY(h, lv, K) {
+  /* a side contact (DESIGN 4.2's corner rule): the box flush against the column on `side` with at least
+     HERO_H - CORNER_PX of vertical overlap against solid cells there (sticky ones only when `wantSticky`); 0 or 1 */
+  function contactAt(h, lv, K, side, wantSticky) {
+    var CS = K.CELL_SUB, edge = side > 0 ? h.x + K.HERO_W_SUB : h.x;
+    if (edge % CS !== 0) return 0;
+    var col = side > 0 ? edge / CS : edge / CS - 1, ov = 0;
+    for (var cy = Math.floor(h.y / CS); cy <= Math.floor((h.y + K.HERO_H_SUB - 1) / CS); cy++) {
+      if (!solidAt(lv, col, cy)) continue;
+      var sticky = col >= 0 && col < lv.w && cy >= 0 && cy < lv.h && !!lv.sticky && lv.sticky[cy * lv.w + col] === 1 && (lv.biome === 2 || lv.biome === 3);
+      if (wantSticky !== sticky) continue;
+      ov += Math.min(h.y + K.HERO_H_SUB, (cy + 1) * CS) - Math.max(h.y, cy * CS);
+    }
+    return ov >= K.HERO_H_SUB - K.CORNER_SUB ? 1 : 0;
+  }
+  /* the dash's edge (DESIGN 4.3, section 3.8 item 8): the step's travel `vx`, cut so the leading foot (the box's last
+     pixel in the dash's direction) stays over a solid or one way top in the row under the feet; never backward, and
+     none when that foot already hangs past the edge. DASH_V is under a cell, so the foot crosses at most one column. */
+  function dashClamp(h, lv, K, vx) {
+    var CS = K.CELL_SUB, HW = K.HERO_W_SUB, row = (h.y + K.HERO_H_SUB) / CS, d = vx > 0 ? 1 : -1;
+    if (row !== Math.floor(row)) return vx;
+    var lead = d > 0 ? h.x + HW - 1 : h.x, c = Math.floor((lead + vx) / CS), cur = Math.floor(lead / CS);
+    if (!(solidAt(lv, cur, row) || platAt(lv, cur, row))) return 0;     /* the foot already past the edge: no dash */
+    if (solidAt(lv, c, row) || platAt(lv, c, row)) return vx;
+    var t = (d > 0 ? (cur + 1) * CS - HW : cur * CS) - h.x;
+    return d > 0 ? Math.max(0, Math.min(vx, t)) : Math.min(0, Math.max(vx, t));
+  }
+
+  /* returns 1 when the hero lands this step; `dy` is the step's travel (an armed slide travels a third of vy) */
+  function moveY(h, lv, K, dy) {
     var CS = K.CELL_SUB, HH = K.HERO_H_SUB, HW = K.HERO_W_SUB;
     var prevFeet = h.y + HH;
-    h.y += h.vy;
+    h.y += dy;
     var cx0 = Math.floor(h.x / CS), cx1 = Math.floor((h.x + HW - 1) / CS), cx;
     if (h.vy > 0) {
       var feet = h.y + HH, row = Math.floor((feet - 1) / CS), landed = false;
       for (cx = cx0; cx <= cx1 && !landed; cx++) if (solidAt(lv, cx, row)) landed = true;
       var top = row * CS;
-      /* a one way top catches only a descending hero whose feet were at or above it, with LAND_OVERLAP of overlap */
-      if (!landed && prevFeet <= top && feet > top) {
+      /* a one way top catches only a descending hero whose feet were at or above it, with LAND_OVERLAP of overlap,
+         and never a hold dive (B held); a hero already standing on it keeps its footing while any overlap remains, as
+         on a solid (T0.13a: the bot found walk offs from one way ledges falling a step early, a column short of what
+         the model and a solid ledge give) */
+      if (!landed && prevFeet <= top && feet > top && h.dive !== 2) {
         for (cx = cx0; cx <= cx1 && !landed; cx++) {
           if (!platAt(lv, cx, row)) continue;
           var ov = Math.min(h.x + HW, (cx + 1) * CS) - Math.max(h.x, cx * CS);
-          if (ov >= K.OVERLAP_SUB) landed = true;
+          if (ov >= K.OVERLAP_SUB || (h.ground && ov > 0)) landed = true;
         }
       }
       if (landed) { h.y = top - HH; h.vy = 0; return 1; }
@@ -951,42 +1805,105 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     return 0;
   }
 
+  /* the step's events (s.ev, cleared at every step's start): what the shell's sounds and hints read, never the sim */
+  var EV = { JUMP: 1, WALLJUMP: 2, DIVE: 4, LAND: 8, HIT: 16, CLEAR: 32, DEAD: 64 };
   function step(s, word) {
     var K = SB.K, h = s.hero, lv = s.level || null;
     if (!lv) throw new Error('sim.step: the state carries no level (attach with sim.attach)');
+    s.ev = 0;
     if (s.room.cleared || s.room.dead) { s.frame++; return s; }
 
     /* 1. the word */
     var dir = ((word & IN.R) ? 1 : 0) - ((word & IN.L) ? 1 : 0);
     var held = (word & IN.A) ? 1 : 0, pressed = (word & IN.A_TAP) !== 0;
-    if (dir !== 0) h.facing = dir;
-    var startedGrounded = h.ground;
+    var bHeld = (word & IN.B) ? 1 : 0, bPressed = (word & IN.B_TAP) !== 0;
+    /* the counters run down first, so a dash's press step is the first of DASH_FRAMES moving steps and of DASH_IFRAMES
+       invulnerable ones, and a dive landing leaves SHAKE_F steps of shake; a dash holds the facing */
+    if (h.dash > 0) { h.dash--; if (h.dash === 0) h.vx = 0; }
+    if (h.dashI > 0) h.dashI--;
+    if (h.shake > 0) h.shake--;
+    if (h.iframes > 0) h.iframes--;
+    if (dir !== 0 && h.dash === 0 && h.lock === 0) h.facing = dir;   /* a dash and the wall jump's lock hold the facing */
+    var startedGrounded = h.ground, dove = bPressed && !startedGrounded;
 
-    /* 2. the jump: a press or a buffered press, on the ground or inside coyote time */
-    var jumped = 0;
-    if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0)) {
+    /* 2. the jumps. From a sticky wall (DESIGN 4.2): A is STICKY_JUMP_V straight up with no push off; B, or the
+       rocker away from the wall, lets go into a plain fall. From an armed wall slide: A is the wall jump, WALL_V up and
+       WALL_JUMP_LOCK steps of WALL_JUMP_PUSH away (the rocker ignored), facing away (Q25). Else a press or a buffered
+       press on the ground or inside coyote time. */
+    var jumped = 0, stickyJump = 0, dashStart = 0;
+    if (h.sticky) {
+      if (pressed) { h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; stickyJump = 1; h.squash = -K.SQUASH_F; s.ev |= EV.JUMP; }
+      else if (dove || (dir !== 0 && dir === -h.wall)) { h.sticky = 0; h.wall = 0; }   /* B lets go into the dive below: no vine catches a dive */
+    } else if (h.wall !== 0 && pressed && !h.ground) {
+      h.vy = -K.WALL_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.facing = -h.wall; h.spent = h.wall; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; h.squash = -K.SQUASH_F; s.ev |= EV.WALLJUMP;
+    } else if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0)) {
       h.vy = -K.JUMP_V; h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;
-      h.squash = -SQUASH_FRAMES;
+      h.squash = -K.SQUASH_F; s.ev |= EV.JUMP;
     } else if (pressed) h.buffer = K.BUFFER + 1;   /* counts this step; see the end of the step */
 
-    /* 3. run: instant full speed, or the decel toward rest (the same in the air: AIR_CONTROL 1) */
-    if (dir !== 0) h.vx = dir * K.RUN;
+    /* 2b. B (DESIGN 4.3, section 3.8 items 7 and 8). A press in the air dives: vy snaps to terminal, vx to zero, the
+       rocker is ignored to the landing (a vine or a wall slide lets go into it; no coyote jump out of it); while B is
+       held the dive drops through one ways (dive 2), released the next surface catches it (dive 1). A fresh press on
+       the ground dashes DASH_V in the facing for DASH_FRAMES steps, never off a platform's edge (dashClamp). A press
+       that began in the air stays a dive through its landing and never becomes a dash; a jump wins over B and ends a
+       dash. */
+    if (jumped) { if (h.dash > 0) { h.dash = 0; h.vx = 0; } }
+    else if (dove) { h.dive = 1; h.vy = K.TERM; h.vx = 0; h.lock = 0; h.wall = 0; h.sticky = 0; h.rising = 0; h.coyote = 0; s.ev |= EV.DIVE; }
+    else if (bPressed && startedGrounded && h.dash === 0) { h.dash = K.DASH_FRAMES; h.dashI = K.DASH_IFRAMES; dashStart = 1; }
+    if (h.dive) h.dive = bHeld ? 2 : 1;
+
+    /* 3. run: instant full speed, or the decel toward rest (the same in the air: AIR_CONTROL 1); the wall jump's lock
+       pushes away whatever the rocker says; a sticky wall and the sticky jump's first step have no push (air control
+       from the second step) */
+    var dashCut = 0, knocked = h.knock !== 0;
+    if (h.knock !== 0) { h.vx = (h.knock > 0 ? 1 : -1) * K.KNOCK_V; h.knock -= h.knock > 0 ? 1 : -1; }   /* a hit's knockback, the rocker ignored */
+    else if (h.dive) h.vx = 0;
+    else if (h.dash > 0) { var dv = dashClamp(h, lv, K, h.facing * K.DASH_V); dashCut = dv !== h.facing * K.DASH_V ? 1 : 0; h.vx = dv; }
+    else if (h.lock !== 0) { h.vx = (h.lock > 0 ? 1 : -1) * K.WALL_PUSH; h.lock -= h.lock > 0 ? 1 : -1; }
+    else if (stickyJump || h.sticky) h.vx = 0;
+    else if (dir !== 0) h.vx = dir * K.RUN;
     else if (h.vx > 0) h.vx = Math.max(0, h.vx - K.DECEL);
     else if (h.vx < 0) h.vx = Math.min(0, h.vx + K.DECEL);
 
     /* 4. the variable jump: the release cap, never on the jump step itself (a sub step tap is a one frame jump) */
     if (h.rising && !held && !jumped && h.vy < -K.CUT_V) h.vy = -K.CUT_V;
 
-    /* 5. gravity to terminal */
-    h.vy = Math.min(K.TERM, h.vy + K.G);
+    /* 5. gravity to terminal; a sticky wall holds the hero still */
+    if (h.sticky) h.vy = 0;
+    else h.vy = Math.min(K.TERM, h.vy + K.G);
     if (h.vy >= 0) h.rising = 0;
 
-    /* 6. move */
+    /* 6. move: an armed slide falls a third of vy (vy keeps the unarmed fall, so the slide's speed is always a third
+       of what the fall would be at the same step, capped at TERMINAL / 3; section 3.8 item 4) */
+    var xBefore = h.x;
     moveX(h, lv, K);
-    var landed = moveY(h, lv, K);
+    if (knocked && h.knock === 0) h.vx = 0;   /* the knockback's last push spent: it ends at rest, 2 cells in KNOCK_FRAMES (the fourth review: vx ran on and the hero slid 42 px) */
+    /* stopped at the edge, or by a wall; a press that cannot move at all is no dash, and keeps no i frames (the third
+       review: a hero drumming B at a wall was invulnerable in place) */
+    if (h.dash > 0 && (dashCut || h.vx === 0)) { if (dashStart && h.x === xBefore) h.dashI = 0; h.dash = 0; h.vx = 0; }
+    var landed = moveY(h, lv, K, h.wall !== 0 && !h.sticky && h.vy > 0 ? Math.floor(h.vy / K.WALL_SLIDE_DIV) : h.vy);
 
-    /* 7. ground, coyote, buffer */
-    if (landed && !startedGrounded && !jumped) h.squash = SQUASH_FRAMES;
+    /* 7. the walls: on the ground nothing clings; in the air a full height contact on the rocker's side arms the slide
+       (DESIGN 4.2, outside the wall jump's lock); a sticky contact on either side arms only on a descending step after
+       an airborne one and stops the fall without the rocker (section 3.8 item 4); leaving the slide hands the fall its
+       third */
+    if (landed) { if (h.dive) h.shake = K.SHAKE_F; h.wall = 0; h.sticky = 0; h.lock = 0; h.dive = 0; h.spent = 0; }
+    else if (!h.sticky) {
+      var side = 0;
+      if (h.vy > 0 && !startedGrounded && h.dive === 0) side = contactAt(h, lv, K, 1, true) ? 1 : contactAt(h, lv, K, -1, true) ? -1 : 0;
+      if (side !== 0) { h.sticky = 1; h.wall = side; h.vy = 0; h.lock = 0; }
+      else {
+        /* never on the wall last jumped from until a landing or the other wall (the third review: re arming there made
+           every tall wall and the frame's two edges a ladder, past what the model's WALLJUMP, always away, allows) */
+        var armed = dir !== 0 && dir !== h.spent && h.lock === 0 && h.dive === 0 && contactAt(h, lv, K, dir, false) ? dir : 0;
+        if (armed !== 0 && h.spent !== 0) h.spent = 0;
+        if (h.wall !== 0 && armed === 0 && h.vy > 0) h.vy = Math.floor(h.vy / K.WALL_SLIDE_DIV);
+        h.wall = armed;
+      }
+    }
+
+    /* ground, coyote, buffer */
+    if (landed && !startedGrounded && !jumped) { h.squash = K.SQUASH_F; s.ev |= EV.LAND; }
     h.ground = landed;
     if (h.ground) {
       h.coyote = K.COYOTE; h.rising = 0;
@@ -998,13 +1915,36 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     if (h.squash > 0) h.squash--; else if (h.squash < 0) h.squash++;
     h.anim = (dir !== 0 && h.ground) ? h.anim + 1 : 0;
 
-    /* 8. the exit: the hero's box touching the exit cell clears the room */
+    /* 8. the exit, before the moths (QUESTIONS Q71): the hero's box touching the exit cell clears the room, and the
+       moths' contact waits on !cleared, so the step that touches the lamp is never also the step a moth takes the
+       last heart (the fourth review found both on one step: the clear card over a fallen bug) */
     if (lv.exit >= 0) {
       var CS2 = K.CELL_SUB, ex = lv.exit % lv.w, ey = (lv.exit - ex) / lv.w;
       if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB > ex * CS2 && h.y < (ey + 1) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {
-        s.room.cleared = 1; s.room.exitLit = 1;
+        s.room.cleared = 1; s.room.exitLit = 1; s.ev |= EV.CLEAR;
       }
     }
+
+    /* 8a. the moths (DESIGN 7, QUESTIONS Q29): each drifts toward the hero at MOTH_V through furniture (the larger axis at
+       full speed, the other in proportion); a moth's 12 px core touching the hero costs HIT_HEARTS, unless i frames
+       (a hit's or a dash's) run or the state is immortal (the bot's route walks, Q30): then HIT_IFRAMES of i frames and
+       KNOCK_FRAMES of knockback away from the moth; the last heart ends the room */
+    for (var m = 0; m < s.enemies.length; m++) {
+      var en = s.enemies[m];
+      if (en.hp <= 0) continue;
+      var mdx = (h.x + (K.HERO_W_SUB >> 1)) - (en.x + (K.CELL_SUB >> 1)), mdy = (h.y + (K.HERO_H_SUB >> 1)) - (en.y + (K.CELL_SUB >> 1)), md = Math.max(Math.abs(mdx), Math.abs(mdy));
+      if (md > 0) { en.vx = (K.MOTH_V * mdx / md) | 0; en.vy = (K.MOTH_V * mdy / md) | 0; en.x += en.vx; en.y += en.vy; en.dir = en.vx < 0 ? -1 : 1; }
+      en.timer++;
+      var core = 2 * K.SUB, mx0 = en.x + core, my0 = en.y + core, mx1 = en.x + K.CELL_SUB - core, my1 = en.y + K.CELL_SUB - core;
+      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && h.x < mx1 && h.x + K.HERO_W_SUB > mx0 && h.y < my1 && h.y + K.HERO_H_SUB > my0) {
+        h.hearts = Math.max(0, h.hearts - SB.TUNING.HIT_HEARTS);
+        h.iframes = K.HIT_IFRAMES_F;
+        h.knock = (mdx < 0 ? -1 : 1) * K.KNOCK_FRAMES;
+        h.lock = 0; h.dash = 0; h.sticky = 0; h.wall = 0; s.ev |= EV.HIT;
+        if (h.hearts === 0) { s.room.dead = 1; s.room.deaths++; s.ev |= EV.DEAD; }
+      }
+    }
+
     s.frame++;
     return s;
   }
@@ -1015,7 +1955,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 
   /* section 2.5: the declared, ordered schema of the whole state */
   var HERO = [['x', 'i32'], ['y', 'i32'], ['vx', 'i32'], ['vy', 'i32'], ['facing', 'i32'], ['ground', 'bool'], ['wall', 'i32'],
-    ['sticky', 'bool'], ['coyote', 'i32'], ['buffer', 'i32'], ['held', 'bool'], ['rising', 'bool'], ['dive', 'i32'], ['dash', 'i32'],
+    ['sticky', 'bool'], ['lock', 'i32'], ['spent', 'i32'], ['knock', 'i32'], ['coyote', 'i32'], ['buffer', 'i32'], ['held', 'bool'], ['rising', 'bool'], ['dive', 'i32'], ['dash', 'i32'],
     ['dashI', 'i32'], ['iframes', 'i32'], ['hearts', 'i32'], ['heartsMax', 'i32'], ['vigor', 'i32'], ['focus', 'i32'], ['grit', 'i32'],
     ['scrolls', 'i32'], ['slots', 'i32[]'], ['cd', 'i32[]'], ['squash', 'i32'], ['anim', 'i32'], ['lastStand', 'i32'],
     ['secondWind', 'bool'], ['thickSkin', 'bool'], ['shake', 'i32']];
@@ -1024,7 +1964,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   var PROJ = [['kind', 'i32'], ['x', 'i32'], ['y', 'i32'], ['vx', 'i32'], ['vy', 'i32'], ['ttl', 'i32'], ['dmg', 'i32'], ['live', 'bool']];
   var LOOT = [['kind', 'i32'], ['idx', 'i32'], ['taken', 'bool']];
   var BOSS = [['cells', 'i32[]'], ['hp', 'i32'], ['hpMax', 'i32'], ['phase', 'i32'], ['timer', 'i32'], ['intro', 'i32'], ['telegraph', 'i32']];
-  var FIELDS = [['v', 'i32'], ['frame', 'i32'], ['rng', 'u32'], ['biome', 'i32'], ['negative', 'bool'], ['firstRoom', 'bool'], ['lastRoom', 'bool'],
+  var FIELDS = [['v', 'i32'], ['frame', 'i32'], ['rng', 'u32'], ['biome', 'i32'], ['negative', 'bool'], ['firstRoom', 'bool'], ['lastRoom', 'bool'], ['immortal', 'bool'], ['ev', 'i32'],
     ['hero', 'obj', HERO], ['enemies', 'obj[]', ENEMY], ['proj', 'obj[]', PROJ], ['loot', 'obj[]', LOOT],
     ['chest', 'obj', [['idx', 'i32'], ['open', 'bool']]], ['scrollsOffered', 'i32[]?'],
     ['door', 'obj', [['idx', 'i32'], ['entered', 'bool']]], ['traps', 'obj', [['phase', 'i32']]], ['boss', 'obj?', BOSS],
@@ -1070,13 +2010,91 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     }
   };
 
-  SB.sim = { IN: IN, rle: rle, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
+  SB.sim = { IN: IN, EV: EV, rle: rle, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
     FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="shell-capture" data-tool>
 (function (SB) { 'use strict';
-  /* photo decode, the 1:2 crop, the downscale to the grid (T0.5b) */
+  /* The photo path (section 1.1 row 9, DESIGN 6.1): decode with the photo's own orientation, the 1:2 crop, the stepped
+     downscale to the grid, release. Photos never persist: the decoded bitmap lives in memory until release(), and only
+     the GRID sized RGB array leaves this block. fixtures/make.html runs this block verbatim (its data-tool tag). */
+  var C = SB.capture = {};
+  var DECODE_W = 1024, MIN_W = 192, MIN_H = 384;
+
+  /* decode(file) -> Promise of an image source with width and height: createImageBitmap with the EXIF orientation
+     applied and the width set to 1024; browsers without those options draw through an <img> into a canvas */
+  C.decode = function (file) {
+    if (typeof createImageBitmap === 'function') {
+      return createImageBitmap(file, { imageOrientation: 'from-image', resizeWidth: DECODE_W, resizeQuality: 'high' })
+        .catch(function () { return viaImg(file); });
+    }
+    return viaImg(file);
+  };
+  function viaImg(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var s = DECODE_W / img.naturalWidth, cv = document.createElement('canvas');
+        cv.width = DECODE_W; cv.height = Math.max(1, Math.round(img.naturalHeight * s));
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(url);
+        resolve(cv);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('capture.decode: the photo could not be read')); };
+      img.src = url;
+    });
+  }
+
+  /* the crop: a 1:2 box { x, y, w, h } in source pixels, never smaller than 192x384 (or the photo, if smaller) and
+     never outside it */
+  function minW(bw, bh) { return Math.min(MIN_W, bw, Math.floor(bh / 2)); }
+  C.fit = function (bw, bh) {
+    var w = Math.min(bw, Math.floor(bh / 2)), h = w * 2;
+    return { x: Math.floor((bw - w) / 2), y: Math.floor((bh - h) / 2), w: w, h: h };
+  };
+  C.clamp = function (c, bw, bh) {
+    var maxW = Math.min(bw, Math.floor(bh / 2)), w = Math.max(minW(bw, bh), Math.min(maxW, Math.round(c.w))), h = w * 2;
+    var x = Math.max(0, Math.min(bw - w, Math.round(c.x))), y = Math.max(0, Math.min(bh - h, Math.round(c.y)));
+    return { x: x, y: y, w: w, h: h };
+  };
+  C.move = function (c, dx, dy, bw, bh) { return C.clamp({ x: c.x + dx, y: c.y + dy, w: c.w, h: c.h }, bw, bh); };
+  /* pinch by `scale` around the source point (px, py): that point stays where it was inside the box */
+  C.pinch = function (c, scale, px, py, bw, bh) {
+    var w = Math.max(minW(bw, bh), Math.min(Math.min(bw, Math.floor(bh / 2)), Math.round(c.w / scale)));
+    var fx = (px - c.x) / c.w, fy = (py - c.y) / c.h;
+    return C.clamp({ x: px - fx * w, y: py - fy * w * 2, w: w, h: w * 2 }, bw, bh);
+  };
+
+  /* downscale(source, crop) -> Uint8Array of GRID.W x GRID.H x 3 (RGB, row major): the crop drawn by halves until it is
+     under twice the target, then one smoothed draw to the grid (one draw from a 1024 photo aliases on busy rooms, Q53) */
+  C.downscale = function (src, crop, gw, gh) {
+    var W = gw || SB.GRID.W, H = gh || SB.GRID.H;
+    var w = crop.w, h = crop.h, cv = document.createElement('canvas'), cx;
+    cv.width = w; cv.height = h; cx = cv.getContext('2d');
+    cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
+    cx.drawImage(src, crop.x, crop.y, crop.w, crop.h, 0, 0, w, h);
+    while (w >= 2 * W && h >= 2 * H) {
+      var hw = Math.ceil(w / 2), hh = Math.ceil(h / 2);
+      cx.drawImage(cv, 0, 0, w, h, 0, 0, hw, hh);
+      w = hw; h = hh;
+    }
+    var out = document.createElement('canvas'), ox;
+    out.width = W; out.height = H; ox = out.getContext('2d', { willReadFrequently: true });
+    ox.imageSmoothingEnabled = true; ox.imageSmoothingQuality = 'high';
+    ox.drawImage(cv, 0, 0, w, h, 0, 0, W, H);
+    var d = ox.getImageData(0, 0, W, H).data, rgb = new Uint8Array(W * H * 3);
+    for (var i = 0, j = 0; i < d.length; i += 4, j += 3) { rgb[j] = d[i]; rgb[j + 1] = d[i + 1]; rgb[j + 2] = d[i + 2]; }
+    cv.width = cv.height = 0;
+    return rgb;
+  };
+
+  /* release(source): the decoded photo leaves memory now (an ImageBitmap closes; a canvas fallback is emptied) */
+  C.release = function (src) {
+    if (!src) return;
+    if (typeof src.close === 'function') src.close();
+    else if ('width' in src) { src.width = 0; src.height = 0; }
+  };
 })(window.SB);
 </script>
 <script id="shell-render">
@@ -1086,14 +2104,17 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
      one exception (QUESTIONS Q5). The static layer is built once per level; each frame is one blit of it at the
      camera plus the sprites. The camera is render state, recomputed from the hero every frame, never in the sim. */
   var R = SB.render = { camY: 0, camX: 0, viewRows: 40, viewW: 384, scale: 1, cssW: 384, crop: false, builds: 0 };
-  var canvas, ctx, stat, sctx, worldH = 0, viewH = 640, pulse = 0;
+  var canvas, ctx, stat, sctx, photo, pctx, worldH = 0, viewH = 640, pulse = 0;
 
   R.init = function () {
+    buildAtlas();
     canvas = document.getElementById('view');
     ctx = canvas.getContext('2d', { alpha: false });
     ctx.imageSmoothingEnabled = false;
     stat = document.createElement('canvas');
     sctx = stat.getContext('2d');
+    photo = document.createElement('canvas');
+    pctx = photo.getContext('2d');
   };
 
   /* the safe area insets, read once per fit from a probe whose padding is env(safe-area-inset-*) */
@@ -1127,6 +2148,94 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   function css(idx) { return SB.palette.hex(SB.palette.RGB[idx]); }
   function rgb(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
 
+  /* the sprites (section 1.7): one string per frame, rows split by '/', one character per pixel ('.' clear, 0..9 and
+     a..f the palette index); the fences are what the lint and H-spr-1 read. */
+  /* SPRITES BEGIN */
+  var SPRITES = {
+    /* the Shutterbug (DESIGN 2: a thumb sized clay bug), facing right: Sun clay with Walnut flecks, an Ink outline and
+       an Ink feet row, a Glare eye; the atlas mirrors it for the left and paints a Glare copy for the dash's i frames */
+    hero: { w: 12, h: 16, frames: {
+      idle0: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../.00.00.00...',
+      idle1: '.......0..0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../.00.00.00...',
+      run0: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../.0..0..0....',
+      run1: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../...0..0..0../...0..0..0..',
+      run2: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../...0..0..0..',
+      run3: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../...0..0..0../..0..0..0...',
+      jump: '....0...0.../.....0.0..../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../..0..0..0...',
+      fall: '.......0.0../.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../.0...0...0../0...0...0...',
+      cling: '.....0...0../......0.0.../..00000000../.0eeeeeeee0./0eeeeee66e00/0eeeeee60e0./0eeeeeeeee00/0e7eeeeeee0./0eeee7eeee00/0e7eeeeeee0./0eeeeeeeee00/0eeeeeeeee0./.0eeeeeeee0./..00000000../...0..0...../...00.00....',
+      dive: '..0..0..0.../..0..0..0.../...00000000./..0eeeeeeee0/.0eeeeeeeee0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeee66e0/0eeeeeee60e0/.0eeeeeeee0./..00000000../....0..0..../...0....0...',
+      land: '............/......0..0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../.0..0..0..0./00.00.00.00.',
+      dead: '............/........000./...00000000./..0eeeeeeee0/.0eeeeeeeee0/0eeeeee000e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0.0..0.0../.0...0...0..'
+    } },
+    /* the Attic's moth (section 7.3: Ash with an Ink outline, a Glare highlight on each forewing, the Pewter body), two
+       flutter frames */
+    moth: { w: 16, h: 16, frames: {
+      a: '................/.....0....0...../......0..0....../.0000.0330.0000./0444400330044440/0464440330444640/0444440330444440/.04444033044440./..000003300000../...0440330440.../...0440330440.../....00033000..../.......00......./................/................/................',
+      b: '................/................/.....0....0...../......0..0....../......0330....../..000.0330.000../.04440033004440./0446440330446440/0444440330444440/.04444033044440./..000003300000../...0440330440.../....00033000..../.......00......./................/................'
+    } },
+    /* the beacon: the ceiling light, a cord, a Glare shade with an Ink rim, a Sun bulb; Glare rays on the second frame */
+    beacon: { w: 16, h: 16, frames: {
+      a: '.......00......./.......00......./.......00......./.....000000...../....06666660..../...0666666660.../..066666666660../.00000000000000./......0ee0....../.....0eeee0...../......0ee0....../.......00......./................/................/................/................',
+      b: '.......00......./.......00......./.......00......./.....000000...../....06666660..../...0666666660.../..066666666660../.00000000000000./.6....0ee0....6./..6..0eeee0..6../......0ee0....../...6...00...6.../..6..........6../.......66......./.......66......./................'
+    } },
+    /* a film tab (the repair, section 7.3): Film with Ink perforations, an Ink edge under it */
+    tab: { w: 16, h: 5, frames: {
+      a: 'ffffffffffffffff/ff0fff0fff0fff0f/ff0fff0fff0fff0f/ffffffffffffffff/0000000000000000'
+    } }
+  };
+  /* SPRITES END */
+  /* the atlas: every frame rasterised once at boot through one ImageData (so every pixel is exactly its palette colour),
+     each beside its mirror ('<') and, for the hero, a Glare copy ('*', the dash's i frames, QUESTIONS Q47) */
+  var atlas = null, atlasData = null, A = R.atlas = {}, CSS = [];
+  function buildAtlas() {
+    var P = SB.palette, W = 256, x = 0, y = 0, rowH = 0, list = [], i, name, f;
+    for (name in SPRITES) for (f in SPRITES[name].frames) {
+      var sp = SPRITES[name], rows = sp.frames[f].split('/');
+      list.push([name + '.' + f, rows, sp.w, sp.h, 0, 0], [name + '.' + f + '<', rows, sp.w, sp.h, 1, 0]);
+      if (name === 'hero') list.push([name + '.' + f + '*', rows, sp.w, sp.h, 0, 1], [name + '.' + f + '<*', rows, sp.w, sp.h, 1, 1]);
+    }
+    for (i = 0; i < list.length; i++) {
+      if (x + list[i][2] > W) { x = 0; y += rowH + 1; rowH = 0; }
+      A[list[i][0]] = { x: x, y: y, w: list[i][2], h: list[i][3] };
+      x += list[i][2] + 1; rowH = Math.max(rowH, list[i][3]);
+    }
+    atlas = document.createElement('canvas'); atlas.width = W; atlas.height = y + rowH;
+    var actx = atlas.getContext('2d'), img = actx.createImageData(W, atlas.height), d = img.data;
+    for (i = 0; i < list.length; i++) {
+      var it = list[i], r = A[it[0]];
+      for (var ry = 0; ry < it[3]; ry++) for (var rx = 0; rx < it[2]; rx++) {
+        var ch = it[1][ry].charAt(it[4] ? it[2] - 1 - rx : rx);
+        if (ch === '.') continue;
+        var idx = parseInt(ch, 16);
+        if (it[5] && (idx === P.I.SUN || idx === P.I.WALNUT)) idx = P.I.GLARE;
+        var o = ((r.y + ry) * W + r.x + rx) * 4, c = P.RGB[idx];
+        d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+      }
+    }
+    actx.putImageData(img, 0, 0);
+    atlasData = d; R.atlasW = W;
+    for (i = 0; i < P.N; i++) CSS.push(css(i));
+  }
+  /* one sprite at the integer place (and size: the squash and the stretch), from the atlas */
+  function spr(c2, key, dx, dy, dw, dh) { var r = A[key]; c2.drawImage(atlas, r.x, r.y, r.w, r.h, dx, dy, dw || r.w, dh || r.h); }
+  R.opaque = function (key, sx, sy) { var r = A[key]; return atlasData[((r.y + sy) * R.atlasW + r.x + sx) * 4 + 3] === 255; };
+  /* the hero's frame (T0.17): dead, dive, cling, jump or fall in the air, the dash, the landing, the run (four frames, each held
+     STEP_HZ / ANIM_FPS steps: 12 fps), the idle with its 1 px wobble every 30 steps */
+  R.heroFrame = function (s) {
+    var h = s.hero, T = SB.TUNING, hold = Math.round(T.STEP_HZ / T.ANIM_FPS);
+    if (s.room.dead) return 'dead';
+    if (h.dive) return 'dive';
+    if (h.wall !== 0 || h.sticky) return 'cling';
+    if (!h.ground) return h.vy < 0 ? 'jump' : 'fall';
+    if (h.dash > 0) return 'run1';   /* the dash: mid stride, not the idle it starts from */
+    if (h.squash > 0) return 'land';
+    if (h.anim > 0) return 'run' + (Math.floor((h.anim - 1) / hold) % 4);
+    return 'idle' + (Math.floor(s.frame / (hold * 6)) % 2);
+  };
+  /* what the last frame drew where (canvas px), for SB_DEV's sprite rects and pixel samples; never read by the game */
+  R.drawn = { hero: { key: null, x: 0, y: 0, w: 0, h: 0 }, moths: [], beacon: null, cam: 0, camX: 0 };
+
   /* the static layer (section 1.5 layer 1; DESIGN 11): the photo at 60% contrast through the blends, Ink outlines on
      solids, a Glare over Ink top edge on everything you can stand on, the biome's line under a one way edge, film
      tabs in Film with a perforated edge. Built once per level. */
@@ -1138,7 +2247,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       sctx.fillStyle = rgb(lv.solid[i] ? P.solidColour(lv.pal[i], biome) : P.openColour(lv.pal[i], biome));
       sctx.fillRect(x * C, y * C, C, C);
     }
-    var ink = css(P.I.INK), glare = css(P.I.GLARE), line = css(P.TINT.line[biome]), film = css(P.I.FILM);
+    var ink = css(P.I.INK), glare = css(P.I.GLARE), line = css(P.TINT.line[biome]);
     var open = function (xx, yy) { return xx >= 0 && xx < w && yy >= 0 && yy < h && !lv.solid[yy * w + xx]; };
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
       i = y * w + x;
@@ -1149,10 +2258,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         if (open(x, y + 1)) sctx.fillRect(x * C, y * C + C - 1, C, 1);
         if (open(x, y - 1)) { sctx.fillStyle = glare; sctx.fillRect(x * C, y * C, C, 1); sctx.fillStyle = ink; sctx.fillRect(x * C, y * C + 1, C, 1); }
       } else if (lv.plat[i]) {
-        if (lv.tab && lv.tab[i]) {
-          sctx.fillStyle = film; sctx.fillRect(x * C, y * C, C, 4);
-          sctx.fillStyle = ink; for (var k = 2; k < C; k += 4) sctx.fillRect(x * C + k, y * C + 1, 1, 2);
-        } else {
+        if (lv.tab && lv.tab[i]) spr(sctx, 'tab.a', x * C, y * C);
+        else {
           sctx.fillStyle = glare; sctx.fillRect(x * C, y * C, C, 1);
           sctx.fillStyle = ink; sctx.fillRect(x * C, y * C + 1, C, 1);
           sctx.fillStyle = line; sctx.fillRect(x * C, y * C + 2, C, 1);
@@ -1162,6 +2269,90 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     R.builds++;
   };
 
+  /* the reveal's photo layer (DESIGN 5.2's first beat): for a record without a bitmap, as the sample room, its own grid
+     at full palette colour; the cropped photo is drawn here from T0.15 */
+  R.buildPhoto = function (lv, pic) {
+    var C = SB.K.CELL, x, y;
+    photo.width = lv.w * C; photo.height = lv.h * C;
+    if (pic && pic.src) {
+      pctx.imageSmoothingEnabled = true; pctx.imageSmoothingQuality = 'high';
+      pctx.drawImage(pic.src, pic.crop.x, pic.crop.y, pic.crop.w, pic.crop.h, 0, 0, photo.width, photo.height);
+      return;
+    }
+    for (y = 0; y < lv.h; y++) for (x = 0; x < lv.w; x++) { pctx.fillStyle = css(lv.pal[y * lv.w + x]); pctx.fillRect(x * C, y * C, C, C); }
+  };
+  /* one reveal frame at t ms after the tap (DESIGN 5.2, T0.14), at the camera play starts with: hold (the photo), resolve
+     (rows quantise bottom up: `rows` from the bottom are the level, a Glare sweep edge above them), light up (platform
+     edges flash Glare, landmarks pulse once, the tabs appear last, one after another); reduced motion: one crossfade */
+  R.drawReveal = function (lv, spawnY, t, reduced) {
+    var K = SB.K, T = SB.TUNING, C = K.CELL, h = lv.h, w = lv.w, W = K.WORLD_W, P = SB.palette, i, k;
+    var cam = Math.max(0, Math.min(worldH - viewH, spawnY + (K.HERO_H >> 1) - Math.round(viewH * T.CAM_HERO_FRAC)));
+    R.camY = cam;
+    var hold = T.REVEAL_HOLD * 1000, res = T.REVEAL_RESOLVE * 1000, light = T.REVEAL_LIGHT * 1000;
+    ctx.globalAlpha = 1;
+    ctx.drawImage(photo, 0, cam, W, viewH, 0, 0, W, viewH);
+    if (reduced) {
+      var a = Math.max(0, Math.min(1, t / (T.REVEAL_HOLD * 1000)));
+      ctx.globalAlpha = a; ctx.drawImage(stat, 0, cam, W, viewH, 0, 0, W, viewH); ctx.globalAlpha = 1;
+      return;
+    }
+    if (t < hold) return;
+    var prog = R.revealProgress(lv, t), rows = prog.rows, top = (h - rows) * C;
+    if (rows > 0 && top < cam + viewH) {
+      var y0 = Math.max(top, cam);
+      ctx.drawImage(stat, 0, y0, W, cam + viewH - y0, 0, y0 - cam, W, cam + viewH - y0);
+    }
+    var t3 = t - hold - res, tabs = R.revealTabs(lv), shown = prog.tabs;
+    /* the tabs stay hidden until their turn: their cells show the room's open colour */
+    for (k = shown; k < tabs.length; k++) for (i = 0; i < 2; i++) {
+      var tc = tabs[k][i], ty = Math.floor(tc / w) * C;
+      if (ty >= top && ty + C > cam && ty < cam + viewH) { ctx.fillStyle = rgb(P.openColour(lv.pal[tc], lv.biome | 0)); ctx.fillRect((tc % w) * C, ty - cam, C, C); }
+    }
+    if (t3 < 0) { ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(0, top - cam - 1, W, 2); return; }
+    /* the platform edges flash in the first half of the beat, fading */
+    var flash = 1 - Math.min(1, t3 / (light / 2));
+    if (flash > 0) {
+      ctx.globalAlpha = flash; ctx.fillStyle = css(P.I.GLARE);
+      for (i = 0; i < w * h; i++) if (lv.plat[i] && !lv.tab[i]) { var py = Math.floor(i / w) * C - cam; if (py > -C && py < viewH) ctx.fillRect((i % w) * C, py - 1, C, 3); }
+      ctx.globalAlpha = 1;
+    }
+    /* the landmarks pulse once, across the beat: a Glare outline along each one's border (a wash over the whole shape
+       read as the furniture going pale in t14-beat3) */
+    var pulse1 = Math.sin(Math.PI * Math.min(1, t3 / light));
+    if (pulse1 > 0 && lv.landmarks) {
+      ctx.globalAlpha = pulse1; ctx.fillStyle = css(P.I.GLARE);
+      for (k = 0; k < lv.landmarks.length; k++) {
+        var cells = lv.landmarks[k].cells, inL = {};
+        for (i = 0; i < cells.length; i++) inL[cells[i]] = 1;
+        for (i = 0; i < cells.length; i++) {
+          var lc = cells[i], lx = (lc % w) * C, ly = Math.floor(lc / w) * C - cam;
+          if (ly <= -C || ly >= viewH) continue;
+          if (!inL[lc - w]) ctx.fillRect(lx, ly, C, 2);
+          if (!inL[lc + w]) ctx.fillRect(lx, ly + C - 2, C, 2);
+          if (lc % w === 0 || !inL[lc - 1]) ctx.fillRect(lx, ly, 2, C);
+          if (lc % w === w - 1 || !inL[lc + 1]) ctx.fillRect(lx + C - 2, ly, 2, C);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+  };
+  /* where the reveal is at t ms: the rows resolved from the bottom (the plan's row at any instant), and the tabs shown,
+     one after another across the light beat's second half */
+  R.revealProgress = function (lv, t) {
+    var T = SB.TUNING, hold = T.REVEAL_HOLD * 1000, res = T.REVEAL_RESOLVE * 1000, light = T.REVEAL_LIGHT * 1000, n = R.revealTabs(lv).length;
+    var t3 = t - hold - res;
+    return { rows: t < hold ? 0 : Math.min(lv.h, Math.floor((t - hold) / res * lv.h)),
+      tabs: t3 < light / 2 ? 0 : t3 >= light ? n : Math.min(n, Math.floor((t3 - light / 2) / (light / 2) * n) + 1) };
+  };
+  /* the level's tabs as pairs, bottom up (the order the stair was laid) */
+  R.revealTabs = function (lv) {
+    if (lv._revealTabs) return lv._revealTabs;
+    var w = lv.w, out = [], i;
+    for (i = w * lv.h - 1; i >= 0; i--) if (lv.tab[i] && (i % w === 0 || !lv.tab[i - 1])) out.push([i, lv.tab[i + 1] && (i + 1) % w ? i + 1 : i]);
+    lv._revealTabs = out;
+    return out;
+  };
+
   /* one frame: the blit at the camera, the beacon, the hero (a Sun rectangle with an Ink outline until T0.17) */
   R.draw = function (s, lv, now) {
     var K = SB.K, P = SB.palette, C = K.CELL;
@@ -1169,10 +2360,17 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var heroY = s.hero.y >> 8, heroX = s.hero.x >> 8;
     var cam = heroY + (K.HERO_H >> 1) - Math.round(viewH * SB.TUNING.CAM_HERO_FRAC);
     cam = Math.max(0, Math.min(worldH - viewH, cam));
+    /* the dive landing's shake (DESIGN 4.4: at most SHAKE_MAX_PX, only on dive landings and boss hits): while the
+       state's counter runs the camera lifts on alternate steps, by the full height in the first half, or drops where
+       the room's top leaves no lift (t12-dive: a landing near the top showed no shake at all) */
+    if (s.hero.shake > 0 && (s.hero.shake & 1)) {
+      var amp = s.hero.shake > (K.SHAKE_F >> 1) ? SB.TUNING.SHAKE_MAX_PX : 1;
+      cam = cam - amp >= 0 ? cam - amp : Math.min(worldH - viewH, cam + amp);
+    }
     R.camY = cam;
     /* the crop alternative follows the hero sideways inside the 24 px the screen lacks; the default never moves */
     var camX = R.crop ? Math.max(0, Math.min(K.WORLD_W - R.viewW, heroX + (K.HERO_W >> 1) - (R.viewW >> 1))) : 0;
-    R.camX = camX;
+    R.camX = camX; R.drawn.cam = cam; R.drawn.camX = camX;
     ctx.save(); ctx.translate(-camX, 0);
     ctx.drawImage(stat, 0, cam, K.WORLD_W, viewH, 0, 0, K.WORLD_W, viewH);
     if (lv.exit >= 0) {
@@ -1191,12 +2389,105 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       ctx.fillStyle = css((pulse & 1) ? P.I.GLARE : P.I.SUN);
       ctx.fillRect(ex - 2, ey - 2, C + 4, 2); ctx.fillRect(ex - 2, ey + C, C + 4, 2);
       ctx.fillRect(ex - 2, ey, 2, C); ctx.fillRect(ex + C, ey, 2, C);
+      /* the beacon: the ceiling light sprite in the exit cell, its rays on alternate pulses */
+      var bk = (pulse & 1) ? 'beacon.b' : 'beacon.a';
+      spr(ctx, bk, ex, ey);
+      R.drawn.beacon = { key: bk, x: ex - camX, y: ey, w: C, h: C };
+    } else R.drawn.beacon = null;
+    /* the moths: the sprite's two flutter frames, a beat every 8 steps */
+    var md = R.drawn.moths; md.length = 0;
+    for (var m = 0; m < s.enemies.length; m++) {
+      var en = s.enemies[m]; if (en.hp <= 0) continue;
+      var mx = en.x >> 8, my = (en.y >> 8) - cam;
+      if (my < -16 || my > viewH) continue;
+      var mk = (Math.floor(en.timer / Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS)) & 1) ? 'moth.a' : 'moth.b';   /* 12 fps (the fourth review: it ran at 7.5) */
+      spr(ctx, mk, mx, my);
+      md.push({ key: mk, x: mx - camX, y: my, w: 16, h: 16 });
     }
-    var hy = heroY - cam;
-    ctx.fillStyle = css(P.I.INK); ctx.fillRect(heroX, hy, K.HERO_W, K.HERO_H);
-    ctx.fillStyle = css(SB.TUNING.HERO_BODY); ctx.fillRect(heroX + 1, hy + 1, K.HERO_W - 2, K.HERO_H - 3);
-    ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(heroX + (s.hero.facing > 0 ? K.HERO_W - 4 : 2), hy + 4, 2, 2);
+    var hy = heroY - cam, h = s.hero, T = SB.TUNING, hd = R.drawn.hero;
+    /* a hit's i frames blink the hero at about 4 Hz (8 steps on, 8 off) */
+    R.heroShown = s.room.dead || !(h.iframes > 0 && ((h.iframes >> 3) & 1));
+    hd.key = null;
+    if (!R.heroShown) { ctx.restore(); return; }
+    /* the dive's three Ink speed lines trailing above, the dash's two streaks behind */
+    if (h.dive) { ctx.fillStyle = CSS[P.I.INK]; ctx.fillRect(heroX + 2, hy - 5, 1, 4); ctx.fillRect(heroX + 6, hy - 7, 1, 6); ctx.fillRect(heroX + 9, hy - 5, 1, 4); }
+    if (h.dash > 0) {
+      var tx = h.facing > 0 ? heroX - 7 : heroX + K.HERO_W + 1;
+      ctx.fillStyle = CSS[P.I.INK]; ctx.fillRect(tx, hy + 5, 6, 1); ctx.fillRect(tx + (h.facing > 0 ? 2 : 0), hy + 10, 4, 1);
+    }
+    /* the sprite: its frame, mirrored to the facing (a cling mirrors to its wall), Glare through the dash's i frames
+       (Q47); the landing squash and the takeoff stretch are offsets of the drawn rect, never the hitbox (Q35) */
+    var fr = R.heroFrame(s), left = fr === 'cling' ? h.wall < 0 : h.facing < 0;
+    var key = 'hero.' + fr + (left ? '<' : '') + (h.dashI > 0 ? '*' : '');
+    var dx = heroX, dy = hy, dw = K.HERO_W, dh = K.HERO_H;
+    if (fr !== 'dead' && h.squash > 0) { dx -= 1; dw += 2; dy += T.SQUASH_PX; dh -= T.SQUASH_PX; }
+    else if (fr !== 'dead' && h.squash < 0) { dx += 1; dw -= 2; dy -= T.STRETCH_PX; dh += T.STRETCH_PX; }
+    spr(ctx, key, dx, dy, dw, dh);
+    hd.key = key; hd.x = dx - camX; hd.y = dy; hd.w = dw; hd.h = dh;
     ctx.restore();
+  };
+
+  /* the dev side of the sprites gate (section 1.7, T0.17; SB_DEV only, never the game): the rects the last frame drew
+     (the hero, every live moth, the beacon, every platform top edge row and every film tab in view, canvas px), n pixels
+     from inside them where a sprite is opaque (read from the canvas), and one backdrop pixel away from all of them */
+  R.rects = function (lv) {
+    var C = SB.K.CELL, cam = R.drawn.cam, camX = R.drawn.camX, out = { hero: null, enemies: [], beacon: null, edges: [], tabs: [] };
+    if (R.drawn.hero.key) out.hero = R.drawn.hero;
+    out.enemies = R.drawn.moths.slice(); out.beacon = R.drawn.beacon;
+    if (!lv) return out;
+    var r0 = Math.max(0, Math.floor(cam / C)), r1 = Math.min(lv.h - 1, Math.floor((cam + viewH - 1) / C));
+    for (var y = r0; y <= r1; y++) for (var x = 0; x < lv.w; x++) {
+      var i = y * lv.w + x, top = y * C - cam;
+      if (top < 0 || top >= viewH) continue;
+      if (lv.tab && lv.tab[i] && lv.plat[i]) { if (top + 5 <= viewH) out.tabs.push({ key: 'tab.a', x: x * C - camX, y: top, w: C, h: 5 }); }
+      else if (lv.plat[i] || (lv.solid[i] && y > 0 && !lv.solid[i - lv.w])) out.edges.push({ x: x * C - camX, y: top, w: C, h: 1 });
+    }
+    return out;
+  };
+  R.samplePixels = function (lv, n) {
+    var rc = R.rects(lv), W = canvas.width, H = canvas.height, kinds = [], k, j;
+    var inView = function (x, y) { return x >= 0 && y >= 0 && x < W && y < H; };
+    var opaqueIn = function (d) {
+      var pts = [], r = A[d.key];
+      for (var yy = 0; yy < d.h; yy++) for (var xx = 0; xx < d.w; xx++) {
+        /* the canvas's nearest neighbour maps a drawn pixel's centre to the sprite (the fourth review: the corner map
+           sampled transparent pixels of the squash and the stretch as opaque, and read the backdrop) */
+        var sx = Math.floor((xx + 0.5) * r.w / d.w), sy = Math.floor((yy + 0.5) * r.h / d.h);
+        if (R.opaque(d.key, sx, sy) && inView(d.x + xx, d.y + yy)) pts.push([d.x + xx, d.y + yy]);
+      }
+      return pts;
+    };
+    if (rc.hero) kinds.push(['hero', opaqueIn(rc.hero)]);
+    var ms = []; for (k = 0; k < rc.enemies.length; k++) ms = ms.concat(opaqueIn(rc.enemies[k])); if (ms.length) kinds.push(['enemy', ms]);
+    if (rc.beacon) { var bp = opaqueIn(rc.beacon); if (bp.length) kinds.push(['beacon', bp]); }
+    var es = []; for (k = 0; k < rc.edges.length; k++) for (j = 0; j < rc.edges[k].w; j++) if (inView(rc.edges[k].x + j, rc.edges[k].y)) es.push([rc.edges[k].x + j, rc.edges[k].y]);
+    if (es.length) kinds.push(['edge', es]);
+    var ts = []; for (k = 0; k < rc.tabs.length; k++) ts = ts.concat(opaqueIn(rc.tabs[k])); if (ts.length) kinds.push(['tab', ts]);
+    var img = ctx.getImageData(0, 0, W, H).data, out = [], per = Math.ceil(n / Math.max(1, kinds.length));
+    for (k = 0; k < kinds.length && out.length < n; k++) {
+      var pts = kinds[k][1], take = Math.min(per, pts.length, n - out.length);
+      for (j = 0; j < take; j++) {
+        var pt = pts[Math.floor((j + 0.5) * pts.length / take)], o = (pt[1] * W + pt[0]) * 4;
+        out.push({ kind: kinds[k][0], x: pt[0], y: pt[1], hex: SB.palette.hex([img[o], img[o + 1], img[o + 2]]) });
+      }
+    }
+    return out;
+  };
+  R.backdropProbe = function (lv) {
+    if (!lv) return null;
+    var C = SB.K.CELL, cam = R.drawn.cam, camX = R.drawn.camX, rc = R.rects(lv), boxes = [];
+    if (rc.hero) boxes.push(rc.hero);
+    if (rc.beacon) boxes.push({ x: rc.beacon.x - 4, y: rc.beacon.y - 4, w: C + 8, h: C + 8 });
+    boxes = boxes.concat(rc.enemies);
+    var hit = function (x, y) { for (var q = 0; q < boxes.length; q++) { var b = boxes[q]; if (x >= b.x - 2 && x < b.x + b.w + 2 && y >= b.y - 2 && y < b.y + b.h + 2) return true; } return false; };
+    for (var y = lv.h - 1; y >= 0; y--) for (var x = 0; x < lv.w; x++) {
+      var i = y * lv.w + x, px = x * C - camX + (C >> 1), py = y * C - cam + (C >> 1);
+      if (lv.solid[i] || lv.plat[i] || py < 0 || py >= viewH || px < 0 || px >= canvas.width || hit(px, py)) continue;
+      if (lv.beacon && lv.beacon.cells && Array.prototype.indexOf.call(lv.beacon.cells, i) >= 0) continue;
+      var d = ctx.getImageData(px, py, 1, 1).data;
+      return { x: px, y: py, cell: i, idx: lv.pal[i], biome: lv.biome | 0, hex: SB.palette.hex([d[0], d[1], d[2]]) };
+    }
+    return null;
   };
 })(window.SB);
 </script>
@@ -1316,7 +2607,74 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 </script>
 <script id="shell-audio">
 (function (SB) { 'use strict';
-  /* Web Audio synth, created in the first gesture (T0.14, T1.7) */
+  /* shell-audio (DESIGN 5.2, BUILD-PLAN T0.14): every sound is synthesised, none is a file. The AudioContext is created
+     and resumed inside the first pointerdown anywhere (the title tap), never before; muted by the sound setting (the
+     settings screen writes A.muted, T1.10); never required for play: any failure is silent. */
+  var A = SB.audio = { ctx: null, made: 0, muted: false };
+  A.state = function () { return A.ctx ? A.ctx.state : 'none'; };
+  function unlock() {
+    if (A.ctx) return;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      A.ctx = new AC(); A.made++;
+      if (A.ctx.state === 'suspended' && A.ctx.resume) A.ctx.resume().catch(function () {});
+    } catch (e) { A.ctx = null; }
+  }
+  A.init = function () { document.addEventListener('pointerdown', unlock, { capture: true, once: true }); };
+  var live = function () { return !!A.ctx && !A.muted && A.ctx.state === 'running'; };
+  /* one click: a 12 ms white noise burst through a 2 kHz band pass, decaying over 60 ms */
+  function click(at) {
+    var c = A.ctx, len = Math.ceil(c.sampleRate * 0.012), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    var src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = 2000; bp.Q.value = 1.2;
+    g.gain.setValueAtTime(0.5, at); g.gain.exponentialRampToValueAtTime(0.001, at + 0.06);
+    src.connect(bp); bp.connect(g); g.connect(c.destination); src.start(at); src.stop(at + 0.07);
+  }
+  /* the shutter on the reveal's first beat: two clicks 40 ms apart */
+  A.shutter = function () { if (!live()) return; try { var t = A.ctx.currentTime; click(t); click(t + 0.04); } catch (e) { /* silent */ } };
+  /* a tone: one oscillator gliding f0 to f1 over dur seconds, its gain falling from vol */
+  function tone(type, f0, f1, dur, vol, at) {
+    var c = A.ctx, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, at); o.frequency.exponentialRampToValueAtTime(f1, at + dur);
+    g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(0.001, at + dur);
+    o.connect(g); g.connect(c.destination); o.start(at); o.stop(at + dur + 0.01);
+  }
+  /* a thud: white noise through a low pass at f, decaying over dur */
+  function thud(f, dur, vol, at) {
+    var c = A.ctx, len = Math.ceil(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    var src = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = buf; lp.type = 'lowpass'; lp.frequency.value = f;
+    g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(0.001, at + dur);
+    src.connect(lp); lp.connect(g); g.connect(c.destination); src.start(at); src.stop(at + dur + 0.01);
+  }
+  /* the game's six (T0.16): jump, wall jump, dive, land (heavier after a dive), hit, the beacon */
+  var SFX = {
+    jump: function (t) { tone('square', 330, 660, 0.09, 0.06, t); },
+    walljump: function (t) { tone('square', 440, 700, 0.05, 0.06, t); tone('square', 700, 990, 0.06, 0.05, t + 0.045); },
+    dive: function (t) { tone('triangle', 880, 180, 0.14, 0.09, t); },
+    land: function (t, heavy) { thud(heavy ? 260 : 420, heavy ? 0.12 : 0.05, heavy ? 0.4 : 0.18, t); },
+    hit: function (t) { tone('sawtooth', 240, 70, 0.2, 0.09, t); thud(900, 0.08, 0.25, t); },
+    beacon: function (t) { tone('triangle', 660, 660, 0.25, 0.08, t); tone('triangle', 880, 880, 0.25, 0.08, t + 0.09); tone('triangle', 1320, 1320, 0.35, 0.08, t + 0.18); }
+  };
+  A.played = {};   /* counts per sound, for the gates (SB_DEV.audioPlayed) */
+  A.sfx = function (name, heavy) {
+    A.played[name] = (A.played[name] || 0) + 1;
+    if (!live()) return;
+    try { SFX[name](A.ctx.currentTime, heavy); } catch (e) { /* silent */ }
+  };
+  /* a develop tick: a 5 ms blip at 3.2 kHz, quiet (the resolve's rows, each tab of the light up) */
+  A.tick = function () {
+    if (!live()) return;
+    try {
+      var c = A.ctx, t = c.currentTime, o = c.createOscillator(), g = c.createGain();
+      o.type = 'square'; o.frequency.value = 3200;
+      g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.005);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.01);
+    } catch (e) { /* silent */ }
+  };
 })(window.SB);
 </script>
 <script id="shell-save">
@@ -1335,10 +2693,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     tagline: 'Your room is the level.',
     shoot: 'Photograph a room',
     choose: 'Choose a photo',
-    soon: 'Coming in the next build.',
     sample: 'Try the sample room',
     sampleRoom: 'Sample room',
-    roomClear: 'Room clear',
+    roomClear: 'Room clear', heartsOf: '{n} of {max} hearts',
     again: 'Again',
     toTitle: 'Title',
     left: '\u25c0',
@@ -1349,7 +2706,17 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     jump: 'Jump',
     dive: 'Dive',
     build: 'build',
-    rotate: 'Turn your phone upright to play.'
+    rotate: 'Turn your phone upright to play.',
+    retake: 'Retake',
+    develop: 'Develop',
+    tighter: 'Try a tighter crop',
+    cropHint: 'Drag and pinch to frame the room. Tap a shape to hide the chest there.',
+    badPhoto: 'That photo did not open. Try another.',
+    photoRoom: 'Your room',
+    death: 'The bug fell out of the picture',
+    dp: 'Dead pixels',
+    nextRoom: 'Shoot the next room',
+    playAgain: 'Play it again'
   });
 
   /* the game: the record, the built level, the live sim state, the room's name */
@@ -1360,7 +2727,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var all = document.querySelectorAll('.screen');
     for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === name);
     ui.screen = name;
-    document.body.classList.toggle('playing', name === 'play');
+    /* the fleet's chip, pill, card and toast hide while a room runs (Q48's addendum) and on the crop screen, where the
+       chip sat over the photo a drag starts on (t15-crop) */
+    document.body.classList.toggle('playing', name === 'play' || name === 'crop');
     if (name === 'play') SB.render.fit();
   };
 
@@ -1381,37 +2750,248 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     document.getElementById('build').textContent = ui.COPY.build + ' ' + SB.BUILD.replace(/-/g, ' ');
   };
 
-  function hearts(n) {
-    var el = document.getElementById('hearts'), s = '';
-    for (var i = 0; i < n; i++) s += '<i></i>';
-    if (el.getAttribute('data-n') !== String(n)) { el.innerHTML = s; el.setAttribute('data-n', String(n)); }
+  /* the hearts in the top strip: max of them, the last max less n emptied (lost) */
+  function hearts(n, max) {
+    var el = document.getElementById('hearts'), s = '', key = n + '/' + max;
+    for (var i = 0; i < max; i++) s += i < n ? '<i></i>' : '<i class="lost"></i>';
+    if (el.getAttribute('data-n') !== key) { el.innerHTML = s; el.setAttribute('data-n', key); el.setAttribute('aria-label', ui.COPY.heartsOf.replace('{n}', n).replace('{max}', max)); }
   }
 
-  /* a room from a record: build, then play; the reveal (T0.14) and the needsCrop sheet (T0.15) come later */
-  ui.startRoom = function (record, name) {
+  /* the develop reveal (DESIGN 5.2, T0.14). It starts at the tap: the room is built inside its first beat. Its clock
+     is the animation frames' timestamp less the tap's, frozen while SB_DEV holds the loop, so each beat lasts its TUNING
+     length at any frame rate and a slow frame skips rows. A tap skips it once one reveal has been seen
+     (onboarding.revealSeen, kept for the session until the save of T1.10). The static layer built at the room's start
+     serves the reveal and the play alike: it is never built twice. */
+  var RV = ui.reveal = { on: false, t: 0, start: 0, prev: 0, lv: null, reduced: false, rows: 0, tabs: 0, marks: null, seen: false, devSkip: false };
+  function startReveal(lv, t0, photo) {
+    RV.on = true; RV.start = t0; RV.t = performance.now() - t0; RV.prev = t0; RV.lv = lv; RV.rows = 0; RV.tabs = 0;
+    RV.reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    RV.marks = { start: t0, build: SB.perfLog.pipeline, reduced: RV.reduced, skipped: false };
+    SB.render.buildPhoto(lv, photo);
+    ui.screen = 'reveal';
+    SB.audio.shutter();
+  }
+  ui.revealFrame = function (now, held) {
+    if (!RV.on) return;
+    if (held) RV.start = now - RV.t; else RV.t = now - RV.start;
+    var T = SB.TUNING, hold = T.REVEAL_HOLD * 1000, res = T.REVEAL_RESOLVE * 1000, light = T.REVEAL_LIGHT * 1000;
+    var end = RV.reduced ? hold : hold + res + light;
+    if (!RV.reduced) {
+      var p = SB.render.revealProgress(RV.lv, RV.t);
+      if ((p.rows >> 2) > (RV.rows >> 2) || p.tabs > RV.tabs) SB.audio.tick();
+      RV.rows = p.rows; RV.tabs = p.tabs;
+      /* each mark is the first frame at or past its beat, with the gap to the frame before it: the beat fell inside
+         that gap (a slow frame widens it; the clock itself is the timestamp's, never a frame count) */
+      if (RV.t >= hold && RV.marks.hold === undefined) { RV.marks.hold = now; RV.marks.holdGap = now - RV.prev; }
+      if (RV.t >= hold + res && RV.marks.resolve === undefined) { RV.marks.resolve = now; RV.marks.resolveGap = now - RV.prev; }
+    }
+    if (RV.t >= end) { RV.marks.endGap = now - RV.prev; ui.endReveal(now); return; }
+    RV.prev = now;
+    SB.render.drawReveal(RV.lv, G.state.hero.y >> 8, RV.t, RV.reduced);
+  };
+  ui.endReveal = function (now) {
+    RV.on = false; RV.seen = true;
+    ui.releasePhoto();   /* the photo lives until the reveal ends, never longer (DESIGN 6.1) */
+    RV.marks.end = now === undefined ? performance.now() : now;
+    if (window.performance && performance.mark) performance.mark('sb-reveal-end');
+    ui.screen = 'play';
+  };
+
+  /* ---------------------------------------------------------------- the crop screen (T0.15, DESIGN 5.1 steps 1 to 3) */
+  /* A photo from the camera or the roll is decoded (shell-capture), fitted to the screen, and framed by a 1:2 box: one
+     finger drags it, two pinch it; a short tap inside it marks the focal shape (the record's focal cell, the chest's
+     place in M1). The overlay is the pipeline's reading of the box: pipeline A at most once per 100 ms while the box
+     moves, the full build when it rests; Develop takes the last full build to the reveal (never building twice), and
+     the photo is released the moment the reveal ends. Nothing is written anywhere. */
+  var CR = ui.crop = { src: null, bw: 0, bh: 0, crop: null, focal: -1, last: null, lastA: null, lastRec: null, full: false, builds: 0, decodes: 0, token: 0, ms: 0, from: '', timer: 0, lastAt: 0, k: 1, ox: 0, oy: 0 };
+  var PERF = /[?&]perf=1/.test(location.search);
+  ui.photoAlive = function () { return !!CR.src; };
+  ui.releasePhoto = function () { if (CR.src && CR.src.close) { try { CR.src.close(); } catch (e) { /* gone */ } } CR.src = null; };
+  function cropSay(t) { document.getElementById('cropsay').textContent = t || ''; }
+  function openPicker(id) { CR.from = id; var inp = document.getElementById(id); inp.value = ''; inp.click(); }
+  /* a decode lands only where it was asked for: a newer pick, or a room started meanwhile (Develop on the old crop
+     while a retake decodes), drops it, so a late photo never releases the one a reveal shows nor pulls the player back */
+  function onFile(e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    e.target.value = '';   /* the same photo may be chosen again */
+    var tok = ++CR.token, from = ui.screen;
+    var stale = function () { return tok !== CR.token || ui.screen !== from; };
+    SB.capture.decode(f).then(function (bm) {
+      if (stale()) { if (bm && bm.close) bm.close(); return; }
+      ui.releasePhoto();
+      CR.src = bm; CR.bw = bm.width; CR.bh = bm.height; CR.crop = SB.capture.fit(CR.bw, CR.bh); CR.focal = -1; CR.last = null;
+      ui.show('crop');
+      var cv = document.getElementById('cropview'); cv.width = CR.bw; cv.height = CR.bh; cv.getContext('2d').drawImage(bm, 0, 0);
+      layoutCrop(); rebuild(true);
+      CR.decodes++;
+    }, function () {
+      if (stale()) return;
+      ui.releasePhoto();
+      ui.show('title');
+      var soon = document.getElementById('soon'); soon.textContent = ui.COPY.badPhoto; soon.hidden = false;
+    });
+  }
+  /* the photo fitted to the stage, the box over it, in CSS pixels */
+  function layoutCrop() {
+    var st = document.getElementById('cropstage').getBoundingClientRect(), cv = document.getElementById('cropview'), box = document.getElementById('cropbox');
+    var k = Math.min(st.width / CR.bw, st.height / CR.bh);
+    CR.k = k; CR.ox = Math.round((st.width - CR.bw * k) / 2); CR.oy = Math.round((st.height - CR.bh * k) / 2);
+    cv.style.width = (CR.bw * k) + 'px'; cv.style.height = (CR.bh * k) + 'px'; cv.style.left = CR.ox + 'px'; cv.style.top = CR.oy + 'px';
+    box.style.left = (CR.ox + CR.crop.x * k) + 'px'; box.style.top = (CR.oy + CR.crop.y * k) + 'px';
+    box.style.width = (CR.crop.w * k) + 'px'; box.style.height = (CR.crop.h * k) + 'px';
+  }
+  /* the record from the box: the grid downscale, the nearest palette colour per cell (DESIGN 6.2), the focal cell */
+  function recordOfCrop() {
+    var W = SB.GRID.W, H = SB.GRID.H, rgb = SB.capture.downscale(CR.src, CR.crop, W, H), pal = new Uint8Array(W * H);
+    for (var i = 0; i < W * H; i++) pal[i] = SB.palette.nearest(rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2]);
+    return SB.record.fromJSON({ v: SB.record.V, w: W, h: H, mode: 0, focal: CR.focal >= 0 ? CR.focal : null, rows: SB.record.palToRows(pal, W, H), rows2: null });
+  }
+  function rebuild(full) {
+    if (!CR.src) return;
+    var t0 = performance.now(), rec = recordOfCrop(), a = SB.pipeline.build(rec, { stage: 'A' }), lv = full ? SB.pipeline.build(rec, { firstRoom: !ui.firstRoomDone }) : null;
+    CR.builds++; CR.ms = performance.now() - t0; CR.lastRec = rec; CR.lastA = a; CR.full = !!full; CR.last = full ? lv : null;
+    drawOverlay(full && !lv.needsCrop ? lv : a, full && !lv.needsCrop);
+    document.getElementById('tighter').hidden = !(full && lv.needsCrop);
+    document.getElementById('crop').classList.toggle('stuck', !!(full && lv.needsCrop));   /* Develop looks unable while it is */
+    if (PERF) cropSay(CR.ms.toFixed(1) + ' ms');
+  }
+  /* while the box moves: at most one build per 100 ms, the last one after the moves stop */
+  function schedule() {
+    var now = performance.now();
+    if (now - CR.lastAt >= 100) { CR.lastAt = now; rebuild(false); return; }
+    if (!CR.timer) CR.timer = setTimeout(function () { CR.timer = 0; CR.lastAt = performance.now(); rebuild(false); }, 100 - (now - CR.lastAt));
+  }
+  /* the overlay, one 4 px block per cell: solids shaded, platform tops Glare, tabs Film, the exit ringed in Sun, the
+     focal ringed in Paper */
+  function drawOverlay(lv, withExit) {
+    var cv = document.getElementById('overlay'), c = cv.getContext('2d'), W = lv.w, H = lv.h, P = SB.palette, i, x, y;
+    var hx = function (k) { return '#' + P.HEX[k]; };
+    c.clearRect(0, 0, cv.width, cv.height);
+    for (i = 0; i < W * H; i++) {
+      x = (i % W) * 4; y = Math.floor(i / W) * 4;
+      if (lv.solid[i]) { c.fillStyle = 'rgba(11,10,15,0.55)'; c.fillRect(x, y, 4, 4); }
+      else if (lv.plat[i]) { c.fillStyle = lv.tab && lv.tab[i] ? hx(P.I.FILM) : hx(P.I.GLARE); c.fillRect(x, y, 4, 1); }
+    }
+    if (withExit && lv.exit >= 0) { x = (lv.exit % W) * 4; y = Math.floor(lv.exit / W) * 4; c.strokeStyle = hx(P.I.SUN); c.lineWidth = 1; c.strokeRect(x - 1.5, y - 1.5, 7, 7); }
+    if (CR.focal >= 0) { x = (CR.focal % W) * 4 + 2; y = Math.floor(CR.focal / W) * 4 + 2; c.strokeStyle = hx(P.I.PAPER); c.beginPath(); c.arc(x, y, 5, 0, 2 * Math.PI); c.stroke(); }
+  }
+  /* the stage's pointers: one drags the box, two pinch it; a short still tap inside the box is the focal tap */
+  var ptrs = {}, gest = null;
+  function src(e) { var r = document.getElementById('cropstage').getBoundingClientRect(); return { x: (e.clientX - r.left - CR.ox) / CR.k, y: (e.clientY - r.top - CR.oy) / CR.k }; }
+  function startGesture() {
+    var ids = Object.keys(ptrs);
+    if (ids.length === 1) gest = { kind: 'drag', id: ids[0], at: ptrs[ids[0]], crop: CR.crop, moved: 0, t0: performance.now() };
+    else if (ids.length >= 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]]; gest = { kind: 'pinch', ids: ids.slice(0, 2), d0: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, crop: CR.crop, moved: 99 }; }
+  }
+  function onDown(e) { if (ui.screen !== 'crop') return; ptrs[e.pointerId] = src(e); startGesture(); e.preventDefault(); }
+  function onMove(e) {
+    if (!ptrs[e.pointerId] || !gest) return;
+    ptrs[e.pointerId] = src(e);
+    if (gest.kind === 'drag' && ptrs[gest.id]) {
+      var p = ptrs[gest.id], dx = p.x - gest.at.x, dy = p.y - gest.at.y;
+      gest.moved = Math.max(gest.moved, Math.hypot(dx, dy) * CR.k);
+      if (gest.moved > 8) { CR.crop = SB.capture.move(gest.crop, dx, dy, CR.bw, CR.bh); layoutCrop(); schedule(); }
+    } else if (gest.kind === 'pinch' && ptrs[gest.ids[0]] && ptrs[gest.ids[1]]) {
+      var a = ptrs[gest.ids[0]], b = ptrs[gest.ids[1]], s = Math.hypot(a.x - b.x, a.y - b.y) / gest.d0;
+      CR.crop = SB.capture.pinch(gest.crop, s, gest.mid.x, gest.mid.y, CR.bw, CR.bh); layoutCrop(); schedule();
+    }
+  }
+  function onUp(e) {
+    if (!ptrs[e.pointerId]) return;
+    var tapped = gest && gest.kind === 'drag' && gest.moved <= 8 && performance.now() - gest.t0 < 400 ? ptrs[e.pointerId] : null;
+    delete ptrs[e.pointerId];
+    if (Object.keys(ptrs).length) { startGesture(); return; }
+    gest = null;
+    if (CR.timer) { clearTimeout(CR.timer); CR.timer = 0; }
+    if (tapped && tapped.x >= CR.crop.x && tapped.x < CR.crop.x + CR.crop.w && tapped.y >= CR.crop.y && tapped.y < CR.crop.y + CR.crop.h) {
+      var gx = Math.floor((tapped.x - CR.crop.x) / CR.crop.w * SB.GRID.W), gy = Math.floor((tapped.y - CR.crop.y) / CR.crop.h * SB.GRID.H);
+      CR.focal = gy * SB.GRID.W + gx;
+    }
+    rebuild(true);
+  }
+  function develop() {
+    if (!CR.src) return;
+    if (!CR.full || !CR.last) rebuild(true);
+    if (CR.last.needsCrop) { document.getElementById('tighter').hidden = false; return; }
+    ui.startRoom(CR.lastRec, ui.COPY.photoRoom, { level: CR.last, photo: { src: CR.src, crop: CR.crop }, ms: CR.ms });
+  }
+  ui.initCrop = function () {
+    document.getElementById('shoot').addEventListener('click', function () { openPicker('fileshoot'); });
+    document.getElementById('choose').addEventListener('click', function () { openPicker('filechoose'); });
+    document.getElementById('fileshoot').addEventListener('change', onFile);
+    document.getElementById('filechoose').addEventListener('change', onFile);
+    document.getElementById('retake').addEventListener('click', function () { openPicker(CR.from || 'filechoose'); });
+    document.getElementById('develop').addEventListener('click', develop);
+    document.getElementById('croptitle').addEventListener('click', function () { ui.releasePhoto(); ui.show('title'); });
+    var st = document.getElementById('cropstage');
+    st.addEventListener('pointerdown', onDown); st.addEventListener('pointermove', onMove);
+    st.addEventListener('pointerup', onUp); st.addEventListener('pointercancel', onUp);
+    window.addEventListener('resize', function () { if (ui.screen === 'crop' && CR.src) layoutCrop(); });
+  };
+
+  /* a room from a record: built (inside the reveal's first beat), or the crop's last full build (opts.level, never built
+     twice), then the reveal with the photo when there is one (opts.photo), then play */
+  ui.startRoom = function (record, name, opts) {
+    opts = opts || {};
     var t0 = performance.now();
-    var lv = SB.pipeline.build(record, {});
-    SB.perfLog.pipeline = performance.now() - t0;
+    if (window.performance && performance.mark) performance.mark('sb-reveal-start');
+    var lv = opts.level || SB.pipeline.build(record, { firstRoom: !ui.firstRoomDone });
+    SB.perfLog.pipeline = opts.level ? (opts.ms || 0) : performance.now() - t0;
     if (lv.needsCrop) return false;
     G.record = record; G.level = lv; G.name = name;
     G.state = SB.sim.create(lv, {});
+    ui.firstRoomDone = true;
     SB.render.buildStatic(lv);
     SB.input.resetRecording();
     document.getElementById('roomname').textContent = name;
-    hearts(G.state.hero.hearts);
+    hearts(G.state.hero.hearts, G.state.hero.heartsMax);
     ui.hideClear();
     ui.show('play');
+    ui.hideDeath(); ui.hinted.stood = false;
+    if (!RV.devSkip && !opts.noReveal) startReveal(lv, t0, opts.photo || null);
+    else ui.releasePhoto();
     return true;
+  };
+  ui.firstRoomDone = false;   /* the first ever free play room runs with at most FIRST_ROOM_MAX_FODDER moths (T1.10 keeps it) */
+  ui.hearts = hearts;
+  /* the death card docks away from the fallen hero (the fourth review: at 30% of the stage it sat where the camera
+     keeps the hero and hid it on half the sample room's climb): the top of the stage, or its bottom when the hero is
+     in the stage's upper half (the camera clamped at the room's top) */
+  ui.showDeath = function () {
+    var hd = SB.render.drawn.hero, cv = document.getElementById('view');
+    document.getElementById('death').classList.toggle('low', !!hd && hd.key !== null && hd.y + hd.h / 2 < cv.height / 2);
+    document.getElementById('death').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'dead'; document.body.classList.remove('playing'); };
+  ui.hideDeath = function () { document.getElementById('death').classList.remove('on'); };
+  /* free play restarts the room with the same record and seed, the reveal skipped */
+  ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true }); };
+  /* the hint glyphs, once each a session (onboarding.hints, T1.10 keeps them): the rocker and A at the first standing
+     moment, B the first time the hero is airborne above a dive target (a one way within 8 rows under its column) */
+  ui.hinted = { rocker: false, A: false, B: false, stood: false };
+  /* the pulse is sbhint, 0.7 s three times; then the class leaves, so the reduced motion outline (no animation to end)
+     goes with it (the fourth review: it stayed for the session) */
+  var HINT_MS = 2100;
+  function pulse(id) {
+    var el = document.getElementById(id); el.classList.remove('hint'); void el.offsetWidth; el.classList.add('hint');
+    clearTimeout(el.sbHintT); el.sbHintT = setTimeout(function () { el.classList.remove('hint'); }, HINT_MS);
+  }
+  ui.hints = function (st, lv) {
+    var h = st.hero, H = ui.hinted;
+    if (h.ground && !H.stood) { H.stood = true; if (!H.rocker) { H.rocker = true; pulse('rocker'); } if (!H.A) { H.A = true; pulse('btnA'); } }
+    if (!H.B && !h.ground && h.vy > 0) {
+      var C = SB.K.CELL_SUB, cx = Math.floor((h.x + (SB.K.HERO_W_SUB >> 1)) / C), cy = Math.floor((h.y + SB.K.HERO_H_SUB) / C);
+      for (var r = cy; r < Math.min(lv.h, cy + 8); r++) if (lv.plat[r * lv.w + cx]) { H.B = true; pulse('btnB'); break; }
+    }
   };
   ui.sampleRecord = function () {
     return SB.record.fromJSON({ v: 1, w: SB.GRID.W, h: SB.GRID.H, mode: 0, focal: null, rows: Array.from(SB.SAMPLE_ROOM), rows2: null });
   };
-  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name); };
+  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level }); };
 
   ui.showClear = function () { document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; document.body.classList.remove('playing'); };
   ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); document.getElementById('back').hidden = false; };
   /* every in game back is an internal screen switch that hides every overlay it can sit over */
-  ui.toTitle = function () { ui.hideClear(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
+  ui.toTitle = function () { RV.on = false; ui.releasePhoto(); ui.hideClear(); ui.hideDeath(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
 
   ui.init = function () {
     ui.fillCopy();
@@ -1425,8 +3005,21 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     });
     document.getElementById('sample').addEventListener('click', function () { ui.startRoom(ui.sampleRecord(), ui.COPY.sampleRoom); });
     document.getElementById('again').addEventListener('click', function () { ui.again(); });
+    /* the next room: back to the title under the camera's picker (a cancelled picker leaves the title) */
+    document.getElementById('nextroom').addEventListener('click', function () { ui.toTitle(); openPicker('fileshoot'); });
+    document.getElementById('deathagain').addEventListener('click', function () { ui.restart(); });
+    document.getElementById('deathtitle').addEventListener('click', function () { ui.hideDeath(); ui.toTitle(); });
     document.getElementById('cleartitle').addEventListener('click', ui.toTitle);
     document.getElementById('back').addEventListener('click', ui.toTitle);
+    ui.initCrop();
+    /* a tap during a reveal, once one has been seen, skips to play; the tap is the skip's alone (the strip never sees
+       it, so it is no jump) */
+    document.addEventListener('pointerdown', function (e) {
+      if (ui.screen !== 'reveal' || !RV.seen || e.target.closest('#back, #exit')) return;
+      e.stopPropagation();
+      RV.marks.skipped = true;
+      ui.endReveal();
+    }, true);
   };
 })(window.SB);
 </script>
@@ -1450,12 +3043,24 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   var perf = SB.perfLog = { step: [], draw: [], frames: [], pipeline: 0 };
   var keep = function (a, v) { a.push(v); if (a.length > 300) a.shift(); };
 
+  var EV = SB.sim.EV;
   function stepOnce() {
     var t0 = performance.now();
     SB.sim.step(G.state, SB.input.sample());
     keep(perf.step, performance.now() - t0);
     loop.steps++;
+    var ev = G.state.ev, au = SB.audio;
+    if (ev) {
+      if (ev & EV.JUMP) au.sfx('jump');
+      if (ev & EV.WALLJUMP) au.sfx('walljump');
+      if (ev & EV.DIVE) au.sfx('dive');
+      if (ev & EV.LAND) au.sfx('land', G.state.hero.shake > 0);
+      if (ev & EV.HIT) { au.sfx('hit'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); }
+      if (ev & EV.CLEAR) au.sfx('beacon');
+    }
+    SB.ui.hints(G.state, G.level);
     if (G.state.room.cleared && SB.ui.screen === 'play') SB.ui.showClear();
+    else if (G.state.room.dead && SB.ui.screen === 'play') SB.ui.showDeath();
   }
   function draw(now) {
     if (!G.state) return;
@@ -1463,12 +3068,16 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     SB.render.draw(G.state, G.level, now === undefined ? t0 : now);
     keep(perf.draw, performance.now() - t0);
   }
+  /* the rotate card's own query: under it the loop holds and the input lets go (the fourth review: the moths kept
+     coming behind a card that hides the room and takes every tap) */
+  var SIDEWAYS = window.matchMedia('(orientation: landscape) and (pointer: coarse)');
+  if (SIDEWAYS.addEventListener) SIDEWAYS.addEventListener('change', function (e) { if (e.matches && SB.input && SB.input.releaseAll) SB.input.releaseAll(); });
   function frame(now) {
     requestAnimationFrame(frame);
     var raw = last < 0 ? 0 : now - last, dt = Math.min(raw, DT_MAX);
     last = now;
     loop.raf++;
-    var run = !held && !!G.state && SB.ui.screen === 'play';
+    var run = !held && !SIDEWAYS.matches && !!G.state && SB.ui.screen === 'play';
     if (run) {
       if (!running) { loop.dropped += acc; acc = PHASE; loop.seeded += PHASE; }
       acc += dt; loop.consumed += dt; loop.clamped += raw - dt;
@@ -1479,14 +3088,16 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       keep(perf.frames, [now, n]);
     }
     running = run;
-    draw(now);
+    if (SB.ui.screen === 'reveal') SB.ui.revealFrame(now, held);
+    if (SB.ui.screen !== 'reveal') draw(now);
   }
 
   SB.render.init();
   SB.input.init();
+  SB.audio.init();
   SB.ui.init();
   SB.input.initStrip();
-  window.addEventListener('resize', function () { if (SB.ui.screen === 'play' || SB.ui.screen === 'clear') { SB.render.fit(); draw(); } });
+  window.addEventListener('resize', function () { if (SB.ui.screen === 'play' || SB.ui.screen === 'clear' || SB.ui.screen === 'dead') { SB.render.fit(); draw(); } });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { if (G.state) { SB.render.fit(); draw(); } });
   requestAnimationFrame(frame);
 
@@ -1503,7 +3114,28 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       return { w: lv.w, h: lv.h, spawn: lv.spawn, exit: lv.exit, otsuT: lv.otsuT, hash: SB.pipeline.levelHash(lv), code: SB.record.encode(lv.rec),
         viewRows: SB.render.viewRows, camY: SB.render.camY, cssW: SB.render.cssW };
     },
-    perf: function () { return { now: performance.now(), step: perf.step.slice(), draw: perf.draw.slice(), frames: perf.frames.slice(), pipeline: perf.pipeline, loop: Object.assign({ acc: acc, stepMs: STEP_MS }, loop) }; },
+    perf: function () { return { now: performance.now(), step: perf.step.slice(), draw: perf.draw.slice(), frames: perf.frames.slice(), pipeline: perf.pipeline, loop: Object.assign({ acc: acc, stepMs: STEP_MS }, loop),
+      reveal: SB.ui.reveal.marks ? Object.assign({}, SB.ui.reveal.marks) : null }; },
+    audioState: function () { return SB.audio.state(); },
+    photoAlive: function () { return SB.ui.photoAlive(); },
+    tabs: function () { return G.level ? G.level.repair.tabs : -1; },
+    overlay: function () {
+      var CR = SB.ui.crop, a = CR.lastA, n = 0;
+      if (a && a.solid) for (var i = 0; i < a.solid.length; i++) n += a.solid[i];
+      return { builds: CR.builds, decodes: CR.decodes, solids: n, full: CR.full, needsCrop: CR.last ? !!CR.last.needsCrop : null, ms: CR.ms, focal: CR.focal, crop: CR.crop };
+    },
+    audioMade: function () { return SB.audio.made; },
+    audioPlayed: function () { return Object.assign({}, SB.audio.played); },
+    hinted: function () { return Object.assign({}, SB.ui.hinted); },
+    heroShown: function () { return SB.render.heroShown; },
+    heroFrame: function () { return SB.render.drawn.hero.key; },
+    spriteRects: function () { return SB.render.rects(G.level); },
+    samplePixels: function (n) { return SB.render.samplePixels(G.level, n || 64); },
+    backdropProbe: function () { return SB.render.backdropProbe(G.level); },
+    atlas: function () { var o = {}; for (var k in SB.render.atlas) o[k] = SB.render.atlas[k]; return o; },
+    /* the reveal's liberties: skip it for the gates that test something else, and hold it at t ms for the shots */
+    revealSkip: function (on) { SB.ui.reveal.devSkip = !!on; return SB.ui.reveal.devSkip; },
+    revealAt: function (ms) { var RV = SB.ui.reveal; if (!RV.on) return false; RV.t = ms; RV.start = performance.now() - ms; SB.ui.revealFrame(performance.now(), true); return true; },
     lastInput: function () { return SB.input.last(); },
     recording: function () { return SB.input.recording(); },
     staticBuilds: function () { return SB.render.builds; },
