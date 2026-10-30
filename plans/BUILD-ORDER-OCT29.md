@@ -1,6 +1,6 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 05:58 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
+> **STATE 30 Oct 02:47 UTC (Opus, building; clock times before this were estimates and are corrected in PROGRESS.md).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
 > night one order, the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after T0.8a, sb-m0-2 after
 > T0.8b, sb-m0-3 when M0 is complete. **Last shipped: T0.8a** (`4c9bcd3d4`, THE FIRST PLAYABLE CLIMB on keyboard: title,
 > sample room, climb, clear, again). Gates: lint, harness (977 assertions), redwatch (21 rows RED, NOOP green), boot,
