@@ -61,6 +61,30 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   color: var(--film); text-decoration: underline; font-size: 0.85rem; }
 #build { margin-top: auto; padding-top: 18px; align-self: flex-end; color: var(--pewter); font-size: 0.7rem; letter-spacing: 0.04em; }
 
+/* the play screen: an instant film frame (Paper, a faint grain) around the photo; the top strip holds the room name
+   and the hearts, the thick bottom strip holds the controls; the frame yields to the controls, never the reverse */
+#play { flex-direction: column; align-items: stretch; color: var(--ink);
+  background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect x='1' y='2' width='1' height='1' fill='%23000' fill-opacity='0.05'/%3E%3Crect x='4' y='4' width='1' height='1' fill='%23000' fill-opacity='0.04'/%3E%3Crect x='3' y='0' width='1' height='1' fill='%23fff' fill-opacity='0.3'/%3E%3C/svg%3E");
+  padding-top: var(--sat); }
+#top { flex: 0 0 36px; height: 36px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 calc(12px + var(--sar)) 0 calc(12px + var(--sal)); font-weight: 700; font-size: 0.95rem; }
+#hearts { display: flex; gap: 4px; }
+#hearts i { width: 12px; height: 11px; background: var(--brick); border: 1px solid var(--ink); display: block; }
+#stage { flex: 0 0 auto; display: flex; justify-content: center; position: relative; }
+#view { display: block; image-rendering: pixelated; image-rendering: crisp-edges; touch-action: none; background: var(--ink); }
+#strip { flex: 1 1 auto; min-height: 168px; position: relative; padding-bottom: var(--sab); touch-action: none; }
+#back { position: absolute; top: 8px; right: calc(8px + var(--sar)); min-width: 64px; min-height: 48px; padding: 0 12px;
+  border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
+#clear { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
+  background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  display: none; flex-direction: column; gap: 12px; align-items: stretch; text-align: center; z-index: 10; }
+#clear.on { display: flex; }
+#clear h2 { margin: 0 0 4px; font-size: 1.3rem; }
+#clear button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
+#again { background: var(--sun); color: var(--ink); }
+#cleartitle { background: transparent; color: var(--ink); }
+#safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 var(--sab) 0; }
+
 /* the rotate card: a phone held sideways; a desktop window (a fine pointer) never gets it (QUESTIONS Q40) */
 #rotate { display: none; position: fixed; inset: 0; z-index: 1000; background: var(--soot); color: var(--paper);
   align-items: center; justify-content: center; text-align: center; padding: 24px; font-size: 1.1rem; }
@@ -79,10 +103,20 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     <button id="shoot" class="big" type="button" disabled data-copy="shoot"></button>
     <button id="choose" class="big" type="button" disabled data-copy="choose"></button>
     <p id="soon" data-copy="soon"></p>
-    <button id="sample" type="button" hidden data-copy="sample"></button>
+    <button id="sample" type="button" data-copy="sample"></button>
   </div>
   <p id="build"></p>
 </main>
+<main id="play" class="screen" aria-label="Play">
+  <div id="top"><span id="roomname"></span><span id="hearts" aria-label="Hearts"></span></div>
+  <div id="stage"><canvas id="view" width="384" height="640"></canvas>
+    <div id="clear" role="dialog" aria-label="Room clear"><h2 data-copy="roomClear"></h2>
+      <button id="again" type="button" data-copy="again"></button>
+      <button id="cleartitle" type="button" data-copy="toTitle"></button></div>
+  </div>
+  <div id="strip"><button id="back" type="button" data-copy="toTitle"></button></div>
+</main>
+<div id="safeprobe"></div>
 <div id="rotate" role="alert" data-copy="rotate"></div>
 
 <script id="core-ns" data-core>
@@ -676,7 +710,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 
     var z = function () { return new Uint8Array(n); };
     return {
-      rec: rec, w: w, h: h, seed: SB.record.seedOf(rec), biome: opts.biome === undefined || opts.biome === null ? 0 : opts.biome,
+      rec: rec, pal: pal, w: w, h: h, seed: SB.record.seedOf(rec), biome: opts.biome === undefined || opts.biome === null ? 0 : opts.biome,
       negative: negative, L: L, solid: solid, plat: plat, tab: z(), slick: z(), sticky: z(), trap: z(),
       otsuT: otsuT, landmarks: landmarks, spawn: spawn, exit: exit,
       beacon: { idx: exit, cells: light ? Int32Array.from(light) : new Int32Array(0) },
@@ -972,7 +1006,24 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   function serialize(s) { return Int32Array.from(walk(s, FIELDS, '', [])); }
   function hash(s) { return SB.rng.hashWords(serialize(s)); }
 
-  SB.sim = { IN: IN, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
+  /* section 2.6: a replay stores runs of equal words, [count, word] */
+  var rle = {
+    encode: function (words) {
+      var runs = [];
+      for (var i = 0; i < words.length; i++) {
+        if (runs.length && runs[runs.length - 1][1] === words[i]) runs[runs.length - 1][0]++;
+        else runs.push([1, words[i]]);
+      }
+      return runs;
+    },
+    decode: function (runs) {
+      var out = [];
+      for (var i = 0; i < runs.length; i++) for (var k = 0; k < runs[i][0]; k++) out.push(runs[i][1]);
+      return out;
+    }
+  };
+
+  SB.sim = { IN: IN, rle: rle, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
     FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
@@ -983,12 +1034,144 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 </script>
 <script id="shell-render">
 (function (SB) { 'use strict';
-  /* canvas, integer scaling, the frame, the static layer, the atlas, the camera (T0.8a) */
+  /* shell-render (BUILD-PLAN.md section 1.5): one canvas pixel is one game pixel and the render never scales; CSS
+     enlarges by an integer (1x, 2x at 768 CSS px and wider) or, under 384 CSS px, shrinks to the screen width, the
+     one exception (QUESTIONS Q5). The static layer is built once per level; each frame is one blit of it at the
+     camera plus the sprites. The camera is render state, recomputed from the hero every frame, never in the sim. */
+  var R = SB.render = { camY: 0, viewRows: 40, scale: 1, cssW: 384, builds: 0 };
+  var canvas, ctx, stat, sctx, worldH = 0, viewH = 640, pulse = 0;
+
+  R.init = function () {
+    canvas = document.getElementById('view');
+    ctx = canvas.getContext('2d', { alpha: false });
+    ctx.imageSmoothingEnabled = false;
+    stat = document.createElement('canvas');
+    sctx = stat.getContext('2d');
+  };
+
+  /* the safe area insets, read once per fit from a probe whose padding is env(safe-area-inset-*) */
+  R.safe = function () {
+    var cs = getComputedStyle(document.getElementById('safeprobe'));
+    return { top: parseFloat(cs.paddingTop) || 0, bottom: parseFloat(cs.paddingBottom) || 0 };
+  };
+
+  R.fit = function () {
+    var K = SB.K, T = SB.TUNING;
+    var vw = document.documentElement.clientWidth || window.innerWidth;
+    var vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    var safe = R.safe(), avail = vh - safe.top - safe.bottom;
+    R.cssW = vw >= T.SCALE2_MIN_W ? K.WORLD_W * 2 : vw >= K.WORLD_W ? K.WORLD_W : vw;
+    R.scale = R.cssW / K.WORLD_W;
+    var rowPx = K.CELL * Math.max(1, R.scale);
+    R.viewRows = Math.max(T.VIEW_ROWS_MIN, Math.min(SB.GRID.VIEW_ROWS, Math.floor((avail - T.TOP_STRIP - T.CONTROL_STRIP) / rowPx)));
+    viewH = R.viewRows * K.CELL;
+    if (canvas.width !== K.WORLD_W) canvas.width = K.WORLD_W;
+    if (canvas.height !== viewH) canvas.height = viewH;
+    canvas.style.width = R.cssW + 'px';
+    canvas.style.height = (viewH * R.scale) + 'px';
+    ctx.imageSmoothingEnabled = false;
+  };
+
+  function css(idx) { return SB.palette.hex(SB.palette.RGB[idx]); }
+  function rgb(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
+
+  /* the static layer (section 1.5 layer 1; DESIGN 11): the photo at 60% contrast through the blends, Ink outlines on
+     solids, a Glare over Ink top edge on everything you can stand on, the biome's line under a one way edge, film
+     tabs in Film with a perforated edge. Built once per level. */
+  R.buildStatic = function (lv) {
+    var P = SB.palette, C = SB.K.CELL, w = lv.w, h = lv.h, x, y, i, biome = lv.biome | 0;
+    stat.width = w * C; stat.height = h * C; worldH = stat.height;
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
+      i = y * w + x;
+      sctx.fillStyle = rgb(lv.solid[i] ? P.solidColour(lv.pal[i], biome) : P.openColour(lv.pal[i], biome));
+      sctx.fillRect(x * C, y * C, C, C);
+    }
+    var ink = css(P.I.INK), glare = css(P.I.GLARE), line = css(P.TINT.line[biome]), film = css(P.I.FILM);
+    var open = function (xx, yy) { return xx >= 0 && xx < w && yy >= 0 && yy < h && !lv.solid[yy * w + xx]; };
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
+      i = y * w + x;
+      if (lv.solid[i]) {
+        sctx.fillStyle = ink;
+        if (open(x - 1, y)) sctx.fillRect(x * C, y * C, 1, C);
+        if (open(x + 1, y)) sctx.fillRect(x * C + C - 1, y * C, 1, C);
+        if (open(x, y + 1)) sctx.fillRect(x * C, y * C + C - 1, C, 1);
+        if (open(x, y - 1)) { sctx.fillStyle = glare; sctx.fillRect(x * C, y * C, C, 1); sctx.fillStyle = ink; sctx.fillRect(x * C, y * C + 1, C, 1); }
+      } else if (lv.plat[i]) {
+        if (lv.tab && lv.tab[i]) {
+          sctx.fillStyle = film; sctx.fillRect(x * C, y * C, C, 4);
+          sctx.fillStyle = ink; for (var k = 2; k < C; k += 4) sctx.fillRect(x * C + k, y * C + 1, 1, 2);
+        } else {
+          sctx.fillStyle = glare; sctx.fillRect(x * C, y * C, C, 1);
+          sctx.fillStyle = ink; sctx.fillRect(x * C, y * C + 1, C, 1);
+          sctx.fillStyle = line; sctx.fillRect(x * C, y * C + 2, C, 1);
+        }
+      }
+    }
+    R.builds++;
+  };
+
+  /* one frame: the blit at the camera, the beacon, the hero (a Sun rectangle with an Ink outline until T0.17) */
+  R.draw = function (s, lv) {
+    var K = SB.K, P = SB.palette, C = K.CELL;
+    if (!s || !lv) return;
+    var heroY = s.hero.y >> 8, heroX = s.hero.x >> 8;
+    var cam = heroY + (K.HERO_H >> 1) - Math.round(viewH * SB.TUNING.CAM_HERO_FRAC);
+    cam = Math.max(0, Math.min(worldH - viewH, cam));
+    R.camY = cam;
+    ctx.drawImage(stat, 0, cam, K.WORLD_W, viewH, 0, 0, K.WORLD_W, viewH);
+    if (lv.exit >= 0) {
+      var ex = (lv.exit % lv.w) * C, ey = Math.floor(lv.exit / lv.w) * C - cam;
+      pulse = (pulse + 1) % 48;
+      ctx.fillStyle = css(pulse < 24 ? P.I.SUN : P.I.GLARE);
+      ctx.fillRect(ex - 2, ey - 2, C + 4, 2); ctx.fillRect(ex - 2, ey + C, C + 4, 2);
+      ctx.fillRect(ex - 2, ey, 2, C); ctx.fillRect(ex + C, ey, 2, C);
+    }
+    var hy = heroY - cam;
+    ctx.fillStyle = css(P.I.INK); ctx.fillRect(heroX, hy, K.HERO_W, K.HERO_H);
+    ctx.fillStyle = css(SB.TUNING.HERO_BODY); ctx.fillRect(heroX + 1, hy + 1, K.HERO_W - 2, K.HERO_H - 3);
+    ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(heroX + (s.hero.facing > 0 ? K.HERO_W - 4 : 2), hy + 4, 2, 2);
+  };
 })(window.SB);
 </script>
 <script id="shell-input">
 (function (SB) { 'use strict';
-  /* rocker and buttons, keyboard, the per step sample (T0.8a, T0.8b) */
+  /* shell-input (section 1.5): a raw latch per verb (held, and a count of down edges since the last sample), fed by
+     the keyboard here and the control strip in T0.8b; sample() builds one word per sim step and clears the edges, so
+     a tap shorter than a step is exactly one tap step with held false, and the word is what the recorder keeps. */
+  var I = SB.input = {};
+  var down = { L: {}, R: {}, A: {}, B: {} }, edge = { A: 0, B: 0 }, last = 0, rec = [];
+  var KEYS = { ArrowLeft: 'L', ArrowRight: 'R', KeyZ: 'A', Space: 'A', KeyX: 'B' };
+  function isHeld(v) { for (var k in down[v]) if (down[v][k]) return true; return false; }
+
+  I.press = function (verb, source) {
+    if (!isHeld(verb) && (verb === 'A' || verb === 'B')) edge[verb]++;
+    down[verb][source] = 1;
+  };
+  I.release = function (verb, source) { delete down[verb][source]; };
+  I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {} }; };
+
+  I.sample = function () {
+    var IN = SB.sim.IN;
+    var w = (isHeld('L') ? IN.L : 0) | (isHeld('R') ? IN.R : 0) | (isHeld('A') ? IN.A : 0) | (isHeld('B') ? IN.B : 0) |
+      (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0);
+    edge.A = 0; edge.B = 0; last = w; rec.push(w);
+    return w;
+  };
+  I.last = function () { return last; };
+  I.recording = function () { return SB.sim.rle.encode(rec); };
+  I.resetRecording = function () { rec = []; edge.A = 0; edge.B = 0; };
+
+  I.init = function () {
+    window.addEventListener('keydown', function (e) {
+      var v = KEYS[e.code]; if (!v) return;
+      if (SB.ui.screen !== 'play') return;
+      e.preventDefault();
+      if (!e.repeat) I.press(v, 'key:' + e.code);
+    });
+    window.addEventListener('keyup', function (e) { var v = KEYS[e.code]; if (!v) return; I.release(v, 'key:' + e.code); });
+    window.addEventListener('blur', I.releaseAll);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) I.releaseAll(); });
+  };
 })(window.SB);
 </script>
 <script id="shell-audio">
@@ -1014,15 +1197,23 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     choose: 'Choose a photo',
     soon: 'Coming in the next build.',
     sample: 'Try the sample room',
+    sampleRoom: 'Sample room',
+    roomClear: 'Room clear',
+    again: 'Again',
+    toTitle: 'Title',
     build: 'build',
     rotate: 'Turn your phone upright to play.'
   });
+
+  /* the game: the record, the built level, the live sim state, the room's name */
+  var G = SB.game = { record: null, level: null, state: null, name: '' };
 
   ui.screen = 'title';
   ui.show = function (name) {
     var all = document.querySelectorAll('.screen');
     for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === name);
     ui.screen = name;
+    if (name === 'play') SB.render.fit();
   };
 
   ui.fillCopy = function (root) {
@@ -1036,6 +1227,38 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     document.getElementById('build').textContent = ui.COPY.build + ' ' + SB.BUILD.replace(/-/g, ' ');
   };
 
+  function hearts(n) {
+    var el = document.getElementById('hearts'), s = '';
+    for (var i = 0; i < n; i++) s += '<i></i>';
+    if (el.getAttribute('data-n') !== String(n)) { el.innerHTML = s; el.setAttribute('data-n', String(n)); }
+  }
+
+  /* a room from a record: build, then play; the reveal (T0.14) and the needsCrop sheet (T0.15) come later */
+  ui.startRoom = function (record, name) {
+    var t0 = performance.now();
+    var lv = SB.pipeline.build(record, {});
+    SB.perfLog.pipeline = performance.now() - t0;
+    if (lv.needsCrop) return false;
+    G.record = record; G.level = lv; G.name = name;
+    G.state = SB.sim.create(lv, {});
+    SB.render.buildStatic(lv);
+    SB.input.resetRecording();
+    document.getElementById('roomname').textContent = name;
+    hearts(G.state.hero.hearts);
+    ui.hideClear();
+    ui.show('play');
+    return true;
+  };
+  ui.sampleRecord = function () {
+    return SB.record.fromJSON({ v: 1, w: SB.GRID.W, h: SB.GRID.H, mode: 0, focal: null, rows: Array.from(SB.SAMPLE_ROOM), rows2: null });
+  };
+  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name); };
+
+  ui.showClear = function () { document.getElementById('clear').classList.add('on'); ui.screen = 'clear'; };
+  ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); };
+  /* every in game back is an internal screen switch that hides every overlay it can sit over */
+  ui.toTitle = function () { ui.hideClear(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
+
   ui.init = function () {
     ui.fillCopy();
     var exit = document.getElementById('exit');
@@ -1046,6 +1269,10 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       setTimeout(function () { exit.disabled = false; }, 1000);
       window.SWS_EXIT();
     });
+    document.getElementById('sample').addEventListener('click', function () { ui.startRoom(ui.sampleRecord(), ui.COPY.sampleRoom); });
+    document.getElementById('again').addEventListener('click', function () { ui.again(); });
+    document.getElementById('cleartitle').addEventListener('click', ui.toTitle);
+    document.getElementById('back').addEventListener('click', ui.toTitle);
   };
 })(window.SB);
 </script>
@@ -1056,11 +1283,76 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 </script>
 <script id="shell-boot">
 (function (SB) { 'use strict';
+  /* shell-boot (section 1.5): the fixed 60 Hz step with an accumulator. Per animation frame dt is the frame time
+     clamped to 100 ms (a tab switch never produces a catch up storm); at most four steps run; if time is still owed
+     after four the frame is a stall and the debt is dropped. The sim never sees time, only steps. */
+  var STEP_MS = 1000 / SB.TUNING.STEP_HZ, MAX_STEPS = 4, DT_MAX = 100;
+  var G = SB.game, held = false, last = -1, acc = 0;
+  var loop = { raf: 0, steps: 0, consumed: 0, dropped: 0, stalls: 0, maxSteps: 0 };
+  var perf = SB.perfLog = { step: [], draw: [], pipeline: 0 };
+  var keep = function (a, v) { a.push(v); if (a.length > 300) a.shift(); };
+
+  function stepOnce() {
+    var t0 = performance.now();
+    SB.sim.step(G.state, SB.input.sample());
+    keep(perf.step, performance.now() - t0);
+    loop.steps++;
+    if (G.state.room.cleared && SB.ui.screen === 'play') SB.ui.showClear();
+  }
+  function draw() {
+    if (!G.state) return;
+    var t0 = performance.now();
+    SB.render.draw(G.state, G.level);
+    keep(perf.draw, performance.now() - t0);
+  }
+  function frame(now) {
+    requestAnimationFrame(frame);
+    var dt = last < 0 ? 0 : Math.min(now - last, DT_MAX);
+    last = now;
+    loop.raf++;
+    if (!held && G.state && SB.ui.screen === 'play') {
+      acc += dt; loop.consumed += dt;
+      var n = 0;
+      while (acc >= STEP_MS && n < MAX_STEPS) { stepOnce(); acc -= STEP_MS; n++; }
+      if (acc >= STEP_MS) { loop.dropped += acc; acc = 0; loop.stalls++; }
+      if (n > loop.maxSteps) loop.maxSteps = n;
+    }
+    draw();
+  }
+
+  SB.render.init();
+  SB.input.init();
   SB.ui.init();
-  /* the dev hook the gates and the shot script read (section 1.7); it grows with the loop in T0.8a */
+  window.addEventListener('resize', function () { if (SB.ui.screen === 'play' || SB.ui.screen === 'clear') { SB.render.fit(); draw(); } });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { if (G.state) { SB.render.fit(); draw(); } });
+  requestAnimationFrame(frame);
+
+  /* the dev hook the gates and the shot script read (section 1.7): read only, plus the named liberties loadRecord,
+     goto, hold and step */
   window.SB_DEV = {
     build: SB.BUILD,
-    screen: function () { return SB.ui.screen; }
+    screen: function () { return SB.ui.screen; },
+    frames: function () { return loop.steps; },
+    state: function () { return G.state ? structuredClone(G.state) : null; },
+    hash: function () { return G.state ? SB.sim.hash(G.state) : null; },
+    level: function () {
+      var lv = G.level; if (!lv) return null;
+      return { w: lv.w, h: lv.h, spawn: lv.spawn, exit: lv.exit, otsuT: lv.otsuT, hash: SB.pipeline.levelHash(lv), code: SB.record.encode(lv.rec),
+        viewRows: SB.render.viewRows, camY: SB.render.camY, cssW: SB.render.cssW };
+    },
+    perf: function () { return { step: perf.step.slice(), draw: perf.draw.slice(), pipeline: perf.pipeline, loop: Object.assign({ acc: acc, stepMs: STEP_MS }, loop) }; },
+    lastInput: function () { return SB.input.last(); },
+    recording: function () { return SB.input.recording(); },
+    staticBuilds: function () { return SB.render.builds; },
+    loadRecord: function (str) {
+      var rec = null, j = null;
+      try { j = JSON.parse(str); } catch (e) { j = null; }
+      if (j && j.rows) rec = SB.record.fromJSON(j); else if (j && j.record) rec = SB.record.fromJSON(j.record); else rec = SB.record.decode(String(str).trim());
+      return rec ? SB.ui.startRoom(rec, SB.ui.COPY.sampleRoom) : false;
+    },
+    goto: function (name) { if (name === 'title') SB.ui.toTitle(); else if (name === 'sample') SB.ui.startRoom(SB.ui.sampleRecord(), SB.ui.COPY.sampleRoom); return SB.ui.screen; },
+    hold: function (on) { held = !!on; acc = 0; return held; },
+    step: function (n) { for (var i = 0; i < n && G.state; i++) stepOnce(); draw(); return loop.steps; }
   };
 })(window.SB);
 </script>

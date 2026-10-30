@@ -35,6 +35,7 @@ const GATES = [
    when the browser is absent; a failure here is rerun ALONE, twice, before it is believed (two cores, swiftshader). */
 const BROWSER_GATES = [
   { name: 'boot',     cmd: ['test/boot.mjs'],   need: 'BOOT OK' },
+  { name: 'play',     cmd: ['test/play.mjs'],   need: 'PLAY OK' },
   { name: 'redwatch-browser', cmd: ['tools/redwatch.js', '--check', '--browser-only'], need: 'REDWATCH OK', slow: true }
 ];
 
