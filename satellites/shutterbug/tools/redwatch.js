@@ -156,7 +156,7 @@ const MUTANTS = [
   { name: 'CAPTURE_BGR', task: 'T0.5b', file: 'page', find: 'rgb[j] = d[i]; rgb[j + 1] = d[i + 1]; rgb[j + 2] = d[i + 2];', repl: 'rgb[j] = d[i + 2]; rgb[j + 1] = d[i + 1]; rgb[j + 2] = d[i];',
     gates: [{ gate: 'make', expect: 'H-cap-1: the canvas path on the gradient is within 2 per channel' }] },
   { name: 'OVERLAY_NO_HASH', task: 'T0.5b', file: 'make', find: "      ox.fillStyle = '#' + SB.palette.HEX[parseInt(rows[y][x], 16)];", repl: "      ox.fillStyle = SB.palette.HEX[parseInt(rows[y][x], 16)];",
-    gates: [{ gate: 'make', expect: "the 24x48 overlay shows the saved record" }] },
+    gates: [{ gate: 'make', expect: 'the 24x48 overlay draws the saved room as built' }] },
   { name: 'CROP_SHADOW_UNCLIPPED', task: 'T0.5b', file: 'make', find: ' overflow: hidden; }   /* the crop box', repl: ' }   /* the crop box',
     gates: [{ gate: 'make', expect: 'on screen the overlay shows each open cell in its palette colour' }] },
   { name: 'MAX_STEPS_1', task: 'T0.8b review', file: 'page', find: 'MAX_STEPS = 4, DT_MAX = 100', repl: 'MAX_STEPS = 1, DT_MAX = 100',

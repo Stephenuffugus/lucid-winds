@@ -4,6 +4,12 @@ Level records (grids, never photos) that `harness.js` builds and checks (BUILD-P
 Photos never enter the repo: a room photo becomes a record in the browser through `fixtures/make.html` (T0.5b), and
 only the JSON is committed, into `fixtures/rooms/`.
 
+**Making one from a photo (Stephen):** serve the repo (`python3 -m http.server 8777` at the repo root), open
+`http://localhost:8777/satellites/shutterbug/fixtures/make.html` (on the phone through the Codespace's forwarded port),
+take or pick photos, frame each one (drag, pinch, the plus and minus buttons, Fit), check the 24x48 overlay (solids
+hatched, one ways as light lines, the exit outlined; the 36x64 view is a preview only), name it, Download JSON, move the
+JSON files into `fixtures/rooms/` and commit only the JSON. Nothing leaves the page and nothing is stored.
+
 Every fixture is the fixture v1 form: `{ v, name, source, notes, record, expect }`. The `expect` block is authored by
 hand FROM THE FIXTURE'S DESIGN, never by running the pipeline (law 2 applied to the corpus); the reasoning is in each
 fixture's `notes`. A `null` expectation means "not asserted for this fixture" and the notes say why. The harness
