@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 4045;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 4119;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -1104,17 +1104,21 @@ group('H-sim-12', 'vines: the fall stops within a step of a descending contact; 
     if (s.hero.sticky) stuckAt = k;
   }
   t.ok(stuckAt >= 0 && stuckAt - firstContact <= 1, 'the fall stops within 1 step of a descending full contact (contact at step ' + firstContact + ', stuck at ' + stuckAt + ')');
-  const yStuck = s.hero.y; SB.sim.step(s, 0); SB.sim.step(s, 0);
-  t.eq(s.hero.y, yStuck, 'it holds without the rocker');
+  const yHold = s.hero.y; SB.sim.step(s, 0); SB.sim.step(s, 0);
+  t.eq(s.hero.y, yHold, 'it holds without the rocker');
+  /* the jump from low on the vine, three rows of vine above it, so a rising step is still in full contact */
+  const s2 = placed(lv, 3 * CS, (v1 - 2) * CS); for (let k = 0; k < 5 && !s2.hero.sticky; k++) SB.sim.step(s2, 0);
+  const yStuck = s2.hero.y;
   let apex = 0, reStick = -1, risingStick = false;
   const words = M_STICKY(80);
   for (let k = 0; k < words.length && reStick < 0; k++) {
-    const vyBefore = s.hero.vy; SB.sim.step(s, words[k]); apex = Math.max(apex, yStuck - s.hero.y);
-    if (s.hero.sticky && k > 0) { reStick = k; if (vyBefore < 0) risingStick = true; }
+    const yPrev = s2.hero.y;
+    SB.sim.step(s2, words[k]); apex = Math.max(apex, yStuck - s2.hero.y);
+    if (s2.hero.sticky) { reStick = k; if (s2.hero.y < yPrev) risingStick = true; }   /* stuck on a step that moved it up */
   }
   t.ok(apex >= 69 * 256, 'A gives ' + (apex / 256).toFixed(1) + ' px straight up (at least 69)');
   t.ok(reStick > 0 && !risingStick, 'it re sticks on a descending step (step ' + reStick + '), never a rising one');
-  t.eq(s.hero.x, 3 * CS, 'and never moved sideways (no push off)');
+  t.eq(s2.hero.x, 3 * CS, 'and never moved sideways (no push off)');
 });
 
 group('H-sim-15', 'facing: a wall jump faces away from the wall; a rocker tap sets it', t => {
@@ -1123,8 +1127,109 @@ group('H-sim-15', 'facing: a wall jump faces away from the wall; a rocker tap se
   const s = placed(lv, 3 * CS, 36 * CS);
   SB.sim.step(s, IN.L); t.eq(s.hero.facing, -1, 'toward the wall while sliding');
   SB.sim.step(s, IN.L | IN.A | IN.A_TAP); t.eq(s.hero.facing, 1, 'the wall jump faces away, the rocker still toward the wall');
+  /* the lock (Q25): holding toward the wall through the jump, the push still carries the hero away; no re stick */
+  const xJump = s.hero.x; let rearmed = false;
+  for (let k = 0; k < 5; k++) { SB.sim.step(s, IN.L | IN.A); if (s.hero.wall !== 0) rearmed = true; }
+  t.ok(!rearmed && s.hero.x > xJump, 'held toward the wall, the lock carries the hero away (' + ((s.hero.x - xJump) / 256).toFixed(1) + ' px in 5 steps) and never re arms the slide');
   for (let k = 0; k < 12; k++) SB.sim.step(s, IN.A);
   SB.sim.step(s, IN.L); t.eq(s.hero.facing, -1, 'a rocker tap after the lock sets it');
+});
+
+/* LAB-EDGE and LAB-CLEAR for the wall jump (T0.12a): the hero flush on the right of a wall column at (3, 38) (started
+   G high, so the arming step leaves it exactly at the contact stance), armed by one step toward the wall, then the
+   wall jump with the oracle's canonical hold; PASS when it rests grounded on the target's row over its column by
+   LAND_OVERLAP */
+function wallLab(dx, dy, support, extraSolid) {
+  const W = SB.GRID.W, H = SB.GRID.H, g = Array.from({ length: H }, () => Array(W).fill('.'));
+  g[H - 1] = Array(W).fill('#');
+  for (let r = 6; r < H - 1; r++) g[r][2] = '#';
+  if (extraSolid) for (const [ex, ey] of extraSolid) if (g[ey] && g[ey][ex] === '.') g[ey][ex] = '#';
+  const lv = LABS.room(g.map(row => row.join(''))), gx = 3 + dx, gy = 38 - dy;
+  if (support === '#') lv.solid[(gy + 1) * W + gx] = 1; else lv.plat[(gy + 1) * W + gx] = 1;
+  return { lv, gx, gy };
+}
+function runWall(lab, hold) {
+  const s = placed(lab.lv, 3 * CS, 38 * CS - SB.K.G);
+  SB.sim.step(s, IN.L);
+  if (s.hero.wall !== -1) return { ok: false, why: 'not armed' };
+  const words = M_WALLJUMP(1, hold);
+  let landed = false;
+  for (let k = 0; k < words.length; k++) { SB.sim.step(s, words[k]); if (s.hero.ground) landed = true; if (landed && s.hero.vx === 0) break; }
+  const h = s.hero, row = Math.floor((h.y + HH - 1) / CS), ov = Math.min(h.x + HW, (lab.gx + 1) * CS) - Math.max(h.x, lab.gx * CS);
+  return { ok: h.ground === 1 && row === lab.gy && ov >= K.OVERLAP_SUB, cell: [Math.floor((h.x + (HW >> 1)) / CS), row] };
+}
+const wallCases = () => { const out = []; const m = ORACLE.clipped('WALL', false); for (let dy = 0; dy <= SB.TUNING.WALL_UP; dy++) for (let dx = 1; dx <= m[dy]; dx++) for (const support of ['#', '=']) out.push({ dx, dy, support }); return out; };
+group('H-lab-5', 'LAB-EDGE and LAB-CLEAR for the wall jump: every case the WALL table admits lands, and no cell outside its corridor stops it', t => {
+  let n = 0, runs = 0, fails = 0, skipped = 0, noHold = [];
+  const core = SB.reach.tables(SB.K, 0).profiles.WALL.paths;
+  for (const c of wallCases()) {
+    const can = ORACLE.canonical('WALL', 1, c.dx, c.dy);
+    /* the lock's 10 steps of push carry the hero about 26 px whatever the rocker does, so a landing 1 across is out of
+       reach: no hold, and the core must list no path (no edge) there either */
+    if (!can) { if (!noHold.includes(c.dx + ',' + c.dy)) { noHold.push(c.dx + ',' + c.dy); t.eq((core[c.dx + ',' + c.dy] || []).length, 0, 'WALL dx' + c.dx + ' dy' + c.dy + ': no hold lands there, and the model lists no path'); } continue; }
+    const cor = ORACLE.corridor(can, 1);
+    if (c.support === '#' && cor.has(c.dx + ',' + (c.dy - 1))) { skipped++; continue; }
+    /* the oracle counts its hold after the lock (the rocker steers from step 11): the macro holds the rocker from the
+       jump step through the lock and the hold */
+    const hold = SB.TUNING.WALL_JUMP_LOCK + can.hold;
+    const res = runWall(wallLab(c.dx, c.dy, c.support), hold);
+    t.ok(res.ok, 'WALL dx' + c.dx + ' dy' + c.dy + ' onto ' + (c.support === '#' ? 'solid' : 'one way') + ': hold ' + can.hold + ' lands (rests at ' + (res.cell || []).join(',') + (res.why ? ', ' + res.why : '') + ')');
+    n++;
+    let topRow = 0; for (const k of cor) topRow = Math.max(topRow, Number(k.split(',')[1]));
+    const bad = [];
+    for (let k = -1; k <= c.dx + 1; k++) for (let rr = -1; rr <= topRow + 2; rr++) {
+      if (cor.has(k + ',' + rr)) continue;
+      const bx = 3 + k, by = 38 - rr;
+      if (bx <= 2 || bx >= SB.GRID.W || by < 0 || by >= SB.GRID.H - 1) continue;
+      if (bx === 3 + c.dx && (by === 38 - c.dy || by === 38 - c.dy + 1)) continue;
+      if (bx === 3 && by >= 38) continue;                       /* the stance's own column below */
+      runs++;
+      if (!runWall(wallLab(c.dx, c.dy, c.support, [[bx, by]]), hold).ok) { fails++; bad.push(k + ',' + rr); }
+    }
+    t.ok(bad.length === 0, 'WALL dx' + c.dx + ' dy' + c.dy + ' onto ' + (c.support === '#' ? 'solid' : 'one way') + ': ' + (bad.length ? 'a solid at ' + bad.join(' ') + ' (outside the corridor) stops it' : 'no cell outside the corridor matters'));
+  }
+  console.log('  info  the wall jump labs: ' + n + ' cases land (' + skipped + ' solid support cases skipped: the support lies in the corridor; no hold at all for ' + noHold.join(' ') + '), ' + runs + ' single solid runs, ' + fails + ' stopped one');
+});
+
+/* the other wall and vine edges, one lab each: a touch arms the slide where the model says; a slide reaches the
+   floor; a vine climbs (STICKYUP), pops over its top (STICKYTOP), and lets go (LET_GO) */
+group('H-lab-6', 'WALLTOUCH, SLIDE, STICKYUP, STICKYTOP and LET_GO in the sim', t => {
+  /* WALLTOUCH: from the floor a FULL jump right toward a wall 3 columns away touches it and arms the slide */
+  { const lv = LABS.room(['', '', '', '', '', '', '', '', '.....#', '.....#', '.....#', '.....#', '.....#', '.....#', '.S...#', FLOOR]);
+    const s = SB.sim.create(lv); SB.sim.attach(s, lv); SB.sim.step(s, 0); SB.sim.step(s, 0);
+    let armed = -1; const words = M_JUMP('FULL', 1, 200);
+    for (let k = 0; k < 60 && armed < 0; k++) { SB.sim.step(s, words[k]); if (s.hero.wall === 1) armed = k; }
+    const g = SB.reach.graph(lv), touchRows = (g.adj[lv.spawn] || []).filter(e => e.kind === 'WALLTOUCH' && ((e.to - g.n) >> 1) % 24 === 4).map(e => Math.floor(((e.to - g.n) >> 1) / 24));
+    const row = Math.floor((s.hero.y + HH - 1) / CS);
+    t.ok(armed >= 0 && touchRows.includes(row), 'a FULL jump right touches the wall and arms the slide at row ' + row + ', a contact the model lists (' + touchRows.join(' ') + ')'); }
+  /* SLIDE: armed high on a wall, the slide reaches the floor below */
+  { const lines = []; for (let r = 20; r <= 46; r++) lines.push('..#'); const lv = LABS.room(lines.concat([FLOOR]));
+    const s = placed(lv, 3 * CS, 25 * CS); let k = 0; while (!s.hero.ground && k < 600) { SB.sim.step(s, IN.L); k++; }
+    t.ok(s.hero.ground === 1 && Math.floor((s.hero.y + HH - 1) / CS) === 46 && s.hero.x === 3 * CS, 'a slide held from row 25 reaches the floor (46) beside the wall (' + k + ' steps)'); }
+  /* STICKYUP, STICKYTOP, LET_GO on a vine (Overgrowth): stuck at its foot, A climbs and re sticks higher; at its top
+     A pops over onto the ledge beside it; B lets go to the floor */
+  { const lines = ['', '..|.'].concat([...Array(12)].map(() => '..|.'), ['', '', '', FLOOR]);
+    const lv = LABS.room(lines, { biome: 3 }), g = SB.reach.graph(lv);
+    const vRows = [...Array(lv.h).keys()].filter(r => lv.sticky[r * 24 + 2]), top = vRows[0];
+    const s = placed(lv, 3 * CS, (vRows[vRows.length - 1] - 1) * CS);
+    for (let k = 0; k < 30 && !s.hero.sticky; k++) SB.sim.step(s, 0);
+    const y1 = s.hero.y; let k2 = 0; const w1 = M_STICKY(80);
+    for (; k2 < w1.length; k2++) { SB.sim.step(s, w1[k2]); if (k2 > 0 && s.hero.sticky) break; }
+    t.ok(s.hero.sticky === 1 && s.hero.y < y1, 'STICKYUP: A from the vine climbs and sticks again ' + ((y1 - s.hero.y) / 256).toFixed(0) + ' px higher');
+    t.ok((g.adj[g.n + 2 * (Math.floor((y1 + HH - 1) / CS) * 24 + 3)] || []).some(e => e.kind === 'STICKYUP'), 'and the model lists a STICKYUP from that contact');
+    /* STICKYTOP by a small macro search (as the bot will): A, then the rocker toward the vine for 1..24 steps from
+       the second step (air control), landing on the vine's top, (2, top - 1) */
+    let popped = -1;
+    for (let hold = 1; hold <= 24 && popped < 0; hold++) {
+      const s3 = placed(lv, 3 * CS, (top + 1) * CS); for (let k = 0; k < 30 && !s3.hero.sticky; k++) SB.sim.step(s3, 0);
+      for (let k = 0; k < 80; k++) { SB.sim.step(s3, IN.A | (k === 0 ? IN.A_TAP : 0) | (k > 0 && k <= hold ? IN.L : 0)); if (s3.hero.ground) break; }
+      if (s3.hero.ground && Math.floor((s3.hero.y + HH - 1) / CS) === top - 1 && Math.floor((s3.hero.x + (HW >> 1)) / CS) <= 2) popped = hold;
+    }
+    t.ok(popped > 0, 'STICKYTOP: from the vine\'s top contact, A and then the rocker toward the vine land on its top, (2, ' + (top - 1) + ') (rocker ' + popped + ' steps)');
+    t.ok((g.adj[g.n + 2 * ((top + 1) * 24 + 3)] || []).some(e => e.kind === 'STICKYTOP' && e.to === (top - 1) * 24 + 2), 'and the model lists that STICKYTOP');
+    const s4 = placed(lv, 3 * CS, (top + 4) * CS); for (let k = 0; k < 30 && !s4.hero.sticky; k++) SB.sim.step(s4, 0);
+    SB.sim.step(s4, IN.B | IN.B_TAP); let k4 = 0; while (!s4.hero.ground && k4 < 200) { SB.sim.step(s4, 0); k4++; }
+    t.ok(s4.hero.ground === 1 && Math.floor((s4.hero.y + HH - 1) / CS) === 46, 'LET_GO: B lets go of the vine, and the fall reaches the floor without sticking again (' + k4 + ' steps)'); }
 });
 
 group('H-sim-18', 'air control: the rocker at takeoff equals a running start; L and R together decelerate to rest', t => {
