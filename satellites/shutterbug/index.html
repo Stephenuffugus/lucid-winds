@@ -6,6 +6,9 @@
 <title>Shutterbug</title>
 <meta name="theme-color" content="#1f1a1d">
 <meta name="description" content="A photo of your room becomes a pixel platformer level.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <script id="shell-fleet">
 /* ===== Sky Wolf Studio embed protocol ===== */
 (function () {
@@ -4285,7 +4288,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });
     document.getElementById('share').addEventListener('click', function () { ui.openShare(); });
     document.getElementById('settingsbtn').addEventListener('click', function () { ui.show('settings'); });
-    document.getElementById('levelcode').placeholder = ui.COPY.levelCode;   /* the field says what it takes (t110: an empty white box) */
+    document.getElementById('levelcode').placeholder = ui.COPY.levelCode;
+    document.getElementById('install').addEventListener('click', function () { var ip = ui.installPrompt; if (ip) { ui.installPrompt = null; this.hidden = true; try { ip.prompt(); } catch (e) { /* silent */ } } });   /* the field says what it takes (t110: an empty white box) */
     document.getElementById('settitle').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
     var setBool = function (id, key) { document.getElementById(id).addEventListener('change', function () { SB.save.doc.settings[key] = this.checked; SB.save.commit(); ui.applySettings(); }); };
     setBool('setmirror', 'mirror'); setBool('setsound', 'sound'); setBool('setmusic', 'music');
@@ -4414,6 +4418,11 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   }
   fromHash();
   window.addEventListener('hashchange', fromHash);
+  /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
+     page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
+     install offer waits behind Settings' Install */
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=1').catch(function () {}); } catch (e) { /* silent */ } });
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); SB.ui.installPrompt = e; document.getElementById('install').hidden = false; });
   SB.input.initStrip();
   window.addEventListener('resize', function () { if (SB.ui.screen === 'play' || SB.ui.screen === 'clear' || SB.ui.screen === 'dead') { SB.render.fit(); draw(); } });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { if (G.state) { SB.render.fit(); draw(); } });

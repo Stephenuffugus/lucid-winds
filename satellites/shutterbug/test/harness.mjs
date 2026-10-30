@@ -62,6 +62,11 @@ export async function serve() {
       res.writeHead(200, { 'content-type': MIME['.html'], 'cache-control': 'no-store' });
       res.end(readFileSync(process.env.SB_PAGE)); return;
     }
+    /* SB_SW answers sw.js with another file (the pwa gate's update path, redwatch's sw.js mutants) */
+    if (process.env.SB_SW && clean === GAME_PATH + 'sw.js') {
+      res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-store' });
+      res.end(readFileSync(process.env.SB_SW)); return;
+    }
     /* SB_MAKE answers fixtures/make.html with another file (redwatch's make.html mutants) */
     if (process.env.SB_MAKE && clean === GAME_PATH + 'fixtures/make.html') {
       res.writeHead(200, { 'content-type': MIME['.html'], 'cache-control': 'no-store' });

@@ -311,6 +311,23 @@ for (const b of inline) {
   if (/controllerchange/.test(b.src) && /location\s*\.\s*reload|reload\s*\(/.test(b.src)) fail('RELOAD', (b.id || 'anon') + ' pairs controllerchange with a reload');
 }
 
+/* rules: the PWA (section 1.5, T1.11): sw.js's BUILD equals the page's SB.BUILD and its CACHE's version the
+   registration's ?v= (the host caching law: they move together); it deletes caches only inside a shutterbug- filter; its
+   fetch handler returns on any URL outside its scope before any respondWith; it never pairs controllerchange with a reload */
+{
+  const swPath = join(dirname(PAGE), 'sw.js');
+  if (existsSync(swPath)) {
+    const sw = readFileSync(swPath, 'utf8'), pb = (html.match(/SB\.BUILD\s*=\s*'([^']*)'/) || [])[1], sb = (sw.match(/var BUILD = '([^']*)'/) || [])[1];
+    const cv = (sw.match(/var CACHE = 'shutterbug-v([0-9A-Za-z._-]+)'/) || [])[1], rv = (html.match(/sw\.js\?v=([0-9A-Za-z._-]+)/) || [])[1];
+    if (!sb || sb !== pb) fail('STAMP', 'sw.js BUILD "' + sb + '" is not the page\'s SB.BUILD "' + pb + '"');
+    if (!cv || cv !== rv) fail('STAMP', 'sw.js CACHE shutterbug-v' + cv + ' and the registration sw.js?v=' + rv + ' do not move together');
+    for (const dm of sw.matchAll(/caches\.delete\(/g)) { const before = sw.slice(Math.max(0, dm.index - 260), dm.index); if (!/indexOf\('shutterbug-'\) === 0|startsWith\('shutterbug-'\)/.test(before)) fail('SW_DELETE', 'sw.js deletes a cache outside the shutterbug- filter'); }
+    const fh = sw.indexOf("addEventListener('fetch'"), guard = fh < 0 ? -1 : sw.indexOf('if (!req.url.startsWith(self.registration.scope)) return;', fh), rw = fh < 0 ? -1 : sw.indexOf('respondWith', fh);
+    if (fh < 0 || guard < 0 || (rw >= 0 && rw < guard)) fail('SW_SCOPE', 'sw.js\'s fetch handler does not return on URLs outside its scope before answering');
+    if (/controllerchange/.test(sw) && /reload\s*\(/.test(sw)) fail('RELOAD', 'sw.js pairs controllerchange with a reload');
+  }
+}
+
 if (warns.length) console.log('warnings (bare numerals over 16 outside TUNING; 256, shifts and masks are legitimate):\n  ' + warns.join('\n  '));
 if (fails.length) { console.log('LINT FAILED: ' + fails.length + '\n' + fails.map(f => '  FAIL ' + f).join('\n')); process.exit(1); }
 console.log('lint: ' + inline.length + ' inline blocks parse, ' + core.length + ' core blocks pure and in order, ' + si + ' style block' + (si === 1 ? '' : 's') + ' balanced, the include once, the copy law');

@@ -623,7 +623,18 @@ const MUTANTS = [
   { name: 'WRITE_25_ROOMS', task: 'T1.10', file: 'page', find: 'S.doc.recent = [j].concat(S.doc.recent.filter(function (r) { return !same(r); })).slice(0, 20);', repl: 'S.doc.recent = [j].concat(S.doc.recent.filter(function (r) { return !same(r); })).slice(0, 25);',
     gates: [{ gate: 'save', expect: '25 rooms added keep 20' }] },
   { name: 'SETITEM_UNGUARDED', task: 'T1.10', file: 'page', find: "    try { localStorage.setItem('shutterbug.v1', JSON.stringify(S.doc)); S.writes++; } catch (e) { /* quota or private mode: the game runs on */ }\n", repl: "    localStorage.setItem('shutterbug.v1', JSON.stringify(S.doc)); S.writes++;\n",
-    gates: [{ gate: 'save', expect: 'with setItem throwing the game runs on' }] }
+    gates: [{ gate: 'save', expect: 'with setItem throwing the game runs on' }] },
+  /* T1.11: the PWA */
+  { name: 'REGISTER_WHEN_EMBEDDED', task: 'T1.11', file: 'page', find: "if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load',", repl: "if (navigator.serviceWorker) window.addEventListener('load',",
+    gates: [{ gate: 'pwa', expect: 'with ?embed=1 and inside the wrapper iframe no worker registers' }] },
+  { name: 'SW_WIPES_OTHER_CACHES', task: 'T1.11', file: 'sw', find: "return k.indexOf('shutterbug-') === 0 && k !== CACHE;", repl: 'return k !== CACHE;',
+    gates: [{ gate: 'lint', expect: 'SW_DELETE' }] },
+  { name: 'SW_CACHES_ROOT_FILES', task: 'T1.11', file: 'sw', find: '  if (!req.url.startsWith(self.registration.scope)) return;\n', repl: '',
+    gates: [{ gate: 'lint', expect: 'SW_SCOPE' }] },
+  { name: 'RELOAD_ON_CONTROLLERCHANGE', task: 'T1.11', file: 'page', find: "  window.addEventListener('beforeinstallprompt',", repl: "  if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', function () { location.reload(); });\n  window.addEventListener('beforeinstallprompt',",
+    gates: [{ gate: 'lint', expect: 'RELOAD' }] },
+  { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=1')", repl: "register('./sw.js?v=2')",
+    gates: [{ gate: 'lint', expect: 'STAMP' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
@@ -639,7 +650,7 @@ fs.mkdirSync(OUT, { recursive: true });
 function anchorOf(m) {
   const isFx = m.file.startsWith('fixture:');
   const src = m.file === 'harness' ? path.join(GAME, 'harness.js') : isFx ? path.join(GAME, 'fixtures', m.file.slice(8))
-    : m.file === 'make' ? path.join(GAME, 'fixtures', 'make.html') : path.join(GAME, 'index.html');
+    : m.file === 'make' ? path.join(GAME, 'fixtures', 'make.html') : m.file === 'sw' ? path.join(GAME, 'sw.js') : path.join(GAME, 'index.html');
   let text = fs.readFileSync(src, 'utf8');
   for (const [find, repl] of (m.edits || (m.find !== null ? [[m.find, m.repl]] : []))) {
     const count = text.split(find).length - 1;
@@ -665,7 +676,7 @@ for (const m of MUTANTS) {
   const fixCopy = path.join(dir, 'fixtures');
   if (isFixture) fs.cpSync(path.join(GAME, 'fixtures'), fixCopy, { recursive: true });
   const srcFile = m.file === 'harness' ? path.join(GAME, 'harness.js') : isFixture ? path.join(fixCopy, m.file.slice(8))
-    : m.file === 'make' ? path.join(GAME, 'fixtures', 'make.html') : path.join(GAME, 'index.html');
+    : m.file === 'make' ? path.join(GAME, 'fixtures', 'make.html') : m.file === 'sw' ? path.join(GAME, 'sw.js') : path.join(GAME, 'index.html');
   const text = fs.readFileSync(srcFile, 'utf8');
   let mutated = text, anchor = 'ok';
   const edits = m.edits || (m.find !== null ? [[m.find, m.repl]] : []);
@@ -683,7 +694,11 @@ for (const m of MUTANTS) {
     harness = path.join(dir, 'harness.js');
   } else if (isFixture) { fs.writeFileSync(srcFile, mutated); fs.copyFileSync(path.join(GAME, 'index.html'), page); }
   else if (m.file === 'make') { fs.writeFileSync(path.join(dir, 'make.html'), mutated); fs.copyFileSync(path.join(GAME, 'index.html'), page); }
+  /* file 'sw' (T1.11): the mutated sw.js beside the page copy (the lint reads it there) and served through SB_SW */
+  else if (m.file === 'sw') { fs.writeFileSync(path.join(dir, 'sw.js'), mutated); fs.copyFileSync(path.join(GAME, 'index.html'), page); }
   else fs.writeFileSync(page, mutated);
+  /* the page's sw.js beside every copy, so the lint's stamp rules see the pair (T1.11) */
+  if (!fs.existsSync(path.join(dir, 'sw.js')) && fs.existsSync(path.join(GAME, 'sw.js'))) fs.copyFileSync(path.join(GAME, 'sw.js'), path.join(dir, 'sw.js'));
   const makeArgs = m.file === 'make' ? ['--make', path.join(dir, 'make.html')] : [];
 
   for (const g of gates) {
@@ -691,7 +706,7 @@ for (const m of MUTANTS) {
     let cmd, env = Object.assign({}, process.env);
     if (g.gate === 'lint') cmd = ['tools/lint.mjs', '--page', page].concat(makeArgs);
     else if (g.gate === 'harness') cmd = [harness, '--page', page].concat(g.only ? ['--only', g.only] : [], isFixture ? ['--fixtures', fixCopy] : [], g.args || []);
-    else if (BROWSER.has(g.gate)) { cmd = ['test/' + g.gate + '.mjs']; env.SB_PAGE = page; if (m.file === 'make') env.SB_MAKE = path.join(dir, 'make.html'); }
+    else if (BROWSER.has(g.gate)) { cmd = ['test/' + g.gate + '.mjs']; env.SB_PAGE = page; if (m.file === 'make') env.SB_MAKE = path.join(dir, 'make.html'); if (m.file === 'sw') env.SB_SW = path.join(dir, 'sw.js'); }
     else { rows.push({ m, g, result: 'UNKNOWN GATE' }); continue; }
     const r = spawnSync('node', cmd, { cwd: GAME, encoding: 'utf8', env, maxBuffer: 64 * 1024 * 1024, timeout: 15 * 60 * 1000 });
     const out = (r.stdout || '') + (r.stderr || '');

@@ -27,6 +27,7 @@ if (gi >= 0 && !ONE) { console.log('usage: --gate <name>'); process.exit(2); }
 /* Gates that need no browser. `slow` gates are skipped by --fast (and said). */
 const GATES = [
   { name: 'lint',     cmd: ['tools/lint.mjs'],  need: 'LINT OK' },
+  { name: 'icons',    cmd: ['tools/icons.mjs', '--check'], need: 'ICONS OK' },   /* the three PWA icons equal what the hero's pixel string draws (T1.11) */
   { name: 'harness',  cmd: ['harness.js', '--fast'], need: 'SHUTTERBUG HARNESS OK' },
   { name: 'redwatch', cmd: ['tools/redwatch.js', '--check'], need: 'REDWATCH OK' },
   /* the bot's macro search on every edge of every graph (T0.13a, BUILD-PLAN 3.9): before every deploy and the morning report */
@@ -49,6 +50,7 @@ const BROWSER_GATES = [
   { name: 'audio',    cmd: ['test/audio.mjs'],  need: 'AUDIO OK' },
   { name: 'share',    cmd: ['test/share.mjs'],  need: 'SHARE OK' },
   { name: 'save',     cmd: ['test/save.mjs'],   need: 'SAVE OK' },
+  { name: 'pwa',      cmd: ['test/pwa.mjs'],    need: 'PWA OK' },
   { name: 'redwatch-browser', cmd: ['tools/redwatch.js', '--check', '--browser-only'], need: 'REDWATCH OK', slow: true }
 ];
 

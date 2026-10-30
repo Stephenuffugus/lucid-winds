@@ -43,6 +43,16 @@ if git cat-file -e "$MAIN:satellites/shutterbug/index.html" 2>/dev/null; then
 else
   echo "note: main holds no satellites/shutterbug/index.html yet (a first deploy): the stamp comparison is skipped"
 fi
+# The stamps move together (T1.11, section 1.5's host caching law): the page holds SB.BUILD = '$BUILD' and registers
+# sw.js?v=$SWV; sw.js holds the same BUILD and CACHE shutterbug-v$SWV. A split stamp stops before anything is written.
+grep -q "SB.BUILD = '$BUILD'" satellites/shutterbug/index.html || { echo "STOP: the page does not hold SB.BUILD = '$BUILD'"; exit 1; }
+if [ -f satellites/shutterbug/sw.js ]; then
+  : "${CACHE:?CACHE required once sw.js exists}"; : "${SWV:?SWV required once sw.js exists}"
+  [ "$CACHE" = "shutterbug-v$SWV" ] || { echo "STOP: CACHE $CACHE and SWV $SWV do not move together"; exit 1; }
+  grep -q "var CACHE = '$CACHE';" satellites/shutterbug/sw.js || { echo "STOP: sw.js does not hold CACHE $CACHE"; exit 1; }
+  grep -q "var BUILD = '$BUILD';" satellites/shutterbug/sw.js || { echo "STOP: sw.js does not hold BUILD $BUILD"; exit 1; }
+  grep -q "sw.js?v=$SWV'" satellites/shutterbug/index.html || { echo "STOP: the page does not register sw.js?v=$SWV"; exit 1; }
+fi
 SERVED=(satellites/shutterbug/index.html satellites/shutterbug/manifest.json satellites/shutterbug/sw.js
         satellites/shutterbug/icons)
 mapfile -t PATHS < <(git diff --name-only "$MAIN" "$BR" -- "${SERVED[@]}")
