@@ -27,7 +27,8 @@ if (gi >= 0 && !ONE) { console.log('usage: --gate <name>'); process.exit(2); }
 /* Gates that need no browser. `slow` gates are skipped by --fast (and said). */
 const GATES = [
   { name: 'lint',     cmd: ['tools/lint.mjs'],  need: 'LINT OK' },
-  { name: 'icons',    cmd: ['tools/icons.mjs', '--check'], need: 'ICONS OK' },   /* the three PWA icons equal what the hero's pixel string draws (T1.11) */
+  { name: 'icons',    cmd: ['tools/icons.mjs', '--check'], need: 'ICONS OK' },
+  { name: 'astra',    cmd: ['test/astra.mjs'], need: 'ASTRA OK' },   /* the Astra cutter: the round trip exact, every broken zip refused for its reason */   /* the three PWA icons equal what the hero's pixel string draws (T1.11) */
   { name: 'harness',  cmd: ['harness.js', '--fast'], need: 'SHUTTERBUG HARNESS OK' },
   { name: 'redwatch', cmd: ['tools/redwatch.js', '--check'], need: 'REDWATCH OK' },
   /* the bot's macro search on every edge of every graph (T0.13a, BUILD-PLAN 3.9): before every deploy and the morning report */

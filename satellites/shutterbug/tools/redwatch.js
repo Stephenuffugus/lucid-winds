@@ -667,7 +667,26 @@ const MUTANTS = [
   { name: 'QR_FOR_DOUBLE_EXPOSURE', task: 'T1.9b', file: 'page', find: "document.getElementById('qrtoggle').hidden = long; document.getElementById('qrlong').hidden = !long;", repl: "document.getElementById('qrtoggle').hidden = false; document.getElementById('qrlong').hidden = true;",
     gates: [{ gate: 'share', expect: "a Double Exposure room's" }] },
   { name: 'SHARE_ROWS_STACKED', task: 'T1.9b', file: 'page', find: '.sharerow { display: flex; gap: 8px; }', repl: '.sharerow { display: flex; flex-direction: column; gap: 8px; }',
-    gates: [{ gate: 'share', expect: 'at 412x915 Close, Copy link, the phone\'s Share, Copy code and the QR toggle are all in sight without a scroll' }] }
+    gates: [{ gate: 'share', expect: 'at 412x915 Close, Copy link, the phone\'s Share, Copy code and the QR toggle are all in sight without a scroll' }] },
+  /* the Astra cutter (tools/astra_cut.py, the brief's section 9) */
+  { name: 'CUT_NO_PALETTE_CHECK', task: 'ASTRA', file: 'astra', find: `                            if hx not in index:\n                                raise Refuse('frame %s pixel (%d, %d) is %s, off the 16 colours' % (name, x, y, hx))\n`, repl: ``,
+    gates: [{ gate: 'astra', expect: 'a pixel off the 16 colours is refused for being off the 16 colours' }] },
+  { name: 'CUT_SEMI_ALPHA', task: 'ASTRA', file: 'astra', find: `                        elif a != 255:\n                            raise Refuse('frame %s pixel (%d, %d) has alpha %d (only 0 or 255)' % (name, x, y, a))\n`, repl: ``,
+    gates: [{ gate: 'astra', expect: 'a pixel at alpha 128 is refused' }] },
+  { name: 'CUT_PAETH_WRONG', task: 'ASTRA', file: 'astra', find: `line[x] = (line[x] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 255`, repl: `line[x] = (line[x] + (a if pa <= pb and pa <= pc else c if pb <= pc else b)) & 255`,
+    gates: [{ gate: 'astra', expect: 'the cut gives back every sprite exactly' }] },
+  { name: 'CUT_NO_SOURCE_COMPARE', task: 'ASTRA', file: 'astra', find: `                if src.get(name) != frames[name]:\n                    raise Refuse('frame %s differs from its source grid %s' % (name, e.get('source')))\n`, repl: ``,
+    gates: [{ gate: 'astra', expect: 'a PNG that differs from its source grid is refused' }] },
+  { name: 'CUT_ZIP_SLIP', task: 'ASTRA', file: 'astra', find: `any(p == '..' for p in n.split('/')):\n                raise Refuse('an unsafe path in the zip: %r' % n)`, repl: `False:\n                raise Refuse('an unsafe path in the zip: %r' % n)`,
+    gates: [{ gate: 'astra', expect: 'a path out of the zip (../evil.txt) is refused before a byte is written' }] },
+  { name: 'CUT_SUN_ANYWHERE', task: 'ASTRA', file: 'astra', find: `            elif key != 'beacon' and any('e' in s for s in frames.values()):`, repl: `            elif False and any('e' in s for s in frames.values()):`,
+    gates: [{ gate: 'astra', expect: 'Sun in the moth is refused' }] },
+  { name: 'CUT_FEET_UNCHECKED', task: 'ASTRA', file: 'astra', find: `                    if '0' not in frames[name].split('/')[-1]:\n                        raise Refuse('hero.%s has no Ink in its feet row' % name)\n`, repl: ``,
+    gates: [{ gate: 'astra', expect: 'a hero frame without Ink in its feet row is refused' }] },
+  { name: 'CUT_NO_SHA', task: 'ASTRA', file: 'astra', find: `            if sha != str(e.get('sha256', '')).lower():\n                raise Refuse(`, repl: `            if False:\n                raise Refuse(`,
+    gates: [{ gate: 'astra', expect: 'a wrong sha256 is refused' }] },
+  { name: 'SPLICE_JOINS_LINES', task: 'ASTRA', file: 'astra', find: `body = body[:em.start()] + em.group(1) + em.group(2)`, repl: `body = body[:em.start()] + em.group(2)`,
+    gates: [{ gate: 'astra', expect: 'splicing the cut back leaves the page byte for byte' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
@@ -683,7 +702,8 @@ fs.mkdirSync(OUT, { recursive: true });
 function anchorOf(m) {
   const isFx = m.file.startsWith('fixture:');
   const src = m.file === 'harness' ? path.join(GAME, 'harness.js') : isFx ? path.join(GAME, 'fixtures', m.file.slice(8))
-    : m.file === 'make' ? path.join(GAME, 'fixtures', 'make.html') : m.file === 'sw' ? path.join(GAME, 'sw.js') : path.join(GAME, 'index.html');
+    : m.file === 'make' ? path.join(GAME, 'fixtures', 'make.html') : m.file === 'sw' ? path.join(GAME, 'sw.js')
+    : m.file === 'astra' ? path.join(GAME, 'tools', 'astra_cut.py') : path.join(GAME, 'index.html');
   let text = fs.readFileSync(src, 'utf8');
   for (const [find, repl] of (m.edits || (m.find !== null ? [[m.find, m.repl]] : []))) {
     const count = text.split(find).length - 1;
@@ -709,7 +729,8 @@ for (const m of MUTANTS) {
   const fixCopy = path.join(dir, 'fixtures');
   if (isFixture) fs.cpSync(path.join(GAME, 'fixtures'), fixCopy, { recursive: true });
   const srcFile = m.file === 'harness' ? path.join(GAME, 'harness.js') : isFixture ? path.join(fixCopy, m.file.slice(8))
-    : m.file === 'make' ? path.join(GAME, 'fixtures', 'make.html') : m.file === 'sw' ? path.join(GAME, 'sw.js') : path.join(GAME, 'index.html');
+    : m.file === 'make' ? path.join(GAME, 'fixtures', 'make.html') : m.file === 'sw' ? path.join(GAME, 'sw.js')
+    : m.file === 'astra' ? path.join(GAME, 'tools', 'astra_cut.py') : path.join(GAME, 'index.html');
   const text = fs.readFileSync(srcFile, 'utf8');
   let mutated = text, anchor = 'ok';
   const edits = m.edits || (m.find !== null ? [[m.find, m.repl]] : []);
@@ -729,6 +750,8 @@ for (const m of MUTANTS) {
   else if (m.file === 'make') { fs.writeFileSync(path.join(dir, 'make.html'), mutated); fs.copyFileSync(path.join(GAME, 'index.html'), page); }
   /* file 'sw' (T1.11): the mutated sw.js beside the page copy (the lint reads it there) and served through SB_SW */
   else if (m.file === 'sw') { fs.writeFileSync(path.join(dir, 'sw.js'), mutated); fs.copyFileSync(path.join(GAME, 'index.html'), page); }
+  /* file 'astra' (the cutter): the mutated tools/astra_cut.py beside the page copy, run by the astra gate through SB_ASTRA_CUT */
+  else if (m.file === 'astra') { fs.writeFileSync(path.join(dir, 'astra_cut.py'), mutated); fs.copyFileSync(path.join(GAME, 'index.html'), page); }
   else fs.writeFileSync(page, mutated);
   /* the page's sw.js beside every copy, so the lint's stamp rules see the pair (T1.11) */
   if (!fs.existsSync(path.join(dir, 'sw.js')) && fs.existsSync(path.join(GAME, 'sw.js'))) fs.copyFileSync(path.join(GAME, 'sw.js'), path.join(dir, 'sw.js'));
@@ -739,6 +762,7 @@ for (const m of MUTANTS) {
     let cmd, env = Object.assign({}, process.env);
     if (g.gate === 'lint') cmd = ['tools/lint.mjs', '--page', page].concat(makeArgs);
     else if (g.gate === 'harness') cmd = [harness, '--page', page].concat(g.only ? ['--only', g.only] : [], isFixture ? ['--fixtures', fixCopy] : [], g.args || []);
+    else if (g.gate === 'astra') { cmd = ['test/astra.mjs']; env.SB_PAGE = page; if (m.file === 'astra') env.SB_ASTRA_CUT = path.join(dir, 'astra_cut.py'); }
     else if (BROWSER.has(g.gate)) { cmd = ['test/' + g.gate + '.mjs']; env.SB_PAGE = page; if (m.file === 'make') env.SB_MAKE = path.join(dir, 'make.html'); if (m.file === 'sw') env.SB_SW = path.join(dir, 'sw.js'); }
     else { rows.push({ m, g, result: 'UNKNOWN GATE' }); continue; }
     const r = spawnSync('node', cmd, { cwd: GAME, encoding: 'utf8', env, maxBuffer: 64 * 1024 * 1024, timeout: 15 * 60 * 1000 });
@@ -746,7 +770,7 @@ for (const m of MUTANTS) {
     fs.writeFileSync(path.join(dir, g.gate + '.out'), out);
     let result;
     if (r.status === 0) result = 'STAYED GREEN';
-    else if (g.expect === null || [].concat(g.expect).some(e => out.includes(BROWSER.has(g.gate) ? 'FAIL  ' + e : e))) result = 'RED';
+    else if (g.expect === null || [].concat(g.expect).some(e => out.includes(BROWSER.has(g.gate) || g.gate === 'astra' ? 'FAIL  ' + e : e))) result = 'RED';
     else result = 'WRONG REASON';
     rows.push({ m, g, result, why: result === 'WRONG REASON' ? (out.split('\n').find(l => /FAIL|Error/.test(l)) || '').trim().slice(0, 120) : '' });
   }

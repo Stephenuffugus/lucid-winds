@@ -1,0 +1,560 @@
+Stephen: paste this whole prompt into a new Astra chat. Nothing else is needed.
+For a new session, paste it again, attach the newest checkpoint zip and end the message with RESUME. Any APPROVED, CHANGES, CONTINUE or RULINGS lines go above RESUME in the same message.
+
+SHUTTERBUG: THE ART BRIEF FOR ASTRA
+Sky Wolf Studio, 30 October 2026. One prompt, everything in it.
+Astra: read sections 0 to 6 before you draw anything. They say what to make, in what order, when to stop, and how to save so no session loses work.
+
+0. THE SHORT VERSION
+- You make the pixel art for Shutterbug, a phone game. Every game file is a tiny PNG sprite at its true size, on a fixed palette of 16 colours.
+- Batch 0 is the hero only. Make it, save a checkpoint, then STOP and wait for Stephen's review.
+- After he writes APPROVED, make batches 1 to 5 in order. After each batch, save a checkpoint and wait for CONTINUE.
+- After every finished file, update progress.md and manifest.json and post the file's source lines in the chat. Save a checkpoint zip after every 3 finished game files.
+- The delivery is ONE zip: shutterbug-assets.zip.
+- A row marked HOLD waits for a ruling from Stephen. Never make a HOLD row and never guess its size.
+- The Gate line in progress.md records when you wait for Stephen. Only APPROVED (batch 0) or CONTINUE (later batches) opens it. RESUME alone never does.
+- If this message ends with RESUME and carries a checkpoint zip, follow section 5f instead of starting over. Stephen may put APPROVED, CHANGES, CONTINUE or RULINGS lines above RESUME in the same message.
+
+1. THE GAME
+Shutterbug turns a photo of a room into a pixel platformer level. The player photographs a room, and it develops like instant film into a grid of 24 by 48 cells. Shelves and table edges become platforms, shadows become walls, and a thumb sized clay bug climbs the furniture to the ceiling light.
+The level is the player's own photo, cut down to the palette and dimmed. You paint NO backgrounds and NO tile sets. You make the small sprites drawn on top of the photo.
+Five biomes come from the photo's colours: Attic (browns, oranges), Frost (white, light grey), Deep (blues, teals), Overgrowth (greens), Ember (reds, pinks). Each has one enemy kind.
+The live game is optional; you do not need it: https://lucidwinds.com/satellites/shutterbug/ then tap Try the sample room. The live page shows only the hero, the moth, the beacon and the film tab; everything else exists only on the build branch. Every sprite there is a code placeholder that your art replaces.
+
+2. THE LOOK
+2.1 The 16 colours. No other colour may appear in a game file.
+idx key name     hex      use
+ 0   0  Ink      #0b0a0f  every outline; the hero's feet row
+ 1   1  Soot     #1f1a1d  near black
+ 2   2  Slate    #4a4a52  dark grey; the crusher body; the empty heart
+ 3   3  Pewter   #8a8a90  mid grey; the moth's body
+ 4   4  Ash      #c9c7c0  light grey; moth wings; the icicle
+ 5   5  Paper    #f2efe6  warm white; the film frame; the scroll
+ 6   6  Glare    #fbfbff  cool white; highlights, the hero's eye, edges, attack effects
+ 7   7  Walnut   #6b3f2a  brown; clay flecks on the hero; the chest body
+ 8   8  Amber    #e07a2b  orange; loot
+ 9   9  Brick    #c8302f  red, DANGER: enemy bodies, thorns, spikes, the full heart
+10   a  Magenta  #d83a9b  magenta, DANGER: the elite mark, spike tips
+11   b  Lapis    #2f5fd0  blue; the blueprint
+12   c  Teal     #3fb8b4  teal; the jelly
+13   d  Moss     #3f9a3a  green; the thorn crawler
+14   e  Sun      #f2d13f  yellow; ONLY the hero's body and the beacon
+15   f  Film     #f0dcb0  cream; ONLY repairs, the film tab
+Stephen has not approved this palette yet. Your art is stored as palette indices, so a later colour change recolours it without a redraw.
+
+2.2 Sizes. Native: one file pixel is one game pixel.
+cell 16x16. hero 12x16. fodder enemy 16x16. elite enemy 24x24. trap (spike, crusher) 16x16. loot (speck, scroll, blueprint, chest) 16x16. beacon 16x16. film tab 16x5. heart 9x8.
+On a phone one game pixel is about 3 screen pixels. A 360 px wide phone shows a 16 px enemy about 15 px wide, so draw for that size.
+
+2.3 Rules for every game file
+a. PNG in RGBA. Alpha is 0 or 255, never between.
+b. Every visible pixel is exactly one of the 16 hexes. No anti aliasing, blends, soft edges or smoothing.
+c. True size only. Never paint large and shrink: that is not pixel art, and the game's colour gate fails it.
+d. A 1 px Ink outline around every creature, item and trap. The film tab is the exception: a tile laid edge to edge across its 2 cells. It has Ink perforations and an Ink bottom row, and no side or top outline. Loose Glare pixels outside the outline are allowed for rays, teeth, glints and highlights.
+e. Flat clay fills. Living things are stop motion clay that reads through motion, not texture: no thumbprints, no grain, no noise.
+f. Draw the hero and the thorn crawler facing RIGHT; the game mirrors those two. Nothing else is ever mirrored: the moth, icicle, jelly and spark, and their elites, must read the same whichever way they move. Make them symmetric or front on, unless Stephen rules a render change. No light direction is set, and a one sided light flips with the mirror; show what you chose in the batch 0 review.
+g. Use only the colours its checklist row names. Enemies always carry at least one Glare highlight pixel.
+h. No words, letters or numbers in any game file. Labels go on review sheets only. Any word you ever draw follows these rules: no dashes, no exclamation marks, "Sky Wolf Studio" singular.
+i. No real trademarks, logos or known characters.
+j. Timing: the game runs 60 steps a second, and sprites change frame every 5 steps (12 fps) unless a row says otherwise.
+k. Never redesign the game, rename a file or add a row. Ideas go in progress.md under Ideas; extra pictures go only in extras/.
+l. Exceptions come only by ruling. A row ruled READY may name its own palette, tool and size, such as a painted photo or a glyph set. Rules b, c and h then bend for that row alone, as its ruling says.
+m. Make no sound or music file. Every sound is synthesised in the page, and the music is Stephen's own.
+
+3. HOW TO MAKE IT
+Your own methods note of 24 September says it: do not ask the image tool for production pixel art. Use the image tool for concept pictures only, and build every game file as data:
+1. Write each frame as a text grid: one string per frame, rows split by "/", one character per pixel. "." is clear; 0 to 9 and a to f are the key column above. A 12x16 frame is 16 rows of 12 characters.
+2. Render it with render(), then run check(). Fix the grid, never the PNG.
+3. Save the grid with save_source(): source/<stem>.txt, one line per frame, the frame name, a space, then the string.
+4. Make enlarged copies only for review: whole number scale, nearest neighbour, with preview().
+5. When a silhouette is unresolved, make one concept picture first: four clearly different silhouettes that stay readable at the target size. Use big shapes, clear negative space, no texture, no text and a flat mid grey background. Then rebuild the chosen one as a grid.
+
+HELPER: at the start of every session, paste everything between the two marker lines into your Python tool and run it. Run it again whenever the Python tool resets: a NameError on render means it did. It makes the work folder and works inside it, so every path you pass is relative to that folder.
+=== BEGIN HELPER ===
+# SHUTTERBUG HELPER (Python with Pillow): run it at the start of every session, and again whenever the tool resets
+import os, json, hashlib, zipfile
+from PIL import Image
+ROOT = '/mnt/data'                  # your sandbox's writable folder; if yours differs, change this one line
+WORK = ROOT + '/shutterbug-work'
+os.makedirs(WORK, exist_ok=True)
+os.chdir(WORK)                      # every relative path below now lands inside the work folder
+HEX = ['0b0a0f', '1f1a1d', '4a4a52', '8a8a90', 'c9c7c0', 'f2efe6', 'fbfbff', '6b3f2a',
+       'e07a2b', 'c8302f', 'd83a9b', '2f5fd0', '3fb8b4', '3f9a3a', 'f2d13f', 'f0dcb0']
+RGB = [tuple(int(h[i:i + 2], 16) for i in (0, 2, 4)) for h in HEX]
+KEY = '0123456789abcdef'
+INK, GLARE, WALNUT, SUN = 0, 6, 7, 14
+
+def render(frames, w, h, path):
+    # frames: one string per frame; rows split by '/'; '.' clear; 0-9 and a-f a palette index
+    im = Image.new('RGBA', (w * len(frames), h), (0, 0, 0, 0))
+    for f, s in enumerate(frames):
+        rows = s.split('/')
+        assert len(rows) == h, (path, f, 'rows', len(rows))
+        for y, r in enumerate(rows):
+            assert len(r) == w, (path, f, y, 'width', len(r))
+            for x, c in enumerate(r):
+                if c != '.':
+                    im.putpixel((f * w + x, y), RGB[KEY.index(c)] + (255,))
+    os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
+    im.save(path)
+
+def check(path, w, h, n, sun=False, feet=False, allowed=None):
+    # sun=True only for the hero and the beacon; feet=True for every hero file; allowed: the
+    # palette indices the row names. Returns the indices used, for the manifest's colours field.
+    im = Image.open(path)
+    assert im.mode == 'RGBA' and im.size == (w * n, h), (path, im.mode, im.size)
+    px, used = im.load(), set()
+    for x in range(w * n):
+        for y in range(h):
+            p = px[x, y]
+            assert p[3] in (0, 255), (path, x, y, 'alpha must be 0 or 255')
+            if p[3]:
+                assert p[:3] in RGB, (path, x, y, 'not one of the 16 colours')
+                k = RGB.index(p[:3])
+                assert sun or k != SUN, (path, x, y, 'Sun belongs to the hero and the beacon')
+                assert allowed is None or k in allowed, (path, x, y, 'colour', k, 'is not named for this row')
+                used.add(k)
+    if feet:
+        for f in range(n):
+            assert any(px[f * w + x, h - 1] == RGB[INK] + (255,) for x in range(w)), (path, f, 'no Ink in the feet row')
+    return sorted(used)
+
+def save_source(stem, names, frames):
+    # source/<stem>.txt: one line per frame, the frame name, a space, the string; post the same lines in the chat
+    os.makedirs('source', exist_ok=True)
+    with open('source/' + stem + '.txt', 'w') as fh:
+        for n, s in zip(names, frames):
+            print(n, s, file=fh)
+
+def from_source(stem, w, h, path):
+    # rebuild a game file from source/<stem>.txt (save posted lines there first with save_source)
+    with open('source/' + stem + '.txt') as fh:
+        frames = [ln.split(' ', 1)[1].strip() for ln in fh if ln.strip()]
+    render(frames, w, h, path)
+
+def preview(path, out, s=8):
+    # a whole number enlargement, nearest neighbour, for review sheets only
+    im = Image.open(path)
+    os.makedirs(os.path.dirname(out) or '.', exist_ok=True)
+    im.resize((im.width * s, im.height * s), Image.NEAREST).save(out)
+
+def frame(path, w, f):
+    # frame f of a strip, as its own image
+    im = Image.open(path).convert('RGBA')
+    return im.crop((f * w, 0, f * w + w, im.height))
+
+def scale_nn(im, w, h):
+    # nearest neighbour by pixel centres, as the game's canvas draws the 14x14 squash and the 10x18 stretch
+    out = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    src, dst = im.load(), out.load()
+    for y in range(h):
+        for x in range(w):
+            dst[x, y] = src[(2 * x + 1) * im.width // (2 * w), (2 * y + 1) * im.height // (2 * h)]
+    return out
+
+def mirror(im):
+    # the left facing copy the game draws for the hero and the thorn crawler
+    out = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    src, dst = im.load(), out.load()
+    for y in range(im.height):
+        for x in range(im.width):
+            dst[im.width - 1 - x, y] = src[x, y]
+    return out
+
+def glare_copy(im):
+    # the dash's invulnerable steps: Sun and Walnut become Glare, every other pixel is kept
+    out = im.copy()
+    px = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            p = px[x, y]
+            if p[3] and p[:3] in (RGB[SUN], RGB[WALNUT]):
+                px[x, y] = RGB[GLARE] + (255,)
+    return out
+
+def sha(path):
+    with open(path, 'rb') as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+# the backdrop under the sprites, for review plates only (the game's own blend)
+BIOME = {'attic': (7, 4, 8), 'frost': (2, 5, 3), 'deep': (11, 2, 12),
+         'overgrowth': (13, 4, 7), 'ember': (1, 3, 8)}   # solid tint, open tint, platform line
+def mix(a, c, t):
+    return tuple(int(a[i] + (c[i] - a[i]) * t + 0.5) for i in range(3))
+def open_colour(k, b):    # an open photo cell of palette colour k (0 to 14) in biome b
+    return mix(mix(RGB[k], RGB[3], 0.4), RGB[BIOME[b][1]], 0.2)
+def solid_colour(k, b):   # a solid photo cell
+    o = mix(RGB[k], RGB[3], 0.4)
+    return mix(tuple(int(v * 0.6 + 0.5) for v in o), RGB[BIOME[b][0]], 0.35)
+
+def pack(name):
+    # zip the whole work folder to ROOT/<name>, test it, and return what to post
+    path = os.path.join(ROOT, name)
+    with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as z:
+        for d, _, files in os.walk(WORK):
+            for f in sorted(files):
+                p = os.path.join(d, f)
+                z.write(p, os.path.relpath(p, WORK))
+    with zipfile.ZipFile(path) as z:
+        assert z.testzip() is None, (path, 'a damaged member')
+        names = z.namelist()
+        assert len(names) > 0 and {'manifest.json', 'progress.md'} <= set(names), (path, 'checkpoint is missing files')
+    return path, len(names), os.path.getsize(path), sha(path)
+
+def checkpoint(n):
+    return pack('shutterbug-checkpoint-%02d.zip' % n)
+
+def final():
+    return pack('shutterbug-assets.zip')
+
+def resume(zpath):
+    # a new session: unpack the newest checkpoint into the work folder, then prove every finished file
+    with zipfile.ZipFile(zpath) as z:
+        z.extractall(WORK)
+    with open('manifest.json') as fh:
+        m = json.load(fh)
+    for e in m['files']:
+        assert sha(e['file']) == e['sha256'], (e['file'], 'sha256 differs from the manifest')
+        if e.get('tool') == 'python grid':
+            check(e['file'], e['w'], e['h'], e['frames'], sun=e['sprite'] in ('hero', 'beacon'),
+                  feet=e['sprite'] == 'hero', allowed=e['colours'])
+    return len(m['files'])
+=== END HELPER ===
+
+4. WHAT TO SEND, AND WHEN
+4.1 Batch 0: the hero, then STOP
+Make the eight hero files in section 9 and these review files:
+- concept/hero_concepts.png: one image tool picture of four silhouette concepts (the prompt is in section 7). Mark the one you built, and run a checkpoint right after the picture.
+- review/hero_sheet.png: every hero frame at 1x and at 8x, each labelled with its frame name.
+- review/hero_plates.png at 3x: for each biome a row of 15 tiles, one per photo colour k from 0 to 14. Each tile is 32x32 at 1x, two 16 px halves side by side.
+  In the left half, idle0 stands on a one way. That is an open cell whose top three rows are Glare, Ink and the biome's line, RGB[BIOME[biome][2]]. The rest of that cell is open_colour(k, biome).
+  In the right half, idle0 stands on a solid top: a Glare row, an Ink row, then solid_colour(k, biome).
+  open_colour(k, biome) fills the air above both, and the hero's bottom row sits just above the Glare row.
+  Add one more tile: full Sun (#f2d13f) behind the hero, with today's beacon frame a (section 8) in the next cell. That is the relit ceiling lamp, the hardest background in the game.
+- review/hero_motion.png at 8x. Squeezed to 14x14 with scale_nn(): land, run1 and fall. Stretched to 10x18 with scale_nn(): jump, fall, dive and cling. The game draws these for 6 steps after a landing or a takeoff, by pixel centres as scale_nn() does.
+  Add glare_copy() of run1 and of jump, the dash's look. Put every frame beside its mirror(), and show the cling against a wall on its right and, mirrored, on its left.
+- review/hero_idle.gif at 2 fps and review/hero_run.gif at 12 fps, both 8x, on the colour open_colour(4, 'attic').
+Before you stop, look at your own sheets. Write the three weakest things you see, fixed or not, at the top of your message.
+Then set the Gate line to "Gate: batch 0 waiting for APPROVED" and run checkpoint(n) with the next number. Show hero_sheet, hero_plates and hero_motion in the chat, and give the checkpoint link with its file count, size and sha256. List these questions for Stephen:
+1. Does it read as a thumb sized clay bug that climbs back up to the light?
+2. Held at arm's length on your phone, can you point to its feet within 3 seconds?
+3. Does it read on all 75 plates, and on the Sun lamp?
+4. Does the run move more than the legs?
+5. Does the cling read as ready to wall jump, and never as a letter?
+6. Does the squeezed land frame read as a squash, not a squint?
+7. Does the fallen frame read as fallen at a glance?
+8. Does facing read both ways?
+9. Are the 16 colours, Sun as the hero's body and the five biome tint pairs right, as used?
+End with this line and STOP: Batch 0 is ready for review. I am waiting for APPROVED or CHANGES.
+
+4.2 Stephen's reply
+APPROVED, or CHANGES followed by one line per fix. On CHANGES, fix only what he names, make a new checkpoint, show the sheets again and stop again. Repeat until APPROVED.
+RULINGS may come with APPROVED, CHANGES or CONTINUE, or alone, at any time. One per line:
+  palette: KEEP                         or   palette: <idx> = #<hex>
+  grid: 24x48                           (if he rules 36x64, STOP: every size changes and a new brief follows)
+  beacon: <its colours>
+  <stem>: READY <w>x<h>, <n> frames at <fps> fps; <what it shows, its colours, its anchor>
+  <stem>: READY <w>x<h>, palette <16 colours or full colour>, tool <python grid or image tool>; <what it shows>
+  <stem>: DROP
+  <stem>: <any other instruction>
+Write every ruling into progress.md under Rulings and into the manifest's rulings list, and repeat each back in one line. A READY ruling moves a HOLD row into its batch as READY. After a palette ruling, render every finished file again from source/ with the new hex, and say so.
+
+4.3 Batches 1 to 5
+Batch 1 enemies and bosses; 2 world; 3 loot; 4 screens and interface; 5 effects. Section 9 lists every file.
+In each batch, make its READY rows in checklist order and skip its HOLD rows. A READY ruling for a row whose batch is done is made next, before the next batch, with its own review sheet and checkpoint.
+At the end of a batch make review/batchN_sheet.png: every new file at 1x and 8x beside the approved hero's idle0 at the same scales. Add a GIF at game speed for every strip.
+Make plates at 3x, built like the hero plates:
+- each enemy and its elite on its biome's 15 open colours;
+- the moth on all five biomes, since it stands in on a blank wall of any biome;
+- the film tab and the beacon on all five biomes; the tab must read on Frost by its Ink edge;
+- the beacon also on the relit Sun lamp;
+- spikes on Attic, Ember and Overgrowth; crushers on Frost and Deep;
+- the speck, scroll and blueprint on open_colour(4, biome) in all five biomes, the colour the game paints under them;
+- the chest standing on a one way over the 15 open colours of each biome;
+- the heart on Paper #f2efe6, the film frame it sits on.
+Ask Stephen the batch's questions with its sheet:
+- batch 1: Can you point to every enemy within 3 seconds? After a staged hit, can you name what hit you?
+- batch 2: Do only the film tabs read as added by the game? Does the beacon read as the exit? Do sunk spikes read? Does a crusher field read as one stroke? Once the ice edge is made, does that platform read as slippery?
+- batch 3: Does the loot read at the room's scale? Does a speck never read as the hero?
+Then set the Gate line to "Gate: batch N waiting for CONTINUE", make the checkpoint, show the sheet, give the link and wait. A batch with no READY rows: say so in one line and go on to the next.
+
+4.4 The end
+After batch 5, or when Stephen writes FINISH, make every READY row not yet made. Then write the final manifest, with every unmade row under missing and its reason.
+Run final(): it zips the whole work folder as shutterbug-assets.zip beside the work folder and tests it. Post its link, file count, size and sha256. That one zip is the delivery.
+If it is over 150 MB, split it by folder into shutterbug-assets-1.zip and shutterbug-assets-2.zip, never splitting a folder, and say so in each manifest.
+
+5. SAVE AS YOU GO (read this twice)
+Your Python files can vanish when a session ends or the tool resets. Save like this.
+a. The work folder (WORK in the helper) holds everything, in the layout of section 6. In the first session, write progress.md (the template below) and manifest.json (section 6.7, with an empty files list) before anything else.
+b. A file is finished only after all five steps. Then start the next file.
+  (1) source/<stem>.txt saved.
+  (2) The PNG rendered and check() passed.
+  (3) Its manifest.json entry written, with its sha256 and the colours check() returned.
+  (4) progress.md ticked with its version and the time, and its Next line moved on.
+  (5) Its source lines posted in the chat in one code block.
+c. If you must stop, stop after a finished file.
+d. Checkpoints: run checkpoint(n) after every 3 finished game files and right after each image tool picture. Also run one at the end of every batch, after every CHANGES round, and whenever Stephen writes CHECKPOINT. Each one is cumulative, the whole work folder, with n counting up from 1. Post the link, file count, size and sha256. Game files are a few KB each, so checkpoints stay small. Stephen downloads each one before he writes CONTINUE.
+e. If files vanish inside the same chat, rebuild them from the source lines you posted: save_source(), then from_source(). Review sheets and GIFs are rebuilt by code. A lost concept picture is made again from its prompts.json entry, with its version raised. Never redraw a finished game file.
+f. A new session: Stephen pastes this prompt, attaches the newest checkpoint zip and writes RESUME. Then:
+  1. Run the helper, then resume() on the attached zip. It unpacks the zip into the work folder and proves every finished file against the manifest.
+  2. Read the Gate line first. If it says waiting and this message carries no APPROVED, CHANGES or CONTINUE, show that batch's review sheet and questions again and stop. RESUME alone never passes a gate.
+  3. Read progress.md and manifest.json, and act on any APPROVED, CHANGES, CONTINUE or RULINGS lines in the message.
+  4. If Stephen also pasted source blocks you posted after that checkpoint, rebuild those files first: render, check, manifest entry, progress tick.
+  5. Say in one line where you resume, the batch and the stem, then continue at the first unfinished READY row.
+g. Never make a finished file again because of a new session or a reset. Change a finished file only when Stephen asks.
+h. Keep the approved hero and its concept as the fixed style reference in every batch. Compare new art with the approved hero, never only with the last batch.
+i. The Gate line: before every stop at a review, write "Gate: batch 0 waiting for APPROVED" or "Gate: batch N waiting for CONTINUE". Set it to "Gate: open" only when Stephen's message carries APPROVED (batch 0) or CONTINUE (later batches).
+progress.md looks like this; keep every heading:
+  # Shutterbug art progress
+  Brief: 30 Oct 2026. Session: 1. Last checkpoint: 02.
+  Next: hero_fall (batch 0)
+  Gate: open
+  ## Rulings
+  ## Checklist
+  - [x] hero/hero_idle.png v1 (2026-10-30 18:05)
+  - [x] hero/hero_run.png v1 (2026-10-30 18:20)
+  - [x] hero/hero_jump.png v1 (2026-10-30 18:31)
+  - [ ] hero/hero_fall.png
+  - [ ] HOLD hero/hero_dash
+  ## Questions (anything unclear; never guess)
+  ## Ideas (yours; never drawn unless Stephen says so)
+  ## Log
+  - session 1: the concept picture, checkpoint 01; three hero files, checkpoint 02
+
+6. FILES, NAMES, SHEETS AND THE MANIFEST
+6.1 Folders, the same in the work folder and in every zip:
+  manifest.json  progress.md  prompts.json
+  hero/  enemies/  boss/  world/  loot/  ui/  fx/
+  source/   one .txt grid per game file
+  concept/  image tool pictures, never cut
+  review/   review sheets, GIFs and enlarged copies, never cut
+  extras/   anything you add unasked; extras/superseded/ holds old versions
+6.2 Names: lower case and underscores, exactly as in section 9. A game file is <folder>/<stem>.png.
+6.3 Sheets: one PNG per row. An animation is ONE strip: frames left to right, each exactly the frame size, with no gaps, no padding and no trimming. The strip is (frames x width) wide and height tall. A single image is one frame. A tile set is its tiles left to right in the manifest's order.
+6.4 Never trim, shift between frames or rescale. Every frame keeps its full canvas, placed by its anchor.
+6.5 To change a finished file after Stephen has seen it, keep its name and raise its version in the manifest and progress.md. Move the old copy to extras/superseded/<stem>_v<N>.png.
+6.6 prompts.json: a list of {"file", "tool", "prompt", "version"} for every picture the image tool made.
+6.7 manifest.json:
+  { "game": "shutterbug", "brief": "Shutterbug: every asset, and the brief for Astra (30 Oct 2026)",
+    "palette": [the 16 hexes in index order, each like "#0b0a0f"],
+    "rulings": [every ruling line received],
+    "files": [ one entry per game file, for example
+      { "file": "hero/hero_run.png", "kind": "strip", "sprite": "hero",
+        "w": 12, "h": 16, "frames": 4, "names": ["run0", "run1", "run2", "run3"],
+        "fps": 12, "loop": true, "anchor": "bottom", "facing": "right",
+        "colours": [0, 6, 7, 14], "batch": 0, "version": 1,
+        "tool": "python grid", "source": "source/hero_run.txt",
+        "sha256": "<64 hex characters>", "notes": "one line on the signature pixels" } ],
+    "missing": [ { "stem": "loot_dp_drop", "why": "HOLD: no size ruled" } ],
+    "extras": [ { "file": "extras/qa_notes.md", "what": "your list of weak spots" } ] }
+  kind is "strip" (an animation), "image" (one frame) or "tileset" (tiles repeated across cells; add "repeat": "x" or "y").
+  sprite is the key the checklist line gives (sprite "..."). A HOLD row ruled READY uses its stem, unless the ruling names a key.
+  names are the frame names the line gives; where it gives none, use a, b, c, d.
+  fps is 0 for a held frame, and for frames the game picks by state or phase (the chest, the traps, the heart). loop is true for cycles.
+  anchor is "bottom" (stands on its bottom row), "top" (hangs from its top row) or "cell" (floats inside its frame).
+  facing is "right" for the hero, the thorn crawler and its elite, and "none" for every other file.
+  colours lists the palette indices used: the list check() returns.
+  tool is "python grid" for every game file, unless a ruling names another.
+
+7. THE HERO IN DETAIL (batch 0)
+Who: the Shutterbug, a thumb sized clay bug that fell out of the photo and climbs back up to the light. Dead Pixels, the game's currency, are the ones that never made it. Nothing else is fixed: its kind of bug, its legs, eyes and any camera or film detail are yours to propose.
+It must:
+- be 12x16 in every frame, the size of its hitbox, with Ink in the bottom row of EVERY frame: the feet row. Players must find its feet within 3 seconds at arm's length;
+- have a Sun body, an Ink outline, Ink feet and a Glare eye. Walnut is allowed for clay detail. Use no other colour: the dash flash turns Sun and Walnut to Glare and keeps Ink;
+- face right; the cling frame has its wall on the RIGHT;
+- stand on its bottom centre. After a landing the game squeezes whatever frame shows into 14x14 for 6 steps. That is usually land, or run1 if a dash starts then, or fall if it runs off an edge. For 6 steps after any takeoff it stretches the frame into 10x18: jump, or dive, cling or fall if they start then. Never the dead frame. Design every frame to survive it;
+- read on every biome and on the relit Sun lamp, where today's placeholder reads only by its outline.
+How the game picks the frame, first match wins:
+  dead;
+  dive;
+  cling: a wall slide, a vine or pipe hold, or rising along a wall with the rocker held toward it;
+  jump while rising, else fall;
+  run1 during a dash;
+  land for 6 steps after any landing;
+  run0 to run3 while moving;
+  else idle0 and idle1.
+On a vine or pipe, A jumps straight up 4 cells with no push off. The shared cling pose must not promise a sideways jump there.
+Motion to fit:
+  the run moves 2.6 px a step, so one 4 frame cycle covers about 52 px;
+  a full jump rises about 70 px, and a fall reaches 12 px a step;
+  a dash covers 3 cells in 8 steps.
+Today's placeholder is in section 8. Reviews found five faults in it. At 360 px wide its feet are 1 px dots, the land squeeze reads as a squint, and the run moves only the legs. On the Sun lamp it reads only by its outline, and an early cling read as the letter i. Start from it or start fresh.
+The concept picture (image tool, saved as concept/hero_concepts.png), this prompt:
+"Four clearly different silhouette concepts for the Shutterbug. It is a thumb sized stop motion clay bug that fell out of a photograph and climbs back up to the light. Side view, facing right. Yellow clay body, near black outline, one bright eye, clear feet. Each concept must stay recognisable when rebuilt in a 12 by 16 pixel grid. Big connected shapes, obvious negative space, no texture, no thumbprints, no text. Flat mid grey background. A concept sheet, not a final sprite."
+
+8. REFERENCE: WHAT THE GAME DRAWS TODAY
+Code placeholders as of 30 Oct, each line "sprite frame string" in the key of section 3.
+The M0 art your work replaces first: the hero, the moth, the beacon and the film tab.
+  hero idle0 ......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../.00.00.00...
+  hero idle1 .......0..0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../.00.00.00...
+  hero run0 ......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../.0..0..0....
+  hero run1 ......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../...0..0..0../...0..0..0..
+  hero run2 ......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../...0..0..0..
+  hero run3 ......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../...0..0..0../..0..0..0...
+  hero jump ....0...0.../.....0.0..../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../..0..0..0...
+  hero fall .......0.0../.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../.0...0...0../0...0...0...
+  hero cling .....0...0../......0.0.../..00000000../.0eeeeeeee0./0eeeeee66e00/0eeeeee60e0./0eeeeeeeee00/0e7eeeeeee0./0eeee7eeee00/0e7eeeeeee0./0eeeeeeeee00/0eeeeeeeee0./.0eeeeeeee0./..00000000../...0..0...../...00.00....
+  hero dive ..0..0..0.../..0..0..0.../...00000000./..0eeeeeeee0/.0eeeeeeeee0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeee66e0/0eeeeeee60e0/.0eeeeeeee0./..00000000../....0..0..../...0....0...
+  hero land ............/......0..0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../.0..0..0..0./00.00.00.00.
+  hero dead ............/........000./...00000000./..0eeeeeeee0/.0eeeeeeeee0/0eeeeee000e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0.0..0.0../.0...0...0..
+  moth a ................/.....0....0...../......0..0....../.0000.0330.0000./0444400330044440/0464440330444640/0444440330444440/.04444033044440./..000003300000../...0440330440.../...0440330440.../....00033000..../.......00......./................/................/................
+  moth b ................/................/.....0....0...../......0..0....../......0330....../..000.0330.000../.04440033004440./0446440330446440/0444440330444440/.04444033044440./..000003300000../...0440330440.../....00033000..../.......00......./................/................
+  beacon a .......00......./.......00......./.......00......./.....000000...../....06666660..../...0666666660.../..066666666660../.00000000000000./......0ee0....../.....0eeee0...../......0ee0....../.......00......./................/................/................/................
+  beacon b .......00......./.......00......./.......00......./.....000000...../....06666660..../...0666666660.../..066666666660../.00000000000000./.6....0ee0....6./..6..0eeee0..6../......0ee0....../...6...00...6.../..6..........6../.......66......./.......66......./................
+  tab a ffffffffffffffff/ff0fff0fff0fff0f/ff0fff0fff0fff0f/ffffffffffffffff/0000000000000000
+The M1 placeholders, for size and placement only. Do not copy their colours. The spark placeholder has no Ink outline, and the speck and the open chest use Film, forbidden outside repairs.
+  icicle a ..000000000000../..044464444440../...0446444440.../...0446444440.../....04644440..../....04644440..../.....046440...../.....046440...../......0640....../......0640....../.......06......./.......00......./................/................/................/................
+  icicle b ..000000000000../..044444464440../...0444446440.../...0444446440.../....04446440..../....04446440..../.....044640...../.....044640...../......0460....../......0460....../.......06......./.......00......./................/................/................/................
+  jelly a ................/.....000000...../...00cccccc00.../..0cc6ccccccc0../..0c6ccaacccc0../.0ccccaaaacccc0./.0cccccaaccccc0./.0cccccccccccc0./..000000000000../...0c.0c.0c.0.../...0c.0c.0c.0.../....0..0..0.0.../...0c.0c.0c...../...0..0..0....../................/................
+  jelly b ................/................/.....000000...../...00cccccc00.../..0cc6ccccccc0../.0cc6ccaacccc0../.0ccccaaaaccccc0/.0cccccaaccccc0./..000000000000../..0c.0c.0c.0c.../...0..0..0..0.../...0c.0c.0c.0c../....0..0..0..0../................/................/................
+  crawler a ................/................/................/................/....6..6..6...../....9..9..9...../...0900900900.../..0dd9dd9dd9d0../.0ddddddddddd60./.0dddddddddd600./.0ddddddddddddd0/..0000000000000./..0.0..0..0..0../.0..0..0..0..0../................/................
+  crawler b ................/................/................/................/.....6..6..6..../.....9..9..9..../...00900900900../..0d9dd9dd9dd0../.0ddddddddddd60./.0dddddddddd600./.0ddddddddddddd0/..0000000000000./...0..0..0..0.../...0..0..0..0.../................/................
+  spark a ................/.......9......../......999......./...9..999..9..../....9.969.9...../.....99699....../...999666999..../.....99699....../....9.969.9...../...9..999..9..../......999......./.......9......../................/................/................/................
+  spark b ................/................/.......9......../.....9.9.9....../......969......./....9966699...../..9.9666669.9.../....9966699...../......969......./.....9.9.9....../.......9......../................/................/................/................/................
+  spike a ................/................/................/................/................/................/................/................/................/................/................/................/..9...9...9...9./.090.090.090.090/0000000000000000/0000000000000000
+  spike b ................/................/..a...a...a...a./..9...9...9...9./..9...9...9...9./.999.999.999.999/.999.999.999.999/.999.999.999.999/9999999999999999/9999999999999999/.909.909.909.909/.909.909.909.909/.090.090.090.090/.090.090.090.090/0000000000000000/0000000000000000
+  crusher a 0000000000000000/0222222222222220/0999999999999990/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/................/................/................/................/................/................/................/................/................/................
+  crusher b 0000000000000000/0222222222222220/0222222222222220/0222222222222220/0999999999999990/0222222222222220/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6/................/................/................/................/................/................
+  crusher c 0000000000000000/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0999999999999990/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6
+  speck a ................/................/................/................/.......00......./......0660....../......0f60....../...0006ff6000.../...066ffff660.../...0006ff6000.../......0f60....../......0660....../.......00......./................/................/................
+  speck b ................/................/................/................/................/.......00......./......0660....../.....066ff60..../.....06fff60..../......066f0...../.......00......./................/................/................/................/................
+  scroll a ................/................/................/...0000000000.../..077777777770../..075555555570../..075000005570../..075555555570../..075000555570../..075555555570../..075000005570../..075555555570../..077777777770../...0000000000.../................/................
+  blueprint a ................/................/................/..000000000000../..0bbbbbbbbbb0../..0b6666b66bb0../..0b6bb6b6b6b0../..0b6666b66bb0../..0b6bbbb6b6b0../..0b6bbbb66bb0../..0bbbbbbbbbb0../..0b66666666b0../..0bbbbbbbbbb0../..000000000000../................/................
+  chest a ................/................/................/................/..000000000000../.07777777777770./.07888888888870./.07777777777770./.00000088000000./.07777788777770./.07777777777770./.07888888888870./.07777777777770./.00000000000000./................/................
+  chest b ................/..000000000000../.07777777777770./.07888888888870./.07777777777770./.00000000000000./.06666666666660./.0f6ffffffff6f0./.00000000000000./.07777777777770./.07777777777770./.07888888888870./.07777777777770./.00000000000000./................/................
+
+9. THE CHECKLIST: EVERY FILE
+READY: make it in its batch. HOLD: wait for a READY ruling; until then it goes under missing in the manifest.
+
+BATCH 0, hero/ (sprite "hero" on every line; colours Ink, Sun, Glare and Walnut only; anchor bottom; facing right; Ink in the feet row of every frame)
+[ ] hero/hero_idle.png    12x16, 2 frames: idle0 idle1, 2 fps (each held 30 steps), loop; sprite "hero". Standing still; idle1 moves one detail by 1 px, the idle wobble. Also shown in the short slow down after a run.
+[ ] hero/hero_run.png     12x16, 4 frames: run0 run1 run2 run3, 12 fps, loop; sprite "hero". Full speed from the first step. Keep a foot on the bottom row in every frame. run1 is also held through a dash.
+[ ] hero/hero_jump.png    12x16, 1 frame: jump; sprite "hero". Rising after any jump; there is no apex frame. Stretched to 10x18 for its first 6 steps.
+[ ] hero/hero_fall.png    12x16, 1 frame: fall; sprite "hero". Falling, up to 12 px a step. Sometimes squeezed or stretched (section 7).
+[ ] hero/hero_cling.png   12x16, 1 frame: cling; sprite "hero". The wall on its RIGHT. Serves the wall slide, the vine or pipe hold and the rise along a wall, and must show the wall jump is armed.
+[ ] hero/hero_dive.png    12x16, 1 frame: dive; sprite "hero". Straight down at full speed until it lands. The game draws three short Ink speed lines just above it.
+[ ] hero/hero_land.png    12x16, 1 frame: land; sprite "hero". Only ever seen squeezed into 14x14, for 6 steps after a landing.
+[ ] hero/hero_dead.png    12x16, 1 frame: dead; sprite "hero". The fallen bug, drawn where it fell and unsquashed, under the card "The bug fell out of the picture".
+[ ] HOLD hero/hero_dash      a dash pose (today the game shows run1)
+[ ] HOLD hero/hero_hurt      a hurt pose (today a hit only blinks the hero)
+[ ] HOLD hero/hero_squash    14x14, a drawn landing squash (needs a game change)
+[ ] HOLD hero/hero_stretch   10x18, a drawn takeoff stretch (needs a game change)
+[ ] HOLD hero/hero_dropin    the hero dropping in from the bottom of the frame after the develop reveal
+[ ] HOLD hero/hero_colours   hero colourways, a later cosmetic
+
+BATCH 1, enemies/ and boss/
+Every enemy: an Ink outline, at least one Glare highlight pixel, only the colours named, no Sun, no Film. One looping cycle of 2 to 4 frames at 12 fps, frames named a, b, c, d. It must read at about 15 screen px wide on a 360 phone. Its contact core is the frame less 2 px on each side, so tips beyond it are forgiving. Only the crawler and its elite face right and get mirrored. Every other enemy has facing none and must read the same moving either way.
+[ ] enemies/enemy_moth.png      16x16, 2 frames: a b, 12 fps, loop; sprite "moth"; anchor cell; facing none. Attic moth, front view, symmetric. Ash wings with forewings over hindwings, a Pewter body, an Ink outline and two Ink antennae, a Glare highlight on each forewing. It drifts through furniture toward the hero, and stands in on a blank wall of any biome. The first moth read as a plus sign until it got forewings and antennae.
+[ ] enemies/enemy_icicle.png    16x16, 2 to 4 frames, 12 fps, loop; sprite "icicle"; anchor top; facing none. Frost icicle: Ash body, Glare tips, Ink outline. It hangs under a plank, its root on the frame's top row. It drops when the hero is near and below, shatters, and hangs again 6 s later. On Frost's near white rooms an Ash icicle reads only by its Ink, so give it enough Ink. Another body colour is Stephen's call.
+[ ] enemies/enemy_jelly.png     16x16, 2 to 4 frames, 12 fps, loop; sprite "jelly"; anchor cell; facing none. Deep jelly: Teal body, a Magenta core, Ink outline. It bobs 2 cells up and down at 1 cell a second. Deep's platforms and pipes are Teal too, so its shape and core must carry it.
+[ ] enemies/enemy_crawler.png   16x16, 2 to 4 frames, 12 fps, loop; sprite "crawler"; anchor bottom; facing right. Overgrowth thorn crawler: Moss body, Brick thorns with Glare tips, Ink outline. It walks its platform edge to edge at 2 cells a second, and the game mirrors it to its walk.
+[ ] enemies/enemy_spark.png     16x16, 2 to 4 frames, 12 fps, loop; sprite "spark"; anchor bottom; facing none. Ember spark: Brick with a Glare core and an Ink outline. It rests, then hops a one cell arc in 0.2 s, every 1.5 s, either way, so make it symmetric. Ember's solid walls are near black Soot.
+Elites: the same creature at 24x24, heavier and meaner, with Magenta as its elite mark. 2 to 4 frames at 12 fps. Its contact core is the middle 20x20. Each elite gets its own new sprite key.
+[ ] enemies/enemy_moth_elite.png     24x24, 2 to 4 frames; sprite "moth_elite"; anchor cell; facing none. It may guard a pocket, asleep until the hero enters.
+[ ] enemies/enemy_icicle_elite.png   24x24, 2 to 4 frames; sprite "icicle_elite"; anchor top; facing none. As a pocket guard it hangs from the pocket's roof.
+[ ] enemies/enemy_jelly_elite.png    24x24, 2 to 4 frames; sprite "jelly_elite"; anchor cell; facing none. Its fodder already has a Magenta core, so the elite mark must read differently.
+[ ] enemies/enemy_crawler_elite.png  24x24, 2 to 4 frames; sprite "crawler_elite"; anchor bottom; facing right.
+[ ] enemies/enemy_spark_elite.png    24x24, 2 to 4 frames; sprite "spark_elite"; anchor bottom; facing none, symmetric. Brick sits beside Magenta, both danger colours, so let the shape carry the mark.
+[ ] HOLD boss/boss_fallback        the default clay boss: "a fixed 5x4 sprite", units not stated
+[ ] HOLD boss/boss_weak_cell       the mark on a boss weak cell (Brick)
+[ ] HOLD boss/boss_moth_shed       Attic attack: 3 moths every 4 s, and its telegraph
+[ ] HOLD boss/boss_icicle_volley   Frost attack: an icicle volley after a 3 s telegraph
+[ ] HOLD boss/boss_ring            Deep attack: a 4 cell ring every 5 s
+[ ] HOLD boss/boss_thorn_lines     Overgrowth attack: thorn lines along platforms
+[ ] HOLD boss/boss_spark_fountain  Ember attack: a spark fountain after a 2 s telegraph
+
+BATCH 2, world/
+[ ] world/film_tab.png      16x5, 1 tile; kind tileset, repeat x; sprite "tab", name a; anchor top; facing none; colours Film and Ink. Drawn at the top of each tab cell, and a tab is 2 cells, 32x5. Film fill, Ink perforations, an Ink bottom row, no side or top outline. It means "the game added this foothold" and must never look like furniture. On white Frost rooms it reads by its Ink edge.
+[ ] world/beacon.png        16x16, 2 frames: a b, swapping every 400 ms (fps 2.5), loop; sprite "beacon"; anchor top; facing none. The exit is a ceiling lamp hanging in its cell: its cord from the top row, a shade and a bulb. Frame b adds light rays. The only sprite besides the hero allowed Sun. Colours: Stephen's beacon ruling; without one, today's: cord and rim Ink, shade Glare, bulb Sun, rays Glare. The game draws a pulsing ring around it.
+[ ] world/trap_spike.png    16x16, 2 frames: a (sunk) b (standing), fps 0, by the trap's phase; sprite "spike"; anchor bottom; facing none. Colours Brick, Magenta and Ink. The trap cycles every 90 steps (1.5 s): a for the off half (45 steps), b for the on half (45 steps), when it hurts. An Ink base on the cell's floor, Brick spikes, Magenta tips, no Glare. Field cells are open cells, so spikes also stand in mid air. One look serves Attic, Ember and Overgrowth. Today's sunk frame barely reads on a photo's checks, where only its Ink base shows: make the sunk frame read. It must not read as the thorn crawler.
+[ ] world/trap_crusher.png  16x16, 3 frames: a (up) b (mid stroke) c (down), fps 0, by the trap's phase; sprite "crusher"; anchor top; facing none. Colours Slate, Brick, Glare and Ink. Frame a shows for the off half (45 steps). Frame b shows for the first and last 6 steps of the on half, and c for the other 33. A Slate body, a Brick stripe, Glare teeth, an Ink outline. Every field cell draws its own crusher, and the stroke hurts across the whole field. Today a 3 row field reads as stacked machines, not one stroke: help it read as one.
+[ ] HOLD world/beacon_dark     the beacon while a boss lives
+[ ] HOLD world/tab_stair       film tabs laid as a stair; perhaps no new art at all
+[ ] HOLD world/ice_edge        Teal edge on Frost's slick planks, 16 px wide per cell
+[ ] HOLD world/vine            Moss with Ink stems over a 1 cell wide wall, 16 px wide per cell
+[ ] HOLD world/pipe            Teal with Ink rings, the same walls in Deep
+[ ] HOLD world/darkroom_door   the door to the in level shop
+[ ] HOLD world/pocket          a 3x3 cell hollow cut into furniture
+[ ] HOLD world/ladder_mark     the mark on a stack of shelves
+[ ] HOLD world/dust_mote       Attic dust
+[ ] HOLD world/daily_rooms     six 24x48 Daily Room grids of palette indices 0 to 14, never Film
+
+BATCH 3, loot/
+Every piece has an Ink outline and no Sun or Film. The game paints the speck, scroll and blueprint cells in open_colour(4, biome) before drawing them.
+[ ] loot/loot_speck.png      16x16, 2 frames: a b, 4 fps (each held 15 steps), loop; sprite "speck"; anchor cell; facing none. Dead Pixels: Amber with a Glare glint; frame b is the glint. Up to 6 a room, 8 in Ember. Today's placeholder is Glare and Film with no Amber: do not copy it. In Attic and Ember the platform line is Amber too, so the speck's shape and glint must carry it.
+[ ] loot/loot_scroll.png     16x16, 1 frame: a; sprite "scroll"; anchor cell; facing none. One a room; touching it offers a pick of two stats. Paper; today it is ruled in Ink inside Walnut rollers.
+[ ] loot/loot_blueprint.png  16x16, 1 frame: a; sprite "blueprint"; anchor cell; facing none. It sometimes replaces the brightest speck, and the player carries it home to develop. Lapis; today it is ruled in Glare.
+[ ] loot/loot_chest.png      16x16, 2 frames: a (shut) b (open, the weapon slip showing), fps 0, picked by state; sprite "chest"; anchor bottom; facing none. One a room, standing on a ledge. A Walnut body; its trim is never Sun, and the slip is never Film. Today the trim is Amber bands and the slip is Film and Glare.
+[ ] HOLD loot/loot_dp_drop     loose Dead Pixels from kills and Tremor
+
+BATCH 4, ui/
+[ ] ui/hud_heart.png   9x8, 2 frames: full empty, fps 0, picked by state; sprite "hud_heart"; anchor cell; facing none. Shown at 2x in the frame's top strip, 4 to 8 of them, on Paper. Full: Ink outline, Brick fill. Empty: the same outline, Slate fill.
+[ ] HOLD ui/logo_wordmark       a SHUTTERBUG wordmark
+[ ] HOLD ui/title_art           the title picture in the polaroid
+[ ] HOLD ui/title_background
+[ ] HOLD ui/photo_icons         camera, camera roll and sample room glyphs
+[ ] HOLD ui/sample_room_photo   384x768, a photo of the sample room, an attic bedroom
+[ ] HOLD ui/crop_handles
+[ ] HOLD ui/frame_paper         the film frame's paper grain tile
+[ ] HOLD ui/hud_room_name       the room name field
+[ ] HOLD ui/hud_dp_counter      handwritten digits 0 to 9 in Lapis
+[ ] HOLD ui/hud_dp_icon         a Dead Pixel symbol
+[ ] HOLD ui/ctrl_rocker         the move rocker's two zones
+[ ] HOLD ui/ctrl_btn_a          the A button
+[ ] HOLD ui/ctrl_btn_b          the B button
+[ ] HOLD ui/ctrl_hints          hint glyphs for the rocker, A and B
+[ ] HOLD ui/ui_buttons          button skins
+[ ] HOLD ui/card_plate
+[ ] HOLD ui/card_clear
+[ ] HOLD ui/card_death
+[ ] HOLD ui/card_rotate         a turn your phone pictogram
+[ ] HOLD ui/card_develop        the Tap to develop card
+[ ] HOLD ui/card_slip           the chest's slip card
+[ ] HOLD ui/sheet_share         the share sheet's chrome
+[ ] HOLD ui/sheet_scroll_pick
+[ ] HOLD ui/icon_stats          Vigor, Focus, Grit: distinct shapes
+[ ] HOLD ui/screen_compare
+[ ] HOLD ui/icon_weapons        24 weapon and charm icons and 3 slot icons
+[ ] HOLD ui/screen_doorway
+[ ] HOLD ui/screen_darkroom
+[ ] HOLD ui/screen_settings
+[ ] HOLD ui/screen_codes        Level code and Recent rooms
+[ ] HOLD ui/icon_modes          Negative, Double Exposure, Open House, Daily Room
+[ ] HOLD ui/font                a glyph set
+[ ] HOLD ui/icon_apple_touch
+[ ] HOLD ui/icon_favicon
+[ ] HOLD ui/frame_styles        frame style cosmetics, later
+[ ] HOLD ui/viewfinder          post launch: never draw it
+
+BATCH 5, fx/
+[ ] HOLD fx/fx_clear            the room clear moment
+[ ] HOLD fx/fx_death            the death moment
+[ ] HOLD fx/fx_land_dust
+[ ] HOLD fx/fx_speck_pickup
+[ ] HOLD fx/fx_chest_open
+[ ] HOLD fx/fx_enemy_hit        enemy hit and death
+[ ] HOLD fx/fx_frozen_stunned
+[ ] HOLD fx/fx_projectiles      Boomerang, Twin Darts
+[ ] HOLD fx/fx_fire             Spark Trail, Ember Stomp, Flashpan
+[ ] HOLD fx/fx_bursts           Flashbulb, Halo, Shutter Snap, and the Icicle dive weapon's freeze
+[ ] HOLD fx/fx_shockwave        Anvil Boots, Wide Lens
+[ ] HOLD fx/fx_impacts          Shield Kick, Pogo Spear, Pile Driver
+[ ] HOLD fx/fx_tremor           Tremor debris
+[ ] HOLD fx/fx_lantern          the Lantern charm's orbiting light
+[ ] HOLD fx/fx_light_meter      the Light Meter glint and frame tick
+
+NOT YOURS: the game draws these itself, so make nothing for them.
+- the solid and one way edges, and the room backdrop and its tints;
+- the boss's body;
+- the develop reveal: its sweep, platform flash, landmark pulse and the repairs appearing;
+- the exit ring and the relit lamp;
+- the dive lines, dash streaks, dash flash and hit blink;
+- the trap rhythm flash;
+- the exit control text;
+- the three install icons, which a script makes from your approved hero;
+- the portal thumbnail and store screenshots;
+- the studio's wolf mark, which already exists;
+- sound and music: make no audio file, since every sound is synthesised in the page and the music is Stephen's own.
+
+10. START
+If this message ends with RESUME and carries a checkpoint zip, follow section 5f. Otherwise say in one line that you have read sections 0 to 9, then begin batch 0.

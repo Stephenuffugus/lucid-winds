@@ -1,0 +1,1734 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Shutterbug: every asset, and how Astra works (30 Oct 2026)</title>
+<style>body{font-family:Georgia,serif;max-width:860px;margin:24px auto;padding:0 16px;line-height:1.45;color:#222}h1{font-size:1.6em}h2{margin-top:1.6em}h3{margin-top:1.2em}code{background:#eee;padding:1px 4px}table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:4px 8px;text-align:left;vertical-align:top}pre{font-family:'Courier New',monospace;font-size:10pt;white-space:pre-wrap}</style></head>
+<body>
+<h1>Shutterbug: every asset, and the brief for Astra</h1>
+<p>Sky Wolf Studio, 30 October 2026. The asset list and how Astra works, for Stephen; the prompt Astra reads is ASTRA-SHUTTERBUG-OCT30 in this folder.</p>
+<h2>How Astra works</h2>
+<p>Astra makes the hero first, stops for Stephen's review, then makes everything else in batches and saves its work as it goes.</p>
+<ol>
+<li><strong>Paste.</strong> Stephen pastes the s10 prompt into a fresh Astra chat. It is one self contained brief, the shape used since Rabbit Ronin (docs/briefs/rabbit-ronin).</li>
+<li><strong>Batch 0, the hero.</strong> Astra makes the eight hero strips, a concept sheet, three review sheets and two GIFs. It saves a checkpoint, sets its Gate line to waiting, and stops.</li>
+<li><strong>Stephen reviews.</strong> He judges the hero against the s3 checklist and replies APPROVED or CHANGES. On CHANGES Astra fixes only what he names, saves a checkpoint and stops again, until he writes APPROVED.</li>
+<li><strong>Rulings, at any time.</strong> RULINGS may ride with APPROVED, CHANGES or CONTINUE, or come alone. A READY ruling turns a HOLD row into work, even in a finished batch; DROP removes it.</li>
+<li><strong>Batches 1 to 5.</strong> Enemies and bosses, world, loot, screens and interface, effects. Each makes its READY rows, shows a review sheet beside the approved hero, saves a checkpoint and waits for CONTINUE.</li>
+<li><strong>Save as you go.</strong> After every finished file Astra updates progress.md and manifest.json and posts the file's source lines. It saves a cumulative checkpoint zip after every 3 game files, each image tool picture and each batch. A new session resumes from the newest checkpoint plus any source lines posted after it, and RESUME alone never passes a gate.</li>
+<li><strong>Delivery.</strong> One zip, shutterbug-assets.zip, lists every unruled row as missing. Stephen uploads it to assets/ here. Claude Code extracts it outside the repo, vaults it, checks it, cuts it into pixel strings and wires it in.</li>
+</ol>
+<p>Before writing APPROVED, Stephen can send the batch 0 checkpoint here. Claude Code then puts the hero in the game and shoots it at 412 and 360 wide, as his phone shows it.</p>
+<h2>The look</h2>
+<p>Every file Astra makes is native size pixel art on one fixed palette of 16 colours, drawn over the player's own photo.</p>
+<p>The level is the player's photo, quantized, dimmed and tinted per biome (BUILD-PLAN 7.3; index.html core-palette). So Astra paints no backgrounds and no tile sets.</p>
+<p>The game stores every sprite as palette indices, one character per pixel, so each file must be exact. Sources are files under satellites/shutterbug/ unless a path says otherwise.</p>
+<h3>The 16 colours</h3>
+<table>
+<thead>
+<tr>
+<th>Index</th>
+<th>Key</th>
+<th>Name</th>
+<th>Hex</th>
+<th>Role in the art</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>Ink</td>
+<td>#0b0a0f</td>
+<td>every sprite's outline; the hero's feet row; the dark half of every collision edge</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>Soot</td>
+<td>#1f1a1d</td>
+<td>near black; the page background; Ember's solid tint</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+<td>Slate</td>
+<td>#4a4a52</td>
+<td>dark grey; the crusher body; empty hearts; Frost's solid tint</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3</td>
+<td>Pewter</td>
+<td>#8a8a90</td>
+<td>mid grey; the backdrop blend target; the moth's body</td>
+</tr>
+<tr>
+<td>4</td>
+<td>4</td>
+<td>Ash</td>
+<td>#c9c7c0</td>
+<td>light grey; moth wings; the icicle body</td>
+</tr>
+<tr>
+<td>5</td>
+<td>5</td>
+<td>Paper</td>
+<td>#f2efe6</td>
+<td>warm near white; the film frame; the scroll</td>
+</tr>
+<tr>
+<td>6</td>
+<td>6</td>
+<td>Glare</td>
+<td>#fbfbff</td>
+<td>cool near white; top edges, highlights, the hero's eye, attack effects</td>
+</tr>
+<tr>
+<td>7</td>
+<td>7</td>
+<td>Walnut</td>
+<td>#6b3f2a</td>
+<td>brown; the chest body; the clay flecks on today's hero</td>
+</tr>
+<tr>
+<td>8</td>
+<td>8</td>
+<td>Amber</td>
+<td>#e07a2b</td>
+<td>orange; loot specks, the beacon halo, the landmark pulse; today's chest bands</td>
+</tr>
+<tr>
+<td>9</td>
+<td>9</td>
+<td>Brick</td>
+<td>#c8302f</td>
+<td>red danger: enemy bodies, spikes, boss weak cells; full hearts</td>
+</tr>
+<tr>
+<td>10</td>
+<td>a</td>
+<td>Magenta</td>
+<td>#d83a9b</td>
+<td>magenta danger: the elite mark, the trap flash, spike tips, the jelly's core</td>
+</tr>
+<tr>
+<td>11</td>
+<td>b</td>
+<td>Lapis</td>
+<td>#2f5fd0</td>
+<td>blue; the blueprint; the handwritten Dead Pixel counter</td>
+</tr>
+<tr>
+<td>12</td>
+<td>c</td>
+<td>Teal</td>
+<td>#3fb8b4</td>
+<td>teal; the jelly, pipes, the Frost ice edge</td>
+</tr>
+<tr>
+<td>13</td>
+<td>d</td>
+<td>Moss</td>
+<td>#3f9a3a</td>
+<td>green; the thorn crawler, vines</td>
+</tr>
+<tr>
+<td>14</td>
+<td>e</td>
+<td>Sun</td>
+<td>#f2d13f</td>
+<td>yellow; the hero's body, the beacon and the hint glyphs; no other sprite</td>
+</tr>
+<tr>
+<td>15</td>
+<td>f</td>
+<td>Film</td>
+<td>#f0dcb0</td>
+<td>cream; repairs only: film tabs and tab stairs</td>
+</tr>
+</tbody>
+</table>
+<p>Hexes, names and roles come from BUILD-PLAN 7.1 and index.html core-palette, with today's sprites where they differ. The palette is still the plan's proposal: approving it is Stephen's call 2 (BUILD-PLAN 7.4; START-HERE.md, 30 Oct). Because sprites are stored as indices, a later hex change recolours every sprite without a redraw (BUILD-PLAN 1.7).</p>
+<h3>Sizes</h3>
+<table>
+<thead>
+<tr>
+<th>Thing</th>
+<th>Size px</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cell</td>
+<td>16x16</td>
+<td>DESIGN 3</td>
+</tr>
+<tr>
+<td>World</td>
+<td>384x768 (24x48 cells)</td>
+<td>DESIGN 3</td>
+</tr>
+<tr>
+<td>Play view</td>
+<td>384x640 on 412 and 390 wide phones, 36 rows at 360x780, 22 rows at 320x568</td>
+<td>BUILD-PLAN 1.5</td>
+</tr>
+<tr>
+<td>Hero sprite and hitbox</td>
+<td>12x16</td>
+<td>DESIGN 3; harness.js H-spr-1</td>
+</tr>
+<tr>
+<td>Fodder enemy</td>
+<td>16x16</td>
+<td>DESIGN 3</td>
+</tr>
+<tr>
+<td>Elite enemy</td>
+<td>24x24, its box centred on its cell</td>
+<td>DESIGN 3; QUESTIONS Q82</td>
+</tr>
+<tr>
+<td>Boss</td>
+<td>its photo cluster, 12 cells or more</td>
+<td>DESIGN 7.1</td>
+</tr>
+<tr>
+<td>Trap: spike or crusher</td>
+<td>16x16, one per field cell</td>
+<td>index.html SPRITES, R.draw</td>
+</tr>
+<tr>
+<td>Loot: speck, scroll, blueprint, chest</td>
+<td>16x16, one cell</td>
+<td>index.html SPRITES, R.draw</td>
+</tr>
+<tr>
+<td>Beacon</td>
+<td>16x16, one cell</td>
+<td>index.html SPRITES</td>
+</tr>
+<tr>
+<td>Film tab</td>
+<td>16x5 per cell; a tab is 2 cells</td>
+<td>index.html SPRITES; TUNING TAB_W</td>
+</tr>
+<tr>
+<td>Heart</td>
+<td>9x8, shown at 18x16 CSS px</td>
+<td>index.html CSS #hearts</td>
+</tr>
+</tbody>
+</table>
+<p>One game pixel is one CSS pixel, about 3 device pixels on most phones (DESIGN 3). Screens 768 CSS px wide or more show 2x, and under 384 the canvas shrinks to fit, 0.9375 at 360 (QUESTIONS Q5). So a 16 px enemy shows about 15 CSS px wide on a 360 phone, the moth's test (PROGRESS T0.16, T0.17).</p>
+<h3>Pixel rules</h3>
+<ul>
+<li>Every opaque pixel is exactly one of the 16 hexes. The sprites gate samples drawn pixels and fails anything between them (test/sprites.mjs; BUILD-PLAN T0.17).</li>
+<li>Alpha is 0 or 255. The atlas writes every drawn pixel fully opaque (index.html buildAtlas).</li>
+<li>Native size only: no anti aliasing, blends or smoothing, and never a painting shrunk down (DESIGN 2; docs/briefs/ASTRA-GRAPHICS-METHODS-2026-09-24.md C2).</li>
+<li>Each frame is a string: '.' clear, 0 to 9 and a to f a palette index, rows split by '/' (BUILD-PLAN 1.7).</li>
+<li>Each sprite name has one size and any number of frames. The game must stay under 40 names (tools/lint.mjs; harness.js H-spr-1).</li>
+<li>Today it has 14 names and 36 frames (index.html SPRITES, read at 16:31 UTC on 30 Oct, after T1.10). The hero has 12 frames and the five enemies 2 each. Spike 2, crusher 3, speck 2, scroll 1, blueprint 1, chest 2, beacon 2 and tab 1.</li>
+<li>Exceptions come only by Stephen's ruling. A row ruled READY may name its own palette, tool and size, such as a painted photo or a glyph set.</li>
+<li>No sound files. Every sound is synthesised in the page, and the music is Stephen's own (DESIGN 1, 11; BUILD-PLAN law 7).</li>
+</ul>
+<h3>Outlines and colour roles</h3>
+<ul>
+<li>Ink outlines every creature, item and trap. Collision edges are Glare over Ink (BUILD-PLAN 7.1, 7.3).</li>
+<li>The film tab is the exception: a tile laid edge to edge across its 2 cells. It has Ink perforations and an Ink bottom row, and no side or top outline. Loose Glare pixels outside an outline are allowed for rays, teeth, glints and highlights (index.html SPRITES tab, beacon, crusher).</li>
+<li>The hero is a Sun fill with an Ink outline, an Ink feet row and a Glare eye (BUILD-PLAN 7.3).</li>
+<li>Enemies get an Ink outline plus a Glare highlight pixel, never the hero's outline weight (BUILD-PLAN 7.3).</li>
+<li>Danger is Brick and Magenta with an Ink outline and Glare tips. A fully saturated red or magenta pixel always means a sprite or a trap (BUILD-PLAN 7.3).</li>
+<li>Sun belongs to the hero and the beacon: H-spr-1 fails any other sprite holding it. BUILD-PLAN 7.3 also gives Sun to the chest trim, an open conflict (harness.js H-spr-1).</li>
+<li>Film is for repairs only, and the quantizer never produces it (BUILD-PLAN 7.1; QUESTIONS Q13). Today's speck and open chest placeholders use Film, and Astra's must not (index.html SPRITES speck, chest).</li>
+<li>Loot is Amber with a Glare glint, so a speck never reads as the hero (BUILD-PLAN 7.3). Today's speck placeholder is Glare and Film instead.</li>
+<li>Highest contrast belongs to collision surfaces and immediate danger (DESIGN 3).</li>
+<li>No words in game art. Any word drawn, such as a wordmark, follows the copy rules: no dashes, no exclamation marks, "Sky Wolf Studio" singular (BUILD-PLAN rule 6).</li>
+</ul>
+<h3>Clay, motion and light</h3>
+<ul>
+<li>Living things are stop motion clay that reads through motion, not texture (DESIGN 2). That means squash on landing, stretch on jump, 12 fps, a one pixel idle wobble and no thumbprints.</li>
+<li>The sim runs 60 steps a second and a sprite holds each frame 5 steps, 12 fps (TUNING STEP_HZ, ANIM_FPS).</li>
+<li>The atlas stores a mirror of every frame (index.html buildAtlas). The game draws a mirror only for the hero, by its facing or its cling's wall, and for the thorn crawler, by its walk (index.html R.draw).</li>
+<li>Everything else is drawn as stored: the moth, icicle, jelly, spark and their elites, the traps, the loot, the beacon and the tab.</li>
+<li>No light direction, shading or dithering rule exists (DESIGN, BUILD-PLAN and QUESTIONS searched). A one sided light flips with the mirror on the hero and the crawler: an open question.</li>
+<li>The grid is 24x48 as ruled. The 36x64 fallback with an 8x12 hero is still open, and choosing it redraws every sprite (DESIGN 3; QUESTIONS Q43).</li>
+</ul>
+<h2>The hero</h2>
+<p>The hero is the Shutterbug, a 12x16 clay bug, and its eight strips are batch 0: the only thing Astra makes before Stephen's review.</p>
+<p>DESIGN gives it one line, "a thumb-sized clay bug that fell out of the photo and climbs back up to the light" (DESIGN 2). It climbs the player's own furniture to the ceiling light (DESIGN 0). No doc sets its species, limb count or props.</p>
+<h3>Rules for every hero frame</h3>
+<ul>
+<li>Exactly 12x16, the hitbox's size, with Ink in the bottom row of every frame: the feet row (harness.js H-spr-1).</li>
+<li>A Sun body, an Ink outline, Ink feet and a Glare eye (BUILD-PLAN 7.3). Today's draft adds Walnut flecks.</li>
+<li>Only Ink, Sun, Glare and Walnut. The dash's 4 invulnerable steps redraw Sun and Walnut as Glare and keep Ink (index.html buildAtlas; QUESTIONS Q47).</li>
+<li>Sprite key hero, with the frame names in the table (index.html SPRITES).</li>
+<li>Facing right. The cling frame has its wall on the right; the game mirrors it for a wall on the left (index.html R.draw).</li>
+<li>The anchor is the bottom centre. After a landing the game squeezes whatever frame shows into 14x14 for 6 steps. That is usually land, or run1 if a dash starts then, or fall if the hero runs off an edge.</li>
+<li>For 6 steps after any takeoff it stretches the frame into 10x18: jump, or dive, cling or fall if they start then. The dead frame is never deformed, and the hitbox never changes (index.html R.draw, core-sim; QUESTIONS Q35).</li>
+<li>The cling frame also shows while the hero rises along a wall with the rocker held toward it (index.html core-sim step 7).</li>
+</ul>
+<p>Frame order, first match wins: dead, dive, cling, jump or fall, run1 in a dash, land, run, idle (index.html R.heroFrame).</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Asset</th>
+<th>Size px</th>
+<th>Frames</th>
+<th>M</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>hero_idle</td>
+<td>Hero idle</td>
+<td>12x16</td>
+<td>2 at 2 fps</td>
+<td>M0</td>
+<td>READY. Frames idle0, idle1, each held 30 steps; idle1 moves one detail by 1 px, the idle wobble (DESIGN 2; TUNING IDLE_WOBBLE_PX; index.html R.heroFrame). Also shown in the 4 step slow down after the rocker is released.</td>
+</tr>
+<tr>
+<td>hero_run</td>
+<td>Hero run</td>
+<td>12x16</td>
+<td>4 at 12 fps</td>
+<td>M0</td>
+<td>READY. Frames run0 to run3, 5 steps each; one cycle covers 52.5 px at 2.625 px a step (TUNING RUN). The game also holds run1 through a dash, squeezed if the dash starts within 6 steps of a landing. Today only the legs move (PROGRESS REVIEW 4).</td>
+</tr>
+<tr>
+<td>hero_jump</td>
+<td>Hero jump, rising</td>
+<td>12x16</td>
+<td>1</td>
+<td>M0</td>
+<td>READY. While rising after any jump; there is no apex frame. Drawn stretched to 10x18 for the first 6 steps, and in Glare if the jump starts in a dash's invulnerable steps (index.html R.draw, core-sim).</td>
+</tr>
+<tr>
+<td>hero_fall</td>
+<td>Hero fall</td>
+<td>12x16</td>
+<td>1</td>
+<td>M0</td>
+<td>READY. From the apex, off a ledge or off a wall; terminal fall is 12 px a step (DESIGN 4.2). Squeezed if the hero runs off an edge within 6 steps of a landing, stretched after a head bonk on a fresh jump (index.html R.draw, core-sim).</td>
+</tr>
+<tr>
+<td>hero_cling</td>
+<td>Hero cling</td>
+<td>12x16</td>
+<td>1</td>
+<td>M0</td>
+<td>READY. The wall slide and the vine or pipe hold share it, and it must show the wall jump is armed (DESIGN 4.2). It also shows while rising along a wall with the rocker held toward it. On a vine or pipe, A jumps straight up 4 cells with no push off, so the pose must not promise a sideways jump (DESIGN 4.2). An early pose read as the letter i (PROGRESS T0.12a).</td>
+</tr>
+<tr>
+<td>hero_dive</td>
+<td>Hero dive</td>
+<td>12x16</td>
+<td>1</td>
+<td>M0</td>
+<td>READY. Straight down at terminal speed until it lands. Code draws three Ink speed lines just above it (DESIGN 4.3; index.html R.draw). Stretched if the dive starts within 6 steps of a takeoff.</td>
+</tr>
+<tr>
+<td>hero_land</td>
+<td>Hero land</td>
+<td>12x16</td>
+<td>1</td>
+<td>M0</td>
+<td>READY. Only ever seen squeezed into 14x14, for 6 steps after a landing (index.html R.draw; TUNING SQUASH_S). Today the squeeze reads as a squint (PROGRESS T0.17).</td>
+</tr>
+<tr>
+<td>hero_dead</td>
+<td>Hero fallen</td>
+<td>12x16</td>
+<td>1</td>
+<td>M0</td>
+<td>READY. Drawn unsquashed where it fell, under the card "The bug fell out of the picture" (BUILD-PLAN T0.16; index.html COPY). Not in DESIGN 11's list.</td>
+</tr>
+<tr>
+<td>hero_dash</td>
+<td>Hero dash pose</td>
+<td>12x16</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>HOLD. Candidate. Today run1 is held for the dash's 8 steps (index.html R.heroFrame).</td>
+</tr>
+<tr>
+<td>hero_hurt</td>
+<td>Hero hurt pose</td>
+<td>12x16</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>HOLD. Candidate. A hit shows only the blink today (index.html R.draw).</td>
+</tr>
+<tr>
+<td>hero_squash</td>
+<td>Drawn landing squash</td>
+<td>14x14</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>HOLD. Candidate to replace the squeezed frames; it needs its own sprite name and a render change (BUILD-PLAN 1.7; QUESTIONS Q35).</td>
+</tr>
+<tr>
+<td>hero_stretch</td>
+<td>Drawn takeoff stretch</td>
+<td>10x18</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>HOLD. Candidate to replace the stretched frames, as hero_squash.</td>
+</tr>
+<tr>
+<td>hero_dropin</td>
+<td>Drop in after the reveal</td>
+<td>12x16 frames</td>
+<td>UNKNOWN</td>
+<td>M0</td>
+<td>HOLD. DESIGN 5.2 ends the reveal with the hero dropping in from the bottom of the frame. Not built: play starts with the hero at spawn (index.html ui.endReveal).</td>
+</tr>
+<tr>
+<td>hero_colours</td>
+<td>Hero colourways</td>
+<td>12x16</td>
+<td>the hero's frames</td>
+<td>M3</td>
+<td>HOLD. Sunbeam cosmetics and Stephen's call; M3 ships only a palette swap hook that keeps the Ink outline (DESIGN 9.4; BUILD-PLAN T3.2).</td>
+</tr>
+</tbody>
+</table>
+<p>Open questions on this table:</p>
+<ul>
+<li>hero_dash, hero_hurt: are these poses wanted, and with how many frames?</li>
+<li>hero_squash, hero_stretch: drawn frames at these sizes, or keep scaling whatever frame shows? How many frames each?</li>
+<li>hero_dropin: what path and how many frames does the drop in take?</li>
+<li>hero_colours: how many colourways, and from which palette entries?</li>
+</ul>
+<h3>What exists today</h3>
+<p>The game draws a 12 frame code draft from T0.17 (index.html SPRITES). It has a round Sun body with Walnut flecks, V antennae, one Glare eye and three legs a side.</p>
+<p>Reviews found five faults (PROGRESS T0.12a, T0.17, REVIEW 4; QUESTIONS Q73). At 360 wide its feet are 1 px dots, the land squeeze reads as a squint, and the run moves only the legs. On the relit Sun lamp it reads only by its outline, and an early cling read as the letter i.</p>
+<p>Astra may start from the draft or start fresh. The s10 prompt carries the draft's strings.</p>
+<h3>Batch 0 deliverables</h3>
+<ul>
+<li>hero/: the eight READY strips in the table, each with its source grid in source/.</li>
+<li>concept/hero_concepts.png: one image tool picture of four silhouette concepts, the built one marked. Astra's own method is the image tool for concepts and the pixels rebuilt as data (ASTRA-GRAPHICS-METHODS C2).</li>
+<li>review/hero_sheet.png: every frame at 1x and 8x, labelled with its frame name.</li>
+<li>review/hero_plates.png at 3x: for each biome, 15 tiles, one per photo colour, in the game's blend (index.html R.buildStatic). Each tile shows both surfaces the hero stands on.</li>
+<li>On a one way, Glare, Ink and the biome's line cross the top of an open cell, with the open colour above and below.</li>
+<li>On a solid top, Glare sits over Ink over the solid colour.</li>
+<li>One more plate puts the hero on the relit Sun lamp beside today's beacon. It is the swatch sheet's test with the real hero (tools/swatch.html; BUILD-PLAN 7.4).</li>
+<li>review/hero_motion.png at 8x, scaled by pixel centres as the canvas does (index.html R.samplePixels).</li>
+<li>Land, run1 and fall are squeezed to 14x14; jump, fall, dive and cling are stretched to 10x18.</li>
+<li>It adds the Glare copy of run1 and jump, every frame beside its mirror, and the cling on both walls.</li>
+<li>review/hero_idle.gif at 2 fps and review/hero_run.gif at 12 fps.</li>
+<li>progress.md with its Gate line, manifest.json, prompts.json, and the batch's last checkpoint zip.</li>
+</ul>
+<h3>What Stephen reviews</h3>
+<ol>
+<li>Does it read as a thumb sized clay bug that climbs to the light (DESIGN 2)?</li>
+<li>Held at arm's length on his phone, can he point to its feet within 3 seconds (BUILD-PLAN 5.9, prompt 1)?</li>
+<li>Does it read on all 75 plates, and on the Sun lamp (QUESTIONS Q73)?</li>
+<li>Does the run move more than the legs (PROGRESS REVIEW 4)?</li>
+<li>Does the cling read as armed for a wall jump, and never as a letter (DESIGN 4.2; PROGRESS T0.12a)?</li>
+<li>Does the squeezed land frame read as a squash, not a squint (PROGRESS T0.17)?</li>
+<li>Does the fallen frame read as fallen at a glance (BUILD-PLAN T0.16)?</li>
+<li>Does facing read both ways (DESIGN 4.2)?</li>
+<li>Are the 16 hexes, Sun as the hero's body and the five tint pairs right as used (BUILD-PLAN 7.4)?</li>
+</ol>
+<p>He replies APPROVED, or CHANGES with one line per fix, and Astra stops again after every CHANGES round. RULINGS may come with either reply, or later, in the format the s10 prompt gives. The gate questions come first: the palette, the grid, the hero's design and colours, and Q73's lamp.</p>
+<h2>Enemies and bosses</h2>
+<p>The five fodder kinds and their five elites are READY to draw after the hero is approved; every boss piece waits on a ruling.</p>
+<p>Each room has one enemy kind, set by its biome (DESIGN 7). Since T1.4 shipped on 30 Oct, the game draws Opus placeholders, two 16x16 frames per kind (index.html SPRITES).</p>
+<p>Today an elite is its fodder's art drawn 1.5 times, 24 px (QUESTIONS Q82; index.html R.draw). Astra's 24x24 elites need five new sprite names and a render change: 19 names with today's 14.</p>
+<h3>Rules for every enemy</h3>
+<ul>
+<li>An Ink outline plus a Glare highlight pixel, and only the colours its row names (BUILD-PLAN 7.3).</li>
+<li>No Sun and no Film (harness.js H-spr-1; BUILD-PLAN 7.1).</li>
+<li>2 to 4 frames at 12 fps, elites included (DESIGN 11; BUILD-PLAN T1.4). The game alternates two today, so more frames need a render change. This brief asks for one looping cycle per kind; frames per state are an open question.</li>
+<li>Only the thorn crawler and its elite are mirrored, by their walk (index.html R.draw). The moth, icicle, jelly and spark and their elites never are, so they must read the same moving either way.</li>
+<li>Readable at about 15 CSS px on a 360 phone. The first moth read as a plus sign until it got forewings over hindwings and antennae (PROGRESS T0.16).</li>
+<li>Contact is the box less 2 px each side, a 12 px core or 20 for an elite (index.html core-sim; QUESTIONS Q70). Tips beyond it are forgiving.</li>
+<li>Elites are 24x24 with their fodder's behaviour and double HP; Magenta is the elite colour (DESIGN 3; QUESTIONS Q51; BUILD-PLAN 7.1).</li>
+<li>Players must point to every enemy within 3 seconds and name the one that hit them (BUILD-PLAN 5.9, prompts 3 and 5).</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Asset</th>
+<th>Size px</th>
+<th>Frames</th>
+<th>M</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>enemy_moth</td>
+<td>Moth, Attic fodder</td>
+<td>16x16</td>
+<td>2 at 12 fps</td>
+<td>M0</td>
+<td>READY. Sprite key moth. Front view and symmetric, facing none: never mirrored. Ash wings, forewings over hindwings, a Pewter body, Ink outline and antennae, a Glare highlight on each forewing (index.html SPRITES moth; BUILD-PLAN 7.3). Drifts through furniture toward the hero at 1 cell a second (DESIGN 7; QUESTIONS Q29). Also the boss's shed moths, and the blank wall's stand in on any biome, so it must read on all five (QUESTIONS Q76).</td>
+</tr>
+<tr>
+<td>enemy_icicle</td>
+<td>Icicle, Frost fodder</td>
+<td>16x16</td>
+<td>2 to 4 at 12 fps</td>
+<td>M1</td>
+<td>READY. Sprite key icicle; facing none, never mirrored. Ash body, Glare tips, Ink outline (BUILD-PLAN 7.3). Hangs under a plank, its root on the frame's top row (PROGRESS T1.2b). It drops when the hero is below and within 2 columns, shatters, and hangs again 6 s later (DESIGN 7; QUESTIONS Q82). On Frost's near white rooms the Ash placeholder reads only by its outline (PROGRESS T1.4).</td>
+</tr>
+<tr>
+<td>enemy_jelly</td>
+<td>Jelly, Deep fodder</td>
+<td>16x16</td>
+<td>2 to 4 at 12 fps</td>
+<td>M1</td>
+<td>READY. Sprite key jelly; facing none, never mirrored. Teal body, Magenta core, Ink outline (BUILD-PLAN 7.3). Bobs 2 cells up and down at 1 cell a second, 8 s a full bob (TUNING JELLY_SPEED; QUESTIONS Q82). Deep's lines and pipes are Teal too, so shape and core carry it.</td>
+</tr>
+<tr>
+<td>enemy_crawler</td>
+<td>Thorn crawler, Overgrowth fodder</td>
+<td>16x16</td>
+<td>2 to 4 at 12 fps</td>
+<td>M1</td>
+<td>READY. Sprite key crawler. Moss body, Brick thorns, Glare tips, Ink outline (BUILD-PLAN 7.3). Walks its platform edge to edge at 2 cells a second (DESIGN 7). Faces right, and the game mirrors it to its walk (index.html R.draw); feet on the bottom row.</td>
+</tr>
+<tr>
+<td>enemy_spark</td>
+<td>Spark, Ember fodder</td>
+<td>16x16</td>
+<td>2 to 4 at 12 fps</td>
+<td>M1</td>
+<td>READY. Sprite key spark. Brick with a Glare core and an Ink outline; today's placeholder has no Ink (BUILD-PLAN 7.3; index.html SPRITES spark). Rests, then hops a one cell arc in 0.2 s, every 1.5 s (QUESTIONS Q82). It hops both ways but is never mirrored, so it is drawn symmetric, facing none. Feet on the bottom row; Ember's solids are Soot.</td>
+</tr>
+<tr>
+<td>enemy_moth_elite</td>
+<td>Moth elite</td>
+<td>24x24</td>
+<td>2 to 4 at 12 fps</td>
+<td>M1</td>
+<td>READY. New sprite key moth_elite; facing none. The moth at 24 px with a Magenta elite mark. As the pocket's guard it sleeps until the hero enters (QUESTIONS Q75, Q81).</td>
+</tr>
+<tr>
+<td>enemy_icicle_elite</td>
+<td>Icicle elite</td>
+<td>24x24</td>
+<td>2 to 4 at 12 fps</td>
+<td>M1</td>
+<td>READY. New sprite key icicle_elite; facing none. As the pocket's guard it hangs from the pocket's roof (index.html core-features).</td>
+</tr>
+<tr>
+<td>enemy_jelly_elite</td>
+<td>Jelly elite</td>
+<td>24x24</td>
+<td>2 to 4 at 12 fps</td>
+<td>M1</td>
+<td>READY. New sprite key jelly_elite; facing none. Its fodder already has a Magenta core, so the elite mark must read differently.</td>
+</tr>
+<tr>
+<td>enemy_crawler_elite</td>
+<td>Thorn crawler elite</td>
+<td>24x24</td>
+<td>2 to 4 at 12 fps</td>
+<td>M1</td>
+<td>READY. New sprite key crawler_elite. Faces right; the game mirrors it to its walk.</td>
+</tr>
+<tr>
+<td>enemy_spark_elite</td>
+<td>Spark elite</td>
+<td>24x24</td>
+<td>2 to 4 at 12 fps</td>
+<td>M1</td>
+<td>READY. New sprite key spark_elite; facing none, symmetric. Brick sits beside Magenta, both danger colours, so the shape must carry the mark.</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Boss body: the photo cluster, its intro outline and erosion</td>
+<td>12 or more cells of 16x16</td>
+<td>code: a 2 s intro, erosion per hit</td>
+<td>M2</td>
+<td>CODE. Room 5's largest saturated cluster, drawn from its own photo cells, with HP equal to its cells. It is outlined in place 2 s before it wakes (DESIGN 7.1). It erodes from the hit point, the outline kept until under 25% (BUILD-PLAN T2.10a).</td>
+</tr>
+<tr>
+<td>boss_fallback</td>
+<td>Default clay boss</td>
+<td>UNKNOWN: "a fixed 5x4 sprite", units not stated</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. The only drawn boss: 20 HP, the Attic moveset, on the largest dark mass when no cluster qualifies (DESIGN 7.1; TUNING BOSS_FALLBACK_HP).</td>
+</tr>
+<tr>
+<td>boss_weak_cell</td>
+<td>Boss weak cell mark</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. At least 3 weak cells reachable from the safe ledge; Brick is the weak cell colour (DESIGN 7.1; BUILD-PLAN 7.1).</td>
+</tr>
+<tr>
+<td>boss_moth_shed</td>
+<td>Attic attack: moth shed</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. Sheds 3 moths every 4 s, each attack telegraphed at least 0.8 s (DESIGN 7, 7.1; TUNING BOSS_MOTH_EVERY_S).</td>
+</tr>
+<tr>
+<td>boss_icicle_volley</td>
+<td>Frost attack: icicle volley</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. Volleys after a 3 s telegraph (DESIGN 7; TUNING BOSS_ICICLE_TELEGRAPH_S).</td>
+</tr>
+<tr>
+<td>boss_ring</td>
+<td>Deep attack: ring pulse</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. A 4 cell ring every 5 s; whether 4 cells is the radius is not stated (DESIGN 7; TUNING BOSS_RING_CELLS).</td>
+</tr>
+<tr>
+<td>boss_thorn_lines</td>
+<td>Overgrowth attack: thorn lines</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. Thorn lines along adjacent platforms; TUNING has no number for them (DESIGN 7).</td>
+</tr>
+<tr>
+<td>boss_spark_fountain</td>
+<td>Ember attack: spark fountain</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. A fountain after a 2 s telegraph (DESIGN 7; TUNING BOSS_SPARK_TELEGRAPH_S).</td>
+</tr>
+</tbody>
+</table>
+<p>Open questions on this table:</p>
+<ul>
+<li>Fodder frames: is 2 to 4 the whole budget per kind or per state? Should the icicle (hang, fall, shatter, regrow), spark (rest, hop, land) and crawler (walk, turn) get state frames?</li>
+<li>Elites: approve five new sprite names and a render change, or keep the scaled fodder art? How should Magenta mark an elite, and does an elite keep its fodder's frame count?</li>
+<li>Pocket guard: should the sleeping elite get a sleeping pose and a wake frame?</li>
+<li>Facing: should the moth and the spark face their way of travel through a render change, or stay symmetric as briefed?</li>
+<li>boss_fallback: is 5x4 in cells (80x64 px)? What does it look like, how many frames, and does it erode in 16 px chunks?</li>
+<li>boss_weak_cell and the five attacks: drawn by Astra or by code, and at what sizes, frame counts and telegraph looks?</li>
+</ul>
+<p>Enemy hit, death, frozen and stunned looks are in s8. No NPC exists in any doc: no Darkroom keeper, guide or mascot (DESIGN, BUILD-PLAN, QUESTIONS, HANDOFF searched).</p>
+<h2>The world</h2>
+<p>The room is the player's photo, drawn by code; Astra makes only the pieces laid on top of it.</p>
+<p>Each 16x16 cell is one flat colour from the photo, dimmed and tinted by biome. Its edges are Ink and Glare lines drawn per cell (index.html R.buildStatic). The biome comes from the photo's dominant hue, and every world piece must read against its tints (DESIGN 6.10, 7).</p>
+<table>
+<thead>
+<tr>
+<th>Biome</th>
+<th>Photo</th>
+<th>Solid tint</th>
+<th>Open tint</th>
+<th>Platform line</th>
+<th>Twist</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Attic</td>
+<td>warm browns, oranges</td>
+<td>Walnut</td>
+<td>Ash</td>
+<td>Amber</td>
+<td>none; dust is cosmetic</td>
+</tr>
+<tr>
+<td>Frost</td>
+<td>white, light grey</td>
+<td>Slate</td>
+<td>Paper</td>
+<td>Pewter</td>
+<td>slick planks marked with a Teal ice edge</td>
+</tr>
+<tr>
+<td>Deep</td>
+<td>blue, teal</td>
+<td>Lapis</td>
+<td>Slate</td>
+<td>Teal</td>
+<td>low gravity; pipes are sticky walls</td>
+</tr>
+<tr>
+<td>Overgrowth</td>
+<td>green</td>
+<td>Moss</td>
+<td>Ash</td>
+<td>Walnut</td>
+<td>vines are sticky walls</td>
+</tr>
+<tr>
+<td>Ember</td>
+<td>red, pink, magenta</td>
+<td>Soot</td>
+<td>Pewter</td>
+<td>Amber</td>
+<td>one more enemy, two more specks</td>
+</tr>
+</tbody>
+</table>
+<p>Biomes and twists come from DESIGN 7; tints from BUILD-PLAN 7.3 and index.html core-palette.</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Asset</th>
+<th>Size px</th>
+<th>Frames</th>
+<th>M</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>none</td>
+<td>Solid edge</td>
+<td>per 16x16 cell: top 16x2, sides 1x16, bottom 16x1</td>
+<td>1, static</td>
+<td>M0</td>
+<td>CODE. Ink on sides facing air; Glare over Ink on a top (index.html R.buildStatic). Contrast is computed by H-pal-3 (BUILD-PLAN 7.3).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>One way platform edge</td>
+<td>16x3 per cell</td>
+<td>1, static</td>
+<td>M0</td>
+<td>CODE. Glare, Ink, then the biome's line colour, on runs of 3 cells or more (index.html R.buildStatic; TUNING PLATFORM_RUN_MIN). The other four line colours arrived with T1.1.</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Room backdrop and biome tints</td>
+<td>384x768 world</td>
+<td>static</td>
+<td>M0</td>
+<td>CODE. The photo through the blends; off palette on purpose, and the sprites gate checks that (BUILD-PLAN 7.3, T0.17).</td>
+</tr>
+<tr>
+<td>film_tab</td>
+<td>Film tab, the repair foothold</td>
+<td>16x5</td>
+<td>1</td>
+<td>M0</td>
+<td>READY. Sprite key tab, one tile repeated across its 2 cells. Drawn at the top of each tab cell; a tab is 2 cells, 32x5 (index.html R.buildStatic; TUNING TAB_W). Film fill, Ink perforations, an Ink bottom row, and no side or top outline (index.html SPRITES tab). It must read as help, never furniture; on Frost it reads by its Ink edge (DESIGN 2, 6.7; BUILD-PLAN 7.3).</td>
+</tr>
+<tr>
+<td>tab_stair</td>
+<td>Tab stair</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M0</td>
+<td>HOLD. DESIGN 6.7 lays film tabs along a stair path, 3 across and 3 up (TUNING TAB_STAIR_ACROSS, TAB_STAIR_UP). DESIGN 6.11 gives a blank wall two film tab stairs: a tab stair is that arrangement of film_tab tiles. DESIGN 11 and BUILD-PLAN T0.17 still list it as a sprite.</td>
+</tr>
+<tr>
+<td>beacon</td>
+<td>Exit beacon, the ceiling light</td>
+<td>16x16</td>
+<td>2, 400 ms each</td>
+<td>M0</td>
+<td>READY. Sprite key beacon; anchor top, facing none. A lamp hanging in the exit cell: cord from the top row, shade, bulb; frame b adds rays (index.html SPRITES beacon). The game draws a pulsing ring round it. Colours follow Stephen's Q73 ruling; until then today's: cord and rim Ink, shade Glare, bulb Sun, rays Glare (QUESTIONS Q73).</td>
+</tr>
+<tr>
+<td>beacon_dark</td>
+<td>Dark beacon, boss room</td>
+<td>16x16</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. The beacon stays dark until the boss is gone (DESIGN 7.1; BUILD-PLAN T2.10a).</td>
+</tr>
+<tr>
+<td>ice_edge</td>
+<td>Frost ice edge</td>
+<td>16 wide per cell, height UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M1</td>
+<td>HOLD. Teal, on slick one ways 5 cells wide or more (BUILD-PLAN 7.3, T1.5; TUNING FROST_SLICK_MIN_W). Today slick planks look like every plank (PROGRESS T1.1). It must not read as the icicle.</td>
+</tr>
+<tr>
+<td>vine</td>
+<td>Vine overlay, Overgrowth sticky wall</td>
+<td>16 wide per cell, height UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M1</td>
+<td>HOLD. Moss with Ink stems over a 1 cell wide solid column, 6 cells tall or more (BUILD-PLAN 7.3; TUNING STICKY_RUN_MIN). At most 3 a room (TUNING CAP_STICKY).</td>
+</tr>
+<tr>
+<td>pipe</td>
+<td>Pipe overlay, Deep sticky wall</td>
+<td>16 wide per cell, height UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M1</td>
+<td>HOLD. Teal with Ink rings, on the same columns as the vine (BUILD-PLAN 7.3).</td>
+</tr>
+<tr>
+<td>trap_spike</td>
+<td>Spikes: Attic, Ember, Overgrowth</td>
+<td>16x16</td>
+<td>2 states, by the trap's phase</td>
+<td>M1</td>
+<td>READY. Sprite key spike. Frame a is sunk for the off half of the 90 step period (45 steps); b stands for the on half, when it hurts. The frames follow traps.phase, not a 12 fps loop (index.html R.draw; TUNING TRAP_PERIOD_S). Anchor bottom, an Ink base on the cell's floor; field cells are open cells, so spikes also stand in mid air. Facing none. Brick with Magenta tips over the Ink base, no Glare (index.html SPRITES spike; BUILD-PLAN T1.4b). One look serves all three biomes. Ask: today's sunk frame barely reads on a photo's checks, where only its Ink base shows (PROGRESS T1.4b). It must not read as the thorn crawler.</td>
+</tr>
+<tr>
+<td>trap_crusher</td>
+<td>Crushers: Frost, Deep</td>
+<td>16x16</td>
+<td>3 states, by the trap's phase</td>
+<td>M1</td>
+<td>READY. Sprite key crusher. Frame a is up for the off half (45 steps). Frame b, mid stroke, covers the first and last 6 steps of the on half, and c, down, the other 33. The frames follow traps.phase, not a 12 fps loop (index.html R.draw). Anchor top, facing none. Slate with a Brick stripe, Glare teeth and Ink (index.html SPRITES crusher; BUILD-PLAN 7.3). Every field cell draws its own crusher, and the stroke hurts across the whole field (QUESTIONS Q83). Ask: a 3 row field reads as stacked machines, not one stroke (PROGRESS T1.4b).</td>
+</tr>
+<tr>
+<td>darkroom_door</td>
+<td>Darkroom door</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M1 placed, M2 sprite</td>
+<td>HOLD. Set in the largest bright rectangle, L over 200 and at least 3x3 cells; entering opens the shop (DESIGN 6.11; BUILD-PLAN T2.9). No colour is assigned.</td>
+</tr>
+<tr>
+<td>pocket</td>
+<td>Pocket, a hollow in a landmark</td>
+<td>UNKNOWN; the hollow is 48x48</td>
+<td>UNKNOWN</td>
+<td>M1</td>
+<td>HOLD. A 3x3 hollow, a tunnel of up to 2 cells, an elite guard and loot at the back (DESIGN 6.11). Today it reads as a grey notch, its mouth on a film tab (PROGRESS T1.2a). Not in DESIGN 11's list.</td>
+</tr>
+<tr>
+<td>ladder_mark</td>
+<td>Ladder zone marking</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M1</td>
+<td>HOLD. A stack of 3 or more one ways is "marked as a ladder" with a chest on top (DESIGN 6.11). No look and no task exist.</td>
+</tr>
+<tr>
+<td>dust_mote</td>
+<td>Attic dust motes</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>HOLD. Cosmetic, and no task builds them. BUILD-PLAN 7.3 colours them Film, which it also keeps for repairs only.</td>
+</tr>
+<tr>
+<td>daily_rooms</td>
+<td>Daily Room set</td>
+<td>24x48 cells each, a 384x768 world</td>
+<td>6 grids</td>
+<td>M3</td>
+<td>HOLD. Candidate. Q18 plans six synthetic or hand drawn rooms beside the sample room, until Stephen's own rooms replace them (DESIGN 8; BUILD-PLAN T3.1b). Each is a grid of palette indices 0 to 14, never Film, in the form of tools/sample-room.txt (QUESTIONS Q13, Q18).</td>
+</tr>
+</tbody>
+</table>
+<p>Open questions on this table:</p>
+<ul>
+<li>tab_stair: is it only film_tab tiles laid as a stair, or does it want a riser, a connector piece or exposure marks (DESIGN 2)?</li>
+<li>beacon_dark: how many frames, and what does dark look like?</li>
+<li>ice_edge, vine, pipe: what tile height, which pieces (ends, middle), and may the vine and pipe share one sprite name?</li>
+<li>trap_crusher: keep a crusher per field cell (QUESTIONS Q83 option a), or one stroke sweeping the field a row at a time with its own sprite (option b)?</li>
+<li>trap_spike: keep the code's Magenta tips and no Glare (BUILD-PLAN T1.4b), or add the Glare tips of BUILD-PLAN 7.3's danger rule?</li>
+<li>darkroom_door, pocket, ladder_mark, dust_mote: wanted at all, and at what size, frames and colours?</li>
+<li>daily_rooms: should Astra draw the six rooms as palette grids, or should Claude Code make them synthetic until Stephen's rooms arrive (QUESTIONS Q18)?</li>
+</ul>
+<h2>Loot and pickups</h2>
+<p>Four loot sprites are READY at 16x16, sized by T1.6's placeholders; only the loose Dead Pixels wait on a ruling.</p>
+<p>Specks come from isolated Sun cells a hero can touch: standable and reached, or at most JUMP_UP open cells above one (PROGRESS T1.2b; TUNING JUMP_UP). Loot is Amber with a Glare glint, and Sun stays the hero's (BUILD-PLAN 7.3).</p>
+<p>The game paints the speck, scroll and blueprint cells in Ash's open blend for the biome, and draws them on it (index.html R.draw). The chest is drawn straight over its photo cell.</p>
+<p>T1.6's shots found the loot small at the room's scale (PROGRESS T1.6).</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Asset</th>
+<th>Size px</th>
+<th>Frames</th>
+<th>M</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>loot_speck</td>
+<td>Loot speck, Dead Pixels</td>
+<td>16x16</td>
+<td>2 at 4 fps</td>
+<td>M1</td>
+<td>READY. Sprite key speck; frames a and b are its glint, each held 15 steps (index.html R.draw). Anchor cell, facing none. Worth 2 to 6 DP on touch; up to 6 a room, 8 in Ember (DESIGN 6.11, 9.3). Amber with a Glare glint, as BUILD-PLAN 7.3 asks. Today's placeholder is Glare and Film with no Amber, which Astra must not copy (index.html SPRITES speck). In Attic and Ember the platform line is Amber too.</td>
+</tr>
+<tr>
+<td>loot_scroll</td>
+<td>Scroll</td>
+<td>16x16</td>
+<td>1</td>
+<td>M1</td>
+<td>READY. Sprite key scroll; anchor cell, facing none. One a room; on landing it offers pick one of two stats, and every 3 scrolls add a heart (DESIGN 9.2; QUESTIONS Q56). Paper (BUILD-PLAN 7.1); today Paper ruled in Ink inside Walnut rollers (index.html SPRITES scroll).</td>
+</tr>
+<tr>
+<td>loot_blueprint</td>
+<td>Blueprint</td>
+<td>16x16</td>
+<td>1</td>
+<td>M1</td>
+<td>READY. Sprite key blueprint; anchor cell, facing none. Replaces the brightest speck at a 25% chance and gives nothing until developed (DESIGN 6.11, 9.3; TUNING BLUEPRINT_CHANCE). Lapis (BUILD-PLAN 7.1); today Lapis ruled in Glare. Drawn and carried since T1.6; developing it comes with M2 (PROGRESS T1.6; BUILD-PLAN T2.6).</td>
+</tr>
+<tr>
+<td>loot_chest</td>
+<td>Chest, shut and open</td>
+<td>16x16</td>
+<td>2 states</td>
+<td>M1</td>
+<td>READY. Sprite key chest; frame a shut, b open with the weapon slip showing (index.html SPRITES chest). Anchor bottom on its standable cell, facing none. One a room: 15 DP plus a weapon (DESIGN 9.3). On the shape the player tapped, else atop the ladder, else deep in a side branch (QUESTIONS Q34, Q78). A Walnut body with a trim that is not Sun, since H-spr-1 forbids Sun here (BUILD-PLAN 7.1, 7.3). Today the trim is Amber bands and the slip is Film and Glare; the slip must not be Film.</td>
+</tr>
+<tr>
+<td>loot_dp_drop</td>
+<td>Loose Dead Pixels from Tremor and kills</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. Tremor shakes 1 to 3 DP out of adjacent walls, and kills pay 3, 10 or 60 (DESIGN 9.1, 9.3). No doc says whether these show as pickups.</td>
+</tr>
+</tbody>
+</table>
+<p>Open questions on this table:</p>
+<ul>
+<li>Size: keep the code's full 16x16 cell per piece, or should the art fill more of it, since T1.6 found the loot small?</li>
+<li>loot_speck, loot_chest: the code's speck is Glare and Film with no Amber, and the open chest's slip is Film. Both break "Film for repairs only" and risk readability prompt 6 (BUILD-PLAN 7.1, 5.9). The brief follows the plan: keep that?</li>
+<li>loot_chest: keep the code's Amber bands as the trim, which settle the Sun conflict between BUILD-PLAN 7.3 and H-spr-1? Is there an opening animation?</li>
+<li>loot_scroll: does the scroll in the room need a colour variant per stat?</li>
+<li>loot_dp_drop: reuse the speck, draw a separate piece, or show nothing in the room?</li>
+</ul>
+<p>The hearts sit in the frame's top strip and are in s7. DESIGN has no heart pickup.</p>
+<h2>Screens and interface</h2>
+<p>The interface is HTML and CSS today: only the heart is READY, and most rows are candidates no doc asked for.</p>
+<p>The served set is exactly index.html, manifest.json, sw.js and icons/, so interface art except the install icons is inlined into index.html (BUILD-PLAN line 7). Labels stay live text for the lint, so no button word is ever baked into art.</p>
+<p>Player copy has no dashes or exclamation marks and says "Sky Wolf Studio" singular (BUILD-PLAN rule 6). Targets are 48 px or more, and text is 0.7 rem or more (tools/lint.mjs).</p>
+<p>The top strip, 36 px, holds the room name and hearts; the control strip is at least 168 px (DESIGN 3). The rocker, A and B take the strip's full height as hit area, with their drawn glyphs at the bottom (BUILD-PLAN 1.5; index.html CSS #rocker, .verb). The rocker starts at x 120, because the fleet's music chip owns the bottom left 120x120 (QUESTIONS Q48).</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Asset</th>
+<th>Size px</th>
+<th>Frames</th>
+<th>M</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>logo_wordmark</td>
+<td>SHUTTERBUG wordmark</td>
+<td>UNKNOWN; today a 1.6 rem CSS word in the title's photo window</td>
+<td>1</td>
+<td>UNKNOWN</td>
+<td>HOLD. Candidate: no doc asks for a logo (index.html CSS .word). Letters by definition, so only a ruling can lift the no words rule for this row; its letters follow the copy rules.</td>
+</tr>
+<tr>
+<td>title_art</td>
+<td>Title picture, the polaroid</td>
+<td>UNKNOWN; today a 240x194 CSS polaroid round a 220x150 window</td>
+<td>1</td>
+<td>UNKNOWN</td>
+<td>HOLD. Candidate. Today a black photo that "reads as a blank screen, not a room" (PROGRESS T0.2). It must keep the bottom left 120x120 clear (QUESTIONS Q48).</td>
+</tr>
+<tr>
+<td>title_background</td>
+<td>Title screen background</td>
+<td>UNKNOWN</td>
+<td>1</td>
+<td>UNKNOWN</td>
+<td>HOLD. Candidate; flat Soot today (index.html CSS).</td>
+</tr>
+<tr>
+<td>studio_mark</td>
+<td>Sky Wolf Studio mark</td>
+<td>512x512 and other sizes, existing</td>
+<td>1</td>
+<td>later</td>
+<td>EXISTS. portal-assets/icons/skywolf-head-512.png and its siblings, a blue ink wolf head off this palette. The game shows the studio only as the exit text; reuse, never redraw unless asked.</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Exit control, "All Sky Wolf games"</td>
+<td>48 px tall or more</td>
+<td>2 states</td>
+<td>M0</td>
+<td>CODE. Live text on the title, in flow and never hidden (BUILD-PLAN 1.6; QUESTIONS Q48).</td>
+</tr>
+<tr>
+<td>photo_icons</td>
+<td>Camera, camera roll and sample glyphs</td>
+<td>UNKNOWN</td>
+<td>1 each, 3</td>
+<td>UNKNOWN</td>
+<td>HOLD. Candidate; the photo buttons are text only (index.html #shoot, #choose, #sample).</td>
+</tr>
+<tr>
+<td>sample_room_photo</td>
+<td>Sample room photo, the attic bedroom</td>
+<td>384x768</td>
+<td>1</td>
+<td>UNKNOWN</td>
+<td>HOLD. Candidate for the reveal's hold beat, which today shows the room's own grid (BUILD-PLAN T0.14). It must read as the room in tools/sample-room.txt. It is full colour, so only a ruling naming its palette and tool can make it READY. Inlined into index.html, it needs a byte budget.</td>
+</tr>
+<tr>
+<td>crop_handles</td>
+<td>Crop box handles and chrome</td>
+<td>UNKNOWN</td>
+<td>1</td>
+<td>UNKNOWN</td>
+<td>HOLD. Candidate; the crop review found no handles (BUILD-PLAN State T0.15). The live overlay stays code.</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Develop reveal</td>
+<td>384x768 layers</td>
+<td>1.6 s of code</td>
+<td>M0</td>
+<td>CODE. Hold, resolve and light up, drawn from the photo and static layers (DESIGN 5.2; index.html R.drawReveal).</td>
+</tr>
+<tr>
+<td>frame_paper</td>
+<td>Film frame paper grain</td>
+<td>UNKNOWN; today a 6x6 CSS tile</td>
+<td>1</td>
+<td>M0</td>
+<td>HOLD. Candidate. Paper with a faint grain, never a seventeenth colour (BUILD-PLAN 7.4; index.html CSS #play).</td>
+</tr>
+<tr>
+<td>hud_heart</td>
+<td>Heart, full and empty</td>
+<td>9x8</td>
+<td>2 states</td>
+<td>M0</td>
+<td>READY. Sprite key hud_heart; frames full and empty, anchor cell. Shown at 18x16 CSS on Paper, 5 px apart, 4 to 8 of them (index.html CSS #hearts; TUNING HEARTS_CAP). Full: Ink outline, Brick fill. Empty: the same outline with a Slate fill (BUILD-PLAN 7.1); the code empties to Paper today (PROGRESS REVIEW 4).</td>
+</tr>
+<tr>
+<td>hud_room_name</td>
+<td>Room name field</td>
+<td>UNKNOWN</td>
+<td>1</td>
+<td>M0</td>
+<td>HOLD. Candidate. Bold system text in the top strip today (DESIGN 11; index.html CSS #top); the name stays live text.</td>
+</tr>
+<tr>
+<td>hud_dp_counter</td>
+<td>Handwritten Dead Pixel digits</td>
+<td>UNKNOWN</td>
+<td>10 digits</td>
+<td>M0</td>
+<td>HOLD. Candidate. Lapis, rotated 4 degrees, in a cursive font stack no phone shot has proven (PROGRESS T0.17; index.html CSS #dp). Digits by definition, so only a ruling can lift the no words rule for this row.</td>
+</tr>
+<tr>
+<td>hud_dp_icon</td>
+<td>Dead Pixel symbol</td>
+<td>UNKNOWN</td>
+<td>1</td>
+<td>M2</td>
+<td>HOLD. Candidate for Darkroom prices; no doc asks for it (DESIGN 9.3).</td>
+</tr>
+<tr>
+<td>ctrl_rocker</td>
+<td>Move rocker zones</td>
+<td>Hit area the strip's full height. Drawn zones 64 tall (56 under 390), each 74 wide at 412, 63 at 390, 56 at 360 and 96 at 320</td>
+<td>2 states</td>
+<td>M0</td>
+<td>HOLD. The zones widen on larger screens. CSS today: two semi transparent zones with arrow glyphs and a 16 px gap (index.html CSS #rocker, #rocker .zone). Any art must stretch and keep 3:1 glyph contrast (BUILD-PLAN T3.7).</td>
+</tr>
+<tr>
+<td>ctrl_btn_a</td>
+<td>A button, jump</td>
+<td>Hit area 64 wide (56 under 390) by the strip's full height, 168 px or more. A 58 px drawn circle at its bottom (50 under 390)</td>
+<td>2 states</td>
+<td>M0</td>
+<td>HOLD. CSS today: a semi transparent circle with the letter A (index.html CSS .verb, .verb .glyph). The pressed state may wash out in sunlight (PROGRESS T0.9).</td>
+</tr>
+<tr>
+<td>ctrl_btn_b</td>
+<td>B button, dive and dash</td>
+<td>as A</td>
+<td>2 states</td>
+<td>M0</td>
+<td>HOLD. As A, with B (index.html CSS .verb).</td>
+</tr>
+<tr>
+<td>ctrl_hints</td>
+<td>Hint glyphs: rocker, A, B</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M0, M1</td>
+<td>HOLD. Today a Sun pulse on the control itself, 0.7 s three times (index.html CSS sbhint). DESIGN allows exactly these three (DESIGN 5.3); their timing waits on T1.12 and QUESTIONS Q72.</td>
+</tr>
+<tr>
+<td>ui_buttons</td>
+<td>Button skins</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>HOLD. Candidate. Sun primary, Paper secondary, outlined quiet and dashed unable, all CSS today (index.html CSS).</td>
+</tr>
+<tr>
+<td>card_plate</td>
+<td>Card plate</td>
+<td>UNKNOWN; today min(300 px, 86vw) wide</td>
+<td>1</td>
+<td>M0</td>
+<td>HOLD. Candidate. Paper with a 2 px Ink border (index.html CSS #clear, #death, #offer, #slip).</td>
+</tr>
+<tr>
+<td>card_clear</td>
+<td>Room clear card art</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M0</td>
+<td>HOLD. Candidate header art for "Room clear" (index.html COPY).</td>
+</tr>
+<tr>
+<td>card_death</td>
+<td>Death card art</td>
+<td>UNKNOWN</td>
+<td>1</td>
+<td>M0</td>
+<td>HOLD. Candidate. The card docks away from the fallen bug (index.html ui.showDeath).</td>
+</tr>
+<tr>
+<td>card_rotate</td>
+<td>Rotate card pictogram</td>
+<td>UNKNOWN</td>
+<td>1</td>
+<td>M0</td>
+<td>HOLD. Candidate beside "Turn your phone upright to play." on Soot (index.html COPY).</td>
+</tr>
+<tr>
+<td>card_develop</td>
+<td>Tap to develop card</td>
+<td>UNKNOWN; today a 220x64 CSS button</td>
+<td>1</td>
+<td>M1</td>
+<td>HOLD. Candidate. Built in T1.8 as CSS: a Sun "Tap to develop" button on a dimmed screen (index.html #devcard; PROGRESS T1.8). It shows before a shared link's reveal, so the shutter click can play.</td>
+</tr>
+<tr>
+<td>card_slip</td>
+<td>Chest slip card</td>
+<td>UNKNOWN; today the card plate</td>
+<td>1</td>
+<td>M1</td>
+<td>HOLD. Candidate. The chest's stand in for the compare screen until M2: "A weapon waits for the Darkroom." and a "Keep the slip" button on the card plate (index.html #slip; ui.COPY slip, slipTake). The words stay live text.</td>
+</tr>
+<tr>
+<td>sheet_share</td>
+<td>Share sheet chrome</td>
+<td>UNKNOWN; today a min(320 px, 92vw) Paper sheet</td>
+<td>1</td>
+<td>M1</td>
+<td>HOLD. Built in T1.8: the 192x384 preview at 8 px a cell, three sentences, the link and its buttons, Close in its corner (PROGRESS T1.8). The preview and the QR are drawn by code, so only the chrome could be art (BUILD-PLAN 1.5, T1.9b).</td>
+</tr>
+<tr>
+<td>sheet_scroll_pick</td>
+<td>Scroll pick sheet</td>
+<td>UNKNOWN; today the card plate</td>
+<td>1</td>
+<td>M1</td>
+<td>HOLD. Built in T1.6 as #offer: a Paper card with two buttons, each a 32 px CSS icon, the stat's name and a plain sentence (index.html #offer; PROGRESS T1.6).</td>
+</tr>
+<tr>
+<td>icon_stats</td>
+<td>Stat icons: Vigor, Focus, Grit</td>
+<td>UNKNOWN; today 32 px CSS shapes</td>
+<td>1 each, 3</td>
+<td>M1</td>
+<td>HOLD. Today CSS shapes: Vigor a Brick downward triangle, Focus a Lapis upward triangle, Grit a Moss ring (index.html CSS #offer .ico; QUESTIONS Q84). Distinct by shape, with colour only a second cue (DESIGN 9.2; BUILD-PLAN T3.7).</td>
+</tr>
+<tr>
+<td>screen_compare</td>
+<td>Pickup compare screen</td>
+<td>UNKNOWN</td>
+<td>1</td>
+<td>M2</td>
+<td>HOLD. The equipped weapon against the candidate, in plain words (DESIGN 9.1; BUILD-PLAN T2.7).</td>
+</tr>
+<tr>
+<td>icon_weapons</td>
+<td>Weapon, charm and slot icons</td>
+<td>UNKNOWN</td>
+<td>1 each, 27</td>
+<td>M2</td>
+<td>HOLD. Candidate: J1 to J8, D1 to D8, C1 to C8 and three slots. As sprites they would break the 40 name cap (DESIGN 9.1, 11).</td>
+</tr>
+<tr>
+<td>screen_doorway</td>
+<td>Doorway screen</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. Bank blueprints, develop, shoot the next room (DESIGN 9.3; BUILD-PLAN T2.8).</td>
+</tr>
+<tr>
+<td>screen_darkroom</td>
+<td>Darkroom, shop and collector</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. Two faces; the door is world/darkroom_door (DESIGN 9.3; BUILD-PLAN T2.9).</td>
+</tr>
+<tr>
+<td>screen_settings</td>
+<td>Settings screen and its title entry</td>
+<td>UNKNOWN</td>
+<td>2 states per toggle</td>
+<td>M1</td>
+<td>HOLD. Candidate. Built in T1.10 as CSS, opened by a small Settings link on the title (index.html #settings, #settingsbtn). It holds Mirror the controls, Sound, Music, Reduced motion, the install line, the save boxes and a Performance line (PROGRESS T1.10; BUILD-PLAN T3.4).</td>
+</tr>
+<tr>
+<td>screen_codes</td>
+<td>Level code and Recent rooms</td>
+<td>UNKNOWN</td>
+<td>1</td>
+<td>M1</td>
+<td>HOLD. Candidate. After the first room the title shows the Level code field, with Paste and Play, since T1.8 (PROGRESS T1.8). Recent rooms followed in T1.10: a thumbnail of each grid, drawn by code, and a tap plays it again (index.html #recent; PROGRESS T1.10).</td>
+</tr>
+<tr>
+<td>icon_modes</td>
+<td>Mode badges: Negative, Double Exposure, Open House, Daily Room</td>
+<td>UNKNOWN</td>
+<td>1 each, 4</td>
+<td>M3</td>
+<td>HOLD. Candidate (DESIGN 8; BUILD-PLAN T3.1a, T3.1b).</td>
+</tr>
+<tr>
+<td>font</td>
+<td>Typefaces: UI, display, handwriting</td>
+<td>UNKNOWN</td>
+<td>static glyphs</td>
+<td>UNKNOWN</td>
+<td>HOLD. System font stacks today (index.html CSS). A glyph set needs letters, digits and . , ? ' and no dash or exclamation mark. Letters by definition, so only a ruling can lift the no words rule for this row.</td>
+</tr>
+<tr>
+<td>none</td>
+<td>App icon 192</td>
+<td>192x192</td>
+<td>1</td>
+<td>M1</td>
+<td>CODE. tools/icons.mjs writes it from the hero's pixel string (BUILD-PLAN 1.5, T1.11). T1.11 built the tool (commit 698edfd15) from the placeholder hero, so it runs again on the approved hero.</td>
+</tr>
+<tr>
+<td>none</td>
+<td>App icon 512</td>
+<td>512x512</td>
+<td>1</td>
+<td>M1</td>
+<td>CODE. As icon 192.</td>
+</tr>
+<tr>
+<td>none</td>
+<td>App icon 512, maskable</td>
+<td>512x512</td>
+<td>1</td>
+<td>M1</td>
+<td>CODE. As icon 192; no safe zone is written.</td>
+</tr>
+<tr>
+<td>icon_apple_touch</td>
+<td>Apple touch icon</td>
+<td>UNKNOWN</td>
+<td>1</td>
+<td>M1</td>
+<td>HOLD. The plan names the link, not a size; the portal ships 180x180 (BUILD-PLAN 1.5; portal-assets/icons).</td>
+</tr>
+<tr>
+<td>icon_favicon</td>
+<td>Favicon</td>
+<td>UNKNOWN</td>
+<td>1</td>
+<td>UNKNOWN</td>
+<td>HOLD. No doc mentions one; gerplunk reuses its 192 icon (satellites/gerplunk/index.html).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Portal card thumbnail</td>
+<td>540x540</td>
+<td>1</td>
+<td>M3</td>
+<td>CODE. tools/thumb.mjs renders it from the sample room (BUILD-PLAN T3.8).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Store listing art</td>
+<td>UNKNOWN for Shutterbug</td>
+<td>1 each</td>
+<td>M3</td>
+<td>CODE. Screenshots from real rooms Stephen picks (HANDOFF M3); no doc says whether a Play listing exists.</td>
+</tr>
+<tr>
+<td>frame_styles</td>
+<td>Frame style cosmetics</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>later</td>
+<td>HOLD. Sunbeam cosmetics, hooks only in M3, Stephen's call (DESIGN 9.4; BUILD-PLAN T3.2).</td>
+</tr>
+<tr>
+<td>viewfinder</td>
+<td>Live viewfinder overlay</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>later</td>
+<td>HOLD. Post launch and not in v1; listed so nobody draws it now (DESIGN 9.4).</td>
+</tr>
+</tbody>
+</table>
+<p>Open questions on this table:</p>
+<ul>
+<li>Every HOLD row above needs a size and frame count before Astra can draw it, and most need a yes first.</li>
+<li>Chrome style: pixel art in the palette, flat palette shapes as today, or paper and film textures?</li>
+<li>hud_heart: Slate as briefed, or Paper as built, for the empty heart? Should Astra's 9x8 heart replace the CSS heart at all?</li>
+<li>icon_stats: keep Q84's Brick, Lapis and Moss shapes, now built in CSS?</li>
+<li>icon_apple_touch, icon_favicon: what sizes, or reuse the 192 icon?</li>
+<li>Install icons: generated from the approved hero, as the plan says, or painted by Astra? What background colour and maskable safe zone?</li>
+<li>font, hud_dp_counter, logo_wordmark: keep system fonts, or rule a pixel font, handwritten digits or a wordmark?</li>
+<li>sample_room_photo: is a painted full colour photo wanted, and what byte budget may it take?</li>
+</ul>
+<h2>Effects</h2>
+<p>Every effect in the game today is drawn by code; the effects still to come have no size or frame count yet.</p>
+<p>Attack effects are Glare (BUILD-PLAN 7.1). Screen shake is a camera offset of at most 2 px, on dive landings and boss hits, so it needs no art (DESIGN 4.4). The reveal's flashes fade with canvas alpha, the only blended effects besides the backdrop, and the sprites gate does not sample them (index.html R.drawReveal).</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Asset</th>
+<th>Size px</th>
+<th>Frames</th>
+<th>M</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>none</td>
+<td>Dive speed lines</td>
+<td>an 8x6 box above the hero</td>
+<td>1</td>
+<td>M0</td>
+<td>CODE. Three Ink lines, 1x4, 1x6 and 1x4 (index.html R.draw). In the dive shot they read as steam (PROGRESS T0.12b).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Dash streaks</td>
+<td>a 6x6 box behind the hero</td>
+<td>1, held 8 steps</td>
+<td>M0</td>
+<td>CODE. Two Ink streaks, 6x1 and 4x1, mirrored to the facing (index.html R.draw).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Dash invulnerability flash</td>
+<td>12x16</td>
+<td>a Glare copy of each frame, 4 steps</td>
+<td>M0</td>
+<td>CODE. The atlas turns Sun and Walnut to Glare and keeps Ink (QUESTIONS Q47; index.html buildAtlas).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Hit blink and knockback</td>
+<td>12x16</td>
+<td>8 steps shown, 8 hidden, through 60 steps</td>
+<td>M0</td>
+<td>CODE. No hurt pose and no colour flash (index.html R.draw).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Reveal sweep</td>
+<td>384x2</td>
+<td>0.8 s</td>
+<td>M0</td>
+<td>CODE. A Glare bar riding the resolved rows; the T0.14 shot found it thin on light walls (PROGRESS T0.14).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Reveal platform flash</td>
+<td>16x3 per one way cell</td>
+<td>a 250 ms fade</td>
+<td>M0</td>
+<td>CODE. Glare, faded with canvas alpha (index.html R.drawReveal).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Reveal landmark pulse</td>
+<td>a 2 px outline per landmark</td>
+<td>500 ms</td>
+<td>M0</td>
+<td>CODE. Glare in the code but Amber in BUILD-PLAN 7.1, an open conflict (PROGRESS T0.14).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Reveal repairs appear</td>
+<td>the film tab</td>
+<td>250 ms</td>
+<td>M0</td>
+<td>CODE. Tabs appear pair by pair from the bottom, a tick each (DESIGN 5.2; index.html R.drawReveal).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Exit ring pulse</td>
+<td>22x22</td>
+<td>2 states, 400 ms each</td>
+<td>M0</td>
+<td>CODE. An Ink square and a 2 px ring alternating Glare and Sun (index.html R.draw). An all Sun ring read as a second hero (PROGRESS T0.12b).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Relit ceiling light</td>
+<td>16x16 per lamp cell</td>
+<td>static</td>
+<td>M0</td>
+<td>CODE. The lamp's cells at full colour; Q73 proposes one step dimmer (QUESTIONS Q73).</td>
+</tr>
+<tr>
+<td>none</td>
+<td>Trap rhythm flash</td>
+<td>a 1 px frame round each 16x16 field cell</td>
+<td>the off half's last 6 steps</td>
+<td>M1</td>
+<td>CODE. Magenta, beating the 1.5 s rhythm just before the field turns on (index.html R.draw; PROGRESS T1.4b). It frames each field cell, never the field's whole rectangle.</td>
+</tr>
+<tr>
+<td>fx_clear</td>
+<td>Room clear moment</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>HOLD. Today the sim freezes and the card shows; no doc gives a clear animation (BUILD-PLAN T0.16).</td>
+</tr>
+<tr>
+<td>fx_death</td>
+<td>Death moment</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>HOLD. A half second beat before the card is recorded for T1.12 (PROGRESS REVIEW 4).</td>
+</tr>
+<tr>
+<td>fx_land_dust</td>
+<td>Landing dust</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>HOLD. In no doc; a landing shows only the squash, plus a 2 px shake after a dive.</td>
+</tr>
+<tr>
+<td>fx_speck_pickup</td>
+<td>Speck pickup</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M1</td>
+<td>HOLD. Only a pickup sound is specified (BUILD-PLAN T1.6). The speck's glint is loot_speck's two frames.</td>
+</tr>
+<tr>
+<td>fx_chest_open</td>
+<td>Chest opening</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M1</td>
+<td>HOLD. The chest gives 15 DP and a weapon slip (DESIGN 9.3; BUILD-PLAN T1.6). Today it swaps from shut to open in one step (index.html R.draw).</td>
+</tr>
+<tr>
+<td>fx_enemy_hit</td>
+<td>Enemy hit and death</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. A dead enemy just vanishes today. Damage starts with M2's weapons, or in M1 if Q27 rules a stomp (QUESTIONS Q27).</td>
+</tr>
+<tr>
+<td>fx_frozen_stunned</td>
+<td>Frozen and stunned enemy</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. A held enemy neither moves nor harms (QUESTIONS Q81). D2 and J7 freeze; J4 stuns (DESIGN 9.1).</td>
+</tr>
+<tr>
+<td>fx_projectiles</td>
+<td>Boomerang and Twin Darts</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. Reach 5 and 4 cells (DESIGN 9.1; BUILD-PLAN T2.2).</td>
+</tr>
+<tr>
+<td>fx_fire</td>
+<td>Spark Trail, Ember Stomp and Flashpan fire</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. Three sparks, one burning cell, a 3 cell burning line (DESIGN 9.1).</td>
+</tr>
+<tr>
+<td>fx_bursts</td>
+<td>Flashbulb, Halo, Shutter Snap and Icicle bursts</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. The three jump weapons reach 2, 6 and 3 cells (DESIGN 9.1). The D2 Icicle freezes enemies within 2 cells for 2 s on a dive landing or a dash (DESIGN 9.1; TUNING WEAPONS).</td>
+</tr>
+<tr>
+<td>fx_shockwave</td>
+<td>Anvil Boots and Wide Lens shockwaves</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. 3 and 5 cells each side (DESIGN 9.1; BUILD-PLAN T2.3).</td>
+</tr>
+<tr>
+<td>fx_impacts</td>
+<td>Shield Kick, Pogo Spear and Pile Driver hits</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. A wall hit within 2 cells, a bounce, one enemy straight below (DESIGN 9.1).</td>
+</tr>
+<tr>
+<td>fx_tremor</td>
+<td>Tremor debris</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. Shakes 1 to 3 DP out of adjacent solid cells (DESIGN 9.1).</td>
+</tr>
+<tr>
+<td>fx_lantern</td>
+<td>Lantern charm, orbiting light</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. 1 damage a second within 1 cell (DESIGN 9.1; BUILD-PLAN T2.4).</td>
+</tr>
+<tr>
+<td>fx_light_meter</td>
+<td>Light Meter glint and frame tick</td>
+<td>UNKNOWN</td>
+<td>UNKNOWN</td>
+<td>M2</td>
+<td>HOLD. Specks glint through walls and show as ticks on the frame's edge, a DOM tick (DESIGN 9.1; BUILD-PLAN T2.4).</td>
+</tr>
+</tbody>
+</table>
+<p>Open questions on this table:</p>
+<ul>
+<li>Every HOLD row needs a size and a frame count, and a yes first where no doc asks for it.</li>
+<li>Transparency: palette exact with alpha 0 or 255 like the sprites, or soft alpha like the reveal?</li>
+<li>fx_enemy_hit, fx_frozen_stunned: frames per enemy, one shared overlay, or a palette swap?</li>
+<li>Should Astra design the develop reveal's look? The T0.14 shot found it reads as the room going grey; DESIGN calls the reveal the hook with the most polish (DESIGN 2).</li>
+<li>Landmark pulse: Amber, as BUILD-PLAN 7.1 says, or Glare, as the code draws since T0.14?</li>
+<li>J8, C2, C3, C4, C5, C7 and C8 have no visual in any doc: does any need one (DESIGN 9.1)?</li>
+</ul>
+<h2>The zip</h2>
+<p>Astra returns one zip with fixed folders, lower case names and a manifest.json that Claude Code's cut script reads.</p>
+<h3>Folder layout</h3>
+<p>The work folder, every checkpoint and the final zip share one layout.</p>
+<pre><code class="language-text">shutterbug-assets.zip
+  manifest.json      the cutter's contract: every game file, its kind, key, size, frames and sha256
+  progress.md        Astra's checklist, Gate line, rulings, questions and session log (the save file)
+  prompts.json       every image tool prompt, by file
+  hero/              batch 0: the eight hero strips
+  enemies/           batch 1: five fodder kinds and five elites
+  boss/              batch 1: boss pieces, once ruled
+  world/             batch 2: film tab, beacon, spikes and crushers, and world rows once ruled
+  loot/              batch 3: speck, scroll, blueprint and chest, and loose Dead Pixels once ruled
+  ui/                batch 4: the heart, and interface rows once ruled
+  fx/                batch 5: effect rows, once ruled
+  source/            one .txt grid per game file: frame name, a space, its pixel string
+  concept/           image tool pictures, never cut
+  review/            review sheets, enlarged copies and GIFs, never cut
+  extras/            anything Astra adds unasked
+    superseded/      old versions of files changed after Stephen saw them
+</code></pre>
+<h3>Names and sheets</h3>
+<ul>
+<li>A game file is <code>&lt;folder&gt;/&lt;stem&gt;.png</code>, with the stem exactly as the tables give it: lower case and underscores.</li>
+<li>One strip per animation: frames left to right, each exactly the frame size, with no gaps, padding or trimming. A strip is frames times the width, by the height.</li>
+<li>A single image is one frame at native size. A tile set is its tiles left to right, in the order the manifest names them.</li>
+<li>Every frame keeps its whole canvas. Its anchor places it: "bottom" stands on the bottom row, "top" hangs from the top row, "cell" floats.</li>
+<li>A file changed after Stephen saw it keeps its name. Its version rises, and the old copy moves to <code>extras/superseded/&lt;stem&gt;_v&lt;N&gt;.png</code>.</li>
+<li>Stable names keep the cutter's map fixed. The old rule of a new name per change (ASTRA-THREE-SISTERS-OCT25) would break it.</li>
+<li>Checkpoints are shutterbug-checkpoint-NN.zip, cumulative, counting up from 01. The delivery is shutterbug-assets.zip.</li>
+<li>Over 150 MB the delivery splits by folder into shutterbug-assets-1.zip and -2.zip, the Three Sisters cap and the Rabbit Ronin split rule.</li>
+</ul>
+<h3>The manifest</h3>
+<p>One entry per game file, with one example below for each kind: a single image, an animation strip and a tile set. Unmade rows go under missing with the reason, as every brief since Rabbit Ronin has asked.</p>
+<pre><code class="language-json">{
+  &quot;game&quot;: &quot;shutterbug&quot;,
+  &quot;brief&quot;: &quot;Shutterbug: every asset, and the brief for Astra (30 Oct 2026)&quot;,
+  &quot;palette&quot;: [&quot;#0b0a0f&quot;, &quot;#1f1a1d&quot;, &quot;#4a4a52&quot;, &quot;#8a8a90&quot;, &quot;#c9c7c0&quot;, &quot;#f2efe6&quot;, &quot;#fbfbff&quot;, &quot;#6b3f2a&quot;,
+              &quot;#e07a2b&quot;, &quot;#c8302f&quot;, &quot;#d83a9b&quot;, &quot;#2f5fd0&quot;, &quot;#3fb8b4&quot;, &quot;#3f9a3a&quot;, &quot;#f2d13f&quot;, &quot;#f0dcb0&quot;],
+  &quot;rulings&quot;: [&quot;palette: KEEP&quot;, &quot;grid: 24x48&quot;],
+  &quot;files&quot;: [
+    {
+      &quot;file&quot;: &quot;hero/hero_jump.png&quot;,
+      &quot;kind&quot;: &quot;image&quot;,
+      &quot;sprite&quot;: &quot;hero&quot;,
+      &quot;w&quot;: 12, &quot;h&quot;: 16, &quot;frames&quot;: 1,
+      &quot;names&quot;: [&quot;jump&quot;],
+      &quot;fps&quot;: 0, &quot;loop&quot;: false,
+      &quot;anchor&quot;: &quot;bottom&quot;, &quot;facing&quot;: &quot;right&quot;,
+      &quot;colours&quot;: [0, 6, 7, 14],
+      &quot;batch&quot;: 0, &quot;version&quot;: 1,
+      &quot;tool&quot;: &quot;python grid&quot;,
+      &quot;source&quot;: &quot;source/hero_jump.txt&quot;,
+      &quot;sha256&quot;: &quot;&lt;64 hex characters&gt;&quot;,
+      &quot;notes&quot;: &quot;rising pose; the game stretches it to 10x18 for 6 steps&quot;
+    },
+    {
+      &quot;file&quot;: &quot;hero/hero_run.png&quot;,
+      &quot;kind&quot;: &quot;strip&quot;,
+      &quot;sprite&quot;: &quot;hero&quot;,
+      &quot;w&quot;: 12, &quot;h&quot;: 16, &quot;frames&quot;: 4,
+      &quot;names&quot;: [&quot;run0&quot;, &quot;run1&quot;, &quot;run2&quot;, &quot;run3&quot;],
+      &quot;fps&quot;: 12, &quot;loop&quot;: true,
+      &quot;anchor&quot;: &quot;bottom&quot;, &quot;facing&quot;: &quot;right&quot;,
+      &quot;colours&quot;: [0, 6, 7, 14],
+      &quot;batch&quot;: 0, &quot;version&quot;: 1,
+      &quot;tool&quot;: &quot;python grid&quot;,
+      &quot;source&quot;: &quot;source/hero_run.txt&quot;,
+      &quot;sha256&quot;: &quot;&lt;64 hex characters&gt;&quot;,
+      &quot;notes&quot;: &quot;a foot on the bottom row in every frame&quot;
+    },
+    {
+      &quot;file&quot;: &quot;world/film_tab.png&quot;,
+      &quot;kind&quot;: &quot;tileset&quot;,
+      &quot;sprite&quot;: &quot;tab&quot;,
+      &quot;w&quot;: 16, &quot;h&quot;: 5, &quot;frames&quot;: 1,
+      &quot;names&quot;: [&quot;a&quot;],
+      &quot;repeat&quot;: &quot;x&quot;,
+      &quot;fps&quot;: 0, &quot;loop&quot;: false,
+      &quot;anchor&quot;: &quot;top&quot;, &quot;facing&quot;: &quot;none&quot;,
+      &quot;colours&quot;: [0, 15],
+      &quot;batch&quot;: 2, &quot;version&quot;: 1,
+      &quot;tool&quot;: &quot;python grid&quot;,
+      &quot;source&quot;: &quot;source/film_tab.txt&quot;,
+      &quot;sha256&quot;: &quot;&lt;64 hex characters&gt;&quot;,
+      &quot;notes&quot;: &quot;drawn once per tab cell; a tab is 2 cells, 32x5&quot;
+    }
+  ],
+  &quot;missing&quot;: [
+    { &quot;stem&quot;: &quot;loot_dp_drop&quot;, &quot;why&quot;: &quot;HOLD: no size ruled&quot; }
+  ],
+  &quot;extras&quot;: [
+    { &quot;file&quot;: &quot;extras/qa_notes.md&quot;, &quot;what&quot;: &quot;Astra's own list of weak spots&quot; }
+  ]
+}
+</code></pre>
+<p>The fields:</p>
+<ul>
+<li>kind is strip, image or tileset; a tile set adds repeat, x or y.</li>
+<li>sprite is the game key the checklist line gives. Today's keys are hero, moth, icicle, jelly, crawler, spark, spike, crusher, speck, scroll, blueprint, chest, beacon and tab (index.html SPRITES).</li>
+<li>The elites get new keys: moth_elite, icicle_elite, jelly_elite, crawler_elite and spark_elite. The heart is hud_heart, and a HOLD row uses its stem unless its ruling names a key.</li>
+<li>names are the frame names: the hero's idle0 to dead, and the heart's full and empty.</li>
+<li>Spike frames are a sunk and b standing; crusher a up, b mid stroke and c down; chest a shut and b open. Every other file uses a, b, c and d.</li>
+<li>fps 0 means a held frame, or frames the game picks by state or phase: the chest, the traps and the heart. The loop field is true for cycles.</li>
+<li>facing is right for the hero, the thorn crawler and its elite, and none for every other file (index.html R.draw).</li>
+<li>colours lists the palette indices used, as check() returns them. tool is "python grid" for every game file unless a ruling names another.</li>
+</ul>
+<h3>What the cut script does</h3>
+<ol>
+<li>Intake: Stephen uploads the zip to /workspaces/lucid-winds/assets/. Zips there are git ignored (assets/*.zip), but the folder itself is tracked and deployed (.gitignore; CLAUDE.md ASSETS).</li>
+<li>The zip is extracted only into its own new empty folder, /tmp/claude-1000/shutterbug-astra/, read with python3 -I, and nothing inside it is run. The upload stays in assets/ until the vault copy is proven (HANDOFF-FABLE-OCT25.md, section 1).</li>
+<li>Vault: the originals go to a private release with a SHA256SUMS file before any cut, and the zip is never committed (same source).</li>
+<li>Verify each entry: its sha256, RGBA mode, and a size of frames times w by h. Then alpha is 0 or 255 only, and every opaque pixel is one of the 16 hexes unless a ruling says otherwise. Every hero frame has Ink in its feet row. Last, no Sun outside the hero and the beacon, and the PNG equal to its source grid.</li>
+<li>Cut: slice each strip into equal frames, never trimming or rescaling. Equal cells are exact here because every frame is authored on the grid; painted packs needed alpha trims and measured slices instead (scripts/cut_art_sheet.py; satellites/bubblenaut/tools/bncut.py).</li>
+<li>Write: each frame becomes a pixel string in the SPRITES block of shell-render, under its sprite key and frame name (BUILD-PLAN 1.7). Interface art becomes inline data URIs, since only icons/ may hold binaries (BUILD-PLAN line 7).</li>
+<li>Wire: keep the game under 40 sprite names. Give the five elites their own names and draw them from their own 24 px art; today R.draw draws the fodder key at ELITE_PX. That makes 19 names with today's 14.</li>
+<li>Wire, continued: teach the render kinds with more than two frames. Rerun tools/icons.mjs on the approved hero; T1.11 built it, and its first run used the placeholder hero.</li>
+<li>Prove: the lint, H-spr-1 and the sprites gate, then shots at 412x915 and 360x780 with three things wrong named (BUILD-PLAN rule 3).</li>
+<li>Report: anything missing, off palette or the wrong size goes back to Stephen as a plain list for Astra's next session.</li>
+</ol>
+<h2>The prompt for Astra</h2>
+<p>The prompt Astra reads is its own file in this folder: the Google Doc ASTRA-SHUTTERBUG-OCT30, and the same text as ASTRA-SHUTTERBUG-OCT30-PROMPT.txt (exact, for pasting or attaching). It is unchanged from the Claude Doc.</p>
+<h2>Open questions for Stephen</h2>
+<p>Calls for Stephen, gates first. The brief proceeds on its stated assumption for each until he rules.</p>
+<ol>
+<li>Gate, palette: does Stephen approve the 16 hexes, Sun as the hero's body and the five tint pairs (BUILD-PLAN 7.4, his call 2), or should the batch 0 review double as the palette review?</li>
+<li>Gate, grid: is 24x48 final, closing the 36x64 fallback with its 8x12 hero (DESIGN 3; QUESTIONS Q43)? Choosing the fallback redraws every sprite.</li>
+<li>Gate, the hero review: does 'the hero' mean the Shutterbug sprite sheet, a larger style anchor picture as in the chess packs, or both? The brief assumes both: the eight strips plus one concept sheet.</li>
+<li>Hero design: what kind of bug (legs, eyes, any camera or film motif), and should Astra start from today's code draft or fresh?</li>
+<li>Hero colours: may the hero use any colour beyond Ink, Sun, Glare and Walnut, for clay volume? Only Sun and Walnut turn Glare in the dash flash.</li>
+<li>Light and shading: is a light direction wanted, given the hero and the thorn crawler are mirrored, and is dithering allowed? No doc has a rule.</li>
+<li>Hero poses: which extra poses are wanted, with how many frames: apex, dash, hurt, separate wall slide and vine hold, a skid or ice slide, a body bob in the run, a clear pose, the drop in after the reveal (DESIGN 5.2)?</li>
+<li>Squash and stretch: keep scaling whatever frame shows to 14x14 and 10x18 (T0.17 found the land squeeze a squint), or draw dedicated frames under new sprite names with a render change?</li>
+<li>Feet: is a heavier feet row within 12x16 wanted, since 1 px feet do not read at 360 wide (PROGRESS T0.17)?</li>
+<li>Q73: relight the lamp one step dimmer and give the beacon's bulb and rays an Ink edge or an Amber fill? The beacon's colours follow this ruling.</li>
+<li>Sprite budget: the game must stay under 40 sprite names: 14 today, 19 with five elite names, before any world, boss or effect ruling. Which pieces may share a name (vine and pipe, the boss attacks, the effects), or may the cap rise?</li>
+<li>Elite art: Astra's 24x24 elites need five new sprite names and a render change, since the game now scales the 16 px fodder art 1.5 times (QUESTIONS Q82; index.html R.draw). Approve that, or keep scaled fodder art and drop the elite rows?</li>
+<li>Facing: the moth and the spark move both ways but are never mirrored (index.html R.draw). Keep them symmetric as the brief asks, or rule a render change so they face their way?</li>
+<li>Fodder frames: is 2 to 4 the whole budget per kind or per state? Should the icicle (hang, fall, shatter, regrow), spark (rest, hop, land) and crawler (walk, turn) get state frames beyond one cycle?</li>
+<li>Elite look: how should Magenta mark an elite (its body, marks, a recolour), given the jelly's Magenta core and the Brick spark? Does an elite keep its fodder's frame count?</li>
+<li>Pocket guard: should the elite that sleeps until the hero enters its pocket get a sleeping pose and a wake frame (QUESTIONS Q75, Q81)?</li>
+<li>Icicle: a shiver before the drop, a drawn shatter, a visible regrow? Should its body be something other than Ash, since it reads only by its outline in white Frost rooms (PROGRESS T1.4)?</li>
+<li>Spark: does 'burns on contact' need its own visual? Its hop peaks one cell above the line between its two cells (index.html core-sim).</li>
+<li>Thorn crawler: a turn frame or a pause at each end of its platform?</li>
+<li>Moth: keep today's moth as the reference or redraw it to match the approved hero? The brief redraws it.</li>
+<li>Boss body: should anything be laid over the photo cluster so it reads as a creature (eyes, a mouth, seams, a wake shudder), or are the outline and erosion enough?</li>
+<li>Boss weak cells: which cells are weak, and how are they marked (Brick, BUILD-PLAN 7.1)?</li>
+<li>Boss attacks: drawn by Astra or by code, at what sizes, counts and telegraph looks (the Frost volley count, the Deep ring's radius, the Overgrowth lines' length and speed, the Ember fountain count)?</li>
+<li>Fallback clay boss: is '5x4' in cells (80x64 px)? What does it look like, how many frames, and does it erode in 16 px chunks?</li>
+<li>Boss phases: one moveset for the whole fight? The sim's boss state keeps a phase field no doc defines (index.html core-sim).</li>
+<li>Attic boss shed moths: the fodder moth, or a distinct spawn?</li>
+<li>NPC: does Stephen want a Darkroom keeper, guide or mascot? None exists in any doc.</li>
+<li>World surfaces: which stay drawn by code (solid and one way edges, tints, exit ring, reveal effects, the trap flash), and should any become Astra art?</li>
+<li>Tab stair: is it only film_tab tiles laid as a stair (DESIGN 6.7, 6.11), with no new art, or does it want a riser, a connector piece or exposure marks (DESIGN 2)? DESIGN 11 still lists it as a sprite.</li>
+<li>Ice edge, vine and pipe: what tile height and which pieces (ends, middle)? May the vine and pipe share one sprite name?</li>
+<li>Crushers: keep a crusher drawn per field cell (QUESTIONS Q83 option a), which reads as stacked machines (PROGRESS T1.4b), or one stroke sweeping the field a row at a time with its own sprite (option b)?</li>
+<li>Spikes: keep the code's Magenta tips and no Glare (BUILD-PLAN T1.4b), or add the Glare tips of BUILD-PLAN 7.3's danger rule? One spike look for all three biomes, or one each?</li>
+<li>Beacon: what does the dark boss room beacon look like, with how many frames? Should the beacon stay a hanging lamp when the exit is a plain ledge?</li>
+<li>Darkroom door: what size, look and states (idle, entered), and is it drawn from its M1 placement or only with the M2 shop?</li>
+<li>Pocket: should it get a dark interior and a lip at its mouth, since it reads as a chipped corner (PROGRESS T1.2a)? It costs a sprite name.</li>
+<li>Ladder zone: rails, rungs, a tint, or nothing?</li>
+<li>Attic dust motes: keep them in Film, which BUILD-PLAN 7.3 also reserves for repairs, recolour them, or drop them? Any ambience for the other biomes?</li>
+<li>Double Exposure (M3): should the seam between the two photos be marked?</li>
+<li>Look alike risks: should the brief guard further against the ice edge reading as the icicle, spikes as the thorn crawler, and Amber specks as the Amber platform line?</li>
+<li>Daily Room set (M3): should Astra draw six 24x48 rooms as palette grids, or should Claude Code make them synthetic until Stephen's own rooms replace them (QUESTIONS Q18)?</li>
+<li>Loot size: the code gives each piece a 16x16 cell, and T1.6 found the loot small at the room's scale. Keep the code's sizes, or should the art fill more of the cell?</li>
+<li>Speck and slip colours: the code's speck is Glare and Film with no Amber, and the open chest's slip is Film. Both break 'Film for repairs only' and risk readability prompt 6 (BUILD-PLAN 7.1, 5.9). The brief follows the plan, an Amber speck and no Film: keep that, and should the placeholders change now?</li>
+<li>Chest trim: keep the code's Amber bands, which settle the Sun trim conflict between BUILD-PLAN 7.3 and H-spr-1 their own way? Is there an opening animation?</li>
+<li>Stats: keep Q84's Brick, Lapis and Moss shapes for Vigor, Focus and Grit, now built in CSS? Does the scroll in the room need a colour variant per stat?</li>
+<li>Loose Dead Pixels from Tremor and kills: reuse the speck, draw a separate piece, or show nothing in the room?</li>
+<li>Light Meter (C6): what do the through wall glint and the frame edge tick look like, and how big are they?</li>
+<li>Interface style: pixel art in the palette, flat palette shapes as today, or paper and film textures?</li>
+<li>Interface delivery: native pixel art turned into inline data URIs, and what byte budget does index.html get? None is written; it is 310,118 bytes after T1.11 (30 Oct) and grows with each M1 task.</li>
+<li>Font: keep system fonts, draw a bitmap pixel font, or draw handwritten digits for the Dead Pixel count, whose cursive fallback is unproven on phones? Should the room name be handwritten too?</li>
+<li>Title: what should the polaroid show (the sample room, the hero on a shelf, a developing print), and is a drawn SHUTTERBUG wordmark wanted, at what size?</li>
+<li>Studio mark: should the title show it, as the blue wolf head or a 16 colour pixel version, and where, clear of the exit and the music chip?</li>
+<li>Install icons: generated from the approved hero by tools/icons.mjs, as the plan says, or painted by Astra? Which background (Soot?) and maskable safe zone?</li>
+<li>Favicon and apple touch icon: separate files at which sizes, or reuse icon-192 as gerplunk does?</li>
+<li>Hint glyphs: drawn glyphs beside each control, or keep the v0 pulse on the control (T1.12; QUESTIONS Q72)?</li>
+<li>Icons: should weapon, charm, stat and mode icons be DOM art outside the sprite cap, or sprites inside it? Are weapon icons wanted at all, since DESIGN describes weapons in plain words?</li>
+<li>Hearts: is the empty heart Slate (BUILD-PLAN 7.1, the brief's choice) or Paper (as built)? Should Astra's 9x8 heart replace the CSS heart at all?</li>
+<li>Loadout HUD: should play show equipped weapon icons, the jump slot cooldown, carried blueprints or the house run's room count?</li>
+<li>Screens: should Astra dress the Darkroom, the doorway, the settings screen, the slip card, the Tap to develop card and the share sheet, or keep them CSS as built (T1.6, T1.8, T1.10)? No art direction exists for any of them.</li>
+<li>Sample room photo: should Astra paint a full colour 384x768 photo of the sample room for the reveal's hold beat, matching tools/sample-room.txt?</li>
+<li>Crop handles and a rotate pictogram: are they wanted?</li>
+<li>Share image: is a share image card wanted, or does a level stay a link and a QR?</li>
+<li>Store art: will Shutterbug get a Google Play listing, or the arcade only? Is the 540x540 portal thumbnail rendered by script or painted?</li>
+<li>Controls: should A and B differ by more than their letters, and should a hold show any indicator?</li>
+<li>Cosmetics: how many hero colourways and frame styles, from which palette entries (DESIGN 9.4)?</li>
+<li>Effect transparency: palette exact with alpha 0 or 255 like the sprites, or soft alpha like the reveal's flashes?</li>
+<li>Moments: which get art, with how many frames: landing dust, speck pickup, chest opening, scroll and blueprint pickup, the clear moment, the death beat recorded for T1.12?</li>
+<li>Enemy states: hit, death, frozen and stunned as per enemy frames, a shared overlay, or a palette swap? If Q27 rules a dive stomp, they move into M1.</li>
+<li>Develop reveal: should Astra design its look, since T0.14 found it reads as the room going grey and the sweep is thin?</li>
+<li>Landmark pulse: Amber, as BUILD-PLAN 7.1 says, or Glare, as the code draws since T0.14?</li>
+<li>Weapon effects (M2): what sizes and frame counts for projectiles, fire, bursts, the D2 freeze, shockwaves, impacts, tremor debris and the Lantern?</li>
+<li>J8, C2, C3, C4, C5, C7 and C8 have no visual in any doc: does any need one (DESIGN 9.1)?</li>
+<li>Process: who runs the Astra account today?</li>
+<li>Process: what plan and usage window does Astra have now, and how many images fit in one window?</li>
+<li>Process: what is the largest zip Stephen can upload? The brief caps each zip at 150 MB and splits by folder.</li>
+<li>Process: where should checkpoints live between sessions: Drive 012Assets/Astra, the phone, or uploads into assets/ here?</li>
+<li>Process: does Astra still hold its earlier 30 item Shutterbug review (DESIGN line 4), and should the brief refer to it?</li>
+<li>Process: should Claude Code cut the batch 0 checkpoint into the game for an on phone look before Stephen writes APPROVED?</li>
+<li>Process: every Astra brief since 23 Oct is a Google Doc in Drive 012Assets/Astra with an HTML source in <code>docs/briefs/&lt;game&gt;/</code> (START-HERE 23 and 25 Oct). Which tool files this one there today?</li>
+<li>Process: the M1 build kept committing while this doc was revised (T1.8, T1.10 and T1.11 shipped; T1.13 and the QR follow). Should Claude Code re-read index.html's SPRITES block and CSS once more just before publishing?</li>
+</ol>
+</body></html>
