@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 620;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 715;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', retable: 'T0.10a', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -49,6 +49,32 @@ catch (e) {
   process.exit(1);
 }
 const SB = CORE.SB;
+
+/* ---------------------------------------------------------------- the corpus (section 2.7) */
+const FIXDIR = path.resolve(opt('fixtures') || path.join(__dirname, 'fixtures'));
+const EXPECT_KEYS = ['biome', 'needsCrop', 'tabsMax', 'exitIsLight', 'platformsMin', 'landmarksMin'];
+function loadFixtures(dir) {
+  const files = [];
+  if (fs.existsSync(path.join(dir, 'sample-room.json'))) files.push(path.join(dir, 'sample-room.json'));
+  for (const sub of ['synthetic', 'rooms']) {
+    const d = path.join(dir, sub);
+    if (fs.existsSync(d)) for (const f of fs.readdirSync(d).sort()) if (f.endsWith('.json')) files.push(path.join(d, f));
+  }
+  return files.map(f => {
+    const j = JSON.parse(fs.readFileSync(f, 'utf8'));
+    if (!j.record) throw new Error('fixture ' + path.relative(dir, f) + ' has no record: the loader refuses it');
+    if (!j.expect) throw new Error('fixture ' + path.relative(dir, f) + ' has no expect (authored by hand from its design): the loader refuses it');
+    return { file: f, name: j.name, fx: j };
+  });
+}
+let FIXTURES;
+try { FIXTURES = loadFixtures(FIXDIR); }
+catch (e) { console.log('FAIL  fixtures: ' + e.message); console.log('\nSHUTTERBUG HARNESS FAILED: the corpus did not load'); process.exit(1); }
+const fixture = name => FIXTURES.find(f => f.name === name);
+
+/* the palette as characters, for a room no pipeline has built yet */
+const PAL_CH = '@#%+., WarmbtgoF';
+const palText = rows => rows.map(r => [...r].map(c => PAL_CH[parseInt(c, 16)]).join('')).join('\n');
 
 /* ---------------------------------------------------------------- the framework */
 const GROUPS = [];
@@ -396,6 +422,64 @@ group('H-pal-6', 'SAT is the computed S over 0.35; the bands follow the hues of 
     const want = computed.includes(i) ? band(palRef.H[i]) : -1;
     t.eq(SB.palette.BAND[i], want, SB.palette.NAMES[i] + ' band (' + (want < 0 ? 'never votes' : SB.palette.BIOMES[want]) + ')');
   }
+});
+
+/* ================================================================ one room */
+if (opt('fixture')) {
+  const want = opt('fixture');
+  const f = fs.existsSync(want) ? { fx: JSON.parse(fs.readFileSync(want, 'utf8')) } : fixture(want);
+  if (!f) { console.log('no fixture named ' + want + ' (the corpus: ' + FIXTURES.map(x => x.name).join(', ') + ')'); process.exit(2); }
+  const j = f.fx.record, mode = opt('mode') !== null ? Number(opt('mode')) : j.mode;
+  console.log(f.fx.name + ' (' + f.fx.source + '): ' + f.fx.notes + '\n');
+  if (SB.pipeline.build) {
+    const lv = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, j, { mode })), { biome: opt('biome') !== null ? Number(opt('biome')) : null });
+    if (lv.needsCrop) console.log('needsCrop: ' + lv.why);
+    else {
+      const tt = SB.pipeline.toText(lv, lv.ascent || null).split('\n'), pt = palText(j.rows).split('\n');
+      console.log('   palette                    built (# solid, = one way, S spawn, X exit, L a landmark top)');
+      tt.forEach((row, y) => console.log(String(y).padStart(2) + ' ' + (pt[y] || '').padEnd(24) + '   ' + row));
+      console.log('\notsu T ' + lv.otsuT + ', spawn ' + (lv.spawn % lv.w) + ',' + Math.floor(lv.spawn / lv.w) + ', exit ' + (lv.exit % lv.w) + ',' + Math.floor(lv.exit / lv.w) +
+        ', landmarks ' + lv.landmarks.map(l => l.size).join('/') + ', one way runs ' + platformRuns(lv));
+    }
+  } else console.log(palText(j.rows));
+  process.exit(0);
+}
+
+/* ================================================================ fixtures */
+group('H-fix-1', 'every fixture validates, carries every expect key, and round trips', t => {
+  t.ok(FIXTURES.length >= 7, 'the corpus holds at least 7 fixtures (' + FIXTURES.length + ')');
+  for (const f of FIXTURES) {
+    const j = f.fx;
+    t.eq(j.v, 1, f.name + ': fixture v 1');
+    t.eq(path.basename(f.file, '.json'), j.name, f.name + ': the file is named for the fixture');
+    t.eq(SB.record.validate(j.record), null, f.name + ': the record validates');
+    for (const k of EXPECT_KEYS) t.ok(k in j.expect, f.name + ': expect.' + k + ' is present');
+    t.ok(typeof j.notes === 'string' && j.notes.length > 40, f.name + ': notes say why the expect is what it is');
+    t.same(SB.record.toJSON(SB.record.fromJSON(j.record)), j.record, f.name + ': toJSON(fromJSON(record)) equals the record');
+  }
+});
+
+group('H-fix-2', 'SB.SAMPLE_ROOM is the sample room fixture', t => {
+  const f = fixture('sample-room');
+  t.ok(!!f, 'fixtures/sample-room.json is in the corpus');
+  if (!f) return;
+  t.same(Array.from(SB.SAMPLE_ROOM), f.fx.record.rows, 'SB.SAMPLE_ROOM rows equal the fixture\'s rows');
+  t.eq(f.fx.record.mode, 0, 'the sample room is mode 0');
+  t.eq(f.fx.record.focal, null, 'the sample room has no focal cell');
+  t.ok(Object.isFrozen(SB.SAMPLE_ROOM), 'SB.SAMPLE_ROOM is frozen');
+  const txt = fs.readFileSync(path.join(__dirname, 'tools', 'sample-room.txt'), 'utf8').trim().split('\n');
+  t.same(txt, f.fx.record.rows, 'tools/sample-room.txt is the fixture (the drawing and the record agree)');
+});
+
+group('H-fix-3', 'the corpus holds every record fixtures/README.md lists; names unique; seeds distinct', t => {
+  const readme = fs.readFileSync(path.join(__dirname, 'fixtures', 'README.md'), 'utf8');
+  const listed = [...readme.matchAll(/^- `([a-z0-9-]+)`/gm)].map(m => m[1]);
+  t.ok(listed.length >= 7, 'the README lists at least 7 fixtures (' + listed.length + ')');
+  for (const n of listed) t.ok(!!fixture(n), 'the corpus holds ' + n);
+  const names = FIXTURES.map(f => f.name);
+  t.eq(new Set(names).size, names.length, 'fixture names are unique');
+  const seeds = FIXTURES.map(f => SB.record.seedOf(SB.record.fromJSON(f.fx.record)));
+  t.eq(new Set(seeds).size, seeds.length, 'no two fixtures share a seedOf');
 });
 
 /* ================================================================ run */

@@ -49,7 +49,13 @@ const MUTANTS = [
   /* the plan's rationale (the ramp breaks) does not hold: a grey ramp quantizes monotonically under either metric
      (measured 2026-10-30); the metrics disagree on 4368 of 20000 seeded colours, which is what H-pal-5's oracle sees */
   { name: 'QUANT_UNWEIGHTED', task: 'T0.4a', file: 'page', find: 'var dd = 30 * dr * dr + 59 * dg * dg + 11 * db * db;', repl: 'var dd = dr * dr + dg * dg + db * db;',
-    gates: [{ gate: 'harness', only: 'H-pal-5', expect: "nearest equals the test's weighted distance" }] }
+    gates: [{ gate: 'harness', only: 'H-pal-5', expect: "nearest equals the test's weighted distance" }] },
+
+  { name: 'SAMPLE_ROOM_DRIFT', task: 'T0.5', file: 'page', find: "SB.SAMPLE_ROOM = Object.freeze([\n    '444444444442244444444444'",
+    repl: "SB.SAMPLE_ROOM = Object.freeze([\n    '444444444442244444444445'",
+    gates: [{ gate: 'harness', only: 'H-fix-2', expect: "SB.SAMPLE_ROOM rows equal the fixture's rows" }] },
+  { name: 'EXPECT_MISSING', task: 'T0.5', file: 'fixture:synthetic/blank-wall.json', find: '  "expect": {', repl: '  "expected_by_nobody": {',
+    gates: [{ gate: 'harness', only: 'H-fix', expect: 'has no expect (authored by hand from its design): the loader refuses it' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
@@ -68,8 +74,12 @@ for (const m of MUTANTS) {
   if (!gates.length) continue;
   const dir = path.join(OUT, m.name);
   fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
-  /* the copy: the page, or a harness tree whose harness.js is the mutated one (tools/ and fixtures/ linked) */
-  const srcFile = m.file === 'harness' ? path.join(GAME, 'harness.js') : path.join(GAME, 'index.html');
+  /* the copy: the page, a harness tree whose harness.js is the mutated one (tools/ and fixtures/ linked), or a copy
+     of the corpus with one fixture file mutated (file 'fixture:<path under fixtures/>') */
+  const isFixture = m.file.startsWith('fixture:');
+  const fixCopy = path.join(dir, 'fixtures');
+  if (isFixture) fs.cpSync(path.join(GAME, 'fixtures'), fixCopy, { recursive: true });
+  const srcFile = m.file === 'harness' ? path.join(GAME, 'harness.js') : isFixture ? path.join(fixCopy, m.file.slice(8)) : path.join(GAME, 'index.html');
   const text = fs.readFileSync(srcFile, 'utf8');
   let mutated = text, anchor = 'ok';
   if (m.find !== null) {
@@ -84,13 +94,14 @@ for (const m of MUTANTS) {
     fs.copyFileSync(path.join(GAME, 'index.html'), page);
     for (const sub of ['tools', 'fixtures']) if (fs.existsSync(path.join(GAME, sub))) fs.symlinkSync(path.join(GAME, sub), path.join(dir, sub));
     harness = path.join(dir, 'harness.js');
-  } else fs.writeFileSync(page, mutated);
+  } else if (isFixture) { fs.writeFileSync(srcFile, mutated); fs.copyFileSync(path.join(GAME, 'index.html'), page); }
+  else fs.writeFileSync(page, mutated);
 
   for (const g of gates) {
     if (anchor !== 'ok') { rows.push({ m, g, result: anchor }); continue; }
     let cmd, env = Object.assign({}, process.env);
     if (g.gate === 'lint') cmd = ['tools/lint.mjs', '--page', page];
-    else if (g.gate === 'harness') cmd = [harness, '--page', page].concat(g.only ? ['--only', g.only] : []);
+    else if (g.gate === 'harness') cmd = [harness, '--page', page].concat(g.only ? ['--only', g.only] : [], isFixture ? ['--fixtures', fixCopy] : []);
     else if (BROWSER.has(g.gate)) { cmd = ['test/' + g.gate + '.mjs']; env.SB_PAGE = page; }
     else { rows.push({ m, g, result: 'UNKNOWN GATE' }); continue; }
     const r = spawnSync('node', cmd, { cwd: GAME, encoding: 'utf8', env, maxBuffer: 64 * 1024 * 1024, timeout: 15 * 60 * 1000 });
