@@ -1,1 +1,211 @@
-<!doctype html><title>SHUTTERBUG</title>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shutterbug</title>
+<meta name="theme-color" content="#1f1a1d">
+<meta name="description" content="A photo of your room becomes a pixel platformer level.">
+<script id="shell-fleet">
+/* ===== Sky Wolf Studio embed protocol ===== */
+(function () {
+  var framed = false; try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.SWS_EMBED = framed || /[?&]embed=1(&|$)/.test(location.search);
+  window.SWS_EXIT = function () {
+    if (framed) { try { parent.postMessage({ sws: 'close' }, '*'); } catch (e) {} return; }
+    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) history.back();
+    else location.replace('https://lucidwinds.com/portal/');
+  };
+  if (framed) {
+    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+    window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+  }
+})();
+</script>
+<style>
+/* Shutterbug. Colours are the palette's (BUILD-PLAN section 7): Ink #0b0a0f, Soot #1f1a1d, Slate #4a4a52,
+   Pewter #8a8a90, Ash #c9c7c0, Paper #f2efe6, Glare #fbfbff, Amber #e07a2b, Sun #f2d13f, Film #f0dcb0. */
+:root { --ink: #0b0a0f; --soot: #1f1a1d; --slate: #4a4a52; --pewter: #8a8a90; --ash: #c9c7c0; --paper: #f2efe6;
+  --glare: #fbfbff; --amber: #e07a2b; --sun: #f2d13f; --film: #f0dcb0; --brick: #c8302f;
+  --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px); }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; background: var(--soot); color: var(--paper); overscroll-behavior: none;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
+body { overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.screen { position: fixed; inset: 0; display: none; }
+.screen.on { display: flex; }
+
+/* the title: everything in flow, the exit first (satellites/_EXIT-AUDIT.md: never floated) */
+#title { flex-direction: column; align-items: center; overflow-y: auto;
+  padding: calc(12px + var(--sat)) calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal)); }
+#exit { align-self: flex-start; min-height: 48px; min-width: 48px; padding: 0 18px; border-radius: 24px;
+  border: 1px solid var(--slate); background: transparent; color: var(--ash); font-size: 0.95rem; }
+#exit:disabled { opacity: 0.6; }
+.art { margin: 18px 0 10px; display: flex; flex-direction: column; align-items: center; }
+.polaroid { background: var(--paper); padding: 10px 10px 34px; box-shadow: 0 6px 18px rgba(0,0,0,0.45); transform: rotate(-2deg); }
+.photo { width: 220px; height: 150px; background: var(--ink); display: flex; align-items: center; justify-content: center;
+  image-rendering: pixelated; }
+.word { font-family: ui-monospace, Menlo, Consolas, monospace; font-weight: 800; font-size: 1.6rem; letter-spacing: 0.12em;
+  color: var(--sun); text-shadow: 2px 2px 0 var(--amber); }
+.tag { margin: 18px 0 0; color: var(--ash); font-size: 1rem; text-align: center; }
+.actions { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+.big { min-height: 56px; border-radius: 12px; border: 0; font-size: 1.1rem; font-weight: 700; }
+#shoot { background: var(--sun); color: var(--ink); }
+#choose { background: var(--paper); color: var(--ink); }
+.big:disabled { opacity: 0.45; }
+#soon { margin: 0; text-align: center; color: var(--ash); font-size: 0.9rem; }
+#sample { align-self: center; min-height: 48px; min-width: 48px; padding: 0 16px; background: transparent; border: 0;
+  color: var(--film); text-decoration: underline; font-size: 0.85rem; }
+#build { margin-top: auto; padding-top: 18px; color: var(--pewter); font-size: 0.7rem; letter-spacing: 0.04em; }
+
+/* the rotate card: a phone held sideways; a desktop window (a fine pointer) never gets it (QUESTIONS Q40) */
+#rotate { display: none; position: fixed; inset: 0; z-index: 1000; background: var(--soot); color: var(--paper);
+  align-items: center; justify-content: center; text-align: center; padding: 24px; font-size: 1.1rem; }
+@media (orientation: landscape) and (pointer: coarse) { #rotate { display: flex; } }
+</style>
+<script src="/music-unlocks.js" defer></script>
+</head>
+<body>
+<main id="title" class="screen on" aria-label="Shutterbug">
+  <button id="exit" type="button" data-copy="exit"></button>
+  <div class="art">
+    <div class="polaroid"><div class="photo"><span class="word" data-copy="title"></span></div></div>
+    <p class="tag" data-copy="tagline"></p>
+  </div>
+  <div class="actions">
+    <button id="shoot" class="big" type="button" disabled data-copy="shoot"></button>
+    <button id="choose" class="big" type="button" disabled data-copy="choose"></button>
+    <p id="soon" data-copy="soon"></p>
+    <button id="sample" type="button" hidden data-copy="sample"></button>
+  </div>
+  <p id="build"></p>
+</main>
+<div id="rotate" role="alert" data-copy="rotate"></div>
+
+<script id="core-ns" data-core>
+(function (SB) { 'use strict';
+  /* core-ns: the namespace, the build stamp. GRID, TUNING and K arrive in T0.3. */
+  SB.BUILD = 'sb-m0-0';
+})(globalThis.SB || (globalThis.SB = {}));
+</script>
+<script id="core-rng" data-core>
+(function (SB) { 'use strict';
+})(globalThis.SB || (globalThis.SB = {}));
+</script>
+<script id="core-palette" data-core>
+(function (SB) { 'use strict';
+})(globalThis.SB || (globalThis.SB = {}));
+</script>
+<script id="core-record" data-core>
+(function (SB) { 'use strict';
+})(globalThis.SB || (globalThis.SB = {}));
+</script>
+<script id="core-pipeline" data-core>
+(function (SB) { 'use strict';
+})(globalThis.SB || (globalThis.SB = {}));
+</script>
+<script id="core-reach" data-core>
+(function (SB) { 'use strict';
+})(globalThis.SB || (globalThis.SB = {}));
+</script>
+<script id="core-features" data-core>
+(function (SB) { 'use strict';
+})(globalThis.SB || (globalThis.SB = {}));
+</script>
+<script id="core-sim" data-core>
+(function (SB) { 'use strict';
+})(globalThis.SB || (globalThis.SB = {}));
+</script>
+<script id="shell-capture" data-tool>
+(function (SB) { 'use strict';
+  /* photo decode, the 1:2 crop, the downscale to the grid (T0.5b) */
+})(window.SB);
+</script>
+<script id="shell-render">
+(function (SB) { 'use strict';
+  /* canvas, integer scaling, the frame, the static layer, the atlas, the camera (T0.8a) */
+})(window.SB);
+</script>
+<script id="shell-input">
+(function (SB) { 'use strict';
+  /* rocker and buttons, keyboard, the per step sample (T0.8a, T0.8b) */
+})(window.SB);
+</script>
+<script id="shell-audio">
+(function (SB) { 'use strict';
+  /* Web Audio synth, created in the first gesture (T0.14, T1.7) */
+})(window.SB);
+</script>
+<script id="shell-save">
+(function (SB) { 'use strict';
+  /* the one localStorage key shutterbug.v1 (T1.10) */
+})(window.SB);
+</script>
+<script id="shell-ui">
+(function (SB) { 'use strict';
+  var ui = SB.ui = SB.ui || {};
+  /* Every player facing string, in one object, so the lint checks the copy law in one place: no dashes of any kind,
+     no exclamation marks, Sky Wolf Studio singular, plain sentences a stranger reads once. */
+  ui.COPY = Object.freeze({
+    exit: 'All Sky Wolf games',
+    title: 'SHUTTERBUG',
+    tagline: 'Your room is the level.',
+    shoot: 'Photograph a room',
+    choose: 'Choose a photo',
+    soon: 'Coming in the next build.',
+    sample: 'Try the sample room',
+    build: 'build',
+    rotate: 'Turn your phone upright to play.'
+  });
+
+  ui.screen = 'title';
+  ui.show = function (name) {
+    var all = document.querySelectorAll('.screen');
+    for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === name);
+    ui.screen = name;
+  };
+
+  ui.fillCopy = function (root) {
+    var els = (root || document).querySelectorAll('[data-copy]');
+    for (var i = 0; i < els.length; i++) {
+      var k = els[i].getAttribute('data-copy');
+      if (ui.COPY[k] === undefined) throw new Error('no copy for ' + k);
+      els[i].textContent = ui.COPY[k];
+    }
+    /* the stamp's hyphens render as spaces: a dash on screen is player copy */
+    document.getElementById('build').textContent = ui.COPY.build + ' ' + SB.BUILD.replace(/-/g, ' ');
+  };
+
+  ui.init = function () {
+    ui.fillCopy();
+    var exit = document.getElementById('exit');
+    exit.addEventListener('click', function () {
+      if (exit.disabled) return;
+      /* once per intent: the portal sees one {sws:'close'} per tap (PORTAL-CONTRACT) */
+      exit.disabled = true;
+      setTimeout(function () { exit.disabled = false; }, 1000);
+      window.SWS_EXIT();
+    });
+  };
+})(window.SB);
+</script>
+<script id="shell-pwa">
+(function (SB) { 'use strict';
+  /* the service worker registration, skipped when window.SWS_EMBED (T1.11) */
+})(window.SB);
+</script>
+<script id="shell-boot">
+(function (SB) { 'use strict';
+  SB.ui.init();
+  /* the dev hook the gates and the shot script read (section 1.7); it grows with the loop in T0.8a */
+  window.SB_DEV = {
+    build: SB.BUILD,
+    screen: function () { return SB.ui.screen; }
+  };
+})(window.SB);
+</script>
+</body>
+</html>
