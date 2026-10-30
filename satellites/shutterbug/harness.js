@@ -2789,7 +2789,10 @@ group('H-feat-7', 'exactly one beacon, at the exit cell, on every built level', 
 
 /* Q50's claims, each on a room whose answer is the rule's (the fourth review: nothing of their own tested them) */
 group('H-en-1b', 'the claims of Q50: no moth from the lamp, lit or not, nor from a solid landmark; none from an elite sized cluster; the seed picks among more than the cap', t => {
-  const moths = rows => { const lv = SB.pipeline.build(labRecord(rows), {}); return lv.needsCrop ? null : lv.features.enemies.map(e => e.idx); };
+  /* the labs pin Attic (the moth's rules) and lay a plank at rows 39 and 40, since a bare room gets the default spread, whose
+     fodder is no lab's (T1.2b) */
+  const plank = rows => Object.assign({ 39: '444444444444444455554444', 40: '444444444444444433334444' }, rows);
+  const moths = rows => { const lv = SB.pipeline.build(labRecord(plank(rows)), { biome: 0 }); return lv.needsCrop ? null : lv.features.enemies.map(e => e.idx); };
   /* the sample room's lamp moved to the top left corner, where it loses the exit (the fourth review's probe): its Sun
      shade at (1..4, 3) spawned a moth */
   const s = Array.from(SB.SAMPLE_ROOM);
@@ -2808,14 +2811,159 @@ group('H-en-1b', 'the claims of Q50: no moth from the lamp, lit or not, nor from
   t.ok(shelfM !== null && shelfM.length === 0, 'a landmark holding Walnut cells (2 and 1) is no nest (' + (shelfM ? shelfM.length : 'needsCrop') + ')');
   /* an Amber cluster of 6 open cells: elite sized, never fodder */
   const six = {}; six[30] = '44444444888444444444444'.padEnd(24, '4'); six[31] = '44444444888444444444444'.padEnd(24, '4');
-  const sixM = moths(six);
-  t.ok(sixM !== null && sixM.length === 0, 'a 6 cell cluster spawns no moth (FODDER_CELLS is 2 to 5; ' + (sixM ? sixM.length : 'needsCrop') + ')');
+  const sixLv = SB.pipeline.build(labRecord(plank(six)), { biome: 0 }), sixFirst = SB.pipeline.build(labRecord(plank(six)), { biome: 0, firstRoom: true });
+  const sixE = sixLv.needsCrop ? [] : sixLv.features.enemies;
+  t.ok(sixE.length === 1 && sixE[0].elite === true && !sixFirst.needsCrop && sixFirst.features.enemies.length === 0, 'a 6 cell cluster spawns one elite and never a fodder, and none in a first room (' + sixE.map(e => (e.elite ? 'elite ' : 'fodder ') + e.idx).join(', ') + ')');
   /* six fodder clusters, more than CAP_ENEMY */
   const many = {}; for (const [y, x] of [[8, 2], [8, 12], [16, 6], [16, 18], [24, 2], [24, 14]]) many[y] = (many[y] || '4'.repeat(24)).slice(0, x) + '99' + (many[y] || '4'.repeat(24)).slice(x + 2);
   /* the same level under three other seeds (the geometry untouched): some pick differs */
-  const a = SB.pipeline.build(labRecord(many), {}), pa = a.needsCrop ? '' : a.features.enemies.map(e => e.idx).join();
+  const a = SB.pipeline.build(labRecord(plank(many)), { biome: 0 }), pa = a.needsCrop ? '' : a.features.enemies.map(e => e.idx).join();
   const others = a.needsCrop ? [] : [1, 2, 3].map(x => SB.features.moths(Object.assign({}, a, { seed: (a.seed ^ x) >>> 0 }), {}).map(e => e.idx).join());
-  t.ok(!a.needsCrop && a.features.enemies.length === SB.TUNING.CAP_ENEMY && others.some(o => o !== pa), 'six clusters over CAP_ENEMY, four seeds: the picks differ (' + [pa].concat(others).join(' / ') + ')');
+  /* which clusters get an enemy (the shuffle over the cap): each enemy belongs to its nearest cluster */
+  const clusterOf = idx => { let best = -1, bd = 1e9; [[8, 2], [8, 12], [16, 6], [16, 18], [24, 2], [24, 14]].forEach(([y, x], k) => { const dd = Math.max(Math.abs(idx % 24 - x), Math.abs(Math.floor(idx / 24) - y)); if (dd < bd) { bd = dd; best = k; } }); return best; };
+  const setOf = list => list.split(',').filter(Boolean).map(Number).map(clusterOf).sort().join('');
+  t.ok(!a.needsCrop && a.features.enemies.length === SB.TUNING.CAP_ENEMY && others.some(o => setOf(o) !== setOf(pa)), 'six clusters over CAP_ENEMY, four seeds: which clusters get an enemy differs (' + [pa].concat(others).map(setOf).join(' / ') + ')');
+});
+
+/* ================================================================ features, part two (T1.2b) */
+const KIND_NAME = ['', 'moth', 'icicle', 'jelly', 'crawler', 'spark'];
+/* a hero touches a cell it stands in, or one at most JUMP_UP open cells above a reached cell it stands in (for the
+   test alone, from DESIGN 6.8's jump) */
+function touchable(lv, d, c) {
+  if (lv.solid[c]) return false;
+  for (let k = 0; k <= SB.TUNING.JUMP_UP; k++) { const cc = c + k * lv.w; if (cc >= lv.w * lv.h || lv.solid[cc]) return false; if (d[cc] >= 0 && standableIn(lv, cc)) return true; }
+  return false;
+}
+
+group('H-feat-2', 'loot: at least one chest and one scroll on every built level; every speck touchable, at most CAP_SPECK (Ember two more), never on the spawn, the exit, the chest, the door or the pocket', t => {
+  const T = SB.TUNING, bad = []; let scrolls = 0, natural = 0, blueprints = 0;
+  for (const { tag, lv } of featBuilds()) {
+    const f = lv.features, d = SB.reach.distances(SB.reach.graph(lv), lv.spawn);
+    if (!(f.chest >= 0)) bad.push(tag + ': no chest');
+    if (!(f.scroll >= 0)) { bad.push(tag + ': no scroll'); continue; }
+    scrolls++;
+    const all = f.specks.concat([f.scroll]).concat(f.blueprint !== null ? [f.blueprint] : []);
+    natural += all.filter(c => lv.pal[c] === SB.palette.I.SUN).length;
+    if (f.blueprint !== null) { blueprints++; if (lv.pal[f.blueprint] !== SB.palette.I.SUN) bad.push(tag + ': a blueprint not on a Sun speck'); }
+    if (all.length > T.CAP_SPECK + (lv.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0)) bad.push(tag + ': ' + all.length + ' specks');
+    for (const c of all) {
+      if (!touchable(lv, d, c)) bad.push(tag + ': a speck at (' + c % lv.w + ', ' + Math.floor(c / lv.w) + ') no hero touches');
+      if (c === lv.spawn || c === lv.exit || c === f.chest || (f.door && c === f.door.idx) || (f.pocket && f.pocket.cells.includes(c))) bad.push(tag + ': a speck on a taken cell');
+    }
+  }
+  t.eq(bad.length, 0, 'loot keeps the rules on every level (' + scrolls + ' scrolls, ' + natural + ' natural Sun specks, ' + blueprints + ' blueprints)' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
+  /* the cap on a room of eight isolated Sun cells standing on the floor */
+  const lab = {}; lab[46] = '4e44e44e44e444444e44e44e'.slice(0, 24); lab[44] = '44444444444e444444444444'.slice(0, 24);
+  const lv = SB.pipeline.build(labRecord(lab), {}), f = lv.features;
+  const n = lv.needsCrop ? -1 : f.specks.length + (f.scroll !== null ? 1 : 0) + (f.blueprint !== null ? 1 : 0);
+  t.ok(n === T.CAP_SPECK, 'eight isolated Sun specks within reach give CAP_SPECK (' + T.CAP_SPECK + ') specks, the scroll and the blueprint among them (' + n + ')');
+});
+
+group('H-feat-3', 'the trap field: a 2 cell repeat at least TRAP_MIN a side, its open cells, never on a cell the ascent stands on and never cutting an ascent edge, never in a first room', t => {
+  const T = SB.TUNING, bad = []; let fields = 0;
+  for (const { tag, lv } of featBuilds()) {
+    const f = lv.features; if (!f.trap) continue; fields++;
+    const w = lv.w, n = w * lv.h, [x0, y0, x1, y1] = f.trapRect, cells = Array.from(f.trap);
+    if (x1 - x0 + 1 < T.TRAP_MIN || y1 - y0 + 1 < T.TRAP_MIN) bad.push(tag + ': a field under TRAP_MIN');
+    let rep = true, two = false;
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const v = lv.pal[y * w + x];
+      if (x + 2 <= x1 && lv.pal[y * w + x + 2] !== v) rep = false;
+      if (y + 2 <= y1 && lv.pal[(y + 2) * w + x] !== v) rep = false;
+      if (x + 1 <= x1 && lv.pal[y * w + x + 1] !== v) two = true;
+    }
+    if (!rep || !two) bad.push(tag + ': the field is not a 2 cell repeat');
+    const open = []; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (!lv.solid[y * w + x]) open.push(y * w + x);
+    if (open.join() !== cells.join() || cells.some(c => !lv.trap[c])) bad.push(tag + ': the trap cells are not the field\'s open cells');
+    const stands = new Set(lv.ascent.nodes.filter(v => v < n));
+    if (cells.some(c => stands.has(c))) bad.push(tag + ': a trap cell the ascent stands on');
+    const walled = lv.solid.slice(); for (const c of cells) walled[c] = 1;
+    const g = SB.reach.graph(Object.assign({}, lv, { solid: walled })), lost = lv.ascent.edges.filter(e => !sameEdge(g, e));
+    if (lost.length) bad.push(tag + ': the field cuts ' + lost.length + ' ascent edges (' + lost[0].kind + ')');
+    if (f.trapKind !== (lv.biome === 1 || lv.biome === 2 ? 'crushers' : 'spikes')) bad.push(tag + ': ' + f.trapKind + ' in ' + SB.palette.BIOMES[lv.biome]);
+  }
+  t.eq(bad.length, 0, 'every field of ' + fields + ' keeps the rule' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
+  const tp = buildFx(fixture('trap-pattern'), 0);
+  const tr = tp.features.trapRect;
+  t.ok(!tp.needsCrop && !!tp.features.trap && tr[0] >= 12 && tr[1] >= 30 && tr[2] <= 17 && tr[3] <= 35, 'trap-pattern (authored for it) holds a field inside its 6x6 checks at x 12..17, rows 30..35, off the ascent (' + (tr ? tr.join() : 'none') + ')');
+  let first = 0; for (const f of FIXTURES) { const lv = SB.pipeline.build(SB.record.fromJSON(f.fx.record), { firstRoom: true }); if (!lv.needsCrop && lv.features.trap) first++; }
+  t.eq(first, 0, 'no trap field in a first room (' + first + ')');
+  /* the cut alone: trap-pattern's field with the ascent's own cells added refuses; walled, an ascent edge goes */
+  const sr = buildFx(fixture('sample-room'), 0), e0 = sr.ascent.edges.find(e => e.kind === 'JUMP' && e.to < sr.w * sr.h);
+  const block = []; for (let y = Math.floor(e0.to / sr.w) - 1; y <= Math.floor(e0.to / sr.w); y++) block.push(y * sr.w + e0.to % sr.w);
+  t.ok(!SB.features.trapOk(sr, block.filter(c => !sr.solid[c])), 'a field over the cell an ascent JUMP lands in is refused (' + e0.to % sr.w + ', ' + Math.floor(e0.to / sr.w) + ')');
+});
+
+group('H-feat-6', 'enemies: their biome\'s kind, on cells that keep the rules (open, clear of spawn by ENEMY_SPAWN_CLEAR, never within ROUTE_SAFE_ENEMY_DIST of the ascent, never a trap or the pocket; crawlers and sparks standing, icicles hanging), the caps, the envelopes of section 3.7', t => {
+  const T = SB.TUNING, bad = []; let count = 0, elites = 0;
+  const kinds = {};
+  for (const { tag, lv, biome } of featBuilds()) {
+    const f = lv.features, w = lv.w, n = w * lv.h, stands = lv.ascent.nodes.filter(v => v < n);
+    const want = SB.features.KIND_OF_BIOME[lv.biome], first = false;
+    const cap = T.CAP_ENEMY + (lv.biome === 4 ? T.EMBER_EXTRA_ENEMY : 0);
+    if (f.enemies.length > cap) bad.push(tag + ': ' + f.enemies.length + ' enemies (cap ' + cap + ')');
+    if (f.enemies.filter(e => e.elite).length > T.CAP_ELITE) bad.push(tag + ': more than CAP_ELITE elites');
+    for (const e of f.enemies) {
+      count++; if (e.elite) elites++; kinds[KIND_NAME[e.kind]] = (kinds[KIND_NAME[e.kind]] || 0) + 1;
+      const c = e.idx, at = '(' + c % w + ', ' + Math.floor(c / w) + ')', pocketElite = !!(f.pocket && e.elite && f.pocket.cells.includes(c));
+      if (e.kind !== want && !(e.kind === SB.features.MOTH && lv.repair.spread)) bad.push(tag + ': a ' + KIND_NAME[e.kind] + ' in ' + SB.palette.BIOMES[lv.biome]);
+      if (lv.solid[c] || lv.trap[c]) bad.push(tag + ': an enemy on a solid or trap cell ' + at);
+      if (cheb(c, lv.spawn, w) <= T.ENEMY_SPAWN_CLEAR) bad.push(tag + ': an enemy within ENEMY_SPAWN_CLEAR of spawn ' + at);
+      if (!pocketElite && stands.some(v => cheb(c, v, w) <= T.ROUTE_SAFE_ENEMY_DIST)) bad.push(tag + ': an enemy within ROUTE_SAFE_ENEMY_DIST of the ascent ' + at);
+      if (!pocketElite && f.pocket && f.pocket.cells.includes(c)) bad.push(tag + ': an enemy in the pocket ' + at);
+      if ((e.kind === SB.features.CRAWLER || e.kind === SB.features.SPARK) && !standableIn(lv, c)) bad.push(tag + ': a ' + KIND_NAME[e.kind] + ' not standing ' + at);
+      if (e.kind === SB.features.ICICLE && !(lv.solid[c - w] || lv.plat[c])) bad.push(tag + ': an icicle hanging from nothing ' + at);
+      /* the envelope, recomputed here from section 3.7's table */
+      let env;
+      if (pocketElite) env = Array.from(f.pocket.cells).sort((a, b) => a - b);
+      else if (e.kind === SB.features.MOTH) env = [c];
+      else if (e.kind === SB.features.JELLY) { env = []; for (let k = -2; k <= 2; k++) { const y = Math.floor(c / w) + k; if (y >= 0 && y < lv.h) env.push(y * w + c % w); } }
+      else if (e.kind === SB.features.ICICLE) { env = [c]; for (let k = 1; k <= 6; k++) { const cc = c + k * w; if (cc >= n || lv.solid[cc]) break; env.push(cc); } }
+      else {
+        const y = Math.floor(c / w); let a = c % w, b = c % w;
+        while (a > 0 && standableIn(lv, y * w + a - 1)) a--; while (b < w - 1 && standableIn(lv, y * w + b + 1)) b++;
+        const s = new Set(); for (let x = a; x <= b; x++) { s.add(y * w + x); if (e.kind === SB.features.CRAWLER && y > 0) s.add((y - 1) * w + x); }
+        if (e.kind === SB.features.SPARK) for (let yy = Math.max(0, y - 3); yy <= Math.min(lv.h - 1, y + 3); yy++) for (let xx = Math.max(0, c % w - 3); xx <= Math.min(w - 1, c % w + 3); xx++) if (standableIn(lv, yy * w + xx)) s.add(yy * w + xx);
+        env = Array.from(s).sort((p, q) => p - q);
+      }
+      if (Array.from(e.env).join() !== env.join()) bad.push(tag + ': the ' + KIND_NAME[e.kind] + ' envelope at ' + at + ' is not section 3.7\'s');
+    }
+  }
+  t.eq(bad.length, 0, 'every enemy of ' + count + ' (' + elites + ' elites; ' + Object.entries(kinds).map(([k, v]) => v + ' ' + k).join(', ') + ') keeps the rules' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
+  /* the first room: at most FIRST_ROOM_MAX_FODDER fodder, no elite */
+  let over = 0; for (const fx of FIXTURES) { const lv = SB.pipeline.build(SB.record.fromJSON(fx.fx.record), { firstRoom: true }); if (!lv.needsCrop && (lv.features.enemies.length > T.FIRST_ROOM_MAX_FODDER || lv.features.enemies.some(e => e.elite))) over++; }
+  t.eq(over, 0, 'a first room holds at most FIRST_ROOM_MAX_FODDER fodder and no elite (' + over + ' over)');
+});
+
+group('H-feat-8', 'placement is a function of the record: three builds agree; one flipped nibble moves the seed on every fixture, and the placement where the stream has choices (saturated-blobs, the sample room)', t => {
+  const feat = lv => JSON.stringify(lv.features, (k, v) => ArrayBuffer.isView(v) ? Array.from(v) : v);
+  const bad = [];
+  for (const f of FIXTURES) {
+    const rec = () => SB.record.fromJSON(f.fx.record), a = SB.pipeline.build(rec(), {}), b = SB.pipeline.build(rec(), {}), c = SB.pipeline.build(rec(), {});
+    if (a.needsCrop) continue;
+    if (feat(a) !== feat(b) || feat(a) !== feat(c) || SB.pipeline.levelHash(a) !== SB.pipeline.levelHash(c)) bad.push(f.name + ': three builds differ');
+  }
+  t.eq(bad.length, 0, 'three builds of every fixture place the same' + (bad.length ? ': ' + bad.join('; ') : ''));
+  /* a nibble flipped: an Ink cell made Soot or a Soot cell made Ink (both far under any threshold: a new seed, the same
+     geometry), else a cell of the floor row (forced solid) */
+  const darkCells = fx => { const out = []; fx.record.rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === '0' || ch === '1') out.push([x, y]); })); return out; };
+  const flip = (fx, k) => { const rows = fx.record.rows.slice(), dk = darkCells(fx), [x, y] = dk.length ? dk[Math.floor(k * dk.length / 6)] : [k, 47], r = rows[y].split(''); r[x] = r[x] === '0' ? '1' : '0'; rows[y] = r.join(''); return SB.record.fromJSON(Object.assign({}, fx.record, { rows })); };
+  let seeds = 0, total = 0;
+  for (const f of FIXTURES) { total++; if (SB.record.seedOf(flip(f.fx, 0)) !== SB.record.seedOf(SB.record.fromJSON(f.fx.record))) seeds++; }
+  t.eq(seeds, total, 'one flipped nibble moves the seed on every fixture (' + seeds + ' of ' + total + ')');
+  for (const name of ['saturated-blobs', 'sample-room']) {   /* under Attic, the default: a cluster's own cells take its moth */
+    const fx = fixture(name).fx, base = SB.pipeline.build(SB.record.fromJSON(fx.record), { biome: 0 }), moved = [];
+    for (let k = 0; k < 6; k++) { const lv = SB.pipeline.build(flip(fx, k), { biome: 0 }); if (!lv.needsCrop && lv.solid.join() === base.solid.join() && feat(lv) !== feat(base)) moved.push(k); }
+    t.ok(moved.length > 0, name + ': with the geometry unchanged, a flipped nibble moves the placement (' + moved.length + ' of 6 flips)');
+  }
+});
+
+group('H-feat-9', 'the default spread (DESIGN 6.11): a blank wall gets its two tab stairs, a speck and a fodder', t => {
+  const lv = buildFx(fixture('blank-wall'), 0), f = lv.features, sp = lv.repair && lv.repair.spread;
+  t.ok(!lv.needsCrop && !!sp && lv.repair.tabs > 0, 'blank-wall builds with the default spread (' + (lv.needsCrop ? 'needsCrop' : lv.repair.tabs + ' tabs') + ')');
+  const specksHere = sp ? f.specks.concat([f.scroll, f.blueprint]).filter(c => c !== null) : [];
+  t.ok(!!sp && specksHere.includes(sp.speck), 'its speck slot holds a speck (slot ' + (sp ? sp.speck : '-') + '; specks ' + specksHere.join(' ') + ')');
+  t.ok(f.enemies.length === 1, 'and one fodder (' + f.enemies.map(e => KIND_NAME[e.kind] + ' at ' + e.idx).join(', ') + ')');
 });
 
 group('H-fix-1', 'every fixture validates, carries every expect key, and round trips', t => {
@@ -3322,7 +3470,7 @@ if (opt('explore')) {
 function mothLab(spots) {
   const rows = {};
   for (const [x, y] of spots) { const r = (rows[y] || '4'.repeat(24)).split(''); r[x] = '9'; r[x + 1] = '9'; rows[y] = r.join(''); }
-  return SB.pipeline.build(labRecord(rows), {});
+  return SB.pipeline.build(labRecord(rows), { biome: 0 });   /* the Attic fodder rules (an Ash walled lab detects Frost since T1.1) */
 }
 const cheb = (a, b, w) => Math.max(Math.abs(a % w - b % w), Math.abs(Math.floor(a / w) - Math.floor(b / w)));
 
@@ -3335,7 +3483,7 @@ group('H-en-1', 'moth spawns: on open cells, clear of spawn, at most 4 (2 in a f
     const es = lv.features.enemies, lm = new Set(lv.landmarks.flatMap(l => Array.from(l.cells))), beacon = new Set(Array.from(lv.beacon.cells));
     moths += es.length;
     const bad = es.filter(e => lv.solid[e.idx] || cheb(e.idx, lv.spawn, lv.w) <= SB.TUNING.ENEMY_SPAWN_CLEAR || lm.has(e.idx) || beacon.has(e.idx));
-    t.ok(es.length <= 4 && bad.length === 0 && es.every(e => e.kind === SB.features.MOTH), f.name + ' mode ' + mode + ': ' + es.length + ' moths, every one on an open cell, clear of spawn and of the claimed cells' + (bad.length ? ' (bad: ' + bad.map(e => e.idx % 24 + ',' + Math.floor(e.idx / 24)).join(' ') + ')' : ''));
+    t.ok(es.length <= SB.TUNING.CAP_ENEMY + (lv.biome === 4 ? SB.TUNING.EMBER_EXTRA_ENEMY : 0) && bad.length === 0 && es.every(e => e.kind === SB.features.KIND_OF_BIOME[lv.biome] || (e.kind === SB.features.MOTH && lv.repair.spread)), f.name + ' mode ' + mode + ': ' + es.length + ' enemies of its biome\'s kind, every one on an open cell, clear of spawn and of the claimed cells' + (bad.length ? ' (bad: ' + bad.map(e => e.idx % 24 + ',' + Math.floor(e.idx / 24)).join(' ') + ')' : ''));
   }
   console.log('  info  H-en-1: ' + moths + ' moths over ' + levels + ' built levels');
   /* six clusters: the cap and the first room cap, the same pick twice */

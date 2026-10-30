@@ -514,3 +514,27 @@ As built: 3.5 in the graph, one rule inside the edge builder (a landing that wou
 Options: (a) 3.5, as built; (b) 3.1, and accept that Frost (the white room, Q4: the most common room there is) refuses most rooms with shelves.
 Recommendation: (a). T1.5 proves the one cell margin against the sim (H-sim-16).
 Plan assumes: (a); section 3.1's slick line reads "see section 3.5".
+
+## Q75. The pocket's elite stays in its pocket (the builder, 30 Oct, T1.2b)
+
+DESIGN 6.11 puts "an elite inside" the pocket and section 3.7 gives the elite the pocket interior as its envelope; DESIGN 7 keeps every enemy off the main ascent's safe cells and 2 cells from spawn. The pocket's entrance faces the ascent cell nearest the hollow (T1.2a), so the elite's cell is often within ROUTE_SAFE_ENEMY_DIST of a cell the ascent stands on, and an Attic elite is a moth, which drifts through furniture (Q29).
+As built (T1.2b): the pocket's elite is placed whatever the ascent distance (its envelope is the closed pocket, which holds no ascent cell by construction), keeps the 2 cell clearance from spawn, takes the one elite slot first, hangs from the pocket's roof when it is an icicle and stands on its floor otherwise.
+Options: (a) T1.4 confines the pocket's elite to its pocket (it wakes when the hero enters and never leaves; a moth elite does not drift out); (b) the elite obeys the ascent distance like every enemy, and a pocket near the climb stays empty.
+Recommendation: (a): the pocket is the reward branch DESIGN describes, and the elite is its guard. T1.4 asserts the confinement.
+Plan assumes: (a); T1.4.
+
+## Q76. The default spread's fodder on a blank white wall (the builder, 30 Oct, T1.2b)
+
+DESIGN 6.11 gives a blank wall "one speck, one fodder"; a blank white wall is Frost (Q4), whose enemy is the icicle, which hangs under a platform; on a blank wall the only platforms are the film tabs of the default spread, which are the climb itself, and the ascent distance keeps every enemy off them.
+As built (T1.2b): the spread's fodder is its biome's kind where a cell keeps that kind's rules, else a moth (which needs no ceiling) on the nearest standable cell that keeps the rest.
+Options: (a) as built; (b) no fodder when the biome's kind has nowhere to go; (c) an icicle hanging from a tab off the ascent (none exists on the spread's two stairs).
+Recommendation: (a): DESIGN promises the blank wall one fodder.
+Plan assumes: (a).
+
+## Q77. The trap field is the largest repeat that keeps off the ascent (the builder, 30 Oct, T1.2b)
+
+DESIGN 6.11: a repeating 2 cell pattern at least 4x4 becomes the trap field, cap 1, never intersecting the main ascent. A photo's pattern often lies across the climb (trap-pattern's checks are stood on by its ascent).
+As built (T1.2b): the candidates are, for every top left cell, the largest rectangle whose palette repeats with period 2 both ways and is not one colour, at least TRAP_MIN a side; they are tried largest first (ties to the lower top left), and a field is kept only when none of its open cells is a cell the ascent stands on and every ascent edge stays an edge with the field walled; at most TRAP_TRIES are checked. So a field can be the part of a pattern the climb does not use (trap-pattern's field is x 14..17, rows 32..35 of its 6x6 checks).
+Options: (a) as built; (b) only the whole largest pattern, and no field when it touches the ascent.
+Recommendation: (a): more rooms with patterns get their trap, always off the climb.
+Plan assumes: (a).

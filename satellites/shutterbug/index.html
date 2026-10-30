@@ -259,7 +259,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     // 6.11 feature caps and thresholds
     CAP_LADDER: 1, CAP_POCKET: 1, CAP_DOOR: 1, CAP_SPECK: 6, CAP_STICKY: 3, CAP_ENEMY: 4, CAP_ELITE: 1, CAP_TRAP: 1,
     LADDER_STACK_ROWS: 3, LADDER_MIN_RUNS: 3, POCKET_LANDMARK_MIN: 20, POCKET_TUNNEL_MAX: 2, POCKET_TRIES: 4, DOOR_L: 200, DOOR_MIN: 3, SPECK_S: 0.5, SPECK_L: 150,
-    STICKY_RUN_MIN: 6, FODDER_CELLS: [2, 5], ELITE_CELLS: [6, 11], ELITE_HP_MULT: 2 /* Q51 */, BOSS_CELLS: 12, TRAP_MIN: 4, TRAP_PERIOD_S: 1.5,
+    STICKY_RUN_MIN: 6, FODDER_CELLS: [2, 5], ELITE_CELLS: [6, 11], ELITE_HP_MULT: 2 /* Q51 */, BOSS_CELLS: 12, TRAP_MIN: 4, TRAP_PERIOD_S: 1.5, TRAP_TRIES: 4,
     ENEMY_SPAWN_CLEAR: 2, BLUEPRINT_CHANCE: 0.25, EMBER_EXTRA_ENEMY: 1, EMBER_EXTRA_SPECKS: 2,
     // 7 biomes and enemies
     FROST_SLICK_MIN_W: 5, FROST_SLIDE_CELLS: 1, DEEP_FALL_MULT: 0.8, DEEP_JUMP_V: 9.5 /* gives the +1 cell apex, section 3.2 */,
@@ -1040,7 +1040,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   }
 
   /* The room as text, one line per row: # solid, = one way, ~ slick, | sticky, . open, S spawn, X exit, T film tab,
-     * ascent, e enemy, ^ trap, $ loot, H a ladder rung, D the Darkroom door, C the chest, p the pocket (E its elite),
+     * ascent, e enemy (E an elite), ^ trap, $ a loot speck, ? the scroll, B the blueprint, H a ladder rung, D the
+     Darkroom door, C the chest, p the pocket,
      L a landmark's top edge, o an open standable cell the reach model reaches from
      spawn, < > a wall contact it reaches and ( ) one it does not (the wall on that side). Printed beside every harness
      failure. */
@@ -1080,9 +1081,11 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var specks = f.specks || [];
     for (k = 0; k < specks.length; k++) g[specks[k].idx === undefined ? specks[k] : specks[k].idx] = '$';
     var en = f.enemies || [];
-    for (k = 0; k < en.length; k++) g[en[k].idx === undefined ? en[k] : en[k].idx] = 'e';
+    for (k = 0; k < en.length; k++) g[en[k].idx === undefined ? en[k] : en[k].idx] = en[k].elite ? 'E' : 'e';
+    if (f.scroll !== null && f.scroll !== undefined) g[f.scroll] = '?';
+    if (f.blueprint !== null && f.blueprint !== undefined) g[f.blueprint] = 'B';
     if (f.ladder) for (k = 0; k < f.ladder.runs.length; k++) for (var lx = f.ladder.runs[k][0]; lx <= f.ladder.runs[k][1]; lx++) g[f.ladder.runs[k][2] * w + lx] = 'H';
-    if (f.pocket) { for (k = 0; k < f.pocket.cells.length; k++) g[f.pocket.cells[k]] = 'p'; g[f.pocket.elite] = 'E'; }
+    if (f.pocket) for (k = 0; k < f.pocket.cells.length; k++) if (g[f.pocket.cells[k]] !== 'E') g[f.pocket.cells[k]] = 'p';
     if (f.door) g[f.door.idx] = 'D';
     if (f.chest !== null && f.chest !== undefined && f.chest >= 0) g[f.chest] = 'C';
     if (level.spawn >= 0 && level.spawn !== undefined) g[level.spawn] = 'S';
@@ -1699,16 +1702,38 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
           keeps loot on the branches; Q34's "farthest off the main ascent" read as farthest FROM it, since the
           farthest from spawn is the cell beside the exit), ties to the greater distance from spawn, then the lower
           index; never the spawn, the exit, the door or the pocket. Exactly 1.
-       5. the moths (T0.16's v0, their own stream until T1.2b), after the claims of Q50: the light's cells whether or
-          not it won the exit (the fourth review: a lamp that lost the exit was a nest), the beacon's, the door's
-          rectangle, the pocket's and every solid landmark's cells leave the saturated set before clustering; a
-          cluster of FODDER_CELLS cells is a moth's spawn, on its lowest open cell that keeps the rules, or, a cluster
-          wholly solid, on the nearest standable open cell that does. The rules: never within ENEMY_SPAWN_CLEAR of
-          spawn, never within ROUTE_SAFE_ENEMY_DIST of a cell the main ascent stands on, that distance included
-          (DESIGN 6.9), never in the pocket. At most FIRST_ROOM_MAX_FODDER in the first ever free play room and
-          CAP_ENEMY otherwise, picked by the level's seed.
+       5. the loot specks (draws; Q49): isolated Sun cells (no saturated cell among the eight around) a hero can
+          touch (standable and reached, or at most JUMP_UP open cells above a reached standable cell), never the spawn,
+          the exit, the chest, the door or the pocket, plus the default spread's speck slot (DESIGN 6.11's blank wall);
+          at most CAP_SPECK (plus EMBER_EXTRA_SPECKS in Ember), a seeded shuffle choosing when there are more. The
+          scroll (one guaranteed) is the speck farthest from spawn by reach, else a speck placed on the reached
+          standable cell deepest into a branch (the chest's measure, the chest's cell excepted); the blueprint is the
+          single brightest speck left (all Sun under the palette: the lowest index) with BLUEPRINT_CHANCE, one draw.
+       6. the trap field (no draw; never in a first room): the largest rectangle, TRAP_MIN or more a side, whose
+          palette repeats with period 2 both ways and is not one colour; its open cells are the field; a field is kept
+          only when none of its cells is a cell the ascent stands on and every ascent edge stays an edge with the field
+          walled (never intersecting the main ascent), trying the next largest at most TRAP_TRIES times. Spikes in
+          Attic, Ember and Overgrowth, crushers in Frost and Deep (their behaviour is T1.4b's).
+       7. the enemies (draws), after the claims of Q50: the light's cells (whether or not it won the exit), the
+          beacon's, the door's rectangle, the pocket's, every speck's and every solid landmark's cells leave the
+          saturated set; its components by size: FODDER_CELLS fodder, ELITE_CELLS an elite, BOSS_CELLS or more the
+          boss in a house run's last room (M2), else nothing. Each enemy is its biome's kind (Attic moth, Frost
+          icicle, Deep jelly, Overgrowth thorn crawler, Ember spark; the sim moves every kind as a moth until T1.4) on
+          a cell of its cluster the stream picks among those that keep the rules, or, none keeping them, on the
+          nearest cell that does (ties to the lower index). The rules: open; a crawler or a spark standable; an icicle
+          hanging under a solid or a one way; never a trap cell; never within ENEMY_SPAWN_CLEAR of spawn; never within
+          ROUTE_SAFE_ENEMY_DIST of a cell the main ascent stands on, that distance included (DESIGN 6.9); never in the
+          pocket. The pocket's elite takes its pocket (its envelope, so the rules for the ascent do not bind it,
+          QUESTIONS Q75; it keeps DESIGN 7's clearance from spawn); the default spread's fodder its slot or the nearest
+          cell that keeps the rules, a moth when no cell keeps its kind's (Q76: a blank white wall is Frost, and an
+          icicle there could hang only from the climb's own tabs). Caps:
+          CAP_ENEMY (plus EMBER_EXTRA_ENEMY in Ember) with at most CAP_ELITE elites, the pocket's first; in a first
+          room FIRST_ROOM_MAX_FODDER fodder and no elite; fodder over the cap chosen by a seeded shuffle. Each enemy
+          carries its envelope (section 3.7): a moth its cell, a crawler its platform run and the row above it, an
+          icicle its cell and the six cells below, a jelly its column two cells either way, a spark its platform and
+          every standable cell within 3, the pocket's elite the pocket.
      A placement never changes the main ascent: the level's ascent is a promise the score made. */
-  var MOTH = 1;
+  var MOTH = 1, ICICLE = 2, JELLY = 3, CRAWLER = 4, SPARK = 5, KIND_OF_BIOME = [MOTH, ICICLE, JELLY, CRAWLER, SPARK];
   function cheb(a, b, w) { return Math.max(Math.abs(a % w - b % w), Math.abs(Math.floor(a / w) - Math.floor(b / w))); }
   function standable(level, c) { var w = level.w; return c >= 0 && c + w < w * level.h && !level.solid[c] && (level.solid[c + w] === 1 || level.plat[c + w] === 1); }
   function ascentStands(level) {
@@ -1859,6 +1884,24 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     return null;
   }
 
+  /* every node's distance in edges from the main ascent: a breadth first search from all its nodes at once */
+  function offAscent(level, g, size) {
+    var off = new Int32Array(size).fill(-1), queue = [], head = 0, nodes = level.ascent && level.ascent.nodes ? level.ascent.nodes : [], i;
+    for (i = 0; i < nodes.length; i++) if (off[nodes[i]] < 0) { off[nodes[i]] = 0; queue.push(nodes[i]); }
+    while (head < queue.length) {
+      var u = queue[head++], es = g.adj[u];
+      if (es) for (var k = 0; k < es.length; k++) if (off[es[k].to] < 0) { off[es[k].to] = off[u] + 1; queue.push(es[k].to); }
+    }
+    return off;
+  }
+  /* the reached standable cell deepest into a branch, ties to the greater distance from spawn then the lower index;
+     ok(c) says which cells may be taken; -1 when none off the ascent */
+  function deepest(level, g, d, ok) {
+    var n = level.w * level.h, off = offAscent(level, g, d.length), best = -1, deep = 0;
+    for (var i = 0; i < n; i++) if (ok(i) && off[i] > 0 && (off[i] > deep || (off[i] === deep && d[i] > d[best]))) { deep = off[i]; best = i; }
+    return best;
+  }
+
   /* 4. the chest */
   function chest(level, f, g, d, stands) {
     var w = level.w, n = w * level.h, i, best = -1, skip = new Uint8Array(n);
@@ -1874,25 +1917,159 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       if (best >= 0) return best;
     }
     if (f.ladder && ok(f.ladder.top)) return f.ladder.top;
-    /* every node's distance in edges from the main ascent: a breadth first search from all its nodes at once */
-    var off = new Int32Array(d.length).fill(-1), queue = [], head = 0, nodes = level.ascent && level.ascent.nodes ? level.ascent.nodes : [];
-    for (i = 0; i < nodes.length; i++) if (off[nodes[i]] < 0) { off[nodes[i]] = 0; queue.push(nodes[i]); }
-    while (head < queue.length) {
-      var u = queue[head++], es = g.adj[u];
-      if (es) for (var k = 0; k < es.length; k++) if (off[es[k].to] < 0) { off[es[k].to] = off[u] + 1; queue.push(es[k].to); }
-    }
-    var deep = 0;
-    for (i = 0; i < n; i++) if (ok(i) && off[i] > 0 && (off[i] > deep || (off[i] === deep && d[i] > d[best]))) { deep = off[i]; best = i; }
+    best = deepest(level, g, d, ok);
     if (best >= 0) return best;
     var far = -1;   /* nothing off the ascent stands: the farthest from spawn, on it */
     for (i = 0; i < n; i++) if (ok(i) && d[i] > far) { far = d[i]; best = i; }
     return best;   /* -1 only when nothing but the spawn and the exit stands: T1.2b's guarantee names it */
   }
 
-  /* 5. the moths, after the claims */
-  function moths(level, opts, f) {
+  /* 5. the loot specks, the scroll and the blueprint */
+  function specks(level, opts, f, g, d, rng) {
+    var T = SB.TUNING, P = SB.palette, w = level.w, h = level.h, n = w * h, i, k, satIdx = {};
+    for (k = 0; k < P.SAT.length; k++) satIdx[P.SAT[k]] = 1;
+    var skip = new Uint8Array(n);
+    skip[level.spawn] = 1; if (level.exit >= 0) skip[level.exit] = 1;
+    if (f.chest >= 0) skip[f.chest] = 1;
+    if (f.door) skip[f.door.idx] = 1;
+    if (f.pocket) for (i = 0; i < f.pocket.cells.length; i++) skip[f.pocket.cells[i]] = 1;
+    /* a hero touches a cell it stands in, or one at most JUMP_UP open cells above a cell it stands in */
+    var support = function (c) {
+      if (level.solid[c]) return -1;
+      for (var y = Math.floor(c / w), k2 = 0; k2 <= T.JUMP_UP && y + k2 < h; k2++) {
+        var cc = c + k2 * w;
+        if (level.solid[cc]) return -1;
+        if (d[cc] >= 0 && standable(level, cc)) return cc;
+      }
+      return -1;
+    };
+    var cand = [];
+    for (i = 0; i < n; i++) {
+      if (level.pal[i] !== P.I.SUN || skip[i]) continue;
+      var x = i % w, y = (i - x) / w, alone = true;
+      for (var oy = -1; oy <= 1 && alone; oy++) for (var ox = -1; ox <= 1; ox++) {
+        if (!ox && !oy) continue;
+        var xx = x + ox, yy = y + oy;
+        if (xx >= 0 && xx < w && yy >= 0 && yy < h && satIdx[level.pal[yy * w + xx]]) { alone = false; break; }
+      }
+      if (alone && support(i) >= 0) cand.push(i);
+    }
+    var spread = level.repair && level.repair.spread;
+    if (spread && spread.speck >= 0 && !skip[spread.speck] && cand.indexOf(spread.speck) < 0 && support(spread.speck) >= 0) cand.push(spread.speck);
+    cand.sort(function (a, b) { return a - b; });
+    var cap = T.CAP_SPECK + (level.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0);
+    if (cand.length > cap) {
+      for (i = cand.length - 1; i > 0; i--) { var j = rng.int(i + 1), t0 = cand[i]; cand[i] = cand[j]; cand[j] = t0; }
+      cand = cand.slice(0, cap).sort(function (a, b) { return a - b; });
+    }
+    /* the scroll: the speck farthest from spawn (by the reach distance of the cell it is touched from) */
+    var scroll = -1, far = -1;
+    for (k = 0; k < cand.length; k++) { var dd = d[support(cand[k])]; if (dd > far) { far = dd; scroll = cand[k]; } }
+    if (scroll >= 0) cand.splice(cand.indexOf(scroll), 1);
+    else {
+      /* none: a speck placed on the reached standable cell deepest into a branch, else the farthest from spawn */
+      var ok = function (c) { return !skip[c] && d[c] >= 0 && standable(level, c); };
+      scroll = deepest(level, g, d, ok);
+      if (scroll < 0) { var fd = -1; for (i = 0; i < n; i++) if (ok(i) && d[i] > fd) { fd = d[i]; scroll = i; } }
+    }
+    /* the blueprint: the brightest speck left (one palette entry, so the lowest index), one draw */
+    var blueprint = null;
+    if (cand.length) { var roll = rng.next(); if (roll < T.BLUEPRINT_CHANCE) { blueprint = cand[0]; cand.splice(0, 1); } }
+    return { specks: cand, scroll: scroll >= 0 ? scroll : null, blueprint: blueprint };
+  }
+
+  /* 6. the trap field */
+  function trapRects(level) {
+    var T = SB.TUNING, w = level.w, h = level.h, pal = level.pal, x, y;
+    /* prefix sums of the period 2 breaks (right, down) and of any change at all (right or down) */
+    var W1 = w + 1, H2 = new Int32Array(W1 * (h + 1)), V2 = new Int32Array(W1 * (h + 1)), D1 = new Int32Array(W1 * (h + 1));
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
+      var i = y * w + x, hb = x + 2 < w && pal[i] !== pal[i + 2] ? 1 : 0, vb = y + 2 < h && pal[i] !== pal[i + 2 * w] ? 1 : 0;
+      var ch = (x + 1 < w && pal[i] !== pal[i + 1]) || (y + 1 < h && pal[i] !== pal[i + w]) ? 1 : 0, o = (y + 1) * W1 + x + 1;
+      H2[o] = hb + H2[o - W1] + H2[o - 1] - H2[o - W1 - 1];
+      V2[o] = vb + V2[o - W1] + V2[o - 1] - V2[o - W1 - 1];
+      D1[o] = ch + D1[o - W1] + D1[o - 1] - D1[o - W1 - 1];
+    }
+    var sum = function (A, x0, y0, x1, y1) { if (x1 < x0 || y1 < y0) return 0; return A[(y1 + 1) * W1 + x1 + 1] - A[y0 * W1 + x1 + 1] - A[(y1 + 1) * W1 + x0] + A[y0 * W1 + x0]; };
+    /* for every top left cell its largest such rectangle (ties to the lower bottom right): at most w * h of them */
+    var out = [];
+    for (var y0 = 0; y0 + T.TRAP_MIN <= h; y0++) for (var x0 = 0; x0 + T.TRAP_MIN <= w; x0++) {
+      /* a period 2 rectangle is its top left 2x2 block repeated: a uniform block starts no pattern (and walls are) */
+      var c0 = pal[y0 * w + x0];
+      if (pal[y0 * w + x0 + 1] === c0 && pal[(y0 + 1) * w + x0] === c0 && pal[(y0 + 1) * w + x0 + 1] === c0) continue;
+      var best = null, ba = 0;
+      for (var y1 = y0 + T.TRAP_MIN - 1; y1 < h; y1++) {
+        if (sum(V2, x0, y0, x0 + T.TRAP_MIN - 1, y1 - 2) || sum(H2, x0, y0, x0 + T.TRAP_MIN - 3, y1)) break;
+        for (var x1 = x0 + T.TRAP_MIN - 1; x1 < w; x1++) {
+          if (sum(H2, x0, y0, x1 - 2, y1) || sum(V2, x0, y0, x1, y1 - 2)) break;
+          /* one colour is no pattern: a change between two of its cells (with period 2 and 4 a side, one shows inside) */
+          if (sum(D1, x0, y0, x1 - 1, y1 - 1) === 0) continue;
+          var a2 = (x1 - x0 + 1) * (y1 - y0 + 1);
+          if (a2 > ba) { ba = a2; best = [x0, y0, x1, y1]; }
+        }
+      }
+      if (best) out.push(best);
+    }
+    out.sort(function (a, b) { var aa = (a[2] - a[0] + 1) * (a[3] - a[1] + 1), ab = (b[2] - b[0] + 1) * (b[3] - b[1] + 1); return ab - aa || (a[1] * w + a[0]) - (b[1] * w + b[0]) || (a[3] * w + a[2]) - (b[3] * w + b[2]); });
+    return out;
+  }
+  function trapOk(level, cells) {
+    var walled = level.solid.slice(), i;
+    for (i = 0; i < cells.length; i++) walled[cells[i]] = 1;
+    var g2 = SB.reach.graph(Object.assign({}, level, { solid: walled })), es = level.ascent && level.ascent.edges ? level.ascent.edges : [];
+    for (i = 0; i < es.length; i++) {
+      var e = es[i], adj = g2.adj[e.from] || [], found = false;
+      for (var j = 0; j < adj.length && !found; j++) { var x = adj[j]; if (x.to === e.to && x.kind === e.kind && x.dir === e.dir && x.dx === e.dx && x.dy === e.dy) found = true; }
+      if (!found) return false;
+    }
+    return true;
+  }
+  function trapField(level, opts, f, stands) {
+    var T = SB.TUNING, w = level.w, n = w * level.h, i;
+    if (opts && opts.firstRoom) return null;
+    var taken = new Uint8Array(n);
+    for (i = 0; i < stands.length; i++) taken[stands[i]] = 1;
+    taken[level.spawn] = 1; if (level.exit >= 0) taken[level.exit] = 1;
+    if (f.chest >= 0) taken[f.chest] = 1;
+    if (f.door) taken[f.door.idx] = 1;
+    if (f.scroll !== null) taken[f.scroll] = 1;
+    if (f.blueprint !== null) taken[f.blueprint] = 1;
+    for (i = 0; i < f.specks.length; i++) taken[f.specks[i]] = 1;
+    if (f.pocket) for (i = 0; i < f.pocket.cells.length; i++) taken[f.pocket.cells[i]] = 1;
+    var rects = trapRects(level), tries = 0;
+    for (var k = 0; k < rects.length && tries < T.TRAP_TRIES; k++) {
+      var r = rects[k], cells = [], clash = false;
+      for (var y = r[1]; y <= r[3] && !clash; y++) for (var x = r[0]; x <= r[2]; x++) { var c = y * w + x; if (level.solid[c]) continue; if (taken[c]) { clash = true; break; } cells.push(c); }
+      if (clash || !cells.length) continue;
+      tries++;
+      if (!trapOk(level, cells)) continue;
+      for (i = 0; i < cells.length; i++) level.trap[cells[i]] = 1;
+      return { cells: Int32Array.from(cells), rect: r, kind: level.biome === 1 || level.biome === 2 ? 'crushers' : 'spikes' };
+    }
+    return null;
+  }
+
+  /* 7. the enemies, after the claims; each with its envelope (section 3.7) */
+  function envelope(level, kind, c, pocket) {
+    var w = level.w, h = level.h, out = [c], x = c % w, y = (c - x) / w, k;
+    var run = function (row) { var a = x, b = x; while (a > 0 && standable(level, row * w + a - 1)) a--; while (b < w - 1 && standable(level, row * w + b + 1)) b++; return [a, b]; };
+    if (kind === 'pocket') return Int32Array.from(pocket.cells).sort();
+    if (kind === CRAWLER) { var rr = run(y); out = []; for (k = rr[0]; k <= rr[1]; k++) { out.push(y * w + k); if (y > 0) out.push((y - 1) * w + k); } }
+    else if (kind === ICICLE) { for (k = 1; k <= 6 && y + k < h && !level.solid[(y + k) * w + x]; k++) out.push((y + k) * w + x); }
+    else if (kind === JELLY) { out = []; for (k = -2; k <= 2; k++) if (y + k >= 0 && y + k < h) out.push((y + k) * w + x); }
+    else if (kind === SPARK) {
+      var rs = run(y); out = [];
+      for (k = rs[0]; k <= rs[1]; k++) out.push(y * w + k);
+      for (var yy = Math.max(0, y - 3); yy <= Math.min(h - 1, y + 3); yy++) for (var xx = Math.max(0, x - 3); xx <= Math.min(w - 1, x + 3); xx++) { var cc = yy * w + xx; if (standable(level, cc) && out.indexOf(cc) < 0) out.push(cc); }
+    }
+    out.sort(function (a, b) { return a - b; });
+    return Int32Array.from(out);
+  }
+  function enemies(level, opts, f, rng, stands) {
     var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k;
     f = f || level.features || {};
+    stands = stands || ascentStands(level);
+    var kind = KIND_OF_BIOME[level.biome | 0] || MOTH, first = !!(opts && opts.firstRoom);
     var sat = new Uint8Array(n), satIdx = {};
     for (k = 0; k < SB.palette.SAT.length; k++) satIdx[SB.palette.SAT[k]] = 1;
     for (i = 0; i < n; i++) if (satIdx[level.pal[i]]) sat[i] = 1;
@@ -1903,41 +2080,88 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var inPocket = new Uint8Array(n);
     if (f.pocket) { claim(f.pocket.cells); for (i = 0; i < f.pocket.cells.length; i++) inPocket[f.pocket.cells[i]] = 1; }
     if (f.door) { var r = f.door.rect; for (var yy = r[1]; yy <= r[3]; yy++) for (var xx = r[0]; xx <= r[2]; xx++) sat[yy * w + xx] = 0; }
-    var safe = ascentStands(level);
+    claim(f.specks); if (f.scroll !== null && f.scroll !== undefined) sat[f.scroll] = 0; if (f.blueprint !== null && f.blueprint !== undefined) sat[f.blueprint] = 0;
+    /* the cells the rules keep enemies off: within ENEMY_SPAWN_CLEAR of spawn, within ROUTE_SAFE_ENEMY_DIST of a cell
+       the ascent stands on (both distances included, Chebyshev), marked once */
+    var near = new Uint8Array(n);
+    var mark = function (c0, r) { var x0 = c0 % w, y0 = (c0 - x0) / w; for (var yy = Math.max(0, y0 - r); yy <= Math.min(h - 1, y0 + r); yy++) for (var xx = Math.max(0, x0 - r); xx <= Math.min(w - 1, x0 + r); xx++) near[yy * w + xx] = 1; };
+    mark(level.spawn, T.ENEMY_SPAWN_CLEAR);
+    for (k = 0; k < stands.length; k++) mark(stands[k], T.ROUTE_SAFE_ENEMY_DIST);
     var ok = function (c) {
-      if (level.solid[c] || c < w || c >= n - w || inPocket[c]) return false;
-      if (cheb(c, level.spawn, w) <= T.ENEMY_SPAWN_CLEAR) return false;
-      for (var q = 0; q < safe.length; q++) if (cheb(c, safe[q], w) <= T.ROUTE_SAFE_ENEMY_DIST) return false;
+      if (c < w || c >= n - w || level.solid[c] || level.trap[c] || inPocket[c] || near[c]) return false;
+      if (kind === CRAWLER || kind === SPARK) { if (!standable(level, c)) return false; }
+      else if (kind === ICICLE && !(level.solid[c - w] || level.plat[c])) return false;
       return true;
     };
-    var comps = SB.pipeline.components(sat, w, h), spots = [];
-    for (k = 0; k < comps.length; k++) {
-      var comp = comps[k];
-      if (comp.length < T.FODDER_CELLS[0] || comp.length > T.FODDER_CELLS[1]) continue;
-      var spot = -1;
-      for (i = 0; i < comp.length && spot < 0; i++) if (ok(comp[i])) spot = comp[i];
-      if (spot < 0) {
-        /* the nearest standable open cell keeping the rules, by Chebyshev distance from the cluster, ties to the lowest */
-        var best = -1, bd = 1e9;
-        for (i = 0; i < n; i++) {
-          if (!standable(level, i) || !ok(i)) continue;
-          var d = 1e9; for (var q = 0; q < comp.length; q++) d = Math.min(d, cheb(i, comp[q], w));
-          if (d < bd) { bd = d; best = i; }
+    /* a cell of the cluster the stream picks among those keeping the rules; else (the plan: a cluster on solid cells)
+       the nearest cell that keeps them and stands (an icicle's hanging rule in place of standing), searched ring by
+       ring outward from the cluster (Chebyshev), ties to the lower index */
+    var spotFor = function (cells) {
+      var good = [], q;
+      for (q = 0; q < cells.length; q++) if (ok(cells[q])) good.push(cells[q]);
+      if (good.length) return good[good.length === 1 ? 0 : rng.int(good.length)];
+      var seen = new Uint8Array(n), ring = [];
+      for (q = 0; q < cells.length; q++) if (!seen[cells[q]]) { seen[cells[q]] = 1; ring.push(cells[q]); }
+      while (ring.length) {
+        var next = [], best = -1;
+        for (q = 0; q < ring.length; q++) {
+          var c = ring[q], cx = c % w, cy = (c - cx) / w;
+          for (var oy = -1; oy <= 1; oy++) for (var ox = -1; ox <= 1; ox++) {
+            var xx = cx + ox, yy = cy + oy;
+            if (xx < 0 || xx >= w || yy < 0 || yy >= h || seen[yy * w + xx]) continue;
+            var cc = yy * w + xx; seen[cc] = 1; next.push(cc);
+            if (ok(cc) && (kind === ICICLE || standable(level, cc)) && (best < 0 || cc < best)) best = cc;
+          }
         }
-        spot = best;
+        if (best >= 0) return best;
+        ring = next;
       }
-      if (spot >= 0 && spots.indexOf(spot) < 0) spots.push(spot);
+      return -1;
+    };
+    var comps = SB.pipeline.components(sat, w, h), out = [], used = {}, fodderSpots = [], eliteCap = first ? 0 : T.CAP_ELITE;
+    var cap = first ? T.FIRST_ROOM_MAX_FODDER : T.CAP_ENEMY + (level.biome === 4 ? T.EMBER_EXTRA_ENEMY : 0);
+    /* the pocket's elite first: it takes its pocket */
+    if (f.pocket && eliteCap > 0) {
+      var pe = kind === ICICLE ? f.pocket.rect[1] * w + f.pocket.rect[0] + 1 : f.pocket.elite;   /* an icicle hangs from the roof */
+      if (cheb(pe, level.spawn, w) > T.ENEMY_SPAWN_CLEAR) { out.push({ kind: kind, idx: pe, elite: true, env: envelope(level, 'pocket', pe, f.pocket) }); used[pe] = 1; eliteCap--; }
     }
-    var cap = opts && opts.firstRoom ? T.FIRST_ROOM_MAX_FODDER : T.CAP_ENEMY;
-    if (spots.length > cap) {
-      spots.sort(function (a, b) { return a - b; });
-      var rr = SB.rng.mulberry32((level.seed ^ 0x6d07a5) >>> 0);
-      for (i = spots.length - 1; i > 0; i--) { var j = rr.int(i + 1), tmp = spots[i]; spots[i] = spots[j]; spots[j] = tmp; }
-      spots = spots.slice(0, cap);
+    var boss = null;
+    for (k = 0; k < comps.length; k++) {
+      var comp = comps[k], size = comp.length;
+      if (size >= T.BOSS_CELLS) { if (opts && opts.lastRoom && !boss) boss = Int32Array.from(comp); continue; }
+      if (size >= T.ELITE_CELLS[0] && size <= T.ELITE_CELLS[1]) {
+        if (eliteCap <= 0) continue;
+        var es = spotFor(comp);
+        if (es >= 0 && !used[es]) { out.push({ kind: kind, idx: es, elite: true }); used[es] = 1; eliteCap--; }
+        continue;
+      }
+      if (size < T.FODDER_CELLS[0] || size > T.FODDER_CELLS[1]) continue;
+      var fs = spotFor(comp);
+      if (fs >= 0 && !used[fs]) { fodderSpots.push(fs); used[fs] = 1; }
     }
-    spots.sort(function (a, b) { return a - b; });
-    return spots.map(function (c) { return { kind: MOTH, idx: c }; });
+    /* the default spread's fodder: its slot, or the nearest cell that keeps the rules */
+    var spread = level.repair && level.repair.spread;
+    var spreadMoth = -1;
+    if (spread && spread.fodder >= 0) {
+      var sf = spotFor([spread.fodder]);
+      if (sf < 0 && kind !== MOTH) { var keep = kind; kind = MOTH; sf = spotFor([spread.fodder]); kind = keep; if (sf >= 0 && !used[sf]) { spreadMoth = sf; used[sf] = 1; } sf = -1; }
+      if (sf >= 0 && !used[sf]) { fodderSpots.push(sf); used[sf] = 1; }
+    }
+    var room = Math.max(0, cap - out.length - (spreadMoth >= 0 ? 1 : 0));
+    if (fodderSpots.length > room) {
+      fodderSpots.sort(function (a, b) { return a - b; });
+      for (i = fodderSpots.length - 1; i > 0; i--) { var j = rng.int(i + 1), t1 = fodderSpots[i]; fodderSpots[i] = fodderSpots[j]; fodderSpots[j] = t1; }
+      fodderSpots = fodderSpots.slice(0, room);
+    }
+    for (i = 0; i < fodderSpots.length; i++) out.push({ kind: kind, idx: fodderSpots[i] });
+    if (spreadMoth >= 0) out.push({ kind: MOTH, idx: spreadMoth, env: Int32Array.of(spreadMoth) });
+    for (i = 0; i < out.length; i++) if (!out[i].env) out[i].env = envelope(level, kind, out[i].idx);
+    out.sort(function (a, b) { return a.idx - b.idx; });
+    f.boss = boss;
+    return out;
   }
+  /* T0.16's name for the harness's direct calls: the enemies of a built level, from a stream on its seed */
+  function moths(level, opts, f) { return enemies(level, opts, f, SB.rng.mulberry32((level.seed ^ 0x6d07a5) >>> 0)); }
 
   function place(level, opts, g, d) {
     var f = level.features, stands = ascentStands(level), rng = SB.rng.mulberry32(level.seed >>> 0);
@@ -1948,10 +2172,16 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     f.pocket = pocket(level, opts, rng, stands);
     if (f.pocket) { g = SB.reach.graph(level); d = SB.reach.distances(g, level.spawn); }
     f.chest = chest(level, f, g, d, stands);
-    f.enemies = moths(level, opts, f);
+    var sp = specks(level, opts, f, g, d, rng);
+    f.specks = sp.specks; f.scroll = sp.scroll; f.blueprint = sp.blueprint;
+    var tf = trapField(level, opts, f, stands);
+    f.trap = tf ? tf.cells : null; f.trapRect = tf ? tf.rect : null; f.trapKind = tf ? tf.kind : null;
+    f.enemies = enemies(level, opts, f, rng, stands);
     return f;
   }
-  SB.features = { MOTH: MOTH, place: place, ladder: ladder, door: door, pocketCands: pocketCands, pocketOk: pocketOk, chest: chest, moths: moths };
+  SB.features = { MOTH: MOTH, ICICLE: ICICLE, JELLY: JELLY, CRAWLER: CRAWLER, SPARK: SPARK, KIND_OF_BIOME: KIND_OF_BIOME,
+    place: place, ladder: ladder, door: door, pocketCands: pocketCands, pocketOk: pocketOk, chest: chest, specks: specks,
+    trapRects: trapRects, trapOk: trapOk, trapField: trapField, envelope: envelope, enemies: enemies, moths: moths };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-sim" data-core>
