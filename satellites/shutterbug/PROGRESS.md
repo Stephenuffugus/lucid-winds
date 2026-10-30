@@ -157,3 +157,11 @@ watched RED: HASH_SKIPS_RNG (H-sim-7 "state: the keys are exactly the declared l
 shots: none (harness task)
 in flight: T0.2b
 blocked: none
+
+### 2026-10-30 05:02 UTC  T0.2b  Journey C and the remaining lint rules  commit 662edc9c1
+shipped: journey C in test/boot.mjs: the test server's wrapper page iframes the game; {sws:'ready'} arrives twice (posted at parse and again on load), SWS_EMBED is true inside the frame, and two quick real taps on the framed exit post {sws:'close'} exactly once; navigator.serviceWorker.getRegistrations() inside the frame is printed (0 tonight) and asserted from T1.11, when a worker exists (a check that cannot fail is not a check). The lint's one CORE_RE rule: the loader's literal (tools/core-loader.js, which harness.js loads through, the owner) is byte identical in the lint itself and in fixtures/make.html (T0.5b) and tools/swatch.html (T0.4b) once each exists.
+gates: check --fast green (lint, harness 1588, redwatch 45 node rows, boot with journey C, play).
+watched RED: READY_NEVER_POSTED (boot: "journey C: framed, {sws:'ready'} arrived twice" got 0); the CORE_RE rule by hand on copies that parse: a loader whose flags drifted to /g ("FAIL CORE_RE: the lint's CORE_RE ... is not the loader's ...") and a make.html holding the /m form ("FAIL CORE_RE: fixtures/make.html holds CORE_RE ..."); MAKE_RE_DRIFT enters the table with make.html in T0.5b.
+shots: none (gate task)
+in flight: T0.5b
+blocked: none
