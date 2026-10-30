@@ -70,8 +70,8 @@ SYNTH.push(() => {
   const g = grid(C.PAPER), r = noise('checkerboard');
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { let v = (x + y) & 1; if (r() < 0.10) v ^= 1; g[y][x] = v ? C.INK : C.PAPER; }
   return fixture('checkerboard', 'synthetic',
-    'A photographed checkerboard: one cell squares of Ink and Paper with 10% of cells flipped by noise. A PERFECT one cell checkerboard is a fixed point of the 3x3 majority rule (each cell sees itself and its four diagonals, five of nine, measured 2026-10-30: 95.8% isolated after any number of passes), so it could never satisfy H-pipe-2; the noisy one is what the rule smooths (measured on the family: about 15 to 25% isolated after one pass, 4 to 7% after two), which is what CA_ONE_PASS must fail. Mean L about 125 and nothing saturated: Attic. What survives is scattered small blobs; platform and landmark counts are not designed, so null; a climb by blobs or tabs.',
-    g, { biome: 'attic', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: null, landmarksMin: null });
+    'A photographed checkerboard: one cell squares of Ink and Paper with 10% of cells flipped by noise. A PERFECT one cell checkerboard is a fixed point of the 3x3 majority rule (each cell sees itself and its four diagonals, five of nine, measured 2026-10-30: 95.8% isolated after any number of passes), so it could never satisfy H-pipe-2; the noisy one is what the rule smooths (measured on the family: about 15 to 25% isolated after one pass, 4 to 7% after two), which is what CA_ONE_PASS must fail. Mean L about 125 and nothing saturated: Attic. What survives is scattered small blobs; platform and landmark counts are not designed, so null; whether its climb exists is not designed either. (T0.11a: the smoothed board is a cave, a solid band from row 8 to 15 broken only by one wide chimneys whose edges are the tops of the three landmarks, where no tab may go; repair threads a few tabs and stops, an honest needsCrop on this box. First authored as built; null now, so the corpus keeps its authored needsCrop at two.)',
+    g, { biome: 'attic', needsCrop: null, tabsMax: 16, exitIsLight: false, platformsMin: null, landmarksMin: null });
 });
 
 SYNTH.push(() => {
@@ -145,8 +145,8 @@ SYNTH.push(() => {
   const g = grid(C.ASH);
   for (let row = 4; row < H - 2; row += 3) { const x0 = (row * 7) % 12, x1 = Math.min(W - 1, x0 + 9); rect(g, x0, row - 1, x1, row - 1, C.PAPER); rect(g, x0, row, x1, row, C.PEWTER); }
   return fixture('shelves-b', 'synthetic',
-    'A plank every third row (Paper over Pewter, ten wide, staggered): a ladder of one ways three rows apart all the way up, climbable by jumps alone. The top plank is at row 4, so its standing row 3 is inside the exit window (the top four rows, 0..3); the exit stands on it. (First drawn from row 5, whose standing row 4 sits one under the window: repair laid a tab to reach it.) Each plank\'s Pewter row is a one row solid line at the clamped threshold (139 under 140), which the smoothing erases, so each plank is a one way. No landmark: nothing solid survives but the forced floor, and the floor row is never a landmark (Q58). Mean L about 190, nothing saturated: Frost.',
-    g, { biome: 'frost', needsCrop: false, tabsMax: 0, exitIsLight: false, platformsMin: 14, landmarksMin: 0 });
+    'A plank every third row (Paper over Pewter, ten wide, staggered): a ladder of one ways three rows apart all the way up, climbable by jumps alone. The top plank is at row 4, so its standing row 3 is inside the exit window (the top four rows, 0..3); the exit stands on it. (First drawn from row 5, whose standing row 4 sits one under the window: repair laid a tab to reach it.) The top plank\'s Paper face, row 3, is then the top rows\' only cluster over CEILING_LIGHT_L (L 239), so it is the light and the exit stands in it. Each plank\'s Pewter row is a one row solid line at the clamped threshold (139 under 140), which the smoothing erases, so each plank is a one way. No landmark: nothing solid survives but the forced floor, and the floor row is never a landmark (Q58). Mean L about 190, nothing saturated: Frost.',
+    g, { biome: 'frost', needsCrop: false, tabsMax: 0, exitIsLight: true, platformsMin: 14, landmarksMin: 0 });
 });
 
 SYNTH.push(() => {

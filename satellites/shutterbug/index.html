@@ -754,6 +754,14 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false
     };
 
+    /* opts.stage 'A' (the harness's pipeline A groups): the level before repair, its exit by reach distance where the
+       top rows are reached, else the light rule */
+    if (opts.stage === 'A') {
+      var exA = exitByReach(level, light, SB.reach.distances(SB.reach.graph(level), spawn));
+      level.exit = exA >= 0 ? exA : lightExit(level, light);
+      level.beacon = { idx: level.exit, cells: light && level.exit >= 0 && light.indexOf(level.exit) >= 0 ? Int32Array.from(light) : new Int32Array(0) };
+      return level;
+    }
     /* DESIGN 6.7: repair with film tabs until the exit is reached and REPAIR_REACH_FRAC of the standable cells are;
        the exit then by reach distance (section 3.7). A room that cannot be repaired is an honest needsCrop. */
     var bare = landmarks.length === 0, anyPlat = false;
@@ -780,6 +788,18 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       var lit = Array.from(light).sort(function (a, b) { return a - b; }), lc = -1;
       for (q = 0; q < lit.length; q++) if (standableIn(level, lit[q]) && d[lit[q]] >= 0 && (lc < 0 || d[lit[q]] > d[lc])) lc = lit[q];
       if (lc >= 0 && d[lc] >= maxD - T.EXIT_LIGHT_SLACK) exit = lc;
+    }
+    return exit;
+  }
+  /* a room whose top rows nothing reaches (before repair): the light's lowest standable row at its lowest index, else
+     the brightest standable cell of the first top row that has one (ties to the lowest index) */
+  function lightExit(level, light) {
+    var T = SB.TUNING, w = level.w, exit = -1, q, x, y;
+    if (light) for (q = 0; q < light.length; q++) if (standableIn(level, light[q]) && (exit < 0 || Math.floor(light[q] / w) > Math.floor(exit / w) || (Math.floor(light[q] / w) === Math.floor(exit / w) && light[q] < exit))) exit = light[q];
+    for (y = 0; y < T.EXIT_ROWS && exit < 0; y++) {
+      var bl = -1;
+      for (x = 0; x < w; x++) { var c = y * w + x; if (standableIn(level, c) && (bl < 0 || level.L[c] > level.L[bl])) bl = c; }
+      exit = bl;
     }
     return exit;
   }
@@ -819,15 +839,18 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         var mass = largestUnreached(level, d);
         tx = mass % w; ty = (mass - tx) / w;
       }
-      /* the frontier: the reached standable cell nearest the target (to the top rows: the highest, then the lowest index) */
-      var fr = -1, fd = 0;
+      /* the frontier: the reached standable cell nearest the target (to the top rows: the highest, then the lowest
+         index); when no hop fits from it (a cell under an overhang), the next nearest, and so on */
+      var fronts = [];
       for (i = 0; i < n; i++) {
         if (!(standableIn(level, i) && d[i] >= 0)) continue;
-        var ix = i % w, iy = (i - ix) / w, dd = tx < 0 ? iy * w * w : (ix - tx) * (ix - tx) + (iy - ty) * (iy - ty);
-        if (fr < 0 || dd < fd) { fr = i; fd = dd; }
+        var ix = i % w, iy = (i - ix) / w;
+        fronts.push([tx < 0 ? iy : (ix - tx) * (ix - tx) + (iy - ty) * (iy - ty), i]);
       }
-      if (fr < 0) return { needsCrop: true, why: 'unreachable', detail: 'nothing is reached from spawn' };
-      var laid = stair(level, near, fr % w, Math.floor(fr / w), tx, ty);
+      if (!fronts.length) return { needsCrop: true, why: 'unreachable', detail: 'nothing is reached from spawn' };
+      fronts.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+      var laid = 0, fr = -1;
+      for (k = 0; k < fronts.length && !laid; k++) { fr = fronts[k][1]; laid = stair(level, near, fr % w, Math.floor(fr / w), tx, ty); }
       tabs += laid;
       if (2 * tabs / n > T.REPAIR_MAX_CHANGE) return { needsCrop: true, why: 'unreachable', detail: 'repair would change ' + Math.round(200 * tabs / n) + '% of the cells' };
       if (!laid) return { needsCrop: true, why: 'unreachable', detail: 'no tab fits on the stair from the frontier' };
