@@ -2084,11 +2084,23 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       for (i = 0; i < w * h; i++) if (lv.plat[i] && !lv.tab[i]) { var py = Math.floor(i / w) * C - cam; if (py > -C && py < viewH) ctx.fillRect((i % w) * C, py - 1, C, 3); }
       ctx.globalAlpha = 1;
     }
-    /* the landmarks pulse once, across the beat */
+    /* the landmarks pulse once, across the beat: a Glare outline along each one's border (a wash over the whole shape
+       read as the furniture going pale in t14-beat3) */
     var pulse1 = Math.sin(Math.PI * Math.min(1, t3 / light));
     if (pulse1 > 0 && lv.landmarks) {
-      ctx.globalAlpha = 0.35 * pulse1; ctx.fillStyle = css(P.I.GLARE);
-      for (k = 0; k < lv.landmarks.length; k++) for (i = 0; i < lv.landmarks[k].cells.length; i++) { var lc = lv.landmarks[k].cells[i], ly = Math.floor(lc / w) * C - cam; if (ly > -C && ly < viewH) ctx.fillRect((lc % w) * C, ly, C, C); }
+      ctx.globalAlpha = pulse1; ctx.fillStyle = css(P.I.GLARE);
+      for (k = 0; k < lv.landmarks.length; k++) {
+        var cells = lv.landmarks[k].cells, inL = {};
+        for (i = 0; i < cells.length; i++) inL[cells[i]] = 1;
+        for (i = 0; i < cells.length; i++) {
+          var lc = cells[i], lx = (lc % w) * C, ly = Math.floor(lc / w) * C - cam;
+          if (ly <= -C || ly >= viewH) continue;
+          if (!inL[lc - w]) ctx.fillRect(lx, ly, C, 2);
+          if (!inL[lc + w]) ctx.fillRect(lx, ly + C - 2, C, 2);
+          if (lc % w === 0 || !inL[lc - 1]) ctx.fillRect(lx, ly, 2, C);
+          if (lc % w === w - 1 || !inL[lc + 1]) ctx.fillRect(lx + C - 2, ly, 2, C);
+        }
+      }
       ctx.globalAlpha = 1;
     }
   };
