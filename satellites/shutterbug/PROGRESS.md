@@ -30,3 +30,24 @@ watched RED by hand on copies (entered in tools/redwatch.js at T0.3): PURITY_DAT
 shots: /tmp/claude-1000/shutterbug-shots/t02 (first), t02b, t02c (final) at 412x915 and 360x780. First pass: 1. the disabled buttons at 45% opacity read muddy olive and grey, broken rather than not yet 2. the bottom 40% of the screen empty, the stack hugged the top 3. the build stamp shared the music chip's baseline. Fixed (dashed outline for not yet, the stack centred, the stamp right aligned) and one regression caught in t02b (the id rule outranked .big:disabled, so the dead buttons showed full colour and looked live) and fixed in t02c. Final: 1. the dashed buttons still invite a tap and "Coming in the next build." could read as about the second only 2. the polaroid's black photo reads as a blank screen, not a room 3. a tall gap between the exit and the art at 412. The music chip landed bottom left inside the reserved 120x120 at both sizes.
 in flight: T0.3
 blocked: none
+
+### 2026-10-30 02:58 UTC  T0.3  harness.js v0: the loader, ns, rng, the record codec, toText, redwatch v0  commit 874f3553e
+shipped: tools/core-loader.js (section 1.3 from the committed proof: CORE_RE, the order and </script assertions, the poison prelude with console poisoned too, lineOffset); core-ns (GRID and GRID_PRESETS, TUNING verbatim from section 1.4 plus STEP_HZ and HERO_BODY, deep frozen, derive, K, BUILD); core-rng (fnv1a32 with a starting hash, fnv1a32Str refusing non ASCII, mulberry32 with state and seed, stepU32 on a state field, base64url by hand, the two pass hashWords of section 2.5); core-record (validate, fromJSON, toJSON, pack, unpack, encode, decode returning null on every malformed input, seedOf, rowsToPal, palToRows); pipeline.toText; harness.js (groups, assertion counts, failing lines in full, XFAIL by name, ASSERT_FLOOR 480, --fast, --page, --only, the later flags answering with their task); tools/redwatch.js v0 (MUTANTS with anchors that must match once, RED only when the gate fails AND names the expected text, browser mutants through SB_PAGE, --check for check.js); check.js gains harness, redwatch and the slow redwatch-browser; 'shutterbug' joins TWELVE in scripts/fleet/ci-twelve.mjs in this commit (SWS_NO_BROWSER=1 node tools/check.js green; node scripts/fleet/ci-twelve.mjs --only=shutterbug "pass shutterbug 1s lint harness redwatch"). The lint gained one exemption: the TUNING and GRID_PRESETS literals may hold 768 (DESIGN's own 2x width, SCALE2_MIN_W).
+gates: check --fast --gate boot green (lint, harness 490 assertions in 10 groups, redwatch, boot); every known answer of the plan verified first in plain Node (mulberry32(1) 0.6270739405881613 and 0.002735721180215478, fnv "" 0x811c9dc5 and "a" 0xe40c292c, 776 and 1544 base64url characters, the 46 character production prefix)
+watched RED (tools/redwatch.js, the table):
+    mutant                        task   gate      expected text                                   result
+    NOOP                          T0.3   harness   (must stay green)                               stayed green (as it must)
+    PURITY_DATE                   T0.2   lint      forbidden token "Date"                          RED
+    PURITY_DATE                   T0.2   harness   core touched Date                               RED
+    INCLUDE_MISSING               T0.2   lint      the fleet include appears 0 times               RED
+    STYLE_COMMENT_EATS            T0.2   lint      "/*" against                                    RED
+    FNV_PRIME_FLIPPED             T0.3   harness   H-rng-1 fnv1a32Str("a")                         RED
+    B64_PAD                       T0.3   harness   share string length                             RED
+    NIBBLE_15_ACCEPTED            T0.3   harness   decode refuses: a high nibble of 15             RED
+    
+    8 rows: 7 RED, 1 stayed green, 0 other
+    REDWATCH OK: every mutant RED, NOOP stayed green
+    browser rows (--browser-only): STYLE_COMMENT_EATS@boot RED, EXIT_UNCALLED@boot RED, BUTTON_32PX@boot RED. NOOP alone exits 1 (it stayed green, as it must).
+shots: none (harness task)
+in flight: T0.4a
+blocked: none
