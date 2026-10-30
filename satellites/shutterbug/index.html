@@ -779,7 +779,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   }
 
   /* The room as text, one line per row: # solid, = one way, ~ slick, | sticky, . open, S spawn, X exit, T film tab,
-     * ascent, e enemy, ^ trap, $ loot, L a landmark's top edge. Printed beside every harness failure. */
+     * ascent, e enemy, ^ trap, $ loot, L a landmark's top edge, o an open standable cell the reach model reaches from
+     spawn, < > a wall contact it reaches and ( ) one it does not (the wall on that side). Printed beside every harness
+     failure. */
   function toText(level, ascent) {
     var w = level.w, h = level.h, n = w * h, g = new Array(n), i, k;
     for (i = 0; i < n; i++) {
@@ -800,6 +802,17 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     }
     var nodes = ascent && ascent.nodes ? ascent.nodes : [];
     for (k = 0; k < nodes.length; k++) if (g[nodes[k]] === '.' || g[nodes[k]] === '=') g[nodes[k]] = '*';
+    if (level.solid && level.spawn >= 0 && SB.reach && SB.reach.graph) {
+      var gr = SB.reach.graph(level), d = SB.reach.distances(gr, level.spawn);
+      for (i = 0; i < n; i++) {
+        if (g[i] !== '.') continue;
+        if (gr.stand[i] && d[i] >= 0) g[i] = 'o';
+        else if (d[n + 2 * i] >= 0) g[i] = '<';
+        else if (d[n + 2 * i + 1] >= 0) g[i] = '>';
+        else if (gr.contact[2 * i]) g[i] = '(';
+        else if (gr.contact[2 * i + 1]) g[i] = ')';
+      }
+    }
     var f = level.features || {};
     var specks = f.specks || [];
     for (k = 0; k < specks.length; k++) g[specks[k].idx === undefined ? specks[k] : specks[k].idx] = '$';
@@ -1020,8 +1033,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       for (dy = 0; dy <= ROWS; dy++) for (dx = 0; dx <= clip[dy]; dx++) {
         var c = [], im = path(K, name, deep, dx, dy, 0);
         if (im) c.push(im);
+        /* a late start of one step is the immediate path again (every jump at the takeoff height): no second candidate */
         var ld = name === 'WALL' || name === 'STICKY' ? -1 : lateDelay(K, name, deep, dy);
-        if (ld > 0) { var lt = path(K, name, deep, dx, dy, ld); if (lt) c.push(lt); }
+        if (ld > 1) { var lt = path(K, name, deep, dx, dy, ld); if (lt) c.push(lt); }
         paths[dx + ',' + dy] = c;
       }
       var air = crossing(a, 0, K);
@@ -1051,7 +1065,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   var KINDS = ['WALK', 'JUMP', 'JUMP_DOWN', 'FALL', 'WALLTOUCH', 'SLIDE', 'WALLJUMP', 'STICKYUP', 'STICKYTOP', 'LET_GO'];
   function graph(lv) {
     var K = SB.K, T = SB.TUNING, w = lv.w, h = lv.h, n = w * h, solid = lv.solid, plat = lv.plat, i, x, y;
-    var sticky = lv.sticky || new Uint8Array(n), slick = lv.slick || new Uint8Array(n), tb = tables(K, lv.biome | 0);
+    /* sticky walls are Overgrowth's vines and Deep's pipes: under any other biome a sticky cell is a plain wall */
+    var sticky = (lv.biome === 2 || lv.biome === 3) && lv.sticky ? lv.sticky : new Uint8Array(n), slick = lv.slick || new Uint8Array(n), tb = tables(K, lv.biome | 0);
     var S = function (cx, cy) { return cx < 0 || cx >= w || cy < 0 || cy >= h || solid[cy * w + cx] === 1; };
     var P = function (cx, cy) { return cx >= 0 && cx < w && cy >= 0 && cy < h && plat[cy * w + cx] === 1; };
     var stand = new Uint8Array(n), contact = new Uint8Array(2 * n), sticks = new Uint8Array(2 * n), standN = 0;

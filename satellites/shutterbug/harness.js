@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 2418;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 3801;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -1205,13 +1205,13 @@ const ORACLE = (() => {
     const wall = profile === 'WALL', sticky = profile === 'STICKY';
     let vy = walk ? 0 : wall ? -r(T.WALL_JUMP_V) : sticky ? -r(T.STICKY_JUMP_V) : -(deep ? r(T.DEEP_JUMP_V) : r(T.JUMP_V)), aHold = walk ? 0 : PROFILE_A[profile];
     let x = (CSZ - HWS) / 2, y = 0, vx = 0, rising = !walk, airborne = !walk;
-    const lock = wall ? T.WALL_JUMP_LOCK : 0, PUSH = r(T.WALL_JUMP_PUSH);
+    const lock = wall ? T.WALL_JUMP_LOCK : 0, PUSH = r(T.WALL_JUMP_PUSH), d0 = opts.delay !== undefined ? opts.delay : lock;
     if (sticky) hold = 0;
     const out = [{ x, y, vx, vy }];
     for (let f = 1; f < 400; f++) {
       if (f > aHold && rising && vy < -CUT) vy = -CUT;
       if (f <= lock) vx = dir * PUSH;
-      else if (f <= lock + hold) vx = dir * RUN; else if (vx > 0) vx = Math.max(0, vx - DECEL); else if (vx < 0) vx = Math.min(0, vx + DECEL);
+      else if (f > d0 && f <= d0 + hold) vx = dir * RUN; else if (vx > 0) vx = Math.max(0, vx - DECEL); else if (vx < 0) vx = Math.min(0, vx + DECEL);
       if (walk && !airborne) {
         /* walking: on the ledge until the box has fully left the takeoff cell's support (the cell under x 0..CSZ) */
         x += vx;
@@ -1266,24 +1266,31 @@ const ORACLE = (() => {
   }
   const below = (profile, rows, deep) => { const a = arc(profile, 1, Infinity, { deep }), out = [-1]; for (let d = 1; d <= rows; d++) { const f = crossing(a, -d); out.push(f < 0 ? -1 : farCell(a[f].x, 1)); } return out; };
   /* after landing at step f the ground decel runs out; where does the box rest? */
-  function restX(a, f, hold, dir) {
+  function restX(a, f, hold, dir, d0 = 0) {
     const RUN = r(T.RUN), DECEL = Math.round(RUN / T.DECEL_FRAMES);
     let x = a[f].x, vx = a[f].vx;
     for (let k = f + 1; k < f + 80; k++) {
-      if (k <= hold) vx = dir * RUN; else if (vx > 0) vx = Math.max(0, vx - DECEL); else if (vx < 0) vx = Math.min(0, vx + DECEL); else break;
+      if (k > d0 && k <= d0 + hold) vx = dir * RUN; else if (vx > 0) vx = Math.max(0, vx - DECEL); else if (vx < 0) vx = Math.min(0, vx + DECEL); else break;
       x += vx;
     }
     return x;
   }
   /* the canonical hold: the smallest whose landing and resting box both overlap the target column by LAND_OVERLAP */
   function canonical(profile, dir, dx, rowsUp, opts = {}) {
+    const d0 = opts.delay !== undefined ? opts.delay : profile === 'WALL' ? T.WALL_JUMP_LOCK : 0;
     for (let h = 0; h <= 60; h++) {
       const a = arc(profile, dir, h, opts), f = crossing(a, rowsUp);
       if (f < 0) continue;
       const c = dir * dx;
-      if (overlap(a[f].x, c) >= OV && overlap(restX(a, f, h, dir), c) >= OV) return { hold: h, land: f, a, rowsUp };
+      if (overlap(a[f].x, c) >= OV && overlap(restX(a, f, h, dir, d0), c) >= OV) return { hold: h, land: f, a, rowsUp };
     }
     return null;
+  }
+  /* the late path (section 3.3's other candidate): the rocker starts once the feet are above the target's top */
+  function lateCanonical(profile, dir, dx, rowsUp, opts = {}) {
+    const a = arc(profile, dir, 0, opts), top = -rowsUp * CSZ;
+    let d0 = -1; for (let f = 1; f < a.length; f++) if (a[f].y <= top) { d0 = f; break; }
+    return d0 > 1 ? canonical(profile, dir, dx, rowsUp, Object.assign({}, opts, { delay: d0 })) : null;
   }
   /* the cells the box occupies from takeoff to the landing step: 'k,r' with k columns in the jump direction and r rows
      up (negative r is below the takeoff row) */
@@ -1303,7 +1310,7 @@ const ORACLE = (() => {
     }
     return cells;
   }
-  return { arc, crossing, table, clipped, caps, apex, air, cols, fall: deep => below('WALK', 24, deep), down: deep => below('FULL', 8, deep), canonical, corridor, CSZ, OV };
+  return { arc, crossing, table, clipped, caps, apex, air, cols, fall: deep => below('WALK', 24, deep), down: deep => below('FULL', 8, deep), canonical, lateCanonical, corridor, CSZ, OV };
 })();
 
 /* A lab room for one jump: the takeoff cell on a solid support, the target on a solid or one way support, everything
@@ -1536,6 +1543,197 @@ group('H-reach-10', 'the sample room\'s beats against the tables (a warning toni
   }
   console.log('  ' + (warn.length ? 'WARN  H-reach-10 beats outside the tables: ' + warn.join('; ') : 'info  H-reach-10 every beat is inside the tables: ' + seen.join('; ')));
   t.ok(true, 'H-reach-10 ran (a warning until T0.11b)');
+});
+
+/* ================================================================ the reach graph (T0.10b, sections 3.1, 3.3 to 3.6) */
+const gname = (g, v) => v < g.n ? '(' + (v % g.w) + ',' + Math.floor(v / g.w) + ')' : 'c(' + (((v - g.n) >> 1) % g.w) + ',' + Math.floor(((v - g.n) >> 1) / g.w) + (((v - g.n) & 1) ? ' R' : ' L') + ')';
+const cnode = (g, x, y, side) => g.n + 2 * (y * g.w + x) + (side > 0 ? 1 : 0);
+const edgesOf = g => g.adj.flatMap(es => es || []);
+const hasEdge = (g, from, to, kind) => (g.adj[from] || []).some(e => e.to === to && (!kind || e.kind === kind));
+/* a breadth first search with parents, written here (the core's distances is what it checks) */
+function bfsPath(g, from, to) {
+  const par = new Map([[from, null]]), q = [from];
+  for (let h = 0; h < q.length; h++) { const u = q[h]; if (u === to) break; for (const e of g.adj[u] || []) if (!par.has(e.to)) { par.set(e.to, e); q.push(e.to); } }
+  if (!par.has(to)) return null;
+  const path = []; for (let v = to; par.get(v); v = par.get(v).from) path.unshift(par.get(v));
+  return path;
+}
+
+group('H-reach-3', 'shelves-a: the hand listed edges exist and the hand listed non edges do not', t => {
+  const lv = buildFx(fixture('shelves-a'), 0), g = SB.reach.graph(lv), at = (x, y) => y * lv.w + x;
+  t.ok(hasEdge(g, at(9, 42), at(11, 39), 'JUMP'), 'S1 (9, 42) to S2 (11, 39): a 3 up, 2 across JUMP');
+  const touched = [35, 36].filter(y => [...Array(10).keys()].some(k => hasEdge(g, at(10 + k, 39), cnode(g, 19, y, 1), 'WALLTOUCH')));
+  t.same(touched, [35, 36], 'from S2 a WALLTOUCH onto the pillar\'s left side at (19, 35) and (19, 36)');
+  t.ok(hasEdge(g, cnode(g, 19, 35, 1), at(15, 32), 'WALLJUMP'), 'a WALLJUMP off the pillar at (19, 35) to S3 (15, 32): 4 away, 3 up');
+  t.ok(hasEdge(g, at(5, 19), at(5, 42), 'FALL'), 'a straight FALL from S6 (5, 19) through S5 and S4 onto S1 (5, 42)');
+  const bad = edgesOf(g).filter(e => e.kind === 'JUMP' && (e.dy >= 5 || (e.dy === 4 && e.dx >= 5)));
+  t.eq(bad.length, 0, 'no JUMP is 5 up, and none is 4 up and 5 across (' + bad.slice(0, 3).map(e => gname(g, e.from) + ' to ' + gname(g, e.to)).join(', ') + ')');
+});
+
+group('H-reach-4', 'every edge\'s corridor is open, rechecked from the oracle\'s own paths on every fixture', t => {
+  const S = (lv, x, y) => x < 0 || x >= lv.w || y < 0 || y >= lv.h || lv.solid[y * lv.w + x] === 1;
+  /* the oracle's rightward path, mapped by the edge's direction (every start is centred, so the arcs mirror exactly) */
+  const openBy = (lv, c, sx, sy, dir) => !!c && [...ORACLE.corridor(c, 1)].every(k => { const [dk, r] = k.split(',').map(Number); return !S(lv, sx + dir * dk, sy - r); });
+  let checked = 0;
+  for (const f of FIXTURES) {
+    const lv = buildFx(f, 0);
+    if (lv.needsCrop) continue;
+    const g = SB.reach.graph(lv), deep = lv.biome === 2, bad = [];
+    for (const e of edgesOf(g)) {
+      const cell = e.from < g.n ? e.from : (e.from - g.n) >> 1, fx = cell % g.w, fy = Math.floor(cell / g.w);
+      const toCell = e.to < g.n ? e.to : (e.to - g.n) >> 1, ty = Math.floor(toCell / g.w);
+      let ok = true, counted = true;
+      if (e.kind === 'JUMP') ok = [ORACLE.canonical(e.profile, 1, e.dx, e.dy, { deep }), ORACLE.lateCanonical(e.profile, 1, e.dx, e.dy, { deep })].some(c => openBy(lv, c, fx, fy, e.dir || -1));
+      else if (e.kind === 'JUMP_DOWN') ok = openBy(lv, ORACLE.canonical('FULL', 1, e.dx, e.dy, { deep }), fx, fy, e.dir || -1);
+      else if (e.kind === 'FALL' && e.dx > 0) ok = openBy(lv, ORACLE.canonical('WALK', 1, e.dx, e.dy, { deep }), fx, fy, e.dir);
+      else if (e.kind === 'FALL' || e.kind === 'SLIDE') { for (let y = fy + 1; y <= ty; y++) if (S(lv, fx, y)) ok = false; }
+      else if (e.kind === 'WALLJUMP' && e.dx > 0) ok = openBy(lv, ORACLE.canonical('WALL', 1, e.dx, e.dy, { deep }), fx, fy, e.dir);
+      else counted = false;
+      if (counted) checked++;
+      if (!ok) bad.push(e.kind + (e.profile ? ' ' + e.profile : '') + ' ' + gname(g, e.from) + ' to ' + gname(g, e.to));
+    }
+    t.eq(bad.length, 0, f.name + ': every JUMP, JUMP_DOWN, FALL, SLIDE and WALLJUMP corridor is open by the oracle (' + bad.slice(0, 3).join('; ') + ')');
+  }
+  console.log('  info  H-reach-4 rechecked ' + checked + ' corridors over the corpus');
+});
+
+group('H-reach-5', 'the lab rooms: gaps, ledges, a ceiling, one ways, a shaft and a wall chain', t => {
+  const at = (lv, x, y) => y * lv.w + x;
+  const jumpsBetween = (lv, g, fromXs, row, toXs, row2) => fromXs.some(a => toXs.some(b => hasEdge(g, at(lv, a, row), at(lv, b, row2), 'JUMP')));
+  /* a gap: two one way ledges at row 41, the far one starting D columns past the near one's last cell */
+  for (const [D, want] of [[5, true], [6, false]]) {
+    const lv = LABS.room(['====' + '.'.repeat(D - 1) + '====', '', '', '', '', '', FLOOR]), g = SB.reach.graph(lv);
+    t.eq(jumpsBetween(lv, g, [0, 1, 2, 3], 40, [3 + D, 4 + D, 5 + D, 6 + D], 40), want, 'a landing ' + D + ' across at the same height is ' + (want ? '' : 'not ') + 'a JUMP');
+  }
+  /* a 4 high ledge: a one cell one way 4 rows above the floor, dx columns from the takeoff */
+  for (let dx = 1; dx <= 5; dx++) {
+    const lv = LABS.room([' '.repeat(2 + dx).replace(/ /g, '.') + '=', '', '', '', FLOOR]), g = SB.reach.graph(lv);
+    t.eq(hasEdge(g, at(lv, 2, 46), at(lv, 2 + dx, 42), 'JUMP'), dx <= 4, 'a ledge 4 up and ' + dx + ' across is ' + (dx <= 4 ? '' : 'not ') + 'reached');
+  }
+  /* a ceiling cell in the corridor: the 3 up, 2 across jump from (5, 46) to (7, 43); a solid at (6, 42) cuts every profile */
+  for (const ceiling of [false, true]) {
+    const lv = LABS.room([ceiling ? '......#' : '', '', '.......=', '', '', FLOOR]), g = SB.reach.graph(lv);   /* rows 42..47 */
+    t.eq(hasEdge(g, at(lv, 5, 46), at(lv, 7, 43), 'JUMP'), !ceiling, ceiling ? 'a ceiling cell in the corridor cuts the edge (a solid at (6, 42) over the 3 up, 2 across jump)' : 'without the ceiling the 3 up, 2 across jump is an edge');
+  }
+  /* a one way straight above: reached by a JUMP with no rocker */
+  { const lv = LABS.room(['.....=', '', '', FLOOR]), g = SB.reach.graph(lv);
+    t.ok(edgesOf(g).some(e => e.kind === 'JUMP' && e.dx === 0 && e.from === at(lv, 5, 46) && e.to === at(lv, 5, 43)), 'a one way 3 above the takeoff is reached straight up'); }
+  /* a one way in the descending part of a long jump cuts it, and the model reaches that one way instead: ledges at
+     row 41 (x 0..2 and 7..9), the jump 5 across from (2, 40), a one way planted at the model's farthest catch */
+  /* (the one way must catch every profile that reaches 5 across, FULL and MID, or the next profile takes the edge) */
+  { const tb5 = SB.reach.tables(SB.K, 0), keyOf = q => q[0] + ',' + q[1];
+    const each = ['FULL', 'MID', 'TAP'].map(p => (tb5.profiles[p].paths['5,0'] || [])).filter(ps => ps.length).map(ps => new Set(ps.flatMap(q => q.catches.map(keyOf))));
+    const common = [...each[0]].filter(k => each.every(st => st.has(k))).map(k => k.split(',').map(Number));
+    const [ck, cr] = common.sort((a, b) => b[0] - a[0] || b[1] - a[1])[0];
+    const px = 2 + ck, py = 40 - cr, base = ['===....===', '', '', '', '', '', FLOOR];
+    const lines = Array(Math.max(0, 41 - py)).fill('').concat(base), idx = py - (48 - lines.length);
+    const lv0 = LABS.room(base), withPlat = lines.slice(); withPlat[idx] = (withPlat[idx] || '').padEnd(24, '.').slice(0, px) + '=' + (withPlat[idx] || '').padEnd(24, '.').slice(px + 1);
+    const lv = LABS.room(withPlat), g0 = SB.reach.graph(lv0), g = SB.reach.graph(lv);
+    t.ok(hasEdge(g0, at(lv0, 2, 40), at(lv0, 7, 40), 'JUMP'), 'the long jump 5 across from (2, 40) is an edge in the bare room');
+    t.ok(!hasEdge(g, at(lv, 2, 40), at(lv, 7, 40), 'JUMP') && hasEdge(g, at(lv, 2, 40), at(lv, px, py - 1), 'JUMP'),
+      'a one way at (' + px + ', ' + py + ') in its descent cuts it, and the model reaches that one way\'s top (' + px + ', ' + (py - 1) + ') instead'); }
+  /* a one wide shaft: contacts down both sides, slides to the floor */
+  { const lv = LABS.room([...Array(26)].map(() => '#########.##############').concat([FLOOR])), g = SB.reach.graph(lv), d = SB.reach.distances(g, cnode(g, 9, 21, -1));
+    const sides = [...Array(25).keys()].every(k => g.contact[2 * at(lv, 9, 21 + k)] && g.contact[2 * at(lv, 9, 21 + k) + 1]);
+    t.ok(sides, 'a one wide shaft: every shaft cell from row 21 to 45 is a contact on both sides');
+    t.ok(d[at(lv, 9, 46)] >= 0 && hasEdge(g, cnode(g, 9, 21, -1), cnode(g, 9, 30, -1), 'SLIDE'), 'it slides from its top contact to the contacts below and to the floor (9, 46)'); }
+  /* two walls 4 apart: the wall jump chain climbs, counted */
+  { const lv = LABS.room([...Array(36)].map(() => '.....#....#.............').concat([FLOOR])), g = SB.reach.graph(lv);
+    const top = [cnode(g, 6, 13, -1), cnode(g, 9, 13, 1)].find(v => bfsPath(g, at(lv, 7, 46), v));
+    const path = top !== undefined ? bfsPath(g, at(lv, 7, 46), top) : null, chain = path ? path.filter(e => e.kind === 'WALLJUMP').length : 0;
+    t.ok(!!path && chain >= 3, 'two walls 4 apart: the chain climbs from the floor to row 13 with ' + chain + ' wall jumps (' + (path ? path.map(e => e.kind).join(' ') : 'no path') + ')'); }
+});
+
+group('H-reach-6', 'the graph builds in under 10 ms median', t => {
+  const rooms = FIXTURES.map(f => [f.name, buildFx(f, 0)]).filter(([, lv]) => !lv.needsCrop);
+  let worst = null;
+  for (const [name, lv] of rooms) {
+    for (let k = 0; k < 5; k++) SB.reach.graph(lv);
+    const ts = []; for (let k = 0; k < 15; k++) { const t0 = process.hrtime.bigint(); SB.reach.graph(lv); ts.push(Number(process.hrtime.bigint() - t0) / 1e6); }
+    ts.sort((a, b) => a - b);
+    if (!worst || ts[7] > worst[1]) worst = [name, ts[7]];
+  }
+  console.log('  info  the slowest graph build: ' + worst[0] + ' at ' + worst[1].toFixed(2) + ' ms median');
+  t.ok(worst[1] < 10, 'every fixture\'s graph builds in under 10 ms median (slowest ' + worst[0] + ', ' + worst[1].toFixed(2) + ' ms)');
+});
+
+group('H-reach-7', 'sticky edges exist only under the Overgrowth and Deep overrides', t => {
+  const vine = [...Array(12)].map((_, k) => k < 10 ? '.....|' : '').concat(['', FLOOR]);
+  for (const biome of [0, 1, 2, 3, 4]) {
+    const lv = LABS.room(vine, { biome }), g = SB.reach.graph(lv), n = edgesOf(g).filter(e => e.kind.startsWith('STICKY') || e.kind === 'LET_GO').length;
+    t.eq(n > 0, biome === 2 || biome === 3, SB.palette.BIOMES[biome] + ': ' + n + ' sticky edges on a vine column');
+  }
+  for (const f of FIXTURES) { const lv = buildFx(f, 0); if (lv.needsCrop) continue; const n = edgesOf(SB.reach.graph(lv)).filter(e => e.kind.startsWith('STICKY') || e.kind === 'LET_GO').length; if (n) t.ok(false, f.name + ' (attic) has ' + n + ' sticky edges'); }
+  t.ok(true, 'no attic fixture has a sticky edge');
+});
+
+group('H-reach-9', 'reach is symmetric under horizontal mirroring, on every lab room and fixture', t => {
+  const mirror = lv => {
+    const w = lv.w, out = Object.assign({}, lv);
+    for (const k of ['solid', 'plat', 'sticky', 'slick', 'tab', 'trap']) { if (!lv[k]) continue; const a = new Uint8Array(lv[k].length); for (let i = 0; i < a.length; i++) a[i] = lv[k][Math.floor(i / w) * w + (w - 1 - i % w)]; out[k] = a; }
+    out.spawn = lv.spawn < 0 ? -1 : Math.floor(lv.spawn / w) * w + (w - 1 - lv.spawn % w);
+    return out;
+  };
+  const sig = (lv) => {
+    const g = SB.reach.graph(lv), d = SB.reach.distances(g, lv.spawn), byKind = {};
+    for (const e of edgesOf(g)) byKind[e.kind] = (byKind[e.kind] || 0) + 1;
+    const reached = []; for (let i = 0; i < g.n; i++) if (g.stand[i] && d[i] >= 0) reached.push(i);
+    return { byKind, reached, d };
+  };
+  const rooms = FIXTURES.map(f => [f.name, buildFx(f, 0)]).filter(([, lv]) => !lv.needsCrop)
+    .concat([['shaft', LABS.room([...Array(26)].map(() => '#########.##############').concat(['....S...................', FLOOR]))],
+      ['walls', LABS.room([...Array(36)].map(() => '.....#....#.............').concat(['.......S................', FLOOR]))],
+      ['gap', LABS.room(['S===.....====', '', '', '', '', '', FLOOR])]]);
+  for (const [name, lv] of rooms) {
+    const a = sig(lv), m = mirror(lv), b = sig(m), w = lv.w;
+    const mirrored = a.reached.map(i => Math.floor(i / w) * w + (w - 1 - i % w)).sort((x, y) => x - y);
+    const sorted = o => Object.keys(o).sort().map(k => k + ' ' + o[k]).join(', ');
+    t.eq(sorted(b.byKind), sorted(a.byKind), name + ': the mirrored room has the same edges by kind');
+    t.same(b.reached, mirrored, name + ': the mirrored room reaches the mirrored cells (' + a.reached.length + ')');
+  }
+});
+
+/* LAB-ONEWAY (section 3.9): for every LAB-EDGE jump, a one way planted where the descent crosses a top with
+   LAND_OVERLAP catches the sim's hero there, on the first landing; one planted where only the rise crosses a top lets
+   it through to the target. The crossings come from the oracle's arc, the landings from the real sim. */
+function firstLanding(lab, profile, dir, hold) {
+  const s = SB.sim.create(lab.lv);
+  SB.sim.step(s, 0); SB.sim.step(s, 0);
+  const words = M_JUMP(profile, dir, hold);
+  for (let k = 0; k < words.length; k++) { SB.sim.step(s, words[k]); if (k > 0 && s.hero.ground) return { row: Math.floor((s.hero.y + HH - 1) / CS), step: k }; }
+  return { row: -1, step: -1 };
+}
+group('H-lab-4', 'LAB-ONEWAY: one ways in the descent catch the hero where the model says; one ways in the rise do not', t => {
+  let caught = 0, through = 0, cases = 0;
+  for (const c of labCases().filter(c => c.kind === 'JUMP')) {
+    const can = ORACLE.canonical(c.profile, 1, c.dx, c.rowsUp);
+    if (!can) continue;
+    if (c.support === '#' && ORACLE.corridor(can, 1).has(c.dx + ',' + (c.rowsUp - 1))) continue;
+    cases++;
+    const down = [], up = [], a = can.a;
+    for (let f = 1; f <= can.land; f++) for (let j = -6; j <= 8; j++) {
+      const top = -j * CS, cols = [];
+      for (let col = Math.floor(a[f].x / CS); col <= Math.floor((a[f].x + HW - 1) / CS); col++) if (Math.min(a[f].x + HW, (col + 1) * CS) - Math.max(a[f].x, col * CS) >= K.OVERLAP_SUB) cols.push(col);
+      if (f < can.land && a[f - 1].y <= top && a[f].y > top) for (const col of cols) down.push([col, j]);
+      if (a[f - 1].y > top && a[f].y <= top) for (const col of cols) up.push([col, j]);
+    }
+    const downKeys = new Set(down.map(([k, j]) => k + ',' + j)), lab0 = jumpLab(c.dir, c.dx, c.rowsUp, c.support);
+    const plant = (k, j) => { const px = lab0.tx + c.dir * k, py = lab0.ty - (j - 1); if (px < 0 || px >= SB.GRID.W || py < 1 || py >= SB.GRID.H - 1 || (px === lab0.tx && py === lab0.ty + 1)) return null; const lab = jumpLab(c.dir, c.dx, c.rowsUp, c.support); lab.lv.plat[py * SB.GRID.W + px] = 1; return { lab, px, py }; };
+    for (const [k, j] of down) {
+      const p = plant(k, j); if (!p || (p.px === lab0.gx && p.py === lab0.gy + 1)) continue;
+      const res = firstLanding(p.lab, c.profile, c.dir, can.hold);
+      t.ok(res.row === lab0.ty - j, caseName(c) + ': a one way at (' + p.px + ', ' + p.py + ') in the descent catches the hero first, on row ' + (lab0.ty - j) + ' (first landing on row ' + res.row + ')');
+      caught++;
+    }
+    for (const [k, j] of up) {
+      if (downKeys.has(k + ',' + j) || j <= 0) continue;
+      const p = plant(k, j); if (!p) continue;
+      const res = firstLanding(p.lab, c.profile, c.dir, can.hold);
+      t.ok(res.row === lab0.gy, caseName(c) + ': a one way at (' + p.px + ', ' + p.py + ') crossed only by the rise lets the hero through (first landing on row ' + res.row + ', the target row ' + lab0.gy + ')');
+      through++;
+    }
+  }
+  console.log('  info  LAB-ONEWAY: ' + cases + ' jumps, ' + caught + ' one ways planted in descents, ' + through + ' in rises');
 });
 
 /* ================================================================ one room */
