@@ -1,9 +1,12 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 10:00 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
-> night one order, the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after T0.8a, sb-m0-2 after
-> T0.8b, sb-m0-3 when M0 is complete. **LIVE: sb-m0-2** (deploy `945b541b5`, both origins proven by curl 04:53:54 UTC):
-> the thumbs climb on a phone. **Last shipped: T0.17 (`bc88c86be`): the sprites, the atlas, the Dead Pixel count, the sprites gate; M0 is complete.** Gates: check --fast green (12 gates). Red: nothing. Next: T0.18 sb-m0-3 (the full check with the slow gates, the deploy, the curl proof), then Lap 2 from T1.1. Autosave running.
+> **STATE 30 Oct 12:45 UTC (Opus, building).** His word: NO budget, NO usage checks; now Lap 2, the M1 SAFE list in
+> order. **LIVE: sb-m0-3** (deploy `c2ffcf5bc`, tag sb-m0-3, both origins proven by curl 12:44:42 UTC): M0 complete, the
+> whole vertical slice. The box was stopped by the platform at 10:06:21 UTC mid T0.18 (nothing committed lost; the T1.1
+> draft replayed from the dead session's transcript); a fourth review of T0.16 and T0.17 ran before the deploy and its
+> fixes shipped in it (`09c9207c0`). Deploys: Claude Code's auto mode denies the session's own deploy.sh; Stephen runs it
+> from the prompt. Gates: the full check ALL GATES PASSED (14). Red: nothing. Next: T1.1 and T1.2a (built and green on a
+> copy), then T1.2b. Autosave running.
 
 You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is ONE game from zero:
 Shutterbug, a photo of a room becomes a pixel platformer level (`satellites/shutterbug/DESIGN.md`). Fable wrote the
