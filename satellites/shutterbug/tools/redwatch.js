@@ -149,6 +149,16 @@ const MUTANTS = [
       ["    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}", "    try { 0; } catch (e) {}"],
       ["function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });", "function () { try { 0; } catch (e) {} });"]],
     gates: [{ gate: 'boot', expect: 'journey C: framed' }] },
+  { name: 'MAKE_RE_DRIFT', task: 'T0.5b', file: 'make', find: 'var CORE_RE = /^<script id="(core-[a-z]+)" data-core>', repl: 'var CORE_RE = /^<script id="(core-[a-z0-9]+)" data-core>',
+    gates: [{ gate: 'lint', expect: 'fixtures/make.html holds CORE_RE' }] },
+  { name: 'BITMAP_LEAK', task: 'T0.5b', file: 'page', find: "    if (typeof src.close === 'function') src.close();", repl: "    if (typeof src.close === 'function') src = null;",
+    gates: [{ gate: 'lint', expect: 'release() never closes the bitmap' }] },
+  { name: 'CAPTURE_BGR', task: 'T0.5b', file: 'page', find: 'rgb[j] = d[i]; rgb[j + 1] = d[i + 1]; rgb[j + 2] = d[i + 2];', repl: 'rgb[j] = d[i + 2]; rgb[j + 1] = d[i + 1]; rgb[j + 2] = d[i];',
+    gates: [{ gate: 'make', expect: 'H-cap-1: the canvas path on the gradient is within 2 per channel' }] },
+  { name: 'OVERLAY_NO_HASH', task: 'T0.5b', file: 'make', find: "      ox.fillStyle = '#' + SB.palette.HEX[parseInt(rows[y][x], 16)];", repl: "      ox.fillStyle = SB.palette.HEX[parseInt(rows[y][x], 16)];",
+    gates: [{ gate: 'make', expect: "the 24x48 overlay shows the saved record" }] },
+  { name: 'CROP_SHADOW_UNCLIPPED', task: 'T0.5b', file: 'make', find: ' overflow: hidden; }   /* the crop box', repl: ' }   /* the crop box',
+    gates: [{ gate: 'make', expect: 'on screen the overlay shows each open cell in its palette colour' }] },
   { name: 'MAX_STEPS_1', task: 'T0.8b review', file: 'page', find: 'MAX_STEPS = 4, DT_MAX = 100', repl: 'MAX_STEPS = 1, DT_MAX = 100',
     gates: [{ gate: 'play', expect: 'the loop ran exactly the steps the accumulator owes' }] },
   { name: 'DT_MAX_20', task: 'T0.8b review', file: 'page', find: 'MAX_STEPS = 4, DT_MAX = 100', repl: 'MAX_STEPS = 4, DT_MAX = 20',
@@ -226,7 +236,8 @@ for (const m of MUTANTS) {
   const isFixture = m.file.startsWith('fixture:');
   const fixCopy = path.join(dir, 'fixtures');
   if (isFixture) fs.cpSync(path.join(GAME, 'fixtures'), fixCopy, { recursive: true });
-  const srcFile = m.file === 'harness' ? path.join(GAME, 'harness.js') : isFixture ? path.join(fixCopy, m.file.slice(8)) : path.join(GAME, 'index.html');
+  const srcFile = m.file === 'harness' ? path.join(GAME, 'harness.js') : isFixture ? path.join(fixCopy, m.file.slice(8))
+    : m.file === 'make' ? path.join(GAME, 'fixtures', 'make.html') : path.join(GAME, 'index.html');
   const text = fs.readFileSync(srcFile, 'utf8');
   let mutated = text, anchor = 'ok';
   const edits = m.edits || (m.find !== null ? [[m.find, m.repl]] : []);
@@ -243,14 +254,16 @@ for (const m of MUTANTS) {
     for (const sub of ['tools', 'fixtures']) if (fs.existsSync(path.join(GAME, sub))) fs.symlinkSync(path.join(GAME, sub), path.join(dir, sub));
     harness = path.join(dir, 'harness.js');
   } else if (isFixture) { fs.writeFileSync(srcFile, mutated); fs.copyFileSync(path.join(GAME, 'index.html'), page); }
+  else if (m.file === 'make') { fs.writeFileSync(path.join(dir, 'make.html'), mutated); fs.copyFileSync(path.join(GAME, 'index.html'), page); }
   else fs.writeFileSync(page, mutated);
+  const makeArgs = m.file === 'make' ? ['--make', path.join(dir, 'make.html')] : [];
 
   for (const g of gates) {
     if (anchor !== 'ok') { rows.push({ m, g, result: anchor }); continue; }
     let cmd, env = Object.assign({}, process.env);
-    if (g.gate === 'lint') cmd = ['tools/lint.mjs', '--page', page];
+    if (g.gate === 'lint') cmd = ['tools/lint.mjs', '--page', page].concat(makeArgs);
     else if (g.gate === 'harness') cmd = [harness, '--page', page].concat(g.only ? ['--only', g.only] : [], isFixture ? ['--fixtures', fixCopy] : []);
-    else if (BROWSER.has(g.gate)) { cmd = ['test/' + g.gate + '.mjs']; env.SB_PAGE = page; }
+    else if (BROWSER.has(g.gate)) { cmd = ['test/' + g.gate + '.mjs']; env.SB_PAGE = page; if (m.file === 'make') env.SB_MAKE = path.join(dir, 'make.html'); }
     else { rows.push({ m, g, result: 'UNKNOWN GATE' }); continue; }
     const r = spawnSync('node', cmd, { cwd: GAME, encoding: 'utf8', env, maxBuffer: 64 * 1024 * 1024, timeout: 15 * 60 * 1000 });
     const out = (r.stdout || '') + (r.stderr || '');

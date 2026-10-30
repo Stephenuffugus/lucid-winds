@@ -2,6 +2,8 @@
  *
  *   node tools/lint.mjs                 lint satellites/shutterbug/index.html
  *   node tools/lint.mjs --page <file>   lint another copy (what tools/redwatch.js and the deploy check use)
+ *   --make <file>, --swatch <file>      the never served pages the one CORE_RE rule reads (default: fixtures/make.html and
+ *                                       tools/swatch.html; redwatch points them at a mutated copy)
  *
  * Prints every failing rule with the block id and line, a warning block (bare numerals in the core outside TUNING),
  * and LINT OK only when nothing failed. Every token scan over a script runs on the block with its comments and the
@@ -101,6 +103,15 @@ if (!fleet || blocks.indexOf(fleet) !== 0 || fleet.index > html.indexOf('</head>
 /* rule: the core blocks, extracted exactly the way harness.js extracts them (CORE_RE, section 1.3) */
 const CORE_RE = /^<script id="(core-[a-z]+)" data-core>\n([\s\S]*?)\n<\/script>/gm;
 const CORE_ORDER = ['core-ns', 'core-rng', 'core-palette', 'core-record', 'core-pipeline', 'core-reach', 'core-features', 'core-sim'];
+/* rule (T0.5b): photos never persist. The capture block's release() closes the decoded bitmap (an ImageBitmap holds the
+   whole photo until close(); a dropped reference waits for the collector) */
+{
+  const cap = blocks.find(b => b.id === 'shell-capture');
+  const rel = cap ? cap.src.match(/C\.release = function \(src\) \{([\s\S]*?)\n  \};/) : null;
+  if (!cap) fail('CAPTURE', 'no shell-capture block');
+  else if (!rel) fail('CAPTURE', 'shell-capture has no C.release = function (src) { ... }');
+  else if (!/\bsrc\.close\(\)/.test(strip(rel[1]))) fail('CAPTURE', 'release() never closes the bitmap (src.close() is missing): the photo would stay in memory');
+}
 /* rule (T0.2b): ONE CORE_RE. The loader's literal (harness.js loads through it, the owner) is byte identical in this
    lint and in every never served page that runs the core: fixtures/make.html (T0.5b) and tools/swatch.html (T0.4b),
    each checked once it exists */
@@ -111,7 +122,8 @@ const CORE_ORDER = ['core-ns', 'core-rng', 'core-palette', 'core-record', 'core-
   const mine = '/' + CORE_RE.source + '/' + CORE_RE.flags;
   if (owner && mine !== owner) fail('CORE_RE', 'the lint\'s CORE_RE ' + mine + ' is not the loader\'s ' + owner);
   for (const rel of ['fixtures/make.html', 'tools/swatch.html']) {
-    const p = join(GAME, rel);
+    const flag = args.indexOf(rel === 'fixtures/make.html' ? '--make' : '--swatch');
+    const p = flag >= 0 ? args[flag + 1] : join(GAME, rel);
     if (!existsSync(p)) continue;
     const theirs = lit(readFileSync(p, 'utf8'));
     if (theirs !== owner) fail('CORE_RE', rel + ' holds CORE_RE ' + theirs + ', not the loader\'s ' + owner + ' (byte identical, section 1.3)');

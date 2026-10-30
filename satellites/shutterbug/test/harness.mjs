@@ -62,6 +62,11 @@ export async function serve() {
       res.writeHead(200, { 'content-type': MIME['.html'], 'cache-control': 'no-store' });
       res.end(readFileSync(process.env.SB_PAGE)); return;
     }
+    /* SB_MAKE answers fixtures/make.html with another file (redwatch's make.html mutants) */
+    if (process.env.SB_MAKE && clean === GAME_PATH + 'fixtures/make.html') {
+      res.writeHead(200, { 'content-type': MIME['.html'], 'cache-control': 'no-store' });
+      res.end(readFileSync(process.env.SB_MAKE)); return;
+    }
     let p = normalize(join(SITE, clean));
     if (!(p + sep).startsWith(SITE + sep) && p !== SITE) { res.writeHead(403); res.end('no'); return; }
     if (existsSync(p) && statSync(p).isDirectory()) p = join(p, 'index.html');

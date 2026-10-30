@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shutterbug fixture maker</title>
+<link rel="icon" href="data:,">
+<!-- fixtures/make.html (BUILD-PLAN T0.5b, HANDOFF section 7): never served by the deploy (the served set is index.html
+     only). USAGE: serve the repo (python3 -m http.server 8777 at the repo root), open
+     http://localhost:8777/satellites/shutterbug/fixtures/make.html on the phone through the Codespace's forwarded port,
+     pick photos, frame each, Download JSON, move the JSON files into satellites/shutterbug/fixtures/rooms/, and commit
+     only the JSON. Nothing leaves this page: one fetch of ../index.html for the core and the capture block, the photos
+     stay in memory and are released after each one, no storage. -->
+<style>
+  :root { --soot: #1b1a1f; --paper: #efe8d8; --ink: #0d0c10; --sun: #f2c14e; --glare: #fbfaf5; --ash: #c7c3bb; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--soot); color: var(--paper); font: 16px/1.4 system-ui, sans-serif; padding: 12px; padding-bottom: 40px; }
+  h1 { font-size: 20px; margin: 4px 0 8px; }
+  p { margin: 6px 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+  button, label.pick { min-height: 48px; min-width: 48px; padding: 0 14px; border-radius: 6px; border: 2px solid var(--paper); background: transparent; color: var(--paper); font: inherit; }
+  label.pick { display: inline-flex; align-items: center; }
+  label.pick input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  button.main { background: var(--sun); color: var(--ink); border-color: var(--sun); }
+  input[type=text] { min-height: 48px; font: inherit; padding: 0 10px; border-radius: 6px; border: 2px solid var(--ash); background: var(--ink); color: var(--paper); width: 100%; max-width: 360px; }
+  #stagewrap { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+  #photo { position: relative; touch-action: none; max-width: 100%; background: var(--ink); overflow: hidden; }   /* the crop box's dimming shadow stays on the photo */
+  #photo canvas { display: block; max-width: 100%; }
+  #box { position: absolute; border: 2px solid var(--sun); box-shadow: 0 0 0 9999px rgba(13, 12, 16, 0.55); touch-action: none; }
+  .prev { display: flex; gap: 10px; align-items: flex-start; }
+  .prev figure { margin: 0; font-size: 12px; color: var(--ash); }
+  #over, #finev { display: block; image-rendering: pixelated; border: 2px solid var(--ash); background: var(--ink); }
+  #over { width: 96px; height: 192px; }
+  #finev { width: 108px; height: 192px; }
+  #saved { font-size: 14px; color: var(--ash); }
+  #msg { color: var(--sun); }
+  .hide { display: none; }
+</style>
+</head>
+<body>
+<h1>Shutterbug fixture maker</h1>
+<p id="fileproto" class="hide">Serve the repo first: python3 -m http.server 8777, then open this page from http://localhost:8777/satellites/shutterbug/fixtures/make.html</p>
+<div id="app" class="hide">
+  <p>Nothing leaves this page. Save the JSON into fixtures and commit only the JSON.</p>
+  <div class="row">
+    <label class="pick">Take a photo<input id="cam" type="file" accept="image/*" capture="environment"></label>
+    <label class="pick">Pick photos<input id="pick" type="file" accept="image/*" multiple></label>
+  </div>
+  <p id="msg"></p>
+  <div id="work" class="hide">
+    <div id="stagewrap">
+      <div id="photo"><canvas id="src"></canvas><div id="box"></div></div>
+      <div class="prev">
+        <figure><canvas id="over" width="96" height="192"></canvas><span id="overcap">24x48: the room</span></figure>
+        <figure id="finefig" class="hide"><canvas id="finev" width="108" height="192"></canvas>36x64: preview only</figure>
+      </div>
+    </div>
+    <div class="row">
+      <button id="zin" aria-label="Crop tighter">+</button>
+      <button id="zout" aria-label="Crop wider">−</button>
+      <button id="fitb">Fit</button>
+      <button id="fine">Preview 36x64</button>
+    </div>
+    <div class="row"><input id="name" type="text" aria-label="Fixture name" spellcheck="false" autocomplete="off"></div>
+    <div class="row">
+      <button id="save" class="main">Download JSON</button>
+      <button id="copy">Copy level code</button>
+      <button id="next">Next photo</button>
+    </div>
+    <p id="saved"></p>
+  </div>
+</div>
+<script>
+(function () { 'use strict';
+  /* the core and the capture block come from the page itself: the same CORE_RE as tools/core-loader.js, the owner of the
+     pattern (harness.js loads through it); the lint holds this line byte identical to it */
+  var CORE_RE = /^<script id="(core-[a-z]+)" data-core>\n([\s\S]*?)\n<\/script>/gm;
+  var TOOL_RE = /^<script id="(shell-capture)" data-tool>\n([\s\S]*?)\n<\/script>/m;
+  var blocks = [], queue = [], cur = null, crop = null, fine = false, last = null, lastRGB = null, dirty = false, list = [];
+  window.MAKE_DEV = { blocks: function () { return blocks.slice(); }, lastRecord: function () { return last; }, lastRGB: function () { return lastRGB; } };
+  if (location.protocol === 'file:') { document.getElementById('fileproto').classList.remove('hide'); return; }
+  var $ = function (id) { return document.getElementById(id); };
+  fetch('../index.html').then(function (r) { return r.text(); }).then(function (src) {
+    window.SB = {};
+    var m; CORE_RE.lastIndex = 0;
+    while ((m = CORE_RE.exec(src))) { blocks.push(m[1]); new Function(m[2])(); }
+    var t = TOOL_RE.exec(src);
+    if (!t) throw new Error('no data-tool block');
+    blocks.push(t[1]); new Function(t[2])();
+    $('app').classList.remove('hide');
+    wire();
+  }).catch(function (e) { $('fileproto').textContent = 'The page could not load the game core: ' + e.message; $('fileproto').classList.remove('hide'); });
+
+  function wire() {
+    var SB = window.SB, C = SB.capture;
+    var take = function (files) { for (var i = 0; i < files.length; i++) queue.push(files[i]); if (!cur) nextPhoto(); };
+    $('cam').addEventListener('change', function (e) { take(e.target.files); e.target.value = ''; });
+    $('pick').addEventListener('change', function (e) { take(e.target.files); e.target.value = ''; });
+    $('next').addEventListener('click', nextPhoto);
+    $('fitb').addEventListener('click', function () { if (cur) { crop = C.fit(cur.width, cur.height); dirty = true; } });
+    $('zin').addEventListener('click', function () { zoom(1.15); });
+    $('zout').addEventListener('click', function () { zoom(1 / 1.15); });
+    $('fine').addEventListener('click', function () { fine = !fine; $('fine').textContent = fine ? 'Hide 36x64' : 'Preview 36x64'; $('finefig').classList.toggle('hide', !fine); dirty = true; });
+    $('save').addEventListener('click', save);
+    $('copy').addEventListener('click', function () {
+      if (!last) return;
+      var code = SB.record.encode(SB.record.fromJSON(last));
+      if (navigator.clipboard) navigator.clipboard.writeText(code).then(function () { say('Level code copied.'); }, function () { say(code); });
+      else say(code);
+    });
+    dragAndPinch();
+    requestAnimationFrame(frame);
+  }
+  function say(t) { $('msg').textContent = t; }
+  function zoom(s) { if (!cur) return; crop = window.SB.capture.pinch(crop, s, crop.x + crop.w / 2, crop.y + crop.h / 2, cur.width, cur.height); dirty = true; }
+
+  function nextPhoto() {
+    var C = window.SB.capture;
+    if (cur) { C.release(cur); cur = null; }
+    var f = queue.shift();
+    if (!f) { $('work').classList.add('hide'); say(list.length ? 'All photos done.' : ''); return; }
+    say('Reading ' + f.name);
+    C.decode(f).then(function (bm) {
+      cur = bm; crop = C.fit(bm.width, bm.height);
+      var cv = $('src'); cv.width = bm.width; cv.height = bm.height;
+      cv.getContext('2d').drawImage(bm, 0, 0);
+      $('name').value = f.name.replace(/\.[^.]*$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'room';
+      $('work').classList.remove('hide'); say(''); dirty = true;
+    }, function (e) { say(e.message); nextPhoto(); });
+  }
+
+  /* the record from the crop: downscale to the grid, nearest palette colour per cell, the fixture v1 form */
+  function recordOf(w, h) {
+    var SB = window.SB, rgb = SB.capture.downscale(cur, crop, w, h), pal = new Uint8Array(w * h);
+    if (w === SB.GRID.W && h === SB.GRID.H) lastRGB = rgb;
+    for (var i = 0; i < w * h; i++) pal[i] = SB.palette.nearest(rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2]);
+    return { v: SB.record.V, w: w, h: h, mode: 0, focal: null, rows: SB.record.palToRows(pal, w, h), rows2: null };
+  }
+  function frame() {
+    requestAnimationFrame(frame);
+    if (!dirty || !cur) return;
+    dirty = false;
+    var SB = window.SB, box = $('box'), cv = $('src'), k = cv.getBoundingClientRect().width / cur.width;
+    box.style.left = (crop.x * k) + 'px'; box.style.top = (crop.y * k) + 'px';
+    box.style.width = (crop.w * k) + 'px'; box.style.height = (crop.h * k) + 'px';
+    /* the download is always the grid's 24x48 record, drawn with the pipeline's reading of it; the 36x64 view is a
+       preview of colours only (the M0 open question of DESIGN 3) */
+    last = recordOf(SB.GRID.W, SB.GRID.H);
+    var lv = SB.pipeline.build(SB.record.fromJSON(last), {});
+    /* a room the pipeline cannot climb (needsCrop) is still saved; its overlay shows the colours and the reason */
+    paint($('over'), last, lv.needsCrop ? null : lv, 4);
+    $('overcap').textContent = lv.needsCrop ? '24x48: no climb found yet (' + lv.why + ')' : '24x48: the room';
+    if (fine) paint($('finev'), recordOf(36, 64), null, 3);
+  }
+  /* solids hatched, one ways as light lines, the exit marked */
+  function paint(o, j, lv, cs) {
+    var SB = window.SB, ox = o.getContext('2d'), w = j.w, h = j.h, rows = j.rows;
+    o.width = w * cs; o.height = h * cs;
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+      ox.fillStyle = '#' + SB.palette.HEX[parseInt(rows[y][x], 16)];
+      ox.fillRect(x * cs, y * cs, cs, cs);
+      if (!lv) continue;
+      var i = y * w + x;
+      if (lv.solid[i]) { ox.fillStyle = 'rgba(13,12,16,0.55)'; ox.fillRect(x * cs, y * cs, cs, cs); ox.fillStyle = '#efe8d8'; ox.fillRect(x * cs + ((x + y) % 2) * 2, y * cs, 1, cs); }
+      if (lv.plat[i]) { ox.fillStyle = '#fbfaf5'; ox.fillRect(x * cs, y * cs, cs, 1); }
+      if (i === lv.exit) { ox.strokeStyle = '#f2c14e'; ox.lineWidth = 1; ox.strokeRect(x * cs - 0.5, y * cs - 0.5, cs + 1, cs + 1); }
+    }
+  }
+
+  function save() {
+    if (!last || !cur) return;
+    var name = $('name').value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'room';
+    var SB = window.SB;
+    SB.record.fromJSON(last);                         /* throws on a record that does not validate */
+    var fx = { v: 1, name: name, source: 'make.html', notes: '', record: last, expect: {} };
+    var url = URL.createObjectURL(new Blob([JSON.stringify(fx, null, 2) + '\n'], { type: 'application/json' }));
+    var a = document.createElement('a'); a.href = url; a.download = name + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    list.push(name + '.json');
+    $('saved').textContent = 'Saved: ' + list.join(', ');
+  }
+
+  /* one finger drags the crop; two pinch it (the midpoint stays put) */
+  function dragAndPinch() {
+    var area = $('photo'), pts = {}, start = null;
+    var scale = function () { return $('src').getBoundingClientRect().width / cur.width; };
+    var snap = function () {
+      var ids = Object.keys(pts), a = pts[ids[0]], b = pts[ids[1]];
+      return { crop: crop, a: a && { x: a.x, y: a.y }, b: b && { x: b.x, y: b.y }, n: ids.length };
+    };
+    area.addEventListener('pointerdown', function (e) { if (!cur) return; area.setPointerCapture(e.pointerId); pts[e.pointerId] = { x: e.clientX, y: e.clientY }; start = snap(); });
+    area.addEventListener('pointermove', function (e) {
+      if (!cur || !pts[e.pointerId] || !start) return;
+      pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var now = snap(), k = scale(), C = window.SB.capture;
+      if (start.n === 1 && now.n === 1) crop = C.move(start.crop, (now.a.x - start.a.x) / k, (now.a.y - start.a.y) / k, cur.width, cur.height);
+      else if (start.n >= 2 && now.n >= 2) {
+        var d0 = Math.hypot(start.a.x - start.b.x, start.a.y - start.b.y), d1 = Math.hypot(now.a.x - now.b.x, now.a.y - now.b.y);
+        var r = $('src').getBoundingClientRect(), mx = ((start.a.x + start.b.x) / 2 - r.left) / k, my = ((start.a.y + start.b.y) / 2 - r.top) / k;
+        if (d0 > 0) crop = C.pinch(start.crop, d1 / d0, mx, my, cur.width, cur.height);
+      }
+      dirty = true;
+    });
+    var end = function (e) { delete pts[e.pointerId]; start = Object.keys(pts).length ? snap() : null; };
+    area.addEventListener('pointerup', end);
+    area.addEventListener('pointercancel', end);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1076,7 +1076,85 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 </script>
 <script id="shell-capture" data-tool>
 (function (SB) { 'use strict';
-  /* photo decode, the 1:2 crop, the downscale to the grid (T0.5b) */
+  /* The photo path (section 1.1 row 9, DESIGN 6.1): decode with the photo's own orientation, the 1:2 crop, the stepped
+     downscale to the grid, release. Photos never persist: the decoded bitmap lives in memory until release(), and only
+     the GRID sized RGB array leaves this block. fixtures/make.html runs this block verbatim (its data-tool tag). */
+  var C = SB.capture = {};
+  var DECODE_W = 1024, MIN_W = 192, MIN_H = 384;
+
+  /* decode(file) -> Promise of an image source with width and height: createImageBitmap with the EXIF orientation
+     applied and the width set to 1024; browsers without those options draw through an <img> into a canvas */
+  C.decode = function (file) {
+    if (typeof createImageBitmap === 'function') {
+      return createImageBitmap(file, { imageOrientation: 'from-image', resizeWidth: DECODE_W, resizeQuality: 'high' })
+        .catch(function () { return viaImg(file); });
+    }
+    return viaImg(file);
+  };
+  function viaImg(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var s = DECODE_W / img.naturalWidth, cv = document.createElement('canvas');
+        cv.width = DECODE_W; cv.height = Math.max(1, Math.round(img.naturalHeight * s));
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        URL.revokeObjectURL(url);
+        resolve(cv);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('capture.decode: the photo could not be read')); };
+      img.src = url;
+    });
+  }
+
+  /* the crop: a 1:2 box { x, y, w, h } in source pixels, never smaller than 192x384 (or the photo, if smaller) and
+     never outside it */
+  function minW(bw, bh) { return Math.min(MIN_W, bw, Math.floor(bh / 2)); }
+  C.fit = function (bw, bh) {
+    var w = Math.min(bw, Math.floor(bh / 2)), h = w * 2;
+    return { x: Math.floor((bw - w) / 2), y: Math.floor((bh - h) / 2), w: w, h: h };
+  };
+  C.clamp = function (c, bw, bh) {
+    var maxW = Math.min(bw, Math.floor(bh / 2)), w = Math.max(minW(bw, bh), Math.min(maxW, Math.round(c.w))), h = w * 2;
+    var x = Math.max(0, Math.min(bw - w, Math.round(c.x))), y = Math.max(0, Math.min(bh - h, Math.round(c.y)));
+    return { x: x, y: y, w: w, h: h };
+  };
+  C.move = function (c, dx, dy, bw, bh) { return C.clamp({ x: c.x + dx, y: c.y + dy, w: c.w, h: c.h }, bw, bh); };
+  /* pinch by `scale` around the source point (px, py): that point stays where it was inside the box */
+  C.pinch = function (c, scale, px, py, bw, bh) {
+    var w = Math.max(minW(bw, bh), Math.min(Math.min(bw, Math.floor(bh / 2)), Math.round(c.w / scale)));
+    var fx = (px - c.x) / c.w, fy = (py - c.y) / c.h;
+    return C.clamp({ x: px - fx * w, y: py - fy * w * 2, w: w, h: w * 2 }, bw, bh);
+  };
+
+  /* downscale(source, crop) -> Uint8Array of GRID.W x GRID.H x 3 (RGB, row major): the crop drawn by halves until it is
+     under twice the target, then one smoothed draw to the grid (one draw from a 1024 photo aliases on busy rooms, Q53) */
+  C.downscale = function (src, crop, gw, gh) {
+    var W = gw || SB.GRID.W, H = gh || SB.GRID.H;
+    var w = crop.w, h = crop.h, cv = document.createElement('canvas'), cx;
+    cv.width = w; cv.height = h; cx = cv.getContext('2d');
+    cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
+    cx.drawImage(src, crop.x, crop.y, crop.w, crop.h, 0, 0, w, h);
+    while (w >= 2 * W && h >= 2 * H) {
+      var hw = Math.ceil(w / 2), hh = Math.ceil(h / 2);
+      cx.drawImage(cv, 0, 0, w, h, 0, 0, hw, hh);
+      w = hw; h = hh;
+    }
+    var out = document.createElement('canvas'), ox;
+    out.width = W; out.height = H; ox = out.getContext('2d', { willReadFrequently: true });
+    ox.imageSmoothingEnabled = true; ox.imageSmoothingQuality = 'high';
+    ox.drawImage(cv, 0, 0, w, h, 0, 0, W, H);
+    var d = ox.getImageData(0, 0, W, H).data, rgb = new Uint8Array(W * H * 3);
+    for (var i = 0, j = 0; i < d.length; i += 4, j += 3) { rgb[j] = d[i]; rgb[j + 1] = d[i + 1]; rgb[j + 2] = d[i + 2]; }
+    cv.width = cv.height = 0;
+    return rgb;
+  };
+
+  /* release(source): the decoded photo leaves memory now (an ImageBitmap closes; a canvas fallback is emptied) */
+  C.release = function (src) {
+    if (!src) return;
+    if (typeof src.close === 'function') src.close();
+    else if ('width' in src) { src.width = 0; src.height = 0; }
+  };
 })(window.SB);
 </script>
 <script id="shell-render">

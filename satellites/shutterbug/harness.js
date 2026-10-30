@@ -1039,6 +1039,20 @@ group('H-in-1', 'the replay codec: 3600 random words round trip through runs, L 
   t.ok(SB.sim.rle.decode(runs)[100] === (IN.L | IN.R), 'a word with L and R both set survives the round trip');
 });
 
+/* ================================================================ the capture oracle (T0.5b) */
+group('H-cap-0', 'the capture oracle: the area average of known images (the value the make gate holds the canvas path to, H-cap-1)', t => {
+  const { downscaleRGB } = require('./tools/capture-oracle.js');
+  const img = (w, h, f) => { const px = Buffer.alloc(w * h * 3); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) px.set(f(x, y), (y * w + x) * 3); return { w, h, bpp: 3, px }; };
+  const flat = downscaleRGB(img(48, 96, () => [10, 200, 30]), 24, 48);
+  t.ok(flat.every((v, i) => v === [10, 200, 30][i % 3]), 'a flat 48x96 image averages to its own colour in every cell');
+  const checker = downscaleRGB(img(48, 96, (x, y) => ((x + y) % 2 ? [0, 0, 0] : [255, 255, 255])), 24, 48);
+  t.ok(checker.every(v => v === 128), 'a one pixel checker averages to 128 in every cell (510 / 4, rounded)');
+  const blocks = downscaleRGB(img(600, 1200, (x, y) => [Math.floor(x / 25) * 10, Math.floor(y / 25) * 5, 7]), 24, 48);
+  let off = -1;
+  for (let c = 0; c < 24 * 48 && off < 0; c++) { const cx = c % 24, cy = Math.floor(c / 24); if (blocks[3 * c] !== cx * 10 || blocks[3 * c + 1] !== cy * 5 || blocks[3 * c + 2] !== 7) off = c; }
+  t.eq(off, -1, 'a 600x1200 image of 25 px blocks gives every cell its own block\'s colour (the first cell that does not)');
+});
+
 /* ================================================================ the sim, part one, proven (T0.7b) */
 /* a seeded random word script: held bits that change every few steps, the edge bits on presses */
 function randomScript(seed, n) {
