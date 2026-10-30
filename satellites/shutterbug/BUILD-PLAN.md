@@ -38,6 +38,7 @@ The builder updates this table in the same commit that ships the task (law 8: th
 | T0.4a | shipped | `a46001f7d` | H-pal-1, 2, 5, 6 green (626 assertions); QUANT_UNWEIGHTED RED via the 20000 colour oracle | no shot (harness task) |
 | T0.5 | shipped | `bb0bb56e2` | H-fix-1..3 green (720); fixtures.mjs idempotent; SAMPLE_ROOM_DRIFT and EXPECT_MISSING RED | no shot (data task) |
 | T0.6 | shipped | `388547ebd` | H-pipe-1..11 green (933) against the test's own pipeline; 5 mutants RED | no shot (harness task) |
+| T0.7a | shipped | `bda5d01a0` | H-sim-1..5, 18, H-fuzz-1 green (972); apex 69.59 px, tap 31.375 px; JUMP_V_LOW, GRAVITY_X2 RED | no shot (harness task) |
 
 Status is one of `shipped`, `shipped with xfail Qn`, `BLOCKED on <assertion> Qn`, `skipped (budget)`. The night's last row is `T0.18 deploy` with the deploy commit and the two origin hashes, or `NOT LIVE` and why.
 
