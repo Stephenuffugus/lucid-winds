@@ -631,3 +631,49 @@ gates: the new gate astra (test/astra.mjs and its fixture test/astra_fixture.py,
 watched RED: CUT_NO_PALETTE_CHECK, CUT_SEMI_ALPHA, CUT_PAETH_WRONG, CUT_NO_SOURCE_COMPARE, CUT_ZIP_SLIP, CUT_SUN_ANYWHERE, CUT_FEET_UNCHECKED, CUT_NO_SHA, SPLICE_JOINS_LINES (a new redwatch file kind, astra: the mutated cutter beside the page copy, run through SB_ASTRA_CUT); NOOP stayed green.
 shots: the preview on the fixture's hero (scratchpad/shots/astra-preview): the contact sheet shows all twelve frames with the fixture's one pixel change; in the room the hero is its true 12x16 at the floor's right, as the phone shows it. Wrong: (1) at true size the review of a new hero rests on the contact sheet, the room shots only show it reads at all; (2) the room shots never show cling, dive or land in place (no liberty puts the hero on a wall; the sheet shows them); (3) the fallen shot is the death card's, the bug small beside its moths.
 Drive: the brief went to 012Assets/Astra/Shutterbug (Stephen asked): the prompt as a text file, checked byte for byte by hash after upload; the assets doc, every text run present but its two code blocks' indentation lost; a first Google Doc of the prompt lost every leading space (Google's HTML import), renamed in place as a broken copy, and the prompt's Google Doc remade from the text file.
+
+### 2026-10-30 20:41 UTC  T1.5  Biome twists in the sim: the Frost slide, Deep gravity, sticky pipes and vines (a WAITS task, built on Stephen's "keep going")  commit (this commit)
+shipped, mapped first by a five reader workflow (the sim, the reach model, the features and render, the harness, the written rules):
+- Deep in the sim, as reach.arc plans it step for step:
+  - the ground and coyote jump at DEEP_JUMP_V (the wall and sticky jumps keep their own speeds)
+  - base gravity while rising and on the step the hero started grounded (a walk off's first airborne step), DEEP_FALL_G once falling, capped at DEEP_TERM
+  - the dive at DEEP_TERM
+- The Frost slide: K.SLICK_DECEL (51, derived as the least whole decel whose stop from RUN stays within FROST_SLIDE_CELLS cells: 4095 sub, 15.996 px in 13 steps) while grounded with a slick cell under the feet, in place of DECEL (3.94 px). The rocker is still full speed at once, the air keeps the plain decel, and a dash and the knockback still end at rest.
+- The reach model's Frost rule (slides()) now walks FROST_SLIDE_CELLS cells instead of hard coding one.
+- The first ever free play room: the level carries twistOff (a Frost, Deep or Overgrowth first room; in the level hash after biome). The pipeline then marks no slick and no sticky cells, and the reach model (the graph's tables and Deep cap, mainAscent, the repair's tables) and the sim both drop Deep for it, so the model is never more generous than the sim (Q87: the look and the enemy kind are kept; the unlock at the first clear is T1.12's).
+- Render, placeholders (Q88): a Teal ice edge (2 rows) on slick planks; vine (Moss, Ink stems) and pipe (Teal, Ink rings, a Glare highlight) 16x16 tiles up sticky columns. Two new SPRITES names, 16 in all.
+- SB_DEV.loadRecord(str, biome): a named liberty, the room under that biome as a room after the first (the shots).
+
+the bot learns ice and Deep:
+- a slick aware stop distance
+- the settle hops on ice (A tapped with one step of the rocker: the air's plain decel carries TAP_MOVE and lands still), within 120 steps
+- a touchdown on a slick target counts when the hero rests on its row (the slide the model admits), then settles back
+- Deep's terminal in the dive range and Deep's first fall step in the contact stances
+- BOT_BIOMES gains Attic and Deep, and the Deep skip by name is gone
+
+gates:
+- H-sim-16: a stop from full run on ice slides 15.996 px in 13 steps, the test's own stepping, against a hard coded 16 px. A dry floor keeps 3.94 px. A full run jump onto ice slides at most 16 px after its touchdown. One step off a run's last cell slides off the open end on ice and stays on a dry run. The bot's Frost walks land on ice and pass. biome-frost's first room build has no slick cell.
+- H-sim-17: Deep's full hold peaks at 85.5 px (at least 84) and its air time and tap equal the test's own Deep stepping. A walk off falls 128 then 102 a step to 2458. A dive falls at 2458. A one way 5 rows up is reached in Deep by the sim and by the model, and by neither under twistOff.
+- H-lab-1 and H-lab-2 now run the DEEP tables too: 530 cases each, every Deep jump landing by its canonical hold (Deep TAP's 2 rows clear by 0.28 px).
+- H-bot-7: every biome override walked or the same as one walked, no edge without a macro.
+- H-ns-1 knows SLICK_DECEL 51. H-pipe-8 knows twistOff.
+- The bot walks 44 levels (733 ascent edges), and --all-edges performs 127930 of 127930 edges over 44 levels (79663 over 27 before), the sticky edges of Deep's pipes walked for the first time.
+- shelves-a (detected Frost) recorded again, golden d2c715fa93931f6c, 955 steps, cleared; its old words ran off the slide. The sample room's golden is unmoved.
+- The astra fixture maps vine and pipe.
+- The harness counts 5483 assertions, and ASSERT_FLOOR is 5483. check --fast is green.
+
+watched RED:
+- DEEP_TABLES_NOT_SWAPPED: the sim's Deep off.
+- SLIDE_32PX: the slick decel halved, a 34 px slide.
+- DEEP_WALKOFF_FALL_G: Deep gravity on a walk off's first step.
+- TWIST_IN_FIRST_ROOM.
+- MODEL_DEEP_IGNORES_TWISTOFF.
+- Re anchored on the lines T1.5 rewrote, each the same mutation: AIR_KEEPS_MOMENTUM, COYOTE_AFTER_JUMP, DIVE_KEEPS_VX, SLICK_PAST_THE_FRAME.
+- NOOP stayed green.
+
+shots (scratchpad/shots/t15, t15-<what>-<size>): ice (shelves-a as a second room), vines and pipes (pillars under Overgrowth and Deep) at 412x915 and 360x780, and shelves-a as the first ever room at all three sizes, 320x568 the worst angle (no ice, the onboarding hints pulsing). Wrong, all in the placeholders:
+1. The ice edge is a 2 px Teal hairline under each plank, too thin to read as ice at phone size.
+2. The vine's zigzag repeats every cell, a zipper up a tall pillar, Moss on Overgrowth's dark green.
+3. The pipe's ring every half cell reads like a ladder.
+
+feel numbers for his pass (TUNING lines): FROST_SLIDE_CELLS 1 (the 16 px slide), DEEP_JUMP_V 9.5 and DEEP_FALL_MULT 0.8 (Deep's float).
