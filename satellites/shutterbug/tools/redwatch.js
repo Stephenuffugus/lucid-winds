@@ -166,6 +166,15 @@ const MUTANTS = [
   { name: 'LIGHT_SLACK_0', task: 'T0.11a', file: 'page', find: 'EXIT_LIGHT_SLACK: 2 /* Q11 */', repl: 'EXIT_LIGHT_SLACK: 0 /* Q11 */',
     /* the plan's LIGHT_SLACK_0_SAMPLE cannot bite on the sample room, whose lamp is itself the farthest cell: the slack lab decides */
     gates: [{ gate: 'harness', only: 'H-rep-1', expect: 'the slack lab: the lamp is the exit inside EXIT_LIGHT_SLACK' }] },
+  { name: 'SLACK_ZERO', task: 'T0.11b', file: 'page', find: 'ROUTE_SLACK: 1,', repl: 'ROUTE_SLACK: 0,',
+    gates: [{ gate: 'harness', only: 'H-route-3', expect: 'fails with max-range' }] },
+  { name: 'CHAIN_3', task: 'T0.11b', file: 'page', find: 'ROUTE_MAX_WALL_CHAIN: 2,', repl: 'ROUTE_MAX_WALL_CHAIN: 3,',
+    gates: [{ gate: 'harness', only: 'H-route-3', expect: 'fail with wall-chain' }] },
+  /* the shelf below the lamp (rows 5 and 6, x 9..12) gone from the sample room: no jump reaches the lamp's shade then,
+     and the room's wall jump (the wardrobe's, at the WALL table's edge) may not carry the main ascent, so repair must
+     lay a tab (the plan's SHELF_CLOSED, translated to this room; removing each shelf in turn found the essential ones) */
+  { name: 'SHELF_CLOSED', task: 'T0.11b', file: 'fixture:sample-room.json', edits: [['"444444444555544444444444",\n      "444444444333344444465664"', '"444444444444444444444444",\n      "444444444444444444465664"']],
+    gates: [{ gate: 'harness', only: 'H-rep-1', expect: 'the sample room needs zero tabs' }] },
   { name: 'LATCH_OFF', task: 'T0.9', file: 'page', find: "    if (!isHeld(verb) && (verb === 'A' || verb === 'B')) edge[verb]++;", repl: "    if (false) edge[verb]++;",
     gates: [{ gate: 'input', expect: 'a sub step tap on A (4 ms) is exactly one A_TAP' }] },
   { name: 'ZONE_FIXED_AT_DOWN', task: 'T0.9', file: 'page', find: "      rockerX[e.pointerId] = e.clientX;\n      if (rockerPtrs[0] === e.pointerId) setRocker(zoneOf(e.clientX));",

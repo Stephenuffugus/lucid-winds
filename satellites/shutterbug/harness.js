@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 3959;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 4045;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -1665,10 +1665,11 @@ group('H-reach-6', 'the graph builds in under 10 ms median', t => {
   const rooms = FIXTURES.map(f => [f.name, buildFx(f, 0)]).filter(([, lv]) => !lv.needsCrop);
   let worst = null;
   for (const [name, lv] of rooms) {
-    for (let k = 0; k < 5; k++) SB.reach.graph(lv);
-    const ts = []; for (let k = 0; k < 15; k++) { const t0 = process.hrtime.bigint(); SB.reach.graph(lv); ts.push(Number(process.hrtime.bigint() - t0) / 1e6); }
+    /* 10 warm builds, then the median of 31 (15 samples let one collector pause move the median past 10 ms) */
+    for (let k = 0; k < 10; k++) SB.reach.graph(lv);
+    const ts = []; for (let k = 0; k < 31; k++) { const t0 = process.hrtime.bigint(); SB.reach.graph(lv); ts.push(Number(process.hrtime.bigint() - t0) / 1e6); }
     ts.sort((a, b) => a - b);
-    if (!worst || ts[7] > worst[1]) worst = [name, ts[7]];
+    if (!worst || ts[15] > worst[1]) worst = [name, ts[15]];
   }
   console.log('  info  the slowest graph build: ' + worst[0] + ' at ' + worst[1].toFixed(2) + ' ms median');
   t.ok(worst[1] < 10, 'every fixture\'s graph builds in under 10 ms median (slowest ' + worst[0] + ', ' + worst[1].toFixed(2) + ' ms)');
@@ -1837,6 +1838,118 @@ group('H-rep-6', 'the full build with its repair passes runs under 50 ms p95 per
     t.ok(p95 < 50, f.name + ': the build p95 ' + p95.toFixed(1) + ' ms (under 50)');
   }
   console.log('  info  the slowest full build: ' + slow.name + ' at ' + slow.p95.toFixed(1) + ' ms p95');
+});
+
+/* ================================================================ the main ascent, the route score, onboarding (T0.11b) */
+/* the test's own slack rule on its own oracle tables (section 3.7 filter 1) */
+const slackRef = (e, deep, both) => {
+  if (!(e.kind === 'JUMP' || (e.kind === 'WALLJUMP' && e.dx > 0))) return true;
+  const m = ORACLE.clipped(e.profile, deep); let maxUp = -1; m.forEach((dx, dy) => { if (dx >= e.dx) maxUp = dy; });
+  const up = e.dy + 1 <= maxUp, across = e.dy < m.length && e.dx + 1 <= m[e.dy];
+  return both ? up && across : up || across;
+};
+const nodeRow = (lv, v) => Math.floor((v < lv.w * lv.h ? v : (v - lv.w * lv.h) >> 1) / lv.w);
+group('H-route-1', 'every built level\'s main ascent starts at spawn, ends at the exit, and keeps the per edge limits', t => {
+  for (const f of FIXTURES) for (const mode of MODES) {
+    const lv = buildFx(f, mode), tag = f.name + ' mode ' + mode;
+    if (lv.needsCrop) continue;
+    const a = lv.ascent;
+    t.ok(!!a && a.nodes && a.nodes[0] === lv.spawn && a.nodes[a.nodes.length - 1] === lv.exit && a.score.ok, tag + ': the ascent runs spawn to exit and passes its route score (' + (a && a.edges ? a.edges.length : 0) + ' edges)');
+    if (!a || !a.edges) continue;
+    let chain = 0, worstChain = 0, bad = '';
+    for (const e of a.edges) {
+      if (!slackRef(e, lv.biome === 2, SB.TUNING.ROUTE_SLACK_BOTH_AXES)) bad = bad || (e.kind + ' ' + e.dx + ' across ' + e.dy + ' up at max range');
+      if (e.kind === 'WALLJUMP' || e.kind === 'WALLTOUCH') chain++; else if (e.to < lv.w * lv.h) chain = 0;
+      worstChain = Math.max(worstChain, chain);
+    }
+    t.ok(!bad, tag + ': every jump on the ascent keeps a cell of slack (the test\'s own tables)' + (bad ? ' (' + bad + ')' : ''));
+    t.ok(worstChain <= SB.TUNING.ROUTE_MAX_WALL_CHAIN, tag + ': no wall chain longer than 2 (' + worstChain + ')');
+  }
+});
+
+group('H-route-2', 'on every ascent, consecutive safe cells are at most 8 rows apart', t => {
+  for (const f of FIXTURES) for (const mode of MODES) {
+    const lv = buildFx(f, mode);
+    if (lv.needsCrop || !lv.ascent || !lv.ascent.nodes) continue;
+    const g = SB.reach.graph(lv); let lastSafe = nodeRow(lv, lv.spawn), worst = 0;
+    for (const v of lv.ascent.nodes) { const r = nodeRow(lv, v); worst = Math.max(worst, lastSafe - r); if (v < g.n && g.stand[v]) lastSafe = Math.min(lastSafe, r); }
+    t.ok(worst <= SB.TUNING.ROUTE_SAFE_EVERY_ROWS, f.name + ' mode ' + mode + ': the longest climb between safe cells is ' + worst + ' rows (at most 8)');
+  }
+});
+
+group('H-route-3', 'the filters, each in its lab: max-range, wall-chain, safe-cadence', t => {
+  const reason = lv => { const g = SB.reach.graph(lv), a = SB.reach.mainAscent(g, lv); return SB.reach.routeScore(lv, g, a); };
+  /* the only way up is a jump 4 up and 4 across from a pillar's top: the cone's corner, no slack on either axis (the
+     floor below the target is out of reach: a pit, so no straight up jump with its column of slack) */
+  { const lv = LABS.room(['......X', '......=', '', '', '..S', ...[...Array(7)].map(() => '###'), FLOOR], { exit: true }); const sc = reason(lv);
+    t.ok(!sc.ok && /^max-range/.test(sc.reasons[0]), 'a room whose only route is a 4 up, 4 across jump fails with max-range (' + sc.reasons.join('; ') + ')'); }
+  /* two walls 2 apart and 7 rows tall, the exit on the right wall's top: so close, each wall jump climbs little, and
+     the top needs a touch and two wall jumps, three wall moves in a row inside the 8 row cadence (found by search: with
+     the walls wider, two moves already climb 8 rows, so the chain limit and the cadence cut the same move) */
+  { const lines = ['........X'].concat([...Array(6)].map(() => '.....#..#'), ['.....#.S#', FLOOR]);
+    const lv = LABS.room(lines, { exit: true }); const sc = reason(lv);
+    t.ok(!sc.ok && /^wall-chain/.test(sc.reasons[0]), 'two walls 2 apart climbed by three wall moves in a row fail with wall-chain (' + sc.reasons.join('; ') + ')'); }
+  /* a 13 row vine in Overgrowth, the exit on a ledge over its top: a sheer climb with no safe cell for 13 rows */
+  { const lines = ['......X', '......#'].concat([...Array(14)].map(() => '.....|')).concat(['', '', '.......S', FLOOR]);
+    const lv = LABS.room(lines, { exit: true, biome: 3 }); const sc = reason(lv);
+    t.ok(!sc.ok && /^safe-cadence/.test(sc.reasons[0]), 'a 13 row sheer vine climb fails with safe-cadence (' + sc.reasons.join('; ') + ')'); }
+});
+
+group('H-route-4', 'tight-gap gets a tab stair, and its ascent stands on it', t => {
+  const lv = buildFx(fixture('tight-gap'), 0);
+  t.ok(!lv.needsCrop && lv.repair.tabs > 0, 'tight-gap is repaired (' + (lv.needsCrop ? 'needsCrop' : lv.repair.tabs + ' tabs') + ')');
+  const onTab = !lv.needsCrop && lv.ascent.nodes.some(v => v < lv.w * lv.h && lv.tab[v + lv.w]);
+  t.ok(onTab, 'its main ascent stands on a film tab');
+});
+
+group('H-route-5', 'how many rooms change under ROUTE_SLACK_BOTH_AXES (for QUESTIONS Q8)', t => {
+  const changed = [];
+  for (const f of FIXTURES) {
+    const lv = buildFx(f, 0);
+    if (lv.needsCrop) continue;
+    const g = SB.reach.graph(lv), a = SB.reach.mainAscent(g, lv, { both: true });
+    if (!a.nodes || a.nodes.join() !== lv.ascent.nodes.join()) changed.push(f.name + (a.nodes ? ' (another ascent)' : ' (no ascent)'));
+  }
+  console.log('  info  H-route-5: under ROUTE_SLACK_BOTH_AXES ' + changed.length + ' rooms change: ' + (changed.join(', ') || 'none'));
+  t.ok(true, 'H-route-5 printed');
+});
+
+/* DESIGN 5.3 on the sample room: the onboarding beats, before any photo code */
+group('H-onb-1', 'the sample room teaches: a forgiving jump onto a landmark, a wall jump branch, a dive onto a speck, a speck above 60%', t => {
+  const lv = buildFx(fixture('sample-room'), 0), g = SB.reach.graph(lv), w = lv.w, n = w * lv.h, a = lv.ascent, beats = fixture('sample-room').fx.expect.beats;
+  const at = (x, y) => y * w + x, rowOf = v => nodeRow(lv, v);
+  /* a cell is "on the ascent" when it is an ascent cell, within 2 cells of one, or on the same surface (walkable in a row) */
+  const onA = new Set(a.nodes.filter(v => v < n));
+  const surface = c => { const out = [c]; for (const d of [-1, 1]) for (let x = c % w + d; x >= 0 && x < w && g.stand[Math.floor(c / w) * w + x]; x += d) out.push(Math.floor(c / w) * w + x); return out; };
+  const near = c => surface(c).some(s => onA.has(s)) || [...onA].some(v => Math.max(Math.abs(v % w - c % w), Math.abs(rowOf(v) - rowOf(c))) <= 2);
+  /* (i) walkable by WALK, JUMP and FALL alone, with a JUMP of at most 2 up onto a landmark top */
+  const kinds = new Set(a.edges.map(e => e.kind));
+  t.ok([...kinds].every(k => k === 'WALK' || k === 'JUMP' || k === 'FALL'), '(i) the main ascent uses WALK, JUMP and FALL only (' + [...kinds].join(', ') + ')');
+  const lmTop = new Set(); for (const lm of lv.landmarks) for (const c of lm.cells) if (c >= w && !lv.solid[c - w]) lmTop.add(c - w);
+  t.ok(a.edges.some(e => e.kind === 'JUMP' && e.dy >= 0 && e.dy <= 2 && lmTop.has(e.to)), '(i) and a JUMP of at most 2 up onto a landmark top');
+  /* (ii) a WALLTOUCH then a WALLJUMP from the ascent that rejoins it at least 3 rows higher */
+  let branch = null;
+  for (const u of onA) for (const e1 of (g.adj[u] || []).filter(e => e.kind === 'WALLTOUCH')) for (const e2 of (g.adj[e1.to] || []).filter(e => e.kind === 'WALLJUMP' && e.to < n))
+    if (near(e2.to) && rowOf(u) - rowOf(e2.to) >= 3) branch = branch || [u, e1.to, e2.to];
+  for (const b of beats.filter(b => b.kind === 'WALLJUMP')) {
+    const from = at(...b.from), c = n + 2 * at(...b.contact) + (b.contact[0] > b.from[0] ? 1 : 0), to = at(...b.to);
+    if (near(from) && (g.adj[from] || []).some(e => e.kind === 'WALLTOUCH' && e.to === c) && (g.adj[c] || []).some(e => e.kind === 'WALLJUMP' && e.to === to) && near(to)) branch = [from, c, to];
+  }
+  t.ok(!!branch, '(ii) a wall touch and a wall jump branch off the ascent and rejoin it at least 3 rows higher' + (branch ? ' (' + [branch[0], branch[2]].map(v => '(' + v % w + ', ' + rowOf(v) + ')').join(' to ') + ')' : ''));
+  /* (iii) a FALL of at least 3 rows from near the ascent onto a standable speck (an isolated Sun cell, Q49) */
+  const SUN = SB.palette.I.SUN, pal = lv.rec.pal, speck = c => pal[c] === SUN;
+  const dive = [...onA].flatMap(u => surface(u)).flatMap(u => (g.adj[u] || []).filter(e => e.kind === 'FALL' && rowOf(e.to) - rowOf(u) >= 3 && speck(e.to)));
+  t.ok(dive.length > 0, '(iii) a FALL of 3 rows or more from the ascent onto a standable speck' + (dive.length ? ' (' + dive.slice(0, 2).map(e => '(' + e.from % w + ', ' + rowOf(e.from) + ') to (' + e.to % w + ', ' + rowOf(e.to) + ')').join(', ') + ')' : ''));
+  /* (iv) a speck within 8 rows above the 60% point of the climb */
+  const r0 = rowOf(lv.spawn), r1 = rowOf(lv.exit), r60 = Math.round(r0 - 0.6 * (r0 - r1)), specks = [];
+  for (let c = 0; c < n; c++) if (speck(c) && rowOf(c) <= r60 && rowOf(c) >= r60 - 8) specks.push('(' + c % w + ', ' + rowOf(c) + ')');
+  t.ok(specks.length > 0, '(iv) a speck within 8 rows above the 60% point (row ' + r60 + '): ' + (specks.join(' ') || 'none'));
+  /* each listed beat, in row order, against the graph */
+  for (const b of beats) {
+    if (b.kind === 'JUMP') t.ok((g.adj[at(...b.from)] || []).some(e => e.kind === 'JUMP' && e.to === at(...b.to)) && near(at(...b.from)), 'beat: ' + b.why);
+    if (b.kind === 'FALL') t.ok((g.adj[at(...b.from)] || []).some(e => e.kind === 'FALL' && e.to === at(...b.to)) && near(at(...b.from)), 'beat: ' + b.why);
+    if (b.kind === 'SPECK') t.ok(speck(at(...b.at)) && g.stand[at(...b.at)], 'beat: ' + b.why);
+  }
 });
 
 /* ================================================================ one room */

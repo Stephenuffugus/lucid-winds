@@ -773,6 +773,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        legs; a speck slot and a fodder slot are reserved as data for M1 */
     if (bare && !anyPlat) level.repair.spread = spreadSlots(level, fixed.d);
     level.exit = exit;
+    /* the main ascent and its route score, stored on the level (section 3.7; the nodes are hashed, FIELDS ascent.nodes) */
+    level.ascent = { nodes: fixed.ascent.nodes, edges: fixed.ascent.edges, score: SB.reach.routeScore(level, fixed.g, fixed.ascent) };
     /* when the exit is the light the light's cells are relit around it; otherwise the light stays backdrop */
     level.beacon = { idx: exit, cells: light && exit >= 0 && light.indexOf(exit) >= 0 ? Int32Array.from(light) : new Int32Array(0) };
     return level;
@@ -823,15 +825,21 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     }
     for (pass = 0; ; pass++) {
       var g = SB.reach.graph(level), d = SB.reach.distances(g, level.spawn), frac = SB.reach.reachableFrac(g, d);
-      var exit = exitByReach(level, light, d);
+      var exit = exitByReach(level, light, d), ascent = null;
       if (exit >= 0 && frac >= T.REPAIR_REACH_FRAC) {
-        level.repair.tabs = tabs; level.repair.passes = pass; level.repair.changedFrac = 2 * tabs / n;
-        return { exit: exit, d: d };
+        /* the route score (section 3.7): a reached exit whose only way needs a hard jump is repaired, not pointed elsewhere */
+        level.exit = exit;
+        ascent = SB.reach.mainAscent(g, level);
+        if (ascent.nodes) {
+          level.repair.tabs = tabs; level.repair.passes = pass; level.repair.changedFrac = 2 * tabs / n;
+          return { exit: exit, d: d, g: g, ascent: ascent };
+        }
       }
-      if (pass >= T.REPAIR_PASSES) return { needsCrop: true, why: 'unreachable', detail: 'repair ran ' + pass + ' passes, ' + tabs + ' tabs, and the exit is ' + (exit < 0 ? 'unreached' : 'reached with ' + Math.round(frac * 100) + '% of the room') };
+      if (pass >= T.REPAIR_PASSES) return { needsCrop: true, why: ascent ? 'route' : 'unreachable', detail: 'repair ran ' + pass + ' passes, ' + tabs + ' tabs, and the exit is ' + (exit < 0 ? 'unreached' : ascent ? 'reached, but the route fails: ' + SB.reach.routeScore(level, g, ascent).reasons.join('; ') : 'reached with ' + Math.round(frac * 100) + '% of the room') };
       /* the target */
       var tx = -1, ty = -1, best = -1;
-      if (exit < 0) {
+      if (exit >= 0 && frac >= T.REPAIR_REACH_FRAC) { tx = exit % w; ty = (exit - tx) / w; }
+      else if (exit < 0) {
         if (light) for (k = 0; k < light.length; k++) if (standableIn(level, light[k]) && d[light[k]] < 0 && (best < 0 || light[k] < best)) best = light[k];
         for (i = 0; i < T.EXIT_ROWS * w && best < 0; i++) if (standableIn(level, i) && d[i] < 0) best = i;
         if (best >= 0) { tx = best % w; ty = (best - tx) / w; } else ty = T.EXIT_ROWS - 1;
@@ -950,8 +958,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         if (g[q] === '#' && (q < w || !level.solid[q - w])) g[q] = 'L';
       }
     }
+    if (ascent === undefined) ascent = level.ascent || null;
     var nodes = ascent && ascent.nodes ? ascent.nodes : [];
-    for (k = 0; k < nodes.length; k++) if (g[nodes[k]] === '.' || g[nodes[k]] === '=') g[nodes[k]] = '*';
+    for (k = 0; k < nodes.length; k++) if (nodes[k] < n && (g[nodes[k]] === '.' || g[nodes[k]] === '=')) g[nodes[k]] = '*';
     if (level.solid && level.spawn >= 0 && SB.reach && SB.reach.graph) {
       var gr = SB.reach.graph(level), d = SB.reach.distances(gr, level.spawn);
       for (i = 0; i < n; i++) {
@@ -1342,7 +1351,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         touches(cand2[0], cx, cy, away, far);
         tx = cx + away * dx; ty = cy - dy;
         if (tx < 0 || tx >= w || ty < 0 || !stand[ty * w + tx]) continue;
-        if (clear(cand2[0], cx, cy, away)) add(from, ty * w + tx, 'WALLJUMP', 'WALL', away, dx, dy, 3 + dy);
+        /* plus 3 at the WALL table's edge, as a JUMP's (the planner prefers forgiving moves; section 3.3 extended) */
+        var wedge = dx === wp.maxAcross[dy] || dy + 1 > T.WALL_UP || wp.maxAcross[dy + 1] < dx;
+        if (clear(cand2[0], cx, cy, away)) add(from, ty * w + tx, 'WALLJUMP', 'WALL', away, dx, dy, 3 + dy + (wedge ? 3 : 0));
       }
       for (key in far) if (+key !== from) add(from, +key, 'WALLJUMP', 'WALL', away, 0, 0, 4);
     }
@@ -1387,7 +1398,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var states = 3 * n * CH * RS, dist = new Float64Array(states).fill(Infinity), prev = new Int32Array(states).fill(-1), via = [];
     var key = function (v, c, r) { return (v * CH + c) * RS + r; };
     var rowOf = function (v) { return Math.floor((v < n ? v : (v - n) >> 1) / w); };
-    var start = key(level.spawn, 0, 0), goal = -1, top = rowOf(level.spawn);
+    var start = key(level.spawn, 0, 0), goal = -1, top = rowOf(level.spawn), cut = { 'max-range': Infinity, 'wall-chain': Infinity, 'safe-cadence': Infinity };
     dist[start] = 0;
     /* a binary heap of [cost, state] */
     var heap = [[0, start]];
@@ -1403,19 +1414,19 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       if (!es) continue;
       for (var k = 0; k < es.length; k++) {
         var e = es[k], u = e.to;
-        if (o.skip !== 'max-range' && (e.kind === 'JUMP' || (e.kind === 'WALLJUMP' && e.dx > 0)) && !slackOk(tb, e, both)) continue;
+        /* each filter that cuts an edge notes the row it cut at; the highest cut names the route's reason */
+        var rv = rowOf(v);
+        if (o.skip !== 'max-range' && (e.kind === 'JUMP' || (e.kind === 'WALLJUMP' && e.dx > 0)) && !slackOk(tb, e, both)) { if (rv < cut['max-range']) cut['max-range'] = rv; continue; }
         var wallish = e.kind === 'WALLJUMP' || e.kind === 'WALLTOUCH';
         var ch = u < n ? 0 : wallish ? c0 + 1 : c0;
-        if (u >= n && wallish && c0 + 1 > T.ROUTE_MAX_WALL_CHAIN) { if (o.skip !== 'wall-chain') continue; ch = T.ROUTE_MAX_WALL_CHAIN; }
-        if (u < n && wallish && c0 + 1 > T.ROUTE_MAX_WALL_CHAIN && o.skip !== 'wall-chain') continue;
-        var climbed = Math.max(0, rowOf(v) - rowOf(u)), rs = u < n && g.stand[u] ? 0 : r0 + climbed;
-        if (rs > T.ROUTE_SAFE_EVERY_ROWS) { if (o.skip !== 'safe-cadence') continue; rs = T.ROUTE_SAFE_EVERY_ROWS; }
-        if (u < n && g.stand[u] && r0 + climbed > T.ROUTE_SAFE_EVERY_ROWS && o.skip !== 'safe-cadence') continue;
+        if (wallish && c0 + 1 > T.ROUTE_MAX_WALL_CHAIN) { if (o.skip !== 'wall-chain') { if (rv < cut['wall-chain']) cut['wall-chain'] = rv; continue; } ch = T.ROUTE_MAX_WALL_CHAIN; }
+        var climbed = Math.max(0, rv - rowOf(u)), rs = u < n && g.stand[u] ? 0 : r0 + climbed;
+        if (r0 + climbed > T.ROUTE_SAFE_EVERY_ROWS) { if (o.skip !== 'safe-cadence') { if (rv < cut['safe-cadence']) cut['safe-cadence'] = rv; continue; } rs = Math.min(rs, T.ROUTE_SAFE_EVERY_ROWS); }
         var nk = key(u, ch, rs), nd = it[0] + e.cost;
         if (nd < dist[nk]) { dist[nk] = nd; prev[nk] = sk; via[nk] = e; push([nd, nk]); }
       }
     }
-    if (goal < 0) return { nodes: null, edges: null, cost: Infinity, top: top };
+    if (goal < 0) return { nodes: null, edges: null, cost: Infinity, top: top, cut: cut };
     var nodes = [], edges = [];
     for (var s = goal; s >= 0; s = prev[s]) { var rr = s % RS, cc = ((s - rr) / RS) % CH; nodes.unshift((s - rr - cc * RS) / (RS * CH)); if (via[s]) edges.unshift(via[s]); }
     return { nodes: nodes, edges: edges, cost: dist[goal], top: top };
@@ -1427,9 +1438,11 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var T = SB.TUNING, w = g.w, n = g.n, out = { ok: !!(ascent && ascent.nodes), reasons: [], ascentLength: 0, maxJump: { dx: 0, dy: 0 }, wallChains: 0, safeGapRows: 0, hardBranches: 0 };
     var rowOf = function (v) { return Math.floor((v < n ? v : (v - n) >> 1) / w); };
     if (!out.ok) {
-      var filters = ['max-range', 'wall-chain', 'safe-cadence'];
-      for (var f = 0; f < filters.length; f++) if (mainAscent(g, level, { skip: filters[f] }).nodes) { out.reasons.push(filters[f] + ' (the frontier died on row ' + (ascent ? ascent.top : '?') + ')'); break; }
-      if (!out.reasons.length) out.reasons.push('unreached (no route even unfiltered)');
+      /* the filters ordered by the row they cut at, the highest first (ties in the filters' order) */
+      var filters = ['max-range', 'wall-chain', 'safe-cadence'].filter(function (f) { return ascent && ascent.cut && ascent.cut[f] < Infinity; });
+      filters.sort(function (a, b) { return ascent.cut[a] - ascent.cut[b]; });
+      for (var f = 0; f < filters.length; f++) out.reasons.push(filters[f] + ' (cut on row ' + ascent.cut[filters[f]] + '; the frontier reached row ' + ascent.top + ')');
+      if (!out.reasons.length) out.reasons.push('unreached (nothing filtered: no route at all)');
       return out;
     }
     out.ascentLength = ascent.edges.length;
