@@ -41,6 +41,7 @@ The builder updates this table in the same commit that ships the task (law 8: th
 | T0.7a | shipped | `bda5d01a0` | H-sim-1..5, 18, H-fuzz-1 green (972); apex 69.59 px, tap 31.375 px; JUMP_V_LOW, GRAVITY_X2 RED | no shot (harness task) |
 | T0.8a | shipped | `4c9bcd3d4` | `play` green twice (488 steps by real keys to the clear card; Again clean; the loop books balance); H-in-1; ACCUMULATOR_DT_FLOAT, CLEAR_NO_RESTART RED | t08: rectangle hero reads as a brick; washed backdrop, thin edges; empty strip; dull lamp (fixed: relit beacon); two Title buttons (fixed) |
 | T0.18 sb-m0-1 | shipped (LIVE) | deploy `cc2816ffe` (branch `6a22a9568`, tag sb-m0-1) | curl sha256 2a0ab4d4…09e106 on lucidwinds.com and www equal to `git show cc2816ffe:…/index.html`, 03:33:57 UTC; full check ALL GATES PASSED | (the T0.8a shots) |
+| T0.8b | shipped | `0ed4fb65e` | `play` touch pass green (the climb by real touches; rocker, A, two fingers, A high); SECOND_FINGER_RELEASES_FIRST RED | strip: verbs hug the bottom under empty film; faint pressed state; A at the edge and B against the rocker at 360; crop cuts the wardrobe; ratio 2.625 edges 2/3/2 device px |
 
 Status is one of `shipped`, `shipped with xfail Qn`, `BLOCKED on <assertion> Qn`, `skipped (budget)`. The night's last row is `T0.18 deploy` with the deploy commit and the two origin hashes, or `NOT LIVE` and why.
 
