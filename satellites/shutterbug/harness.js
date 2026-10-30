@@ -2907,6 +2907,12 @@ group('H-bot-1c', 'every edge of the hand rooms (vines under Overgrowth, a ceili
   /* ledges and a wall: planks ending in the open, a pillar with a shelf beside it */
   const l3 = LABS.room(['', '', '...======.........#....', '...................#....', '...................#....', '.........====......#....', '...................#....', '...................#....', '..=====............#....', '...................#....', '...............===.#....', '...................#....', '...................#....', FLOOR]);
   levelEdges(l3, 'ledges and a wall', 0, out, memo, stats);
+  /* the review's slot: a vine whose top is roofed one row up (no pop over there), and its composite: a pillar to stand
+     on, a wall 5 across, a one way the touch passes under (the route either fails here or the bot walks every edge) */
+  const slot = LABS.room(['', '', '######', '......', '.....|', '.....|', '.....|', '.....|', '.....|', '.....|', '.....|', '.....|', '.....|', '.....|', '', '', FLOOR], { biome: 3 });
+  levelEdges(slot, 'a vine roofed one row up', 0, out, memo, stats);
+  const comp = LABS.room(['', '', '........#', '........#', '........#', '........#', '....===.#', '........#', '........#', '........#', '........#', '........#', '........#', '........#', '...S....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', '...#....#', FLOOR]);
+  levelEdges(comp, 'a pillar beside a wall', 0, out, memo, stats);
   out.stats = stats;
   reportEdges(t, out, 'the hand rooms');
   t.ok(['STICKYUP', 'STICKYTOP', 'LET_GO', 'WALLTOUCH', 'WALLJUMP', 'SLIDE', 'FALL'].every(k => out.byKind[k] && out.byKind[k].tried > 0), 'the hand rooms hold every vine and wall edge kind (' + Object.keys(out.byKind).join(', ') + ')');

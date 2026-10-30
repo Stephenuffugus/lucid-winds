@@ -203,6 +203,8 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-sim-15', expect: 'the push away lasts exactly' }] },
   { name: 'STICKYUP_UNDER_CEILING', task: 'T0.13a', file: 'page', find: 'if (k2 >= 2 && !S(cx, cy - k2 - 1)) add(', repl: 'if (k2 >= 2) add(',
     gates: [{ gate: 'harness', only: 'H-bot-1c', expect: 'every edge has a macro' }] },
+  { name: 'STICKYTOP_INTO_SLOT', task: 'review 3', file: 'page', find: 'stand[topy * w + topx] && !S(topx, topy - 1)) add(', repl: 'stand[topy * w + topx]) add(',
+    gates: [{ gate: 'harness', only: 'H-bot-1c', expect: 'every edge has a macro' }] },
   { name: 'STICKY_UP_PLUS1', task: 'review 3', file: 'page', find: 'k2 <= T.STICKY_UP && cy - k2 >= 0', repl: 'k2 <= T.STICKY_UP + 1 && cy - k2 >= 0',
     gates: [{ gate: 'harness', only: 'H-bot-1c', expect: 'every edge has a macro' }] },
   { name: 'STICKY_THROUGH_CEILING', task: 'review 3', file: 'page', find: 'cy - k2 >= 0 && !S(cx, cy - k2); k2++)', repl: 'cy - k2 >= 0; k2++)',

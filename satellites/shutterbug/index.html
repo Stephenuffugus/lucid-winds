@@ -1451,7 +1451,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
           if (sticks[2 * c2 + sd2]) { if (k2 >= 2 && !S(cx, cy - k2 - 1)) add(from, cnode(c2, side), 'STICKYUP', 'STICKY', 0, 0, k2, 2); }
           else {
             var topx = cx + side, topy = cy - k2;
-            if (topy >= 0 && topx >= 0 && topx < w && stand[topy * w + topx]) add(from, topy * w + topx, 'STICKYTOP', 'STICKY', side, 1, k2, 3);
+            /* headroom over the target: into a one row slot under a solid the box fits at one exact height only (the
+               third review's model lens: 204 of 2846 such STICKYTOPs never performed) */
+            if (topy >= 1 && topx >= 0 && topx < w && stand[topy * w + topx] && !S(topx, topy - 1)) add(from, topy * w + topx, 'STICKYTOP', 'STICKY', side, 1, k2, 3);
             break;
           }
         }
