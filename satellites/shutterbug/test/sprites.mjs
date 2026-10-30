@@ -33,11 +33,13 @@ try {
   await ready(page);
   await page.evaluate(() => window.SB_DEV.hold(true));
   const loaded = await page.evaluate(str => window.SB_DEV.loadRecord(str), fixture);
-  /* let the moth come within 6 rows of the hero, standing, out of the i frames */
+  /* an enemy drawn in view while the hero stands out of its i frames (T1.2b: saturated-blobs' icicle hangs below the
+     low plank and comes in level with the hero, so "within 6 rows above" never held and the wait ended in a death) */
   const st = await page.evaluate(() => {
+    window.SB_DEV.step(1);
     for (let k = 0; k < 6000; k += 5) {
-      const s = window.SB_DEV.state(), near = s.enemies.some(e => Math.abs(e.y - s.hero.y) < 6 * 4096 && Math.abs(e.y - s.hero.y) > 1.5 * 4096);
-      if (near && s.hero.ground && s.hero.squash === 0 && s.hero.iframes === 0) break;
+      const s = window.SB_DEV.state(), inView = window.SB_DEV.spriteRects().enemies.length > 0;
+      if (inView && s.hero.ground && s.hero.squash === 0 && s.hero.iframes === 0 && !s.room.dead) break;
       window.SB_DEV.step(5);
     }
     window.SB_DEV.step(1);
