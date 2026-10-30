@@ -137,6 +137,8 @@ try {
   await rm.page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
   await gotoGame(rm.page, srv.base);
   await ready(rm.page);
+  /* a fresh player: since T1.10 the hints are saved once shown, and this page shares the first one's storage */
+  await rm.page.evaluate(() => localStorage.clear()); await rm.page.reload(); await ready(rm.page);
   await rm.page.evaluate(() => window.SB_DEV.hold(true));
   await tap(rm.page, '#sample');
   const on = await rm.page.evaluate(() => {

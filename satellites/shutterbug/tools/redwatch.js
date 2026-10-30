@@ -616,7 +616,14 @@ const MUTANTS = [
   { name: 'SHARE_DROPS_FOCAL', task: 'T1.8', file: 'page', find: "function linkOf(origin, pathname, rec) { return origin + pathname + '#' + encode(rec); }", repl: "function linkOf(origin, pathname, rec) { return origin + pathname + '#' + encode(Object.assign({}, rec, { focal: null })); }",
     gates: [{ gate: 'harness', only: 'H-share-2', expect: 'records round trip through their links' }] },
   { name: 'PREFIX_CHECK_DROPPED', task: 'T1.8', file: 'page', find: "    if (p.slice(0, 3) === 'v' + V + '.') p = p.slice(3);\n    else if (p.indexOf('.') >= 0) return null;\n", repl: "    p = p.slice(3);\n",
-    gates: [{ gate: 'harness', only: 'H-share-1', expect: 'a paste of without its v1. prefix opens the same record' }] }
+    gates: [{ gate: 'harness', only: 'H-share-1', expect: 'a paste of without its v1. prefix opens the same record' }] },
+  /* T1.10: the save */
+  { name: 'SECOND_KEY', task: 'T1.10', file: 'page', find: "try { localStorage.setItem('shutterbug.v1', JSON.stringify(S.doc)); S.writes++; }", repl: "try { localStorage.setItem('shutterbug.v1', JSON.stringify(S.doc)); localStorage.setItem('shutterbug.settings', JSON.stringify(S.doc.settings)); S.writes++; }",
+    gates: [{ gate: 'save', expect: 'exactly one key not prefixed sws_ is written' }] },
+  { name: 'WRITE_25_ROOMS', task: 'T1.10', file: 'page', find: 'S.doc.recent = [j].concat(S.doc.recent.filter(function (r) { return !same(r); })).slice(0, 20);', repl: 'S.doc.recent = [j].concat(S.doc.recent.filter(function (r) { return !same(r); })).slice(0, 25);',
+    gates: [{ gate: 'save', expect: '25 rooms added keep 20' }] },
+  { name: 'SETITEM_UNGUARDED', task: 'T1.10', file: 'page', find: "    try { localStorage.setItem('shutterbug.v1', JSON.stringify(S.doc)); S.writes++; } catch (e) { /* quota or private mode: the game runs on */ }\n", repl: "    localStorage.setItem('shutterbug.v1', JSON.stringify(S.doc)); S.writes++;\n",
+    gates: [{ gate: 'save', expect: 'with setItem throwing the game runs on' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

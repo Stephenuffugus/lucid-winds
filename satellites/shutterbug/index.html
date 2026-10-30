@@ -138,6 +138,23 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #levelcode { flex: 1 1 auto; min-width: 0; min-height: 48px; border: 1px solid var(--pewter); padding: 0 8px; font-size: 0.95rem; }
 #codebox button { min-width: 64px; min-height: 48px; border-radius: 10px; border: 1px solid var(--pewter); background: var(--paper); color: var(--ink); }
 #codemsg { margin: 4px 0 0; color: var(--brick); font-weight: 700; }
+/* the title's small links and recent rooms (T1.10) */
+#settingsbtn { min-height: 48px; background: transparent; border: 0; color: var(--ash); text-decoration: underline; font-size: 0.95rem; }
+#recent[hidden] { display: none; } #recent p { margin: 6px 0 4px; color: var(--ash); font-size: 0.9rem; }
+#recentlist { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+#recentlist button { flex: 0 0 auto; width: 48px; height: 96px; padding: 0; border: 2px solid var(--pewter); border-radius: 6px; background: var(--ink); }
+#recentlist canvas { width: 44px; height: 88px; image-rendering: pixelated; display: block; margin: 0 auto; }
+/* the settings screen (T1.10) */
+#settings { overflow-y: auto; padding: calc(10px + var(--sat)) 16px calc(16px + var(--sab)); color: var(--paper); flex-direction: column; gap: 10px; }
+#setbar { display: flex; align-items: center; gap: 12px; } #setbar h2 { margin: 0; font-size: 1.3rem; }
+#settitle { min-width: 64px; min-height: 48px; border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--paper); }
+#settings label.row { display: flex; align-items: center; gap: 12px; min-height: 48px; font-size: 1.05rem; }
+#settings input[type=checkbox] { width: 28px; height: 28px; }
+#settings select, #settings textarea { font-size: 0.9rem; } #settings select { min-height: 44px; margin-left: auto; }
+#settings textarea { width: 100%; min-height: 72px; resize: vertical; }
+#settings button.act { min-height: 48px; border-radius: 10px; border: 2px solid var(--paper); background: transparent; color: var(--paper); font-weight: 700; }
+#setdamaged { color: var(--sun); font-weight: 700; margin: 0; } #setperf, #setbuild { color: var(--ash); font-size: 0.85rem; margin: 0; }
+#setinstall { display: flex; align-items: center; gap: 10px; margin: 0; } #install { min-height: 48px; }
 #again { background: var(--paper); color: var(--ink); }
 #cleartitle, #deathtitle { background: transparent; color: var(--ink); }
 /* the hint glyphs (T0.16): a control pulses once, the first time it is the move to make */
@@ -200,10 +217,27 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     <button id="sample" type="button" data-copy="sample"></button>
     <div id="codebox" hidden><input id="levelcode" type="text" data-aria="levelCode" autocomplete="off" spellcheck="false"><button id="pastecode" type="button" data-copy="codePaste"></button><button id="playcode" type="button" data-copy="codePlay"></button></div>
     <p id="codemsg" role="status" hidden></p>
+    <div id="recent" hidden><p data-copy="recentRooms"></p><div id="recentlist"></div></div>
+    <button id="settingsbtn" type="button" data-copy="settingsLink"></button>
   </div>
   <p id="build"></p>
 </main>
 <div id="devcard" role="dialog" data-aria="tapToDevelop"><button id="devtap" type="button" data-copy="tapToDevelop"></button></div>
+<main id="settings" class="screen" aria-label="Settings">
+  <div id="setbar"><button id="settitle" type="button" data-copy="toTitle"></button><h2 data-copy="settings"></h2></div>
+  <p id="setdamaged" role="status" data-copy="saveDamaged" hidden></p>
+  <label class="row"><input id="setmirror" type="checkbox"><span data-copy="setMirror"></span></label>
+  <label class="row"><input id="setsound" type="checkbox"><span data-copy="setSound"></span></label>
+  <label class="row"><input id="setmusic" type="checkbox"><span data-copy="setMusic"></span></label>
+  <label class="row"><span data-copy="setMotion"></span><select id="setmotion"><option value="os" data-copy="motionOs"></option><option value="on" data-copy="motionOn"></option><option value="off" data-copy="motionOff"></option></select></label>
+  <p id="setinstall"><span data-copy="setInstall"></span> <button id="install" type="button" data-copy="install" hidden></button></p>
+  <textarea id="setexport" readonly data-aria="setExport"></textarea>
+  <button id="setcopy" class="act" type="button" data-copy="setCopy"></button>
+  <textarea id="setimport" data-aria="setImportBox"></textarea>
+  <button id="setimportgo" class="act" type="button" data-copy="setImportGo"></button>
+  <p id="setperf"></p>
+  <p id="setbuild"></p>
+</main>
 <main id="crop" class="screen" aria-label="Crop">
   <div id="croptop"><button id="croptitle" type="button" data-copy="toTitle"></button><p id="crophint" data-copy="cropHint"></p></div>
   <div id="cropstage"><canvas id="cropview"></canvas>
@@ -709,8 +743,57 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   /* the link: the page's own origin and path and the code after '#' (no host in the page: it runs wherever it is
      served, section 1.5) */
   function linkOf(origin, pathname, rec) { return origin + pathname + '#' + encode(rec); }
+  /* the save's shape (section 2.4) and its pure checks (T1.10). saveDefaults is a fresh document; validateSave keeps
+     the known keys, fills the missing ones from the defaults and drops the rest (a hand edited save cannot crash boot),
+     recent at most 20 valid records, the pool at most 4 a slot, the log at most 50 runs; loadSave reads the stored
+     string: none gives the defaults, an unreadable one is set aside in quarantine of a fresh document under the same key
+     (QUESTIONS Q42), a v above 1 is left untouched (the game runs on the defaults in memory), an older v runs the
+     migration steps (v1 has none yet) */
+  function saveDefaults() {
+    return { v: 1, dp: 0, collection: [], pool: { jump: [], dive: [], charm: [] },
+      unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
+      settings: { mirror: false, sound: true, music: true, reducedMotion: null },
+      onboarding: { firstRoomDone: false, revealSeen: false, hints: { rocker: false, jump: false, dive: false } },
+      run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null },
+      log: { runs: [] }, cosmetics: { hero: 0, frame: 0 }, daily: { date: null, done: false }, quarantine: null };
+  }
+  function fillSave(def, got) {
+    if (got === null || got === undefined) return def;
+    if (Array.isArray(def)) return Array.isArray(got) ? got : def;
+    if (def === null) return got;
+    if (typeof def === 'object') {
+      if (typeof got !== 'object' || Array.isArray(got)) return def;
+      var out = {}; for (var k in def) out[k] = fillSave(def[k], got[k]);
+      return out;
+    }
+    return typeof got === typeof def ? got : def;
+  }
+  var MIGRATIONS = {};   /* MIGRATIONS[n] turns a v n document into v n + 1 */
+  function validateSave(obj) {
+    var d = fillSave(saveDefaults(), obj && typeof obj === 'object' ? obj : {}), k;
+    d.v = 1;
+    d.recent = d.recent.filter(function (r) { try { return !!fromJSON(r); } catch (e) { return false; } }).slice(0, 20);
+    for (k in d.pool) d.pool[k] = d.pool[k].slice(0, 4);
+    d.log.runs = d.log.runs.slice(-50);
+    var m = {}; if (obj && obj.moments && typeof obj.moments === 'object') for (k in obj.moments) if (obj.moments[k] === true) m[k] = true;
+    d.moments = m;
+    if (d.settings.reducedMotion !== null && typeof d.settings.reducedMotion !== 'boolean') d.settings.reducedMotion = null;
+    return d;
+  }
+  function loadSave(raw) {
+    if (raw === null || raw === undefined || raw === '') return { doc: saveDefaults() };
+    var obj = null;
+    try { obj = JSON.parse(raw); } catch (e) { obj = null; }
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) { var q = saveDefaults(); q.quarantine = String(raw); return { doc: q, quarantined: true, write: true }; }
+    var v = typeof obj.v === 'number' ? obj.v : 1;
+    if (v > 1) return { doc: saveDefaults(), readOnly: true, newer: true };
+    while (v < 1 && MIGRATIONS[v]) { obj = MIGRATIONS[v](obj); v++; }
+    var doc = validateSave(obj);
+    return { doc: doc, write: JSON.stringify(doc) !== raw };
+  }
   SB.record = { V: V, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
-    encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows, parseCode: parseCode, linkOf: linkOf };
+    encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows, parseCode: parseCode, linkOf: linkOf,
+    saveDefaults: saveDefaults, validateSave: validateSave, loadSave: loadSave };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-pipeline" data-core>
@@ -3700,7 +3783,55 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 </script>
 <script id="shell-save">
 (function (SB) { 'use strict';
-  /* the one localStorage key shutterbug.v1 (T1.10) */
+  /* the one localStorage key shutterbug.v1 (section 2.4, T1.10): read once at boot, kept in memory, written whole by
+     commit() at most once in 250 ms and flushed when the page hides; every storage call sits in try/catch, so quota and
+     private mode never throw into the game. A newer save is left untouched and nothing is written that session. */
+  var S = SB.save = { doc: null, readOnly: false, quarantined: false, newer: false, timer: 0, writes: 0 };
+  S.load = function () {
+    var raw = null;
+    try { raw = localStorage.getItem('shutterbug.v1'); } catch (e) { raw = null; }
+    var r = SB.record.loadSave(raw);
+    S.doc = r.doc; S.readOnly = !!r.readOnly; S.quarantined = !!r.quarantined; S.newer = !!r.newer;
+    SB.settings = S.doc.settings;
+    if (r.write) S.write();
+    return S.doc;
+  };
+  S.write = function () {
+    if (S.timer) { clearTimeout(S.timer); S.timer = 0; }
+    if (S.readOnly || !S.doc) return;
+    try { localStorage.setItem('shutterbug.v1', JSON.stringify(S.doc)); S.writes++; } catch (e) { /* quota or private mode: the game runs on */ }
+  };
+  S.commit = function () { if (!S.readOnly && !S.timer) S.timer = setTimeout(S.write, 250); };
+  S.flush = function () { if (S.timer) S.write(); };
+  /* recent rooms: at most 20, newest first, grids only; the same grid again moves to the front */
+  S.addRecent = function (rec) {
+    var j = SB.record.toJSON(rec), same = function (r) { return r.mode === j.mode && JSON.stringify(r.rows) === JSON.stringify(j.rows) && JSON.stringify(r.rows2) === JSON.stringify(j.rows2); };
+    S.doc.recent = [j].concat(S.doc.recent.filter(function (r) { return !same(r); })).slice(0, 20);
+    S.commit();
+  };
+  S.exportText = function () { return JSON.stringify({ app: 'shutterbug', v: 1, save: S.doc }); };
+  S.importText = function (text) {
+    var o = null; try { o = JSON.parse(text); } catch (e) { o = null; }
+    if (!o || o.app !== 'shutterbug' || o.v !== 1 || !o.save || typeof o.save !== 'object') return false;
+    S.doc = SB.record.validateSave(o.save); S.readOnly = false; S.write();
+    return true;
+  };
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') S.flush(); });
+  window.addEventListener('pagehide', function () { S.flush(); });
+  /* the fleet's Wallet (section 1.6): Dead Pixels in and out of the save, and first time moments announced to the
+     parent page only when framed, each once (save.moments) */
+  var framed = false; try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.Wallet = SB.Wallet = {
+    balance: function () { return S.doc ? S.doc.dp : 0; },
+    earn: function (n, reason) { S.doc.dp += Math.max(0, n | 0); S.commit(); return S.doc.dp; },
+    spend: function (n, reason) { n = n | 0; if (n < 0 || S.doc.dp < n) return false; S.doc.dp -= n; S.commit(); return true; },
+    moment: function (name, detail) {
+      if (!S.doc || S.doc.moments[name]) return false;
+      S.doc.moments[name] = true; S.commit();
+      if (framed) { try { parent.postMessage({ sws: 'earn', moment: name, detail: detail || {} }, '*'); } catch (e) { /* silent */ } }
+      return true;
+    }
+  };
 })(window.SB);
 </script>
 <script id="shell-ui">
@@ -3749,6 +3880,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     shareLink: 'The room\'s link', copyLink: 'Copy link', copyCode: 'Copy code', shareNative: 'Share', shareClose: 'Close', copied: 'Copied',
     tapToDevelop: 'Tap to develop', sharedRoom: 'A shared room',
     levelCode: 'Level code', codePaste: 'Paste', codePlay: 'Play',
+    settingsLink: 'Settings', settings: 'Settings', recentRooms: 'Recent rooms', recentRoom: 'A recent room',
+    setMirror: 'Mirror the controls', setSound: 'Sound', setMusic: 'Music', setMotion: 'Reduced motion',
+    motionOs: 'As the phone says', motionOn: 'On', motionOff: 'Off',
+    saveDamaged: 'A damaged save was set aside. You can copy it from Settings.',
+    setInstall: 'Install to the home screen to keep your rooms', install: 'Install',
+    setExport: 'Your save', setCopy: 'Copy the save', setImportBox: 'Paste a save here', setImportGo: 'Load the pasted save',
+    importConfirm: 'Replace your save?', importBad: 'That save did not open.', perf: 'Performance', perfHash: 'last room',
     codeBad: 'That code did not open. Check it and try again.',
     codeNewer: 'This room was made by a newer Shutterbug. Update and try again.',
     nextRoom: 'Shoot the next room',
@@ -3760,7 +3898,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 
   ui.screen = 'title';
   ui.show = function (name) {
-    if (name === 'title') document.getElementById('codebox').hidden = !ui.firstRoomDone;   /* DESIGN 5.3: the first screen is two buttons and a small link */
+    if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; drawRecent(); }   /* DESIGN 5.3: the first screen is two buttons and a small link */
+    if (name === 'settings') fillSettings();
     var all = document.querySelectorAll('.screen');
     for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === name);
     ui.screen = name;
@@ -3802,7 +3941,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   var RV = ui.reveal = { on: false, t: 0, start: 0, prev: 0, lv: null, reduced: false, rows: 0, tabs: 0, marks: null, seen: false, devSkip: false };
   function startReveal(lv, t0, photo) {
     RV.on = true; RV.start = t0; RV.t = performance.now() - t0; RV.prev = t0; RV.lv = lv; RV.rows = 0; RV.tabs = 0;
-    RV.reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    var rm = SB.settings ? SB.settings.reducedMotion : null;
+    RV.reduced = rm === null || rm === undefined ? !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) : !!rm;
     RV.marks = { start: t0, build: SB.perfLog.pipeline, reduced: RV.reduced, skipped: false };
     SB.render.buildPhoto(lv, photo);
     ui.screen = 'reveal';
@@ -3979,7 +4119,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     if (lv.needsCrop) return false;
     G.record = record; G.level = lv; G.name = name; G.mode = opts.mode || 'free';
     G.state = SB.sim.create(lv, {});
-    if (!opts.notFirst) ui.firstRoomDone = true;
+    if (!opts.notFirst && !ui.firstRoomDone) { ui.firstRoomDone = true; SB.save.doc.onboarding.firstRoomDone = true; SB.save.commit(); }
+    else if (!opts.notFirst) ui.firstRoomDone = true;
     SB.render.buildStatic(lv);
     SB.input.resetRecording();
     document.getElementById('roomname').textContent = name;
@@ -4044,12 +4185,48 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     document.getElementById('devcard').classList.remove('on');
     if (rec && !ui.startRoom(rec, ui.COPY.sharedRoom, { mode: 'code', notFirst: true })) { var msg = document.getElementById('codemsg'); msg.textContent = ui.COPY.codeBad; msg.hidden = false; }
   };
+  /* recent rooms on the title (T1.10): after the first room, each a thumbnail of its grid; a tap plays it again */
+  function drawRecent() {
+    var box = document.getElementById('recent'), list = document.getElementById('recentlist'), rs = SB.save.doc ? SB.save.doc.recent : [];
+    box.hidden = !ui.firstRoomDone || !rs.length;
+    list.innerHTML = '';
+    rs.forEach(function (j, k) {
+      var rec = null; try { rec = SB.record.fromJSON(j); } catch (e) { rec = null; }
+      if (!rec) return;
+      var b = document.createElement('button'), cv = document.createElement('canvas'), c2 = cv.getContext('2d'), P = SB.palette;
+      b.type = 'button'; b.setAttribute('aria-label', ui.COPY.recentRoom + ' ' + (k + 1));
+      cv.width = rec.w; cv.height = rec.h;
+      for (var i = 0; i < rec.w * rec.h; i++) { c2.fillStyle = P.hex(P.RGB[rec.pal[i]]); c2.fillRect(i % rec.w, Math.floor(i / rec.w), 1, 1); }
+      b.appendChild(cv);
+      b.addEventListener('click', function () { ui.startRoom(rec, ui.COPY.recentRoom); });
+      list.appendChild(b);
+    });
+  }
+  /* the settings screen (T1.10, section 2.4): every toggle writes the save at once */
+  function fillSettings() {
+    var st = SB.save.doc.settings, p95 = function (a) { if (!a.length) return 0; var b = a.slice().sort(function (x, y) { return x - y; }); return b[Math.min(b.length - 1, Math.floor(b.length * 0.95))]; };
+    document.getElementById('setmirror').checked = !!st.mirror;
+    document.getElementById('setsound').checked = !!st.sound;
+    document.getElementById('setmusic').checked = !!st.music;
+    document.getElementById('setmotion').value = st.reducedMotion === null ? 'os' : st.reducedMotion ? 'on' : 'off';
+    document.getElementById('setdamaged').hidden = !SB.save.quarantined;
+    document.getElementById('setexport').value = SB.save.exportText();
+    var fr = SB.perfLog.frames.slice(-300);   /* no frames yet (a held loop): a dash, not a 0.0 that reads as a measure (t110) */
+    document.getElementById('setperf').textContent = ui.COPY.perf + ': ' + (fr.length ? p95(fr).toFixed(1) + ' ms p95' : '-') + ', ' + ui.COPY.perfHash + ' ' + (ui.lastHash || '-');
+    document.getElementById('setbuild').textContent = ui.COPY.build + ' ' + SB.BUILD.replace(/-/g, ' ');
+  }
+  ui.applySettings = function () {
+    var st = SB.save.doc.settings;
+    document.getElementById('strip').classList.toggle('mirror', !!st.mirror);
+    SB.audio.setSound(!!st.sound);
+  };
   ui.firstRoomDone = false;   /* the first ever free play room runs with at most FIRST_ROOM_MAX_FODDER moths (T1.10 keeps it) */
   ui.hearts = hearts;
   /* the death card docks away from the fallen hero (the fourth review: at 30% of the stage it sat where the camera
      keeps the hero and hid it on half the sample room's climb): the top of the stage, or its bottom when the hero is
      in the stage's upper half (the camera clamped at the room's top) */
   ui.showDeath = function () {
+    if (SB.save.doc) { SB.save.doc.stats.deaths++; SB.save.commit(); ui.lastHash = SB.sim.hash(G.state); }
     var hd = SB.render.drawn.hero, cv = document.getElementById('view');
     document.getElementById('death').classList.toggle('low', !!hd && hd.key !== null && hd.y + hd.h / 2 < cv.height / 2);
     document.getElementById('death').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'dead'; document.body.classList.remove('playing'); };
@@ -4067,19 +4244,23 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     clearTimeout(el.sbHintT); el.sbHintT = setTimeout(function () { el.classList.remove('hint'); }, HINT_MS);
   }
   ui.hints = function (st, lv) {
-    var h = st.hero, H = ui.hinted;
+    var h = st.hero, H = ui.hinted, was = H.rocker + ',' + H.A + ',' + H.B;
+    hintsBody(st, lv, h, H);
+    if (was !== H.rocker + ',' + H.A + ',' + H.B && SB.save.doc) { var o = SB.save.doc.onboarding.hints; o.rocker = H.rocker; o.jump = H.A; o.dive = H.B; SB.save.commit(); }
+  };
+  function hintsBody(st, lv, h, H) {
     if (h.ground && !H.stood) { H.stood = true; if (!H.rocker) { H.rocker = true; pulse('rocker'); } if (!H.A) { H.A = true; pulse('btnA'); } }
     if (!H.B && !h.ground && h.vy > 0) {
       var C = SB.K.CELL_SUB, cx = Math.floor((h.x + (SB.K.HERO_W_SUB >> 1)) / C), cy = Math.floor((h.y + SB.K.HERO_H_SUB) / C);
       for (var r = cy; r < Math.min(lv.h, cy + 8); r++) if (lv.plat[r * lv.w + cx]) { H.B = true; pulse('btnB'); break; }
     }
-  };
+  }
   ui.sampleRecord = function () {
     return SB.record.fromJSON({ v: 1, w: SB.GRID.W, h: SB.GRID.H, mode: 0, focal: null, rows: Array.from(SB.SAMPLE_ROOM), rows2: null });
   };
   ui.again = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level }); };
 
-  ui.showClear = function () { document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; document.body.classList.remove('playing'); };
+  ui.showClear = function () { if (G.record && SB.save.doc) { SB.save.doc.stats.clears++; SB.save.addRecent(G.record); ui.lastHash = SB.sim.hash(G.state); } document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; document.body.classList.remove('playing'); };
   ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); document.getElementById('back').hidden = false; };
   /* every in game back is an internal screen switch that hides every overlay it can sit over */
   ui.toTitle = function () { RV.on = false; ui.releasePhoto(); ui.hideClear(); ui.hideDeath(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
@@ -4103,6 +4284,19 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     document.getElementById('pickB').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.B); });
     document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });
     document.getElementById('share').addEventListener('click', function () { ui.openShare(); });
+    document.getElementById('settingsbtn').addEventListener('click', function () { ui.show('settings'); });
+    document.getElementById('levelcode').placeholder = ui.COPY.levelCode;   /* the field says what it takes (t110: an empty white box) */
+    document.getElementById('settitle').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
+    var setBool = function (id, key) { document.getElementById(id).addEventListener('change', function () { SB.save.doc.settings[key] = this.checked; SB.save.commit(); ui.applySettings(); }); };
+    setBool('setmirror', 'mirror'); setBool('setsound', 'sound'); setBool('setmusic', 'music');
+    document.getElementById('setmotion').addEventListener('change', function () { SB.save.doc.settings.reducedMotion = this.value === 'os' ? null : this.value === 'on'; SB.save.commit(); });
+    document.getElementById('setcopy').addEventListener('click', function () { var el = document.getElementById('setexport'); try { navigator.clipboard.writeText(el.value).catch(function () { el.select(); }); } catch (e) { el.select(); } });
+    document.getElementById('setimportgo').addEventListener('click', function () {
+      var text = document.getElementById('setimport').value;
+      if (!text) return;
+      if (!window.confirm(ui.COPY.importConfirm)) return;
+      if (SB.save.importText(text)) location.reload(); else document.getElementById('setimport').value = ui.COPY.importBad;
+    });
     document.getElementById('shareclose').addEventListener('click', function () { ui.closeShare(); });
     document.getElementById('copylink').addEventListener('click', function () { copied(this, document.getElementById('sharelink').value); });
     document.getElementById('copycode').addEventListener('click', function () { copied(this, SB.record.encode(G.record)); });
@@ -4203,7 +4397,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   SB.render.init();
   SB.input.init();
   SB.audio.init();
+  SB.save.load();
+  SB.ui.firstRoomDone = !!SB.save.doc.onboarding.firstRoomDone;
+  (function (o) { SB.ui.hinted.rocker = o.rocker; SB.ui.hinted.A = o.jump; SB.ui.hinted.B = o.dive; })(SB.save.doc.onboarding.hints);
   SB.ui.init();
+  SB.ui.applySettings();
+  if (SB.save.quarantined) { var dm = document.getElementById('codemsg'); dm.textContent = SB.ui.COPY.saveDamaged; dm.hidden = false; }
+  SB.ui.show('title');
   /* opening a link (section 1.5): the fragment read, cleared with replaceState (never a navigation), and opened behind
      the Tap to develop card; a hash typed or pasted into an open page does the same */
   function fromHash() {
@@ -4264,7 +4464,15 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       if (j && j.rows) rec = SB.record.fromJSON(j); else if (j && j.record) rec = SB.record.fromJSON(j.record); else rec = SB.record.decode(String(str).trim());
       return rec ? SB.ui.startRoom(rec, SB.ui.COPY.sampleRoom) : false;
     },
-    goto: function (name) { if (name === 'title') SB.ui.toTitle(); else if (name === 'sample') SB.ui.startRoom(SB.ui.sampleRecord(), SB.ui.COPY.sampleRoom); return SB.ui.screen; },
+    goto: function (name) {
+      if (name === 'title') SB.ui.toTitle();
+      else if (name === 'sample') SB.ui.startRoom(SB.ui.sampleRecord(), SB.ui.COPY.sampleRoom);
+      else if (name === 'exit' && G.state && G.level && G.level.exit >= 0) {   /* the hero set down in the exit cell: the next step clears the room */
+        var c = G.level.exit, CS = SB.K.CELL_SUB, h = G.state.hero;
+        h.x = (c % G.level.w) * CS + ((CS - SB.K.HERO_W_SUB) >> 1); h.y = Math.floor(c / G.level.w) * CS; h.vx = 0; h.vy = 0;
+      }
+      return SB.ui.screen;
+    },
     hold: function (on) { held = !!on; loop.dropped += acc; acc = 0; return held; },
     step: function (n) { for (var i = 0; i < n && G.state; i++) stepOnce(); draw(); return loop.steps; }
   };

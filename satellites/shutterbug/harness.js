@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 4809;              /* raised per task: the count a full run must reach (4809 after T1.8, 30 Oct) */
+const ASSERT_FLOOR = 4813;              /* raised per task: the count a full run must reach (4813 after T1.10, 30 Oct) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -4181,6 +4181,20 @@ group('H-share-2', 'every fixture in every mode, and the sample room with a foca
     if (!!a.needsCrop !== !!b.needsCrop || (!a.needsCrop && SB.pipeline.levelHash(a) !== SB.pipeline.levelHash(b))) bad.push(tag + ': another level');
   }
   t.eq(bad.length, 0, recs.length + ' records round trip through their links to the same record and level' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
+});
+
+/* ================================================================ the save (T1.10) */
+group('H-save-1', 'the save\'s pure validator (section 2.4): a v 2 save is left untouched, a save missing keys is repaired from the defaults (unknown keys dropped, recent and the pool trimmed), an unreadable string is set aside in quarantine under the same key', t => {
+  const R = SB.record, d = R.saveDefaults();
+  const newer = R.loadSave(JSON.stringify({ v: 2, dp: 99 }));
+  t.ok(newer.readOnly && newer.newer && newer.doc.dp === 0 && !newer.write, 'a v 2 save runs on the defaults and is left untouched (nothing written)');
+  const rec = R.toJSON(R.fromJSON(fixture('sample-room').fx.record));
+  const part = R.loadSave(JSON.stringify({ v: 1, dp: 7, settings: { mirror: true }, junk: 1, recent: Array(25).fill(rec).concat([{ bad: 1 }]), pool: { jump: [1, 2, 3, 4, 5, 6] }, moments: { first_clear: true, weird: 3 } })), doc = part.doc;
+  t.ok(doc.dp === 7 && doc.settings.mirror === true && doc.settings.sound === true && doc.settings.reducedMotion === null && !('junk' in doc) && doc.recent.length === 20 && doc.pool.jump.length === 4 && doc.pool.dive.length === 0 && doc.moments.first_clear === true && !('weird' in doc.moments) && doc.onboarding.hints.rocker === false && part.write,
+    'a save missing keys is repaired: kept values stay, missing ones take the defaults, unknown keys drop, recent keeps 20 valid records and the pool 4 a slot');
+  const q = R.loadSave('{not json');
+  t.ok(q.quarantined && q.write && q.doc.quarantine === '{not json' && JSON.stringify(Object.assign({}, q.doc, { quarantine: null })) === JSON.stringify(d), 'an unreadable string is set aside in quarantine of a fresh document, written under the same key');
+  t.ok(JSON.stringify(R.loadSave(null).doc) === JSON.stringify(d) && JSON.stringify(R.validateSave(R.validateSave(doc))) === JSON.stringify(R.validateSave(doc)), 'no save gives the defaults; validating twice changes nothing');
 });
 
 /* ================================================================ sprites (T0.17) */
