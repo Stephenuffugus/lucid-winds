@@ -15,3 +15,10 @@ gates: none (no page yet)
 shots: /tmp/claude-1000/shutterbug-shots/setup/shot-412x915.png (the kickoff page, the Chrome proof): 1. the heading wraps to two lines at 412 2. the prompt box cuts mid sentence at the fold, by design 3. a third of the screen below the box is empty
 in flight: T0.1
 blocked: none. ~/.config/gh/hosts.yml is absent on this box, so memory is written locally and not pushed (scripts/memory-sync.sh cannot reach the private repo); said again in the morning report.
+
+### 2026-10-30 01:58 UTC  T0.1  Prove the browser pipe  commit 7a90e4a4d
+shipped: the placeholder satellites/shutterbug/index.html; test/harness.mjs (one server rooted at the repo root with a synthetic /portal/ and a wrapper page, SB_PAGE override, swiftshader Chrome from SB_PUPPETEER_DIR, tap = elementFromPoint proof then a REAL touch, press and finger handles for holds, step and waitFrames in sim frames); tools/check.js (gerplunk shape, --fast, --gate, the RUN or SKIPPED browser column, xfail counting, a summary that never overstates); tools/shutterbug-tests/ship.mjs (the per task bookkeeping)
+gates: check.js prints "browser gates: RUN (puppeteer from /workspaces/sws-tools)" and "NO GATES RAN" (exit 1, no gates yet); under SWS_NO_BROWSER=1 it prints SKIPPED with the reason. Harness smoke: the portal link tapped with a real touch navigates to the game with /portal/ in document.referrer; /music-unlocks.js is served from the repo root; no page errors.
+shots: /tmp/claude-1000/shutterbug-shots/t01/shot-360x780.png (and 412x915): 1. the page is white, not Soot 2. nothing on screen names the game (only the tab title) 3. no viewport meta, so the phone lays it out at 980 px and scales it down
+in flight: T0.2
+blocked: none

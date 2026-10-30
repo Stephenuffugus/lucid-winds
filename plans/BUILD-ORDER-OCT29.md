@@ -1,11 +1,11 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 01:45 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
+> **STATE 30 Oct 01:58 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
 > night one order, the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after T0.8a, sb-m0-2 after
-> T0.8b, sb-m0-3 when M0 is complete. **Last shipped: T0.0** (`7d394bafa`, the push proven non interactive, remote head
-> equals local). Harness: none yet (no page). Deployed: nothing; Shutterbug is not live. Red: nothing. Autosave
-> running (PID 7375, log `/tmp/claude-1000/shutterbug-lead/autosave.log`). Next: T0.1, the browser pipe. Opus rewrites
-> this block the turn a task ships (task id, harness assertion count, the stamp if deployed, what is red).
+> T0.8b, sb-m0-3 when M0 is complete. **Last shipped: T0.1** (`7a90e4a4d`, the browser pipe proven, test/harness.mjs and
+> tools/check.js in place). Harness: none yet. Deployed: nothing; Shutterbug is not live. Red: nothing. Autosave running
+> (PID 7375, log `/tmp/claude-1000/shutterbug-lead/autosave.log`). Next: T0.2, the skeleton. Opus rewrites this block the
+> turn a task ships (task id, harness assertion count, the stamp if deployed, what is red).
 
 You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is ONE game from zero:
 Shutterbug, a photo of a room becomes a pixel platformer level (`satellites/shutterbug/DESIGN.md`). Fable wrote the

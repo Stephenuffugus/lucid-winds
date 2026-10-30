@@ -32,6 +32,7 @@ The builder updates this table in the same commit that ships the task (law 8: th
 | Task | Status | Commit | Proof | Seen wrong in the shot |
 | --- | --- | --- | --- | --- |
 | T0.0 | shipped | `7d394bafa` | `git ls-remote --heads origin add-sproing-jumper` = local HEAD `7d394bafa` | no shot (git task) |
+| T0.1 | shipped | `7a90e4a4d` | check.js header `browser gates: RUN (puppeteer from /workspaces/sws-tools)`; two placeholder PNGs, no page errors | t01 360: white not Soot; nothing names the game; no viewport meta |
 
 Status is one of `shipped`, `shipped with xfail Qn`, `BLOCKED on <assertion> Qn`, `skipped (budget)`. The night's last row is `T0.18 deploy` with the deploy commit and the two origin hashes, or `NOT LIVE` and why.
 
