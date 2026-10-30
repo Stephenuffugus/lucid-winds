@@ -326,7 +326,8 @@ const MUTANTS = [
   { name: 'SPECK_CAP_7', task: 'T1.2b', file: 'page', find: 'var cap = T.CAP_SPECK + (level.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0);', repl: 'var cap = T.CAP_SPECK + 1 + (level.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0);',
     gates: [{ gate: 'harness', only: 'H-feat-2', expect: 'eight isolated Sun specks within reach give CAP_SPECK' }] },
   { name: 'TRAP_ON_ASCENT', task: 'T1.2b', file: 'page', edits: [['if (taken[c]) { clash = true; break; } ', ''], ['      if (!trapOk(level, cells)) continue;\n', '']], find: null, repl: null,
-    gates: [{ gate: 'harness', only: 'H-feat-3', expect: 'keeps the rule' }] },
+    /* since T1.3 the second round catches a field on the ascent and the ladder removes it, so the lab names the loss */
+    gates: [{ gate: 'harness', only: 'H-feat-3', expect: 'trap-pattern (authored for it) holds a field' }] },
   { name: 'TRAP_ON_TAB', task: 'T1.2b', file: 'page', find: ' || level.tab[c] || (c + w < n && level.tab[c + w])) continue;', repl: ') continue;',
     gates: [{ gate: 'harness', only: 'H-feat-3', expect: 'keeps the rule' }] },
   { name: 'TRAP_OK_BLIND', task: 'T1.2b', file: 'page', find: '      if (!found) return false;\n', repl: '',
