@@ -43,9 +43,12 @@ function strip(src) {
       while (j < n && src[j] !== '`') {
         if (src[j] === '\\') { out += '  '; j += 2; continue; }
         if (src[j] === '$' && src[j + 1] === '{') {
-          let depth = 1, k = j + 2;
-          while (k < n && depth) { if (src[k] === '{') depth++; else if (src[k] === '}') depth--; k++; }
-          out += '${' + strip(src.slice(j + 2, k - 1)) + '}'; j = k; continue;
+          /* find the substitution's closing brace on code, not on text: strings, templates and comments inside it are
+             blanked first by strip() itself (a quoted brace no longer ends it) */
+          const inner = strip(src.slice(j + 2));
+          let depth = 1, k = 0;
+          while (k < inner.length && depth) { if (inner[k] === '{') depth++; else if (inner[k] === '}') depth--; k++; }
+          out += '${' + inner.slice(0, k - 1) + '}'; j = j + 2 + k; continue;
         }
         out += src[j] === '\n' ? '\n' : ' '; j++;
       }
@@ -111,7 +114,7 @@ const FORBIDDEN = ['window', 'document', 'navigator', 'location', 'self', 'paren
   'indexedDB', 'fetch', 'XMLHttpRequest', 'setTimeout', 'setInterval', 'requestAnimationFrame', 'queueMicrotask', 'performance',
   'Date', 'Intl', 'console', 'alert', 'eval', 'Function', 'Image', 'ImageData', 'ImageBitmap', 'createImageBitmap', 'OffscreenCanvas',
   'AudioContext', 'crypto', 'btoa', 'atob', 'TextEncoder', 'TextDecoder', 'import', 'require', 'process', 'Promise', 'async', 'await',
-  'instanceof', 'localeCompare', 'normalize', 'globalThis', 'Reflect', 'Proxy', 'WeakRef'];
+  'instanceof', 'localeCompare', 'normalize', 'globalThis', 'Reflect', 'Proxy', 'WeakRef', 'constructor'];
 const MATH_OK = new Set(['floor', 'ceil', 'round', 'trunc', 'abs', 'min', 'max', 'sign', 'sqrt', 'clz32', 'imul', 'fround']);
 for (const b of core) {
   const s = strip(b.src);

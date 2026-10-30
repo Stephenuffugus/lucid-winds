@@ -70,29 +70,38 @@ try {
     /* the canvas takes no pointer events, so a thumb on the play area lands on its stage; nothing of the card may be there */
     const top = document.elementFromPoint(view.left + view.width / 2, view.top + view.height * 0.35);
     const card = getComputedStyle(document.getElementById('clear'));
-    return { screen: window.SB_DEV.screen(), frame: window.SB_DEV.state().frame, onCanvas: !!top && (top.id === 'stage' || top.id === 'view'), cardShown: card.display !== 'none' };
+    return { screen: window.SB_DEV.screen(), frame: window.SB_DEV.state().frame, onCanvas: !!top && top.id === 'stage', cardShown: card.display !== 'none' };
   });
   R.say(after.screen === 'play' && after.frame === 0, 'a real touch on Again restarts the room (screen ' + after.screen + ', frame ' + after.frame + ')');
   R.say(!after.cardShown && after.onCanvas, 'Again leaves nothing painted over the play area');
 
-  /* the unheld check: the real loop, a real key held */
-  await page.evaluate(() => window.SB_DEV.hold(false));
-  const a0 = await page.evaluate(() => { const p = window.SB_DEV.perf(); return { f: window.SB_DEV.frames(), loop: p.loop, now: p.now }; });
+  /* the unheld check: the real loop, a real key held. The test keeps its own log of every animation frame's timestamp
+     (a requestAnimationFrame chain of its own, registered after the page's, so it sees each frame the page saw) */
+  await page.evaluate(() => { window.__t = []; window.__log = true; const tick = t => { window.__t.push(t); if (window.__log) requestAnimationFrame(tick); }; requestAnimationFrame(tick); });
+  await page.waitForFunction(() => window.__t.length >= 3, { timeout: 30000, polling: 20 });
+  const a0 = await page.evaluate(() => { window.__m0 = window.__t.length; window.SB_DEV.hold(false); const p = window.SB_DEV.perf(); return { f: window.SB_DEV.frames(), loop: p.loop }; });
   await page.keyboard.down('ArrowLeft');
   await page.waitForFunction(f => window.SB_DEV.frames() >= f + 40, { timeout: 60000, polling: 20 }, a0.f);
   await page.keyboard.up('ArrowLeft');
-  await page.evaluate(() => window.SB_DEV.hold(true));
-  const a1 = await page.evaluate(() => { const p = window.SB_DEV.perf(); return { f: window.SB_DEV.frames(), loop: p.loop, now: p.now, rec: window.SB_DEV.recording() }; });
+  const a1 = await page.evaluate(() => { window.SB_DEV.hold(true); window.__log = false; const p = window.SB_DEV.perf(); return { f: window.SB_DEV.frames(), loop: p.loop, t: window.__t.slice(), m0: window.__m0, m1: window.__t.length, rec: window.SB_DEV.recording() }; });
   /* the books cover only the steps the accumulator ran (SB_DEV.step's steps are the held gate's, outside the clock) */
   const L = a1.loop, books = L.accSteps * L.stepMs + L.acc + L.dropped - L.consumed;
   R.say(L.accSteps >= 40 && Math.abs(books) < 0.01, 'the accumulator\'s books balance: ' + L.accSteps + ' steps x ' + L.stepMs.toFixed(3) + ' ms + owed + dropped = consumed (off by ' + books.toFixed(4) + ' ms over ' + L.raf + ' frames, ' + L.stalls + ' stalls)');
   R.say(L.maxSteps <= 4, 'never more than four steps in one frame (max ' + L.maxSteps + ')');
-  /* the rate, against the test's own clock (performance.now read at both ends) and its own step length */
-  const STEP = 1000 / 60, dSteps = a1.loop.accSteps - a0.loop.accSteps, dt = a1.now - a0.now;
-  const dClamp = a1.loop.clamped - a0.loop.clamped, dStalls = a1.loop.stalls - a0.loop.stalls;
+  /* the rate: section 1.5's accumulator replayed HERE on the frames the test logged (each frame clamped to 100 ms, at
+     most four steps of 1000 / 60, a stall drops the rest); the page must have run exactly that many steps */
+  const STEP = 1000 / 60, dSteps = a1.loop.accSteps - a0.loop.accSteps;
+  let acc = 0, want = 0;
+  for (let i = a1.m0; i < a1.m1; i++) {
+    acc += Math.min(a1.t[i] - a1.t[i - 1], 100);
+    let n = 0;
+    while (acc >= STEP && n < 4) { acc -= STEP; n++; }
+    if (acc >= STEP) acc = 0;
+    want += n;
+  }
+  const span = a1.t[a1.m1 - 1] - a1.t[a1.m0 - 1];
   R.say(Math.abs(a1.loop.stepMs - STEP) < 1e-9, 'the step is 16.667 ms (1000 / 60, computed here): the page says ' + a1.loop.stepMs);
-  R.say(dSteps <= dt / STEP + 2, 'never faster than real time: ' + dSteps + ' steps in ' + dt.toFixed(0) + ' ms (at most ' + (dt / STEP + 2).toFixed(1) + ')');
-  R.say(dSteps >= (dt - dClamp - dStalls * 100) / STEP - 2, 'never slower than real time but for clamped frames and stalls: ' + dSteps + ' steps (at least ' + ((dt - dClamp - dStalls * 100) / STEP - 2).toFixed(1) + ')');
+  R.say(dSteps === want, 'the loop ran exactly the steps the accumulator owes on the test\'s own frame log: ' + dSteps + ' steps, ' + want + ' owed over ' + (a1.m1 - a1.m0) + ' frames, ' + span.toFixed(0) + ' ms');
   const flat = a1.rec.flatMap(([n, w]) => Array(n).fill(w));
   const firstL = flat.findIndex(w => w & 1), lastL = flat.length - 1 - [...flat].reverse().findIndex(w => w & 1);
   const gaps = flat.slice(firstL, lastL + 1).filter(w => !(w & 1)).length;
@@ -100,7 +109,8 @@ try {
   R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
   await page.close();
   /* a short laptop window keeps 1x (2x only when the minimum view fits at 2x); a tall one gets 2x; nothing overflows */
-  for (const [w, h, want] of [[1366, 650, 384], [1366, 1100, 768]]) {
+  const EDGE2X = 36 + 20 * 16 * 2 + 168;     /* the top strip, the 20 row minimum at 2x, the control strip: 844 */
+  for (const [w, h, want] of [[1366, 650, 384], [1366, EDGE2X - 1, 384], [1366, EDGE2X, 768], [1366, 1100, 768]]) {
     const { page, errors } = await newPage(browser, { width: w, height: h, dpr: 1, touch: false });
     await gotoGame(page, srv.base);
     await ready(page);
@@ -126,7 +136,8 @@ try {
     await tap(page, '#sample');
     const at = await page.evaluate(() => {
       const c = el => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
-      return { L: c(document.querySelector('#rocker .zl')), R: c(document.querySelector('#rocker .zr')), A: c(document.querySelector('#btnA .glyph')) };
+      return { L: c(document.querySelector('#rocker .zl')), R: c(document.querySelector('#rocker .zr')), A: c(document.querySelector('#btnA .glyph')),
+        B: c(document.querySelector('#btnB .glyph')), gap: c(document.querySelector('#rocker .gap')) };
     });
     let rf = null, rdir = null, af = null;
     for (const [n, mask] of climb.runs) {
@@ -173,6 +184,29 @@ try {
     R.say((both & 1) && (both & 4), 'a second finger on A during a rocker hold: both register (word ' + both + ')');
     R.say((after & 1) && !(after & 4), 'lifting the second finger leaves the rocker held (word ' + after + ')');
     R.say(none === 0, 'lifting the thumb releases the rocker (word ' + none + ')');
+    /* the slide: a thumb down on the left zone and moved to the right zone without lifting switches the direction; moved
+       into the gap it is neutral; lifted it is nothing; and B taps (each move waited on, since Chrome may coalesce one) */
+    for (let k = 0; k < 20; k++) await page.evaluate(() => window.SB_DEV.step(1));
+    const word = async () => { await page.evaluate(() => window.SB_DEV.step(1)); return page.evaluate(() => window.SB_DEV.lastInput()); };
+    const slide = await page.touchscreen.touchStart(at.L.x, at.L.y);
+    const wL = await word();
+    await slide.move(at.R.x, at.R.y);
+    await page.waitForFunction(() => document.querySelector('#rocker .zr.on'), { timeout: 5000 }).catch(() => {});
+    const wR = await word();
+    await slide.move(at.gap.x, at.gap.y);
+    await page.waitForFunction(() => !document.querySelector('#rocker .zone.on'), { timeout: 5000 }).catch(() => {});
+    const wGap = await word();
+    await slide.end();
+    const wUp = await word();
+    R.say(wL === 1, 'the slide: a thumb down on the left zone is left (word ' + wL + ')');
+    R.say(wR === 2, 'the slide: moved to the right zone without lifting it is right, and only right (word ' + wR + ')');
+    R.say(wGap === 0, 'the slide: moved into the neutral gap it is nothing (word ' + wGap + ')');
+    R.say(wUp === 0, 'the slide: lifted it is nothing (word ' + wUp + ')');
+    const bf = await page.touchscreen.touchStart(at.B.x, at.B.y);
+    await bf.end();
+    const wB = await word();
+    R.say((wB & 32) !== 0 && (wB & 4) === 0, 'a tap on B is the dive verb\'s tap, never A (word ' + wB + ')');
+
     /* a thumb reaching high for jump, at the top of A's full height hit area, jumps and never leaves the play screen */
     const high = await page.evaluate(() => { const r = document.getElementById('btnA').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 6 }; });
     for (let k = 0; k < 60; k++) await page.evaluate(() => window.SB_DEV.step(1));

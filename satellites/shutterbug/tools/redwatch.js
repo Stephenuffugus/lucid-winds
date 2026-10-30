@@ -132,7 +132,48 @@ const MUTANTS = [
 
   { name: 'SECOND_FINGER_RELEASES_FIRST', task: 'T0.8b', file: 'page', find: '        e.preventDefault();\n        ptrs[e.pointerId] = 1;',
     repl: '        e.preventDefault();\n        I.releaseAll();\n        ptrs[e.pointerId] = 1;',
-    gates: [{ gate: 'play', expect: 'a second finger on A during a rocker hold: both register' }] }
+    gates: [{ gate: 'play', expect: 'a second finger on A during a rocker hold: both register' }] },
+
+  /* the second review (30 Oct, before sb-m0-2) */
+  { name: 'MAX_STEPS_1', task: 'T0.8b review', file: 'page', find: 'MAX_STEPS = 4, DT_MAX = 100', repl: 'MAX_STEPS = 1, DT_MAX = 100',
+    gates: [{ gate: 'play', expect: 'the loop ran exactly the steps the accumulator owes' }] },
+  { name: 'DT_MAX_20', task: 'T0.8b review', file: 'page', find: 'MAX_STEPS = 4, DT_MAX = 100', repl: 'MAX_STEPS = 4, DT_MAX = 20',
+    gates: [{ gate: 'play', expect: 'the loop ran exactly the steps the accumulator owes' }] },
+  { name: 'SLIDE_KEEPS_OLD', task: 'T0.8b review', file: 'page', find: "      if (rockerVerb) I.release(rockerVerb, 'rocker');", repl: "      if (rockerVerb && !v) I.release(rockerVerb, 'rocker');",
+    gates: [{ gate: 'play', expect: 'the slide: moved to the right zone without lifting it is right' }] },
+  { name: 'GAP_IS_LEFT', task: 'T0.8b review', file: 'page', find: "      if (x < a.right) return 'L';", repl: "      if (x < b.left) return 'L';",
+    gates: [{ gate: 'play', expect: 'the slide: moved into the neutral gap it is nothing' }] },
+  { name: 'FITS2_NO_STRIP', task: 'T0.8b review', file: 'page', find: 'var fits2 = avail >= T.TOP_STRIP + T.VIEW_ROWS_MIN * K.CELL * 2 + T.CONTROL_STRIP;',
+    repl: 'var fits2 = avail >= T.TOP_STRIP + T.VIEW_ROWS_MIN * K.CELL * 2;',
+    gates: [{ gate: 'play', expect: '1366x843: the canvas is 384 CSS px wide' }] },
+  { name: 'CANVAS_TAKES_POINTERS', task: 'T0.8b review', file: 'page', find: 'pointer-events: none; background: var(--ink); }', repl: 'background: var(--ink); }',
+    gates: [{ gate: 'play', expect: 'Again leaves nothing painted over the play area' }] },
+  { name: 'LIGHT_TIE_TO_SMALLER', task: 'T0.8b review', file: 'page', find: 'if (peak > bestPeak) { bestPeak = peak; light = lights[i]; }', repl: 'if (peak >= bestPeak) { bestPeak = peak; light = lights[i]; }',
+    gates: [{ gate: 'harness', only: 'H-pipe-12', expect: 'two clusters that both peak at Glare' }] },
+  { name: 'EXIT_ROWS_5', task: 'T0.8b review', file: 'page', find: 'SPAWN_ROW_FROM_BOTTOM: 2, EXIT_ROWS: 4,', repl: 'SPAWN_ROW_FROM_BOTTOM: 2, EXIT_ROWS: 5,',
+    gates: [{ gate: 'harness', only: 'H-pipe-12', expect: 'a Glare lamp in row 4, under the top four rows, is not the light' }] },
+  { name: 'EXIT_FALLBACK_DARKEST', task: 'T0.8b review', file: 'page', find: 'if (standable(c2) && (bl < 0 || L[c2] > L[bl])) bl = c2;', repl: 'if (standable(c2) && (bl < 0 || L[c2] < L[bl])) bl = c2;',
+    gates: [{ gate: 'harness', only: 'H-pipe-12', expect: 'with no light, the exit is a brightest standable cell' }] },
+  { name: 'EDGE_GE', task: 'T0.8b review', file: 'page', edits: [
+      ['if (!solid[a] && !solid[b] && L[a] - L[b] > T.EDGE_DROP_L) {', 'if (!solid[a] && !solid[b] && L[a] - L[b] >= T.EDGE_DROP_L) {'],
+      ['L[y * w + x1 + 1] - L[(y + 1) * w + x1 + 1] > T.EDGE_DROP_L) x1++;', 'L[y * w + x1 + 1] - L[(y + 1) * w + x1 + 1] >= T.EDGE_DROP_L) x1++;']],
+    gates: [{ gate: 'harness', only: 'H-pipe-4', expect: 'a drop of exactly 60, is no platform' }] },
+  { name: 'CC8', task: 'T0.8b review', file: 'page', find: "        if (y < h - 1 && mask[c + w] && !seen[c + w]) { seen[c + w] = 1; stack.push(c + w); }",
+    repl: "        if (y < h - 1 && mask[c + w] && !seen[c + w]) { seen[c + w] = 1; stack.push(c + w); }\n        if (x < w - 1 && y < h - 1 && mask[c + w + 1] && !seen[c + w + 1]) { seen[c + w + 1] = 1; stack.push(c + w + 1); }\n        if (x > 0 && y < h - 1 && mask[c + w - 1] && !seen[c + w - 1]) { seen[c + w - 1] = 1; stack.push(c + w - 1); }",
+    gates: [{ gate: 'harness', only: 'H-pipe-5', expect: 'two blocks meeting only at a corner are two landmarks' }] },
+  { name: 'EXIT_ROW_EARLY_1', task: 'T0.8b review', file: 'page', find: 'if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB > ex * CS2 && h.y < (ey + 1) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {',
+    repl: 'if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB > ex * CS2 && h.y < (ey + 2) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {',
+    gates: [{ gate: 'harness', only: 'H-sim-20', expect: "the head exactly at the exit cell's bottom edge" }] },
+  { name: 'EXIT_TOUCH_X', task: 'T0.8b review', file: 'page', find: 'if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB > ex * CS2 && h.y < (ey + 1) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {',
+    repl: 'if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB >= ex * CS2 && h.y < (ey + 1) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {',
+    gates: [{ gate: 'harness', only: 'H-sim-20', expect: 'the box exactly beside the exit cell' }] },
+  { name: 'EXIT_TOUCH_Y', task: 'T0.8b review', file: 'page', find: 'if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB > ex * CS2 && h.y < (ey + 1) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {',
+    repl: 'if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB > ex * CS2 && h.y <= (ey + 1) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {',
+    gates: [{ gate: 'harness', only: 'H-sim-20', expect: "the head exactly at the exit cell's bottom edge" }] },
+  { name: 'TEMPLATE_BRACE_IN_STRING', task: 'T0.8b review', file: 'page', find: CORE_SIM_OPEN, repl: CORE_SIM_OPEN + "  SB.stamp = function () { return `${'}' + Date.now()}`; };\n",
+    gates: [{ gate: 'lint', expect: 'forbidden token "Date"' }] },
+  { name: 'CTOR_CTOR', task: 'T0.8b review', file: 'page', find: CORE_SIM_OPEN, repl: CORE_SIM_OPEN + "  SB.roll = function () { return [].constructor.constructor('return 1')(); };\n",
+    gates: [{ gate: 'lint', expect: 'forbidden token "constructor"' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

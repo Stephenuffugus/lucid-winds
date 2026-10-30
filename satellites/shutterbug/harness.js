@@ -483,7 +483,37 @@ const pipeRef = (() => {
     }
     return out;
   }
-  return { otsu, smooth, solidity, plats, DESIGN };
+  /* the ceiling light and the exit candidate: open cells over 200 in the top 4 rows, 4 connected; the light has the
+     highest peak L, ties to the larger cluster, then the lowest first cell; the exit is the light's lowest standable
+     row at its lowest index, else the brightest standable cell of the first top row that has one (lowest index) */
+  function exitOf(lv) {
+    const w = lv.w, rows = 4, inTop = i => i < rows * w && !lv.solid[i] && Lof[lv.pal[i]] > 200;
+    const st = i => i + w < w * lv.h && !lv.solid[i] && (lv.solid[i + w] || lv.plat[i + w]);
+    const seen = new Set(), clusters = [];
+    for (let i = 0; i < rows * w; i++) {
+      if (!inTop(i) || seen.has(i)) continue;
+      const c = [], q = [i]; seen.add(i);
+      while (q.length) { const j = q.pop(); c.push(j); for (const k of [j - 1, j + 1, j - w, j + w]) { if (k < 0 || k >= rows * w || seen.has(k) || !inTop(k)) continue; if ((k === j - 1 || k === j + 1) && Math.floor(k / w) !== Math.floor(j / w)) continue; seen.add(k); q.push(k); } }
+      c.sort((a, b) => a - b); clusters.push(c);
+    }
+    let light = null;
+    for (const c of clusters) {
+      const peak = Math.max(...c.map(i => Lof[lv.pal[i]]));
+      if (!light) { light = { c, peak }; continue; }
+      if (peak > light.peak || (peak === light.peak && (c.length > light.c.length || (c.length === light.c.length && c[0] < light.c[0])))) light = { c, peak };
+    }
+    if (light) {
+      const ok = light.c.filter(st);
+      if (ok.length) { const row = Math.max(...ok.map(i => Math.floor(i / w))); return Math.min(...ok.filter(i => Math.floor(i / w) === row)); }
+    }
+    for (let y = 0; y < rows; y++) {
+      let best = -1;
+      for (let x = 0; x < w; x++) { const i = y * w + x; if (st(i) && (best < 0 || Lof[lv.pal[i]] > Lof[lv.pal[best]])) best = i; }
+      if (best >= 0) return best;
+    }
+    return -1;
+  }
+  return { otsu, smooth, solidity, plats, exitOf, DESIGN };
 })();
 function platformRuns(lv) {
   let n = 0;
@@ -565,6 +595,10 @@ group('H-pipe-4', 'one way platforms: open, runs of at least 3, never under a so
   const two = SB.pipeline.build(labRecord({ 20: '4444455444445554', 21: '4444433444443334' }), {});
   t.eq(two.plat[21 * 24 + 5] + two.plat[21 * 24 + 6], 0, 'lab: a 2 wide lit plank makes no platform');
   t.eq(two.plat[21 * 24 + 12] + two.plat[21 * 24 + 13] + two.plat[21 * 24 + 14], 3, 'lab: a 3 wide lit plank (x 12..14) makes a 3 wide platform');
+  /* DESIGN 6.4 says over 60: Ash 199 over Pewter 139 is exactly 60 and makes nothing; Paper 239 over Pewter makes one */
+  const sixty = SB.pipeline.build(labRecord({ 20: '444444444445554444444444', 21: '444333444443334444444444' }), {});
+  t.eq(sixty.plat[21 * 24 + 3] + sixty.plat[21 * 24 + 4] + sixty.plat[21 * 24 + 5], 0, 'lab: Ash over Pewter, a drop of exactly 60, is no platform (DESIGN: over 60)');
+  t.eq(sixty.plat[21 * 24 + 11] + sixty.plat[21 * 24 + 12] + sixty.plat[21 * 24 + 13], 3, 'lab: Paper over Pewter beside it, a drop of 100, is a platform');
 });
 
 group('H-pipe-5', 'landmarks: at most 3, each at least 8 cells, by size, disjoint; the giant is one block of its drawn size', t => {
@@ -586,6 +620,10 @@ group('H-pipe-5', 'landmarks: at most 3, each at least 8 cells, by size, disjoin
     43: '411114444111144441111444', 44: '411114444111144441111444', 45: '411114444111144441111444', 46: '411114444111144441111444' }), {});
   t.eq(three.landmarks.length, 3, 'three separate blocks standing on the floor are three landmarks (sizes ' + three.landmarks.map(l => l.size).join('/') + '): the floor row joins nothing (Q58)');
   t.ok(three.landmarks.every(l => l.bbox[3] < three.h - 1), 'no landmark reaches into the floor row');
+  /* DESIGN 6.5 is 4 connected: two blocks that meet only at a corner are two landmarks */
+  const diag = SB.pipeline.build(labRecord({ 10: '411114444444444444444444', 11: '411114444444444444444444', 12: '411114444444444444444444', 13: '411114444444444444444444',
+    14: '444441111444444444444444', 15: '444441111444444444444444', 16: '444441111444444444444444', 17: '444441111444444444444444' }), {});
+  t.eq(diag.landmarks.length, 2, 'two blocks meeting only at a corner are two landmarks (4 connected; sizes ' + diag.landmarks.map(l => l.size).join('/') + ')');
   const g = fixture('one-giant-landmark').fx.expect.giant;
   const drawn = (g.x1 - g.x0 + 1) * (g.y1 - g.y0 + 1);
   const lv = buildFx(fixture('one-giant-landmark'), 0);
@@ -675,6 +713,22 @@ group('H-pipe-12', 'the light is the cluster with the brightest cell; the beacon
   const two = SB.pipeline.build(labRecord({ 0: '444444444444445555554444', 1: '444666444444445555554444', 2: '444666444444445555554444', 3: '444333444444443333334444' }), {});
   const exitX = two.exit % 24;
   t.ok(exitX >= 3 && exitX <= 5, 'a 3x2 Glare lamp beats a bigger 6x3 Paper patch: the light is the lamp (exit at x ' + exitX + ', Q59)');
+  /* ties: two clusters both peaking at Glare, the larger wins; at equal size the one with the lower first cell */
+  const tie = SB.pipeline.build(labRecord({ 1: '466444444445555566444444', 2: '466444444445555555444444', 3: '433444444443333333444444' }), {});
+  t.ok(tie.exit % 24 >= 11 && tie.exit % 24 <= 17, 'two clusters that both peak at Glare: the larger (a Paper patch with a Glare corner) is the light (exit x ' + (tie.exit % 24) + ')');
+  const twin = SB.pipeline.build(labRecord({ 1: '466444444444444664444444', 2: '466444444444444664444444', 3: '433444444444444334444444' }), {});
+  t.ok(twin.exit % 24 <= 2, 'two equal Glare lamps: the one whose first cell comes first is the light (exit x ' + (twin.exit % 24) + ')');
+  /* the window is the top EXIT_ROWS (4) rows: a lamp in row 4 is not a ceiling light */
+  const low = SB.pipeline.build(labRecord({ 4: '444444466444444444444444', 5: '444444433444444444444444', 3: '444444444444444442222244' }), {});
+  t.eq(low.beacon.cells.length, 0, 'a Glare lamp in row 4, under the top four rows, is not the light (no cells relit)');
+  /* no light at all: of the standable top row cells the brightest is the exit */
+  const dim = SB.pipeline.build(labRecord({ 2: '444444444444444444444444', 3: '222222444444444222222444' }), {});
+  t.ok(dim.exit >= 0 && SB.palette.L[dim.rec.pal[dim.exit]] === Math.max(...[...Array(24).keys()].map(x => 2 * 24 + x).filter(i => standableIn(dim, i)).map(i => SB.palette.L[dim.rec.pal[i]])), 'with no light, the exit is a brightest standable cell of the first row that has one');
+  /* the fixtures where peaks tie: the test's own rule picks the same exit */
+  for (const name of ['all-light', 'checkerboard', 'sample-room']) {
+    const lv = buildFx(fixture(name), 0);
+    t.eq(lv.exit, pipeRef.exitOf(lv), name + ': the exit equals the test\'s own rule (the peak, ties to the larger then the lowest first cell; in the light its lowest standable row, lowest index; else the brightest standable top row cell)');
+  }
 });
 
 group('H-pipe-10', 'pipeline A builds in under 20 ms p95 per fixture in Node', t => {
@@ -892,11 +946,24 @@ group('H-sim-20', 'the exit: the room clears on the first step the hero\'s box o
   t.ok(firstOverlap >= 0, 'the lab jump does reach the exit cell (step ' + firstOverlap + ')');
   t.eq(firstClear, firstOverlap, 'the room clears on exactly the first step the box overlaps the exit cell');
   t.eq(early, 0, 'it never clears before the box reaches the cell');
-  /* the same row, one column short; the same column, one row short: no clear */
-  const row = LABS.room(['', '', '..X.....................', '##.#####################', '', '...S....................', FLOOR], { exit: true });
-  const sr = SB.sim.create(row);
-  for (let f = 0; f < 90; f++) SB.sim.step(sr, (f === 0 ? IN.A | IN.A_TAP : IN.A));
-  t.eq(sr.room.cleared, 0, 'sharing the exit\'s column under a ceiling, one row short of it, does not clear');
+  /* the exit's bottom edge: the hero in its column with the head exactly on the cell's bottom is not in it; one more
+     subpixel up is */
+  const col = LABS.room(['', '..........X.............', '', '', FLOOR], { exit: true });
+  const cx = 10, cy = col.h - 4;
+  const s1 = SB.sim.create(col, { at: { x: cx * CS + 512, y: (cy + 1) * CS } });
+  s1.hero.vy = 0; s1.hero.ground = 0;
+  const clearedAtEdge = (() => { const st = SB.sim.attach(structuredClone(s1), col); st.hero.y = (cy + 1) * CS; st.hero.vy = -K.G; SB.sim.step(st, 0); return st.room.cleared; })();
+  t.eq(clearedAtEdge, 0, 'the head exactly at the exit cell\'s bottom edge (moving no higher) does not clear');
+  const into = SB.sim.attach(structuredClone(s1), col); into.hero.y = (cy + 1) * CS; into.hero.vy = -K.G - 256; SB.sim.step(into, 0);
+  t.eq(into.room.cleared, 1, 'one pixel into the exit cell from below clears');
+  /* the exit's side: the box's right edge exactly on the cell's left side is not in it; one step of run into it is */
+  const side = LABS.room(['', '', '', '..........X.............', FLOOR], { exit: true });
+  const sx2 = 10, sy2 = side.h - 2;
+  const beside = SB.sim.create(side, { at: { x: sx2 * CS - HW, y: sy2 * CS } });
+  SB.sim.step(beside, 0);
+  t.eq(beside.room.cleared, 0, 'the box exactly beside the exit cell, touching its side, does not clear');
+  SB.sim.step(beside, IN.R);
+  t.eq(beside.room.cleared, 1, 'one step of run into the exit cell clears');
 });
 
 group('H-sim-18', 'air control: the rocker at takeoff equals a running start; L and R together decelerate to rest', t => {
