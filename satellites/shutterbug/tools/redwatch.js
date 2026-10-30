@@ -55,7 +55,20 @@ const MUTANTS = [
     repl: "SB.SAMPLE_ROOM = Object.freeze([\n    '444444444442244444444445'",
     gates: [{ gate: 'harness', only: 'H-fix-2', expect: "SB.SAMPLE_ROOM rows equal the fixture's rows" }] },
   { name: 'EXPECT_MISSING', task: 'T0.5', file: 'fixture:synthetic/blank-wall.json', find: '  "expect": {', repl: '  "expected_by_nobody": {',
-    gates: [{ gate: 'harness', only: 'H-fix', expect: 'has no expect (authored by hand from its design): the loader refuses it' }] }
+    gates: [{ gate: 'harness', only: 'H-fix', expect: 'has no expect (authored by hand from its design): the loader refuses it' }] },
+
+  { name: 'OTSU_UNCLAMPED', task: 'T0.6', file: 'page', find: '    return Math.max(T.OTSU_MIN, Math.min(T.OTSU_MAX, bestT));', repl: '    return bestT;',
+    gates: [{ gate: 'harness', only: 'H-pipe-3', expect: 'all-dark: threshold 29 inside the clamp' }] },
+  { name: 'CA_ONE_PASS', task: 'T0.6', file: 'page', find: 'for (var pass = 0; pass < T.SMOOTH_PASSES; pass++)', repl: 'for (var pass = 0; pass < 1; pass++)',
+    gates: [{ gate: 'harness', only: 'H-pipe-2', expect: 'isolated cells after smoothing (under 10%)' }] },
+  { name: 'RUN_MIN_2', task: 'T0.6', file: 'page', find: 'if (x1 - x + 1 >= T.PLATFORM_RUN_MIN)', repl: 'if (x1 - x + 1 >= 2)',
+    gates: [{ gate: 'harness', only: 'H-pipe-4', expect: 'lab: a 2 wide lit plank makes no platform' }] },
+  { name: 'FLOOR_NOT_FORCED', task: 'T0.6', file: 'page', find: 'for (x = 0; x < w; x++) { solid[(h - 1) * w + x] = 1; solid[x] = 0; }', repl: 'for (x = 0; x < w; x++) { solid[x] = 0; }',
+    gates: [{ gate: 'harness', only: 'H-pipe-1', expect: 'bottom row solid' }] },
+  { name: 'NEG_AFTER_PLATFORMS', task: 'T0.6', file: 'page', edits: [
+      ['    if (negative) for (i = 0; i < n; i++) solid[i] = solid[i] ? 0 : 1;   /* after smoothing, before the frame rules (Q20) */\n', ''],
+      ['    var comps = components(solid, w, h), landmarks = [];', '    if (negative) for (i = 0; i < n; i++) solid[i] = solid[i] ? 0 : 1;\n    var comps = components(solid, w, h), landmarks = [];']],
+    gates: [{ gate: 'harness', only: 'H-pipe-7', expect: 'H-pipe-7' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
@@ -82,10 +95,11 @@ for (const m of MUTANTS) {
   const srcFile = m.file === 'harness' ? path.join(GAME, 'harness.js') : isFixture ? path.join(fixCopy, m.file.slice(8)) : path.join(GAME, 'index.html');
   const text = fs.readFileSync(srcFile, 'utf8');
   let mutated = text, anchor = 'ok';
-  if (m.find !== null) {
-    const count = text.split(m.find).length - 1;
-    if (count !== 1) anchor = 'ANCHOR LOST (find matches ' + count + ' times)';
-    else mutated = text.replace(m.find, () => m.repl);
+  const edits = m.edits || (m.find !== null ? [[m.find, m.repl]] : []);
+  for (const [find, repl] of edits) {
+    const count = mutated.split(find).length - 1;
+    if (count !== 1) { anchor = 'ANCHOR LOST (find matches ' + count + ' times)'; break; }
+    mutated = mutated.replace(find, () => repl);
   }
   const page = path.join(dir, 'index.html');
   let harness = path.join(GAME, 'harness.js');

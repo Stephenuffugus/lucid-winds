@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 715;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 930;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', retable: 'T0.10a', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -422,6 +422,267 @@ group('H-pal-6', 'SAT is the computed S over 0.35; the bands follow the hues of 
     const want = computed.includes(i) ? band(palRef.H[i]) : -1;
     t.eq(SB.palette.BAND[i], want, SB.palette.NAMES[i] + ' band (' + (want < 0 ? 'never votes' : SB.palette.BIOMES[want]) + ')');
   }
+});
+
+/* ================================================================ pipeline A */
+/* the test's own pipeline A, written from DESIGN 6.3 and 6.4, not from the core */
+const pipeRef = (() => {
+  const Lof = SB.palette.L;
+  /* Otsu, exactly: every integer threshold t (solid is L < t), the between class variance compared as exact
+     fractions in BigInt, the first maximum wins (the lowest threshold), then the clamp */
+  function otsu(pal) {
+    const T = SB.TUNING, hist = new Array(256).fill(0);
+    for (const v of pal) hist[Lof[v]]++;
+    let best = null, bestT = T.OTSU_MIN;
+    const N = BigInt(pal.length);
+    let w0 = 0n, s0 = 0n, sum = 0n;
+    for (let l = 0; l < 256; l++) sum += BigInt(hist[l] * l);
+    for (let t = 1; t <= 256; t++) {
+      w0 += BigInt(hist[t - 1]); s0 += BigInt(hist[t - 1] * (t - 1));
+      const w1 = N - w0; if (w0 === 0n || w1 === 0n) continue;
+      const num = (s0 * w1 - (sum - s0) * w0) ** 2n, den = w0 * w1;      /* variance times N^2, as num / den */
+      if (!best || num * best.den > best.num * den) { best = { num, den }; bestT = t; }
+    }
+    return Math.max(T.OTSU_MIN, Math.min(T.OTSU_MAX, bestT));
+  }
+  function smooth(s, w, h) {
+    const o = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      let n = 0; const me = s[y * w + x];
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const xx = x + dx, yy = y + dy;
+        n += (xx < 0 || yy < 0 || xx >= w || yy >= h) ? me : s[yy * w + xx];
+      }
+      o[y * w + x] = n >= 5 ? 1 : 0;
+    }
+    return o;
+  }
+  function solidity(j, mode) {
+    const w = j.w, rows = mode === 2 ? j.rows2.concat(j.rows) : j.rows, h = rows.length;
+    const pal = []; for (const r of rows) for (const c of r) pal.push(parseInt(c, 16));
+    const T = otsu(pal);
+    let s = Uint8Array.from(pal, v => (Lof[v] < T ? 1 : 0));
+    for (let k = 0; k < SB.TUNING.SMOOTH_PASSES; k++) s = smooth(s, w, h);
+    if (mode === 1) s = s.map(v => 1 - v);
+    for (let x = 0; x < w; x++) { s[x] = 0; s[(h - 1) * w + x] = 1; }
+    return { w, h, pal, T, solid: s };
+  }
+  /* DESIGN 6.4: surfaces over open cells with a luminance drop over 60, runs of at least 3 */
+  function plats(r) {
+    const { w, h, pal, solid } = r, out = new Uint8Array(w * h);
+    for (let y = 0; y < h - 1; y++) {
+      let run = [];
+      const flush = () => { if (run.length >= SB.TUNING.PLATFORM_RUN_MIN) for (const i of run) out[i] = 1; run = []; };
+      for (let x = 0; x < w; x++) {
+        const a = y * w + x, b = a + w;
+        if (!solid[a] && !solid[b] && Lof[pal[a]] - Lof[pal[b]] > SB.TUNING.EDGE_DROP_L) run.push(b); else flush();
+      }
+      flush();
+    }
+    return out;
+  }
+  return { otsu, smooth, solidity, plats };
+})();
+function platformRuns(lv) {
+  let n = 0;
+  for (let y = 0; y < lv.h; y++) for (let x = 0; x < lv.w; x++) if (lv.plat[y * lv.w + x] && (x === 0 || !lv.plat[y * lv.w + x - 1])) n++;
+  return n;
+}
+const built = {};      /* fixture name + mode -> level, built once */
+function buildFx(f, mode) {
+  const k = f.name + '@' + mode;
+  if (!(k in built)) built[k] = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode })), {});
+  return built[k];
+}
+const MODES = [0, 1];
+const standableIn = (lv, i) => i >= 0 && i + lv.w < lv.w * lv.h && !lv.solid[i] && (lv.solid[i + lv.w] || lv.plat[i + lv.w]);
+/* a lab grid: rows of palette characters ('4' Ash and so on), padded to the grid with Ash */
+function labRecord(rows) {
+  const W = SB.GRID.W, H = SB.GRID.H, out = [];
+  for (let y = 0; y < H; y++) out.push(((rows[y] || '') + '4'.repeat(W)).slice(0, W));
+  return SB.record.fromJSON({ v: 1, w: W, h: H, mode: 0, focal: null, rows: out, rows2: null });
+}
+
+group('H-pipe-1', 'the floor row solid and the top row open on every fixture and mode', t => {
+  for (const f of FIXTURES) for (const mode of MODES) {
+    const lv = buildFx(f, mode);
+    if (lv.needsCrop) { t.ok(lv.why === 'unreachable', f.name + ' mode ' + mode + ': needsCrop only as unreachable here (' + lv.why + ')'); continue; }
+    let floor = true, top = true;
+    for (let x = 0; x < lv.w; x++) { if (!lv.solid[(lv.h - 1) * lv.w + x]) floor = false; if (lv.solid[x]) top = false; }
+    t.ok(floor, f.name + ' mode ' + mode + ': bottom row solid');
+    t.ok(top, f.name + ' mode ' + mode + ': top row open');
+  }
+});
+
+group('H-pipe-2', 'the checkerboard smooths to under 10% isolated cells; solidity equals the test\'s own two pass smoothing', t => {
+  const lv = buildFx(fixture('checkerboard'), 0);
+  let iso = 0;
+  for (let y = 1; y < lv.h - 1; y++) for (let x = 0; x < lv.w; x++) {
+    const me = lv.solid[y * lv.w + x]; let same = false;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (xx >= 0 && xx < lv.w && lv.solid[yy * lv.w + xx] === me) same = true; }
+    if (!same) iso++;
+  }
+  t.ok(iso / (lv.w * lv.h) < 0.10, 'checkerboard: ' + (100 * iso / (lv.w * lv.h)).toFixed(1) + '% isolated cells after smoothing (under 10%)');
+  for (const f of FIXTURES) for (const mode of MODES) {
+    const lv2 = buildFx(f, mode);
+    if (lv2.needsCrop) continue;
+    const ref = pipeRef.solidity(f.fx.record, mode);
+    let diff = 0; for (let i = 0; i < ref.solid.length; i++) if (ref.solid[i] !== lv2.solid[i]) diff++;
+    t.eq(diff, 0, f.name + ' mode ' + mode + ': cells where solidity differs from the test\'s threshold and two pass smoothing', diff ? SB.pipeline.toText(lv2) : undefined);
+  }
+});
+
+group('H-pipe-3', 'all-dark and all-light stand on row h-2; the threshold is the exact Otsu, inside the clamp, on every fixture', t => {
+  for (const name of ['all-dark', 'all-light']) {
+    const lv = buildFx(fixture(name), 0);
+    let n = 0; for (let x = 0; x < lv.w; x++) if (standableIn(lv, (lv.h - 2) * lv.w + x)) n++;
+    t.ok(!lv.needsCrop && n > 0, name + ': ' + n + ' standable cells on row h-2');
+  }
+  for (const f of FIXTURES) {
+    const lv = buildFx(f, 0), want = pipeRef.solidity(f.fx.record, 0).T;
+    t.ok(lv.otsuT >= SB.TUNING.OTSU_MIN && lv.otsuT <= SB.TUNING.OTSU_MAX, f.name + ': threshold ' + lv.otsuT + ' inside the clamp [' + SB.TUNING.OTSU_MIN + ', ' + SB.TUNING.OTSU_MAX + ']');
+    t.eq(lv.otsuT, want, f.name + ': threshold equals the test\'s exact Otsu');
+  }
+});
+
+group('H-pipe-4', 'one way platforms: open, runs of at least 3, never under a solid, exactly DESIGN 6.4', t => {
+  for (const f of FIXTURES) for (const mode of MODES) {
+    const lv = buildFx(f, mode);
+    if (lv.needsCrop) continue;
+    let bad = 0, shortRun = 0, underSolid = 0;
+    for (let i = 0; i < lv.w * lv.h; i++) if (lv.plat[i]) { if (lv.solid[i]) bad++; if (i >= lv.w && lv.solid[i - lv.w]) underSolid++; }
+    for (let y = 0; y < lv.h; y++) { let run = 0; for (let x = 0; x <= lv.w; x++) { const p = x < lv.w && lv.plat[y * lv.w + x]; if (p) run++; else { if (run && run < 3) shortRun++; run = 0; } } }
+    t.eq(bad, 0, f.name + ' mode ' + mode + ': plat cells that are solid');
+    t.eq(shortRun, 0, f.name + ' mode ' + mode + ': plat runs shorter than 3');
+    t.eq(underSolid, 0, f.name + ' mode ' + mode + ': plat cells under a solid cell');
+    const ref = pipeRef.plats(pipeRef.solidity(f.fx.record, mode));
+    let diff = 0; for (let i = 0; i < ref.length; i++) if (ref[i] !== lv.plat[i]) diff++;
+    t.eq(diff, 0, f.name + ' mode ' + mode + ': plat cells that differ from the test\'s own DESIGN 6.4', diff ? SB.pipeline.toText(lv) : undefined);
+  }
+  /* lab: a 2 wide plank makes no platform, a 3 wide one does */
+  const two = SB.pipeline.build(labRecord({ 20: '4444455444445554', 21: '4444433444443334' }), {});
+  t.eq(two.plat[21 * 24 + 5] + two.plat[21 * 24 + 6], 0, 'lab: a 2 wide lit plank makes no platform');
+  t.eq(two.plat[21 * 24 + 12] + two.plat[21 * 24 + 13] + two.plat[21 * 24 + 14], 3, 'lab: a 3 wide lit plank (x 12..14) makes a 3 wide platform');
+});
+
+group('H-pipe-5', 'landmarks: at most 3, each at least 8 cells, by size, disjoint; the giant is one block of its drawn size', t => {
+  for (const f of FIXTURES) for (const mode of MODES) {
+    const lv = buildFx(f, mode);
+    if (lv.needsCrop) continue;
+    const L = lv.landmarks, where = f.name + ' mode ' + mode;
+    t.ok(L.length <= 3, where + ': ' + L.length + ' landmarks (at most 3)');
+    const seen = new Set(); let overlap = 0, ok = true;
+    L.forEach((l, k) => {
+      if (l.size < 8 || l.size !== l.cells.length) ok = false;
+      if (k && L[k - 1].size < l.size) ok = false;
+      for (const c of l.cells) { if (seen.has(c)) overlap++; seen.add(c); if (!lv.solid[c]) ok = false; }
+    });
+    t.ok(ok, where + ': every landmark at least 8 solid cells, sorted by size');
+    t.eq(overlap, 0, where + ': landmarks share no cell');
+  }
+  const g = fixture('one-giant-landmark').fx.expect.giant;
+  const drawn = (g.x1 - g.x0 + 1) * (g.y1 - g.y0 + 1);
+  const lv = buildFx(fixture('one-giant-landmark'), 0);
+  /* a rectangle's corner sees four solids of nine and erodes; an edge cell sees six and stays: drawn minus 4 */
+  const big = lv.landmarks.filter(l => l.size === drawn - 4);
+  t.eq(big.length, 1, 'one-giant-landmark: exactly one landmark of the drawn ' + drawn + ' cells less its 4 corners (sizes ' + lv.landmarks.map(l => l.size).join('/') + ')');
+  if (big.length) t.same(Array.from(big[0].bbox), [g.x0, g.y0, g.x1, g.y1], 'one-giant-landmark: its bounding box is the drawing\'s');
+});
+
+group('H-pipe-6', 'spawn is standable and on the standing row above the floor', t => {
+  for (const f of FIXTURES) for (const mode of MODES) {
+    const lv = buildFx(f, mode);
+    if (lv.needsCrop) continue;
+    t.eq(Math.floor(lv.spawn / lv.w), lv.h - 2, f.name + ' mode ' + mode + ': spawn row');
+    t.ok(standableIn(lv, lv.spawn), f.name + ' mode ' + mode + ': spawn is standable');
+  }
+  const lv = buildFx(fixture('sample-room'), 0);
+  t.eq(lv.spawn, 46 * 24 + 15, 'the sample room spawns at (15, 46), the centre of the floor\'s widest open run (x 8..23)');
+});
+
+group('H-pipe-7', 'Negative: solid and open swap after smoothing, before the frame rules and the platforms', t => {
+  const f = fixture('sample-room'), pos = buildFx(f, 0), neg = buildFx(f, 1);
+  let flipped = 0, rows = 0;
+  for (let y = 1; y < pos.h - 1; y++) for (let x = 0; x < pos.w; x++) { rows++; if (neg.solid[y * pos.w + x] === 1 - pos.solid[y * pos.w + x]) flipped++; }
+  t.eq(flipped, rows, 'every cell of rows 1..h-2 is inverted in Negative');
+  let floor = 0, top = 0; for (let x = 0; x < pos.w; x++) { floor += neg.solid[(pos.h - 1) * pos.w + x]; top += neg.solid[x]; }
+  t.eq(floor, pos.w, 'Negative keeps the floor row solid');
+  t.eq(top, 0, 'Negative keeps the top row open');
+  const ref = pipeRef.plats(pipeRef.solidity(f.fx.record, 1));
+  let diff = 0; for (let i = 0; i < ref.length; i++) if (ref[i] !== neg.plat[i]) diff++;
+  t.eq(diff, 0, 'Negative platforms are found on the inverted grid (cells that differ from the test\'s)');
+  t.eq(neg.negative, 1, 'the level says negative');
+});
+
+group('H-pipe-8', 'determinism: the level hash over FIELDS is stable, cross realm, and moves with every field', t => {
+  for (const f of FIXTURES) {
+    const rec = SB.record.fromJSON(f.fx.record);
+    const a = SB.pipeline.levelHash(SB.pipeline.build(rec, {}));
+    t.eq(SB.pipeline.levelHash(SB.pipeline.build(rec, {})), a, f.name + ': a second build hashes equal');
+    t.eq(SB.pipeline.levelHash(SB.pipeline.build(SB.record.fromJSON(f.fx.record), {})), a, f.name + ': a fresh record hashes equal');
+    t.eq(SB.pipeline.levelHash(SB.pipeline.build(structuredClone(rec), {})), a, f.name + ': a structured clone from the harness realm hashes equal');
+  }
+  const lv = SB.pipeline.build(SB.record.fromJSON(fixture('sample-room').fx.record), {});
+  const base = SB.pipeline.levelHash(lv);
+  for (const [name, type] of SB.pipeline.FIELDS) {
+    const c = Object.assign({}, lv, { beacon: Object.assign({}, lv.beacon), features: Object.assign({}, lv.features), repair: Object.assign({}, lv.repair), ascent: lv.ascent ? Object.assign({}, lv.ascent) : { nodes: [] } });
+    const parts = name.split('.'), key = parts.pop(), holder = parts.reduce((o, p) => o[p], c);
+    const v = holder[key];
+    if (type === 'i32') holder[key] = (v === null || v === undefined ? -1 : v) + 1;
+    else if (type === 'grid') { const g2 = Uint8Array.from(v); g2[g2.length >> 1] ^= 1; holder[key] = g2; }
+    else if (type === 'lists') holder[key] = (v || []).concat([{ cells: [1, 2, 3] }]);
+    else if (type === 'enemies') holder[key] = (v || []).concat([{ kind: 1, idx: 5 }]);
+    else if (type === 'idx') holder[key] = (v === null || v === undefined ? -1 : (typeof v === 'object' ? v.idx : v)) + 1;
+    else holder[key] = Array.from(v || []).concat([7]);
+    t.ok(SB.pipeline.levelHash(c) !== base, 'perturbing ' + name + ' (' + type + ') changes the level hash');
+  }
+});
+
+group('H-pipe-9', 'every fixture\'s authored platformsMin and landmarksMin hold', t => {
+  for (const f of FIXTURES) {
+    const e = f.fx.expect, lv = buildFx(f, 0);
+    if (e.needsCrop) continue;
+    if (e.platformsMin !== null) t.ok(platformRuns(lv) >= e.platformsMin, f.name + ': ' + platformRuns(lv) + ' one way runs (at least ' + e.platformsMin + ')', SB.pipeline.toText(lv));
+    if (e.landmarksMin !== null) t.ok(lv.landmarks.length >= e.landmarksMin, f.name + ': ' + lv.landmarks.length + ' landmarks (at least ' + e.landmarksMin + ')', SB.pipeline.toText(lv));
+  }
+  const lv = buildFx(fixture('sample-room'), 0);
+  const bookshelf = lv.landmarks.find(l => l.bbox[0] === 0 && l.bbox[1] >= 26 && l.bbox[3] <= 39);
+  t.ok(!!bookshelf, 'the sample room\'s bookshelf (left wall, rows 27..38) is a landmark');
+  t.eq(lv.exit, 3 * 24 + 13, 'the sample room\'s exit candidate stands in the lamp\'s shade (13, 3)');
+});
+
+group('H-pipe-10', 'pipeline A builds in under 20 ms p95 per fixture in Node', t => {
+  let slow = null;
+  for (const f of FIXTURES) {
+    const rec = SB.record.fromJSON(f.fx.record), ts = [];
+    for (let k = 0; k < 20; k++) { const t0 = process.hrtime.bigint(); SB.pipeline.build(rec, {}); ts.push(Number(process.hrtime.bigint() - t0) / 1e6); }
+    ts.sort((a, b) => a - b);
+    const p95 = ts[Math.floor(ts.length * 0.95) - 1];
+    if (!slow || p95 > slow.p95) slow = { name: f.name, p95 };
+    t.ok(p95 < 20, f.name + ': build p95 ' + p95.toFixed(2) + ' ms (under 20)');
+  }
+  console.log('  info  the slowest pipeline A build: ' + slow.name + ' at ' + slow.p95.toFixed(2) + ' ms p95');
+});
+
+group('H-pipe-11', 'ties break to the lowest: Otsu, landmarks, spawn runs, nearest', t => {
+  /* Otsu: Brick 93, Moss 116, Pewter 139 in equal thirds: the splits after 93 and after 116 have exactly equal
+     between class variance (both class means differ by 34.5), so the lower threshold, 94, wins */
+  const third = 1152 / 3, cells = [];
+  for (let i = 0; i < 1152; i++) cells.push(i < third ? 9 : i < 2 * third ? 13 : 3);
+  t.eq(SB.pipeline.otsu(Uint8Array.from(cells), 1152, SB.TUNING), 94, 'Otsu: a planted two way tie takes the lower threshold');
+  /* landmarks: two equal 4x4 blocks; the one whose first cell comes first wins the tie */
+  const lab = SB.pipeline.build(labRecord({ 10: '4441111444441111', 11: '4441111444441111', 12: '4441111444441111', 13: '4441111444441111' }), {});
+  const eq = lab.landmarks.filter(l => l.size === 12);
+  t.eq(eq.length, 2, 'two equal 4x4 blocks are two 12 cell landmarks (sizes ' + lab.landmarks.map(l => l.size).join('/') + ')');
+  if (eq.length === 2) t.ok(lab.landmarks.indexOf(eq[0]) < lab.landmarks.indexOf(eq[1]) && eq[0].cells[0] < eq[1].cells[0], 'the equal landmark with the lower first cell is listed first');
+  /* spawn: two 3 tall Soot blocks (x 6..8 and 15..17) on a Soot floor. Smoothing fills the standing row cell beside
+     each block (the floor's three votes and the block's two make five), so the runs are x 0..4, 10..13 and 19..23:
+     two equal widest at the edges, and the left one wins, centred at x 2 */
+  const blocks = '444444111444444111444444';
+  const sp = SB.pipeline.build(labRecord({ 44: blocks, 45: blocks, 46: blocks, 47: '1'.repeat(24) }), {});
+  t.eq(sp.spawn, 46 * 24 + 2, 'spawn: of two equal widest runs (x 0..4 and 19..23), the first, centred at x 2');
+  /* nearest: the exact midpoint of Ink and Soot is equidistant; Ink, the lower index, wins */
+  t.eq(SB.palette.nearest(21, 18, 22), 0, 'nearest: equidistant to Ink and Soot, Ink wins');
 });
 
 /* ================================================================ one room */

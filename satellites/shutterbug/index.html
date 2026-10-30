@@ -530,7 +530,160 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 </script>
 <script id="core-pipeline" data-core>
 (function (SB) { 'use strict';
-  /* core-pipeline (DESIGN 6.3 to 6.7, 6.10, 6.12; section 1.1 row 5). T0.3 brings toText; the build arrives in T0.6. */
+  /* core-pipeline (DESIGN 6.3 to 6.7, 6.10, 6.12; BUILD-PLAN.md section 1.1 row 5, section 2.2). Pure: a record in,
+     a Level (or { needsCrop, why }) out, the same bytes on every engine. L, S and H come from the palette entry of
+     each cell, never from the photo (QUESTIONS Q12), so a shared grid rebuilds the identical level. Every scan is row
+     major from index 0 and every tie breaks to the lowest cell index, palette index or threshold. */
+
+  /* DESIGN 6.3: Otsu over the cell histogram (16 bins, one per palette entry, at that entry's L), the threshold with
+     the greatest between class variance, ties to the lowest; then clamped to [OTSU_MIN, OTSU_MAX]. Solid is L < T.
+     The variance is a float of + - * / only, which IEEE 754 fixes bit for bit on every engine. */
+  function otsu(pal, n, T) {
+    var P = SB.palette, hist = new Int32Array(16), i;
+    for (i = 0; i < n; i++) hist[pal[i]]++;
+    var order = [];
+    for (i = 0; i < 16; i++) if (hist[i]) order.push(i);
+    order.sort(function (a, b) { return P.L[a] - P.L[b] || a - b; });
+    var total = 0, sum = 0;
+    for (i = 0; i < order.length; i++) { total += hist[order[i]]; sum += hist[order[i]] * P.L[order[i]]; }
+    var best = -1, bestT = T.OTSU_MIN, w0 = 0, s0 = 0;
+    /* candidate thresholds: just above each distinct L, so class 0 is every bin up to it (the lowest t of a tie) */
+    for (i = 0; i < order.length - 1; i++) {
+      w0 += hist[order[i]]; s0 += hist[order[i]] * P.L[order[i]];
+      if (P.L[order[i]] === P.L[order[i + 1]]) continue;      /* two entries at one L split together */
+      var w1 = total - w0, m0 = s0 / w0, m1 = (sum - s0) / w1, v = w0 * w1 * (m0 - m1) * (m0 - m1);
+      if (v > best) { best = v; bestT = P.L[order[i]] + 1; }
+    }
+    return Math.max(T.OTSU_MIN, Math.min(T.OTSU_MAX, bestT));
+  }
+
+  /* DESIGN 6.3: a cell becomes the majority of its 3x3 neighbourhood (5 of 9), the frame treated as the cell's own
+     value (an out of bounds neighbour votes like the centre). Simultaneous: each pass reads the previous grid. */
+  function smooth(solid, w, h) {
+    var out = new Uint8Array(w * h);
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+      var me = solid[y * w + x], votes = 0;
+      for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+        var xx = x + dx, yy = y + dy;
+        votes += (xx < 0 || yy < 0 || xx >= w || yy >= h) ? me : solid[yy * w + xx];
+      }
+      out[y * w + x] = votes >= 5 ? 1 : 0;
+    }
+    return out;
+  }
+
+  /* DESIGN 6.5: 4 connected components of solid cells, largest first, ties to the lowest first cell; the first
+     LANDMARK_COUNT with at least LANDMARK_MIN cells are the landmarks. */
+  function components(mask, w, h) {
+    var n = w * h, seen = new Uint8Array(n), comps = [], stack = [];
+    for (var i = 0; i < n; i++) {
+      if (!mask[i] || seen[i]) continue;
+      var cells = [];
+      seen[i] = 1; stack.push(i);
+      while (stack.length) {
+        var c = stack.pop(); cells.push(c);
+        var x = c % w, y = (c - x) / w;
+        if (x > 0 && mask[c - 1] && !seen[c - 1]) { seen[c - 1] = 1; stack.push(c - 1); }
+        if (x < w - 1 && mask[c + 1] && !seen[c + 1]) { seen[c + 1] = 1; stack.push(c + 1); }
+        if (y > 0 && mask[c - w] && !seen[c - w]) { seen[c - w] = 1; stack.push(c - w); }
+        if (y < h - 1 && mask[c + w] && !seen[c + w]) { seen[c + w] = 1; stack.push(c + w); }
+      }
+      cells.sort(function (a, b) { return a - b; });
+      comps.push(cells);
+    }
+    comps.sort(function (a, b) { return b.length - a.length || a[0] - b[0]; });
+    return comps;
+  }
+
+  function describe(cells, w) {
+    var x0 = w, x1 = -1, y0 = 1e9, y1 = -1;
+    for (var k = 0; k < cells.length; k++) {
+      var x = cells[k] % w, y = (cells[k] - x) / w;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    return { cells: Int32Array.from(cells), size: cells.length, top: y0, bbox: [x0, y0, x1, y1] };
+  }
+
+  /* Pipeline A: luminance, solidity, Negative, platforms, landmarks, spawn, the light and the exit candidate. */
+  function build(rec, opts) {
+    opts = opts || {};
+    var T = SB.TUNING, P = SB.palette, w = rec.w, h = rec.h, pal = rec.pal, i, x, y;
+    if (rec.mode === 2) {                     /* Double Exposure: pal2 stacked above pal, a 24 x 96 climb (Q19) */
+      var both = new Uint8Array(w * h * 2);
+      both.set(rec.pal2, 0); both.set(rec.pal, w * h);
+      pal = both; h = h * 2;
+    }
+    var n = w * h;
+    var L = new Uint8Array(n);
+    for (i = 0; i < n; i++) L[i] = P.L[pal[i]];
+    var otsuT = otsu(pal, n, T);
+    var solid = new Uint8Array(n);
+    for (i = 0; i < n; i++) solid[i] = L[i] < otsuT ? 1 : 0;
+    for (var pass = 0; pass < T.SMOOTH_PASSES; pass++) solid = smooth(solid, w, h);
+    var negative = rec.mode === 1 ? 1 : 0;
+    if (negative) for (i = 0; i < n; i++) solid[i] = solid[i] ? 0 : 1;   /* after smoothing, before the frame rules (Q20) */
+    for (x = 0; x < w; x++) { solid[(h - 1) * w + x] = 1; solid[x] = 0; }
+
+    /* DESIGN 6.4: a surface where the cell above is open and the cell below is solid or darker by over EDGE_DROP_L.
+       Over solid cells it is just the solid's top; over open cells, runs of at least PLATFORM_RUN_MIN become one way
+       platforms: plat marks the open cell whose top edge is the surface. */
+    var plat = new Uint8Array(n);
+    for (y = 0; y < h - 1; y++) {
+      x = 0;
+      while (x < w) {
+        var a = y * w + x, b = a + w;
+        if (!solid[a] && !solid[b] && L[a] - L[b] > T.EDGE_DROP_L) {
+          var x1 = x;
+          while (x1 + 1 < w && !solid[y * w + x1 + 1] && !solid[(y + 1) * w + x1 + 1] && L[y * w + x1 + 1] - L[(y + 1) * w + x1 + 1] > T.EDGE_DROP_L) x1++;
+          if (x1 - x + 1 >= T.PLATFORM_RUN_MIN) for (var k = x; k <= x1; k++) plat[(y + 1) * w + k] = 1;
+          x = x1 + 1;
+        } else x++;
+      }
+    }
+
+    var comps = components(solid, w, h), landmarks = [];
+    for (i = 0; i < comps.length && landmarks.length < T.LANDMARK_COUNT; i++) if (comps[i].length >= T.LANDMARK_MIN) landmarks.push(describe(comps[i], w));
+
+    /* DESIGN 6.6: spawn is the centre of the widest open run on the standing row above the floor (Q10). */
+    var sy = h - T.SPAWN_ROW_FROM_BOTTOM, bestA = -1, bestLen = 0;
+    x = 0;
+    while (x < w) {
+      if (solid[sy * w + x]) { x++; continue; }
+      var e = x; while (e + 1 < w && !solid[sy * w + e + 1]) e++;
+      if (e - x + 1 > bestLen) { bestLen = e - x + 1; bestA = x; }
+      x = e + 1;
+    }
+    if (bestA < 0) return { needsCrop: true, why: 'unreachable', detail: 'no open cell on the standing row above the floor' };
+    var spawn = sy * w + bestA + ((bestLen - 1) >> 1);
+
+    /* the ceiling light: the brightest (by summed L) 4 connected cluster of cells over CEILING_LIGHT_L in the top
+       EXIT_ROWS rows; the exit candidate (T0.11a chooses by reach distance) is its lowest standable cell */
+    var top = new Uint8Array(n);
+    for (y = 0; y < T.EXIT_ROWS && y < h; y++) for (x = 0; x < w; x++) if (!solid[y * w + x] && L[y * w + x] > T.CEILING_LIGHT_L) top[y * w + x] = 1;
+    var lights = components(top, w, h), light = null, bestSum = -1;
+    for (i = 0; i < lights.length; i++) {
+      var s = 0; for (var q = 0; q < lights[i].length; q++) s += L[lights[i][q]];
+      if (s > bestSum) { bestSum = s; light = lights[i]; }
+    }
+    var standable = function (c) { return c + w < n && !solid[c] && (solid[c + w] || plat[c + w]); };
+    var exit = -1;
+    if (light) for (q = light.length - 1; q >= 0 && exit < 0; q--) if (standable(light[q])) exit = light[q];
+    if (exit < 0) for (y = 0; y < T.EXIT_ROWS && exit < 0; y++) {
+      var bl = -1;
+      for (x = 0; x < w; x++) { var c2 = y * w + x; if (standable(c2) && (bl < 0 || L[c2] > L[bl])) bl = c2; }
+      exit = bl;
+    }
+
+    var z = function () { return new Uint8Array(n); };
+    return {
+      rec: rec, w: w, h: h, seed: SB.record.seedOf(rec), biome: opts.biome === undefined || opts.biome === null ? 0 : opts.biome,
+      negative: negative, L: L, solid: solid, plat: plat, tab: z(), slick: z(), sticky: z(), trap: z(),
+      otsuT: otsuT, landmarks: landmarks, spawn: spawn, exit: exit,
+      beacon: { idx: exit, cells: light ? Int32Array.from(light) : new Int32Array(0) },
+      features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null },
+      repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false
+    };
+  }
 
   /* The room as text, one line per row: # solid, = one way, ~ slick, | sticky, . open, S spawn, X exit, T film tab,
      * ascent, e enemy, ^ trap, $ loot, L a landmark's top edge. Printed beside every harness failure. */
@@ -566,7 +719,43 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     return out.join('\n');
   }
 
-  SB.pipeline = { toText: toText };
+
+  /* section 2.2: the level hash is pinned. FIELDS declares the order; serialize walks it into 32 bit words (a scalar
+     as itself, a byte grid or a cell list as its length then its items, a missing structure as -1), and levelHash is
+     the same two FNV passes as the sim's state hash. H-pipe-8 perturbs each field and asserts the hash moves. */
+  var FIELDS = [
+    ['w', 'i32'], ['h', 'i32'], ['seed', 'i32'], ['biome', 'i32'], ['negative', 'i32'], ['otsuT', 'i32'],
+    ['solid', 'grid'], ['plat', 'grid'], ['tab', 'grid'], ['slick', 'grid'], ['sticky', 'grid'], ['trap', 'grid'],
+    ['spawn', 'i32'], ['exit', 'i32'], ['beacon.idx', 'i32'], ['beacon.cells', 'list'],
+    ['landmarks', 'lists'], ['ascent.nodes', 'list'],
+    ['features.specks', 'idxs'], ['features.chest', 'idx'], ['features.scroll', 'idx'], ['features.blueprint', 'idx'],
+    ['features.enemies', 'enemies'], ['features.trap', 'list'], ['features.door', 'idx'], ['features.boss', 'list'],
+    ['repair.tabs', 'i32'], ['degraded', 'list']
+  ];
+  function get(o, p) { var parts = p.split('.'); for (var k = 0; k < parts.length && o !== null && o !== undefined; k++) o = o[parts[k]]; return o; }
+  function serialize(lv) {
+    var out = [];
+    var list = function (a) { if (!a) { out.push(-1); return; } out.push(a.length); for (var j = 0; j < a.length; j++) out.push(a[j] | 0); };
+    var idxOf = function (v) { return v === null || v === undefined ? -1 : typeof v === 'object' ? (v.idx === undefined ? -1 : v.idx) : v; };
+    for (var f = 0; f < FIELDS.length; f++) {
+      var name = FIELDS[f][0], type = FIELDS[f][1], v = get(lv, name);
+      if (type === 'i32') {
+        var iv = v === null || v === undefined ? -1 : v;
+        if (typeof iv === 'boolean') iv = iv ? 1 : 0;
+        if (!Number.isInteger(iv)) throw new Error('levelHash: ' + name + ' is not an integer');
+        out.push(iv | 0);
+      } else if (type === 'grid' || type === 'list') list(v);
+      else if (type === 'lists') { if (!v) out.push(-1); else { out.push(v.length); for (var q = 0; q < v.length; q++) list(v[q].cells || v[q]); } }
+      else if (type === 'idx') out.push(idxOf(v));
+      else if (type === 'idxs') { if (!v) out.push(-1); else { out.push(v.length); for (var r = 0; r < v.length; r++) out.push(idxOf(v[r])); } }
+      else if (type === 'enemies') { if (!v) out.push(-1); else { out.push(v.length); for (var e = 0; e < v.length; e++) { out.push(v[e].kind | 0); out.push(v[e].idx | 0); } } }
+    }
+    return Int32Array.from(out);
+  }
+  function levelHash(lv) { return SB.rng.hashWords(serialize(lv)); }
+
+  SB.pipeline = { toText: toText, otsu: otsu, smooth: smooth, components: components, build: build,
+    FIELDS: FIELDS, serialize: serialize, levelHash: levelHash };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-reach" data-core>
