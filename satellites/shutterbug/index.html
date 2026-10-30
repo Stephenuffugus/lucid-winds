@@ -283,8 +283,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     '444444444444455554455554', '444444444444433334465664', '444444444444444444465664', '444444444444444444555554',
     '444884444444444444333334', '444444444444444444444444', '444884444444444444444444', '444444444444444444477777',
     '444444444444444444477777', '444444444444445555477117', '444444444444443333477117', '444444444444444444477117',
-    '44444445e555444444477117', '444444433333444444477117', '444444444444444444477117', '444444444445555444477117',
-    '444444444443333444477117', '444444444444444444477117', '444444555544444444477117', '777444333344444444477117',
+    '44444445e555444444477117', '444444433333444444477117', '444444444444444444477117', '444444444445555544477117',
+    '444444444443333344477117', '444444444444444444477117', '444444555544444444477117', '777444333344444444477117',
     '191444444444484844478117', '111444444444555554477117', '444444444444333334477117', '777444444444444444477117',
     '000444455554444444477117', 'b005e5433334444444477117', '444333444444444444477117', '777444444444555544477117',
     '117444444444333344477117', '111444444444322344477117', '777444455554344344477117', '444444433334344344477777',
@@ -1042,7 +1042,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var GF = deep ? K.DEEP_FALL_G : K.G, TERM = deep ? K.DEEP_TERM : K.TERM, walk = profile === 'WALK';
     var vy = walk ? 0 : profile === 'WALL' ? -K.WALL_V : profile === 'STICKY' ? -K.STICKY_V : -(deep ? K.DEEP_JUMP_V : K.JUMP_V);
     var aHold = A_HOLD[profile], lock = profile === 'WALL' ? K.WALL_JUMP_LOCK : 0, ledge = walk;
-    var x = (K.CELL_SUB - K.HERO_W_SUB) >> 1, y = 0, vx = 0, rising = !walk, out = [{ x: x, y: 0, py: 0, vy: vy, vx: 0 }];
+    /* the stance (section 3.1): centred in the cell, but a wall jump starts touching the wall it leaves (flush on the
+       left, since the arc runs to the right) */
+    var x = profile === 'WALL' ? 0 : (K.CELL_SUB - K.HERO_W_SUB) >> 1, y = 0, vx = 0, rising = !walk, out = [{ x: x, y: 0, py: 0, vy: vy, vx: 0 }];
     if (profile === 'STICKY') hold = 0;
     var end = upTo === undefined ? MAX_STEPS : upTo + 1;
     for (var f = 1; f < end; f++) {
@@ -1496,7 +1498,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     return {
       v: 1, frame: 0, rng: (level.seed ^ 0x9e3779b9) >>> 0, biome: level.biome | 0, negative: level.negative ? 1 : 0,
       firstRoom: opts.firstRoom ? 1 : 0, lastRoom: opts.lastRoom ? 1 : 0,
-      hero: { x: hx, y: hy, vx: 0, vy: 0, facing: 1, ground: 0, wall: 0, sticky: 0, coyote: 0, buffer: 0, held: 0, rising: 0,
+      hero: { x: hx, y: hy, vx: 0, vy: 0, facing: 1, ground: 0, wall: 0, sticky: 0, lock: 0, coyote: 0, buffer: 0, held: 0, rising: 0,
         dive: 0, dash: 0, dashI: 0, iframes: 0, hearts: hearts, heartsMax: hearts, vigor: 0, focus: 0, grit: 0, scrolls: 0,
         slots: [0, 0, 0], cd: [0, 0, 0], squash: 0, anim: 0, lastStand: level.spawn | 0, secondWind: 0, thickSkin: 0, shake: 0 },
       enemies: [], proj: [], loot: [], chest: { idx: -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
@@ -1535,11 +1537,25 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     return true;
   }
 
-  /* returns 1 when the hero lands this step */
-  function moveY(h, lv, K) {
+  /* a side contact (DESIGN 4.2's corner rule): the box flush against the column on `side` with at least
+     HERO_H - CORNER_PX of vertical overlap against solid cells there (sticky ones only when `wantSticky`); 0 or 1 */
+  function contactAt(h, lv, K, side, wantSticky) {
+    var CS = K.CELL_SUB, edge = side > 0 ? h.x + K.HERO_W_SUB : h.x;
+    if (edge % CS !== 0) return 0;
+    var col = side > 0 ? edge / CS : edge / CS - 1, ov = 0;
+    for (var cy = Math.floor(h.y / CS); cy <= Math.floor((h.y + K.HERO_H_SUB - 1) / CS); cy++) {
+      if (!solidAt(lv, col, cy)) continue;
+      var sticky = col >= 0 && col < lv.w && cy >= 0 && cy < lv.h && !!lv.sticky && lv.sticky[cy * lv.w + col] === 1 && (lv.biome === 2 || lv.biome === 3);
+      if (wantSticky !== sticky) continue;
+      ov += Math.min(h.y + K.HERO_H_SUB, (cy + 1) * CS) - Math.max(h.y, cy * CS);
+    }
+    return ov >= K.HERO_H_SUB - K.CORNER_SUB ? 1 : 0;
+  }
+  /* returns 1 when the hero lands this step; `dy` is the step's travel (an armed slide travels a third of vy) */
+  function moveY(h, lv, K, dy) {
     var CS = K.CELL_SUB, HH = K.HERO_H_SUB, HW = K.HERO_W_SUB;
     var prevFeet = h.y + HH;
-    h.y += h.vy;
+    h.y += dy;
     var cx0 = Math.floor(h.x / CS), cx1 = Math.floor((h.x + HW - 1) / CS), cx;
     if (h.vy > 0) {
       var feet = h.y + HH, row = Math.floor((feet - 1) / CS), landed = false;
@@ -1577,32 +1593,62 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var dir = ((word & IN.R) ? 1 : 0) - ((word & IN.L) ? 1 : 0);
     var held = (word & IN.A) ? 1 : 0, pressed = (word & IN.A_TAP) !== 0;
     if (dir !== 0) h.facing = dir;
-    var startedGrounded = h.ground;
+    var startedGrounded = h.ground, dove = (word & IN.B_TAP) !== 0;
 
-    /* 2. the jump: a press or a buffered press, on the ground or inside coyote time */
-    var jumped = 0;
-    if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0)) {
+    /* 2. the jumps. From a sticky wall (DESIGN 4.2): A is STICKY_JUMP_V straight up with no push off; B, or the
+       rocker away from the wall, lets go into a plain fall. From an armed wall slide: A is the wall jump, WALL_V up and
+       WALL_JUMP_LOCK steps of WALL_JUMP_PUSH away (the rocker ignored), facing away (Q25). Else a press or a buffered
+       press on the ground or inside coyote time. */
+    var jumped = 0, stickyJump = 0;
+    if (h.sticky) {
+      if (pressed) { h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0; h.rising = 1; jumped = 1; stickyJump = 1; h.squash = -SQUASH_FRAMES; }
+      else if (dove || (dir !== 0 && dir === -h.wall)) { h.sticky = 0; h.wall = 0; if (dove) h.dive = 1; }   /* B lets go as a dive: no vine catches a dive */
+    } else if (h.wall !== 0 && pressed && !h.ground) {
+      h.vy = -K.WALL_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.facing = -h.wall; h.wall = 0; h.rising = 1; jumped = 1; h.squash = -SQUASH_FRAMES;
+    } else if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0)) {
       h.vy = -K.JUMP_V; h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;
       h.squash = -SQUASH_FRAMES;
     } else if (pressed) h.buffer = K.BUFFER + 1;   /* counts this step; see the end of the step */
 
-    /* 3. run: instant full speed, or the decel toward rest (the same in the air: AIR_CONTROL 1) */
-    if (dir !== 0) h.vx = dir * K.RUN;
+    /* 3. run: instant full speed, or the decel toward rest (the same in the air: AIR_CONTROL 1); the wall jump's lock
+       pushes away whatever the rocker says; a sticky wall and the sticky jump's first step have no push (air control
+       from the second step) */
+    if (h.lock !== 0) { h.vx = (h.lock > 0 ? 1 : -1) * K.WALL_PUSH; h.lock -= h.lock > 0 ? 1 : -1; }
+    else if (stickyJump || h.sticky) h.vx = 0;
+    else if (dir !== 0) h.vx = dir * K.RUN;
     else if (h.vx > 0) h.vx = Math.max(0, h.vx - K.DECEL);
     else if (h.vx < 0) h.vx = Math.min(0, h.vx + K.DECEL);
 
     /* 4. the variable jump: the release cap, never on the jump step itself (a sub step tap is a one frame jump) */
     if (h.rising && !held && !jumped && h.vy < -K.CUT_V) h.vy = -K.CUT_V;
 
-    /* 5. gravity to terminal */
-    h.vy = Math.min(K.TERM, h.vy + K.G);
+    /* 5. gravity to terminal; a sticky wall holds the hero still */
+    if (h.sticky) h.vy = 0;
+    else h.vy = Math.min(K.TERM, h.vy + K.G);
     if (h.vy >= 0) h.rising = 0;
 
-    /* 6. move */
+    /* 6. move: an armed slide falls a third of vy (vy keeps the unarmed fall, so the slide's speed is always a third
+       of what the fall would be at the same step, capped at TERMINAL / 3; section 3.8 item 4) */
     moveX(h, lv, K);
-    var landed = moveY(h, lv, K);
+    var landed = moveY(h, lv, K, h.wall !== 0 && !h.sticky && h.vy > 0 ? Math.floor(h.vy / K.WALL_SLIDE_DIV) : h.vy);
 
-    /* 7. ground, coyote, buffer */
+    /* 7. the walls: on the ground nothing clings; in the air a full height contact on the rocker's side arms the slide
+       (DESIGN 4.2, outside the wall jump's lock); a sticky contact on either side arms only on a descending step after
+       an airborne one and stops the fall without the rocker (section 3.8 item 4); leaving the slide hands the fall its
+       third */
+    if (landed) { h.wall = 0; h.sticky = 0; h.lock = 0; h.dive = 0; }
+    else if (!h.sticky) {
+      var side = 0;
+      if (h.vy > 0 && !startedGrounded && h.dive === 0) side = contactAt(h, lv, K, 1, true) ? 1 : contactAt(h, lv, K, -1, true) ? -1 : 0;
+      if (side !== 0) { h.sticky = 1; h.wall = side; h.vy = 0; h.lock = 0; }
+      else {
+        var armed = dir !== 0 && h.lock === 0 && contactAt(h, lv, K, dir, false) ? dir : 0;
+        if (h.wall !== 0 && armed === 0 && h.vy > 0) h.vy = Math.floor(h.vy / K.WALL_SLIDE_DIV);
+        h.wall = armed;
+      }
+    }
+
+    /* ground, coyote, buffer */
     if (landed && !startedGrounded && !jumped) h.squash = SQUASH_FRAMES;
     h.ground = landed;
     if (h.ground) {
@@ -1632,7 +1678,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 
   /* section 2.5: the declared, ordered schema of the whole state */
   var HERO = [['x', 'i32'], ['y', 'i32'], ['vx', 'i32'], ['vy', 'i32'], ['facing', 'i32'], ['ground', 'bool'], ['wall', 'i32'],
-    ['sticky', 'bool'], ['coyote', 'i32'], ['buffer', 'i32'], ['held', 'bool'], ['rising', 'bool'], ['dive', 'i32'], ['dash', 'i32'],
+    ['sticky', 'bool'], ['lock', 'i32'], ['coyote', 'i32'], ['buffer', 'i32'], ['held', 'bool'], ['rising', 'bool'], ['dive', 'i32'], ['dash', 'i32'],
     ['dashI', 'i32'], ['iframes', 'i32'], ['hearts', 'i32'], ['heartsMax', 'i32'], ['vigor', 'i32'], ['focus', 'i32'], ['grit', 'i32'],
     ['scrolls', 'i32'], ['slots', 'i32[]'], ['cd', 'i32[]'], ['squash', 'i32'], ['anim', 'i32'], ['lastStand', 'i32'],
     ['secondWind', 'bool'], ['thickSkin', 'bool'], ['shake', 'i32']];
@@ -1890,6 +1936,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var hy = heroY - cam;
     ctx.fillStyle = css(P.I.INK); ctx.fillRect(heroX, hy, K.HERO_W, K.HERO_H);
     ctx.fillStyle = css(SB.TUNING.HERO_BODY); ctx.fillRect(heroX + 1, hy + 1, K.HERO_W - 2, K.HERO_H - 3);
+    /* the cling pose (an armed slide or a sticky wall; the sprite is T0.17): an Ink bar along the wall side */
+    if (s.hero.wall !== 0) { ctx.fillStyle = css(P.I.INK); ctx.fillRect(s.hero.wall > 0 ? heroX + K.HERO_W - 4 : heroX + 2, hy + 2, 2, K.HERO_H - 5); }
     ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(heroX + (s.hero.facing > 0 ? K.HERO_W - 4 : 2), hy + 4, 2, 2);
     ctx.restore();
   };

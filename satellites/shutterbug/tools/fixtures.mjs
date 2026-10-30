@@ -94,7 +94,7 @@ SYNTH.push(() => {
   plank(g, sx(3), sx(22), sy(25));    /* S5 20 wide */
   plank(g, 0, sx(11), sy(20));        /* S6 12 wide: a straight drop at x 5 falls through S5 and S4 onto S1 */
   return fixture('shelves-a', 'synthetic',
-    'Six one way planks of width 9 to 20 at varied heights and a 2 wide pillar on the right. Hand listed edges (H-reach-3): S1 (9,42) to S2 (11,39), a 3 up 2 across jump; a wall touch on the pillar from S2 at (19,35..36) (the 2 wide pillar, drawn rows 26..38, smooths to rows 28..36: a two wide column loses two rows at each end); a wall jump off it to S3 (15,32); a straight fall from S6 (5,19) through S5 and S4 onto S1 (5,42). Hand listed non edges: a 5 up; a 4 up 5 across. Above S6 the top rows are empty, so the climb is finished by tabs. Mean L about 190, nothing saturated: Frost (Q4). Landmarks: the pillar (the floor row is never one, Q58).',
+    'Six one way planks of width 9 to 20 at varied heights and a 2 wide pillar on the right. Hand listed edges (H-reach-3): S1 (9,42) to S2 (11,39), a 3 up 2 across jump; a wall touch on the pillar from S2 at (19,35..36) (the 2 wide pillar, drawn rows 26..38, smooths to rows 28..36: a two wide column loses two rows at each end); a wall jump off it onto S3 (16,32) (3 away: a wall jump starts touching its wall, so 3 up reaches 3 across, Q64; first listed as (15,32), 4 away); a straight fall from S6 (5,19) through S5 and S4 onto S1 (5,42). Hand listed non edges: a 5 up; a 4 up 5 across. Above S6 the top rows are empty, so the climb is finished by tabs. Mean L about 190, nothing saturated: Frost (Q4). Landmarks: the pillar (the floor row is never one, Q58).',
     g, { biome: 'frost', needsCrop: false, tabsMax: 12, exitIsLight: false, platformsMin: 6, landmarksMin: 1 });
 });
 
@@ -212,7 +212,7 @@ function sampleRoom() {
     expect: { biome: 'attic', needsCrop: false, tabsMax: 0, exitIsLight: true, platformsMin: 14, landmarksMin: 3,
       beats: [
         { kind: 'JUMP', from: [8, 46], to: [5, 44], why: 'the forgiving jump onto the bed, a photo landmark (2 up)' },
-        { kind: 'WALLJUMP', from: [16, 29], contact: [18, 26], to: [14, 23], why: 'off the desk shelf, touch the wardrobe, wall jump to shelf E, skipping shelf D (6 rows up)' },
+        { kind: 'WALLJUMP', from: [16, 29], contact: [18, 26], to: [15, 23], why: 'off the desk shelf, touch the wardrobe, wall jump to shelf E, skipping shelf D (6 rows up; shelf E reaches x 15 since T0.12a, 3 away from the wardrobe, the wall jump\'s reach at 3 up)' },
         { kind: 'FALL', from: [6, 26], to: [4, 33], why: 'walk off shelf D and drop seven rows onto the speck beside the bookshelf' },
         { kind: 'SPECK', at: [8, 20], why: 'the reward above: a Sun speck on shelf F, row 20' }
       ] } };

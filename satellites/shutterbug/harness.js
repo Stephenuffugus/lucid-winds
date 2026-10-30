@@ -1029,6 +1029,104 @@ group('H-sim-20', 'the exit: the room clears on the first step the hero\'s box o
   t.eq(beside.room.cleared, 1, 'one step of run into the exit cell clears');
 });
 
+/* ================================================================ sim part two: walls, slides, vines (T0.12a) */
+/* the macros: M_SLIDE holds toward the wall; M_WALLJUMP presses A from an armed slide and holds the rocker away (after
+   the 10 step lock the rocker steers); M_STICKY presses A from a sticky wall with no rocker */
+const M_SLIDE = (side, n) => Array.from({ length: n }, () => rockerOf(side));
+const M_WALLJUMP = (away, hold, len = 160) => Array.from({ length: len }, (_, k) => (k < 200 ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k < hold ? rockerOf(away) : 0));
+const M_STICKY = (len = 160) => Array.from({ length: len }, (_, k) => IN.A | (k === 0 ? IN.A_TAP : 0));
+/* a hero placed in a lab room: x and y in subpixels, still */
+const placed = (lv, x, y) => { const s = SB.sim.create(lv, { at: { x, y } }); SB.sim.attach(s, lv); s.hero.ground = 0; s.hero.coyote = 0; return s; };
+
+group('H-sim-9', 'a wall jump from an armed slide climbs at least 54 px and lands 4 across', t => {
+  /* a wall at x 2 (rows 30..46); the hero flush on its right at row 36 (feet on row 37's top), slides one step to arm,
+     then wall jumps right; a one way 4 across at the takeoff's height catches it */
+  const lines = []; for (let r = 30; r <= 46; r++) lines.push('..#');
+  const lv = LABS.room(lines.concat([FLOOR]));
+  lv.plat[37 * 24 + 7] = 1; lv.plat[37 * 24 + 8] = 1;
+  const s = placed(lv, 3 * CS, 36 * CS);
+  SB.sim.step(s, IN.L);
+  t.eq(s.hero.wall, -1, 'one step toward the wall arms the slide (wall -1)');
+  /* the model's own hold for 4 across at the takeoff's height (the WALL path, the lock inside it) */
+  const hold = SB.reach.tables(SB.K, 0).profiles.WALL.paths['4,0'][0].hold;
+  const y0 = s.hero.y; let apex = 0, landed = false;
+  const words = M_WALLJUMP(1, hold);
+  for (let k = 0; k < words.length; k++) { SB.sim.step(s, words[k]); apex = Math.max(apex, y0 - s.hero.y); if (s.hero.ground) landed = true; if (landed && s.hero.vx === 0) break; }
+  t.ok(apex >= 54 * 256, 'the wall jump climbs ' + (apex / 256).toFixed(1) + ' px (at least 54)');
+  /* the model's landing rule (LAB-EDGE's): grounded on the target's row with LAND_OVERLAP of the box over its column */
+  const ov7 = Math.min(s.hero.x + HW, 8 * CS) - Math.max(s.hero.x, 7 * CS);
+  t.ok(s.hero.ground === 1 && Math.floor((s.hero.y + HH - 1) / CS) === 36 && ov7 >= SB.K.OVERLAP_SUB, 'with the model\'s hold (' + hold + ' steps) it rests 4 across at the takeoff\'s height, over column 7 by ' + (ov7 / 256).toFixed(1) + ' px (at least 2)');
+  t.eq(s.hero.facing, 1, 'facing away from the wall');
+});
+
+group('H-sim-10', 'the slide falls a third of the unarmed fall, step for step', t => {
+  const lines = []; for (let r = 10; r <= 46; r++) lines.push('..#');
+  const lv = LABS.room(lines.concat([FLOOR]));
+  const a = placed(lv, 3 * CS, 12 * CS), b = placed(lv, 3 * CS, 12 * CS);
+  SB.sim.step(a, IN.L); SB.sim.step(b, 0);
+  let off = -1, steps = 0, most = 0;
+  for (let k = 0; k < 80 && off < 0 && !b.hero.ground; k++) {
+    const ya = a.hero.y, yb = b.hero.y;
+    SB.sim.step(a, IN.L); SB.sim.step(b, 0);
+    if (b.hero.ground) break;
+    steps++; most = Math.max(most, a.hero.y - ya);
+    if (a.hero.y - ya !== Math.floor((b.hero.y - yb) / 3)) off = k;
+  }
+  t.eq(off, -1, 'while the unarmed fall is airborne (' + steps + ' steps) the armed slide moves floor(that fall / 3) each step (the first step that does not)');
+  t.ok(most <= Math.floor(SB.K.TERM / 3), 'capped at TERMINAL / 3: the slide never moves more than ' + Math.floor(SB.K.TERM / 3) + ' a step (most ' + most + ')');
+  SB.sim.step(a, 0);
+  t.eq(a.hero.wall, 0, 'releasing the rocker unarms it');
+});
+
+group('H-sim-11', 'the corner rule: 2 px of side overlap never arms a slide; 14 px does', t => {
+  /* one solid cell at (2, 30); the hero flush on its right, its box overlapping the cell by `ov` px after the step's
+     fall of G (the start is set G higher) */
+  for (const [ov, want] of [[2, 0], [13.5, 0], [14, -1], [16, -1]]) {
+    const lv = LABS.room(['..#', '', '', '', FLOOR].map(r => r));
+    const row = 43, y = row * CS + (16 - ov) * 256 - SB.K.G;
+    const s = placed(lv, 3 * CS, y);
+    SB.sim.step(s, IN.L);
+    t.eq(s.hero.wall, want, 'a side overlap of ' + ov + ' px ' + (want ? 'arms the slide' : 'never arms a slide'));
+  }
+});
+
+group('H-sim-12', 'vines: the fall stops within a step of a descending contact; A climbs 69 px straight up; re sticks only descending', t => {
+  /* a 6 tall vine at x 2 (rows 30..35) in Overgrowth; the hero flush on its right, falling from row 27 */
+  const lines = ['..|', '..|', '..|', '..|', '..|', '..|'].concat(Array(10).fill(''), [FLOOR]);
+  const lv = LABS.room(lines, { biome: 3 });
+  const s = placed(lv, 3 * CS, 26 * CS);
+  let stuckAt = -1, firstContact = -1;
+  const vineRows = [...Array(lv.h).keys()].filter(r => lv.sticky[r * 24 + 2]), v0 = vineRows[0], v1 = vineRows[vineRows.length - 1] + 1;
+  for (let k = 0; k < 40 && stuckAt < 0; k++) {
+    SB.sim.step(s, 0);
+    const top = s.hero.y, bottom = s.hero.y + HH, ov = Math.min(bottom, v1 * CS) - Math.max(top, v0 * CS);
+    if (firstContact < 0 && ov >= HH - SB.K.CORNER_SUB) firstContact = k;
+    if (s.hero.sticky) stuckAt = k;
+  }
+  t.ok(stuckAt >= 0 && stuckAt - firstContact <= 1, 'the fall stops within 1 step of a descending full contact (contact at step ' + firstContact + ', stuck at ' + stuckAt + ')');
+  const yStuck = s.hero.y; SB.sim.step(s, 0); SB.sim.step(s, 0);
+  t.eq(s.hero.y, yStuck, 'it holds without the rocker');
+  let apex = 0, reStick = -1, risingStick = false;
+  const words = M_STICKY(80);
+  for (let k = 0; k < words.length && reStick < 0; k++) {
+    const vyBefore = s.hero.vy; SB.sim.step(s, words[k]); apex = Math.max(apex, yStuck - s.hero.y);
+    if (s.hero.sticky && k > 0) { reStick = k; if (vyBefore < 0) risingStick = true; }
+  }
+  t.ok(apex >= 69 * 256, 'A gives ' + (apex / 256).toFixed(1) + ' px straight up (at least 69)');
+  t.ok(reStick > 0 && !risingStick, 'it re sticks on a descending step (step ' + reStick + '), never a rising one');
+  t.eq(s.hero.x, 3 * CS, 'and never moved sideways (no push off)');
+});
+
+group('H-sim-15', 'facing: a wall jump faces away from the wall; a rocker tap sets it', t => {
+  const lines = []; for (let r = 30; r <= 46; r++) lines.push('..#');
+  const lv = LABS.room(lines.concat([FLOOR]));
+  const s = placed(lv, 3 * CS, 36 * CS);
+  SB.sim.step(s, IN.L); t.eq(s.hero.facing, -1, 'toward the wall while sliding');
+  SB.sim.step(s, IN.L | IN.A | IN.A_TAP); t.eq(s.hero.facing, 1, 'the wall jump faces away, the rocker still toward the wall');
+  for (let k = 0; k < 12; k++) SB.sim.step(s, IN.A);
+  SB.sim.step(s, IN.L); t.eq(s.hero.facing, -1, 'a rocker tap after the lock sets it');
+});
+
 group('H-sim-18', 'air control: the rocker at takeoff equals a running start; L and R together decelerate to rest', t => {
   const lv = LABS.room(['', 'S.......................', FLOOR]);
   const flight = run => {
@@ -1221,7 +1319,8 @@ const ORACLE = (() => {
        TAP's rise; every fall in Deep is the slow one. */
     const wall = profile === 'WALL', sticky = profile === 'STICKY';
     let vy = walk ? 0 : wall ? -r(T.WALL_JUMP_V) : sticky ? -r(T.STICKY_JUMP_V) : -(deep ? r(T.DEEP_JUMP_V) : r(T.JUMP_V)), aHold = walk ? 0 : PROFILE_A[profile];
-    let x = (CSZ - HWS) / 2, y = 0, vx = 0, rising = !walk, airborne = !walk;
+    /* the stance: centred, but a wall jump starts touching the wall it leaves (flush behind the jump direction) */
+    let x = wall ? (dir > 0 ? 0 : CSZ - HWS) : (CSZ - HWS) / 2, y = 0, vx = 0, rising = !walk, airborne = !walk;
     const lock = wall ? T.WALL_JUMP_LOCK : 0, PUSH = r(T.WALL_JUMP_PUSH), d0 = opts.delay !== undefined ? opts.delay : lock;
     if (sticky) hold = 0;
     const out = [{ x, y, vx, vy }];
@@ -1504,8 +1603,10 @@ group('H-reach-1b', 'the known answers: fixtures/tables.json equals the oracle, 
   for (const b of ['base', 'deep']) t.same(JSON.parse(JSON.stringify({ profiles: j[b].profiles, fall: j[b].fall, down: j[b].down })), JSON.parse(JSON.stringify(o[b])), 'tables.json ' + b + ' equals the oracle (else: --retable --why)');
   /* section 3.2's table, typed here from the plan: apex in px to 0.1, the air in steps, the raw table by dy 0..5 */
   const PLAN = { FULL: [69.6, 34, [6, 6, 5, 5, 4, -1]], MID: [52.7, 29, [5, 5, 4, 3, -1, -1]], TAP: [31.4, 22, [4, 3, -1, -1, -1, -1]],
-    WALL: [54.3, 30, [5, 5, 4, 4, -1, -1]], STICKY: [69.6, 34, [0, 0, 0, 0, 0, -1]] };
-  const PLAN_DEEP = { FULL: [85.5, 40, [7, 6, 6, 6, 5, 4]], WALL: [54.3, 32, [6, 5, 5, 4, -1, -1]] };
+    /* WALL's numbers by the flush stance (section 3.1: a wall jump starts touching its wall), not the plan's centred
+       one, which ran 2 px farther than the sim can: 3 up reaches 3 across, not 4 (QUESTIONS Q64) */
+    WALL: [54.3, 30, [5, 5, 4, 3, -1, -1]], STICKY: [69.6, 34, [0, 0, 0, 0, 0, -1]] };
+  const PLAN_DEEP = { FULL: [85.5, 40, [7, 6, 6, 6, 5, 4]], WALL: [54.3, 32, [5, 5, 4, 4, -1, -1]] };
   for (const [set, plan] of [['base', PLAN], ['deep', PLAN_DEEP]]) for (const [p, [apex, air, raw]] of Object.entries(plan)) {
     const e = j[set].profiles[p];
     t.eq(Math.round(e.apex / 25.6) / 10, apex, (set === 'deep' ? 'Deep ' : '') + p + ': apex ' + apex + ' px (section 3.2)');
@@ -1516,7 +1617,7 @@ group('H-reach-1b', 'the known answers: fixtures/tables.json equals the oracle, 
      step 7 the box (x 20.4 px) overlaps column 2 by 0.4 px, which the sim's collision counts and the plan's per pixel
      formula drops (QUESTIONS Q64: the model may be stingier than the sim, never more generous) */
   const PLAN_COLS = { FULL: [[0, 3], [0, 4], [2, 5], [3, 5], [1, 5], [0, 3], [0, 1]], MID: [[0, 3], [0, 4], [2, 4], [1, 4], [0, 3], [0, 1]],
-    TAP: [[0, 2], [0, 2], [1, 2], [0, 2], [0, 1]], WALL: [[0, 2], [0, 4], [2, 4], [2, 4], [0, 3], [0, 2]] };
+    TAP: [[0, 2], [0, 2], [1, 2], [0, 2], [0, 1]], WALL: [[0, 3], [0, 4], [2, 4], [2, 4], [0, 3], [0, 2]] /* k0 by the flush stance, Q64 */ };
   for (const [p, cols] of Object.entries(PLAN_COLS)) t.same(j.base.profiles[p].cols, cols, p + ': the whole arc\'s rows per column (section 3.2' + (p === 'FULL' ? ', k2 per Q64' : '') + ')');
   t.same([1, 4, 8].map(d => j.base.down[d]), [6, 7, 8], 'the jump down table: dx 6 at one row down, 7 at four, 8 at eight (section 3.2)');
   /* the walk off table: section 3.2 prints a fall that starts at once from the takeoff spot (2 at 1 to 2 rows, 3 at 3 to
@@ -1581,7 +1682,8 @@ group('H-reach-3', 'shelves-a: the hand listed edges exist and the hand listed n
   t.ok(hasEdge(g, at(9, 42), at(11, 39), 'JUMP'), 'S1 (9, 42) to S2 (11, 39): a 3 up, 2 across JUMP');
   const touched = [35, 36].filter(y => [...Array(10).keys()].some(k => hasEdge(g, at(10 + k, 39), cnode(g, 19, y, 1), 'WALLTOUCH')));
   t.same(touched, [35, 36], 'from S2 a WALLTOUCH onto the pillar\'s left side at (19, 35) and (19, 36)');
-  t.ok(hasEdge(g, cnode(g, 19, 35, 1), at(15, 32), 'WALLJUMP'), 'a WALLJUMP off the pillar at (19, 35) to S3 (15, 32): 4 away, 3 up');
+  /* (3 away since T0.12a's flush wall stance: 3 up reaches 3 across, Q64; the design's (15, 32) is 4 away) */
+  t.ok(hasEdge(g, cnode(g, 19, 35, 1), at(16, 32), 'WALLJUMP'), 'a WALLJUMP off the pillar at (19, 35) onto S3 at (16, 32): 3 away, 3 up');
   t.ok(hasEdge(g, at(5, 19), at(5, 42), 'FALL'), 'a straight FALL from S6 (5, 19) through S5 and S4 onto S1 (5, 42)');
   const bad = edgesOf(g).filter(e => e.kind === 'JUMP' && (e.dy >= 5 || (e.dy === 4 && e.dx >= 5)));
   t.eq(bad.length, 0, 'no JUMP is 5 up, and none is 4 up and 5 across (' + bad.slice(0, 3).map(e => gname(g, e.from) + ' to ' + gname(g, e.to)).join(', ') + ')');
