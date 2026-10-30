@@ -1,9 +1,9 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 09:09 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
+> **STATE 30 Oct 09:47 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
 > night one order, the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after T0.8a, sb-m0-2 after
 > T0.8b, sb-m0-3 when M0 is complete. **LIVE: sb-m0-2** (deploy `945b541b5`, both origins proven by curl 04:53:54 UTC):
-> the thumbs climb on a phone. **Last shipped: T0.15 (capture: a photo or the camera roll, the crop with the pipeline's live overlay, the focal tap, needsCrop; Develop takes the crop's last build and the photo to the reveal, which releases it; nothing written; the capture gate).** Gates: check --fast green (lint, harness 4269, redwatch, boot, play, make, input, layout, reveal, capture) and harness-all green. Red: nothing. Next: T0.16 (moths, hearts, death and restart, the beacon, hint glyphs), with the review's model lens folded in when it reports. Autosave running.
+> the thumbs climb on a phone. **Last shipped: T0.16 (`3f999e67f`): moths, hearts, death and restart, the beacon, hint pulses, sounds; the capture flake fixed.** Gates: check --fast green (11 gates), harness 4328 assertions. Red: nothing. Next: T0.17 (sprites, dressing, the sprites gate, the perf guard), then T0.18 sb-m0-3. Autosave running.
 
 You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is ONE game from zero:
 Shutterbug, a photo of a room becomes a pixel platformer level (`satellites/shutterbug/DESIGN.md`). Fable wrote the
