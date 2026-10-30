@@ -539,6 +539,16 @@ const pipeRef = (() => {
       if (!light) { light = { c, peak }; continue; }
       if (peak > light.peak || (peak === light.peak && (c.length > light.c.length || (c.length === light.c.length && c[0] < light.c[0])))) light = { c, peak };
     }
+    /* the reach distance from spawn (section 3.7, since T0.10b): the farthest reachable standable cell of the top rows,
+       the light winning within EXIT_LIGHT_SLACK (2) by its own farthest cell; ties to the lowest index. The graph is the
+       core's (H-reach-3 to 5 hold it to the labs); the choice is made here. */
+    const gr = SB.reach.graph(lv), d = SB.reach.distances(gr, lv.spawn);
+    let maxD = -1, far = -1;
+    for (let i = 0; i < rows * w; i++) if (st(i) && d[i] > maxD) { maxD = d[i]; far = i; }
+    if (far >= 0) {
+      const lc = light ? light.c.filter(i => st(i) && d[i] >= 0).sort((a, b) => d[b] - d[a] || a - b)[0] : undefined;
+      return lc !== undefined && d[lc] >= maxD - 2 ? lc : far;
+    }
     if (light) {
       const ok = light.c.filter(st);
       if (ok.length) { const row = Math.max(...ok.map(i => Math.floor(i / w))); return Math.min(...ok.filter(i => Math.floor(i / w) === row)); }
@@ -773,7 +783,7 @@ group('H-pipe-12', 'the light is the cluster with the brightest cell; the beacon
   /* the fixtures where peaks tie: the test's own rule picks the same exit */
   for (const name of ['all-light', 'checkerboard', 'sample-room']) {
     const lv = buildFx(fixture(name), 0);
-    t.eq(lv.exit, pipeRef.exitOf(lv), name + ': the exit equals the test\'s own rule (the peak, ties to the larger then the lowest first cell; in the light its lowest standable row, lowest index; else the brightest standable top row cell)');
+    t.eq(lv.exit, pipeRef.exitOf(lv), name + ': the exit equals the test\'s own rule (the farthest reachable cell of the top rows, the light winning within 2; a room that reaches none: the light\'s lowest standable row at its lowest index, else the brightest standable top row cell)');
   }
 });
 
