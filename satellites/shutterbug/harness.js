@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 4800;              /* raised per task: the count a full run must reach (4800 after T1.6, 30 Oct) */
+const ASSERT_FLOOR = 4809;              /* raised per task: the count a full run must reach (4809 after T1.8, 30 Oct) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -4158,6 +4158,29 @@ group('H-sim-19', 'a room with a scroll pick replays from its recorded script (t
   for (const w of words) { SB.sim.step(cut, w & ~(15 * IN.CHOICE)); if (cut.scrollsOffered && at < 0) at = cut.hero.x; else if (at >= 0 && cut.hero.x !== at) still = false; }
   t.ok(words.some(w => (w >> 6) & 15) && live.hero.scrolls === 1 && SB.sim.hash(replay) === SB.sim.hash(live), 'the recorded script carries its choice word and replays to the live hash (' + SB.sim.hash(live) + ')');
   t.ok(!!cut.scrollsOffered && cut.hero.scrolls === 0 && still && at >= 0, 'without the choice word the replay stalls at the offer, the hero held at x ' + (at / 256) + ' px while R stays held');
+});
+
+/* ================================================================ sharing (T1.8) */
+group('H-share-1', 'the link and the paste (sections 1.5, 1.6): the link is the origin, the path, # and the code; a paste opens the same record with whitespace, without its v1. prefix, as the full link or after its last #; a higher version and garbage are told apart', t => {
+  const rec = SB.record.fromJSON(fixture('sample-room').fx.record), code = SB.record.encode(rec), same = r => !!r && !!r.rec && JSON.stringify(SB.record.toJSON(r.rec)) === JSON.stringify(SB.record.toJSON(rec));
+  const link = SB.record.linkOf('https://lucidwinds.com', '/satellites/shutterbug/', rec);
+  t.ok(link === 'https://lucidwinds.com/satellites/shutterbug/#' + code && link.length === 825, 'the link is the origin, the path, # and the code (' + link.length + ' characters, H-rec-2\'s 825)');
+  const cases = [['the code', code], ['with whitespace around it', '  ' + code + '\n'], ['without its v1. prefix', code.slice(3)], ['as the full link', link], ['after the last #', 'https://x.example/a#b#' + code], ['broken by a line wrap', code.slice(0, 100) + ' \n ' + code.slice(100)]];
+  for (const [name, text] of cases) t.ok(same(SB.record.parseCode(text)), 'a paste of ' + name + ' opens the same record');
+  t.ok(SB.record.parseCode('v2.' + code.slice(3)).why === 'newer' && SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode('').why === 'bad', 'a v2 code reads as newer; garbage and nothing read as bad');
+});
+group('H-share-2', 'every fixture in every mode, and the sample room with a focal tap, round trips through its link to the same record and the same level', t => {
+  const recs = [], bad = [];
+  for (const f of FIXTURES) for (const mode of MODES) recs.push([f.name + ' mode ' + mode, Object.assign({}, f.fx.record, { mode })]);
+  recs.push(['sample-room tapped on (1, 30)', Object.assign({}, fixture('sample-room').fx.record, { focal: 30 * 24 + 1 })]);
+  for (const [tag, json] of recs) {
+    const rec = SB.record.fromJSON(json), back = SB.record.parseCode(SB.record.linkOf('https://lucidwinds.com', '/satellites/shutterbug/', rec));
+    if (!back.rec) { bad.push(tag + ': does not open'); continue; }
+    if (JSON.stringify(SB.record.toJSON(back.rec)) !== JSON.stringify(SB.record.toJSON(rec))) { bad.push(tag + ': another record'); continue; }
+    const a = SB.pipeline.build(rec, {}), b = SB.pipeline.build(back.rec, {});
+    if (!!a.needsCrop !== !!b.needsCrop || (!a.needsCrop && SB.pipeline.levelHash(a) !== SB.pipeline.levelHash(b))) bad.push(tag + ': another level');
+  }
+  t.eq(bad.length, 0, recs.length + ' records round trip through their links to the same record and level' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
 });
 
 /* ================================================================ sprites (T0.17) */

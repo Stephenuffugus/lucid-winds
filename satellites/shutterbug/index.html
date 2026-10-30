@@ -116,6 +116,28 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #offer .ico.focus { width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-bottom: 26px solid var(--lapis); }
 #offer .ico.grit { box-sizing: border-box; border: 7px solid #3f9a3a; border-radius: 50%; }
 #slipok { background: var(--sun); color: var(--ink); }
+/* the share sheet (T1.8): the record's 16 colour grid, the three sentences, the link and its buttons; it scrolls on short phones */
+#sharesheet { position: absolute; left: 0; right: 0; top: 2%; bottom: 2%; margin: 0 auto; width: min(320px, 92vw); padding: 14px; overflow-y: auto;
+  background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  display: none; flex-direction: column; gap: 8px; align-items: stretch; text-align: center; z-index: 11; }
+#sharesheet.on { display: flex; }
+#sharesheet h2 { margin: 0; padding: 12px 64px 0; font-size: 1.2rem; } #sharesheet p { margin: 0; font-size: 0.9rem; }
+/* Close in the sheet's corner, in sight whatever the phone's height (t18: below the fold at 360x780) */
+#sharesheet #shareclose { position: absolute; top: 6px; right: 6px; min-width: 56px; padding: 0 10px; }
+#sharecanvas { align-self: center; height: min(384px, 26vh); width: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; border: 2px solid var(--ink); }
+#sharelink { min-height: 40px; font-size: 0.8rem; border: 1px solid var(--pewter); padding: 0 8px; }
+#sharesheet button { min-height: 48px; border-radius: 10px; font-weight: 700; font-size: 1rem; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); }
+#copylink { background: var(--sun) !important; }
+#share { position: absolute; top: 0; left: calc(84px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;
+  border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
+/* the card a link opens on (T1.8): one tap to develop, so the shutter may sound */
+#devcard { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(11,10,15,0.82); z-index: 30; }
+#devcard.on { display: flex; }
+#devtap { min-width: 220px; min-height: 64px; border-radius: 12px; border: 2px solid var(--ink); background: var(--sun); color: var(--ink); font-weight: 700; font-size: 1.2rem; }
+#codebox { display: flex; gap: 6px; align-items: stretch; } #codebox[hidden] { display: none; }
+#levelcode { flex: 1 1 auto; min-width: 0; min-height: 48px; border: 1px solid var(--pewter); padding: 0 8px; font-size: 0.95rem; }
+#codebox button { min-width: 64px; min-height: 48px; border-radius: 10px; border: 1px solid var(--pewter); background: var(--paper); color: var(--ink); }
+#codemsg { margin: 4px 0 0; color: var(--brick); font-weight: 700; }
 #again { background: var(--paper); color: var(--ink); }
 #cleartitle, #deathtitle { background: transparent; color: var(--ink); }
 /* the hint glyphs (T0.16): a control pulses once, the first time it is the move to make */
@@ -176,9 +198,12 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     <button id="choose" class="big" type="button" data-copy="choose"></button>
     <p id="soon" role="status" hidden></p>
     <button id="sample" type="button" data-copy="sample"></button>
+    <div id="codebox" hidden><input id="levelcode" type="text" data-aria="levelCode" autocomplete="off" spellcheck="false"><button id="pastecode" type="button" data-copy="codePaste"></button><button id="playcode" type="button" data-copy="codePlay"></button></div>
+    <p id="codemsg" role="status" hidden></p>
   </div>
   <p id="build"></p>
 </main>
+<div id="devcard" role="dialog" data-aria="tapToDevelop"><button id="devtap" type="button" data-copy="tapToDevelop"></button></div>
 <main id="crop" class="screen" aria-label="Crop">
   <div id="croptop"><button id="croptitle" type="button" data-copy="toTitle"></button><p id="crophint" data-copy="cropHint"></p></div>
   <div id="cropstage"><canvas id="cropview"></canvas>
@@ -203,8 +228,16 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       <button id="pickB" type="button"><i class="ico"></i><b></b><small></small></button></div>
     <div id="slip" role="dialog" data-aria="slip"><h2 data-copy="slip"></h2>
       <button id="slipok" type="button" data-copy="slipTake"></button></div>
+    <div id="sharesheet" role="dialog" data-aria="shareTitle"><h2 data-copy="shareTitle"></h2>
+      <canvas id="sharecanvas" width="192" height="384"></canvas>
+      <p data-copy="shareAbstract"></p><p data-copy="shareOffline1"></p><p data-copy="shareOffline2"></p>
+      <input id="sharelink" type="text" readonly data-aria="shareLink">
+      <button id="copylink" type="button" data-copy="copyLink"></button>
+      <button id="sharenative" type="button" data-copy="shareNative" hidden></button>
+      <button id="copycode" type="button" data-copy="copyCode"></button>
+      <button id="shareclose" type="button" data-copy="shareClose"></button></div>
   </div>
-  <div id="strip"><button id="back" type="button" data-copy="toTitle"></button>
+  <div id="strip"><button id="back" type="button" data-copy="toTitle"></button><button id="share" type="button" data-copy="share"></button>
     <p id="dp"><span data-copy="dp"></span> <span id="dpn">0</span></p>
     <div id="reserve" aria-hidden="true"></div>
     <div id="rocker" data-aria="move"><i class="zone zl" data-copy="left"></i><i class="gap"></i><i class="zone zr" data-copy="right"></i></div>
@@ -662,8 +695,22 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     return r.mode === 2 && r.pal2 ? SB.rng.fnv1a32(r.pal2, h) : h;
   }
 
+  /* a pasted code or an opened link (section 1.6, T1.8): its whitespace dropped, a full URL cut after its last '#', the
+     v1. prefix optional; { rec }, or { why: 'newer' } for a higher version, or { why: 'bad' } */
+  function parseCode(text) {
+    if (typeof text !== 'string') return { why: 'bad' };
+    var t = text.replace(/\s+/g, ''), k = t.lastIndexOf('#');
+    if (k >= 0) t = t.slice(k + 1);
+    var m = /^v(\d+)\./.exec(t);
+    if (m && +m[1] > V) return { why: 'newer' };
+    var rec = decode(t);
+    return rec ? { rec: rec } : { why: 'bad' };
+  }
+  /* the link: the page's own origin and path and the code after '#' (no host in the page: it runs wherever it is
+     served, section 1.5) */
+  function linkOf(origin, pathname, rec) { return origin + pathname + '#' + encode(rec); }
   SB.record = { V: V, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
-    encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows };
+    encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows, parseCode: parseCode, linkOf: linkOf };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-pipeline" data-core>
@@ -3695,6 +3742,15 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     grit: 'Grit', gritSays: 'charms grow stronger',
     slip: 'A weapon waits for the Darkroom.',
     slipTake: 'Keep the slip',
+    share: 'Share', shareTitle: 'Share this room',
+    shareAbstract: 'This shares an abstracted 16 color version of your photo, not the photo.',
+    shareOffline1: 'Works offline once installed.',
+    shareOffline2: 'A phone that has opened Shutterbug once can open this link offline. A new phone needs one online load.',
+    shareLink: 'The room\'s link', copyLink: 'Copy link', copyCode: 'Copy code', shareNative: 'Share', shareClose: 'Close', copied: 'Copied',
+    tapToDevelop: 'Tap to develop', sharedRoom: 'A shared room',
+    levelCode: 'Level code', codePaste: 'Paste', codePlay: 'Play',
+    codeBad: 'That code did not open. Check it and try again.',
+    codeNewer: 'This room was made by a newer Shutterbug. Update and try again.',
     nextRoom: 'Shoot the next room',
     playAgain: 'Play it again'
   });
@@ -3704,6 +3760,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 
   ui.screen = 'title';
   ui.show = function (name) {
+    if (name === 'title') document.getElementById('codebox').hidden = !ui.firstRoomDone;   /* DESIGN 5.3: the first screen is two buttons and a small link */
     var all = document.querySelectorAll('.screen');
     for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === name);
     ui.screen = name;
@@ -3916,12 +3973,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     opts = opts || {};
     var t0 = performance.now();
     if (window.performance && performance.mark) performance.mark('sb-reveal-start');
-    var lv = opts.level || SB.pipeline.build(record, { firstRoom: !ui.firstRoomDone });
+    var first = !opts.notFirst && !ui.firstRoomDone;   /* a link or a pasted code is never the player's first room (Q32) */
+    var lv = opts.level || SB.pipeline.build(record, { firstRoom: first });
     SB.perfLog.pipeline = opts.level ? (opts.ms || 0) : performance.now() - t0;
     if (lv.needsCrop) return false;
-    G.record = record; G.level = lv; G.name = name;
+    G.record = record; G.level = lv; G.name = name; G.mode = opts.mode || 'free';
     G.state = SB.sim.create(lv, {});
-    ui.firstRoomDone = true;
+    if (!opts.notFirst) ui.firstRoomDone = true;
     SB.render.buildStatic(lv);
     SB.input.resetRecording();
     document.getElementById('roomname').textContent = name;
@@ -3948,6 +4006,43 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     }
     document.getElementById('slip').classList.toggle('on', !!st.room.compare);
     if (st.room.dp !== shownDp) { shownDp = st.room.dp; document.getElementById('dpn').textContent = String(st.room.dp); }
+  };
+  /* the share sheet (T1.8, section 1.5): the record's grid on a 192x384 canvas (8 px a cell), the link from the page's
+     own origin and path; it holds the loop while open (its own screen name) */
+  function drawShare(rec) {
+    var cv = document.getElementById('sharecanvas'), c2 = cv.getContext('2d'), P = SB.palette, k = cv.width / rec.w;
+    for (var i = 0; i < rec.w * rec.h; i++) { c2.fillStyle = P.hex(P.RGB[rec.pal[i]]); c2.fillRect((i % rec.w) * k, Math.floor(i / rec.w) * k, k, k); }
+  }
+  ui.openShare = function () {
+    if (!G.record) return false;
+    var link = SB.record.linkOf(location.origin, location.pathname, G.record), el = document.getElementById('sharelink');
+    drawShare(G.record); el.value = link;
+    var nat = document.getElementById('sharenative');
+    nat.hidden = !(navigator.share && navigator.canShare && navigator.canShare({ url: link }));
+    SB.input.releaseAll();
+    var sh = document.getElementById('sharesheet'); sh.classList.add('on'); sh.scrollTop = 0; ui.screen = 'share';
+    return link;
+  };
+  ui.closeShare = function () { document.getElementById('sharesheet').classList.remove('on'); if (ui.screen === 'share') ui.screen = 'play'; };
+  function copied(btn, text) {
+    var done = function () { var was = btn.textContent; btn.textContent = ui.COPY.copied; setTimeout(function () { btn.textContent = was; }, 1500); };
+    var el = document.getElementById('sharelink');
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, function () { el.value = text; el.select(); }); return; } } catch (e) { /* fall back */ }
+    el.value = text; el.select(); try { document.execCommand('copy'); done(); } catch (e) { /* the selected input stays */ }
+  }
+  /* a link or a pasted code (section 1.5): a room opens behind the Tap to develop card (so the shutter may sound), in
+     mode Level code, never as the first room; a code that does not open says so on the title */
+  ui.openCode = function (text) {
+    var r = SB.record.parseCode(text), msg = document.getElementById('codemsg');
+    if (!r.rec) { msg.textContent = r.why === 'newer' ? ui.COPY.codeNewer : ui.COPY.codeBad; msg.hidden = false; ui.toTitle(); return false; }
+    msg.hidden = true; ui.pendingCode = r.rec;
+    document.getElementById('devcard').classList.add('on');
+    return true;
+  };
+  ui.developCode = function () {
+    var rec = ui.pendingCode; ui.pendingCode = null;
+    document.getElementById('devcard').classList.remove('on');
+    if (rec && !ui.startRoom(rec, ui.COPY.sharedRoom, { mode: 'code', notFirst: true })) { var msg = document.getElementById('codemsg'); msg.textContent = ui.COPY.codeBad; msg.hidden = false; }
   };
   ui.firstRoomDone = false;   /* the first ever free play room runs with at most FIRST_ROOM_MAX_FODDER moths (T1.10 keeps it) */
   ui.hearts = hearts;
@@ -4007,6 +4102,16 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     document.getElementById('pickA').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.A); });
     document.getElementById('pickB').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.B); });
     document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });
+    document.getElementById('share').addEventListener('click', function () { ui.openShare(); });
+    document.getElementById('shareclose').addEventListener('click', function () { ui.closeShare(); });
+    document.getElementById('copylink').addEventListener('click', function () { copied(this, document.getElementById('sharelink').value); });
+    document.getElementById('copycode').addEventListener('click', function () { copied(this, SB.record.encode(G.record)); });
+    document.getElementById('sharenative').addEventListener('click', function () { try { navigator.share({ url: document.getElementById('sharelink').value }).catch(function () {}); } catch (e) { /* silent */ } });
+    document.getElementById('devtap').addEventListener('click', function () { ui.developCode(); });
+    document.getElementById('playcode').addEventListener('click', function () { ui.openCode(document.getElementById('levelcode').value); });
+    document.getElementById('pastecode').addEventListener('click', function () {
+      try { navigator.clipboard.readText().then(function (t) { document.getElementById('levelcode').value = t; }, function () {}); } catch (e) { /* silent */ }
+    });
     document.getElementById('deathtitle').addEventListener('click', function () { ui.hideDeath(); ui.toTitle(); });
     document.getElementById('cleartitle').addEventListener('click', ui.toTitle);
     document.getElementById('back').addEventListener('click', ui.toTitle);
@@ -4099,6 +4204,16 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   SB.input.init();
   SB.audio.init();
   SB.ui.init();
+  /* opening a link (section 1.5): the fragment read, cleared with replaceState (never a navigation), and opened behind
+     the Tap to develop card; a hash typed or pasted into an open page does the same */
+  function fromHash() {
+    var h = location.hash;
+    if (!h || h.length < 2) return;
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* silent */ }
+    SB.ui.openCode(h);
+  }
+  fromHash();
+  window.addEventListener('hashchange', fromHash);
   SB.input.initStrip();
   window.addEventListener('resize', function () { if (SB.ui.screen === 'play' || SB.ui.screen === 'clear' || SB.ui.screen === 'dead') { SB.render.fit(); draw(); } });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { if (G.state) { SB.render.fit(); draw(); } });

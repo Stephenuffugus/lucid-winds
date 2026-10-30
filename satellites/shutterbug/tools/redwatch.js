@@ -611,7 +611,12 @@ const MUTANTS = [
   { name: 'SETTING_IGNORED', task: 'T1.7', file: 'page', find: "var live = function () { return !!A.ctx && !A.muted && A.ctx.state === 'running'; };", repl: "var live = function () { return !!A.ctx && A.ctx.state === 'running'; };",
     gates: [{ gate: 'audio', expect: 'with the sound off a jump is asked for and nothing is scheduled' }] },
   { name: 'AUDIO_FILE_REQUEST', task: 'T1.7', file: 'page', find: "A.init = function () { document.addEventListener('pointerdown', unlock, { capture: true, once: true }); };", repl: "A.init = function () { try { new Audio('sfx/jump.mp3').load(); } catch (e) {} document.addEventListener('pointerdown', unlock, { capture: true, once: true }); };",
-    gates: [{ gate: 'audio', expect: 'no <audio> element' }] }
+    gates: [{ gate: 'audio', expect: 'no <audio> element' }] },
+  /* T1.8: sharing */
+  { name: 'SHARE_DROPS_FOCAL', task: 'T1.8', file: 'page', find: "function linkOf(origin, pathname, rec) { return origin + pathname + '#' + encode(rec); }", repl: "function linkOf(origin, pathname, rec) { return origin + pathname + '#' + encode(Object.assign({}, rec, { focal: null })); }",
+    gates: [{ gate: 'harness', only: 'H-share-2', expect: 'records round trip through their links' }] },
+  { name: 'PREFIX_CHECK_DROPPED', task: 'T1.8', file: 'page', find: "    if (p.slice(0, 3) === 'v' + V + '.') p = p.slice(3);\n    else if (p.indexOf('.') >= 0) return null;\n", repl: "    p = p.slice(3);\n",
+    gates: [{ gate: 'harness', only: 'H-share-1', expect: 'a paste of without its v1. prefix opens the same record' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
