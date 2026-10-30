@@ -175,8 +175,10 @@ const MUTANTS = [
      lay a tab (the plan's SHELF_CLOSED, translated to this room; removing each shelf in turn found the essential ones) */
   { name: 'SHELF_CLOSED', task: 'T0.11b', file: 'fixture:sample-room.json', edits: [['"444444444555544444444444",\n      "444444444333344444465664"', '"444444444444444444444444",\n      "444444444444444444465664"']],
     gates: [{ gate: 'harness', only: 'H-rep-1', expect: 'the sample room needs zero tabs' }] },
-  { name: 'OVERLAP_8', task: 'T0.13a', file: 'page', find: 'LAND_OVERLAP_PX: 2,', repl: 'LAND_OVERLAP_PX: 8,',
-    gates: [{ gate: 'harness', only: 'H-bot-1', expect: 'has no macro' }] },
+  /* the sim alone stingier than the model (TUNING's 8 would move the tables with it, and the bot then agrees): the
+     ascent keeps a cell of slack, so it is the every edge gate that meets the table's edge jumps (46 fail) */
+  { name: 'OVERLAP_8', task: 'T0.13a', file: 'page', find: 'if (ov >= K.OVERLAP_SUB || (h.ground && ov > 0)) landed = true;', repl: 'if (ov >= 8 * 256 || (h.ground && ov > 0)) landed = true;',
+    gates: [{ gate: 'harness', only: 'H-bot-6', args: ['--all-edges'], expect: 'every edge has a macro' }] },
   { name: 'TOUCH_HEAD_ROW', task: 'T0.13a', file: 'page', find: 'var fc = Math.floor((ny - (HHs >> 1)) / C) * w + (col - dir)', repl: 'var fc = Math.floor((ny - HHs) / C) * w + (col - dir)',
     gates: [{ gate: 'harness', only: 'H-bot-5', expect: 'every edge has a macro' }] },
   { name: 'FOOTING_2PX', task: 'T0.13a', file: 'page', find: 'if (ov >= K.OVERLAP_SUB || (h.ground && ov > 0)) landed = true;', repl: 'if (ov >= K.OVERLAP_SUB) landed = true;',
@@ -331,7 +333,7 @@ for (const m of MUTANTS) {
     if (anchor !== 'ok') { rows.push({ m, g, result: anchor }); continue; }
     let cmd, env = Object.assign({}, process.env);
     if (g.gate === 'lint') cmd = ['tools/lint.mjs', '--page', page].concat(makeArgs);
-    else if (g.gate === 'harness') cmd = [harness, '--page', page].concat(g.only ? ['--only', g.only] : [], isFixture ? ['--fixtures', fixCopy] : []);
+    else if (g.gate === 'harness') cmd = [harness, '--page', page].concat(g.only ? ['--only', g.only] : [], isFixture ? ['--fixtures', fixCopy] : [], g.args || []);
     else if (BROWSER.has(g.gate)) { cmd = ['test/' + g.gate + '.mjs']; env.SB_PAGE = page; if (m.file === 'make') env.SB_MAKE = path.join(dir, 'make.html'); }
     else { rows.push({ m, g, result: 'UNKNOWN GATE' }); continue; }
     const r = spawnSync('node', cmd, { cwd: GAME, encoding: 'utf8', env, maxBuffer: 64 * 1024 * 1024, timeout: 15 * 60 * 1000 });
