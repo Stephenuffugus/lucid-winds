@@ -728,3 +728,12 @@ shots (looked at):
   - At 320 wide the fleet's music chip sits on the rocker's left zone whenever no room runs (Q48's reported case).
   - The Double Exposure preview is small (each grid about 85 px tall at 22vh).
   - The spark's Ink outline, like the moth's, vanishes on Soot.
+
+### 2026-10-30 23:52 UTC  M1R  The sb-m1-1 full check after the box stop: two gates fixed  commit (this commit), the code in autosave `4f111e3aa`
+the box: stopped by the platform between 22:49 and 22:58 UTC, the second stop of the day (the host log says its processes ran 12 h from 11:00:47). GitHub held `ce76bbb16`, so nothing committed was lost. Lost with /tmp and the dead session: the full check at its harness gate and the card review mid run. Both rerun from 23:12.
+
+the rerun of the full check (23:12:55 to 23:42:58 UTC, at `ce76bbb16`): 2 GATES FAILED.
+- boot: Chrome did not start within puppeteer's default 30 s. It was the first browser launch after the restart (a cold disk, the load near 4 on two cores); boot alone passed in 7 s, and every later browser gate launched. test/harness.mjs launch() now waits up to 120 s.
+- redwatch-browser: 101 of 102 RED, FAB_OVER_SHEET WRONG REASON (reproduced alone). M1R's step "a tap on A under the open share sheet does not jump at Close" proves a thumb lands on A before it taps; under the mutant the fab shows over the sheet and sits on A, so the step threw before "round 1: the share sheet over the play screen" ran. The sheet check now runs first. It only opens and closes the sheet and never steps the held sim.
+- after the fix: LOOP OK (41 checks), BOOT OK, and the nine loop rows all RED (FAB_OVER_SHEET on its own line again, EDGE_BANKED_UNDER_SHEET still on its own).
+- the served set is unchanged since the stamp (`679395786`). The full check reruns on this commit before the deploy.
