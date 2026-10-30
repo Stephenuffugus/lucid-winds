@@ -8,7 +8,11 @@
  * https://lucidwinds.com/portal/ is intercepted and recorded, never followed. Journey C (the wrapper iframe and the
  * ready posts) is T0.2b. From T0.15 on the gate also asserts no disabled control remains on the title.
  *
- * Watched red by EXIT_UNCALLED (journeys A and B), BUTTON_32PX, STYLE_COMMENT_EATS (the exit under 48 px). */
+ * Journey C (T0.2b): the game inside the test server's wrapper iframe: {sws:'ready'} twice, SWS_EMBED true, two quick
+ * taps on the framed exit post {sws:'close'} once; the frame's service worker registrations are printed, and counted
+ * from T1.11.
+ * Watched red by EXIT_UNCALLED (journeys A and B), BUTTON_32PX, STYLE_COMMENT_EATS (the exit under 48 px),
+ * READY_NEVER_POSTED (journey C). */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME_PATH } from './harness.mjs';
 
 const R = reporter('BOOT');
@@ -110,6 +114,32 @@ try {
     let hit = null;
     for (let i = 0; i < 100 && !hit; i++) { hit = seen.find(s => s.nav && s.u === 'https://lucidwinds.com/portal/'); if (!hit) await sleep(100); }
     R.say(!!hit, 'journey B: a cold exit navigates to https://lucidwinds.com/portal/ (intercepted: ' + (seen.map(s => s.u + (s.nav ? ' nav' : '')).join(', ') || 'nothing') + ')');
+    await page.close();
+  }
+  /* journey C (T0.2b): inside the wrapper iframe the game is framed: SWS_EMBED is true, {sws:'ready'} arrives twice
+     (posted at parse and again on load), and a real tap on the exit inside the frame posts {sws:'close'} exactly
+     once; service worker registrations inside the frame are printed now and counted from T1.11 */
+  {
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await page.goto(srv.base + '/__wrap.html', { waitUntil: 'load' });
+    let frame = null;
+    for (let k = 0; k < 100 && !frame; k++) { frame = page.frames().find(f => f.url().includes('/satellites/shutterbug/')); if (!frame) await sleep(100); }
+    await frame.waitForFunction(() => window.SB_DEV && typeof window.SB_DEV.screen === 'function', { timeout: 30000 });
+    await sleep(300);
+    const readies = await page.evaluate(() => window.__msgs.filter(m => m.data && m.data.sws === 'ready').length);
+    R.say(readies === 2, 'journey C: framed, {sws:\'ready\'} arrived twice, at parse and on load (got ' + readies + ')');
+    R.say(await frame.evaluate(() => window.SWS_EMBED === true), 'journey C: inside the frame SWS_EMBED is true');
+    const box = await frame.evaluate(() => { const r = document.getElementById('exit').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    const off = await page.evaluate(() => { const r = document.getElementById('game').getBoundingClientRect(); return { x: r.left, y: r.top }; });
+    await page.touchscreen.tap(off.x + box.x, off.y + box.y);
+    await sleep(200);
+    await page.touchscreen.tap(off.x + box.x, off.y + box.y);
+    await sleep(500);
+    const closes = await page.evaluate(() => window.__msgs.filter(m => m.data && m.data.sws === 'close').length);
+    R.say(closes === 1, 'journey C: two quick taps on the framed exit post {sws:\'close\'} once (got ' + closes + ')');
+    const regs = await frame.evaluate(() => navigator.serviceWorker ? navigator.serviceWorker.getRegistrations().then(r => r.length) : -1);
+    console.log('  info  journey C: service worker registrations inside the frame: ' + regs + ' (asserted from T1.11, when a worker exists)');
+    R.say(errors.length === 0, 'journey C: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
 } finally {

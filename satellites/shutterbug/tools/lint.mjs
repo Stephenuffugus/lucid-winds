@@ -101,6 +101,22 @@ if (!fleet || blocks.indexOf(fleet) !== 0 || fleet.index > html.indexOf('</head>
 /* rule: the core blocks, extracted exactly the way harness.js extracts them (CORE_RE, section 1.3) */
 const CORE_RE = /^<script id="(core-[a-z]+)" data-core>\n([\s\S]*?)\n<\/script>/gm;
 const CORE_ORDER = ['core-ns', 'core-rng', 'core-palette', 'core-record', 'core-pipeline', 'core-reach', 'core-features', 'core-sim'];
+/* rule (T0.2b): ONE CORE_RE. The loader's literal (harness.js loads through it, the owner) is byte identical in this
+   lint and in every never served page that runs the core: fixtures/make.html (T0.5b) and tools/swatch.html (T0.4b),
+   each checked once it exists */
+{
+  const lit = s => { const k = s.match(/CORE_RE = (\/.*\/[gimsuy]*);/); return k ? k[1] : null; };
+  const owner = lit(readFileSync(join(GAME, 'tools', 'core-loader.js'), 'utf8'));
+  if (!owner) fail('CORE_RE', 'tools/core-loader.js holds no CORE_RE literal');
+  const mine = '/' + CORE_RE.source + '/' + CORE_RE.flags;
+  if (owner && mine !== owner) fail('CORE_RE', 'the lint\'s CORE_RE ' + mine + ' is not the loader\'s ' + owner);
+  for (const rel of ['fixtures/make.html', 'tools/swatch.html']) {
+    const p = join(GAME, rel);
+    if (!existsSync(p)) continue;
+    const theirs = lit(readFileSync(p, 'utf8'));
+    if (theirs !== owner) fail('CORE_RE', rel + ' holds CORE_RE ' + theirs + ', not the loader\'s ' + owner + ' (byte identical, section 1.3)');
+  }
+}
 const core = []; CORE_RE.lastIndex = 0;
 while ((m = CORE_RE.exec(html))) core.push({ id: m[1], src: m[2], index: m.index, line: lineOf(m.index) + 1 });
 const looseCore = (html.match(/<script[^>]*\bdata-core\b/gi) || []).length;

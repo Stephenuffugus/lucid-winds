@@ -145,6 +145,10 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-lab-1', expect: 'JUMP FULL right dx0 dy2 onto one way' }] },
   { name: 'FLOAT_LEAK', task: 'T0.7b', file: 'page', find: 'h.vy < -K.CUT_V) h.vy = -K.CUT_V;', repl: 'h.vy < -K.CUT_V) h.vy = -K.CUT_V / 3;',
     gates: [{ gate: 'harness', only: 'H-sim-8', expect: 'serialize never met a float' }] },
+  { name: 'READY_NEVER_POSTED', task: 'T0.2b', file: 'page', edits: [
+      ["    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}", "    try { 0; } catch (e) {}"],
+      ["function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });", "function () { try { 0; } catch (e) {} });"]],
+    gates: [{ gate: 'boot', expect: 'journey C: framed' }] },
   { name: 'MAX_STEPS_1', task: 'T0.8b review', file: 'page', find: 'MAX_STEPS = 4, DT_MAX = 100', repl: 'MAX_STEPS = 1, DT_MAX = 100',
     gates: [{ gate: 'play', expect: 'the loop ran exactly the steps the accumulator owes' }] },
   { name: 'DT_MAX_20', task: 'T0.8b review', file: 'page', find: 'MAX_STEPS = 4, DT_MAX = 100', repl: 'MAX_STEPS = 4, DT_MAX = 20',
