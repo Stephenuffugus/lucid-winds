@@ -121,17 +121,21 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #offer .ico.grit { box-sizing: border-box; border: 7px solid #3f9a3a; border-radius: 50%; }
 #slipok { background: var(--sun); color: var(--ink); }
 /* the share sheet (T1.8): the record's 16 colour grid, the three sentences, the link and its buttons; it scrolls on short phones */
-#sharesheet { position: absolute; left: 0; right: 0; top: 2%; bottom: 2%; margin: 0 auto; width: min(320px, 92vw); padding: 14px; overflow-y: auto;
+#sharesheet { position: absolute; left: 0; right: 0; top: 2%; bottom: 2%; margin: 0 auto; width: min(360px, 96vw); padding: 14px; overflow-y: auto;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
   display: none; flex-direction: column; gap: 8px; align-items: stretch; text-align: center; z-index: 11; }
 #sharesheet.on { display: flex; }
 #sharesheet h2 { margin: 0; padding: 12px 64px 0; font-size: 1.2rem; } #sharesheet p { margin: 0; font-size: 0.9rem; }
-/* Close in the sheet's corner, in sight whatever the phone's height (t18: below the fold at 360x780) */
-#sharesheet #shareclose { position: absolute; top: 6px; right: 6px; min-width: 56px; padding: 0 10px; }
+/* Close in the sheet's corner, in sight whatever the phone's height (t18: below the fold at 360x780) and however far
+   the sheet is scrolled (T1.9b: the QR drawer scrolled it away): first in the sheet, sticky, its height taken back */
+#sharesheet #shareclose { position: sticky; top: 6px; align-self: flex-end; min-width: 56px; padding: 0 10px; margin: -8px -8px -56px 0; z-index: 1; }
 #sharecanvas { align-self: center; height: min(384px, 26vh); width: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; border: 2px solid var(--ink); }
 #sharelink { min-height: 40px; font-size: 0.8rem; border: 1px solid var(--pewter); padding: 0 8px; }
 #sharesheet button { min-height: 48px; border-radius: 10px; font-weight: 700; font-size: 1rem; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); }
 #copylink { background: var(--sun) !important; }
+/* the QR drawer (T1.9b): one canvas pixel a module, scaled by a whole number of CSS px */
+#qrdrawer { display: flex; justify-content: center; margin: 0 -14px; } #qrdrawer[hidden] { display: none; }   /* over the sheet's padding: the quiet zone is Paper too */
+#qrcanvas { image-rendering: pixelated; }
 #share { position: absolute; top: 0; left: calc(84px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;
   border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
 /* the card a link opens on (T1.8): one tap to develop, so the shutter may sound */
@@ -270,14 +274,16 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <button id="pickB" type="button"><i class="ico"></i><b></b><small></small></button></div>
     <div id="slip" role="dialog" data-aria="slip"><h2 data-copy="slip"></h2>
       <button id="slipok" type="button" data-copy="slipTake"></button></div>
-    <div id="sharesheet" role="dialog" data-aria="shareTitle"><h2 data-copy="shareTitle"></h2>
+    <div id="sharesheet" role="dialog" data-aria="shareTitle"><button id="shareclose" type="button" data-copy="shareClose"></button><h2 data-copy="shareTitle"></h2>
       <canvas id="sharecanvas" width="192" height="384"></canvas>
       <p data-copy="shareAbstract"></p><p data-copy="shareOffline1"></p><p data-copy="shareOffline2"></p>
       <input id="sharelink" type="text" readonly data-aria="shareLink">
       <button id="copylink" type="button" data-copy="copyLink"></button>
       <button id="sharenative" type="button" data-copy="shareNative" hidden></button>
       <button id="copycode" type="button" data-copy="copyCode"></button>
-      <button id="shareclose" type="button" data-copy="shareClose"></button></div>
+      <button id="qrtoggle" type="button" data-copy="qrShow"></button>
+      <p id="qrlong" data-copy="qrLong" hidden></p>
+      <div id="qrdrawer" hidden><canvas id="qrcanvas" width="105" height="105"></canvas></div></div>
   </div>
   <div id="strip"><button id="back" type="button" data-copy="toTitle"></button><button id="share" type="button" data-copy="share"></button>
     <p id="dp"><span data-copy="dp"></span> <span id="dpn">0</span></p>
@@ -4104,7 +4110,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     codeNewer: 'This room was made by a newer Shutterbug. Update and try again.',
     nextRoom: 'Shoot the next room',
     playAgain: 'Play it again',
-    banked: 'Banked {n} dead pixels', bankedOne: 'Banked 1 dead pixel'
+    banked: 'Banked {n} dead pixels', bankedOne: 'Banked 1 dead pixel',
+    qrShow: 'Show a QR code', qrHide: 'Hide the QR code', qrLong: 'Long code, the link is easier.'
   });
 
   /* the game: the record, the built level, the live sim state, the room's name */
@@ -4375,12 +4382,38 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var nat = document.getElementById('sharenative');
     nat.hidden = !(navigator.share && navigator.canShare && navigator.canShare({ url: link }));
     SB.input.releaseAll();
-    var sh = document.getElementById('sharesheet'); sh.classList.add('on'); sh.scrollTop = 0;
+    var sh = document.getElementById('sharesheet'), long = G.record.mode === 2;
+    document.getElementById('qrdrawer').hidden = true; document.getElementById('qrtoggle').textContent = ui.COPY.qrShow;
+    document.getElementById('qrtoggle').hidden = long; document.getElementById('qrlong').hidden = !long;
+    sh.classList.add('on'); sh.scrollTop = 0;
     if (ui.screen !== 'share') ui.shareFrom = ui.screen;
     ui.screen = 'share';
     return link;
   };
   /* Close returns to the screen the sheet was opened over: the room, the clear card or the death card (T1.13) */
+  /* the QR drawer (T1.9b, section 1.5): the link as a symbol (SB.qr) with a 4 module quiet zone of Paper and Ink
+     modules, drawn at one canvas pixel a module and shown at the largest whole number of CSS px a module that fits
+     336 px and the drawer (3 at a 384 wide stage for version 20); a Double Exposure link (version 29) gets a sentence
+     instead; Copy link stays the sheet's first control and the drawer opens on a tap */
+  var QUIET = 4;
+  function drawQR(link) {
+    var cv = document.getElementById('qrcanvas'), sym = SB.qr.encode(link), P = SB.palette, c2, n, x, y, px;
+    if (!sym) return null;
+    n = sym.size + QUIET * 2; cv.width = n; cv.height = n; c2 = cv.getContext('2d');
+    c2.fillStyle = P.hex(P.RGB[P.I.PAPER]); c2.fillRect(0, 0, n, n);
+    c2.fillStyle = P.hex(P.RGB[P.I.INK]);
+    for (y = 0; y < sym.size; y++) for (x = 0; x < sym.size; x++) if (sym.modules[y * sym.size + x]) c2.fillRect(x + QUIET, y + QUIET, 1, 1);
+    px = Math.max(1, Math.floor(Math.min(336, document.getElementById('qrdrawer').clientWidth) / n));
+    cv.style.width = cv.style.height = n * px + 'px';
+    cv.setAttribute('data-modules', String(sym.size)); cv.setAttribute('data-quiet', String(QUIET)); cv.setAttribute('data-px', String(px));
+    return sym;
+  }
+  ui.toggleQR = function () {
+    var dr = document.getElementById('qrdrawer'), open = dr.hidden;
+    dr.hidden = !open; document.getElementById('qrtoggle').textContent = open ? ui.COPY.qrHide : ui.COPY.qrShow;
+    if (open) { drawQR(document.getElementById('sharelink').value); try { dr.scrollIntoView({ block: 'nearest' }); } catch (e) { /* silent */ } }
+    return open;
+  };
   ui.closeShare = function () { document.getElementById('sharesheet').classList.remove('on'); if (ui.screen === 'share') ui.screen = ui.shareFrom || 'play'; };
   function copied(btn, text) {
     var done = function () { var was = btn.textContent; btn.textContent = ui.COPY.copied; setTimeout(function () { btn.textContent = was; }, 1500); };
@@ -4532,6 +4565,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('levelcode').placeholder = ui.COPY.levelCode;   /* the field says what it takes (t110: an empty white box) */
     document.getElementById('install').addEventListener('click', function () { var ip = ui.installPrompt; if (ip) { ui.installPrompt = null; this.hidden = true; try { ip.prompt(); } catch (e) { /* silent */ } } });
     document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });
+    document.getElementById('qrtoggle').addEventListener('click', function () { ui.toggleQR(); });
     var mo = new MutationObserver(syncModal);
     MODALS.forEach(function (id) { mo.observe(document.getElementById(id), { attributes: true, attributeFilter: ['class'] }); });
     syncModal();

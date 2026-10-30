@@ -5,8 +5,13 @@
  * code in the hash shows the refusal on the title. The sample room and three synthetic fixtures round trip in the page
  * through encode, the link and the parser to the same grid and the same level hash.
  *
- * Watched red by SHARE_DROPS_FOCAL and PREFIX_CHECK_DROPPED through H-share-1 and H-share-2 (Node), and by this gate's
- * own checks. */
+ * The QR drawer (T1.9b): closed until its toggle is tapped, Copy link above it; open, the sheet's own link as a version
+ * 20 symbol (97 modules, H-qr-3's) on a 105 pixel canvas, a 4 module quiet zone of Paper, every module the encoder's,
+ * 3 CSS px a module at 412 and at 360 wide and on screen; a Double Exposure room gets `Long code, the link is easier.`
+ * instead of a symbol.
+ *
+ * Watched red by SHARE_DROPS_FOCAL and PREFIX_CHECK_DROPPED through H-share-1 and H-share-2 (Node), QUIET_ZONE_0, and
+ * by this gate's own checks. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, GAME, GAME_PATH } from './harness.mjs';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -59,6 +64,47 @@ try {
     return Array.from(back.pal).join() === Array.from(rec.pal).join() && SB.pipeline.levelHash(a) === SB.pipeline.levelHash(b2) ? 'same' : 'differs';
   }), recs);
   R.say(trips.every(x => x === 'same'), 'the sample room and three fixtures round trip through their links in the page (' + trips.join(', ') + ')');
+
+  /* the QR drawer (T1.9b) on the first page's open sheet (brought to the front: a touch to a tab behind the two
+     pages opened since never gets its acknowledgement) */
+  await page.bringToFront();
+  const qr0 = await page.evaluate(() => ({ hidden: document.getElementById('qrdrawer').hidden, toggle: document.getElementById('qrtoggle').textContent,
+    above: document.getElementById('copylink').getBoundingClientRect().top < document.getElementById('qrtoggle').getBoundingClientRect().top }));
+  R.say(qr0.hidden && qr0.toggle === 'Show a QR code' && qr0.above, 'the QR drawer stays closed until asked for, and Copy link sits above its toggle');
+  await tap(page, '#qrtoggle');
+  const qr = await page.evaluate(() => {
+    const cv = document.getElementById('qrcanvas'), n = cv.width, d = cv.getContext('2d').getImageData(0, 0, n, n).data, link = document.getElementById('sharelink').value;
+    const sym = window.SB.qr.encode(link), q = +cv.dataset.quiet, P = window.SB.palette, paper = P.RGB[P.I.PAPER].join(), ink = P.RGB[P.I.INK].join();
+    const at = (x, y) => { const o = (y * n + x) * 4; return [d[o], d[o + 1], d[o + 2]].join(); };
+    let quietBad = 0, modBad = 0;
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+      if (x < q || y < q || x >= n - q || y >= n - q) { if (at(x, y) !== paper) quietBad++; }
+      else if (at(x, y) !== (sym.modules[(y - q) * sym.size + (x - q)] ? ink : paper)) modBad++;
+    }
+    const r = cv.getBoundingClientRect();
+    return { open: !document.getElementById('qrdrawer').hidden, toggle: document.getElementById('qrtoggle').textContent, n, q, modules: +cv.dataset.modules, px: +cv.dataset.px,
+      size: sym.size, quietBad, modBad, w: r.width, onScreen: r.left >= 0 && r.right <= innerWidth };
+  });
+  R.say(qr.open && qr.toggle === 'Hide the QR code' && qr.modules === 97 && qr.size === 97 && qr.n === 105, 'a real tap opens the drawer: the link is a version 20 symbol of 97 modules (H-qr-3\'s) on a ' + qr.n + ' pixel canvas');
+  R.say(qr.q === 4 && qr.quietBad === 0, 'its quiet zone is 4 modules of Paper on every side (' + qr.quietBad + ' pixels otherwise, quiet ' + qr.q + ')');
+  R.say(qr.modBad === 0, 'every module drawn is the encoder\'s, Ink or Paper (' + qr.modBad + ' differ)');
+  R.say(qr.px === 3 && Math.abs(qr.w - 315) < 0.5 && qr.onScreen, 'at 412 wide: 3 CSS px a module, ' + qr.w + ' px across, on screen');
+  const dx = await newPage(browser, { width: 360, height: 780 });
+  await gotoGame(dx.page, srv.base); await ready(dx.page);
+  await dx.page.evaluate(() => window.SB_DEV.hold(true));
+  await tap(dx.page, '#sample'); await tap(dx.page, '#share');
+  /* at 360x780 the toggle is below the sheet's fold: the player's scroll of the sheet first */
+  await dx.page.evaluate(() => document.getElementById('qrtoggle').scrollIntoView({ block: 'center' }));
+  await tap(dx.page, '#qrtoggle');
+  const q360 = await dx.page.evaluate(() => { const r = document.getElementById('qrcanvas').getBoundingClientRect(); return { px: +document.getElementById('qrcanvas').dataset.px, l: r.left, r: r.right }; });
+  R.say(q360.px === 3 && q360.l >= 0 && q360.r <= 360, 'at 360 wide: 3 CSS px a module, the symbol on screen (' + q360.l.toFixed(0) + ' to ' + q360.r.toFixed(0) + ')');
+  await tap(dx.page, '#shareclose'); await tap(dx.page, '#back');
+  const sj = JSON.parse(readFileSync(join(GAME, 'fixtures', 'sample-room.json'), 'utf8')).record;
+  const deScreen = await dx.page.evaluate(j => { window.SB_DEV.loadRecord(JSON.stringify(Object.assign({}, j, { mode: 2, rows2: j.rows }))); return window.SB_DEV.screen(); }, sj);
+  await tap(dx.page, '#share');
+  const de = await dx.page.evaluate(() => ({ toggle: document.getElementById('qrtoggle').hidden, long: !document.getElementById('qrlong').hidden, text: document.getElementById('qrlong').textContent, len: document.getElementById('sharelink').value.length }));
+  R.say(deScreen === 'play' && de.toggle && de.long && de.text === 'Long code, the link is easier.', 'a Double Exposure room\'s ' + de.len + ' character link gets the sentence instead of a symbol');
+  R.say(dx.errors.length === 0, 'the 360 wide page has zero page errors' + (dx.errors.length ? ' (' + dx.errors.join(' ; ') + ')' : ''));
   R.say(errors.length === 0 && c.errors.length === 0, 'zero page errors' + (errors.length + c.errors.length ? ' (' + errors.concat(c.errors).join(' ; ') + ')' : ''));
 } finally { await browser.close(); await srv.close(); }
 R.finish();

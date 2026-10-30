@@ -658,7 +658,14 @@ const MUTANTS = [
   { name: 'COLUMN_6_NOT_SKIPPED', task: 'T1.9a', file: 'page', find: '        if (right === 6) right = 5;\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-qr-2', expect: 'the 7 EC codewords are the Reed Solomon of the data' }] },
   { name: 'VERSION_ONE_COPY', task: 'T1.9a', file: 'page', find: 'this.set(a, b, dark); this.set(b, a, dark); }', repl: 'this.set(a, b, dark); }',
-    gates: [{ gate: 'harness', only: 'H-qr-3', expect: 'both version copies read 010100100110100110' }] }
+    gates: [{ gate: 'harness', only: 'H-qr-3', expect: 'both version copies read 010100100110100110' }] },
+  /* T1.9b: the QR drawer */
+  { name: 'QUIET_ZONE_0', task: 'T1.9b', file: 'page', find: '  var QUIET = 4;\n', repl: '  var QUIET = 0;\n',
+    gates: [{ gate: 'share', expect: 'its quiet zone is 4 modules of Paper on every side' }] },
+  { name: 'QR_OPEN_BY_DEFAULT', task: 'T1.9b', file: 'page', find: "document.getElementById('qrdrawer').hidden = true; document.getElementById('qrtoggle').textContent = ui.COPY.qrShow;", repl: "document.getElementById('qrdrawer').hidden = false; document.getElementById('qrtoggle').textContent = ui.COPY.qrShow;",
+    gates: [{ gate: 'share', expect: 'the QR drawer stays closed until asked for' }] },
+  { name: 'QR_FOR_DOUBLE_EXPOSURE', task: 'T1.9b', file: 'page', find: "document.getElementById('qrtoggle').hidden = long; document.getElementById('qrlong').hidden = !long;", repl: "document.getElementById('qrtoggle').hidden = false; document.getElementById('qrlong').hidden = true;",
+    gates: [{ gate: 'share', expect: "a Double Exposure room's" }] }
 ];
 
 /* ---------------------------------------------------------------- run */
