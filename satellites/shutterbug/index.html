@@ -76,6 +76,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #cropbar { display: flex; gap: 12px; padding: 10px 16px 14px; }
 #retake { min-height: 56px; flex: 0 0 auto; padding: 0 20px; border-radius: 12px; border: 2px solid var(--slate); background: transparent; color: var(--paper); font-weight: 700; }
 #develop { flex: 1 1 auto; background: var(--sun); color: var(--ink); }
+#crop.stuck #develop { background: transparent; color: var(--ash); border: 2px dashed var(--slate); }
 #cropsay { margin: 0 16px 8px; min-height: 1em; color: var(--pewter); font-size: 0.75rem; }
 
 /* the play screen: an instant film frame (Paper, a faint grain) around the photo; the top strip holds the room name
@@ -2409,7 +2410,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var all = document.querySelectorAll('.screen');
     for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === name);
     ui.screen = name;
-    document.body.classList.toggle('playing', name === 'play');
+    /* the fleet's chip, pill, card and toast hide while a room runs (Q48's addendum) and on the crop screen, where the
+       chip sat over the photo a drag starts on (t15-crop) */
+    document.body.classList.toggle('playing', name === 'play' || name === 'crop');
     if (name === 'play') SB.render.fit();
   };
 
@@ -2491,6 +2494,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   function onFile(e) {
     var f = e.target.files && e.target.files[0];
     if (!f) return;
+    e.target.value = '';   /* the same photo may be chosen again */
     SB.capture.decode(f).then(function (bm) {
       ui.releasePhoto();
       CR.src = bm; CR.bw = bm.width; CR.bh = bm.height; CR.crop = SB.capture.fit(CR.bw, CR.bh); CR.focal = -1; CR.last = null;
@@ -2524,6 +2528,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     CR.builds++; CR.ms = performance.now() - t0; CR.lastRec = rec; CR.lastA = a; CR.full = !!full; CR.last = full ? lv : null;
     drawOverlay(full && !lv.needsCrop ? lv : a, full && !lv.needsCrop);
     document.getElementById('tighter').hidden = !(full && lv.needsCrop);
+    document.getElementById('crop').classList.toggle('stuck', !!(full && lv.needsCrop));   /* Develop looks unable while it is */
     if (PERF) cropSay(CR.ms.toFixed(1) + ' ms');
   }
   /* while the box moves: at most one build per 100 ms, the last one after the moves stop */

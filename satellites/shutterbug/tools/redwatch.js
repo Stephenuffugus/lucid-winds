@@ -294,6 +294,12 @@ const MUTANTS = [
     gates: [{ gate: 'reveal', expect: 'no AudioContext before the first tap' }] },
   { name: 'REVEAL_NO_SKIP', task: 'T0.14', file: 'page', find: "if (ui.screen !== 'reveal' || !RV.seen || e.target.closest('#back, #exit')) return;", repl: 'if (true) return;',
     gates: [{ gate: 'reveal', expect: 'a second room skips on a tap' }] },
+  /* T0.15: capture */
+  { name: 'OVERLAY_STALE', task: 'T0.15', file: 'page', edits: [['if (gest.moved > 8) { CR.crop = SB.capture.move(gest.crop, dx, dy, CR.bw, CR.bh); layoutCrop(); schedule(); }', 'if (gest.moved > 8) { CR.crop = SB.capture.move(gest.crop, dx, dy, CR.bw, CR.bh); layoutCrop(); }'],
+    ['CR.crop = SB.capture.pinch(gest.crop, s, gest.mid.x, gest.mid.y, CR.bw, CR.bh); layoutCrop(); schedule();', 'CR.crop = SB.capture.pinch(gest.crop, s, gest.mid.x, gest.mid.y, CR.bw, CR.bh); layoutCrop();']],
+    gates: [{ gate: 'capture', expect: 'dragging the box rebuilds the overlay as it moves' }] },
+  { name: 'PHOTO_HELD', task: 'T0.15', file: 'page', find: '    ui.releasePhoto();   /* the photo lives until the reveal ends, never longer (DESIGN 6.1) */\n', repl: '',
+    gates: [{ gate: 'capture', expect: 'the photo is released when the reveal ends' }] },
   /* named by T0.8b and left to the layout gate, entered at T0.13b's audit of the plan's list */
   { name: 'ROCKER_AT_X0', task: 'T0.8b', file: 'page', find: '#rocker { position: absolute; left: var(--res); top: 0;', repl: '#rocker { position: absolute; left: 0; top: 0;',
     gates: [{ gate: 'layout', expect: '412x915: left zone is clear of the canvas and the reserved box' }] },

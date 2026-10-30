@@ -12,9 +12,15 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep } from './harness.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url)), GAME = join(HERE, '..');
+/* the photo is the sample room painted: its palette grid laid exactly over the default crop (the room is known to be
+   climbable, so Develop has a level to reach), a wall colour in the margins the crop leaves */
+const SBN = createRequire(import.meta.url)(join(GAME, 'tools', 'core-loader.js')).loadCoreFull(join(GAME, 'index.html')).SB;
+const ROOM = JSON.parse(readFileSync(join(GAME, 'fixtures', 'sample-room.json'), 'utf8')).record.rows, HEX = Array.from(SBN.palette.HEX);
 const R = reporter('CAPTURE');
 const TMP = '/tmp/claude-1000/shutterbug-capture'; mkdirSync(TMP, { recursive: true });
 const PHOTO = join(TMP, 'room-900x1600.png'), REC = join(TMP, 'record.json');
@@ -26,15 +32,11 @@ try {
   {
     const { page } = await newPage(browser, { width: 900, height: 1600, dpr: 1 });
     await page.setContent('<html><body style="margin:0"><canvas id="c" width="900" height="1600"></canvas></body></html>');
-    await page.evaluate(() => {
-      const c = document.getElementById('c').getContext('2d');
-      c.fillStyle = '#b8b2a6'; c.fillRect(0, 0, 900, 1600);               /* the wall */
-      c.fillStyle = '#fbfbf2'; c.fillRect(250, 40, 400, 60);              /* the ceiling light */
-      c.fillStyle = '#cfe4f4'; c.fillRect(560, 300, 220, 260);            /* the window */
-      c.fillStyle = '#3a2a22';
-      for (const [x, y, w, h] of [[60, 1250, 360, 220], [520, 1100, 300, 370], [80, 760, 220, 40], [420, 620, 260, 40], [120, 420, 240, 40], [560, 900, 200, 40]]) c.fillRect(x, y, w, h);
-      c.fillStyle = '#1f1a1d'; c.fillRect(0, 1530, 900, 70);              /* the floor */
-    });
+    await page.evaluate((rows, hex) => {
+      const c = document.getElementById('c').getContext('2d'), cw = 800 / 24, ch = 1600 / 48;
+      c.fillStyle = '#' + hex[4]; c.fillRect(0, 0, 900, 1600);
+      rows.forEach((r, y) => [...r].forEach((d, x) => { c.fillStyle = '#' + hex[parseInt(d, 16)]; c.fillRect(Math.round(50 + x * cw), Math.round(y * ch), Math.ceil(cw), Math.ceil(ch)); }));
+    }, ROOM, HEX);
     const el = await page.$('#c');
     await el.screenshot({ path: PHOTO });
     await page.close();
@@ -48,13 +50,19 @@ try {
   const o1 = await page.evaluate(() => window.SB_DEV.overlay());
   R.say(o1 && o1.builds > 0 && o1.solids > 0, 'the crop screen shows the pipeline\'s overlay (' + (o1 ? o1.builds + ' builds, ' + o1.solids + ' solid cells' : 'none') + ')');
   /* a real touch drags the box down: the overlay rebuilds and its solid count changes */
+  /* the default crop spans the photo's height, so a real touch drags the box sideways */
   const box = await page.evaluate(() => { const r = document.getElementById('cropbox').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, h: r.height }; });
   const f = await page.touchscreen.touchStart(box.x, box.y);
-  for (let k = 1; k <= 8; k++) { await f.move(box.x, box.y + k * 12); await sleep(30); }
+  for (let k = 1; k <= 8; k++) { await f.move(box.x - k * 6, box.y); await sleep(30); }
+  await sleep(150);
+  /* read while the finger is still down: the overlay follows the box as it moves, not only when it rests */
+  const o2 = await page.evaluate(() => window.SB_DEV.overlay());
   await f.end();
   await sleep(200);
-  const o2 = await page.evaluate(() => window.SB_DEV.overlay());
-  R.say(o2.builds > o1.builds && o2.solids !== o1.solids, 'dragging the box rebuilds the overlay and its solid count changes (' + o1.solids + ' to ' + o2.solids + ', ' + o2.builds + ' builds)');
+  R.say(o2.builds > o1.builds && o2.solids !== o1.solids && o2.full === false, 'dragging the box rebuilds the overlay as it moves, before the finger lifts, and its solid count changes (' + o1.solids + ' to ' + o2.solids + ', ' + o2.builds + ' builds, the box at x ' + o2.crop.x + ')');
+  /* the same photo chosen again: the default crop, the room as painted */
+  await input.uploadFile(PHOTO);
+  await page.waitForFunction(n => window.SB_DEV.overlay().builds > n && window.SB_DEV.overlay().full, { timeout: 10000 }, o2.builds).catch(() => {});
   await tap(page, '#develop');
   await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 8000 }).catch(() => {});
   const lv = await page.evaluate(() => ({ s: window.SB_DEV.screen(), l: window.SB_DEV.level(), alive: window.SB_DEV.photoAlive(), tabs: window.SB_DEV.tabs() }));
