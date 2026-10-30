@@ -41,6 +41,7 @@ const BROWSER_GATES = [
   { name: 'make',     cmd: ['test/make.mjs'],   need: 'MAKE OK' },
   { name: 'input',    cmd: ['test/input.mjs'],  need: 'INPUT OK' },
   { name: 'layout',   cmd: ['test/layout.mjs'], need: 'LAYOUT OK' },
+  { name: 'reveal',   cmd: ['test/reveal.mjs'], need: 'REVEAL OK' },
   { name: 'redwatch-browser', cmd: ['tools/redwatch.js', '--check', '--browser-only'], need: 'REDWATCH OK', slow: true }
 ];
 

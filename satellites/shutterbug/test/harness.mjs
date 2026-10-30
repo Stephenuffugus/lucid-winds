@@ -103,8 +103,10 @@ export async function gotoGame(page, base, query = '') {
   await page.goto(base + GAME_PATH + q, { waitUntil: 'load', timeout: 60000 });
 }
 
-export async function ready(page) {
+export async function ready(page, opts = {}) {
   await page.waitForFunction(() => window.SB_DEV && typeof window.SB_DEV.screen === 'function', { timeout: 30000 });
+  /* the develop reveal (T0.14) has its own gate; every other gate goes from the sample tap straight to play */
+  if (!opts.reveal) await page.evaluate(() => window.SB_DEV.revealSkip && window.SB_DEV.revealSkip(true));
 }
 
 export function reporter(name) {

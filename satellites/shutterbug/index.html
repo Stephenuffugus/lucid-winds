@@ -1964,7 +1964,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
      one exception (QUESTIONS Q5). The static layer is built once per level; each frame is one blit of it at the
      camera plus the sprites. The camera is render state, recomputed from the hero every frame, never in the sim. */
   var R = SB.render = { camY: 0, camX: 0, viewRows: 40, viewW: 384, scale: 1, cssW: 384, crop: false, builds: 0 };
-  var canvas, ctx, stat, sctx, worldH = 0, viewH = 640, pulse = 0;
+  var canvas, ctx, stat, sctx, photo, pctx, worldH = 0, viewH = 640, pulse = 0;
 
   R.init = function () {
     canvas = document.getElementById('view');
@@ -1972,6 +1972,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     ctx.imageSmoothingEnabled = false;
     stat = document.createElement('canvas');
     sctx = stat.getContext('2d');
+    photo = document.createElement('canvas');
+    pctx = photo.getContext('2d');
   };
 
   /* the safe area insets, read once per fit from a probe whose padding is env(safe-area-inset-*) */
@@ -2038,6 +2040,73 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       }
     }
     R.builds++;
+  };
+
+  /* the reveal's photo layer (DESIGN 5.2's first beat): for a record without a bitmap, as the sample room, its own grid
+     at full palette colour; the cropped photo is drawn here from T0.15 */
+  R.buildPhoto = function (lv) {
+    var C = SB.K.CELL, x, y;
+    photo.width = lv.w * C; photo.height = lv.h * C;
+    for (y = 0; y < lv.h; y++) for (x = 0; x < lv.w; x++) { pctx.fillStyle = css(lv.pal[y * lv.w + x]); pctx.fillRect(x * C, y * C, C, C); }
+  };
+  /* one reveal frame at t ms after the tap (DESIGN 5.2, T0.14), at the camera play starts with: hold (the photo), resolve
+     (rows quantise bottom up: `rows` from the bottom are the level, a Glare sweep edge above them), light up (platform
+     edges flash Glare, landmarks pulse once, the tabs appear last, one after another); reduced motion: one crossfade */
+  R.drawReveal = function (lv, spawnY, t, reduced) {
+    var K = SB.K, T = SB.TUNING, C = K.CELL, h = lv.h, w = lv.w, W = K.WORLD_W, P = SB.palette, i, k;
+    var cam = Math.max(0, Math.min(worldH - viewH, spawnY + (K.HERO_H >> 1) - Math.round(viewH * T.CAM_HERO_FRAC)));
+    R.camY = cam;
+    var hold = T.REVEAL_HOLD * 1000, res = T.REVEAL_RESOLVE * 1000, light = T.REVEAL_LIGHT * 1000;
+    ctx.globalAlpha = 1;
+    ctx.drawImage(photo, 0, cam, W, viewH, 0, 0, W, viewH);
+    if (reduced) {
+      var a = Math.max(0, Math.min(1, t / (T.REVEAL_HOLD * 1000)));
+      ctx.globalAlpha = a; ctx.drawImage(stat, 0, cam, W, viewH, 0, 0, W, viewH); ctx.globalAlpha = 1;
+      return;
+    }
+    if (t < hold) return;
+    var prog = R.revealProgress(lv, t), rows = prog.rows, top = (h - rows) * C;
+    if (rows > 0 && top < cam + viewH) {
+      var y0 = Math.max(top, cam);
+      ctx.drawImage(stat, 0, y0, W, cam + viewH - y0, 0, y0 - cam, W, cam + viewH - y0);
+    }
+    var t3 = t - hold - res, tabs = R.revealTabs(lv), shown = prog.tabs;
+    /* the tabs stay hidden until their turn: their cells show the room's open colour */
+    for (k = shown; k < tabs.length; k++) for (i = 0; i < 2; i++) {
+      var tc = tabs[k][i], ty = Math.floor(tc / w) * C;
+      if (ty >= top && ty + C > cam && ty < cam + viewH) { ctx.fillStyle = rgb(P.openColour(lv.pal[tc], lv.biome | 0)); ctx.fillRect((tc % w) * C, ty - cam, C, C); }
+    }
+    if (t3 < 0) { ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(0, top - cam - 1, W, 2); return; }
+    /* the platform edges flash in the first half of the beat, fading */
+    var flash = 1 - Math.min(1, t3 / (light / 2));
+    if (flash > 0) {
+      ctx.globalAlpha = flash; ctx.fillStyle = css(P.I.GLARE);
+      for (i = 0; i < w * h; i++) if (lv.plat[i] && !lv.tab[i]) { var py = Math.floor(i / w) * C - cam; if (py > -C && py < viewH) ctx.fillRect((i % w) * C, py - 1, C, 3); }
+      ctx.globalAlpha = 1;
+    }
+    /* the landmarks pulse once, across the beat */
+    var pulse1 = Math.sin(Math.PI * Math.min(1, t3 / light));
+    if (pulse1 > 0 && lv.landmarks) {
+      ctx.globalAlpha = 0.35 * pulse1; ctx.fillStyle = css(P.I.GLARE);
+      for (k = 0; k < lv.landmarks.length; k++) for (i = 0; i < lv.landmarks[k].cells.length; i++) { var lc = lv.landmarks[k].cells[i], ly = Math.floor(lc / w) * C - cam; if (ly > -C && ly < viewH) ctx.fillRect((lc % w) * C, ly, C, C); }
+      ctx.globalAlpha = 1;
+    }
+  };
+  /* where the reveal is at t ms: the rows resolved from the bottom (the plan's row at any instant), and the tabs shown,
+     one after another across the light beat's second half */
+  R.revealProgress = function (lv, t) {
+    var T = SB.TUNING, hold = T.REVEAL_HOLD * 1000, res = T.REVEAL_RESOLVE * 1000, light = T.REVEAL_LIGHT * 1000, n = R.revealTabs(lv).length;
+    var t3 = t - hold - res;
+    return { rows: t < hold ? 0 : Math.min(lv.h, Math.floor((t - hold) / res * lv.h)),
+      tabs: t3 < light / 2 ? 0 : t3 >= light ? n : Math.min(n, Math.floor((t3 - light / 2) / (light / 2) * n) + 1) };
+  };
+  /* the level's tabs as pairs, bottom up (the order the stair was laid) */
+  R.revealTabs = function (lv) {
+    if (lv._revealTabs) return lv._revealTabs;
+    var w = lv.w, out = [], i;
+    for (i = w * lv.h - 1; i >= 0; i--) if (lv.tab[i] && (i % w === 0 || !lv.tab[i - 1])) out.push([i, lv.tab[i + 1] && (i + 1) % w ? i + 1 : i]);
+    lv._revealTabs = out;
+    return out;
   };
 
   /* one frame: the blit at the camera, the beacon, the hero (a Sun rectangle with an Ink outline until T0.17) */
@@ -2212,7 +2281,43 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 </script>
 <script id="shell-audio">
 (function (SB) { 'use strict';
-  /* Web Audio synth, created in the first gesture (T0.14, T1.7) */
+  /* shell-audio (DESIGN 5.2, BUILD-PLAN T0.14): every sound is synthesised, none is a file. The AudioContext is created
+     and resumed inside the first pointerdown anywhere (the title tap), never before; muted by the sound setting (the
+     settings screen writes A.muted, T1.10); never required for play: any failure is silent. */
+  var A = SB.audio = { ctx: null, made: 0, muted: false };
+  A.state = function () { return A.ctx ? A.ctx.state : 'none'; };
+  function unlock() {
+    if (A.ctx) return;
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      A.ctx = new AC(); A.made++;
+      if (A.ctx.state === 'suspended' && A.ctx.resume) A.ctx.resume().catch(function () {});
+    } catch (e) { A.ctx = null; }
+  }
+  A.init = function () { document.addEventListener('pointerdown', unlock, { capture: true, once: true }); };
+  var live = function () { return !!A.ctx && !A.muted && A.ctx.state === 'running'; };
+  /* one click: a 12 ms white noise burst through a 2 kHz band pass, decaying over 60 ms */
+  function click(at) {
+    var c = A.ctx, len = Math.ceil(c.sampleRate * 0.012), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    var src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = 2000; bp.Q.value = 1.2;
+    g.gain.setValueAtTime(0.5, at); g.gain.exponentialRampToValueAtTime(0.001, at + 0.06);
+    src.connect(bp); bp.connect(g); g.connect(c.destination); src.start(at); src.stop(at + 0.07);
+  }
+  /* the shutter on the reveal's first beat: two clicks 40 ms apart */
+  A.shutter = function () { if (!live()) return; try { var t = A.ctx.currentTime; click(t); click(t + 0.04); } catch (e) { /* silent */ } };
+  /* a develop tick: a 5 ms blip at 3.2 kHz, quiet (the resolve's rows, each tab of the light up) */
+  A.tick = function () {
+    if (!live()) return;
+    try {
+      var c = A.ctx, t = c.currentTime, o = c.createOscillator(), g = c.createGain();
+      o.type = 'square'; o.frequency.value = 3200;
+      g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.005);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.01);
+    } catch (e) { /* silent */ }
+  };
 })(window.SB);
 </script>
 <script id="shell-save">
@@ -2283,9 +2388,46 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     if (el.getAttribute('data-n') !== String(n)) { el.innerHTML = s; el.setAttribute('data-n', String(n)); }
   }
 
-  /* a room from a record: build, then play; the reveal (T0.14) and the needsCrop sheet (T0.15) come later */
+  /* the develop reveal (DESIGN 5.2, T0.14). It starts at the tap: the room is built inside its first beat. Its clock
+     is the animation frames' timestamp less the tap's, frozen while SB_DEV holds the loop, so each beat lasts its TUNING
+     length at any frame rate and a slow frame skips rows. A tap skips it once one reveal has been seen
+     (onboarding.revealSeen, kept for the session until the save of T1.10). The static layer built at the room's start
+     serves the reveal and the play alike: it is never built twice. */
+  var RV = ui.reveal = { on: false, t: 0, start: 0, lv: null, reduced: false, rows: 0, tabs: 0, marks: null, seen: false, devSkip: false };
+  function startReveal(lv, t0) {
+    RV.on = true; RV.start = t0; RV.t = performance.now() - t0; RV.lv = lv; RV.rows = 0; RV.tabs = 0;
+    RV.reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    RV.marks = { start: t0, build: SB.perfLog.pipeline, reduced: RV.reduced, skipped: false };
+    SB.render.buildPhoto(lv);
+    ui.screen = 'reveal';
+    SB.audio.shutter();
+  }
+  ui.revealFrame = function (now, held) {
+    if (!RV.on) return;
+    if (held) RV.start = now - RV.t; else RV.t = now - RV.start;
+    var T = SB.TUNING, hold = T.REVEAL_HOLD * 1000, res = T.REVEAL_RESOLVE * 1000, light = T.REVEAL_LIGHT * 1000;
+    var end = RV.reduced ? hold : hold + res + light;
+    if (!RV.reduced) {
+      var p = SB.render.revealProgress(RV.lv, RV.t);
+      if ((p.rows >> 2) > (RV.rows >> 2) || p.tabs > RV.tabs) SB.audio.tick();
+      RV.rows = p.rows; RV.tabs = p.tabs;
+      if (RV.t >= hold && RV.marks.hold === undefined) RV.marks.hold = now;
+      if (RV.t >= hold + res && RV.marks.resolve === undefined) RV.marks.resolve = now;
+    }
+    if (RV.t >= end) { ui.endReveal(now); return; }
+    SB.render.drawReveal(RV.lv, G.state.hero.y >> 8, RV.t, RV.reduced);
+  };
+  ui.endReveal = function (now) {
+    RV.on = false; RV.seen = true;
+    RV.marks.end = now === undefined ? performance.now() : now;
+    if (window.performance && performance.mark) performance.mark('sb-reveal-end');
+    ui.screen = 'play';
+  };
+
+  /* a room from a record: build (inside the reveal's first beat), then the reveal, then play; the needsCrop sheet is T0.15 */
   ui.startRoom = function (record, name) {
     var t0 = performance.now();
+    if (window.performance && performance.mark) performance.mark('sb-reveal-start');
     var lv = SB.pipeline.build(record, {});
     SB.perfLog.pipeline = performance.now() - t0;
     if (lv.needsCrop) return false;
@@ -2297,6 +2439,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     hearts(G.state.hero.hearts);
     ui.hideClear();
     ui.show('play');
+    if (!RV.devSkip) startReveal(lv, t0);
     return true;
   };
   ui.sampleRecord = function () {
@@ -2307,7 +2450,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   ui.showClear = function () { document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; document.body.classList.remove('playing'); };
   ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); document.getElementById('back').hidden = false; };
   /* every in game back is an internal screen switch that hides every overlay it can sit over */
-  ui.toTitle = function () { ui.hideClear(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
+  ui.toTitle = function () { RV.on = false; ui.hideClear(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
 
   ui.init = function () {
     ui.fillCopy();
@@ -2323,6 +2466,14 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     document.getElementById('again').addEventListener('click', function () { ui.again(); });
     document.getElementById('cleartitle').addEventListener('click', ui.toTitle);
     document.getElementById('back').addEventListener('click', ui.toTitle);
+    /* a tap during a reveal, once one has been seen, skips to play; the tap is the skip's alone (the strip never sees
+       it, so it is no jump) */
+    document.addEventListener('pointerdown', function (e) {
+      if (ui.screen !== 'reveal' || !RV.seen || e.target.closest('#back, #exit')) return;
+      e.stopPropagation();
+      RV.marks.skipped = true;
+      ui.endReveal();
+    }, true);
   };
 })(window.SB);
 </script>
@@ -2375,11 +2526,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       keep(perf.frames, [now, n]);
     }
     running = run;
-    draw(now);
+    if (SB.ui.screen === 'reveal') SB.ui.revealFrame(now, held);
+    if (SB.ui.screen !== 'reveal') draw(now);
   }
 
   SB.render.init();
   SB.input.init();
+  SB.audio.init();
   SB.ui.init();
   SB.input.initStrip();
   window.addEventListener('resize', function () { if (SB.ui.screen === 'play' || SB.ui.screen === 'clear') { SB.render.fit(); draw(); } });
@@ -2399,7 +2552,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       return { w: lv.w, h: lv.h, spawn: lv.spawn, exit: lv.exit, otsuT: lv.otsuT, hash: SB.pipeline.levelHash(lv), code: SB.record.encode(lv.rec),
         viewRows: SB.render.viewRows, camY: SB.render.camY, cssW: SB.render.cssW };
     },
-    perf: function () { return { now: performance.now(), step: perf.step.slice(), draw: perf.draw.slice(), frames: perf.frames.slice(), pipeline: perf.pipeline, loop: Object.assign({ acc: acc, stepMs: STEP_MS }, loop) }; },
+    perf: function () { return { now: performance.now(), step: perf.step.slice(), draw: perf.draw.slice(), frames: perf.frames.slice(), pipeline: perf.pipeline, loop: Object.assign({ acc: acc, stepMs: STEP_MS }, loop),
+      reveal: SB.ui.reveal.marks ? Object.assign({}, SB.ui.reveal.marks) : null }; },
+    audioState: function () { return SB.audio.state(); },
+    audioMade: function () { return SB.audio.made; },
+    /* the reveal's liberties: skip it for the gates that test something else, and hold it at t ms for the shots */
+    revealSkip: function (on) { SB.ui.reveal.devSkip = !!on; return SB.ui.reveal.devSkip; },
+    revealAt: function (ms) { var RV = SB.ui.reveal; if (!RV.on) return false; RV.t = ms; RV.start = performance.now() - ms; SB.ui.revealFrame(performance.now(), true); return true; },
     lastInput: function () { return SB.input.last(); },
     recording: function () { return SB.input.recording(); },
     staticBuilds: function () { return SB.render.builds; },

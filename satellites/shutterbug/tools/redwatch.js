@@ -286,6 +286,14 @@ const MUTANTS = [
   { name: 'RESERVE_FILLED', task: 'T0.9', file: 'page', find: '#reserve { position: absolute; left: 0; bottom: 0; width: var(--res); height: var(--res); }',
     repl: '#reserve { position: absolute; left: 0; bottom: 0; width: var(--res); height: var(--res); background: #c8302f; }',
     gates: [{ gate: 'layout', expect: '412x915: the reserved box is transparent' }] },
+  /* T0.14: the develop reveal */
+  { name: 'STATIC_BUILT_TWICE', task: 'T0.14', file: 'page', find: "    if (window.performance && performance.mark) performance.mark('sb-reveal-end');\n    ui.screen = 'play';",
+    repl: "    if (window.performance && performance.mark) performance.mark('sb-reveal-end');\n    SB.render.buildStatic(G.level);\n    ui.screen = 'play';",
+    gates: [{ gate: 'reveal', expect: 'the static layer is built once' }] },
+  { name: 'AUDIO_AT_LOAD', task: 'T0.14', file: 'page', find: "A.init = function () { document.addEventListener('pointerdown', unlock, { capture: true, once: true }); };", repl: 'A.init = function () { unlock(); };',
+    gates: [{ gate: 'reveal', expect: 'no AudioContext before the first tap' }] },
+  { name: 'REVEAL_NO_SKIP', task: 'T0.14', file: 'page', find: "if (ui.screen !== 'reveal' || !RV.seen || e.target.closest('#back, #exit')) return;", repl: 'if (true) return;',
+    gates: [{ gate: 'reveal', expect: 'a second room skips on a tap' }] },
   /* named by T0.8b and left to the layout gate, entered at T0.13b's audit of the plan's list */
   { name: 'ROCKER_AT_X0', task: 'T0.8b', file: 'page', find: '#rocker { position: absolute; left: var(--res); top: 0;', repl: '#rocker { position: absolute; left: 0; top: 0;',
     gates: [{ gate: 'layout', expect: '412x915: left zone is clear of the canvas and the reserved box' }] },
