@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shutterbug palette swatches</title>
+<!-- tools/swatch.html (T0.4b): never served by the deploy. The sixteen colours of section 7.1 and, per biome of section
+     7.3, the hero placeholder, a film tab and the two tone platform edge over every open backdrop, for Stephen's
+     approval of the palette (HANDOFF section 10). It runs the page's own core blocks, fetched from ../index.html. -->
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #1b1a1f; color: #efe8d8; font: 14px/1.3 system-ui, sans-serif; padding: 10px; }
+  h1 { font-size: 18px; margin: 4px 0 8px; }
+  h2 { font-size: 15px; margin: 14px 0 6px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .sw { border-radius: 4px; padding: 6px; min-height: 64px; font-size: 12px; }
+  .sw b { display: block; font-size: 14px; }
+  canvas { display: block; width: 100%; image-rendering: pixelated; margin: 4px 0 10px; }
+  p { margin: 4px 0; color: #c7c3bb; }
+</style>
+</head>
+<body>
+<h1>Palette and biomes</h1>
+<p id="why">Each tile: the hero on a one way edge over the open backdrop, a solid block with its film tab below.</p>
+<div id="sw" class="grid"></div>
+<div id="biomes"></div>
+<script>
+(function () { 'use strict';
+  /* the same CORE_RE as tools/core-loader.js, the owner of the pattern (harness.js loads through it); the lint holds this
+     line byte identical to it */
+  var CORE_RE = /^<script id="(core-[a-z]+)" data-core>\n([\s\S]*?)\n<\/script>/gm;
+  fetch('../index.html').then(function (r) { return r.text(); }).then(function (src) {
+    window.SB = {};
+    var m; CORE_RE.lastIndex = 0;
+    while ((m = CORE_RE.exec(src))) new Function(m[2])();
+    draw(window.SB.palette);
+    window.SWATCH_READY = true;
+  }).catch(function (e) { document.getElementById('why').textContent = 'Serve the repo first: ' + e.message; });
+
+  function draw(P) {
+    var css = function (rgb) { return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')'; };
+    var sw = document.getElementById('sw');
+    for (var i = 0; i < 16; i++) {
+      var d = document.createElement('div'), dark = P.L[i] > 140;
+      d.className = 'sw';
+      d.style.background = '#' + P.HEX[i];
+      d.style.color = '#' + (dark ? P.HEX[P.I.INK] : P.HEX[P.I.GLARE]);
+      d.innerHTML = '<b>' + i + ' ' + P.NAMES[i] + '</b>#' + P.HEX[i] + '<br>L ' + P.L[i];
+      sw.appendChild(d);
+    }
+    var host = document.getElementById('biomes'), TW = 24, TH = 48, PER = 8;
+    for (var b = 0; b < P.BIOMES.length; b++) {
+      var h = document.createElement('h2');
+      h.textContent = P.BIOMES[b] + ': solid ' + P.NAMES[P.TINT.solid[b]] + ', open ' + P.NAMES[P.TINT.open[b]] + ', line ' + P.NAMES[P.TINT.line[b]];
+      host.appendChild(h);
+      var cv = document.createElement('canvas'), rows = Math.ceil(15 / PER);
+      cv.width = PER * TW; cv.height = rows * TH;
+      var cx = cv.getContext('2d');
+      for (var k = 0; k < 15; k++) {
+        var x0 = (k % PER) * TW, y0 = Math.floor(k / PER) * TH;
+        /* the open backdrop (the photo colour k through the biome's open blend) */
+        cx.fillStyle = css(P.openColour(k, b)); cx.fillRect(x0, y0, TW, 30);
+        /* the two tone one way edge: Glare over the biome's line colour */
+        cx.fillStyle = css(P.RGB[P.TINT.line[b]]); cx.fillRect(x0, y0 + 29, TW, 2);
+        cx.fillStyle = css(P.RGB[P.I.GLARE]); cx.fillRect(x0, y0 + 28, TW, 1);
+        /* the hero placeholder, 12x16: Sun with an Ink outline, standing on the edge */
+        cx.fillStyle = css(P.RGB[P.I.INK]); cx.fillRect(x0 + 6, y0 + 12, 12, 16);
+        cx.fillStyle = css(P.RGB[P.I.SUN]); cx.fillRect(x0 + 7, y0 + 13, 10, 13);
+        /* the solid below: the solid blend with an Ink top line and a film tab (Film, perforated) */
+        cx.fillStyle = css(P.solidColour(k, b)); cx.fillRect(x0, y0 + 31, TW, 17);
+        cx.fillStyle = css(P.RGB[P.I.INK]); cx.fillRect(x0, y0 + 31, TW, 1);
+        cx.fillStyle = css(P.RGB[15]); cx.fillRect(x0 + 8, y0 + 35, 8, 8);
+        cx.fillStyle = css(P.solidColour(k, b)); cx.fillRect(x0 + 9, y0 + 36, 1, 1); cx.fillRect(x0 + 14, y0 + 36, 1, 1); cx.fillRect(x0 + 9, y0 + 41, 1, 1); cx.fillRect(x0 + 14, y0 + 41, 1, 1);
+      }
+      host.appendChild(cv);
+    }
+  }
+})();
+</script>
+</body>
+</html>

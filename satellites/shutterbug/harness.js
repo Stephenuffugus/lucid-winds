@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 1591;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 1821;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', retable: 'T0.10a', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -391,6 +391,43 @@ group('H-pal-2', 'DESIGN 11\'s list, computed from the values', t => {
   ];
   for (const [what, got, n] of want) t.eq(got.length, n, what + ': ' + (names(got) || 'none'));
   t.eq(idx(i => L[i] > 200 && L[i] < 235 && S[i] > 0.2 && S[i] < 0.35)[0], 15, 'the cream is index 15, the reserved repair colour');
+});
+
+/* ================================================================ contrast (T0.4b) */
+/* WCAG 2 relative luminance and contrast, here and not in the core: x to the power 2.4 is Math.pow, which the core
+   forbids (not correctly rounded across engines); contrast never enters the sim or a hash. */
+const WCAG = {
+  lum([r, g, b]) {
+    const f = c => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+  },
+  ratio(a, b) { const x = WCAG.lum(a), y = WCAG.lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+};
+/* the backdrop blend, recomputed in the test from section 7.3's sentences: the photo 40% toward Pewter (60% contrast),
+   then open cells 20% toward the biome's open tint */
+const blendRef = (a, b, t) => a.map((v, k) => Math.round(v + (b[k] - v) * t));
+const openRef = (idx, biome) => blendRef(blendRef(palRef.rgb[idx], palRef.rgb[3], 0.4), palRef.rgb[SB.palette.TINT.open[biome]], 0.2);
+
+group('H-pal-3', 'the two tone rule: on every open backdrop of every biome, Ink or Glare clears 3:1 and Sun or Ink clears 3:1', t => {
+  const I = SB.palette.I, ink = palRef.rgb[I.INK], glare = palRef.rgb[I.GLARE], sun = palRef.rgb[I.SUN];
+  let worstEdge = 99, worstHero = 99, at = '';
+  for (let b = 0; b < 5; b++) for (let idx = 0; idx < 15; idx++) {
+    const bg = openRef(idx, b);
+    t.same(SB.palette.openColour(idx, b), bg, SB.palette.NAMES[idx] + ' in ' + SB.palette.BIOMES[b] + ': the page\'s open blend equals the test\'s');
+    const edge = Math.max(WCAG.ratio(ink, bg), WCAG.ratio(glare, bg)), hero = Math.max(WCAG.ratio(sun, bg), WCAG.ratio(ink, bg));
+    if (edge < worstEdge) { worstEdge = edge; at = SB.palette.NAMES[idx] + '/' + SB.palette.BIOMES[b]; }
+    if (hero < worstHero) worstHero = hero;
+    t.ok(edge >= 3, SB.palette.NAMES[idx] + ' in ' + SB.palette.BIOMES[b] + ': the collision edge (Glare over Ink) clears 3:1 (' + edge.toFixed(2) + ')');
+    t.ok(hero >= 3, SB.palette.NAMES[idx] + ' in ' + SB.palette.BIOMES[b] + ': the hero (Sun with an Ink outline) clears 3:1 (' + hero.toFixed(2) + ')');
+  }
+  console.log('  info  the weakest edge contrast is ' + worstEdge.toFixed(2) + ':1 (' + at + '), the weakest hero contrast ' + worstHero.toFixed(2) + ':1');
+});
+
+group('H-pal-4', 'every biome\'s solid tint against its open tint is at least 1.5:1', t => {
+  for (let b = 0; b < 5; b++) {
+    const s = SB.palette.TINT.solid[b], o = SB.palette.TINT.open[b], r = WCAG.ratio(palRef.rgb[s], palRef.rgb[o]);
+    t.ok(r >= 1.5, SB.palette.BIOMES[b] + ': ' + SB.palette.NAMES[s] + ' against ' + SB.palette.NAMES[o] + ' is ' + r.toFixed(2) + ':1 (at least 1.5)');
+  }
 });
 
 group('H-pal-5', 'nearest: idempotent, never 15, the anchors, the ramp, and the test\'s own weighted distance', t => {

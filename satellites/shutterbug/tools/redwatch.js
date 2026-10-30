@@ -149,6 +149,8 @@ const MUTANTS = [
       ["    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}", "    try { 0; } catch (e) {}"],
       ["function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });", "function () { try { 0; } catch (e) {} });"]],
     gates: [{ gate: 'boot', expect: 'journey C: framed' }] },
+  { name: 'GLARE_DARKENED', task: 'T0.4b', file: 'page', find: "'f2efe6', 'fbfbff', '6b3f2a'", repl: "'f2efe6', '999999', '6b3f2a'",
+    gates: [{ gate: 'harness', only: 'H-pal-2', expect: 'near whites (L > 235)' }, { gate: 'harness', only: 'H-pal-3', expect: 'the collision edge (Glare over Ink) clears 3:1' }] },
   { name: 'MAKE_RE_DRIFT', task: 'T0.5b', file: 'make', find: 'var CORE_RE = /^<script id="(core-[a-z]+)" data-core>', repl: 'var CORE_RE = /^<script id="(core-[a-z0-9]+)" data-core>',
     gates: [{ gate: 'lint', expect: 'fixtures/make.html holds CORE_RE' }] },
   { name: 'BITMAP_LEAK', task: 'T0.5b', file: 'page', find: "    if (typeof src.close === 'function') src.close();", repl: "    if (typeof src.close === 'function') src = null;",
