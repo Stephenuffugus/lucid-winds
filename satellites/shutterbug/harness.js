@@ -929,6 +929,22 @@ group('H-sim-2b', 'coyote never arms on a jump: a second press in the first airb
     t.eq(kicks(twice), 1, 'a second press on airborne frame ' + k + ' gives no second upward kick');
     t.eq(Math.min(...twice.trace.map(p => p.y)), Math.min(...held.trace.map(p => p.y)), 'a second press on airborne frame ' + k + ' reaches exactly the apex of the same hold without it');
   }
+  /* the third review: coyote outlived a wall jump and a sticky jump, a mid air second jump. Walk off a ledge into a
+     one cell gap beside a wall (or a vine), arm inside coyote time, jump off it, press again two steps later */
+  for (const [kind, ch, biome] of [['wall jump', '#', 0], ['sticky jump', '|', 3]]) {
+    /* the ledge at columns 0 and 1, the gap at column 2, the wall (or vine) at column 3 from row 10 to the floor */
+    const lines = ['', '', '', '', '', '', '', '', '', '', '...' + ch, '...' + ch, '...' + ch, '...' + ch, '...' + ch, '...' + ch, '...' + ch, '...' + ch, '.S.' + ch, '##.' + ch].concat(Array(10).fill('...' + ch), [FLOOR]);
+    const lv = LABS.room(lines, { biome });
+    const s = SB.sim.create(lv); for (let k = 0; k < 3; k++) SB.sim.step(s, 0);
+    let armedAt = -1;
+    for (let k = 0; k < 30 && armedAt < 0; k++) { SB.sim.step(s, IN.R); if (s.hero.wall === 1 || s.hero.sticky) armedAt = k; }
+    const coyoteLeft = s.hero.coyote, kicks = [];
+    for (let k = 0; k < 40; k++) {
+      const vy0 = s.hero.vy; SB.sim.step(s, (k === 0 || k === 2 ? IN.A | IN.A_TAP : 0) | (ch === '#' && k === 0 ? IN.R : 0));
+      if (s.hero.vy < 0 && s.hero.vy < vy0 - K.G) kicks.push(k);
+    }
+    t.ok(armedAt >= 0 && coyoteLeft > 0 && kicks.length === 1, 'a ' + kind + ' inside coyote time (' + coyoteLeft + ' left) and a press two steps later: one upward kick (kicks on steps ' + kicks.join(' ') + ')');
+  }
 });
 
 group('H-sim-3', 'buffer: a press 6 steps before the first grounded step jumps on landing; 7 does not', t => {
@@ -1074,6 +1090,37 @@ group('H-sim-9', 'a wall jump from an armed slide climbs at least 54 px and land
   t.eq(s.hero.facing, 1, 'facing away from the wall');
 });
 
+group('H-sim-9b', 'LAB-NOT for the wall (the third review): a wall jump never re arms on the wall it left, so no wall is a ladder', t => {
+  /* a 37 row wall at x 2, and the frame's left edge (out of bounds is solid): armed low, then the rocker held toward
+     the wall throughout and A pressed on every step the slide is armed; the hero never arms on that side again before
+     it lands, and it climbs no higher than one wall jump */
+  const tall = []; for (let r = 10; r <= 46; r++) tall.push('..#');
+  for (const [name, lv, x, side] of [['a 37 row wall', LABS.room(tall.concat([FLOOR])), 3 * CS, -1], ['the frame\'s left edge', LABS.room([FLOOR]), 0, -1]]) {
+    const s = placed(lv, x, 40 * CS);
+    SB.sim.step(s, rockerOf(side));
+    const y0 = s.hero.y; let jumps = 0, rearm = 0, top = y0;
+    for (let k = 0; k < 400 && !s.hero.ground; k++) {
+      const armed = s.hero.wall === side;
+      SB.sim.step(s, rockerOf(side) | (armed ? IN.A | IN.A_TAP : 0));
+      if (armed) jumps++; else if (s.hero.wall === side) rearm++;
+      top = Math.min(top, s.hero.y);
+    }
+    t.ok(jumps === 1 && rearm === 0, name + ': after its wall jump the hero never arms on that wall again before landing (' + jumps + ' wall jumps, ' + rearm + ' re arms)');
+    t.ok(y0 - top <= 4 * CS, name + ': it climbs ' + ((y0 - top) / 256).toFixed(1) + ' px, one wall jump at most (no ladder)');
+  }
+  /* between two walls the chain still works: walls 3 apart, the rocker toward each in turn */
+  const two = []; for (let r = 10; r <= 46; r++) two.push('..#...#');
+  const lv2 = LABS.room(two.concat([FLOOR])), s2 = placed(lv2, 3 * CS, 40 * CS);
+  SB.sim.step(s2, IN.L);
+  let side = -1, chain = 0;
+  for (let k = 0; k < 300 && !s2.hero.ground && chain < 3; k++) {
+    const armed = s2.hero.wall === side;
+    SB.sim.step(s2, rockerOf(armed ? -side : side) | (armed ? IN.A | IN.A_TAP : 0));
+    if (armed) { chain++; side = -side; }
+  }
+  t.ok(chain >= 3, 'between two walls 3 apart the wall jumps chain (' + chain + ' in a row)');
+});
+
 group('H-sim-10', 'the slide falls a third of the unarmed fall, step for step', t => {
   const lines = []; for (let r = 10; r <= 46; r++) lines.push('..#');
   const lv = LABS.room(lines.concat([FLOOR]));
@@ -1146,8 +1193,14 @@ group('H-sim-15', 'facing: a wall jump faces away from the wall; a rocker tap se
   const xJump = s.hero.x; let rearmed = false;
   for (let k = 0; k < 5; k++) { SB.sim.step(s, IN.L | IN.A); if (s.hero.wall !== 0) rearmed = true; }
   t.ok(!rearmed && s.hero.x > xJump, 'held toward the wall, the lock carries the hero away (' + ((s.hero.x - xJump) / 256).toFixed(1) + ' px in 5 steps) and never re arms the slide');
-  for (let k = 0; k < 12; k++) SB.sim.step(s, IN.A);
-  SB.sim.step(s, IN.L); t.eq(s.hero.facing, -1, 'a rocker tap after the lock sets it');
+  t.eq(s.hero.facing, 1, 'held toward the wall through the lock, the facing stays away (the third review: it flipped back on the step after the jump)');
+  const s2 = placed(lv, 3 * CS, 36 * CS); SB.sim.step(s2, IN.L); SB.sim.step(s2, IN.L | IN.A | IN.A_TAP);
+  const faced = []; for (let k = 0; k < SB.TUNING.WALL_JUMP_LOCK - 1; k++) { SB.sim.step(s2, IN.L | IN.A); faced.push(s2.hero.facing); }
+  t.ok(faced.every(f => f === 1), 'on every lock step with the rocker toward the wall the facing is away (' + faced.join(' ') + ')');
+  for (let k = 0; k < 12; k++) SB.sim.step(s2, IN.A);
+  const before = s2.hero.facing;
+  SB.sim.step(s2, IN.L);
+  t.ok(before === 1 && s2.hero.facing === -1, 'after the lock a rocker tap toward the wall turns the hero (from ' + before + ' to ' + s2.hero.facing + ')');
 });
 
 /* LAB-EDGE and LAB-CLEAR for the wall jump (T0.12a): the hero flush on the right of a wall column at (3, 38) (started
@@ -1214,9 +1267,11 @@ group('H-lab-6', 'WALLTOUCH, SLIDE, STICKYUP, STICKYTOP and LET_GO in the sim', 
     const s = SB.sim.create(lv); SB.sim.attach(s, lv); SB.sim.step(s, 0); SB.sim.step(s, 0);
     let armed = -1; const words = M_JUMP('FULL', 1, 200);
     for (let k = 0; k < 60 && armed < 0; k++) { SB.sim.step(s, words[k]); if (s.hero.wall === 1) armed = k; }
-    const g = SB.reach.graph(lv), touchRows = (g.adj[lv.spawn] || []).filter(e => e.kind === 'WALLTOUCH' && ((e.to - g.n) >> 1) % 24 === 4).map(e => Math.floor(((e.to - g.n) >> 1) / 24));
-    const row = Math.floor((s.hero.y + HH - 1) / CS);
-    t.ok(armed >= 0 && touchRows.includes(row), 'a FULL jump right touches the wall and arms the slide at row ' + row + ', a contact the model lists (' + touchRows.join(' ') + ')'); }
+    const g = SB.reach.graph(lv), touches = (g.adj[lv.spawn] || []).filter(e => e.kind === 'WALLTOUCH' && e.dir === 1).map(e => { const c = (e.to - g.n) >> 1; return (c % 24) + ',' + Math.floor(c / 24); });
+    /* the direction section 3 needs (the third review: this lab once asked only that the sim's row be in the model's
+       list, which passes however much the model claims): every contact the model lists is one the sim arms */
+    const arms = simArmsRight(lv, lv.spawn % 24, Math.floor(lv.spawn / 24));
+    t.ok(armed >= 0 && touches.length > 0 && touches.every(c => arms.has(c)), 'a FULL jump right arms the slide; every contact the model lists from the start (' + touches.join(' ') + ') is one the sim arms (' + [...arms].join(' ') + ')'); }
   /* SLIDE: armed high on a wall, the slide reaches the floor below */
   { const lines = []; for (let r = 20; r <= 46; r++) lines.push('..#'); const lv = LABS.room(lines.concat([FLOOR]));
     const s = placed(lv, 3 * CS, 25 * CS); let k = 0; while (!s.hero.ground && k < 600) { SB.sim.step(s, IN.L); k++; }
@@ -1305,6 +1360,19 @@ group('H-sim-14', 'the dash: 48 px in 8 steps, i frames for exactly 4, never off
       t.ok(h.hero.x === want && h.hero.ground === 1 && restRow(h) === 39, 'a dash ' + (dir > 0 ? 'right' : 'left') + ' on a ' + kind + ' platform stops with the leading foot on it (x ' + (h.hero.x / 256).toFixed(2) + ' px, the edge at ' + (want / 256).toFixed(2) + ', rests on row ' + restRow(h) + ')');
     }
   }
+  /* the third review: a dash that cannot move is no dash (no i frames to drum for at a wall), and a foot already past
+     an edge gets no dash, not a hop over a one cell gap */
+  { const wl = LABS.room(['......#', FLOOR]), h = placed(wl, 6 * CS - HW, 46 * CS); SB.sim.step(h, 0); SB.sim.step(h, 0);
+    const x0 = h.hero.x; SB.sim.step(h, IN.R | IN.B | IN.B_TAP);
+    t.ok(h.hero.x === x0 && h.hero.dash === 0 && h.hero.dashI === 0, 'a dash pressed flush against a wall does not move and keeps no i frames (dash ' + h.hero.dash + ', dashI ' + h.hero.dashI + ')'); }
+  { const gap = LABS.room(['..#####.#####'].concat(Array(6).fill(''), [FLOOR]));
+    for (const over of [3, 6, 10, 11]) {
+      const h = placed(gap, 7 * CS - HW + over * 256, 39 * CS); SB.sim.step(h, 0); SB.sim.step(h, 0);
+      const x0 = h.hero.x, g0 = h.hero.ground; SB.sim.step(h, IN.R | IN.B | IN.B_TAP);
+      for (let k = 0; k < 10; k++) SB.sim.step(h, 0);
+      t.ok(g0 === 1 && h.hero.dashI === 0 && Math.abs(h.hero.x - x0) < CS, 'standing ' + over + ' px past a platform\'s edge, B gives no dash (moved ' + ((h.hero.x - x0) / 256).toFixed(1) + ' px; the far platform 1 cell away)');
+    }
+  }
   /* only a fresh ground press: B held on the ground with no new press does nothing */
   { const h = placed(lv, 4 * CS + 2 * 256, 46 * CS); SB.sim.step(h, 0); SB.sim.step(h, 0);
     const xs = h.hero.x; let dashed = 0; for (let k = 0; k < 20; k++) { SB.sim.step(h, IN.B | IN.R * 0); if (h.hero.dash > 0) dashed++; }
@@ -1362,6 +1430,9 @@ group('H-lab-7', 'LAB-EDGE and LAB-CLEAR for the dive: every FALL straight down 
 });
 
 group('H-sim-18', 'air control: the rocker at takeoff equals a running start; L and R together decelerate to rest', t => {
+  /* the third review: TUNING.AIR_CONTROL is read nowhere; the sim and the tables implement full air control only, so any
+     other value must arrive with its rule (Q23), not as a knob that changes nothing */
+  t.eq(SB.TUNING.AIR_CONTROL, 1, 'TUNING.AIR_CONTROL is 1, the only value the sim and the tables implement (Q23)');
   const lv = LABS.room(['', 'S.......................', FLOOR]);
   const flight = run => {
     const s = settle(lv); let x0 = null;
@@ -1926,22 +1997,23 @@ group('H-reach-3', 'shelves-a: the hand listed edges exist and the hand listed n
   t.eq(bad.length, 0, 'no JUMP is 5 up, and none is 4 up and 5 across (' + bad.slice(0, 3).map(e => gname(g, e.from) + ' to ' + gname(g, e.to)).join(', ') + ')');
 });
 
-group('H-reach-11', 'the exact wall touch (T0.13a, Q65): the model lists the contacts the sim arms, and no others, where the bot found it wrong', t => {
-  /* the set of contacts (centre column and row) the sim arms on its right from a centred hero at (sx, sy), over the
-     bot's touch candidates (FULL, MID, TAP and the walk off, the rocker from steps 0 to 8) */
-  const simArms = (lv, sx, sy) => {
-    const out = new Set();
-    for (const p of ['FULL', 'MID', 'TAP', 'WALKOFF']) for (let delay = 0; delay <= 8; delay++) {
-      const s = SB.sim.create(lv, { at: { x: sx * CS + 2 * 256, y: sy * CS } });
-      for (let k = 0; k < 3; k++) SB.sim.step(s, 0);
-      for (let k = 0; k < 120; k++) {
-        SB.sim.step(s, (p !== 'WALKOFF' && k < A_FRAMES[p] ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k >= delay ? IN.R : 0));
-        if (s.hero.wall === 1) out.add(Math.floor((s.hero.x + (HW >> 1)) / CS) + ',' + Math.floor((s.hero.y + (HH >> 1)) / CS));
-        if (s.hero.ground && k > 12) break;
-      }
+/* the set of contacts (centre column and row) the sim arms on its right from a centred hero at (sx, sy), over the bot's
+   touch candidates (FULL, MID, TAP and the walk off, the rocker from steps 0 to 8) */
+function simArmsRight(lv, sx, sy) {
+  const out = new Set();
+  for (const p of ['FULL', 'MID', 'TAP', 'WALKOFF']) for (let delay = 0; delay <= 8; delay++) {
+    const s = SB.sim.create(lv, { at: { x: sx * CS + 2 * 256, y: sy * CS } });
+    for (let k = 0; k < 3; k++) SB.sim.step(s, 0);
+    for (let k = 0; k < 120; k++) {
+      SB.sim.step(s, (p !== 'WALKOFF' && k < A_FRAMES[p] ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k >= delay ? IN.R : 0));
+      if (s.hero.wall === 1) out.add(Math.floor((s.hero.x + (HW >> 1)) / CS) + ',' + Math.floor((s.hero.y + (HH >> 1)) / CS));
+      if (s.hero.ground && k > 12) break;
     }
-    return out;
-  };
+  }
+  return out;
+}
+group('H-reach-11', 'the exact wall touch (T0.13a, Q65): the model lists the contacts the sim arms, and no others, where the bot found it wrong', t => {
+  const simArms = simArmsRight;
   const modelTouches = (lv, g, sx, sy) => (g.adj[sy * lv.w + sx] || []).filter(e => e.kind === 'WALLTOUCH' && e.dir === 1).map(e => { const c = (e.to - g.n) >> 1; return (c % lv.w) + ',' + Math.floor(c / lv.w); });
   /* shelves-a: from S2's middle no jump meets the pillar; from (15, 39) on, every contact the model lists is one the sim arms */
   { const lv = buildFx(fixture('shelves-a'), 0), g = SB.reach.graph(lv);

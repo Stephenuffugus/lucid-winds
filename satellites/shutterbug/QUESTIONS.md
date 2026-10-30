@@ -161,6 +161,7 @@ Plan assumes: the across cap unchanged; `DEEP_EXTRA_UP: 1` only.
 Every reach table assumes instant full run speed steering in the air (a digital rocker in flight). It is the single largest determinant of the jump tables and a feel decision.
 Recommendation: `TUNING.AIR_CONTROL: 1` (full, instant) as DESIGN 4.1's "full run speed immediately" implies, marked FEEL, `H-sim-18` asserting it; a ruling of partial air control retunes the tables by the same stepping and reruns the labs.
 Plan assumes: full instant air control outside the wall jump lock.
+(30 Oct, the third review) The knob is read nowhere: the sim's run step and core-reach's arcs implement 1 only, so H-sim-18 now refuses any other value; a ruling of partial air control comes with its rule (how vx moves toward the rocker's speed in the air) and retunes the tables by the same stepping.
 
 ## Q24. The variable jump mechanism is unspecified
 

@@ -196,6 +196,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     // 4.4 feel
     SQUASH_PX: 2, STRETCH_PX: 2, ANIM_FPS: 12, SHAKE_MAX_PX: 2, IDLE_WOBBLE_PX: 1,
     SHAKE_S: 0.15 /* the dive landing's shake (DESIGN 4.4 gives its 2 px, not its length; T0.12b, 9 steps): FEEL */,
+    SQUASH_S: 0.1 /* the landing squash and the takeoff stretch counters, 6 steps (was a literal in core-sim; the third review) */,
     // 3 screen and camera
     CAM_HERO_FRAC: 0.6, TOP_STRIP: 36, CONTROL_STRIP: 168, VIEW_ROWS_MIN: 20 /* Q6: 22 rows on a 320x568 SE */, SCALE2_MIN_W: 768,
     CHIP_RESERVE_PX: 120 /* the fleet music chip's bottom left box, kept empty by the strip, Q48 */,
@@ -1212,10 +1213,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     out.fallPaths = {}; out.downPaths = {};
     for (r = 1; r <= FALL_ROWS; r++) for (dx = 1; dx <= out.fall[r]; dx++) { var fp = fallPath(K, deep, dx, r); if (fp) out.fallPaths[dx + ',' + r] = fp; }
     for (r = 1; r <= DOWN_ROWS; r++) for (dx = 0; dx <= out.down[r]; dx++) { var dp = path(K, 'FULL', deep, dx, -r, 0); if (dp) out.downPaths[dx + ',' + r] = dp; }
-    /* the touch trajectories (T0.13a): the rocker held toward the wall from the takeoff to the touch, as a player and
-       the bot hold it: FULL from step 0, 3 and 6 (a later start rises higher before it meets the wall), MID and TAP
-       from step 0, the walk off; and the wall jump's flight to a far wall (the rocker away after the lock). The graph
-       steps each one against the room (scan, below). */
+    /* the touch trajectories (T0.13a): section 3.3's pair, the FULL jump and the walk off, with the rocker held toward
+       the wall from the takeoff to the touch, as a player and the bot hold it; and the wall jump's flight to a far wall
+       (the rocker away after the lock). The graph steps each one against the room (scan, below). */
     var cap = function (a) { var o = []; for (var f = 0; f < a.length && a[f].y <= TOUCH_ROWS * K.CELL_SUB; f++) o.push(a[f]); return o; };
     var reachOf = function (a) { var m = 0; for (var f = 0; f < a.length; f++) m = Math.max(m, Math.ceil((a[f].x + K.HERO_W_SUB) / K.CELL_SUB)); return m; };
     /* each trajectory with its sweep per direction: the cells its box enters, step by step (x at the old height, then
@@ -1237,8 +1237,14 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       }
       return { a: a, sweep: sw };
     };
-    out.touchArcs = [withSweep(cap(arc(K, 'FULL', deep, 0, NEVER))), withSweep(cap(arc(K, 'FULL', deep, 3, NEVER))), withSweep(cap(arc(K, 'MID', deep, 0, NEVER)))];
+    out.touchArcs = [withSweep(cap(arc(K, 'FULL', deep, 0, NEVER)))];
     out.walkArc = withSweep(cap(w)); out.wallArc = withSweep(cap(arc(K, 'WALL', deep, 0, NEVER)));
+    /* the box a touch trajectory can be beside a wall in: columns 1 to touchReach ahead, rows from its apex to TOUCH_ROWS
+       below (a source with no solid there arms nothing and is not scanned) */
+    var span = function (t) { var m = 0, up = 0; for (var f = 0; f < t.a.length; f++) { m = Math.max(m, Math.ceil((t.a[f].x + K.HERO_W_SUB) / K.CELL_SUB)); up = Math.max(up, Math.ceil((K.HERO_H_SUB - t.a[f].y) / K.CELL_SUB)); } return [m, up]; };
+    var all = out.touchArcs.concat([out.walkArc, out.wallArc]).map(span);
+    out.touchReach = Math.max.apply(null, all.map(function (q) { return q[0]; }));
+    out.touchUp = Math.max.apply(null, all.map(function (q) { return q[1]; }));
     memo[key] = out;
     return out;
   }
@@ -1293,7 +1299,20 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        costed as the jump or fall to it plus one (section 3.3); the scan ends at the first armed step going down (the
        SLIDE edges go on), or 6 rows below the takeoff. Stepping starts two steps before the first solid or one way
        in the trajectory's sweep: before it the box is in open cells, where nothing stops or arms it. */
+    /* is any solid where a touch trajectory from (sx, sy) in dir could be beside it? Columns 1 to touchReach ahead (the
+       frame's sides beyond the grid count), rows from the apex to TOUCH_ROWS below, never the ceiling or the floor row
+       (neither can be beside the box); a prefix sum of the room's solids answers it in one look */
+    var ps = new Int32Array((h + 1) * (w + 1));
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) ps[(y + 1) * (w + 1) + x + 1] = ps[y * (w + 1) + x + 1] + ps[(y + 1) * (w + 1) + x] - ps[y * (w + 1) + x] + (solid[y * w + x] ? 1 : 0);
+    var wallNear = function (sx, sy, dir) {
+      var y0 = Math.max(0, sy + 1 - tb.touchUp), y1 = Math.min(h - 2, sy + TOUCH_ROWS + 1);
+      if (y0 > y1) return false;
+      var x0 = dir > 0 ? sx + 1 : sx - tb.touchReach, x1 = dir > 0 ? sx + tb.touchReach : sx - 1;
+      if (x0 < 0 || x1 > w - 1) return true;
+      return ps[(y1 + 1) * (w + 1) + x1 + 1] - ps[y0 * (w + 1) + x1 + 1] - ps[(y1 + 1) * (w + 1) + x0] + ps[y0 * (w + 1) + x0] > 0;
+    };
     var scan = function (t, sx, sy, dir, out, lockSteps, chain) {
+      if (!wallNear(sx, sy, dir)) return;
       var a = t.a, sw = t.sweep[dir], f0 = -1;
       for (var q = 0; q < sw.length; q++) { var ec = sx + sw[q][0], er = sy + sw[q][1]; if (S(ec, er) || P(ec, er)) { f0 = Math.max(1, sw[q][2] - 2); break; } }
       if (f0 < 0) return;
@@ -1548,7 +1567,6 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        5. gravity to terminal; 6. move x, then y, resolving against solid cells and one way tops;
        7. ground, coyote and buffer bookkeeping; 8. the exit; 9. the frame count. */
   var IN = { L: 1, R: 2, A: 4, B: 8, A_TAP: 16, B_TAP: 32 };
-  var SQUASH_FRAMES = 6;      /* render counters: squash after a landing, stretch (negative) after a takeoff */
 
   function create(level, opts) {
     opts = opts || {};
@@ -1563,7 +1581,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     return {
       v: 1, frame: 0, rng: (level.seed ^ 0x9e3779b9) >>> 0, biome: level.biome | 0, negative: level.negative ? 1 : 0,
       firstRoom: opts.firstRoom ? 1 : 0, lastRoom: opts.lastRoom ? 1 : 0,
-      hero: { x: hx, y: hy, vx: 0, vy: 0, facing: 1, ground: 0, wall: 0, sticky: 0, lock: 0, coyote: 0, buffer: 0, held: 0, rising: 0,
+      hero: { x: hx, y: hy, vx: 0, vy: 0, facing: 1, ground: 0, wall: 0, sticky: 0, lock: 0, spent: 0, coyote: 0, buffer: 0, held: 0, rising: 0,
         dive: 0, dash: 0, dashI: 0, iframes: 0, hearts: hearts, heartsMax: hearts, vigor: 0, focus: 0, grit: 0, scrolls: 0,
         slots: [0, 0, 0], cd: [0, 0, 0], squash: 0, anim: 0, lastStand: level.spawn | 0, secondWind: 0, thickSkin: 0, shake: 0 },
       enemies: [], proj: [], loot: [], chest: { idx: -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
@@ -1623,8 +1641,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var CS = K.CELL_SUB, HW = K.HERO_W_SUB, row = (h.y + K.HERO_H_SUB) / CS, d = vx > 0 ? 1 : -1;
     if (row !== Math.floor(row)) return vx;
     var lead = d > 0 ? h.x + HW - 1 : h.x, c = Math.floor((lead + vx) / CS), cur = Math.floor(lead / CS);
+    if (!(solidAt(lv, cur, row) || platAt(lv, cur, row))) return 0;     /* the foot already past the edge: no dash */
     if (solidAt(lv, c, row) || platAt(lv, c, row)) return vx;
-    if (!(solidAt(lv, cur, row) || platAt(lv, cur, row))) return 0;
     var t = (d > 0 ? (cur + 1) * CS - HW : cur * CS) - h.x;
     return d > 0 ? Math.max(0, Math.min(vx, t)) : Math.min(0, Math.max(vx, t));
   }
@@ -1679,22 +1697,22 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     if (h.dash > 0) { h.dash--; if (h.dash === 0) h.vx = 0; }
     if (h.dashI > 0) h.dashI--;
     if (h.shake > 0) h.shake--;
-    if (dir !== 0 && h.dash === 0) h.facing = dir;
+    if (dir !== 0 && h.dash === 0 && h.lock === 0) h.facing = dir;   /* a dash and the wall jump's lock hold the facing */
     var startedGrounded = h.ground, dove = bPressed && !startedGrounded;
 
     /* 2. the jumps. From a sticky wall (DESIGN 4.2): A is STICKY_JUMP_V straight up with no push off; B, or the
        rocker away from the wall, lets go into a plain fall. From an armed wall slide: A is the wall jump, WALL_V up and
        WALL_JUMP_LOCK steps of WALL_JUMP_PUSH away (the rocker ignored), facing away (Q25). Else a press or a buffered
        press on the ground or inside coyote time. */
-    var jumped = 0, stickyJump = 0;
+    var jumped = 0, stickyJump = 0, dashStart = 0;
     if (h.sticky) {
-      if (pressed) { h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0; h.rising = 1; jumped = 1; stickyJump = 1; h.squash = -SQUASH_FRAMES; }
+      if (pressed) { h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; stickyJump = 1; h.squash = -K.SQUASH_F; }
       else if (dove || (dir !== 0 && dir === -h.wall)) { h.sticky = 0; h.wall = 0; }   /* B lets go into the dive below: no vine catches a dive */
     } else if (h.wall !== 0 && pressed && !h.ground) {
-      h.vy = -K.WALL_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.facing = -h.wall; h.wall = 0; h.rising = 1; jumped = 1; h.squash = -SQUASH_FRAMES;
+      h.vy = -K.WALL_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.facing = -h.wall; h.spent = h.wall; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; h.squash = -K.SQUASH_F;
     } else if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0)) {
       h.vy = -K.JUMP_V; h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;
-      h.squash = -SQUASH_FRAMES;
+      h.squash = -K.SQUASH_F;
     } else if (pressed) h.buffer = K.BUFFER + 1;   /* counts this step; see the end of the step */
 
     /* 2b. B (DESIGN 4.3, section 3.8 items 7 and 8). A press in the air dives: vy snaps to terminal, vx to zero, the
@@ -1705,7 +1723,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        dash. */
     if (jumped) { if (h.dash > 0) { h.dash = 0; h.vx = 0; } }
     else if (dove) { h.dive = 1; h.vy = K.TERM; h.vx = 0; h.lock = 0; h.wall = 0; h.sticky = 0; h.rising = 0; h.coyote = 0; }
-    else if (bPressed && startedGrounded && h.dash === 0) { h.dash = K.DASH_FRAMES; h.dashI = K.DASH_IFRAMES; }
+    else if (bPressed && startedGrounded && h.dash === 0) { h.dash = K.DASH_FRAMES; h.dashI = K.DASH_IFRAMES; dashStart = 1; }
     if (h.dive) h.dive = bHeld ? 2 : 1;
 
     /* 3. run: instant full speed, or the decel toward rest (the same in the air: AIR_CONTROL 1); the wall jump's lock
@@ -1730,28 +1748,34 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 
     /* 6. move: an armed slide falls a third of vy (vy keeps the unarmed fall, so the slide's speed is always a third
        of what the fall would be at the same step, capped at TERMINAL / 3; section 3.8 item 4) */
+    var xBefore = h.x;
     moveX(h, lv, K);
-    if (h.dash > 0 && (dashCut || h.vx === 0)) { h.dash = 0; h.vx = 0; }   /* stopped at the edge, or by a wall */
+    /* stopped at the edge, or by a wall; a press that cannot move at all is no dash, and keeps no i frames (the third
+       review: a hero drumming B at a wall was invulnerable in place) */
+    if (h.dash > 0 && (dashCut || h.vx === 0)) { if (dashStart && h.x === xBefore) h.dashI = 0; h.dash = 0; h.vx = 0; }
     var landed = moveY(h, lv, K, h.wall !== 0 && !h.sticky && h.vy > 0 ? Math.floor(h.vy / K.WALL_SLIDE_DIV) : h.vy);
 
     /* 7. the walls: on the ground nothing clings; in the air a full height contact on the rocker's side arms the slide
        (DESIGN 4.2, outside the wall jump's lock); a sticky contact on either side arms only on a descending step after
        an airborne one and stops the fall without the rocker (section 3.8 item 4); leaving the slide hands the fall its
        third */
-    if (landed) { if (h.dive) h.shake = K.SHAKE_F; h.wall = 0; h.sticky = 0; h.lock = 0; h.dive = 0; }
+    if (landed) { if (h.dive) h.shake = K.SHAKE_F; h.wall = 0; h.sticky = 0; h.lock = 0; h.dive = 0; h.spent = 0; }
     else if (!h.sticky) {
       var side = 0;
       if (h.vy > 0 && !startedGrounded && h.dive === 0) side = contactAt(h, lv, K, 1, true) ? 1 : contactAt(h, lv, K, -1, true) ? -1 : 0;
       if (side !== 0) { h.sticky = 1; h.wall = side; h.vy = 0; h.lock = 0; }
       else {
-        var armed = dir !== 0 && h.lock === 0 && h.dive === 0 && contactAt(h, lv, K, dir, false) ? dir : 0;
+        /* never on the wall last jumped from until a landing or the other wall (the third review: re arming there made
+           every tall wall and the frame's two edges a ladder, past what the model's WALLJUMP, always away, allows) */
+        var armed = dir !== 0 && dir !== h.spent && h.lock === 0 && h.dive === 0 && contactAt(h, lv, K, dir, false) ? dir : 0;
+        if (armed !== 0 && h.spent !== 0) h.spent = 0;
         if (h.wall !== 0 && armed === 0 && h.vy > 0) h.vy = Math.floor(h.vy / K.WALL_SLIDE_DIV);
         h.wall = armed;
       }
     }
 
     /* ground, coyote, buffer */
-    if (landed && !startedGrounded && !jumped) h.squash = SQUASH_FRAMES;
+    if (landed && !startedGrounded && !jumped) h.squash = K.SQUASH_F;
     h.ground = landed;
     if (h.ground) {
       h.coyote = K.COYOTE; h.rising = 0;
@@ -1780,7 +1804,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 
   /* section 2.5: the declared, ordered schema of the whole state */
   var HERO = [['x', 'i32'], ['y', 'i32'], ['vx', 'i32'], ['vy', 'i32'], ['facing', 'i32'], ['ground', 'bool'], ['wall', 'i32'],
-    ['sticky', 'bool'], ['lock', 'i32'], ['coyote', 'i32'], ['buffer', 'i32'], ['held', 'bool'], ['rising', 'bool'], ['dive', 'i32'], ['dash', 'i32'],
+    ['sticky', 'bool'], ['lock', 'i32'], ['spent', 'i32'], ['coyote', 'i32'], ['buffer', 'i32'], ['held', 'bool'], ['rising', 'bool'], ['dive', 'i32'], ['dash', 'i32'],
     ['dashI', 'i32'], ['iframes', 'i32'], ['hearts', 'i32'], ['heartsMax', 'i32'], ['vigor', 'i32'], ['focus', 'i32'], ['grit', 'i32'],
     ['scrolls', 'i32'], ['slots', 'i32[]'], ['cd', 'i32[]'], ['squash', 'i32'], ['anim', 'i32'], ['lastStand', 'i32'],
     ['secondWind', 'bool'], ['thickSkin', 'bool'], ['shake', 'i32']];
