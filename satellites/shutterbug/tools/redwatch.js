@@ -311,7 +311,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'its landing sets LAND once' }] },
   { name: 'MOTH_SPEED_X2', task: 'T0.16', file: 'page', find: 'en.vx = (K.MOTH_V * mdx / md) | 0; en.vy = (K.MOTH_V * mdy / md) | 0;', repl: 'en.vx = (2 * K.MOTH_V * mdx / md) | 0; en.vy = (2 * K.MOTH_V * mdy / md) | 0;',
     gates: [{ gate: 'harness', only: 'H-en-4', expect: 'it reaches the column in' }] },
-  { name: 'KNOCK_TOWARD', task: 'T0.16', file: 'page', find: 'h.knock = (mdx < 0 ? -1 : 1) * K.KNOCK_FRAMES;', repl: 'h.knock = (mdx < 0 ? 1 : -1) * K.KNOCK_FRAMES;',
+  { name: 'KNOCK_TOWARD', task: 'T0.16', file: 'page', find: 'hitHero(s, mdx < 0 ? -1 : 1);', repl: 'hitHero(s, mdx < 0 ? 1 : -1);',   /* re-anchored on T1.4b's shared hit */
     gates: [{ gate: 'harness', only: 'H-en-2', expect: 'the knockback carries the hero away' }] },
   /* T0.17: the sprites */
   { name: 'OFF_PALETTE_PIXEL', task: 'T0.17', file: 'page', find: 'd[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;', repl: 'd[o] = c[0] ^ 1; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;',
@@ -364,7 +364,7 @@ const MUTANTS = [
     gates: [{ gate: 'layout', expect: 'turned sideways mid room the loop holds' }] },
   { name: 'MOTH_AT_7_5', task: 'review 4', file: 'page', find: "((Math.floor(clock / beat) & 1) ? '.a' : '.b')", repl: "(((clock >> 3) & 1) ? '.a' : '.b')",   /* re-anchored on T1.4's per kind beat */
     gates: [{ gate: 'sprites', expect: 'the moth flutters at 12 fps' }] },
-  { name: 'KNOCK_ALWAYS_LEFT', task: 'review 4', file: 'page', find: 'h.knock = (mdx < 0 ? -1 : 1) * K.KNOCK_FRAMES;', repl: 'h.knock = -K.KNOCK_FRAMES;',
+  { name: 'KNOCK_ALWAYS_LEFT', task: 'review 4', file: 'page', find: 'h.knock = side * K.KNOCK_FRAMES;', repl: 'h.knock = -K.KNOCK_FRAMES;',   /* re-anchored on T1.4b's shared hit */
     gates: [{ gate: 'harness', only: 'H-en-2c', expect: 'a moth on the left: the hero is knocked' }] },
   { name: 'IFRAMES_HALF', task: 'review 4', file: 'page', find: '    if (h.iframes > 0) h.iframes--;', repl: '    if (h.iframes > 0) h.iframes = Math.max(0, h.iframes - 2);',
     gates: [{ gate: 'harness', only: 'H-en-2d', expect: 'exactly HIT_IFRAMES_S after the first' }] },
@@ -580,7 +580,16 @@ const MUTANTS = [
   { name: 'ENEMY_IN_THE_PLANK', task: 'T1.4', file: 'page', find: 'level.solid[c] || level.plat[c] || level.trap[c] || inPocket[c] || near[c]) return false;', repl: 'level.solid[c] || level.trap[c] || inPocket[c] || near[c]) return false;',
     gates: [{ gate: 'harness', only: 'H-feat-6', expect: 'an enemy on a solid, one way or trap cell' }] },
   { name: 'JELLY_INTO_THE_PLANK', task: 'T1.4', file: 'page', find: '!solidAt(lv, col, row - up - 1) && !platAt(lv, col, row - up - 1)) up++;', repl: '!solidAt(lv, col, row - up - 1)) up++;',
-    gates: [{ gate: 'harness', only: 'H-en-8', expect: 'under a one way on row 28' }] }
+    gates: [{ gate: 'harness', only: 'H-en-8', expect: 'under a one way on row 28' }] },
+  /* T1.4b: the trap sim */
+  { name: 'TRAP_ALWAYS_ON', task: 'T1.4b', file: 'page', find: 'if (s.traps.phase >= (K.TRAP_PERIOD_F >> 1) && !s.immortal', repl: 'if (!s.immortal',
+    gates: [{ gate: 'harness', only: 'H-trap-1', expect: 'phases a hero standing in the field is hit exactly in the second half' }] },
+  { name: 'TRAP_PHASE_EVERYWHERE', task: 'T1.4b', file: 'page', find: '    if (lv.features && lv.features.trap) {\n      s.traps.phase = (s.traps.phase + 1) % K.TRAP_PERIOD_F;', repl: '    s.traps.phase = (s.traps.phase + 1) % K.TRAP_PERIOD_F;\n    if (lv.features && lv.features.trap) {',
+    gates: [{ gate: 'harness', only: 'H-trap-1', expect: 'after 100 steps the phase' }] },
+  { name: 'TRAP_KNOCK_TOWARD', task: 'T1.4b', file: 'page', find: 'hitHero(s, 2 * h.x + K.HERO_W_SUB < mid2 ? -1 : 1);', repl: 'hitHero(s, 2 * h.x + K.HERO_W_SUB < mid2 ? 1 : -1);',
+    gates: [{ gate: 'harness', only: 'H-trap-1', expect: 'the hit is an enemy' }] },
+  { name: 'TRAP_BESIDE_THE_CLIMB', task: 'T1.4b', file: 'page', find: 'if (taken[c]) { clash = true; break; } if (beside[c]) continue; cells.push(c); }', repl: 'if (taken[c]) { clash = true; break; } cells.push(c); }',
+    gates: [{ gate: 'harness', only: 'H-trap-2', expect: 'the walker is never in it while it is on' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

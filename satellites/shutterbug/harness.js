@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 4765;              /* raised per task: the count a full run must reach (4765 after T1.4, 30 Oct) */
+const ASSERT_FLOOR = 4779;              /* raised per task: the count a full run must reach (4779 after T1.4b, 30 Oct) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -3168,9 +3168,11 @@ group('H-feat-3', 'the trap field: a 2 cell repeat at least TRAP_MIN a side, its
       if (x + 1 <= x1 && lv.pal[y * w + x + 1] !== v) two = true;
     }
     if (!rep || !two) bad.push(tag + ': the field is not a 2 cell repeat');
-    /* the field's open cells, the film tabs and the cells a hero stands in on them left out (help is never danger) */
-    const open = []; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const c = y * w + x; if (!lv.solid[c] && !lv.tab[c] && !(c + w < n && lv.tab[c + w])) open.push(c); }
-    if (open.join() !== cells.join() || cells.some(c => !lv.trap[c])) bad.push(tag + ': the trap cells are not the field\'s open cells less the tabs');
+    /* the field's open cells, the film tabs and the cells a hero stands in on them left out (help is never danger), and the
+       cells beside a cell the ascent stands on (the climb's room, T1.4b) */
+    const standSet = lv.ascent.nodes.filter(v => v < n), beside = c => standSet.some(v => cheb(c, v, w) <= 1);
+    const open = []; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const c = y * w + x; if (!lv.solid[c] && !lv.tab[c] && !(c + w < n && lv.tab[c + w]) && !beside(c)) open.push(c); }
+    if (open.join() !== cells.join() || cells.some(c => !lv.trap[c])) bad.push(tag + ': the trap cells are not the field\'s open cells less the tabs and the climb\'s room');
     if (cells.some(c => lv.tab[c] || (c + w < n && lv.tab[c + w]))) bad.push(tag + ': a trap cell on a film tab or a tab\'s standing cell');
     const stands = new Set(lv.ascent.nodes.filter(v => v < n));
     if (cells.some(c => stands.has(c))) bad.push(tag + ': a trap cell the ascent stands on');
@@ -4063,6 +4065,41 @@ group('H-en-9', 'the elites (Q51): ELITE_HP_MULT times their kind\'s HP, ELITE_S
   const stillHeld = he.x === hx0 && hl.s.hero.hearts === hl.s.hero.heartsMax;
   for (let k = 0; k < 5; k++) SB.sim.step(hl.s, 0);
   t.ok(stillHeld && hl.s.hero.hearts < hl.s.hero.heartsMax, 'a frozen moth on the hero neither moves nor hits for its 30 steps, then hits (held ' + stillHeld + ', hearts ' + hl.s.hero.hearts + ')');
+});
+
+/* ================================================================ the trap field (T1.4b) */
+/* a field of 4x2 cells on the floor (x 10..13, rows 45..46), laid by hand */
+function trapLab() {
+  const lv = LABS.room(['', FLOOR]), cells = [];
+  for (let y = 45; y <= 46; y++) for (let x = 10; x <= 13; x++) { lv.trap[y * 24 + x] = 1; cells.push(y * 24 + x); }
+  lv.features = { pocket: null, enemies: [], trap: Int32Array.from(cells), trapRect: [10, 45, 13, 46], trapKind: 'spikes' };
+  return lv;
+}
+group('H-trap-1', 'the trap field (DESIGN 6.11): its phase counts the steps modulo TRAP_PERIOD_F in a room with a field and nowhere else; a hero in the field takes an enemy\'s hit in the period\'s second half and none in the first', t => {
+  const half = K.TRAP_PERIOD_F / 2, wrong = [], inField = { x: 11 * CS + ((CS - HW) >> 1), y: 46 * CS };
+  for (let p = 0; p < K.TRAP_PERIOD_F; p++) {
+    const s = SB.sim.create(trapLab(), { at: inField });
+    s.traps.phase = (p + K.TRAP_PERIOD_F - 1) % K.TRAP_PERIOD_F;
+    const h0 = s.hero.hearts; SB.sim.step(s, 0);
+    if ((s.hero.hearts < h0) !== (p >= half)) wrong.push(p);
+  }
+  t.ok(wrong.length === 0, 'over the ' + K.TRAP_PERIOD_F + ' phases a hero standing in the field is hit exactly in the second half (' + half + ' and on)' + (wrong.length ? ' (wrong at ' + wrong.slice(0, 6).join(' ') + ')' : ''));
+  const s = SB.sim.create(trapLab(), { at: inField }); s.traps.phase = half; SB.sim.step(s, 0);
+  t.ok(s.hero.hearts === s.hero.heartsMax - SB.TUNING.HIT_HEARTS && s.hero.iframes === K.HIT_IFRAMES_F && s.hero.knock === -K.KNOCK_FRAMES, 'the hit is an enemy\'s: HIT_HEARTS off, HIT_IFRAMES_F i frames, KNOCK_FRAMES of knockback left, away from the field\'s middle (hearts ' + s.hero.hearts + ', i frames ' + s.hero.iframes + ', knock ' + s.hero.knock + ')');
+  const bare = LABS.room(['', FLOOR]); bare.features = { pocket: null, enemies: [], trap: null };
+  const sb = SB.sim.create(bare, {}), sf = SB.sim.create(trapLab(), {});
+  for (let k = 0; k < 100; k++) { SB.sim.step(sb, 0); SB.sim.step(sf, 0); }
+  t.ok(sb.traps.phase === 0 && sf.traps.phase === 100 % K.TRAP_PERIOD_F, 'after 100 steps the phase is ' + sf.traps.phase + ' in a room with a field (100 mod ' + K.TRAP_PERIOD_F + ') and ' + sb.traps.phase + ' in one without');
+});
+group('H-trap-2', 'the bot\'s walker is never in the trap field while it is on, on any walked level (the field keeps off the ascent, H-feat-3: a touch is a placement or a sim bug)', t => {
+  /* the test's own touch: the hero's box over a field cell */
+  const touch = (lv, h) => { for (let r = Math.floor(h.y / CS); r <= Math.floor((h.y + HH - 1) / CS); r++) for (let c = Math.floor(h.x / CS); c <= Math.floor((h.x + HW - 1) / CS); c++) if (c >= 0 && c < lv.w && r >= 0 && r < lv.h && lv.trap[r * lv.w + c]) return true; return false; };
+  const { runs } = botWalks(), withField = runs.filter(r => r.lv && r.lv.features && r.lv.features.trap && r.r && r.r.ok), touched = [];
+  for (const r of withField) {
+    const s = SB.sim.create(r.lv, { immortal: true });
+    for (const w of r.r.words) { SB.sim.step(s, w); if (s.traps.phase >= K.TRAP_PERIOD_F / 2 && touch(r.lv, s.hero)) { touched.push(r.tag + ' at step ' + s.frame); break; } }
+  }
+  t.ok(withField.length > 0 && touched.length === 0, withField.length + ' walked levels hold a trap field and the walker is never in it while it is on' + (touched.length ? ': ' + touched.join('; ') : ' (' + withField.map(r => r.tag).join(', ') + ')'));
 });
 
 /* ================================================================ sprites (T0.17) */

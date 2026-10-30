@@ -2185,11 +2185,15 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     if (f.blueprint !== null) taken[f.blueprint] = 1;
     for (i = 0; i < f.specks.length; i++) taken[f.specks[i]] = 1;
     if (f.pocket) for (i = 0; i < f.pocket.cells.length; i++) taken[f.pocket.cells[i]] = 1;
+    /* the cells beside a cell the ascent stands on (Chebyshev 1): the climb's own room, never a trap cell (T1.4b's
+       H-trap-2: a jump off trap-pattern's (13, 34) clipped the field's corner by 2.6 px; QUESTIONS Q83) */
+    var beside = new Uint8Array(n);
+    for (i = 0; i < stands.length; i++) { var sx = stands[i] % w, sy = (stands[i] - sx) / w; for (var oy = -1; oy <= 1; oy++) for (var ox = -1; ox <= 1; ox++) { var bx = sx + ox, by = sy + oy; if (bx >= 0 && bx < w && by >= 0 && by < level.h) beside[by * w + bx] = 1; } }
     var rects = trapRects(level), tries = 0;
     for (var k = 0; k < rects.length && tries < T.TRAP_TRIES; k++) {
       var r = rects[k], cells = [], clash = false;
-      /* the field spares the help: a film tab and the cell a hero stands in on it are never trap cells */
-      for (var y = r[1]; y <= r[3] && !clash; y++) for (var x = r[0]; x <= r[2]; x++) { var c = y * w + x; if (level.solid[c] || level.tab[c] || (c + w < n && level.tab[c + w])) continue; if (taken[c]) { clash = true; break; } cells.push(c); }
+      /* the field spares the help (a film tab and the cell a hero stands in on it) and the climb's room beside its cells */
+      for (var y = r[1]; y <= r[3] && !clash; y++) for (var x = r[0]; x <= r[2]; x++) { var c = y * w + x; if (level.solid[c] || level.tab[c] || (c + w < n && level.tab[c + w])) continue; if (taken[c]) { clash = true; break; } if (beside[c]) continue; cells.push(c); }
       if (clash || !cells.length) continue;
       tries++;
       if (!trapOk(level, cells)) continue;
@@ -2468,6 +2472,22 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       en.y = Math.max(r[1] * CS, Math.min((r[3] + 1) * CS - sz, en.y));
     }
   }
+  /* a hit (DESIGN 7: an enemy's and a trap's are the same): HIT_HEARTS off, HIT_IFRAMES of i frames and KNOCK_FRAMES of
+     knockback toward side (-1 left, 1 right); the last heart ends the room */
+  function hitHero(s, side) {
+    var h = s.hero, K = SB.K;
+    h.hearts = Math.max(0, h.hearts - SB.TUNING.HIT_HEARTS);
+    h.iframes = K.HIT_IFRAMES_F;
+    h.knock = side * K.KNOCK_FRAMES;
+    h.lock = 0; h.dash = 0; h.sticky = 0; h.wall = 0; s.ev |= EV.HIT;
+    if (h.hearts === 0) { s.room.dead = 1; s.room.deaths++; s.ev |= EV.DEAD; }
+  }
+  /* the hero's box touching a cell of the trap field */
+  function trapTouch(lv, h) {
+    var K = SB.K, CS = K.CELL_SUB, w = lv.w, c0 = Math.floor(h.x / CS), c1 = Math.floor((h.x + K.HERO_W_SUB - 1) / CS), r0 = Math.floor(h.y / CS), r1 = Math.floor((h.y + K.HERO_H_SUB - 1) / CS);
+    for (var r = r0; r <= r1; r++) for (var c = c0; c <= c1; c++) if (c >= 0 && c < w && r >= 0 && r < lv.h && lv.trap[r * w + c] === 1) return true;
+    return false;
+  }
   /* the envelope placement gave the enemy on this cell (section 3.7) */
   function envOf(lv, home) {
     var es = (lv.features && lv.features.enemies) || [];
@@ -2717,12 +2737,18 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       en.timer++;
       if (held || !liveEnemy(en)) continue;
       var core = 2 * K.SUB, mx0 = en.x + core, my0 = en.y + core, mx1 = en.x + esz - core, my1 = en.y + esz - core;
-      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && h.x < mx1 && h.x + K.HERO_W_SUB > mx0 && h.y < my1 && h.y + K.HERO_H_SUB > my0) {
-        h.hearts = Math.max(0, h.hearts - SB.TUNING.HIT_HEARTS);
-        h.iframes = K.HIT_IFRAMES_F;
-        h.knock = (mdx < 0 ? -1 : 1) * K.KNOCK_FRAMES;
-        h.lock = 0; h.dash = 0; h.sticky = 0; h.wall = 0; s.ev |= EV.HIT;
-        if (h.hearts === 0) { s.room.dead = 1; s.room.deaths++; s.ev |= EV.DEAD; }
+      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && h.x < mx1 && h.x + K.HERO_W_SUB > mx0 && h.y < my1 && h.y + K.HERO_H_SUB > my0) hitHero(s, mdx < 0 ? -1 : 1);
+    }
+
+    /* 8b. the trap field (DESIGN 6.11, T1.4b): traps.phase counts the steps modulo TRAP_PERIOD_F, in a room with a field
+       only (every other room hashes as before); the field is on in the period's second half, when a hero whose box
+       touches one of its cells takes an enemy's hit, knocked away from the field's middle: spikes when they stand,
+       crushers in their stroke (the stroke sweeps the field's cells, QUESTIONS Q83) */
+    if (lv.features && lv.features.trap) {
+      s.traps.phase = (s.traps.phase + 1) % K.TRAP_PERIOD_F;
+      if (s.traps.phase >= (K.TRAP_PERIOD_F >> 1) && !s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && trapTouch(lv, h)) {
+        var tr = lv.features.trapRect, mid2 = tr ? (tr[0] + tr[2] + 1) * K.CELL_SUB : 0;
+        hitHero(s, 2 * h.x + K.HERO_W_SUB < mid2 ? -1 : 1);
       }
     }
 
@@ -2792,7 +2818,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   };
 
   SB.sim = { IN: IN, EV: EV, rle: rle, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
-    FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf };
+    FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf, trapTouch: trapTouch };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="shell-capture" data-tool>
@@ -2973,6 +2999,17 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     spark: { w: 16, h: 16, frames: {
       a: '................/.......9......../......999......./...9..999..9..../....9.969.9...../.....99699....../...999666999..../.....99699....../....9.969.9...../...9..999..9..../......999......./.......9......../................/................/................/................',
       b: '................/................/.......9......../.....9.9.9....../......969......./....9966699...../..9.9666669.9.../....9966699...../......969......./.....9.9.9....../.......9......../................/................/................/................/................'
+    } },
+    /* T1.4b's traps (section 7.3): a spike, Brick with a Magenta tip over Ink, sunk (a) and standing (b); a crusher,
+       Slate with a Brick stripe and Glare teeth, up (a), mid stroke (b) and down (c) */
+    spike: { w: 16, h: 16, frames: {
+      a: '................/................/................/................/................/................/................/................/................/................/................/................/..9...9...9...9./.090.090.090.090/0000000000000000/0000000000000000',
+      b: '................/................/..a...a...a...a./..9...9...9...9./..9...9...9...9./.999.999.999.999/.999.999.999.999/.999.999.999.999/9999999999999999/9999999999999999/.909.909.909.909/.909.909.909.909/.090.090.090.090/.090.090.090.090/0000000000000000/0000000000000000'
+    } },
+    crusher: { w: 16, h: 16, frames: {
+      a: '0000000000000000/0222222222222220/0999999999999990/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/................/................/................/................/................/................/................/................/................/................',
+      b: '0000000000000000/0222222222222220/0222222222222220/0222222222222220/0999999999999990/0222222222222220/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6/................/................/................/................/................/................',
+      c: '0000000000000000/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0999999999999990/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6'
     } },
     /* the beacon: the ceiling light, a cord, a Glare shade with an Ink rim, a Sun bulb; Glare rays on the second frame */
     beacon: { w: 16, h: 16, frames: {
@@ -3194,6 +3231,23 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       spr(ctx, bk, ex, ey);
       R.drawn.beacon = { key: bk, x: ex - camX, y: ey, w: C, h: C };
     } else R.drawn.beacon = null;
+    /* the trap field (T1.4b): every cell of it, spikes standing in the on half of the period and sunk in the other,
+       crushers down in the stroke (mid stroke its first and last 6 steps) and up otherwise; in the off half's last 6
+       steps a Magenta frame on each of its cells beats the rhythm (the field's own cells: its rectangle holds tabs, solids
+       and the climb's room, which are safe; T1.4b's shots) */
+    var tf = lv.features && lv.features.trap, tph = s.traps.phase, half = K.TRAP_PERIOD_F >> 1, edge = 6;
+    if (tf) {
+      var crush = lv.features.trapKind === 'crushers', on = tph >= half, tk;
+      if (crush) tk = !on ? 'crusher.a' : (tph < half + edge || tph >= K.TRAP_PERIOD_F - edge ? 'crusher.b' : 'crusher.c'); else tk = on ? 'spike.b' : 'spike.a';
+      for (var q2 = 0; q2 < tf.length; q2++) { var ty2 = Math.floor(tf[q2] / lv.w) * C - cam; if (ty2 > -C && ty2 < viewH) spr(ctx, tk, (tf[q2] % lv.w) * C, ty2); }
+      if (!on && tph >= half - edge) {
+        ctx.fillStyle = css(P.I.MAGENTA);
+        for (var q3 = 0; q3 < tf.length; q3++) {
+          var fx0 = (tf[q3] % lv.w) * C, fy0 = Math.floor(tf[q3] / lv.w) * C - cam;
+          ctx.fillRect(fx0, fy0, C, 1); ctx.fillRect(fx0, fy0 + C - 1, C, 1); ctx.fillRect(fx0, fy0, 1, C); ctx.fillRect(fx0 + C - 1, fy0, 1, C);
+        }
+      }
+    }
     /* the enemies: each kind's two frames at 12 fps (the moth's flutter beats on its own timer: the fourth review found
        it at 7.5), facing its way; an elite drawn ELITE_PX a side; a shattered icicle is not drawn */
     var md = R.drawn.moths, KINDS = ['', 'moth', 'icicle', 'jelly', 'crawler', 'spark'], beat = Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS); md.length = 0;

@@ -580,3 +580,11 @@ Options: (a) as built; (b) each number his.
 Recommendation: (a) until his play; every one is a TUNING line or a sprite (Astra's art replaces the drawn sprites).
 Plan assumes: (a).
 
+## Q83. A crusher's stroke is its field; a trap field keeps off the climb's room (the builder, 30 Oct, T1.4b)
+
+T1.4b: spikes hurt on contact in the on phase and crushers "in their stroke cells during the stroke". The plan does not say which cells a stroke covers. DESIGN 6.11 keeps the field off the main ascent; trap-pattern's field touched no ascent cell and no corridor of the reach model, yet the bot's own jump off (13, 34) clipped the field's corner cell (14, 32) by 2.6 px for two steps of the on phase (H-trap-2).
+As built (T1.4b): a crusher's stroke is the on phase over all the field's cells (each cell's crusher drops through it), the same cells and phase as the spikes; and no trap cell lies beside a cell the ascent stands on (Chebyshev 1), the climb's room, as the field already spares film tabs and the cells a hero stands in on them. Six corpus builds lose those cells; trap-pattern keeps its field.
+Options: (a) as built; (b) a crusher's head sweeps one row of its field at a time (a moving danger, its own sprite); (c) the climb's room is 2 cells.
+Recommendation: (a): one rule for both kinds, and a hazard the climb can graze by a jump's spread is a hit no player expects.
+Plan assumes: (a); H-trap-1, H-trap-2, H-feat-3.
+
