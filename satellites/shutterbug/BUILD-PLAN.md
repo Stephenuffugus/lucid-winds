@@ -51,6 +51,7 @@ The builder updates this table in the same commit that ships the task (law 8: th
 | T0.9 | shipped | `7400462dc` | input (10 checks) and layout (150 checks at 4 sizes, both layouts, landscape) green; LATCH_OFF, ZONE_FIXED_AT_DOWN, CANVAS_100PCT, A_44PX, RESERVE_FILLED, MIRROR_OVERLAPS_CANVAS RED; the chip check adapted to Q48's addendum | a faint pressed state; the empty band over the glyphs; the empty chip corner |
 | T0.10a | shipped | `ece1bcc4d` | H-reach-1 (every field and corridor, both biomes), H-reach-1b (tables.json, section 3.2), H-reach-2 green; H-reach-10 info; HI_PLUS_ONE RED; Q64 (two plan numbers vs the sim) | (reach task) |
 | T0.10b | shipped | `a2ddb5818` | H-reach-3..7, 9 and H-lab-4 (594 descent and 696 rise one ways against the sim) green; the exit by distance in the pipeline; CLEARANCE_SKIPS_HEAD, ONEWAY_CATCHES_RISING RED | (reach task) |
+| T0.11a | shipped | `54c5f4a84` | H-rep-1..6 green (16 rooms build with 0 to 16 tabs; the sample room 0 tabs, the lamp); TAB_MAX_0, TABS_ON_LANDMARK, LIGHT_SLACK_0 RED; 12 tabs read per pass | (pipeline task) |
 
 Status is one of `shipped`, `shipped with xfail Qn`, `BLOCKED on <assertion> Qn`, `skipped (budget)`. The night's last row is `T0.18 deploy` with the deploy commit and the two origin hashes, or `NOT LIVE` and why.
 
