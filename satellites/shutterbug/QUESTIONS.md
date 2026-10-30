@@ -611,3 +611,23 @@ As built (T1.9a): H-qr-1 checks both published pairs, each as published; the pla
 Options: (a) as built; (b) only one of the two examples.
 Recommendation: (a).
 Plan assumes: (a).
+
+## Q87. The first ever room's twists, and when they unlock (the builder, 30 Oct, T1.5)
+
+DESIGN 5.3 says the first free play room "always runs plain Attic rules: no biome twist, at most 2 fodder enemies, no trap field, no pocket. Biome twists unlock after the first clear." T1.5's scope is "twists disabled in the first ever free play room". T1.12 (WAITS) owns the full first room rules.
+As built (T1.5): the level carries twistOff, set for a Frost, Deep or Overgrowth first room. Its slick and sticky cells are not marked, and the reach model and the sim both drop Deep's tables and gravity, so the model is never more generous than the sim. The photo keeps its biome's look (the tints) and its enemy kind: a Frost first room still has icicles, not moths. Ember's two extra specks stay too. Attic and Ember first rooms are unchanged. The first room is the first room started: ui.firstRoomDone flips when it starts, not at its first clear. A restart replays the same level, still without its twist. A second room built after an unfinished first one gets its twist.
+Options: (a) as built, the movement twists off and the look kept; (b) the whole first room forced to Attic (its tints, moths, no Ember extras): "plain Attic rules" read literally; (c) (a) or (b), with the twists unlocking only at the first clear (firstRoomDone set by the clear).
+Recommendation: (a) now, (c)'s unlock at T1.12, and his call on (a) against (b) after he plays the first room.
+Plan assumes: (a); T1.12 takes the unlock and the enemy kind.
+
+## Q88. The ice edge, the vines and the pipes are placeholders (the builder, 30 Oct, T1.5)
+
+Astra's brief holds the rows world/ice_edge, world/vine and world/pipe with no size ruled. T1.5 draws code placeholders from section 7.3:
+- The ice edge is two Teal rows under the plank's Ink line, in place of Frost's Pewter line.
+- The vine is a 16x16 tile, Moss with Ink stems, tiled up a 1 cell sticky column in Overgrowth.
+- The pipe is a 16x16 tile, Teal with Ink rings and a Glare highlight, tiled the same way in Deep.
+
+The shots name three faults: the ice edge is a hairline at phone size; the vine's zigzag repeats every cell, Moss on Overgrowth's dark green; the pipe's rings read like a ladder.
+Options: (a) Astra draws the three rows, at the sizes now fixed in SPRITES (vine and pipe 16x16, the ice edge 16 wide by up to 4 tall); (b) keep the placeholders.
+Recommendation: (a). Rule the three rows READY at those sizes in Astra's next session; the cutter takes vine and pipe as existing keys.
+Plan assumes: (a).

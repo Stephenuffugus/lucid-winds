@@ -20,6 +20,7 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'world/film_tab.png': ('tab', None), 'world/beacon.png': ('beacon', None), 'world/trap_spike.png': ('spike', None),
     'world/trap_crusher.png': ('crusher', None), 'loot/loot_speck.png': ('speck', None), 'loot/loot_scroll.png': ('scroll', None),
     'loot/loot_blueprint.png': ('blueprint', None), 'loot/loot_chest.png': ('chest', None),
+    'world/vine.png': ('vine', None), 'world/pipe.png': ('pipe', None),   # T1.5's sticky walls (the brief's held rows)
 }
 
 
