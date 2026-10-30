@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 965;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 975;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', retable: 'T0.10a', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -870,6 +870,20 @@ group('H-fuzz-1', '2000 seeded random frames per fixture: never in a solid, neve
     }
     t.ok(inSolid + out + floating === 0, f.name + ': 2000 random frames, ' + inSolid + ' in a solid, ' + out + ' outside, ' + floating + ' standing on nothing' + (first ? ' (first: ' + first + ')' : ''), first ? SB.pipeline.toText(lv) : undefined);
   }
+});
+
+/* ================================================================ input */
+group('H-in-1', 'the replay codec: 3600 random words round trip through runs, L and R together included', t => {
+  const r = hrand(36), words = [];
+  let w = 0;
+  for (let k = 0; k < 3600; k++) { if (r.int(6) === 0) w = r.int(64); words.push(w); }
+  words[100] = IN.L | IN.R; words[101] = IN.L | IN.R | IN.A;
+  const runs = SB.sim.rle.encode(words);
+  t.ok(runs.every(([n, x]) => Number.isInteger(n) && n > 0 && Number.isInteger(x)), 'every run is [count > 0, word]');
+  t.ok(runs.every((run, k) => k === 0 || runs[k - 1][1] !== run[1]), 'no two neighbouring runs hold the same word');
+  t.same(SB.sim.rle.decode(runs), words, 'decode(encode(words)) equals the words');
+  t.eq(runs.reduce((a, x) => a + x[0], 0), 3600, 'the runs count 3600 steps');
+  t.ok(SB.sim.rle.decode(runs)[100] === (IN.L | IN.R), 'a word with L and R both set survives the round trip');
 });
 
 /* ================================================================ one room */

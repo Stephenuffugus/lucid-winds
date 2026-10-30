@@ -33,9 +33,9 @@ try {
   const { page, errors } = await newPage(browser, { width: 412, height: 915 });
   await gotoGame(page, srv.base);
   await ready(page);
+  await page.evaluate(() => window.SB_DEV.hold(true));      /* held before the room starts: no live step can slip in */
   await tap(page, '#sample');
   R.say(await page.evaluate(() => window.SB_DEV.screen()) === 'play', 'a real touch on "Try the sample room" opens the play screen');
-  await page.evaluate(() => window.SB_DEV.hold(true));
   const f0 = await page.evaluate(() => window.SB_DEV.frames());
   await replayKeys(page, climb.runs);
   const total = climb.runs.reduce((a, r) => a + r[0], 0);
@@ -65,8 +65,9 @@ try {
   await page.keyboard.up('ArrowLeft');
   await page.evaluate(() => window.SB_DEV.hold(true));
   const a1 = await page.evaluate(() => ({ f: window.SB_DEV.frames(), loop: window.SB_DEV.perf().loop, rec: window.SB_DEV.recording() }));
-  const L = a1.loop, books = L.steps * L.stepMs + L.acc + L.dropped - L.consumed;
-  R.say(Math.abs(books) < 0.01, 'the accumulator\'s books balance: steps x ' + L.stepMs.toFixed(3) + ' ms + owed + dropped = consumed (off by ' + books.toFixed(4) + ' ms over ' + L.raf + ' frames, ' + L.stalls + ' stalls)');
+  /* the books cover only the steps the accumulator ran (SB_DEV.step's steps are the held gate's, outside the clock) */
+  const L = a1.loop, books = L.accSteps * L.stepMs + L.acc + L.dropped - L.consumed;
+  R.say(L.accSteps >= 40 && Math.abs(books) < 0.01, 'the accumulator\'s books balance: ' + L.accSteps + ' steps x ' + L.stepMs.toFixed(3) + ' ms + owed + dropped = consumed (off by ' + books.toFixed(4) + ' ms over ' + L.raf + ' frames, ' + L.stalls + ' stalls)');
   R.say(L.maxSteps <= 4, 'never more than four steps in one frame (max ' + L.maxSteps + ')');
   const flat = a1.rec.flatMap(([n, w]) => Array(n).fill(w));
   const firstL = flat.findIndex(w => w & 1), lastL = flat.length - 1 - [...flat].reverse().findIndex(w => w & 1);

@@ -73,7 +73,14 @@ const MUTANTS = [
   { name: 'JUMP_V_LOW', task: 'T0.7a', file: 'page', find: 'JUMP_V: 8.59375 /* 2200/256 */', repl: 'JUMP_V: 8.1640625 /* 2090/256, 5% low */',
     gates: [{ gate: 'harness', only: 'H-sim-1', expect: 'a full hold from rest peaks at' }] },
   { name: 'GRAVITY_X2', task: 'T0.7a', file: 'page', find: 'GRAVITY: 0.5, JUMP_V', repl: 'GRAVITY: 1, JUMP_V',
-    gates: [{ gate: 'harness', only: 'H-sim-1', expect: 'a full hold from rest peaks at' }] }
+    gates: [{ gate: 'harness', only: 'H-sim-1', expect: 'a full hold from rest peaks at' }] },
+
+  { name: 'ACCUMULATOR_DT_FLOAT', task: 'T0.8a', file: 'page', find: 'while (acc >= STEP_MS && n < MAX_STEPS) { stepOnce(); acc -= STEP_MS; n++; loop.accSteps++; }',
+    repl: 'if (acc > 0) { stepOnce(); acc = 0; n++; loop.accSteps++; }',
+    gates: [{ gate: 'play', expect: "the accumulator's books balance" }] },
+  { name: 'CLEAR_NO_RESTART', task: 'T0.8a', file: 'page', find: "  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name); };",
+    repl: "  ui.again = function () { if (G.record) { var keep = document.getElementById('clear').className; ui.startRoom(G.record, G.name); document.getElementById('clear').className = keep; } };",
+    gates: [{ gate: 'play', expect: 'Again leaves nothing painted over the play area' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

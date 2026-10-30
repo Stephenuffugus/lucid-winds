@@ -1120,8 +1120,18 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     R.camY = cam;
     ctx.drawImage(stat, 0, cam, K.WORLD_W, viewH, 0, 0, K.WORLD_W, viewH);
     if (lv.exit >= 0) {
-      var ex = (lv.exit % lv.w) * C, ey = Math.floor(lv.exit / lv.w) * C - cam;
+      /* the light, relit (section 3.7): the beacon's cells at full palette colour over the dimmed photo, so the goal
+         is the brightest thing in the room; then the exit cell's pulsing outline (the beacon sprite is T0.16) */
       pulse = (pulse + 1) % 48;
+      var cells = lv.beacon && lv.beacon.cells ? lv.beacon.cells : [];
+      for (var b = 0; b < cells.length; b++) {
+        ctx.fillStyle = css(lv.pal[cells[b]]);
+        ctx.fillRect((cells[b] % lv.w) * C, Math.floor(cells[b] / lv.w) * C - cam, C, C);
+      }
+      var ex = (lv.exit % lv.w) * C, ey = Math.floor(lv.exit / lv.w) * C - cam;
+      ctx.fillStyle = css(P.I.INK);
+      ctx.fillRect(ex - 3, ey - 3, C + 6, 1); ctx.fillRect(ex - 3, ey + C + 2, C + 6, 1);
+      ctx.fillRect(ex - 3, ey - 3, 1, C + 6); ctx.fillRect(ex + C + 2, ey - 3, 1, C + 6);
       ctx.fillStyle = css(pulse < 24 ? P.I.SUN : P.I.GLARE);
       ctx.fillRect(ex - 2, ey - 2, C + 4, 2); ctx.fillRect(ex - 2, ey + C, C + 4, 2);
       ctx.fillRect(ex - 2, ey, 2, C); ctx.fillRect(ex + C, ey, 2, C);
@@ -1254,8 +1264,8 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   };
   ui.again = function () { if (G.record) ui.startRoom(G.record, G.name); };
 
-  ui.showClear = function () { document.getElementById('clear').classList.add('on'); ui.screen = 'clear'; };
-  ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); };
+  ui.showClear = function () { document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; };
+  ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); document.getElementById('back').hidden = false; };
   /* every in game back is an internal screen switch that hides every overlay it can sit over */
   ui.toTitle = function () { ui.hideClear(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
 
@@ -1288,7 +1298,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
      after four the frame is a stall and the debt is dropped. The sim never sees time, only steps. */
   var STEP_MS = 1000 / SB.TUNING.STEP_HZ, MAX_STEPS = 4, DT_MAX = 100;
   var G = SB.game, held = false, last = -1, acc = 0;
-  var loop = { raf: 0, steps: 0, consumed: 0, dropped: 0, stalls: 0, maxSteps: 0 };
+  var loop = { raf: 0, steps: 0, accSteps: 0, consumed: 0, dropped: 0, stalls: 0, maxSteps: 0 };
   var perf = SB.perfLog = { step: [], draw: [], pipeline: 0 };
   var keep = function (a, v) { a.push(v); if (a.length > 300) a.shift(); };
 
@@ -1313,7 +1323,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     if (!held && G.state && SB.ui.screen === 'play') {
       acc += dt; loop.consumed += dt;
       var n = 0;
-      while (acc >= STEP_MS && n < MAX_STEPS) { stepOnce(); acc -= STEP_MS; n++; }
+      while (acc >= STEP_MS && n < MAX_STEPS) { stepOnce(); acc -= STEP_MS; n++; loop.accSteps++; }
       if (acc >= STEP_MS) { loop.dropped += acc; acc = 0; loop.stalls++; }
       if (n > loop.maxSteps) loop.maxSteps = n;
     }
@@ -1351,7 +1361,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       return rec ? SB.ui.startRoom(rec, SB.ui.COPY.sampleRoom) : false;
     },
     goto: function (name) { if (name === 'title') SB.ui.toTitle(); else if (name === 'sample') SB.ui.startRoom(SB.ui.sampleRecord(), SB.ui.COPY.sampleRoom); return SB.ui.screen; },
-    hold: function (on) { held = !!on; acc = 0; return held; },
+    hold: function (on) { held = !!on; loop.dropped += acc; acc = 0; return held; },
     step: function (n) { for (var i = 0; i < n && G.state; i++) stepOnce(); draw(); return loop.steps; }
   };
 })(window.SB);
