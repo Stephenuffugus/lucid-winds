@@ -2,7 +2,7 @@
    files (/music-unlocks.js and the three it loads) are never intercepted, cached or answered, and it only ever deletes
    shutterbug- caches (caches.keys() is origin wide and every satellite shares the origin). BUILD equals the page's
    SB.BUILD and CACHE's version the registration's ?v= (the host caching law: the lint and deploy.sh hold them together). */
-var BUILD = 'sb-m0-3';
+var BUILD = 'sb-m1-1';
 var CACHE = 'shutterbug-v1';
 var SHELL = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png'];
 
