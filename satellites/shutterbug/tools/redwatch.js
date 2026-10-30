@@ -44,7 +44,12 @@ const MUTANTS = [
   { name: 'B64_PAD', task: 'T0.3', file: 'page', find: "    return out;\n  }\n\n  /* null on any character", repl: "    return out + '=';\n  }\n\n  /* null on any character",
     gates: [{ gate: 'harness', only: 'H-rec-2', expect: 'share string length' }] },
   { name: 'NIBBLE_15_ACCEPTED', task: 'T0.3', file: 'page', find: '        if (hi === 15 || lo === 15) return null;\n', repl: '',
-    gates: [{ gate: 'harness', only: 'H-rec-3', expect: 'decode refuses: a high nibble of 15' }] }
+    gates: [{ gate: 'harness', only: 'H-rec-3', expect: 'decode refuses: a high nibble of 15' }] },
+
+  /* the plan's rationale (the ramp breaks) does not hold: a grey ramp quantizes monotonically under either metric
+     (measured 2026-10-30); the metrics disagree on 4368 of 20000 seeded colours, which is what H-pal-5's oracle sees */
+  { name: 'QUANT_UNWEIGHTED', task: 'T0.4a', file: 'page', find: 'var dd = 30 * dr * dr + 59 * dg * dg + 11 * db * db;', repl: 'var dd = dr * dr + dg * dg + db * db;',
+    gates: [{ gate: 'harness', only: 'H-pal-5', expect: "nearest equals the test's weighted distance" }] }
 ];
 
 /* ---------------------------------------------------------------- run */

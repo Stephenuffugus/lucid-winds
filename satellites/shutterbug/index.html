@@ -309,6 +309,75 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 </script>
 <script id="core-palette" data-core>
 (function (SB) { 'use strict';
+  /* core-palette (BUILD-PLAN.md section 7): the sixteen colours, their L, S and H from integer formulas, the saturated
+     set and the biome bands, nearest() for quantizing (DESIGN 6.2), and the backdrop blends of section 7.3. Index 15
+     (Film) is reserved for repairs: nearest() never returns it (QUESTIONS Q13). The proposal ships until Stephen
+     rules on it (HANDOFF section 10); a swap is one row here and one H-pal run.
+     The WCAG contrast helpers live in harness.js, not here: relative luminance needs x to the power 2.4, and the
+     core forbids Math.pow (not correctly rounded across engines). Contrast never enters the sim or a hash. */
+  var HEX = ['0b0a0f', '1f1a1d', '4a4a52', '8a8a90', 'c9c7c0', 'f2efe6', 'fbfbff', '6b3f2a',
+    'e07a2b', 'c8302f', 'd83a9b', '2f5fd0', '3fb8b4', '3f9a3a', 'f2d13f', 'f0dcb0'];
+  var NAMES = ['Ink', 'Soot', 'Slate', 'Pewter', 'Ash', 'Paper', 'Glare', 'Walnut',
+    'Amber', 'Brick', 'Magenta', 'Lapis', 'Teal', 'Moss', 'Sun', 'Film'];
+  var I = { INK: 0, SOOT: 1, SLATE: 2, PEWTER: 3, ASH: 4, PAPER: 5, GLARE: 6, WALNUT: 7, AMBER: 8, BRICK: 9,
+    MAGENTA: 10, LAPIS: 11, TEAL: 12, MOSS: 13, SUN: 14, FILM: 15 };
+  var N = 16, QUANT = 15;   /* the quantizer's range is 0..14 */
+
+  var RGB = [], L = [], S1000 = [], H = [];
+  for (var i = 0; i < N; i++) {
+    var h = HEX[i], r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    RGB.push([r, g, b]);
+    /* L: DESIGN's luminance, 0.299 R + 0.587 G + 0.114 B, in integers */
+    L.push(Math.round((299 * r + 587 * g + 114 * b) / 1000));
+    /* S: HSV saturation in thousandths; H: HSV hue in whole degrees */
+    var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    S1000.push(mx === 0 ? 0 : Math.round(d * 1000 / mx));
+    var hue = 0;
+    if (d > 0) hue = mx === r ? 60 * (g - b) / d : mx === g ? 60 * (b - r) / d + 120 : 60 * (r - g) / d + 240;
+    H.push(((Math.round(hue) % 360) + 360) % 360);
+  }
+
+  /* The saturated set, explicit (H-pal-6 asserts it equals the computed S over 0.35, so an edit cannot quietly move
+     a grey into a band), and the biome bands of section 7.2: 0 Attic, 1 Frost, 2 Deep, 3 Overgrowth, 4 Ember;
+     -1 never votes (the greys, Ink, Soot, Film). Frost has no band: it is the bright room rule (QUESTIONS Q4). */
+  var SAT = [7, 8, 9, 10, 11, 12, 13, 14];
+  var BIOMES = ['attic', 'frost', 'deep', 'overgrowth', 'ember'];
+  var BAND = [-1, -1, -1, -1, -1, -1, -1, 0, 0, 4, 4, 2, 2, 3, 0, -1];
+  /* section 7.3: per biome the solid tint, the open tint and the platform line drawn under the Glare edge */
+  var TINT = {
+    solid: [I.WALNUT, I.SLATE, I.LAPIS, I.MOSS, I.SOOT],
+    open: [I.ASH, I.PAPER, I.SLATE, I.ASH, I.PEWTER],
+    line: [I.AMBER, I.PEWTER, I.TEAL, I.WALNUT, I.AMBER]
+  };
+
+  /* DESIGN 6.2: the nearest entry by weighted RGB distance (0.3 R, 0.59 G, 0.11 B), over 0..14, ties to the lowest. */
+  function nearest(r, g, b) {
+    var best = 0, bestD = -1;
+    for (var k = 0; k < QUANT; k++) {
+      var c = RGB[k], dr = r - c[0], dg = g - c[1], db = b - c[2];
+      var dd = 30 * dr * dr + 59 * dg * dg + 11 * db * db;
+      if (bestD < 0 || dd < bestD) { bestD = dd; best = k; }
+    }
+    return best;
+  }
+
+  function mix(a, b, t) {
+    return [Math.round(a[0] + (b[0] - a[0]) * t), Math.round(a[1] + (b[1] - a[1]) * t), Math.round(a[2] + (b[2] - a[2]) * t)];
+  }
+  var BACKDROP = 0.4, SOLID_DIM = 0.6, SOLID_TINT = 0.35, OPEN_TINT = 0.2;
+  /* section 7.3: the backdrop is the photograph at 60% contrast (blended 40% toward Pewter); solids are that times
+     0.6; then each biome tints solids 35% toward its solid colour and open cells 20% toward its open colour. */
+  function base(idx) { return mix(RGB[idx], RGB[I.PEWTER], BACKDROP); }
+  function openColour(idx, biome) { return mix(base(idx), RGB[TINT.open[biome || 0]], OPEN_TINT); }
+  function solidColour(idx, biome) {
+    var o = base(idx);
+    return mix([Math.round(o[0] * SOLID_DIM), Math.round(o[1] * SOLID_DIM), Math.round(o[2] * SOLID_DIM)], RGB[TINT.solid[biome || 0]], SOLID_TINT);
+  }
+  function hex(rgb) { var s = '#'; for (var k = 0; k < 3; k++) s += ('0' + rgb[k].toString(16)).slice(-2); return s; }
+
+  SB.palette = { N: N, HEX: HEX, NAMES: NAMES, I: I, RGB: RGB, L: L, S1000: S1000, H: H, SAT: SAT, BIOMES: BIOMES,
+    BAND: BAND, TINT: TINT, nearest: nearest, mix: mix, openColour: openColour, solidColour: solidColour, hex: hex,
+    BLEND: { BACKDROP: BACKDROP, SOLID_DIM: SOLID_DIM, SOLID_TINT: SOLID_TINT, OPEN_TINT: OPEN_TINT } };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-record" data-core>

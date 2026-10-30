@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 480;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 620;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', retable: 'T0.10a', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -306,6 +306,96 @@ group('H-rec-4', 'seedOf: the grid and nothing else', t => {
   }
   const j2 = randomRecordJSON(r, 2), rec2 = SB.record.fromJSON(j2);
   t.eq(SB.record.seedOf(rec2), fnvRef(asBytes(rec2.pal2), fnvRef(asBytes(rec2.pal))), 'mode 2: the hash continues over pal2');
+});
+
+/* ================================================================ palette */
+/* the test's own colour maths, written from section 7's sentences */
+const palRef = (() => {
+  const hex = SB.palette.HEX;
+  const rgb = hex.map(h => [...Buffer.from(h, 'hex')]);
+  const L = rgb.map(([r, g, b]) => Math.round(0.299 * r + 0.587 * g + 0.114 * b));
+  const S = rgb.map(c => { const mx = Math.max(...c), mn = Math.min(...c); return mx ? (mx - mn) / mx : 0; });
+  const H = rgb.map(([r, g, b]) => {
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    if (!d) return 0;
+    const h = mx === r ? 60 * (((g - b) / d) % 6) : mx === g ? 60 * ((b - r) / d + 2) : 60 * ((r - g) / d + 4);
+    return (Math.round(h) + 360) % 360;
+  });
+  const nearest = (r, g, b) => {
+    let bi = 0, bd = Infinity;
+    for (let i = 0; i < 15; i++) { const d = 0.3 * (r - rgb[i][0]) ** 2 + 0.59 * (g - rgb[i][1]) ** 2 + 0.11 * (b - rgb[i][2]) ** 2; if (d < bd - 1e-9) { bd = d; bi = i; } }
+    return bi;
+  };
+  return { rgb, L, S, H, nearest };
+})();
+
+group('H-pal-1', 'sixteen entries, the hex round trip', t => {
+  t.eq(SB.palette.HEX.length, 16, 'sixteen hexes');
+  t.eq(SB.palette.RGB.length, 16, 'sixteen RGB triples');
+  t.eq(SB.palette.NAMES.length, 16, 'sixteen names');
+  for (let i = 0; i < 16; i++) {
+    t.same(Array.from(SB.palette.RGB[i]), palRef.rgb[i], SB.palette.NAMES[i] + ' RGB parsed from its hex');
+    t.eq(SB.palette.hex(SB.palette.RGB[i]), '#' + SB.palette.HEX[i], SB.palette.NAMES[i] + ' hex round trip');
+  }
+  t.eq(new Set(SB.palette.HEX).size, 16, 'no two entries share a hex');
+});
+
+group('H-pal-2', 'DESIGN 11\'s list, computed from the values', t => {
+  const { L, S, H } = palRef;
+  for (let i = 0; i < 16; i++) {
+    t.eq(SB.palette.L[i], L[i], SB.palette.NAMES[i] + ' L (0.299 R + 0.587 G + 0.114 B)');
+    t.ok(Math.abs(SB.palette.S1000[i] / 1000 - S[i]) < 0.0006, SB.palette.NAMES[i] + ' S (HSV saturation): core ' + SB.palette.S1000[i] / 1000 + ', test ' + S[i].toFixed(4));
+    t.eq(SB.palette.H[i], H[i], SB.palette.NAMES[i] + ' H (HSV hue, degrees)');
+  }
+  const idx = f => [...Array(16).keys()].filter(f);
+  const sat = i => S[i] > 0.35, names = a => a.map(i => SB.palette.NAMES[i]).join(', ');
+  const want = [
+    ['near blacks (L < 40)', idx(i => L[i] < 40), 2],
+    ['near whites (L > 235)', idx(i => L[i] > 235), 2],
+    ['greys (S < 0.12, 40 <= L <= 235)', idx(i => S[i] < 0.12 && L[i] >= 40 && L[i] <= 235), 3],
+    ['brown (hue 10..40, S > 0.35, L < 100)', idx(i => sat(i) && H[i] >= 10 && H[i] <= 40 && L[i] < 100), 1],
+    ['orange (hue 10..40, S > 0.35, L >= 100)', idx(i => sat(i) && H[i] >= 10 && H[i] <= 40 && L[i] >= 100), 1],
+    ['red (hue under 10 or 345 and over, S > 0.35)', idx(i => sat(i) && (H[i] < 10 || H[i] >= 345)), 1],
+    ['magenta (hue 290..345, S > 0.35)', idx(i => sat(i) && H[i] >= 290 && H[i] < 345), 1],
+    ['blue (hue 200..260, S > 0.35)', idx(i => sat(i) && H[i] >= 200 && H[i] < 260), 1],
+    ['teal (hue 160..200, S > 0.35)', idx(i => sat(i) && H[i] >= 160 && H[i] < 200), 1],
+    ['green (hue 70..160, S > 0.35)', idx(i => sat(i) && H[i] >= 70 && H[i] < 160), 1],
+    ['yellow (hue 40..70, S > 0.35)', idx(i => sat(i) && H[i] > 40 && H[i] < 70), 1],
+    ['film tab cream (200 < L < 235, 0.2 < S < 0.35)', idx(i => L[i] > 200 && L[i] < 235 && S[i] > 0.2 && S[i] < 0.35), 1]
+  ];
+  for (const [what, got, n] of want) t.eq(got.length, n, what + ': ' + (names(got) || 'none'));
+  t.eq(idx(i => L[i] > 200 && L[i] < 235 && S[i] > 0.2 && S[i] < 0.35)[0], 15, 'the cream is index 15, the reserved repair colour');
+});
+
+group('H-pal-5', 'nearest: idempotent, never 15, the anchors, the ramp, and the test\'s own weighted distance', t => {
+  const n = SB.palette.nearest;
+  for (let i = 0; i < 15; i++) t.eq(n(...palRef.rgb[i]), i, 'nearest(' + SB.palette.NAMES[i] + ') is itself');
+  t.ok(n(...palRef.rgb[15]) !== 15, 'nearest(Film) is not Film (index 15 is never quantized; got ' + SB.palette.NAMES[n(...palRef.rgb[15])] + ')');
+  t.eq(n(255, 0, 0), 9, 'pure red is Brick');
+  t.eq(n(255, 255, 255), 6, 'pure white is Glare');
+  t.eq(n(0, 0, 0), 0, 'pure black is Ink');
+  let prev = -1, mono = true;
+  for (let k = 0; k < 64; k++) { const v = Math.round(k * 255 / 63), q = n(v, v, v); if (palRef.L[q] < prev) mono = false; prev = palRef.L[q]; }
+  t.ok(mono, 'a 64 step black to white ramp quantizes to non decreasing L');
+  /* the oracle: the weighted distance written here; the unweighted metric disagrees on about a fifth of colours */
+  const r = hrand(1313); let agree = 0, fifteen = 0, first = null;
+  for (let k = 0; k < 20000; k++) {
+    const c = [r.int(256), r.int(256), r.int(256)], a = n(...c), b = palRef.nearest(...c);
+    if (a === b) agree++; else if (!first) first = c.join(',') + ' core ' + a + ' test ' + b;
+    if (a === 15) fifteen++;
+  }
+  t.eq(agree, 20000, '20000 seeded colours: nearest equals the test\'s weighted distance' + (first ? ' (first miss ' + first + ')' : ''));
+  t.eq(fifteen, 0, '20000 seeded colours: nearest never returns 15');
+});
+
+group('H-pal-6', 'SAT is the computed S over 0.35; the bands follow the hues of section 7.2', t => {
+  const computed = [...Array(16).keys()].filter(i => palRef.S[i] > 0.35);
+  t.same(Array.from(SB.palette.SAT), computed, 'SAT equals the entries with S over 0.35');
+  const band = h => (h >= 10 && h < 70) ? 0 : (h >= 300 || h < 10) ? 4 : (h >= 160 && h < 260) ? 2 : (h >= 70 && h < 160) ? 3 : -1;
+  for (let i = 0; i < 16; i++) {
+    const want = computed.includes(i) ? band(palRef.H[i]) : -1;
+    t.eq(SB.palette.BAND[i], want, SB.palette.NAMES[i] + ' band (' + (want < 0 ? 'never votes' : SB.palette.BIOMES[want]) + ')');
+  }
 });
 
 /* ================================================================ run */
