@@ -26,7 +26,7 @@
 /* Shutterbug. Colours are the palette's (BUILD-PLAN section 7): Ink #0b0a0f, Soot #1f1a1d, Slate #4a4a52,
    Pewter #8a8a90, Ash #c9c7c0, Paper #f2efe6, Glare #fbfbff, Amber #e07a2b, Sun #f2d13f, Film #f0dcb0. */
 :root { --ink: #0b0a0f; --soot: #1f1a1d; --slate: #4a4a52; --pewter: #8a8a90; --ash: #c9c7c0; --paper: #f2efe6;
-  --glare: #fbfbff; --amber: #e07a2b; --sun: #f2d13f; --film: #f0dcb0; --brick: #c8302f;
+  --glare: #fbfbff; --amber: #e07a2b; --sun: #f2d13f; --film: #f0dcb0; --brick: #c8302f; --lapis: #2f5fd0;
   --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px); }
 * { box-sizing: border-box; }
@@ -94,6 +94,10 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #stage { flex: 0 0 auto; display: flex; justify-content: center; position: relative; touch-action: none; }
 #view { display: block; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; background: var(--ink); }
 #strip { flex: 1 1 auto; min-height: 168px; position: relative; padding-bottom: var(--sab); touch-action: none; }
+/* the frame's Dead Pixel count, handwritten in Lapis (ballpoint on film) in the strip's corner (DESIGN 2, 11; a
+   placeholder at 0 until T2.6's economy) */
+#dp { position: absolute; top: 10px; right: calc(14px + var(--sar)); margin: 0; color: var(--lapis); pointer-events: none;
+  font-family: 'Segoe Print', 'Bradley Hand', 'Chalkboard SE', 'Comic Sans MS', cursive; font-size: 1.05rem; transform: rotate(-4deg); }
 #back { position: absolute; top: 0; left: calc(6px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;
   border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
 #clear, #death { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
@@ -187,6 +191,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       <button id="deathtitle" type="button" data-copy="toTitle"></button></div>
   </div>
   <div id="strip"><button id="back" type="button" data-copy="toTitle"></button>
+    <p id="dp"><span data-copy="dp"></span> <span id="dpn">0</span></p>
     <div id="reserve" aria-hidden="true"></div>
     <div id="rocker" data-aria="move"><i class="zone zl" data-copy="left"></i><i class="gap"></i><i class="zone zr" data-copy="right"></i></div>
     <div id="btnB" class="verb" role="button" data-aria="dive"><span class="glyph" data-copy="btnB"></span></div>
@@ -2096,6 +2101,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   var canvas, ctx, stat, sctx, photo, pctx, worldH = 0, viewH = 640, pulse = 0;
 
   R.init = function () {
+    buildAtlas();
     canvas = document.getElementById('view');
     ctx = canvas.getContext('2d', { alpha: false });
     ctx.imageSmoothingEnabled = false;
@@ -2136,6 +2142,93 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   function css(idx) { return SB.palette.hex(SB.palette.RGB[idx]); }
   function rgb(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
 
+  /* the sprites (section 1.7): one string per frame, rows split by '/', one character per pixel ('.' clear, 0..9 and
+     a..f the palette index); the fences are what the lint and H-spr-1 read. */
+  /* SPRITES BEGIN */
+  var SPRITES = {
+    /* the Shutterbug (DESIGN 2: a thumb sized clay bug), facing right: Sun clay with Walnut flecks, an Ink outline and
+       an Ink feet row, a Glare eye; the atlas mirrors it for the left and paints a Glare copy for the dash's i frames */
+    hero: { w: 12, h: 16, frames: {
+      idle0: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../.00.00.00...',
+      idle1: '.......0..0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../.00.00.00...',
+      run0: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../.0..0..0....',
+      run1: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../...0..0..0../...0..0..0..',
+      run2: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../...0..0..0..',
+      run3: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../...0..0..0../..0..0..0...',
+      jump: '....0...0.../.....0.0..../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../..0..0..0...',
+      fall: '.......0.0../.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../.0...0...0../0...0...0...',
+      cling: '.....0...0../......0.0.../..00000000../.0eeeeeeee0./0eeeeee66e00/0eeeeee60e0./0eeeeeeeee00/0e7eeeeeee0./0eeee7eeee00/0e7eeeeeee0./0eeeeeeeee00/0eeeeeeeee0./.0eeeeeeee0./..00000000../...0..0...../...00.00....',
+      dive: '..0..0..0.../..0..0..0.../...00000000./..0eeeeeeee0/.0eeeeeeeee0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeee66e0/0eeeeeee60e0/.0eeeeeeee0./..00000000../....0..0..../...0....0...',
+      land: '............/......0..0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../.0..0..0..0./00.00.00.00.',
+      dead: '............/........000./...00000000./..0eeeeeeee0/.0eeeeeeeee0/0eeeeee000e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0.0..0.0../.0...0...0..'
+    } },
+    /* the Attic's moth (section 7.3: Ash with an Ink outline, a Glare highlight on each forewing, the Pewter body), two
+       flutter frames */
+    moth: { w: 16, h: 16, frames: {
+      a: '................/.....0....0...../......0..0....../.0000.0330.0000./0444400330044440/0464440330444640/0444440330444440/.04444033044440./..000003300000../...0440330440.../...0440330440.../....00033000..../.......00......./................/................/................',
+      b: '................/................/.....0....0...../......0..0....../......0330....../..000.0330.000../.04440033004440./0446440330446440/0444440330444440/.04444033044440./..000003300000../...0440330440.../....00033000..../.......00......./................/................'
+    } },
+    /* the beacon: the ceiling light, a cord, a Glare shade with an Ink rim, a Sun bulb; Glare rays on the second frame */
+    beacon: { w: 16, h: 16, frames: {
+      a: '.......00......./.......00......./.......00......./.....000000...../....06666660..../...0666666660.../..066666666660../.00000000000000./......0ee0....../.....0eeee0...../......0ee0....../.......00......./................/................/................/................',
+      b: '.......00......./.......00......./.......00......./.....000000...../....06666660..../...0666666660.../..066666666660../.00000000000000./.6....0ee0....6./..6..0eeee0..6../......0ee0....../...6...00...6.../..6..........6../.......66......./.......66......./................'
+    } },
+    /* a film tab (the repair, section 7.3): Film with Ink perforations, an Ink edge under it */
+    tab: { w: 16, h: 5, frames: {
+      a: 'ffffffffffffffff/ff0fff0fff0fff0f/ff0fff0fff0fff0f/ffffffffffffffff/0000000000000000'
+    } }
+  };
+  /* SPRITES END */
+  /* the atlas: every frame rasterised once at boot through one ImageData (so every pixel is exactly its palette colour),
+     each beside its mirror ('<') and, for the hero, a Glare copy ('*', the dash's i frames, QUESTIONS Q47) */
+  var atlas = null, atlasData = null, A = R.atlas = {}, CSS = [];
+  function buildAtlas() {
+    var P = SB.palette, W = 256, x = 0, y = 0, rowH = 0, list = [], i, name, f;
+    for (name in SPRITES) for (f in SPRITES[name].frames) {
+      var sp = SPRITES[name], rows = sp.frames[f].split('/');
+      list.push([name + '.' + f, rows, sp.w, sp.h, 0, 0], [name + '.' + f + '<', rows, sp.w, sp.h, 1, 0]);
+      if (name === 'hero') list.push([name + '.' + f + '*', rows, sp.w, sp.h, 0, 1], [name + '.' + f + '<*', rows, sp.w, sp.h, 1, 1]);
+    }
+    for (i = 0; i < list.length; i++) {
+      if (x + list[i][2] > W) { x = 0; y += rowH + 1; rowH = 0; }
+      A[list[i][0]] = { x: x, y: y, w: list[i][2], h: list[i][3] };
+      x += list[i][2] + 1; rowH = Math.max(rowH, list[i][3]);
+    }
+    atlas = document.createElement('canvas'); atlas.width = W; atlas.height = y + rowH;
+    var actx = atlas.getContext('2d'), img = actx.createImageData(W, atlas.height), d = img.data;
+    for (i = 0; i < list.length; i++) {
+      var it = list[i], r = A[it[0]];
+      for (var ry = 0; ry < it[3]; ry++) for (var rx = 0; rx < it[2]; rx++) {
+        var ch = it[1][ry].charAt(it[4] ? it[2] - 1 - rx : rx);
+        if (ch === '.') continue;
+        var idx = parseInt(ch, 16);
+        if (it[5] && (idx === P.I.SUN || idx === P.I.WALNUT)) idx = P.I.GLARE;
+        var o = ((r.y + ry) * W + r.x + rx) * 4, c = P.RGB[idx];
+        d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+      }
+    }
+    actx.putImageData(img, 0, 0);
+    atlasData = d; R.atlasW = W;
+    for (i = 0; i < P.N; i++) CSS.push(css(i));
+  }
+  /* one sprite at the integer place (and size: the squash and the stretch), from the atlas */
+  function spr(c2, key, dx, dy, dw, dh) { var r = A[key]; c2.drawImage(atlas, r.x, r.y, r.w, r.h, dx, dy, dw || r.w, dh || r.h); }
+  R.opaque = function (key, sx, sy) { var r = A[key]; return atlasData[((r.y + sy) * R.atlasW + r.x + sx) * 4 + 3] === 255; };
+  /* the hero's frame (T0.17): dead, dive, cling, jump or fall in the air, the landing, the run (four frames, each held
+     STEP_HZ / ANIM_FPS steps: 12 fps), the idle with its 1 px wobble every 30 steps */
+  R.heroFrame = function (s) {
+    var h = s.hero, T = SB.TUNING, hold = Math.round(T.STEP_HZ / T.ANIM_FPS);
+    if (s.room.dead) return 'dead';
+    if (h.dive) return 'dive';
+    if (h.wall !== 0 || h.sticky) return 'cling';
+    if (!h.ground) return h.vy < 0 ? 'jump' : 'fall';
+    if (h.squash > 0) return 'land';
+    if (h.anim > 0) return 'run' + (Math.floor((h.anim - 1) / hold) % 4);
+    return 'idle' + (Math.floor(s.frame / (hold * 6)) % 2);
+  };
+  /* what the last frame drew where (canvas px), for SB_DEV's sprite rects and pixel samples; never read by the game */
+  R.drawn = { hero: { key: null, x: 0, y: 0, w: 0, h: 0 }, moths: [], beacon: null, cam: 0, camX: 0 };
+
   /* the static layer (section 1.5 layer 1; DESIGN 11): the photo at 60% contrast through the blends, Ink outlines on
      solids, a Glare over Ink top edge on everything you can stand on, the biome's line under a one way edge, film
      tabs in Film with a perforated edge. Built once per level. */
@@ -2147,7 +2240,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       sctx.fillStyle = rgb(lv.solid[i] ? P.solidColour(lv.pal[i], biome) : P.openColour(lv.pal[i], biome));
       sctx.fillRect(x * C, y * C, C, C);
     }
-    var ink = css(P.I.INK), glare = css(P.I.GLARE), line = css(P.TINT.line[biome]), film = css(P.I.FILM);
+    var ink = css(P.I.INK), glare = css(P.I.GLARE), line = css(P.TINT.line[biome]);
     var open = function (xx, yy) { return xx >= 0 && xx < w && yy >= 0 && yy < h && !lv.solid[yy * w + xx]; };
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
       i = y * w + x;
@@ -2158,10 +2251,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         if (open(x, y + 1)) sctx.fillRect(x * C, y * C + C - 1, C, 1);
         if (open(x, y - 1)) { sctx.fillStyle = glare; sctx.fillRect(x * C, y * C, C, 1); sctx.fillStyle = ink; sctx.fillRect(x * C, y * C + 1, C, 1); }
       } else if (lv.plat[i]) {
-        if (lv.tab && lv.tab[i]) {
-          sctx.fillStyle = film; sctx.fillRect(x * C, y * C, C, 4);
-          sctx.fillStyle = ink; for (var k = 2; k < C; k += 4) sctx.fillRect(x * C + k, y * C + 1, 1, 2);
-        } else {
+        if (lv.tab && lv.tab[i]) spr(sctx, 'tab.a', x * C, y * C);
+        else {
           sctx.fillStyle = glare; sctx.fillRect(x * C, y * C, C, 1);
           sctx.fillStyle = ink; sctx.fillRect(x * C, y * C + 1, C, 1);
           sctx.fillStyle = line; sctx.fillRect(x * C, y * C + 2, C, 1);
@@ -2291,50 +2382,41 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       ctx.fillStyle = css((pulse & 1) ? P.I.GLARE : P.I.SUN);
       ctx.fillRect(ex - 2, ey - 2, C + 4, 2); ctx.fillRect(ex - 2, ey + C, C + 4, 2);
       ctx.fillRect(ex - 2, ey, 2, C); ctx.fillRect(ex + C, ey, 2, C);
-      /* the beacon v0 (T0.16; the pixel sprite is T0.17): the ceiling light in the exit cell, a cord, the shade, the
-         bulb, and four rays on alternate pulses */
-      ctx.fillStyle = css(P.I.INK);
-      ctx.fillRect(ex + 7, ey, 2, 4); ctx.fillRect(ex + 4, ey + 4, 8, 1); ctx.fillRect(ex + 3, ey + 5, 1, 1); ctx.fillRect(ex + 12, ey + 5, 1, 1);
-      ctx.fillRect(ex + 2, ey + 6, 1, 2); ctx.fillRect(ex + 13, ey + 6, 1, 2); ctx.fillRect(ex + 1, ey + 8, 14, 1);
-      ctx.fillRect(ex + 5, ey + 9, 6, 4);
-      ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(ex + 4, ey + 5, 8, 1); ctx.fillRect(ex + 3, ey + 6, 10, 2); ctx.fillRect(ex + 6, ey + 9, 4, 3);
-      if (pulse & 1) { ctx.fillStyle = css(P.I.INK); ctx.fillRect(ex + 1, ey + 11, 2, 1); ctx.fillRect(ex + 13, ey + 11, 2, 1); ctx.fillRect(ex + 3, ey + 14, 1, 2); ctx.fillRect(ex + 12, ey + 14, 1, 2); }
-    }
-    /* the moths (rectangles until T0.17's sprites, 16 by 14): two forewings with an Amber spot over two hindwings, the
-       body, two antennae; the forewings drop 3 px on the down beat, every 8 steps */
+      /* the beacon: the ceiling light sprite in the exit cell, its rays on alternate pulses */
+      var bk = (pulse & 1) ? 'beacon.b' : 'beacon.a';
+      spr(ctx, bk, ex, ey);
+      R.drawn.beacon = { key: bk, x: ex - camX, y: ey, w: C, h: C };
+    } else R.drawn.beacon = null;
+    /* the moths: the sprite's two flutter frames, a beat every 8 steps */
+    var md = R.drawn.moths; md.length = 0;
     for (var m = 0; m < s.enemies.length; m++) {
       var en = s.enemies[m]; if (en.hp <= 0) continue;
-      var mx = en.x >> 8, my = (en.y >> 8) - cam + 1, f = ((en.timer >> 3) & 1) ? 0 : 3;
+      var mx = en.x >> 8, my = (en.y >> 8) - cam;
       if (my < -16 || my > viewH) continue;
-      ctx.fillStyle = css(P.I.INK);
-      ctx.fillRect(mx + 2, my + 8, 5, 5); ctx.fillRect(mx + 9, my + 8, 5, 5);
-      ctx.fillRect(mx, my + 1 + f, 7, 7); ctx.fillRect(mx + 9, my + 1 + f, 7, 7);
-      ctx.fillRect(mx + 6, my + 2, 4, 11); ctx.fillRect(mx + 5, my - 1, 1, 3); ctx.fillRect(mx + 10, my - 1, 1, 3);
-      ctx.fillStyle = css(P.I.GLARE);
-      ctx.fillRect(mx + 3, my + 9, 3, 3); ctx.fillRect(mx + 10, my + 9, 3, 3);
-      ctx.fillRect(mx + 1, my + 2 + f, 5, 5); ctx.fillRect(mx + 10, my + 2 + f, 5, 5);
-      ctx.fillStyle = css(P.I.AMBER); ctx.fillRect(mx + 2, my + 3 + f, 2, 2); ctx.fillRect(mx + 12, my + 3 + f, 2, 2);
-      ctx.fillStyle = css(P.I.PEWTER); ctx.fillRect(mx + 7, my + 3, 2, 9);
+      var mk = ((en.timer >> 3) & 1) ? 'moth.a' : 'moth.b';
+      spr(ctx, mk, mx, my);
+      md.push({ key: mk, x: mx - camX, y: my, w: 16, h: 16 });
     }
-    var hy = heroY - cam;
+    var hy = heroY - cam, h = s.hero, T = SB.TUNING, hd = R.drawn.hero;
     /* a hit's i frames blink the hero at about 4 Hz (8 steps on, 8 off) */
-    R.heroShown = s.room.dead || !(s.hero.iframes > 0 && ((s.hero.iframes >> 3) & 1));
+    R.heroShown = s.room.dead || !(h.iframes > 0 && ((h.iframes >> 3) & 1));
+    hd.key = null;
     if (!R.heroShown) { ctx.restore(); return; }
-    ctx.fillStyle = css(P.I.INK); ctx.fillRect(heroX, hy, K.HERO_W, K.HERO_H);
-    ctx.fillStyle = css(SB.TUNING.HERO_BODY); ctx.fillRect(heroX + 1, hy + 1, K.HERO_W - 2, K.HERO_H - 3);
-    /* the cling pose (an armed slide or a sticky wall; the sprite is T0.17): the wall side thickened to 3 px of Ink, the
-       body pressed flat against the wall; one column in, the eye (the slide faces the wall) sat on the old bar and the
-       pose read as the letter i in t12-cling */
-    if (s.hero.wall !== 0) { ctx.fillStyle = css(P.I.INK); ctx.fillRect(s.hero.wall > 0 ? heroX + K.HERO_W - 3 : heroX, hy, 3, K.HERO_H); }
-    /* the dive pose (the sprite is T0.17): three Ink speed lines trailing above the box and the eye low, looking down;
-       the dash: two Ink streaks trailing behind at mid height */
-    if (s.hero.dive) { ctx.fillStyle = css(P.I.INK); ctx.fillRect(heroX + 2, hy - 5, 1, 4); ctx.fillRect(heroX + 6, hy - 7, 1, 6); ctx.fillRect(heroX + 9, hy - 5, 1, 4); }
-    if (s.hero.dash > 0) {
-      var tx = s.hero.facing > 0 ? heroX - 7 : heroX + K.HERO_W + 1;
-      ctx.fillStyle = css(P.I.INK); ctx.fillRect(tx, hy + 5, 6, 1); ctx.fillRect(tx + (s.hero.facing > 0 ? 2 : 0), hy + 10, 4, 1);
+    /* the dive's three Ink speed lines trailing above, the dash's two streaks behind */
+    if (h.dive) { ctx.fillStyle = CSS[P.I.INK]; ctx.fillRect(heroX + 2, hy - 5, 1, 4); ctx.fillRect(heroX + 6, hy - 7, 1, 6); ctx.fillRect(heroX + 9, hy - 5, 1, 4); }
+    if (h.dash > 0) {
+      var tx = h.facing > 0 ? heroX - 7 : heroX + K.HERO_W + 1;
+      ctx.fillStyle = CSS[P.I.INK]; ctx.fillRect(tx, hy + 5, 6, 1); ctx.fillRect(tx + (h.facing > 0 ? 2 : 0), hy + 10, 4, 1);
     }
-    if (s.room.dead) { ctx.fillStyle = css(P.I.INK); ctx.fillRect(heroX + (s.hero.facing > 0 ? K.HERO_W - 5 : 2), hy + 5, 3, 1); }   /* the eye shut */
-    else { ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(heroX + (s.hero.facing > 0 ? K.HERO_W - 4 : 2), hy + (s.hero.dive ? K.HERO_H - 7 : 4), 2, 2); }
+    /* the sprite: its frame, mirrored to the facing (a cling mirrors to its wall), Glare through the dash's i frames
+       (Q47); the landing squash and the takeoff stretch are offsets of the drawn rect, never the hitbox (Q35) */
+    var fr = R.heroFrame(s), left = fr === 'cling' ? h.wall < 0 : h.facing < 0;
+    var key = 'hero.' + fr + (left ? '<' : '') + (h.dashI > 0 ? '*' : '');
+    var dx = heroX, dy = hy, dw = K.HERO_W, dh = K.HERO_H;
+    if (h.squash > 0) { dx -= 1; dw += 2; dy += T.SQUASH_PX; dh -= T.SQUASH_PX; }
+    else if (h.squash < 0) { dx += 1; dw -= 2; dy -= T.STRETCH_PX; dh += T.STRETCH_PX; }
+    spr(ctx, key, dx, dy, dw, dh);
+    hd.key = key; hd.x = dx - camX; hd.y = dy; hd.w = dw; hd.h = dh; R.drawn.cam = cam; R.drawn.camX = camX;
     ctx.restore();
   };
 })(window.SB);
@@ -2562,6 +2644,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     badPhoto: 'That photo did not open. Try another.',
     photoRoom: 'Your room',
     death: 'The bug fell out of the picture',
+    dp: 'Dead pixels',
     nextRoom: 'Shoot the next room',
     playAgain: 'Play it again'
   });
