@@ -1636,12 +1636,14 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       for (cx = cx0; cx <= cx1 && !landed; cx++) if (solidAt(lv, cx, row)) landed = true;
       var top = row * CS;
       /* a one way top catches only a descending hero whose feet were at or above it, with LAND_OVERLAP of overlap,
-         and never a hold dive (B held) */
+         and never a hold dive (B held); a hero already standing on it keeps its footing while any overlap remains, as
+         on a solid (T0.13a: the bot found walk offs from one way ledges falling a step early, a column short of what
+         the model and a solid ledge give) */
       if (!landed && prevFeet <= top && feet > top && h.dive !== 2) {
         for (cx = cx0; cx <= cx1 && !landed; cx++) {
           if (!platAt(lv, cx, row)) continue;
           var ov = Math.min(h.x + HW, (cx + 1) * CS) - Math.max(h.x, cx * CS);
-          if (ov >= K.OVERLAP_SUB) landed = true;
+          if (ov >= K.OVERLAP_SUB || (h.ground && ov > 0)) landed = true;
         }
       }
       if (landed) { h.y = top - HH; h.vy = 0; return 1; }

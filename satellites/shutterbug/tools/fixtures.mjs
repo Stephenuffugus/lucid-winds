@@ -89,12 +89,12 @@ SYNTH.push(() => {
   plank(g, 0, sx(9), sy(43));         /* S1 10 wide, stand row 42 */
   plank(g, sx(11), sx(19), sy(40));   /* S2  9 wide, stand row 39: from S1's end a 3 up, 2 across jump */
   rect(g, sx(20), sy(26), sx(21), sy(38), C.SOOT);   /* the right pillar, 2 wide by 13 tall */
-  plank(g, sx(8), sx(16), sy(33));    /* S3  9 wide, stand row 32: off the pillar by a wall jump from S2 */
+  plank(g, sx(8), sx(17), sy(33));    /* S3 10 wide, stand row 32: off the pillar by a wall jump from S2, 2 away (T0.13a) */
   plank(g, 0, sx(14), sy(29));        /* S4 15 wide */
   plank(g, sx(3), sx(22), sy(25));    /* S5 20 wide */
   plank(g, 0, sx(11), sy(20));        /* S6 12 wide: a straight drop at x 5 falls through S5 and S4 onto S1 */
   return fixture('shelves-a', 'synthetic',
-    'Six one way planks of width 9 to 20 at varied heights and a 2 wide pillar on the right. Hand listed edges (H-reach-3): S1 (9,42) to S2 (11,39), a 3 up 2 across jump; a wall touch on the pillar from S2 at (19,35..36) (the 2 wide pillar, drawn rows 26..38, smooths to rows 28..36: a two wide column loses two rows at each end); a wall jump off it onto S3 (16,32) (3 away: a wall jump starts touching its wall, so 3 up reaches 3 across, Q64; first listed as (15,32), 4 away); a straight fall from S6 (5,19) through S5 and S4 onto S1 (5,42). Hand listed non edges: a 5 up; a 4 up 5 across. Above S6 the top rows are empty, so the climb is finished by tabs. Mean L about 190, nothing saturated: Frost (Q4). Landmarks: the pillar (the floor row is never one, Q58).',
+    'Six one way planks of width 9 to 20 at varied heights and a 2 wide pillar on the right. Hand listed edges (H-reach-3): S1 (9,42) to S2 (11,39), a 3 up 2 across jump; a wall touch on the pillar from S2 at (19,35..36) (the 2 wide pillar, drawn rows 26..38, smooths to rows 28..36: a two wide column loses two rows at each end); a wall jump off it onto S3 (17,32), 2 away (S3 reaches x 17 since T0.13a: the touch is exact now, armed only with the box flush against the pillar, and the highest contact a jump from S2 arms is (19,35), the apex being 4.35 cells; from there 3 up and 3 across sits on the edge of the WALL table, with no slack for the route; first listed as (15,32), 4 away, then (16,32), 3 away, Q64); a straight fall from S6 (5,19) through S5 and S4 onto S1 (5,42). Hand listed non edges: a 5 up; a 4 up 5 across. Above S6 the top rows are empty, so the climb is finished by tabs. Mean L about 190, nothing saturated: Frost (Q4). Landmarks: the pillar (the floor row is never one, Q58).',
     g, { biome: 'frost', needsCrop: false, tabsMax: 12, exitIsLight: false, platformsMin: 6, landmarksMin: 1 });
 });
 

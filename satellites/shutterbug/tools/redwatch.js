@@ -175,6 +175,10 @@ const MUTANTS = [
      lay a tab (the plan's SHELF_CLOSED, translated to this room; removing each shelf in turn found the essential ones) */
   { name: 'SHELF_CLOSED', task: 'T0.11b', file: 'fixture:sample-room.json', edits: [['"444444444555544444444444",\n      "444444444333344444465664"', '"444444444444444444444444",\n      "444444444444444444465664"']],
     gates: [{ gate: 'harness', only: 'H-rep-1', expect: 'the sample room needs zero tabs' }] },
+  { name: 'OVERLAP_8', task: 'T0.13a', file: 'page', find: 'LAND_OVERLAP_PX: 2,', repl: 'LAND_OVERLAP_PX: 8,',
+    gates: [{ gate: 'harness', only: 'H-bot-1', expect: 'has no macro' }] },
+  { name: 'TOUCH_HEAD_ROW', task: 'T0.13a', file: 'page', find: 'var fc = Math.floor((ny - (HHs >> 1)) / C) * w + (col - dir)', repl: 'var fc = Math.floor((ny - HHs) / C) * w + (col - dir)',
+    gates: [{ gate: 'harness', only: 'H-bot-5', expect: 'every edge has a macro' }] },
   { name: 'DASH_OFF_EDGE', task: 'T0.12b', file: 'page', find: 'var dv = dashClamp(h, lv, K, h.facing * K.DASH_V);', repl: 'var dv = h.facing * K.DASH_V;',
     gates: [{ gate: 'harness', only: 'H-sim-14', expect: 'stops with the leading foot on it' }] },
   { name: 'DIVE_CHAINS_DASH', task: 'T0.12b', file: 'page', find: 'else if (bPressed && startedGrounded && h.dash === 0)', repl: 'else if (bHeld && startedGrounded && h.dash === 0)',

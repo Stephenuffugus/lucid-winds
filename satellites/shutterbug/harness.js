@@ -32,7 +32,7 @@ const FAST = flag('fast');
 const ONLY = opt('only');
 const ASSERT_FLOOR = 4150;              /* raised per task: the count a full run must reach */
 
-const LATER = { 'record-json': 'T0.15', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
+const LATER = { 'record-json': 'T0.15', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
 
@@ -673,12 +673,12 @@ group('H-pipe-5', 'landmarks: at most 3, each at least 8 cells, by size, disjoin
     t.eq(overlap, 0, where + ': landmarks share no cell');
   }
   const three = SB.pipeline.build(labRecord({ 40: '411114444111144441111444', 41: '411114444111144441111444', 42: '411114444111144441111444',
-    43: '411114444111144441111444', 44: '411114444111144441111444', 45: '411114444111144441111444', 46: '411114444111144441111444' }), {});
+    43: '411114444111144441111444', 44: '411114444111144441111444', 45: '411114444111144441111444', 46: '411114444111144441111444' }), { stage: 'A' });   /* landmarks are pipeline A's; the route is not this lab's business */
   t.eq(three.landmarks.length, 3, 'three separate blocks standing on the floor are three landmarks (sizes ' + three.landmarks.map(l => l.size).join('/') + '): the floor row joins nothing (Q58)');
   t.ok(three.landmarks.every(l => l.bbox[3] < three.h - 1), 'no landmark reaches into the floor row');
   /* DESIGN 6.5 is 4 connected: two blocks that meet only at a corner are two landmarks */
   const diag = SB.pipeline.build(labRecord({ 10: '411114444444444444444444', 11: '411114444444444444444444', 12: '411114444444444444444444', 13: '411114444444444444444444',
-    14: '444441111444444444444444', 15: '444441111444444444444444', 16: '444441111444444444444444', 17: '444441111444444444444444' }), {});
+    14: '444441111444444444444444', 15: '444441111444444444444444', 16: '444441111444444444444444', 17: '444441111444444444444444' }), { stage: 'A' });
   t.eq(diag.landmarks.length, 2, 'two blocks meeting only at a corner are two landmarks (4 connected; sizes ' + diag.landmarks.map(l => l.size).join('/') + ')');
   const g = fixture('one-giant-landmark').fx.expect.giant;
   const drawn = (g.x1 - g.x0 + 1) * (g.y1 - g.y0 + 1);
@@ -1391,7 +1391,9 @@ group('H-fuzz-1', '2000 seeded random frames per fixture: never in a solid, neve
         let support = false;
         if (Number.isInteger(row)) for (let cx = cx0; cx <= cx1; cx++) {
           if (row >= lv.h || lv.solid[row * lv.w + cx]) support = true;
-          else if (lv.plat[row * lv.w + cx] && Math.min(h.x + HW, (cx + 1) * CS) - Math.max(h.x, cx * CS) >= K.OVERLAP_SUB) support = true;
+          /* any overlap: a hero standing on a one way keeps its footing to its last pixel (T0.13a); landing on one from
+             the air takes LAND_OVERLAP, which H-sim-4 holds */
+          else if (lv.plat[row * lv.w + cx] && Math.min(h.x + HW, (cx + 1) * CS) - Math.max(h.x, cx * CS) > 0) support = true;
         }
         if (!support) { floating++; if (!first) first = 'standing on nothing at step ' + k; }
       }
@@ -1901,8 +1903,9 @@ group('H-reach-3', 'shelves-a: the hand listed edges exist and the hand listed n
   t.ok(hasEdge(g, at(9, 42), at(11, 39), 'JUMP'), 'S1 (9, 42) to S2 (11, 39): a 3 up, 2 across JUMP');
   const touched = [35, 36].filter(y => [...Array(10).keys()].some(k => hasEdge(g, at(10 + k, 39), cnode(g, 19, y, 1), 'WALLTOUCH')));
   t.same(touched, [35, 36], 'from S2 a WALLTOUCH onto the pillar\'s left side at (19, 35) and (19, 36)');
-  /* (3 away since T0.12a's flush wall stance: 3 up reaches 3 across, Q64; the design's (15, 32) is 4 away) */
-  t.ok(hasEdge(g, cnode(g, 19, 35, 1), at(16, 32), 'WALLJUMP'), 'a WALLJUMP off the pillar at (19, 35) onto S3 at (16, 32): 3 away, 3 up');
+  /* 2 away since T0.13a (S3 widened to x 17): the exact touch's highest contact from S2 is (19, 35), and 3 up 3 across
+     is the WALL table's edge, with no slack for the route; (Q64: a wall jump starts touching its wall) */
+  t.ok(hasEdge(g, cnode(g, 19, 35, 1), at(17, 32), 'WALLJUMP'), 'a WALLJUMP off the pillar at (19, 35) onto S3 at (17, 32): 2 away, 3 up');
   t.ok(hasEdge(g, at(5, 19), at(5, 42), 'FALL'), 'a straight FALL from S6 (5, 19) through S5 and S4 onto S1 (5, 42)');
   const bad = edgesOf(g).filter(e => e.kind === 'JUMP' && (e.dy >= 5 || (e.dy === 4 && e.dx >= 5)));
   t.eq(bad.length, 0, 'no JUMP is 5 up, and none is 4 up and 5 across (' + bad.slice(0, 3).map(e => gname(g, e.from) + ' to ' + gname(g, e.to)).join(', ') + ')');
@@ -2345,6 +2348,7 @@ const BOT = (() => {
   const stopDist = v => { let d = 0; v = Math.abs(v); while (v > 0) { v = Math.max(0, v - K.DECEL); d += v; } return d; };
   const TAP_MOVE = K.RUN + stopDist(K.RUN);           /* one step of the rocker from rest, then the decel: 6.56 px */
   const centreCol = s => Math.floor((s.hero.x + (HW >> 1)) / CS), feetRow = s => Math.floor((s.hero.y + HH - 1) / CS);
+  const centreRow = s => Math.floor((s.hero.y + (HH >> 1)) / CS);   /* a contact's row is the row holding the box's centre (core-reach's scan) */
   /* settle (section 5.2 step 3): from rest, a step of the rocker toward the cell's centre while that tap would end
      nearer than staying; while moving toward it, the rocker held until the decel's stop comes within 2 px; moving
      away, released. Done when grounded and still with the centre within half a tap of the cell's centre; at most 30
@@ -2370,14 +2374,19 @@ const BOT = (() => {
     const c = (v - g.n) >> 1, sd = (v - g.n) & 1;
     return { v, contact: true, c, cx: c % W, cy: Math.floor(c / W), side: sd ? 1 : -1, sticky: !!g.sticky[2 * c + sd] };
   };
-  const atContact = (s, t) => { const h = s.hero; return !h.ground && h.wall === t.side && (t.sticky ? h.sticky === 1 : h.sticky === 0) && centreCol(s) === t.cx && feetRow(s) === t.cy; };
+  const atContact = (s, t) => { const h = s.hero; return !h.ground && h.wall === t.side && (t.sticky ? h.sticky === 1 : h.sticky === 0) && centreCol(s) === t.cx && centreRow(s) === t.cy; };
   /* run one candidate on a clone; a contact target must be met during the words, a standable one rests on its row
      over its column by LAND_OVERLAP after them and then settles into it */
   function attempt(s0, words, t) {
     const s = cloneState(s0), used = [];
-    let last = 0; for (let k = 0; k < words.length; k++) if (words[k]) last = k;
-    for (let k = 0; k < words.length; k++) {
-      SB.sim.step(s, words[k]); used.push(words[k]);
+    /* a macro is a word list, or a function of the state and the step (a player watching the hero to time a release);
+       a function runs for up to its .len steps */
+    const fn = typeof words === 'function', n = fn ? words.len : words.length;
+    let last = 0; if (!fn) for (let k = 0; k < n; k++) if (words[k]) last = k;
+    for (let k = 0; k < n; k++) {
+      const word = fn ? words(s, k) : words[k];
+      SB.sim.step(s, word); used.push(word);
+      if (fn && word) last = k;
       if (s.room.cleared) return { ok: true, s, used };
       if (t.contact) { if (atContact(s, t)) return { ok: true, s, used }; continue; }
       if (k >= last && s.hero.ground && s.hero.vx === 0) break;
@@ -2397,10 +2406,11 @@ const BOT = (() => {
     if (e.kind === 'WALK') return [1, 2, 3, 4].map(n => Array.from({ length: n }, () => rockerOf(e.dir)));   /* the settle leaves the hero up to half a tap off centre */
     if (e.kind === 'JUMP' || e.kind === 'JUMP_DOWN') {
       const profs = e.kind === 'JUMP' ? [e.profile] : ['FULL', 'MID', 'TAP'], list = [];
-      profs.forEach((p, pi) => A_RANGE[p].forEach((a, ai) => { for (let delay = 0; delay <= 8; delay++) for (let hold = 0; hold <= 40; hold++) list.push({ a, delay, hold, prior: Math.abs(hold - est) + 2 * delay + 3 * ai + 6 * pi }); }));
+      const most = Math.max(40, est + 12);
+      profs.forEach((p, pi) => A_RANGE[p].forEach((a, ai) => { for (let delay = 0; delay <= 8; delay++) for (let hold = 0; hold <= most; hold++) list.push({ a, delay, hold, prior: Math.abs(hold - est) + 2 * delay + 3 * ai + 6 * pi }); }));
       return ranked(list, c => c.prior).map(c => jumpWords(c.a, e.dir, c.delay, c.hold));
     }
-    if (e.kind === 'FALL' && e.dir === 0) return Array.from({ length: 40 }, (_, i) => M_DIVE(i + 1, true, LEN));
+    if (e.kind === 'FALL' && e.dir === 0) { const most = Math.ceil(-e.dy * CS / K.TERM) + 6; return Array.from({ length: most }, (_, i) => M_DIVE(i + 1, true, Math.max(LEN, most + 60))); }
     if (e.kind === 'FALL') {
       const walkEst = Math.round((14 + (e.dx - 1) * 16) * 256 / K.RUN), list = [];
       for (let hold = 1; hold <= 60; hold++) list.push({ hold, prior: Math.abs(hold - walkEst) });
@@ -2412,7 +2422,9 @@ const BOT = (() => {
       return ranked(list, c => c.prior).map(c => Array.from({ length: LEN }, (_, k) =>
         (c.p !== 'WALKOFF' && k < A_FRAMES[c.p] ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k >= c.delay ? rockerOf(e.dir) : 0)));
     }
-    if (e.kind === 'SLIDE') return [Array.from({ length: 4 * LEN }, () => rockerOf(e.dir))];
+    /* SLIDE: toward the wall while the slide is armed, released when it is not (where the wall ends a held rocker would
+       carry the hero into the open column, which no player does) */
+    if (e.kind === 'SLIDE') { const m = (s, k) => (k === 0 || s.hero.wall === e.dir ? rockerOf(e.dir) : 0); m.len = 4 * LEN; return [m]; }
     if (e.kind === 'WALLJUMP') {
       const toward = -e.dir, list = [], lockTravel = SB.TUNING.WALL_JUMP_LOCK * K.WALL_PUSH;
       const holdEst = Math.max(0, Math.round((e.dx * CS - lockTravel) / K.RUN));
@@ -2554,6 +2566,51 @@ group('H-bot-2', 'the walker reaches the exit on every built level; the walk\'s 
   console.log('  info  the level length proxy over ' + secs.length + ' walks: median ' + med.toFixed(1) + ' s, p95 ' + p95.toFixed(1) + ' s (an optimal walk; a player takes two to four times longer; DESIGN 5.1 aims at 60 to 120 s)' + (med < 15 || med > 60 ? '  FLAG: the median is outside 15 to 60 s' : ''));
 });
 
+/* the edges of the whole graph, each from the hero placed on its source (section 5.2 step 6): 20 drawn per level in
+   the fast run (the harness's own generator seeded seedOf(record) ^ 0x5bd1e995), every edge under --all-edges */
+function botEdges(sample) {
+  const out = { tried: 0, ok: 0, misses: [], placeMiss: [], byKind: {}, levels: 0 };
+  const memo = new Map(), stats = { tries: 0, found: 0, memo: 0, memoMiss: 0 };
+  for (const run of botWalks().runs) {
+    if (run.skipped || run.same) continue;
+    const lv = run.lv, g = SB.reach.graph(lv);
+    let list = [];
+    for (let v = 0; v < g.adj.length; v++) for (const e of g.adj[v] || []) list.push(e);
+    if (sample) {
+      const r = hrand((SB.record.seedOf(lv.rec) ^ 0x5bd1e995) >>> 0), pick = [];
+      for (let k = 0; k < sample && list.length; k++) pick.push(list.splice(r.int(list.length), 1)[0]);
+      list = pick;
+    }
+    out.levels++;
+    const placed = new Map();
+    for (const e of list) {
+      if (!placed.has(e.from)) placed.set(e.from, BOT.place(lv, g, e.from));
+      const s0 = placed.get(e.from), kind = e.kind + (e.kind === 'FALL' && e.dir === 0 ? ' (dive)' : '');
+      const bk = out.byKind[kind] || (out.byKind[kind] = { tried: 0, ok: 0 });
+      out.tried++; bk.tried++;
+      const src = BOT.nodeInfo(g, e.from), t = BOT.nodeInfo(g, e.to);
+      if (!s0) { out.placeMiss.push(run.tag + ': ' + (src.contact ? 'the contact' : 'the cell') + ' (' + src.cx + ', ' + src.cy + ')' + (src.contact ? ' side ' + src.side : '') + ' cannot be placed'); continue; }
+      const r = BOT.solve(s0, e, g, memo, stats);
+      if (r.ok) { out.ok++; bk.ok++; continue; }
+      out.misses.push(run.tag + ': ' + kind + (e.profile ? ' ' + e.profile : '') + ' dir ' + e.dir + ' dx ' + e.dx + ' dy ' + e.dy + ' from ' + (src.contact ? 'c' : '') + '(' + src.cx + ', ' + src.cy + ') to ' + (t.contact ? 'c' : '') + '(' + t.cx + ', ' + t.cy + '), ' + r.tried + ' candidates');
+    }
+  }
+  out.stats = stats;
+  return out;
+}
+function reportEdges(t, res, what) {
+  const kinds = Object.entries(res.byKind).map(([k, v]) => k + ' ' + v.ok + '/' + v.tried).join(', ');
+  console.log('  info  ' + what + ': ' + res.ok + ' of ' + res.tried + ' edges performed over ' + res.levels + ' levels (' + kinds + '); ' + res.stats.tries + ' candidates run, ' + res.stats.memo + ' memo hits');
+  t.ok(res.placeMiss.length === 0, what + ': every source the edges leave from can be placed (' + res.placeMiss.length + ' cannot' + (res.placeMiss.length ? ': ' + res.placeMiss.slice(0, 4).join('; ') : '') + ')');
+  t.ok(res.misses.length === 0, what + ': every edge has a macro (' + res.misses.length + ' have none' + (res.misses.length ? ': ' + res.misses.slice(0, 6).join('; ') + (res.misses.length > 6 ? '; ...' : '') : '') + ')');
+}
+group('H-bot-5', '20 random edges per level drawn from the whole graph, each performed from the hero placed on its source', t => {
+  reportEdges(t, botEdges(20), 'the random edges');
+});
+if (flag('all-edges')) group('H-bot-6', 'every edge of every graph has a macro (--all-edges)', t => {
+  reportEdges(t, botEdges(0), 'every edge');
+});
+
 /* ================================================================ run */
 const t0 = Date.now();
 const chosen = ONLY ? GROUPS.filter(g => g.id.startsWith(ONLY)) : GROUPS;
@@ -2568,7 +2625,7 @@ for (const g of chosen) {
   const ms = Date.now() - g0;
   console.log((t.bad ? 'FAIL ' : 'ok   ') + g.id.padEnd(12) + String(t.n).padStart(6) + ' assertions' + (t.bad ? '  ' + t.bad + ' failed' : '') + (ms > 500 ? '  ' + ms + ' ms' : '') + '  ' + g.title);
 }
-if (FAST) console.log('\n--fast: --all-edges and --economy are not run here (they do not exist yet before T0.13a and M2)');
+if (FAST || !flag('all-edges')) console.log('\n' + (FAST ? '--fast: ' : '') + '--all-edges (H-bot-6, the slow gate harness-all) is not run here; --economy arrives in M2');
 console.log('\n' + total + ' assertions in ' + chosen.length + ' groups, ' + ((Date.now() - t0) / 1000).toFixed(1) + ' s');
 if (failLines.length) {
   console.log('\n' + failLines.join('\n'));
