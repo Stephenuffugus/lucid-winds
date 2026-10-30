@@ -754,28 +754,155 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false
     };
 
-    /* the exit (section 3.7, DESIGN 6.6): the reachable standable cell of the top EXIT_ROWS rows with the greatest
-       reach distance from spawn, except that the light wins when its farthest reachable cell is within
-       EXIT_LIGHT_SLACK of that (Q11); every tie to the lowest index. A room whose top rows nothing reaches keeps the
-       light's lowest standable row, else the brightest standable cell of the first top row with one, until repair
-       (T0.11a) lays the tabs that reach it. */
-    var exit = -1, d = SB.reach.distances(SB.reach.graph(level), spawn), maxD = -1;
-    for (i = 0; i < T.EXIT_ROWS * w && i < n; i++) if (standable(i) && d[i] > maxD) { maxD = d[i]; exit = i; }
-    if (exit >= 0 && light) {
-      var lit = Array.from(light).sort(function (a, b) { return a - b; }), lc = -1;
-      for (q = 0; q < lit.length; q++) if (standable(lit[q]) && d[lit[q]] >= 0 && (lc < 0 || d[lit[q]] > d[lc])) lc = lit[q];
-      if (lc >= 0 && d[lc] >= maxD - T.EXIT_LIGHT_SLACK) exit = lc;
-    }
-    if (exit < 0 && light) for (q = 0; q < light.length; q++) if (standable(light[q]) && (exit < 0 || Math.floor(light[q] / w) > Math.floor(exit / w) || (Math.floor(light[q] / w) === Math.floor(exit / w) && light[q] < exit))) exit = light[q];
-    if (exit < 0) for (y = 0; y < T.EXIT_ROWS && exit < 0; y++) {
-      var bl = -1;
-      for (x = 0; x < w; x++) { var c2 = y * w + x; if (standable(c2) && (bl < 0 || L[c2] > L[bl])) bl = c2; }
-      exit = bl;
-    }
+    /* DESIGN 6.7: repair with film tabs until the exit is reached and REPAIR_REACH_FRAC of the standable cells are;
+       the exit then by reach distance (section 3.7). A room that cannot be repaired is an honest needsCrop. */
+    var bare = landmarks.length === 0, anyPlat = false;
+    for (i = 0; i < n && !anyPlat; i++) if (plat[i]) anyPlat = true;
+    var fixed = repair(level, light, landmarks);
+    if (fixed.needsCrop) return fixed;
+    var exit = fixed.exit;
+    /* the default spread (DESIGN 6.11): a room with no landmark and no platform got its climb from the stair's two
+       legs; a speck slot and a fodder slot are reserved as data for M1 */
+    if (bare && !anyPlat) level.repair.spread = spreadSlots(level, fixed.d);
     level.exit = exit;
     /* when the exit is the light the light's cells are relit around it; otherwise the light stays backdrop */
     level.beacon = { idx: exit, cells: light && exit >= 0 && light.indexOf(exit) >= 0 ? Int32Array.from(light) : new Int32Array(0) };
     return level;
+  }
+
+  /* the exit (section 3.7, DESIGN 6.6): the reachable standable cell of the top EXIT_ROWS rows with the greatest
+     reach distance from spawn, the light winning when its own farthest reachable cell is within EXIT_LIGHT_SLACK (Q11);
+     every tie to the lowest index; -1 when the top rows hold no reached standable cell */
+  function exitByReach(level, light, d) {
+    var T = SB.TUNING, w = level.w, exit = -1, maxD = -1, i, q;
+    for (i = 0; i < T.EXIT_ROWS * w; i++) if (standableIn(level, i) && d[i] > maxD) { maxD = d[i]; exit = i; }
+    if (exit >= 0 && light) {
+      var lit = Array.from(light).sort(function (a, b) { return a - b; }), lc = -1;
+      for (q = 0; q < lit.length; q++) if (standableIn(level, lit[q]) && d[lit[q]] >= 0 && (lc < 0 || d[lit[q]] > d[lc])) lc = lit[q];
+      if (lc >= 0 && d[lc] >= maxD - T.EXIT_LIGHT_SLACK) exit = lc;
+    }
+    return exit;
+  }
+  function standableIn(level, c) { var w = level.w; return c >= 0 && c + w < w * level.h && !level.solid[c] && (level.solid[c + w] === 1 || level.plat[c + w] === 1); }
+
+  /* DESIGN 6.7 and section 3.7: each pass lays at most TAB_MAX film tabs (2 wide one ways) along a stair, TAB_STAIR_ACROSS
+     across and TAB_STAIR_UP up per step, turning back at the room's sides, from the reached standable cell nearest the
+     target: an unreached exit candidate (the light's, else the highest), or the top rows when none is standable, or the
+     largest unreached mass when too little is reached. Never on a landmark cell nor within 1 cell of a landmark top. Up
+     to REPAIR_PASSES passes (each pass's 12 is DESIGN's "max 12 tabs"; the 15% cap bounds the total); needsCrop when the
+     tabs would change more than REPAIR_MAX_CHANGE of the cells or the passes run out. */
+  function repair(level, light, landmarks) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k, pass, tabs = 0;
+    var near = new Uint8Array(n);                     /* landmark cells and every cell within 1 of a landmark top */
+    for (k = 0; k < landmarks.length; k++) for (var j = 0; j < landmarks[k].cells.length; j++) {
+      var c = landmarks[k].cells[j], cx = c % w, cy = (c - cx) / w;
+      near[c] = 1;
+      if (cy === 0 || !level.solid[c - w]) for (var ox = -1; ox <= 1; ox++) for (var oy = -1; oy <= 1; oy++) {
+        var xx = cx + ox, yy = cy + oy; if (xx >= 0 && xx < w && yy >= 0 && yy < h) near[yy * w + xx] = 1;
+      }
+    }
+    for (pass = 0; ; pass++) {
+      var g = SB.reach.graph(level), d = SB.reach.distances(g, level.spawn), frac = SB.reach.reachableFrac(g, d);
+      var exit = exitByReach(level, light, d);
+      if (exit >= 0 && frac >= T.REPAIR_REACH_FRAC) {
+        level.repair.tabs = tabs; level.repair.passes = pass; level.repair.changedFrac = 2 * tabs / n;
+        return { exit: exit, d: d };
+      }
+      if (pass >= T.REPAIR_PASSES) return { needsCrop: true, why: 'unreachable', detail: 'repair ran ' + pass + ' passes, ' + tabs + ' tabs, and the exit is ' + (exit < 0 ? 'unreached' : 'reached with ' + Math.round(frac * 100) + '% of the room') };
+      /* the target */
+      var tx = -1, ty = -1, best = -1;
+      if (exit < 0) {
+        if (light) for (k = 0; k < light.length; k++) if (standableIn(level, light[k]) && d[light[k]] < 0 && (best < 0 || light[k] < best)) best = light[k];
+        for (i = 0; i < T.EXIT_ROWS * w && best < 0; i++) if (standableIn(level, i) && d[i] < 0) best = i;
+        if (best >= 0) { tx = best % w; ty = (best - tx) / w; } else ty = T.EXIT_ROWS - 1;
+      } else {
+        var mass = largestUnreached(level, d);
+        tx = mass % w; ty = (mass - tx) / w;
+      }
+      /* the frontier: the reached standable cell nearest the target (to the top rows: the highest, then the lowest index) */
+      var fr = -1, fd = 0;
+      for (i = 0; i < n; i++) {
+        if (!(standableIn(level, i) && d[i] >= 0)) continue;
+        var ix = i % w, iy = (i - ix) / w, dd = tx < 0 ? iy * w * w : (ix - tx) * (ix - tx) + (iy - ty) * (iy - ty);
+        if (fr < 0 || dd < fd) { fr = i; fd = dd; }
+      }
+      if (fr < 0) return { needsCrop: true, why: 'unreachable', detail: 'nothing is reached from spawn' };
+      var laid = stair(level, near, fr % w, Math.floor(fr / w), tx, ty);
+      tabs += laid;
+      if (2 * tabs / n > T.REPAIR_MAX_CHANGE) return { needsCrop: true, why: 'unreachable', detail: 'repair would change ' + Math.round(200 * tabs / n) + '% of the cells' };
+      if (!laid) return { needsCrop: true, why: 'unreachable', detail: 'no tab fits on the stair from the frontier' };
+    }
+  }
+  /* the largest connected mass of unreached standable cells (4 connected through standable cells; ties to the lowest
+     first cell): its lowest index */
+  function largestUnreached(level, d) {
+    var w = level.w, n = w * level.h, seen = new Uint8Array(n), bestN = 0, bestC = -1, i;
+    for (i = 0; i < n; i++) {
+      if (seen[i] || d[i] >= 0 || !standableIn(level, i)) continue;
+      var stack = [i], cnt = 0; seen[i] = 1;
+      while (stack.length) {
+        var c = stack.pop(), x = c % w; cnt++;
+        var nb = [x > 0 ? c - 1 : -1, x < w - 1 ? c + 1 : -1, c - w, c + w];
+        for (var k = 0; k < 4; k++) { var q = nb[k]; if (q >= 0 && q < n && !seen[q] && d[q] < 0 && standableIn(level, q)) { seen[q] = 1; stack.push(q); } }
+      }
+      if (cnt > bestN) { bestN = cnt; bestC = i; }
+    }
+    return bestC;
+  }
+  /* one pass's stair from (x, y) toward (tx, ty) (tx -1: up for the top rows), at most TAB_MAX tabs; returns the number
+     laid. A tab is two one way cells under the next standing cell, along the travel direction. Each step tries the
+     stair's own hop (TAB_STAIR_ACROSS across, TAB_STAIR_UP up) first, then nearer hops inside the forgiving cone, the
+     other way when the way on is walled (a block, a landmark or a room side): the stair turns back like a zig zag. */
+  var HOPS = [[3, 3], [2, 3], [4, 3], [3, 2], [2, 2], [4, 2], [1, 3], [1, 2], [5, 2], [0, 3], [0, 2]];
+  function stair(level, near, x, y, tx, ty) {
+    var T = SB.TUNING, w = level.w, h = level.h, laid = 0, dir = tx < 0 ? (x < w / 2 ? 1 : -1) : tx > x ? 1 : tx < x ? -1 : (x < w / 2 ? 1 : -1);
+    /* a tab cell: open, not already a one way, not on or by a landmark top, and never directly on another one way */
+    var free = function (cx, cy) { return cx >= 0 && cx < w && cy >= 1 && cy < h - 1 && !level.solid[cy * w + cx] && !level.plat[cy * w + cx] && !level.plat[(cy + 1) * w + cx] && !near[cy * w + cx]; };
+    /* a hop the reach model itself admits (FULL, MID, TAP; the immediate or the late corridor open, no one way catching
+       its descent first), so every stair is a chain of graph edges by construction */
+    var tb = SB.reach.tables(SB.K, level.biome | 0), JP = ['FULL', 'MID', 'TAP'];
+    var S = function (cx, cy) { return cx < 0 || cx >= w || cy < 0 || cy >= h || level.solid[cy * w + cx] === 1; };
+    var hop = function (sx, sy, dd, ax, ay) {
+      for (var q = 0; q < JP.length; q++) {
+        var pr = tb.profiles[JP[q]], cands = pr.maxAcross[ay] >= ax ? pr.paths[ax + ',' + ay] || [] : [];
+        for (var c = 0; c < cands.length; c++) {
+          var p = cands[c], ok = true, k;
+          for (k = 0; k < p.cells.length && ok; k++) if (S(sx + dd * p.cells[k][0], sy - p.cells[k][1])) ok = false;
+          for (k = 0; k < p.catches.length && ok; k++) { var qx = sx + dd * p.catches[k][0], qy = sy - p.catches[k][1]; if (qx >= 0 && qx < w && qy >= 0 && qy < h && level.plat[qy * w + qx]) ok = false; }
+          if (ok) return true;
+        }
+      }
+      return false;
+    };
+    while (laid < T.TAB_MAX && y > ty) {
+      if (tx >= 0 && Math.abs(tx - x) <= T.TAB_STAIR_ACROSS && y - ty <= T.TAB_STAIR_UP) break;   /* the target is one hop away */
+      var placed = false;
+      for (var turn = 0; turn < 2 && !placed; turn++) {
+        var dd = turn ? -dir : dir;
+        for (var hh = 0; hh < HOPS.length && !placed; hh++) {
+          var ax = HOPS[hh][0] * (T.TAB_STAIR_ACROSS / 3), ay = HOPS[hh][1] * (T.TAB_STAIR_UP / 3);
+          var px = x + dd * ax, py = Math.max(ty, y - ay);
+          if (px < 0 || px >= w || py < 0 || py >= y || level.solid[py * w + px] || level.plat[py * w + px]) continue;   /* never inside another tab */
+          var second = px + dd >= 0 && px + dd < w ? px + dd : px - dd;
+          if (!free(px, py + 1) || !free(second, py + 1) || S(second, py) || level.plat[py * w + second]) continue;
+          if (!hop(x, y, ax === 0 ? -1 : dd, ax, y - py)) continue;
+          level.plat[(py + 1) * w + px] = 1; level.tab[(py + 1) * w + px] = 1;
+          level.plat[(py + 1) * w + second] = 1; level.tab[(py + 1) * w + second] = 1;
+          x = px; y = py; dir = dd; laid++; placed = true;
+        }
+      }
+      if (!placed) break;
+    }
+    return laid;
+  }
+  /* the default spread's reserved slots: a speck on the middle tab of the stair, fodder on the reached floor cell
+     farthest from spawn */
+  function spreadSlots(level, d) {
+    var w = level.w, n = w * level.h, tops = [], fod = -1, i;
+    for (i = 0; i < n - w; i++) if (level.tab[i + w] && !level.tab[i] && standableIn(level, i) && d[i] >= 0 && (i % w === 0 || !level.tab[i + w - 1] || tops.indexOf(i - 1) < 0)) tops.push(i);
+    var sy = Math.floor(level.spawn / w) * w;
+    for (i = sy; i < sy + w; i++) if (standableIn(level, i) && d[i] >= 0 && i !== level.spawn && (fod < 0 || Math.abs(i - level.spawn) > Math.abs(fod - level.spawn))) fod = i;
+    return { speck: tops.length ? tops[tops.length >> 1] : -1, fodder: fod };
   }
 
   /* The room as text, one line per row: # solid, = one way, ~ slick, | sticky, . open, S spawn, X exit, T film tab,

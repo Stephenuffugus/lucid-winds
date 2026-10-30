@@ -143,9 +143,9 @@ for (const [name, p] of [['noise-s1', 0.15], ['noise-s2', 0.35], ['noise-s3', 0.
 
 SYNTH.push(() => {
   const g = grid(C.ASH);
-  for (let row = 5; row < H - 2; row += 3) { const x0 = (row * 7) % 12, x1 = Math.min(W - 1, x0 + 9); rect(g, x0, row - 1, x1, row - 1, C.PAPER); rect(g, x0, row, x1, row, C.PEWTER); }
+  for (let row = 4; row < H - 2; row += 3) { const x0 = (row * 7) % 12, x1 = Math.min(W - 1, x0 + 9); rect(g, x0, row - 1, x1, row - 1, C.PAPER); rect(g, x0, row, x1, row, C.PEWTER); }
   return fixture('shelves-b', 'synthetic',
-    'A plank every third row (Paper over Pewter, ten wide, staggered): a ladder of one ways three rows apart all the way up, climbable by jumps alone. The top plank is at row 5; the exit stands on it. Each plank\'s Pewter row is a one row solid line at the clamped threshold (139 under 140), which the smoothing erases, so each plank is a one way. No landmark: nothing solid survives but the forced floor, and the floor row is never a landmark (Q58). Mean L about 190, nothing saturated: Frost.',
+    'A plank every third row (Paper over Pewter, ten wide, staggered): a ladder of one ways three rows apart all the way up, climbable by jumps alone. The top plank is at row 4, so its standing row 3 is inside the exit window (the top four rows, 0..3); the exit stands on it. (First drawn from row 5, whose standing row 4 sits one under the window: repair laid a tab to reach it.) Each plank\'s Pewter row is a one row solid line at the clamped threshold (139 under 140), which the smoothing erases, so each plank is a one way. No landmark: nothing solid survives but the forced floor, and the floor row is never a landmark (Q58). Mean L about 190, nothing saturated: Frost.',
     g, { biome: 'frost', needsCrop: false, tabsMax: 0, exitIsLight: false, platformsMin: 14, landmarksMin: 0 });
 });
 
