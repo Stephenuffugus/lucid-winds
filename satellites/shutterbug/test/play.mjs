@@ -103,9 +103,9 @@ try {
   /* two long tasks of the test's own, so the window has a frame owing two or more steps and one over the 100 ms clamp
      (a stall), whatever the machine's own frame rate: the accumulator's every path is exercised */
   await page.waitForFunction(f => window.SB_DEV.frames() >= f + 6, { timeout: 30000, polling: 20 }, a0.f);
-  await page.evaluate(() => { const t = performance.now(); while (performance.now() - t < 45); });
+  await page.evaluate(() => { const t = performance.now(); while (performance.now() - t < 75); });
   await page.waitForFunction(f => window.SB_DEV.frames() >= f + 12, { timeout: 30000, polling: 20 }, a0.f);
-  await page.evaluate(() => { const t = performance.now(); while (performance.now() - t < 140); });
+  await page.evaluate(() => { const t = performance.now(); while (performance.now() - t < 160); });
   await page.waitForFunction(f => window.SB_DEV.frames() >= f + 40, { timeout: 60000, polling: 20 }, a0.f);
   await page.keyboard.up('ArrowLeft');
   const a1 = await page.evaluate(() => { window.SB_DEV.hold(true); window.__log = false; const p = window.SB_DEV.perf(); return { f: window.SB_DEV.frames(), loop: p.loop, frames: p.frames, t: window.__t.slice(), m0: window.__m0, m1: window.__t.length, rec: window.SB_DEV.recording() }; });
@@ -118,19 +118,20 @@ try {
      frame boundary); the page must have run exactly that many steps, frame by frame */
   const STEP = 1000 / 60, PHASE = STEP / 4, dSteps = a1.loop.accSteps - a0.loop.accSteps;
   const pageN = new Map(a1.frames.map(([t, n]) => [t, n]));
-  let acc = PHASE, want = 0, firstOff = null;
+  let acc = PHASE, want = 0, firstOff = null, multi = 0, stalls = 0;
   for (let i = a1.m0; i < a1.m1; i++) {
     acc += Math.min(a1.t[i] - a1.t[i - 1], 100);
     let n = 0;
     while (acc >= STEP && n < 4) { acc -= STEP; n++; }
-    if (acc >= STEP) acc = PHASE;
+    if (acc >= STEP) { acc = PHASE; stalls++; }
+    if (n >= 2) multi++;
     want += n;
     if (firstOff === null && pageN.get(a1.t[i]) !== n) firstOff = { k: i - a1.m0, page: pageN.get(a1.t[i]), want: n };
   }
   R.say(firstOff === null, 'frame by frame the page ran the steps the accumulator owes, a quarter step off the boundary' + (firstOff ? ' (frame ' + firstOff.k + ': the page ran ' + firstOff.page + ', owed ' + firstOff.want + ')' : ' (' + (a1.m1 - a1.m0) + ' frames)'));
   const span = a1.t[a1.m1 - 1] - a1.t[a1.m0 - 1];
   const dts = []; for (let i = a1.m0; i < a1.m1; i++) dts.push(a1.t[i] - a1.t[i - 1]);
-  R.say(dts.some(d => d > 100) && dts.some(d => d >= 2 * STEP && d <= 100), 'the window holds a frame over the 100 ms clamp and one owing two or more steps (longest ' + Math.max(...dts).toFixed(0) + ' ms)');
+  R.say(multi >= 1 && stalls >= 1, 'the window exercised every path of the accumulator: ' + multi + ' frames owed two or more steps, ' + stalls + ' stalls dropped debt (longest frame ' + Math.max(...dts).toFixed(0) + ' ms)');
   R.say(Math.abs(a1.loop.stepMs - STEP) < 1e-9, 'the step is 16.667 ms (1000 / 60, computed here): the page says ' + a1.loop.stepMs);
   R.say(dSteps === want, 'the loop ran exactly the steps the accumulator owes on the test\'s own frame log: ' + dSteps + ' steps, ' + want + ' owed over ' + (a1.m1 - a1.m0) + ' frames, ' + span.toFixed(0) + ' ms');
   const flat = a1.rec.flatMap(([n, w]) => Array(n).fill(w));
