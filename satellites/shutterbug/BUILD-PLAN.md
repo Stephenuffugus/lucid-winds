@@ -67,7 +67,8 @@ The builder updates this table in the same commit that ships the task (law 8: th
 | T1.2a | shipped | (this commit) | H-feat-1, 4, 5, 7 and H-en-1b green (4684); the dumps of bright-door (door), one-giant-landmark (pocket), ladder-stack (ladder); DOOR_ON_SAFE_CELL, POCKET_CARVES_ASCENT and 6 more RED | t12a: the pocket a bite out of the furniture, grey like a chipped corner, its doorway on a film tab |
 | T1.2b | shipped | (this commit) | H-feat-2, 3, 6, 8, 9 green (4699); SPECK_CAP_7, TRAP_ON_ASCENT, NO_SCROLL_GUARANTEE, CLUSTER_ON_LAMP and 4 more RED; Q75 to Q77 | t12b: every kind drawn as a moth (T1.4); an icicle inside its plank (fixed); tabs inside the trap field (fixed) |
 | REVIEW 5 | shipped | `b2dc98e84` | 16 agents over T1.1 and T1.2a (fidelity, harness, model; every blocker or major verified): the chest past the exit or in a pit, the door's floor carved, nine untested guards; all fixed but one refuted (Deep tables, planned until T1.5); Q78, Q79, Q74's addendum; 26 new mutants RED; 4720 assertions | none: nothing of it is drawn yet |
-| T1.3 | shipped | (this commit) | H-route-7..10 green, H-route-2 on the safe cells after placement (4727); the corpus keeps every ascent and hash, 0 rungs used; SAFE_DIST_ZERO, ENVELOPE_IGNORED, DEGRADE_SKIPS_RECHECK and 3 more RED; Q80 | none: no build changed |
+| T1.3 | shipped | `c17697fc1` | H-route-7..10 green, H-route-2 on the safe cells after placement (4727); the corpus keeps every ascent and hash, 0 rungs used; SAFE_DIST_ZERO, ENVELOPE_IGNORED, DEGRADE_SKIPS_RECHECK and 3 more RED; Q80 | none: no build changed |
+| T1.4 | shipped | (this commit) | H-en-5..9 green (4765); the icicle, jelly, crawler and spark sims, elites (Q51), HP and DP, the held timers (Q81), the pocket's elite asleep and held (Q75); ICICLE_RANGE_3, CRAWLER_FALLS_OFF, SPARK_HOPS_INTO_WALL and 9 more RED; Q81, Q82 | t104: saturated-blobs at both sizes under each biome: a jelly inside a plank (fixed: no enemy on a one way's cell), the icicle faint on Frost (art), one enemy per first room |
 
 Status is one of `shipped`, `shipped with xfail Qn`, `BLOCKED on <assertion> Qn`, `skipped (budget)`. The night's last row is `T0.18 deploy` with the deploy commit and the two origin hashes, or `NOT LIVE` and why.
 
@@ -225,6 +226,7 @@ SB.TUNING = Object.freeze({
   // 7 biomes and enemies
   FROST_SLICK_MIN_W: 5, FROST_SLIDE_CELLS: 1, DEEP_FALL_MULT: 0.8, DEEP_JUMP_V: 9.5 /* gives the +1 cell apex, section 3.2 */,
   MOTH_SPEED: 1, ICICLE_TRIGGER_COLS: 2, ICICLE_RESPAWN_S: 6, JELLY_BOB_CELLS: 2, JELLY_HP: 2, CRAWLER_SPEED: 2, CRAWLER_HP: 2, SPARK_HOP_S: 1.5,
+  JELLY_SPEED: 1, SPARK_AIR_S: 0.2, ELITE_SIZE_CELLS: 1.5,   // T1.4 (QUESTIONS Q82)
   HIT_HEARTS: 1, HIT_IFRAMES_S: 1, HIT_KNOCKBACK_CELLS: 2,
   BOSS_INTRO_S: 2, BOSS_TELEGRAPH_S: 0.8, BOSS_SAFE_LEDGE_CELLS: 6, BOSS_WEAK_MIN: 3, BOSS_OUTLINE_UNTIL: 0.25, BOSS_FALLBACK_HP: 20,
   BOSS_MOTH_EVERY_S: 4, BOSS_MOTH_COUNT: 3, BOSS_ICICLE_TELEGRAPH_S: 3, BOSS_RING_EVERY_S: 5, BOSS_RING_CELLS: 4, BOSS_SPARK_TELEGRAPH_S: 2,

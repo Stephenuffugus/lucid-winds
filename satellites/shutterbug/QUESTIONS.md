@@ -564,3 +564,19 @@ Options: (a) as built; (b) the letter: a pocket beside the climb can cost the as
 Recommendation: (a): the elite never leaves its pocket (Q75), so its spawn distance guards nothing.
 Plan assumes: (a); H-route-7.
 
+## Q81. A frozen or stunned enemy is held: it neither moves nor harms (the builder, 30 Oct, T1.4)
+
+T1.4 adds the frozen and stunned timers the M2 weapons set (DESIGN 9.1: Shutter Snap and Icicle freeze, Flashbulb stuns). DESIGN does not say whether a held enemy still hurts on contact.
+As built (T1.4): while either timer runs, the enemy neither moves nor costs a heart on contact; the pocket's elite sleeps the same way (stunned -1) until the hero enters its pocket (Q75). H-en-9: a frozen moth on the hero neither moves nor hits for its 30 steps, then hits.
+Options: (a) as built; (b) held enemies stop moving but still hurt on contact.
+Recommendation: (a): a freeze reads as safety, and the weapons that set it are defensive.
+Plan assumes: (a); M2's weapons.
+
+## Q82. T1.4's readings where DESIGN 7 gives no number (the builder, 30 Oct, T1.4)
+
+DESIGN 7 gives the jelly's throw (2 cells) but not its speed, the spark's period (1.5 s) but not its flight, the icicle's respawn but not what a killed icicle does, and the elite's size (24 px) but not its art.
+As built (T1.4): the jelly bobs at JELLY_SPEED 1 cell per second (a full bob is 8 s); a spark's 1.5 s cycle is a rest and a SPARK_AIR_S (0.2 s) flight through a one cell arc onto a standable cell of its envelope, drawn from the state's generator; an icicle that falls and shatters hangs again ICICLE_RESPAWN_F steps later, one killed by a weapon (M2) stays dead and banks its DP once; an elite is its kind's 16 px art drawn 1.5 times (24 px), its box centred on its cell. No enemy is placed on a one way's own cell, and the jelly's throw stops at one: the render draws that cell as the plank's body (T1.4's shots found a jelly inside a plank).
+Options: (a) as built; (b) each number his.
+Recommendation: (a) until his play; every one is a TUNING line or a sprite (Astra's art replaces the drawn sprites).
+Plan assumes: (a).
+

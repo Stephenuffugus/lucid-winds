@@ -567,7 +567,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-en-6', expect: 'over 900 steps it spans' }] },
   { name: 'SPARK_HOPS_INTO_WALL', task: 'T1.4', file: 'page', find: 'if (env[q] !== here && standCell(lv, env[q])) cands.push(env[q]);', repl: 'if (env[q] !== here) cands.push(env[q]);',
     gates: [{ gate: 'harness', only: 'H-en-7', expect: 'every landing a standable cell' }] },
-  { name: 'JELLY_THROUGH_CEILING', task: 'T1.4', file: 'page', find: 'while (up < T.JELLY_BOB_CELLS && !solidAt(lv, col, row - up - 1)) up++;', repl: 'while (up < T.JELLY_BOB_CELLS) up++;',
+  { name: 'JELLY_THROUGH_CEILING', task: 'T1.4', file: 'page', find: 'while (up < T.JELLY_BOB_CELLS && !solidAt(lv, col, row - up - 1) && !platAt(lv, col, row - up - 1)) up++;', repl: 'while (up < T.JELLY_BOB_CELLS) up++;',
     gates: [{ gate: 'harness', only: 'H-en-8', expect: 'in an open column its extremes' }] },
   { name: 'ELITE_HP_SINGLE', task: 'T1.4', file: 'page', find: 'return elite ? hp * T.ELITE_HP_MULT : hp;', repl: 'return hp;',
     gates: [{ gate: 'harness', only: 'H-en-9', expect: 'elite has ELITE_HP_MULT times its HP' }] },
@@ -576,7 +576,11 @@ const MUTANTS = [
   { name: 'POCKET_ELITE_AWAKE', task: 'T1.4', file: 'page', find: 'stunned: el && pocketOf(level, e.idx) ? -1 : 0 };', repl: 'stunned: 0 };',
     gates: [{ gate: 'harness', only: 'H-en-9', expect: 'the pocket\'s elite sleeps' }] },
   { name: 'HELD_STILL_HARMS', task: 'T1.4', file: 'page', find: '      if (held || !liveEnemy(en)) continue;', repl: '      if (!liveEnemy(en)) continue;',
-    gates: [{ gate: 'harness', only: 'H-en-9', expect: 'a frozen moth on the hero' }] }
+    gates: [{ gate: 'harness', only: 'H-en-9', expect: 'a frozen moth on the hero' }] },
+  { name: 'ENEMY_IN_THE_PLANK', task: 'T1.4', file: 'page', find: 'level.solid[c] || level.plat[c] || level.trap[c] || inPocket[c] || near[c]) return false;', repl: 'level.solid[c] || level.trap[c] || inPocket[c] || near[c]) return false;',
+    gates: [{ gate: 'harness', only: 'H-feat-6', expect: 'an enemy on a solid, one way or trap cell' }] },
+  { name: 'JELLY_INTO_THE_PLANK', task: 'T1.4', file: 'page', find: '!solidAt(lv, col, row - up - 1) && !platAt(lv, col, row - up - 1)) up++;', repl: '!solidAt(lv, col, row - up - 1)) up++;',
+    gates: [{ gate: 'harness', only: 'H-en-8', expect: 'under a one way on row 28' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
