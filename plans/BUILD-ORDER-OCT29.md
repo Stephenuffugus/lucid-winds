@@ -1,10 +1,12 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 02:47 UTC (Opus, building; clock times before this were estimates and are corrected in PROGRESS.md).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
+> **STATE 30 Oct 03:36 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
 > night one order, the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after T0.8a, sb-m0-2 after
-> T0.8b, sb-m0-3 when M0 is complete. **Last shipped: T0.8a** (`4c9bcd3d4`, THE FIRST PLAYABLE CLIMB on keyboard: title,
-> sample room, climb, clear, again). Gates: lint, harness (977 assertions), redwatch (21 rows RED, NOOP green), boot,
-> play. Deployed: nothing yet; the independent review runs, then T0.18 as sb-m0-1. Red: nothing. Autosave running.
+> T0.8b, sb-m0-3 when M0 is complete. **LIVE: sb-m0-1** (deploy commit `cc2816ffe`, tag sb-m0-1; both origins serve
+> sha256 2a0ab4d4…09e106, equal to the deploy blob, proven by curl at 03:33:57 UTC): the first playable climb on the
+> keyboard. Last shipped: T0.18 sb-m0-1, after the first independent review (21 findings, all fixed or recorded as
+> Q58 to Q61). Gates: lint, harness (999 assertions), redwatch (31 rows, NOOP green; browser rows on their FAIL lines),
+> boot, play. Red: nothing. Next: T0.8b, the touch strip, then the second review and sb-m0-2. Autosave running.
 
 You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is ONE game from zero:
 Shutterbug, a photo of a room becomes a pixel platformer level (`satellites/shutterbug/DESIGN.md`). Fable wrote the
