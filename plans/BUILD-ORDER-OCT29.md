@@ -1,12 +1,9 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 04:54 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
+> **STATE 30 Oct 05:00 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
 > night one order, the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after T0.8a, sb-m0-2 after
 > T0.8b, sb-m0-3 when M0 is complete. **LIVE: sb-m0-2** (deploy `945b541b5`, both origins proven by curl 04:53:54 UTC):
-> the thumbs climb on a phone. **Last shipped: T0.18 sb-m0-2** after the second independent review (17 findings, all
-> fixed or recorded: Q48 addendum, Q62, Q63). Gates: lint, harness (1015), redwatch (42 node rows, 21 browser rows), boot,
-> play. Red: nothing. Next: night two, T0.7b (the labs and the determinism proof), then T0.2b, T0.5b, T0.4b, T0.5c, T0.9.
-> Autosave running.
+> the thumbs climb on a phone. **Last shipped: T0.7b (`4aedc3e2d`, the labs and the determinism proof: LAB-CLEAR green at the first run, no retune).** Gates: lint, harness (1588), redwatch (45 node rows, 21 browser rows), boot, play. Red: nothing. Next: T0.2b (journey C, the one CORE_RE lint), then T0.5b, T0.4b, T0.5c, T0.9. Autosave running.
 
 You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is ONE game from zero:
 Shutterbug, a photo of a room becomes a pixel platformer level (`satellites/shutterbug/DESIGN.md`). Fable wrote the

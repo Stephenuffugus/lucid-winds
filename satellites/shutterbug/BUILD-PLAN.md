@@ -43,6 +43,7 @@ The builder updates this table in the same commit that ships the task (law 8: th
 | T0.18 sb-m0-1 | shipped (LIVE) | deploy `cc2816ffe` (branch `6a22a9568`, tag sb-m0-1) | curl sha256 2a0ab4d4…09e106 on lucidwinds.com and www equal to `git show cc2816ffe:…/index.html`, 03:33:57 UTC; full check ALL GATES PASSED | (the T0.8a shots) |
 | T0.8b | shipped | `0ed4fb65e` | `play` touch pass green (the climb by real touches; rocker, A, two fingers, A high); SECOND_FINGER_RELEASES_FIRST RED | strip: verbs hug the bottom under empty film; faint pressed state; A at the edge and B against the rocker at 360; crop cuts the wardrobe; ratio 2.625 edges 2/3/2 device px |
 | T0.18 sb-m0-2 | shipped (LIVE) | deploy `945b541b5` (branch `82ab0828d`, tag sb-m0-2) | curl sha256 5e842669…406e83 on lucidwinds.com and www equal to `git show 945b541b5:…/index.html`, 04:53:54 UTC; full check ALL GATES PASSED; the live stamp STOP watched red first | the empty chip corner and the empty band above the glyphs in play; A on the right edge (Q62); under 360 the left zone on the left edge |
+| T0.7b | shipped | `4aedc3e2d` | H-sim-6..8, H-lab-1 (250 cases), H-lab-2 (9300 runs, none stopped), H-lab-3 warn: nothing beyond; LAB-CLEAR green at the first run, no retune; HASH_SKIPS_RNG, ONEWAY_FROM_BELOW_BLOCKS, FLOAT_LEAK RED | (harness task) |
 
 Status is one of `shipped`, `shipped with xfail Qn`, `BLOCKED on <assertion> Qn`, `skipped (budget)`. The night's last row is `T0.18 deploy` with the deploy commit and the two origin hashes, or `NOT LIVE` and why.
 
