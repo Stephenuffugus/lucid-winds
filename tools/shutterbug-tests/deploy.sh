@@ -25,6 +25,24 @@ cd /workspaces/lucid-winds
 git fetch -q origin main
 [ "$(git rev-list --count HEAD..origin/main)" = "0" ] || { echo "STOP: main has commits the branch lacks; merge origin/main first"; exit 1; }
 BR=$(git rev-parse HEAD); MAIN=$(git rev-parse origin/main); SHORT=$(git rev-parse --short=9 HEAD)
+# Every stamp must move (BUILD-PLAN T0.18): read the live ones from main's blobs (into files, never a pipe into grep -q)
+# and STOP when any equals the new value. A first deploy has no blob on main: the comparison is skipped and said.
+if git cat-file -e "$MAIN:satellites/shutterbug/index.html" 2>/dev/null; then
+  git show "$MAIN:satellites/shutterbug/index.html" > "$L/live-index.html"
+  LIVE_BUILD=$(grep -o "SB.BUILD = '[^']*'" "$L/live-index.html" | head -1 | sed "s/SB.BUILD = '\(.*\)'/\1/" || true)
+  [ "$LIVE_BUILD" != "$BUILD" ] || { echo "STOP: BUILD $BUILD equals the live stamp on main; bump it"; exit 1; }
+  LIVE_SWV=$(grep -o "sw.js?v=[0-9A-Za-z._-]*" "$L/live-index.html" | head -1 | sed 's/sw.js?v=//' || true)
+  if [ -n "${SWV:-}" ] && [ -n "$LIVE_SWV" ] && [ "$LIVE_SWV" = "$SWV" ]; then echo "STOP: SWV $SWV equals the live registration stamp; bump it"; exit 1; fi
+  LIVE_CACHE=""
+  if git cat-file -e "$MAIN:satellites/shutterbug/sw.js" 2>/dev/null; then
+    git show "$MAIN:satellites/shutterbug/sw.js" > "$L/live-sw.js"
+    LIVE_CACHE=$(grep -o "shutterbug-v[0-9A-Za-z._-]*" "$L/live-sw.js" | head -1 || true)
+    if [ -n "${CACHE:-}" ] && [ "$LIVE_CACHE" = "$CACHE" ]; then echo "STOP: CACHE $CACHE equals the live cache name; bump it"; exit 1; fi
+  fi
+  echo "live stamps on main: BUILD $LIVE_BUILD${LIVE_SWV:+, sw.js?v=$LIVE_SWV}${LIVE_CACHE:+, $LIVE_CACHE}; the new ones differ"
+else
+  echo "note: main holds no satellites/shutterbug/index.html yet (a first deploy): the stamp comparison is skipped"
+fi
 SERVED=(satellites/shutterbug/index.html satellites/shutterbug/manifest.json satellites/shutterbug/sw.js
         satellites/shutterbug/icons)
 mapfile -t PATHS < <(git diff --name-only "$MAIN" "$BR" -- "${SERVED[@]}")
@@ -61,6 +79,16 @@ if git cat-file -e "$C:satellites/shutterbug/sw.js" 2>/dev/null; then
 else
   echo "note: no sw.js on the branch yet (M0 has no worker); CACHE and SWV not checked"
 fi
+# Gate the exact blob that will be served (T0.18): the lint and the fast harness against the deploy commit's page, so a
+# mis stamped or stripped block is caught here, not on the host.
+node satellites/shutterbug/tools/lint.mjs --page "$T/page.html" > "$T/lint.out" 2>&1 || { tail -20 "$T/lint.out"; echo "STOP: the lint fails on the deploy blob"; exit 1; }
+node satellites/shutterbug/harness.js --page "$T/page.html" --fast > "$T/harness.out" 2>&1 || { grep -m 20 'FAIL' "$T/harness.out"; echo "STOP: the harness fails on the deploy blob"; exit 1; }
+echo "the deploy blob passes the lint and the fast harness ($(grep -o '[0-9]* assertions in' "$T/harness.out" | head -1))"
+# The pre deploy pin: what the host serves now, both origins, one probe at a time, curl only (never a headless browser).
+for host in lucidwinds.com www.lucidwinds.com; do
+  code=$(curl -s -o "$T/pre-$host.html" -w '%{http_code}' -A "Mozilla/5.0" "https://$host/satellites/shutterbug/index.html?pin=$RANDOM$RANDOM" || true)
+  echo "pre deploy pin $host: HTTP $code $(sha256sum < "$T/pre-$host.html" | cut -c1-16)"
+done
 echo "deploy commit $C verified; pushing to main"
 git push origin "$C:main"
 echo "$C" > "$L/deploy.sha"
