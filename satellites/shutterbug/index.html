@@ -1211,11 +1211,12 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     out.fallPaths = {}; out.downPaths = {};
     for (r = 1; r <= FALL_ROWS; r++) for (dx = 1; dx <= out.fall[r]; dx++) { var fp = fallPath(K, deep, dx, r); if (fp) out.fallPaths[dx + ',' + r] = fp; }
     for (r = 1; r <= DOWN_ROWS; r++) for (dx = 0; dx <= out.down[r]; dx++) { var dp = path(K, 'FULL', deep, dx, -r, 0); if (dp) out.downPaths[dx + ',' + r] = dp; }
-    /* the touch scans: the farthest FULL path of each height, the farthest walk off of each depth */
-    out.touchJumps = []; out.touchFalls = [];
-    var fu = out.profiles.FULL;
-    for (dy = 0; dy <= ROWS; dy++) if (fu.maxAcross[dy] >= 0 && (fu.paths[fu.maxAcross[dy] + ',' + dy] || []).length) out.touchJumps.push(fu.paths[fu.maxAcross[dy] + ',' + dy][0]);
-    for (r = 1; r <= FALL_ROWS; r++) if (out.fallPaths[out.fall[r] + ',' + r]) out.touchFalls.push(out.fallPaths[out.fall[r] + ',' + r]);
+    /* the touch trajectories (T0.13a): the rocker held toward the wall from the takeoff to the touch, as a player and
+       the bot hold it: FULL from step 0, 3 and 6 (a later start rises higher before it meets the wall), MID and TAP
+       from step 0, the walk off; and the wall jump's flight to a far wall (the rocker away after the lock). The graph
+       steps each one against the room (scan, below). */
+    out.touchArcs = [arc(K, 'FULL', deep, 0, NEVER), arc(K, 'FULL', deep, 3, NEVER), arc(K, 'FULL', deep, 6, NEVER), arc(K, 'MID', deep, 0, NEVER), arc(K, 'TAP', deep, 0, NEVER)];
+    out.walkArc = w; out.wallArc = arc(K, 'WALL', deep, 0, NEVER);
     memo[key] = out;
     return out;
   }
@@ -1261,15 +1262,48 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       for (k = 0; k < p.catches.length; k++) if (P(sx + dir * p.catches[k][0], sy - p.catches[k][1])) return false;
       return true;
     };
-    /* the wall contacts a path touches before anything stops it: cells in the order the box enters them, up to the first
-       solid; a contact counts when the wall it touches lies ahead in the travel direction */
-    var touches = function (p, sx, sy, dir, out) {
-      for (var k = 0; k < p.cells.length; k++) {
-        var cx = sx + dir * p.cells[k][0], cy = sy - p.cells[k][1];
-        if (S(cx, cy)) return;
-        var c = cy * w + cx, sd = dir > 0 ? 1 : 0;
-        /* the touch costs what the jump or the fall to it costs, plus one (section 3.3) */
-        if (contact[2 * c + sd] && !out[cnode(c, dir)]) { var tdy = sy - cy, tdx = Math.abs(cx - sx); out[cnode(c, dir)] = (tdy >= 0 ? 2 + tdy + tdx / 2 : 1 - tdy / 4) + 1; }
+    /* the touch scan (T0.13a: the bot found the cell list generous, a contact counted for any cell the box passed
+       through beside a wall, where the sim arms only flush against it). A trajectory `a` from (sx, sy) in `dir` is
+       stepped as the sim steps it: x at the old height, clamped flush against the first solid it runs into, then y,
+       ending at a landing (a solid, or a one way it crosses with LAND_OVERLAP) or a head bonk (the 2 px nudge left out,
+       so the model is the stingier); every step it is flush with HERO_H - CORNER_PX of wall beside it (a plain wall
+       outside the wall jump's lock, a sticky one going down) arms the contact at its feet, costed as the jump or fall
+       to it plus one (section 3.3); the scan ends at the first armed step going down (the SLIDE edges go on). */
+    var scan = function (a, sx, sy, dir, out, lockSteps, chain) {
+      var C = K.CELL_SUB, HWs = K.HERO_W_SUB, HHs = K.HERO_H_SUB, base = (sy + 1) * C, clamp = null, need = HHs - K.CORNER_SUB;
+      for (var f = 1; f < a.length; f++) {
+        var p = a[f];
+        if (p.vy === 0 && p.y === 0) continue;                       /* still on the ledge of a walk off */
+        var py = base + p.py, ny = base + p.y, X = clamp !== null ? clamp : (dir > 0 ? sx * C + p.x : (sx + 1) * C - p.x - HWs);
+        if (clamp === null) {
+          var lead = dir > 0 ? Math.floor((X + HWs - 1) / C) : Math.floor(X / C);
+          for (var r = Math.floor((py - HHs) / C); r <= Math.floor((py - 1) / C); r++) if (S(lead, r)) { clamp = X = dir > 0 ? lead * C - HWs : (lead + 1) * C; break; }
+        }
+        var c0 = Math.floor(X / C), c1 = Math.floor((X + HWs - 1) / C), cx;
+        if (p.vy > 0) {
+          var row = Math.floor((ny - 1) / C), top = row * C;
+          for (cx = c0; cx <= c1; cx++) if (S(cx, row)) return;
+          if (py <= top && ny > top) for (cx = c0; cx <= c1; cx++) if (P(cx, row) && Math.min(X + HWs, (cx + 1) * C) - Math.max(X, cx * C) >= K.OVERLAP_SUB) return;
+        } else if (p.vy < 0) {
+          var hr = Math.floor((ny - HHs) / C);
+          for (cx = c0; cx <= c1; cx++) if (S(cx, hr)) return;
+        }
+        var edgeX = dir > 0 ? X + HWs : X;
+        if (edgeX % C !== 0) continue;
+        var col = dir > 0 ? edgeX / C : edgeX / C - 1, ovP = 0, ovS = 0;
+        for (var rr = Math.floor((ny - HHs) / C); rr <= Math.floor((ny - 1) / C); rr++) {
+          if (!S(col, rr)) continue;
+          var ov = Math.min(ny, (rr + 1) * C) - Math.max(ny - HHs, rr * C);
+          if (col >= 0 && col < w && rr >= 0 && rr < h && sticky[rr * w + col]) ovS += ov; else ovP += ov;
+        }
+        var armed = (p.vy > 0 && ovS >= need) || (f >= lockSteps && ovP >= need);
+        if (!armed) continue;
+        var fc = Math.floor((ny - 1) / C) * w + (col - dir), node = cnode(fc, dir);
+        if (fc >= 0 && fc < n && contact[2 * fc + (dir > 0 ? 1 : 0)]) {
+          var tdy = sy - Math.floor(fc / w), tdx = Math.abs(fc % w - sx), cost = chain ? 4 : (tdy >= 0 ? 2 + tdy + tdx / 2 : 1 - tdy / 4) + 1;
+          if (out[node] === undefined || cost < out[node]) out[node] = cost;
+        }
+        if (p.vy > 0) return;
       }
     };
     var JP = ['FULL', 'MID', 'TAP'], up = lv.biome === 2 ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;
@@ -1312,12 +1346,10 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
             if (fp && clear(fp, sx, sy, dir)) add(s, ty * w + tx, 'FALL', null, dir, dx, -r, 1 + r / 4);
           }
         }
-        /* WALLTOUCH: a contact the farthest FULL jump of each height, or the farthest walk off of each depth, reaches
-           while holding toward the wall (a nearer arc of the same height touches nothing the farthest misses before it
-           stops; scanning only these keeps the graph inside its budget, and can only make the model stingier) */
+        /* WALLTOUCH: every contact a touch trajectory arms, stepped against the room as the sim steps it (scan) */
         var seen = {}, key;
-        for (var t2 = 0; t2 < tb.touchJumps.length; t2++) touches(tb.touchJumps[t2], sx, sy, dir, seen);
-        if (!(sx + dir >= 0 && sx + dir < w && (stand[s + dir] || S(sx + dir, sy)))) for (t2 = 0; t2 < tb.touchFalls.length; t2++) touches(tb.touchFalls[t2], sx, sy, dir, seen);
+        for (var t2 = 0; t2 < tb.touchArcs.length; t2++) scan(tb.touchArcs[t2], sx, sy, dir, seen, 0, false);
+        if (!(sx + dir >= 0 && sx + dir < w && (stand[s + dir] || S(sx + dir, sy)))) scan(tb.walkArc, sx, sy, dir, seen, 0, false);
         for (key in seen) add(s, +key, 'WALLTOUCH', null, dir, 0, 0, seen[key]);
       }
       /* FALL straight down: a dive through the one way under the feet, landing on each standable cell below in turn */
@@ -1351,14 +1383,14 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       for (dy = 0; dy <= T.WALL_UP; dy++) for (dx = 1; dx <= wp.maxAcross[dy]; dx++) {
         var cand2 = wp.paths[dx + ',' + dy] || [];
         if (!cand2.length) continue;
-        touches(cand2[0], cx, cy, away, far);
         tx = cx + away * dx; ty = cy - dy;
         if (tx < 0 || tx >= w || ty < 0 || !stand[ty * w + tx]) continue;
         /* plus 3 at the WALL table's edge, as a JUMP's (the planner prefers forgiving moves; section 3.3 extended) */
         var wedge = dx === wp.maxAcross[dy] || dy + 1 > T.WALL_UP || wp.maxAcross[dy + 1] < dx;
         if (clear(cand2[0], cx, cy, away)) add(from, ty * w + tx, 'WALLJUMP', 'WALL', away, dx, dy, 3 + dy + (wedge ? 3 : 0));
       }
-      for (key in far) if (+key !== from) add(from, +key, 'WALLJUMP', 'WALL', away, 0, 0, 4);
+      scan(tb.wallArc, cx, cy, away, far, T.WALL_JUMP_LOCK, true);
+      for (key in far) if (+key !== from) add(from, +key, 'WALLJUMP', 'WALL', away, 0, 0, far[key]);
     }
     return { w: w, h: h, n: n, stand: stand, contact: contact, sticky: sticks, standN: standN, adj: adj, edges: edges };
   }

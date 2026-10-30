@@ -2331,6 +2331,229 @@ group('H-fix-3', 'the corpus holds every record fixtures/README.md lists; names 
   t.eq(new Set(seeds).size, seeds.length, 'no two fixtures share a seedOf');
 });
 
+/* ================================================================ the bot (T0.13a, sections 3.9 and 5.2) */
+/* The harness's player. It reads the state, never the render, and drives SB.sim.step with words. For each edge of a
+   level's main ascent it searches an input macro that performs the edge from the state the walk is in (section 3.9's
+   candidate sets, ordered by a physics prior, at most 120 per edge, memoised per shape: a memoised macro is tried
+   first and a miss falls back to a fresh search); between edges it settles the hero in its cell; the walk chains the
+   macros from spawn and must clear the room. A miss is the generosity assertion failing: the model promised an edge
+   the sim does not keep. The macros may read the state to time a release, as a player watches the hero; they never
+   write it. */
+const BOT = (() => {
+  const W = SB.GRID.W, MAX_CANDS = 120, LEN = 140;
+  const cloneState = s => SB.sim.attach(structuredClone(s), s.level);
+  const stopDist = v => { let d = 0; v = Math.abs(v); while (v > 0) { v = Math.max(0, v - K.DECEL); d += v; } return d; };
+  const TAP_MOVE = K.RUN + stopDist(K.RUN);           /* one step of the rocker from rest, then the decel: 6.56 px */
+  const centreCol = s => Math.floor((s.hero.x + (HW >> 1)) / CS), feetRow = s => Math.floor((s.hero.y + HH - 1) / CS);
+  /* settle (section 5.2 step 3): from rest, a step of the rocker toward the cell's centre while that tap would end
+     nearer than staying; while moving toward it, the rocker held until the decel's stop comes within 2 px; moving
+     away, released. Done when grounded and still with the centre within half a tap of the cell's centre; at most 30
+     steps, else the settle fails (a hero that cannot stand still in a cell is a sim bug). */
+  function settle(s, cell, words) {
+    const cx = (cell % W) * CS + (CS >> 1);
+    for (let k = 0; k <= 30; k++) {
+      if (s.room.cleared) return true;
+      const h = s.hero, d = cx - (h.x + (HW >> 1));
+      let word = 0;
+      if (h.vx === 0 && h.ground) {
+        if (2 * Math.abs(d) <= TAP_MOVE) return centreCol(s) === cell % W && feetRow(s) === Math.floor(cell / W);
+        word = rockerOf(Math.sign(d));
+      } else if (h.ground && Math.sign(h.vx) === Math.sign(d) && stopDist(h.vx) + 2 * 256 < Math.abs(d)) word = rockerOf(Math.sign(d));
+      if (k === 30) break;
+      SB.sim.step(s, word); words.push(word);
+    }
+    return false;
+  }
+  /* a node: a standable cell, or a contact n + 2c + (wall on the right ? 1 : 0) */
+  const nodeInfo = (g, v) => {
+    if (v < g.n) return { v, contact: false, cx: v % W, cy: Math.floor(v / W) };
+    const c = (v - g.n) >> 1, sd = (v - g.n) & 1;
+    return { v, contact: true, c, cx: c % W, cy: Math.floor(c / W), side: sd ? 1 : -1, sticky: !!g.sticky[2 * c + sd] };
+  };
+  const atContact = (s, t) => { const h = s.hero; return !h.ground && h.wall === t.side && (t.sticky ? h.sticky === 1 : h.sticky === 0) && centreCol(s) === t.cx && feetRow(s) === t.cy; };
+  /* run one candidate on a clone; a contact target must be met during the words, a standable one rests on its row
+     over its column by LAND_OVERLAP after them and then settles into it */
+  function attempt(s0, words, t) {
+    const s = cloneState(s0), used = [];
+    let last = 0; for (let k = 0; k < words.length; k++) if (words[k]) last = k;
+    for (let k = 0; k < words.length; k++) {
+      SB.sim.step(s, words[k]); used.push(words[k]);
+      if (s.room.cleared) return { ok: true, s, used };
+      if (t.contact) { if (atContact(s, t)) return { ok: true, s, used }; continue; }
+      if (k >= last && s.hero.ground && s.hero.vx === 0) break;
+    }
+    if (t.contact) return { ok: false, s, used };
+    for (let k = 0; k < 120 && !(s.hero.ground && s.hero.vx === 0); k++) { SB.sim.step(s, 0); used.push(0); if (s.room.cleared) return { ok: true, s, used }; }
+    const ov = Math.min(s.hero.x + HW, (t.cx + 1) * CS) - Math.max(s.hero.x, t.cx * CS);
+    if (!(s.hero.ground && feetRow(s) === t.cy && ov >= K.OVERLAP_SUB)) return { ok: false, s, used };
+    return { ok: settle(s, t.v, used), s, used };
+  }
+  /* the candidate sets of section 3.9, per kind, each a word script; ordered by a physics prior, at most 120 */
+  const A_RANGE = { FULL: [200], MID: [4, 3, 5, 6, 2], TAP: [1, 2] };
+  function jumpWords(aHold, dir, delay, hold) { return Array.from({ length: LEN }, (_, k) => (k < aHold ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k >= delay && k < delay + hold ? rockerOf(dir) : 0)); }
+  function candidates(e, src, t) {
+    const out = [], est = Math.round(Math.abs(e.dx) * CS / K.RUN);
+    const ranked = (list, score) => list.map(c => [score(c), c]).sort((a, b) => a[0] - b[0]).slice(0, MAX_CANDS).map(x => x[1]);
+    if (e.kind === 'WALK') return [1, 2, 3, 4].map(n => Array.from({ length: n }, () => rockerOf(e.dir)));   /* the settle leaves the hero up to half a tap off centre */
+    if (e.kind === 'JUMP' || e.kind === 'JUMP_DOWN') {
+      const profs = e.kind === 'JUMP' ? [e.profile] : ['FULL', 'MID', 'TAP'], list = [];
+      profs.forEach((p, pi) => A_RANGE[p].forEach((a, ai) => { for (let delay = 0; delay <= 8; delay++) for (let hold = 0; hold <= 40; hold++) list.push({ a, delay, hold, prior: Math.abs(hold - est) + 2 * delay + 3 * ai + 6 * pi }); }));
+      return ranked(list, c => c.prior).map(c => jumpWords(c.a, e.dir, c.delay, c.hold));
+    }
+    if (e.kind === 'FALL' && e.dir === 0) return Array.from({ length: 40 }, (_, i) => M_DIVE(i + 1, true, LEN));
+    if (e.kind === 'FALL') {
+      const walkEst = Math.round((14 + (e.dx - 1) * 16) * 256 / K.RUN), list = [];
+      for (let hold = 1; hold <= 60; hold++) list.push({ hold, prior: Math.abs(hold - walkEst) });
+      return ranked(list, c => c.prior).map(c => M_FALL(e.dir, c.hold, LEN));
+    }
+    if (e.kind === 'WALLTOUCH') {
+      const list = [];
+      ['FULL', 'WALKOFF', 'MID', 'TAP'].forEach((p, pi) => { for (let delay = 0; delay <= 8; delay++) list.push({ p, delay, prior: 2 * delay + pi }); });
+      return ranked(list, c => c.prior).map(c => Array.from({ length: LEN }, (_, k) =>
+        (c.p !== 'WALKOFF' && k < A_FRAMES[c.p] ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k >= c.delay ? rockerOf(e.dir) : 0)));
+    }
+    if (e.kind === 'SLIDE') return [Array.from({ length: 4 * LEN }, () => rockerOf(e.dir))];
+    if (e.kind === 'WALLJUMP') {
+      const toward = -e.dir, list = [], lockTravel = SB.TUNING.WALL_JUMP_LOCK * K.WALL_PUSH;
+      const holdEst = Math.max(0, Math.round((e.dx * CS - lockTravel) / K.RUN));
+      [200, 8, 4].forEach((a, ai) => { for (let wait = 0; wait <= 6; wait++) {
+        if (!t.contact) for (let hold = 0; hold <= 30; hold++) list.push({ a, wait, hold, prior: Math.abs(hold - holdEst) + 2 * wait + 4 * ai });
+        else list.push({ a, wait, hold: LEN, prior: 2 * wait + 4 * ai });
+      } });
+      return ranked(list, c => c.prior).map(c => Array.from({ length: LEN }, (_, k) => {
+        if (k < c.wait) return rockerOf(toward);
+        const j = k - c.wait;
+        return (j < c.a ? IN.A | (j === 0 ? IN.A_TAP : 0) : 0) | (j < SB.TUNING.WALL_JUMP_LOCK + c.hold ? rockerOf(e.dir) : 0);
+      }));
+    }
+    if (e.kind === 'STICKYUP') return [200, 16, 12, 8, 6, 4, 3, 2, 1].map(a => Array.from({ length: LEN }, (_, k) => (k < a ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0)));
+    if (e.kind === 'STICKYTOP') {
+      const list = []; [200, 8, 4].forEach((a, ai) => { for (let hold = 1; hold <= 24; hold++) list.push({ a, hold, prior: hold + 30 * ai }); });
+      return ranked(list, c => c.prior).map(c => Array.from({ length: LEN }, (_, k) => (k < c.a ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k > 0 && k <= c.hold ? rockerOf(src.side) : 0)));
+    }
+    if (e.kind === 'LET_GO') return [[IN.B_TAP]].concat([1, 2, 3, 4].map(n => Array.from({ length: n }, () => rockerOf(-src.side))));
+    return [];
+  }
+  /* the memo key: the edge's shape and the cells around it (section 5.2 step 2) */
+  function shapeKey(lv, e, src, t) {
+    const x0 = Math.min(src.cx, t.cx) - 2, x1 = Math.max(src.cx, t.cx) + 2, y0 = Math.min(src.cy, t.cy) - 4, y1 = Math.max(src.cy, t.cy) + 1;
+    let geo = '';
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const i = y * W + x;
+      geo += x < 0 || x >= W || y < 0 || y >= lv.h ? 'X' : lv.solid[i] ? (lv.sticky[i] ? '|' : '#') : lv.plat[i] ? '=' : '.';
+    }
+    return [e.kind, e.profile, e.dir, e.dx, e.dy, lv.biome === 2 ? 'deep' : 'base', src.contact ? 'c' + src.side : 's', t.contact ? 'c' + t.side : 's', geo].join('|');
+  }
+  /* solve one edge from the state: the memoised macro first, then the search; returns the run that worked, or the
+     prior's best attempt with ok false */
+  function solve(s, e, g, memo, stats) {
+    const src = nodeInfo(g, e.from), t = nodeInfo(g, e.to), key = shapeKey(s.level, e, src, t);
+    if (memo.has(key)) { const r = attempt(s, memo.get(key), t); if (r.ok) { stats.memo++; return r; } stats.memoMiss++; }
+    const cands = candidates(e, src, t);
+    let first = null;
+    for (let i = 0; i < cands.length; i++) {
+      const r = attempt(s, cands[i], t); stats.tries++;
+      if (r.ok) { memo.set(key, cands[i]); stats.found++; return r; }
+      if (!first) first = r;
+    }
+    return first ? Object.assign(first, { ok: false, tried: cands.length }) : { ok: false, s, used: [], tried: 0 };
+  }
+  /* the walk: settle at spawn, then each ascent edge's macro in turn; arrival is the room clearing */
+  function walk(lv, memo, stats) {
+    const g = SB.reach.graph(lv), asc = lv.ascent;
+    let s = SB.sim.create(lv);
+    const words = [];
+    for (let k = 0; k < 10 && !s.hero.ground; k++) { SB.sim.step(s, 0); words.push(0); }
+    if (!settle(s, lv.spawn, words)) return { ok: false, why: 'the hero cannot settle at spawn', edges: 0, words, s };
+    if (!asc || !asc.edges) return { ok: false, why: 'no ascent', edges: 0, words, s };
+    for (let i = 0; i < asc.edges.length && !s.room.cleared; i++) {
+      const e = asc.edges[i], r = solve(s, e, g, memo, stats);
+      if (!r.ok) {
+        const src = nodeInfo(g, e.from), t = nodeInfo(g, e.to);
+        return { ok: false, edges: i, words, s, miss: { i, e, src, t, tried: r.tried, rest: [centreCol(r.s), feetRow(r.s)], wall: r.s.hero.wall, ground: r.s.hero.ground } };
+      }
+      for (const w of r.used) words.push(w);
+      s = r.s;
+    }
+    return { ok: s.room.cleared === 1, why: s.room.cleared ? '' : 'the ascent ended without clearing the room', edges: asc.edges.length, words, s };
+  }
+  /* placement for an edge drawn from the graph (section 5.2 step 6): a standable source settles centred on its cell;
+     a wall contact is armed flush with its feet at the cell's bottom and the rocker toward; a sticky one falls onto
+     the vine from 4 px higher */
+  function place(lv, g, v) {
+    const src = nodeInfo(g, v);
+    if (!src.contact) {
+      const s = SB.sim.create(lv, { at: { x: src.cx * CS + ((CS - HW) >> 1), y: src.cy * CS } }), w = [];
+      for (let k = 0; k < 4; k++) SB.sim.step(s, 0);
+      return settle(s, v, w) ? s : null;
+    }
+    const x = src.side > 0 ? (src.cx + 1) * CS - HW : src.cx * CS;
+    if (src.sticky) {
+      const s = SB.sim.create(lv, { at: { x, y: (src.cy + 1) * CS - HH - 4 * 256 - K.G } });
+      s.hero.ground = 0; s.hero.coyote = 0;
+      for (let k = 0; k < 8 && !atContact(s, src); k++) SB.sim.step(s, 0);
+      return atContact(s, src) ? s : null;
+    }
+    const s = SB.sim.create(lv, { at: { x, y: (src.cy + 1) * CS - HH - K.G } });
+    s.hero.ground = 0; s.hero.coyote = 0;
+    SB.sim.step(s, rockerOf(src.side));
+    return atContact(s, src) ? s : null;
+  }
+  return { settle, solve, walk, place, nodeInfo, atContact, candidates };
+})();
+
+/* every built level of the corpus for the walk: (fixture, mode, biome) with the Deep override skipped by name until
+   H-sim-17 (T1.5); "as detected" is the build's own biome (Attic in M0). A biome whose level has the same cells, the
+   same spawn and exit, the same tables and the same sticky rule as one already walked is the same walk: it is reported
+   as such, not walked twice. */
+const BOT_BIOMES = [[null, 'as detected'], [1, 'frost'], [3, 'overgrowth'], [4, 'ember']];
+let botRuns = null;
+function botWalks() {
+  if (botRuns) return botRuns;
+  const memo = new Map(), stats = { tries: 0, found: 0, memo: 0, memoMiss: 0 }, runs = [], seen = new Map();
+  for (const f of FIXTURES) for (const mode of MODES) for (const [biome, bname] of BOT_BIOMES) {
+    const lv = biome === null ? buildFx(f, mode) : SB.pipeline.build(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode })), { biome });
+    const tag = f.name + ' mode ' + mode + ' ' + bname;
+    if (lv.needsCrop) { runs.push({ tag, f, mode, biome, skipped: 'needsCrop (' + lv.why + ')' }); continue; }
+    const sig = [Buffer.from(lv.solid).toString('base64'), Buffer.from(lv.plat).toString('base64'), Buffer.from(lv.sticky).toString('base64'), Buffer.from(lv.slick).toString('base64'),
+      lv.spawn, lv.exit, lv.biome === 2, (lv.biome === 2 || lv.biome === 3) && lv.sticky.some(Boolean)].join('/');
+    if (seen.has(sig)) { runs.push({ tag, f, mode, biome, same: seen.get(sig) }); continue; }
+    const t0 = Date.now(), r = BOT.walk(lv, memo, stats);
+    const run = { tag, f, mode, biome, lv, r, ms: Date.now() - t0 };
+    seen.set(sig, run); runs.push(run);
+  }
+  botRuns = { runs, stats };
+  return botRuns;
+}
+
+group('H-bot-1', 'the generosity assertion: every main ascent edge of every built level has a macro the sim performs (BOT-ASCENT)', t => {
+  const { runs, stats } = botWalks();
+  let walked = 0, edges = 0, same = 0, skipped = 0;
+  for (const run of runs) {
+    if (run.skipped) { skipped++; continue; }
+    if (run.same) { same++; continue; }
+    walked++; edges += run.r.edges;
+    const m = run.r.miss;
+    t.ok(!m, run.tag + ': ' + (m ? 'edge ' + m.i + ' of ' + run.lv.ascent.edges.length + ' has no macro: ' + m.e.kind + (m.e.profile ? ' ' + m.e.profile : '') + ' dir ' + m.e.dir + ' dx ' + m.e.dx + ' dy ' + m.e.dy + ' from ' + (m.src.contact ? 'the contact' : 'the cell') + ' (' + m.src.cx + ', ' + m.src.cy + ') to ' + (m.t.contact ? 'the contact' : 'the cell') + ' (' + m.t.cx + ', ' + m.t.cy + '); ' + m.tried + ' candidates, the prior\'s best rests at (' + m.rest.join(', ') + ')' + (m.wall ? ' armed ' + m.wall : '') : 'every one of its ' + run.lv.ascent.edges.length + ' ascent edges has a macro'),
+      m ? SB.pipeline.toText(run.lv) : undefined);
+  }
+  console.log('  info  the bot walked ' + walked + ' levels (' + edges + ' ascent edges; ' + same + ' biome overrides share a walked level\'s cells and rules; ' + skipped + ' needsCrop); the Deep override skipped by name until H-sim-17 (T1.5)');
+  console.log('  info  the macro search: ' + stats.tries + ' candidates run, ' + stats.found + ' found by search, ' + stats.memo + ' by the memo (' + stats.memoMiss + ' memo misses fell back to the search)');
+});
+
+group('H-bot-2', 'the walker reaches the exit on every built level; the walk\'s length per level (the level length proxy, section 5.3)', t => {
+  const { runs } = botWalks(), secs = [];
+  for (const run of runs) {
+    if (run.skipped || run.same) continue;
+    const s = (run.r.words.length / 60);
+    t.ok(run.r.ok, run.tag + ': the walk ' + (run.r.ok ? 'clears the room in ' + run.r.words.length + ' steps (' + s.toFixed(1) + ' s)' : 'does not arrive: ' + (run.r.why || 'stopped at edge ' + (run.r.miss ? run.r.miss.i : '?'))));
+    if (run.r.ok) { secs.push(s); console.log('  info  ' + run.tag.padEnd(34) + ' ' + String(run.r.edges).padStart(3) + ' edges ' + String(run.r.words.length).padStart(5) + ' steps ' + s.toFixed(1).padStart(5) + ' s  (' + run.ms + ' ms)'); }
+  }
+  secs.sort((a, b) => a - b);
+  const med = secs.length ? secs[secs.length >> 1] : 0, p95 = secs.length ? secs[Math.min(secs.length - 1, Math.floor(secs.length * 0.95))] : 0;
+  console.log('  info  the level length proxy over ' + secs.length + ' walks: median ' + med.toFixed(1) + ' s, p95 ' + p95.toFixed(1) + ' s (an optimal walk; a player takes two to four times longer; DESIGN 5.1 aims at 60 to 120 s)' + (med < 15 || med > 60 ? '  FLAG: the median is outside 15 to 60 s' : ''));
+});
+
 /* ================================================================ run */
 const t0 = Date.now();
 const chosen = ONLY ? GROUPS.filter(g => g.id.startsWith(ONLY)) : GROUPS;
