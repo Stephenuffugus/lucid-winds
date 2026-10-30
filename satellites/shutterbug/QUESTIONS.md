@@ -555,3 +555,12 @@ As built (review 5): the bands are ordered by the lowest palette index each hold
 Options: (a) as built; (b) the band index, as before.
 Recommendation: (a): the law's letter, and a second implementation derives it from the palette alone. Exact ties are rare in a photo.
 Plan assumes: (a); H-pipe-11 plants the tie.
+
+## Q80. The pocket's elite is held to its envelope in the safe cells (the builder, 30 Oct, T1.3)
+
+Section 3.7: a safe cell is outside every envelope and more than ROUTE_SAFE_ENEMY_DIST from every spawn. Q75 places the pocket's elite whatever the ascent distance, since its envelope is the closed pocket and T1.4 keeps it there.
+As built (T1.3): the safe cells after placement hold the pocket's elite to its envelope (the pocket's cells) and every other enemy, Ember's extra one included, to its envelope and the spawn distance. Over the corpus the letter changes nothing yet: under it 0 of 138 ascents break the cadence (H-route-7 prints the count).
+Options: (a) as built; (b) the letter: a pocket beside the climb can cost the ascent its safe cells, and the degrade ladder then removes the elite first.
+Recommendation: (a): the elite never leaves its pocket (Q75), so its spawn distance guards nothing.
+Plan assumes: (a); H-route-7.
+

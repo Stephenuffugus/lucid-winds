@@ -545,7 +545,20 @@ const MUTANTS = [
   { name: 'PLACE_THROUGH_EXIT', task: 'review 5', file: 'page', find: 'var d = SB.reach.distances(g, level.spawn, level.exit), back = returnable(level, g, 3 * g.n);', repl: 'var d = SB.reach.distances(g, level.spawn), back = returnable(level, g, 3 * g.n);',
     gates: [{ gate: 'harness', only: 'H-feat-1', expect: 'reached without passing the exit' }] },
   { name: 'BRANCH_THROUGH_EXIT', task: 'review 5', file: 'page', find: 'es = u === level.exit ? null : g.adj[u];', repl: 'es = g.adj[u];',
-    gates: [{ gate: 'harness', only: 'H-feat-1', expect: 'the chest keeps Q34\'s order' }] }
+    gates: [{ gate: 'harness', only: 'H-feat-1', expect: 'the chest keeps Q34\'s order' }] },
+  /* T1.3: the route with placements, the two round ascent, the degrade ladder */
+  { name: 'SAFE_DIST_ZERO', task: 'T1.3', file: 'page', find: 'var r = T.ROUTE_SAFE_ENEMY_DIST, x0 = e.idx % w, y0 = (e.idx - x0) / w;', repl: 'var r = 0, x0 = e.idx % w, y0 = (e.idx - x0) / w;',
+    gates: [{ gate: 'harness', only: 'H-route-9', expect: 'a moth 2 rows over the ledge' }] },
+  { name: 'ENVELOPE_IGNORED', task: 'T1.3', file: 'page', find: '      if (e.env) for (q = 0; q < e.env.length; q++) if (e.env[q] >= 0 && e.env[q] < n) safe[e.env[q]] = 0;\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-route-9', expect: 'a crawler at the left end of a 20 cell ledge' }] },
+  { name: 'DEGRADE_SKIPS_RECHECK', task: 'T1.3', file: 'page', find: 'level.degraded.push(DEGRADE.ENEMY, e.idx); if (check()) return null; }', repl: 'level.degraded.push(DEGRADE.ENEMY, e.idx); return null; }',
+    gates: [{ gate: 'harness', only: 'H-route-10', expect: 'two moths' }] },
+  { name: 'TRAP_EDGES_KEPT', task: 'T1.3', file: 'page', find: '    if (!any) return g;\n    var walled = level.solid.slice();', repl: '    return g;\n    var walled = level.solid.slice();',
+    gates: [{ gate: 'harness', only: 'H-route-10', expect: 'a trap band across the room' }] },
+  { name: 'ROUND_TWO_SKIPPED', task: 'T1.3', file: 'page', find: '    if (check()) return null;\n    var k = nearestEnemy(level);', repl: '    return null;\n    var k = nearestEnemy(level);',
+    gates: [{ gate: 'harness', only: 'H-route-10', expect: 'a moth between two planks' }] },
+  { name: 'LADDER_SKIPS_THE_TRAP', task: 'T1.3', file: 'page', find: '    if (f.trap) {\n      for (var q = 0; q < f.trap.length; q++) level.trap[f.trap[q]] = 0;', repl: '    if (false) {\n      for (var q = 0; q < f.trap.length; q++) level.trap[f.trap[q]] = 0;',
+    gates: [{ gate: 'harness', only: 'H-route-10', expect: 'a trap band across the room' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

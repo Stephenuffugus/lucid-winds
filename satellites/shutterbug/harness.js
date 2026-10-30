@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 4720;              /* raised per task: the count a full run must reach (4720 after review 5, 30 Oct) */
+const ASSERT_FLOOR = 4727;              /* raised per task: the count a full run must reach (4727 after T1.3, 30 Oct) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -2565,6 +2565,39 @@ const slackRef = (e, deep, both) => {
   return both ? up && across : up || across;
 };
 const nodeRow = (lv, v) => Math.floor((v < lv.w * lv.h ? v : (v - lv.w * lv.h) >> 1) / lv.w);
+/* T1.3's oracles, the test's own: the edge set with the trap field (an edge of the room's graph that the graph with
+   the field walled also has; no trap cell a node), the safe cells after placement (standable there, outside every
+   envelope and the field, more than ROUTE_SAFE_ENEMY_DIST from every spawn but the pocket's elite: Q57, Q80; with
+   letter, the elite too), and the worst climb between safe cells along an ascent (null when an edge is missing) */
+const edgeKey = e => e.to + ' ' + e.kind + ' ' + e.profile + ' ' + e.dir + ' ' + e.dx + ' ' + e.dy;
+function trapGraphOf(lv) {
+  const g = SB.reach.graph(lv), n = g.n;
+  if (!lv.trap || !lv.trap.some(v => v)) return g;
+  const walled = Uint8Array.from(lv.solid); for (let i = 0; i < n; i++) if (lv.trap[i]) walled[i] = 1;
+  const gw = SB.reach.graph(Object.assign({}, lv, { solid: walled })), adj = [];
+  g.adj.forEach((es, u) => { if (!es) return; const ws = new Set((gw.adj[u] || []).map(edgeKey)), keep = es.filter(e => ws.has(edgeKey(e))); if (keep.length) adj[u] = keep; });
+  return Object.assign({}, g, { adj, stand: Uint8Array.from(g.stand, (v, i) => lv.trap[i] ? 0 : v) });
+}
+function safeOf(lv, g, letter) {
+  const w = lv.w, n = w * lv.h, f = lv.features || {}, safe = Uint8Array.from(g.stand), R = SB.TUNING.ROUTE_SAFE_ENEMY_DIST;
+  for (const e of f.enemies || []) {
+    for (const c of e.env || []) if (c >= 0 && c < n) safe[c] = 0;
+    if (!letter && e.elite && f.pocket && f.pocket.cells.includes(e.idx)) continue;
+    for (let i = 0; i < n; i++) if (cheb(i, e.idx, w) <= R) safe[i] = 0;
+  }
+  if (lv.trap) for (let i = 0; i < n; i++) if (lv.trap[i]) safe[i] = 0;
+  return safe;
+}
+function cadenceOf(lv, a, g, safe) {
+  const n = g.n, rowOf = v => Math.floor((v < n ? v : (v - n) >> 1) / lv.w); let r = 0, worst = 0;
+  for (const e of a.edges) {
+    if (!(g.adj[e.from] || []).some(x => edgeKey(x) === edgeKey(e))) return null;
+    const climbed = Math.max(0, rowOf(e.from) - rowOf(e.to)); worst = Math.max(worst, r + climbed);
+    r = e.to < n && safe[e.to] ? 0 : r + climbed;
+  }
+  return worst;
+}
+
 group('H-route-1', 'every built level\'s main ascent starts at spawn, ends at the exit, and keeps the per edge limits', t => {
   for (const f of FIXTURES) for (const mode of MODES) {
     const lv = buildFx(f, mode), tag = f.name + ' mode ' + mode;
@@ -2583,13 +2616,12 @@ group('H-route-1', 'every built level\'s main ascent starts at spawn, ends at th
   }
 });
 
-group('H-route-2', 'on every ascent, consecutive safe cells are at most 8 rows apart', t => {
+group('H-route-2', 'on every ascent, consecutive safe cells are at most 8 rows apart: the safe cells after placement (T1.3: outside every envelope and the trap field, clear of every spawn), over the edge set with the trap field', t => {
   for (const f of FIXTURES) for (const mode of MODES) {
     const lv = buildFx(f, mode);
     if (lv.needsCrop || !lv.ascent || !lv.ascent.nodes) continue;
-    const g = SB.reach.graph(lv); let lastSafe = nodeRow(lv, lv.spawn), worst = 0;
-    for (const v of lv.ascent.nodes) { const r = nodeRow(lv, v); worst = Math.max(worst, lastSafe - r); if (v < g.n && g.stand[v]) lastSafe = Math.min(lastSafe, r); }
-    t.ok(worst <= SB.TUNING.ROUTE_SAFE_EVERY_ROWS, f.name + ' mode ' + mode + ': the longest climb between safe cells is ' + worst + ' rows (at most 8)');
+    const g = trapGraphOf(lv), worst = cadenceOf(lv, lv.ascent, g, safeOf(lv, g));
+    t.ok(worst !== null && worst <= SB.TUNING.ROUTE_SAFE_EVERY_ROWS, f.name + ' mode ' + mode + ': the longest climb between safe cells is ' + worst + ' rows (at most 8)');
   }
 });
 
@@ -2641,6 +2673,81 @@ group('H-route-5', 'how many rooms change under ROUTE_SLACK_BOTH_AXES (for QUEST
   }
   console.log('  info  H-route-5: under ROUTE_SLACK_BOTH_AXES ' + changed.length + ' rooms change: ' + (changed.join(', ') || 'none'));
   t.ok(true, 'H-route-5 printed');
+});
+
+/* ================================================================ the route with placements (T1.3) */
+group('H-route-7', 'every built level passes with its placements: the ascent runs spawn to exit over the edge set with the trap field, keeps the cadence over the safe cells after placement and never stands on a trap; the degrade ladder never runs out on the corpus', t => {
+  const bad = [], rungs = { 1: 0, 2: 0, 3: 0 }, letter = []; let levels = 0, crops = 0;
+  for (const f of FIXTURES) for (const mode of MODES) for (const biome of [null, 0, 1, 2, 3, 4]) {
+    const lv = biome === null ? buildFx(f, mode) : SB.pipeline.build(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode })), { biome });
+    const tag = f.name + ' mode ' + mode + ' ' + (biome === null ? 'as detected' : SB.palette.BIOMES[biome]);
+    if (lv.needsCrop) { if (lv.degraded) { crops++; bad.push(tag + ': the ladder ran out (' + lv.detail + ')'); } continue; }
+    levels++;
+    for (let k = 0; k < lv.degraded.length; k += 2) rungs[lv.degraded[k]]++;
+    const a = lv.ascent;
+    if (!a || !a.edges || !a.score.ok || a.nodes[0] !== lv.spawn || a.nodes[a.nodes.length - 1] !== lv.exit) { bad.push(tag + ': the ascent fails its score'); continue; }
+    const g = trapGraphOf(lv), worst = cadenceOf(lv, a, g, safeOf(lv, g));
+    if (worst === null) bad.push(tag + ': an ascent edge is not in the edge set with the trap field');
+    else if (worst > SB.TUNING.ROUTE_SAFE_EVERY_ROWS) bad.push(tag + ': a climb of ' + worst + ' rows between safe cells');
+    if (a.nodes.some(v => v < g.n && lv.trap[v])) bad.push(tag + ': the ascent stands on a trap cell');
+    const wl = cadenceOf(lv, a, g, safeOf(lv, g, true));
+    if (wl === null || wl > SB.TUNING.ROUTE_SAFE_EVERY_ROWS) letter.push(tag);
+  }
+  t.eq(bad.length, 0, 'every one of ' + levels + ' built levels passes with its placements' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
+  console.log('  info  the degrade ladder over the corpus (' + levels + ' levels): ' + rungs[1] + ' enemies removed, ' + rungs[2] + ' trap fields removed, ' + rungs[3] + ' repair passes, ' + crops + ' ran out; under the letter of 3.7 (the pocket\'s elite held to the spawn distance too, Q80) ' + letter.length + ' ascents break the cadence' + (letter.length ? ' (' + letter.slice(0, 4).join('; ') + ')' : ''));
+});
+
+group('H-route-8', 'an enemy nest on the only ascent: placement moves its enemy clear of the ascent rather than failing', t => {
+  /* the plank climb of the pit lab (Glare over Pewter, 4 wide, every 3 rows) and an Amber pair over the plank the
+     climb stands on at row 25 */
+  const g = []; for (let y = 0; y < 48; y++) g.push(Array(24).fill('4'));
+  for (let x = 0; x < 24; x++) g[47][x] = '1';
+  [43, 40, 37, 34, 31, 28, 25, 22, 19, 16, 13, 10, 7, 3].forEach((r, k) => { const x0 = k % 2 ? 7 : 2; for (let x = x0; x < x0 + 4; x++) { g[r][x] = '6'; g[r + 1][x] = '3'; } });
+  g[24][3] = '8'; g[24][4] = '8';
+  const lv = SB.pipeline.build(labRecord(g.map(r => r.join(''))), { biome: 0 }), R = SB.TUNING.ROUTE_SAFE_ENEMY_DIST, nest = [24 * 24 + 3, 24 * 24 + 4];
+  const stands = lv.needsCrop ? [] : lv.ascent.nodes.filter(v => v < 24 * 48), dist = c => Math.min(...stands.map(s => cheb(c, s, 24)));
+  const en = lv.needsCrop ? [] : lv.features.enemies;
+  t.ok(!lv.needsCrop && nest.every(c => dist(c) <= R) && en.length === 1 && !nest.includes(en[0].idx) && dist(en[0].idx) > R && lv.degraded.length === 0 && lv.ascent.score.ok, 'an Amber pair 1 cell from the climb: its moth spawns at ' + en.map(e => at(e.idx) + ', ' + dist(e.idx) + ' cells from the ascent').join('; ') + ', and no rung of the ladder runs');
+});
+
+group('H-route-9', 'the envelope rule (section 3.7, Q57): a crawler patrolling the only ledge leaves no safe cell on it; a moth leaves none within ROUTE_SAFE_ENEMY_DIST', t => {
+  const w = 24, y = 41, ledge = []; for (let x = 2; x <= 21; x++) ledge.push(y * w + x);
+  const lv = LABS.room(['..====================', '', '', '', '', FLOOR], { biome: 3 }), g = SB.reach.graph(lv), c = y * w + 3;
+  lv.features = { pocket: null, enemies: [{ kind: SB.features.CRAWLER, idx: c, env: SB.features.envelope(lv, SB.features.CRAWLER, c) }] };
+  const safe = SB.reach.safeSet(lv, g), far = ledge.filter(q => cheb(q, c, w) > SB.TUNING.ROUTE_SAFE_ENEMY_DIST);
+  t.ok(ledge.every(q => g.stand[q]) && far.length > 10 && ledge.every(q => !safe[q]), 'a crawler at the left end of a 20 cell ledge leaves none of its cells safe, the ' + far.length + ' beyond its spawn distance included (safe: ' + (ledge.filter(q => safe[q]).map(at).join(' ') || 'none') + ')');
+  const lvM = LABS.room(['..====================', '', '', '', '', FLOOR]), m = 39 * w + 10;
+  lvM.features = { pocket: null, enemies: [{ kind: SB.features.MOTH, idx: m, env: Int32Array.of(m) }] };
+  const sM = SB.reach.safeSet(lvM, SB.reach.graph(lvM)), near = ledge.filter(q => cheb(q, m, w) <= SB.TUNING.ROUTE_SAFE_ENEMY_DIST);
+  t.ok(near.length === 7 && near.every(q => !sM[q]) && ledge.filter(q => !near.includes(q)).every(q => sM[q]), 'a moth 2 rows over the ledge at x 10: the 7 ledge cells within ROUTE_SAFE_ENEMY_DIST are not safe and the rest are (unsafe: ' + ledge.filter(q => !sM[q]).map(at).join(' ') + ')');
+});
+
+group('H-route-10', 'the degrade ladder (Q36): each rung logged in level.degraded and followed by the same check; the final score ok, or an honest needsCrop(route)', t => {
+  /* 3 wide one ways every 4 rows (x 5..7 and 9..11): a climb whose safe cells are 4 rows apart, so a moth between two
+     planks leaves a 12 row climb */
+  const lab = () => {
+    const L = []; for (let y = 0; y < 47; y++) L.push('.'.repeat(24)); L.push(FLOOR);
+    const set = (x, y, ch) => { L[y] = L[y].slice(0, x) + ch + L[y].slice(x + 1); };
+    let y = 42, k = 0, lastX = 0; while (y >= 4) { const x0 = k % 2 ? 9 : 5; for (let x = x0; x < x0 + 3; x++) set(x, y + 1, '='); lastX = x0; y -= 4; k++; }
+    set(6, 46, 'S'); set(lastX + 1, y + 4, 'X');
+    const lv = Object.assign(LABS.room(L, { exit: true }), { landmarks: [], degraded: [], repair: { tabs: 0, passes: 0, changedFrac: 0 },
+      features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null } });
+    const g = SB.reach.graph(lv), a = SB.reach.mainAscent(g, lv); lv.ascent = { nodes: a.nodes, edges: a.edges, score: SB.reach.routeScore(lv, g, a) };
+    return { lv, g };
+  };
+  const moth = c => ({ kind: SB.features.MOTH, idx: c, env: Int32Array.of(c) }), D = SB.pipeline.DEGRADE;
+  const final = lv => { const g = trapGraphOf(lv), worst = cadenceOf(lv, lv.ascent, g, safeOf(lv, g)); return lv.ascent.score.ok && worst !== null && worst <= SB.TUNING.ROUTE_SAFE_EVERY_ROWS; };
+  { const { lv, g } = lab(); lv.features.enemies = [moth(40 * 24 + 8)];
+    const res = SB.pipeline.settle(lv, g);
+    t.ok(lv.ascent.score.ok && res === null && lv.degraded.join() === [D.ENEMY, 40 * 24 + 8].join() && lv.features.enemies.length === 0 && final(lv), 'a moth between two planks: the first rung removes it (' + lv.degraded.join(' ') + ') and the ascent holds'); }
+  { const { lv, g } = lab(), cells = [];
+    for (let y = 40; y <= 41; y++) for (let x = 0; x < 24; x++) { lv.trap[y * 24 + x] = 1; cells.push(y * 24 + x); }
+    Object.assign(lv.features, { trap: Int32Array.from(cells), trapRect: [0, 40, 23, 41], trapKind: 'spikes' });
+    const res = SB.pipeline.settle(lv, g);
+    t.ok(res === null && lv.degraded.join() === [D.TRAP, 40 * 24].join() && !lv.trap.some(v => v) && final(lv), 'a trap band across the room: no enemy to remove, the second rung removes the field (' + lv.degraded.join(' ') + ') and the ascent holds'); }
+  { const { lv, g } = lab(); lv.features.enemies = [moth(28 * 24 + 8), moth(40 * 24 + 8)];
+    const res = SB.pipeline.settle(lv, g);
+    t.ok(!!res && res.why === 'route' && lv.degraded[0] === D.ENEMY && lv.degraded[1] === 28 * 24 + 8 && lv.degraded.includes(D.REPAIR) && /^enemies-traps/.test(lv.ascent.score.reasons[0] || ''), 'two moths: the nearest goes first (a tie to the lower cell), the other still breaks the climb, the repair pass is logged and the room is an honest needsCrop(route) (' + (res ? res.detail : 'it settled') + ')'); }
 });
 
 /* DESIGN 5.3 on the sample room: the onboarding beats, before any photo code */

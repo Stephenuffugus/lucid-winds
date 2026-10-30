@@ -879,10 +879,11 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     level.ascent = { nodes: fixed.ascent.nodes, edges: fixed.ascent.edges, score: SB.reach.routeScore(level, fixed.g, fixed.ascent) };
     /* when the exit is the light the light's cells are relit around it; otherwise the light stays backdrop */
     level.beacon = { idx: exit, cells: light && exit >= 0 && light.indexOf(exit) >= 0 ? Int32Array.from(light) : new Int32Array(0) };
-    /* the features (T1.2a): the ladder, the door, the pocket, the chest and the moths, in core-features' fixed
-       order, after the ascent so they keep clear of it (the pocket never carves it) */
-    SB.features.place(level, opts, fixed.g);
-    return level;
+    /* the features (T1.2a, T1.2b): the ladder, the pocket, the door, the chest, the loot, the trap field and the
+       enemies, in core-features' fixed order, after the ascent so they keep clear of it (the pocket never carves it);
+       then the second round of the ascent and, when it fails, the degrade ladder (T1.3) */
+    var settled = settle(level, SB.features.place(level, opts, fixed.g));
+    return settled || level;
   }
 
   /* the exit (section 3.7, DESIGN 6.6): the reachable standable cell of the top EXIT_ROWS rows with the greatest
@@ -918,16 +919,21 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
      largest unreached mass when too little is reached. Never on a landmark cell nor within 1 cell of a landmark top. Up
      to REPAIR_PASSES passes (each pass's 12 is DESIGN's "max 12 tabs"; the 15% cap bounds the total); needsCrop when the
      tabs would change more than REPAIR_MAX_CHANGE of the cells or the passes run out. */
-  function repair(level, light, landmarks) {
-    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k, pass, tabs = 0;
-    var near = new Uint8Array(n);                     /* landmark cells and every cell within 1 of a landmark top */
-    for (k = 0; k < landmarks.length; k++) for (var j = 0; j < landmarks[k].cells.length; j++) {
+  /* landmark cells and every cell within 1 of a landmark top: no tab goes there */
+  function landmarkNear(level, landmarks) {
+    var w = level.w, h = level.h, near = new Uint8Array(w * h);
+    for (var k = 0; k < landmarks.length; k++) for (var j = 0; j < landmarks[k].cells.length; j++) {
       var c = landmarks[k].cells[j], cx = c % w, cy = (c - cx) / w;
       near[c] = 1;
       if (cy === 0 || !level.solid[c - w]) for (var ox = -1; ox <= 1; ox++) for (var oy = -1; oy <= 1; oy++) {
         var xx = cx + ox, yy = cy + oy; if (xx >= 0 && xx < w && yy >= 0 && yy < h) near[yy * w + xx] = 1;
       }
     }
+    return near;
+  }
+  function repair(level, light, landmarks) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k, pass, tabs = 0;
+    var near = landmarkNear(level, landmarks);
     for (pass = 0; ; pass++) {
       var g = SB.reach.graph(level), d = SB.reach.distances(g, level.spawn), frac = SB.reach.reachableFrac(g, d);
       var exit = exitByReach(level, light, d), ascent = null;
@@ -1031,6 +1037,84 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     }
     return laid;
   }
+  /* T1.3: the second round of the main ascent (section 3.7) and the degrade ladder (QUESTIONS Q36). Placement kept its
+     enemies and its trap field clear of round one's ascent; round two rebuilds the edge set with the trap field (a
+     trap cell is never a node, no corridor crosses one) and counts as safe only the cells outside every envelope and
+     clear of every spawn. Round one's ascent stands when it still holds (every edge, the cadence), else the least cost
+     ascent of round two; when there is none the ladder runs, each rung followed by the same check and logged in
+     level.degraded as a pair of integers (DEGRADE.ENEMY and the enemy's cell, DEGRADE.TRAP and the field's top left
+     cell, DEGRADE.REPAIR and the tabs laid): the enemy nearest the ascent goes, then the trap field, then one more
+     repair pass lays a stair toward the exit, then needsCrop with why 'route'. Returns null when the level stands. */
+  var DEGRADE = { ENEMY: 1, TRAP: 2, REPAIR: 3 };
+  /* round one's ascent under round two's rules: every edge still an edge, the cadence kept with the new safe cells */
+  function holds(level, a, g, safe) {
+    var T = SB.TUNING, w = level.w, n = g.n, r = 0;
+    if (!a || !a.nodes || !a.edges) return false;
+    var rowOf = function (v) { return Math.floor((v < n ? v : (v - n) >> 1) / w); };
+    for (var k = 0; k < a.edges.length; k++) {
+      var e = a.edges[k], es = g.adj[e.from] || [], found = false;
+      for (var j = 0; j < es.length && !found; j++) { var f = es[j]; if (f.to === e.to && f.kind === e.kind && f.profile === e.profile && f.dir === e.dir && f.dx === e.dx && f.dy === e.dy) found = true; }
+      if (!found) return false;   /* an edge the trap field took */
+      var climbed = Math.max(0, rowOf(e.from) - rowOf(e.to));
+      if (r + climbed > T.ROUTE_SAFE_EVERY_ROWS) return false;
+      r = e.to < n && safe[e.to] ? 0 : r + climbed;
+    }
+    return true;
+  }
+  /* the enemy whose cell is nearest (Chebyshev) a cell the ascent stands on; the list is sorted by cell, so a tie keeps
+     the lower */
+  function nearestEnemy(level) {
+    var w = level.w, n = w * level.h, es = level.features.enemies, nodes = level.ascent && level.ascent.nodes ? level.ascent.nodes : [], best = -1, bd = Infinity;
+    for (var k = 0; k < es.length; k++) {
+      var c = es[k].idx, cx = c % w, cy = (c - cx) / w, dmin = Infinity;
+      for (var q = 0; q < nodes.length; q++) { var v = nodes[q]; if (v >= n) continue; var dd = Math.max(Math.abs(v % w - cx), Math.abs((v - v % w) / w - cy)); if (dd < dmin) dmin = dd; }
+      if (dmin < bd) { bd = dmin; best = k; }
+    }
+    return best;
+  }
+  /* the ladder's repair rung: one stair as repair lays one for a route, from the reached standable cell nearest the exit
+     toward it, never on a landmark top nor on a placed thing's cell */
+  function repairPass(level, g) {
+    var w = level.w, h = level.h, n = w * h, f = level.features, i, k;
+    var near = landmarkNear(level, level.landmarks);
+    var mark = function (c) { if (c !== null && c !== undefined && c >= 0 && c < n) near[c] = 1; };
+    mark(f.chest); mark(f.scroll); mark(f.blueprint); if (f.door) mark(f.door.idx);
+    for (k = 0; k < f.specks.length; k++) mark(f.specks[k]);
+    if (f.pocket) for (k = 0; k < f.pocket.cells.length; k++) mark(f.pocket.cells[k]);
+    for (k = 0; k < f.enemies.length; k++) mark(f.enemies[k].idx);
+    var d = SB.reach.distances(g, level.spawn), tx = level.exit % w, ty = (level.exit - tx) / w, fronts = [];
+    for (i = 0; i < n; i++) if (i !== level.exit && standableIn(level, i) && d[i] >= 0) { var ix = i % w, iy = (i - ix) / w; fronts.push([(ix - tx) * (ix - tx) + (iy - ty) * (iy - ty), i]); }
+    fronts.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+    var laid = 0;
+    for (k = 0; k < fronts.length && !laid; k++) { var fr = fronts[k][1]; laid = stair(level, near, fr % w, (fr - fr % w) / w, tx, ty); }
+    level.repair.tabs += laid; level.repair.changedFrac = 2 * level.repair.tabs / n;
+    return laid;
+  }
+  function settle(level, g) {
+    var R = SB.reach, f = level.features, w = level.w, n = w * level.h;
+    var check = function () {
+      var g2 = R.trapGraph(level, g), safe = R.safeSet(level, g2), a = level.ascent;
+      if (holds(level, a, g2, safe)) { level.ascent = { nodes: a.nodes, edges: a.edges, score: R.routeScore(level, g2, a, safe) }; return true; }
+      var b = R.mainAscent(g2, level, { safe: safe });
+      if (b.nodes) { level.ascent = { nodes: b.nodes, edges: b.edges, score: R.routeScore(level, g2, b, safe) }; return true; }
+      level.ascent.score = R.routeScore(level, g2, b, safe, g);
+      return false;
+    };
+    if (check()) return null;
+    var k = nearestEnemy(level);
+    if (k >= 0) { var e = f.enemies.splice(k, 1)[0]; level.degraded.push(DEGRADE.ENEMY, e.idx); if (check()) return null; }
+    if (f.trap) {
+      for (var q = 0; q < f.trap.length; q++) level.trap[f.trap[q]] = 0;
+      level.degraded.push(DEGRADE.TRAP, f.trapRect ? f.trapRect[1] * w + f.trapRect[0] : f.trap[0]);
+      f.trap = null; f.trapRect = null; f.trapKind = null;
+      if (check()) return null;
+    }
+    var laid = repairPass(level, g);
+    level.degraded.push(DEGRADE.REPAIR, laid);
+    if (laid && 2 * level.repair.tabs / n <= SB.TUNING.REPAIR_MAX_CHANGE) { g = R.graph(level); if (check()) return null; }
+    return { needsCrop: true, why: 'route', detail: 'the degrade ladder ran out (' + level.degraded.join(' ') + '): ' + (level.ascent.score.reasons[0] || 'no reason'), degraded: level.degraded.slice() };
+  }
+
   /* the default spread's reserved slots: a speck on the middle tab of the stair, fodder on the reached floor cell
      farthest from spawn */
   function spreadSlots(level, d) {
@@ -1133,7 +1217,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   function levelHash(lv) { return SB.rng.hashWords(serialize(lv)); }
 
   SB.pipeline = { toText: toText, otsu: otsu, smooth: smooth, components: components, describe: describe, build: build, biomeOf: biomeOf,
-    FIELDS: FIELDS, serialize: serialize, levelHash: levelHash, exitByReach: exitByReach };
+    FIELDS: FIELDS, serialize: serialize, levelHash: levelHash, exitByReach: exitByReach, DEGRADE: DEGRADE, settle: settle, holds: holds };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-reach" data-core>
@@ -1604,10 +1688,10 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   /* mainAscent(graph, level, opts): the least cost path from spawn to the exit by Dijkstra over (node, wallChain,
      rowsSinceSafe) with the filters max-range, wall-chain and safe-cadence (opts.skip names one to switch off, for the
      reasons); safe in M0 is any standable cell of the graph (a slick end included: a landing that would slide off it
-     is no edge, Q74). Returns
+     is no edge, Q74); after placement opts.safe is safeSet's (T1.3: the envelopes, the spawns, the trap field). Returns
      { nodes, edges, cost } or { nodes: null, top } with the highest row its frontier reached. */
   function mainAscent(g, level, opts) {
-    var T = SB.TUNING, o = opts || {}, both = o.both === undefined ? T.ROUTE_SLACK_BOTH_AXES : o.both;
+    var T = SB.TUNING, o = opts || {}, both = o.both === undefined ? T.ROUTE_SLACK_BOTH_AXES : o.both, safe = o.safe || g.stand;
     var tb = tables(SB.K, level.biome | 0), w = g.w, n = g.n, CH = T.ROUTE_MAX_WALL_CHAIN + 1, RS = T.ROUTE_SAFE_EVERY_ROWS + 1;
     var states = 3 * n * CH * RS, dist = new Float64Array(states).fill(Infinity), prev = new Int32Array(states).fill(-1), via = [];
     var key = function (v, c, r) { return (v * CH + c) * RS + r; };
@@ -1634,7 +1718,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         var wallish = e.kind === 'WALLJUMP' || e.kind === 'WALLTOUCH';
         var ch = u < n ? 0 : wallish ? c0 + 1 : c0;
         if (wallish && c0 + 1 > T.ROUTE_MAX_WALL_CHAIN) { if (o.skip !== 'wall-chain') { if (rv < cut['wall-chain']) cut['wall-chain'] = rv; continue; } ch = T.ROUTE_MAX_WALL_CHAIN; }
-        var climbed = Math.max(0, rv - rowOf(u)), rs = u < n && g.stand[u] ? 0 : r0 + climbed;
+        var climbed = Math.max(0, rv - rowOf(u)), rs = u < n && safe[u] ? 0 : r0 + climbed;
         if (r0 + climbed > T.ROUTE_SAFE_EVERY_ROWS) { if (o.skip !== 'safe-cadence') { if (rv < cut['safe-cadence']) cut['safe-cadence'] = rv; continue; } rs = Math.min(rs, T.ROUTE_SAFE_EVERY_ROWS); }
         var nk = key(u, ch, rs), nd = it[0] + e.cost;
         if (nd < dist[nk]) { dist[nk] = nd; prev[nk] = sk; via[nk] = e; push([nd, nk]); }
@@ -1645,11 +1729,12 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     for (var s = goal; s >= 0; s = prev[s]) { var rr = s % RS, cc = ((s - rr) / RS) % CH; nodes.unshift((s - rr - cc * RS) / (RS * CH)); if (via[s]) edges.unshift(via[s]); }
     return { nodes: nodes, edges: edges, cost: dist[goal], top: top };
   }
-  /* routeScore(level, graph, ascent): { ok, reasons, ascentLength, maxJump, wallChains, safeGapRows, hardBranches };
-     reasons[0] names the first filter whose switching off alone reaches the exit, and the row the filtered frontier died
-     on (section 3.7) */
-  function routeScore(level, g, ascent) {
-    var T = SB.TUNING, w = g.w, n = g.n, out = { ok: !!(ascent && ascent.nodes), reasons: [], ascentLength: 0, maxJump: { dx: 0, dy: 0 }, wallChains: 0, safeGapRows: 0, hardBranches: 0 };
+  /* routeScore(level, graph, ascent, safe, plain): { ok, reasons, ascentLength, maxJump, wallChains, safeGapRows,
+     hardBranches }; reasons[0] names the first filter whose switching off alone reaches the exit, and the row the
+     filtered frontier died on (section 3.7). After placement (T1.3) safe is safeSet's and plain the graph without the
+     trap field: when the route reaches the exit there under round one's rules, enemies-traps comes first */
+  function routeScore(level, g, ascent, safe, plain) {
+    var T = SB.TUNING, w = g.w, n = g.n, sf = safe || g.stand, out = { ok: !!(ascent && ascent.nodes), reasons: [], ascentLength: 0, maxJump: { dx: 0, dy: 0 }, wallChains: 0, safeGapRows: 0, hardBranches: 0 };
     var rowOf = function (v) { return Math.floor((v < n ? v : (v - n) >> 1) / w); };
     if (!out.ok) {
       /* the filters ordered by the row they cut at, the highest first (ties in the filters' order) */
@@ -1657,8 +1742,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       filters.sort(function (a, b) { return ascent.cut[a] - ascent.cut[b]; });
       /* reasons[0] is the first of them whose switching off alone reaches the exit (the third review: the highest cut
          alone named wall-chain in a room only max-range blocked); the rest stay in the order of the rows they cut */
-      for (var q = 0; q < filters.length; q++) { var alt = mainAscent(g, level, { skip: filters[q] }); if (alt && alt.nodes) { filters.unshift(filters.splice(q, 1)[0]); break; } }
+      for (var q = 0; q < filters.length; q++) { var alt = mainAscent(g, level, { skip: filters[q], safe: safe }); if (alt && alt.nodes) { filters.unshift(filters.splice(q, 1)[0]); break; } }
       for (var f = 0; f < filters.length; f++) out.reasons.push(filters[f] + ' (cut on row ' + ascent.cut[filters[f]] + '; the frontier reached row ' + ascent.top + ')');
+      if (plain && mainAscent(plain, level).nodes) out.reasons.unshift('enemies-traps (without the envelopes and the trap field the route reaches the exit)');
       if (!out.reasons.length) out.reasons.push('unreached (nothing filtered: no route at all)');
       return out;
     }
@@ -1668,13 +1754,52 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       var e = ascent.edges[k];
       if ((e.kind === 'JUMP' || e.kind === 'WALLJUMP') && (e.dy > out.maxJump.dy || (e.dy === out.maxJump.dy && e.dx > out.maxJump.dx))) out.maxJump = { dx: e.dx, dy: e.dy };
       if (e.kind === 'WALLJUMP' || e.kind === 'WALLTOUCH') { chain++; if (chain > out.wallChains) out.wallChains = chain; }
-      if (e.to < n && g.stand[e.to]) { chain = 0; var gap = lastSafe - rowOf(e.to); if (gap > out.safeGapRows) out.safeGapRows = gap; lastSafe = Math.min(lastSafe, rowOf(e.to)); }
+      if (e.to < n && g.stand[e.to]) chain = 0;
+      if (e.to < n && sf[e.to]) { var gap = lastSafe - rowOf(e.to); if (gap > out.safeGapRows) out.safeGapRows = gap; lastSafe = Math.min(lastSafe, rowOf(e.to)); }
     }
     return out;
   }
 
+  /* the edge set after placement (section 3.7's enemies-traps, T1.3): an edge of the room's graph stands when the graph
+     of the same room with the trap field walled has it too, so its corridor crosses no trap cell (a trajectory that
+     would enter the field bumps the wall there and lands elsewhere, or nowhere); a trap cell is never a node */
+  function trapGraph(level, g) {
+    var n = g.n, tr = level.trap, any = false, i;
+    for (i = 0; tr && i < n && !any; i++) if (tr[i]) any = true;
+    if (!any) return g;
+    var walled = level.solid.slice();
+    for (i = 0; i < n; i++) if (tr[i]) walled[i] = 1;
+    var gw = graph(Object.assign({}, level, { solid: walled })), adj = [], edges = 0, stand = g.stand.slice(), standN = 0;
+    for (i = 0; i < n; i++) { if (tr[i]) stand[i] = 0; if (stand[i]) standN++; }
+    for (var u = 0; u < g.adj.length; u++) {
+      var es = g.adj[u]; if (!es) continue;
+      var ws = gw.adj[u] || [], keep = [];
+      for (var k = 0; k < es.length; k++) {
+        var e = es[k];
+        for (var j = 0; j < ws.length; j++) { var f = ws[j]; if (f.to === e.to && f.kind === e.kind && f.profile === e.profile && f.dir === e.dir && f.dx === e.dx && f.dy === e.dy) { keep.push(e); break; } }
+      }
+      if (keep.length) { adj[u] = keep; edges += keep.length; }
+    }
+    return { w: g.w, h: g.h, n: n, stand: stand, contact: g.contact, sticky: g.sticky, standN: standN, adj: adj, edges: edges };
+  }
+  /* the safe cells after placement (section 3.7, QUESTIONS Q57): standable in the edge set, outside every enemy's
+     envelope and the trap field, and more than ROUTE_SAFE_ENEMY_DIST (Chebyshev) from every enemy's spawn; the pocket's
+     elite is held to its envelope alone, its closed pocket (Q75: it never leaves it; Q80) */
+  function safeSet(level, g) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, safe = g.stand.slice(), f = level.features || {}, es = f.enemies || [], k, q;
+    for (k = 0; k < es.length; k++) {
+      var e = es[k];
+      if (e.env) for (q = 0; q < e.env.length; q++) if (e.env[q] >= 0 && e.env[q] < n) safe[e.env[q]] = 0;
+      if (e.elite && f.pocket && f.pocket.cells.indexOf(e.idx) >= 0) continue;
+      var r = T.ROUTE_SAFE_ENEMY_DIST, x0 = e.idx % w, y0 = (e.idx - x0) / w;
+      for (var yy = Math.max(0, y0 - r); yy <= Math.min(h - 1, y0 + r); yy++) for (var xx = Math.max(0, x0 - r); xx <= Math.min(w - 1, x0 + r); xx++) safe[yy * w + xx] = 0;
+    }
+    if (level.trap) for (q = 0; q < n; q++) if (level.trap[q]) safe[q] = 0;
+    return safe;
+  }
+
   SB.reach = { PROFILES: PROFILES, KINDS: KINDS, arc: arc, crossing: crossing, farCell: farCell, tables: tables, graph: graph, distances: distances, reachableFrac: reachableFrac,
-    slackOk: slackOk, mainAscent: mainAscent, routeScore: routeScore };
+    slackOk: slackOk, mainAscent: mainAscent, routeScore: routeScore, trapGraph: trapGraph, safeSet: safeSet };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-features" data-core>
@@ -2203,7 +2328,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var tf = trapField(level, opts, f, stands);
     f.trap = tf ? tf.cells : null; f.trapRect = tf ? tf.rect : null; f.trapKind = tf ? tf.kind : null;
     f.enemies = enemies(level, opts, f, rng, stands);
-    return f;
+    return g;   /* the graph of the carved grid, for the second round (T1.3) */
   }
   SB.features = { MOTH: MOTH, ICICLE: ICICLE, JELLY: JELLY, CRAWLER: CRAWLER, SPARK: SPARK, KIND_OF_BIOME: KIND_OF_BIOME,
     place: place, returnable: returnable, ladder: ladder, brightRect: brightRect, door: door, pocketCands: pocketCands, pocketOk: pocketOk, chest: chest, specks: specks,
