@@ -68,9 +68,17 @@ try {
   /* the QR drawer (T1.9b) on the first page's open sheet (brought to the front: a touch to a tab behind the two
      pages opened since never gets its acknowledgement) */
   await page.bringToFront();
+  /* Android has the phone's own share sheet (navigator.share), so its button shows there: stubbed here, the sheet
+     reopened, so the layout is the phone's */
+  await tap(page, '#shareclose');
+  await page.evaluate(() => { Object.defineProperty(navigator, 'share', { value: () => Promise.resolve(), configurable: true }); Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true }); });
+  await tap(page, '#share');
   const qr0 = await page.evaluate(() => ({ hidden: document.getElementById('qrdrawer').hidden, toggle: document.getElementById('qrtoggle').textContent,
     above: document.getElementById('copylink').getBoundingClientRect().top < document.getElementById('qrtoggle').getBoundingClientRect().top }));
-  R.say(qr0.hidden && qr0.toggle === 'Show a QR code' && qr0.above, 'the QR drawer stays closed until asked for, and Copy link sits above its toggle');
+  R.say(qr0.hidden && qr0.toggle === 'Show QR code' && qr0.above, 'the QR drawer stays closed until asked for, and Copy link sits above its toggle');
+  const inSight = await page.evaluate(() => { const sh = document.getElementById('sharesheet').getBoundingClientRect();
+    return ['shareclose', 'copylink', 'sharenative', 'copycode', 'qrtoggle'].filter(id => { const el = document.getElementById(id), r = el.getBoundingClientRect(); return el.hidden || !(r.top >= sh.top && r.bottom <= sh.bottom); }); });
+  R.say(inSight.length === 0, 'at 412x915 Close, Copy link, the phone\'s Share, Copy code and the QR toggle are all in sight without a scroll' + (inSight.length ? ' (out of sight: ' + inSight.join(', ') + ')' : ''));
   await tap(page, '#qrtoggle');
   const qr = await page.evaluate(() => {
     const cv = document.getElementById('qrcanvas'), n = cv.width, d = cv.getContext('2d').getImageData(0, 0, n, n).data, link = document.getElementById('sharelink').value;
@@ -85,7 +93,7 @@ try {
     return { open: !document.getElementById('qrdrawer').hidden, toggle: document.getElementById('qrtoggle').textContent, n, q, modules: +cv.dataset.modules, px: +cv.dataset.px,
       size: sym.size, quietBad, modBad, w: r.width, onScreen: r.left >= 0 && r.right <= innerWidth };
   });
-  R.say(qr.open && qr.toggle === 'Hide the QR code' && qr.modules === 97 && qr.size === 97 && qr.n === 105, 'a real tap opens the drawer: the link is a version 20 symbol of 97 modules (H-qr-3\'s) on a ' + qr.n + ' pixel canvas');
+  R.say(qr.open && qr.toggle === 'Hide QR code' && qr.modules === 97 && qr.size === 97 && qr.n === 105, 'a real tap opens the drawer: the link is a version 20 symbol of 97 modules (H-qr-3\'s) on a ' + qr.n + ' pixel canvas');
   R.say(qr.q === 4 && qr.quietBad === 0, 'its quiet zone is 4 modules of Paper on every side (' + qr.quietBad + ' pixels otherwise, quiet ' + qr.q + ')');
   R.say(qr.modBad === 0, 'every module drawn is the encoder\'s, Ink or Paper (' + qr.modBad + ' differ)');
   R.say(qr.px === 3 && Math.abs(qr.w - 315) < 0.5 && qr.onScreen, 'at 412 wide: 3 CSS px a module, ' + qr.w + ' px across, on screen');

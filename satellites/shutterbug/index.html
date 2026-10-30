@@ -125,14 +125,21 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
   display: none; flex-direction: column; gap: 8px; align-items: stretch; text-align: center; z-index: 11; }
 #sharesheet.on { display: flex; }
-#sharesheet h2 { margin: 0; padding: 12px 64px 0; font-size: 1.2rem; } #sharesheet p { margin: 0; font-size: 0.9rem; }
-/* Close in the sheet's corner, in sight whatever the phone's height (t18: below the fold at 360x780) and however far
-   the sheet is scrolled (T1.9b: the QR drawer scrolled it away): first in the sheet, sticky, its height taken back */
-#sharesheet #shareclose { position: sticky; top: 6px; align-self: flex-end; min-width: 56px; padding: 0 10px; margin: -8px -8px -56px 0; z-index: 1; }
-#sharecanvas { align-self: center; height: min(384px, 26vh); width: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; border: 2px solid var(--ink); }
+#sharesheet p { margin: 0; font-size: 0.9rem; }
+/* the sheet's head: the title and Close in a Paper bar that stays on top however far the sheet scrolls (t18: Close
+   below the fold at 360x780; T1.9b: the QR drawer scrolls the sheet, and a floating Close sat over its words); sticky
+   offsets count from the sheet's content box, so -14px puts the bar over its padding too */
+#sharehead { position: sticky; top: -14px; z-index: 1; margin: -14px -14px 0; padding: 6px 6px 6px 14px; background: var(--paper);
+  display: flex; align-items: center; gap: 8px; }
+#sharehead h2 { margin: 0; flex: 1; text-align: left; font-size: 1.2rem; }
+#sharesheet #shareclose { flex: none; min-width: 56px; padding: 0 10px; }
+#sharecanvas { align-self: center; height: min(384px, 22vh); width: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; border: 2px solid var(--ink); }
 #sharelink { min-height: 40px; font-size: 0.8rem; border: 1px solid var(--pewter); padding: 0 8px; }
 #sharesheet button { min-height: 48px; border-radius: 10px; font-weight: 700; font-size: 1rem; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); }
 #copylink { background: var(--sun) !important; }
+/* two controls a row, so every one is in sight at 412x915 with the head and the drawer's toggle (T1.9b); Copy link
+   stays first and widest */
+.sharerow { display: flex; gap: 8px; } .sharerow button { flex: 1 1 0; min-width: 0; } .sharerow #copylink { flex-grow: 2; }
 /* the QR drawer (T1.9b): one canvas pixel a module, scaled by a whole number of CSS px */
 #qrdrawer { display: flex; justify-content: center; margin: 0 -14px; } #qrdrawer[hidden] { display: none; }   /* over the sheet's padding: the quiet zone is Paper too */
 #qrcanvas { image-rendering: pixelated; }
@@ -274,14 +281,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <button id="pickB" type="button"><i class="ico"></i><b></b><small></small></button></div>
     <div id="slip" role="dialog" data-aria="slip"><h2 data-copy="slip"></h2>
       <button id="slipok" type="button" data-copy="slipTake"></button></div>
-    <div id="sharesheet" role="dialog" data-aria="shareTitle"><button id="shareclose" type="button" data-copy="shareClose"></button><h2 data-copy="shareTitle"></h2>
+    <div id="sharesheet" role="dialog" data-aria="shareTitle"><div id="sharehead"><h2 data-copy="shareTitle"></h2><button id="shareclose" type="button" data-copy="shareClose"></button></div>
       <canvas id="sharecanvas" width="192" height="384"></canvas>
       <p data-copy="shareAbstract"></p><p data-copy="shareOffline1"></p><p data-copy="shareOffline2"></p>
       <input id="sharelink" type="text" readonly data-aria="shareLink">
-      <button id="copylink" type="button" data-copy="copyLink"></button>
-      <button id="sharenative" type="button" data-copy="shareNative" hidden></button>
-      <button id="copycode" type="button" data-copy="copyCode"></button>
-      <button id="qrtoggle" type="button" data-copy="qrShow"></button>
+      <div class="sharerow"><button id="copylink" type="button" data-copy="copyLink"></button><button id="sharenative" type="button" data-copy="shareNative" hidden></button></div>
+      <div class="sharerow"><button id="copycode" type="button" data-copy="copyCode"></button><button id="qrtoggle" type="button" data-copy="qrShow"></button></div>
       <p id="qrlong" data-copy="qrLong" hidden></p>
       <div id="qrdrawer" hidden><canvas id="qrcanvas" width="105" height="105"></canvas></div></div>
   </div>
@@ -4111,7 +4116,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     nextRoom: 'Shoot the next room',
     playAgain: 'Play it again',
     banked: 'Banked {n} dead pixels', bankedOne: 'Banked 1 dead pixel',
-    qrShow: 'Show a QR code', qrHide: 'Hide the QR code', qrLong: 'Long code, the link is easier.'
+    qrShow: 'Show QR code', qrHide: 'Hide QR code', qrLong: 'Long code, the link is easier.'
   });
 
   /* the game: the record, the built level, the live sim state, the room's name */

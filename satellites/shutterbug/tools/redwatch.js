@@ -665,7 +665,9 @@ const MUTANTS = [
   { name: 'QR_OPEN_BY_DEFAULT', task: 'T1.9b', file: 'page', find: "document.getElementById('qrdrawer').hidden = true; document.getElementById('qrtoggle').textContent = ui.COPY.qrShow;", repl: "document.getElementById('qrdrawer').hidden = false; document.getElementById('qrtoggle').textContent = ui.COPY.qrShow;",
     gates: [{ gate: 'share', expect: 'the QR drawer stays closed until asked for' }] },
   { name: 'QR_FOR_DOUBLE_EXPOSURE', task: 'T1.9b', file: 'page', find: "document.getElementById('qrtoggle').hidden = long; document.getElementById('qrlong').hidden = !long;", repl: "document.getElementById('qrtoggle').hidden = false; document.getElementById('qrlong').hidden = true;",
-    gates: [{ gate: 'share', expect: "a Double Exposure room's" }] }
+    gates: [{ gate: 'share', expect: "a Double Exposure room's" }] },
+  { name: 'SHARE_ROWS_STACKED', task: 'T1.9b', file: 'page', find: '.sharerow { display: flex; gap: 8px; }', repl: '.sharerow { display: flex; flex-direction: column; gap: 8px; }',
+    gates: [{ gate: 'share', expect: 'at 412x915 Close, Copy link, the phone\'s Share, Copy code and the QR toggle are all in sight without a scroll' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
