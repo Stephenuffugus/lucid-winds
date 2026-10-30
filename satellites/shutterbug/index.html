@@ -100,14 +100,22 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   font-family: 'Segoe Print', 'Bradley Hand', 'Chalkboard SE', 'Comic Sans MS', cursive; font-size: 1.05rem; transform: rotate(-4deg); }
 #back { position: absolute; top: 0; left: calc(6px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;
   border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
-#clear, #death { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
+#clear, #death, #offer, #slip { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
   display: none; flex-direction: column; gap: 12px; align-items: stretch; text-align: center; z-index: 10; }
-#clear.on, #death.on { display: flex; }
+#clear.on, #death.on, #offer.on, #slip.on { display: flex; }
 #death { top: 3%; } #death.low { top: auto; bottom: 3%; }
-#clear h2, #death h2 { margin: 0 0 4px; font-size: 1.3rem; }
-#clear button, #death button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
+#clear h2, #death h2, #offer h2, #slip h2 { margin: 0 0 4px; font-size: 1.3rem; }
+#clear button, #death button, #offer button, #slip button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
 #nextroom, #deathagain { background: var(--sun); color: var(--ink); }
+/* the scroll offer (T1.6): a distinct icon and name per stat, colour a second cue (DESIGN 9.2) */
+#offer button { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 2px 10px; text-align: left; padding: 8px 12px; background: var(--paper); color: var(--ink); }
+#offer button b { font-size: 1.1rem; } #offer button small { grid-column: 2; font-weight: 400; font-size: 0.9rem; }
+#offer .ico { grid-row: 1 / span 2; width: 32px; height: 32px; justify-self: center; }
+#offer .ico.vigor { width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 26px solid var(--brick); }
+#offer .ico.focus { width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-bottom: 26px solid var(--lapis); }
+#offer .ico.grit { box-sizing: border-box; border: 7px solid #3f9a3a; border-radius: 50%; }
+#slipok { background: var(--sun); color: var(--ink); }
 #again { background: var(--paper); color: var(--ink); }
 #cleartitle, #deathtitle { background: transparent; color: var(--ink); }
 /* the hint glyphs (T0.16): a control pulses once, the first time it is the move to make */
@@ -190,6 +198,11 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     <div id="death" role="dialog" data-aria="death"><h2 data-copy="death"></h2>
       <button id="deathagain" type="button" data-copy="again"></button>
       <button id="deathtitle" type="button" data-copy="toTitle"></button></div>
+    <div id="offer" role="dialog" data-aria="scrollOffer"><h2 data-copy="scrollOffer"></h2>
+      <button id="pickA" type="button"><i class="ico"></i><b></b><small></small></button>
+      <button id="pickB" type="button"><i class="ico"></i><b></b><small></small></button></div>
+    <div id="slip" role="dialog" data-aria="slip"><h2 data-copy="slip"></h2>
+      <button id="slipok" type="button" data-copy="slipTake"></button></div>
   </div>
   <div id="strip"><button id="back" type="button" data-copy="toTitle"></button>
     <p id="dp"><span data-copy="dp"></span> <span id="dpn">0</span></p>
@@ -269,7 +282,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     BOSS_INTRO_S: 2, BOSS_TELEGRAPH_S: 0.8, BOSS_SAFE_LEDGE_CELLS: 6, BOSS_WEAK_MIN: 3, BOSS_OUTLINE_UNTIL: 0.25, BOSS_FALLBACK_HP: 20,
     BOSS_MOTH_EVERY_S: 4, BOSS_MOTH_COUNT: 3, BOSS_ICICLE_TELEGRAPH_S: 3, BOSS_RING_EVERY_S: 5, BOSS_RING_CELLS: 4, BOSS_SPARK_TELEGRAPH_S: 2,
     // 9 weapons, stats, economy
-    JUMP_SLOT_CD_S: 0.6, VIGOR_PCT: 25, FOCUS_PCT: 25, HEARTS_BASE: 4, HEARTS_CAP: 8, SCROLLS_PER_HEART: 3, POOL_PER_SLOT: 4, PROJ_MAX: 16,
+    JUMP_SLOT_CD_S: 0.6, VIGOR_PCT: 25, FOCUS_PCT: 25, HEARTS_BASE: 4, HEARTS_CAP: 8, SCROLLS_PER_HEART: 3, PICKUP_GRACE_FRAMES: 6 /* Q56 */, POOL_PER_SLOT: 4, PROJ_MAX: 16,
     DP_FODDER: 3, DP_ELITE: 10, DP_BOSS: 60, DP_SPECK: [2, 6], DP_CHEST: 15, DP_FREE_PLAY_MULT: 0.5, DP_OPEN_HOUSE_MULT: 1.5,
     PRICE_DEVELOP: [30, 100, 300], PRICE_REROLL: 20 /* Q52 */, PRICE_START_PICK: 200, PRICE_NEGATIVE: 400, PRICE_DOUBLE: 600, PRICE_OPEN_HOUSE: 600,
     REPEAT_DECAY: 0 /* off by default, 9.3 */,
@@ -2359,7 +2372,12 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        4. the variable jump: rising from a jump with A released, the climb is capped at JUMP_CUT_V;
        5. gravity to terminal; 6. move x, then y, resolving against solid cells and one way tops;
        7. ground, coyote and buffer bookkeeping; 8. the exit; 9. the frame count. */
-  var IN = { L: 1, R: 2, A: 4, B: 8, A_TAP: 16, B_TAP: 32 };
+  var IN = { L: 1, R: 2, A: 4, B: 8, A_TAP: 16, B_TAP: 32, CHOICE: 64 /* bits 6..9: CHOICE * n (section 2.6) */ };
+  /* the CHOICE field's values (section 2.6): pick scroll A or B, take or leave a compare's slip */
+  var CHOICE = { A: 1, B: 2, TAKE: 3, LEAVE: 4 };
+  /* the loot (T1.6) and the stats (DESIGN 9.2): a scroll offers the room's biome's stat and one other (QUESTIONS Q84: by
+     hue, Attic and Ember Vigor, Frost and Deep Focus, Overgrowth Grit) */
+  var LOOT_SPECK = 1, LOOT_SCROLL = 2, LOOT_BLUEPRINT = 3, VIGOR = 1, FOCUS = 2, GRIT = 3, STAT_OF_BIOME = [VIGOR, FOCUS, FOCUS, GRIT, VIGOR];
 
   function create(level, opts) {
     opts = opts || {};
@@ -2384,9 +2402,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         return { kind: e.kind, x: ex * CS + off, y: ey * CS + off, vx: 0, vy: 0, hp: hpOf(e.kind, el), state: 0, timer: 0, dir: 1, home: e.idx, elite: el, frozen: 0,
           stunned: el && pocketOf(level, e.idx) ? -1 : 0 };
       }),
-      proj: [], loot: [], chest: { idx: -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
+      proj: [], loot: lootOf(level), chest: { idx: level.features && typeof level.features.chest === 'number' && level.features.chest >= 0 ? level.features.chest : -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
       traps: { phase: 0 }, boss: null,
-      room: { dp: 0, blueprints: [], exitLit: 0, cleared: 0, dead: 0, deaths: 0 }
+      room: { dp: 0, blueprints: [], exitLit: 0, cleared: 0, dead: 0, deaths: 0, grace: 0, offerWait: 0, compare: 0 }
     };
   }
 
@@ -2487,6 +2505,26 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var K = SB.K, CS = K.CELL_SUB, w = lv.w, c0 = Math.floor(h.x / CS), c1 = Math.floor((h.x + K.HERO_W_SUB - 1) / CS), r0 = Math.floor(h.y / CS), r1 = Math.floor((h.y + K.HERO_H_SUB - 1) / CS);
     for (var r = r0; r <= r1; r++) for (var c = c0; c <= c1; c++) if (c >= 0 && c < w && r >= 0 && r < lv.h && lv.trap[r * w + c] === 1) return true;
     return false;
+  }
+  /* the room's loot from its placement (T1.6): the specks, the scroll, the blueprint, in that order */
+  function lootOf(level) {
+    var f = level.features || {}, out = [], k;
+    for (k = 0; f.specks && k < f.specks.length; k++) out.push({ kind: LOOT_SPECK, idx: f.specks[k], taken: 0 });
+    if (typeof f.scroll === 'number' && f.scroll >= 0) out.push({ kind: LOOT_SCROLL, idx: f.scroll, taken: 0 });
+    if (typeof f.blueprint === 'number' && f.blueprint >= 0) out.push({ kind: LOOT_BLUEPRINT, idx: f.blueprint, taken: 0 });
+    return out;
+  }
+  /* the hero's box over a cell */
+  function boxOver(h, w, c) { var K = SB.K, CS = K.CELL_SUB, cx = c % w, cy = (c - cx) / w; return h.x < (cx + 1) * CS && h.x + K.HERO_W_SUB > cx * CS && h.y < (cy + 1) * CS && h.y + K.HERO_H_SUB > cy * CS; }
+  /* a scroll picked: its stat up one, the scroll counted, a heart grown every SCROLLS_PER_HEART to HEARTS_CAP (the new
+     heart full), the offer closed */
+  function pickScroll(s, stat) {
+    var h = s.hero, T = SB.TUNING;
+    if (stat === VIGOR) h.vigor++; else if (stat === FOCUS) h.focus++; else h.grit++;
+    h.scrolls++;
+    var grown = Math.min(T.HEARTS_CAP, T.HEARTS_BASE + Math.floor(h.scrolls / T.SCROLLS_PER_HEART));
+    if (grown > h.heartsMax) { h.hearts += grown - h.heartsMax; h.heartsMax = grown; }
+    s.scrollsOffered = null; s.ev |= EV.PICK;
   }
   /* the envelope placement gave the enemy on this cell (section 3.7) */
   function envOf(lv, home) {
@@ -2598,12 +2636,20 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   }
 
   /* the step's events (s.ev, cleared at every step's start): what the shell's sounds and hints read, never the sim */
-  var EV = { JUMP: 1, WALLJUMP: 2, DIVE: 4, LAND: 8, HIT: 16, CLEAR: 32, DEAD: 64 };
+  var EV = { JUMP: 1, WALLJUMP: 2, DIVE: 4, LAND: 8, HIT: 16, CLEAR: 32, DEAD: 64, PICKUP: 128, CHEST: 256, OFFER: 512, PICK: 1024 };
   function step(s, word) {
     var K = SB.K, h = s.hero, lv = s.level || null;
     if (!lv) throw new Error('sim.step: the state carries no level (attach with sim.attach)');
     s.ev = 0;
     if (s.room.cleared || s.room.dead) { s.frame++; return s; }
+
+    /* 0. a sheet (T1.6, section 2.6): while a scroll offer or the chest's compare is open the world waits and the
+       movement bits count for nothing; a CHOICE word moves it on (A or B picks a scroll, TAKE or LEAVE closes the
+       compare: its weapon slip waits for the Darkroom until M2). Every step still counts, so the loop keeps stepping
+       and the recording carries the choice like any other word */
+    var choice = (word >> 6) & 15;
+    if (s.scrollsOffered) { if (choice === CHOICE.A || choice === CHOICE.B) pickScroll(s, s.scrollsOffered[choice - 1]); s.frame++; return s; }
+    if (s.room.compare) { if (choice === CHOICE.TAKE || choice === CHOICE.LEAVE) { s.room.compare = 0; s.ev |= EV.PICK; } s.frame++; return s; }
 
     /* 1. the word */
     var dir = ((word & IN.R) ? 1 : 0) - ((word & IN.L) ? 1 : 0);
@@ -2717,6 +2763,28 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       }
     }
 
+    /* 8c. the loot (T1.6; DESIGN 9.2, 9.3): the hero's box over a speck banks DP_SPECK (a roll of the state's
+       generator), over the blueprint carries it, over the chest opens it (DP_CHEST and its compare sheet), over the
+       scroll takes it; after PICKUP_GRACE_FRAMES and on the ground (Q56: never mid jump) the scroll offers two, the
+       biome's stat first and one other drawn from the generator (Q84) */
+    if (!s.room.cleared) {
+      var T8 = SB.TUNING;
+      if (s.room.grace > 0) s.room.grace--;   /* before the touch below, so the offer waits PICKUP_GRACE_FRAMES whole steps */
+      for (var li = 0; li < s.loot.length; li++) {
+        var lt = s.loot[li];
+        if (lt.taken || !boxOver(h, lv.w, lt.idx)) continue;
+        lt.taken = 1; s.ev |= EV.PICKUP;
+        if (lt.kind === LOOT_SPECK) s.room.dp += T8.DP_SPECK[0] + SB.rng.stepU32(s, 'rng') % (T8.DP_SPECK[1] - T8.DP_SPECK[0] + 1);
+        else if (lt.kind === LOOT_BLUEPRINT) s.room.blueprints.push(lt.idx);
+        else { s.room.grace = T8.PICKUP_GRACE_FRAMES; s.room.offerWait = 1; }
+      }
+      if (s.chest.idx >= 0 && !s.chest.open && boxOver(h, lv.w, s.chest.idx)) { s.chest.open = 1; s.room.dp += T8.DP_CHEST; s.room.compare = 1; s.ev |= EV.CHEST; }
+      if (s.room.offerWait && s.room.grace === 0 && h.ground) {
+        var bias = STAT_OF_BIOME[s.biome] || VIGOR, other = [VIGOR, FOCUS, GRIT].filter(function (x) { return x !== bias; });
+        s.scrollsOffered = [bias, other[SB.rng.stepU32(s, 'rng') % other.length]]; s.room.offerWait = 0; s.ev |= EV.OFFER;
+      }
+    }
+
     /* 8a. the enemies (DESIGN 7; T0.16's moths, T1.4's four more and the elites): each moves by its kind's rule
        (moveEnemy) unless a weapon holds it (frozen or stunned, M2; the pocket's elite sleeps, stunned -1, until the hero
        enters its pocket): held, it neither moves nor harms (QUESTIONS Q81). A live enemy's core (2 px inside its box:
@@ -2775,7 +2843,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     ['hero', 'obj', HERO], ['enemies', 'obj[]', ENEMY], ['proj', 'obj[]', PROJ], ['loot', 'obj[]', LOOT],
     ['chest', 'obj', [['idx', 'i32'], ['open', 'bool']]], ['scrollsOffered', 'i32[]?'],
     ['door', 'obj', [['idx', 'i32'], ['entered', 'bool']]], ['traps', 'obj', [['phase', 'i32']]], ['boss', 'obj?', BOSS],
-    ['room', 'obj', [['dp', 'i32'], ['blueprints', 'i32[]'], ['exitLit', 'bool'], ['cleared', 'bool'], ['dead', 'bool'], ['deaths', 'i32']]]];
+    ['room', 'obj', [['dp', 'i32'], ['blueprints', 'i32[]'], ['exitLit', 'bool'], ['cleared', 'bool'], ['dead', 'bool'], ['deaths', 'i32'], ['grace', 'i32'], ['offerWait', 'bool'], ['compare', 'bool']]]];
 
   var I32_MIN = 1 << 31, I32_MAX = ~I32_MIN, U32_MAX = 0xffffffff;
   function int(path, v) {
@@ -2818,7 +2886,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   };
 
   SB.sim = { IN: IN, EV: EV, rle: rle, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
-    FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf, trapTouch: trapTouch };
+    FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf, trapTouch: trapTouch,
+    CHOICE: CHOICE, LOOT: { SPECK: LOOT_SPECK, SCROLL: LOOT_SCROLL, BLUEPRINT: LOOT_BLUEPRINT }, STAT: { VIGOR: VIGOR, FOCUS: FOCUS, GRIT: GRIT }, STAT_OF_BIOME: STAT_OF_BIOME, pickScroll: pickScroll };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="shell-capture" data-tool>
@@ -3010,6 +3079,22 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       a: '0000000000000000/0222222222222220/0999999999999990/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/................/................/................/................/................/................/................/................/................/................',
       b: '0000000000000000/0222222222222220/0222222222222220/0222222222222220/0999999999999990/0222222222222220/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6/................/................/................/................/................/................',
       c: '0000000000000000/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0999999999999990/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6'
+    } },
+    /* T1.6's loot: a speck, a Glare and Film glint in two beats; the scroll, Paper ruled in Ink inside Walnut rollers; the
+       blueprint, Lapis ruled in Glare; the chest, Walnut banded in Amber, shut (a) and open with its Glare slip (b) */
+    speck: { w: 16, h: 16, frames: {
+      a: '................/................/................/................/.......00......./......0660....../......0f60....../...0006ff6000.../...066ffff660.../...0006ff6000.../......0f60....../......0660....../.......00......./................/................/................',
+      b: '................/................/................/................/................/.......00......./......0660....../.....066ff60..../.....06fff60..../......066f0...../.......00......./................/................/................/................/................'
+    } },
+    scroll: { w: 16, h: 16, frames: {
+      a: '................/................/................/...0000000000.../..077777777770../..075555555570../..075000005570../..075555555570../..075000555570../..075555555570../..075000005570../..075555555570../..077777777770../...0000000000.../................/................'
+    } },
+    blueprint: { w: 16, h: 16, frames: {
+      a: '................/................/................/..000000000000../..0bbbbbbbbbb0../..0b6666b66bb0../..0b6bb6b6b6b0../..0b6666b66bb0../..0b6bbbb6b6b0../..0b6bbbb66bb0../..0bbbbbbbbbb0../..0b66666666b0../..0bbbbbbbbbb0../..000000000000../................/................'
+    } },
+    chest: { w: 16, h: 16, frames: {
+      a: '................/................/................/................/..000000000000../.07777777777770./.07888888888870./.07777777777770./.00000088000000./.07777788777770./.07777777777770./.07888888888870./.07777777777770./.00000000000000./................/................',
+      b: '................/..000000000000../.07777777777770./.07888888888870./.07777777777770./.00000000000000./.06666666666660./.0f6ffffffff6f0./.00000000000000./.07777777777770./.07777777777770./.07888888888870./.07777777777770./.00000000000000./................/................'
     } },
     /* the beacon: the ceiling light, a cord, a Glare shade with an Ink rim, a Sun bulb; Glare rays on the second frame */
     beacon: { w: 16, h: 16, frames: {
@@ -3248,6 +3333,17 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         }
       }
     }
+    /* the loot (T1.6): its photo cell (a Sun cell) painted the room's open Ash, so a taken speck leaves no yellow ghost
+       (T1.6's shots), then every speck, the scroll and the blueprint not yet taken; the chest shut or open */
+    var LK = ['', 'speck', 'scroll', 'blueprint'], lbeat = Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS);
+    ctx.fillStyle = rgb(P.openColour(P.I.ASH, lv.biome | 0));
+    for (var li2 = 0; li2 < s.loot.length; li2++) {
+      var lt2 = s.loot[li2], ly = Math.floor(lt2.idx / lv.w) * C - cam; if (ly < -C || ly > viewH) continue;
+      ctx.fillRect((lt2.idx % lv.w) * C, ly, C, C);
+      if (!lt2.taken) spr(ctx, LK[lt2.kind] + (lt2.kind === 1 && (Math.floor(s.frame / (lbeat * 3)) & 1) ? '.b' : '.a'), (lt2.idx % lv.w) * C, ly);
+      ctx.fillStyle = rgb(P.openColour(P.I.ASH, lv.biome | 0));
+    }
+    if (s.chest.idx >= 0) { var cy2 = Math.floor(s.chest.idx / lv.w) * C - cam; if (cy2 > -C && cy2 < viewH) spr(ctx, s.chest.open ? 'chest.b' : 'chest.a', (s.chest.idx % lv.w) * C, cy2); }
     /* the enemies: each kind's two frames at 12 fps (the moth's flutter beats on its own timer: the fourth review found
        it at 7.5), facing its way; an elite drawn ELITE_PX a side; a shattered icicle is not drawn */
     var md = R.drawn.moths, KINDS = ['', 'moth', 'icicle', 'jelly', 'crawler', 'spark'], beat = Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS); md.length = 0;
@@ -3363,16 +3459,20 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   I.release = function (verb, source) { delete down[verb][source]; };
   I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {} }; if (I._stripReset) I._stripReset(); };
 
+  /* a sheet's tap (T1.6): the choice rides the next word as its CHOICE field, so the sim, not the shell, picks (section
+     2.6) and the recording carries it */
+  var choicePending = 0;
+  I.choose = function (n) { choicePending = n; };
   I.sample = function () {
     var IN = SB.sim.IN;
     var w = (isHeld('L') ? IN.L : 0) | (isHeld('R') ? IN.R : 0) | (isHeld('A') ? IN.A : 0) | (isHeld('B') ? IN.B : 0) |
-      (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0);
-    edge.A = 0; edge.B = 0; last = w; rec.push(w);
+      (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0) | choicePending * IN.CHOICE;
+    edge.A = 0; edge.B = 0; choicePending = 0; last = w; rec.push(w);
     return w;
   };
   I.last = function () { return last; };
   I.recording = function () { return SB.sim.rle.encode(rec); };
-  I.resetRecording = function () { rec = []; edge.A = 0; edge.B = 0; };
+  I.resetRecording = function () { rec = []; edge.A = 0; edge.B = 0; choicePending = 0; };
 
   /* the control strip (T0.8b, section 1.5): DOM, not canvas, so a gate can measure it and press it with real touches.
      The rocker maps the pointer's CURRENT x to left, neutral or right, so a thumb slides between zones without
@@ -3505,14 +3605,18 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(0.001, at + dur);
     src.connect(lp); lp.connect(g); g.connect(c.destination); src.start(at); src.stop(at + dur + 0.01);
   }
-  /* the game's six (T0.16): jump, wall jump, dive, land (heavier after a dive), hit, the beacon */
+  /* the game's nine: jump, wall jump, dive, land (heavier after a dive), hit, the beacon (T0.16); pickup, chest and the
+     scroll's pick (T1.6) */
   var SFX = {
     jump: function (t) { tone('square', 330, 660, 0.09, 0.06, t); },
     walljump: function (t) { tone('square', 440, 700, 0.05, 0.06, t); tone('square', 700, 990, 0.06, 0.05, t + 0.045); },
     dive: function (t) { tone('triangle', 880, 180, 0.14, 0.09, t); },
     land: function (t, heavy) { thud(heavy ? 260 : 420, heavy ? 0.12 : 0.05, heavy ? 0.4 : 0.18, t); },
     hit: function (t) { tone('sawtooth', 240, 70, 0.2, 0.09, t); thud(900, 0.08, 0.25, t); },
-    beacon: function (t) { tone('triangle', 660, 660, 0.25, 0.08, t); tone('triangle', 880, 880, 0.25, 0.08, t + 0.09); tone('triangle', 1320, 1320, 0.35, 0.08, t + 0.18); }
+    beacon: function (t) { tone('triangle', 660, 660, 0.25, 0.08, t); tone('triangle', 880, 880, 0.25, 0.08, t + 0.09); tone('triangle', 1320, 1320, 0.35, 0.08, t + 0.18); },
+    pickup: function (t) { tone('square', 990, 1320, 0.06, 0.05, t); },
+    chest: function (t) { tone('triangle', 523, 523, 0.12, 0.08, t); tone('triangle', 659, 659, 0.12, 0.08, t + 0.07); tone('triangle', 784, 784, 0.2, 0.08, t + 0.14); },
+    pick: function (t) { tone('square', 660, 880, 0.08, 0.05, t); tone('square', 880, 1175, 0.1, 0.05, t + 0.06); }
   };
   A.played = {};   /* counts per sound, for the gates (SB_DEV.audioPlayed) */
   A.sfx = function (name, heavy) {
@@ -3570,6 +3674,12 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     photoRoom: 'Your room',
     death: 'The bug fell out of the picture',
     dp: 'Dead pixels',
+    scrollOffer: 'Pick a scroll',
+    vigor: 'Vigor', vigorSays: 'dive weapons hit harder',
+    focus: 'Focus', focusSays: 'jump weapons hit harder',
+    grit: 'Grit', gritSays: 'charms grow stronger',
+    slip: 'A weapon waits for the Darkroom.',
+    slipTake: 'Keep the slip',
     nextRoom: 'Shoot the next room',
     playAgain: 'Play it again'
   });
@@ -3808,6 +3918,22 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     else ui.releasePhoto();
     return true;
   };
+  /* the sheets (T1.6) are views of the sim's state: the offer while state.scrollsOffered holds two stats, the slip while
+     the chest's compare is open; their taps only queue a CHOICE (SB.input.choose); the Dead pixel count follows the room */
+  var STAT_KEY = ['', 'vigor', 'focus', 'grit'], shownOffer = '', shownDp = -1;
+  ui.sheets = function (st) {
+    var off = st.scrollsOffered, key = off ? off.join() : '';
+    if (key !== shownOffer) {
+      shownOffer = key;
+      document.getElementById('offer').classList.toggle('on', !!off);
+      if (off) ['pickA', 'pickB'].forEach(function (id, k) {
+        var b = document.getElementById(id), sk = STAT_KEY[off[k]] || 'vigor';
+        b.querySelector('.ico').className = 'ico ' + sk; b.querySelector('b').textContent = ui.COPY[sk]; b.querySelector('small').textContent = ui.COPY[sk + 'Says'];
+      });
+    }
+    document.getElementById('slip').classList.toggle('on', !!st.room.compare);
+    if (st.room.dp !== shownDp) { shownDp = st.room.dp; document.getElementById('dpn').textContent = String(st.room.dp); }
+  };
   ui.firstRoomDone = false;   /* the first ever free play room runs with at most FIRST_ROOM_MAX_FODDER moths (T1.10 keeps it) */
   ui.hearts = hearts;
   /* the death card docks away from the fallen hero (the fourth review: at 30% of the stage it sat where the camera
@@ -3863,6 +3989,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     /* the next room: back to the title under the camera's picker (a cancelled picker leaves the title) */
     document.getElementById('nextroom').addEventListener('click', function () { ui.toTitle(); openPicker('fileshoot'); });
     document.getElementById('deathagain').addEventListener('click', function () { ui.restart(); });
+    document.getElementById('pickA').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.A); });
+    document.getElementById('pickB').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.B); });
+    document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });
     document.getElementById('deathtitle').addEventListener('click', function () { ui.hideDeath(); ui.toTitle(); });
     document.getElementById('cleartitle').addEventListener('click', ui.toTitle);
     document.getElementById('back').addEventListener('click', ui.toTitle);
@@ -3912,7 +4041,11 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       if (ev & EV.LAND) au.sfx('land', G.state.hero.shake > 0);
       if (ev & EV.HIT) { au.sfx('hit'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); }
       if (ev & EV.CLEAR) au.sfx('beacon');
+      if (ev & EV.PICKUP) au.sfx('pickup');
+      if (ev & EV.CHEST) au.sfx('chest');
+      if (ev & EV.PICK) { au.sfx('pick'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); }
     }
+    SB.ui.sheets(G.state);
     SB.ui.hints(G.state, G.level);
     if (G.state.room.cleared && SB.ui.screen === 'play') SB.ui.showClear();
     else if (G.state.room.dead && SB.ui.screen === 'play') SB.ui.showDeath();

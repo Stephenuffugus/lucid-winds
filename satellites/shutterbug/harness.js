@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 4779;              /* raised per task: the count a full run must reach (4779 after T1.4b, 30 Oct) */
+const ASSERT_FLOOR = 4800;              /* raised per task: the count a full run must reach (4800 after T1.6, 30 Oct) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -3310,6 +3310,12 @@ group('H-fix-3', 'the corpus holds every record fixtures/README.md lists; names 
    the sim does not keep. The macros may read the state to time a release, as a player watches the hero; they never
    write it. */
 const BOT = (() => {
+  /* a pickup's sheet (T1.6): an open scroll offer or chest compare holds the world until a CHOICE word; the bot answers
+     at once after every step (the first scroll; take the slip), so no movement word is lost to the pause */
+  const stepB = (s, w, used) => {
+    SB.sim.step(s, w); if (used) used.push(w);
+    while ((s.scrollsOffered || s.room.compare) && !s.room.cleared && !s.room.dead) { const c = (s.scrollsOffered ? SB.sim.CHOICE.A : SB.sim.CHOICE.TAKE) * IN.CHOICE; SB.sim.step(s, c); if (used) used.push(c); }
+  };
   const W = SB.GRID.W, MAX_CANDS = 120, LEN = 140;
   const cloneState = s => SB.sim.attach(structuredClone(s), s.level);
   const stopDist = v => { let d = 0; v = Math.abs(v); while (v > 0) { v = Math.max(0, v - K.DECEL); d += v; } return d; };
@@ -3331,7 +3337,7 @@ const BOT = (() => {
         word = rockerOf(Math.sign(d));
       } else if (h.ground && Math.sign(h.vx) === Math.sign(d) && stopDist(h.vx) + 2 * 256 < Math.abs(d)) word = rockerOf(Math.sign(d));
       if (k === 30) break;
-      SB.sim.step(s, word); words.push(word);
+      stepB(s, word, words);
     }
     return false;
   }
@@ -3355,14 +3361,14 @@ const BOT = (() => {
     let last = 0; if (!fn) for (let k = 0; k < n; k++) if (words[k] & MOVES) last = k;
     for (let k = 0; k < n; k++) {
       const word = fn ? words(s, k) : words[k];
-      SB.sim.step(s, word); used.push(word);
+      stepB(s, word, used);
       if (fn && word) last = k;
       if (s.room.cleared) return { ok: true, s, used };
       if (t.contact) { if (atContact(s, t)) return { ok: true, s, used }; continue; }
       if (k >= last && k > 0 && s.hero.ground && s.hero.vx === 0) break;
     }
     if (t.contact) return { ok: false, s, used };
-    for (let k = 0; k < 120 && !(s.hero.ground && s.hero.vx === 0); k++) { SB.sim.step(s, 0); used.push(0); if (s.room.cleared) return { ok: true, s, used }; }
+    for (let k = 0; k < 120 && !(s.hero.ground && s.hero.vx === 0); k++) { stepB(s, 0, used); if (s.room.cleared) return { ok: true, s, used }; }
     const ov = Math.min(s.hero.x + HW, (t.cx + 1) * CS) - Math.max(s.hero.x, t.cx * CS);
     if (!(s.hero.ground && feetRow(s) === t.cy && ov >= K.OVERLAP_SUB)) return { ok: false, s, used };
     return { ok: settle(s, t.v, used), s, used };
@@ -3444,8 +3450,8 @@ const BOT = (() => {
     if (!s.immortal && !src.contact) for (const wait of ['hit', 20, 40, 60, 90, 120, 180, 240, 300, 400, 500, 600]) {
       /* 'hit': until a moth has hit and the knockback is spent, so the edge runs inside the i frames that remain */
       const w0 = cloneState(s), pre = [], h0 = w0.hero.hearts;
-      if (wait === 'hit') { for (let k = 0; k < 600 && !w0.room.dead && !(w0.hero.hearts < h0 && w0.hero.knock === 0); k++) { SB.sim.step(w0, 0); pre.push(0); } if (!(w0.hero.hearts < h0)) continue; }
-      else for (let k = 0; k < wait && !w0.room.dead; k++) { SB.sim.step(w0, 0); pre.push(0); }
+      if (wait === 'hit') { for (let k = 0; k < 600 && !w0.room.dead && !(w0.hero.hearts < h0 && w0.hero.knock === 0); k++) { stepB(w0, 0, pre); } if (!(w0.hero.hearts < h0)) continue; }
+      else for (let k = 0; k < wait && !w0.room.dead; k++) { stepB(w0, 0, pre); }
       if (w0.room.dead || !settle(w0, src.v, pre)) continue;
       for (let i = 0; i < cands.length; i++) {
         const r = attempt(w0, cands[i], t); stats.tries++;
@@ -3459,7 +3465,7 @@ const BOT = (() => {
     const g = SB.reach.graph(lv), asc = lv.ascent;
     let s = SB.sim.create(lv, { immortal: !opts || !opts.mortal });   /* the route walk is immortal (QUESTIONS Q30); H-en-3 walks mortal */
     const words = [];
-    for (let k = 0; k < 10 && !s.hero.ground; k++) { SB.sim.step(s, 0); words.push(0); }
+    for (let k = 0; k < 10 && !s.hero.ground; k++) { stepB(s, 0, words); }
     if (!settle(s, lv.spawn, words)) return { ok: false, why: 'the hero cannot settle at spawn', edges: 0, words, s };
     if (!asc || !asc.edges) return { ok: false, why: 'no ascent', edges: 0, words, s };
     for (let i = 0; i < asc.edges.length && !s.room.cleared; i++) {
@@ -3480,19 +3486,19 @@ const BOT = (() => {
     const src = nodeInfo(g, v);
     if (!src.contact) {
       const s = SB.sim.create(lv, { at: { x: src.cx * CS + ((CS - HW) >> 1), y: src.cy * CS }, immortal: true }), w = [];
-      for (let k = 0; k < 4; k++) SB.sim.step(s, 0);
+      for (let k = 0; k < 4; k++) stepB(s, 0, null);
       return settle(s, v, w) ? s : null;
     }
     const x = src.side > 0 ? (src.cx + 1) * CS - HW : src.cx * CS;
     if (src.sticky) {
       const s = SB.sim.create(lv, { at: { x, y: (src.cy + 1) * CS - HH - 4 * 256 - K.G }, immortal: true });
       s.hero.ground = 0; s.hero.coyote = 0;
-      for (let k = 0; k < 8 && !atContact(s, src); k++) SB.sim.step(s, 0);
+      for (let k = 0; k < 8 && !atContact(s, src); k++) stepB(s, 0, null);
       return atContact(s, src) ? s : null;
     }
     const s = SB.sim.create(lv, { at: { x, y: (src.cy + 1) * CS - HH - K.G }, immortal: true });
     s.hero.ground = 0; s.hero.coyote = 0;
-    SB.sim.step(s, rockerOf(src.side));
+    stepB(s, rockerOf(src.side), null);
     return atContact(s, src) ? s : null;
   }
   return { settle, solve, walk, place, nodeInfo, atContact, candidates };
@@ -4100,6 +4106,58 @@ group('H-trap-2', 'the bot\'s walker is never in the trap field while it is on, 
     for (const w of r.r.words) { SB.sim.step(s, w); if (s.traps.phase >= K.TRAP_PERIOD_F / 2 && touch(r.lv, s.hero)) { touched.push(r.tag + ' at step ' + s.frame); break; } }
   }
   t.ok(withField.length > 0 && touched.length === 0, withField.length + ' walked levels hold a trap field and the walker is never in it while it is on' + (touched.length ? ': ' + touched.join('; ') : ' (' + withField.map(r => r.tag).join(', ') + ')'));
+});
+
+/* ================================================================ loot (T1.6) */
+/* a loot lab: the floor room with laid loot (specks, a scroll, a chest), the hero standing at x 2 on the floor */
+function lootLab(opts = {}) {
+  const lv = LABS.room(['', FLOOR], { biome: opts.biome || 0 });
+  if (opts.seed !== undefined) lv.seed = opts.seed;
+  lv.features = { pocket: null, enemies: [], trap: null, specks: opts.specks || [], scroll: opts.scroll === undefined ? null : opts.scroll, blueprint: null, chest: opts.chest === undefined ? null : opts.chest };
+  return { lv, s: SB.sim.create(lv, { at: { x: 2 * CS + ((CS - HW) >> 1), y: 46 * CS } }) };
+}
+/* the sim's generator step written here (the reference of H-rng-2's kind), for sums the test computes itself */
+const stepRef = st => { const a = (st.v + 0x6D2B79F5) >>> 0; st.v = a; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return (t ^ (t >>> 14)) >>> 0; };
+group('H-loot-1', 'Dead pixels: a walk over three specks and the chest banks the specks\' rolls of DP_SPECK and DP_CHEST, summed here from the generator', t => {
+  const T = SB.TUNING, specks = [46 * 24 + 6, 46 * 24 + 9, 46 * 24 + 12], { s } = lootLab({ specks, chest: 46 * 24 + 15 });
+  const st = { v: s.rng }; let want = 0; for (let k = 0; k < 3; k++) want += T.DP_SPECK[0] + stepRef(st) % (T.DP_SPECK[1] - T.DP_SPECK[0] + 1);
+  want += T.DP_CHEST;
+  let k = 0, compare = false;
+  for (; k < 240 && !(s.chest.open && !s.room.compare); k++) { SB.sim.step(s, s.room.compare ? SB.sim.CHOICE.TAKE * IN.CHOICE : IN.R); if (s.room.compare) compare = true; }
+  t.ok(s.room.dp === want && s.loot.every(l => l.taken) && compare, 'the walk banks ' + s.room.dp + ' DP, the test sums ' + want + ' (three rolls of ' + T.DP_SPECK.join(' to ') + ' and DP_CHEST ' + T.DP_CHEST + '); the chest\'s compare opened and closed');
+});
+group('H-loot-2', 'a heart grows every SCROLLS_PER_HEART scrolls (at 3, 6 and 9) and the hearts cap at HEARTS_CAP', t => {
+  const T = SB.TUNING, { s } = lootLab(), seen = [];
+  for (let n = 1; n <= 15; n++) { s.scrollsOffered = [1, 2]; SB.sim.step(s, SB.sim.CHOICE.A * IN.CHOICE); seen.push(s.hero.heartsMax + (s.hero.hearts === s.hero.heartsMax ? '' : '*')); }
+  const want = []; for (let n = 1; n <= 15; n++) want.push(Math.min(T.HEARTS_CAP, T.HEARTS_BASE + Math.floor(n / T.SCROLLS_PER_HEART)) + '');
+  t.ok(seen.join() === want.join() && s.hero.vigor === 15 && s.hero.scrolls === 15, 'after 1 to 15 scrolls the hearts are ' + seen.join(' ') + ' (full each time), the test wants ' + want.join(' '));
+});
+group('H-loot-3', 'the scroll offer: over 200 seeded rooms the biome\'s stat comes first, the other is one of the other two, and it opens only on the ground, PICKUP_GRACE_FRAMES after the touch (Q56, Q84)', t => {
+  let first = 0, others = 0, grounded = 0, late = 0;
+  for (let k = 0; k < 200; k++) {
+    const biome = k % 5, { s } = lootLab({ biome, seed: 1000 + k, scroll: 46 * 24 + 4 });
+    let touch = -1, open = -1;
+    for (let f = 0; f < 60 && open < 0; f++) { SB.sim.step(s, f < 30 ? IN.R : 0); if (touch < 0 && s.loot[0].taken) touch = f; if (s.scrollsOffered) open = f; }
+    if (open < 0) continue;
+    if (s.scrollsOffered[0] === SB.sim.STAT_OF_BIOME[biome]) first++;
+    if (s.scrollsOffered[1] !== s.scrollsOffered[0] && [1, 2, 3].includes(s.scrollsOffered[1])) others++;
+    if (s.hero.ground) grounded++;
+    if (open - touch >= SB.TUNING.PICKUP_GRACE_FRAMES) late++;
+  }
+  t.ok(first >= 180 && others === 200 && grounded === 200 && late === 200, 'the biome\'s stat first in ' + first + ' of 200 (at least 180), the other always another stat (' + others + '), every offer opened on the ground (' + grounded + ') and PICKUP_GRACE_FRAMES or more after the touch (' + late + ')');
+  /* a scroll touched mid jump opens nothing until the hero lands */
+  const { s } = lootLab({ scroll: 44 * 24 + 2 }); let airOpen = false, landOpen = false;
+  SB.sim.step(s, IN.A | IN.A_TAP); for (let f = 0; f < 60; f++) { SB.sim.step(s, IN.A); if (s.scrollsOffered && !s.hero.ground) airOpen = true; if (s.scrollsOffered && s.hero.ground) { landOpen = true; break; } }
+  t.ok(s.loot[0].taken && !airOpen && landOpen, 'a scroll taken in a jump opens its offer on landing, never in the air');
+});
+group('H-sim-19', 'a room with a scroll pick replays from its recorded script (the CHOICE word in it) to the live run\'s hash; without the choice word it stalls at the offer, the hero still', t => {
+  const live = lootLab({ scroll: 46 * 24 + 6 }).s, words = [];
+  for (let f = 0; f < 120; f++) { const w = live.scrollsOffered && f % 7 === 0 ? SB.sim.CHOICE.B * IN.CHOICE | IN.R : IN.R; SB.sim.step(live, w); words.push(w); }
+  const replay = lootLab({ scroll: 46 * 24 + 6 }).s; for (const w of words) SB.sim.step(replay, w);
+  const cut = lootLab({ scroll: 46 * 24 + 6 }).s; let at = -1, still = true;
+  for (const w of words) { SB.sim.step(cut, w & ~(15 * IN.CHOICE)); if (cut.scrollsOffered && at < 0) at = cut.hero.x; else if (at >= 0 && cut.hero.x !== at) still = false; }
+  t.ok(words.some(w => (w >> 6) & 15) && live.hero.scrolls === 1 && SB.sim.hash(replay) === SB.sim.hash(live), 'the recorded script carries its choice word and replays to the live hash (' + SB.sim.hash(live) + ')');
+  t.ok(!!cut.scrollsOffered && cut.hero.scrolls === 0 && still && at >= 0, 'without the choice word the replay stalls at the offer, the hero held at x ' + (at / 256) + ' px while R stays held');
 });
 
 /* ================================================================ sprites (T0.17) */

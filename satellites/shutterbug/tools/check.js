@@ -45,6 +45,7 @@ const BROWSER_GATES = [
   { name: 'capture',  cmd: ['test/capture.mjs'], need: 'CAPTURE OK' },
   { name: 'death',    cmd: ['test/death.mjs'],  need: 'DEATH OK' },
   { name: 'sprites',  cmd: ['test/sprites.mjs'], need: 'SPRITES OK' },
+  { name: 'loot',     cmd: ['test/loot.mjs'],   need: 'LOOT OK' },
   { name: 'redwatch-browser', cmd: ['tools/redwatch.js', '--check', '--browser-only'], need: 'REDWATCH OK', slow: true }
 ];
 

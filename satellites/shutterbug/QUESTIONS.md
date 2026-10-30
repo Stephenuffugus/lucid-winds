@@ -588,3 +588,11 @@ Options: (a) as built; (b) a crusher's head sweeps one row of its field at a tim
 Recommendation: (a): one rule for both kinds, and a hazard the climb can graze by a jump's spread is a hit no player expects.
 Plan assumes: (a); H-trap-1, H-trap-2, H-feat-3.
 
+## Q84. Which stat a biome's scroll favours, and the world under a sheet (the builder, 30 Oct, T1.6)
+
+DESIGN 9.2: each scroll pickup offers one of two, one colour biased by the room's biome and one off colour; it names three stats (Vigor, Focus, Grit) but gives no biome a stat. DESIGN 9.1 pauses the sim under the pickup screen; section 2.6 has the sim ignore the movement bits under an offer while the loop keeps stepping.
+As built (T1.6): the biome's stat by hue, Attic (warm browns) and Ember (reds) Vigor (a Brick down chevron, the dive's weapons), Frost (white) and Deep (blue) Focus (a Lapis up chevron, the jump's), Overgrowth (green) Grit (a Moss ring, the charms'); the offer is that stat first and one of the other two drawn from the state's generator (so the biased one always comes first: H-loot-3 counts 200 of 200). Under a scroll offer or the chest's compare the whole world waits (no enemy, trap or gravity step), every step still counts and is recorded, and only a CHOICE word moves on. The chest's compare (M1) says A weapon waits for the Darkroom. with one button, Keep the slip (TAKE).
+Options: (a) as built; (b) another table of biome to stat; (c) the biased stat first only most of the time (the plan's 90 percent floor).
+Recommendation: (a) until his play; the table is one line (STAT_OF_BIOME).
+Plan assumes: (a); T2.5 gives the stats their effects.
+

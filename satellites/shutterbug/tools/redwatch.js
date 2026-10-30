@@ -589,7 +589,22 @@ const MUTANTS = [
   { name: 'TRAP_KNOCK_TOWARD', task: 'T1.4b', file: 'page', find: 'hitHero(s, 2 * h.x + K.HERO_W_SUB < mid2 ? -1 : 1);', repl: 'hitHero(s, 2 * h.x + K.HERO_W_SUB < mid2 ? 1 : -1);',
     gates: [{ gate: 'harness', only: 'H-trap-1', expect: 'the hit is an enemy' }] },
   { name: 'TRAP_BESIDE_THE_CLIMB', task: 'T1.4b', file: 'page', find: 'if (taken[c]) { clash = true; break; } if (beside[c]) continue; cells.push(c); }', repl: 'if (taken[c]) { clash = true; break; } cells.push(c); }',
-    gates: [{ gate: 'harness', only: 'H-trap-2', expect: 'the walker is never in it while it is on' }] }
+    gates: [{ gate: 'harness', only: 'H-trap-2', expect: 'the walker is never in it while it is on' }] },
+  /* T1.6: loot, the scroll offer, the CHOICE word */
+  { name: 'HEART_CAP_9', task: 'T1.6', file: 'page', find: 'var grown = Math.min(T.HEARTS_CAP, T.HEARTS_BASE', repl: 'var grown = Math.min(T.HEARTS_CAP + 1, T.HEARTS_BASE',
+    gates: [{ gate: 'harness', only: 'H-loot-2', expect: 'after 1 to 15 scrolls the hearts are' }] },
+  { name: 'SIM_RUNS_UNDER_SHEET', task: 'T1.6', file: 'page', find: 'if (s.scrollsOffered) { if (choice === CHOICE.A || choice === CHOICE.B) pickScroll(s, s.scrollsOffered[choice - 1]); s.frame++; return s; }', repl: 'if (s.scrollsOffered && (choice === CHOICE.A || choice === CHOICE.B)) { pickScroll(s, s.scrollsOffered[choice - 1]); s.frame++; return s; }',
+    gates: [{ gate: 'harness', only: 'H-sim-19', expect: 'without the choice word the replay stalls at the offer' }, { gate: 'loot', expect: '412: the offer opens on the ground and the hero holds still under it' }] },
+  { name: 'CHOICE_VIA_SHELL', task: 'T1.6', file: 'page', find: "document.getElementById('pickA').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.A); });", repl: "document.getElementById('pickA').addEventListener('click', function () { var st = SB.game.state; SB.sim.pickScroll(st, st.scrollsOffered[0]); });",
+    gates: [{ gate: 'loot', expect: '412: the recorded script carries the CHOICE word' }] },
+  { name: 'GRACE_ONE_SHORT', task: 'T1.6', file: 'page', find: 'else { s.room.grace = T8.PICKUP_GRACE_FRAMES; s.room.offerWait = 1; }', repl: 'else { s.room.grace = T8.PICKUP_GRACE_FRAMES - 1; s.room.offerWait = 1; }',
+    gates: [{ gate: 'harness', only: 'H-loot-3', expect: 'PICKUP_GRACE_FRAMES or more after the touch' }] },
+  { name: 'OFFER_IN_THE_AIR', task: 'T1.6', file: 'page', find: 'if (s.room.offerWait && s.room.grace === 0 && h.ground) {', repl: 'if (s.room.offerWait && s.room.grace === 0) {',
+    gates: [{ gate: 'harness', only: 'H-loot-3', expect: 'opens its offer on landing, never in the air' }] },
+  { name: 'SPECK_DP_FIXED', task: 'T1.6', file: 'page', find: 's.room.dp += T8.DP_SPECK[0] + SB.rng.stepU32(s, \'rng\') % (T8.DP_SPECK[1] - T8.DP_SPECK[0] + 1);', repl: 's.room.dp += T8.DP_SPECK[0];',
+    gates: [{ gate: 'harness', only: 'H-loot-1', expect: 'the walk banks' }] },
+  { name: 'OFFER_UNBIASED', task: 'T1.6', file: 'page', find: 'var bias = STAT_OF_BIOME[s.biome] || VIGOR,', repl: 'var bias = VIGOR,',
+    gates: [{ gate: 'harness', only: 'H-loot-3', expect: 'the biome\'s stat first in' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
