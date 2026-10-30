@@ -1,6 +1,9 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 00:50 UTC (Fable).** Nothing of Shutterbug is live. `satellites/shutterbug/` holds the docs only
+> **STATE 30 Oct 01:40 UTC (Fable). His word tonight: NO budget, NO usage checks, NO 8 hour clock (the reset is Sunday
+> noon). Run the night one order, then the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after
+> T0.8a, sb-m0-2 after T0.8b, sb-m0-3 when M0 is complete; stop only when Lap 2 is done or the session must end, then
+> the morning report. Every budget line below is void.** Nothing of Shutterbug is live. `satellites/shutterbug/` holds the docs only
 > (DESIGN.md, HANDOFF.md, BUILD-PLAN.md, QUESTIONS.md, and PROGRESS.md with the lead's entry, so T0.0 appends
 > rather than creates); no game code exists. The tools are proven on this
 > box: `tools/shutterbug-tests/shoot.mjs` shot a real page at both phone sizes, `tools/shutterbug-tests/deploy.sh` is
