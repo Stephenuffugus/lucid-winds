@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 999;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 1015;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', retable: 'T0.10a', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -699,7 +699,7 @@ group('H-pipe-9', 'every fixture\'s authored platformsMin and landmarksMin hold'
   t.ok(!!bookshelf, 'the sample room\'s bookshelf (left wall, rows 27..38) is a landmark');
   const bed = lv.landmarks.find(l => l.bbox[0] === 0 && l.bbox[1] >= 44 && l.bbox[3] === lv.h - 2);
   t.ok(!!bed, 'the sample room\'s bed (bottom left, rows 45..46) is a landmark of its own, not the floor');
-  t.eq(lv.exit, 3 * 24 + 13, 'the sample room\'s exit candidate stands in the lamp\'s shade (13, 3)');
+  t.eq(lv.exit, 3 * 24 + 10, 'the sample room\'s exit stands in the lamp\'s shade at (10, 3), the lowest index of the light\'s lowest standable row (section 3.7)');
 });
 
 group('H-pipe-12', 'the light is the cluster with the brightest cell; the beacon relights it only when the exit stands in it', t => {
@@ -994,6 +994,7 @@ group('H-sim-18', 'air control: the rocker at takeoff equals a running start; L 
   const s2 = settle(lv), air = [];
   for (let f = 0; f < 14; f++) { SB.sim.step(s2, (f === 0 ? IN.A | IN.A_TAP : IN.A) | (f < 8 ? IN.R : 0)); if (f >= 8 && f < 12) air.push([s2.hero.vx, s2.hero.ground]); }
   t.same(air, [[K.RUN - K.DECEL, 0], [K.RUN - 2 * K.DECEL, 0], [K.RUN - 3 * K.DECEL, 0], [0, 0]], 'releasing the rocker in flight decelerates in 4 frames, still airborne (Q60)');
+  t.eq(air.reduce((a, v) => a + v[0], 0), 504 + 336 + 168, 'the drift after the release is 1008 subpixels, 3.94 px (the number Q60 quotes)');
 });
 
 group('H-fuzz-1', '2000 seeded random frames per fixture: never in a solid, never below the floor or outside, never standing on nothing', t => {

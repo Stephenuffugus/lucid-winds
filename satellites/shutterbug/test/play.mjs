@@ -104,22 +104,26 @@ try {
   await page.evaluate(() => { const t = performance.now(); while (performance.now() - t < 140); });
   await page.waitForFunction(f => window.SB_DEV.frames() >= f + 40, { timeout: 60000, polling: 20 }, a0.f);
   await page.keyboard.up('ArrowLeft');
-  const a1 = await page.evaluate(() => { window.SB_DEV.hold(true); window.__log = false; const p = window.SB_DEV.perf(); return { f: window.SB_DEV.frames(), loop: p.loop, t: window.__t.slice(), m0: window.__m0, m1: window.__t.length, rec: window.SB_DEV.recording() }; });
+  const a1 = await page.evaluate(() => { window.SB_DEV.hold(true); window.__log = false; const p = window.SB_DEV.perf(); return { f: window.SB_DEV.frames(), loop: p.loop, frames: p.frames, t: window.__t.slice(), m0: window.__m0, m1: window.__t.length, rec: window.SB_DEV.recording() }; });
   /* the books cover only the steps the accumulator ran (SB_DEV.step's steps are the held gate's, outside the clock) */
-  const L = a1.loop, books = L.accSteps * L.stepMs + L.acc + L.dropped - L.consumed;
-  R.say(L.accSteps >= 40 && Math.abs(books) < 0.01, 'the accumulator\'s books balance: ' + L.accSteps + ' steps x ' + L.stepMs.toFixed(3) + ' ms + owed + dropped = consumed (off by ' + books.toFixed(4) + ' ms over ' + L.raf + ' frames, ' + L.stalls + ' stalls)');
+  const L = a1.loop, books = L.accSteps * L.stepMs + L.acc + L.dropped - L.consumed - L.seeded;
+  R.say(L.accSteps >= 40 && Math.abs(books) < 0.01, 'the accumulator\'s books balance: ' + L.accSteps + ' steps x ' + L.stepMs.toFixed(3) + ' ms + owed + dropped = consumed + the quarter steps seeded (off by ' + books.toFixed(4) + ' ms over ' + L.raf + ' frames, ' + L.stalls + ' stalls)');
   R.say(L.maxSteps <= 4, 'never more than four steps in one frame (max ' + L.maxSteps + ')');
   /* the rate: section 1.5's accumulator replayed HERE on the frames the test logged (each frame clamped to 100 ms, at
-     most four steps of 1000 / 60, a stall drops the rest); the page must have run exactly that many steps */
-  const STEP = 1000 / 60, dSteps = a1.loop.accSteps - a0.loop.accSteps;
-  let acc = 0, want = 0;
+     most four steps of 1000 / 60, a stall drops the rest; a run starts, and a stall restarts, a quarter step off the
+     frame boundary); the page must have run exactly that many steps, frame by frame */
+  const STEP = 1000 / 60, PHASE = STEP / 4, dSteps = a1.loop.accSteps - a0.loop.accSteps;
+  const pageN = new Map(a1.frames.map(([t, n]) => [t, n]));
+  let acc = PHASE, want = 0, firstOff = null;
   for (let i = a1.m0; i < a1.m1; i++) {
     acc += Math.min(a1.t[i] - a1.t[i - 1], 100);
     let n = 0;
     while (acc >= STEP && n < 4) { acc -= STEP; n++; }
-    if (acc >= STEP) acc = 0;
+    if (acc >= STEP) acc = PHASE;
     want += n;
+    if (firstOff === null && pageN.get(a1.t[i]) !== n) firstOff = { k: i - a1.m0, page: pageN.get(a1.t[i]), want: n };
   }
+  R.say(firstOff === null, 'frame by frame the page ran the steps the accumulator owes, a quarter step off the boundary' + (firstOff ? ' (frame ' + firstOff.k + ': the page ran ' + firstOff.page + ', owed ' + firstOff.want + ')' : ' (' + (a1.m1 - a1.m0) + ' frames)'));
   const span = a1.t[a1.m1 - 1] - a1.t[a1.m0 - 1];
   const dts = []; for (let i = a1.m0; i < a1.m1; i++) dts.push(a1.t[i] - a1.t[i - 1]);
   R.say(dts.some(d => d > 100) && dts.some(d => d >= 2 * STEP && d <= 100), 'the window holds a frame over the 100 ms clamp and one owing two or more steps (longest ' + Math.max(...dts).toFixed(0) + ' ms)');
@@ -230,6 +234,31 @@ try {
     const wB = await word();
     R.say((wB & 32) !== 0 && (wB & 4) === 0, 'a tap on B is the dive verb\'s tap, never A (word ' + wB + ')');
 
+    /* releaseAll (blur, hidden, Title) forgets what the strip showed pressed: a thumb still down presses again on its
+       next move inside the zone */
+    const keep = await page.touchscreen.touchStart(at.R.x, at.R.y);
+    const wHold = await word();
+    await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+    const wBlur = await word(), litAfterBlur = await page.evaluate(() => !!document.querySelector('#rocker .zone.on'));
+    await keep.move(at.R.x + 4, at.R.y);
+    await page.waitForFunction(() => document.querySelector('#rocker .zr.on'), { timeout: 5000 }).catch(() => {});
+    const wMove = await word();
+    await keep.end();
+    R.say(wHold === 2 && wBlur === 0 && !litAfterBlur, 'a blur releases a held thumb and its zone stops showing pressed (words ' + wHold + ', ' + wBlur + ')');
+    R.say(wMove === 2, 'the same thumb moved inside its zone after the blur presses right again (word ' + wMove + ')');
+    /* a palm on the left zone first, then the thumb on the right: the first rules; the palm lifted, the thumb still down
+       takes the rocker (it is never left dead) */
+    const palm = await page.touchscreen.touchStart(at.L.x, at.L.y);
+    const late = await page.touchscreen.touchStart(at.R.x, at.R.y);
+    const wBoth = await word();
+    await palm.end();
+    await page.waitForFunction(() => document.querySelector('#rocker .zr.on'), { timeout: 5000 }).catch(() => {});
+    const wAdopt = await word();
+    await late.end();
+    const wNone = await word();
+    R.say(wBoth === 1, 'two pointers on the rocker: the first down rules it (word ' + wBoth + ')');
+    R.say(wAdopt === 2 && wNone === 0, 'the first lifted, the pointer still down takes the rocker where it rests, then lifts to nothing (words ' + wAdopt + ', ' + wNone + ')');
+
     /* a thumb reaching high for jump, at the top of A's full height hit area, jumps and never leaves the play screen */
     const high = await page.evaluate(() => { const r = document.getElementById('btnA').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 6 }; });
     for (let k = 0; k < 60; k++) await page.evaluate(() => window.SB_DEV.step(1));
@@ -239,6 +268,65 @@ try {
     await hf.end();
     R.say(hv.vy < 0 && hv.screen === 'play', 'a touch at the very top of A\'s hit area jumps and stays on the play screen (vy ' + hv.vy + ', screen ' + hv.screen + ')');
     R.say(errors.length === 0, 'touch pass: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
+
+  /* under 360 the reservation is released and the rocker (or A and B mirrored) starts at x 0: Title must stay on top */
+  {
+    const { page, errors } = await newPage(browser, { width: 320, height: 568 });
+    await gotoGame(page, srv.base);
+    await ready(page);
+    await page.evaluate(() => window.SB_DEV.hold(true));
+    await tap(page, '#sample');
+    for (const mirror of [false, true]) {
+      const r = await page.evaluate(m => {
+        document.getElementById('strip').classList.toggle('mirror', m);
+        const b = document.getElementById('back').getBoundingClientRect(), top = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+        return { onTop: !!top && top.id === 'back', topName: top ? (top.id || top.className) : 'nothing', w: b.width, h: b.height };
+      }, mirror);
+      R.say(r.onTop && r.w >= 48 && r.h >= 48, '320x568 ' + (mirror ? 'mirrored' : 'default') + ': Title is ' + r.w.toFixed(0) + 'x' + r.h.toFixed(0) + ' and on top at its centre (a thumb lands on ' + r.topName + ')');
+    }
+    await page.evaluate(() => document.getElementById('strip').classList.remove('mirror'));
+    await tap(page, '#back');
+    R.say(await page.evaluate(() => window.SB_DEV.screen()) === 'title', '320x568: a real touch on Title returns to the title');
+    R.say(errors.length === 0, '320x568: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
+
+  /* the fleet's floating chrome is hidden while a room runs and back on the title (Q48's addendum: its saved drag can
+     put the chip on the strip); Q62's ?edge=1 keeps the verbs 32 px off the right edge at 412 with the rocker zones
+     over 56, while the default keeps A on the edge as designed */
+  for (const edge of [false, true]) {
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base, edge ? 'edge=1' : '');
+    await ready(page);
+    const shown = () => page.evaluate(() => ['sws-music-chip', 'sws-music-pill', 'sws-music-card', 'sws-music-toast']
+      .filter(id => { const el = document.getElementById(id); return !!el && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0; }));
+    const tag = edge ? '412x915 ?edge=1' : '412x915';
+    if (!edge) {
+      await page.waitForFunction(() => !!document.getElementById('sws-music-chip'), { timeout: 8000 }).catch(() => {});
+      const onTitle = await shown();
+      console.log('  info  on the title the fleet shows: ' + (onTitle.join(', ') || 'nothing'));
+      await page.evaluate(() => window.SB_DEV.hold(true));
+      await tap(page, '#sample');
+      const inPlay = await shown();
+      R.say(inPlay.length === 0, 'in play the fleet\'s chip, pill, card and toast are hidden (shown: ' + (inPlay.join(', ') || 'none') + ')');
+      await tap(page, '#back');
+      const back = await shown();
+      R.say(onTitle.every(id => back.includes(id)), 'back on the title the fleet\'s chrome is as it was (' + (back.join(', ') || 'nothing') + ')');
+    } else {
+      await page.evaluate(() => window.SB_DEV.hold(true));
+      await tap(page, '#sample');
+    }
+    if (await page.evaluate(() => window.SB_DEV.screen()) !== 'play') await tap(page, '#sample');
+    const g = await page.evaluate(() => {
+      const r = s => document.querySelector(s).getBoundingClientRect();
+      return { vw: window.innerWidth, aR: r('#btnA').right, bR: r('#btnB').right, zl: r('#rocker .zl').width, zr: r('#rocker .zr').width, gap: r('#rocker .gap').width };
+    });
+    const off = edge ? 32 : 0;
+    R.say(Math.abs(g.vw - g.aR - off) < 0.5 && Math.abs(g.aR - g.bR - 64) < 0.5, tag + ': A ends ' + (g.vw - g.aR).toFixed(0) + ' px from the right edge (want ' + off + '), B beside it');
+    R.say(g.zl >= 56 && g.zr >= 56 && Math.abs(g.gap - 16) < 0.5, tag + ': the rocker zones are ' + g.zl.toFixed(0) + ' and ' + g.zr.toFixed(0) + ' px (56 or more) with the 16 px gap');
+    R.say(errors.length === 0, tag + ': zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
 } finally {

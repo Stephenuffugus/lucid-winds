@@ -73,7 +73,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #stage { flex: 0 0 auto; display: flex; justify-content: center; position: relative; touch-action: none; }
 #view { display: block; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; background: var(--ink); }
 #strip { flex: 1 1 auto; min-height: 168px; position: relative; padding-bottom: var(--sab); touch-action: none; }
-#back { position: absolute; top: 0; left: calc(6px + var(--sal)); min-width: 64px; min-height: 48px; padding: 0 12px;
+#back { position: absolute; top: 0; left: calc(6px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;
   border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
 #clear { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
@@ -92,7 +92,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
    the bottom, semi transparent on the film. 64 px verbs on phones 390 and wider, 56 below (DESIGN 4.1's minimum). */
 #strip { --btn: 64px; --res: 120px; }
 #reserve { position: absolute; left: 0; bottom: 0; width: var(--res); height: var(--res); }
-#rocker { position: absolute; left: var(--res); top: 0; bottom: 0; right: calc(2 * var(--btn)); display: flex; align-items: flex-end;
+#rocker { position: absolute; left: var(--res); top: 0; bottom: 0; right: calc(2 * var(--btn) + var(--edge)); display: flex; align-items: flex-end;
   padding: 0 0 calc(10px + var(--sab)) 0; touch-action: none; }
 #rocker .zone { flex: 1 1 0; height: var(--btn); border-radius: 12px; border: 2px solid rgba(11,10,15,0.35);
   background: rgba(11,10,15,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: rgba(11,10,15,0.55); }
@@ -101,14 +101,22 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   padding-bottom: calc(10px + var(--sab)); touch-action: none; }
 .verb .glyph { width: calc(var(--btn) - 6px); height: calc(var(--btn) - 6px); border-radius: 50%; border: 2px solid rgba(11,10,15,0.35);
   background: rgba(11,10,15,0.06); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: rgba(11,10,15,0.6); }
-#btnA { right: var(--sar); }
-#btnB { right: calc(var(--btn) + var(--sar)); }
+#btnA { right: calc(var(--sar) + var(--edge)); }
+#btnB { right: calc(var(--btn) + var(--sar) + var(--edge)); }
 #rocker .zone.on, .verb.on .glyph { background: rgba(11,10,15,0.28); border-color: rgba(11,10,15,0.7); color: var(--ink); }
-#strip.mirror #rocker { left: calc(var(--res) + 2 * var(--btn)); right: var(--sar); }
+#strip.mirror #rocker { left: calc(var(--res) + 2 * var(--btn)); right: calc(var(--sar) + var(--edge)); }
 #strip.mirror #btnA { right: auto; left: var(--res); }
 #strip.mirror #btnB { right: auto; left: calc(var(--res) + var(--btn)); }
 @media (max-width: 389px) { #strip { --btn: 56px; } }
 @media (max-width: 359px) { #strip { --res: 0px; } #reserve { display: none; } }
+/* Q62's alternative, ?edge=1: on phones 412 wide and over the verbs (and the mirrored rocker) keep 32 px off the right
+   edge, out of Android's back swipe strip; the rocker zones stay over 56 px */
+#strip { --edge: 0px; }
+@media (min-width: 412px) { #strip.edge { --edge: 32px; } }
+/* the fleet's floating chrome (song card, pill, toast, chip) can sit on the strip in play (its drag is saved for every
+   game on the domain): hidden while a room runs and back on the title and the clear card as it was (Q48's addendum;
+   Chaff Wars v1.11's rule, since SWSMusic.hold would close a waiting card as seen) */
+body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-music-toast, body.playing #sws-music-chip { display: none !important; }
 
 /* the rotate card: a phone held sideways; a desktop window (a fine pointer) never gets it (QUESTIONS Q40) */
 #rotate { display: none; position: fixed; inset: 0; z-index: 1000; background: var(--soot); color: var(--paper);
@@ -738,7 +746,8 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     }
     var standable = function (c) { return c + w < n && !solid[c] && (solid[c + w] || plat[c + w]); };
     var exit = -1;
-    if (light) for (q = light.length - 1; q >= 0 && exit < 0; q--) if (standable(light[q])) exit = light[q];
+    /* the light's lowest standable row, then the lowest index in it (section 3.7: ties to the lowest index) */
+    if (light) for (q = 0; q < light.length; q++) if (standable(light[q]) && (exit < 0 || Math.floor(light[q] / w) > Math.floor(exit / w))) exit = light[q];
     if (exit < 0) for (y = 0; y < T.EXIT_ROWS && exit < 0; y++) {
       var bl = -1;
       for (x = 0; x < w; x++) { var c2 = y * w + x; if (standable(c2) && (bl < 0 || L[c2] > L[bl])) bl = c2; }
@@ -1206,7 +1215,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     down[verb][source] = 1;
   };
   I.release = function (verb, source) { delete down[verb][source]; };
-  I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {} }; };
+  I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {} }; if (I._stripReset) I._stripReset(); };
 
   I.sample = function () {
     var IN = SB.sim.IN;
@@ -1224,7 +1233,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
      lifting; A and B track their own pointers, so a second finger never releases the first. */
   I.initStrip = function () {
     var rocker = document.getElementById('rocker'), zl = rocker.querySelector('.zl'), zr = rocker.querySelector('.zr');
-    var rockerPtr = null, rockerVerb = null;
+    var rockerPtrs = [], rockerX = {}, rockerVerb = null;   /* the pointers down on the rocker, first first: the first rules it */
     var paint = function () { zl.classList.toggle('on', rockerVerb === 'L'); zr.classList.toggle('on', rockerVerb === 'R'); };
     var zoneOf = function (x) {
       var a = zl.getBoundingClientRect(), b = zr.getBoundingClientRect();
@@ -1241,13 +1250,22 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     };
     rocker.addEventListener('pointerdown', function (e) {
       e.preventDefault();
-      if (rockerPtr !== null) return;    /* one thumb on the rocker */
-      rockerPtr = e.pointerId;
+      rockerPtrs.push(e.pointerId); rockerX[e.pointerId] = e.clientX;
       try { rocker.setPointerCapture(e.pointerId); } catch (err) { /* already captured */ }
-      setRocker(zoneOf(e.clientX));
+      if (rockerPtrs[0] === e.pointerId) setRocker(zoneOf(e.clientX));      /* one thumb rules; a later one waits */
     });
-    rocker.addEventListener('pointermove', function (e) { if (e.pointerId === rockerPtr) setRocker(zoneOf(e.clientX)); });
-    var endRocker = function (e) { if (e.pointerId !== rockerPtr) return; rockerPtr = null; setRocker(null); };
+    rocker.addEventListener('pointermove', function (e) {
+      if (!(e.pointerId in rockerX)) return;
+      rockerX[e.pointerId] = e.clientX;
+      if (rockerPtrs[0] === e.pointerId) setRocker(zoneOf(e.clientX));
+    });
+    /* the ruling pointer gone, the next still down takes the rocker where it rests (a palm cancelled under a thumb) */
+    var endRocker = function (e) {
+      var k = rockerPtrs.indexOf(e.pointerId);
+      if (k < 0) return;
+      rockerPtrs.splice(k, 1); delete rockerX[e.pointerId];
+      setRocker(rockerPtrs.length ? zoneOf(rockerX[rockerPtrs[0]]) : null);
+    };
     rocker.addEventListener('pointerup', endRocker);
     rocker.addEventListener('pointercancel', endRocker);
     rocker.addEventListener('lostpointercapture', endRocker);
@@ -1270,13 +1288,17 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       el.addEventListener('pointerup', end);
       el.addEventListener('pointercancel', end);
       el.addEventListener('lostpointercapture', end);
+      return function () { ptrs = {}; el.classList.remove('on'); };
     };
-    button(document.getElementById('btnA'), 'A');
-    button(document.getElementById('btnB'), 'B');
+    var btnA = button(document.getElementById('btnA'), 'A'), btnB = button(document.getElementById('btnB'), 'B');
+    /* releaseAll (Title, blur, hidden) clears the latch; the strip forgets what it showed pressed too, and a thumb still
+       on the rocker presses again on its next move */
+    I._stripReset = function () { rockerVerb = null; paint(); btnA(); btnB(); };
     var strip = document.getElementById('strip');
     strip.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     document.getElementById('view').addEventListener('contextmenu', function (e) { e.preventDefault(); });
     strip.classList.toggle('mirror', !!(SB.settings && SB.settings.mirror));
+    strip.classList.toggle('edge', /[?&]edge=1(&|$)/.test(location.search));
   };
 
   I.init = function () {
@@ -1338,6 +1360,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     var all = document.querySelectorAll('.screen');
     for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === name);
     ui.screen = name;
+    document.body.classList.toggle('playing', name === 'play');
     if (name === 'play') SB.render.fit();
   };
 
@@ -1385,7 +1408,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   };
   ui.again = function () { if (G.record) ui.startRoom(G.record, G.name); };
 
-  ui.showClear = function () { document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; };
+  ui.showClear = function () { document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; document.body.classList.remove('playing'); };
   ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); document.getElementById('back').hidden = false; };
   /* every in game back is an internal screen switch that hides every overlay it can sit over */
   ui.toTitle = function () { ui.hideClear(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
@@ -1418,9 +1441,13 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
      clamped to 100 ms (a tab switch never produces a catch up storm); at most four steps run; if time is still owed
      after four the frame is a stall and the debt is dropped. The sim never sees time, only steps. */
   var STEP_MS = 1000 / SB.TUNING.STEP_HZ, MAX_STEPS = 4, DT_MAX = 100;
-  var G = SB.game, held = false, last = -1, acc = 0;
-  var loop = { raf: 0, steps: 0, accSteps: 0, consumed: 0, dropped: 0, clamped: 0, stalls: 0, maxSteps: 0 };
-  var perf = SB.perfLog = { step: [], draw: [], pipeline: 0 };
+  /* each run starts the accumulator a quarter step off the frame boundary (PHASE), and a stall puts it back there: a
+     display at 60 or 120 Hz adds whole or half steps, and frame times are never exact (coarsened to 0.1 or 1 ms), so an
+     accumulator sitting ON the boundary flips frames between 0 and 2 steps; a quarter step clears that jitter */
+  var PHASE = STEP_MS / 4;
+  var G = SB.game, held = false, last = -1, acc = 0, running = false;
+  var loop = { raf: 0, steps: 0, accSteps: 0, consumed: 0, dropped: 0, clamped: 0, stalls: 0, maxSteps: 0, seeded: 0 };
+  var perf = SB.perfLog = { step: [], draw: [], frames: [], pipeline: 0 };
   var keep = function (a, v) { a.push(v); if (a.length > 300) a.shift(); };
 
   function stepOnce() {
@@ -1441,13 +1468,17 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     var raw = last < 0 ? 0 : now - last, dt = Math.min(raw, DT_MAX);
     last = now;
     loop.raf++;
-    if (!held && G.state && SB.ui.screen === 'play') {
+    var run = !held && !!G.state && SB.ui.screen === 'play';
+    if (run) {
+      if (!running) { loop.dropped += acc; acc = PHASE; loop.seeded += PHASE; }
       acc += dt; loop.consumed += dt; loop.clamped += raw - dt;
       var n = 0;
       while (acc >= STEP_MS && n < MAX_STEPS) { stepOnce(); acc -= STEP_MS; n++; loop.accSteps++; }
-      if (acc >= STEP_MS) { loop.dropped += acc; acc = 0; loop.stalls++; }
+      if (acc >= STEP_MS) { loop.dropped += acc; acc = PHASE; loop.seeded += PHASE; loop.stalls++; }
       if (n > loop.maxSteps) loop.maxSteps = n;
+      keep(perf.frames, [now, n]);
     }
+    running = run;
     draw(now);
   }
 
@@ -1472,7 +1503,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       return { w: lv.w, h: lv.h, spawn: lv.spawn, exit: lv.exit, otsuT: lv.otsuT, hash: SB.pipeline.levelHash(lv), code: SB.record.encode(lv.rec),
         viewRows: SB.render.viewRows, camY: SB.render.camY, cssW: SB.render.cssW };
     },
-    perf: function () { return { now: performance.now(), step: perf.step.slice(), draw: perf.draw.slice(), pipeline: perf.pipeline, loop: Object.assign({ acc: acc, stepMs: STEP_MS }, loop) }; },
+    perf: function () { return { now: performance.now(), step: perf.step.slice(), draw: perf.draw.slice(), frames: perf.frames.slice(), pipeline: perf.pipeline, loop: Object.assign({ acc: acc, stepMs: STEP_MS }, loop) }; },
     lastInput: function () { return SB.input.last(); },
     recording: function () { return SB.input.recording(); },
     staticBuilds: function () { return SB.render.builds; },
