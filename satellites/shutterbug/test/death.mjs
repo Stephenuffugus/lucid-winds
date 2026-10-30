@@ -5,8 +5,11 @@
  * the rocker and A pulse at the first standing moment, once. The clear card offers `Shoot the next room` and `Play it
  * again`, each 48 px or more. The loop is held and stepped with SB_DEV.step(n) (each step samples the real input).
  *
+ * At 320x568 the docked card clears the fallen bug at points all the way up the climb (the M1 review).
+ *
  * Watched red by RESTART_REVEALS (Again replays the reveal), DEATH_NO_CARD (the last heart shows no card), BLINK_NONE
- * (the hero drawn through the i frames) and HEARTS_STALE (the strip keeps the old count). */
+ * (the hero drawn through the i frames), HEARTS_STALE (the strip keeps the old count), DEATH_CARD_TALL (the short
+ * screen's side by side buttons gone) and CHIP_ON_DEATH (the fleet's chrome left over the card). */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap } from './harness.mjs';
 
 const R = reporter('DEATH');
@@ -129,6 +132,42 @@ try {
     });
     R.say(high.screen === 'dead' && high.heroY + 8 < high.h / 2 && high.low && high.onCanvas, 'a death high in the room (the hero at ' + high.heroY + ' of ' + high.h + '): the card docks at the bottom and the fallen hero stays in view (screen ' + high.screen + ')');
     await hp.page.close();
+  }
+
+  /* at 320x568, the plan's small phone: the bug set down on each row of the climb (the ascent's first node a row), the
+     camera left to settle, the room ended there by hand: the docked card never covers the fallen bug (the M1 review:
+     the stacked card hid it on 40 of 48 rows; on a short screen Again and Title now sit side by side, and the card docks
+     low when the top dock would reach the bug, measured) */
+  {
+    const sm = await newPage(browser, { width: 320, height: 568 });
+    await gotoGame(sm.page, srv.base); await ready(sm.page);
+    await sm.page.evaluate(() => window.SB_DEV.hold(true));
+    await tap(sm.page, '#sample');
+    const nodes = await sm.page.evaluate(() => { const lv = window.SB.game.level, n = lv.w * lv.h, rows = new Set(); return lv.ascent.nodes.filter(v => v < n && v !== lv.exit && !rows.has(Math.floor(v / lv.w)) && rows.add(Math.floor(v / lv.w))); });
+    const hidden = [], blocked = []; let btn = null;
+    for (const v of nodes) {
+      const r = await sm.page.evaluate(v => {
+        const G = window.SB.game, CS = window.SB.K.CELL_SUB, h = G.state.hero;
+        h.x = (v % G.level.w) * CS + ((CS - window.SB.K.HERO_W_SUB) >> 1); h.y = Math.floor(v / G.level.w) * CS; h.vx = 0; h.vy = 0;
+        window.SB_DEV.step(90); G.state.room.dead = 1; window.SB_DEV.step(1);
+        const cv = document.getElementById('view'), cr = cv.getBoundingClientRect(), hr = window.SB_DEV.spriteRects().hero, k = cr.width / cv.width, card = document.getElementById('death').getBoundingClientRect();
+        const top = cr.top + hr.y * k, bottom = cr.top + (hr.y + hr.h) * k;
+        return { row: Math.floor(v / G.level.w), screen: window.SB_DEV.screen(), covered: top < card.bottom && bottom > card.top, card: [Math.round(card.top), Math.round(card.bottom)], hero: [Math.round(top), Math.round(bottom)],
+          btn: [...document.querySelectorAll('#death button')].map(b => { const q = b.getBoundingClientRect(); return [q.width, q.height]; }),
+          thumbs: ['deathagain', 'deathtitle'].filter(id => { const el = document.getElementById(id), q = el.getBoundingClientRect(), t = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); return !t || !(t === el || el.contains(t)); }).map(id => id + ' under ' + ((document.elementFromPoint(...(q => [q.left + q.width / 2, q.top + q.height / 2])(document.getElementById(id).getBoundingClientRect())) || {}).id || 'nothing')) };
+      }, v);
+      if (r.screen !== 'dead' || r.covered) hidden.push('row ' + r.row + ' (the bug ' + r.hero.join(' to ') + ', the card ' + r.card.join(' to ') + ')');
+      if (r.screen === 'dead' && r.thumbs.length) blocked.push('row ' + r.row + ': ' + r.thumbs.join(', '));
+      btn = btn || r.btn;
+      if (r.screen === 'dead' && !r.thumbs.length) await tap(sm.page, '#deathagain'); else await sm.page.evaluate(() => window.SB.ui.restart());
+    }
+    /* a thumb lands on Again and Title on every row: nothing of the fleet's sits over the card (the M1 review: the music
+       chip, seated on the title, sat on the low docked card's Again; the page now hides the fleet's chrome under it) */
+    R.say(blocked.length === 0, 'at 320x568 a thumb lands on Again and Title on every row' + (blocked.length ? ' (' + blocked.slice(0, 3).join('; ') + ')' : ''));
+    R.say(nodes.length >= 8 && hidden.length === 0, 'at 320x568 the death card clears the fallen bug on each of ' + nodes.length + ' rows up the climb' + (hidden.length ? ' (covered: ' + hidden.slice(0, 4).join('; ') + ')' : ''));
+    R.say(!!btn && btn.length === 2 && btn.every(b => b[0] >= 48 && b[1] >= 48), 'its Again and Title stay 48 px or more (' + (btn || []).map(b => b[0].toFixed(0) + 'x' + b[1].toFixed(0)).join(', ') + ')');
+    R.say(sm.errors.length === 0, 'the 320x568 page has zero page errors' + (sm.errors.length ? ' (' + sm.errors.join(' ; ') + ')' : ''));
+    await sm.page.close();
   }
 
   /* under reduced motion the hint is a still outline, with no animation to end: it must still leave after the pulse

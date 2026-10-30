@@ -4531,13 +4531,14 @@ group('H-qr-4', 'the chosen mask\'s penalty is the lowest of the eight, each rec
 });
 
 /* ================================================================ sprites (T0.17) */
-group('H-spr-1', 'every sprite string decodes to its declared size in the key; the hero is 12x16 with an Ink feet row in every frame; Sun belongs to the hero and the beacon only', t => {
+group('H-spr-1', 'every sprite string decodes to its declared size in the key; the hero is 12x16 with an Ink feet row in every frame; Sun belongs to the hero and the beacon only, Film to the film tab; the speck Amber with a Glare glint; every danger outlined in Ink (section 7.3)', t => {
   const m = fs.readFileSync(PAGE, 'utf8').match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//);
   t.ok(!!m, 'the page holds the SPRITES fence in shell-render');
   if (!m) return;
   let S = null;
   try { S = require('node:vm').runInNewContext(m[1] + '\n;SPRITES'); } catch (e) { t.ok(false, 'the SPRITES literal evaluates (' + e.message + ')'); return; }
-  const names = Object.keys(S), SUN = SB.palette.I.SUN.toString(16), INK = SB.palette.I.INK.toString(16);
+  const names = Object.keys(S), SUN = SB.palette.I.SUN.toString(16), INK = SB.palette.I.INK.toString(16), FILM = SB.palette.I.FILM.toString(16);
+  const AMBER = SB.palette.I.AMBER.toString(16), GLARE = SB.palette.I.GLARE.toString(16), DANGER = ['moth', 'icicle', 'jelly', 'crawler', 'spark', 'spike', 'crusher'];
   t.ok(names.length > 0 && names.length < 40, names.length + ' named sprites (under 40; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
@@ -4550,8 +4551,14 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
       t.ok(bad.length === 0, name + '.' + f + ' decodes to ' + sp.w + 'x' + sp.h + ', every pixel clear or a palette index' + (bad.length ? ' (' + bad.join('; ') + ')' : ''));
       if (name === 'hero') t.ok(sp.w === K.HERO_W && sp.h === K.HERO_H && rows[sp.h - 1].includes(INK), 'hero.' + f + ' is the hitbox\'s size and its bottom row holds Ink (the feet row, section 7.3)');
       else if (name !== 'beacon') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour)');
+      /* section 7.3 (the M1 review: the placeholders broke it): Film is the repairs' alone (the film tab), so help is
+         never furniture; the speck is Amber with a Glare glint; every danger has an Ink outline */
+      if (name !== 'tab') t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour)');
+      if (name === 'speck') t.ok(str.includes(AMBER) && str.includes(GLARE), 'speck.' + f + ' is Amber with a Glare glint');
+      if (DANGER.includes(name)) t.ok(str.includes(INK), name + '.' + f + ' has its Ink outline (danger, section 7.3)');
     }
   }
+  t.ok(DANGER.every(n => names.includes(n)), 'every enemy and trap the rules name has a sprite (' + DANGER.join(', ') + ')');
   console.log('  info  H-spr-1: ' + names.length + ' sprites, ' + frames + ' frames');
 });
 

@@ -16,8 +16,14 @@
  * and a real tap on Play open the card and the same level; garbage says so on the title.
  *
  * Watched red by SHARE_DROPS_FOCAL and PREFIX_CHECK_DROPPED through H-share-1 and H-share-2 (Node), QUIET_ZONE_0,
- * LINK_TAKES_FIRST_ROOM, AGAIN_FORGETS_LINK, PLAY_AGAIN_FORGETS_LINK and by this gate's own checks. */
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, GAME, GAME_PATH } from './harness.mjs';
+ * LINK_TAKES_FIRST_ROOM, AGAIN_FORGETS_LINK, PLAY_AGAIN_FORGETS_LINK and by this gate's own checks.
+ *
+ * The M1 review's phone checks: the symbol fits the window under the head at 375x553; a Double Exposure preview shows
+ * both its grids; Copy code's fallback (the clipboard refused) leaves the QR on the link; a link by hashchange mid room
+ * holds the room under the card; at 320x568 a returning player's refusal is in sight; every field is 16 px or more,
+ * the link field 48 px tall. Watched red by QR_WIDTH_ONLY, PREVIEW_ONE_GRID, QR_FROM_FIELD, CODE_CARD_RUNS,
+ * CODEMSG_BELOW_FOLD, FIELD_15PX and SHARELINK_40PX. */
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, sleep, GAME, GAME_PATH } from './harness.mjs';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -105,11 +111,18 @@ try {
   R.say(f.errors.length === 0, 'the fresh profile has zero page errors' + (f.errors.length ? ' (' + f.errors.join(' ; ') + ')' : ''));
   await fc.close();
 
-  /* a garbage code */
-  const c = await newPage(browser, { width: 360, height: 780 });
+  /* a garbage code, at 320x568 for a returning player (the Level code row showing): the refusal in sight (the M1
+     review: below the buttons it sat under the fold) */
+  const c = await newPage(browser, { width: 320, height: 568 });
   await c.page.goto(srv.base + GAME_PATH + '#v1.this-is-not-a-room'); await ready(c.page);
-  const refusal = await c.page.evaluate(() => ({ shown: !document.getElementById('codemsg').hidden, text: document.getElementById('codemsg').textContent, card: document.getElementById('devcard').classList.contains('on'), screen: window.SB_DEV.screen() }));
+  const refusal = await c.page.evaluate(() => ({ shown: !document.getElementById('codemsg').hidden, text: document.getElementById('codemsg').textContent, card: document.getElementById('devcard').classList.contains('on'), screen: window.SB_DEV.screen(), row: !document.getElementById('codebox').hidden }));
+  const cm = await centre(c.page, '#codemsg');
   R.say(refusal.shown && refusal.text === 'That code did not open. Check it and try again.' && !refusal.card && refusal.screen === 'title', 'a garbage code shows the refusal on the title (' + refusal.text + ')');
+  R.say(refusal.row && !!cm && cm.inView, 'at 320x568 with the Level code row showing, the refusal is in sight without a scroll (' + (cm ? Math.round(cm.top) + ' to ' + Math.round(cm.bottom) : 'not drawn') + ')');
+  /* every field the player types or pastes in is 16 px or more: an iPhone zooms the page on a smaller one and keeps
+     the zoom, and the next room is drawn cropped (the M1 review) */
+  const small = await c.page.evaluate(() => [...document.querySelectorAll('input:not([type=checkbox]):not([type=file]), select, textarea')].filter(el => parseFloat(getComputedStyle(el).fontSize) < 16).map(el => el.id + ' ' + getComputedStyle(el).fontSize));
+  R.say(small.length === 0, 'every input, select and textarea is 16 px or more' + (small.length ? ' (' + small.join(', ') + ')' : ''));
 
   /* the round trips in the page */
   const recs = [JSON.parse(readFileSync(join(GAME, 'fixtures', 'sample-room.json'), 'utf8')).record].concat(['saturated-blobs', 'shelves-a', 'trap-pattern'].map(n => JSON.parse(readFileSync(join(GAME, 'fixtures', 'synthetic', n + '.json'), 'utf8')).record));
@@ -153,6 +166,22 @@ try {
   R.say(qr.q === 4 && qr.quietBad === 0, 'its quiet zone is 4 modules of Paper on every side (' + qr.quietBad + ' pixels otherwise, quiet ' + qr.q + ')');
   R.say(qr.modBad === 0, 'every module drawn is the encoder\'s, Ink or Paper (' + qr.modBad + ' differ)');
   R.say(qr.px === 3 && Math.abs(qr.w - 315) < 0.5 && qr.onScreen, 'at 412 wide: 3 CSS px a module, ' + qr.w + ' px across, on screen');
+  /* the clipboard refused (an in app browser): Copy code's fallback puts the code in the field to copy by hand, and
+     the QR, Copy link and Share still carry the link (the M1 review: all three read the field) */
+  const linkH = await page.evaluate(() => document.getElementById('sharelink').getBoundingClientRect().height);
+  R.say(linkH >= 48, 'the link field is 48 px tall or more (' + linkH.toFixed(0) + ')');
+  await page.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { value: { writeText: () => Promise.reject(new Error('refused')) }, configurable: true }); });
+  await tap(page, '#qrtoggle');
+  await page.evaluate(() => document.getElementById('copycode').scrollIntoView({ block: 'center' }));
+  await tap(page, '#copycode');
+  await page.evaluate(() => document.getElementById('qrtoggle').scrollIntoView({ block: 'center' }));
+  await tap(page, '#qrtoggle');
+  const fb = await page.evaluate(link => {
+    const cv = document.getElementById('qrcanvas'), n = cv.width, d = cv.getContext('2d').getImageData(0, 0, n, n).data, sym = window.SB.qr.encode(link), q = +cv.dataset.quiet, P = window.SB.palette, ink = P.RGB[P.I.INK].join();
+    let bad = 0; for (let y = 0; y < sym.size; y++) for (let x = 0; x < sym.size; x++) { const o = ((y + q) * n + x + q) * 4; if (([d[o], d[o + 1], d[o + 2]].join() === ink) !== !!sym.modules[y * sym.size + x]) bad++; }
+    return { field: document.getElementById('sharelink').value, bad, size: sym.size, n };
+  }, sheet.link);
+  R.say(fb.field.startsWith('v1.') && fb.bad === 0 && fb.n === fb.size + 8, 'Copy code with the clipboard refused leaves the code in the field (' + fb.field.slice(0, 6) + '...) and the QR still the link\'s (' + fb.bad + ' modules differ)');
   const dx = await newPage(browser, { width: 360, height: 780 });
   await gotoGame(dx.page, srv.base); await ready(dx.page);
   await dx.page.evaluate(() => window.SB_DEV.hold(true));
@@ -168,7 +197,51 @@ try {
   await tap(dx.page, '#share');
   const de = await dx.page.evaluate(() => ({ toggle: document.getElementById('qrtoggle').hidden, long: !document.getElementById('qrlong').hidden, text: document.getElementById('qrlong').textContent, len: document.getElementById('sharelink').value.length }));
   R.say(deScreen === 'play' && de.toggle && de.long && de.text === 'Long code, the link is easier.', 'a Double Exposure room\'s ' + de.len + ' character link gets the sentence instead of a symbol');
+  /* its preview shows both grids it shares, the second above the first as the level stacks them, 4 px a cell in the
+     canvas's middle (the M1 review: only the first was drawn) */
+  const both = await dx.page.evaluate(() => {
+    const rec = window.SB.game.record, cv = document.getElementById('sharecanvas'), d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, P = window.SB.palette;
+    let bad = 0;
+    for (let g = 0; g < 2; g++) for (let i = 0; i < rec.w * rec.h; i++) {
+      const x = 48 + (i % rec.w) * 4 + 2, y = (g * rec.h + Math.floor(i / rec.w)) * 4 + 2, o = (y * cv.width + x) * 4;
+      if ([d[o], d[o + 1], d[o + 2]].join() !== P.RGB[(g ? rec.pal : rec.pal2)[i]].join()) bad++;
+    }
+    return { bad, mode: rec.mode };
+  });
+  R.say(both.mode === 2 && both.bad === 0, 'its preview shows both grids, the second above the first, every cell its colour (' + both.bad + ' differ)');
   R.say(dx.errors.length === 0, 'the 360 wide page has zero page errors' + (dx.errors.length ? ' (' + dx.errors.join(' ; ') + ')' : ''));
+
+  /* at 375x553 (an iPhone SE in Safari) the symbol fits the sheet's window under its head, all three finders in sight
+     at once (the M1 review: 3 px a module made it 315 px in a 251 px window) */
+  const se = await newPage(browser, { width: 375, height: 553 });
+  await gotoGame(se.page, srv.base); await ready(se.page);
+  await se.page.evaluate(() => window.SB_DEV.hold(true));
+  await tap(se.page, '#sample'); await tap(se.page, '#share');
+  await se.page.evaluate(() => document.getElementById('qrtoggle').scrollIntoView({ block: 'center' }));
+  await tap(se.page, '#qrtoggle');
+  const fit = await se.page.evaluate(() => { const r = document.getElementById('qrcanvas').getBoundingClientRect(), hd = document.getElementById('sharehead').getBoundingClientRect(), sh = document.getElementById('sharesheet').getBoundingClientRect();
+    return { px: +document.getElementById('qrcanvas').dataset.px, top: r.top, bottom: r.bottom, head: hd.bottom, end: sh.bottom }; });
+  R.say(fit.px >= 2 && fit.top >= fit.head - 0.5 && fit.bottom <= fit.end + 0.5, 'at 375x553 the symbol (' + fit.px + ' CSS px a module) sits whole under the head (' + Math.round(fit.top) + ' to ' + Math.round(fit.bottom) + ', the head ends ' + Math.round(fit.head) + ', the sheet ' + Math.round(fit.end) + ')');
+  R.say(se.errors.length === 0, 'the 375x553 page has zero page errors' + (se.errors.length ? ' (' + se.errors.join(' ; ') + ')' : ''));
+  await se.page.close();
+
+  /* a link that arrives by hashchange during play holds the room under the card until it is developed (the M1
+     review: the room kept running under a card that hides it) */
+  const hc = await newPage(browser, { width: 412, height: 915 });
+  await gotoGame(hc.page, srv.base); await ready(hc.page);
+  await tap(hc.page, '#sample');
+  await sleep(400);
+  await hc.page.evaluate(cd => { location.hash = cd; }, code);
+  await sleep(200);
+  const h0 = await hc.page.evaluate(() => ({ steps: window.SB_DEV.frames(), screen: window.SB_DEV.screen(), card: document.getElementById('devcard').classList.contains('on') }));
+  await sleep(600);
+  const h1 = await hc.page.evaluate(() => window.SB_DEV.frames());
+  await tap(hc.page, '#devtap');
+  await sleep(300);
+  const h2 = await hc.page.evaluate(() => ({ screen: window.SB_DEV.screen(), name: document.getElementById('roomname').textContent }));
+  R.say(h0.card && h0.screen !== 'play' && h1 === h0.steps && h2.screen === 'play' && h2.name === 'A shared room', 'a link by hashchange mid room holds it under the card (' + h0.steps + ' steps, then ' + h1 + ', the screen ' + h0.screen + ') and a tap develops it (' + h2.screen + ', ' + h2.name + ')');
+  R.say(hc.errors.length === 0, 'the hashchange page has zero page errors' + (hc.errors.length ? ' (' + hc.errors.join(' ; ') + ')' : ''));
+  await hc.page.close();
   R.say(errors.length === 0 && c.errors.length === 0, 'zero page errors' + (errors.length + c.errors.length ? ' (' + errors.concat(c.errors).join(' ; ') + ')' : ''));
 } finally { await browser.close(); await srv.close(); }
 R.finish();

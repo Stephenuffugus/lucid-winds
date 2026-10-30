@@ -11,7 +11,12 @@
  * wrapper iframe {sws:'earn', moment:'first_clear'} arrives exactly once across two clears and first_share once across
  * two copies, neither carrying an amount; the unframed clears marked no moment (QUESTIONS Q85).
  *
- * Watched red by X_LEAVES_OVERLAY, MOMENT_TWICE, FAB_OVER_SHEET, BANK_FULL_RATE and SHARE_CLOSE_TO_PLAY. */
+ * The M1 review: Settings opens after a room ran unheld, its Performance line a measure; a tap on A under the open
+ * sheet is not banked into a jump at Close; the clear and death cards hide under the sheet; two quick copies come back
+ * to Copy link.
+ *
+ * Watched red by X_LEAVES_OVERLAY, MOMENT_TWICE, FAB_OVER_SHEET, BANK_FULL_RATE, SHARE_CLOSE_TO_PLAY, PERF_OVER_PAIRS,
+ * EDGE_BANKED_UNDER_SHEET, CARD_UNDER_SHEET and COPIED_STICKS. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, GAME, GAME_PATH, sleep } from './harness.mjs';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -55,13 +60,17 @@ try {
     return R.say(l.screen === 'title' && l.on.length === 0 && !l.modal && l.fab !== 'none' && !!c && c.onTop,
       label + ': the title with nothing over it (screen ' + l.screen + (l.on.length ? ', still on: ' + l.on.join(' ') : '') + (c && !c.onTop ? ', a thumb on Try the sample room lands on ' + c.topName : '') + ', fab ' + l.fab + ')');
   };
+  const shown = id => page.evaluate(id => getComputedStyle(document.getElementById(id)).visibility, id);
   const sheetOver = async (from, label) => {
     await tap(page, from === 'clear' ? '#clearshare' : '#share');
-    const a = await look();
+    const a = await look(), want = from === 'dead' ? 'death' : from, under = from === 'play' ? 'visible' : await shown(want);
     await tap(page, '#shareclose');
-    const b = await look(), want = from === 'dead' ? 'death' : from;
+    const b = await look(), back = from === 'play' ? 'visible' : await shown(want);
     R.say(a.screen === 'share' && a.on.includes('sharesheet') && a.fab === 'none' && b.screen === from && !b.on.includes('sharesheet') && (from === 'play' || b.on.includes(want)),
       label + ': the share sheet over the ' + from + ' screen (fab ' + a.fab + ') and its Close returns to it (screen ' + b.screen + ', on: ' + (b.on.join(' ') || 'nothing') + ')');
+    /* the card the sheet sits over never shows under it (the M1 review: at 320x568 the clear card's Play it again and
+       Title showed and took taps below the sheet) */
+    if (from !== 'play') R.say(under === 'hidden' && back === 'visible', label + ': the ' + want + ' card hides under the sheet (' + under + ') and shows again at Close (' + back + ')');
   };
   const clearRoom = async () => {
     const before = await look();
@@ -80,6 +89,14 @@ try {
     if (round === 1) await tap(page, '#sample'); else await tap(page, '#again');
     l = await look();
     R.say(l.screen === 'play' && l.st.frame === 0 && l.on.length === 0 && l.fab !== 'none', 'round ' + round + ': ' + (round === 1 ? 'Try the sample room' : 'Play it again') + ' opens the room at frame 0 with nothing over it (fab ' + l.fab + ')');
+    if (round === 1) {
+      /* a thumb on A while the sheet is up is never banked into a jump at Close (the M1 review: the strip under the
+         sheet stays live, and its press edge fired on the next step) */
+      const g0 = await page.evaluate(() => { for (let k = 0; k < 120 && !window.SB_DEV.state().hero.ground; k++) window.SB_DEV.step(1); window.SB_DEV.step(2); return window.SB_DEV.state().hero; });
+      await tap(page, '#share'); await tap(page, '#btnA'); await tap(page, '#shareclose');
+      const g1 = await page.evaluate(() => { window.SB_DEV.step(3); return window.SB_DEV.state().hero; });
+      R.say(g0.ground && g1.ground && g1.y === g0.y, 'round 1: a tap on A under the open share sheet does not jump at Close (on the ground ' + g1.ground + ', y ' + (g0.y / 256) + ' then ' + (g1.y / 256) + ' px)');
+    }
     await page.evaluate(() => { window.SB_DEV.goto('speck'); window.SB_DEV.step(2); });
     if (round === 1) await sheetOver('play', 'round 1');
     const c = await clearRoom(), want = Math.floor(c.dp * 0.5);
@@ -90,7 +107,19 @@ try {
     const btns = await Promise.all(['#nextroom', '#clearshare', '#again', '#cleartitle'].map(s => centre(page, s)));
     R.say(btns.every(b => b && b.onTop && b.inView && b.h >= 48), 'round ' + round + ': a thumb lands on each of Shoot the next room, Share this room, Play it again and Title, each 48 px tall or more');
     await sheetOver('clear', 'round ' + round);
-    if (round === 1) { await tap(page, '#clearshare'); await tap(page, '#copylink'); await tap(page, '#shareclose'); }
+    if (round === 1) {
+      /* two quick taps on Copy link (a clipboard that takes it): the label says Copied, then comes back to Copy link,
+         and the next sheet opens on Copy link (the M1 review: the second tap read Copied as the label and kept it) */
+      await page.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { value: { writeText: () => Promise.resolve() }, configurable: true }); });
+      await tap(page, '#clearshare'); await tap(page, '#copylink'); await sleep(300); await tap(page, '#copylink');
+      const mid = await page.evaluate(() => document.getElementById('copylink').textContent);
+      await sleep(1900);
+      const after = await page.evaluate(() => document.getElementById('copylink').textContent);
+      await tap(page, '#shareclose'); await tap(page, '#clearshare');
+      const reopened = await page.evaluate(() => document.getElementById('copylink').textContent);
+      await tap(page, '#shareclose');
+      R.say(mid === 'Copied' && after === 'Copy link' && reopened === 'Copy link', 'round 1: two quick copies say Copied (' + mid + '), then Copy link again (' + after + '), and the next sheet opens on it (' + reopened + ')');
+    }
   }
   await tap(page, '#cleartitle');
   await clean('the clear card\'s Title');

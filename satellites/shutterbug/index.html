@@ -108,6 +108,11 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   display: none; flex-direction: column; gap: 12px; align-items: stretch; text-align: center; z-index: 10; }
 #clear.on, #death.on, #offer.on, #slip.on { display: flex; }
 #death { top: 3%; } #death.low { top: auto; bottom: 3%; }
+#death .duo { display: flex; flex-direction: column; gap: 12px; }
+/* on a short screen Again and Title sit side by side, so the docked card clears the line the camera keeps the bug on
+   (the M1 review: at 320x568 the stacked card hid the fallen bug on 40 of 48 rows) */
+@media (max-height: 700px) { #death .duo { flex-direction: row; } #death .duo button { flex: 1 1 0; min-width: 0; }
+  #death { width: min(320px, 94vw); padding: 12px 14px; gap: 10px; } #stage > #death h2 { font-size: 1rem; } }   /* its words on one line: about 116 px, under half the stage at 320x568 (#stage: over the cards' 1.3rem rule below) */
 #clear h2, #death h2, #offer h2, #slip h2 { margin: 0 0 4px; font-size: 1.3rem; }
 #clear button, #death button, #offer button, #slip button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
 #nextroom, #deathagain { background: var(--sun); color: var(--ink); }
@@ -125,6 +130,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
   display: none; flex-direction: column; gap: 8px; align-items: stretch; text-align: center; z-index: 11; }
 #sharesheet.on { display: flex; }
+#stage:has(> #sharesheet.on) > #clear, #stage:has(> #sharesheet.on) > #death { visibility: hidden; }   /* the card the sheet opened over never shows (or takes taps) under it (the M1 review) */
 #sharesheet p { margin: 0; font-size: 0.9rem; }
 /* the sheet's head: the title and Close in a Paper bar that stays on top however far the sheet scrolls (t18: Close
    below the fold at 360x780; T1.9b: the QR drawer scrolls the sheet, and a floating Close sat over its words); sticky
@@ -134,7 +140,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #sharehead h2 { margin: 0; flex: 1; text-align: left; font-size: 1.2rem; }
 #sharesheet #shareclose { flex: none; min-width: 56px; padding: 0 10px; }
 #sharecanvas { align-self: center; height: min(384px, 22vh); width: auto; aspect-ratio: 1 / 2; image-rendering: pixelated; border: 2px solid var(--ink); }
-#sharelink { min-height: 40px; font-size: 0.8rem; border: 1px solid var(--pewter); padding: 0 8px; }
+#sharelink { min-height: 48px; font-size: 16px; border: 1px solid var(--pewter); padding: 0 8px; }   /* 16 px: an iPhone zooms on a smaller field and keeps it (the M1 review) */
 #sharesheet button { min-height: 48px; border-radius: 10px; font-weight: 700; font-size: 1rem; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); }
 #copylink { background: var(--sun) !important; }
 /* two controls a row, so every one is in sight at 412x915 with the head and the drawer's toggle (T1.9b); Copy link
@@ -150,9 +156,9 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #devcard.on { display: flex; }
 #devtap { min-width: 220px; min-height: 64px; border-radius: 12px; border: 2px solid var(--ink); background: var(--sun); color: var(--ink); font-weight: 700; font-size: 1.2rem; }
 #codebox { display: flex; gap: 6px; align-items: stretch; } #codebox[hidden] { display: none; }
-#levelcode { flex: 1 1 auto; min-width: 0; min-height: 48px; border: 1px solid var(--pewter); padding: 0 8px; font-size: 0.95rem; }
+#levelcode { flex: 1 1 auto; min-width: 0; min-height: 48px; border: 1px solid var(--pewter); padding: 0 8px; font-size: 16px; }
 #codebox button { min-width: 64px; min-height: 48px; border-radius: 10px; border: 1px solid var(--pewter); background: var(--paper); color: var(--ink); }
-#codemsg { margin: 4px 0 0; color: var(--brick); font-weight: 700; }
+#codemsg { margin: 0; color: var(--brick); font-weight: 700; }   /* above the buttons: below them a returning player's refusal sat under the fold at 568 (the M1 review) */
 /* the title's small links and recent rooms (T1.10) */
 #settingsbtn { min-height: 48px; background: transparent; border: 0; color: var(--ash); text-decoration: underline; font-size: 0.95rem; }
 #recent[hidden] { display: none; } #recent p { margin: 6px 0 4px; color: var(--ash); font-size: 0.9rem; }
@@ -165,7 +171,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #settitle { min-width: 64px; min-height: 48px; border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--paper); }
 #settings label.row { display: flex; align-items: center; gap: 12px; min-height: 48px; font-size: 1.05rem; }
 #settings input[type=checkbox] { width: 28px; height: 28px; }
-#settings select, #settings textarea { font-size: 0.9rem; } #settings select { min-height: 44px; margin-left: auto; }
+#settings select, #settings textarea { font-size: 16px; } #settings select { min-height: 48px; margin-left: auto; }
 #settings textarea { width: 100%; min-height: 72px; resize: vertical; }
 #settings button.act { min-height: 48px; border-radius: 10px; border: 2px solid var(--paper); background: transparent; color: var(--paper); font-weight: 700; }
 #setdamaged { color: var(--sun); font-weight: 700; margin: 0; } #setperf, #setbuild { color: var(--ash); font-size: 0.85rem; margin: 0; }
@@ -210,6 +216,9 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
    game on the domain): hidden while a room runs and back on the title and the clear card as it was (Q48's addendum;
    Chaff Wars v1.11's rule, since SWSMusic.hold would close a waiting card as seen) */
 body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-music-toast, body.playing #sws-music-chip { display: none !important; }
+/* and under the death card, a moment of the room, not a break (the M1 review: at 320x568 the chip, seated on the title,
+   sat on the low docked card's Again) */
+body:has(#death.on) #sws-music-card, body:has(#death.on) #sws-music-pill, body:has(#death.on) #sws-music-toast, body:has(#death.on) #sws-music-chip { display: none !important; }
 /* the fleet's feedback fab, if the host ever injects it, never sits over a card or a sheet (section 1.6, T1.13) */
 body.sb-modal .lwfb-fab { display: none !important; }
 
@@ -228,12 +237,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <p class="tag" data-copy="tagline"></p>
   </div>
   <div class="actions">
+    <p id="codemsg" role="status" hidden></p>
     <button id="shoot" class="big" type="button" data-copy="shoot"></button>
     <button id="choose" class="big" type="button" data-copy="choose"></button>
     <p id="soon" role="status" hidden></p>
     <button id="sample" type="button" data-copy="sample"></button>
     <div id="codebox" hidden><input id="levelcode" type="text" data-aria="levelCode" autocomplete="off" spellcheck="false"><button id="pastecode" type="button" data-copy="codePaste"></button><button id="playcode" type="button" data-copy="codePlay"></button></div>
-    <p id="codemsg" role="status" hidden></p>
     <div id="recent" hidden><p data-copy="recentRooms"></p><div id="recentlist"></div></div>
     <button id="settingsbtn" type="button" data-copy="settingsLink"></button>
   </div>
@@ -274,8 +283,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <button id="again" type="button" data-copy="playAgain"></button>
       <button id="cleartitle" type="button" data-copy="toTitle"></button></div>
     <div id="death" role="dialog" data-aria="death"><h2 data-copy="death"></h2>
-      <button id="deathagain" type="button" data-copy="again"></button>
-      <button id="deathtitle" type="button" data-copy="toTitle"></button></div>
+      <div class="duo"><button id="deathagain" type="button" data-copy="again"></button>
+      <button id="deathtitle" type="button" data-copy="toTitle"></button></div></div>
     <div id="offer" role="dialog" data-aria="scrollOffer"><h2 data-copy="scrollOffer"></h2>
       <button id="pickA" type="button"><i class="ico"></i><b></b><small></small></button>
       <button id="pickB" type="button"><i class="ico"></i><b></b><small></small></button></div>
@@ -3457,8 +3466,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
       b: '................/................/................/................/.....6..6..6..../.....9..9..9..../...00900900900../..0d9dd9dd9dd0../.0ddddddddddd60./.0dddddddddd600./.0ddddddddddddd0/..0000000000000./...0..0..0..0.../...0..0..0..0.../................/................'
     } },
     spark: { w: 16, h: 16, frames: {
-      a: '................/.......9......../......999......./...9..999..9..../....9.969.9...../.....99699....../...999666999..../.....99699....../....9.969.9...../...9..999..9..../......999......./.......9......../................/................/................/................',
-      b: '................/................/.......9......../.....9.9.9....../......969......./....9966699...../..9.9666669.9.../....9966699...../......969......./.....9.9.9....../.......9......../................/................/................/................/................'
+      a: '.......0......../......090......./...0.09990.0..../..09009990090.../...090969090..../...009969900..../..09996669990.../...009969900..../...090969090..../..09009990090.../...0.09990.0..../......090......./.......0......../................/................/................',
+      b: '................/.......0......../.....00900....../....0909090...../....0096900...../..00996669900.../.0909666669090../..00996669900.../....0096900...../....0909090...../.....00900....../.......0......../................/................/................/................'
     } },
     /* T1.4b's traps (section 7.3): a spike, Brick with a Magenta tip over Ink, sunk (a) and standing (b); a crusher,
        Slate with a Brick stripe and Glare teeth, up (a), mid stroke (b) and down (c) */
@@ -3471,11 +3480,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
       b: '0000000000000000/0222222222222220/0222222222222220/0222222222222220/0999999999999990/0222222222222220/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6/................/................/................/................/................/................',
       c: '0000000000000000/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0999999999999990/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6'
     } },
-    /* T1.6's loot: a speck, a Glare and Film glint in two beats; the scroll, Paper ruled in Ink inside Walnut rollers; the
-       blueprint, Lapis ruled in Glare; the chest, Walnut banded in Amber, shut (a) and open with its Glare slip (b) */
+    /* T1.6's loot: a speck, Amber with a Glare glint in two beats; the scroll, Paper ruled in Ink inside Walnut rollers;
+       the blueprint, Lapis ruled in Glare; the chest, Walnut banded in Amber, shut (a) and open with its Paper slip (b).
+       Section 7.3 (the M1 review): loot is Amber with a Glare glint, and Film is the repairs' alone */
     speck: { w: 16, h: 16, frames: {
-      a: '................/................/................/................/.......00......./......0660....../......0f60....../...0006ff6000.../...066ffff660.../...0006ff6000.../......0f60....../......0660....../.......00......./................/................/................',
-      b: '................/................/................/................/................/.......00......./......0660....../.....066ff60..../.....06fff60..../......066f0...../.......00......./................/................/................/................/................'
+      a: '................/................/................/................/.......00......./......0880....../......0860....../...0008888000.../...0888868880.../...0008888000.../......0880....../......0880....../.......00......./................/................/................',
+      b: '................/................/................/................/................/.......00......./......0880....../.....088680...../.....088880...../......0880....../.......00......./................/................/................/................/................'
     } },
     scroll: { w: 16, h: 16, frames: {
       a: '................/................/................/...0000000000.../..077777777770../..075555555570../..075000005570../..075555555570../..075000555570../..075555555570../..075000005570../..075555555570../..077777777770../...0000000000.../................/................'
@@ -3485,7 +3495,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     } },
     chest: { w: 16, h: 16, frames: {
       a: '................/................/................/................/..000000000000../.07777777777770./.07888888888870./.07777777777770./.00000088000000./.07777788777770./.07777777777770./.07888888888870./.07777777777770./.00000000000000./................/................',
-      b: '................/..000000000000../.07777777777770./.07888888888870./.07777777777770./.00000000000000./.06666666666660./.0f6ffffffff6f0./.00000000000000./.07777777777770./.07777777777770./.07888888888870./.07777777777770./.00000000000000./................/................'
+      b: '................/..000000000000../.07777777777770./.07888888888870./.07777777777770./.00000000000000./.06666666666660./.05655555555650./.00000000000000./.07777777777770./.07777777777770./.07888888888870./.07777777777770./.00000000000000./................/................'
     } },
     /* the beacon: the ceiling light, a cord, a Glare shade with an Ink rim, a Sun bulb; Glare rays on the second frame */
     beacon: { w: 16, h: 16, frames: {
@@ -3861,7 +3871,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     down[verb][source] = 1;
   };
   I.release = function (verb, source) { delete down[verb][source]; };
-  I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {} }; if (I._stripReset) I._stripReset(); };
+  I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; if (I._stripReset) I._stripReset(); };   /* the edges too: a tap banked under a sheet never fires after it (the M1 review) */
 
   /* a sheet's tap (T1.6): the choice rides the next word as its CHOICE field, so the sim, not the shell, picks (section
      2.6) and the recording carries it */
@@ -4435,14 +4445,19 @@ body.sb-modal .lwfb-fab { display: none !important; }
   };
   /* the share sheet (T1.8, section 1.5): the record's grid on a 192x384 canvas (8 px a cell), the link from the page's
      own origin and path; it holds the loop while open (its own screen name) */
+  /* a Double Exposure record shows both its grids, the second stacked above the first as build() stacks them, 4 px a
+     cell in the canvas's middle on Ink (the M1 review: the preview showed one of the two grids the link shares) */
   function drawShare(rec) {
-    var cv = document.getElementById('sharecanvas'), c2 = cv.getContext('2d'), P = SB.palette, k = cv.width / rec.w;
-    for (var i = 0; i < rec.w * rec.h; i++) { c2.fillStyle = P.hex(P.RGB[rec.pal[i]]); c2.fillRect((i % rec.w) * k, Math.floor(i / rec.w) * k, k, k); }
+    var cv = document.getElementById('sharecanvas'), c2 = cv.getContext('2d'), P = SB.palette, two = rec.mode === 2 && !!rec.pal2;
+    var k = two ? cv.height / (rec.h * 2) : cv.width / rec.w, x0 = two ? (cv.width - rec.w * k) / 2 : 0, grids = two ? [rec.pal2, rec.pal] : [rec.pal];
+    c2.fillStyle = P.hex(P.RGB[P.I.INK]); c2.fillRect(0, 0, cv.width, cv.height);
+    for (var g = 0; g < grids.length; g++) for (var i = 0; i < rec.w * rec.h; i++) { c2.fillStyle = P.hex(P.RGB[grids[g][i]]); c2.fillRect(x0 + (i % rec.w) * k, (g * rec.h + Math.floor(i / rec.w)) * k, k, k); }
   }
   ui.openShare = function () {
     if (!G.record || ui.screen === 'reveal') return false;
     var link = SB.record.linkOf(location.origin, location.pathname, G.record), el = document.getElementById('sharelink');
-    drawShare(G.record); el.value = link;
+    drawShare(G.record); el.value = link; ui.shareLink = link;   /* the sheet's link (Copy link, the QR, Share), never the field's text: Copy code's fallback writes the code there */
+    ['copylink', 'copycode'].forEach(function (id) { var b = document.getElementById(id); b.textContent = ui.COPY[b.getAttribute('data-copy')]; });
     var nat = document.getElementById('sharenative');
     nat.hidden = !(navigator.share && navigator.canShare && navigator.canShare({ url: link }));
     SB.input.releaseAll();
@@ -4467,7 +4482,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
     c2.fillStyle = P.hex(P.RGB[P.I.PAPER]); c2.fillRect(0, 0, n, n);
     c2.fillStyle = P.hex(P.RGB[P.I.INK]);
     for (y = 0; y < sym.size; y++) for (x = 0; x < sym.size; x++) if (sym.modules[y * sym.size + x]) c2.fillRect(x + QUIET, y + QUIET, 1, 1);
-    px = Math.max(1, Math.floor(Math.min(336, document.getElementById('qrdrawer').clientWidth) / n));
+    /* the symbol fits the sheet's window under its head as well as its width (the M1 review: at 375x553 the 3 px symbol
+       was taller than the window, and no scroll showed all three finders) */
+    var sh = document.getElementById('sharesheet'), avail = sh.clientHeight - document.getElementById('sharehead').offsetHeight - 16;
+    px = Math.max(1, Math.floor(Math.min(336, document.getElementById('qrdrawer').clientWidth, avail) / n));
     cv.style.width = cv.style.height = n * px + 'px';
     cv.setAttribute('data-modules', String(sym.size)); cv.setAttribute('data-quiet', String(QUIET)); cv.setAttribute('data-px', String(px));
     return sym;
@@ -4475,12 +4493,21 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.toggleQR = function () {
     var dr = document.getElementById('qrdrawer'), open = dr.hidden;
     dr.hidden = !open; document.getElementById('qrtoggle').textContent = open ? ui.COPY.qrHide : ui.COPY.qrShow;
-    if (open) { drawQR(document.getElementById('sharelink').value); try { dr.scrollIntoView({ block: 'nearest' }); } catch (e) { /* silent */ } }
+    if (open) {
+      drawQR(ui.shareLink || document.getElementById('sharelink').value);
+      /* the drawer's top brought just under the head when any of it is out of sight ('nearest' parked it under the head) */
+      var sh = document.getElementById('sharesheet'), hb = document.getElementById('sharehead').getBoundingClientRect().bottom, r = dr.getBoundingClientRect();
+      if (r.top < hb || r.bottom > sh.getBoundingClientRect().bottom) sh.scrollTop += r.top - hb - 4;
+    }
     return open;
   };
-  ui.closeShare = function () { document.getElementById('sharesheet').classList.remove('on'); if (ui.screen === 'share') ui.screen = ui.shareFrom || 'play'; };
+  ui.closeShare = function () {
+    document.getElementById('sharesheet').classList.remove('on'); if (ui.screen === 'share') ui.screen = ui.shareFrom || 'play';
+    SB.input.releaseAll();   /* a tap on the strip under the sheet is never banked into a jump at Close (the M1 review) */
+  };
   function copied(btn, text) {
-    var done = function () { var was = btn.textContent; btn.textContent = ui.COPY.copied; setTimeout(function () { btn.textContent = was; }, 1500); };
+    /* the label comes back from the button's own key: a second tap inside the 1.5 s read 'Copied' as the label and kept it (the M1 review) */
+    var done = function () { btn.textContent = ui.COPY.copied; setTimeout(function () { btn.textContent = ui.COPY[btn.getAttribute('data-copy')]; }, 1500); };
     var el = document.getElementById('sharelink');
     try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, function () { el.value = text; el.select(); }); return; } } catch (e) { /* fall back */ }
     el.value = text; el.select(); try { document.execCommand('copy'); done(); } catch (e) { /* the selected input stays */ }
@@ -4491,6 +4518,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var r = SB.record.parseCode(text), msg = document.getElementById('codemsg');
     if (!r.rec) { msg.textContent = r.why === 'newer' ? ui.COPY.codeNewer : ui.COPY.codeBad; msg.hidden = false; ui.toTitle(); return false; }
     msg.hidden = true; ui.pendingCode = r.rec;
+    /* a link that arrives during play (a hashchange) holds the room under the card: the loop runs only on 'play' (the M1
+       review: the moths kept coming under a card that hides the room, the rotate card's bug) */
+    if (ui.screen === 'play') { SB.input.releaseAll(); ui.screen = 'code'; }
     document.getElementById('devcard').classList.add('on');
     return true;
   };
@@ -4540,14 +4570,19 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.firstRoomDone = false;   /* the first ever free play room runs with at most FIRST_ROOM_MAX_FODDER moths (T1.10 keeps it) */
   ui.hearts = hearts;
   /* the death card docks away from the fallen hero (the fourth review: at 30% of the stage it sat where the camera
-     keeps the hero and hid it on half the sample room's climb): the top of the stage, or its bottom when the hero is
-     in the stage's upper half (the camera clamped at the room's top) */
+     keeps the hero and hid it on half the sample room's climb): the top of the stage, or its bottom when the card
+     docked at the top would reach the hero's box, measured (the M1 review: the stage's halfway line let the top card
+     cover a hero just below it at 320x568) */
   ui.showDeath = function () {
     if (SB.save.doc) { SB.save.doc.stats.deaths++; SB.save.commit(); ui.lastHash = SB.sim.hash(G.state); }
-    var hd = SB.render.drawn.hero, cv = document.getElementById('view');
-    document.getElementById('death').classList.toggle('low', !!hd && hd.key !== null && hd.y + hd.h / 2 < cv.height / 2);
+    var hd = SB.render.drawn.hero, cv = document.getElementById('view'), dc = document.getElementById('death');
     document.getElementById('offer').classList.remove('on'); document.getElementById('slip').classList.remove('on'); shownOffer = '';
-    document.getElementById('death').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'dead'; document.body.classList.remove('playing'); };
+    dc.classList.remove('low'); dc.classList.add('on');
+    if (hd && hd.key !== null) {
+      var vr = cv.getBoundingClientRect(), k = vr.height / cv.height, top = vr.top + hd.y * k, cr = dc.getBoundingClientRect();
+      if (top < cr.bottom && top + hd.h * k > cr.top) dc.classList.add('low');
+    }
+    document.getElementById('back').hidden = true; ui.screen = 'dead'; document.body.classList.remove('playing'); };
   ui.hideDeath = function () { document.getElementById('death').classList.remove('on'); };
   /* free play restarts the room with the same record and seed, the reveal skipped */
   ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true, notFirst: G.notFirst, mode: G.mode }); };
@@ -4650,9 +4685,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     });
     document.getElementById('shareclose').addEventListener('click', function () { ui.closeShare(); });
     /* first_share (QUESTIONS Q54): a copied link or code, or a native share that went through */
-    document.getElementById('copylink').addEventListener('click', function () { copied(this, document.getElementById('sharelink').value); SB.Wallet.moment('first_share', { via: 'link' }); });
+    document.getElementById('copylink').addEventListener('click', function () { copied(this, ui.shareLink); SB.Wallet.moment('first_share', { via: 'link' }); });
     document.getElementById('copycode').addEventListener('click', function () { copied(this, SB.record.encode(G.record)); SB.Wallet.moment('first_share', { via: 'code' }); });
-    document.getElementById('sharenative').addEventListener('click', function () { try { navigator.share({ url: document.getElementById('sharelink').value }).then(function () { SB.Wallet.moment('first_share', { via: 'native' }); }, function () {}); } catch (e) { /* silent */ } });
+    document.getElementById('sharenative').addEventListener('click', function () { try { navigator.share({ url: ui.shareLink }).then(function () { SB.Wallet.moment('first_share', { via: 'native' }); }, function () {}); } catch (e) { /* silent */ } });
     document.getElementById('devtap').addEventListener('click', function () { ui.developCode(); });
     document.getElementById('playcode').addEventListener('click', function () { ui.openCode(document.getElementById('levelcode').value); });
     document.getElementById('pastecode').addEventListener('click', function () {
