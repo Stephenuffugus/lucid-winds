@@ -1948,8 +1948,12 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var cam = heroY + (K.HERO_H >> 1) - Math.round(viewH * SB.TUNING.CAM_HERO_FRAC);
     cam = Math.max(0, Math.min(worldH - viewH, cam));
     /* the dive landing's shake (DESIGN 4.4: at most SHAKE_MAX_PX, only on dive landings and boss hits): while the
-       state's counter runs the camera lifts on alternate steps, by the full height in the first half */
-    if (s.hero.shake > 0 && (s.hero.shake & 1)) cam = Math.max(0, cam - (s.hero.shake > (K.SHAKE_F >> 1) ? SB.TUNING.SHAKE_MAX_PX : 1));
+       state's counter runs the camera lifts on alternate steps, by the full height in the first half, or drops where
+       the room's top leaves no lift (t12-dive: a landing near the top showed no shake at all) */
+    if (s.hero.shake > 0 && (s.hero.shake & 1)) {
+      var amp = s.hero.shake > (K.SHAKE_F >> 1) ? SB.TUNING.SHAKE_MAX_PX : 1;
+      cam = cam - amp >= 0 ? cam - amp : Math.min(worldH - viewH, cam + amp);
+    }
     R.camY = cam;
     /* the crop alternative follows the hero sideways inside the 24 px the screen lacks; the default never moves */
     var camX = R.crop ? Math.max(0, Math.min(K.WORLD_W - R.viewW, heroX + (K.HERO_W >> 1) - (R.viewW >> 1))) : 0;
