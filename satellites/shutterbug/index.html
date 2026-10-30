@@ -841,6 +841,156 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 </script>
 <script id="core-reach" data-core>
 (function (SB) { 'use strict';
+  /* core-reach (BUILD-PLAN.md section 3): the reach model that repair, the exit choice, the route score and the bot all
+     read. The sim must be at least as generous; the model may be stingier, never more. T0.10a: the stepped arcs, the
+     landing tables (clipped to DESIGN's cone), the fall and jump down tables and the corridors, all from K by the sim's
+     own step order (the jump sets vy, the release cap from the second step, gravity, x at the old height, then y). */
+  var PROFILES = ['FULL', 'MID', 'TAP', 'WALL', 'STICKY'];
+  var NEVER = 1e9;                                   /* a hold that never ends */
+  var A_HOLD = { FULL: NEVER, MID: 4, TAP: 1, WALL: NEVER, STICKY: NEVER, WALK: 0 };
+  var MAX_STEPS = 400, ROWS = 5, FALL_ROWS = 24, DOWN_ROWS = 8;
+
+  /* one flight in subpixels relative to the takeoff cell: x the box's left edge (centred: (CELL - HERO_W) / 2 in), y
+     the feet (0 the takeoff surface, up negative), py the feet one step before (the sim moves x at that height). The
+     rocker is held in the jump direction for `hold` steps from step `delay` (after the wall jump's locked push), then
+     the decel. WALK runs off the ledge: on the support until the box has fully left the takeoff cell, then falls. */
+  function arc(K, profile, deep, delay, hold) {
+    var GF = deep ? K.DEEP_FALL_G : K.G, TERM = deep ? K.DEEP_TERM : K.TERM, walk = profile === 'WALK';
+    var vy = walk ? 0 : profile === 'WALL' ? -K.WALL_V : profile === 'STICKY' ? -K.STICKY_V : -(deep ? K.DEEP_JUMP_V : K.JUMP_V);
+    var aHold = A_HOLD[profile], lock = profile === 'WALL' ? K.WALL_JUMP_LOCK : 0, ledge = walk;
+    var x = (K.CELL_SUB - K.HERO_W_SUB) >> 1, y = 0, vx = 0, rising = !walk, out = [{ x: x, y: 0, py: 0, vy: vy, vx: 0 }];
+    if (profile === 'STICKY') hold = 0;
+    for (var f = 1; f < MAX_STEPS; f++) {
+      if (f > aHold && rising && vy < -K.CUT_V) vy = -K.CUT_V;
+      if (f <= lock) vx = K.WALL_PUSH;
+      else if (f > delay && f <= delay + hold) vx = K.RUN;
+      else if (vx > 0) vx = Math.max(0, vx - K.DECEL);
+      var py = y;
+      if (ledge) {
+        x += vx;
+        if (x < K.CELL_SUB) { out.push({ x: x, y: 0, py: 0, vy: 0, vx: vx }); continue; }
+        ledge = false;
+        vy = Math.min(TERM, vy + K.G); y += vy;
+        out.push({ x: x, y: y, py: py, vy: vy, vx: vx });
+        continue;
+      }
+      vy = Math.min(TERM, vy + (vy >= 0 ? GF : K.G));
+      if (vy >= 0) rising = false;
+      x += vx; y += vy;
+      out.push({ x: x, y: y, py: py, vy: vy, vx: vx });
+      if (y > (FALL_ROWS + 2) * K.CELL_SUB) break;
+    }
+    return out;
+  }
+  /* the first descending step whose previous feet were at or above a top `rowsUp` rows up (negative: below) and whose
+     feet are now below it: the one way landing rule, which a solid top meets on the same step */
+  function crossing(a, rowsUp, K) {
+    var top = -rowsUp * K.CELL_SUB;
+    for (var f = 1; f < a.length; f++) if (a[f].vy > 0 && a[f - 1].y <= top && a[f].y > top) return f;
+    return -1;
+  }
+  function overlap(K, x, c) { return Math.min(x + K.HERO_W_SUB, (c + 1) * K.CELL_SUB) - Math.max(x, c * K.CELL_SUB); }
+  /* the farthest column the box overlaps by LAND_OVERLAP at x */
+  function farCell(K, x) { return Math.floor((x + K.HERO_W_SUB - K.OVERLAP_SUB) / K.CELL_SUB); }
+  /* where the box comes to rest after the landing step (the decel, or the rocker still held to `delay + hold`) */
+  function restX(K, a, f, delay, hold) {
+    var x = a[f].x, vx = a[f].vx;
+    for (var k = f + 1; k < f + MAX_STEPS; k++) {
+      if (k > delay && k <= delay + hold) vx = K.RUN; else if (vx > 0) vx = Math.max(0, vx - K.DECEL); else break;
+      x += vx;
+    }
+    return x;
+  }
+  /* the cells the box sweeps from takeoff to the landing step, as [k, r] (k columns in the jump direction, r rows above
+     the takeoff row): at (x, y) and at (x, the previous y); the landing step's box snapped onto the target's top */
+  function sweep(K, a, last, rowsUp) {
+    var C = K.CELL_SUB, seen = {}, list = [];
+    var add = function (x, y) {
+      var x0 = Math.floor(x / C), x1 = Math.floor((x + K.HERO_W_SUB - 1) / C), y0 = Math.floor((y - K.HERO_H_SUB) / C), y1 = Math.floor((y - 1) / C);
+      for (var cx = x0; cx <= x1; cx++) for (var cy = y0; cy <= y1; cy++) {
+        var key = cx + ',' + (-cy - 1);
+        if (!seen[key]) { seen[key] = 1; list.push([cx, -cy - 1]); }
+      }
+    };
+    for (var f = 0; f <= last; f++) { add(a[f].x, f === last ? -rowsUp * C : a[f].y); if (f > 0) add(a[f].x, a[f].py); }
+    list.sort(function (p, q) { return p[0] - q[0] || p[1] - q[1]; });
+    return list;
+  }
+  /* a path to (dx, rowsUp): the smallest hold from `delay` whose landing box and resting box both overlap the target
+     column by LAND_OVERLAP */
+  function path(K, profile, deep, dx, rowsUp, delay) {
+    for (var h = 0; h <= MAX_STEPS; h++) {
+      var a = arc(K, profile, deep, delay, h), f = crossing(a, rowsUp, K);
+      if (f < 0) return null;
+      if (overlap(K, a[f].x, dx) >= K.OVERLAP_SUB && overlap(K, restX(K, a, f, delay, h), dx) >= K.OVERLAP_SUB)
+        return { delay: delay, hold: h, land: f, cells: sweep(K, a, f, rowsUp) };
+      if (a[f].x > (dx + 1) * K.CELL_SUB) return null;
+    }
+    return null;
+  }
+  /* the late path starts the rocker once the feet are above the target's top: it climbs onto a block beside the
+     takeoff that the immediate path would run into */
+  function lateDelay(K, profile, deep, rowsUp) {
+    var a = arc(K, profile, deep, NEVER, 0), top = -rowsUp * K.CELL_SUB;
+    for (var f = 1; f < a.length; f++) if (a[f].y <= top) return f;
+    return -1;
+  }
+  /* the whole arc, takeoff to the landing back at the takeoff height (snapped onto it), as each column's row span:
+     columns floor((cx - 6) / 16) to floor((cx + 5) / 16), rows floor(feet / 16) to floor((feet + 15) / 16) (section 3.2) */
+  function cols(K, a, last) {
+    var out = [], C = K.CELL_SUB;
+    for (var f = 0; f <= last; f++) {
+      var cx = a[f].x + (K.HERO_W_SUB >> 1), feet = f === last ? 0 : -a[f].y;
+      for (var k = Math.floor((cx - (K.HERO_W_SUB >> 1)) / C); k <= Math.floor((cx + (K.HERO_W_SUB >> 1) - 1) / C); k++)
+        for (var r = Math.floor(feet / C); r <= Math.floor((feet + K.HERO_H_SUB - 1) / C); r++) {
+          if (!out[k]) out[k] = [r, r];
+          if (r < out[k][0]) out[k][0] = r;
+          if (r > out[k][1]) out[k][1] = r;
+        }
+    }
+    return out;
+  }
+
+  /* tables(K, biome): per profile the apex (subpixels), the air (steps to land back at the takeoff height), the raw
+     landing table maxAcross by dy 0..5 (-1 none), the table clipped to DESIGN's cone, the whole arc's columns, and per
+     (dx, dy) in the cone the candidate paths (immediate, then late) with their corridors; the walk off table fall[r]
+     and the jump down table down[r]. Deep (biome 2) behind the same call. Memoised per K and Deep. */
+  var memo = {};
+  function tables(K, biome) {
+    var T = SB.TUNING, deep = biome === 2;
+    var key = (deep ? 'deep,' : 'base,') + [K.JUMP_V, K.G, K.RUN, K.WALL_V, K.STICKY_V, K.TERM, K.CUT_V, K.DECEL, K.DEEP_JUMP_V, K.DEEP_FALL_G].join(',');
+    if (memo[key]) return memo[key];
+    var out = { deep: deep, profiles: {}, fall: [], down: [] }, p, dy, dx, k;
+    for (p = 0; p < PROFILES.length; p++) {
+      var name = PROFILES[p], a = arc(K, name, deep, 0, NEVER), raw = [], clip = [], apex = 0;
+      var up = name === 'WALL' ? T.WALL_UP : name === 'STICKY' ? T.STICKY_UP : deep ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;
+      var across = name === 'WALL' ? T.WALL_ACROSS : name === 'STICKY' ? 0 : T.JUMP_ACROSS;
+      for (k = 0; k < a.length; k++) if (-a[k].y > apex) apex = -a[k].y;
+      for (dy = 0; dy <= ROWS; dy++) {
+        var f = crossing(a, dy, K), dxm = f < 0 ? -1 : name === 'STICKY' ? 0 : farCell(K, a[f].x);
+        raw.push(dxm);
+        clip.push(dxm < 0 || dy > up ? -1 : Math.min(dxm, across));
+      }
+      var paths = {};
+      for (dy = 0; dy <= ROWS; dy++) for (dx = 0; dx <= clip[dy]; dx++) {
+        var c = [], im = path(K, name, deep, dx, dy, 0);
+        if (im) c.push(im);
+        var ld = name === 'WALL' || name === 'STICKY' ? -1 : lateDelay(K, name, deep, dy);
+        if (ld > 0) { var lt = path(K, name, deep, dx, dy, ld); if (lt) c.push(lt); }
+        paths[dx + ',' + dy] = c;
+      }
+      var air = crossing(a, 0, K);
+      out.profiles[name] = { apex: apex, air: air, raw: raw, maxAcross: clip, cols: cols(K, a, air), paths: paths };
+    }
+    var w = arc(K, 'WALK', deep, 0, NEVER), j = arc(K, 'FULL', deep, 0, NEVER);
+    for (var r = 1; r <= FALL_ROWS; r++) { var fw = crossing(w, -r, K); out.fall[r] = fw < 0 ? -1 : farCell(K, w[fw].x); }
+    for (r = 1; r <= DOWN_ROWS; r++) { var fj = crossing(j, -r, K); out.down[r] = fj < 0 ? -1 : farCell(K, j[fj].x); }
+    out.fall[0] = -1; out.down[0] = -1;
+    memo[key] = out;
+    return out;
+  }
+
+  SB.reach = { PROFILES: PROFILES, arc: arc, crossing: crossing, farCell: farCell, tables: tables };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-features" data-core>

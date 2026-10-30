@@ -1192,19 +1192,26 @@ const M_FALL = (dir, hold, len = 160) => Array.from({ length: len }, (_, k) => (
 const ORACLE = (() => {
   const T = SB.TUNING, S = 256, CSZ = SB.GRID.CELL * S, HWS = SB.GRID.HERO_W * S, HHS = SB.GRID.HERO_H * S;
   const OV = T.LAND_OVERLAP_PX * S, r = v => Math.round(v * S);
-  const PROFILE_A = { FULL: Infinity, MID: 4, TAP: 1 };
+  const PROFILE_A = { FULL: Infinity, MID: 4, TAP: 1, WALL: Infinity, STICKY: Infinity };
   /* one flight: the jump on step 1 (or none: a walk off), the rocker held for `hold` steps in `dir`, then the decel */
   function arc(profile, dir, hold, opts = {}) {
     const deep = !!opts.deep, walk = profile === 'WALK';
     const G = r(T.GRAVITY), GF = deep ? Math.round(G * T.DEEP_FALL_MULT) : G;
     const TERM = deep ? Math.round(r(T.TERMINAL) * T.DEEP_FALL_MULT) : r(T.TERMINAL), CUT = r(T.JUMP_CUT_V);
     const RUN = r(T.RUN), DECEL = Math.round(RUN / T.DECEL_FRAMES);
-    let vy = walk ? 0 : -(deep ? r(T.DEEP_JUMP_V) : r(T.JUMP_V)), aHold = walk ? 0 : PROFILE_A[profile];
+    /* the wall jump (T0.10a): WALL_JUMP_V up, WALL_JUMP_LOCK steps of WALL_JUMP_PUSH away from the wall, then the rocker
+       held away; the sticky jump: STICKY_JUMP_V straight up, no rocker (DESIGN 4.2). Deep changes only FULL, MID and
+       TAP's rise; every fall in Deep is the slow one. */
+    const wall = profile === 'WALL', sticky = profile === 'STICKY';
+    let vy = walk ? 0 : wall ? -r(T.WALL_JUMP_V) : sticky ? -r(T.STICKY_JUMP_V) : -(deep ? r(T.DEEP_JUMP_V) : r(T.JUMP_V)), aHold = walk ? 0 : PROFILE_A[profile];
     let x = (CSZ - HWS) / 2, y = 0, vx = 0, rising = !walk, airborne = !walk;
+    const lock = wall ? T.WALL_JUMP_LOCK : 0, PUSH = r(T.WALL_JUMP_PUSH);
+    if (sticky) hold = 0;
     const out = [{ x, y, vx, vy }];
     for (let f = 1; f < 400; f++) {
       if (f > aHold && rising && vy < -CUT) vy = -CUT;
-      if (f <= hold) vx = dir * RUN; else if (vx > 0) vx = Math.max(0, vx - DECEL); else if (vx < 0) vx = Math.min(0, vx + DECEL);
+      if (f <= lock) vx = dir * PUSH;
+      else if (f <= lock + hold) vx = dir * RUN; else if (vx > 0) vx = Math.max(0, vx - DECEL); else if (vx < 0) vx = Math.min(0, vx + DECEL);
       if (walk && !airborne) {
         /* walking: on the ledge until the box has fully left the takeoff cell's support (the cell under x 0..CSZ) */
         x += vx;
@@ -1228,13 +1235,36 @@ const ORACLE = (() => {
   const farCell = (x, dir) => dir > 0 ? Math.floor((x + HWS - OV) / CSZ) : Math.floor((x + OV - 1) / CSZ);
   function table(profile, deep) {
     const a = arc(profile, 1, Infinity, { deep }), out = [];
-    for (let dy = 0; dy <= 5; dy++) { const f = crossing(a, dy); out.push(f < 0 ? -1 : farCell(a[f].x, 1)); }
+    for (let dy = 0; dy <= 5; dy++) { const f = crossing(a, dy); out.push(f < 0 ? -1 : profile === 'STICKY' ? 0 : farCell(a[f].x, 1)); }
     return out;
   }
-  function clipped(profile, deep) {
-    const up = profile === 'STICKY' ? T.STICKY_UP : deep ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;
-    return table(profile, deep).map((dx, dy) => (dy > up || dx < 0 ? -1 : Math.min(dx, T.JUMP_ACROSS)));
+  /* DESIGN's cone: JUMP_UP and JUMP_ACROSS (Deep one more up, Q22), WALL_UP and WALL_ACROSS, STICKY_UP straight up */
+  function caps(profile, deep) {
+    if (profile === 'WALL') return [T.WALL_UP, T.WALL_ACROSS];
+    if (profile === 'STICKY') return [T.STICKY_UP, 0];
+    return [deep ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP, T.JUMP_ACROSS];
   }
+  function clipped(profile, deep) {
+    const [up, across] = caps(profile, deep);
+    return table(profile, deep).map((dx, dy) => (dy > up || dx < 0 ? -1 : Math.min(dx, across)));
+  }
+  /* the apex (subpixels above the takeoff surface), the air (the step it lands back at the takeoff height), the whole
+     arc's row span per column (the box as the SIM sees it: x to x + 12 px less one subpixel, the feet to 16 px above;
+     the landing step snapped onto the surface), the walk off and jump down tables */
+  const apex = (profile, deep) => -Math.min(...arc(profile, 1, Infinity, { deep }).map(p => p.y));
+  const air = (profile, deep) => crossing(arc(profile, 1, Infinity, { deep }), 0);
+  function cols(profile, deep) {
+    const a = arc(profile, 1, Infinity, { deep }), last = crossing(a, 0), out = [];
+    for (let f = 0; f <= last; f++) {
+      const x = a[f].x, feet = f === last ? 0 : -a[f].y;
+      for (let k = Math.floor(x / CSZ); k <= Math.floor((x + HWS - 1) / CSZ); k++)
+        for (let row = Math.floor(feet / CSZ); row <= Math.floor((feet + HHS - 1) / CSZ); row++) {
+          out[k] = out[k] || [row, row]; out[k][0] = Math.min(out[k][0], row); out[k][1] = Math.max(out[k][1], row);
+        }
+    }
+    return out;
+  }
+  const below = (profile, rows) => { const a = arc(profile, 1, Infinity), out = [-1]; for (let d = 1; d <= rows; d++) { const f = crossing(a, -d); out.push(f < 0 ? -1 : farCell(a[f].x, 1)); } return out; };
   /* after landing at step f the ground decel runs out; where does the box rest? */
   function restX(a, f, hold, dir) {
     const RUN = r(T.RUN), DECEL = Math.round(RUN / T.DECEL_FRAMES);
@@ -1273,7 +1303,7 @@ const ORACLE = (() => {
     }
     return cells;
   }
-  return { arc, crossing, table, clipped, canonical, corridor, CSZ, OV };
+  return { arc, crossing, table, clipped, caps, apex, air, cols, fall: () => below('WALK', 24), down: () => below('FULL', 8), canonical, corridor, CSZ, OV };
 })();
 
 /* A lab room for one jump: the takeoff cell on a solid support, the target on a solid or one way support, everything
