@@ -580,6 +580,10 @@ group('H-pipe-5', 'landmarks: at most 3, each at least 8 cells, by size, disjoin
     t.ok(ok, where + ': every landmark at least 8 solid cells, sorted by size');
     t.eq(overlap, 0, where + ': landmarks share no cell');
   }
+  const three = SB.pipeline.build(labRecord({ 40: '411114444111144441111444', 41: '411114444111144441111444', 42: '411114444111144441111444',
+    43: '411114444111144441111444', 44: '411114444111144441111444', 45: '411114444111144441111444', 46: '411114444111144441111444' }), {});
+  t.eq(three.landmarks.length, 3, 'three separate blocks standing on the floor are three landmarks (sizes ' + three.landmarks.map(l => l.size).join('/') + '): the floor row joins nothing (Q58)');
+  t.ok(three.landmarks.every(l => l.bbox[3] < three.h - 1), 'no landmark reaches into the floor row');
   const g = fixture('one-giant-landmark').fx.expect.giant;
   const drawn = (g.x1 - g.x0 + 1) * (g.y1 - g.y0 + 1);
   const lv = buildFx(fixture('one-giant-landmark'), 0);
@@ -648,7 +652,22 @@ group('H-pipe-9', 'every fixture\'s authored platformsMin and landmarksMin hold'
   const lv = buildFx(fixture('sample-room'), 0);
   const bookshelf = lv.landmarks.find(l => l.bbox[0] === 0 && l.bbox[1] >= 26 && l.bbox[3] <= 39);
   t.ok(!!bookshelf, 'the sample room\'s bookshelf (left wall, rows 27..38) is a landmark');
+  const bed = lv.landmarks.find(l => l.bbox[0] === 0 && l.bbox[1] >= 44 && l.bbox[3] === lv.h - 2);
+  t.ok(!!bed, 'the sample room\'s bed (bottom left, rows 45..46) is a landmark of its own, not the floor');
   t.eq(lv.exit, 3 * 24 + 13, 'the sample room\'s exit candidate stands in the lamp\'s shade (13, 3)');
+});
+
+group('H-pipe-12', 'the light is the cluster with the brightest cell; the beacon relights it only when the exit stands in it', t => {
+  const lv = buildFx(fixture('sample-room'), 0);
+  t.ok(lv.beacon.cells.length > 0 && Array.from(lv.beacon.cells).includes(lv.exit), 'the sample room: the exit stands in the lamp, so the lamp\'s ' + lv.beacon.cells.length + ' cells are relit');
+  /* a hanging lamp (Glare over Ash, a drop of 52: nothing under it to stand on) and an Ash shelf over Slate elsewhere */
+  const hang = SB.pipeline.build(labRecord({ 1: '444444444466444444444444', 2: '444444444466444444444444', 3: '444444444444444422222444' }), {});
+  t.eq(hang.exit, 2 * 24 + 16, 'a hanging lamp with nothing under it: the exit falls back to the shelf (16, 2)');
+  t.eq(hang.beacon.cells.length, 0, 'and the lamp stays backdrop: no beacon cells relit away from the exit');
+  /* a small Glare lamp (peak 251) and a bigger Paper patch (239), each over a Pewter shadow */
+  const two = SB.pipeline.build(labRecord({ 0: '444444444444445555554444', 1: '444666444444445555554444', 2: '444666444444445555554444', 3: '444333444444443333334444' }), {});
+  const exitX = two.exit % 24;
+  t.ok(exitX >= 3 && exitX <= 5, 'a 3x2 Glare lamp beats a bigger 6x3 Paper patch: the light is the lamp (exit at x ' + exitX + ', Q59)');
 });
 
 group('H-pipe-10', 'pipeline A builds in under 20 ms p95 per fixture in Node', t => {
@@ -770,6 +789,18 @@ group('H-sim-2', 'coyote: a press on the 6th airborne frame after walking off ju
   }
 });
 
+group('H-sim-2b', 'coyote never arms on a jump: a second press in the first airborne frames does not jump again', t => {
+  const lv = LABS.room(['', '..........S.............', FLOOR]);
+  const once = play(lv, f => (f === 0 ? IN.A | IN.A_TAP : 0), 70);
+  const apexOnce = Math.min(...once.trace.map(p => p.y));
+  for (const k of [1, 3, 6]) {
+    const twice = play(lv, f => (f === 0 || f === k ? IN.A | IN.A_TAP : 0), 70);
+    const resets = twice.trace.filter((p, f) => f > 0 && p.vy < p.before.vy - K.G).length;
+    t.eq(resets, 0, 'a second press on airborne frame ' + k + ' gives no new upward kick');
+    t.eq(Math.min(...twice.trace.map(p => p.y)), apexOnce, 'a second press on airborne frame ' + k + ' leaves the apex of the single jump');
+  }
+});
+
 group('H-sim-3', 'buffer: a press 6 steps before the first grounded step jumps on landing; 7 does not', t => {
   const lv = LABS.room(['', '..........S.............', '', '', '', '', '', '', FLOOR]);
   const s0 = SB.sim.create(lv); let Lf = -1;
@@ -790,6 +821,15 @@ group('H-sim-4', 'one way tops: rising never lands; descending lands with 2 px o
   const r = play(lv, f => (f === 0 ? IN.A | IN.A_TAP : IN.A), 60);
   t.ok(r.trace.every(p => !(p.before.vy < 0 && p.ground)), 'rising through the one way, the hero never lands');
   t.eq(Math.floor((r.s.hero.y + HH - 1) / CS), lv.h - 5, 'after the arc the hero stands on the one way (row 43, above the plank in row 44)');
+  /* a plank five rows up (its top 80 px over the feet, the apex 69.6): the feet never clear it, so it never catches */
+  const high = LABS.room(['.........===............', '', '', '', '..........S.............', FLOOR]);
+  const rh = play(high, f => (f === 0 ? IN.A | IN.A_TAP : IN.A), 80);
+  t.ok(rh.trace.every(p => !(p.ground && p.y < (high.h - 1) * CS)), 'a plank whose top the feet never clear never catches the hero: it falls back to the floor');
+  /* a hero falling with its feet already inside a plank's row does not land on that plank's top */
+  const inside = LABS.room(['', '...........===..........', '', '', FLOOR]);
+  const s3 = SB.sim.create(inside, { at: { x: 11 * CS + 512, y: (inside.h - 4) * CS + 6 * 256 - HH } });
+  for (let f = 0; f < 40; f++) SB.sim.step(s3, 0);
+  t.eq(Math.floor((s3.hero.y + HH - 1) / CS), inside.h - 2, 'feet already inside the plank\'s row fall through it to the floor');
   const drop = lv2 => LABS.room(['..........S.............', '', '', '', '', '', '...........===..........', '', FLOOR]);
   for (const [px, want] of [[2, true], [1, false], [3, true]]) {
     const lv2 = drop();
@@ -807,9 +847,9 @@ group('H-sim-5', 'the head bonk zeroes vy; the 2 px ledge nudge slides the hero 
   const r = play(lv, f => (f === 0 ? IN.A | IN.A_TAP : IN.A), 40);
   const ceilBottom = (lv.h - 3) * CS;
   t.ok(r.trace.every(p => p.y >= ceilBottom), 'the head never enters the ceiling row (it stops at its bottom edge)');
-  t.ok(r.trace.some(p => p.y === ceilBottom), 'the head reaches the ceiling\'s bottom edge');
-  const bonked = r.trace.find(p => p.before.vy < 0 && p.vy >= 0 && p.vy <= K.G);
-  t.ok(!!bonked, 'the rising hero stops dead at the ceiling (vy zeroed, then gravity)');
+  const touching = r.trace.filter(p => p.y === ceilBottom);
+  t.eq(touching.length, 1, 'the head meets the ceiling\'s bottom edge on exactly one step (a bonk that kept vy would pin it there)');
+  t.ok(touching.length > 0 && touching[0].before.vy < -K.G && touching[0].vy === 0, 'on the bonk step itself, rising fast, vy is set to 0 (vy before ' + (touching[0] && touching[0].before.vy) + ', after ' + (touching[0] && touching[0].vy) + ')');
   /* the nudge: one solid cell above, the hero's box over its right edge by k px */
   for (const [px, passes] of [[2, true], [3, false]]) {
     const lv2 = LABS.room(['', '', '.....#..................', '', '', FLOOR]);
@@ -821,6 +861,29 @@ group('H-sim-5', 'the head bonk zeroes vy; the 2 px ledge nudge slides the hero 
     const cellBottom = (lv2.h - 5) * CS;
     t.eq(top < cellBottom, passes, 'overlapping a solid corner by ' + px + ' px the rise ' + (passes ? 'is nudged past it' : 'bonks under it'));
   }
+});
+
+group('H-sim-20', 'the exit: the room clears on the first step the hero\'s box overlaps the exit cell, and only then', t => {
+  const lv = LABS.room(['', '', '.....X..................', '', '', '..........S.............', FLOOR], { exit: true });
+  const ex = lv.exit % lv.w, ey = Math.floor(lv.exit / lv.w);
+  const overlaps = h => h.x < (ex + 1) * CS && h.x + HW > ex * CS && h.y < (ey + 1) * CS && h.y + HH > ey * CS;
+  /* jump up and left past the exit cell: the box crosses its row and its column at other times too */
+  const s = SB.sim.create(lv);
+  let firstOverlap = -1, firstClear = -1, early = 0;
+  for (let f = 0; f < 120 && firstClear < 0; f++) {
+    SB.sim.step(s, (f === 0 ? IN.A | IN.A_TAP : IN.A) | IN.L);
+    if (overlaps(s.hero) && firstOverlap < 0) firstOverlap = f;
+    if (s.room.cleared && firstClear < 0) firstClear = f;
+    if (s.room.cleared && !overlaps(s.hero) && firstOverlap < 0) early++;
+  }
+  t.ok(firstOverlap >= 0, 'the lab jump does reach the exit cell (step ' + firstOverlap + ')');
+  t.eq(firstClear, firstOverlap, 'the room clears on exactly the first step the box overlaps the exit cell');
+  t.eq(early, 0, 'it never clears before the box reaches the cell');
+  /* the same row, one column short; the same column, one row short: no clear */
+  const row = LABS.room(['', '', '..X.....................', '##.#####################', '', '...S....................', FLOOR], { exit: true });
+  const sr = SB.sim.create(row);
+  for (let f = 0; f < 90; f++) SB.sim.step(sr, (f === 0 ? IN.A | IN.A_TAP : IN.A));
+  t.eq(sr.room.cleared, 0, 'sharing the exit\'s column under a ceiling, one row short of it, does not clear');
 });
 
 group('H-sim-18', 'air control: the rocker at takeoff equals a running start; L and R together decelerate to rest', t => {
@@ -842,6 +905,10 @@ group('H-sim-18', 'air control: the rocker at takeoff equals a running start; L 
   for (let f = 0; f < 5; f++) { SB.sim.step(s, IN.L | IN.R); vs.push(s.hero.vx); }
   t.same(vs, [K.RUN - K.DECEL, K.RUN - 2 * K.DECEL, K.RUN - 3 * K.DECEL, 0, 0], 'L and R together read as neutral: the 4 frame decel to rest');
   t.eq(s.hero.facing, 1, 'a neutral word keeps the facing');
+  /* Q60: "no air friction" is read as the fall's; releasing the rocker in flight decelerates as on the ground */
+  const s2 = settle(lv), air = [];
+  for (let f = 0; f < 14; f++) { SB.sim.step(s2, (f === 0 ? IN.A | IN.A_TAP : IN.A) | (f < 8 ? IN.R : 0)); if (f >= 8 && f < 12) air.push([s2.hero.vx, s2.hero.ground]); }
+  t.same(air, [[K.RUN - K.DECEL, 0], [K.RUN - 2 * K.DECEL, 0], [K.RUN - 3 * K.DECEL, 0], [0, 0]], 'releasing the rocker in flight decelerates in 4 frames, still airborne (Q60)');
 });
 
 group('H-fuzz-1', '2000 seeded random frames per fixture: never in a solid, never below the floor or outside, never standing on nothing', t => {

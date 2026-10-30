@@ -80,7 +80,24 @@ const MUTANTS = [
     gates: [{ gate: 'play', expect: "the accumulator's books balance" }] },
   { name: 'CLEAR_NO_RESTART', task: 'T0.8a', file: 'page', find: "  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name); };",
     repl: "  ui.again = function () { if (G.record) { var keep = document.getElementById('clear').className; ui.startRoom(G.record, G.name); document.getElementById('clear').className = keep; } };",
-    gates: [{ gate: 'play', expect: 'Again leaves nothing painted over the play area' }] }
+    gates: [{ gate: 'play', expect: 'Again leaves nothing painted over the play area' }] },
+
+  /* the review of 30 Oct (fidelity lens) */
+  { name: 'FLOOR_IS_LANDMARK', task: 'T0.8a review', file: 'page',
+    find: "    var body = solid.slice();\n    for (x = 0; x < w; x++) body[(h - 1) * w + x] = 0;\n    var comps = components(body, w, h), landmarks = [];",
+    repl: '    var comps = components(solid, w, h), landmarks = [];',
+    gates: [{ gate: 'harness', only: 'H-pipe-5', expect: 'three separate blocks standing on the floor are three landmarks' }] },
+  { name: 'BEACON_RELIT_ANYWHERE', task: 'T0.8a review', file: 'page',
+    find: 'cells: light && exit >= 0 && light.indexOf(exit) >= 0 ? Int32Array.from(light)', repl: 'cells: light ? Int32Array.from(light)',
+    gates: [{ gate: 'harness', only: 'H-pipe-12', expect: 'the lamp stays backdrop' }] },
+  { name: 'LIGHT_BY_SUM', task: 'T0.8a review', file: 'page',
+    find: 'var peak = 0; for (var q = 0; q < lights[i].length; q++) if (L[lights[i][q]] > peak) peak = L[lights[i][q]];',
+    repl: 'var peak = 0; for (var q = 0; q < lights[i].length; q++) peak += L[lights[i][q]];',
+    gates: [{ gate: 'harness', only: 'H-pipe-12', expect: 'a 3x2 Glare lamp beats a bigger 6x3 Paper patch' }] },
+  { name: 'AIR_KEEPS_MOMENTUM', task: 'T0.8a review', file: 'page',
+    find: '    else if (h.vx > 0) h.vx = Math.max(0, h.vx - K.DECEL);\n    else if (h.vx < 0) h.vx = Math.min(0, h.vx + K.DECEL);',
+    repl: '    else if (h.vx > 0 && h.ground) h.vx = Math.max(0, h.vx - K.DECEL);\n    else if (h.vx < 0 && h.ground) h.vx = Math.min(0, h.vx + K.DECEL);',
+    gates: [{ gate: 'harness', only: 'H-sim-18', expect: 'releasing the rocker in flight decelerates in 4 frames' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

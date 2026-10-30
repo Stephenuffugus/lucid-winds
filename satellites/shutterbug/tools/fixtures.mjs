@@ -44,8 +44,8 @@ const SYNTH = [];
 SYNTH.push(() => {
   const g = grid(C.ASH);
   return fixture('blank-wall', 'synthetic',
-    'A bare Ash wall: nothing solid but the forced floor (one landmark, the floor row). No saturated cell and a mean L of 199, so Frost by the bright room rule (Q4). No cell over L 200, so no light. The default spread (DESIGN 6.11) lays two tab stairs: a 3 up stair over 44 rows needs about 15 tabs, so at most 16.',
-    g, { biome: 'frost', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 0, landmarksMin: 1 });
+    'A bare Ash wall: nothing solid but the forced floor row, which is never a landmark (Q58), so no landmarks. No saturated cell and a mean L of 199, so Frost by the bright room rule (Q4). No cell over L 200, so no light. The default spread (DESIGN 6.11) lays two tab stairs: a 3 up stair over 44 rows needs about 15 tabs, so at most 16.',
+    g, { biome: 'frost', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 0, landmarksMin: 0 });
 });
 
 SYNTH.push(() => {
@@ -62,8 +62,8 @@ SYNTH.push(() => {
   const g = grid(C.ASH), r = noise('all-light');
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const v = r(); g[y][x] = v < 0.4 ? C.PAPER : v < 0.7 ? C.GLARE : C.ASH; }
   return fixture('all-light', 'synthetic',
-    'A bright room: Paper, Glare and Ash noise. Otsu splits above 199 and the clamp lowers it to 140, so nothing is solid but the forced floor. No drop between these three is over 60, so no platforms. Frost (Q4). Repaired by tab stairs as the blank wall is. exitIsLight null: bright cells fill the top rows, so whether the exit lands in a light cluster depends on where the stair tops out, which the design does not fix.',
-    g, { biome: 'frost', needsCrop: false, tabsMax: 16, exitIsLight: null, platformsMin: 0, landmarksMin: 1 });
+    'A bright room: Paper, Glare and Ash noise. Otsu splits above 199 and the clamp lowers it to 140, so nothing is solid but the forced floor, and the floor row is never a landmark (Q58): no landmarks. No drop between these three is over 60, so no platforms. Frost (Q4). Repaired by tab stairs as the blank wall is. exitIsLight null: bright cells fill the top rows, so whether the exit lands in a light cluster depends on where the stair tops out, which the design does not fix.',
+    g, { biome: 'frost', needsCrop: false, tabsMax: 16, exitIsLight: null, platformsMin: 0, landmarksMin: 0 });
 });
 
 SYNTH.push(() => {
@@ -79,8 +79,8 @@ SYNTH.push(() => {
   const x0 = sx(6), x1 = sx(17), y0 = sy(10), y1 = sy(39);
   rect(g, x0, y0, x1, y1, C.SOOT);
   return fixture('one-giant-landmark', 'synthetic',
-    'One Soot block, 12 wide by 30 tall (x 6..17, rows 10..39), on Ash with six open columns either side. Smoothing takes its four corners and nothing else (a rectangle edge cell sees six solids), so exactly one landmark of 360 minus 4 cells, plus the floor. Its open side columns are six wide, too wide for a wall jump chain against the room edge, so the climb is repaired with tabs beside it (never on it, never within a cell of its top).',
-    g, { biome: 'attic', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 0, landmarksMin: 2, giant: { x0, y0, x1, y1 } });
+    'One Soot block, 12 wide by 30 tall (x 6..17, rows 10..39), on Ash with six open columns either side. Smoothing takes its four corners and nothing else (a rectangle edge cell sees six solids), so exactly one landmark of 360 minus 4 cells (the floor row is never one, Q58). Its open side columns are six wide, too wide for a wall jump chain against the room edge, so the climb is repaired with tabs beside it (never on it, never within a cell of its top).',
+    g, { biome: 'attic', needsCrop: false, tabsMax: 16, exitIsLight: false, platformsMin: 0, landmarksMin: 1, giant: { x0, y0, x1, y1 } });
 });
 
 SYNTH.push(() => {
@@ -94,15 +94,15 @@ SYNTH.push(() => {
   plank(g, sx(3), sx(22), sy(25));    /* S5 20 wide */
   plank(g, 0, sx(11), sy(20));        /* S6 12 wide: a straight drop at x 5 falls through S5 and S4 onto S1 */
   return fixture('shelves-a', 'synthetic',
-    'Six one way planks of width 9 to 20 at varied heights and a 2 wide pillar on the right. Hand listed edges (H-reach-3): S1 (9,42) to S2 (11,39), a 3 up 2 across jump; a wall touch on the pillar from S2 at (19,35..38); a wall jump off it to S3 (15,32); a straight fall from S6 (5,19) through S5 and S4 onto S1 (5,42). Hand listed non edges: a 5 up; a 4 up 5 across. Above S6 the top rows are empty, so the climb is finished by tabs. Mean L about 190, nothing saturated: Frost (Q4). Landmarks: the floor and the pillar.',
-    g, { biome: 'frost', needsCrop: false, tabsMax: 12, exitIsLight: false, platformsMin: 6, landmarksMin: 2 });
+    'Six one way planks of width 9 to 20 at varied heights and a 2 wide pillar on the right. Hand listed edges (H-reach-3): S1 (9,42) to S2 (11,39), a 3 up 2 across jump; a wall touch on the pillar from S2 at (19,35..36) (the 2 wide pillar, drawn rows 26..38, smooths to rows 28..36: a two wide column loses two rows at each end); a wall jump off it to S3 (15,32); a straight fall from S6 (5,19) through S5 and S4 onto S1 (5,42). Hand listed non edges: a 5 up; a 4 up 5 across. Above S6 the top rows are empty, so the climb is finished by tabs. Mean L about 190, nothing saturated: Frost (Q4). Landmarks: the pillar (the floor row is never one, Q58).',
+    g, { biome: 'frost', needsCrop: false, tabsMax: 12, exitIsLight: false, platformsMin: 6, landmarksMin: 1 });
 });
 
 /* ---------------------------------------------------------------- the sample room (grid A only) */
 function sampleRoom() {
   const rows = readFileSync(join(GAME, 'tools', 'sample-room.txt'), 'utf8').trim().split('\n');
   return { v: 1, name: 'sample-room', source: 'hand',
-    notes: 'The built in sample room, drawn as an attic bedroom (tools/sample-room.txt): the bed bottom left, a walnut bookshelf on the left wall, a desk with a shelf above it right of centre, a tall walnut wardrobe on the right wall with a ledge beside it, a window upper right with a plank sill, wall planks climbing between them, and a ceiling lamp whose shade is the exit. The climb is jumps alone, 3 up and up to 3 across each; the wardrobe wall jump is a shortcut past shelf D; walking off shelf D drops seven rows onto the speck beside the bookshelf; a second speck waits on shelf F at row 20. 141 cells in the Attic band (12% saturated), so never Frost. No index 15, no repair.',
+    notes: 'The built in sample room, drawn as an attic bedroom (tools/sample-room.txt): the bed bottom left, a walnut bookshelf on the left wall, a desk with a shelf above it right of centre, a tall walnut wardrobe on the right wall with a ledge beside it, a window upper right with a plank sill, wall planks climbing between them, and a ceiling lamp whose shade is the exit. The climb is jumps alone, 3 up and up to 3 across each; the wardrobe wall jump is a shortcut past shelf D; walking off shelf D drops seven rows onto the speck beside the bookshelf; a second speck waits on shelf F at row 20. 141 cells in the Attic band (12% saturated), so never Frost. Landmarks: the wardrobe, the bookshelf and the bed (the floor row is never one, Q58). No index 15, no repair.',
     record: { v: 1, w: 24, h: 48, mode: 0, focal: null, rows, rows2: null },
     expect: { biome: 'attic', needsCrop: false, tabsMax: 0, exitIsLight: true, platformsMin: 14, landmarksMin: 3,
       beats: [

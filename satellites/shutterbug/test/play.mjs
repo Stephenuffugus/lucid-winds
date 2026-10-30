@@ -75,6 +75,22 @@ try {
   R.say(firstL >= 0 && lastL - firstL + 1 >= 39 && gaps === 0, 'with the key held every step sampled it (' + (lastL - firstL + 1) + ' steps, ' + gaps + ' missed)');
   R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
   await page.close();
+  /* a short laptop window keeps 1x (2x only when the minimum view fits at 2x); a tall one gets 2x; nothing overflows */
+  for (const [w, h, want] of [[1366, 650, 384], [1366, 1100, 768]]) {
+    const { page, errors } = await newPage(browser, { width: w, height: h, dpr: 1, touch: false });
+    await gotoGame(page, srv.base);
+    await ready(page);
+    await page.evaluate(() => window.SB_DEV.hold(true));
+    await tap(page, '#sample');
+    const m = await page.evaluate(() => {
+      const v = document.getElementById('view').getBoundingClientRect(), st = document.getElementById('strip').getBoundingClientRect();
+      return { cssW: v.width, canvasBottom: v.bottom, stripH: st.height, stripBottom: st.bottom, inner: innerHeight, scroll: document.documentElement.scrollHeight };
+    });
+    R.say(m.cssW === want, w + 'x' + h + ': the canvas is ' + m.cssW + ' CSS px wide (' + (want === 384 ? '1x: 2x would not fit the height' : '2x') + ')');
+    R.say(m.stripBottom <= m.inner + 0.5 && m.stripH >= 168 && m.scroll <= m.inner + 1, w + 'x' + h + ': the top strip, the play area and a ' + Math.round(m.stripH) + ' px control strip fit the window (scroll height ' + m.scroll + ' of ' + m.inner + ')');
+    R.say(errors.length === 0, w + 'x' + h + ': zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
 } finally {
   await browser.close();
   await srv.close();

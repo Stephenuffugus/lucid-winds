@@ -675,7 +675,11 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       }
     }
 
-    var comps = components(solid, w, h), landmarks = [];
+    /* landmarks are the photo's things: the forced floor row is left out, or every piece of furniture standing on
+       it would merge into one blob with the floor (QUESTIONS Q58) */
+    var body = solid.slice();
+    for (x = 0; x < w; x++) body[(h - 1) * w + x] = 0;
+    var comps = components(body, w, h), landmarks = [];
     for (i = 0; i < comps.length && landmarks.length < T.LANDMARK_COUNT; i++) if (comps[i].length >= T.LANDMARK_MIN) landmarks.push(describe(comps[i], w));
 
     /* DESIGN 6.6: spawn is the centre of the widest open run on the standing row above the floor (Q10). */
@@ -690,14 +694,16 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     if (bestA < 0) return { needsCrop: true, why: 'unreachable', detail: 'no open cell on the standing row above the floor' };
     var spawn = sy * w + bestA + ((bestLen - 1) >> 1);
 
-    /* the ceiling light: the brightest (by summed L) 4 connected cluster of cells over CEILING_LIGHT_L in the top
-       EXIT_ROWS rows; the exit candidate (T0.11a chooses by reach distance) is its lowest standable cell */
+    /* the ceiling light: the brightest 4 connected cluster of cells over CEILING_LIGHT_L in the top EXIT_ROWS rows,
+       brightest meaning the highest peak L, ties to the larger cluster, then the lowest first cell (QUESTIONS Q59: a
+       sum let a big white patch beat a brighter lamp); the exit candidate (T0.11a chooses by reach distance) is its
+       lowest standable cell */
     var top = new Uint8Array(n);
     for (y = 0; y < T.EXIT_ROWS && y < h; y++) for (x = 0; x < w; x++) if (!solid[y * w + x] && L[y * w + x] > T.CEILING_LIGHT_L) top[y * w + x] = 1;
-    var lights = components(top, w, h), light = null, bestSum = -1;
-    for (i = 0; i < lights.length; i++) {
-      var s = 0; for (var q = 0; q < lights[i].length; q++) s += L[lights[i][q]];
-      if (s > bestSum) { bestSum = s; light = lights[i]; }
+    var lights = components(top, w, h), light = null, bestPeak = -1;
+    for (i = 0; i < lights.length; i++) {          /* components() lists them larger first, then lowest first cell */
+      var peak = 0; for (var q = 0; q < lights[i].length; q++) if (L[lights[i][q]] > peak) peak = L[lights[i][q]];
+      if (peak > bestPeak) { bestPeak = peak; light = lights[i]; }
     }
     var standable = function (c) { return c + w < n && !solid[c] && (solid[c + w] || plat[c + w]); };
     var exit = -1;
@@ -713,7 +719,8 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       rec: rec, pal: pal, w: w, h: h, seed: SB.record.seedOf(rec), biome: opts.biome === undefined || opts.biome === null ? 0 : opts.biome,
       negative: negative, L: L, solid: solid, plat: plat, tab: z(), slick: z(), sticky: z(), trap: z(),
       otsuT: otsuT, landmarks: landmarks, spawn: spawn, exit: exit,
-      beacon: { idx: exit, cells: light ? Int32Array.from(light) : new Int32Array(0) },
+      /* section 3.7: when the exit is the light the light's cells are relit around it; otherwise the light stays backdrop */
+      beacon: { idx: exit, cells: light && exit >= 0 && light.indexOf(exit) >= 0 ? Int32Array.from(light) : new Int32Array(0) },
       features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null },
       repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false
     };
@@ -1060,7 +1067,9 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
     var vw = document.documentElement.clientWidth || window.innerWidth;
     var vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
     var safe = R.safe(), avail = vh - safe.top - safe.bottom;
-    R.cssW = vw >= T.SCALE2_MIN_W ? K.WORLD_W * 2 : vw >= K.WORLD_W ? K.WORLD_W : vw;
+    /* 2x only when the minimum view still fits the height at 2x; a short laptop window keeps 1x, still an integer */
+    var fits2 = avail >= T.TOP_STRIP + T.VIEW_ROWS_MIN * K.CELL * 2 + T.CONTROL_STRIP;
+    R.cssW = vw >= T.SCALE2_MIN_W && fits2 ? K.WORLD_W * 2 : vw >= K.WORLD_W ? K.WORLD_W : vw;
     R.scale = R.cssW / K.WORLD_W;
     var rowPx = K.CELL * Math.max(1, R.scale);
     R.viewRows = Math.max(T.VIEW_ROWS_MIN, Math.min(SB.GRID.VIEW_ROWS, Math.floor((avail - T.TOP_STRIP - T.CONTROL_STRIP) / rowPx)));
