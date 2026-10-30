@@ -32,7 +32,7 @@ const FAST = flag('fast');
 const ONLY = opt('only');
 const ASSERT_FLOOR = 4269;              /* raised per task: the count a full run must reach */
 
-const LATER = { 'record-json': 'T0.15', economy: 'M2' };
+const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
 
 /* Marked failures, by the start of the assertion's text, each with its QUESTIONS.md entry. */
@@ -2915,6 +2915,18 @@ group('H-bot-1c', 'every edge of the hand rooms (vines under Overgrowth, a ceili
 if (flag('all-edges')) group('H-bot-6', 'every edge of every graph has a macro (--all-edges)', t => {
   reportEdges(t, botEdges(0), 'every edge');
 });
+
+/* --record-json <file> (T0.15): a record the page produced ({ code } from SB_DEV.level(), a record's JSON form, or a
+   fixture), validated and built here; one JSON line: { valid, needsCrop, exit, tabs } */
+if (opt('record-json')) {
+  const j = JSON.parse(fs.readFileSync(path.resolve(opt('record-json')), 'utf8'));
+  let rec = null;
+  try { rec = j.code ? SB.record.decode(String(j.code).trim()) : j.rows ? SB.record.fromJSON(j) : j.record ? SB.record.fromJSON(j.record) : null; } catch (e) { rec = null; }
+  const valid = !!rec && SB.record.validate(SB.record.toJSON(rec)) === null;
+  const lv = valid ? SB.pipeline.build(rec, {}) : null;
+  console.log(JSON.stringify({ valid, needsCrop: !!(lv && lv.needsCrop), exit: lv && !lv.needsCrop ? lv.exit : -1, tabs: lv && !lv.needsCrop ? lv.repair.tabs : -1 }));
+  process.exit(valid ? 0 : 1);
+}
 
 /* ================================================================ replays and goldens (T0.13b, section 2.6) */
 /* A replay is the bot's walk on one fixture, mode and biome, as runs of words, padded with 300 quiet steps past the

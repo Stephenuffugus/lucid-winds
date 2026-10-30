@@ -70,6 +70,8 @@ try {
       R.say(r.w >= 48 && r.h >= 48, `${w}x${h}: #${r.id} measures ${r.w.toFixed(1)}x${r.h.toFixed(1)} (at least 48x48)`);
       R.say(r.onTop, `${w}x${h}: #${r.id} is the top element at its centre (a thumb there lands on ${r.topName})`);
     }
+    /* from T0.15 every title control works: none is disabled */
+    R.say(!rows.out.some(r => r.disabled), `${w}x${h}: no disabled control remains on the title (` + rows.out.filter(r => r.disabled).map(r => '#' + r.id).join(' ') + ')');
     if (w === 412) console.log(`  info  ${handlers} element(s) with a listener on the title; ${rows.out.length} controls measured`);
     await page.close();
   }

@@ -61,6 +61,23 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   color: var(--film); text-decoration: underline; font-size: 0.85rem; }
 #build { margin-top: auto; padding-top: 18px; align-self: flex-end; color: var(--pewter); font-size: 0.7rem; letter-spacing: 0.04em; }
 
+/* the crop screen (T0.15): the photo fitted, the 1:2 box over it with the pipeline's overlay, one finger drags, two
+   pinch; Retake and Develop under it */
+#crop { flex-direction: column; align-items: stretch; background: var(--ink);
+  padding: var(--sat) var(--sar) var(--sab) var(--sal); }
+#croptop { display: flex; align-items: center; gap: 10px; padding: 6px 10px; min-height: 60px; }
+#croptitle { min-height: 48px; min-width: 64px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--slate); background: transparent; color: var(--ash); }
+#crophint { margin: 0; color: var(--ash); font-size: 0.85rem; }
+#cropstage { position: relative; flex: 1 1 auto; overflow: hidden; touch-action: none; }
+#cropview { position: absolute; left: 0; top: 0; }
+#cropbox { position: absolute; border: 3px solid var(--sun); box-shadow: 0 0 0 2000px rgba(11,10,15,0.55); pointer-events: none; }
+#overlay { width: 100%; height: 100%; display: block; image-rendering: pixelated; opacity: 0.8; }
+#tighter { position: absolute; left: 0; right: 0; top: 40%; margin: 0; padding: 10px; text-align: center; background: var(--brick); color: var(--glare); font-weight: 700; }
+#cropbar { display: flex; gap: 12px; padding: 10px 16px 14px; }
+#retake { min-height: 56px; flex: 0 0 auto; padding: 0 20px; border-radius: 12px; border: 2px solid var(--slate); background: transparent; color: var(--paper); font-weight: 700; }
+#develop { flex: 1 1 auto; background: var(--sun); color: var(--ink); }
+#cropsay { margin: 0 16px 8px; min-height: 1em; color: var(--pewter); font-size: 0.75rem; }
+
 /* the play screen: an instant film frame (Paper, a faint grain) around the photo; the top strip holds the room name
    and the hearts, the thick bottom strip holds the controls; the frame yields to the controls, never the reverse */
 #play { flex-direction: column; align-items: stretch; color: var(--ink);
@@ -133,13 +150,22 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     <p class="tag" data-copy="tagline"></p>
   </div>
   <div class="actions">
-    <button id="shoot" class="big" type="button" disabled data-copy="shoot"></button>
-    <button id="choose" class="big" type="button" disabled data-copy="choose"></button>
-    <p id="soon" data-copy="soon"></p>
+    <button id="shoot" class="big" type="button" data-copy="shoot"></button>
+    <button id="choose" class="big" type="button" data-copy="choose"></button>
+    <p id="soon" role="status" hidden></p>
     <button id="sample" type="button" data-copy="sample"></button>
   </div>
   <p id="build"></p>
 </main>
+<main id="crop" class="screen" aria-label="Crop">
+  <div id="croptop"><button id="croptitle" type="button" data-copy="toTitle"></button><p id="crophint" data-copy="cropHint"></p></div>
+  <div id="cropstage"><canvas id="cropview"></canvas>
+    <div id="cropbox"><canvas id="overlay" width="96" height="192"></canvas><p id="tighter" data-copy="tighter" hidden></p></div></div>
+  <div id="cropbar"><button id="retake" type="button" data-copy="retake"></button><button id="develop" class="big" type="button" data-copy="develop"></button></div>
+  <p id="cropsay" aria-live="polite"></p>
+</main>
+<input id="fileshoot" type="file" accept="image/*" capture="environment" hidden>
+<input id="filechoose" type="file" accept="image/*" hidden>
 <main id="play" class="screen" aria-label="Play">
   <div id="top"><span id="roomname"></span><span id="hearts" aria-label="Hearts"></span></div>
   <div id="stage"><canvas id="view" width="384" height="640"></canvas>
@@ -2044,9 +2070,14 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 
   /* the reveal's photo layer (DESIGN 5.2's first beat): for a record without a bitmap, as the sample room, its own grid
      at full palette colour; the cropped photo is drawn here from T0.15 */
-  R.buildPhoto = function (lv) {
+  R.buildPhoto = function (lv, pic) {
     var C = SB.K.CELL, x, y;
     photo.width = lv.w * C; photo.height = lv.h * C;
+    if (pic && pic.src) {
+      pctx.imageSmoothingEnabled = true; pctx.imageSmoothingQuality = 'high';
+      pctx.drawImage(pic.src, pic.crop.x, pic.crop.y, pic.crop.w, pic.crop.h, 0, 0, photo.width, photo.height);
+      return;
+    }
     for (y = 0; y < lv.h; y++) for (x = 0; x < lv.w; x++) { pctx.fillStyle = css(lv.pal[y * lv.w + x]); pctx.fillRect(x * C, y * C, C, C); }
   };
   /* one reveal frame at t ms after the tap (DESIGN 5.2, T0.14), at the camera play starts with: hold (the photo), resolve
@@ -2348,7 +2379,6 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     tagline: 'Your room is the level.',
     shoot: 'Photograph a room',
     choose: 'Choose a photo',
-    soon: 'Coming in the next build.',
     sample: 'Try the sample room',
     sampleRoom: 'Sample room',
     roomClear: 'Room clear',
@@ -2362,7 +2392,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     jump: 'Jump',
     dive: 'Dive',
     build: 'build',
-    rotate: 'Turn your phone upright to play.'
+    rotate: 'Turn your phone upright to play.',
+    retake: 'Retake',
+    develop: 'Develop',
+    tighter: 'Try a tighter crop',
+    cropHint: 'Drag and pinch to frame the room. Tap a shape to hide the chest there.',
+    badPhoto: 'That photo did not open. Try another.',
+    photoRoom: 'Your room'
   });
 
   /* the game: the record, the built level, the live sim state, the room's name */
@@ -2406,11 +2442,11 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
      (onboarding.revealSeen, kept for the session until the save of T1.10). The static layer built at the room's start
      serves the reveal and the play alike: it is never built twice. */
   var RV = ui.reveal = { on: false, t: 0, start: 0, prev: 0, lv: null, reduced: false, rows: 0, tabs: 0, marks: null, seen: false, devSkip: false };
-  function startReveal(lv, t0) {
+  function startReveal(lv, t0, photo) {
     RV.on = true; RV.start = t0; RV.t = performance.now() - t0; RV.prev = t0; RV.lv = lv; RV.rows = 0; RV.tabs = 0;
     RV.reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     RV.marks = { start: t0, build: SB.perfLog.pipeline, reduced: RV.reduced, skipped: false };
-    SB.render.buildPhoto(lv);
+    SB.render.buildPhoto(lv, photo);
     ui.screen = 'reveal';
     SB.audio.shutter();
   }
@@ -2434,17 +2470,144 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   };
   ui.endReveal = function (now) {
     RV.on = false; RV.seen = true;
+    ui.releasePhoto();   /* the photo lives until the reveal ends, never longer (DESIGN 6.1) */
     RV.marks.end = now === undefined ? performance.now() : now;
     if (window.performance && performance.mark) performance.mark('sb-reveal-end');
     ui.screen = 'play';
   };
 
-  /* a room from a record: build (inside the reveal's first beat), then the reveal, then play; the needsCrop sheet is T0.15 */
-  ui.startRoom = function (record, name) {
+  /* ---------------------------------------------------------------- the crop screen (T0.15, DESIGN 5.1 steps 1 to 3) */
+  /* A photo from the camera or the roll is decoded (shell-capture), fitted to the screen, and framed by a 1:2 box: one
+     finger drags it, two pinch it; a short tap inside it marks the focal shape (the record's focal cell, the chest's
+     place in M1). The overlay is the pipeline's reading of the box: pipeline A at most once per 100 ms while the box
+     moves, the full build when it rests; Develop takes the last full build to the reveal (never building twice), and
+     the photo is released the moment the reveal ends. Nothing is written anywhere. */
+  var CR = ui.crop = { src: null, bw: 0, bh: 0, crop: null, focal: -1, last: null, lastA: null, lastRec: null, full: false, builds: 0, ms: 0, from: '', timer: 0, lastAt: 0, k: 1, ox: 0, oy: 0 };
+  var PERF = /[?&]perf=1/.test(location.search);
+  ui.photoAlive = function () { return !!CR.src; };
+  ui.releasePhoto = function () { if (CR.src && CR.src.close) { try { CR.src.close(); } catch (e) { /* gone */ } } CR.src = null; };
+  function cropSay(t) { document.getElementById('cropsay').textContent = t || ''; }
+  function openPicker(id) { CR.from = id; var inp = document.getElementById(id); inp.value = ''; inp.click(); }
+  function onFile(e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    SB.capture.decode(f).then(function (bm) {
+      ui.releasePhoto();
+      CR.src = bm; CR.bw = bm.width; CR.bh = bm.height; CR.crop = SB.capture.fit(CR.bw, CR.bh); CR.focal = -1; CR.last = null;
+      ui.show('crop');
+      var cv = document.getElementById('cropview'); cv.width = CR.bw; cv.height = CR.bh; cv.getContext('2d').drawImage(bm, 0, 0);
+      layoutCrop(); rebuild(true);
+    }, function () {
+      ui.releasePhoto();
+      ui.show('title');
+      var soon = document.getElementById('soon'); soon.textContent = ui.COPY.badPhoto; soon.hidden = false;
+    });
+  }
+  /* the photo fitted to the stage, the box over it, in CSS pixels */
+  function layoutCrop() {
+    var st = document.getElementById('cropstage').getBoundingClientRect(), cv = document.getElementById('cropview'), box = document.getElementById('cropbox');
+    var k = Math.min(st.width / CR.bw, st.height / CR.bh);
+    CR.k = k; CR.ox = Math.round((st.width - CR.bw * k) / 2); CR.oy = Math.round((st.height - CR.bh * k) / 2);
+    cv.style.width = (CR.bw * k) + 'px'; cv.style.height = (CR.bh * k) + 'px'; cv.style.left = CR.ox + 'px'; cv.style.top = CR.oy + 'px';
+    box.style.left = (CR.ox + CR.crop.x * k) + 'px'; box.style.top = (CR.oy + CR.crop.y * k) + 'px';
+    box.style.width = (CR.crop.w * k) + 'px'; box.style.height = (CR.crop.h * k) + 'px';
+  }
+  /* the record from the box: the grid downscale, the nearest palette colour per cell (DESIGN 6.2), the focal cell */
+  function recordOfCrop() {
+    var W = SB.GRID.W, H = SB.GRID.H, rgb = SB.capture.downscale(CR.src, CR.crop, W, H), pal = new Uint8Array(W * H);
+    for (var i = 0; i < W * H; i++) pal[i] = SB.palette.nearest(rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2]);
+    return SB.record.fromJSON({ v: SB.record.V, w: W, h: H, mode: 0, focal: CR.focal >= 0 ? CR.focal : null, rows: SB.record.palToRows(pal, W, H), rows2: null });
+  }
+  function rebuild(full) {
+    if (!CR.src) return;
+    var t0 = performance.now(), rec = recordOfCrop(), a = SB.pipeline.build(rec, { stage: 'A' }), lv = full ? SB.pipeline.build(rec, {}) : null;
+    CR.builds++; CR.ms = performance.now() - t0; CR.lastRec = rec; CR.lastA = a; CR.full = !!full; CR.last = full ? lv : null;
+    drawOverlay(full && !lv.needsCrop ? lv : a, full && !lv.needsCrop);
+    document.getElementById('tighter').hidden = !(full && lv.needsCrop);
+    if (PERF) cropSay(CR.ms.toFixed(1) + ' ms');
+  }
+  /* while the box moves: at most one build per 100 ms, the last one after the moves stop */
+  function schedule() {
+    var now = performance.now();
+    if (now - CR.lastAt >= 100) { CR.lastAt = now; rebuild(false); return; }
+    if (!CR.timer) CR.timer = setTimeout(function () { CR.timer = 0; CR.lastAt = performance.now(); rebuild(false); }, 100 - (now - CR.lastAt));
+  }
+  /* the overlay, one 4 px block per cell: solids shaded, platform tops Glare, tabs Film, the exit ringed in Sun, the
+     focal ringed in Paper */
+  function drawOverlay(lv, withExit) {
+    var cv = document.getElementById('overlay'), c = cv.getContext('2d'), W = lv.w, H = lv.h, P = SB.palette, i, x, y;
+    var hx = function (k) { return '#' + P.HEX[k]; };
+    c.clearRect(0, 0, cv.width, cv.height);
+    for (i = 0; i < W * H; i++) {
+      x = (i % W) * 4; y = Math.floor(i / W) * 4;
+      if (lv.solid[i]) { c.fillStyle = 'rgba(11,10,15,0.55)'; c.fillRect(x, y, 4, 4); }
+      else if (lv.plat[i]) { c.fillStyle = lv.tab && lv.tab[i] ? hx(P.I.FILM) : hx(P.I.GLARE); c.fillRect(x, y, 4, 1); }
+    }
+    if (withExit && lv.exit >= 0) { x = (lv.exit % W) * 4; y = Math.floor(lv.exit / W) * 4; c.strokeStyle = hx(P.I.SUN); c.lineWidth = 1; c.strokeRect(x - 1.5, y - 1.5, 7, 7); }
+    if (CR.focal >= 0) { x = (CR.focal % W) * 4 + 2; y = Math.floor(CR.focal / W) * 4 + 2; c.strokeStyle = hx(P.I.PAPER); c.beginPath(); c.arc(x, y, 5, 0, 2 * Math.PI); c.stroke(); }
+  }
+  /* the stage's pointers: one drags the box, two pinch it; a short still tap inside the box is the focal tap */
+  var ptrs = {}, gest = null;
+  function src(e) { var r = document.getElementById('cropstage').getBoundingClientRect(); return { x: (e.clientX - r.left - CR.ox) / CR.k, y: (e.clientY - r.top - CR.oy) / CR.k }; }
+  function startGesture() {
+    var ids = Object.keys(ptrs);
+    if (ids.length === 1) gest = { kind: 'drag', id: ids[0], at: ptrs[ids[0]], crop: CR.crop, moved: 0, t0: performance.now() };
+    else if (ids.length >= 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]]; gest = { kind: 'pinch', ids: ids.slice(0, 2), d0: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, crop: CR.crop, moved: 99 }; }
+  }
+  function onDown(e) { if (ui.screen !== 'crop') return; ptrs[e.pointerId] = src(e); startGesture(); e.preventDefault(); }
+  function onMove(e) {
+    if (!ptrs[e.pointerId] || !gest) return;
+    ptrs[e.pointerId] = src(e);
+    if (gest.kind === 'drag' && ptrs[gest.id]) {
+      var p = ptrs[gest.id], dx = p.x - gest.at.x, dy = p.y - gest.at.y;
+      gest.moved = Math.max(gest.moved, Math.hypot(dx, dy) * CR.k);
+      if (gest.moved > 8) { CR.crop = SB.capture.move(gest.crop, dx, dy, CR.bw, CR.bh); layoutCrop(); schedule(); }
+    } else if (gest.kind === 'pinch' && ptrs[gest.ids[0]] && ptrs[gest.ids[1]]) {
+      var a = ptrs[gest.ids[0]], b = ptrs[gest.ids[1]], s = Math.hypot(a.x - b.x, a.y - b.y) / gest.d0;
+      CR.crop = SB.capture.pinch(gest.crop, s, gest.mid.x, gest.mid.y, CR.bw, CR.bh); layoutCrop(); schedule();
+    }
+  }
+  function onUp(e) {
+    if (!ptrs[e.pointerId]) return;
+    var tapped = gest && gest.kind === 'drag' && gest.moved <= 8 && performance.now() - gest.t0 < 400 ? ptrs[e.pointerId] : null;
+    delete ptrs[e.pointerId];
+    if (Object.keys(ptrs).length) { startGesture(); return; }
+    gest = null;
+    if (CR.timer) { clearTimeout(CR.timer); CR.timer = 0; }
+    if (tapped && tapped.x >= CR.crop.x && tapped.x < CR.crop.x + CR.crop.w && tapped.y >= CR.crop.y && tapped.y < CR.crop.y + CR.crop.h) {
+      var gx = Math.floor((tapped.x - CR.crop.x) / CR.crop.w * SB.GRID.W), gy = Math.floor((tapped.y - CR.crop.y) / CR.crop.h * SB.GRID.H);
+      CR.focal = gy * SB.GRID.W + gx;
+    }
+    rebuild(true);
+  }
+  function develop() {
+    if (!CR.src) return;
+    if (!CR.full || !CR.last) rebuild(true);
+    if (CR.last.needsCrop) { document.getElementById('tighter').hidden = false; return; }
+    ui.startRoom(CR.lastRec, ui.COPY.photoRoom, { level: CR.last, photo: { src: CR.src, crop: CR.crop }, ms: CR.ms });
+  }
+  ui.initCrop = function () {
+    document.getElementById('shoot').addEventListener('click', function () { openPicker('fileshoot'); });
+    document.getElementById('choose').addEventListener('click', function () { openPicker('filechoose'); });
+    document.getElementById('fileshoot').addEventListener('change', onFile);
+    document.getElementById('filechoose').addEventListener('change', onFile);
+    document.getElementById('retake').addEventListener('click', function () { openPicker(CR.from || 'filechoose'); });
+    document.getElementById('develop').addEventListener('click', develop);
+    document.getElementById('croptitle').addEventListener('click', function () { ui.releasePhoto(); ui.show('title'); });
+    var st = document.getElementById('cropstage');
+    st.addEventListener('pointerdown', onDown); st.addEventListener('pointermove', onMove);
+    st.addEventListener('pointerup', onUp); st.addEventListener('pointercancel', onUp);
+    window.addEventListener('resize', function () { if (ui.screen === 'crop' && CR.src) layoutCrop(); });
+  };
+
+  /* a room from a record: built (inside the reveal's first beat), or the crop's last full build (opts.level, never built
+     twice), then the reveal with the photo when there is one (opts.photo), then play */
+  ui.startRoom = function (record, name, opts) {
+    opts = opts || {};
     var t0 = performance.now();
     if (window.performance && performance.mark) performance.mark('sb-reveal-start');
-    var lv = SB.pipeline.build(record, {});
-    SB.perfLog.pipeline = performance.now() - t0;
+    var lv = opts.level || SB.pipeline.build(record, {});
+    SB.perfLog.pipeline = opts.level ? (opts.ms || 0) : performance.now() - t0;
     if (lv.needsCrop) return false;
     G.record = record; G.level = lv; G.name = name;
     G.state = SB.sim.create(lv, {});
@@ -2454,7 +2617,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     hearts(G.state.hero.hearts);
     ui.hideClear();
     ui.show('play');
-    if (!RV.devSkip) startReveal(lv, t0);
+    if (!RV.devSkip) startReveal(lv, t0, opts.photo || null);
+    else ui.releasePhoto();
     return true;
   };
   ui.sampleRecord = function () {
@@ -2465,7 +2629,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   ui.showClear = function () { document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; document.body.classList.remove('playing'); };
   ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); document.getElementById('back').hidden = false; };
   /* every in game back is an internal screen switch that hides every overlay it can sit over */
-  ui.toTitle = function () { RV.on = false; ui.hideClear(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
+  ui.toTitle = function () { RV.on = false; ui.releasePhoto(); ui.hideClear(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
 
   ui.init = function () {
     ui.fillCopy();
@@ -2481,6 +2645,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     document.getElementById('again').addEventListener('click', function () { ui.again(); });
     document.getElementById('cleartitle').addEventListener('click', ui.toTitle);
     document.getElementById('back').addEventListener('click', ui.toTitle);
+    ui.initCrop();
     /* a tap during a reveal, once one has been seen, skips to play; the tap is the skip's alone (the strip never sees
        it, so it is no jump) */
     document.addEventListener('pointerdown', function (e) {
@@ -2570,6 +2735,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     perf: function () { return { now: performance.now(), step: perf.step.slice(), draw: perf.draw.slice(), frames: perf.frames.slice(), pipeline: perf.pipeline, loop: Object.assign({ acc: acc, stepMs: STEP_MS }, loop),
       reveal: SB.ui.reveal.marks ? Object.assign({}, SB.ui.reveal.marks) : null }; },
     audioState: function () { return SB.audio.state(); },
+    photoAlive: function () { return SB.ui.photoAlive(); },
+    tabs: function () { return G.level ? G.level.repair.tabs : -1; },
+    overlay: function () {
+      var CR = SB.ui.crop, a = CR.lastA, n = 0;
+      if (a && a.solid) for (var i = 0; i < a.solid.length; i++) n += a.solid[i];
+      return { builds: CR.builds, solids: n, full: CR.full, needsCrop: CR.last ? !!CR.last.needsCrop : null, ms: CR.ms, focal: CR.focal, crop: CR.crop };
+    },
     audioMade: function () { return SB.audio.made; },
     /* the reveal's liberties: skip it for the gates that test something else, and hold it at t ms for the shots */
     revealSkip: function (on) { SB.ui.reveal.devSkip = !!on; return SB.ui.reveal.devSkip; },
