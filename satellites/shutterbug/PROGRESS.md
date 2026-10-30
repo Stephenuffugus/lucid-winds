@@ -277,3 +277,167 @@ watched RED: OVERLAP_8 (the sim's landing alone at 8 px: a whole TUNING 8 moves 
 shots: none (harness task)
 in flight: the review's harness and model lenses, then T0.13b
 blocked: none
+
+### 2026-10-30 09:00 UTC  T0.13b  The goldens, the bit flip, BOT-EXPLORE  commit 49653a0f3
+shipped: fixtures/replays/sample-room.json (2456 steps, 64 runs, golden 9382618a9b10403c) and shelves-a.json (2028 steps, 79 runs, golden de20b1ebc4f11c35): the bot's walk as runs of words, padded with 300 quiet steps past the clear (so the frame counter alone then moves the hash), the golden being the state hash at the end, why "regold 2026-10-30 T0.13b: first golden". harness.js --record <fixture> [--mode] [--biome] [--why], --replay <file> (prints the hash against the golden, exits nonzero on a difference or a replay that no longer clears), --regold --why (refuses without a why, writes it into each file, warns when a replay no longer clears: record it again), --explore <fixture>. H-bot-5 (the goldens: each replay clears and ends on its golden), H-bot-3 (determinism: two runs, two fresh contexts and the harness's own agree at frames 300, 900, 1800, the end less 60 and the end; past the clear the last two differ, so the frame is in the hash), H-bot-4 (the bit flip: L, R or B's press at frame 100 changes the final hash; A there is a jump straight up that lands where it left, the walk rightly ends the same, so A is not the bit). The random edges group of T0.13a is H-bot-1b now (the plan names H-bot-5 for the goldens).
+found on the way: the walk's success test counted a cleared room as arrival, right for the walk and wrong for a single edge, which BOT-EXPLORE showed by reporting 5 up jumps that were the hero passing the lamp; single edges (H-bot-1b, H-bot-6, explore) now run in the room without its exit, and every edge of every graph still performs (43303 of 43303 then).
+BOT-EXPLORE on the sample room (jumps one beyond the model, from every standable cell to every standable target): 5 up never (0 of 25: the apex is 4.35 cells); 6 across at 0 to 3 up 68 of 74 (the cone clips FULL at 5 across; a thumb has about a cell of horizontal slack at the low heights).
+the audit of the plan's list (section 5.5): every mutant named for T0.0 to T0.13b is in tools/redwatch.js but two: LIGHT_SLACK_0_SAMPLE is LIGHT_SLACK_0 (T0.11a, said then), and ROCKER_AT_X0, which T0.8b left to the layout gate and T0.9 never entered, is in now (the layout gate, RED). The rest of the list is T0.14 on.
+watched RED: REPLAY_HASH_IGNORES_FRAME (H-bot-3 "the frame is in the hash"), ROCKER_AT_X0 (layout "left zone is clear of the canvas and the reserved box").
+the table (node tools/redwatch.js, then --browser-only, the whole of it, on the tree at the review's fixes):
+    mutant                        task   gate      expected text                                   result
+    NOOP                          T0.3   harness   (must stay green)                               stayed green (as it must)
+    PURITY_DATE                   T0.2   lint      forbidden token "Date"                          RED
+    PURITY_DATE                   T0.2   harness   core touched Date                               RED
+    INCLUDE_MISSING               T0.2   lint      the fleet include appears 0 times               RED
+    STYLE_COMMENT_EATS            T0.2   lint      "/*" against                                    RED
+    FNV_PRIME_FLIPPED             T0.3   harness   H-rng-1 fnv1a32Str("a")                         RED
+    B64_PAD                       T0.3   harness   share string length                             RED
+    NIBBLE_15_ACCEPTED            T0.3   harness   decode refuses: a high nibble of 15             RED
+    QUANT_UNWEIGHTED              T0.4a  harness   nearest equals the test's weighted distance     RED
+    SAMPLE_ROOM_DRIFT             T0.5   harness   SB.SAMPLE_ROOM rows equal the fixture's rows    RED
+    EXPECT_MISSING                T0.5   harness   has no expect (authored by hand from its design)RED
+    OTSU_UNCLAMPED                T0.6   harness   all-dark: threshold 29 inside DESIGN 6.3's clampRED
+    CA_ONE_PASS                   T0.6   harness   isolated cells after smoothing (under 10%)      RED
+    RUN_MIN_2                     T0.6   harness   lab: a 2 wide lit plank makes no platform       RED
+    FLOOR_NOT_FORCED              T0.6   harness   bottom row solid                                RED
+    NEG_AFTER_PLATFORMS           T0.6   harness   Negative platforms are found on the inverted griRED
+    JUMP_V_LOW                    T0.7a  harness   a full hold from rest peaks at                  RED
+    GRAVITY_X2                    T0.7a  harness   a full hold from rest peaks at                  RED
+    FLOOR_IS_LANDMARK             T0.8a rharness   three separate blocks standing on the floor are RED
+    BEACON_RELIT_ANYWHERE         T0.8a rharness   the lamp stays backdrop                         RED
+    LIGHT_BY_SUM                  T0.8a rharness   a 3x2 Glare lamp beats a bigger 6x3 Paper patch RED
+    AIR_KEEPS_MOMENTUM            T0.8a rharness   releasing the rocker in flight decelerates in 4 RED
+    EXIT_EARLY                    T0.8a rharness   the room clears on exactly the first step the boRED
+    BONK_KEEPS_VY                 T0.8a rharness   the head meets the ceiling                      RED
+    COYOTE_AFTER_JUMP             T0.8a rharness   gives no second upward kick                     RED
+    ONEWAY_CATCHES_FROM_BELOW     T0.8a rharness   never catches the hero                          RED
+    EDGE_DROP_40                  T0.8a rharness   plat cells that differ from the test's own DESIGRED
+    FIELDS_DROP_SPAWN             T0.8a rharness   pipeline.FIELDS is the plan's list              RED
+    EXIT_ASSIGN_LOCAL             T0.8a rlint      the shell-fleet block is not byte for byte sectiRED
+    TEMPLATE_HIDES_DATE           T0.8a rlint      forbidden token "Date"                          RED
+    MATH_ALIAS                    T0.8a rlint      a bare Math                                     RED
+    HASH_SKIPS_RNG                T0.7b  harness   state: the keys are exactly the declared list   RED
+    ONEWAY_FROM_BELOW_BLOCKS      T0.7b  harness   JUMP FULL right dx0 dy2 onto one way            RED
+    ONEWAY_FROM_BELOW_BLOCKS      T0.7b  harness   crossed only by the rise lets the hero through  RED
+    FLOAT_LEAK                    T0.7b  harness   serialize never met a float                     RED
+    HI_PLUS_ONE                   T0.10a harness   FULL maxAcross: the core equals the oracle      RED
+    CLEARANCE_SKIPS_HEAD          T0.10b harness   a ceiling cell in the corridor cuts the edge    RED
+    TAB_MAX_0                     T0.11a harness   tight-gap: builds as its expect says            RED
+    TABS_ON_LANDMARK              T0.11a harness   no tab on or by a landmark top                  RED
+    LIGHT_SLACK_0                 T0.11a harness   the slack lab: the lamp is the exit inside EXIT_RED
+    SLACK_ZERO                    T0.11b harness   fails with max-range                            RED
+    CHAIN_3                       T0.11b harness   fail with wall-chain                            RED
+    SHELF_CLOSED                  T0.11b harness   the sample room needs zero tabs                 RED
+    REPLAY_HASH_IGNORES_FRAME     T0.13b harness   the frame is in the hash                        RED
+    CATCHES_ROW_OFF               review harness   catch lists in the cone equal the oracle        RED
+    CATCHES_ANY_OVERLAP           review harness   catch lists in the cone equal the oracle        RED
+    DIVE_KEEPS_VX                 review harness   a dive from a running jump                      RED
+    DIVE_KEEPS_COYOTE             review harness   A pressed in coyote time after a dive           RED
+    SHAKE_NEVER_DECAYS            review harness   counts down from SHAKE_F to 0                   RED
+    SLIDE_ARMS_IN_DIVE            review harness   a dive beside a wall                            RED
+    SLIDE_LEAVE_FULL              review harness   after the release the fall continues            RED
+    STICKY_ROCKER_AWAY_HOLDS      review harness   the rocker away from the vine lets go           RED
+    DASH_TURNS                    review harness   the rocker reversed mid dash                    RED
+    DASH_WALL_NO_END              review harness   a dash into a wall stops flush and ends         RED
+    LOCK_5_SIM                    review harness   the push away lasts exactly                     RED
+    STICKYUP_UNDER_CEILING        T0.13a harness   every edge has a macro                          RED
+    STICKY_UP_PLUS1               review harness   every edge has a macro                          RED
+    STICKY_THROUGH_CEILING        review harness   every edge has a macro                          RED
+    WALLTOUCH_THROUGH_SOLID       review harness   every edge has a macro                          RED
+    STICKYUP_ONE_ROW              T0.13a harness   every edge has a macro                          RED
+    MAXRANGE_SKIPS_WALLJUMP       review harness   the corner wall jump                            RED
+    JUMP_EDGE_PLUS0               review harness   none of its jumps sits at the clipped cone's edgRED
+    CADENCE_GE                    review harness   a vine climb of exactly                         RED
+    STAIR_ON_ONEWAY               review harness   tabs keep the rules                             RED
+    STAIR_SECOND_IN_SOLID         review harness   tabs keep the rules                             RED
+    LIGHT_SLACK_STRICT            review harness   edges farther than the light leaves the light thRED
+    EXIT_ROWS_PLUS1_REACH         review harness   is never the exit                               RED
+    WALK_COST_2                   review harness   cost what section 3.3 says                      RED
+    JUMP_DOWN_COST_1              review harness   cost what section 3.3 says                      RED
+    SLIDE_COST_1                  review harness   cost what section 3.3 says                      RED
+    CHAIN_LINK_COST_1             review harness   cost what section 3.3 says                      RED
+    OVERLAP_8                     T0.13a harness   every edge has a macro                          RED
+    TOUCH_HEAD_ROW                T0.13a harness   every edge has a macro                          RED
+    FOOTING_2PX                   T0.13a harness   walking off a one way plank the hero stands whilRED
+    TOUCH_CLAMP_STICKS            T0.13a harness   noise-s2: from (17, 25) neither the model nor thRED
+    COYOTE_AFTER_WALLJUMP         review harness   a wall jump inside coyote time                  RED
+    COYOTE_AFTER_STICKYJUMP       review harness   a sticky jump inside coyote time                RED
+    FACING_IN_LOCK                review harness   the facing stays away                           RED
+    DASH_IFRAMES_UNMOVED          review harness   a dash pressed flush against a wall does not movRED
+    DASHCLAMP_ORDER               review harness   past a platform                                 RED
+    WALL_LADDER                   review harness   never arms on that wall again                   RED
+    AIR_CONTROL_HALF              review harness   TUNING.AIR_CONTROL is 1                         RED
+    DASH_OFF_EDGE                 T0.12b harness   stops with the leading foot on it               RED
+    DIVE_CHAINS_DASH              T0.12b harness   the dive never becomes a dash                   RED
+    HOLD_DIVE_CAUGHT              T0.12b harness   a hold dive passes the three one ways to the floRED
+    HOLD_DIVE_CAUGHT              T0.12b harness   equal the model                                 RED
+    CORNER_PX_6                   T0.12a harness   a side overlap of 13.5 px never arms a slide    RED
+    STICKY_PUSHOFF                T0.12a harness   and never moved sideways (no push off)          RED
+    LOCK_ZERO                     T0.12a harness   held toward the wall, the lock carries the hero RED
+    STICKY_ARMS_RISING            T0.12a harness   A gives                                         RED
+    GLARE_DARKENED                T0.4b  harness   near whites (L > 235)                           RED
+    GLARE_DARKENED                T0.4b  harness   the collision edge (Glare over Ink) clears 3:1  RED
+    MAKE_RE_DRIFT                 T0.5b  lint      fixtures/make.html holds CORE_RE                RED
+    BITMAP_LEAK                   T0.5b  lint      release() never closes the bitmap               RED
+    EXIT_HIGHEST_INDEX            T0.8b rharness   sample-room: the exit equals the test's own ruleRED
+    LIGHT_TIE_TO_SMALLER          T0.8b rharness   two clusters that both peak at Glare            RED
+    EXIT_ROWS_5                   T0.8b rharness   a Glare lamp in row 4, under the top four rows, RED
+    EXIT_FALLBACK_DARKEST         T0.8b rharness   with no light, the exit is the brightest standabRED
+    EDGE_GE                       T0.8b rharness   a drop of exactly 60, is no platform            RED
+    CC8                           T0.8b rharness   two blocks meeting only at a corner are two landRED
+    EXIT_ROW_EARLY_1              T0.8b rharness   the head exactly at the exit cell's bottom edge RED
+    EXIT_TOUCH_X                  T0.8b rharness   the box exactly beside the exit cell            RED
+    EXIT_TOUCH_Y                  T0.8b rharness   the head exactly at the exit cell's bottom edge RED
+    TEMPLATE_BRACE_IN_STRING      T0.8b rlint      forbidden token "Date"                          RED
+    CTOR_CTOR                     T0.8b rlint      forbidden token "constructor"                   RED
+    STYLE_COMMENT_EATS            T0.2   boot      412x915: #exit measures                         RED
+    EXIT_UNCALLED                 T0.2   boot      journey A: a real touch on the exit returned    RED
+    BUTTON_32PX                   T0.2   boot      412x915: #choose measures                       RED
+    ACCUMULATOR_DT_FLOAT          T0.8a  play      frame by frame the page ran the steps the accumuRED
+    CLEAR_NO_RESTART              T0.8a  play      Again leaves nothing painted over the play area RED
+    EXIT_EARLY                    T0.8a rplay      one step before the lamp the room is not yet cleRED
+    LOOP_DOUBLE_SPEED             T0.8a rplay      the step is 16.667 ms                           RED
+    JOURNEY_A_REPLACES            T0.8a rboot      journey A: a real touch on the exit returned    RED
+    SECOND_FINGER_RELEASES_FIRST  T0.8b  play      a second finger on A during a rocker hold: both RED
+    READY_NEVER_POSTED            T0.2b  boot      journey C: framed                               RED
+    LATCH_OFF                     T0.9   input     a sub step tap on A (4 ms) is exactly one A_TAP RED
+    ZONE_FIXED_AT_DOWN            T0.9   input     a slide from the left zone to the right zone witRED
+    CANVAS_100PCT                 T0.9   layout    412x915: the canvas is                          RED
+    A_44PX                        T0.9   layout    412x915: A measures                             RED
+    RESERVE_FILLED                T0.9   layout    412x915: the reserved box is transparent        RED
+    ROCKER_AT_X0                  T0.8b  layout    412x915: left zone is clear of the canvas and thRED
+    MIRROR_OVERLAPS_CANVAS        T0.9   layout    412x915 mirrored: the rocker, A and B are disjoiRED
+    CAPTURE_BGR                   T0.5b  make      H-cap-1: the canvas path on the gradient is withRED
+    OVERLAY_NO_HASH               T0.5b  make      the 24x48 overlay draws the saved room as built RED
+    CROP_SHADOW_UNCLIPPED         T0.5b  make      on screen the overlay shows each open cell in itRED
+    MAX_STEPS_1                   T0.8b rplay      the loop ran exactly the steps the accumulator oRED
+    DT_MAX_20                     T0.8b rplay      the loop ran exactly the steps the accumulator oRED
+    SLIDE_KEEPS_OLD               T0.8b rplay      the slide: moved to the right zone without liftiRED
+    GAP_IS_LEFT                   T0.8b rplay      the slide: moved into the neutral gap it is nothRED
+    FITS2_NO_STRIP                T0.8b rplay      1366x843: the canvas is 1x, 384 CSS px wide     RED
+    CANVAS_TAKES_POINTERS         T0.8b rplay      Again leaves nothing painted over the play area RED
+    STRIP_KEEPS_PRESSED           T0.8b rplay      the same thumb moved inside its zone after the bRED
+    TITLE_UNDER_ROCKER            T0.8b rplay      320x568 default: Title is                       RED
+    PHASE_ZERO                    T0.8b rplay      frame by frame the page ran the steps the accumuRED
+    ROCKER_NO_ADOPT               T0.8b rplay      the first lifted, the pointer still down takes tRED
+    CHIP_OVER_PLAY                T0.8b rplay      in play the fleet's chip, pill, card and toast aRED
+    BEACON_PULSE_BY_FRAME         T0.8b rplay      the beacon pulses by the clock                  RED
+    STATIC_BUILT_TWICE            T0.14  reveal    the static layer is built once                  RED
+    AUDIO_AT_LOAD                 T0.14  reveal    no AudioContext before the first tap            RED
+    REVEAL_NO_SKIP                T0.14  reveal    a second room skips on a tap                    RED
+    
+    140 rows: 139 RED, 1 stayed green (NOOP, as it must), 0 other (node rows 08:33 UTC, browser rows 08:35 to 08:43, the reveal rows 08:57)
+gates: check --fast green; harness 4227 assertions in 89 groups (4269 in 94 after the review's harness lens); harness-all green.
+shots: none (harness task)
+in flight: the review's model lens, T0.14
+blocked: none
+
+### 2026-10-30 09:00 UTC  T0.14  The develop reveal and the first sounds  commit a0371b836 (with autosaves a2e0976c3, da3b57e67)
+shipped: the 'reveal' screen between the tap and play (DESIGN 5.2): hold (the photo layer; for the sample room its own grid at full palette colour, the cropped photo from T0.15), resolve (rows quantise bottom up, the count at any instant from the frame timestamp, so a slow frame skips rows; a Glare sweep edge), light up (platform tops flash Glare over the first half, landmarks pulse once as a Glare outline, tabs appear one after another over the second half), then play. The room is built inside the hold beat (no build after the tap but that one), and the static layer built at the room's start serves the reveal and the play (built once). The clock is the frame timestamp less the tap's, frozen while SB_DEV holds the loop; each beat is marked at the first frame past it with the gap to the frame before; SB_DEV.perf().reveal carries them. A tap skips a reveal once one has been seen (a session flag until T1.10's save); that tap is the skip's alone, so it is never a jump. Reduced motion: one crossfade of REVEAL_HOLD, no flashes or pulses (Q41). shell-audio: the AudioContext is made and resumed inside the first pointerdown anywhere, never before; the shutter on beat 1 (two clicks 40 ms apart: a 12 ms noise burst through a 2 kHz band pass, decaying over 60 ms); a develop tick every 4 rows and per tab; muted by A.muted (T1.10's setting); any failure silent. SB_DEV gains audioState, audioMade, revealSkip and revealAt.
+gates: check --fast green with the new reveal gate (lint, harness 4269, redwatch, boot, play, make, input, layout, reveal). test/reveal.mjs: no AudioContext before the first tap, exactly one after it (running); the screen passes reveal then play; the hold, resolve and light beats each within 50 ms of 300, 800 and 500 plus the frame gaps at their ends; the tap to the drop at most 1.6 s plus the last frame gap (1624 ms, the build 181 ms inside it); the static layer built once; the first reveal not skipped and a second room skipped by a real tap on the canvas (294 ms); reduced motion under 0.6 s (497 ms). The other browser gates skip reveals (test/harness.mjs ready(), SB_DEV.revealSkip).
+measured, and why the gate adds the frame gaps: headless swiftshader stalls for most of a second after any room starts, with or without the reveal (frames at 137, 140, 155, then 413, 521, 677, 805 ms after the tap with the reveal; 407, 728, 838 ms without it), so a beat marked at its first frame can be late by a whole stall here; on a phone frames are 16 ms and the tolerance is about 80 ms. A clock that counted frames would still fail: its 1.6 s would take well over 2 s of these frames.
+watched RED: STATIC_BUILT_TWICE (reveal "the static layer is built once"), AUDIO_AT_LOAD ("no AudioContext before the first tap"), REVEAL_NO_SKIP ("a second room skips on a tap").
+shots: /tmp/claude-1000/shutterbug-shots/t14/t14-beat1-412x915.png, t14-beat2-mid-412x915.png, t14-beat3-412x915.png, t14-drop-412x915.png and t14-beat2-mid-360x780.png: 1. beat 1: the sample room's photo is its own palette grid, flat blocks that already read as a level, so the photo becoming a level is only a dimming here (real photos arrive with T0.15) 2. beat 2: the resolved half reads as the room going grey (the static layer's Pewter blend) more than as developing, and the 2 px sweep edge is thin on the light wall 3. beat 3: the landmark pulse was a 35% Glare wash that read as the wardrobe and the shelf going pale and pink (FIXED: a Glare outline along each landmark's border, reshot: the bed, the shelf and the wardrobe light up as shapes); the platform flash is spent by the middle of the beat, so a still at the peak shows none.
+in flight: the review's model lens, T0.15
+blocked: none

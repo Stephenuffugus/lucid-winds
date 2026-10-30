@@ -1,9 +1,9 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 08:09 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
+> **STATE 30 Oct 09:00 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
 > night one order, the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after T0.8a, sb-m0-2 after
 > T0.8b, sb-m0-3 when M0 is complete. **LIVE: sb-m0-2** (deploy `945b541b5`, both origins proven by curl 04:53:54 UTC):
-> the thumbs climb on a phone. **Last shipped: T0.13a (the bot: every main ascent edge of every built level has a macro and every walk clears its room; every edge of every graph, 43303 of 43303, under the new slow gate harness-all; the model's wall touch made exact and one way footing fixed where the bot found them apart, Q65; the third review's fidelity lens fixed: no wall ladder, no mid air second jump, the facing held through the lock, no i frames from a dash that cannot move).** Gates: check --fast green (lint, harness 4213 assertions in 86 groups, redwatch 77 rows, boot, play, make, input, layout) and harness-all green. Red: nothing. Next: the third review's harness and model lenses (still running), then T0.13b (the goldens, the bit flip, BOT-EXPLORE). Autosave running.
+> the thumbs climb on a phone. **Last shipped: T0.14 (the develop reveal: hold, resolve and light up on a reveal screen, the room built inside the first beat, the shutter and develop ticks from an AudioContext made in the first tap, a skip once seen, a crossfade under reduced motion; the reveal gate); before it T0.13b (the goldens, the bit flip, BOT-EXPLORE, the whole redwatch table) and the third review's fidelity and harness lenses, every finding fixed with its mutant RED.** Gates: check --fast green (lint, harness 4269 assertions in 94 groups, redwatch, boot, play, make, input, layout, reveal) and harness-all green. Red: nothing. Next: the review's model lens (still running), then T0.15 (photo capture, the crop and its live overlay). Autosave running.
 
 You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is ONE game from zero:
 Shutterbug, a photo of a room becomes a pixel platformer level (`satellites/shutterbug/DESIGN.md`). Fable wrote the
