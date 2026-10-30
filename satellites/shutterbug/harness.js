@@ -2445,7 +2445,10 @@ group('H-rep-2', 'tabs never on a landmark cell nor within 1 cell of a landmark 
   for (const f of FIXTURES) for (const mode of MODES) {
     const lv = buildFx(f, mode);
     if (lv.needsCrop) continue;
-    const near = landmarkTopNear(lv), bad = [];
+    /* the rule is repair's, on the photo's landmark tops (DESIGN 6.7); the pocket (T1.2a) is carved after repair and
+       its floor is no furniture top, so its cells count as their landmark's here */
+    const pk = lv.features && lv.features.pocket, view = pk ? Object.assign({}, lv, { solid: lv.solid.map((v, i) => pk.cells.includes(i) ? 1 : v), landmarks: lv.landmarks.concat([{ cells: Int32Array.from(pk.cells) }]) }) : lv;
+    const near = landmarkTopNear(view), bad = [];
     for (let i = 0; i < lv.w * lv.h; i++) if (lv.tab[i] && near.has(i)) bad.push('(' + i % lv.w + ', ' + Math.floor(i / lv.w) + ')');
     t.eq(bad.length, 0, f.name + ' mode ' + mode + ': no tab on or by a landmark top' + (bad.length ? ' (' + bad.slice(0, 4).join(' ') + ')' : ''));
   }
@@ -2663,6 +2666,158 @@ if (opt('fixture')) {
 }
 
 /* ================================================================ fixtures */
+/* ================================================================ features, part one (T1.2a) */
+/* every built level of the corpus under each biome override and as detected (fixtures x modes x biomes, section 5.1) */
+let featLevels = null;
+function featBuilds() {
+  if (featLevels) return featLevels;
+  featLevels = [];
+  for (const f of FIXTURES) for (const mode of MODES) for (const biome of [null, 0, 1, 2, 3, 4]) {
+    const lv = biome === null ? buildFx(f, mode) : SB.pipeline.build(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode })), { biome });
+    if (lv.needsCrop) continue;
+    featLevels.push({ tag: f.name + ' mode ' + mode + ' ' + (biome === null ? 'as detected' : SB.palette.BIOMES[biome]), f, mode, biome, lv });
+  }
+  return featLevels;
+}
+const sameEdge = (g, e) => (g.adj[e.from] || []).some(x => x.to === e.to && x.kind === e.kind && x.dir === e.dir && x.dx === e.dx && x.dy === e.dy);
+
+group('H-feat-1', 'the caps of DESIGN 6.11 never exceeded: one ladder of stacked one ways, one pocket, one door, CAP_STICKY vines, CAP_ENEMY enemies (CAP_ELITE elites), one chest', t => {
+  const T = SB.TUNING, bad = []; let ladders = 0, pockets = 0, doors = 0, levels = 0;
+  for (const { tag, lv } of featBuilds()) {
+    const f = lv.features, w = lv.w; levels++;
+    if (f.ladder) ladders++; if (f.pocket) pockets++; if (f.door) doors++;
+    for (const k of ['ladder', 'pocket', 'door']) if (Array.isArray(f[k])) bad.push(tag + ': ' + k + ' is a list');
+    if (f.enemies.length > T.CAP_ENEMY) bad.push(tag + ': ' + f.enemies.length + ' enemies (cap ' + T.CAP_ENEMY + ')');
+    if (f.enemies.filter(e => e.elite).length > T.CAP_ELITE) bad.push(tag + ': more than CAP_ELITE elites');
+    let runs = 0; for (let i = 0; i < lv.sticky.length; i++) if (lv.sticky[i] && (i < w || !lv.sticky[i - w])) runs++;
+    if (runs > T.CAP_STICKY) bad.push(tag + ': ' + runs + ' sticky runs');
+    if (!(f.chest >= 0)) bad.push(tag + ': no chest');
+    else if (!standableIn(lv, f.chest) || f.chest === lv.spawn || f.chest === lv.exit || (f.door && f.chest === f.door.idx) || (f.pocket && f.pocket.cells.includes(f.chest))) bad.push(tag + ': the chest stands where it may not');
+    if (f.ladder) {
+      const rs = f.ladder.runs;
+      if (rs.length < T.LADDER_MIN_RUNS) bad.push(tag + ': a ladder of ' + rs.length + ' runs');
+      for (let k = 1; k < rs.length; k++) { const dy = rs[k - 1][2] - rs[k][2]; if (dy < 1 || dy > T.LADDER_STACK_ROWS || rs[k][1] < rs[k - 1][0] || rs[k][0] > rs[k - 1][1]) bad.push(tag + ': ladder rung ' + k + ' is not stacked on the one below'); }
+      for (const [x0, x1, y] of rs) for (let x = x0; x <= x1; x++) if (!lv.plat[y * w + x] || lv.tab[y * w + x]) { bad.push(tag + ': a ladder rung on a cell that is no photo one way'); break; }
+      const tr = rs[rs.length - 1]; if (f.ladder.top !== (tr[2] - 1) * w + ((tr[0] + tr[1]) >> 1)) bad.push(tag + ': the ladder top is not the top run\'s middle standing cell');
+    }
+  }
+  t.eq(bad.length, 0, 'every one of ' + levels + ' built levels keeps the caps' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
+  t.ok(ladders > 0 && pockets > 0 && doors > 0, 'the features bite over the corpus: ' + ladders + ' ladders, ' + pockets + ' pockets, ' + doors + ' doors');
+  /* the focal tap (DESIGN 5.1, Q34): the sample room tapped on the bookshelf (1, 30); the chest is the reached
+     standable cell nearest the tap, found here by brute force */
+  const rec = Object.assign({}, fixture('sample-room').fx.record, { focal: 30 * 24 + 1 }), lvF = SB.pipeline.build(SB.record.fromJSON(rec), {});
+  const dF = SB.reach.distances(SB.reach.graph(lvF), lvF.spawn); let want = -1, wd = 1e9;
+  for (let i = 0; i < 24 * 48; i++) if (dF[i] >= 0 && standableIn(lvF, i) && i !== lvF.spawn && i !== lvF.exit && !(lvF.features.door && i === lvF.features.door.idx) && !(lvF.features.pocket && lvF.features.pocket.cells.includes(i))) { const dd = cheb(i, 30 * 24 + 1, 24); if (dd < wd) { wd = dd; want = i; } }
+  t.ok(lvF.features.chest === want, 'tapped on the bookshelf, the chest is the nearest reached standable cell to the tap (' + (lvF.features.chest % 24) + ', ' + Math.floor(lvF.features.chest / 24) + '; the test finds ' + (want % 24) + ', ' + Math.floor(want / 24) + ')');
+  for (const [name, key] of [['ladder-stack', 'ladder'], ['bright-door', 'door'], ['one-giant-landmark', 'pocket']]) {
+    const lv = buildFx(fixture(name), 0);
+    t.ok(!lv.needsCrop && !!lv.features[key], name + ' (authored for it, T0.5c) has its ' + key, lv.needsCrop ? undefined : SB.pipeline.toText(lv));
+  }
+});
+
+/* the largest rectangle of open cells brighter than DOOR_L with both sides at least DOOR_MIN, by brute force over
+   every rectangle (prefix sums), for the test alone */
+function largestBright(lv) {
+  const T = SB.TUNING, w = lv.w, h = lv.h, P = new Int32Array((w + 1) * (h + 1));
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const b = !lv.solid[y * w + x] && lv.L[y * w + x] > T.DOOR_L ? 1 : 0; P[(y + 1) * (w + 1) + x + 1] = b + P[y * (w + 1) + x + 1] + P[(y + 1) * (w + 1) + x] - P[y * (w + 1) + x]; }
+  const sum = (x0, y0, x1, y1) => P[(y1 + 1) * (w + 1) + x1 + 1] - P[y0 * (w + 1) + x1 + 1] - P[(y1 + 1) * (w + 1) + x0] + P[y0 * (w + 1) + x0];
+  let best = 0;
+  for (let y0 = 0; y0 < h; y0++) for (let x0 = 0; x0 < w; x0++) for (let y1 = y0 + T.DOOR_MIN - 1; y1 < h; y1++) {
+    if (sum(x0, y0, x0, y1) !== y1 - y0 + 1) break;
+    for (let x1 = x0 + T.DOOR_MIN - 1; x1 < w; x1++) { const a = (x1 - x0 + 1) * (y1 - y0 + 1); if (sum(x0, y0, x1, y1) !== a) break; if (a > best) best = a; }
+  }
+  return best;
+}
+group('H-feat-4', 'the Darkroom door (Q33): the largest bright rectangle, its door on the bottom row, standable, reached and never a cell the main ascent stands on', t => {
+  const T = SB.TUNING, bad = []; let doors = 0;
+  for (const { tag, lv, biome } of featBuilds()) {
+    const dr = lv.features.door; if (!dr) continue; doors++;
+    const w = lv.w, n = w * lv.h, [x0, y0, x1, y1] = dr.rect, stands = lv.ascent.nodes.filter(v => v < n);
+    if (stands.includes(dr.idx)) bad.push(tag + ': the door is a cell the ascent stands on');
+    if (!standableIn(lv, dr.idx)) bad.push(tag + ': the door is not standable');
+    if (Math.floor(dr.idx / w) !== y1 || dr.idx % w < x0 || dr.idx % w > x1) bad.push(tag + ': the door is off its rectangle\'s bottom row');
+    let dark = false; for (let y = y0; y <= y1 && !dark; y++) for (let x = x0; x <= x1; x++) if (lv.solid[y * w + x] || lv.L[y * w + x] <= T.DOOR_L) { dark = true; break; }
+    if (dark || x1 - x0 + 1 < T.DOOR_MIN || y1 - y0 + 1 < T.DOOR_MIN) bad.push(tag + ': the rectangle is not all bright open cells, ' + T.DOOR_MIN + ' or more a side');
+    if (biome === null) { const a = largestBright(lv); if ((x1 - x0 + 1) * (y1 - y0 + 1) !== a) bad.push(tag + ': the rectangle holds ' + (x1 - x0 + 1) * (y1 - y0 + 1) + ' cells, the largest ' + a); }
+    if (SB.reach.distances(SB.reach.graph(lv), lv.spawn)[dr.idx] < 0) bad.push(tag + ': the door is not reached');
+  }
+  t.eq(bad.length, 0, 'every door of ' + doors + ' keeps the rule' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
+  /* the ascent rule alone: bright-door's door, with its own cell made an ascent cell, moves along the bottom row */
+  const bd = buildFx(fixture('bright-door'), 0), d = SB.reach.distances(SB.reach.graph(bd), bd.spawn);
+  const first = SB.features.door(bd, d, []), moved = first && SB.features.door(bd, d, [first.idx]);
+  t.ok(!!first && !!moved && moved.idx !== first.idx && moved.rect.join() === first.rect.join(), 'made an ascent cell, the door leaves it for the next cell of the bottom row (' + (first && first.idx % 24) + ' then ' + (moved && moved.idx % 24) + ')');
+});
+
+group('H-feat-5', 'the pocket: a 3x3 hollow closed in its landmark, its entrance facing the ascent, its loot reached, never in the first room, and the main ascent never carved', t => {
+  const T = SB.TUNING, bad = []; let pockets = 0;
+  for (const { tag, lv } of featBuilds()) {
+    const p = lv.features.pocket; if (!p) continue; pockets++;
+    const w = lv.w, n = w * lv.h, [x0, y0] = p.rect, stands = lv.ascent.nodes.filter(v => v < n);
+    for (let y = y0; y <= y0 + 2; y++) for (let x = x0; x <= x0 + 2; x++) if (lv.solid[y * w + x]) bad.push(tag + ': a hollow cell is solid');
+    for (let x = x0; x <= x0 + 2; x++) if (!lv.solid[(y0 + 3) * w + x]) bad.push(tag + ': the hollow has no floor');
+    for (let x = x0; x <= x0 + 2; x++) if (!lv.solid[(y0 - 1) * w + x]) bad.push(tag + ': the hollow has no roof');
+    const cc = (y0 + 1) * w + x0 + 1; let near = -1, nd = 1e9;
+    for (const v of stands) { const dd = cheb(cc, v, w); if (dd < nd || (dd === nd && v < near)) { nd = dd; near = v; } }
+    const side = near % w <= x0 + 1 ? -1 : 1;
+    if (side !== p.side || p.tunnel.some((c, k) => c !== (y0 + 2) * w + (side < 0 ? x0 - 1 - k : x0 + 3 + k))) bad.push(tag + ': the entrance does not face the ascent cell nearest the hollow');
+    if (p.tunnel.length < 1 || p.tunnel.length > T.POCKET_TUNNEL_MAX) bad.push(tag + ': a tunnel of ' + p.tunnel.length);
+    const g = SB.reach.graph(lv), d = SB.reach.distances(g, lv.spawn);
+    if (d[p.loot] < 0) bad.push(tag + ': the loot is not reached');
+    const lost = lv.ascent.edges.filter(e => !sameEdge(g, e));
+    if (lost.length) bad.push(tag + ': the ascent lost ' + lost.length + ' edges to the carve (' + lost[0].kind + ')');
+    const lm = lv.landmarks.find(l => Array.from(l.cells).includes((y0 - 1) * w + x0));
+    if (!lm || SB.pipeline.components(Uint8Array.from({ length: n }, (_, i) => Array.prototype.includes.call(lm.cells, i) ? 1 : 0), w, lv.h).length !== 1) bad.push(tag + ': the landmark around it is not one piece');
+  }
+  t.eq(bad.length, 0, 'every pocket of ' + pockets + ' keeps the rule' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
+  let first = 0; for (const f of FIXTURES) { const lv = SB.pipeline.build(SB.record.fromJSON(f.fx.record), { firstRoom: true }); if (!lv.needsCrop && lv.features.pocket) first++; }
+  t.eq(first, 0, 'no pocket in a first room (' + first + ')');
+  /* the never carve rule alone: a hollow in the wardrobe's top three rows (x 20..22, rows 15..17) would take the
+     support from (20, 14), where the sample room's ascent lands its JUMP from (16, 17); the check refuses it for the
+     ascent's sake (the order inside: the landmark in one piece, then the ascent, then the loot) */
+  const sr = buildFx(fixture('sample-room'), 0), w = sr.w, k = sr.landmarks.findIndex(l => Array.from(l.cells).includes(16 * w + 21));
+  const lands = sr.ascent.edges.some(e => e.to === 14 * w + 20 && e.kind === 'JUMP');
+  const hollow = []; for (let y = 15; y <= 17; y++) for (let x = 20; x <= 22; x++) hollow.push(y * w + x);
+  const res = k >= 0 ? SB.features.pocketOk(sr, { k, rect: [20, 15, 22, 17], side: -1, hollow, tunnel: [], mouth: -1, loot: 17 * w + 22, elite: 17 * w + 21 }) : { ok: true, why: 'no wardrobe' };
+  t.ok(lands && !res.ok && /^the ascent loses/.test(res.why), 'a hollow under the ascent\'s landing on the wardrobe (20, 14) is refused for the ascent (' + (lands ? '' : 'the ascent does not land there; ') + (res.why || 'accepted') + ')');
+});
+
+group('H-feat-7', 'exactly one beacon, at the exit cell, on every built level', t => {
+  const bad = []; let levels = 0;
+  for (const { tag, lv } of featBuilds()) { levels++; if (!(lv.exit >= 0 && lv.beacon && lv.beacon.idx === lv.exit)) bad.push(tag); }
+  t.eq(bad.length, 0, 'every one of ' + levels + ' levels has its one beacon at the exit' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
+});
+
+/* Q50's claims, each on a room whose answer is the rule's (the fourth review: nothing of their own tested them) */
+group('H-en-1b', 'the claims of Q50: no moth from the lamp, lit or not, nor from a solid landmark; none from an elite sized cluster; the seed picks among more than the cap', t => {
+  const moths = rows => { const lv = SB.pipeline.build(labRecord(rows), {}); return lv.needsCrop ? null : lv.features.enemies.map(e => e.idx); };
+  /* the sample room's lamp moved to the top left corner, where it loses the exit (the fourth review's probe): its Sun
+     shade at (1..4, 3) spawned a moth */
+  const s = Array.from(SB.SAMPLE_ROOM);
+  s[0] = '424444444444444444444444'; s[1] = '466444444444444444444444'; s[2] = '466444444444444444444444'; s[3] = '4eeee4444444444444444444';
+  const lostLv = SB.pipeline.build(labRecord(s), {});
+  const onLamp = lostLv.needsCrop ? [] : lostLv.features.enemies.filter(e => e.idx >= 3 * 24 + 1 && e.idx <= 3 * 24 + 4);
+  t.ok(!lostLv.needsCrop && lostLv.beacon.cells.length === 0 && onLamp.length === 0, 'a lamp that lost the exit (exit ' + (lostLv.exit % 24) + ',' + Math.floor(lostLv.exit / 24) + ', ' + lostLv.beacon.cells.length + ' beacon cells) is no nest: ' + onLamp.length + ' moths on its shade');
+  /* a lit Sun lamp, the exit, in a bare room: nothing else is saturated */
+  const lit = {}; lit[1] = '4444444444666644444444444'.slice(0, 24); lit[2] = '44444444444eeee444444444';
+  const litM = moths(lit);
+  t.ok(litM !== null && litM.length === 0, 'a lit Sun lamp spawns no moth (' + (litM ? litM.length : 'needsCrop') + ')');
+  /* a Soot landmark holding Walnut cells (a pair and a single): solid, claimed */
+  const shelf = {}; shelf[30] = '4444411114444444444444444'.slice(0, 24); shelf[31] = '44444177144444444444444444'.slice(0, 24); shelf[32] = '44444111144444444444444444'.slice(0, 24);
+  shelf[33] = '4444417114444444444444444'.slice(0, 24);
+  const shelfM = moths(shelf);
+  t.ok(shelfM !== null && shelfM.length === 0, 'a landmark holding Walnut cells (2 and 1) is no nest (' + (shelfM ? shelfM.length : 'needsCrop') + ')');
+  /* an Amber cluster of 6 open cells: elite sized, never fodder */
+  const six = {}; six[30] = '44444444888444444444444'.padEnd(24, '4'); six[31] = '44444444888444444444444'.padEnd(24, '4');
+  const sixM = moths(six);
+  t.ok(sixM !== null && sixM.length === 0, 'a 6 cell cluster spawns no moth (FODDER_CELLS is 2 to 5; ' + (sixM ? sixM.length : 'needsCrop') + ')');
+  /* six fodder clusters, more than CAP_ENEMY */
+  const many = {}; for (const [y, x] of [[8, 2], [8, 12], [16, 6], [16, 18], [24, 2], [24, 14]]) many[y] = (many[y] || '4'.repeat(24)).slice(0, x) + '99' + (many[y] || '4'.repeat(24)).slice(x + 2);
+  /* the same level under three other seeds (the geometry untouched): some pick differs */
+  const a = SB.pipeline.build(labRecord(many), {}), pa = a.needsCrop ? '' : a.features.enemies.map(e => e.idx).join();
+  const others = a.needsCrop ? [] : [1, 2, 3].map(x => SB.features.moths(Object.assign({}, a, { seed: (a.seed ^ x) >>> 0 }), {}).map(e => e.idx).join());
+  t.ok(!a.needsCrop && a.features.enemies.length === SB.TUNING.CAP_ENEMY && others.some(o => o !== pa), 'six clusters over CAP_ENEMY, four seeds: the picks differ (' + [pa].concat(others).join(' / ') + ')');
+});
+
 group('H-fix-1', 'every fixture validates, carries every expect key, and round trips', t => {
   t.ok(FIXTURES.length >= 7, 'the corpus holds at least 7 fixtures (' + FIXTURES.length + ')');
   for (const f of FIXTURES) {

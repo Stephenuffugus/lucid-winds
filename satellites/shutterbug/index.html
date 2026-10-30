@@ -258,7 +258,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     ROUTE_MAX_WALL_CHAIN: 2, ROUTE_SLACK: 1, ROUTE_SLACK_BOTH_AXES: false /* Q8 */, ROUTE_SAFE_EVERY_ROWS: 8, ROUTE_SAFE_ENEMY_DIST: 3,
     // 6.11 feature caps and thresholds
     CAP_LADDER: 1, CAP_POCKET: 1, CAP_DOOR: 1, CAP_SPECK: 6, CAP_STICKY: 3, CAP_ENEMY: 4, CAP_ELITE: 1, CAP_TRAP: 1,
-    LADDER_STACK_ROWS: 3, POCKET_LANDMARK_MIN: 20, DOOR_L: 200, DOOR_MIN: 3, SPECK_S: 0.5, SPECK_L: 150,
+    LADDER_STACK_ROWS: 3, LADDER_MIN_RUNS: 3, POCKET_LANDMARK_MIN: 20, POCKET_TUNNEL_MAX: 2, POCKET_TRIES: 4, DOOR_L: 200, DOOR_MIN: 3, SPECK_S: 0.5, SPECK_L: 150,
     STICKY_RUN_MIN: 6, FODDER_CELLS: [2, 5], ELITE_CELLS: [6, 11], ELITE_HP_MULT: 2 /* Q51 */, BOSS_CELLS: 12, TRAP_MIN: 4, TRAP_PERIOD_S: 1.5,
     ENEMY_SPAWN_CLEAR: 2, BLUEPRINT_CHANCE: 0.25, EMBER_EXTRA_ENEMY: 1, EMBER_EXTRA_SPECKS: 2,
     // 7 biomes and enemies
@@ -849,6 +849,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null },
       repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false
     };
+    level.light = light ? Int32Array.from(light) : new Int32Array(0);
     /* the biome's surfaces (T1.1), before the reach graph reads them */
     if (level.biome === 1) markSlick(level);
     if (level.biome === 2 || level.biome === 3) markSticky(level);
@@ -876,8 +877,9 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     level.ascent = { nodes: fixed.ascent.nodes, edges: fixed.ascent.edges, score: SB.reach.routeScore(level, fixed.g, fixed.ascent) };
     /* when the exit is the light the light's cells are relit around it; otherwise the light stays backdrop */
     level.beacon = { idx: exit, cells: light && exit >= 0 && light.indexOf(exit) >= 0 ? Int32Array.from(light) : new Int32Array(0) };
-    /* the moths (T0.16), placed after the ascent so they keep clear of its safe cells */
-    level.features.enemies = SB.features.moths(level, opts);
+    /* the features (T1.2a): the ladder, the door, the pocket, the chest and the moths, in core-features' fixed
+       order, after the ascent so they keep clear of it (the pocket never carves it) */
+    SB.features.place(level, opts, fixed.g, fixed.d);
     return level;
   }
 
@@ -1038,7 +1040,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   }
 
   /* The room as text, one line per row: # solid, = one way, ~ slick, | sticky, . open, S spawn, X exit, T film tab,
-     * ascent, e enemy, ^ trap, $ loot, L a landmark's top edge, o an open standable cell the reach model reaches from
+     * ascent, e enemy, ^ trap, $ loot, H a ladder rung, D the Darkroom door, C the chest, p the pocket (E its elite),
+     L a landmark's top edge, o an open standable cell the reach model reaches from
      spawn, < > a wall contact it reaches and ( ) one it does not (the wall on that side). Printed beside every harness
      failure. */
   function toText(level, ascent) {
@@ -1078,6 +1081,10 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     for (k = 0; k < specks.length; k++) g[specks[k].idx === undefined ? specks[k] : specks[k].idx] = '$';
     var en = f.enemies || [];
     for (k = 0; k < en.length; k++) g[en[k].idx === undefined ? en[k] : en[k].idx] = 'e';
+    if (f.ladder) for (k = 0; k < f.ladder.runs.length; k++) for (var lx = f.ladder.runs[k][0]; lx <= f.ladder.runs[k][1]; lx++) g[f.ladder.runs[k][2] * w + lx] = 'H';
+    if (f.pocket) { for (k = 0; k < f.pocket.cells.length; k++) g[f.pocket.cells[k]] = 'p'; g[f.pocket.elite] = 'E'; }
+    if (f.door) g[f.door.idx] = 'D';
+    if (f.chest !== null && f.chest !== undefined && f.chest >= 0) g[f.chest] = 'C';
     if (level.spawn >= 0 && level.spawn !== undefined) g[level.spawn] = 'S';
     if (level.exit >= 0 && level.exit !== undefined) g[level.exit] = 'X';
     var out = [];
@@ -1120,7 +1127,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   }
   function levelHash(lv) { return SB.rng.hashWords(serialize(lv)); }
 
-  SB.pipeline = { toText: toText, otsu: otsu, smooth: smooth, components: components, build: build, biomeOf: biomeOf,
+  SB.pipeline = { toText: toText, otsu: otsu, smooth: smooth, components: components, describe: describe, build: build, biomeOf: biomeOf,
     FIELDS: FIELDS, serialize: serialize, levelHash: levelHash, exitByReach: exitByReach };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
@@ -1666,33 +1673,243 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 </script>
 <script id="core-features" data-core>
 (function (SB) { 'use strict';
-  /* core-features (DESIGN 6.11, BUILD-PLAN T0.16: moths only tonight; the full placement, elites and the rest are
-     T1.2a and T1.2b). The saturated cells less the claims of QUESTIONS Q50 (the beacon's cells, the door candidates,
-     the specks, every solid landmark's cells: none of them is a nest), clustered 4 connected; a cluster of
-     FODDER_CELLS (2 to 5) cells is a moth's spawn, on its lowest open cell that keeps the rules, or, a cluster wholly
-     solid, on the nearest standable open cell that does. The rules: never within ENEMY_SPAWN_CLEAR of spawn, never within
-     ROUTE_SAFE_ENEMY_DIST of a cell the main ascent stands on, that distance included (DESIGN 6.9 "within 3", section
-     3.7 "more than"; so the ascent's safe cells stay safe, H-route-6). At most
-     FIRST_ROOM_MAX_FODDER in the first ever free play room and 4 otherwise, picked by the level's seed. */
+  /* core-features (DESIGN 6.11; BUILD-PLAN T1.2a, then T1.2b; T0.16's moths). place(level, opts, g, d) runs once per
+     build, after the main ascent and its route score (g and d are that build's graph and distances from spawn), and
+     fills level.features in this fixed order. Every draw comes from ONE mulberry32 stream seeded by the level's seed
+     (DESIGN 6.12), in this order, so a shared grid places the same way on every phone:
+       1. the ladder zone (no draw): the tallest chain of at least LADDER_MIN_RUNS one way runs of the photo (film tabs
+          are help, never furniture), each 1 to LADDER_STACK_ROWS rows above the last and sharing a column with it;
+          ties to the lowest top run. Its chest cell is the top run's middle standing cell. Cap 1.
+       2. the Darkroom door (no draw; QUESTIONS Q33): the largest rectangle of open cells brighter than DOOR_L, at
+          least DOOR_MIN on each side (ties to the lowest top left cell, then the lowest bottom right); the door is the
+          cell of its bottom row nearest its middle (ties to the lower index) that is standable (the hero stands in the
+          doorway), reached from spawn and not a cell the main ascent stands on; none qualifies, no door. Cap 1.
+       3. the pocket (draws; never in the first room): a 3x3 hollow inside a landmark of POCKET_LANDMARK_MIN cells or
+          more, closed by landmark cells above, behind and on the entrance side, over a solid floor, with a tunnel of
+          at most POCKET_TUNNEL_MAX cells along its bottom row out to a standable open cell, on the side of the
+          ascent cell nearest the hollow (DESIGN: the entrance faces the main ascent). The stream picks among the
+          candidates of every eligible landmark; a pick is carved only when the landmark stays one 4 connected piece,
+          the loot cell (the back of the bottom row) is reached and every edge of the main ascent is still an edge of
+          the carved grid's graph (never carve the ascent); a failed pick leaves the list and the stream draws again,
+          at most POCKET_TRIES times. The elite's cell is the bottom row's middle (its enemy joins in T1.2b). Cap 1.
+       4. the chest (no draw; Q34): the reached standable cell nearest the focal tap when there is one (DESIGN 5.1:
+          the tapped shape receives the chest; Chebyshev, ties to the lower index; a double exposure's tap is on its
+          first photo, the lower half), else the ladder's top when reached, else the reached standable cell deepest
+          into a branch off the main ascent: the most graph edges from any node the ascent passes through (DESIGN 6.9
+          keeps loot on the branches; Q34's "farthest off the main ascent" read as farthest FROM it, since the
+          farthest from spawn is the cell beside the exit), ties to the greater distance from spawn, then the lower
+          index; never the spawn, the exit, the door or the pocket. Exactly 1.
+       5. the moths (T0.16's v0, their own stream until T1.2b), after the claims of Q50: the light's cells whether or
+          not it won the exit (the fourth review: a lamp that lost the exit was a nest), the beacon's, the door's
+          rectangle, the pocket's and every solid landmark's cells leave the saturated set before clustering; a
+          cluster of FODDER_CELLS cells is a moth's spawn, on its lowest open cell that keeps the rules, or, a cluster
+          wholly solid, on the nearest standable open cell that does. The rules: never within ENEMY_SPAWN_CLEAR of
+          spawn, never within ROUTE_SAFE_ENEMY_DIST of a cell the main ascent stands on, that distance included
+          (DESIGN 6.9), never in the pocket. At most FIRST_ROOM_MAX_FODDER in the first ever free play room and
+          CAP_ENEMY otherwise, picked by the level's seed.
+     A placement never changes the main ascent: the level's ascent is a promise the score made. */
   var MOTH = 1;
   function cheb(a, b, w) { return Math.max(Math.abs(a % w - b % w), Math.abs(Math.floor(a / w) - Math.floor(b / w))); }
-  function moths(level, opts) {
+  function standable(level, c) { var w = level.w; return c >= 0 && c + w < w * level.h && !level.solid[c] && (level.solid[c + w] === 1 || level.plat[c + w] === 1); }
+  function ascentStands(level) {
+    var n = level.w * level.h, out = [];
+    if (level.ascent && level.ascent.nodes) for (var k = 0; k < level.ascent.nodes.length; k++) if (level.ascent.nodes[k] < n) out.push(level.ascent.nodes[k]);
+    return out;
+  }
+
+  /* 1. the ladder zone */
+  function ladder(level) {
+    var T = SB.TUNING, w = level.w, h = level.h, runs = [], x, y, k, q;
+    for (y = 1; y < h; y++) {
+      x = 0;
+      while (x < w) {
+        var i = y * w + x;
+        if (!level.plat[i] || level.tab[i]) { x++; continue; }
+        var e = x; while (e + 1 < w && level.plat[y * w + e + 1] && !level.tab[y * w + e + 1]) e++;
+        runs.push({ x0: x, x1: e, y: y, idx: i });
+        x = e + 1;
+      }
+    }
+    /* bottom to top: best[k] is the tallest chain whose top run is k; a tie keeps the lower indexed run below */
+    var order = runs.map(function (r, j) { return j; }).sort(function (a, b) { return runs[b].y - runs[a].y || runs[a].idx - runs[b].idx; });
+    var best = [], below = [];
+    for (var oi = 0; oi < order.length; oi++) {
+      k = order[oi]; best[k] = 1; below[k] = -1;
+      for (var oj = 0; oj < oi; oj++) {
+        q = order[oj];
+        var dy = runs[q].y - runs[k].y;
+        if (dy < 1 || dy > T.LADDER_STACK_ROWS) continue;
+        if (runs[q].x1 < runs[k].x0 || runs[q].x0 > runs[k].x1) continue;
+        if (best[q] + 1 > best[k] || (best[q] + 1 === best[k] && below[k] >= 0 && runs[q].idx < runs[below[k]].idx)) { best[k] = best[q] + 1; below[k] = q; }
+      }
+    }
+    var top = -1;
+    for (k = 0; k < runs.length; k++) if (best[k] >= T.LADDER_MIN_RUNS && (top < 0 || best[k] > best[top] || (best[k] === best[top] && runs[k].idx < runs[top].idx))) top = k;
+    if (top < 0) return null;
+    var chain = [];
+    for (k = top; k >= 0; k = below[k]) chain.unshift([runs[k].x0, runs[k].x1, runs[k].y]);
+    var tr = runs[top];
+    return { runs: chain, top: (tr.y - 1) * w + ((tr.x0 + tr.x1) >> 1) };
+  }
+
+  /* 2. the Darkroom door */
+  function door(level, d, stands) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, x;
+    var bright = new Uint8Array(n);
+    for (i = 0; i < n; i++) bright[i] = !level.solid[i] && level.L[i] > T.DOOR_L ? 1 : 0;
+    /* for every pair of rows the columns bright from the one to the other; their widest run is the largest rectangle
+       of those rows */
+    var best = null, col = new Uint8Array(w);
+    for (var y0 = 0; y0 < h; y0++) {
+      col.fill(1);
+      for (var y1 = y0; y1 < h; y1++) {
+        for (x = 0; x < w; x++) if (!bright[y1 * w + x]) col[x] = 0;
+        if (y1 - y0 + 1 < T.DOOR_MIN) continue;
+        x = 0;
+        while (x < w) {
+          if (!col[x]) { x++; continue; }
+          var e = x; while (e + 1 < w && col[e + 1]) e++;
+          if (e - x + 1 >= T.DOOR_MIN) {
+            var area = (e - x + 1) * (y1 - y0 + 1), tl = y0 * w + x, br = y1 * w + e;
+            if (!best || area > best.area || (area === best.area && (tl < best.tl || (tl === best.tl && br < best.br)))) best = { area: area, tl: tl, br: br, rect: [x, y0, e, y1] };
+          }
+          x = e + 1;
+        }
+      }
+    }
+    if (!best) return null;
+    var r = best.rect, mid2 = r[0] + r[2], cand = [];
+    for (x = r[0]; x <= r[2]; x++) cand.push(r[3] * w + x);
+    cand.sort(function (a, b) { return Math.abs(2 * (a % w) - mid2) - Math.abs(2 * (b % w) - mid2) || a - b; });
+    for (var k = 0; k < cand.length; k++) {
+      var c = cand[k];
+      if (!standable(level, c) || d[c] < 0 || stands.indexOf(c) >= 0) continue;
+      return { idx: c, rect: r };
+    }
+    return null;
+  }
+
+  /* 3. the pocket: the candidates (cheap geometry), then the stream's picks checked against the carved grid */
+  function pocketCands(level, stands) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, S = level.solid, out = [];
+    var sol = function (x, y) { return x < 0 || x >= w || y >= h || (y >= 0 && S[y * w + x] === 1); };
+    for (var k = 0; k < level.landmarks.length; k++) {
+      var lm = level.landmarks[k];
+      if (lm.size < T.POCKET_LANDMARK_MIN) continue;
+      var LM = new Uint8Array(n), j;
+      for (j = 0; j < lm.cells.length; j++) LM[lm.cells[j]] = 1;
+      var inL = function (x, y) { return x >= 0 && x < w && y >= 0 && y < h && LM[y * w + x] === 1; };
+      var bb = lm.bbox;
+      for (var y0 = bb[1] + 1; y0 + 2 <= bb[3] && y0 + 3 < h; y0++) for (var x0 = bb[0] + 1; x0 + 3 <= bb[2]; x0++) {
+        var ok = true, xx, yy;
+        /* the hollow, its roof (the row above, corners included) and both side walls: all cells of this landmark */
+        for (yy = y0 - 1; yy <= y0 + 2 && ok; yy++) for (xx = x0 - 1; xx <= x0 + 3 && ok; xx++) if (!inL(xx, yy)) ok = false;
+        for (xx = x0; xx <= x0 + 2 && ok; xx++) if (!sol(xx, y0 + 3)) ok = false;   /* a solid floor */
+        if (!ok) continue;
+        /* the entrance faces the ascent cell nearest the hollow's middle (Chebyshev, ties to the lower index) */
+        var cc = (y0 + 1) * w + x0 + 1, near = -1, nd = 1e9;
+        for (var q = 0; q < stands.length; q++) { var dd = cheb(cc, stands[q], w); if (dd < nd || (dd === nd && stands[q] < near)) { nd = dd; near = stands[q]; } }
+        if (near < 0) continue;
+        var side = near % w <= x0 + 1 ? -1 : 1, ty = y0 + 2, tx = side < 0 ? x0 - 1 : x0 + 3, tunnel = [];
+        while (inL(tx, ty) && tunnel.length < T.POCKET_TUNNEL_MAX) { if (!sol(tx, ty + 1)) { ok = false; break; } tunnel.push(ty * w + tx); tx += side; }
+        if (!ok || tx < 0 || tx >= w || sol(tx, ty) || !standable(level, ty * w + tx)) continue;   /* out into the open, onto a standable cell */
+        var hollow = [];
+        for (yy = y0; yy <= y0 + 2; yy++) for (xx = x0; xx <= x0 + 2; xx++) hollow.push(yy * w + xx);
+        out.push({ k: k, rect: [x0, y0, x0 + 2, y0 + 2], side: side, hollow: hollow, tunnel: tunnel, mouth: ty * w + tx,
+          loot: ty * w + (side < 0 ? x0 + 2 : x0), elite: ty * w + x0 + 1 });
+      }
+    }
+    return out;
+  }
+  /* a pick, checked: { ok, why }: the landmark stays one piece, the carved grid's graph keeps every edge of the main
+     ascent, and the loot is reached */
+  function pocketOk(level, c) {
+    var w = level.w, h = level.h, n = w * h, i, cells = c.hollow.concat(c.tunnel), carved = level.solid.slice();
+    for (i = 0; i < cells.length; i++) carved[cells[i]] = 0;
+    var lm = level.landmarks[c.k], rest = new Uint8Array(n);
+    for (i = 0; i < lm.cells.length; i++) if (carved[lm.cells[i]]) rest[lm.cells[i]] = 1;
+    if (SB.pipeline.components(rest, w, h).length !== 1) return { ok: false, why: 'the landmark would fall in two' };
+    var lv2 = Object.assign({}, level, { solid: carved }), g2 = SB.reach.graph(lv2);
+    var es = level.ascent && level.ascent.edges ? level.ascent.edges : [];
+    for (i = 0; i < es.length; i++) {
+      var e = es[i], adj = g2.adj[e.from] || [], found = false;
+      for (var j = 0; j < adj.length && !found; j++) { var f = adj[j]; if (f.to === e.to && f.kind === e.kind && f.dir === e.dir && f.dx === e.dx && f.dy === e.dy) found = true; }
+      if (!found) return { ok: false, why: 'the ascent loses its ' + e.kind + ' edge ' + e.from + ' to ' + e.to };
+    }
+    if (SB.reach.distances(g2, level.spawn)[c.loot] < 0) return { ok: false, why: 'the loot is not reached' };
+    return { ok: true, carved: carved, cells: cells };
+  }
+  function pocket(level, opts, rng, stands) {
+    var T = SB.TUNING;
+    if ((opts && opts.firstRoom) || !stands.length) return null;
+    var cands = pocketCands(level, stands);
+    for (var tries = 0; cands.length && tries < T.POCKET_TRIES; tries++) {
+      var pick = rng.int(cands.length), c = cands[pick];
+      cands.splice(pick, 1);
+      var chk = pocketOk(level, c);
+      if (!chk.ok) continue;
+      for (var i = 0; i < chk.cells.length; i++) level.solid[chk.cells[i]] = 0;
+      /* the landmark loses the carved cells; the list stays largest first (ties to the lowest first cell) */
+      var lm = level.landmarks[c.k], keep = [];
+      for (i = 0; i < lm.cells.length; i++) if (level.solid[lm.cells[i]]) keep.push(lm.cells[i]);
+      level.landmarks[c.k] = SB.pipeline.describe(keep, level.w);
+      level.landmarks.sort(function (a, b) { return b.size - a.size || a.cells[0] - b.cells[0]; });
+      return { rect: c.rect, side: c.side, cells: chk.cells, hollow: c.hollow, tunnel: c.tunnel, mouth: c.mouth, loot: c.loot, elite: c.elite };
+    }
+    return null;
+  }
+
+  /* 4. the chest */
+  function chest(level, f, g, d, stands) {
+    var w = level.w, n = w * level.h, i, best = -1, skip = new Uint8Array(n);
+    skip[level.spawn] = 1; if (level.exit >= 0) skip[level.exit] = 1;
+    if (f.door) skip[f.door.idx] = 1;
+    if (f.pocket) for (i = 0; i < f.pocket.cells.length; i++) skip[f.pocket.cells[i]] = 1;
+    var ok = function (c) { return c >= 0 && c < n && !skip[c] && d[c] >= 0 && standable(level, c); };
+    var focal = level.rec && level.rec.focal !== null && level.rec.focal !== undefined ? level.rec.focal : -1;
+    if (focal >= 0 && level.rec.mode === 2) focal += w * (level.h >> 1);
+    if (focal >= 0) {
+      var bd = 1e9;
+      for (i = 0; i < n; i++) if (ok(i)) { var dd = cheb(i, focal, w); if (dd < bd) { bd = dd; best = i; } }
+      if (best >= 0) return best;
+    }
+    if (f.ladder && ok(f.ladder.top)) return f.ladder.top;
+    /* every node's distance in edges from the main ascent: a breadth first search from all its nodes at once */
+    var off = new Int32Array(d.length).fill(-1), queue = [], head = 0, nodes = level.ascent && level.ascent.nodes ? level.ascent.nodes : [];
+    for (i = 0; i < nodes.length; i++) if (off[nodes[i]] < 0) { off[nodes[i]] = 0; queue.push(nodes[i]); }
+    while (head < queue.length) {
+      var u = queue[head++], es = g.adj[u];
+      if (es) for (var k = 0; k < es.length; k++) if (off[es[k].to] < 0) { off[es[k].to] = off[u] + 1; queue.push(es[k].to); }
+    }
+    var deep = 0;
+    for (i = 0; i < n; i++) if (ok(i) && off[i] > 0 && (off[i] > deep || (off[i] === deep && d[i] > d[best]))) { deep = off[i]; best = i; }
+    if (best >= 0) return best;
+    var far = -1;   /* nothing off the ascent stands: the farthest from spawn, on it */
+    for (i = 0; i < n; i++) if (ok(i) && d[i] > far) { far = d[i]; best = i; }
+    return best;   /* -1 only when nothing but the spawn and the exit stands: T1.2b's guarantee names it */
+  }
+
+  /* 5. the moths, after the claims */
+  function moths(level, opts, f) {
     var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k;
+    f = f || level.features || {};
     var sat = new Uint8Array(n), satIdx = {};
     for (k = 0; k < SB.palette.SAT.length; k++) satIdx[SB.palette.SAT[k]] = 1;
     for (i = 0; i < n; i++) if (satIdx[level.pal[i]]) sat[i] = 1;
-    var cells = level.beacon && level.beacon.cells ? level.beacon.cells : [];
-    for (k = 0; k < cells.length; k++) sat[cells[k]] = 0;
-    for (k = 0; k < level.landmarks.length; k++) for (i = 0; i < level.landmarks[k].cells.length; i++) sat[level.landmarks[k].cells[i]] = 0;
-    var safe = [];
-    if (level.ascent && level.ascent.nodes) for (k = 0; k < level.ascent.nodes.length; k++) if (level.ascent.nodes[k] < n) safe.push(level.ascent.nodes[k]);
+    var claim = function (cells) { if (cells) for (var q = 0; q < cells.length; q++) sat[cells[q]] = 0; };
+    claim(level.light);
+    claim(level.beacon && level.beacon.cells);
+    for (k = 0; k < level.landmarks.length; k++) claim(level.landmarks[k].cells);
+    var inPocket = new Uint8Array(n);
+    if (f.pocket) { claim(f.pocket.cells); for (i = 0; i < f.pocket.cells.length; i++) inPocket[f.pocket.cells[i]] = 1; }
+    if (f.door) { var r = f.door.rect; for (var yy = r[1]; yy <= r[3]; yy++) for (var xx = r[0]; xx <= r[2]; xx++) sat[yy * w + xx] = 0; }
+    var safe = ascentStands(level);
     var ok = function (c) {
-      if (level.solid[c] || c < w || c >= n - w) return false;
+      if (level.solid[c] || c < w || c >= n - w || inPocket[c]) return false;
       if (cheb(c, level.spawn, w) <= T.ENEMY_SPAWN_CLEAR) return false;
       for (var q = 0; q < safe.length; q++) if (cheb(c, safe[q], w) <= T.ROUTE_SAFE_ENEMY_DIST) return false;
       return true;
     };
-    var standable = function (c) { return c + w < n && !level.solid[c] && (level.solid[c + w] || level.plat[c + w]); };
     var comps = SB.pipeline.components(sat, w, h), spots = [];
     for (k = 0; k < comps.length; k++) {
       var comp = comps[k];
@@ -1703,7 +1920,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         /* the nearest standable open cell keeping the rules, by Chebyshev distance from the cluster, ties to the lowest */
         var best = -1, bd = 1e9;
         for (i = 0; i < n; i++) {
-          if (!standable(i) || !ok(i)) continue;
+          if (!standable(level, i) || !ok(i)) continue;
           var d = 1e9; for (var q = 0; q < comp.length; q++) d = Math.min(d, cheb(i, comp[q], w));
           if (d < bd) { bd = d; best = i; }
         }
@@ -1711,17 +1928,30 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       }
       if (spot >= 0 && spots.indexOf(spot) < 0) spots.push(spot);
     }
-    var cap = opts && opts.firstRoom ? T.FIRST_ROOM_MAX_FODDER : 4;
+    var cap = opts && opts.firstRoom ? T.FIRST_ROOM_MAX_FODDER : T.CAP_ENEMY;
     if (spots.length > cap) {
       spots.sort(function (a, b) { return a - b; });
-      var r = SB.rng.mulberry32((level.seed ^ 0x6d07a5) >>> 0);
-      for (i = spots.length - 1; i > 0; i--) { var j = r.int(i + 1), tmp = spots[i]; spots[i] = spots[j]; spots[j] = tmp; }
+      var rr = SB.rng.mulberry32((level.seed ^ 0x6d07a5) >>> 0);
+      for (i = spots.length - 1; i > 0; i--) { var j = rr.int(i + 1), tmp = spots[i]; spots[i] = spots[j]; spots[j] = tmp; }
       spots = spots.slice(0, cap);
     }
     spots.sort(function (a, b) { return a - b; });
     return spots.map(function (c) { return { kind: MOTH, idx: c }; });
   }
-  SB.features = { MOTH: MOTH, moths: moths };
+
+  function place(level, opts, g, d) {
+    var f = level.features, stands = ascentStands(level), rng = SB.rng.mulberry32(level.seed >>> 0);
+    if (!g) g = SB.reach.graph(level);
+    if (!d) d = SB.reach.distances(g, level.spawn);
+    f.ladder = ladder(level);
+    f.door = door(level, d, stands);
+    f.pocket = pocket(level, opts, rng, stands);
+    if (f.pocket) { g = SB.reach.graph(level); d = SB.reach.distances(g, level.spawn); }
+    f.chest = chest(level, f, g, d, stands);
+    f.enemies = moths(level, opts, f);
+    return f;
+  }
+  SB.features = { MOTH: MOTH, place: place, ladder: ladder, door: door, pocketCands: pocketCands, pocketOk: pocketOk, chest: chest, moths: moths };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-sim" data-core>
