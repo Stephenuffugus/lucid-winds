@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 4684;              /* raised per task: the count a full run must reach (4684 after T1.2a, 30 Oct) */
+const ASSERT_FLOOR = 4699;              /* raised per task: the count a full run must reach (4699 after T1.2b, 30 Oct) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -2873,8 +2873,10 @@ group('H-feat-3', 'the trap field: a 2 cell repeat at least TRAP_MIN a side, its
       if (x + 1 <= x1 && lv.pal[y * w + x + 1] !== v) two = true;
     }
     if (!rep || !two) bad.push(tag + ': the field is not a 2 cell repeat');
-    const open = []; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (!lv.solid[y * w + x]) open.push(y * w + x);
-    if (open.join() !== cells.join() || cells.some(c => !lv.trap[c])) bad.push(tag + ': the trap cells are not the field\'s open cells');
+    /* the field's open cells, the film tabs and the cells a hero stands in on them left out (help is never danger) */
+    const open = []; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const c = y * w + x; if (!lv.solid[c] && !lv.tab[c] && !(c + w < n && lv.tab[c + w])) open.push(c); }
+    if (open.join() !== cells.join() || cells.some(c => !lv.trap[c])) bad.push(tag + ': the trap cells are not the field\'s open cells less the tabs');
+    if (cells.some(c => lv.tab[c] || (c + w < n && lv.tab[c + w]))) bad.push(tag + ': a trap cell on a film tab or a tab\'s standing cell');
     const stands = new Set(lv.ascent.nodes.filter(v => v < n));
     if (cells.some(c => stands.has(c))) bad.push(tag + ': a trap cell the ascent stands on');
     const walled = lv.solid.slice(); for (const c of cells) walled[c] = 1;
@@ -2912,7 +2914,7 @@ group('H-feat-6', 'enemies: their biome\'s kind, on cells that keep the rules (o
       if (!pocketElite && stands.some(v => cheb(c, v, w) <= T.ROUTE_SAFE_ENEMY_DIST)) bad.push(tag + ': an enemy within ROUTE_SAFE_ENEMY_DIST of the ascent ' + at);
       if (!pocketElite && f.pocket && f.pocket.cells.includes(c)) bad.push(tag + ': an enemy in the pocket ' + at);
       if ((e.kind === SB.features.CRAWLER || e.kind === SB.features.SPARK) && !standableIn(lv, c)) bad.push(tag + ': a ' + KIND_NAME[e.kind] + ' not standing ' + at);
-      if (e.kind === SB.features.ICICLE && !(lv.solid[c - w] || lv.plat[c])) bad.push(tag + ': an icicle hanging from nothing ' + at);
+      if (e.kind === SB.features.ICICLE && !(lv.solid[c - w] || lv.plat[c - w])) bad.push(tag + ': an icicle hanging from nothing ' + at);
       /* the envelope, recomputed here from section 3.7's table */
       let env;
       if (pocketElite) env = Array.from(f.pocket.cells).sort((a, b) => a - b);

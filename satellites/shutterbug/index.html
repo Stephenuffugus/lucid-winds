@@ -1712,7 +1712,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
        6. the trap field (no draw; never in a first room): the largest rectangle, TRAP_MIN or more a side, whose
           palette repeats with period 2 both ways and is not one colour; its open cells are the field; a field is kept
           only when none of its cells is a cell the ascent stands on and every ascent edge stays an edge with the field
-          walled (never intersecting the main ascent), trying the next largest at most TRAP_TRIES times. Spikes in
+          walled (never intersecting the main ascent), trying the next largest at most TRAP_TRIES times; a film tab
+          and the cell a hero stands in on it are never trap cells (help inside danger). Spikes in
           Attic, Ember and Overgrowth, crushers in Frost and Deep (their behaviour is T1.4b's).
        7. the enemies (draws), after the claims of Q50: the light's cells (whether or not it won the exit), the
           beacon's, the door's rectangle, the pocket's, every speck's and every solid landmark's cells leave the
@@ -2039,7 +2040,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var rects = trapRects(level), tries = 0;
     for (var k = 0; k < rects.length && tries < T.TRAP_TRIES; k++) {
       var r = rects[k], cells = [], clash = false;
-      for (var y = r[1]; y <= r[3] && !clash; y++) for (var x = r[0]; x <= r[2]; x++) { var c = y * w + x; if (level.solid[c]) continue; if (taken[c]) { clash = true; break; } cells.push(c); }
+      /* the field spares the help: a film tab and the cell a hero stands in on it are never trap cells */
+      for (var y = r[1]; y <= r[3] && !clash; y++) for (var x = r[0]; x <= r[2]; x++) { var c = y * w + x; if (level.solid[c] || level.tab[c] || (c + w < n && level.tab[c + w])) continue; if (taken[c]) { clash = true; break; } cells.push(c); }
       if (clash || !cells.length) continue;
       tries++;
       if (!trapOk(level, cells)) continue;
@@ -2090,7 +2092,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var ok = function (c) {
       if (c < w || c >= n - w || level.solid[c] || level.trap[c] || inPocket[c] || near[c]) return false;
       if (kind === CRAWLER || kind === SPARK) { if (!standable(level, c)) return false; }
-      else if (kind === ICICLE && !(level.solid[c - w] || level.plat[c])) return false;
+      else if (kind === ICICLE && !(level.solid[c - w] || level.plat[c - w])) return false;   /* hangs below a solid or a one way's body */
       return true;
     };
     /* a cell of the cluster the stream picks among those keeping the rules; else (the plan: a cluster on solid cells)
