@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 4150;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 4195;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -968,6 +968,21 @@ group('H-sim-4', 'one way tops: rising never lands; descending lands with 2 px o
     for (let f = 0; f < 80; f++) SB.sim.step(s, 0);
     const standRow = Math.floor((s.hero.y + HH - 1) / CS);
     t.eq(standRow === plankRow - 1, want, 'a hero overlapping the plank by ' + px + ' px ' + (want ? 'lands on it' : 'falls past it') + ' (stands on row ' + standRow + ')');
+  }
+  /* footing (T0.13a, Q65): a hero walking off a one way keeps its footing while any of its box overlaps the plank, as
+     on a solid, and falls the step its box clears it */
+  for (const [kind, ch] of [['one way', '='], ['solid', '#']]) {
+    const pl = LABS.room(['', '.........' + ch.repeat(3) + '...........', '', '', FLOOR]), row = pl.h - 5, plankEnd = 12 * CS;
+    const s = SB.sim.create(pl, { at: { x: 10 * CS + 2 * 256, y: row * CS } });
+    for (let f = 0; f < 4; f++) SB.sim.step(s, 0);
+    let lastOv = null, firstAirX = null;
+    for (let f = 0; f < 40 && firstAirX === null; f++) {
+      const before = s.hero.x; SB.sim.step(s, IN.R);
+      if (s.hero.ground) lastOv = plankEnd - s.hero.x; else firstAirX = s.hero.x;
+    }
+    /* from x 162 the box's overlap falls 2.625 px a step: 3.75, then 1.125 (under LAND_OVERLAP: a 2 px rule drops the
+       hero here), then the box is clear */
+    t.ok(lastOv > 0 && lastOv < 2 * 256 && firstAirX >= plankEnd, 'walking off a ' + kind + ' plank the hero stands while its box overlaps it, even by under 2 px (the last grounded overlap ' + (lastOv / 256).toFixed(3) + ' px), and falls once it clears it (x ' + (firstAirX / 256).toFixed(3) + ', the end at ' + plankEnd / 256 + ')');
   }
 });
 
@@ -1909,6 +1924,38 @@ group('H-reach-3', 'shelves-a: the hand listed edges exist and the hand listed n
   t.ok(hasEdge(g, at(5, 19), at(5, 42), 'FALL'), 'a straight FALL from S6 (5, 19) through S5 and S4 onto S1 (5, 42)');
   const bad = edgesOf(g).filter(e => e.kind === 'JUMP' && (e.dy >= 5 || (e.dy === 4 && e.dx >= 5)));
   t.eq(bad.length, 0, 'no JUMP is 5 up, and none is 4 up and 5 across (' + bad.slice(0, 3).map(e => gname(g, e.from) + ' to ' + gname(g, e.to)).join(', ') + ')');
+});
+
+group('H-reach-11', 'the exact wall touch (T0.13a, Q65): the model lists the contacts the sim arms, and no others, where the bot found it wrong', t => {
+  /* the set of contacts (centre column and row) the sim arms on its right from a centred hero at (sx, sy), over the
+     bot's touch candidates (FULL, MID, TAP and the walk off, the rocker from steps 0 to 8) */
+  const simArms = (lv, sx, sy) => {
+    const out = new Set();
+    for (const p of ['FULL', 'MID', 'TAP', 'WALKOFF']) for (let delay = 0; delay <= 8; delay++) {
+      const s = SB.sim.create(lv, { at: { x: sx * CS + 2 * 256, y: sy * CS } });
+      for (let k = 0; k < 3; k++) SB.sim.step(s, 0);
+      for (let k = 0; k < 120; k++) {
+        SB.sim.step(s, (p !== 'WALKOFF' && k < A_FRAMES[p] ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k >= delay ? IN.R : 0));
+        if (s.hero.wall === 1) out.add(Math.floor((s.hero.x + (HW >> 1)) / CS) + ',' + Math.floor((s.hero.y + (HH >> 1)) / CS));
+        if (s.hero.ground && k > 12) break;
+      }
+    }
+    return out;
+  };
+  const modelTouches = (lv, g, sx, sy) => (g.adj[sy * lv.w + sx] || []).filter(e => e.kind === 'WALLTOUCH' && e.dir === 1).map(e => { const c = (e.to - g.n) >> 1; return (c % lv.w) + ',' + Math.floor(c / lv.w); });
+  /* shelves-a: from S2's middle no jump meets the pillar; from (15, 39) on, every contact the model lists is one the sim arms */
+  { const lv = buildFx(fixture('shelves-a'), 0), g = SB.reach.graph(lv);
+    for (const sx of [11, 12, 13, 14]) t.same(modelTouches(lv, g, sx, 39), [], 'shelves-a: from (' + sx + ', 39) the model lists no touch on the pillar (the sim arms none: ' + [...simArms(lv, sx, 39)].join(' ') + ')');
+    for (const sx of [15, 16, 17, 18]) {
+      const sim = simArms(lv, sx, 39), model = modelTouches(lv, g, sx, 39);
+      t.ok(model.length > 0 && model.every(c => sim.has(c)), 'shelves-a: from (' + sx + ', 39) the model lists ' + model.join(' ') + ', each armed by the sim (' + [...sim].join(' ') + ')');
+    }
+  }
+  /* noise-s2: a FULL jump from (17, 25) brushes the corner of the wall cells at (23, 22..23), loses a step there and
+     moves on over the block at (23, 30): no contact at (22, 30) */
+  { const lv = buildFx(fixture('noise-s2'), 0), g = SB.reach.graph(lv);
+    t.ok(!modelTouches(lv, g, 17, 25).includes('22,30') && !simArms(lv, 17, 25).has('22,30'), 'noise-s2: from (17, 25) neither the model nor the sim has a contact at (22, 30) (the model: ' + modelTouches(lv, g, 17, 25).join(' ') + ')');
+  }
 });
 
 group('H-reach-4', 'every edge\'s corridor is open, rechecked from the oracle\'s own paths on every fixture', t => {

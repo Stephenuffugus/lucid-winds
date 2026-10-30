@@ -1297,14 +1297,18 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       var a = t.a, sw = t.sweep[dir], f0 = -1;
       for (var q = 0; q < sw.length; q++) { var ec = sx + sw[q][0], er = sy + sw[q][1]; if (S(ec, er) || P(ec, er)) { f0 = Math.max(1, sw[q][2] - 2); break; } }
       if (f0 < 0) return;
-      var C = K.CELL_SUB, HWs = K.HERO_W_SUB, HHs = K.HERO_H_SUB, base = (sy + 1) * C, clamp = null, need = HHs - K.CORNER_SUB;
+      var C = K.CELL_SUB, HWs = K.HERO_W_SUB, HHs = K.HERO_H_SUB, base = (sy + 1) * C, need = HHs - K.CORNER_SUB;
+      /* x is carried step by step (the arc's travel, clamped flush each step a solid stands in the leading column at the
+         old height, as moveX does: a box that brushes a wall's corner loses that step and then moves on) */
+      var X = dir > 0 ? sx * C + a[f0 - 1].x : (sx + 1) * C - a[f0 - 1].x - HWs;
       for (var f = f0; f < a.length; f++) {
         var p = a[f];
+        X += dir * (p.x - a[f - 1].x);
         if (p.vy === 0 && p.y === 0) continue;                       /* still on the ledge of a walk off */
-        var py = base + p.py, ny = base + p.y, X = clamp !== null ? clamp : (dir > 0 ? sx * C + p.x : (sx + 1) * C - p.x - HWs);
-        if (clamp === null) {
+        var py = base + p.py, ny = base + p.y;
+        if (p.x !== a[f - 1].x) {
           var lead = dir > 0 ? Math.floor((X + HWs - 1) / C) : Math.floor(X / C);
-          for (var r = Math.floor((py - HHs) / C); r <= Math.floor((py - 1) / C); r++) if (S(lead, r)) { clamp = X = dir > 0 ? lead * C - HWs : (lead + 1) * C; break; }
+          for (var r = Math.floor((py - HHs) / C); r <= Math.floor((py - 1) / C); r++) if (S(lead, r)) { X = dir > 0 ? lead * C - HWs : (lead + 1) * C; break; }
         }
         var c0 = Math.floor(X / C), c1 = Math.floor((X + HWs - 1) / C), cx;
         if (p.vy > 0) {

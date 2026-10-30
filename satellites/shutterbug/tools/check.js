@@ -28,7 +28,9 @@ if (gi >= 0 && !ONE) { console.log('usage: --gate <name>'); process.exit(2); }
 const GATES = [
   { name: 'lint',     cmd: ['tools/lint.mjs'],  need: 'LINT OK' },
   { name: 'harness',  cmd: ['harness.js', '--fast'], need: 'SHUTTERBUG HARNESS OK' },
-  { name: 'redwatch', cmd: ['tools/redwatch.js', '--check'], need: 'REDWATCH OK' }
+  { name: 'redwatch', cmd: ['tools/redwatch.js', '--check'], need: 'REDWATCH OK' },
+  /* the bot's macro search on every edge of every graph (T0.13a, BUILD-PLAN 3.9): before every deploy and the morning report */
+  { name: 'harness-all', cmd: ['harness.js', '--all-edges', '--only', 'H-bot-6'], need: 'SHUTTERBUG HARNESS OK', slow: true }
 ];
 
 /* Browser gates drive the real page in a real Chrome with real touch events. Skipped with the reason, never failed,
