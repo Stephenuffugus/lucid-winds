@@ -458,3 +458,11 @@ DESIGN 5.1 and T0.15 give one sentence, Try a tighter crop, but the pipeline say
 Options: (a) one sentence, as built; (b) a sentence per cause: Too dark to find a floor. / Nothing to stand on here. / Try a tighter crop. (the route's causes); (c) (b) plus the overlay marking where the climb stops (the route score's frontier row).
 Recommendation: (b) in M1 with the copy law (no dashes, no exclamation marks); (c) later if photos stall players.
 Plan assumes: (a).
+
+## Q68. The wall chain counts the touch (the builder, 30 Oct, from the third review)
+
+DESIGN 6.9: "no wall-jump chain longer than 2 without a standable cell". The plan's section 3.7 counts wall touches and wall jumps since the last standable cell (ROUTE_MAX_WALL_CHAIN 2), and every wall jump needs a touch first, so under the plan's reading a main ascent holds at most one wall jump between standable cells; under DESIGN's letter it may hold two (a touch, a jump to the far wall, a jump off it).
+Measured tonight: no room of the corpus, in either mode, changes its ascent, tabs or needsCrop under either reading; only H-route-3's chain lab (walls 2 apart, 7 rows) tells them apart.
+Options: (a) the plan's reading, as built: the main ascent stays forgiving, two wall jumps in a row are a branch; (b) DESIGN's letter: count the wall jumps only (the lab's CHAIN_3 then needs a third wall jump to fail).
+Recommendation: (a) for the first rooms; Stephen's thumbs on a real shaft decide.
+Plan assumes: (a); section 3.7, T0.11b.
