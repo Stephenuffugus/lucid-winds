@@ -66,6 +66,7 @@ The builder updates this table in the same commit that ships the task (law 8: th
 | T1.1 | shipped | (this commit) | H-bio-1..5 green (4667 assertions); harness-all green; Q74: section 3.5's landing rule replaces the Frost placeholder; HUE_BANDS_SWAPPED, FROST_RULE_DROPPED, STICKY_ANY_WIDTH, SLICK_SLIDE_IGNORED, SLICK_ENDS_UNSTANDABLE RED | t11: Frost grey on grey, its slick planks unmarked (T1.5); smoothed open saturated cells read as more pillar; a moth drawn on a pillar's open top |
 | T1.2a | shipped | (this commit) | H-feat-1, 4, 5, 7 and H-en-1b green (4684); the dumps of bright-door (door), one-giant-landmark (pocket), ladder-stack (ladder); DOOR_ON_SAFE_CELL, POCKET_CARVES_ASCENT and 6 more RED | t12a: the pocket a bite out of the furniture, grey like a chipped corner, its doorway on a film tab |
 | T1.2b | shipped | (this commit) | H-feat-2, 3, 6, 8, 9 green (4699); SPECK_CAP_7, TRAP_ON_ASCENT, NO_SCROLL_GUARANTEE, CLUSTER_ON_LAMP and 4 more RED; Q75 to Q77 | t12b: every kind drawn as a moth (T1.4); an icicle inside its plank (fixed); tabs inside the trap field (fixed) |
+| REVIEW 5 | shipped | (this commit) | 16 agents over T1.1 and T1.2a (fidelity, harness, model; every blocker or major verified): the chest past the exit or in a pit, the door's floor carved, nine untested guards; all fixed but one refuted (Deep tables, planned until T1.5); Q78, Q79, Q74's addendum; 26 new mutants RED; 4720 assertions | none: nothing of it is drawn yet |
 
 Status is one of `shipped`, `shipped with xfail Qn`, `BLOCKED on <assertion> Qn`, `skipped (budget)`. The night's last row is `T0.18 deploy` with the deploy commit and the two origin hashes, or `NOT LIVE` and why.
 
@@ -487,10 +488,10 @@ The reach graph is DESIGN 6.8's single source of truth: repair uses it, the exit
 - `open(i)`: `solid[i] == 0`.
 - `plat(i)`: `plat[i] == 1`; the cell is open and its top edge is a one way surface (DESIGN 6.4: a run of at least `PLATFORM_RUN_MIN` surface cells; a surface is `open(i)` above and (`solid` below or a palette luminance drop over `EDGE_DROP_L`); runs over open cells become `plat`, runs over solid cells are just solid tops).
 - `standable(i)`: `open(i)` and (`solid(i+w)` or `plat(i+w)`). The hero's body is in the cell; its feet rest on the top edge of the cell below. A one wide solid pillar top is standable; a floating surface only as part of a one way run. The floor row is solid so every open cell on row `h-2` is standable, which is where spawn is (DESIGN's "row 46, two above the floor", QUESTIONS Q10).
-- `slick(i)`: Frost only, the surface under `i` belongs to a one way run of width at least `FROST_SLICK_MIN_W`. The two end cells of a slick run are **not** standable for the model (the one cell slide carries the hero off them); interior cells are.
+- `slick(i)`: Frost only, the surface under `i` belongs to a one way run of width at least `FROST_SLICK_MIN_W`. Every cell of the run is standable; which landings onto it are edges is section 3.5's rule (QUESTIONS Q74).
 - `wallcontact(i, side)`: `open(i)`, not standable, and `solid(i + side)` with `side` in `{-1, +1}`. A full height side contact in the same row; the corner rule (DESIGN 4.2: a 2 px overlap never arms a slide) lives in the sim, which arms a slide only with at least `HERO_H - CORNER_PX` = 14 px of vertical overlap against the solid's side and the rocker toward it. The graph never creates a contact from a corner because contacts are whole cells.
 - `stickycontact(i, side)`: as `wallcontact` but `sticky[i + side] == 1` (Overgrowth vines, Deep pipes). Touching it stops the fall without the rocker.
-- `trap(i)`: a trap field cell; never a node. `safe(i)`: standable, not a trap, not a slick end cell, and outside every enemy envelope (section 3.7).
+- `trap(i)`: a trap field cell; never a node. `safe(i)`: standable, not a trap, and outside every enemy envelope (section 3.7); a slick cell counts (Q74).
 - Stance for an edge's start: the hero grounded, horizontally centred in the cell (hitbox centre at `x*16 + 8`), `vx = 0`, facing either way. For a wall contact start: the hero touching the wall at the cell's vertical centre, sliding, rocker toward the wall. The bot's `settle` macro produces these stances (section 5.2).
 
 ### 3.2 Profiles and tables, derived from TUNING, clipped to DESIGN
@@ -537,7 +538,7 @@ Every edge records `{ from, to, kind, profile, dir, dx, dy, cost }`. `reach.grap
 
 ### 3.5 Biome modifiers
 
-- **Frost (slick)**: a slick platform cell as a landing target is valid only if the sim's one cell slide cannot carry the hero off it: the cell `t + dir` (in the edge's travel direction) is standable, or is solid (the wall stops the slide), or the edge's `dx` is 0. The sim slides exactly `FROST_SLIDE_CELLS * 16` px worth of deceleration and never more, so the one cell margin is always enough. Spawn and the exit are never slick.
+- **Frost (slick)**: a slick platform cell as a landing target is valid only if the sim's one cell slide cannot carry the hero off it: the cell `t + dir` (in the edge's travel direction) is standable, or is solid (the wall stops the slide), or lies past the frame (the frame stops it), or the edge's `dx` is 0; every landing kind (WALK, JUMP, JUMP_DOWN, FALL, WALLJUMP) keeps the rule. The sim slides exactly `FROST_SLIDE_CELLS * 16` px worth of deceleration and never more, so the one cell margin is always enough. Spawn stands on the floor row, which is never slick; the exit may stand on a slick run, since touching it clears the room before any slide (Q74).
 - **Deep**: the DEEP tables replace FULL/MID/TAP/WALL (apex +1 cell; falls 20% slower so `fallAcross` grows). Pipes are sticky walls.
 - **Overgrowth**: vines are sticky walls. No table change.
 - **Ember**, **Attic**: no movement change.
@@ -559,7 +560,7 @@ A fall reaches everything below with clearance (DESIGN 6.8). The model does not 
 **Main ascent.** `reach.mainAscent(graph, level)`: the least cost path from spawn to exit by Dijkstra over the state `(node, wallChain, rowsSinceSafe)` with these filters, each a named reason:
 1. `max-range`: a JUMP or WALLJUMP edge `(dx, dy)` is admitted only with at least `ROUTE_SLACK` (1) cell of slack on height **or** distance against the clipped table: `dy + 1 <= maxUp(dx)` or `dx + 1 <= maxAcross(dy)` (DESIGN's letter; with `ROUTE_SLACK_BOTH_AXES: true` both must hold, which is the stricter reading of QUESTIONS Q8; the harness prints how many corpus rooms change under each so Stephen can rule on numbers). WALK, SLIDE, FALL, JUMP_DOWN and sticky edges are always relaxed.
 2. `wall-chain`: `wallChain` counts WALLJUMP and WALLTOUCH edges since the last standable node; it may never exceed `ROUTE_MAX_WALL_CHAIN` (2).
-3. `safe-cadence`: `rowsSinceSafe` is the row distance climbed since the last safe standable node and may never exceed `ROUTE_SAFE_EVERY_ROWS` (8). Spawn counts as safe. In M0 (no enemies, no traps) every standable non slick cell is safe.
+3. `safe-cadence`: `rowsSinceSafe` is the row distance climbed since the last safe standable node and may never exceed `ROUTE_SAFE_EVERY_ROWS` (8). Spawn counts as safe. In M0 (no enemies, no traps) every standable cell is safe, a slick one included (Q74).
 4. Biome rules are already in the edge set (3.5).
 5. `enemies-traps` (M1): the edge set is rebuilt after placement; `safe` reflects envelopes; a trap cell is never a node; no corridor crosses a trap cell. Placement forbids enemies within `ROUTE_SAFE_ENEMY_DIST` of the ascent's safe cells and traps on any ascent cell, so the final re check is an assertion of construction, not a second chance.
 

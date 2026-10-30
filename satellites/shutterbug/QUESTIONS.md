@@ -514,6 +514,7 @@ As built: 3.5 in the graph, one rule inside the edge builder (a landing that wou
 Options: (a) 3.5, as built; (b) 3.1, and accept that Frost (the white room, Q4: the most common room there is) refuses most rooms with shelves.
 Recommendation: (a). T1.5 proves the one cell margin against the sim (H-sim-16).
 Plan assumes: (a); section 3.1's slick line reads "see section 3.5".
+Addendum (the fifth review, 30 Oct): the plan text now says so in 3.1, 3.5 and 3.7 (it had not been changed). The rule holds for every landing kind, WALK included (the model lens: of the 981 edges it removes over the Frost overrides, 973 would still rest with 2 px or more on the end; testing the landing position instead is open for T1.5's H-sim-16). Section 3.7's "every standable non slick cell is safe" is read like 3.1's clause: a slick cell counts as safe (under 3.7's letter the Frost builds of sample-room, shelves-a, shelves-b, the five tints, ladder-stack and stripes-h become needsCrop(route)). Section 3.5's "the exit is never slick" is read as harmless: the exit may stand on a slick run (shelves-b as detected does), since touching it clears the room first; spawn stands on the floor row, which is never slick.
 
 ## Q75. The pocket's elite stays in its pocket (the builder, 30 Oct, T1.2b)
 
@@ -538,3 +539,19 @@ As built (T1.2b): the candidates are, for every top left cell, the largest recta
 Options: (a) as built; (b) only the whole largest pattern, and no field when it touches the ascent.
 Recommendation: (a): more rooms with patterns get their trap, always off the climb.
 Plan assumes: (a).
+
+## Q78. Placement reach: the exit is a sink, and every placed cell returns (the builder, 30 Oct, the fifth review)
+
+Q34 puts the chest "deepest into a branch off the main ascent". The fifth review found three ways that reading strands the hero. On saturated-blobs the chest sat at (4, 19), which the model reaches only through the exit, and touching the exit ends the room. In a pit room the deepest cell was the pit's floor, from which no move leads back. And the pocket's tunnel could carve the floor from under the Darkroom door.
+As built (review 5): placement measures reach from spawn with the exit a sink (the search never leaves it), and the branch search never leaves the exit either. The chest, the door, the cells the specks and the scroll are touched from, and the pocket's loot must be cells from which the exit can still be reached (a search over the reversed edges). Every tunnel cell has a roof of its landmark, so a carve takes no open cell's floor, and the pocket is placed before the door (the task text's order), the door on the carved grid. Still open: an edge whose jump sweeps the exit cell mid air is counted as a route past it (T1.3 can drop such edges from placement).
+Options: (a) as built; (b) Q34's letter: deepest regardless, and the hero may have to restart after the chest.
+Recommendation: (a): the reward of a branch must never cost the room.
+Plan assumes: (a); H-feat-1 (the chest by Q34's order on every level, the pit, the tap on saturated-blobs), H-feat-2, H-feat-4, H-feat-5.
+
+## Q79. Equal hue bands break to the band holding the lowest palette index (the builder, 30 Oct, the fifth review)
+
+Section 3.7's tie law breaks every tie to the lowest cell index, palette index or threshold. biomeOf broke a tie of band votes to the lower band index (Attic 0, Deep 2, Overgrowth 3, Ember 4), which is none of the three.
+As built (review 5): the bands are ordered by the lowest palette index each holds, read from the palette: Attic (Walnut 7), Ember (Brick 9), Deep (Lapis 11), Overgrowth (Moss 13). Equal Brick and Lapis votes now give Ember, where they gave Deep.
+Options: (a) as built; (b) the band index, as before.
+Recommendation: (a): the law's letter, and a second implementation derives it from the palette alone. Exact ties are rare in a photo.
+Plan assumes: (a); H-pipe-11 plants the tie.

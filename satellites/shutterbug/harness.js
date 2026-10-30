@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 4699;              /* raised per task: the count a full run must reach (4699 after T1.2b, 30 Oct) */
+const ASSERT_FLOOR = 4720;              /* raised per task: the count a full run must reach (4720 after review 5, 30 Oct) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -807,7 +807,7 @@ group('H-pipe-10', 'pipeline A builds in under 20 ms p95 per fixture in Node', t
   console.log('  info  the slowest pipeline A build: ' + slow.name + ' at ' + slow.p95.toFixed(2) + ' ms p95');
 });
 
-group('H-pipe-11', 'ties break to the lowest: Otsu, landmarks, spawn runs, nearest', t => {
+group('H-pipe-11', 'ties break to the lowest: Otsu, landmarks, spawn runs, nearest, hue bands, bright rectangles', t => {
   /* Otsu: Brick 93, Moss 116, Pewter 139 in equal thirds: the splits after 93 and after 116 have exactly equal
      between class variance (both class means differ by 34.5), so the lower threshold, 94, wins */
   const third = 1152 / 3, cells = [];
@@ -826,6 +826,14 @@ group('H-pipe-11', 'ties break to the lowest: Otsu, landmarks, spawn runs, neare
   t.eq(sp.spawn, 46 * 24 + 2, 'spawn: of two equal widest runs (x 0..4 and 19..23), the first, centred at x 2');
   /* nearest: the exact midpoint of Ink and Soot is equidistant; Ink, the lower index, wins */
   t.eq(SB.palette.nearest(21, 18, 22), 0, 'nearest: equidistant to Ink and Soot, Ink wins');
+  /* equal hue bands (the fifth review): 60 Brick and 60 Lapis (Ember and Deep) on Ash: the band holding the lower
+     palette index, Ember (Brick 9 against Lapis 11), wins whichever comes first; 60 Lapis and 60 Moss: Deep (11, 13) */
+  const bandTie = (a, b) => { const g = new Uint8Array(1152).fill(SB.palette.I.ASH); for (let i = 0; i < 60; i++) { g[i] = a; g[100 + i] = b; } return SB.pipeline.biomeOf(g, 1152); };
+  t.ok(bandTie(SB.palette.I.BRICK, SB.palette.I.LAPIS) === 4 && bandTie(SB.palette.I.LAPIS, SB.palette.I.BRICK) === 4 && bandTie(SB.palette.I.LAPIS, SB.palette.I.MOSS) === 2, 'equal hue bands: the band holding the lower palette index wins (Ember over Deep, Deep over Overgrowth)');
+  /* equal bright rectangles: two 3x3 Glare blocks; the one whose top left cell comes first wins */
+  const brr = {}; for (const yy of [20, 21, 22]) brr[yy] = '444446664444444444666444';
+  const brLv = SB.pipeline.build(labRecord(brr), { stage: 'A' }), brRect = SB.features.brightRect(brLv);
+  t.ok(!!brRect && brRect.join() === '5,20,7,22', 'equal bright rectangles: the one whose top left cell comes first (x 5, row 20) wins (' + (brRect ? brRect.join() : 'none') + ')');
 });
 
 /* ================================================================ the sim, part one */
@@ -909,6 +917,12 @@ group('H-bio-3', 'the bright room rule (Q4): all-light is Frost, all-dark is Att
   for (let i = 0; i < k - 1; i++) g1[i] = P.I.LAPIS;
   for (let i = 0; i < k; i++) g2[i] = P.I.LAPIS;
   t.ok(SB.pipeline.biomeOf(g1, n) === 1 && SB.pipeline.biomeOf(g2, n) === 2, (k - 1) + ' Lapis cells on a bright grid stay Frost; ' + k + ' make it Deep');
+  /* the threshold itself (the fifth review: the two grids above sit at 139 and 199): Ash, Pewter and Glare mixed to a
+     mean of exactly FROST_MEAN_L stay Attic (Q4: Frost only when the mean exceeds it); one Pewter made Ash, Frost */
+  let mix = null;
+  for (let c = 0; c <= n && !mix; c++) for (let a = 0; a + c < n; a++) { const pw = n - a - c; if (P.L[P.I.ASH] * a + P.L[P.I.PEWTER] * pw + P.L[P.I.GLARE] * c === T.FROST_MEAN_L * n) { mix = [a, pw, c]; break; } }
+  const mixGrid = (a, pw, c) => { const g = new Uint8Array(n); let i = 0; for (; i < a; i++) g[i] = P.I.ASH; for (; i < a + pw; i++) g[i] = P.I.PEWTER; for (; i < n; i++) g[i] = P.I.GLARE; return g; };
+  t.ok(!!mix && SB.pipeline.biomeOf(mixGrid(mix[0], mix[1], mix[2]), n) === 0 && SB.pipeline.biomeOf(mixGrid(mix[0] + 1, mix[1] - 1, mix[2]), n) === 1, 'a grid whose mean is exactly FROST_MEAN_L (' + (mix ? mix[0] + ' Ash, ' + mix[1] + ' Pewter, ' + mix[2] + ' Glare' : 'none found') + ') is Attic; one Pewter made Ash tips it to Frost');
 });
 group('H-bio-4', 'slick only on Frost (one way runs of FROST_SLICK_MIN_W), sticky only on Overgrowth and Deep (1 wide solid runs of STICKY_RUN_MIN), at most CAP_STICKY runs', t => {
   const T = SB.TUNING; let slickLevels = 0, stickyLevels = 0, bad = [];
@@ -941,6 +955,21 @@ group('H-bio-4', 'slick only on Frost (one way runs of FROST_SLICK_MIN_W), stick
   }
   t.eq(bad.length, 0, 'the surfaces keep to their biomes' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
   t.ok(slickLevels > 0 && stickyLevels > 0, 'the rules bite: ' + slickLevels + ' Frost levels hold slick runs, ' + stickyLevels + ' Overgrowth or Deep levels hold sticky runs');
+  /* the cap, the order and the minimum height on a room that bites them (the fifth review: the corpus holds two
+     candidates): one wide Soot runs on the frame; by their top cell A (23, rows 2..8), B (0, 10..16), E (23, 12..16,
+     one short), C (0, 20..25), D (0, 30..35). Row major the first three are A, B, C; column major B, C, D; with the
+     minimum one lower A, B, E; one higher A, B alone */
+  const fr = {}, put = (x, y0, y1) => { for (let y = y0; y <= y1; y++) { const r = (fr[y] || '4'.repeat(24)).split(''); r[x] = '1'; fr[y] = r.join(''); } };
+  put(23, 2, 8); put(0, 10, 16); put(23, 12, 16); put(0, 20, 25); put(0, 30, 35);
+  for (const biome of [2, 3]) {
+    const lv = SB.pipeline.build(labRecord(fr), { biome, stage: 'A' }), w = lv.w, S = lv.solid, h = lv.h;
+    const lone = (x, y) => S[y * w + x] && !(x > 0 && S[y * w + x - 1]) && !(x < w - 1 && S[y * w + x + 1]), all = [];
+    for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) { if (!lone(x, y) || (y > 0 && lone(x, y - 1))) continue; let e = y; while (e + 1 < h && lone(x, e + 1)) e++; all.push([y * w + x, x, y, e]); }
+    const pick = (min, order) => { const r = all.filter(q => q[3] - q[2] + 1 >= min).sort(order).slice(0, T.CAP_STICKY), m = new Uint8Array(w * h); for (const [, x, y0, y1] of r) for (let y = y0; y <= y1; y++) m[y * w + x] = 1; return m.join(); };
+    const rowMajor = (a, b) => a[0] - b[0], colMajor = (a, b) => a[1] - b[1] || a[2] - b[2], M = T.STICKY_RUN_MIN;
+    const want = pick(M, rowMajor), bites = want !== pick(M, colMajor) && want !== pick(M - 1, rowMajor) && want !== pick(M + 1, rowMajor) && all.filter(q => q[3] - q[2] + 1 >= M).length > T.CAP_STICKY;
+    t.ok(bites && want === Array.from(lv.sticky).join(), SB.palette.BIOMES[biome] + ': of ' + all.length + ' frame runs the sticky set is the first CAP_STICKY of STICKY_RUN_MIN or taller by their top cell (the room tells apart the cap, the order and the minimum: ' + bites + ')');
+  }
 });
 group('H-bio-5', 'the Frost landing rule (section 3.5, Q74): no edge lands on a slick run\'s end moving off it; a landing the slide cannot carry off stays', t => {
   const W = SB.GRID.W, H = SB.GRID.H, FLOOR = '#'.repeat(W), y = H - 5;
@@ -957,6 +986,18 @@ group('H-bio-5', 'the Frost landing rule (section 3.5, Q74): no edge lands on a 
   c = into(wall, 12, 1); t.ok(c > 0, 'beside a wall the right end keeps its landings moving right: the wall stops the slide (' + c + ' edges)');
   const g = SB.reach.graph(open);
   t.ok(g.stand[y * W + 7] === 1 && g.stand[y * W + 12] === 1, 'both end cells are standable (T0.10b\'s placeholder refused them outright)');
+  /* falls and drops through land by the same rule, and the frame stops a slide (the fifth review: only JUMP and WALK
+     were tried): a plank at x 5..8 four rows over the run; its falls and drops that land on the run's right end moving
+     right exist over a plain one way and are gone over a slick one */
+  const dropOnto = biome => {
+    const lv = LABS.room(['.....====', '', '', '', biome === 1 ? '.......~~~~~~...........' : '.......======...........', '', '', FLOOR], { biome }), g = SB.reach.graph(lv), to = y * W + 12;
+    let k = 0; for (const es of g.adj) if (es) for (const e of es) if (e.to === to && e.dx > 0 && e.dir === 1 && (e.kind === 'FALL' || e.kind === 'JUMP_DOWN')) k++; return k;
+  };
+  const plainK = dropOnto(0), slickK = dropOnto(1);
+  t.ok(plainK > 0 && slickK === 0, 'falls and drops onto the run\'s right end moving right: ' + plainK + ' edges over a plain one way, ' + slickK + ' over a slick one');
+  const atFrame = LABS.room(['', '..................~~~~~~', '', '', FLOOR], { biome: 1 });
+  c = into(atFrame, 23, 1);
+  t.ok(c > 0, 'a run against the frame keeps its landings onto the end moving right: the frame stops the slide (' + c + ' edges)');
 });
 
 group('H-sim-1', 'the jump: apex, tap, air time and reach, against the test\'s own stepping', t => {
@@ -2680,6 +2721,77 @@ function featBuilds() {
   return featLevels;
 }
 const sameEdge = (g, e) => (g.adj[e.from] || []).some(x => x.to === e.to && x.kind === e.kind && x.dir === e.dir && x.dx === e.dx && x.dy === e.dy);
+/* the fifth review's rooms (its harness lens found them by a seeded search): the first stream pick of P9_ROWS's pocket is
+   refused by the check; P11_ROWS puts a bright window over a step of a big dark block, beside its pocket's tunnel */
+const P9_ROWS = {"11": "444444444111111111111444", "12": "444444444111111111111444", "13": "444444444111111111111444", "14": "444444444111111111111444", "15": "444444444111111111111444", "16": "444444444111111111111444", "17": "444444441111111111111444", "18": "444444441111111111111444", "19": "444444444111111111111444", "20": "444444444111111111111555", "21": "444444444111111111111333", "22": "444444444111111111111444", "23": "444444444111111111111444", "24": "444444444111111111111444", "25": "444444444111111111111444", "26": "555444444111111111111444", "27": "333555555111111111111444", "28": "444333333111111111111444", "29": "444444455111111111111444", "30": "444444433444444444444444", "35": "445555545555554444444444", "36": "443333343333334444444444", "37": "444444444444444445555444", "38": "444444444444444443333444", "40": "444444455555544444444444", "41": "444444433333344444444444"};
+const P11_ROWS = {"11": "444444411111111144444444", "12": "446666611111111144444444", "13": "446666611111111144444444", "14": "446666611111111144444444", "15": "446666611111111144444444", "16": "444444111111111144455544", "17": "444441111111111144433344", "18": "444441111111111144444444", "19": "444441111111111144444444", "20": "444441111111111144444444", "22": "444444444444444455555444", "23": "444455555555444433333444", "24": "444433333333444444444444", "27": "444444444444444445555554", "28": "444444444444444443333334", "34": "444444455555544444444444", "35": "444444433333344444444444", "36": "444444444455555554444444", "37": "444444444433333334444444", "38": "444444444445554444444444", "39": "444444444443334444444444", "42": "555444444444444444444444", "43": "333444444444444444444444"};
+/* the cells from which the exit can still be reached: the test's own breadth first search over the reversed edges
+   (the fifth review: the chest, deepest into a branch, sat at the bottom of a pit no move leaves; QUESTIONS Q78) */
+function backOf(lv, g) {
+  const N3 = 3 * g.n, rev = Array.from({ length: N3 }, () => []), back = new Uint8Array(N3);
+  g.adj.forEach((es, u) => { if (es) for (const e of es) rev[e.to].push(u); });
+  if (lv.exit < 0) return back;
+  const q = [lv.exit]; back[lv.exit] = 1;
+  for (let k = 0; k < q.length; k++) for (const u of rev[q[k]]) if (!back[u]) { back[u] = 1; q.push(u); }
+  return back;
+}
+/* the distances from a node with one node a sink: the search never leaves it (the test's own; the exit ends the
+   room on touch, so placement counts no route through it: the fifth review found saturated-blobs' chest past the exit) */
+function distSink(g, from, sink) {
+  const d = new Int32Array(3 * g.n).fill(-1), q = [from]; d[from] = 0;
+  for (let k = 0; k < q.length; k++) { const u = q[k]; if (u === sink) continue; for (const e of g.adj[u] || []) if (d[e.to] < 0) { d[e.to] = d[u] + 1; q.push(e.to); } }
+  return d;
+}
+/* a built level's placement reach, once per level: its graph, the distances from spawn with the exit a sink and the
+   cells that return */
+function reachOf(e) {
+  if (!e.reach) { const g = SB.reach.graph(e.lv); e.reach = { g, d: distSink(g, e.lv.spawn, e.lv.exit), back: backOf(e.lv, g) }; }
+  return e.reach;
+}
+/* the chest by Q34's order, for the test alone: the reached standable cell nearest the focal tap; else the ladder top
+   (DESIGN 6.11: a chest at the top); else the cell deepest into a branch off the main ascent (the most edges from any
+   node it passes through, the exit never passed, then the farthest from spawn, then the lowest index); else the
+   farthest from spawn. Reached means with the exit a sink; every one returnable (Q78; off with back null) and never
+   the spawn, the exit, the door or a pocket cell */
+function chestWant(lv, r, back) {
+  const { g, d } = r, w = lv.w, n = w * lv.h, f = lv.features;
+  const ok = c => c >= 0 && c < n && c !== lv.spawn && c !== lv.exit && !(f.door && c === f.door.idx) && !(f.pocket && f.pocket.cells.includes(c)) && d[c] >= 0 && standableIn(lv, c) && (!back || back[c] === 1);
+  let focal = lv.rec && lv.rec.focal !== null && lv.rec.focal !== undefined ? lv.rec.focal : -1, best = -1;
+  if (focal >= 0 && lv.rec.mode === 2) focal += w * (lv.h >> 1);
+  if (focal >= 0) { let bd = 1e9; for (let i = 0; i < n; i++) if (ok(i) && cheb(i, focal, w) < bd) { bd = cheb(i, focal, w); best = i; } if (best >= 0) return best; }
+  if (f.ladder && ok(f.ladder.top)) return f.ladder.top;
+  const off = new Int32Array(3 * g.n).fill(-1), q = [];
+  for (const v of lv.ascent.nodes) if (off[v] < 0) { off[v] = 0; q.push(v); }
+  for (let k = 0; k < q.length; k++) if (q[k] !== lv.exit) for (const e of g.adj[q[k]] || []) if (off[e.to] < 0) { off[e.to] = off[q[k]] + 1; q.push(e.to); }
+  for (let i = 0; i < n; i++) if (ok(i) && off[i] > 0 && (best < 0 || off[i] > off[best] || (off[i] === off[best] && d[i] > d[best]))) best = i;
+  if (best >= 0) return best;
+  for (let i = 0; i < n; i++) if (ok(i) && (best < 0 || d[i] > d[best])) best = i;
+  return best;
+}
+/* the pit (the fifth review's room): a Soot wall (x 13..15, rows 30..46) closes a pit no move leaves; the ascent
+   climbs planks on the left. In the pit a 3x3 Glare block (x 18..20, rows 44..46), the room's largest bright
+   rectangle, and a lone Sun cell (22, 45) */
+function pitRows() {
+  const g = []; for (let y = 0; y < 48; y++) g.push(Array(24).fill('4'));
+  for (let x = 0; x < 24; x++) g[47][x] = '1';
+  for (let y = 30; y <= 46; y++) for (let x = 13; x <= 15; x++) g[y][x] = '1';
+  [43, 40, 37, 34, 31, 28, 25, 22, 19, 16, 13, 10, 7, 3].forEach((r, k) => { const x0 = k % 2 ? 7 : 2; for (let x = x0; x < x0 + 4; x++) { g[r][x] = '6'; g[r + 1][x] = '3'; } });
+  for (let y = 44; y <= 46; y++) for (let x = 18; x <= 20; x++) g[y][x] = '6';
+  g[45][22] = 'e';
+  return g.map(r => r.join(''));
+}
+/* planks stacked for the ladder labs: a Glare standing row over a Pewter one way row, 4 wide (x 5..8), at the
+   standing rows given */
+const stackRows = tops => { const o = {}; for (const r of tops) { o[r] = '44444666644444444444444'.padEnd(24, '4'); o[r + 1] = '44444333344444444444444'.padEnd(24, '4'); } return o; };
+const at = i => i !== null && i >= 0 ? '(' + i % 24 + ', ' + Math.floor(i / 24) + ')' : 'none';
+let pitLv = null;
+const pitLevel = () => pitLv || (pitLv = SB.pipeline.build(labRecord(pitRows()), { biome: 0 }));
+/* touched (as touchable) from a reached standable cell that returns */
+const touchableBack = (lv, d, back, c) => {
+  if (lv.solid[c]) return false;
+  for (let k = 0; k <= SB.TUNING.JUMP_UP; k++) { const cc = c + k * lv.w; if (cc >= lv.w * lv.h || lv.solid[cc]) return false; if (d[cc] >= 0 && standableIn(lv, cc) && back[cc] === 1) return true; }
+  return false;
+};
 
 group('H-feat-1', 'the caps of DESIGN 6.11 never exceeded: one ladder of stacked one ways, one pocket, one door, CAP_STICKY vines, CAP_ENEMY enemies (CAP_ELITE elites), one chest', t => {
   const T = SB.TUNING, bad = []; let ladders = 0, pockets = 0, doors = 0, levels = 0;
@@ -2713,6 +2825,26 @@ group('H-feat-1', 'the caps of DESIGN 6.11 never exceeded: one ladder of stacked
     const lv = buildFx(fixture(name), 0);
     t.ok(!lv.needsCrop && !!lv.features[key], name + ' (authored for it, T0.5c) has its ' + key, lv.needsCrop ? undefined : SB.pipeline.toText(lv));
   }
+  /* the chest by Q34's order on every built level, against the test's own reading: reached with the exit a sink (the
+     fifth review: saturated-blobs' chest lay past the exit) and returnable (only the focal tap was asserted; Q78) */
+  const chestBad = [];
+  for (const e of featBuilds()) { const r = reachOf(e), want = chestWant(e.lv, r, r.back); if (e.lv.features.chest !== want) chestBad.push(e.tag + ': chest ' + at(e.lv.features.chest) + ', the test wants ' + at(want)); }
+  t.eq(chestBad.length, 0, 'on every built level the chest keeps Q34\'s order (the tap, the ladder top, deepest into a branch, farthest) among the cells that return' + (chestBad.length ? ': ' + chestBad.slice(0, 4).join('; ') : ''));
+  /* the pit: deepest into a branch is the pit's floor, from which the exit is out of reach; the chest takes the
+     deepest cell that returns */
+  const pit = pitLevel(), pr = pit.needsCrop ? null : reachOf({ lv: pit }), pitDeep = pr ? chestWant(pit, pr, null) : -1, pitChest = pr ? pit.features.chest : -1;
+  t.ok(!!pr && pr.back[pitDeep] === 0 && pitChest === chestWant(pit, pr, pr.back) && pr.back[pitChest] === 1, 'the pit: deepest into a branch is ' + at(pitDeep) + ', from which the exit is out of reach; the chest is ' + at(pitChest) + ', from which it is not');
+  /* DESIGN 6.11's ladder zone, "3+ one-way platforms stacked within 3 rows": three stacked is a ladder, two is none;
+     with no tap the chest is on the ladder's top */
+  const l3 = SB.pipeline.build(labRecord(stackRows([43, 40, 37])), { biome: 0 }), l2 = SB.pipeline.build(labRecord(stackRows([43, 40])), { biome: 0 });
+  const lad = l3.needsCrop ? null : l3.features.ladder;
+  t.ok(!!lad && lad.runs.length === 3 && l3.features.chest === lad.top, 'three one ways stacked 3 rows apart are a ladder of 3 runs with the chest on its top (' + (lad ? lad.runs.length + ' runs, top ' + at(lad.top) + ', chest ' + at(l3.features.chest) : 'no ladder') + ')');
+  t.ok(!l2.needsCrop && !l2.features.ladder, 'two stacked are no ladder');
+  /* the exit is a sink (the fifth review): saturated-blobs tapped on its left shelf (4, 19), a cell the model reaches
+     only through the exit; the chest is the nearest cell reached without passing it */
+  const sbLv = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, fixture('saturated-blobs').fx.record, { focal: 19 * 24 + 4 })), {}), sbR = sbLv.needsCrop ? null : reachOf({ lv: sbLv });
+  const plainD = sbR ? SB.reach.distances(sbR.g, sbLv.spawn) : null, shelf = 19 * 24 + 4;
+  t.ok(!!sbR && plainD[shelf] >= 0 && sbR.d[shelf] < 0 && sbR.d[sbLv.features.chest] >= 0 && sbLv.features.chest === chestWant(sbLv, sbR, sbR.back), 'saturated-blobs tapped on (4, 19), which only a route through the exit reaches: the chest is ' + (sbR ? at(sbLv.features.chest) : 'needsCrop') + ', reached without passing the exit');
 });
 
 /* the largest rectangle of open cells brighter than DOOR_L with both sides at least DOOR_MIN, by brute force over
@@ -2746,6 +2878,17 @@ group('H-feat-4', 'the Darkroom door (Q33): the largest bright rectangle, its do
   const bd = buildFx(fixture('bright-door'), 0), d = SB.reach.distances(SB.reach.graph(bd), bd.spawn);
   const first = SB.features.door(bd, d, []), moved = first && SB.features.door(bd, d, [first.idx]);
   t.ok(!!first && !!moved && moved.idx !== first.idx && moved.rect.join() === first.rect.join(), 'made an ascent cell, the door leaves it for the next cell of the bottom row (' + (first && first.idx % 24) + ' then ' + (moved && moved.idx % 24) + ')');
+  /* every door is reached with the exit a sink and returns (Q78), on the test's own searches */
+  const doorBack = [];
+  for (const e of featBuilds()) { const dr = e.lv.features.door, r = reachOf(e); if (dr && (r.d[dr.idx] < 0 || r.back[dr.idx] !== 1)) doorBack.push(e.tag + ' ' + at(dr.idx)); }
+  t.eq(doorBack.length, 0, 'every door is reached without passing the exit, and the exit can be reached from it' + (doorBack.length ? ': ' + doorBack.slice(0, 4).join('; ') : ''));
+  /* the fifth review's room: a bright window whose sill rests on a step of a big dark block, beside the block's
+     pocket; the pocket's tunnel once ran under the sill and took the door's floor */
+  const p11 = SB.pipeline.build(labRecord(P11_ROWS), {}), p11d = p11.needsCrop ? null : p11.features.door, p11r = p11d ? reachOf({ lv: p11 }) : null;
+  t.ok(!!p11d && standableIn(p11, p11d.idx) && p11r.d[p11d.idx] >= 0 && p11r.back[p11d.idx] === 1, 'beside a pocket the door stands, is reached and returns (' + (p11d ? at(p11d.idx) : 'no door') + ')');
+  /* the pit: its largest bright rectangle lies on the pit's floor, from which nothing returns: no door */
+  const pit = pitLevel(), pitRect = pit.needsCrop ? null : SB.features.brightRect(pit);
+  t.ok(!!pitRect && pitRect.join() === '18,44,20,46' && pit.features.door === null, 'a bright rectangle on the floor of a pit gets no door (' + (pitRect ? pitRect.join() : 'none') + ', door ' + (pit.features && pit.features.door ? at(pit.features.door.idx) : 'none') + ')');
 });
 
 group('H-feat-5', 'the pocket: a 3x3 hollow closed in its landmark, its entrance facing the ascent, its loot reached, never in the first room, and the main ascent never carved', t => {
@@ -2779,6 +2922,20 @@ group('H-feat-5', 'the pocket: a 3x3 hollow closed in its landmark, its entrance
   const hollow = []; for (let y = 15; y <= 17; y++) for (let x = 20; x <= 22; x++) hollow.push(y * w + x);
   const res = k >= 0 ? SB.features.pocketOk(sr, { k, rect: [20, 15, 22, 17], side: -1, hollow, tunnel: [], mouth: -1, loot: 17 * w + 22, elite: 17 * w + 21 }) : { ok: true, why: 'no wardrobe' };
   t.ok(lands && !res.ok && /^the ascent loses/.test(res.why), 'a hollow under the ascent\'s landing on the wardrobe (20, 14) is refused for the ascent (' + (lands ? '' : 'the ascent does not land there; ') + (res.why || 'accepted') + ')');
+  /* every tunnel cell under a roof of its landmark, so the carve takes no open cell's floor (the fifth review: a
+     second tunnel cell under a window's sill took the door's), and every pocket's loot is reached with the exit a sink and returns (Q78) */
+  const roofBad = [];
+  for (const e of featBuilds()) { const p = e.lv.features.pocket; if (!p) continue; if (p.tunnel.some(c => !e.lv.solid[c - e.lv.w])) roofBad.push(e.tag + ': a tunnel cell under open air'); if (reachOf(e).d[p.loot] < 0 || reachOf(e).back[p.loot] !== 1) roofBad.push(e.tag + ': the loot is not reached past a sink exit, or no way back from it'); }
+  const p11 = SB.pipeline.build(labRecord(P11_ROWS), {}), p11p = p11.needsCrop ? null : p11.features.pocket;
+  if (p11p && p11p.tunnel.some(c => !p11.solid[c - p11.w])) roofBad.push('the door room: a tunnel cell under open air');
+  t.eq(roofBad.length, 0, 'every tunnel cell has a roof of its landmark and every loot is reached and returns, the door room\'s among them' + (roofBad.length ? ': ' + roofBad.slice(0, 4).join('; ') : ''));
+  /* the fifth review's room whose first stream pick the check refuses (its tunnel cuts a WALLTOUCH edge of the
+     ascent): the pocket placed is another and the ascent keeps every edge */
+  const p9 = SB.pipeline.build(labRecord(P9_ROWS), {}), p9f = SB.pipeline.build(labRecord(P9_ROWS), { firstRoom: true });
+  const cands = p9f.needsCrop ? [] : SB.features.pocketCands(p9f, p9f.ascent.nodes.filter(v => v < p9f.w * p9f.h));
+  const firstPick = cands.length ? cands[SB.rng.mulberry32(p9.seed >>> 0).int(cands.length)] : null, refused = firstPick ? SB.features.pocketOk(p9f, firstPick) : null;
+  const placed = p9.needsCrop ? null : p9.features.pocket, lost9 = p9.needsCrop ? [] : p9.ascent.edges.filter(e => !sameEdge(SB.reach.graph(p9), e));
+  t.ok(!!refused && !refused.ok && !!placed && placed.rect.join() !== firstPick.rect.join() && lost9.length === 0, 'the first pick refused (' + (refused ? refused.why || 'accepted' : 'no pick') + '), the pocket placed is another (' + (placed ? placed.rect.join() : 'none') + ') and the ascent keeps its ' + (p9.needsCrop ? 0 : p9.ascent.edges.length) + ' edges (' + lost9.length + ' lost)');
 });
 
 group('H-feat-7', 'exactly one beacon, at the exit cell, on every built level', t => {
@@ -2823,6 +2980,27 @@ group('H-en-1b', 'the claims of Q50: no moth from the lamp, lit or not, nor from
   const clusterOf = idx => { let best = -1, bd = 1e9; [[8, 2], [8, 12], [16, 6], [16, 18], [24, 2], [24, 14]].forEach(([y, x], k) => { const dd = Math.max(Math.abs(idx % 24 - x), Math.abs(Math.floor(idx / 24) - y)); if (dd < bd) { bd = dd; best = k; } }); return best; };
   const setOf = list => list.split(',').filter(Boolean).map(Number).map(clusterOf).sort().join('');
   t.ok(!a.needsCrop && a.features.enemies.length === SB.TUNING.CAP_ENEMY && others.some(o => setOf(o) !== setOf(pa)), 'six clusters over CAP_ENEMY, four seeds: which clusters get an enemy differs (' + [pa].concat(others).map(setOf).join(' / ') + ')');
+  /* the door's claim (the fifth review: nothing tested it): a Sun pair, a yellow frame, inside bright-door's window */
+  const bdRec = fixture('bright-door').fx.record, bd0 = SB.pipeline.build(SB.record.fromJSON(bdRec), { biome: 0 }), bdr = bd0.needsCrop ? null : bd0.features.door;
+  let inDoor = null, sunIn = false;
+  if (bdr) {
+    const rows = bdRec.rows.slice(), yy = bdr.rect[3] - 2, xx = bdr.rect[0] + 1;
+    rows[yy] = rows[yy].slice(0, xx) + 'ee' + rows[yy].slice(xx + 2);
+    const lv = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, bdRec, { rows })), { biome: 0 }), dr = lv.needsCrop ? null : lv.features.door;
+    if (dr) {
+      const inR = c => c % 24 >= dr.rect[0] && c % 24 <= dr.rect[2] && Math.floor(c / 24) >= dr.rect[1] && Math.floor(c / 24) <= dr.rect[3];
+      sunIn = inR(yy * 24 + xx) && inR(yy * 24 + xx + 1); inDoor = lv.features.enemies.filter(e => inR(e.idx));
+    }
+  }
+  t.ok(sunIn && !!inDoor && inDoor.length === 0, 'a Sun pair inside the Darkroom door\'s window is claimed: no moth in the doorway (' + (inDoor ? inDoor.length : 'no door') + ')');
+  /* the pocket's claim: Walnut seams in a Soot block (rows 39, 42, 45); the pocket carved from it opens three Walnut
+     cells, a fodder sized group, which is no nest; the only enemy is the pocket's own elite */
+  const pc = {};
+  for (let y = 38; y <= 46; y++) pc[y] = '44' + ([39, 42, 45].includes(y) ? '77777777' : '11111111') + '4'.repeat(14);
+  pc[39] = pc[39].slice(0, 16) + '5555' + pc[39].slice(20); pc[40] = pc[40].slice(0, 16) + '3333' + pc[40].slice(20);   /* the labs' plank, merged */
+  const pcLv = SB.pipeline.build(labRecord(pc), { biome: 0 }), pp = pcLv.needsCrop ? null : pcLv.features.pocket;
+  const opened = pp ? pp.cells.filter(c => SB.palette.SAT.includes(pcLv.pal[c])).length : 0, pcE = pp ? pcLv.features.enemies : [];
+  t.ok(!!pp && opened >= SB.TUNING.FODDER_CELLS[0] && pcE.every(e => e.elite && e.idx === pp.elite), 'a pocket carved through Walnut seams opens ' + opened + ' saturated cells and no nest: the enemies are its own elite (' + pcE.map(e => (e.elite ? 'elite ' : 'fodder ') + at(e.idx)).join(', ') + ')');
 });
 
 /* ================================================================ features, part two (T1.2b) */
@@ -2857,6 +3035,14 @@ group('H-feat-2', 'loot: at least one chest and one scroll on every built level;
   const lv = SB.pipeline.build(labRecord(lab), {}), f = lv.features;
   const n = lv.needsCrop ? -1 : f.specks.length + (f.scroll !== null ? 1 : 0) + (f.blueprint !== null ? 1 : 0);
   t.ok(n === T.CAP_SPECK, 'eight isolated Sun specks within reach give CAP_SPECK (' + T.CAP_SPECK + ') specks, the scroll and the blueprint among them (' + n + ')');
+  /* every speck, the scroll and the blueprint are touched from a cell that returns (Q78); the pit's lone Sun cell,
+     touched only from the pit's floor, is none of them */
+  const spBad = [];
+  for (const e of featBuilds()) { const { d, back } = reachOf(e), f = e.lv.features; for (const c of f.specks.concat(f.scroll !== null ? [f.scroll] : [], f.blueprint !== null ? [f.blueprint] : [])) if (!touchableBack(e.lv, d, back, c)) spBad.push(e.tag + ' ' + at(c)); }
+  t.eq(spBad.length, 0, 'every speck is touched from a cell the exit can be reached from' + (spBad.length ? ': ' + spBad.slice(0, 4).join('; ') : ''));
+  const pit = pitLevel(), pf = pit.needsCrop ? null : pit.features, pr2 = pf ? reachOf({ lv: pit }) : null, sun = 45 * 24 + 22;
+  const pitLoot = pf ? pf.specks.concat(pf.scroll !== null ? [pf.scroll] : [], pf.blueprint !== null ? [pf.blueprint] : []) : [];
+  t.ok(!!pf && pit.pal[sun] === SB.palette.I.SUN && !pitLoot.includes(sun) && pitLoot.length > 0 && pitLoot.every(c => touchableBack(pit, pr2.d, pr2.back, c)), 'the pit: its lone Sun cell, touched only from the pit\'s floor, is no speck, and the scroll is touched from a cell that returns (' + pitLoot.map(at).join(' ') + ')');
 });
 
 group('H-feat-3', 'the trap field: a 2 cell repeat at least TRAP_MIN a side, its open cells, never on a cell the ascent stands on and never cutting an ascent edge, never in a first room', t => {
