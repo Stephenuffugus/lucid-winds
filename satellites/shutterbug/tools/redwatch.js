@@ -323,6 +323,12 @@ const MUTANTS = [
   { name: 'SPRITE_ROW_SHORT', task: 'T0.17', file: 'page', find: "a: 'ffffffffffffffff/ff0fff0fff0fff0f/", repl: "a: 'fffffffffffffff/ff0fff0fff0fff0f/",
     gates: [{ gate: 'lint', expect: 'tab.a row 0 is 15 wide' }, { gate: 'harness', only: 'H-spr-1', expect: 'tab.a decodes to 16x5' }] },
   /* the fourth review (T0.16, T0.17), before sb-m0-3 */
+  { name: 'DEATH_CARD_FIXED', task: 'review 4', file: 'page', find: "document.getElementById('death').classList.toggle('low', !!hd && hd.key !== null && hd.y + hd.h / 2 < cv.height / 2);", repl: '',
+    gates: [{ gate: 'death', expect: 'a death high in the room' }] },
+  { name: 'ROTATE_RUNS', task: 'review 4', file: 'page', find: "    var run = !held && !SIDEWAYS.matches && !!G.state && SB.ui.screen === 'play';", repl: "    var run = !held && !!G.state && SB.ui.screen === 'play';",
+    gates: [{ gate: 'layout', expect: 'turned sideways mid room the loop holds' }] },
+  { name: 'MOTH_AT_7_5', task: 'review 4', file: 'page', find: "var mk = (Math.floor(en.timer / Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS)) & 1) ? 'moth.a' : 'moth.b';", repl: "var mk = ((en.timer >> 3) & 1) ? 'moth.a' : 'moth.b';",
+    gates: [{ gate: 'sprites', expect: 'the moth flutters at 12 fps' }] },
   { name: 'KNOCK_ALWAYS_LEFT', task: 'review 4', file: 'page', find: 'h.knock = (mdx < 0 ? -1 : 1) * K.KNOCK_FRAMES;', repl: 'h.knock = -K.KNOCK_FRAMES;',
     gates: [{ gate: 'harness', only: 'H-en-2c', expect: 'a moth on the left: the hero is knocked' }] },
   { name: 'IFRAMES_HALF', task: 'review 4', file: 'page', find: '    if (h.iframes > 0) h.iframes--;', repl: '    if (h.iframes > 0) h.iframes = Math.max(0, h.iframes - 2);',

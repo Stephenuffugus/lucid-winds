@@ -104,6 +104,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
   display: none; flex-direction: column; gap: 12px; align-items: stretch; text-align: center; z-index: 10; }
 #clear.on, #death.on { display: flex; }
+#death { top: 3%; } #death.low { top: auto; bottom: 3%; }
 #clear h2, #death h2 { margin: 0 0 4px; font-size: 1.3rem; }
 #clear button, #death button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
 #nextroom, #deathagain { background: var(--sun); color: var(--ink); }
@@ -182,11 +183,11 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 <main id="play" class="screen" aria-label="Play">
   <div id="top"><span id="roomname"></span><span id="hearts" aria-label="Hearts"></span></div>
   <div id="stage"><canvas id="view" width="384" height="640"></canvas>
-    <div id="clear" role="dialog" aria-label="Room clear"><h2 data-copy="roomClear"></h2>
+    <div id="clear" role="dialog" data-aria="roomClear"><h2 data-copy="roomClear"></h2>
       <button id="nextroom" type="button" data-copy="nextRoom"></button>
       <button id="again" type="button" data-copy="playAgain"></button>
       <button id="cleartitle" type="button" data-copy="toTitle"></button></div>
-    <div id="death" role="dialog" aria-label="The bug fell"><h2 data-copy="death"></h2>
+    <div id="death" role="dialog" data-aria="death"><h2 data-copy="death"></h2>
       <button id="deathagain" type="button" data-copy="again"></button>
       <button id="deathtitle" type="button" data-copy="toTitle"></button></div>
   </div>
@@ -2399,7 +2400,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
       var en = s.enemies[m]; if (en.hp <= 0) continue;
       var mx = en.x >> 8, my = (en.y >> 8) - cam;
       if (my < -16 || my > viewH) continue;
-      var mk = ((en.timer >> 3) & 1) ? 'moth.a' : 'moth.b';
+      var mk = (Math.floor(en.timer / Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS)) & 1) ? 'moth.a' : 'moth.b';   /* 12 fps (the fourth review: it ran at 7.5) */
       spr(ctx, mk, mx, my);
       md.push({ key: mk, x: mx - camX, y: my, w: 16, h: 16 });
     }
@@ -2419,8 +2420,8 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var fr = R.heroFrame(s), left = fr === 'cling' ? h.wall < 0 : h.facing < 0;
     var key = 'hero.' + fr + (left ? '<' : '') + (h.dashI > 0 ? '*' : '');
     var dx = heroX, dy = hy, dw = K.HERO_W, dh = K.HERO_H;
-    if (h.squash > 0) { dx -= 1; dw += 2; dy += T.SQUASH_PX; dh -= T.SQUASH_PX; }
-    else if (h.squash < 0) { dx += 1; dw -= 2; dy -= T.STRETCH_PX; dh += T.STRETCH_PX; }
+    if (fr !== 'dead' && h.squash > 0) { dx -= 1; dw += 2; dy += T.SQUASH_PX; dh -= T.SQUASH_PX; }
+    else if (fr !== 'dead' && h.squash < 0) { dx += 1; dw -= 2; dy -= T.STRETCH_PX; dh += T.STRETCH_PX; }
     spr(ctx, key, dx, dy, dw, dh);
     hd.key = key; hd.x = dx - camX; hd.y = dy; hd.w = dw; hd.h = dh;
     ctx.restore();
@@ -2694,7 +2695,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     choose: 'Choose a photo',
     sample: 'Try the sample room',
     sampleRoom: 'Sample room',
-    roomClear: 'Room clear',
+    roomClear: 'Room clear', heartsOf: '{n} of {max} hearts',
     again: 'Again',
     toTitle: 'Title',
     left: '\u25c0',
@@ -2753,7 +2754,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   function hearts(n, max) {
     var el = document.getElementById('hearts'), s = '', key = n + '/' + max;
     for (var i = 0; i < max; i++) s += i < n ? '<i></i>' : '<i class="lost"></i>';
-    if (el.getAttribute('data-n') !== key) { el.innerHTML = s; el.setAttribute('data-n', key); el.setAttribute('aria-label', n + ' of ' + max + ' hearts'); }
+    if (el.getAttribute('data-n') !== key) { el.innerHTML = s; el.setAttribute('data-n', key); el.setAttribute('aria-label', ui.COPY.heartsOf.replace('{n}', n).replace('{max}', max)); }
   }
 
   /* the develop reveal (DESIGN 5.2, T0.14). It starts at the tap: the room is built inside its first beat. Its clock
@@ -2954,7 +2955,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
   };
   ui.firstRoomDone = false;   /* the first ever free play room runs with at most FIRST_ROOM_MAX_FODDER moths (T1.10 keeps it) */
   ui.hearts = hearts;
-  ui.showDeath = function () { document.getElementById('death').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'dead'; document.body.classList.remove('playing'); };
+  /* the death card docks away from the fallen hero (the fourth review: at 30% of the stage it sat where the camera
+     keeps the hero and hid it on half the sample room's climb): the top of the stage, or its bottom when the hero is
+     in the stage's upper half (the camera clamped at the room's top) */
+  ui.showDeath = function () {
+    var hd = SB.render.drawn.hero, cv = document.getElementById('view');
+    document.getElementById('death').classList.toggle('low', !!hd && hd.key !== null && hd.y + hd.h / 2 < cv.height / 2);
+    document.getElementById('death').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'dead'; document.body.classList.remove('playing'); };
   ui.hideDeath = function () { document.getElementById('death').classList.remove('on'); };
   /* free play restarts the room with the same record and seed, the reveal skipped */
   ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true }); };
@@ -3061,12 +3068,16 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     SB.render.draw(G.state, G.level, now === undefined ? t0 : now);
     keep(perf.draw, performance.now() - t0);
   }
+  /* the rotate card's own query: under it the loop holds and the input lets go (the fourth review: the moths kept
+     coming behind a card that hides the room and takes every tap) */
+  var SIDEWAYS = window.matchMedia('(orientation: landscape) and (pointer: coarse)');
+  if (SIDEWAYS.addEventListener) SIDEWAYS.addEventListener('change', function (e) { if (e.matches && SB.input && SB.input.releaseAll) SB.input.releaseAll(); });
   function frame(now) {
     requestAnimationFrame(frame);
     var raw = last < 0 ? 0 : now - last, dt = Math.min(raw, DT_MAX);
     last = now;
     loop.raf++;
-    var run = !held && !!G.state && SB.ui.screen === 'play';
+    var run = !held && !SIDEWAYS.matches && !!G.state && SB.ui.screen === 'play';
     if (run) {
       if (!running) { loop.dropped += acc; acc = PHASE; loop.seeded += PHASE; }
       acc += dt; loop.consumed += dt; loop.clamped += raw - dt;

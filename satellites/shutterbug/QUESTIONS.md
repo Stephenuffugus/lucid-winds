@@ -483,3 +483,26 @@ As built: the moth's contact box is its cell less 2 px each side (12 by 12 of th
 Options: (a) as built; (b) the full 16 px box; (c) a Euclidean drift (1 cell per second on every heading).
 Recommendation: (a): a forgiving core is the genre's habit, and the drift is a feel number Stephen tunes on the phone.
 Plan assumes: (a).
+
+## Q71. A moth's last hit on the step the hero touches the exit (the builder, 30 Oct, from the fourth review)
+
+The sim ran the moths before the exit check, and the exit check did not look at the death: one step could end the room both ways (the fourth review: a moth homed at (11, 45), the hero on one heart walking right into the exit, both on step 62), and the shell showed the clear card over a fallen bug and an empty heart strip. DESIGN is silent on the order.
+As built: the exit is tested before the moths, whose contact already waited on a cleared room, so the touch on the lamp wins and that step takes no heart. Moths still move on that step, so the immortal goldens did not move. H-sim-21 asserts the shared step (DEATH_AND_CLEAR, RED).
+Options: (a) the clear wins, as built (a player who reached the lamp keeps the room); (b) the death wins (the exit check skips a dead room: the hit came first in the step order).
+Recommendation: (a): the genre's habit is that touching the goal wins, and it never shows a card over a fallen hero.
+Plan assumes: (a).
+
+## Q72. The B hint's dive target in M0 (the builder, 30 Oct, from the fourth review)
+
+T0.16 shows the B hint "the first time the hero is airborne above a dive target"; the plan's dive target is the onboarding beat of H-onb-1 (a fall of at least 3 rows onto a standable cell, the sample room's speck landing). T0.16 built a v0: any one way within 8 rows under a falling hero, so on the sample room B pulses on the way down onto the first shelf, about 3 s in, with the rocker and A, and the real dive (walking off shelf D onto the speck) gets no hint.
+As built: the v0, unchanged; the hint's class now leaves after its pulse under reduced motion too (the fourth review: the still outline stayed for the session; HINT_STAYS, RED).
+Options: (a) leave the v0 until T1.12 times every hint by DESIGN 5.3's table (rocker and A at 20 to 35 s, B at 35 to 50 s with the dive target); (b) a dive target now: B only above a standable cell 3 or more rows below.
+Recommendation: (a). Hint timing is onboarding pacing, a WAITS item; Stephen's first play of M0 is the input T1.12 needs.
+Plan assumes: (a); T1.12.
+
+## Q73. The relit lamp swallows the Sun hero and the beacon's bulb (the builder, 30 Oct, from the fourth review)
+
+When the exit is the ceiling light, T0.8a relights the light's cells at full palette colour (its fix for a dull lamp) and T0.17 draws the beacon sprite (a Sun bulb, a Glare shade and rays) on the exit cell. On the sample room the lamp's shade is Sun: the beacon's bulb is Sun on Sun and its Glare parts about 1.4 to 1 against it (the fourth review's phone lens), and the hero, Sun with an Ink outline, walks the last cells of the climb over that Sun shade and reads only by its outline (the builder's clear shots at 412 and 360, 30 Oct). On Paper lamps (all-light, shelves-b) the Glare parts sit near 1.07 to 1.
+Options: (a) relight the light's cells but leave the exit cell at its dimmed backdrop under the sprite; (b) give the beacon's bulb and rays an Ink edge or an Amber fill (section 7.1 gives Glare to the core and Sun or Amber to the halo, the reverse of today's sprite); (c) relight the lamp one step dimmer (the blend at half strength), so full Sun stays the hero's and the beacon's alone (section 7.3: "Sun is reserved for the hero, the chest trim and the beacon").
+Recommendation: (c) with (b): the lamp still glows and the hero and the beacon keep the only full Sun on screen. An art call for Stephen's eye on the phone: one line in the relight and one sprite string.
+Plan assumes: today's draw until he rules.

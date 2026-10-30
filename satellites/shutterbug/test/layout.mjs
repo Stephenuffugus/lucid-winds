@@ -93,6 +93,29 @@ try {
     await page.close();
   }
 
+  /* a phone turned sideways mid room: under the rotate card the loop holds (nothing moves, no moth comes), and
+     turned back it runs on (the fourth review: the moths kept coming behind the card) */
+  {
+    const { page, errors } = await newPage(browser, { width: 412, height: 915, touch: true, dpr: 3 });
+    await gotoGame(page, srv.base); await ready(page);
+    await tap(page, '#sample');
+    await new Promise(r => setTimeout(r, 2500));   /* past the develop reveal (at most 1.6 s) */
+    const f0 = await page.evaluate(() => window.SB_DEV.frames());
+    await new Promise(r => setTimeout(r, 300));
+    const fA = await page.evaluate(() => window.SB_DEV.frames());
+    await page.setViewport({ width: 915, height: 412, deviceScaleFactor: 3, hasTouch: true, isMobile: true });
+    await new Promise(r => setTimeout(r, 300));
+    const s1 = await page.evaluate(() => ({ f: window.SB_DEV.frames(), card: getComputedStyle(document.getElementById('rotate')).display !== 'none' }));
+    await new Promise(r => setTimeout(r, 700));
+    const f2 = await page.evaluate(() => window.SB_DEV.frames());
+    await page.setViewport({ width: 412, height: 915, deviceScaleFactor: 3, hasTouch: true, isMobile: true });
+    await new Promise(r => setTimeout(r, 500));
+    const f3 = await page.evaluate(() => window.SB_DEV.frames());
+    R.say(fA > f0 && s1.card && f2 === s1.f && f3 > f2, 'turned sideways mid room the loop holds under the rotate card (running before: ' + f0 + ' to ' + fA + '; sideways ' + s1.f + ' then ' + f2 + ' in 0.7 s) and runs on when turned back (' + f3 + ')');
+    R.say(errors.length === 0, 'sideways and back: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
+
   /* landscape: a phone held sideways gets the rotate card over everything; a desktop window does not */
   for (const coarse of [true, false]) {
     const { page, errors } = await newPage(browser, { width: 800, height: 360, touch: coarse, dpr: coarse ? 3 : 1 });

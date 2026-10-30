@@ -65,6 +65,14 @@ try {
   const inner = runs.slice(1, -1).filter(r => r[0].startsWith('hero.run'));
   R.say(inner.length >= 3 && inner.every(r => r[1] === 5), 'running, each frame holds 5 steps (12 fps): ' + runs.map(r => r[0].replace('hero.', '') + ' ' + r[1]).join(', '));
 
+  /* the moth flutters at 12 fps too: its frame holds 5 steps (the fourth review: it held 8) */
+  const mseq = await page.evaluate(() => { const out = []; for (let k = 0; k < 40; k++) { window.SB_DEV.step(1); const e = window.SB_DEV.spriteRects().enemies; out.push(e.length ? e[0].key : '-'); } return out; });
+  const mruns = []; let mc = null, mn = 0;
+  for (const f of mseq) { if (f === mc) mn++; else { if (mc) mruns.push([mc, mn]); mc = f; mn = 1; } }
+  mruns.push([mc, mn]);
+  const minner = mruns.slice(1, -1);
+  R.say(minner.length >= 3 && minner.every(r => r[0] !== '-' && r[1] === 5), 'the moth flutters at 12 fps, each frame held 5 steps: ' + mruns.map(r => r[0].replace('moth.', '') + ' ' + r[1]).join(', '));
+
   /* the dash's i frames drawn (QUESTIONS Q47): face left (away from the wall the run ends at), stop, then B on the
      ground; the Glare copy ('*') for exactly the dash's i frames, from its first step */
   await page.keyboard.down('ArrowLeft'); await page.evaluate(() => window.SB_DEV.step(1)); await page.keyboard.up('ArrowLeft');

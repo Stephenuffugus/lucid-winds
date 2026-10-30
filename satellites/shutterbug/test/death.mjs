@@ -66,6 +66,13 @@ try {
   });
   R.say(dead.screen === 'dead' && dead.on && dead.dead === 1 && dead.hearts === 0, 'the last heart ends the room in ' + dead.k + ' more steps: the death card is up');
   R.say(dead.shown && dead.lost === full, 'the fallen hero is drawn (no blink under the card) and the strip shows ' + dead.lost + ' empty hearts');
+  const seen = await page.evaluate(() => {
+    const cv = document.getElementById('view'), r = cv.getBoundingClientRect(), hr = window.SB_DEV.spriteRects().hero, k = r.width / cv.width;
+    const x = r.left + (hr.x + hr.w / 2) * k, y = r.top + (hr.y + hr.h / 2) * k, t = document.elementFromPoint(x, y);
+    const card = document.getElementById('death');
+    return { onCanvas: !!t && t !== card && !card.contains(t), low: card.classList.contains('low'), y: Math.round(y) };
+  });
+  R.say(seen.onCanvas && !seen.low, 'the card docks at the top and the fallen hero stays in view (the point at its middle, ' + seen.y + ' px, is not under the card)');
   R.say(dead.text === 'The bug fell out of the picture', 'the card says "' + dead.text + '"');
   R.say(dead.buttons.length === 2 && dead.buttons[0][1] === 'Again' && dead.buttons.every(b => b[2] >= 48 && b[3] >= 48), 'its buttons: ' + dead.buttons.map(b => b[1] + ' ' + b[2].toFixed(0) + 'x' + b[3].toFixed(0)).join(', '));
 
@@ -91,6 +98,38 @@ try {
   R.say(names[0] === 'Shoot the next room' && names[1] === 'Play it again' && clear.every(b => b[2] >= 48 && b[3] >= 48), 'the clear card offers ' + names.join(', ') + ', each 48 px or more');
   R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
   await page.close();
+
+  /* a death high in the room: the play gate's climb, stopped 30 steps short of the lamp, then standing still until
+     the moths end it; the camera is clamped at the room's top, the hero in the stage's upper half, so the card docks
+     at the bottom and the fallen hero stays in view */
+  {
+    const { readFileSync } = await import('node:fs');
+    const climb = JSON.parse(readFileSync(new URL('./climb-sample-room.json', import.meta.url), 'utf8'));
+    const KEYS = { 1: 'ArrowLeft', 2: 'ArrowRight', 4: 'KeyZ' };
+    const hp = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(hp.page, srv.base); await ready(hp.page);
+    await hp.page.evaluate(() => window.SB_DEV.hold(true));
+    await tap(hp.page, '#sample');
+    const total = climb.runs.reduce((a, r) => a + r[0], 0);
+    let down = 0, done = 0;
+    for (const [n, mask] of climb.runs) {
+      if (done >= total - 30) break;
+      for (const bit of [1, 2, 4]) if ((down & bit) && !(mask & bit)) await hp.page.keyboard.up(KEYS[bit]);
+      for (const bit of [1, 2, 4]) if (!(down & bit) && (mask & bit)) await hp.page.keyboard.down(KEYS[bit]);
+      down = mask; const k = Math.min(n, total - 30 - done);
+      await hp.page.evaluate(k => window.SB_DEV.step(k), k); done += k;
+    }
+    for (const bit of [1, 2, 4]) if (down & bit) await hp.page.keyboard.up(KEYS[bit]);
+    const high = await hp.page.evaluate(() => {
+      for (let k = 0; k < 30000 && window.SB_DEV.screen() === 'play'; k += 30) window.SB_DEV.step(30);
+      const cv = document.getElementById('view'), r = cv.getBoundingClientRect(), hr = window.SB_DEV.spriteRects().hero, kk = r.width / cv.width;
+      const x = r.left + (hr.x + hr.w / 2) * kk, y = r.top + (hr.y + hr.h / 2) * kk, t = document.elementFromPoint(x, y);
+      const card = document.getElementById('death');
+      return { screen: window.SB_DEV.screen(), onCanvas: !!t && t !== card && !card.contains(t), low: card.classList.contains('low'), heroY: hr.y, h: cv.height };
+    });
+    R.say(high.screen === 'dead' && high.heroY + 8 < high.h / 2 && high.low && high.onCanvas, 'a death high in the room (the hero at ' + high.heroY + ' of ' + high.h + '): the card docks at the bottom and the fallen hero stays in view (screen ' + high.screen + ')');
+    await hp.page.close();
+  }
 
   /* under reduced motion the hint is a still outline, with no animation to end: it must still leave after the pulse
      (the fourth review: it stayed for the session). A fresh page, the sample room, the first standing moment. */
