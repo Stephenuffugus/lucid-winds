@@ -80,8 +80,8 @@ const MUTANTS = [
     /* one step per frame whatever the frame owes: the test's own replay of the logged frames disagrees frame by frame
        (the rate checks it was first watched on became that replay in the second review) */
     gates: [{ gate: 'play', expect: ['frame by frame the page ran the steps the accumulator owes', 'the loop ran exactly the steps the accumulator owes'] }] },
-  { name: 'CLEAR_NO_RESTART', task: 'T0.8a', file: 'page', find: "  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level }); };",
-    repl: "  ui.again = function () { if (G.record) { var keep = document.getElementById('clear').className; ui.startRoom(G.record, G.name, { level: G.level }); document.getElementById('clear').className = keep; } };",
+  { name: 'CLEAR_NO_RESTART', task: 'T0.8a', file: 'page', find: "  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, notFirst: G.notFirst, mode: G.mode }); };",   /* re anchored after the M1 review */
+    repl: "  ui.again = function () { if (G.record) { var keep = document.getElementById('clear').className; ui.startRoom(G.record, G.name, { level: G.level, notFirst: G.notFirst, mode: G.mode }); document.getElementById('clear').className = keep; } };",
     gates: [{ gate: 'play', expect: 'Again leaves nothing painted over the play area' }] },
 
   /* the review of 30 Oct (fidelity lens) */
@@ -359,7 +359,7 @@ const MUTANTS = [
   { name: 'LADDER_GAP_4', task: 'T1.2a', file: 'page', find: 'if (dy < 1 || dy > T.LADDER_STACK_ROWS) continue;', repl: 'if (dy < 1 || dy > T.LADDER_STACK_ROWS + 1) continue;',
     gates: [{ gate: 'harness', only: 'H-feat-1', expect: 'every one of' }] },
   /* the fourth review (T0.16, T0.17), before sb-m0-3 */
-  { name: 'DEATH_CARD_FIXED', task: 'review 4', file: 'page', find: "document.getElementById('death').classList.toggle('low', !!hd && hd.key !== null && hd.y + hd.h / 2 < cv.height / 2);", repl: '',
+  { name: 'DEATH_CARD_FIXED', task: 'review 4', file: 'page', find: '      if (top < cr.bottom && top + hd.h * k > cr.top) dc.classList.add(\'low\');\n', repl: '',   /* re anchored after the M1 review's measured dock */
     gates: [{ gate: 'death', expect: 'a death high in the room' }] },
   { name: 'ROTATE_RUNS', task: 'review 4', file: 'page', find: "    var run = !held && !SIDEWAYS.matches && !!G.state && SB.ui.screen === 'play';", repl: "    var run = !held && !!G.state && SB.ui.screen === 'play';",
     gates: [{ gate: 'layout', expect: 'turned sideways mid room the loop holds' }] },
@@ -405,8 +405,8 @@ const MUTANTS = [
     repl: '    for (i = 0; i < n - w; i++) if (!solid[i] && (solid[i + w] || plat[i + w])) stand[i] = 1;\n    for (i = w; i < n; i++) if (slick[i] && (i % w === 0 || !slick[i - 1] || i % w === w - 1 || !slick[i + 1])) stand[i - w] = 0;\n',
     gates: [{ gate: 'harness', only: 'H-bio-5', expect: 'a landing on the right end moving left stays' }] },
   /* T0.16: the death gate */
-  { name: 'RESTART_REVEALS', task: 'T0.16', file: 'page', find: "ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true }); };",
-    repl: "ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level }); };",
+  { name: 'RESTART_REVEALS', task: 'T0.16', file: 'page', find: "ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true, notFirst: G.notFirst, mode: G.mode }); };",   /* re anchored after the M1 review */
+    repl: "ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, notFirst: G.notFirst, mode: G.mode }); };",
     gates: [{ gate: 'death', expect: 'Again restarts straight into play' }] },
   { name: 'DEATH_NO_CARD', task: 'T0.16', file: 'page', find: "    else if (G.state.room.dead && SB.ui.screen === 'play') SB.ui.showDeath();\n", repl: '',
     gates: [{ gate: 'death', expect: 'the last heart ends the room' }] },
@@ -453,8 +453,8 @@ const MUTANTS = [
     gates: [{ gate: 'play', expect: '1366x843: the canvas is 1x, 384 CSS px wide' }] },
   { name: 'CANVAS_TAKES_POINTERS', task: 'T0.8b review', file: 'page', find: 'pointer-events: none; background: var(--ink); }', repl: 'background: var(--ink); }',
     gates: [{ gate: 'play', expect: 'Again leaves nothing painted over the play area' }] },
-  { name: 'STRIP_KEEPS_PRESSED', task: 'T0.8b review', file: 'page', find: "  I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {} }; if (I._stripReset) I._stripReset(); };",
-    repl: "  I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {} }; };",
+  { name: 'STRIP_KEEPS_PRESSED', task: 'T0.8b review', file: 'page', find: "down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; if (I._stripReset) I._stripReset(); };",   /* re anchored after the M1 review */
+    repl: "down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; };",
     gates: [{ gate: 'play', expect: 'the same thumb moved inside its zone after the blur presses right again' }] },
   { name: 'TITLE_UNDER_ROCKER', task: 'T0.8b review', file: 'page', find: 'left: calc(6px + var(--sal)); z-index: 2; min-width: 64px;', repl: 'left: calc(6px + var(--sal)); min-width: 64px;',
     gates: [{ gate: 'play', expect: '320x568 default: Title is' }] },

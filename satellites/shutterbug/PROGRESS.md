@@ -677,3 +677,54 @@ shots (scratchpad/shots/t15, t15-<what>-<size>): ice (shelves-a as a second room
 3. The pipe's ring every half cell reads like a ladder.
 
 feel numbers for his pass (TUNING lines): FROST_SLIDE_CELLS 1 (the 16 px slide), DEEP_JUMP_V 9.5 and DEEP_FALL_MULT 0.8 (Deep's float).
+
+### 2026-10-30 22:40 UTC  M1R  The M1 review: 34 confirmed findings fixed and watched red  commit (this commit)
+the review: one workflow before the M1 deploy, three lenses (fidelity to DESIGN, the harness, the phone), each finding put to a skeptic. 37 found, 34 confirmed, 3 refused (Q89's notes). Every confirmed one is fixed below, with a gate that fails on its bug and a mutant that proves it.
+
+the player's bugs:
+- Settings never opened again once a room had run: the Performance line took its p95 over the frame log's [now, steps] pairs and threw. It now shows the p95 of a step plus the p95 of a draw (section 5.10's measure), and words in place of its two dashes (not measured yet, not played yet).
+- Again and Play it again on a link's room spent the player's first room rules and turned the room into free play. The room keeps its origin (G.notFirst, G.mode) through both.
+- A scroll offer and the chest's compare opening on one step stacked the slip over the offer, and a hit on that step left a sheet over the death card (at 320x568 over both its buttons). One sheet shows at a time, in the order the sim answers them, and none over a dead room.
+- onboarding.revealSeen was never saved, so every session's first reveal could not be skipped. It is saved at the first reveal's end and read at boot.
+- The pocket held no loot (DESIGN 6.11). Its back cell is a speck, inside CAP_SPECK (Q89).
+- A crawler elite in a pocket parked in the pocket's mouth: its run went out through the tunnel and the clamp stopped it short of its turn. It turns at the hollow's walls.
+- The degrade ladder could spend its enemy rung on the pocket's elite, which guards nothing (Q80), and refuse a room another removal would save. The rung passes over it.
+- A link arriving by hashchange mid room showed the Tap to develop card over a room that kept running. The room holds under the card.
+- Copy code's clipboard fallback wrote the bare code into the link field, which the QR, Copy link and Share then read. They read the sheet's own link.
+- Copied stuck on Copy link and Copy code after two quick taps, and stayed on every later sheet.
+- A Double Exposure preview showed one of its two grids. Both show, stacked as the level stacks them.
+- A tap on A or B under the share sheet was banked into a jump at Close. releaseAll forgets the press edges, and Close lets go.
+- The QR at 3 px a module was taller than the sheet's window on short phones (375x553: 315 px in 251). The module size is bounded by the window under the head too (2 px there), and the drawer scrolls its top just under the head.
+- The death card hid the fallen bug on 40 of 48 rows at 320x568. On a short screen Again and Title sit side by side and the card docks by measurement (Q89). The fleet's music chip, seated on the title, sat on the low docked card's Again: the fleet's chrome is hidden under the death card as in play.
+- The clear and death cards showed and took taps under the share sheet on short phones. The card the sheet sits over hides under it.
+- A refused code's sentence sat under the fold at 568 for a returning player. It sits above the title's buttons.
+- The Level code field, the share link and Settings' select and textareas were under 16 px (an iPhone zooms on them and keeps the zoom); the share link (40 px) and the select (44 px) were under the 48 px target. All are 16 px and 48 px.
+- The placeholder art broke section 7.3: the speck was Film (the repairs' colour), the open chest's slip Film, the spark had no Ink outline. The speck is Amber with a Glare glint, the slip Paper, the spark outlined.
+
+the harness made honest:
+- H-feat-2's scroll guarantee tested null >= 0 (true in JS) and never fired; it tests the type, and NO_SCROLL_GUARANTEE is RED for its own message.
+- Redwatch matched a harness row's text anywhere, group titles included; a harness row now needs an assertion's FAIL line.
+- Deep's and Overgrowth's first room (twistOff, no sticky cell) are asserted on the pipeline's own builds (H-sim-17).
+- The chest, its slip and Keep the slip, both sheets on one step, Title under the offer and a death under it are driven by real taps (the loot gate).
+- The pwa gate plants another game's cache and keeps it through the update, counts navigations from before the v2 load, builds v2 from the served copy (so a mutant reaches the update), and checks the fleet's root files never come through the worker.
+- DESIGN 7's enemy per biome and Q84's stat per biome are typed in the harness, not read from the core.
+- The loot's events (PICKUP, CHEST, OFFER, PICK) on exactly their steps (H-sim-21); every sound the shell asks for schedules a voice (audio); the pick is heard as a voice, not an ask (loot).
+- Settings by real input: sound off, reduced motion On (the next reveal a crossfade), export and import round trip, garbage refused (save).
+- H-qr-4 scores the masks by the test's own penalty rules (qrPenalty), not the encoder's.
+- H-save-1's bad recent record sits first, so the validity filter, not the slice, must drop it.
+- H-spr-1 holds Film to the film tab, the speck to Amber and Glare, every danger to an Ink outline.
+
+gates and mutants:
+- New mutants, each RED for its own message: PERF_OVER_PAIRS, PERF_DASH, LINK_TAKES_FIRST_ROOM, AGAIN_FORGETS_LINK, PLAY_AGAIN_FORGETS_LINK, SLIP_OVER_OFFER, SHEET_OVER_DEATH, SLIP_NOT_MODAL, OFFER_NOT_CLEARED, SLIPOK_LEAVES, REVEAL_SEEN_NOT_SAVED, REVEAL_SEEN_NOT_LOADED, POCKET_CRAWLER_PARKS, POCKET_EMPTY, LADDER_TAKES_ELITE, KIND_TABLE_SWAPPED, STAT_TABLE_SWAPPED, STICKY_IN_FIRST_ROOM, TWISTOFF_FROST_ONLY, NO_PICKUP_EVENT, NO_CHEST_EVENT, QR_RULE2_ZERO, QR_RULE3_ZERO, RECENT_UNFILTERED, SYNTH_THROWS, SOUND_TOGGLE_MISWIRED, MOTION_IGNORED, IMPORT_REFUSES, SW_WIPES_PAST_THE_PREFIX, QR_WIDTH_ONLY, PREVIEW_ONE_GRID, QR_FROM_FIELD, CODE_CARD_RUNS, CODEMSG_BELOW_FOLD, FIELD_15PX, SHARELINK_40PX, EDGE_BANKED_UNDER_SHEET, CARD_UNDER_SHEET, COPIED_STICKS, DEATH_CARD_TALL, CHIP_ON_DEATH, SPECK_IN_FILM, SPARK_UNOUTLINED, SELECT_44PX. SW_WIPES_OTHER_CACHES, SW_CACHES_ROOT_FILES and RELOAD_ON_CONTROLLERCHANGE are now RED in the pwa gate as well as the lint.
+- The harness: 5543 assertions, the floor 5543. No golden moved.
+- Six rows re anchored where the fixes moved their lines (SPECK_CAP_7, CRAWLER_FALLS_OFF, CLEAR_NO_RESTART, DEATH_CARD_FIXED, RESTART_REVEALS, STRIP_KEEPS_PRESSED), each RED again.
+- check --fast: every gate passed (the browser gates 7 to 18 s each); the redwatch gate's six anchors re made and rerun RED.
+
+shots (looked at):
+- m1r: the death card at 320x568, 375x553 and 412x915 with the bug on row 11 (the band that defeated the halfway rule); the QR at 375x553; the clear card and the sheet over it at 320x568 and 412x915; the Double Exposure preview at 360x780; the refusal on the title at 320x568; an Ember room with sparks and the open chest at 412x915 and 360x780; a contact sheet of the recoloured sprites at 8x on Ash and Soot.
+- Seen wrong:
+  - At 320x568 the death card's heading still wraps (a one word second line), and the card clears the bug at row 11 by about 5 px.
+  - The QR drawer's scroll leaves a sliver of the button row above it under the head.
+  - At 320 wide the fleet's music chip sits on the rocker's left zone whenever no room runs (Q48's reported case).
+  - The Double Exposure preview is small (each grid about 85 px tall at 22vh).
+  - The spark's Ink outline, like the moth's, vanishes on Soot.
