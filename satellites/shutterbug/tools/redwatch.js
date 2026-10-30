@@ -179,7 +179,7 @@ const MUTANTS = [
      ascent keeps a cell of slack, so it is the every edge gate that meets the table's edge jumps (46 fail) */
   { name: 'OVERLAP_8', task: 'T0.13a', file: 'page', find: 'if (ov >= K.OVERLAP_SUB || (h.ground && ov > 0)) landed = true;', repl: 'if (ov >= 8 * 256 || (h.ground && ov > 0)) landed = true;',
     gates: [{ gate: 'harness', only: 'H-bot-6', args: ['--all-edges'], expect: 'every edge has a macro' }] },
-  { name: 'TOUCH_HEAD_ROW', task: 'T0.13a', file: 'page', find: 'var fc = Math.floor((ny - (HHs >> 1)) / C) * w + (col - dir)', repl: 'var fc = Math.floor((ny - HHs) / C) * w + (col - dir)',
+  { name: 'TOUCH_HEAD_ROW', task: 'T0.13a', file: 'page', find: 'var fc = floor((ny - (HHs >> 1)) / C) * w + (col - dir)', repl: 'var fc = floor((ny - HHs) / C) * w + (col - dir)',
     gates: [{ gate: 'harness', only: 'H-bot-5', expect: 'every edge has a macro' }] },
   { name: 'FOOTING_2PX', task: 'T0.13a', file: 'page', find: 'if (ov >= K.OVERLAP_SUB || (h.ground && ov > 0)) landed = true;', repl: 'if (ov >= K.OVERLAP_SUB) landed = true;',
     gates: [{ gate: 'harness', only: 'H-sim-4', expect: 'walking off a one way plank the hero stands while its box overlaps it' }] },

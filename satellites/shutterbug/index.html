@@ -1302,10 +1302,13 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     /* is any solid where a touch trajectory from (sx, sy) in dir could be beside it? Columns 1 to touchReach ahead (the
        frame's sides beyond the grid count), rows from the apex to TOUCH_ROWS below, never the ceiling or the floor row
        (neither can be beside the box); a prefix sum of the room's solids answers it in one look */
+    /* the touch scan's arithmetic through locals: the harness's purity prelude rewrites Math, which leaves every
+       Math.floor looked up the slow way, three times the cost of the scan in the harness's context (the page's is not) */
+    var floor = Math.floor, mmin = Math.min, mmax = Math.max, mabs = Math.abs;
     var ps = new Int32Array((h + 1) * (w + 1));
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) ps[(y + 1) * (w + 1) + x + 1] = ps[y * (w + 1) + x + 1] + ps[(y + 1) * (w + 1) + x] - ps[y * (w + 1) + x] + (solid[y * w + x] ? 1 : 0);
     var wallNear = function (sx, sy, dir) {
-      var y0 = Math.max(0, sy + 1 - tb.touchUp), y1 = Math.min(h - 2, sy + TOUCH_ROWS + 1);
+      var y0 = mmax(0, sy + 1 - tb.touchUp), y1 = mmin(h - 2, sy + TOUCH_ROWS + 1);
       if (y0 > y1) return false;
       var x0 = dir > 0 ? sx + 1 : sx - tb.touchReach, x1 = dir > 0 ? sx + tb.touchReach : sx - 1;
       if (x0 < 0 || x1 > w - 1) return true;
@@ -1314,7 +1317,7 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var scan = function (t, sx, sy, dir, out, lockSteps, chain) {
       if (!wallNear(sx, sy, dir)) return;
       var a = t.a, sw = t.sweep[dir], f0 = -1;
-      for (var q = 0; q < sw.length; q++) { var ec = sx + sw[q][0], er = sy + sw[q][1]; if (S(ec, er) || P(ec, er)) { f0 = Math.max(1, sw[q][2] - 2); break; } }
+      for (var q = 0; q < sw.length; q++) { var ec = sx + sw[q][0], er = sy + sw[q][1]; if (S(ec, er) || P(ec, er)) { f0 = mmax(1, sw[q][2] - 2); break; } }
       if (f0 < 0) return;
       var C = K.CELL_SUB, HWs = K.HERO_W_SUB, HHs = K.HERO_H_SUB, base = (sy + 1) * C, need = HHs - K.CORNER_SUB;
       /* x is carried step by step (the arc's travel, clamped flush each step a solid stands in the leading column at the
@@ -1326,31 +1329,31 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
         if (p.vy === 0 && p.y === 0) continue;                       /* still on the ledge of a walk off */
         var py = base + p.py, ny = base + p.y;
         if (p.x !== a[f - 1].x) {
-          var lead = dir > 0 ? Math.floor((X + HWs - 1) / C) : Math.floor(X / C);
-          for (var r = Math.floor((py - HHs) / C); r <= Math.floor((py - 1) / C); r++) if (S(lead, r)) { X = dir > 0 ? lead * C - HWs : (lead + 1) * C; break; }
+          var lead = dir > 0 ? floor((X + HWs - 1) / C) : floor(X / C);
+          for (var r = floor((py - HHs) / C); r <= floor((py - 1) / C); r++) if (S(lead, r)) { X = dir > 0 ? lead * C - HWs : (lead + 1) * C; break; }
         }
-        var c0 = Math.floor(X / C), c1 = Math.floor((X + HWs - 1) / C), cx;
+        var c0 = floor(X / C), c1 = floor((X + HWs - 1) / C), cx;
         if (p.vy > 0) {
-          var row = Math.floor((ny - 1) / C), top = row * C;
+          var row = floor((ny - 1) / C), top = row * C;
           for (cx = c0; cx <= c1; cx++) if (S(cx, row)) return;
-          if (py <= top && ny > top) for (cx = c0; cx <= c1; cx++) if (P(cx, row) && Math.min(X + HWs, (cx + 1) * C) - Math.max(X, cx * C) >= K.OVERLAP_SUB) return;
+          if (py <= top && ny > top) for (cx = c0; cx <= c1; cx++) if (P(cx, row) && mmin(X + HWs, (cx + 1) * C) - mmax(X, cx * C) >= K.OVERLAP_SUB) return;
         } else if (p.vy < 0) {
-          var hr = Math.floor((ny - HHs) / C);
+          var hr = floor((ny - HHs) / C);
           for (cx = c0; cx <= c1; cx++) if (S(cx, hr)) return;
         }
         var edgeX = dir > 0 ? X + HWs : X;
         if (edgeX % C !== 0) continue;
         var col = dir > 0 ? edgeX / C : edgeX / C - 1, ovP = 0, ovS = 0;
-        for (var rr = Math.floor((ny - HHs) / C); rr <= Math.floor((ny - 1) / C); rr++) {
+        for (var rr = floor((ny - HHs) / C); rr <= floor((ny - 1) / C); rr++) {
           if (!S(col, rr)) continue;
-          var ov = Math.min(ny, (rr + 1) * C) - Math.max(ny - HHs, rr * C);
+          var ov = mmin(ny, (rr + 1) * C) - mmax(ny - HHs, rr * C);
           if (col >= 0 && col < w && rr >= 0 && rr < h && sticky[rr * w + col]) ovS += ov; else ovP += ov;
         }
         var armed = (p.vy > 0 && ovS >= need) || (f >= lockSteps && ovP >= need);
         if (!armed) continue;
-        var fc = Math.floor((ny - (HHs >> 1)) / C) * w + (col - dir), node = cnode(fc, dir);   /* the row holding the box's centre */
+        var fc = floor((ny - (HHs >> 1)) / C) * w + (col - dir), node = cnode(fc, dir);   /* the row holding the box's centre */
         if (fc >= 0 && fc < n && contact[2 * fc + (dir > 0 ? 1 : 0)]) {
-          var tdy = sy - Math.floor(fc / w), tdx = Math.abs(fc % w - sx), cost = chain ? 4 : (tdy >= 0 ? 2 + tdy + tdx / 2 : 1 - tdy / 4) + 1;
+          var tdy = sy - floor(fc / w), tdx = mabs(fc % w - sx), cost = chain ? 4 : (tdy >= 0 ? 2 + tdy + tdx / 2 : 1 - tdy / 4) + 1;
           if (out[node] === undefined || cost < out[node]) out[node] = cost;
         }
         if (p.vy > 0) return;
