@@ -1936,8 +1936,10 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
     var hy = heroY - cam;
     ctx.fillStyle = css(P.I.INK); ctx.fillRect(heroX, hy, K.HERO_W, K.HERO_H);
     ctx.fillStyle = css(SB.TUNING.HERO_BODY); ctx.fillRect(heroX + 1, hy + 1, K.HERO_W - 2, K.HERO_H - 3);
-    /* the cling pose (an armed slide or a sticky wall; the sprite is T0.17): an Ink bar along the wall side */
-    if (s.hero.wall !== 0) { ctx.fillStyle = css(P.I.INK); ctx.fillRect(s.hero.wall > 0 ? heroX + K.HERO_W - 4 : heroX + 2, hy + 2, 2, K.HERO_H - 5); }
+    /* the cling pose (an armed slide or a sticky wall; the sprite is T0.17): the wall side thickened to 3 px of Ink, the
+       body pressed flat against the wall; one column in, the eye (the slide faces the wall) sat on the old bar and the
+       pose read as the letter i in t12-cling */
+    if (s.hero.wall !== 0) { ctx.fillStyle = css(P.I.INK); ctx.fillRect(s.hero.wall > 0 ? heroX + K.HERO_W - 3 : heroX, hy, 3, K.HERO_H); }
     ctx.fillStyle = css(P.I.GLARE); ctx.fillRect(heroX + (s.hero.facing > 0 ? K.HERO_W - 4 : 2), hy + 4, 2, 2);
     ctx.restore();
   };
