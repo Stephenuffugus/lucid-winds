@@ -54,6 +54,7 @@ The builder updates this table in the same commit that ships the task (law 8: th
 | T0.11a | shipped | `54c5f4a84` | H-rep-1..6 green (16 rooms build with 0 to 16 tabs; the sample room 0 tabs, the lamp); TAB_MAX_0, TABS_ON_LANDMARK, LIGHT_SLACK_0 RED; 12 tabs read per pass | (pipeline task) |
 | T0.11b | shipped | `869a436ab` (autosave) | H-route-1..5 and H-onb-1 green (the sample room's ascent: jumps only, 19 edges, safe gap 3); SLACK_ZERO, CHAIN_3, SHELF_CLOSED RED | (reach task) |
 | T0.12a | shipped | `be5282300` (with autosave `0c3e64cd5`) | H-sim-9..12, 15, H-lab-5 (21 wall jump cases land, 451 single solid runs stop none), H-lab-6 green; CORNER_PX_6, STICKY_PUSHOFF, LOCK_ZERO, STICKY_ARMS_RISING RED; vines not on the sample room (Attic) | t12-cling: the pose read as the letter i (fixed); the exit ring in Sun reads as a second hero; at 360 a sliver of the lamp's ring under the top strip |
+| T0.12b | shipped | `fbfa037f1` (with autosave `25bff4456`) | H-sim-13, 14, H-lab-7 green (the dive rests exactly where the model's FALL straight down says, in three rooms; 273 solid runs beside it stop none); DASH_OFF_EDGE, DIVE_CHAINS_DASH, HOLD_DIVE_CAUGHT RED | t12-dive: no shake near the room's top (fixed); the speed lines read as steam; the exit ring reads as a second hero |
 
 Status is one of `shipped`, `shipped with xfail Qn`, `BLOCKED on <assertion> Qn`, `skipped (budget)`. The night's last row is `T0.18 deploy` with the deploy commit and the two origin hashes, or `NOT LIVE` and why.
 

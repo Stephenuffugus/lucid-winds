@@ -1,9 +1,9 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 06:41 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
+> **STATE 30 Oct 06:56 UTC (Opus, building).** His word tonight: NO budget, NO usage checks, NO 8 hour clock; run the
 > night one order, the night two order, then Lap 2, in one session; T0.18 deploys as sb-m0-1 after T0.8a, sb-m0-2 after
 > T0.8b, sb-m0-3 when M0 is complete. **LIVE: sb-m0-2** (deploy `945b541b5`, both origins proven by curl 04:53:54 UTC):
-> the thumbs climb on a phone. **Last shipped: T0.12a (sim part two: the wall slide, the wall jump with its lock, the corner rule, sticky vines; H-sim-9..12, 15, H-lab-5, H-lab-6; CORNER_PX_6, STICKY_PUSHOFF, LOCK_ZERO, STICKY_ARMS_RISING RED; the cling pose redrawn after the shot read it as the letter i).** Gates: check --fast green (lint, harness 4119 assertions in 78 groups, redwatch, boot, play, make, input, layout). Red: nothing. Next: T0.12b (dive and dash), then the third independent review, then T0.13a (the bot). Autosave running.
+> the thumbs climb on a phone. **Last shipped: T0.12b (dive and dash: B in the air dives, held through one ways; a fresh B on the ground dashes 3 cells, never off an edge; the dive landing's shake; H-sim-13, 14, H-lab-7; DASH_OFF_EDGE, DIVE_CHAINS_DASH, HOLD_DIVE_CAUGHT RED).** Gates: check --fast green (lint, harness 4150 assertions in 81 groups, redwatch, boot, play, make, input, layout). Red: nothing. Next: the third independent review (three lenses, one round), then T0.13a (the bot). Autosave running.
 
 You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is ONE game from zero:
 Shutterbug, a photo of a room becomes a pixel platformer level (`satellites/shutterbug/DESIGN.md`). Fable wrote the
