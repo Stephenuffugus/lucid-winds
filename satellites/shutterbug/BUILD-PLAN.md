@@ -49,6 +49,7 @@ The builder updates this table in the same commit that ships the task (law 8: th
 | T0.4b | shipped | `c2e1c1857` | H-pal-3 (150 pairs, weakest edge 4.38:1, hero 3.63:1), H-pal-4 green; GLARE_DARKENED RED | Ink and Soot read alike; Film and Paper read alike; the hero on Sun's blend held by its outline |
 | T0.5c | shipped | `76f53fdcb` | 21 records, idempotent; H-fix-1..3 and H-pipe-* green over the corpus; 7 first drafts corrected by the rules (the clamp, Q58, the majority) | (corpus task) |
 | T0.9 | shipped | `7400462dc` | input (10 checks) and layout (150 checks at 4 sizes, both layouts, landscape) green; LATCH_OFF, ZONE_FIXED_AT_DOWN, CANVAS_100PCT, A_44PX, RESERVE_FILLED, MIRROR_OVERLAPS_CANVAS RED; the chip check adapted to Q48's addendum | a faint pressed state; the empty band over the glyphs; the empty chip corner |
+| T0.10a | shipped | `ece1bcc4d` | H-reach-1 (every field and corridor, both biomes), H-reach-1b (tables.json, section 3.2), H-reach-2 green; H-reach-10 info; HI_PLUS_ONE RED; Q64 (two plan numbers vs the sim) | (reach task) |
 
 Status is one of `shipped`, `shipped with xfail Qn`, `BLOCKED on <assertion> Qn`, `skipped (budget)`. The night's last row is `T0.18 deploy` with the deploy commit and the two origin hashes, or `NOT LIVE` and why.
 
