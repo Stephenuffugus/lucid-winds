@@ -98,8 +98,9 @@ const MUTANTS = [
     repl: 'var peak = 0; for (var q = 0; q < lights[i].length; q++) peak += L[lights[i][q]];',
     gates: [{ gate: 'harness', only: 'H-pipe-12', expect: 'a 3x2 Glare lamp beats a bigger 6x3 Paper patch' }] },
   { name: 'AIR_KEEPS_MOMENTUM', task: 'T0.8a review', file: 'page',
-    find: '    else if (h.vx > 0) h.vx = Math.max(0, h.vx - K.DECEL);\n    else if (h.vx < 0) h.vx = Math.min(0, h.vx + K.DECEL);',
-    repl: '    else if (h.vx > 0 && h.ground) h.vx = Math.max(0, h.vx - K.DECEL);\n    else if (h.vx < 0 && h.ground) h.vx = Math.min(0, h.vx + K.DECEL);',
+    /* re anchored at T1.5 (the decel reads the slick support): the same mutation, the air keeping its momentum */
+    find: '    else if (h.vx > 0) h.vx = Math.max(0, h.vx - (h.ground && slickUnder(h, lv, K) ? K.SLICK_DECEL : K.DECEL));\n    else if (h.vx < 0) h.vx = Math.min(0, h.vx + (h.ground && slickUnder(h, lv, K) ? K.SLICK_DECEL : K.DECEL));',
+    repl: '    else if (h.vx > 0 && h.ground) h.vx = Math.max(0, h.vx - (h.ground && slickUnder(h, lv, K) ? K.SLICK_DECEL : K.DECEL));\n    else if (h.vx < 0 && h.ground) h.vx = Math.min(0, h.vx + (h.ground && slickUnder(h, lv, K) ? K.SLICK_DECEL : K.DECEL));',
     gates: [{ gate: 'harness', only: 'H-sim-18', expect: 'releasing the rocker in flight decelerates in 4 frames' }] },
 
   /* the review of 30 Oct (harness lens) */
@@ -110,8 +111,8 @@ const MUTANTS = [
   { name: 'BONK_KEEPS_VY', task: 'T0.8a review', file: 'page', find: "        else { h.y = (hr + 1) * CS; h.vy = 0; h.rising = 0; }   /* the head bonk */",
     repl: "        else { h.y = (hr + 1) * CS; h.rising = 0; }   /* the head bonk */",
     gates: [{ gate: 'harness', only: 'H-sim-5', expect: 'the head meets the ceiling' }] },
-  { name: 'COYOTE_AFTER_JUMP', task: 'T0.8a review', file: 'page', find: 'h.vy = -K.JUMP_V; h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;',
-    repl: 'h.vy = -K.JUMP_V; h.ground = 0; h.rising = 1; h.buffer = 0; jumped = 1;',
+  { name: 'COYOTE_AFTER_JUMP', task: 'T0.8a review', file: 'page', find: 'h.vy = deep ? -K.DEEP_JUMP_V : -K.JUMP_V; h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;',
+    repl: 'h.vy = deep ? -K.DEEP_JUMP_V : -K.JUMP_V; h.ground = 0; h.rising = 1; h.buffer = 0; jumped = 1;',
     gates: [{ gate: 'harness', only: 'H-sim-2b', expect: 'gives no second upward kick' }] },
   { name: 'ONEWAY_CATCHES_FROM_BELOW', task: 'T0.8a review', file: 'page', find: '      if (!landed && prevFeet <= top && feet > top && h.dive !== 2) {',
     repl: '      if (!landed && feet > top && h.dive !== 2) {',
@@ -183,7 +184,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-reach-1', expect: 'catch lists in the cone equal the oracle' }] },
   { name: 'CATCHES_ANY_OVERLAP', task: 'review 3', file: 'page', find: '          if (overlap(K, a[f].x, c) < K.OVERLAP_SUB) continue;\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-reach-1', expect: 'catch lists in the cone equal the oracle' }] },
-  { name: 'DIVE_KEEPS_VX', task: 'review 3', file: 'page', edits: [['h.dive = 1; h.vy = K.TERM; h.vx = 0;', 'h.dive = 1; h.vy = K.TERM;'], ['    else if (h.dive) h.vx = 0;\n', '    else if (h.dive) { }\n']],
+  { name: 'DIVE_KEEPS_VX', task: 'review 3', file: 'page', edits: [['h.dive = 1; h.vy = deep ? K.DEEP_TERM : K.TERM; h.vx = 0;', 'h.dive = 1; h.vy = deep ? K.DEEP_TERM : K.TERM;'], ['    else if (h.dive) h.vx = 0;\n', '    else if (h.dive) { }\n']],
     gates: [{ gate: 'harness', only: 'H-sim-13b', expect: 'a dive from a running jump' }] },
   { name: 'DIVE_KEEPS_COYOTE', task: 'review 3', file: 'page', find: 'h.sticky = 0; h.rising = 0; h.coyote = 0; s.ev |= EV.DIVE; }', repl: 'h.sticky = 0; h.rising = 0; s.ev |= EV.DIVE; }',
     gates: [{ gate: 'harness', only: 'H-sim-13b', expect: 'A pressed in coyote time after a dive' }] },
@@ -529,7 +530,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-bio-4', expect: 'the sticky set is the first CAP_STICKY' }] },
   { name: 'SLICK_SPARES_FALLS', task: 'review 5', file: 'page', find: '      if (slides(to, dir, dx)) return;\n', repl: "      if (kind !== 'FALL' && kind !== 'JUMP_DOWN' && slides(to, dir, dx)) return;\n",
     gates: [{ gate: 'harness', only: 'H-bio-5', expect: 'falls and drops onto the run' }] },
-  { name: 'SLICK_PAST_THE_FRAME', task: 'review 5', file: 'page', find: 'return x2 >= 0 && x2 < w && !stand[to + dir] && !solid[to + dir];', repl: 'return !stand[to + dir] && !solid[to + dir];',
+  { name: 'SLICK_PAST_THE_FRAME', task: 'review 5', file: 'page', find: 'if (x2 < 0 || x2 >= w || solid[c]) return false;', repl: 'if (solid[c]) return false;',   /* re anchored at T1.5 (slides() walks FROST_SLIDE_CELLS cells) */
     gates: [{ gate: 'harness', only: 'H-bio-5', expect: 'a run against the frame keeps its landings' }] },
   { name: 'CHEST_IGNORES_LADDER', task: 'review 5', file: 'page', find: '    if (f.ladder && ok(f.ladder.top)) return f.ladder.top;\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-feat-1', expect: 'with the chest on its top' }] },
@@ -686,7 +687,18 @@ const MUTANTS = [
   { name: 'CUT_NO_SHA', task: 'ASTRA', file: 'astra', find: `            if sha != str(e.get('sha256', '')).lower():\n                raise Refuse(`, repl: `            if False:\n                raise Refuse(`,
     gates: [{ gate: 'astra', expect: 'a wrong sha256 is refused' }] },
   { name: 'SPLICE_JOINS_LINES', task: 'ASTRA', file: 'astra', find: `body = body[:em.start()] + em.group(1) + em.group(2)`, repl: `body = body[:em.start()] + em.group(2)`,
-    gates: [{ gate: 'astra', expect: 'splicing the cut back leaves the page byte for byte' }] }
+    gates: [{ gate: 'astra', expect: 'splicing the cut back leaves the page byte for byte' }] },
+  /* T1.5: the biome twists in the sim */
+  { name: 'DEEP_TABLES_NOT_SWAPPED', task: 'T1.5', file: 'page', find: 'var deep = lv.biome === 2 && !lv.twistOff;', repl: 'var deep = false;',
+    gates: [{ gate: 'harness', only: 'H-sim-17', expect: 'a full hold in Deep peaks at' }] },
+  { name: 'SLIDE_32PX', task: 'T1.5', file: 'page', find: '    else if (h.vx > 0) h.vx = Math.max(0, h.vx - (h.ground && slickUnder(h, lv, K) ? K.SLICK_DECEL : K.DECEL));', repl: '    else if (h.vx > 0) h.vx = Math.max(0, h.vx - (h.ground && slickUnder(h, lv, K) ? K.SLICK_DECEL >> 1 : K.DECEL));',
+    gates: [{ gate: 'harness', only: 'H-sim-16', expect: 'a stop from full run on ice slides' }] },
+  { name: 'DEEP_WALKOFF_FALL_G', task: 'T1.5', file: 'page', find: 'h.vy + (h.vy >= 0 && !startedGrounded ? K.DEEP_FALL_G : K.G)', repl: 'h.vy + (h.vy >= 0 ? K.DEEP_FALL_G : K.G)',
+    gates: [{ gate: 'harness', only: 'H-sim-17', expect: 'a walk off in Deep falls G on its first airborne step' }] },
+  { name: 'TWIST_IN_FIRST_ROOM', task: 'T1.5', file: 'page', find: 'level.twistOff = opts.firstRoom && (level.biome === 1 || level.biome === 2 || level.biome === 3) ? 1 : 0;', repl: 'level.twistOff = 0;',
+    gates: [{ gate: 'harness', only: 'H-sim-16', expect: 'the first ever room has no ice' }] },
+  { name: 'MODEL_DEEP_IGNORES_TWISTOFF', task: 'T1.5', file: 'page', edits: [['tb = tables(K, lv.twistOff ? 0 : lv.biome | 0)', 'tb = tables(K, lv.biome | 0)'], ['up = lv.biome === 2 && !lv.twistOff ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;', 'up = lv.biome === 2 ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;']],
+    gates: [{ gate: 'harness', only: 'H-sim-17', expect: 'under twistOff (the first ever room) neither the sim nor the model reaches it' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

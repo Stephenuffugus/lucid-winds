@@ -3484,6 +3484,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* a film tab (the repair, section 7.3): Film with Ink perforations, an Ink edge under it */
     tab: { w: 16, h: 5, frames: {
       a: 'ffffffffffffffff/ff0fff0fff0fff0f/ff0fff0fff0fff0f/ffffffffffffffff/0000000000000000'
+    } },
+    /* T1.5's sticky walls (section 7.3), placeholders until Astra's rows are ruled: a vine, Moss with Ink stems, winding
+       up an Overgrowth pillar; a pipe, Teal with Ink rings and a Glare highlight, up a Deep one. Each tiles a 1 cell
+       column top to bottom */
+    vine: { w: 16, h: 16, frames: {
+      a: '.......0d0....../.......0d0....../......0dd0....../....00dd0......./...0ddd00......./...0dd0........./....00d0......../......0d0......./.......0d0....../.......0dd0...../........0ddd00../.........0dddd0./........0dd000../.......0dd0...../.......0d0....../.......0d0......'
+    } },
+    pipe: { w: 16, h: 16, frames: {
+      a: '..0c6cccccccc0../..0c6cccccccc0../..0c6cccccccc0../..0c6cccccccc0../.00000000000000./.0c6cccccccccc0./.00000000000000./..0c6cccccccc0../..0c6cccccccc0../..0c6cccccccc0../..0c6cccccccc0../..0c6cccccccc0../.00000000000000./.0c6cccccccccc0./.00000000000000./..0c6cccccccc0..'
     } }
   };
   /* SPRITES END */
@@ -3549,7 +3558,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       sctx.fillStyle = rgb(lv.solid[i] ? P.solidColour(lv.pal[i], biome) : P.openColour(lv.pal[i], biome));
       sctx.fillRect(x * C, y * C, C, C);
     }
-    var ink = css(P.I.INK), glare = css(P.I.GLARE), line = css(P.TINT.line[biome]);
+    var ink = css(P.I.INK), glare = css(P.I.GLARE), line = css(P.TINT.line[biome]), teal = css(P.I.TEAL);
     var open = function (xx, yy) { return xx >= 0 && xx < w && yy >= 0 && yy < h && !lv.solid[yy * w + xx]; };
     for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
       i = y * w + x;
@@ -3559,12 +3568,16 @@ body.sb-modal .lwfb-fab { display: none !important; }
         if (open(x + 1, y)) sctx.fillRect(x * C + C - 1, y * C, 1, C);
         if (open(x, y + 1)) sctx.fillRect(x * C, y * C + C - 1, C, 1);
         if (open(x, y - 1)) { sctx.fillStyle = glare; sctx.fillRect(x * C, y * C, C, 1); sctx.fillStyle = ink; sctx.fillRect(x * C, y * C + 1, C, 1); }
+        /* T1.5: the sticky wall over its cell, a pipe in Deep and a vine in Overgrowth (the sim's contactAt rule) */
+        if (lv.sticky && lv.sticky[i] && (biome === 2 || biome === 3)) spr(sctx, biome === 2 ? 'pipe.a' : 'vine.a', x * C, y * C);
       } else if (lv.plat[i]) {
         if (lv.tab && lv.tab[i]) spr(sctx, 'tab.a', x * C, y * C);
         else {
           sctx.fillStyle = glare; sctx.fillRect(x * C, y * C, C, 1);
           sctx.fillStyle = ink; sctx.fillRect(x * C, y * C + 1, C, 1);
-          sctx.fillStyle = line; sctx.fillRect(x * C, y * C + 2, C, 1);
+          /* T1.5: a slick one way's Teal ice edge, two rows under the Ink, in place of the biome's line */
+          if (lv.slick && lv.slick[i]) { sctx.fillStyle = teal; sctx.fillRect(x * C, y * C + 2, C, 2); }
+          else { sctx.fillStyle = line; sctx.fillRect(x * C, y * C + 2, C, 1); }
         }
       }
     }
@@ -4368,7 +4381,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var t0 = performance.now();
     if (window.performance && performance.mark) performance.mark('sb-reveal-start');
     var first = !opts.notFirst && !ui.firstRoomDone;   /* a link or a pasted code is never the player's first room (Q32) */
-    var lv = opts.level || SB.pipeline.build(record, { firstRoom: first });
+    var lv = opts.level || SB.pipeline.build(record, { firstRoom: first, biome: opts.biome });   /* opts.biome: SB_DEV.loadRecord's override (T1.5's shots) */
     SB.perfLog.pipeline = opts.level ? (opts.ms || 0) : performance.now() - t0;
     if (lv.needsCrop) return false;
     G.record = record; G.level = lv; G.name = name; G.mode = opts.mode || 'free';
@@ -4780,11 +4793,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
     lastInput: function () { return SB.input.last(); },
     recording: function () { return SB.input.recording(); },
     staticBuilds: function () { return SB.render.builds; },
-    loadRecord: function (str) {
+    /* biome (T1.5, a named liberty for the shots): the room built under that biome as a room after the first, so its
+       twist shows (no fixture is detected Overgrowth or Deep with a 1 cell pillar) */
+    loadRecord: function (str, biome) {
       var rec = null, j = null;
       try { j = JSON.parse(str); } catch (e) { j = null; }
       if (j && j.rows) rec = SB.record.fromJSON(j); else if (j && j.record) rec = SB.record.fromJSON(j.record); else rec = SB.record.decode(String(str).trim());
-      return rec ? SB.ui.startRoom(rec, SB.ui.COPY.sampleRoom) : false;
+      return rec ? SB.ui.startRoom(rec, SB.ui.COPY.sampleRoom, biome === undefined ? {} : { biome: biome, notFirst: true }) : false;
     },
     goto: function (name) {
       if (name === 'title') SB.ui.toTitle();

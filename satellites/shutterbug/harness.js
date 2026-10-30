@@ -206,6 +206,9 @@ group('H-ns-1', 'K recomputed in the test from TUNING, and the known integers of
     KNOCK_V: T.HIT_KNOCKBACK_CELLS * G.CELL * 256 / T.HIT_KNOCKBACK_FRAMES, KNOCK_FRAMES: T.HIT_KNOCKBACK_FRAMES,
     JELLY_V: Math.round(T.JELLY_SPEED * G.CELL * 256 / 60), ELITE_SUB: T.ELITE_SIZE_CELLS * G.CELL * 256, ELITE_PX: T.ELITE_SIZE_CELLS * G.CELL
   };
+  /* the Frost slide's decel (T1.5): the least whole d whose stop from RUN, the sum of RUN - k d over the positive
+     terms, stays within FROST_SLIDE_CELLS cells */
+  want.SLICK_DECEL = (() => { for (let d = 1; ; d++) { let sum = 0; for (let k = 1; T.RUN * 256 - k * d > 0; k++) sum += T.RUN * 256 - k * d; if (sum <= T.FROST_SLIDE_CELLS * G.CELL * 256) return d; } })();
   for (const k of Object.keys(T)) if (k.endsWith('_S') && typeof T[k] === 'number') want[k.slice(0, -2) + '_F'] = Math.round(T[k] * 60);
   for (const k of Object.keys(want)) t.eq(K[k], want[k], 'K.' + k + ' recomputed from TUNING');
   /* the known answers, hard coded from the plan: the code's derivation checked against the plan, not itself */
@@ -213,7 +216,7 @@ group('H-ns-1', 'K recomputed in the test from TUNING, and the known integers of
     WALL_PUSH: 672, DASH_V: 1536, DEEP_JUMP_V: 2432, DEEP_FALL_G: 102, DEEP_TERM: 2458, MOTH_V: 68, CRAWLER_V: 137,
     WORLD_W: 384, WORLD_H: 768, HIT_IFRAMES_F: 60, ICICLE_RESPAWN_F: 360, SPARK_HOP_F: 90, TRAP_PERIOD_F: 90,
     JUMP_SLOT_CD_F: 36, BOSS_TELEGRAPH_F: 48, BOSS_INTRO_F: 120, KNOCK_V: 1024, KNOCK_FRAMES: 8,
-    JELLY_V: 68, ELITE_SUB: 6144, ELITE_PX: 24, SPARK_AIR_F: 12 };
+    JELLY_V: 68, ELITE_SUB: 6144, ELITE_PX: 24, SPARK_AIR_F: 12, SLICK_DECEL: 51 };
   for (const k of Object.keys(KNOWN)) t.eq(K[k], KNOWN[k], 'K.' + k + ' known answer');
   for (const k of Object.keys(K)) if (typeof K[k] === 'number') t.ok(Number.isInteger(K[k]), 'K.' + k + ' is an integer (' + K[k] + ')');
   t.same(SB.derive(T, G), K, 'derive is pure: a second call equals K');
@@ -725,7 +728,7 @@ group('H-pipe-8', 'determinism: the level hash over FIELDS is stable, cross real
     t.eq(SB.pipeline.levelHash(SB.pipeline.build(structuredClone(rec), {})), a, f.name + ': a structured clone from the harness realm hashes equal');
   }
   /* the fields section 2.2 pins, in its order, typed here and compared with the page's declaration */
-  const PLAN = ['w', 'h', 'seed', 'biome', 'negative', 'otsuT', 'solid', 'plat', 'tab', 'slick', 'sticky', 'trap', 'spawn', 'exit',
+  const PLAN = ['w', 'h', 'seed', 'biome', 'twistOff', 'negative', 'otsuT', 'solid', 'plat', 'tab', 'slick', 'sticky', 'trap', 'spawn', 'exit',
     'beacon.idx', 'beacon.cells', 'landmarks', 'ascent.nodes', 'features.specks', 'features.chest', 'features.scroll',
     'features.blueprint', 'features.enemies', 'features.trap', 'features.door', 'features.boss', 'repair.tabs', 'degraded'];
   t.same(SB.pipeline.FIELDS.map(f => f[0]), PLAN, 'pipeline.FIELDS is the plan\'s list, every field in its order');
@@ -859,6 +862,7 @@ const LABS = {
   cell(lv, i) { return [i % lv.w, Math.floor(i / lv.w)]; }
 };
 const IN = SB.sim.IN, K = SB.K, CS = K.CELL_SUB, HW = K.HERO_W_SUB, HH = K.HERO_H_SUB;
+const deepOf = lv => lv.biome === 2 && !lv.twistOff;   /* the sim's and the model's Deep (T1.5: never in the first ever room) */
 const FLOOR = '#'.repeat(24);
 /* run a script of words (a function of the step index) and record what the test needs */
 function play(lv, words, n, opts) {
@@ -1281,6 +1285,90 @@ group('H-sim-11', 'the corner rule: 2 px of side overlap never arms a slide; 14 
     SB.sim.step(s, IN.L);
     t.eq(s.hero.wall, want, 'a side overlap of ' + ov + ' px ' + (want ? 'arms the slide' : 'never arms a slide'));
   }
+});
+
+/* ================================================================ the biome twists in the sim (T1.5) */
+/* the test's own stop: from RUN, the decel taken each step and the hero moved by what is left (section 3.5's
+   sentence), stepped here and not by the sim; and the test's own Deep jump: DEEP_JUMP_V up, base gravity while
+   rising and on the jump's first step, DEEP_FALL_G once falling, capped at DEEP_TERM (the plan's arc, reach.arc) */
+const stopRef = dec => { let v = SB.TUNING.RUN * 256, d = 0; while (v > 0) { v = Math.max(0, v - dec); d += v; } return d; };
+function deepJumpRef(holdFrames) {
+  const T = SB.TUNING, g = T.GRAVITY * 256, gf = Math.round(g * T.DEEP_FALL_MULT), cut = T.JUMP_CUT_V * 256, term = Math.round(T.TERMINAL * 256 * T.DEEP_FALL_MULT);
+  let vy = -T.DEEP_JUMP_V * 256, y = 0, top = 0, f = 0;
+  for (;;) {
+    if (f > 0 && f >= holdFrames && vy < -cut) vy = -cut;
+    vy = Math.min(term, vy + (f > 0 && vy >= 0 ? gf : g)); y += vy; f++;
+    if (y < top) top = y;
+    if (y >= 0) return { apex: -top / 256, frames: f };
+  }
+}
+
+group('H-sim-16', 'the Frost slide (section 3.5): a stop from full run on ice slides more than 12 px and at most 16 (hard coded), exactly the test\'s own stepping of SLICK_DECEL; a dry floor keeps the plain decel; a landing on ice slides at most 16 px; a step off a run\'s last cell slides off its open end on ice and stays on a dry run; the bot\'s Frost walks land on ice and pass; the first ever room has no ice', t => {
+  const LIM = 16 * 256, Hh = SB.GRID.H;   /* section 3.8 item 9's 16 px, hard coded: a slide retuned in TUNING cannot carry this test with it */
+  const room = c => LABS.room(['', '..S.....................', c.repeat(24), FLOOR], { biome: 1 });
+  const stop = (lv, runSteps) => {
+    const s = settle(lv);
+    for (let f = 0; f < runSteps; f++) SB.sim.step(s, IN.R);
+    const x0 = s.hero.x; let k = 0;
+    while (s.hero.vx !== 0 && k < 200) { SB.sim.step(s, 0); k++; }
+    return { d: s.hero.x - x0, k, ground: s.hero.ground };
+  };
+  const a = stop(room('~'), 12), b = stop(room('='), 12);
+  t.ok(a.ground && a.d > 12 * 256 && a.d <= LIM, 'a stop from full run on ice slides ' + (a.d / 256).toFixed(3) + ' px in ' + a.k + ' steps (more than 12, at most 16)');
+  t.eq(a.d, stopRef(K.SLICK_DECEL), 'the slide is the test\'s own stepping of SLICK_DECEL');
+  t.eq(b.d, stopRef(K.DECEL), 'a dry one way floor stops in the plain decel (' + (b.d / 256).toFixed(2) + ' px)');
+  {   /* a landing: a full jump at full run from a dry start onto the ice, the rocker let go at the touchdown */
+    const lv = LABS.room(['', '.S......................', '=====~~~~~~~~~~~~~~~~~~~', FLOOR], { biome: 1 });
+    const s = settle(lv); let down = -1, x0 = 0, onIce = false;
+    for (let f = 0; f < 160; f++) {
+      SB.sim.step(s, down < 0 ? (f === 0 ? IN.A | IN.A_TAP | IN.R : IN.A | IN.R) : 0);
+      if (f > 0 && s.hero.ground && down < 0) { down = f; x0 = s.hero.x; onIce = Math.floor(s.hero.x / CS) >= 5; }
+      if (down >= 0 && s.hero.vx === 0) break;
+    }
+    const d = s.hero.x - x0;
+    t.ok(down > 0 && onIce && d > 0 && d <= LIM, 'a full run jump lands on the ice and slides ' + (d / 256).toFixed(3) + ' px after its touchdown (at most 16)');
+  }
+  /* an open end: the hero on a run's last cell takes one step toward the drop and lets go */
+  const offEnd = c => { const lv = LABS.room(['', '....S...................', c.repeat(5) + '.'.repeat(19), FLOOR], { biome: 1 }); const s = settle(lv); SB.sim.step(s, IN.R); for (let k = 0; k < 60; k++) SB.sim.step(s, 0); return Math.floor((s.hero.y + HH - 1) / CS); };
+  const iceRow = offEnd('~'), dryRow = offEnd('=');
+  t.ok(iceRow === Hh - 2 && dryRow === Hh - 3, 'one step off a run\'s last cell: the slide carries it off the open end on ice (row ' + iceRow + ') and it stays on a dry run (row ' + dryRow + '): the landing the model refuses (Q74)');
+  const frost = botWalks().runs.filter(r => r.lv && !r.same && !r.skipped && r.lv.biome === 1);
+  let iceLandings = 0;
+  for (const r of frost) for (const e of r.lv.ascent.edges) if (e.to < r.lv.w * r.lv.h && r.lv.slick[e.to + r.lv.w]) iceLandings++;
+  t.ok(frost.length >= 10 && frost.every(r => !r.r.miss) && iceLandings > 0, 'the bot walks ' + frost.length + ' Frost levels with every ascent edge performed, ' + iceLandings + ' of those edges landing on ice');
+  const rec = SB.record.fromJSON(fixture('biome-frost').fx.record), lv0 = SB.pipeline.build(rec, {}), lv1 = SB.pipeline.build(rec, { firstRoom: true });
+  const ice0 = lv0.slick.reduce((a2, v) => a2 + v, 0), ice1 = lv1.slick.reduce((a2, v) => a2 + v, 0);
+  t.ok(lv0.twistOff === 0 && ice0 > 0 && lv1.twistOff === 1 && ice1 === 0 && lv1.biome === 1, 'the first ever room has no ice: biome-frost has ' + ice0 + ' slick cells, its first room build ' + ice1 + ' (still Frost by its look, twistOff ' + lv1.twistOff + ')');
+});
+
+group('H-sim-17', 'Deep (section 3.5): the ground jump at DEEP_JUMP_V peaks a cell over the base reach (at least 84 px) by the test\'s own stepping; a walk off falls G, then DEEP_FALL_G a step to DEEP_TERM (20% slower); a dive falls at DEEP_TERM; a one way 5 rows up is reached in Deep by the sim and by the model, and by neither under twistOff', t => {
+  const T = SB.TUNING, Hh = SB.GRID.H, Ww = SB.GRID.W;
+  const lv = LABS.room(['', '..........S.............', FLOOR], { biome: 2 });
+  const measure = (words, n) => {
+    const s = settle(lv), y0 = s.hero.y; let top = y0, landed = -1;
+    for (let f = 0; f < n; f++) { SB.sim.step(s, words(f)); if (s.hero.y < top) top = s.hero.y; if (f > 0 && s.hero.ground && landed < 0) { landed = f + 1; break; } }
+    return { apex: (y0 - top) / 256, frames: landed };
+  };
+  const full = measure(f => (f === 0 ? IN.A | IN.A_TAP : IN.A), 120), tap = measure(f => (f === 0 ? IN.A | IN.A_TAP : 0), 120);
+  const ref = deepJumpRef(999), refTap = deepJumpRef(1), floor5 = 16 * (T.JUMP_UP + T.DEEP_EXTRA_UP) + 4;
+  t.ok(full.apex >= floor5, 'a full hold in Deep peaks at ' + full.apex + ' px (at least ' + floor5 + ': 5 rows and the 4 px of the plan\'s reach, one row over the base\'s 4)');
+  t.eq(full.apex, ref.apex, 'the Deep apex equals the test\'s own stepping');
+  t.eq(full.frames, ref.frames, 'the Deep air time equals the test\'s own stepping');
+  t.eq(tap.apex, refTap.apex, 'a one frame tap in Deep equals the test\'s own stepping');
+  const ledge = LABS.room(['', 'S.......................'].concat(Array(11).fill('#####...................'), [FLOOR]), { biome: 2 });
+  const s = settle(ledge), vys = [];
+  for (let f = 0; f < 300; f++) { SB.sim.step(s, IN.R); if (!s.hero.ground) vys.push(s.hero.vy); else if (vys.length) break; }
+  const want = [K.G]; while (want[want.length - 1] < K.DEEP_TERM) want.push(Math.min(K.DEEP_TERM, want[want.length - 1] + K.DEEP_FALL_G));
+  t.same(vys.slice(0, want.length), want, 'a walk off in Deep falls G on its first airborne step, then DEEP_FALL_G a step to DEEP_TERM (' + want.length + ' steps to terminal)');
+  t.ok(K.DEEP_FALL_G === Math.round(K.G * 0.8) && K.DEEP_TERM === Math.round(K.TERM * 0.8), 'the fall is 20% slower: gravity ' + K.DEEP_FALL_G + ' of ' + K.G + ', terminal ' + K.DEEP_TERM + ' of ' + K.TERM);
+  { const d = settle(lv); SB.sim.step(d, IN.A | IN.A_TAP); for (let k = 0; k < 6; k++) SB.sim.step(d, IN.A); SB.sim.step(d, IN.B | IN.B_TAP); t.eq(d.hero.vy, K.DEEP_TERM, 'a dive in Deep falls at DEEP_TERM'); }
+  /* a one way 5 rows over the stance (the plat at row H-6, its standable cell H-7, the hero on H-2) */
+  const up5 = off => { const r = LABS.room(['..=====.................', '', '', '', '..S.....................', FLOOR], { biome: 2 }); r.twistOff = off; return r; };
+  const simUp = r => { const st = settle(r); for (let f = 0; f < 120; f++) SB.sim.step(st, f === 0 ? IN.A | IN.A_TAP : IN.A); return Math.floor((st.hero.y + HH - 1) / CS); };
+  const modelUp = r => { const g = SB.reach.graph(r), from = (Hh - 2) * Ww + 2; return (g.adj[from] || []).some(e => e.to < g.n && Math.floor(e.to / Ww) === Hh - 7); };
+  const on = up5(0), off = up5(1);
+  t.ok(simUp(on) === Hh - 7 && modelUp(on), 'in Deep a full jump lands on the one way 5 rows up, and the model has the edge');
+  t.ok(simUp(off) === Hh - 2 && !modelUp(off), 'under twistOff (the first ever room) neither the sim nor the model reaches it');
 });
 
 group('H-sim-12', 'vines: the fall stops within a step of a descending contact; A climbs 69 px straight up; re sticks only descending', t => {
@@ -1917,7 +2005,7 @@ const ORACLE = (() => {
 
 /* A lab room for one jump: the takeoff cell on a solid support, the target on a solid or one way support, everything
    else open, the floor far below. Returns the level and where things are. */
-function jumpLab(dir, dx, rowsUp, support, extraSolid) {
+function jumpLab(dir, dx, rowsUp, support, extraSolid, deep) {
   const W = SB.GRID.W, H = SB.GRID.H, tx = dir > 0 ? 3 : W - 4, ty = 38;
   const g = Array.from({ length: H }, () => Array(W).fill('.'));
   g[H - 1] = Array(W).fill('#');
@@ -1925,7 +2013,7 @@ function jumpLab(dir, dx, rowsUp, support, extraSolid) {
   const gx = tx + dir * dx, gy = ty - rowsUp;
   g[ty][tx] = 'S';
   if (extraSolid) for (const [ex, ey] of extraSolid) if (g[ey] && g[ey][ex] !== undefined && g[ey][ex] === '.') g[ey][ex] = '#';
-  const lv = LABS.room(g.map(row => row.join('')));
+  const lv = LABS.room(g.map(row => row.join('')), { biome: deep ? 2 : 0 });   /* Deep (T1.5): the DEEP tables' labs */
   const si = (gy + 1) * W + gx;
   if (gy + 1 < H - 1) { if (support === '#') lv.solid[si] = 1; else lv.plat[si] = 1; }
   return { lv, tx, ty, gx, gy };
@@ -1946,53 +2034,55 @@ function runJump(lab, profile, dir, hold) {
 }
 /* every case the tables admit: FULL, MID, TAP, both directions, onto a solid and onto a one way top (straight up only
    onto a one way); jump downs 1..8 rows (FULL, the far cell at that depth); walk offs 1..8 rows */
-function labCases() {
+function labCases(deep) {
   const cases = [];
   for (const profile of ['FULL', 'MID', 'TAP']) {
-    const row = ORACLE.clipped(profile, false);
+    const row = ORACLE.clipped(profile, !!deep);
     for (const dir of [1, -1]) for (let dy = 0; dy <= 5; dy++) for (let dx = 0; dx <= row[dy]; dx++) {
       if (dx === 0 && dy === 0) continue;
-      for (const support of dx === 0 ? ['='] : ['#', '=']) cases.push({ kind: 'JUMP', profile, dir, dx, rowsUp: dy, support });
+      for (const support of dx === 0 ? ['='] : ['#', '=']) cases.push({ kind: 'JUMP', profile, dir, dx, rowsUp: dy, support, deep: !!deep });
     }
   }
   for (const [profile, kind] of [['FULL', 'JUMP_DOWN'], ['WALK', 'WALK_OFF']]) for (const dir of [1, -1]) for (let down = 1; down <= 8; down++) {
-    const a = ORACLE.arc(profile, 1, Infinity), f = ORACLE.crossing(a, -down);
+    const a = ORACLE.arc(profile, 1, Infinity, { deep: !!deep }), f = ORACLE.crossing(a, -down);
     if (f < 0) continue;
     const far = Math.floor((a[f].x + SB.GRID.HERO_W * 256 - ORACLE.OV) / ORACLE.CSZ);
-    for (const dx of [far, Math.max(1, far - 2)]) cases.push({ kind, profile, dir, dx, rowsUp: -down, support: '#' });
+    for (const dx of [far, Math.max(1, far - 2)]) cases.push({ kind, profile, dir, dx, rowsUp: -down, support: '#', deep: !!deep });
   }
   return cases;
 }
-const caseName = c => c.kind + ' ' + c.profile + ' ' + (c.dir > 0 ? 'right' : 'left') + ' dx' + c.dx + ' dy' + c.rowsUp + ' onto ' + (c.support === '#' ? 'solid' : 'one way');
+/* the base tables' cases, then the DEEP tables' (T1.5: the sim has Deep's gravity) */
+const allLabCases = () => labCases(false).concat(labCases(true));
+const caseName = c => (c.deep ? 'Deep ' : '') + c.kind + ' ' + c.profile + ' ' + (c.dir > 0 ? 'right' : 'left') + ' dx' + c.dx + ' dy' + c.rowsUp + ' onto ' + (c.support === '#' ? 'solid' : 'one way');
 
-group('H-lab-1', 'LAB-EDGE: every jump the tables admit lands on its target in the sim, by its canonical hold', t => {
+group('H-lab-1', 'LAB-EDGE: every jump the tables admit (the base tables and the DEEP tables) lands on its target in the sim, by its canonical hold', t => {
   let n = 0, skipped = 0;
-  for (const c of labCases()) {
-    const can = ORACLE.canonical(c.profile, c.dir, c.dx, c.rowsUp);
+  for (const c of allLabCases()) {
+    const can = ORACLE.canonical(c.profile, c.dir, c.dx, c.rowsUp, { deep: c.deep });
     if (!can) { t.ok(false, caseName(c) + ': the oracle finds no canonical hold'); continue; }
     if (c.support === '#' && ORACLE.corridor(can, c.dir).has(c.dx + ',' + (c.rowsUp - 1))) { skipped++; continue; }
-    const lab = jumpLab(c.dir, c.dx, c.rowsUp, c.support);
+    const lab = jumpLab(c.dir, c.dx, c.rowsUp, c.support, null, c.deep);
     const res = runJump(lab, c.profile, c.dir, can.hold);
     t.ok(res.ok, caseName(c) + ': hold ' + can.hold + ' lands on the target (rests at ' + res.cell.join(',') + ', target ' + lab.gx + ',' + lab.gy + ')', res.ok ? undefined : lab.lv.rows.slice(lab.gy - 2, lab.ty + 3).join('\n'));
     n++;
   }
   console.log('  info  LAB-EDGE ran ' + n + ' cases; ' + skipped + ' solid support cases skipped (the support lies in the canonical corridor: the model claims no such edge)');
   /* the measured numbers (T0.7b writes them into PROGRESS): each profile's apex and its across table, by dy 0..5 */
-  for (const profile of ['FULL', 'MID', 'TAP']) {
-    const a = ORACLE.arc(profile, 1, Infinity), apex = -Math.min(...a.map(p => p.y)) / 256;
-    console.log('  info  ' + profile + ': apex ' + apex.toFixed(2) + ' px (' + (apex / 16).toFixed(2) + ' cells), across by dy 0..5 ' + JSON.stringify(ORACLE.table(profile, false)) + ', clipped ' + JSON.stringify(ORACLE.clipped(profile, false)));
+  for (const deep of [false, true]) for (const profile of ['FULL', 'MID', 'TAP']) {
+    const a = ORACLE.arc(profile, 1, Infinity, { deep }), apex = -Math.min(...a.map(p => p.y)) / 256;
+    console.log('  info  ' + (deep ? 'Deep ' : '') + profile + ': apex ' + apex.toFixed(2) + ' px (' + (apex / 16).toFixed(2) + ' cells), across by dy 0..5 ' + JSON.stringify(ORACLE.table(profile, deep)) + ', clipped ' + JSON.stringify(ORACLE.clipped(profile, deep)));
   }
 });
 
-group('H-lab-2', 'LAB-CLEAR: a solid in any cell of the move\'s box outside the corridor never stops the jump', t => {
+group('H-lab-2', 'LAB-CLEAR: a solid in any cell of the move\'s box outside the corridor never stops the jump (the base tables and the DEEP tables)', t => {
   let runs = 0, fails = 0;
-  for (const c of labCases()) {
-    const can = ORACLE.canonical(c.profile, c.dir, c.dx, c.rowsUp);
+  for (const c of allLabCases()) {
+    const can = ORACLE.canonical(c.profile, c.dir, c.dx, c.rowsUp, { deep: c.deep });
     if (!can) continue;
     const cor = ORACLE.corridor(can, c.dir);
     if (c.support === '#' && cor.has(c.dx + ',' + (c.rowsUp - 1))) continue;
     let topRow = 0; for (const k of cor) topRow = Math.max(topRow, Number(k.split(',')[1]));
-    const lab0 = jumpLab(c.dir, c.dx, c.rowsUp, c.support);
+    const lab0 = jumpLab(c.dir, c.dx, c.rowsUp, c.support, null, c.deep);
     const bad = [];
     for (let k = -1; k <= c.dx + 1; k++) for (let rr = Math.min(-1, c.rowsUp - 1); rr <= topRow + 2; rr++) {
       const key = k + ',' + rr;
@@ -2000,7 +2090,7 @@ group('H-lab-2', 'LAB-CLEAR: a solid in any cell of the move\'s box outside the 
       const bx = lab0.tx + c.dir * k, by = lab0.ty - rr;
       if (bx < 0 || bx >= SB.GRID.W || by < 0 || by >= SB.GRID.H - 1) continue;
       if ((bx === lab0.gx && (by === lab0.gy || by === lab0.gy + 1)) || (bx === lab0.tx && (by === lab0.ty || by === lab0.ty + 1))) continue;
-      const lab = jumpLab(c.dir, c.dx, c.rowsUp, c.support, [[bx, by]]);
+      const lab = jumpLab(c.dir, c.dx, c.rowsUp, c.support, [[bx, by]], c.deep);
       runs++;
       if (!runJump(lab, c.profile, c.dir, can.hold).ok) { fails++; bad.push(key); }
     }
@@ -3318,8 +3408,18 @@ const BOT = (() => {
   };
   const W = SB.GRID.W, MAX_CANDS = 120, LEN = 140;
   const cloneState = s => SB.sim.attach(structuredClone(s), s.level);
-  const stopDist = v => { let d = 0; v = Math.abs(v); while (v > 0) { v = Math.max(0, v - K.DECEL); d += v; } return d; };
+  const stopDist = (v, dec) => { let d = 0; const D = dec || K.DECEL; v = Math.abs(v); while (v > 0) { v = Math.max(0, v - D); d += v; } return d; };
   const TAP_MOVE = K.RUN + stopDist(K.RUN);           /* one step of the rocker from rest, then the decel: 6.56 px */
+  /* the Frost slide (T1.5): a slick cell in the row under the feet (the sim's slickUnder); on ice a step of the rocker
+     carries RUN and the slide (18.6 px, past a cell), so the settle hops instead: A tapped with one step of the rocker,
+     the air's plain decel stops it in TAP_MOVE and it lands still */
+  const slickUnderS = s => {
+    const h = s.hero, lv = s.level, row = (h.y + HH) / CS;
+    if (!lv.slick || row % 1 !== 0 || row >= lv.h) return false;
+    for (let cx = Math.max(0, Math.floor(h.x / CS)); cx <= Math.min(lv.w - 1, Math.floor((h.x + HW - 1) / CS)); cx++) if (lv.slick[row * lv.w + cx]) return true;
+    return false;
+  };
+  const ICE_MOVE = K.RUN + stopDist(K.RUN, K.SLICK_DECEL), SETTLE_STEPS = 120;
   const centreCol = s => Math.floor((s.hero.x + (HW >> 1)) / CS), feetRow = s => Math.floor((s.hero.y + HH - 1) / CS);
   const centreRow = s => Math.floor((s.hero.y + CS - 1) / CS);   /* a contact's row: the first whose stance is at or below the box (core-reach's scan) */
   /* settle (section 5.2 step 3): from rest, a step of the rocker toward the cell's centre while that tap would end
@@ -3328,15 +3428,15 @@ const BOT = (() => {
      steps, else the settle fails (a hero that cannot stand still in a cell is a sim bug). */
   function settle(s, cell, words) {
     const cx = (cell % W) * CS + (CS >> 1);
-    for (let k = 0; k <= 30; k++) {
+    for (let k = 0; k <= SETTLE_STEPS; k++) {
       if (s.room.cleared) return true;
-      const h = s.hero, d = cx - (h.x + (HW >> 1));
+      const h = s.hero, d = cx - (h.x + (HW >> 1)), ice = h.ground && slickUnderS(s);
       let word = 0;
       if (h.vx === 0 && h.ground) {
         if (2 * Math.abs(d) <= TAP_MOVE) return centreCol(s) === cell % W && feetRow(s) === Math.floor(cell / W);
-        word = rockerOf(Math.sign(d));
-      } else if (h.ground && Math.sign(h.vx) === Math.sign(d) && stopDist(h.vx) + 2 * 256 < Math.abs(d)) word = rockerOf(Math.sign(d));
-      if (k === 30) break;
+        word = ice && 2 * Math.abs(d) < ICE_MOVE ? IN.A | IN.A_TAP | rockerOf(Math.sign(d)) : rockerOf(Math.sign(d));
+      } else if (h.ground && Math.sign(h.vx) === Math.sign(d) && stopDist(h.vx, ice ? K.SLICK_DECEL : K.DECEL) + 2 * 256 < Math.abs(d)) word = rockerOf(Math.sign(d));
+      if (k === SETTLE_STEPS) break;
       stepB(s, word, words);
     }
     return false;
@@ -3359,18 +3459,24 @@ const BOT = (() => {
        trailing held A never keeps the hero standing on its target (a moth would reach it there) */
     const MOVES = IN.L | IN.R | IN.B | IN.A_TAP | IN.B_TAP;
     let last = 0; if (!fn) for (let k = 0; k < n; k++) if (words[k] & MOVES) last = k;
+    /* the touchdown on t (T1.5): grounded on its row over its column by LAND_OVERLAP at some step */
+    const onT = () => s.hero.ground && feetRow(s) === t.cy && Math.min(s.hero.x + HW, (t.cx + 1) * CS) - Math.max(s.hero.x, t.cx * CS) >= K.OVERLAP_SUB;
+    let touched = false;
     for (let k = 0; k < n; k++) {
       const word = fn ? words(s, k) : words[k];
       stepB(s, word, used);
       if (fn && word) last = k;
       if (s.room.cleared) return { ok: true, s, used };
       if (t.contact) { if (atContact(s, t)) return { ok: true, s, used }; continue; }
+      if (onT()) touched = true;
       if (k >= last && k > 0 && s.hero.ground && s.hero.vx === 0) break;
     }
     if (t.contact) return { ok: false, s, used };
-    for (let k = 0; k < 120 && !(s.hero.ground && s.hero.vx === 0); k++) { stepB(s, 0, used); if (s.room.cleared) return { ok: true, s, used }; }
-    const ov = Math.min(s.hero.x + HW, (t.cx + 1) * CS) - Math.max(s.hero.x, t.cx * CS);
-    if (!(s.hero.ground && feetRow(s) === t.cy && ov >= K.OVERLAP_SUB)) return { ok: false, s, used };
+    for (let k = 0; k < 120 && !(s.hero.ground && s.hero.vx === 0); k++) { stepB(s, 0, used); if (s.room.cleared) return { ok: true, s, used }; if (onT()) touched = true; }
+    /* on ice (section 3.5, Q74) a touchdown on a slick t may slide on: the model admits the landing only where the slide
+       stays on standable cells, so the hero resting on t's row after touching t counts, and the settle walks it back */
+    const slickT = !!s.level.slick && s.level.slick[t.v + W] === 1;
+    if (!(onT() || (touched && slickT && s.hero.ground && feetRow(s) === t.cy))) return { ok: false, s, used };
     return { ok: settle(s, t.v, used), s, used };
   }
   /* the candidate sets of section 3.9, per kind, each a word script; ordered by a physics prior, at most 120 */
@@ -3386,7 +3492,7 @@ const BOT = (() => {
       profs.forEach((p, pi) => A_RANGE[p].forEach((a, ai) => { for (let delay = 0; delay <= 8; delay++) for (let hold = 0; hold <= most; hold++) list.push({ a, delay, hold, prior: Math.abs(hold - est) + 2 * delay + 3 * ai + 6 * pi }); }));
       return ranked(list, c => c.prior).map(c => jumpWords(c.a, e.dir, c.delay, c.hold));
     }
-    if (e.kind === 'FALL' && e.dir === 0) { const most = Math.ceil(-e.dy * CS / K.TERM) + 6; return Array.from({ length: most }, (_, i) => M_DIVE(i + 1, true, Math.max(LEN, most + 60))); }
+    if (e.kind === 'FALL' && e.dir === 0) { const most = Math.ceil(-e.dy * CS / K.DEEP_TERM) + 6;   /* Deep's terminal is the slower (T1.5) */ return Array.from({ length: most }, (_, i) => M_DIVE(i + 1, true, Math.max(LEN, most + 60))); }
     if (e.kind === 'FALL') {
       const walkEst = Math.round((14 + (e.dx - 1) * 16) * 256 / K.RUN), list = [];
       for (let hold = 1; hold <= 60; hold++) list.push({ hold, prior: Math.abs(hold - walkEst) });
@@ -3491,12 +3597,12 @@ const BOT = (() => {
     }
     const x = src.side > 0 ? (src.cx + 1) * CS - HW : src.cx * CS;
     if (src.sticky) {
-      const s = SB.sim.create(lv, { at: { x, y: (src.cy + 1) * CS - HH - 4 * 256 - K.G }, immortal: true });
+      const s = SB.sim.create(lv, { at: { x, y: (src.cy + 1) * CS - HH - 4 * 256 - (deepOf(lv) ? K.DEEP_FALL_G : K.G) }, immortal: true });
       s.hero.ground = 0; s.hero.coyote = 0;
       for (let k = 0; k < 8 && !atContact(s, src); k++) stepB(s, 0, null);
       return atContact(s, src) ? s : null;
     }
-    const s = SB.sim.create(lv, { at: { x, y: (src.cy + 1) * CS - HH - K.G }, immortal: true });
+    const s = SB.sim.create(lv, { at: { x, y: (src.cy + 1) * CS - HH - (deepOf(lv) ? K.DEEP_FALL_G : K.G) }, immortal: true });   /* the first falling step's gravity (Deep's, T1.5) */
     s.hero.ground = 0; s.hero.coyote = 0;
     stepB(s, rockerOf(src.side), null);
     return atContact(s, src) ? s : null;
@@ -3504,12 +3610,11 @@ const BOT = (() => {
   return { settle, solve, walk, place, nodeInfo, atContact, candidates };
 })();
 
-/* every built level of the corpus for the walk: (fixture, mode, biome) with the Deep override skipped by name until
-   H-sim-17 (T1.5); "as detected" is the build's own biome (detected since T1.1; a room detected Deep is skipped by
-   name with the override, the DEEP tables being more generous than the sim until T1.5). A biome whose level has the same cells, the
-   same spawn and exit, the same tables and the same sticky rule as one already walked is the same walk: it is reported
-   as such, not walked twice. */
-const BOT_BIOMES = [[null, 'as detected'], [1, 'frost'], [3, 'overgrowth'], [4, 'ember']];
+/* every built level of the corpus for the walk: (fixture, mode, biome), "as detected" (the build's own biome, since
+   T1.1) and every biome override (T1.5: Deep walked since the sim has its gravity, Attic added so every biome is one).
+   A biome whose level has the same cells, the same spawn and exit, the same tables and the same sticky rule as one
+   already walked is the same walk: it is reported as such, not walked twice. */
+const BOT_BIOMES = [[null, 'as detected'], [0, 'attic'], [1, 'frost'], [2, 'deep'], [3, 'overgrowth'], [4, 'ember']];
 let botRuns = null;
 function botWalks() {
   if (botRuns) return botRuns;
@@ -3518,9 +3623,8 @@ function botWalks() {
     const lv = biome === null ? buildFx(f, mode) : SB.pipeline.build(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode })), { biome });
     const tag = f.name + ' mode ' + mode + ' ' + bname;
     if (lv.needsCrop) { runs.push({ tag, f, mode, biome, skipped: 'needsCrop (' + lv.why + ')' }); continue; }
-    if (biome === null && lv.biome === 2) { runs.push({ tag, f, mode, biome, skipped: 'detected Deep', deep: true }); continue; }
     const sig = [Buffer.from(lv.solid).toString('base64'), Buffer.from(lv.plat).toString('base64'), Buffer.from(lv.sticky).toString('base64'), Buffer.from(lv.slick).toString('base64'),
-      lv.spawn, lv.exit, lv.biome === 2, (lv.biome === 2 || lv.biome === 3) && lv.sticky.some(Boolean)].join('/');
+      lv.spawn, lv.exit, deepOf(lv), (lv.biome === 2 || lv.biome === 3) && lv.sticky.some(Boolean)].join('/');
     if (seen.has(sig)) { runs.push({ tag, f, mode, biome, same: seen.get(sig) }); continue; }
     const t0 = Date.now(), r = BOT.walk(lv, memo, stats);
     const run = { tag, f, mode, biome, lv, r, ms: Date.now() - t0 };
@@ -3532,9 +3636,8 @@ function botWalks() {
 
 group('H-bot-1', 'the generosity assertion: every main ascent edge of every built level has a macro the sim performs (BOT-ASCENT)', t => {
   const { runs, stats } = botWalks();
-  let walked = 0, edges = 0, same = 0, skipped = 0, deep = [];
+  let walked = 0, edges = 0, same = 0, skipped = 0;
   for (const run of runs) {
-    if (run.deep) { deep.push(run.tag); continue; }
     if (run.skipped) { skipped++; continue; }
     if (run.same) { same++; continue; }
     walked++; edges += run.r.edges;
@@ -3542,8 +3645,20 @@ group('H-bot-1', 'the generosity assertion: every main ascent edge of every buil
     t.ok(!m, run.tag + ': ' + (m ? 'edge ' + m.i + ' of ' + run.lv.ascent.edges.length + ' has no macro: ' + m.e.kind + (m.e.profile ? ' ' + m.e.profile : '') + ' dir ' + m.e.dir + ' dx ' + m.e.dx + ' dy ' + m.e.dy + ' from ' + (m.src.contact ? 'the contact' : 'the cell') + ' (' + m.src.cx + ', ' + m.src.cy + ') to ' + (m.t.contact ? 'the contact' : 'the cell') + ' (' + m.t.cx + ', ' + m.t.cy + '); ' + m.tried + ' candidates, the prior\'s best rests at (' + m.rest.join(', ') + ')' + (m.wall ? ' armed ' + m.wall : '') : 'every one of its ' + run.lv.ascent.edges.length + ' ascent edges has a macro'),
       m ? SB.pipeline.toText(run.lv) : undefined);
   }
-  console.log('  info  the bot walked ' + walked + ' levels (' + edges + ' ascent edges; ' + same + ' biome overrides share a walked level\'s cells and rules; ' + skipped + ' needsCrop); the Deep override skipped by name until H-sim-17 (T1.5)' + (deep.length ? ', and the rooms detected Deep: ' + deep.join(', ') : ''));
+  console.log('  info  the bot walked ' + walked + ' levels (' + edges + ' ascent edges; ' + same + ' biome overrides share a walked level\'s cells and rules; ' + skipped + ' needsCrop; every biome walked, Deep among them since T1.5)');
   console.log('  info  the macro search: ' + stats.tries + ' candidates run, ' + stats.found + ' found by search, ' + stats.memo + ' by the memo (' + stats.memoMiss + ' memo misses fell back to the search)');
+});
+
+group('H-bot-7', 'the generosity assertion under every biome override (T1.5): each of Attic, Frost, Deep, Overgrowth and Ember has walked levels and no ascent edge without a macro', t => {
+  const { runs } = botWalks();
+  for (const [b, name] of BOT_BIOMES) {
+    if (b === null) continue;
+    /* a level the same as one already walked (same cells, spawn, exit, tables and sticky rule: Ember's are Attic's) is
+       covered by that walk */
+    const mine = runs.filter(r => r.biome === b), walked = mine.filter(r => r.lv && !r.same && !r.skipped), same = mine.filter(r => r.same);
+    const miss = walked.filter(r => r.r.miss).concat(same.filter(r => r.same.r.miss));
+    t.ok(walked.length + same.length > 0 && miss.length === 0, name + ': ' + walked.length + ' levels walked, ' + same.length + ' the same as one walked, ' + miss.length + ' with an edge the bot cannot perform' + (miss.length ? ' (' + miss.map(r => r.tag).join(', ') + ')' : ''));
+  }
 });
 
 group('H-bot-2', 'the walker reaches the exit on every built level; the walk\'s length per level (the level length proxy, section 5.3)', t => {
