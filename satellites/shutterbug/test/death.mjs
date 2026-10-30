@@ -95,7 +95,7 @@ try {
     return out;
   });
   const names = clear.map(b => b[1]);
-  R.say(names[0] === 'Shoot the next room' && names[1] === 'Play it again' && clear.every(b => b[2] >= 48 && b[3] >= 48), 'the clear card offers ' + names.join(', ') + ', each 48 px or more');
+  R.say(names[0] === 'Shoot the next room' && names[1] === 'Share this room' && names[2] === 'Play it again' && clear.every(b => b[2] >= 48 && b[3] >= 48), 'the clear card offers ' + names.join(', ') + ', each 48 px or more');
   R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
   await page.close();
 

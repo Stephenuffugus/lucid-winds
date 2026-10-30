@@ -634,7 +634,18 @@ const MUTANTS = [
   { name: 'RELOAD_ON_CONTROLLERCHANGE', task: 'T1.11', file: 'page', find: "  window.addEventListener('beforeinstallprompt',", repl: "  if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', function () { location.reload(); });\n  window.addEventListener('beforeinstallprompt',",
     gates: [{ gate: 'lint', expect: 'RELOAD' }] },
   { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=1')", repl: "register('./sw.js?v=2')",
-    gates: [{ gate: 'lint', expect: 'STAMP' }] }
+    gates: [{ gate: 'lint', expect: 'STAMP' }] },
+  /* T1.13: the free play loop, the Wallet moments, the fab insurance */
+  { name: 'X_LEAVES_OVERLAY', task: 'T1.13', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'offer', 'slip', 'sharesheet'];", repl: "var OVERLAYS = ['clear', 'death', 'offer', 'slip'];",
+    gates: [{ gate: 'loop', expect: "the strip's Title with the share sheet open: the title with nothing over it" }] },
+  { name: 'MOMENT_TWICE', task: 'T1.13', file: 'page', find: 'if (!S.doc || !framed || S.doc.moments[name]) return false;', repl: 'if (!S.doc || !framed) return false;',
+    gates: [{ gate: 'loop', expect: 'inside the wrapper iframe two clears' }] },
+  { name: 'FAB_OVER_SHEET', task: 'T1.13', file: 'page', find: 'body.sb-modal .lwfb-fab { display: none !important; }', repl: 'body.sb-modal .lwfb-fab { }',
+    gates: [{ gate: 'loop', expect: 'round 1: the share sheet over the play screen' }] },
+  { name: 'BANK_FULL_RATE', task: 'T1.13', file: 'page', find: 'var n = Math.floor(G.state.room.dp * SB.TUNING.DP_FREE_PLAY_MULT)', repl: 'var n = Math.floor(G.state.room.dp)',
+    gates: [{ gate: 'loop', expect: 'round 1: banked at x0.5 floored' }] },
+  { name: 'SHARE_CLOSE_TO_PLAY', task: 'T1.13', file: 'page', find: "if (ui.screen === 'share') ui.screen = ui.shareFrom || 'play';", repl: "if (ui.screen === 'share') ui.screen = 'play';",
+    gates: [{ gate: 'loop', expect: 'round 1: the share sheet over the clear screen' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

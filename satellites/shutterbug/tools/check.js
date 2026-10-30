@@ -51,6 +51,7 @@ const BROWSER_GATES = [
   { name: 'share',    cmd: ['test/share.mjs'],  need: 'SHARE OK' },
   { name: 'save',     cmd: ['test/save.mjs'],   need: 'SAVE OK' },
   { name: 'pwa',      cmd: ['test/pwa.mjs'],    need: 'PWA OK' },
+  { name: 'loop',     cmd: ['test/loop.mjs'],   need: 'LOOP OK' },
   { name: 'redwatch-browser', cmd: ['tools/redwatch.js', '--check', '--browser-only'], need: 'REDWATCH OK', slow: true }
 ];
 
