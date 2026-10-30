@@ -70,7 +70,7 @@ T=$L/deploy-check; rm -rf "$T"; mkdir -p "$T"
 git show "$C:satellites/shutterbug/index.html" > "$T/page.html"
 grep -q -- "$BUILD" "$T/page.html" || { echo "STOP: build stamp $BUILD is not in index.html"; exit 1; }
 grep -q "SWS_EMBED" "$T/page.html" || { echo "STOP: no SWS_EMBED guard in index.html (fleet embed protocol)"; exit 1; }
-grep -q "window.SWS_EXIT" "$T/page.html" || { echo "STOP: SWS_EXIT is not assigned on window (fleet exit protocol)"; exit 1; }
+grep -Eq "^ *window\.SWS_EXIT *= *function" "$T/page.html" || { echo "STOP: SWS_EXIT is not assigned on window (fleet exit protocol; a call site does not count)"; exit 1; }
 if git cat-file -e "$C:satellites/shutterbug/sw.js" 2>/dev/null; then
   : "${CACHE:?CACHE name required once sw.js exists}" "${SWV:?SWV required once sw.js exists}"
   git show "$C:satellites/shutterbug/sw.js" > "$T/sw.js"

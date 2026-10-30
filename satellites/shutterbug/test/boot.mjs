@@ -70,9 +70,16 @@ try {
     await page.close();
   }
 
-  /* journey A: from the portal, the exit goes back to it */
+  /* journey A: from the portal, the exit goes back to it: history.back, never a replace to the live portal (any request
+     to the live site fails the journey, and the URL must be the test server's own portal page) */
   {
     const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await page.setRequestInterception(true);
+    const live = [];
+    page.on('request', req => {
+      const u = req.url();
+      if (/^https:\/\/(www\.)?lucidwinds\.com\//.test(u)) { live.push(u); req.abort().catch(() => {}); } else req.continue().catch(() => {});
+    });
     await page.goto(srv.base + '/portal/', { waitUntil: 'load' });
     await tap(page, '#go');
     await page.waitForFunction(p => location.pathname === p, { timeout: 30000 }, GAME_PATH);
@@ -81,8 +88,8 @@ try {
     R.say(ref.indexOf('/portal') >= 0, 'journey A: the game was reached from the portal (referrer ' + ref + ')');
     await tap(page, '#exit');
     let back = false;
-    try { await page.waitForFunction(() => location.pathname === '/portal/', { timeout: 15000 }); back = true; } catch (e) { /* stays */ }
-    R.say(back, 'journey A: a real touch on the exit returned to the portal page (history.back)');
+    try { await page.waitForFunction(href => location.href === href, { timeout: 15000 }, srv.base + '/portal/'); back = true; } catch (e) { /* stays */ }
+    R.say(back && live.length === 0, 'journey A: a real touch on the exit returned to the test server\'s portal page by history.back' + (live.length ? ' (but requested the live site: ' + live.join(', ') + ')' : ''));
     R.say(errors.length === 0, 'journey A: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }

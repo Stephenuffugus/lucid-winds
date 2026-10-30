@@ -38,8 +38,18 @@ function strip(src) {
       out += c + blank(src.slice(i + 1, j)) + (src[j] === c ? c : ''); i = j + 1; last = c; word = ''; continue;
     }
     if (c === '`') {
-      let j = i + 1; while (j < n && src[j] !== '`') { if (src[j] === '\\') j++; j++; }
-      out += '`' + blank(src.slice(i + 1, j)) + '`'; i = j + 1; last = '`'; word = ''; continue;
+      /* a template: the text is blanked, but each ${ ... } inside is code and is kept for the token scans */
+      out += '`'; let j = i + 1;
+      while (j < n && src[j] !== '`') {
+        if (src[j] === '\\') { out += '  '; j += 2; continue; }
+        if (src[j] === '$' && src[j + 1] === '{') {
+          let depth = 1, k = j + 2;
+          while (k < n && depth) { if (src[k] === '{') depth++; else if (src[k] === '}') depth--; k++; }
+          out += '${' + strip(src.slice(j + 2, k - 1)) + '}'; j = k; continue;
+        }
+        out += src[j] === '\n' ? '\n' : ' '; j++;
+      }
+      out += '`'; i = j + 1; last = '`'; word = ''; continue;
     }
     if (c === '/' && regexOk()) {
       let j = i + 1, cls = false;
@@ -128,6 +138,8 @@ for (const b of core) {
   const mre = /\bMath\s*(\.\s*([A-Za-z_$][\w$]*)|\[)/g;
   while ((mm = mre.exec(body))) if (!mm[2] || !MATH_OK.has(mm[2])) fail('PURITY', where(mm.index) + ': Math' + (mm[2] ? '.' + mm[2] : '[...]') + ' is not allowed in the core (not correctly rounded across engines, or random)');
   if (/\*\*/.test(body)) fail('PURITY', where(body.indexOf('**')) + ': the ** operator (Math.pow by another name)');
+  const bare = /\bMath\b(?!\s*[.[])/g;
+  while ((mm = bare.exec(body))) fail('PURITY', where(mm.index) + ': a bare Math (an alias hides which function is called)');
   if (/\btoLocale/.test(body)) fail('PURITY', where(body.search(/\btoLocale/)) + ': toLocale*');
   /* bare grid derived sizes: legal only inside GRID_PRESETS and the TUNING literal (DESIGN's own 768, the 2x width) */
   let gridScan = body;
@@ -155,6 +167,26 @@ const inc = html.split(INCLUDE).length - 1;
 if (inc !== 1) fail('INCLUDE', 'the fleet include appears ' + inc + ' times, want exactly 1: ' + INCLUDE);
 else if (!html.includes('\n' + INCLUDE + '\n</head>')) fail('INCLUDE', 'the fleet include must sit on its own line immediately before </head>');
 
+/* rule: the fleet block is byte for byte BUILD-PLAN section 1.6's (incoming/PORTAL-CONTRACT.md "The embed protocol"):
+   the assignment window.SWS_EXIT = function, the referrer branch, the replace, the two ready posts. A substring test
+   would be satisfied by a call site; identity cannot be. */
+const FLEET_BLOCK = `
+/* ===== Sky Wolf Studio embed protocol ===== */
+(function () {
+  var framed = false; try { framed = window.parent !== window; } catch (e) { framed = true; }
+  window.SWS_EMBED = framed || /[?&]embed=1(&|$)/.test(location.search);
+  window.SWS_EXIT = function () {
+    if (framed) { try { parent.postMessage({ sws: 'close' }, '*'); } catch (e) {} return; }
+    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) history.back();
+    else location.replace('https://lucidwinds.com/portal/');
+  };
+  if (framed) {
+    try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {}
+    window.addEventListener('load', function () { try { parent.postMessage({ sws: 'ready' }, '*'); } catch (e) {} });
+  }
+})();
+`;
+if (!fleet || fleet.src !== FLEET_BLOCK) fail('FLEET', 'the shell-fleet block is not byte for byte section 1.6\'s canonical block');
 /* rule: the fleet protocol strings deploy.sh greps */
 if (!html.includes('SWS_EMBED')) fail('FLEET', 'no SWS_EMBED');
 if (!html.includes('window.SWS_EXIT')) fail('FLEET', 'SWS_EXIT is not assigned on window');

@@ -1307,7 +1307,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
      after four the frame is a stall and the debt is dropped. The sim never sees time, only steps. */
   var STEP_MS = 1000 / SB.TUNING.STEP_HZ, MAX_STEPS = 4, DT_MAX = 100;
   var G = SB.game, held = false, last = -1, acc = 0;
-  var loop = { raf: 0, steps: 0, accSteps: 0, consumed: 0, dropped: 0, stalls: 0, maxSteps: 0 };
+  var loop = { raf: 0, steps: 0, accSteps: 0, consumed: 0, dropped: 0, clamped: 0, stalls: 0, maxSteps: 0 };
   var perf = SB.perfLog = { step: [], draw: [], pipeline: 0 };
   var keep = function (a, v) { a.push(v); if (a.length > 300) a.shift(); };
 
@@ -1326,11 +1326,11 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   }
   function frame(now) {
     requestAnimationFrame(frame);
-    var dt = last < 0 ? 0 : Math.min(now - last, DT_MAX);
+    var raw = last < 0 ? 0 : now - last, dt = Math.min(raw, DT_MAX);
     last = now;
     loop.raf++;
     if (!held && G.state && SB.ui.screen === 'play') {
-      acc += dt; loop.consumed += dt;
+      acc += dt; loop.consumed += dt; loop.clamped += raw - dt;
       var n = 0;
       while (acc >= STEP_MS && n < MAX_STEPS) { stepOnce(); acc -= STEP_MS; n++; loop.accSteps++; }
       if (acc >= STEP_MS) { loop.dropped += acc; acc = 0; loop.stalls++; }
@@ -1359,7 +1359,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
       return { w: lv.w, h: lv.h, spawn: lv.spawn, exit: lv.exit, otsuT: lv.otsuT, hash: SB.pipeline.levelHash(lv), code: SB.record.encode(lv.rec),
         viewRows: SB.render.viewRows, camY: SB.render.camY, cssW: SB.render.cssW };
     },
-    perf: function () { return { step: perf.step.slice(), draw: perf.draw.slice(), pipeline: perf.pipeline, loop: Object.assign({ acc: acc, stepMs: STEP_MS }, loop) }; },
+    perf: function () { return { now: performance.now(), step: perf.step.slice(), draw: perf.draw.slice(), pipeline: perf.pipeline, loop: Object.assign({ acc: acc, stepMs: STEP_MS }, loop) }; },
     lastInput: function () { return SB.input.last(); },
     recording: function () { return SB.input.recording(); },
     staticBuilds: function () { return SB.render.builds; },

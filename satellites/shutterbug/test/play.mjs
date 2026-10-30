@@ -18,16 +18,21 @@ const KEYS = { 1: 'ArrowLeft', 2: 'ArrowRight', 4: 'KeyZ' };
 const srv = await serve();
 const browser = await launch();
 
-async function replayKeys(page, runs) {
-  let down = 0;
+/* replay the runs by real key events, stepping at most `limit` steps; keys stay as they are at the end */
+async function replayKeys(page, runs, limit = Infinity, down = 0) {
+  let done = 0;
   for (const [n, mask] of runs) {
+    if (done >= limit) break;
     for (const bit of [1, 2, 4]) if ((down & bit) && !(mask & bit)) await page.keyboard.up(KEYS[bit]);
     for (const bit of [1, 2, 4]) if (!(down & bit) && (mask & bit)) await page.keyboard.down(KEYS[bit]);
     down = mask;
-    await page.evaluate(n => window.SB_DEV.step(n), n);
+    const k = Math.min(n, limit - done);
+    await page.evaluate(k => window.SB_DEV.step(k), k);
+    done += k;
   }
-  for (const bit of [1, 2, 4]) if (down & bit) await page.keyboard.up(KEYS[bit]);
+  return down;
 }
+const releaseKeys = async (page, down) => { for (const bit of [1, 2, 4]) if (down & bit) await page.keyboard.up(KEYS[bit]); };
 
 try {
   const { page, errors } = await newPage(browser, { width: 412, height: 915 });
@@ -37,8 +42,19 @@ try {
   await tap(page, '#sample');
   R.say(await page.evaluate(() => window.SB_DEV.screen()) === 'play', 'a real touch on "Try the sample room" opens the play screen');
   const f0 = await page.evaluate(() => window.SB_DEV.frames());
-  await replayKeys(page, climb.runs);
   const total = climb.runs.reduce((a, r) => a + r[0], 0);
+  /* the exit by the step: one step short the room is not clear; the last step clears it with the box on the exit cell,
+     the overlap computed here from the level's exit and the hero's box */
+  let keys = await replayKeys(page, climb.runs, total - 1);
+  const pre = await page.evaluate(() => ({ s: window.SB_DEV.state(), screen: window.SB_DEV.screen() }));
+  R.say(pre.s.room.cleared === 0 && pre.screen === 'play', 'one step before the lamp the room is not yet clear (screen ' + pre.screen + ')');
+  await page.evaluate(() => window.SB_DEV.step(1));
+  await releaseKeys(page, keys);
+  const lvx = await page.evaluate(() => window.SB_DEV.level());
+  const hs = await page.evaluate(() => window.SB_DEV.state().hero);
+  const CSUB = 16 * 256, ex = lvx.exit % lvx.w, ey = Math.floor(lvx.exit / lvx.w);
+  const onExit = hs.x < (ex + 1) * CSUB && hs.x + 12 * 256 > ex * CSUB && hs.y < (ey + 1) * CSUB && hs.y + 16 * 256 > ey * CSUB;
+  R.say(onExit, 'on the clearing step the hero\'s box overlaps the exit cell (' + ex + ', ' + ey + ')');
   const st = await page.evaluate(() => ({ screen: window.SB_DEV.screen(), s: window.SB_DEV.state(), frames: window.SB_DEV.frames(), rec: window.SB_DEV.recording() }));
   R.say(st.frames - f0 === total, 'the held loop ran exactly the script\'s ' + total + ' steps (' + (st.frames - f0) + ')');
   R.say(st.s && st.s.room.cleared === 1, 'the climb by real key events reaches the lamp: the room is clear');
@@ -59,16 +75,22 @@ try {
 
   /* the unheld check: the real loop, a real key held */
   await page.evaluate(() => window.SB_DEV.hold(false));
-  const a0 = await page.evaluate(() => ({ f: window.SB_DEV.frames(), loop: window.SB_DEV.perf().loop }));
+  const a0 = await page.evaluate(() => { const p = window.SB_DEV.perf(); return { f: window.SB_DEV.frames(), loop: p.loop, now: p.now }; });
   await page.keyboard.down('ArrowLeft');
   await page.waitForFunction(f => window.SB_DEV.frames() >= f + 40, { timeout: 60000, polling: 20 }, a0.f);
   await page.keyboard.up('ArrowLeft');
   await page.evaluate(() => window.SB_DEV.hold(true));
-  const a1 = await page.evaluate(() => ({ f: window.SB_DEV.frames(), loop: window.SB_DEV.perf().loop, rec: window.SB_DEV.recording() }));
+  const a1 = await page.evaluate(() => { const p = window.SB_DEV.perf(); return { f: window.SB_DEV.frames(), loop: p.loop, now: p.now, rec: window.SB_DEV.recording() }; });
   /* the books cover only the steps the accumulator ran (SB_DEV.step's steps are the held gate's, outside the clock) */
   const L = a1.loop, books = L.accSteps * L.stepMs + L.acc + L.dropped - L.consumed;
   R.say(L.accSteps >= 40 && Math.abs(books) < 0.01, 'the accumulator\'s books balance: ' + L.accSteps + ' steps x ' + L.stepMs.toFixed(3) + ' ms + owed + dropped = consumed (off by ' + books.toFixed(4) + ' ms over ' + L.raf + ' frames, ' + L.stalls + ' stalls)');
   R.say(L.maxSteps <= 4, 'never more than four steps in one frame (max ' + L.maxSteps + ')');
+  /* the rate, against the test's own clock (performance.now read at both ends) and its own step length */
+  const STEP = 1000 / 60, dSteps = a1.loop.accSteps - a0.loop.accSteps, dt = a1.now - a0.now;
+  const dClamp = a1.loop.clamped - a0.loop.clamped, dStalls = a1.loop.stalls - a0.loop.stalls;
+  R.say(Math.abs(a1.loop.stepMs - STEP) < 1e-9, 'the step is 16.667 ms (1000 / 60, computed here): the page says ' + a1.loop.stepMs);
+  R.say(dSteps <= dt / STEP + 2, 'never faster than real time: ' + dSteps + ' steps in ' + dt.toFixed(0) + ' ms (at most ' + (dt / STEP + 2).toFixed(1) + ')');
+  R.say(dSteps >= (dt - dClamp - dStalls * 100) / STEP - 2, 'never slower than real time but for clamped frames and stalls: ' + dSteps + ' steps (at least ' + ((dt - dClamp - dStalls * 100) / STEP - 2).toFixed(1) + ')');
   const flat = a1.rec.flatMap(([n, w]) => Array(n).fill(w));
   const firstL = flat.findIndex(w => w & 1), lastL = flat.length - 1 - [...flat].reverse().findIndex(w => w & 1);
   const gaps = flat.slice(firstL, lastL + 1).filter(w => !(w & 1)).length;

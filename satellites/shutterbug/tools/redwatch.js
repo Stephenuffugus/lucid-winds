@@ -32,12 +32,12 @@ const MUTANTS = [
   { name: 'INCLUDE_MISSING', task: 'T0.2', file: 'page', find: '<script src="/music-unlocks.js" defer></script>\n', repl: '',
     gates: [{ gate: 'lint', expect: 'the fleet include appears 0 times' }] },
   { name: 'STYLE_COMMENT_EATS', task: 'T0.2', file: 'page', find: '#exit { align-self', repl: '/* the exit control\n#exit { align-self',
-    gates: [{ gate: 'lint', expect: '"/*" against' }, { gate: 'boot', expect: '#exit measures' }] },
+    gates: [{ gate: 'lint', expect: '"/*" against' }, { gate: 'boot', expect: '412x915: #exit measures' }] },
   { name: 'EXIT_UNCALLED', task: 'T0.2', file: 'page', find: '      window.SWS_EXIT();\n', repl: '',
     gates: [{ gate: 'boot', expect: 'journey A: a real touch on the exit returned' }] },
   { name: 'BUTTON_32PX', task: 'T0.2', file: 'page', find: '#choose { background: var(--paper); color: var(--ink); }',
     repl: '#choose { background: var(--paper); color: var(--ink); min-height: 32px; height: 32px; }',
-    gates: [{ gate: 'boot', expect: '#choose measures' }] },
+    gates: [{ gate: 'boot', expect: '412x915: #choose measures' }] },
 
   { name: 'FNV_PRIME_FLIPPED', task: 'T0.3', file: 'page', find: 'FNV_PRIME = 0x01000193', repl: 'FNV_PRIME = 0x01000197',
     gates: [{ gate: 'harness', only: 'H-rng-1', expect: 'H-rng-1 fnv1a32Str("a")' }] },
@@ -58,7 +58,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-fix', expect: 'has no expect (authored by hand from its design): the loader refuses it' }] },
 
   { name: 'OTSU_UNCLAMPED', task: 'T0.6', file: 'page', find: '    return Math.max(T.OTSU_MIN, Math.min(T.OTSU_MAX, bestT));', repl: '    return bestT;',
-    gates: [{ gate: 'harness', only: 'H-pipe-3', expect: 'all-dark: threshold 29 inside the clamp' }] },
+    gates: [{ gate: 'harness', only: 'H-pipe-3', expect: "all-dark: threshold 29 inside DESIGN 6.3's clamp" }] },
   { name: 'CA_ONE_PASS', task: 'T0.6', file: 'page', find: 'for (var pass = 0; pass < T.SMOOTH_PASSES; pass++)', repl: 'for (var pass = 0; pass < 1; pass++)',
     gates: [{ gate: 'harness', only: 'H-pipe-2', expect: 'isolated cells after smoothing (under 10%)' }] },
   { name: 'RUN_MIN_2', task: 'T0.6', file: 'page', find: 'if (x1 - x + 1 >= T.PLATFORM_RUN_MIN)', repl: 'if (x1 - x + 1 >= 2)',
@@ -67,8 +67,8 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-pipe-1', expect: 'bottom row solid' }] },
   { name: 'NEG_AFTER_PLATFORMS', task: 'T0.6', file: 'page', edits: [
       ['    if (negative) for (i = 0; i < n; i++) solid[i] = solid[i] ? 0 : 1;   /* after smoothing, before the frame rules (Q20) */\n', ''],
-      ['    var comps = components(solid, w, h), landmarks = [];', '    if (negative) for (i = 0; i < n; i++) solid[i] = solid[i] ? 0 : 1;\n    var comps = components(solid, w, h), landmarks = [];']],
-    gates: [{ gate: 'harness', only: 'H-pipe-7', expect: 'H-pipe-7' }] },
+      ['    /* landmarks are the photo\'s things:', '    if (negative) { for (i = 0; i < n; i++) solid[i] = solid[i] ? 0 : 1; for (x = 0; x < w; x++) { solid[(h - 1) * w + x] = 1; solid[x] = 0; } }\n    /* landmarks are the photo\'s things:']],
+    gates: [{ gate: 'harness', only: 'H-pipe-7', expect: 'Negative platforms are found on the inverted grid' }] },
 
   { name: 'JUMP_V_LOW', task: 'T0.7a', file: 'page', find: 'JUMP_V: 8.59375 /* 2200/256 */', repl: 'JUMP_V: 8.1640625 /* 2090/256, 5% low */',
     gates: [{ gate: 'harness', only: 'H-sim-1', expect: 'a full hold from rest peaks at' }] },
@@ -76,8 +76,9 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-sim-1', expect: 'a full hold from rest peaks at' }] },
 
   { name: 'ACCUMULATOR_DT_FLOAT', task: 'T0.8a', file: 'page', find: 'while (acc >= STEP_MS && n < MAX_STEPS) { stepOnce(); acc -= STEP_MS; n++; loop.accSteps++; }',
-    repl: 'if (acc > 0) { stepOnce(); acc = 0; n++; loop.accSteps++; }',
-    gates: [{ gate: 'play', expect: "the accumulator's books balance" }] },
+    repl: 'if (acc > 0) { stepOnce(); loop.dropped += acc - STEP_MS; acc = 0; n++; loop.accSteps++; }',
+    /* one step per frame is faster than real time on a fast frame rate and slower on a slow one: either rate check */
+    gates: [{ gate: 'play', expect: ['never faster than real time', 'never slower than real time'] }] },
   { name: 'CLEAR_NO_RESTART', task: 'T0.8a', file: 'page', find: "  ui.again = function () { if (G.record) ui.startRoom(G.record, G.name); };",
     repl: "  ui.again = function () { if (G.record) { var keep = document.getElementById('clear').className; ui.startRoom(G.record, G.name); document.getElementById('clear').className = keep; } };",
     gates: [{ gate: 'play', expect: 'Again leaves nothing painted over the play area' }] },
@@ -97,7 +98,37 @@ const MUTANTS = [
   { name: 'AIR_KEEPS_MOMENTUM', task: 'T0.8a review', file: 'page',
     find: '    else if (h.vx > 0) h.vx = Math.max(0, h.vx - K.DECEL);\n    else if (h.vx < 0) h.vx = Math.min(0, h.vx + K.DECEL);',
     repl: '    else if (h.vx > 0 && h.ground) h.vx = Math.max(0, h.vx - K.DECEL);\n    else if (h.vx < 0 && h.ground) h.vx = Math.min(0, h.vx + K.DECEL);',
-    gates: [{ gate: 'harness', only: 'H-sim-18', expect: 'releasing the rocker in flight decelerates in 4 frames' }] }
+    gates: [{ gate: 'harness', only: 'H-sim-18', expect: 'releasing the rocker in flight decelerates in 4 frames' }] },
+
+  /* the review of 30 Oct (harness lens) */
+  { name: 'EXIT_EARLY', task: 'T0.8a review', file: 'page', find: 'if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB > ex * CS2 && h.y < (ey + 1) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {',
+    repl: 'if (h.y < (ey + 4) * CS2) {',
+    gates: [{ gate: 'harness', only: 'H-sim-20', expect: 'the room clears on exactly the first step the box overlaps the exit cell' },
+      { gate: 'play', expect: 'one step before the lamp the room is not yet clear' }] },
+  { name: 'BONK_KEEPS_VY', task: 'T0.8a review', file: 'page', find: "        else { h.y = (hr + 1) * CS; h.vy = 0; h.rising = 0; }   /* the head bonk */",
+    repl: "        else { h.y = (hr + 1) * CS; h.rising = 0; }   /* the head bonk */",
+    gates: [{ gate: 'harness', only: 'H-sim-5', expect: 'the head meets the ceiling' }] },
+  { name: 'COYOTE_AFTER_JUMP', task: 'T0.8a review', file: 'page', find: 'h.vy = -K.JUMP_V; h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;',
+    repl: 'h.vy = -K.JUMP_V; h.ground = 0; h.rising = 1; h.buffer = 0; jumped = 1;',
+    gates: [{ gate: 'harness', only: 'H-sim-2b', expect: 'gives no second upward kick' }] },
+  { name: 'ONEWAY_CATCHES_FROM_BELOW', task: 'T0.8a review', file: 'page', find: '      if (!landed && prevFeet <= top && feet > top) {',
+    repl: '      if (!landed && feet > top) {',
+    gates: [{ gate: 'harness', only: 'H-sim-4', expect: 'never catches the hero' }] },
+  { name: 'EDGE_DROP_40', task: 'T0.8a review', file: 'page', find: 'PLATFORM_RUN_MIN: 3, EDGE_DROP_L: 60,', repl: 'PLATFORM_RUN_MIN: 3, EDGE_DROP_L: 40,',
+    gates: [{ gate: 'harness', only: 'H-pipe-4', expect: "plat cells that differ from the test's own DESIGN 6.4" }] },
+  { name: 'FIELDS_DROP_SPAWN', task: 'T0.8a review', file: 'page', find: "['spawn', 'i32'], ['exit', 'i32'], ['beacon.idx', 'i32'],", repl: "['beacon.idx', 'i32'],",
+    gates: [{ gate: 'harness', only: 'H-pipe-8', expect: "pipeline.FIELDS is the plan's list" }] },
+  { name: 'EXIT_ASSIGN_LOCAL', task: 'T0.8a review', file: 'page', find: '  window.SWS_EXIT = function () {\n    if (framed)', repl: '  var SWS_EXIT_GONE = function () {\n    if (framed)',
+    gates: [{ gate: 'lint', expect: "the shell-fleet block is not byte for byte section 1.6's canonical block" }] },
+  { name: 'TEMPLATE_HIDES_DATE', task: 'T0.8a review', file: 'page', find: CORE_SIM_OPEN, repl: CORE_SIM_OPEN + '  SB.stamp = function () { return `t${Date.now()}`; };\n',
+    gates: [{ gate: 'lint', expect: 'forbidden token "Date"' }] },
+  { name: 'MATH_ALIAS', task: 'T0.8a review', file: 'page', find: CORE_SIM_OPEN, repl: CORE_SIM_OPEN + '  var M = Math;\n',
+    gates: [{ gate: 'lint', expect: 'a bare Math' }] },
+  { name: 'LOOP_DOUBLE_SPEED', task: 'T0.8a review', file: 'page', find: 'var STEP_MS = 1000 / SB.TUNING.STEP_HZ', repl: 'var STEP_MS = 500 / SB.TUNING.STEP_HZ',
+    gates: [{ gate: 'play', expect: 'the step is 16.667 ms' }] },
+  { name: 'JOURNEY_A_REPLACES', task: 'T0.8a review', file: 'page', find: "    if (document.referrer.indexOf('/portal') >= 0 && history.length > 1) history.back();",
+    repl: "    if (document.referrer.indexOf('/portal') >= 0 && history.length > 9) history.back();",
+    gates: [{ gate: 'boot', expect: 'journey A: a real touch on the exit returned' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
@@ -152,7 +183,7 @@ for (const m of MUTANTS) {
     fs.writeFileSync(path.join(dir, g.gate + '.out'), out);
     let result;
     if (r.status === 0) result = 'STAYED GREEN';
-    else if (g.expect === null || out.includes(g.expect)) result = 'RED';
+    else if (g.expect === null || [].concat(g.expect).some(e => out.includes(BROWSER.has(g.gate) ? 'FAIL  ' + e : e))) result = 'RED';
     else result = 'WRONG REASON';
     rows.push({ m, g, result, why: result === 'WRONG REASON' ? (out.split('\n').find(l => /FAIL|Error/.test(l)) || '').trim().slice(0, 120) : '' });
   }
@@ -162,7 +193,7 @@ for (const m of MUTANTS) {
 const pad = (s, n) => (s + ' '.repeat(n)).slice(0, n);
 console.log(pad('mutant', 30) + pad('task', 7) + pad('gate', 10) + pad('expected text', 48) + 'result');
 for (const r of rows) {
-  const want = r.m.name === 'NOOP' ? '(must stay green)' : r.g.expect || '';
+  const want = r.m.name === 'NOOP' ? '(must stay green)' : [].concat(r.g.expect || '').join(' | ');
   const shown = r.m.name === 'NOOP' && r.result === 'STAYED GREEN' ? 'stayed green (as it must)' : r.result;
   console.log(pad(r.m.name, 30) + pad(r.m.task, 7) + pad(r.g.gate, 10) + pad(want, 48) + shown + (r.why ? '  [' + r.why + ']' : ''));
 }

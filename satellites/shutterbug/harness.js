@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 975;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 999;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', retable: 'T0.10a', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -428,10 +428,12 @@ group('H-pal-6', 'SAT is the computed S over 0.35; the bands follow the hues of 
 /* the test's own pipeline A, written from DESIGN 6.3 and 6.4, not from the core */
 const pipeRef = (() => {
   const Lof = SB.palette.L;
+  /* DESIGN's own numbers, typed here (law 2): 6.3 "clamped to [70, 140]", "two passes"; 6.4 "> 60", "runs of >= 3" */
+  const DESIGN = { OTSU_MIN: 70, OTSU_MAX: 140, SMOOTH_PASSES: 2, EDGE_DROP_L: 60, PLATFORM_RUN_MIN: 3 };
   /* Otsu, exactly: every integer threshold t (solid is L < t), the between class variance compared as exact
      fractions in BigInt, the first maximum wins (the lowest threshold), then the clamp */
   function otsu(pal) {
-    const T = SB.TUNING, hist = new Array(256).fill(0);
+    const T = DESIGN, hist = new Array(256).fill(0);
     for (const v of pal) hist[Lof[v]]++;
     let best = null, bestT = T.OTSU_MIN;
     const N = BigInt(pal.length);
@@ -462,7 +464,7 @@ const pipeRef = (() => {
     const pal = []; for (const r of rows) for (const c of r) pal.push(parseInt(c, 16));
     const T = otsu(pal);
     let s = Uint8Array.from(pal, v => (Lof[v] < T ? 1 : 0));
-    for (let k = 0; k < SB.TUNING.SMOOTH_PASSES; k++) s = smooth(s, w, h);
+    for (let k = 0; k < DESIGN.SMOOTH_PASSES; k++) s = smooth(s, w, h);
     if (mode === 1) s = s.map(v => 1 - v);
     for (let x = 0; x < w; x++) { s[x] = 0; s[(h - 1) * w + x] = 1; }
     return { w, h, pal, T, solid: s };
@@ -472,16 +474,16 @@ const pipeRef = (() => {
     const { w, h, pal, solid } = r, out = new Uint8Array(w * h);
     for (let y = 0; y < h - 1; y++) {
       let run = [];
-      const flush = () => { if (run.length >= SB.TUNING.PLATFORM_RUN_MIN) for (const i of run) out[i] = 1; run = []; };
+      const flush = () => { if (run.length >= DESIGN.PLATFORM_RUN_MIN) for (const i of run) out[i] = 1; run = []; };
       for (let x = 0; x < w; x++) {
         const a = y * w + x, b = a + w;
-        if (!solid[a] && !solid[b] && Lof[pal[a]] - Lof[pal[b]] > SB.TUNING.EDGE_DROP_L) run.push(b); else flush();
+        if (!solid[a] && !solid[b] && Lof[pal[a]] - Lof[pal[b]] > DESIGN.EDGE_DROP_L) run.push(b); else flush();
       }
       flush();
     }
     return out;
   }
-  return { otsu, smooth, solidity, plats };
+  return { otsu, smooth, solidity, plats, DESIGN };
 })();
 function platformRuns(lv) {
   let n = 0;
@@ -540,7 +542,7 @@ group('H-pipe-3', 'all-dark and all-light stand on row h-2; the threshold is the
   }
   for (const f of FIXTURES) {
     const lv = buildFx(f, 0), want = pipeRef.solidity(f.fx.record, 0).T;
-    t.ok(lv.otsuT >= SB.TUNING.OTSU_MIN && lv.otsuT <= SB.TUNING.OTSU_MAX, f.name + ': threshold ' + lv.otsuT + ' inside the clamp [' + SB.TUNING.OTSU_MIN + ', ' + SB.TUNING.OTSU_MAX + ']');
+    t.ok(lv.otsuT >= 70 && lv.otsuT <= 140, f.name + ': threshold ' + lv.otsuT + ' inside DESIGN 6.3\'s clamp [70, 140]');
     t.eq(lv.otsuT, want, f.name + ': threshold equals the test\'s exact Otsu');
   }
 });
@@ -626,6 +628,11 @@ group('H-pipe-8', 'determinism: the level hash over FIELDS is stable, cross real
     t.eq(SB.pipeline.levelHash(SB.pipeline.build(SB.record.fromJSON(f.fx.record), {})), a, f.name + ': a fresh record hashes equal');
     t.eq(SB.pipeline.levelHash(SB.pipeline.build(structuredClone(rec), {})), a, f.name + ': a structured clone from the harness realm hashes equal');
   }
+  /* the fields section 2.2 pins, in its order, typed here and compared with the page's declaration */
+  const PLAN = ['w', 'h', 'seed', 'biome', 'negative', 'otsuT', 'solid', 'plat', 'tab', 'slick', 'sticky', 'trap', 'spawn', 'exit',
+    'beacon.idx', 'beacon.cells', 'landmarks', 'ascent.nodes', 'features.specks', 'features.chest', 'features.scroll',
+    'features.blueprint', 'features.enemies', 'features.trap', 'features.door', 'features.boss', 'repair.tabs', 'degraded'];
+  t.same(SB.pipeline.FIELDS.map(f => f[0]), PLAN, 'pipeline.FIELDS is the plan\'s list, every field in its order');
   const lv = SB.pipeline.build(SB.record.fromJSON(fixture('sample-room').fx.record), {});
   const base = SB.pipeline.levelHash(lv);
   for (const [name, type] of SB.pipeline.FIELDS) {
@@ -790,14 +797,20 @@ group('H-sim-2', 'coyote: a press on the 6th airborne frame after walking off ju
 });
 
 group('H-sim-2b', 'coyote never arms on a jump: a second press in the first airborne frames does not jump again', t => {
+  /* settled on the floor first (4 quiet steps), the jump on step 4, a second press k steps later; an upward kick is a
+     step that makes vy more negative by more than gravity could (a landing zeroing a fall is not one) */
   const lv = LABS.room(['', '..........S.............', FLOOR]);
-  const once = play(lv, f => (f === 0 ? IN.A | IN.A_TAP : 0), 70);
+  const kicks = r => r.trace.filter(p => p.vy < 0 && p.vy < p.before.vy - K.G).length;
+  const once = play(lv, f => (f === 4 ? IN.A | IN.A_TAP : 0), 80);
   const apexOnce = Math.min(...once.trace.map(p => p.y));
+  t.eq(kicks(once), 1, 'a single press is one upward kick');
   for (const k of [1, 3, 6]) {
-    const twice = play(lv, f => (f === 0 || f === k ? IN.A | IN.A_TAP : 0), 70);
-    const resets = twice.trace.filter((p, f) => f > 0 && p.vy < p.before.vy - K.G).length;
-    t.eq(resets, 0, 'a second press on airborne frame ' + k + ' gives no new upward kick');
-    t.eq(Math.min(...twice.trace.map(p => p.y)), apexOnce, 'a second press on airborne frame ' + k + ' leaves the apex of the single jump');
+    const twice = play(lv, f => (f === 4 || f === 4 + k ? IN.A | IN.A_TAP : 0), 80);
+    /* the fair single jump holds A on the same steps, with no second down edge (holding A on frame 1 rightly delays
+       the release cap; a second press must add nothing more than that hold) */
+    const held = play(lv, f => (f === 4 ? IN.A | IN.A_TAP : f === 4 + k ? IN.A : 0), 80);
+    t.eq(kicks(twice), 1, 'a second press on airborne frame ' + k + ' gives no second upward kick');
+    t.eq(Math.min(...twice.trace.map(p => p.y)), Math.min(...held.trace.map(p => p.y)), 'a second press on airborne frame ' + k + ' reaches exactly the apex of the same hold without it');
   }
 });
 
@@ -824,7 +837,7 @@ group('H-sim-4', 'one way tops: rising never lands; descending lands with 2 px o
   /* a plank five rows up (its top 80 px over the feet, the apex 69.6): the feet never clear it, so it never catches */
   const high = LABS.room(['.........===............', '', '', '', '..........S.............', FLOOR]);
   const rh = play(high, f => (f === 0 ? IN.A | IN.A_TAP : IN.A), 80);
-  t.ok(rh.trace.every(p => !(p.ground && p.y < (high.h - 1) * CS)), 'a plank whose top the feet never clear never catches the hero: it falls back to the floor');
+  t.ok(rh.trace.every(p => !p.ground || p.y === (high.h - 2) * CS), 'a plank whose top the feet never clear never catches the hero: it is only ever grounded on the floor');
   /* a hero falling with its feet already inside a plank's row does not land on that plank's top */
   const inside = LABS.room(['', '...........===..........', '', '', FLOOR]);
   const s3 = SB.sim.create(inside, { at: { x: 11 * CS + 512, y: (inside.h - 4) * CS + 6 * 256 - HH } });
