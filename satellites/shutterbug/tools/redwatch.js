@@ -136,6 +136,15 @@ const MUTANTS = [
     gates: [{ gate: 'play', expect: 'a second finger on A during a rocker hold: both register' }] },
 
   /* the second review (30 Oct, before sb-m0-2) */
+  { name: 'HASH_SKIPS_RNG', task: 'T0.7b', file: 'page', find: "['frame', 'i32'], ['rng', 'u32'], ", repl: "['frame', 'i32'], ",
+    gates: [{ gate: 'harness', only: 'H-sim-7', expect: 'state: the keys are exactly the declared list' }] },
+  { name: 'ONEWAY_FROM_BELOW_BLOCKS', task: 'T0.7b', file: 'page', find: 'for (cx = cx0; cx <= cx1; cx++) if (solidAt(lv, cx, hr)) { any = true;',
+    repl: 'for (cx = cx0; cx <= cx1; cx++) if (solidAt(lv, cx, hr) || platAt(lv, cx, hr)) { any = true;',
+    /* dy 1 cannot see it (its one way is in the takeoff cell's own row, the head starts inside it): dy 2 is the first
+       straight up jump through a one way */
+    gates: [{ gate: 'harness', only: 'H-lab-1', expect: 'JUMP FULL right dx0 dy2 onto one way' }] },
+  { name: 'FLOAT_LEAK', task: 'T0.7b', file: 'page', find: 'h.vy < -K.CUT_V) h.vy = -K.CUT_V;', repl: 'h.vy < -K.CUT_V) h.vy = -K.CUT_V / 3;',
+    gates: [{ gate: 'harness', only: 'H-sim-8', expect: 'serialize never met a float' }] },
   { name: 'MAX_STEPS_1', task: 'T0.8b review', file: 'page', find: 'MAX_STEPS = 4, DT_MAX = 100', repl: 'MAX_STEPS = 1, DT_MAX = 100',
     gates: [{ gate: 'play', expect: 'the loop ran exactly the steps the accumulator owes' }] },
   { name: 'DT_MAX_20', task: 'T0.8b review', file: 'page', find: 'MAX_STEPS = 4, DT_MAX = 100', repl: 'MAX_STEPS = 4, DT_MAX = 20',

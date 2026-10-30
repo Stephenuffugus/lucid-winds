@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 1015;              /* raised per task: the count a full run must reach */
+const ASSERT_FLOOR = 1588;              /* raised per task: the count a full run must reach */
 
 const LATER = { 'record-json': 'T0.15', retable: 'T0.10a', 'all-edges': 'T0.13a', replay: 'T0.13b', record: 'T0.13b',
   regold: 'T0.13b', explore: 'T0.13b', economy: 'M2' };
@@ -1037,6 +1037,301 @@ group('H-in-1', 'the replay codec: 3600 random words round trip through runs, L 
   t.same(SB.sim.rle.decode(runs), words, 'decode(encode(words)) equals the words');
   t.eq(runs.reduce((a, x) => a + x[0], 0), 3600, 'the runs count 3600 steps');
   t.ok(SB.sim.rle.decode(runs)[100] === (IN.L | IN.R), 'a word with L and R both set survives the round trip');
+});
+
+/* ================================================================ the sim, part one, proven (T0.7b) */
+/* a seeded random word script: held bits that change every few steps, the edge bits on presses */
+function randomScript(seed, n) {
+  const r = hrand(seed), out = [];
+  let held = 0, prev = 0;
+  for (let k = 0; k < n; k++) {
+    if (r.int(7) === 0) held = r.int(16);
+    out.push(held | ((held & IN.A) && !(prev & IN.A) ? IN.A_TAP : 0) | ((held & IN.B) && !(prev & IN.B) ? IN.B_TAP : 0));
+    prev = held;
+  }
+  return out;
+}
+
+group('H-sim-6', 'determinism: the same script twice, a cross realm clone in lock step, two fresh contexts', t => {
+  const f = fixture('sample-room'), lv = buildFx(f, 0), words = randomScript(606, 3600);
+  const run = (SBx, level) => { const s = SBx.sim.create(level), hs = []; words.forEach((w, k) => { SBx.sim.step(s, w); if ((k + 1) % 100 === 0) hs.push(SBx.sim.hash(s)); }); return hs; };
+  const a = run(SB, lv), b = run(SB, lv);
+  t.same(b, a, 'the same 3600 step script from two fresh states: equal hashes at every 100th step');
+  const s1 = SB.sim.create(lv), s2 = SB.sim.attach(structuredClone(s1), lv);
+  let first = -1;
+  for (let k = 0; k < 3600 && first < 0; k++) { SB.sim.step(s1, words[k]); SB.sim.step(s2, words[k]); if (SB.sim.hash(s1) !== SB.sim.hash(s2)) first = k; }
+  t.eq(first, -1, 'a structured clone from the harness realm, stepped alongside, hashes equal every step (first divergence)');
+  const other = loadCoreFull(PAGE).SB;
+  const lv2 = other.pipeline.build(other.record.fromJSON(f.fx.record), {});
+  t.same(run(other, lv2), a, 'a second fresh context gives equal hashes at every 100th step');
+});
+
+group('H-sim-7', 'coverage: every declared field moves the hash; the keys are exactly the declared ones, after 600 steps too', t => {
+  const lv = buildFx(fixture('sample-room'), 0);
+  const fresh = () => SB.sim.create(lv);
+  const base = SB.sim.hash(fresh());
+  /* every leaf path of FIELDS, perturbed by one unit, a flipped flag, an element changed or appended */
+  const leaves = [];
+  const walk = (schema, path) => {
+    for (const [name, type, sub] of schema) {
+      const p = path.concat(name);
+      if (type === 'obj') walk(sub, p);
+      else leaves.push({ p, type, sub });
+    }
+  };
+  walk(SB.sim.FIELDS, []);
+  const proto = schema => Object.fromEntries(schema.map(([n, ty]) => [n, ty === 'i32[]' ? [] : ty === 'i32[]?' ? null : ty.startsWith('obj') ? null : 0]));
+  for (const { p, type, sub } of leaves) {
+    const s = fresh(), key = p[p.length - 1], holder = p.slice(0, -1).reduce((o, k) => o[k], s), v = holder[key];
+    if (type === 'i32' || type === 'u32') holder[key] = v + 1;
+    else if (type === 'bool') holder[key] = 1 - v;
+    else if (type === 'i32[]') holder[key] = v.length ? v.map((x, k) => (k === 0 ? x + 1 : x)) : [1];
+    else if (type === 'i32[]?') holder[key] = v === null ? [0] : null;
+    else if (type === 'obj[]') holder[key] = v.concat([proto(sub)]);
+    else if (type === 'obj?') holder[key] = v === null ? Object.assign(proto(sub), { cells: [] }) : null;
+    t.ok(SB.sim.hash(s) !== base, 'perturbing ' + p.join('.') + ' (' + type + ') changes the hash');
+  }
+  const keysOf = (o, schema, path) => {
+    t.same(Object.keys(o), schema.map(x => x[0]), (path || 'state') + ': the keys are exactly the declared list, in order');
+    for (const [name, type, sub] of schema) if (type === 'obj') keysOf(o[name], sub, (path ? path + '.' : '') + name);
+  };
+  const s = fresh();
+  keysOf(s, SB.sim.FIELDS, '');
+  const words = randomScript(77, 600);
+  for (const w of words) SB.sim.step(s, w);
+  keysOf(s, SB.sim.FIELDS, '');
+});
+
+group('H-sim-8', 'the integer invariant: no float in the state after 3600 random steps; a planted float is named', t => {
+  for (const name of ['sample-room', 'shelves-a', 'one-giant-landmark']) {
+    const lv = buildFx(fixture(name), 0), s = SB.sim.create(lv), words = randomScript(SB.record.seedOf(lv.rec), 3600);
+    let threw = null;
+    for (let k = 0; k < words.length && !threw; k++) { SB.sim.step(s, words[k]); try { SB.sim.serialize(s); } catch (e) { threw = 'step ' + k + ': ' + e.message; } }
+    t.ok(!threw, name + ': 3600 random steps, serialize never met a float' + (threw ? ' (' + threw + ')' : ''));
+  }
+  const s = SB.sim.create(buildFx(fixture('sample-room'), 0));
+  s.hero.vx = 1.5;
+  let msg = '';
+  try { SB.sim.serialize(s); } catch (e) { msg = e.message; }
+  t.ok(/hero\.vx/.test(msg), 'a planted float in hero.vx makes serialize throw naming the path (' + msg + ')');
+});
+
+/* ================================================================ the macros (section 3.9), as word scripts */
+/* M_WALK walks dir for n steps; M_JUMP presses A on step 0 and holds it for the profile's frames (FULL the whole arc,
+   MID 4, TAP 1) with the rocker in dir for `hold` steps; M_FALL walks off an edge (the rocker for `hold` steps, no A).
+   The labs run them tonight; the bot (T0.12a) and the route tools reuse them. */
+const A_FRAMES = { FULL: 200, MID: 4, TAP: 1 };
+const rockerOf = dir => (dir > 0 ? IN.R : IN.L);
+const M_WALK = (dir, n) => Array.from({ length: n }, () => rockerOf(dir));
+const M_JUMP = (profile, dir, hold, len = 160) => Array.from({ length: len }, (_, k) =>
+  (k < A_FRAMES[profile] ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k < hold ? rockerOf(dir) : 0));
+const M_FALL = (dir, hold, len = 160) => Array.from({ length: len }, (_, k) => (k < hold ? rockerOf(dir) : 0));
+
+/* ================================================================ the oracle and the jump labs (T0.7b, section 3.9) */
+/* The harness's own stepped arcs and tables, written from section 3.2 and TUNING, never from the core: the oracle
+   H-reach-1 compares reach.tables against (T0.10a) and the model the labs hold the sim to tonight. Coordinates are
+   subpixels relative to the takeoff cell: x is the box's left edge (2 px in when centred), y the feet (0 is the takeoff
+   surface, up is negative). A jump's corridor is the set of cells its CANONICAL path occupies, the smallest rocker hold
+   that lands on the target and rests there: the same hold the lab's macro uses, so LAB-CLEAR tests the oracle's
+   hitbox extent against the sim's real collisions cell by cell. */
+const ORACLE = (() => {
+  const T = SB.TUNING, S = 256, CSZ = SB.GRID.CELL * S, HWS = SB.GRID.HERO_W * S, HHS = SB.GRID.HERO_H * S;
+  const OV = T.LAND_OVERLAP_PX * S, r = v => Math.round(v * S);
+  const PROFILE_A = { FULL: Infinity, MID: 4, TAP: 1 };
+  /* one flight: the jump on step 1 (or none: a walk off), the rocker held for `hold` steps in `dir`, then the decel */
+  function arc(profile, dir, hold, opts = {}) {
+    const deep = !!opts.deep, walk = profile === 'WALK';
+    const G = r(T.GRAVITY), GF = deep ? Math.round(G * T.DEEP_FALL_MULT) : G;
+    const TERM = deep ? Math.round(r(T.TERMINAL) * T.DEEP_FALL_MULT) : r(T.TERMINAL), CUT = r(T.JUMP_CUT_V);
+    const RUN = r(T.RUN), DECEL = Math.round(RUN / T.DECEL_FRAMES);
+    let vy = walk ? 0 : -(deep ? r(T.DEEP_JUMP_V) : r(T.JUMP_V)), aHold = walk ? 0 : PROFILE_A[profile];
+    let x = (CSZ - HWS) / 2, y = 0, vx = 0, rising = !walk, airborne = !walk;
+    const out = [{ x, y, vx, vy }];
+    for (let f = 1; f < 400; f++) {
+      if (f > aHold && rising && vy < -CUT) vy = -CUT;
+      if (f <= hold) vx = dir * RUN; else if (vx > 0) vx = Math.max(0, vx - DECEL); else if (vx < 0) vx = Math.min(0, vx + DECEL);
+      if (walk && !airborne) {
+        /* walking: on the ledge until the box has fully left the takeoff cell's support (the cell under x 0..CSZ) */
+        x += vx;
+        const onLedge = dir > 0 ? x < CSZ : x + HWS > 0;
+        if (onLedge) { out.push({ x, y, vx, vy: 0 }); continue; }
+        airborne = true;
+        vy = Math.min(TERM, vy + G); y += vy;
+        out.push({ x, y, vx, vy });
+        continue;
+      }
+      vy = Math.min(TERM, vy + (vy >= 0 ? GF : G));
+      if (vy >= 0) rising = false;
+      x += vx; y += vy;
+      out.push({ x, y, vx, vy });
+      if (y > 30 * CSZ) break;
+    }
+    return out;
+  }
+  const crossing = (a, rowsUp) => { const top = -rowsUp * CSZ; for (let f = 1; f < a.length; f++) if (a[f].vy > 0 && a[f - 1].y <= top && a[f].y > top) return f; return -1; };
+  const overlap = (x, c) => Math.min(x + HWS, (c + 1) * CSZ) - Math.max(x, c * CSZ);
+  const farCell = (x, dir) => dir > 0 ? Math.floor((x + HWS - OV) / CSZ) : Math.floor((x + OV - 1) / CSZ);
+  function table(profile, deep) {
+    const a = arc(profile, 1, Infinity, { deep }), out = [];
+    for (let dy = 0; dy <= 5; dy++) { const f = crossing(a, dy); out.push(f < 0 ? -1 : farCell(a[f].x, 1)); }
+    return out;
+  }
+  function clipped(profile, deep) {
+    const up = profile === 'STICKY' ? T.STICKY_UP : deep ? T.JUMP_UP + T.DEEP_EXTRA_UP : T.JUMP_UP;
+    return table(profile, deep).map((dx, dy) => (dy > up || dx < 0 ? -1 : Math.min(dx, T.JUMP_ACROSS)));
+  }
+  /* after landing at step f the ground decel runs out; where does the box rest? */
+  function restX(a, f, hold, dir) {
+    const RUN = r(T.RUN), DECEL = Math.round(RUN / T.DECEL_FRAMES);
+    let x = a[f].x, vx = a[f].vx;
+    for (let k = f + 1; k < f + 80; k++) {
+      if (k <= hold) vx = dir * RUN; else if (vx > 0) vx = Math.max(0, vx - DECEL); else if (vx < 0) vx = Math.min(0, vx + DECEL); else break;
+      x += vx;
+    }
+    return x;
+  }
+  /* the canonical hold: the smallest whose landing and resting box both overlap the target column by LAND_OVERLAP */
+  function canonical(profile, dir, dx, rowsUp, opts = {}) {
+    for (let h = 0; h <= 60; h++) {
+      const a = arc(profile, dir, h, opts), f = crossing(a, rowsUp);
+      if (f < 0) continue;
+      const c = dir * dx;
+      if (overlap(a[f].x, c) >= OV && overlap(restX(a, f, h, dir), c) >= OV) return { hold: h, land: f, a, rowsUp };
+    }
+    return null;
+  }
+  /* the cells the box occupies from takeoff to the landing step: 'k,r' with k columns in the jump direction and r rows
+     up (negative r is below the takeoff row) */
+  function corridor(c, dir) {
+    const cells = new Set();
+    /* the sim resolves x first, at the previous step's height, then y: so each step sweeps the box at (new x, old y)
+       as well as at (new x, new y). Missing the first is exactly what LAB-CLEAR caught on the far column. */
+    const box = (x, y) => {
+      const x0 = Math.floor(x / CSZ), x1 = Math.floor((x + HWS - 1) / CSZ);
+      const y0 = Math.floor((y - HHS) / CSZ), y1 = Math.floor((y - 1) / CSZ);
+      for (let cx = x0; cx <= x1; cx++) for (let cy = y0; cy <= y1; cy++) cells.add((cx * dir) + ',' + (-cy - 1));
+    };
+    /* the landing step's box as the sim leaves it, snapped onto the target's top: never the support it lands through */
+    for (let k = 0; k <= c.land; k++) {
+      box(c.a[k].x, k === c.land ? -c.rowsUp * CSZ : c.a[k].y);
+      if (k > 0) box(c.a[k].x, c.a[k - 1].y);
+    }
+    return cells;
+  }
+  return { arc, crossing, table, clipped, canonical, corridor, CSZ, OV };
+})();
+
+/* A lab room for one jump: the takeoff cell on a solid support, the target on a solid or one way support, everything
+   else open, the floor far below. Returns the level and where things are. */
+function jumpLab(dir, dx, rowsUp, support, extraSolid) {
+  const W = SB.GRID.W, H = SB.GRID.H, tx = dir > 0 ? 3 : W - 4, ty = 38;
+  const g = Array.from({ length: H }, () => Array(W).fill('.'));
+  g[H - 1] = Array(W).fill('#');
+  g[ty + 1][tx] = '#';
+  const gx = tx + dir * dx, gy = ty - rowsUp;
+  g[ty][tx] = 'S';
+  if (extraSolid) for (const [ex, ey] of extraSolid) if (g[ey] && g[ey][ex] !== undefined && g[ey][ex] === '.') g[ey][ex] = '#';
+  const lv = LABS.room(g.map(row => row.join('')));
+  const si = (gy + 1) * W + gx;
+  if (gy + 1 < H - 1) { if (support === '#') lv.solid[si] = 1; else lv.plat[si] = 1; }
+  return { lv, tx, ty, gx, gy };
+}
+/* run a jump macro: A from step 0 for the profile's frames (none for a walk off), the rocker in dir for `hold` steps;
+   PASS when the hero rests grounded standing in the target row with the box over the target column by LAND_OVERLAP */
+function runJump(lab, profile, dir, hold) {
+  const s = SB.sim.create(lab.lv);
+  SB.sim.step(s, 0); SB.sim.step(s, 0);
+  const aFrames = profile === 'WALK' ? 0 : A_FRAMES[profile], words = profile === 'WALK' ? M_FALL(dir, hold) : M_JUMP(profile, dir, hold);
+  for (let k = 0; k < words.length; k++) {
+    SB.sim.step(s, words[k]);
+    if (k > aFrames && k > hold && s.hero.ground && s.hero.vx === 0) break;
+  }
+  const h = s.hero, row = Math.floor((h.y + HH - 1) / CS);
+  const ov = Math.min(h.x + HW, (lab.gx + 1) * CS) - Math.max(h.x, lab.gx * CS);
+  return { ok: h.ground === 1 && row === lab.gy && ov >= K.OVERLAP_SUB, cell: [Math.floor((h.x + (HW >> 1)) / CS), row] };
+}
+/* every case the tables admit: FULL, MID, TAP, both directions, onto a solid and onto a one way top (straight up only
+   onto a one way); jump downs 1..8 rows (FULL, the far cell at that depth); walk offs 1..8 rows */
+function labCases() {
+  const cases = [];
+  for (const profile of ['FULL', 'MID', 'TAP']) {
+    const row = ORACLE.clipped(profile, false);
+    for (const dir of [1, -1]) for (let dy = 0; dy <= 5; dy++) for (let dx = 0; dx <= row[dy]; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      for (const support of dx === 0 ? ['='] : ['#', '=']) cases.push({ kind: 'JUMP', profile, dir, dx, rowsUp: dy, support });
+    }
+  }
+  for (const [profile, kind] of [['FULL', 'JUMP_DOWN'], ['WALK', 'WALK_OFF']]) for (const dir of [1, -1]) for (let down = 1; down <= 8; down++) {
+    const a = ORACLE.arc(profile, 1, Infinity), f = ORACLE.crossing(a, -down);
+    if (f < 0) continue;
+    const far = Math.floor((a[f].x + SB.GRID.HERO_W * 256 - ORACLE.OV) / ORACLE.CSZ);
+    for (const dx of [far, Math.max(1, far - 2)]) cases.push({ kind, profile, dir, dx, rowsUp: -down, support: '#' });
+  }
+  return cases;
+}
+const caseName = c => c.kind + ' ' + c.profile + ' ' + (c.dir > 0 ? 'right' : 'left') + ' dx' + c.dx + ' dy' + c.rowsUp + ' onto ' + (c.support === '#' ? 'solid' : 'one way');
+
+group('H-lab-1', 'LAB-EDGE: every jump the tables admit lands on its target in the sim, by its canonical hold', t => {
+  let n = 0, skipped = 0;
+  for (const c of labCases()) {
+    const can = ORACLE.canonical(c.profile, c.dir, c.dx, c.rowsUp);
+    if (!can) { t.ok(false, caseName(c) + ': the oracle finds no canonical hold'); continue; }
+    if (c.support === '#' && ORACLE.corridor(can, c.dir).has(c.dx + ',' + (c.rowsUp - 1))) { skipped++; continue; }
+    const lab = jumpLab(c.dir, c.dx, c.rowsUp, c.support);
+    const res = runJump(lab, c.profile, c.dir, can.hold);
+    t.ok(res.ok, caseName(c) + ': hold ' + can.hold + ' lands on the target (rests at ' + res.cell.join(',') + ', target ' + lab.gx + ',' + lab.gy + ')', res.ok ? undefined : lab.lv.rows.slice(lab.gy - 2, lab.ty + 3).join('\n'));
+    n++;
+  }
+  console.log('  info  LAB-EDGE ran ' + n + ' cases; ' + skipped + ' solid support cases skipped (the support lies in the canonical corridor: the model claims no such edge)');
+  /* the measured numbers (T0.7b writes them into PROGRESS): each profile's apex and its across table, by dy 0..5 */
+  for (const profile of ['FULL', 'MID', 'TAP']) {
+    const a = ORACLE.arc(profile, 1, Infinity), apex = -Math.min(...a.map(p => p.y)) / 256;
+    console.log('  info  ' + profile + ': apex ' + apex.toFixed(2) + ' px (' + (apex / 16).toFixed(2) + ' cells), across by dy 0..5 ' + JSON.stringify(ORACLE.table(profile, false)) + ', clipped ' + JSON.stringify(ORACLE.clipped(profile, false)));
+  }
+});
+
+group('H-lab-2', 'LAB-CLEAR: a solid in any cell of the move\'s box outside the corridor never stops the jump', t => {
+  let runs = 0, fails = 0;
+  for (const c of labCases()) {
+    const can = ORACLE.canonical(c.profile, c.dir, c.dx, c.rowsUp);
+    if (!can) continue;
+    const cor = ORACLE.corridor(can, c.dir);
+    if (c.support === '#' && cor.has(c.dx + ',' + (c.rowsUp - 1))) continue;
+    let topRow = 0; for (const k of cor) topRow = Math.max(topRow, Number(k.split(',')[1]));
+    const lab0 = jumpLab(c.dir, c.dx, c.rowsUp, c.support);
+    const bad = [];
+    for (let k = -1; k <= c.dx + 1; k++) for (let rr = Math.min(-1, c.rowsUp - 1); rr <= topRow + 2; rr++) {
+      const key = k + ',' + rr;
+      if (cor.has(key)) continue;
+      const bx = lab0.tx + c.dir * k, by = lab0.ty - rr;
+      if (bx < 0 || bx >= SB.GRID.W || by < 0 || by >= SB.GRID.H - 1) continue;
+      if ((bx === lab0.gx && (by === lab0.gy || by === lab0.gy + 1)) || (bx === lab0.tx && (by === lab0.ty || by === lab0.ty + 1))) continue;
+      const lab = jumpLab(c.dir, c.dx, c.rowsUp, c.support, [[bx, by]]);
+      runs++;
+      if (!runJump(lab, c.profile, c.dir, can.hold).ok) { fails++; bad.push(key); }
+    }
+    t.ok(bad.length === 0, caseName(c) + ': ' + (bad.length ? 'a solid at ' + bad.join(' ') + ' (outside the corridor) stops it' : 'no cell outside the corridor matters'));
+  }
+  console.log('  info  LAB-CLEAR ran ' + runs + ' single solid runs, ' + fails + ' stopped a jump');
+});
+
+group('H-lab-3', 'LAB-NOT (a warning tonight): one beyond the table in height and in reach is not reached', t => {
+  const warn = [];
+  for (const profile of ['FULL', 'MID', 'TAP']) {
+    const raw = ORACLE.table(profile, false);
+    const maxUp = raw.reduce((m, dx, dy) => (dx >= 0 ? dy : m), -1);
+    for (const dir of [1, -1]) {
+      for (const [dx, dy] of [[0, maxUp + 1], [raw[0] + 1, 0]]) {
+        if (dy > 6) continue;
+        const lab = jumpLab(dir, dx, dy, dx === 0 ? '=' : '#');
+        let reached = false;
+        for (let hold = 0; hold <= 40 && !reached; hold++) if (runJump(lab, profile, dir, hold).ok) reached = true;
+        if (reached) warn.push(profile + ' ' + (dir > 0 ? 'right' : 'left') + ' dx' + dx + ' dy' + dy);
+      }
+    }
+  }
+  console.log('  ' + (warn.length ? 'WARN  LAB-NOT: the sim reaches beyond its table at ' + warn.join(', ') : 'info  LAB-NOT: nothing beyond the tables is reached'));
+  t.ok(true, 'LAB-NOT ran (a warning until M3, T3.5)');
 });
 
 /* ================================================================ one room */
