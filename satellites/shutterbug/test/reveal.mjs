@@ -3,9 +3,10 @@
  *   - the screen passes through reveal, then play; the marks measure hold, resolve and light up each within 50 ms of
  *     TUNING's 0.3, 0.8 and 0.5 s, and the tap to the hero's drop at most 1.6 s including the build;
  *   - the static layer is built once (SB_DEV.staticBuilds() === 1);
- *   - a second room, the reveal now seen, skips on a real tap; the first never does;
+ *   - a second room, the reveal now seen, skips on a real tap; the first never does; after a reload (a new session)
+ *     the first reveal skips too, the flag saved as onboarding.revealSeen (the M1 review);
  *   - with prefers-reduced-motion the transition completes under 0.6 s.
- * Watched red by STATIC_BUILT_TWICE, AUDIO_AT_LOAD and REVEAL_NO_SKIP. */
+ * Watched red by STATIC_BUILT_TWICE, AUDIO_AT_LOAD, REVEAL_NO_SKIP, REVEAL_SEEN_NOT_SAVED and REVEAL_SEEN_NOT_LOADED. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep } from './harness.mjs';
 
 const R = reporter('REVEAL');
@@ -59,6 +60,18 @@ try {
     await sleep(80);
     const m2 = await page.evaluate(() => ({ s: window.SB_DEV.screen(), r: window.SB_DEV.perf().reveal, w: window.SB_DEV.lastInput() }));
     R.say(sc0 === 'reveal' && m2.s === 'play' && m2.r.skipped === true && m2.r.end - m2.r.start < 1000, 'a second room skips on a tap (the screen ' + sc0 + ' then ' + m2.s + ', ' + (m2.r.end - m2.r.start).toFixed(0) + ' ms)');
+    /* a new session (the page reloaded): the reveal was seen and saved (onboarding.revealSeen), so its first reveal
+       skips on a tap too (the M1 review: the flag lived for the session only) */
+    await page.evaluate(() => window.SB.save.flush());
+    await page.reload(); await ready(page, { reveal: true });
+    await tap(page, '#sample');
+    await page.waitForFunction(() => window.SB_DEV.screen() === 'reveal', { timeout: 3000 }).catch(() => {});
+    await sleep(100);
+    const sc1 = await page.evaluate(() => ({ s: window.SB_DEV.screen(), saved: JSON.parse(localStorage.getItem('shutterbug.v1')).onboarding.revealSeen }));
+    const f2 = await page.touchscreen.touchStart(box.x, box.y); await f2.end();
+    await sleep(80);
+    const m3 = await page.evaluate(() => ({ s: window.SB_DEV.screen(), r: window.SB_DEV.perf().reveal }));
+    R.say(sc1.saved === true && sc1.s === 'reveal' && m3.s === 'play' && m3.r.skipped === true, 'a new session skips its first reveal on a tap (saved ' + sc1.saved + ', the screen ' + sc1.s + ' then ' + m3.s + ')');
     R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }

@@ -334,7 +334,7 @@ const MUTANTS = [
   { name: 'TRAP_OK_BLIND', task: 'T1.2b', file: 'page', find: '      if (!found) return false;\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-feat-3', expect: 'a field over the cell an ascent JUMP lands in is refused' }] },
   { name: 'NO_SCROLL_GUARANTEE', task: 'T1.2b', file: 'page', find: '      scroll = deepest(level, g, d, ok);\n', repl: '      scroll = -1; return { specks: cand, scroll: null, blueprint: null };\n',
-    gates: [{ gate: 'harness', only: 'H-feat-2', expect: 'loot keeps the rules' }] },
+    gates: [{ gate: 'harness', only: 'H-feat-2', expect: ': no scroll' }] },   /* the M1 review: it was RED by null read as cell 0 */
   { name: 'CLUSTER_ON_LAMP', task: 'T1.2b', file: 'page', find: '    claim(level.light);\n    claim(level.beacon && level.beacon.cells);\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-en-1b', expect: 'a lit Sun lamp spawns no moth' }] },
   { name: 'ICICLE_IN_THE_AIR', task: 'T1.2b', file: 'page', find: "      else if (kind === ICICLE && !(level.solid[c - w] || level.plat[c - w])) return false;", repl: '',
@@ -710,7 +710,22 @@ const MUTANTS = [
   { name: 'AGAIN_FORGETS_LINK', task: 'M1R', file: 'page', find: '{ level: G.level, noReveal: true, notFirst: G.notFirst, mode: G.mode }', repl: '{ level: G.level, noReveal: true }',
     gates: [{ gate: 'share', expect: "its death card's Again keeps it a link" }] },
   { name: 'PLAY_AGAIN_FORGETS_LINK', task: 'M1R', file: 'page', find: 'ui.startRoom(G.record, G.name, { level: G.level, notFirst: G.notFirst, mode: G.mode }); };', repl: 'ui.startRoom(G.record, G.name, { level: G.level }); };',
-    gates: [{ gate: 'share', expect: "its clear card's Play it again keeps it a link" }] }
+    gates: [{ gate: 'share', expect: "its clear card's Play it again keeps it a link" }] },
+  { name: 'SLIP_OVER_OFFER', task: 'M1R', file: 'page', find: "document.getElementById('slip').classList.toggle('on', !!st.room.compare && !off && !dead);", repl: "document.getElementById('slip').classList.toggle('on', !!st.room.compare);",
+    gates: [{ gate: 'loot', expect: "320: the scroll's offer and the chest's compare open on one step: the offer is up alone" }] },
+  { name: 'SHEET_OVER_DEATH', task: 'M1R', file: 'page', edits: [['var dead = !!st.room.dead, off = dead ? null : st.scrollsOffered', 'var dead = !!st.room.dead, off = st.scrollsOffered'],
+    ["    document.getElementById('offer').classList.remove('on'); document.getElementById('slip').classList.remove('on'); shownOffer = '';\n", '']],
+    gates: [{ gate: 'loot', expect: '320: a room ended under the offer shows the death card alone' }] },
+  { name: 'SLIP_NOT_MODAL', task: 'M1R', file: 'page', find: "var MODALS = ['clear', 'death', 'offer', 'slip', 'sharesheet', 'devcard'];", repl: "var MODALS = ['clear', 'death', 'offer', 'sharesheet', 'devcard'];",
+    gates: [{ gate: 'loot', expect: '412: walked on past the scroll, the chest opens its compare: the slip is up alone and the page is modal' }] },
+  { name: 'OFFER_NOT_CLEARED', task: 'M1R', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'offer', 'slip', 'sharesheet'];", repl: "var OVERLAYS = ['clear', 'death', 'slip', 'sharesheet'];",
+    gates: [{ gate: 'loot', expect: "412: the strip's Title with the offer up: the title with nothing over it" }] },
+  { name: 'SLIPOK_LEAVES', task: 'M1R', file: 'page', find: "addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });", repl: "addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.LEAVE); });",
+    gates: [{ gate: 'loot', expect: '412: a real tap on Keep the slip closes the compare' }] },
+  { name: 'REVEAL_SEEN_NOT_SAVED', task: 'M1R', file: 'page', find: '    if (!RV.seen && SB.save.doc && !SB.save.doc.onboarding.revealSeen) { SB.save.doc.onboarding.revealSeen = true; SB.save.commit(); }\n', repl: '',
+    gates: [{ gate: 'reveal', expect: 'a new session skips its first reveal on a tap' }] },
+  { name: 'REVEAL_SEEN_NOT_LOADED', task: 'M1R', file: 'page', find: '  SB.ui.reveal.seen = !!SB.save.doc.onboarding.revealSeen;\n', repl: '',
+    gates: [{ gate: 'reveal', expect: 'a new session skips its first reveal on a tap' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

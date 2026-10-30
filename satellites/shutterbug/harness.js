@@ -1369,6 +1369,22 @@ group('H-sim-17', 'Deep (section 3.5): the ground jump at DEEP_JUMP_V peaks a ce
   const on = up5(0), off = up5(1);
   t.ok(simUp(on) === Hh - 7 && modelUp(on), 'in Deep a full jump lands on the one way 5 rows up, and the model has the edge');
   t.ok(simUp(off) === Hh - 2 && !modelUp(off), 'under twistOff (the first ever room) neither the sim nor the model reaches it');
+  /* the pipeline's own first room in Deep and Overgrowth (the M1 review: only Frost's ice was asserted, and the rooms
+     above set the flag by hand): H-bio-4's frame lab (five 1 wide runs on the frame) holds sticky cells in a later
+     build and none in a first room build, which carries twistOff; biome-deep and biome-green as first rooms carry it */
+  const fr = {}, put = (x, y0, y1) => { for (let y = y0; y <= y1; y++) { const r = (fr[y] || '4'.repeat(24)).split(''); r[x] = '1'; fr[y] = r.join(''); } };
+  put(23, 2, 8); put(0, 10, 16); put(23, 12, 16); put(0, 20, 25); put(0, 30, 35);
+  const twist = [];
+  for (const biome of [2, 3]) {
+    const later = SB.pipeline.build(labRecord(fr), { biome, stage: 'A' }), first = SB.pipeline.build(labRecord(fr), { biome, stage: 'A', firstRoom: true });
+    const n0 = later.sticky.reduce((a2, v) => a2 + v, 0), n1 = first.sticky.reduce((a2, v) => a2 + v, 0);
+    if (!(n0 > 0 && later.twistOff === 0 && n1 === 0 && first.twistOff === 1 && first.biome === biome)) twist.push(SB.palette.BIOMES[biome] + ' lab: ' + n0 + ' sticky later, ' + n1 + ' first (twistOff ' + first.twistOff + ')');
+  }
+  for (const name of ['biome-deep', 'biome-green']) {
+    const lv1 = SB.pipeline.build(SB.record.fromJSON(fixture(name).fx.record), { firstRoom: true }), lv0 = buildFx(fixture(name), 0);
+    if (lv1.needsCrop || lv1.twistOff !== 1 || lv1.biome !== lv0.biome || lv1.sticky.some(v => v)) twist.push(name + ': twistOff ' + lv1.twistOff + ', biome ' + lv1.biome + ' (later ' + lv0.biome + ')');
+  }
+  t.ok(twist.length === 0, 'the first ever room in Deep and Overgrowth: the pipeline sets twistOff and marks no sticky cell (the frame lab under both, biome-deep and biome-green)' + (twist.length ? ': ' + twist.join('; ') : ''));
 });
 
 group('H-sim-12', 'vines: the fall stops within a step of a descending contact; A climbs 69 px straight up; re sticks only descending', t => {
@@ -2840,6 +2856,14 @@ group('H-route-10', 'the degrade ladder (Q36): each rung logged in level.degrade
   { const { lv, g } = lab(); lv.features.enemies = [moth(28 * 24 + 8), moth(40 * 24 + 8)];
     const res = SB.pipeline.settle(lv, g);
     t.ok(!!res && res.why === 'route' && lv.degraded[0] === D.ENEMY && lv.degraded[1] === 28 * 24 + 8 && lv.degraded.includes(D.REPAIR) && /^enemies-traps/.test(lv.ascent.score.reasons[0] || ''), 'two moths: the nearest goes first (a tie to the lower cell), the other still breaks the climb, the repair pass is logged and the room is an honest needsCrop(route) (' + (res ? res.detail : 'it settled') + ')'); }
+  /* a pocket's elite nearer the climb than the moth that breaks it: the rung passes over the elite, whose envelope is
+     the closed hollow (Q80), and removes the moth (the M1 review: the rung went to the elite and the room was refused) */
+  { const { lv, g } = lab(), pc = 37 * 24 + 10;
+    lv.features.pocket = { cells: [pc], rect: [10, 37, 10, 37] };
+    lv.features.enemies = [{ kind: SB.features.MOTH, idx: pc, elite: true, env: Int32Array.of(pc) }, moth(40 * 24 + 8)];
+    const res = SB.pipeline.settle(lv, g);
+    t.ok(res === null && lv.degraded.join() === [D.ENEMY, 40 * 24 + 8].join() && lv.features.enemies.length === 1 && lv.features.enemies[0].idx === pc && final(lv),
+      'a pocket\'s elite nearer the climb than a moth that breaks it: the rung removes the moth (' + lv.degraded.join(' ') + '), the elite stays and the ascent holds (' + (res ? res.detail : 'it settled') + ')'); }
 });
 
 /* DESIGN 5.3 on the sample room: the onboarding beats, before any photo code */
@@ -2909,6 +2933,11 @@ if (opt('fixture')) {
 /* ================================================================ features, part one (T1.2a) */
 /* every built level of the corpus under each biome override and as detected (fixtures x modes x biomes, section 5.1) */
 let featLevels = null;
+/* DESIGN 7's enemy of each biome (Attic the moth, Frost the icicle, Deep the jelly, Overgrowth the crawler, Ember the
+   spark) and Q84's scroll stat (Attic and Ember Vigor, Frost and Deep Focus, Overgrowth Grit), typed here in the core's
+   numbering (MOTH 1 to SPARK 5; VIGOR 1, FOCUS 2, GRIT 3, pinned in H-feat-6): a check never reads its answer from the
+   code under test (the M1 review: H-feat-6, H-en-1 and H-loot-3 passed with either table swapped) */
+const KIND_WANT = [1, 2, 3, 4, 5], STAT_WANT = [1, 2, 2, 3, 1];
 function featBuilds() {
   if (featLevels) return featLevels;
   featLevels = [];
@@ -3212,23 +3241,25 @@ function touchable(lv, d, c) {
   return false;
 }
 
-group('H-feat-2', 'loot: at least one chest and one scroll on every built level; every speck touchable, at most CAP_SPECK (Ember two more), never on the spawn, the exit, the chest, the door or the pocket', t => {
-  const T = SB.TUNING, bad = []; let scrolls = 0, natural = 0, blueprints = 0;
+group('H-feat-2', 'loot: at least one chest and one scroll on every built level; every speck touchable, at most CAP_SPECK (Ember two more), never on the spawn, the exit, the chest, the door or the pocket but its loot cell, where a pocket always holds one (DESIGN 6.11, Q34)', t => {
+  const T = SB.TUNING, bad = []; let scrolls = 0, natural = 0, blueprints = 0, pockets = 0;
   for (const { tag, lv } of featBuilds()) {
     const f = lv.features, d = SB.reach.distances(SB.reach.graph(lv), lv.spawn);
     if (!(f.chest >= 0)) bad.push(tag + ': no chest');
-    if (!(f.scroll >= 0)) { bad.push(tag + ': no scroll'); continue; }
+    /* the core's "no scroll" is null, and null >= 0 is true in JS: the type is tested (the M1 review) */
+    if (typeof f.scroll !== 'number' || f.scroll < 0) { bad.push(tag + ': no scroll'); continue; }
     scrolls++;
+    if (f.pocket) { pockets++; if (f.specks.filter(c => c === f.pocket.loot).length !== 1) bad.push(tag + ': the pocket holds no loot at its back'); }
     const all = f.specks.concat([f.scroll]).concat(f.blueprint !== null ? [f.blueprint] : []);
     natural += all.filter(c => lv.pal[c] === SB.palette.I.SUN).length;
     if (f.blueprint !== null) { blueprints++; if (lv.pal[f.blueprint] !== SB.palette.I.SUN) bad.push(tag + ': a blueprint not on a Sun speck'); }
     if (all.length > T.CAP_SPECK + (lv.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0)) bad.push(tag + ': ' + all.length + ' specks');
     for (const c of all) {
       if (!touchable(lv, d, c)) bad.push(tag + ': a speck at (' + c % lv.w + ', ' + Math.floor(c / lv.w) + ') no hero touches');
-      if (c === lv.spawn || c === lv.exit || c === f.chest || (f.door && c === f.door.idx) || (f.pocket && f.pocket.cells.includes(c))) bad.push(tag + ': a speck on a taken cell');
+      if (c === lv.spawn || c === lv.exit || c === f.chest || (f.door && c === f.door.idx) || (f.pocket && f.pocket.cells.includes(c) && c !== f.pocket.loot)) bad.push(tag + ': a speck on a taken cell');
     }
   }
-  t.eq(bad.length, 0, 'loot keeps the rules on every level (' + scrolls + ' scrolls, ' + natural + ' natural Sun specks, ' + blueprints + ' blueprints)' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
+  t.eq(bad.length, 0, 'loot keeps the rules on every level (' + scrolls + ' scrolls, ' + natural + ' natural Sun specks, ' + blueprints + ' blueprints, ' + pockets + ' pockets each with its loot)' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
   /* the cap on a room of eight isolated Sun cells standing on the floor */
   const lab = {}; lab[46] = '4e44e44e44e444444e44e44e'.slice(0, 24); lab[44] = '44444444444e444444444444'.slice(0, 24);
   const lv = SB.pipeline.build(labRecord(lab), {}), f = lv.features;
@@ -3284,11 +3315,13 @@ group('H-feat-3', 'the trap field: a 2 cell repeat at least TRAP_MIN a side, its
 });
 
 group('H-feat-6', 'enemies: their biome\'s kind, on cells that keep the rules (open, clear of spawn by ENEMY_SPAWN_CLEAR, never within ROUTE_SAFE_ENEMY_DIST of the ascent, never a trap or the pocket; crawlers and sparks standing, icicles hanging), the caps, the envelopes of section 3.7', t => {
-  const T = SB.TUNING, bad = []; let count = 0, elites = 0;
+  const T = SB.TUNING, bad = []; let count = 0, elites = 0, F = SB.features, ST = SB.sim.STAT;
+  t.ok(F.MOTH === 1 && F.ICICLE === 2 && F.JELLY === 3 && F.CRAWLER === 4 && F.SPARK === 5 && ST.VIGOR === 1 && ST.FOCUS === 2 && ST.GRIT === 3,
+    'the kinds and the stats are numbered as the harness types its biome tables (KIND_WANT, STAT_WANT)');
   const kinds = {};
   for (const { tag, lv, biome } of featBuilds()) {
     const f = lv.features, w = lv.w, n = w * lv.h, stands = lv.ascent.nodes.filter(v => v < n);
-    const want = SB.features.KIND_OF_BIOME[lv.biome], first = false;
+    const want = KIND_WANT[lv.biome], first = false;
     const cap = T.CAP_ENEMY + (lv.biome === 4 ? T.EMBER_EXTRA_ENEMY : 0);
     if (f.enemies.length > cap) bad.push(tag + ': ' + f.enemies.length + ' enemies (cap ' + cap + ')');
     if (f.enemies.filter(e => e.elite).length > T.CAP_ELITE) bad.push(tag + ': more than CAP_ELITE elites');
@@ -3903,7 +3936,7 @@ group('H-en-1', 'moth spawns: on open cells, clear of spawn, at most 4 (2 in a f
     const es = lv.features.enemies, lm = new Set(lv.landmarks.flatMap(l => Array.from(l.cells))), beacon = new Set(Array.from(lv.beacon.cells));
     moths += es.length;
     const bad = es.filter(e => lv.solid[e.idx] || cheb(e.idx, lv.spawn, lv.w) <= SB.TUNING.ENEMY_SPAWN_CLEAR || lm.has(e.idx) || beacon.has(e.idx));
-    t.ok(es.length <= SB.TUNING.CAP_ENEMY + (lv.biome === 4 ? SB.TUNING.EMBER_EXTRA_ENEMY : 0) && bad.length === 0 && es.every(e => e.kind === SB.features.KIND_OF_BIOME[lv.biome] || (e.kind === SB.features.MOTH && lv.repair.spread)), f.name + ' mode ' + mode + ': ' + es.length + ' enemies of its biome\'s kind, every one on an open cell, clear of spawn and of the claimed cells' + (bad.length ? ' (bad: ' + bad.map(e => e.idx % 24 + ',' + Math.floor(e.idx / 24)).join(' ') + ')' : ''));
+    t.ok(es.length <= SB.TUNING.CAP_ENEMY + (lv.biome === 4 ? SB.TUNING.EMBER_EXTRA_ENEMY : 0) && bad.length === 0 && es.every(e => e.kind === KIND_WANT[lv.biome] || (e.kind === SB.features.MOTH && lv.repair.spread)), f.name + ' mode ' + mode + ': ' + es.length + ' enemies of its biome\'s kind, every one on an open cell, clear of spawn and of the claimed cells' + (bad.length ? ' (bad: ' + bad.map(e => e.idx % 24 + ',' + Math.floor(e.idx / 24)).join(' ') + ')' : ''));
   }
   console.log('  info  H-en-1: ' + moths + ' moths over ' + levels + ' built levels');
   /* six clusters: the cap and the first room cap, the same pick twice */
@@ -4177,6 +4210,23 @@ group('H-en-9', 'the elites (Q51): ELITE_HP_MULT times their kind\'s HP, ELITE_S
   s.hero.x = 20 * CS; s.hero.y = 30 * CS; s.hero.vx = 0; s.hero.vy = 0;
   let inside = true; for (let k = 0; k < 400; k++) { SB.sim.step(s, 0); if (e.x < r[0] * CS || e.y < r[1] * CS || e.x + K.ELITE_SUB > (r[2] + 1) * CS || e.y + K.ELITE_SUB > (r[3] + 1) * CS) inside = false; }
   t.ok(e.elite === 1 && slept && woke && inside, 'the pocket\'s elite sleeps while the hero is out (' + slept + '), wakes when it enters (' + woke + ') and stays in its hollow while the hero waits far off (' + inside + ')');
+  /* a crawler elite patrols its hollow wall to wall (the M1 review: its run went on through the tunnel, the clamp
+     held it short of its turn, and it parked in the pocket's mouth): every one over the corpus, woken, then 1200 steps
+     with the hero far off; over the last 600 it turns at least twice and its box spans the hollow less its own width */
+  const parked = []; let crawlers = 0;
+  for (const { tag, lv: cl } of featBuilds()) {
+    const cp = cl.features.pocket; if (!cp) continue;
+    const ci = cl.features.enemies.findIndex(en => en.elite && en.kind === F.CRAWLER && cp.cells.includes(en.idx)); if (ci < 0) continue;
+    crawlers++;
+    const cs = SB.sim.create(cl, { immortal: true }), ce = cs.enemies[ci], cr = cp.rect;
+    cs.hero.x = (cr[0] + 1) * CS + ((CS - HW) >> 1); cs.hero.y = (cr[1] + 2) * CS; SB.sim.step(cs, 0);
+    cs.hero.x = cl.spawn % 24 * CS + ((CS - HW) >> 1); cs.hero.y = Math.floor(cl.spawn / 24) * CS; cs.hero.vx = 0; cs.hero.vy = 0;
+    let turns = 0, lo = 1e9, hi = -1e9, dir = ce.dir;
+    for (let k = 0; k < 1200; k++) { SB.sim.step(cs, 0); if (k >= 600) { if (ce.dir !== dir) turns++; lo = Math.min(lo, ce.x); hi = Math.max(hi, ce.x); } dir = ce.dir; }
+    const span = (cr[2] - cr[0] + 1) * CS - K.ELITE_SUB;
+    if (ce.stunned !== 0 || turns < 2 || hi - lo !== span) parked.push(tag + ' (' + turns + ' turns, x ' + (lo / 256) + ' to ' + (hi / 256) + ' px of a ' + (span / 256) + ' px span)');
+  }
+  t.ok(crawlers > 0 && parked.length === 0, crawlers + ' crawler elites over the corpus patrol their hollow wall to wall, woken with the hero far off' + (parked.length ? ': ' + parked.slice(0, 3).join('; ') : ''));
   const dp0 = s.room.dp; SB.sim.hurt(s, 0, 99);
   const lab = enemyLab(['', FLOOR], F.MOTH, 30 * 24 + 4), dp1 = lab.s.room.dp; SB.sim.hurt(lab.s, 0, 1);
   t.ok(e.hp === 0 && s.room.dp - dp0 === T.DP_ELITE && lab.s.room.dp - dp1 === T.DP_FODDER && !SB.sim.liveEnemy(lab.s.enemies[0]), 'a kill banks DP_ELITE for an elite (' + (s.room.dp - dp0) + ') and DP_FODDER for fodder (' + (lab.s.room.dp - dp1) + ')');
@@ -4254,7 +4304,7 @@ group('H-loot-3', 'the scroll offer: over 200 seeded rooms the biome\'s stat com
     let touch = -1, open = -1;
     for (let f = 0; f < 60 && open < 0; f++) { SB.sim.step(s, f < 30 ? IN.R : 0); if (touch < 0 && s.loot[0].taken) touch = f; if (s.scrollsOffered) open = f; }
     if (open < 0) continue;
-    if (s.scrollsOffered[0] === SB.sim.STAT_OF_BIOME[biome]) first++;
+    if (s.scrollsOffered[0] === STAT_WANT[biome]) first++;
     if (s.scrollsOffered[1] !== s.scrollsOffered[0] && [1, 2, 3].includes(s.scrollsOffered[1])) others++;
     if (s.hero.ground) grounded++;
     if (open - touch >= SB.TUNING.PICKUP_GRACE_FRAMES) late++;
