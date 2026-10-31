@@ -121,30 +121,29 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
    placeholder at 0 until T2.6's economy) */
 #dp { position: absolute; top: 10px; right: calc(14px + var(--sar)); margin: 0; color: var(--lapis); pointer-events: none;
   font-family: 'Segoe Print', 'Bradley Hand', 'Chalkboard SE', 'Comic Sans MS', cursive; font-size: 1.05rem; transform: rotate(-4deg); }
+/* what the chest paid (QUESTIONS Q92, Stephen's ruling of 31 Oct: Dead pixels only): a handwritten +15 under the count
+   for about a second, rising a little as it fades; it takes no tap and holds nothing, so the climb goes on under it.
+   With reduced motion it stands still for the same second */
+#dpplus { position: absolute; right: 0; top: 100%; opacity: 0; white-space: nowrap; font-size: 1.3rem; font-weight: 700; }
+#dpplus.on { animation: sbplus 1.2s ease-out forwards; }
+#dpplus.on.still { animation: none; opacity: 1; }
+@keyframes sbplus { 0% { opacity: 0; transform: translateY(8px); } 15% { opacity: 1; transform: translateY(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
 #back { position: absolute; top: 0; left: calc(6px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;
   border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
-#clear, #death, #offer, #slip { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
+#clear, #death { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
   display: none; flex-direction: column; gap: 12px; align-items: stretch; text-align: center; z-index: 10; }
-#clear.on, #death.on, #offer.on, #slip.on { display: flex; }
+#clear.on, #death.on { display: flex; }
 #death { top: 3%; } #death.low { top: auto; bottom: 3%; }
 #death .duo { display: flex; flex-direction: column; gap: 12px; }
 /* on a short screen Again and Title sit side by side, so the docked card clears the line the camera keeps the bug on
    (the M1 review: at 320x568 the stacked card hid the fallen bug on 40 of 48 rows) */
 @media (max-height: 700px) { #death .duo { flex-direction: row; } #death .duo button { flex: 1 1 0; min-width: 0; }
   #death { width: min(320px, 94vw); padding: 12px 14px; gap: 10px; } #stage > #death h2 { font-size: 1rem; } }   /* its words on one line: about 116 px, under half the stage at 320x568 (#stage: over the cards' 1.3rem rule below) */
-#clear h2, #death h2, #offer h2, #slip h2 { margin: 0 0 4px; font-size: 1.3rem; }
-#clear button, #death button, #offer button, #slip button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
+#clear h2, #death h2 { margin: 0 0 4px; font-size: 1.3rem; }
+#clear button, #death button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
 #nextroom, #deathagain { background: var(--sun); color: var(--ink); }
 #clearbank { margin: 0; font-size: 0.95rem; }
-/* the scroll offer (T1.6): a distinct icon and name per stat, colour a second cue (DESIGN 9.2) */
-#offer button { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 2px 10px; text-align: left; padding: 8px 12px; background: var(--paper); color: var(--ink); }
-#offer button b { font-size: 1.1rem; } #offer button small { grid-column: 2; font-weight: 400; font-size: 0.9rem; }
-#offer .ico { grid-row: 1 / span 2; width: 32px; height: 32px; justify-self: center; }
-#offer .ico.vigor { width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 26px solid var(--brick); }
-#offer .ico.focus { width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-bottom: 26px solid var(--lapis); }
-#offer .ico.grit { box-sizing: border-box; border: 7px solid #3f9a3a; border-radius: 50%; }
-#slipok { background: var(--sun); color: var(--ink); }
 /* the share sheet (T1.8): the record's 16 colour grid, the three sentences, the link and its buttons; it scrolls on short phones */
 #sharesheet { position: absolute; left: 0; right: 0; top: 2%; bottom: 2%; margin: 0 auto; width: min(360px, 96vw); padding: 14px; overflow-y: auto;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
@@ -318,11 +317,6 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <div id="death" role="dialog" data-aria="death"><h2 data-copy="death"></h2>
       <div class="duo"><button id="deathagain" type="button" data-copy="again"></button>
       <button id="deathtitle" type="button" data-copy="toTitle"></button></div></div>
-    <div id="offer" role="dialog" data-aria="scrollOffer"><h2 data-copy="scrollOffer"></h2>
-      <button id="pickA" type="button"><i class="ico"></i><b></b><small></small></button>
-      <button id="pickB" type="button"><i class="ico"></i><b></b><small></small></button></div>
-    <div id="slip" role="dialog" data-aria="slip"><h2 data-copy="slip"></h2>
-      <button id="slipok" type="button" data-copy="slipTake"></button></div>
     <div id="sharesheet" role="dialog" data-aria="shareTitle"><div id="sharehead"><h2 data-copy="shareTitle"></h2><button id="shareclose" type="button" data-copy="shareClose"></button></div>
       <canvas id="sharecanvas" width="192" height="384"></canvas>
       <p data-copy="shareAbstract"></p><p data-copy="shareOffline1"></p><p data-copy="shareOffline2"></p>
@@ -333,7 +327,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <div id="qrdrawer" hidden><canvas id="qrcanvas" width="105" height="105"></canvas></div></div>
   </div>
   <div id="strip"><button id="back" type="button" data-copy="toTitle"></button><button id="share" type="button" data-copy="share"></button>
-    <p id="dp"><span data-copy="dp"></span> <span id="dpn">0</span></p>
+    <p id="dp"><span data-copy="dp"></span> <span id="dpn">0</span><span id="dpplus" aria-hidden="true"></span></p>
     <div id="reserve" aria-hidden="true"></div>
     <div id="rocker" data-aria="move"><i class="zone zl" data-copy="left"></i><i class="gap"></i><i class="zone zr" data-copy="right"></i></div>
     <div id="btnB" class="verb" role="button" data-aria="dive"><span class="glyph" data-copy="btnB"></span></div>
@@ -3781,13 +3775,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
       }
     }
     /* the loot (T1.6): its photo cell (a Sun cell) painted the room's open Ash, so a taken speck leaves no yellow ghost
-       (T1.6's shots), then every speck, the scroll and the blueprint not yet taken; the chest shut or open */
+       (T1.6's shots), then every speck and the scroll not yet taken (R.LOOT_SHOWN); the chest shut or open */
     var LK = ['', 'speck', 'scroll', 'blueprint'], lbeat = Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS);
     ctx.fillStyle = rgb(P.openColour(P.I.ASH, lv.biome | 0));
     for (var li2 = 0; li2 < s.loot.length; li2++) {
       var lt2 = s.loot[li2], ly = Math.floor(lt2.idx / lv.w) * C - cam; if (ly < -C || ly > viewH) continue;
       ctx.fillRect((lt2.idx % lv.w) * C, ly, C, C);
-      if (!lt2.taken) spr(ctx, LK[lt2.kind] + (lt2.kind === 1 && (Math.floor(s.frame / (lbeat * 3)) & 1) ? '.b' : '.a'), (lt2.idx % lv.w) * C, ly);
+      if (!lt2.taken && R.LOOT_SHOWN[lt2.kind]) spr(ctx, LK[lt2.kind] + (lt2.kind === 1 && (Math.floor(s.frame / (lbeat * 3)) & 1) ? '.b' : '.a'), (lt2.idx % lv.w) * C, ly);
       ctx.fillStyle = rgb(P.openColour(P.I.ASH, lv.biome | 0));
     }
     if (s.chest.idx >= 0) { var cy2 = Math.floor(s.chest.idx / lv.w) * C - cam; if (cy2 > -C && cy2 < viewH) spr(ctx, s.chest.open ? 'chest.b' : 'chest.a', (s.chest.idx % lv.w) * C, cy2); }
@@ -4185,13 +4179,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     badPhoto: 'That photo did not open. Try another.',
     photoRoom: 'Your room',
     death: 'The bug fell out of the picture',
-    dp: 'Dead pixels',
-    scrollOffer: 'Pick a scroll',
-    vigor: 'Vigor', vigorSays: 'dive weapons hit harder',
-    focus: 'Focus', focusSays: 'jump weapons hit harder',
-    grit: 'Grit', gritSays: 'charms grow stronger',
-    slip: 'A weapon waits for the Darkroom.',
-    slipTake: 'Keep the slip',
+    dp: 'Dead pixels', dpGain: '+{n}',
     share: 'Share', shareTitle: 'Share this room',
     shareAbstract: 'This shares an abstracted 16 color version of your photo, not the photo.',
     shareOffline1: 'Works offline once installed.',
@@ -4467,24 +4455,31 @@ body.sb-modal .lwfb-fab { display: none !important; }
     else ui.releasePhoto();
     return true;
   };
-  /* the sheets (T1.6) are views of the sim's state: the offer while state.scrollsOffered holds two stats, the slip while
-     the chest's compare is open; their taps only queue a CHOICE (SB.input.choose); the Dead pixel count follows the room */
-  var STAT_KEY = ['', 'vigor', 'focus', 'grit'], shownOffer = '', shownDp = -1;
-  /* one sheet at a time, in the order the sim answers them (the offer first, the chest's compare after it), and none
-     over a dead room: a hit on the step a sheet opens ends the room under it (the M1 review: the slip covered the
-     offer, and either covered the death card's Again and Title on a short phone) */
+  /* the sim's two sheets (T1.6, section 2.6): a scroll's offer and the chest's compare each hold the world until a
+     CHOICE word. M1 shows neither (QUESTIONS Q92, Stephen's ruling of 31 Oct, "Dead pixels only"): no stat, weapon or
+     compare does anything before M2, so the shell answers each itself, at once, on the next word, in the order the sim
+     reads them (the offer first, the compare after it: a TAKE under an open offer is never read, and the world would
+     wait for good): the offer with its first scroll (CHOICE.A, the biome's stat), the compare with TAKE. The sim holds
+     the world for that one word's step and the recording carries the answer like any other word; the step's press
+     edges ride the word after it (SB.input.sample), so no tap is lost to it. None over a dead room. T2.5 and T2.7 bring
+     the sheets back, each with what it does. The Dead pixel count follows the room */
+  var shownDp = -1;
   ui.sheets = function (st) {
-    var dead = !!st.room.dead, off = dead ? null : st.scrollsOffered, key = off ? off.join() : '';
-    if (key !== shownOffer) {
-      shownOffer = key;
-      document.getElementById('offer').classList.toggle('on', !!off);
-      if (off) ['pickA', 'pickB'].forEach(function (id, k) {
-        var b = document.getElementById(id), sk = STAT_KEY[off[k]] || 'vigor';
-        b.querySelector('.ico').className = 'ico ' + sk; b.querySelector('b').textContent = ui.COPY[sk]; b.querySelector('small').textContent = ui.COPY[sk + 'Says'];
-      });
+    if (!st.room.dead) {
+      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);
+      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);
     }
-    document.getElementById('slip').classList.toggle('on', !!st.room.compare && !off && !dead);
     if (st.room.dp !== shownDp) { shownDp = st.room.dp; document.getElementById('dpn').textContent = String(st.room.dp); }
+  };
+  /* what the chest paid, a handwritten +n under the count for about a second (Q92): it takes no tap and holds nothing,
+     and a new room clears it (ui.hideOverlays). Reduced motion (the setting, else the phone's) keeps it still */
+  var GAIN_MS = 1200;
+  ui.dpGain = function (n) {
+    var el = document.getElementById('dpplus'), rm = SB.settings ? SB.settings.reducedMotion : null;
+    var still = rm === null || rm === undefined ? !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) : !!rm;
+    el.textContent = ui.COPY.dpGain.replace('{n}', n);
+    el.classList.remove('on'); void el.offsetWidth; el.classList.toggle('still', still); el.classList.add('on');
+    clearTimeout(el.sbGainT); el.sbGainT = setTimeout(function () { el.classList.remove('on'); }, GAIN_MS);
   };
   /* the share sheet (T1.8, section 1.5): the record's grid on a 192x384 canvas (8 px a cell), the link from the page's
      own origin and path; it holds the loop while open (its own screen name) */
@@ -4619,7 +4614,6 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.showDeath = function () {
     if (SB.save.doc) { SB.save.doc.stats.deaths++; SB.save.commit(); ui.lastHash = SB.sim.hash(G.state); }
     var hd = SB.render.drawn.hero, cv = document.getElementById('view'), dc = document.getElementById('death');
-    document.getElementById('offer').classList.remove('on'); document.getElementById('slip').classList.remove('on'); shownOffer = '';
     dc.classList.remove('low'); dc.classList.add('on');
     if (hd && hd.key !== null) {
       var vr = cv.getBoundingClientRect(), k = vr.height / cv.height, top = vr.top + hd.y * k, cr = dc.getBoundingClientRect();
@@ -4672,16 +4666,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
   };
   ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); document.getElementById('back').hidden = false; };
   /* every back and X is an internal screen switch that hides every overlay it can sit over (section 1.6, the
-     Skitterlings bug): the cards and the sheets go, and the offer forgets what it drew so a new room draws its own */
-  var OVERLAYS = ['clear', 'death', 'offer', 'slip', 'sharesheet'];
+     Skitterlings bug): the cards and the sheet go, and the chest's +n with them, so a new room never shows the last one's */
+  var OVERLAYS = ['clear', 'death', 'sharesheet'];
   ui.hideOverlays = function () {
     for (var i = 0; i < OVERLAYS.length; i++) document.getElementById(OVERLAYS[i]).classList.remove('on');
-    document.getElementById('back').hidden = false; shownOffer = '';
+    document.getElementById('dpplus').classList.remove('on');
+    document.getElementById('back').hidden = false;
   };
   ui.toTitle = function () { RV.on = false; ui.releasePhoto(); ui.hideOverlays(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
-  /* the fleet's feedback fab (section 1.6, the _EXIT-AUDIT lesson): body.sb-modal while any card, sheet or the develop
-     card is up, so an injected .lwfb-fab never sits over one; the classes are watched, so no path can forget it */
-  var MODALS = ['clear', 'death', 'offer', 'slip', 'sharesheet', 'devcard'];
+  /* the fleet's feedback fab (section 1.6, the _EXIT-AUDIT lesson): body.sb-modal while any card, the sheet or the
+     develop card is up, so an injected .lwfb-fab never sits over one; the classes are watched, so no path can forget it */
+  var MODALS = ['clear', 'death', 'sharesheet', 'devcard'];
   function syncModal() {
     var on = false;
     for (var i = 0; i < MODALS.length; i++) if (document.getElementById(MODALS[i]).classList.contains('on')) on = true;
@@ -4703,9 +4698,6 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the next room: back to the title under the camera's picker (a cancelled picker leaves the title) */
     document.getElementById('nextroom').addEventListener('click', function () { ui.toTitle(); openPicker('fileshoot'); });
     document.getElementById('deathagain').addEventListener('click', function () { ui.restart(); });
-    document.getElementById('pickA').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.A); });
-    document.getElementById('pickB').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.B); });
-    document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });
     document.getElementById('share').addEventListener('click', function () { ui.openShare(); });
     document.getElementById('settingsbtn').addEventListener('click', function () { ui.show('settings'); });
     document.getElementById('levelcode').placeholder = ui.COPY.levelCode;   /* the field says what it takes (t110: an empty white box) */
