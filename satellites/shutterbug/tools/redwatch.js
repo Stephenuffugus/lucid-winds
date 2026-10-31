@@ -802,7 +802,9 @@ const MUTANTS = [
   { name: 'DEATH_CARD_TALL', task: 'M1R', file: 'page', find: '@media (max-height: 700px) { #death .duo { flex-direction: row; }', repl: '@media (max-height: 1px) { #death .duo { flex-direction: row; }',
     gates: [{ gate: 'death', expect: 'at 320x568 the death card clears the fallen bug' }] },
   { name: 'CHIP_ON_DEATH', task: 'M1R', file: 'page', find: 'body:has(#death.on) #sws-music-card, body:has(#death.on) #sws-music-pill, body:has(#death.on) #sws-music-toast, body:has(#death.on) #sws-music-chip { display: none !important; }', repl: '',
-    gates: [{ gate: 'death', expect: 'at 320x568 a thumb lands on Again and Title on every row' }] },
+    /* re anchored 31 Oct 22:50 UTC (the lead): STICKR's death card box check (test/death.mjs, "the reserved box stays
+       released, the chip hidden") now runs first and fails on this mutant for the same behaviour, the chip over the card */
+    gates: [{ gate: 'death', expect: 'on the death card the reserved box stays released, the chip hidden' }] },
   /* SPECK_IN_FILM and SPARK_UNOUTLINED re anchored in ART1 on Astra's speck.a and spark.a (Q160) */
   { name: 'SPECK_IN_FILM', task: 'M1R', file: 'page', find: ".....088880...../.....088880.....", repl: ".....08f880...../.....088880.....",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'speck.a holds no Film' }] },
