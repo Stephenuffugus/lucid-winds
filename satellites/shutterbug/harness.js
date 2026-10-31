@@ -2627,7 +2627,7 @@ const bandEnd = lv => { for (let y = 1; y < lv.h - 1; y++) { let n = 0; for (let
 group('H-lvl-1', 'the floor band: the sample room on a dark floor builds, its spawn on the band\'s top, its exit the lamp, a climb of at least 24 rows', t => {
   for (const [ch, name, k] of [['7', 'Walnut', 2], ['2', 'Slate', 2], ['3', 'Pewter', 4], ['7', 'Walnut', 6]]) {
     const rec = sampleWith(r => { for (let y = 48 - k; y < 48; y++) r[y] = ch.repeat(24); });
-    const a = SB.pipeline.build(rec, { stage: 'A' }), lv = SB.pipeline.build(rec, {}), tag = 'the sample room on ' + k + ' rows of ' + name;
+    const a0 = SB.pipeline.build(rec, { stage: 'A' }), a = a0.needsCrop ? Object.assign({ spawn: -1 }, a0.grid) : a0, lv = SB.pipeline.build(rec, {}), tag = 'the sample room on ' + k + ' rows of ' + name;
     let open46 = 0; for (let x = 0; x < 24; x++) if (!a.solid[46 * 24 + x]) open46++;
     t.eq(open46, 0, tag + ': row 46 is solid wall to wall (the case the fallback is for)');
     t.ok(!lv.needsCrop, tag + ' builds' + refusedAs(lv));
@@ -2679,6 +2679,16 @@ group('H-lvl-3', 'no room that built before the fallbacks changed: the 23 built 
   }
   t.eq(Object.keys(PINNED_PRE_Q180).length, 23, 'the table holds the 23 rooms that built on sb-m1-3');
   t.eq(n, 46, 'every pinned room was built both ways');
+  /* no corpus room has a ceiling band, so two labs that built on sb-m1-3 with one (row 1 at least 75% solid, a gap or
+     an open end the climb never needed) hold the rule that the band moves the exit only after repair fails */
+  for (const [tag, ch, k, keep, hash] of [
+    ['the sample room under 2 rows of Slate, open over x 14..17', '2', 2, x => x >= 14 && x < 18, '1fb05a77a58a26fd'],
+    ['the sample room under 3 rows of Soot over x 0..17', '1', 3, x => x >= 18, '2ff6d9c47a4fa4ca']]) {
+    const rec = sampleWith(r => { for (let y = 0; y < k; y++) r[y] = [...r[y]].map((c, x) => keep(x) ? c : ch).join(''); });
+    const a = SB.pipeline.build(rec, { stage: 'A' }), lv = SB.pipeline.build(rec, {});
+    t.ok(!a.needsCrop && bandEnd(a) > 1, tag + ': row 1 is a ceiling band (it ends at row ' + (a.needsCrop ? '?' : bandEnd(a)) + ')');
+    t.eq(lv.needsCrop ? 'needsCrop ' + lv.detail : SB.pipeline.levelHash(lv), hash, tag + ': the levelHash pinned from sb-m1-3 (its exit row ' + (lv.needsCrop ? '?' : rowOf(lv, lv.exit)) + ')');
+  }
 });
 group('H-lvl-4', 'the guard: a fallback room climbing under 24 rows is an honest needsCrop; all-dark stays needsCrop', t => {
   const ad = buildFx(fixture('all-dark'), 0);
