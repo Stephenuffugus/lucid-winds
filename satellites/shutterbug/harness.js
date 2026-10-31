@@ -717,7 +717,11 @@ function spawnWant(lv) {
   const widest = ok => { let best = [-1, 0], x = 0; while (x < w) { if (!ok(x)) { x++; continue; } let e = x; while (e + 1 < w && ok(e + 1)) e++; if (e - x + 1 > best[1]) best = [x, e - x + 1]; x = e + 1; } return best; };
   const r0 = widest(x => !S[(h - 2) * w + x]);
   if (r0[0] >= 0) return (h - 2) * w + r0[0] + ((r0[1] - 1) >> 1);
-  for (let y = h - 3; y >= 1; y--) { const r = widest(x => !S[y * w + x] && S[(y + 1) * w + x]); if (r[1] >= 3) return y * w + r[0] + ((r[1] - 1) >> 1); }
+  for (let y = h - 3; y >= 1; y--) {
+    const r = widest(x => !S[y * w + x] && S[(y + 1) * w + x]);
+    if (r[1] >= 3) return y * w + r[0] + ((r[1] - 1) >> 1);
+    if (!S.slice(y * w, y * w + w).some(v => v)) return -1;     /* LEVELSR: a fully open row ends the search */
+  }
   return -1;
 }
 group('H-pipe-6', 'spawn is standable and on the standing row above the floor, or, only where that row is solid wall to wall, on the floor band\'s top (Q180)', t => {
@@ -2714,6 +2718,57 @@ group('H-lvl-5', 'a refusal names its cause for the crop screen (floor, ceiling,
   /* a stage A refusal (no row anywhere to stand on) carries its grid, so the crop overlay never goes blank */
   const al = buildA(fixture('all-light'), 1);
   t.ok(al.needsCrop && al.grid && al.grid.w === 24 && al.grid.solid.length === 24 * 48 && al.grid.plat.length === 24 * 48, 'all-light Negative, stage A: the refusal carries its 24x48 grid' + refusedAs(al));
+});
+
+/* LEVELSR (the levels review, 31 Oct): the dark cause by brightness, the floor search stopped at an open row, the
+   narrow standing row's second try, a whole solid box naming nothing, and the three boundaries the brief named */
+const labRows = paint => { const r = Array(48).fill('4'.repeat(24)); paint(r); return SB.record.fromJSON({ v: 1, w: 24, h: 48, mode: 0, focal: null, rows: r, rows2: null }); };
+const rowSolid = (g, y) => { let n = 0; for (let x = 0; x < g.w; x++) n += g.solid[y * g.w + x]; return n; };
+const gridOf = lv => lv.needsCrop ? lv.grid : lv;
+/* the test's own floor band: the top of the rows from h-2 up, each at least 75% solid; -1 when row h-2 is not */
+const floorBandTop = g => { let top = -1; for (let y = g.h - 2; y >= 1; y--) { if (4 * rowSolid(g, y) < 3 * g.w) break; top = y; } return top; };
+group('H-lvl-6', 'the levels review: dark by brightness, the floor search stops at an open row, a narrow standing row tries the band, a whole solid box names nothing', t => {
+  /* (1) a lit room that is mostly floor is told about the floor, not told to find a brighter photo */
+  for (const k of [36, 38, 40]) {
+    const rec = sampleWith(r => { for (let y = 48 - k; y < 48; y++) r[y] = '7'.repeat(24); }), lv = SB.pipeline.build(rec, {}), g = gridOf(lv);
+    let dim = 0, sol = 0; for (let i = 24; i < 47 * 24; i++) { dim += SB.palette.L[rec.pal[i]] < SB.TUNING.OTSU_MIN ? 1 : 0; sol += g.solid[i]; }
+    t.ok(4 * sol >= 3 * 46 * 24 && 4 * dim < 3 * 46 * 24, 'the sample room on ' + k + ' rows of Walnut: ' + Math.round(100 * sol / (46 * 24)) + '% solid but ' + Math.round(100 * dim / (46 * 24)) + '% darker than OTSU_MIN (the case the solid count got wrong)');
+    t.eq(lv.cause, 'floor', 'the sample room on ' + k + ' rows of Walnut: the refusal names the floor, not dark' + refusedAs(lv));
+  }
+  const black = SB.pipeline.build(labRows(r => r.fill('0'.repeat(24))), {});
+  t.eq(black.cause, 'dark', 'a box of Ink: the refusal names it dark' + refusedAs(black));
+  /* (2) a floor line seen at a slant (2 cell steps, never a run of 3) under 20 open rows and a frame on the wall: the
+     spawn never climbs past the open rows onto the frame, and the band marked is the floor's */
+  const slant = labRows(r => { for (let y = 12; y <= 14; y++) r[y] = '4'.repeat(6) + '7'.repeat(8) + '4'.repeat(10); for (let y = 35; y < 48; y++) { const k = Math.min(24, 2 * (y - 34)); r[y] = '7'.repeat(k) + '4'.repeat(24 - k); } });
+  const sa = SB.pipeline.build(slant, { stage: 'A' }), sl = SB.pipeline.build(slant, {}), sg = gridOf(sl), sft = floorBandTop(sg);
+  t.ok(sa.needsCrop || rowOf(sa, sa.spawn) >= 34, 'the slanted floor lab: no spawn above the open rows (stage A ' + (sa.needsCrop ? 'needsCrop' : 'spawn row ' + rowOf(sa, sa.spawn)) + ')');
+  t.ok(sl.needsCrop && sl.cause === 'floor' && sl.band.floor === sft && sft >= 35, 'the slanted floor lab: a floor refusal that marks the floor band from row ' + sft + ' (band ' + JSON.stringify(sl.band) + ')' + refusedAs(sl));
+  /* (3) a floor band over 22 of 24 columns leaves a 2 cell sliver on the standing row: the build tries the band rule */
+  const nr = sampleWith(r => { for (let y = 38; y < 48; y++) r[y] = '7'.repeat(22) + r[y].slice(22); });
+  const na = SB.pipeline.build(nr, { stage: 'A' }), nl = SB.pipeline.build(nr, {});
+  let run = 0, best = 0; for (let x = 0; x < 24; x++) { run = na.solid[46 * 24 + x] ? 0 : run + 1; best = Math.max(best, run); }
+  t.ok(best >= 1 && best < 3, 'the sample room on 10 rows of Walnut over x 0..21: the standing row\'s widest open run is ' + best + ' (under FLOOR_RUN_MIN)');
+  t.ok(!nl.needsCrop && rowOf(nl, nl.spawn) === 37 && standableIn(nl, nl.spawn) && rowOf(nl, nl.spawn) - rowOf(nl, nl.exit) >= 24, 'the sample room on 10 rows of Walnut over x 0..21 builds, its spawn on the band\'s top (row ' + (nl.needsCrop ? '?' : rowOf(nl, nl.spawn)) + ')' + refusedAs(nl));
+  /* (4) a box solid from row 1 down has no band that explains it: no cause, no band (all-light in Negative) */
+  const al = buildFx(fixture('all-light'), 1);
+  t.ok(al.needsCrop && al.cause === null && al.band.floor === -1 && al.band.ceiling === -1, 'all-light Negative: a whole solid box names no cause and marks no band (cause ' + al.cause + ', band ' + JSON.stringify(al.band) + ')');
+});
+group('H-lvl-7', 'the levels boundaries: a 24 row climb builds and 23 refuses; a ceiling row 18 of 24 solid is a band and 17 is not; a floor run of exactly 3 stands the spawn', t => {
+  const gv = buildFx(fixture('gradient-v'), 0), tg = buildFx(fixture('tight-gap'), 1);
+  t.ok(!gv.needsCrop && rowOf(gv, gv.spawn) - rowOf(gv, gv.exit) === 24, 'gradient-v: a fallback room climbing exactly 24 rows builds' + refusedAs(gv));
+  t.ok(tg.needsCrop && /^the climb left is 23 rows, under 24/.test(tg.detail || ''), 'tight-gap Negative: a fallback room climbing 23 rows is refused by the guard' + refusedAs(tg));
+  /* a sealed pocket in a Slate ceiling: smoothing leaves row 1 with exactly 18 (a band) or 17 (not a band) solid */
+  const pocket = (tall, p) => sampleWith(r => { for (let y = 0; y < tall + 2; y++) r[y] = '2'.repeat(24); for (let y = 1; y <= tall; y++) r[y] = '2'.repeat(4) + '4'.repeat(p) + '2'.repeat(20 - p); });
+  const c18 = pocket(3, 8), a18 = SB.pipeline.build(c18, { stage: 'A' }), l18 = SB.pipeline.build(c18, {});
+  t.ok(rowSolid(a18, 1) === 18 && !l18.needsCrop && l18.exitTop === bandEnd(a18) && l18.exitTop > 1, 'a ceiling whose row 1 is 18 of 24 solid (' + rowSolid(a18, 1) + ') is a band: the room builds with its exit window under it (exitTop ' + l18.exitTop + ', the band ends at row ' + bandEnd(a18) + ')' + refusedAs(l18));
+  const c17 = pocket(4, 9), a17 = SB.pipeline.build(c17, { stage: 'A' }), l17 = SB.pipeline.build(c17, {});
+  t.ok(rowSolid(a17, 1) === 17 && l17.needsCrop && l17.band.ceiling === -1 && l17.cause === null, 'a ceiling whose row 1 is 17 of 24 solid (' + rowSolid(a17, 1) + ') is no band: needsCrop with no ceiling band (band ' + JSON.stringify(l17.band) + ', cause ' + l17.cause + ')');
+  /* a Walnut floor whose top row keeps a gap of 3 (the spawn stands in it) or of 2 (it rises a row) */
+  for (const [gap, want] of [[3, '11,39'], [2, '6,38']]) {
+    const rec = sampleWith(r => { for (let y = 40; y < 48; y++) r[y] = '7'.repeat(24); r[39] = '7'.repeat(10) + '4'.repeat(gap) + '7'.repeat(14 - gap); });
+    const a = SB.pipeline.build(rec, { stage: 'A' });
+    t.eq(a.spawn % 24 + ',' + rowOf(a, a.spawn), want, 'the sample room on 9 rows of Walnut, a gap of ' + gap + ' in its top row: the spawn is at (' + want + ')');
+  }
 });
 
 group('H-rep-1b', 'the exit rule at its boundaries (the third review): the light inside EXIT_LIGHT_SLACK and just past it; never below the top EXIT_ROWS', t => {

@@ -476,8 +476,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the floor and ceiling fallbacks (Stephen's ruling 31 Oct, "Floor becomes the ledge", Q180), only where the room
        would be needsCrop: the floor band's top needs an open over solid run of FLOOR_RUN_MIN; a ceiling band row is at
        least CEILING_BAND_FRAC solid; a fallback room climbs at least FALLBACK_MIN_CLIMB rows; a refusal with at least
-       DARK_SOLID_FRAC of rows 1..h-2 solid is named dark */
-    FLOOR_RUN_MIN: 3, CEILING_BAND_FRAC: 0.75, FALLBACK_MIN_CLIMB: 24, DARK_SOLID_FRAC: 0.75,
+       DARK_CELL_FRAC of the cells of rows 1..h-2 darker than OTSU_MIN (solid under every threshold Otsu can pick) is
+       named dark (LEVELSR: by brightness, not by the solid count, which a lit room's shaded wall can reach) */
+    FLOOR_RUN_MIN: 3, CEILING_BAND_FRAC: 0.75, FALLBACK_MIN_CLIMB: 24, DARK_CELL_FRAC: 0.75,
     BIOME_SAT: 0.35, BIOME_MIN_FRAC: 0.10, FROST_MEAN_L: 170 /* Q4 */, PIPELINE_BUDGET_MS: 50,
     // 6.8 reach cone caps (the derived tables are clipped to these)
     JUMP_UP: 4, JUMP_ACROSS: 5, WALL_UP: 3, WALL_ACROSS: 4, STICKY_UP: 4, DEEP_EXTRA_UP: 1,
@@ -1304,9 +1305,21 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (var r = 0; r < runs.length && r < T.CAP_STICKY; r++) for (y = runs[r][2]; y <= runs[r][3]; y++) level.sticky[y * w + runs[r][1]] = 1;
   }
 
-  function build(rec, opts) { return buildAt(rec, opts || {}, 0); }
-  /* et: the exit window's top row. 0 for every room; the ceiling fallback builds once more with it under the band */
-  function buildAt(rec, opts, et) {
+  /* LEVELSR: a refusal whose standing row holds only open runs narrower than FLOOR_RUN_MIN (a floor band with a sliver
+     open at one edge) builds once more with the floor band rule (narrow); a room that built is never rebuilt */
+  function build(rec, opts) {
+    opts = opts || {};
+    var lv = buildAt(rec, opts, 0, 0), g = lv.needsCrop && opts.stage !== 'A' && lv.grid;
+    if (!g) return lv;
+    var y = g.h - SB.TUNING.SPAWN_ROW_FROM_BOTTOM, run = 0, best = 0, x;
+    for (x = 0; x < g.w; x++) { run = g.solid[y * g.w + x] ? 0 : run + 1; if (run > best) best = run; }
+    if (best < 1 || best >= SB.TUNING.FLOOR_RUN_MIN) return lv;
+    var again = buildAt(rec, opts, 0, 1);
+    return !again.needsCrop || again.cause ? again : lv;
+  }
+  /* et: the exit window's top row. 0 for every room; the ceiling fallback builds once more with it under the band.
+     narrow: the standing row's narrow runs are passed over and the floor band rule runs (build's second try) */
+  function buildAt(rec, opts, et, narrow) {
     var T = SB.TUNING, P = SB.palette, w = rec.w, h = rec.h, pal = rec.pal, i, x, y;
     if (rec.mode === 2) {                     /* Double Exposure: pal2 stacked above pal, a 24 x 96 climb (Q19) */
       var both = new Uint8Array(w * h * 2);
@@ -1350,7 +1363,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
 
     /* DESIGN 6.6: spawn is the centre of the widest open run on the standing row above the floor (Q10). */
     var sy = h - T.SPAWN_ROW_FROM_BOTTOM, bestA = -1, bestLen = 0;
-    x = 0;
+    x = narrow ? w : 0;
     while (x < w) {
       if (solid[sy * w + x]) { x++; continue; }
       var e = x; while (e + 1 < w && !solid[sy * w + e + 1]) e++;
@@ -1371,8 +1384,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
         x = e2 + 1;
       }
       if (rowLen >= T.FLOOR_RUN_MIN) { sy = y; bestA = rowA; bestLen = rowLen; fell = 1; }
+      /* LEVELSR: a fully open row ends the search: the band's top lies below it in steps too narrow to stand on (a
+         floor line seen at a slant), and a run above it is a frame on the wall, not the floor */
+      else if (openRow(solid, w, y)) break;
     }
-    if (bestA < 0) return refusal(solid, plat, w, h, h, et, -1, 'unreachable', 'no open cell on the standing row above the floor, and no open over solid run of ' + T.FLOOR_RUN_MIN + ' above it');
+    if (bestA < 0) return refusal(solid, plat, L, w, h, h, et, -1, 'unreachable', 'no open cell on the standing row above the floor, and no open over solid run of ' + T.FLOOR_RUN_MIN + ' above it');
     var spawn = sy * w + bestA + ((bestLen - 1) >> 1);
 
     /* the ceiling light: the brightest 4 connected cluster of cells over CEILING_LIGHT_L in the top EXIT_ROWS rows,
@@ -1422,13 +1438,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
       /* the ceiling band (Stephen's ruling 31 Oct, Q180), only where repair fails: when the rows from row 1 down are
          each at least CEILING_BAND_FRAC solid, build once more with the exit window moved under that band */
       var cb = ceilingEnd(solid, w, h);
-      if (et === 0 && cb > 1) return buildAt(rec, opts, cb);
-      return refusal(solid, plat, w, h, lostF, et, fell ? sy + 1 : -1, fixed.why, fixed.detail);
+      if (et === 0 && cb > 1) return buildAt(rec, opts, cb, narrow);
+      return refusal(solid, plat, L, w, h, lostF, et, fell ? sy + 1 : -1, fixed.why, fixed.detail);
     }
     var exit = fixed.exit;
     /* a fallback room climbs at least FALLBACK_MIN_CLIMB rows from its spawn to its exit, else an honest needsCrop */
     var climb = Math.floor(spawn / w) - Math.floor(exit / w);
-    if ((fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB) return refusal(solid, plat, w, h, lostF, et, fell ? sy + 1 : -1, 'unreachable', 'the climb left is ' + climb + ' rows, under ' + T.FALLBACK_MIN_CLIMB + ' (the spawn on row ' + Math.floor(spawn / w) + ', the exit on row ' + Math.floor(exit / w) + ')');
+    if ((fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB) return refusal(solid, plat, L, w, h, lostF, et, fell ? sy + 1 : -1, 'unreachable', 'the climb left is ' + climb + ' rows, under ' + T.FALLBACK_MIN_CLIMB + ' (the spawn on row ' + Math.floor(spawn / w) + ', the exit on row ' + Math.floor(exit / w) + ')');
     /* the default spread (DESIGN 6.11): a room with no landmark and no platform got its climb from the stair's two
        legs; a speck slot and a fodder slot are reserved as data for M1 */
     if (bare && !anyPlat) level.repair.spread = spreadSlots(level, fixed.d);
@@ -1475,13 +1491,20 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (y = 1; y < h - 1; y++) { n = 0; for (x = 0; x < w; x++) n += solid[y * w + x]; if (n < T.CEILING_BAND_FRAC * w) return y; }
     return h - 1;
   }
-  /* an honest needsCrop with its cause for the crop screen's copy (Q180): dark when DARK_SOLID_FRAC of rows 1..h-2 are
-     solid, else the band that took more of the climb (lostF rows to the floor band, lostC to the ceiling band; a tie to
-     the floor), else none; and the grid and the bands, so the crop overlay can mark them instead of going blank */
-  function refusal(solid, plat, w, h, lostF, lostC, floorTop, why, detail) {
-    var T = SB.TUNING, n = 0, i, cb = ceilingEnd(solid, w, h);
-    for (i = w; i < (h - 1) * w; i++) n += solid[i];
-    var cause = n >= T.DARK_SOLID_FRAC * (h - 2) * w ? 'dark' : lostF || lostC ? (lostC > lostF ? 'ceiling' : 'floor') : null;
+  function openRow(solid, w, y) { for (var x = 0; x < w; x++) if (solid[y * w + x]) return false; return true; }
+  /* an honest needsCrop with its cause for the crop screen's copy (Q180, LEVELSR): dark when DARK_CELL_FRAC of the cells
+     of rows 1..h-2 are darker than OTSU_MIN, else the band that took more of the climb (lostF rows to the floor band,
+     lostC to the ceiling band; a tie to the floor), else none. A floor band with no spawn on it (floorTop -1) is the
+     rows from h-2 up each at least CEILING_BAND_FRAC solid; when they reach row 1 the whole box is solid, no band
+     explains it, no band is marked and no cause is named. The grid and the bands go with it, so the crop overlay marks
+     them */
+  function refusal(solid, plat, L, w, h, lostF, lostC, floorTop, why, detail) {
+    var T = SB.TUNING, dim = 0, i, x, y, k, fb = -1, cb = ceilingEnd(solid, w, h);
+    for (i = w; i < (h - 1) * w; i++) if (L[i] < T.OTSU_MIN) dim++;
+    for (y = h - 2; y >= 1; y--) { for (k = 0, x = 0; x < w; x++) k += solid[y * w + x]; if (k < T.CEILING_BAND_FRAC * w) break; fb = y; }
+    var whole = fb === 1;
+    if (whole) { floorTop = -1; cb = -1; } else if (floorTop < 0 && lostF) floorTop = fb;
+    var cause = dim >= T.DARK_CELL_FRAC * (h - 2) * w ? 'dark' : whole ? null : lostC > lostF ? 'ceiling' : lostF && floorTop > 0 ? 'floor' : null;
     return { needsCrop: true, why: why, detail: detail, cause: cause, band: { floor: floorTop, ceiling: cb > 1 ? cb : -1 }, grid: { w: w, h: h, solid: solid, plat: plat } };
   }
   function standableIn(level, c) { var w = level.w; return c >= 0 && c + w < w * level.h && !level.solid[c] && (level.solid[c + w] === 1 || level.plat[c + w] === 1); }
