@@ -861,7 +861,7 @@ const MUTANTS = [
   { name: 'OFFER_SHOWS', task: 'NOTE5', file: 'page', edits: [
       ['    <div id="sharesheet" role="dialog"', '    <div id="offer" role="dialog"><h2>Pick a scroll</h2><button id="pickA" type="button">Vigor</button><button id="pickB" type="button">Focus</button></div>\n    <div id="sharesheet" role="dialog"'],
       ['#clear, #death { position: absolute;', '#clear, #death, #offer { position: absolute;'], ['#clear.on, #death.on { display: flex; }', '#clear.on, #death.on, #offer.on { display: flex; }'],
-      ['      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);', "      document.getElementById('offer').classList.toggle('on', !!st.scrollsOffered);"]],
+      ['      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);', "      if (st.scrollsOffered) document.getElementById('offer').classList.add('on');"]],
     gates: [{ gate: 'loot', expect: '412: no sheet, card or dialog shows on the walk' }] },
   { name: 'SLIP_BACK', task: 'NOTE5', file: 'page', edits: [
       ["    dp: 'Dead pixels', dpGain: '+{n}',", "    dp: 'Dead pixels', dpGain: '+{n}',\n    slip: 'A weapon waits for the Darkroom.', slipTake: 'Keep the slip',"],
