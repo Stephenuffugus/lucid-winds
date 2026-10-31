@@ -323,7 +323,8 @@ const MUTANTS = [
     gates: [{ gate: 'sprites', expect: 'running, each frame holds 5 steps' }] },
   { name: 'DASH_NO_FLASH', task: 'T0.17', file: 'page', find: "(h.dashI > 0 ? '*' : '')", repl: "''",
     gates: [{ gate: 'sprites', expect: 'a dash draws the Glare hero' }] },
-  { name: 'SPRITE_ROW_SHORT', task: 'T0.17', file: 'page', find: "a: 'ffffffffffffffff/ff0fff0fff0fff0f/", repl: "a: 'fffffffffffffff/ff0fff0fff0fff0f/",
+  /* re anchored in ART1 on Astra's tab (Q160) */
+  { name: 'SPRITE_ROW_SHORT', task: 'T0.17', file: 'page', find: "a: 'ffffffffffffffff/ff00ffffff00ffff/", repl: "a: 'fffffffffffffff/ff00ffffff00ffff/",
     gates: [{ gate: 'lint', expect: 'tab.a row 0 is 15 wide' }, { gate: 'harness', only: 'H-spr-1', expect: 'tab.a decodes to 16x5' }] },
   /* T1.2b: features, part two */
   { name: 'SPECK_CAP_7', task: 'T1.2b', file: 'page', find: 'var cap = T.CAP_SPECK + (level.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0) - (pl >= 0 ? 1 : 0);', repl: 'var cap = T.CAP_SPECK + 1 + (level.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0) - (pl >= 0 ? 1 : 0);',   /* re anchored after the M1 review's pocket speck */
@@ -792,9 +793,10 @@ const MUTANTS = [
     gates: [{ gate: 'death', expect: 'at 320x568 the death card clears the fallen bug' }] },
   { name: 'CHIP_ON_DEATH', task: 'M1R', file: 'page', find: 'body:has(#death.on) #sws-music-card, body:has(#death.on) #sws-music-pill, body:has(#death.on) #sws-music-toast, body:has(#death.on) #sws-music-chip { display: none !important; }', repl: '',
     gates: [{ gate: 'death', expect: 'at 320x568 a thumb lands on Again and Title on every row' }] },
-  { name: 'SPECK_IN_FILM', task: 'M1R', file: 'page', find: "......0860....../...0008888000.../...0888868880...", repl: "......0f60....../...0008888000.../...0888868880...",
+  /* SPECK_IN_FILM and SPARK_UNOUTLINED re anchored in ART1 on Astra's speck.a and spark.a (Q160) */
+  { name: 'SPECK_IN_FILM', task: 'M1R', file: 'page', find: ".....088880...../.....088880.....", repl: ".....08f880...../.....088880.....",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'speck.a holds no Film' }] },
-  { name: 'SPARK_UNOUTLINED', task: 'M1R', file: 'page', find: "      a: '.......0......../......090......./...0.09990.0..../..09009990090.../...090969090..../...009969900..../..09996669990.../...009969900..../...090969090..../..09009990090.../...0.09990.0..../......090......./.......0......../................/................/................',", repl: "      a: '................/.......9......../......999......./...9..999..9..../....9.969.9...../.....99699....../...999666999..../.....99699....../....9.969.9...../...9..999..9..../......999......./.......9......../................/................/................/................',",
+  { name: 'SPARK_UNOUTLINED', task: 'M1R', file: 'page', find: "      a: '.......00......./......0990....../...0..0990..0.../..090.0990.090../..090099990090../...0999999990.../..099999999990../.09996699669990./.09966666666990./0999666666669990/0999666666669990/0999966996699990/.09999999999990./..099999999990../...0999999990.../....00000000....',", repl: "      a: '................/.......99......./.......99......./...9...99...9.../...9..9999..9.../....99999999..../...9999999999.../..999669966999../..996666666699../.99966666666999./.99966666666999./.99996699669999./..999999999999../...9999999999.../....99999999..../................',",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'spark.a has its Ink outline' }] },
   { name: 'SELECT_44PX', task: 'M1R', file: 'page', find: '#settings select { min-height: 48px; margin-left: auto; }', repl: '#settings select { min-height: 44px; margin-left: auto; }',
     gates: [{ gate: 'save', expect: 'every Settings control is 48 px tall or more' }] },
@@ -1007,7 +1009,18 @@ const MUTANTS = [
   { name: 'REVEAL_AWAY_RUNS', task: 'NOTE3R', file: 'page', find: 'if (held || RV.away) {', repl: 'if (held) {',
     gates: [{ gate: 'pause', expect: 'a lost focus in the first reveal holds it' }] },
   { name: 'REVEAL_AWAY_STUCK', task: 'NOTE3R', file: 'page', find: "    window.addEventListener('focus', back);\n", repl: '',
-    gates: [{ gate: 'pause', expect: 'back on the page by a real tap, the first reveal plays on' }] }
+    gates: [{ gate: 'pause', expect: 'back on the page by a real tap, the first reveal plays on' }] },
+  /* ART1: Astra's in room art (Q160) */
+  { name: 'ELITE_DRAWS_BASE', task: 'ART1', file: 'page', edits: [["ek = en.elite ? kn + '_elite' : kn", "ek = kn"], ['spr(ctx, mk, ex2, ey2);', 'spr(ctx, mk, mx, my, es, es);']],
+    gates: [{ gate: 'sprites', expect: 'biome 0: the moth elite drawn as' }] },
+  { name: 'HEART_NOT_SPRITE', task: 'ART1', file: 'page', find: "/* a heart is Astra's hud_heart (9 by 8, Q160) at 2x, nearest neighbour: full, or the empty frame for a lost one; the\n   images are the sprite's own pixels, cut from the atlas at boot (R.heartURL) */\n#hearts i { width: 18px; height: 16px; display: block; background: var(--heart-full) 0 0 / 18px 16px no-repeat; image-rendering: pixelated; }\n#hearts i.lost { background-image: var(--heart-empty); }\n", repl: "/* a pixel heart (9 by 8), Ink with a Brick heart inset in it; a lost heart keeps its outline and empties to Paper */\n#hearts i { width: 18px; height: 16px; display: block; position: relative; background: var(--ink); clip-path: polygon(11.1% 0%, 33.3% 0%, 33.3% 12.5%, 44.4% 12.5%, 44.4% 25%, 55.6% 25%, 55.6% 12.5%, 66.7% 12.5%, 66.7% 0%, 88.9% 0%, 88.9% 12.5%, 100% 12.5%, 100% 50%, 88.9% 50%, 88.9% 62.5%, 77.8% 62.5%, 77.8% 75%, 66.7% 75%, 66.7% 87.5%, 55.6% 87.5%, 55.6% 100%, 44.4% 100%, 44.4% 87.5%, 33.3% 87.5%, 33.3% 75%, 22.2% 75%, 22.2% 62.5%, 11.1% 62.5%, 11.1% 50%, 0% 50%, 0% 12.5%, 11.1% 12.5%); }\n#hearts i::after { content: ''; position: absolute; left: 3px; top: 3px; right: 3px; bottom: 3px; background: var(--brick); clip-path: polygon(11.1% 0%, 33.3% 0%, 33.3% 12.5%, 44.4% 12.5%, 44.4% 25%, 55.6% 25%, 55.6% 12.5%, 66.7% 12.5%, 66.7% 0%, 88.9% 0%, 88.9% 12.5%, 100% 12.5%, 100% 50%, 88.9% 50%, 88.9% 62.5%, 77.8% 62.5%, 77.8% 75%, 66.7% 75%, 66.7% 87.5%, 55.6% 87.5%, 55.6% 100%, 44.4% 100%, 44.4% 87.5%, 33.3% 87.5%, 33.3% 75%, 22.2% 75%, 22.2% 62.5%, 11.1% 62.5%, 11.1% 50%, 0% 50%, 0% 12.5%, 11.1% 12.5%); }\n#hearts i.lost::after { background: var(--paper); }\n",
+    gates: [{ gate: 'sprites', expect: 'are hud_heart at 2x on a real screenshot' }] },
+  { name: 'ELITE_FRAMES_DRIFT', task: 'ART1', file: 'page', find: "    moth_elite: { w: 24, h: 24, frames: {\n", repl: "    moth_elite: { w: 24, h: 24, frames: {\n      c: '',\n",
+    gates: [{ gate: 'lint', expect: 'moth_elite.c has 1 rows, not 24' }, { gate: 'harness', only: 'H-spr-1', expect: "moth_elite is 24x24 (ELITE_PX 24) with moth's frames" }] },
+  { name: 'SPECK_NO_GLINT', task: 'ART1', file: 'page', find: "/...........6..../.......00.666.../......0880.6..../.....088680.....", repl: "/................/.......00......./......0880....../.....088880.....",
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: "the speck's strip carries its Glare glint" }] },
+  { name: 'HEART_EMPTY_BRICK', task: 'ART1', file: 'page', find: "empty: '.00...00./0220.0220/", repl: "empty: '.00...00./0990.0220/",
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'hud_heart is 9x8 with full (Brick) and empty (no Brick)' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

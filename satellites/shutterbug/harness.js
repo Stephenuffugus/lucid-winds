@@ -4564,12 +4564,11 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   t.ok(DANGER.every(n => names.includes(n)), 'every enemy, elite and trap the rules name has a sprite (' + DANGER.join(', ') + ')');
   t.ok(!!S.speck && Object.values(S.speck.frames).some(s => s.includes(GLARE)), 'the speck\'s strip carries its Glare glint (section 7.3: loot is Amber with a Glare glint)');
   /* the elites (Q160): each its own art, ELITE_PX a side (the sim's box, ELITE_SIZE_CELLS cells), with its kind's frame
-     names, so the draw's beat picks a frame that exists; never the base art scaled */
+     names, so the draw's beat picks a frame that exists (the sprites gate proves it is drawn 1:1, never the base scaled) */
   for (const k of KINDS) {
     const e = S[k + '_elite'], b = S[k];
     t.ok(!!e && e.w === K.ELITE_PX && e.h === K.ELITE_PX && !!b && JSON.stringify(Object.keys(e.frames)) === JSON.stringify(Object.keys(b.frames)),
       k + '_elite is ' + (e ? e.w + 'x' + e.h : 'absent') + ' (ELITE_PX ' + K.ELITE_PX + ') with ' + k + '\'s frames (' + (e ? Object.keys(e.frames).join(' ') : '') + ')');
-    if (e && b) t.ok(Object.keys(e.frames).every(f => e.frames[f] !== b.frames[f]), k + '_elite is its own art, not the base string');
   }
   /* the HUD heart (Q160): 9x8, full and empty, both Ink contoured; the full one Brick, the empty one without it */
   const HH = S.hud_heart, BRICK = SB.palette.I.BRICK.toString(16);
