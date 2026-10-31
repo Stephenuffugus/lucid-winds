@@ -5,10 +5,13 @@
  * pass the lint and H-spr-1 on the copy. Every broken variant is refused for its own reason: a pixel off the 16 colours,
  * alpha 128, a strip one pixel short, Sun in the moth, a hero frame without Ink in its feet row, a PNG that differs from
  * its source grid, a wrong sha256, a 16 bit PNG, a path out of the zip ('../evil.txt', nothing written outside), a
- * folder not empty. Runs the cutter at SB_ASTRA_CUT when set (redwatch's mutants), the page at SB_PAGE when set.
+ * folder not empty. ART2: the hero's poses carry Sun and are cut, Sun in an effect is refused, an effect frame not named
+ * <clip>_<n> is refused, a new effect strip comes as named clips (not an unknown key), and the key cap (44, ART2's)
+ * refuses the cut that would reach it. Runs the cutter at SB_ASTRA_CUT when set (redwatch's mutants), the page at SB_PAGE when set.
  *
  * Watched red by CUT_NO_PALETTE_CHECK, CUT_SEMI_ALPHA, CUT_PAETH_WRONG, CUT_NO_SOURCE_COMPARE, CUT_ZIP_SLIP,
- * CUT_SUN_ANYWHERE, CUT_FEET_UNCHECKED and SPLICE_JOINS_LINES. */
+ * CUT_SUN_ANYWHERE, CUT_FEET_UNCHECKED, SPLICE_JOINS_LINES, CUT_SUN_PAST_HERO, CUT_POSE_SUN_REFUSED, CUT_FX_NAMES_FREE,
+ * CUT_FX_UNKNOWN and CUT_CAP_UNCHECKED. */
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -82,6 +85,20 @@ const ekeys = ecopy ? Object.keys(vm.runInNewContext(ecopy.match(/\/\* SPRITES B
 say(el.code === 0 && /a new key moth_elite/.test(el.out) && ekeys.length === keysNoEl.length + 1 && ekeys.includes('moth_elite') && /\/\* moth_elite: from Astra \(enemies\/enemy_moth_elite\.png\) \*\//.test(ecopy), 'a new key, moth_elite at 24x24, is appended with its comment (' + ekeys.length + ' keys) and named as a render change');
 say(lintOk(join(TMP, 'copy-elite.html')) && sprOk(join(TMP, 'copy-elite.html')), 'the copy with the new key passes the lint and H-spr-1');
 
+/* ART2: the hero's poses carry Sun and are cut (the round trip above holds them); fx keys come as named effects, not
+   unknown keys; the key cap refuses the cut that would reach it, its value read from the cutter */
+const poses = ['hero_dash', 'hero_hurt', 'hero_squash', 'hero_stretch', 'hero_dropin'];
+say(good.code === 0 && poses.every(k => plain[k] && Object.values(plain[k].frames).some(f => f.includes('e')) && new RegExp('cut     ' + k + ' ').test(good.out)),
+  'the hero\'s poses (' + poses.join(', ') + ') each carry Sun and are cut, not refused');
+const noFx = html.replace(/,\n    fx_shockwave: \{ w: 48, h: 48, frames: \{\n[\s\S]*?\n    \} \}/, '');
+writeFileSync(join(TMP, 'page-no-fx.html'), noFx);
+const fxFix = through('fxnew', [], join(TMP, 'sprites.json'), join(TMP, 'page-no-fx.html'));
+say(noFx !== html && fxFix.code === 0 && /an effect fx_shockwave \(anvil_boots, wide_lens\): R\.draw must learn the clips it binds/.test(fxFix.out) && !/an unknown key fx_/.test(fxFix.out),
+  'an effect strip new to the page (fx_shockwave on a copy without it) is taken as named clips (anvil_boots, wide_lens), never as an unknown key' + (fxFix.code === 0 ? '' : ' (' + fxFix.out.split('\n').filter(l => /REFUSE/.test(l)).slice(0, 2).join(' | ') + ')'));
+const CAP = Number((readFileSync(CUT, 'utf8').match(/^MAX_SPRITES = (\d+)/m) || [])[1]);
+const capped = through('cap', ['--pad', String(CAP - keys.length)]);
+say(CAP === 44 && capped.code === 1 && capped.out.includes(CAP + ' names after this cut; the game stays under ' + CAP), 'a cut that would leave ' + CAP + ' names (the page\'s ' + keys.length + ' and ' + (CAP - keys.length) + ' more) is refused at the cap of ' + CAP + ', ART2\'s and no higher');
+
 /* every broken variant refused for its own reason */
 const BREAKS = [
   ['offpalette', 'off the 16 colours', 'a pixel off the 16 colours is refused for being off the 16 colours'],
@@ -92,6 +109,9 @@ const BREAKS = [
   ['source', 'differs from its source grid', 'a PNG that differs from its source grid is refused'],
   ['sha', 'is not the manifest', 'a wrong sha256 is refused'],
   ['depth16', 'not an 8 bit RGBA PNG', 'a 16 bit PNG is refused by name'],
+  /* ART2: Sun stays the hero's (and its poses') past hero_*, and an effect's frames are named <clip>_<n> */
+  ['sunfx', 'Sun in fx_projectiles', 'Sun in an effect (fx_projectiles) is refused: only the hero, its hero_* poses and the beacon carry it'],
+  ['fxname', 'fx_enemy_hit frame hit is not <clip>_<n>', 'an effect frame not named <clip>_<n> is refused'],
 ];
 for (const [kind, text, line] of BREAKS) {
   const r = through('break-' + kind, ['--break', kind]);

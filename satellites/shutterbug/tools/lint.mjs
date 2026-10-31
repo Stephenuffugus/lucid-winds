@@ -322,10 +322,20 @@ for (const fm of html.matchAll(/font-size\s*:\s*([0-9.]+)\s*(rem|em|px)|fontSize
     if (S) {
       const names = Object.keys(S);
       if (names.length >= 40) fail('SPRITES', names.length + ' named sprites (under 40)');
-      /* WEAPON_NAMES: an icon frame for exactly the built ids */
-      const icons = S.icon ? Object.keys(S.icon.frames || {}) : [];
-      for (const id of BUILT) if (!icons.includes(id)) fail('WEAPON_NAMES', 'the SPRITES icon sprite has no frame for ' + id + ' (built)');
-      for (const id of icons) if (WEAPON_NAMES[id] && !BUILT.includes(id)) fail('WEAPON_NAMES', 'the SPRITES icon sprite has a frame for ' + id + ', which is not built');
+      /* WEAPON_NAMES (ART2, Q161): every built id bound by R.ICON_NAME to a glyph of Astra's icon_weapons, and every
+         binding a DESIGN 9.1 id and a glyph that exists (a glyph may wait for its weapon: Astra drew all 24) */
+      const inm = rb.src.match(/R\.ICON_NAME = (\{[^}]*\});/);
+      let ICON_NAME = null;
+      try { ICON_NAME = inm ? vm.runInNewContext('(' + inm[1] + ')') : null; } catch (e) { ICON_NAME = null; }
+      if (!ICON_NAME) fail('WEAPON_NAMES', 'shell-render holds no R.ICON_NAME = { ... } literal');
+      else {
+        const glyphs = S.icon_weapons ? Object.keys(S.icon_weapons.frames || {}) : [];
+        for (const id of BUILT) if (!ICON_NAME[id] || !glyphs.includes(ICON_NAME[id])) fail('WEAPON_NAMES', 'the built ' + id + ' has no icon_weapons glyph through R.ICON_NAME (' + (ICON_NAME[id] || 'unbound') + ')');
+        for (const [id, g] of Object.entries(ICON_NAME)) {
+          if (!WEAPON_NAMES[id]) fail('WEAPON_NAMES', 'R.ICON_NAME binds ' + id + ', which DESIGN 9.1 does not name');
+          if (!glyphs.includes(g)) fail('WEAPON_NAMES', 'R.ICON_NAME binds ' + id + ' to ' + g + ', which icon_weapons does not hold');
+        }
+      }
       for (const name of names) for (const [f, str] of Object.entries(S[name].frames || {})) {
         const rows = String(str).split('/');
         if (rows.length !== S[name].h) fail('SPRITES', name + '.' + f + ' has ' + rows.length + ' rows, not ' + S[name].h);

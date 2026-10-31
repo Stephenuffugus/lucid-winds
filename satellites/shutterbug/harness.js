@@ -4892,7 +4892,7 @@ group('H-qr-4', 'the chosen mask\'s penalty is the lowest of the eight, each rec
 });
 
 /* ================================================================ sprites (T0.17) */
-group('H-spr-1', 'every sprite string decodes to its declared size in the key; the hero is 12x16 with an Ink feet row in every frame; Sun belongs to the hero and the beacon only, Film to the film tab; the speck Amber with a Glare glint; every danger outlined in Ink (section 7.3); each elite its own ELITE_PX art with its kind\'s frame names, the HUD heart 9x8 full and empty (Q160)', t => {
+group('H-spr-1', 'every sprite string decodes to its declared size in the key; the hero is 12x16 with an Ink feet row in every frame; Sun belongs to the hero, its hero_* poses and the beacon only, Film to the film tab; each key of Astra\'s weapons cut under its colour law and every built weapon bound to its glyph (ART2, Q161); the speck Amber with a Glare glint; every danger outlined in Ink (section 7.3); each elite its own ELITE_PX art with its kind\'s frame names, the HUD heart 9x8 full and empty (Q160)', t => {
   const m = fs.readFileSync(PAGE, 'utf8').match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//);
   t.ok(!!m, 'the page holds the SPRITES fence in shell-render');
   if (!m) return;
@@ -4901,7 +4901,18 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   const names = Object.keys(S), SUN = SB.palette.I.SUN.toString(16), INK = SB.palette.I.INK.toString(16), FILM = SB.palette.I.FILM.toString(16);
   const AMBER = SB.palette.I.AMBER.toString(16), GLARE = SB.palette.I.GLARE.toString(16), KINDS = ['moth', 'icicle', 'jelly', 'crawler', 'spark'];
   const ELITES = KINDS.map(k => k + '_elite'), DANGER = KINDS.concat(ELITES, ['spike', 'crusher']);
-  const I = SB.palette.I, WEAPON_SPRITES = ['boomerang', 'shock', 'pop', 'icon'], WEAPON_INKS = [I.INK, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE].map(v => v.toString(16)), WEAPON_ICON_INKS = WEAPON_INKS.concat([I.LAPIS.toString(16)]);
+  const I = SB.palette.I, hx = (...v) => v.map(x => x.toString(16)).join('');
+  /* ART2 (Q161): the colour law for every key Astra's weapons cut added, each the colours her art holds (no pixel of
+     hers changed), with an Ink outline where every frame has one. The hero's poses are the hero (Ink, Glare, Walnut,
+     Sun; an Ink feet row); the effects never Sun (the hero's) or Film (the repairs'); the departures from 8.1's weapon
+     law (the Boomerang's Amber, the hit's and the pop's Brick, the shock's Lapis and no Ink rim) are Q161's */
+  const LAW = {
+    hero_dash: [hx(I.INK, I.GLARE, I.WALNUT, I.SUN), true], hero_hurt: [hx(I.INK, I.GLARE, I.WALNUT, I.SUN), true], hero_squash: [hx(I.INK, I.GLARE, I.WALNUT, I.SUN), true],
+    hero_stretch: [hx(I.INK, I.GLARE, I.WALNUT, I.SUN), true], hero_dropin: [hx(I.INK, I.GLARE, I.WALNUT, I.SUN), true],
+    fx_projectiles: [hx(I.INK, I.PEWTER, I.ASH, I.PAPER, I.GLARE, I.AMBER), true], fx_shockwave: [hx(I.ASH, I.LAPIS), false],
+    fx_enemy_hit: [hx(I.INK, I.PEWTER, I.ASH, I.GLARE, I.BRICK), false],
+    icon_weapons: [hx(I.INK, I.SOOT, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE, I.WALNUT, I.AMBER, I.BRICK, I.LAPIS, I.TEAL, I.MOSS), false] };
+  const POSES = Object.keys(LAW).filter(n => n.startsWith('hero_'));
   t.ok(names.length > 0 && names.length < 40, names.length + ' named sprites (under 40; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
@@ -4913,7 +4924,8 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
       rows.forEach((r, i) => { if (r.length !== sp.w) bad.push('row ' + i + ' is ' + r.length + ' wide'); const c = r.replace(/[.0-9a-f]/g, ''); if (c) bad.push('row ' + i + ' holds ' + JSON.stringify(c)); });
       t.ok(bad.length === 0, name + '.' + f + ' decodes to ' + sp.w + 'x' + sp.h + ', every pixel clear or a palette index' + (bad.length ? ' (' + bad.join('; ') + ')' : ''));
       if (name === 'hero') t.ok(sp.w === K.HERO_W && sp.h === K.HERO_H && rows[sp.h - 1].includes(INK), 'hero.' + f + ' is the hitbox\'s size and its bottom row holds Ink (the feet row, section 7.3)');
-      else if (name !== 'beacon') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour)');
+      else if (name.startsWith('hero_')) t.ok(rows[sp.h - 1].includes(INK), name + '.' + f + ' is a hero pose (Sun allowed) and its bottom row holds Ink (the feet row)');
+      else if (name !== 'beacon') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\' and the beacon\'s)');
       /* section 7.3 (the M1 review: the placeholders broke it): Film is the repairs' alone (the film tab), so help is
          never furniture; the speck is Amber with a Glare glint; every danger has an Ink outline */
       if (name !== 'tab') t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour)');
@@ -4921,17 +4933,20 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
          every frame is Amber and the strip, not each frame, carries the glint (the pin moved from per frame with the art) */
       if (name === 'speck') t.ok(str.includes(AMBER), 'speck.' + f + ' is Amber');
       if (DANGER.includes(name)) t.ok(str.includes(INK), name + '.' + f + ' has its Ink outline (danger, section 7.3)');
-      /* Weapons v1 (docs/WEAPONS-V1.md 8.1): a weapon sprite has an Ink outline and draws only Ink, Slate, Pewter, Ash,
-         Paper and Glare, and Lapis on an icon (never Sun, Film, Brick, Magenta, Amber or Teal) */
-      if (WEAPON_SPRITES.includes(name)) {
-        const allowed = name === 'icon' ? WEAPON_ICON_INKS : WEAPON_INKS, off = [...new Set(str.replace(/[./]/g, ''))].filter(c => !allowed.includes(c));
-        t.ok(str.includes(INK) && off.length === 0, name + '.' + f + ' has an Ink outline and draws only ' + allowed.join(' ') + (off.length ? ' (holds ' + off.join(' ') + ')' : ''));
+      /* ART2: every key the weapons cut added draws only its law's colours, Ink outlined where the law says */
+      if (LAW[name]) {
+        const [allowed, ink] = LAW[name], off = [...new Set(str.replace(/[./]/g, ''))].filter(c => !allowed.includes(c));
+        t.ok((!ink || str.includes(INK)) && off.length === 0, name + '.' + f + (ink ? ' has an Ink outline and' : '') + ' draws only ' + allowed.split('').join(' ') + (off.length ? ' (holds ' + off.join(' ') + ')' : ''));
       }
     }
   }
-  t.ok(WEAPON_SPRITES.every(n => names.includes(n)), 'the weapon sprites exist (' + WEAPON_SPRITES.join(', ') + ')');
-  const iconFrames = S.icon ? Object.keys(S.icon.frames) : [];
-  t.same(iconFrames.slice().sort(), SB.TUNING.WEAPONS_BUILT.slice().sort(), 'the icon sprite has one frame per built weapon, named by its id');
+  t.ok(Object.keys(LAW).every(n => names.includes(n)) && !['boomerang', 'shock', 'pop', 'icon'].some(n => names.includes(n)), 'Astra\'s weapon keys exist (' + Object.keys(LAW).join(', ') + ') and the builder\'s placeholders are gone');
+  /* ART2: every built weapon's icon is a glyph of icon_weapons bound by R.ICON_NAME (read from the page), Ink outlined */
+  const inm = fs.readFileSync(PAGE, 'utf8').match(/R\.ICON_NAME = (\{[^}]*\});/), ICON_NAME = inm ? require('node:vm').runInNewContext('(' + inm[1] + ')') : {};
+  const unbound = SB.TUNING.WEAPONS_BUILT.filter(id => !(ICON_NAME[id] && S.icon_weapons && S.icon_weapons.frames[ICON_NAME[id]] && S.icon_weapons.frames[ICON_NAME[id]].includes(INK)));
+  t.ok(!!inm && unbound.length === 0 && Object.values(ICON_NAME).every(g => S.icon_weapons && S.icon_weapons.frames[g]), 'every built weapon (' + SB.TUNING.WEAPONS_BUILT.join(', ') + ') draws its own Ink outlined icon_weapons glyph through R.ICON_NAME (' + SB.TUNING.WEAPONS_BUILT.map(id => id + ' ' + ICON_NAME[id]).join(', ') + ')' + (unbound.length ? ' (unbound: ' + unbound.join(', ') + ')' : ''));
+  const PW = { hero_squash: [14, 14], hero_stretch: [10, 18] };
+  t.ok(POSES.every(n => S[n] && S[n].w === (PW[n] || [K.HERO_W])[0] && S[n].h === (PW[n] || [0, K.HERO_H])[1]), 'the poses keep the old transform\'s rects (hero_squash 14x14, hero_stretch 10x18) and the rest the hero\'s 12x16 (' + POSES.map(n => n + ' ' + (S[n] ? S[n].w + 'x' + S[n].h : 'absent')).join(', ') + ')');
   t.ok(DANGER.every(n => names.includes(n)), 'every enemy, elite and trap the rules name has a sprite (' + DANGER.join(', ') + ')');
   t.ok(!!S.speck && Object.values(S.speck.frames).some(s => s.includes(GLARE)), 'the speck\'s strip carries its Glare glint (section 7.3: loot is Amber with a Glare glint)');
   /* the elites (Q160): each its own art, ELITE_PX a side (the sim's box, ELITE_SIZE_CELLS cells), with its kind's frame

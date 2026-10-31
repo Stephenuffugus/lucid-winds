@@ -122,12 +122,14 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #pause i::before, #pause i::after { content: ''; width: 4px; height: 12px; background: rgba(11,10,15,0.55); }
 #roomname { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* six hearts still fit at 320 wide */
 #hearts { display: flex; gap: 5px; flex: none; margin-left: 8px; }
-/* the slot HUD (Weapons v1, docs/WEAPONS-V1.md 8.4), inserted by JS before the hearts: a 20 px box a slot at the rocker's
-   alpha, dashed while empty, the icon 16 px and pixelated, the jump box faint while its cooldown runs */
+/* the slot HUD (Weapons v1, docs/WEAPONS-V1.md 8.4), inserted by JS before the hearts: a box a slot at the rocker's
+   alpha, dashed while empty, the icon pixelated, the jump box faint while its cooldown runs. ART2 (Q161): Astra's
+   24 px glyph at 24 CSS px, so every phone shows it at a whole multiple (1, 2 or 3 device px a pixel; at 16 CSS px a
+   dpr 1 or 2 screen would drop or double uneven rows), in a 28 px box (the spec's 20 held a 16 px icon) */
 #slots { display: flex; gap: 3px; flex: none; margin-left: 8px; }
-#slots .slot { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(11,10,15,0.35); border-radius: 4px; }
+#slots .slot { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(11,10,15,0.35); border-radius: 4px; }
 #slots .slot.empty { border-style: dashed; }
-#slots canvas { width: 16px; height: 16px; image-rendering: pixelated; display: block; }
+#slots canvas { width: 24px; height: 24px; image-rendering: pixelated; display: block; }
 #slots .slot.cool canvas { opacity: 0.35; }
 /* the pickup card (8.5): Paper with an Ink border like the cards, at the stage's top (docked low over the bug), under
    the cards; it takes no tap. 2.5 s: 0.2 s in, 0.4 s out; still with reduced motion. 16 px down, not the spec's 8: the
@@ -139,7 +141,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #got.on { display: flex; animation: sbgot 2.5s linear forwards; }
 #got.on.still { animation: none; }
 #got.low { top: auto; bottom: 8px; }
-#got canvas { flex: none; width: 32px; height: 32px; image-rendering: pixelated; }
+#got canvas { flex: none; width: 48px; height: 48px; image-rendering: pixelated; }   /* ART2: Astra's 24 px glyph at 2x */
 #got b { display: block; font-size: 1rem; } #got span { display: block; font-size: 0.85rem; line-height: 1.25; }
 @keyframes sbgot { 0% { opacity: 0; } 8% { opacity: 1; } 84% { opacity: 1; } 100% { opacity: 0; } }
 /* a heart is Astra's hud_heart (9 by 8, Q160) at 2x, nearest neighbour: full, or the empty frame for a lost one; the
@@ -3975,7 +3977,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (name in SPRITES) for (f in SPRITES[name].frames) {
       var sp = SPRITES[name], rows = sp.frames[f].split('/');
       list.push([name + '.' + f, rows, sp.w, sp.h, 0, 0], [name + '.' + f + '<', rows, sp.w, sp.h, 1, 0]);
-      if (name === 'hero') list.push([name + '.' + f + '*', rows, sp.w, sp.h, 0, 1], [name + '.' + f + '<*', rows, sp.w, sp.h, 1, 1]);
+      if (name === 'hero' || name.indexOf('hero_') === 0) list.push([name + '.' + f + '*', rows, sp.w, sp.h, 0, 1], [name + '.' + f + '<*', rows, sp.w, sp.h, 1, 1]);   /* ART2: the poses are the hero, Glare through a dash's i frames too */
       /* an enemy's hit flash (8.3): every pixel but its Ink outline turned Glare ('!') */
       if (FLASHED[name]) list.push([name + '.' + f + '!', rows, sp.w, sp.h, 0, 2], [name + '.' + f + '<!', rows, sp.w, sp.h, 1, 2]);
     }
@@ -4000,6 +4002,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
     actx.putImageData(img, 0, 0);
     atlasData = d; R.atlasW = W;
+    /* ART2: each effect frame's opaque box in its square (R.box['fx_shockwave.anvil_boots_2'] = { x0, y0, x1, y1 },
+       inclusive), measured once here so the draw places the art by its pixels, never by its square */
+    for (name in SPRITES) if (name.indexOf('fx_') === 0) for (f in SPRITES[name].frames) {
+      var br = SPRITES[name].frames[f].split('/'), bx = { x0: 99, y0: 99, x1: -1, y1: -1 };
+      for (var by = 0; by < br.length; by++) for (var bxx = 0; bxx < br[by].length; bxx++) if (br[by].charAt(bxx) !== '.') {
+        bx.x0 = Math.min(bx.x0, bxx); bx.x1 = Math.max(bx.x1, bxx); bx.y0 = Math.min(bx.y0, by); bx.y1 = Math.max(bx.y1, by);
+      }
+      R.box[name + '.' + f] = bx;
+    }
     for (i = 0; i < P.N; i++) CSS.push(css(i));
     /* the top strip's hearts (Q160): Astra's hud_heart, full and empty, cut from the atlas once as PNG data URLs that
        the strip's CSS draws at 2x with nearest neighbour (--heart-full, --heart-empty), so a heart is that sprite's
@@ -4018,20 +4029,40 @@ body.sb-modal .lwfb-fab { display: none !important; }
   R.ELITE_ANCHOR = { icicle: 'top', crawler: 'bottom', spark: 'bottom' };
   /* one sprite at the integer place (and size: the squash and the stretch), from the atlas */
   function spr(c2, key, dx, dy, dw, dh) { var r = A[key]; c2.drawImage(atlas, r.x, r.y, r.w, r.h, dx, dy, dw || r.w, dh || r.h); }
-  /* a weapon's icon (8.4) into a 2d context at (x, y), 16 px a side; false for an id with no frame */
-  R.icon = function (c2, id, x, y) { var r = A['icon.' + id]; if (!r) return false; c2.drawImage(atlas, r.x, r.y, r.w, r.h, x || 0, y || 0, r.w, r.h); return true; };
+  R.box = {};
+  /* a weapon's icon (8.4) into a 2d context at (x, y), Astra's glyph 24 px a side (ART2: icon_weapons, bound by
+     R.ICON_NAME, every weapon and charm the spec names; a glyph exists before its weapon is built); false for an id
+     with no glyph */
+  /* bound by name (DESIGN 9.1's names, Astra's glyph names); J8 Skyhook, C4 Thick Skin, C5 Tripod, C7 Darkroom Discount
+     and C8 Fixer wait for Stephen's or Astra's alias among cable_release, prism_hop, spare_spool, focus_ring and
+     pocket_timer (Q161); Halo is J6 here though Astra drew it among the charms */
+  R.ICON_NAME = { J1: 'boomerang', J2: 'spark_trail', J3: 'shield_kick', J4: 'flashbulb', J5: 'twin_darts', J6: 'halo', J7: 'shutter_snap',
+    D1: 'anvil_boots', D2: 'icicle', D3: 'pogo_spear', D4: 'tremor', D5: 'ember_stomp', D6: 'wide_lens', D7: 'pile_driver', D8: 'flashpan',
+    C1: 'lantern', C2: 'magnet', C3: 'second_wind', C6: 'light_meter' };
+  R.ICON_PX = 24;
+  R.icon = function (c2, id, x, y) { var r = A['icon_weapons.' + R.ICON_NAME[id]]; if (!r) return false; c2.drawImage(atlas, r.x, r.y, r.w, r.h, x || 0, y || 0, r.w, r.h); return true; };
   R.opaque = function (key, sx, sy) { var r = A[key]; return atlasData[((r.y + sy) * R.atlasW + r.x + sx) * 4 + 3] === 255; };
   /* the hero's frame (T0.17): dead, dive, cling, jump or fall in the air, the dash, the landing, the run (four frames, each held
      STEP_HZ / ANIM_FPS steps: 12 fps), the idle with its 1 px wobble every 30 steps */
+  /* ART2 (Astra's poses, Q161): a name with a dot is a pose's own key. The hurt recoil for the hit's first HURT_POSE_F
+     steps (its first shown blink: the i frames hide steps 1 to 5 and show 6 to 13); the takeoff stretch (10x18) and
+     the landing squash (14x14) for the sim's six step squash counter, in place of the land and jump frames the old
+     transform scaled (Q35: the same steps, the same rect, now drawn 1:1); the dash's own lean; the drop in's three
+     beats, DROP_BEAT steps each (8 fps), over a room's first steps while the bug stands still. Render only: the sim
+     never reads a pose */
+  R.HURT_POSE_F = 16; R.DROP_BEAT = 8; R.DROP_BEATS = ['descending', 'contact', 'settled'];
   R.heroFrame = function (s) {
     var h = s.hero, T = SB.TUNING, hold = Math.round(T.STEP_HZ / T.ANIM_FPS);
     if (s.room.dead) return 'dead';
+    if (h.iframes > SB.K.HIT_IFRAMES_F - R.HURT_POSE_F) return 'hero_hurt.recoil';
     if (h.dive) return 'dive';
     if (h.wall !== 0 || h.sticky) return 'cling';
+    if (h.squash < 0) return 'hero_stretch.stretch';
     if (!h.ground) return h.vy < 0 ? 'jump' : 'fall';
-    if (h.dash > 0) return 'run1';   /* the dash: mid stride, not the idle it starts from */
-    if (h.squash > 0) return 'land';
+    if (h.dash > 0) return 'hero_dash.dash';
+    if (h.squash > 0) return 'hero_squash.squash';
     if (h.anim > 0) return 'run' + (Math.floor((h.anim - 1) / hold) % 4);
+    if (s.frame < R.DROP_BEAT * 3) return 'hero_dropin.' + R.DROP_BEATS[Math.floor(s.frame / R.DROP_BEAT)];
     return 'idle' + (Math.floor(s.frame / (hold * 6)) % 2);
   };
   /* what the last frame drew where (canvas px), for SB_DEV's sprite rects and pixel samples; never read by the game */
@@ -4291,50 +4322,67 @@ body.sb-modal .lwfb-fab { display: none !important; }
       ctx.fillStyle = CSS[P.I.INK]; ctx.fillRect(tx, hy + 5, 6, 1); ctx.fillRect(tx + (h.facing > 0 ? 2 : 0), hy + 10, 4, 1);
     }
     /* the sprite: its frame, mirrored to the facing (a cling mirrors to its wall), Glare through the dash's i frames
-       (Q47); the landing squash and the takeoff stretch are offsets of the drawn rect, never the hitbox (Q35) */
-    var fr = R.heroFrame(s), left = fr === 'cling' ? h.wall < 0 : h.facing < 0;
-    var key = 'hero.' + fr + (left ? '<' : '') + (h.dashI > 0 ? '*' : '');
-    var dx = heroX, dy = hy, dw = K.HERO_W, dh = K.HERO_H;
-    if (fr !== 'dead' && h.squash > 0) { dx -= 1; dw += 2; dy += T.SQUASH_PX; dh -= T.SQUASH_PX; }
-    else if (fr !== 'dead' && h.squash < 0) { dx += 1; dw -= 2; dy -= T.STRETCH_PX; dh += T.STRETCH_PX; }
+       (Q47); a pose (ART2) at its own size, 1:1, bottom centred on the hitbox, never moving it (the squash 14x14 and
+       the stretch 10x18 land in the rect the old transform drew: x - 1 and + 1, y + SQUASH_PX and - STRETCH_PX) */
+    var fr = R.heroFrame(s), left = fr === 'cling' ? h.wall < 0 : h.facing < 0, pk = fr.indexOf('.') < 0 ? 'hero.' + fr : fr, psp = SPRITES[pk.slice(0, pk.indexOf('.'))];
+    var key = pk + (left ? '<' : '') + (h.dashI > 0 ? '*' : '');
+    var dw = psp.w, dh = psp.h, dx = heroX + ((K.HERO_W - dw) >> 1), dy = hy + K.HERO_H - dh;
     spr(ctx, key, dx, dy, dw, dh);
     hd.key = key; hd.x = dx - camX; hd.y = dy; hd.w = dw; hd.h = dh;
     ctx.restore();
   };
 
   /* the pool (8.2): after the enemies, before the hero, every live entry at integer coordinates; a cleared or dead room
-     holds every entry where it was. The boomerang spins a quarter turn every 5 steps, mirrored flying left; the shock is
-     drawn at both its fronts (SB.sim.shockFront: the sim's own numbers), its bottom on the surface, the left one
-     mirrored, rising for 2 steps, at its crest while a front grows, falling over the linger, with Ash motes between the
-     fronts on alternate steps; a pop's three frames, 4 steps each. R.drawn.proj records each drawn rect (the gates'
-     samples) from records made once */
+     holds every entry where it was. ART2, Astra's effects (Q161): the Boomerang's spin (fx_projectiles.boomerang_n, 32
+     square) centred on the sim's 12 px box, a quarter turn every 5 steps (12 fps), mirrored flying left; Anvil Boots'
+     ring (fx_shockwave.anvil_boots_n, 48 square) split at its centre column, the left half's outer edge at the left
+     front and the right half's at the right (SB.sim.shockFront: the sim's own numbers), each held inside the band, the
+     ring's bottom row on the surface, its frame growing 0, 1, 2 with the fronts' run and 3 over the linger, Ash motes
+     between the fronts on alternate steps; a kill's pop (fx_enemy_hit.enemy_death_n) centred on the dead box, its four
+     frames over the sim's POP_F (3 steps each). R.drawn.proj records each drawn rect and the part of the frame it
+     drew (sx, sy: the gates compare its pixels) from records made once */
   var PROJ_RECS = [], PK = SB.sim.PROJ_KIND;
-  for (var pr = 0; pr < 48; pr++) PROJ_RECS.push({ kind: 0, key: '', x: 0, y: 0, w: 0, h: 0 });
+  for (var pr = 0; pr < 48; pr++) PROJ_RECS.push({ kind: 0, key: '', x: 0, y: 0, w: 0, h: 0, sx: 0, sy: 0 });
   R.drawn.proj = [];
-  function rec(kind, key, x, y, w, h, camX) { var d = R.drawn.proj; if (d.length >= PROJ_RECS.length) return; var o = PROJ_RECS[d.length]; o.kind = kind; o.key = key; o.x = x - camX; o.y = y; o.w = w; o.h = h; d.push(o); }
+  var FX4 = ['_0', '_1', '_2', '_3'];
+  function rec(kind, key, x, y, w, h, camX, sx, sy) { var d = R.drawn.proj; if (d.length >= PROJ_RECS.length) return; var o = PROJ_RECS[d.length]; o.kind = kind; o.key = key; o.x = x - camX; o.y = y; o.w = w; o.h = h; o.sx = sx || 0; o.sy = sy || 0; d.push(o); }
+  /* part of an atlas frame (source sx, sy, w by h) at (dx, dy), 1:1 */
+  function sprPart(c2, key, sx, sy, w, h, dx, dy) { var r = A[key]; c2.drawImage(atlas, r.x + sx, r.y + sy, w, h, dx, dy, w, h); }
   function drawPool(s, cam, camX) {
     var P = SB.palette, CS = SB.K.CELL_SUB, d = R.drawn.proj, i, p, key;
     d.length = 0;
+    /* ART2: a hit's burst (fx_enemy_hit.enemy_hit_n) over a live enemy, centred on its box, its four frames over the
+       sim's HURT_FLASH_F from the hit's own step, over the Glare flash (8.3); recorded as kind 'hit' */
+    for (i = 0; i < s.enemies.length; i++) {
+      var en = s.enemies[i];
+      if (!(en.hurt > 0) || !SB.sim.liveEnemy(en)) continue;
+      var es = en.elite ? SB.K.ELITE_PX : SB.K.CELL, hf = SB.K.HURT_FLASH_F;
+      key = 'fx_enemy_hit.enemy_hit' + FX4[Math.min(3, Math.floor((hf - en.hurt) * 4 / hf))];
+      var hx2 = (en.x >> 8) + (es >> 1) - 16, hy2 = (en.y >> 8) - cam + (es >> 1) - 16;
+      spr(ctx, key, hx2, hy2); rec('hit', key, hx2, hy2, 32, 32, camX);
+    }
     for (i = 0; i < s.proj.length; i++) {
       p = s.proj[i];
       if (!p.live) continue;
       if (p.kind === PK.BOOMERANG) {
-        key = 'boomerang.' + 'abcd'.charAt(Math.floor(Math.max(0, p.age) / 5) % 4) + (p.vx < 0 ? '<' : '');
-        var bx = p.x >> 8, by = (p.y >> 8) - cam; spr(ctx, key, bx, by); rec(p.kind, key, bx, by, 12, 12, camX);
+        key = 'fx_projectiles.boomerang' + FX4[Math.floor(Math.max(0, p.age) / 5) % 4] + (p.vx < 0 ? '<' : '');
+        var bx = (p.x >> 8) - 10, by = (p.y >> 8) - cam - 10; spr(ctx, key, bx, by); rec(p.kind, key, bx, by, 32, 32, camX);
       } else if (p.kind === PK.SHOCK) {
         var lf = SB.sim.shockFront(p, -1), rf = SB.sim.shockFront(p, 1), sy = ((p.y + CS) >> 8) - cam;
+        var run = Math.ceil(SB.K.D1_REACH / SB.K.D1_V), fk = p.age >= run ? 3 : Math.min(2, Math.floor(Math.max(0, p.age) * 3 / run));
+        key = 'fx_shockwave.anvil_boots' + FX4[fk];
+        var bb = R.box[key], ry = bb.y0, rh = bb.y1 - bb.y0 + 1, rtop = sy - rh;
         for (var side = -1; side <= 1; side += 2) {
-          var fx = side < 0 ? lf : rf, grow = side < 0 ? fx > p.a : fx < p.b;
-          key = 'shock.' + (p.age <= 2 ? 'a' : grow ? 'b' : 'c') + (side < 0 ? '<' : '');
-          /* held inside the band: a front at a wall or a ledge's end draws its crest short of it, never past the edge
-             into the air or the wall (the shots: half of each crest hung off a 4 cell ledge) */
-          var sx = side < 0 ? Math.max(p.a >> 8, (fx >> 8) - 8) : Math.min((p.b >> 8) - 16, (fx >> 8) - 8);
-          spr(ctx, key, sx, sy - 8); rec(p.kind, key, sx, sy - 8, 16, 8, camX);
+          /* the half: columns x0..23 on the left, 24..x1 on the right; its outer edge at the front, held inside the
+             band (a front at a wall or a ledge's end never draws past the edge into the air or the wall) */
+          var fx = side < 0 ? lf : rf, hx0 = side < 0 ? bb.x0 : 24, hw = side < 0 ? 24 - bb.x0 : bb.x1 - 23;
+          var hx = side < 0 ? Math.max(p.a >> 8, fx >> 8) : Math.min((p.b >> 8) - hw, (fx >> 8) - hw);
+          sprPart(ctx, key, hx0, ry, hw, rh, hx, rtop); rec(p.kind, key, hx, rtop, hw, rh, camX, hx0, ry);
         }
         if (p.age & 1) { ctx.fillStyle = CSS[P.I.ASH]; for (var mx = (lf >> 8) + 2; mx < (rf >> 8) - 2; mx += 4) ctx.fillRect(mx, sy - 5, 2, 2); }
       } else if (p.kind === PK.POP) {
-        key = 'pop.' + 'abc'.charAt(Math.min(2, Math.floor(Math.max(0, p.age) / 4)));
-        var px = p.x >> 8, py = (p.y >> 8) - cam; spr(ctx, key, px, py); rec(p.kind, key, px, py, 16, 16, camX);
+        key = 'fx_enemy_hit.enemy_death' + FX4[Math.min(3, Math.floor(Math.max(0, p.age) * 4 / SB.K.POP_F))];
+        var px = (p.x >> 8) - 8, py = (p.y >> 8) - cam - 8; spr(ctx, key, px, py); rec(p.kind, key, px, py, 32, 32, camX);
       }
     }
   }
@@ -5152,14 +5200,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var box = document.createElement('span'); box.id = 'slots'; box.setAttribute('role', 'group'); box.setAttribute('aria-label', ui.COPY.slots);
     for (var k = 0; k < 3; k++) {
       var b = document.createElement('i'), cv = document.createElement('canvas');
-      b.className = 'slot empty'; b.setAttribute('role', 'img'); cv.width = 16; cv.height = 16; b.appendChild(cv);
+      b.className = 'slot empty'; b.setAttribute('role', 'img'); cv.width = SB.render.ICON_PX; cv.height = SB.render.ICON_PX; b.appendChild(cv);
       if (k === 2) b.hidden = true;   /* no charm is built yet (step 4) */
       box.appendChild(b); slotBoxes.push(b);
     }
     document.getElementById('top').insertBefore(box, document.getElementById('hearts'));
     var got = document.createElement('div'), gc = document.createElement('canvas'), gt = document.createElement('div');
     got.id = 'got'; got.setAttribute('role', 'status'); got.setAttribute('aria-live', 'polite');
-    gc.width = 16; gc.height = 16; gt.appendChild(document.createElement('b')); gt.appendChild(document.createElement('span'));
+    gc.width = SB.render.ICON_PX; gc.height = SB.render.ICON_PX; gt.appendChild(document.createElement('b')); gt.appendChild(document.createElement('span'));
     got.appendChild(gc); got.appendChild(gt);
     document.getElementById('stage').appendChild(got);
   };
@@ -5176,7 +5224,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (!fresh && c > 0) put = c;
       shownSlots[k] = c;
       var b = slotBoxes[k], cv = b.firstChild, c2 = cv.getContext('2d');
-      c2.clearRect(0, 0, 16, 16);
+      c2.clearRect(0, 0, c2.canvas.width, c2.canvas.height);
       if (c > 0) SB.render.icon(c2, SB.sim.WPN[c], 0, 0);
       b.classList.toggle('empty', c === 0);
       b.setAttribute('aria-label', slotLabel(k, c));
@@ -5193,7 +5241,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var el = document.getElementById('got'), id = SB.sim.WPN[code];
     if (!el || !id || !ui.COPY.wpn[id]) return false;
     var cv = el.querySelector('canvas'), c2 = cv.getContext('2d'), rm = SB.settings ? SB.settings.reducedMotion : null;
-    c2.clearRect(0, 0, 16, 16); SB.render.icon(c2, id, 0, 0);
+    c2.clearRect(0, 0, c2.canvas.width, c2.canvas.height); SB.render.icon(c2, id, 0, 0);
     el.querySelector('b').textContent = ui.COPY.wpn[id]; el.querySelector('span').textContent = ui.COPY.wpnSays[id];
     var still = rm === null || rm === undefined ? !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) : !!rm;
     el.classList.remove('on', 'low'); void el.offsetWidth; el.classList.toggle('still', still); el.classList.add('on');
