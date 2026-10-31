@@ -976,3 +976,34 @@ Defaults the build takes unless he says otherwise (from docs/PROGRESSION-PROPOSA
 - The biome lean (Q96 ruling 4) is 2 to 1, among built weapons, after the biome fix lands. Its home biome table is in the proposal, section 4.
 - The capture normalisation is built with the levels work: the investigation found it costs nothing (old codes keep their levels, 0 of 26 fixtures change, builds 26 to 32 of 60).
 Still to put to him: edge ledges with a stepping stone repair, gated on record v2 (the film share of a climb 73.8% to 50.6%; "I climbed my bookshelf" on shelf rooms; a DESIGN 6.7 redline), and photo born specks (0.00 per room today).
+
+## Q98. Astra's rounds 2 and 3 are in hand: what goes in now (ART3) and what waits for its system (the lead, recorded 22:42 UTC, 31 Oct)
+
+- **Round 2** (Stephen uploaded it about 21:40 UTC): zip sha256 28f02d0483ec06bf..., 52 files, 20 strips, 74 frames, her VALIDATION PASS. Copies are in /home/codespace/sb-drafts/astra/round2/ (x/ unpacked) and assets/shutterbug-assets-round2.zip (git ignored). What it holds:
+  - icon_weapons in the order J1 to J8, D1 to D8, C1 to C8, jump, dive, charm (every retained glyph pixel identical; five new)
+  - fx_skyhook, fx_magnet, fx_second_wind, fx_thick_skin and fx_tripod
+  - stick_pad, stick_knob and stick_hint
+  - pause_glyph
+  - the five elites with Ink keylines
+  - a 10x10 speck
+  - the crusher with its required shaft rule (tools/crusher_draw.js)
+  - crop_floor_band and crop_ceiling_band
+  - hero_bold (optional; the approved hero stays the default)
+- **Round 3** (uploaded about 22:41 UTC, answering the brief ASTRA-SHUTTERBUG-ROUND3-OCT31.txt): zip sha256 942423725aa9c45d..., 18 strips, 119 frames, VALIDATION PASS. Copies are in /home/codespace/sb-drafts/astra/round3/ (x/ unpacked) and assets/shutterbug-assets-round3.zip (git ignored). Her NOTES.md gives exact placements: the house clear card's 48x56 prize opening at (48,33), fx_unlock at (48,37), the caption 98x14 at (23,100). What it holds:
+  - run_pips
+  - icon_house
+  - card_house_clear
+  - fx_unlock
+  - fx_boss_wake, fx_boss_chip and fx_boss_down
+  - fx_beacon_light (its end frames equal beacon_dark and the lit beacon)
+  - frost_mote, bubble, spore and ember_mote (4 fps, the Attic dust's cadence)
+  - icon_biomes
+  - fx_stat_up (a clear middle 12x12)
+  - hud_heart_new
+  - crop_seek (6 fps)
+  - tab_biome (optional)
+  - hero_colours_r3: four more skins, Pinstripe, Domino, Crescent and Argyle, frame 12 x skin + pose, for the house clear reward pool
+- **Stephen, 22:41 UTC:** "This is our latest handoff from Astra. You can go ahead and implement this and make sure we're noting and saving as a go."
+- **Plan (the lead):** ART3 goes on sb-weapons-2 right after ART2, before weapons step 2, so the lane's review covers it.
+  - ART3 cuts and checks both rounds whole, and splices and draws what has a system now: round 2's icons, elites, speck, crusher shaft, stick art and pause glyph, fx_skyhook for step 2, and round 3's biome air and biome badges.
+  - Everything else is cut, checked and parked for its system: the crop hatches and crop_seek (the levels lane), the house run's pips, icon, card, unlock and skins (house slice 1), the boss effects (slice 1's clay boss), fx_stat_up and hud_heart_new (stats, weapons step 5) and the charm effects (weapons step 4).
