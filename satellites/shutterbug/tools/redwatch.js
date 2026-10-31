@@ -942,11 +942,11 @@ const MUTANTS = [
       ['#paused, #clear, #death { position: absolute;', '#back { position: absolute; top: 0; left: calc(6px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;\n  border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }\n#paused, #clear, #death { position: absolute;'],
       ["    document.getElementById('pausetitle').addEventListener('click', ui.toTitle);", "    document.getElementById('pausetitle').addEventListener('click', ui.toTitle);\n    document.getElementById('back').addEventListener('click', ui.toTitle);"]],
     gates: [{ gate: 'layout', expect: '412x915: the strip holds no control but the rocker, B and A' }] },
-  { name: 'HIDDEN_NO_PAUSE', task: 'NOTE3', file: 'page', find: "    document.addEventListener('visibilitychange', function () { if (document.hidden) ui.pause(); });\n", repl: '',
+  { name: 'HIDDEN_NO_PAUSE', task: 'NOTE3', file: 'page', find: "    document.addEventListener('visibilitychange', function () { if (document.hidden) away(); else back(); });\n", repl: '',
     gates: [{ gate: 'pause', expect: 'inside the wrapper iframe a hidden page pauses its room' }] },
-  { name: 'BLUR_NO_PAUSE', task: 'NOTE3', file: 'page', find: "    window.addEventListener('blur', function () { if (!window.SWS_EMBED) ui.pause(); });\n", repl: '',
+  { name: 'BLUR_NO_PAUSE', task: 'NOTE3', file: 'page', find: "    window.addEventListener('blur', function () { if (!window.SWS_EMBED) away(); });\n", repl: '',
     gates: [{ gate: 'pause', expect: 'at top level a lost focus' }] },
-  { name: 'BLUR_IN_FRAME_PAUSES', task: 'NOTE3', file: 'page', find: 'if (!window.SWS_EMBED) ui.pause();', repl: 'ui.pause();',
+  { name: 'BLUR_IN_FRAME_PAUSES', task: 'NOTE3', file: 'page', find: 'if (!window.SWS_EMBED) away();', repl: 'away();',
     gates: [{ gate: 'pause', expect: 'inside the wrapper iframe a lost focus (the host page took it) leaves the room running' }] },
   { name: 'RESUME_KEEPS_EDGE', task: 'NOTE3', file: 'page', find: '    SB.input.releaseAll();   /* a tap on the strip under the card is never banked into a jump at Resume */\n', repl: '',
     gates: [{ gate: 'pause', expect: '412x915: a real tap on A under the pause card does not jump at Resume' }] },
@@ -974,7 +974,32 @@ const MUTANTS = [
   { name: 'BACK_IN_REVEAL_LOST', task: 'NOTE3', file: 'page', find: '    reveal: function () { ui.pause(); }, play:', repl: '    play:',
     gates: [{ gate: 'pause', expect: 'back in the reveal ends it and opens the pause card' }] },
   { name: 'CODE_CARD_WATCHED', task: 'NOTE3', file: 'page', find: "    if (ui.screen !== 'play' && BACK[ui.screen]) ui.screen = 'code';\n", repl: '',
-    gates: [{ gate: 'pause', expect: 'a link that arrives over the pause card holds the room under the Tap to develop card' }] }
+    gates: [{ gate: 'pause', expect: 'a link that arrives over the pause card holds the room under the Tap to develop card' }] },
+
+  /* NOTE3R, the pause card's review (Q94): Share this room the browser's grey on either card; the card left in the middle
+     over the bug, never in one row, placed against the last room's bug out of a reveal, not placed again on a resize; a
+     link that builds no room stranding the player under the develop card; the first reveal ended by a lost focus, its
+     clock run while away, or held for good when he is back */
+  { name: 'PAUSE_SHARE_GREY', task: 'NOTE3R', file: 'page', find: '#pauseshare, #clearshare { background: var(--paper);', repl: '#clearshare { background: var(--paper);',
+    gates: [{ gate: 'pause', expect: "412x915: Share this room is drawn in the card's Paper" }] },
+  { name: 'CLEAR_SHARE_GREY', task: 'NOTE3R', file: 'page', find: '#pauseshare, #clearshare { background: var(--paper);', repl: '#pauseshare { background: var(--paper);',
+    gates: [{ gate: 'pause', expect: "the clear card's Share this room is drawn in the card's Paper" }] },
+  { name: 'PAUSED_IN_MIDDLE', task: 'NOTE3R', file: 'page', find: "    ui.placePaused();\n    ui.screen = 'pause';", repl: "    ui.screen = 'pause';",
+    gates: [{ gate: 'pause', expect: '320x568: paused by a real tap, the card leaves the bug in sight' }] },
+  { name: 'PAUSED_NO_ROW', task: 'NOTE3R', file: 'page', find: ", ['row'], ['row', 'high'], ['row', 'low']];", repl: '];',
+    gates: [{ gate: 'pause', expect: '320x568: the bug at each of 48 rows, paused: the card covers it at rows' }] },
+  { name: 'PAUSED_STALE_HERO', task: 'NOTE3R', file: 'page', find: ' ui.endReveal(); SB.render.draw(G.state, G.level, performance.now()); }', repl: ' ui.endReveal(); }',
+    gates: [{ gate: 'pause', expect: "paused out of the reveal, the card is placed against this room's bug" }] },
+  { name: 'PAUSED_NOT_REPLACED', task: 'NOTE3R', file: 'page', find: " if (s === 'pause') SB.ui.placePaused(); }", repl: ' }',
+    gates: [{ gate: 'pause', expect: 'a resize under the pause card places it again' }] },
+  { name: 'CODE_BAD_STRANDS', task: 'NOTE3R', file: 'page', find: '    ui.toTitle();\n    if (rec) { var msg', repl: '    if (rec) { var msg',
+    gates: [{ gate: 'pause', expect: 'a link that cannot be built, arriving over the pause card, then Tap to develop' }] },
+  { name: 'REVEAL_AWAY_ENDS', task: 'NOTE3R', file: 'page', find: "if (ui.screen === 'reveal' && !RV.seen) { RV.away = true; return; } ", repl: '',
+    gates: [{ gate: 'pause', expect: 'a lost focus in the first reveal holds it' }] },
+  { name: 'REVEAL_AWAY_RUNS', task: 'NOTE3R', file: 'page', find: 'if (held || RV.away) {', repl: 'if (held) {',
+    gates: [{ gate: 'pause', expect: 'a lost focus in the first reveal holds it' }] },
+  { name: 'REVEAL_AWAY_STUCK', task: 'NOTE3R', file: 'page', find: "    window.addEventListener('focus', back);\n", repl: '',
+    gates: [{ gate: 'pause', expect: 'back on the page by a real tap, the first reveal plays on' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

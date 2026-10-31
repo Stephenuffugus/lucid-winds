@@ -25,19 +25,36 @@
  * room is held under the card when it comes back. At top level: the focus moved into a child frame, the page still
  * visible, pauses it (the gate's one liberty: the frame added to the page; this browser makes no other blur without a
  * hide, and a page in front fires both).
+ * The review of Q94: Share this room in the card's Paper (the clear card's too); the card never covers the bug's drawn
+ * box, paused by a real tap and with the bug set down at every row of the room (it docks at the room's top or bottom, or
+ * goes to one row; at 320x568 the card in the middle would have covered it), out of the reveal, and after a resize; a
+ * link that parses but builds no room (all dark), arriving over the card, then Tap to develop, ends on the title with
+ * its refusal; a lost focus in the first reveal holds it (not ended, not saved as seen) and a tap back plays it on.
  * Watched red by PAUSE_LEAVES, PAUSE_RUNS_SIM, RESUME_KEEPS_EDGE, PAUSED_NOT_OVERLAY, PAUSED_NOT_MODAL, PAUSE_ALWAYS_SHOWN, PAUSE_KEEPS_FOCUS,
  * SHARE_CLOSE_TO_PLAY, BACK_UNWATCHED, BACK_CARD_TO_TITLE, BACK_SHEET_UNWATCHED, BACK_CARDS_UNWATCHED, BACK_TRAPS_TITLE,
- * BACK_IN_REVEAL_LOST, CODE_CARD_WATCHED, HIDDEN_NO_PAUSE, BLUR_NO_PAUSE and BLUR_IN_FRAME_PAUSES. */
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, sleep } from './harness.mjs';
+ * BACK_IN_REVEAL_LOST, CODE_CARD_WATCHED, HIDDEN_NO_PAUSE, BLUR_NO_PAUSE, BLUR_IN_FRAME_PAUSES, and (the review) PAUSE_SHARE_GREY, CLEAR_SHARE_GREY,
+ * PAUSED_IN_MIDDLE, PAUSED_NO_ROW, PAUSED_STALE_HERO, PAUSED_NOT_REPLACED, CODE_BAD_STRANDS, REVEAL_AWAY_ENDS,
+ * REVEAL_AWAY_RUNS and REVEAL_AWAY_STUCK. */
+import { readFileSync } from 'node:fs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, sleep, GAME } from './harness.mjs';
 
 const R = reporter('PAUSE');
 const srv = await serve();
 const browser = await launch();
 const OVER = ['paused', 'clear', 'death', 'sharesheet', 'devcard'];
-const SUN = 'rgb(242, 209, 63)', CLEAR = 'rgba(0, 0, 0, 0)';
+const SUN = 'rgb(242, 209, 63)', CLEAR = 'rgba(0, 0, 0, 0)', PAPER = 'rgb(242, 239, 230)';
+/* a link that parses but builds no room (needsCrop): the all dark fixture's record */
+const DARK = JSON.parse(readFileSync(GAME + '/fixtures/synthetic/all-dark.json', 'utf8')).record;
+/* the bug's drawn box on the page and the pause card's, and whether they meet */
+const heroRect = () => {
+  const hd = window.SB.render.drawn.hero, cv = document.getElementById('view'), vr = cv.getBoundingClientRect(), k = vr.height / cv.height, kx = vr.width / cv.width;
+  return hd && hd.key !== null ? { l: vr.left + hd.x * kx, t: vr.top + hd.y * k, r: vr.left + (hd.x + hd.w) * kx, b: vr.top + (hd.y + hd.h) * k } : null;
+};
 
 /* page side: an injected feedback fab (as the loop gate injects it) and one look at everything the rules name */
-const install = page => page.evaluate((OVER) => {
+const install = page => page.evaluate((OVER, heroSrc) => {
+  window.__hero = eval('(' + heroSrc + ')');
+  window.__meets = (h, c) => !!h && !(h.t >= c.bottom || h.b <= c.top || h.l >= c.right || h.r <= c.left);
   if (!document.querySelector('.lwfb-fab')) {
     const f = document.createElement('div'); f.className = 'lwfb-fab';
     f.style.cssText = 'position:fixed;right:12px;bottom:96px;width:78px;height:78px;z-index:2000000000;background:#d83a9b';
@@ -49,7 +66,7 @@ const install = page => page.evaluate((OVER) => {
       modal: document.body.classList.contains('sb-modal'), fab: getComputedStyle(document.querySelector('.lwfb-fab')).display,
       pause: vis('pause'), card: vis('paused'), state: !!st, frame: st ? st.frame : -1, hash: window.SB_DEV.hash(), href: location.href };
   };
-}, OVER);
+}, OVER, heroRect.toString());
 const look = page => page.evaluate(() => window.__look());
 const onText = l => l.on.join(' ') || 'nothing';
 /* the loop unheld for n animation frames (counted by the loop itself), then held again: the sim steps taken meanwhile */
@@ -87,16 +104,23 @@ try {
 
     const card = await page.evaluate(() => {
       const st = document.getElementById('stage').getBoundingClientRect(), c = document.getElementById('paused').getBoundingClientRect();
-      return { inRoom: c.top >= st.top - 0.5 && c.bottom <= st.bottom + 0.5, box: [c.top, c.bottom, st.top, st.bottom].map(Math.round),
+      const hr = window.__hero();
+      return { inRoom: c.top >= st.top - 0.5 && c.bottom <= st.bottom + 0.5, box: [c.top, c.bottom, st.top, st.bottom].map(Math.round), place: document.getElementById('paused').className,
+        hero: hr && [hr.t, hr.b].map(Math.round), meets: window.__meets(hr, c),
         btns: ['resume', 'pauseshare', 'pausetitle'].map(id => {
           const el = document.getElementById(id), r = el.getBoundingClientRect(), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-          return { id, text: el.textContent, top: r.top, h: r.height, onTop: !!t && (t === el || el.contains(t)), inView: r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth, bg: getComputedStyle(el).backgroundColor };
+          return { id, text: el.textContent, top: r.top, left: r.left, h: r.height, w: r.width, onTop: !!t && (t === el || el.contains(t)), inView: r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth, bg: getComputedStyle(el).backgroundColor };
         }) };
     });
-    const b = card.btns, inOrder = b[0].top < b[1].top && b[1].top < b[2].top;
-    R.say(inOrder && b.map(x => x.text).join('|') === 'Resume|Share this room|Title' && b.every(x => x.h >= 48 && x.onTop && x.inView) && b[0].bg === SUN && b[2].bg === CLEAR && card.inRoom,
+    /* in reading order: stacked, or in one row on a short room (the review of Q94) */
+    const b = card.btns, before = (p, q) => p.top < q.top - 1 || (Math.abs(p.top - q.top) <= 1 && p.left < q.left), inOrder = before(b[0], b[1]) && before(b[1], b[2]);
+    R.say(inOrder && b.map(x => x.text).join('|') === 'Resume|Share this room|Title' && b.every(x => x.h >= 48 && x.w >= 48 && x.onTop && x.inView) && b[0].bg === SUN && b[2].bg === CLEAR && card.inRoom,
       tag + ': the card reads ' + b.map(x => x.text).join(', ') + (inOrder ? ', in that order' : ', OUT OF ORDER') + ', each 48 px or more, on top and in view, Resume in Sun and Title plain, inside the room (' +
-      b.map(x => x.id + ' ' + x.h.toFixed(0) + (x.onTop ? '' : ' NOT on top') + (x.inView ? '' : ' out of view') + ' ' + x.bg).join(', ') + '; the card ' + card.box[0] + ' to ' + card.box[1] + ', the room ' + card.box[2] + ' to ' + card.box[3] + ')');
+      b.map(x => x.id + ' ' + x.w.toFixed(0) + 'x' + x.h.toFixed(0) + (x.onTop ? '' : ' NOT on top') + (x.inView ? '' : ' out of view') + ' ' + x.bg).join(', ') + '; the card ' + card.box[0] + ' to ' + card.box[1] + ', the room ' + card.box[2] + ' to ' + card.box[3] + ')');
+    /* the review of Q94: Share this room was the browser's own grey on the card's Paper */
+    R.say(b[1].bg === PAPER, tag + ': Share this room is drawn in the card\'s Paper, not the browser\'s grey (' + b[1].bg + ', want ' + PAPER + ')');
+    /* the review of Q94: at 320x568 the card in the middle of the room hid the bug, so he resumed blind */
+    R.say(!!card.hero && !card.meets, tag + ': paused by a real tap, the card leaves the bug in sight (the bug ' + (card.hero ? card.hero.join(' to ') : 'not drawn') + ', the card ' + card.box[0] + ' to ' + card.box[1] + ', placed ' + (card.place.replace('on', '').trim() || 'in the middle') + ')');
 
     /* a thumb on A under the card is never banked into a jump at Resume */
     const y0 = (await page.evaluate(() => window.SB_DEV.state().hero)).y;
@@ -109,6 +133,29 @@ try {
     R.say(g1.ground && g1.y === y0, tag + ': a real tap on A under the pause card does not jump at Resume (on the ground ' + g1.ground + ', y ' + (y0 / 256) + ' then ' + (g1.y / 256) + ' px)');
     const u2 = await unheld(page, 10);
     R.say(u2.steps > 0, tag + ': resumed, the room runs again (' + u2.steps + ' steps in ' + u2.frames + ' animation frames)');
+    /* the bug set down at every row of the room in turn (the camera follows it, so it is drawn high, low and on the line
+       the camera keeps), paused there: the card never covers its drawn box, and at 320x568 the card in the middle would
+       have (the case is met, not skipped) */
+    const sweep = await page.evaluate(() => {
+      const lv = window.SB.game.level, h = window.SB.game.state.hero, CS = window.SB.K.CELL_SUB, y0 = h.y, pc = document.getElementById('paused');
+      const out = { rows: 0, covered: [], places: {}, middleWould: 0 };
+      for (let row = 0; row < lv.h; row++) {
+        h.y = row * CS; window.SB_DEV.step(0);
+        const hr = window.__hero(); if (!hr) continue;
+        pc.classList.remove('high', 'low', 'row'); pc.classList.add('on');
+        if (window.__meets(hr, pc.getBoundingClientRect())) out.middleWould++;
+        pc.classList.remove('on');
+        window.SB.ui.pause();
+        const place = pc.className.replace('on', '').trim() || 'middle';
+        out.places[place] = (out.places[place] || 0) + 1; out.rows++;
+        if (window.__meets(hr, pc.getBoundingClientRect())) out.covered.push(row);
+        window.SB.ui.resume();
+      }
+      h.y = y0; window.SB_DEV.step(0);
+      return out;
+    });
+    R.say(sweep.rows >= 40 && sweep.covered.length === 0 && (w !== 320 || sweep.middleWould > 0),
+      tag + ': the bug at each of ' + sweep.rows + ' rows, paused: the card covers it at ' + (sweep.covered.length ? 'rows ' + sweep.covered.join(' ') : 'none') + ' (placed ' + Object.entries(sweep.places).map(e => e.join(' ')).join(', ') + '; in the middle it would cover ' + sweep.middleWould + ')');
 
     /* Share this room from the card, and its Close back to the card */
     await tap(page, '#pause');
@@ -168,7 +215,8 @@ try {
       'back on the share sheet closes it and returns to the pause card (screen ' + b3.screen + ' then ' + b4.screen + ', on: ' + onText(b4) + ', the card ' + b4.card + ')');
     await escape(page);
     await page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(2); });
-    const c0 = await look(page);
+    const c0 = await look(page), cs = await page.evaluate(() => getComputedStyle(document.getElementById('clearshare')).backgroundColor);
+    R.say(cs === PAPER, 'the clear card\'s Share this room is drawn in the card\'s Paper, not the browser\'s grey (' + cs + ')');
     await escape(page);
     const c1 = await look(page);
     R.say(c0.screen === 'clear' && c1.screen === 'title' && c1.on.length === 0 && !c1.state && c1.watch === '',
@@ -188,7 +236,9 @@ try {
     R.say(r0.screen === 'reveal' && r0.pause === 'hidden' && !!pc && !pc.onTop,
       'in the reveal Pause is hidden: a thumb on it lands on ' + (pc ? pc.topName : 'nothing') + ' (screen ' + r0.screen + ', Pause ' + r0.pause + ')');
     await escape(page);
-    const r1 = await look(page), rv = await page.evaluate(() => ({ on: window.SB.ui.reveal.on, marks: window.SB_DEV.perf().reveal }));
+    const r1 = await look(page), rv = await page.evaluate(() => ({ on: window.SB.ui.reveal.on, marks: window.SB_DEV.perf().reveal,
+      meets: window.__meets(window.__hero(), document.getElementById('paused').getBoundingClientRect()), hero: window.__hero() }));
+    R.say(!!rv.hero && !rv.meets, 'paused out of the reveal, the card is placed against this room\'s bug, drawn at once, and leaves it in sight (the bug ' + (rv.hero ? Math.round(rv.hero.t) + ' to ' + Math.round(rv.hero.b) : 'not drawn') + ')');
     R.say(r0.watch === 'reveal' && r1.screen === 'pause' && r1.on.join() === 'paused' && rv.on === false && !!rv.marks && rv.marks.end !== undefined && rv.marks.skipped === true,
       'back in the reveal ends it and opens the pause card (back watched for ' + (r0.watch || 'nothing') + ', then screen ' + r1.screen + ', on: ' + onText(r1) + ', the reveal ' + (rv.on ? 'still on' : 'ended') + ')');
     await tap(page, '#resume');
@@ -209,7 +259,69 @@ try {
     await tap(page, '#devtap');
     const k2 = await look(page);
     R.say(k2.screen === 'play' && k2.on.length === 0 && k2.watch === 'play', 'its tap develops the room with nothing over it (screen ' + k2.screen + ', on: ' + onText(k2) + ')');
+    /* the review of Q94: a link that parses but builds no room (the all dark fixture: needsCrop), arriving over the pause
+       card, then Tap to develop: the title with its refusal, not a room held under no Pause, no Title and a dead Resume */
+    await tap(page, '#pause');
+    await page.evaluate(j => { location.hash = window.SB.record.encode(window.SB.record.fromJSON(j)); }, DARK);
+    await page.waitForFunction(() => document.getElementById('devcard').classList.contains('on'), { timeout: 5000 }).catch(() => {});
+    const n0 = await look(page);
+    await tap(page, '#devtap');
+    const n1 = await look(page), nm = await page.evaluate(() => { const m = document.getElementById('codemsg'); return { hidden: m.hidden, text: m.textContent, title: getComputedStyle(document.getElementById('title')).display }; });
+    R.say(n0.screen === 'code' && n1.screen === 'title' && n1.on.length === 0 && !n1.state && n1.watch === '' && !nm.hidden && nm.text.length > 0 && nm.title !== 'none',
+      'a link that cannot be built, arriving over the pause card, then Tap to develop: the title with its refusal and nothing over it (screen ' + n0.screen + ' then ' + n1.screen + ', on: ' + onText(n1) + ', the room ' + (n1.state ? 'kept' : 'gone') + ', the refusal ' + (nm.hidden ? 'hidden' : '"' + nm.text + '"') + ')');
     R.say(errors.length === 0, 'the back gesture: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
+
+  /* the review of Q94: a resize under the card places it again (a phone turned, the address bar gone): paused at
+     412x915 with the card in the middle, the window made 320x568, where the card in the middle covers the bug at spawn */
+  {
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base); await ready(page); await install(page);
+    await page.evaluate(() => window.SB_DEV.hold(true));
+    await tap(page, '#sample');
+    await settle(page);
+    await tap(page, '#pause');
+    const z0 = await page.evaluate(() => document.getElementById('paused').className);
+    await page.setViewport({ width: 320, height: 568, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+    await sleep(300);
+    const z1 = await page.evaluate(() => { const c = document.getElementById('paused'), hr = window.__hero(); return { place: c.className, meets: window.__meets(hr, c.getBoundingClientRect()), hero: !!hr, screen: window.SB_DEV.screen() }; });
+    R.say(z1.screen === 'pause' && z1.hero && !z1.meets,
+      'a resize under the pause card places it again: 412x915 to 320x568, the card leaves the bug in sight (placed ' + (z0.replace('on', '').trim() || 'in the middle') + ' then ' + (z1.place.replace('on', '').trim() || 'in the middle') + ', screen ' + z1.screen + ')');
+    R.say(errors.length === 0, 'the resize: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
+
+  /* the review of Q94: a lost focus in the player's first reveal (never seen, so no tap may skip it) holds the reveal
+     and never ends it or saves it as seen; a real tap back on the page plays it on to the room */
+  {
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base); await ready(page, { reveal: true }); await install(page);
+    await page.evaluate(() => {
+      window.SB.save.doc.onboarding.revealSeen = false; window.SB.ui.reveal.seen = false; window.SB_DEV.revealSkip(false); window.SB_DEV.hold(true);
+      const f = document.createElement('iframe'); f.id = 'gatefocus'; f.srcdoc = '<input id="i">';
+      f.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;border:0';
+      document.body.appendChild(f);
+      return new Promise(r => { f.onload = r; });
+    });
+    await tap(page, '#sample');
+    const v0 = await page.evaluate(() => ({ screen: window.SB_DEV.screen(), t: window.SB.ui.reveal.t }));
+    await page.evaluate(() => { const f = document.getElementById('gatefocus'); f.contentWindow.focus(); f.contentDocument.getElementById('i').focus(); });
+    await sleep(200);
+    const ua = await unheld(page, 30);
+    const v1 = await page.evaluate(() => ({ screen: window.SB_DEV.screen(), on: window.SB.ui.reveal.on, t: window.SB.ui.reveal.t, saved: window.SB.save.doc.onboarding.revealSeen, seen: window.SB.ui.reveal.seen,
+      card: document.getElementById('paused').classList.contains('on') }));
+    R.say(v0.screen === 'reveal' && v1.screen === 'reveal' && v1.on && !v1.card && v1.saved === false && !v1.seen && Math.abs(v1.t - v0.t) < 1,
+      'a lost focus in the first reveal holds it (' + ua.frames + ' animation frames away, the reveal ' + (v1.on ? 'on' : 'ended') + ' at ' + v1.t.toFixed(0) + ' ms (from ' + v0.t.toFixed(0) + '), screen ' + v1.screen + ', saved as seen ' + v1.saved + ', the card ' + (v1.card ? 'up' : 'down') + ')');
+    const vc = await centre(page, '#view');   /* a thumb on the room: whatever lies over the canvas there takes it, as on his phone */
+    await page.touchscreen.tap(vc.x, vc.y);
+    await page.evaluate(() => window.SB_DEV.hold(false));
+    await page.waitForFunction(() => window.SB_DEV.screen() !== 'reveal', { timeout: 20000, polling: 50 }).catch(() => {});
+    const v2 = await page.evaluate(() => ({ screen: window.SB_DEV.screen(), saved: window.SB.save.doc.onboarding.revealSeen, marks: window.SB_DEV.perf().reveal }));
+    await page.evaluate(() => window.SB_DEV.hold(true));
+    R.say(v2.screen === 'play' && v2.saved === true && !!v2.marks && v2.marks.skipped === false && (v2.marks.reduced || v2.marks.resolve !== undefined),
+      'back on the page by a real tap, the first reveal plays on to its end and the room (screen ' + v2.screen + ', skipped ' + (v2.marks && v2.marks.skipped) + ', its resolve beat ' + (v2.marks && v2.marks.resolve !== undefined ? 'played' : 'missed') + ', saved as seen ' + v2.saved + ')');
+    R.say(errors.length === 0, 'the first reveal: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
 

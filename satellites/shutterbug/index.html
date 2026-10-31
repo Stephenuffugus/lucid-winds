@@ -148,6 +148,13 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   display: none; flex-direction: column; gap: 12px; align-items: stretch; text-align: center; z-index: 10; }
 #paused.on, #clear.on, #death.on { display: flex; }
 #paused { top: 0; bottom: 0; margin: auto; height: fit-content; }   /* in the middle of the room at every height; taller than the room, it starts at the room's top */
+/* the pause card docks away from the bug (the review of Q94: at 320x568 the card in the middle hid the bug paused mid
+   jump, so he resumed blind): at the room's top or its bottom, and in one row (Resume, Share this room, Title side by
+   side, about 110 px tall) when the stacked card cannot clear it either way; ui.placePaused measures, as the death card */
+#paused.high { bottom: auto; top: 3%; margin: 0 auto; } #paused.low { top: auto; bottom: 3%; margin: 0 auto; }
+#paused .trio { display: flex; flex-direction: column; gap: 12px; }
+#paused.row { width: min(320px, 94vw); padding: 12px 14px; gap: 10px; } #stage > #paused.row h2 { font-size: 1rem; }
+#paused.row .trio { flex-direction: row; gap: 8px; } #paused.row .trio button { flex: 1 1 auto; min-width: 0; padding: 0 6px; font-size: 0.95rem; }
 #death { top: 3%; } #death.low { top: auto; bottom: 3%; }
 #death .duo { display: flex; flex-direction: column; gap: 12px; }
 /* on a short screen Again and Title sit side by side, so the docked card clears the line the camera keeps the bug on
@@ -211,6 +218,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #setinstall { display: flex; align-items: center; gap: 10px; margin: 0; } #install { min-height: 48px; }
 #again { background: var(--paper); color: var(--ink); }
 #pausetitle, #cleartitle, #deathtitle { background: transparent; color: var(--ink); }
+#pauseshare, #clearshare { background: var(--paper); color: var(--ink); }   /* Share this room in the card's Paper, never the browser's grey (the review of Q94) */
 /* the hint glyphs (T0.16): a control pulses once, the first time it is the move to make */
 @keyframes sbhint { 0%, 100% { box-shadow: 0 0 0 0 rgba(242,209,63,0); } 50% { box-shadow: 0 0 0 6px rgba(242,209,63,0.9); } }
 #rocker.hint .zone, .verb.hint .glyph { animation: sbhint 0.7s ease-in-out 3; }
@@ -323,9 +331,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <div id="top"><button id="pause" type="button" data-aria="pause"><i aria-hidden="true"></i></button><span id="roomname"></span><span id="hearts" aria-label="Hearts"></span></div>
   <div id="stage"><canvas id="view" width="384" height="640"></canvas>
     <div id="paused" role="dialog" data-aria="paused"><h2 data-copy="paused"></h2>
-      <button id="resume" type="button" data-copy="resume"></button>
+      <div class="trio"><button id="resume" type="button" data-copy="resume"></button>
       <button id="pauseshare" type="button" data-copy="shareTitle"></button>
-      <button id="pausetitle" type="button" data-copy="toTitle"></button></div>
+      <button id="pausetitle" type="button" data-copy="toTitle"></button></div></div>
     <div id="clear" role="dialog" data-aria="roomClear"><h2 data-copy="roomClear"></h2>
       <p id="clearbank" hidden></p>
       <button id="nextroom" type="button" data-copy="nextRoom"></button>
@@ -4269,11 +4277,30 @@ body.sb-modal .lwfb-fab { display: none !important; }
      costs a pause, never the room. In the reveal it ends the reveal first (its photo released), so Resume plays */
   ui.pause = function () {
     if (!G.state || (ui.screen !== 'play' && ui.screen !== 'reveal')) return false;
-    if (ui.screen === 'reveal') { RV.marks.skipped = true; ui.endReveal(); }
+    if (ui.screen === 'reveal') { RV.marks.skipped = true; ui.endReveal(); SB.render.draw(G.state, G.level, performance.now()); }   /* drawn now, so the card is placed against this room's bug */
     SB.input.releaseAll();
     document.getElementById('paused').classList.add('on');
+    ui.placePaused();
     ui.screen = 'pause';
     return true;
+  };
+  /* where the card sits: in the middle of the room, else docked at its top, else at its bottom, wherever the bug's drawn
+     box stays in sight; when the stacked card clears it nowhere (the room too short: 320x568), the card in one row
+     tried the same three ways. Measured at every pause and on a resize under the card (the review of Q94) */
+  ui.placePaused = function () {
+    var pc = document.getElementById('paused'), hd = SB.render.drawn.hero, cv = document.getElementById('view');
+    pc.classList.remove('high', 'low', 'row');
+    if (!hd || hd.key === null || !cv.height) return '';
+    var vr = cv.getBoundingClientRect(), k = vr.height / cv.height, kx = vr.width / cv.width;
+    var hx = vr.left + hd.x * kx, hy = vr.top + hd.y * k, hw = hd.w * kx, hh = hd.h * k;
+    var clear = function () { var r = pc.getBoundingClientRect(); return hy >= r.bottom || hy + hh <= r.top || hx >= r.right || hx + hw <= r.left; };
+    var tries = [[], ['high'], ['low'], ['row'], ['row', 'high'], ['row', 'low']];
+    for (var i = 0; i < tries.length; i++) {
+      pc.classList.remove('high', 'low', 'row');
+      for (var j = 0; j < tries[i].length; j++) pc.classList.add(tries[i][j]);
+      if (clear()) return tries[i].join(' ') || 'middle';
+    }
+    return 'covered';
   };
   ui.resume = function () {
     if (ui.screen !== 'pause') return false;
@@ -4360,9 +4387,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
      length at any frame rate and a slow frame skips rows. A tap skips it once one reveal has been seen
      (onboarding.revealSeen, saved: the skip outlives the session, DESIGN 5.2; the M1 review found it session only). The static layer built at the room's start
      serves the reveal and the play alike: it is never built twice. */
-  var RV = ui.reveal = { on: false, t: 0, start: 0, prev: 0, lv: null, reduced: false, rows: 0, tabs: 0, marks: null, seen: false, devSkip: false };
+  var RV = ui.reveal = { on: false, t: 0, start: 0, prev: 0, lv: null, reduced: false, rows: 0, tabs: 0, marks: null, seen: false, devSkip: false, away: false };
   function startReveal(lv, t0, photo) {
-    RV.on = true; RV.start = t0; RV.t = performance.now() - t0; RV.prev = t0; RV.lv = lv; RV.rows = 0; RV.tabs = 0;
+    RV.on = true; RV.start = t0; RV.t = performance.now() - t0; RV.prev = t0; RV.lv = lv; RV.rows = 0; RV.tabs = 0; RV.away = false;
     var rm = SB.settings ? SB.settings.reducedMotion : null;
     RV.reduced = rm === null || rm === undefined ? !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) : !!rm;
     RV.marks = { start: t0, build: SB.perfLog.pipeline, reduced: RV.reduced, skipped: false };
@@ -4372,7 +4399,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   ui.revealFrame = function (now, held) {
     if (!RV.on) return;
-    if (held) RV.start = now - RV.t; else RV.t = now - RV.start;
+    /* away: the player's first reveal held while the page is hidden or has lost the focus; 'back' re anchors its clock
+       on the first frame after, so the time away is never played (a hidden page runs no frames) */
+    if (held || RV.away) { RV.start = now - RV.t; if (RV.away === 'back') RV.away = false; } else RV.t = now - RV.start;
     var T = SB.TUNING, hold = T.REVEAL_HOLD * 1000, res = T.REVEAL_RESOLVE * 1000, light = T.REVEAL_LIGHT * 1000;
     var end = RV.reduced ? hold : hold + res + light;
     if (!RV.reduced) {
@@ -4673,7 +4702,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.developCode = function () {
     var rec = ui.pendingCode; ui.pendingCode = null;
     document.getElementById('devcard').classList.remove('on');
-    if (rec && !ui.startRoom(rec, ui.COPY.sharedRoom, { mode: 'code', notFirst: true })) { var msg = document.getElementById('codemsg'); msg.textContent = ui.COPY.codeBad; msg.hidden = false; }
+    if (rec && ui.startRoom(rec, ui.COPY.sharedRoom, { mode: 'code', notFirst: true })) return;
+    /* a link that parses but builds no room (all dark, a checkerboard: needsCrop) goes to the title with its refusal, as a
+       code that does not parse does: arrived mid room, the screen stayed 'code' with no Pause, no Title, no back and a
+       dead Resume under it (the review of Q94) */
+    ui.toTitle();
+    if (rec) { var msg = document.getElementById('codemsg'); msg.textContent = ui.COPY.codeBad; msg.hidden = false; }
   };
   /* recent rooms on the title (T1.10): after the first room, each a thumbnail of its grid; a tap plays it again */
   function drawRecent() {
@@ -4846,8 +4880,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* his call 7 (Q94): a room pauses itself when the page is hidden (a call, an app switch, the screen locked) or the
        window loses focus (the notification shade, a system dialog); it ran again the instant he came back. Inside a frame
        on hidden only, as Sproing does under SWS_EMBED: a tap on the host page takes the focus out of the frame */
-    document.addEventListener('visibilitychange', function () { if (document.hidden) ui.pause(); });
-    window.addEventListener('blur', function () { if (!window.SWS_EMBED) ui.pause(); });
+    /* the player's first reveal, which no tap may skip (DESIGN 5.2), is held instead, never ended: the pause ended it
+       and saved it as seen, so pulling the notification shade cost him the reveal for good (the review of Q94); it plays
+       on from where it stood when he is back. A seen reveal pauses as a room does */
+    var away = function () { if (ui.screen === 'reveal' && !RV.seen) { RV.away = true; return; } ui.pause(); };
+    var back = function () { if (RV.away) RV.away = 'back'; };
+    document.addEventListener('visibilitychange', function () { if (document.hidden) away(); else back(); });
+    window.addEventListener('blur', function () { if (!window.SWS_EMBED) away(); });
+    window.addEventListener('focus', back);
     ui.initCrop();
     /* a tap during a reveal, once one has been seen, skips to play; the tap is the skip's alone (the strip never sees
        it, so it is no jump). Pause is hidden in the reveal, so no tap lands on it (Q94); the back gesture pauses */
@@ -4962,7 +5002,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=1').catch(function () {}); } catch (e) { /* silent */ } });
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); SB.ui.installPrompt = e; document.getElementById('install').hidden = false; });
   SB.input.initStrip();
-  window.addEventListener('resize', function () { var s = SB.ui.screen; if (s === 'play' || s === 'pause' || s === 'share' || s === 'clear' || s === 'dead') { SB.render.fit(); draw(); } });
+  window.addEventListener('resize', function () { var s = SB.ui.screen; if (s === 'play' || s === 'pause' || s === 'share' || s === 'clear' || s === 'dead') { SB.render.fit(); draw(); if (s === 'pause') SB.ui.placePaused(); } });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { if (G.state) { SB.render.fit(); draw(); } });
   requestAnimationFrame(frame);
 
