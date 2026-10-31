@@ -24,6 +24,8 @@
  * from SB_DEV.roomOpts() equals the live hash; Title through the pause card ends it (the sample room starts empty); a
  * death after the chest: Again restarts with the gear the bug walked in with.
  *
+ * SB_FIGHT_SIZES=412 runs only the named widths (redwatch's fight rows each name a 412 line; check.js runs all three).
+ *
  * Watched red by CHEST_NO_WEAPON, CHEST_STOPS_FOR_EMPTY, HUD_STALE, HUD_EVERY_STEP, GOT_TAKES_TAPS, GOT_STAYS,
  * GOT_OVER_BUG, GOT_STAYS_OVER_BUG, THROW_SILENT, GEAR_LOST_ON_NEXT_ROOM, GEAR_KEPT_THROUGH_TITLE, DEATH_KEEPS_PICKUP and ROOM_OPTS_MISSING. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME } from './harness.mjs';
@@ -118,7 +120,9 @@ const projColours = (page, kind) => page.evaluate(kind => {
 }, kind);
 
 try {
-  for (const [w, h, rm] of [[412, 915, false], [360, 780, false], [320, 568, true]]) {
+  /* SB_FIGHT_SIZES=412 (a comma list of widths) runs only those sizes: redwatch's fight rows all name a 412 line */
+  const only = process.env.SB_FIGHT_SIZES ? process.env.SB_FIGHT_SIZES.split(',').map(Number) : null;
+  for (const [w, h, rm] of [[412, 915, false], [360, 780, false], [320, 568, true]].filter(z => !only || only.includes(z[0]))) {
     const { page, errors } = await newPage(browser, { width: w, height: h });
     if (rm) await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
     await gotoGame(page, srv.base); await ready(page);
