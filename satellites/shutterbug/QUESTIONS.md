@@ -827,3 +827,49 @@ DESIGN redline: none (5.2's first reveal is now kept, as it reads).
 Options: (a) as built; (b) the card always in the middle (the review's finding back); (c) the card always docked in one row at every size.
 Recommendation: (a).
 Plan assumes: (a).
+
+## Q160. Astra's in room art: what went in, what waits and why, and what the shots found (the builder, 31 Oct, ART1)
+
+The delivery: Stephen uploaded Astra's art zip at 15:17 UTC on 31 Oct 2026 ("Here's everything from Astra so far. Don't let this interrupt what you're doing, just work it in"), `shutterbug-assets-oct31.zip`, sha256 `bfb811bd19e5f30af7848414114287dff011ea0c56932964ca668760db7403f2`, 101 production PNGs, six Daily Room inputs, review boards and Astra's notes (00_START_HERE_DEVELOPER_HANDOFF.md, 01_ASSET_INDEX.md, manifest.json). Astra's manifest records his approval of the round rear hero in his Astra session: "APPROVED: user accepted checkpoint 07 hero revision and directed work to proceed." The lead took it in (`astra_cut.py intake` into /home/codespace/sb-drafts/astra/oct31-x, read only, nothing in it run) and checked the whole delivery (/home/codespace/sb-drafts/astra/check-oct31.txt: CHECK FAILED, 15 refused), then cut the in room subset (/home/codespace/sb-drafts/astra/cut-room.json, check-room.txt: CHECK OK, 20 sprites, 48 frames, every pixel on the page's 16 hexes, every PNG equal to its source grid).
+
+What went in (ART1, the splice read change by change first, then written):
+- In place, Astra's frames for the page's own keys: hero (the twelve frame names), moth, icicle, jelly, crawler, spark, spike, crusher, speck, scroll, blueprint, chest, beacon, tab. vine and pipe keep the page's placeholders (no file for them in this delivery).
+- Appended: moth_elite, icicle_elite, jelly_elite, crawler_elite, spark_elite (24x24 each) and hud_heart (9x8, full and empty). SPRITES now holds 22 keys and 50 frames (the lint's cap is 40 keys).
+- Each elite draws its own art 1:1 in the sim's box (ELITE_SIZE_CELLS, 24 px a side), never the base art scaled, by its manifest anchor (`R.ELITE_ANCHOR`): moth and jelly centred, the icicle hung from the top, the crawler and the spark standing on the bottom; the crawler family mirrors with its way, as the base crawler does. The box is the sim's; the art never moves it.
+- The hearts are hud_heart: full or empty per slot, at 2x (18x16 CSS px, nearest neighbour) in the top strip as the strip is today. Astra: "Draw health at 2x on Paper with four to eight slots". The strip is Paper already, the sim's hearts run HEARTS_BASE 4 to HEARTS_CAP 8, and the old CSS hearts were the same 18x16, so nothing in the strip moved: what changed is that a heart is now the sprite's own pixels (cut from the atlas once at boot as PNG data URLs) and a lost heart is Astra's Slate one, not the old Paper.
+- The hero's timings were checked against the manifest and kept: idle at 2 fps (30 steps a frame) and the run at 12 fps (5 steps a frame) are what the page already did (T0.17's ANIM_FPS). The landing squash and the takeoff stretch stay the runtime transform of the drawn rect (Q35); Astra says to use the transform or her authored 14x14 and 10x18 frames, never both, and the frames wait (below).
+- The PWA icons follow the new hero (`node tools/icons.mjs`).
+
+An anchor fix found in the shots (inside the art's letter, no pixel changed): an elite's box starts centred on its cell (core-sim `create`, `off = (CS - ELITE_SUB) >> 1`), so a hanging icicle elite's box reaches 4 px into the roof and a resting spark elite's 4 px into the floor, and the first shots drew the icicle's root and the flame's base sunk that far (the old scaled art was sunk the same). At rest (state 0: an icicle hanging, a spark between hops, a crawler on its run) a top or bottom anchor now holds to the ceiling or the floor of the row the box's middle is in; in flight the art rides the box. The hitbox is unchanged, so for a resting icicle or spark elite the drawn art and the box differ by those 4 px (the box 4 px into the roof or floor, the art on it).
+
+What waits, and why (the 15 refusals and the rest):
+- The five extra hero poses (hero_dash, hero_hurt, hero_squash 14x14, hero_stretch 10x18, hero_dropin) and the four skins (hero_colours, 48 frames: sun, umber, teal, lapis): refused under the cutter's Sun rule, which allows Sun only in the keys `hero` and `beacon`. They need the cutter to route `hero_*` files into the hero key (or new hero keys) and its Sun rule to allow them, then R.heroFrame to bind dash and hurt, a choice between the squash and stretch frames and the runtime transform, the drop in on the reveal, and the skins on a setting. Their own change.
+- The UI art (title_art, card_clear, card_death, card_develop, the two app icons and the rest of ui/): raster chrome for the DOM screens (portrait screens, nine slice skins, content slots), not SPRITES; refused under the Sun rule and the 40 key cap. Their own change with the screens.
+- ui/sample_room_photo.png: the full colour 384x768 sample photo, a pipeline input, not a sprite (refused: off the 16 colours by design). Whether the sample room moves to it is a pipeline and golden question.
+- ui/hud_dp_counter.png: the ten numeral frames are named 0 to 9, which the cutter refuses as names; the count is DOM text today.
+- fx_* and icon_weapons: belong with the weapons merge (sb-weapons draws its own projectiles and effects).
+- boss (and its five attack sheets), the Darkroom door, the pocket rim, beacon_dark, tab_stair, ice_edge, vine and pipe repeats, ladder_mark, dust_mote, loot_dp_drop, the daily rooms (JSON and PNG): wait for their systems (the boss, the Darkroom, the pocket's art, the daily mode). Every one of these exceeds today's 40 key cap if taken all at once (the check counted 80 names).
+- The vault (README step 3, the originals as a release in the vault repo with SHA256SUMS): waits on Stephen's `gh` login on this box. Until then the zip and its hash live in /home/codespace/sb-drafts/astra/.
+
+Seen in the shots and left (ART1's shots, old art beside new at the same moments: /home/codespace/sb-drafts/sb-art/art1/shots/ and shots2/):
+- The round rear hero is a smaller silhouette in its 12x16 than the old block (its body about 8 px across), and at 320x568, where the room is drawn at 0.83, nearest neighbour drops one pixel in six: its outline goes ragged and an antenna pixel comes and goes (the old art did the same). At 412x915 it reads.
+- The dead pose lies five rows tall at the bottom of the frame and, under two moths at 320x568, reads as a small yellow lump.
+- The empty heart (Slate inside Ink) is nearly as heavy as the Ink contour: a room of four empty hearts reads as four dark hearts more than as empty ones. Option for Astra: a lighter empty fill (Pewter or Ash) or Paper as before.
+- The elite moth's four Magenta spots vanish on a Magenta photo cell (biome 0, saturated-blobs); the elites' mark is Magenta and Magenta is also a photo colour.
+- The base moth is Ash and Pewter on an Attic whose open colour is Ash: it is carried by its Ink outline alone.
+- The speck is a 6 px Amber diamond (the old one was a 9 px cross); at 412x915 it is the smallest thing on screen, and its Glare glint shows only on alternate beats (H-spr-1's pin moved from "every frame has the glint" to "the strip has it", with that reason in the harness).
+- The crusher draws a narrower stem with a wide ram per cell, so a three row field reads as columns of T shapes rather than a solid press (Astra's letter: a row of teeth per cell row).
+- The open chest still shows a Glare slip (a weapon slip in Astra's notes; Q92 keeps weapon words out of M1, and the art has none).
+- The PWA icons draw the new hero on Soot (T1.11's choice, with the manifest's theme and background colours), where its Ink outline vanishes and the antennae all but go; Astra's own app icons put the same hero on Paper.
+
+His calls (the build runs on each default):
+- The elite box's seat. Default: as built (the art holds to the roof or floor at rest, the box stays centred on its cell). Option: the sim seats a hanging or standing elite's box on its cell's line (`footY` as the crawler already does), which moves the hash and the goldens.
+- The empty heart. Default: Astra's Slate. Option: a note for Astra's next session.
+- The icon background. Default: Soot (as T1.11). Option: Paper, as Astra's icons, with the manifest's colours.
+- The extra poses, the skins, the UI art and the rest above: each its own change, in the order he picks.
+
+Plan redline (BUILD-PLAN, not edited): section 1.7's sprites gain the five `<kind>_elite` keys and hud_heart; T1.4's "an elite is the same art drawn ELITE_SIZE_CELLS a side" reads "an elite draws its own 24x24 art by its anchor"; the top strip's hearts are hud_heart at 2x.
+DESIGN redline: none.
+Options: (a) as built; (b) the elites drawn as the base art scaled until Astra's elites are reviewed on his Pixel.
+Recommendation: (a).
+Plan assumes: (a).
