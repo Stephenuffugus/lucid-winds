@@ -289,7 +289,7 @@ try {
           tg + ': VIEW_ROWS ' + p.rows + ' (the formula with the 48 px floor gives ' + wantR + '), the control strip ' + p.strip.toFixed(0) + ' px (216 or more unless the rows sit at their floor), filling the screen');
         const cards = await page.evaluate(() => {
           const o = [];
-          for (const [id, cls] of [['paused'], ['clear'], ['death'], ['death', 'low'], ['sharesheet'], ['devcard']]) {
+          for (const [id, cls] of [['paused'], ['paused', 'low'], ['clear'], ['death'], ['death', 'low'], ['sharesheet'], ['devcard']]) {   /* the pause card docked at the room's bottom too (the review of Q94) */
             const el = document.getElementById(id); el.classList.add('on'); if (cls) el.classList.add(cls);
             const box = (id === 'devcard' ? document.getElementById('devtap') : el).getBoundingClientRect();
             o.push({ id: id + (cls ? '.' + cls : ''), gap: innerHeight - box.bottom });
