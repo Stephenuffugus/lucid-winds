@@ -646,3 +646,29 @@ Refused by the skeptics, kept as notes: the Deep WALL and STICKY profiles in no 
 Options: (a) as built; (b) the pocket's speck outside the cap; (c) the fleet's chrome left on the death card.
 Recommendation: (a).
 Plan assumes: (a).
+
+## Q90. The bottom bar: the installed app's window floors the bottom inset at 48 px (the builder, 31 Oct, NOTE1)
+
+Stephen's note 1, from his Pixel playtest of sb-m1-1 (2026-10-31): "the buttons are behind my bottom buttons. thats fucking dumb as always." No mockup was put to him for this note. The lead's brief ships the investigation's fix A (`/home/codespace/sb-drafts/playtest-notes-investigation.json`, lens 0) as one change, on that lens's recommended defaults, which stay his calls below.
+
+Why: every bottom control already lifted by `env(safe-area-inset-bottom)` (`--sab`), and with a 48 px inset reported everything clears the bar. Opened from the installed arcade app, the game runs in the app's standalone window, which Android draws under its 3 button bar while reporting an inset of 0: the hole Tiny World and LUMEN met on his Pixel on 19 Sep. There the rocker zones, A and B sat 10 px above the screen bottom (a 48 px bar covered 59 percent of each zone and 66 percent of each circle at 412x915, 68 and 76 at 360x780), Retake and Develop lost their bottom 14 px, and the title's build line was hidden. Which window he played in is not known yet (his first call below).
+
+As built (NOTE1):
+- `shell-navpad`, a head block right after `shell-fleet`, is the fleet's test copied from satellites/tiny-world/index.html: `?navpad`, or an Android user agent with `display-mode` standalone, fullscreen or minimal-ui, marks `<html>` `.navpad`.
+- `:root.navpad { --sab: max(env(safe-area-inset-bottom, 0px), 48px); }`. `viewport-fit=cover` stays and `env()` stays the first term: a phone that reports its bar loses nothing (max never adds the two), and a browser tab is never marked, so it loses no rows.
+- Everything bottom anchored already read `--sab` and follows with no script change: the title's and Settings' padding, the crop bar, the strip's drawn rocker, A and B (now 58 px up), and the fit's probe, so the stage gives rows to the floor on top of the 168 px strip: none at 412x915, 3 at 390x844 (40 to 37) and at 360x780 (36 to 33), 2 at 320x568 (22 to 20, the floor of 20).
+- The layout gate holds it at four sizes under a reported 48 px inset and under the mark with env 0 (every screen's controls, the cards and the sheets end 48 px or more up), the mark with env 48 to the same values (never 96), an Android app window to the mark, and a plain tab, an Android tab and a desktop app window to the old layout. Nine redwatch rows watch it (eight on the layout gate, one on the lint).
+
+Plan redline (BUILD-PLAN section 1.1, not edited here): the page has eighteen inline blocks; `shell-navpad` sits second, in `<head>`, between block 0 (`shell-fleet`) and `core-ns`. The lint's ORDER holds it there.
+
+Not covered here: the fleet's music chip, its pill and its song card (`/music-unlocks.js`) anchor themselves to their own `env(safe-area-inset-bottom)`, which reads 0 in the app window. On the title and the clear card the chip can still sit 10 px above the bottom, under the bar (seen on the title at 412x915 and 360x780 and on the clear card at 320x568; the layout gate prints it as info). The fix belongs in the shared include, for every game that sets `.navpad` (Tiny World, LUMEN and this one): its bottom spots at `max(env, 48px)` under the mark, and scored 48 px higher.
+
+His calls (the build runs on each default):
+- Which window he played in: the arcade app's icon or a Chrome tab. Default: the app, which this covers. If Chrome, a shape check for a tab drawn under the bar follows, after a one time readout on his phone (the investigation's option B).
+- The floor: 48 px (the fleet's) or 56 (`glyph-forge`'s). Default 48; the glyphs then clear the bar by 10 px.
+- Where the 48 px goes: on top of the 168 px strip (today's rule: the stage gives the rows) or inside it. Default on top.
+- A Settings row to force the lift on or off for a browser the test cannot see. Default none, until a case outside the app turns up.
+- The fleet: most games opened from the arcade app have the same hole, and the chip above. Default: a fleet sweep as its own task.
+Options: (a) as built; (b) the floor everywhere (a Chrome tab pays 3 rows for nothing at 390x844); (c) drop `viewport-fit=cover` (it does not fix the app window: Tiny World still needed the floor after dropping it).
+Recommendation: (a).
+Plan assumes: (a).
