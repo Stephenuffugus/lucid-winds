@@ -256,14 +256,20 @@ try {
     const wBlur = await word(), litAfterBlur = await page.evaluate(() => document.querySelector('#stick .pad').classList.contains('r'));
     await keep.slide(24);
     const wPaused = await word();
-    const blurred = await page.evaluate(() => window.SB_DEV.screen());
-    if (blurred === 'pause') await tap(page, '#resume');
-    const resumed = await page.evaluate(() => window.SB_DEV.screen());
+    /* Resume with the thumb still down: a liberty, ui.resume, since in headless Chrome a CDP tap on Resume while another
+       touch is held never clicks it (seen at the stick's review; whether a Pixel clicks it is his check, Q140) */
+    const pausedThen = await page.evaluate(() => window.SB_DEV.screen());
+    await page.evaluate(() => window.SB.ui.resume());
     await keep.slide(24 + 14);
     const wMove = await word();
     await keep.end();
+    /* and a real tap on Resume, no thumb down, plays on, so what follows runs in play */
+    await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+    const blurred = await page.evaluate(() => window.SB_DEV.screen());
+    if (blurred === 'pause') await tap(page, '#resume');
+    const resumed = await page.evaluate(() => window.SB_DEV.screen());
     R.say(wHold === 2 && wBlur === 0 && !litAfterBlur, 'a blur releases a held thumb and its pad stops showing right (words ' + wHold + ', ' + wBlur + ')');
-    R.say(blurred === 'pause' && resumed === 'play', 'the blur also paused the room (screen ' + blurred + ') and a real tap on Resume plays on (screen ' + resumed + ')');
+    R.say(pausedThen === 'pause' && blurred === 'pause' && resumed === 'play', 'the blur also paused the room (screen ' + pausedThen + ', again ' + blurred + ') and a real tap on Resume plays on (screen ' + resumed + ')');
     R.say(wPaused === 0, 'under the pause card the held thumb slid on reads nothing (word ' + wPaused + ')');
     R.say(wMove === 2, 'the same thumb, after Resume, slid 14 px more presses right again (word ' + wMove + ')');
     /* a palm on the stick first, then the thumb landed elsewhere and slid right: the first rules (the palm reads nothing);
