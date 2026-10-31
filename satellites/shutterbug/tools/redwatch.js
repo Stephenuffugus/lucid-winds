@@ -839,7 +839,12 @@ const MUTANTS = [
   { name: 'CHIP_LIFT_ADDS', task: 'NOTE1R', file: 'page', find: 'margin-bottom: calc(var(--sab) - env(safe-area-inset-bottom, 0px)); }', repl: 'margin-bottom: var(--sab); }',
     gates: [{ gate: 'layout', expect: "412x915 the app mark with env 48 (the floor never adds to it): on the clear card the fleet's chip ends" }] },
   { name: 'CHIPSILL_DROPPED', task: 'NOTE1R', file: 'page', find: ':root.navpad body:has(#title.on) #chipsill, :root.navpad body:has(#settings.on) #chipsill { display: block; }\n', repl: '',
-    gates: [{ gate: 'layout', expect: "390x844 the app mark (?navpad, env 0): on the title after a room the fleet's chip ends" }] }
+    gates: [{ gate: 'layout', expect: "390x844 the app mark (?navpad, env 0): at once on the title after a room the fleet's chip ends" }] },
+  /* the at once reseat: without it the clear card's seat stays put on the title for the include's 1.5 s (either size, so
+     an include timer that lands in the gate's measure window at one of them cannot turn the row) */
+  { name: 'CHIP_SEAT_LATE', task: 'NOTE1R', file: 'page', find: "    if (name === 'title' || name === 'settings') ui.seatChip();\n", repl: '',
+    gates: [{ gate: 'layout', expect: ["390x844 the app mark (?navpad, env 0): at once on the title after a room the fleet's chip ends",
+      "360x780 the app mark (?navpad, env 0): at once on the title after a room the fleet's chip ends"] }] }
 ];
 
 /* ---------------------------------------------------------------- run */

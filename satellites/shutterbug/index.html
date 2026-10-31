@@ -4227,7 +4227,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the fleet's chip, pill, card and toast hide while a room runs (Q48's addendum) and on the crop screen, where the
        chip sat over the photo a drag starts on (t15-crop) */
     document.body.classList.toggle('playing', name === 'play' || name === 'crop');
+    if (name === 'title' || name === 'settings') ui.seatChip();
     if (name === 'play') SB.render.fit();
+  };
+  /* under the mark the fleet's chip takes its seat on the title and Settings at once, not at the include's own reseat
+     1.5 s after the tap: lifted over the bar, the seat it had on the last screen can lie over this one's controls (the
+     clear card's seat in the strip's reserved box sat on Settings on the title after a room in a Pixel 9 app window:
+     Q91). In a room the include reseats the hidden chip on its own timers, so it reaches the clear card in that seat.
+     SWSMusic.reseat is the include's public reseat on demand; it never moves a chip the player has dragged */
+  ui.seatChip = function () {
+    if (!document.documentElement.classList.contains('navpad') || !window.SWSMusic || typeof window.SWSMusic.reseat !== 'function') return;
+    try { window.SWSMusic.reseat(); } catch (e) { /* the include's own business; its timers reseat it anyway */ }
   };
 
   ui.fillCopy = function (root) {

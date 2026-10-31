@@ -28,13 +28,14 @@
  *     are not, and keep the env 0 layout; on the clear card the fleet's chip in its bottom seat ends 10 px over the
  *     inset or the floor, as the strip's glyphs do (never 10 over both);
  *   - under the mark (the reviews of NOTE1, QUESTIONS Q91): the title and Settings as they open, and the title after a
- *     room, draw no control in the bottom 48 px (they end above the bar); the fleet's chip on the title, on Settings, on
- *     the clear card and on the title after a room ends 48 px or more up, on top and clear of the screen's controls; a
+ *     room, draw no control in the bottom 48 px (they end above the bar); the fleet's chip, as each screen shows (the
+ *     page reseats it at once), on the title, on Settings and on the title after a room ends 48 px or more up, on top
+ *     and clear of the screen's controls, and on the clear card it takes its bottom seat in the reserved box 58 px up; a
  *     song card waiting from another game opens with Play it now and Later 48 px or more up, and its pill too.
  * Watched red by CANVAS_100PCT, A_44PX, RESERVE_FILLED, MIRROR_OVERLAPS_CANVAS, and for the bottom bar NAVPAD_MARK_REMOVED,
  * NAVPAD_FLOOR_DROPPED, STRIP_IGNORES_SAB, NAVPAD_BLANKET, NAVPAD_FLOOR_ADDS, NAVPAD_ANY_ANDROID, NAVPAD_ANY_WINDOW,
  * FIT_IGNORES_SAB, NAVPAD_ENV_DROPPED, NAVPAD_NO_FULLSCREEN, NAVPAD_NO_MINIMAL_UI, SCROLLERS_PAD_PAST_BAR, CHIP_LIFT_DROPPED,
- * PILL_LIFT_DROPPED, CARD_LIFT_DROPPED, CHIP_LIFT_ADDS and CHIPSILL_DROPPED. */
+ * PILL_LIFT_DROPPED, CARD_LIFT_DROPPED, CHIP_LIFT_ADDS, CHIPSILL_DROPPED and CHIP_SEAT_LATE. */
 import { join } from 'node:path';
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME } from './harness.mjs';
 
@@ -89,10 +90,10 @@ const installProbes = page => page.evaluate(() => {
     return { gap: innerHeight - r.bottom, box: [r.left, r.top, r.width, r.height].map(v => v.toFixed(0)).join(','), bottomSeat: /bottom:/.test(seat), onTop: !!t && (t === c || c.contains(t)), covers };
   };
 });
-/* the chip once the include has placed it, reseated by the include's own probe hook (what its timer does 1.5 s after
-   the tap that changed the screen) */
-const chipNow = page => page.waitForFunction(() => !!document.getElementById('sws-music-chip'), { timeout: 8000 }).then(() => true).catch(() => false)
-  .then(ok => ok ? page.evaluate(() => { if (window.SWSMusic && window.SWSMusic.reseat) window.SWSMusic.reseat(); return window.__chip(); }) : null);
+/* the chip once the include has placed it: as it stands at once (under the mark the page reseats it as a screen
+   shows, Q91), or reseated first by the include's own probe hook (what its timers do 1.5 s after a tap) */
+const chipNow = (page, reseat = false) => page.waitForFunction(() => !!document.getElementById('sws-music-chip'), { timeout: 8000 }).then(() => true).catch(() => false)
+  .then(ok => ok ? page.evaluate(r => { if (r && window.SWSMusic && window.SWSMusic.reseat) window.SWSMusic.reseat(); return window.__chip(); }, reseat) : null);
 const chipText = c => c ? 'ends ' + c.gap.toFixed(0) + ' px above the bottom (' + c.box + (c.bottomSeat ? ', a bottom seat' : '') + ')' + (c.onTop ? '' : ', NOT on top') + (c.covers.length ? ', over ' + c.covers.join(', ') : '') : 'is not shown';
 const chipClear = (c, bar) => !!c && c.gap >= bar - 0.5 && c.onTop && c.covers.length === 0;
 
@@ -285,18 +286,19 @@ try {
         });
         R.say(cards.every(c => c.gap >= BAR - 0.5), tg + ': every card and sheet ends 48 px or more above the bottom (lowest: ' + lowText(cards) + ')');
         /* under the mark, the room cleared (the hero set down in its exit, SB_DEV.goto): the chip on the clear card, where
-           its bottom seat is the strip's reserved box, then by a real touch on Title the title after a room, which shows
-           the code row and a recent room and runs to the fold on a short phone (Q91) */
+           its bottom seat is the strip's reserved box (reseated first, as the include's timers do in a room: this flow
+           clears in about a second), then by a real touch on Title, at once, the title after a room, which shows the code
+           row and a recent room and runs to the fold on a short phone (Q91) */
         if (marked) {
           await page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(3); });
           const cleared = await page.evaluate(() => window.SB_DEV.screen()) === 'clear';
-          const chipC = cleared ? await chipNow(page) : null;
-          R.say(cleared && chipClear(chipC, BAR) && (!chipC.bottomSeat || Math.abs(chipC.gap - (GLYPH_LIFT + BAR)) < 0.5),
-            tg + ': on the clear card the fleet\'s chip ' + chipText(chipC) + ', 48 or more (58 in a bottom seat), on top and clear of the card');
+          const chipC = cleared ? await chipNow(page, true) : null;
+          R.say(cleared && chipClear(chipC, BAR) && chipC.bottomSeat && Math.abs(chipC.gap - (GLYPH_LIFT + BAR)) < 0.5,
+            tg + ': on the clear card the fleet\'s chip ' + chipText(chipC) + ' (want its bottom seat, the reserved box, 58 px up), on top and clear of the card');
           if (cleared) await tap(page, '#cleartitle');
           await bandSay(page, tg, 'the title after a room');
           const chipA = await chipNow(page);
-          R.say(chipClear(chipA, BAR), tg + ': on the title after a room the fleet\'s chip ' + chipText(chipA) + ', 48 or more, on top and clear of the title\'s controls');
+          R.say(chipClear(chipA, BAR), tg + ': at once on the title after a room the fleet\'s chip ' + chipText(chipA) + ', 48 or more, on top and clear of the title\'s controls');
         }
         R.say(s.errors.length === 0, tg + ': zero page errors' + errs(s));
         await s.close();
@@ -344,7 +346,7 @@ try {
         R.say(padsAre(t.pads, c.lift) && g.glyphs.every(v => Math.abs(v - want) < 0.5) && g.rows === wantR,
           tg + ': every rule that reads --sab holds its ' + c.lift + ' px value (' + padsText(t.pads) + '), the drawn controls end ' + g.glyphs.map(v => v.toFixed(0)).join(', ') + ' px up (want ' + want + '), VIEW_ROWS ' + g.rows + ' (want ' + wantR + ')');
         await page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(3); });
-        const chip = await page.evaluate(() => window.SB_DEV.screen()) === 'clear' ? await chipNow(page) : null;
+        const chip = await page.evaluate(() => window.SB_DEV.screen()) === 'clear' ? await chipNow(page, true) : null;
         R.say(!!chip && chip.bottomSeat && Math.abs(chip.gap - want) < 0.5, tg + ': on the clear card the fleet\'s chip ' + chipText(chip) + ' (want a bottom seat ' + want + ' px up, 10 over the bar as the glyphs)');
         R.say(s.errors.length === 0, tg + ': zero page errors' + errs(s));
         await s.close();
