@@ -473,6 +473,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     OTSU_MIN: 70, OTSU_MAX: 140, SMOOTH_PASSES: 2, PLATFORM_RUN_MIN: 3, EDGE_DROP_L: 60,
     LANDMARK_MIN: 8, LANDMARK_COUNT: 3, SPAWN_ROW_FROM_BOTTOM: 2, EXIT_ROWS: 4, CEILING_LIGHT_L: 200, EXIT_LIGHT_SLACK: 2 /* Q11 */,
     REPAIR_REACH_FRAC: 0.4, TAB_W: 2, TAB_MAX: 12, TAB_STAIR_ACROSS: 3, TAB_STAIR_UP: 3, REPAIR_PASSES: 4, REPAIR_MAX_CHANGE: 0.15,
+    /* the floor and ceiling fallbacks (Stephen's ruling 31 Oct, "Floor becomes the ledge", Q180), only where the room
+       would be needsCrop: the floor band's top needs an open over solid run of FLOOR_RUN_MIN; a ceiling band row is at
+       least CEILING_BAND_FRAC solid; a fallback room climbs at least FALLBACK_MIN_CLIMB rows; a refusal with at least
+       DARK_SOLID_FRAC of rows 1..h-2 solid is named dark */
+    FLOOR_RUN_MIN: 3, CEILING_BAND_FRAC: 0.75, FALLBACK_MIN_CLIMB: 24, DARK_SOLID_FRAC: 0.75,
     BIOME_SAT: 0.35, BIOME_MIN_FRAC: 0.10, FROST_MEAN_L: 170 /* Q4 */, PIPELINE_BUDGET_MS: 50,
     // 6.8 reach cone caps (the derived tables are clipped to these)
     JUMP_UP: 4, JUMP_ACROSS: 5, WALL_UP: 3, WALL_ACROSS: 4, STICKY_UP: 4, DEEP_EXTRA_UP: 1,
@@ -1299,8 +1304,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (var r = 0; r < runs.length && r < T.CAP_STICKY; r++) for (y = runs[r][2]; y <= runs[r][3]; y++) level.sticky[y * w + runs[r][1]] = 1;
   }
 
-  function build(rec, opts) {
-    opts = opts || {};
+  function build(rec, opts) { return buildAt(rec, opts || {}, 0); }
+  /* et: the exit window's top row. 0 for every room; the ceiling fallback builds once more with it under the band */
+  function buildAt(rec, opts, et) {
     var T = SB.TUNING, P = SB.palette, w = rec.w, h = rec.h, pal = rec.pal, i, x, y;
     if (rec.mode === 2) {                     /* Double Exposure: pal2 stacked above pal, a 24 x 96 climb (Q19) */
       var both = new Uint8Array(w * h * 2);
@@ -1351,7 +1357,22 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (e - x + 1 > bestLen) { bestLen = e - x + 1; bestA = x; }
       x = e + 1;
     }
-    if (bestA < 0) return { needsCrop: true, why: 'unreachable', detail: 'no open cell on the standing row above the floor' };
+    /* the floor band (Stephen's ruling 31 Oct, Q180), only where the standing row is solid wall to wall: the standing
+       row rises to the lowest row holding an open over solid run of at least FLOOR_RUN_MIN, the top of the photo's floor
+       or furniture band; the spawn is the centre of that row's widest such run, ties to the leftmost */
+    var fell = 0;
+    for (y = h - T.SPAWN_ROW_FROM_BOTTOM - 1; bestA < 0 && y >= 1; y--) {
+      var rowA = -1, rowLen = 0;
+      x = 0;
+      while (x < w) {
+        if (solid[y * w + x] || !solid[(y + 1) * w + x]) { x++; continue; }
+        var e2 = x; while (e2 + 1 < w && !solid[y * w + e2 + 1] && solid[(y + 1) * w + e2 + 1]) e2++;
+        if (e2 - x + 1 > rowLen) { rowLen = e2 - x + 1; rowA = x; }
+        x = e2 + 1;
+      }
+      if (rowLen >= T.FLOOR_RUN_MIN) { sy = y; bestA = rowA; bestLen = rowLen; fell = 1; }
+    }
+    if (bestA < 0) return refusal(solid, plat, w, h, h, et, -1, 'unreachable', 'no open cell on the standing row above the floor, and no open over solid run of ' + T.FLOOR_RUN_MIN + ' above it');
     var spawn = sy * w + bestA + ((bestLen - 1) >> 1);
 
     /* the ceiling light: the brightest 4 connected cluster of cells over CEILING_LIGHT_L in the top EXIT_ROWS rows,
@@ -1359,7 +1380,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        sum let a big white patch beat a brighter lamp); the exit candidate (T0.11a chooses by reach distance) is its
        lowest standable cell */
     var top = new Uint8Array(n);
-    for (y = 0; y < T.EXIT_ROWS && y < h; y++) for (x = 0; x < w; x++) if (!solid[y * w + x] && L[y * w + x] > T.CEILING_LIGHT_L) top[y * w + x] = 1;
+    for (y = et; y < et + T.EXIT_ROWS && y < h; y++) for (x = 0; x < w; x++) if (!solid[y * w + x] && L[y * w + x] > T.CEILING_LIGHT_L) top[y * w + x] = 1;
     var lights = components(top, w, h), light = null, bestPeak = -1;
     for (i = 0; i < lights.length; i++) {          /* components() lists them larger first, then lowest first cell */
       var peak = 0; for (var q = 0; q < lights[i].length; q++) if (L[lights[i][q]] > peak) peak = L[lights[i][q]];
@@ -1372,7 +1393,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       negative: negative, L: L, solid: solid, plat: plat, tab: z(), slick: z(), sticky: z(), trap: z(),
       otsuT: otsuT, landmarks: landmarks, spawn: spawn, exit: -1, beacon: { idx: -1, cells: new Int32Array(0) },
       features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null },
-      repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false
+      repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false, exitTop: et
     };
     level.light = light ? Int32Array.from(light) : new Int32Array(0);
     /* the biome's surfaces (T1.1), before the reach graph reads them. The first ever free play room runs without its
@@ -1396,8 +1417,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var bare = landmarks.length === 0, anyPlat = false;
     for (i = 0; i < n && !anyPlat; i++) if (plat[i]) anyPlat = true;
     var fixed = repair(level, light, landmarks);
-    if (fixed.needsCrop) return fixed;
+    var lostF = fell ? h - T.SPAWN_ROW_FROM_BOTTOM - sy : 0;
+    if (fixed.needsCrop) {
+      /* the ceiling band (Stephen's ruling 31 Oct, Q180), only where repair fails: when the rows from row 1 down are
+         each at least CEILING_BAND_FRAC solid, build once more with the exit window moved under that band */
+      var cb = ceilingEnd(solid, w, h);
+      if (et === 0 && cb > 1) return buildAt(rec, opts, cb);
+      return refusal(solid, plat, w, h, lostF, et, fell ? sy + 1 : -1, fixed.why, fixed.detail);
+    }
     var exit = fixed.exit;
+    /* a fallback room climbs at least FALLBACK_MIN_CLIMB rows from its spawn to its exit, else an honest needsCrop */
+    var climb = Math.floor(spawn / w) - Math.floor(exit / w);
+    if ((fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB) return refusal(solid, plat, w, h, lostF, et, fell ? sy + 1 : -1, 'unreachable', 'the climb left is ' + climb + ' rows, under ' + T.FALLBACK_MIN_CLIMB + ' (the spawn on row ' + Math.floor(spawn / w) + ', the exit on row ' + Math.floor(exit / w) + ')');
     /* the default spread (DESIGN 6.11): a room with no landmark and no platform got its climb from the stair's two
        legs; a speck slot and a fodder slot are reserved as data for M1 */
     if (bare && !anyPlat) level.repair.spread = spreadSlots(level, fixed.d);
@@ -1417,8 +1448,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
      reach distance from spawn, the light winning when its own farthest reachable cell is within EXIT_LIGHT_SLACK (Q11);
      every tie to the lowest index; -1 when the top rows hold no reached standable cell */
   function exitByReach(level, light, d) {
-    var T = SB.TUNING, w = level.w, exit = -1, maxD = -1, i, q;
-    for (i = 0; i < T.EXIT_ROWS * w; i++) if (standableIn(level, i) && d[i] > maxD) { maxD = d[i]; exit = i; }
+    var T = SB.TUNING, w = level.w, exit = -1, maxD = -1, i, q, et = level.exitTop || 0;
+    for (i = et * w; i < (et + T.EXIT_ROWS) * w; i++) if (standableIn(level, i) && d[i] > maxD) { maxD = d[i]; exit = i; }
     if (exit >= 0 && light) {
       var lit = Array.from(light).sort(function (a, b) { return a - b; }), lc = -1;
       for (q = 0; q < lit.length; q++) if (standableIn(level, lit[q]) && d[lit[q]] >= 0 && (lc < 0 || d[lit[q]] > d[lc])) lc = lit[q];
@@ -1429,14 +1460,29 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* a room whose top rows nothing reaches (before repair): the light's lowest standable row at its lowest index, else
      the brightest standable cell of the first top row that has one (ties to the lowest index) */
   function lightExit(level, light) {
-    var T = SB.TUNING, w = level.w, exit = -1, q, x, y;
+    var T = SB.TUNING, w = level.w, exit = -1, q, x, y, et = level.exitTop || 0;
     if (light) for (q = 0; q < light.length; q++) if (standableIn(level, light[q]) && (exit < 0 || Math.floor(light[q] / w) > Math.floor(exit / w) || (Math.floor(light[q] / w) === Math.floor(exit / w) && light[q] < exit))) exit = light[q];
-    for (y = 0; y < T.EXIT_ROWS && exit < 0; y++) {
+    for (y = et; y < et + T.EXIT_ROWS && exit < 0; y++) {
       var bl = -1;
       for (x = 0; x < w; x++) { var c = y * w + x; if (standableIn(level, c) && (bl < 0 || level.L[c] > level.L[bl])) bl = c; }
       exit = bl;
     }
     return exit;
+  }
+  /* the ceiling band: the first row from row 1 down that is under CEILING_BAND_FRAC solid (1 when row 1 is) */
+  function ceilingEnd(solid, w, h) {
+    var T = SB.TUNING, y, x, n;
+    for (y = 1; y < h - 1; y++) { n = 0; for (x = 0; x < w; x++) n += solid[y * w + x]; if (n < T.CEILING_BAND_FRAC * w) return y; }
+    return h - 1;
+  }
+  /* an honest needsCrop with its cause for the crop screen's copy (Q180): dark when DARK_SOLID_FRAC of rows 1..h-2 are
+     solid, else the band that took more of the climb (lostF rows to the floor band, lostC to the ceiling band; a tie to
+     the floor), else none; and the grid and the bands, so the crop overlay can mark them instead of going blank */
+  function refusal(solid, plat, w, h, lostF, lostC, floorTop, why, detail) {
+    var T = SB.TUNING, n = 0, i, cb = ceilingEnd(solid, w, h);
+    for (i = w; i < (h - 1) * w; i++) n += solid[i];
+    var cause = n >= T.DARK_SOLID_FRAC * (h - 2) * w ? 'dark' : lostF || lostC ? (lostC > lostF ? 'ceiling' : 'floor') : null;
+    return { needsCrop: true, why: why, detail: detail, cause: cause, band: { floor: floorTop, ceiling: cb > 1 ? cb : -1 }, grid: { w: w, h: h, solid: solid, plat: plat } };
   }
   function standableIn(level, c) { var w = level.w; return c >= 0 && c + w < w * level.h && !level.solid[c] && (level.solid[c + w] === 1 || level.plat[c + w] === 1); }
 
@@ -1459,7 +1505,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return near;
   }
   function repair(level, light, landmarks) {
-    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k, pass, tabs = 0;
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k, pass, tabs = 0, et = level.exitTop || 0;
     var near = landmarkNear(level, landmarks);
     for (pass = 0; ; pass++) {
       var g = SB.reach.graph(level), d = SB.reach.distances(g, level.spawn), frac = SB.reach.reachableFrac(g, d);
@@ -1479,8 +1525,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (exit >= 0 && frac >= T.REPAIR_REACH_FRAC) { tx = exit % w; ty = (exit - tx) / w; }
       else if (exit < 0) {
         if (light) for (k = 0; k < light.length; k++) if (standableIn(level, light[k]) && d[light[k]] < 0 && (best < 0 || light[k] < best)) best = light[k];
-        for (i = 0; i < T.EXIT_ROWS * w && best < 0; i++) if (standableIn(level, i) && d[i] < 0) best = i;
-        if (best >= 0) { tx = best % w; ty = (best - tx) / w; } else ty = T.EXIT_ROWS - 1;
+        for (i = et * w; i < (et + T.EXIT_ROWS) * w && best < 0; i++) if (standableIn(level, i) && d[i] < 0) best = i;
+        if (best >= 0) { tx = best % w; ty = (best - tx) / w; } else ty = et + T.EXIT_ROWS - 1;
       } else {
         var mass = largestUnreached(level, d);
         tx = mass % w; ty = (mass - tx) / w;
