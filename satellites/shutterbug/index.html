@@ -122,10 +122,10 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #pause i::before, #pause i::after { content: ''; width: 4px; height: 12px; background: rgba(11,10,15,0.55); }
 #roomname { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* six hearts still fit at 320 wide */
 #hearts { display: flex; gap: 5px; flex: none; margin-left: 8px; }
-/* a pixel heart (9 by 8), Ink with a Brick heart inset in it; a lost heart keeps its outline and empties to Paper */
-#hearts i { width: 18px; height: 16px; display: block; position: relative; background: var(--ink); clip-path: polygon(11.1% 0%, 33.3% 0%, 33.3% 12.5%, 44.4% 12.5%, 44.4% 25%, 55.6% 25%, 55.6% 12.5%, 66.7% 12.5%, 66.7% 0%, 88.9% 0%, 88.9% 12.5%, 100% 12.5%, 100% 50%, 88.9% 50%, 88.9% 62.5%, 77.8% 62.5%, 77.8% 75%, 66.7% 75%, 66.7% 87.5%, 55.6% 87.5%, 55.6% 100%, 44.4% 100%, 44.4% 87.5%, 33.3% 87.5%, 33.3% 75%, 22.2% 75%, 22.2% 62.5%, 11.1% 62.5%, 11.1% 50%, 0% 50%, 0% 12.5%, 11.1% 12.5%); }
-#hearts i::after { content: ''; position: absolute; left: 3px; top: 3px; right: 3px; bottom: 3px; background: var(--brick); clip-path: polygon(11.1% 0%, 33.3% 0%, 33.3% 12.5%, 44.4% 12.5%, 44.4% 25%, 55.6% 25%, 55.6% 12.5%, 66.7% 12.5%, 66.7% 0%, 88.9% 0%, 88.9% 12.5%, 100% 12.5%, 100% 50%, 88.9% 50%, 88.9% 62.5%, 77.8% 62.5%, 77.8% 75%, 66.7% 75%, 66.7% 87.5%, 55.6% 87.5%, 55.6% 100%, 44.4% 100%, 44.4% 87.5%, 33.3% 87.5%, 33.3% 75%, 22.2% 75%, 22.2% 62.5%, 11.1% 62.5%, 11.1% 50%, 0% 50%, 0% 12.5%, 11.1% 12.5%); }
-#hearts i.lost::after { background: var(--paper); }
+/* a heart is Astra's hud_heart (9 by 8, Q160) at 2x, nearest neighbour: full, or the empty frame for a lost one; the
+   images are the sprite's own pixels, cut from the atlas at boot (R.heartURL) */
+#hearts i { width: 18px; height: 16px; display: block; background: var(--heart-full) 0 0 / 18px 16px no-repeat; image-rendering: pixelated; }
+#hearts i.lost { background-image: var(--heart-empty); }
 #stage { flex: 0 0 auto; display: flex; justify-content: center; position: relative; touch-action: none; }
 #view { display: block; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; background: var(--ink); }
 #strip { flex: 1 1 auto; min-height: 168px; position: relative; padding-bottom: var(--sab); touch-action: none; }
@@ -3482,83 +3482,89 @@ body.sb-modal .lwfb-fab { display: none !important; }
      a..f the palette index); the fences are what the lint and H-spr-1 read. */
   /* SPRITES BEGIN */
   var SPRITES = {
-    /* the Shutterbug (DESIGN 2: a thumb sized clay bug), facing right: Sun clay with Walnut flecks, an Ink outline and
-       an Ink feet row, a Glare eye; the atlas mirrors it for the left and paints a Glare copy for the dash's i frames */
+    /* the Shutterbug, Astra's round rear hero (31 Oct, Stephen's APPROVED of checkpoint 07; Q160), facing right: a Sun
+       body with an oversized rear and a compact head, an Ink outline and an Ink feet row, a Glare eye; the twelve frame
+       names are the page's (idle at 2 fps and the run at 12, as Astra's manifest). The atlas mirrors it for the left and
+       paints a Glare copy for the dash's i frames */
     hero: { w: 12, h: 16, frames: {
-      idle0: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../.00.00.00...',
-      idle1: '.......0..0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../.00.00.00...',
-      run0: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../.0..0..0....',
-      run1: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../...0..0..0../...0..0..0..',
-      run2: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../...0..0..0..',
-      run3: '......0...0./.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../...0..0..0../..0..0..0...',
-      jump: '....0...0.../.....0.0..../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0..0..0.../..0..0..0...',
-      fall: '.......0.0../.......0.0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../.0...0...0../0...0...0...',
-      cling: '.....0...0../......0.0.../..00000000../.0eeeeeeee0./0eeeeee66e00/0eeeeee60e0./0eeeeeeeee00/0e7eeeeeee0./0eeee7eeee00/0e7eeeeeee0./0eeeeeeeee00/0eeeeeeeee0./.0eeeeeeee0./..00000000../...0..0...../...00.00....',
-      dive: '..0..0..0.../..0..0..0.../...00000000./..0eeeeeeee0/.0eeeeeeeee0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeee66e0/0eeeeeee60e0/.0eeeeeeee0./..00000000../....0..0..../...0....0...',
-      land: '............/......0..0../...00000000./..0eeeeeeee0/.0eeeeee66e0/0eeeeeee60e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../.0..0..0..0./00.00.00.00.',
-      dead: '............/........000./...00000000./..0eeeeeeee0/.0eeeeeeeee0/0eeeeee000e0/0eeeeeeeeee0/0e7eeeeeeee0/0eeee7eeeee0/0e7eeeeeeee0/0eeeeeeeeee0/0eeeeeeeeee0/.0eeeeeeee0./..00000000../..0.0..0.0../.0...0...0..'
+      idle0: '.....0....0./......0..0../.......0000./......0ee660/......0ee600/..00000eeee0/.0eeeee0000./0eeeeeee0.../0eeeeeeee00./0eeeeeeee0.0/0eeeeeeee0../.0eeeeee0.../..0eeee0..../...0000...../...00.00..../..000.000...',
+      idle1: '......0...0./......0..0../.......0000./......0ee660/......0ee600/..00000eeee0/.0eeeee0000./0eeeeeee0.../0eeeeeeee00./0eeeeeeee0.0/0eeeeeeee0../.0eeeeee0.../..0eeee0..../...0000...../...00.00..../..000.000...',
+      run0: '.....0....0./......0..0../.......0000./......0ee660/......0ee600/..00000eeee0/.0eeeee0000./0eeeeeee0000/0eeeeeeee0../0eeeeeeee0../.0eeeeee0.../..0eeee0..../...0000...../..00..00..../.00....00.../000.....000.',
+      run1: '............/.....0....0./......0..0../.......0000./......0ee660/......0ee600/...0000eeee0/.00eeee0000./0eeeeeee0000/0eeeeeeee0../0eeeeeeee0../0eeeeeeee0../.0eeeeee0.../..000000..../....00.00.../...000.000..',
+      run2: '......0...0./.......0.0../.......0000./......0ee660/...0000ee600/.00eeeeeeee0/0eeeeee0000./0eeeeeee0.../0eeeeeee0.../.0eeeeee000./..0eeee0...0/...0000...../....00.0..../...00..00.../..00....00../.000.....000',
+      run3: '............/.....0....0./......0..0../.......0000./......0ee660/......0ee600/..00000eeee0/.0eeeee0000./0eeeeeee0.../0eeeeeee0.../0eeeeeee000./.0eeeeee0..0/..0eeee0..../...0000...../...00.00..../..000.000...',
+      jump: '.....0...0../......0.0.../......00000./.....0eee660/.....0eee600/..0000eeeee0/.0eeee00000./0eeeeeee0000/0eeeeeee0..0/0eeeeeee0.../.0eeeeee0.../..0eeee0..../...0000...../....0.0...../....0.00..../...00.000...',
+      fall: '.....0....0./.....0....0./......00000./.....0eee660/..0000eee600/.0eeeeeeeee0/0eeeeee0000./0eeeeeee0000/0eeeeeee0..0/.0eeeeee0.../..0eeee0..../...0000...../...00.00..../..00...00.../..00...00.../..000..000..',
+      cling: '......0...0./.......0.0../.......0000./......0ee660/......0ee600/..00000eeee0/.0eeeee00000/0eeeeeee0..0/0eeeeeee000./0eeeeeee0.../.0eeeeee0000/..0eeee0...0/...0000..00./.....00.00../.....0..0.../....000.000.',
+      dive: '..00...00.../...0...0..../...00000..../..0eeeee0.../.0eeeeeee0../0eeeeeeeee0./0eeeeeeeee0./.0eeeeeee0../..0eeeee0.../...00000..../.....0eeee0./.....0ee660./.....0ee600./......0eee0./.....0.000../....00...00.',
+      land: '............/............/............/............/.....0....0./......0..0../.......0000./......0ee660/..00000ee600/.0eeeeeeeee0/0eeeeeee000./0eeeeeeeee0./.0eeeeeeee0./..00000000../..00....00../.000....000.',
+      dead: '............/............/............/............/............/............/............/...0..0...../...00.00..../..000000..../.0eeeeee0.../0eeeeeeee0../0eeeeeeee00./0eeeeeeee0e0/.0eeeeee0e00/..000000000.'
     } },
-    /* the Attic's moth (section 7.3: Ash with an Ink outline, a Glare highlight on each forewing, the Pewter body), two
-       flutter frames */
+    /* the Attic's moth (Astra, section 7.3): layered Ash forewings with Glare highlights, a Pewter body, an Ink outline
+       and antennae, two flutter frames */
     moth: { w: 16, h: 16, frames: {
-      a: '................/.....0....0...../......0..0....../.0000.0330.0000./0444400330044440/0464440330444640/0444440330444440/.04444033044440./..000003300000../...0440330440.../...0440330440.../....00033000..../.......00......./................/................/................',
-      b: '................/................/.....0....0...../......0..0....../......0330....../..000.0330.000../.04440033004440./0446440330446440/0444440330444440/.04444033044440./..000003300000../...0440330440.../....00033000..../.......00......./................/................'
+      a: '................/.....0....0...../......0..0....../.000..0000..000./0444003333004440/0464403333044640/0464403333044640/0444403333044440/.04440333304440./..000033330000../..044033330440../...0403333040.../....00333300..../......0000....../................/................',
+      b: '................/................/.....0....0...../......0..0....../......0000....../..00.033330.00../.04400333300440./.04640333304640./.04640333304640./..044033330440../...0003333000.../...0403333040.../....00333300..../......0000....../................/................'
     } },
-    /* T1.4's four (section 7.3): the Frost icicle, Ash with Glare tips under an Ink rim; the Deep jelly, Teal with a
-       Magenta core; the Overgrowth thorn crawler, Moss with Brick thorns and Glare tips; the Ember spark, Brick with a
-       Glare core. Two frames each at 12 fps; an elite is the same art drawn ELITE_SIZE_CELLS a side */
+    /* T1.4's four (Astra, section 7.3): the Frost icicle, an Ash shard rooted in its top row with a Glare glint; the
+       Deep jelly, a Teal bell with a Magenta core and Ink tentacles; the Overgrowth crawler, Moss with Brick thorns and
+       Glare tips, facing right; the Ember spark, a Brick flame with a Glare core. Two frames each at 12 fps. Each elite
+       is its own 24x24 art (the <kind>_elite keys below, Q160) */
     icicle: { w: 16, h: 16, frames: {
-      a: '..000000000000../..044464444440../...0446444440.../...0446444440.../....04644440..../....04644440..../.....046440...../.....046440...../......0640....../......0640....../.......06......./.......00......./................/................/................/................',
-      b: '..000000000000../..044444464440../...0444446440.../...0444446440.../....04446440..../....04446440..../.....044640...../.....044640...../......0460....../......0460....../.......06......./.......00......./................/................/................/................'
+      a: '..000000000000../..044444444440../...0464444640.../...0464444640.../....04444440..../....04444440..../.....044440...../.....064460...../......0440....../......0440....../......0440....../.......00......./.......66......./................/................/................',
+      b: '..000000000000../..044444444440../...0444444440.../...0444444440.../....04644640..../....04644640..../.....044440...../.....064460...../......0440....../......0440....../......0440....../.......00......./.......66......./................/................/................'
     } },
     jelly: { w: 16, h: 16, frames: {
-      a: '................/.....000000...../...00cccccc00.../..0cc6ccccccc0../..0c6ccaacccc0../.0ccccaaaacccc0./.0cccccaaccccc0./.0cccccccccccc0./..000000000000../...0c.0c.0c.0.../...0c.0c.0c.0.../....0..0..0.0.../...0c.0c.0c...../...0..0..0....../................/................',
-      b: '................/................/.....000000...../...00cccccc00.../..0cc6ccccccc0../.0cc6ccaacccc0../.0ccccaaaaccccc0/.0cccccaaccccc0./..000000000000../..0c.0c.0c.0c.../...0..0..0..0.../...0c.0c.0c.0c../....0..0..0..0../................/................/................'
+      a: '................/.....000000...../...00cccccc00.../..0cccccccccc0../..0c6cccccc6c0../.0ccccaaaacccc0./.0cccaaaaaaccc0./.0ccccaaaacccc0./..0cccccccccc0../...0000000000.../...0..0..0..0.../..0...0..0...0../..0....00....0../...0...00...0.../................/................',
+      b: '................/................/.....000000...../...00cccccc00.../..0cccccccccc0../.0cc6cccccc6cc0./.0ccccaaaacccc0./.0cccaaaaaaccc0./.0ccccaaaacccc0./..000000000000../...0..0..0..0.../...0..0..0..0.../....0.0..0.0..../....0..00..0..../................/................'
     } },
     crawler: { w: 16, h: 16, frames: {
-      a: '................/................/................/................/....6..6..6...../....9..9..9...../...0900900900.../..0dd9dd9dd9d0../.0ddddddddddd60./.0dddddddddd600./.0ddddddddddddd0/..0000000000000./..0.0..0..0..0../.0..0..0..0..0../................/................',
-      b: '................/................/................/................/.....6..6..6..../.....9..9..9..../...00900900900../..0d9dd9dd9dd0../.0ddddddddddd60./.0dddddddddd600./.0ddddddddddddd0/..0000000000000./...0..0..0..0.../...0..0..0..0.../................/................'
+      a: '................/................/...6...6...6..../..090.090.090.../..090.090.090.../.0999099909990../.0999099909990../..0dddddddddd0../.0dddddddddd660./0ddddddddddd600./0ddddddddddddd0./.0dddddddddddd0./..0dddddddddd0../...0000000000.../...00..00..00.../..000.000.000...',
+      b: '................/................/................/....6...6...6.../...090.090.090../...090.090.090../..0999099909990./..0dddddddddd0../.0dddddddddd660./0ddddddddddd600./0ddddddddddddd0./.0dddddddddddd0./..0dddddddddd0../...0000000000.../....00..00..00../...000.000.000..'
     } },
     spark: { w: 16, h: 16, frames: {
-      a: '.......0......../......090......./...0.09990.0..../..09009990090.../...090969090..../...009969900..../..09996669990.../...009969900..../...090969090..../..09009990090.../...0.09990.0..../......090......./.......0......../................/................/................',
-      b: '................/.......0......../.....00900....../....0909090...../....0096900...../..00996669900.../.0909666669090../..00996669900.../....0096900...../....0909090...../.....00900....../.......0......../................/................/................/................'
+      a: '.......00......./......0990....../...0..0990..0.../..090.0990.090../..090099990090../...0999999990.../..099999999990../.09996699669990./.09966666666990./0999666666669990/0999666666669990/0999966996699990/.09999999999990./..099999999990../...0999999990.../....00000000....',
+      b: '................/.......00......./......0990....../.....099990...../.....099990...../...0.099990.0.../..090999999090../.09999999999990./.09996699669990./0999666666669990/0999666666669990/0999966996699990/.09999999999990./..099999999990../...0999999990.../....00000000....'
     } },
-    /* T1.4b's traps (section 7.3): a spike, Brick with a Magenta tip over Ink, sunk (a) and standing (b); a crusher,
-       Slate with a Brick stripe and Glare teeth, up (a), mid stroke (b) and down (c) */
+    /* T1.4b's traps (Astra, section 7.3): a spike, Brick blades with Magenta tips over Ink, sunk (a, its sockets and
+       tips in sight) and standing (b); a crusher, Slate with a Brick stripe and Glare teeth, up (a), mid stroke (b) and
+       down (c) */
     spike: { w: 16, h: 16, frames: {
-      a: '................/................/................/................/................/................/................/................/................/................/................/................/..9...9...9...9./.090.090.090.090/0000000000000000/0000000000000000',
-      b: '................/................/..a...a...a...a./..9...9...9...9./..9...9...9...9./.999.999.999.999/.999.999.999.999/.999.999.999.999/9999999999999999/9999999999999999/.909.909.909.909/.909.909.909.909/.090.090.090.090/.090.090.090.090/0000000000000000/0000000000000000'
+      a: '................/................/................/................/................/................/................/................/................/................/................/...0.......0..../..0a0.....0a0.../.09990...09990../0999999009999990/0000000000000000',
+      b: '................/................/...0.......0..../..0a0.....0a0.../..0a0.....0a0.../..090.....090.../..090.....090.../.09990...09990../.09990...09990../.09990...09990../0999990.0999990./0999990.0999990./0999999009999990/0999999009999990/0999999009999990/0000000000000000'
     } },
     crusher: { w: 16, h: 16, frames: {
-      a: '0000000000000000/0222222222222220/0999999999999990/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/................/................/................/................/................/................/................/................/................/................',
-      b: '0000000000000000/0222222222222220/0222222222222220/0222222222222220/0999999999999990/0222222222222220/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6/................/................/................/................/................/................',
-      c: '0000000000000000/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0999999999999990/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0222222222222220/0000000000000000/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6/.6.6.6.6.6.6.6.6'
+      a: '...0000000000.../0000229922220000/0222229922222220/0000000000000000/..6...6..6...6../................/................/................/................/................/................/................/................/................/................/................',
+      b: '...0000000000.../...0229922220.../...0229922220.../...0229922220.../...0229922220.../...0229922220.../0000229922220000/0222229922222220/0000000000000000/..6...6..6...6../................/................/................/................/................/................',
+      c: '...0000000000.../...0229922220.../...0229922220.../...0229922220.../...0229922220.../...0229922220.../...0229922220.../...0229922220.../...0229922220.../...0229922220.../...0229922220.../...0229922220.../0000229922220000/0222229922222220/0000000000000000/..6...6..6...6..'
     } },
-    /* T1.6's loot: a speck, Amber with a Glare glint in two beats; the scroll, Paper ruled in Ink inside Walnut rollers;
-       the blueprint, Lapis ruled in Glare; the chest, Walnut banded in Amber, shut (a) and open with its Paper slip (b).
-       Section 7.3 (the M1 review): loot is Amber with a Glare glint, and Film is the repairs' alone */
+    /* T1.6's loot (Astra): a speck, an Amber diamond, its Glare glint above the right corner on the second beat (4 fps);
+       the scroll, Paper ruled in Ink inside Walnut rollers; the blueprint, a folded Lapis sheet with a Glare plan; the
+       chest, Walnut banded in Amber, shut (a) and open with its Glare weapon slip (b). Section 7.3 (the M1 review): loot
+       is Amber with a Glare glint, and Film is the repairs' alone */
     speck: { w: 16, h: 16, frames: {
-      a: '................/................/................/................/.......00......./......0880....../......0860....../...0008888000.../...0888868880.../...0008888000.../......0880....../......0880....../.......00......./................/................/................',
-      b: '................/................/................/................/................/.......00......./......0880....../.....088680...../.....088880...../......0880....../.......00......./................/................/................/................/................'
+      a: '................/................/................/................/.......00......./......0880....../.....088880...../.....088880...../......0880....../.......00......./................/................/................/................/................/................',
+      b: '................/................/................/...........6..../.......00.666.../......0880.6..../.....088680...../.....088880...../......0880....../.......00......./................/................/................/................/................/................'
     } },
     scroll: { w: 16, h: 16, frames: {
-      a: '................/................/................/...0000000000.../..077777777770../..075555555570../..075000005570../..075555555570../..075000555570../..075555555570../..075000005570../..075555555570../..077777777770../...0000000000.../................/................'
+      a: '................/................/...0000000000.../..077777777770../..070000000070../...0555555550.../...0550000550.../...0555555550.../...0550005550.../...0555555550.../...0555500550.../...0555555550.../..000000000000../..077777777770../...0000000000.../................'
     } },
     blueprint: { w: 16, h: 16, frames: {
-      a: '................/................/................/..000000000000../..0bbbbbbbbbb0../..0b6666b66bb0../..0b6bb6b6b6b0../..0b6666b66bb0../..0b6bbbb6b6b0../..0b6bbbb66bb0../..0bbbbbbbbbb0../..0b66666666b0../..0bbbbbbbbbb0../..000000000000../................/................'
+      a: '................/...0000000....../..0bbbbbbb0...../..0bbbbbbb60..../..0bbbbbbb660.../..0bbbbbbb0000../..0bb6666bbbb0../..0bb6bb6b66b0../..0bb6bbbb6bb0../..0bb666666bb0../..0bbbbbbb6bb0../..0bbbbbb66bb0../..0bbbbbbbbbb0../..0bbbbbbbbbb0../...0000000000.../................'
     } },
     chest: { w: 16, h: 16, frames: {
-      a: '................/................/................/................/..000000000000../.07777777777770./.07888888888870./.07777777777770./.00000088000000./.07777788777770./.07777777777770./.07888888888870./.07777777777770./.00000000000000./................/................',
-      b: '................/..000000000000../.07777777777770./.07888888888870./.07777777777770./.00000000000000./.06666666666660./.05655555555650./.00000000000000./.07777777777770./.07777777777770./.07888888888870./.07777777777770./.00000000000000./................/................'
+      a: '................/................/................/................/................/................/...0000000000.../..078877778870../.07788777788770./.07788777788770./.00000088000000./.07777788777770./.07787777778770./.07787777778770./.07777777777770./..000000000000..',
+      b: '................/...0000000000.../..078877778870../..077777777770../..000000000000../.....00000....../....0666660...../....0666660...../...0066666000.../..077000000770../.00000088000000./.07777788777770./.07787777778770./.07787777778770./.07777777777770./..000000000000..'
     } },
-    /* the beacon: the ceiling light, a cord, a Glare shade with an Ink rim, a Sun bulb; Glare rays on the second frame */
+    /* the beacon (Astra): the ceiling light, a two pixel cord, a flared shade, an Ink outlined Sun bulb; Glare rays on
+       the second frame */
     beacon: { w: 16, h: 16, frames: {
-      a: '.......00......./.......00......./.......00......./.....000000...../....06666660..../...0666666660.../..066666666660../.00000000000000./......0ee0....../.....0eeee0...../......0ee0....../.......00......./................/................/................/................',
-      b: '.......00......./.......00......./.......00......./.....000000...../....06666660..../...0666666660.../..066666666660../.00000000000000./.6....0ee0....6./..6..0eeee0..6../......0ee0....../...6...00...6.../..6..........6../.......66......./.......66......./................'
+      a: '.......00......./.......00......./.......00......./......0000....../.....066660...../....06666660..../...0666666660.../..066666666660../..000000000000../......0ee0....../.....0eeee0...../.....0eeee0...../......0ee0....../.......00......./................/................',
+      b: '.......00......./.......00......./.......00......./......0000....../.....066660...../....06666660..../...0666666660.../..066666666660../..000000000000../......0ee0....../.6...0eeee0...6./..6..0eeee0..6../......0ee0....../.......00......./....6......6..../...6...66...6...'
     } },
-    /* a film tab (the repair, section 7.3): Film with Ink perforations, an Ink edge under it */
+    /* a film tab (the repair, section 7.3; Astra): Film with two square Ink perforations, an Ink edge under it */
     tab: { w: 16, h: 5, frames: {
-      a: 'ffffffffffffffff/ff0fff0fff0fff0f/ff0fff0fff0fff0f/ffffffffffffffff/0000000000000000'
+      a: 'ffffffffffffffff/ff00ffffff00ffff/ff00ffffff00ffff/ffffffffffffffff/0000000000000000'
     } },
     /* T1.5's sticky walls (section 7.3), placeholders until Astra's rows are ruled: a vine, Moss with Ink stems, winding
        up an Overgrowth pillar; a pipe, Teal with Ink rings and a Glare highlight, up a Deep one. Each tiles a 1 cell
@@ -3568,6 +3574,38 @@ body.sb-modal .lwfb-fab { display: none !important; }
     } },
     pipe: { w: 16, h: 16, frames: {
       a: '..0c6cccccccc0../..0c6cccccccc0../..0c6cccccccc0../..0c6cccccccc0../.00000000000000./.0c6cccccccccc0./.00000000000000./..0c6cccccccc0../..0c6cccccccc0../..0c6cccccccc0../..0c6cccccccc0../..0c6cccccccc0../.00000000000000./.0c6cccccccccc0./.00000000000000./..0c6cccccccc0..'
+    } },
+    /* the five elites (Astra, Q160): each 24x24, drawn 1:1 in the sim's ELITE_SIZE_CELLS box by its anchor (R.ELITE_ANCHOR).
+       moth_elite: from Astra (enemies/enemy_moth_elite.png) */
+    moth_elite: { w: 24, h: 24, frames: {
+      a: '......................../........0......0......../.........0....0........./..........0000........../..0000...033330...0000../.044440..033330..044440./044664400033330004466440/044444440033330044444440/044aa44400333300444aa440/044aa44440333304444aa440/.0444444403333044444440./..04444440333304444440../...000000033330000000.../...044444033330444440.../....0444403333044440..../....04aa40333304aa40..../.....04440333304440...../......000033330000....../.........033330........./..........0000........../......................../......................../......................../........................',
+      b: '......................../......................../........0......0......../.........0....0........./..........0000........../.........033330........./...000...033330...000.../..04440..033330..04440../.0446640003333000466440./.0444440003333000444440./.044aa440033330044aa440./..04aa440033330044aa40../...044440033330044440.../....0000003333000000..../....0444003333004440..../....04aa00333300aa40..../.....04400333300440...../......000033330000....../.........033330........./..........0000........../......................../......................../......................../........................'
+    } },
+    /* icicle_elite: from Astra (enemies/enemy_icicle_elite.png) */
+    icicle_elite: { w: 24, h: 24, frames: {
+      a: '..00000000000000000000../..04444444444444444440../..04466644444444666440../...044444444444444440.../...04aaaaaaaaaaaaaa40.../...044444444444444440.../....0444444444444440..../....0444444444444440..../....0444444444444440..../....0404444444444040..../.....0.0444444440.0...../.....6.0444444440.6...../........04444440......../........04644640......../.........044440........./.........044440........./.........044440........./..........0440........../..........0660........../...........00.........../...........66.........../......................../......................../........................',
+      b: '..00000000000000000000../..04444444444444444440../..04444444444444444440../...044444444444444440.../...04aaaaaaaaaaaaaa40.../...044444444444444440.../....0444444444444440..../....0444464444644440..../....0444464444644440..../....0404444444444040..../.....0.0444444440.0...../.....6.0444444440.6...../........04444440......../........04444440......../.........044440........./.........044440........./.........044440........./..........0440........../..........0660........../...........00.........../...........66.........../......................../......................../........................'
+    } },
+    /* jelly_elite: from Astra (enemies/enemy_jelly_elite.png) */
+    jelly_elite: { w: 24, h: 24, frames: {
+      a: '......................../........00000000......../......00cccccccc00....../....00cccccccccccc00..../...0cccccccccccccccc0.../..0cc66cccccccccc66cc0../..0c66cccccccccccc66c0../.0ccccccccaaaacccccccc0./.0cccccccaaaaaaccccccc0./.0ccccccccaaaacccccccc0./.0cccccccccccccccccccc0./..0aaaaaaaaaaaaaaaaaa0../..0aaaaaaaaaaaaaaaaaa0../...000000000000000000.../...00..00..00..00..00.../..00...00..00..00...00../..00....00.00.00....00../...00...00....00...00.../....00..00....00..00..../....00...00..00...00..../...00....00..00....00.../......................../......................../........................',
+      b: '......................../......................../........00000000......../......00cccccccc00....../....00cccccccccccc00..../...0cccccccccccccccc0.../..0cc66cccccccccc66cc0../.0cc66cccccccccccc66cc0./.0ccccccccaaaacccccccc0./.0cccccccaaaaaaccccccc0./.0ccccccccaaaacccccccc0./.0aaaaaaaaaaaaaaaaaaaa0./..0aaaaaaaaaaaaaaaaaa0../...000000000000000000.../...00..00..00..00..00.../...00..00..00..00..00.../....00..00.00.00..00..../....00..00.00.00..00..../...00....00..00....00.../...00...00....00...00.../....00..00....00..00..../......................../......................../........................'
+    } },
+    /* crawler_elite: from Astra (enemies/enemy_crawler_elite.png) */
+    crawler_elite: { w: 24, h: 24, frames: {
+      a: '......................../......................../......................../......................../....6....6....6....6..../...090..090..090..090.../...090..090..090..090.../...090..090..090..090.../..09990099900999009990../..09990099900999009990../..09990099900999009990../...0dddddddddddddddd0.../..0daaaddaaaddaaadddd0../.0ddaaaddaaaddaaaddddd0./.0dddddddddddddddddd660./0ddddddddddddddddddd60d0/0dddddddddddddddddddddd0/.0ddddddddddddddddddddd0/..0ddddddddddddddddddd0./...0ddddddddddddddddd0../....00000000000000000.../....00...00....00..00.../...00...00....00..00..../..000..000...000.000....',
+      b: '......................../......................../......................../......................../......................../....6....6....6....6..../...090..090..090..090.../...090..090..090..090.../...090..090..090..090.../..09990099900999009990../..09990099900999009990../...0dddddddddddddddd0.../..0daaaddaaaddaaadddd0../.0ddaaaddaaaddaaaddddd0./.0dddddddddddddddddd660./0ddddddddddddddddddd60d0/0dddddddddddddddddddddd0/.0ddddddddddddddddddddd0/..0ddddddddddddddddddd0./...0ddddddddddddddddd0../....00000000000000000.../.....00...00....00..00../....00...00....00..00.../...000..000...000.000...'
+    } },
+    /* spark_elite: from Astra (enemies/enemy_spark_elite.png) */
+    spark_elite: { w: 24, h: 24, frames: {
+      a: '...........00.........../..........0990........../.........099990........./.....0...099990...0...../....090..099990..090..../....090.09999990.090..../.....09099999999090...../..0..09999999999990..0../.0900999999999999990090./.0999999999999999999990./..09999999999999999990../..099aaa99999999aaa990../.099aa0aa966669aa0aa990./.099a000a666666a000a990./0999aa0aa666666aa0aa9990/09999aaa66666666aaa99990/099999966666666669999990/099999966666666669999990/.0999999666666669999990./.0999999966996699999990./..09999999999999999990../...099999999999999990.../....0999999999999990..../.....00000000000000.....',
+      b: '......................../...........00.........../..........0990........../.........099990........./.........099990........./.....0..09999990..0...../....090.09999990.090..../....0900999999990090..../...099999999999999990.../..09999999999999999990../..09999999999999999990../..099aaa99999999aaa990../.099aa0aa966669aa0aa990./.099a000a666666a000a990./0999aa0aa666666aa0aa9990/09999aaa66666666aaa99990/099999966666666669999990/099999966666666669999990/.0999999666666669999990./.0999999966996699999990./..09999999999999999990../...099999999999999990.../....0999999999999990..../.....00000000000000.....'
+    } },
+    /* hud_heart: from Astra (ui/hud_heart.png): an Ink contour, Brick full, Slate empty; drawn at 2x in the top strip
+       (R.heartURL, Q160), never on the canvas */
+    hud_heart: { w: 9, h: 8, frames: {
+      full: '.00...00./0990.0990/099909990/099999990/.0999990./..09990../...090.../....0....',
+      empty: '.00...00./0220.0220/022202220/022222220/.0222220./..02220../...020.../....0....'
     } }
   };
   /* SPRITES END */
@@ -3602,7 +3640,21 @@ body.sb-modal .lwfb-fab { display: none !important; }
     actx.putImageData(img, 0, 0);
     atlasData = d; R.atlasW = W;
     for (i = 0; i < P.N; i++) CSS.push(css(i));
+    /* the top strip's hearts (Q160): Astra's hud_heart, full and empty, cut from the atlas once as PNG data URLs that
+       the strip's CSS draws at 2x with nearest neighbour (--heart-full, --heart-empty), so a heart is that sprite's
+       pixels and never a shape of its own */
+    R.heartURL = {};
+    for (f in SPRITES.hud_heart.frames) {
+      var hr = A['hud_heart.' + f], hc = document.createElement('canvas');
+      hc.width = hr.w; hc.height = hr.h;
+      hc.getContext('2d').drawImage(atlas, hr.x, hr.y, hr.w, hr.h, 0, 0, hr.w, hr.h);
+      R.heartURL[f] = hc.toDataURL('image/png');
+      document.documentElement.style.setProperty('--heart-' + f, 'url("' + R.heartURL[f] + '")');
+    }
   }
+  /* each enemy's manifest anchor in its box (Astra's manifest, Q160): 'top' hangs it from the box's top, 'bottom'
+     stands it on the box's bottom, anything else ('cell') centres it; horizontally always centred */
+  R.ELITE_ANCHOR = { icicle: 'top', crawler: 'bottom', spark: 'bottom' };
   /* one sprite at the integer place (and size: the squash and the stretch), from the atlas */
   function spr(c2, key, dx, dy, dw, dh) { var r = A[key]; c2.drawImage(atlas, r.x, r.y, r.w, r.h, dx, dy, dw || r.w, dh || r.h); }
   R.opaque = function (key, sx, sy) { var r = A[key]; return atlasData[((r.y + sy) * R.atlasW + r.x + sx) * 4 + 3] === 255; };
@@ -3839,15 +3891,28 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
     if (s.chest.idx >= 0) { var cy2 = Math.floor(s.chest.idx / lv.w) * C - cam; if (cy2 > -C && cy2 < viewH) spr(ctx, s.chest.open ? 'chest.b' : 'chest.a', (s.chest.idx % lv.w) * C, cy2); }
     /* the enemies: each kind's two frames at 12 fps (the moth's flutter beats on its own timer: the fourth review found
-       it at 7.5), facing its way; an elite drawn ELITE_PX a side; a shattered icicle is not drawn */
+       it at 7.5), facing its way (the crawler family mirrors); a shattered icicle is not drawn. An elite draws its own
+       art, Astra's <kind>_elite (Q160), 1:1 and never the base art scaled; each sprite sits in the sim's box (C, or
+       ELITE_PX a side) by its manifest anchor, R.ELITE_ANCHOR: centred, hung from the box's top or standing on its
+       bottom. The box is the sim's alone: the art never moves it */
     var md = R.drawn.moths, KINDS = ['', 'moth', 'icicle', 'jelly', 'crawler', 'spark'], beat = Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS); md.length = 0;
     for (var m = 0; m < s.enemies.length; m++) {
       var en = s.enemies[m]; if (!SB.sim.liveEnemy(en)) continue;
       var es = en.elite ? K.ELITE_PX : C, mx = en.x >> 8, my = (en.y >> 8) - cam;
       if (my < -es || my > viewH) continue;
-      var clock = en.kind === 1 ? en.timer : s.frame, mk = (KINDS[en.kind] || 'moth') + ((Math.floor(clock / beat) & 1) ? '.a' : '.b') + (en.dir < 0 && en.kind === 4 ? '<' : '');
-      spr(ctx, mk, mx, my, es, es);
-      md.push({ key: mk, x: mx - camX, y: my, w: es, h: es });
+      var kn = KINDS[en.kind] || 'moth', ek = en.elite ? kn + '_elite' : kn, esp = SPRITES[ek], an = R.ELITE_ANCHOR[kn] || 'cell';
+      var clock = en.kind === 1 ? en.timer : s.frame, mk = ek + ((Math.floor(clock / beat) & 1) ? '.a' : '.b') + (en.dir < 0 && en.kind === 4 ? '<' : '');
+      var ex2 = mx + ((es - esp.w) >> 1), ey2 = an === 'top' ? my : an === 'bottom' ? my + es - esp.h : my + ((es - esp.h) >> 1);
+      /* at rest (state 0: an icicle hanging, a spark between hops, a crawler on its run) a top or bottom anchor holds to
+         the ceiling or the floor of the row its box's middle is in: an elite's box starts centred on its cell, half a
+         cell's overhang into the roof and the floor (ART1's shots: the icicle's root and the spark's base sunk 4 px into
+         them; Q160 asks whether the sim should seat the box instead); in flight the art rides the box */
+      if (en.state === 0 && an !== 'cell') {
+        var row2 = Math.floor(((en.y >> 8) + (es >> 1)) / C) * C - cam;
+        ey2 = an === 'top' ? row2 : row2 + C - esp.h;
+      }
+      spr(ctx, mk, ex2, ey2);
+      md.push({ key: mk, x: ex2 - camX, y: ey2, w: esp.w, h: esp.h, box: { x: mx - camX, y: my, w: es, h: es } });
     }
     var hy = heroY - cam, h = s.hero, T = SB.TUNING, hd = R.drawn.hero;
     /* a hit's i frames blink the hero at about 4 Hz (8 steps on, 8 off) */
@@ -5065,6 +5130,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
       else if (name === 'speck' && G.state && G.level) {   /* the hero set down on the first speck not taken: the next step takes it (the loop gate's Dead pixels) */
         var L = G.state.loot.filter(function (l) { return l.kind === SB.sim.LOOT.SPECK && !l.taken; })[0], CS2 = SB.K.CELL_SUB, h2 = G.state.hero;
         if (L) { h2.x = (L.idx % G.level.w) * CS2 + ((CS2 - SB.K.HERO_W_SUB) >> 1); h2.y = Math.floor(L.idx / G.level.w) * CS2; h2.vx = 0; h2.vy = 0; }
+      }
+      else if (name === 'elite' && G.state && G.level) {   /* the hero set down in the first live elite's home cell, so the camera holds it (the sprites gate, ART1's shots) */
+        var E = G.state.enemies.filter(function (e) { return e.elite && SB.sim.liveEnemy(e); })[0], CS3 = SB.K.CELL_SUB, h3 = G.state.hero;
+        if (E) { h3.x = (E.home % G.level.w) * CS3 + ((CS3 - SB.K.HERO_W_SUB) >> 1); h3.y = Math.floor(E.home / G.level.w) * CS3; h3.vx = 0; h3.vy = 0; }
       }
       return SB.ui.screen;
     },

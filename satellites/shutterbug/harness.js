@@ -4531,14 +4531,15 @@ group('H-qr-4', 'the chosen mask\'s penalty is the lowest of the eight, each rec
 });
 
 /* ================================================================ sprites (T0.17) */
-group('H-spr-1', 'every sprite string decodes to its declared size in the key; the hero is 12x16 with an Ink feet row in every frame; Sun belongs to the hero and the beacon only, Film to the film tab; the speck Amber with a Glare glint; every danger outlined in Ink (section 7.3)', t => {
+group('H-spr-1', 'every sprite string decodes to its declared size in the key; the hero is 12x16 with an Ink feet row in every frame; Sun belongs to the hero and the beacon only, Film to the film tab; the speck Amber with a Glare glint; every danger outlined in Ink (section 7.3); each elite its own ELITE_PX art with its kind\'s frame names, the HUD heart 9x8 full and empty (Q160)', t => {
   const m = fs.readFileSync(PAGE, 'utf8').match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//);
   t.ok(!!m, 'the page holds the SPRITES fence in shell-render');
   if (!m) return;
   let S = null;
   try { S = require('node:vm').runInNewContext(m[1] + '\n;SPRITES'); } catch (e) { t.ok(false, 'the SPRITES literal evaluates (' + e.message + ')'); return; }
   const names = Object.keys(S), SUN = SB.palette.I.SUN.toString(16), INK = SB.palette.I.INK.toString(16), FILM = SB.palette.I.FILM.toString(16);
-  const AMBER = SB.palette.I.AMBER.toString(16), GLARE = SB.palette.I.GLARE.toString(16), DANGER = ['moth', 'icicle', 'jelly', 'crawler', 'spark', 'spike', 'crusher'];
+  const AMBER = SB.palette.I.AMBER.toString(16), GLARE = SB.palette.I.GLARE.toString(16), KINDS = ['moth', 'icicle', 'jelly', 'crawler', 'spark'];
+  const ELITES = KINDS.map(k => k + '_elite'), DANGER = KINDS.concat(ELITES, ['spike', 'crusher']);
   t.ok(names.length > 0 && names.length < 40, names.length + ' named sprites (under 40; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
@@ -4554,11 +4555,25 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
       /* section 7.3 (the M1 review: the placeholders broke it): Film is the repairs' alone (the film tab), so help is
          never furniture; the speck is Amber with a Glare glint; every danger has an Ink outline */
       if (name !== 'tab') t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour)');
-      if (name === 'speck') t.ok(str.includes(AMBER) && str.includes(GLARE), 'speck.' + f + ' is Amber with a Glare glint');
+      /* the speck's glint is a beat (Astra's speck, Q160: frame a the Amber diamond, b adds the Glare glint, 4 fps), so
+         every frame is Amber and the strip, not each frame, carries the glint (the pin moved from per frame with the art) */
+      if (name === 'speck') t.ok(str.includes(AMBER), 'speck.' + f + ' is Amber');
       if (DANGER.includes(name)) t.ok(str.includes(INK), name + '.' + f + ' has its Ink outline (danger, section 7.3)');
     }
   }
-  t.ok(DANGER.every(n => names.includes(n)), 'every enemy and trap the rules name has a sprite (' + DANGER.join(', ') + ')');
+  t.ok(DANGER.every(n => names.includes(n)), 'every enemy, elite and trap the rules name has a sprite (' + DANGER.join(', ') + ')');
+  t.ok(!!S.speck && Object.values(S.speck.frames).some(s => s.includes(GLARE)), 'the speck\'s strip carries its Glare glint (section 7.3: loot is Amber with a Glare glint)');
+  /* the elites (Q160): each its own art, ELITE_PX a side (the sim's box, ELITE_SIZE_CELLS cells), with its kind's frame
+     names, so the draw's beat picks a frame that exists (the sprites gate proves it is drawn 1:1, never the base scaled) */
+  for (const k of KINDS) {
+    const e = S[k + '_elite'], b = S[k];
+    t.ok(!!e && e.w === K.ELITE_PX && e.h === K.ELITE_PX && !!b && JSON.stringify(Object.keys(e.frames)) === JSON.stringify(Object.keys(b.frames)),
+      k + '_elite is ' + (e ? e.w + 'x' + e.h : 'absent') + ' (ELITE_PX ' + K.ELITE_PX + ') with ' + k + '\'s frames (' + (e ? Object.keys(e.frames).join(' ') : '') + ')');
+  }
+  /* the HUD heart (Q160): 9x8, full and empty, both Ink contoured; the full one Brick, the empty one without it */
+  const HH = S.hud_heart, BRICK = SB.palette.I.BRICK.toString(16);
+  t.ok(!!HH && HH.w === 9 && HH.h === 8 && !!HH.frames.full && !!HH.frames.empty && HH.frames.full.includes(INK) && HH.frames.empty.includes(INK)
+    && HH.frames.full.includes(BRICK) && !HH.frames.empty.includes(BRICK), 'hud_heart is 9x8 with full (Brick) and empty (no Brick), each Ink contoured');
   console.log('  info  H-spr-1: ' + names.length + ' sprites, ' + frames + ' frames');
 });
 

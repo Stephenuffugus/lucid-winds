@@ -21,6 +21,10 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'world/trap_crusher.png': ('crusher', None), 'loot/loot_speck.png': ('speck', None), 'loot/loot_scroll.png': ('scroll', None),
     'loot/loot_blueprint.png': ('blueprint', None), 'loot/loot_chest.png': ('chest', None),
     'world/vine.png': ('vine', None), 'world/pipe.png': ('pipe', None),   # T1.5's sticky walls (the brief's held rows)
+    # ART1's keys (Astra's delivery of 31 Oct, Q160): the five elites and the HUD heart
+    'enemies/enemy_moth_elite.png': ('moth_elite', None), 'enemies/enemy_icicle_elite.png': ('icicle_elite', None),
+    'enemies/enemy_jelly_elite.png': ('jelly_elite', None), 'enemies/enemy_crawler_elite.png': ('crawler_elite', None),
+    'enemies/enemy_spark_elite.png': ('spark_elite', None), 'ui/hud_heart.png': ('hud_heart', None),
 }
 
 
@@ -88,7 +92,7 @@ def main(argv):
     for f, (key, names) in FILES.items():
         if key in S:
             plan.append((f, key, names or list(S[key]['frames'])))
-    if '--elite' in argv:
+    if '--elite' in argv:   # the gate hands a sprites.json without moth_elite (the page holds Astra's since ART1)
         m = S['moth']
         S['moth_elite'] = {'w': 24, 'h': 24, 'frames': {n: '/'.join(['.' * 24] * 4 + ['....' + r + '....' for r in s.split('/')] + ['.' * 24] * 4) for n, s in m['frames'].items()}}
         plan.append(('enemies/enemy_moth_elite.png', 'moth_elite', list(m['frames'])))
