@@ -988,6 +988,9 @@ const MUTANTS = [
     gates: [{ gate: 'pause', expect: '320x568: paused by a real tap, the card leaves the bug in sight' }] },
   { name: 'PAUSED_NO_ROW', task: 'NOTE3R', file: 'page', find: ", ['row'], ['row', 'high'], ['row', 'low']];", repl: '];',
     gates: [{ gate: 'pause', expect: '320x568: the bug at each of 48 rows, paused: the card covers it at rows' }] },
+  /* found in this change's own shots: in one row all three shrunk alike and Resume spilled past its edge at 320x568 */
+  { name: 'PAUSE_ROW_SPILLS', task: 'NOTE3R', file: 'page', find: '#paused.row .trio button { flex: 0 0 auto; padding: 0 6px;', repl: '#paused.row .trio button { flex: 1 1 auto; min-width: 0; padding: 0 6px;',
+    gates: [{ gate: 'pause', expect: "320x568: each button's words sit inside its edge" }] },
   { name: 'PAUSED_STALE_HERO', task: 'NOTE3R', file: 'page', find: ' ui.endReveal(); SB.render.draw(G.state, G.level, performance.now()); }', repl: ' ui.endReveal(); }',
     gates: [{ gate: 'pause', expect: "paused out of the reveal, the card is placed against this room's bug" }] },
   { name: 'PAUSED_NOT_REPLACED', task: 'NOTE3R', file: 'page', find: " if (s === 'pause') SB.ui.placePaused(); }", repl: ' }',

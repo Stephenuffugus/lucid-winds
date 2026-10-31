@@ -33,7 +33,7 @@
  * Watched red by PAUSE_LEAVES, PAUSE_RUNS_SIM, RESUME_KEEPS_EDGE, PAUSED_NOT_OVERLAY, PAUSED_NOT_MODAL, PAUSE_ALWAYS_SHOWN, PAUSE_KEEPS_FOCUS,
  * SHARE_CLOSE_TO_PLAY, BACK_UNWATCHED, BACK_CARD_TO_TITLE, BACK_SHEET_UNWATCHED, BACK_CARDS_UNWATCHED, BACK_TRAPS_TITLE,
  * BACK_IN_REVEAL_LOST, CODE_CARD_WATCHED, HIDDEN_NO_PAUSE, BLUR_NO_PAUSE, BLUR_IN_FRAME_PAUSES, and (the review) PAUSE_SHARE_GREY, CLEAR_SHARE_GREY,
- * PAUSED_IN_MIDDLE, PAUSED_NO_ROW, PAUSED_STALE_HERO, PAUSED_NOT_REPLACED, CODE_BAD_STRANDS, REVEAL_AWAY_ENDS,
+ * PAUSED_IN_MIDDLE, PAUSED_NO_ROW, PAUSE_ROW_SPILLS, PAUSED_STALE_HERO, PAUSED_NOT_REPLACED, CODE_BAD_STRANDS, REVEAL_AWAY_ENDS,
  * REVEAL_AWAY_RUNS and REVEAL_AWAY_STUCK. */
 import { readFileSync } from 'node:fs';
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, sleep, GAME } from './harness.mjs';
@@ -109,7 +109,8 @@ try {
         hero: hr && [hr.t, hr.b].map(Math.round), meets: window.__meets(hr, c),
         btns: ['resume', 'pauseshare', 'pausetitle'].map(id => {
           const el = document.getElementById(id), r = el.getBoundingClientRect(), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-          return { id, text: el.textContent, top: r.top, left: r.left, h: r.height, w: r.width, onTop: !!t && (t === el || el.contains(t)), inView: r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth, bg: getComputedStyle(el).backgroundColor };
+          const rg = document.createRange(); rg.selectNodeContents(el); const tr = rg.getBoundingClientRect();
+          return { id, text: el.textContent, top: r.top, left: r.left, h: r.height, w: r.width, fits: tr.left >= r.left + 2 && tr.right <= r.right - 2 && tr.top >= r.top + 2 && tr.bottom <= r.bottom - 2, onTop: !!t && (t === el || el.contains(t)), inView: r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth, bg: getComputedStyle(el).backgroundColor };
         }) };
     });
     /* in reading order: stacked, or in one row on a short room (the review of Q94) */
@@ -118,6 +119,7 @@ try {
       tag + ': the card reads ' + b.map(x => x.text).join(', ') + (inOrder ? ', in that order' : ', OUT OF ORDER') + ', each 48 px or more, on top and in view, Resume in Sun and Title plain, inside the room (' +
       b.map(x => x.id + ' ' + x.w.toFixed(0) + 'x' + x.h.toFixed(0) + (x.onTop ? '' : ' NOT on top') + (x.inView ? '' : ' out of view') + ' ' + x.bg).join(', ') + '; the card ' + card.box[0] + ' to ' + card.box[1] + ', the room ' + card.box[2] + ' to ' + card.box[3] + ')');
     /* the review of Q94: Share this room was the browser's own grey on the card's Paper */
+    R.say(b.every(x => x.fits), tag + ': each button\'s words sit inside its edge (' + b.map(x => x.id + (x.fits ? ' inside' : ' SPILLS')).join(', ') + ', placed ' + (card.place.replace('on', '').trim() || 'in the middle') + ')');
     R.say(b[1].bg === PAPER, tag + ': Share this room is drawn in the card\'s Paper, not the browser\'s grey (' + b[1].bg + ', want ' + PAPER + ')');
     /* the review of Q94: at 320x568 the card in the middle of the room hid the bug, so he resumed blind */
     R.say(!!card.hero && !card.meets, tag + ': paused by a real tap, the card leaves the bug in sight (the bug ' + (card.hero ? card.hero.join(' to ') : 'not drawn') + ', the card ' + card.box[0] + ' to ' + card.box[1] + ', placed ' + (card.place.replace('on', '').trim() || 'in the middle') + ')');
