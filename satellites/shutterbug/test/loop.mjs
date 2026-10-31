@@ -27,7 +27,7 @@ const SBN = createRequire(import.meta.url)(join(GAME, 'tools', 'core-loader.js')
 const ROOM = JSON.parse(readFileSync(join(GAME, 'fixtures', 'sample-room.json'), 'utf8')).record.rows, HEX = Array.from(SBN.palette.HEX);
 const TMP = '/tmp/claude-1000/shutterbug-loop'; mkdirSync(TMP, { recursive: true });
 const PHOTO = join(TMP, 'room-900x1600.png');
-const OVER = ['clear', 'death', 'offer', 'slip', 'sharesheet', 'devcard'];
+const OVER = ['clear', 'death', 'sharesheet', 'devcard'];   /* the cards and sheets a player can meet (the scroll offer and the chest's slip left M1: QUESTIONS Q92) */
 const srv = await serve();
 const browser = await launch();
 try {

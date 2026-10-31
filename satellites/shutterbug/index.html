@@ -3594,6 +3594,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
   };
   /* what the last frame drew where (canvas px), for SB_DEV's sprite rects and pixel samples; never read by the game */
   R.drawn = { hero: { key: null, x: 0, y: 0, w: 0, h: 0 }, moths: [], beacon: null, cam: 0, camX: 0 };
+  /* the loot a player sees, by kind (speck 1, scroll 2, blueprint 3): the blueprint is placed and carried by the sim
+     (its cell, the level's hash and the room's state are unchanged) but drawn and heard nowhere until T2.6 gives it a
+     use (QUESTIONS Q92: M1 shows nothing that does nothing). lootTaken counts the shown loot taken, so the shell's
+     pickup sound answers only a thing the player saw */
+  R.LOOT_SHOWN = [0, 1, 1, 0];
+  R.lootTaken = function (s) { var n = 0; for (var i = 0; i < s.loot.length; i++) if (s.loot[i].taken && R.LOOT_SHOWN[s.loot[i].kind]) n++; return n; };
 
   /* the static layer (section 1.5 layer 1; DESIGN 11): the photo at 60% contrast through the blends, Ink outlines on
      solids, a Glare over Ink top edge on everything you can stand on, the biome's line under a one way edge, film
@@ -3900,15 +3906,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
   I.release = function (verb, source) { delete down[verb][source]; };
   I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; if (I._stripReset) I._stripReset(); };   /* the edges too: a tap banked under a sheet never fires after it (the M1 review) */
 
-  /* a sheet's tap (T1.6): the choice rides the next word as its CHOICE field, so the sim, not the shell, picks (section
-     2.6) and the recording carries it */
+  /* a choice (T1.6; in M1 the shell's own answer to a sheet, ui.sheets) rides the next word as its CHOICE field, so the
+     sim, not the shell, picks (section 2.6) and the recording carries it. The sim holds the world on that word's step
+     and reads nothing else in it, so the word carries no press edge: A's and B's taps since the last word ride the
+     word after it, one step late and never lost (QUESTIONS Q92: a jump tapped as the chest opens still jumps) */
   var choicePending = 0;
   I.choose = function (n) { choicePending = n; };
   I.sample = function () {
-    var IN = SB.sim.IN;
+    var IN = SB.sim.IN, c = choicePending;
     var w = (isHeld('L') ? IN.L : 0) | (isHeld('R') ? IN.R : 0) | (isHeld('A') ? IN.A : 0) | (isHeld('B') ? IN.B : 0) |
-      (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0) | choicePending * IN.CHOICE;
-    edge.A = 0; edge.B = 0; choicePending = 0; last = w; rec.push(w);
+      (c ? c * IN.CHOICE : (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0));
+    if (!c) { edge.A = 0; edge.B = 0; }
+    choicePending = 0; last = w; rec.push(w);
     return w;
   };
   I.last = function () { return last; };
@@ -4765,7 +4774,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
 
   var EV = SB.sim.EV;
   function stepOnce() {
-    var t0 = performance.now();
+    var t0 = performance.now(), seen = SB.render.lootTaken(G.state);
     SB.sim.step(G.state, SB.input.sample());
     keep(perf.step, performance.now() - t0);
     loop.steps++;
@@ -4777,9 +4786,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (ev & EV.LAND) au.sfx('land', G.state.hero.shake > 0);
       if (ev & EV.HIT) { au.sfx('hit'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); }
       if (ev & EV.CLEAR) au.sfx('beacon');
-      if (ev & EV.PICKUP) au.sfx('pickup');
-      if (ev & EV.CHEST) au.sfx('chest');
-      if (ev & EV.PICK) { au.sfx('pick'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); }
+      if ((ev & EV.PICKUP) && SB.render.lootTaken(G.state) > seen) au.sfx('pickup');   /* the hidden blueprint is taken in silence (Q92) */
+      if (ev & EV.CHEST) { au.sfx('chest'); SB.ui.dpGain(SB.TUNING.DP_CHEST); }
+      /* a pick is the shell's own answer in M1 (ui.sheets), no choice of the player's, so it makes no sound; the pick
+         voice waits for the sheets of T2.5 and T2.7 */
+      if (ev & EV.PICK) SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax);
     }
     SB.ui.sheets(G.state);
     SB.ui.hints(G.state, G.level);

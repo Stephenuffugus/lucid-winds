@@ -276,7 +276,7 @@ try {
         R.say(strip.length === 2 && strip.every(c => c.gap >= BAR - 0.5), tg + ': the strip\'s Title and Share end ' + strip.map(c => c.id + ' ' + c.gap.toFixed(0)).join(', ') + ' px above the bottom');
         const cards = await page.evaluate(() => {
           const o = [];
-          for (const [id, cls] of [['clear'], ['death'], ['death', 'low'], ['offer'], ['slip'], ['sharesheet'], ['devcard']]) {
+          for (const [id, cls] of [['clear'], ['death'], ['death', 'low'], ['sharesheet'], ['devcard']]) {
             const el = document.getElementById(id); el.classList.add('on'); if (cls) el.classList.add(cls);
             const box = (id === 'devcard' ? document.getElementById('devtap') : el).getBoundingClientRect();
             o.push({ id: id + (cls ? '.' + cls : ''), gap: innerHeight - box.bottom });

@@ -597,9 +597,12 @@ const MUTANTS = [
   { name: 'HEART_CAP_9', task: 'T1.6', file: 'page', find: 'var grown = Math.min(T.HEARTS_CAP, T.HEARTS_BASE', repl: 'var grown = Math.min(T.HEARTS_CAP + 1, T.HEARTS_BASE',
     gates: [{ gate: 'harness', only: 'H-loot-2', expect: 'after 1 to 15 scrolls the hearts are' }] },
   { name: 'SIM_RUNS_UNDER_SHEET', task: 'T1.6', file: 'page', find: 'if (s.scrollsOffered) { if (choice === CHOICE.A || choice === CHOICE.B) pickScroll(s, s.scrollsOffered[choice - 1]); s.frame++; return s; }', repl: 'if (s.scrollsOffered && (choice === CHOICE.A || choice === CHOICE.B)) { pickScroll(s, s.scrollsOffered[choice - 1]); s.frame++; return s; }',
-    gates: [{ gate: 'harness', only: 'H-sim-19', expect: 'without the choice word the replay stalls at the offer' }, { gate: 'loot', expect: '412: the offer opens on the ground and the hero holds still under it' }] },
-  { name: 'CHOICE_VIA_SHELL', task: 'T1.6', file: 'page', find: "document.getElementById('pickA').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.A); });", repl: "document.getElementById('pickA').addEventListener('click', function () { var st = SB.game.state; SB.sim.pickScroll(st, st.scrollsOffered[0]); });",
-    gates: [{ gate: 'loot', expect: '412: the recorded script carries the CHOICE word' }] },
+    /* the loot gate's row left with the sheets (Q92): the shell answers on the very next word, a step the sim holds either way */
+    gates: [{ gate: 'harness', only: 'H-sim-19', expect: 'without the choice word the replay stalls at the offer' }] },
+  /* re anchored at NOTE5 on the shell's own answer (the pick buttons left with the sheets): the same mutation, the shell
+     writing the stat itself with no word recorded */
+  { name: 'CHOICE_VIA_SHELL', task: 'T1.6', file: 'page', find: '      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);', repl: '      if (st.scrollsOffered) SB.sim.pickScroll(st, st.scrollsOffered[0]);',
+    gates: [{ gate: 'loot', expect: '412: the recording carries the two answers' }] },
   { name: 'GRACE_ONE_SHORT', task: 'T1.6', file: 'page', find: 'else { s.room.grace = T8.PICKUP_GRACE_FRAMES; s.room.offerWait = 1; }', repl: 'else { s.room.grace = T8.PICKUP_GRACE_FRAMES - 1; s.room.offerWait = 1; }',
     gates: [{ gate: 'harness', only: 'H-loot-3', expect: 'PICKUP_GRACE_FRAMES or more after the touch' }] },
   { name: 'OFFER_IN_THE_AIR', task: 'T1.6', file: 'page', find: 'if (s.room.offerWait && s.room.grace === 0 && h.ground) {', repl: 'if (s.room.offerWait && s.room.grace === 0) {',
@@ -642,7 +645,7 @@ const MUTANTS = [
   { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=1')", repl: "register('./sw.js?v=2')",
     gates: [{ gate: 'lint', expect: 'STAMP' }] },
   /* T1.13: the free play loop, the Wallet moments, the fab insurance */
-  { name: 'X_LEAVES_OVERLAY', task: 'T1.13', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'offer', 'slip', 'sharesheet'];", repl: "var OVERLAYS = ['clear', 'death', 'offer', 'slip'];",
+  { name: 'X_LEAVES_OVERLAY', task: 'T1.13', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'sharesheet'];", repl: "var OVERLAYS = ['clear', 'death'];",   /* re anchored at NOTE5: the sheets left the list */
     gates: [{ gate: 'loop', expect: "the strip's Title with the share sheet open: the title with nothing over it" }] },
   { name: 'MOMENT_TWICE', task: 'T1.13', file: 'page', find: 'if (!S.doc || !framed || S.doc.moments[name]) return false;', repl: 'if (!S.doc || !framed) return false;',
     gates: [{ gate: 'loop', expect: 'inside the wrapper iframe two clears' }] },
@@ -716,17 +719,8 @@ const MUTANTS = [
     gates: [{ gate: 'share', expect: "its death card's Again keeps it a link" }] },
   { name: 'PLAY_AGAIN_FORGETS_LINK', task: 'M1R', file: 'page', find: 'ui.startRoom(G.record, G.name, { level: G.level, notFirst: G.notFirst, mode: G.mode }); };', repl: 'ui.startRoom(G.record, G.name, { level: G.level }); };',
     gates: [{ gate: 'share', expect: "its clear card's Play it again keeps it a link" }] },
-  { name: 'SLIP_OVER_OFFER', task: 'M1R', file: 'page', find: "document.getElementById('slip').classList.toggle('on', !!st.room.compare && !off && !dead);", repl: "document.getElementById('slip').classList.toggle('on', !!st.room.compare);",
-    gates: [{ gate: 'loot', expect: "320: the scroll's offer and the chest's compare open on one step: the offer is up alone" }] },
-  { name: 'SHEET_OVER_DEATH', task: 'M1R', file: 'page', edits: [['var dead = !!st.room.dead, off = dead ? null : st.scrollsOffered', 'var dead = !!st.room.dead, off = st.scrollsOffered'],
-    ["    document.getElementById('offer').classList.remove('on'); document.getElementById('slip').classList.remove('on'); shownOffer = '';\n", '']],
-    gates: [{ gate: 'loot', expect: '320: a room ended under the offer shows the death card alone' }] },
-  { name: 'SLIP_NOT_MODAL', task: 'M1R', file: 'page', find: "var MODALS = ['clear', 'death', 'offer', 'slip', 'sharesheet', 'devcard'];", repl: "var MODALS = ['clear', 'death', 'offer', 'sharesheet', 'devcard'];",
-    gates: [{ gate: 'loot', expect: '412: walked on past the scroll, the chest opens its compare: the slip is up alone and the page is modal' }] },
-  { name: 'OFFER_NOT_CLEARED', task: 'M1R', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'offer', 'slip', 'sharesheet'];", repl: "var OVERLAYS = ['clear', 'death', 'slip', 'sharesheet'];",
-    gates: [{ gate: 'loot', expect: "412: the strip's Title with the offer up: the title with nothing over it" }] },
-  { name: 'SLIPOK_LEAVES', task: 'M1R', file: 'page', find: "addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });", repl: "addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.LEAVE); });",
-    gates: [{ gate: 'loot', expect: '412: a real tap on Keep the slip closes the compare' }] },
+  /* SLIP_OVER_OFFER, SHEET_OVER_DEATH, SLIP_NOT_MODAL, OFFER_NOT_CLEARED and SLIPOK_LEAVES retired at NOTE5 with the two
+     sheets they watched (QUESTIONS Q92: M1 shows no sheet); T2.5 and T2.7 bring the rules back with the sheets */
   { name: 'REVEAL_SEEN_NOT_SAVED', task: 'M1R', file: 'page', find: '    if (!RV.seen && SB.save.doc && !SB.save.doc.onboarding.revealSeen) { SB.save.doc.onboarding.revealSeen = true; SB.save.commit(); }\n', repl: '',
     gates: [{ gate: 'reveal', expect: 'a new session skips its first reveal on a tap' }] },
   { name: 'REVEAL_SEEN_NOT_LOADED', task: 'M1R', file: 'page', find: '  SB.ui.reveal.seen = !!SB.save.doc.onboarding.revealSeen;\n', repl: '',
@@ -844,7 +838,63 @@ const MUTANTS = [
      an include timer that lands in the gate's measure window at one of them cannot turn the row) */
   { name: 'CHIP_SEAT_LATE', task: 'NOTE1R', file: 'page', find: "    if (name === 'title' || name === 'settings') ui.seatChip();\n", repl: '',
     gates: [{ gate: 'layout', expect: ["390x844 the app mark (?navpad, env 0): at once on the title after a room the fleet's chip ends",
-      "360x780 the app mark (?navpad, env 0): at once on the title after a room the fleet's chip ends"] }] }
+      "360x780 the app mark (?navpad, env 0): at once on the title after a room the fleet's chip ends"] }] },
+
+  /* Stephen's playtest of 31 Oct, note 5, his ruling "Dead pixels only" (QUESTIONS Q92): the chest pays its 15 with a
+     handwritten +15 that stops nothing, M1 shows no sheet (the shell answers the sim's offer and compare on the next
+     word), no player string names a weapon, a charm, a blueprint or the Darkroom, and the blueprint is neither drawn
+     nor heard. The lint's rule: the old slip line, the old Grit line, the Darkroom as two words, a blueprint in markup */
+  { name: 'COPY_PROMISES_WEAPON', task: 'NOTE5', file: 'page', find: "    dp: 'Dead pixels', dpGain: '+{n}',", repl: "    dp: 'Dead pixels', dpGain: '+{n}',\n    slip: 'A weapon waits for the Darkroom.',",
+    gates: [{ gate: 'lint', expect: 'COPY.slip: names weapon before the build has one' }] },
+  { name: 'COPY_PROMISES_CHARM', task: 'NOTE5', file: 'page', find: "    dp: 'Dead pixels', dpGain: '+{n}',", repl: "    dp: 'Dead pixels', dpGain: '+{n}',\n    grit: 'Grit', gritSays: 'charms grow stronger',",
+    gates: [{ gate: 'lint', expect: 'COPY.gritSays: names charm before the build has one' }] },
+  { name: 'COPY_NAMES_DARK_ROOM', task: 'NOTE5', file: 'page', find: "nextRoom: 'Shoot the next room',", repl: "nextRoom: 'Shoot the dark room',",
+    gates: [{ gate: 'lint', expect: 'COPY.nextRoom: names Darkroom before the build has one' }] },
+  { name: 'MARKUP_NAMES_BLUEPRINT', task: 'NOTE5', file: 'page', find: '<span id="hearts" aria-label="Hearts">', repl: '<span id="hearts" aria-label="Hearts and a blueprint">',
+    gates: [{ gate: 'lint', expect: 'markup aria-label: names blueprint before the build has one' }] },
+  /* the sheets: an answer dropped holds the world for good; the old sheets back, shown and waiting for a tap; the
+     answers in the wrong order hold it for good when both open on one step */
+  { name: 'OFFER_HOLDS_WORLD', task: 'NOTE5', file: 'page', find: '      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);', repl: '      if (st.scrollsOffered) { /* the offer waits for a tap */ }',
+    gates: [{ gate: 'loot', expect: '412: the scroll is taken with its pickup voice' }] },
+  { name: 'CHEST_HOLDS_WORLD', task: 'NOTE5', file: 'page', find: '      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);', repl: '      else if (st.room.compare) { /* the slip waits for a tap */ }',
+    gates: [{ gate: 'loot', expect: '412: the world holds still for exactly the two steps the answers ride' }] },
+  { name: 'OFFER_SHOWS', task: 'NOTE5', file: 'page', edits: [
+      ['    <div id="sharesheet" role="dialog"', '    <div id="offer" role="dialog"><h2>Pick a scroll</h2><button id="pickA" type="button">Vigor</button><button id="pickB" type="button">Focus</button></div>\n    <div id="sharesheet" role="dialog"'],
+      ['#clear, #death { position: absolute;', '#clear, #death, #offer { position: absolute;'], ['#clear.on, #death.on { display: flex; }', '#clear.on, #death.on, #offer.on { display: flex; }'],
+      ['      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);', "      document.getElementById('offer').classList.toggle('on', !!st.scrollsOffered);"]],
+    gates: [{ gate: 'loot', expect: '412: no sheet, card or dialog shows on the walk' }] },
+  { name: 'SLIP_BACK', task: 'NOTE5', file: 'page', edits: [
+      ["    dp: 'Dead pixels', dpGain: '+{n}',", "    dp: 'Dead pixels', dpGain: '+{n}',\n    slip: 'A weapon waits for the Darkroom.', slipTake: 'Keep the slip',"],
+      ['    <div id="sharesheet" role="dialog"', '    <div id="slip" role="dialog" data-aria="slip"><h2 data-copy="slip"></h2>\n      <button id="slipok" type="button" data-copy="slipTake"></button></div>\n    <div id="sharesheet" role="dialog"'],
+      ['#clear, #death { position: absolute;', '#clear, #death, #slip { position: absolute;'], ['#clear.on, #death.on { display: flex; }', '#clear.on, #death.on, #slip.on { display: flex; }'],
+      ['      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);', "      document.getElementById('slip').classList.toggle('on', !!st.room.compare && !st.scrollsOffered);"],
+      ["    document.getElementById('share').addEventListener('click', function () { ui.openShare(); });", "    document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });\n    document.getElementById('share').addEventListener('click', function () { ui.openShare(); });"],
+      ["var MODALS = ['clear', 'death', 'sharesheet', 'devcard'];", "var MODALS = ['clear', 'death', 'slip', 'sharesheet', 'devcard'];"]],
+    gates: [{ gate: 'loot', expect: '412: no sheet, card or dialog shows on the walk' }, { gate: 'lint', expect: 'COPY.slip: names weapon before the build has one' }] },
+  { name: 'ANSWER_ORDER_SWAPPED', task: 'NOTE5', file: 'page', find: '      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);\n      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);',
+    repl: '      if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);\n      else if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);',
+    gates: [{ gate: 'loot', expect: "320: the scroll's offer and the chest's compare open on one step" }] },
+  /* the +15: never shown, never gone (with reduced motion it stands for good), taking taps over A's hit area, and
+     carried into the next room */
+  { name: 'PLUS_MISSING', task: 'NOTE5', file: 'page', find: "if (ev & EV.CHEST) { au.sfx('chest'); SB.ui.dpGain(SB.TUNING.DP_CHEST); }", repl: "if (ev & EV.CHEST) { au.sfx('chest'); }",
+    gates: [{ gate: 'loot', expect: '412: the chest opens with its chest voice and pays 15' }] },
+  { name: 'PLUS_STAYS', task: 'NOTE5', file: 'page', find: "clearTimeout(el.sbGainT); el.sbGainT = setTimeout(function () { el.classList.remove('on'); }, GAIN_MS);", repl: 'clearTimeout(el.sbGainT);',
+    gates: [{ gate: 'loot', expect: '320: with reduced motion the +15 stands still' }] },
+  { name: 'PLUS_TAKES_TAPS', task: 'NOTE5', file: 'page', find: '#dpplus { position: absolute; right: 0; top: 100%;', repl: '#dpplus { pointer-events: auto; position: absolute; right: 0; top: 100%;',
+    gates: [{ gate: 'loot', expect: '412: the +15 takes no tap' }] },
+  { name: 'PLUS_CARRIES_OVER', task: 'NOTE5', file: 'page', find: "    document.getElementById('dpplus').classList.remove('on');\n", repl: '',
+    gates: [{ gate: 'loot', expect: '412: a new room right after the chest shows no +15' }] },
+  /* the answer's own step: no pick voice for a pick the player never made, and no tap lost to the step the sim holds */
+  { name: 'PICK_SOUNDS', task: 'NOTE5', file: 'page', find: '      if (ev & EV.PICK) SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax);', repl: "      if (ev & EV.PICK) { au.sfx('pick'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); }",
+    gates: [{ gate: 'loot', expect: '412: no pick voice sounds' }] },
+  { name: 'EDGE_LOST_TO_CHOICE', task: 'NOTE5', file: 'page', find: '      (c ? c * IN.CHOICE : (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0));\n    if (!c) { edge.A = 0; edge.B = 0; }',
+    repl: '      (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0) | c * IN.CHOICE;\n    edge.A = 0; edge.B = 0;',
+    gates: [{ gate: 'loot', expect: "412: a real tap on A as the chest opens rides past its answer's step and jumps on the next" }] },
+  /* the blueprint: drawn, or heard */
+  { name: 'BLUEPRINT_DRAWN', task: 'NOTE5', file: 'page', find: 'if (!lt2.taken && R.LOOT_SHOWN[lt2.kind]) spr(', repl: 'if (!lt2.taken) spr(',
+    gates: [{ gate: 'loot', expect: '412: the blueprint is not drawn' }] },
+  { name: 'BLUEPRINT_SOUNDS', task: 'NOTE5', file: 'page', find: "if ((ev & EV.PICKUP) && SB.render.lootTaken(G.state) > seen) au.sfx('pickup');", repl: "if (ev & EV.PICKUP) au.sfx('pickup');",
+    gates: [{ gate: 'loot', expect: '412: the blueprint is taken in silence' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

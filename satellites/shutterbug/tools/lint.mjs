@@ -247,6 +247,16 @@ function copyLaw(where, s) {
   if (/[-‐-―−﹘﹣－]/.test(s)) fail('COPY', where + ': a dash in player copy: "' + s + '"');
   if (/!/.test(s)) fail('COPY', where + ': an exclamation mark in player copy: "' + s + '"');
   if (/Sky Wolf Studios/i.test(s)) fail('COPY', where + ': "Sky Wolf Studio" is singular: "' + s + '"');
+  notYet(where, s);
+}
+/* rule (QUESTIONS Q92, Stephen's ruling of 31 Oct on his note 5, "it says a weapon awaits in the dark room. wtfd does
+   that nmean"): no player string names a thing the build does not have. M1 has no weapon, no charm, no blueprint and
+   no Darkroom, so no COPY value and no text the markup shows names one ("dark room" as two words too: that is how a
+   stranger reads it). Each M2 task takes its word off this list when its thing lands and does something: T2.1 weapon,
+   T2.4 charm, T2.6 blueprint, T2.9 Darkroom (its door drawn and entered) */
+const NOT_YET = [['weapon', /weapon/i], ['charm', /charm/i], ['blueprint', /blueprint/i], ['Darkroom', /dark\s*room/i]];
+function notYet(where, s) {
+  for (const [word, re] of NOT_YET) if (re.test(s)) fail('NOT_YET', where + ': names ' + word + ' before the build has one: "' + s + '"');
 }
 const ui = inline.find(b => b.id === 'shell-ui');
 const cm = ui && ui.src.match(/ui\.COPY\s*=\s*Object\.freeze\(/);
@@ -333,5 +343,5 @@ for (const b of inline) {
 
 if (warns.length) console.log('warnings (bare numerals over 16 outside TUNING; 256, shifts and masks are legitimate):\n  ' + warns.join('\n  '));
 if (fails.length) { console.log('LINT FAILED: ' + fails.length + '\n' + fails.map(f => '  FAIL ' + f).join('\n')); process.exit(1); }
-console.log('lint: ' + inline.length + ' inline blocks parse, ' + core.length + ' core blocks pure and in order, ' + si + ' style block' + (si === 1 ? '' : 's') + ' balanced, the include once, the copy law');
+console.log('lint: ' + inline.length + ' inline blocks parse, ' + core.length + ' core blocks pure and in order, ' + si + ' style block' + (si === 1 ? '' : 's') + ' balanced, the include once, the copy law, no word before its thing');
 console.log('LINT OK');
