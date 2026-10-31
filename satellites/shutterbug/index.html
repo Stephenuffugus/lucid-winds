@@ -4048,8 +4048,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
      steps (its first shown blink: the i frames hide steps 1 to 5 and show 6 to 13); the takeoff stretch (10x18) and
      the landing squash (14x14) for the sim's six step squash counter, in place of the land and jump frames the old
      transform scaled (Q35: the same steps, the same rect, now drawn 1:1); the dash's own lean; the drop in's three
-     beats, DROP_BEAT steps each (8 fps), over a room's first steps while the bug stands still. Render only: the sim
-     never reads a pose */
+     beats, DROP_BEAT steps each (8 fps), over a room's first 24 steps while the bug neither runs, rises nor dashes (the
+     spawn's own short fall and landing included: the descent is the beat, not the fall frame and the squash). Render
+     only: the sim never reads a pose */
   R.HURT_POSE_F = 16; R.DROP_BEAT = 8; R.DROP_BEATS = ['descending', 'contact', 'settled'];
   R.heroFrame = function (s) {
     var h = s.hero, T = SB.TUNING, hold = Math.round(T.STEP_HZ / T.ANIM_FPS);
@@ -4057,12 +4058,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (h.iframes > SB.K.HIT_IFRAMES_F - R.HURT_POSE_F) return 'hero_hurt.recoil';
     if (h.dive) return 'dive';
     if (h.wall !== 0 || h.sticky) return 'cling';
+    if (s.frame < R.DROP_BEAT * 3 && h.anim === 0 && h.vy >= 0 && h.squash >= 0 && !h.dash) return 'hero_dropin.' + R.DROP_BEATS[Math.floor(s.frame / R.DROP_BEAT)];
     if (h.squash < 0) return 'hero_stretch.stretch';
     if (!h.ground) return h.vy < 0 ? 'jump' : 'fall';
     if (h.dash > 0) return 'hero_dash.dash';
     if (h.squash > 0) return 'hero_squash.squash';
     if (h.anim > 0) return 'run' + (Math.floor((h.anim - 1) / hold) % 4);
-    if (s.frame < R.DROP_BEAT * 3) return 'hero_dropin.' + R.DROP_BEATS[Math.floor(s.frame / R.DROP_BEAT)];
     return 'idle' + (Math.floor(s.frame / (hold * 6)) % 2);
   };
   /* what the last frame drew where (canvas px), for SB_DEV's sprite rects and pixel samples; never read by the game */

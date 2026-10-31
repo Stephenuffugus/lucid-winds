@@ -1193,7 +1193,7 @@ const MUTANTS = [
     gates: [{ gate: "sprites", expect: "a dash draws hero_dash" }] },
   { name: "POSE_HURT_OFF", task: 'ART2', file: "page", find: "    if (h.iframes > SB.K.HIT_IFRAMES_F - R.HURT_POSE_F) return 'hero_hurt.recoil';\n", repl: "",
     gates: [{ gate: "sprites", expect: "a hit draws hero_hurt.recoil" }] },
-  { name: "DROPIN_OFF", task: 'ART2', file: "page", find: "    if (s.frame < R.DROP_BEAT * 3) return 'hero_dropin.' + R.DROP_BEATS[Math.floor(s.frame / R.DROP_BEAT)];\n", repl: "",
+  { name: "DROPIN_OFF", task: 'ART2', file: "page", find: "    if (s.frame < R.DROP_BEAT * 3 && h.anim === 0 && h.vy >= 0 && h.squash >= 0 && !h.dash) return 'hero_dropin.' + R.DROP_BEATS[Math.floor(s.frame / R.DROP_BEAT)];\n", repl: "",
     gates: [{ gate: "sprites", expect: "a room opens on the drop in" }] },
   { name: "POSE_IN_BRICK", task: 'ART2', file: "page", find: "      dash: '............/.....0", repl: "      dash: '............/.....9",
     gates: [{ gate: "harness", only: "H-spr-1", expect: "hero_dash.dash has an Ink outline and draws only" }] },

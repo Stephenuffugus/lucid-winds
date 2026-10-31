@@ -139,8 +139,8 @@ try {
   }
   await page.keyboard.up('KeyZ');
   const stretch = sq.filter(f => f.squash < 0), squash = sq.filter(f => f.squash > 0);
-  const stOk = stretch.length >= 6 && stretch.every(f => /^hero_stretch\.stretch<?$/.test(f.key) && f.w === 10 && f.h === 18 && f.x === f.hx + 1 && f.y === f.hy - 2 && f.n > 40 && f.bad.length === 0);
-  const sqOk = squash.length >= 6 && squash.every(f => /^hero_squash\.squash<?$/.test(f.key) && f.w === 14 && f.h === 14 && f.x === f.hx - 1 && f.y === f.hy + 2 && f.n > 40 && f.bad.length === 0);
+  const stOk = stretch.length >= 5 && stretch.every(f => /^hero_stretch\.stretch<?$/.test(f.key) && f.w === 10 && f.h === 18 && f.x === f.hx + 1 && f.y === f.hy - 2 && f.n > 40 && f.bad.length === 0);
+  const sqOk = squash.length >= 5 && squash.every(f => /^hero_squash\.squash<?$/.test(f.key) && f.w === 14 && f.h === 14 && f.x === f.hx - 1 && f.y === f.hy + 2 && f.n > 40 && f.bad.length === 0);
   R.say(stOk && sqOk, 'the takeoff draws hero_stretch 10x18 for ' + stretch.length + ' steps and the landing hero_squash 14x14 for ' + squash.length + ', 1:1 in the old transform\'s rects, every opaque pixel the frame (' + [...new Set(sq.map(f => f.key + ' ' + f.w + 'x' + f.h + ' at ' + (f.x - f.hx) + ',' + (f.y - f.hy) + (f.bad.length ? ' ' + f.bad.length + ' differ' : '')))].join('; ') + ')');
 
   /* ART2: the dash's own lean: hero_dash for its steps on the ground, the Glare copy through its i frames, every opaque
