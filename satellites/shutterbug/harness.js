@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 5543;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; RAISE_ME) */
+const ASSERT_FLOOR = 5740;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5740 at Weapons v1 step 1, 31 Oct) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
