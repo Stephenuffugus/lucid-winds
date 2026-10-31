@@ -426,11 +426,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
     DP_FODDER: 3, DP_ELITE: 10, DP_BOSS: 60, DP_SPECK: [2, 6], DP_CHEST: 15, DP_FREE_PLAY_MULT: 0.5, DP_OPEN_HOUSE_MULT: 1.5,
     PRICE_DEVELOP: [30, 100, 300], PRICE_REROLL: 20 /* Q52 */, PRICE_START_PICK: 200, PRICE_NEGATIVE: 400, PRICE_DOUBLE: 600, PRICE_OPEN_HOUSE: 600,
     REPEAT_DECAY: 0 /* off by default, 9.3 */,
+    /* Weapons v1 step 1 (docs/WEAPONS-V1.md, QUESTIONS Q120): every HP and every hit counted in quarters, so a stat
+       point's +25% is exact (DESIGN 9.2); the weapons this build has, in draw order (the chest's pool until the
+       Darkroom's loaded pool, DESIGN 9.3; the HUD's set and the lint's); Stephen's calls 1, 2 and 4 on their defaults;
+       an enemy's hit flash (9 steps) and a kill's pop (12) */
+    HP_Q: 4, WEAPONS_BUILT: ['J1', 'D1'], CHEST_FILLS_EMPTY_FIRST: true, KEEP_GEAR: true, DIVE_SLOT_CD_S: 0, HURT_FLASH_S: 0.15, POP_S: 0.2,
     WEAPON_TIER: { 1: ['J1', 'J5', 'D1', 'D6', 'C1', 'C2'], 2: ['J2', 'J3', 'J6', 'D2', 'D4', 'D5', 'C3', 'C4', 'C6'], 3: ['J4', 'J7', 'J8', 'D3', 'D7', 'D8', 'C5', 'C7', 'C8'] } /* Q52 */,
-    WEAPONS: { /* DESIGN 9.1's cells, damage, seconds and caps by id */
-      J1: { cells: 5, dmg: 1 }, J2: { count: 3, burnS: 1.5, dmg: 1 }, J3: { cells: 2, dmg: 2 }, J4: { radius: 2, dmg: 1, stunS: 1 },
+    WEAPONS: { /* DESIGN 9.1's cells, damage, seconds and caps by id; the built ones carry their feel numbers (FEEL:
+      Stephen's thumbs judge them): J1 out at 5 px a step (5 cells in 16 steps), a 1.2 s life, a 12 px box; D1's fronts
+      at 6 px a step (3 cells in 8 steps), lingering 0.1 s */
+      J1: { cells: 5, dmg: 1, speed: 5, lifeS: 1.2, box: 12 }, J2: { count: 3, burnS: 1.5, dmg: 1 }, J3: { cells: 2, dmg: 2 }, J4: { radius: 2, dmg: 1, stunS: 1 },
       J5: { cells: 4, dmg: 1 }, J6: { cells: 6, dmg: 1 }, J7: { cells: 3, freezeS: 0.5 }, J8: { extraUpCells: 1 },
-      D1: { cells: 3, dmg: 2 }, D2: { cells: 2, freezeS: 2 }, D3: { dmg: 2, bounceCells: 2 }, D4: { dp: [1, 3], dmg: 1 },
+      D1: { cells: 3, dmg: 2, front: 6, lingerS: 0.1 }, D2: { cells: 2, freezeS: 2 }, D3: { dmg: 2, bounceCells: 2 }, D4: { dp: [1, 3], dmg: 1 },
       D5: { burnS: 2, dmg: 1, everyS: 0.5 }, D6: { cells: 5, dmg: 1 }, D7: { dmg: 3 }, D8: { cells: 3, dmg: 1 },
       C1: { cells: 1, dps: 1, gritDps: 0.5, dpsCap: 3 }, C2: { cells: 4, gritCells: 1, cellsCap: 8 }, C3: {}, C4: {},
       C5: { slideDiv: 5, wallAcross: 5 }, C6: {}, C7: { pct: 20, gritPct: 5, pctCap: 40 }, C8: {}
@@ -481,6 +488,25 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (var i = 0; i < keys.length; i++) {
       var k = keys[i];
       if (k.length > 2 && k.slice(-2) === '_S' && typeof T[k] === 'number') K[k.slice(0, -2) + '_F'] = Math.round(T[k] * HZ);
+    }
+    /* the weapons' flat integers (docs/WEAPONS-V1.md 2.3), one rule for every row: cells and radius are a reach in
+       sub px, a speed, front or bounceV a velocity, jumpV, deepJumpV and push their own velocities, box, boxW, boxH a
+       size, every <name>S a count of steps; damage, counts and caps stay in TUNING. A velocity that is not a whole
+       1/256 px throws (the movement constants' rule) */
+    K.HP_Q = T.HP_Q;
+    var W = T.WEAPONS, ids = Object.keys(W), snake = function (n) { return n.replace(/([A-Z])/g, '_$1').toUpperCase(); };
+    var exact = function (id, n, v) { if (!Number.isInteger(v * SUB)) throw new Error('derive: WEAPONS.' + id + '.' + n + ' is not a whole 1/256 px (' + v + ')'); return v * SUB; };
+    for (var wi = 0; wi < ids.length; wi++) {
+      var row = W[ids[wi]], wk = Object.keys(row), p = ids[wi] + '_';
+      for (var wj = 0; wj < wk.length; wj++) {
+        var n = wk[wj], v = row[n];
+        if (typeof v !== 'number') continue;
+        if (n === 'cells' || n === 'radius') K[p + 'REACH'] = v * G.CELL * SUB;
+        else if (n === 'speed' || n === 'front' || n === 'bounceV') K[p + 'V'] = exact(ids[wi], n, v);
+        else if (n === 'jumpV' || n === 'deepJumpV' || n === 'push') K[p + snake(n)] = exact(ids[wi], n, v);
+        else if (n === 'box' || n === 'boxW' || n === 'boxH') K[p + n.toUpperCase()] = v * SUB;
+        else if (n.length > 1 && n.slice(-1) === 'S') K[p + snake(n.slice(0, -1)) + '_F'] = Math.round(v * HZ);
+      }
     }
     return deepFreeze(K);
   };
@@ -2809,6 +2835,21 @@ body.sb-modal .lwfb-fab { display: none !important; }
      hue, Attic and Ember Vigor, Frost and Deep Focus, Overgrowth Grit) */
   var LOOT_SPECK = 1, LOOT_SCROLL = 2, LOOT_BLUEPRINT = 3, VIGOR = 1, FOCUS = 2, GRIT = 3, STAT_OF_BIOME = [VIGOR, FOCUS, FOCUS, GRIT, VIGOR];
 
+  /* the weapons (docs/WEAPONS-V1.md 2.1): the state holds integers, so every weapon id has a code, its index here; the
+     slot of a code is (code - 1) >> 3 (0 the jump slot, J1..J8; 1 the dive slot, D1..D8; 2 the charm, C1..C8). BUILT is
+     the codes of TUNING.WEAPONS_BUILT in its order, the chest's pool (a frozen plain array: a typed array with elements
+     cannot be frozen), made here, never in step */
+  var WPN = (function () { var a = [''], k, j; for (k = 0; k < 3; k++) for (j = 1; j <= 8; j++) a.push('JDC'.charAt(k) + j); return Object.freeze(a); })();
+  var BUILT = Object.freeze(SB.TUNING.WEAPONS_BUILT.map(function (id) { return WPN.indexOf(id); }));
+  function slotOf(c) { return (c - 1) >> 3; }
+  var WPN_J1 = WPN.indexOf('J1'), WPN_D1 = WPN.indexOf('D1');
+  /* a loadout entry (a code, an id or null) as a code of its own slot k, else 0 */
+  function codeIn(v, k) { var c = typeof v === 'string' ? WPN.indexOf(v) : typeof v === 'number' ? v : 0; return c > 0 && c < WPN.length && slotOf(c) === k ? c : 0; }
+  /* the pool's kinds (section 7): step 1 builds the first three */
+  var BOOMERANG = 1, SHOCK = 2, POP = 3;
+  var PROJ_KEYS = ['kind', 'x', 'y', 'vx', 'vy', 'ttl', 'dmg', 'live', 'age', 'mode', 'a', 'b', 'hit', 'freeze', 'stun'];
+  function newProj() { return { kind: 0, x: 0, y: 0, vx: 0, vy: 0, ttl: 0, dmg: 0, live: 0, age: 0, mode: 0, a: 0, b: 0, hit: 0, freeze: 0, stun: 0 }; }
+
   function create(level, opts) {
     opts = opts || {};
     var K = SB.K, CS = K.CELL_SUB, w = level.w, hx, hy;
@@ -2818,23 +2859,28 @@ body.sb-modal .lwfb-fab { display: none !important; }
       hx = sx * CS + ((CS - K.HERO_W_SUB) >> 1);
       hy = sy * CS;
     }
-    var hearts = opts.hearts || SB.TUNING.HEARTS_BASE;
+    var hearts = opts.hearts || SB.TUNING.HEARTS_BASE, lo = opts.loadout || [0, 0, 0], proj = [];
+    /* the pool (docs/WEAPONS-V1.md 3.3): PROJ_MAX objects made here and kept for the state's life; step reuses them */
+    for (var pi = 0; pi < SB.TUNING.PROJ_MAX; pi++) proj.push(newProj());
+    var es = (level.features && level.features.enemies) || [];
+    if (es.length > 31) throw new Error('sim.create: ' + es.length + ' enemies (a hit pass marks each in one bit of 31)');
     return {
       v: 1, frame: 0, rng: (level.seed ^ 0x9e3779b9) >>> 0, biome: level.biome | 0, negative: level.negative ? 1 : 0,
       firstRoom: opts.firstRoom ? 1 : 0, lastRoom: opts.lastRoom ? 1 : 0, immortal: opts.immortal ? 1 : 0, ev: 0,
       hero: { x: hx, y: hy, vx: 0, vy: 0, facing: 1, ground: 0, wall: 0, sticky: 0, lock: 0, spent: 0, knock: 0, coyote: 0, buffer: 0, held: 0, rising: 0,
         dive: 0, dash: 0, dashI: 0, iframes: 0, hearts: hearts, heartsMax: hearts, vigor: 0, focus: 0, grit: 0, scrolls: 0,
-        slots: [0, 0, 0], cd: [0, 0, 0], squash: 0, anim: 0, lastStand: level.spawn | 0, secondWind: 0, thickSkin: 0, shake: 0 },
-      /* the enemies (T1.4): each kind's HP (an elite's ELITE_HP_MULT times, its box ELITE_SIZE_CELLS a side, centred on
-         its cell; QUESTIONS Q51); the pocket's elite starts asleep (stunned -1) until the hero enters its pocket (Q75) */
-      enemies: ((level.features && level.features.enemies) || []).map(function (e) {
+        slots: [codeIn(lo[0], 0), codeIn(lo[1], 1), codeIn(lo[2], 2)], cd: [0, 0, 0], squash: 0, anim: 0, lastStand: level.spawn | 0, secondWind: 0, thickSkin: 0, shake: 0 },
+      /* the enemies (T1.4): each kind's HP in quarters (HP_Q; an elite's ELITE_HP_MULT times, its box ELITE_SIZE_CELLS a
+         side, centred on its cell; QUESTIONS Q51); the pocket's elite starts asleep (stunned -1) until the hero enters its
+         pocket (Q75); hurt, the steps left of a hit's flash */
+      enemies: es.map(function (e) {
         var ex = e.idx % w, ey = (e.idx - ex) / w, el = e.elite ? 1 : 0, off = (CS - (el ? K.ELITE_SUB : CS)) >> 1;
-        return { kind: e.kind, x: ex * CS + off, y: ey * CS + off, vx: 0, vy: 0, hp: hpOf(e.kind, el), state: 0, timer: 0, dir: 1, home: e.idx, elite: el, frozen: 0,
-          stunned: el && pocketOf(level, e.idx) ? -1 : 0 };
+        return { kind: e.kind, x: ex * CS + off, y: ey * CS + off, vx: 0, vy: 0, hp: hpOf(e.kind, el) * K.HP_Q, state: 0, timer: 0, dir: 1, home: e.idx, elite: el, frozen: 0,
+          stunned: el && pocketOf(level, e.idx) ? -1 : 0, hurt: 0 };
       }),
-      proj: [], loot: lootOf(level), chest: { idx: level.features && typeof level.features.chest === 'number' && level.features.chest >= 0 ? level.features.chest : -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
+      proj: proj, loot: lootOf(level), chest: { idx: level.features && typeof level.features.chest === 'number' && level.features.chest >= 0 ? level.features.chest : -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
       traps: { phase: 0 }, boss: null,
-      room: { dp: 0, blueprints: [], exitLit: 0, cleared: 0, dead: 0, deaths: 0, grace: 0, offerWait: 0, compare: 0 }
+      room: { dp: 0, blueprints: [], exitLit: 0, cleared: 0, dead: 0, deaths: 0, grace: 0, offerWait: 0, compare: 0, cand: 0, tremor: 0 }
     };
   }
 
@@ -2965,14 +3011,120 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (var k = 0; k < es.length; k++) if (es[k].idx === home) return es[k].env || [];
     return [];
   }
-  /* a weapon's hit (M2): dmg off the enemy's HP; at 0 it dies (an icicle too: only a fallen one comes back) and the
-     room banks its Dead Pixels, DP_FODDER or DP_ELITE (DESIGN 9.3); returns the HP left */
-  function hurt(s, m, dmg) {
-    var en = s.enemies[m], T = SB.TUNING;
-    if (!en || en.hp <= 0) return 0;
-    en.hp = Math.max(0, en.hp - dmg);
-    if (en.hp === 0) s.room.dp += en.elite ? T.DP_ELITE : T.DP_FODDER;
+  /* a weapon's hit (docs/WEAPONS-V1.md 5.4): q quarters off a live enemy's HP, its flash set (HURT); at 0 it dies (an
+     icicle too: a killed one never hangs again), the room banks DP_FODDER or DP_ELITE once (DESIGN 9.3; KILL) and a POP
+     marks its box's centre. A dead enemy keeps its slot with HP 0, never moves, never touches, is never drawn. Returns
+     the HP left (0 for one not live) */
+  function hurt(s, m, q) {
+    var en = s.enemies[m], T = SB.TUNING, K = SB.K;
+    if (!en || !liveEnemy(en)) return 0;
+    en.hp = Math.max(0, en.hp - q); en.hurt = K.HURT_FLASH_F; s.ev |= EV.HURT;
+    if (en.hp === 0) {
+      s.room.dp += en.elite ? T.DP_ELITE : T.DP_FODDER; s.ev |= EV.KILL;
+      var half = (en.elite ? K.ELITE_SUB : K.CELL_SUB) >> 1, k = spawn(s, POP);
+      if (k >= 0) { var p = s.proj[k]; p.x = en.x + half - 8 * K.SUB; p.y = en.y + half - 8 * K.SUB; p.ttl = K.POP_F; }
+    }
     return en.hp;
+  }
+
+  /* the pool (3.3): spawn takes the lowest free slot, zeroed, and returns its index, or -1 with none free (the effect is
+     dropped: the pool never grows); one spawned inside the pool pass after the entry being acted waits a step (age -1).
+     free zeroes every field, so a free slot always hashes as zeros */
+  var passing = false, passAt = -1;
+  function spawn(s, kind) {
+    for (var i = 0; i < s.proj.length; i++) {
+      var p = s.proj[i];
+      if (p.live) continue;
+      free(p); p.kind = kind; p.live = 1; if (passing && i > passAt) p.age = -1;
+      return i;
+    }
+    return -1;
+  }
+  function free(p) { for (var k = 0; k < PROJ_KEYS.length; k++) p[PROJ_KEYS[k]] = 0; }
+  /* the entry's box [x0, x1) x [y0, y1) against every live enemy's whole box (what you see is what hits, 5.2), each at
+     most once a pass (bit m of hit): the bit set, its dmg in quarters, its freeze and stun (a stun never wakes the
+     pocket's sleeper, stunned -1: 5.3). Returns how many it hit */
+  function hit(s, p, x0, y0, x1, y1) {
+    var K = SB.K, n = 0;
+    for (var m = 0; m < s.enemies.length; m++) {
+      var en = s.enemies[m], sz = en.elite ? K.ELITE_SUB : K.CELL_SUB;
+      if ((p.hit >> m) & 1 || !liveEnemy(en)) continue;
+      if (!(x0 < en.x + sz && x1 > en.x && y0 < en.y + sz && y1 > en.y)) continue;
+      p.hit |= 1 << m; n++;
+      if (p.dmg > 0) hurt(s, m, p.dmg);
+      if (p.freeze > 0) en.frozen = Math.max(en.frozen, p.freeze);
+      if (p.stun > 0 && en.stunned >= 0) en.stunned = Math.max(en.stunned, p.stun);
+    }
+    return n;
+  }
+  /* a stat's scale (5.1): a hit of dmg whole HP deals dmg x (HP_Q + stat) quarters, DESIGN 9.2's +25% a point exactly */
+  function scaled(dmg, stat) { return dmg * (SB.K.HP_Q + stat); }
+
+  /* J1 Boomerang (7.1): a J1_BOX square over the hero's takeoff box, centred on its height, flying dir */
+  function throwBoomerang(s, x0, y0, dir) {
+    var K = SB.K, k = spawn(s, BOOMERANG);
+    if (k < 0) return false;
+    var p = s.proj[k];
+    p.x = x0; p.y = y0 + ((K.HERO_H_SUB - K.J1_BOX) >> 1); p.vx = dir * K.J1_V; p.ttl = K.J1_LIFE_F;
+    p.dmg = scaled(SB.TUNING.WEAPONS.J1.dmg, s.hero.focus); p.a = p.x;
+    return true;
+  }
+  /* out (mode 0): the move, stopped flush by the first solid in its leading column over the rows it spans (one ways do
+     not stop it); the hit; at a wall or J1_REACH of travel it turns (mode 1) and its hit bits clear. Back (mode 1): homes
+     on the hero's centre at J1_V through anything (the moth's homing), caught within one move */
+  function actBoomerang(s, lv, p) {
+    var K = SB.K, CS = K.CELL_SUB, B = K.J1_BOX, h = s.hero;
+    if (p.mode === 0) {
+      p.x += p.vx;
+      var r0 = Math.floor(p.y / CS), r1 = Math.floor((p.y + B - 1) / CS), col = p.vx > 0 ? Math.floor((p.x + B - 1) / CS) : Math.floor(p.x / CS), stop = false;
+      for (var r = r0; r <= r1 && !stop; r++) if (solidAt(lv, col, r)) stop = true;
+      if (stop) p.x = p.vx > 0 ? col * CS - B : (col + 1) * CS;
+      hit(s, p, p.x, p.y, p.x + B, p.y + B);
+      if (stop || Math.abs(p.x - p.a) >= K.J1_REACH) { p.mode = 1; p.hit = 0; }
+      return;
+    }
+    var dx = (h.x + (K.HERO_W_SUB >> 1)) - (p.x + (B >> 1)), dy = (h.y + (K.HERO_H_SUB >> 1)) - (p.y + (B >> 1)), md = Math.max(Math.abs(dx), Math.abs(dy));
+    if (md <= K.J1_V) { free(p); return; }
+    p.vx = (K.J1_V * dx / md) | 0; p.vy = (K.J1_V * dy / md) | 0; p.x += p.vx; p.y += p.vy;
+    hit(s, p, p.x, p.y, p.x + B, p.y + B);
+  }
+  /* D1 Anvil Boots (7.1): a shock along the surface the hero stands on, from its centre column out D1.cells cells each
+     side while a cell is open and stands on a solid or one way top (a wall or the surface's end stops it); a and b the
+     band's limits, the reach and the walls in them; ttl the fronts' run plus the linger */
+  function shock(s, lv) {
+    var K = SB.K, CS = K.CELL_SUB, h = s.hero, cx = h.x + (K.HERO_W_SUB >> 1), row = Math.floor(h.y / CS), c0 = Math.floor(cx / CS), n = SB.TUNING.WEAPONS.D1.cells, L = c0, R = c0, j;
+    for (j = 1; j <= n; j++) { var c = c0 - j; if (solidAt(lv, c, row) || !(solidAt(lv, c, row + 1) || platAt(lv, c, row + 1))) break; L = c; }
+    for (j = 1; j <= n; j++) { var c2 = c0 + j; if (solidAt(lv, c2, row) || !(solidAt(lv, c2, row + 1) || platAt(lv, c2, row + 1))) break; R = c2; }
+    var k = spawn(s, SHOCK);
+    if (k < 0) return false;
+    var p = s.proj[k];
+    p.x = cx; p.y = h.y; p.a = Math.max(cx - K.D1_REACH, L * CS); p.b = Math.min(cx + K.D1_REACH, (R + 1) * CS);
+    p.ttl = Math.ceil(K.D1_REACH / K.D1_V) + K.D1_LINGER_F; p.dmg = scaled(SB.TUNING.WEAPONS.D1.dmg, s.hero.vigor);
+    return true;
+  }
+  /* a shock's front on a side (-1 left, 1 right) after f sub px of run; shockFront, the fronts as they stand after the
+     step (what the render draws: the same numbers, no array) */
+  function front(p, side, f) { return side < 0 ? Math.max(p.a, p.x - f) : Math.min(p.b, p.x + f); }
+  function shockFront(p, side) { return front(p, side, Math.max(1, p.age) * SB.K.D1_V); }
+  function actShock(s, p) {
+    var f = (p.age + 1) * SB.K.D1_V;
+    hit(s, p, front(p, -1, f), p.y, front(p, 1, f), p.y + SB.K.CELL_SUB);
+  }
+
+  /* the chest's draw (6.2): from BUILT, never an equipped weapon, an empty slot's first when CHEST_FILLS_EMPTY_FIRST;
+     none left, 0 and the generator is not drawn; else one draw. No allocation */
+  function drawWeapon(s) {
+    var h = s.hero, n = 0, empty = 0, i, c;
+    for (i = 0; i < BUILT.length; i++) { c = BUILT[i]; if (h.slots[slotOf(c)] !== c) { n++; if (h.slots[slotOf(c)] === 0) empty++; } }
+    if (n === 0) return 0;
+    var wantEmpty = SB.TUNING.CHEST_FILLS_EMPTY_FIRST && empty > 0, k = SB.rng.stepU32(s, 'rng') % (wantEmpty ? empty : n);
+    for (i = 0; i < BUILT.length; i++) {
+      c = BUILT[i];
+      if (h.slots[slotOf(c)] === c) continue;
+      if (wantEmpty && h.slots[slotOf(c)] !== 0) continue;
+      if (k-- === 0) return c;
+    }
+    return 0;
   }
 
   /* the world: out of bounds is solid (walls both sides, a ceiling above row 0, rock below the floor) */
@@ -3077,7 +3229,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
 
   /* the step's events (s.ev, cleared at every step's start): what the shell's sounds and hints read, never the sim */
-  var EV = { JUMP: 1, WALLJUMP: 2, DIVE: 4, LAND: 8, HIT: 16, CLEAR: 32, DEAD: 64, PICKUP: 128, CHEST: 256, OFFER: 512, PICK: 1024 };
+  /* Weapons v1 (docs/WEAPONS-V1.md 3.5): FIRE_J and FIRE_D (a slot acted), HURT and KILL (an enemy took damage, died),
+     EQUIP (a slot got a weapon), SWAP (a swap opened; its card is step 2's), BURST and SAVED (steps 2 and 4) */
+  var EV = { JUMP: 1, WALLJUMP: 2, DIVE: 4, LAND: 8, HIT: 16, CLEAR: 32, DEAD: 64, PICKUP: 128, CHEST: 256, OFFER: 512, PICK: 1024,
+    FIRE_J: 2048, FIRE_D: 4096, HURT: 8192, KILL: 16384, EQUIP: 32768, SWAP: 65536, BURST: 131072, SAVED: 262144 };
   function step(s, word) {
     var K = SB.K, h = s.hero, lv = s.level || null;
     if (!lv) throw new Error('sim.step: the state carries no level (attach with sim.attach)');
@@ -3090,7 +3245,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
        and the recording carries the choice like any other word */
     var choice = (word >> 6) & 15;
     if (s.scrollsOffered) { if (choice === CHOICE.A || choice === CHOICE.B) pickScroll(s, s.scrollsOffered[choice - 1]); s.frame++; return s; }
-    if (s.room.compare) { if (choice === CHOICE.TAKE || choice === CHOICE.LEAVE) { s.room.compare = 0; s.ev |= EV.PICK; } s.frame++; return s; }
+    /* the swap (6.4): TAKE puts the candidate in its slot (EQUIP), LEAVE keeps the slot; either closes it (PICK) */
+    if (s.room.compare) {
+      if (choice === CHOICE.TAKE || choice === CHOICE.LEAVE) {
+        if (choice === CHOICE.TAKE && s.room.cand > 0) { h.slots[slotOf(s.room.cand)] = s.room.cand; s.ev |= EV.EQUIP; }
+        s.room.compare = 0; s.room.cand = 0; s.ev |= EV.PICK;
+      }
+      s.frame++; return s;
+    }
 
     /* 1. the word */
     var dir = ((word & IN.R) ? 1 : 0) - ((word & IN.L) ? 1 : 0);
@@ -3102,6 +3264,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (h.dashI > 0) h.dashI--;
     if (h.shake > 0) h.shake--;
     if (h.iframes > 0) h.iframes--;
+    /* the slots' cooldowns run down here too (4): a fire at step N sets JUMP_SLOT_CD_F, so the next can come at N + 36;
+       the takeoff box is the hero's box before it moves */
+    if (h.cd[0] > 0) h.cd[0]--;
+    if (h.cd[1] > 0) h.cd[1]--;
+    var x0 = h.x, y0 = h.y;
     if (dir !== 0 && h.dash === 0 && h.lock === 0) h.facing = dir;   /* a dash and the wall jump's lock hold the facing */
     var startedGrounded = h.ground, dove = bPressed && !startedGrounded;
     /* Deep (section 3.5, T1.5): the ground jump at DEEP_JUMP_V, the fall at DEEP_FALL_G to DEEP_TERM, as the DEEP
@@ -3112,12 +3279,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
        rocker away from the wall, lets go into a plain fall. From an armed wall slide: A is the wall jump, WALL_V up and
        WALL_JUMP_LOCK steps of WALL_JUMP_PUSH away (the rocker ignored), facing away (Q25). Else a press or a buffered
        press on the ground or inside coyote time. */
-    var jumped = 0, stickyJump = 0, dashStart = 0;
+    var jumped = 0, stickyJump = 0, dashStart = 0, wallSide = 0;   /* wallSide: the wall a wall or sticky jump left */
     if (h.sticky) {
-      if (pressed) { h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; stickyJump = 1; h.squash = -K.SQUASH_F; s.ev |= EV.JUMP; }
+      if (pressed) { wallSide = h.wall; h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; stickyJump = 1; h.squash = -K.SQUASH_F; s.ev |= EV.JUMP; }
       else if (dove || (dir !== 0 && dir === -h.wall)) { h.sticky = 0; h.wall = 0; }   /* B lets go into the dive below: no vine catches a dive */
     } else if (h.wall !== 0 && pressed && !h.ground) {
-      h.vy = -K.WALL_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.facing = -h.wall; h.spent = h.wall; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; h.squash = -K.SQUASH_F; s.ev |= EV.WALLJUMP;
+      wallSide = h.wall; h.vy = -K.WALL_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.facing = -h.wall; h.spent = h.wall; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; h.squash = -K.SQUASH_F; s.ev |= EV.WALLJUMP;
     } else if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0)) {
       h.vy = deep ? -K.DEEP_JUMP_V : -K.JUMP_V; h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;
       h.squash = -K.SQUASH_F; s.ev |= EV.JUMP;
@@ -3170,6 +3337,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        (DESIGN 4.2, outside the wall jump's lock); a sticky contact on either side arms only on a descending step after
        an airborne one and stops the fall without the rocker (section 3.8 item 4); leaving the slide hands the fall its
        third */
+    var diveLanded = landed && h.dive !== 0, dashed = dashStart && h.x !== xBefore;   /* the dive slot's two triggers (4 step 7) */
     if (landed) { if (h.dive) h.shake = K.SHAKE_F; h.wall = 0; h.sticky = 0; h.lock = 0; h.dive = 0; h.spent = 0; }
     else if (!h.sticky) {
       var side = 0;
@@ -3223,11 +3391,49 @@ body.sb-modal .lwfb-fab { display: none !important; }
         else if (lt.kind === LOOT_BLUEPRINT) s.room.blueprints.push(lt.idx);
         else { s.room.grace = T8.PICKUP_GRACE_FRAMES; s.room.offerWait = 1; }
       }
-      if (s.chest.idx >= 0 && !s.chest.open && boxOver(h, lv.w, s.chest.idx)) { s.chest.open = 1; s.room.dp += T8.DP_CHEST; s.room.compare = 1; s.ev |= EV.CHEST; }
+      /* the chest (6.1): DP_CHEST and a weapon drawn from the built pool: into an empty slot at once (EQUIP, the world
+         never held), else the swap (cand, compare, SWAP: the world waits for TAKE or LEAVE); none left, the Dead pixels only */
+      if (s.chest.idx >= 0 && !s.chest.open && boxOver(h, lv.w, s.chest.idx)) {
+        s.chest.open = 1; s.room.dp += T8.DP_CHEST; s.ev |= EV.CHEST;
+        var got = drawWeapon(s);
+        if (got > 0 && h.slots[slotOf(got)] === 0) { h.slots[slotOf(got)] = got; s.ev |= EV.EQUIP; }
+        else if (got > 0) { s.room.cand = got; s.room.compare = 1; s.ev |= EV.SWAP; }
+      }
       if (s.room.offerWait && s.room.grace === 0 && h.ground) {
         var bias = STAT_OF_BIOME[s.biome] || VIGOR, other = [VIGOR, FOCUS, GRIT].filter(function (x) { return x !== bias; });
         s.scrollsOffered = [bias, other[SB.rng.stepU32(s, 'rng') % other.length]]; s.room.offerWait = 0; s.ev |= EV.OFFER;
       }
+    }
+
+    /* 8w. the weapons (docs/WEAPONS-V1.md 4), only while the room is not cleared; they read the movement's results and
+       never write the hero. W1 the jump slot on any jump or wall jump with its cooldown run out (a jump that did not
+       act sets none); W2 the dive slot on a dive landing or a dash that moved; W5 the pool pass, each live entry by its
+       kind (move, hit, its own turns), then age and ttl, freed at ttl 0; an entry spawned inside the pass after the one
+       acting waits a step. A hit lands here, before the enemies move and touch */
+    if (!s.room.cleared) {
+      if (jumped && h.slots[0] && h.cd[0] === 0) {
+        var acted = false, tdir = wallSide !== 0 ? -wallSide : h.facing;
+        if (h.slots[0] === WPN_J1) acted = throwBoomerang(s, x0, y0, tdir);
+        if (acted) { h.cd[0] = K.JUMP_SLOT_CD_F; s.ev |= EV.FIRE_J; }
+      }
+      if (h.slots[1] && h.cd[1] === 0 && (diveLanded || dashed)) {
+        var dacted = false;
+        if (h.slots[1] === WPN_D1) dacted = shock(s, lv);
+        if (dacted) { h.cd[1] = K.DIVE_SLOT_CD_F; s.ev |= EV.FIRE_D; }
+      }
+      passing = true;
+      for (var pi = 0; pi < s.proj.length; pi++) {
+        var pj = s.proj[pi];
+        if (!pj.live) continue;
+        if (pj.age < 0) { pj.age = 0; continue; }
+        passAt = pi;
+        if (pj.kind === BOOMERANG) actBoomerang(s, lv, pj);
+        else if (pj.kind === SHOCK) actShock(s, pj);
+        if (!pj.live) continue;
+        pj.age++; pj.ttl--;
+        if (pj.ttl <= 0) free(pj);
+      }
+      passing = false; passAt = -1;
     }
 
     /* 8a. the enemies (DESIGN 7; T0.16's moths, T1.4's four more and the elites): each moves by its kind's rule
@@ -3244,6 +3450,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       }
       if (en.frozen > 0) en.frozen--;
       if (en.stunned > 0) en.stunned--;
+      if (en.hurt > 0) en.hurt--;   /* the hit's flash (render reads it; nothing else does) */
       if (en.hp <= 0 && !(en.kind === SB.features.ICICLE && en.state === ICICLE_GONE)) continue;
       var held = en.frozen > 0 || en.stunned !== 0, mdx = (h.x + (K.HERO_W_SUB >> 1)) - (en.x + (esz >> 1));   /* the knockback's side, taken before it moves (T0.16's order) */
       if (!held) moveEnemy(s, lv, en);
@@ -3280,15 +3487,16 @@ body.sb-modal .lwfb-fab { display: none !important; }
     ['scrolls', 'i32'], ['slots', 'i32[]'], ['cd', 'i32[]'], ['squash', 'i32'], ['anim', 'i32'], ['lastStand', 'i32'],
     ['secondWind', 'bool'], ['thickSkin', 'bool'], ['shake', 'i32']];
   var ENEMY = [['kind', 'i32'], ['x', 'i32'], ['y', 'i32'], ['vx', 'i32'], ['vy', 'i32'], ['hp', 'i32'], ['state', 'i32'], ['timer', 'i32'],
-    ['dir', 'i32'], ['home', 'i32'], ['elite', 'bool'], ['frozen', 'i32'], ['stunned', 'i32']];
-  var PROJ = [['kind', 'i32'], ['x', 'i32'], ['y', 'i32'], ['vx', 'i32'], ['vy', 'i32'], ['ttl', 'i32'], ['dmg', 'i32'], ['live', 'bool']];
+    ['dir', 'i32'], ['home', 'i32'], ['elite', 'bool'], ['frozen', 'i32'], ['stunned', 'i32'], ['hurt', 'i32']];
+  var PROJ = [['kind', 'i32'], ['x', 'i32'], ['y', 'i32'], ['vx', 'i32'], ['vy', 'i32'], ['ttl', 'i32'], ['dmg', 'i32'], ['live', 'bool'],
+    ['age', 'i32'], ['mode', 'i32'], ['a', 'i32'], ['b', 'i32'], ['hit', 'i32'], ['freeze', 'i32'], ['stun', 'i32']];
   var LOOT = [['kind', 'i32'], ['idx', 'i32'], ['taken', 'bool']];
   var BOSS = [['cells', 'i32[]'], ['hp', 'i32'], ['hpMax', 'i32'], ['phase', 'i32'], ['timer', 'i32'], ['intro', 'i32'], ['telegraph', 'i32']];
   var FIELDS = [['v', 'i32'], ['frame', 'i32'], ['rng', 'u32'], ['biome', 'i32'], ['negative', 'bool'], ['firstRoom', 'bool'], ['lastRoom', 'bool'], ['immortal', 'bool'], ['ev', 'i32'],
     ['hero', 'obj', HERO], ['enemies', 'obj[]', ENEMY], ['proj', 'obj[]', PROJ], ['loot', 'obj[]', LOOT],
     ['chest', 'obj', [['idx', 'i32'], ['open', 'bool']]], ['scrollsOffered', 'i32[]?'],
     ['door', 'obj', [['idx', 'i32'], ['entered', 'bool']]], ['traps', 'obj', [['phase', 'i32']]], ['boss', 'obj?', BOSS],
-    ['room', 'obj', [['dp', 'i32'], ['blueprints', 'i32[]'], ['exitLit', 'bool'], ['cleared', 'bool'], ['dead', 'bool'], ['deaths', 'i32'], ['grace', 'i32'], ['offerWait', 'bool'], ['compare', 'bool']]]];
+    ['room', 'obj', [['dp', 'i32'], ['blueprints', 'i32[]'], ['exitLit', 'bool'], ['cleared', 'bool'], ['dead', 'bool'], ['deaths', 'i32'], ['grace', 'i32'], ['offerWait', 'bool'], ['compare', 'bool'], ['cand', 'i32'], ['tremor', 'i32']]]];
 
   var I32_MIN = 1 << 31, I32_MAX = ~I32_MIN, U32_MAX = 0xffffffff;
   function int(path, v) {
@@ -3332,6 +3540,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
 
   SB.sim = { IN: IN, EV: EV, rle: rle, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
     FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf, trapTouch: trapTouch,
+    WPN: WPN, BUILT: BUILT, slotOf: slotOf, PROJ_KIND: Object.freeze({ BOOMERANG: BOOMERANG, SHOCK: SHOCK, POP: POP }), shockFront: shockFront, spawn: spawn, free: free, drawWeapon: drawWeapon,
     CHOICE: CHOICE, LOOT: { SPECK: LOOT_SPECK, SCROLL: LOOT_SCROLL, BLUEPRINT: LOOT_BLUEPRINT }, STAT: { VIGOR: VIGOR, FOCUS: FOCUS, GRIT: GRIT }, STAT_OF_BIOME: STAT_OF_BIOME, pickScroll: pickScroll };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
