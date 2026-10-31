@@ -171,7 +171,8 @@ try {
         n++; if (h !== '#' + HEX[parseInt(ch, 16)]) bad.push(x + ',' + y + ' ' + h + ' not ' + HEX[parseInt(ch, 16)]);
       }
     }
-    R.say(keyOk && placeOk && n >= 100 && bad.length === 0, 'biome ' + b + ': the ' + kind + ' elite drawn as ' + (r ? r.key + ' at ' + r.x + ',' + r.y + ' ' + r.w + 'x' + r.h + ' in its box ' + r.box.x + ',' + r.box.y + ' (' + an + (an !== 'cell' && rest ? ', at rest on its row\'s ' + (an === 'top' ? 'ceiling ' : 'floor ') + got.el.row : '') + ')' : 'nothing (keys: ' + got.rc.enemies.map(e => e.key).join(' ') + ')')
+    /* at least 60: the hero, set down at the elite's home, covers part of a cell centred one */
+    R.say(keyOk && placeOk && n >= 60 && bad.length === 0, 'biome ' + b + ': the ' + kind + ' elite drawn as ' + (r ? r.key + ' at ' + r.x + ',' + r.y + ' ' + r.w + 'x' + r.h + ' in its box ' + r.box.x + ',' + r.box.y + ' (' + an + (an !== 'cell' && rest ? ', at rest on its row\'s ' + (an === 'top' ? 'ceiling ' : 'floor ') + got.el.row : '') + ')' : 'nothing (keys: ' + got.rc.enemies.map(e => e.key).join(' ') + ')')
       + ', ' + n + ' opaque pixels equal its frame on the canvas' + (bad.length ? ' (' + bad.length + ' differ: ' + bad.slice(0, 3).join('; ') + ')' : ''));
   }
 
