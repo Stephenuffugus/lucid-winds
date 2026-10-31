@@ -979,3 +979,15 @@ The builder's calls (Stephen's or Astra's to overrule):
 - (g) The slot icons are 24 CSS px (her glyph 1:1, 2:1 or 3:1 on every phone) in 28 px boxes, and the pickup card's at 48 (2x). The spec's 16 px in 20 px boxes would draw 24 px into 16: at dpr 1 or 2 nearest neighbour drops or doubles uneven rows. The cost: at 320x568 the room name keeps 94 px ("Sample r..."), at 360 134 px.
 - (h) The colour law (H-spr-1) for the new keys is each key's own colours as Astra drew them, so it departs from spec 8.1's weapon law in four places, each a reading risk for Stephen: the Boomerang's body is Amber (loot's colour; the speck is Amber too); the hit's burst and the pop carry Brick (danger's); the shock has no Ink rim (see f) and its wide_lens frames carry Lapis; icon_weapons draws from 13 colours (never Sun, Film or Magenta; the HUD is not the room, so no danger confusion there). Halo and second_wind are the only glyphs without Ink.
 - (i) Halo is J6 in DESIGN 9.1 and among the charms in Astra's sheet (her accent rule: jump glyphs, dive glyphs, charm glyphs by position). Bound by name to J6.
+
+Seen in the shots and left (old beside new at the same steps, 412x915, 360x780 and 320x568 at dpr 3: /home/codespace/sb-drafts/weapons2/art2/shots/old, new3 and boards3; the first round, before the rim, in new and boards):
+- The shock: with the rim it reads as two crests running out along the floor, open toward the bug. At 360 (the room at about 0.9) nearest neighbour breaks the one pixel rim into dashes; at its first steps the two halves sit on the bug and clutter its outline; its Ash is still faint over the Frost and Attic open colour inside the rim.
+- The Boomerang: Astra's Amber V is the loudest thing on screen and about 20 px across against the sim's 12 px box, so it looks as if it reaches 4 px further than it hits; Amber is loot's colour (the speck); over a hit or a kill it covers half the enemy and most of the burst.
+- The hit: the burst (Glare, Ash and Brick) lands on an enemy already flashed Glare, so its Glare adds little; over 9 steps its four frames go by at about 27 fps; the Brick bits read as blood more than as a flash.
+- The pop: Brick, Pewter and Ink debris, readable at 320; the old Glare pop read lighter; it plays at 20 fps and its last frame is a few scattered pixels.
+- The poses: the drop in plays at the spawn, so its descending beat reads as a crouch on the floor, not as a drop; the hurt recoil is close to the idle silhouette and shows only in the blink's first window; the stretch at 320 (the room at 0.83) is a thin bug with a ragged outline; the dash's Walnut stroke vanishes in its Glare frames (as Sun does).
+- The HUD: both glyphs read at 320 (the boomerang V, the anvil); the cooling jump box at 0.35 opacity makes the Amber V pale cream; the bigger boxes leave the room name 94 px at 320 ("Sample r...").
+
+Options: (a) as built, each of (a) to (i) above; (b) Stephen picks per item; (c) Astra redraws the shock with an Ink rim and the boomerang in Glare and Ash (spec 8.1's law) in her next session.
+Recommendation: (a) now, and (c) for the shock and the boomerang's colour.
+Plan assumes: (a).
