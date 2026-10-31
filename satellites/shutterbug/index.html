@@ -4943,7 +4943,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.gotFollow = function () {
     var el = document.getElementById('got'), hd = SB.render.drawn.hero;
     if (!el || !el.classList.contains('on') || !hd || hd.key === null) return;
-    var vc = document.getElementById('view'), vr = vc.getBoundingClientRect(), k = vr.height / vc.height, top = vr.top + hd.y * k, bot = top + hd.h * k, cr = el.getBoundingClientRect(), pad = 8;
+    var vc = document.getElementById('view'), vr = vc.getBoundingClientRect(), k = vr.height / vc.height, top = vr.top + hd.y * k, bot = top + hd.h * k, cr = el.getBoundingClientRect(), pad = 16;   /* the drawn box is the last frame's: a falling bug moves up to 12 px a step */
     if (!(top - pad < cr.bottom && bot + pad > cr.top)) return;
     var low = el.classList.contains('low'), h = cr.height, st = document.getElementById('stage').getBoundingClientRect();
     var oTop = low ? st.top + 16 : st.bottom - 8 - h;   /* the other dock's box */
