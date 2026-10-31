@@ -229,6 +229,20 @@ try {
     R.say(d0.screen === 'dead' && d1.screen === 'title' && d1.on.length === 0 && !d1.state && d1.watch === '',
       'back on the death card is Title: the title with nothing over it (screen ' + d0.screen + ' then ' + d1.screen + ', on: ' + onText(d1) + ')');
 
+    /* a room left with its bug drawn high in the room (set down at a row where the card docks low; SB_DEV's liberty), so
+       the last drawn bug is not where the next room's stands: the card out of the next reveal must be placed against
+       the new room's bug, drawn at once, never the old one's */
+    await tap(page, '#sample');
+    const lowRow = await page.evaluate(() => {
+      const lv = window.SB.game.level, h = window.SB.game.state.hero, CS = window.SB.K.CELL_SUB;
+      for (let row = 0; row < lv.h; row++) {
+        h.y = row * CS; window.SB_DEV.step(0);
+        window.SB.ui.pause(); const low = document.getElementById('paused').classList.contains('low'); window.SB.ui.resume();
+        if (low) { window.SB.ui.pause(); return row; }
+      }
+      return -1;
+    });
+    await tap(page, '#pausetitle');
     /* the reveal, held at its start (SB_DEV.hold freezes its clock): Pause hidden, and back ends it and pauses */
     await page.evaluate(() => window.SB_DEV.revealSkip(false));
     await tap(page, '#sample');
@@ -238,7 +252,7 @@ try {
     await escape(page);
     const r1 = await look(page), rv = await page.evaluate(() => ({ on: window.SB.ui.reveal.on, marks: window.SB_DEV.perf().reveal,
       meets: window.__meets(window.__hero(), document.getElementById('paused').getBoundingClientRect()), hero: window.__hero() }));
-    R.say(!!rv.hero && !rv.meets, 'paused out of the reveal, the card is placed against this room\'s bug, drawn at once, and leaves it in sight (the bug ' + (rv.hero ? Math.round(rv.hero.t) + ' to ' + Math.round(rv.hero.b) : 'not drawn') + ')');
+    R.say(lowRow >= 0 && !!rv.hero && !rv.meets, 'paused out of the reveal, the card is placed against this room\'s bug, drawn at once, and leaves it in sight (the bug ' + (rv.hero ? Math.round(rv.hero.t) + ' to ' + Math.round(rv.hero.b) : 'not drawn') + '; the room before left with its bug at row ' + lowRow + ', where the card docks low)');
     R.say(r0.watch === 'reveal' && r1.screen === 'pause' && r1.on.join() === 'paused' && rv.on === false && !!rv.marks && rv.marks.end !== undefined && rv.marks.skipped === true,
       'back in the reveal ends it and opens the pause card (back watched for ' + (r0.watch || 'nothing') + ', then screen ' + r1.screen + ', on: ' + onText(r1) + ', the reveal ' + (rv.on ? 'still on' : 'ended') + ')');
     await tap(page, '#resume');
