@@ -1,5 +1,24 @@
 # START HERE
 
+## 📷 31 Oct 17:55 UTC (Opus) SHUTTERBUG: sb-m1-2 READY TO DEPLOY; the stick, Astra's art and weapons on branches; USAGE 93%, so read this if the session is gone
+**If the session hit the usage limit or the box stopped, nothing is lost.** Every branch below autosaves and pushes to GitHub every ten minutes (`git ls-remote` equalled local HEAD on all four at 17:47 UTC). To resume after the reset, open the box, run `claude` and say: "read START-HERE.md and continue".
+LIVE: sb-m1-1 until Stephen runs the line below.
+READY: **sb-m1-2** on add-sproing-jumper. It holds the chest paying Dead pixels only (no weapon or Darkroom words), the controls above the phone's bottom buttons in the installed app, and the Pause card (Pause in the top bar; Resume, Share this room, Title; back opens it; switching apps pauses).
+  - The full check ALL GATES PASSED on `830c0e95f`, 16:01 to 17:06 UTC: 23 gates, 397 mutants RED. Log: /home/codespace/sb-drafts/sb-m1-2/check-full.txt.
+  - Deploy, from the repo root. It waits for the shared browser lock, because deploy.sh's timed harness groups fail when the other builders' Chrome is running:
+    `flock /home/codespace/sb-drafts/browser.lock bash -c 'git diff --quiet 830c0e95f HEAD -- satellites/shutterbug/{index.html,sw.js,manifest.json,icons} && BUILD=sb-m1-2 CACHE=shutterbug-v2 SWV=2 tools/shutterbug-tests/deploy.sh'`
+  - After it: tools/shutterbug-tests/hostproof.sh on both origins, then `git tag -a sb-m1-2` on the deploy commit and push the tag.
+  - The arcade card's ?v= bump needs a BUMP mode in portal-card.sh first. It is not urgent: the card already opens the new build.
+ON BRANCHES (not merged, not stamped; each in its own worktree with its own autosave):
+  - `sb-stick` (/workspaces/sb-stick): the floating thumbstick, his "Whole left side" ruling (Q140). Built `eaa4c5f7a`; code review: 5 minor findings; its player review and fix were running at 17:55. The levels rule (the floor becomes the ledge) is NOT built: it was stopped to save usage. Its brief is LEVELS_BRIEF in the session script `shutterbug-sb-m1-3-stick-levels-wf_72adb109-f5f.js`.
+  - `sb-art` (/workspaces/sb-art): Astra's in room art. The checked cut is /home/codespace/sb-drafts/astra/cut-room.json (20 keys, 48 frames). The splice, the elites, the hearts and the icons were being built at 17:55; the review is skipped tonight.
+  - `sb-weapons` (/workspaces/sb-weapons): the weapons spec satellites/shutterbug/docs/WEAPONS-V1.md. Step 1 (the framework, J1 Boomerang, D1 Anvil Boots, the chest giving a weapon, kills paying DP) was being built at 17:55; steps 2 to 4 are not started.
+NEXT, in order: after the sb-m1-2 deploy, merge sb-stick and sb-art into add-sproing-jumper. Then stamp sb-m1-3 (SB.BUILD and the worker's BUILD sb-m1-3, CACHE shutterbug-v3, sw.js?v=3; see 830c0e95f's parent stamp commit for every place). Then the full check, detached, under the lock, logging to /home/codespace/sb-drafts/sb-m1-3/check-full.txt. Then the deploy line with `830c0e95f` replaced by the new green commit and the stamps by sb-m1-3 / shutterbug-v3 / 3. Then sb-weapons the same way, then the levels rule.
+AFTER A BOX STOP (the box stops 12 h after boot; this boot 13:01 UTC, so about 01:00 UTC): restart the four autosaves and check each with `ps -eo pid,cmd | /usr/bin/grep "[a]utosave"`:
+  `(setsid nohup tools/shutterbug-tests/autosave.sh >>/home/codespace/sb-drafts/logs/autosave.log 2>&1 </dev/null &)`
+  `for b in sb-weapons sb-stick sb-art; do (setsid nohup /home/codespace/sb-drafts/autosave-wt.sh /workspaces/$b $b >>/home/codespace/sb-drafts/logs/autosave-$b.log 2>&1 </dev/null &); done`
+CLAUDE ITSELF: reinstalled natively at 13:13 UTC (`~/.local/bin/claude`, the latest channel). The "native binary not installed" error came from npm 12 blocking the npm package's install script; never `npm i -g` it on this box.
+
 ## 📷 31 Oct 00:59 UTC (Opus) SHUTTERBUG M1 IS LIVE (sb-m1-1) AND ON THE ARCADE UNDER IN DEVELOPMENT
 LIVE: deploy commit `77d1475bb` (BUILD sb-m1-1, CACHE shutterbug-v1, sw.js?v=1, tag sb-m1-1), the served set from add-sproing-jumper `a980ded93`. Proof (curl only, one probe at a time; tools/shutterbug-tests/hostproof.sh, the first probe at 00:49:39 UTC):
   lucidwinds.com and www.lucidwinds.com /satellites/shutterbug/index.html -> 5879a6c42b2a478a068c586f650209945d9d76d4330b713b0d56857f5656f3af
