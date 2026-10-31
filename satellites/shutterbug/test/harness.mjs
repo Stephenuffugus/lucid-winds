@@ -169,6 +169,35 @@ export async function pressEl(page, sel, dx = 0) {
   return press(page, c.x + dx, c.y);
 }
 
+/* The stick (Stephen's ruling of 31 Oct, QUESTIONS Q140): it reads how far a thumb slid from where it landed, never
+   where it is. `stickAt` is a point of the stick's field (the drawn area above the bottom inset) by fractions of its box,
+   its centre by default. `landStick` puts a real finger down at (x, y) and returns it: `to(x, y)` moves it there and
+   `slide(dx, dy)` to the landing point plus (dx, dy), each waiting until the page has read the move (Chrome hands
+   pointer moves out once a frame; a page that never reads it is the gate's failure to name, never a hang), `end()`.
+   `pushStick` lands at the field's point and slides dx, the stick's way to hold a direction. */
+export const stickAt = (page, fx = 0.5, fy = 0.5) => page.evaluate((fx, fy) => {
+  const r = document.querySelector('#stick .field').getBoundingClientRect();
+  return { x: r.left + r.width * fx, y: r.top + r.height * fy };
+}, fx, fy);
+export async function landStick(page, x, y) {
+  const f = await page.touchscreen.touchStart(x, y);
+  const finger = { x0: x, y0: y, x, y, end: () => f.end(),
+    async to(nx, ny = finger.y) {
+      const n = await page.evaluate(() => { const s = window.SB_DEV.stick(); return s ? s.moves : 0; });
+      finger.x = nx; finger.y = ny;
+      await f.move(nx, ny);
+      await page.waitForFunction(n => { const s = window.SB_DEV.stick(); return !!s && s.moves > n; }, { timeout: 5000, polling: 20 }, n).catch(() => {});
+    },
+    slide(dx, dy = 0) { return finger.to(finger.x0 + dx, finger.y0 + dy); } };
+  return finger;
+}
+export async function pushStick(page, dx = 20, fx, fy) {
+  const p = await stickAt(page, fx, fy);
+  const f = await landStick(page, p.x, p.y);
+  await f.slide(dx);
+  return f;
+}
+
 /* With the loop held: run exactly n sim steps, each sampling the real input latch. */
 export const step = (page, n) => page.evaluate((n) => window.SB_DEV.step(n), n);
 
