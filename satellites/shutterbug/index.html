@@ -3980,6 +3980,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (name === 'hero' || name.indexOf('hero_') === 0) list.push([name + '.' + f + '*', rows, sp.w, sp.h, 0, 1], [name + '.' + f + '<*', rows, sp.w, sp.h, 1, 1]);   /* ART2: the poses are the hero, Glare through a dash's i frames too */
       /* an enemy's hit flash (8.3): every pixel but its Ink outline turned Glare ('!') */
       if (FLASHED[name]) list.push([name + '.' + f + '!', rows, sp.w, sp.h, 0, 2], [name + '.' + f + '<!', rows, sp.w, sp.h, 1, 2]);
+      /* ART2 (Q161): the shock's Ink silhouette ('#'), drawn 1 px out on four sides under Astra's Ash ring so it reads on
+         the Ash and Paper of the Attic and Frost (her ring has no rim of its own; not one of her pixels changes) */
+      if (name === 'fx_shockwave') list.push([name + '.' + f + '#', rows, sp.w, sp.h, 0, 3]);
     }
     for (i = 0; i < list.length; i++) {
       if (x + list[i][2] > W) { x = 0; y += rowH + 1; rowH = 0; }
@@ -3996,6 +3999,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
         var idx = parseInt(ch, 16);
         if (it[5] === 1 && (idx === P.I.SUN || idx === P.I.WALNUT)) idx = P.I.GLARE;
         else if (it[5] === 2 && idx !== P.I.INK) idx = P.I.GLARE;
+        else if (it[5] === 3) idx = P.I.INK;
         var o = ((r.y + ry) * W + r.x + rx) * 4, c = P.RGB[idx];
         d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
       }
@@ -4338,7 +4342,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      square) centred on the sim's 12 px box, a quarter turn every 5 steps (12 fps), mirrored flying left; Anvil Boots'
      ring (fx_shockwave.anvil_boots_n, 48 square) split at its centre column, the left half's outer edge at the left
      front and the right half's at the right (SB.sim.shockFront: the sim's own numbers), each held inside the band, the
-     ring's bottom row on the surface, its frame growing 0, 1, 2 with the fronts' run and 3 over the linger, Ash motes
+     ring's bottom row on the surface over its Ink rim (the '#' silhouette 1 px out each way), its frame growing 0, 1, 2 with the fronts' run and 3 over the linger, Ash motes
      between the fronts on alternate steps; a kill's pop (fx_enemy_hit.enemy_death_n) centred on the dead box, its four
      frames over the sim's POP_F (3 steps each). R.drawn.proj records each drawn rect and the part of the frame it
      drew (sx, sy: the gates compare its pixels) from records made once */
@@ -4378,6 +4382,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
              band (a front at a wall or a ledge's end never draws past the edge into the air or the wall) */
           var fx = side < 0 ? lf : rf, hx0 = side < 0 ? bb.x0 : 24, hw = side < 0 ? 24 - bb.x0 : bb.x1 - 23;
           var hx = side < 0 ? Math.max(p.a >> 8, fx >> 8) : Math.min((p.b >> 8) - hw, (fx >> 8) - hw);
+          sprPart(ctx, key + '#', hx0, ry, hw, rh, hx - 1, rtop); sprPart(ctx, key + '#', hx0, ry, hw, rh, hx + 1, rtop);
+          sprPart(ctx, key + '#', hx0, ry, hw, rh, hx, rtop - 1); sprPart(ctx, key + '#', hx0, ry, hw, rh, hx, rtop + 1);
           sprPart(ctx, key, hx0, ry, hw, rh, hx, rtop); rec(p.kind, key, hx, rtop, hw, rh, camX, hx0, ry);
         }
         if (p.age & 1) { ctx.fillStyle = CSS[P.I.ASH]; for (var mx = (lf >> 8) + 2; mx < (rf >> 8) - 2; mx += 4) ctx.fillRect(mx, sy - 5, 2, 2); }

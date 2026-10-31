@@ -125,7 +125,7 @@ const drawnEqual = async (page, kind) => {
   const got = await page.evaluate(kind => {
     const all = window.SB_DEV.spriteRects(), cv = document.getElementById('view'), d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
     const out = all.proj.map((r, i) => ({ i, kind: r.kind, key: r.key, x: r.x, y: r.y, w: r.w, h: r.h, sx: r.sx, sy: r.sy, px: [] }));
-    for (const r of out) if (r.kind === kind) for (let y = 0; y < r.h; y++) for (let x = 0; x < r.w; x++) { const X = r.x + x, Y = r.y + y; const o = (Y * cv.width + X) * 4; r.px.push(X < 0 || Y < 0 || X >= cv.width || Y >= cv.height ? null : d[o] + ',' + d[o + 1] + ',' + d[o + 2]); }
+    for (const r of out) if (r.kind === kind) for (let y = -1; y < r.h; y++) for (let x = 0; x < r.w; x++) { const X = r.x + x, Y = r.y + y; const o = (Y * cv.width + X) * 4; r.px.push(X < 0 || Y < 0 || X >= cv.width || Y >= cv.height ? null : d[o] + ',' + d[o + 1] + ',' + d[o + 2]); }
     const h = all.hero ? { key: all.hero.key, x: all.hero.x, y: all.hero.y, w: all.hero.w, h: all.hero.h, sx: 0, sy: 0 } : null;
     return { recs: out, hero: h };
   }, kind);
@@ -136,12 +136,15 @@ const drawnEqual = async (page, kind) => {
     const rows = frameRows(r.key);
     if (!rows) { bad.push(r.key + ' has no frame in SPRITES'); continue; }
     for (let y = 0; y < r.h; y++) for (let x = 0; x < r.w; x++) {
-      const ch = rows[r.sy + y][r.sx + x], c = r.px[y * r.w + x];
+      const ch = rows[r.sy + y][r.sx + x], c = r.px[(y + 1) * r.w + x];
       if (ch === '.' || c === null || covered(r, r.x + x, r.y + y)) continue;
       n++; if (c !== RGB[parseInt(ch, 16)].join(',')) bad.push(r.key + ' ' + (r.sx + x) + ',' + (r.sy + y) + ' ' + c);
     }
   }
-  return { rects: mine.length, keys: mine.map(r => r.key + (r.sx ? '@' + r.sx : '')), sizes: mine.map(r => r.w + 'x' + r.h), n, bad };
+  /* the rim (ART2, the shock): the pixel just above each column's topmost opaque pixel, where nothing later covers it */
+  let rimN = 0; const rimBad = [], INK = RGB[0].join(',');
+  for (const r of mine) { const rows = frameRows(r.key); if (!rows) continue; for (let x = 0; x < r.w; x++) { let t = -1; for (let y = 0; y < r.h; y++) if (rows[r.sy + y][r.sx + x] !== '.') { t = y; break; } if (t < 0 || covered(r, r.x + x, r.y + t - 1)) continue; const c = r.px[t * r.w + x]; if (c === null) continue; rimN++; if (c !== INK) rimBad.push(r.key + ' col ' + (r.sx + x) + ' ' + c); } }
+  return { rects: mine.length, keys: mine.map(r => r.key + (r.sx ? '@' + r.sx : '')), sizes: mine.map(r => r.w + 'x' + r.h), n, bad, rimN, rimBad };
 };
 
 try {
@@ -258,8 +261,8 @@ try {
     let dv = null; for (let k = 0; k < 60 && !dv; k++) { const q = await stepN(page, 1); if (q.heard.includes('shock')) dv = q; }
     const dRects = await page.evaluate(() => window.SB_DEV.spriteRects().proj.filter(r => r.kind === 2).length);
     await stepN(page, 4); const dq = await drawnEqual(page, 2);   /* four steps on: the fronts out from under the bug */
-    R.say(dq.rects === 2 && dq.keys.every(k => /^fx_shockwave\.anvil_boots_[0-3](@\d+)?$/.test(k)) && dq.keys.some(k => k.endsWith('@24')) && dq.keys.some(k => !k.endsWith('@24')) && dq.n >= 10 && dq.bad.length === 0,
-      w + ': the shock is Astra\'s ring split at its centre, a half at each front (' + dq.keys.join(', ') + '; ' + dq.sizes.join(', ') + '), its ' + dq.n + ' opaque pixels equal the frame' + (dq.bad.length ? ' (' + dq.bad.length + ' differ: ' + dq.bad.slice(0, 3).join('; ') + ')' : ''));
+    R.say(dq.rects === 2 && dq.keys.every(k => /^fx_shockwave\.anvil_boots_[0-3](@\d+)?$/.test(k)) && dq.keys.some(k => k.endsWith('@24')) && dq.keys.some(k => !k.endsWith('@24')) && dq.n >= 10 && dq.bad.length === 0 && dq.rimN >= 8 && dq.rimBad.length === 0,
+      w + ': the shock is Astra\'s ring split at its centre, a half at each front (' + dq.keys.join(', ') + '; ' + dq.sizes.join(', ') + '), its ' + dq.n + ' opaque pixels equal the frame' + (dq.bad.length ? ' (' + dq.bad.length + ' differ: ' + dq.bad.slice(0, 3).join('; ') + ')' : '') + ', an Ink rim above it in ' + dq.rimN + ' columns' + (dq.rimBad.length ? ' (' + dq.rimBad.length + ' not Ink: ' + dq.rimBad.slice(0, 3).join('; ') + ')' : ''));
     await stepN(page, 8); const afterDive = await probe(page);
     R.say(!!dv && dv.proj.some(e => e.kind === 2) && dRects === 2 && afterDive.hp[mb] === 0, w + ': a real B dive\'s landing sends the shock with its voice, drawn at both fronts (' + dRects + ' rects), and kills a floor moth 3 cells behind (' + (afterDive.hp[mb] === 0) + ')');
     /* the dash: a frozen moth 3 cells ahead; a real B on the ground */

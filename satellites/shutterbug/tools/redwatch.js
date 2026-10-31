@@ -1185,6 +1185,8 @@ const MUTANTS = [
     gates: [{ gate: "fight", expect: "412: the jump box shows J1's icon (icon_weapons.boomerang), its 576 pixels" }] },
   { name: "ICON_SWAPPED", task: 'ART2', file: "page", find: "J1: 'boomerang', J2:", repl: "J1: 'twin_darts', J2:",
     gates: [{ gate: "lint", expect: "R.ICON_NAME binds J1 (Boomerang) to twin_darts, not its own glyph by name" }] },
+  { name: "SHOCK_NO_RIM", task: 'ART2', file: "page", find: "          sprPart(ctx, key + '#', hx0, ry, hw, rh, hx, rtop - 1); sprPart(ctx, key + '#', hx0, ry, hw, rh, hx, rtop + 1);\n", repl: "",
+    gates: [{ gate: "fight", expect: "412: the shock is Astra's ring split at its centre" }] },
   { name: "POSE_SQUASH_OFF", task: 'ART2', file: "page", find: "    if (h.squash > 0) return 'hero_squash.squash';", repl: "    if (h.squash > 0) return 'land';",
     gates: [{ gate: "sprites", expect: "the takeoff draws hero_stretch 10x18 for" }] },
   { name: "POSE_STRETCH_OFF", task: 'ART2', file: "page", find: "    if (h.squash < 0) return 'hero_stretch.stretch';", repl: "    if (h.squash < 0 && false) return 'hero_stretch.stretch';",
