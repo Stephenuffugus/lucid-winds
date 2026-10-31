@@ -1189,13 +1189,13 @@ const MUTANTS = [
   { name: 'REFUSAL_GRIDLESS', task: 'LEVELS', file: 'page', find: ', grid: { w: w, h: h, solid: solid, plat: plat } };', repl: ' };',
     gates: [{ gate: 'harness', only: 'H-lvl-5', expect: 'the refusal carries its 24x48 grid' }] },
   { name: 'MESSAGE_SINGLE', task: 'LEVELS', file: 'page', find: "key = no && CROP_SAYS[lv.cause] || 'tighter';", repl: "key = 'tighter';",
-    gates: [{ gate: 'capture', expect: 'the floor refusal says' }] },
+    gates: [{ gate: 'capture', expect: 'levels: the floor refusal says' }] },
   { name: 'BAND_UNMARKED', task: 'LEVELS', file: 'page', find: "    if (y0 >= 0) {\n      c.fillStyle = 'rgba('", repl: "    if (false) {\n      c.fillStyle = 'rgba('",
-    gates: [{ gate: 'capture', expect: 'the overlay marks the floor band' }] },
+    gates: [{ gate: 'capture', expect: 'levels: the overlay marks the floor band' }] },
   { name: 'OVERLAY_BLANK_REFUSED', task: 'LEVELS', file: 'page', find: 'g = lv.w ? lv : lv.grid,', repl: 'g = lv.w ? lv : null,',
-    gates: [{ gate: 'capture', expect: 'the black photo\'s overlay shades its grid' }] },
+    gates: [{ gate: 'capture', expect: 'levels: the black photo\'s overlay shades its grid' }] },
   { name: 'DEV_READOUT_MS_ONLY', task: 'LEVELS', file: 'page', find: "(no ? '; ' + (lv.cause || 'no cause') + '; ' + lv.detail : '')", repl: "''",
-    gates: [{ gate: 'capture', expect: 'the dev readout names the rule that refused' }] },
+    gates: [{ gate: 'capture', expect: 'levels: the dev readout names the rule that refused' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

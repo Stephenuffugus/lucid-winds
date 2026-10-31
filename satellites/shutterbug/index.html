@@ -5008,6 +5008,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var no = !!(full && lv.needsCrop), say = document.getElementById('tighter'), key = no && CROP_SAYS[lv.cause] || 'tighter';
     CR.marked = drawOverlay(full && !no ? lv : a, full && !no, no ? lv : null);
     say.setAttribute('data-copy', key); say.textContent = ui.COPY[key];
+    /* the bar sits in the middle of the part the band leaves, so it never covers the band it names (the shots, Q180) */
+    say.style.top = no && CR.marked ? 'calc(' + (100 * (CR.markY0 > 1 ? CR.markY0 / 2 : (CR.markY1 + SB.GRID.H) / 2) / SB.GRID.H).toFixed(1) + '% - 2.5em)' : '';
     say.hidden = !no;
     document.getElementById('crop').classList.toggle('stuck', no);   /* Develop looks unable while it is */
     /* the dev readout (?perf=1): the build's time, and on a refusal its cause and the rule that failed (lv.detail) */
@@ -5022,26 +5024,28 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the overlay, one 4 px block per cell: solids shaded, platform tops Glare, tabs Film, the exit ringed in Sun, the
      focal ringed in Paper. A refusal (no) marks the band that refused it in Brick under a Sun edge (Q180): the floor
      band from its top row down, or the ceiling band from row 1; a reading with no level draws the grid its refusal
-     carries, never a blank box. Returns the rows marked */
+     carries, never a blank box. Returns the rows marked; CR.drawn counts the cells it shaded (for the gate) */
   function drawOverlay(lv, withExit, no) {
     var cv = document.getElementById('overlay'), c = cv.getContext('2d'), g = lv.w ? lv : lv.grid, P = SB.palette, i, x, y, marked = 0;
     var hx = function (k) { return '#' + P.HEX[k]; };
     c.clearRect(0, 0, cv.width, cv.height);
+    CR.drawn = 0;
     if (!g) return 0;
     var W = g.w, H = g.h;
     for (i = 0; i < W * H; i++) {
       x = (i % W) * 4; y = Math.floor(i / W) * 4;
-      if (g.solid[i]) { c.fillStyle = 'rgba(11,10,15,0.55)'; c.fillRect(x, y, 4, 4); }
+      if (g.solid[i]) { c.fillStyle = 'rgba(11,10,15,0.55)'; c.fillRect(x, y, 4, 4); CR.drawn++; }
       else if (g.plat[i]) { c.fillStyle = lv.tab && lv.tab[i] ? hx(P.I.FILM) : hx(P.I.GLARE); c.fillRect(x, y, 4, 1); }
     }
     var b = no && no.band, y0 = -1, y1 = -1;
     if (b && no.cause === 'floor' && b.floor > 0) { y0 = b.floor; y1 = H; }
     else if (b && no.cause === 'ceiling' && b.ceiling > 1) { y0 = 1; y1 = b.ceiling; }
     if (y0 >= 0) {
-      c.fillStyle = 'rgba(' + P.RGB[P.I.BRICK].join(',') + ',0.5)'; c.fillRect(0, y0 * 4, W * 4, (y1 - y0) * 4);
+      c.fillStyle = 'rgba(' + P.RGB[P.I.BRICK].join(',') + ',0.35)'; c.fillRect(0, y0 * 4, W * 4, (y1 - y0) * 4);
       c.fillStyle = hx(P.I.SUN); c.fillRect(0, (no.cause === 'floor' ? y0 : y1) * 4 - 1, W * 4, 2);
       marked = y1 - y0;
     }
+    CR.markY0 = y0; CR.markY1 = y1;
     if (withExit && lv.exit >= 0) { x = (lv.exit % W) * 4; y = Math.floor(lv.exit / W) * 4; c.strokeStyle = hx(P.I.SUN); c.lineWidth = 1; c.strokeRect(x - 1.5, y - 1.5, 7, 7); }
     if (CR.focal >= 0) { x = (CR.focal % W) * 4 + 2; y = Math.floor(CR.focal / W) * 4 + 2; c.strokeStyle = hx(P.I.PAPER); c.beginPath(); c.arc(x, y, 5, 0, 2 * Math.PI); c.stroke(); }
     return marked;
@@ -5669,7 +5673,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var CR = SB.ui.crop, a = CR.lastA, n = 0, g = a && (a.solid ? a : a.grid), no = CR.last && CR.last.needsCrop ? CR.last : null;
       if (g) for (var i = 0; i < g.solid.length; i++) n += g.solid[i];
       return { builds: CR.builds, decodes: CR.decodes, solids: n, full: CR.full, needsCrop: CR.last ? !!CR.last.needsCrop : null, ms: CR.ms, focal: CR.focal, crop: CR.crop,
-        cause: no ? no.cause : null, detail: no ? no.detail : null, band: no ? no.band : null, marked: CR.marked || 0, says: document.getElementById('tighter').textContent,
+        cause: no ? no.cause : null, detail: no ? no.detail : null, band: no ? no.band : null, marked: CR.marked || 0, drawn: CR.drawn || 0, says: document.getElementById('tighter').textContent,
         spawnRow: CR.last && !CR.last.needsCrop ? Math.floor(CR.last.spawn / CR.last.w) : -1, exitRow: CR.last && !CR.last.needsCrop ? Math.floor(CR.last.exit / CR.last.w) : -1 };
     },
     audioMade: function () { return SB.audio.made; },

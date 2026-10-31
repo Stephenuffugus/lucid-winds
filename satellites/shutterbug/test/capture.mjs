@@ -83,13 +83,13 @@ try {
     R.say(ok.needsCrop === false && ok.spawnRow >= 40 && ok.spawnRow < 46 && !ok.shown && !ok.stuck, 'levels: the sample room on 4 rows of Walnut develops at the default box, the hero on the band\'s top (needsCrop ' + ok.needsCrop + ', spawn row ' + ok.spawnRow + ', the message ' + (ok.shown ? 'shown' : 'hidden') + ')');
     const fl = await shoot('floor-tall');
     R.say(fl.needsCrop && fl.cause === 'floor' && fl.shown && fl.says === COPY.tighterFloor, 'levels: the floor refusal says "' + COPY.tighterFloor + '" (cause ' + fl.cause + ', shown ' + fl.shown + ', it says "' + fl.says + '")');
-    R.say(fl.marked > 0 && fl.band && fl.marked === 48 - fl.band.floor && fl.solids > 0, 'levels: the overlay marks the floor band, its ' + fl.marked + ' rows from row ' + (fl.band && fl.band.floor) + ' down (' + fl.solids + ' solid cells drawn)');
+    R.say(fl.marked > 0 && fl.band && fl.marked === 48 - fl.band.floor && fl.drawn > 0, 'levels: the overlay marks the floor band, its ' + fl.marked + ' rows from row ' + (fl.band && fl.band.floor) + ' down (' + fl.drawn + ' cells shaded)');
     R.say(typeof fl.detail === 'string' && fl.detail.length > 0 && fl.dev.includes(fl.detail) && fl.dev.includes('floor'), 'levels: the dev readout names the rule that refused ("' + fl.dev + '")');
     const ce = await shoot('ceiling-tall');
     R.say(ce.needsCrop && ce.cause === 'ceiling' && ce.shown && ce.says === COPY.tighterCeiling && ce.marked > 0 && ce.band && ce.marked === ce.band.ceiling - 1, 'levels: the ceiling refusal says "' + COPY.tighterCeiling + '" and the overlay marks its band (cause ' + ce.cause + ', it says "' + ce.says + '", ' + ce.marked + ' rows marked, band ' + JSON.stringify(ce.band) + ')');
     const bk = await shoot('black');
     R.say(bk.needsCrop && bk.cause === 'dark' && bk.shown && bk.says === COPY.tighterDark, 'levels: the black photo\'s refusal says "' + COPY.tighterDark + '" (cause ' + bk.cause + ', it says "' + bk.says + '")');
-    R.say(bk.solids > 1000, 'levels: the black photo\'s overlay shades its grid, never a blank box (' + bk.solids + ' solid cells drawn)');
+    R.say(bk.drawn > 1000, 'levels: the black photo\'s overlay shades its grid, never a blank box (' + bk.drawn + ' cells shaded of ' + bk.solids + ' solid)');
     const cb = await shoot('checker');
     R.say(cb.needsCrop && cb.cause === null && cb.shown && cb.says === COPY.tighter, 'levels: a refusal no fallback names keeps the one old message (the checkerboard: cause ' + cb.cause + ', it says "' + cb.says + '")');
     R.say(errors.length === 0, 'levels: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
