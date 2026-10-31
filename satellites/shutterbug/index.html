@@ -3903,6 +3903,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var kn = KINDS[en.kind] || 'moth', ek = en.elite ? kn + '_elite' : kn, esp = SPRITES[ek], an = R.ELITE_ANCHOR[kn] || 'cell';
       var clock = en.kind === 1 ? en.timer : s.frame, mk = ek + ((Math.floor(clock / beat) & 1) ? '.a' : '.b') + (en.dir < 0 && en.kind === 4 ? '<' : '');
       var ex2 = mx + ((es - esp.w) >> 1), ey2 = an === 'top' ? my : an === 'bottom' ? my + es - esp.h : my + ((es - esp.h) >> 1);
+      /* at rest (state 0: an icicle hanging, a spark between hops, a crawler on its run) a top or bottom anchor holds to
+         the ceiling or the floor of the row its box's middle is in: an elite's box starts centred on its cell, half a
+         cell's overhang into the roof and the floor (ART1's shots: the icicle's root and the spark's base sunk 4 px into
+         them; Q160 asks whether the sim should seat the box instead); in flight the art rides the box */
+      if (en.state === 0 && an !== 'cell') {
+        var row2 = Math.floor(((en.y >> 8) + (es >> 1)) / C) * C - cam;
+        ey2 = an === 'top' ? row2 : row2 + C - esp.h;
+      }
       spr(ctx, mk, ex2, ey2);
       md.push({ key: mk, x: ex2 - camX, y: ey2, w: esp.w, h: esp.h, box: { x: mx - camX, y: my, w: es, h: es } });
     }

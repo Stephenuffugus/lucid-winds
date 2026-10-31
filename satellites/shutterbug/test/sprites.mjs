@@ -13,14 +13,16 @@
  *
  * ART1 (Astra's art, Q160): in saturated-blobs built under each of the five biomes, the hero set down at the elite's
  * home (SB_DEV.goto('elite')), the elite is drawn as its own <kind>_elite key, 24x24 at 1:1, placed in the sim's box
- * by its manifest anchor (moth and jelly centred, icicle hung from the top, crawler and spark on the bottom; the
+ * by its manifest anchor (moth and jelly centred, icicle hung from the top, crawler and spark on the bottom, at rest
+ * held to the ceiling or floor of the row the box's middle is in, since the box starts centred on its cell; the
  * crawler mirrored to its way), and every opaque pixel of its frame (read from the page's SPRITES here) is that colour
  * on the canvas. The top strip's hearts, three full of eight, read from a real screenshot: each of the 72 pixels of
  * every heart is hud_heart's full or empty frame at 2x.
  *
  * Watched red by OFF_PALETTE_PIXEL (the atlas writes one channel a step off), ANIM_AT_60 (the run advances every
  * step), DASH_NO_FLASH (the i frames drawn plain), ELITE_DRAWS_BASE (an elite drawn as its base art scaled to
- * ELITE_PX) and HEART_NOT_SPRITE (the old CSS hearts back). */
+ * ELITE_PX), ELITE_SUNK (the rest rule off: the icicle's root and the spark's base 4 px into the roof and floor) and
+ * HEART_NOT_SPRITE (the old CSS hearts back). */
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { serve, launch, newPage, gotoGame, ready, reporter, GAME } from './harness.mjs';
@@ -148,12 +150,15 @@ try {
       const rc = window.SB_DEV.spriteRects(), st = window.SB_DEV.state(), camY = window.SB_DEV.level().camY;
       const cv = document.getElementById('view'), img = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height);
       const el = st.enemies.filter(e => e.elite)[0];
-      return { rc, el: el && { kind: el.kind, x: el.x >> 8, y: (el.y >> 8) - camY, dir: el.dir }, W: cv.width, H: cv.height, px: Array.from(img.data) };
+      return { rc, el: el && { kind: el.kind, x: el.x >> 8, y: (el.y >> 8) - camY, dir: el.dir, state: el.state, row: Math.floor(((el.y >> 8) + 12) / 16) * 16 - camY }, W: cv.width, H: cv.height, px: Array.from(img.data) };
     }, fixture, b);
     const kind = got.el ? KIND[got.el.kind] : '?';
     const r = got.rc.enemies.find(e => e.box && got.el && e.box.x === got.el.x && e.box.y === got.el.y && e.box.w === 24);
     const rows = r ? frameOf(r.key) : null, an = ANCHOR[kind];
-    const wantY = r ? (an === 'top' ? r.box.y : an === 'bottom' ? r.box.y + r.box.h - 24 : r.box.y) : null;
+    /* at rest (state 0) a top or bottom anchor holds to the ceiling or floor of the row the box's middle is in (the box
+       starts centred on its cell, 4 px into the roof and the floor); in flight it rides the box */
+    const rest = got.el && got.el.state === 0;
+    const wantY = r ? (an === 'top' ? (rest ? got.el.row : r.box.y) : an === 'bottom' ? (rest ? got.el.row + 16 - 24 : r.box.y + r.box.h - 24) : r.box.y) : null;
     const keyOk = !!r && new RegExp('^' + kind + '_elite\\.[ab]' + (kind === 'crawler' && got.el.dir < 0 ? '<' : '') + '$').test(r.key);
     const placeOk = !!r && r.w === 24 && r.h === 24 && r.x === r.box.x && r.y === wantY;
     let n = 0, bad = [];
@@ -166,7 +171,7 @@ try {
         n++; if (h !== '#' + HEX[parseInt(ch, 16)]) bad.push(x + ',' + y + ' ' + h + ' not ' + HEX[parseInt(ch, 16)]);
       }
     }
-    R.say(keyOk && placeOk && n >= 100 && bad.length === 0, 'biome ' + b + ': the ' + kind + ' elite drawn as ' + (r ? r.key + ' at ' + r.x + ',' + r.y + ' ' + r.w + 'x' + r.h + ' in its box ' + r.box.x + ',' + r.box.y + ' (' + an + ')' : 'nothing (keys: ' + got.rc.enemies.map(e => e.key).join(' ') + ')')
+    R.say(keyOk && placeOk && n >= 100 && bad.length === 0, 'biome ' + b + ': the ' + kind + ' elite drawn as ' + (r ? r.key + ' at ' + r.x + ',' + r.y + ' ' + r.w + 'x' + r.h + ' in its box ' + r.box.x + ',' + r.box.y + ' (' + an + (an !== 'cell' && rest ? ', at rest on its row\'s ' + (an === 'top' ? 'ceiling ' : 'floor ') + got.el.row : '') + ')' : 'nothing (keys: ' + got.rc.enemies.map(e => e.key).join(' ') + ')')
       + ', ' + n + ' opaque pixels equal its frame on the canvas' + (bad.length ? ' (' + bad.length + ' differ: ' + bad.slice(0, 3).join('; ') + ')' : ''));
   }
 
