@@ -6,12 +6,15 @@
  * alpha 128, a strip one pixel short, Sun in the moth, a hero frame without Ink in its feet row, a PNG that differs from
  * its source grid, a wrong sha256, a 16 bit PNG, a path out of the zip ('../evil.txt', nothing written outside), a
  * folder not empty. ART2: the hero's poses carry Sun and are cut, Sun in an effect is refused, an effect frame not named
- * <clip>_<n> is refused, a new effect strip comes as named clips (not an unknown key), and the key cap (44, ART2's)
- * refuses the cut that would reach it. Runs the cutter at SB_ASTRA_CUT when set (redwatch's mutants), the page at SB_PAGE when set.
+ * <clip>_<n> is refused, a new effect strip comes as named clips (not an unknown key). ART3: the key cap (43) moved
+ * to the splice (a cut past it is checked, its splice refused); a delivery naming its game SHUTTERBUG with 16 and 64 px
+ * effects and fx_beacon_light carrying Sun is cut (Sun in another effect and a 24 px effect still refused); a renamed
+ * key's entry replaces the page's frames whole (the hero alone merges by frame). Runs the cutter at SB_ASTRA_CUT when set (redwatch's mutants), the page at SB_PAGE when set.
  *
  * Watched red by CUT_NO_PALETTE_CHECK, CUT_SEMI_ALPHA, CUT_PAETH_WRONG, CUT_NO_SOURCE_COMPARE, CUT_ZIP_SLIP,
  * CUT_SUN_ANYWHERE, CUT_FEET_UNCHECKED, SPLICE_JOINS_LINES, CUT_SUN_PAST_HERO, CUT_POSE_SUN_REFUSED, CUT_FX_NAMES_FREE,
- * CUT_FX_UNKNOWN and CUT_CAP_UNCHECKED. */
+ * CUT_FX_UNKNOWN, CUT_CAP_RAISED, CUT_GAME_CASE, CUT_FX_SIDES_NARROW, CUT_BEACON_FX_SUN, CUT_SUN_ANY_FX, CUT_CAP_AT_CHECK
+ * and SPLICE_KEEPS_RENAMED. */
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -95,9 +98,32 @@ writeFileSync(join(TMP, 'page-no-fx.html'), noFx);
 const fxFix = through('fxnew', [], join(TMP, 'sprites.json'), join(TMP, 'page-no-fx.html'));
 say(noFx !== html && fxFix.code === 0 && /an effect fx_shockwave \(anvil_boots, wide_lens\): R\.draw must learn the clips it binds/.test(fxFix.out) && !/an unknown key fx_/.test(fxFix.out),
   'an effect strip new to the page (fx_shockwave on a copy without it) is taken as named clips (anvil_boots, wide_lens), never as an unknown key' + (fxFix.code === 0 ? '' : ' (' + fxFix.out.split('\n').filter(l => /REFUSE/.test(l)).slice(0, 2).join(' | ') + ')'));
+/* ART3: the cap moved to the splice, where the page grows: a cut past it is checked (a whole delivery may be checked
+   and parked), and its splice is refused, the page untouched; the cap is 43, the least that takes ART3's splice */
 const CAP = Number((readFileSync(CUT, 'utf8').match(/^MAX_SPRITES = (\d+)/m) || [])[1]);
 const capped = through('cap', ['--pad', String(CAP - keys.length)]);
-say(CAP === 44 && capped.code === 1 && capped.out.includes(CAP + ' names after this cut; the game stays under ' + CAP), 'a cut that would leave ' + CAP + ' names (the page\'s ' + keys.length + ' and ' + (CAP - keys.length) + ' more) is refused at the cap of ' + CAP + ', ART2\'s and no higher');
+writeFileSync(join(TMP, 'cap.sprites.json'), JSON.stringify(capped.json || {}));
+const capS = py([CUT, 'splice', join(TMP, 'cap.sprites.json'), PAGE, '--out', join(TMP, 'copy-cap.html')]);
+say(CAP === 43 && keys.length < CAP && capped.code === 0 && capped.out.includes('a whole splice would leave ' + CAP + ' names') && capS.code === 1 && capS.out.includes(CAP + ' names after this splice; the page stays under ' + CAP) && !existsSync(join(TMP, 'copy-cap.html')),
+  'a cut that would leave ' + CAP + ' names (the page\'s ' + keys.length + ' and ' + (CAP - keys.length) + ' more) is checked, and its splice is refused at the cap of ' + CAP + ', ART3\'s and no higher, the page unwritten' + (capS.code === 1 ? '' : ' (splice exit ' + capS.code + ')'));
+
+/* ART3: round 3's shapes: the game named in capitals, a 16 px and a 64 px effect, the beacon's lighting with its Sun */
+const r3 = through('round3', ['--round3']);
+say(r3.code === 0 && /cut     fx_boss_chip 16x16: chip_0/.test(r3.out) && /cut     fx_boss_down 64x64: down_0/.test(r3.out) && /cut     fx_beacon_light 16x16: light_0/.test(r3.out),
+  'a delivery naming its game SHUTTERBUG, with a 16 px chip, a 64 px fall and fx_beacon_light carrying the beacon\'s Sun, is checked and cut' + (r3.code === 0 ? '' : ' (' + r3.out.split('\n').filter(l => /REFUSE/.test(l)).slice(0, 3).join(' | ') + ')'));
+const r3sun = through('round3-sun', ['--round3', '--break', 'sunchip']), r3side = through('round3-side', ['--round3', '--break', 'fx24']);
+say(r3sun.code === 1 && r3sun.out.includes('Sun in fx_boss_chip'), 'Sun in another effect of round 3 (fx_boss_chip) is still refused: the beacon\'s lighting alone carries it');
+say(r3side.code === 1 && r3side.out.includes('fx_boss_chip is 24x24: an effect is square, 16 or 32 or 48 or 64 a side'), 'an effect 24 a side is still refused (16, 32, 48 or 64)');
+/* ART3: Astra merges by sprite key: a key's entry (round 2's icon_weapons, J1 to charm) replaces the page's frames
+   whole, in its order, even where a name is shared (the old strip's jump, dive and charm); the hero alone merges */
+const ren = { icon_weapons: { w: 24, h: 24, frames: {} } }, old = Object.keys(plain.icon_weapons.frames);
+old.slice().reverse().forEach((n, i) => { ren.icon_weapons.frames[i === 0 ? old[0] : 'Z' + i] = plain.icon_weapons.frames[n]; });
+writeFileSync(join(TMP, 'renamed.json'), JSON.stringify(ren));
+py([CUT, 'splice', join(TMP, 'renamed.json'), PAGE, '--out', join(TMP, 'copy-renamed.html')]);
+const rcopy = existsSync(join(TMP, 'copy-renamed.html')) ? readFileSync(join(TMP, 'copy-renamed.html'), 'utf8') : '';
+const rspr = rcopy ? vm.runInNewContext(rcopy.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1] + '\n;SPRITES') : null;
+say(!!rspr && JSON.stringify(Object.keys(rspr.icon_weapons.frames)) === JSON.stringify(Object.keys(ren.icon_weapons.frames)) && Object.keys(rspr).length === keys.length,
+ 'a key\'s entry (icon_weapons as ' + old[0] + ', Z1 to Z' + (old.length - 1) + ') replaces the page\'s ' + old.length + ' frames whole, in its own order, no other old name kept' + (rspr ? ' (' + Object.keys(rspr.icon_weapons.frames).slice(0, 3).join(' ') + ' ...)' : ''));
 
 /* every broken variant refused for its own reason */
 const BREAKS = [

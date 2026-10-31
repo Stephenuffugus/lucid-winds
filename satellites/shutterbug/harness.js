@@ -4911,9 +4911,15 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
     hero_stretch: [hx(I.INK, I.GLARE, I.WALNUT, I.SUN), true], hero_dropin: [hx(I.INK, I.GLARE, I.WALNUT, I.SUN), true],
     fx_projectiles: [hx(I.INK, I.PEWTER, I.ASH, I.PAPER, I.GLARE, I.AMBER), true], fx_shockwave: [hx(I.ASH, I.LAPIS), false],
     fx_enemy_hit: [hx(I.INK, I.PEWTER, I.ASH, I.GLARE, I.BRICK), false],
-    icon_weapons: [hx(I.INK, I.SOOT, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE, I.WALNUT, I.AMBER, I.BRICK, I.LAPIS, I.TEAL, I.MOSS), false] };
+    icon_weapons: [hx(I.INK, I.SOOT, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE, I.WALNUT, I.AMBER, I.BRICK, I.LAPIS, I.TEAL, I.MOSS), false],
+    /* ART3 (Astra's rounds 2 and 3, Q98): the stick's pad, knob and hint, the pause glyph, the Skyhook's effect, the
+       biome's air and badges, each the colours her art holds; the dust is Pewter and Ash with no Ink (Q162) */
+    fx_skyhook: [hx(I.INK, I.ASH, I.GLARE, I.TEAL), true], stick_pad: [hx(I.INK, I.PAPER, I.GLARE), true], stick_knob: [hx(I.INK, I.PAPER, I.GLARE), true],
+    stick_hint: [hx(I.INK), true], pause_glyph: [hx(I.INK), true], dust_mote: [hx(I.PEWTER, I.ASH), false], frost_mote: [hx(I.INK, I.PAPER, I.GLARE), true],
+    bubble: [hx(I.INK, I.GLARE, I.TEAL), true], spore: [hx(I.INK, I.MOSS), true], ember_mote: [hx(I.INK, I.ASH, I.AMBER), true],
+    icon_biomes: [hx(I.INK, I.ASH, I.PAPER, I.WALNUT, I.AMBER, I.BRICK, I.LAPIS, I.TEAL, I.MOSS), true] };
   const POSES = Object.keys(LAW).filter(n => n.startsWith('hero_'));
-  t.ok(names.length > 0 && names.length < 40, names.length + ' named sprites (under 40; frames are unlimited)');
+  t.ok(names.length > 0 && names.length < 43, names.length + ' named sprites (under 43, ART3\'s cap; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
     const sp = S[name];
@@ -4941,14 +4947,39 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
     }
   }
   t.ok(Object.keys(LAW).every(n => names.includes(n)) && !['boomerang', 'shock', 'pop', 'icon'].some(n => names.includes(n)), 'Astra\'s weapon keys exist (' + Object.keys(LAW).join(', ') + ') and the builder\'s placeholders are gone');
-  /* ART2: every built weapon's icon is a glyph of icon_weapons bound by R.ICON_NAME (read from the page), Ink outlined */
-  const inm = fs.readFileSync(PAGE, 'utf8').match(/R\.ICON_NAME = (\{[^}]*\});/), ICON_NAME = inm ? require('node:vm').runInNewContext('(' + inm[1] + ')') : {};
-  const unbound = SB.TUNING.WEAPONS_BUILT.filter(id => !(ICON_NAME[id] && S.icon_weapons && S.icon_weapons.frames[ICON_NAME[id]] && S.icon_weapons.frames[ICON_NAME[id]].includes(INK)));
-  t.ok(!!inm && unbound.length === 0 && Object.values(ICON_NAME).every(g => S.icon_weapons && S.icon_weapons.frames[g]), 'every built weapon (' + SB.TUNING.WEAPONS_BUILT.join(', ') + ') draws its own Ink outlined icon_weapons glyph through R.ICON_NAME (' + SB.TUNING.WEAPONS_BUILT.map(id => id + ' ' + ICON_NAME[id]).join(', ') + ')' + (unbound.length ? ' (unbound: ' + unbound.join(', ') + ')' : ''));
+  /* ART3: every built weapon's icon is the icon_weapons glyph named by its code (Astra's round 2, J1 to charm), Ink
+     outlined; J1's and D1's glyphs are round 1's pixel for pixel (Astra's word, pinned by the sha256 of round 1's
+     boomerang and anvil_boots strings) */
+  const unbound = SB.TUNING.WEAPONS_BUILT.filter(id => !(S.icon_weapons && S.icon_weapons.frames[id] && S.icon_weapons.frames[id].includes(INK)));
+  t.ok(unbound.length === 0, 'every built weapon (' + SB.TUNING.WEAPONS_BUILT.join(', ') + ') draws its own Ink outlined icon_weapons glyph named by its code' + (unbound.length ? ' (unbound: ' + unbound.join(', ') + ')' : ''));
+  const sha16 = str => require('node:crypto').createHash('sha256').update(String(str)).digest('hex').slice(0, 16), IW = (S.icon_weapons || { frames: {} }).frames;
+  t.ok(sha16(IW.J1) === '9789ac48c2044d72' && sha16(IW.D1) === 'c9ca5f1ee851afcd', 'icon_weapons.J1 and .D1 are round 1\'s boomerang and anvil_boots pixel for pixel (sha256 ' + sha16(IW.J1) + ', ' + sha16(IW.D1) + ')');
+  /* ART3: round 2's keylined elites: every Magenta pixel's eight neighbours are Magenta or Ink (Astra's keyline, so the
+     marks read on a Magenta photo); round 2's speck: a 10x10 diamond, the Glare glint on frame b only */
+  const MAG = I.MAGENTA.toString(16);
+  for (const k of KINDS) for (const [f, str] of Object.entries((S[k + '_elite'] || { frames: {} }).frames)) {
+    const r = str.split('/'), open = [];
+    for (let y = 0; y < r.length; y++) for (let x = 0; x < r[y].length; x++) if (r[y][x] === MAG) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const c = (r[y + dy] || '')[x + dx] || '.'; if (c !== MAG && c !== INK) open.push(x + dx + ',' + (y + dy)); }
+    t.ok(str.includes(MAG) && open.length === 0, k + '_elite.' + f + ' keylines every Magenta mark in Ink, all eight neighbours' + (open.length ? ' (open at ' + open.slice(0, 4).join(' ') + ')' : ''));
+  }
+  const bbox = str => { const r = str.split('/'); let x0 = 99, y0 = 99, x1 = -1, y1 = -1; r.forEach((row, y) => [...row].forEach((c, x) => { if (c !== '.') { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } })); return (x1 - x0 + 1) + 'x' + (y1 - y0 + 1); };
+  t.ok(!!S.speck && !S.speck.frames.a.includes(GLARE) && S.speck.frames.b.includes(GLARE) && bbox(S.speck.frames.a) === '10x10', 'the speck is a 10x10 Amber diamond (' + (S.speck ? bbox(S.speck.frames.a) : 'absent') + ') with the Glare glint on frame b only');
+  /* ART3: what this step draws or splices for the next: the stick (pad 40x40 idle and active, knob 18x18 neutral, left
+     and right, hint 72x12 with [12,0,48,12] clear for the words), pause_glyph (normal, pressed one pixel lower), fx_skyhook
+     (four frames for weapons step 2's J8), the biome's air (16x16, a b c d) and icon_biomes (24x24, a frame a biome) */
+  const shapeOk = (k, w, h, fr) => !!S[k] && S[k].w === w && S[k].h === h && JSON.stringify(Object.keys(S[k].frames)) === JSON.stringify(fr);
+  t.ok(shapeOk('stick_pad', 40, 40, ['idle', 'active']) && shapeOk('stick_knob', 18, 18, ['neutral', 'left', 'right']) && shapeOk('stick_hint', 72, 12, ['line']) && S.stick_hint.frames.line.split('/').every(r => /^\.+$/.test(r.slice(12, 60))),
+    'the stick\'s art: stick_pad 40x40 idle and active, stick_knob 18x18 neutral, left and right, stick_hint 72x12 with columns 12 to 59 clear for the words');
+  t.ok(shapeOk('pause_glyph', 16, 16, ['normal', 'pressed']) && S.pause_glyph.frames.pressed === '................/' + S.pause_glyph.frames.normal.split('/').slice(0, 15).join('/'), 'pause_glyph is 16x16, its pressed frame the normal one a native pixel lower');
+  t.ok(shapeOk('fx_skyhook', 32, 32, ['skyhook_0', 'skyhook_1', 'skyhook_2', 'skyhook_3']), 'fx_skyhook is spliced for J8, four 32x32 frames skyhook_0 to skyhook_3');
+  t.ok(['dust_mote', 'frost_mote', 'bubble', 'spore', 'ember_mote'].every(k => shapeOk(k, 16, 16, ['a', 'b', 'c', 'd'])) && shapeOk('icon_biomes', 24, 24, SB.palette.BIOMES),
+    'the biome\'s air (dust_mote, frost_mote, bubble, spore, ember_mote, each 16x16 a b c d) and icon_biomes (24x24, ' + SB.palette.BIOMES.join(' ') + ')');
   const PW = { hero_squash: [14, 14], hero_stretch: [10, 18] };
   t.ok(POSES.every(n => S[n] && S[n].w === (PW[n] || [K.HERO_W])[0] && S[n].h === (PW[n] || [0, K.HERO_H])[1]), 'the poses keep the old transform\'s rects (hero_squash 14x14, hero_stretch 10x18) and the rest the hero\'s 12x16 (' + POSES.map(n => n + ' ' + (S[n] ? S[n].w + 'x' + S[n].h : 'absent')).join(', ') + ')');
   t.ok(DANGER.every(n => names.includes(n)), 'every enemy, elite and trap the rules name has a sprite (' + DANGER.join(', ') + ')');
   t.ok(!!S.speck && Object.values(S.speck.frames).some(s => s.includes(GLARE)), 'the speck\'s strip carries its Glare glint (section 7.3: loot is Amber with a Glare glint)');
+  t.ok(!names.some(n => ['crop_floor_band', 'crop_ceiling_band', 'crop_seek', 'run_pips', 'icon_house', 'card_house_clear', 'fx_unlock', 'hero_colours_r3', 'fx_boss_wake', 'fx_boss_chip', 'fx_boss_down', 'fx_beacon_light', 'fx_stat_up', 'hud_heart_new', 'fx_magnet', 'fx_second_wind', 'fx_thick_skin', 'fx_tripod', 'tab_biome', 'hero_bold'].includes(n)),
+    'nothing parked is on the page (ART3: the parked keys wait in docs/astra/cut-art3.json for their systems)');
   /* the elites (Q160): each its own art, ELITE_PX a side (the sim's box, ELITE_SIZE_CELLS cells), with its kind's frame
      names, so the draw's beat picks a frame that exists (the sprites gate proves it is drawn 1:1, never the base scaled) */
   for (const k of KINDS) {

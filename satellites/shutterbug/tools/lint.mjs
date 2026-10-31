@@ -321,22 +321,17 @@ for (const fm of html.matchAll(/font-size\s*:\s*([0-9.]+)\s*(rem|em|px)|fontSize
     try { S = vm.runInNewContext(sm[1] + '\n;SPRITES'); } catch (e) { fail('SPRITES', 'the SPRITES literal does not evaluate: ' + e.message); }
     if (S) {
       const names = Object.keys(S);
-      if (names.length >= 40) fail('SPRITES', names.length + ' named sprites (under 40)');
-      /* WEAPON_NAMES (ART2, Q161): every built id bound by R.ICON_NAME to a glyph of Astra's icon_weapons, and every
-         binding a DESIGN 9.1 id and a glyph that exists (a glyph may wait for its weapon: Astra drew all 24) */
-      const inm = rb.src.match(/R\.ICON_NAME = (\{[^}]*\});/);
-      let ICON_NAME = null;
-      try { ICON_NAME = inm ? vm.runInNewContext('(' + inm[1] + ')') : null; } catch (e) { ICON_NAME = null; }
-      if (!ICON_NAME) fail('WEAPON_NAMES', 'shell-render holds no R.ICON_NAME = { ... } literal');
-      else {
-        const glyphs = S.icon_weapons ? Object.keys(S.icon_weapons.frames || {}) : [];
-        for (const id of BUILT) if (!ICON_NAME[id] || !glyphs.includes(ICON_NAME[id])) fail('WEAPON_NAMES', 'the built ' + id + ' has no icon_weapons glyph through R.ICON_NAME (' + (ICON_NAME[id] || 'unbound') + ')');
-        for (const [id, g] of Object.entries(ICON_NAME)) {
-          if (!WEAPON_NAMES[id]) fail('WEAPON_NAMES', 'R.ICON_NAME binds ' + id + ', which DESIGN 9.1 does not name');
-          if (!glyphs.includes(g)) fail('WEAPON_NAMES', 'R.ICON_NAME binds ' + id + ' to ' + g + ', which icon_weapons does not hold');
-          if (WEAPON_NAMES[id] && g !== WEAPON_NAMES[id].toLowerCase().replace(/ /g, '_')) fail('WEAPON_NAMES', 'R.ICON_NAME binds ' + id + ' (' + WEAPON_NAMES[id] + ') to ' + g + ', not its own glyph by name');
-        }
-      }
+      /* the page's key cap, the same number as tools/astra_cut.py's MAX_SPRITES (ART3: 43, the least that takes the 42
+         names this step leaves; PROGRESS ART3) */
+      if (names.length >= 43) fail('SPRITES', names.length + ' named sprites (under 43)');
+      /* WEAPON_NAMES (ART3, Astra's round 2): icon_weapons holds a glyph for every DESIGN 9.1 code, named by the code,
+         in DESIGN's order (J1 to J8, D1 to D8, C1 to C8), then the jump, dive and charm slot glyphs; every built id has
+         its glyph; and R.icon looks a glyph up by the code itself, never by a table or its place in the strip */
+      const ORDER = Object.keys(WEAPON_NAMES).concat(['jump', 'dive', 'charm']);
+      const glyphs = S.icon_weapons ? Object.keys(S.icon_weapons.frames || {}) : [];
+      if (JSON.stringify(glyphs) !== JSON.stringify(ORDER)) fail('WEAPON_NAMES', 'icon_weapons holds ' + glyphs.join(' ') + ', not Astra\'s order ' + ORDER.join(' '));
+      for (const id of BUILT) if (!glyphs.includes(id)) fail('WEAPON_NAMES', 'the built ' + id + ' has no icon_weapons glyph named ' + id);
+      if (!/R\.icon = function \(c2, id, x, y\) \{ var r = A\['icon_weapons\.' \+ id\];/.test(rb.src)) fail('WEAPON_NAMES', 'R.icon does not look its glyph up by the code (A[\'icon_weapons.\' + id])');
       for (const name of names) for (const [f, str] of Object.entries(S[name].frames || {})) {
         const rows = String(str).split('/');
         if (rows.length !== S[name].h) fail('SPRITES', name + '.' + f + ' has ' + rows.length + ' rows, not ' + S[name].h);
