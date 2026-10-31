@@ -95,6 +95,18 @@ try {
     R.say(errors.length === 0, 'levels: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
+  /* LEVELSR: the dev readout is the dev flag's alone; a player's crop screen never shows the rule that refused */
+  {
+    const { page } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base);
+    await ready(page, { reveal: true });
+    const d = await page.evaluate(() => window.SB_DEV.overlay().decodes);
+    await (await page.$('#filechoose')).uploadFile(join(TMP, 'floor-tall.png'));
+    await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
+    const np = await page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { dev: document.getElementById('cropsay').textContent, shown: !document.getElementById('tighter').hidden }));
+    R.say(np.needsCrop && np.shown && np.dev === '', 'levels: without the dev flag the crop screen shows no readout (needsCrop ' + np.needsCrop + ', the readout "' + np.dev + '")');
+    await page.close();
+  }
   const { page, errors } = await newPage(browser, { width: 412, height: 915 });
   await gotoGame(page, srv.base);
   await ready(page, { reveal: true });
