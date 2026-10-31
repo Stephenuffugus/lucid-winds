@@ -6,7 +6,7 @@
  *
  *   node tools/shutterbug-tests/shots-play.mjs <outdir> <name>:<step> [<name>:<step> ...] [--sizes=412x915,360x780]
  *        [--query=fit=crop] [--strip=R,A] [--dpr=2.625]   (--strip: after stepping, hold those strip controls with real
- *        touches; --dpr: the device pixel ratio, 3 by default, 2.625 for a Pixel 9)
+ *        touches, R and L a thumb on the stick slid 20 px that way; --dpr: the device pixel ratio, 3 by default, 2.625 for a Pixel 9)
  * Serve the repo root first: (cd /workspaces/lucid-winds && python3 -m http.server 8777 >/dev/null 2>&1 &) */
 import { createRequire } from 'node:module';
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -52,8 +52,13 @@ try {
       for (const bit of [1, 2, 4]) if (down & bit) await page.keyboard.up(KEYS[bit]);
       const fingers = [];
       for (const sel of strip) {
-        const c = await page.evaluate(sel => { const b = document.querySelector(sel); if (!b) return null; const r = b.getBoundingClientRect(); return { x: r.left + r.width * 0.75, y: r.top + r.height / 2 }; }, sel === 'R' ? '#rocker' : sel === 'L' ? '#rocker' : sel === 'A' ? '#btnA' : '#btnB');
-        if (c) fingers.push(await page.touchscreen.touchStart(sel === 'L' ? c.x - (c.x - 0) * 0.5 : c.x, c.y));
+        /* R and L: a thumb landed on the stick's field (QUESTIONS Q140) and slid 20 px that way; A and B: held */
+        const stick = sel === 'R' || sel === 'L';
+        const c = await page.evaluate(sel => { const b = document.querySelector(sel); if (!b) return null; const r = b.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }, stick ? '#stick .field' : sel === 'A' ? '#btnA' : '#btnB');
+        if (!c) continue;
+        const f = await page.touchscreen.touchStart(c.x, c.y);
+        if (stick) { await f.move(c.x + (sel === 'R' ? 20 : -20), c.y); await new Promise(r2 => setTimeout(r2, 100)); }
+        fingers.push(f);
       }
       await new Promise(r2 => setTimeout(r2, 700));
       const chip = await page.evaluate(() => {

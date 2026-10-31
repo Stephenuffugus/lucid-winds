@@ -242,36 +242,73 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #pauseshare, #clearshare { background: var(--paper); color: var(--ink); }   /* Share this room in the card's Paper, never the browser's grey (the review of Q94) */
 /* the hint glyphs (T0.16): a control pulses once, the first time it is the move to make */
 @keyframes sbhint { 0%, 100% { box-shadow: 0 0 0 0 rgba(242,209,63,0); } 50% { box-shadow: 0 0 0 6px rgba(242,209,63,0.9); } }
-#rocker.hint .zone, .verb.hint .glyph { animation: sbhint 0.7s ease-in-out 3; }
-@media (prefers-reduced-motion: reduce) { #rocker.hint .zone, .verb.hint .glyph { animation: none; outline: 4px solid var(--sun); } }
+/* A and B are buttons and pulse as buttons; the stick is no button, so its hint draws no box, no ring and no outline
+   (the stick's review: a Sun box round the whole field read as one giant button). Its idle line darkens to Ink and the
+   arrows slide out and back, the way the thumb goes; under reduced motion the line is Ink and still for the pulse */
+.verb.hint .glyph { animation: sbhint 0.7s ease-in-out 3; }
+@keyframes sbidle { 0%, 100% { color: rgba(11,10,15,0.4); } 50% { color: var(--ink); } }
+@keyframes sbidlel { 0%, 100% { transform: none; } 50% { transform: translateX(-10px); } }
+@keyframes sbidler { 0%, 100% { transform: none; } 50% { transform: translateX(10px); } }
+#stick.hint .idle { animation: sbidle 0.7s ease-in-out 3; }
+#stick.hint .idle .hl { animation: sbidlel 0.7s ease-in-out 3; }
+#stick.hint .idle .hr { animation: sbidler 0.7s ease-in-out 3; }
+@media (prefers-reduced-motion: reduce) { .verb.hint .glyph { animation: none; outline: 4px solid var(--sun); }
+  #stick.hint .idle, #stick.hint .idle .hl, #stick.hint .idle .hr { animation: none; color: var(--ink); } }
 #safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 var(--sab) 0; }
 #vhprobe { position: fixed; left: 0; top: 0; width: 0; height: 100vh; height: 100dvh; visibility: hidden; pointer-events: none; }
 
-/* the control strip: the bottom left 120x120 belongs to the fleet's music chip (the reserved box: transparent,
-   borderless, textless, handlerless, the top hit at every point of it); the rocker from x 120 with a 16 px visible
-   neutral gap; A outer and B inner at the right. Every hit area is the strip's full height; the drawn glyphs sit at
-   the bottom, semi transparent on the film. 64 px verbs on phones 390 and wider, 56 below (DESIGN 4.1's minimum). */
+/* the control strip: the stick zone, everything left of B; B inner and A outer at the right. Every hit area is the
+   strip's full height; the drawn glyphs sit at the bottom, semi transparent on the film. 64 px verbs on phones 390
+   and wider, 56 below (DESIGN 4.1's minimum). The bottom left 120x120 belongs to the fleet's music chip (the reserved
+   box: transparent, borderless, textless, handlerless, the top hit at every point of it) wherever the chip shows, the
+   clear card; while a room runs the chip is hidden (Q48's addendum) and the box is released to the stick, so a left
+   thumb in the bottom left corner steers (Stephen's ruling of 31 Oct, "Whole left side", QUESTIONS Q140). Under the
+   death card the chip is hidden too (below), so the box stays released there and the stick never moves under a held
+   thumb when the hero falls (the stick's review) */
 #strip { --btn: 64px; --res: 120px; }
+body.playing #strip, body:has(#death.on) #strip { --res: 0px; }
 #reserve { position: absolute; left: 0; bottom: 0; width: var(--res); height: var(--res); }
-#rocker { position: absolute; left: var(--res); top: 0; bottom: 0; right: calc(2 * var(--btn) + var(--edge)); display: flex; align-items: flex-end;
-  padding: 0 0 calc(10px + var(--sab)) 0; touch-action: none; }
-#rocker .zone { flex: 1 1 0; height: var(--btn); border-radius: 12px; border: 2px solid rgba(11,10,15,0.35);
-  background: rgba(11,10,15,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: rgba(11,10,15,0.55); }
-#rocker .gap { flex: 0 0 16px; }
+body.playing #reserve, body:has(#death.on) #reserve { display: none; }
+/* the stick (Q140): nothing is drawn where a thumb can land until it lands but a quiet line (the two arrows and
+   "slide to run", no box, no ring: it must never read as a button); then the pad and its knob appear centred under the
+   landing point (the stick's review: kept off the room and off B only, so at the screen's edge and its bottom the pad
+   runs off the glass and its centre stays under the thumb), the knob slides sideways only, and both go when the thumb
+   lifts, or when a card or the pause card is up (nothing to steer there). The shell moves the pad (left, top) and the
+   knob (translateX). The pad and knob are <i>: upright, never the browser's italic (the review: slanted arrows) */
+#stick { position: absolute; left: var(--res); top: 0; bottom: 0; right: calc(2 * var(--btn) + var(--edge)); touch-action: none; }
+#stick .field { position: absolute; left: 6px; right: 6px; top: 6px; bottom: calc(10px + var(--sab)); pointer-events: none; border-radius: 14px;
+  display: flex; align-items: flex-end; }
+#stick .idle { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 8px 14px;
+  color: rgba(11,10,15,0.4); font-size: 0.85rem; font-style: normal; white-space: nowrap; }
+#stick .idle b { font-weight: 400; font-size: 1rem; }
+#stick.on .idle { visibility: hidden; }
+#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; border-radius: 50%; display: none;
+  border: 2px solid rgba(11,10,15,0.45); background: rgba(11,10,15,0.08); pointer-events: none; }
+#stick.on .pad { display: block; }
+body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad { display: none; }
+#stick i { font-style: normal; }
+#stick .pad b { position: absolute; top: 50%; margin-top: -0.6em; line-height: 1.2em; font-weight: 400; font-size: 1rem; color: rgba(11,10,15,0.4); }
+#stick .pad .cl { left: 9px; } #stick .pad .cr { right: 9px; }
+/* the knob carries the arrow of the way it reads (it slides over the pad's own arrows at a full push) */
+#stick .knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%;
+  border: 2px solid rgba(11,10,15,0.75); background: #969390; display: flex; align-items: center; justify-content: center; }   /* opaque (the pad's arrow never shows through it): Ink at 0.4 over Paper */
+#stick .knob b { display: none; position: static; margin: 0; color: var(--paper); font-size: 1.1rem; }
+#stick .pad.l .knob .kl, #stick .pad.r .knob .kr { display: block; }
+#stick .pad.l .cl, #stick .pad.r .cr { visibility: hidden; }   /* under the knob at a full push; its tip would peek past the rim */
 .verb { position: absolute; top: 0; bottom: 0; width: var(--btn); display: flex; align-items: flex-end; justify-content: center;
   padding-bottom: calc(10px + var(--sab)); touch-action: none; }
 .verb .glyph { width: calc(var(--btn) - 6px); height: calc(var(--btn) - 6px); border-radius: 50%; border: 2px solid rgba(11,10,15,0.35);
   background: rgba(11,10,15,0.06); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: rgba(11,10,15,0.6); }
 #btnA { right: calc(var(--sar) + var(--edge)); }
 #btnB { right: calc(var(--btn) + var(--sar) + var(--edge)); }
-#rocker .zone.on, .verb.on .glyph { background: rgba(11,10,15,0.28); border-color: rgba(11,10,15,0.7); color: var(--ink); }
-#strip.mirror #rocker { left: calc(var(--res) + 2 * var(--btn)); right: calc(var(--sar) + var(--edge)); }
+.verb.on .glyph { background: rgba(11,10,15,0.28); border-color: rgba(11,10,15,0.7); color: var(--ink); }
+#strip.mirror #stick { left: calc(var(--res) + 2 * var(--btn)); right: calc(var(--sar) + var(--edge)); }
 #strip.mirror #btnA { right: auto; left: var(--res); }
 #strip.mirror #btnB { right: auto; left: calc(var(--res) + var(--btn)); }
 @media (max-width: 389px) { #strip { --btn: 56px; } }
 @media (max-width: 359px) { #strip { --res: 0px; } #reserve { display: none; } }
-/* Q62's alternative, ?edge=1: on phones 412 wide and over the verbs (and the mirrored rocker) keep 32 px off the right
-   edge, out of Android's back swipe strip; the rocker zones stay over 56 px */
+/* Q62's alternative, ?edge=1: on phones 412 wide and over the verbs (and the mirrored stick) keep 32 px off the right
+   edge, out of Android's back swipe strip */
 #strip { --edge: 0px; }
 @media (min-width: 412px) { #strip.edge { --edge: 32px; } }
 /* the fleet's floating chrome (song card, pill, toast, chip) can sit on the strip in play (its drag is saved for every
@@ -376,7 +413,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <div id="strip">
     <p id="dp"><span data-copy="dp"></span> <span id="dpn">0</span><span id="dpplus" aria-hidden="true"></span></p>
     <div id="reserve" aria-hidden="true"></div>
-    <div id="rocker" data-aria="move"><i class="zone zl" data-copy="left"></i><i class="gap"></i><i class="zone zr" data-copy="right"></i></div>
+    <div id="stick" data-aria="move"><div class="field"><i class="idle"><b class="hl" data-copy="left"></b><span data-copy="stickIdle"></span><b class="hr" data-copy="right"></b></i></div><i class="pad"><b class="cl" data-copy="left"></b><b class="cr" data-copy="right"></b><i class="knob"><b class="kl" data-copy="left"></b><b class="kr" data-copy="right"></b></i></i></div>
     <div id="btnB" class="verb" role="button" data-aria="dive"><span class="glyph" data-copy="btnB"></span></div>
     <div id="btnA" class="verb" role="button" data-aria="jump"><span class="glyph" data-copy="btnA"></span></div>
   </div>
@@ -426,7 +463,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
     SQUASH_S: 0.1 /* the landing squash and the takeoff stretch counters, 6 steps (was a literal in core-sim; the third review) */,
     // 3 screen and camera
     CAM_HERO_FRAC: 0.6, TOP_STRIP: 36, CONTROL_STRIP: 168, VIEW_ROWS_MIN: 20 /* Q6: 22 rows on a 320x568 SE */, SCALE2_MIN_W: 768,
-    CHIP_RESERVE_PX: 120 /* the fleet music chip's bottom left box, kept empty by the strip, Q48 */,
+    CHIP_RESERVE_PX: 120 /* the fleet music chip's bottom left box, kept empty by the strip where the chip shows, Q48, Q140 */,
+    /* the floating stick (Q140), read by the shell only: FEEL, Stephen's thumbs judge these. From neutral a slide of ON px
+       is left or right; back inside OFF px is neutral; past TRAVEL px from the centre the centre follows the thumb */
+    STICK_ON_PX: 12, STICK_OFF_PX: 6, STICK_TRAVEL_PX: 32,
     // 5.2 develop reveal, seconds
     REVEAL_HOLD: 0.3, REVEAL_RESOLVE: 0.8, REVEAL_LIGHT: 0.5,
     // 6 pipeline
@@ -4338,46 +4378,93 @@ body.sb-modal .lwfb-fab { display: none !important; }
   I.resetRecording = function () { rec = []; edge.A = 0; edge.B = 0; choicePending = 0; };
 
   /* the control strip (T0.8b, section 1.5): DOM, not canvas, so a gate can measure it and press it with real touches.
-     The rocker maps the pointer's CURRENT x to left, neutral or right, so a thumb slides between zones without
-     lifting; A and B track their own pointers, so a second finger never releases the first. */
+     The stick (Stephen's ruling of 31 Oct, QUESTIONS Q140) reads how far the thumb slid from where it landed, never
+     where it is on the screen; A and B track their own pointers, so a second finger never releases the first. */
   I.initStrip = function () {
-    var rocker = document.getElementById('rocker'), zl = rocker.querySelector('.zl'), zr = rocker.querySelector('.zr');
-    var rockerPtrs = [], rockerX = {}, rockerVerb = null;   /* the pointers down on the rocker, first first: the first rules it */
-    var paint = function () { zl.classList.toggle('on', rockerVerb === 'L'); zr.classList.toggle('on', rockerVerb === 'R'); };
-    var zoneOf = function (x) {
-      var a = zl.getBoundingClientRect(), b = zr.getBoundingClientRect();
-      if (x < a.right) return 'L';
-      if (x >= b.left) return 'R';
-      return null;                       /* the visible neutral gap */
+    var stick = document.getElementById('stick'), pad = stick.querySelector('.pad'), knob = stick.querySelector('.knob');
+    var stripEl = document.getElementById('strip'), paused = document.getElementById('paused');
+    var T = SB.TUNING, ON = T.STICK_ON_PX, OFF = T.STICK_OFF_PX, TRAVEL = T.STICK_TRAVEL_PX;
+    /* the pointers down on the stick, first first: the first rules it. Each keeps its centre (ox: its landing x, then
+       dragged along once the thumb is TRAVEL past it), its x now, and the y it landed at (the pad's row) */
+    var stickPtrs = [], stickAt = {}, stickDir = null;
+    var follow = function (p) {
+      var dx = p.x - p.ox;
+      if (dx > TRAVEL) p.ox = p.x - TRAVEL; else if (dx < -TRAVEL) p.ox = p.x + TRAVEL;
     };
-    var setRocker = function (v) {
-      if (v === rockerVerb) return;
-      if (rockerVerb) I.release(rockerVerb, 'rocker');
-      rockerVerb = v;
-      if (v) I.press(v, 'rocker');
+    /* ON px of slide from neutral is a direction; a direction holds until the thumb is back inside OFF px (or ON px the
+       other way); the vertical never counts: up and down do nothing (the sim has no up, jump is A and dive is B) */
+    var dirOf = function (p, was) {
+      var dx = p.x - p.ox;
+      if (dx >= ON) return 'R';
+      if (dx <= -ON) return 'L';
+      if (was === 'R' && dx >= OFF) return 'R';
+      if (was === 'L' && dx <= -OFF) return 'L';
+      return null;
+    };
+    /* the stick steers only while a room runs: under the pause card and the clear and death cards nothing can move, so
+       it reads nothing and draws nothing there (the stick's review: a pad pushed left under "Paused") */
+    var live = function () { return document.body.classList.contains('playing') && !paused.classList.contains('on'); };
+    var setDir = function (v) {
+      if (!live()) v = null;
+      if (v === stickDir) return;
+      if (stickDir) I.release(stickDir, 'stick');
+      stickDir = v;
+      if (v) I.press(v, 'stick');
+    };
+    /* the pad and the knob: drawn only while a thumb rules the stick in a running room, the pad centred on the ruling
+       thumb's centre and landing row; kept off the room (its top at the strip's) and off B (its inner side at the
+       zone's: mirrored, the zone's left), and nowhere else, so at the screen's edge and its bottom it runs off the glass
+       with its centre under the thumb (the stick's review: kept inside the inset field, a corner thumb sat 61 to 68 px
+       from the pad's centre, outside its rim); the knob at the slide, clamped to TRAVEL */
+    var paint = function () {
+      var p = stickPtrs.length && live() ? stickAt[stickPtrs[0]] : null;
+      stick.classList.toggle('on', !!p);
+      if (!p) return;
+      var s = stick.getBoundingClientRect(), mir = stripEl.classList.contains('mirror');
+      var hw = pad.offsetWidth / 2, hh = pad.offsetHeight / 2;
+      var cx = mir ? Math.max(s.left + hw, p.ox) : Math.min(s.right - hw, p.ox), cy = Math.max(s.top + hh, p.y);
+      pad.style.left = (cx - s.left) + 'px'; pad.style.top = (cy - s.top) + 'px';
+      knob.style.transform = 'translateX(' + Math.max(-TRAVEL, Math.min(TRAVEL, p.x - p.ox)) + 'px)';
+      pad.classList.toggle('l', stickDir === 'L'); pad.classList.toggle('r', stickDir === 'R');
+    };
+    stick.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      if (e.pointerId in stickAt) return;
+      stickPtrs.push(e.pointerId); stickAt[e.pointerId] = { ox: e.clientX, x: e.clientX, y: e.clientY };
+      try { stick.setPointerCapture(e.pointerId); } catch (err) { /* already captured */ }
+      if (stickPtrs[0] === e.pointerId) setDir(dirOf(stickAt[e.pointerId], null));   /* a landing reads nothing; a later thumb waits */
+      paint();
+    });
+    /* captured, so a thumb slid over B, A, the room or off the screen steers until it lifts; every coalesced point is
+       read in order, since the follow and the hold depend on the path */
+    var moves = 0;   /* the moves read, for the gates (SB_DEV.stick) */
+    stick.addEventListener('pointermove', function (e) {
+      moves++;
+      var p = stickAt[e.pointerId];
+      if (!p) return;
+      var pts = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+      if (!pts.length) pts = [e];
+      for (var i = 0; i < pts.length; i++) {
+        p.x = pts[i].clientX; follow(p);
+        if (stickPtrs[0] === e.pointerId) setDir(dirOf(p, stickDir));
+      }
+      paint();
+    });
+    /* the ruling thumb gone, the next still down takes over from its own centre (a palm lifted under a thumb) */
+    var endStick = function (e) {
+      var k = stickPtrs.indexOf(e.pointerId);
+      if (k < 0) return;
+      stickPtrs.splice(k, 1); delete stickAt[e.pointerId];
+      if (k === 0) setDir(stickPtrs.length ? dirOf(stickAt[stickPtrs[0]], null) : null);
       paint();
     };
-    rocker.addEventListener('pointerdown', function (e) {
-      e.preventDefault();
-      rockerPtrs.push(e.pointerId); rockerX[e.pointerId] = e.clientX;
-      try { rocker.setPointerCapture(e.pointerId); } catch (err) { /* already captured */ }
-      if (rockerPtrs[0] === e.pointerId) setRocker(zoneOf(e.clientX));      /* one thumb rules; a later one waits */
-    });
-    rocker.addEventListener('pointermove', function (e) {
-      if (!(e.pointerId in rockerX)) return;
-      rockerX[e.pointerId] = e.clientX;
-      if (rockerPtrs[0] === e.pointerId) setRocker(zoneOf(e.clientX));
-    });
-    /* the ruling pointer gone, the next still down takes the rocker where it rests (a palm cancelled under a thumb) */
-    var endRocker = function (e) {
-      var k = rockerPtrs.indexOf(e.pointerId);
-      if (k < 0) return;
-      rockerPtrs.splice(k, 1); delete rockerX[e.pointerId];
-      setRocker(rockerPtrs.length ? zoneOf(rockerX[rockerPtrs[0]]) : null);
+    stick.addEventListener('pointerup', endStick);
+    stick.addEventListener('pointercancel', endStick);
+    stick.addEventListener('lostpointercapture', endStick);
+    I._stick = function () {
+      var p = stickPtrs.length ? stickAt[stickPtrs[0]] : null;
+      return { dir: stickDir, pointers: stickPtrs.length, shown: getComputedStyle(pad).display !== 'none', ox: p ? p.ox : null, x: p ? p.x : null, moves: moves };
     };
-    rocker.addEventListener('pointerup', endRocker);
-    rocker.addEventListener('pointercancel', endRocker);
-    rocker.addEventListener('lostpointercapture', endRocker);
 
     var button = function (el, verb) {
       var ptrs = {};
@@ -4400,9 +4487,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
       return function () { ptrs = {}; el.classList.remove('on'); };
     };
     var btnA = button(document.getElementById('btnA'), 'A'), btnB = button(document.getElementById('btnB'), 'B');
-    /* releaseAll (Title, blur, hidden) clears the latch; the strip forgets what it showed pressed too, and a thumb still
-       on the rocker presses again on its next move */
-    I._stripReset = function () { rockerVerb = null; paint(); btnA(); btnB(); };
+    /* releaseAll (Title, blur, hidden, Pause, Resume) clears the latch; the stick goes neutral and keeps its thumbs, each
+       re centred where it is now, so the knob shows what the stick reads (the stick's review: a thumb held still across
+       Pause and Resume kept its knob pushed while the hero stood) and a thumb still down presses again once it slides
+       ON px from there */
+    I._stripReset = function () {
+      for (var k = 0; k < stickPtrs.length; k++) { var q = stickAt[stickPtrs[k]]; q.ox = q.x; }
+      stickDir = null; paint(); btnA(); btnB();
+    };
     var strip = document.getElementById('strip');
     strip.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     document.getElementById('view').addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -4597,6 +4689,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     btnA: 'A',
     btnB: 'B',
     move: 'Move',
+    stickIdle: 'slide to run',
     jump: 'Jump',
     dive: 'Dive',
     build: 'build',
@@ -5225,9 +5318,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.hideDeath = function () { document.getElementById('death').classList.remove('on'); };
   /* free play restarts the room with the same record and seed, the reveal skipped */
   ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true, notFirst: G.notFirst, mode: G.mode }); };
-  /* the hint glyphs, once each a session (onboarding.hints, T1.10 keeps them): the rocker and A at the first standing
+  /* the hint glyphs, once each a session (onboarding.hints, T1.10 keeps them; the stick's under the save's old key
+     `rocker`, so no save moves): the stick's idle line (no box: its arrows slide) and A at the first standing
      moment, B the first time the hero is airborne above a dive target (a one way within 8 rows under its column) */
-  ui.hinted = { rocker: false, A: false, B: false, stood: false };
+  ui.hinted = { stick: false, A: false, B: false, stood: false };
   /* the pulse is sbhint, 0.7 s three times; then the class leaves, so the reduced motion outline (no animation to end)
      goes with it (the fourth review: it stayed for the session) */
   var HINT_MS = 2100;
@@ -5236,12 +5330,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
     clearTimeout(el.sbHintT); el.sbHintT = setTimeout(function () { el.classList.remove('hint'); }, HINT_MS);
   }
   ui.hints = function (st, lv) {
-    var h = st.hero, H = ui.hinted, was = H.rocker + ',' + H.A + ',' + H.B;
+    var h = st.hero, H = ui.hinted, was = H.stick + ',' + H.A + ',' + H.B;
     hintsBody(st, lv, h, H);
-    if (was !== H.rocker + ',' + H.A + ',' + H.B && SB.save.doc) { var o = SB.save.doc.onboarding.hints; o.rocker = H.rocker; o.jump = H.A; o.dive = H.B; SB.save.commit(); }
+    if (was !== H.stick + ',' + H.A + ',' + H.B && SB.save.doc) { var o = SB.save.doc.onboarding.hints; o.rocker = H.stick; o.jump = H.A; o.dive = H.B; SB.save.commit(); }
   };
   function hintsBody(st, lv, h, H) {
-    if (h.ground && !H.stood) { H.stood = true; if (!H.rocker) { H.rocker = true; pulse('rocker'); } if (!H.A) { H.A = true; pulse('btnA'); } }
+    if (h.ground && !H.stood) { H.stood = true; if (!H.stick) { H.stick = true; pulse('stick'); } if (!H.A) { H.A = true; pulse('btnA'); } }
     if (!H.B && !h.ground && h.vy > 0) {
       var C = SB.K.CELL_SUB, cx = Math.floor((h.x + (SB.K.HERO_W_SUB >> 1)) / C), cy = Math.floor((h.y + SB.K.HERO_H_SUB) / C);
       for (var r = cy; r < Math.min(lv.h, cy + 8); r++) if (lv.plat[r * lv.w + cx]) { H.B = true; pulse('btnB'); break; }
@@ -5459,7 +5553,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   SB.save.load();
   SB.ui.firstRoomDone = !!SB.save.doc.onboarding.firstRoomDone;
   SB.ui.reveal.seen = !!SB.save.doc.onboarding.revealSeen;
-  (function (o) { SB.ui.hinted.rocker = o.rocker; SB.ui.hinted.A = o.jump; SB.ui.hinted.B = o.dive; })(SB.save.doc.onboarding.hints);
+  (function (o) { SB.ui.hinted.stick = o.rocker; SB.ui.hinted.A = o.jump; SB.ui.hinted.B = o.dive; })(SB.save.doc.onboarding.hints);
   SB.ui.init();
   SB.ui.applySettings();
   if (SB.save.quarantined) { var dm = document.getElementById('codemsg'); dm.textContent = SB.ui.COPY.saveDamaged; dm.hidden = false; }
@@ -5524,6 +5618,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     revealSkip: function (on) { SB.ui.reveal.devSkip = !!on; return SB.ui.reveal.devSkip; },
     revealAt: function (ms) { var RV = SB.ui.reveal; if (!RV.on) return false; RV.t = ms; RV.start = performance.now() - ms; SB.ui.revealFrame(performance.now(), true); return true; },
     lastInput: function () { return SB.input.last(); },
+    stick: function () { return SB.input._stick ? SB.input._stick() : null; },   /* read only: the stick's direction, its thumbs, whether its pad shows (Q140) */
     recording: function () { return SB.input.recording(); },
     staticBuilds: function () { return SB.render.builds; },
     /* biome (T1.5, a named liberty for the shots): the room built under that biome as a room after the first, so its
