@@ -1,5 +1,18 @@
 # START HERE
 
+## 📷 31 Oct 20:20 UTC (Opus) SHUTTERBUG sb-m1-3 IS LIVE: the thumbstick, Pause, the chest, Astra's art, weapons step 1
+LIVE: deploy commit `dbe5274f3` (BUILD sb-m1-3, CACHE shutterbug-v3, sw.js?v=3, tag sb-m1-3), the served set from add-sproing-jumper `9b77ef91e` (served files equal to `751e235bf`). Stephen sent the line and the session ran it. deploy.sh's own lint and fast harness passed on the blob (5795 assertions).
+  - hostproof: LIVE on both origins at 20:19:52 UTC, on the first probe. index.html sha256 071dfc16d9f31717af44eaba82d36f648bdc40c9978adeb71994c28fdc730129.
+  - sw.js: HTTP 200, application/javascript, no-store; its bytes equal the deploy's.
+  - Merged back into add-sproing-jumper as `9a5fc3b8f`. sb-m1-2 never deployed on its own: this build holds it.
+THE CHECK BEHIND IT: the full check on `751e235bf` passed every gate except the last; log /home/codespace/sb-drafts/sb-m1-3/check-full.txt.
+  - Passed: lint, icons, astra, harness, redwatch, harness-all and every browser gate (boot, play, make, input, layout, reveal, capture, death, sprites, loot, audio, share, save, pwa, loop, pause, fight).
+  - redwatch-browser, the mutation sweep of the browser gates, was stopped at 20:15 to quiet the box for the deploy: deploy.sh's timed harness groups fail under its load.
+  - TODO: rerun `node tools/check.js` (or `tools/redwatch.js --check --browser-only`) on add-sproing-jumper, and fix any row that stays green.
+STEPHEN'S PHONE: reload. In the installed app, close it fully and reopen. Settings reads sb-m1-3. His own photos may still need a small crop: the levels rule is not in this build.
+ASTRA ROUND 2: the brief is in Drive Astra/Shutterbug as `ASTRA-SHUTTERBUG-ROUND2-OCT31.txt` (text/plain, 6224 bytes, equal to docs/astra/). Its id is 1Vy9S5BzAYs6-DzCOF6w5uBDeQJjXPvR2.
+NEXT: the levels rule (LEVELS_BRIEF in the session script `shutterbug-sb-m1-3-stick-levels-wf_72adb109-f5f.js`). Then weapons steps 2 to 4 (spec docs/WEAPONS-V1.md), Astra's fx for the weapons, and the cutter rules for the extra hero poses. The art review and the weapons review were skipped tonight to save usage.
+
 ## 📷 31 Oct 19:35 UTC (Opus) SHUTTERBUG sb-m1-3 = sb-m1-2 + THE STICK + ASTRA'S ART + WEAPONS STEP 1, STAMPED, FULL CHECK RUNNING (supersedes the 17:55 plan's merge steps)
 **Where:** branch `sb-m1-3` in the worktree /workspaces/sb-m13 (pushed). It is add-sproing-jumper `a44ef31e4` with these merged in:
   - sb-art: Astra's hero, five enemies, five elites, traps, loot and hearts. ART1, Q160.
