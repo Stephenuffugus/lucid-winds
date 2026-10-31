@@ -1016,6 +1016,8 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-wpn-5', expect: 'the dead moth never moves' }] },
   { name: 'STUN_WAKES_SLEEPER', task: 'W1', file: 'page', find: "      if (p.stun > 0 && en.stunned >= 0) en.stunned = Math.max(en.stunned, p.stun);", repl: "      if (p.stun > 0) en.stunned = Math.max(en.stunned, p.stun);",
     gates: [{ gate: 'harness', only: 'H-wpn-5', expect: 'and never wakes it' }] },
+  { name: 'WEAPON_ON_CLEAR', task: 'W1', file: 'page', find: "       acting waits a step. A hit lands here, before the enemies move and touch */\n    if (!s.room.cleared) {", repl: "       acting waits a step. A hit lands here, before the enemies move and touch */\n    if (true) {",
+    gates: [{ gate: 'harness', only: 'H-wpn-5', expect: 'a jump that clears the room on its takeoff step throws nothing' }] },
   { name: 'CHEST_NO_WEAPON', task: 'W1', file: 'page', find: "        var got = drawWeapon(s);", repl: "        var got = 0;",
     gates: [{ gate: 'harness', only: 'H-wpn-6', expect: "the chest equips the test's draw at once" }, { gate: 'fight', expect: '412: the chest opens by a real walk with its voice and the equip voice' }] },
   { name: 'CHEST_GIVES_EQUIPPED', task: 'W1', file: 'page', edits: [

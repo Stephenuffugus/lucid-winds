@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 5740;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5740 at Weapons v1 step 1, 31 Oct) */
+const ASSERT_FLOOR = 5742;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -4537,6 +4537,20 @@ group('H-wpn-5', 'hits and kills (5.4): a kill banks DP_FODDER or DP_ELITE once;
   p.x = el.x + (esz >> 1); p.y = el.y; p.a = el.x - CS; p.b = el.x + esz + CS; p.ttl = 3; p.stun = 60; p.freeze = 0; p.dmg = 0;
   SB.sim.step(ps, 0);
   t.ok(el.stunned === -1 && p.hit === 1, 'a hit carrying a stun (60) lands on the pocket\'s sleeping elite (hit bits ' + p.hit + ') and never wakes it (stunned ' + el.stunned + ')');
+  /* the order (4): a weapon's hit lands before the enemies move and touch, so a moth killed on the step it would touch
+     the bug never touches it (a hand made shock over a live moth inside the bug's box); and a weapon never acts on the
+     step the room clears (a jump straight into the exit cell over the bug's head throws nothing) */
+  const touch = withShock => {
+    const { s: so } = wpnLab(['', FLOOR], [[F.MOTH, 46 * 24 + 8]], { mortal: true, moving: true, hc: 8 }), m = so.enemies[0];
+    if (withShock) { const k = SB.sim.spawn(so, PK.SHOCK), p = so.proj[k]; p.x = m.x + (CS >> 1); p.y = m.y; p.a = m.x - CS; p.b = m.x + 2 * CS; p.ttl = 3; p.dmg = K.HP_Q; }
+    const h0 = so.hero.hearts; SB.sim.step(so, 0); return { lost: h0 - so.hero.hearts, hp: m.hp };
+  };
+  const bare = touch(false), shot = touch(true);
+  t.ok(bare.lost === 1 && shot.lost === 0 && shot.hp === 0, 'a moth on the bug costs a heart (' + bare.lost + '); killed by a weapon on that same step it costs none (' + shot.lost + ', hp ' + shot.hp + ')');
+  const ex = LABS.room(['', '....X', FLOOR], { exit: true }); ex.features = { pocket: null, enemies: [], trap: null, specks: [], scroll: null, blueprint: null, chest: null };
+  const se = SB.sim.create(ex, { at: { x: 4 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: ARMED }); se.hero.ground = 1;
+  SB.sim.step(se, TAP_A);
+  t.ok(se.room.cleared === 1 && (se.ev & SB.sim.EV.JUMP) && !(se.ev & EV.FIRE_J) && live(se).length === 0 && se.hero.cd[0] === 0, 'a jump that clears the room on its takeoff step throws nothing (cleared ' + se.room.cleared + ', live entries ' + live(se).length + ', cd ' + se.hero.cd[0] + ')');
   /* the flash: HURT_FLASH_F set by a hit, one less a step */
   const { s: sf } = wpnLab(['', FLOOR], [[F.JELLY, 46 * 24 + 6]]);
   SB.sim.hurt(sf, 0, K.HP_Q); const fl = [sf.enemies[0].hurt]; for (let j = 0; j < K.HURT_FLASH_F + 1; j++) { SB.sim.step(sf, 0); fl.push(sf.enemies[0].hurt); }
