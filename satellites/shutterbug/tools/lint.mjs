@@ -334,6 +334,7 @@ for (const fm of html.matchAll(/font-size\s*:\s*([0-9.]+)\s*(rem|em|px)|fontSize
         for (const [id, g] of Object.entries(ICON_NAME)) {
           if (!WEAPON_NAMES[id]) fail('WEAPON_NAMES', 'R.ICON_NAME binds ' + id + ', which DESIGN 9.1 does not name');
           if (!glyphs.includes(g)) fail('WEAPON_NAMES', 'R.ICON_NAME binds ' + id + ' to ' + g + ', which icon_weapons does not hold');
+          if (WEAPON_NAMES[id] && g !== WEAPON_NAMES[id].toLowerCase().replace(/ /g, '_')) fail('WEAPON_NAMES', 'R.ICON_NAME binds ' + id + ' (' + WEAPON_NAMES[id] + ') to ' + g + ', not its own glyph by name');
         }
       }
       for (const name of names) for (const [f, str] of Object.entries(S[name].frames || {})) {

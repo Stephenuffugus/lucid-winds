@@ -38,7 +38,17 @@ const fixture = readFileSync(GAME + '/fixtures/synthetic/saturated-blobs.json', 
 /* the page's own SPRITES (the page under test, SB_PAGE for redwatch's mutants), the oracle for the elites and hearts */
 const PAGE_SRC = readFileSync(process.env.SB_PAGE || GAME + '/index.html', 'utf8');
 const SPR = vm.runInNewContext(PAGE_SRC.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1] + '\n;SPRITES');
-const frameOf = key => { const m = key.match(/^([a-z_]+)\.([a-z0-9]+)(<?)/); if (!m || !SPR[m[1]]) return null; const rows = SPR[m[1]].frames[m[2]].split('/'); return m[3] ? rows.map(r => r.split('').reverse().join('')) : rows; };
+/* a drawn key's frame decoded here: '<' mirrored, '*' the hero's Glare copy (Sun and Walnut turned Glare, Q47) */
+const frameOf = key => { const m = key.match(/^([a-z_]+)\.([a-z0-9_]+?)(<?)(\*?)$/); if (!m || !SPR[m[1]] || !SPR[m[1]].frames[m[2]]) return null; let rows = SPR[m[1]].frames[m[2]].split('/'); if (m[3]) rows = rows.map(r => r.split('').reverse().join('')); if (m[4]) rows = rows.map(r => r.replace(/[e7]/g, '6')); return rows; };
+/* ART2: the hero as drawn, against its frame decoded here: the key, the rect, and every opaque pixel on the canvas */
+const heroNow = page => page.evaluate(() => {
+  const hd = window.SB.render.drawn.hero, camX = window.SB.render.drawn.camX || 0, cv = document.getElementById('view'), s = window.SB.game.state;
+  if (!hd.key) return { key: null };
+  const d = cv.getContext('2d').getImageData(hd.x, hd.y, hd.w, hd.h).data, px = [];
+  for (let i = 0; i < d.length; i += 4) px.push('#' + [d[i], d[i + 1], d[i + 2]].map(v => ('0' + v.toString(16)).slice(-2)).join(''));
+  return { key: hd.key, x: hd.x, y: hd.y, w: hd.w, h: hd.h, hx: (s.hero.x >> 8) - camX, hy: (s.hero.y >> 8) - (window.SB.render.drawn.cam || 0), px };
+});
+const heroEq = h => { const rows = h.key ? frameOf(h.key) : null; if (!rows || rows.length !== h.h || rows[0].length !== h.w) return { n: 0, bad: ['no frame of ' + h.w + 'x' + h.h + ' for ' + h.key] }; let n = 0; const bad = []; for (let y = 0; y < h.h; y++) for (let x = 0; x < h.w; x++) { const ch = rows[y][x]; if (ch === '.') continue; n++; if (h.px[y * h.w + x] !== '#' + HEX[parseInt(ch, 16)]) bad.push(x + ',' + y + ' ' + h.px[y * h.w + x]); } return { n, bad }; };
 const srv = await serve();
 const browser = await launch();
 
@@ -117,21 +127,49 @@ try {
   R.say(litPx.length === 4 && litPx.every(g => g.n > 0 && g.sun === 0) && plainPx.length > 0 && plainPx.every(g => g.sun > 0),
     'on the canvas the hero shows no Sun through the dash i frames, and Sun again after them (' + glow.map(g => (g.lit ? '*' : '') + g.sun + '/' + g.n).join(' ') + ')');
 
-  /* the landing squash and the takeoff stretch are scaled draws: their pixels stay on the palette too */
+  /* ART2 (Q35, Q161): the takeoff stretch and the landing squash are Astra's 10x18 and 14x14 poses, drawn 1:1 for every
+     step of the sim's squash counter, bottom centred in the rect the old transform scaled into (x + 1, y - 2 and x - 1,
+     y + 2), every opaque pixel the frame on the canvas */
   await page.evaluate(() => window.SB_DEV.step(30));
   await page.keyboard.down('KeyZ');
-  const sq = await page.evaluate(() => {
-    const out = [];
-    for (let k = 0; k < 90; k++) {
-      window.SB_DEV.step(1);
-      const s = window.SB_DEV.state();
-      if (s.hero.squash !== 0) out.push({ squash: s.hero.squash, px: window.SB_DEV.samplePixels(64).filter(p => p.kind === 'hero') });
-    }
-    return out;
-  });
+  const sq = [];
+  for (let k = 0; k < 90; k++) {
+    const sqv = await page.evaluate(() => { window.SB_DEV.step(1); return window.SB_DEV.state().hero.squash; });
+    if (sqv !== 0) { const h = await heroNow(page); sq.push(Object.assign({ squash: sqv }, h, heroEq(h))); }
+  }
   await page.keyboard.up('KeyZ');
-  const stretch = sq.filter(f => f.squash < 0), squash = sq.filter(f => f.squash > 0), offSq = sq.flatMap(f => f.px.filter(p => !ON.has(p.hex)));
-  R.say(stretch.length > 0 && squash.length > 0 && offSq.length === 0, 'the stretch (' + stretch.length + ' frames) and the squash (' + squash.length + ' frames) draw only palette pixels (' + sq.reduce((a, f) => a + f.px.length, 0) + ' sampled' + (offSq.length ? ', off: ' + offSq.slice(0, 4).map(p => p.hex).join(' ') : '') + ')');
+  const stretch = sq.filter(f => f.squash < 0), squash = sq.filter(f => f.squash > 0);
+  const stOk = stretch.length >= 6 && stretch.every(f => /^hero_stretch\.stretch<?$/.test(f.key) && f.w === 10 && f.h === 18 && f.x === f.hx + 1 && f.y === f.hy - 2 && f.n > 40 && f.bad.length === 0);
+  const sqOk = squash.length >= 6 && squash.every(f => /^hero_squash\.squash<?$/.test(f.key) && f.w === 14 && f.h === 14 && f.x === f.hx - 1 && f.y === f.hy + 2 && f.n > 40 && f.bad.length === 0);
+  R.say(stOk && sqOk, 'the takeoff draws hero_stretch 10x18 for ' + stretch.length + ' steps and the landing hero_squash 14x14 for ' + squash.length + ', 1:1 in the old transform\'s rects, every opaque pixel the frame (' + [...new Set(sq.map(f => f.key + ' ' + f.w + 'x' + f.h + ' at ' + (f.x - f.hx) + ',' + (f.y - f.hy) + (f.bad.length ? ' ' + f.bad.length + ' differ' : '')))].join('; ') + ')');
+
+  /* ART2: the dash's own lean: hero_dash for its steps on the ground, the Glare copy through its i frames, every opaque
+     pixel the frame (Sun and Walnut Glare while lit) */
+  await page.evaluate(() => window.SB_DEV.step(40));
+  await page.keyboard.down('KeyX'); await page.evaluate(() => window.SB_DEV.step(1)); await page.keyboard.up('KeyX');
+  const dsh = [];
+  for (let k = 0; k < 6; k++) { const h = await heroNow(page); dsh.push(Object.assign(h, heroEq(h))); await page.evaluate(() => window.SB_DEV.step(1)); }
+  const dshOn = dsh.filter(f => f.key && f.key.startsWith('hero_dash.'));
+  R.say(dshOn.length >= 4 && dshOn.some(f => f.key.endsWith('*')) && dshOn.some(f => !f.key.endsWith('*')) && dshOn.every(f => f.n > 40 && f.bad.length === 0),
+    'a dash draws hero_dash, lit through its i frames then plain, every opaque pixel the frame (' + dsh.map(f => f.key + (f.bad.length ? ' ' + f.bad.length + ' differ' : '')).join(', ') + ')');
+
+  /* ART2: the hurt recoil: a moth laid on the bug (a liberty), the hit; the pose for the hit's first HURT_POSE_F steps
+     wherever the blink shows the bug, then the plain frames again */
+  await page.evaluate(() => window.SB_DEV.step(40));
+  await page.evaluate(() => { const st = window.SB.game.state; st.hero.iframes = 0; st.hero.dashI = 0; st.hero.hearts = Math.max(st.hero.hearts, 3); st.enemies.push({ kind: 1, x: st.hero.x, y: st.hero.y, vx: 0, vy: 0, hp: 4, state: 0, timer: 0, dir: 1, home: 0, elite: 0, frozen: 0, stunned: 0, hurt: 0 }); });
+  const hurt = [];
+  for (let k = 0; k < 24; k++) { const it = await page.evaluate(() => { window.SB_DEV.step(1); return window.SB.game.state.hero.iframes; }); const h = await heroNow(page); hurt.push(Object.assign({ it }, h, h.key ? heroEq(h) : { n: 0, bad: [] })); }
+  const hit0 = hurt.findIndex(f => f.it > 0), posed = hurt.filter(f => f.key && f.key.startsWith('hero_hurt.')), HF = hurt[hit0] ? hurt[hit0].it : 0;
+  R.say(hit0 >= 0 && posed.length >= 6 && posed.every(f => f.it > HF - 16 && f.n > 40 && f.bad.length === 0) && hurt.some(f => f.key && f.it > 0 && f.it <= HF - 16 && !f.key.startsWith('hero_hurt.')),
+    'a hit draws hero_hurt.recoil for ' + posed.length + ' shown steps of its first 16, every opaque pixel the frame, then the plain frames (' + hurt.map(f => (f.key ? f.key.replace('hero.', '').replace('hero_hurt.', 'H:') : '-') + '@' + f.it).join(' ') + ')');
+
+  /* ART2: the drop in: a fresh room, its first 24 steps the three beats of hero_dropin, 8 steps each (8 fps), then idle */
+  await page.evaluate(str => { window.SB_DEV.loadRecord(str); window.SB_DEV.step(0); }, fixture);
+  const drop = [];
+  for (let k = 0; k < 26; k++) { const h = await heroNow(page); drop.push(Object.assign(h, heroEq(h))); await page.evaluate(() => window.SB_DEV.step(1)); }
+  const dropWant = ['descending', 'contact', 'settled'].flatMap(b => Array(8).fill(b));
+  R.say(drop.slice(0, 24).every((f, i) => f.key && f.key.replace(/[<*]/g, '') === 'hero_dropin.' + dropWant[i] && f.n > 40 && f.bad.length === 0) && /^hero\.idle/.test(drop[24].key),
+    'a room opens on the drop in: ' + drop.map(f => (f.key || '-').replace('hero_dropin.', '').replace('hero.', '')).join(' ') + (drop.some(f => f.bad.length) ? ' (pixels differ)' : '') + ', every opaque pixel the frame');
 
   /* the perf guard, the loop running with the moth live */
   await page.evaluate(() => window.SB_DEV.hold(false));
