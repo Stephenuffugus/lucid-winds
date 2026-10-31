@@ -9,7 +9,8 @@
  *   - no localStorage value holds data:image or is over 8 KB.
  * The levels item (QUESTIONS Q180, Stephen's ruling 31 Oct, "Floor becomes the ledge"), on a fresh page with the dev
  * flag (?perf=1), the sample room painted with bands and two plain photos:
- *   - on 2 rows of Walnut it develops at the default box, the hero on the band's top (row 45);
+ *   - on 4 rows of Walnut it develops at the default box, the hero on the band's top (above row 46; a 2 row band
+ *     blurs into the row above it in the canvas downscale and leaves row 46 open, measured 31 Oct);
  *   - on 26 rows of Walnut, under 26 rows of Slate, and an all black photo, each refusal shows its own message, the
  *     floor and ceiling bands marked on the overlay, the black photo's overlay shaded and never blank;
  *   - a refusal no fallback names (the checkerboard) keeps the one old message;
@@ -53,7 +54,7 @@ try {
   }
   /* the levels item's photos, painted the same way: the grid exactly over the default crop */
   const LEVELS = [
-    ['floor-ok', banded(46, 48, '7')], ['floor-tall', banded(22, 48, '7')], ['ceiling-tall', banded(0, 26, '2')],
+    ['floor-ok', banded(44, 48, '7')], ['floor-tall', banded(22, 48, '7')], ['ceiling-tall', banded(0, 26, '2')],
     ['black', Array(48).fill('0'.repeat(24))], ['checker', FIX('synthetic/checkerboard.json')]];
   for (const [name, rows] of LEVELS) {
     const { page } = await newPage(browser, { width: 900, height: 1600, dpr: 1 });
@@ -79,7 +80,7 @@ try {
       return page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { shown: !document.getElementById('tighter').hidden, dev: document.getElementById('cropsay').textContent, stuck: document.getElementById('crop').classList.contains('stuck') }));
     };
     const ok = await shoot('floor-ok');
-    R.say(ok.needsCrop === false && ok.spawnRow === 45 && !ok.shown && !ok.stuck, 'levels: the sample room on 2 rows of Walnut develops at the default box, the hero on the band\'s top (needsCrop ' + ok.needsCrop + ', spawn row ' + ok.spawnRow + ', the message ' + (ok.shown ? 'shown' : 'hidden') + ')');
+    R.say(ok.needsCrop === false && ok.spawnRow >= 40 && ok.spawnRow < 46 && !ok.shown && !ok.stuck, 'levels: the sample room on 4 rows of Walnut develops at the default box, the hero on the band\'s top (needsCrop ' + ok.needsCrop + ', spawn row ' + ok.spawnRow + ', the message ' + (ok.shown ? 'shown' : 'hidden') + ')');
     const fl = await shoot('floor-tall');
     R.say(fl.needsCrop && fl.cause === 'floor' && fl.shown && fl.says === COPY.tighterFloor, 'levels: the floor refusal says "' + COPY.tighterFloor + '" (cause ' + fl.cause + ', shown ' + fl.shown + ', it says "' + fl.says + '")');
     R.say(fl.marked > 0 && fl.band && fl.marked === 48 - fl.band.floor && fl.solids > 0, 'levels: the overlay marks the floor band, its ' + fl.marked + ' rows from row ' + (fl.band && fl.band.floor) + ' down (' + fl.solids + ' solid cells drawn)');
