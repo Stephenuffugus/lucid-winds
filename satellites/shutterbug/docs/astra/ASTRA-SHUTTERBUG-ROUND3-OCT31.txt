@@ -1,0 +1,57 @@
+SHUTTERBUG, ART ROUND 3 FOR ASTRA (31 Oct 2026, late)
+
+Thank you for round 2. It arrived whole (52 files, your VALIDATION passed) and it is going into the game now: the weapon icons in their new order, the five effects, the thumbstick, the pause glyph, the elite keylines, the bigger speck, the crusher shaft and the crop hatches. Your round 1 boss, beacon_dark, cards, frame styles, stat and mode icons, daily rooms and hero extras are all still in use.
+
+WHY THERE IS A ROUND 3
+Stephen played the game tonight and said it "feels the same" from room to room, with "no real goal at the end", and asked for "a way to level up or ramp up". He ruled four things:
+- A HOUSE RUN comes first: five rooms back to back, each harder, with weapons, Dead pixels and scrolls carried through, and a boss in room 5. Clearing the house unlocks a cosmetic.
+- Photos keep their colour: a soft green now becomes the green, a soft blue a blue. Rooms will be much more colourful, and the biome will follow the photo, so all five biomes will really show up.
+- When a crop box cannot become a level, the game finds a box that can.
+- Each biome leans toward its own weapons.
+Round 3 draws what those need. Everything you already delivered stays.
+
+CONTRACT (unchanged)
+- The same 16 colours as your manifest's palette, exactly those hexes. Alpha 0 or 255 only.
+- Sun (#f2d13f) only in the hero and the beacon.
+- One sprite key per PNG strip, frames left to right, all the same size. Plain, distinct frame names: letters, digits and underscores, starting with a letter.
+- A source grid per strip, and a manifest entry per file: file, sprite, w, h, frames, names, fps, anchor, sha256, notes.
+- NEW, because rooms will now be colourful: anything drawn over the room (motes, effects, pips) needs a one pixel Ink keyline wherever it uses a saturated colour, like the elites in round 2, so it reads on any photo.
+
+1. THE HOUSE RUN (highest priority)
+   a. run_pips, 10x10 per frame, frames todo, here, cleared, boss_todo, boss_here and boss_cleared. Five of them sit in the top strip beside the hearts, drawn at 2x. "here" must read as "you are in this room" at a glance, and the boss pip as the fifth room's skull or crown, your choice, without Sun.
+   b. icon_house, 24x24, frames house and house_cleared: the house run's button on the title, and its badge on the clear card.
+   c. card_house_clear, 144x140, one frame named base: the moment the boss falls. It needs a framed space about 48x56 in the middle where the game shows the unlocked cosmetic (a hero skin or one of your frame styles), and a writable line under it. It should feel like the best card in the game.
+   d. fx_unlock, 48x48, 6 frames unlock_0 to unlock_5, 12 fps: the reveal that plays over that framed space, a seal breaking or a ribbon opening.
+
+2. THE BOSS (your round 1 attacks are in hand; these are the moments around them)
+   The boss's body is the room's own largest colourful shape, cut from the photo cell by cell, so it has no sprite of its own except your fallback. It is outlined in place for 2 s, then it wakes. Each hit knocks cells off it from the hit point outward.
+   a. fx_boss_wake, 48x48, 4 frames wake_0 to wake_3: the burst when it wakes. Ink, Glare and Paper, so it sits on any photo colour.
+   b. fx_boss_chip, 16x16, 4 frames chip_0 to chip_3: one cell breaking off the body, cell sized. Neutral colours for the same reason.
+   c. fx_boss_down, 64x64, 6 frames down_0 to down_5: the last cell gone, a big collapse.
+   d. fx_beacon_light, 16x16, 4 frames light_0 to light_3: your beacon_dark coming on once the boss is gone (frame 3 should hand over to the lit beacon's frame a). Sun is allowed here, since it is the beacon.
+
+3. BIOMES THAT FEEL DIFFERENT
+   Your dust_mote is the Attic's air. Give the other four biomes theirs, the same size and frame count (16x16, frames a to d), drifting slowly over the room:
+   - frost_mote: a snow fleck or frost glint (Paper, Glare, Ink keyline)
+   - bubble: a rising bubble (Teal or Lapis with a Glare highlight)
+   - spore: a drifting seed or leaf (Moss)
+   - ember_mote: a rising ember (Brick or Amber)
+   Then:
+   - icon_biomes, 24x24, frames attic, frost, deep, overgrowth and ember: a badge per biome for the develop reveal and the room name field.
+   - OPTIONAL, low priority: tab_biome, 16x5, one frame per biome (attic, frost, deep, overgrowth, ember). An edge trim for the film tabs (the cream help platforms) in each biome. Every tab must still read as film, not as furniture: keep the perforated look and change only the trim.
+
+4. LEVELLING UP
+   Scrolls raise Vigor, Focus or Grit (your icon_stats), and every third scroll adds a heart.
+   a. fx_stat_up, 32x32, 4 frames stat_up_0 to stat_up_3: a rising burst over the bug when a stat goes up. The game draws the stat's icon on top of it, so leave its middle 12x12 clear.
+   b. hud_heart_new, 9x8, 4 frames new_0 to new_3, the size of your hud_heart: an empty heart filling in for the first time, ending on your full heart.
+
+5. THE CROP SCREEN SEARCH (low priority)
+   - crop_seek, 16x16, 4 frames seek_0 to seek_3: a small marker that shows while the game moves the crop box to one that works. It must not look like the viewfinder, which stays excluded.
+
+6. OPTIONAL: MORE UNLOCKS
+   House clears unlock cosmetics, and your four skins plus four frame styles are the first eight. If you have room, four more hero skins on the approved round rear hero (same frames and sizes as your round 1 skins), named as you like. A separate follow up can cover new playable heroes.
+
+NOT NEEDED
+The boss attacks, beacon_dark, the Darkroom door, the daily rooms, the cards you drew, the font, the title art and the hero extras are delivered. Weapon icons are complete as of round 2. The Darkroom's screens and blueprint art will come in a later round, when the Darkroom is built.
+
+DELIVERY: one zip, named shutterbug-assets-round3.zip, with manifest.json at its root (a delta manifest like round 2's), the PNG strips, their source grids, your verify script's output, and a short notes file listing anything you chose differently and why.

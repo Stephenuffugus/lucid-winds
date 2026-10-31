@@ -1,5 +1,36 @@
 # START HERE
 
+## 📷 31 Oct 22:05 UTC (Opus) SHUTTERBUG: STEPHEN'S FOUR RULINGS AFTER PLAYING sb-m1-3, ASTRA ROUND 2 IN HAND, ROUND 3 BRIEF IN DRIVE (supersedes the 21:35 entry's NEXT)
+HIS NOTE (verbatim in QUESTIONS Q96): the same two weapons come over and over; "try a tighter crop over and over"; not enough colours ("I try to do something green and it just won't do it"); no biome variety; "everything feels the same"; "no real goal at the end ... a way to level up or ramp up".
+HIS RULINGS (Q96, `e50b75a33`), the recommended option on all four:
+  1. House run and boss first: 5 rooms, each harder, gear, DP and scrolls carried, the boss in room 5, a cosmetic for clearing. This comes before the Darkroom and blueprints.
+  2. Keep the photo's hue: a soft green becomes the green. Only the capture's quantizer changes; the grid and share codes stay.
+  3. Auto-find a crop box that builds when Develop fails.
+  4. Drops lean by biome: about half from the 2 or 3 weapons that suit the biome.
+ASTRA ROUND 2 ARRIVED (zip sha256 28f02d04..., 52 files, her VALIDATION PASS). Copies are in /home/codespace/sb-drafts/astra/round2/ (with x/ unpacked) and assets/shutterbug-assets-round2.zip (git ignored).
+  - It holds: icon_weapons in the order J1 to J8, D1 to D8, C1 to C8, jump, dive, charm (the retained glyphs pixel identical); fx_skyhook, fx_magnet, fx_second_wind, fx_thick_skin and fx_tripod; stick_pad, stick_knob and stick_hint; pause_glyph; the elite keylines; a 10x10 speck; the crusher shaft rule (tools/crusher_draw.js); crop_floor_band and crop_ceiling_band; hero_bold (optional).
+  - NOT IN YET: it waits for an ART3 step on sb-weapons-2, after that lane's fix. The crop hatches go to sb-levels.
+ASTRA ROUND 3 BRIEF: in Drive Astra/Shutterbug as `ASTRA-SHUTTERBUG-ROUND3-OCT31.txt` (id 18PSMZKEumkSpb3BPEthEJk_IrJwZcPai, text/plain, 6093 bytes, equal in size to the repo copy satellites/shutterbug/docs/astra/). It asks for:
+  - the house run's pips, icon and clear card, and the unlock reveal
+  - the boss's wake, chip and collapse effects, and the beacon lighting
+  - four biome motes and the biome badges
+  - the stat up burst and the new heart
+  - a crop search marker
+  - optional skins
+  Stephen pastes it to Astra when he wants.
+RUNNING:
+  - The levels lane (wf_0e39b077-34e).
+  - The weapons 2 and art lane (wf_e6dd0515-5c2).
+  - A read only investigation (wf_5412f80f-a75; its script is docs/lanes/sameness-investigation-oct31-night.js). It measures colour and biome, how much of a photo becomes the level (edge ledges and others), and the progression spine. Scratch and the proposal: /home/codespace/sb-drafts/sameness/ (progression.md).
+  - Stephen's own photos, if he sends any, go to /home/codespace/sb-drafts/sameness/photos/.
+NEXT, in order:
+  1. Merge sb-levels and sb-weapons-2, stamp sb-m1-4, run the full check, hand Stephen the line.
+  2. On sb-levels: auto-find a box, then the hue quantizer (from the investigation's measured pick).
+  3. On sb-weapons-2: ART3 (round 2) and the biome lean.
+  4. The house run spec, from progression.md, shown to Stephen as the first slice, then built.
+  5. Weapons steps 3 and 4.
+USAGE: Stephen says the limit is near. Everything is pushed: three autosaves run, and every branch was equal to origin at 21:58.
+
 ## 📷 31 Oct 21:35 UTC (Opus) SHUTTERBUG NIGHT RUN: the levels rule and weapons step 2 (with Astra's fx) building on two branches; LIVE still sb-m1-3
 Stephen restarted the box at about 21:10 UTC and said "keep building shutterbug". The box stops 12 hours after boot, so about 09:00 UTC on 1 Nov. Everything autosaves and pushes every ten minutes.
 RUNNING (each a Workflow in the lead's session; the scripts are in satellites/shutterbug/docs/lanes/):
