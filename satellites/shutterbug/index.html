@@ -27,10 +27,10 @@
 </script>
 <script id="shell-navpad">
 /* Opened from the installed arcade app on Android, the game runs in the app's own window, which Android draws under the
-   phone's navigation buttons while reporting no inset for them (Tiny World and LUMEN on Stephen's Pixel, 19 Sep; this
-   game's strip, 31 Oct: QUESTIONS Q90). There the page is marked .navpad and its bottom inset floored at a 48 px button
-   bar (:root.navpad below). The fleet's test, copied from satellites/tiny-world/index.html; ?navpad forces it (the gates).
-   It runs in the head so the mark is set before the first layout and the first fit. */
+   phone's navigation buttons while reporting no inset for them (Tiny World and LUMEN on Stephen's Pixel, 19 Sep; most
+   likely this game's strip in his 31 Oct playtest: QUESTIONS Q90). There the page is marked .navpad and its bottom inset
+   floored at a 48 px button bar (:root.navpad below). The fleet's test, copied from satellites/tiny-world/index.html;
+   ?navpad forces it (the gates). It runs in the head so the mark is set before the first layout and the first fit. */
 try {
   if (/[?&]navpad\b/.test(location.search) || (/Android/i.test(navigator.userAgent) &&
       matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)').matches)) document.documentElement.classList.add('navpad');

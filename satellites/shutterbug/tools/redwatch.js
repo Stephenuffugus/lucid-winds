@@ -22,6 +22,8 @@ const OUT = '/tmp/claude-1000/shutterbug-redwatch';
 const BROWSER = new Set(['boot', 'play', 'input', 'layout', 'reveal', 'capture', 'death', 'sprites', 'make', 'loot', 'audio', 'share', 'save', 'pwa', 'loop', 'onboard']);
 
 const CORE_SIM_OPEN = "<script id=\"core-sim\" data-core>\n(function (SB) { 'use strict';\n";
+/* the whole shell-navpad block as the page holds it (NAVPAD_IN_BODY moves it, whatever its comment says) */
+const NAVPAD_BLOCK = (fs.readFileSync(path.join(GAME, 'index.html'), 'utf8').match(/<script id="shell-navpad">\n[\s\S]*?\n<\/script>\n/) || ['<script id="shell-navpad"> missing'])[0];
 
 /* One row per mutant, grouped by the task that added it. `only` narrows the harness to the group that must fail. */
 const MUTANTS = [
@@ -812,6 +814,8 @@ const MUTANTS = [
     gates: [{ gate: 'layout', expect: '412x915 an Android tab (display mode browser, env 0): the page is not marked' }] },
   { name: 'NAVPAD_ANY_WINDOW', task: 'NOTE1', file: 'page', find: '(/Android/i.test(navigator.userAgent) &&', repl: '(true &&',
     gates: [{ gate: 'layout', expect: '412x915 a desktop app window (display mode standalone, not Android): the page is not marked' }] },
+  { name: 'NAVPAD_IN_BODY', task: 'NOTE1', file: 'page', edits: [[NAVPAD_BLOCK, ''], ['<body>\n', '<body>\n' + NAVPAD_BLOCK]],
+    gates: [{ gate: 'lint', expect: 'shell-navpad must be the second script, in <head>' }] },
   { name: 'FIT_IGNORES_SAB', task: 'NOTE1', file: 'page', find: '#safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 var(--sab) 0; }',
     repl: '#safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 0 0; }',
     gates: [{ gate: 'layout', expect: '390x844 the app mark (?navpad, env 0): VIEW_ROWS' }] }
