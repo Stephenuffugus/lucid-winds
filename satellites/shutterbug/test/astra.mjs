@@ -35,13 +35,13 @@ const plain = {}; for (const k of Object.keys(SPRITES)) plain[k] = { w: SPRITES[
 writeFileSync(join(TMP, 'sprites.json'), JSON.stringify(Object.assign({ _palette: Array.from(SB.palette.HEX) }, plain)));
 
 /* a fixture through intake and check: the cutter's output and its JSON */
-function through(tag, extra) {
+function through(tag, extra, src, page) {
   const zip = join(TMP, tag + '.zip'), dest = join(TMP, tag), out = join(TMP, tag + '.json');
-  const f = py([FIX, join(TMP, 'sprites.json'), zip].concat(extra || []));
+  const f = py([FIX, src || join(TMP, 'sprites.json'), zip].concat(extra || []));
   if (f.code !== 0) return { fixture: f.out, code: -1, out: '' };
   const i = py([CUT, 'intake', zip, '--dest', dest]);
   if (i.code !== 0) return { code: i.code, out: i.out, intake: true, dest };
-  const c = py([CUT, 'check', dest, '--sprites', out, '--page', PAGE]);
+  const c = py([CUT, 'check', dest, '--sprites', out, '--page', page || PAGE]);
   return { code: c.code, out: c.out, json: existsSync(out) ? JSON.parse(readFileSync(out, 'utf8')) : null, dest };
 }
 const lintOk = page => run(['node', 'tools/lint.mjs', '--page', page]).out.includes('LINT OK');
@@ -66,13 +66,20 @@ const a = html.split('\n'), b = tcopy.split('\n'), diff = a.map((l, i) => l === 
 say(tw.code === 0 && a.length === b.length && diff.length === 1 && /^\s+idle0: '/.test(b[diff[0]]), 'a one pixel change to hero.idle0 splices in as exactly one changed line (' + diff.length + ' lines differ)');
 say(lintOk(join(TMP, 'copy-tweak.html')) && sprOk(join(TMP, 'copy-tweak.html')), 'the changed copy passes the lint and H-spr-1');
 
-/* a new key */
-const el = through('elite', ['--elite']);
+/* a new key: since ART1 the page holds Astra's moth_elite, so the new key is proven on a copy of the page without it
+   (its comment and entry cut out, the fixture's sprites without it): the splice appends it again */
+const noEl = html.replace(/,\n    \/\* the five elites \(Astra, Q160\)[\s\S]*?\*\/\n    moth_elite: \{ w: 24, h: 24, frames: \{\n[\s\S]*?\n    \} \}/, '');
+writeFileSync(join(TMP, 'page-no-elite.html'), noEl);
+const plainNoEl = Object.assign({}, plain); delete plainNoEl.moth_elite;
+writeFileSync(join(TMP, 'sprites-no-elite.json'), JSON.stringify(Object.assign({ _palette: Array.from(SB.palette.HEX) }, plainNoEl)));
+const keysNoEl = Object.keys(plainNoEl);
+say(noEl !== html && !/moth_elite/.test(noEl.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1]), 'the copy of the page without moth_elite holds no moth_elite (' + keysNoEl.length + ' keys)');
+const el = through('elite', ['--elite'], join(TMP, 'sprites-no-elite.json'), join(TMP, 'page-no-elite.html'));
 writeFileSync(join(TMP, 'elite.sprites.json'), JSON.stringify(el.json || {}));
-py([CUT, 'splice', join(TMP, 'elite.sprites.json'), PAGE, '--out', join(TMP, 'copy-elite.html')]);
+py([CUT, 'splice', join(TMP, 'elite.sprites.json'), join(TMP, 'page-no-elite.html'), '--out', join(TMP, 'copy-elite.html')]);
 const ecopy = existsSync(join(TMP, 'copy-elite.html')) ? readFileSync(join(TMP, 'copy-elite.html'), 'utf8') : '';
 const ekeys = ecopy ? Object.keys(vm.runInNewContext(ecopy.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1] + '\n;SPRITES')) : [];
-say(el.code === 0 && /a new key moth_elite/.test(el.out) && ekeys.length === keys.length + 1 && ekeys.includes('moth_elite') && /\/\* moth_elite: from Astra \(enemies\/enemy_moth_elite\.png\) \*\//.test(ecopy), 'a new key, moth_elite at 24x24, is appended with its comment (' + ekeys.length + ' keys) and named as a render change');
+say(el.code === 0 && /a new key moth_elite/.test(el.out) && ekeys.length === keysNoEl.length + 1 && ekeys.includes('moth_elite') && /\/\* moth_elite: from Astra \(enemies\/enemy_moth_elite\.png\) \*\//.test(ecopy), 'a new key, moth_elite at 24x24, is appended with its comment (' + ekeys.length + ' keys) and named as a render change');
 say(lintOk(join(TMP, 'copy-elite.html')) && sprOk(join(TMP, 'copy-elite.html')), 'the copy with the new key passes the lint and H-spr-1');
 
 /* every broken variant refused for its own reason */

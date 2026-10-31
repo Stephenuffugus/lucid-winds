@@ -11,8 +11,17 @@
  *
  * A dash draws the hero's Glare copy for exactly its 4 i frames (QUESTIONS Q47).
  *
+ * ART1 (Astra's art, Q160): in saturated-blobs built under each of the five biomes, the hero set down at the elite's
+ * home (SB_DEV.goto('elite')), the elite is drawn as its own <kind>_elite key, 24x24 at 1:1, placed in the sim's box
+ * by its manifest anchor (moth and jelly centred, icicle hung from the top, crawler and spark on the bottom; the
+ * crawler mirrored to its way), and every opaque pixel of its frame (read from the page's SPRITES here) is that colour
+ * on the canvas. The top strip's hearts, three full of eight, read from a real screenshot: each of the 72 pixels of
+ * every heart is hud_heart's full or empty frame at 2x.
+ *
  * Watched red by OFF_PALETTE_PIXEL (the atlas writes one channel a step off), ANIM_AT_60 (the run advances every
- * step) and DASH_NO_FLASH (the i frames drawn plain). */
+ * step), DASH_NO_FLASH (the i frames drawn plain), ELITE_DRAWS_BASE (an elite drawn as its base art scaled to
+ * ELITE_PX) and HEART_NOT_SPRITE (the old CSS hearts back). */
+import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { serve, launch, newPage, gotoGame, ready, reporter, GAME } from './harness.mjs';
 
@@ -24,6 +33,10 @@ const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
 const OPEN_TINT = [4, 5, 2, 4, 3];   /* section 7.3: Attic Ash, Frost Paper, Deep Slate, Overgrowth Ash, Ember Pewter */
 const hex = c => '#' + c.map(v => ('0' + v.toString(16)).slice(-2)).join('');
 const fixture = readFileSync(GAME + '/fixtures/synthetic/saturated-blobs.json', 'utf8');
+/* the page's own SPRITES (the page under test, SB_PAGE for redwatch's mutants), the oracle for the elites and hearts */
+const PAGE_SRC = readFileSync(process.env.SB_PAGE || GAME + '/index.html', 'utf8');
+const SPR = vm.runInNewContext(PAGE_SRC.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1] + '\n;SPRITES');
+const frameOf = key => { const m = key.match(/^([a-z_]+)\.([a-z0-9]+)(<?)/); if (!m || !SPR[m[1]]) return null; const rows = SPR[m[1]].frames[m[2]].split('/'); return m[3] ? rows.map(r => r.split('').reverse().join('')) : rows; };
 const srv = await serve();
 const browser = await launch();
 
@@ -125,6 +138,64 @@ try {
   const p95 = a => { const s = a.slice().sort((x, y) => x - y); return s.length ? s[Math.min(s.length - 1, Math.floor(s.length * 0.95))] : 0; };
   const ps = p95(perf.step), pd = p95(perf.draw);
   R.say(perf.draw.length >= 20 && ps + pd < 4, 'the p95 step ' + ps.toFixed(2) + ' ms plus the p95 draw ' + pd.toFixed(2) + ' ms is under 4 ms (' + perf.draw.length + ' draws)');
+
+  /* ART1: each biome's elite, its own art 1:1 in the sim's box by its anchor (Q160) */
+  await page.evaluate(() => window.SB_DEV.hold(true));
+  const ANCHOR = { moth: 'cell', icicle: 'top', jelly: 'cell', crawler: 'bottom', spark: 'bottom' }, KIND = ['', 'moth', 'icicle', 'jelly', 'crawler', 'spark'];
+  for (let b = 0; b < 5; b++) {
+    const got = await page.evaluate((str, b) => {
+      window.SB_DEV.loadRecord(str, b); window.SB_DEV.goto('elite'); window.SB_DEV.step(1);
+      const rc = window.SB_DEV.spriteRects(), st = window.SB_DEV.state(), camY = window.SB_DEV.level().camY;
+      const cv = document.getElementById('view'), img = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height);
+      const el = st.enemies.filter(e => e.elite)[0];
+      return { rc, el: el && { kind: el.kind, x: el.x >> 8, y: (el.y >> 8) - camY, dir: el.dir }, W: cv.width, H: cv.height, px: Array.from(img.data) };
+    }, fixture, b);
+    const kind = got.el ? KIND[got.el.kind] : '?';
+    const r = got.rc.enemies.find(e => e.box && got.el && e.box.x === got.el.x && e.box.y === got.el.y && e.box.w === 24);
+    const rows = r ? frameOf(r.key) : null, an = ANCHOR[kind];
+    const wantY = r ? (an === 'top' ? r.box.y : an === 'bottom' ? r.box.y + r.box.h - 24 : r.box.y) : null;
+    const keyOk = !!r && new RegExp('^' + kind + '_elite\\.[ab]' + (kind === 'crawler' && got.el.dir < 0 ? '<' : '') + '$').test(r.key);
+    const placeOk = !!r && r.w === 24 && r.h === 24 && r.x === r.box.x && r.y === wantY;
+    let n = 0, bad = [];
+    if (rows && keyOk) {
+      const hr = got.rc.hero, inHero = (x, y) => hr && x >= hr.x && x < hr.x + hr.w && y >= hr.y && y < hr.y + hr.h;
+      for (let y = 0; y < 24; y++) for (let x = 0; x < 24; x++) {
+        const ch = rows[y][x], cx = r.x + x, cy = r.y + y;
+        if (ch === '.' || inHero(cx, cy) || cx < 0 || cy < 0 || cx >= got.W || cy >= got.H) continue;
+        const o = (cy * got.W + cx) * 4, h = hex([got.px[o], got.px[o + 1], got.px[o + 2]]);
+        n++; if (h !== '#' + HEX[parseInt(ch, 16)]) bad.push(x + ',' + y + ' ' + h + ' not ' + HEX[parseInt(ch, 16)]);
+      }
+    }
+    R.say(keyOk && placeOk && n >= 100 && bad.length === 0, 'biome ' + b + ': the ' + kind + ' elite drawn as ' + (r ? r.key + ' at ' + r.x + ',' + r.y + ' ' + r.w + 'x' + r.h + ' in its box ' + r.box.x + ',' + r.box.y + ' (' + an + ')' : 'nothing (keys: ' + got.rc.enemies.map(e => e.key).join(' ') + ')')
+      + ', ' + n + ' opaque pixels equal its frame on the canvas' + (bad.length ? ' (' + bad.length + ' differ: ' + bad.slice(0, 3).join('; ') + ')' : ''));
+  }
+
+  /* ART1: the hearts, three full of eight (the cap), read from a real screenshot at the page's dpr (Q160) */
+  const hb = await page.evaluate(() => {
+    window.SB.ui.hearts(3, 8);
+    const els = Array.from(document.querySelectorAll('#hearts i')), box = document.getElementById('hearts').getBoundingClientRect();
+    return { box: { x: box.left, y: box.top, w: box.width, h: box.height }, hs: els.map(e => { const q = e.getBoundingClientRect(); return { x: q.left, y: q.top, w: q.width, h: q.height, lost: e.classList.contains('lost') }; }), dpr: window.devicePixelRatio };
+  });
+  const shot = await page.screenshot({ encoding: 'base64', clip: { x: hb.box.x, y: hb.box.y, width: hb.box.w, height: hb.box.h } });
+  const sp = await page.evaluate(async (b64) => {
+    const im = new Image(); im.src = 'data:image/png;base64,' + b64; await im.decode();
+    const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
+    return { w: im.width, h: im.height, px: Array.from(x.getImageData(0, 0, im.width, im.height).data) };
+  }, shot);
+  let hn = 0; const hbad = [];
+  hb.hs.forEach((q, i) => {
+    const rows = SPR.hud_heart.frames[q.lost ? 'empty' : 'full'].split('/');
+    for (let y = 0; y < 8; y++) for (let x = 0; x < 9; x++) {
+      const ch = rows[y][x]; if (ch === '.') continue;
+      const dx = Math.floor((q.x - hb.box.x + (x * 2 + 1) * q.w / 18) * hb.dpr), dy = Math.floor((q.y - hb.box.y + (y * 2 + 1) * q.h / 16) * hb.dpr);
+      const o = (dy * sp.w + dx) * 4, h = hex([sp.px[o], sp.px[o + 1], sp.px[o + 2]]);
+      hn++; if (h !== '#' + HEX[parseInt(ch, 16)]) hbad.push('heart ' + i + ' ' + x + ',' + y + ' ' + h + ' not ' + HEX[parseInt(ch, 16)]);
+    }
+  });
+  const shape = hb.hs.length === 8 && hb.hs.filter(q => q.lost).length === 5 && hb.hs.every(q => q.w === 18 && q.h === 16);
+  const opq = f => SPR.hud_heart.frames[f].replace(/[/.]/g, '').length;
+  R.say(shape && hn === 3 * opq('full') + 5 * opq('empty') && hbad.length === 0, 'the top strip\'s ' + hb.hs.length + ' hearts (3 full, 5 empty, each 18x16 css px) are hud_heart at 2x on a real screenshot: ' + hn + ' opaque pixels' + (hbad.length ? ' (' + hbad.length + ' differ: ' + hbad.slice(0, 3).join('; ') + ')' : ''));
+
   R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
   await page.close();
 } finally {
