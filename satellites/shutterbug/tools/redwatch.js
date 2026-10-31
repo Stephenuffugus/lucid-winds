@@ -649,6 +649,10 @@ const MUTANTS = [
      foreign copy the gate plants before the install answers the offline shell */
   { name: 'SW_MATCHES_ANY_CACHE', task: 'M1R', file: 'sw', find: 'function own(u) { return caches.match(u, { cacheName: CACHE }); }', repl: 'function own(u) { return caches.match(u); }',
     gates: [{ gate: 'pwa', expect: "offline the shell comes from the worker's own cache, never another cache on the origin holding the same URL" }] },
+  /* sb-m1-2: page.setOfflineMode never reached the worker, so the offline checks ran online from T1.11 to here and no row
+     watched the cached shell; with the worker's target offline too, a worker that drops the fallback is seen */
+  { name: 'OFFLINE_NO_SHELL', task: 'M1R', file: 'sw', find: "    if (r) return r;\n    return own('./index.html')", repl: "    if (r) return r;\n    return new Response('offline', { status: 503 });\n    return own('./index.html')",
+    gates: [{ gate: 'pwa', expect: "offline the shell comes from the worker's own cache, never another cache on the origin holding the same URL (no title)" }] },
   /* T1.13: the free play loop, the Wallet moments, the fab insurance */
   /* re anchored at NOTE5 (the sheets left the list) and at NOTE3 (Q94: the pause card joined it, and this row's path, the
      strip's Title under an open sheet, is gone; a refused link that arrives with the sheet open is the way left) */
