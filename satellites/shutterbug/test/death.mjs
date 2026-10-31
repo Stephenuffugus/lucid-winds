@@ -2,7 +2,7 @@
  * frames, the strip shows the heart gone and the hit is heard; standing still, the last heart ends the room in the
  * death card (`The bug fell out of the picture`, `Again`, `Title`); a REAL touch on Again restarts the same room (the
  * same level hash, the same record and seed) at full hearts with the reveal skipped, the moths home again. The hints:
- * the rocker and A pulse at the first standing moment, once. The clear card offers `Shoot the next room` and `Play it
+ * the stick's field and A pulse at the first standing moment, once. The clear card offers `Shoot the next room` and `Play it
  * again`, each 48 px or more. The loop is held and stepped with SB_DEV.step(n) (each step samples the real input).
  *
  * At 320x568 the docked card clears the fallen bug at points all the way up the climb (the M1 review).
@@ -26,14 +26,14 @@ try {
   const full = s0.st.hero.hearts, moths0 = s0.st.enemies.map(e => [e.x, e.y]);
   R.say(s0.screen === 'play' && moths0.length >= 1 && moths0.length <= 2, 'the sample room, the first room: ' + moths0.length + ' moths (at most 2), ' + full + ' hearts');
 
-  /* the first standing moment pulses the rocker and A, once */
+  /* the first standing moment pulses the stick's field (QUESTIONS Q140) and A, once */
   const hint = await page.evaluate(() => {
     for (let k = 0; k < 120 && !window.SB_DEV.state().hero.ground; k++) window.SB_DEV.step(1);
     window.SB_DEV.step(1);
     const q = s => document.querySelector(s).classList.contains('hint');
-    return { hinted: window.SB_DEV.hinted(), rocker: q('#rocker'), A: q('#btnA'), B: q('#btnB') };
+    return { hinted: window.SB_DEV.hinted(), stick: q('#stick'), A: q('#btnA'), B: q('#btnB') };
   });
-  R.say(hint.hinted.rocker && hint.hinted.A && hint.rocker && hint.A && !hint.B, 'standing first, the rocker and A pulse (B waits for a dive target)');
+  R.say(hint.hinted.stick && hint.hinted.A && hint.stick && hint.A && !hint.B, 'standing first, the stick\'s field and A pulse (B waits for a dive target)');
 
   /* stand still until the first hit */
   const hit = await page.evaluate(full => {
@@ -183,13 +183,13 @@ try {
   const on = await rm.page.evaluate(() => {
     for (let k = 0; k < 120 && !window.SB_DEV.state().hero.ground; k++) window.SB_DEV.step(1);
     window.SB_DEV.step(1);
-    const z = document.querySelector('#rocker .zone');
-    return { cls: document.querySelector('#rocker').classList.contains('hint'), outline: getComputedStyle(z).outlineStyle };
+    const z = document.querySelector('#stick .field');
+    return { cls: document.querySelector('#stick').classList.contains('hint'), outline: getComputedStyle(z).outlineStyle };
   });
   await new Promise(r => setTimeout(r, 2600));
-  const off = await rm.page.evaluate(() => ({ cls: document.querySelector('#rocker').classList.contains('hint'), A: document.querySelector('#btnA').classList.contains('hint'), outline: getComputedStyle(document.querySelector('#rocker .zone')).outlineStyle }));
+  const off = await rm.page.evaluate(() => ({ cls: document.querySelector('#stick').classList.contains('hint'), A: document.querySelector('#btnA').classList.contains('hint'), outline: getComputedStyle(document.querySelector('#stick .field')).outlineStyle }));
   R.say(on.cls && on.outline === 'solid', 'under reduced motion the hint is a still outline at the first standing moment (outline ' + on.outline + ')');
-  R.say(!off.cls && !off.A && off.outline !== 'solid', 'under reduced motion the hint outline leaves after the pulse (2.6 s on: rocker ' + off.cls + ', A ' + off.A + ', outline ' + off.outline + ')');
+  R.say(!off.cls && !off.A && off.outline !== 'solid', 'under reduced motion the hint outline leaves after the pulse (2.6 s on: stick ' + off.cls + ', A ' + off.A + ', outline ' + off.outline + ')');
   R.say(rm.errors.length === 0, 'the reduced motion page has zero page errors');
   await rm.page.close();
 } finally {

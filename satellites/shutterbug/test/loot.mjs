@@ -2,7 +2,7 @@
  * only"): the chest pays its 15 Dead pixels and M1 shows no sheet. A room whose one Sun cell, two cells right of spawn,
  * is its scroll; its chest (row 39 in its build) and a blueprint are set on its floor by hand before the first state is
  * kept (named liberties: no fixture puts the three on one floor), so the replay starts from the state the room played.
- * A REAL touch held on the rocker's right walks the hero over the scroll, the blueprint and the chest, one step at a time
+ * A REAL thumb held 20 px right on the stick walks the hero over the scroll, the blueprint and the chest, one step at a time
  * with the loop held:
  *   - no sheet, card or dialog shows and the page is never modal;
  *   - the scroll is taken with its pickup voice; its offer opens and the shell answers it on the next word (the
@@ -29,7 +29,7 @@
  * PLUS_STAYS, PLUS_TAKES_TAPS, PLUS_CARRIES_OVER, DP_COUNT_STALE, PICK_SOUNDS, EDGE_LOST_TO_CHOICE, BLUEPRINT_DRAWN,
  * BLUEPRINT_SOUNDS, PLUS_OFF_THE_COUNT, PLUS_NOT_STILL, PLUS_RISES_INTO_COUNT, PLUS_OUTSIZED, BLUEPRINT_NOTCH and
  * BLUEPRINT_GHOST. */
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, pressEl, sleep, GAME } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, pressEl, pushStick, sleep, GAME } from './harness.mjs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
@@ -97,7 +97,7 @@ async function plusNow(page) {
   const geo = await page.evaluate(() => {
     const el = document.getElementById('dpplus'), r = el.getBoundingClientRect(), dn = document.getElementById('dpn'), n = dn.getBoundingClientRect();
     const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    const over = ['#btnA .glyph', '#btnB .glyph', '#rocker .zl', '#rocker .zr', '#pause'].filter(s => {
+    const over = ['#btnA .glyph', '#btnB .glyph', '#stick .idle', '#stick .pad', '#pause'].filter(s => {
       const e = document.querySelector(s); if (!e) return false; const b = e.getBoundingClientRect();
       return b.height > 0 && b.right > r.left && b.left < r.right && b.bottom > r.top && b.top < r.bottom;
     });
@@ -144,9 +144,9 @@ try {
     R.say(!!bpCell && bpCell.isOpen && !!scCell && scCell.colours > 1,
       w + ': the blueprint is not drawn: its cell is the open floor alone (' + (bpCell ? bpCell.colours + ' colour, ' + bpCell.first + ', the floor ' + bpCell.open : 'out of view') + '), where the scroll\'s cell shows its sprite (' + (scCell ? scCell.colours : 0) + ' colours)');
 
-    /* the walk: a real touch held on the right zone, one step at a time; a real tap on A as the chest opens */
+    /* the walk: a real thumb held 20 px right on the stick (QUESTIONS Q140), one step at a time; a real tap on A as the chest opens */
     const trace = [await page.evaluate(() => window.__probe())];
-    const finger = await pressEl(page, '#rocker .zr');
+    const finger = await pushStick(page, 20);
     const ctx = await audioOn(page);
     let chestAt = -1, plus = null;
     for (let k = 0; k < 90; k++) {
@@ -192,7 +192,7 @@ try {
   {
     const { page, errors, s0 } = await openRoom(320, 568, 17, null, true);
     const trace = [await page.evaluate(() => window.__probe())];
-    const finger = await pressEl(page, '#rocker .zr');
+    const finger = await pushStick(page, 20);
     let both = -1, plus = null;
     for (let k = 0; k < 90; k++) {
       const p = await page.evaluate(() => window.__step());
@@ -215,7 +215,7 @@ try {
      a REAL tap on Try the sample room, well inside the +15's second: the new room shows no +15 */
   {
     const { page, errors } = await openRoom(412, 915, 15, null, true);
-    const finger = await pressEl(page, '#rocker .zr');
+    const finger = await pushStick(page, 20);
     let opened = false;
     for (let k = 0; k < 6 && !opened; k++) opened = !!(await page.evaluate(() => window.__step())).open;
     await finger.end();
