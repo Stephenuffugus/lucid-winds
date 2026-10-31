@@ -806,3 +806,22 @@ DESIGN redline (DESIGN.md is a verbatim copy and is not edited): the frame layou
 Options: (a) as built; (b) TOP_STRIP 48 instead of the overhang (a view row lost at 390x844, 360x780 and about 412x800); (c) a history entry instead of CloseWatcher (Q62's (c): the first exit tap after a room is swallowed unless the title forwards it).
 Recommendation: (a).
 Plan assumes: (a).
+
+## Q120. Weapons v1: the spec's readings of DESIGN and Stephen's calls (the spec session, 31 Oct, WSPEC)
+
+Stephen, 31 Oct about 13:05 UTC: "why dont we have weapons? ... lets make this game fucking awesome!" His ruling of the night before (Q92, Q93) kept the chest to "Dead pixels only", with no weapon words, until weapons exist. `docs/WEAPONS-V1.md` is the build spec for Weapons v1 on `sb-weapons`: five steps (the first fight with the Boomerang and Anvil Boots, the chest giving a weapon, kills paying their Dead pixels and the slot HUD; then the jump slot and the swap card; the dive slot; charms; stats and scrolls). DESIGN is silent or reads two ways at the places below; the spec builds the first reading of each, and section 15 there ranks his calls with the defaults.
+
+The readings (each a default the build runs on until his word):
+- DESIGN 8, free play: a sitting of free play rooms keeps the gear (Shoot the next room, Play it again, Again after a death with the gear the bug walked in with) until Title. DESIGN gives free play one room and keeps gear only across a house run; its letter would empty the slots at every new room and make the swap card unreachable outside a house run (T2.8). One TUNING line (`KEEP_GEAR`).
+- DESIGN 9.1, the pickup: a weapon for an empty slot is equipped at once with a card that takes no tap (the climb never stops for an empty slot); a full slot opens the swap card, which holds the world until Take or Keep. "With the sim paused" reads as section 2.6's hold: the loop steps and every step counts, nothing in the world moves (BUILD-PLAN T2.7's "the frame counter does not advance" reads the same way).
+- DESIGN 9.1, the chest's draw: the drop pool before the Darkroom is every weapon the build has; a chest fills an empty slot first (`CHEST_FILLS_EMPTY_FIRST`) and never gives a weapon already equipped; with nothing left it pays the 15 Dead pixels only.
+- DESIGN 9.1, the dive slot: no cooldown (DESIGN gives none); a weapon whose line names only a landing (Pogo Spear, Pile Driver) does nothing on a dash, Flashpan (a dash's line) nothing on a landing.
+- DESIGN 9.2, +25% a point: kept exactly by counting HP and hits in quarters (`HP_Q 4`); BUILD-PLAN T2.1's whole HP formula, floored, is not built (under it the first three points do nothing to a 1 damage weapon).
+- DESIGN 9.1, Tremor: at most 12 Dead pixels a room (the letter has no cap and a player could farm them by diving beside a wall); Flashpan's line burns 1.5 s (no length given); Pogo Spear bounces 2 cells up (33 px).
+- DESIGN 4.2's "no weapon ever requires a corrective tap": a sticky jump throws away from its vine.
+- DESIGN 11: the sound list grows by five shared voices (throw, shock, zap, pop, equip) and one for most weapons.
+DESIGN redlines (DESIGN.md is a verbatim copy and is not edited): 8's free play row gains "a sitting keeps its gear until Title"; 9.1's "Pickup screen ... with the sim paused" reads "with the world held"; 9.2's "+25% damage per point" adds "counted in quarter HP"; 9.1's D4 adds "at most 12 a room"; 11's SFX list adds the weapon voices.
+Plan redlines (BUILD-PLAN, not edited): T2.1's damage line reads "dmg x (4 + stat) quarter HP, no floor"; T2.7's gate line reads "nothing in the world moves while the card is open"; T1.6's chest (Q92's redline) reads "15 DP and a weapon: an empty slot at once, a full one through the swap card (T2.7)"; 5.6 gains the `fight` row (WEAPONS-V1 13.1) and the `compare` row (13.2); 4.1's coverage row for 9.1 adds the spec.
+Options: (a) the readings above; (b) any of them by its letter (each is one line or one rule in the spec's section 15).
+Recommendation: (a).
+Plan assumes: (a); docs/WEAPONS-V1.md.
