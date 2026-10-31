@@ -180,12 +180,15 @@ try {
      env 0, every screen's controls end 48 px or more above the screen bottom: the title and Settings scrolled to their
      end (both scroll on a short phone), the crop screen's Retake and Develop, play's drawn rocker zones, A and B (their
      hit areas run the strip's full height by design), and each card and sheet (shown by its class for the measure, a
-     layout liberty: the cards' own gates open them by real input). The stage gives up rows to the floor by the formula. */
+     layout liberty: the cards' own gates open them by real input). The stage gives up rows to the floor by the formula.
+     Under the mark (the reviews of NOTE1, Q91) the title and Settings as they open and the title after a room draw
+     nothing under the bar at scroll 0, and the fleet's chip on each of them and on the clear card is over the bar and
+     clear of the screen's controls. */
   {
     const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36';
     const PHOTO = join(GAME, 'icons', 'icon-512.png');   /* any photo opens the crop screen; this one is in the repo */
     const insetOf = b => ({ top: 0, topMax: 0, left: 0, leftMax: 0, right: 0, rightMax: 0, bottom: b, bottomMax: b });
-    const openAs = async (w, h, { inset = 0, query = '', ua = null, mode = null } = {}) => {
+    const openAs = async (w, h, { inset = 0, query = '', ua = null, mode = null, seedSong = false } = {}) => {
       const ctx = await browser.createBrowserContext();
       const { page, errors } = await newPage(ctx, { width: w, height: h });
       const cdp = await page.createCDPSession();
@@ -198,6 +201,11 @@ try {
         const real = window.matchMedia.bind(window);
         window.matchMedia = q => /display-mode/.test(q) ? real(q.split(',').some(p => p.indexOf('display-mode: ' + mode) >= 0) ? 'all' : 'not all') : real(q);
       }, mode);
+      /* a song another arcade game unlocked mid round waits in the include's pending list (its own key and shape) */
+      if (seedSong) await page.evaluateOnNewDocument(() => {
+        try { if (!sessionStorage.getItem('sb-seeded')) { sessionStorage.setItem('sb-seeded', '1');
+          localStorage.setItem('sws_music_pending_reveal', JSON.stringify([{ id: 'sb-layout-song', title: 'A Song From Another Game', game: 'Another Game' }])); } } catch (e) {}
+      });
       await gotoGame(page, srv.base, query);
       await ready(page);
       await installProbes(page);
@@ -210,22 +218,37 @@ try {
     const scrollEnd = (page, id) => page.evaluate(id => { const el = document.getElementById(id); el.scrollTop = el.scrollHeight; return el.scrollHeight > el.clientHeight; }, id);
     const lowText = list => list.slice(0, 2).map(c => c.id + ' ' + c.gap.toFixed(0)).join(', ');
     const errs = s => s.errors.length ? ' (' + s.errors.join(' ; ') + ')' : '';
+    const markOf = page => page.evaluate(() => ({ mark: document.documentElement.classList.contains('navpad'), cls: document.documentElement.className, pads: window.__pads() }));
+    const markText = (want, t) => (want ? 'the page is marked .navpad' : 'the page is not marked') + ' (the root\'s class: "' + t.cls + '")';
+    const bandSay = async (page, tg, what) => {
+      const band = await page.evaluate(b => window.__band(b), BAR);
+      R.say(band.length === 0, tg + ': ' + what + ' draws no control in the bottom 48 px' + (band.length ? ' (' + band.slice(0, 3).join('; ') + ')' : ''));
+    };
 
     for (const [w, h] of [[412, 915], [390, 844], [360, 780], [320, 568]]) {
       for (const cond of [{ label: 'env 48 (a phone that reports its bar)', inset: BAR }, { label: 'the app mark (?navpad, env 0)', query: 'navpad' }]) {
-        const tg = w + 'x' + h + ' ' + cond.label;
+        const tg = w + 'x' + h + ' ' + cond.label, marked = !!cond.query;
         const s = await openAs(w, h, cond), page = s.page;
-        const t0 = await page.evaluate(() => ({ mark: document.documentElement.classList.contains('navpad'), pads: window.__pads() }));
-        R.say(t0.mark === !!cond.query && padsAre(t0.pads, BAR), tg + ': ' + (cond.query ? 'the page is marked .navpad' : 'the page is not marked') + ' and every rule that reads --sab holds its 48 px value (' + padsText(t0.pads) + ')');
+        const t0 = await markOf(page);
+        R.say(t0.mark === marked, tg + ': ' + markText(marked, t0));
+        R.say(padsAre(t0.pads, BAR), tg + ': every rule that reads --sab holds its 48 px value (' + padsText(t0.pads) + ')');
+        /* under the mark, the title as it opens: nothing drawn under the bar, and the fleet's chip over it and clear of
+           the title (Q91) */
+        if (marked) {
+          await bandSay(page, tg, 'the title as it opens');
+          const chip = await chipNow(page);
+          R.say(chipClear(chip, BAR), tg + ': on the title the fleet\'s chip ' + chipText(chip) + ', 48 or more, on top and clear of the title\'s controls');
+        }
         /* the title and Settings, each scrolled to its end */
         const titleScrolls = await scrollEnd(page, 'title');
         const title = await low(page, '#title button, #title a, #title input, #build');
         R.say(title.length > 0 && title[0].gap >= BAR - 0.5, tg + ': the title' + (titleScrolls ? ', scrolled to its end,' : '') + ' ends every control and the build line 48 px or more above the bottom (lowest: ' + lowText(title) + ')');
-        if (cond.query) {
-          const chip = await page.waitForFunction(() => { const c = document.getElementById('sws-music-chip'); return c && getComputedStyle(c).display !== 'none' ? innerHeight - c.getBoundingClientRect().bottom : false; }, { timeout: 4000 }).then(v => v.jsonValue()).catch(() => null);
-          console.log('  info  ' + tg + ': ' + (chip === null ? 'no fleet chip on the title' : 'the fleet\'s music chip on the title ends ' + chip.toFixed(0) + ' px above the bottom (music-unlocks.js reads env() itself, not --sab: a fleet follow up, Q90)'));
-        }
         await tap(page, '#settingsbtn');
+        if (marked) {
+          await bandSay(page, tg, 'Settings as it opens');
+          const chip = await chipNow(page);
+          R.say(chipClear(chip, BAR), tg + ': on Settings the fleet\'s chip ' + chipText(chip) + ', 48 or more, on top and clear of Settings\' controls');
+        }
         const setScrolls = await scrollEnd(page, 'settings');
         const settings = await low(page, '#settings button, #settings input, #settings select, #settings textarea, #setbuild');
         R.say(settings.length > 0 && settings[0].gap >= BAR - 0.5, tg + ': Settings' + (setScrolls ? ', scrolled to its end,' : '') + ' ends every control and the build line 48 px or more above the bottom (lowest: ' + lowText(settings) + ')');
@@ -261,30 +284,68 @@ try {
           return o.sort((a, b) => a.gap - b.gap);
         });
         R.say(cards.every(c => c.gap >= BAR - 0.5), tg + ': every card and sheet ends 48 px or more above the bottom (lowest: ' + lowText(cards) + ')');
+        /* under the mark, the room cleared (the hero set down in its exit, SB_DEV.goto): the chip on the clear card, where
+           its bottom seat is the strip's reserved box, then by a real touch on Title the title after a room, which shows
+           the code row and a recent room and runs to the fold on a short phone (Q91) */
+        if (marked) {
+          await page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(3); });
+          const cleared = await page.evaluate(() => window.SB_DEV.screen()) === 'clear';
+          const chipC = cleared ? await chipNow(page) : null;
+          R.say(cleared && chipClear(chipC, BAR) && (!chipC.bottomSeat || Math.abs(chipC.gap - (GLYPH_LIFT + BAR)) < 0.5),
+            tg + ': on the clear card the fleet\'s chip ' + chipText(chipC) + ', 48 or more (58 in a bottom seat), on top and clear of the card');
+          if (cleared) await tap(page, '#cleartitle');
+          await bandSay(page, tg, 'the title after a room');
+          const chipA = await chipNow(page);
+          R.say(chipClear(chipA, BAR), tg + ': on the title after a room the fleet\'s chip ' + chipText(chipA) + ', 48 or more, on top and clear of the title\'s controls');
+        }
         R.say(s.errors.length === 0, tg + ': zero page errors' + errs(s));
         await s.close();
       }
     }
 
-    /* the floor never adds to an inset the phone reports, and the mark is the installed app's on Android alone: a
-       browser tab on Android and an app window on a desktop are left as they were */
+    /* a song earned in another arcade game waits in the include's pending list and its card opens at the next boot of
+       any game, this one included (music-unlocks.js reveals before it checks for a shelf): under the mark the card
+       opens with Play it now and Later over the bar, and its pill, folded by a real touch, sits over it too (Q91) */
+    for (const [w, h] of [[412, 915], [320, 568]]) {
+      const tg = w + 'x' + h + ' the app mark (?navpad, env 0)';
+      const s = await openAs(w, h, { query: 'navpad', seedSong: true }), page = s.page;
+      const card = await page.waitForFunction(() => !!document.getElementById('sws-music-later'), { timeout: 10000 }).then(() => true).catch(() => false);
+      const m = card ? await page.evaluate(() => { const g = s => innerHeight - document.querySelector(s).getBoundingClientRect().bottom; return { card: g('#sws-music-card'), listen: g('#sws-music-listen'), later: g('#sws-music-later') }; }) : null;
+      R.say(!!m && m.card >= BAR - 0.5 && m.listen >= BAR - 0.5 && m.later >= BAR - 0.5, tg + ': a song waiting from another game opens its card ' + (m ? 'ending ' + m.card.toFixed(0) + ' px above the bottom, Play it now and Later ' + m.listen.toFixed(0) + ' and ' + m.later.toFixed(0) : 'nowhere (no card)') + ' (48 or more)');
+      if (card) await tap(page, '#sws-music-min');
+      const pill = card ? await page.waitForFunction(() => { const p = document.getElementById('sws-music-pill'); return p && getComputedStyle(p).display !== 'none' ? innerHeight - p.getBoundingClientRect().bottom : false; }, { timeout: 4000 }).then(v => v.jsonValue()).catch(() => null) : null;
+      R.say(pill !== null && pill >= BAR - 0.5, tg + ': folded by a real touch, the song\'s pill ends ' + (pill === null ? 'nowhere (no pill)' : pill.toFixed(0) + ' px above the bottom') + ' (48 or more)');
+      R.say(s.errors.length === 0, tg + ' with a song waiting: zero page errors' + errs(s));
+      await s.close();
+    }
+
+    /* the floor never adds to an inset the phone reports and yields to a larger one, and the mark is the installed
+       app's on Android alone, in each display mode the head test names: a browser tab on Android and an app window on
+       a desktop are left as they were. On the clear card the fleet's chip in its bottom seat ends 10 px over the bar,
+       as the glyphs do */
     for (const [w, h] of [[412, 915], [360, 780]]) {
       for (const c of [
         { label: 'the app mark with env 48 (the floor never adds to it)', query: 'navpad', inset: BAR, mark: true, lift: BAR },
+        { label: 'the app mark with env 60 (a reported inset over the floor wins)', query: 'navpad', inset: 60, mark: true, lift: 60 },
         { label: 'an Android app window (display mode standalone, env 0)', ua: ANDROID_UA, mode: 'standalone', mark: true, lift: BAR },
+        { label: 'an Android app window (display mode fullscreen, env 0)', ua: ANDROID_UA, mode: 'fullscreen', mark: true, lift: BAR, at412: true },
+        { label: 'an Android app window (display mode minimal-ui, env 0)', ua: ANDROID_UA, mode: 'minimal-ui', mark: true, lift: BAR, at412: true },
         { label: 'an Android tab (display mode browser, env 0)', ua: ANDROID_UA, mark: false, lift: 0 },
         { label: 'a desktop app window (display mode standalone, not Android)', mode: 'standalone', mark: false, lift: 0 }
-      ]) {
+      ].filter(c => !c.at412 || w === 412)) {
         const tg = w + 'x' + h + ' ' + c.label;
         const s = await openAs(w, h, c), page = s.page;
-        const t = await page.evaluate(() => ({ mark: document.documentElement.classList.contains('navpad'), pads: window.__pads() }));
+        const t = await markOf(page);
         await page.evaluate(() => window.SB_DEV.hold(true));
         await tap(page, '#sample');
         const g = await page.evaluate(() => ({ glyphs: window.__glyphGaps(), rows: window.SB_DEV.level().viewRows }));
         const want = GLYPH_LIFT + c.lift, wantR = wantRowsAt(h, c.lift);
-        R.say(t.mark === c.mark, tg + ': ' + (c.mark ? 'the page is marked .navpad' : 'the page is not marked'));
+        R.say(t.mark === c.mark, tg + ': ' + markText(c.mark, t));
         R.say(padsAre(t.pads, c.lift) && g.glyphs.every(v => Math.abs(v - want) < 0.5) && g.rows === wantR,
           tg + ': every rule that reads --sab holds its ' + c.lift + ' px value (' + padsText(t.pads) + '), the drawn controls end ' + g.glyphs.map(v => v.toFixed(0)).join(', ') + ' px up (want ' + want + '), VIEW_ROWS ' + g.rows + ' (want ' + wantR + ')');
+        await page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(3); });
+        const chip = await page.evaluate(() => window.SB_DEV.screen()) === 'clear' ? await chipNow(page) : null;
+        R.say(!!chip && chip.bottomSeat && Math.abs(chip.gap - want) < 0.5, tg + ': on the clear card the fleet\'s chip ' + chipText(chip) + ' (want a bottom seat ' + want + ' px up, 10 over the bar as the glyphs)');
         R.say(s.errors.length === 0, tg + ': zero page errors' + errs(s));
         await s.close();
       }

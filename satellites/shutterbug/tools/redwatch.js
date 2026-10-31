@@ -818,7 +818,28 @@ const MUTANTS = [
     gates: [{ gate: 'lint', expect: 'shell-navpad must be the second script, in <head>' }] },
   { name: 'FIT_IGNORES_SAB', task: 'NOTE1', file: 'page', find: '#safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 var(--sab) 0; }',
     repl: '#safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 0 0; }',
-    gates: [{ gate: 'layout', expect: '390x844 the app mark (?navpad, env 0): VIEW_ROWS' }] }
+    gates: [{ gate: 'layout', expect: '390x844 the app mark (?navpad, env 0): VIEW_ROWS' }] },
+  /* the reviews of NOTE1 (QUESTIONS Q91): a reported inset over the floor wins, every display mode the head test names
+     marks the page, the title and Settings end above the bar, and the fleet's chip, pill and song card rise over it
+     without ever doubling, the chip seated off the bar's band where content can sit over it */
+  { name: 'NAVPAD_ENV_DROPPED', task: 'NOTE1R', file: 'page', find: 'max(env(safe-area-inset-bottom, 0px), 48px)', repl: '48px',
+    gates: [{ gate: 'layout', expect: '412x915 the app mark with env 60 (a reported inset over the floor wins): every rule that reads --sab holds its 60 px value' }] },
+  { name: 'NAVPAD_NO_FULLSCREEN', task: 'NOTE1R', file: 'page', find: '(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)', repl: '(display-mode: standalone), (display-mode: minimal-ui)',
+    gates: [{ gate: 'layout', expect: '412x915 an Android app window (display mode fullscreen, env 0): the page is marked .navpad' }] },
+  { name: 'NAVPAD_NO_MINIMAL_UI', task: 'NOTE1R', file: 'page', find: ", (display-mode: minimal-ui)'", repl: "'",
+    gates: [{ gate: 'layout', expect: '412x915 an Android app window (display mode minimal-ui, env 0): the page is marked .navpad' }] },
+  { name: 'SCROLLERS_PAD_PAST_BAR', task: 'NOTE1R', file: 'page', find: ':root.navpad #title, :root.navpad #settings { bottom: var(--sab); padding-bottom: 16px; }\n', repl: '',
+    gates: [{ gate: 'layout', expect: '320x568 the app mark (?navpad, env 0): the title as it opens draws no control in the bottom 48 px' }] },
+  { name: 'CHIP_LIFT_DROPPED', task: 'NOTE1R', file: 'page', find: ':root.navpad #sws-music-chip, :root.navpad #sws-music-pill', repl: ':root.navpad #sws-music-pill',
+    gates: [{ gate: 'layout', expect: "412x915 the app mark (?navpad, env 0): on the clear card the fleet's chip ends" }] },
+  { name: 'PILL_LIFT_DROPPED', task: 'NOTE1R', file: 'page', find: ', :root.navpad #sws-music-pill, ', repl: ', ',
+    gates: [{ gate: 'layout', expect: "412x915 the app mark (?navpad, env 0): folded by a real touch, the song's pill ends" }] },
+  { name: 'CARD_LIFT_DROPPED', task: 'NOTE1R', file: 'page', find: ', :root.navpad #sws-music-card { margin-bottom', repl: ' { margin-bottom',
+    gates: [{ gate: 'layout', expect: '412x915 the app mark (?navpad, env 0): a song waiting from another game opens its card' }] },
+  { name: 'CHIP_LIFT_ADDS', task: 'NOTE1R', file: 'page', find: 'margin-bottom: calc(var(--sab) - env(safe-area-inset-bottom, 0px)); }', repl: 'margin-bottom: var(--sab); }',
+    gates: [{ gate: 'layout', expect: "412x915 the app mark with env 48 (the floor never adds to it): on the clear card the fleet's chip ends" }] },
+  { name: 'CHIPSILL_DROPPED', task: 'NOTE1R', file: 'page', find: ':root.navpad body:has(#title.on) #chipsill, :root.navpad body:has(#settings.on) #chipsill { display: block; }\n', repl: '',
+    gates: [{ gate: 'layout', expect: "390x844 the app mark (?navpad, env 0): on the title after a room the fleet's chip ends" }] }
 ];
 
 /* ---------------------------------------------------------------- run */
