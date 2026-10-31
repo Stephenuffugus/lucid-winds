@@ -146,7 +146,7 @@ try {
   const ANCHOR = { moth: 'cell', icicle: 'top', jelly: 'cell', crawler: 'bottom', spark: 'bottom' }, KIND = ['', 'moth', 'icicle', 'jelly', 'crawler', 'spark'];
   for (let b = 0; b < 5; b++) {
     const got = await page.evaluate((str, b) => {
-      window.SB_DEV.loadRecord(str, b); window.SB_DEV.goto('elite'); window.SB_DEV.step(1);
+      window.SB_DEV.loadRecord(str, b); window.SB_DEV.goto('elite'); window.SB_DEV.step(0);   /* drawn, not stepped: the icicle still hangs (a step with the hero below it drops it) */
       const rc = window.SB_DEV.spriteRects(), st = window.SB_DEV.state(), camY = window.SB_DEV.level().camY;
       const cv = document.getElementById('view'), img = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height);
       const el = st.enemies.filter(e => e.elite)[0];
