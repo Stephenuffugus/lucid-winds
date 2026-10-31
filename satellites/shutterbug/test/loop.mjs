@@ -1,13 +1,16 @@
 /* Browser gate `loop` (BUILD-PLAN.md T1.13, DESIGN 5.1): the free play loop end to end with real taps. The sample room
  * twice in a row (a speck taken, the climb skipped, the clear card, Share this room and its Close back to the card,
  * Play it again, the second clear), then Shoot the next room to the camera's picker, the photo, the crop, Develop and a
- * third room; a recent room and the death card, Again, the death card's Title. The gate's two named liberties:
+ * third room; a recent room and the death card, Again, the death card's Title. Title and Share left the strip for the
+ * pause card (Stephen's note 3 of 31 Oct, QUESTIONS Q94): the room is left by Pause and the card's Title, the sheet opens
+ * from the card's Share this room, and the death card has no Share (his call 8). The gate's two named liberties:
  * SB_DEV.goto('speck') sets the hero on the first speck (so the room has Dead pixels to bank) and SB_DEV.goto('exit') on
  * the exit cell (the climb skipped); every other move is a real tap.
  * Checked: the room's Dead pixels banked at x0.5 floored on every clear and said on the card, which names the strip's
  * count it came from (QUESTIONS Q93: `Banked 1 of 3 dead pixels` over the count's 3); Recent rooms written on
  * every clear and shown on the title only after the first; every back and X returns to the screen it came from and
- * leaves nothing over the title; a share sheet left open under the strip's back never comes back over the next room;
+ * leaves nothing over the title; a refused link that arrives with the share sheet open leaves the title with nothing over
+ * it, and the sheet never comes back over the next room;
  * an injected .lwfb-fab hides under every card and sheet and shows on the title, the crop and in the room. Inside the
  * wrapper iframe {sws:'earn', moment:'first_clear'} arrives exactly once across two clears and first_share once across
  * two copies, neither carrying an amount; the unframed clears marked no moment (QUESTIONS Q85).
@@ -18,7 +21,7 @@
  *
  * Watched red by X_LEAVES_OVERLAY, MOMENT_TWICE, FAB_OVER_SHEET, BANK_FULL_RATE, SHARE_CLOSE_TO_PLAY, PERF_OVER_PAIRS,
  * EDGE_BANKED_UNDER_SHEET, CARD_UNDER_SHEET, COPIED_STICKS and BANK_LINE_BARE. */
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, GAME, GAME_PATH, sleep } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, GAME, GAME_PATH, sleep, leaveRoom, openSheet } from './harness.mjs';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
@@ -28,7 +31,7 @@ const SBN = createRequire(import.meta.url)(join(GAME, 'tools', 'core-loader.js')
 const ROOM = JSON.parse(readFileSync(join(GAME, 'fixtures', 'sample-room.json'), 'utf8')).record.rows, HEX = Array.from(SBN.palette.HEX);
 const TMP = '/tmp/claude-1000/shutterbug-loop'; mkdirSync(TMP, { recursive: true });
 const PHOTO = join(TMP, 'room-900x1600.png');
-const OVER = ['clear', 'death', 'sharesheet', 'devcard'];   /* the cards and sheets a player can meet (the scroll offer and the chest's slip left M1: QUESTIONS Q92) */
+const OVER = ['paused', 'clear', 'death', 'sharesheet', 'devcard'];   /* the cards and sheets a player can meet (the scroll offer and the chest's slip left M1: QUESTIONS Q92; the pause card came: Q94) */
 const srv = await serve();
 const browser = await launch();
 try {
@@ -63,16 +66,19 @@ try {
       label + ': the title with nothing over it (screen ' + l.screen + (l.on.length ? ', still on: ' + l.on.join(' ') : '') + (c && !c.onTop ? ', a thumb on Try the sample room lands on ' + c.topName : '') + ', fab ' + l.fab + ')');
   };
   const shown = id => page.evaluate(id => getComputedStyle(document.getElementById(id)).visibility, id);
+  /* the sheet opens from the pause card's Share this room or the clear card's (Q94: the strip's Share left with Title,
+     and the death card has none) */
   const sheetOver = async (from, label) => {
-    await tap(page, from === 'clear' ? '#clearshare' : '#share');
-    const a = await look(), want = from === 'dead' ? 'death' : from, under = from === 'play' ? 'visible' : await shown(want);
+    const want = from === 'pause' ? 'paused' : from;
+    await tap(page, from === 'clear' ? '#clearshare' : '#pauseshare');
+    const a = await look(), under = await shown(want);
     await tap(page, '#shareclose');
-    const b = await look(), back = from === 'play' ? 'visible' : await shown(want);
-    R.say(a.screen === 'share' && a.on.includes('sharesheet') && a.fab === 'none' && b.screen === from && !b.on.includes('sharesheet') && (from === 'play' || b.on.includes(want)),
+    const b = await look(), back = await shown(want);
+    R.say(a.screen === 'share' && a.on.includes('sharesheet') && a.fab === 'none' && b.screen === from && !b.on.includes('sharesheet') && b.on.includes(want),
       label + ': the share sheet over the ' + from + ' screen (fab ' + a.fab + ') and its Close returns to it (screen ' + b.screen + ', on: ' + (b.on.join(' ') || 'nothing') + ')');
     /* the card the sheet sits over never shows under it (the M1 review: at 320x568 the clear card's Play it again and
        Title showed and took taps below the sheet) */
-    if (from !== 'play') R.say(under === 'hidden' && back === 'visible', label + ': the ' + want + ' card hides under the sheet (' + under + ') and shows again at Close (' + back + ')');
+    R.say(under === 'hidden' && back === 'visible', label + ': the ' + (from === 'pause' ? 'pause' : want) + ' card hides under the sheet (' + under + ') and shows again at Close (' + back + ')');
   };
   const clearRoom = async () => {
     const before = await look();
@@ -92,16 +98,18 @@ try {
     l = await look();
     R.say(l.screen === 'play' && l.st.frame === 0 && l.on.length === 0 && l.fab !== 'none', 'round ' + round + ': ' + (round === 1 ? 'Try the sample room' : 'Play it again') + ' opens the room at frame 0 with nothing over it (fab ' + l.fab + ')');
     if (round === 1) {
-      /* the sheet over the play screen comes before the A tap below: that tap first proves a thumb lands on A, so a fab
+      /* the sheet over the pause card comes before the A tap below: that tap first proves a thumb lands on A, so a fab
          left showing over the sheet threw there before this check could name it (FAB_OVER_SHEET read WRONG REASON in
          the sb-m1-1 full check). It opens and closes the sheet and never steps the held sim, so what follows is as before. */
-      await sheetOver('play', 'round 1');
-      /* a thumb on A while the sheet is up is never banked into a jump at Close (the M1 review: the strip under the
-         sheet stays live, and its press edge fired on the next step) */
+      await tap(page, '#pause');
+      await sheetOver('pause', 'round 1');
+      await tap(page, '#resume');
+      /* a thumb on A while the sheet is up is never banked into a jump at Close and Resume (the M1 review: the strip under
+         the sheet stays live, and its press edge fired on the next step) */
       const g0 = await page.evaluate(() => { for (let k = 0; k < 120 && !window.SB_DEV.state().hero.ground; k++) window.SB_DEV.step(1); window.SB_DEV.step(2); return window.SB_DEV.state().hero; });
-      await tap(page, '#share'); await tap(page, '#btnA'); await tap(page, '#shareclose');
+      await openSheet(page); await tap(page, '#btnA'); await tap(page, '#shareclose'); await tap(page, '#resume');
       const g1 = await page.evaluate(() => { window.SB_DEV.step(3); return window.SB_DEV.state().hero; });
-      R.say(g0.ground && g1.ground && g1.y === g0.y, 'round 1: a tap on A under the open share sheet does not jump at Close (on the ground ' + g1.ground + ', y ' + (g0.y / 256) + ' then ' + (g1.y / 256) + ' px)');
+      R.say(g0.ground && g1.ground && g1.y === g0.y, 'round 1: a tap on A under the open share sheet does not jump at Close and Resume (on the ground ' + g1.ground + ', y ' + (g0.y / 256) + ' then ' + (g1.y / 256) + ' px)');
     }
     await page.evaluate(() => { window.SB_DEV.goto('speck'); window.SB_DEV.step(2); });
     const c = await clearRoom(), want = Math.floor(c.dp * 0.5);
@@ -135,10 +143,10 @@ try {
   l = await look();
   R.say(l.recentShown, 'after the first clear the title shows Recent rooms');
 
-  /* the room's own back */
+  /* the room's own way out: Pause, then the card's Title (Q94: the strip's Title is gone) */
   await tap(page, '#sample');
-  await tap(page, '#back');
-  await clean('the strip\'s Title from the room');
+  await leaveRoom(page);
+  await clean('the pause card\'s Title from the room');
 
   /* Shoot the next room: the camera's picker, the photo, the crop (its Title back), Develop */
   await tap(page, '#sample');
@@ -166,7 +174,10 @@ try {
   const k1 = await kill();
   l = await look();
   R.say(l.screen === 'dead' && l.on.includes('death') && l.fab === 'none', 'a recent room played and left alone ends at the death card in ' + k1 + ' steps; the fab hides under it');
-  await sheetOver('dead', 'the death card');
+  /* his call 8 (Q94): the death card keeps Again and Title and has no Share, and the strip under it only its controls */
+  const dc = await page.evaluate(() => [...document.querySelectorAll('#play button, #play a, #play [role=button]')]
+    .filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; }).map(e => e.id));
+  R.say(dc.join() === 'deathagain,deathtitle,btnB,btnA', 'the death card offers Again and Title and no Share, and the strip under it only its controls (' + dc.join(', ') + ')');
   await tap(page, '#deathagain');
   l = await look();
   R.say(l.screen === 'play' && l.st.frame === 0 && l.st.room.dead === 0 && l.on.length === 0, 'Again restarts the room with nothing over it');
@@ -174,16 +185,19 @@ try {
   await tap(page, '#deathtitle');
   await clean('the death card\'s Title');
 
-  /* a share sheet left open under the strip's back: never over the next room */
+  /* a refused link by hashchange with the share sheet open: the title with nothing over it, never the sheet over the next
+     room (Q94: this path's tap was the strip's Title under the open sheet; the sheet now opens from the pause card, whose
+     Title it hides, so a link is the one way left to the title with the sheet up) */
   await tap(page, '#sample');
-  await tap(page, '#share');
-  await tap(page, '#back');
-  await clean('the strip\'s Title with the share sheet open');
+  await openSheet(page);
+  await page.evaluate(() => { location.hash = 'v1.not-a-room'; });
+  await page.waitForFunction(() => window.SB_DEV.screen() === 'title', { timeout: 5000 }).catch(() => {});
+  await clean('a refused link with the share sheet open');
   await tap(page, '#sample');
   l = await look();
   const mid = await page.evaluate(() => { const r = document.getElementById('view').getBoundingClientRect(), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return t ? t.id : ''; });
-  R.say(l.screen === 'play' && !l.on.includes('sharesheet') && mid === 'stage', 'the next room opens with no share sheet over it (on: ' + (l.on.join(' ') || 'nothing') + ', a thumb mid room lands on ' + mid + ')');
-  await tap(page, '#back');
+  R.say(l.screen === 'play' && !l.on.includes('sharesheet') && !l.on.includes('paused') && mid === 'stage', 'the next room opens with no share sheet or pause card over it (on: ' + (l.on.join(' ') || 'nothing') + ', a thumb mid room lands on ' + mid + ')');
+  await leaveRoom(page);
 
   /* settings and back, after a room that ran unheld (the M1 review: the Performance line ran its p95 over the frame
      log's [now, steps] pairs and threw, so Settings never opened again once a room had run) */
@@ -192,7 +206,7 @@ try {
   await sleep(900);
   await page.evaluate(() => window.SB_DEV.hold(true));
   const ran = await page.evaluate(() => ({ frames: window.SB_DEV.perf().frames.length, screen: window.SB_DEV.screen() }));   /* the frame log fills only while the loop runs unheld */
-  await tap(page, ran.screen === 'dead' ? '#deathtitle' : '#back');
+  if (ran.screen === 'dead') await tap(page, '#deathtitle'); else await leaveRoom(page);
   await tap(page, '#settingsbtn');
   l = await look();
   const perfLine = await page.evaluate(() => document.getElementById('setperf').textContent);

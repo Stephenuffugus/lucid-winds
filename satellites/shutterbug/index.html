@@ -108,8 +108,20 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect x='1' y='2' width='1' height='1' fill='%23000' fill-opacity='0.05'/%3E%3Crect x='4' y='4' width='1' height='1' fill='%23000' fill-opacity='0.04'/%3E%3Crect x='3' y='0' width='1' height='1' fill='%23fff' fill-opacity='0.3'/%3E%3C/svg%3E");
   padding-top: var(--sat); }
 #top { flex: 0 0 36px; height: 36px; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 calc(12px + var(--sar)) 0 calc(12px + var(--sal)); font-weight: 700; font-size: 0.95rem; }
-#hearts { display: flex; gap: 5px; }
+  padding: 0 calc(12px + var(--sar)) 0 calc(12px + var(--sal)); font-weight: 700; font-size: 0.95rem; position: relative; z-index: 3; }
+/* the pause (Stephen's note 3 of 31 Oct, his ruling "Pause in the top bar", QUESTIONS Q94): at the top strip's left end
+   before the room name, where the crop and settings screens keep their Title. A 48x48 hit area in a 36 px strip: its
+   lower 12 px hang over the room's top left corner with nothing drawn there (the stage takes no input; #top sits over
+   it). The two bar glyph is drawn inside the strip at the rocker's alpha. Shown only while the room runs (ui.screen
+   'play'); hidden, it takes no touch and keeps its place, so the room name never moves */
+#pause { flex: 0 0 48px; width: 48px; height: 48px; align-self: flex-start; margin: 0 4px 0 -12px; padding: 4px 0 0; border: 0;
+  background: transparent; display: flex; justify-content: center; align-items: flex-start; visibility: hidden; }
+#pause.on { visibility: visible; }
+#pause i { width: 28px; height: 28px; border-radius: 8px; border: 2px solid rgba(11,10,15,0.35); background: rgba(11,10,15,0.06);
+  display: flex; align-items: center; justify-content: center; gap: 4px; }
+#pause i::before, #pause i::after { content: ''; width: 4px; height: 12px; background: rgba(11,10,15,0.55); }
+#roomname { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* six hearts still fit at 320 wide */
+#hearts { display: flex; gap: 5px; flex: none; margin-left: 8px; }
 /* a pixel heart (9 by 8), Ink with a Brick heart inset in it; a lost heart keeps its outline and empties to Paper */
 #hearts i { width: 18px; height: 16px; display: block; position: relative; background: var(--ink); clip-path: polygon(11.1% 0%, 33.3% 0%, 33.3% 12.5%, 44.4% 12.5%, 44.4% 25%, 55.6% 25%, 55.6% 12.5%, 66.7% 12.5%, 66.7% 0%, 88.9% 0%, 88.9% 12.5%, 100% 12.5%, 100% 50%, 88.9% 50%, 88.9% 62.5%, 77.8% 62.5%, 77.8% 75%, 66.7% 75%, 66.7% 87.5%, 55.6% 87.5%, 55.6% 100%, 44.4% 100%, 44.4% 87.5%, 33.3% 87.5%, 33.3% 75%, 22.2% 75%, 22.2% 62.5%, 11.1% 62.5%, 11.1% 50%, 0% 50%, 0% 12.5%, 11.1% 12.5%); }
 #hearts i::after { content: ''; position: absolute; left: 3px; top: 3px; right: 3px; bottom: 3px; background: var(--brick); clip-path: polygon(11.1% 0%, 33.3% 0%, 33.3% 12.5%, 44.4% 12.5%, 44.4% 25%, 55.6% 25%, 55.6% 12.5%, 66.7% 12.5%, 66.7% 0%, 88.9% 0%, 88.9% 12.5%, 100% 12.5%, 100% 50%, 88.9% 50%, 88.9% 62.5%, 77.8% 62.5%, 77.8% 75%, 66.7% 75%, 66.7% 87.5%, 55.6% 87.5%, 55.6% 100%, 44.4% 100%, 44.4% 87.5%, 33.3% 87.5%, 33.3% 75%, 22.2% 75%, 22.2% 62.5%, 11.1% 62.5%, 11.1% 50%, 0% 50%, 0% 12.5%, 11.1% 12.5%); }
@@ -129,28 +141,31 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #dpplus.on { animation: sbplus 1.2s ease-out forwards; }
 #dpplus.on.still { animation: none; opacity: 1; }
 @keyframes sbplus { 0% { opacity: 0; transform: translateY(8px); } 15% { opacity: 1; transform: translateY(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(0); } }
-#back { position: absolute; top: 0; left: calc(6px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;
-  border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
-#clear, #death { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
+/* the cards: the pause card (Q94: Resume, Share this room, Title), the clear card and the death card. Title and Share left
+   the strip for the pause card, so the strip holds only the controls */
+#paused, #clear, #death { position: absolute; left: 0; right: 0; top: 30%; margin: 0 auto; width: min(300px, 86vw); padding: 18px;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
   display: none; flex-direction: column; gap: 12px; align-items: stretch; text-align: center; z-index: 10; }
-#clear.on, #death.on { display: flex; }
+#paused.on, #clear.on, #death.on { display: flex; }
+#paused { top: 0; bottom: 0; margin: auto; height: fit-content; }   /* in the middle of the room at every height; taller than the room, it starts at the room's top */
 #death { top: 3%; } #death.low { top: auto; bottom: 3%; }
 #death .duo { display: flex; flex-direction: column; gap: 12px; }
 /* on a short screen Again and Title sit side by side, so the docked card clears the line the camera keeps the bug on
    (the M1 review: at 320x568 the stacked card hid the fallen bug on 40 of 48 rows) */
 @media (max-height: 700px) { #death .duo { flex-direction: row; } #death .duo button { flex: 1 1 0; min-width: 0; }
   #death { width: min(320px, 94vw); padding: 12px 14px; gap: 10px; } #stage > #death h2 { font-size: 1rem; } }   /* its words on one line: about 116 px, under half the stage at 320x568 (#stage: over the cards' 1.3rem rule below) */
-#clear h2, #death h2 { margin: 0 0 4px; font-size: 1.3rem; }
-#clear button, #death button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
-#nextroom, #deathagain { background: var(--sun); color: var(--ink); }
+#paused h2, #clear h2, #death h2 { margin: 0 0 4px; font-size: 1.3rem; }
+#paused button, #clear button, #death button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
+#resume, #nextroom, #deathagain { background: var(--sun); color: var(--ink); }
 #clearbank { margin: 0; font-size: 0.95rem; }
 /* the share sheet (T1.8): the record's 16 colour grid, the three sentences, the link and its buttons; it scrolls on short phones */
 #sharesheet { position: absolute; left: 0; right: 0; top: 2%; bottom: 2%; margin: 0 auto; width: min(360px, 96vw); padding: 14px; overflow-y: auto;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
   display: none; flex-direction: column; gap: 8px; align-items: stretch; text-align: center; z-index: 11; }
 #sharesheet.on { display: flex; }
-#stage:has(> #sharesheet.on) > #clear, #stage:has(> #sharesheet.on) > #death { visibility: hidden; }   /* the card the sheet opened over never shows (or takes taps) under it (the M1 review) */
+/* the card the sheet opened over never shows (or takes taps) under it (the M1 review): the pause card or the clear card
+   (the death card has no Share since Title and Share left the strip: Q94) */
+#stage:has(> #sharesheet.on) > #paused, #stage:has(> #sharesheet.on) > #clear { visibility: hidden; }
 #sharesheet p { margin: 0; font-size: 0.9rem; }
 /* the sheet's head: the title and Close in a Paper bar that stays on top however far the sheet scrolls (t18: Close
    below the fold at 360x780; T1.9b: the QR drawer scrolls the sheet, and a floating Close sat over its words); sticky
@@ -169,8 +184,6 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 /* the QR drawer (T1.9b): one canvas pixel a module, scaled by a whole number of CSS px */
 #qrdrawer { display: flex; justify-content: center; margin: 0 -14px; } #qrdrawer[hidden] { display: none; }   /* over the sheet's padding: the quiet zone is Paper too */
 #qrcanvas { image-rendering: pixelated; }
-#share { position: absolute; top: 0; left: calc(84px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;
-  border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }
 /* the card a link opens on (T1.8): one tap to develop, so the shutter may sound */
 #devcard { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(11,10,15,0.82); z-index: 30; }
 #devcard.on { display: flex; }
@@ -197,7 +210,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #setdamaged { color: var(--sun); font-weight: 700; margin: 0; } #setperf, #setbuild { color: var(--ash); font-size: 0.85rem; margin: 0; }
 #setinstall { display: flex; align-items: center; gap: 10px; margin: 0; } #install { min-height: 48px; }
 #again { background: var(--paper); color: var(--ink); }
-#cleartitle, #deathtitle { background: transparent; color: var(--ink); }
+#pausetitle, #cleartitle, #deathtitle { background: transparent; color: var(--ink); }
 /* the hint glyphs (T0.16): a control pulses once, the first time it is the move to make */
 @keyframes sbhint { 0%, 100% { box-shadow: 0 0 0 0 rgba(242,209,63,0); } 50% { box-shadow: 0 0 0 6px rgba(242,209,63,0.9); } }
 #rocker.hint .zone, .verb.hint .glyph { animation: sbhint 0.7s ease-in-out 3; }
@@ -307,8 +320,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
 <input id="fileshoot" type="file" accept="image/*" capture="environment" hidden>
 <input id="filechoose" type="file" accept="image/*" hidden>
 <main id="play" class="screen" aria-label="Play">
-  <div id="top"><span id="roomname"></span><span id="hearts" aria-label="Hearts"></span></div>
+  <div id="top"><button id="pause" type="button" data-aria="pause"><i aria-hidden="true"></i></button><span id="roomname"></span><span id="hearts" aria-label="Hearts"></span></div>
   <div id="stage"><canvas id="view" width="384" height="640"></canvas>
+    <div id="paused" role="dialog" data-aria="paused"><h2 data-copy="paused"></h2>
+      <button id="resume" type="button" data-copy="resume"></button>
+      <button id="pauseshare" type="button" data-copy="shareTitle"></button>
+      <button id="pausetitle" type="button" data-copy="toTitle"></button></div>
     <div id="clear" role="dialog" data-aria="roomClear"><h2 data-copy="roomClear"></h2>
       <p id="clearbank" hidden></p>
       <button id="nextroom" type="button" data-copy="nextRoom"></button>
@@ -327,7 +344,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <p id="qrlong" data-copy="qrLong" hidden></p>
       <div id="qrdrawer" hidden><canvas id="qrcanvas" width="105" height="105"></canvas></div></div>
   </div>
-  <div id="strip"><button id="back" type="button" data-copy="toTitle"></button><button id="share" type="button" data-copy="share"></button>
+  <div id="strip">
     <p id="dp"><span data-copy="dp"></span> <span id="dpn">0</span><span id="dpplus" aria-hidden="true"></span></p>
     <div id="reserve" aria-hidden="true"></div>
     <div id="rocker" data-aria="move"><i class="zone zl" data-copy="left"></i><i class="gap"></i><i class="zone zr" data-copy="right"></i></div>
@@ -4210,7 +4227,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     photoRoom: 'Your room',
     death: 'The bug fell out of the picture',
     dp: 'Dead pixels', dpGain: '+{n}',
-    share: 'Share', shareTitle: 'Share this room',
+    shareTitle: 'Share this room',
+    pause: 'Pause', paused: 'Paused', resume: 'Resume',
     shareAbstract: 'This shares an abstracted 16 color version of your photo, not the photo.',
     shareOffline1: 'Works offline once installed.',
     shareOffline2: 'A phone that has opened Shutterbug once can open this link offline. A new phone needs one online load.',
@@ -4236,7 +4254,61 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the game: the record, the built level, the live sim state, the room's name */
   var G = SB.game = { record: null, level: null, state: null, name: '' };
 
-  ui.screen = 'title';
+  /* the screen's name. Every switch shows the Pause control only in a running room and arms the back gesture for the
+     screen it names (ui.onScreen, QUESTIONS Q94), so no path that sets a screen can forget either */
+  var screenNow = 'title';
+  Object.defineProperty(ui, 'screen', { enumerable: true, get: function () { return screenNow; },
+    set: function (v) { screenNow = v; if (ui.onScreen) ui.onScreen(v); } });
+  ui.onScreen = function (name) {
+    document.getElementById('pause').classList.toggle('on', name === 'play');
+    armBack(name);
+  };
+  /* the pause card (Stephen's note 3 of 31 Oct, "the title button that leaves the game is in the wrong place that ruined
+     my run"; his ruling "Pause in the top bar", Q94): a tap on Pause, the back gesture, a hidden page or a lost focus
+     holds the room (the loop steps only on 'play') and opens the card: Resume, Share this room, Title. A stray tap
+     costs a pause, never the room. In the reveal it ends the reveal first (its photo released), so Resume plays */
+  ui.pause = function () {
+    if (!G.state || (ui.screen !== 'play' && ui.screen !== 'reveal')) return false;
+    if (ui.screen === 'reveal') { RV.marks.skipped = true; ui.endReveal(); }
+    SB.input.releaseAll();
+    document.getElementById('paused').classList.add('on');
+    ui.screen = 'pause';
+    return true;
+  };
+  ui.resume = function () {
+    if (ui.screen !== 'pause') return false;
+    document.getElementById('paused').classList.remove('on');
+    SB.input.releaseAll();   /* a tap on the strip under the card is never banked into a jump at Resume */
+    ui.screen = 'play';
+    return true;
+  };
+  /* the back gesture (Q94, his ruling): in a room it opens the pause card; on the card it resumes; on the share sheet it
+     closes it; on the clear and death cards it is Title; on the title (and Settings, the crop screen, the develop card)
+     it leaves, as before. One CloseWatcher at a time, for the screen showing, made on each switch with the old one
+     destroyed first, so it always takes a group of its own and one back closes one screen. No history entry, so the
+     fleet exit's history.back and an installed app's back on the title are untouched (Q62's (c) is not built). Where
+     CloseWatcher is missing (iOS Safari) back stays the browser's, as before */
+  var BACK = {
+    reveal: function () { ui.pause(); }, play: function () { ui.pause(); }, pause: function () { ui.resume(); },
+    share: function () { ui.closeShare(); }, clear: function () { ui.toTitle(); }, dead: function () { ui.hideDeath(); ui.toTitle(); }
+  };
+  var watcher = null, watching = '';
+  function armBack(name) {
+    if (typeof window.CloseWatcher !== 'function' || (watcher && watching === name)) return;
+    if (watcher) { var old = watcher; watcher = null; try { old.destroy(); } catch (e) { /* gone */ } }
+    watching = '';
+    if (!BACK[name]) return;
+    var w;
+    try { w = new window.CloseWatcher(); } catch (e) { return; }
+    w.onclose = function () {
+      if (watcher !== w) return;
+      watcher = null; watching = '';
+      BACK[name]();
+      armBack(ui.screen);   /* the screen the back went to (none on the title) */
+    };
+    watcher = w; watching = name;
+  }
+  ui.backWatched = function () { return watcher ? watching : ''; };
   ui.show = function (name) {
     if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; drawRecent(); }   /* DESIGN 5.3: the first screen is two buttons and a small link */
     if (name === 'settings') fillSettings();
@@ -4590,7 +4662,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     msg.hidden = true; ui.pendingCode = r.rec;
     /* a link that arrives during play (a hashchange) holds the room under the card: the loop runs only on 'play' (the M1
        review: the moths kept coming under a card that hides the room, the rotate card's bug) */
+    if (ui.screen === 'reveal') ui.endReveal();   /* the reveal ends (its photo released); the room holds as below */
     if (ui.screen === 'play') { SB.input.releaseAll(); ui.screen = 'code'; }
+    /* over the pause card, the sheet or a room's card too: the screen becomes the code card's, so no back watcher is left
+       armed under it (a back there would have resumed the room under the card: Q94) */
+    if (ui.screen !== 'play' && BACK[ui.screen]) ui.screen = 'code';
     document.getElementById('devcard').classList.add('on');
     return true;
   };
@@ -4651,7 +4727,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var vr = cv.getBoundingClientRect(), k = vr.height / cv.height, top = vr.top + hd.y * k, cr = dc.getBoundingClientRect();
       if (top < cr.bottom && top + hd.h * k > cr.top) dc.classList.add('low');
     }
-    document.getElementById('back').hidden = true; ui.screen = 'dead'; document.body.classList.remove('playing'); };
+    ui.screen = 'dead'; document.body.classList.remove('playing'); };
   ui.hideDeath = function () { document.getElementById('death').classList.remove('on'); };
   /* free play restarts the room with the same record and seed, the reveal skipped */
   ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true, notFirst: G.notFirst, mode: G.mode }); };
@@ -4695,21 +4771,21 @@ body.sb-modal .lwfb-fab { display: none !important; }
       bank.textContent = n < dp ? ui.COPY.bankedOf.replace('{n}', n).replace('{of}', dp) : n === 1 ? ui.COPY.bankedOne : ui.COPY.banked.replace('{n}', n); bank.hidden = n <= 0;
       SB.Wallet.moment('first_clear', { mode: G.mode });
     }
-    document.getElementById('clear').classList.add('on'); document.getElementById('back').hidden = true; ui.screen = 'clear'; document.body.classList.remove('playing');
+    document.getElementById('clear').classList.add('on'); ui.screen = 'clear'; document.body.classList.remove('playing');
   };
-  ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); document.getElementById('back').hidden = false; };
+  ui.hideClear = function () { document.getElementById('clear').classList.remove('on'); };
   /* every back and X is an internal screen switch that hides every overlay it can sit over (section 1.6, the
-     Skitterlings bug): the cards and the sheet go, and the chest's +n with them, so a new room never shows the last one's */
-  var OVERLAYS = ['clear', 'death', 'sharesheet'];
+     Skitterlings bug): the cards (the pause card's too, Q94) and the sheet go, and the chest's +n with them, so a new room
+     never shows the last one's */
+  var OVERLAYS = ['clear', 'death', 'paused', 'sharesheet'];
   ui.hideOverlays = function () {
     for (var i = 0; i < OVERLAYS.length; i++) document.getElementById(OVERLAYS[i]).classList.remove('on');
     document.getElementById('dpplus').classList.remove('on');
-    document.getElementById('back').hidden = false;
   };
   ui.toTitle = function () { RV.on = false; ui.releasePhoto(); ui.hideOverlays(); SB.input.releaseAll(); G.state = null; ui.show('title'); };
   /* the fleet's feedback fab (section 1.6, the _EXIT-AUDIT lesson): body.sb-modal while any card, the sheet or the
      develop card is up, so an injected .lwfb-fab never sits over one; the classes are watched, so no path can forget it */
-  var MODALS = ['clear', 'death', 'sharesheet', 'devcard'];
+  var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard'];
   function syncModal() {
     var on = false;
     for (var i = 0; i < MODALS.length; i++) if (document.getElementById(MODALS[i]).classList.contains('on')) on = true;
@@ -4731,7 +4807,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the next room: back to the title under the camera's picker (a cancelled picker leaves the title) */
     document.getElementById('nextroom').addEventListener('click', function () { ui.toTitle(); openPicker('fileshoot'); });
     document.getElementById('deathagain').addEventListener('click', function () { ui.restart(); });
-    document.getElementById('share').addEventListener('click', function () { ui.openShare(); });
+    /* the pause card (Q94): Pause holds the room; Resume, Share this room (its Close comes back to the card) and Title */
+    document.getElementById('pause').addEventListener('click', function () { ui.pause(); });
+    document.getElementById('resume').addEventListener('click', function () { ui.resume(); });
+    document.getElementById('pauseshare').addEventListener('click', function () { ui.openShare(); });
     document.getElementById('settingsbtn').addEventListener('click', function () { ui.show('settings'); });
     document.getElementById('levelcode').placeholder = ui.COPY.levelCode;   /* the field says what it takes (t110: an empty white box) */
     document.getElementById('install').addEventListener('click', function () { var ip = ui.installPrompt; if (ip) { ui.installPrompt = null; this.hidden = true; try { ip.prompt(); } catch (e) { /* silent */ } } });
@@ -4763,12 +4842,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
     });
     document.getElementById('deathtitle').addEventListener('click', function () { ui.hideDeath(); ui.toTitle(); });
     document.getElementById('cleartitle').addEventListener('click', ui.toTitle);
-    document.getElementById('back').addEventListener('click', ui.toTitle);
+    document.getElementById('pausetitle').addEventListener('click', ui.toTitle);
+    /* his call 7 (Q94): a room pauses itself when the page is hidden (a call, an app switch, the screen locked) or the
+       window loses focus (the notification shade, a system dialog); it ran again the instant he came back. Inside a frame
+       on hidden only, as Sproing does under SWS_EMBED: a tap on the host page takes the focus out of the frame */
+    document.addEventListener('visibilitychange', function () { if (document.hidden) ui.pause(); });
+    window.addEventListener('blur', function () { if (!window.SWS_EMBED) ui.pause(); });
     ui.initCrop();
     /* a tap during a reveal, once one has been seen, skips to play; the tap is the skip's alone (the strip never sees
-       it, so it is no jump) */
+       it, so it is no jump). Pause is hidden in the reveal, so no tap lands on it (Q94); the back gesture pauses */
     document.addEventListener('pointerdown', function (e) {
-      if (ui.screen !== 'reveal' || !RV.seen || e.target.closest('#back, #exit')) return;
+      if (ui.screen !== 'reveal' || !RV.seen || e.target.closest('#exit')) return;
       e.stopPropagation();
       RV.marks.skipped = true;
       ui.endReveal();
@@ -4878,7 +4962,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=1').catch(function () {}); } catch (e) { /* silent */ } });
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); SB.ui.installPrompt = e; document.getElementById('install').hidden = false; });
   SB.input.initStrip();
-  window.addEventListener('resize', function () { if (SB.ui.screen === 'play' || SB.ui.screen === 'clear' || SB.ui.screen === 'dead') { SB.render.fit(); draw(); } });
+  window.addEventListener('resize', function () { var s = SB.ui.screen; if (s === 'play' || s === 'pause' || s === 'share' || s === 'clear' || s === 'dead') { SB.render.fit(); draw(); } });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { if (G.state) { SB.render.fit(); draw(); } });
   requestAnimationFrame(frame);
 
@@ -4887,6 +4971,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   window.SB_DEV = {
     build: SB.BUILD,
     screen: function () { return SB.ui.screen; },
+    backWatch: function () { return SB.ui.backWatched(); },   /* the screen the armed back watcher serves, '' for none (Q94) */
     frames: function () { return loop.steps; },
     state: function () { return G.state ? structuredClone(G.state) : null; },
     hash: function () { return G.state ? SB.sim.hash(G.state) : null; },

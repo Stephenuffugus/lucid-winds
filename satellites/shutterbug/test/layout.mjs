@@ -6,6 +6,9 @@
  *   - the top strip is 36 px; the control strip at least 168 and takes the spare height;
  *   - the rocker zones, A and B at least 56 px, the gap at least 16, none over the canvas or the reserved box;
  *   - every other control on the play screen at least 48 px and on top at its centre; the title's exit too;
+ *   - the pause (Stephen's note 3 of 31 Oct, QUESTIONS Q94): Pause at the top strip's left end, 48x48 or more, on top at
+ *     its centre and at its lower edge, which hangs over the room's top left corner, its glyph drawn inside the 36 px top
+ *     strip; the strip holds no control but the rocker, B and A (Title and Share left it for the pause card);
  *   - the reserved box (412, 390, 360; released at 320): the bottom left 120x120, transparent, borderless, textless,
  *     the top hit at its centre and corners;
  *   - the fleet's chip, from the real /music-unlocks.js: on the title its rect is printed and it is on top and clear of
@@ -20,7 +23,7 @@
  *     rocker zones, A and B end 10 px above the bottom, as before the floor;
  *   - under a 48 px inset the phone reports (CDP Emulation.setSafeAreaInsetsOverride) and under ?navpad with env 0, at
  *     the four sizes: the title and Settings scrolled to their end, the crop screen's Retake and Develop, play's drawn
- *     controls, its Title and Share, and every card and sheet end 48 px or more above the bottom; VIEW_ROWS =
+ *     controls, and every card and sheet (the pause card too) end 48 px or more above the bottom; VIEW_ROWS =
  *     clamp(floor((h - 48 - 36 - 168) / 16), 20, 40) (40, 37, 33 and 20);
  *   - ?navpad with env 48: the floor never adds (every rule at its 48 px value, the glyphs 58 px up); with env 60 the
  *     reported inset wins (every rule at 60); an Android app window (the UA, and a display-mode double: headless Chrome
@@ -32,7 +35,8 @@
  *     page reseats it at once), on the title, on Settings and on the title after a room ends 48 px or more up, on top
  *     and clear of the screen's controls, and on the clear card it takes its bottom seat in the reserved box 58 px up; a
  *     song card waiting from another game opens with Play it now and Later 48 px or more up, and its pill too.
- * Watched red by CANVAS_100PCT, A_44PX, RESERVE_FILLED, MIRROR_OVERLAPS_CANVAS, and for the bottom bar NAVPAD_MARK_REMOVED,
+ * Watched red by CANVAS_100PCT, A_44PX, RESERVE_FILLED, MIRROR_OVERLAPS_CANVAS, for the pause TITLE_BACK_IN_STRIP and
+ * PAUSE_OVERHANG_UNDER, and for the bottom bar NAVPAD_MARK_REMOVED,
  * NAVPAD_FLOOR_DROPPED, STRIP_IGNORES_SAB, NAVPAD_BLANKET, NAVPAD_FLOOR_ADDS, NAVPAD_ANY_ANDROID, NAVPAD_ANY_WINDOW,
  * FIT_IGNORES_SAB, NAVPAD_ENV_DROPPED, NAVPAD_NO_FULLSCREEN, NAVPAD_NO_MINIMAL_UI, SCROLLERS_PAD_PAST_BAR, CHIP_LIFT_DROPPED,
  * PILL_LIFT_DROPPED, CARD_LIFT_DROPPED, CHIP_LIFT_ADDS, CHIPSILL_DROPPED and CHIP_SEAT_LATE. */
@@ -139,7 +143,11 @@ try {
           vw: window.innerWidth, vh: window.innerHeight, cssW: cv.getBoundingClientRect().width, bw: cv.width, bh: cv.height,
           rows: window.SB_DEV.level().viewRows, canvas: box(cv), top: box(q('#top')), strip: box(q('#strip')),
           zl: box(q('#rocker .zl')), zr: box(q('#rocker .zr')), gap: box(q('#rocker .gap')), rocker: box(q('#rocker')),
-          A: box(q('#btnA')), B: box(q('#btnB')), back: box(q('#back')), backTop: topIs(q('#back'), q('#back').getBoundingClientRect().left + 24, q('#back').getBoundingClientRect().top + 24),
+          A: box(q('#btnA')), B: box(q('#btnB')), pause: box(q('#pause')), glyph: box(q('#pause i')), pauseShown: getComputedStyle(q('#pause')).visibility,
+          pauseTop: topIs(q('#pause'), q('#pause').getBoundingClientRect().left + 24, q('#pause').getBoundingClientRect().top + 24),
+          pauseLow: topIs(q('#pause'), q('#pause').getBoundingClientRect().left + 24, q('#pause').getBoundingClientRect().bottom - 3),
+          stripCtrls: [...document.querySelectorAll('#strip button, #strip a, #strip input, #strip select, #strip [role=button]')]
+            .filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; }).map(e => e.id || e.tagName),
           res: resShown ? box(res) : null, resClear: resShown ? cs.backgroundColor === 'rgba(0, 0, 0, 0)' && parseFloat(cs.borderTopWidth) === 0 && res.textContent === '' : true,
           resTop: corners.every(([x, y]) => topIs(res, x, y)),
           chipShown: !!chip && getComputedStyle(chip).display !== 'none'
@@ -162,7 +170,14 @@ try {
       }
       R.say(m.gap.w >= 16 - 0.5, tg + ': the rocker\'s gap is ' + m.gap.w.toFixed(0) + ' px (16 or more)');
       R.say(!overlap(m.rocker, m.canvas) && !overlap(m.A, m.B) && !overlap(m.A, m.rocker) && !overlap(m.B, m.rocker), tg + ': the rocker, A and B are disjoint and clear of the canvas');
-      R.say(m.back.w >= 48 && m.back.h >= 48 && m.backTop, tg + ': Title is ' + m.back.w.toFixed(0) + 'x' + m.back.h.toFixed(0) + ' and on top');
+      /* the pause (Q94): a 48x48 hit area at the top strip's left end whose lower 12 px hang over the room's top left
+         corner, the top hit there too (#top over the stage); its glyph inside the 36 px strip; the strip only the controls */
+      const pb = m.pause, overRoom = pb.y + pb.h - (m.top.y + m.top.h);
+      R.say(m.pauseShown === 'visible' && pb.w >= 48 - 0.5 && pb.h >= 48 - 0.5 && pb.x <= 0.5 && Math.abs(pb.y - m.top.y) < 0.5 && m.pauseTop && m.pauseLow,
+        tg + ': Pause is ' + pb.w.toFixed(0) + 'x' + pb.h.toFixed(0) + ' at the top strip\'s left end (x ' + pb.x.toFixed(0) + '), on top at its centre' + (m.pauseTop ? '' : ' (NOT)') + ' and at its lower edge, ' + overRoom.toFixed(0) + ' px over the room\'s corner' + (m.pauseLow ? '' : ' (NOT on top there)'));
+      R.say(m.glyph.y >= m.top.y - 0.5 && m.glyph.y + m.glyph.h <= m.top.y + m.top.h + 0.5 && m.glyph.x >= 0 && m.glyph.w >= 24,
+        tg + ': Pause\'s glyph is drawn inside the 36 px top strip (' + [m.glyph.x, m.glyph.y, m.glyph.w, m.glyph.h].map(v => v.toFixed(0)).join(',') + ', the strip ' + m.top.y.toFixed(0) + ' to ' + (m.top.y + m.top.h).toFixed(0) + ')');
+      R.say(m.stripCtrls.join() === 'btnB,btnA', tg + ': the strip holds no control but the rocker, B and A (' + (m.stripCtrls.join(', ') || 'none') + ')');
       if (w >= 360) {
         R.say(!!m.res && Math.abs(m.res.x) < 0.5 && Math.abs(m.res.w - RES) < 0.5 && Math.abs(m.res.h - RES) < 0.5 && Math.abs(m.res.y + m.res.h - m.vh) < 0.5,
           tg + ': the reserved box is the bottom left 120x120 (' + (m.res ? [m.res.x, m.res.y, m.res.w, m.res.h].map(v => v.toFixed(0)).join(',') : 'missing') + ')');
@@ -272,11 +287,9 @@ try {
         const wantR = wantRowsAt(h, BAR);
         R.say(p.rows === wantR && Math.abs(p.top + p.canvas + p.strip - p.vh) < 1.5 && (p.strip >= CTRL + BAR - 0.5 || p.rows === ROWS_MIN),
           tg + ': VIEW_ROWS ' + p.rows + ' (the formula with the 48 px floor gives ' + wantR + '), the control strip ' + p.strip.toFixed(0) + ' px (216 or more unless the rows sit at their floor), filling the screen');
-        const strip = await low(page, '#back, #share');
-        R.say(strip.length === 2 && strip.every(c => c.gap >= BAR - 0.5), tg + ': the strip\'s Title and Share end ' + strip.map(c => c.id + ' ' + c.gap.toFixed(0)).join(', ') + ' px above the bottom');
         const cards = await page.evaluate(() => {
           const o = [];
-          for (const [id, cls] of [['clear'], ['death'], ['death', 'low'], ['sharesheet'], ['devcard']]) {
+          for (const [id, cls] of [['paused'], ['clear'], ['death'], ['death', 'low'], ['sharesheet'], ['devcard']]) {
             const el = document.getElementById(id); el.classList.add('on'); if (cls) el.classList.add(cls);
             const box = (id === 'devcard' ? document.getElementById('devtap') : el).getBoundingClientRect();
             o.push({ id: id + (cls ? '.' + cls : ''), gap: innerHeight - box.bottom });

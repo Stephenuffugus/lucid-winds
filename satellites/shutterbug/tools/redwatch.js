@@ -19,7 +19,7 @@ const fs = require('node:fs'), path = require('node:path'), { spawnSync } = requ
 
 const GAME = path.join(__dirname, '..');
 const OUT = '/tmp/claude-1000/shutterbug-redwatch';
-const BROWSER = new Set(['boot', 'play', 'input', 'layout', 'reveal', 'capture', 'death', 'sprites', 'make', 'loot', 'audio', 'share', 'save', 'pwa', 'loop', 'onboard']);
+const BROWSER = new Set(['boot', 'play', 'input', 'layout', 'reveal', 'capture', 'death', 'sprites', 'make', 'loot', 'audio', 'share', 'save', 'pwa', 'loop', 'pause', 'onboard']);
 
 const CORE_SIM_OPEN = "<script id=\"core-sim\" data-core>\n(function (SB) { 'use strict';\n";
 /* the whole shell-navpad block as the page holds it (NAVPAD_IN_BODY moves it, whatever its comment says) */

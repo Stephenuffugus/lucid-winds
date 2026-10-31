@@ -149,6 +149,16 @@ export async function tap(page, sel) {
   return c;
 }
 
+/* Title and Share left the strip for the pause card (Stephen's note 3 of 31 Oct, QUESTIONS Q94): a real tap on the room's
+   Pause when the room runs (the card may already be open: a sheet's Close comes back to it), then a real tap on the
+   card's button. `leaveRoom` ends on the title, `openSheet` on the share sheet opened from the card. */
+export async function fromPause(page, sel) {
+  if (await page.evaluate(() => window.SB_DEV.screen()) === 'play') await tap(page, '#pause');
+  return tap(page, sel);
+}
+export const leaveRoom = page => fromPause(page, '#pausetitle');
+export const openSheet = page => fromPause(page, '#pauseshare');
+
 /* A finger put down at (x, y) and left down: returns Puppeteer's TouchHandle (`move`, `end`). */
 export const press = (page, x, y) => page.touchscreen.touchStart(x, y);
 

@@ -53,6 +53,7 @@ const BROWSER_GATES = [
   { name: 'save',     cmd: ['test/save.mjs'],   need: 'SAVE OK' },
   { name: 'pwa',      cmd: ['test/pwa.mjs'],    need: 'PWA OK' },
   { name: 'loop',     cmd: ['test/loop.mjs'],   need: 'LOOP OK' },
+  { name: 'pause',    cmd: ['test/pause.mjs'],  need: 'PAUSE OK' },   /* the pause card and the back gesture (QUESTIONS Q94) */
   { name: 'redwatch-browser', cmd: ['tools/redwatch.js', '--check', '--browser-only'], need: 'REDWATCH OK', slow: true }
 ];
 
