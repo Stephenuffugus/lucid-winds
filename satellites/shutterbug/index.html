@@ -48,6 +48,10 @@ try {
    browser tab, never marked, loses no rows. Everything bottom anchored reads --sab: the title's and Settings' padding,
    the crop bar, the strip and its drawn controls, and #safeprobe, so the fit gives the stage's rows up to it (Q90) */
 :root.navpad { --sab: max(env(safe-area-inset-bottom, 0px), 48px); }
+/* and under the mark the title and Settings end above the bar instead of padding their end past it: at scroll 0 their
+   fold sat behind the buttons (Settings on a 780 tall window after a room, the Level code row at 568), and a control
+   cut at the fold now shows that the screen scrolls (Q91). A phone that reports its inset keeps the padding */
+:root.navpad #title, :root.navpad #settings { bottom: var(--sab); padding-bottom: 16px; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; background: var(--soot); color: var(--paper); overscroll-behavior: none;
@@ -235,6 +239,17 @@ body.playing #sws-music-card, body.playing #sws-music-pill, body.playing #sws-mu
 /* and under the death card, a moment of the room, not a break (the M1 review: at 320x568 the chip, seated on the title,
    sat on the low docked card's Again) */
 body:has(#death.on) #sws-music-card, body:has(#death.on) #sws-music-pill, body:has(#death.on) #sws-music-toast, body:has(#death.on) #sws-music-chip { display: none !important; }
+/* the bottom bar (Q91): the include anchors its chip, pill and song card to its own env(safe-area-inset-bottom), 0 in
+   the installed app's window, so under the mark they rise by what the floor adds to it (never twice: with the bar
+   reported the margin is 0). A dragged chip or card is placed by its top and does not move. Drop this in the change
+   that teaches music-unlocks.js the mark, or the lift doubles */
+:root.navpad #sws-music-chip, :root.navpad #sws-music-pill, :root.navpad #sws-music-card { margin-bottom: calc(var(--sab) - env(safe-area-inset-bottom, 0px)); }
+/* the include still scores a bottom seat in the bar's band, 48 px under where the lift draws the chip, so on the title
+   and Settings (where content can sit over that band) the band reads as taken (a pointer cursor, which the include
+   counts as a control) and the include seats the chip by its own scoring elsewhere; in a room's clear card the lifted
+   seat is the strip's reserved box, free by design. Transparent, and under the phone's buttons on the phone */
+#chipsill { display: none; position: fixed; left: 0; right: 0; bottom: 0; height: var(--sab); cursor: pointer; }
+:root.navpad body:has(#title.on) #chipsill, :root.navpad body:has(#settings.on) #chipsill { display: block; }
 /* the fleet's feedback fab, if the host ever injects it, never sits over a card or a sheet (section 1.6, T1.13) */
 body.sb-modal .lwfb-fab { display: none !important; }
 
@@ -287,6 +302,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <div id="cropbar"><button id="retake" type="button" data-copy="retake"></button><button id="develop" class="big" type="button" data-copy="develop"></button></div>
   <p id="cropsay" aria-live="polite"></p>
 </main>
+<div id="chipsill" aria-hidden="true"></div>
 <input id="fileshoot" type="file" accept="image/*" capture="environment" hidden>
 <input id="filechoose" type="file" accept="image/*" hidden>
 <main id="play" class="screen" aria-label="Play">

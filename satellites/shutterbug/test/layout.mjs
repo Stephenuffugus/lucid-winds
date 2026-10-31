@@ -22,12 +22,19 @@
  *     the four sizes: the title and Settings scrolled to their end, the crop screen's Retake and Develop, play's drawn
  *     controls, its Title and Share, and every card and sheet end 48 px or more above the bottom; VIEW_ROWS =
  *     clamp(floor((h - 48 - 36 - 168) / 16), 20, 40) (40, 37, 33 and 20);
- *   - ?navpad with env 48: the floor never adds (every rule at its 48 px value, the glyphs 58 px up); an Android app
- *     window (the UA, and a display-mode double: headless Chrome opens no app window) is marked; an Android tab and a
- *     desktop app window are not, and keep the env 0 layout.
+ *   - ?navpad with env 48: the floor never adds (every rule at its 48 px value, the glyphs 58 px up); with env 60 the
+ *     reported inset wins (every rule at 60); an Android app window (the UA, and a display-mode double: headless Chrome
+ *     opens no app window) in each display mode the head test names is marked; an Android tab and a desktop app window
+ *     are not, and keep the env 0 layout; on the clear card the fleet's chip in its bottom seat ends 10 px over the
+ *     inset or the floor, as the strip's glyphs do (never 10 over both);
+ *   - under the mark (the reviews of NOTE1, QUESTIONS Q91): the title and Settings as they open, and the title after a
+ *     room, draw no control in the bottom 48 px (they end above the bar); the fleet's chip on the title, on Settings, on
+ *     the clear card and on the title after a room ends 48 px or more up, on top and clear of the screen's controls; a
+ *     song card waiting from another game opens with Play it now and Later 48 px or more up, and its pill too.
  * Watched red by CANVAS_100PCT, A_44PX, RESERVE_FILLED, MIRROR_OVERLAPS_CANVAS, and for the bottom bar NAVPAD_MARK_REMOVED,
- * NAVPAD_FLOOR_DROPPED, STRIP_IGNORES_SAB, NAVPAD_BLANKET, NAVPAD_FLOOR_ADDS, NAVPAD_ANY_ANDROID, NAVPAD_ANY_WINDOW and
- * FIT_IGNORES_SAB. */
+ * NAVPAD_FLOOR_DROPPED, STRIP_IGNORES_SAB, NAVPAD_BLANKET, NAVPAD_FLOOR_ADDS, NAVPAD_ANY_ANDROID, NAVPAD_ANY_WINDOW,
+ * FIT_IGNORES_SAB, NAVPAD_ENV_DROPPED, NAVPAD_NO_FULLSCREEN, NAVPAD_NO_MINIMAL_UI, SCROLLERS_PAD_PAST_BAR, CHIP_LIFT_DROPPED,
+ * PILL_LIFT_DROPPED, CARD_LIFT_DROPPED, CHIP_LIFT_ADDS and CHIPSILL_DROPPED. */
 import { join } from 'node:path';
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME } from './harness.mjs';
 
@@ -44,14 +51,50 @@ const PADS_AT = lift => ({ probe: lift, title: 16 + lift, settings: 16 + lift, c
 const padsAre = (p, lift) => Object.entries(PADS_AT(lift)).every(([k, v]) => Math.abs(p[k] - v) < 0.5);
 const padsText = p => Object.entries(p).map(([k, v]) => k + ' ' + v).join(', ');
 const wantRowsAt = (h, lift) => Math.max(ROWS_MIN, Math.min(ROWS_MAX, Math.floor((h - lift - TOP - CTRL) / CELL)));
-/* page side, installed once per page: every --sab rule's computed bottom padding, and how far each drawn strip control
-   (the rocker's two zones, B's and A's glyphs) ends above the screen bottom */
+/* page side, installed once per page: every --sab rule's computed bottom padding (for the title and Settings, the
+   padding plus the screen's own bottom offset: how far their last control sits above the bottom at the end of a
+   scroll, since under the mark they end above the bar and pad 16, Q91), and how far each drawn strip control (the
+   rocker's two zones, B's and A's glyphs) ends above the screen bottom */
 const installProbes = page => page.evaluate(() => {
   const px = (sel, prop) => parseFloat(getComputedStyle(document.querySelector(sel))[prop]);
-  window.__pads = () => ({ probe: px('#safeprobe', 'paddingBottom'), title: px('#title', 'paddingBottom'), settings: px('#settings', 'paddingBottom'),
+  const end = sel => px(sel, 'paddingBottom') + px(sel, 'bottom');
+  window.__pads = () => ({ probe: px('#safeprobe', 'paddingBottom'), title: end('#title'), settings: end('#settings'),
     crop: px('#crop', 'paddingBottom'), strip: px('#strip', 'paddingBottom'), rocker: px('#rocker', 'paddingBottom'), verb: px('#btnA', 'paddingBottom') });
   window.__glyphGaps = () => ['#rocker .zl', '#rocker .zr', '#btnB .glyph', '#btnA .glyph'].map(s => innerHeight - document.querySelector(s).getBoundingClientRect().bottom);
+  const CTRL = 'button, a, input, select, textarea', nameOf = e => e.id || e.getAttribute('aria-label') || e.tagName;
+  const shown = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };
+  /* the bottom `bar` px of the screen showing, as it stands (no scroll): every control whose visible part (clipped by
+     the screen, a scroller) reaches into them, and every control a thumb there lands on */
+  window.__band = bar => {
+    const H = innerHeight, W = innerWidth, scr = document.querySelector('.screen.on'), sb = scr.getBoundingClientRect(), out = [];
+    for (const e of scr.querySelectorAll(CTRL)) {
+      if (!shown(e)) continue;
+      const r = e.getBoundingClientRect(), t = Math.max(r.top, sb.top), b = Math.min(r.bottom, sb.bottom, H);
+      if (b - t >= 1 && b > H - bar + 0.5) out.push(nameOf(e) + ' drawn ' + t.toFixed(0) + '-' + b.toFixed(0));
+    }
+    for (const fx of [0.05, 0.25, 0.5, 0.75, 0.95]) for (const dy of [2, bar / 2, bar - 2]) {
+      const t = document.elementFromPoint(fx * W, H - dy), c = t && t.closest && t.closest(CTRL);
+      if (c && scr.contains(c)) out.push('a thumb at ' + (fx * W).toFixed(0) + ',' + (H - dy).toFixed(0) + ' lands on ' + nameOf(c));
+    }
+    return out;
+  };
+  /* the fleet's chip: how far it ends above the bottom, its seat, whether a thumb at its centre lands on it, and which
+     of the showing screen's controls it covers */
+  window.__chip = () => {
+    const c = document.getElementById('sws-music-chip');
+    if (!c || getComputedStyle(c).display === 'none') return null;
+    const r = c.getBoundingClientRect(), scr = document.querySelector('.screen.on'), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    const covers = [...scr.querySelectorAll(CTRL)].filter(e => { if (!shown(e)) return false; const b = e.getBoundingClientRect(); return b.left < r.right && r.left < b.right && b.top < r.bottom && r.top < b.bottom; }).map(nameOf);
+    const seat = c.getAttribute('data-corner') || '';
+    return { gap: innerHeight - r.bottom, box: [r.left, r.top, r.width, r.height].map(v => v.toFixed(0)).join(','), bottomSeat: /bottom:/.test(seat), onTop: !!t && (t === c || c.contains(t)), covers };
+  };
 });
+/* the chip once the include has placed it, reseated by the include's own probe hook (what its timer does 1.5 s after
+   the tap that changed the screen) */
+const chipNow = page => page.waitForFunction(() => !!document.getElementById('sws-music-chip'), { timeout: 8000 }).then(() => true).catch(() => false)
+  .then(ok => ok ? page.evaluate(() => { if (window.SWSMusic && window.SWSMusic.reseat) window.SWSMusic.reseat(); return window.__chip(); }) : null);
+const chipText = c => c ? 'ends ' + c.gap.toFixed(0) + ' px above the bottom (' + c.box + (c.bottomSeat ? ', a bottom seat' : '') + ')' + (c.onTop ? '' : ', NOT on top') + (c.covers.length ? ', over ' + c.covers.join(', ') : '') : 'is not shown';
+const chipClear = (c, bar) => !!c && c.gap >= bar - 0.5 && c.onTop && c.covers.length === 0;
 
 try {
   for (const [w, h] of [[412, 915], [390, 844], [360, 780], [320, 568]]) {
