@@ -701,3 +701,37 @@ Plan redline (BUILD-PLAN section 1.6's chip notes, not edited): under the mark t
 Options: (a) as built; (b) the reviews' lift alone (the chip lands on Settings after a room in a Pixel 9 app window); (c) leave the fleet's chrome to the include's own fix (the chip and a waiting song card stay under the bar until then).
 Recommendation: (a).
 Plan assumes: (a).
+
+## Q92. The chest pays Dead pixels only, and M1 shows no sheet (the builder, 31 Oct, NOTE5)
+
+Stephen's note 5, from his Pixel playtest of sb-m1-1 (2026-10-31): "it says a weapon awaits in the dark room. wtfd does that nmean? and i dont think i can use the fuckign thing". His ruling the same night (2026-10-31), picked from a mockup: CHEST "Dead pixels only": the chest just pays its 15 Dead pixels with a small +15 that does not stop the climb; no weapon or Darkroom words anywhere until weapons exist; the scroll offer, which also does nothing yet, stays out until M2 as well. The brief adds: the blueprint sprite, which does nothing in M1, hidden in render only.
+
+Why (lens 4 of `/home/codespace/sb-drafts/playtest-notes-investigation.json`, checked again here): he was right twice. M1 has no weapon and no attack (`hurt()` has no caller in the page), Keep the slip and a LEAVE ran the same branch, and the Darkroom door is placed but never drawn or entered. The slip stopped the climb behind a modal to say a sentence nobody could act on, and the plan's T1.6 had prescribed that sentence. The scroll offer was the same: a second modal for a stat nothing reads (a heart needs 3 scrolls, a room has 1 and every room starts fresh), its lines promising weapons and charms.
+
+As built (NOTE5):
+- The sim is untouched. The shell answers the sim's two sheets itself, at once, on the next word (`ui.sheets`): an open offer with CHOICE A (the biome's stat), an open compare with TAKE, in the order the sim reads them (a TAKE under an open offer is never read and the world would wait for good). This is the bot's model since T1.6. The core blocks are byte for byte the same (sha256 `88a2706f98a5cd05` before and after), so every level, level code, replay and golden is too: no regold.
+- The cost of leaving the sim alone: it still holds the world for the one step each answer rides (16.7 ms at the chest, and at the scroll once its offer opens). The answer's word carries no press edge, so a tap in that step rides the next word, one step late, never lost (it was lost before, under the sheet).
+- The chest sounds its chest voice and a handwritten +15 (`COPY.dpGain`, `+{n}` with DP_CHEST) shows under the corner count for 1.2 s, rising as it fades and standing still under reduced motion (the setting, else the phone's). It takes no tap (it lies over A's hit area), is no modal, and a new room clears it. The count now shows the new room's 0 from its start: it showed the last room's through the next reveal (seen in the shots).
+- The slip and the offer left the page: markup, CSS, COPY (`scrollOffer`, `vigor`, `vigorSays`, `focus`, `focusSays`, `grit`, `gritSays`, `slip`, `slipTake`), listeners, OVERLAYS and MODALS. T1.6's offer (an icon and a name per stat) and the M1 review's sheet rules (one sheet at a time, none over a dead room, cleared by every back and X) last lived at `4ae50f6ce`, for T2.5 and T2.7 to lift with their rows (SLIP_OVER_OFFER, SHEET_OVER_DEATH, SLIP_NOT_MODAL, OFFER_NOT_CLEARED and SLIPOK_LEAVES, retired here).
+- No pick voice for the shell's own pick (the synth stays for M2).
+- The blueprint is drawn nowhere and taken in silence (`R.LOOT_SHOWN`: the pickup voice answers only loot a player sees); its cell is painted the open floor as before. Placement, the level hash and the room's state are unchanged.
+- The lint's rule NOT_YET: no COPY value and no text the markup shows names a weapon, a charm, a blueprint or the Darkroom ("dark room" as two words too). Each M2 task takes its word off the list when its thing lands: T2.1 weapon, T2.4 charm, T2.6 blueprint, T2.9 Darkroom.
+
+Plan redline (BUILD-PLAN T1.6, line 877, not edited here): "the chest (15 DP plus a weapon slip; until M2 the compare screen says `A weapon waits for the Darkroom.`)" reads: the chest pays 15 DP with a +15 by the count; M1 shows no compare and no scroll offer, the shell answering both at once. T2.5 brings the offer back with the stats' effects, T2.7 the compare with the weapons, T2.6 the blueprint's sprite, each with honest words and the lint word it lifts. DESIGN 9.3's "chest 15 + a weapon" stands for M2 (DESIGN is not edited). The core's own comment on the compare ("its weapon slip waits for the Darkroom until M2") is left as it is, so the core stays byte for byte; T2.7 rewrites it.
+
+Seen in the shots and left (his calls below):
+- The +15 sits by the count, across the screen from the chest: about 380 px from it at 412x915 with the chest at the left wall. The chest's voice and the moment tie them; nothing on screen does.
+- The open chest's sprite still draws its Paper slip (a white band between lid and body), and at 16 px the open chest reads as a striped box more than an open one.
+- The scroll is still a pickup that gives nothing a player can see in M1: a pickup blip, then nothing.
+- Every loot cell is painted the room's open Ash (T1.6's fix for the yellow ghost), so a taken scroll leaves a darker square in the light band over its plank, and a hidden blueprint in a light patch reads the same from the start. A render polish for all loot cells (their open neighbour's colour), not made here.
+- This box has none of the count's handwriting fonts, so the shots show it and the +15 in a serif; a phone draws them in its cursive.
+
+His calls (the build runs on each default):
+- Where the +15 shows. Default: under the corner count (as built). Option: beside the chest in the room, following the camera.
+- The scroll in M1. Default: a visible pickup with its blip and nothing after it (the brief). Options: hidden like the blueprint until T2.5; an M1 effect such as a heart for the room (lens 4's A2 (ii), a DESIGN 9.2 change).
+- The open chest's slip. Default: a note for Astra's next session (chest.b without the slip, or with specks). Option: keep it.
+- The name Darkroom when it arrives. Default (lens 4): keep it, shown only once the door is drawn and enterable.
+- "Banked N dead pixels" with nothing to spend them on in M1. Default (lens 4): keep the line; a balance on the title is its own change.
+Options: (a) as built; (b) lens 4's fix A in the sim: the chest sets no compare and an M1 sim offers no scroll (no held step, but a core change and an M1 flag in it, the harness's sheet groups and their mutants parked until M2); (c) copy only, a true sentence on the same modal (still stops the climb).
+Recommendation: (a).
+Plan assumes: (a).

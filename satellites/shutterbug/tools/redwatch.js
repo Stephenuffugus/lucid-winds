@@ -884,6 +884,9 @@ const MUTANTS = [
     gates: [{ gate: 'loot', expect: '412: the +15 takes no tap' }] },
   { name: 'PLUS_CARRIES_OVER', task: 'NOTE5', file: 'page', find: "    document.getElementById('dpplus').classList.remove('on');\n", repl: '',
     gates: [{ gate: 'loot', expect: '412: a new room right after the chest shows no +15' }] },
+  /* seen in the shots: the next room's reveal showed the last room's count */
+  { name: 'DP_COUNT_STALE', task: 'NOTE5', file: 'page', find: '    showDp(G.state.room.dp);   /* the new room', repl: '    /* the new room',
+    gates: [{ gate: 'loot', expect: "412: the new room's count reads its own 0 before its first step" }] },
   /* the answer's own step: no pick voice for a pick the player never made, and no tap lost to the step the sim holds */
   { name: 'PICK_SOUNDS', task: 'NOTE5', file: 'page', find: '      if (ev & EV.PICK) SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax);', repl: "      if (ev & EV.PICK) { au.sfx('pick'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); }",
     gates: [{ gate: 'loot', expect: '412: no pick voice sounds' }] },

@@ -4457,6 +4457,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     SB.input.resetRecording();
     document.getElementById('roomname').textContent = name;
     hearts(G.state.hero.hearts, G.state.hero.heartsMax);
+    showDp(G.state.room.dp);   /* the new room's count from its start: it showed the last room's through the reveal (NOTE5's shots) */
     ui.hideOverlays();
     ui.show('play');
     ui.hideDeath(); ui.hinted.stood = false;
@@ -4473,12 +4474,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
      edges ride the word after it (SB.input.sample), so no tap is lost to it. None over a dead room. T2.5 and T2.7 bring
      the sheets back, each with what it does. The Dead pixel count follows the room */
   var shownDp = -1;
+  function showDp(dp) { if (dp !== shownDp) { shownDp = dp; document.getElementById('dpn').textContent = String(dp); } }
   ui.sheets = function (st) {
     if (!st.room.dead) {
       if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);
       else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);
     }
-    if (st.room.dp !== shownDp) { shownDp = st.room.dp; document.getElementById('dpn').textContent = String(st.room.dp); }
+    showDp(st.room.dp);
   };
   /* what the chest paid, a handwritten +n under the count for about a second (Q92): it takes no tap and holds nothing,
      and a new room clears it (ui.hideOverlays). Reduced motion (the setting, else the phone's) keeps it still */

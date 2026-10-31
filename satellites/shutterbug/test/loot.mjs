@@ -18,11 +18,12 @@
  *     hash.
  * At 412x915 and 360x780. At 320x568 with reduced motion the scroll's offer and the chest's compare open on one step and
  * are answered in the sim's order, one step each, the climb goes on, and the +15 stands still for its second. At 412x915
- * a new room started inside that second shows no +15.
+ * a new room started inside that second shows no +15, and its count reads its own 0 before its first step.
  *
  * Watched red by CHOICE_VIA_SHELL (the shell picks the stat itself: the replay's hash differs), OFFER_HOLDS_WORLD and
  * CHEST_HOLDS_WORLD (an answer dropped), OFFER_SHOWS and SLIP_BACK (the old sheets back), ANSWER_ORDER_SWAPPED, PLUS_MISSING,
- * PLUS_STAYS, PLUS_TAKES_TAPS, PLUS_CARRIES_OVER, PICK_SOUNDS, EDGE_LOST_TO_CHOICE, BLUEPRINT_DRAWN and BLUEPRINT_SOUNDS. */
+ * PLUS_STAYS, PLUS_TAKES_TAPS, PLUS_CARRIES_OVER, DP_COUNT_STALE, PICK_SOUNDS, EDGE_LOST_TO_CHOICE, BLUEPRINT_DRAWN and
+ * BLUEPRINT_SOUNDS. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, pressEl, sleep } from './harness.mjs';
 
 const R = reporter('LOOT');
@@ -183,11 +184,12 @@ try {
     let opened = false;
     for (let k = 0; k < 6 && !opened; k++) opened = !!(await page.evaluate(() => window.__step())).open;
     await finger.end();
-    const was = await page.evaluate(() => document.getElementById('dpplus').classList.contains('on'));
+    const was = await page.evaluate(() => ({ on: document.getElementById('dpplus').classList.contains('on'), dpn: document.getElementById('dpn').textContent }));
     await page.evaluate(() => window.SB_DEV.goto('title'));
     await tap(page, '#sample');
-    const now = await page.evaluate(() => { const el = document.getElementById('dpplus'); return { screen: window.SB_DEV.screen(), on: el.classList.contains('on'), opacity: Number(getComputedStyle(el).opacity) }; });
-    R.say(opened && was && now.screen === 'play' && !now.on && now.opacity < 0.05, '412: a new room right after the chest shows no +15 (the chest\'s +15 ' + (was ? 'up' : 'never up') + ', in the new room ' + (now.on ? 'still up' : 'gone') + ', opacity ' + now.opacity + ')');
+    const now = await page.evaluate(() => { const el = document.getElementById('dpplus'); return { screen: window.SB_DEV.screen(), on: el.classList.contains('on'), opacity: Number(getComputedStyle(el).opacity), dpn: document.getElementById('dpn').textContent, steps: window.SB_DEV.state().frame }; });
+    R.say(opened && was.on && now.screen === 'play' && !now.on && now.opacity < 0.05, '412: a new room right after the chest shows no +15 (the chest\'s +15 ' + (was.on ? 'up' : 'never up') + ', in the new room ' + (now.on ? 'still up' : 'gone') + ', opacity ' + now.opacity + ')');
+    R.say(was.dpn === '15' && now.dpn === '0' && now.steps === 0, '412: the new room\'s count reads its own 0 before its first step (the last room\'s ' + was.dpn + ', now ' + now.dpn + ' at step ' + now.steps + ')');
     R.say(errors.length === 0, '412 new room: no page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
     await page.close();
   }
