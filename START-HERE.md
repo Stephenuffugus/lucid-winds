@@ -1,5 +1,15 @@
 # START HERE
 
+## 📷 31 Oct 21:35 UTC (Opus) SHUTTERBUG NIGHT RUN: the levels rule and weapons step 2 (with Astra's fx) building on two branches; LIVE still sb-m1-3
+Stephen restarted the box at about 21:10 UTC and said "keep building shutterbug". The box stops 12 hours after boot, so about 09:00 UTC on 1 Nov. Everything autosaves and pushes every ten minutes.
+RUNNING (each a Workflow in the lead's session; the scripts are in satellites/shutterbug/docs/lanes/):
+  - **Levels** (`levels-lane-oct31-night.js`): his ruling "Floor becomes the ledge". Branch `sb-levels`, worktree /workspaces/sb-levels, from add-sproing-jumper `b1ab7b002`. Build, one review, fix. Q180 onward.
+  - **Weapons 2 and art** (`weapons2-art-lane-oct31-night.js`): ART2 is Astra's fx, the weapon icons and the hero's extra poses through the cutter. Then weapons step 2: J2 to J8 and the swap card. Branch `sb-weapons-2`, worktree /workspaces/sb-w2. Two reviews (code, player), including step 1, which was never reviewed, then a fix. Q122 onward and Q161 onward.
+  - **The owed redwatch-browser** on add-sproing-jumper `b1ab7b002`, detached under the browser lock from 21:22 UTC. Log: /home/codespace/sb-drafts/sb-m1-3/redwatch-browser-rerun.txt. It ends `EXIT=0` when every browser mutant goes RED.
+AUTOSAVES (four): the main checkout, plus `/home/codespace/sb-drafts/autosave-wt.sh` for /workspaces/sb-levels and /workspaces/sb-w2. Check them with `ps -eo pid,cmd | /usr/bin/grep "[a]utosave"`.
+NEXT (the lead): merge sb-levels, then sb-weapons-2, into add-sproing-jumper. Stamp sb-m1-4 (BUILD sb-m1-4, CACHE shutterbug-v4, sw.js?v=4). Run the full check detached under the lock, then hand Stephen the deploy line. After that, weapons steps 3 and 4 (spec 13.3 and 13.4; no lane written yet).
+IF THE SESSION IS GONE: open the box, run `claude`, say "read START-HERE.md and continue". A lane whose workflow died is rerun from its script in docs/lanes (fix any commit it names first). The branch's own commits say how far it got.
+
 ## 📷 31 Oct 20:20 UTC (Opus) SHUTTERBUG sb-m1-3 IS LIVE: the thumbstick, Pause, the chest, Astra's art, weapons step 1
 LIVE: deploy commit `dbe5274f3` (BUILD sb-m1-3, CACHE shutterbug-v3, sw.js?v=3, tag sb-m1-3), the served set from add-sproing-jumper `9b77ef91e` (served files equal to `751e235bf`). Stephen sent the line and the session ran it. deploy.sh's own lint and fast harness passed on the blob (5795 assertions).
   - hostproof: LIVE on both origins at 20:19:52 UTC, on the first probe. index.html sha256 071dfc16d9f31717af44eaba82d36f648bdc40c9978adeb71994c28fdc730129.

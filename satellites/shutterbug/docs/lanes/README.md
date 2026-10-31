@@ -12,3 +12,9 @@ The box's rules that every lane needs:
 - `/usr/bin/grep`, not the shell function.
 - Commit and push after every step.
 - The box stops 12 hours after boot.
+
+## The 31 Oct night lanes (started 21:30 UTC by the lead, after Stephen restarted the box and said "keep building shutterbug")
+
+- `levels-lane-oct31-night.js` (workflow wf_0e39b077-34e): the levels rule, his "floor becomes the ledge" ruling, on branch `sb-levels` in /workspaces/sb-levels (from add-sproing-jumper b1ab7b002). Build, one review (code, corpus, the crop screen), fix. QUESTIONS Q180 to Q199.
+- `weapons2-art-lane-oct31-night.js` (workflow wf_e6dd0515-5c2): ART2 (Astra's fx, weapon icons and the hero's extra poses through the cutter) then weapons step 2 (J2 to J8 and the swap card, spec 13.2), on branch `sb-weapons-2` in /workspaces/sb-w2 (from b1ab7b002). Two reviews (code, player) over ART2, step 2 and the never reviewed step 1, then one fix. QUESTIONS Q122 to Q139 (weapons) and Q161 to Q179 (art).
+- To rerun one after a box stop: fix any commit the script names, then run it with the Workflow tool (resume works only inside the session that started it). Weapons steps 3 and 4 have no lane yet: write it from the weapons2 script with the spec's sections 13.3 and 13.4.
