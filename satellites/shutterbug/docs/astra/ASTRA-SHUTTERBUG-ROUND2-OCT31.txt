@@ -1,0 +1,61 @@
+SHUTTERBUG, ART ROUND 2 FOR ASTRA (31 Oct 2026)
+
+Thank you for the expanded delivery. 101 PNGs went through our cutter, and the in-room set is now in the game: the hero, the five enemies and their elites, the traps, the loot and the hearts. Round 2 is short. It fixes what the first in-game look showed, fills the weapon list, and draws two controls Stephen ruled on today. Everything else in your contract stays as it was in round 1.
+
+CONTRACT (unchanged from round 1)
+- The same 16 colours as your manifest's palette, exactly those hexes. Alpha 0 or 255 only.
+- Sun (#f2d13f) only in the hero and the beacon. Sun means "the bug and the goal" on screen, so it appears in nothing below.
+- One sprite key per PNG strip, frames left to right, all the same size. Plain, distinct frame names: letters, digits and underscores, starting with a letter.
+- A source grid per strip ("." for transparent, one character per palette index), and a manifest entry per file: file, sprite, w, h, frames, names, fps, anchor, sha256, notes.
+- One zip, with manifest.json at its root.
+
+1. WEAPON ICONS (fix): icon_weapons, 24x24 per frame, 27 frames, in this order with these frame names
+   The game's weapons are the 24 of DESIGN 9.1. Five of the round 1 glyphs are aliases the game does not have: cable_release, prism_hop, spare_spool, focus_ring and pocket_timer. Halo is a jump weapon, not a charm. Keep your glyph for every name below that you already drew. Draw the five that are missing.
+   J1 Boomerang, J2 Spark Trail, J3 Shield Kick, J4 Flashbulb, J5 Twin Darts, J6 Halo, J7 Shutter Snap,
+   J8 Skyhook (NEW: utility, the jump goes 1 cell higher, no damage),
+   D1 Anvil Boots, D2 Icicle, D3 Pogo Spear, D4 Tremor, D5 Ember Stomp, D6 Wide Lens, D7 Pile Driver, D8 Flashpan,
+   C1 Lantern, C2 Magnet, C3 Second Wind,
+   C4 Thick Skin (NEW: the first hit each room does nothing),
+   C5 Tripod (NEW: wall slide at one fifth speed, wall jump 5 cells across),
+   C6 Light Meter,
+   C7 Darkroom Discount (NEW: the shop costs less),
+   C8 Fixer (NEW: carried blueprints survive one death),
+   then the three slot glyphs: jump, dive, charm.
+   Frame names: J1 to J8, D1 to D8, C1 to C8, jump, dive, charm.
+   The icons show at 16 px in the top strip and at 32 px on the pickup card, so each must read at 16 px.
+
+2. WEAPON EFFECTS (fill the gaps): 32x32, 4 frames, 12 fps, anchor cell
+   Your fx sheets already cover every jump and dive weapon except Skyhook, and the Lantern and the Light Meter. Add one strip per effect:
+   - fx_skyhook: a small hook flourish under the bug at takeoff (frames skyhook_0 to skyhook_3)
+   - fx_magnet: loot motes streaming toward the bug (magnet_0 to magnet_3)
+   - fx_second_wind: the burst when a free death is spent and the bug stands back up (second_wind_0 to second_wind_3)
+   - fx_thick_skin: a shell flash when the first hit of a room is absorbed (thick_skin_0 to thick_skin_3)
+   - fx_tripod: slow dust while clinging to a wall (tripod_0 to tripod_3)
+   Darkroom Discount and Fixer need no in-room effect.
+
+3. THE THUMBSTICK (new; it replaces ctrl_rocker, which Stephen retired today)
+   The rocker's two buttons are gone. A floating stick now appears wherever the left thumb lands on the bottom strip, including the very bottom left corner. Sliding left or right runs; up and down do nothing. It is drawn at about 2.9x on a phone (the pad 116 CSS px, the knob 52 CSS px), so make every line at least 2 px.
+   - stick_pad, 40x40, frames idle and active: a round ring with a transparent centre. The active frame is a little stronger. It must not read as a button or a box.
+   - stick_knob, 18x18, frames neutral, left and right: a round knob. The left and right frames carry one chevron pointing the push direction. No up or down marks, ever.
+   - stick_hint, 72x12, one frame named line: one chevron at each end pointing outward, with the middle left clear for the game's own words ("slide to run"). It shows on the strip before the first touch and must look like a hint, not a control.
+   Colours: Ink and Paper, with Glare for highlights. No Sun.
+
+4. THE PAUSE CONTROL (new)
+   - pause_glyph, 16x16, frames normal and pressed: two upright bars, Ink, readable on Paper. It sits at the top strip's left end.
+   The pause card itself (Resume, Share this room, Title) uses your card_plate skin as it is. Nothing new is needed for it.
+
+5. READABILITY FIXES FROM THE FIRST LOOK IN THE GAME (same keys and sizes as round 1)
+   a. Elites (moth_elite, icicle_elite, jelly_elite, crawler_elite, spark_elite): the Magenta spots, rims and sigils disappear when the elite crosses a Magenta part of the photo. Give each Magenta mark a one pixel Ink keyline so it reads on any backdrop.
+   b. speck: the 6 px diamond is the smallest thing on screen. Make it 8 to 10 px inside the 16x16 frame. Keep Amber, and keep the Glare glint on frame b only.
+   c. crusher: a field three rows deep reads as columns of T shapes. Make stacked crusher cells read as one ram: a continuous shaft, with the teeth on the bottom cell only. Keep the three phase frames a, b and c.
+   d. hero (OPTIONAL, Stephen's call, since he approved the round rear hero): on a phone the body reads small, about 8 px. If you like, send a side by side variant of idle0 and run0 that fills more of the 12x16 box with the same silhouette idea, as hero_bold.png. The approved hero stays the default.
+
+6. CROP SCREEN MARKS (low priority)
+   The game will mark why a photo cannot become a level yet: the floor fills the bottom, or the ceiling fills the top.
+   - crop_floor_band, 8x8, one frame named tile: a quiet diagonal hatch, Ink at partial coverage, tiling seamlessly.
+   - crop_ceiling_band, 8x8, one frame named tile: the same hatch in the other direction.
+
+NOT NEEDED
+The boss, the Darkroom door, the daily rooms, the screens, the cards and the font are already delivered and wait for their systems. The viewfinder stays excluded. The five hero extras (dash, hurt, squash, stretch, dropin) and the four skins are received; the work to take them in is on our side.
+
+DELIVERY: one zip, named shutterbug-assets-round2.zip, with manifest.json, the PNG strips, their source grids, and a short notes file listing anything you chose differently and why.
