@@ -708,13 +708,32 @@ group('H-pipe-5', 'landmarks: at most 3, each at least 8 cells, by size, disjoin
   if (big.length) t.same(Array.from(big[0].bbox), [g.x0, g.y0, g.x1, g.y1], 'one-giant-landmark: its bounding box is the drawing\'s');
 });
 
-group('H-pipe-6', 'spawn is standable and on the standing row above the floor', t => {
+/* DESIGN 6.6 as Stephen ruled it on 31 Oct (Q180, "Floor becomes the ledge"), read here from the sentence, not from
+   the page: the centre of the widest open run on row h-2; only when that row holds no open cell, the lowest row holding
+   an open over solid run of at least 3 (the top of the floor or furniture band), the spawn the centre of its widest such
+   run; every tie to the leftmost run. -1 when no row has one */
+function spawnWant(lv) {
+  const w = lv.w, h = lv.h, S = lv.solid;
+  const widest = ok => { let best = [-1, 0], x = 0; while (x < w) { if (!ok(x)) { x++; continue; } let e = x; while (e + 1 < w && ok(e + 1)) e++; if (e - x + 1 > best[1]) best = [x, e - x + 1]; x = e + 1; } return best; };
+  const r0 = widest(x => !S[(h - 2) * w + x]);
+  if (r0[0] >= 0) return (h - 2) * w + r0[0] + ((r0[1] - 1) >> 1);
+  for (let y = h - 3; y >= 1; y--) { const r = widest(x => !S[y * w + x] && S[(y + 1) * w + x]); if (r[1] >= 3) return y * w + r[0] + ((r[1] - 1) >> 1); }
+  return -1;
+}
+group('H-pipe-6', 'spawn is standable and on the standing row above the floor, or, only where that row is solid wall to wall, on the floor band\'s top (Q180)', t => {
+  /* re-authored for Q180 (Stephen's ruling 31 Oct): this group pinned the spawn to row h-2, the rule the floor band
+     fallback changes where (and only where) row h-2 has no open cell; gradient-v mode 0 and three Negative rooms now
+     stand on their band's top. The rooms with an open cell on row h-2 are held to the old rule, cell for cell */
+  let risen = 0;
   for (const f of FIXTURES) for (const mode of MODES) {
     const lv = buildA(f, mode);
     if (lv.needsCrop) continue;
-    t.eq(Math.floor(lv.spawn / lv.w), lv.h - 2, f.name + ' mode ' + mode + ': spawn row');
+    const want = spawnWant(lv);
+    if (Math.floor(want / lv.w) !== lv.h - 2) risen++;
+    t.eq(lv.spawn, want, f.name + ' mode ' + mode + ': spawn (row ' + Math.floor(lv.spawn / lv.w) + ', want row ' + Math.floor(want / lv.w) + ')');
     t.ok(standableIn(lv, lv.spawn), f.name + ' mode ' + mode + ': spawn is standable');
   }
+  t.ok(risen >= 1, 'the floor band rule is seen on the corpus: ' + risen + ' rooms stand on their band\'s top (gradient-v mode 0 among them)');
   const lv = buildA(fixture('sample-room'), 0);
   t.eq(lv.spawn, 46 * 24 + 15, 'the sample room spawns at (15, 46), the centre of the floor\'s widest open run (x 8..23)');
 });
@@ -2591,6 +2610,100 @@ group('H-rep-1', 'the corpus result table: every fixture builds or returns needs
   const lampD = Math.max(...[2, 3, 4].map(x => d[2 * 24 + x])), farD = Math.max(...[9, 10, 11].map(x => d[2 * 24 + x]));
   t.ok(lampD >= 0 && farD > lampD && farD - lampD <= SB.TUNING.EXIT_LIGHT_SLACK, 'the slack lab: the plank (' + farD + ' edges) lies within the slack of the lamp (' + lampD + ')');
   t.ok(Array.from(sl.beacon.cells).includes(sl.exit), 'the slack lab: the lamp is the exit inside EXIT_LIGHT_SLACK, though the plank is farther (exit (' + sl.exit % 24 + ', ' + Math.floor(sl.exit / 24) + '))');
+});
+
+/* ================================================================ the floor and ceiling fallbacks (Q180) */
+/* Stephen's ruling, 31 Oct, picked from options: "Floor becomes the ledge (Recommended)". Only where the build was
+   needsCrop: (a) a solid standing row raises the spawn to the floor band's top; (b) a failed repair under a ceiling band
+   (rows from row 1, each at least 75% solid) builds once more with the exit window under the band; (c) a fallback room
+   that climbs under 24 rows is an honest needsCrop. A refusal names its cause (floor, ceiling, dark) for the crop
+   screen's copy. The labs are the sample room with a band painted on, which is how a phone's default box sees a room */
+const SAMPLE_ROWS = () => fixture('sample-room').fx.record.rows;
+const sampleWith = paint => { const r = SAMPLE_ROWS().slice(); paint(r); return SB.record.fromJSON({ v: 1, w: 24, h: 48, mode: 0, focal: null, rows: r, rows2: null }); };
+const rowOf = (lv, c) => Math.floor(c / lv.w);
+const refusedAs = lv => lv.needsCrop ? ' (needsCrop, ' + lv.cause + ': ' + lv.detail + ')' : '';
+/* the test's own ceiling band: the first row from row 1 down under 75% solid */
+const bandEnd = lv => { for (let y = 1; y < lv.h - 1; y++) { let n = 0; for (let x = 0; x < lv.w; x++) n += lv.solid[y * lv.w + x]; if (4 * n < 3 * lv.w) return y; } return lv.h - 1; };
+group('H-lvl-1', 'the floor band: the sample room on a dark floor builds, its spawn on the band\'s top, its exit the lamp, a climb of at least 24 rows', t => {
+  for (const [ch, name, k] of [['7', 'Walnut', 2], ['2', 'Slate', 2], ['3', 'Pewter', 4], ['7', 'Walnut', 6]]) {
+    const rec = sampleWith(r => { for (let y = 48 - k; y < 48; y++) r[y] = ch.repeat(24); });
+    const a = SB.pipeline.build(rec, { stage: 'A' }), lv = SB.pipeline.build(rec, {}), tag = 'the sample room on ' + k + ' rows of ' + name;
+    let open46 = 0; for (let x = 0; x < 24; x++) if (!a.solid[46 * 24 + x]) open46++;
+    t.eq(open46, 0, tag + ': row 46 is solid wall to wall (the case the fallback is for)');
+    t.ok(!lv.needsCrop, tag + ' builds' + refusedAs(lv));
+    if (lv.needsCrop) continue;
+    t.eq(lv.spawn, spawnWant(a), tag + ': the spawn is the centre of the band top\'s widest open over solid run (row ' + rowOf(lv, lv.spawn) + ')');
+    t.ok(standableIn(lv, lv.spawn), tag + ': the spawn is standable');
+    t.ok(Array.from(lv.beacon.cells).includes(lv.exit), tag + ': the exit is the lamp (exit row ' + rowOf(lv, lv.exit) + ')');
+    t.ok(rowOf(lv, lv.spawn) - rowOf(lv, lv.exit) >= 24, tag + ': the climb is ' + (rowOf(lv, lv.spawn) - rowOf(lv, lv.exit)) + ' rows (at least 24)');
+  }
+});
+group('H-lvl-2', 'the ceiling band: the sample room under a dark ceiling builds once more with its exit under the band', t => {
+  for (const [ch, name, k] of [['2', 'Slate', 2], ['1', 'Soot', 3], ['7', 'Walnut', 4]]) {
+    const rec = sampleWith(r => { for (let y = 0; y < k; y++) r[y] = ch.repeat(24); });
+    const a = SB.pipeline.build(rec, { stage: 'A' }), lv = SB.pipeline.build(rec, {}), tag = 'the sample room under ' + k + ' rows of ' + name, end = bandEnd(a);
+    t.ok(end > 1, tag + ': row 1 is at least 75% solid (the band ends at row ' + end + ')');
+    t.ok(!lv.needsCrop, tag + ' builds' + refusedAs(lv));
+    if (lv.needsCrop) continue;
+    t.ok(rowOf(lv, lv.exit) >= end && rowOf(lv, lv.exit) < end + SB.TUNING.EXIT_ROWS, tag + ': the exit (row ' + rowOf(lv, lv.exit) + ') is in the ' + SB.TUNING.EXIT_ROWS + ' rows under the band (from row ' + end + ')');
+    t.eq(rowOf(lv, lv.spawn), 46, tag + ': the spawn is still on the standing row');
+  }
+});
+/* every corpus room that built before Q180, its levelHash as the shipped core (b1ab7b002, sb-m1-3) made it, built
+   plain and as a first room: [plain, firstRoom]. Written once from sb-m1-3's page and never regenerated */
+const PINNED_PRE_Q180 = {
+  'sample-room@0': ['398abc93d279c699', '398abc93d279c699'], 'all-light@0': ['9a9cc17e4084974c', '939718eb160c6c99'],
+  'biome-attic@0': ['e6162f38b71d40c6', '0feb0f667860b448'], 'biome-deep@0': ['dab9528691823ad8', '3ce7dac7d58a674d'],
+  'biome-ember@0': ['baecadd31a978df5', '7dce90830d56d765'], 'biome-frost@0': ['b19a79377c711bf1', 'b985a2e1ede54403'],
+  'biome-green@0': ['961602ae09016024', 'dcb164da90854048'], 'blank-wall@0': ['851ffa384836099a', 'cf65e0f5db2bb9c7'],
+  'bright-door@0': ['6a97a2e003e8782e', '63280740404f220e'], 'gradient-h@0': ['c56252d2b7bf54fc', '8829a9cf2c375e89'],
+  'gradient-h@1': ['af071449865d4933', '7a00bf9f0ae0c2d5'], 'ladder-stack@0': ['ecc21ea4ab5cdf9a', '55d9509cfd0ad63a'],
+  'noise-s1@0': ['a90370ccb42667f6', 'd5a42171a9baf8d3'], 'noise-s2@0': ['d04e44f838e9236e', 'd04e44f838e9236e'],
+  'one-giant-landmark@0': ['2111a029ceaae987', '6898383bfacec1c5'],
+  'pillars@0': ['34408e541b910dc2', '392a0e65216873a3'], 'saturated-blobs@0': ['e281fc74b6295b5a', 'e578d09a4f957c28'],
+  'shelves-a@0': ['6648f09e07ddab7c', '3c1866c7f4c8bb6d'], 'shelves-b@0': ['a2d1f5444721c756', '9732bb0bbb5d4a49'],
+  'stripes-h@0': ['b302cc8dddd2fb0b', 'b302cc8dddd2fb0b'], 'stripes-v@0': ['8a5ba90eefcdba64', '8a5ba90eefcdba64'],
+  'tight-gap@0': ['ae460a531a647db5', '0386a26de1c5a723'], 'trap-pattern@0': ['0209100208f07160', 'a48268897f910023']
+};
+group('H-lvl-3', 'no room that built before the fallbacks changed: the 23 built corpus rooms\' levelHashes, plain and first room, pinned from sb-m1-3', t => {
+  let n = 0;
+  for (const k of Object.keys(PINNED_PRE_Q180)) {
+    const [name, mode] = k.split('@'), f = fixture(name);
+    t.ok(!!f, k + ': the fixture exists');
+    if (!f) continue;
+    [{}, { firstRoom: true }].forEach((o, j) => {
+      const lv = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode: +mode })), o);
+      t.eq(lv.needsCrop ? 'needsCrop ' + lv.detail : SB.pipeline.levelHash(lv), PINNED_PRE_Q180[k][j], k + (j ? ' as a first room' : '') + ': the levelHash pinned from sb-m1-3');
+      n++;
+    });
+  }
+  t.eq(Object.keys(PINNED_PRE_Q180).length, 23, 'the table holds the 23 rooms that built on sb-m1-3');
+  t.eq(n, 46, 'every pinned room was built both ways');
+});
+group('H-lvl-4', 'the guard: a fallback room climbing under 24 rows is an honest needsCrop; all-dark stays needsCrop', t => {
+  const ad = buildFx(fixture('all-dark'), 0);
+  t.ok(ad.needsCrop === true, 'all-dark: stays needsCrop through the 24 row guard' + (ad.needsCrop ? ' (' + ad.detail + ')' : ' (it built a ' + (rowOf(ad, ad.spawn) - rowOf(ad, ad.exit)) + ' row room)'));
+  t.ok(/^the climb left is \d+ rows, under 24/.test(ad.detail || ''), 'all-dark: the guard is the rule that refused it (' + ad.detail + ')');
+  const tall = SB.pipeline.build(sampleWith(r => { for (let y = 22; y < 48; y++) r[y] = '7'.repeat(24); }), {});
+  t.ok(tall.needsCrop === true && /^the climb left is \d+ rows, under 24/.test(tall.detail || ''), 'the sample room on 26 rows of Walnut: the band\'s top leaves under 24 rows, needsCrop by the guard' + refusedAs(tall));
+  /* the guard holds only fallback rooms: a room that stood on row 46 with its exit in the top rows is never measured */
+  t.ok(!buildFx(fixture('sample-room'), 0).needsCrop, 'the sample room, no fallback, builds as before');
+});
+group('H-lvl-5', 'a refusal names its cause for the crop screen (floor, ceiling, dark, else none) and carries its grid and bands', t => {
+  const tall = SB.pipeline.build(sampleWith(r => { for (let y = 22; y < 48; y++) r[y] = '7'.repeat(24); }), {});
+  t.eq(tall.cause, 'floor', 'the sample room on 26 rows of Walnut: the refusal names the floor' + refusedAs(tall));
+  const ta = SB.pipeline.build(sampleWith(r => { for (let y = 22; y < 48; y++) r[y] = '7'.repeat(24); }), { stage: 'A' });
+  t.ok(tall.band && tall.band.floor === rowOf(ta, ta.spawn) + 1, 'the floor refusal\'s band starts under the risen spawn (band ' + JSON.stringify(tall.band) + ', spawn row ' + rowOf(ta, ta.spawn) + ')');
+  const cl = SB.pipeline.build(sampleWith(r => { for (let y = 0; y < 26; y++) r[y] = '2'.repeat(24); }), {});
+  t.eq(cl.cause, 'ceiling', 'the sample room under 26 rows of Slate: the refusal names the ceiling' + refusedAs(cl));
+  t.ok(cl.band && cl.band.ceiling > 20, 'the ceiling refusal\'s band ends below row 20 (band ' + JSON.stringify(cl.band) + ')');
+  const ad = buildFx(fixture('all-dark'), 0);
+  t.eq(ad.cause, 'dark', 'all-dark: the refusal names its cause dark' + refusedAs(ad));
+  const cb = buildFx(fixture('checkerboard'), 0);
+  t.ok(cb.needsCrop && cb.cause === null, 'checkerboard: a refusal no fallback touched names no cause (the crop keeps its one old message)' + refusedAs(cb));
+  /* a stage A refusal (no row anywhere to stand on) carries its grid, so the crop overlay never goes blank */
+  const al = buildA(fixture('all-light'), 1);
+  t.ok(al.needsCrop && al.grid && al.grid.w === 24 && al.grid.solid.length === 24 * 48 && al.grid.plat.length === 24 * 48, 'all-light Negative, stage A: the refusal carries its 24x48 grid' + refusedAs(al));
 });
 
 group('H-rep-1b', 'the exit rule at its boundaries (the third review): the light inside EXIT_LIGHT_SLACK and just past it; never below the top EXIT_ROWS', t => {

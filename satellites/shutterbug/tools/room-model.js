@@ -112,25 +112,28 @@ function png(img, out) {
   fs.writeFileSync(out, Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ih), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]));
 }
 
-if (opt('png') !== null) {
-  const k = +opt('png'), out = ARGS[ARGS.indexOf('--png') + 2];
-  png(paint(k), out); console.log('scene ' + k + ' (' + FLOORS[k % FLOORS.length].name + ') written to ' + out);
-  process.exit(0);
+module.exports = { paint, captureOf, recordOf, png, FLOORS, COUNT };
+if (require.main === module) {
+  if (opt('png') !== null) {
+    const k = +opt('png'), out = ARGS[ARGS.indexOf('--png') + 2];
+    png(paint(k), out); console.log('scene ' + k + ' (' + FLOORS[k % FLOORS.length].name + ') written to ' + out);
+    process.exit(0);
+  }
+  const SB = loadCoreFull(PAGE).SB, CAP = captureOf(PAGE), rows = [];
+  for (let k = 0; k < COUNT; k++) {
+    const img = paint(k), crop = CAP.fit(img.w, img.h), lv = SB.pipeline.build(recordOf(SB, img, crop), { firstRoom: true });
+    rows.push({ k, floor: img.floor, built: !lv.needsCrop, cause: lv.needsCrop ? (lv.cause || 'none') : '', detail: lv.needsCrop ? lv.detail : '', tabs: lv.needsCrop ? -1 : lv.repair.tabs,
+      spawnRow: lv.needsCrop ? -1 : Math.floor(lv.spawn / lv.w), exitRow: lv.needsCrop ? -1 : Math.floor(lv.exit / lv.w), crop });
+  }
+  if (ARGS.includes('--json')) { for (const r of rows) console.log(JSON.stringify(r)); process.exit(0); }
+  console.log('room model, ' + COUNT + ' scenes at ' + BW + 'x' + BH + ', the default box ' + JSON.stringify(rows[0].crop) + ', page ' + path.relative(process.cwd(), PAGE));
+  for (const F of FLOORS) {
+    const of = rows.filter(r => r.floor === F.name), b = of.filter(r => r.built).length;
+    console.log('  ' + F.name.padEnd(13) + String(b).padStart(3) + ' of ' + of.length + ' build');
+  }
+  const b = rows.filter(r => r.built).length;
+  console.log('  ' + 'all'.padEnd(13) + String(b).padStart(3) + ' of ' + rows.length + ' build at the default box');
+  const why = {};
+  for (const r of rows.filter(x => !x.built)) { const key = r.cause + ': ' + r.detail.replace(/\d+/g, 'N'); why[key] = (why[key] || 0) + 1; }
+  for (const [k, n] of Object.entries(why).sort((a, b) => b[1] - a[1])) console.log('  refused ' + String(n).padStart(3) + '  ' + k);
 }
-const SB = loadCoreFull(PAGE).SB, CAP = captureOf(PAGE), rows = [];
-for (let k = 0; k < COUNT; k++) {
-  const img = paint(k), crop = CAP.fit(img.w, img.h), lv = SB.pipeline.build(recordOf(SB, img, crop), { firstRoom: true });
-  rows.push({ k, floor: img.floor, built: !lv.needsCrop, cause: lv.needsCrop ? (lv.cause || 'none') : '', detail: lv.needsCrop ? lv.detail : '', tabs: lv.needsCrop ? -1 : lv.repair.tabs,
-    spawnRow: lv.needsCrop ? -1 : Math.floor(lv.spawn / lv.w), exitRow: lv.needsCrop ? -1 : Math.floor(lv.exit / lv.w), crop });
-}
-if (ARGS.includes('--json')) { for (const r of rows) console.log(JSON.stringify(r)); process.exit(0); }
-console.log('room model, ' + COUNT + ' scenes at ' + BW + 'x' + BH + ', the default box ' + JSON.stringify(rows[0].crop) + ', page ' + path.relative(process.cwd(), PAGE));
-for (const F of FLOORS) {
-  const of = rows.filter(r => r.floor === F.name), b = of.filter(r => r.built).length;
-  console.log('  ' + F.name.padEnd(13) + String(b).padStart(3) + ' of ' + of.length + ' build');
-}
-const b = rows.filter(r => r.built).length;
-console.log('  ' + 'all'.padEnd(13) + String(b).padStart(3) + ' of ' + rows.length + ' build at the default box');
-const why = {};
-for (const r of rows.filter(x => !x.built)) { const key = r.cause + ': ' + r.detail.replace(/\d+/g, 'N'); why[key] = (why[key] || 0) + 1; }
-for (const [k, n] of Object.entries(why).sort((a, b) => b[1] - a[1])) console.log('  refused ' + String(n).padStart(3) + '  ' + k);

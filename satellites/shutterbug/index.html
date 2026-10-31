@@ -4743,6 +4743,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     retake: 'Retake',
     develop: 'Develop',
     tighter: 'Try a tighter crop',
+    tighterFloor: 'The floor fills the bottom of the box. Make the box smaller and lift it off the floor.',
+    tighterCeiling: 'The top of the box is all ceiling. Lower the box.',
+    tighterDark: 'Too dark to find a floor. Try a brighter photo.',
     cropHint: 'Drag and pinch to frame the room. Tap a shape to hide the chest there.',
     badPhoto: 'That photo did not open. Try another.',
     photoRoom: 'Your room',
@@ -4995,14 +4998,20 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (var i = 0; i < W * H; i++) pal[i] = SB.palette.nearest(rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2]);
     return SB.record.fromJSON({ v: SB.record.V, w: W, h: H, mode: 0, focal: CR.focal >= 0 ? CR.focal : null, rows: SB.record.palToRows(pal, W, H), rows2: null });
   }
+  /* a refusal says its cause (Q180, Stephen's ruling 31 Oct): the floor band, the ceiling band, a dark photo; a refusal
+     with no named cause keeps the one message every refusal had before */
+  var CROP_SAYS = { floor: 'tighterFloor', ceiling: 'tighterCeiling', dark: 'tighterDark' };
   function rebuild(full) {
     if (!CR.src) return;
     var t0 = performance.now(), rec = recordOfCrop(), a = SB.pipeline.build(rec, { stage: 'A' }), lv = full ? SB.pipeline.build(rec, { firstRoom: !ui.firstRoomDone }) : null;
     CR.builds++; CR.ms = performance.now() - t0; CR.lastRec = rec; CR.lastA = a; CR.full = !!full; CR.last = full ? lv : null;
-    drawOverlay(full && !lv.needsCrop ? lv : a, full && !lv.needsCrop);
-    document.getElementById('tighter').hidden = !(full && lv.needsCrop);
-    document.getElementById('crop').classList.toggle('stuck', !!(full && lv.needsCrop));   /* Develop looks unable while it is */
-    if (PERF) cropSay(CR.ms.toFixed(1) + ' ms');
+    var no = !!(full && lv.needsCrop), say = document.getElementById('tighter'), key = no && CROP_SAYS[lv.cause] || 'tighter';
+    CR.marked = drawOverlay(full && !no ? lv : a, full && !no, no ? lv : null);
+    say.setAttribute('data-copy', key); say.textContent = ui.COPY[key];
+    say.hidden = !no;
+    document.getElementById('crop').classList.toggle('stuck', no);   /* Develop looks unable while it is */
+    /* the dev readout (?perf=1): the build's time, and on a refusal its cause and the rule that failed (lv.detail) */
+    if (PERF) cropSay(CR.ms.toFixed(1) + ' ms' + (no ? '; ' + (lv.cause || 'no cause') + '; ' + lv.detail : ''));
   }
   /* while the box moves: at most one build per 100 ms, the last one after the moves stop */
   function schedule() {
@@ -5011,18 +5020,31 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (!CR.timer) CR.timer = setTimeout(function () { CR.timer = 0; CR.lastAt = performance.now(); rebuild(false); }, 100 - (now - CR.lastAt));
   }
   /* the overlay, one 4 px block per cell: solids shaded, platform tops Glare, tabs Film, the exit ringed in Sun, the
-     focal ringed in Paper */
-  function drawOverlay(lv, withExit) {
-    var cv = document.getElementById('overlay'), c = cv.getContext('2d'), W = lv.w, H = lv.h, P = SB.palette, i, x, y;
+     focal ringed in Paper. A refusal (no) marks the band that refused it in Brick under a Sun edge (Q180): the floor
+     band from its top row down, or the ceiling band from row 1; a reading with no level draws the grid its refusal
+     carries, never a blank box. Returns the rows marked */
+  function drawOverlay(lv, withExit, no) {
+    var cv = document.getElementById('overlay'), c = cv.getContext('2d'), g = lv.w ? lv : lv.grid, P = SB.palette, i, x, y, marked = 0;
     var hx = function (k) { return '#' + P.HEX[k]; };
     c.clearRect(0, 0, cv.width, cv.height);
+    if (!g) return 0;
+    var W = g.w, H = g.h;
     for (i = 0; i < W * H; i++) {
       x = (i % W) * 4; y = Math.floor(i / W) * 4;
-      if (lv.solid[i]) { c.fillStyle = 'rgba(11,10,15,0.55)'; c.fillRect(x, y, 4, 4); }
-      else if (lv.plat[i]) { c.fillStyle = lv.tab && lv.tab[i] ? hx(P.I.FILM) : hx(P.I.GLARE); c.fillRect(x, y, 4, 1); }
+      if (g.solid[i]) { c.fillStyle = 'rgba(11,10,15,0.55)'; c.fillRect(x, y, 4, 4); }
+      else if (g.plat[i]) { c.fillStyle = lv.tab && lv.tab[i] ? hx(P.I.FILM) : hx(P.I.GLARE); c.fillRect(x, y, 4, 1); }
+    }
+    var b = no && no.band, y0 = -1, y1 = -1;
+    if (b && no.cause === 'floor' && b.floor > 0) { y0 = b.floor; y1 = H; }
+    else if (b && no.cause === 'ceiling' && b.ceiling > 1) { y0 = 1; y1 = b.ceiling; }
+    if (y0 >= 0) {
+      c.fillStyle = 'rgba(' + P.RGB[P.I.BRICK].join(',') + ',0.5)'; c.fillRect(0, y0 * 4, W * 4, (y1 - y0) * 4);
+      c.fillStyle = hx(P.I.SUN); c.fillRect(0, (no.cause === 'floor' ? y0 : y1) * 4 - 1, W * 4, 2);
+      marked = y1 - y0;
     }
     if (withExit && lv.exit >= 0) { x = (lv.exit % W) * 4; y = Math.floor(lv.exit / W) * 4; c.strokeStyle = hx(P.I.SUN); c.lineWidth = 1; c.strokeRect(x - 1.5, y - 1.5, 7, 7); }
     if (CR.focal >= 0) { x = (CR.focal % W) * 4 + 2; y = Math.floor(CR.focal / W) * 4 + 2; c.strokeStyle = hx(P.I.PAPER); c.beginPath(); c.arc(x, y, 5, 0, 2 * Math.PI); c.stroke(); }
+    return marked;
   }
   /* the stage's pointers: one drags the box, two pinch it; a short still tap inside the box is the focal tap */
   var ptrs = {}, gest = null;
@@ -5644,9 +5666,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     photoAlive: function () { return SB.ui.photoAlive(); },
     tabs: function () { return G.level ? G.level.repair.tabs : -1; },
     overlay: function () {
-      var CR = SB.ui.crop, a = CR.lastA, n = 0;
-      if (a && a.solid) for (var i = 0; i < a.solid.length; i++) n += a.solid[i];
-      return { builds: CR.builds, decodes: CR.decodes, solids: n, full: CR.full, needsCrop: CR.last ? !!CR.last.needsCrop : null, ms: CR.ms, focal: CR.focal, crop: CR.crop };
+      var CR = SB.ui.crop, a = CR.lastA, n = 0, g = a && (a.solid ? a : a.grid), no = CR.last && CR.last.needsCrop ? CR.last : null;
+      if (g) for (var i = 0; i < g.solid.length; i++) n += g.solid[i];
+      return { builds: CR.builds, decodes: CR.decodes, solids: n, full: CR.full, needsCrop: CR.last ? !!CR.last.needsCrop : null, ms: CR.ms, focal: CR.focal, crop: CR.crop,
+        cause: no ? no.cause : null, detail: no ? no.detail : null, band: no ? no.band : null, marked: CR.marked || 0, says: document.getElementById('tighter').textContent,
+        spawnRow: CR.last && !CR.last.needsCrop ? Math.floor(CR.last.spawn / CR.last.w) : -1, exitRow: CR.last && !CR.last.needsCrop ? Math.floor(CR.last.exit / CR.last.w) : -1 };
     },
     audioMade: function () { return SB.audio.made; },
     audioPlayed: function () { return Object.assign({}, SB.audio.played); },
