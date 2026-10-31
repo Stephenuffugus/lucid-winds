@@ -1208,7 +1208,7 @@ const MUTANTS = [
   { name: "CUT_FX_UNKNOWN", task: 'ART2', file: "astra", find: "            elif FX_RE.match(key):\n                warnings.append(", repl: "            elif False and FX_RE.match(key):\n                warnings.append(",
     gates: [{ gate: "astra", expect: "an effect strip new to the page (fx_shockwave on a copy without it) is taken as named clips" }] },
   { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 44\n", repl: "MAX_SPRITES = 48\n",
-    gates: [{ gate: "astra", expect: "is refused at the cap of 44" }] },
+    gates: [{ gate: "astra", expect: "a cut that would leave" }] },
 ];
 
 /* ---------------------------------------------------------------- run */
