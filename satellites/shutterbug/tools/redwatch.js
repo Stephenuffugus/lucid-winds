@@ -757,7 +757,7 @@ const MUTANTS = [
   { name: 'RECENT_UNFILTERED', task: 'M1R', file: 'page', find: 'd.recent = d.recent.filter(function (r) { try { return !!fromJSON(r); } catch (e) { return false; } }).slice(0, 20);', repl: 'd.recent = d.recent.slice(0, 20);',
     gates: [{ gate: 'harness', only: 'H-save-1', expect: 'recent keeps 20 valid records' }] },
   { name: 'SYNTH_THROWS', task: 'M1R', file: 'page', find: "    chest: function (t) { tone('triangle', 523, 523", repl: "    chest: function (t) { undefinedSynth(); tone('triangle', 523, 523",
-    gates: [{ gate: 'audio', expect: 'each of the 11 sounds the shell asks for schedules one voice' }] },
+    gates: [{ gate: 'audio', expect: 'each of the 16 sounds the shell asks for schedules one voice' }] },   /* re anchored at W1: the five weapon voices joined the list */
   { name: 'SOUND_TOGGLE_MISWIRED', task: 'M1R', file: 'page', find: "setBool('setsound', 'sound');", repl: "setBool('setsound', 'music');",
     gates: [{ gate: 'save', expect: 'mirror on, sound off and reduced motion On' }] },
   { name: 'MOTION_IGNORED', task: 'M1R', file: 'page', find: "SB.save.doc.settings.reducedMotion = this.value === 'os' ? null : this.value === 'on'; SB.save.commit();", repl: 'SB.save.commit();',
