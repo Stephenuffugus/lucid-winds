@@ -1,6 +1,7 @@
 /* Browser gate `audio` (BUILD-PLAN.md T1.7): after a REAL tap the AudioContext runs; a jump schedules exactly one voice
  * and a dive landing two (the dive and the land), counted through SB_DEV.audioEvents(); ten asks of one name inside
- * 100 ms schedule four; each of the eleven sounds the shell asks for schedules one voice (the M1 review); with the sound
+ * 100 ms schedule four; each of the sixteen sounds the shell asks for schedules one voice (the M1 review; Weapons v1's
+ * five: throw, shock, zap, pop, equip); with the sound
  * setting off nothing is scheduled (the setting's own call, SB.audio.setSound; the save gate drives Settings' real
  * toggle); the page holds no <audio> element and asks for no audio file.
  *
@@ -47,7 +48,8 @@ try {
   /* every sound the shell asks for schedules one voice (the M1 review: a synth that throws is swallowed by A.play, and
      only jump, dive, land and pickup had ever been heard); the names typed here, one ask each */
   await new Promise(r => setTimeout(r, 250));
-  const NAMES = ['jump', 'walljump', 'dive', 'land', 'hit', 'beacon', 'pickup', 'chest', 'pick', 'shutter', 'tick'];
+  const NAMES = ['jump', 'walljump', 'dive', 'land', 'hit', 'beacon', 'pickup', 'chest', 'pick', 'shutter', 'tick',
+    'throw', 'shock', 'zap', 'pop', 'equip'];   /* Weapons v1 step 1's five (docs/WEAPONS-V1.md 9) */
   const each = await page.evaluate(names => names.map(n => { const n0 = window.SB_DEV.audioEvents().length; window.SB.audio.play(n); const ev = window.SB_DEV.audioEvents().slice(n0); return ev.length === 1 && ev[0].name === n ? '' : n; }).filter(Boolean), NAMES);
   R.say(each.length === 0, 'each of the ' + NAMES.length + ' sounds the shell asks for schedules one voice' + (each.length ? ' (silent: ' + each.join(', ') + ')' : ''));
 

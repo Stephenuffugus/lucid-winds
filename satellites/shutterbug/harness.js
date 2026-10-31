@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 5543;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct) */
+const ASSERT_FLOOR = 5742;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -210,13 +210,27 @@ group('H-ns-1', 'K recomputed in the test from TUNING, and the known integers of
      terms, stays within FROST_SLIDE_CELLS cells */
   want.SLICK_DECEL = (() => { for (let d = 1; ; d++) { let sum = 0; for (let k = 1; T.RUN * 256 - k * d > 0; k++) sum += T.RUN * 256 - k * d; if (sum <= T.FROST_SLIDE_CELLS * G.CELL * 256) return d; } })();
   for (const k of Object.keys(T)) if (k.endsWith('_S') && typeof T[k] === 'number') want[k.slice(0, -2) + '_F'] = Math.round(T[k] * 60);
+  /* the weapons' rows (docs/WEAPONS-V1.md 2.3), written here from the spec's table: reach, velocities (whole 1/256 px),
+     sizes, and every <name>S as steps; HP_Q as it is */
+  want.HP_Q = T.HP_Q;
+  const up = n => n.replace(/[A-Z]/g, c => '_' + c).toUpperCase();
+  for (const [id, row] of Object.entries(T.WEAPONS)) for (const [n, v] of Object.entries(row)) {
+    if (typeof v !== 'number') continue;
+    if (n === 'cells' || n === 'radius') want[id + '_REACH'] = v * G.CELL * 256;
+    else if (['speed', 'front', 'bounceV'].includes(n)) { t.ok(Number.isInteger(v * 256), 'WEAPONS.' + id + '.' + n + ' * 256 is an integer'); want[id + '_V'] = v * 256; }
+    else if (['jumpV', 'deepJumpV', 'push'].includes(n)) { t.ok(Number.isInteger(v * 256), 'WEAPONS.' + id + '.' + n + ' * 256 is an integer'); want[id + '_' + up(n)] = v * 256; }
+    else if (['box', 'boxW', 'boxH'].includes(n)) want[id + '_' + n.toUpperCase()] = v * 256;
+    else if (/[a-z]S$/.test(n)) want[id + '_' + up(n.slice(0, -1)) + '_F'] = Math.round(v * 60);
+  }
   for (const k of Object.keys(want)) t.eq(K[k], want[k], 'K.' + k + ' recomputed from TUNING');
   /* the known answers, hard coded from the plan: the code's derivation checked against the plan, not itself */
   const KNOWN = { SUB: 256, CELL_SUB: 4096, RUN: 672, DECEL: 168, G: 128, JUMP_V: 2200, CUT_V: 1300, TERM: 3072, WALL_V: 1950,
     WALL_PUSH: 672, DASH_V: 1536, DEEP_JUMP_V: 2432, DEEP_FALL_G: 102, DEEP_TERM: 2458, MOTH_V: 68, CRAWLER_V: 137,
     WORLD_W: 384, WORLD_H: 768, HIT_IFRAMES_F: 60, ICICLE_RESPAWN_F: 360, SPARK_HOP_F: 90, TRAP_PERIOD_F: 90,
     JUMP_SLOT_CD_F: 36, BOSS_TELEGRAPH_F: 48, BOSS_INTRO_F: 120, KNOCK_V: 1024, KNOCK_FRAMES: 8,
-    JELLY_V: 68, ELITE_SUB: 6144, ELITE_PX: 24, SPARK_AIR_F: 12, SLICK_DECEL: 51 };
+    JELLY_V: 68, ELITE_SUB: 6144, ELITE_PX: 24, SPARK_AIR_F: 12, SLICK_DECEL: 51,
+    /* Weapons v1 step 1 (docs/WEAPONS-V1.md 2.3) */
+    HP_Q: 4, J1_REACH: 20480, J1_V: 1280, J1_LIFE_F: 72, J1_BOX: 3072, D1_REACH: 12288, D1_V: 1536, D1_LINGER_F: 6, HURT_FLASH_F: 9, POP_F: 12, DIVE_SLOT_CD_F: 0 };
   for (const k of Object.keys(KNOWN)) t.eq(K[k], KNOWN[k], 'K.' + k + ' known answer');
   for (const k of Object.keys(K)) if (typeof K[k] === 'number') t.ok(Number.isInteger(K[k]), 'K.' + k + ' is an integer (' + K[k] + ')');
   t.same(SB.derive(T, G), K, 'derive is pure: a second call equals K');
@@ -1812,18 +1826,20 @@ function randomScript(seed, n) {
   return out;
 }
 
-group('H-sim-6', 'determinism: the same script twice, a cross realm clone in lock step, two fresh contexts', t => {
+group('H-sim-6', 'determinism: the same script twice, a cross realm clone in lock step, two fresh contexts (unarmed and with J1 and D1)', t => {
   const f = fixture('sample-room'), lv = buildFx(f, 0), words = randomScript(606, 3600);
-  const run = (SBx, level) => { const s = SBx.sim.create(level), hs = []; words.forEach((w, k) => { SBx.sim.step(s, w); if ((k + 1) % 100 === 0) hs.push(SBx.sim.hash(s)); }); return hs; };
-  const a = run(SB, lv), b = run(SB, lv);
-  t.same(b, a, 'the same 3600 step script from two fresh states: equal hashes at every 100th step');
-  const s1 = SB.sim.create(lv), s2 = SB.sim.attach(structuredClone(s1), lv);
-  let first = -1;
-  for (let k = 0; k < 3600 && first < 0; k++) { SB.sim.step(s1, words[k]); SB.sim.step(s2, words[k]); if (SB.sim.hash(s1) !== SB.sim.hash(s2)) first = k; }
-  t.eq(first, -1, 'a structured clone from the harness realm, stepped alongside, hashes equal every step (first divergence)');
-  const other = loadCoreFull(PAGE).SB;
-  const lv2 = other.pipeline.build(other.record.fromJSON(f.fx.record), {});
-  t.same(run(other, lv2), a, 'a second fresh context gives equal hashes at every 100th step');
+  for (const [tag, opts] of [['unarmed', {}], ['armed J1 D1', { loadout: ['J1', 'D1'] }]]) {
+    const run = (SBx, level) => { const s = SBx.sim.create(level, opts), hs = []; words.forEach((w, k) => { SBx.sim.step(s, w); if ((k + 1) % 100 === 0) hs.push(SBx.sim.hash(s)); }); return hs; };
+    const a = run(SB, lv), b = run(SB, lv);
+    t.same(b, a, tag + ': the same 3600 step script from two fresh states: equal hashes at every 100th step');
+    const s1 = SB.sim.create(lv, opts), s2 = SB.sim.attach(structuredClone(s1), lv);
+    let first = -1;
+    for (let k = 0; k < 3600 && first < 0; k++) { SB.sim.step(s1, words[k]); SB.sim.step(s2, words[k]); if (SB.sim.hash(s1) !== SB.sim.hash(s2)) first = k; }
+    t.eq(first, -1, tag + ': a structured clone from the harness realm, stepped alongside, hashes equal every step (first divergence)');
+    const other = loadCoreFull(PAGE).SB;
+    const lv2 = other.pipeline.build(other.record.fromJSON(f.fx.record), {});
+    t.same(run(other, lv2), a, tag + ': a second fresh context gives equal hashes at every 100th step');
+  }
 });
 
 group('H-sim-7', 'coverage: every declared field moves the hash; the keys are exactly the declared ones, after 600 steps too', t => {
@@ -1863,11 +1879,11 @@ group('H-sim-7', 'coverage: every declared field moves the hash; the keys are ex
 });
 
 group('H-sim-8', 'the integer invariant: no float in the state after 3600 random steps; a planted float is named', t => {
-  for (const name of ['sample-room', 'shelves-a', 'one-giant-landmark']) {
-    const lv = buildFx(fixture(name), 0), s = SB.sim.create(lv), words = randomScript(SB.record.seedOf(lv.rec), 3600);
+  for (const name of ['sample-room', 'shelves-a', 'one-giant-landmark']) for (const lo of [null, ['J1', 'D1']]) {
+    const lv = buildFx(fixture(name), 0), s = SB.sim.create(lv, lo ? { loadout: lo } : {}), words = randomScript(SB.record.seedOf(lv.rec), 3600);
     let threw = null;
     for (let k = 0; k < words.length && !threw; k++) { SB.sim.step(s, words[k]); try { SB.sim.serialize(s); } catch (e) { threw = 'step ' + k + ': ' + e.message; } }
-    t.ok(!threw, name + ': 3600 random steps, serialize never met a float' + (threw ? ' (' + threw + ')' : ''));
+    t.ok(!threw, name + (lo ? ' armed J1 D1' : '') + ': 3600 random steps, serialize never met a float' + (threw ? ' (' + threw + ')' : ''));
   }
   const s = SB.sim.create(buildFx(fixture('sample-room'), 0));
   s.hero.vx = 1.5;
@@ -3807,12 +3823,12 @@ function replayLevel(j, core) {
   return S.pipeline.build(S.record.fromJSON(Object.assign({}, f.fx.record, { mode: j.mode })), j.biome === null ? {} : { biome: j.biome });
 }
 function runReplay(j, core, marks) {
-  const S = core || SB, lv = replayLevel(j, S), s = S.sim.create(lv, { hearts: j.opts && j.opts.hearts, immortal: !!(j.opts && j.opts.immortal) }), words = S.sim.rle.decode(j.runs), at = {};
+  const S = core || SB, lv = replayLevel(j, S), s = S.sim.create(lv, { hearts: j.opts && j.opts.hearts, immortal: !!(j.opts && j.opts.immortal), loadout: (j.opts && j.opts.loadout) || undefined }), words = S.sim.rle.decode(j.runs), at = {};
   for (let k = 0; k < words.length; k++) { S.sim.step(s, words[k]); if (marks && marks.includes(k + 1)) at[k + 1] = S.sim.hash(s); }
   return { s, hash: S.sim.hash(s), at, words, cleared: s.room.cleared };
 }
 const hex = h => String(h);   /* sim.hash is a 16 hex digit string (section 2.5: two FNV passes) */
-function recordReplay(name, mode, biome, why) {
+function recordReplay(name, mode, biome, why, loadout) {
   const f = fixture(name);
   if (!f) throw new Error('--record: no fixture named ' + name);
   const lv = biome === null ? buildFx(f, mode) : SB.pipeline.build(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode })), { biome });
@@ -3820,15 +3836,17 @@ function recordReplay(name, mode, biome, why) {
   const r = BOT.walk(lv, new Map(), { tries: 0, found: 0, memo: 0, memoMiss: 0 });
   if (!r.ok) throw new Error('--record: the bot does not clear ' + name + ' (' + (r.why || 'a miss at edge ' + (r.miss && r.miss.i)) + ')');
   const words = r.words.concat(Array(REPLAY_PAD).fill(0));
-  const j = { v: 1, fixture: name, mode, biome, opts: { hearts: SB.TUNING.HEARTS_BASE, loadout: null, immortal: true }, steps: words.length, runs: SB.sim.rle.encode(words) };
+  const j = { v: 1, fixture: name, mode, biome, opts: { hearts: SB.TUNING.HEARTS_BASE, loadout: loadout || null, immortal: true }, steps: words.length, runs: SB.sim.rle.encode(words) };
   j.golden = { hash: hex(runReplay(j).hash), at: words.length, why: why };
   return j;
 }
 if (opt('record')) {
   const name = opt('record'), mode = Number(opt('mode') || 0), biome = opt('biome') === null ? null : Number(opt('biome'));
-  const j = recordReplay(name, mode, biome, opt('why') || 'recorded ' + new Date().toISOString().slice(0, 10) + ' by --record');
+  /* --loadout J1,D1 (docs/WEAPONS-V1.md 3.6): the walk replayed armed, its file name + '-armed' unless --as names it */
+  const loadout = opt('loadout') ? opt('loadout').split(',').map(x => x.trim() || null) : null;
+  const j = recordReplay(name, mode, biome, opt('why') || 'recorded ' + new Date().toISOString().slice(0, 10) + ' by --record', loadout);
   fs.mkdirSync(REPLAY_DIR, { recursive: true });
-  const file = path.join(REPLAY_DIR, name + (mode ? '-mode' + mode : '') + (biome !== null ? '-biome' + biome : '') + '.json');
+  const file = path.join(REPLAY_DIR, (opt('as') || name + (mode ? '-mode' + mode : '') + (biome !== null ? '-biome' + biome : '') + (loadout ? '-armed' : '')) + '.json');
   fs.writeFileSync(file, JSON.stringify(j) + '\n');
   console.log('recorded ' + file + ': ' + j.steps + ' steps (' + j.runs.length + ' runs), golden ' + j.golden.hash);
   process.exit(0);
@@ -3854,7 +3872,7 @@ const replays = () => fs.existsSync(REPLAY_DIR) ? fs.readdirSync(REPLAY_DIR).fil
 
 group('H-bot-5', 'the goldens: each replay in fixtures/replays clears its room and ends on its golden hash', t => {
   const list = replays();
-  t.ok(['sample-room.json', 'shelves-a.json'].every(n => list.some(r => r.name === n)), 'the sample room and shelves-a have replays (' + list.map(r => r.name).join(', ') + ')');
+  t.ok(['sample-room.json', 'shelves-a.json', 'sample-room-armed.json'].every(n => list.some(r => r.name === n)), 'the sample room and shelves-a have replays, and the sample room an armed one (' + list.map(r => r.name).join(', ') + ')');
   for (const { name, j } of list) {
     const r = runReplay(j);
     t.ok(r.cleared === 1, name + ': its ' + j.steps + ' steps clear the room (else --record it again)');
@@ -3874,6 +3892,12 @@ group('H-bot-3', 'determinism: the sample room\'s replay hashes alike twice and 
   t.same(marks.map(m => c.at[m]), marks.map(m => a.at[m]), 'and alike with the harness\'s own context');
   /* after the clear the state stands still but for the frame: a hash that ignored the frame would repeat here */
   t.ok(a.cleared === 1 && a.at[j.j.steps - 60] !== a.at[j.j.steps], 'past the clear, 60 quiet steps apart, the hashes differ (' + hex(a.at[j.j.steps - 60]) + ', ' + hex(a.at[j.j.steps]) + '): the frame is in the hash');
+  /* the armed golden too (Weapons v1): two fresh contexts alike, and alike with this one */
+  const ar = replays().find(r => r.name === 'sample-room-armed.json');
+  if (!t.ok(!!ar && !!(ar.j.opts && ar.j.opts.loadout), 'the sample room\'s armed replay exists and carries its loadout (' + (ar ? JSON.stringify(ar.j.opts.loadout) : 'none') + ')')) return;
+  const am = [300, 900, ar.j.steps], x = runReplay(ar.j, loadCoreFull(PAGE).SB, am), y = runReplay(ar.j, loadCoreFull(PAGE).SB, am), z = runReplay(ar.j, SB, am);
+  t.same(am.map(m => x.at[m]), am.map(m => y.at[m]), 'the armed replay hashes alike in two fresh contexts at ' + am.join(', '));
+  t.same(am.map(m => z.at[m]), am.map(m => x.at[m]), 'and alike with the harness\'s own context');
 });
 
 group('H-bot-4', 'the bit flip: one input bit changed at frame 100 changes the final hash', t => {
@@ -4110,19 +4134,40 @@ group('H-sim-21', 'the step\'s event word (s.ev, what the sounds read): each eve
      the state shows its change (a loot taken, the chest opened, the offer opened, a sheet answered: the scroll's pick
      and the slip's TAKE), and nowhere else */
   { const { s } = lootLab({ specks: [46 * 24 + 5], scroll: 46 * 24 + 8, chest: 46 * 24 + 14 });
-    const want = { PICKUP: [], CHEST: [], OFFER: [], PICK: [] }, got = { PICKUP: [], CHEST: [], OFFER: [], PICK: [] };
+    const want = { PICKUP: [], CHEST: [], OFFER: [], PICK: [], EQUIP: [] }, got = { PICKUP: [], CHEST: [], OFFER: [], PICK: [], EQUIP: [] };
     for (let k = 0; k < 240; k++) {
-      const taken0 = s.loot.filter(l => l.taken).length, open0 = s.chest.open, offer0 = !!s.scrollsOffered, compare0 = !!s.room.compare;
+      const taken0 = s.loot.filter(l => l.taken).length, open0 = s.chest.open, offer0 = !!s.scrollsOffered, compare0 = !!s.room.compare, slots0 = s.hero.slots.join();
       const e = log(s, s.scrollsOffered ? SB.sim.CHOICE.A * IN.CHOICE : s.room.compare ? SB.sim.CHOICE.TAKE * IN.CHOICE : IN.R);
       if (s.loot.filter(l => l.taken).length > taken0) want.PICKUP.push(k);
       if (s.chest.open && !open0) want.CHEST.push(k);
       if (!!s.scrollsOffered && !offer0) want.OFFER.push(k);
       if ((offer0 && !s.scrollsOffered) || (compare0 && !s.room.compare)) want.PICK.push(k);
+      if (s.hero.slots.join() !== slots0) want.EQUIP.push(k);
       for (const name of Object.keys(got)) if (e & EV[name]) got[name].push(k);
     }
     const shown = o => Object.keys(o).map(n => n + ' ' + (o[n].join(' ') || 'never')).join(', ');
-    t.ok(want.PICKUP.length === 2 && want.CHEST.length === 1 && want.OFFER.length === 1 && want.PICK.length === 2 && JSON.stringify(got) === JSON.stringify(want),
-      'the loot sets PICKUP, CHEST, OFFER and PICK each on exactly its step (' + shown(got) + '; the state changed at ' + shown(want) + ')');
+    t.ok(want.PICKUP.length === 2 && want.CHEST.length === 1 && want.OFFER.length === 1 && want.PICK.length === 1 && want.EQUIP.length === 1 && want.EQUIP[0] === want.CHEST[0] && JSON.stringify(got) === JSON.stringify(want),
+      'the loot sets PICKUP, CHEST, OFFER, PICK (the scroll\'s, once) and EQUIP (the chest\'s weapon, on the chest\'s step) each on exactly its step (' + shown(got) + '; the state changed at ' + shown(want) + ')');
+  }
+  /* the weapons' events (docs/WEAPONS-V1.md 3.5), each on exactly the step the state shows it: FIRE_J when a boomerang
+     is thrown, FIRE_D when a shock is sent, HURT when an enemy loses HP, KILL when one reaches 0; a frozen jelly two
+     cells ahead (two hits) and a frozen moth 3 cells right of a dive's landing (one) */
+  { const lv = LABS.room(['', FLOOR]); lv.features = { pocket: null, enemies: [{ kind: SB.features.JELLY, idx: 46 * 24 + 6 }, { kind: SB.features.MOTH, idx: 46 * 24 + 2 }], trap: null, specks: [], scroll: null, blueprint: null, chest: null };
+    const s = SB.sim.create(lv, { at: { x: 4 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: ['J1', 'D1'], immortal: true }); s.enemies.forEach(e => { e.frozen = 1 << 20; }); s.hero.ground = 1;
+    const names = ['FIRE_J', 'FIRE_D', 'HURT', 'KILL'], want = {}, got = {}; names.forEach(n => { want[n] = []; got[n] = []; });
+    for (let k = 0; k < 200; k++) {
+      const hp0 = s.enemies.map(e => e.hp);
+      const w = k === 0 ? IN.A | IN.A_TAP : k === 60 ? IN.A | IN.A_TAP : k > 60 && k < 66 ? IN.A | IN.R : k === 70 ? IN.B | IN.B_TAP : 0;
+      const e = log(s, w);
+      if (s.proj.some(p => p.live && p.kind === 1 && p.age === 1)) want.FIRE_J.push(k);
+      if (s.proj.some(p => p.live && p.kind === 2 && p.age === 1)) want.FIRE_D.push(k);
+      if (s.enemies.some((en, i) => en.hp < hp0[i])) want.HURT.push(k);
+      if (s.enemies.some((en, i) => en.hp === 0 && hp0[i] > 0)) want.KILL.push(k);
+      for (const n of names) if (e & EV[n]) got[n].push(k);
+    }
+    const shown = o => Object.keys(o).map(n => n + ' ' + (o[n].join(' ') || 'never')).join(', ');
+    t.ok(want.FIRE_J.length === 2 && want.FIRE_D.length === 1 && want.HURT.length >= 3 && want.KILL.length === 2 && JSON.stringify(got) === JSON.stringify(want),
+      'the weapons set FIRE_J, FIRE_D, HURT and KILL each on exactly its step (' + shown(got) + '; the state changed at ' + shown(want) + ')');
   }
   /* the shared step (QUESTIONS Q71): a moth reaching the hero on its last heart on the very step it touches the exit
      (found by the fourth review: a moth homed at (11, 45), the rocker right from step 19, both on step 62) */
@@ -4212,9 +4257,9 @@ group('H-en-9', 'the elites (Q51): ELITE_HP_MULT times their kind\'s HP, ELITE_S
   const bad = []; let elites = 0;
   for (const { tag, lv } of featBuilds()) {
     const s = SB.sim.create(lv, {});
-    lv.features.enemies.forEach((e, i) => { const en = s.enemies[i]; if (!e.elite) return; elites++; const off = (CS - K.ELITE_SUB) >> 1; if (en.hp !== SB.sim.hpOf(e.kind, 1) || en.x !== (e.idx % 24) * CS + off || en.y !== Math.floor(e.idx / 24) * CS + off) bad.push(tag + ' ' + e.idx); });
+    lv.features.enemies.forEach((e, i) => { const en = s.enemies[i]; if (!e.elite) return; elites++; const off = (CS - K.ELITE_SUB) >> 1; if (en.hp !== SB.sim.hpOf(e.kind, 1) * SB.TUNING.HP_Q || en.x !== (e.idx % 24) * CS + off || en.y !== Math.floor(e.idx / 24) * CS + off) bad.push(tag + ' ' + e.idx); });
   }
-  t.ok(elites > 0 && bad.length === 0, elites + ' elites over the corpus start with their HP and a ' + K.ELITE_PX + ' px box centred on their cell' + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
+  t.ok(elites > 0 && bad.length === 0, elites + ' elites over the corpus start with their HP (in quarters) and a ' + K.ELITE_PX + ' px box centred on their cell' + (bad.length ? ': ' + bad.slice(0, 3).join('; ') : ''));
   /* the pocket's elite: the Walnut seam lab of H-en-1b (its one enemy is the pocket's elite, a moth) */
   const pc = {};
   for (let y = 38; y <= 46; y++) pc[y] = '44' + ([39, 42, 45].includes(y) ? '77777777' : '11111111') + '4'.repeat(14);
@@ -4246,8 +4291,8 @@ group('H-en-9', 'the elites (Q51): ELITE_HP_MULT times their kind\'s HP, ELITE_S
     if (ce.stunned !== 0 || turns < 2 || hi - lo !== span) parked.push(tag + ' (' + turns + ' turns, x ' + (lo / 256) + ' to ' + (hi / 256) + ' px of a ' + (span / 256) + ' px span)');
   }
   t.ok(crawlers > 0 && parked.length === 0, crawlers + ' crawler elites over the corpus patrol their hollow wall to wall, woken with the hero far off' + (parked.length ? ': ' + parked.slice(0, 3).join('; ') : ''));
-  const dp0 = s.room.dp; SB.sim.hurt(s, 0, 99);
-  const lab = enemyLab(['', FLOOR], F.MOTH, 30 * 24 + 4), dp1 = lab.s.room.dp; SB.sim.hurt(lab.s, 0, 1);
+  const dp0 = s.room.dp; SB.sim.hurt(s, 0, 99 * K.HP_Q);
+  const lab = enemyLab(['', FLOOR], F.MOTH, 30 * 24 + 4), dp1 = lab.s.room.dp; SB.sim.hurt(lab.s, 0, K.HP_Q);
   t.ok(e.hp === 0 && s.room.dp - dp0 === T.DP_ELITE && lab.s.room.dp - dp1 === T.DP_FODDER && !SB.sim.liveEnemy(lab.s.enemies[0]), 'a kill banks DP_ELITE for an elite (' + (s.room.dp - dp0) + ') and DP_FODDER for fodder (' + (lab.s.room.dp - dp1) + ')');
   /* held (Q81): a frozen moth on the hero neither moves nor hits until its timer runs out */
   const hl = enemyLab(['', FLOOR], F.MOTH, 46 * 24 + 4, { hc: 4, mortal: true }), he = hl.s.enemies[0], hx0 = he.x; he.frozen = 30;
@@ -4307,8 +4352,8 @@ group('H-loot-1', 'Dead pixels: a walk over three specks and the chest banks the
   const st = { v: s.rng }; let want = 0; for (let k = 0; k < 3; k++) want += T.DP_SPECK[0] + stepRef(st) % (T.DP_SPECK[1] - T.DP_SPECK[0] + 1);
   want += T.DP_CHEST;
   let k = 0, compare = false;
-  for (; k < 240 && !(s.chest.open && !s.room.compare); k++) { SB.sim.step(s, s.room.compare ? SB.sim.CHOICE.TAKE * IN.CHOICE : IN.R); if (s.room.compare) compare = true; }
-  t.ok(s.room.dp === want && s.loot.every(l => l.taken) && compare, 'the walk banks ' + s.room.dp + ' DP, the test sums ' + want + ' (three rolls of ' + T.DP_SPECK.join(' to ') + ' and DP_CHEST ' + T.DP_CHEST + '); the chest\'s compare opened and closed');
+  for (; k < 240 && !s.chest.open; k++) { SB.sim.step(s, IN.R); if (s.room.compare) compare = true; }
+  t.ok(s.room.dp === want && s.loot.every(l => l.taken) && !compare && s.hero.slots.some(c => c > 0), 'the walk banks ' + s.room.dp + ' DP, the test sums ' + want + ' (three rolls of ' + T.DP_SPECK.join(' to ') + ' and DP_CHEST ' + T.DP_CHEST + '); the chest equipped a weapon (slots ' + s.hero.slots.join(',') + ') and opened no compare');
 });
 group('H-loot-2', 'a heart grows every SCROLLS_PER_HEART scrolls (at 3, 6 and 9) and the hearts cap at HEARTS_CAP', t => {
   const T = SB.TUNING, { s } = lootLab(), seen = [];
@@ -4342,6 +4387,322 @@ group('H-sim-19', 'a room with a scroll pick replays from its recorded script (t
   for (const w of words) { SB.sim.step(cut, w & ~(15 * IN.CHOICE)); if (cut.scrollsOffered && at < 0) at = cut.hero.x; else if (at >= 0 && cut.hero.x !== at) still = false; }
   t.ok(words.some(w => (w >> 6) & 15) && live.hero.scrolls === 1 && SB.sim.hash(replay) === SB.sim.hash(live), 'the recorded script carries its choice word and replays to the live hash (' + SB.sim.hash(live) + ')');
   t.ok(!!cut.scrollsOffered && cut.hero.scrolls === 0 && still && at >= 0, 'without the choice word the replay stalls at the offer, the hero held at x ' + (at / 256) + ' px while R stays held');
+});
+
+/* ================================================================ weapons v1, step 1 (docs/WEAPONS-V1.md 13.1) */
+/* every expected number here is computed from TUNING and K or stepped by the test, never read back from the sim. The
+   labs lay enemies by hand and freeze them wherever an enemy must hold still for geometry (a held enemy is hit as any
+   other, 5.3) */
+const WPN_ID = ['', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7', 'J8', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8'];
+const code = id => WPN_ID.indexOf(id), BUILT_IDS = SB.TUNING.WEAPONS_BUILT, PK = { BOOMERANG: 1, SHOCK: 2, POP: 3 };
+const ARMED = ['J1', 'D1'];
+/* a lab: the room from text, enemies [kind, cell, elite?] frozen unless `moving`, the hero at its box (x, y sub px) or
+   standing in column hc on row `row` (default the floor row 46), the loadout */
+function wpnLab(lines, enemies, opts = {}) {
+  const lv = LABS.room(lines, opts.room || {});
+  lv.features = { pocket: null, enemies: (enemies || []).map(([kind, idx, elite]) => ({ kind, idx, elite: !!elite, env: Int32Array.of(idx) })), trap: null, specks: [], scroll: null, blueprint: null, chest: opts.chest === undefined ? null : opts.chest };
+  const at = opts.at || { x: (opts.hc === undefined ? 4 : opts.hc) * CS + ((CS - HW) >> 1), y: (opts.row === undefined ? 46 : opts.row) * CS };
+  const s = SB.sim.create(lv, { at, loadout: opts.loadout === undefined ? ARMED : opts.loadout, immortal: !opts.mortal });
+  if (!opts.moving) for (const en of s.enemies) en.frozen = 1 << 20;
+  if (opts.air) { s.hero.ground = 0; s.hero.coyote = 0; } else s.hero.ground = 1;
+  return { lv, s };
+}
+const live = (s, kind) => s.proj.filter(p => p.live && (kind === undefined || p.kind === kind));
+const TAP_A = IN.A | IN.A_TAP;
+/* a tap jump and n quiet steps; returns the step words' events */
+function hop(s, n) { const evs = []; SB.sim.step(s, TAP_A); evs.push(s.ev); for (let k = 0; k < n; k++) { SB.sim.step(s, 0); evs.push(s.ev); } return evs; }
+
+group('H-wpn-1', 'the cooldown never delays movement: armed and unarmed hero traces equal over 3600 random steps; a jump inside the cooldown jumps on its unarmed step and throws nothing; cd[0] runs JUMP_SLOT_CD_F to 0', t => {
+  const lv = buildFx(fixture('shelves-a'), 0), words = randomScript(4401, 3600);
+  const a = SB.sim.create(lv, { immortal: true, loadout: ARMED }), u = SB.sim.create(lv, { immortal: true });
+  let diff = -1, fires = 0;
+  for (let k = 0; k < words.length && diff < 0; k++) {
+    SB.sim.step(a, words[k]); SB.sim.step(u, words[k]);
+    if (a.ev & SB.sim.EV.FIRE_J) fires++;
+    if (a.hero.x !== u.hero.x || a.hero.y !== u.hero.y || a.hero.vx !== u.hero.vx || a.hero.vy !== u.hero.vy) diff = k;
+  }
+  t.ok(diff < 0 && fires > 0, 'shelves-a, 3600 random steps, immortal: the armed hero\'s x, y, vx and vy equal the unarmed at every step (first difference ' + diff + '; ' + fires + ' throws)');
+  /* a hop at step 0, then presses through the cooldown: a short hop's buffered press (landing inside it) and later taps;
+     the unarmed jump steps are the test's; a jump throws only when JUMP_SLOT_CD_F steps have passed since the last throw */
+  const script = k => (k === 0 || k === 16 || k === 39 || k === 70 || k === 100) ? TAP_A : 0;
+  const run = lo => { const { s } = wpnLab(['', FLOOR], [], { loadout: lo }), jumps = [], throws = [], cd = []; for (let k = 0; k < 140; k++) { SB.sim.step(s, script(k)); if (s.ev & (SB.sim.EV.JUMP | SB.sim.EV.WALLJUMP)) jumps.push(k); if (s.ev & SB.sim.EV.FIRE_J) throws.push(k); cd.push(s.hero.cd[0]); } return { jumps, throws, cd }; };
+  const A = run(ARMED), U = run([0, 0, 0]);
+  const want = []; let last = -1e9; for (const j of U.jumps) if (j - last >= K.JUMP_SLOT_CD_F) { want.push(j); last = j; }
+  t.ok(U.jumps.length >= 4 && JSON.stringify(A.jumps) === JSON.stringify(U.jumps), 'every jump lands on the step it does unarmed (armed ' + A.jumps.join(' ') + ', unarmed ' + U.jumps.join(' ') + ')');
+  t.ok(JSON.stringify(A.throws) === JSON.stringify(want) && want.length < U.jumps.length, 'a jump throws only once JUMP_SLOT_CD_F (' + K.JUMP_SLOT_CD_F + ') steps passed since the last throw: throws at ' + A.throws.join(' ') + ', the test wants ' + want.join(' ') + ' (' + (U.jumps.length - want.length) + ' jumps inside the cooldown throw nothing)');
+  const n0 = A.throws[0], seq = A.cd.slice(n0, n0 + K.JUMP_SLOT_CD_F + 1), wantSeq = []; for (let v = K.JUMP_SLOT_CD_F; v >= 0; v--) wantSeq.push(v);
+  t.same(seq, wantSeq, 'cd[0] after the throw at step ' + n0 + ' runs ' + K.JUMP_SLOT_CD_F + ' to 0, one a step');
+});
+
+group('H-wpn-2', 'coverage: every PROJ field of a live boomerang, an enemy\'s hurt, room.cand and room.tremor move the hash; a planted float in proj[3].vx is named', t => {
+  const { s } = wpnLab(['', FLOOR], [[SB.features.MOTH, 46 * 24 + 12]]);
+  SB.sim.step(s, TAP_A); SB.sim.step(s, 0);
+  const k = s.proj.findIndex(p => p.live && p.kind === PK.BOOMERANG), base = SB.sim.hash(s);
+  t.ok(k >= 0, 'a jump throws a live boomerang (slot ' + k + ')');
+  const PROJ = SB.sim.FIELDS.find(f => f[0] === 'proj')[2];
+  t.same(PROJ.map(f => f[0]), ['kind', 'x', 'y', 'vx', 'vy', 'ttl', 'dmg', 'live', 'age', 'mode', 'a', 'b', 'hit', 'freeze', 'stun'], 'PROJ is the eight old keys then the seven new, in order');
+  /* every key the live entry holds (not the schema's list: a key the schema drops must still be seen) */
+  for (const name of Object.keys(s.proj[k])) {
+    const c = SB.sim.attach(structuredClone(s), s.level); c.proj[k][name] = name === 'live' ? 1 - c.proj[k][name] : c.proj[k][name] + 1;
+    t.ok(SB.sim.hash(c) !== base, 'perturbing proj[' + k + '].' + name + ' changes the hash');
+  }
+  for (const [path, set] of [['enemies[0].hurt', c => { c.enemies[0].hurt++; }], ['room.cand', c => { c.room.cand++; }], ['room.tremor', c => { c.room.tremor++; }]]) {
+    const c = SB.sim.attach(structuredClone(s), s.level); set(c);
+    t.ok(SB.sim.hash(c) !== base, 'perturbing ' + path + ' changes the hash');
+  }
+  const f = SB.sim.attach(structuredClone(s), s.level); f.proj[3].vx = 0.5; let msg = '';
+  try { SB.sim.serialize(f); } catch (e) { msg = e.message; }
+  t.ok(/proj\[3\]\.vx/.test(msg), 'a planted float in proj[3].vx makes serialize throw naming the path (' + msg + ')');
+});
+
+group('H-wpn-3', 'the pool never grows: 16 slots, the same 16 objects through 3600 drumming steps, lowest free first, a freed slot all zeros', t => {
+  const lv = buildFx(fixture('shelves-a'), 0), s = SB.sim.create(lv, { immortal: true, loadout: ARMED }), objs = s.proj.slice(), r = hrand(4403);
+  let bad = -1, dirty = -1, most = 0, full = 0, held = 0, prevA = 0, prevB = 0;
+  for (let k = 0; k < 3600 && bad < 0; k++) {
+    if (r.int(5) === 0) held = r.int(16);
+    const A = (k % 3 === 0) ? IN.A : 0, B = (k % 4 === 1) ? IN.B : 0, w = (held & (IN.L | IN.R)) | A | B | (A && !prevA ? IN.A_TAP : 0) | (B && !prevB ? IN.B_TAP : 0);
+    prevA = A; prevB = B;
+    SB.sim.step(s, w);
+    if (s.proj.length !== SB.TUNING.PROJ_MAX || s.proj.some((p, i) => p !== objs[i])) bad = k;
+    const n = live(s).length; most = Math.max(most, n); if (n === SB.TUNING.PROJ_MAX) full++;
+    if (dirty < 0 && s.proj.some(p => !p.live && Object.keys(p).some(key => p[key] !== 0))) dirty = k;
+  }
+  t.ok(bad < 0 && s.proj.length === 16, 'proj.length is PROJ_MAX (16) and the same 16 objects at every step (first break ' + bad + ')');
+  t.ok(dirty < 0, 'every free slot is all zeros at every step (first dirty ' + dirty + ')');
+  console.log('  info  H-wpn-3: at most ' + most + ' live entries at once; the pool full on ' + full + ' steps (a spawn then is refused, the pool never grows)');
+  const c = SB.sim.create(lv, {}); for (let i = 0; i < 3; i++) SB.sim.spawn(c, PK.POP);
+  SB.sim.free(c.proj[1]);
+  t.ok(SB.sim.spawn(c, PK.POP) === 1 && SB.sim.spawn(c, PK.POP) === 3, 'spawn takes the lowest free slot (1 after freeing it, then 3)');
+  for (let i = 0; i < 16; i++) SB.sim.spawn(c, PK.POP);
+  t.ok(SB.sim.spawn(c, PK.POP) === -1 && c.proj.length === 16, 'a full pool refuses a spawn (-1) and stays 16 long');
+  const p = c.proj[5]; p.x = 3; p.mode = 1; p.hit = 7; SB.sim.free(p);
+  t.ok(Object.keys(p).every(key => p[key] === 0), 'free zeroes every field');
+});
+
+group('H-stat-1', 'damage in quarters (5.1): the boomerang 1 x (4 + Focus), Anvil Boots 2 x (4 + Vigor); Focus never scales a dive weapon nor Vigor a jump weapon; a frozen elite jelly dies after ceil(16 / (4 + f)) passes', t => {
+  const W1 = SB.TUNING.WEAPONS.J1.dmg, W2 = SB.TUNING.WEAPONS.D1.dmg, Q = SB.TUNING.HP_Q, got = [], want = [];
+  for (let st = 0; st <= 4; st++) {
+    for (const [focus, vigor] of [[st, 0], [0, st], [st, 4 - st]]) {
+      const { s } = wpnLab(['', FLOOR], []); s.hero.focus = focus; s.hero.vigor = vigor;
+      SB.sim.step(s, TAP_A); const b = live(s, PK.BOOMERANG)[0];
+      const d = wpnLab(['', FLOOR], [], { row: 40, air: true }); d.s.hero.focus = focus; d.s.hero.vigor = vigor;
+      SB.sim.step(d.s, IN.B | IN.B_TAP); let sh = null; for (let k = 0; k < 60 && !sh; k++) { SB.sim.step(d.s, 0); sh = live(d.s, PK.SHOCK)[0]; }
+      got.push((b ? b.dmg : -1) + '/' + (sh ? sh.dmg : -1)); want.push(W1 * (Q + focus) + '/' + W2 * (Q + vigor));
+    }
+  }
+  t.same(got, want, 'boomerang/shock quarters for Focus and Vigor 0 to 4 in every pairing (Focus never in the shock, Vigor never in the boomerang)');
+  /* the elite jelly: 2 x JELLY_HP x HP_Q quarters, hit once each pass by tap hops 40 steps apart */
+  const passes = [], wantP = [];
+  for (let f = 0; f <= 4; f++) {
+    const { s } = wpnLab(['', FLOOR], [[SB.features.JELLY, 46 * 24 + 6, true]]); s.hero.focus = f;
+    const hp0 = s.enemies[0].hp, q = W1 * (Q + f); let n = 0;
+    for (let k = 0; k < 600 && s.enemies[0].hp > 0; k++) { const was = s.enemies[0].hp; SB.sim.step(s, k % 40 === 0 ? TAP_A : 0); n += Math.ceil((was - s.enemies[0].hp) / q); }
+    passes.push(n + (s.enemies[0].hp === 0 ? '' : ' alive')); wantP.push(String(Math.ceil(hp0 / (W1 * (Q + f)))));
+  }
+  t.same(passes, wantP, 'a frozen elite jelly (' + SB.sim.hpOf(SB.features.JELLY, 1) * Q + ' quarters) dies after exactly ceil(' + SB.sim.hpOf(SB.features.JELLY, 1) * Q + ' / (4 + f)) boomerang passes, Focus 0 to 4');
+});
+
+/* the pocket lab of H-en-9 (its one enemy the pocket's elite, asleep) */
+function pocketLab() {
+  const pc = {};
+  for (let y = 38; y <= 46; y++) pc[y] = '44' + ([39, 42, 45].includes(y) ? '77777777' : '11111111') + '4'.repeat(14);
+  pc[39] = pc[39].slice(0, 16) + '5555' + pc[39].slice(20); pc[40] = pc[40].slice(0, 16) + '3333' + pc[40].slice(20);
+  return SB.pipeline.build(labRecord(pc), { biome: 0 });
+}
+group('H-wpn-5', 'hits and kills (5.4): a kill banks DP_FODDER or DP_ELITE once; the dead never move, touch or bank again; a killed icicle never hangs again; a stun never wakes the pocket\'s sleeper; HURT and KILL on their steps; a POP; hurt counts HURT_FLASH_F', t => {
+  const T = SB.TUNING, F = SB.features, EV = SB.sim.EV;
+  const { s } = wpnLab(['', FLOOR], [[F.MOTH, 46 * 24 + 8], [F.JELLY, 46 * 24 + 12, true]], { mortal: true });
+  const dp0 = s.room.dp; s.ev = 0;
+  SB.sim.hurt(s, 1, K.HP_Q); const e1 = s.ev; s.ev = 0;
+  SB.sim.hurt(s, 0, K.HP_Q); const e2 = s.ev;
+  t.ok((e1 & EV.HURT) && !(e1 & EV.KILL) && (e2 & EV.HURT) && (e2 & EV.KILL) && s.room.dp - dp0 === T.DP_FODDER, 'a hit that leaves HP sets HURT alone; a kill sets HURT and KILL and banks DP_FODDER (' + (s.room.dp - dp0) + ')');
+  const pop = live(s, PK.POP)[0], m0 = s.enemies[0];
+  t.ok(!!pop && pop.ttl === K.POP_F && pop.x === m0.x + (CS >> 1) - 8 * 256 && pop.y === m0.y + (CS >> 1) - 8 * 256, 'the kill spawns a POP of POP_F (' + K.POP_F + ') steps at the dead box\'s centre less 8 px');
+  SB.sim.hurt(s, 1, 99 * K.HP_Q); const dpE = s.room.dp;
+  t.eq(dpE - dp0, T.DP_FODDER + T.DP_ELITE, 'the elite\'s kill banks DP_ELITE on top: the room\'s count');
+  t.ok(SB.sim.hurt(s, 0, 4) === 0 && SB.sim.hurt(s, 1, 4) === 0 && s.room.dp === dpE, 'a dead enemy takes nothing and banks nothing again');
+  const mx = m0.x, my = m0.y; m0.frozen = 0; s.enemies[1].frozen = 0;
+  s.hero.x = m0.x; s.hero.y = m0.y; const hearts = s.hero.hearts;
+  for (let k = 0; k < 120; k++) SB.sim.step(s, 0);
+  t.ok(m0.x === mx && m0.y === my && s.hero.hearts === hearts && s.room.dp === dpE, 'the dead moth never moves (' + (m0.x - mx) + ', ' + (m0.y - my) + ') nor touches a mortal hero standing on it (hearts ' + s.hero.hearts + ' of ' + hearts + ')');
+  const { s: si } = wpnLab(['........========', '', '', '', '', '', FLOOR], [[F.ICICLE, 42 * 24 + 12]], { hc: 20 });
+  SB.sim.hurt(si, 0, K.HP_Q); const ic = si.enemies[0];
+  for (let k = 0; k < K.ICICLE_RESPAWN_F + 60; k++) SB.sim.step(si, 0);
+  t.ok(ic.hp === 0 && !SB.sim.liveEnemy(ic) && si.room.dp === T.DP_FODDER, 'a weapon killed icicle never hangs again (hp ' + ic.hp + ', live ' + SB.sim.liveEnemy(ic) + ') and banked once (' + si.room.dp + ')');
+  /* a hand made shock carrying a stun over the pocket's sleeping elite (no step 1 weapon stuns) */
+  const plv = pocketLab();
+  if (plv.needsCrop || plv.features.enemies.length !== 1) { t.ok(false, 'the pocket lab builds with its elite'); return; }
+  const ps = SB.sim.create(plv, { immortal: true }), el = ps.enemies[0];
+  const k = SB.sim.spawn(ps, PK.SHOCK), p = ps.proj[k], esz = K.ELITE_SUB;
+  p.x = el.x + (esz >> 1); p.y = el.y; p.a = el.x - CS; p.b = el.x + esz + CS; p.ttl = 3; p.stun = 60; p.freeze = 0; p.dmg = 0;
+  SB.sim.step(ps, 0);
+  t.ok(el.stunned === -1 && p.hit === 1, 'a hit carrying a stun (60) lands on the pocket\'s sleeping elite (hit bits ' + p.hit + ') and never wakes it (stunned ' + el.stunned + ')');
+  /* the order (4): a weapon's hit lands before the enemies move and touch, so a moth killed on the step it would touch
+     the bug never touches it (a hand made shock over a live moth inside the bug's box); and a weapon never acts on the
+     step the room clears (a jump straight into the exit cell over the bug's head throws nothing) */
+  const touch = withShock => {
+    const { s: so } = wpnLab(['', FLOOR], [[F.MOTH, 46 * 24 + 8]], { mortal: true, moving: true, hc: 8 }), m = so.enemies[0];
+    if (withShock) { const k = SB.sim.spawn(so, PK.SHOCK), p = so.proj[k]; p.x = m.x + (CS >> 1); p.y = m.y; p.a = m.x - CS; p.b = m.x + 2 * CS; p.ttl = 3; p.dmg = K.HP_Q; }
+    const h0 = so.hero.hearts; SB.sim.step(so, 0); return { lost: h0 - so.hero.hearts, hp: m.hp };
+  };
+  const bare = touch(false), shot = touch(true);
+  t.ok(bare.lost === 1 && shot.lost === 0 && shot.hp === 0, 'a moth on the bug costs a heart (' + bare.lost + '); killed by a weapon on that same step it costs none (' + shot.lost + ', hp ' + shot.hp + ')');
+  const ex = LABS.room(['', '....X', FLOOR], { exit: true }); ex.features = { pocket: null, enemies: [], trap: null, specks: [], scroll: null, blueprint: null, chest: null };
+  const se = SB.sim.create(ex, { at: { x: 4 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: ARMED }); se.hero.ground = 1;
+  SB.sim.step(se, TAP_A);
+  t.ok(se.room.cleared === 1 && (se.ev & SB.sim.EV.JUMP) && !(se.ev & EV.FIRE_J) && live(se).length === 0 && se.hero.cd[0] === 0, 'a jump that clears the room on its takeoff step throws nothing (cleared ' + se.room.cleared + ', live entries ' + live(se).length + ', cd ' + se.hero.cd[0] + ')');
+  /* the flash: HURT_FLASH_F set by a hit, one less a step */
+  const { s: sf } = wpnLab(['', FLOOR], [[F.JELLY, 46 * 24 + 6]]);
+  SB.sim.hurt(sf, 0, K.HP_Q); const fl = [sf.enemies[0].hurt]; for (let j = 0; j < K.HURT_FLASH_F + 1; j++) { SB.sim.step(sf, 0); fl.push(sf.enemies[0].hurt); }
+  const wf = []; for (let v = K.HURT_FLASH_F; v >= 0; v--) wf.push(v); wf.push(0);
+  t.same(fl, wf, 'hurt is HURT_FLASH_F (' + K.HURT_FLASH_F + ') after a hit and counts down one a step');
+});
+
+group('H-wpn-6', 'the chest (6.1, 6.2): over 200 seeded rooms it equips at once the code the test draws after the specks\' rolls, with no compare and no held step; one slot full gives the other; both full, Dead pixels only and no draw', t => {
+  const T = SB.TUNING, EV = SB.sim.EV, CH = 46 * 24 + 9, built = BUILT_IDS.map(code);
+  const slot = c => (c - 1) >> 3;
+  const drawRef = (st, slots) => { const cands = built.filter(c => slots[slot(c)] !== c), empty = cands.filter(c => slots[slot(c)] === 0); if (!cands.length) return 0; const pool = T.CHEST_FILLS_EMPTY_FIRST && empty.length ? empty : cands; return pool[stepRef(st) % pool.length]; };
+  let ok = 0, compares = 0, held = 0, equippedGiven = 0, gaveEquipped = 0, firstBad = '';
+  const tally = {};
+  for (let k = 0; k < 200; k++) {
+    for (const [lo, name] of [[[0, 0, 0], 'empty'], [['J1', 0, 0], 'jump full'], [[0, 'D1', 0], 'dive full'], [['J1', 'D1', 0], 'both full']]) {
+      const lv = LABS.room(['', FLOOR]); lv.seed = 5000 + k;
+      const specks = [46 * 24 + 5, 46 * 24 + 7], after = 46 * 24 + 12;
+      lv.features = { pocket: null, enemies: [], trap: null, specks: specks.concat([after]), scroll: null, blueprint: null, chest: CH };
+      const s = SB.sim.create(lv, { at: { x: 2 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: lo });
+      const st = { v: s.rng }, slots0 = s.hero.slots.slice();
+      let dpWant = 0; for (let j = 0; j < 2; j++) dpWant += T.DP_SPECK[0] + stepRef(st) % (T.DP_SPECK[1] - T.DP_SPECK[0] + 1);
+      const want = drawRef(st, slots0); dpWant += T.DP_CHEST + T.DP_SPECK[0] + stepRef(st) % (T.DP_SPECK[1] - T.DP_SPECK[0] + 1);
+      let at = -1, ev = 0, x0 = 0, x1 = 0, x2 = 0;
+      for (let f = 0; f < 200 && !s.loot[2].taken; f++) {
+        const xb = s.hero.x; SB.sim.step(s, IN.R);
+        if (s.room.compare) compares++;
+        if (s.chest.open && at < 0) { at = f; ev = s.ev; x0 = xb; x1 = s.hero.x; SB.sim.step(s, IN.R); x2 = s.hero.x; if (s.room.compare) compares++; }
+      }
+      const slotsNow = s.hero.slots, gotCode = want ? slotsNow[slot(want)] : 0;
+      if (s.room.cand > 0 && slots0[slot(s.room.cand)] === s.room.cand) gaveEquipped++;   /* the sim's own offer of a weapon the slot holds */
+      if (x1 === x0 || x2 === x1) held++;
+      if (want && slots0[slot(want)] === want) equippedGiven++;
+      const right = at >= 0 && s.room.dp === dpWant && (want ? gotCode === want && (ev & EV.EQUIP) : !(ev & EV.EQUIP) && JSON.stringify(slotsNow) === JSON.stringify(slots0)) && !(ev & EV.SWAP) && (ev & EV.CHEST);
+      if (right) ok++; else if (!firstBad) firstBad = name + ' seed ' + (5000 + k) + ': want ' + (WPN_ID[want] || 'nothing') + ' and ' + dpWant + ' DP, got slots ' + slotsNow.join(',') + ', ' + s.room.dp + ' DP, ev ' + ev;
+      tally[name] = tally[name] || {}; tally[name][WPN_ID[want] || 'none'] = (tally[name][WPN_ID[want] || 'none'] || 0) + 1;
+    }
+  }
+  t.ok(ok === 800, 'over 200 seeds and four loadouts the chest equips the test\'s draw at once (EQUIP on its step), or with both slots full pays DP only and draws nothing (the next speck\'s roll is the test\'s) (' + ok + ' of 800' + (firstBad ? '; first wrong: ' + firstBad : '') + ')');
+  t.ok(compares === 0, 'no compare ever opens from the built pool (' + compares + ' steps under one)');
+  t.ok(held === 0, 'the hero moves on the chest\'s step and the next with R held (' + held + ' held)');
+  t.ok(equippedGiven === 0 && gaveEquipped === 0, 'no chest gives a weapon already equipped (the test\'s draws ' + equippedGiven + ', the sim\'s offers ' + gaveEquipped + ')');
+  t.ok(tally.empty.J1 > 60 && tally.empty.D1 > 60 && tally['jump full'].D1 === 200 && tally['dive full'].J1 === 200 && tally['both full'].none === 200, 'the draws: both empty ' + JSON.stringify(tally.empty) + '; jump full ' + JSON.stringify(tally['jump full']) + '; dive full ' + JSON.stringify(tally['dive full']) + '; both full ' + JSON.stringify(tally['both full']));
+});
+
+group('H-wpn-7', 'the swap (6.4) with a hand loadout of unbuilt codes (J5, D6): the chest opens compare with the test\'s draw; the world holds until a CHOICE; TAKE equips, LEAVE keeps; the recorded choice replays to the live hash', t => {
+  const EV = SB.sim.EV, C = SB.sim.CHOICE, built = BUILT_IDS.map(code), CH = 46 * 24 + 6;
+  const mk = () => { const { lv, s } = wpnLab(['', FLOOR], [[SB.features.MOTH, 40 * 24 + 18]], { hc: 3, loadout: ['J5', 'D6', 0], moving: true, chest: CH }); return { lv, s }; };
+  const { s } = mk(), st = { v: s.rng }, want = built[stepRef(st) % built.length];
+  let f = 0; for (; f < 200 && !s.room.compare; f++) SB.sim.step(s, IN.R);
+  t.ok(s.room.compare === 1 && s.room.cand === want && (s.ev & EV.SWAP) && JSON.stringify(s.hero.slots) === JSON.stringify([code('J5'), code('D6'), 0]), 'both slots full: the chest opens the swap with cand ' + WPN_ID[s.room.cand] + ' (the test draws ' + WPN_ID[want] + '), SWAP on its step, the slots unchanged');
+  const world = x => JSON.stringify([x.hero, x.enemies, x.proj, x.traps, x.loot, x.chest, x.rng, x.room]);
+  const before = world(s), fr = s.frame;
+  for (let k = 0; k < 30; k++) SB.sim.step(s, IN.R | (k % 3 === 0 ? IN.A_TAP | IN.A : 0) | (k % 5 === 0 ? IN.B_TAP | IN.B : 0));
+  t.ok(world(s) === before && s.frame === fr + 30, 'the world holds through 30 steps of R, A and B (hero, enemies, pool, traps, loot, the generator; only the frame counts: ' + (s.frame - fr) + ')');
+  const take = SB.sim.attach(structuredClone(s), s.level), leave = SB.sim.attach(structuredClone(s), s.level);
+  SB.sim.step(take, C.TAKE * IN.CHOICE); SB.sim.step(leave, C.LEAVE * IN.CHOICE);
+  t.ok(take.hero.slots[(want - 1) >> 3] === want && (take.ev & EV.EQUIP) && (take.ev & EV.PICK) && !take.room.compare && take.room.cand === 0, 'TAKE puts ' + WPN_ID[want] + ' in its slot (slots ' + take.hero.slots.join(',') + '), EQUIP and PICK, the swap closed');
+  t.ok(JSON.stringify(leave.hero.slots) === JSON.stringify([code('J5'), code('D6'), 0]) && !(leave.ev & EV.EQUIP) && (leave.ev & EV.PICK) && !leave.room.compare && leave.room.cand === 0, 'LEAVE keeps J5 and D6, PICK alone, the swap closed');
+  const live1 = mk().s, words = [];
+  for (let k = 0; k < 120; k++) { const w = live1.room.compare && k % 9 === 0 ? C.TAKE * IN.CHOICE : IN.R; SB.sim.step(live1, w); words.push(w); }
+  const rep = mk().s; for (const w of words) SB.sim.step(rep, w);
+  const cut = mk().s; for (const w of words) SB.sim.step(cut, w & ~(15 * IN.CHOICE));
+  t.ok(words.some(w => (w >> 6) & 15) && SB.sim.hash(rep) === SB.sim.hash(live1) && !!cut.room.compare && cut.hero.slots[0] === code('J5'), 'the recorded script carries its TAKE and replays to the live hash; without it the replay stalls at the swap');
+});
+
+group('H-wpn-J1', 'the Boomerang (7.1): 5 cells and not 5 cells and 1 px, both facings; two passes on a jelly two cells ahead; a wall turns it; a sticky jump throws away from the vine; caught or freed within J1_LIFE_F', t => {
+  const F = SB.features, REACH = SB.TUNING.WEAPONS.J1.cells * CS, P1 = 256;
+  /* a frozen moth set by hand with its near edge at the boomerang's far reach less 1 px (hit) or at it (not) */
+  const at = (side, dx) => {
+    const { s } = wpnLab(['', FLOOR], [[F.MOTH, 46 * 24 + 20]], { hc: 10 }), h = s.hero, m = s.enemies[0];
+    h.facing = side; m.y = h.y;
+    m.x = side > 0 ? h.x + HW + REACH - P1 + dx : h.x - REACH - CS + P1 - dx;
+    for (let k = 0; k < 40; k++) SB.sim.step(s, k === 0 ? TAP_A : 0);
+    return m.hp === 0;
+  };
+  t.ok(at(1, 0) && !at(1, P1) && at(-1, 0) && !at(-1, P1), 'a moth 1 px inside 5 cells past the front edge is hit, one at 5 cells is not, facing right and mirrored left (' + [at(1, 0), at(1, P1), at(-1, 0), at(-1, P1)].join(' ') + ')');
+  const two = (elite) => {
+    const { s } = wpnLab(['', FLOOR], [[F.JELLY, 46 * 24 + 6, elite]]), en = s.enemies[0], hp0 = en.hp; let hits = 0;
+    for (let k = 0; k < 90; k++) { SB.sim.step(s, k === 0 ? TAP_A : 0); if (s.ev & SB.sim.EV.HURT) hits++; }
+    return { hits, hp0, hp: en.hp };
+  };
+  const j = two(false), e = two(true), q = SB.TUNING.WEAPONS.J1.dmg * K.HP_Q;
+  t.ok(j.hits === 2 && j.hp === 0 && j.hp0 === 2 * q, 'a frozen jelly two cells ahead takes exactly two hits, out and back, and dies (' + j.hits + ' hits, hp ' + j.hp0 + ' to ' + j.hp + ')');
+  t.ok(e.hits === 2 && e.hp === e.hp0 - 2 * q && e.hp > 0, 'an elite jelly takes two of its four (' + e.hits + ' hits, hp ' + e.hp0 + ' to ' + e.hp + ')');
+  /* a wall two cells ahead (a column of solid at x 6 over the floor rows) */
+  const { s: sw } = wpnLab(['......#', '......#', FLOOR], [[F.MOTH, 46 * 24 + 8]]);
+  let turnX = null; for (let k = 0; k < 60; k++) { SB.sim.step(sw, k === 0 ? TAP_A : 0); const b = live(sw, PK.BOOMERANG)[0]; if (b && b.mode === 1 && turnX === null) turnX = b.x; }
+  t.ok(turnX === 6 * CS - K.J1_BOX && sw.enemies[0].hp > 0, 'a wall two cells ahead turns it flush against the wall (x ' + (turnX / 256) + ' px, the wall at ' + (6 * 16) + ') and a moth beyond the wall takes nothing (hp ' + sw.enemies[0].hp + ')');
+  /* the sticky jump: a vine at x 2 in Overgrowth, the hero clinging on its right and facing it */
+  const lines = ['..|', '..|', '..|', '..|', '..|', '..|'].concat(Array(10).fill(''), [FLOOR]);
+  const vl = LABS.room(lines, { biome: 3 }); vl.features = { pocket: null, enemies: [], trap: null, specks: [], scroll: null, blueprint: null, chest: null };
+  const vineRows = [...Array(vl.h).keys()].filter(r => vl.sticky[r * 24 + 2]);
+  const vs = SB.sim.create(vl, { at: { x: 3 * CS, y: (vineRows[vineRows.length - 1] - 1) * CS }, loadout: ARMED, immortal: true }); vs.hero.ground = 0;
+  for (let k = 0; k < 6 && !vs.hero.sticky; k++) SB.sim.step(vs, 0);
+  vs.hero.facing = -1; SB.sim.step(vs, TAP_A);
+  const vb = live(vs, PK.BOOMERANG)[0];
+  t.ok(vs.hero.sticky === 0 && !!vb && vb.vx > 0, 'a sticky jump off a vine on the left, facing it, throws away from the vine (vx ' + (vb ? vb.vx : 'none') + ')');
+  /* every boomerang is caught or freed within J1_LIFE_F of its throw */
+  const lv = buildFx(fixture('sample-room'), 0), s = SB.sim.create(lv, { immortal: true, loadout: ARMED }), words = randomScript(4411, 3600), born = new Map();
+  let late = 0, throws = 0;
+  for (const w of words) {
+    SB.sim.step(s, w);
+    if (s.room.cleared) break;   /* a cleared room holds its pool where it was (a photograph of the moment) */
+    s.proj.forEach((p, i) => { if (p.live && p.kind === PK.BOOMERANG) { if (p.age === 1) { born.set(i, s.frame); throws++; } if (s.frame - born.get(i) > K.J1_LIFE_F) late++; } });
+  }
+  t.ok(throws > 0 && late === 0, throws + ' throws on the sample room, every one caught or freed within J1_LIFE_F (' + K.J1_LIFE_F + ') steps (' + late + ' late)');
+});
+
+group('H-wpn-D1', 'Anvil Boots (7.1): a dive landing\'s shock hits 3 cells along the floor and not 4; not a row up; a wall and a ledge\'s end stop it; a dash fires it, a dash into a wall and a plain landing do not; a hold dive on its last landing only; the shake on the dive alone', t => {
+  const F = SB.features, EV = SB.sim.EV, N = SB.TUNING.WEAPONS.D1.cells;
+  /* the hero over column 10 at row 40, a dive to the floor; the moths [cell] frozen; the hits after 30 steps */
+  const dive = (lines, cells, opts = {}) => {
+    const { s } = wpnLab(lines, cells.map(c => [F.MOTH, c]), Object.assign({ hc: 10, row: 40, air: true }, opts));
+    let fires = 0, at = -1, shake = 0;
+    for (let k = 0; k < 90; k++) { SB.sim.step(s, k === 0 ? IN.B | IN.B_TAP : opts.hold ? IN.B : 0); if (s.ev & EV.FIRE_D) { fires++; at = k; shake = s.hero.shake; } }
+    return { s, fires, at, shake, dead: s.enemies.map(e => e.hp === 0) };
+  };
+  const r = 46 * 24, q = SB.TUNING.WEAPONS.D1.dmg * (K.HP_Q + 0);
+  const a = dive(['', FLOOR], [r + 10 + N, r + 10 + N + 1, r + 10 - N, r + 10 - N - 1, r - 24 + 10 + 1, r - 48 + 10 + 2]);
+  t.ok(a.fires === 1 && a.dead.join() === 'true,false,true,false,false,false', 'a dive landing fires once and its shock kills the floor moths ' + N + ' cells off either side, not ' + (N + 1) + ', and none a row or two up (' + a.dead.join(' ') + ')');
+  const d = wpnLab(['', FLOOR], [], { hc: 10, row: 40, air: true }); SB.sim.step(d.s, IN.B | IN.B_TAP); let sh = null; for (let k = 0; k < 60 && !sh; k++) { SB.sim.step(d.s, 0); sh = live(d.s, PK.SHOCK)[0]; }
+  t.ok(!!sh && sh.dmg === q && sh.ttl === Math.ceil(N * CS / K.D1_V) + K.D1_LINGER_F - 1, 'its damage is ' + (sh ? sh.dmg : '?') + ' quarters (2 x (4 + Vigor 0) = ' + q + ') and it lives ceil(reach / D1_V) + D1_LINGER_F steps');
+  const w = dive(['', '............#', FLOOR], [r + 13, r + 7]);
+  t.ok(w.fires === 1 && !w.dead[0] && w.dead[1], 'a solid cell 2 cells right stops the right front (the moth past it lives: ' + !w.dead[0] + ') while the left reaches 3 (' + w.dead[1] + ')');
+  /* a 4 cell ledge (columns 9..12 on row 41) high over the floor; the hero dives onto it at column 10 */
+  const lg = wpnLab(['.........####', '', '', '', '', FLOOR], [[F.MOTH, 41 * 24 + 12], [F.MOTH, 41 * 24 + 13], [F.MOTH, 41 * 24 + 8], [F.MOTH, 41 * 24 + 9]], { hc: 10, row: 36, air: true });
+  let lf = 0; for (let k = 0; k < 60; k++) { SB.sim.step(lg.s, k === 0 ? IN.B | IN.B_TAP : 0); if (lg.s.ev & EV.FIRE_D) lf++; }
+  t.ok(lf === 1 && lg.s.enemies.map(e => e.hp === 0).join() === 'true,false,false,true', 'on a 4 cell ledge the wave ends at its edges: the moths over the ledge die, the ones past its ends in the air live (' + lg.s.enemies.map(e => e.hp === 0).join(' ') + ')');
+  /* a dash on the floor fires; a dash pressed flush against a wall fires nothing; a plain fall's landing fires nothing */
+  const ds = wpnLab(['', FLOOR], [[F.MOTH, r + 10 + 3]], { hc: 10 }); ds.s.hero.facing = 1; SB.sim.step(ds.s, 0); SB.sim.step(ds.s, IN.B | IN.B_TAP);
+  const dFire = !!(ds.s.ev & EV.FIRE_D), dsh = live(ds.s, PK.SHOCK)[0]; for (let k = 0; k < 30; k++) SB.sim.step(ds.s, 0);
+  t.ok(dFire && !!dsh && ds.s.enemies[0].hp === 0 && ds.s.hero.shake === 0, 'a dash fires on its press step, its shock kills a floor moth 3 cells on, and nothing shakes (fired ' + dFire + ', shake ' + ds.s.hero.shake + ')');
+  const dw = wpnLab(['...........#', FLOOR], [], { at: { x: 11 * CS - HW, y: 46 * CS } }); dw.s.hero.facing = 1; SB.sim.step(dw.s, 0); const x0 = dw.s.hero.x; SB.sim.step(dw.s, IN.B | IN.B_TAP);
+  t.ok(dw.s.hero.x === x0 && !(dw.s.ev & EV.FIRE_D) && live(dw.s, PK.SHOCK).length === 0, 'a dash pressed flush against a wall moves nothing and fires nothing');
+  const pf = wpnLab(['', FLOOR], [], { hc: 10, row: 40, air: true }); let pfF = 0, pfL = 0; for (let k = 0; k < 60; k++) { SB.sim.step(pf.s, 0); if (pf.s.ev & EV.FIRE_D) pfF++; if (pf.s.ev & EV.LAND) pfL++; }
+  t.ok(pfL === 1 && pfF === 0, 'a plain landing (no dive) fires nothing (' + pfL + ' landing, ' + pfF + ' fires)');
+  /* a hold dive through three one ways fires on its floor landing alone */
+  const hd = dive(['', '..........=', '', '..........=', '', '..........=', '', FLOOR], [], { row: 38, hold: true });
+  t.ok(hd.fires === 1 && Math.floor((hd.s.hero.y + HH) / CS) === 47 && hd.shake > 0, 'a hold dive through three one ways fires once, on the floor (' + hd.fires + ' fires; the shake runs on the dive landing: ' + hd.shake + ')');
+});
+
+group('H-bot-9', 'the bot\'s walks armed (J1 and D1) clear every walked level with the unarmed words, on the same step (weapons never stop the climb)', t => {
+  const { runs } = botWalks(); let walked = 0; const bad = [];
+  for (const run of runs) {
+    if (run.skipped || run.same || !run.r.ok) continue;
+    walked++;
+    const u = SB.sim.create(run.lv, { immortal: true }), a = SB.sim.create(run.lv, { immortal: true, loadout: ARMED });
+    let cu = -1, ca = -1;
+    run.r.words.forEach((w, k) => { SB.sim.step(u, w); SB.sim.step(a, w); if (cu < 0 && u.room.cleared) cu = k; if (ca < 0 && a.room.cleared) ca = k; });
+    if (ca < 0 || ca !== cu) bad.push(run.tag + ' (unarmed ' + cu + ', armed ' + ca + ')');
+  }
+  t.ok(walked > 0 && bad.length === 0, walked + ' walked levels clear armed on the unarmed walk\'s step' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
 });
 
 /* ================================================================ sharing (T1.8) */
@@ -4540,6 +4901,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   const names = Object.keys(S), SUN = SB.palette.I.SUN.toString(16), INK = SB.palette.I.INK.toString(16), FILM = SB.palette.I.FILM.toString(16);
   const AMBER = SB.palette.I.AMBER.toString(16), GLARE = SB.palette.I.GLARE.toString(16), KINDS = ['moth', 'icicle', 'jelly', 'crawler', 'spark'];
   const ELITES = KINDS.map(k => k + '_elite'), DANGER = KINDS.concat(ELITES, ['spike', 'crusher']);
+  const I = SB.palette.I, WEAPON_SPRITES = ['boomerang', 'shock', 'pop', 'icon'], WEAPON_INKS = [I.INK, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE].map(v => v.toString(16)), WEAPON_ICON_INKS = WEAPON_INKS.concat([I.LAPIS.toString(16)]);
   t.ok(names.length > 0 && names.length < 40, names.length + ' named sprites (under 40; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
@@ -4559,8 +4921,17 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
          every frame is Amber and the strip, not each frame, carries the glint (the pin moved from per frame with the art) */
       if (name === 'speck') t.ok(str.includes(AMBER), 'speck.' + f + ' is Amber');
       if (DANGER.includes(name)) t.ok(str.includes(INK), name + '.' + f + ' has its Ink outline (danger, section 7.3)');
+      /* Weapons v1 (docs/WEAPONS-V1.md 8.1): a weapon sprite has an Ink outline and draws only Ink, Slate, Pewter, Ash,
+         Paper and Glare, and Lapis on an icon (never Sun, Film, Brick, Magenta, Amber or Teal) */
+      if (WEAPON_SPRITES.includes(name)) {
+        const allowed = name === 'icon' ? WEAPON_ICON_INKS : WEAPON_INKS, off = [...new Set(str.replace(/[./]/g, ''))].filter(c => !allowed.includes(c));
+        t.ok(str.includes(INK) && off.length === 0, name + '.' + f + ' has an Ink outline and draws only ' + allowed.join(' ') + (off.length ? ' (holds ' + off.join(' ') + ')' : ''));
+      }
     }
   }
+  t.ok(WEAPON_SPRITES.every(n => names.includes(n)), 'the weapon sprites exist (' + WEAPON_SPRITES.join(', ') + ')');
+  const iconFrames = S.icon ? Object.keys(S.icon.frames) : [];
+  t.same(iconFrames.slice().sort(), SB.TUNING.WEAPONS_BUILT.slice().sort(), 'the icon sprite has one frame per built weapon, named by its id');
   t.ok(DANGER.every(n => names.includes(n)), 'every enemy, elite and trap the rules name has a sprite (' + DANGER.join(', ') + ')');
   t.ok(!!S.speck && Object.values(S.speck.frames).some(s => s.includes(GLARE)), 'the speck\'s strip carries its Glare glint (section 7.3: loot is Amber with a Glare glint)');
   /* the elites (Q160): each its own art, ELITE_PX a side (the sim's box, ELITE_SIZE_CELLS cells), with its kind's frame

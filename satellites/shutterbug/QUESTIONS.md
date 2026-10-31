@@ -871,5 +871,43 @@ His calls (the build runs on each default):
 Plan redline (BUILD-PLAN, not edited): section 1.7's sprites gain the five `<kind>_elite` keys and hud_heart; T1.4's "an elite is the same art drawn ELITE_SIZE_CELLS a side" reads "an elite draws its own 24x24 art by its anchor"; the top strip's hearts are hud_heart at 2x.
 DESIGN redline: none.
 Options: (a) as built; (b) the elites drawn as the base art scaled until Astra's elites are reviewed on his Pixel.
+
+## Q120. Weapons v1: the spec's readings of DESIGN and Stephen's calls (the spec session, 31 Oct, WSPEC)
+
+Stephen, 31 Oct about 13:05 UTC: "why dont we have weapons? ... lets make this game fucking awesome!" His ruling of the night before (Q92, Q93) kept the chest to "Dead pixels only", with no weapon words, until weapons exist. `docs/WEAPONS-V1.md` is the build spec for Weapons v1 on `sb-weapons`: five steps (the first fight with the Boomerang and Anvil Boots, the chest giving a weapon, kills paying their Dead pixels and the slot HUD; then the jump slot and the swap card; the dive slot; charms; stats and scrolls). DESIGN is silent or reads two ways at the places below; the spec builds the first reading of each, and section 15 there ranks his calls with the defaults.
+
+The readings (each a default the build runs on until his word):
+- DESIGN 8, free play: a sitting of free play rooms keeps the gear (Shoot the next room, Play it again, Again after a death with the gear the bug walked in with) until Title. DESIGN gives free play one room and keeps gear only across a house run; its letter would empty the slots at every new room and make the swap card unreachable outside a house run (T2.8). One TUNING line (`KEEP_GEAR`).
+- DESIGN 9.1, the pickup: a weapon for an empty slot is equipped at once with a card that takes no tap (the climb never stops for an empty slot); a full slot opens the swap card, which holds the world until Take or Keep. "With the sim paused" reads as section 2.6's hold: the loop steps and every step counts, nothing in the world moves (BUILD-PLAN T2.7's "the frame counter does not advance" reads the same way).
+- DESIGN 9.1, the chest's draw: the drop pool before the Darkroom is every weapon the build has; a chest fills an empty slot first (`CHEST_FILLS_EMPTY_FIRST`) and never gives a weapon already equipped; with nothing left it pays the 15 Dead pixels only.
+- DESIGN 9.1, the dive slot: no cooldown (DESIGN gives none); a weapon whose line names only a landing (Pogo Spear, Pile Driver) does nothing on a dash, Flashpan (a dash's line) nothing on a landing.
+- DESIGN 9.2, +25% a point: kept exactly by counting HP and hits in quarters (`HP_Q 4`); BUILD-PLAN T2.1's whole HP formula, floored, is not built (under it the first three points do nothing to a 1 damage weapon).
+- DESIGN 9.1, Tremor: at most 12 Dead pixels a room (the letter has no cap and a player could farm them by diving beside a wall); Flashpan's line burns 1.5 s (no length given); Pogo Spear bounces 2 cells up (33 px).
+- DESIGN 4.2's "no weapon ever requires a corrective tap": a sticky jump throws away from its vine.
+- DESIGN 11: the sound list grows by five shared voices (throw, shock, zap, pop, equip) and one for most weapons.
+DESIGN redlines (DESIGN.md is a verbatim copy and is not edited): 8's free play row gains "a sitting keeps its gear until Title"; 9.1's "Pickup screen ... with the sim paused" reads "with the world held"; 9.2's "+25% damage per point" adds "counted in quarter HP"; 9.1's D4 adds "at most 12 a room"; 11's SFX list adds the weapon voices.
+Plan redlines (BUILD-PLAN, not edited): T2.1's damage line reads "dmg x (4 + stat) quarter HP, no floor"; T2.7's gate line reads "nothing in the world moves while the card is open"; T1.6's chest (Q92's redline) reads "15 DP and a weapon: an empty slot at once, a full one through the swap card (T2.7)"; 5.6 gains the `fight` row (WEAPONS-V1 13.1) and the `compare` row (13.2); 4.1's coverage row for 9.1 adds the spec.
+Options: (a) the readings above; (b) any of them by its letter (each is one line or one rule in the spec's section 15).
+Recommendation: (a).
+Plan assumes: (a); docs/WEAPONS-V1.md.
+
+## Q121. Weapons v1 step 1 (W1): the builder's calls inside the spec, and what the shots changed
+
+Built on `sb-weapons` from docs/WEAPONS-V1.md 13.1. Each line is a call the build made where the spec was silent or its letter met the page; each is the default until Stephen's word.
+- The pickup card sits 16 px down the stage, not the spec's 8: Pause's 48 px hit area hangs 12 px over the room's top left corner (Q94), and at 360 and 320 wide the card reached under it (the fight gate's first run, "over #pause"). The card takes no tap either way.
+- The card follows the bug while it shows: docked low when it would cover the bug's drawn box at the top, and each step after it moves to the other dock when the bug climbs or falls into it and the other dock is clear (the shots: a card docked low over a bug that then fell under it). Never a write to the slot HUD.
+- `SB.sim.BUILT` is a frozen plain array of codes, not a frozen `Int32Array` (a typed array with elements cannot be frozen; the spec's word). Made at load, never in step.
+- An enemy's hit flash draws on the hit's own frame: the `!` copy while `((hurt + 1) >> 1) & 1` is 0 (hurt 8, 7, 4, 3 after the step's countdown), alternate pairs of steps as the spec says, phased so the first frame after a hit flashes (the spec's `(hurt >> 1) & 1` left that frame plain).
+- A jump slot fire that finds the pool full throws nothing and sets no cooldown (the spec: "A jump that did not act sets no cooldown"); a kill with the pool full banks and sounds but draws no pop. Neither happens in step 1 (H-wpn-3: at most 6 live entries over 3600 drumming steps).
+- The shock's crest is drawn inside its band: a front at a wall or a ledge's end draws its 16 px crest short of the edge (the shots: half of each crest hung off a 4 cell ledge into the air). The sim's fronts and hits are unchanged. Its linger frame `c` is a breaking crest as tall as the rising one (the first, two 3 px bumps, read as snow).
+- The icons: the Boomerang is an L, Anvil Boots a boot on a heavy Slate sole; the slot's Lapis accent is a corner (the jump slot's top left, the dive slot's bottom right), not a full edge line. The shots: the edge line read as a stray line over the icon, the chevron read as a caret, and the first boot over a grey anvil read as a toilet at 320. The flying boomerang is the same L, a quarter turn a frame.
+- The sitting: Crop's Title (`croptitle`) ends it too (a Title control). Shoot the next room keeps the gear through the title and the picker; a picker cancelled there leaves the title with the gear still kept until a Title control or a room's own Title (the sitting goes on; the spec is silent).
+- `ui.slots(st, true)` on a room's start shows the entry gear without the pickup card (a room's first call never reports a weapon as new).
+- On a step with the chest and a speck the +n under the count is their sum (the spec's "the room's count gained that step").
+- The armed golden `sample-room-armed` is the bot's current sample room walk (767 steps; the old unarmed golden, 2456 steps, was recorded by an older bot and is kept). Its nine throws ride the hash; it dives nowhere and passes no moth, so no shock, hit or kill is in it (its why says so).
+- Redwatch: CHEST_HOLDS_WORLD and ANSWER_ORDER_SWAPPED retired (no compare opens for an empty slot); SLIP_BACK keeps only its lint line (its slip shows on a compare, and none opens); EDGE_LOST_TO_CHOICE re anchored on the scroll's offer (the loot gate taps A as the offer opens; the chest answers nothing now); the loot gate's blueprint moves to (21, 46) and its chest to (23, 46) so the walk is back on the floor after the offer's jump.
+- Not built here and left as seen: the empty slot boxes are faint (the rocker's alpha, the spec's), the +3 and +15 show in the strip's corner far from the kill or the chest (Q92's first call), and the card covers about a third of the room at 320x568 for its 2.5 s (call 7's options).
+DESIGN redline: none beyond Q120's. Plan redline (BUILD-PLAN, not edited): 5.6 gains the `fight` row as WEAPONS-V1 13.1 words it; the loot row reads "the chest equips (no compare), one held step for the scroll's answer, the recording one A and no TAKE, a tap on A as the offer opens rides past its answer".
+Options: (a) as built; (b) any line by the spec's letter.
 Recommendation: (a).
 Plan assumes: (a).

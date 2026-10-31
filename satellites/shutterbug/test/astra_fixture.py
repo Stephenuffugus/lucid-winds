@@ -25,6 +25,9 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'enemies/enemy_moth_elite.png': ('moth_elite', None), 'enemies/enemy_icicle_elite.png': ('icicle_elite', None),
     'enemies/enemy_jelly_elite.png': ('jelly_elite', None), 'enemies/enemy_crawler_elite.png': ('crawler_elite', None),
     'enemies/enemy_spark_elite.png': ('spark_elite', None), 'ui/hud_heart.png': ('hud_heart', None),
+    # Weapons v1 step 1 (docs/WEAPONS-V1.md 8.1): the builder's placeholders under the HOLD items' names, one key a file
+    'fx/fx_projectiles.png': ('boomerang', None), 'fx/fx_shockwave.png': ('shock', None), 'fx/fx_bursts.png': ('pop', None),
+    'ui/icon_weapons.png': ('icon', None),
 }
 
 
