@@ -27,6 +27,20 @@ const keys = page => page.evaluate(() => caches.keys());
    copy, stamped shutterbug-v2, would have equalled the new live name and proved no update at all) */
 const CACHE = (readFileSync(process.env.SB_SW || join(GAME, 'sw.js'), 'utf8').match(/var CACHE = '(shutterbug-v[0-9A-Za-z._-]+)'/) || [])[1] || 'none';
 const NEXT = 'shutterbug-vpwa-next';
+/* offline for the page AND the worker: page.setOfflineMode reaches the page's own network only, and the worker's fetch()
+   is its own target's (sb-m1-2: probed, the server still answered the "offline" reload's navigation through the worker,
+   so the offline checks had been run online since T1.11). Every service worker target is put offline by CDP too, and
+   the server's request log proves nothing reached it. */
+const swSessions = [];
+async function offline(browser, page, on) {
+  await page.setOfflineMode(on);
+  for (const t of browser.targets().filter(x => x.type() === 'service_worker')) {
+    let s = swSessions.find(x => x.t === t);
+    if (!s) { s = { t, c: await t.createCDPSession() }; await s.c.send('Network.enable'); swSessions.push(s); }
+    await s.c.send('Network.emulateNetworkConditions', { offline: on, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+  }
+  return browser.targets().filter(x => x.type() === 'service_worker').length;
+}
 const FOREIGN = 'FOREIGN SHELL from another cache';
 try {
   /* framed or ?embed=1: no registration */
@@ -67,7 +81,8 @@ try {
   /* offline: the title, the sample room, a shared link */
   const link = await page.evaluate(() => window.SB.record.linkOf(location.origin, location.pathname, window.SB.ui.sampleRecord()));
   const before = errors.length;
-  await page.setOfflineMode(true);
+  const workers = await offline(browser, page, true);
+  const asked = srv.requests.length;
   await page.reload();
   const shellOf = await page.evaluate(f => ({ foreign: document.documentElement.outerHTML.includes(f), title: !!document.getElementById('title') }), FOREIGN);
   R.say(!shellOf.foreign && shellOf.title, 'offline the shell comes from the worker\'s own cache, never another cache on the origin holding the same URL (' + (shellOf.foreign ? 'the foreign copy answered' : shellOf.title ? 'its own' : 'no title') + ')');
@@ -78,10 +93,14 @@ try {
   const played = await page.evaluate(() => window.SB_DEV.screen() === 'play' && window.SB_DEV.state().frame >= 30);
   await page.goto(link); await ready(page);
   const card = await page.evaluate(() => document.getElementById('devcard').classList.contains('on'));
+  const reached = srv.requests.slice(asked);
+  R.say(workers > 0 && reached.length === 0, 'offline means offline: the page and its worker (' + workers + ' worker target) reach the server for nothing' + (reached.length ? ' (' + reached.slice(0, 4).join(', ') + ')' : ''));
   const offErr = errors.slice(before).filter(e => !FLEET.some(f => e.includes(f.slice(1))) && !/ERR_INTERNET_DISCONNECTED|Failed to load resource/.test(e));
   const fleetOnly = errors.slice(before).filter(e => /Failed to load resource|ERR_INTERNET_DISCONNECTED/.test(e)).length <= FLEET.length * 2;
   R.say(title && played && card && offErr.length === 0 && fleetOnly, 'offline a reload renders the title, plays the sample room and opens a shared link; only the fleet\'s root files fail' + (offErr.length ? ' (' + offErr.slice(0, 3).join(' ; ') + ')' : ''));
-  await page.setOfflineMode(false);
+  await offline(browser, page, false);
+  /* detached once online again: a session left on the old worker held its activate (the update kept the old cache) */
+  for (const s of swSessions.splice(0)) await s.c.detach().catch(() => {});
 
   /* the update path: a copy stamped v2 */
   const dir = mkdtempSync(join(tmpdir(), 'sbpwa-'));
