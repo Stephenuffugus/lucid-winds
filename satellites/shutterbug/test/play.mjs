@@ -245,23 +245,27 @@ try {
     const wB = await word();
     R.say((wB & 32) !== 0 && (wB & 4) === 0, 'a tap on B is the dive verb\'s tap, never A (word ' + wB + ')');
 
-    /* releaseAll (blur, hidden, Pause) forgets what the strip showed pressed: a thumb still down presses again on its
-       next move, read from where it landed */
+    /* releaseAll (blur, hidden, Pause, Resume) forgets what the strip showed pressed: a thumb still down is re centred
+       where it is, so it presses again once it slides ON px from there. The blur pauses the room too (his call 7, QUESTIONS
+       Q94), and under the pause card the stick reads nothing (the stick's review); a real tap on Resume with a second
+       finger, the thumb still down: then 14 px more is right */
     const keep = await landStick(page, sc.x, sc.y);
     await keep.slide(20);
     const wHold = await word();
     await page.evaluate(() => window.dispatchEvent(new Event('blur')));
     const wBlur = await word(), litAfterBlur = await page.evaluate(() => document.querySelector('#stick .pad').classList.contains('r'));
     await keep.slide(24);
-    const wMove = await word();
-    await keep.end();
-    R.say(wHold === 2 && wBlur === 0 && !litAfterBlur, 'a blur releases a held thumb and its pad stops showing right (words ' + wHold + ', ' + wBlur + ')');
-    R.say(wMove === 2, 'the same thumb moved after the blur presses right again (word ' + wMove + ')');
-    /* the blur paused the room too (his call 7, QUESTIONS Q94): a real tap on Resume plays on, so what follows runs in play */
+    const wPaused = await word();
     const blurred = await page.evaluate(() => window.SB_DEV.screen());
     if (blurred === 'pause') await tap(page, '#resume');
     const resumed = await page.evaluate(() => window.SB_DEV.screen());
+    await keep.slide(24 + 14);
+    const wMove = await word();
+    await keep.end();
+    R.say(wHold === 2 && wBlur === 0 && !litAfterBlur, 'a blur releases a held thumb and its pad stops showing right (words ' + wHold + ', ' + wBlur + ')');
     R.say(blurred === 'pause' && resumed === 'play', 'the blur also paused the room (screen ' + blurred + ') and a real tap on Resume plays on (screen ' + resumed + ')');
+    R.say(wPaused === 0, 'under the pause card the held thumb slid on reads nothing (word ' + wPaused + ')');
+    R.say(wMove === 2, 'the same thumb, after Resume, slid 14 px more presses right again (word ' + wMove + ')');
     /* a palm on the stick first, then the thumb landed elsewhere and slid right: the first rules (the palm reads nothing);
        the palm lifted, the thumb still down takes over from its own landing point, its pad drawn there */
     const palm = await landStick(page, sc.x - 60, sc.y + 20);

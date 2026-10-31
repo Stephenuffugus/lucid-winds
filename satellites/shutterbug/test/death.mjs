@@ -2,7 +2,10 @@
  * frames, the strip shows the heart gone and the hit is heard; standing still, the last heart ends the room in the
  * death card (`The bug fell out of the picture`, `Again`, `Title`); a REAL touch on Again restarts the same room (the
  * same level hash, the same record and seed) at full hearts with the reveal skipped, the moths home again. The hints:
- * the stick's field and A pulse at the first standing moment, once. The clear card offers `Shoot the next room` and `Play it
+ * the stick's idle line and A pulse at the first standing moment, once (the stick's hint draws no box: under reduced
+ * motion A is a still outline and the stick's line is Ink, no outline, and both leave). On the death card the fleet's
+ * chip is hidden, so the reserved box stays released: the stick runs from the edge and a thumb under the card draws and
+ * reads nothing. The clear card offers `Shoot the next room` and `Play it
  * again`, each 48 px or more. The loop is held and stepped with SB_DEV.step(n) (each step samples the real input).
  *
  * At 320x568 the docked card clears the fallen bug at points all the way up the climb (the M1 review).
@@ -10,7 +13,7 @@
  * Watched red by RESTART_REVEALS (Again replays the reveal), DEATH_NO_CARD (the last heart shows no card), BLINK_NONE
  * (the hero drawn through the i frames), HEARTS_STALE (the strip keeps the old count), DEATH_CARD_TALL (the short
  * screen's side by side buttons gone) and CHIP_ON_DEATH (the fleet's chrome left over the card). */
-import { serve, launch, newPage, gotoGame, ready, reporter, tap } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, landStick } from './harness.mjs';
 
 const R = reporter('DEATH');
 const srv = await serve();
@@ -26,14 +29,14 @@ try {
   const full = s0.st.hero.hearts, moths0 = s0.st.enemies.map(e => [e.x, e.y]);
   R.say(s0.screen === 'play' && moths0.length >= 1 && moths0.length <= 2, 'the sample room, the first room: ' + moths0.length + ' moths (at most 2), ' + full + ' hearts');
 
-  /* the first standing moment pulses the stick's field (QUESTIONS Q140) and A, once */
+  /* the first standing moment pulses the stick's idle line (QUESTIONS Q140) and A, once */
   const hint = await page.evaluate(() => {
     for (let k = 0; k < 120 && !window.SB_DEV.state().hero.ground; k++) window.SB_DEV.step(1);
     window.SB_DEV.step(1);
     const q = s => document.querySelector(s).classList.contains('hint');
     return { hinted: window.SB_DEV.hinted(), stick: q('#stick'), A: q('#btnA'), B: q('#btnB') };
   });
-  R.say(hint.hinted.stick && hint.hinted.A && hint.stick && hint.A && !hint.B, 'standing first, the stick\'s field and A pulse (B waits for a dive target)');
+  R.say(hint.hinted.stick && hint.hinted.A && hint.stick && hint.A && !hint.B, 'standing first, the stick\'s idle line and A pulse (B waits for a dive target)');
 
   /* stand still until the first hit */
   const hit = await page.evaluate(full => {
@@ -68,6 +71,23 @@ try {
       shown: window.SB_DEV.heroShown(), lost: document.querySelectorAll('#hearts i.lost').length };
   });
   R.say(dead.screen === 'dead' && dead.on && dead.dead === 1 && dead.hearts === 0, 'the last heart ends the room in ' + dead.k + ' more steps: the death card is up');
+  /* the chip is hidden under the death card, so the box stays released (the stick's review: it came back, and the stick
+     jumped 120 px under a held thumb); a thumb in the bottom left corner under the card draws no pad and reads nothing */
+  const box = await page.evaluate(() => {
+    const res = document.getElementById('reserve'), rb = res.getBoundingClientRect(), st = document.getElementById('stick').getBoundingClientRect();
+    const chip = document.getElementById('sws-music-chip');
+    const t = document.elementFromPoint(3, innerHeight - 3), s = document.getElementById('stick');
+    return { res: getComputedStyle(res).display !== 'none' && rb.width > 0, left: st.left, corner: !!t && (t === s || s.contains(t)) ? 'the stick' : t ? (t.id || t.className || t.tagName) : 'nothing',
+      chip: !!chip && getComputedStyle(chip).display !== 'none' };
+  });
+  R.say(!box.res && Math.abs(box.left) < 0.5 && !box.chip, 'on the death card the reserved box stays released, the chip hidden (box ' + (box.res ? 'SHOWN' : 'hidden') + ', the stick from x ' + box.left.toFixed(0) + ', chip ' + (box.chip ? 'SHOWN' : 'hidden') + ')');
+  {
+    const fd = await landStick(page, 3, (await page.evaluate(() => innerHeight)) - 3);
+    await fd.slide(20);
+    const sd = await page.evaluate(() => ({ s: window.SB_DEV.stick(), pad: getComputedStyle(document.querySelector('#stick .pad')).display }));
+    await fd.end();
+    R.say(box.corner === 'the stick' && sd.s.dir === null && sd.pad === 'none', 'on the death card a thumb in the bottom left corner (on ' + box.corner + ') slid 20 px draws no pad and reads nothing (dir ' + sd.s.dir + ', pad ' + sd.pad + ')');
+  }
   R.say(dead.shown && dead.lost === full, 'the fallen hero is drawn (no blink under the card) and the strip shows ' + dead.lost + ' empty hearts');
   const seen = await page.evaluate(() => {
     const cv = document.getElementById('view'), r = cv.getBoundingClientRect(), hr = window.SB_DEV.spriteRects().hero, k = r.width / cv.width;
@@ -183,13 +203,17 @@ try {
   const on = await rm.page.evaluate(() => {
     for (let k = 0; k < 120 && !window.SB_DEV.state().hero.ground; k++) window.SB_DEV.step(1);
     window.SB_DEV.step(1);
-    const z = document.querySelector('#stick .field');
-    return { cls: document.querySelector('#stick').classList.contains('hint'), outline: getComputedStyle(z).outlineStyle };
+    const st = document.querySelector('#stick'), lines = [];
+    for (const e of [st, ...st.querySelectorAll('*')]) { const c = getComputedStyle(e); if (c.outlineStyle !== 'none' && parseFloat(c.outlineWidth) > 0) lines.push(e.className || e.tagName); }
+    return { cls: st.classList.contains('hint'), A: document.querySelector('#btnA').classList.contains('hint'), aOutline: getComputedStyle(document.querySelector('#btnA .glyph')).outlineStyle,
+      lines, idle: getComputedStyle(st.querySelector('.idle')).color, anim: getComputedStyle(st.querySelector('.idle')).animationName };
   });
   await new Promise(r => setTimeout(r, 2600));
-  const off = await rm.page.evaluate(() => ({ cls: document.querySelector('#stick').classList.contains('hint'), A: document.querySelector('#btnA').classList.contains('hint'), outline: getComputedStyle(document.querySelector('#stick .field')).outlineStyle }));
-  R.say(on.cls && on.outline === 'solid', 'under reduced motion the hint is a still outline at the first standing moment (outline ' + on.outline + ')');
-  R.say(!off.cls && !off.A && off.outline !== 'solid', 'under reduced motion the hint outline leaves after the pulse (2.6 s on: stick ' + off.cls + ', A ' + off.A + ', outline ' + off.outline + ')');
+  const off = await rm.page.evaluate(() => ({ cls: document.querySelector('#stick').classList.contains('hint'), A: document.querySelector('#btnA').classList.contains('hint'),
+    aOutline: getComputedStyle(document.querySelector('#btnA .glyph')).outlineStyle, idle: getComputedStyle(document.querySelector('#stick .idle')).color }));
+  R.say(on.cls && on.A && on.aOutline === 'solid', 'under reduced motion A\'s hint is a still outline at the first standing moment (outline ' + on.aOutline + ')');
+  R.say(on.cls && on.lines.length === 0 && on.idle === 'rgb(11, 10, 15)' && on.anim === 'none', 'under reduced motion the stick\'s hint draws no outline: its idle line is Ink and still (' + (on.lines.join(', ') || 'no outline') + ', the line ' + on.idle + ', animation ' + on.anim + ')');
+  R.say(!off.cls && !off.A && off.aOutline !== 'solid' && off.idle !== 'rgb(11, 10, 15)', 'under reduced motion the hint leaves after the pulse (2.6 s on: stick ' + off.cls + ', A ' + off.A + ', A\'s outline ' + off.aOutline + ', the line ' + off.idle + ')');
   R.say(rm.errors.length === 0, 'the reduced motion page has zero page errors');
   await rm.page.close();
 } finally {

@@ -390,7 +390,7 @@ const MUTANTS = [
   { name: 'DEATH_AND_CLEAR', task: 'review 4', file: 'page', find: '      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && ', repl: '      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && ',
     gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the clear wins' }] },
   { name: 'HINT_STAYS', task: 'review 4', file: 'page', find: "clearTimeout(el.sbHintT); el.sbHintT = setTimeout(function () { el.classList.remove('hint'); }, HINT_MS);", repl: '',
-    gates: [{ gate: 'death', expect: 'under reduced motion the hint outline leaves' }] },
+    gates: [{ gate: 'death', expect: 'under reduced motion the hint leaves after the pulse' }] },
   /* T1.1: biome detection */
   { name: 'HUE_BANDS_SWAPPED', task: 'T1.1', file: 'page', find: 'BAND = [-1, -1, -1, -1, -1, -1, -1, 0, 0, 4, 4, 2, 2, 3, 0, -1];',
     repl: 'BAND = [-1, -1, -1, -1, -1, -1, -1, 0, 0, 2, 2, 4, 4, 3, 0, -1];',
@@ -459,7 +459,7 @@ const MUTANTS = [
     gates: [{ gate: 'play', expect: 'Again leaves nothing painted over the play area' }] },
   { name: 'STRIP_KEEPS_PRESSED', task: 'T0.8b review', file: 'page', find: "down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; if (I._stripReset) I._stripReset(); };",   /* re anchored after the M1 review */
     repl: "down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; };",
-    gates: [{ gate: 'play', expect: 'the same thumb moved after the blur presses right again' }] },
+    gates: [{ gate: 'play', expect: 'a blur releases a held thumb and its pad stops showing right' }] },   /* since the stick's review the thumb re centres at Resume and presses on its own move, so the lit pad names it */
   /* TITLE_UNDER_ROCKER, retired at NOTE3 (QUESTIONS Q94): the strip's Title it watched at 320x568 is gone; Pause in the top
      strip is watched by TITLE_BACK_IN_STRIP and PAUSE_OVERHANG_UNDER (layout) and the pause gate's rows */
   { name: 'EXIT_HIGHEST_INDEX', task: 'T0.8b review', file: 'page', find: 'if (standableIn(level, lit[q]) && d[lit[q]] >= 0 && (lc < 0 || d[lit[q]] > d[lc])) lc = lit[q];',
@@ -974,10 +974,38 @@ const MUTANTS = [
   { name: 'RELEASE_ON_LEAVE', task: 'STICK', file: 'page', find: '      var p = stickAt[e.pointerId];\n      if (!p) return;\n',
     repl: '      var p = stickAt[e.pointerId];\n      if (!p) return;\n      var zr = stick.getBoundingClientRect();\n      if (e.clientX > zr.right || e.clientY < zr.top) { endStick(e); return; }\n',
     gates: [{ gate: 'input', expect: '412x915: slid over B and up over the room it still steers right' }] },
-  { name: 'PAD_OVER_CANVAS', task: 'STICK', file: 'page', find: 'cy = Math.max(f.top + hh, Math.min(f.bottom - hh, p.y));', repl: 'cy = p.y;',
+  { name: 'PAD_OVER_CANVAS', task: 'STICK', file: 'page', find: 'cy = Math.max(s.top + hh, p.y);', repl: 'cy = p.y;',
     gates: [{ gate: 'input', expect: "412x915: a landing at the zone's top edge draws its pad inside the strip, never over the room" }] },
   { name: 'MIRROR_STICK_LEFT', task: 'STICK', file: 'page', find: '#strip.mirror #stick { left: calc(var(--res) + 2 * var(--btn)); right: calc(var(--sar) + var(--edge)); }\n', repl: '',
     gates: [{ gate: 'input', expect: '412x915 mirrored: the stick zone runs from B to the right edge' }] },
+  /* the stick's review (STICKR): the hint drew a Sun box round the whole field; the pad was kept inside the inset field,
+     so a corner thumb sat outside its rim; the arrows were italic; the stick drew and read under the pause and clear
+     cards; a thumb held still across Resume kept its knob pushed; the death card brought the box back; and three
+     behaviours had a gate and no row (the idle line, the pad's sideways clamp, the lit arrow) */
+  { name: 'HINT_BOXES_FIELD', task: 'STICKR', file: 'page', find: '#stick.hint .idle { animation: sbidle 0.7s ease-in-out 3; }', repl: '#stick.hint .field { animation: sbhint 0.7s ease-in-out 3; }',
+    gates: [{ gate: 'input', expect: "412x915: the first standing moment's hint on the stick draws no box" }] },
+  { name: 'HINT_OUTLINE_REDUCED', task: 'STICKR', file: 'page', find: '  #stick.hint .idle, #stick.hint .idle .hl, #stick.hint .idle .hr { animation: none; color: var(--ink); } }',
+    repl: '  #stick.hint .idle, #stick.hint .idle .hl, #stick.hint .idle .hr { animation: none; color: var(--ink); } #stick.hint .field { outline: 4px solid var(--sun); } }',
+    gates: [{ gate: 'death', expect: "under reduced motion the stick's hint draws no outline" }] },
+  { name: 'STICK_IDLE_GONE', task: 'STICKR', file: 'page', find: "    stickIdle: 'slide to run',", repl: "    stickIdle: '',",
+    gates: [{ gate: 'input', expect: '412x915: idle, a quiet hint in the field' }] },
+  { name: 'PAD_X_UNCLAMPED', task: 'STICKR', file: 'page', find: 'Math.min(s.right - hw, p.ox)', repl: 'p.ox',
+    gates: [{ gate: 'input', expect: '412x915: landed at beside B, low the pad and the knob appear centred under it, kept off the room and off B' }] },
+  { name: 'PAD_FIELD_INSET', task: 'STICKR', file: 'page', find: 'var cx = mir ? Math.max(s.left + hw, p.ox) : Math.min(s.right - hw, p.ox), cy = Math.max(s.top + hh, p.y);',
+    repl: "var f = stick.querySelector('.field').getBoundingClientRect(), cx = Math.max(f.left + hw, Math.min(f.right - hw, p.ox)), cy = Math.max(f.top + hh, Math.min(f.bottom - hh, p.y));",
+    gates: [{ gate: 'input', expect: '412x915: landed at the very bottom left corner the thumb is inside the drawn pad' }] },
+  { name: 'KNOB_ARROW_DARK', task: 'STICKR', file: 'page', find: "      pad.classList.toggle('l', stickDir === 'L'); pad.classList.toggle('r', stickDir === 'R');\n", repl: '',
+    gates: [{ gate: 'input', expect: '412x915: pushed 20 px right without lifting it is right, the knob 20 px right and the right arrow lit' }] },
+  { name: 'ITALIC_ARROWS', task: 'STICKR', file: 'page', find: '#stick i { font-style: normal; }\n', repl: '',
+    gates: [{ gate: 'input', expect: "412x915: the stick's arrows stand upright" }] },
+  { name: 'PAD_UNDER_CARD', task: 'STICKR', file: 'page', edits: [['body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad { display: none; }\n', ''], ['var p = stickPtrs.length && live() ? stickAt', 'var p = stickPtrs.length ? stickAt']],
+    gates: [{ gate: 'input', expect: '412x915: under the pause card a thumb slid on the strip draws no pad' }] },
+  { name: 'STICK_STEERS_PAUSED', task: 'STICKR', file: 'page', find: '      if (!live()) v = null;\n', repl: '',
+    gates: [{ gate: 'input', expect: '412x915: under the pause card a thumb slid on the strip reads nothing' }] },
+  { name: 'RESUME_KNOB_STALE', task: 'STICKR', file: 'page', find: '      for (var k = 0; k < stickPtrs.length; k++) { var q = stickAt[stickPtrs[k]]; q.ox = q.x; }\n', repl: '',
+    gates: [{ gate: 'input', expect: '412x915: after Resume with the thumb held still the knob is centred and the word 0' }] },
+  { name: 'DEATH_BOX_BACK', task: 'STICKR', file: 'page', edits: [['body.playing #strip, body:has(#death.on) #strip { --res: 0px; }', 'body.playing #strip { --res: 0px; }'], ['body.playing #reserve, body:has(#death.on) #reserve { display: none; }', 'body.playing #reserve { display: none; }']],
+    gates: [{ gate: 'death', expect: 'on the death card the reserved box stays released' }] },
   { name: 'BLUR_IN_FRAME_PAUSES', task: 'NOTE3', file: 'page', find: 'if (!window.SWS_EMBED) ui.pause();', repl: 'ui.pause();',
     gates: [{ gate: 'pause', expect: 'inside the wrapper iframe a lost focus (the host page took it) leaves the room running' }] },
   { name: 'RESUME_KEEPS_EDGE', task: 'NOTE3', file: 'page', find: '    SB.input.releaseAll();   /* a tap on the strip under the card is never banked into a jump at Resume */\n', repl: '',
