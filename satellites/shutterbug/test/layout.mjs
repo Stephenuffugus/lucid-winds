@@ -190,8 +190,9 @@ try {
       R.say(m.stripCtrls.join() === 'btnB,btnA', tg + ': the strip holds no control but the stick, B and A (' + (m.stripCtrls.join(', ') || 'none') + ')');
       R.say(!m.chipShown, tg + ': in a room the fleet chip is hidden (Q48\'s addendum)');
     }
-    /* the clear card, where the fleet's chip shows: the reserved box is back (Q48, Q140), and the stick clear of it */
-    await page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(3); });
+    /* the clear card, where the fleet's chip shows, in the default strip: the reserved box is back (Q48, Q140), and the
+       stick clear of it */
+    await page.evaluate(() => { document.getElementById('strip').classList.remove('mirror'); window.SB_DEV.goto('exit'); window.SB_DEV.step(3); });
     const cl = await page.evaluate(() => {
       const q = s => document.querySelector(s), res = q('#reserve'), cs = getComputedStyle(res), rb = res.getBoundingClientRect(), shown = cs.display !== 'none' && rb.width > 0;
       const mine = t => !!t && (t === res || res.contains(t) || /^sws-music/.test(t.id || '') || !!(t.closest && t.closest('[id^="sws-music"]')));
