@@ -85,7 +85,7 @@ const cellPixels = (page, col, row) => page.evaluate((col, row) => {
   return { px: px.join(' '), first: px[0], ash: window.SB.palette.openColour(window.SB.palette.I.ASH, window.SB.game.level.biome | 0).map(Math.round).join(',') };
 }, col, row);
 /* the +15 as it shows: faded in within 2 s, still showing 400 ms later, under the count, in view, clear of the drawn
-   controls and Pause (the strip's Title and Share left it, QUESTIONS Q94), and a thumb on it lands on what lies under it; a real box (the review of NOTE5:
+   controls and Pause (Q94), and a thumb on it lands on what lies under it; a real box (the review of NOTE5:
    the placement line passed on the empty element of a +15 never shown), its size against the count's, whether any
    animation moves it, and its path: its animation set to its seat (0.18 s), 0.6, 0.9 and 1.1 s and put back, the
    top of the +15 against the bottom of the count in the corner's own frame (the corner is turned 4 degrees, so the
