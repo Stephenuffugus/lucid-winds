@@ -792,7 +792,29 @@ const MUTANTS = [
   { name: 'SPARK_UNOUTLINED', task: 'M1R', file: 'page', find: "      a: '.......0......../......090......./...0.09990.0..../..09009990090.../...090969090..../...009969900..../..09996669990.../...009969900..../...090969090..../..09009990090.../...0.09990.0..../......090......./.......0......../................/................/................',", repl: "      a: '................/.......9......../......999......./...9..999..9..../....9.969.9...../.....99699....../...999666999..../.....99699....../....9.969.9...../...9..999..9..../......999......./.......9......../................/................/................/................',",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'spark.a has its Ink outline' }] },
   { name: 'SELECT_44PX', task: 'M1R', file: 'page', find: '#settings select { min-height: 48px; margin-left: auto; }', repl: '#settings select { min-height: 44px; margin-left: auto; }',
-    gates: [{ gate: 'save', expect: 'every Settings control is 48 px tall or more' }] }
+    gates: [{ gate: 'save', expect: 'every Settings control is 48 px tall or more' }] },
+
+  /* Stephen's playtest of 31 Oct, note 1 (QUESTIONS Q90): the installed app's window on Android is drawn under the
+     phone's 48 px button bar with no inset reported, so the page is marked .navpad there and --sab floored at 48 */
+  { name: 'NAVPAD_MARK_REMOVED', task: 'NOTE1', file: 'page', find: " document.documentElement.classList.add('navpad');", repl: ' { /* the mark removed */ }',
+    gates: [{ gate: 'layout', expect: '412x915 the app mark (?navpad, env 0): the page is marked .navpad' }] },
+  { name: 'NAVPAD_FLOOR_DROPPED', task: 'NOTE1', file: 'page', find: ':root.navpad { --sab: max(env(safe-area-inset-bottom, 0px), 48px); }\n', repl: '',
+    gates: [{ gate: 'layout', expect: '412x915 the app mark (?navpad, env 0): the drawn rocker zones, A and B end' }] },
+  { name: 'STRIP_IGNORES_SAB', task: 'NOTE1', file: 'page', edits: [['  padding: 0 0 calc(10px + var(--sab)) 0; touch-action: none; }', '  padding: 0 0 10px 0; touch-action: none; }'],
+      ['  padding-bottom: calc(10px + var(--sab)); touch-action: none; }', '  padding-bottom: 10px; touch-action: none; }']],
+    gates: [{ gate: 'layout', expect: '412x915 env 48 (a phone that reports its bar): the drawn rocker zones, A and B end' }] },
+  /* the floor's other half: a tab is never floored, a reported inset never doubled, and the mark is Android's app window alone */
+  { name: 'NAVPAD_BLANKET', task: 'NOTE1', file: 'page', find: ':root.navpad { --sab:', repl: ':root { --sab:',
+    gates: [{ gate: 'layout', expect: '412x915: the drawn rocker zones, A and B sit' }] },
+  { name: 'NAVPAD_FLOOR_ADDS', task: 'NOTE1', file: 'page', find: 'max(env(safe-area-inset-bottom, 0px), 48px)', repl: 'calc(env(safe-area-inset-bottom, 0px) + 48px)',
+    gates: [{ gate: 'layout', expect: '412x915 the app mark with env 48 (the floor never adds to it): every rule that reads --sab holds its 48 px value' }] },
+  { name: 'NAVPAD_ANY_ANDROID', task: 'NOTE1', file: 'page', find: "matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)').matches))", repl: 'true))',
+    gates: [{ gate: 'layout', expect: '412x915 an Android tab (display mode browser, env 0): the page is not marked' }] },
+  { name: 'NAVPAD_ANY_WINDOW', task: 'NOTE1', file: 'page', find: '(/Android/i.test(navigator.userAgent) &&', repl: '(true &&',
+    gates: [{ gate: 'layout', expect: '412x915 a desktop app window (display mode standalone, not Android): the page is not marked' }] },
+  { name: 'FIT_IGNORES_SAB', task: 'NOTE1', file: 'page', find: '#safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 var(--sab) 0; }',
+    repl: '#safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 0 0; }',
+    gates: [{ gate: 'layout', expect: '390x844 the app mark (?navpad, env 0): VIEW_ROWS' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
