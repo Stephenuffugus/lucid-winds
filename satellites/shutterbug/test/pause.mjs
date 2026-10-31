@@ -1,5 +1,5 @@
-/* Browser gate `pause` (Stephen's note 3 of 31 Oct, "the title button that leaves the game is in the wrong place that
- * ruined my run", and his ruling the same night, "Pause in the top bar": QUESTIONS Q94). Real taps and real keys.
+/* Browser gate `pause` (Stephen's note 3 of 31 Oct: the strip's Title, one bare tap, ended his run; and his ruling the
+ * same night, "Pause in the top bar": QUESTIONS Q94). Real taps and real keys.
  *
  * At 412x915, 360x780 and 320x568, the sample room with the loop held:
  *   - in the running room Pause shows and the back gesture is watched; a real tap on Pause opens the pause card and keeps
