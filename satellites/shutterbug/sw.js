@@ -2,8 +2,8 @@
    files (/music-unlocks.js and the three it loads) are never intercepted, cached or answered, and it only ever deletes
    shutterbug- caches (caches.keys() is origin wide and every satellite shares the origin). BUILD equals the page's
    SB.BUILD and CACHE's version the registration's ?v= (the host caching law: the lint and deploy.sh hold them together). */
-var BUILD = 'sb-m1-1';
-var CACHE = 'shutterbug-v1';
+var BUILD = 'sb-m1-3';
+var CACHE = 'shutterbug-v3';
 var SHELL = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png'];
 
 self.addEventListener('install', function (e) {
@@ -25,8 +25,13 @@ self.addEventListener('fetch', function (e) {
   if (req.method !== 'GET') return;
   if (req.mode === 'navigate') { e.respondWith(navigate(req)); return; }
   if (/\/music\/[^/]+\.mp3$/.test(new URL(req.url).pathname)) { e.respondWith(lazy(req)); return; }
-  e.respondWith(caches.match(req).then(function (hit) { return hit || fetch(req).catch(function () { return new Response('', { status: 504 }); }); }));
+  e.respondWith(own(req).then(function (hit) { return hit || fetch(req).catch(function () { return new Response('', { status: 504 }); }); }));
 });
+
+/* a lookup in the game's own cache only (the card review, sb-m1-2): caches.match() with no cacheName searches every cache
+   on the origin in creation order, and the root worker's lw-assets cache may hold an older copy of this page under the
+   same URL; that copy would answer first and no activate ever purges it (it is not a shutterbug- cache) */
+function own(u) { return caches.match(u, { cacheName: CACHE }); }
 
 /* a navigation: the network with no-cache and an 8 s limit, else the cached shell; it always settles with a Response */
 function navigate(req) {
@@ -34,7 +39,7 @@ function navigate(req) {
   var net = fetch(req, { cache: 'no-cache' }).then(function (r) { return r && r.ok ? r : null; }).catch(function () { return null; });
   return Promise.race([net, limit]).then(function (r) {
     if (r) return r;
-    return caches.match('./index.html').then(function (hit) { return hit || caches.match('./'); }).then(function (hit) {
+    return own('./index.html').then(function (hit) { return hit || own('./'); }).then(function (hit) {
       return hit || new Response('Shutterbug is offline and not installed yet.', { status: 503, headers: { 'content-type': 'text/plain' } });
     });
   });
