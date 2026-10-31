@@ -272,8 +272,9 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-sim-13', expect: 'a hold dive passes the three one ways to the floor' }, { gate: 'harness', only: 'H-lab-7', expect: 'equal the model' }] },
   { name: 'CORNER_PX_6', task: 'T0.12a', file: 'page', find: 'CORNER_PX: 2,', repl: 'CORNER_PX: 6,',
     gates: [{ gate: 'harness', only: 'H-sim-11', expect: 'a side overlap of 13.5 px never arms a slide' }] },
-  { name: 'STICKY_PUSHOFF', task: 'T0.12a', file: 'page', find: 'if (pressed) { h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0;',
-    repl: 'if (pressed) { h.vy = -K.STICKY_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.sticky = 0; h.wall = 0;',
+  /* re anchored at W1 (the sticky jump keeps the wall it left for the throw's side) */
+  { name: 'STICKY_PUSHOFF', task: 'T0.12a', file: 'page', find: 'if (pressed) { wallSide = h.wall; h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0;',
+    repl: 'if (pressed) { wallSide = h.wall; h.vy = -K.STICKY_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.sticky = 0; h.wall = 0;',
     gates: [{ gate: 'harness', only: 'H-sim-12', expect: 'and never moved sideways (no push off)' }] },
   { name: 'LOCK_ZERO', task: 'T0.12a', file: 'page', find: 'WALL_JUMP_LOCK: 10,', repl: 'WALL_JUMP_LOCK: 0,',
     gates: [{ gate: 'harness', only: 'H-sim-15', expect: 'held toward the wall, the lock carries the hero away' }] },
@@ -377,7 +378,8 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-en-2f', expect: '1 px into the hero hits on that step' }] },
   { name: 'CORE_1PX', task: 'review 4', file: 'page', find: 'var core = 2 * K.SUB, mx0 = en.x + core,', repl: 'var core = 1 * K.SUB, mx0 = en.x + core,',
     gates: [{ gate: 'harness', only: 'H-en-2f', expect: 'only touches the hero\'s edge does not' }] },
-  { name: 'FLASH_UNDRAWN', task: 'review 4', file: 'page', find: '        if (it[5] && (idx === P.I.SUN || idx === P.I.WALNUT)) idx = P.I.GLARE;\n', repl: '',
+  /* re anchored at W1 (the atlas paints a second copy, the enemies' hit flash): the dash's Glare copy dropped alone */
+  { name: 'FLASH_UNDRAWN', task: 'review 4', file: 'page', find: '        if (it[5] === 1 && (idx === P.I.SUN || idx === P.I.WALNUT)) idx = P.I.GLARE;\n', repl: '        if (false) idx = P.I.GLARE;\n',
     gates: [{ gate: 'sprites', expect: 'on the canvas the hero shows no Sun through the dash i frames' }] },
   { name: 'SQUASH_SMOOTHED', task: 'review 4', file: 'page', find: '    spr(ctx, key, dx, dy, dw, dh);\n', repl: '    ctx.imageSmoothingEnabled = h.squash !== 0; spr(ctx, key, dx, dy, dw, dh); ctx.imageSmoothingEnabled = false;\n',
     gates: [{ gate: 'sprites', expect: 'the stretch (' }] },
@@ -576,7 +578,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-en-9', expect: 'elite has ELITE_HP_MULT times its HP' }] },
   { name: 'POCKET_ELITE_ROAMS', task: 'T1.4', file: 'page', find: '    if (pk) {\n      var r = pk.rect;', repl: '    if (false) {\n      var r = pk.rect;',
     gates: [{ gate: 'harness', only: 'H-en-9', expect: 'the pocket\'s elite sleeps' }] },
-  { name: 'POCKET_ELITE_AWAKE', task: 'T1.4', file: 'page', find: 'stunned: el && pocketOf(level, e.idx) ? -1 : 0 };', repl: 'stunned: 0 };',
+  { name: 'POCKET_ELITE_AWAKE', task: 'T1.4', file: 'page', find: 'stunned: el && pocketOf(level, e.idx) ? -1 : 0, hurt: 0 };', repl: 'stunned: 0, hurt: 0 };',   /* re anchored at W1 (hurt joined the enemy) */
     gates: [{ gate: 'harness', only: 'H-en-9', expect: 'the pocket\'s elite sleeps' }] },
   { name: 'HELD_STILL_HARMS', task: 'T1.4', file: 'page', find: '      if (held || !liveEnemy(en)) continue;', repl: '      if (!liveEnemy(en)) continue;',
     gates: [{ gate: 'harness', only: 'H-en-9', expect: 'a frozen moth on the hero' }] },
@@ -602,7 +604,7 @@ const MUTANTS = [
   /* re anchored at NOTE5 on the shell's own answer (the pick buttons left with the sheets): the same mutation, the shell
      writing the stat itself with no word recorded */
   { name: 'CHOICE_VIA_SHELL', task: 'T1.6', file: 'page', find: '      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);', repl: '      if (st.scrollsOffered) SB.sim.pickScroll(st, st.scrollsOffered[0]);',
-    gates: [{ gate: 'loot', expect: '412: the recording carries the two answers' }] },
+    gates: [{ gate: 'loot', expect: '412: the recording carries the one answer' }] },   /* W1: the chest answers nothing now */
   { name: 'GRACE_ONE_SHORT', task: 'T1.6', file: 'page', find: 'else { s.room.grace = T8.PICKUP_GRACE_FRAMES; s.room.offerWait = 1; }', repl: 'else { s.room.grace = T8.PICKUP_GRACE_FRAMES - 1; s.room.offerWait = 1; }',
     gates: [{ gate: 'harness', only: 'H-loot-3', expect: 'PICKUP_GRACE_FRAMES or more after the touch' }] },
   { name: 'OFFER_IN_THE_AIR', task: 'T1.6', file: 'page', find: 'if (s.room.offerWait && s.room.grace === 0 && h.ground) {', repl: 'if (s.room.offerWait && s.room.grace === 0) {',
@@ -744,9 +746,10 @@ const MUTANTS = [
   { name: 'TWISTOFF_FROST_ONLY', task: 'M1R', file: 'page', find: 'level.twistOff = opts.firstRoom && (level.biome === 1 || level.biome === 2 || level.biome === 3) ? 1 : 0;', repl: 'level.twistOff = opts.firstRoom && level.biome === 1 ? 1 : 0;',
     gates: [{ gate: 'harness', only: 'H-sim-17', expect: 'the first ever room in Deep and Overgrowth' }] },
   { name: 'NO_PICKUP_EVENT', task: 'M1R', file: 'page', find: 'lt.taken = 1; s.ev |= EV.PICKUP;', repl: 'lt.taken = 1;',
-    gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the loot sets PICKUP, CHEST, OFFER and PICK each on exactly its step' }] },
-  { name: 'NO_CHEST_EVENT', task: 'M1R', file: 'page', find: 's.room.compare = 1; s.ev |= EV.CHEST; }', repl: 's.room.compare = 1; }',
-    gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the loot sets PICKUP, CHEST, OFFER and PICK each on exactly its step' }] },
+    gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the loot sets PICKUP, CHEST, OFFER, PICK' }] },
+  /* re anchored at W1 (the chest pays a weapon): the same mutation, the chest's event dropped */
+  { name: 'NO_CHEST_EVENT', task: 'M1R', file: 'page', find: 's.chest.open = 1; s.room.dp += T8.DP_CHEST; s.ev |= EV.CHEST;', repl: 's.chest.open = 1; s.room.dp += T8.DP_CHEST;',
+    gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the loot sets PICKUP, CHEST, OFFER, PICK' }] },
   { name: 'QR_RULE2_ZERO', task: 'M1R', file: 'page', find: 'if (c === m[y * n + x + 1] && c === m[(y + 1) * n + x] && c === m[(y + 1) * n + x + 1]) score += 3;', repl: 'if (c === m[y * n + x + 1] && c === m[(y + 1) * n + x] && c === m[(y + 1) * n + x + 1]) score += 0;',
     gates: [{ gate: 'harness', only: 'H-qr-4', expect: "the lowest of the test's own" }] },
   { name: 'QR_RULE3_ZERO', task: 'M1R', file: 'page', edits: [['if (!color) score += count(hist) * 40;', 'if (!color) score += count(hist) * 0;'], ['add(run + n, hist); score += count(hist) * 40;', 'add(run + n, hist); score += count(hist) * 0;']],
@@ -849,7 +852,7 @@ const MUTANTS = [
      word), no player string names a weapon, a charm, a blueprint or the Darkroom, and the blueprint is neither drawn
      nor heard. The lint's rule: the old slip line, the old Grit line, the Darkroom as two words, a blueprint in markup */
   { name: 'COPY_PROMISES_WEAPON', task: 'NOTE5', file: 'page', find: "    dp: 'Dead pixels', dpGain: '+{n}',", repl: "    dp: 'Dead pixels', dpGain: '+{n}',\n    slip: 'A weapon waits for the Darkroom.',",
-    gates: [{ gate: 'lint', expect: 'COPY.slip: names weapon before the build has one' }] },
+    gates: [{ gate: 'lint', expect: 'COPY.slip: names Darkroom before the build has one' }] },   /* re anchored at W1: weapon is lifted (weapons exist), so the slip line fails for its Darkroom (NOT_YET's line) */
   { name: 'COPY_PROMISES_CHARM', task: 'NOTE5', file: 'page', find: "    dp: 'Dead pixels', dpGain: '+{n}',", repl: "    dp: 'Dead pixels', dpGain: '+{n}',\n    grit: 'Grit', gritSays: 'charms grow stronger',",
     gates: [{ gate: 'lint', expect: 'COPY.gritSays: names charm before the build has one' }] },
   { name: 'COPY_NAMES_DARK_ROOM', task: 'NOTE5', file: 'page', find: "nextRoom: 'Shoot the next room',", repl: "nextRoom: 'Shoot the dark room',",
@@ -860,8 +863,8 @@ const MUTANTS = [
      answers in the wrong order hold it for good when both open on one step */
   { name: 'OFFER_HOLDS_WORLD', task: 'NOTE5', file: 'page', find: '      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);', repl: '      if (st.scrollsOffered) { /* the offer waits for a tap */ }',
     gates: [{ gate: 'loot', expect: '412: the scroll is taken with its pickup voice' }] },
-  { name: 'CHEST_HOLDS_WORLD', task: 'NOTE5', file: 'page', find: '      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);', repl: '      else if (st.room.compare) { /* the slip waits for a tap */ }',
-    gates: [{ gate: 'loot', expect: '412: the world holds still for exactly the two steps the answers ride' }] },
+  /* CHEST_HOLDS_WORLD retired at W1 (Weapons v1 step 1): no compare opens for an empty slot, so the shell's answer to
+     a chest's compare never rides a step and the condition it watched never arises; step 2's swap rows replace it */
   { name: 'OFFER_SHOWS', task: 'NOTE5', file: 'page', edits: [
       ['    <div id="sharesheet" role="dialog"', '    <div id="offer" role="dialog"><h2>Pick a scroll</h2><button id="pickA" type="button">Vigor</button><button id="pickB" type="button">Focus</button></div>\n    <div id="sharesheet" role="dialog"'],
       ['#clear, #death { position: absolute;', '#clear, #death, #offer { position: absolute;'], ['#clear.on, #death.on { display: flex; }', '#clear.on, #death.on, #offer.on { display: flex; }'],
@@ -874,13 +877,14 @@ const MUTANTS = [
       ['      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);', "      document.getElementById('slip').classList.toggle('on', !!st.room.compare && !st.scrollsOffered);"],
       ["    document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });", "    document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });\n    document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });"],
       ["var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard'];", "var MODALS = ['clear', 'death', 'paused', 'slip', 'sharesheet', 'devcard'];"]],   /* the listener and the list re anchored at NOTE3 (Q94) */
-    gates: [{ gate: 'loot', expect: '412: no sheet, card or dialog shows on the walk' }, { gate: 'lint', expect: 'COPY.slip: names weapon before the build has one' }] },
-  { name: 'ANSWER_ORDER_SWAPPED', task: 'NOTE5', file: 'page', find: '      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);\n      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);',
-    repl: '      if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);\n      else if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);',
-    gates: [{ gate: 'loot', expect: "320: the scroll's offer and the chest's compare open on one step" }] },
+    /* W1: its slip shows on a compare and no compare opens for an empty slot, so the loot walk can no longer see it; the
+       lint still sees its words (the Darkroom, NOT_YET's line now that weapon is lifted) */
+    gates: [{ gate: 'lint', expect: 'COPY.slip: names Darkroom before the build has one' }] },
+  /* ANSWER_ORDER_SWAPPED retired at W1: the offer and the chest's compare can no longer open on one step (no compare
+     opens for an empty slot), so the order of the two answers is never read; step 2's swap rows replace it */
   /* the +15: never shown, never gone (with reduced motion it stands for good), taking taps over A's hit area, and
      carried into the next room */
-  { name: 'PLUS_MISSING', task: 'NOTE5', file: 'page', find: "if (ev & EV.CHEST) { au.sfx('chest'); SB.ui.dpGain(SB.TUNING.DP_CHEST); }", repl: "if (ev & EV.CHEST) { au.sfx('chest'); }",
+  { name: 'PLUS_MISSING', task: 'NOTE5', file: 'page', find: "      if ((ev & (EV.CHEST | EV.KILL)) && G.state.room.dp > dp0) SB.ui.dpGain(G.state.room.dp - dp0);\n", repl: '',   /* re anchored at W1: the gain line serves kills too */
     gates: [{ gate: 'loot', expect: '412: the chest opens with its chest voice and pays 15' }] },
   { name: 'PLUS_STAYS', task: 'NOTE5', file: 'page', find: "clearTimeout(el.sbGainT); el.sbGainT = setTimeout(function () { el.classList.remove('on'); }, GAIN_MS);", repl: 'clearTimeout(el.sbGainT);',
     gates: [{ gate: 'loot', expect: '320: with reduced motion the +15 stands still' }] },
@@ -896,7 +900,7 @@ const MUTANTS = [
     gates: [{ gate: 'loot', expect: '412: no pick voice sounds' }] },
   { name: 'EDGE_LOST_TO_CHOICE', task: 'NOTE5', file: 'page', find: '      (c ? c * IN.CHOICE : (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0));\n    if (!c) { edge.A = 0; edge.B = 0; }',
     repl: '      (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0) | c * IN.CHOICE;\n    edge.A = 0; edge.B = 0;',
-    gates: [{ gate: 'loot', expect: "412: a real tap on A as the chest opens rides past its answer's step and jumps on the next" }] },
+    gates: [{ gate: 'loot', expect: "412: a real tap on A as the scroll's offer opens rides past its answer's step and jumps on the next" }] },   /* re anchored at W1: the chest answers nothing, the scroll's offer still does */
   /* the blueprint: drawn, or heard */
   /* re anchored at NOTE5R (a hidden loot's cell is drawn as its neighbour's): the blueprint's sprite on the open Ash,
      drawn as before the hide */
@@ -911,7 +915,7 @@ const MUTANTS = [
      real box), moving under reduced motion, rising into the count as it fades, larger than the count */
   { name: 'PLUS_OFF_THE_COUNT', task: 'NOTE5R', file: 'page', find: '#dpplus { position: absolute; right: 0; top: 100%;', repl: '#dpplus { position: absolute; right: 0; top: 560%;',
     gates: [{ gate: 'loot', expect: '412: the +15 sits under the count' }] },
-  { name: 'PLUS_NOT_STILL', task: 'NOTE5R', file: 'page', find: "el.classList.toggle('still', still)", repl: "el.classList.toggle('still', false)",
+  { name: 'PLUS_NOT_STILL', task: 'NOTE5R', file: 'page', find: "el.classList.remove('on'); void el.offsetWidth; el.classList.toggle('still', still)", repl: "el.classList.remove('on'); void el.offsetWidth; el.classList.toggle('still', false)",   /* re anchored at W1 (the pickup card has the same line) */
     gates: [{ gate: 'loot', expect: '320: with reduced motion the +15 stands still' }] },
   { name: 'PLUS_RISES_INTO_COUNT', task: 'NOTE5R', file: 'page', find: '100% { opacity: 0; transform: translateY(0); } }', repl: '100% { opacity: 0; transform: translateY(-10px); } }',
     gates: [{ gate: 'loot', expect: '412: the +15 never rises into the count' }] },
@@ -940,7 +944,7 @@ const MUTANTS = [
   { name: 'TITLE_BACK_IN_STRIP', task: 'NOTE3', file: 'page', edits: [
       ['  <div id="strip">\n', '  <div id="strip"><button id="back" type="button" data-copy="toTitle"></button>\n'],
       ['#paused, #clear, #death { position: absolute;', '#back { position: absolute; top: 0; left: calc(6px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;\n  border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }\n#paused, #clear, #death { position: absolute;'],
-      ["    document.getElementById('pausetitle').addEventListener('click', ui.toTitle);", "    document.getElementById('pausetitle').addEventListener('click', ui.toTitle);\n    document.getElementById('back').addEventListener('click', ui.toTitle);"]],
+      ["    document.getElementById('pausetitle').addEventListener('click', function () { ui.toTitle(); });", "    document.getElementById('pausetitle').addEventListener('click', function () { ui.toTitle(); });\n    document.getElementById('back').addEventListener('click', function () { ui.toTitle(); });"]],   /* re anchored at W1 (the listener wrapped) */
     gates: [{ gate: 'layout', expect: '412x915: the strip holds no control but the rocker, B and A' }] },
   { name: 'HIDDEN_NO_PAUSE', task: 'NOTE3', file: 'page', find: "    document.addEventListener('visibilitychange', function () { if (document.hidden) ui.pause(); });\n", repl: '',
     gates: [{ gate: 'pause', expect: 'inside the wrapper iframe a hidden page pauses its room' }] },
@@ -974,7 +978,85 @@ const MUTANTS = [
   { name: 'BACK_IN_REVEAL_LOST', task: 'NOTE3', file: 'page', find: '    reveal: function () { ui.pause(); }, play:', repl: '    play:',
     gates: [{ gate: 'pause', expect: 'back in the reveal ends it and opens the pause card' }] },
   { name: 'CODE_CARD_WATCHED', task: 'NOTE3', file: 'page', find: "    if (ui.screen !== 'play' && BACK[ui.screen]) ui.screen = 'code';\n", repl: '',
-    gates: [{ gate: 'pause', expect: 'a link that arrives over the pause card holds the room under the Tap to develop card' }] }
+    gates: [{ gate: 'pause', expect: 'a link that arrives over the pause card holds the room under the Tap to develop card' }] },
+
+  /* ---------------------------------------------------------------- Weapons v1 step 1 (docs/WEAPONS-V1.md 13.1) */
+  { name: 'CD_DELAYS_JUMP', task: 'W1', file: 'page', find: "    } else if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0)) {", repl: "    } else if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0) && !(h.slots[0] && h.cd[0] > 0)) {",
+    gates: [{ gate: 'harness', only: 'H-wpn-1', expect: "the armed hero's x, y, vx and vy equal the unarmed" }] },
+  { name: 'POOL_GROWS', task: 'W1', file: 'page', find: "      return i;\n    }\n    return -1;\n  }", repl: "      return i;\n    }\n    s.proj.push(newProj()); s.proj[s.proj.length - 1].kind = kind; s.proj[s.proj.length - 1].live = 1;\n    return s.proj.length - 1;\n  }",
+    gates: [{ gate: 'harness', only: 'H-wpn-3', expect: 'a full pool refuses a spawn (-1) and stays 16 long' }] },
+  { name: 'PROJ_UNHASHED', task: 'W1', file: 'page', find: "    ['age', 'i32'], ['mode', 'i32'],", repl: "    ['mode', 'i32'],",
+    gates: [{ gate: 'harness', only: 'H-wpn-2', expect: '.age changes the hash' }] },
+  { name: 'DMG_FLOORED', task: 'W1', file: 'page', find: "  function scaled(dmg, stat) { return dmg * (SB.K.HP_Q + stat); }", repl: "  function scaled(dmg, stat) { return Math.floor(dmg * (SB.K.HP_Q + stat) / SB.K.HP_Q) * SB.K.HP_Q; }",
+    gates: [{ gate: 'harness', only: 'H-stat-1', expect: 'boomerang/shock quarters for Focus and Vigor 0 to 4' }] },
+  { name: 'FOCUS_SCALES_DIVE', task: 'W1', file: 'page', find: "p.dmg = scaled(SB.TUNING.WEAPONS.D1.dmg, s.hero.vigor);", repl: "p.dmg = scaled(SB.TUNING.WEAPONS.D1.dmg, s.hero.focus);",
+    gates: [{ gate: 'harness', only: 'H-stat-1', expect: 'boomerang/shock quarters for Focus and Vigor 0 to 4' }] },
+  { name: 'BOOMERANG_6_CELLS', task: 'W1', file: 'page', find: "if (stop || Math.abs(p.x - p.a) >= K.J1_REACH) {", repl: "if (stop || Math.abs(p.x - p.a) >= K.J1_REACH + K.CELL_SUB) {",
+    gates: [{ gate: 'harness', only: 'H-wpn-J1', expect: 'a moth 1 px inside 5 cells past the front edge is hit, one at 5 cells is not' }] },
+  { name: 'BOOM_HITS_EVERY_STEP', task: 'W1', file: 'page', find: "      if ((p.hit >> m) & 1 || !liveEnemy(en)) continue;", repl: "      if (!liveEnemy(en)) continue;",
+    gates: [{ gate: 'harness', only: 'H-wpn-J1', expect: 'an elite jelly takes two of its four' }] },
+  { name: 'BOOM_NO_RETURN', task: 'W1', file: 'page', find: "if (stop || Math.abs(p.x - p.a) >= K.J1_REACH) { p.mode = 1; p.hit = 0; }", repl: "if (stop || Math.abs(p.x - p.a) >= K.J1_REACH) { p.vx = 0; p.hit = 0; }",
+    gates: [{ gate: 'harness', only: 'H-wpn-J1', expect: 'a frozen jelly two cells ahead takes exactly two hits' }] },
+  { name: 'BOOM_INTO_VINE', task: 'W1', file: 'page', find: "tdir = wallSide !== 0 ? -wallSide : h.facing;", repl: "tdir = h.facing;",
+    gates: [{ gate: 'harness', only: 'H-wpn-J1', expect: 'a sticky jump off a vine on the left, facing it, throws away from the vine' }] },
+  { name: 'SHOCK_THROUGH_WALLS', task: 'W1', file: 'page', edits: [
+      ["if (solidAt(lv, c, row) || !(solidAt(lv, c, row + 1)", "if (!(solidAt(lv, c, row + 1)"], ["if (solidAt(lv, c2, row) || !(solidAt(lv, c2, row + 1)", "if (!(solidAt(lv, c2, row + 1)"]],
+    gates: [{ gate: 'harness', only: 'H-wpn-D1', expect: 'a solid cell 2 cells right stops the right front' }] },
+  { name: 'SHOCK_OFF_THE_LEDGE', task: 'W1', file: 'page', edits: [
+      ["if (solidAt(lv, c, row) || !(solidAt(lv, c, row + 1) || platAt(lv, c, row + 1))) break;", "if (solidAt(lv, c, row)) break;"], ["if (solidAt(lv, c2, row) || !(solidAt(lv, c2, row + 1) || platAt(lv, c2, row + 1))) break;", "if (solidAt(lv, c2, row)) break;"]],
+    gates: [{ gate: 'harness', only: 'H-wpn-D1', expect: 'on a 4 cell ledge the wave ends at its edges' }] },
+  { name: 'SHOCK_ON_PLAIN_LANDING', task: 'W1', file: 'page', find: "var diveLanded = landed && h.dive !== 0,", repl: "var diveLanded = landed && !startedGrounded,",
+    gates: [{ gate: 'harness', only: 'H-wpn-D1', expect: 'a plain landing (no dive) fires nothing' }] },
+  { name: 'DASH_FIRES_IN_PLACE', task: 'W1', file: 'page', find: "dashed = dashStart && h.x !== xBefore;", repl: "dashed = dashStart;",
+    gates: [{ gate: 'harness', only: 'H-wpn-D1', expect: 'a dash pressed flush against a wall moves nothing and fires nothing' }] },
+  { name: 'KILL_NO_DP', task: 'W1', file: 'page', find: "      s.room.dp += en.elite ? T.DP_ELITE : T.DP_FODDER; s.ev |= EV.KILL;", repl: "      s.ev |= EV.KILL;",
+    gates: [{ gate: 'harness', only: 'H-wpn-5', expect: 'a kill sets HURT and KILL and banks DP_FODDER' }] },
+  { name: 'DEAD_STILL_TOUCHES', task: 'W1', file: 'page', edits: [
+      ["      if (en.hp <= 0 && !(en.kind === SB.features.ICICLE && en.state === ICICLE_GONE)) continue;\n", ""], ["      if (held || !liveEnemy(en)) continue;", "      if (held) continue;"]],
+    gates: [{ gate: 'harness', only: 'H-wpn-5', expect: 'the dead moth never moves' }] },
+  { name: 'STUN_WAKES_SLEEPER', task: 'W1', file: 'page', find: "      if (p.stun > 0 && en.stunned >= 0) en.stunned = Math.max(en.stunned, p.stun);", repl: "      if (p.stun > 0) en.stunned = Math.max(en.stunned, p.stun);",
+    gates: [{ gate: 'harness', only: 'H-wpn-5', expect: 'and never wakes it' }] },
+  { name: 'CHEST_NO_WEAPON', task: 'W1', file: 'page', find: "        var got = drawWeapon(s);", repl: "        var got = 0;",
+    gates: [{ gate: 'harness', only: 'H-wpn-6', expect: "the chest equips the test's draw at once" }, { gate: 'fight', expect: '412: the chest opens by a real walk with its voice and the equip voice' }] },
+  { name: 'CHEST_GIVES_EQUIPPED', task: 'W1', file: 'page', edits: [
+      ["if (h.slots[slotOf(c)] !== c) { n++; if (h.slots[slotOf(c)] === 0) empty++; }", "{ n++; if (h.slots[slotOf(c)] === 0) empty++; }"], ["      if (h.slots[slotOf(c)] === c) continue;\n", ""]],
+    gates: [{ gate: 'harness', only: 'H-wpn-6', expect: 'no chest gives a weapon already equipped' }] },
+  { name: 'CHEST_STOPS_FOR_EMPTY', task: 'W1', file: 'page', find: "        if (got > 0 && h.slots[slotOf(got)] === 0) { h.slots[slotOf(got)] = got; s.ev |= EV.EQUIP; }\n        else if (got > 0)", repl: "        if (got > 0)",
+    gates: [{ gate: 'harness', only: 'H-wpn-6', expect: 'no compare ever opens from the built pool' }, { gate: 'fight', expect: '412: the world is never held' }] },
+  { name: 'CHEST_DRAWS_ON_EMPTY_POOL', task: 'W1', file: 'page', find: "    if (n === 0) return 0;\n    var wantEmpty", repl: "    if (n === 0) { SB.rng.stepU32(s, 'rng'); return 0; }\n    var wantEmpty",
+    gates: [{ gate: 'harness', only: 'H-wpn-6', expect: 'or with both slots full pays DP only and draws nothing' }] },
+  { name: 'TAKE_KEEPS_OLD', task: 'W1', file: 'page', find: "        if (choice === CHOICE.TAKE && s.room.cand > 0) { h.slots[slotOf(s.room.cand)] = s.room.cand; s.ev |= EV.EQUIP; }", repl: "        if (choice === CHOICE.TAKE && s.room.cand > 0) { s.ev |= EV.EQUIP; }",
+    gates: [{ gate: 'harness', only: 'H-wpn-7', expect: 'TAKE puts' }] },
+  { name: 'HUD_STALE', task: 'W1', file: 'page', find: "      if (c === shownSlots[k]) continue;", repl: "      if (c === shownSlots[k] || !fresh) continue;",
+    gates: [{ gate: 'fight', expect: '412: the jump box shows' }] },
+  { name: 'HUD_EVERY_STEP', task: 'W1', file: 'page', find: "      if (c === shownSlots[k]) continue;", repl: "      if (c === shownSlots[k]) { slotBoxes[k].setAttribute('aria-label', slotLabel(k, c)); continue; }",
+    gates: [{ gate: 'fight', expect: '412: the HUD is written 0 times over 30 quiet steps' }] },
+  { name: 'GOT_TAKES_TAPS', task: 'W1', file: 'page', find: "width: min(300px, 90%); z-index: 4; pointer-events: none;", repl: "width: min(300px, 90%); z-index: 4;",
+    gates: [{ gate: 'fight', expect: '412: the card is in view' }] },
+  { name: 'GOT_STAYS', task: 'W1', file: 'page', find: "clearTimeout(el.sbGotT); el.sbGotT = setTimeout(function () { el.classList.remove('on'); }, GOT_MS);", repl: "clearTimeout(el.sbGotT);",
+    gates: [{ gate: 'fight', expect: '412: the card goes in about 2.5 s' }] },
+  { name: 'GOT_OVER_BUG', task: 'W1', file: 'page', find: "      if (top - pad < cr.bottom && top + hd.h * k + pad > cr.top) el.classList.add('low');\n", repl: '',
+    gates: [{ gate: 'fight', expect: "412: a chest near the room's top with the bug beside it: the card docks low" }] },
+  { name: 'THROW_SILENT', task: 'W1', file: 'page', find: "      if (ev & EV.FIRE_J) au.sfx(SB.ui.WPN_SFX[SB.sim.WPN[G.state.hero.slots[0]]] || 'throw');\n", repl: '',
+    gates: [{ gate: 'fight', expect: '412: a real A tap throws the boomerang with the throw voice' }] },
+  { name: 'PROJ_IN_BRICK', task: 'W1', file: 'page', find: "boomerang: { w: 12, h: 12, frames: { a: '......000...", repl: "boomerang: { w: 12, h: 12, frames: { a: '......090...",
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'boomerang.a has an Ink outline and draws only' }] },
+  { name: 'GEAR_LOST_ON_NEXT_ROOM', task: 'W1', file: 'page', find: "    if (SB.TUNING.KEEP_GEAR && G.state) G.gear = G.state.hero.slots.slice();", repl: '',
+    gates: [{ gate: 'fight', expect: "412: Play it again starts the next room with the cleared room's gear" }] },
+  { name: 'GEAR_KEPT_THROUGH_TITLE', task: 'W1', file: 'page', find: "    if (!(opts && opts.keepGear === true)) { G.gear = [0, 0, 0]; G.entry = [0, 0, 0]; }\n", repl: '',
+    gates: [{ gate: 'fight', expect: '412: Title through the pause card ends the sitting' }] },
+  { name: 'DEATH_KEEPS_PICKUP', task: 'W1', file: 'page', find: "  ui.showDeath = function () {\n", repl: "  ui.showDeath = function () {\n    if (G.state) G.gear = G.state.hero.slots.slice();\n",
+    gates: [{ gate: 'fight', expect: '412: a death after the chest' }] },
+  { name: 'ROOM_OPTS_MISSING', task: 'W1', file: 'page', find: "    roomOpts: function () { return { loadout: (G.entry || [0, 0, 0]).map(function (c) { return c > 0 ? SB.sim.WPN[c] : null; }) }; },", repl: "    roomOpts: function () { return {}; },",
+    gates: [{ gate: 'fight', expect: '412: the recording replayed on a fresh sim made from SB_DEV.roomOpts()' }] },
+  { name: 'NAME_BEFORE_BUILT', task: 'W1', file: 'page', find: "slots: 'Weapons', slotJump:", repl: "slots: 'Weapons and a Halo', slotJump:",
+    gates: [{ gate: 'lint', expect: 'names Halo (J6), a weapon this build does not have' }] },
+  { name: 'SENTENCE_MISSING', task: 'W1', file: 'page', find: ", D1: 'Dive landings and dashes send a shock along the ground.' },", repl: " },",
+    gates: [{ gate: 'lint', expect: 'COPY.wpnSays holds J1, the build has J1, D1' }] },
+  { name: 'ICON_MISSING', task: 'W1', file: 'page', find: "D1: '................/...000000.......", repl: "X1: '................/...000000.......",
+    gates: [{ gate: 'lint', expect: 'the SPRITES icon sprite has no frame for D1' }] },
+  { name: 'WPN_RENAMED', task: 'W1', file: 'page', find: "wpn: { J1: 'Boomerang', D1: 'Anvil Boots' },", repl: "wpn: { J1: 'Boomerang', D1: 'Anvil Shoes' },",
+    gates: [{ gate: 'lint', expect: 'COPY.wpn.D1 is "Anvil Shoes", DESIGN 9.1 names it "Anvil Boots"' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

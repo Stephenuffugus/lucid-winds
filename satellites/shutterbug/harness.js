@@ -4441,8 +4441,9 @@ group('H-wpn-2', 'coverage: every PROJ field of a live boomerang, an enemy\'s hu
   t.ok(k >= 0, 'a jump throws a live boomerang (slot ' + k + ')');
   const PROJ = SB.sim.FIELDS.find(f => f[0] === 'proj')[2];
   t.same(PROJ.map(f => f[0]), ['kind', 'x', 'y', 'vx', 'vy', 'ttl', 'dmg', 'live', 'age', 'mode', 'a', 'b', 'hit', 'freeze', 'stun'], 'PROJ is the eight old keys then the seven new, in order');
-  for (const [name, type] of PROJ) {
-    const c = SB.sim.attach(structuredClone(s), s.level); c.proj[k][name] = type === 'bool' ? 1 - c.proj[k][name] : c.proj[k][name] + 1;
+  /* every key the live entry holds (not the schema's list: a key the schema drops must still be seen) */
+  for (const name of Object.keys(s.proj[k])) {
+    const c = SB.sim.attach(structuredClone(s), s.level); c.proj[k][name] = name === 'live' ? 1 - c.proj[k][name] : c.proj[k][name] + 1;
     t.ok(SB.sim.hash(c) !== base, 'perturbing proj[' + k + '].' + name + ' changes the hash');
   }
   for (const [path, set] of [['enemies[0].hurt', c => { c.enemies[0].hurt++; }], ['room.cand', c => { c.room.cand++; }], ['room.tremor', c => { c.room.tremor++; }]]) {
@@ -4547,7 +4548,7 @@ group('H-wpn-6', 'the chest (6.1, 6.2): over 200 seeded rooms it equips at once 
   const T = SB.TUNING, EV = SB.sim.EV, CH = 46 * 24 + 9, built = BUILT_IDS.map(code);
   const slot = c => (c - 1) >> 3;
   const drawRef = (st, slots) => { const cands = built.filter(c => slots[slot(c)] !== c), empty = cands.filter(c => slots[slot(c)] === 0); if (!cands.length) return 0; const pool = T.CHEST_FILLS_EMPTY_FIRST && empty.length ? empty : cands; return pool[stepRef(st) % pool.length]; };
-  let ok = 0, compares = 0, held = 0, equippedGiven = 0, firstBad = '';
+  let ok = 0, compares = 0, held = 0, equippedGiven = 0, gaveEquipped = 0, firstBad = '';
   const tally = {};
   for (let k = 0; k < 200; k++) {
     for (const [lo, name] of [[[0, 0, 0], 'empty'], [['J1', 0, 0], 'jump full'], [[0, 'D1', 0], 'dive full'], [['J1', 'D1', 0], 'both full']]) {
@@ -4565,6 +4566,7 @@ group('H-wpn-6', 'the chest (6.1, 6.2): over 200 seeded rooms it equips at once 
         if (s.chest.open && at < 0) { at = f; ev = s.ev; x0 = xb; x1 = s.hero.x; SB.sim.step(s, IN.R); x2 = s.hero.x; if (s.room.compare) compares++; }
       }
       const slotsNow = s.hero.slots, gotCode = want ? slotsNow[slot(want)] : 0;
+      if (s.room.cand > 0 && slots0[slot(s.room.cand)] === s.room.cand) gaveEquipped++;   /* the sim's own offer of a weapon the slot holds */
       if (x1 === x0 || x2 === x1) held++;
       if (want && slots0[slot(want)] === want) equippedGiven++;
       const right = at >= 0 && s.room.dp === dpWant && (want ? gotCode === want && (ev & EV.EQUIP) : !(ev & EV.EQUIP) && JSON.stringify(slotsNow) === JSON.stringify(slots0)) && !(ev & EV.SWAP) && (ev & EV.CHEST);
@@ -4573,7 +4575,9 @@ group('H-wpn-6', 'the chest (6.1, 6.2): over 200 seeded rooms it equips at once 
     }
   }
   t.ok(ok === 800, 'over 200 seeds and four loadouts the chest equips the test\'s draw at once (EQUIP on its step), or with both slots full pays DP only and draws nothing (the next speck\'s roll is the test\'s) (' + ok + ' of 800' + (firstBad ? '; first wrong: ' + firstBad : '') + ')');
-  t.ok(compares === 0 && held === 0 && equippedGiven === 0, 'no compare ever opens from the built pool (' + compares + '), the hero moves on the chest\'s step and the next with R held (' + held + ' held), and no chest gives an equipped weapon (' + equippedGiven + ')');
+  t.ok(compares === 0, 'no compare ever opens from the built pool (' + compares + ' steps under one)');
+  t.ok(held === 0, 'the hero moves on the chest\'s step and the next with R held (' + held + ' held)');
+  t.ok(equippedGiven === 0 && gaveEquipped === 0, 'no chest gives a weapon already equipped (the test\'s draws ' + equippedGiven + ', the sim\'s offers ' + gaveEquipped + ')');
   t.ok(tally.empty.J1 > 60 && tally.empty.D1 > 60 && tally['jump full'].D1 === 200 && tally['dive full'].J1 === 200 && tally['both full'].none === 200, 'the draws: both empty ' + JSON.stringify(tally.empty) + '; jump full ' + JSON.stringify(tally['jump full']) + '; dive full ' + JSON.stringify(tally['dive full']) + '; both full ' + JSON.stringify(tally['both full']));
 });
 

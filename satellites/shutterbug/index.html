@@ -130,8 +130,10 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #slots canvas { width: 16px; height: 16px; image-rendering: pixelated; display: block; }
 #slots .slot.cool canvas { opacity: 0.35; }
 /* the pickup card (8.5): Paper with an Ink border like the cards, at the stage's top (docked low over the bug), under
-   the cards; it takes no tap. 2.5 s: 0.2 s in, 0.4 s out; still with reduced motion */
-#got { position: absolute; left: 0; right: 0; top: 8px; margin: 0 auto; width: min(300px, 90%); z-index: 4; pointer-events: none;
+   the cards; it takes no tap. 2.5 s: 0.2 s in, 0.4 s out; still with reduced motion. 16 px down, not the spec's 8: the
+   Pause control's 48 px hit area hangs 12 px over the room's top left corner (Q94), and at 360 and 320 wide the card
+   reached under it (the fight gate; Q121) */
+#got { position: absolute; left: 0; right: 0; top: 16px; margin: 0 auto; width: min(300px, 90%); z-index: 4; pointer-events: none;
   display: none; align-items: center; gap: 10px; padding: 8px 12px; background: var(--paper); color: var(--ink); border: 2px solid var(--ink);
   box-shadow: 0 4px 12px rgba(0,0,0,0.35); text-align: left; }
 #got.on { display: flex; animation: sbgot 2.5s linear forwards; }
