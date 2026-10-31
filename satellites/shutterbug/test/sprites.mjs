@@ -22,7 +22,15 @@
  * Watched red by OFF_PALETTE_PIXEL (the atlas writes one channel a step off), ANIM_AT_60 (the run advances every
  * step), DASH_NO_FLASH (the i frames drawn plain), ELITE_DRAWS_BASE (an elite drawn as its base art scaled to
  * ELITE_PX), ELITE_SUNK (the rest rule off: the icicle's root and the spark's base 4 px into the roof and floor) and
- * HEART_NOT_SPRITE (the old CSS hearts back). */
+ * HEART_NOT_SPRITE (the old CSS hearts back).
+ *
+ * ART3 (Astra's rounds 2 and 3, Q98): trap-pattern under Frost, a crusher column of three or more cells in each phase:
+ * the cells above the bottom are row 0 of the phase's frame stretched, the bottom cell the whole frame; the sample room's
+ * 10x10 speck as speck.a off the beat and speck.b on it; saturated-blobs under each biome: five tiles of its own mote
+ * key at 4 fps, every opaque pixel on the canvas, repeatable, drifting by the art's step, none under reduced motion, the
+ * hash untouched; the room name's badge and the reveal's (2x) are icon_biomes' frame of the room's biome. Watched red
+ * by CRUSHER_TILED, CRUSHER_BOTTOM_SHAFT, SPECK_STUCK_A, MOTES_WRONG_BIOME, MOTES_AT_60, MOTES_UNREPEATABLE,
+ * MOTES_UNDER_REDUCED, MOTES_JUMP, BADGE_WRONG_BIOME and REVEAL_NO_BADGE. */
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { serve, launch, newPage, gotoGame, ready, reporter, GAME } from './harness.mjs';
@@ -239,6 +247,113 @@ try {
   const shape = hb.hs.length === 8 && hb.hs.filter(q => q.lost).length === 5 && hb.hs.every(q => q.w === 18 && q.h === 16);
   const opq = f => SPR.hud_heart.frames[f].replace(/[/.]/g, '').length;
   R.say(shape && hn === 3 * opq('full') + 5 * opq('empty') && hbad.length === 0, 'the top strip\'s ' + hb.hs.length + ' hearts (3 full, 5 empty, each 18x16 css px) are hud_heart at 2x on a real screenshot: ' + hn + ' opaque pixels' + (hbad.length ? ' (' + hbad.length + ' differ: ' + hbad.slice(0, 3).join('; ') + ')' : ''));
+
+  /* ART3 (Astra's rounds 2 and 3, Q98), each read off the real canvas against the frame decoded here from the page's
+     SPRITES. The room is emptied of what draws over the subject (the enemies and, for the crusher and the air, the loot):
+     a liberty of the gate, never of the game */
+  const canvasAt = (x, y, w, h) => page.evaluate((x, y, w, h) => { const d = document.getElementById('view').getContext('2d').getImageData(x, y, w, h).data, o = []; for (let i = 0; i < d.length; i += 4) o.push('#' + [d[i], d[i + 1], d[i + 2]].map(v => ('0' + v.toString(16)).slice(-2)).join('')); return o; }, x, y, w, h);
+  /* rows (the frame as drawn, w x h) against the canvas pixels px at the same box; skip(x, y) for pixels a later draw may cover */
+  const eqRows = (rows, px, w, skip) => { let n = 0; const bad = []; for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y].length; x++) { const ch = rows[y][x]; if (ch === '.' || (skip && skip(x, y))) continue; n++; if (px[y * w + x] !== '#' + HEX[parseInt(ch, 16)]) bad.push(x + ',' + y + ' ' + px[y * w + x] + ' not ' + HEX[parseInt(ch, 16)]); } return { n, bad }; };
+  const stretchRows = (key, h) => { const r0 = frameOf(key)[0]; return Array.from({ length: h }, () => r0); };
+
+  /* ART3 c, the crusher's shaft: trap-pattern built under Frost (crushers), a column of three or more field cells: in
+     each phase (a up, b mid stroke, c down) every cell above the column's bottom is row 0 of that phase's frame
+     stretched to 16x16 and the bottom cell is the whole frame, every opaque pixel on the canvas */
+  const tp = readFileSync(GAME + '/fixtures/synthetic/trap-pattern.json', 'utf8');
+  const col = await page.evaluate(str => {
+    window.SB_DEV.loadRecord(str, 1); window.SB_DEV.step(1);
+    const G = window.SB.game, lv = G.level, w = lv.w, tf = lv.features && lv.features.trap ? Array.from(lv.features.trap) : [];
+    G.state.enemies.length = 0; G.state.loot.length = 0;
+    let best = null;
+    for (const c of tf) if (!lv.trap[c - w]) { let n = 1; while (lv.trap[c + n * w]) n++; if (!best || n > best.n) best = { top: c, n }; }
+    return { kind: lv.features && lv.features.trapKind, best, w, period: window.SB.K.TRAP_PERIOD_F };
+  }, tp);
+  R.say(col.kind === 'crushers' && !!col.best && col.best.n >= 3, 'trap-pattern under Frost has a crusher column of ' + (col.best ? col.best.n : 0) + ' cells (3 or more)');
+  if (col.best) {
+    const half = col.period >> 1;
+    for (const [ph, tph] of [['a', 10], ['b', half + 1], ['c', half + 20]]) {
+      const got = await page.evaluate((top, n, tph) => {
+        const G = window.SB.game, lv = G.level, w = lv.w, C = 16, h = G.state.hero;
+        G.state.traps.phase = tph;
+        h.x = ((top % w) < 12 ? 20 : 2) * C * 256; h.y = Math.floor(top / w) * C * 256; h.vx = 0; h.vy = 0; window.SB.render.draw(G.state, lv);
+        const cam = window.SB.render.drawn.cam, camX = window.SB.render.drawn.camX || 0, x = (top % w) * C - camX, y0 = Math.floor(top / w) * C - cam;
+        const d = document.getElementById('view').getContext('2d').getImageData(x, y0, C, n * C).data, o = [];
+        for (let i = 0; i < d.length; i += 4) o.push('#' + [d[i], d[i + 1], d[i + 2]].map(v => ('0' + v.toString(16)).slice(-2)).join(''));
+        return { px: o, y0, phase: G.state.traps.phase };
+      }, col.best.top, col.best.n, tph);
+      const rows = stretchRows('crusher.' + ph, (col.best.n - 1) * 16).concat(frameOf('crusher.' + ph));
+      const e = eqRows(rows, got.px, 16);
+      R.say(got.y0 >= 0 && e.n > 0 && e.bad.length === 0, 'a ' + col.best.n + ' cell crusher column in phase ' + ph + ' (trap phase ' + tph + '): the cells above the bottom are row 0 of crusher.' + ph + ' stretched, the bottom cell the whole frame, ' + e.n + ' pixels' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, 3).join('; ') + ')' : ''));
+    }
+  }
+
+  /* ART3 b, the 10x10 speck: in the sample room, the first speck drawn at its cell, frame a off the glint beat and frame
+     b on it (every 3 beats of 5 steps), every opaque pixel on the canvas */
+  for (const fr of ['a', 'b']) {
+    const sp2 = await page.evaluate(fr => {
+      window.SB_DEV.goto('sample'); window.SB_DEV.step(1);
+      const G = window.SB.game, lv = G.level, s2 = G.state; s2.enemies.length = 0;
+      const L = s2.loot.find(l => l.kind === 1 && !l.taken); if (!L) return null;
+      const C = 16, beat = 15; s2.frame = fr === 'a' ? 0 : beat;
+      s2.hero.y = Math.floor(L.idx / lv.w) * C * 256; s2.hero.x = ((L.idx % lv.w) < 12 ? 20 : 2) * C * 256;
+      window.SB.render.draw(s2, lv);
+      const cam = window.SB.render.drawn.cam, camX = window.SB.render.drawn.camX || 0, x = (L.idx % lv.w) * C - camX, y = Math.floor(L.idx / lv.w) * C - cam;
+      const d = document.getElementById('view').getContext('2d').getImageData(x, y, C, C).data, o = [];
+      for (let i = 0; i < d.length; i += 4) o.push('#' + [d[i], d[i + 1], d[i + 2]].map(v => ('0' + v.toString(16)).slice(-2)).join(''));
+      return { px: o, y };
+    }, fr);
+    const e = sp2 ? eqRows(frameOf('speck.' + fr), sp2.px, 16) : { n: 0, bad: ['no speck'] };
+    R.say(!!sp2 && e.n > 0 && e.bad.length === 0, 'the sample room\'s speck draws speck.' + fr + (fr === 'b' ? ' with its glint on the beat' : ' off the beat') + ', ' + e.n + ' pixels' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, 3).join('; ') + ')' : ''));
+  }
+
+  /* ART3 f, the biome's air: saturated-blobs built under each biome, the enemies, loot and trap cleared, the hero set
+     down: five tiles of the biome's own mote key, each frame every opaque pixel on the canvas (but where the hero is);
+     the frame holds 15 steps (4 fps) and then turns; the same state draws the same tiles (seeded, repeatable); a loop
+     later each tile has drifted by its art's step; under reduced motion none; the sim's hash never sees them */
+  const MOTE = ['dust_mote', 'frost_mote', 'bubble', 'spore', 'ember_mote'], DRIFT = [2, 4, -4, 4, -4];
+  for (let b = 0; b < 5; b++) {
+    const m = await page.evaluate((str, b) => {
+      window.SB_DEV.loadRecord(str, b); window.SB_DEV.step(1);
+      const G = window.SB.game, lv = G.level, s2 = G.state; s2.enemies.length = 0; s2.loot.length = 0; s2.chest.idx = -1; if (lv.features) lv.features.trap = null;
+      const R2 = window.SB.render, at = f => { s2.frame = f; R2.draw(s2, lv); return R2.drawn.motes.map(q => Object.assign({}, q)); };
+      const a0 = at(60), a14 = at(74), a15 = at(75), again = at(60), loop1 = at(120);
+      const hd = R2.drawn.hero, cv = document.getElementById('view').getContext('2d');
+      at(60);
+      const px = a0.map(q => { const d = cv.getImageData(q.x, q.y, 16, 16).data, o = []; for (let i = 0; i < d.length; i += 4) o.push('#' + [d[i], d[i + 1], d[i + 2]].map(v => ('0' + v.toString(16)).slice(-2)).join('')); return o; });
+      const hash0 = window.SB_DEV.hash(); window.SB.settings.reducedMotion = true; const red = at(60); window.SB.settings.reducedMotion = null; const hash1 = window.SB_DEV.hash();
+      return { a0, a14, a15, again, loop1, px, hero: { x: hd.x, y: hd.y, w: hd.w, h: hd.h }, red: red.length, same: hash0 === hash1, screen: window.SB_DEV.screen() };
+    }, fixture, b);
+    const keysOk = m.a0.length === 5 && m.a0.every(q => q.key === MOTE[b] + '.a') && m.a14.every(q => q.key === MOTE[b] + '.a') && m.a15.every(q => q.key === MOTE[b] + '.b');
+    let n = 0; const bad = [];
+    m.a0.forEach((q, i) => { const e = eqRows(frameOf(q.key), m.px[i], 16, (x, y) => q.x + x >= m.hero.x - 1 && q.x + x <= m.hero.x + m.hero.w && q.y + y >= m.hero.y - 1 && q.y + y <= m.hero.y + m.hero.h); n += e.n; bad.push(...e.bad.map(t => i + ' ' + t)); });
+    const rep = JSON.stringify(m.a0) === JSON.stringify(m.again);
+    const drift = m.a0.every((q, i) => { const d = m.loop1[i].y - q.y; return m.loop1[i].x === q.x && (d === DRIFT[b] || Math.abs(d - DRIFT[b]) > 100); });
+    R.say(keysOk && n > 0 && bad.length === 0, 'biome ' + b + ': five ' + MOTE[b] + ' tiles drawn over the room at 4 fps (frame a at steps 60 and 74, b at 75), ' + n + ' opaque pixels on the canvas' + (keysOk ? '' : ' (keys ' + m.a0.map(q => q.key).join(' ') + ' / ' + m.a15.map(q => q.key).join(' ') + ')') + (bad.length ? ' (' + bad.length + ' differ: ' + bad.slice(0, 3).join('; ') + ')' : ''));
+    R.say(rep && drift && m.red === 0 && m.same, 'biome ' + b + ': the same state draws the same tiles, a loop later each has drifted ' + DRIFT[b] + ' px, none under reduced motion, and the sim\'s hash is the same with them and without (' + [rep, drift, m.red, m.same].join(' ') + ')');
+  }
+
+  /* ART3 f, the badges: the room name's badge is icon_biomes' frame of the room's biome at 1:1 on a real screenshot, and
+     the develop reveal draws the same frame at 2x at the view's top */
+  for (const b of [0, 3]) {
+    const bb = await page.evaluate((str, b) => { window.SB_DEV.loadRecord(str, b); window.SB_DEV.step(1); const el = document.getElementById('biomebadge'), r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, biome: el.getAttribute('data-biome'), dpr: devicePixelRatio, hidden: el.hidden }; }, fixture, b);
+    const shotB = await page.screenshot({ encoding: 'base64', clip: { x: bb.x, y: bb.y, width: bb.w, height: bb.h } });
+    const spB = await page.evaluate(async (b64) => { const im = new Image(); im.src = 'data:image/png;base64,' + b64; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); return { w: im.width, px: Array.from(x.getImageData(0, 0, im.width, im.height).data) }; }, shotB);
+    const nm = ['attic', 'frost', 'deep', 'overgrowth', 'ember'][b], rows = frameOf('icon_biomes.' + nm);
+    let n = 0; const bad = [];
+    for (let y = 0; y < 24; y++) for (let x = 0; x < 24; x++) { const ch = rows[y][x]; if (ch === '.') continue; n++; const o = (Math.floor((y + 0.5) * bb.dpr) * spB.w + Math.floor((x + 0.5) * bb.dpr)) * 4, h = hex([spB.px[o], spB.px[o + 1], spB.px[o + 2]]); if (h !== '#' + HEX[parseInt(ch, 16)]) bad.push(x + ',' + y + ' ' + h); }
+    R.say(!bb.hidden && bb.biome === nm && bb.w === 24 && bb.h === 24 && n > 0 && bad.length === 0, 'biome ' + b + ': the room name\'s badge is icon_biomes.' + nm + ' at 1:1, 24x24 css px, ' + n + ' pixels on a real screenshot' + (bad.length ? ' (' + bad.length + ' differ: ' + bad.slice(0, 3).join('; ') + ')' : ''));
+    const rv = await page.evaluate((str, b) => {
+      window.SB_DEV.revealSkip(false); window.SB_DEV.loadRecord(str, b); const ok = window.SB_DEV.revealAt(300); window.SB_DEV.revealSkip(true);
+      const bd = window.SB.render.drawn.badge; if (!ok || !bd) return { ok, bd };
+      const d = document.getElementById('view').getContext('2d').getImageData(bd.x, bd.y, 48, 48).data, o = [];
+      for (let i = 0; i < d.length; i += 4) o.push('#' + [d[i], d[i + 1], d[i + 2]].map(v => ('0' + v.toString(16)).slice(-2)).join(''));
+      return { ok, bd, px: o, screen: window.SB_DEV.screen() };
+    }, fixture, b);
+    const r2 = rows.flatMap(r => { const w2 = [...r].map(c => c + c).join(''); return [w2, w2]; });
+    const e = rv.px ? eqRows(r2, rv.px, 48) : { n: 0, bad: ['no badge drawn'] };
+    R.say(rv.ok && rv.bd && rv.bd.key === 'icon_biomes.' + nm && e.n > 0 && e.bad.length === 0, 'biome ' + b + ': the develop reveal draws icon_biomes.' + nm + ' at 2x (48 px) at the view\'s top, ' + e.n + ' pixels on the canvas' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, 3).join('; ') + ')' : ''));
+    await page.evaluate(() => { if (window.SB.ui.reveal.on) window.SB.ui.endReveal(); });
+  }
 
   R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
   await page.close();
