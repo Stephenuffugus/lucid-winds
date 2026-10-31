@@ -1,35 +1,38 @@
 /* Browser gate `loot` (BUILD-PLAN.md T1.6; QUESTIONS Q92, Stephen's ruling of 31 Oct on his note 5, "Dead pixels
  * only"): the chest pays its 15 Dead pixels and M1 shows no sheet. A room whose one Sun cell, two cells right of spawn,
- * is its scroll; its chest (row 39 in its build) and a blueprint are set on its floor by hand before the first state is
+ * is its scroll; its chest (row 39 in its build) and a blueprint are set on its floor by hand (at 23 and 21) before the first state is
  * kept (named liberties: no fixture puts the three on one floor), so the replay starts from the state the room played.
- * A REAL touch held on the rocker's right walks the hero over the scroll, the blueprint and the chest, one step at a time
+ * A REAL thumb held 20 px right on the stick walks the hero over the scroll, the blueprint and the chest, one step at a time
  * with the loop held:
  *   - no sheet, card or dialog shows and the page is never modal;
  *   - the scroll is taken with its pickup voice; its offer opens and the shell answers it on the next word (the
  *     biome's stat), as the bot does (that the offer opens on landing is H-loot-3's: this walk never leaves the floor);
  *   - the blueprint is not drawn (its cell is the open floor, beside a scroll that is) and is taken in silence, the sim
  *     still carrying it;
- *   - the chest opens with its chest voice and pays 15: the count reads 15 at once and a handwritten +15 shows under
+ *   - the chest opens with its chest voice and pays 15 and a weapon (Weapons v1 step 1, docs/WEAPONS-V1.md 6.1): an
+ *     empty slot takes it at once, so no compare opens and nothing waits; the count reads 15 at once and a +15 shows under
  *     it (a real box), in view, clear of the strip's controls, no larger than the count, taking no tap, never rising
  *     into the count on its way out (its animation set to 0.18, 0.6, 0.9 and 1.1 s: QUESTIONS Q93), and goes after
  *     about a second;
- *   - a REAL tap on A as the chest opens (in the step its answer rides) still jumps, one step late;
- *   - the world holds still for exactly the two steps the answers ride and moves on every other, right held; no pick
- *     voice sounds (the pick is the shell's, not the player's);
- *   - the recording carries the two answers (one CHOICE A, one TAKE) and replays on the room's first state to the live
+ *   - a REAL tap on A as the scroll's offer opens rides past the answer's step and jumps on the next (no tap is lost to a
+ *     choice word); a REAL tap on A as the chest opens jumps on the very next step (the chest holds nothing);
+ *   - the world holds still for exactly the one step the scroll's answer rides and moves on every other, right held; no
+ *     pick voice sounds (the pick is the shell's, not the player's);
+ *   - the recording carries the one answer (one CHOICE A, no TAKE) and replays on the room's first state to the live
  *     hash.
- * At 412x915 and 360x780. At 320x568 with reduced motion the scroll's offer and the chest's compare open on one step and
- * are answered in the sim's order, one step each, the climb goes on, and the +15 stands still for its second (no
- * animation on it). At 412x915 a new room started inside that second shows no +15, and its count reads its own 0 before
+ * At 412x915 and 360x780. At 320x568 with reduced motion the scroll's offer opens on the chest's step, the chest equips on
+ * it, one step holds (the offer's answer), the climb goes on, and the +15 stands still for its second (no animation on
+ * it). At 412x915 a new room started inside that second shows no +15, and its count reads its own 0 before
  * its first step. At 412x915 a room that places its own blueprint (the sample room with one corner cell changed, on a
  * Sun cell in a plank's light top) draws that cell as its row neighbours are: no open Ash notch, no yellow (Q93).
  *
- * Watched red by CHOICE_VIA_SHELL (the shell picks the stat itself: the replay's hash differs), OFFER_HOLDS_WORLD and
- * CHEST_HOLDS_WORLD (an answer dropped), OFFER_SHOWS and SLIP_BACK (the old sheets back), ANSWER_ORDER_SWAPPED, PLUS_MISSING,
+ * Watched red by CHOICE_VIA_SHELL (the shell picks the stat itself: the replay's hash differs), OFFER_HOLDS_WORLD (an
+ * answer dropped), CHEST_STOPS_FOR_EMPTY (an empty slot opens a compare), OFFER_SHOWS and SLIP_BACK (the old sheets
+ * back), PLUS_MISSING,
  * PLUS_STAYS, PLUS_TAKES_TAPS, PLUS_CARRIES_OVER, DP_COUNT_STALE, PICK_SOUNDS, EDGE_LOST_TO_CHOICE, BLUEPRINT_DRAWN,
  * BLUEPRINT_SOUNDS, PLUS_OFF_THE_COUNT, PLUS_NOT_STILL, PLUS_RISES_INTO_COUNT, PLUS_OUTSIZED, BLUEPRINT_NOTCH and
  * BLUEPRINT_GHOST. */
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, pressEl, sleep, GAME } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, pressEl, pushStick, sleep, GAME } from './harness.mjs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 
@@ -97,7 +100,7 @@ async function plusNow(page) {
   const geo = await page.evaluate(() => {
     const el = document.getElementById('dpplus'), r = el.getBoundingClientRect(), dn = document.getElementById('dpn'), n = dn.getBoundingClientRect();
     const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    const over = ['#btnA .glyph', '#btnB .glyph', '#rocker .zl', '#rocker .zr', '#pause'].filter(s => {
+    const over = ['#btnA .glyph', '#btnB .glyph', '#stick .idle', '#stick .pad', '#pause'].filter(s => {
       const e = document.querySelector(s); if (!e) return false; const b = e.getBoundingClientRect();
       return b.height > 0 && b.right > r.left && b.left < r.right && b.bottom > r.top && b.top < r.bottom;
     });
@@ -136,22 +139,23 @@ const replayOf = page => page.evaluate(() => {
 
 try {
   for (const [w, h] of [[412, 915], [360, 780]]) {
-    const BP = 18, CHEST = 21;
+    const BP = 21, CHEST = 23;   /* W1: three and two cells further than before, so the bug is down from the jump the offer's tap makes */
     const { page, errors, s0 } = await openRoom(w, h, CHEST, BP, false);
     R.say(s0.ok && s0.screen === 'play' && s0.loot.length === 2 && s0.loot[0][0] === 2 && s0.loot[0][1] === FLOOR * W + SCROLL && s0.loot[1][0] === 3 && s0.chest === FLOOR * W + CHEST,
-      w + ': the room loads, its loot the scroll at (16, 46) and the blueprint set at (18, 46), its chest set at (21, 46)');
+      w + ': the room loads, its loot the scroll at (16, 46) and the blueprint set at (21, 46), its chest set at (23, 46)');
     const bpCell = await cellOf(page, BP, FLOOR), scCell = await cellOf(page, SCROLL, FLOOR);
     R.say(!!bpCell && bpCell.isOpen && !!scCell && scCell.colours > 1,
       w + ': the blueprint is not drawn: its cell is the open floor alone (' + (bpCell ? bpCell.colours + ' colour, ' + bpCell.first + ', the floor ' + bpCell.open : 'out of view') + '), where the scroll\'s cell shows its sprite (' + (scCell ? scCell.colours : 0) + ' colours)');
 
-    /* the walk: a real touch held on the right zone, one step at a time; a real tap on A as the chest opens */
+    /* the walk: a real thumb held 20 px right on the stick (QUESTIONS Q140), one step at a time; a real tap on A as the chest opens */
     const trace = [await page.evaluate(() => window.__probe())];
-    const finger = await pressEl(page, '#rocker .zr');
+    const finger = await pushStick(page, 20);
     const ctx = await audioOn(page);
-    let chestAt = -1, plus = null;
+    let chestAt = -1, plus = null, offerTap = -1;
     for (let k = 0; k < 90; k++) {
       const p = await page.evaluate(() => window.__step());
       trace.push(p);
+      if (p.offered && offerTap < 0) { offerTap = trace.length - 1; await tap(page, '#btnA'); }   /* a real tap as the offer opens: it rides past the answer's step */
       if (p.open && chestAt < 0) { chestAt = trace.length - 1; plus = await plusNow(page); await tap(page, '#btnA'); }
       if (chestAt > 0 && trace.length - 1 > chestAt + 4 && p.x >= END) break;
     }
@@ -174,37 +178,40 @@ try {
     R.say(!!plus && plus.path.length === 4 && plus.path.every(p => p.gap >= -0.5), w + ': the +15 never rises into the count: in the corner\'s frame its top to the count\'s bottom at 0.18, 0.6, 0.9 and 1.1 s is ' + (plus && plus.path.length ? plus.path.map(p => p.gap).join(', ') + ' px' : 'not measured, no animation'));
     R.say(!!plus && plus.real && plus.noTap, w + ': the +15 takes no tap: a thumb on it lands on ' + (plus ? plus.hitName : 'nothing') + ', what lies under it');
     R.say(!!plus && plus.later > 0.5 && gone, w + ': the +15 still shows 400 ms on (opacity ' + (plus ? plus.later.toFixed(2) : 0) + ') and goes after about a second (' + gone + ')');
-    const ans = chestAt > 0 ? trace[chestAt + 1] : null, next = chestAt > 0 ? trace[chestAt + 2] : null;
-    R.say(!!ans && !!next && ans.compare === 0 && !next.ground && next.vy < 0 && next.heard.includes('jump'),
-      w + ': a real tap on A as the chest opens rides past its answer\'s step and jumps on the next (vy ' + (next ? next.vy : '?') + ', ' + (next ? next.heard.join(', ') || 'silent' : '') + ')');
-    R.say(still.length === 2 && still[0] === offerAt + 1 && still[1] === chestAt + 1 && trace[trace.length - 1].x >= END,
-      w + ': the world holds still for exactly the two steps the answers ride (steps ' + still.join(', ') + ', the answers at ' + (offerAt + 1) + ' and ' + (chestAt + 1) + ') and moves on every other to the room\'s edge');
-    R.say(!heard.includes('pick') && heard.filter(n => n === 'pickup').length === 1 && heard.filter(n => n === 'chest').length === 1 && ctx === 'running',
-      w + ': no pick voice sounds; one pickup and one chest voice (' + (heard.join(', ') || 'none') + ', the context ' + ctx + ')');
+    const oa = offerAt > 0 ? trace[offerAt + 1] : null, on = offerAt > 0 ? trace[offerAt + 2] : null;
+    R.say(offerTap === offerAt && !!oa && !!on && oa.offered === false && oa.vy === trace[offerAt].vy && on.vy < 0 && on.heard.includes('jump'),
+      w + ': a real tap on A as the scroll\'s offer opens rides past its answer\'s step and jumps on the next (vy ' + (on ? on.vy : '?') + ', ' + (on ? on.heard.join(', ') || 'silent' : '') + ')');
+    const next = chestAt > 0 ? trace[chestAt + 1] : null;
+    R.say(!!ch && ch.compare === 0 && !!next && next.compare === 0 && !next.ground && next.vy < 0 && next.heard.includes('jump'),
+      w + ': the chest opens no compare (its weapon goes into an empty slot) and a real tap on A as it opens jumps on the very next step (vy ' + (next ? next.vy : '?') + ', ' + (next ? next.heard.join(', ') || 'silent' : '') + ')');
+    R.say(still.length === 1 && still[0] === offerAt + 1 && trace[trace.length - 1].x >= END,
+      w + ': the world holds still for exactly the one step the scroll\'s answer rides (steps ' + still.join(', ') + ', the answer at ' + (offerAt + 1) + ') and moves on every other to the room\'s edge');
+    R.say(!heard.includes('pick') && heard.filter(n => n === 'pickup').length === 1 && heard.filter(n => n === 'chest').length === 1 && heard.filter(n => n === 'equip').length === 1 && ctx === 'running',
+      w + ': no pick voice sounds; one pickup, one chest and one equip voice (' + (heard.join(', ') || 'none') + ', the context ' + ctx + ')');
     const rp = await replayOf(page);
-    R.say(rp.a === 1 && rp.take === 1 && rp.other === 0 && rp.same, w + ': the recording carries the two answers (' + rp.a + ' A, ' + rp.take + ' TAKE) and replays on the room\'s first state to the live hash (' + rp.same + ')');
+    R.say(rp.a === 1 && rp.take === 0 && rp.other === 0 && rp.same, w + ': the recording carries the one answer (' + rp.a + ' A, ' + rp.take + ' TAKE) and replays on the room\'s first state to the live hash (' + rp.same + ')');
     R.say(errors.length === 0, w + ': no page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
     await page.close();
   }
 
-  /* the scroll's offer and the chest's compare on one step (the chest one cell past the scroll), with reduced motion:
-     answered in the order the sim reads them, one step each, and the +15 stands still for its second */
+  /* the scroll's offer and the chest on one step (the chest one cell past the scroll), with reduced motion: the chest
+     equips on that step, the offer's answer holds the next, and the +15 stands still for its second */
   {
     const { page, errors, s0 } = await openRoom(320, 568, 17, null, true);
     const trace = [await page.evaluate(() => window.__probe())];
-    const finger = await pressEl(page, '#rocker .zr');
+    const finger = await pushStick(page, 20);
     let both = -1, plus = null;
     for (let k = 0; k < 90; k++) {
       const p = await page.evaluate(() => window.__step());
       trace.push(p);
-      if (p.offered && p.compare && both < 0) { both = trace.length - 1; plus = await plusNow(page); }
+      if (p.offered && p.open && !trace[trace.length - 2].open && both < 0) { both = trace.length - 1; plus = await plusNow(page); }
       if (both > 0 && p.x >= END) break;
     }
     await finger.end();
     const gone = await goneWithin(page, 3000), still = stillSteps(trace), bad = trace.filter(p => p.dialogs.length || p.modal);
-    const a1 = both > 0 ? trace[both + 1] : null, a2 = both > 0 ? trace[both + 2] : null;
-    R.say(s0.ok && both > 0 && !!a1 && !a1.offered && a1.compare === 1 && !!a2 && a2.compare === 0 && still.join() === (both + 1) + ',' + (both + 2) && trace[trace.length - 1].x >= END && bad.length === 0,
-      '320: the scroll\'s offer and the chest\'s compare open on one step (' + both + ') and are answered in the sim\'s order, one step each (still at ' + still.slice(0, 6).join(', ') + (still.length > 6 ? ' and ' + (still.length - 6) + ' more' : '') + '), and the climb goes on with no sheet');
+    const a1 = both > 0 ? trace[both + 1] : null;
+    R.say(s0.ok && both > 0 && !!a1 && !a1.offered && trace.every(p => p.compare === 0) && still.join() === String(both + 1) && trace[trace.length - 1].x >= END && bad.length === 0,
+      '320: the scroll\'s offer opens on the chest\'s step (' + both + '), the chest opens no compare, one step holds for the offer\'s answer (still at ' + still.slice(0, 6).join(', ') + (still.length > 6 ? ' and ' + (still.length - 6) + ' more' : '') + '), and the climb goes on with no sheet');
     R.say(!!plus && plus.still && plus.real && plus.seen && plus.at < 300 && plus.later > 0.99 && gone && plus.inView && plus.over.length === 0,
       '320: with reduced motion the +15 stands still (' + (plus ? (plus.still ? 'no animation on it' : 'an animation moves it') + ', opacity ' + plus.opacity + ' at once, ' + plus.later + ' 400 ms on' : 'never shown') + '), in view and clear of the controls (box ' + (plus ? plus.box.join(' ') : '') + '), and goes after about a second (' + gone + ')');
     R.say(errors.length === 0, '320: no page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
@@ -215,7 +222,7 @@ try {
      a REAL tap on Try the sample room, well inside the +15's second: the new room shows no +15 */
   {
     const { page, errors } = await openRoom(412, 915, 15, null, true);
-    const finger = await pressEl(page, '#rocker .zr');
+    const finger = await pushStick(page, 20);
     let opened = false;
     for (let k = 0; k < 6 && !opened; k++) opened = !!(await page.evaluate(() => window.__step())).open;
     await finger.end();

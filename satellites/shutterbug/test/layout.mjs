@@ -4,13 +4,17 @@
  *   - the backing store is 384 x VIEW_ROWS*16 and VIEW_ROWS = clamp(floor((h - 36 - 168) / 16), 20, 40)
  *     (40 at 412 and 390, 36 at 360, 22 at 320x568);
  *   - the top strip is 36 px; the control strip at least 168 and takes the spare height;
- *   - the rocker zones, A and B at least 56 px, the gap at least 16, none over the canvas or the reserved box;
+ *   - A and B at least 56 px; the stick zone (Stephen's ruling of 31 Oct, "Whole left side", QUESTIONS Q140) the strip's
+ *     full height from the left edge to B (mirrored: from B to the right edge); the stick, A and B disjoint and clear of
+ *     the canvas; idle, no pad drawn;
+ *   - in a room the reserved box is released (hidden) and the bottom left corner is the stick's (mirrored, A's); on the
+ *     clear card, where the fleet's chip shows, the box is back: the bottom left 120x120 (412, 390, 360; released at
+ *     320), transparent, borderless, textless, the top hit (or the chip seated in it) at its centre and corners, and the
+ *     stick zone clear of it;
  *   - every other control on the play screen at least 48 px and on top at its centre; the title's exit too;
  *   - the pause (Stephen's note 3 of 31 Oct, QUESTIONS Q94): Pause at the top strip's left end, 48x48 or more, on top at
  *     its centre and at its lower edge, which hangs over the room's top left corner, its glyph drawn inside the 36 px top
- *     strip; the strip holds no control but the rocker, B and A (Title and Share left it for the pause card);
- *   - the reserved box (412, 390, 360; released at 320): the bottom left 120x120, transparent, borderless, textless,
- *     the top hit at its centre and corners;
+ *     strip; the strip holds no control but the stick, B and A (Title and Share left it for the pause card);
  *   - the fleet's chip, from the real /music-unlocks.js: on the title its rect is printed and it is on top and clear of
  *     the title's controls; in a room it is hidden (Q48's addendum, since sb-m0-2: the plan's "inside the reserved box
  *     in play" became "hidden in play" once the chip's saved drag was found to land anywhere);
@@ -20,7 +24,7 @@
  * the phone's 48 px button bar with env(safe-area-inset-bottom) at 0, so shell-navpad marks the page .navpad and --sab
  * becomes max(env, 48px):
  *   - a plain tab (the size loop above) is never marked, every rule that reads --sab holds its env 0 value, and the drawn
- *     rocker zones, A and B end 10 px above the bottom, as before the floor;
+ *     stick's field (where its hint and pad are drawn), A and B end 10 px above the bottom, as before the floor;
  *   - under a 48 px inset the phone reports (CDP Emulation.setSafeAreaInsetsOverride) and under ?navpad with env 0, at
  *     the four sizes: the title and Settings scrolled to their end, the crop screen's Retake and Develop, play's drawn
  *     controls, and every card and sheet (the pause card too) end 48 px or more above the bottom; VIEW_ROWS =
@@ -35,7 +39,8 @@
  *     page reseats it at once), on the title, on Settings and on the title after a room ends 48 px or more up, on top
  *     and clear of the screen's controls, and on the clear card it takes its bottom seat in the reserved box 58 px up; a
  *     song card waiting from another game opens with Play it now and Later 48 px or more up, and its pill too.
- * Watched red by CANVAS_100PCT, A_44PX, RESERVE_FILLED, MIRROR_OVERLAPS_CANVAS, for the pause TITLE_BACK_IN_STRIP and
+ * Watched red by CANVAS_100PCT, A_44PX, RESERVE_FILLED, MIRROR_OVERLAPS_CANVAS, for the stick STICK_AT_X0, CORNER_DEAD
+ * and STICK_DRAWN_IDLE, for the pause TITLE_BACK_IN_STRIP and
  * PAUSE_OVERHANG_UNDER, and for the bottom bar NAVPAD_MARK_REMOVED,
  * NAVPAD_FLOOR_DROPPED, STRIP_IGNORES_SAB, NAVPAD_BLANKET, NAVPAD_FLOOR_ADDS, NAVPAD_ANY_ANDROID, NAVPAD_ANY_WINDOW,
  * FIT_IGNORES_SAB, NAVPAD_ENV_DROPPED, NAVPAD_NO_FULLSCREEN, NAVPAD_NO_MINIMAL_UI, SCROLLERS_PAD_PAST_BAR, CHIP_LIFT_DROPPED,
@@ -49,23 +54,23 @@ const browser = await launch();
 const TOP = 36, CTRL = 168, CELL = 16, ROWS_MIN = 20, ROWS_MAX = 40, WORLD = 384, RES = 120;
 const overlap = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
-/* the bottom bar (Q90): the floor is 48 px, the strip's drawn controls sit 10 px over the inset (#rocker, .verb), and
+/* the bottom bar (Q90): the floor is 48 px, the strip's drawn controls sit 10 px over the inset (the stick's field, .verb), and
    each rule that reads --sab computes to a known bottom padding under an inset (or the floor) of `lift` px */
 const BAR = 48, GLYPH_LIFT = 10;
-const PADS_AT = lift => ({ probe: lift, title: 16 + lift, settings: 16 + lift, crop: lift, strip: lift, rocker: GLYPH_LIFT + lift, verb: GLYPH_LIFT + lift });
+const PADS_AT = lift => ({ probe: lift, title: 16 + lift, settings: 16 + lift, crop: lift, strip: lift, stick: GLYPH_LIFT + lift, verb: GLYPH_LIFT + lift });
 const padsAre = (p, lift) => Object.entries(PADS_AT(lift)).every(([k, v]) => Math.abs(p[k] - v) < 0.5);
 const padsText = p => Object.entries(p).map(([k, v]) => k + ' ' + v).join(', ');
 const wantRowsAt = (h, lift) => Math.max(ROWS_MIN, Math.min(ROWS_MAX, Math.floor((h - lift - TOP - CTRL) / CELL)));
 /* page side, installed once per page: every --sab rule's computed bottom padding (for the title and Settings, the
    padding plus the screen's own bottom offset: how far their last control sits above the bottom at the end of a
    scroll, since under the mark they end above the bar and pad 16, Q91), and how far each drawn strip control (the
-   rocker's two zones, B's and A's glyphs) ends above the screen bottom */
+   stick's field, B's and A's glyphs) ends above the screen bottom */
 const installProbes = page => page.evaluate(() => {
   const px = (sel, prop) => parseFloat(getComputedStyle(document.querySelector(sel))[prop]);
   const end = sel => px(sel, 'paddingBottom') + px(sel, 'bottom');
   window.__pads = () => ({ probe: px('#safeprobe', 'paddingBottom'), title: end('#title'), settings: end('#settings'),
-    crop: px('#crop', 'paddingBottom'), strip: px('#strip', 'paddingBottom'), rocker: px('#rocker', 'paddingBottom'), verb: px('#btnA', 'paddingBottom') });
-  window.__glyphGaps = () => ['#rocker .zl', '#rocker .zr', '#btnB .glyph', '#btnA .glyph'].map(s => innerHeight - document.querySelector(s).getBoundingClientRect().bottom);
+    crop: px('#crop', 'paddingBottom'), strip: px('#strip', 'paddingBottom'), stick: px('#stick .field', 'bottom'), verb: px('#btnA', 'paddingBottom') });
+  window.__glyphGaps = () => ['#stick .field', '#btnB .glyph', '#btnA .glyph'].map(s => innerHeight - document.querySelector(s).getBoundingClientRect().bottom);
   const CTRL = 'button, a, input, select, textarea', nameOf = e => e.id || e.getAttribute('aria-label') || e.tagName;
   const shown = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };
   /* the bottom `bar` px of the screen showing, as it stands (no scroll): every control whose visible part (clipped by
@@ -142,7 +147,8 @@ try {
           mark: document.documentElement.classList.contains('navpad'), pads: window.__pads(), glyphGaps: window.__glyphGaps(),
           vw: window.innerWidth, vh: window.innerHeight, cssW: cv.getBoundingClientRect().width, bw: cv.width, bh: cv.height,
           rows: window.SB_DEV.level().viewRows, canvas: box(cv), top: box(q('#top')), strip: box(q('#strip')),
-          zl: box(q('#rocker .zl')), zr: box(q('#rocker .zr')), gap: box(q('#rocker .gap')), rocker: box(q('#rocker')),
+          stick: box(q('#stick')), padShown: getComputedStyle(q('#stick .pad')).display !== 'none' && q('#stick .pad').getBoundingClientRect().width > 0,
+          corner: (() => { const t = document.elementFromPoint(3, innerHeight - 3); return !t ? 'nothing' : q('#stick').contains(t) ? 'stick' : q('#btnA').contains(t) ? 'A' : (t.id || t.className || t.tagName); })(),
           A: box(q('#btnA')), B: box(q('#btnB')), pause: box(q('#pause')), glyph: box(q('#pause i')), pauseShown: getComputedStyle(q('#pause')).visibility,
           pauseTop: topIs(q('#pause'), q('#pause').getBoundingClientRect().left + 24, q('#pause').getBoundingClientRect().top + 24),
           pauseLow: topIs(q('#pause'), q('#pause').getBoundingClientRect().left + 24, q('#pause').getBoundingClientRect().bottom - 3),
@@ -162,14 +168,18 @@ try {
       /* the bottom bar floor (Q90) costs a plain tab nothing: no mark, every --sab rule at its env 0 value, the glyphs
          where they were before it */
       R.say(!m.mark && padsAre(m.pads, 0), tg + ': a plain tab is not marked .navpad and every rule that reads --sab holds its env 0 value (' + padsText(m.pads) + ')');
-      R.say(m.glyphGaps.every(g => Math.abs(g - GLYPH_LIFT) < 0.5), tg + ': the drawn rocker zones, A and B sit ' + m.glyphGaps.map(g => g.toFixed(0)).join(', ') + ' px above the screen bottom, 10 as before the floor');
-      const verbs = { 'left zone': m.zl, 'right zone': m.zr, A: m.A, B: m.B };
-      for (const [name, b] of Object.entries(verbs)) {
+      R.say(m.glyphGaps.every(g => Math.abs(g - GLYPH_LIFT) < 0.5), tg + ': the drawn stick field, A and B sit ' + m.glyphGaps.map(g => g.toFixed(0)).join(', ') + ' px above the screen bottom, 10 as before the floor');
+      for (const [name, b] of Object.entries({ A: m.A, B: m.B })) {
         R.say(b.w >= 56 - 0.5 && b.h >= 56 - 0.5, tg + ': ' + name + ' measures ' + b.w.toFixed(0) + 'x' + b.h.toFixed(0) + ' (56 or more)');
-        R.say(!overlap(b, m.canvas) && (!m.res || !overlap(b, m.res)), tg + ': ' + name + ' is clear of the canvas' + (m.res ? ' and the reserved box' : ''));
+        R.say(!overlap(b, m.canvas), tg + ': ' + name + ' is clear of the canvas');
       }
-      R.say(m.gap.w >= 16 - 0.5, tg + ': the rocker\'s gap is ' + m.gap.w.toFixed(0) + ' px (16 or more)');
-      R.say(!overlap(m.rocker, m.canvas) && !overlap(m.A, m.B) && !overlap(m.A, m.rocker) && !overlap(m.B, m.rocker), tg + ': the rocker, A and B are disjoint and clear of the canvas');
+      /* the stick zone (Q140): the whole side of the strip, the strip's full height, from the screen's edge to B */
+      const zs = m.stick, zFrom = mirror ? m.B.x + m.B.w : 0, zTo = mirror ? m.vw : m.B.x;
+      R.say(Math.abs(zs.x - zFrom) < 0.5 && Math.abs(zs.x + zs.w - zTo) < 0.5 && Math.abs(zs.y - m.strip.y) < 0.5 && Math.abs(zs.h - m.strip.h) < 0.5,
+        tg + ': the stick zone is the strip\'s full height from ' + (mirror ? 'B to the right edge' : 'the left edge to B') + ' (' + [zs.x, zs.y, zs.w, zs.h].map(v => v.toFixed(0)).join(',') + ')');
+      R.say(!overlap(m.stick, m.canvas) && !overlap(m.A, m.B) && !overlap(m.A, m.stick) && !overlap(m.B, m.stick), tg + ': the stick, A and B are disjoint and clear of the canvas');
+      R.say(!m.padShown, tg + ': idle, the stick draws no pad');
+      R.say(!m.res && m.corner === (mirror ? 'A' : 'stick'), tg + ': in a room the reserved box is released (' + (m.res ? 'NOT: shown' : 'hidden') + ') and a thumb in the very bottom left corner lands on ' + (mirror ? 'A' : 'the stick') + ' (it lands on ' + m.corner + ')');
       /* the pause (Q94): a 48x48 hit area at the top strip's left end whose lower 12 px hang over the room's top left
          corner, the top hit there too (#top over the stage); its glyph inside the 36 px strip; the strip only the controls */
       const pb = m.pause, overRoom = pb.y + pb.h - (m.top.y + m.top.h);
@@ -177,14 +187,29 @@ try {
         tg + ': Pause is ' + pb.w.toFixed(0) + 'x' + pb.h.toFixed(0) + ' at the top strip\'s left end (x ' + pb.x.toFixed(0) + '), on top at its centre' + (m.pauseTop ? '' : ' (NOT)') + ' and at its lower edge, ' + overRoom.toFixed(0) + ' px over the room\'s corner' + (m.pauseLow ? '' : ' (NOT on top there)'));
       R.say(m.glyph.y >= m.top.y - 0.5 && m.glyph.y + m.glyph.h <= m.top.y + m.top.h + 0.5 && m.glyph.x >= 0 && m.glyph.w >= 24,
         tg + ': Pause\'s glyph is drawn inside the 36 px top strip (' + [m.glyph.x, m.glyph.y, m.glyph.w, m.glyph.h].map(v => v.toFixed(0)).join(',') + ', the strip ' + m.top.y.toFixed(0) + ' to ' + (m.top.y + m.top.h).toFixed(0) + ')');
-      R.say(m.stripCtrls.join() === 'btnB,btnA', tg + ': the strip holds no control but the rocker, B and A (' + (m.stripCtrls.join(', ') || 'none') + ')');
-      if (w >= 360) {
-        R.say(!!m.res && Math.abs(m.res.x) < 0.5 && Math.abs(m.res.w - RES) < 0.5 && Math.abs(m.res.h - RES) < 0.5 && Math.abs(m.res.y + m.res.h - m.vh) < 0.5,
-          tg + ': the reserved box is the bottom left 120x120 (' + (m.res ? [m.res.x, m.res.y, m.res.w, m.res.h].map(v => v.toFixed(0)).join(',') : 'missing') + ')');
-        R.say(m.resClear && m.resTop, tg + ': the reserved box is transparent, borderless and textless, and the top hit at its centre and corners');
-      } else R.say(!m.res, tg + ': under 360 the reserved box is released (hidden)');
+      R.say(m.stripCtrls.join() === 'btnB,btnA', tg + ': the strip holds no control but the stick, B and A (' + (m.stripCtrls.join(', ') || 'none') + ')');
       R.say(!m.chipShown, tg + ': in a room the fleet chip is hidden (Q48\'s addendum)');
     }
+    /* the clear card, where the fleet's chip shows, in the default strip: the reserved box is back (Q48, Q140), and the
+       stick clear of it */
+    await page.evaluate(() => { document.getElementById('strip').classList.remove('mirror'); window.SB_DEV.goto('exit'); window.SB_DEV.step(3); });
+    const cl = await page.evaluate(() => {
+      const q = s => document.querySelector(s), res = q('#reserve'), cs = getComputedStyle(res), rb = res.getBoundingClientRect(), shown = cs.display !== 'none' && rb.width > 0;
+      const mine = t => !!t && (t === res || res.contains(t) || /^sws-music/.test(t.id || '') || !!(t.closest && t.closest('[id^="sws-music"]')));
+      const pts = shown ? [[rb.left + 2, rb.top + 2], [rb.right - 2, rb.top + 2], [rb.left + 2, rb.bottom - 2], [rb.right - 2, rb.bottom - 2], [rb.left + rb.width / 2, rb.top + rb.height / 2]] : [];
+      const sb = q('#stick').getBoundingClientRect();
+      return { screen: window.SB_DEV.screen(), res: shown ? { x: rb.left, y: rb.top, w: rb.width, h: rb.height } : null, vh: innerHeight,
+        clear: cs.backgroundColor === 'rgba(0, 0, 0, 0)' && parseFloat(cs.borderTopWidth) === 0 && res.textContent === '',
+        top: pts.map(([x, y]) => { const t = document.elementFromPoint(x, y); return mine(t) ? 'ok' : (t ? (t.id || t.className || t.tagName) : 'nothing'); }),
+        stick: { x: sb.left, y: sb.top, w: sb.width, h: sb.height } };
+    });
+    const ctg = tag + ' on the clear card';
+    if (w >= 360) {
+      R.say(cl.screen === 'clear' && !!cl.res && Math.abs(cl.res.x) < 0.5 && Math.abs(cl.res.w - RES) < 0.5 && Math.abs(cl.res.h - RES) < 0.5 && Math.abs(cl.res.y + cl.res.h - cl.vh) < 0.5,
+        ctg + ': the reserved box is back, the bottom left 120x120 (' + (cl.res ? [cl.res.x, cl.res.y, cl.res.w, cl.res.h].map(v => v.toFixed(0)).join(',') : 'missing') + ', screen ' + cl.screen + ')');
+      R.say(cl.clear && cl.top.length === 5 && cl.top.every(t => t === 'ok'), ctg + ': the reserved box is transparent, borderless and textless, and the top hit (or the fleet\'s chip in it) at its centre and corners (' + cl.top.join(', ') + ')');
+      R.say(!!cl.res && !overlap(cl.stick, cl.res), ctg + ': the stick zone is clear of the reserved box (' + [cl.stick.x, cl.stick.w].map(v => v.toFixed(0)).join(', wide ') + ')');
+    } else R.say(cl.screen === 'clear' && !cl.res, ctg + ': under 360 the reserved box is released (hidden)');
     R.say(errors.length === 0, tag + ': zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
@@ -194,7 +219,7 @@ try {
      shell-navpad marks the page .navpad there and --sab is floored at 48. Each condition is a fresh profile (what the
      title shows depends on the save). Under a 48 px inset the phone reports (the CDP override) and under the mark with
      env 0, every screen's controls end 48 px or more above the screen bottom: the title and Settings scrolled to their
-     end (both scroll on a short phone), the crop screen's Retake and Develop, play's drawn rocker zones, A and B (their
+     end (both scroll on a short phone), the crop screen's Retake and Develop, play's drawn stick field, A and B (their
      hit areas run the strip's full height by design), and each card and sheet (shown by its class for the measure, a
      layout liberty: the cards' own gates open them by real input). The stage gives up rows to the floor by the formula.
      Under the mark (the reviews of NOTE1, Q91) the title and Settings as they open and the title after a room draw
@@ -283,7 +308,7 @@ try {
           const b = s => document.querySelector(s).getBoundingClientRect().height;
           return { glyphs: window.__glyphGaps(), rows: window.SB_DEV.level().viewRows, vh: innerHeight, top: b('#top'), canvas: b('#view'), strip: b('#strip') };
         });
-        R.say(p.glyphs.every(g => g >= BAR - 0.5), tg + ': the drawn rocker zones, A and B end ' + p.glyphs.map(g => g.toFixed(0)).join(', ') + ' px above the bottom (48 or more)');
+        R.say(p.glyphs.every(g => g >= BAR - 0.5), tg + ': the drawn stick field, A and B end ' + p.glyphs.map(g => g.toFixed(0)).join(', ') + ' px above the bottom (48 or more)');
         const wantR = wantRowsAt(h, BAR);
         R.say(p.rows === wantR && Math.abs(p.top + p.canvas + p.strip - p.vh) < 1.5 && (p.strip >= CTRL + BAR - 0.5 || p.rows === ROWS_MIN),
           tg + ': VIEW_ROWS ' + p.rows + ' (the formula with the 48 px floor gives ' + wantR + '), the control strip ' + p.strip.toFixed(0) + ' px (216 or more unless the rows sit at their floor), filling the screen');

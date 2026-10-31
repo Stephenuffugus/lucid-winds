@@ -19,7 +19,7 @@ const fs = require('node:fs'), path = require('node:path'), { spawnSync } = requ
 
 const GAME = path.join(__dirname, '..');
 const OUT = '/tmp/claude-1000/shutterbug-redwatch';
-const BROWSER = new Set(['boot', 'play', 'input', 'layout', 'reveal', 'capture', 'death', 'sprites', 'make', 'loot', 'audio', 'share', 'save', 'pwa', 'loop', 'pause', 'onboard']);
+const BROWSER = new Set(['boot', 'play', 'input', 'layout', 'reveal', 'capture', 'death', 'sprites', 'make', 'loot', 'audio', 'share', 'save', 'pwa', 'loop', 'pause', 'onboard', 'fight']);
 
 const CORE_SIM_OPEN = "<script id=\"core-sim\" data-core>\n(function (SB) { 'use strict';\n";
 /* the whole shell-navpad block as the page holds it (NAVPAD_IN_BODY moves it, whatever its comment says) */
@@ -137,7 +137,7 @@ const MUTANTS = [
 
   { name: 'SECOND_FINGER_RELEASES_FIRST', task: 'T0.8b', file: 'page', find: '        e.preventDefault();\n        ptrs[e.pointerId] = 1;',
     repl: '        e.preventDefault();\n        I.releaseAll();\n        ptrs[e.pointerId] = 1;',
-    gates: [{ gate: 'play', expect: 'a second finger on A during a rocker hold: both register' }] },
+    gates: [{ gate: 'play', expect: 'a second finger on A during a stick hold: both register' }] },
 
   /* the second review (30 Oct, before sb-m0-2) */
   { name: 'HASH_SKIPS_RNG', task: 'T0.7b', file: 'page', find: "['frame', 'i32'], ['rng', 'u32'], ", repl: "['frame', 'i32'], ",
@@ -272,8 +272,9 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-sim-13', expect: 'a hold dive passes the three one ways to the floor' }, { gate: 'harness', only: 'H-lab-7', expect: 'equal the model' }] },
   { name: 'CORNER_PX_6', task: 'T0.12a', file: 'page', find: 'CORNER_PX: 2,', repl: 'CORNER_PX: 6,',
     gates: [{ gate: 'harness', only: 'H-sim-11', expect: 'a side overlap of 13.5 px never arms a slide' }] },
-  { name: 'STICKY_PUSHOFF', task: 'T0.12a', file: 'page', find: 'if (pressed) { h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0;',
-    repl: 'if (pressed) { h.vy = -K.STICKY_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.sticky = 0; h.wall = 0;',
+  /* re anchored at W1 (the sticky jump keeps the wall it left for the throw's side) */
+  { name: 'STICKY_PUSHOFF', task: 'T0.12a', file: 'page', find: 'if (pressed) { wallSide = h.wall; h.vy = -K.STICKY_V; h.sticky = 0; h.wall = 0;',
+    repl: 'if (pressed) { wallSide = h.wall; h.vy = -K.STICKY_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.sticky = 0; h.wall = 0;',
     gates: [{ gate: 'harness', only: 'H-sim-12', expect: 'and never moved sideways (no push off)' }] },
   { name: 'LOCK_ZERO', task: 'T0.12a', file: 'page', find: 'WALL_JUMP_LOCK: 10,', repl: 'WALL_JUMP_LOCK: 0,',
     gates: [{ gate: 'harness', only: 'H-sim-15', expect: 'held toward the wall, the lock carries the hero away' }] },
@@ -281,16 +282,16 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-sim-12', expect: 'A gives' }] },
   { name: 'LATCH_OFF', task: 'T0.9', file: 'page', find: "    if (!isHeld(verb) && (verb === 'A' || verb === 'B')) edge[verb]++;", repl: "    if (false) edge[verb]++;",
     gates: [{ gate: 'input', expect: 'a sub step tap on A (4 ms) is exactly one A_TAP' }] },
-  { name: 'ZONE_FIXED_AT_DOWN', task: 'T0.9', file: 'page', find: "      rockerX[e.pointerId] = e.clientX;\n      if (rockerPtrs[0] === e.pointerId) setRocker(zoneOf(e.clientX));",
-    repl: "      rockerX[e.pointerId] = e.clientX;",
-    gates: [{ gate: 'input', expect: 'a slide from the left zone to the right zone without lifting switches the direction' }] },
+  /* ZONE_FIXED_AT_DOWN became STICK_FIXED_AT_DOWN at Q140 (the stick): its moves never read */
+  { name: 'STICK_FIXED_AT_DOWN', task: 'STICK', file: 'page', find: '        p.x = pts[i].clientX; follow(p);', repl: '        follow(p);',
+    gates: [{ gate: 'input', expect: '412x915: pushed 20 px right without lifting it is right' }] },
   { name: 'CANVAS_100PCT', task: 'T0.9', file: 'page', find: "    canvas.style.width = R.cssW + 'px';", repl: "    canvas.style.width = '100%';",
     gates: [{ gate: 'layout', expect: '412x915: the canvas is' }] },
   { name: 'A_44PX', task: 'T0.9', file: 'page', find: '#btnA { right: calc(var(--sar) + var(--edge)); }', repl: '#btnA { right: calc(var(--sar) + var(--edge)); width: 44px; }',
     gates: [{ gate: 'layout', expect: '412x915: A measures' }] },
   { name: 'RESERVE_FILLED', task: 'T0.9', file: 'page', find: '#reserve { position: absolute; left: 0; bottom: 0; width: var(--res); height: var(--res); }',
     repl: '#reserve { position: absolute; left: 0; bottom: 0; width: var(--res); height: var(--res); background: #c8302f; }',
-    gates: [{ gate: 'layout', expect: '412x915: the reserved box is transparent' }] },
+    gates: [{ gate: 'layout', expect: '412x915 on the clear card: the reserved box is transparent' }] },
   /* T0.14: the develop reveal */
   { name: 'STATIC_BUILT_TWICE', task: 'T0.14', file: 'page', find: "    if (window.performance && performance.mark) performance.mark('sb-reveal-end');\n    ui.screen = 'play';",
     repl: "    if (window.performance && performance.mark) performance.mark('sb-reveal-end');\n    SB.render.buildStatic(G.level);\n    ui.screen = 'play';",
@@ -323,7 +324,8 @@ const MUTANTS = [
     gates: [{ gate: 'sprites', expect: 'running, each frame holds 5 steps' }] },
   { name: 'DASH_NO_FLASH', task: 'T0.17', file: 'page', find: "(h.dashI > 0 ? '*' : '')", repl: "''",
     gates: [{ gate: 'sprites', expect: 'a dash draws the Glare hero' }] },
-  { name: 'SPRITE_ROW_SHORT', task: 'T0.17', file: 'page', find: "a: 'ffffffffffffffff/ff0fff0fff0fff0f/", repl: "a: 'fffffffffffffff/ff0fff0fff0fff0f/",
+  /* re anchored in ART1 on Astra's tab (Q160) */
+  { name: 'SPRITE_ROW_SHORT', task: 'T0.17', file: 'page', find: "a: 'ffffffffffffffff/ff00ffffff00ffff/", repl: "a: 'fffffffffffffff/ff00ffffff00ffff/",
     gates: [{ gate: 'lint', expect: 'tab.a row 0 is 15 wide' }, { gate: 'harness', only: 'H-spr-1', expect: 'tab.a decodes to 16x5' }] },
   /* T1.2b: features, part two */
   { name: 'SPECK_CAP_7', task: 'T1.2b', file: 'page', find: 'var cap = T.CAP_SPECK + (level.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0) - (pl >= 0 ? 1 : 0);', repl: 'var cap = T.CAP_SPECK + 1 + (level.biome === 4 ? T.EMBER_EXTRA_SPECKS : 0) - (pl >= 0 ? 1 : 0);',   /* re anchored after the M1 review's pocket speck */
@@ -377,7 +379,8 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-en-2f', expect: '1 px into the hero hits on that step' }] },
   { name: 'CORE_1PX', task: 'review 4', file: 'page', find: 'var core = 2 * K.SUB, mx0 = en.x + core,', repl: 'var core = 1 * K.SUB, mx0 = en.x + core,',
     gates: [{ gate: 'harness', only: 'H-en-2f', expect: 'only touches the hero\'s edge does not' }] },
-  { name: 'FLASH_UNDRAWN', task: 'review 4', file: 'page', find: '        if (it[5] && (idx === P.I.SUN || idx === P.I.WALNUT)) idx = P.I.GLARE;\n', repl: '',
+  /* re anchored at W1 (the atlas paints a second copy, the enemies' hit flash): the dash's Glare copy dropped alone */
+  { name: 'FLASH_UNDRAWN', task: 'review 4', file: 'page', find: '        if (it[5] === 1 && (idx === P.I.SUN || idx === P.I.WALNUT)) idx = P.I.GLARE;\n', repl: '        if (false) idx = P.I.GLARE;\n',
     gates: [{ gate: 'sprites', expect: 'on the canvas the hero shows no Sun through the dash i frames' }] },
   { name: 'SQUASH_SMOOTHED', task: 'review 4', file: 'page', find: '    spr(ctx, key, dx, dy, dw, dh);\n', repl: '    ctx.imageSmoothingEnabled = h.squash !== 0; spr(ctx, key, dx, dy, dw, dh); ctx.imageSmoothingEnabled = false;\n',
     gates: [{ gate: 'sprites', expect: 'the stretch (' }] },
@@ -390,7 +393,7 @@ const MUTANTS = [
   { name: 'DEATH_AND_CLEAR', task: 'review 4', file: 'page', find: '      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && ', repl: '      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && ',
     gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the clear wins' }] },
   { name: 'HINT_STAYS', task: 'review 4', file: 'page', find: "clearTimeout(el.sbHintT); el.sbHintT = setTimeout(function () { el.classList.remove('hint'); }, HINT_MS);", repl: '',
-    gates: [{ gate: 'death', expect: 'under reduced motion the hint outline leaves' }] },
+    gates: [{ gate: 'death', expect: 'under reduced motion the hint leaves after the pulse' }] },
   /* T1.1: biome detection */
   { name: 'HUE_BANDS_SWAPPED', task: 'T1.1', file: 'page', find: 'BAND = [-1, -1, -1, -1, -1, -1, -1, 0, 0, 4, 4, 2, 2, 3, 0, -1];',
     repl: 'BAND = [-1, -1, -1, -1, -1, -1, -1, 0, 0, 2, 2, 4, 4, 3, 0, -1];',
@@ -425,11 +428,13 @@ const MUTANTS = [
   { name: 'PHOTO_HELD', task: 'T0.15', file: 'page', find: '    ui.releasePhoto();   /* the photo lives until the reveal ends, never longer (DESIGN 6.1) */\n', repl: '',
     gates: [{ gate: 'capture', expect: 'the photo is released when the reveal ends' }] },
   /* named by T0.8b and left to the layout gate, entered at T0.13b's audit of the plan's list */
-  { name: 'ROCKER_AT_X0', task: 'T0.8b', file: 'page', find: '#rocker { position: absolute; left: var(--res); top: 0;', repl: '#rocker { position: absolute; left: 0; top: 0;',
-    gates: [{ gate: 'layout', expect: '412x915: left zone is clear of the canvas and the reserved box' }] },
-  { name: 'MIRROR_OVERLAPS_CANVAS', task: 'T0.9', file: 'page', find: '#strip.mirror #rocker { left: calc(var(--res) + 2 * var(--btn)); right: calc(var(--sar) + var(--edge)); }',
-    repl: '#strip.mirror #rocker { left: calc(var(--res) + 2 * var(--btn)); right: calc(var(--sar) + var(--edge)); top: -160px; }',
-    gates: [{ gate: 'layout', expect: '412x915 mirrored: the rocker, A and B are disjoint and clear of the canvas' }] },
+  /* ROCKER_AT_X0 became STICK_AT_X0 at Q140: in a room the stick owns x 0 by design; where the chip shows (the clear
+     card) the stick starting at x 0 lies under the chip's reserved box */
+  { name: 'STICK_AT_X0', task: 'STICK', file: 'page', find: '#stick { position: absolute; left: var(--res); top: 0;', repl: '#stick { position: absolute; left: 0; top: 0;',
+    gates: [{ gate: 'layout', expect: '412x915 on the clear card: the stick zone is clear of the reserved box' }] },
+  { name: 'MIRROR_OVERLAPS_CANVAS', task: 'T0.9', file: 'page', find: '#strip.mirror #stick { left: calc(var(--res) + 2 * var(--btn)); right: calc(var(--sar) + var(--edge)); }',
+    repl: '#strip.mirror #stick { left: calc(var(--res) + 2 * var(--btn)); right: calc(var(--sar) + var(--edge)); top: -160px; }',
+    gates: [{ gate: 'layout', expect: '412x915 mirrored: the stick, A and B are disjoint and clear of the canvas' }] },
   { name: 'GLARE_DARKENED', task: 'T0.4b', file: 'page', find: "'f2efe6', 'fbfbff', '6b3f2a'", repl: "'f2efe6', '999999', '6b3f2a'",
     gates: [{ gate: 'harness', only: 'H-pal-2', expect: 'near whites (L > 235)' }, { gate: 'harness', only: 'H-pal-3', expect: 'the collision edge (Glare over Ink) clears 3:1' }] },
   { name: 'MAKE_RE_DRIFT', task: 'T0.5b', file: 'make', find: 'var CORE_RE = /^<script id="(core-[a-z]+)" data-core>', repl: 'var CORE_RE = /^<script id="(core-[a-z0-9]+)" data-core>',
@@ -446,10 +451,10 @@ const MUTANTS = [
     gates: [{ gate: 'play', expect: 'the loop ran exactly the steps the accumulator owes' }] },
   { name: 'DT_MAX_20', task: 'T0.8b review', file: 'page', find: 'MAX_STEPS = 4, DT_MAX = 100', repl: 'MAX_STEPS = 4, DT_MAX = 20',
     gates: [{ gate: 'play', expect: 'the loop ran exactly the steps the accumulator owes' }] },
-  { name: 'SLIDE_KEEPS_OLD', task: 'T0.8b review', file: 'page', find: "      if (rockerVerb) I.release(rockerVerb, 'rocker');", repl: "      if (rockerVerb && !v) I.release(rockerVerb, 'rocker');",
-    gates: [{ gate: 'play', expect: 'the slide: moved to the right zone without lifting it is right' }] },
-  { name: 'GAP_IS_LEFT', task: 'T0.8b review', file: 'page', find: "      if (x < a.right) return 'L';", repl: "      if (x < b.left) return 'L';",
-    gates: [{ gate: 'play', expect: 'the slide: moved into the neutral gap it is nothing' }] },
+  /* SLIDE_KEEPS_OLD became STICK_KEEPS_OLD at Q140; GAP_IS_LEFT retired with the rocker's gap (the stick's neutral is
+     watched by DEADZONE_ZERO and NO_HYSTERESIS) */
+  { name: 'STICK_KEEPS_OLD', task: 'STICK', file: 'page', find: "      if (stickDir) I.release(stickDir, 'stick');", repl: "      if (stickDir && !v) I.release(stickDir, 'stick');",
+    gates: [{ gate: 'play', expect: 'the reversal: slid 20 px right of its landing without lifting it is right, and only right' }] },
   { name: 'FITS2_NO_STRIP', task: 'T0.8b review', file: 'page', find: 'var fits2 = avail >= T.TOP_STRIP + T.VIEW_ROWS_MIN * K.CELL * 2 + T.CONTROL_STRIP;',
     repl: 'var fits2 = avail >= T.TOP_STRIP + T.VIEW_ROWS_MIN * K.CELL * 2;',
     gates: [{ gate: 'play', expect: '1366x843: the canvas is 1x, 384 CSS px wide' }] },
@@ -457,7 +462,7 @@ const MUTANTS = [
     gates: [{ gate: 'play', expect: 'Again leaves nothing painted over the play area' }] },
   { name: 'STRIP_KEEPS_PRESSED', task: 'T0.8b review', file: 'page', find: "down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; if (I._stripReset) I._stripReset(); };",   /* re anchored after the M1 review */
     repl: "down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; };",
-    gates: [{ gate: 'play', expect: 'the same thumb moved inside its zone after the blur presses right again' }] },
+    gates: [{ gate: 'play', expect: 'a blur releases a held thumb and its pad stops showing right' }] },   /* since the stick's review the thumb re centres at Resume and presses on its own move, so the lit pad names it */
   /* TITLE_UNDER_ROCKER, retired at NOTE3 (QUESTIONS Q94): the strip's Title it watched at 320x568 is gone; Pause in the top
      strip is watched by TITLE_BACK_IN_STRIP and PAUSE_OVERHANG_UNDER (layout) and the pause gate's rows */
   { name: 'EXIT_HIGHEST_INDEX', task: 'T0.8b review', file: 'page', find: 'if (standableIn(level, lit[q]) && d[lit[q]] >= 0 && (lc < 0 || d[lit[q]] > d[lc])) lc = lit[q];',
@@ -465,8 +470,9 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-pipe-12', expect: "sample-room: the exit equals the test's own rule" }] },
   { name: 'PHASE_ZERO', task: 'T0.8b review', file: 'page', find: '  var PHASE = STEP_MS / 4;', repl: '  var PHASE = 0;',
     gates: [{ gate: 'play', expect: 'frame by frame the page ran the steps the accumulator owes' }] },
-  { name: 'ROCKER_NO_ADOPT', task: 'T0.8b review', file: 'page', find: '      setRocker(rockerPtrs.length ? zoneOf(rockerX[rockerPtrs[0]]) : null);', repl: '      setRocker(null);',
-    gates: [{ gate: 'play', expect: 'the first lifted, the pointer still down takes the rocker' }] },
+  /* ROCKER_NO_ADOPT became STICK_NO_ADOPT at Q140 */
+  { name: 'STICK_NO_ADOPT', task: 'STICK', file: 'page', find: '      if (k === 0) setDir(stickPtrs.length ? dirOf(stickAt[stickPtrs[0]], null) : null);', repl: '      if (k === 0) setDir(null);',
+    gates: [{ gate: 'play', expect: 'the first lifted, the thumb still down takes over from its own landing point' }] },
   { name: 'CHIP_OVER_PLAY', task: 'T0.8b review', file: 'page', find: "    document.body.classList.toggle('playing', name === 'play' || name === 'crop');", repl: '',
     gates: [{ gate: 'play', expect: "in play the fleet's chip, pill, card and toast are hidden" }] },
   { name: 'BEACON_PULSE_BY_FRAME', task: 'T0.8b review', file: 'page', find: 'pulse = ((now === undefined ? performance.now() : now) / 400) | 0;', repl: 'pulse = (pulse + 1) | 0;',
@@ -576,7 +582,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-en-9', expect: 'elite has ELITE_HP_MULT times its HP' }] },
   { name: 'POCKET_ELITE_ROAMS', task: 'T1.4', file: 'page', find: '    if (pk) {\n      var r = pk.rect;', repl: '    if (false) {\n      var r = pk.rect;',
     gates: [{ gate: 'harness', only: 'H-en-9', expect: 'the pocket\'s elite sleeps' }] },
-  { name: 'POCKET_ELITE_AWAKE', task: 'T1.4', file: 'page', find: 'stunned: el && pocketOf(level, e.idx) ? -1 : 0 };', repl: 'stunned: 0 };',
+  { name: 'POCKET_ELITE_AWAKE', task: 'T1.4', file: 'page', find: 'stunned: el && pocketOf(level, e.idx) ? -1 : 0, hurt: 0 };', repl: 'stunned: 0, hurt: 0 };',   /* re anchored at W1 (hurt joined the enemy) */
     gates: [{ gate: 'harness', only: 'H-en-9', expect: 'the pocket\'s elite sleeps' }] },
   { name: 'HELD_STILL_HARMS', task: 'T1.4', file: 'page', find: '      if (held || !liveEnemy(en)) continue;', repl: '      if (!liveEnemy(en)) continue;',
     gates: [{ gate: 'harness', only: 'H-en-9', expect: 'a frozen moth on the hero' }] },
@@ -602,7 +608,7 @@ const MUTANTS = [
   /* re anchored at NOTE5 on the shell's own answer (the pick buttons left with the sheets): the same mutation, the shell
      writing the stat itself with no word recorded */
   { name: 'CHOICE_VIA_SHELL', task: 'T1.6', file: 'page', find: '      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);', repl: '      if (st.scrollsOffered) SB.sim.pickScroll(st, st.scrollsOffered[0]);',
-    gates: [{ gate: 'loot', expect: '412: the recording carries the two answers' }] },
+    gates: [{ gate: 'loot', expect: '412: the recording carries the one answer' }] },   /* W1: the chest answers nothing now */
   { name: 'GRACE_ONE_SHORT', task: 'T1.6', file: 'page', find: 'else { s.room.grace = T8.PICKUP_GRACE_FRAMES; s.room.offerWait = 1; }', repl: 'else { s.room.grace = T8.PICKUP_GRACE_FRAMES - 1; s.room.offerWait = 1; }',
     gates: [{ gate: 'harness', only: 'H-loot-3', expect: 'PICKUP_GRACE_FRAMES or more after the touch' }] },
   { name: 'OFFER_IN_THE_AIR', task: 'T1.6', file: 'page', find: 'if (s.room.offerWait && s.room.grace === 0 && h.ground) {', repl: 'if (s.room.offerWait && s.room.grace === 0) {',
@@ -642,8 +648,8 @@ const MUTANTS = [
     gates: [{ gate: 'lint', expect: 'SW_SCOPE' }, { gate: 'pwa', expect: "under the worker the fleet's root files come from the network, never the worker" }] },
   { name: 'RELOAD_ON_CONTROLLERCHANGE', task: 'T1.11', file: 'page', find: "  window.addEventListener('beforeinstallprompt',", repl: "  if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', function () { location.reload(); });\n  window.addEventListener('beforeinstallprompt',",
     gates: [{ gate: 'lint', expect: 'RELOAD' }, { gate: 'pwa', expect: 'the new worker causes no navigation of its own' }] },
-  /* re anchored at the sb-m1-2 stamp (the registration is ?v=2 now) */
-  { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=2')", repl: "register('./sw.js?v=3')",
+  /* re anchored at the sb-m1-3 stamp (the registration is ?v=3 now) */
+  { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=3')", repl: "register('./sw.js?v=4')",
     gates: [{ gate: 'lint', expect: 'STAMP' }] },
   /* the card review's follow up, due at the sb-m1-2 stamp: the worker reads its own cache only; with no cacheName the
      foreign copy the gate plants before the install answers the offline shell */
@@ -753,9 +759,10 @@ const MUTANTS = [
   { name: 'TWISTOFF_FROST_ONLY', task: 'M1R', file: 'page', find: 'level.twistOff = opts.firstRoom && (level.biome === 1 || level.biome === 2 || level.biome === 3) ? 1 : 0;', repl: 'level.twistOff = opts.firstRoom && level.biome === 1 ? 1 : 0;',
     gates: [{ gate: 'harness', only: 'H-sim-17', expect: 'the first ever room in Deep and Overgrowth' }] },
   { name: 'NO_PICKUP_EVENT', task: 'M1R', file: 'page', find: 'lt.taken = 1; s.ev |= EV.PICKUP;', repl: 'lt.taken = 1;',
-    gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the loot sets PICKUP, CHEST, OFFER and PICK each on exactly its step' }] },
-  { name: 'NO_CHEST_EVENT', task: 'M1R', file: 'page', find: 's.room.compare = 1; s.ev |= EV.CHEST; }', repl: 's.room.compare = 1; }',
-    gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the loot sets PICKUP, CHEST, OFFER and PICK each on exactly its step' }] },
+    gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the loot sets PICKUP, CHEST, OFFER, PICK' }] },
+  /* re anchored at W1 (the chest pays a weapon): the same mutation, the chest's event dropped */
+  { name: 'NO_CHEST_EVENT', task: 'M1R', file: 'page', find: 's.chest.open = 1; s.room.dp += T8.DP_CHEST; s.ev |= EV.CHEST;', repl: 's.chest.open = 1; s.room.dp += T8.DP_CHEST;',
+    gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the loot sets PICKUP, CHEST, OFFER, PICK' }] },
   { name: 'QR_RULE2_ZERO', task: 'M1R', file: 'page', find: 'if (c === m[y * n + x + 1] && c === m[(y + 1) * n + x] && c === m[(y + 1) * n + x + 1]) score += 3;', repl: 'if (c === m[y * n + x + 1] && c === m[(y + 1) * n + x] && c === m[(y + 1) * n + x + 1]) score += 0;',
     gates: [{ gate: 'harness', only: 'H-qr-4', expect: "the lowest of the test's own" }] },
   { name: 'QR_RULE3_ZERO', task: 'M1R', file: 'page', edits: [['if (!color) score += count(hist) * 40;', 'if (!color) score += count(hist) * 0;'], ['add(run + n, hist); score += count(hist) * 40;', 'add(run + n, hist); score += count(hist) * 0;']],
@@ -763,7 +770,7 @@ const MUTANTS = [
   { name: 'RECENT_UNFILTERED', task: 'M1R', file: 'page', find: 'd.recent = d.recent.filter(function (r) { try { return !!fromJSON(r); } catch (e) { return false; } }).slice(0, 20);', repl: 'd.recent = d.recent.slice(0, 20);',
     gates: [{ gate: 'harness', only: 'H-save-1', expect: 'recent keeps 20 valid records' }] },
   { name: 'SYNTH_THROWS', task: 'M1R', file: 'page', find: "    chest: function (t) { tone('triangle', 523, 523", repl: "    chest: function (t) { undefinedSynth(); tone('triangle', 523, 523",
-    gates: [{ gate: 'audio', expect: 'each of the 11 sounds the shell asks for schedules one voice' }] },
+    gates: [{ gate: 'audio', expect: 'each of the 16 sounds the shell asks for schedules one voice' }] },   /* re anchored at W1: the five weapon voices joined the list */
   { name: 'SOUND_TOGGLE_MISWIRED', task: 'M1R', file: 'page', find: "setBool('setsound', 'sound');", repl: "setBool('setsound', 'music');",
     gates: [{ gate: 'save', expect: 'mirror on, sound off and reduced motion On' }] },
   { name: 'MOTION_IGNORED', task: 'M1R', file: 'page', find: "SB.save.doc.settings.reducedMotion = this.value === 'os' ? null : this.value === 'on'; SB.save.commit();", repl: 'SB.save.commit();',
@@ -796,9 +803,10 @@ const MUTANTS = [
     gates: [{ gate: 'death', expect: 'at 320x568 the death card clears the fallen bug' }] },
   { name: 'CHIP_ON_DEATH', task: 'M1R', file: 'page', find: 'body:has(#death.on) #sws-music-card, body:has(#death.on) #sws-music-pill, body:has(#death.on) #sws-music-toast, body:has(#death.on) #sws-music-chip { display: none !important; }', repl: '',
     gates: [{ gate: 'death', expect: 'at 320x568 a thumb lands on Again and Title on every row' }] },
-  { name: 'SPECK_IN_FILM', task: 'M1R', file: 'page', find: "......0860....../...0008888000.../...0888868880...", repl: "......0f60....../...0008888000.../...0888868880...",
+  /* SPECK_IN_FILM and SPARK_UNOUTLINED re anchored in ART1 on Astra's speck.a and spark.a (Q160) */
+  { name: 'SPECK_IN_FILM', task: 'M1R', file: 'page', find: ".....088880...../.....088880.....", repl: ".....08f880...../.....088880.....",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'speck.a holds no Film' }] },
-  { name: 'SPARK_UNOUTLINED', task: 'M1R', file: 'page', find: "      a: '.......0......../......090......./...0.09990.0..../..09009990090.../...090969090..../...009969900..../..09996669990.../...009969900..../...090969090..../..09009990090.../...0.09990.0..../......090......./.......0......../................/................/................',", repl: "      a: '................/.......9......../......999......./...9..999..9..../....9.969.9...../.....99699....../...999666999..../.....99699....../....9.969.9...../...9..999..9..../......999......./.......9......../................/................/................/................',",
+  { name: 'SPARK_UNOUTLINED', task: 'M1R', file: 'page', find: "      a: '.......00......./......0990....../...0..0990..0.../..090.0990.090../..090099990090../...0999999990.../..099999999990../.09996699669990./.09966666666990./0999666666669990/0999666666669990/0999966996699990/.09999999999990./..099999999990../...0999999990.../....00000000....',", repl: "      a: '................/.......99......./.......99......./...9...99...9.../...9..9999..9.../....99999999..../...9999999999.../..999669966999../..996666666699../.99966666666999./.99966666666999./.99996699669999./..999999999999../...9999999999.../....99999999..../................',",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'spark.a has its Ink outline' }] },
   { name: 'SELECT_44PX', task: 'M1R', file: 'page', find: '#settings select { min-height: 48px; margin-left: auto; }', repl: '#settings select { min-height: 44px; margin-left: auto; }',
     gates: [{ gate: 'save', expect: 'every Settings control is 48 px tall or more' }] },
@@ -808,13 +816,13 @@ const MUTANTS = [
   { name: 'NAVPAD_MARK_REMOVED', task: 'NOTE1', file: 'page', find: " document.documentElement.classList.add('navpad');", repl: ' { /* the mark removed */ }',
     gates: [{ gate: 'layout', expect: '412x915 the app mark (?navpad, env 0): the page is marked .navpad' }] },
   { name: 'NAVPAD_FLOOR_DROPPED', task: 'NOTE1', file: 'page', find: ':root.navpad { --sab: max(env(safe-area-inset-bottom, 0px), 48px); }\n', repl: '',
-    gates: [{ gate: 'layout', expect: '412x915 the app mark (?navpad, env 0): the drawn rocker zones, A and B end' }] },
-  { name: 'STRIP_IGNORES_SAB', task: 'NOTE1', file: 'page', edits: [['  padding: 0 0 calc(10px + var(--sab)) 0; touch-action: none; }', '  padding: 0 0 10px 0; touch-action: none; }'],
+    gates: [{ gate: 'layout', expect: '412x915 the app mark (?navpad, env 0): the drawn stick field, A and B end' }] },
+  { name: 'STRIP_IGNORES_SAB', task: 'NOTE1', file: 'page', edits: [['top: 6px; bottom: calc(10px + var(--sab)); pointer-events: none;', 'top: 6px; bottom: 10px; pointer-events: none;'],
       ['  padding-bottom: calc(10px + var(--sab)); touch-action: none; }', '  padding-bottom: 10px; touch-action: none; }']],
-    gates: [{ gate: 'layout', expect: '412x915 env 48 (a phone that reports its bar): the drawn rocker zones, A and B end' }] },
+    gates: [{ gate: 'layout', expect: '412x915 env 48 (a phone that reports its bar): the drawn stick field, A and B end' }] },
   /* the floor's other half: a tab is never floored, a reported inset never doubled, and the mark is Android's app window alone */
   { name: 'NAVPAD_BLANKET', task: 'NOTE1', file: 'page', find: ':root.navpad { --sab:', repl: ':root { --sab:',
-    gates: [{ gate: 'layout', expect: '412x915: the drawn rocker zones, A and B sit' }] },
+    gates: [{ gate: 'layout', expect: '412x915: the drawn stick field, A and B sit' }] },
   { name: 'NAVPAD_FLOOR_ADDS', task: 'NOTE1', file: 'page', find: 'max(env(safe-area-inset-bottom, 0px), 48px)', repl: 'calc(env(safe-area-inset-bottom, 0px) + 48px)',
     gates: [{ gate: 'layout', expect: '412x915 the app mark with env 48 (the floor never adds to it): every rule that reads --sab holds its 48 px value' }] },
   { name: 'NAVPAD_ANY_ANDROID', task: 'NOTE1', file: 'page', find: "matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)').matches))", repl: 'true))',
@@ -858,7 +866,7 @@ const MUTANTS = [
      word), no player string names a weapon, a charm, a blueprint or the Darkroom, and the blueprint is neither drawn
      nor heard. The lint's rule: the old slip line, the old Grit line, the Darkroom as two words, a blueprint in markup */
   { name: 'COPY_PROMISES_WEAPON', task: 'NOTE5', file: 'page', find: "    dp: 'Dead pixels', dpGain: '+{n}',", repl: "    dp: 'Dead pixels', dpGain: '+{n}',\n    slip: 'A weapon waits for the Darkroom.',",
-    gates: [{ gate: 'lint', expect: 'COPY.slip: names weapon before the build has one' }] },
+    gates: [{ gate: 'lint', expect: 'COPY.slip: names Darkroom before the build has one' }] },   /* re anchored at W1: weapon is lifted (weapons exist), so the slip line fails for its Darkroom (NOT_YET's line) */
   { name: 'COPY_PROMISES_CHARM', task: 'NOTE5', file: 'page', find: "    dp: 'Dead pixels', dpGain: '+{n}',", repl: "    dp: 'Dead pixels', dpGain: '+{n}',\n    grit: 'Grit', gritSays: 'charms grow stronger',",
     gates: [{ gate: 'lint', expect: 'COPY.gritSays: names charm before the build has one' }] },
   { name: 'COPY_NAMES_DARK_ROOM', task: 'NOTE5', file: 'page', find: "nextRoom: 'Shoot the next room',", repl: "nextRoom: 'Shoot the dark room',",
@@ -869,8 +877,8 @@ const MUTANTS = [
      answers in the wrong order hold it for good when both open on one step */
   { name: 'OFFER_HOLDS_WORLD', task: 'NOTE5', file: 'page', find: '      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);', repl: '      if (st.scrollsOffered) { /* the offer waits for a tap */ }',
     gates: [{ gate: 'loot', expect: '412: the scroll is taken with its pickup voice' }] },
-  { name: 'CHEST_HOLDS_WORLD', task: 'NOTE5', file: 'page', find: '      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);', repl: '      else if (st.room.compare) { /* the slip waits for a tap */ }',
-    gates: [{ gate: 'loot', expect: '412: the world holds still for exactly the two steps the answers ride' }] },
+  /* CHEST_HOLDS_WORLD retired at W1 (Weapons v1 step 1): no compare opens for an empty slot, so the shell's answer to
+     a chest's compare never rides a step and the condition it watched never arises; step 2's swap rows replace it */
   { name: 'OFFER_SHOWS', task: 'NOTE5', file: 'page', edits: [
       ['    <div id="sharesheet" role="dialog"', '    <div id="offer" role="dialog"><h2>Pick a scroll</h2><button id="pickA" type="button">Vigor</button><button id="pickB" type="button">Focus</button></div>\n    <div id="sharesheet" role="dialog"'],
       ['#clear, #death { position: absolute;', '#clear, #death, #offer { position: absolute;'], ['#clear.on, #death.on { display: flex; }', '#clear.on, #death.on, #offer.on { display: flex; }'],
@@ -883,13 +891,14 @@ const MUTANTS = [
       ['      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);', "      document.getElementById('slip').classList.toggle('on', !!st.room.compare && !st.scrollsOffered);"],
       ["    document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });", "    document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });\n    document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });"],
       ["var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard'];", "var MODALS = ['clear', 'death', 'paused', 'slip', 'sharesheet', 'devcard'];"]],   /* the listener and the list re anchored at NOTE3 (Q94) */
-    gates: [{ gate: 'loot', expect: '412: no sheet, card or dialog shows on the walk' }, { gate: 'lint', expect: 'COPY.slip: names weapon before the build has one' }] },
-  { name: 'ANSWER_ORDER_SWAPPED', task: 'NOTE5', file: 'page', find: '      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);\n      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);',
-    repl: '      if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);\n      else if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);',
-    gates: [{ gate: 'loot', expect: "320: the scroll's offer and the chest's compare open on one step" }] },
+    /* W1: its slip shows on a compare and no compare opens for an empty slot, so the loot walk can no longer see it; the
+       lint still sees its words (the Darkroom, NOT_YET's line now that weapon is lifted) */
+    gates: [{ gate: 'lint', expect: 'COPY.slip: names Darkroom before the build has one' }] },
+  /* ANSWER_ORDER_SWAPPED retired at W1: the offer and the chest's compare can no longer open on one step (no compare
+     opens for an empty slot), so the order of the two answers is never read; step 2's swap rows replace it */
   /* the +15: never shown, never gone (with reduced motion it stands for good), taking taps over A's hit area, and
      carried into the next room */
-  { name: 'PLUS_MISSING', task: 'NOTE5', file: 'page', find: "if (ev & EV.CHEST) { au.sfx('chest'); SB.ui.dpGain(SB.TUNING.DP_CHEST); }", repl: "if (ev & EV.CHEST) { au.sfx('chest'); }",
+  { name: 'PLUS_MISSING', task: 'NOTE5', file: 'page', find: "      if ((ev & (EV.CHEST | EV.KILL)) && G.state.room.dp > dp0) SB.ui.dpGain(G.state.room.dp - dp0);\n", repl: '',   /* re anchored at W1: the gain line serves kills too */
     gates: [{ gate: 'loot', expect: '412: the chest opens with its chest voice and pays 15' }] },
   { name: 'PLUS_STAYS', task: 'NOTE5', file: 'page', find: "clearTimeout(el.sbGainT); el.sbGainT = setTimeout(function () { el.classList.remove('on'); }, GAIN_MS);", repl: 'clearTimeout(el.sbGainT);',
     gates: [{ gate: 'loot', expect: '320: with reduced motion the +15 stands still' }] },
@@ -905,7 +914,7 @@ const MUTANTS = [
     gates: [{ gate: 'loot', expect: '412: no pick voice sounds' }] },
   { name: 'EDGE_LOST_TO_CHOICE', task: 'NOTE5', file: 'page', find: '      (c ? c * IN.CHOICE : (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0));\n    if (!c) { edge.A = 0; edge.B = 0; }',
     repl: '      (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0) | c * IN.CHOICE;\n    edge.A = 0; edge.B = 0;',
-    gates: [{ gate: 'loot', expect: "412: a real tap on A as the chest opens rides past its answer's step and jumps on the next" }] },
+    gates: [{ gate: 'loot', expect: "412: a real tap on A as the scroll's offer opens rides past its answer's step and jumps on the next" }] },   /* re anchored at W1: the chest answers nothing, the scroll's offer still does */
   /* the blueprint: drawn, or heard */
   /* re anchored at NOTE5R (a hidden loot's cell is drawn as its neighbour's): the blueprint's sprite on the open Ash,
      drawn as before the hide */
@@ -920,7 +929,7 @@ const MUTANTS = [
      real box), moving under reduced motion, rising into the count as it fades, larger than the count */
   { name: 'PLUS_OFF_THE_COUNT', task: 'NOTE5R', file: 'page', find: '#dpplus { position: absolute; right: 0; top: 100%;', repl: '#dpplus { position: absolute; right: 0; top: 560%;',
     gates: [{ gate: 'loot', expect: '412: the +15 sits under the count' }] },
-  { name: 'PLUS_NOT_STILL', task: 'NOTE5R', file: 'page', find: "el.classList.toggle('still', still)", repl: "el.classList.toggle('still', false)",
+  { name: 'PLUS_NOT_STILL', task: 'NOTE5R', file: 'page', find: "el.classList.remove('on'); void el.offsetWidth; el.classList.toggle('still', still)", repl: "el.classList.remove('on'); void el.offsetWidth; el.classList.toggle('still', false)",   /* re anchored at W1 (the pickup card has the same line) */
     gates: [{ gate: 'loot', expect: '320: with reduced motion the +15 stands still' }] },
   { name: 'PLUS_RISES_INTO_COUNT', task: 'NOTE5R', file: 'page', find: '100% { opacity: 0; transform: translateY(0); } }', repl: '100% { opacity: 0; transform: translateY(-10px); } }',
     gates: [{ gate: 'loot', expect: '412: the +15 never rises into the count' }] },
@@ -949,12 +958,69 @@ const MUTANTS = [
   { name: 'TITLE_BACK_IN_STRIP', task: 'NOTE3', file: 'page', edits: [
       ['  <div id="strip">\n', '  <div id="strip"><button id="back" type="button" data-copy="toTitle"></button>\n'],
       ['#paused, #clear, #death { position: absolute;', '#back { position: absolute; top: 0; left: calc(6px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;\n  border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }\n#paused, #clear, #death { position: absolute;'],
-      ["    document.getElementById('pausetitle').addEventListener('click', ui.toTitle);", "    document.getElementById('pausetitle').addEventListener('click', ui.toTitle);\n    document.getElementById('back').addEventListener('click', ui.toTitle);"]],
-    gates: [{ gate: 'layout', expect: '412x915: the strip holds no control but the rocker, B and A' }] },
+      ["    document.getElementById('pausetitle').addEventListener('click', function () { ui.toTitle(); });", "    document.getElementById('pausetitle').addEventListener('click', function () { ui.toTitle(); });\n    document.getElementById('back').addEventListener('click', function () { ui.toTitle(); });"]],   /* re anchored at W1 (the listener wrapped) */
+    gates: [{ gate: 'layout', expect: '412x915: the strip holds no control but the stick, B and A' }] },
   { name: 'HIDDEN_NO_PAUSE', task: 'NOTE3', file: 'page', find: "    document.addEventListener('visibilitychange', function () { if (document.hidden) away(); else back(); });\n", repl: '',
     gates: [{ gate: 'pause', expect: 'inside the wrapper iframe a hidden page pauses its room' }] },
   { name: 'BLUR_NO_PAUSE', task: 'NOTE3', file: 'page', find: "    window.addEventListener('blur', function () { if (!window.SWS_EMBED) away(); });\n", repl: '',
     gates: [{ gate: 'pause', expect: 'at top level a lost focus' }] },
+
+  /* the stick (Stephen's ruling of 31 Oct, "Whole left side", QUESTIONS Q140): a floating stick over the whole left of
+     the strip, the bottom left corner too, drawn only under a thumb, reading the slide from where the thumb landed */
+  { name: 'STICK_DRAWN_IDLE', task: 'STICK', file: 'page', find: '#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; border-radius: 50%; display: none;',
+    repl: '#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; border-radius: 50%; display: block;',
+    gates: [{ gate: 'input', expect: '412x915: with no thumb down the stick draws no pad' }] },
+  { name: 'STICK_ABSOLUTE', task: 'STICK', file: 'page', find: 'stickAt[e.pointerId] = { ox: e.clientX, x: e.clientX, y: e.clientY };',
+    repl: 'stickAt[e.pointerId] = { ox: (stick.getBoundingClientRect().left + stick.getBoundingClientRect().right) / 2, x: e.clientX, y: e.clientY };',
+    gates: [{ gate: 'input', expect: "412x915: a landing at the field's left middle" }] },
+  { name: 'CORNER_DEAD', task: 'STICK', file: 'page', edits: [['body.playing #strip, body:has(#death.on) #strip { --res: 0px; }', 'body:has(#death.on) #strip { --res: 0px; }'], ['body.playing #reserve, body:has(#death.on) #reserve { display: none; }', 'body:has(#death.on) #reserve { display: none; }']],   /* re anchored at the stick's review (the death card's box) */
+    gates: [{ gate: 'input', expect: '412x915: landed at the very bottom left corner, 20 px right is right' }] },
+  { name: 'PAD_STAYS', task: 'STICK', file: 'page', find: "      stick.classList.toggle('on', !!p);", repl: "      if (p) stick.classList.add('on');",
+    gates: [{ gate: 'input', expect: "412x915: landed at the field's left middle and lifted it is nothing, the pad is gone" }] },
+  { name: 'DEADZONE_ZERO', task: 'STICK', file: 'page', find: 'STICK_ON_PX: 12,', repl: 'STICK_ON_PX: 0,',
+    gates: [{ gate: 'input', expect: '412x915: a 4 px wobble after landing reads nothing' }] },
+  { name: 'NO_HYSTERESIS', task: 'STICK', file: 'page', find: 'STICK_OFF_PX: 6,', repl: 'STICK_OFF_PX: 12,',
+    gates: [{ gate: 'input', expect: '412x915: pushed 20 px and eased back to 9 px it stays right' }] },
+  { name: 'NO_FOLLOW', task: 'STICK', file: 'page', find: '      if (dx > TRAVEL) p.ox = p.x - TRAVEL; else if (dx < -TRAVEL) p.ox = p.x + TRAVEL;\n', repl: '',
+    gates: [{ gate: 'input', expect: '412x915: after the 80 px push, a 44 px reversal is left' }] },
+  { name: 'UP_IS_JUMP', task: 'STICK', file: 'page', find: '        p.x = pts[i].clientX; follow(p);',
+    repl: "        p.x = pts[i].clientX; follow(p);\n        if (p.y - pts[i].clientY >= ON) I.press('A', 'stick-up'); else I.release('A', 'stick-up');",
+    gates: [{ gate: 'input', expect: '412x915: a 60 px push straight up is word 0' }] },
+  { name: 'RELEASE_ON_LEAVE', task: 'STICK', file: 'page', find: '      var p = stickAt[e.pointerId];\n      if (!p) return;\n',
+    repl: '      var p = stickAt[e.pointerId];\n      if (!p) return;\n      var zr = stick.getBoundingClientRect();\n      if (e.clientX > zr.right || e.clientY < zr.top) { endStick(e); return; }\n',
+    gates: [{ gate: 'input', expect: '412x915: slid over B and up over the room it still steers right' }] },
+  { name: 'PAD_OVER_CANVAS', task: 'STICK', file: 'page', find: 'cy = Math.max(s.top + hh, p.y);', repl: 'cy = p.y;',
+    gates: [{ gate: 'input', expect: "412x915: a landing at the zone's top edge draws its pad inside the strip, never over the room" }] },
+  { name: 'MIRROR_STICK_LEFT', task: 'STICK', file: 'page', find: '#strip.mirror #stick { left: calc(var(--res) + 2 * var(--btn)); right: calc(var(--sar) + var(--edge)); }\n', repl: '',
+    gates: [{ gate: 'input', expect: '412x915 mirrored: the stick zone runs from B to the right edge' }] },
+  /* the stick's review (STICKR): the hint drew a Sun box round the whole field; the pad was kept inside the inset field,
+     so a corner thumb sat outside its rim; the arrows were italic; the stick drew and read under the pause and clear
+     cards; a thumb held still across Resume kept its knob pushed; the death card brought the box back; and three
+     behaviours had a gate and no row (the idle line, the pad's sideways clamp, the lit arrow) */
+  { name: 'HINT_BOXES_FIELD', task: 'STICKR', file: 'page', find: '#stick.hint .idle { animation: sbidle 0.7s ease-in-out 3; }', repl: '#stick.hint .field { animation: sbhint 0.7s ease-in-out 3; }',
+    gates: [{ gate: 'input', expect: "412x915: the first standing moment's hint on the stick draws no box" }] },
+  { name: 'HINT_OUTLINE_REDUCED', task: 'STICKR', file: 'page', find: '  #stick.hint .idle, #stick.hint .idle .hl, #stick.hint .idle .hr { animation: none; color: var(--ink); } }',
+    repl: '  #stick.hint .idle, #stick.hint .idle .hl, #stick.hint .idle .hr { animation: none; color: var(--ink); } #stick.hint .field { outline: 4px solid var(--sun); } }',
+    gates: [{ gate: 'death', expect: "under reduced motion the stick's hint draws no outline" }] },
+  { name: 'STICK_IDLE_GONE', task: 'STICKR', file: 'page', find: "    stickIdle: 'slide to run',", repl: "    stickIdle: '',",
+    gates: [{ gate: 'input', expect: '412x915: idle, a quiet hint in the field' }] },
+  { name: 'PAD_X_UNCLAMPED', task: 'STICKR', file: 'page', find: 'Math.min(s.right - hw, p.ox)', repl: 'p.ox',
+    gates: [{ gate: 'input', expect: '412x915: landed at beside B, low the pad and the knob appear centred under it, kept off the room and off B' }] },
+  { name: 'PAD_FIELD_INSET', task: 'STICKR', file: 'page', find: 'var cx = mir ? Math.max(s.left + hw, p.ox) : Math.min(s.right - hw, p.ox), cy = Math.max(s.top + hh, p.y);',
+    repl: "var f = stick.querySelector('.field').getBoundingClientRect(), cx = Math.max(f.left + hw, Math.min(f.right - hw, p.ox)), cy = Math.max(f.top + hh, Math.min(f.bottom - hh, p.y));",
+    gates: [{ gate: 'input', expect: '412x915: landed at the very bottom left corner the thumb is inside the drawn pad' }] },
+  { name: 'KNOB_ARROW_DARK', task: 'STICKR', file: 'page', find: "      pad.classList.toggle('l', stickDir === 'L'); pad.classList.toggle('r', stickDir === 'R');\n", repl: '',
+    gates: [{ gate: 'input', expect: '412x915: pushed 20 px right without lifting it is right, the knob 20 px right and the right arrow lit' }] },
+  { name: 'ITALIC_ARROWS', task: 'STICKR', file: 'page', find: '#stick i { font-style: normal; }\n', repl: '',
+    gates: [{ gate: 'input', expect: "412x915: the stick's arrows stand upright" }] },
+  { name: 'PAD_UNDER_CARD', task: 'STICKR', file: 'page', edits: [['body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad { display: none; }\n', ''], ['var p = stickPtrs.length && live() ? stickAt', 'var p = stickPtrs.length ? stickAt']],
+    gates: [{ gate: 'input', expect: '412x915: under the pause card a thumb slid on the strip draws no pad' }] },
+  { name: 'STICK_STEERS_PAUSED', task: 'STICKR', file: 'page', find: '      if (!live()) v = null;\n', repl: '',
+    gates: [{ gate: 'input', expect: '412x915: under the pause card a thumb slid on the strip reads nothing' }] },
+  { name: 'RESUME_KNOB_STALE', task: 'STICKR', file: 'page', find: '      for (var k = 0; k < stickPtrs.length; k++) { var q = stickAt[stickPtrs[k]]; q.ox = q.x; }\n', repl: '',
+    gates: [{ gate: 'input', expect: '412x915: after Resume with the thumb held still the knob is centred and the word 0' }] },
+  { name: 'DEATH_BOX_BACK', task: 'STICKR', file: 'page', edits: [['body.playing #strip, body:has(#death.on) #strip { --res: 0px; }', 'body.playing #strip { --res: 0px; }'], ['body.playing #reserve, body:has(#death.on) #reserve { display: none; }', 'body.playing #reserve { display: none; }']],
+    gates: [{ gate: 'death', expect: 'on the death card the reserved box stays released' }] },
   { name: 'BLUR_IN_FRAME_PAUSES', task: 'NOTE3', file: 'page', find: 'if (!window.SWS_EMBED) away();', repl: 'away();',
     gates: [{ gate: 'pause', expect: 'inside the wrapper iframe a lost focus (the host page took it) leaves the room running' }] },
   { name: 'RESUME_KEEPS_EDGE', task: 'NOTE3', file: 'page', find: '    SB.input.releaseAll();   /* a tap on the strip under the card is never banked into a jump at Resume */\n', repl: '',
@@ -1011,7 +1077,101 @@ const MUTANTS = [
   { name: 'REVEAL_AWAY_RUNS', task: 'NOTE3R', file: 'page', find: 'if (held || RV.away) {', repl: 'if (held) {',
     gates: [{ gate: 'pause', expect: 'a lost focus in the first reveal holds it' }] },
   { name: 'REVEAL_AWAY_STUCK', task: 'NOTE3R', file: 'page', find: "    window.addEventListener('focus', back);\n", repl: '',
-    gates: [{ gate: 'pause', expect: 'back on the page by a real tap, the first reveal plays on' }] }
+    gates: [{ gate: 'pause', expect: 'back on the page by a real tap, the first reveal plays on' }] },
+  /* ART1: Astra's in room art (Q160) */
+  { name: 'ELITE_DRAWS_BASE', task: 'ART1', file: 'page', edits: [["ek = en.elite ? kn + '_elite' : kn", "ek = kn"], ['spr(ctx, mk, ex2, ey2);', 'spr(ctx, mk, mx, my, es, es);']],
+    gates: [{ gate: 'sprites', expect: 'biome 0: the moth elite drawn as' }] },
+  { name: 'ELITE_SUNK', task: 'ART1', file: 'page', find: "if (en.state === 0 && an !== 'cell') {", repl: "if (false) {",
+    gates: [{ gate: 'sprites', expect: ['biome 1: the icicle elite drawn as', 'biome 4: the spark elite drawn as'] }] },
+  { name: 'HEART_NOT_SPRITE', task: 'ART1', file: 'page', find: "/* a heart is Astra's hud_heart (9 by 8, Q160) at 2x, nearest neighbour: full, or the empty frame for a lost one; the\n   images are the sprite's own pixels, cut from the atlas at boot (R.heartURL) */\n#hearts i { width: 18px; height: 16px; display: block; background: var(--heart-full) 0 0 / 18px 16px no-repeat; image-rendering: pixelated; }\n#hearts i.lost { background-image: var(--heart-empty); }\n", repl: "/* a pixel heart (9 by 8), Ink with a Brick heart inset in it; a lost heart keeps its outline and empties to Paper */\n#hearts i { width: 18px; height: 16px; display: block; position: relative; background: var(--ink); clip-path: polygon(11.1% 0%, 33.3% 0%, 33.3% 12.5%, 44.4% 12.5%, 44.4% 25%, 55.6% 25%, 55.6% 12.5%, 66.7% 12.5%, 66.7% 0%, 88.9% 0%, 88.9% 12.5%, 100% 12.5%, 100% 50%, 88.9% 50%, 88.9% 62.5%, 77.8% 62.5%, 77.8% 75%, 66.7% 75%, 66.7% 87.5%, 55.6% 87.5%, 55.6% 100%, 44.4% 100%, 44.4% 87.5%, 33.3% 87.5%, 33.3% 75%, 22.2% 75%, 22.2% 62.5%, 11.1% 62.5%, 11.1% 50%, 0% 50%, 0% 12.5%, 11.1% 12.5%); }\n#hearts i::after { content: ''; position: absolute; left: 3px; top: 3px; right: 3px; bottom: 3px; background: var(--brick); clip-path: polygon(11.1% 0%, 33.3% 0%, 33.3% 12.5%, 44.4% 12.5%, 44.4% 25%, 55.6% 25%, 55.6% 12.5%, 66.7% 12.5%, 66.7% 0%, 88.9% 0%, 88.9% 12.5%, 100% 12.5%, 100% 50%, 88.9% 50%, 88.9% 62.5%, 77.8% 62.5%, 77.8% 75%, 66.7% 75%, 66.7% 87.5%, 55.6% 87.5%, 55.6% 100%, 44.4% 100%, 44.4% 87.5%, 33.3% 87.5%, 33.3% 75%, 22.2% 75%, 22.2% 62.5%, 11.1% 62.5%, 11.1% 50%, 0% 50%, 0% 12.5%, 11.1% 12.5%); }\n#hearts i.lost::after { background: var(--paper); }\n",
+    gates: [{ gate: 'sprites', expect: "the top strip's 8 hearts" }] },
+  { name: 'ELITE_FRAMES_DRIFT', task: 'ART1', file: 'page', find: "    moth_elite: { w: 24, h: 24, frames: {\n", repl: "    moth_elite: { w: 24, h: 24, frames: {\n      c: '',\n",
+    gates: [{ gate: 'lint', expect: 'moth_elite.c has 1 rows, not 24' }, { gate: 'harness', only: 'H-spr-1', expect: "moth_elite is 24x24 (ELITE_PX 24) with moth's frames" }] },
+  { name: 'SPECK_NO_GLINT', task: 'ART1', file: 'page', find: "/...........6..../.......00.666.../......0880.6..../.....088680.....", repl: "/................/.......00......./......0880....../.....088880.....",
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: "the speck's strip carries its Glare glint" }] },
+  { name: 'HEART_EMPTY_BRICK', task: 'ART1', file: 'page', find: "empty: '.00...00./0220.0220/", repl: "empty: '.00...00./0990.0220/",
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'hud_heart is 9x8 with full (Brick) and empty (no Brick)' }] },
+  /* ---------------------------------------------------------------- Weapons v1 step 1 (docs/WEAPONS-V1.md 13.1) */
+  { name: 'CD_DELAYS_JUMP', task: 'W1', file: 'page', find: "    } else if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0)) {", repl: "    } else if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0) && !(h.slots[0] && h.cd[0] > 0)) {",
+    gates: [{ gate: 'harness', only: 'H-wpn-1', expect: "the armed hero's x, y, vx and vy equal the unarmed" }] },
+  { name: 'POOL_GROWS', task: 'W1', file: 'page', find: "      return i;\n    }\n    return -1;\n  }", repl: "      return i;\n    }\n    s.proj.push(newProj()); s.proj[s.proj.length - 1].kind = kind; s.proj[s.proj.length - 1].live = 1;\n    return s.proj.length - 1;\n  }",
+    gates: [{ gate: 'harness', only: 'H-wpn-3', expect: 'a full pool refuses a spawn (-1) and stays 16 long' }] },
+  { name: 'PROJ_UNHASHED', task: 'W1', file: 'page', find: "    ['age', 'i32'], ['mode', 'i32'],", repl: "    ['mode', 'i32'],",
+    gates: [{ gate: 'harness', only: 'H-wpn-2', expect: '.age changes the hash' }] },
+  { name: 'DMG_FLOORED', task: 'W1', file: 'page', find: "  function scaled(dmg, stat) { return dmg * (SB.K.HP_Q + stat); }", repl: "  function scaled(dmg, stat) { return Math.floor(dmg * (SB.K.HP_Q + stat) / SB.K.HP_Q) * SB.K.HP_Q; }",
+    gates: [{ gate: 'harness', only: 'H-stat-1', expect: 'boomerang/shock quarters for Focus and Vigor 0 to 4' }] },
+  { name: 'FOCUS_SCALES_DIVE', task: 'W1', file: 'page', find: "p.dmg = scaled(SB.TUNING.WEAPONS.D1.dmg, s.hero.vigor);", repl: "p.dmg = scaled(SB.TUNING.WEAPONS.D1.dmg, s.hero.focus);",
+    gates: [{ gate: 'harness', only: 'H-stat-1', expect: 'boomerang/shock quarters for Focus and Vigor 0 to 4' }] },
+  { name: 'BOOMERANG_6_CELLS', task: 'W1', file: 'page', find: "if (stop || Math.abs(p.x - p.a) >= K.J1_REACH) {", repl: "if (stop || Math.abs(p.x - p.a) >= K.J1_REACH + K.CELL_SUB) {",
+    gates: [{ gate: 'harness', only: 'H-wpn-J1', expect: 'a moth 1 px inside 5 cells past the front edge is hit, one at 5 cells is not' }] },
+  { name: 'BOOM_HITS_EVERY_STEP', task: 'W1', file: 'page', find: "      if ((p.hit >> m) & 1 || !liveEnemy(en)) continue;", repl: "      if (!liveEnemy(en)) continue;",
+    gates: [{ gate: 'harness', only: 'H-wpn-J1', expect: 'an elite jelly takes two of its four' }] },
+  { name: 'BOOM_NO_RETURN', task: 'W1', file: 'page', find: "if (stop || Math.abs(p.x - p.a) >= K.J1_REACH) { p.mode = 1; p.hit = 0; }", repl: "if (stop || Math.abs(p.x - p.a) >= K.J1_REACH) { p.vx = 0; p.hit = 0; }",
+    gates: [{ gate: 'harness', only: 'H-wpn-J1', expect: 'a frozen jelly two cells ahead takes exactly two hits' }] },
+  { name: 'BOOM_INTO_VINE', task: 'W1', file: 'page', find: "tdir = wallSide !== 0 ? -wallSide : h.facing;", repl: "tdir = h.facing;",
+    gates: [{ gate: 'harness', only: 'H-wpn-J1', expect: 'a sticky jump off a vine on the left, facing it, throws away from the vine' }] },
+  { name: 'SHOCK_THROUGH_WALLS', task: 'W1', file: 'page', edits: [
+      ["if (solidAt(lv, c, row) || !(solidAt(lv, c, row + 1)", "if (!(solidAt(lv, c, row + 1)"], ["if (solidAt(lv, c2, row) || !(solidAt(lv, c2, row + 1)", "if (!(solidAt(lv, c2, row + 1)"]],
+    gates: [{ gate: 'harness', only: 'H-wpn-D1', expect: 'a solid cell 2 cells right stops the right front' }] },
+  { name: 'SHOCK_OFF_THE_LEDGE', task: 'W1', file: 'page', edits: [
+      ["if (solidAt(lv, c, row) || !(solidAt(lv, c, row + 1) || platAt(lv, c, row + 1))) break;", "if (solidAt(lv, c, row)) break;"], ["if (solidAt(lv, c2, row) || !(solidAt(lv, c2, row + 1) || platAt(lv, c2, row + 1))) break;", "if (solidAt(lv, c2, row)) break;"]],
+    gates: [{ gate: 'harness', only: 'H-wpn-D1', expect: 'on a 4 cell ledge the wave ends at its edges' }] },
+  { name: 'SHOCK_ON_PLAIN_LANDING', task: 'W1', file: 'page', find: "var diveLanded = landed && h.dive !== 0,", repl: "var diveLanded = landed && !startedGrounded,",
+    gates: [{ gate: 'harness', only: 'H-wpn-D1', expect: 'a plain landing (no dive) fires nothing' }] },
+  { name: 'DASH_FIRES_IN_PLACE', task: 'W1', file: 'page', find: "dashed = dashStart && h.x !== xBefore;", repl: "dashed = dashStart;",
+    gates: [{ gate: 'harness', only: 'H-wpn-D1', expect: 'a dash pressed flush against a wall moves nothing and fires nothing' }] },
+  { name: 'KILL_NO_DP', task: 'W1', file: 'page', find: "      s.room.dp += en.elite ? T.DP_ELITE : T.DP_FODDER; s.ev |= EV.KILL;", repl: "      s.ev |= EV.KILL;",
+    gates: [{ gate: 'harness', only: 'H-wpn-5', expect: 'a kill sets HURT and KILL and banks DP_FODDER' }] },
+  { name: 'DEAD_STILL_TOUCHES', task: 'W1', file: 'page', edits: [
+      ["      if (en.hp <= 0 && !(en.kind === SB.features.ICICLE && en.state === ICICLE_GONE)) continue;\n", ""], ["      if (held || !liveEnemy(en)) continue;", "      if (held) continue;"]],
+    gates: [{ gate: 'harness', only: 'H-wpn-5', expect: 'the dead moth never moves' }] },
+  { name: 'STUN_WAKES_SLEEPER', task: 'W1', file: 'page', find: "      if (p.stun > 0 && en.stunned >= 0) en.stunned = Math.max(en.stunned, p.stun);", repl: "      if (p.stun > 0) en.stunned = Math.max(en.stunned, p.stun);",
+    gates: [{ gate: 'harness', only: 'H-wpn-5', expect: 'and never wakes it' }] },
+  { name: 'WEAPON_ON_CLEAR', task: 'W1', file: 'page', find: "       acting waits a step. A hit lands here, before the enemies move and touch */\n    if (!s.room.cleared) {", repl: "       acting waits a step. A hit lands here, before the enemies move and touch */\n    if (true) {",
+    gates: [{ gate: 'harness', only: 'H-wpn-5', expect: 'a jump that clears the room on its takeoff step throws nothing' }] },
+  { name: 'CHEST_NO_WEAPON', task: 'W1', file: 'page', find: "        var got = drawWeapon(s);", repl: "        var got = 0;",
+    gates: [{ gate: 'harness', only: 'H-wpn-6', expect: "the chest equips the test's draw at once" }, { gate: 'fight', expect: '412: the chest opens by a real walk with its voice and the equip voice' }] },
+  { name: 'CHEST_GIVES_EQUIPPED', task: 'W1', file: 'page', edits: [
+      ["if (h.slots[slotOf(c)] !== c) { n++; if (h.slots[slotOf(c)] === 0) empty++; }", "{ n++; if (h.slots[slotOf(c)] === 0) empty++; }"], ["      if (h.slots[slotOf(c)] === c) continue;\n", ""]],
+    gates: [{ gate: 'harness', only: 'H-wpn-6', expect: 'no chest gives a weapon already equipped' }] },
+  { name: 'CHEST_STOPS_FOR_EMPTY', task: 'W1', file: 'page', find: "        if (got > 0 && h.slots[slotOf(got)] === 0) { h.slots[slotOf(got)] = got; s.ev |= EV.EQUIP; }\n        else if (got > 0)", repl: "        if (got > 0)",
+    gates: [{ gate: 'harness', only: 'H-wpn-6', expect: 'no compare ever opens from the built pool' }, { gate: 'fight', expect: '412: the world is never held' }] },
+  { name: 'CHEST_DRAWS_ON_EMPTY_POOL', task: 'W1', file: 'page', find: "    if (n === 0) return 0;\n    var wantEmpty", repl: "    if (n === 0) { SB.rng.stepU32(s, 'rng'); return 0; }\n    var wantEmpty",
+    gates: [{ gate: 'harness', only: 'H-wpn-6', expect: 'or with both slots full pays DP only and draws nothing' }] },
+  { name: 'TAKE_KEEPS_OLD', task: 'W1', file: 'page', find: "        if (choice === CHOICE.TAKE && s.room.cand > 0) { h.slots[slotOf(s.room.cand)] = s.room.cand; s.ev |= EV.EQUIP; }", repl: "        if (choice === CHOICE.TAKE && s.room.cand > 0) { s.ev |= EV.EQUIP; }",
+    gates: [{ gate: 'harness', only: 'H-wpn-7', expect: 'TAKE puts' }] },
+  { name: 'HUD_STALE', task: 'W1', file: 'page', find: "      if (c === shownSlots[k]) continue;", repl: "      if (c === shownSlots[k] || !fresh) continue;",
+    gates: [{ gate: 'fight', expect: '412: the jump box shows' }] },
+  { name: 'HUD_EVERY_STEP', task: 'W1', file: 'page', find: "      if (c === shownSlots[k]) continue;", repl: "      if (c === shownSlots[k]) { slotBoxes[k].setAttribute('aria-label', slotLabel(k, c)); continue; }",
+    gates: [{ gate: 'fight', expect: '412: the HUD is written 0 times over 30 quiet steps' }] },
+  { name: 'GOT_TAKES_TAPS', task: 'W1', file: 'page', find: "width: min(300px, 90%); z-index: 4; pointer-events: none;", repl: "width: min(300px, 90%); z-index: 4;",
+    gates: [{ gate: 'fight', expect: '412: the card is in view' }] },
+  { name: 'GOT_STAYS', task: 'W1', file: 'page', find: "clearTimeout(el.sbGotT); el.sbGotT = setTimeout(function () { el.classList.remove('on'); }, GOT_MS);", repl: "clearTimeout(el.sbGotT);",
+    gates: [{ gate: 'fight', expect: '412: the card goes in about 2.5 s' }] },
+  { name: 'GOT_OVER_BUG', task: 'W1', file: 'page', find: "      if (top - pad < cr.bottom && top + hd.h * k + pad > cr.top) el.classList.add('low');\n", repl: '',
+    gates: [{ gate: 'fight', expect: "412: a chest near the room's top with the bug beside it: the card docks low" }] },
+  { name: 'GOT_STAYS_OVER_BUG', task: 'W1', file: 'page', find: "    else SB.ui.gotFollow();\n", repl: '',
+    gates: [{ gate: 'fight', expect: '412: as the bug falls under the docked card' }] },
+  { name: 'THROW_SILENT', task: 'W1', file: 'page', find: "      if (ev & EV.FIRE_J) au.sfx(SB.ui.WPN_SFX[SB.sim.WPN[G.state.hero.slots[0]]] || 'throw');\n", repl: '',
+    gates: [{ gate: 'fight', expect: '412: a real A tap throws the boomerang with the throw voice' }] },
+  { name: 'PROJ_IN_BRICK', task: 'W1', file: 'page', find: "boomerang: { w: 12, h: 12, frames: {\n      a: '........000.", repl: "boomerang: { w: 12, h: 12, frames: {\n      a: '........090.",
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'boomerang.a has an Ink outline and draws only' }] },
+  { name: 'GEAR_LOST_ON_NEXT_ROOM', task: 'W1', file: 'page', find: "    if (SB.TUNING.KEEP_GEAR && G.state) G.gear = G.state.hero.slots.slice();", repl: '',
+    gates: [{ gate: 'fight', expect: "412: Play it again starts the next room with the cleared room's gear" }] },
+  { name: 'GEAR_KEPT_THROUGH_TITLE', task: 'W1', file: 'page', find: "    if (!(opts && opts.keepGear === true)) { G.gear = [0, 0, 0]; G.entry = [0, 0, 0]; }\n", repl: '',
+    gates: [{ gate: 'fight', expect: '412: Title through the pause card ends the sitting' }] },
+  { name: 'DEATH_KEEPS_PICKUP', task: 'W1', file: 'page', find: "  ui.showDeath = function () {\n", repl: "  ui.showDeath = function () {\n    if (G.state) G.gear = G.state.hero.slots.slice();\n",
+    gates: [{ gate: 'fight', expect: '412: a death after the chest' }] },
+  { name: 'ROOM_OPTS_MISSING', task: 'W1', file: 'page', find: "    roomOpts: function () { return { loadout: (G.entry || [0, 0, 0]).map(function (c) { return c > 0 ? SB.sim.WPN[c] : null; }) }; },", repl: "    roomOpts: function () { return {}; },",
+    gates: [{ gate: 'fight', expect: '412: the recording replayed on a fresh sim made from SB_DEV.roomOpts()' }] },
+  { name: 'NAME_BEFORE_BUILT', task: 'W1', file: 'page', find: "slots: 'Weapons', slotJump:", repl: "slots: 'Weapons and a Halo', slotJump:",
+    gates: [{ gate: 'lint', expect: 'names Halo (J6), a weapon this build does not have' }] },
+  { name: 'SENTENCE_MISSING', task: 'W1', file: 'page', find: ", D1: 'Dive landings and dashes send a shock along the ground.' },", repl: " },",
+    gates: [{ gate: 'lint', expect: 'COPY.wpnSays holds J1, the build has J1, D1' }] },
+  { name: 'ICON_MISSING', task: 'W1', file: 'page', find: "D1: '................/..0000000.......", repl: "X1: '................/..0000000.......",
+    gates: [{ gate: 'lint', expect: 'the SPRITES icon sprite has no frame for D1' }] },
+  { name: 'WPN_RENAMED', task: 'W1', file: 'page', find: "wpn: { J1: 'Boomerang', D1: 'Anvil Boots' },", repl: "wpn: { J1: 'Boomerang', D1: 'Anvil Shoes' },",
+    gates: [{ gate: 'lint', expect: 'COPY.wpn.D1 is "Anvil Shoes", DESIGN 9.1 names it "Anvil Boots"' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

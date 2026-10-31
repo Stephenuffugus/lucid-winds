@@ -248,13 +248,29 @@ function copyLaw(where, s) {
   if (/!/.test(s)) fail('COPY', where + ': an exclamation mark in player copy: "' + s + '"');
   if (/Sky Wolf Studios/i.test(s)) fail('COPY', where + ': "Sky Wolf Studio" is singular: "' + s + '"');
   notYet(where, s);
+  unbuiltName(where, s);
+}
+/* rule WEAPON_NAMES (Weapons v1, docs/WEAPONS-V1.md 11): DESIGN 9.1's 24 names typed here by id; the built ids read from
+   core-ns's TUNING.WEAPONS_BUILT literal. COPY.wpn and COPY.wpnSays hold exactly the built ids, every COPY.wpn value is
+   DESIGN's name, the SPRITES icon sprite has a frame for exactly the built ids, and no player string (COPY, the
+   markup's text, aria, title, alt, placeholder) names a weapon the build does not have (whole name, case sensitive) */
+const WEAPON_NAMES = { J1: 'Boomerang', J2: 'Spark Trail', J3: 'Shield Kick', J4: 'Flashbulb', J5: 'Twin Darts', J6: 'Halo', J7: 'Shutter Snap', J8: 'Skyhook',
+  D1: 'Anvil Boots', D2: 'Icicle', D3: 'Pogo Spear', D4: 'Tremor', D5: 'Ember Stomp', D6: 'Wide Lens', D7: 'Pile Driver', D8: 'Flashpan',
+  C1: 'Lantern', C2: 'Magnet', C3: 'Second Wind', C4: 'Thick Skin', C5: 'Tripod', C6: 'Light Meter', C7: 'Darkroom Discount', C8: 'Fixer' };
+const builtM = html.match(/WEAPONS_BUILT:\s*\[([^\]]*)\]/);
+const BUILT = builtM ? [...builtM[1].matchAll(/'([A-Z][0-9])'/g)].map(m => m[1]) : [];
+if (!builtM) fail('WEAPON_NAMES', 'core-ns holds no TUNING.WEAPONS_BUILT literal');
+for (const id of BUILT) if (!WEAPON_NAMES[id]) fail('WEAPON_NAMES', 'WEAPONS_BUILT holds ' + id + ', which DESIGN 9.1 does not name');
+const UNBUILT = Object.keys(WEAPON_NAMES).filter(id => !BUILT.includes(id)).map(id => [id, new RegExp('\\b' + WEAPON_NAMES[id].replace(/ /g, '\\s+') + '\\b')]);
+function unbuiltName(where, s) {
+  for (const [id, re] of UNBUILT) if (re.test(s)) fail('WEAPON_NAMES', where + ': names ' + WEAPON_NAMES[id] + ' (' + id + '), a weapon this build does not have: "' + s + '"');
 }
 /* rule (QUESTIONS Q92, Stephen's ruling of 31 Oct on his note 5, "it says a weapon awaits in the dark room. wtfd does
    that nmean"): no player string names a thing the build does not have. M1 has no weapon, no charm, no blueprint and
    no Darkroom, so no COPY value and no text the markup shows names one ("dark room" as two words too: that is how a
    stranger reads it). Each M2 task takes its word off this list when its thing lands and does something: T2.1 weapon,
    T2.4 charm, T2.6 blueprint, T2.9 Darkroom (its door drawn and entered) */
-const NOT_YET = [['weapon', /weapon/i], ['charm', /charm/i], ['blueprint', /blueprint/i], ['Darkroom', /dark\s*room/i]];
+const NOT_YET = [['charm', /charm/i], ['blueprint', /blueprint/i], ['Darkroom', /dark\s*room/i]];   /* weapon lifted by Weapons v1 step 1 (T2.1): weapons exist */
 function notYet(where, s) {
   for (const [word, re] of NOT_YET) if (re.test(s)) fail('NOT_YET', where + ': names ' + word + ' before the build has one: "' + s + '"');
 }
@@ -272,6 +288,12 @@ else {
     walk(COPY, 'COPY');
     const keys = new Set(Object.keys(COPY));
     for (const dm of html.matchAll(/data-copy="([^"]+)"/g)) if (!keys.has(dm[1])) fail('COPY', 'data-copy="' + dm[1] + '" has no COPY entry');
+    /* WEAPON_NAMES: the names and sentences exactly the built ids, each name DESIGN's */
+    const same = (a, b) => a.length === b.length && a.every(x => b.includes(x));
+    const wk = Object.keys(COPY.wpn || {}), sk = Object.keys(COPY.wpnSays || {});
+    if (!same(wk, BUILT)) fail('WEAPON_NAMES', 'COPY.wpn holds ' + (wk.join(', ') || 'nothing') + ', the build has ' + (BUILT.join(', ') || 'nothing'));
+    if (!same(sk, BUILT)) fail('WEAPON_NAMES', 'COPY.wpnSays holds ' + (sk.join(', ') || 'nothing') + ', the build has ' + (BUILT.join(', ') || 'nothing') + ' (every built weapon says what it does)');
+    for (const id of wk) if (WEAPON_NAMES[id] && COPY.wpn[id] !== WEAPON_NAMES[id]) fail('WEAPON_NAMES', 'COPY.wpn.' + id + ' is "' + COPY.wpn[id] + '", DESIGN 9.1 names it "' + WEAPON_NAMES[id] + '"');
   }
 }
 const bodyStart = html.indexOf('<body'), firstScript = html.indexOf('<script', bodyStart);
@@ -300,6 +322,10 @@ for (const fm of html.matchAll(/font-size\s*:\s*([0-9.]+)\s*(rem|em|px)|fontSize
     if (S) {
       const names = Object.keys(S);
       if (names.length >= 40) fail('SPRITES', names.length + ' named sprites (under 40)');
+      /* WEAPON_NAMES: an icon frame for exactly the built ids */
+      const icons = S.icon ? Object.keys(S.icon.frames || {}) : [];
+      for (const id of BUILT) if (!icons.includes(id)) fail('WEAPON_NAMES', 'the SPRITES icon sprite has no frame for ' + id + ' (built)');
+      for (const id of icons) if (WEAPON_NAMES[id] && !BUILT.includes(id)) fail('WEAPON_NAMES', 'the SPRITES icon sprite has a frame for ' + id + ', which is not built');
       for (const name of names) for (const [f, str] of Object.entries(S[name].frames || {})) {
         const rows = String(str).split('/');
         if (rows.length !== S[name].h) fail('SPRITES', name + '.' + f + ' has ' + rows.length + ' rows, not ' + S[name].h);
@@ -343,5 +369,5 @@ for (const b of inline) {
 
 if (warns.length) console.log('warnings (bare numerals over 16 outside TUNING; 256, shifts and masks are legitimate):\n  ' + warns.join('\n  '));
 if (fails.length) { console.log('LINT FAILED: ' + fails.length + '\n' + fails.map(f => '  FAIL ' + f).join('\n')); process.exit(1); }
-console.log('lint: ' + inline.length + ' inline blocks parse, ' + core.length + ' core blocks pure and in order, ' + si + ' style block' + (si === 1 ? '' : 's') + ' balanced, the include once, the copy law, no word before its thing');
+console.log('lint: ' + inline.length + ' inline blocks parse, ' + core.length + ' core blocks pure and in order, ' + si + ' style block' + (si === 1 ? '' : 's') + ' balanced, the include once, the copy law, no word before its thing, the built weapons\' names (' + BUILT.join(', ') + ')');
 console.log('LINT OK');

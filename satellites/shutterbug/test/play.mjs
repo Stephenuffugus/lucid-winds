@@ -9,14 +9,15 @@
  *
  * Watched red by CLEAR_NO_RESTART (Again leaves the card painted) and ACCUMULATOR_DT_FLOAT (the loop steps by the raw
  * frame delta), and by SECOND_FINGER_RELEASES_FIRST (T0.8b: the same climb by real touches on the strip, and one real
- * event per control: the rocker moves the hero, A rises, a second finger on A leaves the rocker held). The second review
+ * event per control: the stick moves the hero, A rises, a second finger on A leaves the stick held). The second review
  * (30 Oct, before sb-m0-2) added MAX_STEPS_1, DT_MAX_20 and PHASE_ZERO (the test's own replay of its logged frames, total
- * and frame by frame), SLIDE_KEEPS_OLD and GAP_IS_LEFT (the slide), STRIP_KEEPS_PRESSED (a blur), ROCKER_NO_ADOPT (the
- * pointer still down takes the rocker), TITLE_UNDER_ROCKER (Title at 320x568; retired at QUESTIONS Q94 with the strip's
+ * and frame by frame), SLIDE_KEEPS_OLD and GAP_IS_LEFT (the rocker's slide; at Q140 STICK_KEEPS_OLD, the stick's
+ * reversal), STRIP_KEEPS_PRESSED (a blur), ROCKER_NO_ADOPT (at Q140 STICK_NO_ADOPT: the thumb still down takes over from
+ * its own landing point), TITLE_UNDER_ROCKER (Title at 320x568; retired at QUESTIONS Q94 with the strip's
  * Title: Pause in the top strip and its card's Title take its checks), CHIP_OVER_PLAY (the fleet's chrome
  * hidden in play), FITS2_NO_STRIP (1366x843 and 844), CANVAS_TAKES_POINTERS (Again) and BEACON_PULSE_BY_FRAME. */
 import { readFileSync } from 'node:fs';
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, centre, leaveRoom } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, centre, leaveRoom, stickAt, landStick } from './harness.mjs';
 
 const R = reporter('PLAY');
 const climb = JSON.parse(readFileSync(new URL('./climb-sample-room.json', import.meta.url), 'utf8'));
@@ -158,9 +159,11 @@ try {
     R.say(errors.length === 0, w + 'x' + h + ': zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
-  /* T0.8b: the same climb by real touches on the strip, timed by SB_DEV.step: one finger on the rocker (lifted and
-     pressed again when the direction changes: Chrome may coalesce a moving touch; the slide itself is T0.9's), one
-     finger on A. Then one real event per control proves the mapping without the script. */
+  /* T0.8b: the same climb by real touches on the strip, timed by SB_DEV.step. The stick (Stephen's ruling of 31 Oct,
+     QUESTIONS Q140): one thumb lands once, low in the strip's bottom left, and never lifts: each change of direction
+     slides it to 20 px right of where it landed, 20 px left, or back onto the landing point (each move waited on: Chrome
+     hands pointer moves out once a frame); one finger on A. Then one real event per control proves the mapping
+     without the script. */
   {
     const { page, errors } = await newPage(browser, { width: 412, height: 915 });
     await gotoGame(page, srv.base);
@@ -169,41 +172,44 @@ try {
     await tap(page, '#sample');
     const at = await page.evaluate(() => {
       const c = el => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
-      return { L: c(document.querySelector('#rocker .zl')), R: c(document.querySelector('#rocker .zr')), A: c(document.querySelector('#btnA .glyph')),
-        B: c(document.querySelector('#btnB .glyph')), gap: c(document.querySelector('#rocker .gap')) };
+      return { A: c(document.querySelector('#btnA .glyph')), B: c(document.querySelector('#btnB .glyph')) };
     });
-    let rf = null, rdir = null, af = null;
+    const sc = await stickAt(page);
+    const DX = { L: -20, R: 20 };
+    const climbThumb = await landStick(page, 40, 915 - 40);
+    let rdir = null, af = null, slid = 0;
     for (const [n, mask] of climb.runs) {
       const dir = mask & 1 ? 'L' : mask & 2 ? 'R' : null;
-      if (rf && dir !== rdir) { await rf.end(); rf = null; rdir = null; }
-      if (dir && !rf) { rf = await page.touchscreen.touchStart(at[dir].x, at[dir].y); rdir = dir; }
+      if (dir !== rdir) { await climbThumb.slide(dir ? DX[dir] : 0); rdir = dir; slid++; }
       if ((mask & 4) && !af) af = await page.touchscreen.touchStart(at.A.x, at.A.y);
       else if (!(mask & 4) && af) { await af.end(); af = null; }
       await page.evaluate(n => window.SB_DEV.step(n), n);
     }
-    if (rf) await rf.end();
+    await climbThumb.end();
     if (af) await af.end();
     const st = await page.evaluate(() => ({ s: window.SB_DEV.state(), screen: window.SB_DEV.screen() }));
-    R.say(st.s && st.s.room.cleared === 1 && st.screen === 'clear', 'the climb by real touches on the rocker and A reaches the lamp (screen ' + st.screen + ')');
+    R.say(st.s && st.s.room.cleared === 1 && st.screen === 'clear', 'the climb by real touches on the stick and A reaches the lamp, one thumb landed once in the bottom left and slid ' + slid + ' times (screen ' + st.screen + ')');
 
     /* the per control checks start from a fresh room whatever the climb did (the goto liberty; Again's own real touch
        is proven in the keyboard pass), so each runs and names its own failure */
     await page.evaluate(() => window.SB_DEV.goto('sample'));
     for (let k = 0; k < 4; k++) await page.evaluate(() => window.SB_DEV.step(1));
     const x0 = await page.evaluate(() => window.SB_DEV.state().hero.x);
-    let f = await page.touchscreen.touchStart(at.R.x, at.R.y);
+    let f = await landStick(page, sc.x, sc.y);
+    await f.slide(20);
     await page.evaluate(() => window.SB_DEV.step(1));
     const x1 = await page.evaluate(() => window.SB_DEV.state().hero.x);
     await f.end();
-    R.say(x1 > x0, 'a real touch on the rocker\'s right zone moves the hero on the next step (' + x0 + ' to ' + x1 + ')');
+    R.say(x1 > x0, 'a real thumb on the stick slid 20 px right moves the hero on the next step (' + x0 + ' to ' + x1 + ')');
     for (let k = 0; k < 8; k++) await page.evaluate(() => window.SB_DEV.step(1));
-    f = await page.touchscreen.touchStart(at.A.x, at.A.y);
-    await f.end();
+    let t = await page.touchscreen.touchStart(at.A.x, at.A.y);
+    await t.end();
     await page.evaluate(() => window.SB_DEV.step(1));
     const vy = await page.evaluate(() => window.SB_DEV.state().hero.vy);
     R.say(vy < 0, 'a real tap on A makes the hero rise on the next step (vy ' + vy + ')');
     for (let k = 0; k < 60; k++) await page.evaluate(() => window.SB_DEV.step(1));
-    const thumb = await page.touchscreen.touchStart(at.L.x, at.L.y);
+    const thumb = await landStick(page, sc.x, sc.y);
+    await thumb.slide(-20);
     await page.evaluate(() => window.SB_DEV.step(2));
     const second = await page.touchscreen.touchStart(at.A.x, at.A.y);
     await page.evaluate(() => window.SB_DEV.step(1));
@@ -214,61 +220,72 @@ try {
     await thumb.end();
     await page.evaluate(() => window.SB_DEV.step(1));
     const none = await page.evaluate(() => window.SB_DEV.lastInput());
-    R.say((both & 1) && (both & 4), 'a second finger on A during a rocker hold: both register (word ' + both + ')');
-    R.say((after & 1) && !(after & 4), 'lifting the second finger leaves the rocker held (word ' + after + ')');
-    R.say(none === 0, 'lifting the thumb releases the rocker (word ' + none + ')');
-    /* the slide: a thumb down on the left zone and moved to the right zone without lifting switches the direction; moved
-       into the gap it is neutral; lifted it is nothing; and B taps (each move waited on, since Chrome may coalesce one) */
+    R.say((both & 1) && (both & 4), 'a second finger on A during a stick hold: both register (word ' + both + ')');
+    R.say((after & 1) && !(after & 4), 'lifting the second finger leaves the stick held (word ' + after + ')');
+    R.say(none === 0, 'lifting the thumb releases the stick (word ' + none + ')');
+    /* the reversal: a thumb pushed left, then slid right without lifting is right and only right; back on its landing
+       point it is nothing; lifted nothing; and B taps */
     for (let k = 0; k < 20; k++) await page.evaluate(() => window.SB_DEV.step(1));
     const word = async () => { await page.evaluate(() => window.SB_DEV.step(1)); return page.evaluate(() => window.SB_DEV.lastInput()); };
-    const slide = await page.touchscreen.touchStart(at.L.x, at.L.y);
+    const slide = await landStick(page, sc.x, sc.y);
+    await slide.slide(-20);
     const wL = await word();
-    await slide.move(at.R.x, at.R.y);
-    await page.waitForFunction(() => document.querySelector('#rocker .zr.on'), { timeout: 5000 }).catch(() => {});
+    await slide.slide(20);
     const wR = await word();
-    await slide.move(at.gap.x, at.gap.y);
-    await page.waitForFunction(() => !document.querySelector('#rocker .zone.on'), { timeout: 5000 }).catch(() => {});
-    const wGap = await word();
+    await slide.slide(0);
+    const wMid = await word();
     await slide.end();
     const wUp = await word();
-    R.say(wL === 1, 'the slide: a thumb down on the left zone is left (word ' + wL + ')');
-    R.say(wR === 2, 'the slide: moved to the right zone without lifting it is right, and only right (word ' + wR + ')');
-    R.say(wGap === 0, 'the slide: moved into the neutral gap it is nothing (word ' + wGap + ')');
-    R.say(wUp === 0, 'the slide: lifted it is nothing (word ' + wUp + ')');
+    R.say(wL === 1, 'the reversal: a thumb pushed 20 px left is left (word ' + wL + ')');
+    R.say(wR === 2, 'the reversal: slid 20 px right of its landing without lifting it is right, and only right (word ' + wR + ')');
+    R.say(wMid === 0, 'the reversal: back on its landing point it is nothing (word ' + wMid + ')');
+    R.say(wUp === 0, 'the reversal: lifted it is nothing (word ' + wUp + ')');
     const bf = await page.touchscreen.touchStart(at.B.x, at.B.y);
     await bf.end();
     const wB = await word();
     R.say((wB & 32) !== 0 && (wB & 4) === 0, 'a tap on B is the dive verb\'s tap, never A (word ' + wB + ')');
 
-    /* releaseAll (blur, hidden, Title) forgets what the strip showed pressed: a thumb still down presses again on its
-       next move inside the zone */
-    const keep = await page.touchscreen.touchStart(at.R.x, at.R.y);
+    /* releaseAll (blur, hidden, Pause, Resume) forgets what the strip showed pressed: a thumb still down is re centred
+       where it is, so it presses again once it slides ON px from there. The blur pauses the room too (his call 7, QUESTIONS
+       Q94), and under the pause card the stick reads nothing (the stick's review); a real tap on Resume with a second
+       finger, the thumb still down: then 14 px more is right */
+    const keep = await landStick(page, sc.x, sc.y);
+    await keep.slide(20);
     const wHold = await word();
     await page.evaluate(() => window.dispatchEvent(new Event('blur')));
-    const wBlur = await word(), litAfterBlur = await page.evaluate(() => !!document.querySelector('#rocker .zone.on'));
-    await keep.move(at.R.x + 4, at.R.y);
-    await page.waitForFunction(() => document.querySelector('#rocker .zr.on'), { timeout: 5000 }).catch(() => {});
+    const wBlur = await word(), litAfterBlur = await page.evaluate(() => document.querySelector('#stick .pad').classList.contains('r'));
+    await keep.slide(24);
+    const wPaused = await word();
+    /* Resume with the thumb still down: a liberty, ui.resume, since in headless Chrome a CDP tap on Resume while another
+       touch is held never clicks it (seen at the stick's review; whether a Pixel clicks it is his check, Q140) */
+    const pausedThen = await page.evaluate(() => window.SB_DEV.screen());
+    await page.evaluate(() => window.SB.ui.resume());
+    await keep.slide(24 + 14);
     const wMove = await word();
     await keep.end();
-    R.say(wHold === 2 && wBlur === 0 && !litAfterBlur, 'a blur releases a held thumb and its zone stops showing pressed (words ' + wHold + ', ' + wBlur + ')');
-    R.say(wMove === 2, 'the same thumb moved inside its zone after the blur presses right again (word ' + wMove + ')');
-    /* the blur paused the room too (his call 7, QUESTIONS Q94): a real tap on Resume plays on, so what follows runs in play */
+    /* and a real tap on Resume, no thumb down, plays on, so what follows runs in play */
+    await page.evaluate(() => window.dispatchEvent(new Event('blur')));
     const blurred = await page.evaluate(() => window.SB_DEV.screen());
     if (blurred === 'pause') await tap(page, '#resume');
     const resumed = await page.evaluate(() => window.SB_DEV.screen());
-    R.say(blurred === 'pause' && resumed === 'play', 'the blur also paused the room (screen ' + blurred + ') and a real tap on Resume plays on (screen ' + resumed + ')');
-    /* a palm on the left zone first, then the thumb on the right: the first rules; the palm lifted, the thumb still down
-       takes the rocker (it is never left dead) */
-    const palm = await page.touchscreen.touchStart(at.L.x, at.L.y);
-    const late = await page.touchscreen.touchStart(at.R.x, at.R.y);
+    R.say(wHold === 2 && wBlur === 0 && !litAfterBlur, 'a blur releases a held thumb and its pad stops showing right (words ' + wHold + ', ' + wBlur + ')');
+    R.say(pausedThen === 'pause' && blurred === 'pause' && resumed === 'play', 'the blur also paused the room (screen ' + pausedThen + ', again ' + blurred + ') and a real tap on Resume plays on (screen ' + resumed + ')');
+    R.say(wPaused === 0, 'under the pause card the held thumb slid on reads nothing (word ' + wPaused + ')');
+    R.say(wMove === 2, 'the same thumb, after Resume, slid 14 px more presses right again (word ' + wMove + ')');
+    /* a palm on the stick first, then the thumb landed elsewhere and slid right: the first rules (the palm reads nothing);
+       the palm lifted, the thumb still down takes over from its own landing point, its pad drawn there */
+    const palm = await landStick(page, sc.x - 60, sc.y + 20);
+    const late = await landStick(page, sc.x + 40, sc.y - 20);
+    await late.slide(20);
     const wBoth = await word();
     await palm.end();
-    await page.waitForFunction(() => document.querySelector('#rocker .zr.on'), { timeout: 5000 }).catch(() => {});
+    await page.waitForFunction(() => window.SB_DEV.stick().pointers === 1, { timeout: 5000, polling: 20 }).catch(() => {});
     const wAdopt = await word();
+    const padAt = await page.evaluate(() => { const r = document.querySelector('#stick .pad').getBoundingClientRect(); return { x: r.left + r.width / 2, shown: r.width > 0 }; });
     await late.end();
     const wNone = await word();
-    R.say(wBoth === 1, 'two pointers on the rocker: the first down rules it (word ' + wBoth + ')');
-    R.say(wAdopt === 2 && wNone === 0, 'the first lifted, the pointer still down takes the rocker where it rests, then lifts to nothing (words ' + wAdopt + ', ' + wNone + ')');
+    R.say(wBoth === 0, 'two thumbs on the stick: the first down rules it, and it landed still (word ' + wBoth + ')');
+    R.say(wAdopt === 2 && wNone === 0 && padAt.shown && Math.abs(padAt.x - (sc.x + 40)) < 1, 'the first lifted, the thumb still down takes over from its own landing point (right, its pad at ' + padAt.x.toFixed(0) + ' over its landing ' + (sc.x + 40).toFixed(0) + '), then lifts to nothing (words ' + wAdopt + ', ' + wNone + ')');
 
     /* a thumb reaching high for jump, at the top of A's full height hit area, jumps and never leaves the play screen */
     const high = await page.evaluate(() => { const r = document.getElementById('btnA').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 6 }; });
@@ -282,7 +299,7 @@ try {
     await page.close();
   }
 
-  /* under 360 the reservation is released and the rocker (or A and B mirrored) starts at x 0. Title and Share left the strip
+  /* under 360 the reservation is released everywhere and the stick (or A and B mirrored) starts at x 0. Title and Share left the strip
      for the pause card (QUESTIONS Q94): Pause, in the top strip, stays on top in both layouts, and a real touch on it, then
      on its card's Title, returns to the title */
   {
@@ -309,8 +326,8 @@ try {
   }
 
   /* the fleet's floating chrome is hidden while a room runs and back on the title (Q48's addendum: its saved drag can
-     put the chip on the strip); Q62's ?edge=1 keeps the verbs 32 px off the right edge at 412 with the rocker zones
-     over 56, while the default keeps A on the edge as designed */
+     put the chip on the strip); Q62's ?edge=1 keeps the verbs 32 px off the right edge at 412, the stick zone running
+     from the left edge to B either way, while the default keeps A on the edge as designed */
   for (const edge of [false, true]) {
     const { page, errors } = await newPage(browser, { width: 412, height: 915 });
     await gotoGame(page, srv.base, edge ? 'edge=1' : '');
@@ -336,11 +353,11 @@ try {
     if (await page.evaluate(() => window.SB_DEV.screen()) !== 'play') await tap(page, '#sample');
     const g = await page.evaluate(() => {
       const r = s => document.querySelector(s).getBoundingClientRect();
-      return { vw: window.innerWidth, aR: r('#btnA').right, bR: r('#btnB').right, zl: r('#rocker .zl').width, zr: r('#rocker .zr').width, gap: r('#rocker .gap').width };
+      return { vw: window.innerWidth, aR: r('#btnA').right, bR: r('#btnB').right, bL: r('#btnB').left, sL: r('#stick').left, sR: r('#stick').right };
     });
     const off = edge ? 32 : 0;
     R.say(Math.abs(g.vw - g.aR - off) < 0.5 && Math.abs(g.aR - g.bR - 64) < 0.5, tag + ': A ends ' + (g.vw - g.aR).toFixed(0) + ' px from the right edge (want ' + off + '), B beside it');
-    R.say(g.zl >= 56 && g.zr >= 56 && Math.abs(g.gap - 16) < 0.5, tag + ': the rocker zones are ' + g.zl.toFixed(0) + ' and ' + g.zr.toFixed(0) + ' px (56 or more) with the 16 px gap');
+    R.say(Math.abs(g.sL) < 0.5 && Math.abs(g.sR - g.bL) < 0.5 && g.sR - g.sL >= 200, tag + ': the stick zone runs from the left edge to B (' + g.sL.toFixed(0) + ' to ' + g.sR.toFixed(0) + ', B from ' + g.bL.toFixed(0) + ')');
     R.say(errors.length === 0, tag + ': zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }

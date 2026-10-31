@@ -54,6 +54,7 @@ const BROWSER_GATES = [
   { name: 'pwa',      cmd: ['test/pwa.mjs'],    need: 'PWA OK' },
   { name: 'loop',     cmd: ['test/loop.mjs'],   need: 'LOOP OK' },
   { name: 'pause',    cmd: ['test/pause.mjs'],  need: 'PAUSE OK' },   /* the pause card and the back gesture (QUESTIONS Q94) */
+  { name: 'fight',    cmd: ['test/fight.mjs'],  need: 'FIGHT OK' },   /* Weapons v1 step 1: the first fight (docs/WEAPONS-V1.md 13.1) */
   { name: 'redwatch-browser', cmd: ['tools/redwatch.js', '--check', '--browser-only'], need: 'REDWATCH OK', slow: true }
 ];
 
