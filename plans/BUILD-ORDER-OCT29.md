@@ -1,14 +1,13 @@
 # BUILD ORDER, 29 Oct 2026 (Fable, for Opus). Trigger: "build plans/BUILD-ORDER-OCT29.md"
 
-> **STATE 30 Oct 20:42 UTC (Opus, building on his word).** The M1 SAFE list was DONE at 18:02 (the MORNING REPORT at the
-> top of START-HERE.md). Then Stephen: "keep going" while Astra draws. Since: the Astra cutter, its gate and the hero
-> review shots `b6a0f6175` (docs/astra: the intake steps); the brief copied to Drive 012Assets/Astra/Shutterbug (the
-> prompt byte for byte as a .txt and a text converted Doc; a first HTML Doc lost its indentation and is renamed in place
-> as a broken copy); T1.5 the biome twists `8d29eea10` (Deep and the slide in the sim, the first room's twistOff, every
-> biome walked, 127930 of 127930 edges): the Deep room bug that kept M1 off the live site is fixed. **LIVE: sb-m0-3**
-> (deploy `c2ffcf5bc`, curl 17:41). Running: the M1 review (three lenses, each finding verified) before an M1 deploy.
-> Next: fix what it finds, stamp sb-m1-1, and Stephen runs the deploy with `!` if he wants M1 live before T1.12 and
-> T1.14 (both wait on his M0 notes). Red: nothing. Autosave running.
+> **STATE 31 Oct 00:59 UTC (Opus, on his word).** **LIVE: sb-m1-1** (deploy `77d1475bb`, tag sb-m1-1, curl 00:49:39 UTC on
+> both origins, sw.js live) and **the arcade card** under In Development (portal `9effc5a46`, curl 00:57:10 UTC, one row),
+> both at Stephen's ask ("make it live on the sky wolf studios arcade behind the in development"). Since 20:42: the M1
+> review's 34 fixes `0706c5eec`, the stamp `679395786`, the card and portal-card.sh `29cedf480`; the box stopped 22:49 to
+> 22:58 UTC with nothing lost; the full check's two test faults fixed `a980ded93` and ALL GATES PASSED on it; the card
+> review (18 findings, 13 real and minor, 5 refuted) blocked nothing. Next: the review's follow ups that touch no served
+> file, then T1.12 and T1.14 after his M1 notes; T1.15's phone matrix checklist is still open. Red: nothing. Autosave
+> running.
 
 You are Opus, the Lead Developer, in a fresh session. Stephen is the Director. Tonight is ONE game from zero:
 Shutterbug, a photo of a room becomes a pixel platformer level (`satellites/shutterbug/DESIGN.md`). Fable wrote the

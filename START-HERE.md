@@ -1,5 +1,15 @@
 # START HERE
 
+## 📷 31 Oct 00:59 UTC (Opus) SHUTTERBUG M1 IS LIVE (sb-m1-1) AND ON THE ARCADE UNDER IN DEVELOPMENT
+LIVE: deploy commit `77d1475bb` (BUILD sb-m1-1, CACHE shutterbug-v1, sw.js?v=1, tag sb-m1-1), the served set from add-sproing-jumper `a980ded93`. Proof (curl only, one probe at a time; tools/shutterbug-tests/hostproof.sh, the first probe at 00:49:39 UTC):
+  lucidwinds.com and www.lucidwinds.com /satellites/shutterbug/index.html -> 5879a6c42b2a478a068c586f650209945d9d76d4330b713b0d56857f5656f3af
+  git show 77d1475bb:satellites/shutterbug/index.html | sha256sum -> 5879a6c42b2a478a068c586f650209945d9d76d4330b713b0d56857f5656f3af      (all three equal: LIVE)
+  sw.js (one probe): HTTP 200, application/javascript, no-cache no-store, cf BYPASS, its bytes equal to the deploy's
+CARD: the arcade's In Development tab, portal commit `9effc5a46` (Stephen ran tools/shutterbug-tests/portal-card.sh from the prompt; the session's own run was denied as a Production Deploy). portal-card.sh --prove at 00:57:10 UTC: both origins serve `git show 9effc5a46:portal/index.html` (81f44eb0…ca0e78) with one Shutterbug row. Launching it asks for the tester key once per device; the game page has no gate of its own (a shared room's link opens for anyone).
+TONIGHT: the box stopped between 22:49 and 22:58 UTC (the platform's second stop of the day); nothing committed was lost (GitHub held `ce76bbb16`), and the full check and the card review that were running were rerun. The full check found two test faults, fixed in `4f111e3aa` (recorded in `a980ded93`): boot's cold Chrome start and FAB_OVER_SHEET's wrong reason. Then ALL GATES PASSED on `a980ded93` at 00:22:49 UTC. The card review (three lenses, 21 agents): 18 findings, 13 real and all minor, 5 refuted; nothing blocked the deploy. The follow ups are in PROGRESS.md.
+STEPHEN'S CALLS, RANKED: 1. play M1 on the Pixel, from the arcade or https://lucidwinds.com/satellites/shutterbug/: T1.12 (onboarding and the first room rules) and T1.14 (controls) wait on your notes · 2. the 16 colour palette (BUILD-PLAN section 7) and Q73's lamp · 3. Astra's hero review (Astra is drawing from the brief) · 4. scan the QR proof image from the 18:02 report · 5. QUESTIONS Q85, Q86, Q78 to Q84 · 6. still open from M0: Q5, Q61, Q62 on the phone
+NEXT TASK: the card review's follow ups that touch no served file (portal-card.sh and deploy.sh), then T1.12 and T1.14 after your notes. sw.js matching only its own cache waits for the next stamp (sb-m1-2). T1.15's phone matrix checklist is still open.
+
 ## 📷 30 Oct 18:02 UTC (Opus) SHUTTERBUG M1 SAFE LIST DONE ON THE BRANCH (14 tasks, each pushed green); live is still M0 (sb-m0-3): photograph a room, crop it, watch it develop, climb it by thumbs or keys past homing moths, four hearts, death card, clear card
 LIVE: deploy commit `c2ffcf5bc` (BUILD sb-m0-3), the served set from add-sproing-jumper `09c9207c0`. Proof (re-run 30 Oct 17:41 UTC, one probe at a time, curl only):
   curl -sA "Mozilla/5.0" "https://lucidwinds.com/satellites/shutterbug/index.html?x=<rand>" | sha256sum  -> 68bf8270b5791f2477251c364c22b48acc02c37da1f7dc2876d58d60417ba828
