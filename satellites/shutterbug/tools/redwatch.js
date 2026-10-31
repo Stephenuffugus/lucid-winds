@@ -803,7 +803,7 @@ const MUTANTS = [
     gates: [{ gate: 'layout', expect: '412x915 the app mark (?navpad, env 0): the page is marked .navpad' }] },
   { name: 'NAVPAD_FLOOR_DROPPED', task: 'NOTE1', file: 'page', find: ':root.navpad { --sab: max(env(safe-area-inset-bottom, 0px), 48px); }\n', repl: '',
     gates: [{ gate: 'layout', expect: '412x915 the app mark (?navpad, env 0): the drawn stick field, A and B end' }] },
-  { name: 'STRIP_IGNORES_SAB', task: 'NOTE1', file: 'page', edits: [['top: 0; bottom: calc(10px + var(--sab)); pointer-events: none;', 'top: 0; bottom: 10px; pointer-events: none;'],
+  { name: 'STRIP_IGNORES_SAB', task: 'NOTE1', file: 'page', edits: [['top: 6px; bottom: calc(10px + var(--sab)); pointer-events: none;', 'top: 6px; bottom: 10px; pointer-events: none;'],
       ['  padding-bottom: calc(10px + var(--sab)); touch-action: none; }', '  padding-bottom: 10px; touch-action: none; }']],
     gates: [{ gate: 'layout', expect: '412x915 env 48 (a phone that reports its bar): the drawn stick field, A and B end' }] },
   /* the floor's other half: a tab is never floored, a reported inset never doubled, and the mark is Android's app window alone */

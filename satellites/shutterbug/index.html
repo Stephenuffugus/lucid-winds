@@ -233,7 +233,7 @@ body.playing #reserve { display: none; }
    landing point, kept inside the field (the strip above the bottom inset, never over the room or B), the knob slides
    sideways only, and both go when the thumb lifts. The shell moves the pad (left, top) and the knob (translateX) */
 #stick { position: absolute; left: var(--res); top: 0; bottom: 0; right: calc(2 * var(--btn) + var(--edge)); touch-action: none; }
-#stick .field { position: absolute; left: 0; right: 0; top: 0; bottom: calc(10px + var(--sab)); pointer-events: none; border-radius: 14px;
+#stick .field { position: absolute; left: 6px; right: 6px; top: 6px; bottom: calc(10px + var(--sab)); pointer-events: none; border-radius: 14px;
   display: flex; align-items: flex-end; }
 #stick .idle { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 8px 14px;
   color: rgba(11,10,15,0.4); font-size: 0.85rem; font-style: normal; white-space: nowrap; }
@@ -244,9 +244,12 @@ body.playing #reserve { display: none; }
 #stick.on .pad { display: block; }
 #stick .pad b { position: absolute; top: 50%; margin-top: -0.6em; line-height: 1.2em; font-weight: 400; font-size: 1rem; color: rgba(11,10,15,0.4); }
 #stick .pad .cl { left: 9px; } #stick .pad .cr { right: 9px; }
-#stick .pad.l .cl, #stick .pad.r .cr { color: var(--ink); }
+/* the knob carries the arrow of the way it reads (it slides over the pad's own arrows at a full push) */
 #stick .knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%;
-  border: 2px solid rgba(11,10,15,0.75); background: rgba(11,10,15,0.4); }
+  border: 2px solid rgba(11,10,15,0.75); background: #969390; display: flex; align-items: center; justify-content: center; }   /* opaque (the pad's arrow never shows through it): Ink at 0.4 over Paper */
+#stick .knob b { display: none; position: static; margin: 0; color: var(--paper); font-size: 1.1rem; }
+#stick .pad.l .knob .kl, #stick .pad.r .knob .kr { display: block; }
+#stick .pad.l .cl, #stick .pad.r .cr { visibility: hidden; }   /* under the knob at a full push; its tip would peek past the rim */
 .verb { position: absolute; top: 0; bottom: 0; width: var(--btn); display: flex; align-items: flex-end; justify-content: center;
   padding-bottom: calc(10px + var(--sab)); touch-action: none; }
 .verb .glyph { width: calc(var(--btn) - 6px); height: calc(var(--btn) - 6px); border-radius: 50%; border: 2px solid rgba(11,10,15,0.35);
@@ -365,7 +368,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <div id="strip">
     <p id="dp"><span data-copy="dp"></span> <span id="dpn">0</span><span id="dpplus" aria-hidden="true"></span></p>
     <div id="reserve" aria-hidden="true"></div>
-    <div id="stick" data-aria="move"><div class="field"><i class="idle"><b data-copy="left"></b><span data-copy="stickIdle"></span><b data-copy="right"></b></i></div><i class="pad"><b class="cl" data-copy="left"></b><b class="cr" data-copy="right"></b><i class="knob"></i></i></div>
+    <div id="stick" data-aria="move"><div class="field"><i class="idle"><b data-copy="left"></b><span data-copy="stickIdle"></span><b data-copy="right"></b></i></div><i class="pad"><b class="cl" data-copy="left"></b><b class="cr" data-copy="right"></b><i class="knob"><b class="kl" data-copy="left"></b><b class="kr" data-copy="right"></b></i></i></div>
     <div id="btnB" class="verb" role="button" data-aria="dive"><span class="glyph" data-copy="btnB"></span></div>
     <div id="btnA" class="verb" role="button" data-aria="jump"><span class="glyph" data-copy="btnA"></span></div>
   </div>
