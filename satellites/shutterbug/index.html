@@ -247,9 +247,10 @@ body:has(#death.on) #sws-music-card, body:has(#death.on) #sws-music-pill, body:h
 /* the include still scores a bottom seat in the bar's band, 48 px under where the lift draws the chip, so on the title
    and Settings (where content can sit over that band) the band reads as taken (a pointer cursor, which the include
    counts as a control) and the include seats the chip by its own scoring elsewhere; in a room's clear card the lifted
-   seat is the strip's reserved box, free by design. Transparent, and under the phone's buttons on the phone */
+   seat is the strip's reserved box, free by design. Transparent, and under the phone's buttons on the phone. A sibling
+   rule, not body:has(): the screens precede it, and a :has() on body cost the tap that starts a room about 50 ms */
 #chipsill { display: none; position: fixed; left: 0; right: 0; bottom: 0; height: var(--sab); cursor: pointer; }
-:root.navpad body:has(#title.on) #chipsill, :root.navpad body:has(#settings.on) #chipsill { display: block; }
+:root.navpad #title.on ~ #chipsill, :root.navpad #settings.on ~ #chipsill { display: block; }
 /* the fleet's feedback fab, if the host ever injects it, never sits over a card or a sheet (section 1.6, T1.13) */
 body.sb-modal .lwfb-fab { display: none !important; }
 
