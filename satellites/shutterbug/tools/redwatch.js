@@ -958,7 +958,7 @@ const MUTANTS = [
   { name: 'STICK_ABSOLUTE', task: 'STICK', file: 'page', find: 'stickAt[e.pointerId] = { ox: e.clientX, x: e.clientX, y: e.clientY };',
     repl: 'stickAt[e.pointerId] = { ox: (stick.getBoundingClientRect().left + stick.getBoundingClientRect().right) / 2, x: e.clientX, y: e.clientY };',
     gates: [{ gate: 'input', expect: "412x915: a landing at the field's left middle" }] },
-  { name: 'CORNER_DEAD', task: 'STICK', file: 'page', edits: [['body.playing #strip { --res: 0px; }\n', ''], ['body.playing #reserve { display: none; }\n', '']],
+  { name: 'CORNER_DEAD', task: 'STICK', file: 'page', edits: [['body.playing #strip, body:has(#death.on) #strip { --res: 0px; }', 'body:has(#death.on) #strip { --res: 0px; }'], ['body.playing #reserve, body:has(#death.on) #reserve { display: none; }', 'body:has(#death.on) #reserve { display: none; }']],   /* re anchored at the stick's review (the death card's box) */
     gates: [{ gate: 'input', expect: '412x915: landed at the very bottom left corner, 20 px right is right' }] },
   { name: 'PAD_STAYS', task: 'STICK', file: 'page', find: "      stick.classList.toggle('on', !!p);", repl: "      if (p) stick.classList.add('on');",
     gates: [{ gate: 'input', expect: "412x915: landed at the field's left middle and lifted it is nothing, the pad is gone" }] },
