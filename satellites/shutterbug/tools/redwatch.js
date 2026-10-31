@@ -1043,7 +1043,7 @@ const MUTANTS = [
     gates: [{ gate: 'fight', expect: '412: as the bug falls under the docked card' }] },
   { name: 'THROW_SILENT', task: 'W1', file: 'page', find: "      if (ev & EV.FIRE_J) au.sfx(SB.ui.WPN_SFX[SB.sim.WPN[G.state.hero.slots[0]]] || 'throw');\n", repl: '',
     gates: [{ gate: 'fight', expect: '412: a real A tap throws the boomerang with the throw voice' }] },
-  { name: 'PROJ_IN_BRICK', task: 'W1', file: 'page', find: "boomerang: { w: 12, h: 12, frames: { a: '........000.", repl: "boomerang: { w: 12, h: 12, frames: { a: '........090.",
+  { name: 'PROJ_IN_BRICK', task: 'W1', file: 'page', find: "boomerang: { w: 12, h: 12, frames: {\n      a: '........000.", repl: "boomerang: { w: 12, h: 12, frames: {\n      a: '........090.",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'boomerang.a has an Ink outline and draws only' }] },
   { name: 'GEAR_LOST_ON_NEXT_ROOM', task: 'W1', file: 'page', find: "    if (SB.TUNING.KEEP_GEAR && G.state) G.gear = G.state.hero.slots.slice();", repl: '',
     gates: [{ gate: 'fight', expect: "412: Play it again starts the next room with the cleared room's gear" }] },

@@ -21,6 +21,9 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'world/trap_crusher.png': ('crusher', None), 'loot/loot_speck.png': ('speck', None), 'loot/loot_scroll.png': ('scroll', None),
     'loot/loot_blueprint.png': ('blueprint', None), 'loot/loot_chest.png': ('chest', None),
     'world/vine.png': ('vine', None), 'world/pipe.png': ('pipe', None),   # T1.5's sticky walls (the brief's held rows)
+    # Weapons v1 step 1 (docs/WEAPONS-V1.md 8.1): the builder's placeholders under the HOLD items' names, one key a file
+    'fx/fx_projectiles.png': ('boomerang', None), 'fx/fx_shockwave.png': ('shock', None), 'fx/fx_bursts.png': ('pop', None),
+    'ui/icon_weapons.png': ('icon', None),
 }
 
 
