@@ -4808,7 +4808,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('nextroom').addEventListener('click', function () { ui.toTitle(); openPicker('fileshoot'); });
     document.getElementById('deathagain').addEventListener('click', function () { ui.restart(); });
     /* the pause card (Q94): Pause holds the room; Resume, Share this room (its Close comes back to the card) and Title */
-    document.getElementById('pause').addEventListener('click', function () { ui.pause(); });
+    document.getElementById('pause').addEventListener('click', function () { this.blur(); ui.pause(); });   /* no focus kept: Space (jump) or Enter would press it again after Resume */
     document.getElementById('resume').addEventListener('click', function () { ui.resume(); });
     document.getElementById('pauseshare').addEventListener('click', function () { ui.openShare(); });
     document.getElementById('settingsbtn').addEventListener('click', function () { ui.show('settings'); });

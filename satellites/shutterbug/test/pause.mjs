@@ -15,7 +15,8 @@
  *     frame 0 with no card over it.
  * The back gesture (his ruling; one CloseWatcher, and a real Escape key, which desktop Chrome sends as a close request),
  * at 412x915: on the title no watcher is armed (SB_DEV.backWatch, so the phone's back leaves the game) and Escape
- * changes nothing; in a room it opens the card; on the card it resumes; on the share sheet it returns to the card; on the
+ * changes nothing; in a room it opens the card; on the card it resumes (and after a tap on Pause the button keeps no
+ * focus, so Space, the jump key, and Enter never press it again); on the share sheet it returns to the card; on the
  * clear card and on the death card it is Title. In the reveal (held at its start, SB_DEV.hold) Pause is hidden, and back
  * ends the reveal and opens the card. A link that arrives over the card holds the room under the Tap to develop card with
  * no watcher armed there.
@@ -24,7 +25,7 @@
  * room is held under the card when it comes back. At top level: the focus moved into a child frame, the page still
  * visible, pauses it (the gate's one liberty: the frame added to the page; this browser makes no other blur without a
  * hide, and a page in front fires both).
- * Watched red by PAUSE_LEAVES, PAUSE_RUNS_SIM, RESUME_KEEPS_EDGE, PAUSED_NOT_OVERLAY, PAUSED_NOT_MODAL, PAUSE_ALWAYS_SHOWN,
+ * Watched red by PAUSE_LEAVES, PAUSE_RUNS_SIM, RESUME_KEEPS_EDGE, PAUSED_NOT_OVERLAY, PAUSED_NOT_MODAL, PAUSE_ALWAYS_SHOWN, PAUSE_KEEPS_FOCUS,
  * SHARE_CLOSE_TO_PLAY, BACK_UNWATCHED, BACK_CARD_TO_TITLE, BACK_SHEET_UNWATCHED, BACK_CARDS_UNWATCHED, BACK_TRAPS_TITLE,
  * BACK_IN_REVEAL_LOST, CODE_CARD_WATCHED, HIDDEN_NO_PAUSE, BLUR_NO_PAUSE and BLUR_IN_FRAME_PAUSES. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, sleep } from './harness.mjs';
@@ -152,6 +153,12 @@ try {
     const b2 = await look(page);
     R.say(b2.screen === 'play' && b2.on.length === 0 && b2.watch === 'play' && b2.hash === b0.hash,
       'back on the pause card resumes (screen ' + b2.screen + ', on: ' + onText(b2) + ', watching ' + (b2.watch || 'nothing') + ')');
+    /* a keyboard after a tap on Pause: the button keeps no focus, so Space (the jump key) and Enter never press it again */
+    await tap(page, '#pause');
+    await escape(page);
+    await page.keyboard.press('Space'); await page.keyboard.press('Enter'); await sleep(60);
+    const kb = await look(page), focus = await page.evaluate(() => document.activeElement ? (document.activeElement.id || document.activeElement.tagName) : 'nothing');
+    R.say(kb.screen === 'play' && focus !== 'pause', 'after a tap on Pause and back to resume, Space (the jump key) and Enter leave the room running: Pause keeps no focus (screen ' + kb.screen + ', the focus on ' + focus + ')');
     await escape(page);
     await tap(page, '#pauseshare');
     const b3 = await look(page);
@@ -178,12 +185,12 @@ try {
     await page.evaluate(() => window.SB_DEV.revealSkip(false));
     await tap(page, '#sample');
     const r0 = await look(page), pc = await centre(page, '#pause');
-    R.say(r0.screen === 'reveal' && r0.pause === 'hidden' && !!pc && !pc.onTop && r0.watch === 'reveal',
-      'in the reveal Pause is hidden: a thumb on it lands on ' + (pc ? pc.topName : 'nothing') + ' (screen ' + r0.screen + ', Pause ' + r0.pause + ', back watched for ' + (r0.watch || 'nothing') + ')');
+    R.say(r0.screen === 'reveal' && r0.pause === 'hidden' && !!pc && !pc.onTop,
+      'in the reveal Pause is hidden: a thumb on it lands on ' + (pc ? pc.topName : 'nothing') + ' (screen ' + r0.screen + ', Pause ' + r0.pause + ')');
     await escape(page);
     const r1 = await look(page), rv = await page.evaluate(() => ({ on: window.SB.ui.reveal.on, marks: window.SB_DEV.perf().reveal }));
-    R.say(r1.screen === 'pause' && r1.on.join() === 'paused' && rv.on === false && !!rv.marks && rv.marks.end !== undefined && rv.marks.skipped === true,
-      'back in the reveal ends it and opens the pause card (screen ' + r1.screen + ', on: ' + onText(r1) + ', the reveal ' + (rv.on ? 'still on' : 'ended') + ')');
+    R.say(r0.watch === 'reveal' && r1.screen === 'pause' && r1.on.join() === 'paused' && rv.on === false && !!rv.marks && rv.marks.end !== undefined && rv.marks.skipped === true,
+      'back in the reveal ends it and opens the pause card (back watched for ' + (r0.watch || 'nothing') + ', then screen ' + r1.screen + ', on: ' + onText(r1) + ', the reveal ' + (rv.on ? 'still on' : 'ended') + ')');
     await tap(page, '#resume');
     const r2 = await look(page);
     R.say(r2.screen === 'play' && r2.on.length === 0, 'from that card Resume plays the room (screen ' + r2.screen + ')');

@@ -297,7 +297,7 @@ const MUTANTS = [
     gates: [{ gate: 'reveal', expect: 'the static layer is built once' }] },
   { name: 'AUDIO_AT_LOAD', task: 'T0.14', file: 'page', find: "A.init = function () { document.addEventListener('pointerdown', unlock, { capture: true, once: true }); };", repl: 'A.init = function () { unlock(); };',
     gates: [{ gate: 'reveal', expect: 'no AudioContext before the first tap' }] },
-  { name: 'REVEAL_NO_SKIP', task: 'T0.14', file: 'page', find: "if (ui.screen !== 'reveal' || !RV.seen || e.target.closest('#back, #exit')) return;", repl: 'if (true) return;',
+  { name: 'REVEAL_NO_SKIP', task: 'T0.14', file: 'page', find: "if (ui.screen !== 'reveal' || !RV.seen || e.target.closest('#exit')) return;", repl: 'if (true) return;',   /* re anchored at NOTE3: Title left the strip (QUESTIONS Q94) */
     gates: [{ gate: 'reveal', expect: 'a second room skips on a tap' }] },
   /* T0.16: moths, hearts */
   { name: 'IFRAMES_ZERO', task: 'T0.16', file: 'page', find: 'h.iframes = K.HIT_IFRAMES_F;', repl: 'h.iframes = 0;',
@@ -458,8 +458,8 @@ const MUTANTS = [
   { name: 'STRIP_KEEPS_PRESSED', task: 'T0.8b review', file: 'page', find: "down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; if (I._stripReset) I._stripReset(); };",   /* re anchored after the M1 review */
     repl: "down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; };",
     gates: [{ gate: 'play', expect: 'the same thumb moved inside its zone after the blur presses right again' }] },
-  { name: 'TITLE_UNDER_ROCKER', task: 'T0.8b review', file: 'page', find: 'left: calc(6px + var(--sal)); z-index: 2; min-width: 64px;', repl: 'left: calc(6px + var(--sal)); min-width: 64px;',
-    gates: [{ gate: 'play', expect: '320x568 default: Title is' }] },
+  /* TITLE_UNDER_ROCKER, retired at NOTE3 (QUESTIONS Q94): the strip's Title it watched at 320x568 is gone; Pause in the top
+     strip is watched by TITLE_BACK_IN_STRIP and PAUSE_OVERHANG_UNDER (layout) and the pause gate's rows */
   { name: 'EXIT_HIGHEST_INDEX', task: 'T0.8b review', file: 'page', find: 'if (standableIn(level, lit[q]) && d[lit[q]] >= 0 && (lc < 0 || d[lit[q]] > d[lc])) lc = lit[q];',
     repl: 'if (standableIn(level, lit[q]) && d[lit[q]] >= 0 && (lc < 0 || d[lit[q]] >= d[lc])) lc = lit[q];',
     gates: [{ gate: 'harness', only: 'H-pipe-12', expect: "sample-room: the exit equals the test's own rule" }] },
@@ -645,18 +645,20 @@ const MUTANTS = [
   { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=1')", repl: "register('./sw.js?v=2')",
     gates: [{ gate: 'lint', expect: 'STAMP' }] },
   /* T1.13: the free play loop, the Wallet moments, the fab insurance */
-  { name: 'X_LEAVES_OVERLAY', task: 'T1.13', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'sharesheet'];", repl: "var OVERLAYS = ['clear', 'death'];",   /* re anchored at NOTE5: the sheets left the list */
-    gates: [{ gate: 'loop', expect: "the strip's Title with the share sheet open: the title with nothing over it" }] },
+  /* re anchored at NOTE5 (the sheets left the list) and at NOTE3 (Q94: the pause card joined it, and this row's path, the
+     strip's Title under an open sheet, is gone; a refused link that arrives with the sheet open is the way left) */
+  { name: 'X_LEAVES_OVERLAY', task: 'T1.13', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'paused', 'sharesheet'];", repl: "var OVERLAYS = ['clear', 'death', 'paused'];",
+    gates: [{ gate: 'loop', expect: 'a refused link with the share sheet open: the title with nothing over it' }] },
   { name: 'MOMENT_TWICE', task: 'T1.13', file: 'page', find: 'if (!S.doc || !framed || S.doc.moments[name]) return false;', repl: 'if (!S.doc || !framed) return false;',
     gates: [{ gate: 'loop', expect: 'inside the wrapper iframe two clears' }] },
   { name: 'FAB_OVER_SHEET', task: 'T1.13', file: 'page', find: 'body.sb-modal .lwfb-fab { display: none !important; }', repl: 'body.sb-modal .lwfb-fab { }',
-    gates: [{ gate: 'loop', expect: 'round 1: the share sheet over the play screen' }] },
+    gates: [{ gate: 'loop', expect: 'round 1: the share sheet over the pause screen' }] },   /* NOTE3: the room's sheet opens from the pause card */
   /* re anchored at NOTE5R (the bank's line names the count it came from, so the room's count is read once): the same
      mutation, the room's full count banked */
   { name: 'BANK_FULL_RATE', task: 'T1.13', file: 'page', find: 'n = Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT)', repl: 'n = Math.floor(dp)',
     gates: [{ gate: 'loop', expect: 'round 1: banked at x0.5 floored' }] },
   { name: 'SHARE_CLOSE_TO_PLAY', task: 'T1.13', file: 'page', find: "if (ui.screen === 'share') ui.screen = ui.shareFrom || 'play';", repl: "if (ui.screen === 'share') ui.screen = 'play';",
-    gates: [{ gate: 'loop', expect: 'round 1: the share sheet over the clear screen' }] },
+    gates: [{ gate: 'loop', expect: 'round 1: the share sheet over the clear screen' }, { gate: 'pause', expect: '412x915: Share this room opens the sheet over the pause card' }] },
   /* T1.9a: the QR encoder */
   { name: 'RS_WRONG_POLY', task: 'T1.9a', file: 'page', find: 'var POLY = 0x11d, EXP = new Uint8Array(512)', repl: 'var POLY = 0x12d, EXP = new Uint8Array(512)',
     gates: [{ gate: 'harness', only: 'H-qr-1', expect: 'HELLO WORLD 1-M: its 10 published EC codewords' }] },
@@ -775,8 +777,8 @@ const MUTANTS = [
   { name: 'SHARELINK_40PX', task: 'M1R', file: 'page', find: '#sharelink { min-height: 48px;', repl: '#sharelink { min-height: 40px;',
     gates: [{ gate: 'share', expect: 'the link field is 48 px tall or more' }] },
   { name: 'EDGE_BANKED_UNDER_SHEET', task: 'M1R', file: 'page', find: 'down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; if (I._stripReset)', repl: 'down = { L: {}, R: {}, A: {}, B: {} }; if (I._stripReset)',
-    gates: [{ gate: 'loop', expect: 'round 1: a tap on A under the open share sheet does not jump at Close' }] },
-  { name: 'CARD_UNDER_SHEET', task: 'M1R', file: 'page', find: '#stage:has(> #sharesheet.on) > #clear, #stage:has(> #sharesheet.on) > #death { visibility: hidden; }', repl: '',
+    gates: [{ gate: 'loop', expect: 'round 1: a tap on A under the open share sheet does not jump at Close and Resume' }] },
+  { name: 'CARD_UNDER_SHEET', task: 'M1R', file: 'page', find: '#stage:has(> #sharesheet.on) > #paused, #stage:has(> #sharesheet.on) > #clear { visibility: hidden; }', repl: '',   /* re anchored at NOTE3: the pause card's sheet (Q94) */
     gates: [{ gate: 'loop', expect: 'round 1: the clear card hides under the sheet' }] },
   { name: 'COPIED_STICKS', task: 'M1R', file: 'page', find: "var done = function () { btn.textContent = ui.COPY.copied; setTimeout(function () { btn.textContent = ui.COPY[btn.getAttribute('data-copy')]; }, 1500); };",
     repl: 'var done = function () { var was = btn.textContent; btn.textContent = ui.COPY.copied; setTimeout(function () { btn.textContent = was; }, 1500); };',
@@ -870,8 +872,8 @@ const MUTANTS = [
       ['    <div id="sharesheet" role="dialog"', '    <div id="slip" role="dialog" data-aria="slip"><h2 data-copy="slip"></h2>\n      <button id="slipok" type="button" data-copy="slipTake"></button></div>\n    <div id="sharesheet" role="dialog"'],
       ['#clear, #death { position: absolute;', '#clear, #death, #slip { position: absolute;'], ['#clear.on, #death.on { display: flex; }', '#clear.on, #death.on, #slip.on { display: flex; }'],
       ['      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);', "      document.getElementById('slip').classList.toggle('on', !!st.room.compare && !st.scrollsOffered);"],
-      ["    document.getElementById('share').addEventListener('click', function () { ui.openShare(); });", "    document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });\n    document.getElementById('share').addEventListener('click', function () { ui.openShare(); });"],
-      ["var MODALS = ['clear', 'death', 'sharesheet', 'devcard'];", "var MODALS = ['clear', 'death', 'slip', 'sharesheet', 'devcard'];"]],
+      ["    document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });", "    document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });\n    document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });"],
+      ["var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard'];", "var MODALS = ['clear', 'death', 'paused', 'slip', 'sharesheet', 'devcard'];"]],   /* the listener and the list re anchored at NOTE3 (Q94) */
     gates: [{ gate: 'loot', expect: '412: no sheet, card or dialog shows on the walk' }, { gate: 'lint', expect: 'COPY.slip: names weapon before the build has one' }] },
   { name: 'ANSWER_ORDER_SWAPPED', task: 'NOTE5', file: 'page', find: '      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);\n      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);',
     repl: '      if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);\n      else if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);',
@@ -922,7 +924,57 @@ const MUTANTS = [
     gates: [{ gate: 'loot', expect: "412: the hidden blueprint's cell is drawn as its row neighbours are" }] },
   /* the clear card's bare line back: "Banked 2 dead pixels" over the strip's 5 */
   { name: 'BANK_LINE_BARE', task: 'NOTE5R', file: 'page', find: "bank.textContent = n < dp ? ui.COPY.bankedOf.replace('{n}', n).replace('{of}', dp) : n === 1", repl: 'bank.textContent = n === 1',
-    gates: [{ gate: 'loop', expect: 'round 1: the card names the count it banked from' }] }
+    gates: [{ gate: 'loop', expect: 'round 1: the card names the count it banked from' }] },
+
+  /* NOTE3, the pause card (Stephen's note 3 of 31 Oct, his ruling "Pause in the top bar", QUESTIONS Q94). The brief's four:
+     a stray Pause tap that leaves the room, the sim stepping under the card, Title back in the strip, a hidden page that
+     keeps running; then the card's own rules, the back gesture's five, and a lost focus */
+  { name: 'PAUSE_LEAVES', task: 'NOTE3', file: 'page', find: "    document.getElementById('pause').addEventListener('click', function () { this.blur(); ui.pause(); });", repl: "    document.getElementById('pause').addEventListener('click', ui.toTitle);",
+    gates: [{ gate: 'pause', expect: '412x915: a real tap on Pause opens the pause card and keeps the room' }] },
+  /* found in this change's own probe: after a tap on Pause the button kept the focus, and a later Space (the jump key)
+     or Enter pressed it again and paused the room */
+  { name: 'PAUSE_KEEPS_FOCUS', task: 'NOTE3', file: 'page', find: "addEventListener('click', function () { this.blur(); ui.pause(); });", repl: "addEventListener('click', function () { ui.pause(); });",
+    gates: [{ gate: 'pause', expect: 'after a tap on Pause and back to resume, Space (the jump key) and Enter leave the room running' }] },
+  { name: 'PAUSE_RUNS_SIM', task: 'NOTE3', file: 'page', find: "    var run = !held && !SIDEWAYS.matches && !!G.state && SB.ui.screen === 'play';", repl: "    var run = !held && !SIDEWAYS.matches && !!G.state && (SB.ui.screen === 'play' || SB.ui.screen === 'pause');",
+    gates: [{ gate: 'pause', expect: '412x915: under the pause card the room holds' }] },
+  { name: 'TITLE_BACK_IN_STRIP', task: 'NOTE3', file: 'page', edits: [
+      ['  <div id="strip">\n', '  <div id="strip"><button id="back" type="button" data-copy="toTitle"></button>\n'],
+      ['#paused, #clear, #death { position: absolute;', '#back { position: absolute; top: 0; left: calc(6px + var(--sal)); z-index: 2; min-width: 64px; min-height: 48px; padding: 0 12px;\n  border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--ink); font-size: 0.9rem; }\n#paused, #clear, #death { position: absolute;'],
+      ["    document.getElementById('pausetitle').addEventListener('click', ui.toTitle);", "    document.getElementById('pausetitle').addEventListener('click', ui.toTitle);\n    document.getElementById('back').addEventListener('click', ui.toTitle);"]],
+    gates: [{ gate: 'layout', expect: '412x915: the strip holds no control but the rocker, B and A' }] },
+  { name: 'HIDDEN_NO_PAUSE', task: 'NOTE3', file: 'page', find: "    document.addEventListener('visibilitychange', function () { if (document.hidden) ui.pause(); });\n", repl: '',
+    gates: [{ gate: 'pause', expect: 'inside the wrapper iframe a hidden page pauses its room' }] },
+  { name: 'BLUR_NO_PAUSE', task: 'NOTE3', file: 'page', find: "    window.addEventListener('blur', function () { if (!window.SWS_EMBED) ui.pause(); });\n", repl: '',
+    gates: [{ gate: 'pause', expect: 'at top level a lost focus' }] },
+  { name: 'BLUR_IN_FRAME_PAUSES', task: 'NOTE3', file: 'page', find: 'if (!window.SWS_EMBED) ui.pause();', repl: 'ui.pause();',
+    gates: [{ gate: 'pause', expect: 'inside the wrapper iframe a lost focus (the host page took it) leaves the room running' }] },
+  { name: 'RESUME_KEEPS_EDGE', task: 'NOTE3', file: 'page', find: '    SB.input.releaseAll();   /* a tap on the strip under the card is never banked into a jump at Resume */\n', repl: '',
+    gates: [{ gate: 'pause', expect: '412x915: a real tap on A under the pause card does not jump at Resume' }] },
+  { name: 'PAUSED_NOT_OVERLAY', task: 'NOTE3', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'paused', 'sharesheet'];", repl: "var OVERLAYS = ['clear', 'death', 'sharesheet'];",
+    gates: [{ gate: 'pause', expect: "412x915: the pause card's Title: the title with nothing over it" }] },
+  { name: 'PAUSED_NOT_MODAL', task: 'NOTE3', file: 'page', find: "var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard'];", repl: "var MODALS = ['clear', 'death', 'sharesheet', 'devcard'];",
+    gates: [{ gate: 'pause', expect: '412x915: under the pause card an injected .lwfb-fab hides' }] },
+  { name: 'PAUSE_ALWAYS_SHOWN', task: 'NOTE3', file: 'page', find: "    document.getElementById('pause').classList.toggle('on', name === 'play');", repl: "    document.getElementById('pause').classList.toggle('on', true);",
+    gates: [{ gate: 'pause', expect: 'in the reveal Pause is hidden' }] },
+  { name: 'PAUSE_OVERHANG_UNDER', task: 'NOTE3', file: 'page', find: 'font-weight: 700; font-size: 0.95rem; position: relative; z-index: 3; }', repl: 'font-weight: 700; font-size: 0.95rem; position: relative; }',
+    gates: [{ gate: 'layout', expect: "412x915: Pause is 48x48 at the top strip's left end" }] },
+  /* the back gesture: no watcher in a room; the card's back leaving instead of resuming; none on the sheet; none on the
+     clear and death cards; one armed on the title (back could never leave); none in the reveal; one left armed under the
+     Tap to develop card (a back there resumed the room under the card) */
+  { name: 'BACK_UNWATCHED', task: 'NOTE3', file: 'page', find: 'reveal: function () { ui.pause(); }, play: function () { ui.pause(); }, pause:', repl: 'reveal: function () { ui.pause(); }, pause:',
+    gates: [{ gate: 'pause', expect: 'back (a real Escape) in a room opens the pause card' }] },
+  { name: 'BACK_CARD_TO_TITLE', task: 'NOTE3', file: 'page', find: 'pause: function () { ui.resume(); },', repl: 'pause: function () { ui.toTitle(); },',
+    gates: [{ gate: 'pause', expect: 'back on the pause card resumes' }] },
+  { name: 'BACK_SHEET_UNWATCHED', task: 'NOTE3', file: 'page', find: '    share: function () { ui.closeShare(); }, ', repl: '    ',
+    gates: [{ gate: 'pause', expect: 'back on the share sheet closes it and returns to the pause card' }] },
+  { name: 'BACK_CARDS_UNWATCHED', task: 'NOTE3', file: 'page', find: 'clear: function () { ui.toTitle(); }, dead: function () { ui.hideDeath(); ui.toTitle(); }', repl: '',
+    gates: [{ gate: 'pause', expect: ['back on the clear card is Title', 'back on the death card is Title'] }] },
+  { name: 'BACK_TRAPS_TITLE', task: 'NOTE3', file: 'page', find: '    share: function () { ui.closeShare(); }, ', repl: '    title: function () {}, share: function () { ui.closeShare(); }, ',
+    gates: [{ gate: 'pause', expect: 'on the title no back watcher is armed' }] },
+  { name: 'BACK_IN_REVEAL_LOST', task: 'NOTE3', file: 'page', find: '    reveal: function () { ui.pause(); }, play:', repl: '    play:',
+    gates: [{ gate: 'pause', expect: 'back in the reveal ends it and opens the pause card' }] },
+  { name: 'CODE_CARD_WATCHED', task: 'NOTE3', file: 'page', find: "    if (ui.screen !== 'play' && BACK[ui.screen]) ui.screen = 'code';\n", repl: '',
+    gates: [{ gate: 'pause', expect: 'a link that arrives over the pause card holds the room under the Tap to develop card' }] }
 ];
 
 /* ---------------------------------------------------------------- run */

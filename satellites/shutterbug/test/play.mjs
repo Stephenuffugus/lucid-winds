@@ -12,10 +12,11 @@
  * event per control: the rocker moves the hero, A rises, a second finger on A leaves the rocker held). The second review
  * (30 Oct, before sb-m0-2) added MAX_STEPS_1, DT_MAX_20 and PHASE_ZERO (the test's own replay of its logged frames, total
  * and frame by frame), SLIDE_KEEPS_OLD and GAP_IS_LEFT (the slide), STRIP_KEEPS_PRESSED (a blur), ROCKER_NO_ADOPT (the
- * pointer still down takes the rocker), TITLE_UNDER_ROCKER (Title at 320x568), CHIP_OVER_PLAY (the fleet's chrome
+ * pointer still down takes the rocker), TITLE_UNDER_ROCKER (Title at 320x568; retired at QUESTIONS Q94 with the strip's
+ * Title: Pause in the top strip and its card's Title take its checks), CHIP_OVER_PLAY (the fleet's chrome
  * hidden in play), FITS2_NO_STRIP (1366x843 and 844), CANVAS_TAKES_POINTERS (Again) and BEACON_PULSE_BY_FRAME. */
 import { readFileSync } from 'node:fs';
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, centre } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, centre, leaveRoom } from './harness.mjs';
 
 const R = reporter('PLAY');
 const climb = JSON.parse(readFileSync(new URL('./climb-sample-room.json', import.meta.url), 'utf8'));
@@ -251,6 +252,11 @@ try {
     await keep.end();
     R.say(wHold === 2 && wBlur === 0 && !litAfterBlur, 'a blur releases a held thumb and its zone stops showing pressed (words ' + wHold + ', ' + wBlur + ')');
     R.say(wMove === 2, 'the same thumb moved inside its zone after the blur presses right again (word ' + wMove + ')');
+    /* the blur paused the room too (his call 7, QUESTIONS Q94): a real tap on Resume plays on, so what follows runs in play */
+    const blurred = await page.evaluate(() => window.SB_DEV.screen());
+    if (blurred === 'pause') await tap(page, '#resume');
+    const resumed = await page.evaluate(() => window.SB_DEV.screen());
+    R.say(blurred === 'pause' && resumed === 'play', 'the blur also paused the room (screen ' + blurred + ') and a real tap on Resume plays on (screen ' + resumed + ')');
     /* a palm on the left zone first, then the thumb on the right: the first rules; the palm lifted, the thumb still down
        takes the rocker (it is never left dead) */
     const palm = await page.touchscreen.touchStart(at.L.x, at.L.y);
@@ -276,7 +282,9 @@ try {
     await page.close();
   }
 
-  /* under 360 the reservation is released and the rocker (or A and B mirrored) starts at x 0: Title must stay on top */
+  /* under 360 the reservation is released and the rocker (or A and B mirrored) starts at x 0. Title and Share left the strip
+     for the pause card (QUESTIONS Q94): Pause, in the top strip, stays on top in both layouts, and a real touch on it, then
+     on its card's Title, returns to the title */
   {
     const { page, errors } = await newPage(browser, { width: 320, height: 568 });
     await gotoGame(page, srv.base);
@@ -286,14 +294,16 @@ try {
     for (const mirror of [false, true]) {
       const r = await page.evaluate(m => {
         document.getElementById('strip').classList.toggle('mirror', m);
-        const b = document.getElementById('back').getBoundingClientRect(), top = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
-        return { onTop: !!top && top.id === 'back', topName: top ? (top.id || top.className) : 'nothing', w: b.width, h: b.height };
+        const el = document.getElementById('pause'), b = el.getBoundingClientRect(), top = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+        return { onTop: !!top && (top === el || el.contains(top)), topName: top ? (top.id || top.className || top.tagName) : 'nothing', w: b.width, h: b.height };
       }, mirror);
-      R.say(r.onTop && r.w >= 48 && r.h >= 48, '320x568 ' + (mirror ? 'mirrored' : 'default') + ': Title is ' + r.w.toFixed(0) + 'x' + r.h.toFixed(0) + ' and on top at its centre (a thumb lands on ' + r.topName + ')');
+      R.say(r.onTop && r.w >= 48 && r.h >= 48, '320x568 ' + (mirror ? 'mirrored' : 'default') + ': Pause is ' + r.w.toFixed(0) + 'x' + r.h.toFixed(0) + ' and on top at its centre (a thumb lands on ' + r.topName + ')');
     }
     await page.evaluate(() => document.getElementById('strip').classList.remove('mirror'));
-    await tap(page, '#back');
-    R.say(await page.evaluate(() => window.SB_DEV.screen()) === 'title', '320x568: a real touch on Title returns to the title');
+    await tap(page, '#pause');
+    const paused = await page.evaluate(() => window.SB_DEV.screen());
+    await tap(page, '#pausetitle');
+    R.say(paused === 'pause' && await page.evaluate(() => window.SB_DEV.screen()) === 'title', '320x568: a real touch on Pause opens its card (screen ' + paused + ') and the card\'s Title returns to the title');
     R.say(errors.length === 0, '320x568: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
@@ -316,7 +326,7 @@ try {
       await tap(page, '#sample');
       const inPlay = await shown();
       R.say(inPlay.length === 0, 'in play the fleet\'s chip, pill, card and toast are hidden (shown: ' + (inPlay.join(', ') || 'none') + ')');
-      await tap(page, '#back');
+      await leaveRoom(page);
       const back = await shown();
       R.say(onTitle.every(id => back.includes(id)), 'back on the title the fleet\'s chrome is as it was (' + (back.join(', ') || 'nothing') + ')');
     } else {

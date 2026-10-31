@@ -10,6 +10,9 @@
  * 3 CSS px a module at 412 and at 360 wide and on screen; a Double Exposure room gets `Long code, the link is easier.`
  * instead of a symbol.
  *
+ * Since QUESTIONS Q94 the room's sheet opens from the pause card (Pause, then Share this room) and a room is left by
+ * Pause and the card's Title: the strip's Share and Title are gone.
+ *
  * Q32 in a profile of its own (the M1 review): a link to a room whose first room build differs (trap-pattern) opens
  * in a fresh profile to the sharer's level with the first room not spent; the death card's Again and the clear card's
  * Play it again keep it a link and unspent; the player's own first room comes after. The Level code field: a typed code
@@ -23,7 +26,7 @@
  * holds the room under the card; at 320x568 a returning player's refusal is in sight; every field is 16 px or more,
  * the link field 48 px tall. Watched red by QR_WIDTH_ONLY, PREVIEW_ONE_GRID, QR_FROM_FIELD, CODE_CARD_RUNS,
  * CODEMSG_BELOW_FOLD, FIELD_15PX and SHARELINK_40PX. */
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, sleep, GAME, GAME_PATH } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, sleep, GAME, GAME_PATH, leaveRoom, openSheet } from './harness.mjs';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -37,7 +40,7 @@ try {
   await page.evaluate(() => window.SB_DEV.hold(true));
   await tap(page, '#sample');
   const hashA = await page.evaluate(() => window.SB_DEV.level().hash);
-  await tap(page, '#share');
+  await openSheet(page);
   const sheet = await page.evaluate(() => {
     const cv = document.getElementById('sharecanvas'), d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, colours = new Set();
     for (let i = 0; i < d.length; i += 4 * 97) colours.add(d[i] + ',' + d[i + 1] + ',' + d[i + 2]);
@@ -45,7 +48,7 @@ try {
       link: document.getElementById('sharelink').value, own: location.origin + location.pathname, screen: window.SB_DEV.screen() };
   });
   const code = sheet.link.slice(sheet.link.lastIndexOf('#') + 1);
-  R.say(sheet.on && sheet.w === 192 && sheet.h === 384 && sheet.colours > 1, 'a real tap on Share opens the sheet; its preview is 192x384 and painted (' + sheet.colours + ' colours sampled)');
+  R.say(sheet.on && sheet.w === 192 && sheet.h === 384 && sheet.colours > 1, 'a real tap on the pause card\'s Share this room opens the sheet; its preview is 192x384 and painted (' + sheet.colours + ' colours sampled)');
   R.say(SENT.every(x => sheet.text.includes(x)), 'the three sentences stand verbatim');
   R.say(code.length === 779 && sheet.link === sheet.own + '#' + code, 'the link is the page\'s own origin + pathname + # + a ' + code.length + ' character code');
   R.say(sheet.screen === 'share', 'the sheet holds the room (the screen is share)');
@@ -91,19 +94,19 @@ try {
   await tap(f.page, '#again');
   fs = await fl();
   R.say(fs.screen === 'play' && fs.hash === shared.hash && fs.mode === 'code' && !fs.spent && !fs.ui, 'its clear card\'s Play it again keeps it a link (mode ' + fs.mode + ') and the first room unspent (' + fs.spent + ')');
-  await tap(f.page, '#back');
+  await leaveRoom(f.page);
   await tap(f.page, '#sample');
   fs = await fl();
   R.say(fs.spent && fs.ui && fs.mode === 'free', 'the player\'s own first room comes after and spends it (' + fs.spent + ')');
   /* the Level code field, a returning player's: a pasted code opens on the card, garbage says so */
-  await tap(f.page, '#back');
+  await leaveRoom(f.page);
   await f.page.evaluate(code => { document.getElementById('levelcode').value = code; }, shared.code);
   await tap(f.page, '#playcode');
   const fcard = await f.page.evaluate(() => document.getElementById('devcard').classList.contains('on'));
   await tap(f.page, '#devtap');
   fs = await fl();
   R.say(fcard && fs.hash === shared.hash && fs.mode === 'code', 'a code typed in the Level code field and a real tap on Play open the card, then the same level (' + fs.hash + ')');
-  await tap(f.page, '#back');
+  await leaveRoom(f.page);
   await f.page.evaluate(() => { document.getElementById('levelcode').value = 'v1.not-a-room'; });
   await tap(f.page, '#playcode');
   const fbad = await f.page.evaluate(() => ({ shown: !document.getElementById('codemsg').hidden, text: document.getElementById('codemsg').textContent, card: document.getElementById('devcard').classList.contains('on') }));
@@ -141,7 +144,7 @@ try {
      reopened, so the layout is the phone's */
   await tap(page, '#shareclose');
   await page.evaluate(() => { Object.defineProperty(navigator, 'share', { value: () => Promise.resolve(), configurable: true }); Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true }); });
-  await tap(page, '#share');
+  await openSheet(page);
   const qr0 = await page.evaluate(() => ({ hidden: document.getElementById('qrdrawer').hidden, toggle: document.getElementById('qrtoggle').textContent,
     above: document.getElementById('copylink').getBoundingClientRect().top < document.getElementById('qrtoggle').getBoundingClientRect().top }));
   R.say(qr0.hidden && qr0.toggle === 'Show QR code' && qr0.above, 'the QR drawer stays closed until asked for, and Copy link sits above its toggle');
@@ -185,16 +188,16 @@ try {
   const dx = await newPage(browser, { width: 360, height: 780 });
   await gotoGame(dx.page, srv.base); await ready(dx.page);
   await dx.page.evaluate(() => window.SB_DEV.hold(true));
-  await tap(dx.page, '#sample'); await tap(dx.page, '#share');
+  await tap(dx.page, '#sample'); await openSheet(dx.page);
   /* at 360x780 the toggle is below the sheet's fold: the player's scroll of the sheet first */
   await dx.page.evaluate(() => document.getElementById('qrtoggle').scrollIntoView({ block: 'center' }));
   await tap(dx.page, '#qrtoggle');
   const q360 = await dx.page.evaluate(() => { const r = document.getElementById('qrcanvas').getBoundingClientRect(); return { px: +document.getElementById('qrcanvas').dataset.px, l: r.left, r: r.right }; });
   R.say(q360.px === 3 && q360.l >= 0 && q360.r <= 360, 'at 360 wide: 3 CSS px a module, the symbol on screen (' + q360.l.toFixed(0) + ' to ' + q360.r.toFixed(0) + ')');
-  await tap(dx.page, '#shareclose'); await tap(dx.page, '#back');
+  await tap(dx.page, '#shareclose'); await leaveRoom(dx.page);
   const sj = JSON.parse(readFileSync(join(GAME, 'fixtures', 'sample-room.json'), 'utf8')).record;
   const deScreen = await dx.page.evaluate(j => { window.SB_DEV.loadRecord(JSON.stringify(Object.assign({}, j, { mode: 2, rows2: j.rows }))); return window.SB_DEV.screen(); }, sj);
-  await tap(dx.page, '#share');
+  await openSheet(dx.page);
   const de = await dx.page.evaluate(() => ({ toggle: document.getElementById('qrtoggle').hidden, long: !document.getElementById('qrlong').hidden, text: document.getElementById('qrlong').textContent, len: document.getElementById('sharelink').value.length }));
   R.say(deScreen === 'play' && de.toggle && de.long && de.text === 'Long code, the link is easier.', 'a Double Exposure room\'s ' + de.len + ' character link gets the sentence instead of a symbol');
   /* its preview shows both grids it shares, the second above the first as the level stacks them, 4 px a cell in the
@@ -216,7 +219,7 @@ try {
   const se = await newPage(browser, { width: 375, height: 553 });
   await gotoGame(se.page, srv.base); await ready(se.page);
   await se.page.evaluate(() => window.SB_DEV.hold(true));
-  await tap(se.page, '#sample'); await tap(se.page, '#share');
+  await tap(se.page, '#sample'); await openSheet(se.page);
   await se.page.evaluate(() => document.getElementById('qrtoggle').scrollIntoView({ block: 'center' }));
   await tap(se.page, '#qrtoggle');
   const fit = await se.page.evaluate(() => { const r = document.getElementById('qrcanvas').getBoundingClientRect(), hd = document.getElementById('sharehead').getBoundingClientRect(), sh = document.getElementById('sharesheet').getBoundingClientRect();

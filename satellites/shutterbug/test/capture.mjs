@@ -14,7 +14,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, leaveRoom } from './harness.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url)), GAME = join(HERE, '..');
 /* the photo is the sample room painted: its palette grid laid exactly over the default crop (the room is known to be
@@ -77,8 +77,8 @@ try {
   const store = await page.evaluate(() => { const out = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i), v = localStorage.getItem(k) || ''; out.push([k, v.length, v.includes('data:image')]); } return out; });
   R.say(store.every(([, n, img]) => n <= 8192 && !img), 'no localStorage value holds an image or is over 8 KB (' + (store.map(([k, n]) => k + ' ' + n).join(', ') || 'none stored') + ')');
   /* the race itself, forced: a retake whose decode lands after Develop is dropped, never pulling the player back to the
-     crop nor releasing the photo the reveal shows */
-  await tap(page, '#back');
+     crop nor releasing the photo the reveal shows (the room left by Pause and its card's Title: QUESTIONS Q94) */
+  await leaveRoom(page);
   await page.waitForFunction(() => window.SB_DEV.screen() === 'title', { timeout: 5000 }).catch(() => {});
   const d1 = await page.evaluate(() => window.SB_DEV.overlay().decodes);
   await input.uploadFile(PHOTO);
