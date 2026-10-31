@@ -1,6 +1,6 @@
 /* Browser gate `loot` (BUILD-PLAN.md T1.6; QUESTIONS Q92, Stephen's ruling of 31 Oct on his note 5, "Dead pixels
  * only"): the chest pays its 15 Dead pixels and M1 shows no sheet. A room whose one Sun cell, two cells right of spawn,
- * is its scroll; its chest (row 39 in its build) and a blueprint are set on its floor by hand before the first state is
+ * is its scroll; its chest (row 39 in its build) and a blueprint are set on its floor by hand (at 23 and 21) before the first state is
  * kept (named liberties: no fixture puts the three on one floor), so the replay starts from the state the room played.
  * A REAL touch held on the rocker's right walks the hero over the scroll, the blueprint and the chest, one step at a time
  * with the loop held:
@@ -139,10 +139,10 @@ const replayOf = page => page.evaluate(() => {
 
 try {
   for (const [w, h] of [[412, 915], [360, 780]]) {
-    const BP = 18, CHEST = 23;   /* W1: two cells further than before, so the bug is down from the jump the offer's tap makes */
+    const BP = 21, CHEST = 23;   /* W1: three and two cells further than before, so the bug is down from the jump the offer's tap makes */
     const { page, errors, s0 } = await openRoom(w, h, CHEST, BP, false);
     R.say(s0.ok && s0.screen === 'play' && s0.loot.length === 2 && s0.loot[0][0] === 2 && s0.loot[0][1] === FLOOR * W + SCROLL && s0.loot[1][0] === 3 && s0.chest === FLOOR * W + CHEST,
-      w + ': the room loads, its loot the scroll at (16, 46) and the blueprint set at (18, 46), its chest set at (23, 46)');
+      w + ': the room loads, its loot the scroll at (16, 46) and the blueprint set at (21, 46), its chest set at (23, 46)');
     const bpCell = await cellOf(page, BP, FLOOR), scCell = await cellOf(page, SCROLL, FLOOR);
     R.say(!!bpCell && bpCell.isOpen && !!scCell && scCell.colours > 1,
       w + ': the blueprint is not drawn: its cell is the open floor alone (' + (bpCell ? bpCell.colours + ' colour, ' + bpCell.first + ', the floor ' + bpCell.open : 'out of view') + '), where the scroll\'s cell shows its sprite (' + (scCell ? scCell.colours : 0) + ' colours)');

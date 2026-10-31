@@ -37,7 +37,8 @@ try {
       window.SB_DEV.step(0);
     }, rec, cx, moths, W, FLOOR);
     const lay = (c, r, kind) => page.evaluate((c, r, kind, W) => { const s = window.SB.game.state; s.enemies.push({ kind, x: c * 4096, y: r * 4096, vx: 0, vy: 0, hp: kind === 3 ? 8 : 4, state: 0, timer: 0, dir: 1, home: r * W + c, elite: 0, frozen: 1 << 20, stunned: 0, hurt: 0 }); return s.enemies.length - 1; }, c, r, kind, W);
-    const projClip = kind => () => { const r = window.SB_DEV.spriteRects().proj.find(p => p.kind === kind), v = document.getElementById('view').getBoundingClientRect(), k = v.height / document.getElementById('view').height; if (!r) return null; return { x: Math.max(0, v.left + (r.x - 24) * k), y: Math.max(0, v.top + (r.y - 24) * k), width: 64 * k + r.w * k - 16 * k, height: 64 * k }; };
+    /* a clip around every drawn rect of a kind (the pool's kinds, or 'enemy'), 24 canvas px of margin, in CSS px */
+    const projClip = kind => new Function('return (' + ((kind) => { const R = window.SB_DEV.spriteRects(), rs = kind === 'enemy' ? R.enemies : R.proj.filter(p => p.kind === kind), cv = document.getElementById('view'), v = cv.getBoundingClientRect(), k = v.height / cv.height; if (!rs.length) return null; const x0 = Math.min(...rs.map(r => r.x)) - 24, y0 = Math.min(...rs.map(r => r.y)) - 24, x1 = Math.max(...rs.map(r => r.x + r.w)) + 24, y1 = Math.max(...rs.map(r => r.y + r.h)) + 24; const X = Math.max(0, v.left + x0 * k), Y = Math.max(0, v.top + y0 * k); return { x: X, y: Y, width: Math.min(innerWidth, v.left + x1 * k) - X, height: Math.min(innerHeight, v.top + y1 * k) - Y }; }).toString() + ')(' + JSON.stringify(kind) + ')');
 
     /* the HUD empty, a fresh sitting */
     await room(REC, 5, []); await step(2);
@@ -61,7 +62,7 @@ try {
     s = await st(); const jc = Math.floor((s.x + 1536) / 4096) + 2, ji = await lay(jc, FLOOR, 3);
     await tap(page, '#btnA');
     for (let k = 0; k < 20; k++) { await step(1); s = await st(); const e = s.en[ji]; if (e.hurt > 0 && !(((e.hurt + 1) >> 1) & 1)) break; }
-    await shot('w1-hit-flash', () => { const r = window.SB_DEV.spriteRects().enemies[0], v = document.getElementById('view').getBoundingClientRect(); return r ? { x: Math.max(0, v.left + r.x - 24), y: v.top + r.y - 24, width: 64, height: 64 } : null; });
+    await shot('w1-hit-flash', projClip('enemy'));
     /* the kill: the back pass, the pop and the +3 */
     for (let k = 0; k < 60; k++) { await step(1); s = await st(); if (s.en[ji].hp === 0) break; }
     await step(2); await sleep(300); await shot('w1-kill-pop');
