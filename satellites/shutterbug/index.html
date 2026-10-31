@@ -25,6 +25,17 @@
   }
 })();
 </script>
+<script id="shell-navpad">
+/* Opened from the installed arcade app on Android, the game runs in the app's own window, which Android draws under the
+   phone's navigation buttons while reporting no inset for them (Tiny World and LUMEN on Stephen's Pixel, 19 Sep; this
+   game's strip, 31 Oct: QUESTIONS Q90). There the page is marked .navpad and its bottom inset floored at a 48 px button
+   bar (:root.navpad below). The fleet's test, copied from satellites/tiny-world/index.html; ?navpad forces it (the gates).
+   It runs in the head so the mark is set before the first layout and the first fit. */
+try {
+  if (/[?&]navpad\b/.test(location.search) || (/Android/i.test(navigator.userAgent) &&
+      matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)').matches)) document.documentElement.classList.add('navpad');
+} catch (e) { /* no matchMedia: a browser tab, nothing to do */ }
+</script>
 <style>
 /* Shutterbug. Colours are the palette's (BUILD-PLAN section 7): Ink #0b0a0f, Soot #1f1a1d, Slate #4a4a52,
    Pewter #8a8a90, Ash #c9c7c0, Paper #f2efe6, Glare #fbfbff, Amber #e07a2b, Sun #f2d13f, Film #f0dcb0. */
@@ -32,6 +43,11 @@
   --glare: #fbfbff; --amber: #e07a2b; --sun: #f2d13f; --film: #f0dcb0; --brick: #c8302f; --lapis: #2f5fd0;
   --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px); --sar: env(safe-area-inset-right, 0px); }
+/* the installed app's window on Android (.navpad, set by shell-navpad in the head): the bottom inset floored at a 48 px
+   button bar. env() stays the first term, so a phone that reports its bar loses nothing (max never adds the two), and a
+   browser tab, never marked, loses no rows. Everything bottom anchored reads --sab: the title's and Settings' padding,
+   the crop bar, the strip and its drawn controls, and #safeprobe, so the fit gives the stage's rows up to it (Q90) */
+:root.navpad { --sab: max(env(safe-area-inset-bottom, 0px), 48px); }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; background: var(--soot); color: var(--paper); overscroll-behavior: none;

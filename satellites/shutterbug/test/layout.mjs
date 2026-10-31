@@ -13,8 +13,23 @@
  *     in play" became "hidden in play" once the chip's saved drag was found to land anywhere);
  *   - landscape 800x360 with a coarse pointer: the rotate card, and five elementFromPoint probes all land on it; a fine
  *     pointer gets no card.
- * Watched red by CANVAS_100PCT, A_44PX, RESERVE_FILLED, MIRROR_OVERLAPS_CANVAS. */
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep } from './harness.mjs';
+ * The bottom bar (Stephen's note 1 of 31 Oct, QUESTIONS Q90): the installed arcade app's window on Android is drawn under
+ * the phone's 48 px button bar with env(safe-area-inset-bottom) at 0, so shell-navpad marks the page .navpad and --sab
+ * becomes max(env, 48px):
+ *   - a plain tab (the size loop above) is never marked, every rule that reads --sab holds its env 0 value, and the drawn
+ *     rocker zones, A and B end 10 px above the bottom, as before the floor;
+ *   - under a 48 px inset the phone reports (CDP Emulation.setSafeAreaInsetsOverride) and under ?navpad with env 0, at
+ *     the four sizes: the title and Settings scrolled to their end, the crop screen's Retake and Develop, play's drawn
+ *     controls, its Title and Share, and every card and sheet end 48 px or more above the bottom; VIEW_ROWS =
+ *     clamp(floor((h - 48 - 36 - 168) / 16), 20, 40) (40, 37, 33 and 20);
+ *   - ?navpad with env 48: the floor never adds (every rule at its 48 px value, the glyphs 58 px up); an Android app
+ *     window (the UA, and a display-mode double: headless Chrome opens no app window) is marked; an Android tab and a
+ *     desktop app window are not, and keep the env 0 layout.
+ * Watched red by CANVAS_100PCT, A_44PX, RESERVE_FILLED, MIRROR_OVERLAPS_CANVAS, and for the bottom bar NAVPAD_MARK_REMOVED,
+ * NAVPAD_FLOOR_DROPPED, STRIP_IGNORES_SAB, NAVPAD_BLANKET, NAVPAD_FLOOR_ADDS, NAVPAD_ANY_ANDROID, NAVPAD_ANY_WINDOW and
+ * FIT_IGNORES_SAB. */
+import { join } from 'node:path';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME } from './harness.mjs';
 
 const R = reporter('LAYOUT');
 const srv = await serve();
@@ -22,12 +37,29 @@ const browser = await launch();
 const TOP = 36, CTRL = 168, CELL = 16, ROWS_MIN = 20, ROWS_MAX = 40, WORLD = 384, RES = 120;
 const overlap = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
+/* the bottom bar (Q90): the floor is 48 px, the strip's drawn controls sit 10 px over the inset (#rocker, .verb), and
+   each rule that reads --sab computes to a known bottom padding under an inset (or the floor) of `lift` px */
+const BAR = 48, GLYPH_LIFT = 10;
+const PADS_AT = lift => ({ probe: lift, title: 16 + lift, settings: 16 + lift, crop: lift, strip: lift, rocker: GLYPH_LIFT + lift, verb: GLYPH_LIFT + lift });
+const padsAre = (p, lift) => Object.entries(PADS_AT(lift)).every(([k, v]) => Math.abs(p[k] - v) < 0.5);
+const padsText = p => Object.entries(p).map(([k, v]) => k + ' ' + v).join(', ');
+const wantRowsAt = (h, lift) => Math.max(ROWS_MIN, Math.min(ROWS_MAX, Math.floor((h - lift - TOP - CTRL) / CELL)));
+/* page side, installed once per page: every --sab rule's computed bottom padding, and how far each drawn strip control
+   (the rocker's two zones, B's and A's glyphs) ends above the screen bottom */
+const installProbes = page => page.evaluate(() => {
+  const px = (sel, prop) => parseFloat(getComputedStyle(document.querySelector(sel))[prop]);
+  window.__pads = () => ({ probe: px('#safeprobe', 'paddingBottom'), title: px('#title', 'paddingBottom'), settings: px('#settings', 'paddingBottom'),
+    crop: px('#crop', 'paddingBottom'), strip: px('#strip', 'paddingBottom'), rocker: px('#rocker', 'paddingBottom'), verb: px('#btnA', 'paddingBottom') });
+  window.__glyphGaps = () => ['#rocker .zl', '#rocker .zr', '#btnB .glyph', '#btnA .glyph'].map(s => innerHeight - document.querySelector(s).getBoundingClientRect().bottom);
+});
+
 try {
   for (const [w, h] of [[412, 915], [390, 844], [360, 780], [320, 568]]) {
     const tag = w + 'x' + h;
     const { page, errors } = await newPage(browser, { width: w, height: h });
     await gotoGame(page, srv.base);
     await ready(page);
+    await installProbes(page);
 
     /* the title: the exit control, and the fleet chip once it arrives */
     await page.waitForFunction(() => !!document.getElementById('sws-music-chip'), { timeout: 8000 }).catch(() => {});
@@ -59,6 +91,7 @@ try {
         const corners = resShown ? [[rb.left + 2, rb.top + 2], [rb.right - 2, rb.top + 2], [rb.left + 2, rb.bottom - 2], [rb.right - 2, rb.bottom - 2], [rb.left + rb.width / 2, rb.top + rb.height / 2]] : [];
         const chip = q('#sws-music-chip');
         return {
+          mark: document.documentElement.classList.contains('navpad'), pads: window.__pads(), glyphGaps: window.__glyphGaps(),
           vw: window.innerWidth, vh: window.innerHeight, cssW: cv.getBoundingClientRect().width, bw: cv.width, bh: cv.height,
           rows: window.SB_DEV.level().viewRows, canvas: box(cv), top: box(q('#top')), strip: box(q('#strip')),
           zl: box(q('#rocker .zl')), zr: box(q('#rocker .zr')), gap: box(q('#rocker .gap')), rocker: box(q('#rocker')),
@@ -74,6 +107,10 @@ try {
       R.say(m.bw === WORLD && m.bh === m.rows * CELL && m.rows === wantRows, tg + ': the backing store is ' + m.bw + 'x' + m.bh + ', VIEW_ROWS ' + m.rows + ' (the formula gives ' + wantRows + ')');
       R.say(Math.abs(m.top.h - TOP) < 0.5 && m.strip.h >= CTRL - 0.5 && Math.abs(m.top.h + m.canvas.h + m.strip.h - m.vh) < 1.5,
         tg + ': the top strip ' + m.top.h.toFixed(0) + ' px, the control strip ' + m.strip.h.toFixed(0) + ' px (168 or more, the spare height), filling the ' + m.vh + ' px screen');
+      /* the bottom bar floor (Q90) costs a plain tab nothing: no mark, every --sab rule at its env 0 value, the glyphs
+         where they were before it */
+      R.say(!m.mark && padsAre(m.pads, 0), tg + ': a plain tab is not marked .navpad and every rule that reads --sab holds its env 0 value (' + padsText(m.pads) + ')');
+      R.say(m.glyphGaps.every(g => Math.abs(g - GLYPH_LIFT) < 0.5), tg + ': the drawn rocker zones, A and B sit ' + m.glyphGaps.map(g => g.toFixed(0)).join(', ') + ' px above the screen bottom, 10 as before the floor');
       const verbs = { 'left zone': m.zl, 'right zone': m.zr, A: m.A, B: m.B };
       for (const [name, b] of Object.entries(verbs)) {
         R.say(b.w >= 56 - 0.5 && b.h >= 56 - 0.5, tg + ': ' + name + ' measures ' + b.w.toFixed(0) + 'x' + b.h.toFixed(0) + ' (56 or more)');
@@ -91,6 +128,124 @@ try {
     }
     R.say(errors.length === 0, tag + ': zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
+  }
+
+  /* the bottom bar (Stephen's note 1 of 31 Oct, QUESTIONS Q90). Opened from the installed arcade app on Android, the game
+     runs in the app's window, which Android draws under its 48 px button bar while env(safe-area-inset-bottom) reads 0;
+     shell-navpad marks the page .navpad there and --sab is floored at 48. Each condition is a fresh profile (what the
+     title shows depends on the save). Under a 48 px inset the phone reports (the CDP override) and under the mark with
+     env 0, every screen's controls end 48 px or more above the screen bottom: the title and Settings scrolled to their
+     end (both scroll on a short phone), the crop screen's Retake and Develop, play's drawn rocker zones, A and B (their
+     hit areas run the strip's full height by design), and each card and sheet (shown by its class for the measure, a
+     layout liberty: the cards' own gates open them by real input). The stage gives up rows to the floor by the formula. */
+  {
+    const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Mobile Safari/537.36';
+    const PHOTO = join(GAME, 'icons', 'icon-512.png');   /* any photo opens the crop screen; this one is in the repo */
+    const insetOf = b => ({ top: 0, topMax: 0, left: 0, leftMax: 0, right: 0, rightMax: 0, bottom: b, bottomMax: b });
+    const openAs = async (w, h, { inset = 0, query = '', ua = null, mode = null } = {}) => {
+      const ctx = await browser.createBrowserContext();
+      const { page, errors } = await newPage(ctx, { width: w, height: h });
+      const cdp = await page.createCDPSession();
+      if (inset) await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: insetOf(inset) });
+      if (ua) await page.setUserAgent(ua);
+      /* headless Chrome opens no app window (it has no PWA domain, and setEmulatedMedia takes display-mode and ignores
+         it: measured 31 Oct), so the display mode is a double installed before the page's scripts: a display-mode query
+         answers whether it names `mode`, with a real MediaQueryList ('all' or 'not all'); any other query is Chrome's */
+      if (mode) await page.evaluateOnNewDocument(mode => {
+        const real = window.matchMedia.bind(window);
+        window.matchMedia = q => /display-mode/.test(q) ? real(q.split(',').some(p => p.indexOf('display-mode: ' + mode) >= 0) ? 'all' : 'not all') : real(q);
+      }, mode);
+      await gotoGame(page, srv.base, query);
+      await ready(page);
+      await installProbes(page);
+      return { page, errors, cdp, close: () => ctx.close() };
+    };
+    /* every visible match of sel, lowest first, with how far it ends above the screen bottom */
+    const low = (page, sel) => page.evaluate(sel => [...document.querySelectorAll(sel)]
+      .filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; })
+      .map(e => ({ id: e.id || e.className, gap: innerHeight - e.getBoundingClientRect().bottom })).sort((a, b) => a.gap - b.gap), sel);
+    const scrollEnd = (page, id) => page.evaluate(id => { const el = document.getElementById(id); el.scrollTop = el.scrollHeight; return el.scrollHeight > el.clientHeight; }, id);
+    const lowText = list => list.slice(0, 2).map(c => c.id + ' ' + c.gap.toFixed(0)).join(', ');
+    const errs = s => s.errors.length ? ' (' + s.errors.join(' ; ') + ')' : '';
+
+    for (const [w, h] of [[412, 915], [390, 844], [360, 780], [320, 568]]) {
+      for (const cond of [{ label: 'env 48 (a phone that reports its bar)', inset: BAR }, { label: 'the app mark (?navpad, env 0)', query: 'navpad' }]) {
+        const tg = w + 'x' + h + ' ' + cond.label;
+        const s = await openAs(w, h, cond), page = s.page;
+        const t0 = await page.evaluate(() => ({ mark: document.documentElement.classList.contains('navpad'), pads: window.__pads() }));
+        R.say(t0.mark === !!cond.query && padsAre(t0.pads, BAR), tg + ': ' + (cond.query ? 'the page is marked .navpad' : 'the page is not marked') + ' and every rule that reads --sab holds its 48 px value (' + padsText(t0.pads) + ')');
+        /* the title and Settings, each scrolled to its end */
+        const titleScrolls = await scrollEnd(page, 'title');
+        const title = await low(page, '#title button, #title a, #title input, #build');
+        R.say(title.length > 0 && title[0].gap >= BAR - 0.5, tg + ': the title' + (titleScrolls ? ', scrolled to its end,' : '') + ' ends every control and the build line 48 px or more above the bottom (lowest: ' + lowText(title) + ')');
+        if (cond.query) {
+          const chip = await page.waitForFunction(() => { const c = document.getElementById('sws-music-chip'); return c && getComputedStyle(c).display !== 'none' ? innerHeight - c.getBoundingClientRect().bottom : false; }, { timeout: 4000 }).then(v => v.jsonValue()).catch(() => null);
+          console.log('  info  ' + tg + ': ' + (chip === null ? 'no fleet chip on the title' : 'the fleet\'s music chip on the title ends ' + chip.toFixed(0) + ' px above the bottom (music-unlocks.js reads env() itself, not --sab: a fleet follow up, Q90)'));
+        }
+        await tap(page, '#settingsbtn');
+        const setScrolls = await scrollEnd(page, 'settings');
+        const settings = await low(page, '#settings button, #settings input, #settings select, #settings textarea, #setbuild');
+        R.say(settings.length > 0 && settings[0].gap >= BAR - 0.5, tg + ': Settings' + (setScrolls ? ', scrolled to its end,' : '') + ' ends every control and the build line 48 px or more above the bottom (lowest: ' + lowText(settings) + ')');
+        await page.evaluate(() => { document.getElementById('settings').scrollTop = 0; });
+        await tap(page, '#settitle');
+        /* the crop screen, from a real file through Choose a photo */
+        await (await page.$('#filechoose')).uploadFile(PHOTO);
+        const onCrop = await page.waitForFunction(() => window.SB_DEV.screen() === 'crop', { timeout: 20000 }).then(() => true).catch(() => false);
+        const crop = onCrop ? await low(page, '#retake, #develop') : [];
+        R.say(onCrop && crop.length === 2 && crop.every(c => c.gap >= BAR - 0.5), tg + ': on the crop screen Retake and Develop end ' + (crop.map(c => c.id + ' ' + c.gap.toFixed(0)).join(', ') || 'nowhere (no crop screen)') + ' px above the bottom (48 or more)');
+        if (onCrop) await tap(page, '#croptitle');
+        /* play: the sample room, held */
+        await page.evaluate(() => { window.SB_DEV.hold(true); document.getElementById('title').scrollTop = 0; });
+        await tap(page, '#sample');
+        const p = await page.evaluate(() => {
+          const b = s => document.querySelector(s).getBoundingClientRect().height;
+          return { glyphs: window.__glyphGaps(), rows: window.SB_DEV.level().viewRows, vh: innerHeight, top: b('#top'), canvas: b('#view'), strip: b('#strip') };
+        });
+        R.say(p.glyphs.every(g => g >= BAR - 0.5), tg + ': the drawn rocker zones, A and B end ' + p.glyphs.map(g => g.toFixed(0)).join(', ') + ' px above the bottom (48 or more)');
+        const wantR = wantRowsAt(h, BAR);
+        R.say(p.rows === wantR && Math.abs(p.top + p.canvas + p.strip - p.vh) < 1.5 && (p.strip >= CTRL + BAR - 0.5 || p.rows === ROWS_MIN),
+          tg + ': VIEW_ROWS ' + p.rows + ' (the formula with the 48 px floor gives ' + wantR + '), the control strip ' + p.strip.toFixed(0) + ' px (216 or more unless the rows sit at their floor), filling the screen');
+        const strip = await low(page, '#back, #share');
+        R.say(strip.length === 2 && strip.every(c => c.gap >= BAR - 0.5), tg + ': the strip\'s Title and Share end ' + strip.map(c => c.id + ' ' + c.gap.toFixed(0)).join(', ') + ' px above the bottom');
+        const cards = await page.evaluate(() => {
+          const o = [];
+          for (const [id, cls] of [['clear'], ['death'], ['death', 'low'], ['offer'], ['slip'], ['sharesheet'], ['devcard']]) {
+            const el = document.getElementById(id); el.classList.add('on'); if (cls) el.classList.add(cls);
+            const box = (id === 'devcard' ? document.getElementById('devtap') : el).getBoundingClientRect();
+            o.push({ id: id + (cls ? '.' + cls : ''), gap: innerHeight - box.bottom });
+            el.classList.remove('on'); if (cls) el.classList.remove(cls);
+          }
+          return o.sort((a, b) => a.gap - b.gap);
+        });
+        R.say(cards.every(c => c.gap >= BAR - 0.5), tg + ': every card and sheet ends 48 px or more above the bottom (lowest: ' + lowText(cards) + ')');
+        R.say(s.errors.length === 0, tg + ': zero page errors' + errs(s));
+        await s.close();
+      }
+    }
+
+    /* the floor never adds to an inset the phone reports, and the mark is the installed app's on Android alone: a
+       browser tab on Android and an app window on a desktop are left as they were */
+    for (const [w, h] of [[412, 915], [360, 780]]) {
+      for (const c of [
+        { label: 'the app mark with env 48 (the floor never adds to it)', query: 'navpad', inset: BAR, mark: true, lift: BAR },
+        { label: 'an Android app window (display mode standalone, env 0)', ua: ANDROID_UA, mode: 'standalone', mark: true, lift: BAR },
+        { label: 'an Android tab (display mode browser, env 0)', ua: ANDROID_UA, mark: false, lift: 0 },
+        { label: 'a desktop app window (display mode standalone, not Android)', mode: 'standalone', mark: false, lift: 0 }
+      ]) {
+        const tg = w + 'x' + h + ' ' + c.label;
+        const s = await openAs(w, h, c), page = s.page;
+        const t = await page.evaluate(() => ({ mark: document.documentElement.classList.contains('navpad'), pads: window.__pads() }));
+        await page.evaluate(() => window.SB_DEV.hold(true));
+        await tap(page, '#sample');
+        const g = await page.evaluate(() => ({ glyphs: window.__glyphGaps(), rows: window.SB_DEV.level().viewRows }));
+        const want = GLYPH_LIFT + c.lift, wantR = wantRowsAt(h, c.lift);
+        R.say(t.mark === c.mark, tg + ': ' + (c.mark ? 'the page is marked .navpad' : 'the page is not marked'));
+        R.say(padsAre(t.pads, c.lift) && g.glyphs.every(v => Math.abs(v - want) < 0.5) && g.rows === wantR,
+          tg + ': every rule that reads --sab holds its ' + c.lift + ' px value (' + padsText(t.pads) + '), the drawn controls end ' + g.glyphs.map(v => v.toFixed(0)).join(', ') + ' px up (want ' + want + '), VIEW_ROWS ' + g.rows + ' (want ' + wantR + ')');
+        R.say(s.errors.length === 0, tg + ': zero page errors' + errs(s));
+        await s.close();
+      }
+    }
   }
 
   /* a phone turned sideways mid room: under the rotate card the loop holds (nothing moves, no moth comes), and

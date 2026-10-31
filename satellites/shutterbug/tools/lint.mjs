@@ -92,13 +92,16 @@ for (const b of inline) {
   if (/<script/i.test(b.src)) fail('HTML-IN-SCRIPT', (b.id || 'anon') + ' holds "<script"');
 }
 
-/* rule: the seventeen blocks of section 1.1 in order */
-const ORDER = ['shell-fleet', 'core-ns', 'core-rng', 'core-palette', 'core-record', 'core-pipeline', 'core-reach', 'core-features',
+/* rule: the seventeen blocks of section 1.1 in order, with shell-navpad second (QUESTIONS Q90): the installed app's
+   bottom bar mark, in <head> so it is set before the first layout and the first fit read --sab */
+const ORDER = ['shell-fleet', 'shell-navpad', 'core-ns', 'core-rng', 'core-palette', 'core-record', 'core-pipeline', 'core-reach', 'core-features',
   'core-sim', 'shell-capture', 'shell-render', 'shell-input', 'shell-audio', 'shell-save', 'shell-ui', 'shell-pwa', 'shell-boot'];
 const ids = inline.map(b => b.id);
 if (ids.join() !== ORDER.join()) fail('ORDER', 'inline script ids are [' + ids.join(', ') + '], want [' + ORDER.join(', ') + ']');
 const fleet = blocks.find(b => b.id === 'shell-fleet');
 if (!fleet || blocks.indexOf(fleet) !== 0 || fleet.index > html.indexOf('</head>')) fail('ORDER', 'shell-fleet must be the first script, in <head>');
+const navpad = blocks.find(b => b.id === 'shell-navpad');
+if (!navpad || blocks.indexOf(navpad) !== 1 || navpad.index > html.indexOf('</head>')) fail('ORDER', 'shell-navpad must be the second script, in <head>');
 
 /* rule: the core blocks, extracted exactly the way harness.js extracts them (CORE_RE, section 1.3) */
 const CORE_RE = /^<script id="(core-[a-z]+)" data-core>\n([\s\S]*?)\n<\/script>/gm;
