@@ -3,12 +3,14 @@
  * files; offline, a reload still renders the title, plays the sample room and opens a shared link, with only the fleet's
  * four root files failing to load; the request log after the worker is active holds only the served set under the
  * game's folder and the fleet's root files; the update path: a copy stamped v2 (BUILD, CACHE, ?v=) served, two reloads,
- * the page shows the v2 BUILD and caches.keys() holds only shutterbug-v2, another game's cache planted before it is
+ * the page shows the v2 BUILD and caches.keys() holds only the copy's cache, another game's cache planted before it is
  * still there, and the new worker causes no navigation (counted from before the v2 load); after a controlled reload the
- * shutterbug- cache holds nothing outside the game's folder (the M1 review).
+ * shutterbug- cache holds nothing outside the game's folder (the M1 review); a foreign cache planted before the install
+ * holding this page's URLs with another body never answers the offline shell (the card review, sb-m1-2: the worker reads
+ * its own cache only). The cache name is read from the worker being served, and the update copy's is always another.
  *
  * Watched red by REGISTER_WHEN_EMBEDDED, SW_WIPES_OTHER_CACHES, SW_CACHES_ROOT_FILES and RELOAD_ON_CONTROLLERCHANGE (each
- * also by the lint), STAMP_SPLIT (the lint and deploy.sh). */
+ * also by the lint), STAMP_SPLIT (the lint and deploy.sh), SW_MATCHES_ANY_CACHE (this gate alone). */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, GAME, GAME_PATH, sleep } from './harness.mjs';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { join } from 'node:path';
@@ -20,6 +22,12 @@ const browser = await launch();
 const FLEET = ['/music-unlocks.js', '/music-catalog.js', '/music-tracks.js', '/music-player.js'];
 const regs = page => page.evaluate(() => navigator.serviceWorker.getRegistrations().then(r => r.map(x => x.scope)));
 const keys = page => page.evaluate(() => caches.keys());
+/* the stamp under test, from the worker being served (a red watch copy under SB_SW, else the game's own): the gate never
+   holds a cache name of its own, so a stamp moves it with no edit here (sb-m1-2: it held shutterbug-v1, and its update
+   copy, stamped shutterbug-v2, would have equalled the new live name and proved no update at all) */
+const CACHE = (readFileSync(process.env.SB_SW || join(GAME, 'sw.js'), 'utf8').match(/var CACHE = '(shutterbug-v[0-9A-Za-z._-]+)'/) || [])[1] || 'none';
+const NEXT = 'shutterbug-vpwa-next';
+const FOREIGN = 'FOREIGN SHELL from another cache';
 try {
   /* framed or ?embed=1: no registration */
   { const { page } = await newPage(browser, { width: 412, height: 915 });
@@ -27,6 +35,9 @@ try {
     const r1 = await regs(page);
     await page.goto(srv.base + '/__wrap.html'); await sleep(2500);
     const r2 = await regs(page);
+    /* before the install: another cache on the origin holding the game's two shell URLs (the root worker's lw-assets
+       caches every navigation it serves); caches.match() with no cacheName would find it first, by creation order */
+    await page.evaluate((path, body) => caches.open('lw-assets').then(c => Promise.all(['', 'index.html'].map(f => c.put(new Request(location.origin + path + f), new Response('<!doctype html><title>foreign</title><p>' + body, { headers: { 'content-type': 'text/html' } }))))), GAME_PATH, FOREIGN);
     R.say(r1.length === 0 && r2.length === 0, 'with ?embed=1 and inside the wrapper iframe no worker registers (' + r1.length + ', ' + r2.length + ')');
     await page.close(); }
 
@@ -38,7 +49,7 @@ try {
   let ks = []; for (let k = 0; k < 30 && !ks.some(x => x.startsWith('shutterbug-')); k++) { await sleep(200); ks = await keys(page); }
   const shell = await page.evaluate(k => caches.open(k).then(c => c.keys()).then(rs => rs.map(r => new URL(r.url).pathname)), ks.find(x => x.startsWith('shutterbug-')) || 'none');
   const want = ['', 'index.html', 'manifest.json', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'].map(f => GAME_PATH + f);
-  R.say(ks.filter(x => x.startsWith('shutterbug-')).length === 1 && ks[0] === 'shutterbug-v1' && want.every(w => shell.includes(w)) && shell.length === want.length, 'unframed the worker installs; caches.keys() holds one shutterbug- cache (' + ks.join(', ') + ') with the six shell files (' + shell.length + ')');
+  R.say(ks.filter(x => x.startsWith('shutterbug-')).length === 1 && ks.find(x => x.startsWith('shutterbug-')) === CACHE && want.every(w => shell.includes(w)) && shell.length === want.length, 'unframed the worker installs; caches.keys() holds one shutterbug- cache, ' + CACHE + ' (' + ks.join(', ') + ') with the six shell files (' + shell.length + ')');
 
   /* the request log once the worker is active; the fleet's root files answered by the network, never the worker */
   const rootSeen = [], viaSW = [];
@@ -57,7 +68,10 @@ try {
   const link = await page.evaluate(() => window.SB.record.linkOf(location.origin, location.pathname, window.SB.ui.sampleRecord()));
   const before = errors.length;
   await page.setOfflineMode(true);
-  await page.reload(); await ready(page);
+  await page.reload();
+  const shellOf = await page.evaluate(f => ({ foreign: document.documentElement.outerHTML.includes(f), title: !!document.getElementById('title') }), FOREIGN);
+  R.say(!shellOf.foreign && shellOf.title, 'offline the shell comes from the worker\'s own cache, never another cache on the origin holding the same URL (' + (shellOf.foreign ? 'the foreign copy answered' : shellOf.title ? 'its own' : 'no title') + ')');
+  await ready(page);
   const title = await page.evaluate(() => document.getElementById('title').classList.contains('on'));
   await page.evaluate(() => window.SB_DEV.hold(true));
   await tap(page, '#sample'); await page.evaluate(() => window.SB_DEV.step(30));
@@ -73,8 +87,8 @@ try {
   const dir = mkdtempSync(join(tmpdir(), 'sbpwa-'));
   /* the v2 copies are made from the page and the worker being served (a red watch mutant's copy under SB_PAGE or
      SB_SW: the M1 review found the update path built from the clean files, so the update never ran the mutant) */
-  const v2page = readFileSync(process.env.SB_PAGE || join(GAME, 'index.html'), 'utf8').replace(/SB\.BUILD = '[^']*'/, "SB.BUILD = 'sb-pwa-v2'").replace(/sw\.js\?v=[0-9A-Za-z._-]+/, 'sw.js?v=2');
-  const v2sw = readFileSync(process.env.SB_SW || join(GAME, 'sw.js'), 'utf8').replace(/var BUILD = '[^']*'/, "var BUILD = 'sb-pwa-v2'").replace(/var CACHE = 'shutterbug-v[0-9A-Za-z._-]+'/, "var CACHE = 'shutterbug-v2'");
+  const v2page = readFileSync(process.env.SB_PAGE || join(GAME, 'index.html'), 'utf8').replace(/SB\.BUILD = '[^']*'/, "SB.BUILD = 'sb-pwa-v2'").replace(/sw\.js\?v=[0-9A-Za-z._-]+/, 'sw.js?v=pwa-next');
+  const v2sw = readFileSync(process.env.SB_SW || join(GAME, 'sw.js'), 'utf8').replace(/var BUILD = '[^']*'/, "var BUILD = 'sb-pwa-v2'").replace(/var CACHE = 'shutterbug-v[0-9A-Za-z._-]+'/, "var CACHE = '" + NEXT + "'");
   writeFileSync(join(dir, 'index.html'), v2page); writeFileSync(join(dir, 'sw.js'), v2sw);
   /* another game's cache on the same origin (every satellite shares lucidwinds.com): the update must leave it (the
      M1 review: no foreign cache was planted, and the check read only shutterbug- keys) */
@@ -89,7 +103,7 @@ try {
   await sleep(2000);
   const v2 = await page.evaluate(() => ({ build: window.SB.BUILD, keys: null }));
   ks = await keys(page);
-  R.say(v2.build === 'sb-pwa-v2' && ks.filter(x => x.startsWith('shutterbug-')).join() === 'shutterbug-v2', 'a v2 copy served and two reloads: the page shows its BUILD (' + v2.build + ') and caches.keys() holds only shutterbug-v2 (' + ks.join(', ') + ')');
+  R.say(v2.build === 'sb-pwa-v2' && CACHE !== NEXT && ks.filter(x => x.startsWith('shutterbug-')).join() === NEXT, 'a v2 copy served and two reloads: the page shows its BUILD (' + v2.build + ') and caches.keys() holds only ' + NEXT + ', not ' + CACHE + ' (' + ks.join(', ') + ')');
   R.say(ks.includes('another-game-v1'), 'the update leaves another game\'s cache on the origin alone (' + ks.join(', ') + ')');
   R.say(navs === 3, 'the new worker causes no navigation of its own (' + navs + ' main frame navigations for the gate\'s own 3)');
   delete process.env.SB_PAGE; delete process.env.SB_SW;
