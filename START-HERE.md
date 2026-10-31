@@ -1,5 +1,12 @@
 # START HERE
 
+## 📷 31 Oct 22:50 UTC (Opus) SHUTTERBUG: ASTRA ROUND 3 ARRIVED (Q98); ART3 INSERTED INTO THE WEAPONS LANE
+Round 3 arrived at 22:41 UTC: 18 strips, 119 frames, her VALIDATION PASS, zip sha256 942423725aa9c45d.... Copies: /home/codespace/sb-drafts/astra/round3/ and assets/ (git ignored). Stephen: "go ahead and implement this". Q98 (`7936aaa4f`) records rounds 2 and 3 and where each piece goes.
+THE PLAN IN FLIGHT: the weapons lane script (docs/lanes/weapons2-art-lane-oct31-night.js, `165e7a3ae`) now runs ART2, then ART3, then step 2, review and fix.
+  - ART3 cuts both rounds whole and draws what has a system now: the icons' final order, the elites, the speck, the crusher shaft, the stick and pause art, fx_skyhook, and the biome air and badges. Everything else is parked for its system, with Astra's placements under WAITING in docs/astra/README.md.
+  - The lead stops the running workflow wf_e6dd0515-5c2 when build:w2 starts, then resumes it from the edited script, so ART2's result replays from cache.
+IF THE SESSION DIED BEFORE THAT: check PROGRESS on sb-weapons-2 for an ART2 entry. If it is there, delete the ART2 step from a copy of the script, set art.commit to ART2's commit, and run the copy from ART3. If it is not there, run the script as it is.
+
 ## 📷 31 Oct 22:20 UTC (Opus) SHUTTERBUG: HIS SECOND FOUR RULINGS (Q97); THE BUILD ORDER FROM HERE (supersedes the 22:05 entry's NEXT)
 The investigation's findings: docs/SAMENESS-INVESTIGATION-OCT31.md and docs/PROGRESSION-PROPOSAL-OCT31.md (`5ad2e674f`).
   - The hue quantizer he first picked measured badly: Attic 118 to 104 of 120, builds 49 to 38. He re-ruled (Q97, `5cce4c551`), the recommended option each time:
