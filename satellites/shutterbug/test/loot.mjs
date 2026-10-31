@@ -5,28 +5,36 @@
  * A REAL touch held on the rocker's right walks the hero over the scroll, the blueprint and the chest, one step at a time
  * with the loop held:
  *   - no sheet, card or dialog shows and the page is never modal;
- *   - the scroll is taken with its pickup voice; its offer opens on the ground and the shell answers it on the next
- *     word (the biome's stat), as the bot does;
+ *   - the scroll is taken with its pickup voice; its offer opens and the shell answers it on the next word (the
+ *     biome's stat), as the bot does (that the offer opens on landing is H-loot-3's: this walk never leaves the floor);
  *   - the blueprint is not drawn (its cell is the open floor, beside a scroll that is) and is taken in silence, the sim
  *     still carrying it;
  *   - the chest opens with its chest voice and pays 15: the count reads 15 at once and a handwritten +15 shows under
- *     it, in view, clear of the strip's controls, taking no tap, and goes after about a second;
+ *     it (a real box), in view, clear of the strip's controls, no larger than the count, taking no tap, never rising
+ *     into the count on its way out (its animation set to 0.18, 0.6, 0.9 and 1.1 s: QUESTIONS Q93), and goes after
+ *     about a second;
  *   - a REAL tap on A as the chest opens (in the step its answer rides) still jumps, one step late;
  *   - the world holds still for exactly the two steps the answers ride and moves on every other, right held; no pick
  *     voice sounds (the pick is the shell's, not the player's);
  *   - the recording carries the two answers (one CHOICE A, one TAKE) and replays on the room's first state to the live
  *     hash.
  * At 412x915 and 360x780. At 320x568 with reduced motion the scroll's offer and the chest's compare open on one step and
- * are answered in the sim's order, one step each, the climb goes on, and the +15 stands still for its second. At 412x915
- * a new room started inside that second shows no +15, and its count reads its own 0 before its first step.
+ * are answered in the sim's order, one step each, the climb goes on, and the +15 stands still for its second (no
+ * animation on it). At 412x915 a new room started inside that second shows no +15, and its count reads its own 0 before
+ * its first step. At 412x915 a room that places its own blueprint (the sample room with one corner cell changed, on a
+ * Sun cell in a plank's light top) draws that cell as its row neighbours are: no open Ash notch, no yellow (Q93).
  *
  * Watched red by CHOICE_VIA_SHELL (the shell picks the stat itself: the replay's hash differs), OFFER_HOLDS_WORLD and
  * CHEST_HOLDS_WORLD (an answer dropped), OFFER_SHOWS and SLIP_BACK (the old sheets back), ANSWER_ORDER_SWAPPED, PLUS_MISSING,
- * PLUS_STAYS, PLUS_TAKES_TAPS, PLUS_CARRIES_OVER, DP_COUNT_STALE, PICK_SOUNDS, EDGE_LOST_TO_CHOICE, BLUEPRINT_DRAWN and
- * BLUEPRINT_SOUNDS. */
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, pressEl, sleep } from './harness.mjs';
+ * PLUS_STAYS, PLUS_TAKES_TAPS, PLUS_CARRIES_OVER, DP_COUNT_STALE, PICK_SOUNDS, EDGE_LOST_TO_CHOICE, BLUEPRINT_DRAWN,
+ * BLUEPRINT_SOUNDS, PLUS_OFF_THE_COUNT, PLUS_NOT_STILL, PLUS_RISES_INTO_COUNT, PLUS_OUTSIZED, BLUEPRINT_NOTCH and
+ * BLUEPRINT_GHOST. */
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, pressEl, sleep, GAME } from './harness.mjs';
+import { createRequire } from 'node:module';
+import { join } from 'node:path';
 
 const R = reporter('LOOT');
+const SBN = createRequire(import.meta.url)(join(GAME, 'tools', 'core-loader.js')).loadCoreFull(join(GAME, 'index.html')).SB;
 const srv = await serve();
 const browser = await launch();
 const W = 24, FLOOR = 46, SCROLL = 16, END = (W * 16 - 12) * 256;   /* the hero's x at the room's right edge */
@@ -68,20 +76,44 @@ const cellOf = (page, col, row) => page.evaluate((col, row) => {
   const open = window.SB.palette.openColour(window.SB.palette.I.ASH, window.SB.game.level.biome | 0).map(Math.round), one = [...seen][0].split(',').map(Number);
   return { colours: seen.size, isOpen: seen.size === 1 && one.every((v, k) => Math.abs(v - open[k]) <= 2), first: [...seen][0], open: open.join(',') };
 }, col, row);
+/* every pixel drawn in a cell of the view, its first, and the room's open Ash; null out of view */
+const cellPixels = (page, col, row) => page.evaluate((col, row) => {
+  const Rn = window.SB.render, cv = document.getElementById('view'), x0 = col * 16 - Rn.drawn.camX, y0 = row * 16 - Rn.drawn.cam;
+  if (col < 0 || x0 < 0 || y0 < 0 || x0 + 16 > cv.width || y0 + 16 > cv.height) return null;
+  const d = cv.getContext('2d').getImageData(x0, y0, 16, 16).data, px = [];
+  for (let i = 0; i < d.length; i += 4) px.push(d[i] + ',' + d[i + 1] + ',' + d[i + 2]);
+  return { px: px.join(' '), first: px[0], ash: window.SB.palette.openColour(window.SB.palette.I.ASH, window.SB.game.level.biome | 0).map(Math.round).join(',') };
+}, col, row);
 /* the +15 as it shows: faded in within 2 s, still showing 400 ms later, under the count, in view, clear of the drawn
-   controls and the strip's buttons, and a thumb on it lands on what lies under it */
+   controls and the strip's buttons, and a thumb on it lands on what lies under it; a real box (the review of NOTE5:
+   the placement line passed on the empty element of a +15 never shown), its size against the count's, whether any
+   animation moves it, and its path: its animation set to its seat (0.18 s), 0.6, 0.9 and 1.1 s and put back, the
+   top of the +15 against the bottom of the count in the corner's own frame (the corner is turned 4 degrees, so the
+   page boxes overlap by a few px at rest), from offsetTop and the computed translate */
 async function plusNow(page) {
   const t0 = Date.now();
   const seen = await page.waitForFunction(() => Number(getComputedStyle(document.getElementById('dpplus')).opacity) > 0.5, { timeout: 2000, polling: 20 }).then(() => true).catch(() => false);
   const at = Date.now() - t0;
   const geo = await page.evaluate(() => {
-    const el = document.getElementById('dpplus'), r = el.getBoundingClientRect(), n = document.getElementById('dpn').getBoundingClientRect();
+    const el = document.getElementById('dpplus'), r = el.getBoundingClientRect(), dn = document.getElementById('dpn'), n = dn.getBoundingClientRect();
     const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
     const over = ['#btnA .glyph', '#btnB .glyph', '#rocker .zl', '#rocker .zr', '#back', '#share'].filter(s => {
       const e = document.querySelector(s); if (!e) return false; const b = e.getBoundingClientRect();
       return b.height > 0 && b.right > r.left && b.left < r.right && b.bottom > r.top && b.top < r.bottom;
     });
-    return { text: el.textContent, still: el.classList.contains('still'), opacity: Number(getComputedStyle(el).opacity), fs: parseFloat(getComputedStyle(el).fontSize),
+    const anims = el.getAnimations(), a = anims[0], path = [];
+    if (a) {
+      const was = a.currentTime;
+      a.pause();
+      for (const t of [180, 600, 900, 1100]) {
+        a.currentTime = t;
+        const ty = new DOMMatrixReadOnly(getComputedStyle(el).transform).m42;
+        path.push({ t, gap: Math.round((el.offsetTop + ty - (dn.offsetTop + dn.offsetHeight)) * 10) / 10 });
+      }
+      a.currentTime = was; a.play();
+    }
+    return { text: el.textContent, still: anims.length === 0, opacity: Number(getComputedStyle(el).opacity), fs: parseFloat(getComputedStyle(el).fontSize), countFs: parseFloat(getComputedStyle(dn).fontSize),
+      real: r.width > 0 && r.height > 0, path,
       under: r.top >= n.bottom - 6 && r.top - n.bottom <= 24 && Math.abs(r.right - n.right) <= 24, inView: r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight,
       noTap: getComputedStyle(el).pointerEvents === 'none' && hit !== el, hitName: hit ? hit.id || hit.className || hit.tagName : 'nothing', over,
       box: [r.left, r.top, r.width, r.height].map(v => Math.round(v)) };
@@ -129,15 +161,18 @@ try {
     const scrollAt = trace.findIndex(p => p.taken[0]), bpAt = trace.findIndex(p => p.taken[1]), offerAt = trace.findIndex(p => p.offered);
     const still = stillSteps(trace), heard = trace.flatMap(p => p.heard), bad = trace.filter(p => p.dialogs.length || p.modal);
     R.say(bad.length === 0 && trace.every(p => p.screen === 'play'), w + ': no sheet, card or dialog shows on the walk and the page is never modal (' + (bad.length ? bad[0].dialogs.join(', ') + (bad[0].modal ? ' modal' : '') : 'none') + ')');
+    /* (the offer opening on landing, never in the air, is H-loot-3's: this walk never leaves the floor) */
     R.say(scrollAt > 0 && trace[scrollAt].heard.includes('pickup') && offerAt > scrollAt && !!trace[offerAt + 1] && !trace[offerAt + 1].offered,
-      w + ': the scroll is taken with its pickup voice (step ' + scrollAt + '), its offer opens on the ground (step ' + offerAt + ') and the shell answers it on the next word');
+      w + ': the scroll is taken with its pickup voice (step ' + scrollAt + '), its offer opens (step ' + offerAt + ') and the shell answers it on the next word');
     R.say(bpAt > 0 && trace[bpAt].heard.length === 0 && trace[trace.length - 1].carried.includes(FLOOR * W + BP),
       w + ': the blueprint is taken in silence (step ' + bpAt + ', voices: ' + (bpAt > 0 ? trace[bpAt].heard.join(', ') || 'none' : 'never taken') + ') and the sim still carries it');
     const ch = chestAt > 0 ? trace[chestAt] : null;
     R.say(!!ch && ch.heard.includes('chest') && ch.dp === 15 && ch.dpn === '15' && ch.plus === '+15' && !!plus && plus.seen && plus.text === '+15',
       w + ': the chest opens with its chest voice and pays 15: the count reads ' + (ch ? ch.dpn : 'nothing') + ' at once and a handwritten ' + (plus ? plus.text : 'nothing') + ' shows under it (faded in by ' + (plus ? plus.at : 0) + ' ms)');
-    R.say(!!plus && plus.under && plus.inView && plus.over.length === 0 && plus.fs >= 16, w + ': the +15 sits under the count, in view, ' + (plus ? plus.fs : 0) + ' px, clear of the drawn controls and the strip\'s buttons (box ' + (plus ? plus.box.join(' ') : '') + (plus && plus.over.length ? ', over ' + plus.over.join(' ') : '') + ')');
-    R.say(!!plus && plus.noTap, w + ': the +15 takes no tap: a thumb on it lands on ' + (plus ? plus.hitName : 'nothing') + ', what lies under it');
+    R.say(!!plus && plus.real && plus.under && plus.inView && plus.over.length === 0 && plus.fs >= 16, w + ': the +15 sits under the count, in view, ' + (plus ? plus.fs : 0) + ' px, clear of the drawn controls and the strip\'s buttons (box ' + (plus ? plus.box.join(' ') : '') + (plus && plus.over.length ? ', over ' + plus.over.join(' ') : '') + ')');
+    R.say(!!plus && plus.real && plus.fs <= plus.countFs, w + ': the +15 is no larger than the count it adds to (' + (plus ? plus.fs + ' px against ' + plus.countFs : 'never shown') + '; his ruling: a small +15)');
+    R.say(!!plus && plus.path.length === 4 && plus.path.every(p => p.gap >= -0.5), w + ': the +15 never rises into the count: in the corner\'s frame its top to the count\'s bottom at 0.18, 0.6, 0.9 and 1.1 s is ' + (plus && plus.path.length ? plus.path.map(p => p.gap).join(', ') + ' px' : 'not measured, no animation'));
+    R.say(!!plus && plus.real && plus.noTap, w + ': the +15 takes no tap: a thumb on it lands on ' + (plus ? plus.hitName : 'nothing') + ', what lies under it');
     R.say(!!plus && plus.later > 0.5 && gone, w + ': the +15 still shows 400 ms on (opacity ' + (plus ? plus.later.toFixed(2) : 0) + ') and goes after about a second (' + gone + ')');
     const ans = chestAt > 0 ? trace[chestAt + 1] : null, next = chestAt > 0 ? trace[chestAt + 2] : null;
     R.say(!!ans && !!next && ans.compare === 0 && !next.ground && next.vy < 0 && next.heard.includes('jump'),
@@ -170,8 +205,8 @@ try {
     const a1 = both > 0 ? trace[both + 1] : null, a2 = both > 0 ? trace[both + 2] : null;
     R.say(s0.ok && both > 0 && !!a1 && !a1.offered && a1.compare === 1 && !!a2 && a2.compare === 0 && still.join() === (both + 1) + ',' + (both + 2) && trace[trace.length - 1].x >= END && bad.length === 0,
       '320: the scroll\'s offer and the chest\'s compare open on one step (' + both + ') and are answered in the sim\'s order, one step each (still at ' + still.slice(0, 6).join(', ') + (still.length > 6 ? ' and ' + (still.length - 6) + ' more' : '') + '), and the climb goes on with no sheet');
-    R.say(!!plus && plus.still && plus.seen && plus.at < 300 && plus.later > 0.99 && gone && plus.inView && plus.over.length === 0,
-      '320: with reduced motion the +15 stands still (opacity ' + (plus ? plus.opacity : 0) + ' at once, ' + (plus ? plus.later : 0) + ' 400 ms on), in view and clear of the controls (box ' + (plus ? plus.box.join(' ') : '') + '), and goes after about a second (' + gone + ')');
+    R.say(!!plus && plus.still && plus.real && plus.seen && plus.at < 300 && plus.later > 0.99 && gone && plus.inView && plus.over.length === 0,
+      '320: with reduced motion the +15 stands still (' + (plus ? (plus.still ? 'no animation on it' : 'an animation moves it') + ', opacity ' + plus.opacity + ' at once, ' + plus.later + ' 400 ms on' : 'never shown') + '), in view and clear of the controls (box ' + (plus ? plus.box.join(' ') : '') + '), and goes after about a second (' + gone + ')');
     R.say(errors.length === 0, '320: no page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
     await page.close();
   }
@@ -191,6 +226,33 @@ try {
     R.say(opened && was.on && now.screen === 'play' && !now.on && now.opacity < 0.05, '412: a new room right after the chest shows no +15 (the chest\'s +15 ' + (was.on ? 'up' : 'never up') + ', in the new room ' + (now.on ? 'still up' : 'gone') + ', opacity ' + now.opacity + ')');
     R.say(was.dpn === '15' && now.dpn === '0' && now.steps === 0, '412: the new room\'s count reads its own 0 before its first step (the last room\'s ' + was.dpn + ', now ' + now.dpn + ' at step ' + now.steps + ')');
     R.say(errors.length === 0, '412 new room: no page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
+    await page.close();
+  }
+
+  /* a blueprint the room places itself (no hand here): the sample room with its top left cell Slate, whose one draw then
+     lands on the brightest speck, a Sun cell in the light top of a plank, Paper either side (both computed in Node from
+     the core, never read back from the page). Built as a room after the first (SB_DEV.loadRecord with its own biome),
+     as Node builds it, at frame 0: the hidden blueprint's cell is drawn as a row neighbour is, so neither the open Ash
+     notch (the review of NOTE5) nor the Sun cell's yellow ghost marks where it lies */
+  {
+    const rows = Array.from(SBN.SAMPLE_ROOM); rows[0] = '2' + rows[0].slice(1);
+    const rec = { v: 1, w: 24, h: 48, mode: 0, focal: null, rows, rows2: null };
+    const lv = SBN.pipeline.build(SBN.record.fromJSON(rec), { firstRoom: false }), bp = lv.features.blueprint;
+    const bx = bp === null ? -1 : bp % lv.w, by = bp === null ? -1 : Math.floor(bp / lv.w), I = SBN.palette.I;
+    const light = bp !== null && lv.pal[bp] === I.SUN && [bp - 1, bp + 1].every(c => !lv.solid[c] && lv.pal[c] !== I.ASH && lv.pal[c] !== I.SUN);
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base); await ready(page);
+    const got = await page.evaluate((str, biome) => {
+      window.SB_DEV.hold(true);
+      const ok = window.SB_DEV.loadRecord(str, biome); window.SB_DEV.step(0);
+      return { ok: !!ok, screen: window.SB_DEV.screen(), loot: window.SB.game.state.loot.map(l => [l.kind, l.idx, l.taken]) };
+    }, JSON.stringify(rec), lv.biome);
+    const cell = await cellPixels(page, bx, by), left = await cellPixels(page, bx - 1, by), right = await cellPixels(page, bx + 1, by);
+    const asNeighbour = !!cell && ((!!left && cell.px === left.px) || (!!right && cell.px === right.px));
+    R.say(light && got.ok && got.screen === 'play' && got.loot.some(l => l[0] === 3 && l[1] === bp && !l[2]),
+      '412: the room places its own blueprint, on the Sun cell (' + bx + ', ' + by + ') with Paper either side (the page\'s loot ' + JSON.stringify(got.loot) + ')');
+    R.say(asNeighbour, '412: the hidden blueprint\'s cell is drawn as its row neighbours are, with no notch and no yellow (the cell ' + (cell ? cell.first : 'out of view') + ', left ' + (left ? left.first : '?') + ', right ' + (right ? right.first : '?') + ', the open Ash ' + (cell ? cell.ash : '?') + ')');
+    R.say(errors.length === 0, '412 blueprint room: no page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
     await page.close();
   }
 } finally { await browser.close(); await srv.close(); }

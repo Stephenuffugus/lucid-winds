@@ -4,7 +4,8 @@
  * third room; a recent room and the death card, Again, the death card's Title. The gate's two named liberties:
  * SB_DEV.goto('speck') sets the hero on the first speck (so the room has Dead pixels to bank) and SB_DEV.goto('exit') on
  * the exit cell (the climb skipped); every other move is a real tap.
- * Checked: the room's Dead pixels banked at x0.5 floored on every clear and said on the card; Recent rooms written on
+ * Checked: the room's Dead pixels banked at x0.5 floored on every clear and said on the card, which names the strip's
+ * count it came from (QUESTIONS Q93: `Banked 1 of 3 dead pixels` over the count's 3); Recent rooms written on
  * every clear and shown on the title only after the first; every back and X returns to the screen it came from and
  * leaves nothing over the title; a share sheet left open under the strip's back never comes back over the next room;
  * an injected .lwfb-fab hides under every card and sheet and shows on the title, the crop and in the room. Inside the
@@ -16,7 +17,7 @@
  * to Copy link.
  *
  * Watched red by X_LEAVES_OVERLAY, MOMENT_TWICE, FAB_OVER_SHEET, BANK_FULL_RATE, SHARE_CLOSE_TO_PLAY, PERF_OVER_PAIRS,
- * EDGE_BANKED_UNDER_SHEET, CARD_UNDER_SHEET and COPIED_STICKS. */
+ * EDGE_BANKED_UNDER_SHEET, CARD_UNDER_SHEET, COPIED_STICKS and BANK_LINE_BARE. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, GAME, GAME_PATH, sleep } from './harness.mjs';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -54,6 +55,7 @@ try {
     screen: window.SB_DEV.screen(), on: OVER.filter(id => document.getElementById(id).classList.contains('on')),
     fab: getComputedStyle(document.querySelector('.lwfb-fab')).display, modal: document.body.classList.contains('sb-modal'),
     recentShown: !document.getElementById('recent').hidden, bank: document.getElementById('clearbank').hidden ? '' : document.getElementById('clearbank').textContent,
+    count: document.getElementById('dpn').textContent,
     st: window.SB_DEV.state(), save: structuredClone(window.SB.save.doc) }), OVER);
   const clean = async (label) => {
     const l = await look(), c = await centre(page, '#sample');
@@ -105,7 +107,11 @@ try {
     const c = await clearRoom(), want = Math.floor(c.dp * 0.5);
     banked += want;
     R.say(c.dp > 0 && c.after.screen === 'clear' && c.after.on.includes('clear') && c.after.fab === 'none', 'round ' + round + ': a speck taken (' + c.dp + ' Dead pixels in the room) and the clear card up; the fab hides under it');
-    R.say(c.after.save.dp === banked && c.after.bank === (want === 1 ? 'Banked 1 dead pixel' : 'Banked ' + want + ' dead pixels'), 'round ' + round + ': banked at x0.5 floored, ' + want + ' (the save holds ' + c.after.save.dp + ', the card says "' + c.after.bank + '")');
+    R.say(c.after.save.dp === banked && c.after.bank === 'Banked ' + want + ' of ' + c.dp + ' dead pixels', 'round ' + round + ': banked at x0.5 floored, ' + want + ' (the save holds ' + c.after.save.dp + ', the card says "' + c.after.bank + '")');
+    /* the card's words and the strip's count under it agree (QUESTIONS Q93: the chest's +15, then a bare "Banked 7 dead
+       pixels" over "Dead pixels 15", read as 8 lost): a bank under the count names the count it came from */
+    R.say(c.after.count === String(c.dp) && new RegExp('^Banked ' + want + ' of ' + c.after.count + ' dead pixels?$').test(c.after.bank),
+      'round ' + round + ': the card names the count it banked from, the strip\'s ' + c.after.count + ' under it ("' + c.after.bank + '")');
     R.say(c.after.save.stats.clears === round && c.after.save.recent.length === 1, 'round ' + round + ': the clear counted (' + c.after.save.stats.clears + ') and the room in Recent rooms (' + c.after.save.recent.length + ', the same grid once)');
     const btns = await Promise.all(['#nextroom', '#clearshare', '#again', '#cleartitle'].map(s => centre(page, s)));
     R.say(btns.every(b => b && b.onTop && b.inView && b.h >= 48), 'round ' + round + ': a thumb lands on each of Shoot the next room, Share this room, Play it again and Title, each 48 px tall or more');

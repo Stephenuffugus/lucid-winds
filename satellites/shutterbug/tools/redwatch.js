@@ -651,7 +651,9 @@ const MUTANTS = [
     gates: [{ gate: 'loop', expect: 'inside the wrapper iframe two clears' }] },
   { name: 'FAB_OVER_SHEET', task: 'T1.13', file: 'page', find: 'body.sb-modal .lwfb-fab { display: none !important; }', repl: 'body.sb-modal .lwfb-fab { }',
     gates: [{ gate: 'loop', expect: 'round 1: the share sheet over the play screen' }] },
-  { name: 'BANK_FULL_RATE', task: 'T1.13', file: 'page', find: 'var n = Math.floor(G.state.room.dp * SB.TUNING.DP_FREE_PLAY_MULT)', repl: 'var n = Math.floor(G.state.room.dp)',
+  /* re anchored at NOTE5R (the bank's line names the count it came from, so the room's count is read once): the same
+     mutation, the room's full count banked */
+  { name: 'BANK_FULL_RATE', task: 'T1.13', file: 'page', find: 'n = Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT)', repl: 'n = Math.floor(dp)',
     gates: [{ gate: 'loop', expect: 'round 1: banked at x0.5 floored' }] },
   { name: 'SHARE_CLOSE_TO_PLAY', task: 'T1.13', file: 'page', find: "if (ui.screen === 'share') ui.screen = ui.shareFrom || 'play';", repl: "if (ui.screen === 'share') ui.screen = 'play';",
     gates: [{ gate: 'loop', expect: 'round 1: the share sheet over the clear screen' }] },
@@ -894,10 +896,33 @@ const MUTANTS = [
     repl: '      (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0) | c * IN.CHOICE;\n    edge.A = 0; edge.B = 0;',
     gates: [{ gate: 'loot', expect: "412: a real tap on A as the chest opens rides past its answer's step and jumps on the next" }] },
   /* the blueprint: drawn, or heard */
-  { name: 'BLUEPRINT_DRAWN', task: 'NOTE5', file: 'page', find: 'if (!lt2.taken && R.LOOT_SHOWN[lt2.kind]) spr(', repl: 'if (!lt2.taken) spr(',
+  /* re anchored at NOTE5R (a hidden loot's cell is drawn as its neighbour's): the blueprint's sprite on the open Ash,
+     drawn as before the hide */
+  { name: 'BLUEPRINT_DRAWN', task: 'NOTE5', file: 'page', edits: [
+      ['var cov = R.LOOT_SHOWN[lt2.kind] ? -1 : R.coverOf(s, lv, lt2.idx);', 'var cov = -1;'],
+      ['if (!lt2.taken && R.LOOT_SHOWN[lt2.kind]) spr(', 'if (!lt2.taken) spr(']],
     gates: [{ gate: 'loot', expect: '412: the blueprint is not drawn' }] },
   { name: 'BLUEPRINT_SOUNDS', task: 'NOTE5', file: 'page', find: "if ((ev & EV.PICKUP) && SB.render.lootTaken(G.state) > seen) au.sfx('pickup');", repl: "if (ev & EV.PICKUP) au.sfx('pickup');",
-    gates: [{ gate: 'loot', expect: '412: the blueprint is taken in silence' }] }
+    gates: [{ gate: 'loot', expect: '412: the blueprint is taken in silence' }] },
+
+  /* the two reviews of NOTE5 (QUESTIONS Q93). The +15: off its seat under the count (the placement line now needs a
+     real box), moving under reduced motion, rising into the count as it fades, larger than the count */
+  { name: 'PLUS_OFF_THE_COUNT', task: 'NOTE5R', file: 'page', find: '#dpplus { position: absolute; right: 0; top: 100%;', repl: '#dpplus { position: absolute; right: 0; top: 560%;',
+    gates: [{ gate: 'loot', expect: '412: the +15 sits under the count' }] },
+  { name: 'PLUS_NOT_STILL', task: 'NOTE5R', file: 'page', find: "el.classList.toggle('still', still)", repl: "el.classList.toggle('still', false)",
+    gates: [{ gate: 'loot', expect: '320: with reduced motion the +15 stands still' }] },
+  { name: 'PLUS_RISES_INTO_COUNT', task: 'NOTE5R', file: 'page', find: '100% { opacity: 0; transform: translateY(0); } }', repl: '100% { opacity: 0; transform: translateY(-10px); } }',
+    gates: [{ gate: 'loot', expect: '412: the +15 never rises into the count' }] },
+  { name: 'PLUS_OUTSIZED', task: 'NOTE5R', file: 'page', find: 'white-space: nowrap; font-weight: 700; }', repl: 'white-space: nowrap; font-size: 1.3rem; font-weight: 700; }',
+    gates: [{ gate: 'loot', expect: '412: the +15 is no larger than the count it adds to' }] },
+  /* the hidden blueprint's cell: the open Ash notch back, or the static Sun cell (the yellow ghost) left showing */
+  { name: 'BLUEPRINT_NOTCH', task: 'NOTE5R', file: 'page', find: 'var cov = R.LOOT_SHOWN[lt2.kind] ? -1 : R.coverOf(s, lv, lt2.idx);', repl: 'var cov = -1;',
+    gates: [{ gate: 'loot', expect: "412: the hidden blueprint's cell is drawn as its row neighbours are" }] },
+  { name: 'BLUEPRINT_GHOST', task: 'NOTE5R', file: 'page', find: 'if (cov >= 0) { ctx.drawImage(stat, (cov % lv.w) * C, Math.floor(cov / lv.w) * C, C, C, lx2, ly, C, C); continue; }', repl: 'if (cov >= 0) continue;',
+    gates: [{ gate: 'loot', expect: "412: the hidden blueprint's cell is drawn as its row neighbours are" }] },
+  /* the clear card's bare line back: "Banked 2 dead pixels" over the strip's 5 */
+  { name: 'BANK_LINE_BARE', task: 'NOTE5R', file: 'page', find: "bank.textContent = n < dp ? ui.COPY.bankedOf.replace('{n}', n).replace('{of}', dp) : n === 1", repl: 'bank.textContent = n === 1',
+    gates: [{ gate: 'loop', expect: 'round 1: the card names the count it banked from' }] }
 ];
 
 /* ---------------------------------------------------------------- run */
