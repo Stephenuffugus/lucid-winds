@@ -24,10 +24,25 @@ CAP_FILE, CAP_TOTAL = 50 * 1024 * 1024, 400 * 1024 * 1024
 NEW_KEYS = {
     'moth_elite': (24, 24, None), 'icicle_elite': (24, 24, None), 'jelly_elite': (24, 24, None),
     'crawler_elite': (24, 24, None), 'spark_elite': (24, 24, None), 'hud_heart': (9, 8, ['full', 'empty']),
+    # ART2 (Astra's delivery of 31 Oct): the hero's extra poses (each the hero, so each may carry Sun and stands on an
+    # Ink feet row) and the slot HUD's weapon icons
+    'hero_dash': (12, 16, ['dash']), 'hero_hurt': (12, 16, ['recoil']), 'hero_squash': (14, 14, ['squash']),
+    'hero_stretch': (10, 18, ['stretch']), 'hero_dropin': (12, 16, ['descending', 'contact', 'settled']),
+    'icon_weapons': (24, 24, None),
 }
+# ART2: an effect strip, fx_<name>, is named frames: square, 32 or 48 a side, each frame <clip>_<n> with every clip's n
+# running 0, 1, 2 ... in order (Astra's manifest clips); Sun is the hero's and never an effect's
+FX_RE = re.compile(r'^fx_[a-z]+(_[a-z]+)*$')
+FX_FRAME_RE = re.compile(r'^([a-z]+(?:_[a-z]+)*)_([0-9])$')
+FX_SIDES = (32, 48)
 HERO_NAMES = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'jump', 'fall', 'cling', 'dive', 'land', 'dead']
 NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
-MAX_SPRITES = 40
+# the names a cut may leave the page with, counting the page's and the cut's together (the page itself stays under 40:
+# the lint and H-spr-1). ART2 raised it from 40 to 44 and no further: its checked weapons cut holds 17 keys (icon_weapons,
+# the five hero_* poses and eleven fx_* strips) against the 26 the page held before the splice retired the builder's
+# four placeholders (boomerang, shock, pop, icon), 43 names, so 44 is the least cap that takes it (the page is left
+# with 31; PROGRESS ART2)
+MAX_SPRITES = 44
 
 
 class Refuse(Exception):
@@ -216,8 +231,24 @@ def check(root, page):
                         raise Refuse('%r is not one of the hero\'s twelve frame names' % name)
                     if '0' not in frames[name].split('/')[-1]:
                         raise Refuse('hero.%s has no Ink in its feet row' % name)
+            elif key.startswith('hero_'):
+                # ART2: every hero_* pose is the hero, so it may carry Sun, and it stands on an Ink feet row too
+                for name in names:
+                    if '0' not in frames[name].split('/')[-1]:
+                        raise Refuse('%s.%s has no Ink in its feet row' % (key, name))
             elif key != 'beacon' and any('e' in s for s in frames.values()):
-                raise Refuse('Sun in %s (Sun belongs to the hero and the beacon)' % key)
+                raise Refuse('Sun in %s (Sun belongs to the hero, its hero_* poses and the beacon)' % key)
+            if FX_RE.match(key):
+                if fw != fh or fw not in FX_SIDES:
+                    raise Refuse('%s is %dx%d: an effect is square, %s a side' % (key, fw, fh, ' or '.join(map(str, FX_SIDES))))
+                seen = {}
+                for name in names:
+                    fm = FX_FRAME_RE.match(name)
+                    if not fm:
+                        raise Refuse('%s frame %s is not <clip>_<n>' % (key, name))
+                    if int(fm.group(2)) != seen.get(fm.group(1), 0):
+                        raise Refuse('%s frame %s is out of its clip\'s order (%s_%d expected)' % (key, name, fm.group(1), seen.get(fm.group(1), 0)))
+                    seen[fm.group(1)] = int(fm.group(2)) + 1
             if key in have:
                 want = have[key]
                 if (fw, fh) != (want['w'], want['h']):
@@ -235,6 +266,8 @@ def check(root, page):
                 if nn and names != nn:
                     raise Refuse('%s frames are %r, the brief asks %r' % (key, names, nn))
                 warnings.append((f, 'a new key %s: R.draw must learn to draw it' % key))
+            elif FX_RE.match(key):
+                warnings.append((f, 'an effect %s (%s): R.draw must learn the clips it binds' % (key, ', '.join(sorted({FX_FRAME_RE.match(x).group(1) for x in names})))))
             else:
                 warnings.append((f, 'an unknown key %s: added to SPRITES, drawn by nothing yet' % key))
             if sorted(used) != sorted(int(c) for c in e.get('colours', [])):
