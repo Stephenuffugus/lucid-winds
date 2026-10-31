@@ -1037,6 +1037,8 @@ const MUTANTS = [
     gates: [{ gate: 'fight', expect: '412: the card goes in about 2.5 s' }] },
   { name: 'GOT_OVER_BUG', task: 'W1', file: 'page', find: "      if (top - pad < cr.bottom && top + hd.h * k + pad > cr.top) el.classList.add('low');\n", repl: '',
     gates: [{ gate: 'fight', expect: "412: a chest near the room's top with the bug beside it: the card docks low" }] },
+  { name: 'GOT_STAYS_OVER_BUG', task: 'W1', file: 'page', find: "    else SB.ui.gotFollow();\n", repl: '',
+    gates: [{ gate: 'fight', expect: '412: as the bug falls under the docked card' }] },
   { name: 'THROW_SILENT', task: 'W1', file: 'page', find: "      if (ev & EV.FIRE_J) au.sfx(SB.ui.WPN_SFX[SB.sim.WPN[G.state.hero.slots[0]]] || 'throw');\n", repl: '',
     gates: [{ gate: 'fight', expect: '412: a real A tap throws the boomerang with the throw voice' }] },
   { name: 'PROJ_IN_BRICK', task: 'W1', file: 'page', find: "boomerang: { w: 12, h: 12, frames: { a: '........000.", repl: "boomerang: { w: 12, h: 12, frames: { a: '........090.",

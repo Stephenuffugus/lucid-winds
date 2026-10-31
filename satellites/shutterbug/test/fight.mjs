@@ -17,14 +17,15 @@
  *   - a real B dive's landing and a real B dash each send the shock (drawn at both fronts, the shock voice) and kill a
  *     floor moth 3 cells off;
  *   - the HUD writes nothing over 30 quiet steps (a MutationObserver counts the records);
- *   - a chest laid near the room's top with the bug beside it (the camera at the top): the card docks low, clear of it;
+ *   - a chest laid near the room's top with the bug beside it (the camera at the top): the card docks low, clear of it,
+ *     and as the bug falls the room's height into that place the card moves back to the top, never over it;
  *   - #top never overflows (scrollWidth at most clientWidth) with 4 hearts and both icons; zero page errors.
  * At 412x915 too, the sitting: Play it again again (both weapons carried), the recording replayed on a fresh sim made
  * from SB_DEV.roomOpts() equals the live hash; Title through the pause card ends it (the sample room starts empty); a
  * death after the chest: Again restarts with the gear the bug walked in with.
  *
  * Watched red by CHEST_NO_WEAPON, CHEST_STOPS_FOR_EMPTY, HUD_STALE, HUD_EVERY_STEP, GOT_TAKES_TAPS, GOT_STAYS,
- * GOT_OVER_BUG, THROW_SILENT, GEAR_LOST_ON_NEXT_ROOM, GEAR_KEPT_THROUGH_TITLE, DEATH_KEEPS_PICKUP and ROOM_OPTS_MISSING. */
+ * GOT_OVER_BUG, GOT_STAYS_OVER_BUG, THROW_SILENT, GEAR_LOST_ON_NEXT_ROOM, GEAR_KEPT_THROUGH_TITLE, DEATH_KEEPS_PICKUP and ROOM_OPTS_MISSING. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME } from './harness.mjs';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
@@ -224,6 +225,20 @@ try {
     await page.evaluate((str, W) => { window.SB_DEV.hold(true); window.SB_DEV.loadRecord(str); const st = window.SB.game.state; st.loot.length = 0; st.enemies.length = 0; st.hero.x = 3 * 4096 + 512; st.hero.y = 3 * 4096; st.chest.idx = 3 * W + 3; st.chest.open = 0; window.SB_DEV.step(0); }, REC, W);
     const top1 = await stepN(page, 1), gl = await card(page);
     R.say(top1.slots.some(c => c > 0) && gl.on && gl.low && !gl.overBug && gl.inView && gl.over.length === 0, w + ': a chest near the room\'s top with the bug beside it: the card docks low (' + gl.low + '), clear of the bug (box ' + gl.box.join(' ') + ')');
+    /* the bug then falls the room's height into the low card's place: each step the card stays off the bug's drawn box,
+       moving back to the top (in one evaluate, inside the card's 2.5 s) */
+    const fall = await page.evaluate(() => {
+      const el = document.getElementById('got'), cv = document.getElementById('view'); let over = 0, onSteps = 0;
+      for (let k = 0; k < 90; k++) {
+        window.SB_DEV.step(1);
+        if (!el.classList.contains('on')) continue;
+        onSteps++;
+        const hd = window.SB.render.drawn.hero, vr = cv.getBoundingClientRect(), kk = vr.height / cv.height, r = el.getBoundingClientRect();
+        if (hd && hd.key && vr.top + hd.y * kk < r.bottom && vr.top + (hd.y + hd.h) * kk > r.top) over++;
+      }
+      return { over, onSteps, low: el.classList.contains('low'), ground: window.SB.game.state.hero.ground };
+    });
+    R.say(fall.ground && fall.onSteps >= 60 && fall.over === 0 && !fall.low, w + ': as the bug falls under the docked card, the card moves back to the top and never covers it (' + fall.over + ' steps over the bug in ' + fall.onSteps + ', docked ' + (fall.low ? 'low' : 'at the top') + ' at the end)');
     R.say(ctx === 'running' && errors.length === 0, w + ': the audio ran and zero page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
 
     /* the sitting, at 412: Play it again carries both; the roomOpts replay; Title ends it; a death keeps the entry gear */
