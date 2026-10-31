@@ -1,5 +1,29 @@
 # START HERE
 
+## 📷 31 Oct 19:35 UTC (Opus) SHUTTERBUG sb-m1-3 = sb-m1-2 + THE STICK + ASTRA'S ART + WEAPONS STEP 1, STAMPED, FULL CHECK RUNNING (supersedes the 17:55 plan's merge steps)
+**Where:** branch `sb-m1-3` in the worktree /workspaces/sb-m13 (pushed). It is add-sproing-jumper `a44ef31e4` with these merged in:
+  - sb-art: Astra's hero, five enemies, five elites, traps, loot and hearts. ART1, Q160.
+  - sb-weapons: step 1, the first fight. The chest gives a weapon; Boomerang on every jump; Anvil Boots on a dive landing or a dash; kills pay DP; the slot HUD. W1, Q120 and Q121.
+  - sb-stick: the floating thumbstick on the whole left side, and its review's seven fixes. Q140.
+  - The stamp `b8484f481`: BUILD sb-m1-3, CACHE shutterbug-v3, sw.js?v=3.
+  - Merge resolutions are written in the merge commits `e80475299` and `751e235bf`. The elites were added to FLASHED: without that, a hit elite would crash the renderer.
+**The full check** started 19:32 UTC on `751e235bf`, logging to /home/codespace/sb-drafts/sb-m1-3/check-full.txt. It ends with a line `EXIT=0` and ALL GATES PASSED, or names what failed.
+**When it passes (whoever reads this):**
+  1. In /workspaces/lucid-winds: `git merge --ff-only sb-m1-3` (or `git merge --no-ff sb-m1-3` if START-HERE moved meanwhile), then push.
+  2. Stephen runs, from the repo root (or sends it as a message):
+     `flock /home/codespace/sb-drafts/browser.lock bash -c 'git diff --quiet <GREEN> HEAD -- satellites/shutterbug/{index.html,sw.js,manifest.json,icons} && BUILD=sb-m1-3 CACHE=shutterbug-v3 SWV=3 tools/shutterbug-tests/deploy.sh'`
+     with <GREEN> the commit the check passed on. This one deploy ships everything; the sb-m1-2 line is no longer needed.
+  3. Then hostproof.sh on both origins, `git tag -a sb-m1-3`, and memory.
+  - If sb-m1-2 was deployed first, merge origin/main into add-sproing-jumper before step 1. The served files will conflict at the stamps; take ours, since sb-m1-3 holds everything sb-m1-2 has.
+**Parked, not built:**
+  - The levels rule. Its brief is LEVELS_BRIEF in `shutterbug-sb-m1-3-stick-levels-wf_72adb109-f5f.js`.
+  - Weapons steps 2 to 4 (the swap card and J2 to J8, the dive weapons, the charms; spec docs/WEAPONS-V1.md on sb-weapons).
+  - Astra's fx and weapon icons (step 1 uses its own placeholder art), the cutter rules for the extra hero poses, and the art review (skipped to save usage).
+**Stephen's calls are in QUESTIONS:**
+  - Q120 and Q121: the weapons, 21 calls ranked in spec section 15.
+  - Q140: the stick's feel numbers, and the very left edge.
+  - Q160: Astra's art; questions for Astra on the small hero and the magenta marks.
+
 ## 📷 31 Oct 17:55 UTC (Opus) SHUTTERBUG: sb-m1-2 READY TO DEPLOY; the stick, Astra's art and weapons on branches; USAGE 93%, so read this if the session is gone
 **If the session hit the usage limit or the box stopped, nothing is lost.** Every branch below autosaves and pushes to GitHub every ten minutes (`git ls-remote` equalled local HEAD on all four at 17:47 UTC). To resume after the reset, open the box, run `claude` and say: "read START-HERE.md and continue".
 LIVE: sb-m1-1 until Stephen runs the line below.
