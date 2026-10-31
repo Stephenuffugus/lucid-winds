@@ -1,5 +1,30 @@
 # START HERE
 
+## 📷 31 Oct 22:20 UTC (Opus) SHUTTERBUG: HIS SECOND FOUR RULINGS (Q97); THE BUILD ORDER FROM HERE (supersedes the 22:05 entry's NEXT)
+The investigation's findings: docs/SAMENESS-INVESTIGATION-OCT31.md and docs/PROGRESSION-PROPOSAL-OCT31.md (`5ad2e674f`).
+  - The hue quantizer he first picked measured badly: Attic 118 to 104 of 120, builds 49 to 38. He re-ruled (Q97, `5cce4c551`), the recommended option each time:
+    1. The biome from the photo's real colour, in a record v2 byte.
+    2. A firm ramp: at least 2, 3 and 4 enemies in rooms 2 to 4, an elite from room 3, room 4's enemies at 1.5x HP and 1.25x speed.
+    3. The clay boss now.
+    4. A cosmetic per clear.
+  - Live sb-m1-3 builds 5 of 120 model rooms at the default box. sb-levels' work in progress builds 48 of 120.
+BUILD ORDER (each a lean lane: build, one review, fix; the scripts in satellites/shutterbug/docs/lanes are the templates):
+  1. The running lanes finish, then merge sb-levels and sb-weapons-2 into add-sproing-jumper, stamp sb-m1-4, run the full check and hand him the line.
+  2. On sb-levels, in order:
+     - auto-find a crop box (Q96 ruling 3)
+     - the capture normalisation (free: 0 fixtures change, builds 26 to 32 of 60)
+     - B1, the biome from the photo's colour with record v2 (Q97 ruling 1)
+     - the crop hatches from Astra's round 2
+  3. House slice 1, on top of sb-levels (the proposal's section on slice 1; 2 lanes):
+     - a saved five room run with Retry House
+     - the ramp table
+     - hearts carried, plus one at each doorway
+     - the clay boss in room 5 (boss_fallback)
+     - the clear card with a cosmetic per clear
+     - "Start a house" on the title
+  4. On sb-weapons-2: ART3 (Astra's round 2), then weapons step 3 (the dive slot; until it lands, the dive slot is Anvil Boots forever), then the biome lean (after B1).
+  5. To put to him later: edge ledges with a stepping stone repair (a v2 rule), photo born specks, blueprints and the Darkroom, and the photo boss (HP capped at 40).
+
 ## 📷 31 Oct 22:05 UTC (Opus) SHUTTERBUG: STEPHEN'S FOUR RULINGS AFTER PLAYING sb-m1-3, ASTRA ROUND 2 IN HAND, ROUND 3 BRIEF IN DRIVE (supersedes the 21:35 entry's NEXT)
 HIS NOTE (verbatim in QUESTIONS Q96): the same two weapons come over and over; "try a tighter crop over and over"; not enough colours ("I try to do something green and it just won't do it"); no biome variety; "everything feels the same"; "no real goal at the end ... a way to level up or ramp up".
 HIS RULINGS (Q96, `e50b75a33`), the recommended option on all four:
