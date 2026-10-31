@@ -213,8 +213,18 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #pausetitle, #cleartitle, #deathtitle { background: transparent; color: var(--ink); }
 /* the hint glyphs (T0.16): a control pulses once, the first time it is the move to make */
 @keyframes sbhint { 0%, 100% { box-shadow: 0 0 0 0 rgba(242,209,63,0); } 50% { box-shadow: 0 0 0 6px rgba(242,209,63,0.9); } }
-#stick.hint .field, .verb.hint .glyph { animation: sbhint 0.7s ease-in-out 3; }
-@media (prefers-reduced-motion: reduce) { #stick.hint .field, .verb.hint .glyph { animation: none; outline: 4px solid var(--sun); } }
+/* A and B are buttons and pulse as buttons; the stick is no button, so its hint draws no box, no ring and no outline
+   (the stick's review: a Sun box round the whole field read as one giant button). Its idle line darkens to Ink and the
+   arrows slide out and back, the way the thumb goes; under reduced motion the line is Ink and still for the pulse */
+.verb.hint .glyph { animation: sbhint 0.7s ease-in-out 3; }
+@keyframes sbidle { 0%, 100% { color: rgba(11,10,15,0.4); } 50% { color: var(--ink); } }
+@keyframes sbidlel { 0%, 100% { transform: none; } 50% { transform: translateX(-10px); } }
+@keyframes sbidler { 0%, 100% { transform: none; } 50% { transform: translateX(10px); } }
+#stick.hint .idle { animation: sbidle 0.7s ease-in-out 3; }
+#stick.hint .idle .hl { animation: sbidlel 0.7s ease-in-out 3; }
+#stick.hint .idle .hr { animation: sbidler 0.7s ease-in-out 3; }
+@media (prefers-reduced-motion: reduce) { .verb.hint .glyph { animation: none; outline: 4px solid var(--sun); }
+  #stick.hint .idle, #stick.hint .idle .hl, #stick.hint .idle .hr { animation: none; color: var(--ink); } }
 #safeprobe { position: fixed; visibility: hidden; pointer-events: none; padding: var(--sat) 0 var(--sab) 0; }
 #vhprobe { position: fixed; left: 0; top: 0; width: 0; height: 100vh; height: 100dvh; visibility: hidden; pointer-events: none; }
 
@@ -222,16 +232,20 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
    strip's full height; the drawn glyphs sit at the bottom, semi transparent on the film. 64 px verbs on phones 390
    and wider, 56 below (DESIGN 4.1's minimum). The bottom left 120x120 belongs to the fleet's music chip (the reserved
    box: transparent, borderless, textless, handlerless, the top hit at every point of it) wherever the chip shows, the
-   clear and death cards; while a room runs the chip is hidden (Q48's addendum) and the box is released to the stick,
-   so a left thumb in the bottom left corner steers (Stephen's ruling of 31 Oct, "Whole left side", QUESTIONS Q140) */
+   clear card; while a room runs the chip is hidden (Q48's addendum) and the box is released to the stick, so a left
+   thumb in the bottom left corner steers (Stephen's ruling of 31 Oct, "Whole left side", QUESTIONS Q140). Under the
+   death card the chip is hidden too (below), so the box stays released there and the stick never moves under a held
+   thumb when the hero falls (the stick's review) */
 #strip { --btn: 64px; --res: 120px; }
-body.playing #strip { --res: 0px; }
+body.playing #strip, body:has(#death.on) #strip { --res: 0px; }
 #reserve { position: absolute; left: 0; bottom: 0; width: var(--res); height: var(--res); }
-body.playing #reserve { display: none; }
+body.playing #reserve, body:has(#death.on) #reserve { display: none; }
 /* the stick (Q140): nothing is drawn where a thumb can land until it lands but a quiet line (the two arrows and
    "slide to run", no box, no ring: it must never read as a button); then the pad and its knob appear centred under the
-   landing point, kept inside the field (the strip above the bottom inset, never over the room or B), the knob slides
-   sideways only, and both go when the thumb lifts. The shell moves the pad (left, top) and the knob (translateX) */
+   landing point (the stick's review: kept off the room and off B only, so at the screen's edge and its bottom the pad
+   runs off the glass and its centre stays under the thumb), the knob slides sideways only, and both go when the thumb
+   lifts, or when a card or the pause card is up (nothing to steer there). The shell moves the pad (left, top) and the
+   knob (translateX). The pad and knob are <i>: upright, never the browser's italic (the review: slanted arrows) */
 #stick { position: absolute; left: var(--res); top: 0; bottom: 0; right: calc(2 * var(--btn) + var(--edge)); touch-action: none; }
 #stick .field { position: absolute; left: 6px; right: 6px; top: 6px; bottom: calc(10px + var(--sab)); pointer-events: none; border-radius: 14px;
   display: flex; align-items: flex-end; }
@@ -242,6 +256,8 @@ body.playing #reserve { display: none; }
 #stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; border-radius: 50%; display: none;
   border: 2px solid rgba(11,10,15,0.45); background: rgba(11,10,15,0.08); pointer-events: none; }
 #stick.on .pad { display: block; }
+body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad { display: none; }
+#stick i { font-style: normal; }
 #stick .pad b { position: absolute; top: 50%; margin-top: -0.6em; line-height: 1.2em; font-weight: 400; font-size: 1rem; color: rgba(11,10,15,0.4); }
 #stick .pad .cl { left: 9px; } #stick .pad .cr { right: 9px; }
 /* the knob carries the arrow of the way it reads (it slides over the pad's own arrows at a full push) */
@@ -368,7 +384,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <div id="strip">
     <p id="dp"><span data-copy="dp"></span> <span id="dpn">0</span><span id="dpplus" aria-hidden="true"></span></p>
     <div id="reserve" aria-hidden="true"></div>
-    <div id="stick" data-aria="move"><div class="field"><i class="idle"><b data-copy="left"></b><span data-copy="stickIdle"></span><b data-copy="right"></b></i></div><i class="pad"><b class="cl" data-copy="left"></b><b class="cr" data-copy="right"></b><i class="knob"><b class="kl" data-copy="left"></b><b class="kr" data-copy="right"></b></i></i></div>
+    <div id="stick" data-aria="move"><div class="field"><i class="idle"><b class="hl" data-copy="left"></b><span data-copy="stickIdle"></span><b class="hr" data-copy="right"></b></i></div><i class="pad"><b class="cl" data-copy="left"></b><b class="cr" data-copy="right"></b><i class="knob"><b class="kl" data-copy="left"></b><b class="kr" data-copy="right"></b></i></i></div>
     <div id="btnB" class="verb" role="button" data-aria="dive"><span class="glyph" data-copy="btnB"></span></div>
     <div id="btnA" class="verb" role="button" data-aria="jump"><span class="glyph" data-copy="btnA"></span></div>
   </div>
@@ -3990,7 +4006,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
      The stick (Stephen's ruling of 31 Oct, QUESTIONS Q140) reads how far the thumb slid from where it landed, never
      where it is on the screen; A and B track their own pointers, so a second finger never releases the first. */
   I.initStrip = function () {
-    var stick = document.getElementById('stick'), field = stick.querySelector('.field'), pad = stick.querySelector('.pad'), knob = stick.querySelector('.knob');
+    var stick = document.getElementById('stick'), pad = stick.querySelector('.pad'), knob = stick.querySelector('.knob');
+    var stripEl = document.getElementById('strip'), paused = document.getElementById('paused');
     var T = SB.TUNING, ON = T.STICK_ON_PX, OFF = T.STICK_OFF_PX, TRAVEL = T.STICK_TRAVEL_PX;
     /* the pointers down on the stick, first first: the first rules it. Each keeps its centre (ox: its landing x, then
        dragged along once the thumb is TRAVEL past it), its x now, and the y it landed at (the pad's row) */
@@ -4009,21 +4026,28 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (was === 'L' && dx <= -OFF) return 'L';
       return null;
     };
+    /* the stick steers only while a room runs: under the pause card and the clear and death cards nothing can move, so
+       it reads nothing and draws nothing there (the stick's review: a pad pushed left under "Paused") */
+    var live = function () { return document.body.classList.contains('playing') && !paused.classList.contains('on'); };
     var setDir = function (v) {
+      if (!live()) v = null;
       if (v === stickDir) return;
       if (stickDir) I.release(stickDir, 'stick');
       stickDir = v;
       if (v) I.press(v, 'stick');
     };
-    /* the pad and the knob: drawn only while a thumb rules the stick, the pad centred on the ruling thumb's centre and
-       landing row, kept inside the field; the knob at the slide, clamped to TRAVEL */
+    /* the pad and the knob: drawn only while a thumb rules the stick in a running room, the pad centred on the ruling
+       thumb's centre and landing row; kept off the room (its top at the strip's) and off B (its inner side at the
+       zone's: mirrored, the zone's left), and nowhere else, so at the screen's edge and its bottom it runs off the glass
+       with its centre under the thumb (the stick's review: kept inside the inset field, a corner thumb sat 61 to 68 px
+       from the pad's centre, outside its rim); the knob at the slide, clamped to TRAVEL */
     var paint = function () {
-      var p = stickPtrs.length ? stickAt[stickPtrs[0]] : null;
+      var p = stickPtrs.length && live() ? stickAt[stickPtrs[0]] : null;
       stick.classList.toggle('on', !!p);
       if (!p) return;
-      var s = stick.getBoundingClientRect(), f = field.getBoundingClientRect();
+      var s = stick.getBoundingClientRect(), mir = stripEl.classList.contains('mirror');
       var hw = pad.offsetWidth / 2, hh = pad.offsetHeight / 2;
-      var cx = Math.max(f.left + hw, Math.min(f.right - hw, p.ox)), cy = Math.max(f.top + hh, Math.min(f.bottom - hh, p.y));
+      var cx = mir ? Math.max(s.left + hw, p.ox) : Math.min(s.right - hw, p.ox), cy = Math.max(s.top + hh, p.y);
       pad.style.left = (cx - s.left) + 'px'; pad.style.top = (cy - s.top) + 'px';
       knob.style.transform = 'translateX(' + Math.max(-TRAVEL, Math.min(TRAVEL, p.x - p.ox)) + 'px)';
       pad.classList.toggle('l', stickDir === 'L'); pad.classList.toggle('r', stickDir === 'R');
@@ -4064,7 +4088,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     stick.addEventListener('lostpointercapture', endStick);
     I._stick = function () {
       var p = stickPtrs.length ? stickAt[stickPtrs[0]] : null;
-      return { dir: stickDir, pointers: stickPtrs.length, shown: stick.classList.contains('on'), ox: p ? p.ox : null, x: p ? p.x : null, moves: moves };
+      return { dir: stickDir, pointers: stickPtrs.length, shown: getComputedStyle(pad).display !== 'none', ox: p ? p.ox : null, x: p ? p.x : null, moves: moves };
     };
 
     var button = function (el, verb) {
@@ -4088,9 +4112,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
       return function () { ptrs = {}; el.classList.remove('on'); };
     };
     var btnA = button(document.getElementById('btnA'), 'A'), btnB = button(document.getElementById('btnB'), 'B');
-    /* releaseAll (Title, blur, hidden, Pause) clears the latch; the stick goes neutral and keeps its thumbs and their
-       centres, so a thumb still down presses again on its next move */
-    I._stripReset = function () { stickDir = null; paint(); btnA(); btnB(); };
+    /* releaseAll (Title, blur, hidden, Pause, Resume) clears the latch; the stick goes neutral and keeps its thumbs, each
+       re centred where it is now, so the knob shows what the stick reads (the stick's review: a thumb held still across
+       Pause and Resume kept its knob pushed while the hero stood) and a thumb still down presses again once it slides
+       ON px from there */
+    I._stripReset = function () {
+      for (var k = 0; k < stickPtrs.length; k++) { var q = stickAt[stickPtrs[k]]; q.ox = q.x; }
+      stickDir = null; paint(); btnA(); btnB();
+    };
     var strip = document.getElementById('strip');
     strip.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     document.getElementById('view').addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -4796,7 +4825,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* free play restarts the room with the same record and seed, the reveal skipped */
   ui.restart = function () { if (G.record) ui.startRoom(G.record, G.name, { level: G.level, noReveal: true, notFirst: G.notFirst, mode: G.mode }); };
   /* the hint glyphs, once each a session (onboarding.hints, T1.10 keeps them; the stick's under the save's old key
-     `rocker`, so no save moves): the stick's field and A at the first standing
+     `rocker`, so no save moves): the stick's idle line (no box: its arrows slide) and A at the first standing
      moment, B the first time the hero is airborne above a dive target (a one way within 8 rows under its column) */
   ui.hinted = { stick: false, A: false, B: false, stood: false };
   /* the pulse is sbhint, 0.7 s three times; then the class leaves, so the reduced motion outline (no animation to end)
