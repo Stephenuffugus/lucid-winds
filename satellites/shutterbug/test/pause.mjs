@@ -252,6 +252,9 @@ try {
     R.say(r0.screen === 'reveal' && r0.pause === 'hidden' && !!pc && !pc.onTop,
       'in the reveal Pause is hidden: a thumb on it lands on ' + (pc ? pc.topName : 'nothing') + ' (screen ' + r0.screen + ', Pause ' + r0.pause + ')');
     await escape(page);
+    /* two animation frames first: the held loop still draws, so the bug read below is this room's, whatever the card was
+       placed against at the pause */
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     const r1 = await look(page), rv = await page.evaluate(() => ({ on: window.SB.ui.reveal.on, marks: window.SB_DEV.perf().reveal,
       meets: window.__meets(window.__hero(), document.getElementById('paused').getBoundingClientRect()), hero: window.__hero() }));
     R.say(lowRow >= 0 && !!rv.hero && !rv.meets, 'paused out of the reveal, the card is placed against this room\'s bug, drawn at once, and leaves it in sight (the bug ' + (rv.hero ? Math.round(rv.hero.t) + ' to ' + Math.round(rv.hero.b) : 'not drawn') + '; the room before left with its bug at row ' + lowRow + ', where the card docks low)');
