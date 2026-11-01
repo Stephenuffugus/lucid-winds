@@ -20,16 +20,19 @@
  * search skipped, the refusal's message at once on Develop). Without flags:
  *   - 26 rows of Walnut at the default box: no message at rest; Develop (one real tap, no drag) searches, the box is
  *     drawn where the search chose, no message while it shows, and the room developed is the chosen box's record;
- *   - a photo Ink to every edge: the seek marker loops while it searches, then the dark message, the box where the player
- *     left it; no animation frame spends more than SEEK.SLICE_MS on the search (the builds in a worker), and with
- *     ?seekworker=0 (the builds on the page's thread) the search still spreads over frames and no frame that ran
- *     more than one build passed the budget.
+ *   - a photo Ink to every edge: the seek marker loops while it searches, then, after exactly SEEK.CAP builds, the
+ *     message for a photo nothing builds in its dark form (Q183: nothing in the photo can be climbed, a night sky
+ *     named; never a tighter crop), the box where the player left it; no animation frame spends more than
+ *     SEEK.SLICE_MS on the search (the builds in a worker), and with ?seekworker=0 (the builds on the page's thread)
+ *     on a photo of light and dark stripes 40 px high (no box of the list builds, no cause) the search still spreads
+ *     over frames, no frame that ran more than one build passed the budget, and it ends on the plain message.
  * The capture normalisation (QUESTIONS Q182), on a painted model room at rest: the page's normalised canvas grid equals
  * the capture oracle's normalizeRGB of the same grid byte for byte, the crop screen's record is that grid's nearest
  * colour in every cell, and the oracle's own area average of the PNG, normalised, lands near the page's record.
  * Watched red by OVERLAY_STALE and PHOTO_HELD, for the levels item by MESSAGE_SINGLE, BAND_UNMARKED,
  * OVERLAY_BLANK_REFUSED and DEV_READOUT_MS_ONLY, for the auto crop by SEEK_OFF, SEEK_NO_BUDGET, SEEK_BOX_UNMOVED,
- * SEEK_MESSAGE_AT_REST and SEEK_MESSAGE_WITH_BOX, and for the normalisation by NORM_OFF and NORM_SPLIT. */
+ * SEEK_MESSAGE_AT_REST and SEEK_MESSAGE_WITH_BOX, for the search's reach by SEEK_OLD_COPY, and for the normalisation by
+ * NORM_OFF and NORM_SPLIT. */
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
@@ -86,6 +89,8 @@ try {
     await page.setContent('<html><body style="margin:0"><canvas id="c" width="900" height="1600"></canvas></body></html>');
     await page.evaluate(hex => { const c = document.getElementById('c').getContext('2d'); c.fillStyle = '#' + hex[0]; c.fillRect(0, 0, 900, 1600); }, HEX);
     await (await page.$('#c')).screenshot({ path: join(TMP, 'void.png') });
+    await page.evaluate(() => { const c = document.getElementById('c').getContext('2d'); for (let y = 0; y < 1600; y += 40) { c.fillStyle = (y / 40) % 2 ? '#e6e6e6' : '#1e1e1e'; c.fillRect(0, y, 900, 40); } });
+    await (await page.$('#c')).screenshot({ path: join(TMP, 'stripes.png') });
     await page.close();
   }
   {
@@ -155,12 +160,13 @@ try {
     const bk0 = await load('void');
     await tap(page, '#develop');
     const mk = await page.evaluate(() => new Promise(r => requestAnimationFrame(() => setTimeout(() => r(Object.assign(window.SB_DEV.overlay().seek || {}, { seeking: window.SB_DEV.overlay().seeking })), 120))));
-    await page.waitForFunction(() => { const s = window.SB_DEV.overlay().seek; return s && s.phase !== 'seek'; }, { timeout: 30000 }).catch(() => {});
+    await page.waitForFunction(() => { const s = window.SB_DEV.overlay().seek; return s && s.phase !== 'seek'; }, { timeout: 120000 }).catch(() => {});
     const bk = await page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { stuck: document.getElementById('crop').classList.contains('stuck'), copy: Object.assign({}, window.SB.ui.COPY) }));
     const bs = bk.seek || {};
     R.say(mk.seeking && mk.marker && mk.frames >= 1, 'autocrop: the seek marker shows while the search runs (searching ' + mk.seeking + ', the marker ' + (mk.marker ? 'shown' : 'hidden') + ', ' + (mk.frames || 0) + ' frames drawn)');
-    R.say(bs.phase === 'none' && bs.builds >= 1 && bk.shown && bk.says === bk.copy.tighterDark && bk.stuck && !bs.marker && JSON.stringify(bk.crop) === JSON.stringify(bk0.crop),
-      'autocrop: a photo nothing builds ends on its message, the box where the player left it (phase ' + bs.phase + ', ' + bs.builds + ' builds of ' + bs.candidates + ' boxes, it says "' + bk.says + '", the box ' + JSON.stringify(bk.crop) + ')');
+    R.say(bs.phase === 'none' && bs.builds === SEEK.CAP && bs.candidates > SEEK.CAP && bk.shown && bk.says === bk.copy.nothingDark && bk.stuck && !bs.marker && JSON.stringify(bk.crop) === JSON.stringify(bk0.crop),
+      'autocrop: a photo nothing builds ends, after exactly SEEK.CAP builds, on the message that nothing in it can be climbed (its dark form), the box where the player left it (phase ' + bs.phase + ', ' + bs.builds + ' builds of ' + bs.candidates + ' boxes, CAP ' + SEEK.CAP + ', it says "' + bk.says + '", the box ' + JSON.stringify(bk.crop) + ')');
+    R.say(!/tighter|crop/i.test(bk.says), 'autocrop: the message after a search never asks for a tighter crop ("' + bk.says + '")');
     R.say(bs.slices >= 2 && bs.sliceMax <= SEEK.SLICE_MS, 'autocrop: the search spreads over ' + bs.slices + ' frames and none spends more than ' + SEEK.SLICE_MS + ' ms on it (the longest ' + (bs.sliceMax || 0).toFixed(1) + ' ms, ' + bs.mode + ' mode)');
     R.say(errors.length === 0, 'autocrop: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
@@ -172,11 +178,13 @@ try {
     await ready(page, { reveal: true });
     const SLICE = await page.evaluate(() => window.SB.capture.SEEK.SLICE_MS);
     const d = await page.evaluate(() => window.SB_DEV.overlay().decodes);
-    await (await page.$('#filechoose')).uploadFile(join(TMP, 'void.png'));
+    await (await page.$('#filechoose')).uploadFile(join(TMP, 'stripes.png'));
     await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
     await tap(page, '#develop');
-    await page.waitForFunction(() => { const s = window.SB_DEV.overlay().seek; return s && s.phase !== 'seek'; }, { timeout: 60000 }).catch(() => {});
+    await page.waitForFunction(() => { const s = window.SB_DEV.overlay().seek; return s && s.phase !== 'seek'; }, { timeout: 150000 }).catch(() => {});
     const ms = await page.evaluate(() => window.SB_DEV.overlay().seek || {});
+    const st = await page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { copy: Object.assign({}, window.SB.ui.COPY) }));
+    R.say(ms.phase === 'none' && st.cause === null && st.shown && st.says === st.copy.nothingClimbs, 'autocrop: the striped photo nothing builds (no cause) ends on "' + st.copy.nothingClimbs + '" (phase ' + ms.phase + ', ' + ms.builds + ' builds, cause ' + st.cause + ', it says "' + st.says + '")');
     R.say(ms.mode === 'main' && ms.phase === 'none' && ms.slices >= 2 && ms.multiOver === 0, 'autocrop: without a worker the builds spread over ' + ms.slices + ' frames and no frame that ran more than one build passed ' + SLICE + ' ms (' + ms.multiOver + ' did; the longest ' + (ms.sliceMax || 0).toFixed(1) + ' ms, ' + ms.builds + ' builds, ' + ms.mode + ' mode)');
     R.say(errors.length === 0, 'autocrop: zero page errors without a worker' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();

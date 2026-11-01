@@ -3769,18 +3769,20 @@ body.sb-modal .lwfb-fab { display: none !important; }
       all.push({ b: b, n: all.length, cost: T.SIZE * si + dx + (dy >= 0 ? T.ALONG * dy : -T.AGAINST * dy) - (b.x === 0 || b.x + b.w === bw ? T.EDGE : 0) });
     };
     var j, k, i, m;
-    seen[c.x + ',' + c.y + ',' + c.w] = 1;
     for (;;) {
       var h = w * 2, q = w / 4, ay = cause === 'floor' ? bot - h : cause === 'ceiling' ? top : (top + bot - h) / 2;
-      var a = Math.max(0, Math.min(bh - h, ay)), nk = Math.ceil(bw / q) + 1, nj = Math.ceil(bh / (h / 4)) + 1;
-      for (j = -nj; j <= nj; j++) for (k = -nk; k <= nk; k++) add(C.clamp({ x: cx - w / 2 + k * q, y: ay + j * h / 4, w: w, h: h }, bw, bh), a, q);
+      /* the lattice from the photo's top edge to its bottom and from its left edge to its right (one step past each,
+         clamped onto it) */
+      var a = Math.max(0, Math.min(bh - h, ay)), x0 = cx - w / 2, ky = h / 4;
+      var k0 = Math.floor(-x0 / q), k1 = Math.ceil((bw - w - x0) / q), j0 = Math.floor(-ay / ky), j1 = Math.ceil((bh - h - ay) / ky);
+      for (j = j0; j <= j1; j++) for (k = k0; k <= k1; k++) add(C.clamp({ x: x0 + k * q, y: ay + j * ky, w: w, h: h }, bw, bh), a, q);
       if (w <= mw) break;
       si++;
       w = Math.max(mw, Math.round(w * C.SEEK.SHRINK));
     }
     all.sort(function (p, r) { return p.cost - r.cost || p.n - r.n; });
     var out = [], near = {}, b, s, cl;
-    near[c.w] = [c];
+    near[c.w] = [c];   /* the player's own box, and any box within a cell of it, already refused */
     for (i = 0; i < all.length; i++) {
       b = all[i].b; s = near[b.w] || (near[b.w] = []); cl = false;
       for (m = 0; m < s.length && !cl; m++) cl = Math.abs(s[m].x - b.x) * GW < b.w && Math.abs(s[m].y - b.y) * GH < b.h;
