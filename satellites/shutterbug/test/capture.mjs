@@ -239,6 +239,47 @@ try {
   R.say(raced.s !== 'crop' && raced.s !== 'title' && raced.decodes === d1 + 1, 'a retake decoding past Develop is dropped: the screen stays ' + raced.s + ' (not the crop), the late decode not shown (' + (raced.decodes - d1) + ' landed)');
   R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
   await page.close();
+  /* BIOME (QUESTIONS Q220, Stephen's Q97 ruling 1): the biome from the photo's own colour. The sample room painted with
+     its Ash wall (and the margins) a sage green that still quantizes to Ash, so its grid is the sample room's and
+     today's rule alone would make it Attic; developed, the record is v2 with the hue vote's biome byte, the room is
+     Overgrowth with its thorn crawlers, and the same code built in Node is Overgrowth too. Watched red by BIOME_IGNORED
+     and HUE_UNWRITTEN */
+  {
+    const SAGE = [178, 194, 164], sagePng = join(TMP, 'sage.png');
+    const pg = await newPage(browser, { width: 900, height: 1600, dpr: 1 });
+    await pg.page.setContent('<html><body style="margin:0"><canvas id="c" width="900" height="1600"></canvas></body></html>');
+    await pg.page.evaluate((rows, hex, sage) => {
+      const c = document.getElementById('c').getContext('2d'), cw = 800 / 24, ch = 1600 / 48, col = d => (d === '4' ? 'rgb(' + sage.join(',') + ')' : '#' + hex[parseInt(d, 16)]);
+      c.fillStyle = col('4'); c.fillRect(0, 0, 900, 1600);
+      rows.forEach((r, y) => [...r].forEach((d, x) => { c.fillStyle = col(d); c.fillRect(Math.round(50 + x * cw), Math.round(y * ch), Math.ceil(cw), Math.ceil(ch)); }));
+    }, ROOM, HEX, SAGE);
+    await (await pg.page.$('#c')).screenshot({ path: sagePng });
+    await pg.page.close();
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base);
+    await ready(page, { reveal: true });
+    const d = await page.evaluate(() => window.SB_DEV.overlay().decodes);
+    await (await page.$('#filechoose')).uploadFile(sagePng);
+    await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
+    const rest = await page.evaluate(() => window.SB_DEV.overlay());
+    await tap(page, '#develop');
+    await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 15000 }).catch(() => {});
+    const got = await page.evaluate(() => {
+      const SB = window.SB, l = window.SB_DEV.level(), st = window.SB_DEV.state(), rec = l ? SB.record.decode(l.code) : null;
+      return { screen: window.SB_DEV.screen(), code: l && l.code, v: rec && rec.v, byte: rec && rec.biome, rules: rec && rec.rules, flags: rec && rec.flags, derived: rec ? SB.pipeline.biomeOf(rec.pal, rec.pal.length) : -1,
+        biome: st ? st.biome : -1, kinds: st ? st.enemies.filter(e => e.kind > 0).map(e => e.kind) : [], CRAWLER: SB.features.CRAWLER };
+    });
+    R.say(rest.needsCrop === false && got.screen === 'play' && got.v === 2 && got.byte === 4 && got.rules === 0 && got.flags === 0,
+      'biome: a sage walled room develops at the default box as a v2 record with biome byte 4 (Overgrowth), RULES 0, no flags (screen ' + got.screen + ', v ' + got.v + ', biome byte ' + got.byte + ', rules ' + got.rules + ', flags ' + got.flags + ')');
+    R.say(got.biome === 3 && got.derived === 0 && got.kinds.length > 0 && got.kinds.every(k => k === got.CRAWLER),
+      'biome: the room plays as Overgrowth with its thorn crawlers, where its grid alone is Attic (biome ' + got.biome + ', the grid\'s own rule ' + got.derived + ', enemy kinds ' + JSON.stringify(got.kinds) + ')');
+    writeFileSync(join(TMP, 'sage-record.json'), JSON.stringify({ code: got.code }));
+    let nb = null;
+    try { nb = JSON.parse(execFileSync('node', [join(GAME, 'harness.js'), '--record-json', join(TMP, 'sage-record.json')], { encoding: 'utf8' }).trim().split('\n').pop()); } catch (e) { nb = { error: String(e.message).slice(0, 200) }; }
+    R.say(nb && nb.valid === true && nb.v === 2 && nb.biome === 3, 'biome: the same code built in Node is the v2 Overgrowth room (Node ' + JSON.stringify(nb) + ')');
+    R.say(errors.length === 0, 'biome: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
 } finally {
   await browser.close();
   await srv.close();

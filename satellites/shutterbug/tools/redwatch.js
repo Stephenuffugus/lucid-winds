@@ -1238,6 +1238,28 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-seek-1', expect: 'a 300 wide box, a floor band from row 30: the box ends 4 rows below the band\'s top' }] },
   { name: 'SEEK_FLOOR_UNLIFTED', task: 'AUTOCROP', file: 'page', find: "if (band && cause === 'floor' && band.floor > 0) bot = ", repl: "if (false) bot = ",
     gates: [{ gate: 'harness', only: 'H-seek-1', expect: 'model scene 3: the search builds a room from the 15th box it tries' }] },
+
+  /* BIOME (Q220): record v2's three header bytes and the hue vote at capture */
+  { name: 'BIOME_IGNORED', task: 'BIOME', file: 'page', find: '    if (rec.biome > 0) return rec.biome - 1;\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'a v2 record with biome 1 to 5 builds that biome' },
+      { gate: 'capture', expect: 'biome: the room plays as Overgrowth with its thorn crawlers' }] },
+  { name: 'RULES_UNKNOWN_ACCEPTED', task: 'BIOME', file: 'page', find: 'b[7] > RULES_MAX || ', repl: '',
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a v2 code with RULES 9' }] },
+  { name: 'FLAGS_UNKNOWN_ACCEPTED', task: 'BIOME', file: 'page', find: ' || (b[8] & ~FLAGS_KNOWN) !== 0);', repl: ');',
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a v2 code with flags bit 0' }] },
+  { name: 'V1_CHANGED', task: 'BIOME', file: 'page', find: '    return biomeOf(pal, n);\n  }\n  /* Frost (DESIGN 7)', repl: '    return 0;\n  }\n  /* Frost (DESIGN 7)',
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'every fixture builds the level or the refusal it built on 42fc8b19a' }] },
+  { name: 'V1_CODE_CHANGED', task: 'BIOME', file: 'page', find: 'grids = r.mode === 2 ? 2 : 1, head = headOf(r.v);', repl: 'grids = r.mode === 2 ? 2 : 1, head = HEADER2;',
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'every fixture\'s v1 code in modes 0, 1 and 2 is the string it was on 42fc8b19a' }] },
+  { name: 'HUE_BRIGHT_LAST', task: 'BIOME', file: 'page', edits: [
+      ["    if (sumL > K.FROST_L * 1000 * n) return { biome: 1, rule: 'bright', votes: votes, voters: 0 };\n", ''],
+      ["    if (100 * voters < K.MIN_PCT * n) return { biome: 0, rule: 'few'", "    if (100 * voters < K.MIN_PCT * n) return { biome: sumL > K.FROST_L * 1000 * n ? 1 : 0, rule: sumL > K.FROST_L * 1000 * n ? 'bright' : 'few'"]],
+    gates: [{ gate: 'harness', only: 'H-hue-1', expect: 'the bright room rule comes first: a mint room bright to the floor is Frost' }] },
+  { name: 'HUE_SPLIT', task: 'BIOME', file: 'page', find: 'C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 15,', repl: 'C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 16,',
+    gates: [{ gate: 'harness', only: 'H-hue-1', expect: 'the page\'s HUE numbers are the oracle\'s' }] },
+  { name: 'HUE_UNWRITTEN', task: 'BIOME', file: 'page', find: 'biome: C.hueVote(rgb).biome + 1, rules: 0', repl: 'biome: 0, rules: 0',
+    gates: [{ gate: 'harness', only: 'H-hue-1', expect: 'gridRecord writes a valid v2 record: biome the vote + 1' },
+      { gate: 'capture', expect: 'biome: a sage walled room develops at the default box as a v2 record with biome byte 4' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

@@ -246,5 +246,34 @@ try {
   R.say(hc.errors.length === 0, 'the hashchange page has zero page errors' + (hc.errors.length ? ' (' + hc.errors.join(' ; ') + ')' : ''));
   await hc.page.close();
   R.say(errors.length === 0 && c.errors.length === 0, 'zero page errors' + (errors.length + c.errors.length ? ' (' + errors.concat(c.errors).join(' ; ') + ')' : ''));
+
+  /* BIOME (QUESTIONS Q220): a v2 code round trips. The sample room as a v2 record with biome byte 4 (Overgrowth),
+     encoded in the page, opens from its link in a new page on the card and develops the same level as the sharer's
+     build, as Overgrowth; a v2 code with RULES 9 or an unknown flag bit opens nothing and says the room is newer */
+  {
+    const sj = JSON.parse(readFileSync(join(GAME, 'fixtures', 'sample-room.json'), 'utf8')).record;
+    const made = await page.evaluate(j => { const SB = window.SB, rec = SB.record.fromJSON(Object.assign({}, j, { v: 2, biome: 4, rules: 0, flags: 0 }));
+      const lv = SB.pipeline.build(rec, {}), bytes = SB.record.pack(rec);
+      const bump = (k, v) => { const b = Uint8Array.from(bytes); b[k] = v; return 'v2.' + SB.rng.b64urlEncode(b); };
+      return { link: SB.record.linkOf(location.origin, location.pathname, rec), hash: SB.pipeline.levelHash(lv), biome: lv.biome, rules9: bump(7, 9), flag0: bump(8, 1) }; }, sj);
+    const v = await newPage(browser, { width: 412, height: 915 });
+    await v.page.goto(made.link); await ready(v.page);
+    const vcard = await v.page.evaluate(() => document.getElementById('devcard').classList.contains('on'));
+    await tap(v.page, '#devtap');
+    let vl = null; for (let k = 0; k < 30 && !vl; k++) { await sleep(100); vl = await v.page.evaluate(() => { const l = window.SB_DEV.level(), st = window.SB_DEV.state(); return l && st ? { hash: l.hash, code: l.code, biome: st.biome } : null; }); }
+    R.say(made.link.includes('#v2.') && vcard && vl && vl.hash === made.hash && vl.biome === 3 && made.biome === 3 && vl.code === made.link.slice(made.link.lastIndexOf('#') + 1),
+      'biome: a v2 link (biome byte 4) opens on the card and develops the sharer\'s level as Overgrowth, its code the same v2 code (' + (vl ? vl.hash + ', biome ' + vl.biome : 'no level') + ', the sharer ' + made.hash + ')');
+    const newerMsg = [];
+    for (const code of [made.rules9, made.flag0]) {
+      const nw = await newPage(browser, { width: 412, height: 915 });
+      await nw.page.goto(srv.base + GAME_PATH + '#' + code); await ready(nw.page);
+      newerMsg.push(await nw.page.evaluate(() => ({ shown: !document.getElementById('codemsg').hidden, text: document.getElementById('codemsg').textContent, card: document.getElementById('devcard').classList.contains('on'), newer: window.SB.ui.COPY.codeNewer })));
+      if (nw.errors.length) v.errors.push(...nw.errors);
+      await nw.page.close();
+    }
+    R.say(newerMsg.every(m => m.shown && m.text === m.newer && !m.card), 'biome: a v2 code with RULES 9, and one with flag bit 0, open nothing and say "' + (newerMsg[0] && newerMsg[0].newer) + '" (' + newerMsg.map(m => m.text).join(' | ') + ')');
+    R.say(v.errors.length === 0, 'biome: the v2 page has zero page errors' + (v.errors.length ? ' (' + v.errors.join(' ; ') + ')' : ''));
+    await v.page.close();
+  }
 } finally { await browser.close(); await srv.close(); }
 R.finish();
