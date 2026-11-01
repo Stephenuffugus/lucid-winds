@@ -49,8 +49,10 @@ NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 # and only what this step draws is spliced, 11 new keys on the page's 31 (stick_pad, stick_knob, stick_hint,
 # pause_glyph, fx_skyhook, dust_mote, frost_mote, bubble, spore, ember_mote, icon_biomes): 42 names, so 43 is the
 # least cap that takes it (PROGRESS ART3). W2 (weapons step 2) splices three more of round 1's effects, fx_bursts,
-# fx_impacts and fx_frozen_stunned (their step 2 clips only): 45 names, so 46 (PROGRESS W2, QUESTIONS Q122)
-MAX_SPRITES = 46
+# fx_impacts and fx_frozen_stunned (their step 2 clips only): 45 names, so 46 (PROGRESS W2, QUESTIONS Q122). ART4
+# (Astra's round 4, Q164) adds her eight weapon effect keys (dart, ring, ember, flash_ring, snap_frame, kick_spray,
+# fire_cell, frost_burst) and retires the round 1 fx_bursts and fx_impacts they replace: 51 names, so 52
+MAX_SPRITES = 52
 
 
 class Refuse(Exception):

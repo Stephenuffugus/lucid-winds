@@ -5114,15 +5114,24 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
     icon_weapons: [hx(I.INK, I.SOOT, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE, I.WALNUT, I.AMBER, I.BRICK, I.LAPIS, I.TEAL, I.MOSS), false],
     /* ART3 (Astra's rounds 2 and 3, Q98): the stick's pad, knob and hint, the pause glyph, the Skyhook's effect, the
        biome's air and badges, each the colours her art holds; the dust is Pewter and Ash with no Ink (Q162) */
-    fx_skyhook: [hx(I.INK, I.ASH, I.GLARE, I.TEAL), true], stick_pad: [hx(I.INK, I.PAPER, I.GLARE), true], stick_knob: [hx(I.INK, I.PAPER, I.GLARE), true],
-    stick_hint: [hx(I.INK), true], pause_glyph: [hx(I.INK), true], dust_mote: [hx(I.PEWTER, I.ASH), false], frost_mote: [hx(I.INK, I.PAPER, I.GLARE), true],
-    bubble: [hx(I.INK, I.GLARE, I.TEAL), true], spore: [hx(I.INK, I.MOSS), true], ember_mote: [hx(I.INK, I.ASH, I.AMBER), true],
+    fx_skyhook: [hx(I.INK, I.ASH, I.GLARE, I.TEAL), true], stick_knob: [hx(I.INK, I.PAPER, I.GLARE), true],
+    spore: [hx(I.INK, I.MOSS), true],
     icon_biomes: [hx(I.INK, I.ASH, I.PAPER, I.WALNUT, I.AMBER, I.BRICK, I.LAPIS, I.TEAL, I.MOSS), true],
-    /* W2 (weapons step 2, Q122): round 1's bursts (the Flashbulb, Halo, Shutter Snap), Shield Kick's impact and the held
-       looks, each the colours Astra drew: no Ink rim in the bursts and the impact, Ink on the frozen crystals only */
-    fx_bursts: [hx(I.PEWTER, I.GLARE, I.AMBER), false], fx_impacts: [hx(I.ASH, I.GLARE, I.AMBER), false], fx_frozen_stunned: [hx(I.INK, I.GLARE, I.AMBER, I.TEAL), false] };
+    /* W2 (weapons step 2, Q122): the held looks, the colours Astra drew, Ink on the frozen crystals only */
+    fx_frozen_stunned: [hx(I.INK, I.GLARE, I.AMBER, I.TEAL), false],
+    /* ART4 (Astra's round 4, Q164): the stick's pad thin Slate arcs and an Ash disc, the hint Slate, Pause Slate bars
+       (pressed: Paper bars on an Ink tile), none Ink outlined; the air neutral with Ink cores (the dust's flecks, the
+       frost's crystal, the bubble's hollow ring) and the ember Brick with a Glare core, never loot's Amber */
+    stick_pad: [hx(I.SLATE, I.ASH), false], stick_hint: [hx(I.SLATE), false], pause_glyph: [hx(I.INK, I.SLATE, I.PAPER), false],
+    dust_mote: [hx(I.INK, I.PEWTER, I.ASH), true], frost_mote: [hx(I.INK, I.PAPER, I.GLARE), true], bubble: [hx(I.INK, I.PEWTER, I.GLARE), true],
+    ember_mote: [hx(I.INK, I.GLARE, I.BRICK), true] };
+  /* ART4: the weapon colour law (8.1, Astra's round 4): every weapon effect pixel Ink, Slate, Pewter, Ash, Paper or
+     Glare, Ink outlined in every frame: Twin Darts' dart, Halo's ring, Spark Trail's ember, the Flashbulb's flash_ring,
+     Shutter Snap's snap_frame, Shield Kick's kick_spray, and step 3's fire_cell and frost_burst */
+  const WFX = ['dart', 'ring', 'ember', 'flash_ring', 'snap_frame', 'kick_spray', 'fire_cell', 'frost_burst'];
+  for (const k of WFX) LAW[k] = [hx(I.INK, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE), true];
   const POSES = Object.keys(LAW).filter(n => n.startsWith('hero_'));
-  t.ok(names.length > 0 && names.length < 46, names.length + ' named sprites (under 46, W2\'s cap; frames are unlimited)');
+  t.ok(names.length > 0 && names.length < 52, names.length + ' named sprites (under 52, ART4\'s cap; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
     const sp = S[name];
@@ -5153,16 +5162,30 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   /* ART3: every built weapon's icon is the icon_weapons glyph named by its code (Astra's round 2, J1 to charm), Ink
      outlined; J1's and D1's glyphs are round 1's pixel for pixel (Astra's word, pinned by the sha256 of round 1's
      boomerang and anvil_boots strings) */
-  /* W2 (Q122): Astra drew Halo's glyph (J6) as an Amber ring with a Glare cross, no Ink at all; it is bound as she drew
-     it, named here, and every other built glyph keeps its Ink */
-  const NO_INK_GLYPH = ['J6'];
-  const unbound = SB.TUNING.WEAPONS_BUILT.filter(id => !(S.icon_weapons && S.icon_weapons.frames[id] && (S.icon_weapons.frames[id].includes(INK) || (NO_INK_GLYPH.includes(id) && /[1-9a-f]/.test(S.icon_weapons.frames[id])))));
-  t.ok(unbound.length === 0, 'every built weapon (' + SB.TUNING.WEAPONS_BUILT.join(', ') + ') draws its own Ink outlined icon_weapons glyph named by its code (J6 Halo as Astra drew it, no Ink)' + (unbound.length ? ' (unbound: ' + unbound.join(', ') + ')' : ''));
-  /* W2: the step 2 clips the pictures bind, four frames each, and none of step 3's (they wait in the cut) */
+  /* ART4: Astra's round 4 gave Halo's glyph (J6) Ink edges (W2 had bound her round 2 glyph, no Ink, as a named
+     exception), so every built glyph is Ink outlined */
+  const unbound = SB.TUNING.WEAPONS_BUILT.filter(id => !(S.icon_weapons && S.icon_weapons.frames[id] && S.icon_weapons.frames[id].includes(INK)));
+  t.ok(unbound.length === 0, 'every built weapon (' + SB.TUNING.WEAPONS_BUILT.join(', ') + ') draws its own Ink outlined icon_weapons glyph named by its code' + (unbound.length ? ' (unbound: ' + unbound.join(', ') + ')' : ''));
+  /* W2, ART4: the step 2 pictures are round 4's keys, one per instance, at her sizes and frame names; the held looks
+     stay round 1's fx_frozen_stunned clips; round 1's fx_bursts, fx_impacts and fx_projectiles.twin_darts are retired
+     (the Boomerang's spin stays) */
   const clips = (n, c) => !!S[n] && [0, 1, 2, 3].every(k => typeof S[n].frames[c + '_' + k] === 'string');
-  t.ok(clips('fx_bursts', 'flashbulb') && clips('fx_bursts', 'halo') && clips('fx_bursts', 'shutter_snap') && clips('fx_impacts', 'shield_kick') && clips('fx_frozen_stunned', 'frozen') && clips('fx_frozen_stunned', 'stunned') && clips('fx_projectiles', 'twin_darts')
-    && !clips('fx_bursts', 'icicle_freeze') && !clips('fx_impacts', 'pogo_spear') && !clips('fx_impacts', 'pile_driver') && S.fx_bursts.w === 48 && S.fx_impacts.w === 32 && S.fx_frozen_stunned.w === 32,
-    'the step 2 pictures are Astra\'s clips (fx_bursts flashbulb, halo, shutter_snap at 48; fx_impacts shield_kick, fx_frozen_stunned frozen and stunned, fx_projectiles twin_darts at 32), and step 3\'s icicle_freeze, pogo_spear and pile_driver wait in the cut');
+  const shapeOk = (k, w, h, fr) => !!S[k] && S[k].w === w && S[k].h === h && JSON.stringify(Object.keys(S[k].frames)) === JSON.stringify(fr);
+  t.ok(shapeOk('dart', 8, 4, ['a']) && shapeOk('ring', 16, 6, ['a', 'b']) && shapeOk('ember', 8, 8, ['a', 'b']) && shapeOk('flash_ring', 64, 64, ['a', 'b', 'c', 'd'])
+    && shapeOk('snap_frame', 8, 8, ['corner', 'edge_h', 'edge_v']) && shapeOk('kick_spray', 16, 80, ['a', 'b', 'c']) && shapeOk('fire_cell', 16, 16, ['a', 'b']) && shapeOk('frost_burst', 80, 80, ['a', 'b', 'c', 'd']),
+    'Astra\'s round 4 weapon keys: dart 8x4 a, ring 16x6 a b, ember 8x8 a b, flash_ring 64x64 a to d, snap_frame 8x8 corner edge_h edge_v, kick_spray 16x80 a to c, fire_cell 16x16 a b, frost_burst 80x80 a to d');
+  t.ok(clips('fx_frozen_stunned', 'frozen') && clips('fx_frozen_stunned', 'stunned') && S.fx_frozen_stunned.w === 32 && clips('fx_projectiles', 'boomerang') && !clips('fx_projectiles', 'twin_darts') && !S.fx_bursts && !S.fx_impacts,
+    'the held looks are fx_frozen_stunned\'s frozen and stunned clips at 32, the Boomerang keeps its spin, and round 1\'s fx_bursts, fx_impacts and twin_darts are retired');
+  /* ART4: the reach frames (Astra's manifest range_frames): flash_ring b and c touch all four edges of its 64 square
+     (the 32 px stun radius), frost_burst b and c all four of its 80 square (Icicle's freeze), and kick_spray's strokes
+     run its whole 80 px column; Shutter Snap's tiles hold the 1 px inset Ink rim */
+  const bbox = str => { const r = str.split('/'); let x0 = 99, y0 = 99, x1 = -1, y1 = -1; r.forEach((row, y) => [...row].forEach((c, x) => { if (c !== '.') { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } })); return (x1 - x0 + 1) + 'x' + (y1 - y0 + 1); };
+  const fr = (k, f) => (S[k] && S[k].frames[f]) || '';
+  t.ok(['b', 'c'].every(f => bbox(fr('flash_ring', f)) === '64x64' && bbox(fr('frost_burst', f)) === '80x80') && !['a', 'd'].some(f => bbox(fr('flash_ring', f)) === '64x64')
+    && ['a', 'b', 'c'].some(f => fr('kick_spray', f).split('/')[0] !== '.'.repeat(16) && fr('kick_spray', f).split('/')[79] !== '.'.repeat(16)),
+    'the reach frames: flash_ring b and c fill its 64 square (a and d inside it), frost_burst b and c its 80 square, kick_spray\'s strokes reach both ends of its 80 px column');
+  t.ok(fr('snap_frame', 'corner').split('/')[1] === '.0000000' && fr('snap_frame', 'edge_h').split('/')[1] === '00000000' && fr('snap_frame', 'edge_v').split('/').every(r => r[1] === INK),
+    'snap_frame\'s Ink rim is inset one pixel in the corner and both edges (Astra\'s assembly)');
   const sha16 = str => require('node:crypto').createHash('sha256').update(String(str)).digest('hex').slice(0, 16), IW = (S.icon_weapons || { frames: {} }).frames;
   t.ok(sha16(IW.J1) === '9789ac48c2044d72' && sha16(IW.D1) === 'c9ca5f1ee851afcd', 'icon_weapons.J1 and .D1 are round 1\'s boomerang and anvil_boots pixel for pixel (sha256 ' + sha16(IW.J1) + ', ' + sha16(IW.D1) + ')');
   /* ART3: round 2's keylined elites: every Magenta pixel's eight neighbours are Magenta or Ink (Astra's keyline, so the
@@ -5173,15 +5196,20 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
     for (let y = 0; y < r.length; y++) for (let x = 0; x < r[y].length; x++) if (r[y][x] === MAG) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const c = (r[y + dy] || '')[x + dx] || '.'; if (c !== MAG && c !== INK) open.push(x + dx + ',' + (y + dy)); }
     t.ok(open.length === 0, k + '_elite.' + f + ' keylines every Magenta mark in Ink, all eight neighbours' + (open.length ? ' (open at ' + open.slice(0, 4).join(' ') + ')' : ''));
   }
-  const bbox = str => { const r = str.split('/'); let x0 = 99, y0 = 99, x1 = -1, y1 = -1; r.forEach((row, y) => [...row].forEach((c, x) => { if (c !== '.') { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } })); return (x1 - x0 + 1) + 'x' + (y1 - y0 + 1); };
-  t.ok(!!S.speck && !S.speck.frames.a.includes(GLARE) && S.speck.frames.b.includes(GLARE) && bbox(S.speck.frames.a) === '10x10', 'the speck is a 10x10 Amber diamond (' + (S.speck ? bbox(S.speck.frames.a) : 'absent') + ') with the Glare glint on frame b only');
+  const glint = S.speck ? S.speck.frames.b.split('/').map(r => [...r].map(c => c === GLARE ? '#' : '.').join('')).join('/') : '';
+  t.ok(!!S.speck && !S.speck.frames.a.includes(GLARE) && S.speck.frames.b.includes(GLARE) && bbox(S.speck.frames.a) === '10x10' && bbox(glint.replace(/[^#/]/g, '.')) === '2x2' && (glint.match(/#/g) || []).length === 4,
+    'the speck is a 10x10 Amber diamond (' + (S.speck ? bbox(S.speck.frames.a) : 'absent') + ') with the Glare glint on frame b only, 2x2 (ART4)');
   /* ART3: what this step draws or splices for the next: the stick (pad 40x40 idle and active, knob 18x18 neutral, left
      and right, hint 72x12 with [12,0,48,12] clear for the words), pause_glyph (normal, pressed one pixel lower), fx_skyhook
      (four frames for weapons step 2's J8), the biome's air (16x16, a b c d) and icon_biomes (24x24, a frame a biome) */
-  const shapeOk = (k, w, h, fr) => !!S[k] && S[k].w === w && S[k].h === h && JSON.stringify(Object.keys(S[k].frames)) === JSON.stringify(fr);
-  t.ok(shapeOk('stick_pad', 40, 40, ['idle', 'active']) && shapeOk('stick_knob', 18, 18, ['neutral', 'left', 'right']) && shapeOk('stick_hint', 72, 12, ['line']) && S.stick_hint.frames.line.split('/').every(r => /^\.+$/.test(r.slice(12, 60))),
-    'the stick\'s art: stick_pad 40x40 idle and active, stick_knob 18x18 neutral, left and right, stick_hint 72x12 with columns 12 to 59 clear for the words');
-  t.ok(shapeOk('pause_glyph', 16, 16, ['normal', 'pressed']) && S.pause_glyph.frames.pressed === '................/' + S.pause_glyph.frames.normal.split('/').slice(0, 15).join('/'), 'pause_glyph is 16x16, its pressed frame the normal one a native pixel lower');
+  /* ART4: round 4's pad (thin Slate arcs open on both sides, the knob's travel lane rows 9 to 30 clear at both edges;
+     active adds the Ash disc), the hint an exact mirror, Pause's pressed frame Paper bars on an Ink tile */
+  const padRows = fr('stick_pad', 'idle').split('/'), SLATE = I.SLATE.toString(16), ASH = I.ASH.toString(16), PAPER = I.PAPER.toString(16);
+  t.ok(shapeOk('stick_pad', 40, 40, ['idle', 'active']) && shapeOk('stick_knob', 18, 18, ['neutral', 'left', 'right']) && shapeOk('stick_hint', 72, 12, ['line']) && S.stick_hint.frames.line.split('/').every(r => /^\.+$/.test(r.slice(12, 60)) && r === [...r].reverse().join(''))
+    && padRows.slice(9, 31).every(r => r.slice(0, 5) === '.....' && r.slice(35) === '.....') && !fr('stick_pad', 'idle').includes(ASH) && fr('stick_pad', 'active').includes(ASH),
+    'the stick\'s art: stick_pad 40x40 idle and active (open both sides through rows 9 to 30, the Ash disc only while active), stick_knob 18x18 neutral, left and right, stick_hint 72x12 an exact mirror with columns 12 to 59 clear for the words');
+  t.ok(shapeOk('pause_glyph', 16, 16, ['normal', 'pressed']) && fr('pause_glyph', 'normal').includes(SLATE) && !fr('pause_glyph', 'normal').includes(INK) && fr('pause_glyph', 'pressed').includes(INK) && fr('pause_glyph', 'pressed').includes(PAPER) && !fr('pause_glyph', 'pressed').includes(SLATE),
+    'pause_glyph is 16x16, normal Slate bars, pressed Paper bars on an Ink tile (ART4)');
   t.ok(shapeOk('fx_skyhook', 32, 32, ['skyhook_0', 'skyhook_1', 'skyhook_2', 'skyhook_3']), 'fx_skyhook is spliced for J8, four 32x32 frames skyhook_0 to skyhook_3');
   t.ok(['dust_mote', 'frost_mote', 'bubble', 'spore', 'ember_mote'].every(k => shapeOk(k, 16, 16, ['a', 'b', 'c', 'd'])) && shapeOk('icon_biomes', 24, 24, SB.palette.BIOMES),
     'the biome\'s air (dust_mote, frost_mote, bubble, spore, ember_mote, each 16x16 a b c d) and icon_biomes (24x24, ' + SB.palette.BIOMES.join(' ') + ')');

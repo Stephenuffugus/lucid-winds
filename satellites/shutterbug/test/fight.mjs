@@ -58,7 +58,7 @@ const ICON_NAME = new Proxy({}, { get: (_, id) => (COPY.wpn[id] ? String(id) : '
 const iconPx = id => SPR.icon_weapons.frames[ICON_NAME[id]].split('/').map(r => [...r].map(c => c === '.' ? null : RGB[parseInt(c, 16)].join(','))).flat();
 void I;
 /* ART2: a drawn record's frame decoded here ('<' mirrored, the record's sx, sy the part of the frame it drew) */
-const frameRows = key => { const m = key.match(/^([a-z_]+)\.([a-z0-9_]+?)(<?)$/); if (!m || !SPR[m[1]] || !SPR[m[1]].frames[m[2]]) return null; const rows = SPR[m[1]].frames[m[2]].split('/'); return m[3] ? rows.map(r => r.split('').reverse().join('')) : rows; };
+const frameRows = key => { const m = key.match(/^([a-z_]+)\.([a-z0-9_]+?)(<?)(\^?)$/); if (!m || !SPR[m[1]] || !SPR[m[1]].frames[m[2]]) return null; let rows = SPR[m[1]].frames[m[2]].split('/'); if (m[3]) rows = rows.map(r => r.split('').reverse().join('')); return m[4] ? rows.reverse() : rows; };   /* ART4: '^' upside down (Shutter Snap's bottom tiles) */
 
 const srv = await serve();
 const browser = await launch();
@@ -144,7 +144,8 @@ const drawnEqual = async (page, kind) => {
   /* the rim (ART2, the shock): the pixel just above each column's topmost opaque pixel, where nothing later covers it */
   let rimN = 0; const rimBad = [], INK = RGB[0].join(',');
   for (const r of mine) { const rows = frameRows(r.key); if (!rows) continue; for (let x = 0; x < r.w; x++) { let t = -1; for (let y = 0; y < r.h; y++) if (rows[r.sy + y][r.sx + x] !== '.') { t = y; break; } if (t < 0 || covered(r, r.x + x, r.y + t - 1)) continue; const c = r.px[t * r.w + x]; if (c === null) continue; rimN++; if (c !== INK) rimBad.push(r.key + ' col ' + (r.sx + x) + ' ' + c); } }
-  return { rects: mine.length, keys: mine.map(r => r.key + (r.sx ? '@' + r.sx : '')), sizes: mine.map(r => r.w + 'x' + r.h), n, bad, rimN, rimBad };
+  const box = mine.length ? [Math.min(...mine.map(r => r.x)), Math.min(...mine.map(r => r.y)), Math.max(...mine.map(r => r.x + r.w)), Math.max(...mine.map(r => r.y + r.h))] : null;
+  return { rects: mine.length, keys: mine.map(r => r.key + (r.sx ? '@' + r.sx : '')), sizes: mine.map(r => r.w + 'x' + r.h), n, bad, rimN, rimBad, box };
 };
 
 try {
@@ -340,8 +341,10 @@ try {
     await stepN(page, 4);
     await tap(page, '#btnA'); const d1 = await stepN(page, 1); await stepN(page, 2);
     const dEq = await drawnEqual(page, 7);
-    R.say(d1.heard.includes('dart') && d1.proj.filter(e => e.kind === 7).length === 2 && dEq.rects === 2 && dEq.keys.some(k => /^fx_projectiles\.twin_darts_\d<$/.test(k)) && dEq.keys.some(k => /^fx_projectiles\.twin_darts_\d$/.test(k)) && dEq.n >= 20 && dEq.bad.length === 0,
-      w + ': a real A tap with Twin Darts shoots two darts with the dart voice (' + d1.heard.join(', ') + '), drawn as Astra\'s ' + dEq.keys.join(' ') + ', ' + dEq.n + ' opaque pixels equal the frames' + (dEq.bad.length ? ' (' + dEq.bad.length + ' differ: ' + dEq.bad.slice(0, 3).join('; ') + ')' : ''));
+    const dAt = await page.evaluate(() => { const st = window.SB.game.state, d = window.SB.render.drawn; return st.proj.filter(p => p.live && p.kind === 7).map(p => [(p.x >> 8) - d.camX, (p.y >> 8) - d.cam, p.vx < 0 ? 1 : 0].join(',')).sort().join(' '); });
+    const dRec = await page.evaluate(() => window.SB_DEV.spriteRects().proj.filter(r => r.kind === 7).map(r => [r.x, r.y, r.key.endsWith('<') ? 1 : 0].join(',')).sort().join(' '));
+    R.say(d1.heard.includes('dart') && d1.proj.filter(e => e.kind === 7).length === 2 && dEq.rects === 2 && dEq.keys.includes('dart.a<') && dEq.keys.includes('dart.a') && dEq.sizes.every(s => s === '8x4') && dRec === dAt && dEq.n >= 40 && dEq.bad.length === 0,
+      w + ': a real A tap with Twin Darts shoots two darts with the dart voice (' + d1.heard.join(', ') + '), each Astra\'s round 4 dart on its 8x4 box, the left one mirrored (' + dEq.keys.join(' ') + ' at ' + dRec + ', the boxes ' + dAt + '), ' + dEq.n + ' opaque pixels equal the frames' + (dEq.bad.length ? ' (' + dEq.bad.length + ' differ: ' + dEq.bad.slice(0, 3).join('; ') + ')' : ''));
     for (let k = 0; k < 60 && !(await probe(page)).ground; k++) await stepN(page, 1);
     await stepN(page, 40);
     const sp = await probe(page), sc = Math.floor((sp.x + 6 * 256) / 4096);
@@ -351,6 +354,61 @@ try {
     const fz = await page.evaluate(i => window.SB.game.state.enemies[i].frozen, mi2), zEq = await drawnEqual(page, 'frozen');
     R.say(z1.heard.includes('shutter') && fz > 0 && fz <= K.J7_FREEZE_F && z1.hp[mi2] === 4 && zEq.rects >= 1 && zEq.keys.every(k => /^fx_frozen_stunned\.frozen_\d$/.test(k)) && zEq.n >= 20 && zEq.bad.length === 0,
       w + ': a real A tap with Shutter Snap freezes the moth beside the bug (' + fz + ' steps left, hp ' + z1.hp[mi2] + ') with the shutter voice (' + z1.heard.join(', ') + '), its frozen look drawn as ' + zEq.keys.join(' ') + ', ' + zEq.n + ' opaque pixels equal the frame' + (zEq.bad.length ? ' (' + zEq.bad.length + ' differ)' : ''));
+    /* ART4: the Snap's frame is Astra's snap_frame assembled round the reach's square: the takeoff box and J7_REACH each
+       side, 108x112, from four corners (each mirrored to its corner), 12 edge_h tiles along the top and 12 upside down
+       along the bottom (the last of each 4 px), 12 edge_v down each side (the right mirrored), every opaque pixel its tile */
+    const snAt = await page.evaluate((HW, HH, RE) => { const st = window.SB.game.state, d = window.SB.render.drawn, p = st.proj.find(q => q.live && q.kind === 10); return p ? [((p.x - (HW >> 1) - RE) >> 8) - d.camX, ((p.y - (HH >> 1) - RE) >> 8) - d.cam] : null; }, K.HERO_W_SUB, K.HERO_H_SUB, K.J7_REACH);
+    const sEq = await drawnEqual(page, 10), snKeys = {}; for (const k of sEq.keys) { const b = k.replace(/@\d+$/, ''); snKeys[b] = (snKeys[b] || 0) + 1; }
+    const snWant = { 'snap_frame.corner': 1, 'snap_frame.corner<': 1, 'snap_frame.corner^': 1, 'snap_frame.corner<^': 1, 'snap_frame.edge_h': 12, 'snap_frame.edge_h^': 12, 'snap_frame.edge_v': 12, 'snap_frame.edge_v<': 12 };
+    R.say(!!snAt && !!sEq.box && sEq.box.join(',') === [snAt[0], snAt[1], snAt[0] + 108, snAt[1] + 112].join(',') && JSON.stringify(Object.keys(snWant).map(k => snKeys[k] || 0)) === JSON.stringify(Object.values(snWant)) && sEq.rects === 52 && sEq.sizes.filter(s => s === '4x8').length === 2 && sEq.n >= 400 && sEq.bad.length === 0,
+      w + ': the Snap draws Astra\'s 108x112 frame round the reach\'s square (drawn ' + (sEq.box ? sEq.box.join(',') : 'nothing') + ', the reach ' + (snAt ? [snAt[0], snAt[1], snAt[0] + 108, snAt[1] + 112].join(',') : '?') + '), ' + sEq.rects + ' tiles (' + Object.entries(snKeys).map(([k, v]) => k.slice(11) + ' ' + v).join(', ') + '), ' + sEq.n + ' opaque pixels equal their tiles' + (sEq.bad.length ? ' (' + sEq.bad.length + ' differ: ' + sEq.bad.slice(0, 3).join('; ') + ')' : ''));
+    /* ART4: each picture's timing on the bug's own steps, one step at a time: the records of a kind with their keys and
+       places, and the live entries of that kind (the place each must take) */
+    const trace = (kind, n) => page.evaluate((kind, n) => { const out = []; for (let k = 0; k < n; k++) { window.SB_DEV.step(1); const st = window.SB.game.state, d = window.SB.render.drawn; out.push({ cam: d.cam, camX: d.camX,
+      recs: window.SB_DEV.spriteRects().proj.filter(r => r.kind === kind).map(r => ({ key: r.key, x: r.x, y: r.y, w: r.w, h: r.h })), proj: st.proj.filter(p => p.live && p.kind === kind).map(p => ({ x: p.x, y: p.y, a: p.a, b: p.b, age: p.age, mode: p.mode, vx: p.vx, vy: p.vy })) }); } return out; }, kind, n);
+    const f8 = age => Math.floor(Math.max(0, age) * 2 / 15) % 2 ? 'b' : 'a';   /* her 8 fps loop */
+    /* Halo: the ring rises on its 16x6 box from the takeoff, ring.a and ring.b at 8 fps by its own age */
+    for (let k = 0; k < 60 && !(await probe(page)).ground; k++) await stepN(page, 1);
+    await stepN(page, 30);
+    await page.evaluate(() => { window.SB.game.state.hero.slots[0] = 6; });
+    await tap(page, '#btnA');
+    const hT = await trace(8, 30), hBad = [], hKeys = new Set(); let hN = 0;
+    for (const s of hT) for (const p of s.proj) { const want = 'ring.' + f8(p.age), x = (p.x >> 8) - s.camX, y = (p.y >> 8) - s.cam, r = s.recs.find(q => q.x === x && q.y === y); hN++; if (!r || r.key !== want || r.w !== 16 || r.h !== 6) hBad.push('age ' + p.age + ': ' + (r ? r.key : 'none') + ' not ' + want); else hKeys.add(r.key); }
+    R.say(hN >= 20 && hBad.length === 0 && hKeys.size === 2, w + ': Halo\'s ring is Astra\'s 16x6 ring on its box at every step it lives (' + hN + '), flickering ' + [...hKeys].join(' and ') + ' at 8 fps by its age' + (hBad.length ? ' (' + hBad.slice(0, 3).join('; ') + ')' : ''));
+    /* Spark Trail: each EMBER one 8x8 ember, bottom centred on its box, ember.a and ember.b at 8 fps by its own age */
+    for (let k = 0; k < 90 && !(await probe(page)).ground; k++) await stepN(page, 1);
+    await stepN(page, 30);
+    await page.evaluate(() => { window.SB.game.state.hero.slots[0] = 2; });
+    await tap(page, '#btnA');
+    const eT = await trace(5, 40), eBad = [], eKeys = new Set(); let eN = 0, eMax = 0;
+    for (const s of eT) { eMax = Math.max(eMax, s.proj.length); if (s.recs.length !== s.proj.length) eBad.push(s.recs.length + ' drawn for ' + s.proj.length); for (const p of s.proj) { const want = 'ember.' + f8(p.age), x = (p.x >> 8) + (((p.a >> 8) - 8) >> 1) - s.camX, y = ((p.y + p.b) >> 8) - s.cam - 8, r = s.recs.find(q => q.x === x && q.y === y); eN++; if (!r || r.key !== want || r.w !== 8 || r.h !== 8) eBad.push('age ' + p.age + ': ' + (r ? r.key + ' at ' + r.x + ',' + r.y : 'none') + ' not ' + want + ' at ' + x + ',' + y); else eKeys.add(r.key); } }
+    R.say(eMax === 3 && eN >= 40 && eBad.length === 0 && eKeys.size === 2, w + ': Spark Trail\'s sparks are one Astra ember each (' + eMax + ' at once), bottom centred on its box at every step (' + eN + '), flickering ' + [...eKeys].join(' and ') + ' at 8 fps by its age' + (eBad.length ? ' (' + eBad.slice(0, 3).join('; ') + ')' : ''));
+    /* the Flashbulb: at the burst flash_ring's origin (32, 32) on the bug's centre where it burst, a, b, c, d for 5
+       steps each (12 fps, past the pool entry's 8 steps), then gone */
+    for (let k = 0; k < 120 && !(await probe(page)).ground; k++) await stepN(page, 1);
+    await stepN(page, 30);
+    await page.evaluate(() => { window.SB.game.state.hero.slots[0] = 4; });
+    await tap(page, '#btnA');
+    const fT = await trace(6, 70); let fAt = null; const fSeq = [], fBad = [];
+    for (const s of fT) { const b = s.proj.find(p => p.mode === 1); if (b && !fAt) fAt = { x: b.x >> 8, y: b.y >> 8 }; if (!fAt) continue; if (!s.recs.length) { fSeq.push('-'); continue; } const r = s.recs[0]; fSeq.push(r.key.slice(11)); if (s.recs.length !== 1 || r.x !== fAt.x - 32 - s.camX || r.y !== fAt.y - 32 - s.cam || r.w !== 64) fBad.push(r.key + ' at ' + r.x + ',' + r.y + ' not ' + (fAt.x - 32 - s.camX) + ',' + (fAt.y - 32 - s.cam)); }
+    const fRun = fSeq.join('').replace(/^-+/, '').replace(/-+$/, '');
+    R.say(!!fAt && fRun === 'aaaaabbbbbcccccddddd' && fBad.length === 0, w + ': the Flashbulb\'s burst is Astra\'s flash_ring centred on the bug where it burst, a to d at 12 fps then gone (' + (fRun || 'none') + ')' + (fBad.length ? ' (' + fBad.slice(0, 2).join('; ') + ')' : ''));
+    /* Shield Kick: a wall jump off each wall (the bug laid in the air flush against it, the arrow held into it: a
+       liberty, the sim's kick is H-wpn-J3's); kick_spray's wall edge on the face, the bug's centre on its local row 40,
+       mirrored for the right wall; a, b, c for 5 steps each, then gone */
+    for (const side of [-1, 1]) {
+      await page.evaluate((side, W, HW, FL) => { const st = window.SB.game.state, h = st.hero; h.slots[0] = 3; h.cd[0] = 0; h.x = side < 0 ? 0 : W * 4096 - HW; h.y = (FL - 6) * 4096; h.vx = 0; h.vy = 0; h.ground = 0; }, side, W, K.HERO_W_SUB, FLOOR);
+      const key = side < 0 ? 'ArrowLeft' : 'ArrowRight';
+      await page.keyboard.down(key); await stepN(page, 6);
+      await tap(page, '#btnA');
+      const kT = await trace(9, 24); await page.keyboard.up(key);
+      let kAt = null; const kSeq = [], kBad = [];
+      for (const s of kT) { const p = s.proj[0]; if (p && !kAt) kAt = { x: p.x >> 8, y: (p.y + (K.HERO_H_SUB >> 1)) >> 8, b: p.b }; if (!kAt) continue; if (!s.recs.length) { kSeq.push('-'); continue; } const r = s.recs[0], wx = (kAt.b > 0 ? kAt.x - 16 : kAt.x) - s.camX, wy = kAt.y - 40 - s.cam;
+        kSeq.push(r.key.slice(11)); if (s.recs.length !== 1 || r.x !== wx || r.y !== wy || r.w !== 16 || r.h !== 80 || r.key.endsWith('<') !== (kAt.b > 0)) kBad.push(r.key + ' at ' + r.x + ',' + r.y + ' not ' + wx + ',' + wy); }
+      const kRun = kSeq.join('').replace(/^-+/, '').replace(/-+$/, '');
+      R.say(!!kAt && kAt.b === side && /^a{5}b{5}c{5}$/.test(kRun.replace(/</g, '')) && kBad.length === 0, w + ': a wall jump off the ' + (side < 0 ? 'left' : 'right') + ' wall draws Astra\'s kick_spray on the kicked column, its wall edge on the face' + (side > 0 ? ' (mirrored)' : '') + ', a to c at 12 fps then gone (' + (kRun || 'none') + ', side ' + (kAt ? kAt.b : '?') + ')' + (kBad.length ? ' (' + kBad.slice(0, 2).join('; ') + ')' : ''));
+    }
+    if (process.env.SB_SHOTS) await page.screenshot({ path: join(process.env.SB_SHOTS, 'fight-' + w + '-kick.png') });
     await page.close();
   }
 } finally { await browser.close(); await srv.close(); }

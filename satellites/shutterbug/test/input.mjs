@@ -258,11 +258,28 @@ try {
     f = await landStick(page, c.x, c.y);
     await f.slide(80);
     const w80 = await word(), g80 = await look(page);
+    /* ART4 (Astra's round 4 pad): at the full push the knob is her 18 native px at 11 native px off the pad's centre
+       (TRAVEL 32 css px at the pad's 2.9 a pixel), through the pad's open side and inside its 40 px box; the pad
+       active and the knob right drawn there pixel for pixel */
+    const nat = 116 / 40;
+    R.say(Math.abs((g80.knob.cx - g80.pad.cx) / nat - 11) < 0.1 && g80.knob.right <= g80.pad.right + 0.5 && Math.abs(g80.knob.w / nat - 18) < 0.1,
+      tg + ': at the full push right the knob sits ' + ((g80.knob.cx - g80.pad.cx) / nat).toFixed(2) + ' native px right of the pad\'s centre (11), its right edge ' + f0(g80.pad.right - g80.knob.right) + ' css px inside the pad');
+    await stickArt(tg, page, 'R');
+    if (SHOTS) await page.screenshot({ path: join(SHOTS, 'stick-' + tg + '-full-right.png') });
     await f.slide(36);
     const wRev = await word(), gRev = await look(page);
     R.say(w80 === IN.R && Math.abs(g80.knob.cx - g80.pad.cx - 32) < 1 && Math.abs(g80.pad.cx - (c.x + 48)) < 1,
       tg + ': pushed 80 px right it is right, the knob stops 32 px right and the pad follows the thumb 48 px (knob ' + f0(g80.knob.cx - g80.pad.cx) + ', pad moved ' + f0(g80.pad.cx - c.x) + ')');
     R.say(wRev === IN.L && gRev.lit === 'L', tg + ': after the 80 px push, a 44 px reversal is left (word ' + wRev + ')');
+    await f.end(); await rest();
+    /* ART4: the full push left, the mirror of the right */
+    f = await landStick(page, c.x, c.y);
+    await f.slide(-80);
+    const gL80 = await look(page);
+    R.say(Math.abs((gL80.pad.cx - gL80.knob.cx) / nat - 11) < 0.1 && gL80.knob.left >= gL80.pad.left - 0.5,
+      tg + ': at the full push left the knob sits ' + ((gL80.pad.cx - gL80.knob.cx) / nat).toFixed(2) + ' native px left of the pad\'s centre (11), its left edge ' + f0(gL80.knob.left - gL80.pad.left) + ' css px inside the pad');
+    await stickArt(tg, page, 'L');
+    if (SHOTS) await page.screenshot({ path: join(SHOTS, 'stick-' + tg + '-full-left.png') });
     await f.end(); await rest();
 
     /* up and down read nothing */

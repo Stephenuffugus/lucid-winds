@@ -39,8 +39,12 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'ui/pause_glyph.png': ('pause_glyph', None), 'fx/fx_skyhook.png': ('fx_skyhook', None), 'world/dust_mote.png': ('dust_mote', None),
     'world/frost_mote.png': ('frost_mote', None), 'world/bubble.png': ('bubble', None), 'world/spore.png': ('spore', None),
     'world/ember_mote.png': ('ember_mote', None), 'ui/icon_biomes.png': ('icon_biomes', None),
-    # W2's keys (weapons step 2, Q163): round 1's bursts, impacts and held looks, their step 2 clips
-    'fx/fx_bursts.png': ('fx_bursts', None), 'fx/fx_impacts.png': ('fx_impacts', None), 'fx/fx_frozen_stunned.png': ('fx_frozen_stunned', None),
+    # W2's keys (weapons step 2, Q163): round 1's held looks (its bursts and impacts retired at ART4)
+    'fx/fx_frozen_stunned.png': ('fx_frozen_stunned', None),
+    # ART4's keys (Astra's round 4, Q164): her eight weapon effects under her own file names
+    'fx/dart.png': ('dart', None), 'fx/ring.png': ('ring', None), 'fx/ember.png': ('ember', None), 'fx/flash_ring.png': ('flash_ring', None),
+    'fx/snap_frame.png': ('snap_frame', None), 'fx/kick_spray.png': ('kick_spray', None), 'fx/fire_cell.png': ('fire_cell', None),
+    'fx/frost_burst.png': ('frost_burst', None),
 }
 
 

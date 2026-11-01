@@ -1088,7 +1088,7 @@ const MUTANTS = [
     gates: [{ gate: 'sprites', expect: "the top strip's 8 hearts" }] },
   { name: 'ELITE_FRAMES_DRIFT', task: 'ART1', file: 'page', find: "    moth_elite: { w: 24, h: 24, frames: {\n", repl: "    moth_elite: { w: 24, h: 24, frames: {\n      c: '',\n",
     gates: [{ gate: 'lint', expect: 'moth_elite.c has 1 rows, not 24' }, { gate: 'harness', only: 'H-spr-1', expect: "moth_elite is 24x24 (ELITE_PX 24) with moth's frames" }] },
-  { name: 'SPECK_NO_GLINT', task: 'ART1', file: 'page', find: ".....088600.....", repl: ".....088800.....",   /* re anchored at ART3: round 2's speck has one Glare pixel, on b */
+  { name: 'SPECK_NO_GLINT', task: 'ART1', file: 'page', find: ".....086600...../.....0866880....", repl: ".....088800...../.....0888880....",   /* re anchored at ART3: round 2's speck has one Glare pixel, on b */   /* re anchored at ART4: round 4's glint is 2x2 */
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: "the speck's strip carries its Glare glint" }] },
   { name: 'HEART_EMPTY_BRICK', task: 'ART1', file: 'page', find: "empty: '.00...00./0220.0220/", repl: "empty: '.00...00./0990.0220/",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'hud_heart is 9x8 with full (Brick) and empty (no Brick)' }] },
@@ -1209,8 +1209,8 @@ const MUTANTS = [
     gates: [{ gate: "astra", expect: "an effect frame not named <clip>_<n> is refused" }] },
   { name: "CUT_FX_UNKNOWN", task: 'ART2', file: "astra", find: "            elif FX_RE.match(key):\n                warnings.append(", repl: "            elif False and FX_RE.match(key):\n                warnings.append(",
     gates: [{ gate: "astra", expect: "an effect strip new to the page (fx_shockwave on a copy without it) is taken as named clips" }] },
-  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 46\n", repl: "MAX_SPRITES = 48\n",   /* re anchored at W2 (46) */   /* re anchored at ART3 (the cap at the splice, 43) */
-    gates: [{ gate: "astra", expect: "the cap is 46, W2's" }] },
+  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 52\n", repl: "MAX_SPRITES = 54\n",   /* re anchored at ART4 (52) */   /* re anchored at W2 (46) */   /* re anchored at ART3 (the cap at the splice, 43) */
+    gates: [{ gate: "astra", expect: "the cap is 52, ART4's" }] },
   /* ART3: Astra's rounds 2 and 3 (Q98): the cutter's rules, the splice, the stick, Pause, the crusher's shaft, the speck,
      the elites' keylines, the biome's air and badges, the icons by code */
   { name: "CUT_GAME_CASE", task: 'ART3', file: "astra", find: "    if str(man.get('game', '')).lower() != 'shutterbug':", repl: "    if man.get('game') != 'shutterbug':",
@@ -1227,7 +1227,7 @@ const MUTANTS = [
     gates: [{ gate: "lint", expect: "R.icon does not look its glyph up by the code" }, { gate: "fight", expect: "412: the jump box shows J1's icon (icon_weapons.J1), its 576 pixels" }] },
   { name: "ICON_J1_REDRAWN", task: 'ART3', file: "page", find: "      J1: '......................../......................../......................../......................../......................../..00000", repl: "      J1: '......................../......................../......................../......................../......................../..00002",
     gates: [{ gate: "harness", only: "H-spr-1", expect: "icon_weapons.J1 and .D1 are round 1's boomerang and anvil_boots pixel for pixel" }] },
-  { name: "ELITE_KEYLINE_GONE", task: 'ART3', file: "page", find: "/044664400033330004466440/040000440033330044000040/040aa04400333300440aa040", repl: "/044664400033330004466440/040000440033330044000040/044aa04400333300440aa040",
+  { name: "ELITE_KEYLINE_GONE", task: 'ART3', file: "page", find: "/040aa04400111100440aa040/", repl: "/044aa04400111100440aa040/",   /* re anchored at ART4: round 4's moth elite body is Soot */
     gates: [{ gate: "harness", only: "H-spr-1", expect: "moth_elite.a keylines every Magenta mark in Ink, all eight neighbours (open at" }] },
   { name: "SPECK_GLINT_BOTH", task: 'ART3', file: "page", find: "a: '................/................/................/.......0......../......080......./.....088800.....", repl: "a: '................/................/................/.......0......../......080......./.....088600.....",
     gates: [{ gate: "harness", only: "H-spr-1", expect: "with the Glare glint on frame b only" }] },
@@ -1302,6 +1302,36 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-bot-8', expect: 'walked levels clear with Skyhook, every ascent edge performed:' }] },
   { name: 'FROZEN_UNDRAWN', task: 'W2', file: 'page', find: "    drawHeld(s, cam, camX);\n", repl: "",
     gates: [{ gate: 'fight', expect: '412: a real A tap with Shutter Snap freezes the moth' }] },
+  /* ART4: Astra's round 4 (Q164): her weapon keys drawn one per instance at her anchors and timings, the colour law,
+     the reach frames, the pad and Pause, the 2x2 glint */
+  { name: 'DART_UNMIRRORED', task: 'ART4', file: 'page', find: "key = 'dart.a' + (p.vx < 0 ? '<' : '');", repl: "key = 'dart.a';",
+    gates: [{ gate: 'fight', expect: '412: a real A tap with Twin Darts shoots two darts' }] },
+  { name: 'RING_NO_FLICKER', task: 'ART4', file: 'page', find: "key = 'ring.' + (Math.floor(a * FPS8 / FPS8_STEPS) % 2 ? 'b' : 'a');", repl: "key = 'ring.a';",
+    gates: [{ gate: 'fight', expect: "412: Halo's ring is Astra's 16x6 ring on its box" }] },
+  { name: 'EMBER_NO_FLICKER', task: 'ART4', file: 'page', find: "key = 'ember.' + (Math.floor(a * FPS8 / FPS8_STEPS) % 2 ? 'b' : 'a');", repl: "key = 'ember.' + (Math.floor(FRAME_NO / 5) % 2 ? 'b' : 'a');",
+    gates: [{ gate: 'fight', expect: "412: Spark Trail's sparks are one Astra ember each" }] },
+  { name: 'EMBER_OFF_BOX', task: 'ART4', file: 'page', find: "y = ((p.y + p.b) >> 8) - cam - 8;", repl: "y = (p.y >> 8) - cam;",
+    gates: [{ gate: 'fight', expect: "412: Spark Trail's sparks are one Astra ember each" }] },
+  { name: 'FLASH_CUT_SHORT', task: 'ART4', file: 'page', find: "SHOT_F[PK.FLASH] = 20;", repl: "SHOT_F[PK.FLASH] = 8;",
+    gates: [{ gate: 'fight', expect: "412: the Flashbulb's burst is Astra's flash_ring centred on the bug" }] },
+  { name: 'FLASH_OFF_CENTRE', task: 'ART4', file: 'page', find: "(p.x >> 8) - 32, (p.y >> 8) - 32, 0);", repl: "(p.x >> 8) - 24, (p.y >> 8) - 24, 0);",
+    gates: [{ gate: 'fight', expect: "412: the Flashbulb's burst is Astra's flash_ring centred on the bug" }] },
+  { name: 'KICK_WRONG_SIDE', task: 'ART4', file: 'page', find: "- 40, p.b > 0 ? 1 : 0);", repl: "- 40, p.b > 0 ? 0 : 1);",
+    gates: [{ gate: 'fight', expect: "412: a wall jump off the left wall draws Astra's kick_spray" }] },
+  { name: 'KICK_CUT_SHORT', task: 'ART4', file: 'page', find: "SHOT_F[PK.KICK] = 15;", repl: "SHOT_F[PK.KICK] = 8;",
+    gates: [{ gate: 'fight', expect: "412: a wall jump off the left wall draws Astra's kick_spray" }] },
+  { name: 'SNAP_OFF_REACH', task: 'ART4', file: 'page', find: "x = (p.x >> 8) - 54; y = (p.y >> 8) - cam - 56;", repl: "x = (p.x >> 8) - 48; y = (p.y >> 8) - cam - 48;",
+    gates: [{ gate: 'fight', expect: "412: the Snap draws Astra's 108x112 frame round the reach's square" }] },
+  { name: 'SNAP_BOTTOM_UNFLIPPED', task: 'ART4', file: 'page', find: "snapTile('snap_frame.edge_h^', Math.min(8, 100 - e), x + e, y + 104, camX);", repl: "snapTile('snap_frame.edge_h', Math.min(8, 100 - e), x + e, y + 104, camX);",
+    gates: [{ gate: 'fight', expect: "412: the Snap draws Astra's 108x112 frame round the reach's square" }] },
+  { name: 'WFX_AMBER', task: 'ART4', file: 'page', find: "      a: '00..000./06666600/", repl: "      a: '00..000./06686600/",
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'dart.a has an Ink outline and draws only' }] },
+  { name: 'HALO_GLYPH_EXCEPTION', task: 'ART4', file: 'harness', find: "S.icon_weapons.frames[id] && S.icon_weapons.frames[id].includes(INK)));", repl: "S.icon_weapons.frames[id] && (S.icon_weapons.frames[id].includes(INK) || id === 'J6')));",
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: null }] },
+  { name: 'PAUSE_PRESSED_LOWERED', task: 'ART4', file: 'page', find: "      pressed: '................/.00000000000000./", repl: "      pressed: '................/................/",
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'pause_glyph is 16x16, normal Slate bars, pressed Paper bars on an Ink tile' }] },
+  { name: 'KNOB_PAST_PAD', task: 'ART4', file: 'page', find: "STICK_TRAVEL_PX: 32,", repl: "STICK_TRAVEL_PX: 40,",
+    gates: [{ gate: 'input', expect: '412x915: at the full push right the knob sits' }] },
 ];
 
 /* ---------------------------------------------------------------- run */
