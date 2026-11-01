@@ -4779,8 +4779,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
       x = (p.x >> 8) - 54; y = (p.y >> 8) - cam - 56; drawSnap(x, y, camX);
     } else if (p.kind === PK.KICK) {
       /* the wall at the frame's left edge (mirrored for a right wall), the bug's centre on its local row 40: the frame
-         is the kicked column itself, CELL wide from the face, J3_REACH above and below the bug */
-      shot(s, PK.KICK, s.frame - a, p.b > 0 ? (p.x >> 8) - 16 : p.x >> 8, ((p.y + (SB.K.HERO_H_SUB >> 1)) >> 8) - 40, p.b > 0 ? 1 : 0);
+         is the kicked column itself, CELL wide from the face, J3_REACH above and below the bug; spawned in the hero's
+         step, the KICK is first drawn at age 1 (the fight gate: f0 from age 0 lost frame a's first step) */
+      shot(s, PK.KICK, s.frame - a + 1, p.b > 0 ? (p.x >> 8) - 16 : p.x >> 8, ((p.y + (SB.K.HERO_H_SUB >> 1)) >> 8) - 40, p.b > 0 ? 1 : 0);
     } else if (p.kind === PK.DART) {
       key = 'dart.a' + (p.vx < 0 ? '<' : '');
       x = p.x >> 8; y = (p.y >> 8) - cam; spr(ctx, key, x, y); rec(p.kind, key, x, y, 8, 4, camX);
