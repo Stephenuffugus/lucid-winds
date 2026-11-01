@@ -100,7 +100,9 @@ try {
     /* the worst angle: the chest at the room's top, the bug beside it */
     await page.evaluate(str => { window.SB_DEV.hold(true); window.SB_DEV.loadRecord(str); const s = window.SB.game.state; s.loot.length = 0; s.enemies.length = 0; s.hero.slots[0] = 1; s.hero.slots[1] = 9; s.hero.x = 3 * 4096 + 512; s.hero.y = 2 * 4096; s.chest.idx = 2 * 24 + 4; s.chest.open = 0; window.SB_DEV.step(0); }, REC);
     await page.keyboard.down('ArrowRight'); for (let k = 0; k < 60 && !(await st()).compare; k++) await step(1); await page.keyboard.up('ArrowRight');
-    await step(1); await sleep(200);
+    /* the room was entered beside its chest, so the view still glides to the bug under the held world: steps go on as
+       they do in play (the card is placed again on a step after the drawn camera moved) */
+    for (let k = 0; k < 8; k++) { await step(1); await sleep(120); }
     await shot('w2-swap-top');
     await page.close();
   }
