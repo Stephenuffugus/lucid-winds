@@ -1086,3 +1086,67 @@ Held by (1 Nov, the lane's finish): the capture gate (a floor refusal at the def
 What the shots showed (412x915 and 360x780, model scene 3 and an all Ink photo): the search answers his complaint (one tap, the box moves, the room develops), but on the painted rooms the "floor band" it lifts off is most often the wall's own shading, read solid from about row 14 down (the LEVELSR open item). So the box it finds is the top third of the room: the lamp and the window stay, the bed, the dresser and the real floor go, and the level is a short ladder of ledges up the left edge. That is the capture step's threshold, not the search: once the wall's shading stops reading solid the same search keeps more of the room. Two near duplicate boxes of the player's size (x 0 and x 2, one quarter and a clamp apart) each cost a build; deduping within a few pixels would save one, and would move the model's numbers, so it is left for that threshold change.
 
 Still open: his real rooms (Q45); whether 700 ms reads as "the game moved my box" on his phone; Astra's crop hatches for the marked band (parked with crop_seek); nothing on the screen says it is searching except the marker (its label is for a screen reader only), and the top hint still says "Tap a shape to hide the chest there" while it searches and after a search found nothing.
+
+## Q182. The capture normalisation: the grid's colours white balanced and stretched before nearest, tuned on 95 real photographs (the builder, 1 Nov, NORMALISE)
+
+His words today (1 Nov): "I want to make shutterbug really good. It's almost fun, but it needs to be able to pixelate more stuff right now. It's too hard to actually get the level to be made." The sameness investigation (docs/SAMENESS-INVESTIGATION-OCT31.md, "How much of the photo becomes the level", the "capture normalisation" option and its recommendation "build the capture normalisation first, on its own") measured it free on the painted model: old share codes keep their levels, 0 of 26 fixtures change, 26 to 32 of 60 model rooms build. This entry is that step, built, and measured for the first time on real photographs (the corpus of 95 freely licensed Wikimedia Commons photos under /home/codespace/sb-drafts/realphotos, never committed).
+
+As built (shell-capture only, plus the oracle, the room model and their tests; no core change, so no code, fixture, golden or table moves):
+- `SB.capture.normalize(rgb)`, pure, on the 24x48 grid's RGB as the downscale gives it (after the area average, before nearest; the photo itself is never touched again): (1) a grey world white balance at half strength, each channel scaled by 1 - 0.5 + 0.5 * (the mean of the three channel sums) / (its own sum); (2) a luminance stretch, the 10th and 90th percentile of the cells' L mapped to L 40 and 224, each cell's three channels scaled by its own new L over its old, so its hue is kept; rounded and clamped. The stretch's gain is at most 4: a nearly flat photo (a blank wall, a black frame) has no contrast to spread, so its noise grows at most 4 times, and as the gain is held back the window slides from the middle of 40..224 toward the photo's own middle, so a white wall stays light and a black one dark (continuous: at full gain the window is exactly 40..224). The numbers are `SB.capture.NORM` { WB 0.5, P_LO 0.1, P_HI 0.9, L_LO 40, L_HI 224, MAX_GAIN 4 }.
+- `SB.capture.gridRecord` takes the step before nearest, so the crop screen's overlay, Develop, and the auto crop's worker (which runs the same block) all read the normalised grid. fixtures/make.html keeps its own raw loop (see Still open).
+- `tools/capture-oracle.js` `normalizeRGB` is the same step written again in Node, the same arithmetic in the same order, so the doubles round the same way. H-norm-1 holds the two equal byte for byte on model rooms, seeded noise, ramps and flat and tinted grids, and the capture gate holds them equal on the page's own canvas grid of a painted model room (0 of 3456 bytes differ; 240 real photo boxes also checked by hand: 0).
+- `tools/room-model.js` puts each box through the page's own normalize (an older page has none, so `--page` on it is the before), and its table now prints the biomes and the film share of the rooms that develop.
+
+The investigation's setting (the 3rd and 97th percentile to 24..240) made two real photos worse. On r05 (a hoarder's living room) and r12 (a modern living room) the search found a box before and none after: the stretch spreads a wall that read as one grey (Pewter) over Pewter, Ash and Paper, Otsu's split rises with the light wall, and the wall's darker shading turns solid (r12's box that built on the first try, 553 solid cells, became 586 and "no tab fits"). So I tuned it on the real photos and the model together (pure Node, /home/codespace/sb-drafts/photo/norm/exp.js, the HEAD page's own core and seekBoxes, the search on, a returning player for the real photos):
+
+| setting | real: develop of 95 | at rest | made worse | model at rest of 60 | model Frost |
+| --- | --- | --- | --- | --- | --- |
+| none (42fc8b19a) | 76 | 15 | | 33 | 14 |
+| 3rd to 97th, 24..240 (the investigation) | 82 | 21 | r05 r12 | 39 | 22 |
+| 3rd to 97th, 32..232 | 84 | 25 | r05 r12 o25 | 40 | 20 |
+| 3rd to 97th, 40..224 | 85 | 27 | r12 | 38 | 16 |
+| 5th to 95th, 24..240 | 87 | 20 | r05 r12 | 41 | 23 |
+| 5th to 95th, 32..232 | 89 | 19 | r12 | 39 | 18 |
+| 8th to 92nd, 24..240 | 87 | 26 | r05 | 42 | 20 |
+| 8th to 92nd, 40..224 | 90 | 25 | r12 | 42 | 11 |
+| **10th to 90th, 40..224 (built)** | **90** | **23** | **none** | **40** | **10** |
+| 12th to 88th, 40..224 | 89 | 24 | r11 r65 | 44 | 8 |
+| 10th to 90th, 48..216 | 90 | 22 | r12 | 42 | 3 |
+| white balance only, no stretch | 86 | 25 | r17 | 32 | 11 |
+| 8th to 92nd, 40..224, balance 0.25 / 0.75 | 88 / 89 | 24 / 24 | 2 each | 42 | 10 |
+
+A gentler, more robust stretch (percentiles nearer the middle, a narrower target) builds more real rooms; 8th to 12th with 40..224 is a plateau of 89 to 90, so the choice is not one lucky point. 10th to 90th is the only setting that made no real photo worse, and it spends the fewest builds (p90 26). The gain cap of 4 changes no real photo's outcome (at the default box the largest gain in the corpus is 2.98, r32) and one model room's search length; it is there for the flat photo.
+
+Measured, before (42fc8b19a, file sha1 73c0a38767) and after (this build), the auto crop's search on:
+
+| | real, before | real, after | model, before | model, after |
+| --- | --- | --- | --- | --- |
+| develop at the default box | 15 of 95 | 23 of 95 | 33 of 60 | 40 of 60 |
+| develop after the search | 76 of 95 (80%) | 90 of 95 (95%) | 60 of 60 | 60 of 60 |
+| rooms / other | 47 of 60 / 29 of 35 | 57 of 60 / 33 of 35 | | |
+| portrait / landscape | 24 of 28 / 52 of 67 | 27 of 28 / 63 of 67 | | |
+| builds a photo, median / p90 | 11 / 49 | 3 / 26 | 0 / 14 | 0 / 5 |
+| over the refused at rest, median / p90 | 17 / 49 | 5 / 35 | 6 / 18 | 2 / 10 |
+| the chosen box keeps of the default height, median (min) | 88% (53%) | 100% (60%) | 88% (68%) | 100% (77%) |
+| biomes | attic 69, ember 2, frost 3, overgrowth 1, deep 1 | attic 87, deep 2, ember 1 | attic 46, frost 14 | attic 50, frost 10 |
+| film share of the main ascent, quartiles | 52%, 64%, 79% | 47%, 60%, 71% | 59%, 75%, 90% | 70%, 79%, 92% |
+| at least half the climb on film | 58 of 76 | 66 of 90 | 54 of 60 | 59 of 60 |
+
+(real: /home/codespace/sb-drafts/photo/norm/measure-norm.js, the corpus measure with the page's own step, results in realphotos/results/before+norm.json; model: `node tools/room-model.js`, as a first room.) Made worse: none. Newly developing: r04, r07, r21, r48, r49, r53, r54, r57, r58, r60, r62, o04, o06, o20 (14). Built at rest before and now only after a short search: r13, r16, o14, o23 (2 to 4 builds each). Still the message: r15 and r51 (floor), r50, o01 and o27 (repair; o27 is the street that no box builds). On the model the floor refusals mostly go: the wall's lighting gradient no longer reads as a floor band (the LEVELSR and AUTOCROP open item), so the default box builds where he framed it and model scene 3 builds with no search (H-seek-1); the 20 left are mostly a light floor that reads open with repair failing on the wall.
+
+What it did not do:
+- The biome. On real photos it is nearly always Attic either way, and the built setting shows fewer Frost rooms than none on both corpora (the investigation's setting showed more on the model, 22, and only 2 on real photos). The biome from the photo's real colour is Q97's ruling, its own lane; this step should not be judged by it.
+- The film. Real photos climb a little less on film (median 64% to 60%), the model a little more (75% to 79%: rooms that built only through a found box with real ledges now build at the full default box, mostly up a tab stair). The photo desert is the repair's problem (the investigation's option (e)).
+- The fidelity drift grows. The page's canvas downscale against the oracle's area average, both normalised: mean channel difference median 3.13 (2.15 raw), palette cells differing median 83 of 1152 (47 raw), the build outcome agreeing on 89 of 95 (94 raw; r24, r26, r66 and o23 build in the page and not in Node, o10 and o31 the other way). A stretch amplifies whatever the two downscales disagree on. Every Node number above is the oracle's grid; his phone sees the canvas's.
+
+Options: (a) as built, 10th to 90th to 40..224, half strength balance, gain at most 4; (b) the investigation's setting (82 of 95, two photos worse, more Frost on the model); (c) white balance only (86, the model's default box worse than none); (d) no normalisation (76).
+Recommendation: (a).
+Plan assumes: (a).
+
+DESIGN 6.2 redline (DESIGN.md is a verbatim copy and is not edited; the addition marked with asterisks): Map each cell to the nearest palette entry (§11) using weighted RGB distance (0.3 R, 0.59 G, 0.11 B). *Before that, the grid's colours are white balanced halfway toward grey and their brightness stretched so the photo's 10th and 90th percentile cells span L 40 to 224 (at most 4 times the contrast), each cell keeping its hue; a new photo's grid only, never a stored one.* Store `pal[i] ∈ 0..15`. This grid is the only thing ever persisted or shared.
+
+Held by (1 Nov): H-norm-1 (9 assertions: the page's NORM numbers are the oracle's; the page's normalize equals the oracle's on 18 grids byte for byte; a grey ramp's percentile cells land on 40 and 224 and stay in order; a warm room loses about half its cast and every cell keeps its balanced red to blue ratio; a flat white grid stays light and a flat dark one dark; a nearly flat wall's noise grows at most 4 times; gridRecord gives the normalised grid's nearest colour in every cell), H-seek-1 (model scene 3 pinned on the raw capture for the search, and its normalised build at rest), the capture gate's normalise block, and four redwatch rows: NORM_OFF (the step removed from gridRecord: H-norm-1 and the capture gate), NORM_SPLIT (the page's arithmetic moved by 1 L: the page and the oracle disagree, in H-norm-1 and on the page's own canvas grid), NORM_NUMBERS_SPLIT and NORM_UNCAPPED (harness).
+
+What the shots showed (412x915, three real photos, before and after, /home/codespace/sb-drafts/photo/norm/shots/): a supermarket shelf (r53) that refused now builds at the default box; a dim attic bedroom (r44) that refused for its floor now builds at rest with ledges on the bed rail and the window sill; a beamed Maltese living room (r13) that built at rest now refuses for its ceiling and develops after a two box search. On every photo the overlay's solid shading is close to invisible, so before and after look alike at a glance.
+
+Still open: fixtures/make.html makes a fixture from a photo with its own nearest loop and no normalisation, so a fixture made from a photo now reads that photo differently than the page does (its make gate holds its downscale to the raw oracle; giving it the step moves that gate too); his phone (the canvas drift above is larger than before); the biome (Q97); a shelf's boards read as broken single cell ledges, not whole boards.
