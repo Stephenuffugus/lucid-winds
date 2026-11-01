@@ -5129,9 +5129,10 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
 /* ================================================================ the house (T2.8, QUESTIONS Q200): the ramp and the run */
 /* every built corpus room (fixture, mode) as detected, and under each biome override, built at house rooms 1 to 5 and
    in free play; the test's own reading of the ramp table (Stephen's "Firm ramp", 31 Oct; the proposal's 2.1), typed
-   here from the table, not read from TUNING */
+   here from the table, not read from TUNING. Room 5 is room 4's row until lane B's boss (Q201: the review of HOUSE-A
+   found the last room the easiest of the five, often empty) */
 const RAMP_WANT = { 2: { floor: 2, cap: 4, elites: 1, eliteMin: 0, hpQ: 4, fast: false }, 3: { floor: 3, cap: 4, elites: 1, eliteMin: 1, hpQ: 4, fast: true },
-  4: { floor: 4, cap: 5, elites: 2, eliteMin: 1, hpQ: 6, fast: true }, 5: { floor: 0, cap: 3, elites: 1, eliteMin: 0, hpQ: 4, fast: false } };
+  4: { floor: 4, cap: 5, elites: 2, eliteMin: 1, hpQ: 6, fast: true }, 5: { floor: 4, cap: 5, elites: 2, eliteMin: 1, hpQ: 6, fast: true } };
 let rampLevels = null;
 function rampBuilds() {
   if (rampLevels) return rampLevels;
@@ -5149,7 +5150,8 @@ function rampBuilds() {
 }
 const featJSON = lv => JSON.stringify(lv.features, (k, v) => ArrayBuffer.isView(v) ? Array.from(v) : v);
 group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHash, features, the first sim state, no ramp row) and a first room never sees a room index; rooms 2, 3 and 4 hold at least 2, 3 and 4 enemies on every built corpus room, as detected and under every biome, rooms 3 and 4 an elite, within the table\'s caps; every ramp enemy is its biome\'s kind (a moth where none can keep the kind\'s rule), keeps DESIGN 7\'s cells and keeps its envelope off the ascent; the route, the safe cadence and the degrade ladder are the free play room\'s', t => {
-  const T = SB.TUNING, bad = { same: [], floor: [], elite: [], cap: [], kind: [], rules: [], env: [], route: [], refuse: [], first: [] };
+  const T = SB.TUNING, bad = { same: [], floor: [], elite: [], cap: [], kind: [], rules: [], env: [], fall: [], route: [], refuse: [], first: [], last: [] };
+  let falls = 0;
   let rooms = 0, laid = 0, promoted = 0, moths = 0; const own = {};
   for (const L of rampBuilds()) {
     const { tag, base, rec } = L;
@@ -5190,8 +5192,20 @@ group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHas
         if ((e.kind === SB.features.CRAWLER || e.kind === SB.features.SPARK) && !standableIn(lv, c)) bad.rules.push(tag + ' room ' + r + ': a ' + KIND_NAME[e.kind] + ' not standing ' + at);
         if (e.kind === SB.features.ICICLE && !(lv.solid[c - w] || lv.plat[c - w])) bad.rules.push(tag + ' room ' + r + ': an icicle hanging from nothing ' + at);
         if (Array.from(e.env).some(v => standSet.has(v))) bad.env.push(tag + ' room ' + r + ': the ' + KIND_NAME[e.kind] + ' at ' + at + ' covers a cell the ascent stands on');
+        /* an icicle's real fall, the test's own walk of the sim's rule (down to the first solid or one way cell, no row
+           limit; the review of HOUSE-A: envelope()'s six rows let 15 of 121 ramp icicles fall onto the ascent) */
+        if (e.kind === SB.features.ICICLE) {
+          falls++;
+          for (let q = c + w; q < n && !lv.solid[q] && !lv.plat[q]; q += w) {
+            const x = q % w, hit = standSet.has(q) || (x > 0 && standSet.has(q - 1)) || (x < w - 1 && standSet.has(q + 1));
+            if (hit) { bad.fall.push(tag + ' room ' + r + ': the icicle at ' + at + ' falls ' + (Math.floor(q / w) - Math.floor(c / w)) + ' rows onto or beside the ascent at row ' + Math.floor(q / w)); break; }
+          }
+        }
       }
     }
+    /* the last room is never easier than room 4 on the same photo (room 4's row until lane B's boss) */
+    if (L.rooms[4] && L.rooms[5] && !L.rooms[4].needsCrop && !L.rooms[5].needsCrop && L.rooms[5].features.enemies.length < L.rooms[4].features.enemies.length)
+      bad.last.push(tag + ': room 5 ' + L.rooms[5].features.enemies.length + ' enemies, room 4 ' + L.rooms[4].features.enemies.length);
   }
   const say = (k, msg) => t.eq(bad[k].length, 0, msg + (bad[k].length ? ': ' + bad[k].slice(0, 5).join('; ') : ''));
   say('same', 'room 1 is free play byte for byte on every built room (levelHash, features, the first sim state, no ramp row), and a ramped room carries its table row');
@@ -5199,12 +5213,14 @@ group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHas
   say('refuse', 'no room that builds in free play refuses at any house room');
   say('floor', 'rooms 2, 3 and 4 hold at least 2, 3 and 4 enemies over ' + rooms + ' ramped builds (' + laid + ' ramp fodder laid)');
   say('elite', 'rooms 3 and 4 hold an elite on every build (' + promoted + ' promoted where the photo gave none)');
-  say('cap', 'the table\'s caps hold: room 2 and 3 at most 4 enemies and 1 elite, room 4 at most 5 and 2, room 5 at most 3 and 1 (Ember one more enemy)');
+  say('cap', 'the table\'s caps hold: room 2 and 3 at most 4 enemies and 1 elite, rooms 4 and 5 at most 5 and 2 (Ember one more enemy)');
   say('kind', 'every ramp enemy is its biome\'s kind or, where no cell keeps the kind\'s rule, a moth (' + moths + ' moths)');
   const missing = [1, 2, 3, 4].filter(b => !own[b]);
   t.ok(missing.length === 0, 'every biome\'s own kind is laid as ramp fodder (' + [0, 1, 2, 3, 4].map(b => SB.palette.BIOMES[b] + ' ' + (own[b] || 0)).join(', ') + '; ' + moths + ' moths of ' + laid + ')');
   say('rules', 'every ramp enemy keeps DESIGN 7: open, clear of spawn by ENEMY_SPAWN_CLEAR, outside ROUTE_SAFE_ENEMY_DIST of the ascent, never on a trap, the pocket, a loot cell or the exit; crawlers and sparks standing, icicles hanging');
   say('env', 'no ramp enemy\'s envelope covers a cell the ascent stands on');
+  say('fall', 'no ramp icicle falls onto or beside a cell the ascent stands on, all the way down (' + falls + ' ramp icicles)');
+  say('last', 'room 5 holds at least room 4\'s enemies on every built room (room 4\'s row until the boss)');
   say('route', 'the ramped room keeps the free play room\'s ascent and degrade ladder, and its ascent holds on the safe cells');
 });
 
@@ -5213,12 +5229,12 @@ group('H-house-2', 'the ramp in the sim: room 4\'s fodder at 6 quarters a HP (1.
   let checked = 0, promos = 0;
   for (const L of rampBuilds()) {
     if (L.biome !== null) continue;
-    for (const r of [1, 2, 3, 4]) {
+    for (const r of [1, 2, 3, 4, 5]) {
       const lv = L.rooms[r]; if (!lv || lv.needsCrop) continue;
-      const s = SB.sim.create(lv, { immortal: true });
+      const s = SB.sim.create(lv, { immortal: true, lastRoom: r === 5 });
       lv.features.enemies.forEach((e, k) => {
         const hp = (e.kind === SB.features.JELLY ? T.JELLY_HP : e.kind === SB.features.CRAWLER ? T.CRAWLER_HP : 1);
-        const want = e.elite ? hp * T.ELITE_HP_MULT * 4 : hp * (r === 4 ? 6 : 4);
+        const want = e.elite ? hp * T.ELITE_HP_MULT * 4 : hp * (r >= 4 ? 6 : 4);
         if (s.enemies[k].hp !== want) bad.hp.push(L.tag + ' room ' + r + ': a ' + (e.elite ? 'elite ' : '') + KIND_NAME[e.kind] + ' at ' + s.enemies[k].hp + ' quarters, want ' + want);
       });
       /* the clock: 8 steps of a held hero (immortal) tick each live enemy 8 times at 1x, 10 at 1.25x */
@@ -5246,7 +5262,7 @@ group('H-house-2', 'the ramp in the sim: room 4\'s fodder at 6 quarters a HP (1.
     }
   }
   t.eq(bad.hp.length, 0, 'every enemy\'s first HP is its kind\'s in quarters, room 4\'s fodder 1.5x' + (bad.hp.length ? ': ' + bad.hp.slice(0, 5).join('; ') : ''));
-  t.eq(bad.tick.length, 0, 'the enemies tick 1.25x in rooms 3 and 4 and 1x in rooms 1 and 2, over ' + checked + ' rooms' + (bad.tick.length ? ': ' + bad.tick.slice(0, 5).join('; ') : ''));
+  t.eq(bad.tick.length, 0, 'the enemies tick 1.25x in rooms 3 and 4 (and 5, room 4\'s row until the boss) and 1x in rooms 1 and 2, over ' + checked + ' rooms' + (bad.tick.length ? ': ' + bad.tick.slice(0, 5).join('; ') : ''));
   t.ok(promos > 0 && bad.promo.length === 0, 'room 3\'s promoted elite is the fodder farthest from spawn (' + promos + ' rooms promote)' + (bad.promo.length ? ': ' + bad.promo.slice(0, 5).join('; ') : ''));
   /* the same record, free play against the house's room 1, stepped 300 steps with the same words: the same hash */
   const sr = SB.record.fromJSON(fixture('sample-room').fx.record);
@@ -5316,8 +5332,8 @@ group('H-run-2', 'the run reducers: runFresh sets out with the slots and the bas
   const lost = R.runDie(r);
   t.ok(lost.lost === 1 && r.lost === 0, 'runDie marks the run lost (the argument untouched)');
   const again = R.runRetry(lost);
-  t.ok(again.lost === 0 && again.at === 0 && again.dp === 0 && JSON.stringify(again.rooms) === JSON.stringify(r.rooms) && JSON.stringify(again.hero) === JSON.stringify(runHero({ slots: [1, 0, 0] })),
-    'runRetry: the same three rooms, from room 1, a fresh bug with the entry slots (T2.8\'s Retry House offers the same grids)');
+  t.ok(again.lost === 0 && again.at === 0 && again.dp === 22 && JSON.stringify(again.rooms) === JSON.stringify(r.rooms) && JSON.stringify(again.hero) === JSON.stringify(runHero({ slots: [1, 0, 0] })),
+    'runRetry: the same three rooms, from room 1, a fresh bug with the entry slots (T2.8\'s Retry House offers the same grids), the 22 banked kept (the House cleared card counts the house\'s whole bank)');
   const same = R.runEnter(again, a);
   t.ok(same.rooms.length === 3 && JSON.stringify(same.rooms) === JSON.stringify(r.rooms), 'runEnter with the room saved at its place keeps the rooms after it (Play room n, Retry House)');
   const other = R.runEnter(R.runClear(same, hero, 0), c);

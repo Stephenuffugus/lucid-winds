@@ -222,10 +222,12 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #codemsg { margin: 0; color: var(--brick); font-weight: 700; }   /* above the buttons: below them a returning player's refusal sat under the fold at 568 (the M1 review) */
 /* the title's small links and recent rooms (T1.10) */
 #settingsbtn { min-height: 48px; background: transparent; border: 0; color: var(--ash); text-decoration: underline; font-size: 0.95rem; }
-/* the house (QUESTIONS Q200): on the title once a first room is cleared, Start a house leads, Continue the house under it
-   when a run is saved, a small Houses cleared n, then Free play's two buttons as before */
+/* the house (QUESTIONS Q200): on the title once a first room is cleared, Start a house leads; while a run is saved
+   Continue the house (or Retry House, a lost run) leads in Sun and Start a house follows in Paper (the review of
+   HOUSE-A: the Sun button asked to throw the saved house away); a small Houses cleared n, then Free play as before */
 #house { display: flex; flex-direction: column; gap: 12px; }
-#housestart { background: var(--sun); color: var(--ink); } #housego { background: var(--paper); color: var(--ink); }
+#housestart { background: var(--sun); color: var(--ink); } #housego { background: var(--sun); color: var(--ink); }
+#housego:not([hidden]) ~ #housestart { background: var(--paper); }
 #housecount { margin: 0; text-align: center; color: var(--ash); font-size: 0.9rem; }
 #freeplay { margin: 6px 0 0; color: var(--ash); font-size: 0.9rem; }
 #title:has(#house:not([hidden])) #shoot { background: var(--paper); }   /* one Sun button on the title: Start a house */
@@ -252,6 +254,16 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #doorrecentlist canvas { width: 44px; height: 88px; image-rendering: pixelated; display: block; margin: 0 auto; }
 #doorrecentlist p { margin: 0; color: var(--slate); }
 #deathlost { margin: 0; font-size: 0.95rem; }
+/* the house's death card stacks its three buttons at every height (the review of HOUSE-A: in a row at 320x568 Retry
+   House and New house each wrapped to two lines); the house is over, so no fallen bug needs the room kept clear. The
+   strip's count the death lost is struck through */
+#death.house .duo { flex-direction: column; } #death.house .duo button { flex: none; }
+#dp.lost #dpn { text-decoration: line-through; }
+/* the doorway's hearts: the strip's sprites, the one back at this doorway ringed in Sun (a placeholder for Astra's) */
+#doorhearts:not([hidden]) { display: flex; justify-content: center; gap: 6px; }
+#doorhearts i { width: 18px; height: 16px; display: block; background: var(--heart-full) 0 0 / 18px 16px no-repeat; image-rendering: pixelated; }
+#doorhearts i.lost { background-image: var(--heart-empty); }
+#doorhearts i.back { box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--sun); border-radius: 2px; }
 #deathretry { background: var(--sun); color: var(--ink); } #deathnew { background: var(--paper); color: var(--ink); }
 #recent[hidden] { display: none; } #recent p { margin: 6px 0 4px; color: var(--ash); font-size: 0.9rem; }
 #recentlist { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
@@ -380,8 +392,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   </div>
   <div class="actions">
     <p id="codemsg" role="status" hidden></p>
-    <div id="house" hidden><button id="housestart" class="big" type="button" data-copy="houseStart"></button>
-      <button id="housego" class="big" type="button" data-copy="houseContinue" hidden></button>
+    <div id="house" hidden><button id="housego" class="big" type="button" data-copy="houseContinue" hidden></button>
+      <button id="housestart" class="big" type="button" data-copy="houseStart"></button>
       <p id="housecount" hidden></p><p id="freeplay" data-copy="freePlay"></p></div>
     <button id="shoot" class="big" type="button" data-copy="shoot"></button>
     <button id="choose" class="big" type="button" data-copy="choose"></button>
@@ -397,6 +409,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <div id="doorcard">
     <p id="doorpips" hidden></p>
     <h2 id="doorhead"></h2>
+    <p id="doorhearts" hidden></p>
     <p id="doorbank" hidden></p>
     <p id="doornext" hidden></p>
     <div id="doorprize" hidden></div>
@@ -1033,8 +1046,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
      rooms entered so far in JSON form (room n is rooms[n - 1]; DESIGN 8's any order and repeats), at the rooms cleared
      (0 to HOUSE_ROOMS - 1: the fifth clear ends the house and the run goes), hero the bug that walks into room at + 1
      (its hearts with the doorway's heart already back, its cap, stats, scrolls and slots), entry the slots it set out
-     with (Retry House's), dp the Dead pixels banked in this house, last the last room's, lost 1 once a death ended it
-     (Retry House reads it; the title drops it). runValid keeps a well formed run and gives null for anything else,
+     with (Retry House's), dp the Dead pixels banked in this house (every attempt's: Retry House keeps it, so the House
+     cleared card counts what the wallet got, the review of HOUSE-A), last the last room's, lost 1 once a death ended it
+     (Retry House reads it, from the death card or from the title after a reload; Start a house or New house replaces it). runValid keeps a well formed run and gives null for anything else,
      so a hand edited save never starts a broken house; the reducers return a new run and never touch their argument */
   var RUN_INT = function (v, lo, hi) { return typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi; };
   function runSlots(a) { return Array.isArray(a) && a.length === 3 && a.every(function (c) { return RUN_INT(c, 0, 24); }); }
@@ -1079,8 +1093,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   /* a death: the run is lost (the room's carried Dead pixels with it: they were never banked) */
   function runDie(run) { var r = runCopy(run); r.lost = 1; return r; }
-  /* Retry House: the same rooms so far, a fresh bug with the entry slots, from room 1 */
-  function runRetry(run) { var r = runCopy(run); r.at = 0; r.hero = runBug(r.entry); r.dp = 0; r.last = 0; r.lost = 0; return runValid(r); }
+  /* Retry House: the same rooms so far, a fresh bug with the entry slots, from room 1; what the doorways banked stays */
+  function runRetry(run) { var r = runCopy(run); r.at = 0; r.hero = runBug(r.entry); r.last = 0; r.lost = 0; return runValid(r); }
   function loadSave(raw) {
     if (raw === null || raw === undefined || raw === '') return { doc: saveDefaults() };
     var obj = null;
@@ -5109,6 +5123,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.show = function (name) {
     if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; drawRecent(); HS.on = false; drawHouse(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
     if (name === 'settings') fillSettings();
+    if (name === 'crop') document.getElementById('croptitle').textContent = HS.on && HS.run ? ui.COPY.cropBack : ui.COPY.toTitle;
     var all = document.querySelectorAll('.screen');
     for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === name);
     ui.screen = name;
@@ -5150,7 +5165,20 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function hearts(n, max) {
     var el = document.getElementById('hearts'), s = '', key = n + '/' + max;
     for (var i = 0; i < max; i++) s += i < n ? '<i></i>' : '<i class="lost"></i>';
-    if (el.getAttribute('data-n') !== key) { el.innerHTML = s; el.setAttribute('data-n', key); el.setAttribute('aria-label', ui.COPY.heartsOf.replace('{n}', n).replace('{max}', max)); }
+    if (el.getAttribute('data-n') !== key) { el.innerHTML = s; el.setAttribute('data-n', key); el.setAttribute('aria-label', ui.COPY.heartsOf.replace('{n}', n).replace('{max}', max)); fitName(); }
+  }
+  /* the room name in the strip, the longest of its forms that fits beside the slots and the hearts (the review of
+     HOUSE-A: 8 carried hearts and two weapons cut Room 3 of 5 to Room... at 320 wide): Room 3 of 5, Room 3/5, 3/5;
+     The last room, Last room, 5/5. A photo's own name keeps its ellipsis. Measured only when the name or the hearts
+     change and on a resize, never in a step */
+  function fitName() {
+    var el = document.getElementById('roomname'), forms = G.nameForms && G.nameForms.length ? G.nameForms : [G.name || ''];
+    for (var k = 0; k < forms.length; k++) { el.textContent = forms[k]; if (el.clientWidth === 0 || el.scrollWidth <= el.clientWidth) return; }   /* hidden, the full form */
+  }
+  ui.fitName = fitName;
+  function nameForms(r) {
+    var C = ui.COPY, of = SB.TUNING.HOUSE_ROOMS, f = function (t) { return t.replace('{n}', r).replace('{of}', of); };
+    return r === of ? [C.lastRoom, C.lastRoomShort, f(C.roomOfTiny)] : [f(C.roomOf), f(C.roomOfShort), f(C.roomOfTiny)];
   }
 
   /* the develop reveal (DESIGN 5.2, T0.14). It starts at the tap: the room is built inside its first beat. Its clock
@@ -5368,10 +5396,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
       : opts.level || SB.pipeline.build(record, { firstRoom: first, biome: opts.biome });   /* opts.biome: SB_DEV.loadRecord's override (T1.5's shots) */
     SB.perfLog.pipeline = opts.level && !hs ? (opts.ms || 0) : performance.now() - t0;
     if (lv.needsCrop) return false;
-    if (!hs) HS.on = false;
+    if (!hs) { HS.on = false; G.nameForms = null; }
     else {
       HS.run = SB.record.runEnter(HS.run, SB.record.toJSON(record)); saveRun(HS.run);   /* the room's place in the run, saved before a step */
-      G.gear = HS.run.hero.slots.slice(); name = roomName(room); opts.mode = 'house';
+      G.gear = HS.run.hero.slots.slice(); name = roomName(room); opts.mode = 'house'; G.nameForms = nameForms(room);
     }
     G.room = room; G.carry = hs ? HS.run.hero : null;
     G.record = record; G.level = lv; G.name = name; G.mode = opts.mode || 'free';
@@ -5386,10 +5414,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
     SB.input.resetRecording();
     document.getElementById('roomname').textContent = name;
     hearts(G.state.hero.hearts, G.state.hero.heartsMax);
+    document.getElementById('dp').classList.remove('lost');   /* a house death's struck count goes with its card */
+    document.getElementById('pausetitle').textContent = G.mode === 'house' ? ui.COPY.leaveHouse : ui.COPY.toTitle;   /* in a house Pause's Title leaves it, saved (the review of HOUSE-A) */
     showDp(G.state.room.dp);   /* the new room's count from its start: it showed the last room's through the reveal (NOTE5's shots) */
     ui.slots(G.state, true);   /* the HUD shows the room's gear before its first step */
     ui.hideOverlays();
     ui.show('play');
+    fitName();   /* measured on the shown strip, the hearts and the slots in place */
     ui.hideDeath(); ui.hinted.stood = false;
     if (!RV.devSkip && !opts.noReveal) startReveal(lv, t0, opts.photo || null);
     else ui.releasePhoto();
@@ -5678,7 +5709,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      Retry House (the same rooms so far, a fresh bug, the entry slots). Lane B's hooks: the boss (the build and the sim
      already get lastRoom in room 5; level.features.boss holds the photo's cluster), the clear card's prize and the
      run pips (Astra's round 3 cut); each does nothing yet */
-  var HS = ui.house = { on: false, run: null, hooks: {
+  var HS = ui.house = { on: false, run: null, raw: null, back: 0, hooks: {
     boss: null,
     prize: function (el, info) { el.hidden = true; },
     pips: function (el, run, room) { el.hidden = true; }
@@ -5687,14 +5718,16 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function roomName(r) { return r === SB.TUNING.HOUSE_ROOMS ? ui.COPY.lastRoom : ui.COPY.roomOf.replace('{n}', r).replace('{of}', SB.TUNING.HOUSE_ROOMS); }
   function plural(n, one, many) { return n === 1 ? ui.COPY[one] : ui.COPY[many].replace('{n}', n); }
   /* the title's house block: shown once a first room is cleared (DESIGN 5.3 keeps the first screen to its two buttons);
-     Continue the house while a run is saved; a lost run (a death the player walked away from) is dropped here */
+     while a run is saved its button leads: Continue the house, room n of 5, or Retry House for a lost run (a death
+     the player left by Title, Back or a reload keeps its Retry: the review of HOUSE-A found the title dropped it, and
+     with it every room shot so far); Start a house or New house replaces it */
   function drawHouse() {
     var doc = SB.save.doc; if (!doc) return;
-    if (doc.run && doc.run.lost) { doc.run = null; SB.save.commit(); }
-    var n = doc.stats.houseClears | 0, cnt = document.getElementById('housecount');
+    var n = doc.stats.houseClears | 0, cnt = document.getElementById('housecount'), go = document.getElementById('housego'), run = doc.run, C = ui.COPY;
     document.getElementById('house').hidden = !(doc.stats.clears > 0);
-    document.getElementById('housego').hidden = !doc.run;
-    cnt.textContent = ui.COPY.houseCount.replace('{n}', n); cnt.hidden = n < 1;
+    go.hidden = !run;
+    go.textContent = !run ? C.houseContinue : run.lost ? C.retryHouse : C.houseContinueAt.replace('{n}', run.at + 1).replace('{of}', SB.TUNING.HOUSE_ROOMS);
+    cnt.textContent = C.houseCount.replace('{n}', n); cnt.hidden = n < 1;
   }
   ui.drawHouse = drawHouse;
   /* a new house, from the title (a saved one is replaced only when the player says so), the death card or the clear card */
@@ -5708,8 +5741,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
   };
   ui.houseContinue = function () {
     var run = SB.save.doc && SB.record.runValid(SB.save.doc.run);
-    if (!run || run.lost) return false;
-    HS.run = run; HS.on = true; G.gear = run.hero.slots.slice();
+    if (!run) return false;
+    HS.run = run; HS.raw = null; HS.back = 0;
+    if (run.lost) return ui.houseRetry();   /* a lost run's button is Retry House */
+    HS.on = true; G.gear = run.hero.slots.slice();
     showDoor('door');
     return true;
   };
@@ -5717,11 +5752,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function showDoor(kind, info) {
     var C = ui.COPY, run = HS.run, cleared = kind === 'cleared', at = run ? run.at : 0, $ = function (id) { return document.getElementById(id); };
     var bank = $('doorbank'), nx = $('doornext'), ent = $('doorenter');
-    $('doorhead').textContent = cleared ? C.houseCleared : at === 0 ? C.houseNew : C.doorCleared.replace('{n}', at);
-    bank.textContent = cleared ? (info.dp === 1 ? C.houseSumOne : C.houseSum).replace('{rooms}', SB.TUNING.HOUSE_ROOMS).replace('{n}', info.dp)
-      : at === 0 ? C.houseRooms : plural(run.last, 'bankedOne', 'banked');
+    var of = SB.TUNING.HOUSE_ROOMS, raw = HS.raw;
+    $('doorhead').textContent = cleared ? C.houseCleared : at === 0 ? C.houseNew : C.doorCleared.replace('{n}', at).replace('{of}', of);
+    bank.textContent = cleared ? (info.dp === 1 ? C.houseSumOne : C.houseSum).replace('{rooms}', of).replace('{n}', info.dp)
+      : at === 0 ? C.houseRooms : raw !== null && raw !== undefined && raw > run.last ? C.bankedOf.replace('{n}', run.last).replace('{of}', raw) : plural(run.last, 'bankedOne', 'banked');
     bank.hidden = false;
-    nx.textContent = at > 0 && !cleared ? C.doorTougher.replace('{n}', at + 1) : ''; nx.hidden = !nx.textContent;
+    nx.textContent = at > 0 && !cleared ? (at + 1 === of ? C.doorLast : C.doorTougher.replace('{n}', at + 1)) : ''; nx.hidden = !nx.textContent;
+    doorHearts($('doorhearts'), at > 0 && !cleared ? run.hero : null, HS.back);
     var saved = !cleared && run && run.rooms.length > at;
     ent.textContent = C.enterRoom.replace('{n}', at + 1); ent.hidden = !saved;
     $('doorshoot').textContent = at === 0 ? C.shootFirst : C.nextRoom;
@@ -5735,6 +5772,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
     $('door').scrollTop = 0;
   }
   ui.showDoor = showDoor;
+  /* the bug's hearts on the doorway (the review of HOUSE-A: the heart back was invisible until the next room's strip):
+     the strip's heart sprites, the one that came back at this doorway ringed in Sun */
+  function doorHearts(el, hero, back) {
+    if (!hero) { el.hidden = true; el.innerHTML = ''; return; }
+    var s = '';
+    for (var i = 0; i < hero.heartsMax; i++) s += i >= hero.hearts ? '<i class="lost"></i>' : back && i === hero.hearts - 1 ? '<i class="back"></i>' : '<i></i>';
+    el.innerHTML = s; el.hidden = false;
+    el.setAttribute('aria-label', (back ? ui.COPY.doorHearts : ui.COPY.doorHeartsFull).replace('{n}', hero.hearts).replace('{max}', hero.heartsMax));
+  }
   /* a room's thumbnails, each a button that plays it (the title's recent rooms and the doorway's) */
   function thumbs(list, rs, label, pick) {
     list.innerHTML = '';
@@ -5758,27 +5804,32 @@ body.sb-modal .lwfb-fab { display: none !important; }
     list.hidden = false;
     list.scrollIntoView({ block: 'nearest' });
   }
-  /* a house room cleared: banked at x1, the run advanced and saved, the doorway; the fifth ends the house */
+  /* a house room cleared: banked, the run advanced and saved, the doorway; the fifth ends the house. Room 1 is free
+     play's room byte for byte (Q200), so it banks at free play's rate (Stephen's "Room 1 stays as today"; the review
+     of HOUSE-A: at x1, Start a house, room 1, Leave the house paid every free play room double, and Retry House paid
+     room 1 again); rooms 2 to 5 at x1 (DESIGN 8). Q201 */
   function houseClear() {
     if (!G.banked) {
       G.banked = true;
-      var dp = G.state.room.dp, doc = SB.save.doc, total = HS.run.dp + dp;
-      doc.stats.clears++; SB.save.addRecent(G.record); if (dp > 0) SB.Wallet.earn(dp, 'house');
+      var dp = G.state.room.dp, doc = SB.save.doc, n = HS.run.at === 0 ? Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT) : dp, total = HS.run.dp + n;
+      doc.stats.clears++; SB.save.addRecent(G.record); if (n > 0) SB.Wallet.earn(n, 'house');
       ui.lastHash = SB.sim.hash(G.state);
       SB.Wallet.moment('first_clear', { mode: 'house' });
-      var next = SB.record.runClear(HS.run, G.state.hero, dp);
+      var next = SB.record.runClear(HS.run, G.state.hero, n);
+      HS.raw = dp; HS.back = next && next.hero.hearts > G.state.hero.hearts ? 1 : 0;
       if (!next) { doc.stats.houseClears++; HS.run = null; saveRun(null); HS.done = { dp: total }; }
       else { HS.run = next; saveRun(next); G.gear = next.hero.slots.slice(); }
     }
     if (HS.run) showDoor('door'); else showDoor('cleared', HS.done);   /* G.state stays: the frame's remaining steps step it */
     return true;
   }
-  /* the death card's words: in a house, the loss (the room's carried Dead pixels) and Retry House, New house, Title;
-     the run saved as lost (Retry House reads it; the title drops it) */
+  /* the death card's words: in a house, the loss (the room's carried Dead pixels, struck through in the strip) and
+     Retry House, New house, Title; the run saved as lost (Retry House reads it, here or on the title after a reload) */
   function houseDeath() {
     var house = G.mode === 'house' && !!HS.run, C = ui.COPY, $ = function (id) { return document.getElementById(id); };
     $('deathhead').textContent = house ? C.houseLost : C.death;
     $('deathagain').hidden = house; $('deathretry').hidden = !house; $('deathnew').hidden = !house; $('deathlost').hidden = !house;
+    $('death').classList.toggle('house', house); $('dp').classList.toggle('lost', house);
     if (!house) return;
     var dp = G.state ? G.state.room.dp : 0;
     $('deathlost').textContent = plural(dp, 'lostOne', 'lost');
@@ -5787,7 +5838,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* Retry House: the same rooms so far, a fresh bug with the entry slots, straight into room 1 (its grid known) */
   ui.houseRetry = function () {
     if (!HS.run || !HS.run.rooms.length) return false;
-    HS.run = SB.record.runRetry(HS.run); saveRun(HS.run); HS.on = true;
+    HS.run = SB.record.runRetry(HS.run); saveRun(HS.run); HS.on = true; HS.raw = null; HS.back = 0;
     G.gear = HS.run.entry.slice();
     ui.hideDeath();
     return ui.startRoom(SB.record.fromJSON(HS.run.rooms[0]), '', { noReveal: true });
@@ -5867,6 +5918,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
     on('doortitle', function () { ui.toTitle(); });
     on('deathretry', function () { ui.houseRetry(); });
     on('deathnew', function () { ui.hideDeath(); ui.houseStart(); });
+    window.addEventListener('resize', function () { if (G.nameForms) fitName(); });
+    /* the crop screen opened from a doorway: its Title is Back, to that doorway (the review of HOUSE-A); a capture
+       listener, so the crop's own Title handler stays as it is outside a house */
+    document.getElementById('croptitle').addEventListener('click', function (e) {
+      if (!HS.on || !HS.run) return;
+      e.stopImmediatePropagation(); ui.releasePhoto(); showDoor('door');
+    }, true);
     /* the pause card (Q94): Pause holds the room; Resume, Share this room (its Close comes back to the card) and Title */
     document.getElementById('pause').addEventListener('click', function () { this.blur(); ui.pause(); });   /* no focus kept: Space (jump) or Enter would press it again after Resume */
     document.getElementById('resume').addEventListener('click', function () { ui.resume(); });
