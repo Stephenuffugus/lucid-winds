@@ -99,7 +99,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #cropbar { display: flex; gap: 12px; padding: 10px 16px 14px; }
 #retake { min-height: 56px; flex: 0 0 auto; padding: 0 20px; border-radius: 12px; border: 2px solid var(--slate); background: transparent; color: var(--paper); font-weight: 700; }
 #develop { flex: 1 1 auto; background: var(--sun); color: var(--ink); }
-#cropseek { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; image-rendering: pixelated; }
+#cropseek { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; image-rendering: pixelated; }
 #crop.seeking #develop { opacity: 0.6; }
 #crop.stuck #develop { background: transparent; color: var(--ash); border: 2px dashed var(--slate); }
 #cropsay { margin: 0 16px 8px; min-height: 1em; color: var(--pewter); font-size: 0.75rem; }
@@ -5186,18 +5186,19 @@ body.sb-modal .lwfb-fab { display: none !important; }
      refusal's message at once), ?seekworker=0 tries on this thread. */
   var SEEK_OFF = /[?&]seek=0/.test(location.search), SEEK_MAIN = /[?&]seekworker=0/.test(location.search);
   CR.seek = null; CR.lastSeek = null; CR.seekRuns = 0; CR.worker = undefined;
-  /* the seek marker's art hook: CROP_SEEK_ART draws frame f (0..3) of a 16x16 loop at 6 fps. A code placeholder (a Sun
-     diamond and its Paper trail on an open path, after Astra's round 3 NOTES) until her crop_seek is spliced on
+  /* the seek marker's art hook: CROP_SEEK_ART draws frame f (0..3) of a 16x16 loop at 6 fps, shown at 4x. A code
+     placeholder (an Ink keylined Sun diamond climbing up and right with a trail of three Paper dots, after Astra's round
+     3 NOTES) until her crop_seek is spliced on
      sb-weapons-2; the merge swaps this one function for a blit of crop_seek.seek_<f> */
   ui.CROP_SEEK_ART = function (c, f) {
-    var P = SB.palette, x = 3 + 2 * f, y = 10 - 2 * f, k;
+    var P = SB.palette, x = 7 + f, y = 8 - f, k, d;
+    var dia = function (r, hex) { c.fillStyle = '#' + hex; for (d = -r; d <= r; d++) c.fillRect(x - (r - Math.abs(d)), y + d, 2 * (r - Math.abs(d)) + 1, 1); };
     c.clearRect(0, 0, 16, 16);
-    c.fillStyle = '#' + P.HEX[P.I.PAPER];
-    for (k = 1; k <= 3; k++) c.fillRect(x - 3 * k + 1, y + 2 * k, 1, 1);
-    c.fillStyle = '#' + P.HEX[P.I.INK]; c.fillRect(x - 3, y - 3, 7, 7);
-    c.fillStyle = '#' + P.HEX[P.I.SUN];
-    for (k = 0; k < 3; k++) c.fillRect(x - k, y - 2 + k, 2 * k + 1, 1);
-    c.fillRect(x - 1, y + 1, 3, 1); c.fillRect(x, y + 2, 1, 1);
+    for (k = 1; k <= 3; k++) {   /* the trail: three Paper dots on Ink, back down the path the diamond climbs */
+      c.fillStyle = '#' + P.HEX[P.I.INK]; c.fillRect(x - 2 * k - 1 - 1, y + 2 * k + 1 - 1, 3, 3);
+      c.fillStyle = '#' + P.HEX[P.I.PAPER]; c.fillRect(x - 2 * k - 1, y + 2 * k + 1, 1, 1);
+    }
+    dia(3, P.HEX[P.I.INK]); dia(2, P.HEX[P.I.SUN]);
   };
   function seekMarker(S, now) {
     var rm = SB.settings ? SB.settings.reducedMotion : null, still = rm === null || rm === undefined ? !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) : !!rm;
