@@ -212,7 +212,7 @@ try {
     const b = await newPage(browser, { width: 320, height: 568 });
     await gotoGame(b.page, srv.base); await ready(b.page);
     await b.page.evaluate(() => window.SB_DEV.hold(true));
-    await tap(b.page, '#sample'); await climb(b.page); await tap(b.page, '#cleartitle');
+    await scrollTap(b.page, '#sample'); await climb(b.page); await scrollTap(b.page, '#cleartitle');
     await scrollTap(b.page, '#housestart');
     await fromRecent(b.page); await climb(b.page);
     const sm2 = await small(b.page);

@@ -5150,7 +5150,7 @@ function rampBuilds() {
 const featJSON = lv => JSON.stringify(lv.features, (k, v) => ArrayBuffer.isView(v) ? Array.from(v) : v);
 group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHash, features, the first sim state, no ramp row) and a first room never sees a room index; rooms 2, 3 and 4 hold at least 2, 3 and 4 enemies on every built corpus room, as detected and under every biome, rooms 3 and 4 an elite, within the table\'s caps; every ramp enemy is its biome\'s kind (a moth where none can keep the kind\'s rule), keeps DESIGN 7\'s cells and keeps its envelope off the ascent; the route, the safe cadence and the degrade ladder are the free play room\'s', t => {
   const T = SB.TUNING, bad = { same: [], floor: [], elite: [], cap: [], kind: [], rules: [], env: [], route: [], refuse: [], first: [] };
-  let rooms = 0, laid = 0, promoted = 0, moths = 0;
+  let rooms = 0, laid = 0, promoted = 0, moths = 0; const own = {};
   for (const L of rampBuilds()) {
     const { tag, base, rec } = L;
     if (L.rooms[1]) {
@@ -5179,7 +5179,7 @@ group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHas
       for (const e of E) {
         if (e.promoted) promoted++;
         if (!e.ramp) continue;
-        laid++;
+        laid++; if (e.kind === KIND_WANT[lv.biome]) own[lv.biome] = (own[lv.biome] || 0) + 1;
         const c = e.idx, at = '(' + c % w + ', ' + Math.floor(c / w) + ')';
         if (e.kind !== KIND_WANT[lv.biome]) { if (e.kind === SB.features.MOTH) moths++; else bad.kind.push(tag + ' room ' + r + ': a ' + KIND_NAME[e.kind] + ' at ' + at); }
         if (lv.solid[c] || lv.plat[c] || lv.trap[c] || c < w || c >= n - w) bad.rules.push(tag + ' room ' + r + ': on a solid, one way, trap or edge cell ' + at);
@@ -5201,6 +5201,8 @@ group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHas
   say('elite', 'rooms 3 and 4 hold an elite on every build (' + promoted + ' promoted where the photo gave none)');
   say('cap', 'the table\'s caps hold: room 2 and 3 at most 4 enemies and 1 elite, room 4 at most 5 and 2, room 5 at most 3 and 1 (Ember one more enemy)');
   say('kind', 'every ramp enemy is its biome\'s kind or, where no cell keeps the kind\'s rule, a moth (' + moths + ' moths)');
+  const missing = [1, 2, 3, 4].filter(b => !own[b]);
+  t.ok(missing.length === 0 && moths < laid / 4, 'every biome\'s own kind is laid as ramp fodder, moths the exception (' + [0, 1, 2, 3, 4].map(b => SB.palette.BIOMES[b] + ' ' + (own[b] || 0)).join(', ') + '; ' + moths + ' moths of ' + laid + ')');
   say('rules', 'every ramp enemy keeps DESIGN 7: open, clear of spawn by ENEMY_SPAWN_CLEAR, outside ROUTE_SAFE_ENEMY_DIST of the ascent, never on a trap, the pocket, a loot cell or the exit; crawlers and sparks standing, icicles hanging');
   say('env', 'no ramp enemy\'s envelope covers a cell the ascent stands on');
   say('route', 'the ramped room keeps the free play room\'s ascent and degrade ladder, and its ascent holds on the safe cells');
@@ -5306,8 +5308,9 @@ group('H-run-2', 'the run reducers: runFresh sets out with the slots and the bas
   t.same(r.hero, { hearts: 3, heartsMax: 4, vigor: 1, focus: 0, grit: 2, scrolls: 3, slots: [1, 9, 0] }, 'runClear: the bug carried with one heart back, its stats and slots');
   t.ok(r.at === 1 && r.dp === 17 && r.last === 17, 'runClear: at 1, 17 banked (' + r.at + ', ' + r.dp + ', ' + r.last + ')');
   const r2 = R.runEnter(r, b);
-  t.eq(R.runClear(r2, Object.assign({}, hero, { hearts: 4 }), 0).hero.hearts, 4, 'runClear: the heart back never passes the bug\'s cap');
-  t.eq(R.runClear(r2, Object.assign({}, hero, { hearts: 5, heartsMax: 5 }), 0).hero.hearts, 5, 'runClear: a bug whose scrolls grew its cap keeps it');
+  const full = R.runClear(r2, Object.assign({}, hero, { hearts: 4 }), 0), grown = R.runClear(r2, Object.assign({}, hero, { hearts: 5, heartsMax: 5 }), 0);
+  t.eq(full && full.hero.hearts, 4, 'runClear: the heart back never passes the bug\'s cap');
+  t.eq(grown && grown.hero.hearts, 5, 'runClear: a bug whose scrolls grew its cap keeps it');
   r = R.runEnter(r, b); r = R.runClear(r, hero, 5); r = R.runEnter(r, c);
   t.ok(r.rooms.length === 3 && r.at === 2 && r.dp === 22, 'three rooms entered, two cleared, 22 banked');
   const lost = R.runDie(r);
