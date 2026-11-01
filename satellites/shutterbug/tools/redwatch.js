@@ -1179,7 +1179,7 @@ const MUTANTS = [
      guard, a cause per refusal, the crop screen's message per cause, its band marks and its dev readout */
   { name: 'S2_OFF', task: 'LEVELS', file: 'page', find: '      if (rowLen >= T.FLOOR_RUN_MIN) { sy = y; bestA = rowA; bestLen = rowLen; fell = 1; }\n', repl: '      if (false) { sy = y; bestA = rowA; bestLen = rowLen; fell = 1; }\n',
     gates: [{ gate: 'harness', only: 'H-lvl-1', expect: 'no open cell on the standing row' }] },
-  { name: 'C_OFF', task: 'LEVELS', file: 'page', find: '      if (et === 0 && cb > 1) return buildAt(rec, opts, cb, narrow);\n', repl: '',
+  { name: 'C_OFF', task: 'LEVELS', file: 'page', find: '      if (et === 0 && cb > 1) return buildAt(rec, opts, cb, narrow, climb);\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-lvl-2', expect: 'and the exit is unreached' }] },
   { name: 'C_ALWAYS', task: 'LEVELS', file: 'page', find: '    var fixed = repair(level, light, landmarks);\n',
     repl: '    var cb0 = ceilingEnd(solid, w, h);\n    if (et === 0 && cb0 > 1) return buildAt(rec, opts, cb0, narrow);\n    var fixed = repair(level, light, landmarks);\n',
