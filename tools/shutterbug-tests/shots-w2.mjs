@@ -58,8 +58,10 @@ try {
     await page.keyboard.down('ArrowLeft'); for (let k = 0; k < 30 && !(await st()).wall; k++) await step(1); await page.keyboard.up('ArrowLeft');
     await tap(page, '#btnA'); await step(3);
     await shot('w2-J3', near([9, 'hero']));
-    /* J4 Flashbulb: jellies two cells off each side at the apex height, the burst, then the stunned stars */
-    await room(REC, -1, [[12, 42, 1, 'frozen'], [10, 42, 1, 'frozen']], [CODE.J4, CODE.D1]); await at(11, FLOOR); await step(4);
+    /* J4 Flashbulb: moths at the reach's edge each side (centres 2 cells off) at a tap's apex height (row 44: a tapped
+       A is a short hop, its apex two cells up; the first set laid them at row 42, out of reach, and showed no stars),
+       the burst, then the stunned stars */
+    await room(REC, -1, [[13, 44, 1, 'frozen'], [9, 44, 1, 'frozen']], [CODE.J4, CODE.D1]); await at(11, FLOOR); await step(4);
     await page.evaluate(() => window.SB.game.state.enemies.forEach(e => { e.frozen = 0; e.hp = 8; }));   /* held by nothing after the burst but its stun; 8 quarters so it lives to show the stars */
     await tap(page, '#btnA');
     for (let k = 0; k < 40; k++) { await step(1); if ((await st()).proj.some(p => p.kind === 6 && p.mode === 1)) break; }
