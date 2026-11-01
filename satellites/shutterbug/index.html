@@ -475,6 +475,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     OTSU_MIN: 70, OTSU_MAX: 140, SMOOTH_PASSES: 2, PLATFORM_RUN_MIN: 3, EDGE_DROP_L: 60,
     LANDMARK_MIN: 8, LANDMARK_COUNT: 3, SPAWN_ROW_FROM_BOTTOM: 2, EXIT_ROWS: 4, CEILING_LIGHT_L: 200, EXIT_LIGHT_SLACK: 2 /* Q11 */,
     REPAIR_REACH_FRAC: 0.4, TAB_W: 2, TAB_MAX: 12, TAB_STAIR_ACROSS: 3, TAB_STAIR_UP: 3, REPAIR_PASSES: 4, REPAIR_MAX_CHANGE: 0.15,
+    /* the climb rules (record v2 with rules 1, Q97, Q221): a stacked pair of cells is a photo edge when its luminance
+       differs by over EDGE_L or its S1000 by over EDGE_S1000 (or both hue bands differ); repair runs CLIMB_PASSES */
+    EDGE_L: 30, EDGE_S1000: 350, CLIMB_PASSES: 8,
     /* the floor and ceiling fallbacks (Stephen's ruling 31 Oct, "Floor becomes the ledge", Q180), only where the room
        would be needsCrop: the floor band's top needs an open over solid run of FLOOR_RUN_MIN; a ceiling band row is at
        least CEILING_BAND_FRAC solid; a fallback room climbs at least FALLBACK_MIN_CLIMB rows; a refusal with at least
@@ -791,7 +794,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        v2 { v: 2, w, h, mode, focal, biome, rules, flags, pal, pal2 } (QUESTIONS Q220, Stephen's Q97 ruling 1): three
           header bytes that let the record grow without a v3. biome 0 derives it from the grid by today's rule (biomeOf),
           1 to 5 name it (SB.palette.BIOMES index + 1: the capture's vote from the photo's own colour); rules 0 builds
-          by today's level rules exactly (1 is reserved for the climb rules); flags 0 (bit 0 a coded grid, bit 1 a
+          by today's level rules exactly, 1 by the climb rules (Q221: edge ledges, the aimed stair, today's level when they refuse); flags 0 (bit 0 a coded grid, bit 1 a
           solid mask, bit 2 detail, all reserved). A value this client does not know reads as 'newer' (parseCode), so
           an old client never builds a room by rules it lacks. The seed still hashes only the grid (seedOf).
      pal[i] in 0..14, row major, row 0 the top of the room. Index 15 (Film, the repair colour) never appears in a
@@ -801,7 +804,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      and their code: nothing that was shared changes. */
   var V = 2, HEADER = 6, HEADER2 = 9, HEX = '0123456789abcdef';
   /* what this client knows of v2's three bytes (raised only by the lane that builds what a value means) */
-  var BIOME_MAX = 5, RULES_MAX = 0, FLAGS_KNOWN = 0;
+  var BIOME_MAX = 5, RULES_MAX = 1, FLAGS_KNOWN = 0;
   function headOf(v) { return v === 1 ? HEADER : HEADER2; }
   /* a v2 header holding a byte this client does not know (a biome past BIOME_MAX, rules past RULES_MAX, a flag bit
      outside FLAGS_KNOWN): such a code is a newer client's, never 'bad' and never built */
@@ -1356,19 +1359,34 @@ body.sb-modal .lwfb-fab { display: none !important; }
 
   /* LEVELSR: a refusal whose standing row holds only open runs narrower than FLOOR_RUN_MIN (a floor band with a sliver
      open at one edge) builds once more with the floor band rule (narrow); a room that built is never rebuilt */
+  /* CLIMB (Q97, Q221): a v2 record with rules 1 or more builds by the climb rules (edge ledges in buildAt, the aimed
+     stair in repair); every other record (v1, rules 0, opts.noClimb) builds by today's rules exactly. A box the climb
+     rules refuse builds once more by today's rules on the same record and keeps that level (repair.wholeFallback 1),
+     so no room that builds today stops building; when both refuse, today's refusal goes back, so the crop screen's
+     cause and the auto crop's order of boxes are today's */
   function build(rec, opts) {
     opts = opts || {};
-    var lv = buildAt(rec, opts, 0, 0), g = lv.needsCrop && opts.stage !== 'A' && lv.grid;
+    if (!climbs(rec, opts)) return buildRules(rec, opts, 0);
+    var lv = buildRules(rec, opts, 1);
+    if (!lv.needsCrop) return lv;
+    var today = buildRules(rec, opts, 0);
+    if (!today.needsCrop) today.repair.wholeFallback = 1;
+    return today;
+  }
+  function climbs(rec, opts) { return !opts.noClimb && rec.v >= 2 && rec.rules >= 1; }
+  function buildRules(rec, opts, climb) {
+    var lv = buildAt(rec, opts, 0, 0, climb), g = lv.needsCrop && opts.stage !== 'A' && lv.grid;
     if (!g) return lv;
     var y = g.h - SB.TUNING.SPAWN_ROW_FROM_BOTTOM, run = 0, best = 0, x;
     for (x = 0; x < g.w; x++) { run = g.solid[y * g.w + x] ? 0 : run + 1; if (run > best) best = run; }
     if (best < 1 || best >= SB.TUNING.FLOOR_RUN_MIN) return lv;
-    var again = buildAt(rec, opts, 0, 1);
+    var again = buildAt(rec, opts, 0, 1, climb);
     return !again.needsCrop || again.cause ? again : lv;
   }
   /* et: the exit window's top row. 0 for every room; the ceiling fallback builds once more with it under the band.
-     narrow: the standing row's narrow runs are passed over and the floor band rule runs (build's second try) */
-  function buildAt(rec, opts, et, narrow) {
+     narrow: the standing row's narrow runs are passed over and the floor band rule runs (build's second try);
+     climb: the climb rules (edge ledges here, the aimed stair in repair) */
+  function buildAt(rec, opts, et, narrow, climb) {
     var T = SB.TUNING, P = SB.palette, w = rec.w, h = rec.h, pal = rec.pal, i, x, y;
     if (rec.mode === 2) {                     /* Double Exposure: pal2 stacked above pal, a 24 x 96 climb (Q19) */
       var both = new Uint8Array(w * h * 2);
@@ -1402,6 +1420,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
         } else x++;
       }
     }
+
+    if (climb) edgeLedges(solid, plat, pal, L, w, h);
 
     /* landmarks are the photo's things: the forced floor row is left out, or every piece of furniture standing on
        it would merge into one blob with the floor (QUESTIONS Q58) */
@@ -1458,7 +1478,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       negative: negative, L: L, solid: solid, plat: plat, tab: z(), slick: z(), sticky: z(), trap: z(),
       otsuT: otsuT, landmarks: landmarks, spawn: spawn, exit: -1, beacon: { idx: -1, cells: new Int32Array(0) },
       features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null },
-      repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false, exitTop: et
+      repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false, exitTop: et, climb: climb ? 1 : 0
     };
     level.light = light ? Int32Array.from(light) : new Int32Array(0);
     /* the biome's surfaces (T1.1), before the reach graph reads them. The first ever free play room runs without its
@@ -1487,7 +1507,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       /* the ceiling band (Stephen's ruling 31 Oct, Q180), only where repair fails: when the rows from row 1 down are
          each at least CEILING_BAND_FRAC solid, build once more with the exit window moved under that band */
       var cb = ceilingEnd(solid, w, h);
-      if (et === 0 && cb > 1) return buildAt(rec, opts, cb, narrow);
+      if (et === 0 && cb > 1) return buildAt(rec, opts, cb, narrow, climb);
       return refusal(solid, plat, L, w, h, lostF, et, fell ? sy + 1 : -1, fixed.why, fixed.detail);
     }
     var exit = fixed.exit;
@@ -1507,6 +1527,38 @@ body.sb-modal .lwfb-fab { display: none !important; }
        then the second round of the ascent and, when it fails, the degrade ladder (T1.3) */
     var settled = settle(level, SB.features.place(level, opts, fixed.g));
     return settled || level;
+  }
+
+  /* CLIMB, the edge ledges (Q221; the investigation's rule (a), the design sprint's climb angle): the wall is the two
+     most common palette indices among the open cells of rows 1 to h-2 (ties to the lower index). A stacked pair, ia
+     above ib, is an edge when neither is solid, ib is not wall paint, the indices differ, and the luminance differs by
+     over EDGE_L, or S1000 by over EDGE_S1000, or both have hue bands and the bands differ; a run of at least
+     PLATFORM_RUN_MIN edges along a row becomes photo one ways on the lower row (rows 2 to h-2: never the floor row) */
+  function wallPaint(solid, pal, w, h) {
+    var c = new Int32Array(16), a = -1, b = -1, q, n = w * h;
+    for (q = w; q < n - w; q++) if (!solid[q]) c[pal[q]]++;
+    for (q = 0; q < 16; q++) { if (a < 0 || c[q] > c[a]) { b = a; a = q; } else if (b < 0 || c[q] > c[b]) b = q; }
+    var s = new Uint8Array(16); if (a >= 0) s[a] = 1; if (b >= 0 && c[b] > 0) s[b] = 1;
+    return s;
+  }
+  function edgeLedges(solid, plat, pal, L, w, h) {
+    var T = SB.TUNING, P = SB.palette, wall = wallPaint(solid, pal, w, h), y, x, x2, k;
+    var edge = function (ia, ib) {
+      if (solid[ia] || solid[ib] || wall[pal[ib]]) return false;
+      var pa = pal[ia], pb = pal[ib]; if (pa === pb) return false;
+      var dl = L[ia] - L[ib], ds = P.S1000[pa] - P.S1000[pb];
+      return dl > T.EDGE_L || dl < -T.EDGE_L || ds > T.EDGE_S1000 || ds < -T.EDGE_S1000 || (P.BAND[pa] >= 0 && P.BAND[pb] >= 0 && P.BAND[pa] !== P.BAND[pb]);
+    };
+    for (y = 1; y < h - 2; y++) {
+      x = 0;
+      while (x < w) {
+        if (!edge(y * w + x, (y + 1) * w + x)) { x++; continue; }
+        x2 = x; while (x2 + 1 < w && edge(y * w + x2 + 1, (y + 1) * w + x2 + 1)) x2++;
+        if (x2 - x + 1 >= T.PLATFORM_RUN_MIN) for (k = x; k <= x2; k++) plat[(y + 1) * w + k] = 1;
+        x = x2 + 1;
+      }
+    }
+    return wall;
   }
 
   /* the exit (section 3.7, DESIGN 6.6): the reachable standable cell of the top EXIT_ROWS rows with the greatest
@@ -1591,10 +1643,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
           return { exit: exit, d: d, g: g, ascent: ascent };
         }
       }
-      if (pass >= T.REPAIR_PASSES) return { needsCrop: true, why: ascent ? 'route' : 'unreachable', detail: 'repair ran ' + pass + ' passes, ' + tabs + ' tabs, and the exit is ' + (exit < 0 ? 'unreached' : ascent ? 'reached, but the route fails: ' + SB.reach.routeScore(level, g, ascent).reasons.join('; ') : 'reached with ' + Math.round(frac * 100) + '% of the room') };
+      if (pass >= (level.climb ? T.CLIMB_PASSES : T.REPAIR_PASSES)) return { needsCrop: true, why: ascent ? 'route' : 'unreachable', detail: 'repair ran ' + pass + ' passes, ' + tabs + ' tabs, and the exit is ' + (exit < 0 ? 'unreached' : ascent ? 'reached, but the route fails: ' + SB.reach.routeScore(level, g, ascent).reasons.join('; ') : 'reached with ' + Math.round(frac * 100) + '% of the room') };
       /* the target */
-      var tx = -1, ty = -1, best = -1;
-      if (exit >= 0 && frac >= T.REPAIR_REACH_FRAC) { tx = exit % w; ty = (exit - tx) / w; }
+      var tx = -1, ty = -1, best = -1, stone = level.climb && exit < 0 ? stoneOf(level, d) : null;
+      if (stone) { tx = stone.cell % w; ty = (stone.cell - tx) / w; (level.repair.stones || (level.repair.stones = [])).push(stone); }
+      else if (exit >= 0 && frac >= T.REPAIR_REACH_FRAC) { tx = exit % w; ty = (exit - tx) / w; }
       else if (exit < 0) {
         if (light) for (k = 0; k < light.length; k++) if (standableIn(level, light[k]) && d[light[k]] < 0 && (best < 0 || light[k] < best)) best = light[k];
         for (i = et * w; i < (et + T.EXIT_ROWS) * w && best < 0; i++) if (standableIn(level, i) && d[i] < 0) best = i;
@@ -1619,6 +1672,21 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (2 * tabs / n > T.REPAIR_MAX_CHANGE) return { needsCrop: true, why: 'unreachable', detail: 'repair would change ' + Math.round(200 * tabs / n) + '% of the cells' };
       if (!laid) return { needsCrop: true, why: 'unreachable', detail: 'no tab fits on the stair from the frontier' };
     }
+  }
+  /* CLIMB, the stepping stone (Q221; the investigation's rule (e)): while the exit is unreached, the pass's stair aims
+     at the unreached standable cell of rows 1 to h-3 above the highest reached row, not standing on a film tab,
+     nearest by Chebyshev distance to any reached standable cell, ties to the lowest index; null when there is none (the
+     pass is then today's), else the cell and the highest reached row (kept on level.repair.stones for the harness) */
+  function stoneOf(level, d) {
+    var w = level.w, h = level.h, n = w * h, topR = h, reached = [], c, r, best = -1, bestD = 1e9;
+    for (c = 0; c < n; c++) if (d[c] >= 0 && standableIn(level, c)) { reached.push(c); if ((c - c % w) / w < topR) topR = (c - c % w) / w; }
+    for (c = w; c < (h - 2) * w && c < topR * w; c++) {
+      if (d[c] >= 0 || level.tab[c + w] || !standableIn(level, c)) continue;
+      var cx = c % w, cy = (c - cx) / w, dm = 1e9;
+      for (r = 0; r < reached.length && dm > 1; r++) { var rx = reached[r] % w, dd = Math.max(Math.abs(rx - cx), Math.abs((reached[r] - rx) / w - cy)); if (dd < dm) dm = dd; }
+      if (dm < bestD) { bestD = dm; best = c; }
+    }
+    return best >= 0 ? { cell: best, top: topR } : null;
   }
   /* the largest connected mass of unreached standable cells (4 connected through standable cells; ties to the lowest
      first cell): its lowest index */
@@ -1864,7 +1932,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   function levelHash(lv) { return SB.rng.hashWords(serialize(lv)); }
 
-  SB.pipeline = { toText: toText, otsu: otsu, smooth: smooth, components: components, describe: describe, build: build, biomeOf: biomeOf, biomeFor: biomeFor,
+  SB.pipeline = { toText: toText, otsu: otsu, smooth: smooth, components: components, describe: describe, build: build, climbs: climbs, wallPaint: wallPaint, biomeOf: biomeOf, biomeFor: biomeFor,
     FIELDS: FIELDS, serialize: serialize, levelHash: levelHash, exitByReach: exitByReach, DEGRADE: DEGRADE, settle: settle, holds: holds };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
@@ -3845,7 +3913,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   C.gridRecord = function (rgb, focal) {
     var W = SB.GRID.W, H = SB.GRID.H, pal = new Uint8Array(W * H);
     for (var i = 0; i < W * H; i++) pal[i] = SB.palette.nearest(rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2]);
-    return { v: SB.record.V, w: W, h: H, mode: 0, focal: focal >= 0 ? focal : null, biome: C.hueVote(rgb).biome + 1, rules: 0, flags: 0, rows: SB.record.palToRows(pal, W, H), rows2: null };
+    return { v: SB.record.V, w: W, h: H, mode: 0, focal: focal >= 0 ? focal : null, biome: C.hueVote(rgb).biome + 1, rules: C.RULES, flags: 0, rows: SB.record.palToRows(pal, W, H), rows2: null };
   };
 
   /* The hue vote (QUESTIONS Q220, Stephen's Q97 ruling 1, the investigation's option B1 with the bright room rule
@@ -3863,6 +3931,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
        4. else the largest vote; a tie goes Attic, Ember, Deep, Overgrowth (the palette's tie law, Q79).
      Integers only, so tools/capture-oracle.js's hueVoteRGB (its own copy, written apart) agrees cell for cell (H-hue-1).
      Returns { biome: 0..4 (SB.palette.BIOMES), rule: 'bright' | 'vote' | 'few', votes: [5], voters }. */
+  /* the level rules a new record names (core-record's rules byte): 1, the climb rules (Q221); 0 would build today's */
+  C.RULES = 1;
   C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 15, GREEN_LO: 70, DEEP_LO: 170, EMBER_LO: 285, C_MIN: 12, S_MIN: 9, WARM_C_MIN: 16, WARM_S_MIN: 30, MIN_PCT: 10 });
   C.hueBand = function (r, g, b) {
     var K = C.HUE, mx = Math.max(r, g, b), d = mx - Math.min(r, g, b), band;
