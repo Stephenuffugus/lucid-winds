@@ -1310,7 +1310,7 @@ const MUTANTS = [
     gates: [{ gate: 'fight', expect: "412: Halo's ring is Astra's 16x6 ring on its box" }] },
   { name: 'EMBER_NO_FLICKER', task: 'ART4', file: 'page', find: "key = 'ember.' + (Math.floor(a * FPS8 / FPS8_STEPS) % 2 ? 'b' : 'a');", repl: "key = 'ember.' + (Math.floor(FRAME_NO / 5) % 2 ? 'b' : 'a');",
     gates: [{ gate: 'fight', expect: "412: Spark Trail's sparks are one Astra ember each" }] },
-  { name: 'EMBER_OFF_BOX', task: 'ART4', file: 'page', find: "y = ((p.y + p.b) >> 8) - cam - 8;", repl: "y = (p.y >> 8) - cam;",
+  { name: 'EMBER_OFF_BOX', task: 'ART4', file: 'page', find: "x = (p.x >> 8) + (((p.a >> 8) - 8) >> 1);", repl: "x = (p.x >> 8) + 4;",   /* first run: an 8 px box's top and its bottom less 8 agree, so the y mutant stayed green */
     gates: [{ gate: 'fight', expect: "412: Spark Trail's sparks are one Astra ember each" }] },
   { name: 'FLASH_CUT_SHORT', task: 'ART4', file: 'page', find: "SHOT_F[PK.FLASH] = 20;", repl: "SHOT_F[PK.FLASH] = 8;",
     gates: [{ gate: 'fight', expect: "412: the Flashbulb's burst is Astra's flash_ring centred on the bug" }] },
