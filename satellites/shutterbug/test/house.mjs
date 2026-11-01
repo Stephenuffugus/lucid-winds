@@ -73,6 +73,7 @@ async function saveRun(page, o) {
     d.stats.clears = 1; d.onboarding.firstRoomDone = true;
     d.run = { v: 1, rooms: Array.from({ length: o.at + 1 }, () => rec), at: o.at, hero: Object.assign({ vigor: 0, focus: 0, grit: 0, scrolls: 0 }, o.hero, { slots: slots.slice(0, 3) }), entry: [0, 0, 0], dp: 0, last: 0, lost: 0 };
     if (!R.runValid(d.run)) throw new Error('the gate\'s run is not valid');
+    const doc = window.SB.save.doc; for (const k of Object.keys(d)) doc[k] = d[k];   /* the page's own write on the way out writes the same save */
     localStorage.setItem('shutterbug.v1', JSON.stringify(d));
   }, SAMPLE, o);
   await page.reload(); await ready(page); await page.evaluate(() => window.SB_DEV.hold(true));
