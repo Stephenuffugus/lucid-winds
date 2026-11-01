@@ -5126,6 +5126,204 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   console.log('  info  H-spr-1: ' + names.length + ' sprites, ' + frames + ' frames');
 });
 
+/* ================================================================ the house (T2.8, QUESTIONS Q200): the ramp and the run */
+/* every built corpus room (fixture, mode) as detected, and under each biome override, built at house rooms 1 to 5 and
+   in free play; the test's own reading of the ramp table (Stephen's "Firm ramp", 31 Oct; the proposal's 2.1), typed
+   here from the table, not read from TUNING */
+const RAMP_WANT = { 2: { floor: 2, cap: 4, elites: 1, eliteMin: 0, hpQ: 4, fast: false }, 3: { floor: 3, cap: 4, elites: 1, eliteMin: 1, hpQ: 4, fast: true },
+  4: { floor: 4, cap: 5, elites: 2, eliteMin: 1, hpQ: 6, fast: true }, 5: { floor: 0, cap: 3, elites: 1, eliteMin: 0, hpQ: 4, fast: false } };
+let rampLevels = null;
+function rampBuilds() {
+  if (rampLevels) return rampLevels;
+  rampLevels = [];
+  for (const f of FIXTURES) for (const mode of MODES) for (const biome of [null, 0, 1, 2, 3, 4]) {
+    const rec = () => SB.record.fromJSON(Object.assign({}, f.fx.record, { mode })), o = biome === null ? {} : { biome };
+    const base = SB.pipeline.build(rec(), o);
+    if (base.needsCrop) continue;
+    const rooms = {};
+    /* the overrides at room 4 only (the hardest row: every kind's ramp fodder and its envelope); as detected, every room */
+    for (const r of biome === null ? [1, 2, 3, 4, 5] : [4]) rooms[r] = SB.pipeline.build(rec(), Object.assign({ roomIndex: r, lastRoom: r === 5 }, o));
+    rampLevels.push({ tag: f.name + ' mode ' + mode + ' ' + (biome === null ? 'as detected' : SB.palette.BIOMES[biome]), f, mode, biome, base, rooms, rec });
+  }
+  return rampLevels;
+}
+const featJSON = lv => JSON.stringify(lv.features, (k, v) => ArrayBuffer.isView(v) ? Array.from(v) : v);
+group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHash, features, the first sim state, no ramp row) and a first room never sees a room index; rooms 2, 3 and 4 hold at least 2, 3 and 4 enemies on every built corpus room, as detected and under every biome, rooms 3 and 4 an elite, within the table\'s caps; every ramp enemy is its biome\'s kind (a moth where none can keep the kind\'s rule), keeps DESIGN 7\'s cells and keeps its envelope off the ascent; the route, the safe cadence and the degrade ladder are the free play room\'s', t => {
+  const T = SB.TUNING, bad = { same: [], floor: [], elite: [], cap: [], kind: [], rules: [], env: [], route: [], refuse: [], first: [] };
+  let rooms = 0, laid = 0, promoted = 0, moths = 0;
+  for (const L of rampBuilds()) {
+    const { tag, base, rec } = L;
+    if (L.rooms[1]) {
+      const r1 = L.rooms[1];
+      if (SB.pipeline.levelHash(r1) !== SB.pipeline.levelHash(base) || featJSON(r1) !== featJSON(base) || 'ramp' in r1 || 'ramp' in base
+        || SB.sim.hash(SB.sim.create(r1, {})) !== SB.sim.hash(SB.sim.create(base, {}))) bad.same.push(tag);
+      const fr = SB.pipeline.build(rec(), { firstRoom: true }), fr3 = SB.pipeline.build(rec(), { firstRoom: true, roomIndex: 3 });
+      if (!fr.needsCrop && (SB.pipeline.levelHash(fr) !== SB.pipeline.levelHash(fr3) || 'ramp' in fr3)) bad.first.push(tag);
+    }
+    for (const [rs, lv] of Object.entries(L.rooms)) {
+      const r = +rs, want = RAMP_WANT[r];
+      if (r === 1) continue;
+      rooms++;
+      if (lv.needsCrop) { bad.refuse.push(tag + ' room ' + r); continue; }
+      const f = lv.features, E = f.enemies, w = lv.w, n = w * lv.h, stands = lv.ascent.nodes.filter(v => v < n), standSet = new Set(stands);
+      const cap = want.cap + (lv.biome === 4 ? T.EMBER_EXTRA_ENEMY : 0), elites = E.filter(e => e.elite).length;
+      if (E.length < want.floor) bad.floor.push(tag + ' room ' + r + ': ' + E.length + ' enemies');
+      if (E.length > Math.max(cap, want.floor)) bad.cap.push(tag + ' room ' + r + ': ' + E.length + ' enemies (cap ' + cap + ')');
+      if (elites > want.elites) bad.cap.push(tag + ' room ' + r + ': ' + elites + ' elites (cap ' + want.elites + ')');
+      if (elites < want.eliteMin) bad.elite.push(tag + ' room ' + r + ': ' + elites + ' elites');
+      if (!lv.ramp || lv.ramp.floor !== want.floor || lv.ramp.fodderHpQ !== want.hpQ || !!lv.ramp.fast !== want.fast) bad.same.push(tag + ' room ' + r + ': the level\'s ramp row ' + JSON.stringify(lv.ramp));
+      if (JSON.stringify(Array.from(lv.ascent.nodes)) !== JSON.stringify(Array.from(base.ascent.nodes)) || lv.degraded.join() !== base.degraded.join()) bad.route.push(tag + ' room ' + r);
+      /* the settled check the pipeline runs, run again by the test on the ramped level: the ascent still holds on its safe set */
+      const g2 = SB.reach.trapGraph(lv, SB.reach.graph(lv));
+      if (!SB.pipeline.holds(lv, lv.ascent, g2, SB.reach.safeSet(lv, g2))) bad.route.push(tag + ' room ' + r + ': the ascent no longer holds on the safe cells');
+      for (const e of E) {
+        if (e.promoted) promoted++;
+        if (!e.ramp) continue;
+        laid++;
+        const c = e.idx, at = '(' + c % w + ', ' + Math.floor(c / w) + ')';
+        if (e.kind !== KIND_WANT[lv.biome]) { if (e.kind === SB.features.MOTH) moths++; else bad.kind.push(tag + ' room ' + r + ': a ' + KIND_NAME[e.kind] + ' at ' + at); }
+        if (lv.solid[c] || lv.plat[c] || lv.trap[c] || c < w || c >= n - w) bad.rules.push(tag + ' room ' + r + ': on a solid, one way, trap or edge cell ' + at);
+        if (cheb(c, lv.spawn, w) <= T.ENEMY_SPAWN_CLEAR) bad.rules.push(tag + ' room ' + r + ': within ENEMY_SPAWN_CLEAR of spawn ' + at);
+        if (stands.some(v => cheb(c, v, w) <= T.ROUTE_SAFE_ENEMY_DIST)) bad.rules.push(tag + ' room ' + r + ': within ROUTE_SAFE_ENEMY_DIST of the ascent ' + at);
+        if (f.pocket && f.pocket.cells.includes(c)) bad.rules.push(tag + ' room ' + r + ': in the pocket ' + at);
+        if ([f.chest, f.scroll, f.blueprint, lv.exit].concat(Array.from(f.specks)).includes(c)) bad.rules.push(tag + ' room ' + r + ': on a loot cell or the exit ' + at);
+        if ((e.kind === SB.features.CRAWLER || e.kind === SB.features.SPARK) && !standableIn(lv, c)) bad.rules.push(tag + ' room ' + r + ': a ' + KIND_NAME[e.kind] + ' not standing ' + at);
+        if (e.kind === SB.features.ICICLE && !(lv.solid[c - w] || lv.plat[c - w])) bad.rules.push(tag + ' room ' + r + ': an icicle hanging from nothing ' + at);
+        if (Array.from(e.env).some(v => standSet.has(v))) bad.env.push(tag + ' room ' + r + ': the ' + KIND_NAME[e.kind] + ' at ' + at + ' covers a cell the ascent stands on');
+      }
+    }
+  }
+  const say = (k, msg) => t.eq(bad[k].length, 0, msg + (bad[k].length ? ': ' + bad[k].slice(0, 5).join('; ') : ''));
+  say('same', 'room 1 is free play byte for byte on every built room (levelHash, features, the first sim state, no ramp row), and a ramped room carries its table row');
+  say('first', 'a first room built with a room index is the first room (the ramp never reaches the onboarding room)');
+  say('refuse', 'no room that builds in free play refuses at any house room');
+  say('floor', 'rooms 2, 3 and 4 hold at least 2, 3 and 4 enemies over ' + rooms + ' ramped builds (' + laid + ' ramp fodder laid)');
+  say('elite', 'rooms 3 and 4 hold an elite on every build (' + promoted + ' promoted where the photo gave none)');
+  say('cap', 'the table\'s caps hold: room 2 and 3 at most 4 enemies and 1 elite, room 4 at most 5 and 2, room 5 at most 3 and 1 (Ember one more enemy)');
+  say('kind', 'every ramp enemy is its biome\'s kind or, where no cell keeps the kind\'s rule, a moth (' + moths + ' moths)');
+  say('rules', 'every ramp enemy keeps DESIGN 7: open, clear of spawn by ENEMY_SPAWN_CLEAR, outside ROUTE_SAFE_ENEMY_DIST of the ascent, never on a trap, the pocket, a loot cell or the exit; crawlers and sparks standing, icicles hanging');
+  say('env', 'no ramp enemy\'s envelope covers a cell the ascent stands on');
+  say('route', 'the ramped room keeps the free play room\'s ascent and degrade ladder, and its ascent holds on the safe cells');
+});
+
+group('H-house-2', 'the ramp in the sim: room 4\'s fodder at 6 quarters a HP (1.5x; an elite as before, rooms 1 to 3 at HP_Q); rooms 3 and 4 tick their enemies 1.25x (an extra tick on every fourth step: 10 in 8 steps, a moth 10 MOTH_V along its larger axis), rooms 1 and 2 at 1x; the promotion is the fodder farthest from spawn by the test\'s own squared distance; free play\'s sim state never moves', t => {
+  const K = SB.K, T = SB.TUNING, bad = { hp: [], tick: [], promo: [] };
+  let checked = 0, promos = 0;
+  for (const L of rampBuilds()) {
+    if (L.biome !== null) continue;
+    for (const r of [1, 2, 3, 4]) {
+      const lv = L.rooms[r]; if (!lv || lv.needsCrop) continue;
+      const s = SB.sim.create(lv, { immortal: true });
+      lv.features.enemies.forEach((e, k) => {
+        const hp = (e.kind === SB.features.JELLY ? T.JELLY_HP : e.kind === SB.features.CRAWLER ? T.CRAWLER_HP : 1);
+        const want = e.elite ? hp * T.ELITE_HP_MULT * 4 : hp * (r === 4 ? 6 : 4);
+        if (s.enemies[k].hp !== want) bad.hp.push(L.tag + ' room ' + r + ': a ' + (e.elite ? 'elite ' : '') + KIND_NAME[e.kind] + ' at ' + s.enemies[k].hp + ' quarters, want ' + want);
+      });
+      /* the clock: 8 steps of a held hero (immortal) tick each live enemy 8 times at 1x, 10 at 1.25x */
+      if (s.enemies.length) {
+        const x0 = s.enemies.map(e => [e.x, e.y]);
+        for (let k = 0; k < 8; k++) SB.sim.step(s, 0);
+        const want = r >= 3 ? 10 : 8;
+        s.enemies.forEach((e, k) => {
+          if (e.stunned !== 0 || e.frozen) return;
+          if (e.timer !== want) bad.tick.push(L.tag + ' room ' + r + ': a ' + KIND_NAME[e.kind] + ' ticked ' + e.timer + ' times in 8 steps, want ' + want);
+          const d = Math.max(Math.abs(e.x - x0[k][0]), Math.abs(e.y - x0[k][1]));
+          if (e.kind === SB.features.MOTH && d !== want * K.MOTH_V) bad.tick.push(L.tag + ' room ' + r + ': a moth moved ' + d + ' sub along its larger axis in 8 steps, want ' + want * K.MOTH_V);
+        });
+        checked++;
+      }
+    }
+    /* the promotion: where room 3 lifted an elite out of the fodder, it is the fodder farthest from spawn */
+    const lv3 = L.rooms[3];
+    if (lv3 && !lv3.needsCrop && lv3.features.enemies.some(e => e.promoted)) {
+      promos++;
+      const E = lv3.features.enemies, w = lv3.w, sx = lv3.spawn % w, sy = Math.floor(lv3.spawn / w), d2 = c => (c % w - sx) ** 2 + (Math.floor(c / w) - sy) ** 2;
+      const cands = E.filter(e => !e.elite || e.promoted).map(e => e.idx).sort((a, b) => d2(b) - d2(a) || a - b);
+      const got = E.filter(e => e.promoted).map(e => e.idx);
+      if (got.length !== 1 || got[0] !== cands[0] || E.some(e => e.elite && !e.promoted)) bad.promo.push(L.tag + ': promoted ' + got.join(',') + ', the farthest fodder is ' + cands[0]);
+    }
+  }
+  t.eq(bad.hp.length, 0, 'every enemy\'s first HP is its kind\'s in quarters, room 4\'s fodder 1.5x' + (bad.hp.length ? ': ' + bad.hp.slice(0, 5).join('; ') : ''));
+  t.eq(bad.tick.length, 0, 'the enemies tick 1.25x in rooms 3 and 4 and 1x in rooms 1 and 2, over ' + checked + ' rooms' + (bad.tick.length ? ': ' + bad.tick.slice(0, 5).join('; ') : ''));
+  t.ok(promos > 0 && bad.promo.length === 0, 'room 3\'s promoted elite is the fodder farthest from spawn (' + promos + ' rooms promote)' + (bad.promo.length ? ': ' + bad.promo.slice(0, 5).join('; ') : ''));
+  /* the same record, free play against the house's room 1, stepped 300 steps with the same words: the same hash */
+  const sr = SB.record.fromJSON(fixture('sample-room').fx.record);
+  const a = SB.sim.create(SB.pipeline.build(sr, {}), {}), b = SB.sim.create(SB.pipeline.build(sr, { roomIndex: 1 }), {}), r = hrand(97);
+  for (let k = 0; k < 300; k++) { const wd = r.int(64); SB.sim.step(a, wd); SB.sim.step(b, wd); }
+  t.eq(SB.sim.hash(b), SB.sim.hash(a), 'the sample room as house room 1 steps to free play\'s hash over 300 seeded words');
+});
+
+group('H-house-3', 'the bot walks every built corpus room, as detected, under room 4\'s rules (immortal, Q30: the ramp never touches the climb)', t => {
+  const memo = new Map(), stats = { tries: 0, found: 0, memo: 0, memoMiss: 0 }, miss = [];
+  let walked = 0;
+  for (const L of rampBuilds()) {
+    if (L.biome !== null) continue;
+    const lv = L.rooms[4]; if (!lv || lv.needsCrop) continue;
+    const r = BOT.walk(lv, memo, stats); walked++;
+    if (!r.ok) miss.push(L.tag + ': ' + (r.why || 'stopped at edge ' + (r.miss ? r.miss.i : '?')));
+  }
+  t.ok(walked > 0 && miss.length === 0, 'the bot clears ' + (walked - miss.length) + ' of ' + walked + ' rooms under room 4\'s rules' + (miss.length ? ': ' + miss.slice(0, 5).join('; ') : ''));
+});
+
+/* ---------------------------------------------------------------- the run state (T2.8's H-run-1 and H-run-2) */
+const runRec = name => SB.record.toJSON(SB.record.fromJSON(fixture(name).fx.record));
+const runHero = o => Object.assign({ hearts: 4, heartsMax: 4, vigor: 0, focus: 0, grit: 0, scrolls: 0, slots: [0, 0, 0] }, o);
+const runOf = o => Object.assign({ v: 1, rooms: [], at: 0, hero: runHero(), entry: [0, 0, 0], dp: 0, last: 0, lost: 0 }, o);
+group('H-run-1', 'the run state\'s validator and its place in the save: runValid keeps a well formed run (a deep copy) and gives null, never a throw, for every malformed one; the save keeps a run through validateSave and loadSave and drops a broken one to null; a fresh save has none', t => {
+  const R = SB.record, a = runRec('sample-room'), b = runRec('shelves-a');
+  const good = runOf({ rooms: [a, b, a], at: 2, hero: runHero({ hearts: 3, heartsMax: 5, vigor: 1, focus: 2, scrolls: 3, slots: [1, 9, 0] }), entry: [1, 0, 0], dp: 31, last: 12 });
+  const kept = R.runValid(good);
+  t.same(kept, good, 'a well formed run is kept as it is (three rooms, a repeat among them: DESIGN 8)');
+  kept.rooms[0].rows[0] = 'x'; kept.hero.slots[0] = 7;
+  t.ok(good.rooms[0].rows[0] !== 'x' && good.hero.slots[0] === 1, 'the kept run is a copy: changing it never changes the argument');
+  const broken = {
+    'not an object': 'run', 'an array': [], 'v 2': runOf({ v: 2 }), 'six rooms': runOf({ rooms: [a, a, a, a, a, a] }), 'at 5': runOf({ rooms: [a, a, a, a, a], at: 5 }),
+    'at past the rooms': runOf({ rooms: [a], at: 2 }), 'a bad record': runOf({ rooms: [{ rows: [] }] }), 'a negative dp': runOf({ dp: -1 }), 'lost 2': runOf({ lost: 2 }),
+    'no hearts': runOf({ hero: runHero({ hearts: 0 }) }), 'hearts over the cap': runOf({ hero: runHero({ hearts: 5 }) }), 'a cap over HEARTS_CAP': runOf({ hero: runHero({ heartsMax: 9, hearts: 9 }) }),
+    'two slots': runOf({ hero: runHero({ slots: [0, 0] }) }), 'a slot 25': runOf({ entry: [25, 0, 0] }), 'a float stat': runOf({ hero: runHero({ focus: 0.5 }) }), 'no hero': runOf({ hero: null })
+  };
+  const leaked = [];
+  for (const [k, v] of Object.entries(broken)) { let got; try { got = R.runValid(v); } catch (e) { got = 'threw ' + e.message; } if (got !== null) leaked.push(k + ' (' + JSON.stringify(got).slice(0, 40) + ')'); }
+  t.eq(leaked.length, 0, 'every malformed run gives null, never a throw (' + Object.keys(broken).length + ' kinds)' + (leaked.length ? ': ' + leaked.join('; ') : ''));
+  t.eq(R.saveDefaults().run, null, 'a fresh save has no run');
+  const doc = R.loadSave(JSON.stringify(Object.assign(R.saveDefaults(), { run: good }))).doc;
+  t.same(doc.run, good, 'the save keeps a run through loadSave (the reload a house resumes from)');
+  t.same(R.validateSave(R.validateSave(doc)).run, good, 'validating the save twice keeps the run');
+  const bad = R.loadSave(JSON.stringify(Object.assign(R.saveDefaults(), { run: runOf({ at: 9 }) })));
+  t.ok(bad.doc.run === null && bad.write, 'a broken run in the save is dropped to null (and the save written)');
+});
+
+group('H-run-2', 'the run reducers: runFresh sets out with the slots and the base bug; runEnter puts the room at its place and drops the rooms after it, unless it is the room saved there; runClear banks the Dead pixels, gives one heart back up to the cap and carries the stats and slots, and the fifth clear gives null; runDie marks it lost; runRetry keeps every room so far with a fresh bug and the entry slots; no reducer touches its argument', t => {
+  const R = SB.record, T = SB.TUNING, a = runRec('sample-room'), b = runRec('shelves-a'), c = runRec('blank-wall');
+  const f = R.runFresh([1, 0, 0]);
+  t.same(f, runOf({ hero: runHero({ slots: [1, 0, 0] }), entry: [1, 0, 0] }), 'runFresh: no rooms, at 0, the base bug with the entry slots');
+  let r = R.runEnter(f, a);
+  t.ok(r.rooms.length === 1 && JSON.stringify(r.rooms[0]) === JSON.stringify(a) && r.at === 0 && f.rooms.length === 0, 'runEnter: room 1 takes its place (the argument untouched)');
+  const hero = { hearts: 2, heartsMax: 4, vigor: 1, focus: 0, grit: 2, scrolls: 3, slots: [1, 9, 0] };
+  const before = JSON.stringify(r);
+  r = R.runClear(r, hero, 17);
+  t.ok(JSON.stringify(R.runEnter(f, a)) === before, 'runClear never touches its argument');
+  t.same(r.hero, { hearts: 3, heartsMax: 4, vigor: 1, focus: 0, grit: 2, scrolls: 3, slots: [1, 9, 0] }, 'runClear: the bug carried with one heart back, its stats and slots');
+  t.ok(r.at === 1 && r.dp === 17 && r.last === 17, 'runClear: at 1, 17 banked (' + r.at + ', ' + r.dp + ', ' + r.last + ')');
+  const r2 = R.runEnter(r, b);
+  t.eq(R.runClear(r2, Object.assign({}, hero, { hearts: 4 }), 0).hero.hearts, 4, 'runClear: the heart back never passes the bug\'s cap');
+  t.eq(R.runClear(r2, Object.assign({}, hero, { hearts: 5, heartsMax: 5 }), 0).hero.hearts, 5, 'runClear: a bug whose scrolls grew its cap keeps it');
+  r = R.runEnter(r, b); r = R.runClear(r, hero, 5); r = R.runEnter(r, c);
+  t.ok(r.rooms.length === 3 && r.at === 2 && r.dp === 22, 'three rooms entered, two cleared, 22 banked');
+  const lost = R.runDie(r);
+  t.ok(lost.lost === 1 && r.lost === 0, 'runDie marks the run lost (the argument untouched)');
+  const again = R.runRetry(lost);
+  t.ok(again.lost === 0 && again.at === 0 && again.dp === 0 && JSON.stringify(again.rooms) === JSON.stringify(r.rooms) && JSON.stringify(again.hero) === JSON.stringify(runHero({ slots: [1, 0, 0] })),
+    'runRetry: the same three rooms, from room 1, a fresh bug with the entry slots (T2.8\'s Retry House offers the same grids)');
+  const same = R.runEnter(again, a);
+  t.ok(same.rooms.length === 3 && JSON.stringify(same.rooms) === JSON.stringify(r.rooms), 'runEnter with the room saved at its place keeps the rooms after it (Play room n, Retry House)');
+  const other = R.runEnter(R.runClear(same, hero, 0), c);
+  t.ok(other.rooms.length === 2 && JSON.stringify(other.rooms[1]) === JSON.stringify(c), 'runEnter with a new photo at room 2 drops the rooms after it (the rest still to shoot)');
+  let five = R.runFresh([0, 0, 0]);
+  for (let k = 0; k < T.HOUSE_ROOMS - 1; k++) five = R.runClear(R.runEnter(five, a), hero, 1);
+  t.ok(five.at === T.HOUSE_ROOMS - 1 && R.runClear(R.runEnter(five, a), hero, 1) === null, 'the fifth clear ends the house: runClear gives null');
+});
+
 /* ================================================================ run */
 const t0 = Date.now();
 const chosen = ONLY ? GROUPS.filter(g => g.id.startsWith(ONLY)) : GROUPS;
