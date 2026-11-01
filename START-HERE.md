@@ -1,5 +1,14 @@
 # START HERE
 
+## 📷 1 Nov 18:00 UTC (Opus) THE FIRST REAL PHOTO NUMBERS; THE PHOTO LANE GAINS "THE SEARCH REACHES EVERY BOX THAT BUILDS"; THE DESIGN SPRINT SPLIT IN THREE
+REAL PHOTOS (95 freely licensed Wikimedia photos, 60 rooms and 35 other, in /home/codespace/sb-drafts/realphotos/; never committed; `bash tools/run.sh` there reruns the measure in about 4 minutes):
+  - LIVE sb-m1-3 develops 5 of 95 (3 of 60 rooms). add-sproing-jumper (the levels rule) develops 15 of 95. sb-levels with the auto crop develops 76 of 95 (47 of 60 rooms).
+  - 18 of the 19 left are the search's candidate list, not the photo: some boxes sit past the cap of 48, and others at the side edges or above the furniture. 94 of 95 is the target.
+  - The levels are still thin: Attic in 91% of them, and film tabs on 52 to 79% of the climb.
+  - The auto crop's builder also found the root cause: a wall's own shading reads as solid, the furniture vanishes into it, and the search lifts the box to the blank top of the room. Shots are in /home/codespace/sb-drafts/photo/autocrop/shots3/.
+PHOTO 1A: stopped and resumed from its edited script, with REACH (PROGRESS SEARCHR) inserted after NORMALISE and before the review. AUTOCROP `42fc8b19a` and the corpus replayed from cache. The script is docs/lanes/photo-1a-reach-lane-nov01-pm.js.
+DESIGN SPRINT: the first run (`wf_2046ba70-00f`) was stopped and relaunched with the root cause in its context and a sixth angle, "read the photo right" (solid against wall from the real colours, carried in record v2). The angles now run as three workflows: `wf_03cb5a3f-b90` (read, climb), `wf_f871bed3-aee` (frame, blank) and `wf_ff666ee0-03d` (goals, look). When all six return, the lead runs docs/lanes/design-judge-plan-nov01.js with args {proposals: [...]}.
+
 ## 📷 1 Nov 17:45 UTC (Opus) ASTRA ROUND 4 ARRIVED (Q99), CHECKED, AND INSERTED AS ART4 INTO THE WEAPONS LANE
 The zip (sha256 0f90f8f0..., 46 files, 19 strips, 76 frames, her VALIDATION PASS) passes the cutter: CHECK OK. It is at /home/codespace/sb-drafts/astra/round4/ (x/ unpacked, cut-round4.json) and at assets/ (git ignored).
 THE PLAN IN FLIGHT: the weapons lane script now runs ART4 after W2 and before W2's review. The lead stops `wf_43048222-ed7` when build:w2 completes and resumes it from the edited script, so W2 replays from cache.
