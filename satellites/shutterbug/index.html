@@ -3570,6 +3570,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      moths fall with it (no Dead pixels for them), and the beacon is lit */
   function hurtBoss(s, lv, struck, q) {
     var B = s.boss, K = SB.K, w = lv.w, i;
+    if (!B || B.hp <= 0 || B.cells[struck] < 0) return 0;
     B.hp = Math.max(0, B.hp - q); s.ev |= EV.BOSS_HIT;
     var want = Math.ceil(B.hp / K.HP_Q), live = 0, sc = B.cells[struck], sx = sc % w, sy = (sc - sx) / w;
     for (i = 0; i < B.cells.length; i++) if (B.cells[i] >= 0) live++;
@@ -3587,6 +3588,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       B.phase = 2; B.telegraph = 0; s.room.dp += SB.TUNING.DP_BOSS; s.room.exitLit = 1; s.ev |= EV.BOSS_DOWN | EV.KILL;
       for (i = s.enemies.length - SB.TUNING.BOSS_MOTH_COUNT; i < s.enemies.length; i++) s.enemies[i].hp = 0;
     }
+    return B.hp;
   }
   /* the shed (DESIGN 7's Attic moveset, "sheds 3 moths every 4 s"): each dead moth slot of the guardian's filled with a
      live moth on a cell of the shed box over its top (features.guardian.shed), left to right */
