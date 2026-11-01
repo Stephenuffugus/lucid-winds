@@ -129,10 +129,11 @@ try {
   s = await look(page);
   R.say(s.screen === 'play' && s.name === 'Room 2 of 5' && s.enemies >= 2 && s.run.rooms.length === 2, 'Choose a photo at the doorway plays room 2: the strip reads "' + s.name + '", ' + s.enemies + ' enemies (its floor 2)');
   /* a moth's hit, then the clear: one heart back */
-  const hit = await page.evaluate(() => { const h0 = window.SB_DEV.state().hero.hearts; for (let k = 0; k < 4000 && window.SB_DEV.state().hero.hearts === h0; k += 10) window.SB_DEV.step(10); return { h0, h1: window.SB_DEV.state().hero.hearts }; });
+  /* two hits, so the heart back leaves the bug short of its cap and room 3 starts below a fresh bug's hearts */
+  const hit = await page.evaluate(() => { const h0 = window.SB_DEV.state().hero.hearts; for (let k = 0; k < 6000 && window.SB_DEV.state().hero.hearts > h0 - 2; k += 10) window.SB_DEV.step(10); return { h0, h1: window.SB_DEV.state().hero.hearts }; });
   await climb(page);
   s = await look(page);
-  R.say(hit.h1 < hit.h0 && s.screen === 'door' && s.run.hero.hearts === Math.min(s.run.hero.heartsMax, hit.h1 + 1) && s.head === 'Room 2 cleared' && s.next === 'Room 3 is tougher',
+  R.say(hit.h1 === hit.h0 - 2 && s.screen === 'door' && s.run.hero.hearts === Math.min(s.run.hero.heartsMax, hit.h1 + 1) && s.head === 'Room 2 cleared' && s.next === 'Room 3 is tougher',
     'hearts carry with one back: hit to ' + hit.h1 + ' of ' + hit.h0 + ' in room 2, the doorway saves ' + (s.run && s.run.hero.hearts) + ' ("' + s.head + '", "' + s.next + '")');
   const hero2 = JSON.stringify(s.run.hero), rooms2 = JSON.stringify(s.run.rooms);
 
@@ -148,7 +149,7 @@ try {
   /* room 3: the carried hearts, an elite; then a death */
   await fromRecent(page);
   s = await look(page);
-  R.say(s.name === 'Room 3 of 5' && s.hero.hearts === JSON.parse(hero2).hearts && s.elites >= 1 && s.enemies >= 3, 'room 3 starts with the carried ' + s.hero.hearts + ' hearts, ' + s.enemies + ' enemies and ' + s.elites + ' elite (strip "' + s.name + '")');
+  R.say(s.name === 'Room 3 of 5' && s.hero.hearts === JSON.parse(hero2).hearts && s.hero.hearts < s.hero.heartsMax && s.elites >= 1 && s.enemies >= 3, 'room 3 starts with the carried ' + s.hero.hearts + ' hearts, ' + s.enemies + ' enemies and ' + s.elites + ' elite (strip "' + s.name + '")');
   const rooms3 = JSON.stringify(s.run.rooms), lostDp = await speck(page);
   const died = await page.evaluate(() => { for (let k = 0; k < 9000 && window.SB_DEV.screen() === 'play'; k += 30) window.SB_DEV.step(30); return window.SB_DEV.screen(); });
   const dc = await page.evaluate(() => { const $ = id => document.getElementById(id), vis = id => !$(id).hidden && $(id).getBoundingClientRect().height > 0;
