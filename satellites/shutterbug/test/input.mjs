@@ -30,7 +30,9 @@
  * PAD_UNDER_CARD, STICK_STEERS_PAUSED and RESUME_KNOB_STALE.
  * ART3 (Astra's round 2, Q98): on real screenshots the hint's chevrons are stick_hint's outer 12 columns each side, the
  * pad stick_pad (idle held neutral, active steering) at 116 css px and the knob stick_knob (neutral, right, left) at 52;
- * Pause is pause_glyph.normal at 2x and pause_glyph.pressed under a held finger. Watched red by PAD_CSS_RING,
+ * Pause is pause_glyph.normal at 2x and pause_glyph.pressed under a held finger. ART4 (Astra's round 4 pad): at both
+ * full pushes the knob sits 11 native px off the pad's centre inside its box, pad and knob drawn there pixel for pixel
+ * (watched red by KNOB_PAST_PAD). Watched red by PAD_CSS_RING,
  * PAD_NEVER_ACTIVE, KNOB_NO_WAY, HINT_TEXT_ARROWS, PAUSE_OLD_BOX and PAUSE_NOT_PRESSED. */
 import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';

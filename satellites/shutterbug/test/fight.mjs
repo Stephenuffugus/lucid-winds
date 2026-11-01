@@ -33,7 +33,14 @@
  *
  * Watched red by CHEST_NO_WEAPON, CHEST_STOPS_FOR_EMPTY, HUD_STALE, HUD_EVERY_STEP, GOT_TAKES_TAPS, GOT_STAYS,
  * GOT_OVER_BUG, GOT_STAYS_OVER_BUG, THROW_SILENT, GEAR_LOST_ON_NEXT_ROOM, GEAR_KEPT_THROUGH_TITLE, DEATH_KEEPS_PICKUP, ROOM_OPTS_MISSING, and ART2's ICON_PLACEHOLDER, BOOMERANG_PLACEHOLDER,
- * SHOCK_WHOLE_RING, POP_PLACEHOLDER and HIT_NO_BURST. */
+ * SHOCK_WHOLE_RING, POP_PLACEHOLDER and HIT_NO_BURST.
+ * ART4 (Astra's round 4, Q164): step 2's pictures are her keys at her anchors and timings, each line on the page's own
+ * records against the sim's live entries step by step: Twin Darts one dart a side on its 8x4 box (the left mirrored);
+ * Shutter Snap's 108x112 frame of 52 tiles round the reach's square; Halo's ring and Spark Trail's embers on their boxes
+ * flickering at 8 fps by age; the Flashbulb's flash_ring centred where it burst, a to d at 12 fps then gone; Shield
+ * Kick's kick_spray off each wall (laid in the air against it), a to c at 12 fps, mirrored for the right. Watched red by
+ * DART_UNMIRRORED, SNAP_OFF_REACH, SNAP_BOTTOM_UNFLIPPED, RING_NO_FLICKER, EMBER_NO_FLICKER, EMBER_OFF_BOX,
+ * FLASH_CUT_SHORT, FLASH_OFF_CENTRE, KICK_WRONG_SIDE and KICK_CUT_SHORT. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME } from './harness.mjs';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
