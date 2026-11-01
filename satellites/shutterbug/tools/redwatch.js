@@ -889,9 +889,9 @@ const MUTANTS = [
       ["    dp: 'Dead pixels', dpGain: '+{n}',", "    dp: 'Dead pixels', dpGain: '+{n}',\n    slip: 'A weapon waits for the Darkroom.', slipTake: 'Keep the slip',"],
       ['    <div id="sharesheet" role="dialog"', '    <div id="slip" role="dialog" data-aria="slip"><h2 data-copy="slip"></h2>\n      <button id="slipok" type="button" data-copy="slipTake"></button></div>\n    <div id="sharesheet" role="dialog"'],
       ['#clear, #death { position: absolute;', '#clear, #death, #slip { position: absolute;'], ['#clear.on, #death.on { display: flex; }', '#clear.on, #death.on, #slip.on { display: flex; }'],
-      ['      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);', "      document.getElementById('slip').classList.toggle('on', !!st.room.compare && !st.scrollsOffered);"],
+      ["      /* the compare is the player's own from Weapons v1 step 2: the swap card (ui.swap) answers it, never the shell */", "      document.getElementById('slip').classList.toggle('on', !!st.room.compare && !st.scrollsOffered);"],
       ["    document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });", "    document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });\n    document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });"],
-      ["var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard'];", "var MODALS = ['clear', 'death', 'paused', 'slip', 'sharesheet', 'devcard'];"]],   /* the listener and the list re anchored at NOTE3 (Q94) */
+      ["var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard', 'swap'];", "var MODALS = ['clear', 'death', 'paused', 'slip', 'sharesheet', 'devcard', 'swap'];"]],   /* the listener and the list re anchored at NOTE3 (Q94), the TAKE line and the list at W2 */
     /* W1: its slip shows on a compare and no compare opens for an empty slot, so the loot walk can no longer see it; the
        lint still sees its words (the Darkroom, NOT_YET's line now that weapon is lifted) */
     gates: [{ gate: 'lint', expect: 'COPY.slip: names Darkroom before the build has one' }] },
@@ -1165,13 +1165,13 @@ const MUTANTS = [
     gates: [{ gate: 'fight', expect: '412: a death after the chest' }] },
   { name: 'ROOM_OPTS_MISSING', task: 'W1', file: 'page', find: "    roomOpts: function () { return { loadout: (G.entry || [0, 0, 0]).map(function (c) { return c > 0 ? SB.sim.WPN[c] : null; }) }; },", repl: "    roomOpts: function () { return {}; },",
     gates: [{ gate: 'fight', expect: '412: the recording replayed on a fresh sim made from SB_DEV.roomOpts()' }] },
-  { name: 'NAME_BEFORE_BUILT', task: 'W1', file: 'page', find: "slots: 'Weapons', slotJump:", repl: "slots: 'Weapons and a Halo', slotJump:",
-    gates: [{ gate: 'lint', expect: 'names Halo (J6), a weapon this build does not have' }] },
-  { name: 'SENTENCE_MISSING', task: 'W1', file: 'page', find: ", D1: 'Dive landings and dashes send a shock along the ground.' },", repl: " },",
-    gates: [{ gate: 'lint', expect: 'COPY.wpnSays holds J1, the build has J1, D1' }] },
+  { name: 'NAME_BEFORE_BUILT', task: 'W1', file: 'page', find: "slots: 'Weapons', slotJump:", repl: "slots: 'Weapons and a Pogo Spear', slotJump:",   /* re anchored at W2: Halo is built */
+    gates: [{ gate: 'lint', expect: 'names Pogo Spear (D3), a weapon this build does not have' }] },
+  { name: 'SENTENCE_MISSING', task: 'W1', file: 'page', find: ", D1: 'Dive landings and dashes send a shock along the ground.',", repl: ",",   /* re anchored at W2 */
+    gates: [{ gate: 'lint', expect: 'COPY.wpnSays holds J1, J2, J3, J4, J5, J6, J7, J8, the build has J1, D1, J2' }] },
   { name: 'ICON_MISSING', task: 'W1', file: 'page', find: "\n      D1: '", repl: "\n      D1x: '",   /* re anchored at ART3: D1's glyph not named by its code */
-    gates: [{ gate: 'lint', expect: 'the built D1 has no icon_weapons glyph named D1' }, { gate: 'harness', only: 'H-spr-1', expect: 'every built weapon (J1, D1) draws its own Ink outlined icon_weapons glyph named by its code (unbound: D1)' }] },
-  { name: 'WPN_RENAMED', task: 'W1', file: 'page', find: "wpn: { J1: 'Boomerang', D1: 'Anvil Boots' },", repl: "wpn: { J1: 'Boomerang', D1: 'Anvil Shoes' },",
+    gates: [{ gate: 'lint', expect: 'the built D1 has no icon_weapons glyph named D1' }, { gate: 'harness', only: 'H-spr-1', expect: 'glyph named by its code (J6 Halo as Astra drew it, no Ink) (unbound: D1)' }] },   /* re anchored at W2 */
+  { name: 'WPN_RENAMED', task: 'W1', file: 'page', find: "wpn: { J1: 'Boomerang', D1: 'Anvil Boots',", repl: "wpn: { J1: 'Boomerang', D1: 'Anvil Shoes',",   /* re anchored at W2 */
     gates: [{ gate: 'lint', expect: 'COPY.wpn.D1 is "Anvil Shoes", DESIGN 9.1 names it "Anvil Boots"' }] },  /* ART2: Astra's weapons cut (Q161): the cutter's rules, the poses, the effects and the icons */
   { name: "BOOMERANG_PLACEHOLDER", task: 'ART2', file: "page", edits: [["        key = 'fx_projectiles.boomerang' + FX4[Math.floor(Math.max(0, p.age) / 5) % 4] + (p.vx < 0 ? '<' : '');\n        var bx = (p.x >> 8) - 10, by = (p.y >> 8) - cam - 10; spr(ctx, key, bx, by); rec(p.kind, key, bx, by, 32, 32, camX);", "        key = 'boomerang.' + 'abcd'.charAt(Math.floor(Math.max(0, p.age) / 5) % 4) + (p.vx < 0 ? '<' : '');\n        var bx = p.x >> 8, by = (p.y >> 8) - cam; spr(ctx, key, bx, by); rec(p.kind, key, bx, by, 12, 12, camX);"], ["    pipe: { w: 16, h: 16, frames: {\n", "    boomerang: { w: 12, h: 12, frames: {\n      a: '........000./.......06660/......066630/.....066630./....066630../...066630.../..066630..../.0666300000./06666666660./06666666630./.0333333330./..00000000..',\n      b: '..00......../.0660......./036660....../0366660...../03666660..../036636660.../0366036660../03660036660./03660.036660/03360..03660/.0000...0360/.........00.',\n      c: '..00000000../.0333333330./.03666666660/.06666666660/.0000036660./....036660../...036660.../..036660..../.036660...../036660....../06660......./.000........',\n      d: '.00........./0630...0000./06630..06330/066630.06630/.06663006630/..0666306630/...066636630/....06666630/.....0666630/......066630/.......0660./........00..'\n    } },\n    pipe: { w: 16, h: 16, frames: {\n"]],
     gates: [{ gate: "fight", expect: "412: the boomerang is Astra's" }] },
@@ -1267,6 +1267,37 @@ const MUTANTS = [
     gates: [{ gate: "input", expect: "412x915: Pause is pause_glyph.normal at 2x" }] },
   { name: "PAUSE_NOT_PRESSED", task: 'ART3', file: "page", find: "#pause.down i { background-image: var(--pause-glyph-pressed); }", repl: "",
     gates: [{ gate: "input", expect: "412x915: under a held finger Pause is pause_glyph.pressed" }] },
+  /* W2: weapons step 2, the jump slot and the swap (docs/WEAPONS-V1.md 13.2) */
+  { name: 'SWAP_AUTO_TAKES', task: 'W2', file: 'page', find: "      /* the compare is the player's own from Weapons v1 step 2: the swap card (ui.swap) answers it, never the shell */", repl: "      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);",
+    gates: [{ gate: 'compare', expect: '412: while it is open nothing in the world moves' }] },
+  { name: 'SIM_RUNS_UNDER_SWAP', task: 'W2', file: 'page', find: "        s.room.compare = 0; s.room.cand = 0; s.ev |= EV.PICK;\n      }\n      s.frame++; return s;\n    }", repl: "        s.room.compare = 0; s.room.cand = 0; s.ev |= EV.PICK;\n      }\n    }",
+    gates: [{ gate: 'harness', only: 'H-wpn-7', expect: 'the world holds through 30 steps' }, { gate: 'compare', expect: '412: while it is open nothing in the world moves' }] },
+  { name: 'SWAP_WORDS_WRONG', task: 'W2', file: 'page', find: "said.push(a[0] > b[0] ? C.cmpFarther : C.cmpShorter);", repl: "said.push(a[0] > b[0] ? C.cmpShorter : C.cmpFarther);",
+    gates: [{ gate: 'compare', expect: "412: every pair of built weapons of a slot gives the gate's comparison line" }] },
+  { name: 'SWAP_NOT_MODAL', task: 'W2', file: 'page', find: "'sharesheet', 'devcard', 'swap'];", repl: "'sharesheet', 'devcard'];",
+    gates: [{ gate: 'compare', expect: '412: the chest by a real walk opens the swap card' }] },
+  { name: 'TRAITS_MISSING', task: 'W2', file: 'page', find: "J7: [3, 0, 1, 1, 0], J8: [0, 0, 0, 0, 1],", repl: "J7: [3, 0, 1, 1, 0],",
+    gates: [{ gate: 'lint', expect: 'the built J8 has no ui.TRAITS row of five numbers (TRAITS_MISSING)' }] },
+  { name: 'TWIN_DARTS_ONE', task: 'W2', file: 'page', find: "    for (var side = -1; side <= 1; side += 2) {\n      var k = spawn(s, DART);", repl: "    for (var side = 1; side <= 1; side += 2) {\n      var k = spawn(s, DART);",
+    gates: [{ gate: 'harness', only: 'H-wpn-J5', expect: 'a jump shoots two darts' }] },
+  { name: 'DART_PASSES_THROUGH', task: 'W2', file: 'page', find: "if (hit(s, p, p.x, p.y, p.x + K.J5_BOXW, p.y + K.J5_BOXH, true) > 0 || ", repl: "if (hit(s, p, p.x, p.y, p.x + K.J5_BOXW, p.y + K.J5_BOXH) < 0 || ",
+    gates: [{ gate: 'harness', only: 'H-wpn-J5', expect: 'a dart stops on its first enemy' }] },
+  { name: 'HALO_THROUGH_SOLID', task: 'W2', file: 'page', find: "    if (solidBox(lv, p.x, p.y, p.x + K.J6_BOXW, p.y + K.J6_BOXH)) { free(p); return; }\n", repl: "",
+    gates: [{ gate: 'harness', only: 'H-wpn-J6', expect: 'a solid cell there frees it' }] },
+  { name: 'FLASH_AT_TAKEOFF', task: 'W2', file: 'page', find: "    if (h.vy < 0 && !h.ground) return;\n    var R = K.J4_REACH;", repl: "    var R = K.J4_REACH;",
+    gates: [{ gate: 'harness', only: 'H-wpn-J4', expect: 'FIRE_J on the takeoff step, the burst (BURST) on step' }] },
+  { name: 'SNAP_HURTS', task: 'W2', file: 'page', find: "x0 + K.HERO_W_SUB + R, y0 + K.HERO_H_SUB + R, 0, K.J7_FREEZE_F);", repl: "x0 + K.HERO_W_SUB + R, y0 + K.HERO_H_SUB + R, K.HP_Q, K.J7_FREEZE_F);",
+    gates: [{ gate: 'harness', only: 'H-wpn-J7', expect: 'and keep every quarter' }] },
+  { name: 'KICK_ON_GROUND_JUMP', task: 'W2', file: 'page', find: "acted = wallSide !== 0 && shieldKick(s, x0, y0, wallSide);", repl: "acted = shieldKick(s, x0, y0, wallSide);",
+    gates: [{ gate: 'harness', only: 'H-wpn-J3', expect: 'a ground jump never kicks' }] },
+  { name: 'SPARKS_2', task: 'W2', file: 'page', find: "J2: { count: 3,", repl: "J2: { count: 2,",
+    gates: [{ gate: 'harness', only: 'H-wpn-J2', expect: 'a jump drops three sparks' }] },
+  { name: 'SKYHOOK_ON_WALL_JUMP', task: 'W2', file: 'page', find: "wallSide = h.wall; h.vy = -K.WALL_V;", repl: "wallSide = h.wall; h.vy = h.slots[0] === WPN_J8 ? -K.J8_JUMP_V : -K.WALL_V;",
+    gates: [{ gate: 'harness', only: 'H-sim-1b', expect: 'a wall jump with Skyhook takes WALL_V as unarmed' }] },
+  { name: 'SKYHOOK_BREAKS_ASCENT', task: 'W2', file: 'page', find: "J8: { extraUpCells: 1, jumpV: 9.5,", repl: "J8: { extraUpCells: 1, jumpV: 16,",
+    gates: [{ gate: 'harness', only: 'H-bot-8', expect: 'walked levels clear with Skyhook, every ascent edge performed:' }] },
+  { name: 'FROZEN_UNDRAWN', task: 'W2', file: 'page', find: "    drawHeld(s, cam, camX);\n", repl: "",
+    gates: [{ gate: 'fight', expect: '412: a real A tap with Shutter Snap freezes the moth' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

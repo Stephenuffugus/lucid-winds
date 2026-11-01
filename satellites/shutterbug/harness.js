@@ -3878,7 +3878,7 @@ const replays = () => fs.existsSync(REPLAY_DIR) ? fs.readdirSync(REPLAY_DIR).fil
 
 group('H-bot-5', 'the goldens: each replay in fixtures/replays clears its room and ends on its golden hash', t => {
   const list = replays();
-  t.ok(['sample-room.json', 'shelves-a.json', 'sample-room-armed.json'].every(n => list.some(r => r.name === n)), 'the sample room and shelves-a have replays, and the sample room an armed one (' + list.map(r => r.name).join(', ') + ')');
+  t.ok(['sample-room.json', 'shelves-a.json', 'sample-room-armed.json', 'shelves-a-jump.json'].every(n => list.some(r => r.name === n)), 'the sample room and shelves-a have replays, the sample room an armed one and shelves-a its step 2 one with Twin Darts (' + list.map(r => r.name).join(', ') + ')');
   for (const { name, j } of list) {
     const r = runReplay(j);
     t.ok(r.cleared === 1, name + ': its ' + j.steps + ' steps clear the room (else --record it again)');
@@ -4757,7 +4757,8 @@ group('H-wpn-J2', 'Spark Trail (7.2): three sparks dropped 10 steps apart at the
     return { s, drops, spans: [...spans.values()], boxes };
   };
   const r = run(0), r2 = run(2), T = SB.TUNING.WEAPONS.J2;
-  t.ok(r.drops.join() === [0, K.J2_DROP_F, 2 * K.J2_DROP_F].slice(0, T.count).join() && r.drops.length === T.count, 'a jump drops ' + T.count + ' sparks on its steps 0, ' + K.J2_DROP_F + ' and ' + 2 * K.J2_DROP_F + ' (' + r.drops.join(', ') + ')');
+  /* three: the sentence's word (COPY.wpnSays.J2 says "three sparks"), hard coded so a retuned count cannot carry it */
+  t.ok(r.drops.join() === [0, K.J2_DROP_F, 2 * K.J2_DROP_F].join() && T.count === 3, 'a jump drops three sparks, on its steps 0, ' + K.J2_DROP_F + ' and ' + 2 * K.J2_DROP_F + ' (' + r.drops.join(', ') + ')');
   t.ok(r.spans.length === T.count && r.spans.every(([a, b]) => b - a + 1 === K.J2_BURN_F), 'each spark burns exactly J2_BURN_F (' + K.J2_BURN_F + ') steps (' + r.spans.map(([a, b]) => b - a + 1).join(', ') + ')');
   t.ok(r.boxes.every(([x, y, w, h, wx, wy]) => x === wx && y === wy && w === B && h === B), 'each spark is a J2_BOX square at the hero\'s feet centre on its drop step');
   t.ok(r.s.enemies[0].hp === 8 - 4 && r.s.enemies[1].hp === 8 && r2.s.enemies[0].hp === 8 - 6, 'a frozen jelly in the first spark takes 1 x (4 + Focus) once (Focus 0: hp 8 to ' + r.s.enemies[0].hp + '; Focus 2: to ' + r2.s.enemies[0].hp + '), the one a cell beyond nothing (' + r.s.enemies[1].hp + ')');

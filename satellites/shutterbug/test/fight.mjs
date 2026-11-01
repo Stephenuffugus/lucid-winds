@@ -193,8 +193,12 @@ try {
     p = await probe(page);
     R.say(s2.ok && JSON.stringify(s2.slots) === JSON.stringify(ch ? ch.slots : null) && !p.boxes[put1].empty && p.frame === 0, w + ': Play it again starts the next room with the cleared room\'s gear (' + s2.slots.join(',') + '), its box full before the first step');
     const c2 = await walkToChest(page, 'ArrowLeft'), ch2 = c2.at > 0 ? c2.trace[c2.at] : null, id2 = ch2 ? WPN[ch2.slots[1 - put1]] : '';
-    R.say(!!ch2 && ch2.heard.includes('equip') && ch2.slots[0] > 0 && ch2.slots[1] > 0 && id2 && id2 !== id1, w + ': its chest gives the other weapon (' + id2 + '), both slots full now');
+    R.say(!!ch2 && ch2.heard.includes('equip') && ch2.slots[0] > 0 && ch2.slots[1] > 0 && id2 && (id2[0] !== id1[0]), w + ': its chest gives the other slot\'s weapon (' + id2 + '), both slots full now');
     await page.waitForFunction(() => !document.getElementById('got').classList.contains('on'), { timeout: 6000, polling: 50 }).catch(() => {});
+    /* W2: the pool holds eight jump weapons now, so the chest's jump weapon is any of them (H-wpn-7 holds the draw); a
+       liberty: the jump slot set to the Boomerang by hand for the throw below */
+    await page.evaluate(() => { const st = window.SB.game.state; st.hero.slots[0] = 1; st.hero.slots[1] = 9; });
+    await stepN(page, 1);
 
     /* the throw: face right (a few real steps), a frozen moth 3 cells ahead on the floor row */
     await page.keyboard.down('ArrowRight'); await stepN(page, 3); await page.keyboard.up('ArrowRight'); await stepN(page, 8);
