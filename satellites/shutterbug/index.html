@@ -3793,10 +3793,39 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return rgb;
   };
   function pageCanvas(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
-  /* gridRecord(rgb, focal) -> the record's JSON form from the grid's RGB: the nearest palette colour per cell (DESIGN
-     6.2), the focal cell or none. The crop screen and the auto crop's worker both make their records here */
+
+  /* The capture normalisation (QUESTIONS Q182, the investigation's photo lens): the grid's RGB, after the area average
+     and before nearest, (1) white balanced toward grey at WB strength (each channel scaled by 1 - WB + WB * the mean of
+     the three channel sums / its own sum), then (2) its luminance stretched so the P_LO and P_HI percentiles of the
+     cells' L land on L_LO and L_HI, each cell's three channels scaled by its own new L over its old (its hue kept),
+     rounded and clamped. A dim or tinted photo reaches the palette's whole range instead of collapsing into one grey.
+     It acts before nearest, so only a new photo's record changes: a shared code or a fixture is a palette grid and
+     never passes here. Pure and deterministic; tools/capture-oracle.js holds its own copy (normalizeRGB), and H-norm-1
+     and the capture gate hold the two equal byte for byte. */
+  C.NORM = Object.freeze({ WB: 0.5, P_LO: 0.03, P_HI: 0.97, L_LO: 24, L_HI: 240 });
+  C.normalize = function (rgb) {
+    var N = C.NORM, n = rgb.length / 3, out = new Uint8Array(rgb.length), t = new Float64Array(rgb.length), L = new Float64Array(n);
+    var sr = 0, sg = 0, sb = 0, i, c;
+    for (i = 0; i < n; i++) { sr += rgb[3 * i]; sg += rgb[3 * i + 1]; sb += rgb[3 * i + 2]; }
+    var m = (sr + sg + sb) / 3, kr = sr > 0 ? 1 - N.WB + N.WB * m / sr : 1, kg = sg > 0 ? 1 - N.WB + N.WB * m / sg : 1, kb = sb > 0 ? 1 - N.WB + N.WB * m / sb : 1;
+    for (i = 0; i < n; i++) {
+      t[3 * i] = rgb[3 * i] * kr; t[3 * i + 1] = rgb[3 * i + 1] * kg; t[3 * i + 2] = rgb[3 * i + 2] * kb;
+      L[i] = 0.299 * t[3 * i] + 0.587 * t[3 * i + 1] + 0.114 * t[3 * i + 2];
+    }
+    var s = Array.prototype.slice.call(L).sort(function (x, y) { return x - y; });
+    var lo = s[Math.floor(N.P_LO * n)], hi = s[Math.floor(N.P_HI * n)], a = (N.L_HI - N.L_LO) / Math.max(1, hi - lo);
+    for (i = 0; i < n; i++) {
+      var f = L[i] > 0 ? (N.L_LO + (L[i] - lo) * a) / L[i] : 1;
+      for (c = 0; c < 3; c++) out[3 * i + c] = Math.max(0, Math.min(255, Math.round(t[3 * i + c] * f)));
+    }
+    return out;
+  };
+  /* gridRecord(rgb, focal) -> the record's JSON form from the grid's RGB as the downscale gives it: normalised (above),
+     then the nearest palette colour per cell (DESIGN 6.2), the focal cell or none. The crop screen and the auto crop's
+     worker both make their records here */
   C.gridRecord = function (rgb, focal) {
     var W = SB.GRID.W, H = SB.GRID.H, pal = new Uint8Array(W * H);
+    rgb = C.normalize(rgb);
     for (var i = 0; i < W * H; i++) pal[i] = SB.palette.nearest(rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2]);
     return { v: SB.record.V, w: W, h: H, mode: 0, focal: focal >= 0 ? focal : null, rows: SB.record.palToRows(pal, W, H), rows2: null };
   };

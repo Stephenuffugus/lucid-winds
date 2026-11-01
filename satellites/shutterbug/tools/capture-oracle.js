@@ -49,4 +49,28 @@ function downscaleRGB(img, W, H) {
   return out;
 }
 
-module.exports = { readPNG, downscaleRGB };
+/* the capture normalisation (QUESTIONS Q182): the step shell-capture's C.normalize takes between the area average and
+   nearest, written again here from its definition so the page and Node are held to each other (H-norm-1 on Node grids,
+   the capture gate on the page's own canvas grid, both byte for byte): a half strength grey world white balance, then
+   the luminance stretched so its 3rd and 97th percentiles over the cells land on 24 and 240, each cell scaled by its new
+   L over its old. The same arithmetic in the same order as the page, so the doubles round the same way.
+     normalizeRGB(rgb) -> a new Uint8Array the length of rgb (any whole number of RGB triples) */
+const NORM = Object.freeze({ WB: 0.5, P_LO: 0.03, P_HI: 0.97, L_LO: 24, L_HI: 240 });
+function normalizeRGB(rgb) {
+  const n = rgb.length / 3, out = new Uint8Array(rgb.length), t = new Float64Array(rgb.length), L = new Float64Array(n), sum = [0, 0, 0];
+  for (let i = 0; i < n; i++) for (let c = 0; c < 3; c++) sum[c] += rgb[3 * i + c];
+  const mean = (sum[0] + sum[1] + sum[2]) / 3, k = sum.map(s => (s > 0 ? 1 - NORM.WB + NORM.WB * mean / s : 1));
+  for (let i = 0; i < n; i++) {
+    for (let c = 0; c < 3; c++) t[3 * i + c] = rgb[3 * i + c] * k[c];
+    L[i] = 0.299 * t[3 * i] + 0.587 * t[3 * i + 1] + 0.114 * t[3 * i + 2];
+  }
+  const sorted = Float64Array.from(L).sort(), lo = sorted[Math.floor(NORM.P_LO * n)], hi = sorted[Math.floor(NORM.P_HI * n)];
+  const gain = (NORM.L_HI - NORM.L_LO) / Math.max(1, hi - lo);
+  for (let i = 0; i < n; i++) {
+    const f = L[i] > 0 ? (NORM.L_LO + (L[i] - lo) * gain) / L[i] : 1;
+    for (let c = 0; c < 3; c++) out[3 * i + c] = Math.max(0, Math.min(255, Math.round(t[3 * i + c] * f)));
+  }
+  return out;
+}
+
+module.exports = { readPNG, downscaleRGB, normalizeRGB, NORM };

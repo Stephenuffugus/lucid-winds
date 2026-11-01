@@ -15,6 +15,9 @@
  * order, at most SB.capture.SEEK.CAP builds, as Develop's search does in the page; the table adds how many scenes
  * develop from the default box with the search and the builds the search spent per photo (median, p90, max), over
  * the refused scenes and over all 60 (a scene that builds at rest spends none).
+ * The capture normalisation (Q182): each box's grid passes through the page's own SB.capture.normalize between the
+ * area average and nearest, as the page's gridRecord does (an older page has none, so --page on it is the before); the
+ * table adds the biomes of the rooms that develop and the film share of their main ascents (quartiles).
  *
  * Each scene is 1024 x 1360 (a phone's 3:4 photo decoded at the page's 1024 width): a lit wall, a ceiling strip in
  * some, a floor band (wood, dark wood, grey carpet, beige carpet or light tile) 8 to 22% of the frame, two to four pieces
@@ -103,8 +106,11 @@ function cropImg(img, c) {
   for (let y = 0; y < c.h; y++) img.px.copy(px, y * c.w * 3, ((c.y + y) * img.w + c.x) * 3, ((c.y + y) * img.w + c.x + c.w) * 3);
   return { w: c.w, h: c.h, bpp: 3, px };
 }
-function recordOf(SB, img, crop) {
-  const W = SB.GRID.W, H = SB.GRID.H, rgb = downscaleRGB(cropImg(img, crop), W, H), pal = new Uint8Array(W * H);
+/* the record a box makes: the oracle's area average, then the page's own capture normalisation when CAP (the page's
+   shell-capture, captureOf) has one (Q182; an older page has none, so its column is the before), then nearest */
+function recordOf(SB, img, crop, CAP) {
+  const W = SB.GRID.W, H = SB.GRID.H, raw = downscaleRGB(cropImg(img, crop), W, H), pal = new Uint8Array(W * H);
+  const rgb = CAP && typeof CAP.normalize === 'function' ? CAP.normalize(raw) : raw;
   for (let i = 0; i < W * H; i++) pal[i] = SB.palette.nearest(rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2]);
   return SB.record.fromJSON({ v: SB.record.V, w: W, h: H, mode: 0, focal: null, rows: SB.record.palToRows(pal, W, H), rows2: null });
 }
@@ -125,13 +131,20 @@ function seek(SB, CAP, img, crop, no) {
   for (const b of boxes) {
     if (n >= CAP.SEEK.CAP) break;
     n++;
-    const lv = SB.pipeline.build(recordOf(SB, img, b), { firstRoom: true });
-    if (!lv.needsCrop) return { seekBuilds: n, seekBox: b };
+    const lv = SB.pipeline.build(recordOf(SB, img, b, CAP), { firstRoom: true });
+    if (!lv.needsCrop) return { seekBuilds: n, seekBox: b, seekLevel: lv };
   }
-  return { seekBuilds: n, seekBox: null };
+  return { seekBuilds: n, seekBox: null, seekLevel: null };
 }
 
-module.exports = { paint, captureOf, recordOf, seek, png, FLOORS, COUNT };
+/* a built room's biome and its film share: of the main ascent's standing cells, the share that stand on a film tab */
+function levelInfo(SB, lv) {
+  const w = lv.w, n = w * lv.h, nodes = lv.ascent && lv.ascent.nodes ? Array.from(lv.ascent.nodes).filter(v => v < n) : [];
+  let onTab = 0; for (const v of nodes) if (lv.tab[v + w]) onTab++;
+  return { biome: SB.palette.BIOMES[lv.biome], tabShare: nodes.length ? onTab / nodes.length : 0 };
+}
+
+module.exports = { paint, captureOf, recordOf, seek, levelInfo, png, FLOORS, COUNT };
 if (require.main === module) {
   if (opt('png') !== null) {
     const k = +opt('png'), out = ARGS[ARGS.indexOf('--png') + 2];
@@ -140,14 +153,17 @@ if (require.main === module) {
   }
   const SB = loadCoreFull(PAGE).SB, CAP = captureOf(PAGE), rows = [];
   for (let k = 0; k < COUNT; k++) {
-    const img = paint(k), crop = CAP.fit(img.w, img.h), lv = SB.pipeline.build(recordOf(SB, img, crop), { firstRoom: true });
+    const img = paint(k), crop = CAP.fit(img.w, img.h), lv = SB.pipeline.build(recordOf(SB, img, crop, CAP), { firstRoom: true });
     const row = { k, floor: img.floor, built: !lv.needsCrop, cause: lv.needsCrop ? (lv.cause || 'none') : '', detail: lv.needsCrop ? lv.detail : '', tabs: lv.needsCrop ? -1 : lv.repair.tabs,
       spawnRow: lv.needsCrop ? -1 : Math.floor(lv.spawn / lv.w), exitRow: lv.needsCrop ? -1 : Math.floor(lv.exit / lv.w), crop, seekBuilds: 0, seekBox: null };
     if (lv.needsCrop && !ARGS.includes('--no-seek')) Object.assign(row, seek(SB, CAP, img, crop, lv));
+    const got = !lv.needsCrop ? lv : row.seekLevel;
+    delete row.seekLevel;
+    if (got) Object.assign(row, levelInfo(SB, got));
     rows.push(row);
   }
   if (ARGS.includes('--json')) { for (const r of rows) console.log(JSON.stringify(r)); process.exit(0); }
-  console.log('room model, ' + COUNT + ' scenes at ' + BW + 'x' + BH + ', the default box ' + JSON.stringify(rows[0].crop) + ', page ' + path.relative(process.cwd(), PAGE));
+  console.log('room model, ' + COUNT + ' scenes at ' + BW + 'x' + BH + ', the default box ' + JSON.stringify(rows[0].crop) + ', page ' + path.relative(process.cwd(), PAGE) + ', capture normalisation ' + (typeof CAP.normalize === 'function' ? 'on' : 'none (an older page)'));
   for (const F of FLOORS) {
     const of = rows.filter(r => r.floor === F.name), b = of.filter(r => r.built).length;
     console.log('  ' + F.name.padEnd(13) + String(b).padStart(3) + ' of ' + of.length + ' build');
@@ -164,6 +180,12 @@ if (require.main === module) {
     const shr = ref.filter(r => r.seekBox).map(r => Math.round(100 * r.seekBox.h / r.crop.h));
     console.log('  the chosen box keeps of the default box\'s height: ' + st(shr, '%') + ' (min ' + Math.min(...shr) + '%)');
     for (const r of ref.filter(x => !x.seekBox)) console.log('  nothing builds: scene ' + r.k + ' (' + r.floor + ', ' + r.cause + ')');
+  }
+  {
+    const got = rows.filter(r => r.biome), bio = {}, q = (a, p) => { const s = a.slice().sort((x, y) => x - y); return s.length ? s[Math.min(s.length - 1, Math.floor(p * s.length))] : 0; };
+    for (const r of got) bio[r.biome] = (bio[r.biome] || 0) + 1;
+    const ts = got.map(r => r.tabShare);
+    console.log('  the ' + got.length + ' rooms that develop: biomes ' + Object.entries(bio).sort((a, b) => b[1] - a[1]).map(([k, n]) => k + ' ' + n).join(', ') + '; film share of the main ascent quartiles ' + [0.25, 0.5, 0.75].map(p => Math.round(100 * q(ts, p)) + '%').join(', ') + ', at least half on film ' + ts.filter(v => v >= 0.5).length);
   }
   const why = {};
   for (const r of rows.filter(x => !x.built)) { const key = r.cause + ': ' + r.detail.replace(/\d+/g, 'N'); why[key] = (why[key] || 0) + 1; }
