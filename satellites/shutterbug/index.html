@@ -606,14 +606,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
        floor: ramp fodder added up to it; cap and eliteCap: the photo's own caps (Ember one more enemy); eliteMin: the
        fodder farthest from spawn promoted when the photo gives fewer elites; fodderHpQ: a fodder's quarters per HP
        (HP_Q is 1x, 6 is 1.5x); fast: an enemy's extra tick every that many steps (4 is 1.25x speed, 0 none). Room 5 is
-       the last room: until lane B's clay boss (Q97 ruling 3) it takes room 4's row (Q200 call 2's option b, the review
-       of HOUSE-A, Q201), so the last room is never easier than room 4. Lane B's row is the table's own, { floor: 0,
-       cap: 3, eliteCap: 0 } beside the boss (the table's room 5 elite is the boss: no photo elite) */
+       the last room: lane A gave it room 4's row until the boss (Q201); with the guardian (Q97 ruling 3, HOUSE-B) it
+       takes the table's own row, the photo's fodder only (at most 3, Ember 4), no photo elite (the guardian is the
+       room's elite), 1x HP and speed */
     RAMP: [null, null,
       { floor: 2, cap: 4, eliteCap: 1, eliteMin: 0, fodderHpQ: 4, fast: 0 },
       { floor: 3, cap: 4, eliteCap: 1, eliteMin: 1, fodderHpQ: 4, fast: 4 },
       { floor: 4, cap: 5, eliteCap: 2, eliteMin: 1, fodderHpQ: 6, fast: 4 },
-      { floor: 4, cap: 5, eliteCap: 2, eliteMin: 1, fodderHpQ: 6, fast: 4 }],
+      { floor: 0, cap: 3, eliteCap: 0, eliteMin: 0, fodderHpQ: 4, fast: 0 }],
+    /* the guardian (HOUSE-B; DESIGN 7.1's fallback, Stephen's "Clay boss now"): the clay body is GUARD_W x GUARD_H
+       cells (Astra's boss_fallback, 80x64 at 16 px a cell), resting on GUARD_REST or more cells of a dark mass; its
+       moths shed from GUARD_SHED_W x GUARD_SHED_H cells over its top (Astra's boss_moth_shed, 48x32) */
+    GUARD_W: 5, GUARD_H: 4, GUARD_REST: 3, GUARD_SHED_W: 3, GUARD_SHED_H: 2,
     HOUSE_DOOR_HEARTS: 1 /* a heart back at each doorway, up to the bug's own cap (Q97's default) */, RAMP_SALT: 0x4a3b2c1d,
     // 5.3 onboarding
     FIRST_ROOM_MAX_FODDER: 2,
@@ -1610,6 +1614,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var settled = settle(level, SB.features.place(level, opts, fixed.g));
     if (settled) return settled;
     SB.features.ramp(level, opts);   /* a house room after the first only (opts.roomIndex, Q200); on the settled level */
+    SB.features.guardian(level, opts);   /* the house's last room only (HOUSE-B, Q97 ruling 3): the clay guardian */
     return level;
   }
 
@@ -3159,6 +3164,138 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return laid;
   }
 
+  /* 9. the guardian (HOUSE-B: Stephen's "Clay boss now", 31 Oct, QUESTIONS Q97 ruling 3; DESIGN 7.1's fallback;
+     BUILD-PLAN T2.10a's fallback branch and T2.11's arena), in a house's last room only (opts.lastRoom with
+     opts.roomIndex HOUSE_ROOMS, never a first room): free play, a code and every other room never see it, and their
+     levels and hashes are today's. The pipeline calls it last, on the settled and ramped level; it draws nothing.
+     The body is the clay boss's GUARD_W x GUARD_H open cells (no solid, one way, trap, claimed or enemy cell), resting
+     on at least GUARD_REST cells of one dark mass (a 4 connected component of solid cells: dark is solid, DESIGN 6.4),
+     clear of spawn by ENEMY_SPAWN_CLEAR, never within a cell of a cell the ascent stands on nor across the box any
+     ascent edge spans (the climb never runs through it). The rules, in order: rule k is the k-th largest dark mass
+     (ties to the lower first cell); on a mass the candidates go nearest the mass's middle first (squared cells, ties
+     to the lower index). A candidate is kept only when it passes DESIGN 7.1's three arena rules (arena()), so a body
+     that fails one is placed by the next candidate, then the next rule. features.boss is its cells (hashed);
+     features.guardian keeps the rect, the rule, the safe ledge, the shed box and the weak cells. None passing, no
+     guardian (H-boss-3 asserts every built corpus room has one) */
+  function darkMasses(level) {
+    var w = level.w, n = w * level.h, seen = new Int32Array(n).fill(-1), out = [], k;
+    for (var i = 0; i < n; i++) {
+      if (!level.solid[i] || seen[i] >= 0) continue;
+      var id = out.length, cells = [i], head = 0; seen[i] = id;
+      while (head < cells.length) {
+        var c = cells[head++], x = c % w, nb = [x > 0 ? c - 1 : -1, x < w - 1 ? c + 1 : -1, c - w, c + w];
+        for (k = 0; k < 4; k++) { var q = nb[k]; if (q >= 0 && q < n && level.solid[q] && seen[q] < 0) { seen[q] = id; cells.push(q); } }
+      }
+      out.push({ id: id, first: i, cells: cells });
+    }
+    out.sort(function (a, b) { return b.cells.length - a.cells.length || a.first - b.first; });
+    return { masses: out, of: seen };
+  }
+  /* the arena (DESIGN 7.1, T2.11) of a body at (x0, y0): the attack cells (the body and the cell round it, its
+     contact; the shed box over its top and ROUTE_SAFE_ENEMY_DIST round it, where a shed moth starts, the moth's own
+     static rule, BUILD-PLAN 3.7), the safe ledge (a reached standable cell outside them, within BOSS_SAFE_LEDGE_CELLS
+     of a body cell, nearest the body, ties to the lower index), and the weak cells: body cells with an open side out of
+     the body that a hit from the ledge reaches, by its own row or one JUMP, JUMP_DOWN or FALL from it (the Boomerang's
+     row, its J1 cells across with no solid between; the body is not solid, so each next cell of that row is struck as
+     the near ones go). The telegraph rule is the sim's (BOSS_TELEGRAPH_F, H-boss-6). Null with a reason when a rule fails */
+  function arena(level, g, d, x0, y0) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, GW = T.GUARD_W, GH = T.GUARD_H, i, x, y, k;
+    var inBody = function (c) { var cx = c % w, cy = (c - cx) / w; return cx >= x0 && cx < x0 + GW && cy >= y0 && cy < y0 + GH; };
+    var sx0 = x0 + ((GW - T.GUARD_SHED_W) >> 1), sy0 = y0 - T.GUARD_SHED_H, R = T.ROUTE_SAFE_ENEMY_DIST;
+    var attack = new Uint8Array(n);
+    for (y = Math.max(0, y0 - 1); y <= Math.min(h - 1, y0 + GH); y++) for (x = Math.max(0, x0 - 1); x <= Math.min(w - 1, x0 + GW); x++) attack[y * w + x] = 1;
+    for (y = Math.max(0, sy0 - R); y <= Math.min(h - 1, sy0 + T.GUARD_SHED_H - 1 + R); y++) for (x = Math.max(0, sx0 - R); x <= Math.min(w - 1, sx0 + T.GUARD_SHED_W - 1 + R); x++) attack[y * w + x] = 1;
+    var bodyDist = function (c) { var cx = c % w, cy = (c - cx) / w; return Math.max(Math.max(x0 - cx, cx - (x0 + GW - 1), 0), Math.max(y0 - cy, cy - (y0 + GH - 1), 0)); };
+    var ledge = -1, ld = 99;
+    for (i = 0; i < n; i++) {
+      if (!g.stand[i] || d[i] < 0 || attack[i] || level.trap[i]) continue;
+      var bd = bodyDist(i);
+      if (bd <= T.BOSS_SAFE_LEDGE_CELLS && bd < ld) { ld = bd; ledge = i; }
+    }
+    if (ledge < 0) return { fail: 'ledge' };
+    var from = [ledge], es = g.adj[ledge] || [];
+    for (k = 0; k < es.length; k++) if (es[k].to < n && (es[k].kind === 'JUMP' || es[k].kind === 'JUMP_DOWN' || es[k].kind === 'FALL' || es[k].kind === 'WALK') && from.indexOf(es[k].to) < 0) from.push(es[k].to);
+    var weak = [], J = T.WEAPONS.J1.cells;
+    for (k = 0; k < from.length; k++) {
+      var v = from[k], vx = v % w, vy = (v - vx) / w;
+      for (var dir = -1; dir <= 1; dir += 2) for (var j = 1; j <= J; j++) {
+        var cx = vx + dir * j; if (cx < 0 || cx >= w || level.solid[vy * w + cx]) break;
+        var c = vy * w + cx;
+        if (!inBody(c) || weak.indexOf(c) >= 0) continue;
+        var open = false, nb = [cx > 0 ? c - 1 : -1, cx < w - 1 ? c + 1 : -1, c - w, c + w];
+        for (var q = 0; q < 4; q++) if (nb[q] >= 0 && nb[q] < n && !inBody(nb[q]) && !level.solid[nb[q]]) open = true;
+        if (open || weak.length) weak.push(c);   /* the first struck in a row is exposed; the ones behind it follow it */
+      }
+    }
+    if (weak.length < T.BOSS_WEAK_MIN) return { fail: 'weak', ledge: ledge, weak: weak };
+    weak.sort(function (a, b) { return a - b; });
+    return { ledge: ledge, weak: weak, shed: [sx0, sy0, T.GUARD_SHED_W, T.GUARD_SHED_H], attack: attack };
+  }
+  function guardian(level, opts) {
+    var T = SB.TUNING;
+    if (!opts || !opts.lastRoom || opts.firstRoom || (opts.roomIndex | 0) !== T.HOUSE_ROOMS || level.needsCrop) return null;
+    var w = level.w, h = level.h, n = w * h, f = level.features, GW = T.GUARD_W, GH = T.GUARD_H, i, k, x, y;
+    var g = SB.reach.trapGraph(level, SB.reach.graph(level)), d = SB.reach.distances(g, level.spawn, level.exit);
+    var claim = new Uint8Array(n), off = function (c) { if (typeof c === 'number' && c >= 0 && c < n) claim[c] = 1; };
+    off(level.spawn); off(level.exit); off(f.chest); off(f.scroll); off(f.blueprint);
+    for (k = 0; f.specks && k < f.specks.length; k++) off(f.specks[k]);
+    for (k = 0; level.beacon && k < level.beacon.cells.length; k++) off(level.beacon.cells[k]);
+    if (f.door) { var dr = f.door.rect; for (y = dr[1]; y <= dr[3]; y++) for (x = dr[0]; x <= dr[2]; x++) claim[y * w + x] = 1; }
+    if (f.pocket) for (k = 0; k < f.pocket.cells.length; k++) claim[f.pocket.cells[k]] = 1;
+    /* the climb: every cell the ascent stands on and the cell round it, and the box each ascent edge spans (its rows
+       and one over the higher end, a jump's arc) */
+    var climb = new Uint8Array(n), nodes = level.ascent ? level.ascent.nodes : [], cellOf = function (v) { return v < n ? v : (v - n) >> 1; };
+    for (k = 0; k < nodes.length; k++) {
+      var c0 = cellOf(nodes[k]), ax = c0 % w, ay = (c0 - ax) / w;
+      for (y = Math.max(0, ay - 1); y <= Math.min(h - 1, ay + 1); y++) for (x = Math.max(0, ax - 1); x <= Math.min(w - 1, ax + 1); x++) climb[y * w + x] = 1;
+      if (k === 0) continue;
+      var c1 = cellOf(nodes[k - 1]), bx = c1 % w, by = (c1 - bx) / w;
+      for (y = Math.max(0, Math.min(ay, by) - 1); y <= Math.max(ay, by); y++) for (x = Math.min(ax, bx); x <= Math.max(ax, bx); x++) climb[y * w + x] = 1;
+    }
+    var sp = level.spawn, spx = sp % w, spy = (sp - spx) / w, DM = darkMasses(level);
+    /* the rules: each dark mass by size, then the last, the air: a body resting on nothing (the clay hovers), nearest
+       the room's middle, for a room whose every floor is the climb's (a narrow shaft); then the shelf: the air with one
+       ways inside the body (it hangs across them), for a room of shelves closer than the body is tall */
+    for (var r = 0; r <= DM.masses.length + 1; r++) {
+      var air = r >= DM.masses.length, shelf = r === DM.masses.length + 1, m = air ? { id: -2, cells: [] } : DM.masses[r], mx = (w - 1) / 2 - (GW - 1) / 2, my = h / 2, cands = [];
+      if (!air) { mx = 0; my = 0; for (k = 0; k < m.cells.length; k++) { mx += m.cells[k] % w; my += Math.floor(m.cells[k] / w); } mx = mx / m.cells.length - (GW - 1) / 2; my = my / m.cells.length - GH; }
+      for (y = 1; y + GH < h; y++) for (x = 0; x + GW <= w; x++) {
+        var ok = true, rest = 0;
+        for (var yy = y; yy < y + GH && ok; yy++) for (var xx = x; xx < x + GW && ok; xx++) {
+          var c = yy * w + xx;
+          if (level.solid[c] || (level.plat[c] && !shelf) || level.trap[c] || claim[c] || climb[c]) ok = false;
+        }
+        if (!ok) continue;
+        for (k = 0; k < GW; k++) if (DM.of[(y + GH) * w + x + k] === m.id) rest++;
+        if (!air && rest < T.GUARD_REST) continue;
+        if (Math.max(Math.max(x - spx, spx - (x + GW - 1), 0), Math.max(y - spy, spy - (y + GH - 1), 0)) <= T.ENEMY_SPAWN_CLEAR) continue;
+        var ddx = x - mx, ddy = y - my;
+        cands.push({ x: x, y: y, d: ddx * ddx + ddy * ddy, i: y * w + x });
+      }
+      cands.sort(function (a, b) { return a.d - b.d || a.i - b.i; });
+      for (k = 0; k < cands.length; k++) {
+        var A = arena(level, g, d, cands[k].x, cands[k].y);
+        if (A.fail) continue;
+        var cells = new Int32Array(GW * GH);
+        for (i = 0; i < GW * GH; i++) cells[i] = (cands[k].y + Math.floor(i / GW)) * w + cands[k].x + i % GW;
+        /* the guardian claims its ground: a photo fodder whose cell or envelope is in the body or the cell round it
+           leaves (room 5's row keeps at most 3; fewer enemies only make more of the climb safe) */
+        var gx = cands[k].x, gy = cands[k].y, near = function (c) { var cx = c % w, cy = (c - cx) / w; return cx >= gx - 1 && cx <= gx + GW && cy >= gy - 1 && cy <= gy + GH; }, kept = [], dropped = 0;
+        for (i = 0; i < f.enemies.length; i++) {
+          var e = f.enemies[i], hitE = near(e.idx), env = e.env || [];
+          for (var q = 0; q < env.length && !hitE; q++) if (near(env[q])) hitE = true;
+          if (hitE) dropped++; else kept.push(e);
+        }
+        f.enemies = kept;
+        f.boss = cells;
+        f.guardian = { rect: [gx, gy, GW, GH], rule: r + 1, air: air ? 1 : 0, shelf: shelf ? 1 : 0, mass: air ? 0 : m.cells.length, ledge: A.ledge, weak: Int32Array.from(A.weak), shed: A.shed, dropped: dropped };
+        return f.guardian;
+      }
+    }
+    f.boss = null; f.guardian = null;
+    return null;
+  }
+
   function place(level, opts, g) {
     var f = level.features, stands = ascentStands(level), rng = SB.rng.mulberry32(level.seed >>> 0);
     if (!g) g = SB.reach.graph(level);
@@ -3179,7 +3316,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   SB.features = { MOTH: MOTH, ICICLE: ICICLE, JELLY: JELLY, CRAWLER: CRAWLER, SPARK: SPARK, KIND_OF_BIOME: KIND_OF_BIOME,
     place: place, returnable: returnable, ladder: ladder, brightRect: brightRect, door: door, pocketCands: pocketCands, pocketOk: pocketOk, chest: chest, specks: specks,
-    trapRects: trapRects, trapOk: trapOk, trapField: trapField, envelope: envelope, enemies: enemies, moths: moths, rampRow: rampRow, ramp: ramp };
+    trapRects: trapRects, trapOk: trapOk, trapField: trapField, envelope: envelope, enemies: enemies, moths: moths, rampRow: rampRow, ramp: ramp,
+    darkMasses: darkMasses, arena: arena, guardian: guardian };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-sim" data-core>
@@ -3233,8 +3371,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var hearts = opts.hearts || SB.TUNING.HEARTS_BASE, lo = opts.loadout || [0, 0, 0], proj = [];
     /* the pool (docs/WEAPONS-V1.md 3.3): PROJ_MAX objects made here and kept for the state's life; step reuses them */
     for (var pi = 0; pi < SB.TUNING.PROJ_MAX; pi++) proj.push(newProj());
-    var es = (level.features && level.features.enemies) || [];
-    if (es.length > 31) throw new Error('sim.create: ' + es.length + ' enemies (a hit pass marks each in one bit of 31)');
+    var es = (level.features && level.features.enemies) || [], gd = level.features && level.features.guardian, shedN = gd ? SB.TUNING.BOSS_MOTH_COUNT : 0;
+    /* a hit pass marks each enemy in one bit of 31 and the guardian in bit 31 (HOUSE-B) */
+    if (es.length + shedN > 31) throw new Error('sim.create: ' + (es.length + shedN) + ' enemies (a hit pass marks each in one bit of 31)');
     var fq = level.ramp ? level.ramp.fodderHpQ : K.HP_Q;   /* a fodder's quarters per HP: HP_Q, or the house ramp's (room 4: 1.5x, Q200) */
     var s = {
       v: 1, frame: 0, rng: (level.seed ^ 0x9e3779b9) >>> 0, biome: level.biome | 0, negative: level.negative ? 1 : 0,
@@ -3251,9 +3390,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
           stunned: el && pocketOf(level, e.idx) ? -1 : 0, hurt: 0 };
       }),
       proj: proj, loot: lootOf(level), chest: { idx: level.features && typeof level.features.chest === 'number' && level.features.chest >= 0 ? level.features.chest : -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
-      traps: { phase: 0 }, boss: null,
+      traps: { phase: 0 }, boss: gd ? newBoss(level, gd) : null,
       room: { dp: 0, blueprints: [], exitLit: 0, cleared: 0, dead: 0, deaths: 0, grace: 0, offerWait: 0, compare: 0, cand: 0, tremor: 0 }
     };
+    /* the guardian's moths (HOUSE-B): BOSS_MOTH_COUNT enemy slots made here, after the level's, each a dead moth
+       (HP 0: never moved, touched or drawn) until a shed fills it; step never allocates one */
+    for (var si = 0; si < shedN; si++) s.enemies.push({ kind: SB.features.MOTH, x: 0, y: 0, vx: 0, vy: 0, hp: 0, state: 0, timer: 0, dir: 1, home: -1, elite: 0, frozen: 0, stunned: 0, hurt: 0 });
     /* the bug carried into a house room (Q200): its hearts, its cap, its stats and scrolls, clamped to the rules
        (opts.carry; the slots come by opts.loadout as in free play). No carry, the fresh bug above */
     var c = opts.carry, T = SB.TUNING, hh = s.hero;
@@ -3401,11 +3543,63 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (!en || !liveEnemy(en)) return 0;
     en.hp = Math.max(0, en.hp - q); en.hurt = K.HURT_FLASH_F; s.ev |= EV.HURT;
     if (en.hp === 0) {
-      s.room.dp += en.elite ? T.DP_ELITE : T.DP_FODDER; s.ev |= EV.KILL;
+      if (!shedSlot(s, m)) s.room.dp += en.elite ? T.DP_ELITE : T.DP_FODDER;   /* the guardian's moths bank nothing (no farm) */
+      s.ev |= EV.KILL;
       var half = (en.elite ? K.ELITE_SUB : K.CELL_SUB) >> 1, k = spawn(s, POP);
       if (k >= 0) { var p = s.proj[k]; p.x = en.x + half - 8 * K.SUB; p.y = en.y + half - 8 * K.SUB; p.ttl = K.POP_F; }
     }
     return en.hp;
+  }
+
+  /* the guardian (HOUSE-B; DESIGN 7.1's fallback, T2.10a): the clay boss of a house's last room. cells: the body's
+     cells (features.boss) in reading order, -1 once struck off; hp and hpMax in quarters (BOSS_FALLBACK_HP whole HP,
+     one cell a whole HP, so a cell goes with each HP_Q lost); phase 0 the intro (the body outlined, harmless and
+     unharmed, intro steps left), 1 awake, 2 down; timer the shed clock (BOSS_MOTH_EVERY_F a cycle), telegraph the
+     shed's tell steps left (BOSS_TELEGRAPH_F, at least 48: T2.11). Its moths are the last BOSS_MOTH_COUNT enemy slots */
+  function newBoss(level, gd) {
+    var T = SB.TUNING, K = SB.K, cells = [], b = level.features.boss;
+    for (var i = 0; i < b.length; i++) cells.push(b[i] | 0);
+    return { cells: cells, hp: T.BOSS_FALLBACK_HP * K.HP_Q, hpMax: T.BOSS_FALLBACK_HP * K.HP_Q, phase: 0, timer: 0, intro: K.BOSS_INTRO_F, telegraph: 0 };
+  }
+  function shedSlot(s, m) { return !!s.boss && m >= s.enemies.length - SB.TUNING.BOSS_MOTH_COUNT; }
+  /* a cell's box against [x0, x1) x [y0, y1) */
+  function cellOver(w, c, x0, y0, x1, y1) { var CS = SB.K.CELL_SUB, cx = c % w, cy = (c - cx) / w; return x0 < (cx + 1) * CS && x1 > cx * CS && y0 < (cy + 1) * CS && y1 > cy * CS; }
+  /* a weapon's hit on the guardian (the same funnel as an enemy's, hit()): q quarters off; the struck cell goes, then
+     the live cells nearest it (Chebyshev, ties to the lower index) until a cell stands for each whole HP left (DESIGN
+     7.1: the struck cells go, the body erodes from the hit point outward). At 0 it is down: DP_BOSS banked once, its
+     moths fall with it (no Dead pixels for them), and the beacon is lit */
+  function hurtBoss(s, lv, struck, q) {
+    var B = s.boss, K = SB.K, w = lv.w, i;
+    B.hp = Math.max(0, B.hp - q); s.ev |= EV.BOSS_HIT;
+    var want = Math.ceil(B.hp / K.HP_Q), live = 0, sc = B.cells[struck], sx = sc % w, sy = (sc - sx) / w;
+    for (i = 0; i < B.cells.length; i++) if (B.cells[i] >= 0) live++;
+    if (live > want) { B.cells[struck] = -1; live--; }
+    while (live > want) {
+      var best = -1, bd = 1e9;
+      for (i = 0; i < B.cells.length; i++) {
+        var c = B.cells[i]; if (c < 0) continue;
+        var dd = Math.max(Math.abs(c % w - sx), Math.abs(((c - c % w) / w) - sy));
+        if (dd < bd) { bd = dd; best = i; }
+      }
+      B.cells[best] = -1; live--;
+    }
+    if (B.hp === 0) {
+      B.phase = 2; B.telegraph = 0; s.room.dp += SB.TUNING.DP_BOSS; s.room.exitLit = 1; s.ev |= EV.BOSS_DOWN | EV.KILL;
+      for (i = s.enemies.length - SB.TUNING.BOSS_MOTH_COUNT; i < s.enemies.length; i++) s.enemies[i].hp = 0;
+    }
+  }
+  /* the shed (DESIGN 7's Attic moveset, "sheds 3 moths every 4 s"): each dead moth slot of the guardian's filled with a
+     live moth on a cell of the shed box over its top (features.guardian.shed), left to right */
+  function shed(s, lv) {
+    var K = SB.K, CS = K.CELL_SUB, sh = lv.features.guardian.shed, n = SB.TUNING.BOSS_MOTH_COUNT, j = 0;
+    for (var m = s.enemies.length - n; m < s.enemies.length; m++) {
+      var en = s.enemies[m];
+      if (en.hp > 0) { j++; continue; }
+      var cx = sh[0] + (j % sh[2]), cy = sh[1] + Math.floor(j / sh[2]) % sh[3];
+      en.x = cx * CS; en.y = cy * CS; en.vx = 0; en.vy = 0; en.hp = hpOf(SB.features.MOTH, 0) * K.HP_Q; en.state = 0; en.timer = 0; en.dir = 1;
+      en.home = cy * lv.w + cx; en.frozen = 0; en.stunned = 0; en.hurt = 0; j++;
+    }
+    s.ev |= EV.SHED;
   }
 
   /* the pool (3.3): spawn takes the lowest free slot, zeroed, and returns its index, or -1 with none free (the effect is
@@ -3435,6 +3629,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (p.dmg > 0) hurt(s, m, p.dmg);
       if (p.freeze > 0) en.frozen = Math.max(en.frozen, p.freeze);
       if (p.stun > 0 && en.stunned >= 0) en.stunned = Math.max(en.stunned, p.stun);
+    }
+    /* the guardian awake (HOUSE-B): the box against its live cells, at most once a pass (bit 31); the struck cell the
+       first live one in reading order under the box */
+    var B = s.boss;
+    if (B && B.phase === 1 && B.hp > 0 && !((p.hit >>> 31) & 1)) {
+      var lv = s.level, struck = -1;
+      for (var j = 0; j < B.cells.length && struck < 0; j++) if (B.cells[j] >= 0 && cellOver(lv.w, B.cells[j], x0, y0, x1, y1)) struck = j;
+      if (struck >= 0) { p.hit |= 1 << 31; n++; if (p.dmg > 0) hurtBoss(s, lv, struck, p.dmg); }
     }
     return n;
   }
@@ -3613,7 +3815,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* Weapons v1 (docs/WEAPONS-V1.md 3.5): FIRE_J and FIRE_D (a slot acted), HURT and KILL (an enemy took damage, died),
      EQUIP (a slot got a weapon), SWAP (a swap opened; its card is step 2's), BURST and SAVED (steps 2 and 4) */
   var EV = { JUMP: 1, WALLJUMP: 2, DIVE: 4, LAND: 8, HIT: 16, CLEAR: 32, DEAD: 64, PICKUP: 128, CHEST: 256, OFFER: 512, PICK: 1024,
-    FIRE_J: 2048, FIRE_D: 4096, HURT: 8192, KILL: 16384, EQUIP: 32768, SWAP: 65536, BURST: 131072, SAVED: 262144 };
+    FIRE_J: 2048, FIRE_D: 4096, HURT: 8192, KILL: 16384, EQUIP: 32768, SWAP: 65536, BURST: 131072, SAVED: 262144,
+    /* the guardian (HOUSE-B): it wakes, tells a shed, sheds, takes a hit, goes down */
+    WAKE: 524288, TELL: 1048576, SHED: 2097152, BOSS_HIT: 4194304, BOSS_DOWN: 8388608 };
   function step(s, word) {
     var K = SB.K, h = s.hero, lv = s.level || null;
     if (!lv) throw new Error('sim.step: the state carries no level (attach with sim.attach)');
@@ -3750,7 +3954,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* 8. the exit, before the moths (QUESTIONS Q71): the hero's box touching the exit cell clears the room, and the
        moths' contact waits on !cleared, so the step that touches the lamp is never also the step a moth takes the
        last heart (the fourth review found both on one step: the clear card over a fallen bug) */
-    if (lv.exit >= 0) {
+    /* in the last room the beacon stays dark, and the exit shut, until the guardian is down (DESIGN 7.1, H-boss-4) */
+    if (lv.exit >= 0 && !(s.boss && s.boss.phase < 2)) {
       var CS2 = K.CELL_SUB, ex = lv.exit % lv.w, ey = (lv.exit - ex) / lv.w;
       if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB > ex * CS2 && h.y < (ey + 1) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {
         s.room.cleared = 1; s.room.exitLit = 1; s.ev |= EV.CLEAR;
@@ -3815,6 +4020,29 @@ body.sb-modal .lwfb-fab { display: none !important; }
         if (pj.ttl <= 0) free(pj);
       }
       passing = false; passAt = -1;
+    }
+
+    /* 8g. the guardian (HOUSE-B): the intro counts down (WAKE when it ends); awake, the shed clock runs: TELL
+       BOSS_TELEGRAPH_F steps before each BOSS_MOTH_EVERY_F, then SHED; a live cell's core (2 px inside) touching the
+       hero costs an enemy's hit, knocked away from the body's middle */
+    var GB = s.boss;
+    if (GB && GB.phase < 2 && !s.room.cleared) {
+      if (GB.phase === 0) { GB.intro--; if (GB.intro <= 0) { GB.intro = 0; GB.phase = 1; GB.timer = 0; s.ev |= EV.WAKE; } }
+      else {
+        GB.timer++;
+        if (GB.telegraph > 0) { GB.telegraph--; if (GB.telegraph === 0) { shed(s, lv); GB.timer = 0; } }
+        else if (GB.timer >= K.BOSS_MOTH_EVERY_F - K.BOSS_TELEGRAPH_F) { GB.telegraph = K.BOSS_TELEGRAPH_F; s.ev |= EV.TELL; }
+        if (!s.immortal && h.iframes === 0 && h.dashI === 0) {
+          var gc = 2 * K.SUB, gmid = 0, glive = 0, touched = false;
+          for (var gi = 0; gi < GB.cells.length; gi++) {
+            var gcl = GB.cells[gi]; if (gcl < 0) continue;
+            gmid += (gcl % lv.w) * K.CELL_SUB + (K.CELL_SUB >> 1); glive++;
+            var gx0 = (gcl % lv.w) * K.CELL_SUB, gy0 = ((gcl - gcl % lv.w) / lv.w) * K.CELL_SUB;
+            if (h.x < gx0 + K.CELL_SUB - gc && h.x + K.HERO_W_SUB > gx0 + gc && h.y < gy0 + K.CELL_SUB - gc && h.y + K.HERO_H_SUB > gy0 + gc) touched = true;
+          }
+          if (touched) hitHero(s, (h.x + (K.HERO_W_SUB >> 1)) * glive < gmid ? -1 : 1);
+        }
+      }
     }
 
     /* 8a. the enemies (DESIGN 7; T0.16's moths, T1.4's four more and the elites): each moves by its kind's rule
@@ -3924,7 +4152,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   SB.sim = { IN: IN, EV: EV, rle: rle, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
     FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf, trapTouch: trapTouch,
     WPN: WPN, BUILT: BUILT, slotOf: slotOf, PROJ_KIND: Object.freeze({ BOOMERANG: BOOMERANG, SHOCK: SHOCK, POP: POP }), shockFront: shockFront, spawn: spawn, free: free, drawWeapon: drawWeapon,
-    CHOICE: CHOICE, LOOT: { SPECK: LOOT_SPECK, SCROLL: LOOT_SCROLL, BLUEPRINT: LOOT_BLUEPRINT }, STAT: { VIGOR: VIGOR, FOCUS: FOCUS, GRIT: GRIT }, STAT_OF_BIOME: STAT_OF_BIOME, pickScroll: pickScroll };
+    CHOICE: CHOICE, LOOT: { SPECK: LOOT_SPECK, SCROLL: LOOT_SCROLL, BLUEPRINT: LOOT_BLUEPRINT }, STAT: { VIGOR: VIGOR, FOCUS: FOCUS, GRIT: GRIT }, STAT_OF_BIOME: STAT_OF_BIOME, pickScroll: pickScroll,
+    hurtBoss: hurtBoss, shedSlot: shedSlot };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="shell-capture" data-tool>
