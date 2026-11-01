@@ -71,7 +71,7 @@ const pipsOf = page => page.evaluate(() => { const el = document.getElementById(
   return { pipped: el.classList.contains('pipped'), w: Math.round(parseFloat(b.width) || 0), img: b.backgroundImage.split('url(').length - 1, words: el.textContent,
     vars: [1, 2, 3, 4, 5].map(k => (el.style.getPropertyValue('--pip' + k).match(/var\((--[^)]+)\)/) || [])[1] || '') }; });
 const prizeOf = page => page.evaluate(() => { const el = document.getElementById('doorprize'), r = el.getBoundingClientRect(), p = el.querySelector('p');
-  return { shown: !el.hidden && r.height > 0, w: Math.round(r.width), canvas: !!el.querySelector('canvas'), caption: p ? p.textContent : null, unlock: el.getAttribute('data-unlock'),
+  return { shown: !el.hidden && r.height > 0, w: Math.round(r.width), canvas: !!el.querySelector('canvas'), caption: p ? p.textContent : null, unlock: el.getAttribute('data-unlock'), seen: el.getAttribute('data-unlock-seen'),
     cos: window.SB.save.doc.cosmetics, daily: window.SB.save.doc.unlocks.daily }; });
 const titleLook = page => page.evaluate(() => { const pol = document.querySelector('#title .polaroid'), hs = document.getElementById('housestart'), b = getComputedStyle(hs, '::before');
   return { framed: pol.classList.contains('framed'), frame: pol.getAttribute('data-frame'), border: parseFloat(getComputedStyle(pol).borderTopWidth) || 0,
@@ -301,10 +301,11 @@ try {
   await fromRecent(page);
   s = await look(page);
   /* HOUSE-B: the guardian asleep in its place, outlined, the beacon dark, the intro's words over the room; the pips */
+  await page.evaluate(() => window.SB_DEV.step(1));
   const g0 = await guardOf(page), p5 = await pipsOf(page);
   R.say(s.name === 'The last room' && !!g0.boss && g0.boss.phase === 0 && g0.boss.live === 20 && !!g0.drawn && g0.drawn.outline && g0.beacon === 'fx_beacon_light.light_0' && g0.banner && s.elites === 0,
     'room 5 ("' + s.name + '"): the guardian asleep and outlined in its place (' + JSON.stringify(g0.boss) + '), the beacon dark (' + g0.beacon + '), the intro\'s words shown (' + g0.banner + '), no photo elite');
-  R.say(p5.pipped && p5.w === 108 && p5.vars.join() === pipWant(5).join() && p5.words === 'The last room',
+  R.say(p5.pipped && p5.w === 100 && p5.vars.join() === pipWant(5).join() && p5.words === 'The last room',
     'room 5\'s strip draws the run pips (' + p5.vars.join(' ') + ', ' + p5.w + ' px) and keeps "' + p5.words + '" as its words for a screen reader');
   const banked = s.run.dp;
   await speck(page);
@@ -330,7 +331,7 @@ try {
   R.say(pz.shown && pz.caption === 'New: Walnut frame' && pz.canvas && pz.w >= 250, 'the house clear card draws its prize in Astra\'s card (' + pz.w + ' px wide) and names it "' + pz.caption + '"');
   await page.waitForFunction(() => document.getElementById('doorprize').getAttribute('data-unlock') === 'done', { timeout: 5000 }).catch(() => {});
   const pz2 = await prizeOf(page);
-  R.say(pz.unlock !== 'done' && pz2.unlock === 'done', 'fx_unlock plays over the prize, then hides (frame ' + pz.unlock + ', then ' + pz2.unlock + ')');
+  R.say(pz2.seen === '0,1,2,3,4,5,done' && pz2.unlock === 'done', 'fx_unlock plays its six frames over the prize, then hides (' + pz2.seen + ')');
   R.say(JSON.stringify(pz2.cos) === JSON.stringify({ hero: 0, frame: 1, owned: ['frame.walnut'] }) && pz2.daily === true, 'the save owns and wears the walnut frame (' + JSON.stringify(pz2.cos) + '), Daily Room\'s flag set (' + pz2.daily + ')');
   sm = await small(page);
   R.say(sm.length === 0, 'every control on the house clear card is 48 px or more' + (sm.length ? ' (' + sm.join(', ') + ')' : ''));

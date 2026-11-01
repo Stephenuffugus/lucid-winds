@@ -242,12 +242,13 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   background: var(--icon-house-house) 0 0 / 24px 24px no-repeat; image-rendering: pixelated; }
 #housestart.sealed::before { background-image: var(--icon-house-house_cleared); }
 /* the run pips (Astra's run_pips at 2x, 20 px): in a house the strip's name draws the five (todo, here, cleared; room 5
-   the crown) and keeps Room n of 5 as its words for a screen reader (font size 0: no box of their own); 108 px wide, so
+   the crown) and keeps Room n of 5 as its words for a screen reader (font size 0: no box of their own); 100 px wide
+   (Astra's pips carry their own 2 px margins, so they sit edge to edge: 108 with gaps did not fit 320 wide), so
    the fit folds the hearts when they do not fit beside it (fitName measures the same box) */
 #roomname.pipped { font-size: 0; line-height: 0; }
-#roomname.pipped::before { content: ''; display: inline-block; width: 108px; height: 20px; vertical-align: middle; image-rendering: pixelated;
-  background: var(--pip1) 0 0 / 20px 20px no-repeat, var(--pip2) 22px 0 / 20px 20px no-repeat, var(--pip3) 44px 0 / 20px 20px no-repeat,
-    var(--pip4) 66px 0 / 20px 20px no-repeat, var(--pip5) 88px 0 / 20px 20px no-repeat; }
+#roomname.pipped::before { content: ''; display: inline-block; width: 100px; height: 20px; vertical-align: middle; image-rendering: pixelated;
+  background: var(--pip1) 0 0 / 20px 20px no-repeat, var(--pip2) 20px 0 / 20px 20px no-repeat, var(--pip3) 40px 0 / 20px 20px no-repeat,
+    var(--pip4) 60px 0 / 20px 20px no-repeat, var(--pip5) 80px 0 / 20px 20px no-repeat; }
 #doorpips { display: flex; gap: 4px; justify-content: center; margin: 0 0 8px; }
 #doorpips i { width: 20px; height: 20px; display: block; background: 0 0 / 20px 20px no-repeat; image-rendering: pixelated; }
 /* the guardian's intro (the 2 s outline): the last room's words over the room's top, Paper on Ink, no tap taken */
@@ -6289,6 +6290,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     ui.hideOverlays();
     ui.show('play');
     fitName();   /* measured on the shown strip, the hearts and the slots in place */
+    ui.guardian(G.state);   /* HOUSE-B: the guardian's intro words from the room's start */
     ui.hideDeath(); ui.hinted.stood = false;
     if (!RV.devSkip && !opts.noReveal) startReveal(lv, t0, opts.photo || null);
     else ui.releasePhoto();
@@ -6609,7 +6611,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function drawPrize(el, info) {
     if (!info || !info.prize) { el.hidden = true; el.innerHTML = ''; return; }
     var id = info.prize, kind = id.slice(0, id.indexOf('.')), nm = id.slice(id.indexOf('.') + 1), C = ui.COPY, name = C['look_' + kind + '_' + nm] || nm;
-    el.innerHTML = '<canvas width="144" height="140"></canvas><p></p>';
+    el.innerHTML = '<canvas width="144" height="140"></canvas><p></p>'; el.removeAttribute('data-unlock-seen');
     var cv = el.firstChild, c2 = cv.getContext('2d'), R = SB.render;
     el.lastChild.textContent = C.prizeNew.replace('{name}', name);
     el.setAttribute('role', 'img'); el.setAttribute('aria-label', C.prizeLabel.replace('{name}', name));
@@ -6618,13 +6620,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (kind === 'frame') R.sprite(c2, 'frame_styles.' + nm, 48, 33);
       else { var hk = R.skinKey('idle0', SB.record.LOOKS.hero.indexOf(nm)), hs = SB.render.atlas[hk]; R.sprite(c2, hk, 72 - (hs.w * 3 >> 1), 61 - (hs.h * 3 >> 1), hs.w * 3, hs.h * 3); }
       if (f >= 0 && f < 6) R.sprite(c2, 'fx_unlock.unlock_' + f, 48, 37);
-      el.setAttribute('data-unlock', f >= 0 && f < 6 ? String(f) : 'done');
+      var fs = f >= 0 && f < 6 ? String(f) : 'done', seen = el.getAttribute('data-unlock-seen') || '';
+      el.setAttribute('data-unlock', fs); if (seen.split(',').indexOf(fs) < 0) el.setAttribute('data-unlock-seen', seen ? seen + ',' + fs : fs);   /* the frames shown, for the gate */
     };
     cancelAnimationFrame(prizeAnim);
     var t0 = performance.now(), still = SB.render.reduced();
     if (still) { paint(6); el.hidden = false; return; }
     paint(0);
-    var tick = function (now) { var f = Math.floor((now - t0) / (1000 / 12)); paint(f); if (f < 6) prizeAnim = requestAnimationFrame(tick); };
+    var last = 0, tick = function (now) { var f = Math.min(last + 1, Math.floor((now - t0) / (1000 / 12))); if (f > last) { last = f; paint(f); } if (f < 6) prizeAnim = requestAnimationFrame(tick); };   /* every frame shown once, in order, a slow phone or not */
     prizeAnim = requestAnimationFrame(tick);
     el.hidden = false;
   }

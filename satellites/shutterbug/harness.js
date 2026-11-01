@@ -5415,9 +5415,10 @@ group('H-boss-4', 'the beacon lights only at HP 0: on every built room 5 a bug i
     const put = () => { s.hero.x = ex * CS + ((CS - HW) >> 1); s.hero.y = ey * CS; s.hero.vx = 0; s.hero.vy = 0; };
     put(); SB.sim.step(s, 0);
     if (s.room.cleared || s.room.exitLit) bad.early.push(tag + ': asleep');
-    while (s.boss.phase === 0) SB.sim.step(s, 0);
+    if (s.room.cleared) { bad.early.push(tag + ': asleep, cleared'); continue; }   /* a cleared room never steps again: the loops below would wait for good */
+    for (let k = 0; k < 2 * K.BOSS_INTRO_F && s.boss.phase === 0; k++) SB.sim.step(s, 0);
     put(); SB.sim.step(s, 0);
-    if (s.room.cleared || s.room.exitLit) bad.early.push(tag + ': awake');
+    if (s.room.cleared || s.room.exitLit) { bad.early.push(tag + ': awake'); continue; }
     for (let k = 0; k < 600 && s.boss.hp > 1; k++) SB.sim.hurtBoss(s, lv, s.boss.cells.findIndex(c => c >= 0), Math.min(4, s.boss.hp - 1));
     put(); SB.sim.step(s, 0);
     if (s.room.cleared || s.room.exitLit || s.boss.hp !== 1) bad.early.push(tag + ': at ' + s.boss.hp + ' quarter');
