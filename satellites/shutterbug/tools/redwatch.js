@@ -1265,7 +1265,7 @@ const MUTANTS = [
     gates: [{ gate: "input", expect: "412x915: idle, the hint's chevrons are stick_hint's left and right 12 columns" }] },
   { name: "PAUSE_OLD_BOX", task: 'ART3', file: "page", find: "#pause i { width: 32px; height: 32px; display: block; background: var(--pause-glyph-normal) 0 0 / 32px 32px no-repeat; image-rendering: pixelated; }", repl: "#pause i { width: 28px; height: 28px; border-radius: 8px; border: 2px solid rgba(11,10,15,0.35); background: rgba(11,10,15,0.06); display: block; }",
     gates: [{ gate: "input", expect: "412x915: Pause is pause_glyph.normal at 2x" }] },
-  { name: "PAUSE_NOT_PRESSED", task: 'ART3', file: "page", find: "#pause:active i { background-image: var(--pause-glyph-pressed); }", repl: "",
+  { name: "PAUSE_NOT_PRESSED", task: 'ART3', file: "page", find: "#pause.down i { background-image: var(--pause-glyph-pressed); }", repl: "",
     gates: [{ gate: "input", expect: "412x915: under a held finger Pause is pause_glyph.pressed" }] },
 ];
 

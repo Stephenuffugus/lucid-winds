@@ -91,7 +91,7 @@ const thumbIn = (g, x, y) => Math.hypot(x - g.pad.cx, y - g.pad.cy);
 const PAGE_SRC = readFileSync(process.env.SB_PAGE || GAME + '/index.html', 'utf8');
 const SPR = vm.runInNewContext(PAGE_SRC.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1] + '\n;SPRITES');
 const HEX = ['0b0a0f', '1f1a1d', '4a4a52', '8a8a90', 'c9c7c0', 'f2efe6', 'fbfbff', '6b3f2a', 'e07a2b', 'c8302f', 'd83a9b', '2f5fd0', '3fb8b4', '3f9a3a', 'f2d13f', 'f0dcb0'];
-async function cssSprite(page, sel, key, c0, c1) {
+async function cssSprite(page, sel, key, c0, c1, hole) {
   const [k, f] = key.split('.'), rows = SPR[k].frames[f].split('/').map(r => r.slice(c0 || 0, c1 || r.length));
   const b = await page.evaluate(sel => { const e = document.querySelector(sel); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, dpr: devicePixelRatio, vw: innerWidth, vh: innerHeight }; }, sel);
   if (!b) return { n: 0, bad: ['no ' + sel] };
@@ -102,6 +102,7 @@ async function cssSprite(page, sel, key, c0, c1) {
   for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y].length; x++) {
     const ch = rows[y][x]; if (ch === '.') continue;
     const cx = b.x + (x + 0.5) * sx - X, cy = b.y + (y + 0.5) * sy - Y; if (cx < 0 || cy < 0 || cx >= W || cy >= H) continue;   /* off the glass */
+    if (hole && cx + X >= hole.left && cx + X <= hole.right && cy + Y >= hole.top && cy + Y <= hole.bottom) continue;   /* under the knob */
     const o = (Math.floor(cy * b.dpr) * sp.w + Math.floor(cx * b.dpr)) * 4, h = [sp.px[o], sp.px[o + 1], sp.px[o + 2]].map(v => ('0' + v.toString(16)).slice(-2)).join('');
     n++; if (h !== HEX[parseInt(ch, 16)]) bad.push(x + ',' + y + ' ' + h + ' not ' + HEX[parseInt(ch, 16)]);
   }
@@ -111,7 +112,8 @@ const artLine = (tg, what, e) => tg + ': ' + what + ', ' + e.n + ' pixels on a r
 /* the pad and knob as they stand: the pad's frame (idle neutral, active steering) at 116 css px, the knob's (neutral,
    left, right) at 52 */
 async function stickArt(tg, page, dir) {
-  const pad = await cssSprite(page, '#stick .pad', 'stick_pad.' + (dir ? 'active' : 'idle')), knob = await cssSprite(page, '#stick .knob', 'stick_knob.' + (dir === 'R' ? 'right' : dir === 'L' ? 'left' : 'neutral'));
+  const kb = await page.evaluate(() => { const r = document.querySelector('#stick .knob').getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; });
+  const pad = await cssSprite(page, '#stick .pad', 'stick_pad.' + (dir ? 'active' : 'idle'), 0, 0, kb), knob = await cssSprite(page, '#stick .knob', 'stick_knob.' + (dir === 'R' ? 'right' : dir === 'L' ? 'left' : 'neutral'));
   R.say(pad.n > 0 && pad.bad.length === 0 && pad.w === 116, artLine(tg, (dir ? 'steering ' + dir : 'held neutral') + ', the pad is stick_pad.' + (dir ? 'active' : 'idle') + ' at 116 css px', pad));
   R.say(knob.n > 0 && knob.bad.length === 0 && knob.w === 52, artLine(tg, (dir ? 'steering ' + dir : 'held neutral') + ', the knob is stick_knob.' + (dir === 'R' ? 'right' : dir === 'L' ? 'left' : 'neutral') + ' at 52 css px', knob));
 }

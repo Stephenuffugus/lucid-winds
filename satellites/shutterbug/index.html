@@ -119,7 +119,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   background: transparent; display: flex; justify-content: center; align-items: flex-start; visibility: hidden; }
 #pause.on { visibility: visible; }
 #pause i { width: 32px; height: 32px; display: block; background: var(--pause-glyph-normal) 0 0 / 32px 32px no-repeat; image-rendering: pixelated; }
-#pause:active i { background-image: var(--pause-glyph-pressed); }
+#pause.down i { background-image: var(--pause-glyph-pressed); }   /* a finger or the pointer on it (ui wiring: pointerdown to up) */
 #roomname { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* six hearts still fit at 320 wide */
 /* the room's biome badge (ART3: Astra's icon_biomes, round 3, "use on reveal and room label"): 24x24 at 1:1 before the
    name, nearest neighbour; ui.badge sets the frame of the room's biome */
@@ -5658,7 +5658,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('nextroom').addEventListener('click', function () { ui.toTitle({ keepGear: true }); openPicker('fileshoot'); });   /* the sitting goes on (6.5) */
     document.getElementById('deathagain').addEventListener('click', function () { ui.restart(); });
     /* the pause card (Q94): Pause holds the room; Resume, Share this room (its Close comes back to the card) and Title */
-    document.getElementById('pause').addEventListener('click', function () { this.blur(); ui.pause(); });   /* no focus kept: Space (jump) or Enter would press it again after Resume */
+    document.getElementById('pause').addEventListener('click', function () { this.blur(); ui.pause(); });
+    /* ART3: pause_glyph's pressed frame while a finger is on Pause (a touch's :active is not reliable on phones) */
+    ['pointerdown', 'pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) { document.getElementById('pause').addEventListener(t, function () { this.classList.toggle('down', t === 'pointerdown'); }); });   /* no focus kept: Space (jump) or Enter would press it again after Resume */
     document.getElementById('resume').addEventListener('click', function () { ui.resume(); });
     document.getElementById('pauseshare').addEventListener('click', function () { ui.openShare(); });
     document.getElementById('settingsbtn').addEventListener('click', function () { ui.show('settings'); });
