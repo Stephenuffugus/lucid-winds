@@ -289,8 +289,9 @@ try {
     const sm3 = await small(b.page);
     R.say(sm3.length === 0, '320x568: every control on the house death card is 48 px or more' + (sm3.length ? ' (' + sm3.join(', ') + ')' : ''));
     await scrollTap(b.page, '#deathretry');
-    const rt = await look(b.page);
-    R.say(rt.screen === 'play' && rt.name === 'Room 1 of 5' && rt.code === rt.codes[0] && rt.hero.hearts === 4, '320x568: Retry House on the death card replays room 1 with a fresh bug ("' + rt.name + '", ' + (rt.hero && rt.hero.hearts) + ' hearts)');
+    const rt = await look(b.page), rfit = await b.page.evaluate(() => { const el = document.getElementById('roomname'); return el.scrollWidth <= el.clientWidth && el.clientWidth > 0; });
+    /* room 1 by any of its fitted forms (HOUSE-ART3: at 320 the biome badge leaves a fresh bug's name Room 1/5) */
+    R.say(rt.screen === 'play' && ['Room 1 of 5', 'Room 1/5'].includes(rt.name) && rfit && rt.code === rt.codes[0] && rt.hero.hearts === 4, '320x568: Retry House on the death card replays room 1 with a fresh bug ("' + rt.name + '", ' + (rfit ? 'fits' : 'cut') + ', ' + (rt.hero && rt.hero.hearts) + ' hearts)');
     R.say(b.errors.length === 0, '320x568: zero page errors' + (b.errors.length ? ' (' + b.errors.join(' ; ') + ')' : ''));
     await b.page.close();
   }

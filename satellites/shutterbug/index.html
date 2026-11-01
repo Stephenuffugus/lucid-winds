@@ -5432,7 +5432,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var el = document.getElementById('roomname'), forms = G.nameForms && G.nameForms.length ? G.nameForms : [G.name || ''];
     /* the words first (the tiny form only once the hearts are folded: 5/5 read worse than one heart and 8/8) */
     var last = G.nameForms && !ui.heartsCount && G.state ? forms.length - 1 : forms.length;
-    for (var k = 0; k < last; k++) { el.textContent = forms[k]; if (el.clientWidth === 0 || el.scrollWidth <= el.clientWidth) return; }   /* hidden, the full form */
+    for (var k = 0; k < last; k++) { el.textContent = forms[k]; if (!el.getClientRects().length || el.scrollWidth <= el.clientWidth) return; }   /* hidden (no box), the full form; a shown name squeezed to 0 px is not hidden (HOUSE-ART3: the biome badge and the 28 px slots leave it 0 px at 320 beside 8 hearts) */
     if (last < forms.length) { ui.heartsCount = true; hearts(G.state.hero.hearts, G.state.hero.heartsMax); }   /* hearts() measures again */
   }
   ui.fitName = fitName;
