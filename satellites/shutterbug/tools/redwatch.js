@@ -1290,7 +1290,7 @@ const MUTANTS = [
     gates: [{ gate: 'house', expect: 'with a house saved its button leads the title in Sun' }] },
   { name: 'STRIP_NAME_FULL', task: 'HOUSE-AR', file: 'page', find: "if (el.clientWidth === 0 || el.scrollWidth <= el.clientWidth) return; }", repl: "return; }",
     gates: [{ gate: 'house', expect: "the strip's room name fits beside 8 hearts" }] },
-  { name: 'HEARTS_NEVER_COUNT', task: 'HOUSE-AR', file: 'page', find: "if (G.nameForms && !ui.heartsCount && G.state) {", repl: "if (false) {",
+  { name: 'HEARTS_NEVER_COUNT', task: 'HOUSE-AR', file: 'page', find: "if (last < forms.length) { ui.heartsCount = true;", repl: "if (false) { ui.heartsCount = true;",
     gates: [{ gate: 'house', expect: "320x568: the strip's room name fits beside 8 hearts" }] },
   { name: 'DOOR_HEARTS_OFF', task: 'HOUSE-AR', file: 'page', find: "    doorHearts($('doorhearts'), at > 0 && !cleared ? run.hero : null, HS.back);\n", repl: "    doorHearts($('doorhearts'), null, 0);\n",
     gates: [{ gate: 'house', expect: "room 1's clear shows the doorway" }] },

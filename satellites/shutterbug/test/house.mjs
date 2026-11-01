@@ -69,7 +69,7 @@ async function fromRecent(page) {
 /* a saved house written into the save (the sample room at every place so far), then a reload to the title */
 async function saveRun(page, o) {
   await page.evaluate((rec, o) => {
-    const R = window.SB.record, d = R.saveDefaults(), W = window.SB.sim.WPN, slots = o.hero.slots ? o.hero.slots.split(',').map(id => W.indexOf(id)).concat([0]) : [0, 0, 0];
+    const R = window.SB.record, d = R.saveDefaults(), W = window.SB.sim.WPN, slots = o.hero.slots ? o.hero.slots.split(',').map(id => W.indexOf(id)).concat([0, 0]) : [0, 0, 0];
     d.stats.clears = 1; d.onboarding.firstRoomDone = true;
     d.run = { v: 1, rooms: Array.from({ length: o.at + 1 }, () => rec), at: o.at, hero: Object.assign({ vigor: 0, focus: 0, grit: 0, scrolls: 0 }, o.hero, { slots: slots.slice(0, 3) }), entry: [0, 0, 0], dp: 0, last: 0, lost: 0 };
     if (!R.runValid(d.run)) throw new Error('the gate\'s run is not valid');

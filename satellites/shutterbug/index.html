@@ -5176,8 +5176,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
      keeps its ellipsis. Measured only when the name or the hearts change and on a resize, never in a step */
   function fitName() {
     var el = document.getElementById('roomname'), forms = G.nameForms && G.nameForms.length ? G.nameForms : [G.name || ''];
-    for (var k = 0; k < forms.length; k++) { el.textContent = forms[k]; if (el.clientWidth === 0 || el.scrollWidth <= el.clientWidth) return; }   /* hidden, the full form */
-    if (G.nameForms && !ui.heartsCount && G.state) { ui.heartsCount = true; hearts(G.state.hero.hearts, G.state.hero.heartsMax); }   /* hearts() measures again */
+    /* the words first (the tiny form only once the hearts are folded: 5/5 read worse than one heart and 8/8) */
+    var last = G.nameForms && !ui.heartsCount && G.state ? forms.length - 1 : forms.length;
+    for (var k = 0; k < last; k++) { el.textContent = forms[k]; if (el.clientWidth === 0 || el.scrollWidth <= el.clientWidth) return; }   /* hidden, the full form */
+    if (last < forms.length) { ui.heartsCount = true; hearts(G.state.hero.hearts, G.state.hero.heartsMax); }   /* hearts() measures again */
   }
   ui.fitName = fitName;
   function nameForms(r) {
@@ -5761,7 +5763,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     $('doorhead').textContent = cleared ? C.houseCleared : at === 0 ? C.houseNew : C.doorCleared.replace('{n}', at).replace('{of}', of);
     bank.textContent = cleared ? (info.dp === 1 ? C.houseSumOne : C.houseSum).replace('{rooms}', of).replace('{n}', info.dp)
       : at === 0 ? C.houseRooms : raw !== null && raw !== undefined && raw > run.last ? C.bankedOf.replace('{n}', run.last).replace('{of}', raw) : plural(run.last, 'bankedOne', 'banked');
-    bank.hidden = false;
+    bank.hidden = !cleared && at > 0 && !run.last && !raw;   /* a doorway that banked nothing says nothing of it */
     nx.textContent = at > 0 && !cleared ? (at + 1 === of ? C.doorLast : C.doorTougher.replace('{n}', at + 1)) : ''; nx.hidden = !nx.textContent;
     doorHearts($('doorhearts'), at > 0 && !cleared ? run.hero : null, HS.back);
     var saved = !cleared && run && run.rooms.length > at;
@@ -5837,7 +5839,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     $('death').classList.toggle('house', house); $('dp').classList.toggle('lost', house);
     if (!house) return;
     var dp = G.state ? G.state.room.dp : 0;
-    $('deathlost').textContent = plural(dp, 'lostOne', 'lost');
+    $('deathlost').textContent = plural(dp, 'lostOne', 'lost'); $('deathlost').hidden = dp <= 0;   /* nothing carried, nothing to name */
     if (!HS.run.lost) { HS.run = SB.record.runDie(HS.run); saveRun(HS.run); }
   }
   /* Retry House: the same rooms so far, a fresh bug with the entry slots, straight into room 1 (its grid known) */
