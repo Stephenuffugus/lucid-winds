@@ -326,6 +326,27 @@ try {
       R.say(!!got && got.some(c => c > 0) && dead === 'dead' && JSON.stringify(g5.slots) === '[0,0,0]' && g5.boxes[0].empty && g5.boxes[1].empty, '412: a death after the chest (' + (got ? got.join(',') : '?') + ', screen ' + dead + '): Again restarts with the gear the bug walked in with (' + g5.slots.join(',') + ')');
       R.say(errors.length === 0, '412 the sitting: zero page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
     }
+    /* W2 (step 2): Twin Darts and Shutter Snap drawn. The slots laid by hand (a liberty: the chest's draw is H-wpn-7's);
+       a real A tap shoots two darts with the dart voice, each Astra's twin_darts frame (the left one mirrored), every
+       opaque pixel the frame decoded here; then Shutter Snap freezes a live moth beside the bug with the shutter voice,
+       and the frozen look (fx_frozen_stunned.frozen_n) is drawn over it, every opaque pixel its frame */
+    await page.evaluate(() => window.SB_DEV.goto('title'));
+    await setRoom(page, 20, [[14, 30, 1 << 20]]);
+    await page.evaluate(() => { window.SB.game.state.hero.slots[0] = 5; });
+    await stepN(page, 4);
+    await tap(page, '#btnA'); const d1 = await stepN(page, 1); await stepN(page, 2);
+    const dEq = await drawnEqual(page, 7);
+    R.say(d1.heard.includes('dart') && d1.proj.filter(e => e.kind === 7).length === 2 && dEq.rects === 2 && dEq.keys.some(k => /^fx_projectiles\.twin_darts_\d<$/.test(k)) && dEq.keys.some(k => /^fx_projectiles\.twin_darts_\d$/.test(k)) && dEq.n >= 20 && dEq.bad.length === 0,
+      w + ': a real A tap with Twin Darts shoots two darts with the dart voice (' + d1.heard.join(', ') + '), drawn as Astra\'s ' + dEq.keys.join(' ') + ', ' + dEq.n + ' opaque pixels equal the frames' + (dEq.bad.length ? ' (' + dEq.bad.length + ' differ: ' + dEq.bad.slice(0, 3).join('; ') + ')' : ''));
+    for (let k = 0; k < 60 && !(await probe(page)).ground; k++) await stepN(page, 1);
+    await stepN(page, 40);
+    const sp = await probe(page), sc = Math.floor((sp.x + 6 * 256) / 4096);
+    const mi2 = await page.evaluate((c, r) => { const st = window.SB.game.state; st.hero.slots[0] = 7; st.enemies.push({ kind: 1, x: c * 4096, y: r * 4096, vx: 0, vy: 0, hp: 4, state: 0, timer: 0, dir: 1, home: r * 24 + c, elite: 0, frozen: 0, stunned: 1 << 20, hurt: 0 }); return st.enemies.length - 1; }, sc + 2, FLOOR);
+    await stepN(page, 1);
+    await tap(page, '#btnA'); const z1 = await stepN(page, 1); await stepN(page, 1);
+    const fz = await page.evaluate(i => window.SB.game.state.enemies[i].frozen, mi2), zEq = await drawnEqual(page, 'frozen');
+    R.say(z1.heard.includes('shutter') && fz > 0 && fz <= K.J7_FREEZE_F && z1.hp[mi2] === 4 && zEq.rects >= 1 && zEq.keys.every(k => /^fx_frozen_stunned\.frozen_\d$/.test(k)) && zEq.n >= 20 && zEq.bad.length === 0,
+      w + ': a real A tap with Shutter Snap freezes the moth beside the bug (' + fz + ' steps left, hp ' + z1.hp[mi2] + ') with the shutter voice (' + z1.heard.join(', ') + '), its frozen look drawn as ' + zEq.keys.join(' ') + ', ' + zEq.n + ' opaque pixels equal the frame' + (zEq.bad.length ? ' (' + zEq.bad.length + ' differ)' : ''));
     await page.close();
   }
 } finally { await browser.close(); await srv.close(); }

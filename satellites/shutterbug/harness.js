@@ -3451,6 +3451,7 @@ group('H-fix-3', 'the corpus holds every record fixtures/README.md lists; names 
    macros from spawn and must clear the room. A miss is the generosity assertion failing: the model promised an edge
    the sim does not keep. The macros may read the state to time a release, as a player watches the hero; they never
    write it. */
+const BOT_ANY_HOLD = { on: false };
 const BOT = (() => {
   /* a pickup's sheet (T1.6): an open scroll offer or chest compare holds the world until a CHOICE word; the bot answers
      at once after every step (the first scroll; take the slip), so no movement word is lost to the pause */
@@ -3539,9 +3540,11 @@ const BOT = (() => {
     const ranked = (list, score) => list.map(c => [score(c), c]).sort((a, b) => a[0] - b[0]).slice(0, MAX_CANDS).map(x => x[1]);
     if (e.kind === 'WALK') return [1, 2, 3, 4].map(n => Array.from({ length: n }, () => rockerOf(e.dir)));   /* the settle leaves the hero up to half a tap off centre */
     if (e.kind === 'JUMP' || e.kind === 'JUMP_DOWN') {
-      const profs = e.kind === 'JUMP' ? [e.profile] : ['FULL', 'MID', 'TAP'], list = [];
+      /* H-bot-8 (Skyhook): a jump edge may be taken with any hold, as a player with a higher jump lets go sooner */
+      const profs = e.kind === 'JUMP' && !BOT_ANY_HOLD.on ? [e.profile] : BOT_ANY_HOLD.on ? ['FULL', 'SKY'] : ['FULL', 'MID', 'TAP'], list = [];
       const most = Math.max(40, est + 12);
-      profs.forEach((p, pi) => A_RANGE[p].forEach((a, ai) => { for (let delay = 0; delay <= 8; delay++) for (let hold = 0; hold <= most; hold++) list.push({ a, delay, hold, prior: Math.abs(hold - est) + 2 * delay + 3 * ai + 6 * pi }); }));
+      profs.forEach((p, pi) => (p === 'SKY' ? [12, 10, 8, 6, 4, 3, 2, 1] : A_RANGE[p]).forEach((a, ai) => { for (let delay = 0; delay <= 8; delay++) for (let hold = 0; hold <= most; hold++) list.push({ a, delay, hold, prior: Math.abs(hold - est) + 2 * delay + (BOT_ANY_HOLD.on ? ai : 3 * ai + 6 * pi) }); }));
+      if (BOT_ANY_HOLD.on) return list.sort((x, y) => x.prior - y.prior).slice(0, 6 * MAX_CANDS).map(c => jumpWords(c.a, e.dir, c.delay, c.hold));   /* every hold ranked together, six times the cap */
       return ranked(list, c => c.prior).map(c => jumpWords(c.a, e.dir, c.delay, c.hold));
     }
     if (e.kind === 'FALL' && e.dir === 0) { const most = Math.ceil(-e.dy * CS / K.DEEP_TERM) + 6;   /* Deep's terminal is the slower (T1.5) */ return Array.from({ length: most }, (_, i) => M_DIVE(i + 1, true, Math.max(LEN, most + 60))); }
@@ -3552,9 +3555,9 @@ const BOT = (() => {
     }
     if (e.kind === 'WALLTOUCH') {
       const list = [];
-      ['FULL', 'WALKOFF', 'MID', 'TAP'].forEach((p, pi) => { for (let delay = 0; delay <= 8; delay++) list.push({ p, delay, prior: 2 * delay + pi }); });
+      ['FULL', 'WALKOFF', 'MID', 'TAP'].concat(BOT_ANY_HOLD.on ? [12, 10, 8, 6, 5, 3, 2] : []).forEach((p, pi) => { for (let delay = 0; delay <= 8; delay++) list.push({ p, delay, prior: 2 * delay + pi }); });
       return ranked(list, c => c.prior).map(c => Array.from({ length: LEN }, (_, k) =>
-        (c.p !== 'WALKOFF' && k < A_FRAMES[c.p] ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k >= c.delay ? rockerOf(e.dir) : 0)));
+        (c.p !== 'WALKOFF' && k < (typeof c.p === 'number' ? c.p : A_FRAMES[c.p]) ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k >= c.delay ? rockerOf(e.dir) : 0)));
     }
     /* SLIDE: toward the wall while the slide is armed, released when it is not (where the wall ends a held rocker would
        carry the hero into the open column, which no player does) */
@@ -4880,7 +4883,7 @@ group('H-bot-8', 'Skyhook never breaks a climb: with J8 equipped every main asce
   for (const run of runs) {
     if (run.skipped || run.same || !run.r.ok) continue;
     walked++;
-    const r = BOT.walk(run.lv, memo, stats, { loadout: J('J8') });
+    BOT_ANY_HOLD.on = true; let r; try { r = BOT.walk(run.lv, memo, stats, { loadout: J('J8') }); } finally { BOT_ANY_HOLD.on = false; }
     if (!r.ok) bad.push(run.tag + (r.miss ? ' (edge ' + r.miss.i + ': ' + r.miss.e.kind + (r.miss.e.profile ? ' ' + r.miss.e.profile : '') + ' dx ' + r.miss.e.dx + ' dy ' + r.miss.e.dy + ')' : ' (' + r.why + ')'));
   }
   t.ok(walked > 0 && bad.length === 0, walked + ' walked levels clear with Skyhook, every ascent edge performed' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));

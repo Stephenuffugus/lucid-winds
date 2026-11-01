@@ -19,7 +19,7 @@ const fs = require('node:fs'), path = require('node:path'), { spawnSync } = requ
 
 const GAME = path.join(__dirname, '..');
 const OUT = '/tmp/claude-1000/shutterbug-redwatch';
-const BROWSER = new Set(['boot', 'play', 'input', 'layout', 'reveal', 'capture', 'death', 'sprites', 'make', 'loot', 'audio', 'share', 'save', 'pwa', 'loop', 'pause', 'onboard', 'fight']);
+const BROWSER = new Set(['boot', 'play', 'input', 'layout', 'reveal', 'capture', 'death', 'sprites', 'make', 'loot', 'audio', 'share', 'save', 'pwa', 'loop', 'pause', 'onboard', 'fight', 'compare']);
 
 const CORE_SIM_OPEN = "<script id=\"core-sim\" data-core>\n(function (SB) { 'use strict';\n";
 /* the whole shell-navpad block as the page holds it (NAVPAD_IN_BODY moves it, whatever its comment says) */
@@ -771,7 +771,7 @@ const MUTANTS = [
   { name: 'RECENT_UNFILTERED', task: 'M1R', file: 'page', find: 'd.recent = d.recent.filter(function (r) { try { return !!fromJSON(r); } catch (e) { return false; } }).slice(0, 20);', repl: 'd.recent = d.recent.slice(0, 20);',
     gates: [{ gate: 'harness', only: 'H-save-1', expect: 'recent keeps 20 valid records' }] },
   { name: 'SYNTH_THROWS', task: 'M1R', file: 'page', find: "    chest: function (t) { tone('triangle', 523, 523", repl: "    chest: function (t) { undefinedSynth(); tone('triangle', 523, 523",
-    gates: [{ gate: 'audio', expect: 'each of the 16 sounds the shell asks for schedules one voice' }] },   /* re anchored at W1: the five weapon voices joined the list */
+    gates: [{ gate: 'audio', expect: 'each of the 21 sounds the shell asks for schedules one voice' }] },   /* re anchored at W1 and W2: the weapon voices joined the list */
   { name: 'SOUND_TOGGLE_MISWIRED', task: 'M1R', file: 'page', find: "setBool('setsound', 'sound');", repl: "setBool('setsound', 'music');",
     gates: [{ gate: 'save', expect: 'mirror on, sound off and reduced motion On' }] },
   { name: 'MOTION_IGNORED', task: 'M1R', file: 'page', find: "SB.save.doc.settings.reducedMotion = this.value === 'os' ? null : this.value === 'on'; SB.save.commit();", repl: 'SB.save.commit();',
