@@ -1257,9 +1257,20 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-hue-1', expect: 'the bright room rule comes first: a mint room bright to the floor is Frost' }] },
   { name: 'HUE_SPLIT', task: 'BIOME', file: 'page', find: 'C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 15,', repl: 'C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 16,',
     gates: [{ gate: 'harness', only: 'H-hue-1', expect: 'the page\'s HUE numbers are the oracle\'s' }] },
-  { name: 'HUE_UNWRITTEN', task: 'BIOME', file: 'page', find: 'biome: C.hueVote(rgb).biome + 1, rules: 0', repl: 'biome: 0, rules: 0',
+  { name: 'HUE_UNWRITTEN', task: 'BIOME', file: 'page', find: 'biome: C.hueVote(rgb).biome + 1, rules: C.RULES', repl: 'biome: 0, rules: C.RULES',
     gates: [{ gate: 'harness', only: 'H-hue-1', expect: 'gridRecord writes a valid v2 record: biome the vote + 1' },
       { gate: 'capture', expect: 'biome: a sage walled room develops at the default box as a v2 record with biome byte 4' }] },
+
+  /* CLIMB (Q221): the climb rules on record v2 RULES 1 (edge ledges, the aimed stair, the whole build fallback). The
+     brief's V1_CHANGED is V1_CLIMBS here: BIOME's row already holds that name */
+  { name: 'LEDGE_ON_WALL', task: 'CLIMB', file: 'page', find: '      if (solid[ia] || solid[ib] || wall[pal[ib]]) return false;', repl: '      if (solid[ia] || solid[ib]) return false;',
+    gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'an edge ledge never sits on wall paint' }] },
+  { name: 'STONE_BELOW_TOP', task: 'CLIMB', file: 'page', find: '    for (c = w; c < (h - 2) * w && c < topR * w; c++) {', repl: '    for (c = w; c < (h - 2) * w && c < (topR + 1) * w; c++) {',
+    gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'a stone is always above the highest reached row' }] },
+  { name: 'V1_CLIMBS', task: 'CLIMB', file: 'page', find: 'function climbs(rec, opts) { return !opts.noClimb && rec.v >= 2 && rec.rules >= 1; }', repl: 'function climbs(rec, opts) { return !opts.noClimb; }',
+    gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'every fixture in modes 0 and 1 builds the same level by v1 and by v2 RULES 0, never by the climb rules' }] },
+  { name: 'FALLBACK_LOST', task: 'CLIMB', file: 'page', find: '    var today = buildRules(rec, opts, 0);\n    if (!today.needsCrop) today.repair.wholeFallback = 1;\n    return today;\n', repl: '    return lv;\n',
+    gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'every room that builds by today\'s rules builds by the climb rules' }] },
 ];
 
 /* ---------------------------------------------------------------- run */
