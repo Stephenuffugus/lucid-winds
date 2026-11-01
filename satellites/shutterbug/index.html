@@ -3736,35 +3736,55 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return C.clamp({ x: px - fx * w, y: py - fy * w * 2, w: w, h: w * 2 }, bw, bh);
   };
 
-  /* The auto crop (QUESTIONS Q96 ruling 3, Q181): when Develop meets a box the build refuses, the crop screen tries the
-     boxes nearest the player's framing, in this order, until one builds. Each size from the player's own down to the
-     smallest box, by SEEK.SHRINK a step; at each size the box is anchored the way the refusal's cause points: a floor
-     refusal's box ends SEEK.KEEP rows below the floor band's top, so the bottom lifts off the floor and keeps a ledge
-     (clamped into the photo: at a large size the box simply keeps its top); a ceiling refusal's box starts SEEK.KEEP
-     rows above the band's foot, so the top comes down; any other keeps its centre. Then each anchor is shifted in
-     quarter boxes, up off a floor (down from a ceiling) and sideways, nearest first. The
-     player's own box is not in the list (it already refused); every box is clamped into the photo and none repeats.
-     Pure and deterministic: tools/room-model.js runs this same function over the model rooms. The search's numbers:
-     SHRINK (the size step), KEEP (the rows of a refusing band the anchored box keeps; 3, 4 and 6 each found a box for
-     60 of 60 model rooms, 0 found 57), SLICE_MS (the most one animation frame spends on the search), CAP (the most
-     builds one search may spend before the refusal's message shows), SHOW_MS (how long the chosen box shows before it
-     develops). */
-  C.SEEK = Object.freeze({ SHRINK: 0.88, KEEP: 4, SLICE_MS: 40, CAP: 48, SHOW_MS: 700 });
+  /* The auto crop (QUESTIONS Q96 ruling 3, Q181, Q183): when Develop meets a box the build refuses, the crop screen tries
+     the boxes of the photo in this order until one builds. Every size from the player's own down to the smallest box,
+     by SEEK.SHRINK a step; at each size a lattice anchored the way the refusal's cause points: a floor refusal's box
+     ends SEEK.KEEP rows below the floor band's top (the bottom lifted off the floor, a ledge kept), a ceiling
+     refusal's starts SEEK.KEEP rows above the band's foot (the top lowered), any other keeps its centre; from that
+     anchor the lattice steps a quarter box sideways out to both edges of the photo and a quarter box height up and
+     down to its top and bottom. Every box is clamped into the photo; the player's own box (it already refused) and
+     any box within one grid cell of a box before it, the same size, are left out, so no two tries read nearly the
+     same grid. The order is by a cost in quarter box steps, the nearest the player's framing first (SEEK.COST, fitted
+     on 95 real photographs and the 60 model rooms, Q183): each quarter sideways 1; each size step SIZE (about how far
+     the box's sides move); each quarter height the cause's way ALONG (up off a floor, so the boxes above the
+     furniture come before the boxes that sink into it; down from a ceiling; up otherwise), the other way AGAINST (a
+     ceiling refusal's box may still rise where the band was the photo's sky); a box on the photo's left or right edge
+     less EDGE, the one predictor the probe's data supports (at the edges 37 to 44 in 100 boxes build, inside 28 to
+     32). Ties keep the lattice's own order. Pure and deterministic: tools/room-model.js runs this same function over
+     the model rooms. The search's numbers: SHRINK (the size step), KEEP (the rows of a refusing band the anchored box
+     keeps), SLICE_MS (the most one animation frame spends on the search), CAP (the most builds one search may spend
+     before the message shows: the corpus's last first build is the 62nd, CAP leaves room for the page's canvas
+     downscale reading a photo a little differently), SHOW_MS (how long the chosen box shows before it develops). */
+  C.SEEK = Object.freeze({ SHRINK: 0.88, KEEP: 4, SLICE_MS: 40, CAP: 80, SHOW_MS: 700, COST: Object.freeze({ SIZE: 0.5, ALONG: 5, AGAINST: 12, EDGE: 3.5 }) });
   C.seekBoxes = function (c, bw, bh, cause, band) {
-    var out = [], seen = {}, w = c.w, mw = minW(bw, bh), cx = c.x + c.w / 2, top = c.y, bot = c.y + c.h, GH = SB.GRID.H, K = C.SEEK.KEEP;
+    var all = [], seen = {}, w = c.w, si = 0, mw = minW(bw, bh), cx = c.x + c.w / 2, top = c.y, bot = c.y + c.h, GW = SB.GRID.W, GH = SB.GRID.H, K = C.SEEK.KEEP, T = C.SEEK.COST;
     if (band && cause === 'floor' && band.floor > 0) bot = Math.min(bot, c.y + (band.floor + K) / GH * c.h);
     if (band && cause === 'ceiling' && band.ceiling > 1) top = Math.max(top, c.y + (band.ceiling - K) / GH * c.h);
-    var vdir = cause === 'ceiling' ? 1 : -1;   /* the way a vertical shift goes: down from a ceiling, else up */
-    var add = function (b) { var k = b.x + ',' + b.y + ',' + b.w; if (!seen[k]) { seen[k] = 1; out.push(b); } };
-    var steps = [], dx, dy, i;
-    for (dy = 0; dy <= 3; dy++) for (dx = -2; dx <= 2; dx++) steps.push([dx, dy]);
-    steps.sort(function (a, b) { return (Math.abs(a[0]) + a[1]) - (Math.abs(b[0]) + b[1]) || a[1] - b[1] || Math.abs(a[0]) - Math.abs(b[0]) || a[0] - b[0]; });
+    var vdir = cause === 'ceiling' ? 1 : -1;   /* the cause's way: down from a ceiling, else up */
+    var add = function (b, a, q) {
+      var k = b.x + ',' + b.y + ',' + b.w;
+      if (seen[k]) return;
+      seen[k] = 1;
+      var dx = Math.abs(b.x + b.w / 2 - cx) / q, dy = vdir * (b.y - a) / (b.h / 4);
+      all.push({ b: b, n: all.length, cost: T.SIZE * si + dx + (dy >= 0 ? T.ALONG * dy : -T.AGAINST * dy) - (b.x === 0 || b.x + b.w === bw ? T.EDGE : 0) });
+    };
+    var j, k, i, m;
     seen[c.x + ',' + c.y + ',' + c.w] = 1;
     for (;;) {
       var h = w * 2, q = w / 4, ay = cause === 'floor' ? bot - h : cause === 'ceiling' ? top : (top + bot - h) / 2;
-      for (i = 0; i < steps.length; i++) add(C.clamp({ x: cx - w / 2 + steps[i][0] * q, y: ay + vdir * steps[i][1] * 2 * q, w: w, h: h }, bw, bh));
+      var a = Math.max(0, Math.min(bh - h, ay)), nk = Math.ceil(bw / q) + 1, nj = Math.ceil(bh / (h / 4)) + 1;
+      for (j = -nj; j <= nj; j++) for (k = -nk; k <= nk; k++) add(C.clamp({ x: cx - w / 2 + k * q, y: ay + j * h / 4, w: w, h: h }, bw, bh), a, q);
       if (w <= mw) break;
+      si++;
       w = Math.max(mw, Math.round(w * C.SEEK.SHRINK));
+    }
+    all.sort(function (p, r) { return p.cost - r.cost || p.n - r.n; });
+    var out = [], near = {}, b, s, cl;
+    near[c.w] = [c];
+    for (i = 0; i < all.length; i++) {
+      b = all[i].b; s = near[b.w] || (near[b.w] = []); cl = false;
+      for (m = 0; m < s.length && !cl; m++) cl = Math.abs(s[m].x - b.x) * GW < b.w && Math.abs(s[m].y - b.y) * GH < b.h;
+      if (!cl) { s.push(b); out.push(b); }
     }
     return out;
   };
@@ -4847,6 +4867,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     tighterFloor: 'The floor fills the bottom of the box. Make the box smaller and lift it off the floor.',
     tighterCeiling: 'The top of the box is all ceiling. Lower the box.',
     tighterDark: 'Too dark to find a floor. Try a brighter photo.',
+    nothingClimbs: 'Nothing in this photo can be climbed. Try another photo.',
+    nothingDark: 'This photo is too dark to climb. A dark room or a night sky reads as one wall. Try a brighter photo.',
     cropHint: 'Drag and pinch to frame the room. Tap a shape to hide the chest there.',
     seeking: 'Looking for a box that builds',
     badPhoto: 'That photo did not open. Try another.',
@@ -5099,8 +5121,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function recordJSON(crop, focal) { return SB.capture.gridRecord(SB.capture.downscale(CR.src, crop, SB.GRID.W, SB.GRID.H), focal); }
   function recordOfCrop() { return SB.record.fromJSON(recordJSON(CR.crop, CR.focal)); }
   /* a refusal says its cause (Q180, Stephen's ruling 31 Oct): the floor band, the ceiling band, a dark photo; a refusal
-     with no named cause keeps the one message every refusal had before */
+     with no named cause keeps the one message every refusal had before. Since the auto crop (Q181) these show only
+     with the search skipped (the dev flag ?seek=0): after a search that found nothing, NOTHING_SAYS (Q183) says that
+     nothing in the photo can be climbed and asks for another photo, never for a tighter crop; a dark photo's names a
+     night sky, the band a night photo's sky reads as */
   var CROP_SAYS = { floor: 'tighterFloor', ceiling: 'tighterCeiling', dark: 'tighterDark' };
+  var NOTHING_SAYS = { dark: 'nothingDark' };
   function rebuild(full) {
     if (!CR.src) return;
     var t0 = performance.now(), rec = recordOfCrop(), a = SB.pipeline.build(rec, { stage: 'A' }), lv = full ? SB.pipeline.build(rec, { firstRoom: !ui.firstRoomDone }) : null;
@@ -5116,8 +5142,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   /* the refusal's message, once the search has found nothing that builds: its cause's sentence, its band marked, the
      bar in the middle of the part the band leaves so it never covers the band it names (the shots, Q180) */
-  function refused(lv) {
-    var say = document.getElementById('tighter'), key = CROP_SAYS[lv.cause] || 'tighter';
+  function refused(lv, searched) {
+    var say = document.getElementById('tighter'), key = searched ? NOTHING_SAYS[lv.cause] || 'nothingClimbs' : CROP_SAYS[lv.cause] || 'tighter';
     CR.marked = drawOverlay(lv, false, lv);
     say.setAttribute('data-copy', key); say.textContent = ui.COPY[key];
     say.style.top = CR.marked ? 'calc(' + (100 * (CR.markY0 > 1 ? CR.markY0 / 2 : (CR.markY1 + SB.GRID.H) / 2) / SB.GRID.H).toFixed(1) + '% - 2.5em)' : '';
@@ -5199,7 +5225,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (CR.last.needsCrop) {
       /* the same box of the same photo already searched to nothing: its message again, not the same search again */
       var L = CR.lastSeek;
-      if (L && L.phase === 'none' && L.pick === CR.token && JSON.stringify(L.from) === JSON.stringify(CR.crop)) { refused(CR.last); return; }
+      if (L && L.phase === 'none' && L.pick === CR.token && JSON.stringify(L.from) === JSON.stringify(CR.crop)) { refused(CR.last, L.boxes.length > 0); return; }
       seekStart(CR.last); return;
     }
     ui.startRoom(CR.lastRec, ui.COPY.photoRoom, { level: CR.last, photo: { src: CR.src, crop: CR.crop }, ms: CR.ms });
@@ -5340,7 +5366,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     S.phase = 'none'; S.ms = performance.now() - S.t0;
     seekStop();
     CR.last = S.no;
-    refused(S.no);
+    refused(S.no, S.boxes.length > 0);
     if (PERF) cropSay(S.builds + ' builds, none builds; ' + (S.no.cause || 'no cause') + '; ' + S.no.detail);
   }
   /* the search ends: the marker hidden, Develop live, any pending develop dropped */
