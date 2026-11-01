@@ -5097,7 +5097,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
     bubble: [hx(I.INK, I.GLARE, I.TEAL), true], spore: [hx(I.INK, I.MOSS), true], ember_mote: [hx(I.INK, I.ASH, I.AMBER), true],
     icon_biomes: [hx(I.INK, I.ASH, I.PAPER, I.WALNUT, I.AMBER, I.BRICK, I.LAPIS, I.TEAL, I.MOSS), true] };
   const POSES = Object.keys(LAW).filter(n => n.startsWith('hero_'));
-  t.ok(names.length > 0 && names.length < 43, names.length + ' named sprites (under 43, ART3\'s cap; frames are unlimited)');
+  t.ok(names.length > 0 && names.length < 56, names.length + ' named sprites (under 56, HOUSE-B\'s cap; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
     const sp = S[name];
@@ -5156,7 +5156,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   t.ok(POSES.every(n => S[n] && S[n].w === (PW[n] || [K.HERO_W])[0] && S[n].h === (PW[n] || [0, K.HERO_H])[1]), 'the poses keep the old transform\'s rects (hero_squash 14x14, hero_stretch 10x18) and the rest the hero\'s 12x16 (' + POSES.map(n => n + ' ' + (S[n] ? S[n].w + 'x' + S[n].h : 'absent')).join(', ') + ')');
   t.ok(DANGER.every(n => names.includes(n)), 'every enemy, elite and trap the rules name has a sprite (' + DANGER.join(', ') + ')');
   t.ok(!!S.speck && Object.values(S.speck.frames).some(s => s.includes(GLARE)), 'the speck\'s strip carries its Glare glint (section 7.3: loot is Amber with a Glare glint)');
-  t.ok(!names.some(n => ['crop_floor_band', 'crop_ceiling_band', 'crop_seek', 'run_pips', 'icon_house', 'card_house_clear', 'fx_unlock', 'hero_colours_r3', 'fx_boss_wake', 'fx_boss_chip', 'fx_boss_down', 'fx_beacon_light', 'fx_stat_up', 'hud_heart_new', 'fx_magnet', 'fx_second_wind', 'fx_thick_skin', 'fx_tripod', 'tab_biome', 'hero_bold'].includes(n)),
+  t.ok(!names.some(n => ['crop_floor_band', 'crop_ceiling_band', 'crop_seek', 'fx_stat_up', 'hud_heart_new', 'fx_magnet', 'fx_second_wind', 'fx_thick_skin', 'fx_tripod', 'tab_biome', 'hero_bold'].includes(n)),
     'nothing parked is on the page (ART3: the parked keys wait in docs/astra/cut-art3.json for their systems)');
   /* the elites (Q160): each its own art, ELITE_PX a side (the sim's box, ELITE_SIZE_CELLS cells), with its kind's frame
      names, so the draw's beat picks a frame that exists (the sprites gate proves it is drawn 1:1, never the base scaled) */

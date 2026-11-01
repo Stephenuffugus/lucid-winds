@@ -48,8 +48,10 @@ NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 # and 3 are checked whole (38 keys, most of them parked for systems not built yet, kept in docs/astra/cut-art3.json),
 # and only what this step draws is spliced, 11 new keys on the page's 31 (stick_pad, stick_knob, stick_hint,
 # pause_glyph, fx_skyhook, dust_mote, frost_mote, bubble, spore, ember_mote, icon_biomes): 42 names, so 43 is the
-# least cap that takes it (PROGRESS ART3)
-MAX_SPRITES = 43
+# least cap that takes it (PROGRESS ART3). HOUSE-B splices the house's 13 (round 1's boss_fallback, boss_moth_shed,
+# frame_styles and hero_colours; round 3's run_pips, icon_house, card_house_clear, fx_unlock, the boss effects,
+# fx_beacon_light and hero_colours_r3): 55 names, so 56
+MAX_SPRITES = 56
 
 
 class Refuse(Exception):

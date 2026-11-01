@@ -322,8 +322,8 @@ for (const fm of html.matchAll(/font-size\s*:\s*([0-9.]+)\s*(rem|em|px)|fontSize
     if (S) {
       const names = Object.keys(S);
       /* the page's key cap, the same number as tools/astra_cut.py's MAX_SPRITES (ART3: 43, the least that takes the 42
-         names this step leaves; PROGRESS ART3) */
-      if (names.length >= 43) fail('SPRITES', names.length + ' named sprites (under 43)');
+         names this step leaves; PROGRESS ART3; HOUSE-B: 56, the least that takes the house's 13 more, 55 names) */
+      if (names.length >= 56) fail('SPRITES', names.length + ' named sprites (under 56)');
       /* WEAPON_NAMES (ART3, Astra's round 2): icon_weapons holds a glyph for every DESIGN 9.1 code, named by the code,
          in DESIGN's order (J1 to J8, D1 to D8, C1 to C8), then the jump, dive and charm slot glyphs; every built id has
          its glyph; and R.icon looks a glyph up by the code itself, never by a table or its place in the strip */
