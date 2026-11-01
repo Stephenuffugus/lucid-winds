@@ -21,7 +21,7 @@
  *   - a chest laid near the room's top with the bug beside it (the camera at the top): the card docks low, clear of it,
  *     and as the bug falls the room's height into that place the card moves back to the top, never over it;
  *   - #top never overflows (scrollWidth at most clientWidth) with 4 hearts and both icons; zero page errors.
- *   - ART2 (Q161): the icon is Astra's icon_weapons glyph through R.ICON_NAME (576 pixels); the shock is her ring split at
+ *   - ART2 (Q161), ART3: the icon is Astra's icon_weapons glyph named by its code (576 pixels); the shock is her ring split at
  *     its centre, a half at each front; the kill's pop her enemy_death clip; a non lethal hit on a frozen 8 quarter
  *     jelly draws her enemy_hit burst over it, its four frames over the hurt; each drawn record's opaque pixels equal
  *     its frame decoded here, except where the hero or a later record covers them.
@@ -52,9 +52,9 @@ const COPY = (() => {
 const SPR = vm.runInNewContext(SRC.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1] + '\n;SPRITES');
 const RGB = SBN.palette.RGB, I = SBN.palette.I, T = SBN.TUNING, K = SBN.K;
 const WPN = ['', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7', 'J8', 'D1'];
-/* ART2 (Q161): an icon is Astra's icon_weapons glyph named as the weapon is (COPY.wpn's name, lower case, spaces as
-   underscores: Boomerang boomerang, Anvil Boots anvil_boots), never read from the page's own binding */
-const ICON_NAME = new Proxy({}, { get: (_, id) => String(COPY.wpn[id] || '').toLowerCase().replace(/ /g, '_') });
+/* ART3 (Astra's round 2): an icon is Astra's icon_weapons glyph named by the weapon's code (J1, D1), the gate's own
+   reading of the strip, never the page's lookup (H-spr-1 pins J1 and D1 to round 1's boomerang and anvil boots) */
+const ICON_NAME = new Proxy({}, { get: (_, id) => (COPY.wpn[id] ? String(id) : '') });
 const iconPx = id => SPR.icon_weapons.frames[ICON_NAME[id]].split('/').map(r => [...r].map(c => c === '.' ? null : RGB[parseInt(c, 16)].join(','))).flat();
 void I;
 /* ART2: a drawn record's frame decoded here ('<' mirrored, the record's sx, sy the part of the frame it drew) */

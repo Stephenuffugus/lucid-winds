@@ -708,7 +708,7 @@ const MUTANTS = [
     gates: [{ gate: 'astra', expect: 'a PNG that differs from its source grid is refused' }] },
   { name: 'CUT_ZIP_SLIP', task: 'ASTRA', file: 'astra', find: `any(p == '..' for p in n.split('/')):\n                raise Refuse('an unsafe path in the zip: %r' % n)`, repl: `False:\n                raise Refuse('an unsafe path in the zip: %r' % n)`,
     gates: [{ gate: 'astra', expect: 'a path out of the zip (../evil.txt) is refused before a byte is written' }] },
-  { name: 'CUT_SUN_ANYWHERE', task: 'ASTRA', file: 'astra', find: `            elif key != 'beacon' and any('e' in s for s in frames.values()):`, repl: `            elif False and any('e' in s for s in frames.values()):`,
+  { name: 'CUT_SUN_ANYWHERE', task: 'ASTRA', file: 'astra', find: `            elif key not in SUN_KEYS and any('e' in s for s in frames.values()):`, repl: `            elif False and any('e' in s for s in frames.values()):`,   /* re anchored at ART3 */
     gates: [{ gate: 'astra', expect: 'Sun in the moth is refused' }] },
   { name: 'CUT_FEET_UNCHECKED', task: 'ASTRA', file: 'astra', find: `                    if '0' not in frames[name].split('/')[-1]:\n                        raise Refuse('hero.%s has no Ink in its feet row' % name)\n`, repl: ``,
     gates: [{ gate: 'astra', expect: 'a hero frame without Ink in its feet row is refused' }] },
@@ -805,7 +805,7 @@ const MUTANTS = [
   { name: 'CHIP_ON_DEATH', task: 'M1R', file: 'page', find: 'body:has(#death.on) #sws-music-card, body:has(#death.on) #sws-music-pill, body:has(#death.on) #sws-music-toast, body:has(#death.on) #sws-music-chip { display: none !important; }', repl: '',
     gates: [{ gate: 'death', expect: 'at 320x568 a thumb lands on Again and Title on every row' }] },
   /* SPECK_IN_FILM and SPARK_UNOUTLINED re anchored in ART1 on Astra's speck.a and spark.a (Q160) */
-  { name: 'SPECK_IN_FILM', task: 'M1R', file: 'page', find: ".....088880...../.....088880.....", repl: ".....08f880...../.....088880.....",
+  { name: 'SPECK_IN_FILM', task: 'M1R', file: 'page', find: "a: '................/................/................/.......0......../......080......./.....088800.....", repl: "a: '................/................/................/.......0......../......080......./.....08f800.....",   /* re anchored at ART3 (round 2's speck) */
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'speck.a holds no Film' }] },
   { name: 'SPARK_UNOUTLINED', task: 'M1R', file: 'page', find: "      a: '.......00......./......0990....../...0..0990..0.../..090.0990.090../..090099990090../...0999999990.../..099999999990../.09996699669990./.09966666666990./0999666666669990/0999666666669990/0999966996699990/.09999999999990./..099999999990../...0999999990.../....00000000....',", repl: "      a: '................/.......99......./.......99......./...9...99...9.../...9..9999..9.../....99999999..../...9999999999.../..999669966999../..996666666699../.99966666666999./.99966666666999./.99996699669999./..999999999999../...9999999999.../....99999999..../................',",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'spark.a has its Ink outline' }] },
@@ -968,8 +968,8 @@ const MUTANTS = [
 
   /* the stick (Stephen's ruling of 31 Oct, "Whole left side", QUESTIONS Q140): a floating stick over the whole left of
      the strip, the bottom left corner too, drawn only under a thumb, reading the slide from where the thumb landed */
-  { name: 'STICK_DRAWN_IDLE', task: 'STICK', file: 'page', find: '#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; border-radius: 50%; display: none;',
-    repl: '#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; border-radius: 50%; display: block;',
+  { name: 'STICK_DRAWN_IDLE', task: 'STICK', file: 'page', find: '#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; display: none;',   /* re anchored at ART3 */
+    repl: '#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; display: block;',
     gates: [{ gate: 'input', expect: '412x915: with no thumb down the stick draws no pad' }] },
   { name: 'STICK_ABSOLUTE', task: 'STICK', file: 'page', find: 'stickAt[e.pointerId] = { ox: e.clientX, x: e.clientX, y: e.clientY };',
     repl: 'stickAt[e.pointerId] = { ox: (stick.getBoundingClientRect().left + stick.getBoundingClientRect().right) / 2, x: e.clientX, y: e.clientY };',
@@ -1088,7 +1088,7 @@ const MUTANTS = [
     gates: [{ gate: 'sprites', expect: "the top strip's 8 hearts" }] },
   { name: 'ELITE_FRAMES_DRIFT', task: 'ART1', file: 'page', find: "    moth_elite: { w: 24, h: 24, frames: {\n", repl: "    moth_elite: { w: 24, h: 24, frames: {\n      c: '',\n",
     gates: [{ gate: 'lint', expect: 'moth_elite.c has 1 rows, not 24' }, { gate: 'harness', only: 'H-spr-1', expect: "moth_elite is 24x24 (ELITE_PX 24) with moth's frames" }] },
-  { name: 'SPECK_NO_GLINT', task: 'ART1', file: 'page', find: "/...........6..../.......00.666.../......0880.6..../.....088680.....", repl: "/................/.......00......./......0880....../.....088880.....",
+  { name: 'SPECK_NO_GLINT', task: 'ART1', file: 'page', find: ".....088600.....", repl: ".....088800.....",   /* re anchored at ART3: round 2's speck has one Glare pixel, on b */
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: "the speck's strip carries its Glare glint" }] },
   { name: 'HEART_EMPTY_BRICK', task: 'ART1', file: 'page', find: "empty: '.00...00./0220.0220/", repl: "empty: '.00...00./0990.0220/",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'hud_heart is 9x8 with full (Brick) and empty (no Brick)' }] },
@@ -1169,8 +1169,8 @@ const MUTANTS = [
     gates: [{ gate: 'lint', expect: 'names Halo (J6), a weapon this build does not have' }] },
   { name: 'SENTENCE_MISSING', task: 'W1', file: 'page', find: ", D1: 'Dive landings and dashes send a shock along the ground.' },", repl: " },",
     gates: [{ gate: 'lint', expect: 'COPY.wpnSays holds J1, the build has J1, D1' }] },
-  { name: 'ICON_MISSING', task: 'W1', file: 'page', find: "    D1: 'anvil_boots', D2:", repl: "    D2:",   /* re anchored at ART2: D1 unbound from its glyph */
-    gates: [{ gate: 'lint', expect: 'the built D1 has no icon_weapons glyph through R.ICON_NAME (unbound)' }, { gate: 'harness', only: 'H-spr-1', expect: 'every built weapon (J1, D1) draws its own Ink outlined icon_weapons glyph' }] },
+  { name: 'ICON_MISSING', task: 'W1', file: 'page', find: "\n      D1: '", repl: "\n      D1x: '",   /* re anchored at ART3: D1's glyph not named by its code */
+    gates: [{ gate: 'lint', expect: 'the built D1 has no icon_weapons glyph named D1' }, { gate: 'harness', only: 'H-spr-1', expect: 'every built weapon (J1, D1) draws its own Ink outlined icon_weapons glyph named by its code (unbound: D1)' }] },
   { name: 'WPN_RENAMED', task: 'W1', file: 'page', find: "wpn: { J1: 'Boomerang', D1: 'Anvil Boots' },", repl: "wpn: { J1: 'Boomerang', D1: 'Anvil Shoes' },",
     gates: [{ gate: 'lint', expect: 'COPY.wpn.D1 is "Anvil Shoes", DESIGN 9.1 names it "Anvil Boots"' }] },  /* ART2: Astra's weapons cut (Q161): the cutter's rules, the poses, the effects and the icons */
   { name: "BOOMERANG_PLACEHOLDER", task: 'ART2', file: "page", edits: [["        key = 'fx_projectiles.boomerang' + FX4[Math.floor(Math.max(0, p.age) / 5) % 4] + (p.vx < 0 ? '<' : '');\n        var bx = (p.x >> 8) - 10, by = (p.y >> 8) - cam - 10; spr(ctx, key, bx, by); rec(p.kind, key, bx, by, 32, 32, camX);", "        key = 'boomerang.' + 'abcd'.charAt(Math.floor(Math.max(0, p.age) / 5) % 4) + (p.vx < 0 ? '<' : '');\n        var bx = p.x >> 8, by = (p.y >> 8) - cam; spr(ctx, key, bx, by); rec(p.kind, key, bx, by, 12, 12, camX);"], ["    pipe: { w: 16, h: 16, frames: {\n", "    boomerang: { w: 12, h: 12, frames: {\n      a: '........000./.......06660/......066630/.....066630./....066630../...066630.../..066630..../.0666300000./06666666660./06666666630./.0333333330./..00000000..',\n      b: '..00......../.0660......./036660....../0366660...../03666660..../036636660.../0366036660../03660036660./03660.036660/03360..03660/.0000...0360/.........00.',\n      c: '..00000000../.0333333330./.03666666660/.06666666660/.0000036660./....036660../...036660.../..036660..../.036660...../036660....../06660......./.000........',\n      d: '.00........./0630...0000./06630..06330/066630.06630/.06663006630/..0666306630/...066636630/....06666630/.....0666630/......066630/.......0660./........00..'\n    } },\n    pipe: { w: 16, h: 16, frames: {\n"]],
@@ -1181,10 +1181,10 @@ const MUTANTS = [
     gates: [{ gate: "fight", expect: "412: a hit on a live jelly draws Astra's burst over it" }] },
   { name: "SHOCK_ONE_HALF", task: 'ART2', file: "page", find: "var fx = side < 0 ? lf : rf, hx0 = side < 0 ? bb.x0 : 24, hw = side < 0 ? 24 - bb.x0 : bb.x1 - 23;", repl: "var fx = side < 0 ? lf : rf, hx0 = bb.x0, hw = 24 - bb.x0;",
     gates: [{ gate: "fight", expect: "412: the shock is Astra's ring split at its centre" }] },
-  { name: "ICON_SCALED", task: 'ART2', file: "page", find: "var r = A['icon_weapons.' + R.ICON_NAME[id]]; if (!r) return false; c2.drawImage(atlas, r.x, r.y, r.w, r.h, x || 0, y || 0, r.w, r.h); return true;", repl: "var r = A['icon_weapons.' + R.ICON_NAME[id]]; if (!r) return false; c2.drawImage(atlas, r.x, r.y, r.w, r.h, x || 0, y || 0, 16, 16); return true;",
-    gates: [{ gate: "fight", expect: "412: the jump box shows J1's icon (icon_weapons.boomerang), its 576 pixels" }] },
-  { name: "ICON_SWAPPED", task: 'ART2', file: "page", find: "J1: 'boomerang', J2:", repl: "J1: 'twin_darts', J2:",
-    gates: [{ gate: "lint", expect: "R.ICON_NAME binds J1 (Boomerang) to twin_darts, not its own glyph by name" }] },
+  { name: "ICON_SCALED", task: 'ART2', file: "page", find: "var r = A['icon_weapons.' + id]; if (!r) return false; c2.drawImage(atlas, r.x, r.y, r.w, r.h, x || 0, y || 0, r.w, r.h); return true;", repl: "var r = A['icon_weapons.' + id]; if (!r) return false; c2.drawImage(atlas, r.x, r.y, r.w, r.h, x || 0, y || 0, 16, 16); return true;",   /* re anchored at ART3 */
+    gates: [{ gate: "fight", expect: "412: the jump box shows J1's icon (icon_weapons.J1), its 576 pixels" }] },
+  { name: "ICON_SWAPPED", task: 'ART2', file: "page", find: "\n      J1: '", repl: "\n      boomerang: '",   /* re anchored at ART3: the glyph named by Astra's round 1 name, not its code */
+    gates: [{ gate: "lint", expect: "not Astra's order J1 J2" }] },
   { name: "SHOCK_NO_RIM", task: 'ART2', file: "page", find: "          sprPart(ctx, key + '#', hx0, ry, hw, rh, hx + side, rtop); sprPart(ctx, key + '#', hx0, ry, hw, rh, hx, rtop - 1);\n", repl: "",
     gates: [{ gate: "fight", expect: "412: the shock is Astra's ring split at its centre" }] },
   { name: "POSE_SQUASH_OFF", task: 'ART2', file: "page", find: "    if (h.squash > 0) return 'hero_squash.squash';", repl: "    if (h.squash > 0) return 'land';",
@@ -1201,7 +1201,7 @@ const MUTANTS = [
     gates: [{ gate: "harness", only: "H-spr-1", expect: "hero_dash.dash has an Ink outline and draws only" }] },
   { name: "SUN_IN_FX", task: 'ART2', file: "page", find: "      boomerang_0: '................................/................................/................................/................................/................................/................................/................................/................................/................................/......0", repl: "      boomerang_0: '................................/................................/................................/................................/................................/................................/................................/................................/................................/......e",
     gates: [{ gate: "harness", only: "H-spr-1", expect: "fx_projectiles.boomerang_0 holds no Sun" }] },
-  { name: "CUT_SUN_PAST_HERO", task: 'ART2', file: "astra", find: "            elif key != 'beacon' and any('e' in s for s in frames.values()):", repl: "            elif key != 'beacon' and not key.startswith('fx_') and any('e' in s for s in frames.values()):",
+  { name: "CUT_SUN_PAST_HERO", task: 'ART2', file: "astra", find: "            elif key not in SUN_KEYS and any('e' in s for s in frames.values()):", repl: "            elif key not in SUN_KEYS and not key.startswith('fx_') and any('e' in s for s in frames.values()):",   /* re anchored at ART3 */
     gates: [{ gate: "astra", expect: "Sun in an effect (fx_projectiles) is refused" }] },
   { name: "CUT_POSE_SUN_REFUSED", task: 'ART2', file: "astra", find: "            elif key.startswith('hero_'):", repl: "            elif False:",
     gates: [{ gate: "astra", expect: "the hero's poses (hero_dash, hero_hurt, hero_squash, hero_stretch, hero_dropin) each carry Sun and are cut" }] },
@@ -1209,8 +1209,64 @@ const MUTANTS = [
     gates: [{ gate: "astra", expect: "an effect frame not named <clip>_<n> is refused" }] },
   { name: "CUT_FX_UNKNOWN", task: 'ART2', file: "astra", find: "            elif FX_RE.match(key):\n                warnings.append(", repl: "            elif False and FX_RE.match(key):\n                warnings.append(",
     gates: [{ gate: "astra", expect: "an effect strip new to the page (fx_shockwave on a copy without it) is taken as named clips" }] },
-  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 44\n", repl: "MAX_SPRITES = 48\n",
+  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 43\n", repl: "MAX_SPRITES = 48\n",   /* re anchored at ART3 (the cap at the splice, 43) */
     gates: [{ gate: "astra", expect: "a cut that would leave" }] },
+  /* ART3: Astra's rounds 2 and 3 (Q98): the cutter's rules, the splice, the stick, Pause, the crusher's shaft, the speck,
+     the elites' keylines, the biome's air and badges, the icons by code */
+  { name: "CUT_GAME_CASE", task: 'ART3', file: "astra", find: "    if str(man.get('game', '')).lower() != 'shutterbug':", repl: "    if man.get('game') != 'shutterbug':",
+    gates: [{ gate: "astra", expect: "game is 'SHUTTERBUG'" }] },
+  { name: "CUT_FX_SIDES_NARROW", task: 'ART3', file: "astra", find: "FX_SIDES = (16, 32, 48, 64)", repl: "FX_SIDES = (32, 48)",
+    gates: [{ gate: "astra", expect: "fx_boss_chip is 16x16: an effect is square" }] },
+  { name: "CUT_BEACON_FX_SUN", task: 'ART3', file: "astra", find: "SUN_KEYS = ('beacon', 'fx_beacon_light')", repl: "SUN_KEYS = ('beacon',)",
+    gates: [{ gate: "astra", expect: "Sun in fx_beacon_light" }] },
+  { name: "SPLICE_CAP_GONE", task: 'ART3', file: "astra", find: "    if n >= MAX_SPRITES:\n        raise Refuse(", repl: "    if False:\n        raise Refuse(",
+    gates: [{ gate: "astra", expect: "is checked, and its splice is refused at the cap of 43" }] },
+  { name: "SPLICE_KEEPS_RENAMED", task: 'ART3', file: "astra", find: "            if key != 'hero':\n                old = []\n", repl: "",
+    gates: [{ gate: "astra", expect: "replaces the page's 27 frames whole" }] },
+  { name: "ICON_BY_STRIP_INDEX", task: 'ART3', file: "page", find: "var r = A['icon_weapons.' + id]; if (!r) return false;", repl: "var IK = Object.keys(SPRITES.icon_weapons.frames), r = A['icon_weapons.' + IK[IK.indexOf(id) + 1]]; if (!r) return false;",
+    gates: [{ gate: "lint", expect: "R.icon does not look its glyph up by the code" }, { gate: "fight", expect: "412: the jump box shows J1's icon (icon_weapons.J1), its 576 pixels" }] },
+  { name: "ICON_J1_REDRAWN", task: 'ART3', file: "page", find: "      J1: '......................../......................../......................../......................../......................../..00000", repl: "      J1: '......................../......................../......................../......................../......................../..00002",
+    gates: [{ gate: "harness", only: "H-spr-1", expect: "icon_weapons.J1 and .D1 are round 1's boomerang and anvil_boots pixel for pixel" }] },
+  { name: "ELITE_KEYLINE_GONE", task: 'ART3', file: "page", find: "/044664400033330004466440/040000440033330044000040/040aa04400333300440aa040", repl: "/044664400033330004466440/040000440033330044000040/044aa04400333300440aa040",
+    gates: [{ gate: "harness", only: "H-spr-1", expect: "moth_elite.a keylines every Magenta mark in Ink, all eight neighbours (open at" }] },
+  { name: "SPECK_GLINT_BOTH", task: 'ART3', file: "page", find: "a: '................/................/................/.......0......../......080......./.....088800.....", repl: "a: '................/................/................/.......0......../......080......./.....088600.....",
+    gates: [{ gate: "harness", only: "H-spr-1", expect: "with the Glare glint on frame b only" }] },
+  { name: "SKYHOOK_GONE", task: 'ART3', file: "page", find: "    fx_skyhook: { w: 32, h: 32, frames: {", repl: "    fx_skyhooks: { w: 32, h: 32, frames: {",
+    gates: [{ gate: "harness", only: "H-spr-1", expect: "fx_skyhook is spliced for J8" }] },
+  { name: "PARKED_ON_PAGE", task: 'ART3', file: "page", find: "    fx_skyhook: { w: 32, h: 32, frames: {", repl: "    fx_tripod: { w: 32, h: 32, frames: {",
+    gates: [{ gate: "harness", only: "H-spr-1", expect: "nothing parked is on the page" }] },
+  { name: "CRUSHER_TILED", task: 'ART3', file: "page", find: "        if (crush && lv.trap[tf[q2] + lv.w] === 1) ctx.drawImage(atlas, tr0.x, tr0.y, tr0.w, 1, (tf[q2] % lv.w) * C, ty2, C, C);\n        else spr(ctx, tk, (tf[q2] % lv.w) * C, ty2);", repl: "        spr(ctx, tk, (tf[q2] % lv.w) * C, ty2);",
+    gates: [{ gate: "sprites", expect: "crusher column in phase a (trap phase 10): the cells above the bottom are row 0" }] },
+  { name: "CRUSHER_BOTTOM_SHAFT", task: 'ART3', file: "page", find: "if (crush && lv.trap[tf[q2] + lv.w] === 1) ctx", repl: "if (crush) ctx",
+    gates: [{ gate: "sprites", expect: "crusher column in phase a (trap phase 10): the cells above the bottom are row 0" }] },
+  { name: "SPECK_STUCK_A", task: 'ART3', file: "page", find: "spr(ctx, LK[lt2.kind] + (lt2.kind === 1 && (Math.floor(s.frame / (lbeat * 3)) & 1) ? '.b' : '.a'), lx2, ly);", repl: "spr(ctx, LK[lt2.kind] + '.a', lx2, ly);",
+    gates: [{ gate: "sprites", expect: "the sample room's speck draws speck.b with its glint on the beat" }] },
+  { name: "MOTES_WRONG_BIOME", task: 'ART3', file: "page", find: "key = R.MOTE_KEYS[b] || R.MOTE_KEYS[0]", repl: "key = R.MOTE_KEYS[(b + 1) % 5]",
+    gates: [{ gate: "sprites", expect: "biome 0: five dust_mote tiles drawn over the room at 4 fps" }] },
+  { name: "MOTES_AT_60", task: 'ART3', file: "page", find: "t = Math.floor(s.frame / R.MOTE_TICK)", repl: "t = s.frame",
+    gates: [{ gate: "sprites", expect: "biome 0: five dust_mote tiles drawn over the room at 4 fps" }] },
+  { name: "MOTES_UNREPEATABLE", task: 'ART3', file: "page", find: "var x0 = hsh % wspan", repl: "var x0 = Math.floor(Math.random() * wspan)",
+    gates: [{ gate: "sprites", expect: "the sim's hash is the same with them and without (false" }] },
+  { name: "MOTES_UNDER_REDUCED", task: 'ART3', file: "page", find: "SB.ui.screen !== 'play' || R.reduced()", repl: "SB.ui.screen !== 'play'",
+    gates: [{ gate: "sprites", expect: "the sim's hash is the same with them and without (true true 5 true)" }] },
+  { name: "MOTES_JUMP", task: 'ART3', file: "page", find: "R.MOTE_DRIFT = [2, 4, -4, 4, -4];", repl: "R.MOTE_DRIFT = [0, 0, 0, 0, 0];",
+    gates: [{ gate: "sprites", expect: "the sim's hash is the same with them and without (true false 0 true)" }] },
+  { name: "BADGE_WRONG_BIOME", task: 'ART3', file: "page", find: "el.style.backgroundImage = 'var(--icon-biomes-' + nm + ')';", repl: "el.style.backgroundImage = 'var(--icon-biomes-attic)';",
+    gates: [{ gate: "sprites", expect: "biome 3: the room name's badge is icon_biomes.overgrowth" }] },
+  { name: "REVEAL_NO_BADGE", task: 'ART3', file: "page", find: "    ctx.drawImage(atlas, br.x, br.y, br.w, br.h, bx, 8, 48, 48);\n", repl: "",
+    gates: [{ gate: "sprites", expect: "biome 0: the develop reveal draws icon_biomes.attic at 2x" }] },
+  { name: "PAD_CSS_RING", task: 'ART3', file: "page", find: "  background: var(--stick-pad-idle) 0 0 / 116px 116px no-repeat; image-rendering: pixelated; pointer-events: none; }", repl: "  border: 2px solid rgba(11,10,15,0.45); background: rgba(11,10,15,0.08); border-radius: 50%; pointer-events: none; }",
+    gates: [{ gate: "input", expect: "412x915: held neutral, the pad is stick_pad.idle at 116 css px" }] },
+  { name: "PAD_NEVER_ACTIVE", task: 'ART3', file: "page", find: "#stick .pad.l, #stick .pad.r { background-image: var(--stick-pad-active); }", repl: "",
+    gates: [{ gate: "input", expect: "412x915: steering R, the pad is stick_pad.active" }] },
+  { name: "KNOB_NO_WAY", task: 'ART3', file: "page", find: "#stick .pad.r .knob { background-image: var(--stick-knob-right); }", repl: "",
+    gates: [{ gate: "input", expect: "412x915: steering R, the knob is stick_knob.right" }] },
+  { name: "HINT_HALF_WRONG", task: 'ART3', file: "page", find: "#stick .idle .hr { background-position: calc(-60 * var(--hk)) 0; }", repl: "",
+    gates: [{ gate: "input", expect: "412x915: idle, the hint's chevrons are stick_hint's left and right 12 columns" }] },
+  { name: "PAUSE_OLD_BOX", task: 'ART3', file: "page", find: "#pause i { width: 32px; height: 32px; display: block; background: var(--pause-glyph-normal) 0 0 / 32px 32px no-repeat; image-rendering: pixelated; }", repl: "#pause i { width: 28px; height: 28px; border-radius: 8px; border: 2px solid rgba(11,10,15,0.35); background: rgba(11,10,15,0.06); display: block; }",
+    gates: [{ gate: "input", expect: "412x915: Pause is pause_glyph.normal at 2x" }] },
+  { name: "PAUSE_NOT_PRESSED", task: 'ART3', file: "page", find: "#pause:active i { background-image: var(--pause-glyph-pressed); }", repl: "",
+    gates: [{ gate: "input", expect: "412x915: under a held finger Pause is pause_glyph.pressed" }] },
 ];
 
 /* ---------------------------------------------------------------- run */

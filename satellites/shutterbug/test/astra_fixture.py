@@ -33,6 +33,12 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'hero/hero_dash.png': ('hero_dash', None), 'hero/hero_hurt.png': ('hero_hurt', None), 'hero/hero_squash.png': ('hero_squash', None),
     'hero/hero_stretch.png': ('hero_stretch', None), 'hero/hero_dropin.png': ('hero_dropin', None), 'ui/icon_weapons.png': ('icon_weapons', None),
     'fx/fx_projectiles.png': ('fx_projectiles', None), 'fx/fx_shockwave.png': ('fx_shockwave', None), 'fx/fx_enemy_hit.png': ('fx_enemy_hit', None),
+    # ART3's keys (Astra's rounds 2 and 3, Q98, and round 1's dust): the stick, the pause glyph, the Skyhook's effect,
+    # the biome's air and badges
+    'ui/stick_pad.png': ('stick_pad', None), 'ui/stick_knob.png': ('stick_knob', None), 'ui/stick_hint.png': ('stick_hint', None),
+    'ui/pause_glyph.png': ('pause_glyph', None), 'fx/fx_skyhook.png': ('fx_skyhook', None), 'world/dust_mote.png': ('dust_mote', None),
+    'world/frost_mote.png': ('frost_mote', None), 'world/bubble.png': ('bubble', None), 'world/spore.png': ('spore', None),
+    'world/ember_mote.png': ('ember_mote', None), 'ui/icon_biomes.png': ('icon_biomes', None),
 }
 
 

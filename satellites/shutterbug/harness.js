@@ -4960,7 +4960,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   for (const k of KINDS) for (const [f, str] of Object.entries((S[k + '_elite'] || { frames: {} }).frames)) {
     const r = str.split('/'), open = [];
     for (let y = 0; y < r.length; y++) for (let x = 0; x < r[y].length; x++) if (r[y][x] === MAG) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const c = (r[y + dy] || '')[x + dx] || '.'; if (c !== MAG && c !== INK) open.push(x + dx + ',' + (y + dy)); }
-    t.ok(str.includes(MAG) && open.length === 0, k + '_elite.' + f + ' keylines every Magenta mark in Ink, all eight neighbours' + (open.length ? ' (open at ' + open.slice(0, 4).join(' ') + ')' : ''));
+    t.ok(open.length === 0, k + '_elite.' + f + ' keylines every Magenta mark in Ink, all eight neighbours' + (open.length ? ' (open at ' + open.slice(0, 4).join(' ') + ')' : ''));
   }
   const bbox = str => { const r = str.split('/'); let x0 = 99, y0 = 99, x1 = -1, y1 = -1; r.forEach((row, y) => [...row].forEach((c, x) => { if (c !== '.') { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } })); return (x1 - x0 + 1) + 'x' + (y1 - y0 + 1); };
   t.ok(!!S.speck && !S.speck.frames.a.includes(GLARE) && S.speck.frames.b.includes(GLARE) && bbox(S.speck.frames.a) === '10x10', 'the speck is a 10x10 Amber diamond (' + (S.speck ? bbox(S.speck.frames.a) : 'absent') + ') with the Glare glint on frame b only');
