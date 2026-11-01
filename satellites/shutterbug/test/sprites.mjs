@@ -19,6 +19,9 @@
  * on the canvas. The top strip's hearts, three full of eight, read from a real screenshot: each of the 72 pixels of
  * every heart is hud_heart's full or empty frame at 2x.
  *
+ * HOUSE-B: the sample room as a house's last room drawn straight: the guardian's live cells are boss_fallback's own 16 px,
+ * the dark lamp fx_beacon_light.light_0, the shed's tell boss_moth_shed.telegraph, the bug in skin 1 hero_colours.umber.
+ *
  * Watched red by OFF_PALETTE_PIXEL (the atlas writes one channel a step off), ANIM_AT_60 (the run advances every
  * step), DASH_NO_FLASH (the i frames drawn plain), ELITE_DRAWS_BASE (an elite drawn as its base art scaled to
  * ELITE_PX), ELITE_SUNK (the rest rule off: the icicle's root and the spark's base 4 px into the roof and floor) and
@@ -356,6 +359,45 @@ try {
     const e = rv.px ? eqRows(r2, rv.px, 48) : { n: 0, bad: ['no badge drawn'] };
     R.say(rv.ok && rv.bd && rv.bd.key === 'icon_biomes.' + nm && e.n > 0 && e.bad.length === 0, 'biome ' + b + ': the develop reveal draws icon_biomes.' + nm + ' at 2x (48 px) at the view\'s top, ' + e.n + ' pixels on the canvas' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, 3).join('; ') + ')' : ''));
     await page.evaluate(() => { if (window.SB.ui.reveal.on) window.SB.ui.endReveal(); });
+  }
+
+  /* HOUSE-B, the house's keys: the sample room built as a house's last room and drawn straight (R.draw on the view):
+     the guardian awake draws each live cell as its own 16 px of boss_fallback.brace or .breathe, every opaque pixel on
+     the canvas; the dark lamp is fx_beacon_light.light_0 (beacon_dark pixel for pixel); the shed's tell is
+     boss_moth_shed.telegraph in the shed box; and the hero worn in skin 1 is hero_colours.umber_<pose> */
+  {
+    const SR = readFileSync(GAME + '/fixtures/sample-room.json', 'utf8');
+    const gq = await page.evaluate((str) => {
+      const SBx = window.SB, rec = SBx.record.fromJSON(JSON.parse(str).record), lv = SBx.pipeline.build(rec, { roomIndex: 5, lastRoom: true });
+      const st = SBx.sim.create(lv, { lastRoom: true }), g = lv.features.guardian, R2 = SBx.render, C = 16, w = lv.w;
+      SBx.render.buildStatic(lv);
+      st.hero.x = (g.ledge % w) * C * 256 + 512; st.hero.y = Math.floor(g.ledge / w) * C * 256;
+      st.boss.phase = 1; st.boss.intro = 0; st.boss.telegraph = 40; st.frame = 30; st.boss.cells[7] = -1;
+      const grab = (x, y, ww, hh) => { const d = document.getElementById('view').getContext('2d').getImageData(x, y, ww, hh).data, o = []; for (let i = 0; i < d.length; i += 4) o.push('#' + [d[i], d[i + 1], d[i + 2]].map(v => ('0' + v.toString(16)).slice(-2)).join('')); return o; };
+      R2.skin = 1; R2.draw(st, lv, 0);
+      const cam = R2.drawn.cam, camX = R2.drawn.camX || 0, bx = g.rect[0] * C - camX, by = g.rect[1] * C - cam, sh = g.shed;
+      const out = { boss: Object.assign({}, R2.drawn.boss), body: grab(bx, by, 80, 64), bx, by, beacon: R2.drawn.beacon ? Object.assign({}, R2.drawn.beacon) : null,
+        tell: grab(sh[0] * C - camX, sh[1] * C - cam, 48, 32), hero: Object.assign({}, R2.drawn.hero), heroPx: null };
+      out.heroPx = grab(out.hero.x, out.hero.y, out.hero.w, out.hero.h);
+      /* the lamp: the bug set under the exit, so the camera holds the room's top */
+      st.hero.x = (lv.exit % w) * C * 256 + 512; st.hero.y = (Math.floor(lv.exit / w) + 2) * C * 256; R2.draw(st, lv, 0);
+      out.beacon = R2.drawn.beacon ? Object.assign({}, R2.drawn.beacon) : null;
+      if (out.beacon) out.lamp = grab(out.beacon.x, out.beacon.y, 16, 16);
+      R2.skin = 0;
+      return out;
+    }, SR);
+    const key = gq.boss && gq.boss.key, rows = key ? frameOf(key) : null, hr = gq.hero;
+    const overHero = (x, y) => gq.bx + x >= hr.x - 1 && gq.bx + x <= hr.x + hr.w && gq.by + y >= hr.y - 1 && gq.by + y <= hr.y + hr.h;
+    /* cell 7 is struck off: its 16 px are not the body's; the dotted outline sits on the rect's edge pixels */
+    const e = rows ? eqRows(rows, gq.body, 80, (x, y) => overHero(x, y) || (Math.floor(x / 16) === 2 && Math.floor(y / 16) === 1) || x === 0 || y === 0 || x === 79 || y === 63) : { n: 0, bad: ['no body'] };
+    R.say(!!rows && gq.boss.live === 19 && e.n > 0 && e.bad.length === 0, 'the guardian awake draws its 19 live cells as ' + key + ', ' + e.n + ' pixels on the canvas' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, 3).join('; ') + ')' : ''));
+    const lamp = gq.lamp ? eqRows(frameOf('fx_beacon_light.light_0'), gq.lamp, 16) : { n: 0, bad: ['no lamp'] };
+    R.say(!!gq.beacon && gq.beacon.dark && gq.beacon.key === 'fx_beacon_light.light_0' && lamp.n > 0 && lamp.bad.length === 0, 'while it stands the lamp is fx_beacon_light.light_0, the dark lamp, ' + lamp.n + ' pixels' + (lamp.bad.length ? ' (' + lamp.bad.slice(0, 3).join('; ') + ')' : ''));
+    const tl = eqRows(frameOf('boss_moth_shed.telegraph'), gq.tell, 48);
+    R.say(gq.boss.tell === 'telegraph' && tl.n > 0 && tl.bad.length === 0, 'the shed\'s tell draws boss_moth_shed.telegraph in its box, ' + tl.n + ' pixels' + (tl.bad.length ? ' (' + tl.bad.slice(0, 3).join('; ') + ')' : ''));
+    const hk = hr.key || '', hrows = frameOf(hk);
+    const he = hrows ? eqRows(hrows, gq.heroPx, hr.w) : { n: 0, bad: ['no hero frame ' + hk] };
+    R.say(/^hero_colours\.umber_/.test(hk) && he.n > 0 && he.bad.length === 0, 'the bug worn in skin 1 draws ' + hk + ', ' + he.n + ' pixels on the canvas' + (he.bad.length ? ' (' + he.bad.slice(0, 3).join('; ') + ')' : ''));
   }
 
   R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));

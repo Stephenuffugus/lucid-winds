@@ -46,20 +46,19 @@ Each parked key with Astra's placement, word for word where her NOTES give one. 
 - `crop_floor_band`, `crop_ceiling_band` (round 2, 8x8, one frame `tile`): a seamless diagonal Ink hatch, 12.5% pixel coverage, binary alpha (coverage means spatial coverage, never fractional alpha); each tile repeats seamlessly; the runtime chooses the band's height.
 - `crop_seek` (round 3, 16x16, `seek_0` to `seek_3`, 6 fps, loops): "Loop crop_seek at 6 fps while the crop moves. Its diamond and trailing dots follow an open path." Loop until the game accepts a crop.
 
-### House slice 1 (the house run)
+### The house (spliced and drawn in HOUSE-B, 1 Nov)
 
-- `run_pips` (round 3, 10x10, `todo here cleared boss_todo boss_here boss_cleared`): "Draw five run_pips at 2x. Rooms 1 through 4 use a hollow square for todo, a bright diamond for here and a check for cleared. Room 5 uses the corresponding crown."
-- `icon_house` (round 3, 24x24, `house house_cleared`): "Use the house button on the title and its checked seal on clear."
-- `card_house_clear` (round 3, 144x140, `base`): "draw the unlocked cosmetic in the 48x56 Paper opening at (48,33). A frame style fits at native size. A hero idle pose fits at 3x, centered at (72,61)." "Draw the reward name in the 98x14 caption area at (23,100). All positions are native card pixels measured from the upper left." Its manifest's content slots: cosmetic [48, 33, 48, 56], caption [23, 100, 98, 14], reveal [48, 37, 48, 48]. Draw the prize, then the reveal, then the localized caption.
-- `fx_unlock` (round 3, 48x48, `unlock_0` to `unlock_5`, 12 fps, once): "Overlay fx_unlock at (48,37) for six frames, then hide it." Blue ribbons and an Amber seal part outward above the prize.
-- `hero_colours_r3` (round 3, 12x16, 48 frames, `<skin>_<pose>`): Pinstripe, Domino, Crescent and Argyle, in that order, each with all 12 poses of the approved round rear hero. "Select frame 12 x skin index + original pose index. Keep the original pose timing and right-facing, bottom-center anchor. Register the four IDs in the house-clear cosmetic reward pool alongside the previous eight cosmetics. Reward order is a game-side choice."
-
-### House slice 1's clay boss
-
-- `fx_boss_wake` (round 3, 48x48, `wake_0` to `wake_3`, 12 fps): "After the two-second outline, center fx_boss_wake on the waking body."
-- `fx_boss_chip` (round 3, 16x16, `chip_0` to `chip_3`, 12 fps): "Center one fx_boss_chip on each detached cell."
-- `fx_boss_down` (round 3, 64x64, `down_0` to `down_5`, 12 fps): "Center fx_boss_down on the last cell", then hide.
-- `fx_beacon_light` (round 3, 16x16, `light_0` to `light_3`, 12 fps, anchor top, carries the beacon's Sun): "Play fx_beacon_light at the lamp's top anchor and hand over to the regular beacon loop. Its first and last frames match the existing dark lamp and lit frame a pixel for pixel." Draw it in place of the lamp; resume the beacon's loop at a.
+HOUSE-B splices 13 keys (the cap 43 to 56 in the cutter, the lint, H-spr-1 and the astra gate): round 1's `boss_fallback`, `boss_moth_shed`, `frame_styles` and `hero_colours` (cut from /home/codespace/sb-drafts/astra/oct31-x as a four file subset, CHECK OK, 58 frames) and round 3's `run_pips`, `icon_house`, `card_house_clear`, `fx_unlock`, `fx_boss_wake`, `fx_boss_chip`, `fx_boss_down`, `fx_beacon_light` and `hero_colours_r3` (from this file, now `status: spliced`). How each is drawn, by her placements:
+- `boss_fallback` (80x64, brace and breathe at 4 fps): the guardian of every house room 5, each live cell its own 16 px of the frame, so it erodes cell by cell; asleep (the 2 s intro) at a third of its alpha inside a blinking Ink and Glare ring; awake and eroding, a dotted Ink outline of the whole body until under a quarter is left.
+- `boss_moth_shed` (48x32): over the shed box above the body: telegraph the tell's first 24 steps, windup its last 24, release and follow 6 steps each after the shed.
+- `fx_boss_wake` centred on the body from the step it wakes; `fx_boss_chip` centred on each cell struck off; `fx_boss_down` centred on the last cell, then hidden (each at 12 fps, 5 steps a frame).
+- `fx_beacon_light`: its `light_0` is the dark lamp while the guardian stands (beacon_dark pixel for pixel, so beacon_dark itself is not spliced); from the fall, light_0 to light_3 in the lamp's place, then the beacon's own loop.
+- `run_pips`: five at 2x in the strip's name in a house (CSS variables; the words Room n of 5 kept for a screen reader) and on the doorway card.
+- `icon_house`: 24 px before Start a house on the title, its `house_cleared` seal once a house is cleared.
+- `card_house_clear` at 2x on the house clear card, the prize in the 48x56 opening at (48,33) (a frame style at native size; a skin's idle pose at 3x centred at (72,61)), `fx_unlock` at (48,37) for its six frames at 12 fps (none under reduced motion), the caption New: <name> in the 98x14 area at (23,100).
+- `hero_colours` and `hero_colours_r3`: the skins sun (the approved bug), umber, teal, lapis, pinstripe, domino, crescent and argyle; frame 12 x skin + pose by name; ART2's extra poses keep the approved bug's art.
+- `frame_styles`: paper, walnut, lapis and moss, a nine slice border (5 5 14 5) at 2x round the title's polaroid and the share sheet's picture; paper is the polaroid as it was.
+- Not spliced: `boss_weak_cell` (the clay boss marks no weak cell: any live cell is struck), `beacon_dark` (fx_beacon_light's first frame is it).
 
 ### Stats (weapons step 5)
 
