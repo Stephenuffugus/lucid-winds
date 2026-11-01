@@ -1,5 +1,13 @@
 # START HERE
 
+## 📷 1 Nov 17:45 UTC (Opus) STEPHEN'S NEW NOTE; A DESIGN SPRINT AND THE DEWBALL FORGE JOIN THE THREE LANES
+HIS NOTE (17:25 UTC): "It's literally every picture I really have to move the cropper around and then it mostly just makes the most basic level over light space where it adds a bunch of floating platforms, usually straight up, that's pretty boring. We can make it way better and we want an objective and reason to keep making and playing levels." He offered to take room photos (they would land in ~/.claude/uploads/d3e56aa5-c836-411c-876d-c8fc14d16b86/). He is pasting the Astra round 4 brief.
+NEW RUNNING:
+  - The design sprint, `wf_2046ba70-00f` (satellites/shutterbug/docs/lanes/design-levels-goals-nov01.js). It is read only, with output in /home/codespace/sb-drafts/design-nov01/. Five angles, each prototyped and measured with boards: climb the photo, frame the interesting part, blank walls become level design, a reason to keep playing, and the look. Then three judges, and a plan in PROPOSAL.md with his questions and build briefs. Photo 1b and the next lanes are built from it.
+  - The Dewball forge, `wf_33b115cc-23b` (plans/dewball/lanes/dewball-forge-w567-nov01.js), on branch dewball-w567 in the worktree /workspaces/dewball-w567. It rebuilds the toolchain (Blender 4.0, gltfpack, Pillow, numpy and scipy are not on this box), cuts his 36 Astra pictures, and buys up to 1,700 credits of Meshy image to 3D (89 kinds; the balance was 3,039). It backs up to the vault, then fits, packs and looks at w5, w7 and w6, runs the gates, stamps dewball-vNN, and writes tools/forge/deploy.sh, a files only deploy that Stephen runs.
+  - His three zips: /home/codespace/dewball-drafts/astra/w5.zip (sha256 45a9e5e2...), w6.zip (0bb5d4cd...) and w7.zip (71a9d482...), unpacked beside them.
+IF THE SESSION DIES: rerun these two scripts with the Workflow tool after checking what is already committed. On dewball-w567, the meshy-tasks.json ledger stops a rerun from spending twice.
+
 ## 📷 1 Nov 16:40 UTC (Opus) SHUTTERBUG: NEW SESSION, THE THREE LANES RUN AGAIN, THE PHOTO LANE FIRST
 STEPHEN TODAY: "I want to make shutterbug really good. It's almost fun, but it needs to be able to pixelate more stuff right now. It's too hard to actually get the level to be made." Also: Meshy has reset (Dewball's remaining assets), and an Astra round 4 doc if we need art.
 BOX: booted 16:05 UTC, so it stops about 04:05 UTC on 2 Nov. The four autosaves are restarted (main, sb-w2 on sb-weapons-2, sb-house, sb-levels).
