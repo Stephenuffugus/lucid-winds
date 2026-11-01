@@ -48,8 +48,9 @@ NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 # and 3 are checked whole (38 keys, most of them parked for systems not built yet, kept in docs/astra/cut-art3.json),
 # and only what this step draws is spliced, 11 new keys on the page's 31 (stick_pad, stick_knob, stick_hint,
 # pause_glyph, fx_skyhook, dust_mote, frost_mote, bubble, spore, ember_mote, icon_biomes): 42 names, so 43 is the
-# least cap that takes it (PROGRESS ART3)
-MAX_SPRITES = 43
+# least cap that takes it (PROGRESS ART3). W2 (weapons step 2) splices three more of round 1's effects, fx_bursts,
+# fx_impacts and fx_frozen_stunned (their step 2 clips only): 45 names, so 46 (PROGRESS W2, QUESTIONS Q122)
+MAX_SPRITES = 46
 
 
 class Refuse(Exception):

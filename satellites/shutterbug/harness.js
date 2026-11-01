@@ -230,7 +230,10 @@ group('H-ns-1', 'K recomputed in the test from TUNING, and the known integers of
     JUMP_SLOT_CD_F: 36, BOSS_TELEGRAPH_F: 48, BOSS_INTRO_F: 120, KNOCK_V: 1024, KNOCK_FRAMES: 8,
     JELLY_V: 68, ELITE_SUB: 6144, ELITE_PX: 24, SPARK_AIR_F: 12, SLICK_DECEL: 51,
     /* Weapons v1 step 1 (docs/WEAPONS-V1.md 2.3) */
-    HP_Q: 4, J1_REACH: 20480, J1_V: 1280, J1_LIFE_F: 72, J1_BOX: 3072, D1_REACH: 12288, D1_V: 1536, D1_LINGER_F: 6, HURT_FLASH_F: 9, POP_F: 12, DIVE_SLOT_CD_F: 0 };
+    HP_Q: 4, J1_REACH: 20480, J1_V: 1280, J1_LIFE_F: 72, J1_BOX: 3072, D1_REACH: 12288, D1_V: 1536, D1_LINGER_F: 6, HURT_FLASH_F: 9, POP_F: 12, DIVE_SLOT_CD_F: 0,
+    /* Weapons v1 step 2 (docs/WEAPONS-V1.md 2.3) */
+    J2_BURN_F: 90, J2_DROP_F: 10, J2_BOX: 2048, J3_REACH: 8192, J4_REACH: 8192, J4_STUN_F: 60, J5_REACH: 16384, J5_V: 1536, J5_BOXW: 2048, J5_BOXH: 1024,
+    J6_REACH: 24576, J6_V: 1024, J6_BOXW: 4096, J6_BOXH: 1536, J7_REACH: 12288, J7_FREEZE_F: 30, J8_JUMP_V: 2432, J8_DEEP_JUMP_V: 2656 };
   for (const k of Object.keys(KNOWN)) t.eq(K[k], KNOWN[k], 'K.' + k + ' known answer');
   for (const k of Object.keys(K)) if (typeof K[k] === 'number') t.ok(Number.isInteger(K[k]), 'K.' + k + ' is an integer (' + K[k] + ')');
   t.same(SB.derive(T, G), K, 'derive is pure: a second call equals K');
@@ -4394,7 +4397,7 @@ group('H-sim-19', 'a room with a scroll pick replays from its recorded script (t
    labs lay enemies by hand and freeze them wherever an enemy must hold still for geometry (a held enemy is hit as any
    other, 5.3) */
 const WPN_ID = ['', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7', 'J8', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8'];
-const code = id => WPN_ID.indexOf(id), BUILT_IDS = SB.TUNING.WEAPONS_BUILT, PK = { BOOMERANG: 1, SHOCK: 2, POP: 3 };
+const code = id => WPN_ID.indexOf(id), BUILT_IDS = SB.TUNING.WEAPONS_BUILT, PK = { BOOMERANG: 1, SHOCK: 2, POP: 3, TRAIL: 4, EMBER: 5, FLASH: 6, DART: 7, RING: 8, KICK: 9, SNAP: 10 };
 const ARMED = ['J1', 'D1'];
 /* a lab: the room from text, enemies [kind, cell, elite?] frozen unless `moving`, the hero at its box (x, y sub px) or
    standing in column hc on row `row` (default the floor row 46), the loadout */
@@ -4917,9 +4920,12 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
     fx_skyhook: [hx(I.INK, I.ASH, I.GLARE, I.TEAL), true], stick_pad: [hx(I.INK, I.PAPER, I.GLARE), true], stick_knob: [hx(I.INK, I.PAPER, I.GLARE), true],
     stick_hint: [hx(I.INK), true], pause_glyph: [hx(I.INK), true], dust_mote: [hx(I.PEWTER, I.ASH), false], frost_mote: [hx(I.INK, I.PAPER, I.GLARE), true],
     bubble: [hx(I.INK, I.GLARE, I.TEAL), true], spore: [hx(I.INK, I.MOSS), true], ember_mote: [hx(I.INK, I.ASH, I.AMBER), true],
-    icon_biomes: [hx(I.INK, I.ASH, I.PAPER, I.WALNUT, I.AMBER, I.BRICK, I.LAPIS, I.TEAL, I.MOSS), true] };
+    icon_biomes: [hx(I.INK, I.ASH, I.PAPER, I.WALNUT, I.AMBER, I.BRICK, I.LAPIS, I.TEAL, I.MOSS), true],
+    /* W2 (weapons step 2, Q122): round 1's bursts (the Flashbulb, Halo, Shutter Snap), Shield Kick's impact and the held
+       looks, each the colours Astra drew: no Ink rim in the bursts and the impact, Ink on the frozen crystals only */
+    fx_bursts: [hx(I.PEWTER, I.GLARE, I.AMBER), false], fx_impacts: [hx(I.ASH, I.GLARE, I.AMBER), false], fx_frozen_stunned: [hx(I.INK, I.GLARE, I.AMBER, I.TEAL), false] };
   const POSES = Object.keys(LAW).filter(n => n.startsWith('hero_'));
-  t.ok(names.length > 0 && names.length < 43, names.length + ' named sprites (under 43, ART3\'s cap; frames are unlimited)');
+  t.ok(names.length > 0 && names.length < 46, names.length + ' named sprites (under 46, W2\'s cap; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
     const sp = S[name];
@@ -4950,8 +4956,16 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   /* ART3: every built weapon's icon is the icon_weapons glyph named by its code (Astra's round 2, J1 to charm), Ink
      outlined; J1's and D1's glyphs are round 1's pixel for pixel (Astra's word, pinned by the sha256 of round 1's
      boomerang and anvil_boots strings) */
-  const unbound = SB.TUNING.WEAPONS_BUILT.filter(id => !(S.icon_weapons && S.icon_weapons.frames[id] && S.icon_weapons.frames[id].includes(INK)));
-  t.ok(unbound.length === 0, 'every built weapon (' + SB.TUNING.WEAPONS_BUILT.join(', ') + ') draws its own Ink outlined icon_weapons glyph named by its code' + (unbound.length ? ' (unbound: ' + unbound.join(', ') + ')' : ''));
+  /* W2 (Q122): Astra drew Halo's glyph (J6) as an Amber ring with a Glare cross, no Ink at all; it is bound as she drew
+     it, named here, and every other built glyph keeps its Ink */
+  const NO_INK_GLYPH = ['J6'];
+  const unbound = SB.TUNING.WEAPONS_BUILT.filter(id => !(S.icon_weapons && S.icon_weapons.frames[id] && (S.icon_weapons.frames[id].includes(INK) || (NO_INK_GLYPH.includes(id) && /[1-9a-f]/.test(S.icon_weapons.frames[id])))));
+  t.ok(unbound.length === 0, 'every built weapon (' + SB.TUNING.WEAPONS_BUILT.join(', ') + ') draws its own Ink outlined icon_weapons glyph named by its code (J6 Halo as Astra drew it, no Ink)' + (unbound.length ? ' (unbound: ' + unbound.join(', ') + ')' : ''));
+  /* W2: the step 2 clips the pictures bind, four frames each, and none of step 3's (they wait in the cut) */
+  const clips = (n, c) => !!S[n] && [0, 1, 2, 3].every(k => typeof S[n].frames[c + '_' + k] === 'string');
+  t.ok(clips('fx_bursts', 'flashbulb') && clips('fx_bursts', 'halo') && clips('fx_bursts', 'shutter_snap') && clips('fx_impacts', 'shield_kick') && clips('fx_frozen_stunned', 'frozen') && clips('fx_frozen_stunned', 'stunned') && clips('fx_projectiles', 'twin_darts')
+    && !clips('fx_bursts', 'icicle_freeze') && !clips('fx_impacts', 'pogo_spear') && !clips('fx_impacts', 'pile_driver') && S.fx_bursts.w === 48 && S.fx_impacts.w === 32 && S.fx_frozen_stunned.w === 32,
+    'the step 2 pictures are Astra\'s clips (fx_bursts flashbulb, halo, shutter_snap at 48; fx_impacts shield_kick, fx_frozen_stunned frozen and stunned, fx_projectiles twin_darts at 32), and step 3\'s icicle_freeze, pogo_spear and pile_driver wait in the cut');
   const sha16 = str => require('node:crypto').createHash('sha256').update(String(str)).digest('hex').slice(0, 16), IW = (S.icon_weapons || { frames: {} }).frames;
   t.ok(sha16(IW.J1) === '9789ac48c2044d72' && sha16(IW.D1) === 'c9ca5f1ee851afcd', 'icon_weapons.J1 and .D1 are round 1\'s boomerang and anvil_boots pixel for pixel (sha256 ' + sha16(IW.J1) + ', ' + sha16(IW.D1) + ')');
   /* ART3: round 2's keylined elites: every Magenta pixel's eight neighbours are Magenta or Ink (Astra's keyline, so the

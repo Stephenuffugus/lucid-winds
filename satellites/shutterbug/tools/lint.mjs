@@ -295,6 +295,13 @@ else {
     if (!same(sk, BUILT)) fail('WEAPON_NAMES', 'COPY.wpnSays holds ' + (sk.join(', ') || 'nothing') + ', the build has ' + (BUILT.join(', ') || 'nothing') + ' (every built weapon says what it does)');
     for (const id of wk) if (WEAPON_NAMES[id] && COPY.wpn[id] !== WEAPON_NAMES[id]) fail('WEAPON_NAMES', 'COPY.wpn.' + id + ' is "' + COPY.wpn[id] + '", DESIGN 9.1 names it "' + WEAPON_NAMES[id] + '"');
   }
+  /* WEAPON_NAMES, step 2 (docs/WEAPONS-V1.md 11): every built weapon has its ui.TRAITS row (reach, damage, both sides,
+     holds, lift: five numbers), so the swap card's comparison line can never be made from nothing (TRAITS_MISSING) */
+  const tm = ui.src.match(/ui\.TRAITS = (\{[^;]*\});/);
+  let TR = null;
+  try { TR = tm ? vm.runInNewContext('(' + tm[1] + ')') : null; } catch (e) { TR = null; }
+  if (!TR) fail('WEAPON_NAMES', 'shell-ui holds no ui.TRAITS literal (the swap card\'s traits by id)');
+  else for (const id of BUILT) if (!Array.isArray(TR[id]) || TR[id].length !== 5 || !TR[id].every(n => Number.isInteger(n))) fail('WEAPON_NAMES', 'the built ' + id + ' has no ui.TRAITS row of five numbers (TRAITS_MISSING)');
 }
 const bodyStart = html.indexOf('<body'), firstScript = html.indexOf('<script', bodyStart);
 const markup = html.slice(bodyStart, firstScript < 0 ? html.length : firstScript);
@@ -322,8 +329,8 @@ for (const fm of html.matchAll(/font-size\s*:\s*([0-9.]+)\s*(rem|em|px)|fontSize
     if (S) {
       const names = Object.keys(S);
       /* the page's key cap, the same number as tools/astra_cut.py's MAX_SPRITES (ART3: 43, the least that takes the 42
-         names this step leaves; PROGRESS ART3) */
-      if (names.length >= 43) fail('SPRITES', names.length + ' named sprites (under 43)');
+         names this step leaves; PROGRESS ART3; W2: 46, Astra's fx_bursts, fx_impacts and fx_frozen_stunned make 45, Q122) */
+      if (names.length >= 46) fail('SPRITES', names.length + ' named sprites (under 46)');
       /* WEAPON_NAMES (ART3, Astra's round 2): icon_weapons holds a glyph for every DESIGN 9.1 code, named by the code,
          in DESIGN's order (J1 to J8, D1 to D8, C1 to C8), then the jump, dive and charm slot glyphs; every built id has
          its glyph; and R.icon looks a glyph up by the code itself, never by a table or its place in the strip */
