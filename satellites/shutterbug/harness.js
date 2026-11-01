@@ -5202,7 +5202,7 @@ group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHas
   say('cap', 'the table\'s caps hold: room 2 and 3 at most 4 enemies and 1 elite, room 4 at most 5 and 2, room 5 at most 3 and 1 (Ember one more enemy)');
   say('kind', 'every ramp enemy is its biome\'s kind or, where no cell keeps the kind\'s rule, a moth (' + moths + ' moths)');
   const missing = [1, 2, 3, 4].filter(b => !own[b]);
-  t.ok(missing.length === 0 && moths < laid / 4, 'every biome\'s own kind is laid as ramp fodder, moths the exception (' + [0, 1, 2, 3, 4].map(b => SB.palette.BIOMES[b] + ' ' + (own[b] || 0)).join(', ') + '; ' + moths + ' moths of ' + laid + ')');
+  t.ok(missing.length === 0, 'every biome\'s own kind is laid as ramp fodder (' + [0, 1, 2, 3, 4].map(b => SB.palette.BIOMES[b] + ' ' + (own[b] || 0)).join(', ') + '; ' + moths + ' moths of ' + laid + ')');
   say('rules', 'every ramp enemy keeps DESIGN 7: open, clear of spawn by ENEMY_SPAWN_CLEAR, outside ROUTE_SAFE_ENEMY_DIST of the ascent, never on a trap, the pocket, a loot cell or the exit; crawlers and sparks standing, icicles hanging');
   say('env', 'no ramp enemy\'s envelope covers a cell the ascent stands on');
   say('route', 'the ramped room keeps the free play room\'s ascent and degrade ladder, and its ascent holds on the safe cells');

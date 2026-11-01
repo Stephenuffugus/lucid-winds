@@ -229,10 +229,12 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #housecount { margin: 0; text-align: center; color: var(--ash); font-size: 0.9rem; }
 #freeplay { margin: 6px 0 0; color: var(--ash); font-size: 0.9rem; }
 #title:has(#house:not([hidden])) #shoot { background: var(--paper); }   /* one Sun button on the title: Start a house */
-/* a short phone with the house shown: the polaroid shrinks so Free play's buttons stay clear of the fleet's chip in the
-   bottom corner (the 320x568 shot: the chip sat on Photograph a room) */
-@media (max-height: 700px) { #title:has(#house:not([hidden])) .art { padding-top: 4px; } #title:has(#house:not([hidden])) .photo { height: 80px; }
-  #title:has(#house:not([hidden])) .polaroid { padding-bottom: 16px; } #title:has(#house:not([hidden])) .tag { margin-top: 8px; } }
+/* with the house shown the polaroid shrinks, so the title keeps its old length and the fleet's chip its clear seat in the
+   bottom corner (the 320x568 shot: the chip sat on Photograph a room; the layout gate at 390x844 and 360x780 after a
+   room); with Continue the house too, the tagline goes */
+#title:has(#house:not([hidden])) .art { padding-top: 4px; } #title:has(#house:not([hidden])) .photo { height: 80px; }
+#title:has(#house:not([hidden])) .polaroid { padding-bottom: 16px; } #title:has(#house:not([hidden])) .tag { margin-top: 8px; }
+#title:has(#housego:not([hidden])) .tag { display: none; }
 /* the doorway (the clear card's place in a house), the house's start and its clear: one card on a screen of its own */
 #door { flex-direction: column; align-items: center; justify-content: center; overflow-y: auto; background: var(--soot);
   padding: calc(12px + var(--sat)) calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal)); }
@@ -3071,9 +3073,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var T = SB.TUNING, w = level.w, h = level.h, n = w * h, f = level.features, es = f.enemies, stands = ascentStands(level), i, k, laid = 0;
     var rng = SB.rng.mulberry32((level.seed ^ T.RAMP_SALT) >>> 0), base = KIND_OF_BIOME[level.biome | 0] || MOTH;
     var near = new Uint8Array(n), stand = new Uint8Array(n), keep = new Uint8Array(n);
-    var mark = function (c0, r) { var x0 = c0 % w, y0 = (c0 - x0) / w; for (var yy = Math.max(0, y0 - r); yy <= Math.min(h - 1, y0 + r); yy++) for (var xx = Math.max(0, x0 - r); xx <= Math.min(w - 1, x0 + r); xx++) near[yy * w + xx] = 1; };
-    mark(level.spawn, T.ENEMY_SPAWN_CLEAR);
-    for (k = 0; k < stands.length; k++) { mark(stands[k], T.ROUTE_SAFE_ENEMY_DIST); stand[stands[k]] = 1; }
+    var ring = function (c0, r) { var x0 = c0 % w, y0 = (c0 - x0) / w; for (var yy = Math.max(0, y0 - r); yy <= Math.min(h - 1, y0 + r); yy++) for (var xx = Math.max(0, x0 - r); xx <= Math.min(w - 1, x0 + r); xx++) near[yy * w + xx] = 1; };
+    ring(level.spawn, T.ENEMY_SPAWN_CLEAR);
+    for (k = 0; k < stands.length; k++) { ring(stands[k], T.ROUTE_SAFE_ENEMY_DIST); stand[stands[k]] = 1; }
     var off = function (c) { if (c !== null && c !== undefined && c >= 0 && c < n) keep[c] = 1; };
     for (k = 0; k < f.specks.length; k++) off(f.specks[k]);
     off(f.chest); off(f.scroll); off(f.blueprint); off(level.exit); off(level.spawn);
@@ -3082,7 +3084,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var ok = function (c, kind) {
       if (c < w || c >= n - w || level.solid[c] || level.plat[c] || level.trap[c] || near[c] || keep[c]) return false;
       if (kind === CRAWLER || kind === SPARK) { if (!standable(level, c)) return false; }
-      else if (kind === ICICLE && !(level.solid[c - w] || level.plat[c - w])) return false;
+      else if (kind === ICICLE && !level.solid[c - w] && !level.plat[c - w]) return false;
       var env = envelope(level, kind, c);
       for (var q = 0; q < env.length; q++) if (stand[env[q]]) return false;
       return true;
@@ -5099,7 +5101,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the fleet's chip, pill, card and toast hide while a room runs (Q48's addendum) and on the crop screen, where the
        chip sat over the photo a drag starts on (t15-crop) */
     document.body.classList.toggle('playing', name === 'play' || name === 'crop');
-    if (name === 'title' || name === 'settings' || name === 'door') ui.seatChip();
+    if (name === 'title' || name === 'settings') ui.seatChip();
+    else if (name === 'door') ui.seatChip();   /* the house's doorway is a screen of its own, seated as the title (Q200) */
     if (name === 'play') SB.render.fit();
   };
   /* under the mark the fleet's chip takes its seat on the title and Settings at once, not at the include's own reseat
