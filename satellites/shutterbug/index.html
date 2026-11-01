@@ -5713,7 +5713,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (!said.length) said.push(C.cmpOther);
     return C.wpn[newId] + ' ' + said.slice(0, 2).join(C.cmpAnd) + '.';
   };
-  var swapShown = 0, swapSent = 0;
+  var swapShown = 0, swapSent = 0, swapCam = '';
   ui.initSwap = function () {
     var el = document.createElement('div'); el.id = 'swap'; el.setAttribute('role', 'dialog');
     var row = function (cls) { var r = document.createElement('div'), cv = document.createElement('canvas'), t = document.createElement('div'); r.className = 'srow ' + cls; cv.width = SB.render.ICON_PX; cv.height = SB.render.ICON_PX; t.appendChild(document.createElement('b')); t.appendChild(document.createElement('span')); r.appendChild(cv); r.appendChild(t); return r; };
@@ -5766,7 +5766,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
       el.querySelector('.cmp').textContent = ui.compareLine(nu, old);
       document.getElementById('swaptake').textContent = C.swapTake.replace('{new}', C.wpn[nu] || '');
       document.getElementById('swapkeep').textContent = C.swapKeep.replace('{old}', C.wpn[old] || '');
-      swapShown = 1; swapSent = 0; SB.input.releaseAll(); el.classList.add('on'); ui.placeSwap();
+      swapShown = 1; swapSent = 0; SB.input.releaseAll(); el.classList.add('on'); swapCam = SB.render.drawn.cam + ',' + SB.render.drawn.camX; ui.placeSwap();
+    } else if (open && swapShown) {
+      /* the camera still settling under the held world (the shots: a room entered beside its chest opened the card while
+         the view was still gliding to the bug, and the card docked for where the bug had been): placed again only when
+         the drawn camera moved, so a still card is measured once */
+      var cam = SB.render.drawn.cam + ',' + SB.render.drawn.camX;
+      if (cam !== swapCam) { swapCam = cam; ui.placeSwap(); }
     } else if (!open && swapShown) { swapShown = 0; swapSent = 0; el.classList.remove('on'); }
   };
 
