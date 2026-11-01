@@ -1385,6 +1385,10 @@ const MUTANTS = [
     gates: [{ gate: 'house', expect: 'with a house saved its button leads the title in Sun' }] },
   { name: 'STRIP_NAME_FULL', task: 'HOUSE-AR', file: 'page', find: "if (!el.getClientRects().length || el.scrollWidth <= el.clientWidth) return; }", repl: "return; }",   /* re anchored at HOUSE-ART3 */
     gates: [{ gate: 'house', expect: "320x568: the strip's room name fits beside 8 hearts" }] },
+  { name: 'PAUSE_ROW_HOUSE_CRUSHED', task: 'HOUSE-ART3', file: 'page', find: "#paused.row.house #pausetitle { flex: 1 1 0; min-width: 0; }", repl: "",
+    gates: [{ gate: 'house', expect: '320x568: the house pause card holds every control at 48 px or more' }] },
+  { name: 'PAUSE_HOUSE_UNMARKED', task: 'HOUSE-ART3', file: 'page', find: "    document.getElementById('paused').classList.toggle('house', G.mode === 'house');\n", repl: "",
+    gates: [{ gate: 'house', expect: '320x568: the house pause card holds every control at 48 px or more' }] },
   { name: 'NAME_ZERO_IS_HIDDEN', task: 'HOUSE-ART3', file: 'page', find: "if (!el.getClientRects().length || el.scrollWidth <= el.clientWidth) return; }", repl: "if (el.clientWidth === 0 || el.scrollWidth <= el.clientWidth) return; }",
     gates: [{ gate: 'house', expect: "320x568: the strip's room name fits beside 8 hearts and two weapons in room 3" }] },
   { name: 'HEARTS_NEVER_COUNT', task: 'HOUSE-AR', file: 'page', find: "if (last < forms.length) { ui.heartsCount = true;", repl: "if (false) { ui.heartsCount = true;",

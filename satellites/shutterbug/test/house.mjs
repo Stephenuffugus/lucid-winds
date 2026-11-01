@@ -279,6 +279,15 @@ try {
     const gl = await b.page.evaluate(() => { const el = document.getElementById('housego'), rg = document.createRange(); rg.selectNodeContents(el); return { text: el.textContent, lines: new Set([...rg.getClientRects()].map(r => Math.round(r.top))).size }; });
     R.say(gl.text === 'Continue room 3 of 5' && gl.lines === 1, '320x568: the title\'s Continue room 3 of 5 sits on one line (' + JSON.stringify(gl) + ')');
     await scrollTap(b.page, '#housego'); await scrollTap(b.page, '#doorenter'); await playing(b.page);
+    /* the pause card in a house at 320x568 (HOUSE-ART3's shots: in its one row Leave the house crushed Share this room to
+       20 px and lay over it): every control 48 px or more, none over another, every word inside its button */
+    const pz = await b.page.evaluate(() => {
+      window.SB.ui.pause(); const pc = document.getElementById('paused'), bs = [...pc.querySelectorAll('button')].filter(el => !el.hidden), rs = bs.map(el => el.getBoundingClientRect());
+      const over = []; for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++) if (rs[i].left < rs[j].right - 1 && rs[j].left < rs[i].right - 1 && rs[i].top < rs[j].bottom - 1 && rs[j].top < rs[i].bottom - 1) over.push(bs[i].id + '/' + bs[j].id);
+      const out = { cls: pc.className, small: bs.filter((el, k) => rs[k].width < 48 || rs[k].height < 48).map((el, k) => el.id), over, spill: bs.filter(el => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1).map(el => el.id), sizes: rs.map(r => Math.round(r.width) + 'x' + Math.round(r.height)) };
+      window.SB.ui.resume(); return out;
+    });
+    R.say(pz.small.length === 0 && pz.over.length === 0 && pz.spill.length === 0, '320x568: the house pause card holds every control at 48 px or more, none over another, every word inside (' + JSON.stringify(pz) + ')');
     await b.page.evaluate(() => { for (let k = 0; k < 9000 && window.SB_DEV.screen() === 'play'; k += 30) window.SB_DEV.step(30); });
     const dk = await b.page.evaluate(() => {
       const $ = id => document.getElementById(id), ids = ['deathretry', 'deathnew', 'deathtitle'], rs = ids.map(id => $(id).getBoundingClientRect());
