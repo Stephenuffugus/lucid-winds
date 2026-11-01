@@ -1,0 +1,93 @@
+SHUTTERBUG, ART ROUND 4 FOR ASTRA (1 Nov 2026)
+
+Thank you for round 3. It arrived whole (18 strips, 119 frames, your VALIDATION passed). Tonight it goes in:
+- the house run's pips, house icon, clear card and unlock reveal
+- the boss's wake, chip and collapse, and the beacon lighting
+- the crop search marker and the crop hatches
+The biome air and badges are already in. Your stat up burst and new heart wait for the scrolls. Everything you delivered stays.
+
+A CORRECTION TO ROUND 3
+Round 3 said a soft green would become the green. That change measured badly and was replaced:
+- The 16 colours stay exactly as they are.
+- The room's biome is now read from the photo's real colour, so a green room is an Overgrowth room (its air, its enemy, its badge) while its cells still use the 16 colours.
+- Rooms stay mostly greys, browns and wood, so the keyline rule below still matters.
+
+WHY THERE IS A ROUND 4
+Stephen today: "I want to make shutterbug really good." Your rounds 2 and 3 were shot inside the game on a phone at 412, 360 and 320 px wide. Those shots found two kinds of problem:
+- Some pieces do not read yet.
+- Seven new jump weapons are in, and some of their effects are drawn bigger or smaller than the area they actually hit.
+Round 4 is mostly fixes. Each fix replaces the key whole: the same key name, size and frame names unless a line here says otherwise.
+
+CONTRACT (unchanged)
+- The same 16 colours as your manifest's palette, exactly those hexes. Alpha 0 or 255 only.
+- Sun (#f2d13f) only in the hero and the beacon.
+- One sprite key per PNG strip, frames left to right, all the same size. Plain, distinct frame names: letters, digits and underscores, starting with a letter.
+- A source grid per strip, and a manifest entry per file: file, sprite, w, h, frames, names, fps, anchor, sha256, notes.
+- Anything drawn over the room keeps a one pixel Ink keyline wherever it uses a saturated colour.
+- WEAPON EFFECTS have their own colour law, which the game checks. An Ink outline, then only Slate, Pewter, Ash, Paper and Glare. The colours they must avoid, and why:
+  - Sun: the hero's.
+  - Film: help platforms.
+  - Brick and Magenta: danger.
+  - Amber: loot.
+  - Teal.
+  So fire is drawn as white and grey flame (a Glare core with Ash and Pewter licks).
+
+1. WEAPON EFFECTS SIZED TO WHAT THEY HIT (highest priority: these weapons are in the game now)
+   Sizes are in native pixels. One cell is 16 px. The bug's box is about 12x16.
+   a. dart, 8x4, one frame a: ONE dart flying level, pointing right (the game mirrors it for the left side). Twin Darts fires one dart to each side, level, and each travels 4 cells. Your fx_projectiles twin_darts frames show a pair rising at 45 degrees, about 22 px wide, so each side looks like two darts for one hit.
+   b. ring, 16x6, frames a and b: Halo's ring, rising straight up 6 cells from where the bug jumped. Not Amber: Amber means loot. Glare and Paper with an Ink rim.
+   c. ember, 8x8, frames a and b (a flicker): ONE spark. Spark Trail drops three sparks one at a time along the jump, each burning 1.5 s where it fell. Your fx_fire spark_trail frames draw all three in one 32 px frame.
+   d. flash_ring, 64x64, frames a to d, 12 fps, played once: Flashbulb stuns everything within 2 cells (32 px) of the bug's centre at the top of a jump. Your fx_bursts flashbulb frames are 7 to 29 px across, so the player cannot see where the stun reaches. Draw a burst whose outer ring sits on the 64 px edge on frame b or c, so the player sees where the reach ends.
+   e. snap_frame, 8x8, frames corner, edge_h and edge_v: Shutter Snap freezes everything within 3 cells of the bug on both axes, a square about 108x112 px. That is too big for one sprite, so the game builds the square from three tiles:
+      - corner, drawn top left (the game mirrors it into the other three corners)
+      - edge_h, repeated along the top and the bottom
+      - edge_v, repeated along the sides
+      It should read as a camera's viewfinder or a film frame snapping shut around the frozen enemies, in Paper and Glare with an Ink rim.
+   f. kick_spray, 16x80, frames a, b and c, 12 fps, played once: Shield Kick hits everything in the one cell column beside the wall, from 2 cells above the bug to 2 cells below it (5 cells tall). Draw three strokes coming off the wall face along that column. The game draws it with the wall on the left of the frame and mirrors it for a right wall. Today's spray is 14 px, too small to read.
+   g. fire_cell, 16x16, frames a and b (a flicker): one cell of ground fire, white and grey flame per the weapon law. Ember Stomp burns the cell the bug lands on, and Flashpan burns a line of three cells behind a dash (the game repeats the tile along the line).
+   h. frost_burst, 80x80, frames a to d, 12 fps, played once: Icicle freezes everything within 2 cells of the bug on both axes when it lands from a dive or dashes. Your fx_bursts icicle_freeze frames are 48 px, smaller than the reach. Paper, Glare and Pewter shards with an Ink rim, reaching the 80 px edge on frame b or c.
+
+2. THE CONTROLS (high: the player sees them every second)
+   a. stick_pad, 40x40, frames idle and active.
+      - Today it is an opaque Ink ring with a Paper inner ring, the loudest mark on the control strip. Make it quieter: a 1 px ring, or Slate instead of Ink.
+      - Active must look clearly different from idle on the strip's Paper. Today's Glare inner ring is almost invisible on Paper. A filled inner disc in Ash, or a Lapis ring, would work: your choice.
+      - The knob (stick_knob, 18x18) slides only left and right, up to 11 px from the pad's centre (the game draws both at about 2.9x). At a full push its edge reaches the pad's own edge, and today its rim cuts across the pad's ring. Draw them so the knob passing over the ring still reads cleanly: for example a ring broken at its left and right sides, or a 14x14 knob. If you change the knob's size, say so in your notes.
+   b. stick_hint, 72x12, frame line.
+      - The two chevrons must be exact mirror images. Today the left one has a one pixel nub on its row 6, and their rows differ (1 to 11 against 2 to 10).
+      - They must be no louder than the words beside them. The game draws the words in Ink at 40%, so draw the chevrons in Slate, or thinner.
+      - Keep the middle 48 columns clear for the words.
+   c. pause_glyph, 16x16, frames normal and pressed.
+      - Two solid Ink bars are the heaviest mark in the top strip. Make them lighter: thinner bars, or Slate.
+      - Make pressed clearly different, not only 2 px lower: for example the bars inverted into a Paper glyph on an Ink tile.
+
+3. THE BIOME AIR (medium: every room)
+   All four keep 16x16, frames a to d, 4 fps:
+   a. dust_mote (Attic): single Pewter and Ash pixels vanish on the Attic's Ash and wood walls. Give each fleck an Ink core or keyline.
+   b. frost_mote: today it reads as Ink outlined plus signs. Make it read as snow: a soft fleck, or a tiny six arm crystal.
+   c. bubble (Deep): dark Ink balls read as hazards, like mines. Make it mostly hollow: a thin ring with a Glare highlight.
+   d. ember_mote: Amber is loot's colour, so at 320 px it looks like a Dead pixel to collect. Use Brick with a Glare core, never Amber.
+
+4. SMALL FIXES (lower)
+   a. icon_weapons, frame J6 (Halo): the glyph has no Ink at all (an Amber ring with a Glare cross). Give it the Ink outline every other glyph has, and not Amber. Send the whole 27 frame strip again in the same order, every other frame pixel identical.
+   b. crusher, 16x16, frames a, b and c.
+      - Three columns side by side read as the bars of a cage.
+      - The Glare teeth are 1 px dots that vanish on light cells. Make the tooth row 2 px tall with an Ink edge.
+      - Keep your shaft rule: row 0 of the frame stretched above the bottom cell.
+   c. moth_elite, 24x24, frames a and b: its Slate body sits too close to the Attic's Ash walls. Darken it or give it a fuller Ink outline. Keep the Magenta marks keylined.
+   d. speck, 16x16, frames a and b: the one pixel Glare glint on frame b barely shows. Make it a 2x2 glint, or a small plus.
+
+NOT NEEDED
+These are all delivered:
+- the hero and the skins
+- the enemies and the other elites
+- the bosses
+- the cards and the font
+- the house art
+- the crop art
+- the Darkroom door
+- the daily rooms
+- the frame styles
+- the stat icons
+Pogo Spear and Pile Driver keep your round 1 frames unless the game finds a problem. If it does, it comes in round 5. The Darkroom's screens and blueprint art come later, when the Darkroom is built.
+
+DELIVERY: one zip named shutterbug-assets-round4.zip with manifest.json at its root (a delta manifest like rounds 2 and 3), the PNG strips, their source grids, your verify script's output, and a short notes file listing anything you chose differently and why.
