@@ -20,7 +20,7 @@
  * search skipped, the refusal's message at once on Develop). Without flags:
  *   - 26 rows of Walnut at the default box: no message at rest; Develop (one real tap, no drag) searches, the box is
  *     drawn where the search chose, no message while it shows, and the room developed is the chosen box's record;
- *   - the all black photo: the seek marker loops while it searches, then the dark message, the box where the player
+ *   - a photo Ink to every edge: the seek marker loops while it searches, then the dark message, the box where the player
  *     left it; no animation frame spends more than SEEK.SLICE_MS on the search (the builds in a worker), and with
  *     ?seekworker=0 (the builds on the page's thread) the search still spreads over frames and no frame that ran
  *     more than one build passed the budget.
@@ -75,6 +75,14 @@ try {
       rows.forEach((r, y) => [...r].forEach((d, x) => { c.fillStyle = '#' + hex[parseInt(d, 16)]; c.fillRect(Math.round(50 + x * cw), Math.round(y * ch), Math.ceil(cw), Math.ceil(ch)); }));
     }, rows, HEX);
     await (await page.$('#c')).screenshot({ path: join(TMP, name + '.png') });
+    await page.close();
+  }
+  /* the auto crop's photo that nothing builds: Ink to every edge (the black photo's wall margins build at the side) */
+  {
+    const { page } = await newPage(browser, { width: 900, height: 1600, dpr: 1 });
+    await page.setContent('<html><body style="margin:0"><canvas id="c" width="900" height="1600"></canvas></body></html>');
+    await page.evaluate(hex => { const c = document.getElementById('c').getContext('2d'); c.fillStyle = '#' + hex[0]; c.fillRect(0, 0, 900, 1600); }, HEX);
+    await (await page.$('#c')).screenshot({ path: join(TMP, 'void.png') });
     await page.close();
   }
   {
@@ -140,8 +148,8 @@ try {
     R.say(dev.screen === 'play' && dev.code && dev.code === dev.chosen, 'autocrop: it develops by itself, the room the chosen box\'s record (screen ' + dev.screen + ', the room\'s code ' + (dev.code === dev.chosen ? 'is' : 'is not') + ' the chosen box\'s)');
     await leaveRoom(page);
     await page.waitForFunction(() => window.SB_DEV.screen() === 'title', { timeout: 5000 }).catch(() => {});
-    /* the black photo: nothing in it builds */
-    const bk0 = await load('black');
+    /* Ink to every edge: nothing in it builds */
+    const bk0 = await load('void');
     await tap(page, '#develop');
     const mk = await page.evaluate(() => new Promise(r => requestAnimationFrame(() => setTimeout(() => r(Object.assign(window.SB_DEV.overlay().seek || {}, { seeking: window.SB_DEV.overlay().seeking })), 120))));
     await page.waitForFunction(() => { const s = window.SB_DEV.overlay().seek; return s && s.phase !== 'seek'; }, { timeout: 30000 }).catch(() => {});
@@ -161,7 +169,7 @@ try {
     await ready(page, { reveal: true });
     const SLICE = await page.evaluate(() => window.SB.capture.SEEK.SLICE_MS);
     const d = await page.evaluate(() => window.SB_DEV.overlay().decodes);
-    await (await page.$('#filechoose')).uploadFile(join(TMP, 'black.png'));
+    await (await page.$('#filechoose')).uploadFile(join(TMP, 'void.png'));
     await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
     await tap(page, '#develop');
     await page.waitForFunction(() => { const s = window.SB_DEV.overlay().seek; return s && s.phase !== 'seek'; }, { timeout: 60000 }).catch(() => {});
