@@ -126,14 +126,15 @@ function png(img, out) {
   fs.writeFileSync(out, Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ih), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]));
 }
 
-/* the auto crop's search over one scene, as the page runs it: the candidates in order, at most SEEK.CAP builds */
-function seek(SB, CAP, img, crop, no) {
+/* the auto crop's search over one scene, as the page runs it: the candidates in order, at most SEEK.CAP builds; with
+   opts.raw each box's grid skips the capture normalisation (the search alone, on the grids it met before Q182) */
+function seek(SB, CAP, img, crop, no, opts) {
   const boxes = CAP.seekBoxes(crop, img.w, img.h, no.cause, no.band);
   let n = 0;
   for (const b of boxes) {
     if (n >= CAP.SEEK.CAP) break;
     n++;
-    const lv = SB.pipeline.build(recordOf(SB, img, b, CAP), { firstRoom: true });
+    const lv = SB.pipeline.build(recordOf(SB, img, b, opts && opts.raw ? null : CAP), { firstRoom: true });
     if (!lv.needsCrop) return { seekBuilds: n, seekBox: b, seekLevel: lv };
   }
   return { seekBuilds: n, seekBox: null, seekLevel: null };

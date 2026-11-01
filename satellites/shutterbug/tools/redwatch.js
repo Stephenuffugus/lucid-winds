@@ -1243,11 +1243,13 @@ const MUTANTS = [
   { name: 'NORM_OFF', task: 'NORMALISE', file: 'page', find: '    rgb = C.normalize(rgb);\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-norm-1', expect: 'gridRecord gives the normalised grid\'s nearest colour in every cell' },
       { gate: 'capture', expect: 'normalise: the crop screen\'s record is the normalised grid\'s nearest colour in every cell' }] },
-  { name: 'NORM_SPLIT', task: 'NORMALISE', file: 'page', find: 'var f = L[i] > 0 ? (N.L_LO + (L[i] - lo) * a) / L[i] : 1;', repl: 'var f = L[i] > 0 ? (N.L_LO + 1 + (L[i] - lo) * a) / L[i] : 1;',
+  { name: 'NORM_SPLIT', task: 'NORMALISE', file: 'page', find: 'var f = L[i] > 0 ? (cc + (L[i] - ms) * a) / L[i] : 1;', repl: 'var f = L[i] > 0 ? (cc + 1 + (L[i] - ms) * a) / L[i] : 1;',
     gates: [{ gate: 'harness', only: 'H-norm-1', expect: 'the page\'s normalize equals the oracle\'s on' },
       { gate: 'capture', expect: 'normalise: the page\'s normalised grid of the box equals the capture oracle\'s normalizeRGB' }] },
   { name: 'NORM_NUMBERS_SPLIT', task: 'NORMALISE', file: 'page', find: 'C.NORM = Object.freeze({ WB: ', repl: 'C.NORM = Object.freeze({ WB: 0.01 + ',
     gates: [{ gate: 'harness', only: 'H-norm-1', expect: 'the page\'s NORM numbers are the oracle\'s' }] },
+  { name: 'NORM_UNCAPPED', task: 'NORMALISE', file: 'page', find: 'a = Math.min(a0, N.MAX_GAIN);', repl: 'a = a0;',
+    gates: [{ gate: 'harness', only: 'H-norm-1', expect: ['a flat white grid stays light and a flat dark one dark', 'a nearly flat wall (L 197 to 203): its noise grows at most'] }] },
 ];
 
 /* ---------------------------------------------------------------- run */

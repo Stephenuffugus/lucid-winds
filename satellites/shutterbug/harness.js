@@ -1837,7 +1837,7 @@ group('H-cap-0', 'the capture oracle: the area average of known images (the valu
 });
 
 /* ================================================================ the capture normalisation (NORMALISE, Q182) */
-group('H-norm-1', 'the capture normalisation: the page\'s SB.capture.normalize (shell-capture, read as tools/room-model.js reads it) equals the capture oracle\'s normalizeRGB byte for byte; the oracle on known grids (the grey world balance at its strength, the percentiles landing on L_LO and L_HI, the hue kept, a flat grid); gridRecord takes the step before nearest', t => {
+group('H-norm-1', 'the capture normalisation: the page\'s SB.capture.normalize (shell-capture, read as tools/room-model.js reads it) equals the capture oracle\'s normalizeRGB byte for byte; the page\'s step on known grids (the grey world balance at its strength, the percentiles landing on L_LO and L_HI, the hue kept, the gain held to MAX_GAIN so a flat photo keeps its brightness); gridRecord takes the step before nearest', t => {
   const RM = require('./tools/room-model.js'), O = require('./tools/capture-oracle.js'), CAP = RM.captureOf(PAGE, SB), N = O.NORM;
   t.same(Object.assign({}, CAP.NORM), Object.assign({}, N), 'the page\'s NORM numbers are the oracle\'s');
   const Lof = (g, i) => 0.299 * g[3 * i] + 0.587 * g[3 * i + 1] + 0.114 * g[3 * i + 2];
@@ -1852,12 +1852,12 @@ group('H-norm-1', 'the capture normalisation: the page\'s SB.capture.normalize (
   let bad = null;
   for (const [name, g] of grids) { const a = CAP.normalize(g), b = O.normalizeRGB(g); for (let i = 0; i < a.length && !bad; i++) if (a[i] !== b[i]) bad = name + ' byte ' + i + ': page ' + a[i] + ', oracle ' + b[i]; }
   t.ok(bad === null, 'the page\'s normalize equals the oracle\'s on ' + grids.length + ' grids, byte for byte' + (bad ? ' (first difference: ' + bad + ')' : ''));
-  /* the oracle on known answers */
-  const ramp = grid((x, y, i) => { const v = Math.round(i * 200 / 1151) + 20; return [v, v, v]; }), rn = O.normalizeRGB(ramp);
+  /* the page's step on known answers (the oracle is held to it above) */
+  const nz = CAP.normalize, ramp = grid((x, y, i) => { const v = Math.round(i * 200 / 1151) + 20; return [v, v, v]; }), rn = nz(ramp);
   const Ls = Array.from({ length: 1152 }, (_, i) => Lof(rn, i)), loI = Math.floor(N.P_LO * 1152), hiI = Math.floor(N.P_HI * 1152);
   t.ok(Math.abs(Ls[loI] - N.L_LO) <= 1 && Math.abs(Ls[hiI] - N.L_HI) <= 1, 'a grey ramp from L 20 to 220: its cells at the ' + Math.round(100 * N.P_LO) + 'th and ' + Math.round(100 * N.P_HI) + 'th percentile land on L ' + N.L_LO + ' and ' + N.L_HI + ' (' + Ls[loI].toFixed(1) + ', ' + Ls[hiI].toFixed(1) + ')');
   t.ok(Ls.every((v, i) => i === 0 || v >= Ls[i - 1]), 'a grey ramp stays in order (the stretch is monotone)');
-  const warm = grid((x, y) => [100 + (y & 15) * 6, 70 + (y & 15) * 4, 40 + (y & 15) * 2]), wn = O.normalizeRGB(warm);
+  const warm = grid((x, y) => [100 + (y & 15) * 6, 70 + (y & 15) * 4, 40 + (y & 15) * 2]), wn = nz(warm);
   const sum = g => [0, 1, 2].map(c => { let s = 0; for (let i = 0; i < 1152; i++) s += g[3 * i + c]; return s; }), s0 = sum(warm), s1 = sum(wn);
   const cast = s => (s[0] - s[2]) / (s[0] + s[1] + s[2]), m = (s0[0] + s0[1] + s0[2]) / 3, k = s0.map(v => 1 - N.WB + N.WB * m / v);
   t.ok(cast(s1) > 0 && Math.abs(cast(s1) / cast(s0) - (1 - N.WB)) < 0.15, 'a warm room: the white balance takes about ' + Math.round(100 * N.WB) + '% of its red over blue cast away, not all of it (the cast ' + cast(s0).toFixed(3) + ' to ' + cast(s1).toFixed(3) + ')');
@@ -1867,8 +1867,12 @@ group('H-norm-1', 'the capture normalisation: the page\'s SB.capture.normalize (
     if (wn[3 * i] < 255 && Math.abs(got / want - 1) > 0.05) hue++;
   }
   t.eq(hue, 0, 'a warm room: each cell keeps its balanced red to blue ratio through the stretch, within 5% (cells that do not)');
-  const flat = O.normalizeRGB(grid(() => [200, 200, 200]));
-  t.ok(flat.every((v, i) => v === flat[i % 3]), 'a flat grid stays flat (every cell ' + Array.from(flat.slice(0, 3)).join(',') + ')');
+  const flat = nz(grid(() => [200, 200, 200])), dark = nz(grid(() => [20, 20, 20]));
+  t.ok(flat.every((v, i) => v === flat[i % 3]) && Math.abs(Lof(flat, 0) - 200) <= 3 && Math.abs(Lof(dark, 0) - 20) <= 3,
+    'a flat white grid stays light and a flat dark one dark: no contrast to stretch, the gain held to ' + N.MAX_GAIN + ' (L 200 to ' + Lof(flat, 0).toFixed(1) + ', L 20 to ' + Lof(dark, 0).toFixed(1) + ')');
+  const rw = hrand(0xa11), wall = grid(() => { const v = 200 + rw.int(7) - 3; return [v, v, v]; }), wn2 = nz(wall);
+  const spread = g => { let a = 255, b = 0; for (let i = 0; i < 1152; i++) { const v = Lof(g, i); a = Math.min(a, v); b = Math.max(b, v); } return b - a; };
+  t.ok(spread(wn2) <= N.MAX_GAIN * spread(wall) + 2, 'a nearly flat wall (L 197 to 203): its noise grows at most ' + N.MAX_GAIN + ' times (a spread of ' + spread(wall).toFixed(1) + ' to ' + spread(wn2).toFixed(1) + ')');
   /* gridRecord: the normalised grid's nearest colour in every cell, not the raw grid's */
   const raw = grids[0][1], pal = SB.record.fromJSON(CAP.gridRecord(raw, -1)).pal, nn = O.normalizeRGB(raw);
   let off = 0, moved = 0;
@@ -2839,9 +2843,14 @@ group('H-seek-1', 'the auto crop\'s boxes (shell-capture\'s seekBoxes, read from
     }
   }
   const img = RM.paint(3), crop = CAP.fit(img.w, img.h);
-  const lv = SB.pipeline.build(RM.recordOf(SB, img, crop), { firstRoom: true }), s = RM.seek(SB, CAP, img, crop, lv);
-  t.ok(lv.needsCrop && lv.cause === 'floor', 'model scene 3 is refused at the default box for its floor (cause ' + lv.cause + ')');
+  /* the search itself on the raw grids (the capture normalisation skipped, as the page read photos before Q182): the
+     floor lift is what finds this box. Normalised, the wall's shading no longer reads as a floor band and the scene
+     builds where the player framed it (NORMALISE) */
+  const lv = SB.pipeline.build(RM.recordOf(SB, img, crop), { firstRoom: true }), s = RM.seek(SB, CAP, img, crop, lv, { raw: true });
+  t.ok(lv.needsCrop && lv.cause === 'floor', 'model scene 3, the raw capture, is refused at the default box for its floor (cause ' + lv.cause + ')');
   t.same({ builds: s.seekBuilds, box: s.seekBox }, { builds: 15, box: { x: 281, y: 0, w: 463, h: 926 } }, 'model scene 3: the search builds a room from the 15th box it tries');
+  const ln = SB.pipeline.build(RM.recordOf(SB, img, crop, CAP), { firstRoom: true });
+  t.ok(!ln.needsCrop, 'model scene 3, the capture normalised, builds at the default box with no search (' + (ln.needsCrop ? 'refused: ' + ln.cause + ', ' + ln.detail : 'the spawn on row ' + Math.floor(ln.spawn / ln.w)) + ')');
 });
 
 group('H-rep-1b', 'the exit rule at its boundaries (the third review): the light inside EXIT_LIGHT_SLACK and just past it; never below the top EXIT_ROWS', t => {

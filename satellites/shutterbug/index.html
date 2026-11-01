@@ -3794,15 +3794,19 @@ body.sb-modal .lwfb-fab { display: none !important; }
   };
   function pageCanvas(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
 
-  /* The capture normalisation (QUESTIONS Q182, the investigation's photo lens): the grid's RGB, after the area average
-     and before nearest, (1) white balanced toward grey at WB strength (each channel scaled by 1 - WB + WB * the mean of
-     the three channel sums / its own sum), then (2) its luminance stretched so the P_LO and P_HI percentiles of the
-     cells' L land on L_LO and L_HI, each cell's three channels scaled by its own new L over its old (its hue kept),
-     rounded and clamped. A dim or tinted photo reaches the palette's whole range instead of collapsing into one grey.
-     It acts before nearest, so only a new photo's record changes: a shared code or a fixture is a palette grid and
-     never passes here. Pure and deterministic; tools/capture-oracle.js holds its own copy (normalizeRGB), and H-norm-1
-     and the capture gate hold the two equal byte for byte. */
-  C.NORM = Object.freeze({ WB: 0.5, P_LO: 0.03, P_HI: 0.97, L_LO: 24, L_HI: 240 });
+  /* The capture normalisation (QUESTIONS Q182, the investigation's photo lens, tuned on 95 real photographs): the
+     grid's RGB, after the area average and before nearest, (1) white balanced toward grey at WB strength (each channel
+     scaled by 1 - WB + WB * the mean of the three channel sums / its own sum), then (2) its luminance stretched so the
+     P_LO and P_HI percentiles of the cells' L land on L_LO and L_HI, each cell's three channels scaled by its own new
+     L over its old (its hue kept), rounded and clamped. The stretch's gain is at most MAX_GAIN: a nearly flat photo
+     (a blank wall, a black frame) has no contrast to spread, so its noise grows at most that much and, as the gain
+     is held back, the window slides back toward its own middle, so a white wall stays light and a black one dark
+     (at full gain the window is exactly L_LO..L_HI; the slide is continuous). A dim or tinted photo reaches the
+     palette's range instead of collapsing into one grey. It acts before nearest, so only a new photo's record
+     changes: a shared code or a fixture is a palette grid and never passes here. Pure and deterministic;
+     tools/capture-oracle.js holds its own copy (normalizeRGB), and H-norm-1 and the capture gate hold the two equal
+     byte for byte. */
+  C.NORM = Object.freeze({ WB: 0.5, P_LO: 0.1, P_HI: 0.9, L_LO: 40, L_HI: 224, MAX_GAIN: 4 });
   C.normalize = function (rgb) {
     var N = C.NORM, n = rgb.length / 3, out = new Uint8Array(rgb.length), t = new Float64Array(rgb.length), L = new Float64Array(n);
     var sr = 0, sg = 0, sb = 0, i, c;
@@ -3813,9 +3817,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
       L[i] = 0.299 * t[3 * i] + 0.587 * t[3 * i + 1] + 0.114 * t[3 * i + 2];
     }
     var s = Array.prototype.slice.call(L).sort(function (x, y) { return x - y; });
-    var lo = s[Math.floor(N.P_LO * n)], hi = s[Math.floor(N.P_HI * n)], a = (N.L_HI - N.L_LO) / Math.max(1, hi - lo);
+    var lo = s[Math.floor(N.P_LO * n)], hi = s[Math.floor(N.P_HI * n)], a0 = (N.L_HI - N.L_LO) / Math.max(1, hi - lo), a = Math.min(a0, N.MAX_GAIN);
+    var ms = (lo + hi) / 2, mt = (N.L_LO + N.L_HI) / 2, cc = mt + (ms - mt) * (1 - a / a0);
     for (i = 0; i < n; i++) {
-      var f = L[i] > 0 ? (N.L_LO + (L[i] - lo) * a) / L[i] : 1;
+      var f = L[i] > 0 ? (cc + (L[i] - ms) * a) / L[i] : 1;
       for (c = 0; c < 3; c++) out[3 * i + c] = Math.max(0, Math.min(255, Math.round(t[3 * i + c] * f)));
     }
     return out;
