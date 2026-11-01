@@ -33,9 +33,19 @@ The gate `astra` (test/astra.mjs) proves the cutter on a fixture made from the p
 
 Astra's rounds 2 and 3 are deltas over round 1, merged by sprite key: a later round's entry replaces the key whole, and every other round 1 key stays (Q98). Both were checked whole (`astra_cut.py check`: CHECK OK, round 2 20 sprites and 74 frames, round 3 18 sprites and 119 frames) with round 1's dust_mote (a one file subset, CHECK OK). The checked cut of every key, drawn or not, is `docs/astra/cut-art3.json` (39 keys, 197 frames). It is the cutter's own `--sprites` shape with four more fields per key (`round`, `fps`, `anchor`, `sha256`) and a `status` of spliced or parked.
 
-To splice a parked key, copy its entry into a JSON of its own and run `python3 -I tools/astra_cut.py splice <that.json> index.html` (the dry run first). The page holds at most 42 names (MAX_SPRITES 43, the lint and H-spr-1 the same), so a lane that adds keys raises the cap in all three places, its bytes counted in PROGRESS.
+To splice a parked key, copy its entry into a JSON of its own and run `python3 -I tools/astra_cut.py splice <that.json> index.html` (the dry run first). The page holds at most 51 names since ART4 (MAX_SPRITES 52; ART3 43, W2 46), the lint, H-spr-1 and the astra gate the same, so a lane that adds keys raises the cap in all four places, its bytes counted in PROGRESS.
 
 Spliced and drawn in ART3: icon_weapons (J1 to C8, jump, dive, charm, looked up by code), the five keylined elites, the 10x10 speck, the crusher with its shaft rule, stick_pad, stick_knob, stick_hint, pause_glyph, dust_mote, frost_mote, bubble, spore, ember_mote and icon_biomes. Spliced and not drawn yet: fx_skyhook, for weapons step 2's J8.
+
+## Round 4 (ART4, 1 Nov)
+
+Astra's round 4 answers the lead's round 4 brief (`ASTRA-SHUTTERBUG-ROUND4-NOV01.txt` here, built from Q162 and Q163, the shots of ART3 and W2). Stephen uploaded it on 1 Nov at 17:30 UTC: zip sha256 `0f90f8f02869bfa6...`, 46 files, 19 strips, 76 frames, her VALIDATION PASS. `astra_cut.py check` gave CHECK OK (19 sprites, 76 frames). Its checked cut is `docs/astra/cut-art4.json` (19 keys, 76 frames, cut-art3.json's shape). The vault upload waits for Stephen's gh login.
+
+Spliced whole, every key: the eight weapon effects (dart, ring, ember, flash_ring, snap_frame, kick_spray, fire_cell, frost_burst; every pixel Ink, Slate, Pewter, Ash, Paper or Glare) and the eleven replacements (stick_pad, stick_hint, pause_glyph, dust_mote, frost_mote, bubble, ember_mote, icon_weapons, crusher, moth_elite, speck). Retired from the page, because round 4 replaces them and nothing else draws them: round 1's fx_bursts (flashbulb, halo, shutter_snap), fx_impacts (shield_kick) and fx_projectiles.twin_darts. Kept: fx_projectiles.boomerang (J1's spin), fx_shockwave, fx_enemy_hit, fx_skyhook and fx_frozen_stunned, which round 4 does not replace. The page holds 51 names; the cap is 52 in the cutter, the lint, H-spr-1 and the astra gate.
+
+Drawn as her bindings say (shell-render's drawStep2, drawSnap and drawShots): Twin Darts one dart a side on its 8x4 box, the left one mirrored; Halo's ring on its 16x6 box from the takeoff; Spark Trail's ember, one a spark, bottom centred on its box; the Flashbulb's flash_ring centred on the bug where it burst; Shutter Snap's 108x112 frame assembled from corner, edge_h and edge_v round the reach's square; Shield Kick's kick_spray with the wall at its left edge and the bug's centre on its row 40, mirrored for a right wall. Her timings: flash_ring and kick_spray play once at 12 fps and end after their last frame (render only records, longer than their pool entries); the ring and the ember loop a and b at 8 fps by their own age; movement and lifetimes are the sim's.
+
+Spliced and not drawn yet: `fire_cell` (16x16, a b at 8 fps, anchored to the ground: Ember Stomp uses one cell, Flashpan repeats three behind the dash) and `frost_burst` (80x80, a to d once at 12 fps, centred on the bug, b and c on the full square freeze: Icicle). Both are for weapons step 3.
 
 ## WAITING
 
