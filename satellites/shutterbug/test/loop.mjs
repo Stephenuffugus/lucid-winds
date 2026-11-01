@@ -86,7 +86,14 @@ try {
     const after = await look();
     return { dp: before.st.room.dp, before, after };
   };
-  const kill = () => page.evaluate(() => { let k = 0; for (; k < 20000 && !window.SB_DEV.state().room.dead; k += 60) window.SB_DEV.step(60); return k; });
+  /* a room left alone dies to its moths. A photographed room's biome now comes from the photo's colour (Q220): the
+     painted sample room is Frost by the bright room rule, and its icicles drop only on a hero below them, so a room
+     with no moth gets one laid beside the hero (the fight gate's liberty) before it is left alone */
+  const kill = () => page.evaluate(() => {
+    const st = window.SB.game.state;
+    if (!st.enemies.some(e => e.kind === 1)) st.enemies.push({ kind: 1, x: st.hero.x - 3 * 4096, y: st.hero.y, vx: 0, vy: 0, hp: 4, state: 0, timer: 0, dir: 1, home: 0, elite: 0, frozen: 0, stunned: 0, hurt: 0 });
+    let k = 0; for (; k < 20000 && !window.SB_DEV.state().room.dead; k += 60) window.SB_DEV.step(60); return k;
+  });
 
   let l = await look();
   R.say(l.screen === 'title' && !l.recentShown && l.fab !== 'none', 'a fresh title: no Recent rooms before the first clear; the injected fab shows (' + l.fab + ')');
