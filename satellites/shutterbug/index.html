@@ -5291,6 +5291,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     S.phase = 'show'; S.chosen = box; S.ms = performance.now() - S.t0; S.code = SB.record.encode(rec);
     CR.crop = box; CR.focal = focal; layoutCrop();
     CR.lastRec = rec; CR.last = lv; CR.full = true; CR.builds++;
+    document.getElementById('tighter').hidden = true; document.getElementById('crop').classList.remove('stuck');
     CR.marked = drawOverlay(lv, true, null);
     seekMarker(S, performance.now());
     if (PERF) cropSay(S.builds + ' builds; ' + S.ms.toFixed(0) + ' ms; the box at ' + box.x + ',' + box.y + ' ' + box.w + 'x' + box.h);
