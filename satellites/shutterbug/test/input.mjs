@@ -27,10 +27,15 @@
  * Watched red by LATCH_OFF (the sub step tap), STICK_DRAWN_IDLE, STICK_ABSOLUTE, CORNER_DEAD, PAD_STAYS, DEADZONE_ZERO,
  * NO_HYSTERESIS, STICK_FIXED_AT_DOWN, NO_FOLLOW, UP_IS_JUMP, RELEASE_ON_LEAVE, PAD_OVER_CANVAS, MIRROR_STICK_LEFT, and since the
  * stick's review HINT_BOXES_FIELD, STICK_IDLE_GONE, PAD_X_UNCLAMPED, PAD_FIELD_INSET, KNOB_ARROW_DARK, ITALIC_ARROWS,
- * PAD_UNDER_CARD, STICK_STEERS_PAUSED and RESUME_KNOB_STALE. */
-import { mkdirSync } from 'node:fs';
+ * PAD_UNDER_CARD, STICK_STEERS_PAUSED and RESUME_KNOB_STALE.
+ * ART3 (Astra's round 2, Q98): on real screenshots the hint's chevrons are stick_hint's outer 12 columns each side, the
+ * pad stick_pad (idle held neutral, active steering) at 116 css px and the knob stick_knob (neutral, right, left) at 52;
+ * Pause is pause_glyph.normal at 2x and pause_glyph.pressed under a held finger. Watched red by PAD_CSS_RING,
+ * PAD_NEVER_ACTIVE, KNOB_NO_WAY, HINT_TEXT_ARROWS, PAUSE_OLD_BOX and PAUSE_NOT_PRESSED. */
+import { mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, stickAt, landStick } from './harness.mjs';
+import vm from 'node:vm';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, stickAt, landStick, GAME } from './harness.mjs';
 const SHOTS = process.env.SB_SHOTS || '';
 
 const R = reporter('INPUT');
@@ -79,6 +84,39 @@ const look = page => page.evaluate(() => {
 const padWant = (g, x, y) => ({ x: g.mirror ? Math.max(g.zone.left + g.pad.w / 2, x) : Math.min(g.zone.right - g.pad.w / 2, x), y: Math.max(g.zone.top + g.pad.h / 2, y) });
 const offRoomB = g => g.pad.top >= g.zone.top - 0.5 && g.pad.top >= g.view.bottom - 0.5 && (g.mirror ? g.pad.left >= g.zone.left - 0.5 : g.pad.right <= g.zone.right + 0.5);
 const thumbIn = (g, x, y) => Math.hypot(x - g.pad.cx, y - g.pad.cy);
+
+/* ART3 (Astra's round 2, Q98): the page's own SPRITES, the oracle for the stick's art and the pause glyph, read off a
+   real screenshot at the page's dpr: the device pixel at the centre of every native pixel of the drawn box must be that
+   native pixel's colour (nearest neighbour at any scale), every opaque pixel of the frame (cols [c0, c1) of it) */
+const PAGE_SRC = readFileSync(process.env.SB_PAGE || GAME + '/index.html', 'utf8');
+const SPR = vm.runInNewContext(PAGE_SRC.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1] + '\n;SPRITES');
+const HEX = ['0b0a0f', '1f1a1d', '4a4a52', '8a8a90', 'c9c7c0', 'f2efe6', 'fbfbff', '6b3f2a', 'e07a2b', 'c8302f', 'd83a9b', '2f5fd0', '3fb8b4', '3f9a3a', 'f2d13f', 'f0dcb0'];
+async function cssSprite(page, sel, key, c0, c1, hole) {
+  const [k, f] = key.split('.'), rows = SPR[k].frames[f].split('/').map(r => r.slice(c0 || 0, c1 || r.length));
+  const b = await page.evaluate(sel => { const e = document.querySelector(sel); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, dpr: devicePixelRatio, vw: innerWidth, vh: innerHeight }; }, sel);
+  if (!b) return { n: 0, bad: ['no ' + sel] };
+  const X = Math.max(0, b.x), Y = Math.max(0, b.y), W = Math.min(b.vw, b.x + b.w) - X, H = Math.min(b.vh, b.y + b.h) - Y;
+  const shot = await page.screenshot({ encoding: 'base64', clip: { x: X, y: Y, width: W, height: H } });
+  const sp = await page.evaluate(async (b64) => { const im = new Image(); im.src = 'data:image/png;base64,' + b64; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d'); x.drawImage(im, 0, 0); return { w: im.width, h: im.height, px: Array.from(x.getImageData(0, 0, im.width, im.height).data) }; }, shot);
+  const sx = b.w / rows[0].length, sy = b.h / rows.length; let n = 0; const bad = [];
+  for (let y = 0; y < rows.length; y++) for (let x = 0; x < rows[y].length; x++) {
+    const ch = rows[y][x]; if (ch === '.') continue;
+    const cx = b.x + (x + 0.5) * sx - X, cy = b.y + (y + 0.5) * sy - Y; if (cx < 0 || cy < 0 || cx >= W || cy >= H) continue;   /* off the glass */
+    if (hole && cx + X >= hole.left && cx + X <= hole.right && cy + Y >= hole.top && cy + Y <= hole.bottom) continue;   /* under the knob */
+    const o = (Math.floor(cy * b.dpr) * sp.w + Math.floor(cx * b.dpr)) * 4, h = [sp.px[o], sp.px[o + 1], sp.px[o + 2]].map(v => ('0' + v.toString(16)).slice(-2)).join('');
+    n++; if (h !== HEX[parseInt(ch, 16)]) bad.push(x + ',' + y + ' ' + h + ' not ' + HEX[parseInt(ch, 16)]);
+  }
+  return { n, bad, w: b.w, h: b.h };
+}
+const artLine = (tg, what, e) => tg + ': ' + what + ', ' + e.n + ' pixels on a real screenshot' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, 3).join('; ') + ')' : '');
+/* the pad and knob as they stand: the pad's frame (idle neutral, active steering) at 116 css px, the knob's (neutral,
+   left, right) at 52 */
+async function stickArt(tg, page, dir) {
+  const kb = await page.evaluate(() => { const r = document.querySelector('#stick .knob').getBoundingClientRect(); return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; });
+  const pad = await cssSprite(page, '#stick .pad', 'stick_pad.' + (dir ? 'active' : 'idle'), 0, 0, kb), knob = await cssSprite(page, '#stick .knob', 'stick_knob.' + (dir === 'R' ? 'right' : dir === 'L' ? 'left' : 'neutral'));
+  R.say(pad.n > 0 && pad.bad.length === 0 && pad.w === 116, artLine(tg, (dir ? 'steering ' + dir : 'held neutral') + ', the pad is stick_pad.' + (dir ? 'active' : 'idle') + ' at 116 css px', pad));
+  R.say(knob.n > 0 && knob.bad.length === 0 && knob.w === 52, artLine(tg, (dir ? 'steering ' + dir : 'held neutral') + ', the knob is stick_knob.' + (dir === 'R' ? 'right' : dir === 'L' ? 'left' : 'neutral') + ' at 52 css px', knob));
+}
 
 /* a landing at (x, y): read, slid 20 px right, lifted; `name` says where */
 async function landing(r, tg, name, x, y, { exact = false, shot = '' } = {}) {
@@ -158,7 +196,10 @@ try {
     /* idle: no pad; the quiet hint in the field, unboxed */
     const g0 = await look(page);
     R.say(!g0.padShown && g0.s && g0.s.pointers === 0, tg + ': with no thumb down the stick draws no pad (' + (g0.padShown ? 'a pad drawn at ' + f0(g0.pad.cx) + ',' + f0(g0.pad.cy) : 'none') + ')');
-    R.say(g0.idleShown && /slide to run/.test(g0.idleText) && g0.idleText.indexOf('◀') >= 0 && g0.idleText.indexOf('▶') >= 0 && g0.idleBare
+    /* ART3: the hint's chevrons are Astra's stick_hint, its left 12 columns and its right 12, with the words between */
+    const hl = await cssSprite(page, '#stick .idle .hl', 'stick_hint.line', 0, 12), hr = await cssSprite(page, '#stick .idle .hr', 'stick_hint.line', 60, 72);
+    R.say(hl.n > 0 && hr.n > 0 && hl.bad.length === 0 && hr.bad.length === 0, artLine(tg, 'idle, the hint\'s chevrons are stick_hint\'s left and right 12 columns', { n: hl.n + hr.n, bad: hl.bad.concat(hr.bad) }));
+    R.say(g0.idleShown && /slide to run/.test(g0.idleText) && g0.idleBare
       && g0.idle.left >= g0.field.left - 0.5 && g0.idle.right <= g0.field.right + 0.5 && g0.idle.bottom <= g0.field.bottom + 0.5,
       tg + ': idle, a quiet hint in the field says where the thumb goes ("' + g0.idleText + '", no border, no fill, inside the field)');
 
@@ -187,8 +228,12 @@ try {
     const wob = [];
     for (const dx of [4, -4, 4, 0]) { await f.slide(dx); wob.push(await word()); }
     R.say(wob.every(v => v === 0), tg + ': a 4 px wobble after landing reads nothing (words ' + wob.join(', ') + ')');
+    await stickArt(tg, page, null);
+    if (SHOTS) await page.screenshot({ path: join(SHOTS, 'stick-' + tg + '-held.png') });
     await f.slide(20);
     const r20 = await word(), gr = await look(page);
+    await stickArt(tg, page, 'R');
+    if (SHOTS) await page.screenshot({ path: join(SHOTS, 'stick-' + tg + '-right.png') });
     await f.slide(9);
     const r9 = await word();
     await f.slide(3);
@@ -199,6 +244,8 @@ try {
     R.say(r3 === 0, tg + ': eased back to 3 px it is nothing (word ' + r3 + ')');
     await f.slide(-20);
     const l20 = await word(), gl = await look(page);
+    await stickArt(tg, page, 'L');
+    if (SHOTS) await page.screenshot({ path: join(SHOTS, 'stick-' + tg + '-left.png') });
     await f.slide(-9);
     const l9 = await word();
     await f.slide(-3);
@@ -404,6 +451,22 @@ try {
       }
       await page.close();
     }
+  }
+  /* ART3: Pause is Astra's pause_glyph at 2x (32 css px): normal, then pressed (one native pixel lower) under a held
+     finger, at each size */
+  for (const [w, h] of [[412, 915], [360, 780], [320, 568]]) {
+    const r = await room(w, h), { page, errors } = r, tg = w + 'x' + h;
+    const pn = await cssSprite(page, '#pause i', 'pause_glyph.normal');
+    R.say(pn.n > 0 && pn.bad.length === 0 && pn.w === 32, artLine(tg, 'Pause is pause_glyph.normal at 2x, 32 css px', pn));
+    const pc = await page.evaluate(() => { const r = document.querySelector('#pause i').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    await page.touchscreen.touchStart(pc.x, pc.y);
+    await sleep(60);
+    const pp = await cssSprite(page, '#pause i', 'pause_glyph.pressed');
+    if (SHOTS) await page.screenshot({ path: join(SHOTS, 'pause-' + tg + '-pressed.png') });
+    await page.touchscreen.touchEnd();
+    R.say(pp.n > 0 && pp.bad.length === 0, artLine(tg, 'under a held finger Pause is pause_glyph.pressed', pp));
+    R.say(errors.length === 0, tg + ' the pause glyph\'s page: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
   }
 } finally {
   await browser.close();
