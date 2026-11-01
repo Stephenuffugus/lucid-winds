@@ -1245,11 +1245,11 @@ const MUTANTS = [
      an order by cost, near duplicates dropped, the cap, the message after a search that found nothing */
   { name: 'SEEK_NEAR_DUPES', task: 'SEARCHR', file: 'page', find: 'for (m = 0; m < s.length && !cl; m++) cl = ', repl: 'for (m = 0; m < 0; m++) cl = ',
     gates: [{ gate: 'harness', only: 'H-seek-1', expect: "the default box, a floor band from row 30: no box lies within one grid cell of the player's box" }] },
-  { name: 'SEEK_EDGES_DROPPED', task: 'SEARCHR', file: 'page', find: 'nk = Math.ceil(bw / q) + 1', repl: 'nk = 2',
+  { name: 'SEEK_EDGES_DROPPED', task: 'SEARCHR', file: 'page', find: 'var k0 = Math.floor(-x0 / q), k1 = Math.ceil((bw - w - x0) / q)', repl: 'var k0 = -2, k1 = 2',
     gates: [{ gate: 'harness', only: 'H-seek-2', expect: "a landscape photo: the list holds the player's size at the photo's left edge and at its right" }] },
   { name: 'SEEK_NO_EDGE_BONUS', task: 'SEARCHR', file: 'page', find: 'EDGE: 3.5 })', repl: 'EDGE: 0 })',
     gates: [{ gate: 'harness', only: 'H-seek-2', expect: 'a landscape photo: the two edge boxes are the first two tried' }] },
-  { name: 'SEEK_LIFT_CAPPED', task: 'SEARCHR', file: 'page', find: 'nj = Math.ceil(bh / (h / 4)) + 1', repl: 'nj = 3',
+  { name: 'SEEK_LIFT_CAPPED', task: 'SEARCHR', file: 'page', find: 'j0 = Math.floor(-ay / ky), j1 = Math.ceil((bh - h - ay) / ky);', repl: 'j0 = Math.max(-3, Math.floor(-ay / ky)), j1 = Math.min(3, Math.ceil((bh - h - ay) / ky));',
     gates: [{ gate: 'harness', only: 'H-seek-2', expect: 'a floor refusal: the lift reaches the top of the photo' }] },
   { name: 'SEEK_CEILING_PUSHED_DOWN', task: 'SEARCHR', file: 'page', find: '      seen[k] = 1;\n', repl: "      seen[k] = 1;\n      if (cause === 'ceiling' && b.y < a) return;\n",
     gates: [{ gate: 'harness', only: 'H-seek-2', expect: 'a ceiling refusal: the box lowered a quarter height off the anchor comes first, and the box raised' }] },
