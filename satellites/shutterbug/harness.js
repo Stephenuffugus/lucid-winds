@@ -5627,6 +5627,26 @@ group('H-run-2', 'the run reducers: runFresh sets out with the slots and the bas
 
 /* ================================================================ run */
 const t0 = Date.now();
+/* ---------------------------------------------------------------- the looks (HOUSE-B, Q97 ruling 4) */
+group('H-look-1', 'the prize ladder (Stephen\'s "Cosmetic per clear"): the first house clear wins a frame style, each clear after it the next of Astra\'s skins in her order until all are owned, then the other frames, then nothing; a win is owned and worn; lookValid keeps owned ids and a worn index only when owned, never throws; the save carries cosmetics through validateSave', t => {
+  const Rr = SB.record, L = Rr.LOOKS;
+  t.same(Array.from(L.hero), ['sun', 'umber', 'teal', 'lapis', 'pinstripe', 'domino', 'crescent', 'argyle'], 'the skins are round 1\'s four (sun the approved bug) then round 3\'s four, in Astra\'s order');
+  t.same(Array.from(L.frame), ['paper', 'walnut', 'lapis', 'moss'], 'the frames are Astra\'s frame_styles in her order (paper the polaroid as it was)');
+  let c = Rr.saveDefaults().cosmetics; const got = [];
+  for (let k = 0; k < 12; k++) { const w = Rr.lookWin(c); got.push(w.id); c = w.cosmetics; if (w.id) t.ok(c[w.id.split('.')[0]] === L[w.id.split('.')[0]].indexOf(w.id.split('.')[1]), 'clear ' + (k + 1) + ' wears what it won (' + w.id + ')'); }
+  t.same(got, ['frame.walnut', 'hero.umber', 'hero.teal', 'hero.lapis', 'hero.pinstripe', 'hero.domino', 'hero.crescent', 'hero.argyle', 'frame.lapis', 'frame.moss', null, null],
+    'the ladder: a frame style first, then every skin in order until all are owned, then the other frames, then nothing new');
+  const bad = [null, 7, 'x', [], { hero: 5, frame: 2, owned: ['hero.umber'] }, { hero: 1.5, owned: 'hero.umber' }, { hero: -1, frame: 9, owned: ['nope', 'frame.moss', 'frame.moss'] }];
+  const v = bad.map(x => { try { return Rr.lookValid(x); } catch (e) { return 'threw'; } });
+  t.ok(v.every(x => x !== 'threw'), 'lookValid never throws on a malformed cosmetics');
+  t.same(v[4], { hero: 0, frame: 0, owned: ['hero.umber'] }, 'a worn index that is not owned falls back to the default (hero 5 and frame 2 not owned)');
+  t.same(v[6], { hero: 0, frame: 0, owned: ['frame.moss'] }, 'unknown ids are dropped, a repeat kept once, an index out of range is the default');
+  t.same(Rr.lookValid({ hero: 1, frame: 3, owned: ['hero.umber', 'frame.moss'] }), { hero: 1, frame: 3, owned: ['hero.umber', 'frame.moss'] }, 'a well formed cosmetics is kept as it is');
+  const d = Rr.saveDefaults(); d.cosmetics = { hero: 2, frame: 0, owned: ['hero.teal', 'bogus'] };
+  t.same(Rr.validateSave(JSON.parse(JSON.stringify(d))).cosmetics, { hero: 2, frame: 0, owned: ['hero.teal'] }, 'validateSave carries the looks through, an unknown id dropped');
+  t.same(Rr.validateSave({ v: 1 }).cosmetics, { hero: 0, frame: 0, owned: [] }, 'an old save without owned gets the defaults (no migration)');
+});
+
 const chosen = ONLY ? GROUPS.filter(g => g.id.startsWith(ONLY)) : GROUPS;
 if (ONLY && !chosen.length) { console.log('FAIL  --only ' + ONLY + ' matched no group'); console.log('\nSHUTTERBUG HARNESS FAILED'); process.exit(1); }
 for (const g of chosen) {

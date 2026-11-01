@@ -25,6 +25,12 @@
  * counts the house's whole bank; at 320x568 the house death card stacks its buttons on one line each and its Retry
  * House replays room 1; the strip's name fits beside 8 hearts and two weapons at 320, 360 and 412 wide.
  *
+ * HOUSE-B (Q97 rulings 3 and 4): room 5 holds the guardian, asleep and outlined under the intro's words, the beacon
+ * dark and the exit shut; it wakes (fx_boss_wake, the intro sound), real jumps throw a Boomerang into it (chips, the hit
+ * sound) until it falls (fx_boss_down, 60 dead pixels, fx_beacon_light into the beacon's loop); the house clear card
+ * draws its prize (the walnut frame, fx_unlock, its name), the save owns and wears it, the title wears it after a
+ * reload with icon_house sealed, Settings' Look row wears any owned look; a second clear wins the umber bug, worn in a
+ * room after a reload; the strip's run pips, the doorway's.
  * Watched red by LOSE_ROOM_2_ON_RELOAD and RETRY_NEW_GRIDS (T2.8's names), HOUSE_ON_FIRST_SCREEN, STRIP_NAME_PLAIN,
  * DOOR_NEXT_WRONG, DP_HALF_IN_HOUSE, CARRY_DROPPED, DEATH_CARD_FREE, CONTINUE_HIDDEN, HOUSE_CLEAR_UNCOUNTED and
  * DOOR_BUTTON_40PX; and by HOUSE-AR's ROOM1_FULL_PAY, DP_HALF_IN_HOUSE, RETRY_ZEROES_DP, TITLE_DROPS_LOST, CONTINUE_PAPER,
@@ -58,6 +64,53 @@ const look = page => page.evaluate(() => {
 /* every visible control on the screen showing, measured: the ids under 48 px */
 const small = page => page.evaluate(() => [...document.querySelectorAll('.screen.on button, #death.on button')].filter(el => !el.hidden && el.getBoundingClientRect().height > 0)
   .filter(el => el.getBoundingClientRect().height < 48 || el.getBoundingClientRect().width < 48).map(el => (el.id || el.getAttribute('aria-label')) + ' ' + el.getBoundingClientRect().height.toFixed(0)));
+/* HOUSE-B: the guardian as the page draws it (SB_DEV.guardian), the strip's pips, the prize card, the title's look */
+const guardOf = page => page.evaluate(() => window.SB_DEV.guardian());
+const pipWant = room => [1, 2, 3, 4, 5].map(k => '--run-pips-' + (k === 5 ? 'boss_' : '') + (k < room ? 'cleared' : k === room ? 'here' : 'todo'));
+const pipsOf = page => page.evaluate(() => { const el = document.getElementById('roomname'), b = getComputedStyle(el, '::before');
+  return { pipped: el.classList.contains('pipped'), w: Math.round(parseFloat(b.width) || 0), img: b.backgroundImage.split('url(').length - 1, words: el.textContent,
+    vars: [1, 2, 3, 4, 5].map(k => (el.style.getPropertyValue('--pip' + k).match(/var\((--[^)]+)\)/) || [])[1] || '') }; });
+const prizeOf = page => page.evaluate(() => { const el = document.getElementById('doorprize'), r = el.getBoundingClientRect(), p = el.querySelector('p');
+  return { shown: !el.hidden && r.height > 0, w: Math.round(r.width), canvas: !!el.querySelector('canvas'), caption: p ? p.textContent : null, unlock: el.getAttribute('data-unlock'),
+    cos: window.SB.save.doc.cosmetics, daily: window.SB.save.doc.unlocks.daily }; });
+const titleLook = page => page.evaluate(() => { const pol = document.querySelector('#title .polaroid'), hs = document.getElementById('housestart'), b = getComputedStyle(hs, '::before');
+  return { framed: pol.classList.contains('framed'), frame: pol.getAttribute('data-frame'), border: parseFloat(getComputedStyle(pol).borderTopWidth) || 0,
+    icon: b.backgroundImage.startsWith('url('), sealed: hs.classList.contains('sealed') }; });
+const lookRow = page => page.evaluate(() => { const row = document.getElementById('setlook'), bs = [...row.querySelectorAll('button')];
+  return { shown: !row.hidden && row.getBoundingClientRect().height > 0, heroes: bs.map(b => b.getAttribute('data-look')).filter(x => x.startsWith('hero.')), frames: bs.map(b => b.getAttribute('data-look')).filter(x => x.startsWith('frame.')),
+    checked: bs.filter(b => b.getAttribute('aria-checked') === 'true').map(b => b.getAttribute('data-look')),
+    small: bs.filter(b => b.getBoundingClientRect().height < 48 || b.getBoundingClientRect().width < 48).map(b => b.getAttribute('data-look')) }; });
+/* the guardian fought by real play: its intro stepped out, then the bug set down where a Boomerang reaches it
+   (SB_DEV.goto('guardian'), the named camera liberty) and a real Space press for each jump; immortal (SB_DEV.immortal,
+   the bot's rule) so the shed moths make it no test of dodging; J1 armed (SB_DEV.arm, as a chest would) when the slot is
+   empty. Then the steps after the fall one at a time: the beacon's lighting */
+async function kill(page) {
+  const o = await page.evaluate(() => {
+    const D = window.SB_DEV; if (!D.state().hero.slots[0]) D.arm('J1'); D.immortal(true);
+    const before = D.audioPlayed().bossIntro || 0;
+    let wakeFx = false; for (let k = 0; k < 200 && D.guardian().boss.phase === 0; k++) D.step(1);
+    for (let k = 0; k < 6; k++) { D.step(1); if (D.guardian().fx.some(f => f.startsWith('fx_boss_wake'))) wakeFx = true; }
+    const g = D.guardian();
+    return { woke: g.boss.phase === 1, wakeFx, bannerAfter: g.banner, intro: (D.audioPlayed().bossIntro || 0) - before, dp0: D.state().room.dp, hit0: D.audioPlayed().bossHit || 0 };
+  });
+  let hits = 0, chips = 0, throws = 0, down = false, downFx = false, hp = 80;
+  for (let k = 0; k < 120 && !down; k++) {
+    await page.evaluate(() => { window.SB_DEV.goto('guardian'); window.SB_DEV.step(2); });
+    await page.keyboard.down('Space'); await page.evaluate(() => window.SB_DEV.step(1)); await page.keyboard.up('Space'); throws++;
+    for (let j = 0; j < 40 && !down; j++) {
+      const g = await page.evaluate(() => { window.SB_DEV.step(1); return window.SB_DEV.guardian(); });
+      if (g.boss.hp < hp) { hits++; hp = g.boss.hp; }
+      if (g.fx.some(f => f.startsWith('fx_boss_chip'))) chips++;
+      if (g.fx.some(f => f.startsWith('fx_boss_down'))) downFx = true;
+      if (g.boss.phase === 2) down = true;
+    }
+  }
+  const light = [];
+  if (down) for (let k = 0; k < 24; k++) { const g = await page.evaluate(() => { window.SB_DEV.step(1); return window.SB_DEV.guardian(); }); if (g.fx.some(f => f.startsWith('fx_boss_down'))) downFx = true; if (!light.length || light[light.length - 1] !== g.beacon) light.push(g.beacon); }
+  const end = await page.evaluate(() => ({ dp: window.SB_DEV.state().room.dp, hit: window.SB_DEV.audioPlayed().bossHit || 0 }));
+  await page.evaluate(() => window.SB_DEV.immortal(false));
+  return Object.assign(o, { hits, chips, throws, down, downFx, light, dp: end.dp - o.dp0, hitSound: end.hit - o.hit0 });
+}
 const scrollTap = async (page, sel) => { await page.evaluate(s => document.querySelector(s).scrollIntoView({ block: 'center' }), sel); return tap(page, sel); };
 const playing = page => page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 10000 }).catch(() => {});
 /* a recent room from the doorway, by real taps: Use a recent room, then the first thumbnail */
@@ -71,6 +124,7 @@ async function saveRun(page, o) {
   await page.evaluate((rec, o) => {
     const R = window.SB.record, d = R.saveDefaults(), W = window.SB.sim.WPN, slots = o.hero.slots ? o.hero.slots.split(',').map(id => W.indexOf(id)).concat([0, 0]) : [0, 0, 0];
     d.stats.clears = 1; d.onboarding.firstRoomDone = true;
+    if (o.cos) d.cosmetics = o.cos; if (o.houseClears) d.stats.houseClears = o.houseClears;   /* HOUSE-B: the looks won so far */
     d.run = { v: 1, rooms: Array.from({ length: o.at + 1 }, () => rec), at: o.at, hero: Object.assign({ vigor: 0, focus: 0, grit: 0, scrolls: 0 }, o.hero, { slots: slots.slice(0, 3) }), entry: [0, 0, 0], dp: 0, last: 0, lost: 0 };
     if (!R.runValid(d.run)) throw new Error('the gate\'s run is not valid');
     const doc = window.SB.save.doc; for (const k of Object.keys(d)) doc[k] = d[k];   /* the page's own write on the way out writes the same save */
@@ -246,20 +300,55 @@ try {
   R.say(s.next === 'The last room is next', 'room 4\'s doorway: "' + s.next + '"');
   await fromRecent(page);
   s = await look(page);
-  R.say(s.name === 'The last room' && s.enemies >= 4 && s.elites >= 1, 'room 5\'s strip reads "' + s.name + '", ' + s.enemies + ' enemies, ' + s.elites + ' elite (room 4\'s row until the boss)');
-  const banked = s.run.dp, dp5 = await speck(page);
+  /* HOUSE-B: the guardian asleep in its place, outlined, the beacon dark, the intro's words over the room; the pips */
+  const g0 = await guardOf(page), p5 = await pipsOf(page);
+  R.say(s.name === 'The last room' && !!g0.boss && g0.boss.phase === 0 && g0.boss.live === 20 && !!g0.drawn && g0.drawn.outline && g0.beacon === 'fx_beacon_light.light_0' && g0.banner && s.elites === 0,
+    'room 5 ("' + s.name + '"): the guardian asleep and outlined in its place (' + JSON.stringify(g0.boss) + '), the beacon dark (' + g0.beacon + '), the intro\'s words shown (' + g0.banner + '), no photo elite');
+  R.say(p5.pipped && p5.w === 108 && p5.vars.join() === pipWant(5).join() && p5.words === 'The last room',
+    'room 5\'s strip draws the run pips (' + p5.vars.join(' ') + ', ' + p5.w + ' px) and keeps "' + p5.words + '" as its words for a screen reader');
+  const banked = s.run.dp;
+  await speck(page);
+  /* the exit while it stands: no clear */
+  const shut = await page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(3); return { screen: window.SB_DEV.screen(), beacon: window.SB_DEV.guardian().beacon }; });
+  R.say(shut.screen === 'play' && shut.beacon === 'fx_beacon_light.light_0', 'the exit stays shut and the beacon dark while the guardian stands (' + shut.screen + ', ' + shut.beacon + ')');
+  const fight = await kill(page);
+  R.say(fight.woke && fight.wakeFx && !fight.bannerAfter && fight.intro > 0, 'it wakes after its intro: fx_boss_wake drawn on the body, the words gone, the intro sound played (' + JSON.stringify({ woke: fight.woke, fx: fight.wakeFx, banner: fight.bannerAfter, intro: fight.intro }) + ')');
+  R.say(fight.down && fight.hits >= 5 && fight.chips > 0 && fight.hitSound > 0, 'real jumps throw the Boomerang into it until it falls: ' + fight.hits + ' hits, fx_boss_chip drawn ' + fight.chips + ' times, the hit sound ' + fight.hitSound + ' times (' + fight.throws + ' throws)');
+  R.say(fight.downFx && fight.dp >= 60 && fight.light.slice(0, 4).join() === 'fx_beacon_light.light_0,fx_beacon_light.light_1,fx_beacon_light.light_2,fx_beacon_light.light_3' && /^beacon\.[ab]$/.test(fight.light[4] || ''),
+    'its fall: fx_boss_down drawn, 60 dead pixels banked (+' + fight.dp + '), the beacon lit through fx_beacon_light into its loop (' + fight.light.join(' ') + ')');
+  const r5 = await look(page);
   await climb(page);
   s = await look(page);
-  const total = banked + dp5;
+  const total = banked + r5.roomDp;
   R.say(s.screen === 'door' && s.head === 'House cleared' && s.bank === '5 rooms, ' + total + (total === 1 ? ' dead pixel' : ' dead pixels') && s.shown.join() === 'doornew,doortitle',
     'room 5\'s clear ends the house: "' + s.head + '", "' + s.bank + '", buttons ' + s.shown.join(', '));
   R.say(s.run === null && s.stored.run === null && s.houseClears === 1, 'the house cleared: the run gone from the save, Houses cleared ' + s.houseClears);
   R.say(total === s.dp - wHouse, 'the House cleared card counts the house\'s whole bank, Retry House\'s first attempt included (' + total + '; the wallet up ' + (s.dp - wHouse) + ' since Start a house)');
+  /* HOUSE-B: the prize, Q97 ruling 4: the first house clear unlocks a frame style, drawn in the card's opening with
+     fx_unlock over it, then named; owned and worn in the save; Daily Room's flag set */
+  const pz = await prizeOf(page);
+  R.say(pz.shown && pz.caption === 'New: Walnut frame' && pz.canvas && pz.w >= 250, 'the house clear card draws its prize in Astra\'s card (' + pz.w + ' px wide) and names it "' + pz.caption + '"');
+  await page.waitForFunction(() => document.getElementById('doorprize').getAttribute('data-unlock') === 'done', { timeout: 5000 }).catch(() => {});
+  const pz2 = await prizeOf(page);
+  R.say(pz.unlock !== 'done' && pz2.unlock === 'done', 'fx_unlock plays over the prize, then hides (frame ' + pz.unlock + ', then ' + pz2.unlock + ')');
+  R.say(JSON.stringify(pz2.cos) === JSON.stringify({ hero: 0, frame: 1, owned: ['frame.walnut'] }) && pz2.daily === true, 'the save owns and wears the walnut frame (' + JSON.stringify(pz2.cos) + '), Daily Room\'s flag set (' + pz2.daily + ')');
   sm = await small(page);
   R.say(sm.length === 0, 'every control on the house clear card is 48 px or more' + (sm.length ? ' (' + sm.join(', ') + ')' : ''));
   await tap(page, '#doortitle');
   const tc = await page.evaluate(() => ({ count: document.getElementById('housecount').hidden ? null : document.getElementById('housecount').textContent, go: !document.getElementById('housego').hidden }));
   R.say(tc.count === 'Houses cleared 1' && !tc.go, 'the title says "' + tc.count + '" and offers no Continue the house');
+  /* HOUSE-B: the title wears the frame and seals the house icon, kept after a reload; Settings' Look row */
+  await page.reload(); await ready(page); await page.evaluate(() => window.SB_DEV.hold(true));
+  const tlk = await titleLook(page);
+  R.say(tlk.framed && tlk.frame === 'walnut' && tlk.border > 0 && tlk.icon && tlk.sealed, 'after a reload the title\'s polaroid wears the walnut frame (' + tlk.frame + ', ' + tlk.border + ' px border) and Start a house shows icon_house with its seal (' + tlk.icon + ', ' + tlk.sealed + ')');
+  await scrollTap(page, '#settingsbtn');
+  const lk = await lookRow(page);
+  R.say(lk.shown && lk.frames.join() === 'frame.paper,frame.walnut' && lk.heroes.join() === 'hero.sun' && lk.checked.join() === 'hero.sun,frame.walnut' && lk.small.length === 0,
+    'Settings shows the Look row: ' + lk.heroes.concat(lk.frames).join(', ') + ', worn ' + lk.checked.join(', ') + (lk.small.length ? ' (under 48 px: ' + lk.small.join(', ') + ')' : ''));
+  await scrollTap(page, '#lookframe button[data-look="frame.paper"]');
+  const lk2 = await lookRow(page), t2 = await page.evaluate(() => window.SB.save.doc.cosmetics.frame);
+  R.say(lk2.checked.join() === 'hero.sun,frame.paper' && t2 === 0, 'the Look row wears the paper frame again (' + lk2.checked.join(', ') + ', saved ' + t2 + ')');
+  await scrollTap(page, '#settitle');
   R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
 
   /* the short phone: the doorway's controls 48 px or more, each reachable by a scroll and a real tap */
@@ -321,6 +410,33 @@ try {
       await b.page.evaluate(() => window.SB.ui.toTitle());
     }
     R.say(b.errors.length === 0, vw + 'x' + vh + ': zero page errors' + (b.errors.length ? ' (' + b.errors.join(' ; ') + ')' : ''));
+    await b.page.close();
+  }
+
+  /* HOUSE-B, Q97 ruling 4: a second house clear unlocks the next look on the ladder, Astra's first skin (umber), worn
+     in the next room, kept after a reload, and the Look row wears the approved bug again */
+  {
+    const b = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(b.page, srv.base); await ready(b.page);
+    await saveRun(b.page, { at: 4, houseClears: 1, cos: { hero: 0, frame: 1, owned: ['frame.walnut'] }, hero: { hearts: 4, heartsMax: 4, slots: 'J1' } });
+    await scrollTap(b.page, '#housego'); await scrollTap(b.page, '#doorenter'); await playing(b.page);
+    const f2 = await kill(b.page);
+    await climb(b.page);
+    const pz = await prizeOf(b.page);
+    R.say(f2.down && pz.shown && pz.caption === 'New: Umber bug' && JSON.stringify(pz.cos) === JSON.stringify({ hero: 1, frame: 1, owned: ['frame.walnut', 'hero.umber'] }),
+      'a second house clear unlocks the next look, the umber bug, worn at once ("' + pz.caption + '", ' + JSON.stringify(pz.cos) + ')');
+    await b.page.reload(); await ready(b.page); await b.page.evaluate(() => window.SB_DEV.hold(true));
+    await b.page.evaluate(() => window.SB_DEV.goto('sample')); await playing(b.page);
+    const w1 = await b.page.evaluate(() => { window.SB_DEV.step(4); return window.SB_DEV.guardian(); });
+    R.say(w1.skin === 1 && /^hero_colours\.umber_/.test(w1.hero || ''), 'after a reload a room draws the bug in its umber skin (' + w1.hero + ')');
+    await b.page.evaluate(() => window.SB.ui.toTitle());
+    await scrollTap(b.page, '#settingsbtn');
+    await scrollTap(b.page, '#lookhero button[data-look="hero.sun"]');
+    await scrollTap(b.page, '#settitle');
+    await b.page.evaluate(() => window.SB_DEV.goto('sample')); await playing(b.page);
+    const w2 = await b.page.evaluate(() => { window.SB_DEV.step(4); return window.SB_DEV.guardian(); });
+    R.say(w2.skin === 0 && /^hero\./.test(w2.hero || ''), 'the Look row wears the approved bug again, in the room (' + w2.hero + ')');
+    R.say(b.errors.length === 0, '412x915 (looks): zero page errors' + (b.errors.length ? ' (' + b.errors.join(' ; ') + ')' : ''));
     await b.page.close();
   }
 } finally { await browser.close(); await srv.close(); }
