@@ -519,6 +519,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
     },
     // 8 runs, 12 persistence
     HOUSE_ROOMS: 5, OPEN_HOUSE_ROOMS: 8, RECENT_ROOMS: 20,
+    /* the house's ramp (Stephen's ruling "Firm ramp", 31 Oct, QUESTIONS Q97 and Q200; docs/PROGRESSION-PROPOSAL-OCT31.md
+       2.1), by house room 1 to 5. Room 1 is today's rules (no row), so free play, codes and every golden never see it.
+       floor: ramp fodder added up to it; cap and eliteCap: the photo's own caps (Ember one more enemy); eliteMin: the
+       fodder farthest from spawn promoted when the photo gives fewer elites; fodderHpQ: a fodder's quarters per HP
+       (HP_Q is 1x, 6 is 1.5x); fast: an enemy's extra tick every that many steps (4 is 1.25x speed, 0 none). Room 5 is
+       the last room, the table's room 5 without its boss until lane B (the clay boss, Q97 ruling 3) */
+    RAMP: [null, null,
+      { floor: 2, cap: 4, eliteCap: 1, eliteMin: 0, fodderHpQ: 4, fast: 0 },
+      { floor: 3, cap: 4, eliteCap: 1, eliteMin: 1, fodderHpQ: 4, fast: 4 },
+      { floor: 4, cap: 5, eliteCap: 2, eliteMin: 1, fodderHpQ: 6, fast: 4 },
+      { floor: 0, cap: 3, eliteCap: 1, eliteMin: 0, fodderHpQ: 4, fast: 0 }],
+    HOUSE_DOOR_HEARTS: 1 /* a heart back at each doorway, up to the bug's own cap (Q97's default) */, RAMP_SALT: 0x4a3b2c1d,
     // 5.3 onboarding
     FIRST_ROOM_MAX_FODDER: 2,
     // 11 art: the hero's body colour, one palette index (section 7.4)
@@ -958,8 +970,56 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var m = {}; if (obj && obj.moments && typeof obj.moments === 'object') for (k in obj.moments) if (obj.moments[k] === true) m[k] = true;
     d.moments = m;
     if (d.settings.reducedMotion !== null && typeof d.settings.reducedMotion !== 'boolean') d.settings.reducedMotion = null;
+    d.run = runValid(d.run);
     return d;
   }
+  /* the house run (DESIGN 8, BUILD-PLAN T2.8, QUESTIONS Q200), the save's run field: v 1, rooms the records of the
+     rooms entered so far in JSON form (room n is rooms[n - 1]; DESIGN 8's any order and repeats), at the rooms cleared
+     (0 to HOUSE_ROOMS - 1: the fifth clear ends the house and the run goes), hero the bug that walks into room at + 1
+     (its hearts with the doorway's heart already back, its cap, stats, scrolls and slots), entry the slots it set out
+     with (Retry House's), dp the Dead pixels banked in this house, last the last room's, lost 1 once a death ended it
+     (Retry House reads it; the title drops it). runValid keeps a well formed run and gives null for anything else,
+     so a hand edited save never starts a broken house; the reducers return a new run and never touch their argument */
+  var RUN_INT = function (v, lo, hi) { return typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi; };
+  function runSlots(a) { return Array.isArray(a) && a.length === 3 && a.every(function (c) { return RUN_INT(c, 0, 24); }); }
+  function runHero(o) {
+    var T = SB.TUNING;
+    if (!o || typeof o !== 'object' || !RUN_INT(o.heartsMax, T.HEARTS_BASE, T.HEARTS_CAP) || !RUN_INT(o.hearts, 1, o.heartsMax)) return null;
+    if (!RUN_INT(o.vigor, 0, 99) || !RUN_INT(o.focus, 0, 99) || !RUN_INT(o.grit, 0, 99) || !RUN_INT(o.scrolls, 0, 999) || !runSlots(o.slots)) return null;
+    return { hearts: o.hearts, heartsMax: o.heartsMax, vigor: o.vigor, focus: o.focus, grit: o.grit, scrolls: o.scrolls, slots: o.slots.slice() };
+  }
+  function runValid(o) {
+    var T = SB.TUNING;
+    if (!o || typeof o !== 'object' || Array.isArray(o) || o.v !== 1 || !Array.isArray(o.rooms) || o.rooms.length > T.HOUSE_ROOMS) return null;
+    if (!RUN_INT(o.at, 0, T.HOUSE_ROOMS - 1) || o.at > o.rooms.length || !RUN_INT(o.dp, 0, 1e9) || !RUN_INT(o.last, 0, 1e9) || (o.lost !== 0 && o.lost !== 1)) return null;
+    if (!runSlots(o.entry)) return null;
+    var hero = runHero(o.hero), rooms = [];
+    if (!hero) return null;
+    for (var k = 0; k < o.rooms.length; k++) { var r = null; try { r = fromJSON(o.rooms[k]); } catch (e) { r = null; } if (!r) return null; rooms.push(toJSON(r)); }
+    return { v: 1, rooms: rooms, at: o.at, hero: hero, entry: o.entry.slice(), dp: o.dp, last: o.last, lost: o.lost };
+  }
+  /* a fresh bug with the entry slots: the base hearts, no stats */
+  function runBug(slots) { var T = SB.TUNING; return { hearts: T.HEARTS_BASE, heartsMax: T.HEARTS_BASE, vigor: 0, focus: 0, grit: 0, scrolls: 0, slots: slots.slice() }; }
+  function runCopy(run) { return runValid(run); }   /* runValid builds every part anew: a copy */
+  /* a new house, setting out with these slots */
+  function runFresh(slots) { var s = runSlots(slots) ? slots : [0, 0, 0]; return { v: 1, rooms: [], at: 0, hero: runBug(s), entry: s.slice(), dp: 0, last: 0, lost: 0 }; }
+  /* room at + 1 entered with this record (JSON form): it takes that place, and the rooms after it go (still to shoot) */
+  function runEnter(run, recJSON) { var r = runCopy(run); r.rooms = r.rooms.slice(0, r.at); r.rooms.push(recJSON); return runValid(r); }
+  /* the room cleared by this bug (the sim's hero) with dp Dead pixels: banked, the bug carried with HOUSE_DOOR_HEARTS back
+     up to its cap; the fifth clear gives null (the house is cleared and the run goes) */
+  function runClear(run, hero, dp) {
+    var T = SB.TUNING, r = runCopy(run);
+    if (r.at + 1 >= T.HOUSE_ROOMS) return null;
+    var max = Math.max(T.HEARTS_BASE, Math.min(T.HEARTS_CAP, hero.heartsMax | 0));
+    r.hero = { hearts: Math.min(max, Math.max(1, hero.hearts | 0) + T.HOUSE_DOOR_HEARTS), heartsMax: max, vigor: hero.vigor | 0, focus: hero.focus | 0, grit: hero.grit | 0,
+      scrolls: hero.scrolls | 0, slots: hero.slots.slice(0, 3) };
+    r.at++; r.dp += Math.max(0, dp | 0); r.last = Math.max(0, dp | 0);
+    return runValid(r);
+  }
+  /* a death: the run is lost (the room's carried Dead pixels with it: they were never banked) */
+  function runDie(run) { var r = runCopy(run); r.lost = 1; return r; }
+  /* Retry House: the same rooms so far, a fresh bug with the entry slots, from room 1 */
+  function runRetry(run) { var r = runCopy(run); r.at = 0; r.hero = runBug(r.entry); r.dp = 0; r.last = 0; r.lost = 0; return runValid(r); }
   function loadSave(raw) {
     if (raw === null || raw === undefined || raw === '') return { doc: saveDefaults() };
     var obj = null;
@@ -973,7 +1033,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   SB.record = { V: V, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
     encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows, parseCode: parseCode, linkOf: linkOf,
-    saveDefaults: saveDefaults, validateSave: validateSave, loadSave: loadSave };
+    saveDefaults: saveDefaults, validateSave: validateSave, loadSave: loadSave,
+    runValid: runValid, runFresh: runFresh, runEnter: runEnter, runClear: runClear, runDie: runDie, runRetry: runRetry };
 
   /* the QR encoder (BUILD-PLAN.md T1.9a; section 1.5: a QR's content is the full link). Byte mode, error correction L,
      the smallest version 1 to 40 that holds the text, Reed Solomon over GF(256) (x^8 + x^4 + x^3 + x^2 + 1, 0x11d) with
@@ -1457,7 +1518,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
        enemies, in core-features' fixed order, after the ascent so they keep clear of it (the pocket never carves it);
        then the second round of the ascent and, when it fails, the degrade ladder (T1.3) */
     var settled = settle(level, SB.features.place(level, opts, fixed.g));
-    return settled || level;
+    if (settled) return settled;
+    SB.features.ramp(level, opts);   /* a house room after the first only (opts.roomIndex, Q200); on the settled level */
+    return level;
   }
 
   /* the exit (section 3.7, DESIGN 6.6): the reachable standable cell of the top EXIT_ROWS rows with the greatest
@@ -2879,8 +2942,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
       }
       return -1;
     };
-    var comps = SB.pipeline.components(sat, w, h), out = [], used = {}, fodderSpots = [], eliteCap = first ? 0 : T.CAP_ELITE;
-    var cap = first ? T.FIRST_ROOM_MAX_FODDER : T.CAP_ENEMY + (level.biome === 4 ? T.EMBER_EXTRA_ENEMY : 0);
+    var R = rampRow(opts);   /* a house room after the first: its row's caps (Q200); null everywhere else, today's caps */
+    var comps = SB.pipeline.components(sat, w, h), out = [], used = {}, fodderSpots = [], eliteCap = first ? 0 : R ? R.eliteCap : T.CAP_ELITE;
+    var cap = first ? T.FIRST_ROOM_MAX_FODDER : (R ? R.cap : T.CAP_ENEMY) + (level.biome === 4 ? T.EMBER_EXTRA_ENEMY : 0);
     /* the pocket's elite first: it takes its pocket */
     if (f.pocket && eliteCap > 0) {
       var pe = kind === ICICLE ? f.pocket.rect[1] * w + f.pocket.rect[0] + 1 : f.pocket.elite;   /* an icicle hangs from the roof */
@@ -2926,6 +2990,74 @@ body.sb-modal .lwfb-fab { display: none !important; }
      placement from its one stream */
   function moths(level, opts, f) { return enemies(level, opts, f, SB.rng.mulberry32((level.seed ^ 0x6d07a5) >>> 0)); }
 
+  /* 8. the house's ramp (Stephen's "Firm ramp", 31 Oct, QUESTIONS Q97 and Q200; TUNING.RAMP), behind opts.roomIndex:
+     room 2 onward of a house, never a first room, free play, a code or room 1 (rampRow gives null there, and nothing
+     below runs: those levels and their hashes are today's). The pipeline calls ramp() once the level has settled
+     (its ascent final), with a stream of its own (seed ^ RAMP_SALT), so no draw of place() moves. It lays ramp fodder
+     until the room holds its row's floor: each the biome's kind (a moth when no cell keeps the kind's rule, as the
+     default spread's fodder, Q76) on a cell where an extra enemy would go today (DESIGN 7: open, not a one way's body,
+     no trap, outside the pocket, outside ENEMY_SPAWN_CLEAR of spawn, outside ROUTE_SAFE_ENEMY_DIST of every cell the
+     main ascent stands on; a crawler or a spark standing, an icicle hanging), never on a loot cell, the door or the
+     exit, with an envelope that covers no cell the ascent stands on (so the safe cells, the cadence and the route the
+     score promised stay as they were), at least ROUTE_SAFE_ENEMY_DIST from every other enemy where any cell allows it;
+     the stream picks among the candidates in index order. Then, while the room holds fewer elites than eliteMin, the
+     fodder farthest from spawn (squared cells, ties to the lower index) is promoted. level.ramp keeps the row for the
+     sim (a fodder's HP in quarters, the extra tick). Returns the number laid */
+  function rampRow(opts) {
+    var T = SB.TUNING, r = opts && !opts.firstRoom ? opts.roomIndex | 0 : 0;
+    return r >= 2 && r < T.RAMP.length ? T.RAMP[r] : null;
+  }
+  function ramp(level, opts) {
+    var R = rampRow(opts);
+    if (!R || level.needsCrop) return 0;
+    level.ramp = R;
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, f = level.features, es = f.enemies, stands = ascentStands(level), i, k, laid = 0;
+    var rng = SB.rng.mulberry32((level.seed ^ T.RAMP_SALT) >>> 0), base = KIND_OF_BIOME[level.biome | 0] || MOTH;
+    var near = new Uint8Array(n), stand = new Uint8Array(n), keep = new Uint8Array(n);
+    var mark = function (c0, r) { var x0 = c0 % w, y0 = (c0 - x0) / w; for (var yy = Math.max(0, y0 - r); yy <= Math.min(h - 1, y0 + r); yy++) for (var xx = Math.max(0, x0 - r); xx <= Math.min(w - 1, x0 + r); xx++) near[yy * w + xx] = 1; };
+    mark(level.spawn, T.ENEMY_SPAWN_CLEAR);
+    for (k = 0; k < stands.length; k++) { mark(stands[k], T.ROUTE_SAFE_ENEMY_DIST); stand[stands[k]] = 1; }
+    var off = function (c) { if (c !== null && c !== undefined && c >= 0 && c < n) keep[c] = 1; };
+    for (k = 0; k < f.specks.length; k++) off(f.specks[k]);
+    off(f.chest); off(f.scroll); off(f.blueprint); off(level.exit); off(level.spawn);
+    if (f.door) { var dr = f.door.rect; for (var yy = dr[1]; yy <= dr[3]; yy++) for (var xx = dr[0]; xx <= dr[2]; xx++) keep[yy * w + xx] = 1; off(f.door.idx); }
+    if (f.pocket) for (k = 0; k < f.pocket.cells.length; k++) keep[f.pocket.cells[k]] = 1;
+    var ok = function (c, kind) {
+      if (c < w || c >= n - w || level.solid[c] || level.plat[c] || level.trap[c] || near[c] || keep[c]) return false;
+      if (kind === CRAWLER || kind === SPARK) { if (!standable(level, c)) return false; }
+      else if (kind === ICICLE && !(level.solid[c - w] || level.plat[c - w])) return false;
+      var env = envelope(level, kind, c);
+      for (var q = 0; q < env.length; q++) if (stand[env[q]]) return false;
+      return true;
+    };
+    var apart = function (c) { for (var q = 0; q < es.length; q++) if (cheb(c, es[q].idx, w) <= T.ROUTE_SAFE_ENEMY_DIST) return false; return true; };
+    while (es.length < R.floor) {
+      var kind = base, cands = [], wide = [];
+      for (i = 0; i < n; i++) if (ok(i, kind)) cands.push(i);
+      if (!cands.length && kind !== MOTH) { kind = MOTH; for (i = 0; i < n; i++) if (ok(i, kind)) cands.push(i); }
+      for (i = 0; i < cands.length; i++) if (apart(cands[i])) wide.push(cands[i]);
+      var from = wide.length ? wide : cands;
+      if (!from.length) break;
+      var c = from[from.length === 1 ? 0 : rng.int(from.length)];
+      es.push({ kind: kind, idx: c, env: envelope(level, kind, c), ramp: 1 });
+      keep[c] = 1; laid++;
+    }
+    var elites = 0;
+    for (k = 0; k < es.length; k++) if (es[k].elite) elites++;
+    while (elites < R.eliteMin) {
+      var best = -1, bd = -1, sx = level.spawn % w, sy = (level.spawn - sx) / w;
+      for (k = 0; k < es.length; k++) {
+        if (es[k].elite) continue;
+        var ex = es[k].idx % w, ey = (es[k].idx - ex) / w, dd = (ex - sx) * (ex - sx) + (ey - sy) * (ey - sy);
+        if (dd > bd || (dd === bd && es[k].idx < es[best].idx)) { bd = dd; best = k; }
+      }
+      if (best < 0) break;
+      es[best].elite = true; es[best].promoted = 1; elites++;
+    }
+    es.sort(function (a, b) { return a.idx - b.idx; });
+    return laid;
+  }
+
   function place(level, opts, g) {
     var f = level.features, stands = ascentStands(level), rng = SB.rng.mulberry32(level.seed >>> 0);
     if (!g) g = SB.reach.graph(level);
@@ -2946,7 +3078,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   SB.features = { MOTH: MOTH, ICICLE: ICICLE, JELLY: JELLY, CRAWLER: CRAWLER, SPARK: SPARK, KIND_OF_BIOME: KIND_OF_BIOME,
     place: place, returnable: returnable, ladder: ladder, brightRect: brightRect, door: door, pocketCands: pocketCands, pocketOk: pocketOk, chest: chest, specks: specks,
-    trapRects: trapRects, trapOk: trapOk, trapField: trapField, envelope: envelope, enemies: enemies, moths: moths };
+    trapRects: trapRects, trapOk: trapOk, trapField: trapField, envelope: envelope, enemies: enemies, moths: moths, rampRow: rampRow, ramp: ramp };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-sim" data-core>
