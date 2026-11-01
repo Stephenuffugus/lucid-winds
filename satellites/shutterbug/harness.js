@@ -333,7 +333,7 @@ group('H-rec-3', 'decode refuses every malformed code with null, never a throw',
   t.ok(SB.record.validate(Object.assign({}, base, { mode: 2 })) !== null, 'validate refuses mode 2 without rows2');
   t.ok(SB.record.validate(Object.assign({}, base, { rows2: base.rows })) !== null, 'validate refuses rows2 outside mode 2');
   t.ok(SB.record.validate(Object.assign({}, base, { focal: 1152 })) !== null, 'validate refuses focal 1152');
-  t.ok(SB.record.validate(Object.assign({}, base, { v: 2 })) !== null, 'validate refuses v 2');
+  t.ok(SB.record.validate(Object.assign({}, base, { v: 3 })) !== null, 'validate refuses v 3 (v 2 is the biome record, Q220, H-v2-1)');
   t.eq(SB.record.validate(base), null, 'validate accepts the unbroken record (control)');
 });
 
@@ -4923,7 +4923,8 @@ group('H-share-1', 'the link and the paste (sections 1.5, 1.6): the link is the 
   t.ok(link === 'https://lucidwinds.com/satellites/shutterbug/#' + code && link.length === 825, 'the link is the origin, the path, # and the code (' + link.length + ' characters, H-rec-2\'s 825)');
   const cases = [['the code', code], ['with whitespace around it', '  ' + code + '\n'], ['without its v1. prefix', code.slice(3)], ['as the full link', link], ['after the last #', 'https://x.example/a#b#' + code], ['broken by a line wrap', code.slice(0, 100) + ' \n ' + code.slice(100)]];
   for (const [name, text] of cases) t.ok(same(SB.record.parseCode(text)), 'a paste of ' + name + ' opens the same record');
-  t.ok(SB.record.parseCode('v2.' + code.slice(3)).why === 'newer' && SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode('').why === 'bad', 'a v2 code reads as newer; garbage and nothing read as bad');
+  t.ok(SB.record.parseCode('v3.' + code.slice(3)).why === 'newer' && SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode('').why === 'bad', 'a v3 code reads as newer; garbage and nothing read as bad');
+  t.ok(SB.record.parseCode('v2.' + code.slice(3)).why === 'bad', 'a v2. prefix on a v1 record reads as bad (since Q220 v2 is known: the prefix must name the record\'s own version)');
 });
 group('H-share-2', 'every fixture in every mode, and the sample room with a focal tap, round trips through its link to the same record and the same level', t => {
   const recs = [], bad = [];

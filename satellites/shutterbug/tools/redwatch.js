@@ -627,7 +627,7 @@ const MUTANTS = [
   /* T1.8: sharing */
   { name: 'SHARE_DROPS_FOCAL', task: 'T1.8', file: 'page', find: "function linkOf(origin, pathname, rec) { return origin + pathname + '#' + encode(rec); }", repl: "function linkOf(origin, pathname, rec) { return origin + pathname + '#' + encode(Object.assign({}, rec, { focal: null })); }",
     gates: [{ gate: 'harness', only: 'H-share-2', expect: 'records round trip through their links' }] },
-  { name: 'PREFIX_CHECK_DROPPED', task: 'T1.8', file: 'page', find: "    if (p.slice(0, 3) === 'v' + V + '.') p = p.slice(3);\n    else if (p.indexOf('.') >= 0) return null;\n", repl: "    p = p.slice(3);\n",
+  { name: 'PREFIX_CHECK_DROPPED', task: 'T1.8', file: 'page', find: "    if (m) { want = +m[1]; p = p.slice(m[0].length); }\n    else if (p.indexOf('.') >= 0) return null;\n", repl: "    p = p.slice(3);\n",
     gates: [{ gate: 'harness', only: 'H-share-1', expect: 'a paste of without its v1. prefix opens the same record' }] },
   /* T1.10: the save */
   { name: 'SECOND_KEY', task: 'T1.10', file: 'page', find: "try { localStorage.setItem('shutterbug.v1', JSON.stringify(S.doc)); S.writes++; }", repl: "try { localStorage.setItem('shutterbug.v1', JSON.stringify(S.doc)); localStorage.setItem('shutterbug.settings', JSON.stringify(S.doc.settings)); S.writes++; }",
