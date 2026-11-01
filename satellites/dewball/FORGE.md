@@ -815,3 +815,70 @@ palace, cathedral, aqueduct, observatory; moon gate, pagoda, stone circle), the 
 in the game frame: **kelp tangle** (crumpled green shards, the popcorn's fault), **shell** (big flat facets), **mooring
 post** (a dark lump), **dragonfly** (small and bug like), the balloon's grey anchor rock at its foot, the oar (a thin
 sliver), the postbox's dark foot, the sheep's faceted wool; the **moon gate's** moon fills its opening (as Astra drew it).
+
+## Starfall Bay (w5) in models from his Astra pictures, 1 Nov 2026 (`dewball-v35`, no credits)
+
+**Built from the step 2 buy** (54 i2t models, 810 credits, balance 1,704 unchanged by this step). ⚠️ The vault release
+is STILL NOT MADE: gh is logged in with the codespace token, which cannot see `Stephenuffugus/lucid-winds-vault`
+(`Could not resolve to a Repository`, 18:51 UTC), so this step builds on the two same disk copies; all 270 files were
+checked against `VAULT-PENDING.txt`'s sha256 list before the first fit (every one equal). The law says vault first:
+the release command in that file must run before this branch ships.
+**Fit** (dewfit, the ladder law: every largest extent equals its primitive's, `report.mjs` REPORT_PASS): movers
+looked at with facing.mjs before and after: the crab came back eyes and claws on +Z (no yaw), the gull beak to +X
+(`--yaw gull=-90`, after: beak on +Z), the dragonfly head on +Z but its wings ONE upright sheet, a line from above
+(`--roll dragonflyS=90` laid them flat). Flat things that came back standing, read in Blender's four views:
+`--tip starfish=-90` (spotted face up; +90 laid it face down), `--tip lifering=-90`, the surfboard lying along z nose
+up 31 degrees (`--yaw surfboard=90 --roll surfboard=31`: 111.5 x 13.5 x 46.2, fins down), the oar already flat
+(`--yaw oar=90`). Then uvclean (54 of 54), one 2048x1536 atlas for 55 kinds (99% full, 909 KB, 16.0 MB on the GPU):
+the eight landmarks keep 512 (two thirds of the atlas, the most of any world), so the sets step down: ferry,
+harborcrane, lighthouse, sailboat, beachhut, boathouse, houseboat, whalebone, fishshack 512 → 256; driftwood, bonfire,
+fishcart, umbrella, dinghy, boardwalk stand, rowboat, lifeguard post, barrel 512 → 128; the keepsakes, crab, gull,
+seawall, cratewall and the shared signpost, banner pole, flower bed 256 → 128 (about 20 px a metre for every set piece
+and landmark alike). Pack `--world w5 --merge`: `git diff --stat` shows index.json +170 lines and 0 removed, no file in
+w1 to w4 touched; `assets/3d/w5` is 55 GLBs + `atlas.jpg`, 3.6 MB.
+**Shared kinds without the October files.** Signpost, banner pole, flower bed, barrel and cratewall are placed in w5
+and draw only from w5's atlas, but this box has neither the October fitted files nor the raw Meshy files (those are in
+the vault). New `tools/forge/unatlas.py` rebuilds a fitted file from the SERVED one: gltfpack decodes it (the mesh is
+dewfit's exactly, -noq keeps float positions), its square is found from its UVs in the home atlas, the square's inner
+part is cut from that `atlas.jpg` and embedded, the UVs mapped back to 0..1; the world that gave the kind the biggest
+square wins (signpost and banner pole from w1, flower bed w2, barrel and cratewall w4, all 256). One JPEG generation
+more than a fresh paint; looked at whole in Blender (clean) and in the game camera.
+**Looked at** (shot.mjs pairs of all 59 at 412x915, 8 mosaic pages, plus Blender four views of all 54 new models):
+**55 ship**, each reading better than its primitive: all eight landmarks (the broken keel a real wreck with a ragged
+red sail, the dry dock a ship on its blocks, the cannery's brick and chimneys, the hotel, helter skelter, Ferris
+wheel, moored balloon, pier pavilion), crab (a crab, where today's is a red blob) and gull (a face, grey wings), all
+five keepsakes (the bell on its post, the message in a bottle, a star, the Pearl Whorl a whorled shell, the comb with
+its blue gems), the boats (ferry, sailboat, rowboat, dinghy, houseboat), the huts and stalls, lifeguard post,
+lighthouse, crane, whalebone, umbrella, deckchair, bonfire, fish cart, cargo box (a ridged container), lobster pot,
+net bale, buoys, dock and mooring posts, seawall (mossy rocks instead of purple blocks), groyne, driftwood, bucket,
+sandcastle, seagrass, shell, starfish, surfboard, lifering, anchor, and the five shared kinds. The barrel's shot was
+blocked (driftwood and an anchor fill the frame; one instance in w5): judged from Blender, sound. The starfish shot is
+far; judged from Blender too. **Kept primitives (4):** the **dragonfly** (a pale smudge at a 9 cm ball: the light
+wings and the thin navy body in a 128 px square vanish on the dusk sand, where today's blue rod with grey wings reads),
+the **kelp tangle** (about 250 crumpled shards, the popcorn's fault: crumpled lettuce, today's green coils read as a
+tangle), the **oar** (the blade a third of the length wide, as Astra drew it: a lute or a big spoon in the game camera,
+today's thin oar reads), the **tide pool** (Meshy built the rock ring and left the middle open, the sand shows through:
+a ring of stones, today's blue water disc reads as a pool). Removing them from the atlas let the fish shack grow
+128 → 256; nothing else changed size.
+**Drift to know** (in `w5-picks.json`): the mooring post is a squat bollard 2.2x the primitive's width (the darkest
+thing on the boardwalk, 155 of them); the lighthouse 564 wide against 352; the pier pavilion lower (1,253 against
+1,899) and shallower; the balloon taller and deeper, its four grey mooring stones on ropes; the keel's sail higher;
+the hotel wider; the whalebone a long low skeleton (232 tall against 390); the bonfire's flame a card from its side;
+the comb stands on its edge like the primitive.
+**The world, looked at** (world_shots 60 / 400 / 1500 cm, busy, above, rim in, rim out, models beside today from one
+frame): the opening's 319 shells are coral whelks where today's are pink blobs, so the sand at 60 cm and 4 m reads as
+a shell beach; at 15 m the breakwaters read as rock, not purple blocks. Three things wrong: (1) the mooring bollards
+are the heaviest dark accents in every boardwalk frame (the width drift); (2) the busy cluster mixes models with the
+kept tide pools' flat blue discs, which now look plainer beside them; (3) the worst angle, rim out, is unchanged
+by the models: the sand ends in a hard line against a flat navy sea band, the known horizon fault.
+**Perf** (perf.mjs, 4x CPU tick, exact counts; before = the same build with an index without w5, base
+`tools/forge/fitted/before/`): at 60 / 400 / 1500 cm, draw calls 68 / 83 / 102 → 73 / 108 / 125, triangles 478k /
+481k / 485k → 494k / 695k / **1,677k**, textures 5.96 → 21.96 MB. Inside the fence against the plan's base (3x the
+~920k w7 triangles, 2x its 145 to 181 calls), but ⚠️ 1.68M is the most of any world so far and 3.5x w5's OWN primitive
+count at the 15 m ball: the near set covers 2,405 instances there (seawall 197 x 600, shells 319 x 300, mooring and
+dock posts 280 x 300). Ticks scatter both ways (p95 4.6 to 22 ms with models, 9.6 to 17 without): the Shutterbug
+lanes shared both cores the whole time, so no frame time here means a phone.
+**Gates:** report (w1 to w5 atlases 16.0 MB), gate-glb w5 (55 ready, 74 calls, 493k triangles, 21.96 MB) and `--block
+atlas` (0 ready, every kind its primitive, 69 calls), same.sh pointed at this worktree (SAME_PASS byte identical:
+physics never reads a model), react_test REACT_PASS, sign_test, `manifest.mjs --check` MANIFEST_FRESH. Stamp: sw.js
+CACHE `dewball-v35` (models, the index and the stamp only; no game code changed).
