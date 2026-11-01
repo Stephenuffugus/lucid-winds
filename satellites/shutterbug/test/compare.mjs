@@ -21,8 +21,12 @@
  *     card hides, the jump box's 576 pixels are the new weapon's glyph decoded here, the pickup card names it;
  *   - the recording carries the TAKE and, replayed on the kept first state, reaches the live hash;
  *   - again with Keep: the slots kept, PICK alone, no voice of a pick, the card gone.
- * Watched red by SWAP_AUTO_TAKES, SIM_RUNS_UNDER_SWAP, SWAP_WORDS_WRONG, SWAP_NOT_MODAL, SWAP_OVER_PAUSE, SWAP_NO_DEEP. */
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME } from './harness.mjs';
+ *   - W2R: no line about a weapon of no damage says how it hits, how far or how hard; a stick thumb down from Pause to
+ *     Take (the pad and knob not drawn under the card, Pause, Resume and Take each answer a real tap); at 412 a scroll
+ *     offer on the chest's step answered first, the card on the next step, its Take equipping.
+ * Watched red by SWAP_AUTO_TAKES, SIM_RUNS_UNDER_SWAP, SWAP_WORDS_WRONG, SWAP_NOT_MODAL, SWAP_OVER_PAUSE, SWAP_NO_DEEP,
+ * and since W2R SWAP_NOHIT_LIES, SWAP_TAP_CLICK_ONLY, PAUSE_TAP_CLICK_ONLY, STICK_PAD_UNDER_SWAP, SWAP_UNDER_OFFER. */
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME, stickAt, landStick } from './harness.mjs';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -47,9 +51,13 @@ const lineOf = (n, o) => {
   const a = TRAITS[n], b = TRAITS[o], said = [];
   if (a[4] > b[4]) said.push(COPY.cmpLift);
   if (a[3] > b[3]) said.push(COPY.cmpHolds);
-  if (a[2] !== b[2]) said.push(a[2] ? COPY.cmpBoth : COPY.cmpOne);
-  if (a[0] !== b[0]) said.push(a[0] > b[0] ? COPY.cmpFarther : COPY.cmpShorter);
-  if (a[1] !== b[1]) said.push(a[1] > b[1] ? COPY.cmpHarder : COPY.cmpSofter);
+  /* a new weapon of no damage says only that it hits nothing (W2R) */
+  if (a[1] === 0) { if (b[1] > 0) said.push(COPY.cmpNoHit); }
+  else {
+    if (a[2] !== b[2]) said.push(a[2] ? COPY.cmpBoth : COPY.cmpOne);
+    if (a[0] !== b[0]) said.push(a[0] > b[0] ? COPY.cmpFarther : COPY.cmpShorter);
+    if (a[1] !== b[1]) said.push(a[1] > b[1] ? COPY.cmpHarder : COPY.cmpSofter);
+  }
   if (!said.length) said.push(COPY.cmpOther);
   return COPY.wpn[n] + ' ' + said.slice(0, 2).join(COPY.cmpAnd) + '.';
 };
@@ -121,6 +129,11 @@ try {
     /* every pair of built jump weapons, through the page's own compareLine */
     const pairs = await page.evaluate(ids => { const out = {}; for (const n of ids) for (const o of ids) if (n !== o && n[0] === o[0]) out[n + o] = window.SB.ui.compareLine(n, o); return out; }, BUILT);
     const wrongPairs = Object.entries(pairs).filter(([k, v]) => v !== lineOf(k.slice(0, 2), k.slice(2)));
+    /* the words a weapon of no damage can never be given (W2R): how it hits, how far, how hard */
+    const HITWORDS = [COPY.cmpBoth, COPY.cmpOne, COPY.cmpFarther, COPY.cmpShorter, COPY.cmpHarder, COPY.cmpSofter];
+    const lies = Object.entries(pairs).filter(([k]) => TRAITS[k.slice(0, 2)][1] === 0).filter(([, v]) => HITWORDS.some(x => v.includes(x)));
+    const noHit = Object.keys(pairs).filter(k => TRAITS[k.slice(0, 2)][1] === 0).length;
+    R.say(noHit >= 14 && lies.length === 0, w + ': no line about a weapon of no damage says how it hits, how far or how hard (' + noHit + ' such pairs' + (lies.length ? '; ' + lies.slice(0, 3).map(([k, v]) => k + ' says "' + v + '"').join('; ') : '; e.g. "' + pairs.J8J5 + '", "' + pairs.J7J1 + '"') + ')');
     R.say(Object.keys(pairs).length >= 56 && wrongPairs.length === 0, w + ': every pair of built weapons of a slot gives the gate\'s comparison line (' + Object.keys(pairs).length + ' pairs' + (wrongPairs.length ? '; ' + wrongPairs.slice(0, 2).map(([k, v]) => k + ' says "' + v + '", the gate "' + lineOf(k.slice(0, 2), k.slice(2)) + '"').join('; ') : '') + ')');
 
     const p = await walkToSwap(page);
@@ -156,19 +169,30 @@ try {
     const after = await world(page), p2 = await probe(page);
     R.say(before === after && p2.frame === f0 + 30 && p2.on && p2.compare === 1, w + ': while it is open nothing in the world moves through 30 steps of a held arrow and real taps on A and B (only the frame counts: ' + (p2.frame - f0) + '; the world ' + (before === after ? 'held' : 'MOVED') + ')');
 
-    /* Pause over it, Resume back to it */
+    /* a stick thumb lands and stays down from here to Take, as a player's does after walking into the chest (W2R: Chrome
+       made no click from a tap while it was down, so Pause, Resume and Take did nothing); nothing of the stick is drawn
+       under the card */
+    const sp = await stickAt(page, 0.25, 0.8);
+    const onStick = await page.evaluate((x, y) => { const h = document.elementFromPoint(x, y); return !!h && !!h.closest('#stick'); }, sp.x, sp.y);
+    const thumb = await landStick(page, sp.x, sp.y);
+    const th = await page.evaluate(() => { const st = window.SB_DEV.stick(); return { pointers: st ? st.pointers : 0, pad: getComputedStyle(document.querySelector('#stick .pad')).display, on: document.getElementById('swap').classList.contains('on') }; });
+    R.say(onStick && th.pointers === 1 && th.on && th.pad === 'none', w + ': a stick thumb down under the open card (on the stick ' + onStick + ', pointers ' + th.pointers + '): the pad and knob are not drawn (display ' + th.pad + ')');
+
+    /* Pause over it, Resume back to it, the stick thumb still down */
     await tap(page, '#pause');
     const pp = await page.evaluate(() => { const pc = document.getElementById('paused'), r = pc.getBoundingClientRect(), hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return { screen: window.SB_DEV.screen(), on: pc.classList.contains('on'), top: pc.contains(hit), z: [getComputedStyle(pc).zIndex, getComputedStyle(document.getElementById('swap')).zIndex] }; });
-    await tap(page, '#resume');
+    if (pp.on) await tap(page, '#resume');   /* no card, no Resume to tap: the line below names it */
     const pr = await probe(page);
-    R.say(pp.screen === 'pause' && pp.on && pp.top && pr.screen === 'play' && pr.on && pr.compare === 1 && !pr.paused, w + ': a real tap on Pause opens the pause card over the swap card (z ' + pp.z.join(' over ') + '), and Resume comes back to it, still open');
+    R.say(pp.screen === 'pause' && pp.on && pp.top && pr.screen === 'play' && pr.on && pr.compare === 1 && !pr.paused, w + ': a real tap on Pause with the stick thumb down opens the pause card over the swap card (z ' + pp.z.join(' over ') + '), and Resume comes back to it, still open');
 
-    /* Take */
+    /* Take, the stick thumb still down; it lifts after the step */
     await tap(page, '#swaptake');
-    const t1 = await stepN(page, 1), t2 = await stepN(page, 1);
+    const t1 = await stepN(page, 1);
+    await thumb.end();
+    const t2 = await stepN(page, 1);
     const px = await slotPx(page, 0), want = iconPx(nu);
     R.say(t1.slots[0] === WPN.indexOf(nu) && t1.slots[1] === 9 && !t1.compare && t1.heard.includes('pick') && t1.heard.includes('equip') && !t2.on && t1.got === COPY.wpn[nu],
-      w + ': a real tap on Take equips ' + nu + ' on the next step with the pick and equip voices (' + t1.heard.join(', ') + '), the card gone, the pickup card naming ' + JSON.stringify(t1.got));
+      w + ': a real tap on Take with the stick thumb down equips ' + nu + ' on the next step with the pick and equip voices (' + t1.heard.join(', ') + '), the card gone, the pickup card naming ' + JSON.stringify(t1.got));
     R.say(px.length === 576 && px.every((c, i) => c === want[i]), w + ': the jump box\'s 576 pixels are ' + nu + '\'s glyph (icon_weapons.' + nu + ') decoded here');
     if (w === 412) {
       const rep = await page.evaluate(() => { const s = window.SB.sim.attach(structuredClone(window.__s0), window.SB.game.level); const words = window.SB.sim.rle.decode(window.SB.input.recording()); for (const wd of words) window.SB.sim.step(s, wd); return { same: window.SB.sim.hash(s) === window.SB_DEV.hash(), take: words.some(wd => ((wd >> 6) & 15) === window.SB.sim.CHOICE.TAKE) }; });
@@ -182,6 +206,25 @@ try {
     const k1 = await stepN(page, 1), k2 = await stepN(page, 1);
     R.say(!!k0 && k0.compare === 1 && JSON.stringify(k1.slots) === '[1,9,0]' && !k1.compare && (k1.ev & SBN.sim.EV.PICK) && !(k1.ev & SBN.sim.EV.EQUIP) && !k1.heard.includes('pick') && !k1.heard.includes('equip') && !k2.on,
       w + ': a real tap on Keep keeps Boomerang (slots ' + k1.slots.join(',') + '), PICK alone and no pick voice (' + k1.heard.join(', ') + '), the card gone');
+    if (w === 412) {
+      /* a scroll offer on the chest's own step (W2R; a named liberty: the offer's wait laid on the real state the step
+         before the walk opens the chest, found by stepping a copy): the card waits for the offer's sheet, which answers
+         first, then shows on the next step and its Take equips */
+      await setRoom(page); await stepN(page, 4);
+      await page.keyboard.down('ArrowLeft');
+      let laid = false, rp = null;
+      for (let k = 0; k < 120 && !laid; k++) {
+        laid = await page.evaluate(() => { const st = window.SB.game.state, c = window.SB.sim.attach(structuredClone(st), window.SB.game.level); window.SB.sim.step(c, window.SB.sim.IN.L); if (!c.room.compare || !st.hero.ground) return false; st.room.offerWait = 1; st.room.grace = 0; return true; });
+        rp = await page.evaluate(() => { const p = window.__step(1); p.offer = !!window.SB.game.state.scrollsOffered; return p; });
+      }
+      await page.keyboard.up('ArrowLeft');
+      const rq = await page.evaluate(() => { const p = window.__step(1); p.offer = !!window.SB.game.state.scrollsOffered; return p; });
+      R.say(laid && rp.compare === 1 && rp.offer && !rp.on && rq.compare === 1 && !rq.offer && rq.on,
+        '412: a scroll offer on the chest\'s step: the card waits (shown ' + (rp && rp.on) + ' with the offer open ' + (rp && rp.offer) + '), the offer is answered first and the card shows on the next step (shown ' + rq.on + ', offer ' + rq.offer + ')');
+      await tap(page, '#swaptake');
+      const rt = await stepN(page, 1);
+      R.say(!rt.compare && rt.slots[0] === rq.cand && !(await stepN(page, 1)).on, '412: and its Take equips ' + WPN[rq.cand] + ' on the next step, the card gone (slots ' + rt.slots.join(',') + ')');
+    }
     if (w === 320) {
       /* the worst angle (13.2's shot): the bug dropping in at the room's top beside the chest (laid at row 2): no dock in
          the room clears it at 320, so the card hangs deep over the strip, the bug in sight, A's and B's circles bare,

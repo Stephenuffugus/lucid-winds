@@ -20,7 +20,8 @@
  *   - the HUD writes nothing over 30 quiet steps (a MutationObserver counts the records);
  *   - a chest laid near the room's top with the bug beside it (the camera at the top): the card docks low, clear of it,
  *     and as the bug falls the room's height into that place the card moves back to the top, never over it;
- *   - #top never overflows (scrollWidth at most clientWidth) with 4 hearts and both icons; zero page errors.
+ *   - #top never overflows (scrollWidth at most clientWidth) with 4 hearts and both icons, and the room name keeps 90 px
+ *     or more at every size (W2R); zero page errors.
  *   - ART2 (Q161), ART3: the icon is Astra's icon_weapons glyph named by its code (576 pixels); the shock is her ring split at
  *     its centre, a half at each front; the kill's pop her enemy_death clip; a non lethal hit on a frozen 8 quarter
  *     jelly draws her enemy_hit burst over it, its four frames over the hurt; each drawn record's opaque pixels equal
@@ -288,7 +289,7 @@ try {
     const writes = await page.evaluate(() => { const box = document.getElementById('slots'); let n = 0; const mo = new MutationObserver(r => { n += r.length; }); mo.observe(box, { attributes: true, childList: true, subtree: true, characterData: true }); for (let k = 0; k < 30; k++) window.SB_DEV.step(1); const left = mo.takeRecords().length; mo.disconnect(); return n + left; });
     R.say(writes === 0, w + ': the HUD is written 0 times over 30 quiet steps (' + writes + ' mutation records)');
     const ov = await page.evaluate(() => { const t = document.getElementById('top'); return { sw: t.scrollWidth, cw: t.clientWidth, name: document.getElementById('roomname').getBoundingClientRect().width, hearts: document.querySelectorAll('#hearts i').length }; });
-    R.say(ov.sw <= ov.cw && ov.hearts === 4, w + ': the top strip holds Pause, the name, both icons and ' + ov.hearts + ' hearts without overflow (scrollWidth ' + ov.sw + ', clientWidth ' + ov.cw + ', the name ' + Math.round(ov.name) + ' px)');
+    R.say(ov.sw <= ov.cw && ov.hearts === 4 && ov.name >= 90, w + ': the top strip holds Pause, the name, both icons and ' + ov.hearts + ' hearts without overflow (scrollWidth ' + ov.sw + ', clientWidth ' + ov.cw + '), the name keeps 90 px or more (' + Math.round(ov.name) + ' px; W2R: 64 at 320 before)');
 
     /* the card near the top: a fresh sitting (Title), a chest in the bug's own cell high in the room */
     await page.evaluate(() => window.SB_DEV.goto('title'));

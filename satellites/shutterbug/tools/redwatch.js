@@ -1298,7 +1298,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-wpn-J2', expect: 'a jump drops three sparks' }] },
   { name: 'SKYHOOK_ON_WALL_JUMP', task: 'W2', file: 'page', find: "wallSide = h.wall; h.vy = -K.WALL_V;", repl: "wallSide = h.wall; h.vy = h.slots[0] === WPN_J8 ? -K.J8_JUMP_V : -K.WALL_V;",
     gates: [{ gate: 'harness', only: 'H-sim-1b', expect: 'a wall jump with Skyhook takes WALL_V as unarmed' }] },
-  { name: 'SKYHOOK_BREAKS_ASCENT', task: 'W2', file: 'page', find: "J8: { extraUpCells: 1, jumpV: 9.5,", repl: "J8: { extraUpCells: 1, jumpV: 16,",
+  { name: 'SKYHOOK_BREAKS_ASCENT', task: 'W2', file: 'page', find: "J8: { extraUpCells: 1, jumpV: 9.5,", repl: "J8: { extraUpCells: 1, jumpV: 13,",   /* re anchored at W2R: 16 was far past the first break (13: the attic's and ember's wall touches; 11 still clears) */
     gates: [{ gate: 'harness', only: 'H-bot-8', expect: 'walked levels clear with Skyhook, every ascent edge performed:' }] },
   { name: 'FROZEN_UNDRAWN', task: 'W2', file: 'page', find: "    drawHeld(s, cam, camX);\n", repl: "",
     gates: [{ gate: 'fight', expect: '412: a real A tap with Shutter Snap freezes the moth' }] },
@@ -1330,6 +1330,29 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'pause_glyph is 16x16, normal Slate bars, pressed Paper bars on an Ink tile' }] },
   { name: 'KNOB_PAST_PAD', task: 'ART4', file: 'page', find: "STICK_TRAVEL_PX: 32,", repl: "STICK_TRAVEL_PX: 40,",
     gates: [{ gate: 'input', expect: '412x915: at the full push right the knob sits' }] },
+  /* W2R: the review of weapons step 2 (and step 1): Halo at a wall and its whole cells, the Snap's 6 steps, Skyhook's
+     count of full hold misses, the comparison line of a weapon of no damage, taps with the stick thumb down, the scroll
+     offer beside the chest, the stick under the card, the room name at 320 */
+  { name: 'HALO_DIES_AT_WALL', task: 'W2R', file: 'page', find: "    if (x < x0 && solidBox(lv, x, yt, x0, yb)) x = (Math.floor(x / CS) + 1) * CS;\n    else if (x + K.J6_BOXW > x0 + K.HERO_W_SUB && solidBox(lv, x0 + K.HERO_W_SUB, yt, x + K.J6_BOXW, yb)) x = Math.floor((x + K.J6_BOXW - 1) / CS) * CS - K.J6_BOXW;\n", repl: "",
+    gates: [{ gate: 'harness', only: 'H-wpn-J6', expect: 'a jump flush against a wall on the left, 1 px off it, and flush against one on the right each send a live ring' }] },
+  { name: 'HALO_REACH_7', task: 'W2R', file: 'page', find: "far = K.J6_REACH - K.J6_BOXH;", repl: "far = K.J6_REACH;",
+    gates: [{ gate: 'harness', only: 'H-wpn-J6', expect: 'one in the cell 7 rows over lives' }] },
+  { name: 'SNAP_SHORT', task: 'W2R', file: 'page', find: "p.y = y0 + (K.HERO_H_SUB >> 1); p.ttl = 7; }", repl: "p.y = y0 + (K.HERO_H_SUB >> 1); p.ttl = 6; }",
+    gates: [{ gate: 'harness', only: 'H-wpn-J7', expect: 'its SNAP is drawn for 6 steps' }] },
+  { name: 'SKYHOOK_MISSES_MORE', task: 'W2R', file: 'page', find: "J8: { extraUpCells: 1, jumpV: 9.5,", repl: "J8: { extraUpCells: 1, jumpV: 10.5,",
+    gates: [{ gate: 'harness', only: 'H-bot-8', expect: 'misses exactly 9 ascent edges outside Deep' }] },
+  { name: 'SWAP_NOHIT_LIES', task: 'W2R', file: 'page', find: "    if (a[1] === 0) { if (b[1] > 0) said.push(C.cmpNoHit); }\n    else {\n", repl: "    {\n",
+    gates: [{ gate: 'compare', expect: '412: no line about a weapon of no damage says how it hits' }] },
+  { name: 'SWAP_TAP_CLICK_ONLY', task: 'W2R', file: 'page', find: "ui.onTap(take, answer(SB.sim.CHOICE.TAKE)); ui.onTap(keep, answer(SB.sim.CHOICE.LEAVE));", repl: "take.addEventListener('click', answer(SB.sim.CHOICE.TAKE)); keep.addEventListener('click', answer(SB.sim.CHOICE.LEAVE));",
+    gates: [{ gate: 'compare', expect: '412: a real tap on Take with the stick thumb down equips' }] },
+  { name: 'PAUSE_TAP_CLICK_ONLY', task: 'W2R', file: 'page', find: "ui.onTap(document.getElementById('pause'), function () { this.blur(); ui.pause(); });", repl: "document.getElementById('pause').addEventListener('click', function () { this.blur(); ui.pause(); });",
+    gates: [{ gate: 'compare', expect: '412: a real tap on Pause with the stick thumb down opens the pause card' }] },
+  { name: 'STICK_PAD_UNDER_SWAP', task: 'W2R', file: 'page', find: ", body:has(#swap.on) #stick .pad { display: none; }", repl: " { display: none; }",
+    gates: [{ gate: 'compare', expect: '412: a stick thumb down under the open card' }] },
+  { name: 'SWAP_UNDER_OFFER', task: 'W2R', file: 'page', find: " && !st.room.dead && !st.scrollsOffered);", repl: " && !st.room.dead);",
+    gates: [{ gate: 'compare', expect: "412: a scroll offer on the chest's step: the card waits" }] },
+  { name: 'TOP_NAME_SQUEEZED', task: 'W2R', file: 'page', find: "  #hearts { margin-left: 4px; gap: 3px; }\n", repl: "",
+    gates: [{ gate: 'fight', expect: '320: the top strip holds Pause, the name, both icons and 4 hearts without overflow' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

@@ -135,6 +135,18 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #slots .slot.empty { border-style: dashed; }
 #slots canvas { width: 24px; height: 24px; image-rendering: pixelated; display: block; }
 #slots .slot.cool canvas { opacity: 0.35; }
+/* under 360 wide the strip's air is cut so the room name keeps 90 px or more beside the badge, both boxes and 4 hearts
+   (W2R: it had 64, "Samp..."; spec 8.4 budgets about 109 with two boxes): 2 px of padding a side, Pause's own 4 px
+   (its 48 px hit area keeps its 8 px of air round the glyph), half the gaps, the boxes 26 px (the 24 px glyph and its
+   1 px border) */
+@media (max-width: 359px) {
+  #top { padding: 0 calc(10px + var(--sar)) 0 calc(10px + var(--sal)); }
+  #pause { margin: 0 0 0 -10px; }
+  #biomebadge { margin-right: 3px; }
+  #slots { margin-left: 4px; gap: 2px; }
+  #slots .slot { width: 26px; height: 26px; }
+  #hearts { margin-left: 4px; gap: 3px; }
+}
 /* the pickup card (8.5): Paper with an Ink border like the cards, at the stage's top (docked low over the bug), under
    the cards; it takes no tap. 2.5 s: 0.2 s in, 0.4 s out; still with reduced motion. 16 px down, not the spec's 8: the
    Pause control's 48 px hit area hangs 12 px over the room's top left corner (Q94), and at 360 and 320 wide the card
@@ -332,7 +344,7 @@ body.playing #reserve, body:has(#death.on) #reserve { display: none; }
   background: var(--stick-pad-idle) 0 0 / 116px 116px no-repeat; image-rendering: pixelated; pointer-events: none; }
 #stick .pad.l, #stick .pad.r { background-image: var(--stick-pad-active); }
 #stick.on .pad { display: block; }
-body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad { display: none; }
+body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad, body:has(#swap.on) #stick .pad { display: none; }   /* nothing drawn under the cards (STICKR; the swap card since W2R) */
 #stick i { font-style: normal; }
 #stick .knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px;
   background: var(--stick-knob-neutral) 0 0 / 52px 52px no-repeat; image-rendering: pixelated; }
@@ -5319,7 +5331,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     swapHead: 'Swap {old} for {new}?', swapTake: 'Take {new}', swapKeep: 'Keep {old}',
     cmpLift: 'jumps higher', cmpHolds: 'stops enemies', cmpBoth: 'hits both sides', cmpOne: 'hits one side',
     cmpFarther: 'reaches farther', cmpShorter: 'reaches less far', cmpHarder: 'hits harder', cmpSofter: 'hits softer',
-    cmpOther: 'works differently', cmpAnd: ' and '
+    cmpNoHit: 'hits nothing', cmpOther: 'works differently', cmpAnd: ' and '
   });
 
   /* the game: the record, the built level, the live sim state, the room's name */
@@ -5766,18 +5778,40 @@ body.sb-modal .lwfb-fab { display: none !important; }
     J7: [3, 0, 1, 1, 0], J8: [0, 0, 0, 0, 1], D1: [3, 2, 1, 0, 0], D2: [2, 0, 1, 1, 0], D3: [0, 2, 0, 0, 0], D4: [1, 1, 1, 0, 0], D5: [0, 1, 0, 0, 0],
     D6: [5, 1, 1, 0, 0], D7: [0, 3, 0, 0, 0], D8: [3, 1, 0, 0, 0] };
   /* the comparison line: the new weapon's differences from yours, at most two, in the order lift, holds, both sides,
-     reach, damage; none, cmpOther. "{new} {first}{and second}." */
+     reach, damage; none, cmpOther. "{new} {first}{and second}." A new weapon that does no damage (Skyhook, Shutter
+     Snap) never says how it hits, how far or how hard: it says cmpNoHit in their place when yours hits (W2R: the review
+     read "Skyhook jumps higher and hits one side") */
   ui.compareLine = function (newId, oldId) {
     var C = ui.COPY, a = ui.TRAITS[newId] || [0, 0, 0, 0, 0], b = ui.TRAITS[oldId] || [0, 0, 0, 0, 0], said = [];
     if (a[4] > b[4]) said.push(C.cmpLift);
     if (a[3] > b[3]) said.push(C.cmpHolds);
-    if (a[2] !== b[2]) said.push(a[2] ? C.cmpBoth : C.cmpOne);
-    if (a[0] !== b[0]) said.push(a[0] > b[0] ? C.cmpFarther : C.cmpShorter);
-    if (a[1] !== b[1]) said.push(a[1] > b[1] ? C.cmpHarder : C.cmpSofter);
+    if (a[1] === 0) { if (b[1] > 0) said.push(C.cmpNoHit); }
+    else {
+      if (a[2] !== b[2]) said.push(a[2] ? C.cmpBoth : C.cmpOne);
+      if (a[0] !== b[0]) said.push(a[0] > b[0] ? C.cmpFarther : C.cmpShorter);
+      if (a[1] !== b[1]) said.push(a[1] > b[1] ? C.cmpHarder : C.cmpSofter);
+    }
     if (!said.length) said.push(C.cmpOther);
     return C.wpn[newId] + ' ' + said.slice(0, 2).join(C.cmpAnd) + '.';
   };
   var swapShown = 0, swapSent = 0, swapCam = '';
+  /* a control that answers while another finger is down (W2R): Chrome makes no click from a tap while another touch is
+     held, and a player reaches the chest, and Pause, with the stick thumb down. A touch or a pen answers on its
+     pointerup inside the control it went down on; a mouse and the keyboard keep click; the click a touch makes after
+     its own pointerup (when no other finger is down) is dropped, so one tap answers once */
+  ui.onTap = function (el, fn) {
+    var downs = {}, upAt = -1e9;
+    el.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse') downs[e.pointerId] = 1; });
+    el.addEventListener('pointercancel', function (e) { delete downs[e.pointerId]; });
+    el.addEventListener('pointerup', function (e) {
+      if (!downs[e.pointerId]) return;
+      delete downs[e.pointerId];
+      var r = el.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+      upAt = e.timeStamp; fn.call(el, e);
+    });
+    el.addEventListener('click', function (e) { if (e.timeStamp - upAt < 1000) return; fn.call(el, e); });
+  };
   ui.initSwap = function () {
     var el = document.createElement('div'); el.id = 'swap'; el.setAttribute('role', 'dialog');
     var row = function (cls) { var r = document.createElement('div'), cv = document.createElement('canvas'), t = document.createElement('div'); r.className = 'srow ' + cls; cv.width = SB.render.ICON_PX; cv.height = SB.render.ICON_PX; t.appendChild(document.createElement('b')); t.appendChild(document.createElement('span')); r.appendChild(cv); r.appendChild(t); return r; };
@@ -5787,7 +5821,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     el.appendChild(h); el.appendChild(row('new')); el.appendChild(row('old')); el.appendChild(cmp); el.appendChild(duo);
     document.getElementById('stage').appendChild(el);
     var answer = function (c) { return function () { if (!swapShown || swapSent) return; swapSent = c; SB.input.choose(c); SB.input.releaseAll(); }; };
-    take.addEventListener('click', answer(SB.sim.CHOICE.TAKE)); keep.addEventListener('click', answer(SB.sim.CHOICE.LEAVE));
+    ui.onTap(take, answer(SB.sim.CHOICE.TAKE)); ui.onTap(keep, answer(SB.sim.CHOICE.LEAVE));
   };
   function fillRow(r, id) {
     var cv = r.querySelector('canvas'), c2 = cv.getContext('2d');
@@ -5821,7 +5855,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
   };
   /* after every step and on startRoom: shows the card when a compare opens (filled once), hides it when it closes */
   ui.swap = function (st) {
-    var el = document.getElementById('swap'), open = !!(st && st.room.compare && st.room.cand > 0 && !st.room.dead);
+    /* never under a scroll offer from the same step (W2R): the offer's sheet answers first, as the M1 slip did, and the
+       card shows on the step after; a Take tapped over the offer was swallowed by the sim and latched the card */
+    var el = document.getElementById('swap'), open = !!(st && st.room.compare && st.room.cand > 0 && !st.room.dead && !st.scrollsOffered);
     if (!el) return;
     if (open && !swapShown) {
       var nu = SB.sim.WPN[st.room.cand], old = SB.sim.WPN[st.hero.slots[SB.sim.slotOf(st.room.cand)]], C = ui.COPY;
@@ -6089,10 +6125,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('nextroom').addEventListener('click', function () { ui.toTitle({ keepGear: true }); openPicker('fileshoot'); });   /* the sitting goes on (6.5) */
     document.getElementById('deathagain').addEventListener('click', function () { ui.restart(); });
     /* the pause card (Q94): Pause holds the room; Resume, Share this room (its Close comes back to the card) and Title */
-    document.getElementById('pause').addEventListener('click', function () { this.blur(); ui.pause(); });
+    ui.onTap(document.getElementById('pause'), function () { this.blur(); ui.pause(); });   /* the stick thumb may be down (W2R) */
     /* ART3: pause_glyph's pressed frame while a finger is on Pause (a touch's :active is not reliable on phones) */
     ['pointerdown', 'pointerup', 'pointercancel', 'pointerleave'].forEach(function (t) { document.getElementById('pause').addEventListener(t, function () { this.classList.toggle('down', t === 'pointerdown'); }); });   /* no focus kept: Space (jump) or Enter would press it again after Resume */
-    document.getElementById('resume').addEventListener('click', function () { ui.resume(); });
+    ui.onTap(document.getElementById('resume'), function () { ui.resume(); });
     document.getElementById('pauseshare').addEventListener('click', function () { ui.openShare(); });
     document.getElementById('settingsbtn').addEventListener('click', function () { ui.show('settings'); });
     document.getElementById('levelcode').placeholder = ui.COPY.levelCode;   /* the field says what it takes (t110: an empty white box) */
