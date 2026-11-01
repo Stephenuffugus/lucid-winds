@@ -1,5 +1,11 @@
 # START HERE
 
+## 📷 1 Nov 23:55 UTC (Opus) A MERGE RULE FOR sb-levels + sb-climb: THE BIOME VOTE MUST READ THE COLOURS BEFORE THE NORMALISATION'S WHITE BALANCE
+Photo 1a's real photo review (`wf_31d4b38c-8e6`, review-photos) found that the capture normalisation (sb-levels NORMALISE) turns almost every real photo into Attic. Frost can no longer happen, and gardens, an orange door and a ginger cat lose Overgrowth or Ember: the half strength grey world white balance washes out the colour casts.
+  - sb-climb's BIOME (`049ba6925`) puts SB.capture.hueVote after gridRecord, so after the merge it would vote on the NORMALISED grid. It was measured on raw capture only.
+  - WHEN MERGING: feed the hue vote the area averaged colours from BEFORE SB.capture.normalize (keep a copy of the raw grid in gridRecord; the capture oracle the same), then rerun the biome spread on the real corpus with the page's own steps (/home/codespace/sb-drafts/photo/norm/measure-norm.js runs the page's normalisation). Target: the raw capture spread on sb-climb (real rooms Attic 34, Deep 7, Ember 3, Frost 2, Overgrowth 1), not Attic 87.
+OTHER REVIEW NUMBERS (real photos, sb-levels `d0d51015b`): 95 of 95 develop. 27 of 95 levels climb 75% or more on film. The player's own box is refused on 72 of 95, mostly because the repair runs out of passes. Both of those are CLIMB-A's ground (8 passes, stepping stones).
+
 ## 📷 1 Nov 19:17 UTC (Opus) PHOTO 1B RUNS IN PARALLEL ON A NEW BRANCH sb-climb (so the climb can make sb-m1-5)
 Photo 1a's NORMALISE was slow on the loaded box: its WIP autosaves `6afa1b009` and `25fe2f122` were tuned on the 95 real photos, and it ran from about 18:00 to past 19:16. Waiting for 1a would put photo 1b past the 02:45 gate.
   - So BIOME-V2, CLIMB-A, a review and a fix run as `wf_292fb74b-7cb` (docs/lanes/climb-1b-lane-nov01-night.js), on branch sb-climb in /workspaces/sb-climb, from sb-levels `42fc8b19a` (AUTOCROP).
