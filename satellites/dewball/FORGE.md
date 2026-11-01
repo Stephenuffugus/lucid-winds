@@ -794,3 +794,24 @@ degree slant and the oar on its edge (`--roll` then `--tip`, as the rattle); dri
 clock tower, windmill sails, stadium (an elevated view, 0.77 tall per wide against the primitive's 0.31), hotel,
 pavilion, aqueduct. w6 places seven w5 kinds and w7 twenty eight, pending on w5's buy; the bicycle stays w4's primitive.
 ⚠️ w7 draws 95 kinds from one 2048x1536 atlas (29 new, 38 shared, 28 from w5): its squares will be the tightest yet.
+
+## Starfall Bay (w5), The Whole World (w7), Dream Meadow (w6): step 2, the models bought, 1 Nov 2026 (1,335 credits)
+
+**Bought:** all 89 cut kinds by Meshy image to 3D, arm `i2t` (smart topology meshy-t2 at each kind's own budget, painted
+from the cut, the same body as w3 and w4: the ledger's image_body equal to `windkey.i2t`'s), one run a world after a
+`--dry-run` of all 89 (1,335 planned): w5 54 kinds `--max-credits 810` 18:31 to 18:40 UTC, w7 29 `--max-credits 435`
+18:41 to 18:46, w6 6 `--max-credits 90` 18:47 to 18:48, `--parallel 4`, 21 to 53 s a model. **No refusal, no failure,
+no reroll: 89 x 15 = 1,335 credits, balance 3,039 → 2,229 → 1,794 → 1,704.** The ledger keeps every task (350 jobs;
+the 267 older entries byte for byte unchanged). The lane's budget was 1,700; 365 of it is left for rerolls.
+**The vault today:** the private vault is not reachable from this box (no gh login) and lucid-winds is public, so no
+release yet. Two copies, sha256 checked equal: `tools/forge/meshy-out` + `meshy-in` in the worktree and
+`/home/codespace/dewball-drafts/meshy-raw/` (89 glb, 89 thumbnails, 89 cuts, 288 MB), the three zips in
+`dewball-drafts/astra/`. ⚠️ Measured: both sit on the same loop device (`/dev/loop4`), so they guard against a deleted
+folder, not a lost codespace. `dewball-drafts/VAULT-PENDING.txt` lists all 270 files (sha256, size) and the one
+`gh release create meshy-dewball-w567-20261101` command; it must run before anything is built on these models.
+**First look, Meshy's own thumbnails only** (a contact sheet a world; NOT the game camera, nothing fitted yet): every
+landmark reads (Ferris wheel, helter skelter, balloon, hotel, pavilion, keel, dry dock, cannery; the bridge, stadium,
+palace, cathedral, aqueduct, observatory; moon gate, pagoda, stone circle), the creatures and vehicles read. To watch
+in the game frame: **kelp tangle** (crumpled green shards, the popcorn's fault), **shell** (big flat facets), **mooring
+post** (a dark lump), **dragonfly** (small and bug like), the balloon's grey anchor rock at its foot, the oar (a thin
+sliver), the postbox's dark foot, the sheep's faceted wool; the **moon gate's** moon fills its opening (as Astra drew it).
