@@ -1238,6 +1238,16 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-seek-1', expect: 'a 300 wide box, a floor band from row 30: the box ends 4 rows below the band\'s top' }] },
   { name: 'SEEK_FLOOR_UNLIFTED', task: 'AUTOCROP', file: 'page', find: "if (band && cause === 'floor' && band.floor > 0) bot = ", repl: "if (false) bot = ",
     gates: [{ gate: 'harness', only: 'H-seek-1', expect: 'model scene 3: the search builds a room from the 15th box it tries' }] },
+
+  /* NORMALISE (Q182): the capture normalisation between the area average and nearest, the page's copy held to the oracle's */
+  { name: 'NORM_OFF', task: 'NORMALISE', file: 'page', find: '    rgb = C.normalize(rgb);\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-norm-1', expect: 'gridRecord gives the normalised grid\'s nearest colour in every cell' },
+      { gate: 'capture', expect: 'normalise: the crop screen\'s record is the normalised grid\'s nearest colour in every cell' }] },
+  { name: 'NORM_SPLIT', task: 'NORMALISE', file: 'page', find: 'var f = L[i] > 0 ? (N.L_LO + (L[i] - lo) * a) / L[i] : 1;', repl: 'var f = L[i] > 0 ? (N.L_LO + 1 + (L[i] - lo) * a) / L[i] : 1;',
+    gates: [{ gate: 'harness', only: 'H-norm-1', expect: 'the page\'s normalize equals the oracle\'s on' },
+      { gate: 'capture', expect: 'normalise: the page\'s normalised grid of the box equals the capture oracle\'s normalizeRGB' }] },
+  { name: 'NORM_NUMBERS_SPLIT', task: 'NORMALISE', file: 'page', find: 'C.NORM = Object.freeze({ WB: ', repl: 'C.NORM = Object.freeze({ WB: 0.01 + ',
+    gates: [{ gate: 'harness', only: 'H-norm-1', expect: 'the page\'s NORM numbers are the oracle\'s' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

@@ -178,6 +178,38 @@ try {
     R.say(errors.length === 0, 'autocrop: zero page errors without a worker' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
+  /* NORMALISE (Q182): a painted model room (tools/room-model.js scene 22, a pale blue wall, a 1024x1360 photo) at rest
+     on the crop screen. The page's own canvas grid of the box, normalised by the page, equals the capture oracle's
+     normalizeRGB of that same grid byte for byte; the record the crop screen built is the normalised grid's nearest
+     colour in every cell (and not the raw grid's); the oracle's own area average of the PNG, normalised, lands near it */
+  {
+    const RM = createRequire(import.meta.url)(join(GAME, 'tools', 'room-model.js')), O = createRequire(import.meta.url)(join(GAME, 'tools', 'capture-oracle.js'));
+    const SCENE = join(TMP, 'model-22.png');
+    RM.png(RM.paint(22), SCENE);
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base);
+    await ready(page, { reveal: true });
+    const d = await page.evaluate(() => window.SB_DEV.overlay().decodes);
+    await (await page.$('#filechoose')).uploadFile(SCENE);
+    await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
+    const g = await page.evaluate(() => {
+      const CR = window.SB.ui.crop, C = window.SB.capture, raw = C.downscale(CR.src, CR.crop, 24, 48);
+      return { raw: Array.from(raw), norm: Array.from(C.normalize(raw)), pal: CR.lastRec ? Array.from(CR.lastRec.pal) : [], crop: CR.crop };
+    });
+    const raw = Uint8Array.from(g.raw), want = O.normalizeRGB(raw);
+    let diff = 0; for (let i = 0; i < want.length; i++) if (want[i] !== g.norm[i]) diff++;
+    R.say(g.norm.length === 3456 && diff === 0, 'normalise: the page\'s normalised grid of the box equals the capture oracle\'s normalizeRGB of the same canvas grid, byte for byte (' + diff + ' of ' + want.length + ' bytes differ)');
+    let off = 0, moved = 0;
+    for (let i = 0; i < 1152; i++) { if (g.pal[i] !== SBN.palette.nearest(want[3 * i], want[3 * i + 1], want[3 * i + 2])) off++; if (g.pal[i] !== SBN.palette.nearest(raw[3 * i], raw[3 * i + 1], raw[3 * i + 2])) moved++; }
+    R.say(g.pal.length === 1152 && off === 0 && moved > 0, 'normalise: the crop screen\'s record is the normalised grid\'s nearest colour in every cell (' + off + ' cells are not; ' + moved + ' cells differ from the raw grid\'s nearest)');
+    const img = O.readPNG(SCENE), c = g.crop, px = Buffer.alloc(c.w * c.h * 3);
+    for (let y = 0; y < c.h; y++) for (let x = 0; x < c.w; x++) { const s = ((c.y + y) * img.w + c.x + x) * img.bpp; px[(y * c.w + x) * 3] = img.px[s]; px[(y * c.w + x) * 3 + 1] = img.px[s + 1]; px[(y * c.w + x) * 3 + 2] = img.px[s + 2]; }
+    const on = O.normalizeRGB(O.downscaleRGB({ w: c.w, h: c.h, bpp: 3, px }, 24, 48));
+    let pd = 0; for (let i = 0; i < 1152; i++) if (g.pal[i] !== SBN.palette.nearest(on[3 * i], on[3 * i + 1], on[3 * i + 2])) pd++;
+    R.say(pd <= 115, 'normalise: the oracle\'s own area average of the photo, normalised, gives the page\'s colour in all but ' + pd + ' of 1152 cells (at most 115: the canvas downscale drifts from the area average, risk 12)');
+    R.say(errors.length === 0, 'normalise: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
   /* LEVELSR: the dev readout is the dev flag's alone; a player's crop screen never shows the rule that refused */
   {
     const { page } = await newPage(browser, { width: 412, height: 915 });

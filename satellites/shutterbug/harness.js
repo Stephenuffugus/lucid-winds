@@ -1836,6 +1836,46 @@ group('H-cap-0', 'the capture oracle: the area average of known images (the valu
   t.eq(off, -1, 'a 600x1200 image of 25 px blocks gives every cell its own block\'s colour (the first cell that does not)');
 });
 
+/* ================================================================ the capture normalisation (NORMALISE, Q182) */
+group('H-norm-1', 'the capture normalisation: the page\'s SB.capture.normalize (shell-capture, read as tools/room-model.js reads it) equals the capture oracle\'s normalizeRGB byte for byte; the oracle on known grids (the grey world balance at its strength, the percentiles landing on L_LO and L_HI, the hue kept, a flat grid); gridRecord takes the step before nearest', t => {
+  const RM = require('./tools/room-model.js'), O = require('./tools/capture-oracle.js'), CAP = RM.captureOf(PAGE, SB), N = O.NORM;
+  t.same(Object.assign({}, CAP.NORM), Object.assign({}, N), 'the page\'s NORM numbers are the oracle\'s');
+  const Lof = (g, i) => 0.299 * g[3 * i] + 0.587 * g[3 * i + 1] + 0.114 * g[3 * i + 2];
+  const grid = f => { const g = new Uint8Array(1152 * 3); for (let i = 0; i < 1152; i++) g.set(f(i % 24, Math.floor(i / 24), i), 3 * i); return g; };
+  const boxGrid = (img, c) => { const px = Buffer.alloc(c.w * c.h * 3); for (let y = 0; y < c.h; y++) img.px.copy(px, y * c.w * 3, ((c.y + y) * img.w + c.x) * 3, ((c.y + y) * img.w + c.x + c.w) * 3); return O.downscaleRGB({ w: c.w, h: c.h, bpp: 3, px }, 24, 48); };
+  /* the same bytes from both copies: model scenes' default boxes, seeded noise, ramps, flat and tinted grids */
+  const grids = [], r = hrand(0x5eed);
+  for (let k = 0; k < RM.COUNT; k += 10) { const img = RM.paint(k); grids.push(['model scene ' + k, boxGrid(img, CAP.fit(img.w, img.h))]); }
+  for (let s = 0; s < 8; s++) grids.push(['seeded noise ' + s, grid(() => [r.int(256), r.int(256), r.int(256)])]);
+  grids.push(['a grey ramp', grid((x, y) => [y * 5, y * 5, y * 5])], ['a flat grey', grid(() => [128, 128, 128])], ['all black', grid(() => [0, 0, 0])],
+    ['a warm dim room', grid((x, y) => [60 + y, 40 + y, 20 + (x & 3)])], ['a blue night', grid((x, y) => [10 + (x % 5), 20 + y % 7, 60 + y])]);
+  let bad = null;
+  for (const [name, g] of grids) { const a = CAP.normalize(g), b = O.normalizeRGB(g); for (let i = 0; i < a.length && !bad; i++) if (a[i] !== b[i]) bad = name + ' byte ' + i + ': page ' + a[i] + ', oracle ' + b[i]; }
+  t.ok(bad === null, 'the page\'s normalize equals the oracle\'s on ' + grids.length + ' grids, byte for byte' + (bad ? ' (first difference: ' + bad + ')' : ''));
+  /* the oracle on known answers */
+  const ramp = grid((x, y, i) => { const v = Math.round(i * 200 / 1151) + 20; return [v, v, v]; }), rn = O.normalizeRGB(ramp);
+  const Ls = Array.from({ length: 1152 }, (_, i) => Lof(rn, i)), loI = Math.floor(N.P_LO * 1152), hiI = Math.floor(N.P_HI * 1152);
+  t.ok(Math.abs(Ls[loI] - N.L_LO) <= 1 && Math.abs(Ls[hiI] - N.L_HI) <= 1, 'a grey ramp from L 20 to 220: its cells at the ' + Math.round(100 * N.P_LO) + 'th and ' + Math.round(100 * N.P_HI) + 'th percentile land on L ' + N.L_LO + ' and ' + N.L_HI + ' (' + Ls[loI].toFixed(1) + ', ' + Ls[hiI].toFixed(1) + ')');
+  t.ok(Ls.every((v, i) => i === 0 || v >= Ls[i - 1]), 'a grey ramp stays in order (the stretch is monotone)');
+  const warm = grid((x, y) => [100 + (y & 15) * 6, 70 + (y & 15) * 4, 40 + (y & 15) * 2]), wn = O.normalizeRGB(warm);
+  const sum = g => [0, 1, 2].map(c => { let s = 0; for (let i = 0; i < 1152; i++) s += g[3 * i + c]; return s; }), s0 = sum(warm), s1 = sum(wn);
+  const cast = s => (s[0] - s[2]) / (s[0] + s[1] + s[2]), m = (s0[0] + s0[1] + s0[2]) / 3, k = s0.map(v => 1 - N.WB + N.WB * m / v);
+  t.ok(cast(s1) > 0 && Math.abs(cast(s1) / cast(s0) - (1 - N.WB)) < 0.15, 'a warm room: the white balance takes about ' + Math.round(100 * N.WB) + '% of its red over blue cast away, not all of it (the cast ' + cast(s0).toFixed(3) + ' to ' + cast(s1).toFixed(3) + ')');
+  let hue = 0;
+  for (let i = 0; i < 1152; i++) {
+    const want = (warm[3 * i] * k[0]) / (warm[3 * i + 2] * k[2]), got = wn[3 * i] / wn[3 * i + 2];
+    if (wn[3 * i] < 255 && Math.abs(got / want - 1) > 0.05) hue++;
+  }
+  t.eq(hue, 0, 'a warm room: each cell keeps its balanced red to blue ratio through the stretch, within 5% (cells that do not)');
+  const flat = O.normalizeRGB(grid(() => [200, 200, 200]));
+  t.ok(flat.every((v, i) => v === flat[i % 3]), 'a flat grid stays flat (every cell ' + Array.from(flat.slice(0, 3)).join(',') + ')');
+  /* gridRecord: the normalised grid's nearest colour in every cell, not the raw grid's */
+  const raw = grids[0][1], pal = SB.record.fromJSON(CAP.gridRecord(raw, -1)).pal, nn = O.normalizeRGB(raw);
+  let off = 0, moved = 0;
+  for (let i = 0; i < 1152; i++) { if (pal[i] !== SB.palette.nearest(nn[3 * i], nn[3 * i + 1], nn[3 * i + 2])) off++; if (pal[i] !== SB.palette.nearest(raw[3 * i], raw[3 * i + 1], raw[3 * i + 2])) moved++; }
+  t.ok(off === 0 && moved > 0, 'model scene 0, the default box: gridRecord gives the normalised grid\'s nearest colour in every cell (' + off + ' cells do not; ' + moved + ' differ from the raw grid\'s)');
+});
+
 /* ================================================================ the sim, part one, proven (T0.7b) */
 /* a seeded random word script: held bits that change every few steps, the edge bits on presses */
 function randomScript(seed, n) {

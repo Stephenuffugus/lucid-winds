@@ -93,11 +93,13 @@ function paint(k) {
   return { w: BW, h: BH, bpp: 3, px, floor: F.name, floorY };
 }
 
-/* the page's own shell-capture block, run in a context with only what its pure functions read */
-function captureOf(page) {
+/* the page's own shell-capture block, run in a context with only what its pure functions read; with core (an SB the
+   core loader made) the block sees the core through a child object, so gridRecord can run (H-norm-1) and the core's
+   own SB gains no capture key */
+function captureOf(page, core) {
   const html = fs.readFileSync(page, 'utf8'), m = html.match(/<script id="shell-capture" data-tool>([\s\S]*?)<\/script>/);
   if (!m) throw new Error('room-model: the page holds no shell-capture block');
-  const SB = { GRID: { W: 24, H: 48 } }, ctx = { SB, self: { SB }, window: { SB } };
+  const SB = core ? Object.create(core) : { GRID: { W: 24, H: 48 } }, ctx = { SB, self: { SB }, window: { SB } };
   vm.runInNewContext(m[1].replace(/\}\)\(\s*[\w.]+\s*\)\s*;?\s*$/, '})(SB);'), ctx);
   return SB.capture;
 }
