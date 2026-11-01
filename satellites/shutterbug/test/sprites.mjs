@@ -329,7 +329,10 @@ try {
     const rep = JSON.stringify(m.a0) === JSON.stringify(m.again);
     const drift = m.a0.every((q, i) => { const d = m.loop1[i].y - q.y; return m.loop1[i].x === q.x && (d === DRIFT[b] || Math.abs(d - DRIFT[b]) > 100); });
     R.say(keysOk && n > 0 && bad.length === 0, 'biome ' + b + ': five ' + MOTE[b] + ' tiles drawn over the room at 4 fps (frame a at steps 60 and 74, b at 75), ' + n + ' opaque pixels on the canvas' + (keysOk ? '' : ' (keys ' + m.a0.map(q => q.key).join(' ') + ' / ' + m.a15.map(q => q.key).join(' ') + ')') + (bad.length ? ' (' + bad.length + ' differ: ' + bad.slice(0, 3).join('; ') + ')' : ''));
-    R.say(rep && drift && m.red === 0 && m.same, 'biome ' + b + ': the same state draws the same tiles, a loop later each has drifted ' + DRIFT[b] + ' px, none under reduced motion, and the sim\'s hash is the same with them and without (' + [rep, drift, m.red, m.same].join(' ') + ')');
+    R.say(rep, 'biome ' + b + ': the same state draws the same tiles (seeded from the room and the frame)');
+    R.say(drift, 'biome ' + b + ': a loop later each tile has drifted ' + DRIFT[b] + ' px (' + m.a0.map((q, i) => m.loop1[i].y - q.y).join(' ') + ')');
+    R.say(m.red === 0, 'biome ' + b + ': under reduced motion no tile is drawn (' + m.red + ')');
+    R.say(m.same, 'biome ' + b + ': the sim\'s hash is the same with the air and without');
   }
 
   /* ART3 f, the badges: the room name's badge is icon_biomes' frame of the room's biome at 1:1 on a real screenshot, and
