@@ -185,7 +185,7 @@ try {
     bg = id => getComputedStyle($(id)).backgroundColor, hex = c => { const m = c.match(/\d+/g); return '#' + m.slice(0, 3).map(v => (+v).toString(16).padStart(2, '0')).join(''); };
     return { go: !$('housego').hidden, text: $('housego').textContent, first: r('housego').top < r('housestart').top, goSun: hex(bg('housego')) === sun.toLowerCase(), startSun: hex(bg('housestart')) === sun.toLowerCase() }; });
   const tt = await lead();
-  R.say(tt.go && tt.text === 'Continue the house, room 3 of 5', 'after a reload the title offers Continue the house ("' + tt.text + '")');
+  R.say(tt.go && tt.text === 'Continue room 3 of 5', 'after a reload the title offers Continue the house ("' + tt.text + '")');
   R.say(tt.first && tt.goSun && !tt.startSun, 'with a house saved its button leads the title in Sun and Start a house follows in Paper (' + JSON.stringify(tt) + ')');
   await tap(page, '#housego');
   s = await look(page);
@@ -276,6 +276,8 @@ try {
 
     /* the house's death card at 320x568: a saved run at room 3 with one heart, played until the bug falls */
     await saveRun(b.page, { at: 2, hero: { hearts: 1, heartsMax: 4 } });
+    const gl = await b.page.evaluate(() => { const el = document.getElementById('housego'), rg = document.createRange(); rg.selectNodeContents(el); return { text: el.textContent, lines: new Set([...rg.getClientRects()].map(r => Math.round(r.top))).size }; });
+    R.say(gl.text === 'Continue room 3 of 5' && gl.lines === 1, '320x568: the title\'s Continue room 3 of 5 sits on one line (' + JSON.stringify(gl) + ')');
     await scrollTap(b.page, '#housego'); await scrollTap(b.page, '#doorenter'); await playing(b.page);
     await b.page.evaluate(() => { for (let k = 0; k < 9000 && window.SB_DEV.screen() === 'play'; k += 30) window.SB_DEV.step(30); });
     const dk = await b.page.evaluate(() => {

@@ -1292,6 +1292,8 @@ const MUTANTS = [
     gates: [{ gate: 'house', expect: "the strip's room name fits beside 8 hearts" }] },
   { name: 'HEARTS_NEVER_COUNT', task: 'HOUSE-AR', file: 'page', find: "if (last < forms.length) { ui.heartsCount = true;", repl: "if (false) { ui.heartsCount = true;",
     gates: [{ gate: 'house', expect: "320x568: the strip's room name fits beside 8 hearts" }] },
+  { name: 'CONTINUE_LONG', task: 'HOUSE-AR', file: 'page', find: "houseContinueAt: 'Continue room {n} of {of}'", repl: "houseContinueAt: 'Continue the house, room {n} of {of}'",
+    gates: [{ gate: 'house', expect: "320x568: the title's Continue room 3 of 5 sits on one line" }] },
   { name: 'DOOR_HEARTS_OFF', task: 'HOUSE-AR', file: 'page', find: "    doorHearts($('doorhearts'), at > 0 && !cleared ? run.hero : null, HS.back);\n", repl: "    doorHearts($('doorhearts'), null, 0);\n",
     gates: [{ gate: 'house', expect: "room 1's clear shows the doorway" }] },
   { name: 'DOOR_BACK_UNMARKED', task: 'HOUSE-AR', file: 'page', find: "HS.back = next && next.hero.hearts > G.state.hero.hearts ? 1 : 0;", repl: "HS.back = 0;",

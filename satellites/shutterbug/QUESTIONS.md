@@ -1091,7 +1091,7 @@ The review of HOUSE-A (e0eaab541) found fourteen things. Built from it (each wit
 - **Room 5 takes room 4's row until lane B's boss** (Q200 call 2, option b): floor 4, an elite promoted, room 4's caps, 1.5x fodder HP, 1.25x speed. On every built room room 5 holds at least room 4's enemies (it was empty on 11 of 24). The doorway after room 4 says The last room is next.
 - **Room 1 banks at free play's rate** (x0.5, floored), rooms 2 to 5 at x1. Room 1 is free play's room byte for byte, and Stephen's "Room 1 stays as today" covers its pay. At x1, starting a house, clearing room 1 and leaving paid every free play room double, and Retry House paid room 1 again. The doorway reads Banked 3 of 6 dead pixels, as free play's card does.
 - **A lost house survives a reload.** The title no longer drops a lost run: while one is saved the title leads with Retry House. Title on the death card, Android back and a killed tab all keep it. Start a house or New house replaces it.
-- **With a house saved, its button leads the title in Sun** (Continue the house, room 3 of 5, or Retry House), and Start a house follows in Paper.
+- **With a house saved, its button leads the title in Sun** (Continue room 3 of 5, or Retry House), and Start a house follows in Paper.
 - **The doorway**: Room 2 of 5 cleared; the bug's hearts in the strip's sprites, with the heart that came back ringed in Sun (a placeholder for Astra).
 - **The strip's name** takes the longest form that fits beside the slots and the hearts: Room 3 of 5, Room 3/5, 3/5; The last room, Last room, 5/5.
 - **The house death card** stacks its three buttons at every height, and the strip's count the death lost is struck through.
@@ -1110,6 +1110,6 @@ Stephen's calls:
 DESIGN redlines (to add when DESIGN.md is next copied):
 - DESIGN 8, House run, DP: *room 1 at the free play rate (x0.5), rooms 2 to 5 at x1; the house clear counts every attempt's bank.*
 - DESIGN 8, Notes: *until the boss, room 5 takes room 4's row.*
-- DESIGN 5.3: *while a house is saved, its button (Continue the house, room n of 5, or Retry House after a death) leads the title.*
+- DESIGN 5.3: *while a house is saved, its button (Continue room n of 5, or Retry House after a death) leads the title.*
 Recommendation: (a) on each.
 Plan assumes: (a).

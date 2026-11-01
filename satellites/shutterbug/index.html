@@ -5033,7 +5033,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     wpnSays: { J1: 'Every jump throws it ahead, and it flies back to you.', D1: 'Dive landings and dashes send a shock along the ground.' },
     slots: 'Weapons', slotJump: 'Jump', slotDive: 'Dive', slotHas: '{slot}: {name}', slotNone: '{slot}: nothing yet',
     /* the house (DESIGN 8, QUESTIONS Q200; docs/PROGRESSION-PROPOSAL-OCT31.md 2.3's words) */
-    houseStart: 'Start a house', houseContinue: 'Continue the house', houseContinueAt: 'Continue the house, room {n} of {of}', houseCount: 'Houses cleared {n}', freePlay: 'Free play',
+    houseStart: 'Start a house', houseContinue: 'Continue the house', houseContinueAt: 'Continue room {n} of {of}', houseCount: 'Houses cleared {n}', freePlay: 'Free play',
     roomOf: 'Room {n} of {of}', lastRoom: 'The last room', roomOfShort: 'Room {n}/{of}', roomOfTiny: '{n}/{of}', lastRoomShort: 'Last room',
     houseNew: 'A new house', houseRooms: 'Five rooms, each one tougher than the last.', shootFirst: 'Shoot the first room',
     doorCleared: 'Room {n} of {of} cleared', doorTougher: 'Room {n} is tougher', doorLast: 'The last room is next', enterRoom: 'Play room {n}',
@@ -5725,7 +5725,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function roomName(r) { return r === SB.TUNING.HOUSE_ROOMS ? ui.COPY.lastRoom : ui.COPY.roomOf.replace('{n}', r).replace('{of}', SB.TUNING.HOUSE_ROOMS); }
   function plural(n, one, many) { return n === 1 ? ui.COPY[one] : ui.COPY[many].replace('{n}', n); }
   /* the title's house block: shown once a first room is cleared (DESIGN 5.3 keeps the first screen to its two buttons);
-     while a run is saved its button leads: Continue the house, room n of 5, or Retry House for a lost run (a death
+     while a run is saved its button leads: Continue room n of 5, or Retry House for a lost run (a death
      the player left by Title, Back or a reload keeps its Retry: the review of HOUSE-A found the title dropped it, and
      with it every room shot so far); Start a house or New house replaces it */
   function drawHouse() {
