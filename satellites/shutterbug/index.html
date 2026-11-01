@@ -5258,7 +5258,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (!lv.needsCrop) seekFound(S, p.box, p.focal, rec, lv);
   }
   function seekFound(S, box, focal, rec, lv) {
-    S.phase = 'show'; S.chosen = box; S.ms = performance.now() - S.t0;
+    S.phase = 'show'; S.chosen = box; S.ms = performance.now() - S.t0; S.code = SB.record.encode(rec);
     CR.crop = box; CR.focal = focal; layoutCrop();
     CR.lastRec = rec; CR.last = lv; CR.full = true; CR.builds++;
     CR.marked = drawOverlay(lv, true, null);
@@ -5281,7 +5281,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.seekInfo = function () {
     var S = CR.lastSeek, b = document.getElementById('cropbox');
     if (!S) return null;
-    return { phase: S.phase, mode: S.mode, builds: S.builds, candidates: S.boxes.length, from: S.from, chosen: S.chosen, ms: S.ms || 0, finalMs: S.finalMs || 0,
+    return { phase: S.phase, mode: S.mode, builds: S.builds, code: S.code || null, candidates: S.boxes.length, from: S.from, chosen: S.chosen, ms: S.ms || 0, finalMs: S.finalMs || 0,
       slices: S.slices.length, sliceMax: S.slices.reduce(function (m, x) { return Math.max(m, x.ms); }, 0), multiOver: S.slices.filter(function (x) { return x.n > 1 && x.ms > SB.capture.SEEK.SLICE_MS; }).length,
       frames: S.frames, marker: !document.getElementById('cropseek').hidden, drawn: { left: parseFloat(b.style.left), top: parseFloat(b.style.top), width: parseFloat(b.style.width) }, k: CR.k, ox: CR.ox, oy: CR.oy };
   };

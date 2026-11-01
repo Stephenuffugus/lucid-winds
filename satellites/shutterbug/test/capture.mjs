@@ -15,8 +15,18 @@
  *     floor and ceiling bands marked on the overlay, the black photo's overlay shaded and never blank;
  *   - a refusal no fallback names (the checkerboard) keeps the one old message;
  *   - the dev readout under the box names the rule that refused (lv.detail).
- * Watched red by OVERLAY_STALE and PHOTO_HELD, and for the levels item by MESSAGE_SINGLE, BAND_UNMARKED,
- * OVERLAY_BLANK_REFUSED and DEV_READOUT_MS_ONLY. */
+ * The auto crop (QUESTIONS Q96 ruling 3, Q181) moved those messages behind Develop: a refusing box at rest shows no
+ * message, and Develop searches for the nearest box that builds; the messages per cause are seen with ?seek=0 (the
+ * search skipped, the refusal's message at once on Develop). Without flags:
+ *   - 26 rows of Walnut at the default box: no message at rest; Develop (one real tap, no drag) searches, the box is
+ *     drawn where the search chose, no message while it shows, and the room developed is the chosen box's record;
+ *   - the all black photo: the seek marker loops while it searches, then the dark message, the box where the player
+ *     left it; no animation frame spends more than SEEK.SLICE_MS on the search (the builds in a worker), and with
+ *     ?seekworker=0 (the builds on the page's thread) the search still spreads over frames and no frame that ran
+ *     more than one build passed the budget.
+ * Watched red by OVERLAY_STALE and PHOTO_HELD, for the levels item by MESSAGE_SINGLE, BAND_UNMARKED,
+ * OVERLAY_BLANK_REFUSED and DEV_READOUT_MS_ONLY, and for the auto crop by SEEK_OFF, SEEK_NO_BUDGET, SEEK_BOX_UNMOVED,
+ * SEEK_MESSAGE_AT_REST and SEEK_MESSAGE_WITH_BOX. */
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
@@ -69,15 +79,21 @@ try {
   }
   {
     const { page, errors } = await newPage(browser, { width: 412, height: 915 });
-    await gotoGame(page, srv.base, 'perf=1');
+    await gotoGame(page, srv.base, 'perf=1&seek=0');
     await ready(page, { reveal: true });
     const input = await page.$('#filechoose');
     const COPY = await page.evaluate(() => Object.assign({}, window.SB.ui.COPY));
+    /* the photo at rest (the dev readout read here, before Develop writes its own), then, for a refusal, Develop with
+       the search skipped: the message, the band and the dashed Develop */
     const shoot = async name => {
       const d = await page.evaluate(() => window.SB_DEV.overlay().decodes);
       await input.uploadFile(join(TMP, name + '.png'));
       await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
-      return page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { shown: !document.getElementById('tighter').hidden, dev: document.getElementById('cropsay').textContent, stuck: document.getElementById('crop').classList.contains('stuck') }));
+      const rest = await page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { shown: !document.getElementById('tighter').hidden, dev: document.getElementById('cropsay').textContent, stuck: document.getElementById('crop').classList.contains('stuck') }));
+      if (!rest.needsCrop) return rest;
+      await page.evaluate(() => document.getElementById('develop').click());
+      await page.waitForFunction(() => !document.getElementById('tighter').hidden, { timeout: 5000 }).catch(() => {});
+      return page.evaluate(dev => Object.assign(window.SB_DEV.overlay(), { shown: !document.getElementById('tighter').hidden, dev: dev, stuck: document.getElementById('crop').classList.contains('stuck') }), rest.dev);
     };
     const ok = await shoot('floor-ok');
     R.say(ok.needsCrop === false && ok.spawnRow >= 40 && ok.spawnRow < 46 && !ok.shown && !ok.stuck, 'levels: the sample room on 4 rows of Walnut develops at the default box, the hero on the band\'s top (needsCrop ' + ok.needsCrop + ', spawn row ' + ok.spawnRow + ', the message ' + (ok.shown ? 'shown' : 'hidden') + ')');
@@ -95,6 +111,65 @@ try {
     R.say(errors.length === 0, 'levels: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
+  /* AUTOCROP (Q181): the player's page, no flags. 26 rows of Walnut refuse at the default box; Develop finds a box */
+  {
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base);
+    await ready(page, { reveal: true });
+    const input = await page.$('#filechoose'), SEEK = await page.evaluate(() => Object.assign({}, window.SB.capture.SEEK));
+    const load = async name => {
+      const d = await page.evaluate(() => window.SB_DEV.overlay().decodes);
+      await input.uploadFile(join(TMP, name + '.png'));
+      await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
+      return page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { stuck: document.getElementById('crop').classList.contains('stuck') }));
+    };
+    const rest = await load('floor-tall');
+    R.say(rest.needsCrop === true && !rest.shown && !rest.stuck, 'autocrop: 26 rows of Walnut refuse at the default box and say nothing at rest, Develop live (needsCrop ' + rest.needsCrop + ', the message ' + (rest.shown ? 'shown: "' + rest.says + '"' : 'hidden') + ', Develop ' + (rest.stuck ? 'dashed' : 'live') + ')');
+    await tap(page, '#develop');
+    await page.waitForFunction(() => { const s = window.SB_DEV.overlay().seek; return s && s.phase !== 'seek'; }, { timeout: 20000 }).catch(() => {});
+    const show = await page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { screen: window.SB_DEV.screen() }));
+    const sk = show.seek || {}, ch = sk.chosen, dr = sk.drawn || {};
+    const at = ch ? { left: sk.ox + ch.x * sk.k, top: sk.oy + ch.y * sk.k, width: ch.w * sk.k } : null;
+    const near = (a, b) => Math.abs(a - b) <= 1;
+    R.say(sk.phase === 'show' && ch && JSON.stringify(ch) !== JSON.stringify(sk.from) && sk.builds >= 1 && show.screen === 'crop' && JSON.stringify(show.crop) === JSON.stringify(ch),
+      'autocrop: one tap on Develop, no drag, and the search finds a box that builds (' + (sk.builds || 0) + ' builds, ' + (sk.mode || 'no') + ' mode, ' + Math.round(sk.ms || 0) + ' ms, the box ' + JSON.stringify(sk.from) + ' to ' + JSON.stringify(ch) + ', phase ' + sk.phase + ')');
+    R.say(at && near(dr.left, at.left) && near(dr.top, at.top) && near(dr.width, at.width), 'autocrop: the box is drawn where the search chose it (drawn ' + JSON.stringify(dr) + ', the chosen box on screen ' + JSON.stringify(at) + ')');
+    R.say(sk.phase === 'show' && !show.shown && !show.stuck && show.needsCrop === false, 'autocrop: no message while the chosen box shows (the message ' + (show.shown ? 'shown: "' + show.says + '"' : 'hidden') + ', needsCrop ' + show.needsCrop + ')');
+    await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 15000 }).catch(() => {});
+    const dev = await page.evaluate(() => ({ screen: window.SB_DEV.screen(), code: window.SB_DEV.level() && window.SB_DEV.level().code, chosen: window.SB.ui.seekInfo().code }));
+    R.say(dev.screen === 'play' && dev.code && dev.code === dev.chosen, 'autocrop: it develops by itself, the room the chosen box\'s record (screen ' + dev.screen + ', the room\'s code ' + (dev.code === dev.chosen ? 'is' : 'is not') + ' the chosen box\'s)');
+    await leaveRoom(page);
+    await page.waitForFunction(() => window.SB_DEV.screen() === 'title', { timeout: 5000 }).catch(() => {});
+    /* the black photo: nothing in it builds */
+    const bk0 = await load('black');
+    await tap(page, '#develop');
+    const mk = await page.evaluate(() => new Promise(r => requestAnimationFrame(() => setTimeout(() => r(Object.assign(window.SB_DEV.overlay().seek || {}, { seeking: window.SB_DEV.overlay().seeking })), 120))));
+    await page.waitForFunction(() => { const s = window.SB_DEV.overlay().seek; return s && s.phase !== 'seek'; }, { timeout: 30000 }).catch(() => {});
+    const bk = await page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { stuck: document.getElementById('crop').classList.contains('stuck'), copy: Object.assign({}, window.SB.ui.COPY) }));
+    const bs = bk.seek || {};
+    R.say(mk.seeking && mk.marker && mk.frames >= 1, 'autocrop: the seek marker shows while the search runs (searching ' + mk.seeking + ', the marker ' + (mk.marker ? 'shown' : 'hidden') + ', ' + (mk.frames || 0) + ' frames drawn)');
+    R.say(bs.phase === 'none' && bs.builds >= 1 && bk.shown && bk.says === bk.copy.tighterDark && bk.stuck && !bs.marker && JSON.stringify(bk.crop) === JSON.stringify(bk0.crop),
+      'autocrop: a photo nothing builds ends on its message, the box where the player left it (phase ' + bs.phase + ', ' + bs.builds + ' builds of ' + bs.candidates + ' boxes, it says "' + bk.says + '", the box ' + JSON.stringify(bk.crop) + ')');
+    R.say(bs.slices >= 2 && bs.sliceMax <= SEEK.SLICE_MS, 'autocrop: the search spreads over ' + bs.slices + ' frames and none spends more than ' + SEEK.SLICE_MS + ' ms on it (the longest ' + (bs.sliceMax || 0).toFixed(1) + ' ms, ' + bs.mode + ' mode)');
+    R.say(errors.length === 0, 'autocrop: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
+  /* AUTOCROP: the builds on the page's own thread (no worker): still spread over frames under the budget */
+  {
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base, 'seekworker=0');
+    await ready(page, { reveal: true });
+    const SLICE = await page.evaluate(() => window.SB.capture.SEEK.SLICE_MS);
+    const d = await page.evaluate(() => window.SB_DEV.overlay().decodes);
+    await (await page.$('#filechoose')).uploadFile(join(TMP, 'black.png'));
+    await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
+    await tap(page, '#develop');
+    await page.waitForFunction(() => { const s = window.SB_DEV.overlay().seek; return s && s.phase !== 'seek'; }, { timeout: 60000 }).catch(() => {});
+    const ms = await page.evaluate(() => window.SB_DEV.overlay().seek || {});
+    R.say(ms.mode === 'main' && ms.phase === 'none' && ms.slices >= 2 && ms.multiOver === 0, 'autocrop: without a worker the builds spread over ' + ms.slices + ' frames and no frame that ran more than one build passed ' + SLICE + ' ms (' + ms.multiOver + ' did; the longest ' + (ms.sliceMax || 0).toFixed(1) + ' ms, ' + ms.builds + ' builds, ' + ms.mode + ' mode)');
+    R.say(errors.length === 0, 'autocrop: zero page errors without a worker' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
   /* LEVELSR: the dev readout is the dev flag's alone; a player's crop screen never shows the rule that refused */
   {
     const { page } = await newPage(browser, { width: 412, height: 915 });
@@ -104,7 +179,7 @@ try {
     await (await page.$('#filechoose')).uploadFile(join(TMP, 'floor-tall.png'));
     await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
     const np = await page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { dev: document.getElementById('cropsay').textContent, shown: !document.getElementById('tighter').hidden }));
-    R.say(np.needsCrop && np.shown && np.dev === '', 'levels: without the dev flag the crop screen shows no readout (needsCrop ' + np.needsCrop + ', the readout "' + np.dev + '")');
+    R.say(np.needsCrop && np.dev === '', 'levels: without the dev flag the crop screen shows no readout (needsCrop ' + np.needsCrop + ', the readout "' + np.dev + '")');
     await page.close();
   }
   const { page, errors } = await newPage(browser, { width: 412, height: 915 });

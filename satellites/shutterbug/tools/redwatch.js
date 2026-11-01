@@ -1190,7 +1190,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-lvl-5', expect: 'the refusal names the floor' }] },
   { name: 'REFUSAL_GRIDLESS', task: 'LEVELS', file: 'page', find: ', grid: { w: w, h: h, solid: solid, plat: plat } };', repl: ' };',
     gates: [{ gate: 'harness', only: 'H-lvl-5', expect: 'the refusal carries its 24x48 grid' }] },
-  { name: 'MESSAGE_SINGLE', task: 'LEVELS', file: 'page', find: "key = no && CROP_SAYS[lv.cause] || 'tighter';", repl: "key = 'tighter';",
+  { name: 'MESSAGE_SINGLE', task: 'LEVELS', file: 'page', find: "key = CROP_SAYS[lv.cause] || 'tighter';", repl: "key = 'tighter';",
     gates: [{ gate: 'capture', expect: 'levels: the floor refusal says' }] },
   { name: 'BAND_UNMARKED', task: 'LEVELS', file: 'page', find: "    if (y0 >= 0) {\n      c.fillStyle = 'rgba('", repl: "    if (false) {\n      c.fillStyle = 'rgba('",
     gates: [{ gate: 'capture', expect: 'levels: the overlay marks the floor band' }] },
@@ -1217,6 +1217,19 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-lvl-7', expect: 'a gap of 3 in its top row: the spawn is at (11,39)' }] },
   { name: 'DEV_READOUT_ALWAYS', task: 'LEVELSR', file: 'page', find: '    if (PERF) cropSay(CR.ms.toFixed(1)', repl: '    if (true) cropSay(CR.ms.toFixed(1)',
     gates: [{ gate: 'capture', expect: 'levels: without the dev flag the crop screen shows no readout' }] },
+
+  /* AUTOCROP (Q96 ruling 3, Q181): Develop on a refusing box searches for the nearest box that builds */
+  { name: 'SEEK_OFF', task: 'AUTOCROP', file: 'page', find: 'boxes: SEEK_OFF ? [] : SB.capture.seekBoxes(c, CR.bw, CR.bh, no.cause, no.band)', repl: 'boxes: []',
+    gates: [{ gate: 'capture', expect: 'autocrop: one tap on Develop, no drag, and the search finds a box that builds' }] },
+  { name: 'SEEK_NO_BUDGET', task: 'AUTOCROP', file: 'page', find: '(n === 0 || performance.now() - t0 + S.est <= T.SLICE_MS)', repl: 'true',
+    gates: [{ gate: 'capture', expect: 'autocrop: without a worker the builds spread over' }] },
+  { name: 'SEEK_BOX_UNMOVED', task: 'AUTOCROP', file: 'page', find: 'CR.crop = box; CR.focal = focal; layoutCrop();', repl: 'CR.crop = box; CR.focal = focal;',
+    gates: [{ gate: 'capture', expect: 'autocrop: the box is drawn where the search chose it' }] },
+  { name: 'SEEK_MESSAGE_AT_REST', task: 'AUTOCROP', file: 'page', find: "    document.getElementById('tighter').hidden = true;\n    document.getElementById('crop').classList.remove('stuck');\n",
+    repl: "    if (no) refused(lv); else { document.getElementById('tighter').hidden = true; document.getElementById('crop').classList.remove('stuck'); }\n",
+    gates: [{ gate: 'capture', expect: 'autocrop: 26 rows of Walnut refuse at the default box and say nothing at rest' }] },
+  { name: 'SEEK_MESSAGE_WITH_BOX', task: 'AUTOCROP', file: 'page', find: '    CR.marked = drawOverlay(lv, true, null);\n    seekMarker(S, performance.now());', repl: '    CR.marked = drawOverlay(lv, true, null); refused(S.no);\n    seekMarker(S, performance.now());',
+    gates: [{ gate: 'capture', expect: 'autocrop: no message while the chosen box shows' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

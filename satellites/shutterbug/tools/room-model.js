@@ -9,6 +9,12 @@
  *   node tools/room-model.js --page <file>        the same for another copy of the page (the before column)
  *   node tools/room-model.js --png <k> <out.png>  scene k written as a PNG (the crop screen's shots)
  *   node tools/room-model.js --json               one JSON line per scene
+ *   node tools/room-model.js --no-seek            the default box only, without the auto crop's search (faster)
+ *
+ * The auto crop (Q181): for each scene the default box refuses, the page's own SB.capture.seekBoxes list is built in
+ * order, at most SB.capture.SEEK.CAP builds, as Develop's search does in the page; the table adds how many scenes
+ * develop from the default box with the search and the builds the search spent per photo (median, p90, max), over
+ * the refused scenes and over all 60 (a scene that builds at rest spends none).
  *
  * Each scene is 1024 x 1360 (a phone's 3:4 photo decoded at the page's 1024 width): a lit wall, a ceiling strip in
  * some, a floor band (wood, dark wood, grey carpet, beige carpet or light tile) 8 to 22% of the frame, two to four pieces
@@ -112,7 +118,20 @@ function png(img, out) {
   fs.writeFileSync(out, Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ih), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]));
 }
 
-module.exports = { paint, captureOf, recordOf, png, FLOORS, COUNT };
+/* the auto crop's search over one scene, as the page runs it: the candidates in order, at most SEEK.CAP builds */
+function seek(SB, CAP, img, crop, no) {
+  const boxes = CAP.seekBoxes(crop, img.w, img.h, no.cause, no.band);
+  let n = 0;
+  for (const b of boxes) {
+    if (n >= CAP.SEEK.CAP) break;
+    n++;
+    const lv = SB.pipeline.build(recordOf(SB, img, b), { firstRoom: true });
+    if (!lv.needsCrop) return { seekBuilds: n, seekBox: b };
+  }
+  return { seekBuilds: n, seekBox: null };
+}
+
+module.exports = { paint, captureOf, recordOf, seek, png, FLOORS, COUNT };
 if (require.main === module) {
   if (opt('png') !== null) {
     const k = +opt('png'), out = ARGS[ARGS.indexOf('--png') + 2];
@@ -122,8 +141,10 @@ if (require.main === module) {
   const SB = loadCoreFull(PAGE).SB, CAP = captureOf(PAGE), rows = [];
   for (let k = 0; k < COUNT; k++) {
     const img = paint(k), crop = CAP.fit(img.w, img.h), lv = SB.pipeline.build(recordOf(SB, img, crop), { firstRoom: true });
-    rows.push({ k, floor: img.floor, built: !lv.needsCrop, cause: lv.needsCrop ? (lv.cause || 'none') : '', detail: lv.needsCrop ? lv.detail : '', tabs: lv.needsCrop ? -1 : lv.repair.tabs,
-      spawnRow: lv.needsCrop ? -1 : Math.floor(lv.spawn / lv.w), exitRow: lv.needsCrop ? -1 : Math.floor(lv.exit / lv.w), crop });
+    const row = { k, floor: img.floor, built: !lv.needsCrop, cause: lv.needsCrop ? (lv.cause || 'none') : '', detail: lv.needsCrop ? lv.detail : '', tabs: lv.needsCrop ? -1 : lv.repair.tabs,
+      spawnRow: lv.needsCrop ? -1 : Math.floor(lv.spawn / lv.w), exitRow: lv.needsCrop ? -1 : Math.floor(lv.exit / lv.w), crop, seekBuilds: 0, seekBox: null };
+    if (lv.needsCrop && !ARGS.includes('--no-seek')) Object.assign(row, seek(SB, CAP, img, crop, lv));
+    rows.push(row);
   }
   if (ARGS.includes('--json')) { for (const r of rows) console.log(JSON.stringify(r)); process.exit(0); }
   console.log('room model, ' + COUNT + ' scenes at ' + BW + 'x' + BH + ', the default box ' + JSON.stringify(rows[0].crop) + ', page ' + path.relative(process.cwd(), PAGE));
@@ -133,6 +154,17 @@ if (require.main === module) {
   }
   const b = rows.filter(r => r.built).length;
   console.log('  ' + 'all'.padEnd(13) + String(b).padStart(3) + ' of ' + rows.length + ' build at the default box');
+  if (!ARGS.includes('--no-seek')) {
+    const dev = rows.filter(r => r.built || r.seekBox).length, ref = rows.filter(r => !r.built);
+    const q = (a, p) => { const s = a.slice().sort((x, y) => x - y); return s.length ? s[Math.min(s.length - 1, Math.floor(p * s.length))] : 0; };
+    const st = (a, u = '') => 'median ' + q(a, 0.5) + u + ', p90 ' + q(a, 0.9) + u + ', max ' + q(a, 1) + u;
+    console.log('  with the auto crop (Q181, at most ' + CAP.SEEK.CAP + ' builds): ' + dev + ' of ' + rows.length + ' develop from the default box');
+    for (const F of FLOORS) { const of = rows.filter(r => r.floor === F.name); console.log('    ' + F.name.padEnd(13) + String(of.filter(r => r.built || r.seekBox).length).padStart(3) + ' of ' + of.length); }
+    console.log('  builds the search spent, over the ' + ref.length + ' refused: ' + st(ref.map(r => r.seekBuilds)) + '; over all ' + rows.length + ': ' + st(rows.map(r => r.seekBuilds)));
+    const shr = ref.filter(r => r.seekBox).map(r => Math.round(100 * r.seekBox.h / r.crop.h));
+    console.log('  the chosen box keeps of the default box\'s height: ' + st(shr, '%') + ' (min ' + Math.min(...shr) + '%)');
+    for (const r of ref.filter(x => !x.seekBox)) console.log('  nothing builds: scene ' + r.k + ' (' + r.floor + ', ' + r.cause + ')');
+  }
   const why = {};
   for (const r of rows.filter(x => !x.built)) { const key = r.cause + ': ' + r.detail.replace(/\d+/g, 'N'); why[key] = (why[key] || 0) + 1; }
   for (const [k, n] of Object.entries(why).sort((a, b) => b[1] - a[1])) console.log('  refused ' + String(n).padStart(3) + '  ' + k);
