@@ -5178,7 +5178,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
    here from the table, not read from TUNING. Room 5 is room 4's row until lane B's boss (Q201: the review of HOUSE-A
    found the last room the easiest of the five, often empty) */
 const RAMP_WANT = { 2: { floor: 2, cap: 4, elites: 1, eliteMin: 0, hpQ: 4, fast: false }, 3: { floor: 3, cap: 4, elites: 1, eliteMin: 1, hpQ: 4, fast: true },
-  4: { floor: 4, cap: 5, elites: 2, eliteMin: 1, hpQ: 6, fast: true }, 5: { floor: 4, cap: 5, elites: 2, eliteMin: 1, hpQ: 6, fast: true } };
+  4: { floor: 4, cap: 5, elites: 2, eliteMin: 1, hpQ: 6, fast: true }, 5: { floor: 0, cap: 3, elites: 0, eliteMin: 0, hpQ: 4, fast: false } };   /* room 5: the table's own row beside the guardian (HOUSE-B) */
 let rampLevels = null;
 function rampBuilds() {
   if (rampLevels) return rampLevels;
@@ -5249,9 +5249,10 @@ group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHas
         }
       }
     }
-    /* the last room is never easier than room 4 on the same photo (room 4's row until lane B's boss) */
-    if (L.rooms[4] && L.rooms[5] && !L.rooms[4].needsCrop && !L.rooms[5].needsCrop && L.rooms[5].features.enemies.length < L.rooms[4].features.enemies.length)
-      bad.last.push(tag + ': room 5 ' + L.rooms[5].features.enemies.length + ' enemies, room 4 ' + L.rooms[4].features.enemies.length);
+    /* the last room is never easier than room 4: it holds the guardian on every built room (HOUSE-B; room 4's row
+       stood in for it until then) */
+    if (L.rooms[5] && !L.rooms[5].needsCrop && !(L.rooms[5].features.guardian && L.rooms[5].features.boss && L.rooms[5].features.boss.length === SB.TUNING.GUARD_W * SB.TUNING.GUARD_H))
+      bad.last.push(tag + ': room 5 has no guardian');
   }
   const say = (k, msg) => t.eq(bad[k].length, 0, msg + (bad[k].length ? ': ' + bad[k].slice(0, 5).join('; ') : ''));
   say('same', 'room 1 is free play byte for byte on every built room (levelHash, features, the first sim state, no ramp row), and a ramped room carries its table row');
@@ -5266,7 +5267,7 @@ group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHas
   say('rules', 'every ramp enemy keeps DESIGN 7: open, clear of spawn by ENEMY_SPAWN_CLEAR, outside ROUTE_SAFE_ENEMY_DIST of the ascent, never on a trap, the pocket, a loot cell or the exit; crawlers and sparks standing, icicles hanging');
   say('env', 'no ramp enemy\'s envelope covers a cell the ascent stands on');
   say('fall', 'no ramp icicle falls onto or beside a cell the ascent stands on, all the way down (' + falls + ' ramp icicles)');
-  say('last', 'room 5 holds at least room 4\'s enemies on every built room (room 4\'s row until the boss)');
+  say('last', 'room 5 holds the guardian on every built room (HOUSE-B)');
   say('route', 'the ramped room keeps the free play room\'s ascent and degrade ladder, and its ascent holds on the safe cells');
 });
 
@@ -5280,16 +5281,16 @@ group('H-house-2', 'the ramp in the sim: room 4\'s fodder at 6 quarters a HP (1.
       const s = SB.sim.create(lv, { immortal: true, lastRoom: r === 5 });
       lv.features.enemies.forEach((e, k) => {
         const hp = (e.kind === SB.features.JELLY ? T.JELLY_HP : e.kind === SB.features.CRAWLER ? T.CRAWLER_HP : 1);
-        const want = e.elite ? hp * T.ELITE_HP_MULT * 4 : hp * (r >= 4 ? 6 : 4);
+        const want = e.elite ? hp * T.ELITE_HP_MULT * 4 : hp * (r === 4 ? 6 : 4);
         if (s.enemies[k].hp !== want) bad.hp.push(L.tag + ' room ' + r + ': a ' + (e.elite ? 'elite ' : '') + KIND_NAME[e.kind] + ' at ' + s.enemies[k].hp + ' quarters, want ' + want);
       });
       /* the clock: 8 steps of a held hero (immortal) tick each live enemy 8 times at 1x, 10 at 1.25x */
       if (s.enemies.length) {
         const x0 = s.enemies.map(e => [e.x, e.y]);
         for (let k = 0; k < 8; k++) SB.sim.step(s, 0);
-        const want = r >= 3 ? 10 : 8;
+        const want = r === 3 || r === 4 ? 10 : 8;
         s.enemies.forEach((e, k) => {
-          if (e.stunned !== 0 || e.frozen) return;
+          if (e.stunned !== 0 || e.frozen || SB.sim.shedSlot(s, k)) return;   /* the guardian's unshed moth slots never tick */
           if (e.timer !== want) bad.tick.push(L.tag + ' room ' + r + ': a ' + KIND_NAME[e.kind] + ' ticked ' + e.timer + ' times in 8 steps, want ' + want);
           const d = Math.max(Math.abs(e.x - x0[k][0]), Math.abs(e.y - x0[k][1]));
           if (e.kind === SB.features.MOTH && d !== want * K.MOTH_V) bad.tick.push(L.tag + ' room ' + r + ': a moth moved ' + d + ' sub along its larger axis in 8 steps, want ' + want * K.MOTH_V);
@@ -5308,7 +5309,7 @@ group('H-house-2', 'the ramp in the sim: room 4\'s fodder at 6 quarters a HP (1.
     }
   }
   t.eq(bad.hp.length, 0, 'every enemy\'s first HP is its kind\'s in quarters, room 4\'s fodder 1.5x' + (bad.hp.length ? ': ' + bad.hp.slice(0, 5).join('; ') : ''));
-  t.eq(bad.tick.length, 0, 'the enemies tick 1.25x in rooms 3 and 4 (and 5, room 4\'s row until the boss) and 1x in rooms 1 and 2, over ' + checked + ' rooms' + (bad.tick.length ? ': ' + bad.tick.slice(0, 5).join('; ') : ''));
+  t.eq(bad.tick.length, 0, 'the enemies tick 1.25x in rooms 3 and 4 and 1x in rooms 1, 2 and 5 (the table\'s room 5, HOUSE-B), over ' + checked + ' rooms' + (bad.tick.length ? ': ' + bad.tick.slice(0, 5).join('; ') : ''));
   t.ok(promos > 0 && bad.promo.length === 0, 'room 3\'s promoted elite is the fodder farthest from spawn (' + promos + ' rooms promote)' + (bad.promo.length ? ': ' + bad.promo.slice(0, 5).join('; ') : ''));
   /* the same record, free play against the house's room 1, stepped 300 steps with the same words: the same hash */
   const sr = SB.record.fromJSON(fixture('sample-room').fx.record);
@@ -5327,6 +5328,241 @@ group('H-house-3', 'the bot walks every built corpus room, as detected, under ro
     if (!r.ok) miss.push(L.tag + ': ' + (r.why || 'stopped at edge ' + (r.miss ? r.miss.i : '?')));
   }
   t.ok(walked > 0 && miss.length === 0, 'the bot clears ' + (walked - miss.length) + ' of ' + walked + ' rooms under room 4\'s rules' + (miss.length ? ': ' + miss.slice(0, 5).join('; ') : ''));
+});
+
+/* ---------------------------------------------------------------- the guardian (HOUSE-B; DESIGN 7.1's fallback, T2.10a, T2.11) */
+/* every built corpus room as a house's last room: as detected and under each biome, both modes */
+let bossLevels = null;
+function bossBuilds() {
+  if (bossLevels) return bossLevels;
+  bossLevels = [];
+  for (const L of rampBuilds()) {
+    const lv = L.rooms[5] || SB.pipeline.build(L.rec(), Object.assign({ roomIndex: 5, lastRoom: true }, L.biome === null ? {} : { biome: L.biome }));
+    if (!lv.needsCrop) bossLevels.push({ tag: L.tag, L, lv });
+  }
+  return bossLevels;
+}
+/* the test's own dark masses: 4 connected solid cells, by size (ties to the lower first cell) */
+function testMasses(lv) {
+  const w = lv.w, n = w * lv.h, of = new Int32Array(n).fill(-1), list = [];
+  for (let i = 0; i < n; i++) {
+    if (!lv.solid[i] || of[i] >= 0) continue;
+    const id = list.length, q = [i]; of[i] = id;
+    for (let h = 0; h < q.length; h++) { const c = q[h], x = c % w; for (const d of [x > 0 ? c - 1 : -1, x < w - 1 ? c + 1 : -1, c - w, c + w]) if (d >= 0 && d < n && lv.solid[d] && of[d] < 0) { of[d] = id; q.push(d); } }
+    list.push({ id, first: i, size: q.length });
+  }
+  const rank = list.slice().sort((a, b) => b.size - a.size || a.first - b.first).map(m => m.id);
+  return { of, rank };
+}
+const bodyOf = lv => { const g = lv.features.guardian, w = lv.w, out = []; for (let y = g.rect[1]; y < g.rect[1] + g.rect[3]; y++) for (let x = g.rect[0]; x < g.rect[0] + g.rect[2]; x++) out.push(y * w + x); return out; };
+/* a state with the guardian awake (the intro run out by steps, an immortal bug) */
+function awake(lv, o) {
+  const s = SB.sim.create(lv, Object.assign({ immortal: true, lastRoom: true }, o || {}));
+  for (let k = 0; k < K.BOSS_INTRO_F && s.boss.phase === 0; k++) SB.sim.step(s, 0);
+  return s;
+}
+group('H-boss-3', 'the guardian (HOUSE-B, Stephen\'s "Clay boss now", Q97; DESIGN 7.1\'s fallback): every built corpus room as a house room 5 holds the GUARD_W x GUARD_H clay body at BOSS_FALLBACK_HP, on open cells, resting on the dark mass its rule names (the test\'s own masses), clear of spawn, the climb and every claimed cell, no photo enemy in reach of it; free play, a code, rooms 1 to 4 and a first room never see it', t => {
+  const T = SB.TUNING, bad = { none: [], cells: [], rest: [], spawn: [], climb: [], claim: [], enemy: [], hp: [], seen: [] }, rules = {}, kinds = { mass1: 0, later: 0, air: 0, shelf: 0 };
+  let n = 0, dropped = 0;
+  for (const B of bossBuilds()) {
+    const { tag, lv } = B, g = lv.features.guardian, w = lv.w, N = w * lv.h; n++;
+    if (!g || !lv.features.boss) { bad.none.push(tag); continue; }
+    const body = bodyOf(lv), set = new Set(body);
+    if (JSON.stringify(Array.from(lv.features.boss)) !== JSON.stringify(body) || g.rect[2] !== T.GUARD_W || g.rect[3] !== T.GUARD_H) bad.cells.push(tag + ': features.boss is not the guardian\'s rect');
+    if (body.some(c => lv.solid[c] || lv.trap[c] || (lv.plat[c] && !g.shelf))) bad.cells.push(tag + ': a body cell is solid, a trap or (off the shelf rule) a one way');
+    rules[g.rule] = (rules[g.rule] || 0) + 1; dropped += g.dropped;
+    if (g.shelf) kinds.shelf++; else if (g.air) kinds.air++; else if (g.rule === 1) kinds.mass1++; else kinds.later++;
+    if (!g.air) {
+      const M = testMasses(lv), under = [], y = g.rect[1] + g.rect[3];
+      for (let x = g.rect[0]; x < g.rect[0] + g.rect[2]; x++) under.push(M.of[y * w + x]);
+      const id = M.rank[g.rule - 1], rest = under.filter(v => v === id && v >= 0).length;
+      if (rest < T.GUARD_REST) bad.rest.push(tag + ': rests on ' + rest + ' cells of the ' + g.rule + ' largest dark mass');
+    } else if (g.rule <= testMasses(lv).rank.length) bad.rest.push(tag + ': the air rule numbered inside the masses');
+    if (body.some(c => cheb(c, lv.spawn, w) <= T.ENEMY_SPAWN_CLEAR)) bad.spawn.push(tag);
+    const nodes = Array.from(lv.ascent.nodes).map(v => v < N ? v : (v - N) >> 1);
+    if (nodes.some(v => body.some(c => cheb(c, v, w) <= 1))) bad.climb.push(tag + ': within a cell of a cell the ascent stands on');
+    const f = lv.features, claimed = [lv.spawn, lv.exit, f.chest, f.scroll, f.blueprint].concat(Array.from(f.specks), Array.from(lv.beacon.cells), f.pocket ? f.pocket.cells : []);
+    if (claimed.some(c => set.has(c))) bad.claim.push(tag + ': on a claimed cell');
+    const ring = c => { const x = c % w, y = Math.floor(c / w); return x >= g.rect[0] - 1 && x <= g.rect[0] + g.rect[2] && y >= g.rect[1] - 1 && y <= g.rect[1] + g.rect[3]; };
+    if (f.enemies.some(e => ring(e.idx) || Array.from(e.env || []).some(ring))) bad.enemy.push(tag + ': a photo enemy reaches the body');
+    if (f.enemies.length > 3 + (lv.biome === 4 ? T.EMBER_EXTRA_ENEMY : 0) || f.enemies.some(e => e.elite)) bad.enemy.push(tag + ': room 5 holds ' + f.enemies.length + ' photo enemies (cap 3, no elite)');
+    const s = SB.sim.create(lv, { lastRoom: true });
+    if (!s.boss || s.boss.hp !== T.BOSS_FALLBACK_HP * K.HP_Q || s.boss.hpMax !== s.boss.hp || s.boss.phase !== 0 || s.boss.intro !== K.BOSS_INTRO_F || s.boss.cells.join() !== body.join()) bad.hp.push(tag + ': ' + JSON.stringify(s.boss));
+    /* the house's other rooms, a first room built as room 5, free play and the code's own build: no guardian */
+    const L = B.L, o = L.biome === null ? {} : { biome: L.biome }, others = [SB.pipeline.build(L.rec(), o), SB.pipeline.build(L.rec(), Object.assign({ roomIndex: 4 }, o)), SB.pipeline.build(L.rec(), Object.assign({ roomIndex: 5, lastRoom: true, firstRoom: true }, o)),
+      SB.pipeline.build(SB.record.decode(SB.record.encode(L.rec())), o), SB.pipeline.build(L.rec(), Object.assign({ lastRoom: true }, o))];
+    if (others.some(x => !x.needsCrop && (x.features.guardian || SB.sim.create(x, {}).boss))) bad.seen.push(tag);
+  }
+  const say = (k, msg) => t.eq(bad[k].length, 0, msg + (bad[k].length ? ': ' + bad[k].slice(0, 5).join('; ') : ''));
+  say('none', 'every one of ' + n + ' built rooms as room 5 holds the guardian; by rule ' + JSON.stringify(rules) + ': on the largest dark mass ' + kinds.mass1 + ', placed by a later rule ' + (kinds.later + kinds.air + kinds.shelf) + ' (a smaller mass ' + kinds.later + ', the air ' + kinds.air + ', the shelf ' + kinds.shelf + ')');
+  say('cells', 'the body is features.boss, the GUARD_W x GUARD_H rect, on open cells');
+  say('rest', 'a resting body rests on at least GUARD_REST cells of the dark mass its rule ranks (the test\'s own 4 connected masses)');
+  say('spawn', 'the body keeps ENEMY_SPAWN_CLEAR from spawn');
+  say('climb', 'no body cell is within a cell of a cell the ascent stands on');
+  say('claim', 'the body covers no claimed cell (spawn, exit, chest, scroll, blueprint, specks, the beacon, the pocket)');
+  say('enemy', 'no photo enemy\'s cell or envelope reaches the body or the cell round it (' + dropped + ' photo fodder made way), and room 5 keeps its row\'s caps');
+  say('hp', 'the sim starts it whole at BOSS_FALLBACK_HP whole HP in quarters, asleep for BOSS_INTRO_F steps');
+  say('seen', 'free play, a share code, room 4, a first room and lastRoom without its room index build no guardian and start no boss');
+});
+group('H-boss-4', 'the beacon lights only at HP 0: on every built room 5 a bug in the exit cell does not clear it asleep, awake or at one quarter left, the room\'s exitLit stays 0; the hit that takes the last quarter banks DP_BOSS once, lights it (BOSS_DOWN, KILL), drops its moths, and the next touch clears', t => {
+  const bad = { early: [], down: [], clear: [] };
+  let n = 0;
+  for (const { tag, lv } of bossBuilds()) {
+    n++;
+    const s = SB.sim.create(lv, { lastRoom: true, immortal: true }), w = lv.w, ex = lv.exit % w, ey = Math.floor(lv.exit / w);
+    const put = () => { s.hero.x = ex * CS + ((CS - HW) >> 1); s.hero.y = ey * CS; s.hero.vx = 0; s.hero.vy = 0; };
+    put(); SB.sim.step(s, 0);
+    if (s.room.cleared || s.room.exitLit) bad.early.push(tag + ': asleep');
+    while (s.boss.phase === 0) SB.sim.step(s, 0);
+    put(); SB.sim.step(s, 0);
+    if (s.room.cleared || s.room.exitLit) bad.early.push(tag + ': awake');
+    for (let k = 0; k < 600 && s.boss.hp > 1; k++) SB.sim.hurtBoss(s, lv, s.boss.cells.findIndex(c => c >= 0), Math.min(4, s.boss.hp - 1));
+    put(); SB.sim.step(s, 0);
+    if (s.room.cleared || s.room.exitLit || s.boss.hp !== 1) bad.early.push(tag + ': at ' + s.boss.hp + ' quarter');
+    const dp0 = s.room.dp, moths = s.enemies.filter((e, m) => SB.sim.shedSlot(s, m)).length;
+    s.ev = 0; SB.sim.hurtBoss(s, lv, s.boss.cells.findIndex(c => c >= 0), 4);
+    const ev = s.ev;
+    SB.sim.hurtBoss(s, lv, 0, 4);
+    if (s.room.dp - dp0 !== SB.TUNING.DP_BOSS || !(ev & SB.sim.EV.BOSS_DOWN) || !(ev & SB.sim.EV.KILL) || !s.room.exitLit || s.boss.phase !== 2 || s.boss.cells.some(c => c >= 0) || moths !== SB.TUNING.BOSS_MOTH_COUNT || s.enemies.some((e, m) => SB.sim.shedSlot(s, m) && e.hp > 0))
+      bad.down.push(tag + ': +' + (s.room.dp - dp0) + ' DP, ev ' + ev + ', phase ' + s.boss.phase);
+    put(); SB.sim.step(s, 0);
+    if (!s.room.cleared) bad.clear.push(tag);
+  }
+  t.eq(bad.early.length, 0, 'over ' + n + ' rooms the exit stays shut and the beacon dark while the guardian stands (asleep, awake, one quarter left)' + (bad.early.length ? ': ' + bad.early.slice(0, 5).join('; ') : ''));
+  t.eq(bad.down.length, 0, 'the last quarter banks DP_BOSS once, sets BOSS_DOWN and KILL, lights the beacon and takes its moths with it' + (bad.down.length ? ': ' + bad.down.slice(0, 5).join('; ') : ''));
+  t.eq(bad.clear.length, 0, 'with the guardian down the exit clears the room' + (bad.clear.length ? ': ' + bad.clear.slice(0, 5).join('; ') : ''));
+});
+/* the shed, by steps: the TELL and SHED steps over a stretch awake, and where each shed moth starts */
+function shedLog(lv, steps) {
+  const s = awake(lv), EV = SB.sim.EV, log = { tell: [], shed: [], starts: [] }, w = lv.w;
+  for (let k = 0; k < steps; k++) {
+    SB.sim.step(s, 0);
+    if (s.ev & EV.TELL) log.tell.push(s.frame);
+    if (s.ev & EV.SHED) { log.shed.push(s.frame); s.enemies.forEach((e, m) => { if (SB.sim.shedSlot(s, m) && e.hp > 0 && e.timer <= 1) log.starts.push(Math.floor((e.y + (CS >> 1)) / CS) * w + Math.floor((e.x + (CS >> 1)) / CS)); }); }
+  }
+  return { s, log };
+}
+group('H-boss-8', 'the shed (DESIGN 7\'s Attic moveset, "sheds 3 moths every 4 s"): awake, a SHED every BOSS_MOTH_EVERY_F steps, each after its TELL; BOSS_MOTH_COUNT moth slots made at create after the level\'s enemies, the same objects through the room (none made in step); a shed fills only dead slots; its moths bank no Dead pixels', t => {
+  const T = SB.TUNING, bad = { cadence: [], slots: [], dp: [] };
+  let n = 0;
+  for (const { tag, lv } of bossBuilds().filter((b, i) => i % 3 === 0)) {
+    n++;
+    const s0 = SB.sim.create(lv, { lastRoom: true, immortal: true }), ne = lv.features.enemies.length;
+    if (s0.enemies.length !== ne + T.BOSS_MOTH_COUNT || s0.enemies.slice(ne).some(e => e.hp !== 0 || e.kind !== SB.features.MOTH)) bad.slots.push(tag + ': ' + s0.enemies.length + ' slots');
+    const objs = s0.enemies.slice();
+    for (let k = 0; k < 1300; k++) SB.sim.step(s0, 0);
+    if (s0.enemies.length !== objs.length || s0.enemies.some((e, k) => e !== objs[k])) bad.slots.push(tag + ': the slots changed in step');
+    const live = s0.enemies.filter((e, m) => SB.sim.shedSlot(s0, m) && e.hp > 0).length;
+    if (live > T.BOSS_MOTH_COUNT) bad.slots.push(tag + ': ' + live + ' shed moths');
+    const { log } = shedLog(lv, 1000), gaps = log.shed.slice(1).map((f, k) => f - log.shed[k]);
+    if (log.shed.length < 4 || gaps.some(g => g !== K.BOSS_MOTH_EVERY_F) || log.shed.some((f, k) => log.tell[k] === undefined || log.tell[k] > f)) bad.cadence.push(tag + ': sheds at ' + log.shed.join(',') + ', tells at ' + log.tell.join(','));
+    /* a shed moth killed: no Dead pixels; the slot refilled at the next shed */
+    const s = awake(lv);
+    while (!(s.ev & SB.sim.EV.SHED)) SB.sim.step(s, 0);
+    const m = s.enemies.length - 1, dp0 = s.room.dp;
+    SB.sim.hurt(s, m, 4);
+    if (s.room.dp !== dp0 || s.enemies[m].hp !== 0) bad.dp.push(tag + ': +' + (s.room.dp - dp0));
+    SB.sim.step(s, 0);
+    while (!(s.ev & SB.sim.EV.SHED)) SB.sim.step(s, 0);
+    if (s.enemies[m].hp <= 0) bad.slots.push(tag + ': a dead slot not refilled');
+  }
+  t.eq(bad.cadence.length, 0, 'over ' + n + ' rooms the guardian sheds every ' + K.BOSS_MOTH_EVERY_F + ' steps, each after its TELL' + (bad.cadence.length ? ': ' + bad.cadence.slice(0, 4).join('; ') : ''));
+  t.eq(bad.slots.length, 0, 'its ' + T.BOSS_MOTH_COUNT + ' moth slots are made at create, never in step, and refilled when dead' + (bad.slots.length ? ': ' + bad.slots.slice(0, 4).join('; ') : ''));
+  t.eq(bad.dp.length, 0, 'a shed moth killed banks nothing (no farm)' + (bad.dp.length ? ': ' + bad.dp.slice(0, 4).join('; ') : ''));
+});
+group('H-boss-5', 'the arena (T2.11, DESIGN 7.1): on every built room 5 a safe ledge: standable (the test\'s own), reached from spawn, within BOSS_SAFE_LEDGE_CELLS of the body, outside the attack cells the sim makes (the body and the cell round it, every cell a shed moth starts on and ROUTE_SAFE_ENEMY_DIST round it)', t => {
+  const T = SB.TUNING, bad = [];
+  let n = 0;
+  for (const { tag, lv } of bossBuilds()) {
+    n++;
+    const g = lv.features.guardian, w = lv.w, L = g.ledge, body = bodyOf(lv), { log } = shedLog(lv, K.BOSS_MOTH_EVERY_F + 2);
+    const gr = SB.reach.trapGraph(lv, SB.reach.graph(lv)), d = SB.reach.distances(gr, lv.spawn, lv.exit);
+    const near = Math.min(...body.map(c => cheb(c, L, w)));
+    const why = [];
+    if (!standableIn(lv, L)) why.push('not standable');
+    if (d[L] < 0) why.push('not reached');
+    if (near > T.BOSS_SAFE_LEDGE_CELLS) why.push(near + ' cells from the body');
+    if (near <= 1) why.push('in the body\'s contact');
+    if (log.starts.length !== T.BOSS_MOTH_COUNT) why.push(log.starts.length + ' moths shed');
+    if (log.starts.some(c => cheb(c, L, w) <= T.ROUTE_SAFE_ENEMY_DIST)) why.push('within ROUTE_SAFE_ENEMY_DIST of a shed moth\'s start');
+    if (lv.trap[L]) why.push('a trap');
+    if (why.length) bad.push(tag + ': ' + why.join(', '));
+  }
+  t.eq(bad.length, 0, 'over ' + n + ' rooms the guardian\'s safe ledge holds' + (bad.length ? ': ' + bad.slice(0, 5).join('; ') : ''));
+});
+group('H-boss-6', 'the arena (T2.11): every telegraph is at least 48 frames: on every built room 5, each SHED comes at least 48 steps after its TELL, with no TELL left unanswered and none overlapping', t => {
+  const bad = [];
+  let n = 0, least = Infinity;
+  for (const { tag, lv } of bossBuilds()) {
+    n++;
+    const { log } = shedLog(lv, 3 * K.BOSS_MOTH_EVERY_F);
+    const pairs = log.shed.map((f, k) => f - (log.tell[k] === undefined ? Infinity : log.tell[k]));
+    pairs.forEach(p => { least = Math.min(least, p); });
+    if (log.shed.length < 2 || pairs.some(p => !(p >= 48)) || log.tell.length > log.shed.length + 1) bad.push(tag + ': tells ' + log.tell.join(',') + ', sheds ' + log.shed.join(','));
+  }
+  t.eq(bad.length, 0, 'over ' + n + ' rooms every shed is told at least 48 frames ahead (the least ' + least + ')' + (bad.length ? ': ' + bad.slice(0, 5).join('; ') : ''));
+});
+group('H-boss-7', 'the arena (T2.11): at least BOSS_WEAK_MIN weak cells reachable from the ledge, by the real weapon: from the ledge and every stand one JUMP, JUMP_DOWN, FALL or WALK from it, a Boomerang thrown each way by a real jump strikes body cells (the cells the sim takes off, counted by the test); the core\'s own weak list is no bigger than what the sim strikes', t => {
+  const T = SB.TUNING, bad = [], W = SB.sim.WPN;
+  let n = 0, least = Infinity;
+  for (const { tag, lv } of bossBuilds()) {
+    n++;
+    const g = lv.features.guardian, w = lv.w, N = w * lv.h, gr = SB.reach.trapGraph(lv, SB.reach.graph(lv));
+    const from = [g.ledge].concat((gr.adj[g.ledge] || []).filter(e => e.to < N && ['JUMP', 'JUMP_DOWN', 'FALL', 'WALK'].includes(e.kind)).map(e => e.to));
+    const struck = new Set();
+    for (const v of new Set(from)) for (const dir of [-1, 1]) {
+      const s = awake(lv, { loadout: ['J1', null, null] }), b0 = s.boss.cells.slice();
+      s.hero.x = (v % w) * CS + ((CS - HW) >> 1); s.hero.y = Math.floor(v / w) * CS; s.hero.vx = 0; s.hero.vy = 0; s.hero.facing = dir;
+      SB.sim.step(s, 0); SB.sim.step(s, 0);
+      SB.sim.step(s, IN.A | IN.A_TAP);
+      for (let k = 0; k < 80; k++) SB.sim.step(s, IN.A);
+      s.boss.cells.forEach((c, j) => { if (c < 0 && b0[j] >= 0) struck.add(b0[j]); });
+    }
+    least = Math.min(least, struck.size);
+    if (struck.size < T.BOSS_WEAK_MIN) bad.push(tag + ': ' + struck.size + ' cells struck from the ledge (the core listed ' + g.weak.length + ')');
+  }
+  t.eq(bad.length, 0, 'over ' + n + ' rooms a Boomerang from the ledge strikes at least ' + T.BOSS_WEAK_MIN + ' body cells (the least ' + least + ')' + (bad.length ? ': ' + bad.slice(0, 5).join('; ') : ''));
+});
+group('H-boss-9', 'the weapons hurt the guardian through their own paths (hit(), never a list): a Boomerang thrown into the awake body takes a cell for its J1 damage at Focus 0 (4 quarters), Anvil Boots\' shock along its floor takes two (8); asleep it takes nothing; the struck cell goes first, then the nearest (the erosion order, the test\'s own Chebyshev)', t => {
+  const sr = bossBuilds().find(b => b.tag.startsWith('sample-room mode 0 as detected'));
+  t.ok(!!sr, 'the sample room builds as room 5 with its guardian');
+  if (!sr) return;
+  const lv = sr.lv, g = lv.features.guardian, w = lv.w, body = bodyOf(lv);
+  /* the hero on the floor beside the body's bottom row, facing it */
+  const row = g.rect[1] + g.rect[3] - 1, side = g.rect[0] > 0 && standableIn(lv, row * w + g.rect[0] - 1) ? -1 : 1, hc = side < 0 ? g.rect[0] - 2 : g.rect[0] + g.rect[2] + 1, face = -side;
+  const at = (s, c) => { s.hero.x = (c % w) * CS + ((CS - HW) >> 1); s.hero.y = Math.floor(c / w) * CS; s.hero.vx = 0; s.hero.vy = 0; s.hero.facing = face; SB.sim.step(s, 0); };
+  const hc0 = row * w + hc;
+  t.ok(standableIn(lv, hc0), 'the test\'s stand beside the body (' + hc + ', ' + row + ') is standable');
+  { const s = SB.sim.create(lv, { lastRoom: true, immortal: true, loadout: ['J1', null, null] }); at(s, hc0); SB.sim.step(s, IN.A | IN.A_TAP); for (let k = 0; k < 60; k++) SB.sim.step(s, IN.A);
+    t.eq(s.boss.hp, s.boss.hpMax, 'asleep (the intro) a Boomerang through the body takes nothing'); }
+  { const s = awake(lv, { loadout: ['J1', null, null] }); at(s, hc0); const hp0 = s.boss.hp; let hitAt = -1;
+    SB.sim.step(s, IN.A | IN.A_TAP);
+    for (let k = 0; k < 80 && hitAt < 0; k++) { SB.sim.step(s, IN.A); if (s.ev & SB.sim.EV.BOSS_HIT) hitAt = k; }
+    const gone = body.filter((c, j) => s.boss.cells[j] < 0), near = face > 0 ? row * w + g.rect[0] : row * w + g.rect[0] + g.rect[2] - 1;
+    t.ok(hitAt >= 0 && hp0 - s.boss.hp >= 4 && (hp0 - s.boss.hp) % 4 === 0, 'a Boomerang\'s pass hits the awake body (' + (hp0 - s.boss.hp) + ' quarters off, BOSS_HIT on its step)');
+    t.ok(gone.includes(near), 'the first cell struck is the body\'s near cell in the hero\'s row (' + gone.join(',') + ', near ' + near + ')');
+    t.eq(gone.length, Math.ceil(s.boss.hpMax / 4) - Math.ceil(s.boss.hp / 4), 'a cell goes for each whole HP lost'); }
+  { const s = awake(lv, { loadout: [null, 'D1', null] }), hp0 = s.boss.hp;
+    /* a dive onto the floor beside the body: the shock runs along the floor into the bottom row */
+    s.hero.x = hc * CS + ((CS - HW) >> 1); s.hero.y = (row - 3) * CS; s.hero.vx = 0; s.hero.vy = 0; s.hero.ground = 0; s.hero.facing = face;
+    SB.sim.step(s, IN.B | IN.B_TAP); for (let k = 0; k < 60; k++) SB.sim.step(s, IN.B);
+    t.ok(hp0 - s.boss.hp >= 8, 'Anvil Boots\' shock along the floor takes 2 x 4 quarters off the awake body (' + (hp0 - s.boss.hp) + ')'); }
+  { const s = awake(lv), j = 7, c0 = body[j];
+    SB.sim.hurtBoss(s, lv, j, 8);
+    const gone = body.filter((c, k) => s.boss.cells[k] < 0), want = [c0].concat(body.filter(c => c !== c0).sort((a, b) => cheb(a, c0, w) - cheb(b, c0, w) || a - b).slice(0, 1));
+    t.eq(gone.slice().sort((a, b) => a - b).join(), want.sort((a, b) => a - b).join(), 'two quarters of HP x 4 take the struck cell and the nearest live one (the test\'s erosion order)'); }
+});
+group('H-boss-10', 'determinism and the replay: the sample room as room 5, 2400 seeded words with a Boomerang, hashes alike twice and in a fresh context; the boss\'s every field moves the hash; the same words over room 5 and free play end apart (free play never sees it)', t => {
+  const rec = () => SB.record.fromJSON(fixture('sample-room').fx.record);
+  const run = (S, opts) => { const lv = S.pipeline.build(rec(), opts), s = S.sim.create(lv, { lastRoom: !!opts.lastRoom, loadout: ['J1', 'D1', null] }), r = hrand(5); for (let k = 0; k < 2400; k++) S.sim.step(s, r.int(64)); return S.sim.hash(s); };
+  const a = run(SB, { roomIndex: 5, lastRoom: true }), b = run(SB, { roomIndex: 5, lastRoom: true }), c = run(loadCoreFull(PAGE).SB, { roomIndex: 5, lastRoom: true });
+  t.ok(a === b && b === c, 'room 5 replays to one hash twice and in a fresh context (' + a + ')');
+  t.ok(run(SB, {}) !== a, 'free play over the same words ends on another hash');
+  const lv = SB.pipeline.build(rec(), { roomIndex: 5, lastRoom: true }), s = SB.sim.create(lv, { lastRoom: true }), h0 = SB.sim.hash(s), moved = [];
+  for (const k of ['hp', 'hpMax', 'phase', 'timer', 'intro', 'telegraph']) { const v = s.boss[k]; s.boss[k] = v + 1; if (SB.sim.hash(s) === h0) moved.push(k); s.boss[k] = v; }
+  { const v = s.boss.cells[3]; s.boss.cells[3] = -1; if (SB.sim.hash(s) === h0) moved.push('cells'); s.boss.cells[3] = v; }
+  t.eq(moved.length, 0, 'every guardian field moves the state hash' + (moved.length ? ' (not: ' + moved.join(', ') + ')' : ''));
+  t.eq(SB.pipeline.levelHash(lv) === SB.pipeline.levelHash(SB.pipeline.build(rec(), {})), false, 'room 5\'s level hash carries the guardian (features.boss), free play\'s does not');
 });
 
 /* ---------------------------------------------------------------- the run state (T2.8's H-run-1 and H-run-2) */
