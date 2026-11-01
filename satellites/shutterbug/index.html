@@ -174,8 +174,8 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #stage > #swap.tall h2, #stage > #swap.deep h2 { font-size: 1rem; }
 #swap.tall .srow canvas, #swap.deep .srow canvas { width: 32px; height: 32px; } #swap.tall .cmp, #swap.deep .cmp { font-size: 0.9rem; }
 /* deep: when even that hides the bug (the worst angle: 320x568, the bug at the room's top), the card hangs low over the
-   control strip, its bottom 8 px over A and B (placeSwap sets --swap-deep), so the bug stays in sight and A and B stay
-   bare; the world holds under it either way */
+   control strip, its bottom 8 px over A's and B's drawn circles (placeSwap sets --swap-deep), so the bug stays in sight
+   and the circles stay bare; the world holds under it either way */
 #swap.deep { top: var(--swap-deep, 16px); }
 #stage:has(> #paused.on) > #swap { visibility: hidden; }
 /* a heart is Astra's hud_heart (9 by 8, Q160) at 2x, nearest neighbour: full, or the empty frame for a lost one; the
@@ -5745,7 +5745,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (var i = 0; i < tries.length; i++) {
       el.classList.remove('high', 'low', 'tall', 'deep'); if (tries[i]) el.classList.add(tries[i]);
       if (tries[i] === 'deep') {
-        var ba = document.getElementById('btnA').getBoundingClientRect(), bb = document.getElementById('btnB').getBoundingClientRect();
+        /* the drawn circles (each button's hit column is the strip's full height, its circle at the bottom) */
+        var ba = document.querySelector('#btnA .glyph').getBoundingClientRect(), bb = document.querySelector('#btnB .glyph').getBoundingClientRect();
         var sp = el.offsetParent.getBoundingClientRect(), y = Math.min(ba.top, bb.top) - 8 - el.getBoundingClientRect().height - sp.top;
         el.style.setProperty('--swap-deep', Math.round(Math.max(16, y)) + 'px');
       }

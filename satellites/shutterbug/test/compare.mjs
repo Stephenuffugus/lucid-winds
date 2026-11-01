@@ -10,7 +10,9 @@
  *     reach, damage; at most two); every pair of built weapons gives the gate's line through SB.ui.compareLine too;
  *   - Take first in Sun, Keep plain, each 48 px or more both ways, on top, in view, inside the card;
  *   - the dock: the card's top 16 px or more under the room's top (the Pause control's hit area hangs 12 px over it) and
- *     a thumb at Pause's centre on Pause; the bug's drawn box clear of the card unless the page says 'covered';
+ *     a thumb at Pause's centre on Pause; the bug's drawn box clear of the card unless the page says 'covered'; at 320
+ *     the worst angle (the bug dropping in at the room's top beside the chest): the card hangs deep over the strip, the
+ *     bug in sight, A's and B's circles bare;
  *   - while it is open nothing in the world moves through 30 steps of a held arrow and real taps on A and B (the hero,
  *     the enemies, the pool, the traps, the cooldowns, the loot, the generator): only the frame counts;
  *   - a real tap on Pause opens the pause card over it (the screen pause, the card under it), Resume comes back to it
@@ -19,7 +21,7 @@
  *     card hides, the jump box's 576 pixels are the new weapon's glyph decoded here, the pickup card names it;
  *   - the recording carries the TAKE and, replayed on the kept first state, reaches the live hash;
  *   - again with Keep: the slots kept, PICK alone, no voice of a pick, the card gone.
- * Watched red by SWAP_AUTO_TAKES, SIM_RUNS_UNDER_SWAP, SWAP_WORDS_WRONG, SWAP_NOT_MODAL, SWAP_OVER_PAUSE. */
+ * Watched red by SWAP_AUTO_TAKES, SIM_RUNS_UNDER_SWAP, SWAP_WORDS_WRONG, SWAP_NOT_MODAL, SWAP_OVER_PAUSE, SWAP_NO_DEEP. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME } from './harness.mjs';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
@@ -113,6 +115,7 @@ try {
     await gotoGame(page, srv.base); await ready(page);
     await tap(page, '.art');
     await install(page);
+    await page.evaluate(str => { window.__rec = str; }, REC);
     const s0 = await setRoom(page);
     await stepN(page, 4);
     /* every pair of built jump weapons, through the page's own compareLine */
@@ -179,6 +182,24 @@ try {
     const k1 = await stepN(page, 1), k2 = await stepN(page, 1);
     R.say(!!k0 && k0.compare === 1 && JSON.stringify(k1.slots) === '[1,9,0]' && !k1.compare && (k1.ev & SBN.sim.EV.PICK) && !(k1.ev & SBN.sim.EV.EQUIP) && !k1.heard.includes('pick') && !k1.heard.includes('equip') && !k2.on,
       w + ': a real tap on Keep keeps Boomerang (slots ' + k1.slots.join(',') + '), PICK alone and no pick voice (' + k1.heard.join(', ') + '), the card gone');
+    if (w === 320) {
+      /* the worst angle (13.2's shot): the bug dropping in at the room's top beside the chest (laid at row 2): no dock in
+         the room clears it at 320, so the card hangs deep over the strip, the bug in sight, A's and B's circles bare,
+         Pause still Pause's */
+      await page.evaluate(() => { window.SB_DEV.hold(true); window.SB_DEV.loadRecord(window.__rec); const s = window.SB.game.state; s.loot.length = 0; s.enemies.length = 0; s.hero.slots[0] = 1; s.hero.slots[1] = 9; s.hero.x = 3 * 4096 + 512; s.hero.y = 2 * 4096; s.chest.idx = 2 * 24 + 4; s.chest.open = 0; window.SB_DEV.step(0); });
+      await page.keyboard.down('ArrowRight'); let q = null; for (let k = 0; k < 60; k++) { q = await stepN(page, 1); if (q.compare) break; } await page.keyboard.up('ArrowRight');
+      await stepN(page, 2);
+      const dp = await page.evaluate(() => {
+        const el = document.getElementById('swap'), r = el.getBoundingClientRect(), st = document.getElementById('stage').getBoundingClientRect();
+        const hd = window.SB.render.drawn.hero, cv = document.getElementById('view'), vr = cv.getBoundingClientRect(), k = vr.height / cv.height, ht = vr.top + hd.y * k, hb = ht + hd.h * k;
+        const circ = ['#btnA .glyph', '#btnB .glyph'].map(sel => { const g = document.querySelector(sel).getBoundingClientRect(); return g.top >= r.bottom; });
+        const pz = document.getElementById('pause').getBoundingClientRect(), hit = document.elementFromPoint(pz.left + pz.width / 2, pz.top + pz.height / 2);
+        return { cls: el.className, top: Math.round(r.top - st.top), clear: ht >= r.bottom || hb <= r.top, circ, onPause: !!hit && document.getElementById('pause').contains(hit) };
+      });
+      R.say(!!q && q.compare === 1 && / deep/.test(' ' + dp.cls) && dp.clear && dp.circ.every(Boolean) && dp.onPause && dp.top >= 16,
+        '320: the worst angle, the bug at the room\'s top beside the chest: the card hangs deep (' + dp.cls + ', its top ' + dp.top + ' px under the room\'s top), the bug ' + (dp.clear ? 'in sight' : 'UNDER IT') + ', A\'s and B\'s circles bare (' + dp.circ.join(', ') + '), Pause on top (' + dp.onPause + ')');
+      await tap(page, '#swapkeep'); await stepN(page, 2);
+    }
     R.say(errors.length === 0, w + ': no page errors' + (errors.length ? ' (' + errors.slice(0, 2).join(' | ') + ')' : ''));
     await page.close();
     void sleep;

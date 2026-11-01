@@ -1278,6 +1278,8 @@ const MUTANTS = [
     gates: [{ gate: 'compare', expect: '412: the chest by a real walk opens the swap card' }] },
   { name: 'SWAP_OVER_PAUSE', task: 'W2', file: 'page', find: "#swap.tall, #swap.deep { top: 16px;", repl: "#swap.tall, #swap.deep { top: 0;",
     gates: [{ gate: 'compare', expect: '320: the card sits' }] },
+  { name: 'SWAP_NO_DEEP', task: 'W2', file: 'page', find: "var tries = ['', 'high', 'low', 'tall', 'deep'], r;", repl: "var tries = ['', 'high', 'low', 'tall'], r;",
+    gates: [{ gate: 'compare', expect: "320: the worst angle, the bug at the room's top beside the chest: the card hangs deep" }] },
   { name: 'TRAITS_MISSING', task: 'W2', file: 'page', find: "J7: [3, 0, 1, 1, 0], J8: [0, 0, 0, 0, 1],", repl: "J7: [3, 0, 1, 1, 0],",
     gates: [{ gate: 'lint', expect: 'the built J8 has no ui.TRAITS row of five numbers (TRAITS_MISSING)' }] },
   { name: 'TWIN_DARTS_ONE', task: 'W2', file: 'page', find: "    for (var side = -1; side <= 1; side += 2) {\n      var k = spawn(s, DART);", repl: "    for (var side = 1; side <= 1; side += 2) {\n      var k = spawn(s, DART);",
