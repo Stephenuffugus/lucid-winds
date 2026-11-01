@@ -39,6 +39,8 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'ui/pause_glyph.png': ('pause_glyph', None), 'fx/fx_skyhook.png': ('fx_skyhook', None), 'world/dust_mote.png': ('dust_mote', None),
     'world/frost_mote.png': ('frost_mote', None), 'world/bubble.png': ('bubble', None), 'world/spore.png': ('spore', None),
     'world/ember_mote.png': ('ember_mote', None), 'ui/icon_biomes.png': ('icon_biomes', None),
+    # W2's keys (weapons step 2, Q163): round 1's bursts, impacts and held looks, their step 2 clips
+    'fx/fx_bursts.png': ('fx_bursts', None), 'fx/fx_impacts.png': ('fx_impacts', None), 'fx/fx_frozen_stunned.png': ('fx_frozen_stunned', None),
 }
 
 
