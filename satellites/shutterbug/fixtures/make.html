@@ -129,12 +129,13 @@
     }, function (e) { say(e.message); nextPhoto(); });
   }
 
-  /* the record from the crop: downscale to the grid, nearest palette colour per cell, the fixture v1 form */
+  /* the record from the crop: downscale to the grid, nearest palette colour per cell, the fixture v1 form (a fixture is
+     a grid whose biome the build derives, QUESTIONS Q220: it never carries the capture's v2 biome byte) */
   function recordOf(w, h) {
     var SB = window.SB, rgb = SB.capture.downscale(cur, crop, w, h), pal = new Uint8Array(w * h);
     if (w === SB.GRID.W && h === SB.GRID.H) lastRGB = rgb;
     for (var i = 0; i < w * h; i++) pal[i] = SB.palette.nearest(rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2]);
-    return { v: SB.record.V, w: w, h: h, mode: 0, focal: null, rows: SB.record.palToRows(pal, w, h), rows2: null };
+    return { v: 1, w: w, h: h, mode: 0, focal: null, rows: SB.record.palToRows(pal, w, h), rows2: null };
   }
   function frame() {
     requestAnimationFrame(frame);
