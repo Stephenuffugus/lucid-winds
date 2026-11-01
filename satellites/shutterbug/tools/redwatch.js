@@ -1230,6 +1230,14 @@ const MUTANTS = [
     gates: [{ gate: 'capture', expect: 'autocrop: 26 rows of Walnut refuse at the default box and say nothing at rest' }] },
   { name: 'SEEK_MESSAGE_WITH_BOX', task: 'AUTOCROP', file: 'page', find: '    CR.marked = drawOverlay(lv, true, null);\n    seekMarker(S, performance.now());', repl: '    CR.marked = drawOverlay(lv, true, null); refused(S.no);\n    seekMarker(S, performance.now());',
     gates: [{ gate: 'capture', expect: 'autocrop: no message while the chosen box shows' }] },
+  { name: 'SEEK_REPEATS', task: 'AUTOCROP', file: 'page', find: "if (!seen[k]) { seen[k] = 1; out.push(b); }", repl: 'out.push(b);',
+    gates: [{ gate: 'harness', only: 'H-seek-1', expect: 'the default box, a floor band from row 30: no box repeats' }] },
+  { name: 'SEEK_KEEPS_OWN', task: 'AUTOCROP', file: 'page', find: "    seen[c.x + ',' + c.y + ',' + c.w] = 1;\n", repl: '',
+    gates: [{ gate: 'harness', only: 'H-seek-1', expect: "a 400 wide box, no cause: the player's own box is not in the list" }] },
+  { name: 'SEEK_FLOOR_DOWN', task: 'AUTOCROP', file: 'page', find: "var vdir = cause === 'ceiling' ? 1 : -1;", repl: 'var vdir = 1;',
+    gates: [{ gate: 'harness', only: 'H-seek-1', expect: 'a 300 wide box, a floor band from row 30: the box ends 4 rows below the band\'s top' }] },
+  { name: 'SEEK_FLOOR_UNLIFTED', task: 'AUTOCROP', file: 'page', find: "if (band && cause === 'floor' && band.floor > 0) bot = ", repl: "if (false) bot = ",
+    gates: [{ gate: 'harness', only: 'H-seek-1', expect: 'model scene 3: the search builds a room from the 15th box it tries' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

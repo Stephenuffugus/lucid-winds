@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 6033;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov) */
+const ASSERT_FLOOR = 6057;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6057 at AUTOCROP, Q181, 1 Nov) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -2769,6 +2769,39 @@ group('H-lvl-7', 'the levels boundaries: a 24 row climb builds and 23 refuses; a
     const a = SB.pipeline.build(rec, { stage: 'A' });
     t.eq(a.spawn % 24 + ',' + rowOf(a, a.spawn), want, 'the sample room on 9 rows of Walnut, a gap of ' + gap + ' in its top row: the spawn is at (' + want + ')');
   }
+});
+
+/* ================================================================ the auto crop's search order (AUTOCROP, Q181) */
+group('H-seek-1', 'the auto crop\'s boxes (shell-capture\'s seekBoxes, read from the page as tools/room-model.js reads it): the player\'s box never in the list, none repeats, every box clamped 1:2 in the photo, the same size first then smaller down to the smallest, a floor refusal\'s boxes lifted and shifted up, a ceiling refusal\'s lowered and shifted down, the same list twice; model scene 3 (beige carpet, refused at the default box for its floor) develops after 15 builds', t => {
+  const RM = require('./tools/room-model.js'), CAP = RM.captureOf(PAGE), K = CAP.SEEK.KEEP, BW = 1024, BH = 1360, MW = 192;
+  const key = b => b.x + ',' + b.y + ',' + b.w;
+  const cases = [
+    { name: 'the default box, a floor band from row 30', c: CAP.fit(BW, BH), cause: 'floor', band: { floor: 30, ceiling: -1 } },
+    { name: 'a 300 wide box, a floor band from row 30', c: { x: 300, y: 500, w: 300, h: 600 }, cause: 'floor', band: { floor: 30, ceiling: -1 } },
+    { name: 'a 300 wide box, a ceiling band to row 10', c: { x: 300, y: 300, w: 300, h: 600 }, cause: 'ceiling', band: { floor: -1, ceiling: 10 } },
+    { name: 'a 400 wide box, no cause', c: { x: 200, y: 300, w: 400, h: 800 }, cause: null, band: null }
+  ];
+  for (const k of cases) {
+    const L = CAP.seekBoxes(k.c, BW, BH, k.cause, k.band), keys = L.map(key);
+    t.ok(L.length > 0 && !keys.includes(key(k.c)), k.name + ': the player\'s own box is not in the list (' + L.length + ' boxes)');
+    t.eq(new Set(keys).size, keys.length, k.name + ': no box repeats');
+    t.ok(L.every(b => JSON.stringify(b) === JSON.stringify(CAP.clamp(b, BW, BH)) && b.h === 2 * b.w), k.name + ': every box is 1:2 and clamped into the photo');
+    t.ok(L[0].w === k.c.w && L[L.length - 1].w === MW && L.every((b, i) => i === 0 || b.w <= L[i - 1].w), k.name + ': the player\'s size first, then smaller, down to the smallest (' + L[0].w + ' to ' + L[L.length - 1].w + ')');
+    t.same(CAP.seekBoxes(k.c, BW, BH, k.cause, k.band), L, k.name + ': the same list twice');
+    const same = L.filter(b => b.w === k.c.w);
+    if (k.cause === 'floor' && k.c.w === 300) {
+      const bot = Math.round(k.c.y + (k.band.floor + K) / 48 * k.c.h);
+      t.ok(same.some(b => b.y + b.h === bot && b.x === k.c.x) && same.every(b => b.y + b.h <= bot), k.name + ': the box ends ' + K + ' rows below the band\'s top (y ' + bot + ') and every shift goes up from there');
+    }
+    if (k.cause === 'ceiling') {
+      const top = Math.round(k.c.y + (k.band.ceiling - K) / 48 * k.c.h);
+      t.ok(same.some(b => b.y === top && b.x === k.c.x) && same.every(b => b.y >= top), k.name + ': the box starts ' + K + ' rows above the band\'s foot (y ' + top + ') and every shift goes down from there');
+    }
+  }
+  const img = RM.paint(3), crop = CAP.fit(img.w, img.h);
+  const lv = SB.pipeline.build(RM.recordOf(SB, img, crop), { firstRoom: true }), s = RM.seek(SB, CAP, img, crop, lv);
+  t.ok(lv.needsCrop && lv.cause === 'floor', 'model scene 3 is refused at the default box for its floor (cause ' + lv.cause + ')');
+  t.same({ builds: s.seekBuilds, box: s.seekBox }, { builds: 15, box: { x: 281, y: 0, w: 463, h: 926 } }, 'model scene 3: the search builds a room from the 15th box it tries');
 });
 
 group('H-rep-1b', 'the exit rule at its boundaries (the third review): the light inside EXIT_LIGHT_SLACK and just past it; never below the top EXIT_ROWS', t => {
