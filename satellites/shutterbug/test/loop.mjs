@@ -169,8 +169,11 @@ try {
   await tap(page, '#cleartitle');
   await clean('the clear card\'s Title after a photo');
 
-  /* a recent room, the death card, Again, the death card's Title */
-  await tap(page, '#recentlist button');
+  /* a recent room, the death card, Again, the death card's Title. The recent room is the sample room's entry: the
+     painted photo's room was the sample room until the capture normalisation (NORMALISE, Q182) read the painting
+     brighter (its Ash wall as Paper, a Frost room with one enemy that never reaches a hero left alone) */
+  const sampleAt = await page.evaluate(() => window.SB.save.doc.recent.findIndex(j => j.rows.join() === window.SB.SAMPLE_ROOM.join()));
+  await tap(page, '#recentlist button:nth-child(' + (sampleAt + 1) + ')');
   const k1 = await kill();
   l = await look();
   R.say(l.screen === 'dead' && l.on.includes('death') && l.fab === 'none', 'a recent room played and left alone ends at the death card in ' + k1 + ' steps; the fab hides under it');
