@@ -5162,7 +5162,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function develop() {
     if (!CR.src || CR.seek) return;
     if (!CR.full || !CR.last) rebuild(true);
-    if (CR.last.needsCrop) { seekStart(CR.last); return; }
+    if (CR.last.needsCrop) {
+      /* the same box of the same photo already searched to nothing: its message again, not the same search again */
+      var L = CR.lastSeek;
+      if (L && L.phase === 'none' && L.pick === CR.token && JSON.stringify(L.from) === JSON.stringify(CR.crop)) { refused(CR.last); return; }
+      seekStart(CR.last); return;
+    }
     ui.startRoom(CR.lastRec, ui.COPY.photoRoom, { level: CR.last, photo: { src: CR.src, crop: CR.crop }, ms: CR.ms });
   }
 
@@ -5235,7 +5240,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function seekStart(no) {
     var c = CR.crop, W = SB.GRID.W, H = SB.GRID.H, now = performance.now();
     var S = CR.seek = { tok: ++CR.seekRuns, no: no, from: c, boxes: SEEK_OFF ? [] : SB.capture.seekBoxes(c, CR.bw, CR.bh, no.cause, no.band), i: 0, builds: 0,
-      t0: now, slices: [], est: 0, workMax: 0, busy: false, pend: null, phase: 'seek', chosen: null, frame: -1, frames: 0, firstRoom: !ui.firstRoomDone,
+      t0: now, pick: CR.token, slices: [], est: 0, workMax: 0, busy: false, pend: null, phase: 'seek', chosen: null, frame: -1, frames: 0, firstRoom: !ui.firstRoomDone,
       fp: CR.focal >= 0 ? { x: c.x + ((CR.focal % W) + 0.5) / W * c.w, y: c.y + (Math.floor(CR.focal / W) + 0.5) / H * c.h } : null };
     S.mode = seekWorker() ? 'worker' : 'main'; S.ready = S.mode === 'main';
     /* the worker's copy of the photo; a copy that cannot be made leaves the tries on this thread */
