@@ -146,6 +146,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
    images are the sprite's own pixels, cut from the atlas at boot (R.heartURL) */
 #hearts i { width: 18px; height: 16px; display: block; background: var(--heart-full) 0 0 / 18px 16px no-repeat; image-rendering: pixelated; }
 #hearts i.lost { background-image: var(--heart-empty); }
+#hearts b { align-self: center; font-size: 0.95rem; }   /* the count form (the review of HOUSE-A: 8 hearts at 320 wide) */
 #stage { flex: 0 0 auto; display: flex; justify-content: center; position: relative; touch-action: none; }
 #view { display: block; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; background: var(--ink); }
 #strip { flex: 1 1 auto; min-height: 168px; position: relative; padding-bottom: var(--sab); touch-action: none; }
@@ -5163,17 +5164,20 @@ body.sb-modal .lwfb-fab { display: none !important; }
 
   /* the hearts in the top strip: max of them, the last max less n emptied (lost) */
   function hearts(n, max) {
-    var el = document.getElementById('hearts'), s = '', key = n + '/' + max;
-    for (var i = 0; i < max; i++) s += i < n ? '<i></i>' : '<i class="lost"></i>';
+    var el = document.getElementById('hearts'), s = '', key = n + '/' + max + (ui.heartsCount ? 'c' : '');
+    if (ui.heartsCount) s = '<i' + (n > 0 ? '' : ' class="lost"') + '></i><b>' + n + '/' + max + '</b>';   /* the count form: one heart and n/max */
+    else for (var i = 0; i < max; i++) s += i < n ? '<i></i>' : '<i class="lost"></i>';
     if (el.getAttribute('data-n') !== key) { el.innerHTML = s; el.setAttribute('data-n', key); el.setAttribute('aria-label', ui.COPY.heartsOf.replace('{n}', n).replace('{max}', max)); fitName(); }
   }
   /* the room name in the strip, the longest of its forms that fits beside the slots and the hearts (the review of
      HOUSE-A: 8 carried hearts and two weapons cut Room 3 of 5 to Room... at 320 wide): Room 3 of 5, Room 3/5, 3/5;
-     The last room, Last room, 5/5. A photo's own name keeps its ellipsis. Measured only when the name or the hearts
-     change and on a resize, never in a step */
+     The last room, Last room, 5/5. When even the shortest does not fit (8 hearts and two weapons at 320 wide leave the
+     name 18 px), the hearts take their count form, one heart and 6/8, for the rest of the room. A photo's own name
+     keeps its ellipsis. Measured only when the name or the hearts change and on a resize, never in a step */
   function fitName() {
     var el = document.getElementById('roomname'), forms = G.nameForms && G.nameForms.length ? G.nameForms : [G.name || ''];
     for (var k = 0; k < forms.length; k++) { el.textContent = forms[k]; if (el.clientWidth === 0 || el.scrollWidth <= el.clientWidth) return; }   /* hidden, the full form */
+    if (G.nameForms && !ui.heartsCount && G.state) { ui.heartsCount = true; hearts(G.state.hero.hearts, G.state.hero.heartsMax); }   /* hearts() measures again */
   }
   ui.fitName = fitName;
   function nameForms(r) {
@@ -5413,6 +5417,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     SB.render.buildStatic(lv);
     SB.input.resetRecording();
     document.getElementById('roomname').textContent = name;
+    ui.heartsCount = false;   /* each room starts with every heart drawn; fitName may fold them to the count */
     hearts(G.state.hero.hearts, G.state.hero.heartsMax);
     document.getElementById('dp').classList.remove('lost');   /* a house death's struck count goes with its card */
     document.getElementById('pausetitle').textContent = G.mode === 'house' ? ui.COPY.leaveHouse : ui.COPY.toTitle;   /* in a house Pause's Title leaves it, saved (the review of HOUSE-A) */
@@ -5918,7 +5923,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     on('doortitle', function () { ui.toTitle(); });
     on('deathretry', function () { ui.houseRetry(); });
     on('deathnew', function () { ui.hideDeath(); ui.houseStart(); });
-    window.addEventListener('resize', function () { if (G.nameForms) fitName(); });
+    window.addEventListener('resize', function () { if (G.nameForms && G.state) { ui.heartsCount = false; hearts(G.state.hero.hearts, G.state.hero.heartsMax); fitName(); } });
     /* the crop screen opened from a doorway: its Title is Back, to that doorway (the review of HOUSE-A); a capture
        listener, so the crop's own Title handler stays as it is outside a house */
     document.getElementById('croptitle').addEventListener('click', function (e) {

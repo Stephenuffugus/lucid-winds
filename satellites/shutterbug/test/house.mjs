@@ -300,10 +300,11 @@ try {
     for (const at of [2, 4]) {
       await saveRun(b.page, { at, hero: { hearts: 8, heartsMax: 8, scrolls: 18, slots: 'J1,D1' } });
       await scrollTap(b.page, '#housego'); await scrollTap(b.page, '#doorenter'); await playing(b.page);
-      const nm = await b.page.evaluate(() => { const el = document.getElementById('roomname'); return { text: el.textContent, sw: el.scrollWidth, cw: el.clientWidth, hearts: document.getElementById('hearts').children.length,
+      const nm = await b.page.evaluate(() => { const el = document.getElementById('roomname'); const hs = document.getElementById('hearts'); return { text: el.textContent, sw: el.scrollWidth, cw: el.clientWidth, hearts: hs.getAttribute('aria-label'), shown: hs.textContent || hs.children.length + ' sprites',
+        over: document.getElementById('top').scrollWidth > document.getElementById('top').clientWidth,
         slots: document.querySelectorAll('#slots .slot:not(.empty)').length }; });
       const want = at === 4 ? ['The last room', 'Last room', '5/5'] : ['Room 3 of 5', 'Room 3/5', '3/5'];
-      R.say(nm.hearts === 8 && nm.slots === 2 && want.includes(nm.text) && nm.sw <= nm.cw, vw + 'x' + vh + ': the strip\'s room name fits beside 8 hearts and two weapons in room ' + (at + 1) + ' ("' + nm.text + '", ' + nm.sw + ' of ' + nm.cw + ' px)');
+      R.say(nm.hearts === '8 of 8 hearts' && nm.slots === 2 && want.includes(nm.text) && nm.sw <= nm.cw && !nm.over, vw + 'x' + vh + ': the strip\'s room name fits beside 8 hearts and two weapons in room ' + (at + 1) + ' ("' + nm.text + '", ' + nm.sw + ' of ' + nm.cw + ' px, the hearts ' + nm.shown + ')');
       await b.page.evaluate(() => window.SB.ui.toTitle());
     }
     R.say(b.errors.length === 0, vw + 'x' + vh + ': zero page errors' + (b.errors.length ? ' (' + b.errors.join(' ; ') + ')' : ''));
