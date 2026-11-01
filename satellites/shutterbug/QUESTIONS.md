@@ -1007,6 +1007,26 @@ Still to put to him: edge ledges with a stepping stone repair, gated on record v
 - **Plan (the lead):** ART3 goes on sb-weapons-2 right after ART2, before weapons step 2, so the lane's review covers it.
   - ART3 cuts and checks both rounds whole, and splices and draws what has a system now: round 2's icons, elites, speck, crusher shaft, stick art and pause glyph, fx_skyhook for step 2, and round 3's biome air and biome badges.
   - Everything else is cut, checked and parked for its system: the crop hatches and crop_seek (the levels lane), the house run's pips, icon, card, unlock and skins (house slice 1), the boss effects (slice 1's clay boss), fx_stat_up and hud_heart_new (stats, weapons step 5) and the charm effects (weapons step 4).
+## Q99. Astra's round 4 is in hand: what it fixes, where it goes (ART4 on sb-weapons-2), and the vault (the lead, recorded 1 Nov, about 17:40 UTC)
+
+Stephen, 1 Nov 17:30 UTC: "Astra came right back with your shutterbug request". It answers the round 4 brief, docs/astra/ASTRA-SHUTTERBUG-ROUND4-NOV01.txt (in Drive Astra/Shutterbug, id 17IBRU5WT_Liu-W2IFACmTkHsU88lirsZ). The brief was built from Q162 and Q163, the shots of ART3 and W2.
+
+- **The zip:** shutterbug-assets-round4.zip, sha256 0f90f8f02869bfa62626df010cfafddd2ee04dfb404531314e90516467259834. It has 46 files, 106,996 bytes, and 19 strips with 76 frames. Her VALIDATION is PASS on four lines: palette, alpha and source grids; the weapon law and reach edges; the controls, air and fixes; prior packs and pixel identical icons. Copies are at /home/codespace/sb-drafts/astra/round4/ (unpacked in x/, with her NOTES.md and four review sheets) and at assets/shutterbug-assets-round4.zip (git ignored).
+- **The cutter's check** (sb-weapons-2's tools/astra_cut.py, the ART3 rules): CHECK OK, 19 sprites, 76 frames. The cut is /home/codespace/sb-drafts/astra/round4/cut-round4.json. Two warnings, both expected:
+  - The eight new weapon keys are drawn by nothing yet.
+  - A whole splice would leave 53 names against the cap of 46.
+- **What it holds:**
+  - Eight weapon effects drawn the size of what they hit, in the weapon law's six colours: dart (8x4, one level dart), ring (16x6, Halo, no longer Amber), ember (8x8, one spark), flash_ring (64x64, frames b and c on the 32 px stun reach), snap_frame (8x8 corner, edge_h and edge_v, assembled into the 108x112 freeze square at her coordinates), kick_spray (16x80, five cells of the wall column), fire_cell (16x16, Ember Stomp and Flashpan) and frost_burst (80x80, Icicle's freeze square).
+  - The controls: a quiet Slate pad with openings at both sides and an Ash active disc; the 18x18 knob and its 11 px travel kept; mirrored Slate hint chevrons with columns 12 to 59 clear; Slate Pause bars, with pressed shown as Paper bars on an Ink tile.
+  - The air: Attic dust with Ink cores, a six arm frost crystal, a hollow neutral bubble with a Glare glint, and a Brick ember mote with an Ink keyline.
+  - Small fixes: the Halo J6 glyph is now neutral with Ink edges (the other 26 icons pixel identical); the crusher has a broad solid Slate shaft and two row teeth with Ink lower edges, the tips still at y 4, 9 and 15; the moth elite's body is Soot; the speck has a 2x2 glint.
+- **Looked at (her four review sheets):** they read as asked. To check in the game, since sheets cannot show it:
+  - The ember mote is Brick, danger's colour. Does it read as a hazard?
+  - Three crusher columns side by side still show their gaps.
+  - The Halo ring reads like a bar seen edge on.
+- **Where it goes:** ART4 on sb-weapons-2, inserted into the weapons lane (`wf_43048222-ed7`) after W2 and before W2's review, so the review sees her new art. Every key it replaces lives there (ART3), and the eight effects bind to step 2's and step 3's weapons. fire_cell and frost_burst are drawn in W3.
+- **The vault:** NOT done. The private vault Stephenuffugus/lucid-winds-vault cannot be seen from this box: the codespace's token resolves no such repository, and there is no gh login. lucid-winds itself is public, so its releases are no place for originals. Stephen's `gh auth login` unblocks it, for this zip and for Dewball's Meshy models.
+
 ## Q180. The levels: the floor becomes the ledge, the exit sits under a ceiling band, a message per cause (the builder, 31 Oct, LEVELS)
 
 Stephen's note 4, from his Pixel playtest of sb-m1-1: "its also haveing trouble actaully making the levels. it make me shrink the box to as small as possible". His ruling (2026-10-31, 03:13 UTC), picked from options: "Floor becomes the ledge (Recommended)". The option was lens 3's option 1 of the playtest investigation (`/home/codespace/sb-drafts/playtest-notes-investigation.json`, index 3), built with every recommended default of its stephensCalls.

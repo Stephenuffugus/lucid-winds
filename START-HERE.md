@@ -1,6 +1,13 @@
 # START HERE
 
-## 📷 1 Nov 17:45 UTC (Opus) STEPHEN'S NEW NOTE; A DESIGN SPRINT AND THE DEWBALL FORGE JOIN THE THREE LANES
+## 📷 1 Nov 17:45 UTC (Opus) ASTRA ROUND 4 ARRIVED (Q99), CHECKED, AND INSERTED AS ART4 INTO THE WEAPONS LANE
+The zip (sha256 0f90f8f0..., 46 files, 19 strips, 76 frames, her VALIDATION PASS) passes the cutter: CHECK OK. It is at /home/codespace/sb-drafts/astra/round4/ (x/ unpacked, cut-round4.json) and at assets/ (git ignored).
+THE PLAN IN FLIGHT: the weapons lane script now runs ART4 after W2 and before W2's review. The lead stops `wf_43048222-ed7` when build:w2 completes and resumes it from the edited script, so W2 replays from cache.
+  - The edited script: the session copy of shutterbug-weapons-w2-w3-wf_43048222-ed7.js. The copy before the edit is /home/codespace/sb-drafts/weapons-w2-w3.before-art4.js.
+  - The Dewball lane's vault step is replaced the same way (`wf_33b115cc-23b`, at the setup boundary): two copies on two disks plus VAULT-PENDING.txt, because the vault needs Stephen's gh login.
+IF THE SESSION DIED BEFORE THE RESTARTS: check PROGRESS on sb-weapons-2 for a W2 entry. If it is there, run a copy of the edited script with the W2 step replaced by its commit. If it is not there, run docs/lanes/weapons-w2-w3-lane-nov01-pm.js as it is, then ART4 as its own lane (the ART4 constant in the session script).
+
+## 📷 1 Nov 17:32 UTC (Opus) STEPHEN'S NEW NOTE; A DESIGN SPRINT AND THE DEWBALL FORGE JOIN THE THREE LANES
 HIS NOTE (17:25 UTC): "It's literally every picture I really have to move the cropper around and then it mostly just makes the most basic level over light space where it adds a bunch of floating platforms, usually straight up, that's pretty boring. We can make it way better and we want an objective and reason to keep making and playing levels." He offered to take room photos (they would land in ~/.claude/uploads/d3e56aa5-c836-411c-876d-c8fc14d16b86/). He is pasting the Astra round 4 brief.
 NEW RUNNING:
   - The design sprint, `wf_2046ba70-00f` (satellites/shutterbug/docs/lanes/design-levels-goals-nov01.js). It is read only, with output in /home/codespace/sb-drafts/design-nov01/. Five angles, each prototyped and measured with boards: climb the photo, frame the interesting part, blank walls become level design, a reason to keep playing, and the look. Then three judges, and a plan in PROPOSAL.md with his questions and build briefs. Photo 1b and the next lanes are built from it.
