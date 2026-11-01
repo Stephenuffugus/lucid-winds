@@ -321,11 +321,11 @@ try {
       at(60);
       const px = a0.map(q => { const d = cv.getImageData(q.x, q.y, 16, 16).data, o = []; for (let i = 0; i < d.length; i += 4) o.push('#' + [d[i], d[i + 1], d[i + 2]].map(v => ('0' + v.toString(16)).slice(-2)).join('')); return o; });
       const hash0 = window.SB_DEV.hash(); window.SB.settings.reducedMotion = true; const red = at(60); window.SB.settings.reducedMotion = null; const hash1 = window.SB_DEV.hash();
-      return { a0, a14, a15, again, loop1, px, hero: { x: hd.x, y: hd.y, w: hd.w, h: hd.h }, red: red.length, same: hash0 === hash1, screen: window.SB_DEV.screen() };
+      return { a0, a14, a15, again, loop1, px, hero: { x: hd.x, y: hd.y, w: hd.w, h: hd.h }, red: red.length, same: hash0 === hash1, screen: window.SB_DEV.screen(), cw: cv.canvas.width, ch: cv.canvas.height };
     }, fixture, b);
     const keysOk = m.a0.length === 5 && m.a0.every(q => q.key === MOTE[b] + '.a') && m.a14.every(q => q.key === MOTE[b] + '.a') && m.a15.every(q => q.key === MOTE[b] + '.b');
     let n = 0; const bad = [];
-    m.a0.forEach((q, i) => { const e = eqRows(frameOf(q.key), m.px[i], 16, (x, y) => q.x + x >= m.hero.x - 1 && q.x + x <= m.hero.x + m.hero.w && q.y + y >= m.hero.y - 1 && q.y + y <= m.hero.y + m.hero.h); n += e.n; bad.push(...e.bad.map(t => i + ' ' + t)); });
+    m.a0.forEach((q, i) => { const e = eqRows(frameOf(q.key), m.px[i], 16, (x, y) => (q.x + x >= m.hero.x - 1 && q.x + x <= m.hero.x + m.hero.w && q.y + y >= m.hero.y - 1 && q.y + y <= m.hero.y + m.hero.h) || q.x + x < 0 || q.y + y < 0 || q.x + x >= m.cw || q.y + y >= m.ch);   /* off the canvas: a tile may hang past its edge */ n += e.n; bad.push(...e.bad.map(t => i + ' ' + t)); });
     const rep = JSON.stringify(m.a0) === JSON.stringify(m.again);
     const drift = m.a0.every((q, i) => { const d = m.loop1[i].y - q.y; return m.loop1[i].x === q.x && (d === DRIFT[b] || Math.abs(d - DRIFT[b]) > 100); });
     R.say(keysOk && n > 0 && bad.length === 0, 'biome ' + b + ': five ' + MOTE[b] + ' tiles drawn over the room at 4 fps (frame a at steps 60 and 74, b at 75), ' + n + ' opaque pixels on the canvas' + (keysOk ? '' : ' (keys ' + m.a0.map(q => q.key).join(' ') + ' / ' + m.a15.map(q => q.key).join(' ') + ')') + (bad.length ? ' (' + bad.length + ' differ: ' + bad.slice(0, 3).join('; ') + ')' : ''));

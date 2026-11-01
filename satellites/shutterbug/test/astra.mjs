@@ -104,13 +104,19 @@ const CAP = Number((readFileSync(CUT, 'utf8').match(/^MAX_SPRITES = (\d+)/m) || 
 const capped = through('cap', ['--pad', String(CAP - keys.length)]);
 writeFileSync(join(TMP, 'cap.sprites.json'), JSON.stringify(capped.json || {}));
 const capS = py([CUT, 'splice', join(TMP, 'cap.sprites.json'), PAGE, '--out', join(TMP, 'copy-cap.html')]);
-say(CAP === 43 && keys.length < CAP && capped.code === 0 && capped.out.includes('a whole splice would leave ' + CAP + ' names') && capS.code === 1 && capS.out.includes(CAP + ' names after this splice; the page stays under ' + CAP) && !existsSync(join(TMP, 'copy-cap.html')),
-  'a cut that would leave ' + CAP + ' names (the page\'s ' + keys.length + ' and ' + (CAP - keys.length) + ' more) is checked, and its splice is refused at the cap of ' + CAP + ', ART3\'s and no higher, the page unwritten' + (capS.code === 1 ? '' : ' (splice exit ' + capS.code + ')'));
+say(keys.length < CAP && capped.code === 0 && capped.out.includes('a whole splice would leave ' + CAP + ' names'),
+  'a cut that would leave ' + CAP + ' names (the page\'s ' + keys.length + ' and ' + (CAP - keys.length) + ' more) is checked: a whole delivery may be checked and parked' + (capped.code === 0 ? '' : ' (exit ' + capped.code + ')'));
+say(capS.code === 1 && capS.out.includes(CAP + ' names after this splice; the page stays under ' + CAP) && !existsSync(join(TMP, 'copy-cap.html')),
+  'its splice is refused at the cap, the page unwritten (splice exit ' + capS.code + ')');
+say(CAP === 43, 'the cap is 43, ART3\'s (the least that takes its 42 names) and no higher (' + CAP + ')');
 
 /* ART3: round 3's shapes: the game named in capitals, a 16 px and a 64 px effect, the beacon's lighting with its Sun */
 const r3 = through('round3', ['--round3']);
-say(r3.code === 0 && /cut     fx_boss_chip 16x16: chip_0/.test(r3.out) && /cut     fx_boss_down 64x64: down_0/.test(r3.out) && /cut     fx_beacon_light 16x16: light_0/.test(r3.out),
-  'a delivery naming its game SHUTTERBUG, with a 16 px chip, a 64 px fall and fx_beacon_light carrying the beacon\'s Sun, is checked and cut' + (r3.code === 0 ? '' : ' (' + r3.out.split('\n').filter(l => /REFUSE/.test(l)).slice(0, 3).join(' | ') + ')'));
+const r3why = r3.code === 0 ? '' : ' (' + r3.out.split('\n').filter(l => /REFUSE/.test(l)).slice(0, 3).join(' | ') + ')';
+say(!/game is/.test(r3.out) && /cut     fx_boss_chip/.test(r3.out), 'round 3\'s manifest naming its game SHUTTERBUG is the game\'s' + r3why);
+say(/cut     fx_boss_chip 16x16: chip_0/.test(r3.out) && /cut     fx_boss_down 64x64: down_0/.test(r3.out), 'round 3\'s 16 px chip and 64 px fall are cut as effects' + r3why);
+say(/cut     fx_beacon_light 16x16: light_0/.test(r3.out), 'round 3\'s fx_beacon_light carries the beacon\'s Sun and is cut' + r3why);
+say(r3.code === 0, 'a delivery of round 3\'s shapes checks OK' + r3why);
 const r3sun = through('round3-sun', ['--round3', '--break', 'sunchip']), r3side = through('round3-side', ['--round3', '--break', 'fx24']);
 say(r3sun.code === 1 && r3sun.out.includes('Sun in fx_boss_chip'), 'Sun in another effect of round 3 (fx_boss_chip) is still refused: the beacon\'s lighting alone carries it');
 say(r3side.code === 1 && r3side.out.includes('fx_boss_chip is 24x24: an effect is square, 16 or 32 or 48 or 64 a side'), 'an effect 24 a side is still refused (16, 32, 48 or 64)');
