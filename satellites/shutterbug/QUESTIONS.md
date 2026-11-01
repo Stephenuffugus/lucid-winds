@@ -1083,3 +1083,33 @@ DESIGN redlines (DESIGN.md is a verbatim copy and is not edited; these are the l
 - DESIGN 5.3: *after the first room is cleared the title shows Start a house first, Continue the house when a run is saved, Houses cleared n, then Free play.*
 Recommendation: (a) on each of 1 to 4.
 Plan assumes: (a).
+
+## Q201. The review of house lane A: what changed, and four calls (the builder, 1 Nov, HOUSE-AR)
+
+The review of HOUSE-A (e0eaab541) found fourteen things. Built from it (each with its assertion and a red row):
+- **Ramp icicles keep their whole fall off the ascent.** envelope() gives an icicle six rows, but the sim lets it fall to the first solid or one way cell; 14 ramp icicles on the corpus fell onto a cell the ascent stands on (the review counted 15 of 121). A ramp icicle's envelope is now its whole fall, and that fall keeps a column clear of every stand (the stand's own column and the one each side). The photo's own icicles keep envelope()'s six rows (0 of 31 reach the ascent; free play does not move). Under Frost the ramp lays more moths where no icicle column is clear (80 to 114 over the corpus).
+- **Room 5 takes room 4's row until lane B's boss** (Q200 call 2, option b): floor 4, an elite promoted, room 4's caps, 1.5x fodder HP, 1.25x speed. On every built room room 5 holds at least room 4's enemies (it was empty on 11 of 24). The doorway after room 4 says The last room is next.
+- **Room 1 banks at free play's rate** (x0.5, floored), rooms 2 to 5 at x1. Room 1 is free play's room byte for byte, and Stephen's "Room 1 stays as today" covers its pay. At x1, starting a house, clearing room 1 and leaving paid every free play room double, and Retry House paid room 1 again. The doorway reads Banked 3 of 6 dead pixels, as free play's card does.
+- **A lost house survives a reload.** The title no longer drops a lost run: while one is saved the title leads with Retry House. Title on the death card, Android back and a killed tab all keep it. Start a house or New house replaces it.
+- **With a house saved, its button leads the title in Sun** (Continue the house, room 3 of 5, or Retry House), and Start a house follows in Paper.
+- **The doorway**: Room 2 of 5 cleared; the bug's hearts in the strip's sprites, with the heart that came back ringed in Sun (a placeholder for Astra).
+- **The strip's name** takes the longest form that fits beside the slots and the hearts: Room 3 of 5, Room 3/5, 3/5; The last room, Last room, 5/5.
+- **The house death card** stacks its three buttons at every height, and the strip's count the death lost is struck through.
+- **Pause's Title** reads Leave the house in a house. The crop screen opened from a doorway has **Back** (to that doorway) where it had Title.
+- **Retry House keeps what the doorways banked** (Q200 call 5 is superseded), so the House cleared card counts the house's whole bank, the same as the wallet's gain.
+- tools/redwatch.js: its header and a stderr line say that a named row runs every gate it lists, browser gates included (so hold the lock). The behaviour is unchanged, because the other lanes rely on it.
+
+Refuted or left: the room 5 photo elite (finding 3) stays while room 5 is room 4's row. With the boss, lane B's row is the table's own (`{ floor: 0, cap: 3, eliteCap: 0 }`, the boss as room 5's elite). That is written in the TUNING comment.
+
+Stephen's calls:
+1. **Room 1's pay.** Options: (a) as built, room 1 at free play's x0.5 and rooms 2 to 5 at x1; (b) x0.5 at every doorway, with the other half paid when the house is cleared; (c) nothing banked until the house ends, with half of what was carried paid on a death; (d) x1 everywhere, DESIGN 8 to the letter, with the farm accepted.
+2. **Room 5 before the boss.** Options: (a) as built, room 4's row; (b) the table's room 5 without its boss (the photo's fodder only, often an empty room).
+3. **Rooms that look alike.** The ramp only lifts a floor, so a photo already at the floor gets nothing visible in room 2 (rooms 1 and 2 of the sample room are the same room), and room 4's HP and the speed are never shown. Nothing changed here. Options: (a) leave the table as ruled; (b) at least one ramp enemy over the photo from room 2 on (each room then differs from the last on every photo, and a harness line can prove it); (c) the doorway names what changes (Room 3: an elite and faster enemies; Room 4: enemies take more hits); (d) a tint on room 4's tougher fodder (Astra's art).
+4. **Retry House's capital H.** Kept, as DESIGN 8 and the proposal write it, beside New house in the same card. Options: (a) keep; (b) Retry house.
+
+DESIGN redlines (to add when DESIGN.md is next copied):
+- DESIGN 8, House run, DP: *room 1 at the free play rate (x0.5), rooms 2 to 5 at x1; the house clear counts every attempt's bank.*
+- DESIGN 8, Notes: *until the boss, room 5 takes room 4's row.*
+- DESIGN 5.3: *while a house is saved, its button (Continue the house, room n of 5, or Retry House after a death) leads the title.*
+Recommendation: (a) on each.
+Plan assumes: (a).

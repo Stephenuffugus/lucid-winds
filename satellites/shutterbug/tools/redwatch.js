@@ -2,7 +2,10 @@
 /* Red watch: every check watched failing, mechanically (BUILD-PLAN.md section 5.5).
  *
  *   node tools/redwatch.js                  every mutant that needs no browser, then the table
- *   node tools/redwatch.js NAME [NAME..]    only those
+ *   node tools/redwatch.js NAME [NAME..]    only those, with EVERY gate each lists, its browser gates included
+ *                                           (--browser is not needed and does not narrow it: a named row that lists a
+ *                                           browser gate launches Chrome, so run it under the box's browser lock; the
+ *                                           review of HOUSE-A launched the house gate outside it this way)
  *   node tools/redwatch.js --browser        also the browser mutants (each serves its copy through SB_PAGE and runs
  *                                           the one browser gate it names; one Chrome at a time)
  *   node tools/redwatch.js --browser-only   only the browser mutants
@@ -1230,7 +1233,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-house-1', expect: 'room 1 is free play byte for byte on every built room' }] },
   { name: 'RAMP_KIND_MOTH', task: 'HOUSE-A', file: 'page', find: '      var kind = base, cands = [], wide = [];\n', repl: '      var kind = MOTH, cands = [], wide = [];\n',
     gates: [{ gate: 'harness', only: 'H-house-1', expect: "every biome's own kind is laid as ramp fodder" }] },
-  { name: 'RAMP_ON_ASCENT', task: 'HOUSE-A', file: 'page', find: '      for (var q = 0; q < env.length; q++) if (stand[env[q]]) return false;\n', repl: '',
+  { name: 'RAMP_ON_ASCENT', task: 'HOUSE-A', file: 'page', find: '      for (var q = 0; q < env.length; q++) if (stand[env[q]] || (kind === ICICLE && beside[env[q]])) return false;\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-house-1', expect: "no ramp enemy's envelope covers a cell the ascent stands on" }] },
   { name: 'RAMP_NEAR_ASCENT', task: 'HOUSE-A', file: 'page', find: '    for (k = 0; k < stands.length; k++) { ring(stands[k], T.ROUTE_SAFE_ENEMY_DIST); stand[stands[k]] = 1; }\n', repl: '    for (k = 0; k < stands.length; k++) { stand[stands[k]] = 1; }\n',
     gates: [{ gate: 'harness', only: 'H-house-1', expect: 'every ramp enemy keeps DESIGN 7' }] },
@@ -1258,18 +1261,49 @@ const MUTANTS = [
     gates: [{ gate: 'house', expect: 'a recent room from the doorway plays as Room 1 of 5' }] },
   { name: 'DOOR_NEXT_WRONG', task: 'HOUSE-A', file: 'page', find: "C.doorTougher.replace('{n}', at + 1)", repl: "C.doorTougher.replace('{n}', at)",
     gates: [{ gate: 'house', expect: "room 1's clear shows the doorway" }] },
-  { name: 'DP_HALF_IN_HOUSE', task: 'HOUSE-A', file: 'page', find: "if (dp > 0) SB.Wallet.earn(dp, 'house');", repl: "if (dp > 0) SB.Wallet.earn(Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT), 'house');",
+  { name: 'DP_HALF_IN_HOUSE', task: 'HOUSE-A', file: 'page', find: 'n = HS.run.at === 0 ? Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT) : dp,', repl: 'n = Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT),',
     gates: [{ gate: 'house', expect: 'the doorway banks the room' }] },
   { name: 'CARRY_DROPPED', task: 'HOUSE-A', file: 'page', find: 'G.state = SB.sim.create(lv, { loadout: G.gear, carry: G.carry,', repl: 'G.state = SB.sim.create(lv, { loadout: G.gear, carry: null,',
     gates: [{ gate: 'house', expect: 'room 3 starts with the carried' }] },
   { name: 'DEATH_CARD_FREE', task: 'HOUSE-A', file: 'page', find: "    var house = G.mode === 'house' && !!HS.run, C = ui.COPY,", repl: "    var house = false, C = ui.COPY,",
     gates: [{ gate: 'house', expect: 'a death in the house' }] },
-  { name: 'CONTINUE_HIDDEN', task: 'HOUSE-A', file: 'page', find: "    document.getElementById('housego').hidden = !doc.run;\n", repl: "    document.getElementById('housego').hidden = true;\n",
+  { name: 'CONTINUE_HIDDEN', task: 'HOUSE-A', file: 'page', find: "    go.hidden = !run;\n", repl: "    go.hidden = true;\n",
     gates: [{ gate: 'house', expect: 'after a reload the title offers Continue the house' }] },
   { name: 'HOUSE_CLEAR_UNCOUNTED', task: 'HOUSE-A', file: 'page', find: '      if (!next) { doc.stats.houseClears++; HS.run = null;', repl: '      if (!next) { HS.run = null;',
     gates: [{ gate: 'house', expect: 'the house cleared: the run gone from the save' }] },
   { name: 'DOOR_BUTTON_40PX', task: 'HOUSE-A', file: 'page', find: '#doorcard button { min-height: 52px;', repl: '#doorcard button { min-height: 40px; height: 40px;',
     gates: [{ gate: 'house', expect: "every control on the house's card is 48 px or more" }] },
+  /* HOUSE-AR (the review of HOUSE-A, QUESTIONS Q201): the ramp icicle's whole fall, room 5 as room 4, room 1 at free
+     play's rate, the house's bank kept through Retry House, a lost run kept on the title, the title's lead, the strip's
+     name, the doorway's hearts and last line, the house death card, the struck count, Pause's and the crop's words */
+  { name: 'RAMP_ICICLE_SIX', task: 'HOUSE-AR', file: 'page', find: '      if (kind !== ICICLE) return envelope(level, kind, c);\n', repl: '      return envelope(level, kind, c);\n',
+    gates: [{ gate: 'harness', only: 'H-house-1', expect: 'no ramp icicle falls onto or beside a cell the ascent stands on' }] },
+  { name: 'ROOM5_EASY', task: 'HOUSE-AR', file: 'page', find: '      { floor: 4, cap: 5, eliteCap: 2, eliteMin: 1, fodderHpQ: 6, fast: 4 }],', repl: '      { floor: 0, cap: 3, eliteCap: 1, eliteMin: 0, fodderHpQ: 4, fast: 0 }],',
+    gates: [{ gate: 'harness', only: 'H-house-1', expect: "room 5 holds at least room 4's enemies" }] },
+  { name: 'RETRY_ZEROES_DP', task: 'HOUSE-AR', file: 'page', find: 'r.hero = runBug(r.entry); r.last = 0;', repl: 'r.hero = runBug(r.entry); r.dp = 0; r.last = 0;',
+    gates: [{ gate: 'harness', only: 'H-run-2', expect: 'runRetry: the same three rooms' }, { gate: 'house', expect: "the House cleared card counts the house's whole bank" }] },
+  { name: 'ROOM1_FULL_PAY', task: 'HOUSE-AR', file: 'page', find: 'n = HS.run.at === 0 ? Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT) : dp,', repl: 'n = dp,',
+    gates: [{ gate: 'house', expect: "room 1 banks at free play's rate" }] },
+  { name: 'TITLE_DROPS_LOST', task: 'HOUSE-AR', file: 'page', find: "    var doc = SB.save.doc; if (!doc) return;\n    var n = doc.stats.houseClears", repl: "    var doc = SB.save.doc; if (!doc) return;\n    if (doc.run && doc.run.lost) { doc.run = null; SB.save.commit(); }\n    var n = doc.stats.houseClears",
+    gates: [{ gate: 'house', expect: 'after a reload on the death card the title offers Retry House' }] },
+  { name: 'CONTINUE_PAPER', task: 'HOUSE-AR', file: 'page', find: '#housego:not([hidden]) ~ #housestart { background: var(--paper); }', repl: '#housego:not([hidden]) { background: var(--paper); }',
+    gates: [{ gate: 'house', expect: 'with a house saved its button leads the title in Sun' }] },
+  { name: 'STRIP_NAME_FULL', task: 'HOUSE-AR', file: 'page', find: "if (el.clientWidth === 0 || el.scrollWidth <= el.clientWidth) return; }", repl: "return; }",
+    gates: [{ gate: 'house', expect: "the strip's room name fits beside 8 hearts" }] },
+  { name: 'DOOR_HEARTS_OFF', task: 'HOUSE-AR', file: 'page', find: "    doorHearts($('doorhearts'), at > 0 && !cleared ? run.hero : null, HS.back);\n", repl: "    doorHearts($('doorhearts'), null, 0);\n",
+    gates: [{ gate: 'house', expect: "room 1's clear shows the doorway" }] },
+  { name: 'DOOR_BACK_UNMARKED', task: 'HOUSE-AR', file: 'page', find: "HS.back = next && next.hero.hearts > G.state.hero.hearts ? 1 : 0;", repl: "HS.back = 0;",
+    gates: [{ gate: 'house', expect: "the doorway shows the bug's hearts, the one back ringed" }] },
+  { name: 'DOOR_LAST_TOUGHER', task: 'HOUSE-AR', file: 'page', find: "(at + 1 === of ? C.doorLast : C.doorTougher.replace('{n}', at + 1))", repl: "C.doorTougher.replace('{n}', at + 1)",
+    gates: [{ gate: 'house', expect: "room 4's doorway" }] },
+  { name: 'DEATH_HOUSE_ROW', task: 'HOUSE-AR', file: 'page', find: '#death.house .duo { flex-direction: column; }', repl: '#death.house .duo { }',
+    gates: [{ gate: 'house', expect: '320x568: the house death card stacks its buttons' }] },
+  { name: 'DP_NOT_STRUCK', task: 'HOUSE-AR', file: 'page', find: " $('dp').classList.toggle('lost', house);", repl: '',
+    gates: [{ gate: 'house', expect: "the strip's count the death lost is struck through" }] },
+  { name: 'PAUSE_TITLE_IN_HOUSE', task: 'HOUSE-AR', file: 'page', find: "textContent = G.mode === 'house' ? ui.COPY.leaveHouse : ui.COPY.toTitle;", repl: "textContent = ui.COPY.toTitle;",
+    gates: [{ gate: 'house', expect: "in a house the pause card's Title reads" }] },
+  { name: 'CROP_BACK_TITLE', task: 'HOUSE-AR', file: 'page', find: "      if (!HS.on || !HS.run) return;\n      e.stopImmediatePropagation();", repl: "      return;\n      e.stopImmediatePropagation();",
+    gates: [{ gate: 'house', expect: 'Back on the crop screen returns to the doorway' }] },
 ];
 
 /* ---------------------------------------------------------------- run */
@@ -1279,6 +1313,8 @@ const names = args.filter(a => !a.startsWith('--'));
 const unknown = names.filter(n => !MUTANTS.some(m => m.name === n));
 if (unknown.length) { console.log('no mutant named ' + unknown.join(', ')); process.exit(2); }
 const isBrowserRow = g => BROWSER.has(g.gate);
+{ const br = MUTANTS.filter(m => names.includes(m.name) && m.gates.some(isBrowserRow)).map(m => m.name);
+  if (br.length) console.error('redwatch: ' + br.join(', ') + ' list a browser gate, which a named row runs (one Chrome at a time: hold the browser lock)'); }
 
 fs.mkdirSync(OUT, { recursive: true });
 /* a row's anchors, counted without running anything: 'ok', or ANCHOR LOST with the count */
