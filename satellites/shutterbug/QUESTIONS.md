@@ -1183,3 +1183,18 @@ DESIGN redlines (to add when DESIGN.md is next copied):
 Recommendation: (a) on each.
 
 Plan assumes: (a).
+
+## Q202. The house with Astra's ART3: what the merge changed, and one call (the builder, 1 Nov, HOUSE-ART3)
+
+Astra's ART2 and ART3 (07dd2d1e7, from sb-weapons-2) are merged into sb-house. Both sides are kept. Two house things changed because of it, and one house bug from HOUSE-AR was found in the shots and fixed:
+- **The strip is fuller.** ART3 puts the 24 px biome badge before the room name, and ART2 widened the slot boxes from 20 to 28 px. At 320 wide, eight hearts and two weapons left the name 0 px, and fitName read a 0 px name as hidden, so the hearts never folded and the strip spilled past the screen. fitName now treats only a name with no box as hidden. With eight hearts and two weapons the hearts fold to one heart and 8/8 at every width (they folded only at 320 and 360 before), and at 320 the name reads Room 3/5 and Last room.
+- **A fresh bug at 320 reads Room 1/5**, not Room 1 of 5: four hearts, two empty slots and the badge leave the name about 64 px. The gate now takes room 1 by either form and checks that it fits.
+- **The house pause card at 320x568** (found in this merge's shots, present since HOUSE-AR; that review's own shot shows it): in its one row Leave the house kept its words' width and crushed Share this room to about 20 px, under it. In a house the row now splits the rest between the two, each on two lines (84x58 each). Free play's row is unchanged.
+
+Stephen's call:
+1. **The strip at 320 wide.** Options: (a) as built: the badge stays, the name takes its short form (Room 3/5) and many hearts fold to a count; (b) drop the badge from the strip under 360 wide (it stays on the reveal), so the full Room 3 of 5 returns at 320 with a fresh bug; (c) shrink the slot boxes back to 24 px under 360 wide (Astra's glyph would then show at less than 1:1 on a dpr 1 screen).
+Recommendation: (a). The badge is the biome read at a glance, and the short forms were built for exactly this.
+
+DESIGN redlines: none new (the strip's forms are Q201's).
+
+Plan assumes: (a).
