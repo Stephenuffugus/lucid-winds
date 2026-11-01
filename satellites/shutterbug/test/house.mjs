@@ -427,14 +427,14 @@ try {
       'a second house clear unlocks the next look, the umber bug, worn at once ("' + pz.caption + '", ' + JSON.stringify(pz.cos) + ')');
     await b.page.reload(); await ready(b.page); await b.page.evaluate(() => window.SB_DEV.hold(true));
     await b.page.evaluate(() => window.SB_DEV.goto('sample')); await playing(b.page);
-    const w1 = await b.page.evaluate(() => { window.SB_DEV.step(4); return window.SB_DEV.guardian(); });
+    const w1 = await b.page.evaluate(() => { window.SB_DEV.step(60); return window.SB_DEV.guardian(); });
     R.say(w1.skin === 1 && /^hero_colours\.umber_/.test(w1.hero || ''), 'after a reload a room draws the bug in its umber skin (' + w1.hero + ')');
     await b.page.evaluate(() => window.SB.ui.toTitle());
     await scrollTap(b.page, '#settingsbtn');
     await scrollTap(b.page, '#lookhero button[data-look="hero.sun"]');
     await scrollTap(b.page, '#settitle');
     await b.page.evaluate(() => window.SB_DEV.goto('sample')); await playing(b.page);
-    const w2 = await b.page.evaluate(() => { window.SB_DEV.step(4); return window.SB_DEV.guardian(); });
+    const w2 = await b.page.evaluate(() => { window.SB_DEV.step(60); return window.SB_DEV.guardian(); });
     R.say(w2.skin === 0 && /^hero\./.test(w2.hero || ''), 'the Look row wears the approved bug again, in the room (' + w2.hero + ')');
     R.say(b.errors.length === 0, '412x915 (looks): zero page errors' + (b.errors.length ? ' (' + b.errors.join(' ; ') + ')' : ''));
     await b.page.close();

@@ -5109,7 +5109,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
       t.ok(bad.length === 0, name + '.' + f + ' decodes to ' + sp.w + 'x' + sp.h + ', every pixel clear or a palette index' + (bad.length ? ' (' + bad.join('; ') + ')' : ''));
       if (name === 'hero') t.ok(sp.w === K.HERO_W && sp.h === K.HERO_H && rows[sp.h - 1].includes(INK), 'hero.' + f + ' is the hitbox\'s size and its bottom row holds Ink (the feet row, section 7.3)');
       else if (name.startsWith('hero_')) t.ok(rows[sp.h - 1].includes(INK), name + '.' + f + ' is a hero pose (Sun allowed) and its bottom row holds Ink (the feet row)');
-      else if (name !== 'beacon') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\' and the beacon\'s)');
+      else if (name !== 'beacon' && name !== 'fx_beacon_light') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\', the beacon\'s and its lighting\'s)');
       /* section 7.3 (the M1 review: the placeholders broke it): Film is the repairs' alone (the film tab), so help is
          never furniture; the speck is Amber with a Glare glint; every danger has an Ink outline */
       if (name !== 'tab') t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour)');
@@ -5156,6 +5156,8 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   t.ok(POSES.every(n => S[n] && S[n].w === (PW[n] || [K.HERO_W])[0] && S[n].h === (PW[n] || [0, K.HERO_H])[1]), 'the poses keep the old transform\'s rects (hero_squash 14x14, hero_stretch 10x18) and the rest the hero\'s 12x16 (' + POSES.map(n => n + ' ' + (S[n] ? S[n].w + 'x' + S[n].h : 'absent')).join(', ') + ')');
   t.ok(DANGER.every(n => names.includes(n)), 'every enemy, elite and trap the rules name has a sprite (' + DANGER.join(', ') + ')');
   t.ok(!!S.speck && Object.values(S.speck.frames).some(s => s.includes(GLARE)), 'the speck\'s strip carries its Glare glint (section 7.3: loot is Amber with a Glare glint)');
+  /* HOUSE-B: the beacon's lighting ends on the lit beacon pixel for pixel (Astra's NOTES), so the hand over is seamless */
+  t.ok(!!S.fx_beacon_light && S.fx_beacon_light.frames.light_3 === S.beacon.frames.a, 'fx_beacon_light.light_3 is beacon.a pixel for pixel (the hand over to the beacon\'s loop, HOUSE-B)');
   t.ok(!names.some(n => ['crop_floor_band', 'crop_ceiling_band', 'crop_seek', 'fx_stat_up', 'hud_heart_new', 'fx_magnet', 'fx_second_wind', 'fx_thick_skin', 'fx_tripod', 'tab_biome', 'hero_bold'].includes(n)),
     'nothing parked is on the page (ART3: the parked keys wait in docs/astra/cut-art3.json for their systems)');
   /* the elites (Q160): each its own art, ELITE_PX a side (the sim's box, ELITE_SIZE_CELLS cells), with its kind's frame
