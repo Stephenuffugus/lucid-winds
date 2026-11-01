@@ -1309,9 +1309,9 @@ group('H-sim-11', 'the corner rule: 2 px of side overlap never arms a slide; 14 
    sentence), stepped here and not by the sim; and the test's own Deep jump: DEEP_JUMP_V up, base gravity while
    rising and on the jump's first step, DEEP_FALL_G once falling, capped at DEEP_TERM (the plan's arc, reach.arc) */
 const stopRef = dec => { let v = SB.TUNING.RUN * 256, d = 0; while (v > 0) { v = Math.max(0, v - dec); d += v; } return d; };
-function deepJumpRef(holdFrames) {
+function deepJumpRef(holdFrames, v0) {
   const T = SB.TUNING, g = T.GRAVITY * 256, gf = Math.round(g * T.DEEP_FALL_MULT), cut = T.JUMP_CUT_V * 256, term = Math.round(T.TERMINAL * 256 * T.DEEP_FALL_MULT);
-  let vy = -T.DEEP_JUMP_V * 256, y = 0, top = 0, f = 0;
+  let vy = -(v0 === undefined ? T.DEEP_JUMP_V : v0) * 256, y = 0, top = 0, f = 0;
   for (;;) {
     if (f > 0 && f >= holdFrames && vy < -cut) vy = -cut;
     vy = Math.min(term, vy + (f > 0 && vy >= 0 ? gf : g)); y += vy; f++;
@@ -3621,7 +3621,7 @@ const BOT = (() => {
   /* the walk: settle at spawn, then each ascent edge's macro in turn; arrival is the room clearing */
   function walk(lv, memo, stats, opts) {
     const g = SB.reach.graph(lv), asc = lv.ascent;
-    let s = SB.sim.create(lv, { immortal: !opts || !opts.mortal });   /* the route walk is immortal (QUESTIONS Q30); H-en-3 walks mortal */
+    let s = SB.sim.create(lv, { immortal: !opts || !opts.mortal, loadout: opts && opts.loadout });   /* the route walk is immortal (QUESTIONS Q30); H-en-3 walks mortal; H-bot-8 walks with Skyhook */
     const words = [];
     for (let k = 0; k < 10 && !s.hero.ground; k++) { stepB(s, 0, words); }
     if (!settle(s, lv.spawn, words)) return { ok: false, why: 'the hero cannot settle at spawn', edges: 0, words, s };
@@ -4561,8 +4561,18 @@ group('H-wpn-5', 'hits and kills (5.4): a kill banks DP_FODDER or DP_ELITE once;
   t.same(fl, wf, 'hurt is HURT_FLASH_F (' + K.HURT_FLASH_F + ') after a hit and counts down one a step');
 });
 
-group('H-wpn-6', 'the chest (6.1, 6.2): over 200 seeded rooms it equips at once the code the test draws after the specks\' rolls, with no compare and no held step; one slot full gives the other; both full, Dead pixels only and no draw', t => {
-  const T = SB.TUNING, EV = SB.sim.EV, CH = 46 * 24 + 9, built = BUILT_IDS.map(code);
+/* a core whose TUNING.WEAPONS_BUILT is `ids` (the page's text with that one literal replaced, loaded fresh): the step 1
+   pool's chest (H-wpn-6) keeps its own truths once step 2 grows the pool */
+function coreBuilt(ids) {
+  const html = fs.readFileSync(PAGE, 'utf8'), m = html.match(/WEAPONS_BUILT: \[[^\]]*\]/);
+  if (!m) throw new Error('coreBuilt: no WEAPONS_BUILT literal in the page');
+  const tmp = path.join(require('node:os').tmpdir(), 'sb-core-built-' + process.pid + '.html');
+  fs.writeFileSync(tmp, html.replace(m[0], 'WEAPONS_BUILT: ' + JSON.stringify(ids).replace(/"/g, "'").replace(/,/g, ', ')));
+  try { return loadCoreFull(tmp).SB; } finally { fs.unlinkSync(tmp); }
+}
+
+group('H-wpn-6', 'the chest (6.1, 6.2), on the step 1 pool {J1, D1} (a core loaded with that WEAPONS_BUILT; step 2\'s pool is H-wpn-7\'s): over 200 seeded rooms it equips at once the code the test draws after the specks\' rolls, with no compare and no held step; one slot full gives the other; both full, Dead pixels only and no draw', t => {
+  const S1 = coreBuilt(['J1', 'D1']), T = S1.TUNING, EV = S1.sim.EV, CH = 46 * 24 + 9, built = T.WEAPONS_BUILT.map(code);
   const slot = c => (c - 1) >> 3;
   const drawRef = (st, slots) => { const cands = built.filter(c => slots[slot(c)] !== c), empty = cands.filter(c => slots[slot(c)] === 0); if (!cands.length) return 0; const pool = T.CHEST_FILLS_EMPTY_FIRST && empty.length ? empty : cands; return pool[stepRef(st) % pool.length]; };
   let ok = 0, compares = 0, held = 0, equippedGiven = 0, gaveEquipped = 0, firstBad = '';
@@ -4572,15 +4582,15 @@ group('H-wpn-6', 'the chest (6.1, 6.2): over 200 seeded rooms it equips at once 
       const lv = LABS.room(['', FLOOR]); lv.seed = 5000 + k;
       const specks = [46 * 24 + 5, 46 * 24 + 7], after = 46 * 24 + 12;
       lv.features = { pocket: null, enemies: [], trap: null, specks: specks.concat([after]), scroll: null, blueprint: null, chest: CH };
-      const s = SB.sim.create(lv, { at: { x: 2 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: lo });
+      const s = S1.sim.create(lv, { at: { x: 2 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: lo });
       const st = { v: s.rng }, slots0 = s.hero.slots.slice();
       let dpWant = 0; for (let j = 0; j < 2; j++) dpWant += T.DP_SPECK[0] + stepRef(st) % (T.DP_SPECK[1] - T.DP_SPECK[0] + 1);
       const want = drawRef(st, slots0); dpWant += T.DP_CHEST + T.DP_SPECK[0] + stepRef(st) % (T.DP_SPECK[1] - T.DP_SPECK[0] + 1);
       let at = -1, ev = 0, x0 = 0, x1 = 0, x2 = 0;
       for (let f = 0; f < 200 && !s.loot[2].taken; f++) {
-        const xb = s.hero.x; SB.sim.step(s, IN.R);
+        const xb = s.hero.x; S1.sim.step(s, IN.R);
         if (s.room.compare) compares++;
-        if (s.chest.open && at < 0) { at = f; ev = s.ev; x0 = xb; x1 = s.hero.x; SB.sim.step(s, IN.R); x2 = s.hero.x; if (s.room.compare) compares++; }
+        if (s.chest.open && at < 0) { at = f; ev = s.ev; x0 = xb; x1 = s.hero.x; S1.sim.step(s, IN.R); x2 = s.hero.x; if (s.room.compare) compares++; }
       }
       const slotsNow = s.hero.slots, gotCode = want ? slotsNow[slot(want)] : 0;
       if (s.room.cand > 0 && slots0[slot(s.room.cand)] === s.room.cand) gaveEquipped++;   /* the sim's own offer of a weapon the slot holds */
@@ -4617,6 +4627,27 @@ group('H-wpn-7', 'the swap (6.4) with a hand loadout of unbuilt codes (J5, D6): 
   const rep = mk().s; for (const w of words) SB.sim.step(rep, w);
   const cut = mk().s; for (const w of words) SB.sim.step(cut, w & ~(15 * IN.CHOICE));
   t.ok(words.some(w => (w >> 6) & 15) && SB.sim.hash(rep) === SB.sim.hash(live1) && !!cut.room.compare && cut.hero.slots[0] === code('J5'), 'the recorded script carries its TAKE and replays to the live hash; without it the replay stalls at the swap');
+  /* step 2 (13.2): the built pool now holds eight jump weapons, so a swap arises from it. Over 200 seeded rooms and four
+     loadouts the chest gives the test's draw: into an empty slot first (CHEST_FILLS_EMPTY_FIRST: EQUIP, no compare),
+     else, every slot that has a candidate full, the swap (compare, cand the draw, SWAP, the slots unchanged); never a
+     weapon already equipped */
+  const T = SB.TUNING, slot = c => (c - 1) >> 3, CH2 = 46 * 24 + 9;
+  const drawRef = (st2, slots) => { const cands = built.filter(c => slots[slot(c)] !== c), empty = cands.filter(c => slots[slot(c)] === 0); if (!cands.length) return 0; const pool = T.CHEST_FILLS_EMPTY_FIRST && empty.length ? empty : cands; return pool[stepRef(st2) % pool.length]; };
+  let ok2 = 0, bad2 = '', swaps = 0, fills = 0, emptyFirst = 0, emptyCases = 0;
+  for (let k = 0; k < 200; k++) for (const lo of [[0, 0, 0], ['J1', 0, 0], [0, 'D1', 0], ['J3', 'D1', 0]]) {
+    const lv = LABS.room(['', FLOOR]); lv.seed = 7000 + k;
+    lv.features = { pocket: null, enemies: [], trap: null, specks: [], scroll: null, blueprint: null, chest: CH2 };
+    const s2 = SB.sim.create(lv, { at: { x: 2 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: lo }), slots0 = s2.hero.slots.slice(), want = drawRef({ v: s2.rng }, slots0);
+    let ev = 0; for (let f = 0; f < 200 && !s2.chest.open; f++) { SB.sim.step(s2, IN.R); ev = s2.ev; }
+    const anyEmpty = built.some(c => slots0[slot(c)] === 0);
+    if (anyEmpty) { emptyCases++; if (want && slots0[slot(want)] === 0) emptyFirst++; }
+    const right = want > 0 && slots0[slot(want)] !== want && (slots0[slot(want)] === 0
+      ? s2.hero.slots[slot(want)] === want && (ev & EV.EQUIP) && !s2.room.compare && !(ev & EV.SWAP)
+      : s2.room.compare === 1 && s2.room.cand === want && (ev & EV.SWAP) && !(ev & EV.EQUIP) && JSON.stringify(s2.hero.slots) === JSON.stringify(slots0));
+    if (right) { ok2++; if (s2.room.compare) swaps++; else fills++; } else if (!bad2) bad2 = lo.join(',') + ' seed ' + (7000 + k) + ': want ' + WPN_ID[want] + ', slots ' + s2.hero.slots.join(',') + ', cand ' + WPN_ID[s2.room.cand] + ', ev ' + ev;
+  }
+  t.ok(ok2 === 800 && swaps === 200 && fills === 600, 'the built pool (' + BUILT_IDS.join(', ') + '): over 200 seeds and four loadouts the chest gives the test\'s draw, into an empty slot at once (' + fills + ') or, both slots with a candidate full, as the swap (' + swaps + '), never an equipped weapon (' + ok2 + ' of 800' + (bad2 ? '; first wrong: ' + bad2 : '') + ')');
+  t.ok(emptyCases === 600 && emptyFirst === 600, 'CHEST_FILLS_EMPTY_FIRST: with an empty slot the draw is always for an empty slot (' + emptyFirst + ' of ' + emptyCases + ')');
 });
 
 group('H-wpn-J1', 'the Boomerang (7.1): 5 cells and not 5 cells and 1 px, both facings; two passes on a jelly two cells ahead; a wall turns it; a sticky jump throws away from the vine; caught or freed within J1_LIFE_F', t => {
@@ -4695,15 +4726,177 @@ group('H-wpn-D1', 'Anvil Boots (7.1): a dive landing\'s shock hits 3 cells along
   t.ok(hd.fires === 1 && Math.floor((hd.s.hero.y + HH) / CS) === 47 && hd.shake > 0, 'a hold dive through three one ways fires once, on the floor (' + hd.fires + ' fires; the shake runs on the dive landing: ' + hd.shake + ')');
 });
 
-group('H-bot-9', 'the bot\'s walks armed (J1 and D1) clear every walked level with the unarmed words, on the same step (weapons never stop the climb)', t => {
+/* ================================================================ weapons v1, step 2 (docs/WEAPONS-V1.md 13.2) */
+/* the jump slot's seven: each places an enemy at its sentence's distance (hit) and one just beyond (not), with every
+   expected number from TUNING and K or the test's own stepping (jumpRef's order: the takeoff velocity, then gravity) */
+const J = id => [id, 0, 0];
+/* the hero's y after each of n steps of a held jump from rest at y0 (no ceiling): the test's own stepping */
+function riseRef(y0, v0, n, deep) {
+  const T = SB.TUNING, g = T.GRAVITY * 256, ys = [], vys = []; let vy = -v0 * 256, y = y0;
+  for (let f = 0; f < n; f++) { vy = Math.min(T.TERMINAL * 256, vy + g); y += vy; ys.push(y); vys.push(vy); }
+  return { ys, vys };
+}
+group('H-wpn-J2', 'Spark Trail (7.2): three sparks dropped 10 steps apart at the hero\'s feet, each burning J2_BURN_F steps; a frozen jelly in the first spark takes 1 x (4 + Focus) once, one a cell beyond nothing', t => {
+  const F = SB.features, B = K.J2_BOX;
+  const run = (focus) => {
+    const { s } = wpnLab(['', FLOOR], [[F.JELLY, 45 * 24 + 10], [F.JELLY, 45 * 24 + 11]], { hc: 10, loadout: J('J2') });
+    s.hero.focus = focus;
+    const drops = [], spans = new Map(), boxes = [];
+    for (let k = 0; k < 140; k++) {
+      const before = new Set(live(s, PK.EMBER).map(p => s.proj.indexOf(p)));
+      SB.sim.step(s, k === 0 ? TAP_A : IN.A);
+      for (const p of live(s, PK.EMBER)) {
+        const i = s.proj.indexOf(p);
+        if (!before.has(i) && !spans.has(i + ':' + k)) { drops.push(k); boxes.push([p.x, p.y, p.a, p.b, s.hero.x + ((HW - B) >> 1), s.hero.y + HH - B]); spans.set(i, [k, k]); }
+        else if (spans.has(i)) spans.get(i)[1] = k;
+      }
+    }
+    return { s, drops, spans: [...spans.values()], boxes };
+  };
+  const r = run(0), r2 = run(2), T = SB.TUNING.WEAPONS.J2;
+  t.ok(r.drops.join() === [0, K.J2_DROP_F, 2 * K.J2_DROP_F].slice(0, T.count).join() && r.drops.length === T.count, 'a jump drops ' + T.count + ' sparks on its steps 0, ' + K.J2_DROP_F + ' and ' + 2 * K.J2_DROP_F + ' (' + r.drops.join(', ') + ')');
+  t.ok(r.spans.length === T.count && r.spans.every(([a, b]) => b - a + 1 === K.J2_BURN_F), 'each spark burns exactly J2_BURN_F (' + K.J2_BURN_F + ') steps (' + r.spans.map(([a, b]) => b - a + 1).join(', ') + ')');
+  t.ok(r.boxes.every(([x, y, w, h, wx, wy]) => x === wx && y === wy && w === B && h === B), 'each spark is a J2_BOX square at the hero\'s feet centre on its drop step');
+  t.ok(r.s.enemies[0].hp === 8 - 4 && r.s.enemies[1].hp === 8 && r2.s.enemies[0].hp === 8 - 6, 'a frozen jelly in the first spark takes 1 x (4 + Focus) once (Focus 0: hp 8 to ' + r.s.enemies[0].hp + '; Focus 2: to ' + r2.s.enemies[0].hp + '), the one a cell beyond nothing (' + r.s.enemies[1].hp + ')');
+});
+group('H-wpn-J3', 'Shield Kick (7.2): a wall jump kicks the open column beside the wall face 2 cells up and down for 2 x (4 + Focus); a row beyond and the next column take nothing; a ground jump never kicks, sets no cooldown, fires nothing; a sticky jump kicks', t => {
+  const F = SB.features, EV = SB.sim.EV;
+  /* a solid wall at column 8 from row 30 down; the hero falls against its right face (rocker left) until the slide arms */
+  const wall = Array(17).fill('########');
+  const mk = (cells) => {
+    const { s } = wpnLab(wall.concat([FLOOR]), cells.map(c => [F.JELLY, c]), { at: { x: 8 * CS, y: 38 * CS + 77 }, air: true, loadout: J('J3') });
+    let k = 0; for (; k < 30 && s.hero.wall === 0; k++) SB.sim.step(s, IN.L);
+    return s;
+  };
+  const probe = mk([]), Y = probe.hero.y + K.G * 0;   /* the takeoff y is the y before the wall jump's step */
+  const top = Math.floor((Y - K.J3_REACH) / CS), bot = Math.floor((Y + HH + K.J3_REACH - 1) / CS);
+  const s = mk([top * 24 + 8, (top - 1) * 24 + 8, bot * 24 + 8, (bot + 1) * 24 + 8, Math.floor(Y / CS) * 24 + 9]);
+  const y0 = s.hero.y, x0 = s.hero.x; SB.sim.step(s, TAP_A);
+  const kick = live(s, PK.KICK)[0], q = SB.TUNING.WEAPONS.J3.dmg * K.HP_Q;
+  t.ok(probe.hero.wall === -1 && x0 === 8 * CS && y0 === Y && (s.ev & EV.WALLJUMP) && (s.ev & EV.FIRE_J) && s.hero.cd[0] === K.JUMP_SLOT_CD_F && !!kick && kick.x === x0 && kick.b === -1, 'a wall jump off a wall on the left kicks: FIRE_J, the cooldown, a KICK at the face (x ' + (kick ? kick.x / 256 : '?') + ' px)');
+  t.ok(s.enemies.map(e => e.hp === 0).join() === 'true,false,true,false,false' && q === 8, 'the jellies 2 cells up and 2 down the column die to ' + q + ' quarters, the ones a row beyond them and the one in the next column live (' + s.enemies.map(e => e.hp).join(' ') + ')');
+  const g = wpnLab(['', FLOOR], [[F.MOTH, 46 * 24 + 9], [F.MOTH, 46 * 24 + 11]], { hc: 10, loadout: J('J3') }).s;
+  const gEv = hop(g, 30).reduce((a, e) => a | e, 0);
+  t.ok(!(gEv & EV.FIRE_J) && g.hero.cd[0] === 0 && live(g, PK.KICK).length === 0 && g.enemies.every(e => e.hp > 0), 'a ground jump never kicks: no FIRE_J, no cooldown, no KICK, the moths beside it live');
+  const lines = ['..|', '..|', '..|', '..|', '..|', '..|'].concat(Array(10).fill(''), [FLOOR]);
+  const vl = LABS.room(lines, { biome: 3 }); vl.features = { pocket: null, enemies: [], trap: null, specks: [], scroll: null, blueprint: null, chest: null };
+  const vineRows = [...Array(vl.h).keys()].filter(r => vl.sticky[r * 24 + 2]);
+  const vs = SB.sim.create(vl, { at: { x: 3 * CS, y: (vineRows[vineRows.length - 1] - 1) * CS }, loadout: J('J3'), immortal: true }); vs.hero.ground = 0;
+  for (let k = 0; k < 6 && !vs.hero.sticky; k++) SB.sim.step(vs, 0);
+  SB.sim.step(vs, TAP_A); const vk = live(vs, PK.KICK)[0];
+  t.ok((vs.ev & EV.FIRE_J) && !!vk && vk.b === -1, 'a sticky jump off a vine kicks too (FIRE_J, a KICK on the vine\'s side)');
+});
+group('H-wpn-J4', 'the Flashbulb (7.2): it bursts on the apex step the test steps itself, never at the takeoff; a jelly whose centre is exactly J4_REACH from the hero\'s centre takes 1 x (4 + Focus) and the 1 s stun, one 1/256 px beyond nothing, both sides', t => {
+  const F = SB.features, EV = SB.sim.EV, R = K.J4_REACH;
+  const ref = riseRef(46 * CS, SB.TUNING.JUMP_V, 60), apex = ref.vys.findIndex(v => v >= 0);
+  const cx = 10 * CS + ((CS - HW) >> 1) + (HW >> 1), cy = ref.ys[apex] + (HH >> 1);
+  const run = (side) => {
+    const { s } = wpnLab(['', FLOOR], [[F.JELLY, 30 * 24 + 2], [F.JELLY, 30 * 24 + 20]], { hc: 10, loadout: J('J4') });
+    const a = s.enemies[0], b = s.enemies[1];
+    a.x = cx + side * R - (CS >> 1); a.y = cy - (CS >> 1); b.x = cx - side * (R + 1) - (CS >> 1); b.y = cy - (CS >> 1);
+    let at = -1, fired = -1;
+    for (let k = 0; k < 60; k++) { SB.sim.step(s, k === 0 ? TAP_A : IN.A); if ((s.ev & EV.BURST) && at < 0) at = k; if ((s.ev & EV.FIRE_J) && fired < 0) fired = k; if (k === at) { a.st = a.stunned; b.st = b.stunned; } }
+    return { s, at, fired, a, b };
+  };
+  const r = run(1), l = run(-1), q = SB.TUNING.WEAPONS.J4.dmg * K.HP_Q;
+  t.ok(apex > 0 && r.at === apex && l.at === apex && r.fired === 0, 'FIRE_J on the takeoff step, the burst (BURST) on step ' + r.at + ', the apex the test steps itself (' + apex + ')');
+  t.ok(r.a.hp === 8 - q && r.a.st === K.J4_STUN_F - 1 && r.b.hp === 8 && r.b.st === 0 && l.a.hp === 8 - q && l.b.hp === 8, 'the jelly exactly J4_REACH off takes ' + q + ' quarters and J4_STUN_F (' + K.J4_STUN_F + ') steps of stun (after its step\'s count down: ' + r.a.st + '), the one 1/256 px beyond nothing, right and left (' + [r.a.hp, r.b.hp, l.a.hp, l.b.hp].join(' ') + ')');
+});
+group('H-wpn-J5', 'Twin Darts (7.2): one dart each side from the hero\'s centre, its travel exactly J5_REACH; a moth 1/256 px inside its far edge is hit, one at it is not, both sides; a dart stops on its first enemy; a solid cell frees it', t => {
+  const F = SB.features, BW = K.J5_BOXW, BH = K.J5_BOXH;
+  const sx = 10 * CS + ((CS - HW) >> 1) + ((HW - BW) >> 1), dy = riseRef(46 * CS, SB.TUNING.JUMP_V, 1).ys[0] + ((HH - BH) >> 1);
+  const run = (lines, place) => {
+    const { s } = wpnLab(lines, [[F.MOTH, 30 * 24 + 2], [F.MOTH, 30 * 24 + 20]], { hc: 10, loadout: J('J5') });
+    place(s.enemies[0], s.enemies[1]);
+    let darts = 0, far = 0;
+    for (let k = 0; k < 40; k++) { SB.sim.step(s, k === 0 ? TAP_A : 0); if (k === 0) darts = live(s, PK.DART).length; for (const p of live(s, PK.DART)) far = Math.max(far, Math.abs(p.x - p.a)); }
+    return { s, darts, far, dead: s.enemies.map(e => e.hp === 0).join() };
+  };
+  const set = (m, x) => { m.x = x; m.y = dy - 6 * 256; };
+  const inR = run(['', FLOOR], (a, b) => { set(a, sx + K.J5_REACH + BW - 1); set(b, sx - K.J5_REACH - CS + 1); });
+  const out = run(['', FLOOR], (a, b) => { set(a, sx + K.J5_REACH + BW); set(b, sx - K.J5_REACH - CS); });
+  const open = run(['', FLOOR], () => {});
+  const n5 = Math.ceil(K.J5_REACH / K.J5_V);   /* its moves; the last is cut to the reach and frees it on that step */
+  t.ok(open.darts === 2 && open.far === (n5 - 1) * K.J5_V, 'a jump shoots two darts, each seen last ' + open.far / 256 + ' px out (' + (n5 - 1) + ' moves of J5_V) and freed on its move ' + n5 + ', cut to J5_REACH (the moths below hold the reach to the 1/256 px)');
+  t.ok(inR.dead === 'true,true' && out.dead === 'false,false', 'a moth 1/256 px inside a dart\'s far reach dies, one at it lives, right and left (' + inR.dead + ' / ' + out.dead + ')');
+  const first = run(['', FLOOR], (a, b) => { set(a, sx + 2 * CS); set(b, sx + 3 * CS); });
+  t.ok(first.dead === 'true,false', 'a dart stops on its first enemy: the moth 2 cells on dies, the one behind it lives (' + first.dead + ')');
+  const wall = run(['', '............#', FLOOR], (a) => { set(a, 13 * CS); });
+  t.ok(wall.dead.startsWith('false'), 'a solid cell frees the dart: the moth past the wall at column 12 lives');
+});
+group('H-wpn-J6', 'Halo (7.2): a ring from the takeoff box straight up, J6_REACH of travel; a moth overlapping its last box by 1/256 px is hit, one touching it is not; it passes one ways and a solid cell frees it', t => {
+  const F = SB.features, RW = K.J6_BOXW, RH = K.J6_BOXH, y0 = 46 * CS, topAt = y0 - RH - K.J6_REACH;
+  const run = (lines, my) => {
+    const { s } = wpnLab(lines, [[F.MOTH, 30 * 24 + 10]], { hc: 10, loadout: J('J6') });
+    s.enemies[0].y = my; s.enemies[0].x = 10 * CS;
+    let top = Infinity, fired = false; for (let k = 0; k < 60; k++) { SB.sim.step(s, k === 0 ? TAP_A : 0); if (s.ev & SB.sim.EV.FIRE_J) fired = true; for (const p of live(s, PK.RING)) top = Math.min(top, p.y); }
+    return { s, top, fired, dead: s.enemies[0].hp === 0 };
+  };
+  const hitR = run(['', FLOOR], topAt - CS + 1), miss = run(['', FLOOR], topAt - CS);
+  const n6 = Math.ceil(K.J6_REACH / K.J6_V);
+  t.ok(hitR.fired && hitR.top === y0 - RH - (n6 - 1) * K.J6_V && hitR.dead && !miss.dead, 'the ring rises J6_REACH (seen last at ' + hitR.top / 256 + ' px, ' + (n6 - 1) + ' moves of J6_V, then cut to its top at ' + topAt / 256 + ' px and freed): a moth overlapping that last box by 1/256 px dies, one touching it lives');
+  const thru = run(['..........=', '', '', FLOOR], topAt - CS + 1), solid = run(['..........#', '', '', FLOOR], topAt - CS + 1);
+  t.ok(thru.dead && !solid.dead, 'a one way 3 rows up lets it through (the moth above dies) and a solid cell there frees it (the moth lives)');
+});
+group('H-wpn-J7', 'Shutter Snap (7.2): every enemy less than J7_REACH from the takeoff box on both axes is frozen J7_FREEZE_F steps and takes no damage; one at J7_REACH takes nothing; both sides', t => {
+  const F = SB.features, R = K.J7_REACH, x0 = 10 * CS + ((CS - HW) >> 1), y0 = 46 * CS;
+  const run = (dx) => {
+    const { s } = wpnLab(['', FLOOR], [[F.JELLY, 30 * 24 + 2], [F.JELLY, 30 * 24 + 20]], { hc: 10, loadout: J('J7'), moving: true });
+    const [a, b] = s.enemies;
+    for (const e of s.enemies) { e.stunned = 1 << 20; e.y = y0; }
+    a.x = x0 + HW + R - 1 + dx; b.x = x0 - R + 1 - CS - dx;
+    SB.sim.step(s, TAP_A);
+    return { s, a, b, snap: live(s, PK.SNAP).length };
+  };
+  const hitR = run(0), miss = run(1);
+  t.ok(hitR.snap === 1 && hitR.a.frozen === K.J7_FREEZE_F - 1 && hitR.b.frozen === K.J7_FREEZE_F - 1 && hitR.a.hp === 8 && hitR.b.hp === 8, 'the jellies 1/256 px inside J7_REACH both sides are frozen J7_FREEZE_F (' + K.J7_FREEZE_F + ') steps (after the step\'s count down: ' + hitR.a.frozen + ', ' + hitR.b.frozen + ') and keep every quarter (hp ' + hitR.a.hp + ', ' + hitR.b.hp + ')');
+  t.ok(miss.a.frozen === 0 && miss.b.frozen === 0, 'the ones at J7_REACH take nothing (' + miss.a.frozen + ', ' + miss.b.frozen + ')');
+});
+group('H-wpn-J8', 'Skyhook (7.2): its jump is its effect: no FIRE_J, no cooldown, no entry in the pool, a jump inside the old cooldown jumps as high', t => {
+  const s = wpnLab(['', FLOOR], [], { hc: 10, loadout: J('J8') }).s, EV = SB.sim.EV;
+  let fires = 0, cds = 0, ents = 0, takeoffs = [];
+  for (let k = 0; k < 120; k++) { SB.sim.step(s, k % 40 === 0 ? TAP_A : 0); if (s.ev & EV.FIRE_J) fires++; if (s.hero.cd[0] > 0) cds++; ents += s.proj.filter(p => p.live).length; if (s.ev & EV.JUMP) takeoffs.push(s.hero.vy); }
+  t.ok(takeoffs.length === 3 && takeoffs.every(v => v === -K.J8_JUMP_V + K.G) && fires === 0 && cds === 0 && ents === 0, 'three Skyhook jumps take -J8_JUMP_V (' + takeoffs.map(v => v / 256).join(', ') + ' px a step after gravity), with no FIRE_J, no cooldown and nothing in the pool');
+});
+group('H-sim-1b', 'Skyhook\'s jumps (7.2): a full hold peaks at 85.5 px, in Deep at 102.5 px, both the test\'s own stepping; a wall jump and a sticky jump are unchanged', t => {
+  const T = SB.TUNING.WEAPONS.J8;
+  const measure = (lv, lo) => { const s = SB.sim.create(lv, { loadout: lo }); for (let k = 0; k < 4; k++) SB.sim.step(s, 0); const y0 = s.hero.y; let top = y0; for (let f = 0; f < 120; f++) { SB.sim.step(s, f === 0 ? TAP_A : IN.A); if (s.hero.y < top) top = s.hero.y; if (f > 0 && s.hero.ground) break; } return (y0 - top) / 256; };
+  const base = LABS.room(['', '..........S.............', FLOOR]), deep = LABS.room(['', '..........S.............', FLOOR], { biome: 2 });
+  const a = measure(base, J('J8')), d = measure(deep, J('J8')), refA = jumpRef(T.jumpV, 999).apex, refD = deepJumpRef(999, T.deepJumpV).apex;
+  t.ok(a === 85.5 && a === refA, 'a full Skyhook jump peaks at ' + a + ' px (85.5, the test\'s stepping ' + refA + ')');
+  t.ok(d === 102.5 && d === refD, 'in Deep at ' + d + ' px (102.5, the test\'s stepping ' + refD + ')');
+  const wj = lo => { const { s } = wpnLab(Array(17).fill('########').concat([FLOOR]), [], { at: { x: 8 * CS, y: 38 * CS + 77 }, air: true, loadout: lo }); for (let k = 0; k < 30 && s.hero.wall === 0; k++) SB.sim.step(s, IN.L); SB.sim.step(s, TAP_A); return s.hero.vy; };
+  const sj = lo => {
+    const lines = ['..|', '..|', '..|', '..|', '..|', '..|'].concat(Array(10).fill(''), [FLOOR]), vl = LABS.room(lines, { biome: 3 });
+    vl.features = { pocket: null, enemies: [], trap: null, specks: [], scroll: null, blueprint: null, chest: null };
+    const rows = [...Array(vl.h).keys()].filter(r => vl.sticky[r * 24 + 2]), s = SB.sim.create(vl, { at: { x: 3 * CS, y: (rows[rows.length - 1] - 1) * CS }, loadout: lo, immortal: true }); s.hero.ground = 0;
+    for (let k = 0; k < 6 && !s.hero.sticky; k++) SB.sim.step(s, 0); SB.sim.step(s, TAP_A); return s.hero.vy;
+  };
+  t.ok(wj(J('J8')) === wj([0, 0, 0]) && wj([0, 0, 0]) === -K.WALL_V + K.G, 'a wall jump with Skyhook takes WALL_V as unarmed (' + wj(J('J8')) / 256 + ' px a step)');
+  t.ok(sj(J('J8')) === sj([0, 0, 0]) && sj([0, 0, 0]) < 0, 'a sticky jump with Skyhook is unchanged (' + sj(J('J8')) / 256 + ' px a step)');
+});
+group('H-bot-8', 'Skyhook never breaks a climb: with J8 equipped every main ascent edge of every walked level still has a macro the sim performs', t => {
+  const { runs } = botWalks(), memo = new Map(), stats = { tries: 0, found: 0, memo: 0, memoMiss: 0 }; let walked = 0; const bad = [];
+  for (const run of runs) {
+    if (run.skipped || run.same || !run.r.ok) continue;
+    walked++;
+    const r = BOT.walk(run.lv, memo, stats, { loadout: J('J8') });
+    if (!r.ok) bad.push(run.tag + (r.miss ? ' (edge ' + r.miss.i + ': ' + r.miss.e.kind + (r.miss.e.profile ? ' ' + r.miss.e.profile : '') + ' dx ' + r.miss.e.dx + ' dy ' + r.miss.e.dy + ')' : ' (' + r.why + ')'));
+  }
+  t.ok(walked > 0 && bad.length === 0, walked + ' walked levels clear with Skyhook, every ascent edge performed' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
+});
+
+group('H-bot-9', 'the bot\'s walks armed (J1 and D1) clear every walked level with the unarmed words, on the same step (weapons never stop the climb; a chest\'s swap, answered Keep, holds one step and moves nothing)', t => {
   const { runs } = botWalks(); let walked = 0; const bad = [];
   for (const run of runs) {
     if (run.skipped || run.same || !run.r.ok) continue;
     walked++;
     const u = SB.sim.create(run.lv, { immortal: true }), a = SB.sim.create(run.lv, { immortal: true, loadout: ARMED });
-    let cu = -1, ca = -1;
-    run.r.words.forEach((w, k) => { SB.sim.step(u, w); SB.sim.step(a, w); if (cu < 0 && u.room.cleared) cu = k; if (ca < 0 && a.room.cleared) ca = k; });
-    if (ca < 0 || ca !== cu) bad.push(run.tag + ' (unarmed ' + cu + ', armed ' + ca + ')');
+    let cu = -1, ca = -1, held = 0;
+    /* step 2: the chest's weapon for a full slot opens the swap, DESIGN's one stop; the walk answers Keep at once, and that
+       answer's held step is the only step the armed walk may add */
+    run.r.words.forEach((w, k) => { SB.sim.step(u, w); SB.sim.step(a, w); if (a.room.compare) { SB.sim.step(a, SB.sim.CHOICE.LEAVE * IN.CHOICE); held++; } if (cu < 0 && u.room.cleared) cu = k; if (ca < 0 && a.room.cleared) ca = k; });
+    if (ca < 0 || ca !== cu || held > 1) bad.push(run.tag + ' (unarmed ' + cu + ', armed ' + ca + ', ' + held + ' swaps answered)');
   }
   t.ok(walked > 0 && bad.length === 0, walked + ' walked levels clear armed on the unarmed walk\'s step' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
 });
