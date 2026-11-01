@@ -266,7 +266,8 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
    title's polaroid and the share sheet's picture; paper is the polaroid as it was */
 .framed { border-style: solid; border-width: 10px 10px 28px; border-image-slice: 5 5 14 5; border-image-width: 10px 10px 28px 10px; border-image-repeat: stretch; image-rendering: pixelated; }
 .polaroid.framed { padding: 0; background: transparent; }
-#setlook { flex-direction: column; align-items: stretch; gap: 8px; }
+#setlook { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+#setlook[hidden] { display: none; }
 #setlook .lookset p { margin: 0 0 4px; font-size: 0.9rem; }
 #setlook [role=radiogroup] { display: flex; flex-wrap: wrap; gap: 8px; }
 #setlook button { width: 52px; height: 60px; padding: 0; border: 2px solid var(--ash); background: var(--paper); display: flex; align-items: center; justify-content: center; }
@@ -3628,8 +3629,6 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return { cells: cells, hp: T.BOSS_FALLBACK_HP * K.HP_Q, hpMax: T.BOSS_FALLBACK_HP * K.HP_Q, phase: 0, timer: 0, intro: K.BOSS_INTRO_F, telegraph: 0 };
   }
   function shedSlot(s, m) { return !!s.boss && m >= s.enemies.length - SB.TUNING.BOSS_MOTH_COUNT; }
-  /* a cell's box against [x0, x1) x [y0, y1) */
-  function cellOver(w, c, x0, y0, x1, y1) { var CS = SB.K.CELL_SUB, cx = c % w, cy = (c - cx) / w; return x0 < (cx + 1) * CS && x1 > cx * CS && y0 < (cy + 1) * CS && y1 > cy * CS; }
   /* a weapon's hit on the guardian (the same funnel as an enemy's, hit()): q quarters off; the struck cell goes, then
      the live cells nearest it (Chebyshev, ties to the lower index) until a cell stands for each whole HP left (DESIGN
      7.1: the struck cells go, the body erodes from the hit point outward). At 0 it is down: DP_BOSS banked once, its
@@ -3698,13 +3697,21 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (p.freeze > 0) en.frozen = Math.max(en.frozen, p.freeze);
       if (p.stun > 0 && en.stunned >= 0) en.stunned = Math.max(en.stunned, p.stun);
     }
-    /* the guardian awake (HOUSE-B): the box against its live cells, at most once a pass (bit 31); the struck cell the
-       first live one in reading order under the box */
-    var B = s.boss;
-    if (B && B.phase === 1 && B.hp > 0 && !((p.hit >>> 31) & 1)) {
-      var lv = s.level, struck = -1;
-      for (var j = 0; j < B.cells.length && struck < 0; j++) if (B.cells[j] >= 0 && cellOver(lv.w, B.cells[j], x0, y0, x1, y1)) struck = j;
-      if (struck >= 0) { p.hit |= 1 << 31; n++; if (p.dmg > 0) hurtBoss(s, lv, struck, p.dmg); }
+    /* the guardian awake (HOUSE-B): the box against its body's whole rect, the silhouette DESIGN 7.1 keeps as it erodes
+       (so every spot that could reach it whole still reaches what is left), at most once a pass (bit 31); the struck
+       cell is the live one nearest the box's middle (Chebyshev, then the fewer row and column steps, then the lower index) */
+    var B = s.boss, gd = B && s.level.features ? s.level.features.guardian : null;
+    if (gd && B.phase === 1 && B.hp > 0 && !((p.hit >>> 31) & 1)) {
+      var lv = s.level, CS = K.CELL_SUB, gr = gd.rect;
+      if (x0 < (gr[0] + gr[2]) * CS && x1 > gr[0] * CS && y0 < (gr[1] + gr[3]) * CS && y1 > gr[1] * CS) {
+        var mcx = Math.floor(((x0 + x1) >> 1) / CS), mcy = Math.floor(((y0 + y1) >> 1) / CS), struck = -1, sd = 1e9;
+        for (var j = 0; j < B.cells.length; j++) {
+          var bc = B.cells[j]; if (bc < 0) continue;
+          var ax = Math.abs(bc % lv.w - mcx), ay = Math.abs((bc - bc % lv.w) / lv.w - mcy), dj = Math.max(ax, ay) * 64 + ax + ay;   /* Chebyshev, then the fewer steps */
+          if (dj < sd) { sd = dj; struck = j; }
+        }
+        if (struck >= 0) { p.hit |= 1 << 31; n++; if (p.dmg > 0) hurtBoss(s, lv, struck, p.dmg); }
+      }
     }
     return n;
   }
@@ -5301,6 +5308,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
         ctx.drawImage(atlas, r.x + cx * C, r.y + cy * C, C, C, rx + cx * C, ry + cy * C, C, C);
       }
       ctx.globalAlpha = 1;
+      /* awake and eroding, its silhouette stays (DESIGN 7.1) until under BOSS_OUTLINE_UNTIL of it is left: a dotted
+         Ink outline of the whole body, the rect the weapons still strike */
+      if (B.phase === 1 && live < B.cells.length && live >= Math.ceil(B.cells.length * SB.TUNING.BOSS_OUTLINE_UNTIL)) {
+        ctx.fillStyle = CSS[P.I.INK];
+        var ow = g.rect[2] * C, oh = g.rect[3] * C;
+        for (var ox2 = 0; ox2 < ow; ox2 += 2) { ctx.fillRect(rx + ox2, ry, 1, 1); ctx.fillRect(rx + ox2, ry + oh - 1, 1, 1); }
+        for (var oy2 = 0; oy2 < oh; oy2 += 2) { ctx.fillRect(rx, ry + oy2, 1, 1); ctx.fillRect(rx + ow - 1, ry + oy2, 1, 1); }
+      }
       if (B.phase === 0) {
         var on = (s.frame >> 3) & 1, w5 = g.rect[2] * C, h4 = g.rect[3] * C;
         ctx.fillStyle = CSS[P.I.INK]; ctx.fillRect(rx - 2, ry - 2, w5 + 4, 1); ctx.fillRect(rx - 2, ry + h4 + 1, w5 + 4, 1); ctx.fillRect(rx - 2, ry - 2, 1, h4 + 4); ctx.fillRect(rx + w5 + 1, ry - 2, 1, h4 + 4);
@@ -5958,7 +5973,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   ui.backWatched = function () { return watcher ? watching : ''; };
   ui.show = function (name) {
-    if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; drawRecent(); HS.on = false; drawHouse(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
+    if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; drawRecent(); HS.on = false; drawHouse(); ui.applyLook(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
     if (name === 'settings') fillSettings();
     if (name === 'crop') document.getElementById('croptitle').textContent = HS.on && HS.run ? ui.COPY.cropBack : ui.COPY.toTitle;
     var all = document.querySelectorAll('.screen');
@@ -6260,7 +6275,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     else if (!opts.notFirst) ui.firstRoomDone = true;
     SB.render.buildStatic(lv);
     SB.input.resetRecording();
-    document.getElementById('roomname').textContent = name;
+    var rn = document.getElementById('roomname');
+    rn.textContent = name; rn.classList.toggle('pipped', hs); if (hs) stripPips(rn, room);   /* HOUSE-B: the run pips in a house */
+    ui.applyLook(); ui.guardian(null);
     ui.heartsCount = false;   /* each room starts with every heart drawn; fitName may fold them to the count */
     ui.badge(lv.biome | 0);
     hearts(G.state.hero.hearts, G.state.hero.heartsMax);
@@ -6490,6 +6507,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('setmusic').checked = !!st.music;
     document.getElementById('setmotion').value = st.reducedMotion === null ? 'os' : st.reducedMotion ? 'on' : 'off';
     document.getElementById('setdamaged').hidden = !SB.save.quarantined;
+    drawLook();
     document.getElementById('setexport').value = SB.save.exportText();
     /* the p95 of a step plus the p95 of a draw over the last 300 of each (section 5.10's measure, the sprites gate's sum;
        perfLog.frames holds [now, steps] pairs, which threw here once a room had run: the M1 review). No step yet (a
@@ -6562,9 +6580,96 @@ body.sb-modal .lwfb-fab { display: none !important; }
      run pips (Astra's round 3 cut); each does nothing yet */
   var HS = ui.house = { on: false, run: null, raw: null, back: 0, hooks: {
     boss: null,
-    prize: function (el, info) { el.hidden = true; },
-    pips: function (el, run, room) { el.hidden = true; }
+    prize: function (el, info) { drawPrize(el, info); },
+    pips: function (el, run, room) { doorPips(el, run, room); }
   } };
+  /* HOUSE-B: the run pips (Astra's run_pips, round 3): room k of the five is cleared below the room in hand, here at
+     it, todo after it; room 5 the crown of each. pipKeys gives the five CSS variables' names */
+  function pipKeys(room, allDone) {
+    var out = [];
+    for (var k = 1; k <= SB.TUNING.HOUSE_ROOMS; k++) {
+      var st = allDone || k < room ? 'cleared' : k === room ? 'here' : 'todo';
+      out.push('--run-pips-' + (k === SB.TUNING.HOUSE_ROOMS ? 'boss_' : '') + st);
+    }
+    return out;
+  }
+  ui.pipKeys = pipKeys;
+  function stripPips(el, room) { var ks = pipKeys(room, false); for (var k = 0; k < ks.length; k++) el.style.setProperty('--pip' + (k + 1), 'var(' + ks[k] + ')'); }
+  /* the doorway's pips: the rooms cleared so far, the next one here (the house clear card: all five cleared) */
+  function doorPips(el, run, room) {
+    var done = !run, ks = pipKeys(room, done), s = '';
+    for (var k = 0; k < ks.length; k++) s += '<i style="background-image: var(' + ks[k] + ')"></i>';
+    el.innerHTML = s; el.hidden = false;
+    el.setAttribute('aria-label', done ? ui.COPY.houseCleared : ui.COPY.runPipsOf.replace('{n}', room).replace('{of}', SB.TUNING.HOUSE_ROOMS));
+  }
+  /* the house clear card's prize (Astra's card_house_clear and NOTES: the prize in the 48x56 Paper opening at (48,33),
+     a frame style at native size, a hero idle pose at 3x centred at (72,61); fx_unlock over it at (48,37) for its six
+     frames at 12 fps, then hidden; the name in the 98x14 caption at (23,100), all native card pixels) */
+  var prizeAnim = 0;
+  function drawPrize(el, info) {
+    if (!info || !info.prize) { el.hidden = true; el.innerHTML = ''; return; }
+    var id = info.prize, kind = id.slice(0, id.indexOf('.')), nm = id.slice(id.indexOf('.') + 1), C = ui.COPY, name = C['look_' + kind + '_' + nm] || nm;
+    el.innerHTML = '<canvas width="144" height="140"></canvas><p></p>';
+    var cv = el.firstChild, c2 = cv.getContext('2d'), R = SB.render;
+    el.lastChild.textContent = C.prizeNew.replace('{name}', name);
+    el.setAttribute('role', 'img'); el.setAttribute('aria-label', C.prizeLabel.replace('{name}', name));
+    var paint = function (f) {
+      c2.clearRect(0, 0, 144, 140); R.sprite(c2, 'card_house_clear.base', 0, 0);
+      if (kind === 'frame') R.sprite(c2, 'frame_styles.' + nm, 48, 33);
+      else { var hk = R.skinKey('idle0', SB.record.LOOKS.hero.indexOf(nm)), hs = SB.render.atlas[hk]; R.sprite(c2, hk, 72 - (hs.w * 3 >> 1), 61 - (hs.h * 3 >> 1), hs.w * 3, hs.h * 3); }
+      if (f >= 0 && f < 6) R.sprite(c2, 'fx_unlock.unlock_' + f, 48, 37);
+      el.setAttribute('data-unlock', f >= 0 && f < 6 ? String(f) : 'done');
+    };
+    cancelAnimationFrame(prizeAnim);
+    var t0 = performance.now(), still = SB.render.reduced();
+    if (still) { paint(6); el.hidden = false; return; }
+    paint(0);
+    var tick = function (now) { var f = Math.floor((now - t0) / (1000 / 12)); paint(f); if (f < 6) prizeAnim = requestAnimationFrame(tick); };
+    prizeAnim = requestAnimationFrame(tick);
+    el.hidden = false;
+  }
+  ui.drawPrize = drawPrize;
+  /* the look worn (HOUSE-B): the hero's skin in the room, the frame style round the title's polaroid and the share
+     sheet's picture (paper: as they were) */
+  ui.applyLook = function () {
+    var c = SB.save.doc ? SB.record.lookValid(SB.save.doc.cosmetics) : { hero: 0, frame: 0 }, fr = SB.record.LOOKS.frame[c.frame];
+    SB.render.skin = c.hero;
+    ['#title .polaroid', '#sharecanvas'].forEach(function (q) {
+      var el = document.querySelector(q); if (!el) return;
+      el.classList.toggle('framed', c.frame > 0);
+      el.style.borderImageSource = c.frame > 0 ? 'var(--frame-styles-' + fr + ')' : '';
+      el.setAttribute('data-frame', fr);
+    });
+  };
+  /* Settings' Look row (HOUSE-B): a button for each owned skin (its idle pose at 3x) and each owned frame (the swatch at
+     1x), the worn one checked; shown once anything past the defaults is owned */
+  function drawLook() {
+    var doc = SB.save.doc, row = document.getElementById('setlook'); if (!doc || !row) return;
+    var c = SB.record.lookValid(doc.cosmetics), L = SB.record.LOOKS, C = ui.COPY;
+    row.hidden = c.owned.length === 0;
+    ['hero', 'frame'].forEach(function (kind) {
+      var box = document.getElementById('look' + kind); box.innerHTML = '';
+      for (var i = 0; i < L[kind].length; i++) {
+        if (!SB.record.lookOwns(c, kind, i)) continue;
+        var b = document.createElement('button'), cv = document.createElement('canvas'), nm = C['look_' + kind + '_' + L[kind][i]];
+        b.type = 'button'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', String(c[kind] === i)); b.setAttribute('aria-label', C.lookWear.replace('{name}', nm));
+        b.setAttribute('data-look', kind + '.' + L[kind][i]);
+        if (kind === 'hero') { SB.render.heroThumb(cv, i, 3); cv.style.width = '36px'; cv.style.height = '48px'; }
+        else { cv.width = 48; cv.height = 56; SB.render.sprite(cv.getContext('2d'), 'frame_styles.' + L[kind][i], 0, 0); cv.style.width = '40px'; cv.style.height = '47px'; }
+        b.appendChild(cv);
+        (function (k2, i2) { b.addEventListener('click', function () { var d = SB.save.doc; d.cosmetics = SB.record.lookValid(d.cosmetics); d.cosmetics[k2] = i2; SB.save.commit(); ui.applyLook(); drawLook(); }); })(kind, i);
+        box.appendChild(b);
+      }
+    });
+  }
+  ui.drawLook = drawLook;
+  /* the guardian's intro words over the room while it sleeps (the 2 s outline): The last room, Beat the guardian to
+     light the exit; hidden from its wake. Toggled only on a change, never rebuilt in a step */
+  var bannerOn = false;
+  ui.guardian = function (st) {
+    var on = !!(st && st.boss && st.boss.phase === 0 && ui.screen === 'play');
+    if (on !== bannerOn) { bannerOn = on; document.getElementById('guardbanner').hidden = !on; }
+  };
   function saveRun(run) { if (!SB.save.doc) return; SB.save.doc.run = run; SB.save.write(); }
   function roomName(r) { return r === SB.TUNING.HOUSE_ROOMS ? ui.COPY.lastRoom : ui.COPY.roomOf.replace('{n}', r).replace('{of}', SB.TUNING.HOUSE_ROOMS); }
   function plural(n, one, many) { return n === 1 ? ui.COPY[one] : ui.COPY[many].replace('{n}', n); }
@@ -6579,6 +6684,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     go.hidden = !run;
     go.textContent = !run ? C.houseContinue : run.lost ? C.retryHouse : C.houseContinueAt.replace('{n}', run.at + 1).replace('{of}', SB.TUNING.HOUSE_ROOMS);
     cnt.textContent = C.houseCount.replace('{n}', n); cnt.hidden = n < 1;
+    document.getElementById('housestart').classList.toggle('sealed', n > 0);   /* HOUSE-B: icon_house's checked seal once a house is cleared */
   }
   ui.drawHouse = drawHouse;
   /* a new house, from the title (a saved one is replaced only when the player says so), the death card or the clear card */
@@ -6668,7 +6774,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
       SB.Wallet.moment('first_clear', { mode: 'house' });
       var next = SB.record.runClear(HS.run, G.state.hero, n);
       HS.raw = dp; HS.back = next && next.hero.hearts > G.state.hero.hearts ? 1 : 0;
-      if (!next) { doc.stats.houseClears++; HS.run = null; saveRun(null); HS.done = { dp: total }; }
+      /* the house cleared (HOUSE-B): the count, Daily Room's unlock flag (DESIGN 9.4: its mode is not built, so the card
+         names only the prize), and the next look on the prize ladder, worn (Q97 ruling 4) */
+      if (!next) {
+        doc.stats.houseClears++; doc.unlocks.daily = true;
+        var won = SB.record.lookWin(doc.cosmetics); doc.cosmetics = won.cosmetics;
+        HS.run = null; saveRun(null); HS.done = { dp: total, prize: won.id };
+      }
       else { HS.run = next; saveRun(next); G.gear = next.hero.slots.slice(); }
     }
     if (HS.run) showDoor('door'); else showDoor('cleared', HS.done);   /* G.state stays: the frame's remaining steps step it */
@@ -6881,6 +6993,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (ev & EV.FIRE_D) au.sfx(SB.ui.WPN_SFX[SB.sim.WPN[G.state.hero.slots[1]]] || 'shock');
       if (ev & EV.KILL) au.sfx('pop'); else if (ev & EV.HURT) au.sfx('zap');
       if (ev & EV.EQUIP) au.sfx('equip');
+      /* the guardian (HOUSE-B): its wake, each hit, its fall lighting the lamp */
+      if (ev & EV.WAKE) au.sfx('bossIntro');
+      if (ev & EV.BOSS_HIT) au.sfx('bossHit');
+      if (ev & EV.BOSS_DOWN) au.sfx('beacon');
       /* a pick is the shell's own answer in M1 (ui.sheets), no choice of the player's, so it makes no sound; the pick
          voice waits for the sheets of T2.5 and T2.7 */
       if (ev & EV.PICK) SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax);
@@ -6890,6 +7006,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (put && (ev & EV.EQUIP)) SB.ui.showGot(put);
     else SB.ui.gotFollow();
     SB.ui.hints(G.state, G.level);
+    SB.ui.guardian(G.state);
     if (G.state.room.cleared && SB.ui.screen === 'play') SB.ui.showClear();
     else if (G.state.room.dead && SB.ui.screen === 'play') SB.ui.showDeath();
   }
@@ -6988,7 +7105,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     heroFrame: function () { return SB.render.drawn.hero.key; },
     spriteRects: function () { return SB.render.rects(G.level); },
     /* the room's first state's options (docs/WEAPONS-V1.md 6.5), so a gate or a phone report replays the room exactly */
-    roomOpts: function () { var o = { loadout: (G.entry || [0, 0, 0]).map(function (c) { return c > 0 ? SB.sim.WPN[c] : null; }) }; if (G.room) { o.roomIndex = G.room; o.carry = G.carry; } return o; },
+    roomOpts: function () { var o = { loadout: (G.entry || [0, 0, 0]).map(function (c) { return c > 0 ? SB.sim.WPN[c] : null; }) }; if (G.room) { o.roomIndex = G.room; o.carry = G.carry; if (G.room === SB.TUNING.HOUSE_ROOMS) o.lastRoom = true; } return o; },
     samplePixels: function (n) { return SB.render.samplePixels(G.level, n || 64); },
     backdropProbe: function () { return SB.render.backdropProbe(G.level); },
     atlas: function () { var o = {}; for (var k in SB.render.atlas) o[k] = SB.render.atlas[k]; return o; },
@@ -7022,7 +7139,29 @@ body.sb-modal .lwfb-fab { display: none !important; }
         var E = G.state.enemies.filter(function (e) { return e.elite && SB.sim.liveEnemy(e); })[0], CS3 = SB.K.CELL_SUB, h3 = G.state.hero;
         if (E) { h3.x = (E.home % G.level.w) * CS3 + ((CS3 - SB.K.HERO_W_SUB) >> 1); h3.y = Math.floor(E.home / G.level.w) * CS3; h3.vx = 0; h3.vy = 0; }
       }
+      else if (name === 'guardian' && G.state && G.state.boss && G.level.features.guardian) {
+        /* HOUSE-B: the hero set down where a jump's Boomerang reaches the guardian: the nearest stand in one of the
+           body's rows within the Boomerang's cells of it, no solid between (else the arena's ledge), facing it */
+        var gd = G.level.features.guardian, lv = G.level, w = lv.w, J = SB.TUNING.WEAPONS.J1.cells, best = gd.ledge, bd = 99, face = 1;
+        for (var gy = gd.rect[1]; gy < gd.rect[1] + gd.rect[3]; gy++) for (var sd = -1; sd <= 1; sd += 2) for (var j = 1; j <= J; j++) {
+          var gx = sd < 0 ? gd.rect[0] - j : gd.rect[0] + gd.rect[2] - 1 + j, c = gy * w + gx;
+          if (gx < 0 || gx >= w || lv.solid[c]) break;
+          if (c + w < w * lv.h && (lv.solid[c + w] || lv.plat[c + w]) && j > 1 && j < bd) { bd = j; best = c; face = -sd; }
+        }
+        var CS4 = SB.K.CELL_SUB, h4 = G.state.hero;
+        h4.x = (best % w) * CS4 + ((CS4 - SB.K.HERO_W_SUB) >> 1); h4.y = Math.floor(best / w) * CS4; h4.vx = 0; h4.vy = 0; h4.facing = face;
+      }
       return SB.ui.screen;
+    },
+    /* HOUSE-B's liberties for the house gate and the shots: a built weapon put in its slot of the live bug (as a chest
+       would), and the bug made immortal (the bot's rule, Q30) so a long fight is not a test of dodging */
+    arm: function (id) { if (!G.state) return null; var c = SB.sim.WPN.indexOf(id); if (c <= 0) return null; G.state.hero.slots[SB.sim.slotOf(c)] = c; SB.ui.slots(G.state, true); return G.state.hero.slots.slice(); },
+    immortal: function (on) { if (!G.state) return null; G.state.immortal = on ? 1 : 0; return G.state.immortal; },
+    guardian: function () {
+      var st = G.state, d = SB.render.drawn;
+      return { boss: st && st.boss ? { phase: st.boss.phase, hp: st.boss.hp, live: st.boss.cells.filter(function (c) { return c >= 0; }).length } : null, drawn: d.boss ? Object.assign({}, d.boss) : null,
+        fx: d.bossFx.slice(), beacon: d.beacon ? d.beacon.key : null, banner: !document.getElementById('guardbanner').hidden, rect: G.level && G.level.features.guardian ? G.level.features.guardian.rect.slice() : null,
+        skin: SB.render.skin, hero: d.hero.key };
     },
     hold: function (on) { held = !!on; loop.dropped += acc; acc = 0; return held; },
     step: function (n) { for (var i = 0; i < n && G.state; i++) stepOnce(); draw(); return loop.steps; }
