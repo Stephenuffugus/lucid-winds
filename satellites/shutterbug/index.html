@@ -229,6 +229,10 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #housecount { margin: 0; text-align: center; color: var(--ash); font-size: 0.9rem; }
 #freeplay { margin: 6px 0 0; color: var(--ash); font-size: 0.9rem; }
 #title:has(#house:not([hidden])) #shoot { background: var(--paper); }   /* one Sun button on the title: Start a house */
+/* a short phone with the house shown: the polaroid shrinks so Free play's buttons stay clear of the fleet's chip in the
+   bottom corner (the 320x568 shot: the chip sat on Photograph a room) */
+@media (max-height: 700px) { #title:has(#house:not([hidden])) .art { padding-top: 4px; } #title:has(#house:not([hidden])) .photo { height: 80px; }
+  #title:has(#house:not([hidden])) .polaroid { padding-bottom: 16px; } #title:has(#house:not([hidden])) .tag { margin-top: 8px; } }
 /* the doorway (the clear card's place in a house), the house's start and its clear: one card on a screen of its own */
 #door { flex-direction: column; align-items: center; justify-content: center; overflow-y: auto; background: var(--soot);
   padding: calc(12px + var(--sat)) calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal)); }
