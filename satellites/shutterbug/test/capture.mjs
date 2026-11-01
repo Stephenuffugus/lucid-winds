@@ -24,9 +24,12 @@
  *     left it; no animation frame spends more than SEEK.SLICE_MS on the search (the builds in a worker), and with
  *     ?seekworker=0 (the builds on the page's thread) the search still spreads over frames and no frame that ran
  *     more than one build passed the budget.
+ * The capture normalisation (QUESTIONS Q182), on a painted model room at rest: the page's normalised canvas grid equals
+ * the capture oracle's normalizeRGB of the same grid byte for byte, the crop screen's record is that grid's nearest
+ * colour in every cell, and the oracle's own area average of the PNG, normalised, lands near the page's record.
  * Watched red by OVERLAY_STALE and PHOTO_HELD, for the levels item by MESSAGE_SINGLE, BAND_UNMARKED,
- * OVERLAY_BLANK_REFUSED and DEV_READOUT_MS_ONLY, and for the auto crop by SEEK_OFF, SEEK_NO_BUDGET, SEEK_BOX_UNMOVED,
- * SEEK_MESSAGE_AT_REST and SEEK_MESSAGE_WITH_BOX. */
+ * OVERLAY_BLANK_REFUSED and DEV_READOUT_MS_ONLY, for the auto crop by SEEK_OFF, SEEK_NO_BUDGET, SEEK_BOX_UNMOVED,
+ * SEEK_MESSAGE_AT_REST and SEEK_MESSAGE_WITH_BOX, and for the normalisation by NORM_OFF and NORM_SPLIT. */
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';

@@ -5,8 +5,10 @@
  * harness.js holds the oracle itself to known answers (H-cap-0). One copy, shared, so the gate and the harness cannot
  * disagree about what "the area average" is.
  *
- *   const { readPNG, downscaleRGB } = require('./tools/capture-oracle.js');
- *   downscaleRGB({ w, h, bpp, px }, 24, 48)   -> Uint8Array of 24 * 48 * 3, row major, each cell its source block's mean */
+ *   const { readPNG, downscaleRGB, normalizeRGB } = require('./tools/capture-oracle.js');
+ *   downscaleRGB({ w, h, bpp, px }, 24, 48)   -> Uint8Array of 24 * 48 * 3, row major, each cell its source block's mean
+ *   normalizeRGB(grid)                         -> the capture normalisation of that grid (Q182), the page's step before
+ *                                                 nearest: H-norm-1 and the capture gate hold it to the page byte for byte */
 const zlib = require('node:zlib'), fs = require('node:fs');
 
 /* 8 bit RGB or RGBA, non interlaced (what Chrome writes); the five PNG filters */
