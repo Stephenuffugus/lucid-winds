@@ -756,3 +756,41 @@ w1 to w4 + `--block atlas`, same.sh, react_test, sign_test.
 **⛔ The live boot tripped the host's ban:** two liveboot runs and one debug load (each 100+ requests) and the LiteSpeed
 origin answered 403 to this box for the whole site (skywolfstudio.com fine). Probing stopped at once; the read back is
 one request per origin after the ban lifts (memory project_cdn_429_lockout_sep15).
+
+## Starfall Bay (w5), Dream Meadow (w6), The Whole World (w7): step 1, the toolchain and the cuts, 1 Nov 2026 (no credits)
+
+**Why:** Meshy reset ("our meshy just reset so I have the rest of DuBall's assets"), balance 3,039 at 16:30 UTC; his Astra
+zips for the last three worlds (w5 20 pictures, zip sha256 45a9e5e2a87f2fab..., w7 12, 71a9d4820bb70fc7..., w6 4,
+0bb5d4cda1a6281a...; every picture's sha256 equal to Astra's asset-manifest.json). Branch `dewball-w567`.
+**Toolchain, new box:** Blender 4.0.2 official tarball (sha256 equal to download.blender.org's list) in
+`/workspaces/sws-tools/blender-4.0`, `blender` on PATH via `~/.local/bin`; it needed four X/GL runtime libraries from
+Ubuntu's archive (libxxf86vm1, libsm6, libice6, libgl1). gltfpack 0.25 official release binary (digest equal to GitHub's).
+Pillow 13.0, numpy 2.5.4, scipy 1.18.1 (pip --user; ⛔ `python3 -I` hides user site packages). `node_modules` in the
+worktree root is a symlink to `/workspaces/sws-tools/node_modules` (untracked, never committed). Proved before use: a
+headless Blender export; gltfpack decoding the committed `w3/toadG.glb` and repacking it with pack.mjs's flags (41,732 B
+against 41,764 B committed); dewfit.py on that decoded toad (size matches its primitive, fit scale 1.0; only "has a
+texture" fails, as it must for an atlas file); `report.mjs assets/3d` REPORT_PASS; `gate-glb.mjs --world w3`
+GATE_GLB_PASS under the browser lock.
+**Cuts, looked at on magenta, every one** (89 kinds; each world's picks file holds each kind's picture, quarter and
+flags in `cut`, and `cutpicks.py <world>-picks.json --pictures <dir>` makes them again, byte equal to the cuts looked
+at). Astra's pictures keep soft ground shadows and glow halos that the w3/w4 recipe leaves on the object, so
+`sheetcut.py` gained three opt in passes (defaults off; a w5 sheet recut without them is byte identical):
+`--shadow` (neutral, darker than the sheet, touching it, in the low 30% of its object: the first version without
+the low part rule ate the gull's dark wing tips), `--ramp` (grows the sheet through a smooth glow halo and stops at the
+step of the thing's edge: the reed's halo ends 87 from the grey and its blue stem sits at 77, no tolerance splits them)
+and `--specks`. Run on everything, `--ramp 6` ate the Ferris wheel's base top, the bell's post and the dinghy's mast, so
+it stays on Dream Meadow's lit pictures only. **Recuts and why:** crab, gull, dragonfly, the four p10 keepsakes,
+driftwood, oar (`--shadow 50`; the star at `--shadow-chroma 30`, its shadow is glow tinted, which bit the bell's base so
+the others stay at 14); the boardwalk stand (its open window sat 9 from the sheet, past `--holes 8`: `--holes 12
+--specks 80`); moon gate, pagoda, moth, cloud puff, dream reed (`--ramp 6`; `--tol 30` to 50 either kept the halo or ate
+the felt); stadium (`--shadow 50`; the same pass bit the cathedral's grey towers, so the cathedral keeps a thin step
+shadow); the grey peak (`--tol 18` and 10 both bit the left peak, `--tol 6 --holes 0` is whole). The anchor's
+"crosses" warning is its ring passing the centre line: one piece, nothing of its neighbours. Everything else at
+`--tol 18 --holes 8`, the grey kinds included (stone circle, sea wall, bollard, keep, clock tower, city wall, standing
+stone: whole, compared with `--tol 10`).
+**Seen in the pictures, for the fit** (in the picks files): movers face right (crab three quarter, dragonfly and moth
+with wings raised where the primitive lies flat); lifering and starfish drawn face on (`--tip`), surfboard on a 42
+degree slant and the oar on its edge (`--roll` then `--tip`, as the rattle); drift: whalebone, bollard, lighthouse,
+clock tower, windmill sails, stadium (an elevated view, 0.77 tall per wide against the primitive's 0.31), hotel,
+pavilion, aqueduct. w6 places seven w5 kinds and w7 twenty eight, pending on w5's buy; the bicycle stays w4's primitive.
+⚠️ w7 draws 95 kinds from one 2048x1536 atlas (29 new, 38 shared, 28 from w5): its squares will be the tightest yet.
