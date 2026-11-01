@@ -6,7 +6,7 @@ THE PLAN: six angles, prototyped on the 95 real photos and judged three ways. To
   - TOMORROW: FRAME-C (on a refusal, the best scoring box), CLIMB-B (clear away unused film), SNAPSHOTS (finds placed on the photo's surfaces, branch sb-goals), STARS (three a room, the album, quests; on sb-house).
   - LATER: GRIDCODE, then FIGURE (the figure and ground mask, only with the climb).
   - The briefs are in docs/design-nov01-judges-and-plan.json.
-  - His four calls (sent to him at about 19:00): what tonight's v2 carries, how far auto framing goes, star pay, and the new reading's timing. Each has a recommended option. The plan proceeds on those unless he picks otherwise.
+  - His four calls (sent to him at about 18:30): what tonight's v2 carries, how far auto framing goes, star pay, and the new reading's timing. Each has a recommended option. The plan proceeds on those unless he picks otherwise.
 PHOTO 1B: the script is docs/lanes/photo-1b-lane-nov01-night.js (BIOME-V2, CLIMB-A, a three lens review, a fix). Launch it on sb-levels as soon as photo 1a returns and its work is merged for sb-m1-4. args {extra: "<his calls>"} passes his picks; args {skipClimb: true} drops the climb.
 WEAPONS: W2 is done at `b3d245a48`. The lane was stopped at that boundary and resumed with ART4 inserted (the stopped reviewers' orphan harness was killed by its PGID). ART4 is building now, then the reviews (now covering ART4), the fix, and W3.
 DEWBALL: the setup is done at `13c8ab4eb` (Blender 4.0, gltfpack, Pillow, numpy and scipy installed; all 89 pictures cut and looked at). The lane was stopped and resumed with the vault step replaced: two copies on two disks plus VAULT-PENDING.txt. The Meshy buy is running.
