@@ -1,5 +1,27 @@
 # START HERE
 
+## 📷 1 Nov 16:40 UTC (Opus) SHUTTERBUG: NEW SESSION, THE THREE LANES RUN AGAIN, THE PHOTO LANE FIRST
+STEPHEN TODAY: "I want to make shutterbug really good. It's almost fun, but it needs to be able to pixelate more stuff right now. It's too hard to actually get the level to be made." Also: Meshy has reset (Dewball's remaining assets), and an Astra round 4 doc if we need art.
+BOX: booted 16:05 UTC, so it stops about 04:05 UTC on 2 Nov. The four autosaves are restarted (main, sb-w2 on sb-weapons-2, sb-house, sb-levels).
+WHERE LAST NIGHT STOPPED (about 01:47 UTC, the usage limit):
+  - sb-levels: AUTOCROP was in progress at `5d4617e5c`. With the search, 60 of 60 model rooms develop. It still needed check --fast and its PROGRESS entry.
+  - sb-house: HOUSE-A was built at `e0eaab541`. Its review never ran.
+  - sb-weapons-2: ART3 at `07dd2d1e7`, check --fast green. W2 was in progress at `df8a91020`.
+RUNNING (the scripts are satellites/shutterbug/docs/lanes/*-nov01-pm.js):
+  - Photo 1a, `wf_31d4b38c-8e6` (sb-levels): finish AUTOCROP, and in parallel build a real photo corpus and its measure. The corpus is about 90 freely licensed Wikimedia Commons photos in /home/codespace/sb-drafts/realphotos/, never committed. Then NORMALISE, a review (code, player, real photos) and a fix (PHOTO1R). This is the early deploy candidate.
+  - Weapons, `wf_43048222-ed7` (sb-weapons-2): finish W2, a review (code and player, over ART2, ART3, W1 and W2) and a fix (W2R). Then W3, the dive slot, with a review and a fix (W3R).
+  - House, `wf_f8dafdec-b69` (sb-house): review A and fix it (HOUSE-AR), merge ART3 `07dd2d1e7` (HOUSE-ART3), then lane B (the clay boss, the house clear card, a cosmetic per clear, the pips), a review and a fix (HOUSE-BR).
+NEXT (the lead):
+  1. When photo 1a returns: merge sb-levels into add-sproing-jumper, stamp sb-m1-4 (CACHE shutterbug-v4, sw.js?v=4), run the check, and hand Stephen the deploy line. His phone's build develops 3 of 60 model rooms.
+  2. Photo 1b on sb-levels: BIOME (record v2), then edge ledges with the stepping stone repair gated on v2, then a never refuse rule if real photos still refuse. Then a review and a fix.
+  3. When the house and weapons lanes return: merge everything into add-sproing-jumper, stamp sb-m1-5, run the full check, and hand him the line.
+  4. The Astra round 4 brief, from Q162, Q163 and the lanes' placeholders, goes to Drive Astra/Shutterbug.
+  5. Dewball: his Astra zips for w5 Starfall Bay, w7 The Whole World and w6 Dream Meadow are in Drive (27 Oct; 29, 18 and 6 MB). The Drive connector cannot carry them, so he link shares them or uploads them. The Meshy balance was 3,039 credits at 16:30 UTC.
+IF THE SESSION DIES:
+  1. Restart the autosaves (the 31 Oct 17:55 entry's commands, for sb-w2 on sb-weapons-2, sb-house and sb-levels).
+  2. Read each branch's git log and PROGRESS.
+  3. Rerun each lane script from docs/lanes, with the steps already committed removed.
+
 ## 🛑 1 Nov 00:55 UTC (Opus) USAGE AT 99%: THE SESSION IS ABOUT TO STOP
 The three lanes (weapons and art, house A, photo) die wherever they are when the limit hits. The four autosaves are detached and keep pushing every ten minutes until the box stops (about 09:00 UTC).
 TO RESUME after the reset:
