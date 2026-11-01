@@ -1,5 +1,15 @@
 # START HERE
 
+## 📷 1 Nov 19:17 UTC (Opus) PHOTO 1B RUNS IN PARALLEL ON A NEW BRANCH sb-climb (so the climb can make sb-m1-5)
+Photo 1a's NORMALISE was slow on the loaded box: its WIP autosaves `6afa1b009` and `25fe2f122` were tuned on the 95 real photos, and it ran from about 18:00 to past 19:16. Waiting for 1a would put photo 1b past the 02:45 gate.
+  - So BIOME-V2, CLIMB-A, a review and a fix run as `wf_292fb74b-7cb` (docs/lanes/climb-1b-lane-nov01-night.js), on branch sb-climb in /workspaces/sb-climb, from sb-levels `42fc8b19a` (AUTOCROP).
+  - Its autosave runs. Its QUESTIONS use Q220 to Q239, and its numbers are on raw capture.
+THE MERGE ORDER: sb-levels (1a: NORMALISE, SEARCHR, PHOTO1R) into add-sproing-jumper for sb-m1-4. Then sb-climb, sb-house and sb-weapons-2 on top for sb-m1-5.
+  - Expected conflicts: shell-capture (1a's normalisation and seekBoxes against climb's hue vote, each in its own function), harness groups, redwatch rows, QUESTIONS, PROGRESS and the State rows (union).
+  - Re-measure the real corpus after the merge (bash /home/codespace/sb-drafts/realphotos/tools/run.sh).
+HOUSE: HOUSE-AR is done at `c3fd1f962` (12 of 14 findings fixed; Q201 holds four calls for Stephen, among them room 1 paying x0.5 and rooms 2 to 4 not feeling harder). The ART3 merge is running.
+DEWBALL: all 89 models are bought (1,335 credits; balance 1,704; ledger `1f68a30af`). Two copies are kept, both on /dev/loop4. The vault release command is in /home/codespace/dewball-drafts/VAULT-PENDING.txt and waits for his gh login. world:w5 is fitting.
+
 ## 📷 1 Nov 18:33 UTC (Opus) THE DESIGN SPRINT'S PLAN IS IN (docs/LEVELS-AND-GOALS-PROPOSAL-NOV01.md); ART4 AND THE DEWBALL BUY RUNNING; PHOTO 1B READY
 THE PLAN: six angles, prototyped on the 95 real photos and judged three ways. Totals: climb 24, goals 21, frame 18.5, read 17, blank 13.5, look 13.
   - TONIGHT, on sb-levels for sb-m1-5: BIOME-V2, a record v2 carrying a biome byte plus a RULES byte and a FLAGS byte so it can grow without a v3. Then CLIMB-A, on v2 rules 1: edge ledges, stepping stones aimed at the photo's tops, and the whole build fallback. On 22 real photos the film share of the climb went from 64.8% to 49.3%, no room was lost, and the bot cleared every level. Gate: green by 02:45 UTC, or the biome ships alone.
