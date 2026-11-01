@@ -54,7 +54,7 @@ SYNTH.push(() => {
   rect(g, 0, H - sy(8), W - 1, H - 2, C.SLATE);              /* a dim floor area, rows 40..46 */
   rect(g, 0, H - 1, W - 1, H - 1, C.SOOT);
   return fixture('all-dark', 'synthetic',
-    'A dark room: Ink and Soot noise above, a dim Slate floor area in the bottom seven rows. Otsu splits Ink and Soot from Slate at 29 and the clamp raises it to 70 (H-pipe-3, OTSU_UNCLAMPED), so the Slate rows are open and stand (spawn exists) and everything above is one solid mass with only the forced top row open over it. Nothing joins the floor area to the top: repair cannot put a tab in a solid cell, so needsCrop.',
+    'A dark room: Ink and Soot noise above, a dim Slate floor area in the bottom seven rows. Otsu splits Ink and Soot from Slate at 29 and the clamp raises it to 70 (H-pipe-3, OTSU_UNCLAMPED), so the Slate rows are open and stand (spawn exists) and everything above is one solid mass with only the forced top row open over it. Nothing joins the floor area to the top: repair cannot put a tab in a solid cell. The ceiling fallback (Q180, Stephen\'s ruling 31 Oct) sees rows 1 to 39 as one band at least 75% solid and moves the exit window under it, to row 40: a climb of a few rows, under the fallback\'s 24, so it stays an honest needsCrop, its cause dark (well over 75% of the room is solid).',
     g, { biome: 'attic', needsCrop: true, tabsMax: 0, exitIsLight: false, platformsMin: 0, landmarksMin: 1 });
 });
 
@@ -121,8 +121,8 @@ SYNTH.push(() => {
   const g = grid(C.ASH), ramp = [C.GLARE, C.PAPER, C.ASH, C.PEWTER, C.SLATE, C.SOOT, C.INK];
   for (let y = 0; y < H; y++) { const k = Math.min(ramp.length - 1, Math.floor(y * ramp.length / H)); rect(g, 0, y, W - 1, y, ramp[k]); }
   return fixture('gradient-v', 'synthetic',
-    'A vertical light to dark gradient, Glare at the top to Ink at the bottom in seven bands. Otsu splits the dark bottom bands (Slate, Soot, Ink) from the light ones, so the lower three sevenths are one solid mass with the forced floor; the light upper rooms float over it. The band edges where a drop exceeds 60 (Paper 239 over Ash 199 does not; Ash over Pewter 60 does not; Pewter over Slate 64 does) make one full width surface over solid: the mass\'s top. The hero spawns... nowhere: the standing row is solid. needsCrop (unreachable).',
-    g, { biome: 'attic', needsCrop: true, tabsMax: 0, exitIsLight: null, platformsMin: null, landmarksMin: 1 });
+    'A vertical light to dark gradient, Glare at the top to Ink at the bottom in seven bands. Otsu splits the dark bottom bands (Slate, Soot, Ink) from the light ones, so the lower three sevenths are one solid mass with the forced floor; the light upper rooms float over it. The band edges where a drop exceeds 60 (Paper 239 over Ash 199 does not; Ash over Pewter 60 does not; Pewter over Slate 64 does) make one full width surface over solid: the mass\'s top. The standing row is solid, so the floor fallback (Q180, Stephen\'s ruling 31 Oct, "Floor becomes the ledge") raises the spawn to the mass\'s top, the lowest row with an open over solid run of 3 (row 27, over the Slate band). Above it the light bands are a blank wall of about 24 rows, climbed by the tab stair at 3 rows a step: about 8 tabs, at most one pass\'s 12. The top four rows are Glare, all over CEILING_LIGHT_L and joined, so they are one light and whatever cell of them the stair reaches is the light. This is the luminance shape of a real room (bright at the top, dark at the bottom), and it builds.',
+    g, { biome: 'attic', needsCrop: false, tabsMax: 12, exitIsLight: true, platformsMin: null, landmarksMin: 1 });
 });
 
 SYNTH.push(() => {

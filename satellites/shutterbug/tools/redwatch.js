@@ -229,7 +229,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-rep-7', expect: 'tabs keep the rules' }] },
   { name: 'LIGHT_SLACK_STRICT', task: 'review 3', file: 'page', find: 'if (lc >= 0 && d[lc] >= maxD - T.EXIT_LIGHT_SLACK) exit = lc;', repl: 'if (lc >= 0 && d[lc] > maxD - T.EXIT_LIGHT_SLACK) exit = lc;',
     gates: [{ gate: 'harness', only: 'H-rep-1b', expect: 'edges farther than the light leaves the light the exit' }] },
-  { name: 'EXIT_ROWS_PLUS1_REACH', task: 'review 3', file: 'page', find: 'for (i = 0; i < T.EXIT_ROWS * w; i++) if (standableIn(level, i) && d[i] > maxD)', repl: 'for (i = 0; i < (T.EXIT_ROWS + 1) * w; i++) if (standableIn(level, i) && d[i] > maxD)',
+  { name: 'EXIT_ROWS_PLUS1_REACH', task: 'review 3', file: 'page', find: 'for (i = et * w; i < (et + T.EXIT_ROWS) * w; i++) if (standableIn(level, i) && d[i] > maxD)', repl: 'for (i = et * w; i < (et + T.EXIT_ROWS + 1) * w; i++) if (standableIn(level, i) && d[i] > maxD)',
     gates: [{ gate: 'harness', only: 'H-rep-1b', expect: 'is never the exit' }] },
   { name: 'WALK_COST_2', task: 'review 3', file: 'page', find: "add(s, s + dir, 'WALK', null, dir, 1, 0, 1);", repl: "add(s, s + dir, 'WALK', null, dir, 1, 0, 2);",
     gates: [{ gate: 'harness', only: 'H-reach-12', expect: "cost what section 3.3 says" }] },
@@ -1174,6 +1174,49 @@ const MUTANTS = [
     gates: [{ gate: 'lint', expect: 'the SPRITES icon sprite has no frame for D1' }] },
   { name: 'WPN_RENAMED', task: 'W1', file: 'page', find: "wpn: { J1: 'Boomerang', D1: 'Anvil Boots' },", repl: "wpn: { J1: 'Boomerang', D1: 'Anvil Shoes' },",
     gates: [{ gate: 'lint', expect: 'COPY.wpn.D1 is "Anvil Shoes", DESIGN 9.1 names it "Anvil Boots"' }] },
+
+  /* LEVELS (Q180, Stephen's ruling 31 Oct, "Floor becomes the ledge"): the floor and ceiling fallbacks, the 24 row
+     guard, a cause per refusal, the crop screen's message per cause, its band marks and its dev readout */
+  { name: 'S2_OFF', task: 'LEVELS', file: 'page', find: '      if (rowLen >= T.FLOOR_RUN_MIN) { sy = y; bestA = rowA; bestLen = rowLen; fell = 1; }\n', repl: '      if (false) { sy = y; bestA = rowA; bestLen = rowLen; fell = 1; }\n',
+    gates: [{ gate: 'harness', only: 'H-lvl-1', expect: 'no open cell on the standing row' }] },
+  { name: 'C_OFF', task: 'LEVELS', file: 'page', find: '      if (et === 0 && cb > 1) return buildAt(rec, opts, cb, narrow);\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-lvl-2', expect: 'and the exit is unreached' }] },
+  { name: 'C_ALWAYS', task: 'LEVELS', file: 'page', find: '    var fixed = repair(level, light, landmarks);\n',
+    repl: '    var cb0 = ceilingEnd(solid, w, h);\n    if (et === 0 && cb0 > 1) return buildAt(rec, opts, cb0, narrow);\n    var fixed = repair(level, light, landmarks);\n',
+    gates: [{ gate: 'harness', only: 'H-lvl-3', expect: 'the levelHash pinned from sb-m1-3' }] },
+  { name: 'GUARD_OFF', task: 'LEVELS', file: 'page', find: '    if ((fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB)', repl: '    if (false && (fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB)',
+    gates: [{ gate: 'harness', only: 'H-lvl-4', expect: 'all-dark: stays needsCrop through the 24 row guard' }] },
+  { name: 'CAUSE_UNNAMED', task: 'LEVELS', file: 'page', find: 'detail: detail, cause: cause,', repl: 'detail: detail, cause: null,',
+    gates: [{ gate: 'harness', only: 'H-lvl-5', expect: 'the refusal names the floor' }] },
+  { name: 'REFUSAL_GRIDLESS', task: 'LEVELS', file: 'page', find: ', grid: { w: w, h: h, solid: solid, plat: plat } };', repl: ' };',
+    gates: [{ gate: 'harness', only: 'H-lvl-5', expect: 'the refusal carries its 24x48 grid' }] },
+  { name: 'MESSAGE_SINGLE', task: 'LEVELS', file: 'page', find: "key = no && CROP_SAYS[lv.cause] || 'tighter';", repl: "key = 'tighter';",
+    gates: [{ gate: 'capture', expect: 'levels: the floor refusal says' }] },
+  { name: 'BAND_UNMARKED', task: 'LEVELS', file: 'page', find: "    if (y0 >= 0) {\n      c.fillStyle = 'rgba('", repl: "    if (false) {\n      c.fillStyle = 'rgba('",
+    gates: [{ gate: 'capture', expect: 'levels: the overlay marks the floor band' }] },
+  { name: 'OVERLAY_BLANK_REFUSED', task: 'LEVELS', file: 'page', find: 'g = lv.w ? lv : lv.grid,', repl: 'g = lv.w ? lv : null,',
+    gates: [{ gate: 'capture', expect: 'levels: the black photo\'s overlay shades its grid' }] },
+  { name: 'DEV_READOUT_MS_ONLY', task: 'LEVELS', file: 'page', find: "(no ? '; ' + (lv.cause || 'no cause') + '; ' + lv.detail : '')", repl: "''",
+    gates: [{ gate: 'capture', expect: 'levels: the dev readout names the rule that refused' }] },
+
+  /* LEVELSR (the levels review): dark by brightness, the floor search stopped at an open row, the narrow standing
+     row's second try, a whole solid box naming nothing, the three boundaries, the readout hidden without the flag */
+  { name: 'DARK_BY_SOLID', task: 'LEVELSR', file: 'page', find: '    for (i = w; i < (h - 1) * w; i++) if (L[i] < T.OTSU_MIN) dim++;\n', repl: '    for (i = w; i < (h - 1) * w; i++) dim += solid[i];\n',
+    gates: [{ gate: 'harness', only: 'H-lvl-6', expect: 'rows of Walnut: the refusal names the floor, not dark' }] },
+  { name: 'OPEN_ROW_PASSED', task: 'LEVELSR', file: 'page', find: '      else if (openRow(solid, w, y)) break;\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-lvl-6', expect: 'the slanted floor lab: no spawn above the open rows' }] },
+  { name: 'NARROW_OFF', task: 'LEVELSR', file: 'page', find: '    if (best < 1 || best >= SB.TUNING.FLOOR_RUN_MIN) return lv;\n', repl: '    return lv;\n',
+    gates: [{ gate: 'harness', only: 'H-lvl-6', expect: 'over x 0..21 builds, its spawn on the band' }] },
+  { name: 'WHOLE_NAMED', task: 'LEVELSR', file: 'page', find: '    var whole = fb === 1;\n', repl: '    var whole = false;\n',
+    gates: [{ gate: 'harness', only: 'H-lvl-6', expect: 'all-light Negative: a whole solid box names no cause' }] },
+  { name: 'GUARD_23', task: 'LEVELSR', file: 'page', find: '(fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB)', repl: '(fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB - 1)',
+    gates: [{ gate: 'harness', only: 'H-lvl-7', expect: 'tight-gap Negative: a fallback room climbing 23 rows is refused' }] },
+  { name: 'BAND_75_EXCL', task: 'LEVELSR', file: 'page', find: 'if (n < T.CEILING_BAND_FRAC * w) return y;', repl: 'if (n <= T.CEILING_BAND_FRAC * w) return y;',
+    gates: [{ gate: 'harness', only: 'H-lvl-7', expect: 'a ceiling whose row 1 is 18 of 24 solid (18) is a band' }] },
+  { name: 'RUN_3_EXCL', task: 'LEVELSR', file: 'page', find: '      if (rowLen >= T.FLOOR_RUN_MIN) { sy = y;', repl: '      if (rowLen > T.FLOOR_RUN_MIN) { sy = y;',
+    gates: [{ gate: 'harness', only: 'H-lvl-7', expect: 'a gap of 3 in its top row: the spawn is at (11,39)' }] },
+  { name: 'DEV_READOUT_ALWAYS', task: 'LEVELSR', file: 'page', find: '    if (PERF) cropSay(CR.ms.toFixed(1)', repl: '    if (true) cropSay(CR.ms.toFixed(1)',
+    gates: [{ gate: 'capture', expect: 'levels: without the dev flag the crop screen shows no readout' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

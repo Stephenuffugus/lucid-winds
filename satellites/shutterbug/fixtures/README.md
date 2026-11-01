@@ -26,14 +26,14 @@ nothing); `--preset B` writes the same designs for the 36x64 fallback into `fixt
 
 - `sample-room` the built in attic bedroom, the onboarding room (hand, `tools/sample-room.txt`)
 - `blank-wall` a bare Ash wall: the default spread
-- `all-dark` Ink and Soot over a dim Slate floor: the Otsu clamp, an honest needsCrop
+- `all-dark` Ink and Soot over a dim Slate floor: the Otsu clamp, an honest needsCrop (the ceiling fallback leaves a climb under 24 rows, Q180)
 - `all-light` Paper, Glare and Ash noise: the clamp from above, Frost
 - `checkerboard` a photographed checkerboard (10% noise): the smoothing
 - `one-giant-landmark` one 12x30 Soot block: landmarks, repair beside a landmark
 - `shelves-a` six one way planks and a pillar: the reach edges
 - `stripes-h` thin dark rows every fourth row: erased solids, a full width plank ladder
 - `stripes-v` thin dark columns every fourth column: erased solids, a bare wall
-- `gradient-v` Glare at the top to Ink at the bottom: a solid lower mass, an honest needsCrop
+- `gradient-v` Glare at the top to Ink at the bottom: a solid lower mass; the floor fallback stands the hero on its top (Q180)
 - `gradient-h` dark to light across: a solid left wall, the rest open
 - `noise-s1` Ink and Soot specks at 15%: smoothed nearly bare
 - `noise-s2` the same at 35%: scattered blobs
@@ -52,4 +52,4 @@ nothing); `--preset B` writes the same designs for the 36x64 fallback into `fixt
 - `biome-ember` shelves-a tinted red (Magenta, Brick): detected Ember (T1.1)
 
 Twenty six records (twenty five synthetic plus the sample room) since T1.1, which added the five biome tints; T3.1a
-adds the double exposure sample. Authored needsCrop: all-dark and gradient-v (at most 2 over the corpus, H-rep-1).
+adds the double exposure sample. Authored needsCrop: all-dark (at most 2 over the corpus, H-rep-1); gradient-v builds since Q180.
