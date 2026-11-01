@@ -1,5 +1,14 @@
 # START HERE
 
+## 🛑 1 Nov 00:55 UTC (Opus) USAGE AT 99%: THE SESSION IS ABOUT TO STOP
+The three lanes (weapons and art, house A, photo) die wherever they are when the limit hits. The four autosaves are detached and keep pushing every ten minutes until the box stops (about 09:00 UTC).
+TO RESUME after the reset:
+  1. Restart the box. Run `claude` and say "read START-HERE.md and continue".
+  2. Restart the four autosaves (the 17:55 entry has the commands; add sb-house and sb-levels the same way).
+  3. Per branch, read `git log` and PROGRESS on sb-weapons-2, sb-house and sb-levels to see where each lane stopped.
+  4. Rerun each lane's script from satellites/shutterbug/docs/lanes/, with the steps already committed removed.
+  5. Then take the 1 Nov entry below's NEXT.
+
 ## 📷 1 Nov 00:24 UTC (Opus) SHUTTERBUG: THE LEVELS RULE IS MERGED; THREE LANES RUN (weapons and art, the house, the photo)
 DONE AND MERGED: the levels rule (sb-levels `b73b271de`, its review's five findings fixed). It is merged into add-sproing-jumper as `5156bdc1a` (the code equal to sb-levels' tested code; QUESTIONS by union). Model rooms that build at the default box: 3 to 33 of 60. Not deployed yet.
 DONE: the owed redwatch-browser on `b1ab7b002`: every row RED after CHIP_ON_DEATH's re-anchor (`c6e781b88`).
