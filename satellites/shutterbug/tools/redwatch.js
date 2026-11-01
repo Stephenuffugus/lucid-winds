@@ -1276,6 +1276,8 @@ const MUTANTS = [
     gates: [{ gate: 'compare', expect: "412: every pair of built weapons of a slot gives the gate's comparison line" }] },
   { name: 'SWAP_NOT_MODAL', task: 'W2', file: 'page', find: "'sharesheet', 'devcard', 'swap'];", repl: "'sharesheet', 'devcard'];",
     gates: [{ gate: 'compare', expect: '412: the chest by a real walk opens the swap card' }] },
+  { name: 'SWAP_OVER_PAUSE', task: 'W2', file: 'page', find: "r = el.getBoundingClientRect(); if (r.top >= floor - 0.5 && (top >= r.bottom || bot <= r.top)) return tries[i] || 'middle';", repl: "r = el.getBoundingClientRect(); if (top >= r.bottom || bot <= r.top) return tries[i] || 'middle';",
+    gates: [{ gate: 'compare', expect: '320: the card sits' }] },
   { name: 'TRAITS_MISSING', task: 'W2', file: 'page', find: "J7: [3, 0, 1, 1, 0], J8: [0, 0, 0, 0, 1],", repl: "J7: [3, 0, 1, 1, 0],",
     gates: [{ gate: 'lint', expect: 'the built J8 has no ui.TRAITS row of five numbers (TRAITS_MISSING)' }] },
   { name: 'TWIN_DARTS_ONE', task: 'W2', file: 'page', find: "    for (var side = -1; side <= 1; side += 2) {\n      var k = spawn(s, DART);", repl: "    for (var side = 1; side <= 1; side += 2) {\n      var k = spawn(s, DART);",

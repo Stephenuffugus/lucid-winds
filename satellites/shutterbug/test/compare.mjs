@@ -9,6 +9,8 @@
  *     the one this gate computes from ui.TRAITS (read here from the source) in DESIGN's order (lift, holds, both sides,
  *     reach, damage; at most two); every pair of built weapons gives the gate's line through SB.ui.compareLine too;
  *   - Take first in Sun, Keep plain, each 48 px or more both ways, on top, in view, inside the card;
+ *   - the dock: the card's top 16 px or more under the room's top (the Pause control's hit area hangs 12 px over it) and
+ *     a thumb at Pause's centre on Pause; the bug's drawn box clear of the card unless the page says 'covered';
  *   - while it is open nothing in the world moves through 30 steps of a held arrow and real taps on A and B (the hero,
  *     the enemies, the pool, the traps, the cooldowns, the loot, the generator): only the frame counts;
  *   - a real tap on Pause opens the pause card over it (the screen pause, the card under it), Resume comes back to it
@@ -17,7 +19,7 @@
  *     card hides, the jump box's 576 pixels are the new weapon's glyph decoded here, the pickup card names it;
  *   - the recording carries the TAKE and, replayed on the kept first state, reaches the live hash;
  *   - again with Keep: the slots kept, PICK alone, no voice of a pick, the card gone.
- * Watched red by SWAP_AUTO_TAKES, SIM_RUNS_UNDER_SWAP, SWAP_WORDS_WRONG, SWAP_NOT_MODAL. */
+ * Watched red by SWAP_AUTO_TAKES, SIM_RUNS_UNDER_SWAP, SWAP_WORDS_WRONG, SWAP_NOT_MODAL, SWAP_OVER_PAUSE. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME } from './harness.mjs';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
@@ -129,6 +131,19 @@ try {
       w + ': the card says COPY\'s words: "' + g.head + '", the new row then yours, "' + g.cmp + '" (the gate\'s line from ui.TRAITS: "' + lineOf(nu, old) + '"), "' + g.btns.map(b => b.text).join('" and "') + '"');
     R.say(g.btns.every(b => b.w >= 48 && b.h >= 48 && b.top && b.inCard && b.inView) && g.btns[0].x < g.btns[1].x && g.btns[0].bg === hexRgb(g.sun) && g.btns[1].bg !== g.btns[0].bg,
       w + ': Take first in Sun and Keep plain, each 48 px or more (' + g.btns.map(b => Math.round(b.w) + 'x' + Math.round(b.h)).join(', ') + '), on top, in view, inside the card');
+
+    /* the dock (Q122): the card never reaches over the Pause control's lower 12 px (its top at the stage's plus 16 or
+       lower, a thumb at Pause's centre lands on Pause), and the bug's drawn box is clear of it unless the page says
+       'covered' */
+    const dk = await page.evaluate(() => {
+      const el = document.getElementById('swap'), at = window.SB.ui.placeSwap(), r = el.getBoundingClientRect(), st = document.getElementById('stage').getBoundingClientRect();
+      const pz = document.getElementById('pause').getBoundingClientRect(), hit = document.elementFromPoint(pz.left + pz.width / 2, pz.top + pz.height / 2);
+      const hd = window.SB.render.drawn.hero, cv = document.getElementById('view'), vr = cv.getBoundingClientRect(), k = vr.height / cv.height;
+      const ht = vr.top + hd.y * k, hb = ht + hd.h * k;
+      return { at, top: Math.round(r.top - st.top), bottom: Math.round(r.bottom), onPause: !!hit && document.getElementById('pause').contains(hit), clear: ht >= r.bottom || hb <= r.top, inView: r.bottom <= innerHeight };
+    });
+    R.say(dk.top >= 16 && dk.onPause && dk.inView && (dk.clear || dk.at === 'covered') && dk.at !== '',
+      w + ': the card sits ' + dk.at + ', its top ' + dk.top + ' px under the room\'s top (16 or more: Pause\'s hit area hangs 12 px over), a thumb at Pause\'s centre on Pause (' + dk.onPause + '), the bug ' + (dk.clear ? 'in sight' : 'under it') + ', the card in view');
 
     /* the world holds: 30 steps of a held arrow and real taps on A and B */
     await page.keyboard.down('ArrowRight');
