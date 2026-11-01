@@ -119,9 +119,9 @@ try {
     R.say(Object.keys(pairs).length >= 56 && wrongPairs.length === 0, w + ': every pair of built weapons of a slot gives the gate\'s comparison line (' + Object.keys(pairs).length + ' pairs' + (wrongPairs.length ? '; ' + wrongPairs.slice(0, 2).map(([k, v]) => k + ' says "' + v + '", the gate "' + lineOf(k.slice(0, 2), k.slice(2)) + '"').join('; ') : '') + ')');
 
     const p = await walkToSwap(page);
-    const nu = p ? WPN[p.cand] : '', old = 'J1';
-    R.say(s0.ok && !!p && p.compare === 1 && p.cand >= 2 && p.cand <= 8 && p.on && p.modal && p.screen === 'play' && JSON.stringify(p.slots) === '[1,9,0]',
-      w + ': the chest by a real walk opens the swap card for ' + nu + ' over the full jump slot on its step, modal, the screen still play (' + (p ? 'card ' + p.on + ', modal ' + p.modal : 'no swap') + ')');
+    const nu = p ? WPN[p.cand] : '', old = 'J1', pm = await probe(page);   /* body.sb-modal follows a MutationObserver: read after its callback */
+    R.say(s0.ok && !!p && p.compare === 1 && p.cand >= 2 && p.cand <= 8 && p.on && pm.modal && p.screen === 'play' && JSON.stringify(p.slots) === '[1,9,0]',
+      w + ': the chest by a real walk opens the swap card for ' + nu + ' over the full jump slot on its step, modal, the screen still play (' + (p ? 'card ' + p.on + ', modal ' + pm.modal : 'no swap') + ')');
     const g = await cardGeo(page), C = COPY;
     const wantHead = C.swapHead.replace('{old}', C.wpn[old]).replace('{new}', C.wpn[nu]);
     R.say(g.role === 'dialog' && g.head === wantHead && JSON.stringify(g.rows) === JSON.stringify([[C.wpn[nu], C.wpnSays[nu]], [C.wpn[old], C.wpnSays[old]]]) && g.cmp === lineOf(nu, old)
