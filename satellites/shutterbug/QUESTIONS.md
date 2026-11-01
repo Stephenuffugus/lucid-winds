@@ -1186,7 +1186,7 @@ Against the prototype (the investigation's 61 grids normalised, 73.3% to 54.8%; 
 
 TIMING
 
-SHOTS
+What the shots showed (`/home/codespace/sb-drafts/climb/climb/shots/`, 412x915, each photo picked through the real file input on a fresh page, a first room, Develop tapped, the room in play and after six real jumps; `tools/shutterbug-tests/shots-climb.mjs`; looked at): r47 (the real classroom, the sprint's showcase) refused at the default box and the search found a box after 2 builds, but at that box the climb rules refuse and the fallback keeps today's level: a navy solid mass for the lower half with a 3 tab stair up its shaft, so the showcase is not reproduced on raw capture. Model scene 10 (dresser, bed, a frame): the climb rules build it with 2 stones, and still a 9 tab stair up the bare wall on the right past the frame. Model scene 3 (the autocrop's beige carpet room): the shaded lower wall is one navy mass under a 5 tab stair up the left edge, the window sill unused. Model scene 41 on purpose (a bare wall over two tables): 17 tabs in two stairs, and the chest and the scroll sit on film tabs. These are model scenes of tools/room-model.js, not the investigation's model 10 and 41.
 
 Options:
 - (a) as built: the climb rules on v2 RULES 1, capture writes RULES 1, 8 passes, today's level when they refuse and today's refusal when both refuse;
