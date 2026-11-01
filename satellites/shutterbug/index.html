@@ -3314,30 +3314,37 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (solidBox(lv, p.x, p.y, p.x + K.J5_BOXW, p.y + K.J5_BOXH)) { free(p); return; }
     if (hit(s, p, p.x, p.y, p.x + K.J5_BOXW, p.y + K.J5_BOXH, true) > 0 || Math.abs(p.x - p.a) >= K.J5_REACH) free(p);
   }
-  /* J6 Halo: a RING from the takeoff box straight up, through one ways, freed by a solid cell or at J6_REACH; once an enemy */
-  function halo(s, x0, y0) {
-    var K = SB.K, k = spawn(s, RING);
+  /* J6 Halo: a RING from the takeoff box straight up, through one ways, freed by a solid cell or with its top J6_REACH
+     over the bug's top (J6.cells whole cells up from the takeoff cell; it starts J6_BOXH up, so it travels J6_REACH -
+     J6_BOXH: W2R); once an enemy. The ring is wider than the bug: when the 2 px it sticks out on a side would meet a
+     solid in its first move (a wall jump, a vine jump, any jump flush against a wall) it starts moved off that wall,
+     never inside it (W2R) */
+  function halo(s, lv, x0, y0) {
+    var K = SB.K, CS = K.CELL_SUB, k = spawn(s, RING);
     if (k < 0) return false;
-    var p = s.proj[k];
-    p.x = x0 + ((K.HERO_W_SUB - K.J6_BOXW) >> 1); p.y = y0 - K.J6_BOXH; p.vy = -K.J6_V; p.a = p.y;
-    p.ttl = Math.ceil(K.J6_REACH / K.J6_V) + 1; p.dmg = scaled(SB.TUNING.WEAPONS.J6.dmg, s.hero.focus);
+    var p = s.proj[k], x = x0 + ((K.HERO_W_SUB - K.J6_BOXW) >> 1), y = y0 - K.J6_BOXH, yt = y - K.J6_V, yb = y + K.J6_BOXH;
+    if (x < x0 && solidBox(lv, x, yt, x0, yb)) x = (Math.floor(x / CS) + 1) * CS;
+    else if (x + K.J6_BOXW > x0 + K.HERO_W_SUB && solidBox(lv, x0 + K.HERO_W_SUB, yt, x + K.J6_BOXW, yb)) x = Math.floor((x + K.J6_BOXW - 1) / CS) * CS - K.J6_BOXW;
+    p.x = x; p.y = y; p.vy = -K.J6_V; p.a = p.y;
+    p.ttl = Math.ceil((K.J6_REACH - K.J6_BOXH) / K.J6_V) + 1; p.dmg = scaled(SB.TUNING.WEAPONS.J6.dmg, s.hero.focus);
     return true;
   }
   function actRing(s, lv, p) {
-    var K = SB.K, ny = p.y + p.vy;
-    if (p.a - ny > K.J6_REACH) ny = p.a - K.J6_REACH;
+    var K = SB.K, ny = p.y + p.vy, far = K.J6_REACH - K.J6_BOXH;
+    if (p.a - ny > far) ny = p.a - far;
     p.y = ny;
     if (solidBox(lv, p.x, p.y, p.x + K.J6_BOXW, p.y + K.J6_BOXH)) { free(p); return; }
     hit(s, p, p.x, p.y, p.x + K.J6_BOXW, p.y + K.J6_BOXH);
-    if (p.a - p.y >= K.J6_REACH) free(p);
+    if (p.a - p.y >= far) free(p);
   }
   /* J7 Shutter Snap: every live enemy whose box is less than J7_REACH from the takeoff box on both axes is frozen
-     J7_FREEZE_F steps; no damage; a SNAP for the picture, centred on the takeoff box */
+     J7_FREEZE_F steps; no damage; a SNAP for the picture, centred on the takeoff box, drawn 6 steps (ttl 7: the pass
+     that spawned it ages it once before its first draw, as the Flashbulb's ttl 9 draws 8: W2R) */
   function shutterSnap(s, x0, y0) {
     var K = SB.K, R = K.J7_REACH;
     hitNow(s, x0 - R, y0 - R, x0 + K.HERO_W_SUB + R, y0 + K.HERO_H_SUB + R, 0, K.J7_FREEZE_F);
     var k = spawn(s, SNAP);
-    if (k >= 0) { var p = s.proj[k]; p.x = x0 + (K.HERO_W_SUB >> 1); p.y = y0 + (K.HERO_H_SUB >> 1); p.ttl = 6; }
+    if (k >= 0) { var p = s.proj[k]; p.x = x0 + (K.HERO_W_SUB >> 1); p.y = y0 + (K.HERO_H_SUB >> 1); p.ttl = 7; }
     return true;
   }
 
@@ -3651,7 +3658,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
         else if (j === WPN_J3) acted = wallSide !== 0 && shieldKick(s, x0, y0, wallSide);
         else if (j === WPN_J4) acted = flashbulb(s);
         else if (j === WPN_J5) acted = twinDarts(s);
-        else if (j === WPN_J6) acted = halo(s, x0, y0);
+        else if (j === WPN_J6) acted = halo(s, lv, x0, y0);
         else if (j === WPN_J7) acted = shutterSnap(s, x0, y0);   /* J8 never acts here: its jump is its effect */
         if (acted) { h.cd[0] = K.JUMP_SLOT_CD_F; s.ev |= EV.FIRE_J; }
       }

@@ -3630,7 +3630,10 @@ const BOT = (() => {
     if (!settle(s, lv.spawn, words)) return { ok: false, why: 'the hero cannot settle at spawn', edges: 0, words, s };
     if (!asc || !asc.edges) return { ok: false, why: 'no ascent', edges: 0, words, s };
     for (let i = 0; i < asc.edges.length && !s.room.cleared; i++) {
-      const e = asc.edges[i], r = solve(s, e, g, memo, stats);
+      const e = asc.edges[i]; let r = solve(s, e, g, memo, stats);
+      /* H-bot-8's count (W2R): an edge the walk's own holds miss is noted and solved again another way, so the walk
+         goes on and every such edge of a level is counted, not only its first */
+      if (!r.ok && opts && opts.onMiss) { const r2 = opts.onMiss(s, e, g, i); if (r2 && r2.ok) r = r2; }
       if (!r.ok) {
         const src = nodeInfo(g, e.from), t = nodeInfo(g, e.to);
         return { ok: false, edges: i, words, s, miss: { i, e, src, t, tried: r.tried, rest: [centreCol(r.s), feetRow(r.s)], wall: r.s.hero.wall, ground: r.s.hero.ground } };
@@ -4828,19 +4831,44 @@ group('H-wpn-J5', 'Twin Darts (7.2): one dart each side from the hero\'s centre,
   const wall = run(['', '............#', FLOOR], (a) => { set(a, 13 * CS); });
   t.ok(wall.dead.startsWith('false'), 'a solid cell frees the dart: the moth past the wall at column 12 lives');
 });
-group('H-wpn-J6', 'Halo (7.2): a ring from the takeoff box straight up, J6_REACH of travel; a moth overlapping its last box by 1/256 px is hit, one touching it is not; it passes one ways and a solid cell frees it', t => {
-  const F = SB.features, RW = K.J6_BOXW, RH = K.J6_BOXH, y0 = 46 * CS, topAt = y0 - RH - K.J6_REACH;
-  const run = (lines, my) => {
-    const { s } = wpnLab(lines, [[F.MOTH, 30 * 24 + 10]], { hc: 10, loadout: J('J6') });
-    s.enemies[0].y = my; s.enemies[0].x = 10 * CS;
-    let top = Infinity, fired = false; for (let k = 0; k < 60; k++) { SB.sim.step(s, k === 0 ? TAP_A : 0); if (s.ev & SB.sim.EV.FIRE_J) fired = true; for (const p of live(s, PK.RING)) top = Math.min(top, p.y); }
-    return { s, top, fired, dead: s.enemies[0].hp === 0 };
+group('H-wpn-J6', 'Halo (7.2): a ring from the takeoff box straight up, its top J6_REACH over the bug\'s top (J6.cells whole cells up from the takeoff cell, not one more); a moth overlapping its last box by 1/256 px is hit, one touching it is not; it passes one ways and a solid cell frees it; a jump flush against a wall, a wall jump and a vine jump each send a live ring', t => {
+  const F = SB.features, EV = SB.sim.EV, RW = K.J6_BOXW, RH = K.J6_BOXH, y0 = 46 * CS, topAt = y0 - K.J6_REACH, NC = SB.TUNING.WEAPONS.J6.cells;
+  const run = (lines, my, opts = {}) => {
+    const { s } = wpnLab(lines, [[F.MOTH, 30 * 24 + 10]], Object.assign({ hc: 10, loadout: J('J6') }, opts));
+    s.enemies[0].y = my; s.enemies[0].x = opts.mx === undefined ? 10 * CS : opts.mx;
+    let top = Infinity, fired = false, first = -1; for (let k = 0; k < 60; k++) { SB.sim.step(s, k === 0 ? TAP_A : 0); if (s.ev & EV.FIRE_J) fired = true; if (k === 0) first = live(s, PK.RING).length; for (const p of live(s, PK.RING)) top = Math.min(top, p.y); }
+    return { s, top, fired, first, dead: s.enemies[0].hp === 0 };
   };
   const hitR = run(['', FLOOR], topAt - CS + 1), miss = run(['', FLOOR], topAt - CS);
-  const n6 = Math.ceil(K.J6_REACH / K.J6_V);
-  t.ok(hitR.fired && hitR.top === y0 - RH - (n6 - 1) * K.J6_V && hitR.dead && !miss.dead, 'the ring rises J6_REACH (seen last at ' + hitR.top / 256 + ' px, ' + (n6 - 1) + ' moves of J6_V, then cut to its top at ' + topAt / 256 + ' px and freed): a moth overlapping that last box by 1/256 px dies, one touching it lives');
+  const n6 = Math.ceil((K.J6_REACH - RH) / K.J6_V);
+  t.ok(hitR.fired && hitR.top === y0 - RH - (n6 - 1) * K.J6_V && hitR.dead && !miss.dead, 'the ring rises J6_REACH - J6_BOXH from its start J6_BOXH over the bug (seen last at ' + hitR.top / 256 + ' px, ' + (n6 - 1) + ' moves of J6_V, then cut to its top at ' + topAt / 256 + ' px and freed): a moth overlapping that last box by 1/256 px dies, one touching it lives');
+  /* whole cells, as the weapon's sentence and ui.TRAITS.J6 count them: the takeoff cell is row 46 */
+  const inC = run(['', FLOOR], (46 - NC) * CS), outC = run(['', FLOOR], (46 - NC - 1) * CS);
+  t.ok(inC.dead && !outC.dead, 'a moth in the cell ' + NC + ' rows over the takeoff cell dies, one in the cell ' + (NC + 1) + ' rows over lives (' + inC.dead + ', ' + !outC.dead + ')');
   const thru = run(['..........=', '', '', FLOOR], topAt - CS + 1), solid = run(['..........#', '', '', FLOOR], topAt - CS + 1);
   t.ok(thru.dead && !solid.dead, 'a one way 3 rows up lets it through (the moth above dies) and a solid cell there frees it (the moth lives)');
+  /* flush against a wall the ring (16 px over a 12 px bug) would start 2 px inside it: it starts beside it instead */
+  const wl = Array(7).fill('.........#'), wr = Array(7).fill('...........#');
+  const fl = run(wl.concat([FLOOR]), y0 - 5 * CS, { at: { x: 10 * CS, y: y0 } }), f1 = run(wl.concat([FLOOR]), y0 - 5 * CS, { at: { x: 10 * CS + 256, y: y0 } });
+  const fr = run(wr.concat([FLOOR]), y0 - 5 * CS, { at: { x: 11 * CS - HW, y: y0 } });
+  t.ok([fl, f1, fr].every(r => r.fired && r.first === 1 && r.dead), 'a jump flush against a wall on the left, 1 px off it, and flush against one on the right each send a live ring that kills the moth 5 cells up (rings live after the takeoff ' + [fl, f1, fr].map(r => r.first).join(' ') + ', moths dead ' + [fl, f1, fr].map(r => r.dead).join(' ') + ')');
+  /* a wall jump off a wall on the left (H-wpn-J3's lab) and a sticky jump off a vine (H-sim-1b's) */
+  const wall = Array(17).fill('########');
+  const wj = wpnLab(wall.concat([FLOOR]), [[F.MOTH, 30 * 24 + 8]], { at: { x: 8 * CS, y: 38 * CS + 77 }, air: true, loadout: J('J6') }).s;
+  for (let k = 0; k < 30 && wj.hero.wall === 0; k++) SB.sim.step(wj, IN.L);
+  const wy = wj.hero.y; wj.enemies[0].x = 8 * CS; wj.enemies[0].y = wy - 4 * CS; SB.sim.step(wj, TAP_A);
+  const wFire = !!(wj.ev & EV.WALLJUMP) && !!(wj.ev & EV.FIRE_J), wLive = live(wj, PK.RING).length;
+  for (let k = 0; k < 40; k++) SB.sim.step(wj, 0);
+  t.ok(wFire && wLive === 1 && wj.enemies[0].hp === 0, 'a wall jump sends a live ring up the wall\'s face that kills the moth 4 cells up (WALLJUMP and FIRE_J ' + wFire + ', rings live ' + wLive + ', moth hp ' + wj.enemies[0].hp + ')');
+  const lines = ['..|', '..|', '..|', '..|', '..|', '..|'].concat(Array(10).fill(''), [FLOOR]);
+  const vl = LABS.room(lines, { biome: 3 }); vl.features = { pocket: null, enemies: [{ kind: F.MOTH, idx: 30 * 24 + 3, elite: false, env: Int32Array.of(30 * 24 + 3) }], trap: null, specks: [], scroll: null, blueprint: null, chest: null };
+  const vineRows = [...Array(vl.h).keys()].filter(r => vl.sticky[r * 24 + 2]);
+  const vs = SB.sim.create(vl, { at: { x: 3 * CS, y: (vineRows[vineRows.length - 1] - 1) * CS }, loadout: J('J6'), immortal: true }); vs.hero.ground = 0; vs.enemies[0].frozen = 1 << 20;
+  for (let k = 0; k < 6 && !vs.hero.sticky; k++) SB.sim.step(vs, 0);
+  vs.enemies[0].x = 3 * CS; vs.enemies[0].y = vs.hero.y - 4 * CS; SB.sim.step(vs, TAP_A);
+  const vFire = !!(vs.ev & EV.FIRE_J), vLive = live(vs, PK.RING).length;
+  for (let k = 0; k < 40; k++) SB.sim.step(vs, 0);
+  t.ok(vFire && vLive === 1 && vs.enemies[0].hp === 0, 'a sticky jump off a vine sends a live ring that kills the moth 4 cells up (FIRE_J ' + vFire + ', rings live ' + vLive + ', moth hp ' + vs.enemies[0].hp + ')');
 });
 group('H-wpn-J7', 'Shutter Snap (7.2): every enemy less than J7_REACH from the takeoff box on both axes is frozen J7_FREEZE_F steps and takes no damage; one at J7_REACH takes nothing; both sides', t => {
   const F = SB.features, R = K.J7_REACH, x0 = 10 * CS + ((CS - HW) >> 1), y0 = 46 * CS;
@@ -4854,7 +4882,10 @@ group('H-wpn-J7', 'Shutter Snap (7.2): every enemy less than J7_REACH from the t
   };
   const hitR = run(0), miss = run(1);
   t.ok(hitR.snap === 1 && hitR.a.frozen === K.J7_FREEZE_F - 1 && hitR.b.frozen === K.J7_FREEZE_F - 1 && hitR.a.hp === 8 && hitR.b.hp === 8, 'the jellies 1/256 px inside J7_REACH both sides are frozen J7_FREEZE_F (' + K.J7_FREEZE_F + ') steps (after the step\'s count down: ' + hitR.a.frozen + ', ' + hitR.b.frozen + ') and keep every quarter (hp ' + hitR.a.hp + ', ' + hitR.b.hp + ')');
-  t.ok(miss.a.frozen === 0 && miss.b.frozen === 0, 'the ones at J7_REACH take nothing (' + miss.a.frozen + ', ' + miss.b.frozen + ')');
+  t.ok(miss.a.frozen === 0 && miss.b.frozen === 0, 'the ones at J7_REACH take nothing (' + miss.a.frozen + ', ' + miss.b.frozen + ')');  /* the picture's length (7.2: 6 steps): the SNAP is live for the draws after the takeoff step and the 5 after it */
+  const sn = wpnLab(['', FLOOR], [], { hc: 10, loadout: J('J7') }).s, seen = [];
+  for (let k = 0; k < 20; k++) { SB.sim.step(sn, k === 0 ? TAP_A : 0); if (live(sn, PK.SNAP).length) seen.push(k); }
+  t.ok(seen.join() === '0,1,2,3,4,5', 'its SNAP is drawn for 6 steps, from the takeoff step (live after steps ' + seen.join(' ') + ')');
 });
 group('H-wpn-J8', 'Skyhook (7.2): its jump is its effect: no FIRE_J, no cooldown, no entry in the pool, a jump inside the old cooldown jumps as high', t => {
   const s = wpnLab(['', FLOOR], [], { hc: 10, loadout: J('J8') }).s, EV = SB.sim.EV;
@@ -4888,7 +4919,26 @@ group('H-bot-8', 'Skyhook never breaks a climb: with J8 equipped every main asce
     if (!r.ok) bad.push(run.tag + (r.miss ? ' (edge ' + r.miss.i + ': ' + r.miss.e.kind + (r.miss.e.profile ? ' ' + r.miss.e.profile : '') + ' dx ' + r.miss.e.dx + ' dy ' + r.miss.e.dy + ')' : ' (' + r.why + ')'));
   }
   t.ok(walked > 0 && bad.length === 0, walked + ' walked levels clear with Skyhook, every ascent edge performed' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
+  /* the cost Q122 names (W2R): walked with the route's own holds, the edges a full Skyhook hold misses (each then
+     solved with any hold, so the walk goes on). A retune that adds misses changes the count and goes red */
+  const fullMemo = new Map(), anyMemo = new Map(), missed = [], stuck = [];
+  for (const run of runs) {
+    if (run.skipped || run.same || !run.r.ok) continue;
+    const onMiss = (s, e, g, i) => {
+      BOT_ANY_HOLD.on = true; let r2; try { r2 = BOT.solve(s, e, g, anyMemo, stats); } finally { BOT_ANY_HOLD.on = false; }
+      missed.push(run.tag + ' edge ' + i + ' (' + e.kind + (e.profile ? ' ' + e.profile : '') + ' dx ' + e.dx + ' dy ' + e.dy + ')');
+      return r2;
+    };
+    const r = BOT.walk(run.lv, fullMemo, stats, { loadout: J('J8'), onMiss });
+    if (!r.ok) stuck.push(run.tag);
+  }
+  console.log('  info  with the route\'s own holds a full Skyhook hold misses ' + missed.length + ' ascent edges: ' + missed.join('; '));
+  const nDeep = missed.filter(m => / deep edge /.test(m)).length, nBase = missed.length - nDeep, M = SKYHOOK_FULL_HOLD_MISSES;
+  t.ok(nBase === M.base && nDeep === M.deep && stuck.length === 0, 'with the route\'s own holds Skyhook misses exactly ' + M.base + ' ascent edges outside Deep and ' + M.deep + ' in Deep (Q123), each then taken with a shorter hold (' + nBase + ' and ' + nDeep + ' missed' + (stuck.length ? ', stuck: ' + stuck.join(' ') : '') + ')');
 });
+/* the corpus edges a full Skyhook hold misses, walked to the end (W2R, Q123; Q122's four counted only the first miss of
+   a walk outside Deep): the count moves only with a QUESTIONS entry */
+const SKYHOOK_FULL_HOLD_MISSES = { base: 9, deep: 87 };
 
 group('H-bot-9', 'the bot\'s walks armed (J1 and D1) clear every walked level with the unarmed words, on the same step (weapons never stop the climb; a chest\'s swap, answered Keep, holds one step and moves nothing)', t => {
   const { runs } = botWalks(); let walked = 0; const bad = [];
