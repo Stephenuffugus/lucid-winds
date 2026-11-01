@@ -578,12 +578,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
        floor: ramp fodder added up to it; cap and eliteCap: the photo's own caps (Ember one more enemy); eliteMin: the
        fodder farthest from spawn promoted when the photo gives fewer elites; fodderHpQ: a fodder's quarters per HP
        (HP_Q is 1x, 6 is 1.5x); fast: an enemy's extra tick every that many steps (4 is 1.25x speed, 0 none). Room 5 is
-       the last room, the table's room 5 without its boss until lane B (the clay boss, Q97 ruling 3) */
+       the last room: until lane B's clay boss (Q97 ruling 3) it takes room 4's row (Q200 call 2's option b, the review
+       of HOUSE-A, Q201), so the last room is never easier than room 4. Lane B's row is the table's own, { floor: 0,
+       cap: 3, eliteCap: 0 } beside the boss (the table's room 5 elite is the boss: no photo elite) */
     RAMP: [null, null,
       { floor: 2, cap: 4, eliteCap: 1, eliteMin: 0, fodderHpQ: 4, fast: 0 },
       { floor: 3, cap: 4, eliteCap: 1, eliteMin: 1, fodderHpQ: 4, fast: 4 },
       { floor: 4, cap: 5, eliteCap: 2, eliteMin: 1, fodderHpQ: 6, fast: 4 },
-      { floor: 0, cap: 3, eliteCap: 1, eliteMin: 0, fodderHpQ: 4, fast: 0 }],
+      { floor: 4, cap: 5, eliteCap: 2, eliteMin: 1, fodderHpQ: 6, fast: 4 }],
     HOUSE_DOOR_HEARTS: 1 /* a heart back at each doorway, up to the bug's own cap (Q97's default) */, RAMP_SALT: 0x4a3b2c1d,
     // 5.3 onboarding
     FIRST_ROOM_MAX_FODDER: 2,
@@ -3081,12 +3083,23 @@ body.sb-modal .lwfb-fab { display: none !important; }
     off(f.chest); off(f.scroll); off(f.blueprint); off(level.exit); off(level.spawn);
     if (f.door) { var dr = f.door.rect; for (var yy = dr[1]; yy <= dr[3]; yy++) for (var xx = dr[0]; xx <= dr[2]; xx++) keep[yy * w + xx] = 1; off(f.door.idx); }
     if (f.pocket) for (k = 0; k < f.pocket.cells.length; k++) keep[f.pocket.cells[k]] = 1;
+    /* a ramp icicle's envelope is its whole fall, the sim's (moveEnemy: down to the first solid or one way cell under
+       it, no row limit), not envelope()'s six rows, which the photo's own icicles keep (free play does not move); the
+       fall keeps a column clear of every cell the ascent stands on (an elite's wider box, a hero's off centre) */
+    var beside = new Uint8Array(n);
+    for (k = 0; k < stands.length; k++) { var bx = stands[k] % w, by = (stands[k] - bx) / w; for (var dx = -1; dx <= 1; dx++) if (bx + dx >= 0 && bx + dx < w) beside[by * w + bx + dx] = 1; }
+    var envFor = function (kind, c) {
+      if (kind !== ICICLE) return envelope(level, kind, c);
+      var out = [c];
+      for (var q = c + w; q < n && !level.solid[q] && !level.plat[q]; q += w) out.push(q);
+      return Int32Array.from(out);
+    };
     var ok = function (c, kind) {
       if (c < w || c >= n - w || level.solid[c] || level.plat[c] || level.trap[c] || near[c] || keep[c]) return false;
       if (kind === CRAWLER || kind === SPARK) { if (!standable(level, c)) return false; }
       else if (kind === ICICLE && !level.solid[c - w] && !level.plat[c - w]) return false;
-      var env = envelope(level, kind, c);
-      for (var q = 0; q < env.length; q++) if (stand[env[q]]) return false;
+      var env = envFor(kind, c);
+      for (var q = 0; q < env.length; q++) if (stand[env[q]] || (kind === ICICLE && beside[env[q]])) return false;
       return true;
     };
     var apart = function (c) { for (var q = 0; q < es.length; q++) if (cheb(c, es[q].idx, w) <= T.ROUTE_SAFE_ENEMY_DIST) return false; return true; };
@@ -3098,7 +3111,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var from = wide.length ? wide : cands;
       if (!from.length) break;
       var c = from[from.length === 1 ? 0 : rng.int(from.length)];
-      es.push({ kind: kind, idx: c, env: envelope(level, kind, c), ramp: 1 });
+      es.push({ kind: kind, idx: c, env: envFor(kind, c), ramp: 1 });
       keep[c] = 1; laid++;
     }
     var elites = 0;
@@ -5005,10 +5018,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     wpnSays: { J1: 'Every jump throws it ahead, and it flies back to you.', D1: 'Dive landings and dashes send a shock along the ground.' },
     slots: 'Weapons', slotJump: 'Jump', slotDive: 'Dive', slotHas: '{slot}: {name}', slotNone: '{slot}: nothing yet',
     /* the house (DESIGN 8, QUESTIONS Q200; docs/PROGRESSION-PROPOSAL-OCT31.md 2.3's words) */
-    houseStart: 'Start a house', houseContinue: 'Continue the house', houseCount: 'Houses cleared {n}', freePlay: 'Free play',
-    roomOf: 'Room {n} of {of}', lastRoom: 'The last room',
+    houseStart: 'Start a house', houseContinue: 'Continue the house', houseContinueAt: 'Continue the house, room {n} of {of}', houseCount: 'Houses cleared {n}', freePlay: 'Free play',
+    roomOf: 'Room {n} of {of}', lastRoom: 'The last room', roomOfShort: 'Room {n}/{of}', roomOfTiny: '{n}/{of}', lastRoomShort: 'Last room',
     houseNew: 'A new house', houseRooms: 'Five rooms, each one tougher than the last.', shootFirst: 'Shoot the first room',
-    doorCleared: 'Room {n} cleared', doorTougher: 'Room {n} is tougher', enterRoom: 'Play room {n}',
+    doorCleared: 'Room {n} of {of} cleared', doorTougher: 'Room {n} is tougher', doorLast: 'The last room is next', enterRoom: 'Play room {n}',
+    doorHearts: '{n} of {max} hearts, one back', doorHeartsFull: '{n} of {max} hearts', cropBack: 'Back',
     useRecent: 'Use a recent room', noRecent: 'No recent rooms yet.', leaveHouse: 'Leave the house',
     houseLost: 'The house is lost', lost: 'Lost {n} dead pixels', lostOne: 'Lost 1 dead pixel', retryHouse: 'Retry House', newHouse: 'New house',
     houseReplace: 'Start a new house? The saved house will be lost.', houseCleared: 'House cleared', houseSum: '{rooms} rooms, {n} dead pixels', houseSumOne: '{rooms} rooms, 1 dead pixel'
