@@ -1,5 +1,17 @@
 # START HERE
 
+## 📷 1 Nov 00:24 UTC (Opus) SHUTTERBUG: THE LEVELS RULE IS MERGED; THREE LANES RUN (weapons and art, the house, the photo)
+DONE AND MERGED: the levels rule (sb-levels `b73b271de`, its review's five findings fixed). It is merged into add-sproing-jumper as `5156bdc1a` (the code equal to sb-levels' tested code; QUESTIONS by union). Model rooms that build at the default box: 3 to 33 of 60. Not deployed yet.
+DONE: the owed redwatch-browser on `b1ab7b002`: every row RED after CHIP_ON_DEATH's re-anchor (`c6e781b88`).
+RUNNING (scripts in satellites/shutterbug/docs/lanes/; four autosaves):
+  - Weapons and art, `wf_e6dd0515-5c2`, sb-weapons-2, /workspaces/sb-w2: ART2 done (`8398d5ce8`). ART3 (Astra's rounds 2 and 3) is building, then step 2, then the code and player reviews and a fix.
+  - The house, lane A, `wf_5a6f671e-e6a` (house-a-lane-nov01.js), sb-house, /workspaces/sb-house from `5156bdc1a`: the saved five room run, Retry House, the title, the doorway and death cards, Room n of 5, the firm ramp, carried hearts. Q200 onward.
+  - The photo lane, `wf_3e09fd42-e97` (photo-lane-nov01.js), sb-levels, /workspaces/sb-levels: the automatic box search, the capture normalisation, then the biome from the photo's colour (record v2). Q181 onward.
+NEXT (the lead):
+  1. When ART3 is done, merge it into sb-house and run house lane B: the clay boss in room 5 (boss_fallback plus Astra's round 3 boss effects), the house clear card with a cosmetic per clear (a frame style first, then her skins), and the run pips.
+  2. Merge every lane into add-sproing-jumper, stamp sb-m1-4, run the full check, hand him the deploy line.
+  3. Then weapons step 3 (the dive slot), the biome lean, edge ledges (his call first), blueprints and the Darkroom.
+
 ## 📷 31 Oct 22:50 UTC (Opus) SHUTTERBUG: ASTRA ROUND 3 ARRIVED (Q98); ART3 INSERTED INTO THE WEAPONS LANE
 Round 3 arrived at 22:41 UTC: 18 strips, 119 frames, her VALIDATION PASS, zip sha256 942423725aa9c45d.... Copies: /home/codespace/sb-drafts/astra/round3/ and assets/ (git ignored). Stephen: "go ahead and implement this". Q98 (`7936aaa4f`) records rounds 2 and 3 and where each piece goes.
 THE PLAN IN FLIGHT: the weapons lane script (docs/lanes/weapons2-art-lane-oct31-night.js, `165e7a3ae`) now runs ART2, then ART3, then step 2, review and fix.

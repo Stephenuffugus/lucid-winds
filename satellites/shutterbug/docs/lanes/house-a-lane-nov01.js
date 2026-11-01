@@ -1,0 +1,67 @@
+export const meta = {
+  name: 'shutterbug-house-a',
+  description: 'Shutterbug sb-house: house run lane A (Stephen\'s rulings Q96 1, Q97 2 to 4): the saved five room run, Retry House, the doorway card, Room n of 5, the firm ramp, carried hearts; built, reviewed once, fixed',
+  phases: [
+    { title: 'build', detail: 'run state, title, doorway and death cards, the ramp table, carried hearts' },
+    { title: 'review', detail: 'code and the player\'s seat' },
+    { title: 'fix', detail: 'refute or fix each finding' },
+  ],
+}
+const CONTEXT = `You are building Shutterbug (a photo of a room becomes a pixel platformer level; a single file mobile game at satellites/shutterbug/: DESIGN.md the design, BUILD-PLAN.md the plan, QUESTIONS.md the decisions, PROGRESS.md the log). LIVE is sb-m1-3. add-sproing-jumper 5156bdc1a adds the levels rule (sb-levels; 3 to 33 of 60 painted model rooms now build at the default crop box).
+WHY: Stephen, the director, played it on 31 Oct and wrote "I'm not like collecting or building towards anything ... no like real goal at the end. So maybe we need a way to like level up or ramp up". He ruled (QUESTIONS Q96 and Q97, read both): the HOUSE RUN AND BOSS FIRST (five rooms back to back, each harder, gear, Dead pixels and scrolls carried, a boss in room 5, a cosmetic for clearing); a FIRM RAMP; the CLAY BOSS NOW; a COSMETIC PER CLEAR. The spec is docs/PROGRESSION-PROPOSAL-OCT31.md (sections 2.1 the ramp table, 2.3 what the player sees, 2.4 slice 1, 2.5 the risks) with DESIGN 8, 7.1 and BUILD-PLAN T2.8; Q97 lists the defaults (hearts carried with one back at each doorway; once a first house is cleared, Start a house leads the title; free play stays flat).
+THIS LANE IS SLICE 1's LANE A. Lane B (the clay boss in room 5, the house clear card with the cosmetic and Astra's round 3 house and boss art) comes after you, once Astra's art is cut on another branch: leave room 5 a normal room flagged as the last, whose clear ends the house on a plain House cleared card, and leave named hooks for lane B (the boss, the clear card, the run pips).
+WHERE: your own branch sb-house in the git worktree /workspaces/sb-house (sparse: satellites/shutterbug, tools/shutterbug-tests, plans and the repo's root files; the tests serve the worktree's own root), from add-sproing-jumper 5156bdc1a. Two other builders share the box: /workspaces/sb-w2 (branch sb-weapons-2: Astra's art, then weapons step 2: the sim's weapons, render, the HUD, the sprites) and /workspaces/sb-levels (branch sb-levels: the crop screen's automatic box search, the capture's normalisation, then the biome from the photo's colour in a record v2). Read anything anywhere, edit only your worktree. The lead merges sb-house later, so keep your changes in the run state, the save's run field, the title, the clear and death cards, the doorway card, the top strip's room name, core features' ramp (behind a roomIndex opt) and their tests, and out of the weapons, the sprites, the crop screen and the record format where you can.
+DISCIPLINE (read PROGRESS.md's last two entries for the house style): every behaviour ships with a harness assertion or browser gate that sees it and a redwatch row (tools/redwatch.js) that mutates it away and goes RED for the right reason; node tools/check.js --fast --gate <gate> for each browser gate you touch, then node tools/check.js --fast; the pure core stays deterministic and shared verbatim with harness.js (the lint holds the copies together); no allocation in step; a golden moves only through --regold --why "..." and room 1 must not move any golden, share code or record (the ramp is off for room 1 and for free play and codes). Player facing copy: plain words, no dashes of any kind, no exclamation marks. Satellites may use ES2020. A timed assertion that fails while the box is loaded is rerun alone before it is believed.
+NUMBERING: QUESTIONS entries on this branch use Q200 to Q219 only. PROGRESS entries and State rows are appended as usual; the lead resolves the merge.
+USAGE IS TIGHT: read with /usr/bin/grep -n and sed -n ranges instead of whole files (index.html is about 5,800 lines, harness.js about 5,100), and do not rerun a long check without a reason.`
+const RULES = `HARD RULES:
+- Work ONLY in /workspaces/sb-house on branch sb-house. Never touch main, add-sproing-jumper or any other worktree; never run deploy.sh or portal-card.sh; never stamp the build.
+- ONE BROWSER AT A TIME ON THE WHOLE BOX (2 cores, three builders). Run every command that can launch Chrome (node tools/check.js in any form, node test/*.mjs, browser redwatch rows, tools/shutterbug-tests/shoot.mjs, any puppeteer script) as: flock /home/codespace/sb-drafts/browser.lock <command>. Hold the lock only for that command. Run pure Node work (node harness.js, tools/lint.mjs, non browser redwatch rows) under nice -n 10.
+- A long command (check --fast is about 20 to 30 minutes, longer while someone else holds the lock) runs detached so a Bash timeout cannot kill it: (setsid nohup bash -c 'cd /workspaces/sb-house/satellites/shutterbug && flock /home/codespace/sb-drafts/browser.lock node tools/check.js --fast > LOG 2>&1; echo EXIT=$? >> LOG' </dev/null >/dev/null 2>&1 &) then poll LOG with sleep loops of at most 9 minutes per Bash call. Logs and scratch go under /home/codespace/sb-drafts/house/<your label>/ (it survives a box stop; /tmp does not).
+- Never pkill -f or killall: a pattern can match your own shell. Stop a job by its process group: kill -- -<PGID> (find it with ps -eo pid,pgid,cmd).
+- The box stops 12 hours after it boots (about 09:00 UTC on 1 Nov): commit and push after every meaningful step (git push -q origin sb-house). A WIP autosave also commits this worktree every ten minutes.
+- In this box the shell's grep is a function that can break: call /usr/bin/grep by its path.
+- LOOK at every shot you take (open the PNG with the Read tool) and write down three things wrong in each before you call it done. A green gate is not a look. Shoot at 360x780 and 320x568 as well as 412x915. Shots go against a local server only, never the live host.
+- Commit with explicit paths, a message in the repo's style, ending with these two lines:
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01Dzsq6Wiep7qHdfRq9UrbKd
+- Times in PROGRESS.md come from date -u at commit time. Do not edit DESIGN.md (a verbatim copy); put DESIGN redlines (the ramp, the hearts) in your QUESTIONS entry.`
+const BRIEF = `HOUSE SLICE 1, LANE A. Build:
+1. The run state (BUILD-PLAN T2.8): a house is five rooms, each from a photo shot in any order (camera, camera roll, a recent room: DESIGN 8's repeats allowed), saved to the save's existing run field after every room, resumed on launch. Death ends the run. Retry House replays the same rooms so far with a fresh bug and the entry gear; the rest are still to shoot.
+2. The title: Start a house first once the player has cleared a first room (DESIGN 5.3 keeps the very first screen to its two buttons), Free play below it, Continue the house when a run is saved, and a small Houses cleared n.
+3. In a house room, the top strip's room name reads Room n of 5 (the last room: The last room). Astra's run_pips wait in her round 3 cut (lane B wires them): keep the words now.
+4. The doorway card replaces the clear card in a house: Room n cleared, Banked n dead pixels, Room n+1 is tougher. Buttons: Shoot the next room, Choose a photo, Use a recent room, Leave the house (saved; resume from the title). Every control 48 px or more.
+5. The ramp table (the proposal 2.1, Stephen's "Firm ramp"): room 1 exactly today's rules; rooms 2, 3 and 4 an enemy floor of 2, 3 and 4 (ramp fodder added where an extra enemy would go today, by DESIGN 7's rules: outside 2 cells of spawn, outside 3 of the main ascent, never on its safe cells, the biome's kind); an elite guaranteed from room 3 (the fodder farthest from spawn promoted when the photo gives none); room 4 fodder at 1.5x HP in quarters; enemy speed 1.25x in rooms 3 and 4; caps as the table. Behind a roomIndex opt the sim and features read; free play, codes and room 1 never see it.
+6. Hearts carried through a house with one heart back at each doorway, up to the cap; the gear carried (the sitting already keeps it); Dead pixels at x1 in a house (DESIGN 8).
+7. Death in a house: The house is lost, Lost n dead pixels. Buttons: Retry House, New house, Title.
+8. Room 5 for now: a normal room flagged as the last; its clear ends the house on a plain House cleared card (5 rooms, n dead pixels; New house, Title) and counts the clear. Named hooks for lane B: the boss, the clear card's prize, the pips.
+Tests: harness groups for the ramp (floors met on every built corpus room per room index, the promotion, room 4 HP and the 1.25x speed, room 1 byte identical, the bot still walks every corpus room under room 4 rules) and for the run state's serialisation; a new browser gate house (test/house.mjs, registered in tools/check.js and redwatch's BROWSER set): a five room run by real taps (the climbs through SB_DEV's goto liberty), the run saved after each room and resumed after a reload, the doorway card's words and buttons, Room n of 5, hearts carried with one back, Retry House after a death, Leave the house and Continue the house. A redwatch row RED for each behaviour. Shots of the title with a saved run, the doorway card, the strip's Room 3 of 5, the death card in a house and the House cleared card, at 412x915, 360x780 and 320x568, LOOKED at.`
+const DONE = { type: 'object', properties: {
+  commit: { type: 'string' }, summary: { type: 'string' },
+  gates: { type: 'array', items: { type: 'string' } }, mutants: { type: 'array', items: { type: 'string' } },
+  shots: { type: 'array', items: { type: 'string' }, description: 'each shot path and the three things wrong you saw' },
+  open: { type: 'array', items: { type: 'string' } } },
+  required: ['commit', 'summary', 'gates', 'mutants', 'shots', 'open'] }
+const FINDINGS = { type: 'object', properties: { findings: { type: 'array', items: { type: 'object', properties: {
+  title: { type: 'string' }, severity: { type: 'string', enum: ['blocker', 'major', 'minor'] }, evidence: { type: 'string' }, fix: { type: 'string' } },
+  required: ['title', 'severity', 'evidence', 'fix'] } } }, required: ['findings'] }
+const reviewRules = `You are reviewing, not building: do not edit, commit or push anything. ` + RULES.split('\n').filter(l => !/Commit with|Co-Authored|Claude-Session|Times in PROGRESS|commit and push after/.test(l)).join('\n')
+
+phase('build')
+const built = await agent(`${CONTEXT}\n\n${BRIEF}\n\nBuild it, verify it, record it (a PROGRESS entry headed HOUSE-A, a BUILD-PLAN State row, a Q200 entry quoting his rulings with their dates and the DESIGN redlines), commit with explicit paths and push, then report.\n\n${RULES}`, { label: 'build:house-a', phase: 'build', schema: DONE, effort: 'high' })
+if (!built) { log('build returned nothing; stopping'); return { failed: 'build' } }
+log('house A built at ' + built.commit)
+
+phase('review')
+const review = await agent(`${CONTEXT}\n\nReview this change, built and committed on sb-house as ${built.commit} (git log --oneline -15; git diff --stat 5156bdc1a ${built.commit}; it may have ridden WIP autosaves). Its brief was:\n${BRIEF}\n\nYour lens has two parts. (1) The code: run nice -n 10 node harness.js --fast and node tools/lint.mjs. Is room 1, free play and every share code byte identical to before (goldens, levelHash, records)? Is the ramp exactly the table, placed by DESIGN 7's rules, never on the ascent's safe cells, and does the bot still walk room 4 rules? Does the run state survive a reload at every point (mid room, on the doorway card, after a death), and can a saved run be lost or duplicated? No allocation in step; every mutant RED for the right reason; copy law. (2) The player's seat, browsers one at a time under the lock against a local server only: play a house at 412x915 and 320x568 by real taps; LOOK at the title, the doorway card, the strip, the death card and the clear card: is the goal clear, does each room feel harder, is anything unreadable or over the controls?\n\nReport only defects you can show with evidence (file:line, a command and its output, or a shot path and what is wrong in it).\n\n${reviewRules}`, { label: 'review:house-a', phase: 'review', schema: FINDINGS, effort: 'high' })
+const found = (review && review.findings) || []
+log('house A: ' + found.length + ' findings (' + found.filter(f => f.severity !== 'minor').length + ' blocker or major)')
+
+let fixed = null
+if (found.length) {
+  phase('fix')
+  fixed = await agent(`${CONTEXT}\n\nA reviewer looked at this change (${built.commit} on sb-house). For EACH finding below: first try to refute it from the code or a run; fix only the real ones, each with its assertion or gate and a redwatch row RED where it is a behaviour; rerun the affected gates and node tools/check.js --fast; record it (a PROGRESS entry headed HOUSE-AR, a State row), commit and push. Report which you fixed, which you refuted and why, and what is still open.\n\nThe brief was:\n${BRIEF}\n\nFINDINGS:\n${JSON.stringify(found, null, 1)}\n\n${RULES}`, { label: 'fix:house-a', phase: 'fix', schema: DONE, effort: 'high' })
+  if (!fixed) log('fix returned nothing')
+  else log('house A fixes at ' + fixed.commit)
+}
+return { built, findings: found, fixed }
