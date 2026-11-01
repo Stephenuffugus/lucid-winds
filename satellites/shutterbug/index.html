@@ -1360,17 +1360,20 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* LEVELSR: a refusal whose standing row holds only open runs narrower than FLOOR_RUN_MIN (a floor band with a sliver
      open at one edge) builds once more with the floor band rule (narrow); a room that built is never rebuilt */
   /* CLIMB (Q97, Q221): a v2 record with rules 1 or more builds by the climb rules (edge ledges in buildAt, the aimed
-     stair in repair); every other record (v1, rules 0, opts.noClimb) builds by today's rules exactly. A box the climb
-     rules refuse builds once more by today's rules on the same record and keeps that level (repair.wholeFallback 1),
-     so no room that builds today stops building; when both refuse, today's refusal goes back, so the crop screen's
-     cause and the auto crop's order of boxes are today's */
+     stair in repair); every other record (v1, rules 0, opts.noClimb) builds by today's rules exactly. Today's rules
+     decide whether a box builds: a box they refuse gets today's refusal (its cause, its band, so the crop screen and
+     the auto crop's boxes and their cost are today's); a box they build is built again by the climb rules and keeps
+     the climb's level, or today's when the climb refuses (repair.wholeFallback 1), so no room that builds today stops
+     building. Pipeline A (the crop screen's reading at rest) is the climb's reading, its edge ledges drawn */
   function build(rec, opts) {
     opts = opts || {};
     if (!climbs(rec, opts)) return buildRules(rec, opts, 0);
+    if (opts.stage === 'A') return buildRules(rec, opts, 1);
+    var today = buildRules(rec, opts, 0);
+    if (today.needsCrop) return today;
     var lv = buildRules(rec, opts, 1);
     if (!lv.needsCrop) return lv;
-    var today = buildRules(rec, opts, 0);
-    if (!today.needsCrop) today.repair.wholeFallback = 1;
+    today.repair.wholeFallback = 1;
     return today;
   }
   function climbs(rec, opts) { return !opts.noClimb && rec.v >= 2 && rec.rules >= 1; }

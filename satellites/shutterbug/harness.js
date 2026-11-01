@@ -5457,17 +5457,19 @@ group('H-climb-1', 'the climb rules (Q221, record v2 RULES 1): v1 and RULES 0 bu
   t.eq(capBad.length, 0, 'every climb level stays within CLIMB_PASSES 8 passes, REPAIR_MAX_CHANGE 15% of the cells and TAB_MAX 12 tabs a pass' + (capBad.length ? ': ' + capBad.slice(0, 4).join('; ') : ''));
   t.ok(morePasses > 0, 'some climb level needs more than today\'s 4 passes (' + morePasses + ')');
   /* never lose a room */
-  let fell = 0, both = 0; const lost = [], fbBad = [], causeBad = [];
+  let fell = 0, both = 0; const lost = [], fbBad = [], causeBad = [], gainedBad = [];
   for (const r of rooms) {
     if (!r.lv0.needsCrop && r.lv1.needsCrop) lost.push(r.tag);
+    if (r.lv0.needsCrop && !r.lv1.needsCrop) gainedBad.push(r.tag);
     if (!r.lv1.needsCrop && r.lv1.repair.wholeFallback) { fell++; if (r.lv1.climb || SB.pipeline.levelHash(r.lv1) !== SB.pipeline.levelHash(r.lv0)) fbBad.push(r.tag); }
     if (r.lv0.needsCrop && r.lv1.needsCrop) { both++; if (r.lv1.cause !== r.lv0.cause || JSON.stringify(r.lv1.band) !== JSON.stringify(r.lv0.band) || r.lv1.why !== r.lv0.why) causeBad.push(r.tag); }
   }
   const models = rooms.filter(r => r.kind === 'model'), seekLost = models.filter(r => r.seek0.box && !r.seek1.box).map(r => r.tag), seekLater = models.filter(r => r.seek0.box && r.seek1.box && r.seek1.builds > r.seek0.builds).map(r => r.tag);
   t.eq(lost.length, 0, 'every room that builds by today\'s rules builds by the climb rules (' + rooms.length + ' rooms: fixtures, model scenes at the default box, real photos)' + (lost.length ? ': ' + lost.slice(0, 6).join('; ') : ''));
   t.ok(fell > 0 && fbBad.length === 0, 'a box the climb rules refuse keeps today\'s level bit for bit, marked repair.wholeFallback (' + fell + ' rooms)' + (fbBad.length ? ': ' + fbBad.slice(0, 4).join('; ') : ''));
-  t.ok(both > 0 && causeBad.length === 0, 'a box both rules refuse says today\'s refusal: the same cause, band and why (' + both + ' rooms)' + (causeBad.length ? ': ' + causeBad.slice(0, 4).join('; ') : ''));
-  t.ok(seekLost.length === 0 && seekLater.length === 0, 'the search develops every model scene it develops today, never after more builds (' + models.filter(r => r.seek1.box).length + ' of ' + models.length + ')' + (seekLost.length + seekLater.length ? ': ' + seekLost.concat(seekLater).slice(0, 4).join('; ') : ''));
+  t.ok(both > 0 && causeBad.length === 0 && gainedBad.length === 0, 'a box today\'s rules refuse is refused by RULES 1 with today\'s refusal: the same cause, band and why (' + both + ' rooms), so the crop screen and the search pay today\'s cost' + (causeBad.length + gainedBad.length ? ': ' + causeBad.concat(gainedBad.map(x => x + ' built')).slice(0, 4).join('; ') : ''));
+  const seekDiff = models.filter(r => !!r.seek0.box !== !!r.seek1.box || r.seek0.builds !== r.seek1.builds || (r.seek0.box && JSON.stringify(r.seek0.box) !== JSON.stringify(r.seek1.box))).map(r => r.tag);
+  t.ok(seekLost.length === 0 && seekLater.length === 0 && seekDiff.length === 0, 'the search develops every model scene it develops today, from the same box after the same builds (' + models.filter(r => r.seek1.box).length + ' of ' + models.length + ')' + (seekLost.length + seekLater.length + seekDiff.length ? ': ' + seekLost.concat(seekLater, seekDiff).slice(0, 4).join('; ') : ''));
   console.log('  info  H-climb-1: ' + rooms.length + ' rooms; by the climb rules ' + rooms.filter(r => !r.lv1.needsCrop && r.lv1.climb).length + ', today\'s level kept by the fallback ' + fell + ', both refuse ' + both + '; stones ' + stones + '; ledge cells ' + ledgeCells);
 });
 group('H-climb-2', 'the climb rules\' levels are played (Q221): the harness\'s bot walks the main ascent of every room the climb rules build, the room model\'s developed scenes and the real photo fixtures, through the real sim to the clear', t => {

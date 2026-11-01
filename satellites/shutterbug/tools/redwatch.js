@@ -1269,8 +1269,10 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'a stone is always above the highest reached row' }] },
   { name: 'V1_CLIMBS', task: 'CLIMB', file: 'page', find: 'function climbs(rec, opts) { return !opts.noClimb && rec.v >= 2 && rec.rules >= 1; }', repl: 'function climbs(rec, opts) { return !opts.noClimb; }',
     gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'every fixture in modes 0 and 1 builds the same level by v1 and by v2 RULES 0, never by the climb rules' }] },
-  { name: 'FALLBACK_LOST', task: 'CLIMB', file: 'page', find: '    var today = buildRules(rec, opts, 0);\n    if (!today.needsCrop) today.repair.wholeFallback = 1;\n    return today;\n', repl: '    return lv;\n',
+  { name: 'FALLBACK_LOST', task: 'CLIMB', file: 'page', find: '    today.repair.wholeFallback = 1;\n    return today;\n', repl: '    return lv;\n',
     gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'every room that builds by today\'s rules builds by the climb rules' }] },
+  { name: 'SEARCH_PAYS_CLIMB', task: 'CLIMB', file: 'page', find: '    if (today.needsCrop) return today;\n', repl: '    if (today.needsCrop) { var lc = buildRules(rec, opts, 1); if (!lc.needsCrop) return lc; return today; }\n',
+    gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'a box today\'s rules refuse is refused by RULES 1' }] },
 ];
 
 /* ---------------------------------------------------------------- run */
