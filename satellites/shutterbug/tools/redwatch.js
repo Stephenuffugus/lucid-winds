@@ -948,11 +948,11 @@ const MUTANTS = [
   /* NOTE3, the pause card (Stephen's note 3 of 31 Oct, his ruling "Pause in the top bar", QUESTIONS Q94). The brief's four:
      a stray Pause tap that leaves the room, the sim stepping under the card, Title back in the strip, a hidden page that
      keeps running; then the card's own rules, the back gesture's five, and a lost focus */
-  { name: 'PAUSE_LEAVES', task: 'NOTE3', file: 'page', find: "    document.getElementById('pause').addEventListener('click', function () { this.blur(); ui.pause(); });", repl: "    document.getElementById('pause').addEventListener('click', ui.toTitle);",
+  { name: 'PAUSE_LEAVES', task: 'NOTE3', file: 'page', find: "    ui.onTap(document.getElementById('pause'), function () { this.blur(); ui.pause(); });", repl: "    ui.onTap(document.getElementById('pause'), ui.toTitle);",   /* re anchored at W2R (onTap) */
     gates: [{ gate: 'pause', expect: '412x915: a real tap on Pause opens the pause card and keeps the room' }] },
   /* found in this change's own probe: after a tap on Pause the button kept the focus, and a later Space (the jump key)
      or Enter pressed it again and paused the room */
-  { name: 'PAUSE_KEEPS_FOCUS', task: 'NOTE3', file: 'page', find: "addEventListener('click', function () { this.blur(); ui.pause(); });", repl: "addEventListener('click', function () { ui.pause(); });",
+  { name: 'PAUSE_KEEPS_FOCUS', task: 'NOTE3', file: 'page', find: "ui.onTap(document.getElementById('pause'), function () { this.blur(); ui.pause(); });", repl: "ui.onTap(document.getElementById('pause'), function () { ui.pause(); });",   /* re anchored at W2R (onTap) */
     gates: [{ gate: 'pause', expect: 'after a tap on Pause and back to resume, Space (the jump key) and Enter leave the room running' }] },
   { name: 'PAUSE_RUNS_SIM', task: 'NOTE3', file: 'page', find: "    var run = !held && !SIDEWAYS.matches && !!G.state && SB.ui.screen === 'play';", repl: "    var run = !held && !SIDEWAYS.matches && !!G.state && (SB.ui.screen === 'play' || SB.ui.screen === 'pause');",
     gates: [{ gate: 'pause', expect: '412x915: under the pause card the room holds' }] },
@@ -1014,7 +1014,7 @@ const MUTANTS = [
     gates: [{ gate: 'input', expect: '412x915: pushed 20 px right without lifting it is right, the knob 20 px right and the right arrow lit' }] },
   { name: 'ITALIC_ARROWS', task: 'STICKR', file: 'page', find: '#stick i { font-style: normal; }\n', repl: '',
     gates: [{ gate: 'input', expect: "412x915: the stick's arrows stand upright" }] },
-  { name: 'PAD_UNDER_CARD', task: 'STICKR', file: 'page', edits: [['body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad { display: none; }\n', ''], ['var p = stickPtrs.length && live() ? stickAt', 'var p = stickPtrs.length ? stickAt']],
+  { name: 'PAD_UNDER_CARD', task: 'STICKR', file: 'page', edits: [['body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad, body:has(#swap.on) #stick .pad { display: none; }', ''],   /* re anchored at W2R (the swap card joined the rule) */ ['var p = stickPtrs.length && live() ? stickAt', 'var p = stickPtrs.length ? stickAt']],
     gates: [{ gate: 'input', expect: '412x915: under the pause card a thumb slid on the strip draws no pad' }] },
   { name: 'STICK_STEERS_PAUSED', task: 'STICKR', file: 'page', find: '      if (!live()) v = null;\n', repl: '',
     gates: [{ gate: 'input', expect: '412x915: under the pause card a thumb slid on the strip reads nothing' }] },
