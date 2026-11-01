@@ -164,6 +164,10 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #swap .duo { display: flex; gap: 8px; }
 #swap .duo button { flex: 1 1 0; min-width: 0; min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1rem; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); }
 #swap #swaptake { background: var(--sun); }
+/* it docks away from the bug as the pause card does (the shots: at 320x568 with the bug at the room's top the card in
+   the middle hid it), and hides under the pause card (the shots: its heading peeked over the pause card's top) */
+#swap.high { bottom: auto; top: 3%; } #swap.low { top: auto; bottom: 3%; }
+#stage:has(> #paused.on) > #swap { visibility: hidden; }
 /* a heart is Astra's hud_heart (9 by 8, Q160) at 2x, nearest neighbour: full, or the empty frame for a lost one; the
    images are the sprite's own pixels, cut from the atlas at boot (R.heartURL) */
 #hearts i { width: 18px; height: 16px; display: block; background: var(--heart-full) 0 0 / 18px 16px no-repeat; image-rendering: pixelated; }
@@ -4752,14 +4756,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
   }
   /* Skyhook's flourish (fx_skyhook.skyhook_n, Astra's round 3: "a small hook flourish under the bug at takeoff"), 4 steps
-     a frame where the bug left the ground. Render only: the shell notes a Skyhook takeoff (R.hookAt) and the sim never
+     a frame where the bug left the ground, its bottom row on that ground. Render only: the shell notes a Skyhook takeoff (R.hookAt) and the sim never
      holds it (J8 fires nothing) */
   R.hook = { frame: -1, x: 0, y: 0, st: null };
   R.hookAt = function (st, x, y) { R.hook.frame = st.frame; R.hook.x = x; R.hook.y = y; R.hook.st = st; };
   function drawHook(s, cam, camX) {
     var hk = R.hook, a = s.frame - hk.frame;
     if (hk.st !== s || hk.frame < 0 || a < 0 || a >= 16) return;
-    var key = 'fx_skyhook.skyhook' + FX4[a >> 2], b = R.box[key], x = ((hk.x + (SB.K.HERO_W_SUB >> 1)) >> 8) - ((b.x0 + b.x1 + 1) >> 1), y = ((hk.y + SB.K.HERO_H_SUB) >> 8) - cam - b.y0;
+    var key = 'fx_skyhook.skyhook' + FX4[a >> 2], b = R.box[key], x = ((hk.x + (SB.K.HERO_W_SUB >> 1)) >> 8) - ((b.x0 + b.x1 + 1) >> 1), y = ((hk.y + SB.K.HERO_H_SUB) >> 8) - cam - b.y1 - 1;   /* its bottom on the surface the bug left (the shots: hung below it, it sank into the floor) */
     spr(ctx, key, x, y); rec('hook', key, x, y, 32, 32, camX);
   }
   /* the held looks (8.3, Astra's fx_frozen_stunned): a frozen enemy's crystals and a stunned one's stars, each a 32
@@ -5716,6 +5720,20 @@ body.sb-modal .lwfb-fab { display: none !important; }
     c2.clearRect(0, 0, cv.width, cv.height); SB.render.icon(c2, id, 0, 0);
     r.querySelector('b').textContent = ui.COPY.wpn[id] || ''; r.querySelector('span').textContent = ui.COPY.wpnSays[id] || '';
   }
+  /* where the swap card sits: in the middle of the room, else at its top, else at its bottom, wherever the bug's drawn
+     box stays in sight (the pause card's measure, ui.placePaused) */
+  ui.placeSwap = function () {
+    var el = document.getElementById('swap'), hd = SB.render.drawn.hero, cv = document.getElementById('view');
+    el.classList.remove('high', 'low');
+    if (!hd || hd.key === null || !cv.height) return '';
+    var vr = cv.getBoundingClientRect(), k = vr.height / cv.height, top = vr.top + hd.y * k, bot = top + hd.h * k;
+    var tries = ['', 'high', 'low'];
+    for (var i = 0; i < tries.length; i++) {
+      el.classList.remove('high', 'low'); if (tries[i]) el.classList.add(tries[i]);
+      var r = el.getBoundingClientRect(); if (top >= r.bottom || bot <= r.top) return tries[i] || 'middle';
+    }
+    return 'covered';
+  };
   /* after every step and on startRoom: shows the card when a compare opens (filled once), hides it when it closes */
   ui.swap = function (st) {
     var el = document.getElementById('swap'), open = !!(st && st.room.compare && st.room.cand > 0 && !st.room.dead);
@@ -5728,7 +5746,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       el.querySelector('.cmp').textContent = ui.compareLine(nu, old);
       document.getElementById('swaptake').textContent = C.swapTake.replace('{new}', C.wpn[nu] || '');
       document.getElementById('swapkeep').textContent = C.swapKeep.replace('{old}', C.wpn[old] || '');
-      swapShown = 1; swapSent = 0; SB.input.releaseAll(); el.classList.add('on');
+      swapShown = 1; swapSent = 0; SB.input.releaseAll(); el.classList.add('on'); ui.placeSwap();
     } else if (!open && swapShown) { swapShown = 0; swapSent = 0; el.classList.remove('on'); }
   };
 

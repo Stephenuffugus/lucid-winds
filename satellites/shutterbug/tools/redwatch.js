@@ -113,8 +113,8 @@ const MUTANTS = [
   { name: 'BONK_KEEPS_VY', task: 'T0.8a review', file: 'page', find: "        else { h.y = (hr + 1) * CS; h.vy = 0; h.rising = 0; }   /* the head bonk */",
     repl: "        else { h.y = (hr + 1) * CS; h.rising = 0; }   /* the head bonk */",
     gates: [{ gate: 'harness', only: 'H-sim-5', expect: 'the head meets the ceiling' }] },
-  { name: 'COYOTE_AFTER_JUMP', task: 'T0.8a review', file: 'page', find: 'h.vy = deep ? -K.DEEP_JUMP_V : -K.JUMP_V; h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;',
-    repl: 'h.vy = deep ? -K.DEEP_JUMP_V : -K.JUMP_V; h.ground = 0; h.rising = 1; h.buffer = 0; jumped = 1;',
+  { name: 'COYOTE_AFTER_JUMP', task: 'T0.8a review', file: 'page', find: 'h.vy = deep ? -(hook ? K.J8_DEEP_JUMP_V : K.DEEP_JUMP_V) : -(hook ? K.J8_JUMP_V : K.JUMP_V); h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;',   /* re anchored at W2 (Skyhook) */
+    repl: 'h.vy = deep ? -(hook ? K.J8_DEEP_JUMP_V : K.DEEP_JUMP_V) : -(hook ? K.J8_JUMP_V : K.JUMP_V); h.ground = 0; h.rising = 1; h.buffer = 0; jumped = 1;',
     gates: [{ gate: 'harness', only: 'H-sim-2b', expect: 'gives no second upward kick' }] },
   { name: 'ONEWAY_CATCHES_FROM_BELOW', task: 'T0.8a review', file: 'page', find: '      if (!landed && prevFeet <= top && feet > top && h.dive !== 2) {',
     repl: '      if (!landed && feet > top && h.dive !== 2) {',
@@ -663,7 +663,7 @@ const MUTANTS = [
   /* T1.13: the free play loop, the Wallet moments, the fab insurance */
   /* re anchored at NOTE5 (the sheets left the list) and at NOTE3 (Q94: the pause card joined it, and this row's path, the
      strip's Title under an open sheet, is gone; a refused link that arrives with the sheet open is the way left) */
-  { name: 'X_LEAVES_OVERLAY', task: 'T1.13', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'paused', 'sharesheet'];", repl: "var OVERLAYS = ['clear', 'death', 'paused'];",
+  { name: 'X_LEAVES_OVERLAY', task: 'T1.13', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'paused', 'sharesheet', 'swap'];", repl: "var OVERLAYS = ['clear', 'death', 'paused', 'swap'];",   /* re anchored at W2 */
     gates: [{ gate: 'loop', expect: 'a refused link with the share sheet open: the title with nothing over it' }] },
   { name: 'MOMENT_TWICE', task: 'T1.13', file: 'page', find: 'if (!S.doc || !framed || S.doc.moments[name]) return false;', repl: 'if (!S.doc || !framed) return false;',
     gates: [{ gate: 'loop', expect: 'inside the wrapper iframe two clears' }] },
@@ -1026,9 +1026,9 @@ const MUTANTS = [
     gates: [{ gate: 'pause', expect: 'inside the wrapper iframe a lost focus (the host page took it) leaves the room running' }] },
   { name: 'RESUME_KEEPS_EDGE', task: 'NOTE3', file: 'page', find: '    SB.input.releaseAll();   /* a tap on the strip under the card is never banked into a jump at Resume */\n', repl: '',
     gates: [{ gate: 'pause', expect: '412x915: a real tap on A under the pause card does not jump at Resume' }] },
-  { name: 'PAUSED_NOT_OVERLAY', task: 'NOTE3', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'paused', 'sharesheet'];", repl: "var OVERLAYS = ['clear', 'death', 'sharesheet'];",
+  { name: 'PAUSED_NOT_OVERLAY', task: 'NOTE3', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'paused', 'sharesheet', 'swap'];", repl: "var OVERLAYS = ['clear', 'death', 'sharesheet', 'swap'];",   /* re anchored at W2 */
     gates: [{ gate: 'pause', expect: "412x915: the pause card's Title: the title with nothing over it" }] },
-  { name: 'PAUSED_NOT_MODAL', task: 'NOTE3', file: 'page', find: "var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard'];", repl: "var MODALS = ['clear', 'death', 'sharesheet', 'devcard'];",
+  { name: 'PAUSED_NOT_MODAL', task: 'NOTE3', file: 'page', find: "var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard', 'swap'];", repl: "var MODALS = ['clear', 'death', 'sharesheet', 'devcard', 'swap'];",   /* re anchored at W2 */
     gates: [{ gate: 'pause', expect: '412x915: under the pause card an injected .lwfb-fab hides' }] },
   { name: 'PAUSE_ALWAYS_SHOWN', task: 'NOTE3', file: 'page', find: "    document.getElementById('pause').classList.toggle('on', name === 'play');", repl: "    document.getElementById('pause').classList.toggle('on', true);",
     gates: [{ gate: 'pause', expect: 'in the reveal Pause is hidden' }] },
@@ -1153,7 +1153,7 @@ const MUTANTS = [
     gates: [{ gate: 'fight', expect: "412: a chest near the room's top with the bug beside it: the card docks low" }] },
   { name: 'GOT_STAYS_OVER_BUG', task: 'W1', file: 'page', find: "    else SB.ui.gotFollow();\n", repl: '',
     gates: [{ gate: 'fight', expect: '412: as the bug falls under the docked card' }] },
-  { name: 'THROW_SILENT', task: 'W1', file: 'page', find: "      if (ev & EV.FIRE_J) au.sfx(SB.ui.WPN_SFX[SB.sim.WPN[G.state.hero.slots[0]]] || 'throw');\n", repl: '',
+  { name: 'THROW_SILENT', task: 'W1', file: 'page', find: "      if (ev & EV.FIRE_J) { var vj = SB.ui.WPN_SFX[SB.sim.WPN[G.state.hero.slots[0]]]; if (vj === undefined) vj = 'throw'; if (vj) au.sfx(vj); }\n", repl: '',   /* re anchored at W2 */
     gates: [{ gate: 'fight', expect: '412: a real A tap throws the boomerang with the throw voice' }] },
   { name: 'PROJ_IN_BRICK', task: 'W1', file: 'page', find: "      boomerang_0: '................................/................................/................................/................................/................................/................................/................................/................................/................................/......0", repl: "      boomerang_0: '................................/................................/................................/................................/................................/................................/................................/................................/................................/......9",   /* re anchored at ART2 on Astra's boomerang: its first Ink pixel Brick */
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'fx_projectiles.boomerang_0 has an Ink outline and draws only' }] },
@@ -1209,8 +1209,8 @@ const MUTANTS = [
     gates: [{ gate: "astra", expect: "an effect frame not named <clip>_<n> is refused" }] },
   { name: "CUT_FX_UNKNOWN", task: 'ART2', file: "astra", find: "            elif FX_RE.match(key):\n                warnings.append(", repl: "            elif False and FX_RE.match(key):\n                warnings.append(",
     gates: [{ gate: "astra", expect: "an effect strip new to the page (fx_shockwave on a copy without it) is taken as named clips" }] },
-  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 43\n", repl: "MAX_SPRITES = 48\n",   /* re anchored at ART3 (the cap at the splice, 43) */
-    gates: [{ gate: "astra", expect: "the cap is 43, ART3's" }] },
+  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 46\n", repl: "MAX_SPRITES = 48\n",   /* re anchored at W2 (46) */   /* re anchored at ART3 (the cap at the splice, 43) */
+    gates: [{ gate: "astra", expect: "the cap is 46, W2's" }] },
   /* ART3: Astra's rounds 2 and 3 (Q98): the cutter's rules, the splice, the stick, Pause, the crusher's shaft, the speck,
      the elites' keylines, the biome's air and badges, the icons by code */
   { name: "CUT_GAME_CASE", task: 'ART3', file: "astra", find: "    if str(man.get('game', '')).lower() != 'shutterbug':", repl: "    if man.get('game') != 'shutterbug':",

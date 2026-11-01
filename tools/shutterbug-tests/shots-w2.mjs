@@ -59,9 +59,8 @@ try {
     await tap(page, '#btnA'); await step(3);
     await shot('w2-J3', near([9, 'hero']));
     /* J4 Flashbulb: jellies two cells off each side at the apex height, the burst, then the stunned stars */
-    await room(REC, -1, [[13, 41, 3, 'frozen'], [9, 41, 3, 'frozen']], [CODE.J4, CODE.D1]); await at(11, FLOOR); await step(4);
-    await page.evaluate(() => window.SB.game.state.enemies.forEach(e => { e.frozen = 0; e.stunned = 0; e.vx = 0; }));
-    await page.evaluate(() => window.SB.game.state.enemies.forEach(e => { e.state = 0; }));
+    await room(REC, -1, [[12, 42, 1, 'frozen'], [10, 42, 1, 'frozen']], [CODE.J4, CODE.D1]); await at(11, FLOOR); await step(4);
+    await page.evaluate(() => window.SB.game.state.enemies.forEach(e => { e.frozen = 0; e.hp = 8; }));   /* held by nothing after the burst but its stun; 8 quarters so it lives to show the stars */
     await tap(page, '#btnA');
     for (let k = 0; k < 40; k++) { await step(1); if ((await st()).proj.some(p => p.kind === 6 && p.mode === 1)) break; }
     await step(2); await shot('w2-J4', near([6, 'hero']));
@@ -76,7 +75,7 @@ try {
     await shot('w2-J6', near([8, 'hero']));
     /* the worst angle: Halo under the 4 cell ledge (rows 42 and 43, columns 4 to 7), two rows over the bug's head */
     await room(LEDGE, -1, [[5, 38, 1, 'frozen']], [CODE.J6, CODE.D1]); await at(5, FLOOR); await step(4);
-    await tap(page, '#btnA'); await step(1);
+    await tap(page, '#btnA'); await step(5);
     await shot('w2-halo-ceiling', near([8, 'hero']));
     /* J7 Shutter Snap: moths two cells off each side, held by a stun (not frozen), the snap and the frozen look */
     await room(REC, -1, [[13, 46, 1, 'stunned'], [8, 45, 1, 'stunned']], [CODE.J7, CODE.D1]); await at(11, FLOOR); await step(4);
