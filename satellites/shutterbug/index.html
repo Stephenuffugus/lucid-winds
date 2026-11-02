@@ -5828,6 +5828,31 @@ body.sb-modal .lwfb-fab { display: none !important; }
     boss_spark: { w: 8, h: 8, frames: {
       a: '...000../..06660./00066600/09000000/0999000./009990../.00900../..000...',
       b: '....000./...06660/..006660/00000000/0999900./009990../.09000../.000....'
+    } },
+    /* edge_attic: from Astra (world/edge_attic.png) */
+    edge_attic: { w: 16, h: 4, frames: {
+      top_a: '............4.../3000000333333333/3077770333333333/.000000.........',
+      top_b: '........4......./3333000000333333/3333077770333333/....000000......'
+    } },
+    /* edge_frost: from Astra (world/edge_frost.png) */
+    edge_frost: { w: 16, h: 4, frames: {
+      top_a: '5555655555556555/4446444444464444/4464444444644444/4444444344444444',
+      top_b: '5555565555555655/4444644444446444/4446444444464444/4444443444444444'
+    } },
+    /* edge_deep: from Astra (world/edge_deep.png) */
+    edge_deep: { w: 16, h: 4, frames: {
+      top_a: '...........6..../..0000003333..../330cccc0....3333/..000000........',
+      top_b: '......6........./.....33000000.../33333..0cccc0333/.......000000...'
+    } },
+    /* edge_overgrowth: from Astra (world/edge_overgrowth.png) */
+    edge_overgrowth: { w: 16, h: 4, frames: {
+      top_a: '.000000...000.../.0dddd0...0d0.../30dddd0333000333/3000000333333333',
+      top_b: '.....000000...../.....0dddd0...../333330dddd033333/3333300000033333'
+    } },
+    /* edge_ember: from Astra (world/edge_ember.png) */
+    edge_ember: { w: 16, h: 4, frames: {
+      top_a: '......00000...../2000000888022222/2088888000022222/2000000022222222',
+      top_b: '........00000.../2220000008880222/2220888880000222/2220000000222222'
     } }
   };
   /* SPRITES END */
@@ -6007,6 +6032,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
           else { sctx.fillStyle = line; sctx.fillRect(x * C, y * C + 2, C, 1); }
         }
       }
+    }
+    /* the biome's edge trim (Astra's round 5, 16x4, laid on the top of every surface the bug stands on, top_a and top_b
+       alternating by the cell so a long run never repeats): dust and grain in the Attic, wet algae in the Deep, moss in
+       the Overgrowth, the safe warm cracks in the Ember; in the Frost only the slick ledges, their pale streaks saying
+       slippery where the Teal edge was. Never on a film tab: that stays the help's own cream */
+    var EDGE = ['edge_attic', 'edge_frost', 'edge_deep', 'edge_overgrowth', 'edge_ember'][biome] || 'edge_attic';
+    for (y = 1; y < h; y++) for (x = 0; x < w; x++) {
+      i = y * w + x;
+      var top = (lv.solid[i] && open(x, y - 1)) || (lv.plat[i] && !(lv.tab && lv.tab[i]));
+      if (!top) continue;
+      if (biome === 1 && !(lv.slick && lv.slick[i])) continue;
+      spr(sctx, EDGE + '.' + (((x * 7 + y * 3) & 1) ? 'top_b' : 'top_a'), x * C, y * C);
     }
     R.builds++;
   };

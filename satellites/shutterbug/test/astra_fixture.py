@@ -64,6 +64,9 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'boss/frost_warn.png': ('frost_warn', None), 'boss/boss_icicle.png': ('boss_icicle', None), 'boss/pulse_warn.png': ('pulse_warn', None),
     'boss/pulse_ring.png': ('pulse_ring', None), 'boss/thorn_warn.png': ('thorn_warn', None), 'boss/thorn_line.png': ('thorn_line', None),
     'boss/fountain_warn.png': ('fountain_warn', None), 'boss/boss_spark.png': ('boss_spark', None),
+    # the biome edge trims
+    'world/edge_attic.png': ('edge_attic', None), 'world/edge_frost.png': ('edge_frost', None), 'world/edge_deep.png': ('edge_deep', None),
+    'world/edge_overgrowth.png': ('edge_overgrowth', None), 'world/edge_ember.png': ('edge_ember', None),
 }
 
 
