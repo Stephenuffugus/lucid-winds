@@ -1,12 +1,14 @@
 # START HERE
 
-## 🎳 2 Nov 20:32 UTC (Opus) DEWBALL dewball-v36 READY ON dewball-w567 `cdc057046`: ALL SEVEN WORLDS IN MODELS; NOT DEPLOYED (HIS LINE BELOW)
+## 🎳 2 Nov 20:32 UTC (Opus, updated 20:39) DEWBALL dewball-v36 READY ON dewball-w567 `afa458f65`: ALL SEVEN WORLDS IN MODELS, PLAY READY; NOT DEPLOYED (HIS LINE BELOW)
 - Built today on /workspaces/dewball-w567 (no credits): The Whole World (w7, 92 kinds) and Dream Meadow (w6, 54 kinds) in models, on top of Starfall Bay (w5, `85fc8b343`). Every new kind looked at (Blender four views, game camera pairs, world shots); none kept a primitive. Record: satellites/dewball/FORGE.md, the last three sections.
 - PERF FIX (drawing only, same.sh byte identical): w7 at 22 m drew all 4,466 instances as models, 4.5M triangles (over the 3x fence). lodSync gained LOD_SPECK 20 and LOD_GLOBE 1.2: now 2.2M at 22 m, 2.5M at 5 m, 1.7M at 44 m.
 - SIGN FIX: the globe's gate signs hung over the spawn ("13.0 m" banners across the screen); now on their fences; sign_test covers the globe, both plants red.
 - Gates green: report, gate-glb w6 w7 (+ --block atlas; the gate now accepts a globe kind wholly past the visible cap), same.sh, react, sign, manifest fresh. Stamp CACHE dewball-v36, ASSET_V and sw.js?v= 24 (v35 had moved only the CACHE).
 - HIS LINE (vault first, the 1,335 credits of Meshy originals exist only on this box): in a VS Code terminal tab, `env -u GITHUB_TOKEN gh auth login -h github.com -p https -w`, then at an idle prompt `! bash /home/codespace/dewball-drafts/deploy-dewball-v36.sh` (VAULT_LATER=1 ships without the vault). Dry run built the deploy commit (217 paths, satellites/dewball only), not pushed.
-- After it: merge dewball-w567 into add-sproing-jumper; then Dewball Play readiness (no privacy.html yet; twa_ready; store kit; the manifest says landscape, his call).
+- PLAY READINESS (`afa458f65`): twa_ready all green (the Hues guard: inside the Play app no Sunbeam SDK or Firebase, no exit, no arcade button, no feedback fab, no offline arcade link; privacy.html; manifest id). Offline cold launch opens Crumb Country (scripts/_offline_check.mjs now taps a world when the menu draws no canvas, add-sproing-jumper `048485b5b`).
+- After his deploy: merge dewball-w567 into add-sproing-jumper. Then the store kit (shots from the real game, feature graphic, Console page like store/shutterbug-play). HIS CALLS: price (assumed $0.99, "our next one dollar game"), landscape only (the manifest says landscape) or both, listing copy.
+- Seen, not fixed: Dream Meadow's spawn frame is nearly empty and dark (both builds); the w7 hillocks read lime green, louder than before.
 
 ## 🗒 2 Nov 18:26 UTC (Opus) HIS CALLS: SHUTTERBUG AT $0.99; DEWBALL THE NEXT $1 CANDIDATE; LOAF TO ASTRA FOR A WHOLE PACK; LUCID WINDS PUBLISHING IS FABLE'S AND HIS
 - Shutterbug: $0.99 (store/shutterbug-play/index.html says so). He is testing sb-m1-12 and looking for one real room photo for the first store shot.
