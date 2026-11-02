@@ -363,14 +363,29 @@
 </div>
 <div id="toast"></div>
 
-<script src="/sunbeam-sdk.js?v=7"></script>
-<script>window.Sunbeam&&Sunbeam.init({gameId:"dewball"}).catch(function(){});</script>
+<script>
+/* THE PLAY APP (a Trusted Web Activity, 2 Nov 2026, Hues' rule): Chrome opens it with document.referrer
+   android-app://<package>, and an installed Android standalone window counts too (the fleet's rule, Hues and
+   Bandit's Box). Inside it the Sunbeam SDK is never loaded (no Firebase, nothing sent: the listing says no data
+   collected), the arcade exit is hidden and SWS_EXIT refuses, so the Play app can never reach the portal and its
+   Stripe checkout (Play's payment rules). Every Sunbeam call below already tests window.Sunbeam first. */
+(function(){
+  var inTWA=false;
+  try{ inTWA=document.referrer.indexOf("android-app://")===0||!!(window.matchMedia&&matchMedia("(display-mode: standalone)").matches&&/Android/i.test(navigator.userAgent)); }catch(e){ inTWA=false; }
+  window.SWS_IN_TWA=inTWA;
+  if(inTWA) return;
+  var s=document.createElement("script"); s.src="/sunbeam-sdk.js?v=7";
+  s.onload=function(){ if(window.Sunbeam&&Sunbeam.init) Sunbeam.init({gameId:"dewball"}).catch(function(){}); };
+  document.head.appendChild(s);
+})();
+</script>
 <script>
 // portal-standard sunbeam cap + embed handshake
 (function(){
   var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
   window.SWS_EMBED=SWS_EMBED;
-  window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:"close"},"*"); }catch(e){} return; } location.href="https://lucidwinds.com/portal/"; };
+  window.SWS_EXIT=function(){ if(window.SWS_IN_TWA) return;   /* ⛔ never leave the Play app */
+    if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:"close"},"*"); }catch(e){} return; } location.href="https://lucidwinds.com/portal/"; };
   if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:"ready"},"*"); }catch(e){} }
   window._sbCapEarn=function(n,tag){ var granted=0;
     try{ var k="sw_sb_dewball", s={}; try{ s=JSON.parse(localStorage.getItem(k)||"{}"); }catch(e){}
@@ -5496,7 +5511,8 @@
     $("collectClose").onclick=$("collectBack").onclick=function(){ $("collect").classList.add("hidden"); };
     $("mMute").onclick=function(){ muted=!muted; save.muted=muted; persist();
       $("mMute").textContent="Sound: "+(muted?"Off":"On"); };
-    $("mExit").onclick=function(){ if(window.SWS_EXIT)window.SWS_EXIT(); };
+    $("mExit").onclick=function(){ if(window.SWS_IN_TWA) return; if(window.SWS_EXIT)window.SWS_EXIT(); };
+    if(window.SWS_IN_TWA) $("mExit").style.display="none";   // the Play app has no arcade to go back to
     $("pResume").onclick=function(){ setPause(false); };
     $("pRestart").onclick=function(){ setPause(false); startWorld(WIDX); };
     $("pQuit").onclick=function(){ setPause(false);
@@ -5764,6 +5780,6 @@
 
 })();
 </script>
-<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'dewball',surface:'satellite'});};document.head.appendChild(s);});</script>
+<script>/* fleet feedback fab (2026-07-27); never in the Play app (2 Nov 2026, Hues' rule: the form sends to our server, and the listing says nothing is collected) */addEventListener('load',function(){if(window.SWS_IN_TWA)return;var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'dewball',surface:'satellite'});};document.head.appendChild(s);});</script>
 </body>
 </html>

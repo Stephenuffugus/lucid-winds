@@ -989,3 +989,17 @@ at the horizon. **sign_test.js now covers the globe** (it skipped it): SIGN_PASS
 worlds; `--plant` (the old planar placement) and the new `--plant-globe` (the old globe placement) both go red. The
 test calls `D.sync()` after its steps, because the globe places its signs in globeSync, which a step does not run.
 same.sh SAME_PASS, react_test REACT_PASS.
+
+## Play readiness: the Play app guard, the privacy page, the manifest id, 2 Nov 2026 (`dewball-v36`, no credits)
+
+`node scripts/twa_ready.mjs dewball` was red three ways: SWS_EXIT had no Play app guard, no privacy page, no manifest
+id. **Fixed the Hues way:** a TWA test at boot (document.referrer `android-app://`, or an installed Android standalone
+window) sets `SWS_IN_TWA`; inside the Play app the Sunbeam SDK is never loaded (it lazy loads Firebase; every Sunbeam
+call already tests `window.Sunbeam`), SWS_EXIT refuses, the "Sky Wolf Studio Arcade" button is hidden, the feedback
+fab is not loaded, and the service worker's offline page drops its "Back to the arcade" link. `privacy.html` (the
+Shutterbug and Hues pages' shape: what `dewball_save` and the song unlock keys hold, the files and songs from
+lucidwinds.com, the web copy's Sunbeams and feedback form; the email inside the `email_off` fence), manifest
+`"id": "./"`. **After:** every gate green; the offline cold launch (`scripts/_offline_check.mjs`, which now launches
+with SwiftShader and, when a menu draws no canvas, taps the first open world card offline) opened Crumb Country with
+the network off (looked at: the ball, the crumbs, the HUD, the first hints). same.sh SAME_PASS, sign_test SIGN_PASS.
+Still his: price, listing copy, the landscape only manifest, and the store pictures from the real game.

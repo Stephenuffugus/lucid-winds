@@ -61,7 +61,10 @@ function offlineResponse() {
     + '<main><h1>That did not load</h1><p>The connection went quiet while this was opening. '
     + 'Your games and your sunbeams are safe.</p>'
     + '<button onclick="location.reload()">Try again</button>'
-    + '<a href="/portal/">Back to the arcade</a></main>',
+    + '<a id="arc" href="/portal/">Back to the arcade</a></main>'
+    /* the Play app (2 Nov 2026): no way out to the portal and its checkout, not even from this page */
+    + '<script>try{if(document.referrer.indexOf("android-app://")===0||(matchMedia("(display-mode: standalone)").matches&&/Android/i.test(navigator.userAgent))){'
+    + 'var a=document.getElementById("arc");a.parentNode.removeChild(a);}}catch(e){}</script>',
     { status: 503, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
 }
 
