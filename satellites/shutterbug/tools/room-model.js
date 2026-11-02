@@ -9,6 +9,15 @@
  *   node tools/room-model.js --page <file>        the same for another copy of the page (the before column)
  *   node tools/room-model.js --png <k> <out.png>  scene k written as a PNG (the crop screen's shots)
  *   node tools/room-model.js --json               one JSON line per scene
+ *   node tools/room-model.js --no-seek            the default box only, without the auto crop's search (faster)
+ *
+ * The auto crop (Q181): for each scene the default box refuses, the page's own SB.capture.seekBoxes list is built in
+ * order, at most SB.capture.SEEK.CAP builds, as Develop's search does in the page; the table adds how many scenes
+ * develop from the default box with the search and the builds the search spent per photo (median, p90, max), over
+ * the refused scenes and over all 60 (a scene that builds at rest spends none).
+ * The capture normalisation (Q182): each box's grid passes through the page's own SB.capture.normalize between the
+ * area average and nearest, as the page's gridRecord does (an older page has none, so --page on it is the before); the
+ * table adds the biomes of the rooms that develop and the film share of their main ascents (quartiles).
  *
  * Each scene is 1024 x 1360 (a phone's 3:4 photo decoded at the page's 1024 width): a lit wall, a ceiling strip in
  * some, a floor band (wood, dark wood, grey carpet, beige carpet or light tile) 8 to 22% of the frame, two to four pieces
@@ -84,11 +93,13 @@ function paint(k) {
   return { w: BW, h: BH, bpp: 3, px, floor: F.name, floorY };
 }
 
-/* the page's own shell-capture block, run in a context with only what its pure functions read */
-function captureOf(page) {
+/* the page's own shell-capture block, run in a context with only what its pure functions read; with core (an SB the
+   core loader made) the block sees the core through a child object, so gridRecord can run (H-norm-1) and the core's
+   own SB gains no capture key */
+function captureOf(page, core) {
   const html = fs.readFileSync(page, 'utf8'), m = html.match(/<script id="shell-capture" data-tool>([\s\S]*?)<\/script>/);
   if (!m) throw new Error('room-model: the page holds no shell-capture block');
-  const SB = { GRID: { W: 24, H: 48 } }, ctx = { SB, self: { SB }, window: { SB } };
+  const SB = core ? Object.create(core) : { GRID: { W: 24, H: 48 } }, ctx = { SB, self: { SB }, window: { SB } };
   vm.runInNewContext(m[1].replace(/\}\)\(\s*[\w.]+\s*\)\s*;?\s*$/, '})(SB);'), ctx);
   return SB.capture;
 }
@@ -97,8 +108,11 @@ function cropImg(img, c) {
   for (let y = 0; y < c.h; y++) img.px.copy(px, y * c.w * 3, ((c.y + y) * img.w + c.x) * 3, ((c.y + y) * img.w + c.x + c.w) * 3);
   return { w: c.w, h: c.h, bpp: 3, px };
 }
-function recordOf(SB, img, crop) {
-  const W = SB.GRID.W, H = SB.GRID.H, rgb = downscaleRGB(cropImg(img, crop), W, H), pal = new Uint8Array(W * H);
+/* the record a box makes: the oracle's area average, then the page's own capture normalisation when CAP (the page's
+   shell-capture, captureOf) has one (Q182; an older page has none, so its column is the before), then nearest */
+function recordOf(SB, img, crop, CAP) {
+  const W = SB.GRID.W, H = SB.GRID.H, raw = downscaleRGB(cropImg(img, crop), W, H), pal = new Uint8Array(W * H);
+  const rgb = CAP && typeof CAP.normalize === 'function' ? CAP.normalize(raw) : raw;
   for (let i = 0; i < W * H; i++) pal[i] = SB.palette.nearest(rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2]);
   return SB.record.fromJSON({ v: SB.record.V, w: W, h: H, mode: 0, focal: null, rows: SB.record.palToRows(pal, W, H), rows2: null });
 }
@@ -112,7 +126,28 @@ function png(img, out) {
   fs.writeFileSync(out, Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ih), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]));
 }
 
-module.exports = { paint, captureOf, recordOf, png, FLOORS, COUNT };
+/* the auto crop's search over one scene, as the page runs it: the candidates in order, at most SEEK.CAP builds; with
+   opts.raw each box's grid skips the capture normalisation (the search alone, on the grids it met before Q182) */
+function seek(SB, CAP, img, crop, no, opts) {
+  const boxes = CAP.seekBoxes(crop, img.w, img.h, no.cause, no.band);
+  let n = 0;
+  for (const b of boxes) {
+    if (n >= CAP.SEEK.CAP) break;
+    n++;
+    const lv = SB.pipeline.build(recordOf(SB, img, b, opts && opts.raw ? null : CAP), { firstRoom: true });
+    if (!lv.needsCrop) return { seekBuilds: n, seekBox: b, seekLevel: lv };
+  }
+  return { seekBuilds: n, seekBox: null, seekLevel: null };
+}
+
+/* a built room's biome and its film share: of the main ascent's standing cells, the share that stand on a film tab */
+function levelInfo(SB, lv) {
+  const w = lv.w, n = w * lv.h, nodes = lv.ascent && lv.ascent.nodes ? Array.from(lv.ascent.nodes).filter(v => v < n) : [];
+  let onTab = 0; for (const v of nodes) if (lv.tab[v + w]) onTab++;
+  return { biome: SB.palette.BIOMES[lv.biome], tabShare: nodes.length ? onTab / nodes.length : 0 };
+}
+
+module.exports = { paint, captureOf, recordOf, seek, levelInfo, png, FLOORS, COUNT };
 if (require.main === module) {
   if (opt('png') !== null) {
     const k = +opt('png'), out = ARGS[ARGS.indexOf('--png') + 2];
@@ -121,18 +156,40 @@ if (require.main === module) {
   }
   const SB = loadCoreFull(PAGE).SB, CAP = captureOf(PAGE), rows = [];
   for (let k = 0; k < COUNT; k++) {
-    const img = paint(k), crop = CAP.fit(img.w, img.h), lv = SB.pipeline.build(recordOf(SB, img, crop), { firstRoom: true });
-    rows.push({ k, floor: img.floor, built: !lv.needsCrop, cause: lv.needsCrop ? (lv.cause || 'none') : '', detail: lv.needsCrop ? lv.detail : '', tabs: lv.needsCrop ? -1 : lv.repair.tabs,
-      spawnRow: lv.needsCrop ? -1 : Math.floor(lv.spawn / lv.w), exitRow: lv.needsCrop ? -1 : Math.floor(lv.exit / lv.w), crop });
+    const img = paint(k), crop = CAP.fit(img.w, img.h), lv = SB.pipeline.build(recordOf(SB, img, crop, CAP), { firstRoom: true });
+    const row = { k, floor: img.floor, built: !lv.needsCrop, cause: lv.needsCrop ? (lv.cause || 'none') : '', detail: lv.needsCrop ? lv.detail : '', tabs: lv.needsCrop ? -1 : lv.repair.tabs,
+      spawnRow: lv.needsCrop ? -1 : Math.floor(lv.spawn / lv.w), exitRow: lv.needsCrop ? -1 : Math.floor(lv.exit / lv.w), crop, seekBuilds: 0, seekBox: null };
+    if (lv.needsCrop && !ARGS.includes('--no-seek')) Object.assign(row, seek(SB, CAP, img, crop, lv));
+    const got = !lv.needsCrop ? lv : row.seekLevel;
+    delete row.seekLevel;
+    if (got) Object.assign(row, levelInfo(SB, got));
+    rows.push(row);
   }
   if (ARGS.includes('--json')) { for (const r of rows) console.log(JSON.stringify(r)); process.exit(0); }
-  console.log('room model, ' + COUNT + ' scenes at ' + BW + 'x' + BH + ', the default box ' + JSON.stringify(rows[0].crop) + ', page ' + path.relative(process.cwd(), PAGE));
+  console.log('room model, ' + COUNT + ' scenes at ' + BW + 'x' + BH + ', the default box ' + JSON.stringify(rows[0].crop) + ', page ' + path.relative(process.cwd(), PAGE) + ', capture normalisation ' + (typeof CAP.normalize === 'function' ? 'on' : 'none (an older page)'));
   for (const F of FLOORS) {
     const of = rows.filter(r => r.floor === F.name), b = of.filter(r => r.built).length;
     console.log('  ' + F.name.padEnd(13) + String(b).padStart(3) + ' of ' + of.length + ' build');
   }
   const b = rows.filter(r => r.built).length;
   console.log('  ' + 'all'.padEnd(13) + String(b).padStart(3) + ' of ' + rows.length + ' build at the default box');
+  if (!ARGS.includes('--no-seek')) {
+    const dev = rows.filter(r => r.built || r.seekBox).length, ref = rows.filter(r => !r.built);
+    const q = (a, p) => { const s = a.slice().sort((x, y) => x - y); return s.length ? s[Math.min(s.length - 1, Math.floor(p * s.length))] : 0; };
+    const st = (a, u = '') => 'median ' + q(a, 0.5) + u + ', p90 ' + q(a, 0.9) + u + ', max ' + q(a, 1) + u;
+    console.log('  with the auto crop (Q181, at most ' + CAP.SEEK.CAP + ' builds): ' + dev + ' of ' + rows.length + ' develop from the default box');
+    for (const F of FLOORS) { const of = rows.filter(r => r.floor === F.name); console.log('    ' + F.name.padEnd(13) + String(of.filter(r => r.built || r.seekBox).length).padStart(3) + ' of ' + of.length); }
+    console.log('  builds the search spent, over the ' + ref.length + ' refused: ' + st(ref.map(r => r.seekBuilds)) + '; over all ' + rows.length + ': ' + st(rows.map(r => r.seekBuilds)));
+    const shr = ref.filter(r => r.seekBox).map(r => Math.round(100 * r.seekBox.h / r.crop.h));
+    console.log('  the chosen box keeps of the default box\'s height: ' + st(shr, '%') + ' (min ' + Math.min(...shr) + '%)');
+    for (const r of ref.filter(x => !x.seekBox)) console.log('  nothing builds: scene ' + r.k + ' (' + r.floor + ', ' + r.cause + ')');
+  }
+  {
+    const got = rows.filter(r => r.biome), bio = {}, q = (a, p) => { const s = a.slice().sort((x, y) => x - y); return s.length ? s[Math.min(s.length - 1, Math.floor(p * s.length))] : 0; };
+    for (const r of got) bio[r.biome] = (bio[r.biome] || 0) + 1;
+    const ts = got.map(r => r.tabShare);
+    console.log('  the ' + got.length + ' rooms that develop: biomes ' + Object.entries(bio).sort((a, b) => b[1] - a[1]).map(([k, n]) => k + ' ' + n).join(', ') + '; film share of the main ascent quartiles ' + [0.25, 0.5, 0.75].map(p => Math.round(100 * q(ts, p)) + '%').join(', ') + ', at least half on film ' + ts.filter(v => v >= 0.5).length);
+  }
   const why = {};
   for (const r of rows.filter(x => !x.built)) { const key = r.cause + ': ' + r.detail.replace(/\d+/g, 'N'); why[key] = (why[key] || 0) + 1; }
   for (const [k, n] of Object.entries(why).sort((a, b) => b[1] - a[1])) console.log('  refused ' + String(n).padStart(3) + '  ' + k);

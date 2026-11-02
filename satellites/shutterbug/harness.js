@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 6033;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov) */
+const ASSERT_FLOOR = 6087;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6057 at AUTOCROP, Q181, 1 Nov; 6067 at NORMALISE, Q182, 1 Nov; 6085 at SEARCHR, Q183, 1 Nov; 6087 at PHOTO1R, 2 Nov) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -1836,6 +1836,50 @@ group('H-cap-0', 'the capture oracle: the area average of known images (the valu
   t.eq(off, -1, 'a 600x1200 image of 25 px blocks gives every cell its own block\'s colour (the first cell that does not)');
 });
 
+/* ================================================================ the capture normalisation (NORMALISE, Q182) */
+group('H-norm-1', 'the capture normalisation: the page\'s SB.capture.normalize (shell-capture, read as tools/room-model.js reads it) equals the capture oracle\'s normalizeRGB byte for byte; the page\'s step on known grids (the grey world balance at its strength, the percentiles landing on L_LO and L_HI, the hue kept, the gain held to MAX_GAIN so a flat photo keeps its brightness); gridRecord takes the step before nearest', t => {
+  const RM = require('./tools/room-model.js'), O = require('./tools/capture-oracle.js'), CAP = RM.captureOf(PAGE, SB), N = O.NORM;
+  t.same(Object.assign({}, CAP.NORM), Object.assign({}, N), 'the page\'s NORM numbers are the oracle\'s');
+  const Lof = (g, i) => 0.299 * g[3 * i] + 0.587 * g[3 * i + 1] + 0.114 * g[3 * i + 2];
+  const grid = f => { const g = new Uint8Array(1152 * 3); for (let i = 0; i < 1152; i++) g.set(f(i % 24, Math.floor(i / 24), i), 3 * i); return g; };
+  const boxGrid = (img, c) => { const px = Buffer.alloc(c.w * c.h * 3); for (let y = 0; y < c.h; y++) img.px.copy(px, y * c.w * 3, ((c.y + y) * img.w + c.x) * 3, ((c.y + y) * img.w + c.x + c.w) * 3); return O.downscaleRGB({ w: c.w, h: c.h, bpp: 3, px }, 24, 48); };
+  /* the same bytes from both copies: model scenes' default boxes, seeded noise, ramps, flat and tinted grids */
+  const grids = [], r = hrand(0x5eed);
+  for (let k = 0; k < RM.COUNT; k += 10) { const img = RM.paint(k); grids.push(['model scene ' + k, boxGrid(img, CAP.fit(img.w, img.h))]); }
+  for (let s = 0; s < 8; s++) grids.push(['seeded noise ' + s, grid(() => [r.int(256), r.int(256), r.int(256)])]);
+  grids.push(['a grey ramp', grid((x, y) => [y * 5, y * 5, y * 5])], ['a flat grey', grid(() => [128, 128, 128])], ['all black', grid(() => [0, 0, 0])],
+    ['a warm dim room', grid((x, y) => [60 + y, 40 + y, 20 + (x & 3)])], ['a blue night', grid((x, y) => [10 + (x % 5), 20 + y % 7, 60 + y])]);
+  let bad = null;
+  for (const [name, g] of grids) { const a = CAP.normalize(g), b = O.normalizeRGB(g); for (let i = 0; i < a.length && !bad; i++) if (a[i] !== b[i]) bad = name + ' byte ' + i + ': page ' + a[i] + ', oracle ' + b[i]; }
+  t.ok(bad === null, 'the page\'s normalize equals the oracle\'s on ' + grids.length + ' grids, byte for byte' + (bad ? ' (first difference: ' + bad + ')' : ''));
+  /* the page's step on known answers (the oracle is held to it above) */
+  const nz = CAP.normalize, ramp = grid((x, y, i) => { const v = Math.round(i * 200 / 1151) + 20; return [v, v, v]; }), rn = nz(ramp);
+  const Ls = Array.from({ length: 1152 }, (_, i) => Lof(rn, i)), loI = Math.floor(N.P_LO * 1152), hiI = Math.floor(N.P_HI * 1152);
+  t.ok(Math.abs(Ls[loI] - N.L_LO) <= 1 && Math.abs(Ls[hiI] - N.L_HI) <= 1, 'a grey ramp from L 20 to 220: its cells at the ' + Math.round(100 * N.P_LO) + 'th and ' + Math.round(100 * N.P_HI) + 'th percentile land on L ' + N.L_LO + ' and ' + N.L_HI + ' (' + Ls[loI].toFixed(1) + ', ' + Ls[hiI].toFixed(1) + ')');
+  t.ok(Ls.every((v, i) => i === 0 || v >= Ls[i - 1]), 'a grey ramp stays in order (the stretch is monotone)');
+  const warm = grid((x, y) => [100 + (y & 15) * 6, 70 + (y & 15) * 4, 40 + (y & 15) * 2]), wn = nz(warm);
+  const sum = g => [0, 1, 2].map(c => { let s = 0; for (let i = 0; i < 1152; i++) s += g[3 * i + c]; return s; }), s0 = sum(warm), s1 = sum(wn);
+  const cast = s => (s[0] - s[2]) / (s[0] + s[1] + s[2]), m = (s0[0] + s0[1] + s0[2]) / 3, k = s0.map(v => 1 - N.WB + N.WB * m / v);
+  t.ok(cast(s1) > 0 && Math.abs(cast(s1) / cast(s0) - (1 - N.WB)) < 0.15, 'a warm room: the white balance takes about ' + Math.round(100 * N.WB) + '% of its red over blue cast away, not all of it (the cast ' + cast(s0).toFixed(3) + ' to ' + cast(s1).toFixed(3) + ')');
+  let hue = 0;
+  for (let i = 0; i < 1152; i++) {
+    const want = (warm[3 * i] * k[0]) / (warm[3 * i + 2] * k[2]), got = wn[3 * i] / wn[3 * i + 2];
+    if (wn[3 * i] < 255 && Math.abs(got / want - 1) > 0.05) hue++;
+  }
+  t.eq(hue, 0, 'a warm room: each cell keeps its balanced red to blue ratio through the stretch, within 5% (cells that do not)');
+  const flat = nz(grid(() => [200, 200, 200])), dark = nz(grid(() => [20, 20, 20]));
+  t.ok(flat.every((v, i) => v === flat[i % 3]) && Math.abs(Lof(flat, 0) - 200) <= 3 && Math.abs(Lof(dark, 0) - 20) <= 3,
+    'a flat white grid stays light and a flat dark one dark: no contrast to stretch, the gain held to ' + N.MAX_GAIN + ' (L 200 to ' + Lof(flat, 0).toFixed(1) + ', L 20 to ' + Lof(dark, 0).toFixed(1) + ')');
+  const rw = hrand(0xa11), wall = grid(() => { const v = 200 + rw.int(7) - 3; return [v, v, v]; }), wn2 = nz(wall);
+  const spread = g => { let a = 255, b = 0; for (let i = 0; i < 1152; i++) { const v = Lof(g, i); a = Math.min(a, v); b = Math.max(b, v); } return b - a; };
+  t.ok(spread(wn2) <= N.MAX_GAIN * spread(wall) + 2, 'a nearly flat wall (L 197 to 203): its noise grows at most ' + N.MAX_GAIN + ' times (a spread of ' + spread(wall).toFixed(1) + ' to ' + spread(wn2).toFixed(1) + ')');
+  /* gridRecord: the normalised grid's nearest colour in every cell, not the raw grid's */
+  const raw = grids[0][1], pal = SB.record.fromJSON(CAP.gridRecord(raw, -1)).pal, nn = O.normalizeRGB(raw);
+  let off = 0, moved = 0;
+  for (let i = 0; i < 1152; i++) { if (pal[i] !== SB.palette.nearest(nn[3 * i], nn[3 * i + 1], nn[3 * i + 2])) off++; if (pal[i] !== SB.palette.nearest(raw[3 * i], raw[3 * i + 1], raw[3 * i + 2])) moved++; }
+  t.ok(off === 0 && moved > 0, 'model scene 0, the default box: gridRecord gives the normalised grid\'s nearest colour in every cell (' + off + ' cells do not; ' + moved + ' differ from the raw grid\'s)');
+});
+
 /* ================================================================ the sim, part one, proven (T0.7b) */
 /* a seeded random word script: held bits that change every few steps, the edge bits on presses */
 function randomScript(seed, n) {
@@ -2769,6 +2813,89 @@ group('H-lvl-7', 'the levels boundaries: a 24 row climb builds and 23 refuses; a
     const a = SB.pipeline.build(rec, { stage: 'A' });
     t.eq(a.spawn % 24 + ',' + rowOf(a, a.spawn), want, 'the sample room on 9 rows of Walnut, a gap of ' + gap + ' in its top row: the spawn is at (' + want + ')');
   }
+});
+
+/* ================================================================ the auto crop's search order (AUTOCROP, Q181; SEARCHR, Q183) */
+group('H-seek-1', 'the auto crop\'s boxes (shell-capture\'s seekBoxes, read from the page as tools/room-model.js reads it): the player\'s box never in the list, none repeats, no two of one size within a grid cell of each other, every box clamped 1:2 in the photo, every size from the player\'s down to the smallest, the player\'s size first, the anchor the cause points to, the same list twice; model scene 3 (beige carpet, refused at the default box for its floor, the raw capture) develops after 7 builds', t => {
+  const RM = require('./tools/room-model.js'), CAP = RM.captureOf(PAGE), K = CAP.SEEK.KEEP, BW = 1024, BH = 1360, MW = 192;
+  const key = b => b.x + ',' + b.y + ',' + b.w;
+  const sizes = w0 => { const a = [w0]; let w = w0; while (w > MW) { w = Math.max(MW, Math.round(w * CAP.SEEK.SHRINK)); a.push(w); } return a; };
+  const cases = [
+    { name: 'the default box, a floor band from row 30', c: CAP.fit(BW, BH), cause: 'floor', band: { floor: 30, ceiling: -1 } },
+    { name: 'a 300 wide box, a floor band from row 30', c: { x: 300, y: 500, w: 300, h: 600 }, cause: 'floor', band: { floor: 30, ceiling: -1 } },
+    { name: 'a 300 wide box, a ceiling band to row 10', c: { x: 300, y: 300, w: 300, h: 600 }, cause: 'ceiling', band: { floor: -1, ceiling: 10 } },
+    { name: 'a 400 wide box, no cause', c: { x: 200, y: 300, w: 400, h: 800 }, cause: null, band: null }
+  ];
+  for (const k of cases) {
+    const L = CAP.seekBoxes(k.c, BW, BH, k.cause, k.band), keys = L.map(key);
+    t.ok(L.length > 0 && !keys.includes(key(k.c)), k.name + ': the player\'s own box is not in the list (' + L.length + ' boxes)');
+    t.eq(new Set(keys).size, keys.length, k.name + ': no box repeats');
+    const near = [];
+    L.forEach((b, i) => { for (const o of [k.c].concat(L.slice(0, i))) if (o.w === b.w && Math.abs(o.x - b.x) * 24 < b.w && Math.abs(o.y - b.y) * 48 < b.h) { near.push(key(b) + ' by ' + key(o)); break; } });
+    t.eq(near.length, 0, k.name + ': no box lies within one grid cell of the player\'s box or of a box the same size before it' + (near.length ? ' (' + near.slice(0, 3).join('; ') + ')' : ''));
+    t.ok(L.every(b => JSON.stringify(b) === JSON.stringify(CAP.clamp(b, BW, BH)) && b.h === 2 * b.w), k.name + ': every box is 1:2 and clamped into the photo');
+    t.same([...new Set(L.map(b => b.w))].sort((a, b) => b - a), sizes(k.c.w), k.name + ': every size from the player\'s (' + k.c.w + ') down to the smallest (' + MW + ') by SHRINK, none other');
+    t.eq(L[0].w, k.c.w, k.name + ': the first box is the player\'s size');
+    t.same(CAP.seekBoxes(k.c, BW, BH, k.cause, k.band), L, k.name + ': the same list twice');
+    if (k.cause === 'floor' && k.c.w === 300) {
+      const bot = Math.round(k.c.y + (k.band.floor + K) / 48 * k.c.h);
+      t.ok(L.some(b => b.w === k.c.w && b.x === k.c.x && b.y + b.h === bot), k.name + ': the anchor box ends ' + K + ' rows below the band\'s top (y ' + bot + ')');
+    }
+    if (k.cause === 'ceiling') {
+      const top = Math.round(k.c.y + (k.band.ceiling - K) / 48 * k.c.h);
+      t.ok(L[0].y === top && L[0].x === k.c.x, k.name + ': the first box is the anchor, starting ' + K + ' rows above the band\'s foot (y ' + top + '; the first box ' + key(L[0]) + ')');
+    }
+  }
+  /* a long screenshot (PHOTO1R): the decode keeps the width 1024 and any height, and the near duplicate filter scanned
+     every box kept, so its list stalled Develop. By buckets the list is the one the scan gave (pinned from d0d51015b:
+     7764 boxes, its sha1) with at most nine comparisons a candidate (the scan's grew with the list) */
+  const tc = CAP.fit(1024, 8192), TL = CAP.seekBoxes(tc, 1024, 8192, null, null), ts = CAP.seekStats || {};
+  t.eq(TL.length + ' ' + require('node:crypto').createHash('sha1').update(JSON.stringify(TL)).digest('hex').slice(0, 12), '7764 c0c36666315a', 'a long screenshot (1024 x 8192): the list is the one the scan of every kept box gave');
+  t.ok(ts.candidates >= TL.length && ts.cmp <= 9 * ts.candidates, 'a long screenshot: the near filter compares each candidate with at most nine boxes kept (' + ts.cmp + ' comparisons for ' + ts.candidates + ' candidates)');
+  const img = RM.paint(3), crop = CAP.fit(img.w, img.h);
+  /* the search itself on the raw grids (the capture normalisation skipped, as the page read photos before Q182): the
+     floor lift is what finds this box. Normalised, the wall's shading no longer reads as a floor band and the scene
+     builds where the player framed it (NORMALISE). Since SEARCHR the 7th box, the photo's left edge at a size down */
+  const lv = SB.pipeline.build(RM.recordOf(SB, img, crop), { firstRoom: true }), s = RM.seek(SB, CAP, img, crop, lv, { raw: true });
+  t.ok(lv.needsCrop && lv.cause === 'floor', 'model scene 3, the raw capture, is refused at the default box for its floor (cause ' + lv.cause + ')');
+  t.same({ builds: s.seekBuilds, box: s.seekBox }, { builds: 7, box: { x: 0, y: 0, w: 463, h: 926 } }, 'model scene 3: the search builds a room from the 7th box it tries');
+  const ln = SB.pipeline.build(RM.recordOf(SB, img, crop, CAP), { firstRoom: true });
+  t.ok(!ln.needsCrop, 'model scene 3, the capture normalised, builds at the default box with no search (' + (ln.needsCrop ? 'refused: ' + ln.cause + ', ' + ln.detail : 'the spawn on row ' + Math.floor(ln.spawn / ln.w)) + ')');
+});
+
+group('H-seek-2', 'the search reaches the boxes that build (SEARCHR, Q183): the photo\'s side edges at the player\'s own size, and among the first boxes; a floor refusal\'s boxes above the furniture, lifted before lowered; a ceiling refusal\'s box lowered first and raised too, where a night sky was the band; the cap: a photo nothing builds spends exactly SEEK.CAP builds of a longer list, and CAP is 80', t => {
+  const RM = require('./tools/room-model.js'), CAP = RM.captureOf(PAGE), K = CAP.SEEK.KEEP;
+  const key = b => b.x + ',' + b.y + ',' + b.w;
+  /* a landscape photo decoded at 1024 x 768: the default box is 384 wide in the middle; a quarter step is 96, so
+     the edges are 3 and a third quarters away, past the two quarter shifts the AUTOCROP order stopped at */
+  const lc = CAP.fit(1024, 768), LL = CAP.seekBoxes(lc, 1024, 768, null, null);
+  const iL = LL.findIndex(b => b.w === lc.w && b.x === 0), iR = LL.findIndex(b => b.w === lc.w && b.x === 1024 - lc.w);
+  t.ok(iL >= 0 && iR >= 0, 'a landscape photo: the list holds the player\'s size at the photo\'s left edge and at its right (boxes ' + (iL + 1) + ' and ' + (iR + 1) + ')');
+  t.ok(iL >= 0 && iR >= 0 && Math.max(iL, iR) < 2, 'a landscape photo: the two edge boxes are the first two tried, ahead of the one quarter shifts (EDGE ' + CAP.SEEK.COST.EDGE + '; the first boxes ' + LL.slice(0, 4).map(key).join(' ') + ')');
+  const xs = new Set(LL.filter(b => b.w === 192).map(b => b.x));
+  t.ok(xs.has(0) && xs.has(1024 - 192), 'a landscape photo: the smallest box also reaches both edges (' + xs.size + ' positions across)');
+  /* a floor refusal: the floor band's top at row 30 of the default portrait box */
+  const BW = 1024, BH = 1360, fc = { x: 300, y: 700, w: 300, h: 600 }, fb = { floor: 30, ceiling: -1 }, FL = CAP.seekBoxes(fc, BW, BH, 'floor', fb);
+  const ftop = fc.y + fb.floor / 48 * fc.h, abot = Math.round(fc.y + (fb.floor + K) / 48 * fc.h);
+  const above = FL.filter(b => b.y + b.h <= ftop - b.h / 8);
+  t.ok(above.length > 0 && above.some(b => b.w === fc.w), 'a floor refusal: the list holds boxes above the furniture, their bottoms at least an eighth of their height above the floor band\'s top (' + above.length + ' boxes, ' + above.filter(b => b.w === fc.w).length + ' the player\'s size)');
+  const topBox = FL.findIndex(b => b.w === fc.w && b.x === fc.x && b.y === 0);
+  t.ok(topBox >= 0, 'a floor refusal: the lift reaches the top of the photo, the player\'s size at y 0, the box over the furniture (box ' + (topBox + 1) + ' of ' + FL.length + ')');
+  const at = (dy, l, c, a) => l.findIndex(b => b.w === c.w && b.x === c.x && b.y === a + dy);
+  const up = at(-fc.h / 4, FL, fc, abot - fc.h), dn = at(fc.h / 4, FL, fc, abot - fc.h);
+  t.ok(up >= 0 && (dn < 0 || up < dn), 'a floor refusal: lifted a quarter height off the anchor comes before lowered a quarter into the band (box ' + (up + 1) + ' before ' + (dn + 1) + ')');
+  /* a ceiling refusal: the band to row 10 */
+  const cc = { x: 300, y: 300, w: 300, h: 600 }, cb = { floor: -1, ceiling: 10 }, CL = CAP.seekBoxes(cc, BW, BH, 'ceiling', cb), atop = Math.round(cc.y + (cb.ceiling - K) / 48 * cc.h);
+  const cdn = at(cc.h / 4, CL, cc, atop), cup = at(-cc.h / 4, CL, cc, atop);
+  t.ok(cdn >= 0 && cup >= 0 && cdn < cup, 'a ceiling refusal: the box lowered a quarter height off the anchor comes first, and the box raised a quarter height (toward the band, a night sky read as a ceiling) is in the list too (box ' + (cdn + 1) + ', then ' + (cup + 1) + ')');
+  t.ok(CL.some(b => b.y < cc.y), 'a ceiling refusal: the list reaches above the player\'s own box (the ceiling rule never only pushes down)');
+  /* the cap: horizontal stripes 40 px high, light and dark, a 900 x 1600 photo that no box of the list builds */
+  const W = 900, H = 1600, img = { w: W, h: H, px: Buffer.alloc(W * H * 3) };
+  for (let y = 0; y < H; y++) { const v = Math.floor(y / 40) % 2 ? 230 : 30; img.px.fill(v, y * W * 3, (y + 1) * W * 3); }
+  const crop = CAP.fit(W, H), lv = SB.pipeline.build(RM.recordOf(SB, img, crop, CAP), { firstRoom: true }), s = RM.seek(SB, CAP, img, crop, lv);
+  const n = CAP.seekBoxes(crop, W, H, lv.cause, lv.band).length;
+  t.ok(lv.needsCrop && !s.seekBox && s.seekBuilds === CAP.SEEK.CAP && n > CAP.SEEK.CAP, 'the cap: a striped photo nothing builds spends exactly SEEK.CAP builds (' + s.seekBuilds + ' of a list of ' + n + ') and finds none');
+  t.eq(CAP.SEEK.CAP, 80, 'SEEK.CAP is 80: on the 95 photo corpus the last first build is the 62nd, 80 leaves room for the page\'s canvas downscale (Q183)');
 });
 
 group('H-rep-1b', 'the exit rule at its boundaries (the third review): the light inside EXIT_LIGHT_SLACK and just past it; never below the top EXIT_ROWS', t => {
