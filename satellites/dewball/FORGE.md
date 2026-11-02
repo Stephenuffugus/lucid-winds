@@ -1012,3 +1012,12 @@ shows in portrait on a touch screen whether or not the game is installed; instal
 "Dewball plays best sideways. Turn your phone for a wider world." (no browser bar to promise away); in a browser it
 keeps the horizon mode line. The iPhone install note no longer says it opens in landscape. copy_check COPY_PASS,
 same.sh SAME_PASS. Ships with the next stamp (v36's deploy script is pinned to `afa458f65`, before this).
+
+## dewball-v36 LIVE, 2 Nov 2026
+
+Deployed by his own command (`deploy-dewball-v36.sh`, the script in plans/dewball/deploy/): **the vault first**,
+release `meshy-dewball-w567-20261101` in `Stephenuffugus/lucid-winds-vault`, 271 files; every asset's sha256 read
+back from GitHub equal to `SHA256SUMS` (270) and `SHA256SUMS` itself equal. Then the files only commit
+`a88e9a65c` on main (219 paths under satellites/dewball, from `afa458f65`), tag `dewball-v36`; both origins serve
+sw.js, index.html and assets/3d/index.json byte equal to the commit (one probe each). The orientation change above
+is NOT in it.
