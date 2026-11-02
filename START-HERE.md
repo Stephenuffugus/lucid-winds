@@ -1,5 +1,8 @@
 # START HERE
 
+## 📷 2 Nov 15:21 UTC (Opus) sb-m1-6 IS LIVE (deploy d6c21a15d, tag sb-m1-6; both origins on the first probe, index sha256 11eb6aeb...; sw.js 200, bytes equal, shutterbug-v6)
+NEXT: keys and the locked exit with Astra's key art.
+
 ## 📷 2 Nov 16:10 UTC (Opus) sb-m1-6 STAMPED: HEALTH MADE OBVIOUS + ASTRA ROUND 5's FIXES; STEPHEN RUNS THE DEPLOY SCRIPT
 His ask: "a number of hits before you lose that needs to be obvious to players as your health". Hearts over the bug on a hit, 3x strip hearts, pop, shake, last heart pulse, Brick ring. Astra's round 5 (65 strips) checked; 12 keys in, the rest wait for their systems (docs/astra/README.md, Round 5). lint OK, harness 7246 OK.
 DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-6/deploy-sb-m1-6.sh`, then hostproof, tag sb-m1-6.
