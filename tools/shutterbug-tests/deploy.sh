@@ -54,7 +54,7 @@ if [ -f satellites/shutterbug/sw.js ]; then
   grep -q "sw.js?v=$SWV'" satellites/shutterbug/index.html || { echo "STOP: the page does not register sw.js?v=$SWV"; exit 1; }
 fi
 SERVED=(satellites/shutterbug/index.html satellites/shutterbug/manifest.json satellites/shutterbug/sw.js
-        satellites/shutterbug/icons)
+        satellites/shutterbug/icons satellites/shutterbug/manifest.webmanifest satellites/shutterbug/privacy.html)   # the Play listing's two (2 Nov)
 mapfile -t PATHS < <(git diff --name-only "$MAIN" "$BR" -- "${SERVED[@]}")
 [ "${#PATHS[@]}" -gt 0 ] || { echo "nothing to deploy: the served set on main already equals the branch"; exit 0; }
 echo "deploy set: ${#PATHS[@]} files"; printf '  %s\n' "${PATHS[@]}"

@@ -1,5 +1,9 @@
 # START HERE
 
+## 📷 2 Nov 20:30 UTC (Opus) sb-m1-12 STAMPED: POLISH + PLAY READY (twa_ready all ok, offline cold launch ok); it carries sb-m1-9 to sb-m1-11 (charms, bosses, Darkroom, second monsters), none shipped yet
+DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-12/deploy-sb-m1-12.sh`, then hostproof on index.html AND privacy.html and manifest.webmanifest (new served files), tag sb-m1-12.
+His rule (2 Nov): nothing goes to Play until it is good. The store page (copy, shots from real rooms, feature graphic, IARC, Data safety: no data collected) and the bubblewrap build wait for his call to submit.
+
 ## 📷 2 Nov 19:45 UTC (Opus) sb-m1-11 STAMPED: THE DARKROOM, THE SECOND MONSTERS, THE EDGE TRIMS (on top of sb-m1-10's bosses and charms, none shipped yet)
 DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-11/deploy-sb-m1-11.sh` (it carries sb-m1-9 and sb-m1-10 too), then hostproof, tag sb-m1-11.
 NEXT (his order, "finish making shutterbug now"): the polish pass over every screen at 320, 360 and 412; then the ship list (unlocks with Negative, music, perf, accessibility, the store page). Interactive terrain (crumble, spring, vent, hot coal, switch) waits: each one changes the collision and the fairness proof.

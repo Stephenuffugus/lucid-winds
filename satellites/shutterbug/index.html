@@ -390,10 +390,11 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #dkbar { display: flex; align-items: center; gap: 12px; } #dkbar h2 { margin: 0; font-size: 1.3rem; }
 #dkback { min-height: 48px; min-width: 64px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--slate); background: transparent; color: var(--ash); }
 #darkroom h3 { margin: 6px 0 0; font-size: 1rem; color: var(--ash); } #dkwallet { margin: 0; font-size: 1.1rem; color: var(--sun); }
-.dkrow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--slate); }
+.dkrow { display: grid; grid-template-columns: 48px 1fr; column-gap: 10px; row-gap: 6px; align-items: start; padding: 8px 0; border-bottom: 1px solid var(--slate); }
+.dkrow canvas { grid-row: 1 / span 2; }   /* the icon beside both; Develop under the words (at 320 the button squeezed the words to a column) */
 .dkrow canvas, #dkowned canvas { width: 48px; height: 48px; image-rendering: pixelated; flex: none; }
 .dktext { flex: 1 1 auto; min-width: 0; } .dktext b { display: block; } .dktext span { display: block; font-size: 0.85rem; color: var(--ash); }
-.dkrow .act { min-height: 48px; padding: 0 12px; border-radius: 10px; font-weight: 700; border: 2px solid var(--ink); background: var(--sun); color: var(--ink); flex: none; }
+.dkrow .act { grid-column: 2; justify-self: start; min-height: 48px; padding: 0 16px; border-radius: 10px; font-weight: 700; border: 2px solid var(--ink); background: var(--sun); color: var(--ink); }
 .dkrow .act:disabled { background: var(--slate); color: var(--pewter); }
 #dkowned { display: flex; flex-wrap: wrap; gap: 6px; } .dknone, #dkleft { color: var(--ash); font-size: 0.9rem; margin: 0; }
 #settitle { min-width: 64px; min-height: 48px; border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--paper); }
@@ -852,7 +853,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m1-11';
+  SB.BUILD = 'sb-m1-12';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -7409,7 +7410,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* HOUSE-B: the guardian, the prize, the looks */
     guardHint: 'Beat the guardian to light the exit', darkroom: 'Darkroom', darkroomLink: 'Darkroom', dkWallet: 'Dead pixels {n}', dkPrints: 'Prints to develop', dkOwned: 'Your weapons',
     dkDevelop: 'Develop for {n}', dkNoPrints: 'No prints yet. Carry a blueprint out of a room and it prints here.', dkLeft: '{n} weapons not found yet', dkLeftOne: '1 weapon not found yet',
-    dkAll: 'You have found every weapon', newPrint: 'New print: {name}. Develop it in the Darkroom.', dupPrint: 'A print you had already: {n} dead pixels',
+    dkAll: 'You have found every weapon', newPrint: 'New print: {name}. Develop it in the Darkroom.', newPrints: 'New prints: {name}. Develop them in the Darkroom.', dupPrint: 'A print you had already: {n} dead pixels',
     keysFind: 'Find {n} keys', keysFind1: 'Find the key', keysOpen: 'They open the exit', keysOpen1: 'It opens the exit', keysLocked: 'The exit is locked', keysMore: '{n} more keys', keysMore1: '1 more key', keysOf: '{n} of {max} keys', guardHintChest: 'Open the chest for a weapon', prizeNew: 'New: {name}', prizeLabel: 'Your prize, {name}',
     setLook: 'Look', lookHero: 'Bug', lookFrame: 'Frame', lookWear: 'Wear {name}',
     look_hero_sun: 'Sun bug', look_hero_umber: 'Umber bug', look_hero_teal: 'Teal bug', look_hero_lapis: 'Lapis bug', look_hero_pinstripe: 'Pinstripe bug',
@@ -7521,7 +7522,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function printLine(elId, got) {
     var el = document.getElementById(elId); if (!el) return;
     var names = got.filter(Boolean).map(function (id) { return ui.COPY.wpn[id]; }), dup = got.filter(function (x) { return !x; }).length;
-    el.textContent = names.length ? ui.COPY.newPrint.replace('{name}', names.join(ui.COPY.cmpAnd)) : dup ? ui.COPY.dupPrint.replace('{n}', dup * SB.TUNING.DEV_DUP_DP) : '';
+    el.textContent = names.length ? ui.COPY[names.length > 1 ? 'newPrints' : 'newPrint'].replace('{name}', names.join(ui.COPY.cmpAnd)) : dup ? ui.COPY.dupPrint.replace('{n}', dup * SB.TUNING.DEV_DUP_DP) : '';
     el.hidden = !names.length && !dup;
   }
   function devPrice(id) { var T = SB.TUNING; return T.DEV_PRICE[T.DEV_TIER[id] || 1]; }
@@ -7602,14 +7603,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the hearts in the top strip: max of them, the last max less n emptied (lost) */
   var heartsWas = -1, heartsWasMax = -1;
   function hearts(n, max) {
-    var el = document.getElementById('hearts'), s = '', key = n + '/' + max + (ui.heartsCount ? 'c' : '');
+    var el = document.getElementById('hearts'), s = '', key = n + '/' + max + (ui.heartsCount ? 'c' : '') + (ui.heartsSmall ? 's' : '');
     if (el.getAttribute('data-n') === key) return;
     /* a loss since the last draw (the same max): those hearts pop and the row shakes; one left of several, it pulses */
     var calm = SB.render.reduced(), lost = !calm && max === heartsWasMax && n < heartsWas, last = !calm && n === 1 && max > 1;
     if (ui.heartsCount) s = '<i class="' + (n > 0 ? '' : 'lost') + (lost ? ' pop' : '') + (last ? ' last' : '') + '"></i><b>' + n + '/' + max + '</b>';   /* the count form: one heart and n/max */
     else for (var i = 0; i < max; i++) s += i < n ? '<i' + (last ? ' class="last"' : '') + '></i>' : '<i class="lost' + (lost && i < heartsWas ? ' pop' : '') + '"></i>';
     heartsWas = n; heartsWasMax = max;
-    el.classList.toggle('hbig', max <= 5);   /* not .big: that is the big buttons' class (min-height 56) */
+    el.classList.toggle('hbig', max <= 5 && !ui.heartsSmall);   /* not .big: that is the big buttons' class (min-height 56); 2x when the strip is short of room */
     el.innerHTML = s; el.setAttribute('data-n', key); el.setAttribute('aria-label', ui.COPY.heartsOf.replace('{n}', n).replace('{max}', max));
     if (lost) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
     fitName();
@@ -7629,6 +7630,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the words first (the tiny form only once the hearts are folded: 5/5 read worse than one heart and 8/8) */
     var last = G.nameForms && !ui.heartsCount && G.state ? forms.length - 1 : forms.length;
     for (var k = 0; k < last; k++) { el.textContent = forms[k]; if (!el.getClientRects().length || el.scrollWidth <= el.clientWidth) return; }   /* hidden (no box), the full form; a shown name squeezed to 0 px is not hidden (HOUSE-ART3: the biome badge and the 28 px slots leave it 0 px at 320 beside 8 hearts) */
+    /* the strip steps down before the hearts fold (2 Nov: at 360 three keys, three slots and big hearts pushed the 4th heart
+       off the edge and the name to 0 px): first the hearts back to 2x, then the keys to one key and n/max */
+    var hb = document.getElementById('hearts');
+    if (G.state && !ui.heartsSmall && hb.classList.contains('hbig')) { ui.heartsSmall = true; hearts(G.state.hero.hearts, G.state.hero.heartsMax); return; }
+    if (G.state && !ui.keysCount && SB.sim.keysOf(G.state) > 1) { ui.keysCount = true; ui.keys(G.state); return; }
     if (last < forms.length) { ui.heartsCount = true; hearts(G.state.hero.hearts, G.state.hero.heartsMax); }   /* hearts() measures again */
   }
   ui.fitName = fitName;
@@ -8104,7 +8110,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var rn = document.getElementById('roomname');
     rn.textContent = name; rn.classList.toggle('pipped', hs); if (hs) stripPips(rn, room);   /* HOUSE-B: the run pips in a house */
     ui.applyLook(); ui.guardian(null);
-    ui.heartsCount = false;   /* each room starts with every heart drawn; fitName may fold them to the count */
+    ui.heartsCount = false; ui.heartsSmall = false; ui.keysCount = false;   /* each room starts with every heart and key drawn, big; fitName steps them down */
     ui.badge(lv.biome | 0);
     hearts(G.state.hero.hearts, G.state.hero.heartsMax);
     ui.keys(G.state);   /* the locked exit's keys, hidden in a room without them */
@@ -8644,11 +8650,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the strip's keys (2 Nov): one hud_key a key, full once taken, the newest popping; hidden in a room without keys */
   var keysWas = '';
   ui.keys = function (st) {
-    var el = document.getElementById('keys'), nk = st ? SB.sim.keysOf(st) : 0, held = nk ? nk - SB.sim.keysLeft(st) : 0, k = held + '/' + nk, s = '', i;
+    var el = document.getElementById('keys'), nk = st ? SB.sim.keysOf(st) : 0, held = nk ? nk - SB.sim.keysLeft(st) : 0, k = held + '/' + nk + (ui.keysCount ? 'c' : ''), s = '', i;
     if (k === keysWas) return;
-    var pop = !SB.render.reduced() && keysWas !== '' && held > parseInt(keysWas, 10) && nk === parseInt(keysWas.split('/')[1], 10);
+    var pop = !SB.render.reduced() && keysWas !== '' && held > parseInt(keysWas, 10) && nk === parseInt(keysWas.split('/')[1], 10);   /* parseInt reads past the 'c' */
     keysWas = k; el.hidden = nk === 0;
-    if (nk && window.innerWidth < 360) s = '<i' + (held ? ' class="got' + (pop ? ' pop' : '') + '"' : '') + '></i><b>' + held + '/' + nk + '</b>';
+    if (nk && (window.innerWidth < 360 || ui.keysCount)) s = '<i' + (held ? ' class="got' + (pop ? ' pop' : '') + '"' : '') + '></i><b>' + held + '/' + nk + '</b>';
     else for (i = 0; i < nk; i++) s += '<i' + (i < held ? ' class="got' + (pop && i === held - 1 ? ' pop' : '') + '"' : '') + '></i>';
     el.innerHTML = s; el.setAttribute('aria-label', ui.COPY.keysOf.replace('{n}', held).replace('{max}', nk));
     fitName();
@@ -8843,7 +8849,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
     ui.initSlots();
     ui.initSwap();
     var exit = document.getElementById('exit');
+    /* the Play app (a Trusted Web Activity, 2 Nov): Chrome opens it with document.referrer android-app://<package>, and
+       an installed Android standalone window counts too (the fleet's rule, Hues and Bandit's Box). Inside it the arcade
+       exit is gone and refuses, so the Play app can never reach the portal and its tip jar (Play's payment rules) */
+    var inTWA = false;
+    try { inTWA = document.referrer.indexOf('android-app://') === 0 || !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches && /Android/i.test(navigator.userAgent)); } catch (e) { inTWA = false; }
+    window.SWS_IN_TWA = inTWA;
+    if (inTWA) exit.hidden = true;
     exit.addEventListener('click', function () {
+      if (inTWA) return;
       if (exit.disabled) return;
       /* once per intent: the portal sees one {sws:'close'} per tap (PORTAL-CONTRACT) */
       exit.disabled = true;
@@ -9060,7 +9074,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=11').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=12').catch(function () {}); } catch (e) { /* silent */ } });
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); SB.ui.installPrompt = e; document.getElementById('install').hidden = false; });
   SB.input.initStrip();
   window.addEventListener('resize', function () { var s = SB.ui.screen; if (s === 'play' || s === 'pause' || s === 'share' || s === 'clear' || s === 'dead') { SB.render.fit(); draw(); if (s === 'pause') SB.ui.placePaused(); } });
@@ -9121,6 +9135,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (j && j.rows) rec = SB.record.fromJSON(j); else if (j && j.record) rec = SB.record.fromJSON(j.record); else rec = SB.record.decode(String(str).trim());
       return rec ? SB.ui.startRoom(rec, SB.ui.COPY.sampleRoom, biome === undefined ? {} : { biome: biome, notFirst: true }) : false;
     },
+    carryBlueprint: function () { if (!G.state) return 0; G.state.room.blueprints.push(G.level.spawn); return G.state.room.blueprints.length; },   /* the clear card's print line, for the gates */
     goto: function (name) {
       if (name === 'title') SB.ui.toTitle();
       else if (name === 'sample') SB.ui.startRoom(SB.ui.sampleRecord(), SB.ui.COPY.sampleRoom);
@@ -9131,6 +9146,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
       else if (name === 'speck' && G.state && G.level) {   /* the hero set down on the first speck not taken: the next step takes it (the loop gate's Dead pixels) */
         var L = G.state.loot.filter(function (l) { return l.kind === SB.sim.LOOT.SPECK && !l.taken; })[0], CS2 = SB.K.CELL_SUB, h2 = G.state.hero;
         if (L) { h2.x = (L.idx % G.level.w) * CS2 + ((CS2 - SB.K.HERO_W_SUB) >> 1); h2.y = Math.floor(L.idx / G.level.w) * CS2; h2.vx = 0; h2.vy = 0; }
+      }
+      else if (name === 'blueprint' && G.state && G.level) {   /* the hero set down on the room's blueprint: the next step takes it */
+        var BL = G.state.loot.filter(function (l) { return l.kind === SB.sim.LOOT.BLUEPRINT && !l.taken; })[0], CS6 = SB.K.CELL_SUB, h6 = G.state.hero;
+        if (BL) { h6.x = (BL.idx % G.level.w) * CS6 + ((CS6 - SB.K.HERO_W_SUB) >> 1); h6.y = Math.floor(BL.idx / G.level.w) * CS6; h6.vx = 0; h6.vy = 0; }
       }
       else if (name === 'key' && G.state && G.level) {   /* the hero set down on the first key not taken: the next step takes it */
         var KL = G.state.loot.filter(function (l) { return l.kind === SB.sim.LOOT.KEY && !l.taken; })[0], CS5 = SB.K.CELL_SUB, h5 = G.state.hero;
