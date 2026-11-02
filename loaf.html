@@ -8404,6 +8404,38 @@ if (stage) (async () => {
     _five(up, lo){ FIVE_UP = up; FIVE_LO = lo; },   /* axis-probe dial */
     _rig(){ return rig.position.toArray(); },       /* harness peephole */
     _light(k){ setLights(k); if (room.on) shellLoad(lightK); return lightK; },
+    /* THE BLIND PAIR SHOT (A5): every cat in the same pose, at the same
+       angle and scale, in the room's day light, so two cats differ only in
+       who they are. Off the room only. */
+    async _pairShot(){
+      if (room.on) return null;
+      shellLoad('day');
+      for (let i = 0; i < 80 && !(SETS.day.floor && SETS.day.wall && SETS.day.win); i++)
+        await new Promise(r => setTimeout(r, 50));
+      const el = renderer.domElement, ow = el.width, oh = el.height;
+      const ry = rig.rotation.y, rp = rig.position.clone();
+      try {
+        floor.visible = false; shell.visible = true; setLights('day');
+        rig.position.set(0, 0, 0); rig.rotation.y = Math.PI - 0.55;
+        _applied.forEach((q, bone) => { bone.quaternion.multiply(_qUndo.copy(q).invert()); q.identity(); });
+        mixer.setTime(1.0);                            /* the same breath of Idle */
+        if (bones.eyeL) bones.eyeL.scale.y = life.esCur;
+        if (bones.eyeR) bones.eyeR.scale.y = life.esCur;
+        shadow.position.x = 0; shadow.position.z = 0; shadow.scale.set(1, 1, 1);
+        renderer.setSize(512, 512, false);
+        cam.aspect = 1; cam.updateProjectionMatrix();
+        rig.updateMatrixWorld(true);
+        cam.position.set(0, -0.15, 5.6);
+        cam.lookAt(0, -0.55, 0);
+        renderer.render(scene, cam);
+        return el.toDataURL('image/png');
+      } finally {
+        floor.visible = true; shell.visible = false;
+        rig.rotation.y = ry; rig.position.copy(rp);
+        renderer.setSize(ow, oh, false);
+        size();
+      }
+    },
     /* the look tool's face shot: head and shoulders, a front three-quarter
        turn, day light on a quiet mid-value ground. Off the room only. */
     _portrait(turn){
