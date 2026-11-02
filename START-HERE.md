@@ -1,5 +1,11 @@
 # START HERE
 
+## 🐈 2 Nov 22:50 UTC (Fable) LOAF BUILD PLAN WRITTEN: LOAF_BUILD_PLAN.md (repo root). READ IT BEFORE ANY LOAF CODE
+- Four milestones, A likeness → B meet her → C the games read → D the return and the store. Astra's order kept; the room grounding moved into A because the recognition test needs neutral light. Five decisions wait on Stephen at the end of the file (order, grader, other people's cats, PNG billboards before Meshy, the pilot).
+- THE TESTING LAW (his order, 2 Nov: "what actually needs tested when"): per step `node loaf_check.mjs` only (node, no browser, ~1 s); a visual step gets ONE screenshot of that screen, once, after all its edits; the full walk once per milestone; offline + twa_ready + the Two Cat Test once before Play. No probes per tweak, no redwatch, no review agents, no lanes. Stephen on the Pixel is the review.
+- Astra's ASSESSMENT, NOTES, STYLE-GUIDE and manifest now in docs/briefs/loaf/astra-v1/. The art stays in /workspaces/loaf-astra-v1/pack/assets/ until the step that uses it copies it in (map at the end of the plan).
+- Dewball and Shutterbug: HIS WORDS tonight, "pretty much ready to start publishing but I want to do some playing and testing first, I will probably have some tweaks and improvements and maybe even another expansion on assets." No Play submission for either until he says; expect his notes.
+
 ## 🐈 2 Nov 22:13 UTC (Opus) FABLE: PLAN THE LOAF BUILD WITH STEPHEN FROM ASTRA'S PACK (it came back tonight)
 HIS WORDS: "loaf holds a very unique feature and i think it could sell ... give astra an entire pack so it can assess and help smooth it all out, then give us a single zip back with everything so fable can plan the build with me." And tonight: "We will probably want Fable to look that over and plan the build."
 ASTRA'S PACK (loaf-astra-pack-v1.zip, 125 files, 11.5 MB, sha256 88d09217...; every item the brief asked for is there by count):
