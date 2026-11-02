@@ -1,5 +1,19 @@
 # START HERE
 
+## 📷 2 Nov 02:02 UTC (Opus) sb-m1-4 MERGED AND STAMPED (`102c8ed7d`); THE DEPLOY LINE WAITS ON A LOCKED TIMING RERUN
+WHAT IS IN IT: photo lane 1a, merged from sb-levels `7a029d6ab` as `f5c3765f1`, stamped `102c8ed7d` (BUILD sb-m1-4, CACHE shutterbug-v4, sw.js?v=4, STAMP_SPLIT re anchored).
+  - The auto crop, the capture normalisation, the search reaching every box that builds, and its review's ten fixes.
+  - 95 of 95 real photos develop. LIVE sb-m1-3 develops 5 of 95.
+  - Biomes are nearly all Attic until BIOME (sb-climb) lands.
+THE CHECKS:
+  - check --fast passed on sb-levels `a1e36f505` (01:40 to 01:56 UTC). `7a029d6ab` adds only BUILD-PLAN and PROGRESS.
+  - The served files of `102c8ed7d` differ from `7a029d6ab` by exactly the four stamp lines. Lint OK.
+  - The harness, run under the lanes' load, failed only the timing groups H-pipe-10 and H-rep-6, and again when rerun alone without the lock (load about 4). The rerun under the browser lock (the deploy's own conditions) is in /home/codespace/sb-drafts/sb-m1-4/timing-locked.txt.
+THE DEPLOY LINE (Stephen, at an idle prompt, from the repo root):
+  `flock /home/codespace/sb-drafts/browser.lock bash -c 'git diff --quiet 102c8ed7d HEAD -- satellites/shutterbug/{index.html,sw.js,manifest.json,icons} && BUILD=sb-m1-4 CACHE=shutterbug-v4 SWV=4 tools/shutterbug-tests/deploy.sh'`
+  - After it: hostproof on both origins (tools/shutterbug-tests/hostproof.sh), then `git tag -a sb-m1-4` on the deploy commit, pushed as refs/tags/sb-m1-4, then merge main back.
+  - If deploy.sh stops on the timed groups, quiet the box (the lanes' node and chrome processes) and run it again.
+
 ## 📷 2 Nov 00:03 UTC (Opus) STEPHEN FLAGGED THE USAGE BURN; THE NIGHT IS CUT TO THREE THINGS
 HIS WORDS: "We've used 17% of total usage on 8 hours ... Are you just burning resources on pointless tests? ... I thought it would be done and built by now". The measure: 5,084 subagent turns, 4.3M output tokens, 825M cache reads, mostly lanes waiting on the one browser lock (memory feedback_usage_burn_lanes).
 CUT:
