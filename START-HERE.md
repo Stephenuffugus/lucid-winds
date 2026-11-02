@@ -1,5 +1,12 @@
 # START HERE
 
+## ✅ 2 Nov 21:45 UTC (Opus) DEWBALL dewball-v36 IS LIVE (main `a88e9a65c`, tag dewball-v36); THE VAULT RELEASE IS MADE
+- His own command ran deploy-dewball-v36.sh after his gh login (`env -u GITHUB_TOKEN gh auth login`; his token now sits in ~/.config/gh/hosts.yml, plain text, repo scope). Vault release meshy-dewball-w567-20261101: 271 files, every sha256 read back equal.
+- Both origins serve sw.js, index.html and assets/3d/index.json byte equal to `a88e9a65c`. dewball-w567 and main are merged into add-sproing-jumper.
+- HIS CALLS 2 Nov: Dewball on Play at $0.99; "they should be able to play either way but its recommended in landscape" (built on dewball-w567 `3191c59f1`: manifest orientation any, the rotate tip for installed copies; NOT live, ships with v37).
+- NEXT for Dewball: the store kit (store/dewball-play, the Shutterbug kit's shape: shots from the real game in both orientations, feature graphic, Console page, listing says best in landscape), then the v37 stamp and deploy. Loaf: the zip went to him in the conversation; he gives it to Astra.
+
+
 ## 🎳 2 Nov 20:32 UTC (Opus, updated 20:39) DEWBALL dewball-v36 READY ON dewball-w567 `afa458f65`: ALL SEVEN WORLDS IN MODELS, PLAY READY; NOT DEPLOYED (HIS LINE BELOW)
 - Built today on /workspaces/dewball-w567 (no credits): The Whole World (w7, 92 kinds) and Dream Meadow (w6, 54 kinds) in models, on top of Starfall Bay (w5, `85fc8b343`). Every new kind looked at (Blender four views, game camera pairs, world shots); none kept a primitive. Record: satellites/dewball/FORGE.md, the last three sections.
 - PERF FIX (drawing only, same.sh byte identical): w7 at 22 m drew all 4,466 instances as models, 4.5M triangles (over the 3x fence). lodSync gained LOD_SPECK 20 and LOD_GLOBE 1.2: now 2.2M at 22 m, 2.5M at 5 m, 1.7M at 44 m.
