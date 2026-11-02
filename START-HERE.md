@@ -1,5 +1,12 @@
 # START HERE
 
+## 📷 2 Nov 03:13 UTC (Opus) sb-m1-4 IS LIVE: 95 OF 95 REAL PHOTOS DEVELOP
+LIVE: deploy commit `25fe84cc5` (BUILD sb-m1-4, CACHE shutterbug-v4, sw.js?v=4, tag sb-m1-4), the served set from add-sproing-jumper `078d1b5f0` (stamped `102c8ed7d`). Stephen ran /home/codespace/sb-drafts/sb-m1-4/deploy-sb-m1-4.sh: the long line wrapped in his terminal, so the deploy now lives in that script.
+  - deploy.sh: the blob passed the lint and the fast harness (6087 assertions); 2 files (index.html, sw.js); main merged back as `3ef31c25a`.
+  - hostproof: LIVE on both origins at 03:12:33 UTC on the first probe (index.html sha256 7f1863b1...53a0f8). sw.js: HTTP 200, application/javascript, bytes equal, holds shutterbug-v4.
+  - In it: the auto crop, the capture normalisation, the search reaching every box that builds, and their review's ten fixes. LIVE sb-m1-3 developed 5 of 95 real photos; this develops 95 of 95. Biomes are nearly all Attic until BIOME (sb-climb) ships in sb-m1-5.
+NEXT: the 03:00 and 03:0x entries (the house fix over its findings file, then the sb-m1-5 merge of sb-climb, sb-weapons-2 and sb-house). At most 2 lanes.
+
 ## 📷 2 Nov 03:01 UTC (Opus) SAVED FOR THE CODESPACE REFRESH (11 hours up): EVERY BRANCH CLEAN AND PUSHED
 Stephen: "when you finish what youre on we need to save commit and push ... we will have to refresh the codespace". All lanes are stopped, and no lane process is left. Every branch equals origin:
   - add-sproing-jumper: sb-m1-4 is merged and stamped `102c8ed7d`; its deploy line is in the 02:0x entry. Not run yet at 03:00 UTC: main still shows sb-m1-3 `dbe5274f3`.
