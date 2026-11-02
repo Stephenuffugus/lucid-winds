@@ -1457,6 +1457,8 @@ const MUTANTS = [
     gates: [{ gate: 'house', expect: 'the save owns and wears the walnut frame' }] },
   { name: 'FRAME_NOT_WORN', task: 'HOUSE-B', file: 'page', find: "      el.classList.toggle('framed', c.frame > 0);", repl: "",
     gates: [{ gate: 'house', expect: "after a reload the title's polaroid wears the walnut frame" }] },
+  { name: 'GUARD_DRAWS_STRUCK', task: 'HOUSE-B', file: 'page', find: "        if (B.cells[j] < 0) continue;\n        live++;", repl: "        live++;",
+    gates: [{ gate: 'sprites', expect: 'the guardian awake draws its 19 live cells' }] },
   { name: 'SKIN_IGNORED', task: 'HOUSE-B', file: 'page', find: "    if (k <= 0 || k >= R.SKINS.length) return 'hero.' + fr;", repl: "    return 'hero.' + fr;",
     gates: [{ gate: 'house', expect: 'after a reload a room draws the bug in its umber skin' }] },
 ];
