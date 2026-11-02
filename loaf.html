@@ -135,6 +135,10 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 .hint{font-family:var(--mono);font-size:11px;line-height:1.5;color:var(--dim);text-align:center;
   margin-top:9px}
 .hint:empty{display:none}
+.choosewrap{display:flex;justify-content:center}
+#chooseCv{display:block;border-radius:18px;border:1px solid var(--line);touch-action:none;cursor:pointer}
+.choosehd{font-family:var(--display);font-weight:700;font-size:20px;color:var(--bone);
+  text-align:center;margin:14px 0 2px}
 .coatchip{display:flex;align-items:center;gap:9px;margin-top:12px;font-family:var(--mono);
   font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
 .coatchip span{width:22px;height:22px;border-radius:6px;border:1px solid var(--line);
@@ -478,6 +482,15 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
   <div class="row"><button class="btn" id="goScan">Print the card</button></div>
   <div class="row"><button class="ghost" id="addShot">Add another photo of her</button></div>
   <div class="row"><button class="ghost" id="reshoot">Start over with a different photo</button></div>
+</section>
+
+<section class="wrap hidden" id="view-choose">
+  <div class="choosewrap"><canvas id="chooseCv" aria-label="Your photo. The lit cat is the one you will meet."></canvas></div>
+  <div class="choosehd">Tap the cat to meet.</div>
+  <div class="hint" id="chooseHint">Touching? Drag a box around her.</div>
+  <div class="row"><button class="btn" id="chooseGo">Meet her</button></div>
+  <div class="row"><button class="ghost" id="chooseNext">The other cat</button></div>
+  <div class="row"><button class="ghost" id="chooseBack">Use a different photo</button></div>
 </section>
 
 <section class="wrap hidden" id="view-scan">
@@ -948,7 +961,7 @@ const Hooks = {
 };
 
 const $ = id => document.getElementById(id);
-const VIEWS = { slot:'view-slot', meter:'view-meter', scan:'view-scan', card:'view-card' };
+const VIEWS = { slot:'view-slot', meter:'view-meter', choose:'view-choose', scan:'view-scan', card:'view-card' };
 function show(name){
   Object.entries(VIEWS).forEach(([k,id]) => $(id).classList.toggle('hidden', k !== name));
   $('demoCard').classList.toggle('hidden', name !== 'slot');
@@ -1729,8 +1742,21 @@ async function intake(file, additive){
      how a tuxedo got graded as a brown tabby. Fails soft to no mask. */
   let segMask = null;
   try { segMask = await segmentCat(big.canvas); } catch (e) {}
+  /* More than one animal in frame: the owner says which one is hers, and
+     only her region reaches the reader. One cat goes straight through. */
+  let subject = null;
+  if (segMask){
+    const pick = await Chooser.pick(big.canvas, segMask);
+    if (!pick){
+      busy = false;
+      if (additive && pending){ show('meter'); return; }
+      pending = null; shots = []; show('slot'); return;
+    }
+    segMask = pick.mask; subject = pick.subject;
+  }
   /* Read what she actually looks like, on this device. */
   const dna = readCatFromPhoto(big.canvas, segMask) || defaultDNA();
+  if (subject) dna._subject = subject;
   const shot = { url: small.url, b64: big.url.split(',')[1], meter, dna };
   if (additive && pending && shots.length && shots.length < 3) shots.push(shot);
   else shots = [shot];
@@ -3384,6 +3410,214 @@ function segmentCat(canvas){
     });
   }));
 }
+
+/* ── THE SUBJECT CHOOSER ────────────────────────────────────────────────────
+   The segmenter marks every cat in frame as ONE mask, and the reader used to
+   sample all of it: two cats on a perch became one blended stranger. Split
+   the mask into its separate animals; with more than one, the owner taps
+   hers (the biggest starts lit, the rest dimmed). Touching cats share one
+   region, so a dragged box cuts her out. Never two cats in one read. */
+const SUBJ_G = 192;
+function petGrid(m){
+  const gw = Math.min(SUBJ_G, m.w), gh = Math.min(SUBJ_G, m.h);
+  const g = new Uint8Array(gw * gh);
+  for (let y = 0; y < gh; y++){
+    const sy = Math.min(m.h - 1, (y * m.h / gh) | 0);
+    for (let x = 0; x < gw; x++){
+      const sx = Math.min(m.w - 1, (x * m.w / gw) | 0);
+      g[y * gw + x] = m.data[sy * m.w + sx] ? 1 : 0;
+    }
+  }
+  return { data: g, w: gw, h: gh };
+}
+/* connected regions, biggest first. Specks under 1.5% of the frame or a
+   tenth of the biggest are fur at an edge, not another cat. lab[i] is the
+   1-based index of the kept region a cell belongs to, else 0. */
+function petBlobs(grid, keepAll){
+  const { data, w, h } = grid, n = w * h;
+  const raw = new Int32Array(n), all = [], st = [];
+  for (let i = 0; i < n; i++){
+    if (!data[i] || raw[i]) continue;
+    const id = all.length + 1, px = [];
+    st.length = 0; st.push(i); raw[i] = id;
+    while (st.length){
+      const q = st.pop(); px.push(q);
+      const qx = q % w;
+      if (qx > 0     && data[q - 1] && !raw[q - 1]){ raw[q - 1] = id; st.push(q - 1); }
+      if (qx < w - 1 && data[q + 1] && !raw[q + 1]){ raw[q + 1] = id; st.push(q + 1); }
+      if (q >= w     && data[q - w] && !raw[q - w]){ raw[q - w] = id; st.push(q - w); }
+      if (q < n - w  && data[q + w] && !raw[q + w]){ raw[q + w] = id; st.push(q + w); }
+    }
+    all.push({ id, px });
+  }
+  all.sort((a, b) => b.px.length - a.px.length);
+  const big = all.length ? all[0].px.length : 0;
+  const list = keepAll ? all
+    : all.filter(b => b.px.length >= Math.max(n * 0.015, big * 0.1));
+  const map = {}; list.forEach((b, k) => { map[b.id] = k + 1; });
+  const lab = new Int32Array(n);
+  for (let i = 0; i < n; i++) if (raw[i]) lab[i] = map[raw[i]] || 0;
+  return { list, lab };
+}
+function blobMask(grid, px){
+  const d = new Uint8Array(grid.w * grid.h);
+  for (let k = 0; k < px.length; k++) d[px[k]] = 1;
+  return { data: d, w: grid.w, h: grid.h };
+}
+/* her region inside a box, the largest piece only */
+function cropBlob(grid, box){
+  const d = new Uint8Array(grid.w * grid.h);
+  const X0 = Math.max(0, Math.floor(box[0] * grid.w)), X1 = Math.min(grid.w, Math.ceil(box[2] * grid.w));
+  const Y0 = Math.max(0, Math.floor(box[1] * grid.h)), Y1 = Math.min(grid.h, Math.ceil(box[3] * grid.h));
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++){ const i = y * grid.w + x; d[i] = grid.data[i]; }
+  const b = petBlobs({ data: d, w: grid.w, h: grid.h }, true).list[0];
+  return b && b.px.length >= grid.w * grid.h * 0.004 ? b.px : null;
+}
+/* the region under a point, or the nearest one within reach */
+function blobAt(grid, found, at, reach){
+  const x = Math.min(grid.w - 1, Math.max(0, (at[0] * grid.w) | 0));
+  const y = Math.min(grid.h - 1, Math.max(0, (at[1] * grid.h) | 0));
+  const k = found.lab[y * grid.w + x];
+  if (k) return found.list[k - 1];
+  let best = null, bd = (reach * grid.w) * (reach * grid.w);
+  found.list.forEach(b => {
+    for (let j = 0; j < b.px.length; j += 3){
+      const dx = b.px[j] % grid.w - x, dy = ((b.px[j] / grid.w) | 0) - y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bd){ bd = d2; best = b; }
+    }
+  });
+  return best;
+}
+/* kept with her DNA so a re-read of the stored photo finds HER again: a
+   point inside her near her middle, and the box if the owner drew one */
+function subjectOf(grid, px, box){
+  let sx = 0, sy = 0;
+  for (let k = 0; k < px.length; k++){ sx += px[k] % grid.w; sy += (px[k] / grid.w) | 0; }
+  sx /= px.length; sy /= px.length;
+  let bi = px[0], bd = Infinity;
+  for (let k = 0; k < px.length; k++){
+    const dx = px[k] % grid.w - sx, dy = ((px[k] / grid.w) | 0) - sy, d2 = dx * dx + dy * dy;
+    if (d2 < bd){ bd = d2; bi = px[k]; }
+  }
+  const r3 = v => Math.round(v * 1000) / 1000;
+  return { at: [r3(((bi % grid.w) + 0.5) / grid.w), r3((((bi / grid.w) | 0) + 0.5) / grid.h)],
+           box: box ? box.map(r3) : null };
+}
+/* a fresh mask of the same photo, narrowed to the subject on file. A card
+   from before the chooser, with two cats in its photo, keeps the biggest. */
+function subjectMask(m, subj){
+  if (!m) return m;
+  const grid = petGrid(m);
+  if (subj && subj.box){
+    const px = cropBlob(grid, subj.box);
+    return px ? blobMask(grid, px) : m;
+  }
+  const found = petBlobs(grid);
+  if (found.list.length < 2 && !subj) return m;
+  const b = subj && subj.at ? blobAt(grid, found, subj.at, 0.12) : found.list[0];
+  return b ? blobMask(grid, b.px) : m;
+}
+
+const Chooser = (() => {
+  let st = null;
+  const cv = $('chooseCv');
+  const pt = e => {
+    const r = cv.getBoundingClientRect();
+    return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
+            Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))];
+  };
+  function size(){
+    const avail = (cv.parentNode && cv.parentNode.clientWidth) || 340;
+    const maxH = Math.max(220, Math.round((window.innerHeight || 640) * 0.56));
+    const ar = st.photo.width / st.photo.height;
+    let w = avail, h = Math.round(w / ar);
+    if (h > maxH){ h = maxH; w = Math.round(h * ar); }
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  }
+  function draw(){
+    if (!st) return;
+    const g = cv.getContext('2d'), W = cv.width, H = cv.height, G = st.grid;
+    g.drawImage(st.photo, 0, 0, W, H);
+    g.fillStyle = 'rgba(21,14,29,0.68)'; g.fillRect(0, 0, W, H);
+    const m = document.createElement('canvas'); m.width = G.w; m.height = G.h;
+    const mc = m.getContext('2d'), im = mc.createImageData(G.w, G.h);
+    for (let k = 0; k < st.sel.px.length; k++) im.data[st.sel.px[k] * 4 + 3] = 255;
+    mc.putImageData(im, 0, 0);
+    const lit = document.createElement('canvas'); lit.width = W; lit.height = H;
+    const lc = lit.getContext('2d');
+    lc.drawImage(st.photo, 0, 0, W, H);
+    lc.globalCompositeOperation = 'destination-in';
+    lc.drawImage(m, 0, 0, W, H);
+    g.drawImage(lit, 0, 0);
+    if (st.drag){
+      const b = st.drag, dpr = W / (parseFloat(cv.style.width) || W);
+      g.strokeStyle = '#FFB23F'; g.lineWidth = 2 * dpr; g.setLineDash([8 * dpr, 6 * dpr]);
+      g.strokeRect(b[0] * W, b[1] * H, (b[2] - b[0]) * W, (b[3] - b[1]) * H);
+      g.setLineDash([]);
+    }
+  }
+  function hint(t){ $('chooseHint').textContent = t || 'Touching? Drag a box around her.'; }
+  function finish(ok){
+    if (!st) return;
+    const s = st; st = null;
+    s.res(ok ? { mask: blobMask(s.grid, s.sel.px), subject: subjectOf(s.grid, s.sel.px, s.sel.box) } : null);
+  }
+  cv.addEventListener('pointerdown', e => {
+    if (!st) return;
+    try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+    st.down = pt(e); st.drag = null;
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!st || !st.down) return;
+    const p = pt(e), d = st.down, r = cv.getBoundingClientRect();
+    if (st.drag || Math.hypot((p[0] - d[0]) * r.width, (p[1] - d[1]) * r.height) > 12){
+      st.drag = [Math.min(d[0], p[0]), Math.min(d[1], p[1]), Math.max(d[0], p[0]), Math.max(d[1], p[1])];
+      draw();
+    }
+  });
+  cv.addEventListener('pointerup', e => {
+    if (!st || !st.down) return;
+    const p = pt(e);
+    if (st.drag){
+      const box = st.drag; st.drag = null;
+      const px = cropBlob(st.grid, box);
+      if (px){ st.sel = { px, box }; hint(); }
+      else hint('No cat inside that box. Try a bigger one.');
+    } else {
+      const b = blobAt(st.grid, st.found, p, 0.12);
+      if (b){ st.sel = { px: b.px, box: null }; hint(); }
+    }
+    st.down = null; draw();
+  });
+  cv.addEventListener('pointercancel', () => { if (st){ st.down = null; st.drag = null; draw(); } });
+  $('chooseGo').onclick = () => finish(true);
+  $('chooseBack').onclick = () => finish(false);
+  $('chooseNext').onclick = () => {
+    if (!st || st.found.list.length < 2) return;
+    const k = st.found.list.findIndex(b => b.px === st.sel.px);
+    st.sel = { px: st.found.list[(k + 1) % st.found.list.length].px, box: null };
+    hint(); draw();
+  };
+  return {
+    /* resolves { mask, subject } at once for one cat, after the owner's
+       choice for several, or null when she wants a different photo */
+    pick(photo, mask){
+      const grid = petGrid(mask), found = petBlobs(grid);
+      if (found.list.length < 2) return Promise.resolve({ mask, subject: null });
+      return new Promise(res => {
+        st = { photo, grid, found, sel: { px: found.list[0].px, box: null }, res, down: null, drag: null };
+        hint();
+        show('choose');
+        size(); draw();
+        $('view-choose').scrollIntoView({ block: 'start' });
+      });
+    }
+  };
+})();
 
 function readCatFromPhoto(canvas, extMask){
   const N = 128;
@@ -5462,7 +5696,10 @@ $('tuneReset').onclick = () => {
     cv.getContext('2d').drawImage(im, 0, 0);
     let m = null;
     try { m = await segmentCat(cv); } catch (e) {}
+    const subj = c.dna && c.dna._subject;
+    if (m) m = subjectMask(m, subj);
     c.dna = readCatFromPhoto(cv, m) || defaultDNA();
+    if (subj) c.dna._subject = subj;
     Store.update(list => {
       const x = list.find(y => y.id === c.id);
       if (x) x.dna = c.dna;

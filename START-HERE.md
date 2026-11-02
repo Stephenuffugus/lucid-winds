@@ -2,6 +2,7 @@
 
 ## 🐈 LOAF MILESTONE A, BUILD LOG (Opus, from LOAF_BUILD_PLAN.md; one line per step)
 - A1 ROOM GROUNDING done 2 Nov: Astra's floor (0.8 m tile), wall plate (panels repeat, wash runs on), arched window decal, day/dusk/night plates + light sets by the local clock (neutral key, jaw fill, warm floor bounce); the seat is a level shift lens (no keystone); violet void gone. Look tool: `node scripts/loaf_look.mjs --photo <p> --out <png>` (one image, a panel per light; Chrome from sws-tools). Seen: room reads in all three, black coat separates at night.
+- A2 SUBJECT CHOOSER done 2 Nov: the mask splits into separate cats; with two or more, "Tap the cat to meet." (biggest lit, rest dimmed; tap another, "The other cat", or drag a box when they touch); only her region reaches the reader; her place is kept as dna._subject so a re-read of the stored photo finds her, never the sibling. Seen: both-perch with Oreo lit, room shows a lone tabby. `--tap x,y` on the look tool shoots the chooser.
 
 ## 🐈 2 Nov 22:50 UTC (Fable) LOAF BUILD PLAN WRITTEN: LOAF_BUILD_PLAN.md (repo root). READ IT BEFORE ANY LOAF CODE
 - Four milestones, A likeness → B meet her → C the games read → D the return and the store. Astra's order kept; the room grounding moved into A because the recognition test needs neutral light. Five decisions wait on Stephen at the end of the file (order, grader, other people's cats, PNG billboards before Meshy, the pilot).
