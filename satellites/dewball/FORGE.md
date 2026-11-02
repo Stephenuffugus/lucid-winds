@@ -1003,3 +1003,12 @@ lucidwinds.com, the web copy's Sunbeams and feedback form; the email inside the 
 with SwiftShader and, when a menu draws no canvas, taps the first open world card offline) opened Crumb Country with
 the network off (looked at: the ball, the crumbs, the HUD, the first hints). same.sh SAME_PASS, sign_test SIGN_PASS.
 Still his: price, listing copy, the landscape only manifest, and the store pictures from the real game.
+
+## Either way round, sideways recommended, 2 Nov 2026 (his call; NOT in dewball-v36, for the next release)
+
+Stephen: "they should be able to play either way but its recommended in landscape". The manifest's `orientation` is
+`any` (it was `landscape`, which would have locked the Play app and an installed copy sideways). The rotate tip now
+shows in portrait on a touch screen whether or not the game is installed; installed (the Play app included) it reads
+"Dewball plays best sideways. Turn your phone for a wider world." (no browser bar to promise away); in a browser it
+keeps the horizon mode line. The iPhone install note no longer says it opens in landscape. copy_check COPY_PASS,
+same.sh SAME_PASS. Ships with the next stamp (v36's deploy script is pinned to `afa458f65`, before this).
