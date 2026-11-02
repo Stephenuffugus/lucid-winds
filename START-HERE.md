@@ -1,5 +1,19 @@
 # START HERE
 
+## 🐈 2 Nov 22:13 UTC (Opus) FABLE: PLAN THE LOAF BUILD WITH STEPHEN FROM ASTRA'S PACK (it came back tonight)
+HIS WORDS: "loaf holds a very unique feature and i think it could sell ... give astra an entire pack so it can assess and help smooth it all out, then give us a single zip back with everything so fable can plan the build with me." And tonight: "We will probably want Fable to look that over and plan the build."
+ASTRA'S PACK (loaf-astra-pack-v1.zip, 125 files, 11.5 MB, sha256 88d09217...; every item the brief asked for is there by count):
+- Unpacked at /workspaces/loaf-astra-v1/pack/ (on the persistent disk, NOT in git: the repo is public). The zip beside it; backed up to the private vault as release astra-loaf-pack-v1-20261102 (digest read back equal).
+- ASSESSMENT.md "design review 01": the walkthrough (first visit and day 30), the four photo against 3D comparisons, a 10 step build order with sizes and exit tests, three commercial risks, the Two Cat Test to run before release. Its decision line: "Give an owner one photo, one correction and one good catch before asking them to file anything. Keep the field-card voice." Its first two steps are L: subject selection with a visible mask and reversible marking corrections, then face shape, eyelids, paw whites, brow and stripe direction, passing a blind same coat comparison before building more games.
+- NOTES.md is Astra's own "Fable handoff". STYLE-GUIDE.md (palette, type, card, room, icons, motion). manifest.json lists every file.
+- assets/: a_identity 6 (wordmark, icons, feature graphic, splash), b_card 33 SVG (5 rarity frames, back, 6 stats, 6 abilities, 15 postures), c_room 25 PNG (floor, wall, window for day, dusk, night; the 16 furnishings), d_play 28 (toys, laser, yarn, 9 fish, pond, beans), e_bond 22 SVG (ritual, needs with calm low states, bond 1 to 10, days together). previews/ has a contact sheet per section plus card_and_room.png (Barthalomew's foil card beside the 3D cat in the furnished room) and icon_size_proof.png.
+WHAT WE SENT ASTRA: docs/briefs/loaf/ASTRA-LOAF-PACK-NOV02.txt (the brief, with the hard lines) and docs/briefs/loaf/loaf-pack-for-astra-nov02.zip (22 screens of the real app, the plan, four photo and 3D pairs of Barthalomew and Oreo).
+LOAF ITSELF: loaf.html (the app), LOAF_PLAN.md (the product SSOT), LOAF_3D_PLAN.md, LOAF-AUDIT-NOTES.md, LOAF_FURNISHINGS.md, assets/loaf/ (cat.glb, refcats, shots), scripts/loaf_fullwalk.mjs (the walk that shot the screens).
+THE HARD LINES (the brief): comfort first (nothing dies, sickens, runs away or is punished; a low need is an invitation, never alarm red); coat, never breed; chonk never reads as body condition; days together only counts up; the owner's photo stays the hero of the card; no fixed mascot cat.
+HOW THIS STUDIO WORKS NOW: Fable plans with Stephen; Opus builds from the plan. Stephen's standing order (2 Nov): no lanes, workflows or review agents; code directly; one check run before a deploy; ship every session. Deploys to main are his, run with `!` at an idle prompt. Nothing goes to Play until it is good (Play approves within hours).
+THE REST OF TONIGHT: Dewball dewball-v36 LIVE (next: its Play store kit at $0.99, either orientation, landscape recommended; v37 carries that change). Shutterbug sb-m1-12 LIVE at $0.99 (waits for his play notes and one real room photo). Lucid Winds publishing: Fable's and his to plan.
+
+
 ## ✅ 2 Nov 21:45 UTC (Opus) DEWBALL dewball-v36 IS LIVE (main `a88e9a65c`, tag dewball-v36); THE VAULT RELEASE IS MADE
 - His own command ran deploy-dewball-v36.sh after his gh login (`env -u GITHUB_TOKEN gh auth login`; his token now sits in ~/.config/gh/hosts.yml, plain text, repo scope). Vault release meshy-dewball-w567-20261101: 271 files, every sha256 read back equal.
 - Both origins serve sw.js, index.html and assets/3d/index.json byte equal to `a88e9a65c`. dewball-w567 and main are merged into add-sproing-jumper.
