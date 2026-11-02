@@ -756,3 +756,250 @@ w1 to w4 + `--block atlas`, same.sh, react_test, sign_test.
 **⛔ The live boot tripped the host's ban:** two liveboot runs and one debug load (each 100+ requests) and the LiteSpeed
 origin answered 403 to this box for the whole site (skywolfstudio.com fine). Probing stopped at once; the read back is
 one request per origin after the ban lifts (memory project_cdn_429_lockout_sep15).
+
+## Starfall Bay (w5), Dream Meadow (w6), The Whole World (w7): step 1, the toolchain and the cuts, 1 Nov 2026 (no credits)
+
+**Why:** Meshy reset ("our meshy just reset so I have the rest of DuBall's assets"), balance 3,039 at 16:30 UTC; his Astra
+zips for the last three worlds (w5 20 pictures, zip sha256 45a9e5e2a87f2fab..., w7 12, 71a9d4820bb70fc7..., w6 4,
+0bb5d4cda1a6281a...; every picture's sha256 equal to Astra's asset-manifest.json). Branch `dewball-w567`.
+**Toolchain, new box:** Blender 4.0.2 official tarball (sha256 equal to download.blender.org's list) in
+`/workspaces/sws-tools/blender-4.0`, `blender` on PATH via `~/.local/bin`; it needed four X/GL runtime libraries from
+Ubuntu's archive (libxxf86vm1, libsm6, libice6, libgl1). gltfpack 0.25 official release binary (digest equal to GitHub's).
+Pillow 13.0, numpy 2.5.4, scipy 1.18.1 (pip --user; ⛔ `python3 -I` hides user site packages). `node_modules` in the
+worktree root is a symlink to `/workspaces/sws-tools/node_modules` (untracked, never committed). Proved before use: a
+headless Blender export; gltfpack decoding the committed `w3/toadG.glb` and repacking it with pack.mjs's flags (41,732 B
+against 41,764 B committed); dewfit.py on that decoded toad (size matches its primitive, fit scale 1.0; only "has a
+texture" fails, as it must for an atlas file); `report.mjs assets/3d` REPORT_PASS; `gate-glb.mjs --world w3`
+GATE_GLB_PASS under the browser lock.
+**Cuts, looked at on magenta, every one** (89 kinds; each world's picks file holds each kind's picture, quarter and
+flags in `cut`, and `cutpicks.py <world>-picks.json --pictures <dir>` makes them again, byte equal to the cuts looked
+at). Astra's pictures keep soft ground shadows and glow halos that the w3/w4 recipe leaves on the object, so
+`sheetcut.py` gained three opt in passes (defaults off; a w5 sheet recut without them is byte identical):
+`--shadow` (neutral, darker than the sheet, touching it, in the low 30% of its object: the first version without
+the low part rule ate the gull's dark wing tips), `--ramp` (grows the sheet through a smooth glow halo and stops at the
+step of the thing's edge: the reed's halo ends 87 from the grey and its blue stem sits at 77, no tolerance splits them)
+and `--specks`. Run on everything, `--ramp 6` ate the Ferris wheel's base top, the bell's post and the dinghy's mast, so
+it stays on Dream Meadow's lit pictures only. **Recuts and why:** crab, gull, dragonfly, the four p10 keepsakes,
+driftwood, oar (`--shadow 50`; the star at `--shadow-chroma 30`, its shadow is glow tinted, which bit the bell's base so
+the others stay at 14); the boardwalk stand (its open window sat 9 from the sheet, past `--holes 8`: `--holes 12
+--specks 80`); moon gate, pagoda, moth, cloud puff, dream reed (`--ramp 6`; `--tol 30` to 50 either kept the halo or ate
+the felt); stadium (`--shadow 50`; the same pass bit the cathedral's grey towers, so the cathedral keeps a thin step
+shadow); the grey peak (`--tol 18` and 10 both bit the left peak, `--tol 6 --holes 0` is whole). The anchor's
+"crosses" warning is its ring passing the centre line: one piece, nothing of its neighbours. Everything else at
+`--tol 18 --holes 8`, the grey kinds included (stone circle, sea wall, bollard, keep, clock tower, city wall, standing
+stone: whole, compared with `--tol 10`).
+**Seen in the pictures, for the fit** (in the picks files): movers face right (crab three quarter, dragonfly and moth
+with wings raised where the primitive lies flat); lifering and starfish drawn face on (`--tip`), surfboard on a 42
+degree slant and the oar on its edge (`--roll` then `--tip`, as the rattle); drift: whalebone, bollard, lighthouse,
+clock tower, windmill sails, stadium (an elevated view, 0.77 tall per wide against the primitive's 0.31), hotel,
+pavilion, aqueduct. w6 places seven w5 kinds and w7 twenty eight, pending on w5's buy; the bicycle stays w4's primitive.
+⚠️ w7 draws 95 kinds from one 2048x1536 atlas (29 new, 38 shared, 28 from w5): its squares will be the tightest yet.
+
+## Starfall Bay (w5), The Whole World (w7), Dream Meadow (w6): step 2, the models bought, 1 Nov 2026 (1,335 credits)
+
+**Bought:** all 89 cut kinds by Meshy image to 3D, arm `i2t` (smart topology meshy-t2 at each kind's own budget, painted
+from the cut, the same body as w3 and w4: the ledger's image_body equal to `windkey.i2t`'s), one run a world after a
+`--dry-run` of all 89 (1,335 planned): w5 54 kinds `--max-credits 810` 18:31 to 18:40 UTC, w7 29 `--max-credits 435`
+18:41 to 18:46, w6 6 `--max-credits 90` 18:47 to 18:48, `--parallel 4`, 21 to 53 s a model. **No refusal, no failure,
+no reroll: 89 x 15 = 1,335 credits, balance 3,039 → 2,229 → 1,794 → 1,704.** The ledger keeps every task (350 jobs;
+the 267 older entries byte for byte unchanged). The lane's budget was 1,700; 365 of it is left for rerolls.
+**The vault today:** the private vault is not reachable from this box (no gh login) and lucid-winds is public, so no
+release yet. Two copies, sha256 checked equal: `tools/forge/meshy-out` + `meshy-in` in the worktree and
+`/home/codespace/dewball-drafts/meshy-raw/` (89 glb, 89 thumbnails, 89 cuts, 288 MB), the three zips in
+`dewball-drafts/astra/`. ⚠️ Measured: both sit on the same loop device (`/dev/loop4`), so they guard against a deleted
+folder, not a lost codespace. `dewball-drafts/VAULT-PENDING.txt` lists all 270 files (sha256, size) and the one
+`gh release create meshy-dewball-w567-20261101` command; it must run before anything is built on these models.
+**First look, Meshy's own thumbnails only** (a contact sheet a world; NOT the game camera, nothing fitted yet): every
+landmark reads (Ferris wheel, helter skelter, balloon, hotel, pavilion, keel, dry dock, cannery; the bridge, stadium,
+palace, cathedral, aqueduct, observatory; moon gate, pagoda, stone circle), the creatures and vehicles read. To watch
+in the game frame: **kelp tangle** (crumpled green shards, the popcorn's fault), **shell** (big flat facets), **mooring
+post** (a dark lump), **dragonfly** (small and bug like), the balloon's grey anchor rock at its foot, the oar (a thin
+sliver), the postbox's dark foot, the sheep's faceted wool; the **moon gate's** moon fills its opening (as Astra drew it).
+
+## Starfall Bay (w5) in models from his Astra pictures, 1 Nov 2026 (`dewball-v35`, no credits)
+
+**Built from the step 2 buy** (54 i2t models, 810 credits, balance 1,704 unchanged by this step). ⚠️ The vault release
+is STILL NOT MADE: gh is logged in with the codespace token, which cannot see `Stephenuffugus/lucid-winds-vault`
+(`Could not resolve to a Repository`, 18:51 UTC), so this step builds on the two same disk copies; all 270 files were
+checked against `VAULT-PENDING.txt`'s sha256 list before the first fit (every one equal). The law says vault first:
+the release command in that file must run before this branch ships.
+**Fit** (dewfit, the ladder law: every largest extent equals its primitive's, `report.mjs` REPORT_PASS): movers
+looked at with facing.mjs before and after: the crab came back eyes and claws on +Z (no yaw), the gull beak to +X
+(`--yaw gull=-90`, after: beak on +Z), the dragonfly head on +Z but its wings ONE upright sheet, a line from above
+(`--roll dragonflyS=90` laid them flat). Flat things that came back standing, read in Blender's four views:
+`--tip starfish=-90` (spotted face up; +90 laid it face down), `--tip lifering=-90`, the surfboard lying along z nose
+up 31 degrees (`--yaw surfboard=90 --roll surfboard=31`: 111.5 x 13.5 x 46.2, fins down), the oar already flat
+(`--yaw oar=90`). Then uvclean (54 of 54), one 2048x1536 atlas for 55 kinds (99% full, 909 KB, 16.0 MB on the GPU):
+the eight landmarks keep 512 (two thirds of the atlas, the most of any world), so the sets step down: ferry,
+harborcrane, lighthouse, sailboat, beachhut, boathouse, houseboat, whalebone, fishshack 512 → 256; driftwood, bonfire,
+fishcart, umbrella, dinghy, boardwalk stand, rowboat, lifeguard post, barrel 512 → 128; the keepsakes, crab, gull,
+seawall, cratewall and the shared signpost, banner pole, flower bed 256 → 128 (about 20 px a metre for every set piece
+and landmark alike). Pack `--world w5 --merge`: `git diff --stat` shows index.json +170 lines and 0 removed, no file in
+w1 to w4 touched; `assets/3d/w5` is 55 GLBs + `atlas.jpg`, 3.6 MB.
+**Shared kinds without the October files.** Signpost, banner pole, flower bed, barrel and cratewall are placed in w5
+and draw only from w5's atlas, but this box has neither the October fitted files nor the raw Meshy files (those are in
+the vault). New `tools/forge/unatlas.py` rebuilds a fitted file from the SERVED one: gltfpack decodes it (the mesh is
+dewfit's exactly, -noq keeps float positions), its square is found from its UVs in the home atlas, the square's inner
+part is cut from that `atlas.jpg` and embedded, the UVs mapped back to 0..1; the world that gave the kind the biggest
+square wins (signpost and banner pole from w1, flower bed w2, barrel and cratewall w4, all 256). One JPEG generation
+more than a fresh paint; looked at whole in Blender (clean) and in the game camera.
+**Looked at** (shot.mjs pairs of all 59 at 412x915, 8 mosaic pages, plus Blender four views of all 54 new models):
+**55 ship**, each reading better than its primitive: all eight landmarks (the broken keel a real wreck with a ragged
+red sail, the dry dock a ship on its blocks, the cannery's brick and chimneys, the hotel, helter skelter, Ferris
+wheel, moored balloon, pier pavilion), crab (a crab, where today's is a red blob) and gull (a face, grey wings), all
+five keepsakes (the bell on its post, the message in a bottle, a star, the Pearl Whorl a whorled shell, the comb with
+its blue gems), the boats (ferry, sailboat, rowboat, dinghy, houseboat), the huts and stalls, lifeguard post,
+lighthouse, crane, whalebone, umbrella, deckchair, bonfire, fish cart, cargo box (a ridged container), lobster pot,
+net bale, buoys, dock and mooring posts, seawall (mossy rocks instead of purple blocks), groyne, driftwood, bucket,
+sandcastle, seagrass, shell, starfish, surfboard, lifering, anchor, and the five shared kinds. The barrel's shot was
+blocked (driftwood and an anchor fill the frame; one instance in w5): judged from Blender, sound. The starfish shot is
+far; judged from Blender too. **Kept primitives (4):** the **dragonfly** (a pale smudge at a 9 cm ball: the light
+wings and the thin navy body in a 128 px square vanish on the dusk sand, where today's blue rod with grey wings reads),
+the **kelp tangle** (about 250 crumpled shards, the popcorn's fault: crumpled lettuce, today's green coils read as a
+tangle), the **oar** (the blade a third of the length wide, as Astra drew it: a lute or a big spoon in the game camera,
+today's thin oar reads), the **tide pool** (Meshy built the rock ring and left the middle open, the sand shows through:
+a ring of stones, today's blue water disc reads as a pool). Removing them from the atlas let the fish shack grow
+128 → 256; nothing else changed size.
+**Drift to know** (in `w5-picks.json`): the mooring post is a squat bollard 2.2x the primitive's width (the darkest
+thing on the boardwalk, 155 of them); the lighthouse 564 wide against 352; the pier pavilion lower (1,253 against
+1,899) and shallower; the balloon taller and deeper, its four grey mooring stones on ropes; the keel's sail higher;
+the hotel wider; the whalebone a long low skeleton (232 tall against 390); the bonfire's flame a card from its side;
+the comb stands on its edge like the primitive.
+**The world, looked at** (world_shots 60 / 400 / 1500 cm, busy, above, rim in, rim out, models beside today from one
+frame): the opening's 319 shells are coral whelks where today's are pink blobs, so the sand at 60 cm and 4 m reads as
+a shell beach; at 15 m the breakwaters read as rock, not purple blocks. Three things wrong: (1) the mooring bollards
+are the heaviest dark accents in every boardwalk frame (the width drift); (2) the busy cluster mixes models with the
+kept tide pools' flat blue discs, which now look plainer beside them; (3) the worst angle, rim out, is unchanged
+by the models: the sand ends in a hard line against a flat navy sea band, the known horizon fault.
+**Perf** (perf.mjs, 4x CPU tick, exact counts; before = the same build with an index without w5, base
+`tools/forge/fitted/before/`): at 60 / 400 / 1500 cm, draw calls 68 / 83 / 102 → 73 / 108 / 125, triangles 478k /
+481k / 485k → 494k / 695k / **1,677k**, textures 5.96 → 21.96 MB. Inside the fence against the plan's base (3x the
+~920k w7 triangles, 2x its 145 to 181 calls), but ⚠️ 1.68M is the most of any world so far and 3.5x w5's OWN primitive
+count at the 15 m ball: the near set covers 2,405 instances there (seawall 197 x 600, shells 319 x 300, mooring and
+dock posts 280 x 300). Ticks scatter both ways (p95 4.6 to 22 ms with models, 9.6 to 17 without): the Shutterbug
+lanes shared both cores the whole time, so no frame time here means a phone.
+**Gates:** report (w1 to w5 atlases 16.0 MB), gate-glb w5 (55 ready, 74 calls, 493k triangles, 21.96 MB) and `--block
+atlas` (0 ready, every kind its primitive, 69 calls), same.sh pointed at this worktree (SAME_PASS byte identical:
+physics never reads a model), react_test REACT_PASS, sign_test, `manifest.mjs --check` MANIFEST_FRESH. Stamp: sw.js
+CACHE `dewball-v35` (models, the index and the stamp only; no game code changed).
+
+## The Whole World (w7) in models from his Astra pictures, 2 Nov 2026 (no credits)
+
+**Built from the step 2 buy** (29 i2t models, 435 credits; balance 1,704, unchanged by this step). ⚠️ The vault release
+is STILL NOT MADE: the codespace token still cannot see `Stephenuffugus/lucid-winds-vault` (`Could not resolve to a
+Repository`, 2 Nov 19:53 UTC). The two same disk copies stand; the release command in `VAULT-PENDING.txt` waits for
+his own `gh auth login`. The 1 Nov lane stopped this step after the pack (fit, uvclean, atlas and pack had each exited
+0, logs in `dewball-drafts/w7/`); the looks, the record and the gates were finished on 2 Nov, nothing rebuilt.
+**Fit** (dewfit, the ladder law): the four movers came back along x; `--yaw 90` on sheepW, cowW, busW and carW put the
+sheep's black face, the cow's head, the bus's flat front and the car's bonnet on +Z (facing.mjs before and after,
+looked at). No tip, roll or fold. uvclean 29 of 29.
+**Shared kinds:** 34 rebuilt from their served files by unatlas.py (the v35 method; apple from w1 and w4, the
+biggest square winning), 25 from w5's fitted files, the three w5 keeps (kelp tangle, oar, tide pool) stay primitives
+here too (`w7-picks.json` keep). **One 2048x1536 atlas for 92 kinds** (99% full, 896 KB, 16.0 MB on the GPU), the
+tightest yet: the six landmarks keep 512; city wall, clock tower, grey peak, harbour crane, hillock, keep and moon
+shard 256; every other set piece 128 (110 step downs, most sets 512 → 256 → 128); 17 small kinds at 64. Pack `--world
+w7 --merge`: index.json +281 lines, 0 removed, the w1 to w5 entries equal as parsed; `assets/3d/w7` is 92 GLBs +
+`atlas.jpg`, 5.0 MB.
+**Looked at** (Blender four views of all 29 new kinds; shot.mjs pairs of all 29 at 412x915): ⚠️ **on the globe the
+pairs park the ball far from its subject** (the tool walks the flat plane; on the 129 m planet the curve and the ball
+hide it): the six landmarks never show in their pairs, the weathervane's and the standing stone's are blocked by a
+haystack and a cloud. The Blender views carried those. **29 ship, every one reading better than its primitive:** the
+suspension bridge (red towers over a river between grassy banks), stadium (red stands, a green pitch, floodlights),
+palace (golden domes), cathedral (blue spires), aqueduct (arches carrying a water channel), observatory (a dome with
+its telescope out); the sheep (wool, black face), cow, camper bus and red car; the five keepsakes (a brass telescope on
+its tripod, the weathervane's arrow, a red pillar postbox, the crown with red gems, a globe on its stand); cottage,
+chapel, water tower, windmill, clock tower, keep, city wall, standing stone (mossy), oak, pine, hayrick, grey peak
+(snow capped), hillock (a green mound with one pine and grey rocks), moon shard (a crystal cluster). Where the pairs
+did show the subject (car, telescope, postbox, crown, globe, cottage, water tower, windmill, hayrick, grey peak, moon
+shard, sheep, cow) the model reads better than its primitive in the game camera too. **Kept primitives: none new.**
+**Drift to know** (in `w7-picks.json`): the aqueduct a long thin span (1,290 tall, 506 deep against the primitive's
+1,950 x 2,538 block); the cathedral wider and deeper (3,020 x 2,991 against 2,140 x 1,834); the palace lower and
+shallower; the windmill's sails 649 wide against 364; the standing stone fatter; the weathervane's arrow and the
+telescope's tripod wider; the hillock a bright lime mound.
+**The world, looked at** (world_shots 45 / 500 / 2,200 cm, busy, above, rim in, rim out, models beside today from one
+frame): from above at 22 m the villages are cottages, hayricks and stalls where today they are red pyramids and boxes;
+the busy cluster at 5 m is scarecrows and mossy stone walls instead of brown sticks; rim out is green hills with pines
+instead of dark domes. Three things wrong: (1) the hillocks are lime green, louder than the muted domes, and at the
+rim one fills the frame; (2) the gate signs stretch across the middle of the screen at 5 m ("4.20 m") and at 22 m
+("13.0 m") in BOTH builds, a world fault the models did not make; (3) the spawn at 45 cm is sparse in both builds.
+**Perf** (perf.mjs, 4x CPU tick, exact counts; before = an index without w6 and w7, `tools/forge/fitted/before-w67/`):
+⛔ **the first measure broke the fence**: at 45 / 500 / 2,200 cm, triangles 922k / 924k / 931k → 1,016k / 2,735k /
+**4,503k** (4.8x the base at the goal size), every one of the 4,466 live instances drawn as its model, because
+LOD_NEAR's 16 ball widths of a 22 m ball reach round the whole 129 m planet (a 90 cm barrel at 1,509 triangles is 5
+px there). **Two drawing only rules fixed it (index.html lodSync; physics never reads them, same.sh byte identical):**
+`LOD_SPECK` 20, a thing smaller than a twentieth of the ball draws as its primitive wherever it is (every world), and
+`LOD_GLOBE` 1.2, on the globe the ball widths reach at most 1.2 planet radii of arc (69 degrees; the draw cap stays
+2.35 rad, and a thing big enough by LOD_SIZE still reaches past it: the landmarks). Measured after: 1,016k / 2,528k /
+**2,222k**, and 1,718k at the 44 m three star size; draw calls 160 / 188 / 226 / 239 against 146 / 160 / 192 (the
+fence is 3x the ~920k triangles and 2x the calls). Tried on the way: the speck rule alone at 20 gave 3,400k at 22 m,
+at 12 gave 2,971k. Looked at again at 22 m and 44 m (world_shots `w7/world2`): the hayricks, cottages, stalls and
+the horizon's landmarks still draw as models; nothing on the limb reads as a primitive swap. Textures 2.15 → 18.15
+MB. Tick times scatter run to run on this box (median 14 to 49 ms at 22 m under the 4x throttle, the same build),
+so no frame time here means a phone.
+
+## Dream Meadow (w6) in models from his Astra pictures, 2 Nov 2026 (`dewball-v36`, no credits)
+
+**Built from the step 2 buy** (6 i2t models, 90 credits; balance 1,704, unchanged). The vault caveat above holds.
+**Fit:** the moon gate, pagoda, stone circle, moth, cloud puff and dream grass. The moth came back with its head on -X
+and its wings fanned up and back (as Astra drew it): `--yaw mothZ=90` put the head and antennae on +Z (facing.mjs
+before and after, looked at). uvclean 6 of 6. **Shared kinds:** 27 more rebuilt by unatlas.py from their homes (w1:
+berry, crumb, book tower, pea, pie, sandwich, teacup; w2: crayon, die, drum, duck, kite, carousel, marble, paper plane,
+teddy; w3: birdbath, firefly, hedgehog, lantern, dovecote, gazebo pond, moonflower, moonstone, toad; w4: jug, clock
+tower), 14 from w7's set, 7 from w5 (anchor, small crab, driftwood, rowboat, sailboat, sandcastle, umbrella); the
+bicycle stays w4's primitive. **One 2048x1536 atlas for 54 kinds** (100% full, 794 KB, 16.0 MB on the GPU): the eight
+landmarks 512; bench, cart, cloud puff, driftwood, rowboat, sailboat, stall, streetlamp and umbrella 256; the rest 128
+and 64. Pack `--world w6 --merge`: index.json +167 lines, 0 removed; `assets/3d/w6` is 54 GLBs + `atlas.jpg`, 3.2 MB.
+**Looked at** (Blender four views of the six; shot.mjs pairs of the six and the seven w5 kinds): **13 ship**: the moon
+gate (a purple felt ring round its moon, on a felt base), the pagoda (red and cream tiers), the stone circle (grey
+stones on a purple disc round a glowing orb), the moth (a felt moth where today's are two flat cards), the cloud puff,
+the dream grass (a felt ball on a blue stalk, today's own lollipop shape), and from w5 the crab (a red crab with legs
+where today's is a red blob), the rowboat (a wooden boat, today's a plank box), the sandcastle (sand coloured, today's
+pink), the anchor, driftwood, sailboat and umbrella. Kept primitives: none new.
+**Drift to know** (in `w6-picks.json`): the stone circle 253 tall against 443 (low stones); the moth's wings fanned up
+(4.7 tall against 2.6); the moon joined to its ring.
+**The world, looked at** (world_shots 20 / 150 / 600 cm, busy, above, rim): the models barely change Dream Meadow at
+these sizes, because its near field is crumbs, marbles and peas and its far kinds are few. Three things wrong, all in
+both builds: (1) the spawn frame at 20 cm is nearly empty, a dark purple field with one pale band; (2) the whole world
+reads dark and sparse at 1.5 m and 6 m (night fog over a dark ground); (3) the anchor at the rim is a black hook
+against the dusk.
+**Perf** (the same probe and base): at 20 / 150 / 600 cm, triangles 265k / 266k / 269k → 305k / 382k / 734k with the
+speck rule (1,345k at 600 cm before it), draw calls 57 / 68 / 88 → 62 / 89 / 95, textures 5.42 → 21.42 MB. Starfall
+Bay (w5) with the speck rule: 494k / 695k / 1,585k at 60 / 400 / 1,500 cm (1,677k in the v35 record).
+**Gates** (2 Nov, the box quiet): report REPORT_PASS (w1 to w7 atlases 16.0 MB each), gate-glb w7 and w6 GATE_GLB_PASS
+and `--block atlas` on both (0 ready, every kind its primitive; w7 142 calls and 922k triangles, w6 57 and 265k),
+`--plant missing` red as it must be; ⚠️ gate-glb on w7 first went red on `kCrown split is impossible` (near 0, far 0
+of 1): the Crown of the World's keepsake lies past the globe's visible cap at the spawn, so it draws nothing either
+way. The gate now accepts zero on a globe world (more than n is still impossible) and fails if the globe draws no
+model at all. same.sh SAME_PASS (smoke and the w1 near bot byte identical to the Phase 0 baseline: physics never
+reads a model or the LOD), react_test REACT_PASS, sign_test SIGN_PASS, `manifest.mjs --check` MANIFEST_FRESH.
+**Stamp:** sw.js CACHE `dewball-v36`, ASSET_V and `sw.js?v=` 23 → 24 (⚠️ v35 moved only the CACHE: index.json?v=23
+would have kept a phone's old index; v36 ships w5 with them). Not deployed: the deploy script is
+`/home/codespace/dewball-drafts/deploy-dewball-v36.sh` (the vault release first, then a files only commit to main).
+
+## The globe's gate signs stand on their fences, 2 Nov 2026 (`dewball-v36`, no credits)
+
+**Seen in the w7 world shots:** the 10 Oct sign fix (`dewball-v27`) left the globe as it was, so every ring's sign
+still stood at the rings' shared centre, the start, at twice its need: at 5 m a "4.20 m" banner filled the top third
+of the screen, at 22 m "13.0 m" and at 44 m "26.0 m" stretched across the middle, in BOTH builds. **Fixed in
+globeSync, drawing only:** as on the flat worlds, a sign stands on its fence at the point nearest the ball, sized by
+how far away it is (0.9x to 3.6x its need), just above the gold caps; its chart point and height are kept on the gate
+(`sCx`, `sCz`, `sUp`) and shown in `DB_DEV.state().gates`. **Looked at** (world_shots 5 / 22 / 44 m, before and
+after from the same frames): the banners are gone; at 5 m the "4.20 m" and "1.20 m" signs stand small on their fences
+at the horizon. **sign_test.js now covers the globe** (it skipped it): SIGN_PASS 38 signs (8 on the globe) across 6
+worlds; `--plant` (the old planar placement) and the new `--plant-globe` (the old globe placement) both go red. The
+test calls `D.sync()` after its steps, because the globe places its signs in globeSync, which a step does not run.
+same.sh SAME_PASS, react_test REACT_PASS.
+
+## Play readiness: the Play app guard, the privacy page, the manifest id, 2 Nov 2026 (`dewball-v36`, no credits)
+
+`node scripts/twa_ready.mjs dewball` was red three ways: SWS_EXIT had no Play app guard, no privacy page, no manifest
+id. **Fixed the Hues way:** a TWA test at boot (document.referrer `android-app://`, or an installed Android standalone
+window) sets `SWS_IN_TWA`; inside the Play app the Sunbeam SDK is never loaded (it lazy loads Firebase; every Sunbeam
+call already tests `window.Sunbeam`), SWS_EXIT refuses, the "Sky Wolf Studio Arcade" button is hidden, the feedback
+fab is not loaded, and the service worker's offline page drops its "Back to the arcade" link. `privacy.html` (the
+Shutterbug and Hues pages' shape: what `dewball_save` and the song unlock keys hold, the files and songs from
+lucidwinds.com, the web copy's Sunbeams and feedback form; the email inside the `email_off` fence), manifest
+`"id": "./"`. **After:** every gate green; the offline cold launch (`scripts/_offline_check.mjs`, which now launches
+with SwiftShader and, when a menu draws no canvas, taps the first open world card offline) opened Crumb Country with
+the network off (looked at: the ball, the crumbs, the HUD, the first hints). same.sh SAME_PASS, sign_test SIGN_PASS.
+Still his: price, listing copy, the landscape only manifest, and the store pictures from the real game.

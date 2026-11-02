@@ -48,6 +48,12 @@ def main():
     p.add_argument('--kinds', required=True)
     p.add_argument('--tol', type=float, default=34.0)
     p.add_argument('--holes', type=float, default=0.0, help='also clear enclosed background within this tol (0 = off; 8 suits a flat grey sheet)')
+    p.add_argument('--shadow', type=float, default=0.0, help='also clear a soft cast shadow touching the background, down to this far below the sheet\'s brightness (0 = off; 50 suits Astra\'s pictures)')
+    p.add_argument('--shadow-chroma', type=float, default=14.0, help='how colourless a shadow pixel is (max minus min of r, g, b); a glowing thing tints its shadow (the star fragment: 30)')
+    p.add_argument('--shadow-low', type=float, default=0.7, help='a shadow piece is cleared only when its centre sits this far down its object or lower')
+    p.add_argument('--ramp', type=float, default=0.0, help='also clear a smooth glow halo: grow the background into neighbours closer than this (0 = off; 6 suits Astra\'s Dream Meadow)')
+    p.add_argument('--ramp-max', type=float, default=100.0, help='the glow halo never reaches further than this from the sheet\'s colour')
+    p.add_argument('--specks', type=int, default=0, help='also clear object pieces smaller than this many pixels (0 = off)')
     p.add_argument('--max', type=int, default=1024)
     p.add_argument('--out', default=OUT)
     a = p.parse_args()
@@ -71,6 +77,71 @@ def main():
             area = ndimage.sum(np.ones_like(lab), lab, index=np.arange(1, n + 1))
             big = np.nonzero(area >= W * H * 0.0003)[0] + 1
             back |= np.isin(lab, big)
+    if a.ramp:
+        # a GLOW halo (Dream Meadow's lit orb and moon spill light into the sheet): a smooth ramp from the sheet's
+        # grey up to a colour as far from it as the thing's own (the reed's halo ends 87 from the grey, its blue
+        # stem sits at 77), so no tolerance can split them. The ramp is SMOOTH and the thing's edge is a STEP: the
+        # background grows into each neighbour whose colour differs from it by less than a.ramp, and never past
+        # a.ramp_max from the sheet's colour (1 Nov 2026).
+        f = arr.astype(np.float64)
+        far = np.sqrt(((f - bg) ** 2).sum(-1)) <= a.ramp_max
+        def step(p, q):
+            return np.sqrt(((p - q) ** 2).sum(-1)) < a.ramp
+        dn, rt = step(f[1:], f[:-1]), step(f[:, 1:], f[:, :-1])
+        while True:
+            g = back.copy()
+            g[1:] |= back[:-1] & dn
+            g[:-1] |= back[1:] & dn
+            g[:, 1:] |= back[:, :-1] & rt
+            g[:, :-1] |= back[:, 1:] & rt
+            g &= far
+            g |= back
+            if (g == back).all():
+                break
+            back = g
+    if a.shadow:
+        # a soft cast shadow under the object (Astra's w5 to w7 pictures keep some: crab, bottle, shell, driftwood):
+        # darker than the sheet, as colourless as the sheet, and TOUCHING the background. The edge flood stops at its
+        # dark core, so it stays and Meshy builds it as a base plate. Cleared: neutral pixels from a.shadow below the
+        # sheet's brightness to just above it, in pieces that touch the background AND sit in the LOW part of their
+        # object (a.shadow_low of its height and down: the gull's dark grey wing tips, half way up, ate away without
+        # that). A grey or iron THING is just as colourless, so this is opt in per picture and every cut is looked at
+        # (1 Nov 2026).
+        f = arr.astype(np.float64)
+        chroma = f.max(-1) - f.min(-1)
+        lum = f.mean(-1)
+        bgl = float(np.mean(bg))
+        like = (chroma <= a.shadow_chroma) & (lum >= bgl - a.shadow) & (lum <= bgl + 4) & ~back
+        lab, n = ndimage.label(like)
+        if n:
+            touch = np.unique(lab[ndimage.binary_dilation(back) & like])
+            touch = touch[touch > 0]
+            fg0 = ~back
+            olab, _ = ndimage.label(ndimage.binary_dilation(fg0, iterations=max(2, int(min(W, H) * 0.012))))
+            olab = np.where(fg0, olab, 0)
+            oboxes = ndimage.find_objects(olab)
+            sl = ndimage.find_objects(lab)
+            drop = []
+            for i in touch:
+                s = sl[i - 1]
+                m = lab[s] == i
+                os_ = olab[s][m]
+                os_ = os_[os_ > 0]
+                if not len(os_):
+                    continue
+                ob = oboxes[int(np.bincount(os_).argmax()) - 1]
+                y0, y1 = ob[0].start, ob[0].stop
+                cy = s[0].start + np.nonzero(m)[0].mean()
+                if cy >= y0 + a.shadow_low * (y1 - y0):
+                    drop.append(i)
+            back |= np.isin(lab, drop)
+    if a.specks:
+        # specks of sheet texture left inside a cleared hole (the stall's open window at --holes 12): any piece of
+        # object smaller than a.specks pixels, which the joining below would otherwise glue onto the object
+        lab, n = ndimage.label(~back)
+        if n:
+            area = ndimage.sum(np.ones_like(lab), lab, index=np.arange(1, n + 1))
+            back |= np.isin(lab, np.nonzero(area < a.specks)[0] + 1)
     fg = ~back
     # join near pieces of one object (wings, a handle) before counting objects
     grow = max(2, int(min(W, H) * 0.012))

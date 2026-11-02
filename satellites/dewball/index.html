@@ -363,14 +363,29 @@
 </div>
 <div id="toast"></div>
 
-<script src="/sunbeam-sdk.js?v=7"></script>
-<script>window.Sunbeam&&Sunbeam.init({gameId:"dewball"}).catch(function(){});</script>
+<script>
+/* THE PLAY APP (a Trusted Web Activity, 2 Nov 2026, Hues' rule): Chrome opens it with document.referrer
+   android-app://<package>, and an installed Android standalone window counts too (the fleet's rule, Hues and
+   Bandit's Box). Inside it the Sunbeam SDK is never loaded (no Firebase, nothing sent: the listing says no data
+   collected), the arcade exit is hidden and SWS_EXIT refuses, so the Play app can never reach the portal and its
+   Stripe checkout (Play's payment rules). Every Sunbeam call below already tests window.Sunbeam first. */
+(function(){
+  var inTWA=false;
+  try{ inTWA=document.referrer.indexOf("android-app://")===0||!!(window.matchMedia&&matchMedia("(display-mode: standalone)").matches&&/Android/i.test(navigator.userAgent)); }catch(e){ inTWA=false; }
+  window.SWS_IN_TWA=inTWA;
+  if(inTWA) return;
+  var s=document.createElement("script"); s.src="/sunbeam-sdk.js?v=7";
+  s.onload=function(){ if(window.Sunbeam&&Sunbeam.init) Sunbeam.init({gameId:"dewball"}).catch(function(){}); };
+  document.head.appendChild(s);
+})();
+</script>
 <script>
 // portal-standard sunbeam cap + embed handshake
 (function(){
   var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
   window.SWS_EMBED=SWS_EMBED;
-  window.SWS_EXIT=function(){ if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:"close"},"*"); }catch(e){} return; } location.href="https://lucidwinds.com/portal/"; };
+  window.SWS_EXIT=function(){ if(window.SWS_IN_TWA) return;   /* ⛔ never leave the Play app */
+    if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:"close"},"*"); }catch(e){} return; } location.href="https://lucidwinds.com/portal/"; };
   if(SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:"ready"},"*"); }catch(e){} }
   window._sbCapEarn=function(n,tag){ var granted=0;
     try{ var k="sw_sb_dewball", s={}; try{ s=JSON.parse(localStorage.getItem(k)||"{}"); }catch(e){}
@@ -4936,7 +4951,17 @@
       if(any) st.mesh.instanceMatrix.needsUpdate=true; }
     for(i=0;i<MOVERS.length;i++){ var m=MOVERS[i]; _gsPlaceMesh(m.x,m.z,m.rot,m.mesh,0); }
     for(i=0;i<GATES.length;i++){ var g=GATES[i];
-      if(g.sign) _gsPlaceMesh(g.def.x,g.def.z,0,g.sign.sprite,g.def.need*2.1);
+      /* ⛔ THE GLOBE'S SIGNS HUNG OVER THE SPAWN TOO (2 Nov 2026): the planar fix of 10 Oct left the globe alone, so
+         every ring's sign stood at the rings' shared centre, the start, at twice its need: "4.20 m", "13.0 m" and
+         "26.0 m" stretched across the middle of the screen at 5, 22 and 44 m (the world shots). Now as on the flat
+         worlds: ON its fence at the point nearest the ball, sized by how far away it is, just above the gold caps.
+         The chart point is kept on the gate for the sign test. Drawing only. */
+      if(g.sign){ var gsx=wrapD(R.x-g.def.x), gsz=wrapD(R.z-g.def.z), gsl=Math.sqrt(gsx*gsx+gsz*gsz), gux, guz;
+        if(gsl>g.def.r*0.05){ gux=gsx/gsl; guz=gsz/gsl; } else { gux=Math.sin(camYaw); guz=Math.cos(camYaw); }
+        var gpx=g.def.x+gux*g.def.r, gpz=g.def.z+guz*g.def.r, gdx=wrapD(R.x-gpx), gdz=wrapD(R.z-gpz);
+        var gsw=Math.max(g.def.need*0.9,Math.min(g.def.need*3.6,Math.sqrt(gdx*gdx+gdz*gdz)*0.22));
+        g.sCx=gpx; g.sCz=gpz; g.sUp=g.def.need*1.2+gsw*0.12;
+        _gsPlaceMesh(gpx,gpz,0,g.sign.sprite,g.sUp); g.sign.sprite.scale.set(gsw,gsw*0.35,1); }
       if(!g.postIM) continue;
       for(j=0;j<g.posts.length;j++){ var p=g.posts[j];
         /* ⚖️ CANCEL THE BALL-RELATIVE BASIS. _gsMat builds a post's local frame
@@ -5186,13 +5211,22 @@
   //  colours land as written, so a painted texel must too (an sRGB map would
   //  be decoded and come out darker than the primitive it replaces).
   // =====================================================================
-  var ASSET_V="23";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
+  var ASSET_V="24";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
   /* ball diameters. ⛔ 8 first: the near set is rebuilt each quarter of this radius, so a model popped in at 6 to 8
      ball widths, mid screen, and Stephen saw it (10 Oct: "some things load a little slow when i get close to them").
      16: the swap at 12 to 16 widths, half the size on screen. Measured (perf.mjs): triangles +2% to +30%, the worst
      867k in Night Garden at 150 cm (1.5x the world before models; the plan's fence is 3x), draw calls under 2x. */
   var LOD_NEAR=16;
   var LOD_SIZE=6;              // ...or this many of the thing's own sizes, whichever reaches farther
+  /* ...and never a SPECK: a thing smaller than a twentieth of the ball (a few pixels beside it) draws as its
+     primitive wherever it is. 2 Nov 2026, measured (perf.mjs, the ball parked, nothing eaten): The Whole World at
+     22 m drew all 4,466 live instances as models, 4.5M triangles (1.6x the plan's 3x fence of ~920k), because 16
+     ball widths of a 22 m ball cover the whole planet; a 90 cm barrel at 1,509 triangles is 5 px there. */
+  var LOD_SPECK=20;
+  /* ...and on the globe the ball widths reach at most this many planet radii of arc (69 degrees): the draw cap
+     (_gsMat, 2.35 rad) keeps 85% of the planet on screen for the zoomed out late game, but past this the props sit
+     over the curve or on the limb, edge on. A thing big enough (LOD_SIZE) still reaches past it: the landmarks. */
+  var LOD_GLOBE=1.2;
   /* where the models come from: the shipped set, a test fixture (?dbglb=, test mode only),
      or a BENCHMARK set for a person to try on a phone before it ships (?models=bench-std or
      ?models=bench-t2: two fixed names, never a path from the address bar) */
@@ -5342,7 +5376,9 @@
   function _cp16(a,o,b,p){ for(var q=0;q<16;q++) b[p+q]=a[o+q]; }
   function lodSync(){
     if(!R||!INST.length) return;
-    var rn=R.D*LOD_NEAR, rn2=rn*rn, i, j, st, L, a, na, fa, k, f, dx, dz, o, ver, sz;
+    var rn=R.D*LOD_NEAR, rn2, i, j, st, L, a, na, fa, k, f, dx, dz, o, ver, sz;
+    if(GLOBE&&rn>GLOBE.R*LOD_GLOBE) rn=GLOBE.R*LOD_GLOBE;
+    rn2=rn*rn;
     for(i=0;i<INST.length;i++){ st=INST[i]; L=st.lod; if(!L) continue;
       ver=st.mesh.instanceMatrix.version;
       dx=wrapD(R.x-L.bx); dz=wrapD(R.z-L.bz);
@@ -5355,7 +5391,7 @@
         /* near = within 8 ball diameters OR 6 of its own sizes, whichever is farther: a
            62 cm cake stand 75 cm from a 4 cm ball towers over it, and the ball radius
            alone drew it as its primitive (found planning the benchmark shots) */
-        if(dx*dx+dz*dz<(rn2>sz*sz?rn2:sz*sz)){ _cp16(a,o,na,k*16); k++; } else { _cp16(a,o,fa,f*16); f++; } }
+        if(dx*dx+dz*dz<(rn2>sz*sz?rn2:sz*sz)&&st.size[j]*LOD_SPECK>=R.D){ _cp16(a,o,na,k*16); k++; } else { _cp16(a,o,fa,f*16); f++; } }
       L.near.count=k; L.far.count=f;
       L.near.instanceMatrix.updateRange.offset=0; L.near.instanceMatrix.updateRange.count=k*16;
       L.far.instanceMatrix.updateRange.offset=0; L.far.instanceMatrix.updateRange.count=f*16;
@@ -5430,7 +5466,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=23")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=24")["catch"](function(){});
     });
   }
   var deferredPrompt=null;
@@ -5475,7 +5511,8 @@
     $("collectClose").onclick=$("collectBack").onclick=function(){ $("collect").classList.add("hidden"); };
     $("mMute").onclick=function(){ muted=!muted; save.muted=muted; persist();
       $("mMute").textContent="Sound: "+(muted?"Off":"On"); };
-    $("mExit").onclick=function(){ if(window.SWS_EXIT)window.SWS_EXIT(); };
+    $("mExit").onclick=function(){ if(window.SWS_IN_TWA) return; if(window.SWS_EXIT)window.SWS_EXIT(); };
+    if(window.SWS_IN_TWA) $("mExit").style.display="none";   // the Play app has no arcade to go back to
     $("pResume").onclick=function(){ setPause(false); };
     $("pRestart").onclick=function(){ setPause(false); startWorld(WIDX); };
     $("pQuit").onclick=function(){ setPause(false);
@@ -5693,7 +5730,8 @@
                  cling:R.cling.map(function(c){ return c.size; }),
                  objects:objs, timer:R.timer, D:R.D, combo:R.combo,
                  gates:GATES.map(function(g){ var sp=g.sign&&g.sign.sprite; return {open:g.open,need:g.def.need,x:g.def.x,z:g.def.z,r:g.def.r,
-                   sign:sp?{x:sp.position.x,y:sp.position.y,z:sp.position.z,w:sp.scale.x}:null}; }),
+                   sign:sp?{x:sp.position.x,y:sp.position.y,z:sp.position.z,w:sp.scale.x,
+                     cx:g.sCx,cz:g.sCz,up:g.sUp}:null}; }),   // cx cz up: the globe's chart point and height (globeSync)
                  movers:MOVERS.length };
       },
       absorbAll:function(){
@@ -5742,6 +5780,6 @@
 
 })();
 </script>
-<script>/* fleet feedback fab (2026-07-27) */addEventListener('load',function(){var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'dewball',surface:'satellite'});};document.head.appendChild(s);});</script>
+<script>/* fleet feedback fab (2026-07-27); never in the Play app (2 Nov 2026, Hues' rule: the form sends to our server, and the listing says nothing is collected) */addEventListener('load',function(){if(window.SWS_IN_TWA)return;var s=document.createElement('script');s.src='/feedback.js?v=6';s.onload=function(){if(window.LW_Feedback)window.LW_Feedback.mountFab({game:'dewball',surface:'satellite'});};document.head.appendChild(s);});</script>
 </body>
 </html>
