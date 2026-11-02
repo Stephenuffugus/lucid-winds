@@ -1,5 +1,33 @@
 # START HERE
 
+## 📷 2 Nov 02:52 UTC (Opus) THE NEXT SESSION STARTS HERE: sb-m1-5 IS THREE BRANCHES TO MERGE, STAMP, CHECK AND SHIP
+STATE AT THE BOX STOP (about 04:05 UTC):
+  - sb-m1-4 is stamped `102c8ed7d`, with the deploy line handed to Stephen at 02:36 (see the 02:0x entry). The timing groups pass under the lock. If main still shows sb-m1-3 (deploy `dbe5274f3`), give him the line again.
+  - Three branches are ready for sb-m1-5, each green on its own:
+    1. sb-climb `8e9ee54e2`: BIOME, record v2 with biome, rules and flags; the hue vote on; capture writes RULES 0, so the CLIMB code is in but off. Q220 to Q222.
+    2. sb-weapons-2 `3abb41352`: ART2, ART3, W2 (J2 to J8 and the swap card), ART4 (Astra round 4) and W2R. W3, the dive slot, is NOT built.
+    3. sb-house: HOUSE-A, HOUSE-AR, HOUSE-ART3 and HOUSE-B `c74f38f0d` (the guardian in room 5, the clear card and prize, the Look row, the pips). Its review and fix were still running at the stop: check git log for a HOUSE-BR commit. If it is missing, run one review and a fix before the merge.
+THE sb-m1-5 STEPS:
+  1. Merge into add-sproing-jumper: sb-climb, then sb-weapons-2, then sb-house.
+     - THE MERGE RULE (the 01:3x entry): the hue vote must read the averaged colours from BEFORE SB.capture.normalize, then re-measure the biome spread on the real corpus.
+     - The SPRITES block conflicts: house adds 13 keys (cap 56) and weapons adds round 4's (cap 52). Take one side and re-splice the other side's keys with tools/astra_cut.py splice from docs/astra/cut-art3.json and cut-art4.json. Raise the cap to the union in the cutter, the lint, H-spr-1 and the astra gate.
+     - Merge harness groups, redwatch rows, QUESTIONS, PROGRESS and State rows by union.
+  2. Stamp sb-m1-5 (BUILD sb-m1-5, CACHE shutterbug-v5, sw.js?v=5, STAMP_SPLIT to ?v=5; the script is /home/codespace/sb-drafts/sb-m1-4/merge-stamp.sh, adapt it).
+  3. Run ONE check --fast under the lock with the box quiet (at most 2 lanes), then hand him the line.
+THEN, at most 2 lanes:
+  - CLIMB, a second pass (Q222): fix A or B, re-measure on normalised capture, a timed group for RULES 1, and a gate that it never lays more tabs than today. Then flip C.RULES to 1.
+  - W3, the dive slot.
+  - Tomorrow's design items, in order: FRAME-C, SNAPSHOTS, STARS (docs/LEVELS-AND-GOALS-PROPOSAL-NOV01.md).
+  - Dewball w7 and w6, after his gh login (the vault release first).
+ASTRA ROUND 5 (no brief written yet; the items are in Q164, Q165 and PROGRESS HOUSE-B):
+  - an ember that reads as fire
+  - a flash that reads as light
+  - a kick spray that is not a spike trap
+  - crusher columns that join
+  - a non Brick ember mote
+  - the boss chip and the beacon lighting seen on camera
+HIS OPEN CALLS: the design sprint's four (only the defaults were built), Q201 (house: room 1 pay, rooms 2 to 4 feel), Q203 (six prize and pip calls), Q222 (climb).
+
 ## 📷 2 Nov 02:02 UTC (Opus) sb-m1-4 MERGED AND STAMPED (`102c8ed7d`); THE DEPLOY LINE WAITS ON A LOCKED TIMING RERUN
 WHAT IS IN IT: photo lane 1a, merged from sb-levels `7a029d6ab` as `f5c3765f1`, stamped `102c8ed7d` (BUILD sb-m1-4, CACHE shutterbug-v4, sw.js?v=4, STAMP_SPLIT re anchored).
   - The auto crop, the capture normalisation, the search reaching every box that builds, and its review's ten fixes.
