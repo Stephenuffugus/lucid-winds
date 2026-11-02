@@ -74,7 +74,7 @@ diff <(git diff --name-only "$MAIN" "$C" | sort) <(printf '%s\n' "${PATHS[@]}" |
 for f in $(git ls-tree -r --name-only "$BR" -- "${SERVED[@]}"); do
   [ "$(git rev-parse "$C:$f")" = "$(git rev-parse "$BR:$f")" ] || { echo "STOP: $f differs between the deploy and the branch"; exit 1; }
 done
-if git diff --name-only "$MAIN" "$C" | grep -v -E '^satellites/shutterbug/(index\.html|manifest\.json|sw\.js|icons/)' ; then
+if git diff --name-only "$MAIN" "$C" | grep -v -E '^satellites/shutterbug/(index\.html|manifest\.json|manifest\.webmanifest|privacy\.html|sw\.js|icons/)' ; then   # the Play listing's two (2 Nov)
   echo "STOP: a file outside the served set is in the deploy"; exit 1; fi
 T=$L/deploy-check; rm -rf "$T"; mkdir -p "$T"
 git show "$C:satellites/shutterbug/index.html" > "$T/page.html"
