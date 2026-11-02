@@ -627,7 +627,7 @@ const MUTANTS = [
   /* T1.8: sharing */
   { name: 'SHARE_DROPS_FOCAL', task: 'T1.8', file: 'page', find: "function linkOf(origin, pathname, rec) { return origin + pathname + '#' + encode(rec); }", repl: "function linkOf(origin, pathname, rec) { return origin + pathname + '#' + encode(Object.assign({}, rec, { focal: null })); }",
     gates: [{ gate: 'harness', only: 'H-share-2', expect: 'records round trip through their links' }] },
-  { name: 'PREFIX_CHECK_DROPPED', task: 'T1.8', file: 'page', find: "    if (p.slice(0, 3) === 'v' + V + '.') p = p.slice(3);\n    else if (p.indexOf('.') >= 0) return null;\n", repl: "    p = p.slice(3);\n",
+  { name: 'PREFIX_CHECK_DROPPED', task: 'T1.8', file: 'page', find: "    if (m) { want = +m[1]; p = p.slice(m[0].length); }\n    else if (p.indexOf('.') >= 0) return null;\n", repl: "    p = p.slice(3);\n",
     gates: [{ gate: 'harness', only: 'H-share-1', expect: 'a paste of without its v1. prefix opens the same record' }] },
   /* T1.10: the save */
   { name: 'SECOND_KEY', task: 'T1.10', file: 'page', find: "try { localStorage.setItem('shutterbug.v1', JSON.stringify(S.doc)); S.writes++; }", repl: "try { localStorage.setItem('shutterbug.v1', JSON.stringify(S.doc)); localStorage.setItem('shutterbug.settings', JSON.stringify(S.doc.settings)); S.writes++; }",
@@ -1179,12 +1179,12 @@ const MUTANTS = [
      guard, a cause per refusal, the crop screen's message per cause, its band marks and its dev readout */
   { name: 'S2_OFF', task: 'LEVELS', file: 'page', find: '      if (rowLen >= T.FLOOR_RUN_MIN) { sy = y; bestA = rowA; bestLen = rowLen; fell = 1; }\n', repl: '      if (false) { sy = y; bestA = rowA; bestLen = rowLen; fell = 1; }\n',
     gates: [{ gate: 'harness', only: 'H-lvl-1', expect: 'no open cell on the standing row' }] },
-  { name: 'C_OFF', task: 'LEVELS', file: 'page', find: '      if (et === 0 && cb > 1) return buildAt(rec, opts, cb, narrow);\n', repl: '',
+  { name: 'C_OFF', task: 'LEVELS', file: 'page', find: '      if (et === 0 && cb > 1) return buildAt(rec, opts, cb, narrow, climb);\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-lvl-2', expect: 'and the exit is unreached' }] },
   { name: 'C_ALWAYS', task: 'LEVELS', file: 'page', find: '    var fixed = repair(level, light, landmarks);\n',
     repl: '    var cb0 = ceilingEnd(solid, w, h);\n    if (et === 0 && cb0 > 1) return buildAt(rec, opts, cb0, narrow);\n    var fixed = repair(level, light, landmarks);\n',
     gates: [{ gate: 'harness', only: 'H-lvl-3', expect: 'the levelHash pinned from sb-m1-3' }] },
-  { name: 'GUARD_OFF', task: 'LEVELS', file: 'page', find: '    if ((fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB)', repl: '    if (false && (fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB)',
+  { name: 'GUARD_OFF', task: 'LEVELS', file: 'page', find: '    if ((fell || et > 0) && rise < T.FALLBACK_MIN_CLIMB)', repl: '    if (false && (fell || et > 0) && rise < T.FALLBACK_MIN_CLIMB)',
     gates: [{ gate: 'harness', only: 'H-lvl-4', expect: 'all-dark: stays needsCrop through the 24 row guard' }] },
   { name: 'CAUSE_UNNAMED', task: 'LEVELS', file: 'page', find: 'detail: detail, cause: cause,', repl: 'detail: detail, cause: null,',
     gates: [{ gate: 'harness', only: 'H-lvl-5', expect: 'the refusal names the floor' }] },
@@ -1209,7 +1209,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-lvl-6', expect: 'over x 0..21 builds, its spawn on the band' }] },
   { name: 'WHOLE_NAMED', task: 'LEVELSR', file: 'page', find: '    var whole = fb === 1;\n', repl: '    var whole = false;\n',
     gates: [{ gate: 'harness', only: 'H-lvl-6', expect: 'all-light Negative: a whole solid box names no cause' }] },
-  { name: 'GUARD_23', task: 'LEVELSR', file: 'page', find: '(fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB)', repl: '(fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB - 1)',
+  { name: 'GUARD_23', task: 'LEVELSR', file: 'page', find: '(fell || et > 0) && rise < T.FALLBACK_MIN_CLIMB)', repl: '(fell || et > 0) && rise < T.FALLBACK_MIN_CLIMB - 1)',
     gates: [{ gate: 'harness', only: 'H-lvl-7', expect: 'tight-gap Negative: a fallback room climbing 23 rows is refused' }] },
   { name: 'BAND_75_EXCL', task: 'LEVELSR', file: 'page', find: 'if (n < T.CEILING_BAND_FRAC * w) return y;', repl: 'if (n <= T.CEILING_BAND_FRAC * w) return y;',
     gates: [{ gate: 'harness', only: 'H-lvl-7', expect: 'a ceiling whose row 1 is 18 of 24 solid (18) is a band' }] },
@@ -1307,6 +1307,50 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-seek-1', expect: 'a long screenshot: the near filter compares each candidate with at most nine boxes kept' }] },
   { name: 'SEEK_NEAR_ONE_BUCKET', task: 'PHOTO1R', file: 'page', find: 'for (u = -1; u <= 1 && !cl; u++) for (v = -1; v <= 1 && !cl; v++)', repl: 'for (u = 0; u <= 0 && !cl; u++) for (v = 0; v <= 0 && !cl; v++)',
     gates: [{ gate: 'harness', only: 'H-seek-1', expect: 'a long screenshot (1024 x 8192): the list is the one the scan of every kept box gave' }] },
+
+  /* BIOME (Q220): record v2's three header bytes and the hue vote at capture */
+  { name: 'BIOME_IGNORED', task: 'BIOME', file: 'page', find: '    if (rec.biome > 0) return rec.biome - 1;\n', repl: '',
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'a v2 record with biome 1 to 5 builds that biome' },
+      { gate: 'capture', expect: 'biome: the room plays as Overgrowth with its thorn crawlers' }] },
+  { name: 'RULES_UNKNOWN_ACCEPTED', task: 'BIOME', file: 'page', find: 'b[7] > RULES_MAX || ', repl: '',
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a v2 code with RULES 9' }] },
+  { name: 'FLAGS_UNKNOWN_ACCEPTED', task: 'BIOME', file: 'page', find: ' || (b[8] & ~FLAGS_KNOWN) !== 0);', repl: ');',
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a v2 code with flags bit 0' }] },
+  { name: 'V1_CHANGED', task: 'BIOME', file: 'page', find: '    return biomeOf(pal, n);\n  }\n  /* Frost (DESIGN 7)', repl: '    return 0;\n  }\n  /* Frost (DESIGN 7)',
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'every fixture builds the level or the refusal it built on 42fc8b19a' }] },
+  { name: 'V1_CODE_CHANGED', task: 'BIOME', file: 'page', find: 'grids = r.mode === 2 ? 2 : 1, head = headOf(r.v);', repl: 'grids = r.mode === 2 ? 2 : 1, head = HEADER2;',
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'every fixture\'s v1 code in modes 0, 1 and 2 is the string it was on 42fc8b19a' }] },
+  { name: 'HUE_BRIGHT_LAST', task: 'BIOME', file: 'page', edits: [
+      ["    if (sumL > K.FROST_L * 1000 * n) return { biome: 1, rule: 'bright', votes: votes, voters: 0 };\n", ''],
+      ["    if (100 * voters < K.MIN_PCT * n) return { biome: 0, rule: 'few'", "    if (100 * voters < K.MIN_PCT * n) return { biome: sumL > K.FROST_L * 1000 * n ? 1 : 0, rule: sumL > K.FROST_L * 1000 * n ? 'bright' : 'few'"]],
+    gates: [{ gate: 'harness', only: 'H-hue-1', expect: 'the bright room rule comes first: a mint room bright to the floor is Frost' }] },
+  { name: 'HUE_SPLIT', task: 'BIOME', file: 'page', find: 'C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 15,', repl: 'C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 16,',
+    gates: [{ gate: 'harness', only: 'H-hue-1', expect: 'the page\'s HUE numbers are the oracle\'s' }] },
+  { name: 'HUE_UNWRITTEN', task: 'BIOME', file: 'page', find: 'biome: C.hueVote(rgb).biome + 1, rules: C.RULES', repl: 'biome: 0, rules: C.RULES',
+    gates: [{ gate: 'harness', only: 'H-hue-1', expect: 'gridRecord writes a valid v2 record: biome the vote + 1' },
+      { gate: 'capture', expect: 'biome: a sage walled room develops at the default box as a v2 record with biome byte 4' }] },
+
+  /* CLIMB (Q221): the climb rules on record v2 RULES 1 (edge ledges, the aimed stair, the whole build fallback). The
+     brief's V1_CHANGED is V1_CLIMBS here: BIOME's row already holds that name */
+  { name: 'LEDGE_ON_WALL', task: 'CLIMB', file: 'page', find: '      if (solid[ia] || solid[ib] || wall[pal[ib]]) return false;', repl: '      if (solid[ia] || solid[ib]) return false;',
+    gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'an edge ledge never sits on wall paint' }] },
+  { name: 'STONE_BELOW_TOP', task: 'CLIMB', file: 'page', find: '    for (c = w; c < (h - 2) * w && c < topR * w; c++) {', repl: '    for (c = w; c < (h - 2) * w && c < (topR + 1) * w; c++) {',
+    gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'a stone is always above the highest reached row' }] },
+  { name: 'V1_CLIMBS', task: 'CLIMB', file: 'page', find: 'function climbs(rec, opts) { return !opts.noClimb && rec.v >= 2 && rec.rules >= 1; }', repl: 'function climbs(rec, opts) { return !opts.noClimb; }',
+    gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'every fixture in modes 0 and 1 builds the same level by v1 and by v2 RULES 0, never by the climb rules' }] },
+  { name: 'FALLBACK_LOST', task: 'CLIMB', file: 'page', find: '    today.repair.wholeFallback = 1;\n    return today;\n', repl: '    return lv;\n',
+    gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'every room that builds by today\'s rules builds by the climb rules' }] },
+  { name: 'SEARCH_PAYS_CLIMB', task: 'CLIMB', file: 'page', find: '    if (today.needsCrop) return today;\n', repl: '    if (today.needsCrop) { var lc = buildRules(rec, opts, 1); if (!lc.needsCrop) return lc; return today; }\n',
+    gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'a box today\'s rules refuse is refused by RULES 1' }] },
+
+  /* PHOTO1BR (Q222): the review's rows. Capture writes RULES 0 until the climb's fallbacks, film and build time are
+     fixed; the climb's 8 passes are seen; a bare payload from a newer version reads as newer */
+  { name: 'CAPTURE_RULES_1', task: 'PHOTO1BR', file: 'page', find: '  C.RULES = 0;\n', repl: '  C.RULES = 1;\n',
+    gates: [{ gate: 'harness', only: 'H-hue-1', expect: 'RULES 0 (today\'s rules, Q222)' }] },
+  { name: 'CLIMB_PASSES_TODAY', task: 'PHOTO1BR', file: 'page', find: "      if (pass >= (level.climb ? T.CLIMB_PASSES : T.REPAIR_PASSES)) return", repl: "      if (pass >= T.REPAIR_PASSES) return",
+    gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'some climb level needs more than today\'s 4 passes' }] },
+  { name: 'BARE_NEWER_BAD', task: 'PHOTO1BR', file: 'page', find: "    if (!m && head && head.length >= HEADER && head[0] > V && head[0] < 16) return { why: 'newer' };\n", repl: '',
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a bare v3 payload' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

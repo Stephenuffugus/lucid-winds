@@ -79,3 +79,32 @@ function normalizeRGB(rgb) {
 }
 
 module.exports = { readPNG, downscaleRGB, normalizeRGB, NORM };
+
+/* The hue vote's oracle (QUESTIONS Q220): the biome from a grid's averaged RGB, written apart from the page's
+   SB.capture.hueVote (which never computes a hue: it cross multiplies inside each sector), from the investigation's
+   prototype (rgbBiome in /home/codespace/sb-drafts/sameness/colour/analyze.js) with the bright room rule first. K is
+   the page's SB.capture.HUE (H-hue-1 holds its numbers to the ones written here). Returns the biome index 0..4. */
+const HUE_K = Object.freeze({ FROST_L: 170, ATTIC_LO: 15, GREEN_LO: 70, DEEP_LO: 170, EMBER_LO: 285, C_MIN: 12, S_MIN: 9, WARM_C_MIN: 16, WARM_S_MIN: 30, MIN_PCT: 10 });
+function hueVoteRGB(rgb, K) {
+  K = K || HUE_K;
+  const n = rgb.length / 3, votes = [0, 0, 0, 0, 0];
+  let lum = 0, voters = 0;
+  for (let i = 0; i < n; i++) lum += (299 * rgb[3 * i] + 587 * rgb[3 * i + 1] + 114 * rgb[3 * i + 2]) / 1000;
+  if (lum / n > K.FROST_L) return 1;
+  for (let i = 0; i < n; i++) {
+    const r = rgb[3 * i], g = rgb[3 * i + 1], b = rgb[3 * i + 2], mx = Math.max(r, g, b), c = mx - Math.min(r, g, b);
+    if (c === 0) continue;
+    let h = mx === r ? 60 * (g - b) / c : mx === g ? 60 * (b - r) / c + 120 : 60 * (r - g) / c + 240;
+    if (h < 0) h += 360;
+    const band = h < K.ATTIC_LO || h >= K.EMBER_LO ? 4 : h < K.GREEN_LO ? 0 : h < K.DEEP_LO ? 3 : 2;
+    const s100 = 100 * c / mx;
+    if (band === 0 ? c < K.WARM_C_MIN || s100 < K.WARM_S_MIN : c < K.C_MIN || s100 < K.S_MIN) continue;
+    votes[band]++; voters++;
+  }
+  if (voters * 100 < K.MIN_PCT * n) return 0;
+  let best = 0;
+  for (const b of [4, 2, 3]) if (votes[b] > votes[best]) best = b;
+  return best;
+}
+module.exports.hueVoteRGB = hueVoteRGB;
+module.exports.HUE_K = HUE_K;

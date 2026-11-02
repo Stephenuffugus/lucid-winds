@@ -53,3 +53,12 @@ nothing); `--preset B` writes the same designs for the 36x64 fallback into `fixt
 
 Twenty six records (twenty five synthetic plus the sample room) since T1.1, which added the five biome tints; T3.1a
 adds the double exposure sample. Authored needsCrop: all-dark (at most 2 over the corpus, H-rep-1); gradient-v builds since Q180.
+
+## Real photo fixtures (CLIMB, Q221)
+
+`real-photos.json` is not part of the corpus above (the loader never reads it): the records of the nine CC0 and public
+domain photographs of the 95 photo corpus (`/home/codespace/sb-drafts/realphotos`, Wikimedia Commons; the photos
+themselves never enter the repo) that develop by the climb rules, each the v2 record (biome byte from the hue vote,
+RULES 1) at the box that built (the default box, else the auto crop's search), raw capture. Each entry names its
+source page and licence. `H-climb-1` and `H-climb-2` build them; regenerate with the lane's measure script (PROGRESS
+CLIMB).

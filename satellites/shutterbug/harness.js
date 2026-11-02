@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 6087;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6057 at AUTOCROP, Q181, 1 Nov; 6067 at NORMALISE, Q182, 1 Nov; 6085 at SEARCHR, Q183, 1 Nov; 6087 at PHOTO1R, 2 Nov) */
+const ASSERT_FLOOR = 6145;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6057 at AUTOCROP, Q181, 1 Nov; 6145 at BIOME, Q220, 1 Nov) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -333,7 +333,7 @@ group('H-rec-3', 'decode refuses every malformed code with null, never a throw',
   t.ok(SB.record.validate(Object.assign({}, base, { mode: 2 })) !== null, 'validate refuses mode 2 without rows2');
   t.ok(SB.record.validate(Object.assign({}, base, { rows2: base.rows })) !== null, 'validate refuses rows2 outside mode 2');
   t.ok(SB.record.validate(Object.assign({}, base, { focal: 1152 })) !== null, 'validate refuses focal 1152');
-  t.ok(SB.record.validate(Object.assign({}, base, { v: 2 })) !== null, 'validate refuses v 2');
+  t.ok(SB.record.validate(Object.assign({}, base, { v: 3 })) !== null, 'validate refuses v 3 (v 2 is the biome record, Q220, H-v2-1)');
   t.eq(SB.record.validate(base), null, 'validate accepts the unbroken record (control)');
 });
 
@@ -4106,14 +4106,14 @@ if (flag('all-edges')) group('H-bot-6', 'every edge of every graph has a macro (
 });
 
 /* --record-json <file> (T0.15): a record the page produced ({ code } from SB_DEV.level(), a record's JSON form, or a
-   fixture), validated and built here; one JSON line: { valid, needsCrop, exit, tabs } */
+   fixture), validated and built here; one JSON line: { valid, needsCrop, exit, tabs, v, biome } */
 if (opt('record-json')) {
   const j = JSON.parse(fs.readFileSync(path.resolve(opt('record-json')), 'utf8'));
   let rec = null;
   try { rec = j.code ? SB.record.decode(String(j.code).trim()) : j.rows ? SB.record.fromJSON(j) : j.record ? SB.record.fromJSON(j.record) : null; } catch (e) { rec = null; }
   const valid = !!rec && SB.record.validate(SB.record.toJSON(rec)) === null;
   const lv = valid ? SB.pipeline.build(rec, {}) : null;
-  console.log(JSON.stringify({ valid, needsCrop: !!(lv && lv.needsCrop), exit: lv && !lv.needsCrop ? lv.exit : -1, tabs: lv && !lv.needsCrop ? lv.repair.tabs : -1 }));
+  console.log(JSON.stringify({ valid, needsCrop: !!(lv && lv.needsCrop), exit: lv && !lv.needsCrop ? lv.exit : -1, tabs: lv && !lv.needsCrop ? lv.repair.tabs : -1, v: rec ? rec.v : null, biome: lv && !lv.needsCrop ? lv.biome : -1, rules: rec && rec.v >= 2 ? rec.rules : null, climb: lv && !lv.needsCrop ? lv.climb : null, fallback: lv && !lv.needsCrop ? (lv.repair.wholeFallback ? 1 : 0) : null }));
   process.exit(valid ? 0 : 1);
 }
 
@@ -5017,7 +5017,8 @@ group('H-share-1', 'the link and the paste (sections 1.5, 1.6): the link is the 
   t.ok(link === 'https://lucidwinds.com/satellites/shutterbug/#' + code && link.length === 825, 'the link is the origin, the path, # and the code (' + link.length + ' characters, H-rec-2\'s 825)');
   const cases = [['the code', code], ['with whitespace around it', '  ' + code + '\n'], ['without its v1. prefix', code.slice(3)], ['as the full link', link], ['after the last #', 'https://x.example/a#b#' + code], ['broken by a line wrap', code.slice(0, 100) + ' \n ' + code.slice(100)]];
   for (const [name, text] of cases) t.ok(same(SB.record.parseCode(text)), 'a paste of ' + name + ' opens the same record');
-  t.ok(SB.record.parseCode('v2.' + code.slice(3)).why === 'newer' && SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode('').why === 'bad', 'a v2 code reads as newer; garbage and nothing read as bad');
+  t.ok(SB.record.parseCode('v3.' + code.slice(3)).why === 'newer' && SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode('').why === 'bad', 'a v3 code reads as newer; garbage and nothing read as bad');
+  t.ok(SB.record.parseCode('v2.' + code.slice(3)).why === 'bad', 'a v2. prefix on a v1 record reads as bad (since Q220 v2 is known: the prefix must name the record\'s own version)');
 });
 group('H-share-2', 'every fixture in every mode, and the sample room with a focal tap, round trips through its link to the same record and the same level', t => {
   const recs = [], bad = [];
@@ -5251,6 +5252,339 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   t.ok(!!HH && HH.w === 9 && HH.h === 8 && !!HH.frames.full && !!HH.frames.empty && HH.frames.full.includes(INK) && HH.frames.empty.includes(INK)
     && HH.frames.full.includes(BRICK) && !HH.frames.empty.includes(BRICK), 'hud_heart is 9x8 with full (Brick) and empty (no Brick), each Ink contoured');
   console.log('  info  H-spr-1: ' + names.length + ' sprites, ' + frames + ' frames');
+});
+
+/* ================================================================ BIOME: record v2 and the hue vote (Q220) */
+/* the packed v2 record, written from Q220's header table, not from the core: v, w, h, mode, focal + 1 (big endian),
+   biome, rules, flags, then the grids two cells a byte */
+function packRefV2(j) {
+  const n = j.w * j.h, grids = j.mode === 2 ? 2 : 1, out = Buffer.alloc(9 + grids * n / 2);
+  out[0] = 2; out[1] = j.w; out[2] = j.h; out[3] = j.mode;
+  out.writeUInt16BE(j.focal === null ? 0 : j.focal + 1, 4);
+  out[6] = j.biome; out[7] = j.rules; out[8] = j.flags;
+  [j.rows].concat(grids === 2 ? [j.rows2] : []).forEach((rs, g) => {
+    const cells = rs.join('');
+    for (let k = 0; k < n / 2; k++) out[9 + g * n / 2 + k] = (parseInt(cells[2 * k], 16) << 4) | parseInt(cells[2 * k + 1], 16);
+  });
+  return out;
+}
+const v2Of = (j, biome, rules, flags) => ({ v: 2, w: j.w, h: j.h, mode: j.mode, focal: j.focal, biome, rules: rules || 0, flags: flags || 0, rows: j.rows, rows2: j.rows2 === undefined ? null : j.rows2 });
+group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchanged (pinned from 42fc8b19a); a v2 record carries biome, rules and flags through JSON, pack, the code and the link; RULES 0 builds the same level as the same grid in v1, the biome aside; a byte this client does not know reads as newer; the seed still the grid alone', t => {
+  /* v1 unchanged: every fixture in modes 0 and 1, plain and as a first room, built to the same level or the same
+     refusal as on 42fc8b19a (104 builds), and every fixture's v1 code in modes 0, 1 and 2 the same string */
+  let h, n = 0, codes = '';
+  for (const f of FIXTURES) {
+    for (const mode of [0, 1]) for (const first of [false, true]) {
+      const lv = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode })), { firstRoom: first });
+      h = fnvRef(Buffer.from(f.name + ' ' + mode + ' ' + (first ? 'F' : '-') + ' ' + (lv.needsCrop ? 'refused ' + (lv.cause || lv.why) : SB.pipeline.levelHash(lv) + ' b' + lv.biome) + '\n'), h); n++;
+    }
+    for (const mode of [0, 1, 2]) codes += SB.record.encode(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode, rows2: mode === 2 ? f.fx.record.rows : null }))) + '\n';
+  }
+  t.eq(n, 104, 'the pin covers 26 fixtures in two modes, plain and first room');
+  t.eq(h, 0xfbe70a13, 'every fixture builds the level or the refusal it built on 42fc8b19a (the digest of 104 levelHashes and causes)');
+  t.eq(fnvRef(Buffer.from(codes)), 0xb4bad1d5, 'every fixture\'s v1 code in modes 0, 1 and 2 is the string it was on 42fc8b19a');
+  const sj = fixture('sample-room').fx.record, srec = SB.record.fromJSON(sj), scode = SB.record.encode(srec);
+  t.eq(SB.pipeline.levelHash(SB.pipeline.build(srec, {})), '398abc93d279c699', 'the sample room\'s levelHash is pinned');
+  t.ok(scode.startsWith('v1.') && fnvRef(Buffer.from(scode)) === 0x24bc9885 && scode.length === 779, 'the sample room\'s code is still v1, 779 characters, the same string');
+  t.ok(srec.v === 1 && !('biome' in srec) && JSON.stringify(Object.keys(SB.record.toJSON(srec))) === JSON.stringify(['v', 'w', 'h', 'mode', 'focal', 'rows', 'rows2']), 'a v1 record stays v1: no biome, rules or flags in it or its JSON');
+  /* v2 round trips on seeded grids in every mode and every biome byte */
+  const r = hrand(220);
+  let jsonOk = 0, refOk = 0, packOk = 0, codeOk = 0, linkOk = 0, lenOk = 0, total2 = 0;
+  for (const mode of [0, 1, 2]) for (let biome = 0; biome <= 5; biome++) for (let k = 0; k < 6; k++) {
+    const j = v2Of(randomRecordJSON(r, mode), biome), rec = SB.record.fromJSON(j), p = SB.record.pack(rec), code = SB.record.encode(rec); total2++;
+    if (JSON.stringify(SB.record.toJSON(rec)) === JSON.stringify(j)) jsonOk++;
+    if (Buffer.compare(asBytes(p), packRefV2(j)) === 0) refOk++;
+    const back = SB.record.unpack(p); if (back && JSON.stringify(SB.record.toJSON(back)) === JSON.stringify(j)) packOk++;
+    if (code === 'v2.' + packRefV2(j).toString('base64url') && JSON.stringify(SB.record.toJSON(SB.record.decode(code))) === JSON.stringify(j)) codeOk++;
+    const lk = SB.record.parseCode(SB.record.linkOf('https://lucidwinds.com', '/satellites/shutterbug/', rec)); if (lk.rec && JSON.stringify(SB.record.toJSON(lk.rec)) === JSON.stringify(j)) linkOk++;
+    if (p.length === (mode === 2 ? 1161 : 585) && code.length === (mode === 2 ? 1551 : 783)) lenOk++;
+  }
+  t.eq(jsonOk, total2, 'v2: toJSON(fromJSON(x)) equals x, biome 0 to 5 in every mode');
+  t.eq(refOk, total2, 'v2: pack equals the 9 byte header packing written from Q220\'s table');
+  t.eq(packOk, total2, 'v2: unpack(pack(r)) equals r');
+  t.eq(codeOk, total2, 'v2: the code is v2. plus Node\'s base64url of the packing, and decodes back');
+  t.eq(linkOk, total2, 'v2: a record opens from its link through parseCode with its biome, rules and flags');
+  t.eq(lenOk, total2, 'v2: 585 bytes and 783 characters (1161 and 1551 in Double Exposure), 3 bytes over v1');
+  const bare = SB.record.fromJSON({ v: 2, w: sj.w, h: sj.h, mode: 0, focal: null, rows: sj.rows, rows2: null });
+  t.ok(bare.biome === 0 && bare.rules === 0 && bare.flags === 0, 'a v2 JSON record missing biome, rules and flags reads them as 0 (derive, today\'s rules, no flags)');
+  /* the validator */
+  const g2 = v2Of(sj, 4);
+  const refuse = [['biome 6', { biome: 6 }], ['biome -1', { biome: -1 }], ['biome 1.5', { biome: 1.5 }], ['rules 2 (reserved for the next rules, not this client\'s)', { rules: 2 }], ['rules 9', { rules: 9 }],
+    ['flags bit 0', { flags: 1 }], ['flags bit 1', { flags: 2 }], ['flags bit 2', { flags: 4 }], ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
+  for (const [why, o] of refuse) t.ok(SB.record.validate(Object.assign({}, g2, o)) !== null, 'validate refuses a v2 record with ' + why);
+  t.ok(SB.record.validate(Object.assign({}, sj, { biome: 3 })) !== null, 'validate refuses a v1 record carrying a biome');
+  t.eq(SB.record.validate(g2), null, 'validate accepts the v2 sample room with biome 4 (control)');
+  /* the code: a prefix names the record's own version; a byte this client does not know reads as newer */
+  const gb = packRefV2(g2), v1b = packRef(sj), code2 = b => 'v2.' + b.toString('base64url');
+  t.ok(SB.record.decode('v1.' + gb.toString('base64url')) === null && SB.record.decode('v2.' + v1b.toString('base64url')) === null, 'decode refuses a v1. prefix on a v2 record and a v2. prefix on a v1 record');
+  t.ok(SB.record.decode(gb.toString('base64url')) !== null && SB.record.decode(gb.toString('base64url')).biome === 4, 'a bare v2 payload decodes with its biome');
+  const at = (k, v) => { const b = Buffer.from(gb); b[k] = v; return b; };
+  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 0', at(8, 1)], ['flags bit 1', at(8, 2)], ['flags bit 2', at(8, 4)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
+  for (const [why, b] of newer) {
+    t.eq(SB.record.parseCode(code2(b)).why, 'newer', 'parseCode answers newer on a v2 code with ' + why);
+    t.eq(SB.record.decode(code2(b)), null, 'decode never builds a v2 record with ' + why);
+  }
+  t.eq(SB.record.parseCode('https://x.example/s/#' + b64(at(7, 9))).why, 'newer', 'parseCode answers newer on RULES 9 as a bare payload after a link\'s #');
+  /* PHOTO1BR: a bare payload from a newer version reads as newer, as its prefixed code does; garbage stays bad */
+  t.eq(SB.record.parseCode(at(0, 3).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v3 payload (no prefix), as on its v3. code');
+  t.eq(SB.record.parseCode('https://x.example/s/#' + at(0, 7).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v7 payload after a link\'s #');
+  t.ok(SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode(at(0, 200).toString('base64url')).why === 'bad', 'garbage and a bare payload with version byte 200 still read as bad (control)');
+  t.eq(SB.record.parseCode(code2(at(8, 1).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length)');
+  t.eq(SB.record.parseCode(code2(gb.subarray(0, 300))).why, 'bad', 'a truncated v2 code with known bytes reads as bad (control)');
+  t.ok(SB.record.parseCode(code2(gb)).rec && SB.record.parseCode(code2(gb)).rec.biome === 4, 'a v2 code with RULES 0 and no flags opens (control)');
+  /* the build: the biome byte names the biome; RULES 0 is today's rules on the same grid */
+  const bad = [], bad0 = [], biomesSeen = new Set();
+  for (const f of FIXTURES) for (const mode of [0, 1]) {
+    const j1 = Object.assign({}, f.fx.record, { mode }), r1 = SB.record.fromJSON(j1);
+    const a0 = SB.pipeline.build(r1, {}), b0 = SB.pipeline.build(SB.record.fromJSON(v2Of(j1, 0)), {});
+    if (!!a0.needsCrop !== !!b0.needsCrop || (!a0.needsCrop && SB.pipeline.levelHash(a0) !== SB.pipeline.levelHash(b0))) bad0.push(f.name + ' ' + mode);
+    for (let biome = 1; biome <= 5; biome++) for (const first of [false, true]) {
+      if (first && f.name !== 'sample-room') continue;   /* the first room on the sample room only: the builds are the group's time */
+      const lv = SB.pipeline.build(SB.record.fromJSON(v2Of(j1, biome)), { firstRoom: first }), ref = SB.pipeline.build(r1, { firstRoom: first, biome: biome - 1 });
+      if (!lv.needsCrop) biomesSeen.add(lv.biome);
+      if (!!lv.needsCrop !== !!ref.needsCrop || (!lv.needsCrop && (lv.biome !== biome - 1 || SB.pipeline.levelHash(lv) !== SB.pipeline.levelHash(ref)))) bad.push(f.name + ' ' + mode + ' biome ' + biome + (first ? ' first' : ''));
+    }
+  }
+  t.eq(bad0.length, 0, 'a v2 record with biome 0 builds the same level as its v1 record on every fixture in modes 0 and 1' + (bad0.length ? ': ' + bad0.slice(0, 4).join('; ') : ''));
+  t.eq(bad.length, 0, 'a v2 record with biome 1 to 5 builds that biome, and the same level as its v1 grid built under that biome, on every fixture in modes 0 and 1, plain (the sample room as a first room too)' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
+  t.eq(biomesSeen.size, 5, 'all five biomes were built from the byte');
+  const ov = SB.pipeline.build(SB.record.fromJSON(v2Of(sj, 4)), { firstRoom: true }), at0 = SB.pipeline.build(srec, { firstRoom: true });
+  t.ok(at0.biome === 0 && ov.biome === 3 && ov.features.enemies.length > 0 && ov.features.enemies.every(e => e.kind === SB.features.CRAWLER), 'the sample room is Attic in v1 and, with biome byte 4, an Overgrowth room with thorn crawlers (' + ov.features.enemies.length + ')');
+  t.eq(SB.pipeline.build(SB.record.fromJSON(v2Of(sj, 4)), { biome: 2 }).biome, 2, 'an explicit opts.biome (the dev loader\'s shots) still wins over the byte');
+  /* the seed: the grid alone */
+  t.ok([0, 1, 3, 5].every(b => SB.record.seedOf(SB.record.fromJSON(v2Of(sj, b))) === SB.record.seedOf(srec)), 'the seed of a v2 record is its v1 grid\'s seed, whatever its biome byte');
+  /* the save keeps a v2 record in recent */
+  const sv = SB.record.validateSave({ recent: [SB.record.toJSON(SB.record.fromJSON(g2)), SB.record.toJSON(srec)] });
+  t.ok(sv.recent.length === 2 && sv.recent[0].v === 2 && sv.recent[0].biome === 4, 'the save\'s recent list keeps a v2 record with its biome beside a v1 record');
+});
+const b64 = b => Buffer.from(b).toString('base64url');
+
+/* the page's shell-capture block over the core (its gridRecord reads SB.record and SB.palette): a child of the core's
+   SB, so the core gains no capture key */
+function captureWithCore() {
+  const vm = require('node:vm'), html = fs.readFileSync(PAGE, 'utf8'), m = html.match(/<script id="shell-capture" data-tool>([\s\S]*?)<\/script>/);
+  const C = Object.create(SB), ctx = { SB: C, self: { SB: C }, window: { SB: C } };
+  vm.runInNewContext(m[1].replace(/\}\)\(\s*[\w.]+\s*\)\s*;?\s*$/, '})(SB);'), ctx);
+  return C.capture;
+}
+group('H-hue-1', 'the hue vote (Q220, shell-capture\'s hueVote): the bright room rule first, then the hue bands over the averaged colours; known walls to their biomes; the ties; the boundaries; equal to the capture oracle\'s hueVoteRGB on random grids and the room model; gridRecord writes a v2 record with the vote, RULES 0 (Q222), no flags; a sage walled room builds Overgrowth where its grid alone is Attic', t => {
+  const CAP = captureWithCore(), { hueVoteRGB, HUE_K, downscaleRGB } = require('./tools/capture-oracle.js'), N = SB.GRID.W * SB.GRID.H;
+  t.same(Object.assign({}, CAP.HUE), Object.assign({}, HUE_K), 'the page\'s HUE numbers are the oracle\'s');
+  t.eq(CAP.HUE.FROST_L, SB.TUNING.FROST_MEAN_L, 'the bright room rule\'s number is TUNING\'s FROST_MEAN_L');
+  /* a room: the wall colour on rows 0 to 31, a dark grey floor (no colour, so no vote) on rows 32 to 47 */
+  const room = (wall, floor, wallRows) => { const g = new Uint8Array(N * 3), fr = floor || [60, 60, 64], wr = wallRows === undefined ? 32 : wallRows; for (let i = 0; i < N; i++) g.set(Math.floor(i / 24) < wr ? wall : fr, 3 * i); return g; };
+  const known = [['sage', [178, 194, 164], 3], ['mint', [190, 224, 200], 3], ['forest green', [34, 85, 51], 3], ['navy', [42, 58, 92], 2], ['teal', [40, 128, 128], 2],
+    ['blush', [234, 198, 194], 4], ['red', [180, 40, 40], 4], ['beige', [206, 186, 150], 0], ['wood', [150, 102, 62], 0]];
+  for (const [name, c, want] of known) { const v = CAP.hueVote(room(c)); t.eq(v.biome, want, 'a ' + name + ' walled room over a grey floor votes ' + SB.palette.BIOMES[want] + ' (rule ' + v.rule + ')'); }
+  const white = CAP.hueVote(room([240, 240, 236], [200, 200, 198]));
+  t.ok(white.biome === 1 && white.rule === 'bright', 'a white room is Frost by the bright room rule (rule ' + white.rule + ')');
+  t.ok(CAP.hueVote(room([190, 224, 200], [190, 224, 200])).rule === 'bright', 'the bright room rule comes first: a mint room bright to the floor is Frost, not Overgrowth');
+  t.eq(CAP.hueVote(room([206, 186, 150])).rule, 'few', 'beige is under the warm band\'s gate (saturation 0.27 under 0.30): Attic by the few voters rule');
+  t.eq(CAP.hueVote(room([150, 102, 62])).rule, 'vote', 'wood votes Attic');
+  /* the ties: equal votes go Attic, Ember, Deep, Overgrowth */
+  const split = (a, b) => { const g = new Uint8Array(N * 3); for (let i = 0; i < N; i++) g.set(i < N / 2 ? a : b, 3 * i); return g; };
+  const WOOD = [150, 102, 62], RED = [180, 40, 40], NAVY = [42, 58, 92], FOREST = [34, 85, 51];
+  t.eq(CAP.hueVote(split(FOREST, RED)).biome, 4, 'a tie between Overgrowth and Ember goes Ember');
+  t.eq(CAP.hueVote(split(FOREST, NAVY)).biome, 2, 'a tie between Overgrowth and Deep goes Deep');
+  t.eq(CAP.hueVote(split(RED, WOOD)).biome, 0, 'a tie between Ember and Attic goes Attic');
+  t.eq(CAP.hueVote(split(NAVY, RED)).biome, 4, 'a tie between Deep and Ember goes Ember');
+  /* the boundaries */
+  t.eq(CAP.hueVote(room([170, 170, 170], [170, 170, 170])).rule, 'few', 'a grey room at mean L exactly 170 is not bright');
+  t.eq(CAP.hueVote(room([171, 171, 171], [171, 171, 171])).rule, 'bright', 'at mean L 171 it is');
+  const tenth = k => { const g = room([110, 110, 110], [110, 110, 110], 0); for (let i = 0; i < k; i++) g.set(FOREST, 3 * i); return g; };
+  t.ok(CAP.hueVote(tenth(116)).biome === 3 && CAP.hueVote(tenth(115)).rule === 'few', 'MIN_PCT: 116 green cells of 1152 vote Overgrowth, 115 are too few');
+  t.eq(CAP.hueBand(100, 92, 89), -1, 'a colour of saturation 0.11 and chroma 11 does not vote (C_MIN 12)');
+  t.eq(CAP.hueBand(100, 88, 88), 4, 'chroma 12 at saturation 0.12 votes its band (Ember, hue 0)');
+  t.eq(CAP.hueBand(100, 100, 91), -1, 'the warm band needs WARM_S_MIN: saturation 0.09 in yellow does not vote');
+  t.ok(CAP.hueBand(200, 140, 120) === 0 && CAP.hueBand(200, 139, 120) === 4, 'hue 15 is Attic and hue 14.25 is Ember');
+  t.ok(CAP.hueBand(180, 200, 80) === 3 && CAP.hueBand(181, 200, 80) === 0, 'hue 70 is Overgrowth and hue 69.5 is Attic');
+  t.ok(CAP.hueBand(80, 200, 180) === 2 && CAP.hueBand(80, 200, 179) === 3, 'hue 170 is Deep and hue 169.5 is Overgrowth (DEEP_LO inside the green sector)');
+  t.ok(CAP.hueBand(195, 80, 230) === 4 && CAP.hueBand(190, 80, 230) === 2, 'hue 286 is Ember and hue 284 is Deep (EMBER_LO 285)');
+  /* the page against the oracle: one cell grids over 30000 seeded colours, 300 seeded rooms, the room model's 60 */
+  const r = hrand(97); let cellBad = 0, gridBad = 0, sceneBad = 0; const firstBad = [];
+  for (let k = 0; k < 30000; k++) { const c = new Uint8Array([r.int(256), r.int(256), r.int(256)]); if (CAP.hueVote(c).biome !== hueVoteRGB(c, HUE_K)) { cellBad++; if (firstBad.length < 3) firstBad.push(Array.from(c).join(',')); } }
+  for (let k = 0; k < 300; k++) {
+    const wall = [r.int(256), r.int(256), r.int(256)], g = room(wall, [r.int(256), r.int(256), r.int(256)], r.int(49));
+    for (let i = 0; i < g.length; i++) g[i] = Math.max(0, Math.min(255, g[i] + r.int(41) - 20));
+    if (CAP.hueVote(g).biome !== hueVoteRGB(g, HUE_K)) gridBad++;
+  }
+  const RM = require('./tools/room-model.js'), spread = [0, 0, 0, 0, 0];
+  const SCENES = 12;   /* painting a scene is the cost; tools/room-model.js measures all of them */
+  for (let k = 0; k < SCENES; k++) {
+    const img = RM.paint(k), c = CAP.fit(img.w, img.h), px = Buffer.alloc(c.w * c.h * 3);
+    for (let y = 0; y < c.h; y++) img.px.copy(px, y * c.w * 3, ((c.y + y) * img.w + c.x) * 3, ((c.y + y) * img.w + c.x + c.w) * 3);
+    const g = downscaleRGB({ w: c.w, h: c.h, bpp: 3, px }, 24, 48), v = CAP.hueVote(g).biome;
+    if (v !== hueVoteRGB(g, HUE_K)) sceneBad++; spread[v]++;
+  }
+  t.eq(cellBad, 0, 'the page\'s vote equals the oracle\'s on 30000 one cell grids' + (firstBad.length ? ' (first: ' + firstBad.join('; ') + ')' : ''));
+  t.eq(gridBad, 0, 'the page\'s vote equals the oracle\'s on 300 seeded noisy rooms');
+  t.eq(sceneBad, 0, 'the page\'s vote equals the oracle\'s on the room model\'s first ' + SCENES + ' scenes at the default box');
+  console.log('  info  H-hue-1: the room model\'s first ' + SCENES + ' scenes vote ' + SB.palette.BIOMES.map((b, i) => b + ' ' + spread[i]).join(', '));
+  /* gridRecord: v2, the vote's biome + 1, RULES 0 (today's rules; PHOTO1BR, Q222: the climb rules are not written yet), no flags */
+  const sage = SB.SAMPLE_ROOM, rgb = new Uint8Array(N * 3);
+  for (let i = 0; i < N; i++) { const p = parseInt(sage[Math.floor(i / 24)][i % 24], 16); rgb.set(p === SB.palette.I.ASH ? [178, 194, 164] : SB.palette.RGB[p], 3 * i); }
+  const j = CAP.gridRecord(rgb, -1), want = CAP.hueVote(rgb).biome;
+  t.ok(j.v === 2 && j.biome === want + 1 && j.rules === 0 && CAP.RULES === 0 && j.flags === 0 && SB.record.validate(j) === null, 'gridRecord writes a valid v2 record: biome the vote + 1 (' + j.biome + '), RULES 0 (today\'s rules, Q222), flags 0');
+  t.same(j.rows, Array.from(SB.SAMPLE_ROOM), 'the sage walled sample room quantizes to the sample room itself (sage is nearest Ash): only the biome byte differs');
+  const lv = SB.pipeline.build(SB.record.fromJSON(j), { firstRoom: true }), lv1 = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, j, { v: 1, biome: undefined, rules: undefined, flags: undefined })), { firstRoom: true });
+  t.ok(want === 3 && lv.biome === 3 && lv1.biome === 0 && lv.features.enemies.length > 0 && lv.features.enemies.every(e => e.kind === SB.features.CRAWLER), 'a sage walled room builds Overgrowth with thorn crawlers (' + lv.features.enemies.length + '); the same grid alone is Attic');
+});
+
+/* ================================================================ CLIMB (Q97, Q221): the climb rules, record v2 RULES 1 */
+/* the corpus the climb groups share: every fixture in modes 0 and 1 as v2 RULES 0 and RULES 1 (biome byte 0, so the
+   grid's own biome), the room model's 60 scenes at the default box then the page's own search (RULES 0 and RULES 1 each,
+   as tools/room-model.js builds them: a first room), and the real photo fixtures (fixtures/real-photos.json: the CC0 and
+   public domain photos of the 95 photo corpus that develop, each its record at the box that built; raw capture) */
+let climbCorpus = null;
+function climbRooms() {
+  if (climbCorpus) return climbCorpus;
+  const RM = require('./tools/room-model.js'), CAP = captureWithCore(), rooms = [];
+  const recOf = (rgb, rules) => { const j = CAP.gridRecord(rgb, -1); j.rules = rules; return SB.record.fromJSON(j); };
+  const cropImg = (img, c) => { const px = Buffer.alloc(c.w * c.h * 3); for (let y = 0; y < c.h; y++) img.px.copy(px, y * c.w * 3, ((c.y + y) * img.w + c.x) * 3, ((c.y + y) * img.w + c.x + c.w) * 3); return { w: c.w, h: c.h, bpp: 3, px }; };
+  const { downscaleRGB } = require('./tools/capture-oracle.js');
+  for (const f of FIXTURES) for (const mode of [0, 1]) {
+    const j = Object.assign({}, f.fx.record, { mode });
+    rooms.push({ tag: f.name + ' mode ' + mode, kind: 'fixture', rec0: SB.record.fromJSON(v2Of(j, 0, 0)), rec1: SB.record.fromJSON(v2Of(j, 0, 1)), opts: {} });
+  }
+  for (let k = 0; k < RM.COUNT; k++) {
+    const img = RM.paint(k), crop = CAP.fit(img.w, img.h), cache = new Map();
+    const gridAt = c => { const key = c.x + ',' + c.y + ',' + c.w + ',' + c.h; if (!cache.has(key)) cache.set(key, downscaleRGB(cropImg(img, c), 24, 48)); return cache.get(key); };
+    const room = { tag: 'model ' + k, kind: 'model', rec0: recOf(gridAt(crop), 0), rec1: recOf(gridAt(crop), 1), opts: { firstRoom: true } };
+    /* the search, RULES 0 and RULES 1 each, as Develop runs it */
+    for (const rules of [0, 1]) {
+      const lv = SB.pipeline.build(rules ? room.rec1 : room.rec0, room.opts);
+      let found = lv.needsCrop ? null : crop, builds = 1;
+      if (lv.needsCrop) for (const b of CAP.seekBoxes(crop, img.w, img.h, lv.cause, lv.band)) {
+        if (builds - 1 >= CAP.SEEK.CAP) break;
+        builds++;
+        if (!SB.pipeline.build(recOf(gridAt(b), rules), room.opts).needsCrop) { found = b; break; }
+      }
+      room['seek' + rules] = { box: found, builds };
+      if (rules === 1 && found) room.dev1 = recOf(gridAt(found), 1);
+    }
+    rooms.push(room);
+  }
+  const RP = path.join(FIXDIR, 'real-photos.json');
+  if (fs.existsSync(RP)) for (const p of JSON.parse(fs.readFileSync(RP, 'utf8'))) {
+    const j = p.record; rooms.push({ tag: 'photo ' + p.id, kind: 'photo', rec0: SB.record.fromJSON(Object.assign({}, j, { rules: 0 })), rec1: SB.record.fromJSON(Object.assign({}, j, { rules: 1 })), opts: {} });
+  }
+  for (const r of rooms) { r.lv0 = SB.pipeline.build(r.rec0, r.opts); r.lv1 = SB.pipeline.build(r.rec1, r.opts); }
+  climbCorpus = rooms;
+  return rooms;
+}
+/* the harness's own edge ledges, written from Q221's words (not the core's code): the wall is the two most common
+   palette indices among the open cells of rows 1..h-2, ties to the lower index; an edge pair, a above b, has neither
+   solid, b not wall paint, different indices, and |dL| > 30 or |dS1000| > 350 or two different hue bands; a run of 3
+   or more along a row marks the lower row */
+function edgeLedgesRef(solid, pal, w, h) {
+  const P = SB.palette, count = new Array(16).fill(0);
+  for (let i = w; i < (h - 1) * w; i++) if (!solid[i]) count[pal[i]]++;
+  const order = [...Array(16).keys()].sort((a, b) => count[b] - count[a] || a - b);
+  const wall = new Set([order[0]].concat(count[order[1]] > 0 ? [order[1]] : []));
+  const isEdge = (a, b) => !solid[a] && !solid[b] && !wall.has(pal[b]) && pal[a] !== pal[b] && (Math.abs(P.L[pal[a]] - P.L[pal[b]]) > 30 || Math.abs(P.S1000[pal[a]] - P.S1000[pal[b]]) > 350 || (P.BAND[pal[a]] >= 0 && P.BAND[pal[b]] >= 0 && P.BAND[pal[a]] !== P.BAND[pal[b]]));
+  const out = new Set();
+  for (let y = 1; y + 1 <= h - 2; y++) { let run = []; for (let x = 0; x <= w; x++) { if (x < w && isEdge(y * w + x, (y + 1) * w + x)) run.push((y + 1) * w + x); else { if (run.length >= 3) for (const c of run) out.add(c); run = []; } } }
+  return { cells: out, wall };
+}
+group('H-climb-1', 'the climb rules (Q221, record v2 RULES 1): v1 and RULES 0 build today\'s level bit for bit (pinned); edge ledges are the harness\'s own rule and never on wall paint; every stepping stone above the highest reached row and the first equal to the harness\'s own choice; no room that builds today is lost (the whole build fallback keeps today\'s level, a refusal keeps today\'s cause); at most 8 passes, 15% of the cells', t => {
+  const sj = fixture('sample-room').fx.record, srec = SB.record.fromJSON(sj);
+  /* the pins: v1 and RULES 0 are today's level; RULES 1 is the climb's own, pinned here */
+  t.ok(!SB.pipeline.climbs(srec, {}) && !SB.pipeline.climbs(SB.record.fromJSON(v2Of(sj, 0, 0)), {}) && SB.pipeline.climbs(SB.record.fromJSON(v2Of(sj, 0, 1)), {}) && !SB.pipeline.climbs(SB.record.fromJSON(v2Of(sj, 0, 1)), { noClimb: 1 }),
+    'a v1 record by today\'s rules, a v2 RULES 0 record by today\'s rules, a v2 RULES 1 record by the climb rules, opts.noClimb by today\'s');
+  t.eq(SB.pipeline.levelHash(SB.pipeline.build(srec, {})), '398abc93d279c699', 'a v1 fixture (the sample room) builds today\'s level: its levelHash pinned');
+  t.eq(SB.pipeline.levelHash(SB.pipeline.build(SB.record.fromJSON(v2Of(sj, 0, 0)), {})), '398abc93d279c699', 'a RULES 0 fixture (the sample room as v2, biome byte 0) builds the same level bit for bit');
+  t.eq(SB.pipeline.levelHash(SB.pipeline.build(SB.record.fromJSON(v2Of(sj, 0, 1)), { noClimb: 1 })), '398abc93d279c699', 'a RULES 1 record under opts.noClimb builds today\'s level');
+  const rooms = climbRooms(), fx = rooms.filter(r => r.kind === 'fixture');
+  let h1, nv1 = 0; const v1bad = [];
+  for (const r of fx) {
+    const v1 = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, SB.record.toJSON(r.rec0), { v: 1, biome: undefined, rules: undefined, flags: undefined })), {});
+    if (!!v1.needsCrop !== !!r.lv0.needsCrop || (!v1.needsCrop && SB.pipeline.levelHash(v1) !== SB.pipeline.levelHash(r.lv0)) || (!v1.needsCrop && v1.climb)) v1bad.push(r.tag);
+    h1 = fnvRef(Buffer.from(r.tag + ' ' + (r.lv1.needsCrop ? 'refused ' + (r.lv1.cause || r.lv1.why) : SB.pipeline.levelHash(r.lv1) + (r.lv1.repair.wholeFallback ? ' F' : '')) + '\n'), h1); nv1++;
+  }
+  t.eq(v1bad.length, 0, 'every fixture in modes 0 and 1 builds the same level by v1 and by v2 RULES 0, never by the climb rules' + (v1bad.length ? ': ' + v1bad.slice(0, 4).join('; ') : ''));
+  t.eq(SB.pipeline.levelHash(SB.pipeline.build(SB.record.fromJSON(v2Of(sj, 0, 1)), {})), '3b14461ab78c5494', 'the sample room by the climb rules: its levelHash pinned (Q221)');
+  t.eq(h1, 0x700c1433, 'every fixture in modes 0 and 1 by the climb rules builds the level pinned at Q221 (the digest of ' + nv1 + ' levelHashes and refusals)');
+  /* edge ledges: the climb's plat over today's is exactly the harness's own edge ledges, and never wall paint */
+  let compared = 0, ledgeCells = 0, onWall = 0; const ledgeBad = [];
+  for (const r of rooms) {
+    if (r.rec1.mode === 2) continue;
+    const a0 = SB.pipeline.build(r.rec0, Object.assign({ stage: 'A' }, r.opts)), a1 = SB.pipeline.build(r.rec1, Object.assign({ stage: 'A' }, r.opts));
+    if (a0.needsCrop || a1.needsCrop) continue;
+    compared++;
+    const ref = edgeLedgesRef(a1.solid, a1.pal, a1.w, a1.h), n = a1.w * a1.h, diff = [];
+    let same = Buffer.compare(Buffer.from(a0.solid), Buffer.from(a1.solid)) === 0;
+    for (let i = 0; i < n; i++) { if (a0.plat[i] && !a1.plat[i]) same = false; if (a1.plat[i] && !a0.plat[i]) { diff.push(i); if (ref.wall.has(a1.pal[i])) onWall++; } }
+    ledgeCells += diff.length;
+    const want = [...ref.cells].filter(c => !a0.plat[c]).sort((x, y) => x - y);
+    if (!same || diff.join() !== want.join() || diff.some(c => c >= (a1.h - 1) * a1.w || c < 2 * a1.w)) ledgeBad.push(r.tag + ' (' + diff.length + ' against ' + want.length + ')');
+  }
+  t.ok(compared >= 90, 'edge ledges compared on ' + compared + ' rooms (fixtures, model scenes, real photos)');
+  t.eq(ledgeBad.length, 0, 'the climb rules add exactly the harness\'s own edge ledges to today\'s one ways, the same solids, rows 2 to h-2 only (' + ledgeCells + ' ledge cells)' + (ledgeBad.length ? ': ' + ledgeBad.slice(0, 4).join('; ') : ''));
+  t.eq(onWall, 0, 'an edge ledge never sits on wall paint (the two commonest open indices)');
+  t.ok(ledgeCells > 200, 'the edge ledges exist: ' + ledgeCells + ' cells over the corpus');
+  /* stepping stones */
+  let stones = 0, firstChecked = 0, morePasses = 0; const stoneBad = [], firstBad = [], capBad = [];
+  for (const r of rooms) {
+    const lv = r.lv1;
+    if (lv.needsCrop || !lv.climb) continue;
+    if (lv.repair.passes > SB.TUNING.CLIMB_PASSES || lv.repair.changedFrac > SB.TUNING.REPAIR_MAX_CHANGE || lv.repair.tabs > SB.TUNING.TAB_MAX * Math.max(1, lv.repair.passes)) capBad.push(r.tag);
+    if (lv.repair.passes > SB.TUNING.REPAIR_PASSES) morePasses++;
+    const st = lv.repair.stones || [];
+    for (const s of st) { stones++; if (Math.floor(s.cell / lv.w) >= s.top || lv.tab[s.cell + lv.w] || lv.solid[s.cell] || (!lv.solid[s.cell + lv.w] && !lv.plat[s.cell + lv.w])) stoneBad.push(r.tag + ' stone ' + s.cell + ' top ' + s.top); }
+    /* the first pass's stone, chosen by the harness from the level before repair */
+    const a = SB.pipeline.build(r.rec1, Object.assign({ stage: 'A' }, r.opts));
+    if (a.needsCrop || a.spawn !== lv.spawn || (lv.exitTop || 0) !== 0) continue;
+    const w = a.w, h = a.h, d = SB.reach.distances(SB.reach.graph(a), a.spawn), stand = c => !a.solid[c] && (a.solid[c + w] === 1 || a.plat[c + w] === 1);
+    let exitReached = false; for (let c = 0; c < SB.TUNING.EXIT_ROWS * w; c++) if (stand(c) && d[c] >= 0) exitReached = true;
+    if (exitReached) continue;
+    const reached = []; let top = h;
+    for (let c = 0; c < w * h - w; c++) if (d[c] >= 0 && stand(c)) { reached.push(c); top = Math.min(top, Math.floor(c / w)); }
+    let best = null, bd = Infinity;
+    for (let y = 1; y < Math.min(top, h - 2); y++) for (let x = 0; x < w; x++) {
+      const c = y * w + x; if (d[c] >= 0 || !stand(c) || a.tab[c + w]) continue;
+      const dm = Math.min(...reached.map(q => Math.max(Math.abs(q % w - x), Math.abs(Math.floor(q / w) - y))));
+      if (dm < bd) { bd = dm; best = c; }
+    }
+    firstChecked++;
+    const got = st.length ? st[0].cell : null;
+    if (got !== best) firstBad.push(r.tag + ' (the core ' + got + ', the harness ' + best + ')');
+  }
+  t.ok(stones > 30 && firstChecked > 20, 'stepping stones laid: ' + stones + ', the first pass\'s checked on ' + firstChecked + ' rooms');
+  t.eq(stoneBad.length, 0, 'a stone is always above the highest reached row, open and standable, never standing on a film tab' + (stoneBad.length ? ': ' + stoneBad.slice(0, 4).join('; ') : ''));
+  t.eq(firstBad.length, 0, 'the first pass aims at the harness\'s own stone: the unreached standable cell above the highest reached row nearest a reached one, ties to the lowest index' + (firstBad.length ? ': ' + firstBad.slice(0, 4).join('; ') : ''));
+  t.eq(capBad.length, 0, 'every climb level stays within CLIMB_PASSES 8 passes, REPAIR_MAX_CHANGE 15% of the cells and TAB_MAX 12 tabs a pass' + (capBad.length ? ': ' + capBad.slice(0, 4).join('; ') : ''));
+  t.ok(morePasses > 0, 'some climb level needs more than today\'s 4 passes (' + morePasses + ')');
+  /* never lose a room */
+  let fell = 0, both = 0; const lost = [], fbBad = [], causeBad = [], gainedBad = [];
+  for (const r of rooms) {
+    if (!r.lv0.needsCrop && r.lv1.needsCrop) lost.push(r.tag);
+    if (r.lv0.needsCrop && !r.lv1.needsCrop) gainedBad.push(r.tag);
+    if (!r.lv1.needsCrop && r.lv1.repair.wholeFallback) { fell++; if (r.lv1.climb || SB.pipeline.levelHash(r.lv1) !== SB.pipeline.levelHash(r.lv0)) fbBad.push(r.tag); }
+    if (r.lv0.needsCrop && r.lv1.needsCrop) { both++; if (r.lv1.cause !== r.lv0.cause || JSON.stringify(r.lv1.band) !== JSON.stringify(r.lv0.band) || r.lv1.why !== r.lv0.why) causeBad.push(r.tag); }
+  }
+  const models = rooms.filter(r => r.kind === 'model'), seekLost = models.filter(r => r.seek0.box && !r.seek1.box).map(r => r.tag), seekLater = models.filter(r => r.seek0.box && r.seek1.box && r.seek1.builds > r.seek0.builds).map(r => r.tag);
+  t.eq(lost.length, 0, 'every room that builds by today\'s rules builds by the climb rules (' + rooms.length + ' rooms: fixtures, model scenes at the default box, real photos)' + (lost.length ? ': ' + lost.slice(0, 6).join('; ') : ''));
+  t.ok(fell > 0 && fbBad.length === 0, 'a box the climb rules refuse keeps today\'s level bit for bit, marked repair.wholeFallback (' + fell + ' rooms)' + (fbBad.length ? ': ' + fbBad.slice(0, 4).join('; ') : ''));
+  t.ok(both > 0 && causeBad.length === 0 && gainedBad.length === 0, 'a box today\'s rules refuse is refused by RULES 1 with today\'s refusal: the same cause, band and why (' + both + ' rooms), so the crop screen and the search pay today\'s cost' + (causeBad.length + gainedBad.length ? ': ' + causeBad.concat(gainedBad.map(x => x + ' built')).slice(0, 4).join('; ') : ''));
+  const seekDiff = models.filter(r => !!r.seek0.box !== !!r.seek1.box || r.seek0.builds !== r.seek1.builds || (r.seek0.box && JSON.stringify(r.seek0.box) !== JSON.stringify(r.seek1.box))).map(r => r.tag);
+  t.ok(seekLost.length === 0 && seekLater.length === 0 && seekDiff.length === 0, 'the search develops every model scene it develops today, from the same box after the same builds (' + models.filter(r => r.seek1.box).length + ' of ' + models.length + ')' + (seekLost.length + seekLater.length + seekDiff.length ? ': ' + seekLost.concat(seekLater, seekDiff).slice(0, 4).join('; ') : ''));
+  console.log('  info  H-climb-1: ' + rooms.length + ' rooms; by the climb rules ' + rooms.filter(r => !r.lv1.needsCrop && r.lv1.climb).length + ', today\'s level kept by the fallback ' + fell + ', both refuse ' + both + '; stones ' + stones + '; ledge cells ' + ledgeCells);
+});
+group('H-climb-2', 'the climb rules\' levels are played (Q221): the harness\'s bot walks the main ascent of every room the climb rules build, the room model\'s developed scenes and the real photo fixtures, through the real sim to the clear', t => {
+  const rooms = climbRooms(), memo = new Map(), stats = { tries: 0, found: 0, memo: 0, memoMiss: 0 };
+  const walks = [];
+  for (const r of rooms) {
+    if (r.kind === 'fixture') continue;
+    const lv = r.kind === 'model' ? (r.dev1 ? SB.pipeline.build(r.dev1, r.opts) : null) : r.lv1;
+    if (!lv || lv.needsCrop) continue;
+    const w = BOT.walk(lv, memo, stats);
+    walks.push({ tag: r.tag, kind: r.kind, ok: w.ok, why: w.ok ? '' : (w.why || ('miss at edge ' + w.miss.i + ' ' + w.miss.e.kind + ' ' + w.miss.e.profile + ' dx ' + w.miss.e.dx + ' dy ' + w.miss.e.dy)), climb: lv.climb });
+  }
+  for (const kind of ['model', 'photo']) {
+    const of = walks.filter(x => x.kind === kind), bad = of.filter(x => !x.ok);
+    t.ok(of.length >= (kind === 'model' ? 50 : 5) && of.filter(x => x.climb).length > (kind === 'model' ? 40 : 3), 'the ' + kind + ' corpus gives ' + of.length + ' developed levels, ' + of.filter(x => x.climb).length + ' by the climb rules');
+    t.eq(bad.length, 0, 'the bot clears every developed ' + (kind === 'model' ? 'model scene' : 'real photo fixture') + ' level by the climb rules through the sim (' + (of.length - bad.length) + ' of ' + of.length + ')' + (bad.length ? ': ' + bad.slice(0, 4).map(x => x.tag + ' ' + x.why).join('; ') : ''));
+  }
 });
 
 /* ================================================================ run */
