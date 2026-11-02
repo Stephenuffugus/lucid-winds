@@ -6614,6 +6614,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var id = info.prize, kind = id.slice(0, id.indexOf('.')), nm = id.slice(id.indexOf('.') + 1), C = ui.COPY, name = C['look_' + kind + '_' + nm] || nm;
     el.innerHTML = '<canvas width="144" height="140"></canvas><p></p>'; el.removeAttribute('data-unlock-seen');
     var cv = el.firstChild, c2 = cv.getContext('2d'), R = SB.render;
+    c2.imageSmoothingEnabled = false;   /* the 3x pose nearest neighbour (the first shots drew it smeared) */
     el.lastChild.textContent = C.prizeNew.replace('{name}', name);
     el.setAttribute('role', 'img'); el.setAttribute('aria-label', C.prizeLabel.replace('{name}', name));
     var paint = function (f) {
