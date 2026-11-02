@@ -5798,9 +5798,20 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* a control that answers while another finger is down (W2R): Chrome makes no click from a tap while another touch is
      held, and a player reaches the chest, and Pause, with the stick thumb down. A touch or a pen answers on its
      pointerup inside the control it went down on; a mouse and the keyboard keep click; the click a touch makes after
-     its own pointerup (when no other finger is down) is dropped, so one tap answers once */
+     its own pointerup (when no other finger is down) is dropped, so one tap answers once and nothing else */
+  var tapAt = -1e9, tapId = null, tapHooked = false;
+  /* the click of the touch an answer already took: Chrome's click is a PointerEvent with that touch's pointerId (a new
+     tap has a new id); elsewhere, any click inside 350 ms */
+  var sameTap = function (e) { return typeof e.pointerId === 'number' && e.pointerId > 0 ? e.pointerId === tapId && e.timeStamp - tapAt < 1000 : e.timeStamp - tapAt < 350; };
   ui.onTap = function (el, fn) {
-    var downs = {}, upAt = -1e9;
+    var downs = {};
+    if (!tapHooked) {
+      tapHooked = true;
+      /* the click Chrome makes from a touch comes after its pointerup, hit tested where the finger was: when the answer
+         changed the screen (Resume gone over the swap card's Take, Pause gone to its card) it would land on what is now
+         under the finger, so the click of an answered tap is dropped wherever it lands (W2R) */
+      document.addEventListener('click', function (e) { if (sameTap(e)) { e.stopPropagation(); e.preventDefault(); } }, true);
+    }
     el.addEventListener('pointerdown', function (e) { if (e.pointerType !== 'mouse') downs[e.pointerId] = 1; });
     el.addEventListener('pointercancel', function (e) { delete downs[e.pointerId]; });
     el.addEventListener('pointerup', function (e) {
@@ -5808,9 +5819,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
       delete downs[e.pointerId];
       var r = el.getBoundingClientRect();
       if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
-      upAt = e.timeStamp; fn.call(el, e);
+      tapAt = e.timeStamp; tapId = e.pointerId; fn.call(el, e);
     });
-    el.addEventListener('click', function (e) { if (e.timeStamp - upAt < 1000) return; fn.call(el, e); });
+    el.addEventListener('click', function (e) { if (!sameTap(e)) fn.call(el, e); });
   };
   ui.initSwap = function () {
     var el = document.createElement('div'); el.id = 'swap'; el.setAttribute('role', 'dialog');

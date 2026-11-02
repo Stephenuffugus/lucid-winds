@@ -950,10 +950,9 @@ const MUTANTS = [
      keeps running; then the card's own rules, the back gesture's five, and a lost focus */
   { name: 'PAUSE_LEAVES', task: 'NOTE3', file: 'page', find: "    ui.onTap(document.getElementById('pause'), function () { this.blur(); ui.pause(); });", repl: "    ui.onTap(document.getElementById('pause'), ui.toTitle);",   /* re anchored at W2R (onTap) */
     gates: [{ gate: 'pause', expect: '412x915: a real tap on Pause opens the pause card and keeps the room' }] },
-  /* found in this change's own probe: after a tap on Pause the button kept the focus, and a later Space (the jump key)
-     or Enter pressed it again and paused the room */
-  { name: 'PAUSE_KEEPS_FOCUS', task: 'NOTE3', file: 'page', find: "ui.onTap(document.getElementById('pause'), function () { this.blur(); ui.pause(); });", repl: "ui.onTap(document.getElementById('pause'), function () { ui.pause(); });",   /* re anchored at W2R (onTap) */
-    gates: [{ gate: 'pause', expect: 'after a tap on Pause and back to resume, Space (the jump key) and Enter leave the room running' }] },
+  /* PAUSE_KEEPS_FOCUS retired at W2R: Pause answers on its pointerup (ui.onTap) and hides itself before the touch's
+     compat mousedown, so a tap can no longer leave it focused with or without blur() (the row STAYED GREEN; the pause
+     gate's line still holds the behaviour) */
   { name: 'PAUSE_RUNS_SIM', task: 'NOTE3', file: 'page', find: "    var run = !held && !SIDEWAYS.matches && !!G.state && SB.ui.screen === 'play';", repl: "    var run = !held && !SIDEWAYS.matches && !!G.state && (SB.ui.screen === 'play' || SB.ui.screen === 'pause');",
     gates: [{ gate: 'pause', expect: '412x915: under the pause card the room holds' }] },
   { name: 'TITLE_BACK_IN_STRIP', task: 'NOTE3', file: 'page', edits: [
@@ -1351,6 +1350,8 @@ const MUTANTS = [
     gates: [{ gate: 'compare', expect: '412: a stick thumb down under the open card' }] },
   { name: 'SWAP_UNDER_OFFER', task: 'W2R', file: 'page', find: " && !st.room.dead && !st.scrollsOffered);", repl: " && !st.room.dead);",
     gates: [{ gate: 'compare', expect: "412: a scroll offer on the chest's step: the card waits" }] },
+  { name: 'GHOST_CLICK_LANDS', task: 'W2R', file: 'page', find: "      document.addEventListener('click', function (e) { if (sameTap(e)) { e.stopPropagation(); e.preventDefault(); } }, true);\n", repl: "",
+    gates: [{ gate: 'compare', expect: 'Pause then Resume with no other finger down leaves the card open' }] },
   { name: 'TOP_NAME_SQUEEZED', task: 'W2R', file: 'page', find: "  #hearts { margin-left: 4px; gap: 3px; }\n", repl: "",
     gates: [{ gate: 'fight', expect: '320: the top strip holds Pause, the name, both icons and 4 hearts without overflow' }] },
 ];
