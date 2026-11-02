@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 6145;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6057 at AUTOCROP, Q181, 1 Nov; 6145 at BIOME, Q220, 1 Nov) */
+const ASSERT_FLOOR = 6312;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6312 at Weapons v1 step 2, 1 Nov, the --fast count) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -230,7 +230,10 @@ group('H-ns-1', 'K recomputed in the test from TUNING, and the known integers of
     JUMP_SLOT_CD_F: 36, BOSS_TELEGRAPH_F: 48, BOSS_INTRO_F: 120, KNOCK_V: 1024, KNOCK_FRAMES: 8,
     JELLY_V: 68, ELITE_SUB: 6144, ELITE_PX: 24, SPARK_AIR_F: 12, SLICK_DECEL: 51,
     /* Weapons v1 step 1 (docs/WEAPONS-V1.md 2.3) */
-    HP_Q: 4, J1_REACH: 20480, J1_V: 1280, J1_LIFE_F: 72, J1_BOX: 3072, D1_REACH: 12288, D1_V: 1536, D1_LINGER_F: 6, HURT_FLASH_F: 9, POP_F: 12, DIVE_SLOT_CD_F: 0 };
+    HP_Q: 4, J1_REACH: 20480, J1_V: 1280, J1_LIFE_F: 72, J1_BOX: 3072, D1_REACH: 12288, D1_V: 1536, D1_LINGER_F: 6, HURT_FLASH_F: 9, POP_F: 12, DIVE_SLOT_CD_F: 0,
+    /* Weapons v1 step 2 (docs/WEAPONS-V1.md 2.3) */
+    J2_BURN_F: 90, J2_DROP_F: 10, J2_BOX: 2048, J3_REACH: 8192, J4_REACH: 8192, J4_STUN_F: 60, J5_REACH: 16384, J5_V: 1536, J5_BOXW: 2048, J5_BOXH: 1024,
+    J6_REACH: 24576, J6_V: 1024, J6_BOXW: 4096, J6_BOXH: 1536, J7_REACH: 12288, J7_FREEZE_F: 30, J8_JUMP_V: 2432, J8_DEEP_JUMP_V: 2656 };
   for (const k of Object.keys(KNOWN)) t.eq(K[k], KNOWN[k], 'K.' + k + ' known answer');
   for (const k of Object.keys(K)) if (typeof K[k] === 'number') t.ok(Number.isInteger(K[k]), 'K.' + k + ' is an integer (' + K[k] + ')');
   t.same(SB.derive(T, G), K, 'derive is pure: a second call equals K');
@@ -1329,9 +1332,9 @@ group('H-sim-11', 'the corner rule: 2 px of side overlap never arms a slide; 14 
    sentence), stepped here and not by the sim; and the test's own Deep jump: DEEP_JUMP_V up, base gravity while
    rising and on the jump's first step, DEEP_FALL_G once falling, capped at DEEP_TERM (the plan's arc, reach.arc) */
 const stopRef = dec => { let v = SB.TUNING.RUN * 256, d = 0; while (v > 0) { v = Math.max(0, v - dec); d += v; } return d; };
-function deepJumpRef(holdFrames) {
+function deepJumpRef(holdFrames, v0) {
   const T = SB.TUNING, g = T.GRAVITY * 256, gf = Math.round(g * T.DEEP_FALL_MULT), cut = T.JUMP_CUT_V * 256, term = Math.round(T.TERMINAL * 256 * T.DEEP_FALL_MULT);
-  let vy = -T.DEEP_JUMP_V * 256, y = 0, top = 0, f = 0;
+  let vy = -(v0 === undefined ? T.DEEP_JUMP_V : v0) * 256, y = 0, top = 0, f = 0;
   for (;;) {
     if (f > 0 && f >= holdFrames && vy < -cut) vy = -cut;
     vy = Math.min(term, vy + (f > 0 && vy >= 0 ? gf : g)); y += vy; f++;
@@ -3753,6 +3756,7 @@ group('H-fix-3', 'the corpus holds every record fixtures/README.md lists; names 
    macros from spawn and must clear the room. A miss is the generosity assertion failing: the model promised an edge
    the sim does not keep. The macros may read the state to time a release, as a player watches the hero; they never
    write it. */
+const BOT_ANY_HOLD = { on: false };
 const BOT = (() => {
   /* a pickup's sheet (T1.6): an open scroll offer or chest compare holds the world until a CHOICE word; the bot answers
      at once after every step (the first scroll; take the slip), so no movement word is lost to the pause */
@@ -3841,9 +3845,11 @@ const BOT = (() => {
     const ranked = (list, score) => list.map(c => [score(c), c]).sort((a, b) => a[0] - b[0]).slice(0, MAX_CANDS).map(x => x[1]);
     if (e.kind === 'WALK') return [1, 2, 3, 4].map(n => Array.from({ length: n }, () => rockerOf(e.dir)));   /* the settle leaves the hero up to half a tap off centre */
     if (e.kind === 'JUMP' || e.kind === 'JUMP_DOWN') {
-      const profs = e.kind === 'JUMP' ? [e.profile] : ['FULL', 'MID', 'TAP'], list = [];
+      /* H-bot-8 (Skyhook): a jump edge may be taken with any hold, as a player with a higher jump lets go sooner */
+      const profs = e.kind === 'JUMP' && !BOT_ANY_HOLD.on ? [e.profile] : BOT_ANY_HOLD.on ? ['FULL', 'SKY'] : ['FULL', 'MID', 'TAP'], list = [];
       const most = Math.max(40, est + 12);
-      profs.forEach((p, pi) => A_RANGE[p].forEach((a, ai) => { for (let delay = 0; delay <= 8; delay++) for (let hold = 0; hold <= most; hold++) list.push({ a, delay, hold, prior: Math.abs(hold - est) + 2 * delay + 3 * ai + 6 * pi }); }));
+      profs.forEach((p, pi) => (p === 'SKY' ? [12, 10, 8, 6, 4, 3, 2, 1] : A_RANGE[p]).forEach((a, ai) => { for (let delay = 0; delay <= 8; delay++) for (let hold = 0; hold <= most; hold++) list.push({ a, delay, hold, prior: Math.abs(hold - est) + 2 * delay + (BOT_ANY_HOLD.on ? ai : 3 * ai + 6 * pi) }); }));
+      if (BOT_ANY_HOLD.on) return list.sort((x, y) => x.prior - y.prior).slice(0, 6 * MAX_CANDS).map(c => jumpWords(c.a, e.dir, c.delay, c.hold));   /* every hold ranked together, six times the cap */
       return ranked(list, c => c.prior).map(c => jumpWords(c.a, e.dir, c.delay, c.hold));
     }
     if (e.kind === 'FALL' && e.dir === 0) { const most = Math.ceil(-e.dy * CS / K.DEEP_TERM) + 6;   /* Deep's terminal is the slower (T1.5) */ return Array.from({ length: most }, (_, i) => M_DIVE(i + 1, true, Math.max(LEN, most + 60))); }
@@ -3854,9 +3860,9 @@ const BOT = (() => {
     }
     if (e.kind === 'WALLTOUCH') {
       const list = [];
-      ['FULL', 'WALKOFF', 'MID', 'TAP'].forEach((p, pi) => { for (let delay = 0; delay <= 8; delay++) list.push({ p, delay, prior: 2 * delay + pi }); });
+      ['FULL', 'WALKOFF', 'MID', 'TAP'].concat(BOT_ANY_HOLD.on ? [12, 10, 8, 6, 5, 3, 2] : []).forEach((p, pi) => { for (let delay = 0; delay <= 8; delay++) list.push({ p, delay, prior: 2 * delay + pi }); });
       return ranked(list, c => c.prior).map(c => Array.from({ length: LEN }, (_, k) =>
-        (c.p !== 'WALKOFF' && k < A_FRAMES[c.p] ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k >= c.delay ? rockerOf(e.dir) : 0)));
+        (c.p !== 'WALKOFF' && k < (typeof c.p === 'number' ? c.p : A_FRAMES[c.p]) ? IN.A | (k === 0 ? IN.A_TAP : 0) : 0) | (k >= c.delay ? rockerOf(e.dir) : 0)));
     }
     /* SLIDE: toward the wall while the slide is armed, released when it is not (where the wall ends a held rocker would
        carry the hero into the open column, which no player does) */
@@ -3923,13 +3929,16 @@ const BOT = (() => {
   /* the walk: settle at spawn, then each ascent edge's macro in turn; arrival is the room clearing */
   function walk(lv, memo, stats, opts) {
     const g = SB.reach.graph(lv), asc = lv.ascent;
-    let s = SB.sim.create(lv, { immortal: !opts || !opts.mortal });   /* the route walk is immortal (QUESTIONS Q30); H-en-3 walks mortal */
+    let s = SB.sim.create(lv, { immortal: !opts || !opts.mortal, loadout: opts && opts.loadout });   /* the route walk is immortal (QUESTIONS Q30); H-en-3 walks mortal; H-bot-8 walks with Skyhook */
     const words = [];
     for (let k = 0; k < 10 && !s.hero.ground; k++) { stepB(s, 0, words); }
     if (!settle(s, lv.spawn, words)) return { ok: false, why: 'the hero cannot settle at spawn', edges: 0, words, s };
     if (!asc || !asc.edges) return { ok: false, why: 'no ascent', edges: 0, words, s };
     for (let i = 0; i < asc.edges.length && !s.room.cleared; i++) {
-      const e = asc.edges[i], r = solve(s, e, g, memo, stats);
+      const e = asc.edges[i]; let r = solve(s, e, g, memo, stats);
+      /* H-bot-8's count (W2R): an edge the walk's own holds miss is noted and solved again another way, so the walk
+         goes on and every such edge of a level is counted, not only its first */
+      if (!r.ok && opts && opts.onMiss) { const r2 = opts.onMiss(s, e, g, i); if (r2 && r2.ok) r = r2; }
       if (!r.ok) {
         const src = nodeInfo(g, e.from), t = nodeInfo(g, e.to);
         return { ok: false, edges: i, words, s, miss: { i, e, src, t, tried: r.tried, rest: [centreCol(r.s), feetRow(r.s)], wall: r.s.hero.wall, ground: r.s.hero.ground } };
@@ -4177,7 +4186,7 @@ const replays = () => fs.existsSync(REPLAY_DIR) ? fs.readdirSync(REPLAY_DIR).fil
 
 group('H-bot-5', 'the goldens: each replay in fixtures/replays clears its room and ends on its golden hash', t => {
   const list = replays();
-  t.ok(['sample-room.json', 'shelves-a.json', 'sample-room-armed.json'].every(n => list.some(r => r.name === n)), 'the sample room and shelves-a have replays, and the sample room an armed one (' + list.map(r => r.name).join(', ') + ')');
+  t.ok(['sample-room.json', 'shelves-a.json', 'sample-room-armed.json', 'shelves-a-jump.json'].every(n => list.some(r => r.name === n)), 'the sample room and shelves-a have replays, the sample room an armed one and shelves-a its step 2 one with Twin Darts (' + list.map(r => r.name).join(', ') + ')');
   for (const { name, j } of list) {
     const r = runReplay(j);
     t.ok(r.cleared === 1, name + ': its ' + j.steps + ' steps clear the room (else --record it again)');
@@ -4699,7 +4708,7 @@ group('H-sim-19', 'a room with a scroll pick replays from its recorded script (t
    labs lay enemies by hand and freeze them wherever an enemy must hold still for geometry (a held enemy is hit as any
    other, 5.3) */
 const WPN_ID = ['', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7', 'J8', 'D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8'];
-const code = id => WPN_ID.indexOf(id), BUILT_IDS = SB.TUNING.WEAPONS_BUILT, PK = { BOOMERANG: 1, SHOCK: 2, POP: 3 };
+const code = id => WPN_ID.indexOf(id), BUILT_IDS = SB.TUNING.WEAPONS_BUILT, PK = { BOOMERANG: 1, SHOCK: 2, POP: 3, TRAIL: 4, EMBER: 5, FLASH: 6, DART: 7, RING: 8, KICK: 9, SNAP: 10 };
 const ARMED = ['J1', 'D1'];
 /* a lab: the room from text, enemies [kind, cell, elite?] frozen unless `moving`, the hero at its box (x, y sub px) or
    standing in column hc on row `row` (default the floor row 46), the loadout */
@@ -4863,8 +4872,18 @@ group('H-wpn-5', 'hits and kills (5.4): a kill banks DP_FODDER or DP_ELITE once;
   t.same(fl, wf, 'hurt is HURT_FLASH_F (' + K.HURT_FLASH_F + ') after a hit and counts down one a step');
 });
 
-group('H-wpn-6', 'the chest (6.1, 6.2): over 200 seeded rooms it equips at once the code the test draws after the specks\' rolls, with no compare and no held step; one slot full gives the other; both full, Dead pixels only and no draw', t => {
-  const T = SB.TUNING, EV = SB.sim.EV, CH = 46 * 24 + 9, built = BUILT_IDS.map(code);
+/* a core whose TUNING.WEAPONS_BUILT is `ids` (the page's text with that one literal replaced, loaded fresh): the step 1
+   pool's chest (H-wpn-6) keeps its own truths once step 2 grows the pool */
+function coreBuilt(ids) {
+  const html = fs.readFileSync(PAGE, 'utf8'), m = html.match(/WEAPONS_BUILT: \[[^\]]*\]/);
+  if (!m) throw new Error('coreBuilt: no WEAPONS_BUILT literal in the page');
+  const tmp = path.join(require('node:os').tmpdir(), 'sb-core-built-' + process.pid + '.html');
+  fs.writeFileSync(tmp, html.replace(m[0], 'WEAPONS_BUILT: ' + JSON.stringify(ids).replace(/"/g, "'").replace(/,/g, ', ')));
+  try { return loadCoreFull(tmp).SB; } finally { fs.unlinkSync(tmp); }
+}
+
+group('H-wpn-6', 'the chest (6.1, 6.2), on the step 1 pool {J1, D1} (a core loaded with that WEAPONS_BUILT; step 2\'s pool is H-wpn-7\'s): over 200 seeded rooms it equips at once the code the test draws after the specks\' rolls, with no compare and no held step; one slot full gives the other; both full, Dead pixels only and no draw', t => {
+  const S1 = coreBuilt(['J1', 'D1']), T = S1.TUNING, EV = S1.sim.EV, CH = 46 * 24 + 9, built = T.WEAPONS_BUILT.map(code);
   const slot = c => (c - 1) >> 3;
   const drawRef = (st, slots) => { const cands = built.filter(c => slots[slot(c)] !== c), empty = cands.filter(c => slots[slot(c)] === 0); if (!cands.length) return 0; const pool = T.CHEST_FILLS_EMPTY_FIRST && empty.length ? empty : cands; return pool[stepRef(st) % pool.length]; };
   let ok = 0, compares = 0, held = 0, equippedGiven = 0, gaveEquipped = 0, firstBad = '';
@@ -4874,15 +4893,15 @@ group('H-wpn-6', 'the chest (6.1, 6.2): over 200 seeded rooms it equips at once 
       const lv = LABS.room(['', FLOOR]); lv.seed = 5000 + k;
       const specks = [46 * 24 + 5, 46 * 24 + 7], after = 46 * 24 + 12;
       lv.features = { pocket: null, enemies: [], trap: null, specks: specks.concat([after]), scroll: null, blueprint: null, chest: CH };
-      const s = SB.sim.create(lv, { at: { x: 2 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: lo });
+      const s = S1.sim.create(lv, { at: { x: 2 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: lo });
       const st = { v: s.rng }, slots0 = s.hero.slots.slice();
       let dpWant = 0; for (let j = 0; j < 2; j++) dpWant += T.DP_SPECK[0] + stepRef(st) % (T.DP_SPECK[1] - T.DP_SPECK[0] + 1);
       const want = drawRef(st, slots0); dpWant += T.DP_CHEST + T.DP_SPECK[0] + stepRef(st) % (T.DP_SPECK[1] - T.DP_SPECK[0] + 1);
       let at = -1, ev = 0, x0 = 0, x1 = 0, x2 = 0;
       for (let f = 0; f < 200 && !s.loot[2].taken; f++) {
-        const xb = s.hero.x; SB.sim.step(s, IN.R);
+        const xb = s.hero.x; S1.sim.step(s, IN.R);
         if (s.room.compare) compares++;
-        if (s.chest.open && at < 0) { at = f; ev = s.ev; x0 = xb; x1 = s.hero.x; SB.sim.step(s, IN.R); x2 = s.hero.x; if (s.room.compare) compares++; }
+        if (s.chest.open && at < 0) { at = f; ev = s.ev; x0 = xb; x1 = s.hero.x; S1.sim.step(s, IN.R); x2 = s.hero.x; if (s.room.compare) compares++; }
       }
       const slotsNow = s.hero.slots, gotCode = want ? slotsNow[slot(want)] : 0;
       if (s.room.cand > 0 && slots0[slot(s.room.cand)] === s.room.cand) gaveEquipped++;   /* the sim's own offer of a weapon the slot holds */
@@ -4919,6 +4938,27 @@ group('H-wpn-7', 'the swap (6.4) with a hand loadout of unbuilt codes (J5, D6): 
   const rep = mk().s; for (const w of words) SB.sim.step(rep, w);
   const cut = mk().s; for (const w of words) SB.sim.step(cut, w & ~(15 * IN.CHOICE));
   t.ok(words.some(w => (w >> 6) & 15) && SB.sim.hash(rep) === SB.sim.hash(live1) && !!cut.room.compare && cut.hero.slots[0] === code('J5'), 'the recorded script carries its TAKE and replays to the live hash; without it the replay stalls at the swap');
+  /* step 2 (13.2): the built pool now holds eight jump weapons, so a swap arises from it. Over 200 seeded rooms and four
+     loadouts the chest gives the test's draw: into an empty slot first (CHEST_FILLS_EMPTY_FIRST: EQUIP, no compare),
+     else, every slot that has a candidate full, the swap (compare, cand the draw, SWAP, the slots unchanged); never a
+     weapon already equipped */
+  const T = SB.TUNING, slot = c => (c - 1) >> 3, CH2 = 46 * 24 + 9;
+  const drawRef = (st2, slots) => { const cands = built.filter(c => slots[slot(c)] !== c), empty = cands.filter(c => slots[slot(c)] === 0); if (!cands.length) return 0; const pool = T.CHEST_FILLS_EMPTY_FIRST && empty.length ? empty : cands; return pool[stepRef(st2) % pool.length]; };
+  let ok2 = 0, bad2 = '', swaps = 0, fills = 0, emptyFirst = 0, emptyCases = 0;
+  for (let k = 0; k < 200; k++) for (const lo of [[0, 0, 0], ['J1', 0, 0], [0, 'D1', 0], ['J3', 'D1', 0]]) {
+    const lv = LABS.room(['', FLOOR]); lv.seed = 7000 + k;
+    lv.features = { pocket: null, enemies: [], trap: null, specks: [], scroll: null, blueprint: null, chest: CH2 };
+    const s2 = SB.sim.create(lv, { at: { x: 2 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: lo }), slots0 = s2.hero.slots.slice(), want = drawRef({ v: s2.rng }, slots0);
+    let ev = 0; for (let f = 0; f < 200 && !s2.chest.open; f++) { SB.sim.step(s2, IN.R); ev = s2.ev; }
+    const anyEmpty = built.some(c => slots0[slot(c)] === 0);
+    if (anyEmpty) { emptyCases++; if (want && slots0[slot(want)] === 0) emptyFirst++; }
+    const right = want > 0 && slots0[slot(want)] !== want && (slots0[slot(want)] === 0
+      ? s2.hero.slots[slot(want)] === want && (ev & EV.EQUIP) && !s2.room.compare && !(ev & EV.SWAP)
+      : s2.room.compare === 1 && s2.room.cand === want && (ev & EV.SWAP) && !(ev & EV.EQUIP) && JSON.stringify(s2.hero.slots) === JSON.stringify(slots0));
+    if (right) { ok2++; if (s2.room.compare) swaps++; else fills++; } else if (!bad2) bad2 = lo.join(',') + ' seed ' + (7000 + k) + ': want ' + WPN_ID[want] + ', slots ' + s2.hero.slots.join(',') + ', cand ' + WPN_ID[s2.room.cand] + ', ev ' + ev;
+  }
+  t.ok(ok2 === 800 && swaps === 200 && fills === 600, 'the built pool (' + BUILT_IDS.join(', ') + '): over 200 seeds and four loadouts the chest gives the test\'s draw, into an empty slot at once (' + fills + ') or, both slots with a candidate full, as the swap (' + swaps + '), never an equipped weapon (' + ok2 + ' of 800' + (bad2 ? '; first wrong: ' + bad2 : '') + ')');
+  t.ok(emptyCases === 600 && emptyFirst === 600, 'CHEST_FILLS_EMPTY_FIRST: with an empty slot the draw is always for an empty slot (' + emptyFirst + ' of ' + emptyCases + ')');
 });
 
 group('H-wpn-J1', 'the Boomerang (7.1): 5 cells and not 5 cells and 1 px, both facings; two passes on a jelly two cells ahead; a wall turns it; a sticky jump throws away from the vine; caught or freed within J1_LIFE_F', t => {
@@ -4997,15 +5037,225 @@ group('H-wpn-D1', 'Anvil Boots (7.1): a dive landing\'s shock hits 3 cells along
   t.ok(hd.fires === 1 && Math.floor((hd.s.hero.y + HH) / CS) === 47 && hd.shake > 0, 'a hold dive through three one ways fires once, on the floor (' + hd.fires + ' fires; the shake runs on the dive landing: ' + hd.shake + ')');
 });
 
-group('H-bot-9', 'the bot\'s walks armed (J1 and D1) clear every walked level with the unarmed words, on the same step (weapons never stop the climb)', t => {
+/* ================================================================ weapons v1, step 2 (docs/WEAPONS-V1.md 13.2) */
+/* the jump slot's seven: each places an enemy at its sentence's distance (hit) and one just beyond (not), with every
+   expected number from TUNING and K or the test's own stepping (jumpRef's order: the takeoff velocity, then gravity) */
+const J = id => [id, 0, 0];
+/* the hero's y after each of n steps of a held jump from rest at y0 (no ceiling): the test's own stepping */
+function riseRef(y0, v0, n, deep) {
+  const T = SB.TUNING, g = T.GRAVITY * 256, ys = [], vys = []; let vy = -v0 * 256, y = y0;
+  for (let f = 0; f < n; f++) { vy = Math.min(T.TERMINAL * 256, vy + g); y += vy; ys.push(y); vys.push(vy); }
+  return { ys, vys };
+}
+group('H-wpn-J2', 'Spark Trail (7.2): three sparks dropped 10 steps apart at the hero\'s feet, each burning J2_BURN_F steps; a frozen jelly in the first spark takes 1 x (4 + Focus) once, one a cell beyond nothing', t => {
+  const F = SB.features, B = K.J2_BOX;
+  const run = (focus) => {
+    const { s } = wpnLab(['', FLOOR], [[F.JELLY, 45 * 24 + 10], [F.JELLY, 45 * 24 + 11]], { hc: 10, loadout: J('J2') });
+    s.hero.focus = focus;
+    const drops = [], spans = new Map(), boxes = [];
+    for (let k = 0; k < 140; k++) {
+      const before = new Set(live(s, PK.EMBER).map(p => s.proj.indexOf(p)));
+      SB.sim.step(s, k === 0 ? TAP_A : IN.A);
+      for (const p of live(s, PK.EMBER)) {
+        const i = s.proj.indexOf(p);
+        if (!before.has(i) && !spans.has(i + ':' + k)) { drops.push(k); boxes.push([p.x, p.y, p.a, p.b, s.hero.x + ((HW - B) >> 1), s.hero.y + HH - B]); spans.set(i, [k, k]); }
+        else if (spans.has(i)) spans.get(i)[1] = k;
+      }
+    }
+    return { s, drops, spans: [...spans.values()], boxes };
+  };
+  const r = run(0), r2 = run(2), T = SB.TUNING.WEAPONS.J2;
+  /* three: the sentence's word (COPY.wpnSays.J2 says "three sparks"), hard coded so a retuned count cannot carry it */
+  t.ok(r.drops.join() === [0, K.J2_DROP_F, 2 * K.J2_DROP_F].join() && T.count === 3, 'a jump drops three sparks, on its steps 0, ' + K.J2_DROP_F + ' and ' + 2 * K.J2_DROP_F + ' (' + r.drops.join(', ') + ')');
+  t.ok(r.spans.length === T.count && r.spans.every(([a, b]) => b - a + 1 === K.J2_BURN_F), 'each spark burns exactly J2_BURN_F (' + K.J2_BURN_F + ') steps (' + r.spans.map(([a, b]) => b - a + 1).join(', ') + ')');
+  t.ok(r.boxes.every(([x, y, w, h, wx, wy]) => x === wx && y === wy && w === B && h === B), 'each spark is a J2_BOX square at the hero\'s feet centre on its drop step');
+  t.ok(r.s.enemies[0].hp === 8 - 4 && r.s.enemies[1].hp === 8 && r2.s.enemies[0].hp === 8 - 6, 'a frozen jelly in the first spark takes 1 x (4 + Focus) once (Focus 0: hp 8 to ' + r.s.enemies[0].hp + '; Focus 2: to ' + r2.s.enemies[0].hp + '), the one a cell beyond nothing (' + r.s.enemies[1].hp + ')');
+});
+group('H-wpn-J3', 'Shield Kick (7.2): a wall jump kicks the open column beside the wall face 2 cells up and down for 2 x (4 + Focus); a row beyond and the next column take nothing; a ground jump never kicks, sets no cooldown, fires nothing; a sticky jump kicks', t => {
+  const F = SB.features, EV = SB.sim.EV;
+  /* a solid wall at column 8 from row 30 down; the hero falls against its right face (rocker left) until the slide arms */
+  const wall = Array(17).fill('########');
+  const mk = (cells) => {
+    const { s } = wpnLab(wall.concat([FLOOR]), cells.map(c => [F.JELLY, c]), { at: { x: 8 * CS, y: 38 * CS + 77 }, air: true, loadout: J('J3') });
+    let k = 0; for (; k < 30 && s.hero.wall === 0; k++) SB.sim.step(s, IN.L);
+    return s;
+  };
+  const probe = mk([]), Y = probe.hero.y + K.G * 0;   /* the takeoff y is the y before the wall jump's step */
+  const top = Math.floor((Y - K.J3_REACH) / CS), bot = Math.floor((Y + HH + K.J3_REACH - 1) / CS);
+  const s = mk([top * 24 + 8, (top - 1) * 24 + 8, bot * 24 + 8, (bot + 1) * 24 + 8, Math.floor(Y / CS) * 24 + 9]);
+  const y0 = s.hero.y, x0 = s.hero.x; SB.sim.step(s, TAP_A);
+  const kick = live(s, PK.KICK)[0], q = SB.TUNING.WEAPONS.J3.dmg * K.HP_Q;
+  t.ok(probe.hero.wall === -1 && x0 === 8 * CS && y0 === Y && (s.ev & EV.WALLJUMP) && (s.ev & EV.FIRE_J) && s.hero.cd[0] === K.JUMP_SLOT_CD_F && !!kick && kick.x === x0 && kick.b === -1, 'a wall jump off a wall on the left kicks: FIRE_J, the cooldown, a KICK at the face (x ' + (kick ? kick.x / 256 : '?') + ' px)');
+  t.ok(s.enemies.map(e => e.hp === 0).join() === 'true,false,true,false,false' && q === 8, 'the jellies 2 cells up and 2 down the column die to ' + q + ' quarters, the ones a row beyond them and the one in the next column live (' + s.enemies.map(e => e.hp).join(' ') + ')');
+  const g = wpnLab(['', FLOOR], [[F.MOTH, 46 * 24 + 9], [F.MOTH, 46 * 24 + 11]], { hc: 10, loadout: J('J3') }).s;
+  const gEv = hop(g, 30).reduce((a, e) => a | e, 0);
+  t.ok(!(gEv & EV.FIRE_J) && g.hero.cd[0] === 0 && live(g, PK.KICK).length === 0 && g.enemies.every(e => e.hp > 0), 'a ground jump never kicks: no FIRE_J, no cooldown, no KICK, the moths beside it live');
+  const lines = ['..|', '..|', '..|', '..|', '..|', '..|'].concat(Array(10).fill(''), [FLOOR]);
+  const vl = LABS.room(lines, { biome: 3 }); vl.features = { pocket: null, enemies: [], trap: null, specks: [], scroll: null, blueprint: null, chest: null };
+  const vineRows = [...Array(vl.h).keys()].filter(r => vl.sticky[r * 24 + 2]);
+  const vs = SB.sim.create(vl, { at: { x: 3 * CS, y: (vineRows[vineRows.length - 1] - 1) * CS }, loadout: J('J3'), immortal: true }); vs.hero.ground = 0;
+  for (let k = 0; k < 6 && !vs.hero.sticky; k++) SB.sim.step(vs, 0);
+  SB.sim.step(vs, TAP_A); const vk = live(vs, PK.KICK)[0];
+  t.ok((vs.ev & EV.FIRE_J) && !!vk && vk.b === -1, 'a sticky jump off a vine kicks too (FIRE_J, a KICK on the vine\'s side)');
+});
+group('H-wpn-J4', 'the Flashbulb (7.2): it bursts on the apex step the test steps itself, never at the takeoff; a jelly whose centre is exactly J4_REACH from the hero\'s centre takes 1 x (4 + Focus) and the 1 s stun, one 1/256 px beyond nothing, both sides', t => {
+  const F = SB.features, EV = SB.sim.EV, R = K.J4_REACH;
+  const ref = riseRef(46 * CS, SB.TUNING.JUMP_V, 60), apex = ref.vys.findIndex(v => v >= 0);
+  const cx = 10 * CS + ((CS - HW) >> 1) + (HW >> 1), cy = ref.ys[apex] + (HH >> 1);
+  const run = (side) => {
+    const { s } = wpnLab(['', FLOOR], [[F.JELLY, 30 * 24 + 2], [F.JELLY, 30 * 24 + 20]], { hc: 10, loadout: J('J4') });
+    const a = s.enemies[0], b = s.enemies[1];
+    a.x = cx + side * R - (CS >> 1); a.y = cy - (CS >> 1); b.x = cx - side * (R + 1) - (CS >> 1); b.y = cy - (CS >> 1);
+    let at = -1, fired = -1;
+    for (let k = 0; k < 60; k++) { SB.sim.step(s, k === 0 ? TAP_A : IN.A); if ((s.ev & EV.BURST) && at < 0) at = k; if ((s.ev & EV.FIRE_J) && fired < 0) fired = k; if (k === at) { a.st = a.stunned; b.st = b.stunned; } }
+    return { s, at, fired, a, b };
+  };
+  const r = run(1), l = run(-1), q = SB.TUNING.WEAPONS.J4.dmg * K.HP_Q;
+  t.ok(apex > 0 && r.at === apex && l.at === apex && r.fired === 0, 'FIRE_J on the takeoff step, the burst (BURST) on step ' + r.at + ', the apex the test steps itself (' + apex + ')');
+  t.ok(r.a.hp === 8 - q && r.a.st === K.J4_STUN_F - 1 && r.b.hp === 8 && r.b.st === 0 && l.a.hp === 8 - q && l.b.hp === 8, 'the jelly exactly J4_REACH off takes ' + q + ' quarters and J4_STUN_F (' + K.J4_STUN_F + ') steps of stun (after its step\'s count down: ' + r.a.st + '), the one 1/256 px beyond nothing, right and left (' + [r.a.hp, r.b.hp, l.a.hp, l.b.hp].join(' ') + ')');
+});
+group('H-wpn-J5', 'Twin Darts (7.2): one dart each side from the hero\'s centre, its travel exactly J5_REACH; a moth 1/256 px inside its far edge is hit, one at it is not, both sides; a dart stops on its first enemy; a solid cell frees it', t => {
+  const F = SB.features, BW = K.J5_BOXW, BH = K.J5_BOXH;
+  const sx = 10 * CS + ((CS - HW) >> 1) + ((HW - BW) >> 1), dy = riseRef(46 * CS, SB.TUNING.JUMP_V, 1).ys[0] + ((HH - BH) >> 1);
+  const run = (lines, place) => {
+    const { s } = wpnLab(lines, [[F.MOTH, 30 * 24 + 2], [F.MOTH, 30 * 24 + 20]], { hc: 10, loadout: J('J5') });
+    place(s.enemies[0], s.enemies[1]);
+    let darts = 0, far = 0;
+    for (let k = 0; k < 40; k++) { SB.sim.step(s, k === 0 ? TAP_A : 0); if (k === 0) darts = live(s, PK.DART).length; for (const p of live(s, PK.DART)) far = Math.max(far, Math.abs(p.x - p.a)); }
+    return { s, darts, far, dead: s.enemies.map(e => e.hp === 0).join() };
+  };
+  const set = (m, x) => { m.x = x; m.y = dy - 6 * 256; };
+  const inR = run(['', FLOOR], (a, b) => { set(a, sx + K.J5_REACH + BW - 1); set(b, sx - K.J5_REACH - CS + 1); });
+  const out = run(['', FLOOR], (a, b) => { set(a, sx + K.J5_REACH + BW); set(b, sx - K.J5_REACH - CS); });
+  const open = run(['', FLOOR], () => {});
+  const n5 = Math.ceil(K.J5_REACH / K.J5_V);   /* its moves; the last is cut to the reach and frees it on that step */
+  t.ok(open.darts === 2 && open.far === (n5 - 1) * K.J5_V, 'a jump shoots two darts, each seen last ' + open.far / 256 + ' px out (' + (n5 - 1) + ' moves of J5_V) and freed on its move ' + n5 + ', cut to J5_REACH (the moths below hold the reach to the 1/256 px)');
+  t.ok(inR.dead === 'true,true' && out.dead === 'false,false', 'a moth 1/256 px inside a dart\'s far reach dies, one at it lives, right and left (' + inR.dead + ' / ' + out.dead + ')');
+  const first = run(['', FLOOR], (a, b) => { set(a, sx + 2 * CS); set(b, sx + 3 * CS); });
+  t.ok(first.dead === 'true,false', 'a dart stops on its first enemy: the moth 2 cells on dies, the one behind it lives (' + first.dead + ')');
+  const wall = run(['', '............#', FLOOR], (a) => { set(a, 13 * CS); });
+  t.ok(wall.dead.startsWith('false'), 'a solid cell frees the dart: the moth past the wall at column 12 lives');
+});
+group('H-wpn-J6', 'Halo (7.2): a ring from the takeoff box straight up, its top J6_REACH over the bug\'s top (J6.cells whole cells up from the takeoff cell, not one more); a moth overlapping its last box by 1/256 px is hit, one touching it is not; it passes one ways and a solid cell frees it; a jump flush against a wall, a wall jump and a vine jump each send a live ring', t => {
+  const F = SB.features, EV = SB.sim.EV, RW = K.J6_BOXW, RH = K.J6_BOXH, y0 = 46 * CS, topAt = y0 - K.J6_REACH, NC = SB.TUNING.WEAPONS.J6.cells;
+  const run = (lines, my, opts = {}) => {
+    const { s } = wpnLab(lines, [[F.MOTH, 30 * 24 + 10]], Object.assign({ hc: 10, loadout: J('J6') }, opts));
+    s.enemies[0].y = my; s.enemies[0].x = opts.mx === undefined ? 10 * CS : opts.mx;
+    let top = Infinity, fired = false, first = -1; for (let k = 0; k < 60; k++) { SB.sim.step(s, k === 0 ? TAP_A : 0); if (s.ev & EV.FIRE_J) fired = true; if (k === 0) first = live(s, PK.RING).length; for (const p of live(s, PK.RING)) top = Math.min(top, p.y); }
+    return { s, top, fired, first, dead: s.enemies[0].hp === 0 };
+  };
+  const hitR = run(['', FLOOR], topAt - CS + 1), miss = run(['', FLOOR], topAt - CS);
+  const n6 = Math.ceil((K.J6_REACH - RH) / K.J6_V);
+  t.ok(hitR.fired && hitR.top === y0 - RH - (n6 - 1) * K.J6_V && hitR.dead && !miss.dead, 'the ring rises J6_REACH - J6_BOXH from its start J6_BOXH over the bug (seen last at ' + hitR.top / 256 + ' px, ' + (n6 - 1) + ' moves of J6_V, then cut to its top at ' + topAt / 256 + ' px and freed): a moth overlapping that last box by 1/256 px dies, one touching it lives');
+  /* whole cells, as the weapon's sentence and ui.TRAITS.J6 count them: the takeoff cell is row 46 */
+  const inC = run(['', FLOOR], (46 - NC) * CS), outC = run(['', FLOOR], (46 - NC - 1) * CS);
+  t.ok(inC.dead && !outC.dead, 'a moth in the cell ' + NC + ' rows over the takeoff cell dies, one in the cell ' + (NC + 1) + ' rows over lives (' + inC.dead + ', ' + !outC.dead + ')');
+  const thru = run(['..........=', '', '', FLOOR], topAt - CS + 1), solid = run(['..........#', '', '', FLOOR], topAt - CS + 1);
+  t.ok(thru.dead && !solid.dead, 'a one way 3 rows up lets it through (the moth above dies) and a solid cell there frees it (the moth lives)');
+  /* flush against a wall the ring (16 px over a 12 px bug) would start 2 px inside it: it starts beside it instead */
+  const wl = Array(7).fill('.........#'), wr = Array(7).fill('...........#');
+  const fl = run(wl.concat([FLOOR]), y0 - 5 * CS, { at: { x: 10 * CS, y: y0 } }), f1 = run(wl.concat([FLOOR]), y0 - 5 * CS, { at: { x: 10 * CS + 256, y: y0 } });
+  const fr = run(wr.concat([FLOOR]), y0 - 5 * CS, { at: { x: 11 * CS - HW, y: y0 } });
+  t.ok([fl, f1, fr].every(r => r.fired && r.first === 1 && r.dead), 'a jump flush against a wall on the left, 1 px off it, and flush against one on the right each send a live ring that kills the moth 5 cells up (rings live after the takeoff ' + [fl, f1, fr].map(r => r.first).join(' ') + ', moths dead ' + [fl, f1, fr].map(r => r.dead).join(' ') + ')');
+  /* a wall jump off a wall on the left (H-wpn-J3's lab) and a sticky jump off a vine (H-sim-1b's) */
+  const wall = Array(17).fill('########');
+  const wj = wpnLab(wall.concat([FLOOR]), [[F.MOTH, 30 * 24 + 8]], { at: { x: 8 * CS, y: 38 * CS + 77 }, air: true, loadout: J('J6') }).s;
+  for (let k = 0; k < 30 && wj.hero.wall === 0; k++) SB.sim.step(wj, IN.L);
+  const wy = wj.hero.y; wj.enemies[0].x = 8 * CS; wj.enemies[0].y = wy - 4 * CS; SB.sim.step(wj, TAP_A);
+  const wFire = !!(wj.ev & EV.WALLJUMP) && !!(wj.ev & EV.FIRE_J), wLive = live(wj, PK.RING).length;
+  for (let k = 0; k < 40; k++) SB.sim.step(wj, 0);
+  t.ok(wFire && wLive === 1 && wj.enemies[0].hp === 0, 'a wall jump sends a live ring up the wall\'s face that kills the moth 4 cells up (WALLJUMP and FIRE_J ' + wFire + ', rings live ' + wLive + ', moth hp ' + wj.enemies[0].hp + ')');
+  const lines = ['..|', '..|', '..|', '..|', '..|', '..|'].concat(Array(10).fill(''), [FLOOR]);
+  const vl = LABS.room(lines, { biome: 3 }); vl.features = { pocket: null, enemies: [{ kind: F.MOTH, idx: 30 * 24 + 3, elite: false, env: Int32Array.of(30 * 24 + 3) }], trap: null, specks: [], scroll: null, blueprint: null, chest: null };
+  const vineRows = [...Array(vl.h).keys()].filter(r => vl.sticky[r * 24 + 2]);
+  const vs = SB.sim.create(vl, { at: { x: 3 * CS, y: (vineRows[vineRows.length - 1] - 1) * CS }, loadout: J('J6'), immortal: true }); vs.hero.ground = 0; vs.enemies[0].frozen = 1 << 20;
+  for (let k = 0; k < 6 && !vs.hero.sticky; k++) SB.sim.step(vs, 0);
+  vs.enemies[0].x = 3 * CS; vs.enemies[0].y = vs.hero.y - 4 * CS; SB.sim.step(vs, TAP_A);
+  const vFire = !!(vs.ev & EV.FIRE_J), vLive = live(vs, PK.RING).length;
+  for (let k = 0; k < 40; k++) SB.sim.step(vs, 0);
+  t.ok(vFire && vLive === 1 && vs.enemies[0].hp === 0, 'a sticky jump off a vine sends a live ring that kills the moth 4 cells up (FIRE_J ' + vFire + ', rings live ' + vLive + ', moth hp ' + vs.enemies[0].hp + ')');
+});
+group('H-wpn-J7', 'Shutter Snap (7.2): every enemy less than J7_REACH from the takeoff box on both axes is frozen J7_FREEZE_F steps and takes no damage; one at J7_REACH takes nothing; both sides', t => {
+  const F = SB.features, R = K.J7_REACH, x0 = 10 * CS + ((CS - HW) >> 1), y0 = 46 * CS;
+  const run = (dx) => {
+    const { s } = wpnLab(['', FLOOR], [[F.JELLY, 30 * 24 + 2], [F.JELLY, 30 * 24 + 20]], { hc: 10, loadout: J('J7'), moving: true });
+    const [a, b] = s.enemies;
+    for (const e of s.enemies) { e.stunned = 1 << 20; e.y = y0; }
+    a.x = x0 + HW + R - 1 + dx; b.x = x0 - R + 1 - CS - dx;
+    SB.sim.step(s, TAP_A);
+    return { s, a, b, snap: live(s, PK.SNAP).length };
+  };
+  const hitR = run(0), miss = run(1);
+  t.ok(hitR.snap === 1 && hitR.a.frozen === K.J7_FREEZE_F - 1 && hitR.b.frozen === K.J7_FREEZE_F - 1 && hitR.a.hp === 8 && hitR.b.hp === 8, 'the jellies 1/256 px inside J7_REACH both sides are frozen J7_FREEZE_F (' + K.J7_FREEZE_F + ') steps (after the step\'s count down: ' + hitR.a.frozen + ', ' + hitR.b.frozen + ') and keep every quarter (hp ' + hitR.a.hp + ', ' + hitR.b.hp + ')');
+  t.ok(miss.a.frozen === 0 && miss.b.frozen === 0, 'the ones at J7_REACH take nothing (' + miss.a.frozen + ', ' + miss.b.frozen + ')');  /* the picture's length (7.2: 6 steps): the SNAP is live for the draws after the takeoff step and the 5 after it */
+  const sn = wpnLab(['', FLOOR], [], { hc: 10, loadout: J('J7') }).s, seen = [];
+  for (let k = 0; k < 20; k++) { SB.sim.step(sn, k === 0 ? TAP_A : 0); if (live(sn, PK.SNAP).length) seen.push(k); }
+  t.ok(seen.join() === '0,1,2,3,4,5', 'its SNAP is drawn for 6 steps, from the takeoff step (live after steps ' + seen.join(' ') + ')');
+});
+group('H-wpn-J8', 'Skyhook (7.2): its jump is its effect: no FIRE_J, no cooldown, no entry in the pool, a jump inside the old cooldown jumps as high', t => {
+  const s = wpnLab(['', FLOOR], [], { hc: 10, loadout: J('J8') }).s, EV = SB.sim.EV;
+  let fires = 0, cds = 0, ents = 0, takeoffs = [];
+  for (let k = 0; k < 120; k++) { SB.sim.step(s, k % 40 === 0 ? TAP_A : 0); if (s.ev & EV.FIRE_J) fires++; if (s.hero.cd[0] > 0) cds++; ents += s.proj.filter(p => p.live).length; if (s.ev & EV.JUMP) takeoffs.push(s.hero.vy); }
+  t.ok(takeoffs.length === 3 && takeoffs.every(v => v === -K.J8_JUMP_V + K.G) && fires === 0 && cds === 0 && ents === 0, 'three Skyhook jumps take -J8_JUMP_V (' + takeoffs.map(v => v / 256).join(', ') + ' px a step after gravity), with no FIRE_J, no cooldown and nothing in the pool');
+});
+group('H-sim-1b', 'Skyhook\'s jumps (7.2): a full hold peaks at 85.5 px, in Deep at 102.5 px, both the test\'s own stepping; a wall jump and a sticky jump are unchanged', t => {
+  const T = SB.TUNING.WEAPONS.J8;
+  const measure = (lv, lo) => { const s = SB.sim.create(lv, { loadout: lo }); for (let k = 0; k < 4; k++) SB.sim.step(s, 0); const y0 = s.hero.y; let top = y0; for (let f = 0; f < 120; f++) { SB.sim.step(s, f === 0 ? TAP_A : IN.A); if (s.hero.y < top) top = s.hero.y; if (f > 0 && s.hero.ground) break; } return (y0 - top) / 256; };
+  const base = LABS.room(['', '..........S.............', FLOOR]), deep = LABS.room(['', '..........S.............', FLOOR], { biome: 2 });
+  const a = measure(base, J('J8')), d = measure(deep, J('J8')), refA = jumpRef(T.jumpV, 999).apex, refD = deepJumpRef(999, T.deepJumpV).apex;
+  t.ok(a === 85.5 && a === refA, 'a full Skyhook jump peaks at ' + a + ' px (85.5, the test\'s stepping ' + refA + ')');
+  t.ok(d === 102.5 && d === refD, 'in Deep at ' + d + ' px (102.5, the test\'s stepping ' + refD + ')');
+  const wj = lo => { const { s } = wpnLab(Array(17).fill('########').concat([FLOOR]), [], { at: { x: 8 * CS, y: 38 * CS + 77 }, air: true, loadout: lo }); for (let k = 0; k < 30 && s.hero.wall === 0; k++) SB.sim.step(s, IN.L); SB.sim.step(s, TAP_A); return s.hero.vy; };
+  const sj = lo => {
+    const lines = ['..|', '..|', '..|', '..|', '..|', '..|'].concat(Array(10).fill(''), [FLOOR]), vl = LABS.room(lines, { biome: 3 });
+    vl.features = { pocket: null, enemies: [], trap: null, specks: [], scroll: null, blueprint: null, chest: null };
+    const rows = [...Array(vl.h).keys()].filter(r => vl.sticky[r * 24 + 2]), s = SB.sim.create(vl, { at: { x: 3 * CS, y: (rows[rows.length - 1] - 1) * CS }, loadout: lo, immortal: true }); s.hero.ground = 0;
+    for (let k = 0; k < 6 && !s.hero.sticky; k++) SB.sim.step(s, 0); SB.sim.step(s, TAP_A); return s.hero.vy;
+  };
+  t.ok(wj(J('J8')) === wj([0, 0, 0]) && wj([0, 0, 0]) === -K.WALL_V + K.G, 'a wall jump with Skyhook takes WALL_V as unarmed (' + wj(J('J8')) / 256 + ' px a step)');
+  t.ok(sj(J('J8')) === sj([0, 0, 0]) && sj([0, 0, 0]) < 0, 'a sticky jump with Skyhook is unchanged (' + sj(J('J8')) / 256 + ' px a step)');
+});
+group('H-bot-8', 'Skyhook never breaks a climb: with J8 equipped every main ascent edge of every walked level still has a macro the sim performs', t => {
+  const { runs } = botWalks(), memo = new Map(), stats = { tries: 0, found: 0, memo: 0, memoMiss: 0 }; let walked = 0; const bad = [];
+  for (const run of runs) {
+    if (run.skipped || run.same || !run.r.ok) continue;
+    walked++;
+    BOT_ANY_HOLD.on = true; let r; try { r = BOT.walk(run.lv, memo, stats, { loadout: J('J8') }); } finally { BOT_ANY_HOLD.on = false; }
+    if (!r.ok) bad.push(run.tag + (r.miss ? ' (edge ' + r.miss.i + ': ' + r.miss.e.kind + (r.miss.e.profile ? ' ' + r.miss.e.profile : '') + ' dx ' + r.miss.e.dx + ' dy ' + r.miss.e.dy + ')' : ' (' + r.why + ')'));
+  }
+  t.ok(walked > 0 && bad.length === 0, walked + ' walked levels clear with Skyhook, every ascent edge performed' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
+  /* the cost Q122 names (W2R): walked with the route's own holds, the edges a full Skyhook hold misses (each then
+     solved with any hold, so the walk goes on). A retune that adds misses changes the count and goes red */
+  const fullMemo = new Map(), anyMemo = new Map(), missed = [], stuck = [];
+  for (const run of runs) {
+    if (run.skipped || run.same || !run.r.ok) continue;
+    const onMiss = (s, e, g, i) => {
+      BOT_ANY_HOLD.on = true; let r2; try { r2 = BOT.solve(s, e, g, anyMemo, stats); } finally { BOT_ANY_HOLD.on = false; }
+      missed.push(run.tag + ' edge ' + i + ' (' + e.kind + (e.profile ? ' ' + e.profile : '') + ' dx ' + e.dx + ' dy ' + e.dy + ')');
+      return r2;
+    };
+    const r = BOT.walk(run.lv, fullMemo, stats, { loadout: J('J8'), onMiss });
+    if (!r.ok) stuck.push(run.tag);
+  }
+  console.log('  info  with the route\'s own holds a full Skyhook hold misses ' + missed.length + ' ascent edges: ' + missed.join('; '));
+  const nDeep = missed.filter(m => / deep edge /.test(m)).length, nBase = missed.length - nDeep, M = SKYHOOK_FULL_HOLD_MISSES;
+  t.ok(nBase === M.base && nDeep === M.deep && stuck.length === 0, 'with the route\'s own holds Skyhook misses exactly ' + M.base + ' ascent edges outside Deep and ' + M.deep + ' in Deep (Q123), each then taken with a shorter hold (' + nBase + ' and ' + nDeep + ' missed' + (stuck.length ? ', stuck: ' + stuck.join(' ') : '') + ')');
+});
+/* the corpus edges a full Skyhook hold misses, walked to the end (W2R, Q123; Q122's four counted only the first miss of
+   a walk outside Deep): the count moves only with a QUESTIONS entry */
+const SKYHOOK_FULL_HOLD_MISSES = { base: 9, deep: 87 };
+
+group('H-bot-9', 'the bot\'s walks armed (J1 and D1) clear every walked level with the unarmed words, on the same step (weapons never stop the climb; a chest\'s swap, answered Keep, holds one step and moves nothing)', t => {
   const { runs } = botWalks(); let walked = 0; const bad = [];
   for (const run of runs) {
     if (run.skipped || run.same || !run.r.ok) continue;
     walked++;
     const u = SB.sim.create(run.lv, { immortal: true }), a = SB.sim.create(run.lv, { immortal: true, loadout: ARMED });
-    let cu = -1, ca = -1;
-    run.r.words.forEach((w, k) => { SB.sim.step(u, w); SB.sim.step(a, w); if (cu < 0 && u.room.cleared) cu = k; if (ca < 0 && a.room.cleared) ca = k; });
-    if (ca < 0 || ca !== cu) bad.push(run.tag + ' (unarmed ' + cu + ', armed ' + ca + ')');
+    let cu = -1, ca = -1, held = 0;
+    /* step 2: the chest's weapon for a full slot opens the swap, DESIGN's one stop; the walk answers Keep at once, and that
+       answer's held step is the only step the armed walk may add */
+    run.r.words.forEach((w, k) => { SB.sim.step(u, w); SB.sim.step(a, w); if (a.room.compare) { SB.sim.step(a, SB.sim.CHOICE.LEAVE * IN.CHOICE); held++; } if (cu < 0 && u.room.cleared) cu = k; if (ca < 0 && a.room.cleared) ca = k; });
+    if (ca < 0 || ca !== cu || held > 1) bad.push(run.tag + ' (unarmed ' + cu + ', armed ' + ca + ', ' + held + ' swaps answered)');
   }
   t.ok(walked > 0 && bad.length === 0, walked + ' walked levels clear armed on the unarmed walk\'s step' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
 });
@@ -5198,7 +5448,7 @@ group('H-qr-4', 'the chosen mask\'s penalty is the lowest of the eight, each rec
 });
 
 /* ================================================================ sprites (T0.17) */
-group('H-spr-1', 'every sprite string decodes to its declared size in the key; the hero is 12x16 with an Ink feet row in every frame; Sun belongs to the hero and the beacon only, Film to the film tab; the speck Amber with a Glare glint; every danger outlined in Ink (section 7.3); each elite its own ELITE_PX art with its kind\'s frame names, the HUD heart 9x8 full and empty (Q160)', t => {
+group('H-spr-1', 'every sprite string decodes to its declared size in the key; the hero is 12x16 with an Ink feet row in every frame; Sun belongs to the hero, its hero_* poses and the beacon only, Film to the film tab; each key of Astra\'s weapons cut under its colour law and every built weapon bound to its glyph (ART2, Q161); the speck Amber with a Glare glint; every danger outlined in Ink (section 7.3); each elite its own ELITE_PX art with its kind\'s frame names, the HUD heart 9x8 full and empty (Q160)', t => {
   const m = fs.readFileSync(PAGE, 'utf8').match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//);
   t.ok(!!m, 'the page holds the SPRITES fence in shell-render');
   if (!m) return;
@@ -5207,8 +5457,37 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   const names = Object.keys(S), SUN = SB.palette.I.SUN.toString(16), INK = SB.palette.I.INK.toString(16), FILM = SB.palette.I.FILM.toString(16);
   const AMBER = SB.palette.I.AMBER.toString(16), GLARE = SB.palette.I.GLARE.toString(16), KINDS = ['moth', 'icicle', 'jelly', 'crawler', 'spark'];
   const ELITES = KINDS.map(k => k + '_elite'), DANGER = KINDS.concat(ELITES, ['spike', 'crusher']);
-  const I = SB.palette.I, WEAPON_SPRITES = ['boomerang', 'shock', 'pop', 'icon'], WEAPON_INKS = [I.INK, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE].map(v => v.toString(16)), WEAPON_ICON_INKS = WEAPON_INKS.concat([I.LAPIS.toString(16)]);
-  t.ok(names.length > 0 && names.length < 40, names.length + ' named sprites (under 40; frames are unlimited)');
+  const I = SB.palette.I, hx = (...v) => v.map(x => x.toString(16)).join('');
+  /* ART2 (Q161): the colour law for every key Astra's weapons cut added, each the colours her art holds (no pixel of
+     hers changed), with an Ink outline where every frame has one. The hero's poses are the hero (Ink, Glare, Walnut,
+     Sun; an Ink feet row); the effects never Sun (the hero's) or Film (the repairs'); the departures from 8.1's weapon
+     law (the Boomerang's Amber, the hit's and the pop's Brick, the shock's Lapis and no Ink rim) are Q161's */
+  const LAW = {
+    hero_dash: [hx(I.INK, I.GLARE, I.WALNUT, I.SUN), true], hero_hurt: [hx(I.INK, I.GLARE, I.WALNUT, I.SUN), true], hero_squash: [hx(I.INK, I.GLARE, I.WALNUT, I.SUN), true],
+    hero_stretch: [hx(I.INK, I.GLARE, I.WALNUT, I.SUN), true], hero_dropin: [hx(I.INK, I.GLARE, I.WALNUT, I.SUN), true],
+    fx_projectiles: [hx(I.INK, I.PEWTER, I.ASH, I.PAPER, I.GLARE, I.AMBER), true], fx_shockwave: [hx(I.ASH, I.LAPIS), false],
+    fx_enemy_hit: [hx(I.INK, I.PEWTER, I.ASH, I.GLARE, I.BRICK), false],
+    icon_weapons: [hx(I.INK, I.SOOT, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE, I.WALNUT, I.AMBER, I.BRICK, I.LAPIS, I.TEAL, I.MOSS), false],
+    /* ART3 (Astra's rounds 2 and 3, Q98): the stick's pad, knob and hint, the pause glyph, the Skyhook's effect, the
+       biome's air and badges, each the colours her art holds; the dust is Pewter and Ash with no Ink (Q162) */
+    fx_skyhook: [hx(I.INK, I.ASH, I.GLARE, I.TEAL), true], stick_knob: [hx(I.INK, I.PAPER, I.GLARE), true],
+    spore: [hx(I.INK, I.MOSS), true],
+    icon_biomes: [hx(I.INK, I.ASH, I.PAPER, I.WALNUT, I.AMBER, I.BRICK, I.LAPIS, I.TEAL, I.MOSS), true],
+    /* W2 (weapons step 2, Q122): the held looks, the colours Astra drew, Ink on the frozen crystals only */
+    fx_frozen_stunned: [hx(I.INK, I.GLARE, I.AMBER, I.TEAL), false],
+    /* ART4 (Astra's round 4, Q164): the stick's pad thin Slate arcs and an Ash disc, the hint Slate, Pause Slate bars
+       (pressed: Paper bars on an Ink tile), none Ink outlined; the air neutral with Ink cores (the dust's flecks, the
+       frost's crystal, the bubble's hollow ring) and the ember Brick with a Glare core, never loot's Amber */
+    stick_pad: [hx(I.SLATE, I.ASH), false], stick_hint: [hx(I.SLATE), false], pause_glyph: [hx(I.INK, I.SLATE, I.PAPER), false],
+    dust_mote: [hx(I.INK, I.PEWTER, I.ASH), true], frost_mote: [hx(I.INK, I.PAPER, I.GLARE), true], bubble: [hx(I.INK, I.PEWTER, I.GLARE), true],
+    ember_mote: [hx(I.INK, I.GLARE, I.BRICK), true] };
+  /* ART4: the weapon colour law (8.1, Astra's round 4): every weapon effect pixel Ink, Slate, Pewter, Ash, Paper or
+     Glare, Ink outlined in every frame: Twin Darts' dart, Halo's ring, Spark Trail's ember, the Flashbulb's flash_ring,
+     Shutter Snap's snap_frame, Shield Kick's kick_spray, and step 3's fire_cell and frost_burst */
+  const WFX = ['dart', 'ring', 'ember', 'flash_ring', 'snap_frame', 'kick_spray', 'fire_cell', 'frost_burst'];
+  for (const k of WFX) LAW[k] = [hx(I.INK, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE), true];
+  const POSES = Object.keys(LAW).filter(n => n.startsWith('hero_'));
+  t.ok(names.length > 0 && names.length < 52, names.length + ' named sprites (under 52, ART4\'s cap; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
     const sp = S[name];
@@ -5219,7 +5498,8 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
       rows.forEach((r, i) => { if (r.length !== sp.w) bad.push('row ' + i + ' is ' + r.length + ' wide'); const c = r.replace(/[.0-9a-f]/g, ''); if (c) bad.push('row ' + i + ' holds ' + JSON.stringify(c)); });
       t.ok(bad.length === 0, name + '.' + f + ' decodes to ' + sp.w + 'x' + sp.h + ', every pixel clear or a palette index' + (bad.length ? ' (' + bad.join('; ') + ')' : ''));
       if (name === 'hero') t.ok(sp.w === K.HERO_W && sp.h === K.HERO_H && rows[sp.h - 1].includes(INK), 'hero.' + f + ' is the hitbox\'s size and its bottom row holds Ink (the feet row, section 7.3)');
-      else if (name !== 'beacon') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour)');
+      else if (name.startsWith('hero_')) t.ok(rows[sp.h - 1].includes(INK), name + '.' + f + ' is a hero pose (Sun allowed) and its bottom row holds Ink (the feet row)');
+      else if (name !== 'beacon') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\' and the beacon\'s)');
       /* section 7.3 (the M1 review: the placeholders broke it): Film is the repairs' alone (the film tab), so help is
          never furniture; the speck is Amber with a Glare glint; every danger has an Ink outline */
       if (name !== 'tab') t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour)');
@@ -5227,19 +5507,74 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
          every frame is Amber and the strip, not each frame, carries the glint (the pin moved from per frame with the art) */
       if (name === 'speck') t.ok(str.includes(AMBER), 'speck.' + f + ' is Amber');
       if (DANGER.includes(name)) t.ok(str.includes(INK), name + '.' + f + ' has its Ink outline (danger, section 7.3)');
-      /* Weapons v1 (docs/WEAPONS-V1.md 8.1): a weapon sprite has an Ink outline and draws only Ink, Slate, Pewter, Ash,
-         Paper and Glare, and Lapis on an icon (never Sun, Film, Brick, Magenta, Amber or Teal) */
-      if (WEAPON_SPRITES.includes(name)) {
-        const allowed = name === 'icon' ? WEAPON_ICON_INKS : WEAPON_INKS, off = [...new Set(str.replace(/[./]/g, ''))].filter(c => !allowed.includes(c));
-        t.ok(str.includes(INK) && off.length === 0, name + '.' + f + ' has an Ink outline and draws only ' + allowed.join(' ') + (off.length ? ' (holds ' + off.join(' ') + ')' : ''));
+      /* ART2: every key the weapons cut added draws only its law's colours, Ink outlined where the law says */
+      if (LAW[name]) {
+        const [allowed, ink] = LAW[name], off = [...new Set(str.replace(/[./]/g, ''))].filter(c => !allowed.includes(c));
+        t.ok((!ink || str.includes(INK)) && off.length === 0, name + '.' + f + (ink ? ' has an Ink outline and' : '') + ' draws only ' + allowed.split('').join(' ') + (off.length ? ' (holds ' + off.join(' ') + ')' : ''));
       }
     }
   }
-  t.ok(WEAPON_SPRITES.every(n => names.includes(n)), 'the weapon sprites exist (' + WEAPON_SPRITES.join(', ') + ')');
-  const iconFrames = S.icon ? Object.keys(S.icon.frames) : [];
-  t.same(iconFrames.slice().sort(), SB.TUNING.WEAPONS_BUILT.slice().sort(), 'the icon sprite has one frame per built weapon, named by its id');
+  t.ok(Object.keys(LAW).every(n => names.includes(n)) && !['boomerang', 'shock', 'pop', 'icon'].some(n => names.includes(n)), 'Astra\'s weapon keys exist (' + Object.keys(LAW).join(', ') + ') and the builder\'s placeholders are gone');
+  /* ART3: every built weapon's icon is the icon_weapons glyph named by its code (Astra's round 2, J1 to charm), Ink
+     outlined; J1's and D1's glyphs are round 1's pixel for pixel (Astra's word, pinned by the sha256 of round 1's
+     boomerang and anvil_boots strings) */
+  /* ART4: Astra's round 4 gave Halo's glyph (J6) Ink edges (W2 had bound her round 2 glyph, no Ink, as a named
+     exception), so every built glyph is Ink outlined */
+  const unbound = SB.TUNING.WEAPONS_BUILT.filter(id => !(S.icon_weapons && S.icon_weapons.frames[id] && S.icon_weapons.frames[id].includes(INK)));
+  t.ok(unbound.length === 0, 'every built weapon (' + SB.TUNING.WEAPONS_BUILT.join(', ') + ') draws its own Ink outlined icon_weapons glyph named by its code' + (unbound.length ? ' (unbound: ' + unbound.join(', ') + ')' : ''));
+  /* W2, ART4: the step 2 pictures are round 4's keys, one per instance, at her sizes and frame names; the held looks
+     stay round 1's fx_frozen_stunned clips; round 1's fx_bursts, fx_impacts and fx_projectiles.twin_darts are retired
+     (the Boomerang's spin stays) */
+  const clips = (n, c) => !!S[n] && [0, 1, 2, 3].every(k => typeof S[n].frames[c + '_' + k] === 'string');
+  const shapeOk = (k, w, h, fr) => !!S[k] && S[k].w === w && S[k].h === h && JSON.stringify(Object.keys(S[k].frames)) === JSON.stringify(fr);
+  t.ok(shapeOk('dart', 8, 4, ['a']) && shapeOk('ring', 16, 6, ['a', 'b']) && shapeOk('ember', 8, 8, ['a', 'b']) && shapeOk('flash_ring', 64, 64, ['a', 'b', 'c', 'd'])
+    && shapeOk('snap_frame', 8, 8, ['corner', 'edge_h', 'edge_v']) && shapeOk('kick_spray', 16, 80, ['a', 'b', 'c']) && shapeOk('fire_cell', 16, 16, ['a', 'b']) && shapeOk('frost_burst', 80, 80, ['a', 'b', 'c', 'd']),
+    'Astra\'s round 4 weapon keys: dart 8x4 a, ring 16x6 a b, ember 8x8 a b, flash_ring 64x64 a to d, snap_frame 8x8 corner edge_h edge_v, kick_spray 16x80 a to c, fire_cell 16x16 a b, frost_burst 80x80 a to d');
+  t.ok(clips('fx_frozen_stunned', 'frozen') && clips('fx_frozen_stunned', 'stunned') && S.fx_frozen_stunned.w === 32 && clips('fx_projectiles', 'boomerang') && !clips('fx_projectiles', 'twin_darts') && !S.fx_bursts && !S.fx_impacts,
+    'the held looks are fx_frozen_stunned\'s frozen and stunned clips at 32, the Boomerang keeps its spin, and round 1\'s fx_bursts, fx_impacts and twin_darts are retired');
+  /* ART4: the reach frames (Astra's manifest range_frames): flash_ring b and c touch all four edges of its 64 square
+     (the 32 px stun radius), frost_burst b and c all four of its 80 square (Icicle's freeze), and kick_spray's strokes
+     run its whole 80 px column; Shutter Snap's tiles hold the 1 px inset Ink rim */
+  const bbox = str => { const r = str.split('/'); let x0 = 99, y0 = 99, x1 = -1, y1 = -1; r.forEach((row, y) => [...row].forEach((c, x) => { if (c !== '.') { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } })); return (x1 - x0 + 1) + 'x' + (y1 - y0 + 1); };
+  const fr = (k, f) => (S[k] && S[k].frames[f]) || '';
+  t.ok(['b', 'c'].every(f => bbox(fr('flash_ring', f)) === '64x64' && bbox(fr('frost_burst', f)) === '80x80') && !['a', 'd'].some(f => bbox(fr('flash_ring', f)) === '64x64')
+    && ['a', 'b', 'c'].some(f => fr('kick_spray', f).split('/')[0] !== '.'.repeat(16) && fr('kick_spray', f).split('/')[79] !== '.'.repeat(16)),
+    'the reach frames: flash_ring b and c fill its 64 square (a and d inside it), frost_burst b and c its 80 square, kick_spray\'s strokes reach both ends of its 80 px column');
+  t.ok(fr('snap_frame', 'corner').split('/')[1] === '.0000000' && fr('snap_frame', 'edge_h').split('/')[1] === '00000000' && fr('snap_frame', 'edge_v').split('/').every(r => r[1] === INK),
+    'snap_frame\'s Ink rim is inset one pixel in the corner and both edges (Astra\'s assembly)');
+  const sha16 = str => require('node:crypto').createHash('sha256').update(String(str)).digest('hex').slice(0, 16), IW = (S.icon_weapons || { frames: {} }).frames;
+  t.ok(sha16(IW.J1) === '9789ac48c2044d72' && sha16(IW.D1) === 'c9ca5f1ee851afcd', 'icon_weapons.J1 and .D1 are round 1\'s boomerang and anvil_boots pixel for pixel (sha256 ' + sha16(IW.J1) + ', ' + sha16(IW.D1) + ')');
+  /* ART3: round 2's keylined elites: every Magenta pixel's eight neighbours are Magenta or Ink (Astra's keyline, so the
+     marks read on a Magenta photo); round 2's speck: a 10x10 diamond, the Glare glint on frame b only */
+  const MAG = I.MAGENTA.toString(16);
+  for (const k of KINDS) for (const [f, str] of Object.entries((S[k + '_elite'] || { frames: {} }).frames)) {
+    const r = str.split('/'), open = [];
+    for (let y = 0; y < r.length; y++) for (let x = 0; x < r[y].length; x++) if (r[y][x] === MAG) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const c = (r[y + dy] || '')[x + dx] || '.'; if (c !== MAG && c !== INK) open.push(x + dx + ',' + (y + dy)); }
+    t.ok(open.length === 0, k + '_elite.' + f + ' keylines every Magenta mark in Ink, all eight neighbours' + (open.length ? ' (open at ' + open.slice(0, 4).join(' ') + ')' : ''));
+  }
+  const glint = S.speck ? S.speck.frames.b.split('/').map(r => [...r].map(c => c === GLARE ? '#' : '.').join('')).join('/') : '';
+  t.ok(!!S.speck && !S.speck.frames.a.includes(GLARE) && S.speck.frames.b.includes(GLARE) && bbox(S.speck.frames.a) === '10x10' && bbox(glint.replace(/[^#/]/g, '.')) === '2x2' && (glint.match(/#/g) || []).length === 4,
+    'the speck is a 10x10 Amber diamond (' + (S.speck ? bbox(S.speck.frames.a) : 'absent') + ') with the Glare glint on frame b only, 2x2 (ART4)');
+  /* ART3: what this step draws or splices for the next: the stick (pad 40x40 idle and active, knob 18x18 neutral, left
+     and right, hint 72x12 with [12,0,48,12] clear for the words), pause_glyph (normal, pressed one pixel lower), fx_skyhook
+     (four frames for weapons step 2's J8), the biome's air (16x16, a b c d) and icon_biomes (24x24, a frame a biome) */
+  /* ART4: round 4's pad (thin Slate arcs open on both sides, the knob's travel lane rows 9 to 30 clear at both edges;
+     active adds the Ash disc), the hint an exact mirror, Pause's pressed frame Paper bars on an Ink tile */
+  const padRows = fr('stick_pad', 'idle').split('/'), SLATE = I.SLATE.toString(16), ASH = I.ASH.toString(16), PAPER = I.PAPER.toString(16);
+  t.ok(shapeOk('stick_pad', 40, 40, ['idle', 'active']) && shapeOk('stick_knob', 18, 18, ['neutral', 'left', 'right']) && shapeOk('stick_hint', 72, 12, ['line']) && S.stick_hint.frames.line.split('/').every(r => /^\.+$/.test(r.slice(12, 60)) && r === [...r].reverse().join(''))
+    && padRows.slice(9, 31).every(r => r.slice(0, 5) === '.....' && r.slice(35) === '.....') && !fr('stick_pad', 'idle').includes(ASH) && fr('stick_pad', 'active').includes(ASH),
+    'the stick\'s art: stick_pad 40x40 idle and active (open both sides through rows 9 to 30, the Ash disc only while active), stick_knob 18x18 neutral, left and right, stick_hint 72x12 an exact mirror with columns 12 to 59 clear for the words');
+  t.ok(shapeOk('pause_glyph', 16, 16, ['normal', 'pressed']) && fr('pause_glyph', 'normal').includes(SLATE) && !fr('pause_glyph', 'normal').includes(INK) && fr('pause_glyph', 'pressed').includes(INK) && fr('pause_glyph', 'pressed').includes(PAPER) && !fr('pause_glyph', 'pressed').includes(SLATE),
+    'pause_glyph is 16x16, normal Slate bars, pressed Paper bars on an Ink tile (ART4)');
+  t.ok(shapeOk('fx_skyhook', 32, 32, ['skyhook_0', 'skyhook_1', 'skyhook_2', 'skyhook_3']), 'fx_skyhook is spliced for J8, four 32x32 frames skyhook_0 to skyhook_3');
+  t.ok(['dust_mote', 'frost_mote', 'bubble', 'spore', 'ember_mote'].every(k => shapeOk(k, 16, 16, ['a', 'b', 'c', 'd'])) && shapeOk('icon_biomes', 24, 24, SB.palette.BIOMES),
+    'the biome\'s air (dust_mote, frost_mote, bubble, spore, ember_mote, each 16x16 a b c d) and icon_biomes (24x24, ' + SB.palette.BIOMES.join(' ') + ')');
+  const PW = { hero_squash: [14, 14], hero_stretch: [10, 18] };
+  t.ok(POSES.every(n => S[n] && S[n].w === (PW[n] || [K.HERO_W])[0] && S[n].h === (PW[n] || [0, K.HERO_H])[1]), 'the poses keep the old transform\'s rects (hero_squash 14x14, hero_stretch 10x18) and the rest the hero\'s 12x16 (' + POSES.map(n => n + ' ' + (S[n] ? S[n].w + 'x' + S[n].h : 'absent')).join(', ') + ')');
   t.ok(DANGER.every(n => names.includes(n)), 'every enemy, elite and trap the rules name has a sprite (' + DANGER.join(', ') + ')');
   t.ok(!!S.speck && Object.values(S.speck.frames).some(s => s.includes(GLARE)), 'the speck\'s strip carries its Glare glint (section 7.3: loot is Amber with a Glare glint)');
+  t.ok(!names.some(n => ['crop_floor_band', 'crop_ceiling_band', 'crop_seek', 'run_pips', 'icon_house', 'card_house_clear', 'fx_unlock', 'hero_colours_r3', 'fx_boss_wake', 'fx_boss_chip', 'fx_boss_down', 'fx_beacon_light', 'fx_stat_up', 'hud_heart_new', 'fx_magnet', 'fx_second_wind', 'fx_thick_skin', 'fx_tripod', 'tab_biome', 'hero_bold'].includes(n)),
+    'nothing parked is on the page (ART3: the parked keys wait in docs/astra/cut-art3.json for their systems)');
   /* the elites (Q160): each its own art, ELITE_PX a side (the sim's box, ELITE_SIZE_CELLS cells), with its kind's frame
      names, so the draw's beat picks a frame that exists (the sprites gate proves it is drawn 1:1, never the base scaled) */
   for (const k of KINDS) {

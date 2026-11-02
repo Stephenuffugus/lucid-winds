@@ -19,7 +19,7 @@ const fs = require('node:fs'), path = require('node:path'), { spawnSync } = requ
 
 const GAME = path.join(__dirname, '..');
 const OUT = '/tmp/claude-1000/shutterbug-redwatch';
-const BROWSER = new Set(['boot', 'play', 'input', 'layout', 'reveal', 'capture', 'death', 'sprites', 'make', 'loot', 'audio', 'share', 'save', 'pwa', 'loop', 'pause', 'onboard', 'fight']);
+const BROWSER = new Set(['boot', 'play', 'input', 'layout', 'reveal', 'capture', 'death', 'sprites', 'make', 'loot', 'audio', 'share', 'save', 'pwa', 'loop', 'pause', 'onboard', 'fight', 'compare']);
 
 const CORE_SIM_OPEN = "<script id=\"core-sim\" data-core>\n(function (SB) { 'use strict';\n";
 /* the whole shell-navpad block as the page holds it (NAVPAD_IN_BODY moves it, whatever its comment says) */
@@ -113,8 +113,8 @@ const MUTANTS = [
   { name: 'BONK_KEEPS_VY', task: 'T0.8a review', file: 'page', find: "        else { h.y = (hr + 1) * CS; h.vy = 0; h.rising = 0; }   /* the head bonk */",
     repl: "        else { h.y = (hr + 1) * CS; h.rising = 0; }   /* the head bonk */",
     gates: [{ gate: 'harness', only: 'H-sim-5', expect: 'the head meets the ceiling' }] },
-  { name: 'COYOTE_AFTER_JUMP', task: 'T0.8a review', file: 'page', find: 'h.vy = deep ? -K.DEEP_JUMP_V : -K.JUMP_V; h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;',
-    repl: 'h.vy = deep ? -K.DEEP_JUMP_V : -K.JUMP_V; h.ground = 0; h.rising = 1; h.buffer = 0; jumped = 1;',
+  { name: 'COYOTE_AFTER_JUMP', task: 'T0.8a review', file: 'page', find: 'h.vy = deep ? -(hook ? K.J8_DEEP_JUMP_V : K.DEEP_JUMP_V) : -(hook ? K.J8_JUMP_V : K.JUMP_V); h.ground = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1;',   /* re anchored at W2 (Skyhook) */
+    repl: 'h.vy = deep ? -(hook ? K.J8_DEEP_JUMP_V : K.DEEP_JUMP_V) : -(hook ? K.J8_JUMP_V : K.JUMP_V); h.ground = 0; h.rising = 1; h.buffer = 0; jumped = 1;',
     gates: [{ gate: 'harness', only: 'H-sim-2b', expect: 'gives no second upward kick' }] },
   { name: 'ONEWAY_CATCHES_FROM_BELOW', task: 'T0.8a review', file: 'page', find: '      if (!landed && prevFeet <= top && feet > top && h.dive !== 2) {',
     repl: '      if (!landed && feet > top && h.dive !== 2) {',
@@ -382,8 +382,9 @@ const MUTANTS = [
   /* re anchored at W1 (the atlas paints a second copy, the enemies' hit flash): the dash's Glare copy dropped alone */
   { name: 'FLASH_UNDRAWN', task: 'review 4', file: 'page', find: '        if (it[5] === 1 && (idx === P.I.SUN || idx === P.I.WALNUT)) idx = P.I.GLARE;\n', repl: '        if (false) idx = P.I.GLARE;\n',
     gates: [{ gate: 'sprites', expect: 'on the canvas the hero shows no Sun through the dash i frames' }] },
-  { name: 'SQUASH_SMOOTHED', task: 'review 4', file: 'page', find: '    spr(ctx, key, dx, dy, dw, dh);\n', repl: '    ctx.imageSmoothingEnabled = h.squash !== 0; spr(ctx, key, dx, dy, dw, dh); ctx.imageSmoothingEnabled = false;\n',
-    gates: [{ gate: 'sprites', expect: 'the stretch (' }] },
+  /* SQUASH_SMOOTHED retired at ART2 (Q161): the squash and the stretch are Astra's 14x14 and 10x18 poses drawn 1:1, so
+     smoothing that draw at whole coordinates changes no pixel and the row could never go red again; POSE_SQUASH_OFF and
+     POSE_STRETCH_OFF watch the poses' pixels on the canvas instead */
   { name: 'MOTH_AT_THREE', task: 'review 4', file: 'page', find: 'mark(stands[k], T.ROUTE_SAFE_ENEMY_DIST);', repl: 'mark(stands[k], T.ROUTE_SAFE_ENEMY_DIST - 1);',
     gates: [{ gate: 'harness', only: 'H-route-6', expect: 'saturated-blobs mode 0: moths within ROUTE_SAFE_ENEMY_DIST of an ascent cell' }] },
   { name: 'KNOCK_RUNS_ON', task: 'review 4', file: 'page', find: '    if (knocked && h.knock === 0) h.vx = 0;', repl: '',
@@ -662,7 +663,7 @@ const MUTANTS = [
   /* T1.13: the free play loop, the Wallet moments, the fab insurance */
   /* re anchored at NOTE5 (the sheets left the list) and at NOTE3 (Q94: the pause card joined it, and this row's path, the
      strip's Title under an open sheet, is gone; a refused link that arrives with the sheet open is the way left) */
-  { name: 'X_LEAVES_OVERLAY', task: 'T1.13', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'paused', 'sharesheet'];", repl: "var OVERLAYS = ['clear', 'death', 'paused'];",
+  { name: 'X_LEAVES_OVERLAY', task: 'T1.13', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'paused', 'sharesheet', 'swap'];", repl: "var OVERLAYS = ['clear', 'death', 'paused', 'swap'];",   /* re anchored at W2 */
     gates: [{ gate: 'loop', expect: 'a refused link with the share sheet open: the title with nothing over it' }] },
   { name: 'MOMENT_TWICE', task: 'T1.13', file: 'page', find: 'if (!S.doc || !framed || S.doc.moments[name]) return false;', repl: 'if (!S.doc || !framed) return false;',
     gates: [{ gate: 'loop', expect: 'inside the wrapper iframe two clears' }] },
@@ -707,7 +708,7 @@ const MUTANTS = [
     gates: [{ gate: 'astra', expect: 'a PNG that differs from its source grid is refused' }] },
   { name: 'CUT_ZIP_SLIP', task: 'ASTRA', file: 'astra', find: `any(p == '..' for p in n.split('/')):\n                raise Refuse('an unsafe path in the zip: %r' % n)`, repl: `False:\n                raise Refuse('an unsafe path in the zip: %r' % n)`,
     gates: [{ gate: 'astra', expect: 'a path out of the zip (../evil.txt) is refused before a byte is written' }] },
-  { name: 'CUT_SUN_ANYWHERE', task: 'ASTRA', file: 'astra', find: `            elif key != 'beacon' and any('e' in s for s in frames.values()):`, repl: `            elif False and any('e' in s for s in frames.values()):`,
+  { name: 'CUT_SUN_ANYWHERE', task: 'ASTRA', file: 'astra', find: `            elif key not in SUN_KEYS and any('e' in s for s in frames.values()):`, repl: `            elif False and any('e' in s for s in frames.values()):`,   /* re anchored at ART3 */
     gates: [{ gate: 'astra', expect: 'Sun in the moth is refused' }] },
   { name: 'CUT_FEET_UNCHECKED', task: 'ASTRA', file: 'astra', find: `                    if '0' not in frames[name].split('/')[-1]:\n                        raise Refuse('hero.%s has no Ink in its feet row' % name)\n`, repl: ``,
     gates: [{ gate: 'astra', expect: 'a hero frame without Ink in its feet row is refused' }] },
@@ -770,7 +771,7 @@ const MUTANTS = [
   { name: 'RECENT_UNFILTERED', task: 'M1R', file: 'page', find: 'd.recent = d.recent.filter(function (r) { try { return !!fromJSON(r); } catch (e) { return false; } }).slice(0, 20);', repl: 'd.recent = d.recent.slice(0, 20);',
     gates: [{ gate: 'harness', only: 'H-save-1', expect: 'recent keeps 20 valid records' }] },
   { name: 'SYNTH_THROWS', task: 'M1R', file: 'page', find: "    chest: function (t) { tone('triangle', 523, 523", repl: "    chest: function (t) { undefinedSynth(); tone('triangle', 523, 523",
-    gates: [{ gate: 'audio', expect: 'each of the 16 sounds the shell asks for schedules one voice' }] },   /* re anchored at W1: the five weapon voices joined the list */
+    gates: [{ gate: 'audio', expect: 'each of the 21 sounds the shell asks for schedules one voice' }] },   /* re anchored at W1 and W2: the weapon voices joined the list */
   { name: 'SOUND_TOGGLE_MISWIRED', task: 'M1R', file: 'page', find: "setBool('setsound', 'sound');", repl: "setBool('setsound', 'music');",
     gates: [{ gate: 'save', expect: 'mirror on, sound off and reduced motion On' }] },
   { name: 'MOTION_IGNORED', task: 'M1R', file: 'page', find: "SB.save.doc.settings.reducedMotion = this.value === 'os' ? null : this.value === 'on'; SB.save.commit();", repl: 'SB.save.commit();',
@@ -806,7 +807,7 @@ const MUTANTS = [
        released, the chip hidden") now runs first and fails on this mutant for the same behaviour, the chip over the card */
     gates: [{ gate: 'death', expect: 'on the death card the reserved box stays released, the chip hidden' }] },
   /* SPECK_IN_FILM and SPARK_UNOUTLINED re anchored in ART1 on Astra's speck.a and spark.a (Q160) */
-  { name: 'SPECK_IN_FILM', task: 'M1R', file: 'page', find: ".....088880...../.....088880.....", repl: ".....08f880...../.....088880.....",
+  { name: 'SPECK_IN_FILM', task: 'M1R', file: 'page', find: "a: '................/................/................/.......0......../......080......./.....088800.....", repl: "a: '................/................/................/.......0......../......080......./.....08f800.....",   /* re anchored at ART3 (round 2's speck) */
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'speck.a holds no Film' }] },
   { name: 'SPARK_UNOUTLINED', task: 'M1R', file: 'page', find: "      a: '.......00......./......0990....../...0..0990..0.../..090.0990.090../..090099990090../...0999999990.../..099999999990../.09996699669990./.09966666666990./0999666666669990/0999666666669990/0999966996699990/.09999999999990./..099999999990../...0999999990.../....00000000....',", repl: "      a: '................/.......99......./.......99......./...9...99...9.../...9..9999..9.../....99999999..../...9999999999.../..999669966999../..996666666699../.99966666666999./.99966666666999./.99996699669999./..999999999999../...9999999999.../....99999999..../................',",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'spark.a has its Ink outline' }] },
@@ -890,9 +891,9 @@ const MUTANTS = [
       ["    dp: 'Dead pixels', dpGain: '+{n}',", "    dp: 'Dead pixels', dpGain: '+{n}',\n    slip: 'A weapon waits for the Darkroom.', slipTake: 'Keep the slip',"],
       ['    <div id="sharesheet" role="dialog"', '    <div id="slip" role="dialog" data-aria="slip"><h2 data-copy="slip"></h2>\n      <button id="slipok" type="button" data-copy="slipTake"></button></div>\n    <div id="sharesheet" role="dialog"'],
       ['#clear, #death { position: absolute;', '#clear, #death, #slip { position: absolute;'], ['#clear.on, #death.on { display: flex; }', '#clear.on, #death.on, #slip.on { display: flex; }'],
-      ['      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);', "      document.getElementById('slip').classList.toggle('on', !!st.room.compare && !st.scrollsOffered);"],
+      ["      /* the compare is the player's own from Weapons v1 step 2: the swap card (ui.swap) answers it, never the shell */", "      document.getElementById('slip').classList.toggle('on', !!st.room.compare && !st.scrollsOffered);"],
       ["    document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });", "    document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });\n    document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });"],
-      ["var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard'];", "var MODALS = ['clear', 'death', 'paused', 'slip', 'sharesheet', 'devcard'];"]],   /* the listener and the list re anchored at NOTE3 (Q94) */
+      ["var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard', 'swap'];", "var MODALS = ['clear', 'death', 'paused', 'slip', 'sharesheet', 'devcard', 'swap'];"]],   /* the listener and the list re anchored at NOTE3 (Q94), the TAKE line and the list at W2 */
     /* W1: its slip shows on a compare and no compare opens for an empty slot, so the loot walk can no longer see it; the
        lint still sees its words (the Darkroom, NOT_YET's line now that weapon is lifted) */
     gates: [{ gate: 'lint', expect: 'COPY.slip: names Darkroom before the build has one' }] },
@@ -949,12 +950,11 @@ const MUTANTS = [
   /* NOTE3, the pause card (Stephen's note 3 of 31 Oct, his ruling "Pause in the top bar", QUESTIONS Q94). The brief's four:
      a stray Pause tap that leaves the room, the sim stepping under the card, Title back in the strip, a hidden page that
      keeps running; then the card's own rules, the back gesture's five, and a lost focus */
-  { name: 'PAUSE_LEAVES', task: 'NOTE3', file: 'page', find: "    document.getElementById('pause').addEventListener('click', function () { this.blur(); ui.pause(); });", repl: "    document.getElementById('pause').addEventListener('click', ui.toTitle);",
+  { name: 'PAUSE_LEAVES', task: 'NOTE3', file: 'page', find: "    ui.onTap(document.getElementById('pause'), function () { this.blur(); ui.pause(); });", repl: "    ui.onTap(document.getElementById('pause'), ui.toTitle);",   /* re anchored at W2R (onTap) */
     gates: [{ gate: 'pause', expect: '412x915: a real tap on Pause opens the pause card and keeps the room' }] },
-  /* found in this change's own probe: after a tap on Pause the button kept the focus, and a later Space (the jump key)
-     or Enter pressed it again and paused the room */
-  { name: 'PAUSE_KEEPS_FOCUS', task: 'NOTE3', file: 'page', find: "addEventListener('click', function () { this.blur(); ui.pause(); });", repl: "addEventListener('click', function () { ui.pause(); });",
-    gates: [{ gate: 'pause', expect: 'after a tap on Pause and back to resume, Space (the jump key) and Enter leave the room running' }] },
+  /* PAUSE_KEEPS_FOCUS retired at W2R: Pause answers on its pointerup (ui.onTap) and hides itself before the touch's
+     compat mousedown, so a tap can no longer leave it focused with or without blur() (the row STAYED GREEN; the pause
+     gate's line still holds the behaviour) */
   { name: 'PAUSE_RUNS_SIM', task: 'NOTE3', file: 'page', find: "    var run = !held && !SIDEWAYS.matches && !!G.state && SB.ui.screen === 'play';", repl: "    var run = !held && !SIDEWAYS.matches && !!G.state && (SB.ui.screen === 'play' || SB.ui.screen === 'pause');",
     gates: [{ gate: 'pause', expect: '412x915: under the pause card the room holds' }] },
   { name: 'TITLE_BACK_IN_STRIP', task: 'NOTE3', file: 'page', edits: [
@@ -969,8 +969,8 @@ const MUTANTS = [
 
   /* the stick (Stephen's ruling of 31 Oct, "Whole left side", QUESTIONS Q140): a floating stick over the whole left of
      the strip, the bottom left corner too, drawn only under a thumb, reading the slide from where the thumb landed */
-  { name: 'STICK_DRAWN_IDLE', task: 'STICK', file: 'page', find: '#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; border-radius: 50%; display: none;',
-    repl: '#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; border-radius: 50%; display: block;',
+  { name: 'STICK_DRAWN_IDLE', task: 'STICK', file: 'page', find: '#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; display: none;',   /* re anchored at ART3 */
+    repl: '#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; display: block;',
     gates: [{ gate: 'input', expect: '412x915: with no thumb down the stick draws no pad' }] },
   { name: 'STICK_ABSOLUTE', task: 'STICK', file: 'page', find: 'stickAt[e.pointerId] = { ox: e.clientX, x: e.clientX, y: e.clientY };',
     repl: 'stickAt[e.pointerId] = { ox: (stick.getBoundingClientRect().left + stick.getBoundingClientRect().right) / 2, x: e.clientX, y: e.clientY };',
@@ -1015,7 +1015,7 @@ const MUTANTS = [
     gates: [{ gate: 'input', expect: '412x915: pushed 20 px right without lifting it is right, the knob 20 px right and the right arrow lit' }] },
   { name: 'ITALIC_ARROWS', task: 'STICKR', file: 'page', find: '#stick i { font-style: normal; }\n', repl: '',
     gates: [{ gate: 'input', expect: "412x915: the stick's arrows stand upright" }] },
-  { name: 'PAD_UNDER_CARD', task: 'STICKR', file: 'page', edits: [['body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad { display: none; }\n', ''], ['var p = stickPtrs.length && live() ? stickAt', 'var p = stickPtrs.length ? stickAt']],
+  { name: 'PAD_UNDER_CARD', task: 'STICKR', file: 'page', edits: [['body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad, body:has(#swap.on) #stick .pad { display: none; }', ''],   /* re anchored at W2R (the swap card joined the rule) */ ['var p = stickPtrs.length && live() ? stickAt', 'var p = stickPtrs.length ? stickAt']],
     gates: [{ gate: 'input', expect: '412x915: under the pause card a thumb slid on the strip draws no pad' }] },
   { name: 'STICK_STEERS_PAUSED', task: 'STICKR', file: 'page', find: '      if (!live()) v = null;\n', repl: '',
     gates: [{ gate: 'input', expect: '412x915: under the pause card a thumb slid on the strip reads nothing' }] },
@@ -1027,9 +1027,9 @@ const MUTANTS = [
     gates: [{ gate: 'pause', expect: 'inside the wrapper iframe a lost focus (the host page took it) leaves the room running' }] },
   { name: 'RESUME_KEEPS_EDGE', task: 'NOTE3', file: 'page', find: '    SB.input.releaseAll();   /* a tap on the strip under the card is never banked into a jump at Resume */\n', repl: '',
     gates: [{ gate: 'pause', expect: '412x915: a real tap on A under the pause card does not jump at Resume' }] },
-  { name: 'PAUSED_NOT_OVERLAY', task: 'NOTE3', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'paused', 'sharesheet'];", repl: "var OVERLAYS = ['clear', 'death', 'sharesheet'];",
+  { name: 'PAUSED_NOT_OVERLAY', task: 'NOTE3', file: 'page', find: "var OVERLAYS = ['clear', 'death', 'paused', 'sharesheet', 'swap'];", repl: "var OVERLAYS = ['clear', 'death', 'sharesheet', 'swap'];",   /* re anchored at W2 */
     gates: [{ gate: 'pause', expect: "412x915: the pause card's Title: the title with nothing over it" }] },
-  { name: 'PAUSED_NOT_MODAL', task: 'NOTE3', file: 'page', find: "var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard'];", repl: "var MODALS = ['clear', 'death', 'sharesheet', 'devcard'];",
+  { name: 'PAUSED_NOT_MODAL', task: 'NOTE3', file: 'page', find: "var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard', 'swap'];", repl: "var MODALS = ['clear', 'death', 'sharesheet', 'devcard', 'swap'];",   /* re anchored at W2 */
     gates: [{ gate: 'pause', expect: '412x915: under the pause card an injected .lwfb-fab hides' }] },
   { name: 'PAUSE_ALWAYS_SHOWN', task: 'NOTE3', file: 'page', find: "    document.getElementById('pause').classList.toggle('on', name === 'play');", repl: "    document.getElementById('pause').classList.toggle('on', true);",
     gates: [{ gate: 'pause', expect: 'in the reveal Pause is hidden' }] },
@@ -1089,7 +1089,7 @@ const MUTANTS = [
     gates: [{ gate: 'sprites', expect: "the top strip's 8 hearts" }] },
   { name: 'ELITE_FRAMES_DRIFT', task: 'ART1', file: 'page', find: "    moth_elite: { w: 24, h: 24, frames: {\n", repl: "    moth_elite: { w: 24, h: 24, frames: {\n      c: '',\n",
     gates: [{ gate: 'lint', expect: 'moth_elite.c has 1 rows, not 24' }, { gate: 'harness', only: 'H-spr-1', expect: "moth_elite is 24x24 (ELITE_PX 24) with moth's frames" }] },
-  { name: 'SPECK_NO_GLINT', task: 'ART1', file: 'page', find: "/...........6..../.......00.666.../......0880.6..../.....088680.....", repl: "/................/.......00......./......0880....../.....088880.....",
+  { name: 'SPECK_NO_GLINT', task: 'ART1', file: 'page', find: ".....086600...../.....0866880....", repl: ".....088800...../.....0888880....",   /* re anchored at ART3: round 2's speck has one Glare pixel, on b */   /* re anchored at ART4: round 4's glint is 2x2 */
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: "the speck's strip carries its Glare glint" }] },
   { name: 'HEART_EMPTY_BRICK', task: 'ART1', file: 'page', find: "empty: '.00...00./0220.0220/", repl: "empty: '.00...00./0990.0220/",
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'hud_heart is 9x8 with full (Brick) and empty (no Brick)' }] },
@@ -1154,10 +1154,10 @@ const MUTANTS = [
     gates: [{ gate: 'fight', expect: "412: a chest near the room's top with the bug beside it: the card docks low" }] },
   { name: 'GOT_STAYS_OVER_BUG', task: 'W1', file: 'page', find: "    else SB.ui.gotFollow();\n", repl: '',
     gates: [{ gate: 'fight', expect: '412: as the bug falls under the docked card' }] },
-  { name: 'THROW_SILENT', task: 'W1', file: 'page', find: "      if (ev & EV.FIRE_J) au.sfx(SB.ui.WPN_SFX[SB.sim.WPN[G.state.hero.slots[0]]] || 'throw');\n", repl: '',
+  { name: 'THROW_SILENT', task: 'W1', file: 'page', find: "      if (ev & EV.FIRE_J) { var vj = SB.ui.WPN_SFX[SB.sim.WPN[G.state.hero.slots[0]]]; if (vj === undefined) vj = 'throw'; if (vj) au.sfx(vj); }\n", repl: '',   /* re anchored at W2 */
     gates: [{ gate: 'fight', expect: '412: a real A tap throws the boomerang with the throw voice' }] },
-  { name: 'PROJ_IN_BRICK', task: 'W1', file: 'page', find: "boomerang: { w: 12, h: 12, frames: {\n      a: '........000.", repl: "boomerang: { w: 12, h: 12, frames: {\n      a: '........090.",
-    gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'boomerang.a has an Ink outline and draws only' }] },
+  { name: 'PROJ_IN_BRICK', task: 'W1', file: 'page', find: "      boomerang_0: '................................/................................/................................/................................/................................/................................/................................/................................/................................/......0", repl: "      boomerang_0: '................................/................................/................................/................................/................................/................................/................................/................................/................................/......9",   /* re anchored at ART2 on Astra's boomerang: its first Ink pixel Brick */
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'fx_projectiles.boomerang_0 has an Ink outline and draws only' }] },
   { name: 'GEAR_LOST_ON_NEXT_ROOM', task: 'W1', file: 'page', find: "    if (SB.TUNING.KEEP_GEAR && G.state) G.gear = G.state.hero.slots.slice();", repl: '',
     gates: [{ gate: 'fight', expect: "412: Play it again starts the next room with the cleared room's gear" }] },
   { name: 'GEAR_KEPT_THROUGH_TITLE', task: 'W1', file: 'page', find: "    if (!(opts && opts.keepGear === true)) { G.gear = [0, 0, 0]; G.entry = [0, 0, 0]; }\n", repl: '',
@@ -1166,14 +1166,6 @@ const MUTANTS = [
     gates: [{ gate: 'fight', expect: '412: a death after the chest' }] },
   { name: 'ROOM_OPTS_MISSING', task: 'W1', file: 'page', find: "    roomOpts: function () { return { loadout: (G.entry || [0, 0, 0]).map(function (c) { return c > 0 ? SB.sim.WPN[c] : null; }) }; },", repl: "    roomOpts: function () { return {}; },",
     gates: [{ gate: 'fight', expect: '412: the recording replayed on a fresh sim made from SB_DEV.roomOpts()' }] },
-  { name: 'NAME_BEFORE_BUILT', task: 'W1', file: 'page', find: "slots: 'Weapons', slotJump:", repl: "slots: 'Weapons and a Halo', slotJump:",
-    gates: [{ gate: 'lint', expect: 'names Halo (J6), a weapon this build does not have' }] },
-  { name: 'SENTENCE_MISSING', task: 'W1', file: 'page', find: ", D1: 'Dive landings and dashes send a shock along the ground.' },", repl: " },",
-    gates: [{ gate: 'lint', expect: 'COPY.wpnSays holds J1, the build has J1, D1' }] },
-  { name: 'ICON_MISSING', task: 'W1', file: 'page', find: "D1: '................/..0000000.......", repl: "X1: '................/..0000000.......",
-    gates: [{ gate: 'lint', expect: 'the SPRITES icon sprite has no frame for D1' }] },
-  { name: 'WPN_RENAMED', task: 'W1', file: 'page', find: "wpn: { J1: 'Boomerang', D1: 'Anvil Boots' },", repl: "wpn: { J1: 'Boomerang', D1: 'Anvil Shoes' },",
-    gates: [{ gate: 'lint', expect: 'COPY.wpn.D1 is "Anvil Shoes", DESIGN 9.1 names it "Anvil Boots"' }] },
 
   /* LEVELS (Q180, Stephen's ruling 31 Oct, "Floor becomes the ledge"): the floor and ceiling fallbacks, the 24 row
      guard, a cause per refusal, the crop screen's message per cause, its band marks and its dev readout */
@@ -1351,6 +1343,196 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'some climb level needs more than today\'s 4 passes' }] },
   { name: 'BARE_NEWER_BAD', task: 'PHOTO1BR', file: 'page', find: "    if (!m && head && head.length >= HEADER && head[0] > V && head[0] < 16) return { why: 'newer' };\n", repl: '',
     gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a bare v3 payload' }] },
+  { name: 'NAME_BEFORE_BUILT', task: 'W1', file: 'page', find: "slots: 'Weapons', slotJump:", repl: "slots: 'Weapons and a Pogo Spear', slotJump:",   /* re anchored at W2: Halo is built */
+    gates: [{ gate: 'lint', expect: 'names Pogo Spear (D3), a weapon this build does not have' }] },
+  { name: 'SENTENCE_MISSING', task: 'W1', file: 'page', find: ", D1: 'Dive landings and dashes send a shock along the ground.',", repl: ",",   /* re anchored at W2 */
+    gates: [{ gate: 'lint', expect: 'COPY.wpnSays holds J1, J2, J3, J4, J5, J6, J7, J8, the build has J1, D1, J2' }] },
+  { name: 'ICON_MISSING', task: 'W1', file: 'page', find: "\n      D1: '", repl: "\n      D1x: '",   /* re anchored at ART3: D1's glyph not named by its code */
+    gates: [{ gate: 'lint', expect: 'the built D1 has no icon_weapons glyph named D1' }, { gate: 'harness', only: 'H-spr-1', expect: 'glyph named by its code (unbound: D1)' }] },   /* re anchored at W2 */   /* re worded at ART4: J6's exception gone */
+  { name: 'WPN_RENAMED', task: 'W1', file: 'page', find: "wpn: { J1: 'Boomerang', D1: 'Anvil Boots',", repl: "wpn: { J1: 'Boomerang', D1: 'Anvil Shoes',",   /* re anchored at W2 */
+    gates: [{ gate: 'lint', expect: 'COPY.wpn.D1 is "Anvil Shoes", DESIGN 9.1 names it "Anvil Boots"' }] },  /* ART2: Astra's weapons cut (Q161): the cutter's rules, the poses, the effects and the icons */
+  { name: "BOOMERANG_PLACEHOLDER", task: 'ART2', file: "page", edits: [["        key = 'fx_projectiles.boomerang' + FX4[Math.floor(Math.max(0, p.age) / 5) % 4] + (p.vx < 0 ? '<' : '');\n        var bx = (p.x >> 8) - 10, by = (p.y >> 8) - cam - 10; spr(ctx, key, bx, by); rec(p.kind, key, bx, by, 32, 32, camX);", "        key = 'boomerang.' + 'abcd'.charAt(Math.floor(Math.max(0, p.age) / 5) % 4) + (p.vx < 0 ? '<' : '');\n        var bx = p.x >> 8, by = (p.y >> 8) - cam; spr(ctx, key, bx, by); rec(p.kind, key, bx, by, 12, 12, camX);"], ["    pipe: { w: 16, h: 16, frames: {\n", "    boomerang: { w: 12, h: 12, frames: {\n      a: '........000./.......06660/......066630/.....066630./....066630../...066630.../..066630..../.0666300000./06666666660./06666666630./.0333333330./..00000000..',\n      b: '..00......../.0660......./036660....../0366660...../03666660..../036636660.../0366036660../03660036660./03660.036660/03360..03660/.0000...0360/.........00.',\n      c: '..00000000../.0333333330./.03666666660/.06666666660/.0000036660./....036660../...036660.../..036660..../.036660...../036660....../06660......./.000........',\n      d: '.00........./0630...0000./06630..06330/066630.06630/.06663006630/..0666306630/...066636630/....06666630/.....0666630/......066630/.......0660./........00..'\n    } },\n    pipe: { w: 16, h: 16, frames: {\n"]],
+    gates: [{ gate: "fight", expect: "412: the boomerang is Astra's" }] },
+  { name: "POP_WRONG_CLIP", task: 'ART2', file: "page", find: "key = 'fx_enemy_hit.enemy_death' + FX4[", repl: "key = 'fx_enemy_hit.enemy_hit' + FX4[",
+    gates: [{ gate: "fight", expect: "412: the kill's pop is Astra's" }] },
+  { name: "HIT_NO_BURST", task: 'ART2', file: "page", find: "      spr(ctx, key, hx2, hy2); rec('hit', key, hx2, hy2, 32, 32, camX);\n", repl: "",
+    gates: [{ gate: "fight", expect: "412: a hit on a live jelly draws Astra's burst over it" }] },
+  { name: "SHOCK_ONE_HALF", task: 'ART2', file: "page", find: "var fx = side < 0 ? lf : rf, hx0 = side < 0 ? bb.x0 : 24, hw = side < 0 ? 24 - bb.x0 : bb.x1 - 23;", repl: "var fx = side < 0 ? lf : rf, hx0 = bb.x0, hw = 24 - bb.x0;",
+    gates: [{ gate: "fight", expect: "412: the shock is Astra's ring split at its centre" }] },
+  { name: "ICON_SCALED", task: 'ART2', file: "page", find: "var r = A['icon_weapons.' + id]; if (!r) return false; c2.drawImage(atlas, r.x, r.y, r.w, r.h, x || 0, y || 0, r.w, r.h); return true;", repl: "var r = A['icon_weapons.' + id]; if (!r) return false; c2.drawImage(atlas, r.x, r.y, r.w, r.h, x || 0, y || 0, 16, 16); return true;",   /* re anchored at ART3 */
+    gates: [{ gate: "fight", expect: "412: the jump box shows J1's icon (icon_weapons.J1), its 576 pixels" }] },
+  { name: "ICON_SWAPPED", task: 'ART2', file: "page", find: "\n      J1: '", repl: "\n      boomerang: '",   /* re anchored at ART3: the glyph named by Astra's round 1 name, not its code */
+    gates: [{ gate: "lint", expect: "not Astra's order J1 J2" }] },
+  { name: "SHOCK_NO_RIM", task: 'ART2', file: "page", find: "          sprPart(ctx, key + '#', hx0, ry, hw, rh, hx + side, rtop); sprPart(ctx, key + '#', hx0, ry, hw, rh, hx, rtop - 1);\n", repl: "",
+    gates: [{ gate: "fight", expect: "412: the shock is Astra's ring split at its centre" }] },
+  { name: "POSE_SQUASH_OFF", task: 'ART2', file: "page", find: "    if (h.squash > 0) return 'hero_squash.squash';", repl: "    if (h.squash > 0) return 'land';",
+    gates: [{ gate: "sprites", expect: "the takeoff draws hero_stretch 10x18 for" }] },
+  { name: "POSE_STRETCH_OFF", task: 'ART2', file: "page", find: "    if (h.squash < 0) return 'hero_stretch.stretch';", repl: "    if (h.squash < 0 && false) return 'hero_stretch.stretch';",
+    gates: [{ gate: "sprites", expect: "the takeoff draws hero_stretch 10x18 for" }] },
+  { name: "POSE_DASH_OFF", task: 'ART2', file: "page", find: "    if (h.dash > 0) return 'hero_dash.dash';", repl: "    if (h.dash > 0) return 'run1';",
+    gates: [{ gate: "sprites", expect: "a dash draws hero_dash" }] },
+  { name: "POSE_HURT_OFF", task: 'ART2', file: "page", find: "    if (h.iframes > SB.K.HIT_IFRAMES_F - R.HURT_POSE_F) return 'hero_hurt.recoil';\n", repl: "",
+    gates: [{ gate: "sprites", expect: "a hit draws hero_hurt.recoil" }] },
+  { name: "DROPIN_OFF", task: 'ART2', file: "page", find: "    if (s.frame < R.DROP_BEAT * 3 && h.anim === 0 && h.vy >= 0 && h.squash >= 0 && !h.dash) return 'hero_dropin.' + R.DROP_BEATS[Math.floor(s.frame / R.DROP_BEAT)];\n", repl: "",
+    gates: [{ gate: "sprites", expect: "a room opens on the drop in" }] },
+  { name: "POSE_IN_BRICK", task: 'ART2', file: "page", find: "      dash: '............/.....0", repl: "      dash: '............/.....9",
+    gates: [{ gate: "harness", only: "H-spr-1", expect: "hero_dash.dash has an Ink outline and draws only" }] },
+  { name: "SUN_IN_FX", task: 'ART2', file: "page", find: "      boomerang_0: '................................/................................/................................/................................/................................/................................/................................/................................/................................/......0", repl: "      boomerang_0: '................................/................................/................................/................................/................................/................................/................................/................................/................................/......e",
+    gates: [{ gate: "harness", only: "H-spr-1", expect: "fx_projectiles.boomerang_0 holds no Sun" }] },
+  { name: "CUT_SUN_PAST_HERO", task: 'ART2', file: "astra", find: "            elif key not in SUN_KEYS and any('e' in s for s in frames.values()):", repl: "            elif key not in SUN_KEYS and not key.startswith('fx_') and any('e' in s for s in frames.values()):",   /* re anchored at ART3 */
+    gates: [{ gate: "astra", expect: "Sun in an effect (fx_projectiles) is refused" }] },
+  { name: "CUT_POSE_SUN_REFUSED", task: 'ART2', file: "astra", find: "            elif key.startswith('hero_'):", repl: "            elif False:",
+    gates: [{ gate: "astra", expect: "the hero's poses (hero_dash, hero_hurt, hero_squash, hero_stretch, hero_dropin) each carry Sun and are cut" }] },
+  { name: "CUT_FX_NAMES_FREE", task: 'ART2', file: "astra", find: "                    if not fm:\n                        raise Refuse('%s frame %s is not <clip>_<n>' % (key, name))\n", repl: "                    if not fm:\n                        continue\n",
+    gates: [{ gate: "astra", expect: "an effect frame not named <clip>_<n> is refused" }] },
+  { name: "CUT_FX_UNKNOWN", task: 'ART2', file: "astra", find: "            elif FX_RE.match(key):\n                warnings.append(", repl: "            elif False and FX_RE.match(key):\n                warnings.append(",
+    gates: [{ gate: "astra", expect: "an effect strip new to the page (fx_shockwave on a copy without it) is taken as named clips" }] },
+  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 52\n", repl: "MAX_SPRITES = 54\n",   /* re anchored at ART4 (52) */   /* re anchored at W2 (46) */   /* re anchored at ART3 (the cap at the splice, 43) */
+    gates: [{ gate: "astra", expect: "the cap is 52, ART4's" }] },
+  /* ART3: Astra's rounds 2 and 3 (Q98): the cutter's rules, the splice, the stick, Pause, the crusher's shaft, the speck,
+     the elites' keylines, the biome's air and badges, the icons by code */
+  { name: "CUT_GAME_CASE", task: 'ART3', file: "astra", find: "    if str(man.get('game', '')).lower() != 'shutterbug':", repl: "    if man.get('game') != 'shutterbug':",
+    gates: [{ gate: "astra", expect: "round 3's manifest naming its game SHUTTERBUG is the game's" }] },
+  { name: "CUT_FX_SIDES_NARROW", task: 'ART3', file: "astra", find: "FX_SIDES = (16, 32, 48, 64)", repl: "FX_SIDES = (32, 48)",
+    gates: [{ gate: "astra", expect: "round 3's 16 px chip and 64 px fall are cut as effects" }] },
+  { name: "CUT_BEACON_FX_SUN", task: 'ART3', file: "astra", find: "SUN_KEYS = ('beacon', 'fx_beacon_light')", repl: "SUN_KEYS = ('beacon',)",
+    gates: [{ gate: "astra", expect: "round 3's fx_beacon_light carries the beacon's Sun and is cut" }] },
+  { name: "SPLICE_CAP_GONE", task: 'ART3', file: "astra", find: "    if n >= MAX_SPRITES:\n        raise Refuse(", repl: "    if False:\n        raise Refuse(",
+    gates: [{ gate: "astra", expect: "its splice is refused at the cap, the page unwritten" }] },
+  { name: "SPLICE_KEEPS_RENAMED", task: 'ART3', file: "astra", find: "            if key != 'hero':\n                old = []\n", repl: "",
+    gates: [{ gate: "astra", expect: "a key's entry (icon_weapons as J1, Z1 to Z26) replaces the page's 27 frames whole" }] },
+  { name: "ICON_BY_STRIP_INDEX", task: 'ART3', file: "page", find: "var r = A['icon_weapons.' + id]; if (!r) return false;", repl: "var IK = Object.keys(SPRITES.icon_weapons.frames), r = A['icon_weapons.' + IK[IK.indexOf(id) + 1]]; if (!r) return false;",
+    gates: [{ gate: "lint", expect: "R.icon does not look its glyph up by the code" }, { gate: "fight", expect: "412: the jump box shows J1's icon (icon_weapons.J1), its 576 pixels" }] },
+  { name: "ICON_J1_REDRAWN", task: 'ART3', file: "page", find: "      J1: '......................../......................../......................../......................../......................../..00000", repl: "      J1: '......................../......................../......................../......................../......................../..00002",
+    gates: [{ gate: "harness", only: "H-spr-1", expect: "icon_weapons.J1 and .D1 are round 1's boomerang and anvil_boots pixel for pixel" }] },
+  { name: "ELITE_KEYLINE_GONE", task: 'ART3', file: "page", find: "/040aa04400111100440aa040/", repl: "/044aa04400111100440aa040/",   /* re anchored at ART4: round 4's moth elite body is Soot */
+    gates: [{ gate: "harness", only: "H-spr-1", expect: "moth_elite.a keylines every Magenta mark in Ink, all eight neighbours (open at" }] },
+  { name: "SPECK_GLINT_BOTH", task: 'ART3', file: "page", find: "a: '................/................/................/.......0......../......080......./.....088800.....", repl: "a: '................/................/................/.......0......../......080......./.....088600.....",
+    gates: [{ gate: "harness", only: "H-spr-1", expect: "with the Glare glint on frame b only" }] },
+  { name: "SKYHOOK_GONE", task: 'ART3', file: "page", find: "    fx_skyhook: { w: 32, h: 32, frames: {", repl: "    fx_skyhooks: { w: 32, h: 32, frames: {",
+    gates: [{ gate: "harness", only: "H-spr-1", expect: "fx_skyhook is spliced for J8" }] },
+  { name: "PARKED_ON_PAGE", task: 'ART3', file: "page", find: "    fx_skyhook: { w: 32, h: 32, frames: {", repl: "    fx_tripod: { w: 32, h: 32, frames: {",
+    gates: [{ gate: "harness", only: "H-spr-1", expect: "nothing parked is on the page" }] },
+  { name: "CRUSHER_TILED", task: 'ART3', file: "page", find: "        if (crush && lv.trap[tf[q2] + lv.w] === 1) ctx.drawImage(atlas, tr0.x, tr0.y, tr0.w, 1, (tf[q2] % lv.w) * C, ty2, C, C);\n        else spr(ctx, tk, (tf[q2] % lv.w) * C, ty2);", repl: "        spr(ctx, tk, (tf[q2] % lv.w) * C, ty2);",
+    gates: [{ gate: "sprites", expect: "a 3 cell crusher column in phase a (trap phase 10): the cells above the bottom are row 0" }] },
+  { name: "CRUSHER_BOTTOM_SHAFT", task: 'ART3', file: "page", find: "if (crush && lv.trap[tf[q2] + lv.w] === 1) ctx", repl: "if (crush) ctx",
+    gates: [{ gate: "sprites", expect: "a 3 cell crusher column in phase a (trap phase 10): the cells above the bottom are row 0" }] },
+  { name: "SPECK_STUCK_A", task: 'ART3', file: "page", find: "spr(ctx, LK[lt2.kind] + (lt2.kind === 1 && (Math.floor(s.frame / (lbeat * 3)) & 1) ? '.b' : '.a'), lx2, ly);", repl: "spr(ctx, LK[lt2.kind] + '.a', lx2, ly);",
+    gates: [{ gate: "sprites", expect: "the sample room's speck draws speck.b with its glint on the beat" }] },
+  { name: "MOTES_WRONG_BIOME", task: 'ART3', file: "page", find: "key = R.MOTE_KEYS[b] || R.MOTE_KEYS[0]", repl: "key = R.MOTE_KEYS[(b + 1) % 5]",
+    gates: [{ gate: "sprites", expect: "biome 0: five dust_mote tiles drawn over the room at 4 fps" }] },
+  { name: "MOTES_AT_60", task: 'ART3', file: "page", find: "t = Math.floor(s.frame / R.MOTE_TICK)", repl: "t = s.frame",
+    gates: [{ gate: "sprites", expect: "biome 0: five dust_mote tiles drawn over the room at 4 fps" }] },
+  { name: "MOTES_UNREPEATABLE", task: 'ART3', file: "page", find: "var x0 = hsh % wspan", repl: "var x0 = Math.floor(Math.random() * wspan)",
+    gates: [{ gate: "sprites", expect: "biome 0: the same state draws the same tiles" }] },
+  { name: "MOTES_UNDER_REDUCED", task: 'ART3', file: "page", find: "SB.ui.screen !== 'play' || R.reduced()", repl: "SB.ui.screen !== 'play'",
+    gates: [{ gate: "sprites", expect: "biome 0: under reduced motion no tile is drawn" }] },
+  { name: "MOTES_JUMP", task: 'ART3', file: "page", find: "R.MOTE_DRIFT = [2, 4, -4, 4, -4];", repl: "R.MOTE_DRIFT = [0, 0, 0, 0, 0];",
+    gates: [{ gate: "sprites", expect: "biome 0: a loop later each tile has drifted 2 px" }] },
+  { name: "BADGE_WRONG_BIOME", task: 'ART3', file: "page", find: "el.style.backgroundImage = 'var(--icon-biomes-' + nm + ')';", repl: "el.style.backgroundImage = 'var(--icon-biomes-attic)';",
+    gates: [{ gate: "sprites", expect: "biome 3: the room name's badge is icon_biomes.overgrowth" }] },
+  { name: "REVEAL_NO_BADGE", task: 'ART3', file: "page", find: "    ctx.drawImage(atlas, br.x, br.y, br.w, br.h, bx, 8, 48, 48);\n", repl: "",
+    gates: [{ gate: "sprites", expect: "biome 0: the develop reveal draws icon_biomes.attic at 2x" }] },
+  { name: "PAD_CSS_RING", task: 'ART3', file: "page", find: "  background: var(--stick-pad-idle) 0 0 / 116px 116px no-repeat; image-rendering: pixelated; pointer-events: none; }", repl: "  border: 2px solid rgba(11,10,15,0.45); background: rgba(11,10,15,0.08); border-radius: 50%; pointer-events: none; }",
+    gates: [{ gate: "input", expect: "412x915: held neutral, the pad is stick_pad.idle at 116 css px" }] },
+  { name: "PAD_NEVER_ACTIVE", task: 'ART3', file: "page", find: "#stick .pad.l, #stick .pad.r { background-image: var(--stick-pad-active); }", repl: "",
+    gates: [{ gate: "input", expect: "412x915: steering R, the pad is stick_pad.active" }] },
+  { name: "KNOB_NO_WAY", task: 'ART3', file: "page", find: "#stick .pad.r .knob { background-image: var(--stick-knob-right); }", repl: "",
+    gates: [{ gate: "input", expect: "412x915: steering R, the knob is stick_knob.right" }] },
+  { name: "HINT_HALF_WRONG", task: 'ART3', file: "page", find: "#stick .idle .hr { background-position: calc(-60 * var(--hk)) 0; }", repl: "",
+    gates: [{ gate: "input", expect: "412x915: idle, the hint's chevrons are stick_hint's left and right 12 columns" }] },
+  { name: "PAUSE_OLD_BOX", task: 'ART3', file: "page", find: "#pause i { width: 32px; height: 32px; display: block; background: var(--pause-glyph-normal) 0 0 / 32px 32px no-repeat; image-rendering: pixelated; }", repl: "#pause i { width: 28px; height: 28px; border-radius: 8px; border: 2px solid rgba(11,10,15,0.35); background: rgba(11,10,15,0.06); display: block; }",
+    gates: [{ gate: "input", expect: "412x915: Pause is pause_glyph.normal at 2x" }] },
+  { name: "PAUSE_NOT_PRESSED", task: 'ART3', file: "page", find: "#pause.down i { background-image: var(--pause-glyph-pressed); }", repl: "",
+    gates: [{ gate: "input", expect: "412x915: under a held finger Pause is pause_glyph.pressed" }] },
+  /* W2: weapons step 2, the jump slot and the swap (docs/WEAPONS-V1.md 13.2) */
+  { name: 'SWAP_AUTO_TAKES', task: 'W2', file: 'page', find: "      /* the compare is the player's own from Weapons v1 step 2: the swap card (ui.swap) answers it, never the shell */", repl: "      else if (st.room.compare) SB.input.choose(SB.sim.CHOICE.TAKE);",
+    gates: [{ gate: 'compare', expect: '412: while it is open nothing in the world moves' }] },
+  { name: 'SIM_RUNS_UNDER_SWAP', task: 'W2', file: 'page', find: "        s.room.compare = 0; s.room.cand = 0; s.ev |= EV.PICK;\n      }\n      s.frame++; return s;\n    }", repl: "        s.room.compare = 0; s.room.cand = 0; s.ev |= EV.PICK;\n      }\n    }",
+    gates: [{ gate: 'harness', only: 'H-wpn-7', expect: 'the world holds through 30 steps' }, { gate: 'compare', expect: '412: while it is open nothing in the world moves' }] },
+  { name: 'SWAP_WORDS_WRONG', task: 'W2', file: 'page', find: "said.push(a[0] > b[0] ? C.cmpFarther : C.cmpShorter);", repl: "said.push(a[0] > b[0] ? C.cmpShorter : C.cmpFarther);",
+    gates: [{ gate: 'compare', expect: "412: every pair of built weapons of a slot gives the gate's comparison line" }] },
+  { name: 'SWAP_NOT_MODAL', task: 'W2', file: 'page', find: "'sharesheet', 'devcard', 'swap'];", repl: "'sharesheet', 'devcard'];",
+    gates: [{ gate: 'compare', expect: '412: the chest by a real walk opens the swap card' }] },
+  { name: 'SWAP_OVER_PAUSE', task: 'W2', file: 'page', find: "#swap.tall, #swap.deep { top: 16px;", repl: "#swap.tall, #swap.deep { top: 0;",
+    gates: [{ gate: 'compare', expect: '320: the card sits' }] },
+  { name: 'SWAP_NO_DEEP', task: 'W2', file: 'page', find: "var tries = ['', 'high', 'low', 'tall', 'deep'], r;", repl: "var tries = ['', 'high', 'low', 'tall'], r;",
+    gates: [{ gate: 'compare', expect: "320: the worst angle, the bug at the room's top beside the chest: the card hangs deep" }] },
+  { name: 'TRAITS_MISSING', task: 'W2', file: 'page', find: "J7: [3, 0, 1, 1, 0], J8: [0, 0, 0, 0, 1],", repl: "J7: [3, 0, 1, 1, 0],",
+    gates: [{ gate: 'lint', expect: 'the built J8 has no ui.TRAITS row of five numbers (TRAITS_MISSING)' }] },
+  { name: 'TWIN_DARTS_ONE', task: 'W2', file: 'page', find: "    for (var side = -1; side <= 1; side += 2) {\n      var k = spawn(s, DART);", repl: "    for (var side = 1; side <= 1; side += 2) {\n      var k = spawn(s, DART);",
+    gates: [{ gate: 'harness', only: 'H-wpn-J5', expect: 'a jump shoots two darts' }] },
+  { name: 'DART_PASSES_THROUGH', task: 'W2', file: 'page', find: "if (hit(s, p, p.x, p.y, p.x + K.J5_BOXW, p.y + K.J5_BOXH, true) > 0 || ", repl: "if (hit(s, p, p.x, p.y, p.x + K.J5_BOXW, p.y + K.J5_BOXH) < 0 || ",
+    gates: [{ gate: 'harness', only: 'H-wpn-J5', expect: 'a dart stops on its first enemy' }] },
+  { name: 'HALO_THROUGH_SOLID', task: 'W2', file: 'page', find: "    if (solidBox(lv, p.x, p.y, p.x + K.J6_BOXW, p.y + K.J6_BOXH)) { free(p); return; }\n", repl: "",
+    gates: [{ gate: 'harness', only: 'H-wpn-J6', expect: 'a solid cell there frees it' }] },
+  { name: 'FLASH_AT_TAKEOFF', task: 'W2', file: 'page', find: "    if (h.vy < 0 && !h.ground) return;\n    var R = K.J4_REACH;", repl: "    var R = K.J4_REACH;",
+    gates: [{ gate: 'harness', only: 'H-wpn-J4', expect: 'FIRE_J on the takeoff step, the burst (BURST) on step' }] },
+  { name: 'SNAP_HURTS', task: 'W2', file: 'page', find: "x0 + K.HERO_W_SUB + R, y0 + K.HERO_H_SUB + R, 0, K.J7_FREEZE_F);", repl: "x0 + K.HERO_W_SUB + R, y0 + K.HERO_H_SUB + R, K.HP_Q, K.J7_FREEZE_F);",
+    gates: [{ gate: 'harness', only: 'H-wpn-J7', expect: 'and keep every quarter' }] },
+  { name: 'KICK_ON_GROUND_JUMP', task: 'W2', file: 'page', find: "acted = wallSide !== 0 && shieldKick(s, x0, y0, wallSide);", repl: "acted = shieldKick(s, x0, y0, wallSide);",
+    gates: [{ gate: 'harness', only: 'H-wpn-J3', expect: 'a ground jump never kicks' }] },
+  { name: 'SPARKS_2', task: 'W2', file: 'page', find: "J2: { count: 3,", repl: "J2: { count: 2,",
+    gates: [{ gate: 'harness', only: 'H-wpn-J2', expect: 'a jump drops three sparks' }] },
+  { name: 'SKYHOOK_ON_WALL_JUMP', task: 'W2', file: 'page', find: "wallSide = h.wall; h.vy = -K.WALL_V;", repl: "wallSide = h.wall; h.vy = h.slots[0] === WPN_J8 ? -K.J8_JUMP_V : -K.WALL_V;",
+    gates: [{ gate: 'harness', only: 'H-sim-1b', expect: 'a wall jump with Skyhook takes WALL_V as unarmed' }] },
+  { name: 'SKYHOOK_BREAKS_ASCENT', task: 'W2', file: 'page', find: "J8: { extraUpCells: 1, jumpV: 9.5,", repl: "J8: { extraUpCells: 1, jumpV: 13,",   /* re anchored at W2R: 16 was far past the first break (13: the attic's and ember's wall touches; 11 still clears) */
+    gates: [{ gate: 'harness', only: 'H-bot-8', expect: 'walked levels clear with Skyhook, every ascent edge performed:' }] },
+  { name: 'FROZEN_UNDRAWN', task: 'W2', file: 'page', find: "    drawHeld(s, cam, camX);\n", repl: "",
+    gates: [{ gate: 'fight', expect: '412: a real A tap with Shutter Snap freezes the moth' }] },
+  /* ART4: Astra's round 4 (Q164): her weapon keys drawn one per instance at her anchors and timings, the colour law,
+     the reach frames, the pad and Pause, the 2x2 glint */
+  { name: 'DART_UNMIRRORED', task: 'ART4', file: 'page', find: "key = 'dart.a' + (p.vx < 0 ? '<' : '');", repl: "key = 'dart.a';",
+    gates: [{ gate: 'fight', expect: '412: a real A tap with Twin Darts shoots two darts' }] },
+  { name: 'RING_NO_FLICKER', task: 'ART4', file: 'page', find: "key = 'ring.' + (Math.floor(a * FPS8 / FPS8_STEPS) % 2 ? 'b' : 'a');", repl: "key = 'ring.a';",
+    gates: [{ gate: 'fight', expect: "412: Halo's ring is Astra's 16x6 ring on its box" }] },
+  { name: 'EMBER_NO_FLICKER', task: 'ART4', file: 'page', find: "key = 'ember.' + (Math.floor(a * FPS8 / FPS8_STEPS) % 2 ? 'b' : 'a');", repl: "key = 'ember.' + (Math.floor(FRAME_NO / 5) % 2 ? 'b' : 'a');",
+    gates: [{ gate: 'fight', expect: "412: Spark Trail's sparks are one Astra ember each" }] },
+  { name: 'EMBER_OFF_BOX', task: 'ART4', file: 'page', find: "x = (p.x >> 8) + (((p.a >> 8) - 8) >> 1);", repl: "x = (p.x >> 8) + 4;",   /* first run: an 8 px box's top and its bottom less 8 agree, so the y mutant stayed green */
+    gates: [{ gate: 'fight', expect: "412: Spark Trail's sparks are one Astra ember each" }] },
+  { name: 'FLASH_CUT_SHORT', task: 'ART4', file: 'page', find: "SHOT_F[PK.FLASH] = 20;", repl: "SHOT_F[PK.FLASH] = 8;",
+    gates: [{ gate: 'fight', expect: "412: the Flashbulb's burst is Astra's flash_ring centred on the bug" }] },
+  { name: 'FLASH_OFF_CENTRE', task: 'ART4', file: 'page', find: "(p.x >> 8) - 32, (p.y >> 8) - 32, 0);", repl: "(p.x >> 8) - 24, (p.y >> 8) - 24, 0);",
+    gates: [{ gate: 'fight', expect: "412: the Flashbulb's burst is Astra's flash_ring centred on the bug" }] },
+  { name: 'KICK_WRONG_SIDE', task: 'ART4', file: 'page', find: "- 40, p.b > 0 ? 1 : 0);", repl: "- 40, p.b > 0 ? 0 : 1);",
+    gates: [{ gate: 'fight', expect: "412: a wall jump off the left wall draws Astra's kick_spray" }] },
+  { name: 'KICK_CUT_SHORT', task: 'ART4', file: 'page', find: "SHOT_F[PK.KICK] = 15;", repl: "SHOT_F[PK.KICK] = 8;",
+    gates: [{ gate: 'fight', expect: "412: a wall jump off the left wall draws Astra's kick_spray" }] },
+  { name: 'SNAP_OFF_REACH', task: 'ART4', file: 'page', find: "x = (p.x >> 8) - 54; y = (p.y >> 8) - cam - 56;", repl: "x = (p.x >> 8) - 48; y = (p.y >> 8) - cam - 48;",
+    gates: [{ gate: 'fight', expect: "412: the Snap draws Astra's 108x112 frame round the reach's square" }] },
+  { name: 'SNAP_BOTTOM_UNFLIPPED', task: 'ART4', file: 'page', find: "snapTile('snap_frame.edge_h^', Math.min(8, 100 - e), x + e, y + 104, camX);", repl: "snapTile('snap_frame.edge_h', Math.min(8, 100 - e), x + e, y + 104, camX);",
+    gates: [{ gate: 'fight', expect: "412: the Snap draws Astra's 108x112 frame round the reach's square" }] },
+  { name: 'WFX_AMBER', task: 'ART4', file: 'page', find: "      a: '00..000./06666600/", repl: "      a: '00..000./06686600/",
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'dart.a has an Ink outline and draws only' }] },
+  { name: 'PAUSE_INK_BARS', task: 'ART4', file: 'page', find: "      normal: '................/................/................/................/.....22..22...../", repl: "      normal: '................/................/................/................/.....00..00...../",
+    gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'pause_glyph is 16x16, normal Slate bars, pressed Paper bars on an Ink tile' }] },
+  { name: 'KNOB_PAST_PAD', task: 'ART4', file: 'page', find: "STICK_TRAVEL_PX: 32,", repl: "STICK_TRAVEL_PX: 40,",
+    gates: [{ gate: 'input', expect: '412x915: at the full push right the knob sits' }] },
+  /* W2R: the review of weapons step 2 (and step 1): Halo at a wall and its whole cells, the Snap's 6 steps, Skyhook's
+     count of full hold misses, the comparison line of a weapon of no damage, taps with the stick thumb down, the scroll
+     offer beside the chest, the stick under the card, the room name at 320 */
+  { name: 'HALO_DIES_AT_WALL', task: 'W2R', file: 'page', find: "    if (x < x0 && solidBox(lv, x, yt, x0, yb)) x = (Math.floor(x / CS) + 1) * CS;\n    else if (x + K.J6_BOXW > x0 + K.HERO_W_SUB && solidBox(lv, x0 + K.HERO_W_SUB, yt, x + K.J6_BOXW, yb)) x = Math.floor((x + K.J6_BOXW - 1) / CS) * CS - K.J6_BOXW;\n", repl: "",
+    gates: [{ gate: 'harness', only: 'H-wpn-J6', expect: 'a jump flush against a wall on the left, 1 px off it, and flush against one on the right each send a live ring' }] },
+  { name: 'HALO_REACH_7', task: 'W2R', file: 'page', find: "far = K.J6_REACH - K.J6_BOXH;", repl: "far = K.J6_REACH;",
+    gates: [{ gate: 'harness', only: 'H-wpn-J6', expect: 'one in the cell 7 rows over lives' }] },
+  { name: 'SNAP_SHORT', task: 'W2R', file: 'page', find: "p.y = y0 + (K.HERO_H_SUB >> 1); p.ttl = 7; }", repl: "p.y = y0 + (K.HERO_H_SUB >> 1); p.ttl = 6; }",
+    gates: [{ gate: 'harness', only: 'H-wpn-J7', expect: 'its SNAP is drawn for 6 steps' }] },
+  { name: 'SKYHOOK_MISSES_MORE', task: 'W2R', file: 'page', find: "J8: { extraUpCells: 1, jumpV: 9.5,", repl: "J8: { extraUpCells: 1, jumpV: 10.5,",
+    gates: [{ gate: 'harness', only: 'H-bot-8', expect: 'misses exactly 9 ascent edges outside Deep' }] },
+  { name: 'SWAP_NOHIT_LIES', task: 'W2R', file: 'page', find: "    if (a[1] === 0) { if (b[1] > 0) said.push(C.cmpNoHit); }\n    else {\n", repl: "    {\n",
+    gates: [{ gate: 'compare', expect: '412: no line about a weapon of no damage says how it hits' }] },
+  { name: 'SWAP_TAP_CLICK_ONLY', task: 'W2R', file: 'page', find: "ui.onTap(take, answer(SB.sim.CHOICE.TAKE)); ui.onTap(keep, answer(SB.sim.CHOICE.LEAVE));", repl: "take.addEventListener('click', answer(SB.sim.CHOICE.TAKE)); keep.addEventListener('click', answer(SB.sim.CHOICE.LEAVE));",
+    gates: [{ gate: 'compare', expect: '412: a real tap on Take with the stick thumb down equips' }] },
+  { name: 'PAUSE_TAP_CLICK_ONLY', task: 'W2R', file: 'page', find: "ui.onTap(document.getElementById('pause'), function () { this.blur(); ui.pause(); });", repl: "document.getElementById('pause').addEventListener('click', function () { this.blur(); ui.pause(); });",
+    gates: [{ gate: 'compare', expect: '412: a real tap on Pause with the stick thumb down opens the pause card' }] },
+  { name: 'STICK_PAD_UNDER_SWAP', task: 'W2R', file: 'page', find: ", body:has(#swap.on) #stick .pad { display: none; }", repl: " { display: none; }",
+    gates: [{ gate: 'compare', expect: '412: a stick thumb down under the open card' }] },
+  { name: 'SWAP_UNDER_OFFER', task: 'W2R', file: 'page', find: " && !st.room.dead && !st.scrollsOffered);", repl: " && !st.room.dead);",
+    gates: [{ gate: 'compare', expect: "412: a scroll offer on the chest's step: the card waits" }] },
+  { name: 'GHOST_CLICK_LANDS', task: 'W2R', file: 'page', find: "      document.addEventListener('click', function (e) { if (sameTap(e)) { e.stopPropagation(); e.preventDefault(); } }, true);\n", repl: "",
+    gates: [{ gate: 'compare', expect: '412: Pause then Resume with no other finger down leaves the card open' }] },
+  { name: 'TOP_NAME_SQUEEZED', task: 'W2R', file: 'page', find: "  #hearts { margin-left: 4px; gap: 3px; }\n", repl: "",
+    gates: [{ gate: 'fight', expect: '320: the top strip holds Pause, the name, both icons and 4 hearts without overflow' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

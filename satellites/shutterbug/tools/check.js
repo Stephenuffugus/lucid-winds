@@ -55,6 +55,7 @@ const BROWSER_GATES = [
   { name: 'loop',     cmd: ['test/loop.mjs'],   need: 'LOOP OK' },
   { name: 'pause',    cmd: ['test/pause.mjs'],  need: 'PAUSE OK' },   /* the pause card and the back gesture (QUESTIONS Q94) */
   { name: 'fight',    cmd: ['test/fight.mjs'],  need: 'FIGHT OK' },   /* Weapons v1 step 1: the first fight (docs/WEAPONS-V1.md 13.1) */
+  { name: 'compare',  cmd: ['test/compare.mjs'], need: 'COMPARE OK' },   /* Weapons v1 step 2: the swap card (docs/WEAPONS-V1.md 13.2) */
   { name: 'redwatch-browser', cmd: ['tools/redwatch.js', '--check', '--browser-only'], need: 'REDWATCH OK', slow: true }
 ];
 

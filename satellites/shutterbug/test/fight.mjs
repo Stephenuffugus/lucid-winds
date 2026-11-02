@@ -11,7 +11,8 @@
  *     reduced motion);
  *   - Play it again from the clear card: the new room's slots and HUD equal the cleared room's before its first step,
  *     and its chest gives the other weapon;
- *   - a real A tap throws (the throw voice): the boomerang drawn in weapon colours only, out 5 cells and back, a frozen
+ *   - a real A tap throws (the throw voice): the boomerang drawn as Astra's fx_projectiles (ART2), every opaque pixel
+ *     the frame decoded here from the page's SPRITES, out 5 cells and back, a frozen
  *     moth ahead killed (the pop drawn, the count +3 and `+3` under it, the pop voice);
  *   - a second jump inside the cooldown jumps and throws nothing; the jump box is `cool` for exactly JUMP_SLOT_CD_F steps;
  *   - a real B dive's landing and a real B dash each send the shock (drawn at both fronts, the shock voice) and kill a
@@ -19,7 +20,12 @@
  *   - the HUD writes nothing over 30 quiet steps (a MutationObserver counts the records);
  *   - a chest laid near the room's top with the bug beside it (the camera at the top): the card docks low, clear of it,
  *     and as the bug falls the room's height into that place the card moves back to the top, never over it;
- *   - #top never overflows (scrollWidth at most clientWidth) with 4 hearts and both icons; zero page errors.
+ *   - #top never overflows (scrollWidth at most clientWidth) with 4 hearts and both icons, and the room name keeps 90 px
+ *     or more at every size (W2R); zero page errors.
+ *   - ART2 (Q161), ART3: the icon is Astra's icon_weapons glyph named by its code (576 pixels); the shock is her ring split at
+ *     its centre, a half at each front; the kill's pop her enemy_death clip; a non lethal hit on a frozen 8 quarter
+ *     jelly draws her enemy_hit burst over it, its four frames over the hurt; each drawn record's opaque pixels equal
+ *     its frame decoded here, except where the hero or a later record covers them.
  * At 412x915 too, the sitting: Play it again again (both weapons carried), the recording replayed on a fresh sim made
  * from SB_DEV.roomOpts() equals the live hash; Title through the pause card ends it (the sample room starts empty); a
  * death after the chest: Again restarts with the gear the bug walked in with.
@@ -27,7 +33,15 @@
  * SB_FIGHT_SIZES=412 runs only the named widths (redwatch's fight rows each name a 412 line; check.js runs all three).
  *
  * Watched red by CHEST_NO_WEAPON, CHEST_STOPS_FOR_EMPTY, HUD_STALE, HUD_EVERY_STEP, GOT_TAKES_TAPS, GOT_STAYS,
- * GOT_OVER_BUG, GOT_STAYS_OVER_BUG, THROW_SILENT, GEAR_LOST_ON_NEXT_ROOM, GEAR_KEPT_THROUGH_TITLE, DEATH_KEEPS_PICKUP and ROOM_OPTS_MISSING. */
+ * GOT_OVER_BUG, GOT_STAYS_OVER_BUG, THROW_SILENT, GEAR_LOST_ON_NEXT_ROOM, GEAR_KEPT_THROUGH_TITLE, DEATH_KEEPS_PICKUP, ROOM_OPTS_MISSING, and ART2's ICON_PLACEHOLDER, BOOMERANG_PLACEHOLDER,
+ * SHOCK_WHOLE_RING, POP_PLACEHOLDER and HIT_NO_BURST.
+ * ART4 (Astra's round 4, Q164): step 2's pictures are her keys at her anchors and timings, each line on the page's own
+ * records against the sim's live entries step by step: Twin Darts one dart a side on its 8x4 box (the left mirrored);
+ * Shutter Snap's 108x112 frame of 52 tiles round the reach's square; Halo's ring and Spark Trail's embers on their boxes
+ * flickering at 8 fps by age; the Flashbulb's flash_ring centred where it burst, a to d at 12 fps then gone; Shield
+ * Kick's kick_spray off each wall (laid in the air against it), a to c at 12 fps, mirrored for the right. Watched red by
+ * DART_UNMIRRORED, SNAP_OFF_REACH, SNAP_BOTTOM_UNFLIPPED, RING_NO_FLICKER, EMBER_NO_FLICKER, EMBER_OFF_BOX,
+ * FLASH_CUT_SHORT, FLASH_OFF_CENTRE, KICK_WRONG_SIDE and KICK_CUT_SHORT. */
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME } from './harness.mjs';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
@@ -46,8 +60,13 @@ const COPY = (() => {
 const SPR = vm.runInNewContext(SRC.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1] + '\n;SPRITES');
 const RGB = SBN.palette.RGB, I = SBN.palette.I, T = SBN.TUNING, K = SBN.K;
 const WPN = ['', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7', 'J8', 'D1'];
-const iconPx = id => SPR.icon.frames[id].split('/').map(r => [...r].map(c => c === '.' ? null : RGB[parseInt(c, 16)].join(','))).flat();
-const WEAPON_RGB = new Set([I.INK, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE].map(i => RGB[i].join(',')));
+/* ART3 (Astra's round 2): an icon is Astra's icon_weapons glyph named by the weapon's code (J1, D1), the gate's own
+   reading of the strip, never the page's lookup (H-spr-1 pins J1 and D1 to round 1's boomerang and anvil boots) */
+const ICON_NAME = new Proxy({}, { get: (_, id) => (COPY.wpn[id] ? String(id) : '') });
+const iconPx = id => SPR.icon_weapons.frames[ICON_NAME[id]].split('/').map(r => [...r].map(c => c === '.' ? null : RGB[parseInt(c, 16)].join(','))).flat();
+void I;
+/* ART2: a drawn record's frame decoded here ('<' mirrored, the record's sx, sy the part of the frame it drew) */
+const frameRows = key => { const m = key.match(/^([a-z_]+)\.([a-z0-9_]+?)(<?)(\^?)$/); if (!m || !SPR[m[1]] || !SPR[m[1]].frames[m[2]]) return null; let rows = SPR[m[1]].frames[m[2]].split('/'); if (m[3]) rows = rows.map(r => r.split('').reverse().join('')); return m[4] ? rows.reverse() : rows; };   /* ART4: '^' upside down (Shutter Snap's bottom tiles) */
 
 const srv = await serve();
 const browser = await launch();
@@ -97,7 +116,7 @@ const card = page => page.evaluate(() => {
     inView: r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight, noTap: cs.pointerEvents === 'none' && hit !== el && !el.contains(hit), hitName: hit ? hit.id || hit.className || hit.tagName : 'nothing',
     over, overBug, still: el.getAnimations().length === 0, box: [r.left, r.top, r.width, r.height].map(Math.round), opacity: Number(cs.opacity) };
 });
-const slotPx = (page, k) => page.evaluate(k => { const cv = document.querySelectorAll('#slots .slot canvas')[k], d = cv.getContext('2d').getImageData(0, 0, 16, 16).data, out = []; for (let i = 0; i < d.length; i += 4) out.push(d[i + 3] === 0 ? null : d[i] + ',' + d[i + 1] + ',' + d[i + 2]); return out; }, k);
+const slotPx = (page, k) => page.evaluate(k => { const cv = document.querySelectorAll('#slots .slot canvas')[k], d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, out = []; for (let i = 0; i < d.length; i += 4) out.push(d[i + 3] === 0 ? null : d[i] + ',' + d[i + 1] + ',' + d[i + 2]); return out; }, k);
 const audioOn = async page => { let st = 'none'; for (let k = 0; k < 30 && st !== 'running'; k++) { await sleep(100); st = await page.evaluate(() => window.SB_DEV.audioState()); } return st; };
 /* walk by a real arrow key until the chest opens (or n steps), then one more; the trace of probes */
 async function walkToChest(page, key) {
@@ -108,16 +127,34 @@ async function walkToChest(page, key) {
   await page.keyboard.up(key);
   return { trace, at };
 }
-/* the boomerang's pixels on the canvas: every opaque pixel of each drawn boomerang rect, its colour */
-const projColours = (page, kind) => page.evaluate(kind => {
-  const rc = window.SB_DEV.spriteRects().proj.filter(p => p.kind === kind), cv = document.getElementById('view'), d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data, out = new Set();
-  for (const r of rc) for (let y = 0; y < r.h; y++) for (let x = 0; x < r.w; x++) {
-    const key = r.key, X = r.x + x, Y = r.y + y; if (X < 0 || Y < 0 || X >= cv.width || Y >= cv.height) continue;
-    if (!window.SB.render.opaque(key, key.includes('<') ? x : x, y)) continue;
-    const o = (Y * cv.width + X) * 4; out.add(d[o] + ',' + d[o + 1] + ',' + d[o + 2]);
+/* ART2: every drawn record of a kind against its frame decoded here from the page's SPRITES: each opaque pixel of the
+   part it drew equals the canvas, except where the hero or a record drawn after it covers it (the hero draws last) */
+const drawnEqual = async (page, kind) => {
+  const got = await page.evaluate(kind => {
+    const all = window.SB_DEV.spriteRects(), cv = document.getElementById('view'), d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+    const out = all.proj.map((r, i) => ({ i, kind: r.kind, key: r.key, x: r.x, y: r.y, w: r.w, h: r.h, sx: r.sx, sy: r.sy, px: [] }));
+    for (const r of out) if (r.kind === kind) for (let y = -1; y < r.h; y++) for (let x = 0; x < r.w; x++) { const X = r.x + x, Y = r.y + y; const o = (Y * cv.width + X) * 4; r.px.push(X < 0 || Y < 0 || X >= cv.width || Y >= cv.height ? null : d[o] + ',' + d[o + 1] + ',' + d[o + 2]); }
+    const h = all.hero ? { key: all.hero.key, x: all.hero.x, y: all.hero.y, w: all.hero.w, h: all.hero.h, sx: 0, sy: 0 } : null;
+    return { recs: out, hero: h };
+  }, kind);
+  const mine = got.recs.filter(r => r.kind === kind), bad = []; let n = 0;
+  /* covered: an opaque pixel of the hero's frame or of a record drawn later lies on it (each frame decoded here) */
+  const covered = (r, X, Y) => [got.hero].concat(got.recs.filter(q => q.i > r.i)).some(q => { if (!q || X < q.x || X >= q.x + q.w || Y < q.y || Y >= q.y + q.h) return false; const fr = frameRows(q.key.replace('*', '')); return !fr || fr[q.sy + Y - q.y][q.sx + X - q.x] !== '.'; });
+  for (const r of mine) {
+    const rows = frameRows(r.key);
+    if (!rows) { bad.push(r.key + ' has no frame in SPRITES'); continue; }
+    for (let y = 0; y < r.h; y++) for (let x = 0; x < r.w; x++) {
+      const ch = rows[r.sy + y][r.sx + x], c = r.px[(y + 1) * r.w + x];
+      if (ch === '.' || c === null || covered(r, r.x + x, r.y + y)) continue;
+      n++; if (c !== RGB[parseInt(ch, 16)].join(',')) bad.push(r.key + ' ' + (r.sx + x) + ',' + (r.sy + y) + ' ' + c);
+    }
   }
-  return { rects: rc.length, colours: [...out] };
-}, kind);
+  /* the rim (ART2, the shock): the pixel just above each column's topmost opaque pixel, where nothing later covers it */
+  let rimN = 0; const rimBad = [], INK = RGB[0].join(',');
+  for (const r of mine) { const rows = frameRows(r.key); if (!rows) continue; for (let x = 0; x < r.w; x++) { let t = -1; for (let y = 0; y < r.h; y++) if (rows[r.sy + y][r.sx + x] !== '.') { t = y; break; } if (t < 0 || covered(r, r.x + x, r.y + t - 1)) continue; const c = r.px[t * r.w + x]; if (c === null) continue; rimN++; if (c !== INK) rimBad.push(r.key + ' col ' + (r.sx + x) + ' ' + c); } }
+  const box = mine.length ? [Math.min(...mine.map(r => r.x)), Math.min(...mine.map(r => r.y)), Math.max(...mine.map(r => r.x + r.w)), Math.max(...mine.map(r => r.y + r.h))] : null;
+  return { rects: mine.length, keys: mine.map(r => r.key + (r.sx ? '@' + r.sx : '')), sizes: mine.map(r => r.w + 'x' + r.h), n, bad, rimN, rimBad, box };
+};
 
 try {
   /* SB_FIGHT_SIZES=412 (a comma list of widths) runs only those sizes: redwatch's fight rows all name a 412 line */
@@ -149,7 +186,7 @@ try {
     R.say(!!ch && !!nx && ch.x !== c1.trace[at1 - 1].x && nx.x !== ch.x && !ch.dialogs.length && !nx.dialogs.length && !ch.modal && !nx.modal,
       w + ': the world is never held: the bug walks on the chest\'s step and the next (x ' + (ch ? [c1.trace[at1 - 1].x, ch.x, nx ? nx.x : '?'].map(v => (v / 256).toFixed(1)).join(', ') : '?') + '), no dialog, never modal');
     const px1 = put1 >= 0 ? await slotPx(page, put1) : [], want1 = id1 ? iconPx(id1) : [];
-    R.say(!!id1 && px1.length === 256 && px1.every((c, i) => c === want1[i]) && !ch.boxes[put1].empty, w + ': the ' + (put1 === 0 ? 'jump' : 'dive') + ' box shows ' + id1 + '\'s icon, its 256 pixels equal the frame decoded from the page\'s SPRITES (' + px1.filter((c, i) => c !== want1[i]).length + ' differ)');
+    R.say(!!id1 && px1.length === 576 && px1.every((c, i) => c === want1[i]) && !ch.boxes[put1].empty, w + ': the ' + (put1 === 0 ? 'jump' : 'dive') + ' box shows ' + id1 + '\'s icon (icon_weapons.' + ICON_NAME[id1] + '), its 576 pixels equal the frame decoded from the page\'s SPRITES (' + px1.filter((c, i) => c !== want1[i]).length + ' differ)');
     const g1 = await card(page);
     R.say(g1.on && g1.name === COPY.wpn[id1] && g1.says === COPY.wpnSays[id1], w + ': the pickup card names ' + JSON.stringify(g1.name) + ' and says ' + JSON.stringify(g1.says) + ', COPY\'s words');
     R.say(g1.real && g1.inView && g1.noTap && g1.over.length === 0 && !g1.overBug, w + ': the card is in view (box ' + g1.box.join(' ') + '), takes no tap (a thumb lands on ' + g1.hitName + '), clear of Pause and the drawn controls' + (g1.over.length ? ' (over ' + g1.over.join(' ') + ')' : '') + ' and of the bug\'s drawn box' + (g1.overBug ? ' (OVER THE BUG)' : ''));
@@ -165,8 +202,12 @@ try {
     p = await probe(page);
     R.say(s2.ok && JSON.stringify(s2.slots) === JSON.stringify(ch ? ch.slots : null) && !p.boxes[put1].empty && p.frame === 0, w + ': Play it again starts the next room with the cleared room\'s gear (' + s2.slots.join(',') + '), its box full before the first step');
     const c2 = await walkToChest(page, 'ArrowLeft'), ch2 = c2.at > 0 ? c2.trace[c2.at] : null, id2 = ch2 ? WPN[ch2.slots[1 - put1]] : '';
-    R.say(!!ch2 && ch2.heard.includes('equip') && ch2.slots[0] > 0 && ch2.slots[1] > 0 && id2 && id2 !== id1, w + ': its chest gives the other weapon (' + id2 + '), both slots full now');
+    R.say(!!ch2 && ch2.heard.includes('equip') && ch2.slots[0] > 0 && ch2.slots[1] > 0 && id2 && (id2[0] !== id1[0]), w + ': its chest gives the other slot\'s weapon (' + id2 + '), both slots full now');
     await page.waitForFunction(() => !document.getElementById('got').classList.contains('on'), { timeout: 6000, polling: 50 }).catch(() => {});
+    /* W2: the pool holds eight jump weapons now, so the chest's jump weapon is any of them (H-wpn-7 holds the draw); a
+       liberty: the jump slot set to the Boomerang by hand for the throw below */
+    await page.evaluate(() => { const st = window.SB.game.state; st.hero.slots[0] = 1; st.hero.slots[1] = 9; });
+    await stepN(page, 1);
 
     /* the throw: face right (a few real steps), a frozen moth 3 cells ahead on the floor row */
     await page.keyboard.down('ArrowRight'); await stepN(page, 3); await page.keyboard.up('ArrowRight'); await stepN(page, 8);
@@ -174,7 +215,8 @@ try {
     const col = Math.floor((p.x + 6 * 256) / 4096), mi = await layMoth(page, col + 3, FLOOR), dpA = p.dp;
     await tap(page, '#btnA');
     const th = [await stepN(page, 1)];
-    for (let k = 0; k < 80; k++) th.push(await stepN(page, 1));
+    let popEq = null;   /* ART2: the kill's pop read on the canvas on the step it is first drawn */
+    for (let k = 0; k < 80; k++) { const q = await stepN(page, 1); th.push(q); if (!popEq && q.hp[mi] === 0 && q.proj.some(e => e.kind === 3)) popEq = await drawnEqual(page, 3); }
     const b = th.flatMap(q => q.proj.filter(e => e.kind === 1)), far = b.length ? Math.max(...b.map(e => Math.abs(e.x - e.a))) : 0, back = th.some(q => q.proj.some(e => e.kind === 1 && e.mode === 1));
     const killAt = th.findIndex(q => q.hp[mi] === 0), kq = killAt >= 0 ? th[killAt] : null;
     R.say(th[0].heard.includes('throw') && th[0].proj.some(e => e.kind === 1) && far === K.J1_REACH && back && th[th.length - 1].proj.every(e => e.kind !== 1),
@@ -182,12 +224,34 @@ try {
     R.say(!!kq && kq.heard.includes('pop') && kq.dp === dpA + T.DP_FODDER && kq.dpn === String(dpA + T.DP_FODDER) && kq.plus === '+' + T.DP_FODDER && kq.proj.some(e => e.kind === 3),
       w + ': it kills the frozen moth ahead with the pop voice, the count ' + (kq ? kq.dpn : '?') + ' and ' + (kq ? kq.plus : '?') + ' under it, the pop drawn (' + (kq ? kq.proj.map(e => e.kind).join(' ') : 'never killed') + ')');
 
-    /* the boomerang's colours on the canvas (a fresh throw once the cooldown has run) */
+    R.say(!!popEq && popEq.rects === 1 && /^fx_enemy_hit\.enemy_death_0$/.test(popEq.keys[0]) && popEq.sizes[0] === '32x32' && popEq.n >= 8 && popEq.bad.length === 0,
+      w + ': the kill\'s pop is Astra\'s ' + (popEq ? popEq.keys.join(' ') + ' (' + popEq.sizes.join(' ') + '), its ' + popEq.n + ' opaque pixels equal the frame' + (popEq.bad.length ? ' (' + popEq.bad.length + ' differ: ' + popEq.bad.slice(0, 3).join('; ') + ')' : '') : 'never drawn'));
+
+    /* ART2: a hit's burst over a live enemy: a frozen jelly of 8 quarters 2 cells ahead takes the throw and lives; the
+       burst read on the canvas on the hit's first drawn step, its frames walked over the hurt */
+    for (let k = 0; k < 60 && !(await probe(page)).ground; k++) await stepN(page, 1);
+    await stepN(page, 40); p = await probe(page);
+    const jc = Math.floor((p.x + 6 * 256) / 4096) + 2;
+    const ji = await page.evaluate((c, r, W) => { const st = window.SB.game.state; st.enemies.push({ kind: 3, x: c * 4096, y: r * 4096, vx: 0, vy: 0, hp: 8, state: 0, timer: 0, dir: 1, home: r * W + c, elite: 0, frozen: 1 << 20, stunned: 0, hurt: 0 }); window.SB_DEV.step(0); return st.enemies.length - 1; }, jc, FLOOR, W);
+    await tap(page, '#btnA');
+    let hitEq = null; const hitKeys = [];
+    for (let k = 0; k < 30; k++) {
+      await stepN(page, 1);
+      const hk = await page.evaluate(() => window.SB_DEV.spriteRects().proj.filter(r => r.kind === 'hit').map(r => r.key));
+      if (hk.length) { hitKeys.push(hk[0]); if (!hitEq) hitEq = await drawnEqual(page, 'hit'); } else if (hitKeys.length) break;
+    }
+    const jhp = (await probe(page)).hp[ji];
+    R.say(!!hitEq && hitEq.rects === 1 && /^fx_enemy_hit\.enemy_hit_0$/.test(hitEq.keys[0]) && hitEq.n >= 8 && hitEq.bad.length === 0 && jhp > 0 && hitKeys.length >= K.HURT_FLASH_F - 1 && hitKeys.length <= K.HURT_FLASH_F
+      && hitKeys[hitKeys.length - 1] === 'fx_enemy_hit.enemy_hit_3' && hitKeys.every((k, i) => i === 0 || k >= hitKeys[i - 1]),
+      w + ': a hit on a live jelly draws Astra\'s burst over it, ' + (hitEq ? hitEq.n : 0) + ' opaque pixels of ' + (hitEq ? hitEq.keys[0] : 'nothing') + ' equal the frame' + (hitEq && hitEq.bad.length ? ' (' + hitEq.bad.length + ' differ: ' + hitEq.bad.slice(0, 3).join('; ') + ')' : '') + ', its frames over the hurt\'s ' + K.HURT_FLASH_F + ' steps: ' + hitKeys.map(k => k.slice(-1)).join(' ') + ' (the jelly lives, ' + jhp + ' quarters)');
+
+    /* the boomerang on the canvas (a fresh throw once the cooldown has run) */
     for (let k = 0; k < 60 && !(await probe(page)).ground; k++) await stepN(page, 1);
     await stepN(page, 40);
     await tap(page, '#btnA'); await stepN(page, 6);
-    const bc = await projColours(page, 1);
-    R.say(bc.rects === 1 && bc.colours.length > 1 && bc.colours.every(c => WEAPON_RGB.has(c)), w + ': the boomerang is drawn in weapon colours only (' + bc.colours.join(' ') + ')');
+    const bc = await drawnEqual(page, 1);
+    R.say(bc.rects === 1 && /^fx_projectiles\.boomerang_[0-3]<?$/.test(bc.keys[0]) && bc.sizes[0] === '32x32' && bc.n >= 40 && bc.bad.length === 0,
+      w + ': the boomerang is Astra\'s ' + bc.keys.join(' ') + ' (' + bc.sizes.join(' ') + '), its ' + bc.n + ' opaque pixels equal the frame decoded from the page\'s SPRITES' + (bc.bad.length ? ' (' + bc.bad.length + ' differ: ' + bc.bad.slice(0, 3).join('; ') + ')' : ''));
 
     /* the cooldown: a hop landed inside it, then A: it jumps and throws nothing; the jump box cool for exactly 36 steps */
     const cdTrace = [await probe(page)];
@@ -209,7 +273,10 @@ try {
     await tap(page, '#btnA'); await stepN(page, 4); await tap(page, '#btnB');
     let dv = null; for (let k = 0; k < 60 && !dv; k++) { const q = await stepN(page, 1); if (q.heard.includes('shock')) dv = q; }
     const dRects = await page.evaluate(() => window.SB_DEV.spriteRects().proj.filter(r => r.kind === 2).length);
-    await stepN(page, 12); const afterDive = await probe(page);
+    await stepN(page, 4); const dq = await drawnEqual(page, 2);   /* four steps on: the fronts out from under the bug */
+    R.say(dq.rects === 2 && dq.keys.every(k => /^fx_shockwave\.anvil_boots_[0-3](@\d+)?$/.test(k)) && dq.keys.some(k => k.endsWith('@24')) && dq.keys.some(k => !k.endsWith('@24')) && dq.n >= 10 && dq.bad.length === 0 && dq.rimN >= 8 && dq.rimBad.length === 0,
+      w + ': the shock is Astra\'s ring split at its centre, a half at each front (' + dq.keys.join(', ') + '; ' + dq.sizes.join(', ') + '), its ' + dq.n + ' opaque pixels equal the frame' + (dq.bad.length ? ' (' + dq.bad.length + ' differ: ' + dq.bad.slice(0, 3).join('; ') + ')' : '') + ', an Ink rim above it in ' + dq.rimN + ' columns' + (dq.rimBad.length ? ' (' + dq.rimBad.length + ' not Ink: ' + dq.rimBad.slice(0, 3).join('; ') + ')' : ''));
+    await stepN(page, 8); const afterDive = await probe(page);
     R.say(!!dv && dv.proj.some(e => e.kind === 2) && dRects === 2 && afterDive.hp[mb] === 0, w + ': a real B dive\'s landing sends the shock with its voice, drawn at both fronts (' + dRects + ' rects), and kills a floor moth 3 cells behind (' + (afterDive.hp[mb] === 0) + ')');
     /* the dash: a frozen moth 3 cells ahead; a real B on the ground */
     await stepN(page, 20); p = await probe(page);
@@ -222,7 +289,7 @@ try {
     const writes = await page.evaluate(() => { const box = document.getElementById('slots'); let n = 0; const mo = new MutationObserver(r => { n += r.length; }); mo.observe(box, { attributes: true, childList: true, subtree: true, characterData: true }); for (let k = 0; k < 30; k++) window.SB_DEV.step(1); const left = mo.takeRecords().length; mo.disconnect(); return n + left; });
     R.say(writes === 0, w + ': the HUD is written 0 times over 30 quiet steps (' + writes + ' mutation records)');
     const ov = await page.evaluate(() => { const t = document.getElementById('top'); return { sw: t.scrollWidth, cw: t.clientWidth, name: document.getElementById('roomname').getBoundingClientRect().width, hearts: document.querySelectorAll('#hearts i').length }; });
-    R.say(ov.sw <= ov.cw && ov.hearts === 4, w + ': the top strip holds Pause, the name, both icons and ' + ov.hearts + ' hearts without overflow (scrollWidth ' + ov.sw + ', clientWidth ' + ov.cw + ', the name ' + Math.round(ov.name) + ' px)');
+    R.say(ov.sw <= ov.cw && ov.hearts === 4 && ov.name >= 90, w + ': the top strip holds Pause, the name, both icons and ' + ov.hearts + ' hearts without overflow (scrollWidth ' + ov.sw + ', clientWidth ' + ov.cw + '), the name keeps 90 px or more (' + Math.round(ov.name) + ' px; W2R: 64 at 320 before)');
 
     /* the card near the top: a fresh sitting (Title), a chest in the bug's own cell high in the room */
     await page.evaluate(() => window.SB_DEV.goto('title'));
@@ -272,6 +339,84 @@ try {
       R.say(!!got && got.some(c => c > 0) && dead === 'dead' && JSON.stringify(g5.slots) === '[0,0,0]' && g5.boxes[0].empty && g5.boxes[1].empty, '412: a death after the chest (' + (got ? got.join(',') : '?') + ', screen ' + dead + '): Again restarts with the gear the bug walked in with (' + g5.slots.join(',') + ')');
       R.say(errors.length === 0, '412 the sitting: zero page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
     }
+    /* W2 (step 2): Twin Darts and Shutter Snap drawn. The slots laid by hand (a liberty: the chest's draw is H-wpn-7's);
+       a real A tap shoots two darts with the dart voice, each Astra's twin_darts frame (the left one mirrored), every
+       opaque pixel the frame decoded here; then Shutter Snap freezes a live moth beside the bug with the shutter voice,
+       and the frozen look (fx_frozen_stunned.frozen_n) is drawn over it, every opaque pixel its frame */
+    await page.evaluate(() => window.SB_DEV.goto('title'));
+    await setRoom(page, 20, [[14, 30, 1 << 20]]);
+    await page.evaluate(() => { window.SB.game.state.hero.slots[0] = 5; });
+    await stepN(page, 4);
+    await tap(page, '#btnA'); const d1 = await stepN(page, 1); await stepN(page, 2);
+    const dEq = await drawnEqual(page, 7);
+    const dAt = await page.evaluate(() => { const st = window.SB.game.state, d = window.SB.render.drawn; return st.proj.filter(p => p.live && p.kind === 7).map(p => [(p.x >> 8) - d.camX, (p.y >> 8) - d.cam, p.vx < 0 ? 1 : 0].join(',')).sort().join(' '); });
+    const dRec = await page.evaluate(() => window.SB_DEV.spriteRects().proj.filter(r => r.kind === 7).map(r => [r.x, r.y, r.key.endsWith('<') ? 1 : 0].join(',')).sort().join(' '));
+    R.say(d1.heard.includes('dart') && d1.proj.filter(e => e.kind === 7).length === 2 && dEq.rects === 2 && dEq.keys.includes('dart.a<') && dEq.keys.includes('dart.a') && dEq.sizes.every(s => s === '8x4') && dRec === dAt && dEq.n >= 40 && dEq.bad.length === 0,
+      w + ': a real A tap with Twin Darts shoots two darts with the dart voice (' + d1.heard.join(', ') + '), each Astra\'s round 4 dart on its 8x4 box, the left one mirrored (' + dEq.keys.join(' ') + ' at ' + dRec + ', the boxes ' + dAt + '), ' + dEq.n + ' opaque pixels equal the frames' + (dEq.bad.length ? ' (' + dEq.bad.length + ' differ: ' + dEq.bad.slice(0, 3).join('; ') + ')' : ''));
+    for (let k = 0; k < 60 && !(await probe(page)).ground; k++) await stepN(page, 1);
+    await stepN(page, 40);
+    const sp = await probe(page), sc = Math.floor((sp.x + 6 * 256) / 4096);
+    const mi2 = await page.evaluate((c, r) => { const st = window.SB.game.state; st.hero.slots[0] = 7; st.enemies.push({ kind: 1, x: c * 4096, y: r * 4096, vx: 0, vy: 0, hp: 4, state: 0, timer: 0, dir: 1, home: r * 24 + c, elite: 0, frozen: 0, stunned: 1 << 20, hurt: 0 }); return st.enemies.length - 1; }, sc + 2, FLOOR);
+    await stepN(page, 1);
+    await tap(page, '#btnA'); const z1 = await stepN(page, 1); await stepN(page, 1);
+    const fz = await page.evaluate(i => window.SB.game.state.enemies[i].frozen, mi2), zEq = await drawnEqual(page, 'frozen');
+    R.say(z1.heard.includes('shutter') && fz > 0 && fz <= K.J7_FREEZE_F && z1.hp[mi2] === 4 && zEq.rects >= 1 && zEq.keys.every(k => /^fx_frozen_stunned\.frozen_\d$/.test(k)) && zEq.n >= 20 && zEq.bad.length === 0,
+      w + ': a real A tap with Shutter Snap freezes the moth beside the bug (' + fz + ' steps left, hp ' + z1.hp[mi2] + ') with the shutter voice (' + z1.heard.join(', ') + '), its frozen look drawn as ' + zEq.keys.join(' ') + ', ' + zEq.n + ' opaque pixels equal the frame' + (zEq.bad.length ? ' (' + zEq.bad.length + ' differ)' : ''));
+    /* ART4: the Snap's frame is Astra's snap_frame assembled round the reach's square: the takeoff box and J7_REACH each
+       side, 108x112, from four corners (each mirrored to its corner), 12 edge_h tiles along the top and 12 upside down
+       along the bottom (the last of each 4 px), 12 edge_v down each side (the right mirrored), every opaque pixel its tile */
+    const snAt = await page.evaluate((HW, HH, RE) => { const st = window.SB.game.state, d = window.SB.render.drawn, p = st.proj.find(q => q.live && q.kind === 10); return p ? [((p.x - (HW >> 1) - RE) >> 8) - d.camX, ((p.y - (HH >> 1) - RE) >> 8) - d.cam] : null; }, K.HERO_W_SUB, K.HERO_H_SUB, K.J7_REACH);
+    const sEq = await drawnEqual(page, 10), snKeys = {}; for (const k of sEq.keys) { const b = k.replace(/@\d+$/, ''); snKeys[b] = (snKeys[b] || 0) + 1; }
+    const snWant = { 'snap_frame.corner': 1, 'snap_frame.corner<': 1, 'snap_frame.corner^': 1, 'snap_frame.corner<^': 1, 'snap_frame.edge_h': 12, 'snap_frame.edge_h^': 12, 'snap_frame.edge_v': 12, 'snap_frame.edge_v<': 12 };
+    R.say(!!snAt && !!sEq.box && sEq.box.join(',') === [snAt[0], snAt[1], snAt[0] + 108, snAt[1] + 112].join(',') && JSON.stringify(Object.keys(snWant).map(k => snKeys[k] || 0)) === JSON.stringify(Object.values(snWant)) && sEq.rects === 52 && sEq.sizes.filter(s => s === '4x8').length === 2 && sEq.n >= 400 && sEq.bad.length === 0,
+      w + ': the Snap draws Astra\'s 108x112 frame round the reach\'s square (drawn ' + (sEq.box ? sEq.box.join(',') : 'nothing') + ', the reach ' + (snAt ? [snAt[0], snAt[1], snAt[0] + 108, snAt[1] + 112].join(',') : '?') + '), ' + sEq.rects + ' tiles (' + Object.entries(snKeys).map(([k, v]) => k.slice(11) + ' ' + v).join(', ') + '), ' + sEq.n + ' opaque pixels equal their tiles' + (sEq.bad.length ? ' (' + sEq.bad.length + ' differ: ' + sEq.bad.slice(0, 3).join('; ') + ')' : ''));
+    /* ART4: each picture's timing on the bug's own steps, one step at a time: the records of a kind with their keys and
+       places, and the live entries of that kind (the place each must take) */
+    const trace = (kind, n) => page.evaluate((kind, n) => { const out = []; for (let k = 0; k < n; k++) { window.SB_DEV.step(1); const st = window.SB.game.state, d = window.SB.render.drawn; out.push({ cam: d.cam, camX: d.camX,
+      recs: window.SB_DEV.spriteRects().proj.filter(r => r.kind === kind).map(r => ({ key: r.key, x: r.x, y: r.y, w: r.w, h: r.h })), proj: st.proj.filter(p => p.live && p.kind === kind).map(p => ({ x: p.x, y: p.y, a: p.a, b: p.b, age: p.age, mode: p.mode, vx: p.vx, vy: p.vy })) }); } return out; }, kind, n);
+    const f8 = age => Math.floor(Math.max(0, age) * 2 / 15) % 2 ? 'b' : 'a';   /* her 8 fps loop */
+    /* Halo: the ring rises on its 16x6 box from the takeoff, ring.a and ring.b at 8 fps by its own age */
+    for (let k = 0; k < 60 && !(await probe(page)).ground; k++) await stepN(page, 1);
+    await stepN(page, 30);
+    await page.evaluate(() => { window.SB.game.state.hero.slots[0] = 6; });
+    await tap(page, '#btnA');
+    const hT = await trace(8, 30), hBad = [], hKeys = new Set(); let hN = 0;
+    for (const s of hT) for (const p of s.proj) { const want = 'ring.' + f8(p.age), x = (p.x >> 8) - s.camX, y = (p.y >> 8) - s.cam, r = s.recs.find(q => q.x === x && q.y === y); hN++; if (!r || r.key !== want || r.w !== 16 || r.h !== 6) hBad.push('age ' + p.age + ': ' + (r ? r.key : 'none') + ' not ' + want); else hKeys.add(r.key); }
+    R.say(hN >= 20 && hBad.length === 0 && hKeys.size === 2, w + ': Halo\'s ring is Astra\'s 16x6 ring on its box at every step it lives (' + hN + '), flickering ' + [...hKeys].join(' and ') + ' at 8 fps by its age' + (hBad.length ? ' (' + hBad.slice(0, 3).join('; ') + ')' : ''));
+    /* Spark Trail: each EMBER one 8x8 ember, bottom centred on its box, ember.a and ember.b at 8 fps by its own age */
+    for (let k = 0; k < 90 && !(await probe(page)).ground; k++) await stepN(page, 1);
+    await stepN(page, 30);
+    await page.evaluate(() => { window.SB.game.state.hero.slots[0] = 2; });
+    await tap(page, '#btnA');
+    const eT = await trace(5, 40), eBad = [], eKeys = new Set(); let eN = 0, eMax = 0;
+    for (const s of eT) { eMax = Math.max(eMax, s.proj.length); if (s.recs.length !== s.proj.length) eBad.push(s.recs.length + ' drawn for ' + s.proj.length); for (const p of s.proj) { const want = 'ember.' + f8(p.age), x = (p.x >> 8) + (((p.a >> 8) - 8) >> 1) - s.camX, y = ((p.y + p.b) >> 8) - s.cam - 8, r = s.recs.find(q => q.x === x && q.y === y); eN++; if (!r || r.key !== want || r.w !== 8 || r.h !== 8) eBad.push('age ' + p.age + ': ' + (r ? r.key + ' at ' + r.x + ',' + r.y : 'none') + ' not ' + want + ' at ' + x + ',' + y); else eKeys.add(r.key); } }
+    R.say(eMax === 3 && eN >= 40 && eBad.length === 0 && eKeys.size === 2, w + ': Spark Trail\'s sparks are one Astra ember each (' + eMax + ' at once), bottom centred on its box at every step (' + eN + '), flickering ' + [...eKeys].join(' and ') + ' at 8 fps by its age' + (eBad.length ? ' (' + eBad.slice(0, 3).join('; ') + ')' : ''));
+    /* the Flashbulb: at the burst flash_ring's origin (32, 32) on the bug's centre where it burst, a, b, c, d for 5
+       steps each (12 fps, past the pool entry's 8 steps), then gone */
+    for (let k = 0; k < 120 && !(await probe(page)).ground; k++) await stepN(page, 1);
+    await stepN(page, 30);
+    await page.evaluate(() => { window.SB.game.state.hero.slots[0] = 4; });
+    await tap(page, '#btnA');
+    const fT = await trace(6, 70); let fAt = null; const fSeq = [], fBad = [];
+    for (const s of fT) { const b = s.proj.find(p => p.mode === 1); if (b && !fAt) fAt = { x: b.x >> 8, y: b.y >> 8 }; if (!fAt) continue; if (!s.recs.length) { fSeq.push('-'); continue; } const r = s.recs[0]; fSeq.push(r.key.slice(11)); if (s.recs.length !== 1 || r.x !== fAt.x - 32 - s.camX || r.y !== fAt.y - 32 - s.cam || r.w !== 64) fBad.push(r.key + ' at ' + r.x + ',' + r.y + ' not ' + (fAt.x - 32 - s.camX) + ',' + (fAt.y - 32 - s.cam)); }
+    const fRun = fSeq.join('').replace(/^-+/, '').replace(/-+$/, '');
+    R.say(!!fAt && fRun === 'aaaaabbbbbcccccddddd' && fBad.length === 0, w + ': the Flashbulb\'s burst is Astra\'s flash_ring centred on the bug where it burst, a to d at 12 fps then gone (' + (fRun || 'none') + ')' + (fBad.length ? ' (' + fBad.slice(0, 2).join('; ') + ')' : ''));
+    /* Shield Kick: a wall jump off each wall (the bug laid in the air flush against it, the arrow held into it: a
+       liberty, the sim's kick is H-wpn-J3's); kick_spray's wall edge on the face, the bug's centre on its local row 40,
+       mirrored for the right wall; a, b, c for 5 steps each, then gone */
+    for (const side of [-1, 1]) {
+      await page.evaluate((side, W, HW, FL) => { const st = window.SB.game.state, h = st.hero; h.slots[0] = 3; h.cd[0] = 0; h.x = side < 0 ? 0 : W * 4096 - HW; h.y = (FL - 6) * 4096; h.vx = 0; h.vy = 0; h.ground = 0; }, side, W, K.HERO_W_SUB, FLOOR);
+      const key = side < 0 ? 'ArrowLeft' : 'ArrowRight';
+      await page.keyboard.down(key); await stepN(page, 6);
+      await tap(page, '#btnA');
+      const kT = await trace(9, 24); await page.keyboard.up(key);
+      let kAt = null; const kSeq = [], kBad = [];
+      for (const s of kT) { const p = s.proj[0]; if (p && !kAt) kAt = { x: p.x >> 8, y: (p.y + (K.HERO_H_SUB >> 1)) >> 8, b: p.b }; if (!kAt) continue; if (!s.recs.length) { kSeq.push('-'); continue; } const r = s.recs[0], wx = (kAt.b > 0 ? kAt.x - 16 : kAt.x) - s.camX, wy = kAt.y - 40 - s.cam;
+        kSeq.push(r.key.slice(11)); if (s.recs.length !== 1 || r.x !== wx || r.y !== wy || r.w !== 16 || r.h !== 80 || r.key.endsWith('<') !== (kAt.b > 0)) kBad.push(r.key + ' at ' + r.x + ',' + r.y + ' not ' + wx + ',' + wy); }
+      const kRun = kSeq.join('').replace(/^-+/, '').replace(/-+$/, '');
+      R.say(!!kAt && kAt.b === side && /^a{5}b{5}c{5}$/.test(kRun.replace(/</g, '')) && kBad.length === 0, w + ': a wall jump off the ' + (side < 0 ? 'left' : 'right') + ' wall draws Astra\'s kick_spray on the kicked column, its wall edge on the face' + (side > 0 ? ' (mirrored)' : '') + ', a to c at 12 fps then gone (' + (kRun || 'none') + ', side ' + (kAt ? kAt.b : '?') + ')' + (kBad.length ? ' (' + kBad.slice(0, 2).join('; ') + ')' : ''));
+    }
+    if (process.env.SB_SHOTS) await page.screenshot({ path: join(process.env.SB_SHOTS, 'fight-' + w + '-kick.png') });
     await page.close();
   }
 } finally { await browser.close(); await srv.close(); }

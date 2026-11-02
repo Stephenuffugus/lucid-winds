@@ -5,9 +5,13 @@ variants each of which the cutter must refuse for its own reason.
 
   python3 -I test/astra_fixture.py <sprites.json> <out.zip> [--break KIND] [--tweak] [--elite]
       sprites.json: {key: {w, h, frames: {name: string}}} with the page's palette under "_palette" (16 hexes)
-      --break offpalette | alpha | size | sun | feet | source | sha | slip | depth16
+      --break offpalette | alpha | size | sun | feet | source | sha | slip | depth16 | sunfx | fxname
+      --pad N  adds N one pixel keys pad_00.. (the key cap)
       --tweak  one pixel of hero.idle0 changed to another palette colour (a legal change)
       --elite  adds enemies/enemy_moth_elite.png, 24x24, the moth centred (a new key)
+      --round3 Astra's round 3 shapes (ART3): the manifest names its game 'SHUTTERBUG', and fx_boss_chip (16 a side),
+               fx_boss_down (64 a side) and fx_beacon_light (the beacon's frame a with its Sun) come as effects;
+               with --break sunchip the chip carries Sun too, with --break fx24 the chip is 24 a side
 The PNG rows cycle the five filter types, so the cutter's decoder meets each of them."""
 import sys, json, zlib, struct, hashlib, zipfile, io
 
@@ -25,9 +29,22 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'enemies/enemy_moth_elite.png': ('moth_elite', None), 'enemies/enemy_icicle_elite.png': ('icicle_elite', None),
     'enemies/enemy_jelly_elite.png': ('jelly_elite', None), 'enemies/enemy_crawler_elite.png': ('crawler_elite', None),
     'enemies/enemy_spark_elite.png': ('spark_elite', None), 'ui/hud_heart.png': ('hud_heart', None),
-    # Weapons v1 step 1 (docs/WEAPONS-V1.md 8.1): the builder's placeholders under the HOLD items' names, one key a file
-    'fx/fx_projectiles.png': ('boomerang', None), 'fx/fx_shockwave.png': ('shock', None), 'fx/fx_bursts.png': ('pop', None),
-    'ui/icon_weapons.png': ('icon', None),
+    # ART2's keys (Astra's delivery of 31 Oct, Q161): the hero's poses, the weapon icons and the step 1 effects
+    'hero/hero_dash.png': ('hero_dash', None), 'hero/hero_hurt.png': ('hero_hurt', None), 'hero/hero_squash.png': ('hero_squash', None),
+    'hero/hero_stretch.png': ('hero_stretch', None), 'hero/hero_dropin.png': ('hero_dropin', None), 'ui/icon_weapons.png': ('icon_weapons', None),
+    'fx/fx_projectiles.png': ('fx_projectiles', None), 'fx/fx_shockwave.png': ('fx_shockwave', None), 'fx/fx_enemy_hit.png': ('fx_enemy_hit', None),
+    # ART3's keys (Astra's rounds 2 and 3, Q98, and round 1's dust): the stick, the pause glyph, the Skyhook's effect,
+    # the biome's air and badges
+    'ui/stick_pad.png': ('stick_pad', None), 'ui/stick_knob.png': ('stick_knob', None), 'ui/stick_hint.png': ('stick_hint', None),
+    'ui/pause_glyph.png': ('pause_glyph', None), 'fx/fx_skyhook.png': ('fx_skyhook', None), 'world/dust_mote.png': ('dust_mote', None),
+    'world/frost_mote.png': ('frost_mote', None), 'world/bubble.png': ('bubble', None), 'world/spore.png': ('spore', None),
+    'world/ember_mote.png': ('ember_mote', None), 'ui/icon_biomes.png': ('icon_biomes', None),
+    # W2's keys (weapons step 2, Q163): round 1's held looks (its bursts and impacts retired at ART4)
+    'fx/fx_frozen_stunned.png': ('fx_frozen_stunned', None),
+    # ART4's keys (Astra's round 4, Q164): her eight weapon effects under her own file names
+    'fx/dart.png': ('dart', None), 'fx/ring.png': ('ring', None), 'fx/ember.png': ('ember', None), 'fx/flash_ring.png': ('flash_ring', None),
+    'fx/snap_frame.png': ('snap_frame', None), 'fx/kick_spray.png': ('kick_spray', None), 'fx/fire_cell.png': ('fire_cell', None),
+    'fx/frost_burst.png': ('frost_burst', None),
 }
 
 
@@ -95,16 +112,34 @@ def main(argv):
     for f, (key, names) in FILES.items():
         if key in S:
             plan.append((f, key, names or list(S[key]['frames'])))
+    for k in range(int(argv[argv.index('--pad') + 1]) if '--pad' in argv else 0):
+        S['pad_%02d' % k] = {'w': 1, 'h': 1, 'frames': {'a': '0'}}
+        plan.append(('extras/pad_%02d.png' % k, 'pad_%02d' % k, ['a']))
     if '--elite' in argv:   # the gate hands a sprites.json without moth_elite (the page holds Astra's since ART1)
         m = S['moth']
         S['moth_elite'] = {'w': 24, 'h': 24, 'frames': {n: '/'.join(['.' * 24] * 4 + ['....' + r + '....' for r in s.split('/')] + ['.' * 24] * 4) for n, s in m['frames'].items()}}
         plan.append(('enemies/enemy_moth_elite.png', 'moth_elite', list(m['frames'])))
+    if '--round3' in argv:
+        sq = lambda n, k: '/'.join(('.' * ((n - k) // 2) + '0' * k + '.' * (n - k - (n - k) // 2)) if (n - k) // 2 <= y < (n - k) // 2 + k else '.' * n for y in range(n))
+        side = 24 if brk == 'fx24' else 16
+        chip = sq(side, 4)
+        if brk == 'sunchip':
+            chip = chip.replace('0', 'e', 1)
+        S['fx_boss_chip'] = {'w': side, 'h': side, 'frames': {'chip_0': chip}}
+        S['fx_boss_down'] = {'w': 64, 'h': 64, 'frames': {'down_0': sq(64, 8)}}
+        S['fx_beacon_light'] = {'w': 16, 'h': 16, 'frames': {'light_0': S['beacon']['frames']['a']}}
+        for k in ('fx_boss_chip', 'fx_boss_down', 'fx_beacon_light'):
+            plan.append(('fx/%s.png' % k, k, list(S[k]['frames'])))
     entries, members = [], {}
     for f, key, names in plan:
         sp = S[key]
         frames = [sp['frames'][n] for n in names]
         if brk == 'sun' and key == 'moth':
             frames[0] = frames[0].replace('4', 'e', 1)
+        if brk == 'sunfx' and key == 'fx_projectiles':
+            frames[0] = frames[0].replace('0', 'e', 1)
+        if brk == 'fxname' and key == 'fx_enemy_hit':
+            names = ['hit'] + names[1:]
         if brk == 'feet' and f == 'hero/hero_idle.png':
             r = frames[0].split('/')
             r[-1] = r[-1].replace('0', '.')
@@ -133,7 +168,7 @@ def main(argv):
                         'anchor': 'cell', 'facing': 'right' if key in ('hero', 'crawler') else 'none', 'colours': used,
                         'batch': 0, 'version': 1, 'tool': 'python grid', 'source': 'source/%s.txt' % stem,
                         'sha256': hashlib.sha256(data).hexdigest() if not (brk == 'sha' and key == 'scroll') else '0' * 64})
-    man = {'game': 'shutterbug', 'brief': 'Shutterbug: every asset, and the brief for Astra (30 Oct 2026)',
+    man = {'game': 'SHUTTERBUG' if '--round3' in argv else 'shutterbug', 'brief': 'Shutterbug: every asset, and the brief for Astra (30 Oct 2026)',
            'palette': ['#' + h for h in pal], 'rulings': ['palette: KEEP', 'grid: 24x48'], 'files': entries,
            'missing': [{'stem': 'loot_dp_drop', 'why': 'HOLD: no size ruled'}], 'extras': []}
     with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:

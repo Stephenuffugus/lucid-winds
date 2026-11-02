@@ -295,6 +295,13 @@ else {
     if (!same(sk, BUILT)) fail('WEAPON_NAMES', 'COPY.wpnSays holds ' + (sk.join(', ') || 'nothing') + ', the build has ' + (BUILT.join(', ') || 'nothing') + ' (every built weapon says what it does)');
     for (const id of wk) if (WEAPON_NAMES[id] && COPY.wpn[id] !== WEAPON_NAMES[id]) fail('WEAPON_NAMES', 'COPY.wpn.' + id + ' is "' + COPY.wpn[id] + '", DESIGN 9.1 names it "' + WEAPON_NAMES[id] + '"');
   }
+  /* WEAPON_NAMES, step 2 (docs/WEAPONS-V1.md 11): every built weapon has its ui.TRAITS row (reach, damage, both sides,
+     holds, lift: five numbers), so the swap card's comparison line can never be made from nothing (TRAITS_MISSING) */
+  const tm = ui.src.match(/ui\.TRAITS = (\{[^;]*\});/);
+  let TR = null;
+  try { TR = tm ? vm.runInNewContext('(' + tm[1] + ')') : null; } catch (e) { TR = null; }
+  if (!TR) fail('WEAPON_NAMES', 'shell-ui holds no ui.TRAITS literal (the swap card\'s traits by id)');
+  else for (const id of BUILT) if (!Array.isArray(TR[id]) || TR[id].length !== 5 || !TR[id].every(n => Number.isInteger(n))) fail('WEAPON_NAMES', 'the built ' + id + ' has no ui.TRAITS row of five numbers (TRAITS_MISSING)');
 }
 const bodyStart = html.indexOf('<body'), firstScript = html.indexOf('<script', bodyStart);
 const markup = html.slice(bodyStart, firstScript < 0 ? html.length : firstScript);
@@ -321,11 +328,18 @@ for (const fm of html.matchAll(/font-size\s*:\s*([0-9.]+)\s*(rem|em|px)|fontSize
     try { S = vm.runInNewContext(sm[1] + '\n;SPRITES'); } catch (e) { fail('SPRITES', 'the SPRITES literal does not evaluate: ' + e.message); }
     if (S) {
       const names = Object.keys(S);
-      if (names.length >= 40) fail('SPRITES', names.length + ' named sprites (under 40)');
-      /* WEAPON_NAMES: an icon frame for exactly the built ids */
-      const icons = S.icon ? Object.keys(S.icon.frames || {}) : [];
-      for (const id of BUILT) if (!icons.includes(id)) fail('WEAPON_NAMES', 'the SPRITES icon sprite has no frame for ' + id + ' (built)');
-      for (const id of icons) if (WEAPON_NAMES[id] && !BUILT.includes(id)) fail('WEAPON_NAMES', 'the SPRITES icon sprite has a frame for ' + id + ', which is not built');
+      /* the page's key cap, the same number as tools/astra_cut.py's MAX_SPRITES (ART3: 43, the least that takes the 42
+         names this step leaves; PROGRESS ART3; W2: 46, Astra's fx_bursts, fx_impacts and fx_frozen_stunned make 45, Q122;
+         ART4: 52, Astra's eight round 4 weapon keys in, fx_bursts and fx_impacts out, 51 names, Q164) */
+      if (names.length >= 52) fail('SPRITES', names.length + ' named sprites (under 52)');
+      /* WEAPON_NAMES (ART3, Astra's round 2): icon_weapons holds a glyph for every DESIGN 9.1 code, named by the code,
+         in DESIGN's order (J1 to J8, D1 to D8, C1 to C8), then the jump, dive and charm slot glyphs; every built id has
+         its glyph; and R.icon looks a glyph up by the code itself, never by a table or its place in the strip */
+      const ORDER = Object.keys(WEAPON_NAMES).concat(['jump', 'dive', 'charm']);
+      const glyphs = S.icon_weapons ? Object.keys(S.icon_weapons.frames || {}) : [];
+      if (JSON.stringify(glyphs) !== JSON.stringify(ORDER)) fail('WEAPON_NAMES', 'icon_weapons holds ' + glyphs.join(' ') + ', not Astra\'s order ' + ORDER.join(' '));
+      for (const id of BUILT) if (!glyphs.includes(id)) fail('WEAPON_NAMES', 'the built ' + id + ' has no icon_weapons glyph named ' + id);
+      if (!/R\.icon = function \(c2, id, x, y\) \{ var r = A\['icon_weapons\.' \+ id\];/.test(rb.src)) fail('WEAPON_NAMES', 'R.icon does not look its glyph up by the code (A[\'icon_weapons.\' + id])');
       for (const name of names) for (const [f, str] of Object.entries(S[name].frames || {})) {
         const rows = String(str).split('/');
         if (rows.length !== S[name].h) fail('SPRITES', name + '.' + f + ' has ' + rows.length + ' rows, not ' + S[name].h);

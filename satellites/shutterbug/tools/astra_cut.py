@@ -8,12 +8,14 @@ the pixel strings of the page's SPRITES block. Standard library only; nothing in
   python3 -I tools/astra_cut.py check <dir> [--sprites OUT.json] [--page index.html]
       verify every manifest entry and cut it: the sha256, an 8 bit RGBA PNG of frames times w by h, alpha 0 or 255
       only, every opaque pixel one of the page's 16 hexes, the PNG equal to its source grid, the hero's feet row holding
-      Ink, Sun only in the hero and the beacon, a known key's size and frame names. Prints the report (refusals, then
+      Ink, Sun only in the hero, its poses, the beacon and its fx_beacon_light, a known key's size and frame names. Prints the report (refusals, then
       warnings, then what was cut); exits 1 on any refusal. --sprites writes the cut frames as JSON
       {key: {w, h, frames: {name: string}, files: [...]}}
   python3 -I tools/astra_cut.py splice <sprites.json> <page> [--out PAGE2]
       write the cut frames into the page's SPRITES block: a key the page has keeps its comment and its frames' order
-      (new names after), a new key is appended; without --out it prints what would change
+      (the hero's new names after; any other key's entry replaces its frames whole, Astra's per key merge), a new key
+      is appended; refused when
+      the page would reach MAX_SPRITES names; without --out it prints what would change
 """
 import sys, os, re, json, zlib, struct, hashlib, zipfile
 
@@ -24,10 +26,33 @@ CAP_FILE, CAP_TOTAL = 50 * 1024 * 1024, 400 * 1024 * 1024
 NEW_KEYS = {
     'moth_elite': (24, 24, None), 'icicle_elite': (24, 24, None), 'jelly_elite': (24, 24, None),
     'crawler_elite': (24, 24, None), 'spark_elite': (24, 24, None), 'hud_heart': (9, 8, ['full', 'empty']),
+    # ART2 (Astra's delivery of 31 Oct): the hero's extra poses (each the hero, so each may carry Sun and stands on an
+    # Ink feet row) and the slot HUD's weapon icons
+    'hero_dash': (12, 16, ['dash']), 'hero_hurt': (12, 16, ['recoil']), 'hero_squash': (14, 14, ['squash']),
+    'hero_stretch': (10, 18, ['stretch']), 'hero_dropin': (12, 16, ['descending', 'contact', 'settled']),
+    'icon_weapons': (24, 24, None),
 }
+# ART2: an effect strip, fx_<name>, is named frames: square, 32 or 48 a side, each frame <clip>_<n> with every clip's n
+# running 0, 1, 2 ... in order (Astra's manifest clips); Sun is the hero's and never an effect's
+FX_RE = re.compile(r'^fx_[a-z]+(_[a-z]+)*$')
+FX_FRAME_RE = re.compile(r'^([a-z]+(?:_[a-z]+)*)_([0-9])$')
+# ART3: Astra's round 3 brings a 16 px chip (fx_boss_chip) and a 64 px fall (fx_boss_down), so 16 and 64 join
+FX_SIDES = (16, 32, 48, 64)
+# ART3: the beacon's own lighting (fx_beacon_light, round 3) starts on the dark lamp and ends on the lit beacon pixel for
+# pixel, so it carries the beacon's Sun; every other effect stays without it
+SUN_KEYS = ('beacon', 'fx_beacon_light')
 HERO_NAMES = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'jump', 'fall', 'cling', 'dive', 'land', 'dead']
 NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
-MAX_SPRITES = 40
+# the names the page may hold after a splice (the lint and H-spr-1 hold the page to the same number). ART2 counted the
+# page and the cut together at the check (44). ART3 moves the cap to the splice, where the page grows: Astra's rounds 2
+# and 3 are checked whole (38 keys, most of them parked for systems not built yet, kept in docs/astra/cut-art3.json),
+# and only what this step draws is spliced, 11 new keys on the page's 31 (stick_pad, stick_knob, stick_hint,
+# pause_glyph, fx_skyhook, dust_mote, frost_mote, bubble, spore, ember_mote, icon_biomes): 42 names, so 43 is the
+# least cap that takes it (PROGRESS ART3). W2 (weapons step 2) splices three more of round 1's effects, fx_bursts,
+# fx_impacts and fx_frozen_stunned (their step 2 clips only): 45 names, so 46 (PROGRESS W2, QUESTIONS Q122). ART4
+# (Astra's round 4, Q164) adds her eight weapon effect keys (dart, ring, ember, flash_ring, snap_frame, kick_spray,
+# fire_cell, frost_burst) and retires the round 1 fx_bursts and fx_impacts they replace: 51 names, so 52
+MAX_SPRITES = 52
 
 
 class Refuse(Exception):
@@ -162,7 +187,8 @@ def check(root, page):
         man = json.load(open(safe_join(root, 'manifest.json'), encoding='utf-8'))
     except (OSError, ValueError, Refuse) as e:
         return [('manifest.json', 'unreadable: %s' % e)], [], {}, {}
-    if man.get('game') != 'shutterbug':
+    # ART3: rounds 2 and 3 name the game 'SHUTTERBUG'; the name is the game's in any case
+    if str(man.get('game', '')).lower() != 'shutterbug':
         refusals.append(('manifest.json', 'game is %r, not "shutterbug"' % man.get('game')))
     pal = [str(p).lower() for p in man.get('palette', [])]
     if pal and pal != ['#' + h for h in hexes]:
@@ -216,15 +242,31 @@ def check(root, page):
                         raise Refuse('%r is not one of the hero\'s twelve frame names' % name)
                     if '0' not in frames[name].split('/')[-1]:
                         raise Refuse('hero.%s has no Ink in its feet row' % name)
-            elif key != 'beacon' and any('e' in s for s in frames.values()):
-                raise Refuse('Sun in %s (Sun belongs to the hero and the beacon)' % key)
+            elif key.startswith('hero_'):
+                # ART2: every hero_* pose is the hero, so it may carry Sun, and it stands on an Ink feet row too
+                for name in names:
+                    if '0' not in frames[name].split('/')[-1]:
+                        raise Refuse('%s.%s has no Ink in its feet row' % (key, name))
+            elif key not in SUN_KEYS and any('e' in s for s in frames.values()):
+                raise Refuse('Sun in %s (Sun belongs to the hero, its hero_* poses and the beacon with its fx_beacon_light)' % key)
+            if FX_RE.match(key):
+                if fw != fh or fw not in FX_SIDES:
+                    raise Refuse('%s is %dx%d: an effect is square, %s a side' % (key, fw, fh, ' or '.join(map(str, FX_SIDES))))
+                seen = {}
+                for name in names:
+                    fm = FX_FRAME_RE.match(name)
+                    if not fm:
+                        raise Refuse('%s frame %s is not <clip>_<n>' % (key, name))
+                    if int(fm.group(2)) != seen.get(fm.group(1), 0):
+                        raise Refuse('%s frame %s is out of its clip\'s order (%s_%d expected)' % (key, name, fm.group(1), seen.get(fm.group(1), 0)))
+                    seen[fm.group(1)] = int(fm.group(2)) + 1
             if key in have:
                 want = have[key]
                 if (fw, fh) != (want['w'], want['h']):
                     raise Refuse('%s is %dx%d in the page, %dx%d here (a size change is a render change, not a cut)' % (key, want['w'], want['h'], fw, fh))
                 gone = [x for x in want['names'] if x not in names and not (sprites.get(key) and x in sprites[key]['frames'])]
                 if key != 'hero' and gone:
-                    warnings.append((f, '%s keeps the page\'s frame%s %s (not in this file)' % (key, 's' if len(gone) > 1 else '', ', '.join(gone))))
+                    warnings.append((f, '%s drops the page\'s frame%s %s: Astra\'s entry replaces the key whole' % (key, 's' if len(gone) > 1 else '', ', '.join(gone))))
                 extra = [x for x in names if x not in want['names']]
                 if extra:
                     warnings.append((f, '%s gains frame%s %s: R.draw must learn %s before they show' % (key, 's' if len(extra) > 1 else '', ', '.join(extra), 'them' if len(extra) > 1 else 'it')))
@@ -235,6 +277,8 @@ def check(root, page):
                 if nn and names != nn:
                     raise Refuse('%s frames are %r, the brief asks %r' % (key, names, nn))
                 warnings.append((f, 'a new key %s: R.draw must learn to draw it' % key))
+            elif FX_RE.match(key):
+                warnings.append((f, 'an effect %s (%s): R.draw must learn the clips it binds' % (key, ', '.join(sorted({FX_FRAME_RE.match(x).group(1) for x in names})))))
             else:
                 warnings.append((f, 'an unknown key %s: added to SPRITES, drawn by nothing yet' % key))
             if sorted(used) != sorted(int(c) for c in e.get('colours', [])):
@@ -254,7 +298,7 @@ def check(root, page):
         if lack:
             warnings.append(('hero', 'the hero lacks %s in this zip (the page keeps its own for those)' % ', '.join(lack)))
     if len(set(have) | set(sprites)) >= MAX_SPRITES:
-        refusals.append(('SPRITES', '%d names after this cut; the game stays under %d' % (len(set(have) | set(sprites)), MAX_SPRITES)))
+        warnings.append(('SPRITES', 'a whole splice would leave %d names; the splice refuses %d or more (splice a subset)' % (len(set(have) | set(sprites)), MAX_SPRITES)))
     return refusals, warnings, sprites, man
 
 
@@ -271,6 +315,11 @@ def splice(sprites, text):
         em = er.search(body)
         if em:
             old = re.findall(r"^      ([A-Za-z_][A-Za-z0-9_]*): '([^']*)'", em.group(7), re.M)
+            # ART3: Astra merges by sprite key (round 2's NOTES): her entry replaces the page's frames whole, in her
+            # order (round 2's icon_weapons, J1 to charm, retires the 27 old names); only the hero merges by frame,
+            # since a cut may bring some of its twelve and the page keeps its own for the rest
+            if key != 'hero':
+                old = []
             merged = dict(old)
             merged.update(sp['frames'])
             order = [n for n, _ in old] + [n for n in sp['frames'] if n not in dict(old)]
@@ -279,6 +328,9 @@ def splice(sprites, text):
         else:
             inner = ',\n'.join("      %s: '%s'" % (n, s) for n, s in sp['frames'].items())
             body += ',\n    /* %s: from Astra (%s) */\n    %s: { w: %d, h: %d, frames: {\n%s\n    } }' % (key, ', '.join(sp.get('files', [])), key, sp['w'], sp['h'], inner)
+    n = len(re.findall(r"\n    [A-Za-z_][A-Za-z0-9_]*: \{ w: \d+, h: \d+, frames: \{", '\n' + body))
+    if n >= MAX_SPRITES:
+        raise Refuse('%d names after this splice; the page stays under %d' % (n, MAX_SPRITES))
     return text[:m.start()] + m.group(1) + body + m.group(3) + text[m.end():]
 
 
