@@ -5,7 +5,9 @@
    Usage: node scripts/loaf_look.mjs [--photo p] [--lights day,dusk,night]
           [--out file.png] [--wait ms] [--tap x,y]
    --tap: when the photo holds several cats, tap this point of the photo
-   (0..1 each way) on the chooser and add the chooser as the first panel. */
+   (0..1 each way) on the chooser and add the chooser as the first panel.
+   --face a.jpg,b.jpg: no room; for each photo, scan it and set the photo
+   beside a head-and-shoulders portrait of her 3D self (one row per cat). */
 import { createRequire } from 'module';
 /* Chrome lives in /workspaces/sws-tools (START-HERE); the repo has no node_modules */
 const puppeteer = createRequire('/workspaces/sws-tools/package.json')('puppeteer');
@@ -20,6 +22,7 @@ const LIGHTS = arg('lights', 'day,dusk,night').split(',');
 const OUT = arg('out', '/tmp/loaf-look.png');
 const WAIT = +arg('wait', 2200);
 const TAP = arg('tap', null);
+const FACE = arg('face', null);
 
 const srv = createServer((req, res) => {
   try { res.end(readFileSync(join(ROOT, decodeURIComponent(req.url.split('?')[0])))); }
@@ -29,7 +32,50 @@ const b = await puppeteer.launch({ headless: 'new', args: [
   '--no-sandbox', '--disable-setuid-sandbox', '--enable-unsafe-swiftshader',
   '--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist'] });
 const done = code => { b.close(); srv.close(); process.exit(code); };
-try {
+async function mintFrom(pg, photo){
+  await pg.goto('http://127.0.0.1:8951/loaf.html', { waitUntil: 'networkidle0', timeout: 60000 });
+  await (await pg.$('#file')).uploadFile(join(ROOT, photo));
+  await pg.waitForSelector('#view-meter:not(.hidden), #view-choose:not(.hidden)', { timeout: 120000 });
+  if (await pg.$('#view-choose:not(.hidden)')){
+    await pg.evaluate(() => document.getElementById('chooseGo').click());
+    await pg.waitForSelector('#view-meter:not(.hidden)', { timeout: 60000 });
+  }
+  await pg.evaluate(() => document.getElementById('goScan').click());
+  await pg.waitForSelector('#view-card:not(.hidden)', { timeout: 60000 });
+  await pg.waitForFunction(() => window.LoafCat3D && LoafCat3D._portrait, { timeout: 60000 });
+}
+if (FACE) try {
+  const pg = await b.newPage();
+  await pg.setViewport({ width: 375, height: 667, deviceScaleFactor: 1 });
+  pg.on('pageerror', e => console.log('PAGE ERROR:', e.message));
+  await pg.evaluateOnNewDocument(() => localStorage.setItem('sws_dev_ok', '1'));
+  const rows = [];
+  for (const photo of FACE.split(',')){
+    await mintFrom(pg, photo);
+    await new Promise(r => setTimeout(r, 1200));          /* the 512 coat lands */
+    rows.push({ photo: '/' + photo, face: await pg.evaluate(() => LoafCat3D._portrait(0.42)),
+                dna: await pg.evaluate(() => JSON.stringify(Object.fromEntries(Object.entries(
+                  (window.LOAF.Store.read()[0] || {}).dna || {}).filter(([k]) => /pattern|whiteStyle|whiteGrade|lid|whiteMuzzle|eye$|base/.test(k))))) });
+  }
+  const url = await pg.evaluate(async rows => {
+    const load = src => new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = src; });
+    const H = 512, gap = 12, ims = [];
+    for (const r of rows) ims.push([await load(r.photo), await load(r.face)]);
+    const W = Math.max.apply(null, ims.map(p => Math.round(p[0].width * H / p[0].height) + gap + H));
+    const c = document.createElement('canvas'); c.width = W; c.height = rows.length * (H + gap);
+    const g = c.getContext('2d'); g.fillStyle = '#150E1D'; g.fillRect(0, 0, c.width, c.height);
+    ims.forEach((p, i) => {
+      const pw = Math.round(p[0].width * H / p[0].height), y = i * (H + gap);
+      g.drawImage(p[0], 0, y, pw, H); g.drawImage(p[1], pw + gap, y, H, H);
+    });
+    return c.toDataURL('image/png');
+  }, rows);
+  writeFileSync(OUT, Buffer.from(url.split(',')[1], 'base64'));
+  rows.forEach(r => console.log(r.photo, r.dna));
+  console.log('wrote ' + OUT);
+  done(0);
+} catch (e) { console.log('LOOK FAILED:', e.message); done(1); }
+else try {
   const pg = await b.newPage();
   await pg.setViewport({ width: 375, height: 667, deviceScaleFactor: 2 });
   pg.on('pageerror', e => console.log('PAGE ERROR:', e.message));

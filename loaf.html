@@ -3619,6 +3619,20 @@ const Chooser = (() => {
   };
 })();
 
+/* Nose leather follows the coat the way it does in life: black coats wear
+   black noses, blues slate, browns brick, gingers, creams and whites pink.
+   A default only; the grader or the owner's swatch overrides it. (Every
+   scan used to wear the same pink nose, Barthalomew's black one included.) */
+function noseByCoat(base, whiteGrade){
+  const p = hexRGB(base || '#9A7248'), L = 0.2126*p[0] + 0.7152*p[1] + 0.0722*p[2];
+  const warm = p[0] - p[2];
+  if ((whiteGrade || 0) >= 7) return '#E3A0A8';
+  if (L < 62) return '#2B2327';
+  if (warm < 12) return '#6A6170';
+  if (L < 120 && warm < 60) return '#B8706F';
+  return '#DE96A0';
+}
+
 function readCatFromPhoto(canvas, extMask){
   const N = 128;
   const c = document.createElement('canvas');
@@ -3941,6 +3955,7 @@ function readCatFromPhoto(canvas, extMask){
 
   return Object.assign(defaultDNA(), {
     base, marking, white: whiteAmt > 0.015 ? bright : '#F2E9D8', eye,
+    nose: noseByCoat(base, whiteGrade),
     pattern, whiteStyle, whiteGrade, whiteEdge: Math.min(1, 0.3 + floof*0.6),
     seed: (hashStr(base + marking + String(Math.round(whiteAmt*1000)))) >>> 0,
     whiteAmt: Math.min(0.9, whiteAmt),
@@ -6240,10 +6255,25 @@ if (stage) (async () => {
     const g0 = d.whiteGrade != null ? d.whiteGrade : (GRADES[d.whiteStyle] || 0);
     const grade = d.pattern === 'calico' ? Math.max(g0, 5.2) : g0;
     const edge = d.whiteEdge == null ? 0.5 : d.whiteEdge;
+    /* the white muzzle (A3): how far the white climbs from the chin toward
+       the nose (0..1) and how crisp its edge is. Without the owner's word it
+       follows the white grade; it replaces the old round chin blob. */
+    const WM = d.whiteMuzzle != null ? d.whiteMuzzle
+      : grade > 1.3 ? 0.30 + 0.40 * sm(1.3, 4.0, grade) : 0;
+    const ME = d.muzzleEdge != null ? d.muzzleEdge : 0.55;
+    const tabby = d.pattern === 'mackerel' || d.pattern === 'classic'
+      || d.pattern === 'spotted' || d.pattern === 'ticked';
+    /* distance in the side view (forward, up) to a segment: cheek lines */
+    const seg2 = (f, h, f0, h0, f1, h1) => {
+      const vf = f1 - f0, vh = h1 - h0, t = Math.max(0, Math.min(1,
+        ((f - f0) * vf + (h - h0) * vh) / (vf * vf + vh * vh)));
+      return Math.hypot(f - f0 - vf * t, h - h0 - vh * t);
+    };
     const seeds = [];
     for (let i = 0; i < WSEED3.length; i++){
       const w = WSEED3[i];
       if (grade <= w.on) continue;
+      if (i === 1 && WM > 0) continue;            /* the muzzle painter owns the chin */
       if (w.toe && d.socks && Object.keys(d.socks).length) continue;
       const jit = (N.hash(i * 91 + 7, 17, 3) - 0.5) * (w.j || 0.25);
       seeds.push({ p: w.p, r: w.r * sm(0, 1, Math.min(1, (grade - w.on) / w.span)) * (1 + jit) });
@@ -6266,6 +6296,7 @@ if (stage) (async () => {
       const f = -(MAPS.min.z + MAPS.pos[mi + 2] * q * MAPS.ext.z);
       const nx = MAPS.nrm[mi] * (MAPS.float ? 2 : 2 / 255) - 1,
             ny = MAPS.nrm[mi + 1] * (MAPS.float ? 2 : 2 / 255) - 1;
+      const nFwd = -(MAPS.nrm[mi + 2] * (MAPS.float ? 2 : 2 / 255) - 1);
       /* countershading — real fur is lighter underneath; this is anatomy,
          not baked lighting */
       const underAmt = Math.max(0, -ny) * (h < 1.35 ? 1 : 0.35);
@@ -6280,15 +6311,19 @@ if (stage) (async () => {
         /* stripes live on the flanks AND meet over the spine; the belly and
            chest stay clear (ny<0 kills both) */
         const flank = Math.min(1, Math.abs(nx) * 1.3 + Math.max(0, ny) * 0.7);
-        const phase = f * 5.2 + (N.fbm(s * 2.2, f * 1.3, h * 2.2) - 0.5) * 1.2;
+        /* no two bars alike (Astra: even bars read as a costume): each one
+           leans its own way down the flank, keeps its own width, and some
+           break into dashes */
+        const lean = 0.35 + (N.fbm(f * 0.9 + 11, 3.3, s * 0.4) - 0.5) * 1.6;
+        const phase = f * 5.0 + (h - 1.2) * lean + (N.fbm(s * 2.2, f * 1.3, h * 2.2) - 0.5) * 1.3;
         const b = Math.abs(((phase % 1) + 1) % 1 - 0.5) * 2;
-        if (inBody && h > 0.55) m = sm(0.50, 0.74, b) * flank;
+        const wid = 0.53 + (N.fbm(Math.floor(phase + 0.5) * 1.7 + 0.3, h * 1.6, s) - 0.5) * 0.7;
+        const brk = sm(0.28, 0.42, N.fbm(s * 4.5 + 21, f * 3.2, h * 4.5));
+        if (inBody && h > 0.55) m = sm(wid, wid + 0.22, b) * flank * (0.45 + 0.55 * brk);
         if (h <= 0.85 && Math.abs(f) < 1.15)
           m = Math.max(m, sm(0.58, 0.82, Math.abs(((h * 5 % 1) + 1) % 1 - 0.5) * 2) * 0.5);
         if (f < -1.0)
           m = Math.max(m, sm(0.55, 0.8, Math.abs((((h * 5 + f * 2) % 1) + 1) % 1 - 0.5) * 2));
-        if (f > 1.25 && h > 1.95)
-          m = Math.max(m, sm(0.55, 0.8, Math.abs(((s * 9 % 1) + 1) % 1 - 0.5) * 2) * 0.9);
         c = mix3(c, P.core, Math.min(1, m * pAmp));
       } else if (pat === 'classic'){
         const v = N.fbm(s * 0.9 + 31, f * 0.6, h * 0.7);
@@ -6308,6 +6343,36 @@ if (stage) (async () => {
         if (f < -0.95) ext = Math.max(ext, Math.min(1, (-f - 0.95) / 0.45));
         c = mix3(P.cream, P.core, Math.min(1, sm(0.12, 0.75, ext) * pAmp));
       }
+      /* THE TABBY FACE (A3): pale spectacles round the eyes, a pale muzzle,
+         the brow fork (lines that start together between the eyes and fan
+         out over the crown) and two cheek lines from the outer eye corner */
+      if (tabby && h > 1.30 && f > 0.70){
+        const fa = Math.abs(s);
+        const er = Math.hypot(fa - 0.205, f - 1.445, h - 1.87);
+        if (er < 0.155) c = mix3(c, P.cream, 0.40 * sm(0.155, 0.11, er));
+        const mzp = Math.min(Math.hypot(fa - 0.13, f - 1.50, h - 1.58) / 0.17,
+                             Math.hypot(s, f - 1.52, h - 1.47) / 0.15);
+        if (mzp < 1 && f > 1.30) c = mix3(c, P.cream, 0.5 * sm(1, 0.55, mzp));
+        if (h > 1.90 && fa < 0.5){
+          const v = (h - 1.93) + (1.50 - f) * 0.85;     /* up the brow, back over the crown */
+          if (v > -0.02 && v < 0.75){
+            const t = s / (0.10 + 0.34 * Math.max(0, v));
+            let fk = 0;
+            for (let k = -3; k <= 3; k++){
+              const tk = k * 0.30 + (N.fbm(k * 5.3 + 1, v * 3.1, 2) - 0.5) * 0.22;
+              const wk = 0.075 + 0.05 * N.hash(k + 9, 3, 1);
+              fk = Math.max(fk, sm(wk, wk * 0.4, Math.abs(t - tk)) * (Math.abs(k) === 3 ? 0.75 : 1));
+            }
+            fk *= sm(-0.02, 0.05, v) * sm(0.70, 0.30, v);
+            c = mix3(c, P.core, Math.min(1, fk * pAmp));
+          }
+        }
+        if (fa > 0.24 && Math.abs(nx) > 0.35 && f > 0.85 && f < 1.48 && h > 1.45 && h < 1.95){
+          const cl = Math.max(sm(0.034, 0.018, seg2(f, h, 1.40, 1.86, 1.02, 1.74)),
+                        0.8 * sm(0.030, 0.016, seg2(f, h, 1.33, 1.73, 1.00, 1.60)));
+          c = mix3(c, P.core, Math.min(1, cl * pAmp));
+        }
+      }
       if (seeds.length){
         let w = 0;
         for (const sd of seeds){
@@ -6316,6 +6381,20 @@ if (stage) (async () => {
           w = Math.max(w, sm(sd.r, sd.r * 0.72, dd));
         }
         c = mix3(c, P.white, Math.min(1, w));
+      }
+      /* THE MUZZLE LINE (A3): white climbs from the chin under a line that
+         rises to an apex just below the nose, so the cheeks stay coat
+         (Barthalomew's black cheek against a white muzzle). The throat joins
+         it to the bib when there is one. */
+      if (WM > 0.02 && f > 1.0 && h > 1.0 && h < 1.75 && Math.abs(s) < 0.42 && nFwd > -0.15){
+        const apex = 1.46 + 0.17 * WM;
+        const top = apex - (0.55 - 0.15 * WM) * Math.abs(s);
+        const wob = (N.fbm(s * 8 + 3, f * 8, h * 8) - 0.5) * 0.06 * (1 - ME);
+        const soft = 0.008 + 0.045 * (1 - ME);
+        let wv = sm(top + soft, top - soft, h + wob);
+        if (grade > 0.4 && h < 1.47 && f > 1.05 && Math.abs(s) < 0.30)
+          wv = Math.max(wv, sm(0.30, 0.22, Math.abs(s)));
+        c = mix3(c, P.white, Math.min(1, wv));
       }
       if (socks){
         /* a tapped paw is a fact: paint the sock as a clean vertical dip
@@ -6333,8 +6412,6 @@ if (stage) (async () => {
       }
       /* the face: philtrum + mouth line + inner-ear pink. Painted, not
          modelled - the muzzle is body-space geometry like everything else */
-      const nzg = MAPS.nrm[mi + 2] * (MAPS.float ? 2 : 2 / 255) - 1;
-      const nFwd = -nzg;
       if (f > 1.45 && h > 1.40 && h < 1.70 && nFwd > 0.1){
         if (Math.abs(s) < 0.013 && h > 1.545 && h < 1.63)
           c = mix3(c, [16, 13, 15], 0.4);
@@ -6370,6 +6447,14 @@ if (stage) (async () => {
   let eyeTex = null, eyeDil = 0;
   const eyeCanvas = document.createElement('canvas');
   const EYE_U = 0.75;                    /* forward longitude - probe-tuned */
+  /* eye size: smaller than v5's by default (Astra: the round projecting eyes
+     dominated every face). The eyeball sits mostly inside the skull, so
+     this trims the visible eye by about a quarter. */
+  function eyeScale(d){
+    const v = (x, dflt) => x == null ? dflt : x;
+    const kitten = Math.max(0, 0.55 - v(d.age, 0.55));
+    return (0.74 + 0.36 * v(d.eyeSize, 0.55)) * (1 + kitten * 0.30);
+  }
   function paintEyes(d){
     if (!eyeMat || !window.LOAF || !window.LOAF.OK) return;
     const S2 = 128;
@@ -6396,8 +6481,42 @@ if (stage) (async () => {
     g.beginPath();
     g.ellipse(u0 - S2 * 0.055, S2 / 2 - S2 * 0.075, S2 * 0.026, S2 * 0.038, 0, 0, Math.PI * 2);
     g.fill();
+    /* THE LIDS (A3). Only the cap of the eyeball shows through the skull,
+       so an eye reads narrowed when that cap's top is fur. lid 0 = wide,
+       1 = half closed (Barthalomew's look); 0.3 = relaxed, the default. A
+       dark rim on both edges; a tabby's lid edge is her pale spectacles. */
+    const lid = d.lid != null ? Math.max(0, Math.min(1, d.lid)) : 0.3;
+    const es = eyeScale(d), rr = 0.105 * es;
+    const al = Math.acos(Math.min(0.97, 0.075 / rr));      /* half angle of the cap */
+    const capH = al / Math.PI * S2 * 2, capW = al / (2 * Math.PI) * S2;
+    const yTop = S2 / 2 - capH / 2;
+    const yLid = yTop + lid * 0.62 * capH, yLow = yTop + capH - lid * 0.10 * capH;
+    const P = pal3D(d);
+    const tab = d.pattern === 'mackerel' || d.pattern === 'classic'
+      || d.pattern === 'spotted' || d.pattern === 'ticked';
+    const furC = 'rgb(' + P.mid.map(x => Math.round(x * 0.82)).join(',') + ')';
+    const edgeC = tab ? 'rgb(' + P.cream.join(',') + ')' : furC;
+    /* an almond: the upper edge is highest mid-eye, the lower lowest */
+    const edge = (y0, sgn, fill) => {
+      g.beginPath();
+      if (fill) g.moveTo(u0 - capW * 1.6, sgn < 0 ? 0 : S2);
+      for (let k = 0; k <= 24; k++){
+        const du = (k / 24 - 0.5) * 3.2 * capW, q = du / capW;
+        const y = y0 + sgn * 5 * (1 - Math.min(1, q * q));
+        if (!fill && k === 0) g.moveTo(u0 + du, y); else g.lineTo(u0 + du, y);
+      }
+      if (fill){ g.lineTo(u0 + capW * 1.6, sgn < 0 ? 0 : S2); g.closePath(); g.fill(); }
+      else g.stroke();
+    };
+    g.fillStyle = edgeC; edge(yLid, -1, true);
+    g.fillStyle = furC; edge(yLid - 4, -1, true);
+    g.strokeStyle = '#141015'; g.lineWidth = 2.2; edge(yLid, -1, false);
+    g.fillStyle = edgeC; edge(yLow, 1, true);
+    g.lineWidth = 1.6; edge(yLow, 1, false);
     if (!eyeTex){
       eyeTex = new THREE.CanvasTexture(eyeCanvas);
+      eyeTex.flipY = false;          /* glTF UVs: v=0 is the TOP of the eyeball
+                                        (read from cat.glb: top pole v 0.000) */
       eyeTex.colorSpace = THREE.SRGBColorSpace;
       eyeTex.wrapS = THREE.RepeatWrapping;
       eyeMat.map = eyeTex;
@@ -6534,7 +6653,7 @@ if (stage) (async () => {
     if (bones.tail1) bones.tail1.scale.y = 0.75 + 0.5 * v(d.tail, 0.6);
     const kitten = Math.max(0, 0.55 - v(d.age, 0.55));
     if (bones.head) bones.head.scale.setScalar(1 + kitten * 0.30);
-    const es = (0.84 + 0.44 * v(d.eyeSize, 0.55)) * (1 + kitten * 0.30);
+    const es = eyeScale(d);
     life.esCur = es;                               /* the blink squashes from here */
     if (bones.eyeL) bones.eyeL.scale.setScalar(es);
     if (bones.eyeR) bones.eyeR.scale.setScalar(es);
@@ -8095,6 +8214,33 @@ if (stage) (async () => {
     _five(up, lo){ FIVE_UP = up; FIVE_LO = lo; },   /* axis-probe dial */
     _rig(){ return rig.position.toArray(); },       /* harness peephole */
     _light(k){ setLights(k); if (room.on) shellLoad(lightK); return lightK; },
+    /* the look tool's face shot: head and shoulders, a front three-quarter
+       turn, day light on a quiet mid-value ground. Off the room only. */
+    _portrait(turn){
+      if (room.on || !bones.head) return null;
+      const el = renderer.domElement, ow = el.width, oh = el.height;
+      const bg = scene.background, ry = rig.rotation.y;
+      try {
+        rig.rotation.y = Math.PI - (turn == null ? 0.42 : turn);
+        floor.visible = false; shadow.visible = false;
+        scene.background = new THREE.Color(0x9C8E8C);
+        renderer.setSize(512, 512, false);
+        cam.aspect = 1; cam.updateProjectionMatrix();
+        rig.updateMatrixWorld(true);
+        const hp = bones.head.getWorldPosition(new THREE.Vector3());
+        const fw = new THREE.Vector3(0, 0, -1).applyQuaternion(rig.quaternion);
+        const face = hp.clone().addScaledVector(fw, 0.42); face.y += 0.30;
+        cam.position.set(face.x + 0.15, face.y + 0.12, face.z + 2.5);
+        cam.lookAt(face.x, face.y - 0.12, face.z);
+        renderer.render(scene, cam);
+        return el.toDataURL('image/png');
+      } finally {
+        rig.rotation.y = ry; floor.visible = true; shadow.visible = true;
+        scene.background = bg;
+        renderer.setSize(ow, oh, false);
+        size();
+      }
+    },
     _boxSmall(v){ room.boxSmallNext = v; },         /* harness: force box size */
     get _vis(){ return vis && { state: vis.state, pos: vis.rig.position.toArray() }; },
     _room: room,                                 /* harness peephole */
