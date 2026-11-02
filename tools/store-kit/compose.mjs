@@ -8,7 +8,7 @@
 
    Run: node tools/store-kit/compose.mjs store/hues-play/kit.json
    kit.json: { out, font:{ css, head, body }, colors:{ bg, ink, dim, accent }, icon,
-               shots:[{ src, head, out }], feature:{ title, tagline (a string, or an array of lines), sub?, swatches?:[c1,c2] } } (paths from the repo root) */
+               shots:[{ src, head, out }], feature:{ title, tagline (a string, or an array of lines), sub?, swatches?:[c1,c2], raw?: a real shot shown framed at the right (Shutterbug, 2 Nov) } } (paths from the repo root) */
 import { readFileSync, mkdirSync, existsSync } from 'fs';
 import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -60,7 +60,8 @@ if (K.feature) {
       <div style="font-size:30px;font-weight:600;letter-spacing:.01em;line-height:1.3">${[].concat(fe.tagline).map(esc).join('<br>')}</div>
       ${fe.sub ? `<div style="font-size:19px;color:${C.dim};letter-spacing:.04em">${esc(fe.sub)}</div>` : ''}
     </div>
-    ${sw ? `<div style="display:flex;gap:22px">${sw}</div>` : ''}</body>`, 1024, 500, 'feature-graphic-1024x500.png');
+    ${sw ? `<div style="display:flex;gap:22px">${sw}</div>` : ''}
+    ${fe.raw ? `<div style="flex:none;width:250px;height:420px;overflow:hidden;border-radius:22px;box-shadow:0 22px 50px -24px #000,inset 0 0 0 1px #ffffff14"><img src="${dataUrl(fe.raw)}" style="display:block;width:250px"></div>` : ''}</body>`, 1024, 500, 'feature-graphic-1024x500.png');
 }
 
 /* 3. the listing icon: the game's own 512 icon flattened onto the background (no alpha) */
