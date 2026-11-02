@@ -29,10 +29,21 @@
  * The capture normalisation (QUESTIONS Q182), on a painted model room at rest: the page's normalised canvas grid equals
  * the capture oracle's normalizeRGB of the same grid byte for byte, the crop screen's record is that grid's nearest
  * colour in every cell, and the oracle's own area average of the PNG, normalised, lands near the page's record.
+ * PHOTO1R (the auto crop reviewed from the player's seat): the page's own thread builds the chosen box to the record
+ * the room develops (the worker's OffscreenCanvas reads a box a little differently, so the worker only finds the box);
+ * while the found box shows, a faint trace of the player's box where he left it, the line over the photo saying a box
+ * was found and Develop live; the worker holds its photo copy while it searches and none after a search found nothing
+ * or after the develop; after nothing, the line points to Retake and Retake is set apart, both back once the box moves;
+ * a worker failing mid try is ended and its box tried again on this thread (the same box after the same builds); with
+ * the page hidden or the focus lost the found box waits on the crop screen and develops SEEK.SHOW_MS after he is back
+ * (the reveal plays), a tap on Develop develops it at once; while the search runs the line says it looks; Retake mid
+ * search stops it (nothing develops behind the chooser); a still tap on the box mid search stops it and moves no chest.
  * Watched red by OVERLAY_STALE and PHOTO_HELD, for the levels item by MESSAGE_SINGLE, BAND_UNMARKED,
  * OVERLAY_BLANK_REFUSED and DEV_READOUT_MS_ONLY, for the auto crop by SEEK_OFF, SEEK_NO_BUDGET, SEEK_BOX_UNMOVED,
  * SEEK_MESSAGE_AT_REST and SEEK_MESSAGE_WITH_BOX, for the search's reach by SEEK_OLD_COPY, and for the normalisation by
- * NORM_OFF and NORM_SPLIT. */
+ * NORM_OFF and NORM_SPLIT, and for PHOTO1R by SEEK_DEVELOPS_AWAY, SEEK_SHOW_TAP_IGNORED, SEEK_NO_TRACE, SEEK_SHOW_DIMMED,
+ * SEEK_HINT_SILENT, RETAKE_KEEPS_SEEKING, SEEK_TAP_PLACES_CHEST, WORKER_NOT_ENDED, WORKER_LOST_BOX, WORKER_PHOTO_HELD,
+ * CAP_UNENFORCED, WORKER_RECORD_TRUSTED, NOTHING_HINT_STALE and NOTHING_HINT_STUCK. */
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
@@ -160,7 +171,7 @@ try {
       'autocrop: one tap on Develop, no drag, and the search finds a box that builds (' + (sk.builds || 0) + ' builds, ' + (sk.mode || 'no') + ' mode, ' + Math.round(sk.ms || 0) + ' ms, the box ' + JSON.stringify(sk.from) + ' to ' + JSON.stringify(ch) + ', phase ' + sk.phase + ')');
     R.say(at && near(dr.left, at.left) && near(dr.top, at.top) && near(dr.width, at.width), 'autocrop: the box is drawn where the search chose it (drawn ' + JSON.stringify(dr) + ', the chosen box on screen ' + JSON.stringify(at) + ')');
     R.say(sk.phase === 'show' && !show.shown && !show.stuck && show.needsCrop === false, 'autocrop: no message while the chosen box shows (the message ' + (show.shown ? 'shown: "' + show.says + '"' : 'hidden') + ', needsCrop ' + show.needsCrop + ')');
-    R.say(sk.mode === 'worker' && sk.code && show.pageCode === sk.code, 'photo1r: the page\'s own thread builds the chosen box to the record the worker found (' + sk.mode + ' mode, the codes ' + (show.pageCode === sk.code ? 'agree' : 'differ: page ' + String(show.pageCode).slice(0, 24) + ' worker ' + String(sk.code).slice(0, 24)) + ')');
+    R.say(sk.mode === 'worker' && sk.code && show.pageCode === sk.code, 'photo1r: the page\'s own thread builds the chosen box to the record the worker found (' + sk.mode + ' mode, ' + sk.drift + ' of the worker\'s builds read differently here, ' + sk.refusedHere + ' refused here; the codes ' + (show.pageCode === sk.code ? 'agree' : 'differ: page ' + String(show.pageCode).slice(0, 24) + ' worker ' + String(sk.code).slice(0, 24)) + ')');
     const fa = sk.from ? { left: sk.ox + sk.from.x * sk.k, top: sk.oy + sk.from.y * sk.k, width: sk.from.w * sk.k } : null, fr = show.fromAt || {};
     R.say(sk.phase === 'show' && sk.fromShown && fa && near(fr.left, fa.left) && near(fr.top, fa.top) && near(fr.width, fa.width) && sk.hint === 'seekFound' && !show.dim,
       'photo1r: while the found box shows, the player\'s box stays as a faint trace where he left it, the line over the photo says a box was found, Develop live (trace ' + (sk.fromShown ? JSON.stringify(fr) : 'hidden') + ' against ' + JSON.stringify(fa) + ', the line ' + sk.hint + ', Develop ' + (show.dim ? 'dimmed' : 'live') + ')');

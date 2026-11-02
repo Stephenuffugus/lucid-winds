@@ -5278,8 +5278,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
      and fixtures/make.html load) on a copy of the decoded photo, so a slow downscale or refusal never holds the
      screen: an animation frame only posts the next try. Without a worker (or OffscreenCanvas) the tries run here, a
      frame starting another only while the longest try seen still fits SEEK.SLICE_MS, never more than one past it. The
-     seek marker loops at the box's centre meanwhile. The record of the box that builds (the chosen box's own) is built
-     once more here for the level Develop takes, the box drawn where the search put it for SEEK.SHOW_MS, then the room
+     seek marker loops at the box's centre meanwhile. A box the worker builds is read and built once more here, from
+     the page's own downscale, for the level Develop takes (a box this thread refuses goes on), the box drawn where the search put it for SEEK.SHOW_MS, then the room
      develops; when none builds the box stays where the player left it and the refusal's message shows. A touch on the
      stage stops the search (or the pending develop) and the box is the player's again. The photo never persists: the
      worker's copy is in memory only and is closed when the search ends. Dev flags: ?seek=0 skips the search (the
@@ -5395,10 +5395,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var p = S.pend; S.pend = null;
     if (d.ms > S.workMax) S.workMax = d.ms;
     if (!d.built) return;   /* the next frame tries the next box */
-    /* the chosen box's record (the worker made it from that box) built once more on this thread: the level Develop takes */
-    var t0 = performance.now(), rec = SB.record.fromJSON(d.json), lv = rec && SB.pipeline.build(rec, { firstRoom: S.firstRoom });
+    /* the box the worker built, read and built once more on this thread from the page's own <canvas> downscale: the
+       level Develop takes. The worker's OffscreenCanvas reads a box a few cells differently (PHOTO1R measured it in
+       Chrome), so its record is never the room: the room is the one a touch's rebuild of this box gives. Where this
+       thread's reading refuses, the search goes on */
+    var t0 = performance.now(), rec = SB.record.fromJSON(recordJSON(p.box, p.focal)), lv = rec && SB.pipeline.build(rec, { firstRoom: S.firstRoom });
     S.finalMs = performance.now() - t0;
-    if (lv && !lv.needsCrop) seekFound(S, p.box, p.focal, rec, lv);
+    S.drift = (S.drift || 0) + (rec && d.json && SB.record.encode(SB.record.fromJSON(d.json)) !== SB.record.encode(rec) ? 1 : 0);
+    if (lv && !lv.needsCrop) seekFound(S, p.box, p.focal, rec, lv); else S.refusedHere = (S.refusedHere || 0) + 1;
   }
   function seekFound(S, box, focal, rec, lv) {
     S.phase = 'show'; S.chosen = box; S.ms = performance.now() - S.t0; S.code = SB.record.encode(rec);
@@ -5443,7 +5447,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (!S) return null;
     return { phase: S.phase, mode: S.mode, builds: S.builds, code: S.code || null, candidates: S.boxes.length, from: S.from, chosen: S.chosen, ms: S.ms || 0, finalMs: S.finalMs || 0, workMax: S.workMax,
       slices: S.slices.length, sliceMax: S.slices.reduce(function (m, x) { return Math.max(m, x.ms); }, 0), multiOver: S.slices.filter(function (x) { return x.n > 1 && x.ms > SB.capture.SEEK.SLICE_MS; }).length,
-      frames: S.frames, marker: !document.getElementById('cropseek').hidden, held: S.held || 0, tapped: !!S.tapped, retried: S.retried || 0,
+      frames: S.frames, marker: !document.getElementById('cropseek').hidden, held: S.held || 0, tapped: !!S.tapped, retried: S.retried || 0, drift: S.drift || 0, refusedHere: S.refusedHere || 0,
       hint: document.getElementById('crophint').getAttribute('data-copy'), fromShown: !document.getElementById('cropfrom').hidden, drawn: { left: parseFloat(b.style.left), top: parseFloat(b.style.top), width: parseFloat(b.style.width) }, k: CR.k, ox: CR.ox, oy: CR.oy };
   };
   function seekStop() {

@@ -1223,7 +1223,7 @@ const MUTANTS = [
     gates: [{ gate: 'capture', expect: 'autocrop: one tap on Develop, no drag, and the search finds a box that builds' }] },
   { name: 'SEEK_NO_BUDGET', task: 'AUTOCROP', file: 'page', find: '(n === 0 || performance.now() - t0 + S.est <= T.SLICE_MS)', repl: 'true',
     gates: [{ gate: 'capture', expect: 'autocrop: without a worker the builds spread over' }] },
-  { name: 'SEEK_BOX_UNMOVED', task: 'AUTOCROP', file: 'page', find: 'CR.crop = box; CR.focal = focal; layoutCrop();', repl: 'CR.crop = box; CR.focal = focal;',
+  { name: 'SEEK_BOX_UNMOVED', task: 'AUTOCROP', file: 'page', find: 'CR.crop = box; CR.focal = focal; CR.fromBox = S.from; layoutCrop();', repl: 'CR.crop = box; CR.focal = focal; CR.fromBox = S.from;',
     gates: [{ gate: 'capture', expect: 'autocrop: the box is drawn where the search chose it' }] },
   { name: 'SEEK_MESSAGE_AT_REST', task: 'AUTOCROP', file: 'page', find: "    document.getElementById('tighter').hidden = true;\n    document.getElementById('crop').classList.remove('stuck');\n",
     repl: "    if (no) refused(lv); else { document.getElementById('tighter').hidden = true; document.getElementById('crop').classList.remove('stuck'); }\n",
@@ -1295,7 +1295,9 @@ const MUTANTS = [
     gates: [{ gate: 'capture', expect: 'photo1r: after the develop the worker holds no copy of the photo' }] },
   { name: 'CAP_UNENFORCED', task: 'PHOTO1R', file: 'page', find: 'S.i < S.boxes.length && S.builds < T.CAP && (n === 0', repl: 'S.i < S.boxes.length && true && (n === 0',
     gates: [{ gate: 'capture', expect: 'autocrop: a photo nothing builds ends, after exactly SEEK.CAP builds' }] },
-  { name: 'WORKER_DRIFT', task: 'PHOTO1R', file: 'page', find: 'SB.capture.downscale(photo, d.box, SB.GRID.W, SB.GRID.H, mk)', repl: 'SB.capture.downscale(photo, { x: d.box.x + 8, y: d.box.y, w: d.box.w, h: d.box.h }, SB.GRID.W, SB.GRID.H, mk)',
+  /* the worker's OffscreenCanvas reads a box a few cells differently from the page's <canvas> (measured in Chrome): the
+     row trusts the worker's record again, as AUTOCROP did */
+  { name: 'WORKER_RECORD_TRUSTED', task: 'PHOTO1R', file: 'page', find: 'rec = SB.record.fromJSON(recordJSON(p.box, p.focal)), lv = rec', repl: 'rec = SB.record.fromJSON(d.json), lv = rec',
     gates: [{ gate: 'capture', expect: 'photo1r: the page' }] },
   { name: 'NOTHING_HINT_STALE', task: 'PHOTO1R', file: 'page', find: "    if (searched) { document.getElementById('crop').classList.add('nothing'); cropHint('nothingHint'); }\n", repl: '',
     gates: [{ gate: 'capture', expect: 'photo1r: with the message that nothing builds, the line over the photo points to Retake' }] },
