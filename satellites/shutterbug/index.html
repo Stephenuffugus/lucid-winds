@@ -295,7 +295,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #codebox button { min-width: 64px; min-height: 48px; border-radius: 10px; border: 1px solid var(--pewter); background: var(--paper); color: var(--ink); }
 #codemsg { margin: 0; color: var(--brick); font-weight: 700; }   /* above the buttons: below them a returning player's refusal sat under the fold at 568 (the M1 review) */
 /* the title's small links and recent rooms (T1.10) */
-#settingsbtn { min-height: 48px; background: transparent; border: 0; color: var(--ash); text-decoration: underline; font-size: 0.95rem; }
+#settingsbtn, #darkroombtn { min-height: 48px; background: transparent; border: 0; color: var(--ash); text-decoration: underline; font-size: 0.95rem; }
 /* the house (QUESTIONS Q200): on the title once a first room is cleared, Start a house leads; while a run is saved
    Continue the house (or Retry House, a lost run) leads in Sun and Start a house follows in Paper (the review of
    HOUSE-A: the Sun button asked to throw the saved house away); a small Houses cleared n, then Free play as before */
@@ -385,6 +385,17 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 /* the settings screen (T1.10) */
 #settings { overflow-y: auto; padding: calc(10px + var(--sat)) 16px calc(16px + var(--sab)); color: var(--paper); flex-direction: column; gap: 10px; }
 #setbar { display: flex; align-items: center; gap: 12px; } #setbar h2 { margin: 0; font-size: 1.3rem; }
+/* the Darkroom (2 Nov): the settings' shape; a print a row (icon, name and what it does, Develop for n), the collection's icons */
+#darkroom { overflow-y: auto; padding: calc(10px + var(--sat)) 16px calc(16px + var(--sab)); color: var(--paper); flex-direction: column; gap: 10px; }
+#dkbar { display: flex; align-items: center; gap: 12px; } #dkbar h2 { margin: 0; font-size: 1.3rem; }
+#dkback { min-height: 48px; min-width: 64px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--slate); background: transparent; color: var(--ash); }
+#darkroom h3 { margin: 6px 0 0; font-size: 1rem; color: var(--ash); } #dkwallet { margin: 0; font-size: 1.1rem; color: var(--sun); }
+.dkrow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--slate); }
+.dkrow canvas, #dkowned canvas { width: 48px; height: 48px; image-rendering: pixelated; flex: none; }
+.dktext { flex: 1 1 auto; min-width: 0; } .dktext b { display: block; } .dktext span { display: block; font-size: 0.85rem; color: var(--ash); }
+.dkrow .act { min-height: 48px; padding: 0 12px; border-radius: 10px; font-weight: 700; border: 2px solid var(--ink); background: var(--sun); color: var(--ink); flex: none; }
+.dkrow .act:disabled { background: var(--slate); color: var(--pewter); }
+#dkowned { display: flex; flex-wrap: wrap; gap: 6px; } .dknone, #dkleft { color: var(--ash); font-size: 0.9rem; margin: 0; }
 #settitle { min-width: 64px; min-height: 48px; border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--paper); }
 #settings label.row { display: flex; align-items: center; gap: 12px; min-height: 48px; font-size: 1.05rem; }
 #settings input[type=checkbox] { width: 28px; height: 28px; }
@@ -521,6 +532,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <button id="sample" type="button" data-copy="sample"></button>
     <div id="codebox" hidden><input id="levelcode" type="text" data-aria="levelCode" autocomplete="off" spellcheck="false"><button id="pastecode" type="button" data-copy="codePaste"></button><button id="playcode" type="button" data-copy="codePlay"></button></div>
     <div id="recent" hidden><p data-copy="recentRooms"></p><div id="recentlist"></div></div>
+    <button id="darkroombtn" type="button" data-copy="darkroomLink" hidden></button>
     <button id="settingsbtn" type="button" data-copy="settingsLink"></button>
   </div>
   <p id="build"></p>
@@ -531,6 +543,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <h2 id="doorhead"></h2>
     <p id="doorhearts" hidden></p>
     <p id="doorbank" hidden></p>
+    <p id="doorprint" hidden></p>
     <p id="doornext" hidden></p>
     <div id="doorprize" hidden></div>
     <button id="doorenter" class="big" type="button" hidden></button>
@@ -544,6 +557,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
   </div>
 </main>
 <div id="devcard" role="dialog" data-aria="tapToDevelop"><button id="devtap" type="button" data-copy="tapToDevelop"></button></div>
+<main id="darkroom" class="screen" aria-label="Darkroom">
+  <div id="dkbar"><button id="dkback" type="button" data-copy="toTitle"></button><h2 data-copy="darkroom"></h2></div>
+  <p id="dkwallet"></p>
+  <h3 data-copy="dkPrints"></h3>
+  <div id="dkprints"></div>
+  <h3 data-copy="dkOwned"></h3>
+  <div id="dkowned"></div>
+  <p id="dkleft"></p>
+</main>
 <main id="settings" class="screen" aria-label="Settings">
   <div id="setbar"><button id="settitle" type="button" data-copy="toTitle"></button><h2 data-copy="settings"></h2></div>
   <p id="setdamaged" role="status" data-copy="saveDamaged" hidden></p>
@@ -582,6 +604,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <button id="pausetitle" type="button" data-copy="toTitle"></button></div></div>
     <div id="clear" role="dialog" data-aria="roomClear"><h2 data-copy="roomClear"></h2>
       <p id="clearbank" hidden></p>
+      <p id="clearprint" hidden></p>
       <button id="nextroom" type="button" data-copy="nextRoom"></button>
       <button id="clearshare" type="button" data-copy="shareTitle"></button>
       <button id="again" type="button" data-copy="playAgain"></button>
@@ -689,7 +712,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     JELLY_SPEED: 1 /* T1.4: the bob's cells per second */, SPARK_AIR_S: 0.2 /* a hop's flight */, ELITE_SIZE_CELLS: 1.5 /* 24 px (Q51) */,
     HIT_HEARTS: 1, HIT_IFRAMES_S: 1, HIT_KNOCKBACK_CELLS: 2, HIT_KNOCKBACK_FRAMES: 8 /* T0.16's "over 8 frames" */,
     BOSS_INTRO_S: 2, BOSS_TELEGRAPH_S: 0.8, BOSS_SAFE_LEDGE_CELLS: 6, BOSS_WEAK_MIN: 3, BOSS_OUTLINE_UNTIL: 0.25, BOSS_FALLBACK_HP: 20,
-    STOMP_GRACE_S: 0.5 /* W3: a stomped enemy's contact off the hero */, LANTERN_PULSE_S: 1 /* W4: the Lantern burns once a second */, KEYS_MAX: 3, KEYS_ROWS_OVER_SPAWN: 2, KEYS_MIN_ROWS: 6, KEYS_GUARD_CELLS: 4 /* the locked exit (2 Nov, features.keys) */,
+    STOMP_GRACE_S: 0.5 /* W3: a stomped enemy's contact off the hero */,
+    /* the Darkroom (2 Nov): the starting collection, each weapon's tier and the price to develop it, a print that
+       cannot be new paid in Dead pixels instead */
+    DEV_START: ['J1', 'D1'], DEV_PRICE: [0, 30, 100, 300], DEV_DUP_DP: 30,
+    DEV_TIER: { J2: 1, J3: 1, J5: 1, D2: 1, D4: 1, D6: 1, J4: 2, J6: 2, J7: 2, D3: 2, D5: 2, D8: 2, C2: 2, C6: 2, J8: 3, D7: 3, C1: 3, C3: 3, C4: 3 }, LANTERN_PULSE_S: 1 /* W4: the Lantern burns once a second */, KEYS_MAX: 3, KEYS_ROWS_OVER_SPAWN: 2, KEYS_MIN_ROWS: 6, KEYS_GUARD_CELLS: 4 /* the locked exit (2 Nov, features.keys) */,
     BOSS_MOTH_EVERY_S: 4, BOSS_MOTH_COUNT: 3, BOSS_ICICLE_TELEGRAPH_S: 3, BOSS_RING_EVERY_S: 5, BOSS_RING_CELLS: 4, BOSS_SPARK_TELEGRAPH_S: 2,
     /* the biome movesets (2 Nov): each cycle and its tell; Frost's columns, Overgrowth's thorn life, Ember's sparks */
     BOSS_ICE_EVERY_S: 5, BOSS_ICE_COLUMNS: 3, BOSS_ICE_ROWS: 10, BOSS_RING_TELL_S: 1, BOSS_RING_GROW_S: 0.5, BOSS_THORN_EVERY_S: 5, BOSS_THORN_TELL_S: 0.9, BOSS_THORN_LIVE_S: 2,
@@ -1191,7 +1218,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      (QUESTIONS Q42), a v above 1 is left untouched (the game runs on the defaults in memory), an older v runs the
      migration steps (v1 has none yet) */
   function saveDefaults() {
-    return { v: 1, dp: 0, collection: [], pool: { jump: [], dive: [], charm: [] },
+    return { v: 1, dp: 0, collection: [], prints: [], pool: { jump: [], dive: [], charm: [] },
       unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
       settings: { mirror: false, sound: true, music: true, reducedMotion: null },
       onboarding: { firstRoomDone: false, revealSeen: false, hints: { rocker: false, jump: false, dive: false } },
@@ -4359,6 +4386,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return true;
   }
 
+  /* the Darkroom's pool (2 Nov): the weapons the player has developed, beside the state like the level (never hashed:
+     a state without one draws from BUILT, every fixture and golden as before) */
+  function setPool(s, ids) {
+    var codes = [];
+    for (var i = 0; i < ids.length; i++) { var c = WPN.indexOf(ids[i]); if (c > 0 && BUILT.indexOf(c) >= 0 && codes.indexOf(c) < 0) codes.push(c); }
+    codes.sort(function (a, b) { return BUILT.indexOf(a) - BUILT.indexOf(b); });
+    Object.defineProperty(s, 'pool', { value: codes, enumerable: false, writable: true, configurable: true });
+    return s;
+  }
   /* the chest's draw (6.2): from BUILT, never an equipped weapon, an empty slot's first when CHEST_FILLS_EMPTY_FIRST;
      none left, 0 and the generator is not drawn; else one draw. No allocation */
   function drawWeapon(s) {
@@ -4367,11 +4403,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
        guardian (Anvil Boots only strike the ground), so the room's chest gives the Boomerang the arena is proven by */
     var gj = h.slots[0] ? SB.TUNING.WEAPONS[WPN[h.slots[0]]] : null;
     if (s.level && s.level.features && s.level.features.guardian && !(gj && gj.dmg > 0)) return WPN_J1;
-    for (i = 0; i < BUILT.length; i++) { c = BUILT[i]; if (h.slots[slotOf(c)] !== c) { n++; if (h.slots[slotOf(c)] === 0) empty++; } }
+    var LIST = s.pool && s.pool.length ? s.pool : BUILT;   /* the Darkroom's pool when the shell gave one */
+    for (i = 0; i < LIST.length; i++) { c = LIST[i]; if (h.slots[slotOf(c)] !== c) { n++; if (h.slots[slotOf(c)] === 0) empty++; } }
     if (n === 0) return 0;
     var wantEmpty = SB.TUNING.CHEST_FILLS_EMPTY_FIRST && empty > 0, k = SB.rng.stepU32(s, 'rng') % (wantEmpty ? empty : n);
-    for (i = 0; i < BUILT.length; i++) {
-      c = BUILT[i];
+    for (i = 0; i < LIST.length; i++) {
+      c = LIST[i];
       if (h.slots[slotOf(c)] === c) continue;
       if (wantEmpty && h.slots[slotOf(c)] !== 0) continue;
       if (k-- === 0) return c;
@@ -4859,11 +4896,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
   };
 
-  SB.sim = { IN: IN, EV: EV, rle: rle, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
+  SB.sim = { IN: IN, EV: EV, rle: rle, create: function (level, opts) { var st = attach(create(level, opts), level); if (opts && opts.pool) setPool(st, opts.pool); return st; }, attach: attach, step: step,
     FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf, trapTouch: trapTouch,
     WPN: WPN, BUILT: BUILT, slotOf: slotOf, PROJ_KIND: Object.freeze({ BOOMERANG: BOOMERANG, SHOCK: SHOCK, POP: POP, TRAIL: TRAIL, EMBER: EMBER, FLASH: FLASH, DART: DART, RING: RING, KICK: KICK, SNAP: SNAP, FROST: FROST, STOMP: STOMP, DUST: DUST, PULL: PULL, SAVE: SAVE, BICE: BICE, BRING: BRING, BTHORN: BTHORN, BSPARK: BSPARK, BWARN: BWARN }), shockFront: shockFront, spawn: spawn, free: free, drawWeapon: drawWeapon,
     CHOICE: CHOICE, LOOT: { SPECK: LOOT_SPECK, SCROLL: LOOT_SCROLL, BLUEPRINT: LOOT_BLUEPRINT, KEY: LOOT_KEY }, keysLeft: keysLeft, keysOf: keysOf, STAT: { VIGOR: VIGOR, FOCUS: FOCUS, GRIT: GRIT }, STAT_OF_BIOME: STAT_OF_BIOME, pickScroll: pickScroll,
-    hurtBoss: hurtBoss, shedSlot: shedSlot };
+    hurtBoss: hurtBoss, shedSlot: shedSlot, setPool: setPool };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="shell-capture" data-tool>
@@ -5979,7 +6016,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      (its cell, the level's hash and the room's state are unchanged) but drawn and heard nowhere until T2.6 gives it a
      use (QUESTIONS Q92: M1 shows nothing that does nothing). lootTaken counts the shown loot taken, so the shell's
      pickup sound answers only a thing the player saw */
-  R.LOOT_SHOWN = [0, 1, 1, 0, 1];   /* the speck, the scroll and (2 Nov) the key; the blueprint stays hidden (Q92) */
+  R.LOOT_SHOWN = [0, 1, 1, 1, 1];   /* the speck, the scroll, the blueprint (the Darkroom prints it, 2 Nov) and the key */
   R.lootTaken = function (s) { var n = 0; for (var i = 0; i < s.loot.length; i++) if (s.loot[i].taken && R.LOOT_SHOWN[s.loot[i].kind]) n++; return n; };
   /* the cell a hidden loot's cell is drawn as (QUESTIONS Q93): the first of its left, right, upper and lower neighbours
      that is open, holds no loot and is marked as the cell is (a one way's top, a tab, an ice edge), so its static
@@ -7193,7 +7230,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
     houseLost: 'The house is lost', lost: 'Lost {n} dead pixels', lostOne: 'Lost 1 dead pixel', retryHouse: 'Retry House', newHouse: 'New house',
     houseReplace: 'Start a new house? The saved house will be lost.', houseCleared: 'House cleared', houseSum: '{rooms} rooms, {n} dead pixels', houseSumOne: '{rooms} rooms, 1 dead pixel',
     /* HOUSE-B: the guardian, the prize, the looks */
-    guardHint: 'Beat the guardian to light the exit', keysFind: 'Find {n} keys', keysFind1: 'Find the key', keysOpen: 'They open the exit', keysOpen1: 'It opens the exit', keysLocked: 'The exit is locked', keysMore: '{n} more keys', keysMore1: '1 more key', keysOf: '{n} of {max} keys', guardHintChest: 'Open the chest for a weapon', prizeNew: 'New: {name}', prizeLabel: 'Your prize, {name}',
+    guardHint: 'Beat the guardian to light the exit', darkroom: 'Darkroom', darkroomLink: 'Darkroom', dkWallet: 'Dead pixels {n}', dkPrints: 'Prints to develop', dkOwned: 'Your weapons',
+    dkDevelop: 'Develop for {n}', dkNoPrints: 'No prints yet. Carry a blueprint out of a room and it prints here.', dkLeft: '{n} weapons not found yet', dkLeftOne: '1 weapon not found yet',
+    dkAll: 'You have found every weapon', newPrint: 'New print: {name}. Develop it in the Darkroom.', dupPrint: 'A print you had already: {n} dead pixels',
+    keysFind: 'Find {n} keys', keysFind1: 'Find the key', keysOpen: 'They open the exit', keysOpen1: 'It opens the exit', keysLocked: 'The exit is locked', keysMore: '{n} more keys', keysMore1: '1 more key', keysOf: '{n} of {max} keys', guardHintChest: 'Open the chest for a weapon', prizeNew: 'New: {name}', prizeLabel: 'Your prize, {name}',
     setLook: 'Look', lookHero: 'Bug', lookFrame: 'Frame', lookWear: 'Wear {name}',
     look_hero_sun: 'Sun bug', look_hero_umber: 'Umber bug', look_hero_teal: 'Teal bug', look_hero_lapis: 'Lapis bug', look_hero_pinstripe: 'Pinstripe bug',
     look_hero_domino: 'Domino bug', look_hero_crescent: 'Crescent bug', look_hero_argyle: 'Argyle bug',
@@ -7279,8 +7319,64 @@ body.sb-modal .lwfb-fab { display: none !important; }
     watcher = w; watching = name;
   }
   ui.backWatched = function () { return watcher ? watching : ''; };
+  /* the Darkroom (2 Nov, DESIGN 9.3 and 9.4 cut to the core): owned is the starting pair and every developed weapon
+     (what the chests drop); a blueprint carried out of a room prints a weapon not found yet, picked by the room's
+     code and the blueprint's cell (the same room prints the same weapon), or pays DEV_DUP_DP when none is left */
+  ui.owned = function () {
+    var T = SB.TUNING, doc = SB.save.doc, out = T.DEV_START.slice();
+    if (doc && doc.collection) for (var i = 0; i < doc.collection.length; i++) if (out.indexOf(doc.collection[i]) < 0) out.push(doc.collection[i]);
+    return out;
+  };
+  ui.bankPrints = function () {
+    var doc = SB.save.doc, T = SB.TUNING, bp = G.state && G.state.room.blueprints, got = [];
+    if (!doc || !bp || !bp.length) return got;
+    if (!doc.prints) doc.prints = [];
+    for (var i = 0; i < bp.length; i++) {
+      var have = ui.owned().concat(doc.prints), left = T.WEAPONS_BUILT.filter(function (id) { return have.indexOf(id) < 0; });
+      if (!left.length) { SB.Wallet.earn(T.DEV_DUP_DP, 'print'); got.push(null); continue; }
+      var key = (G.record ? SB.record.encode(G.record) : '') + ':' + bp[i], hsh = 0;
+      for (var k = 0; k < key.length; k++) hsh = (hsh * 31 + key.charCodeAt(k)) >>> 0;
+      var id = left[hsh % left.length]; doc.prints.push(id); got.push(id);
+    }
+    SB.save.commit();
+    return got;
+  };
+  function printLine(elId, got) {
+    var el = document.getElementById(elId); if (!el) return;
+    var names = got.filter(Boolean).map(function (id) { return ui.COPY.wpn[id]; }), dup = got.filter(function (x) { return !x; }).length;
+    el.textContent = names.length ? ui.COPY.newPrint.replace('{name}', names.join(ui.COPY.cmpAnd)) : dup ? ui.COPY.dupPrint.replace('{n}', dup * SB.TUNING.DEV_DUP_DP) : '';
+    el.hidden = !names.length && !dup;
+  }
+  function devPrice(id) { var T = SB.TUNING; return T.DEV_PRICE[T.DEV_TIER[id] || 1]; }
+  function drawDarkroom() {
+    var doc = SB.save.doc, C = ui.COPY, T = SB.TUNING, list = document.getElementById('dkprints'), own = document.getElementById('dkowned');
+    document.getElementById('dkwallet').textContent = C.dkWallet.replace('{n}', doc ? doc.dp : 0);
+    list.textContent = '';
+    var prints = doc && doc.prints ? doc.prints : [];
+    if (!prints.length) { var p0 = document.createElement('p'); p0.className = 'dknone'; p0.textContent = C.dkNoPrints; list.appendChild(p0); }
+    prints.forEach(function (id, at) {
+      var row = document.createElement('div'), cv = document.createElement('canvas'), tx = document.createElement('div'), b = document.createElement('button'), price = devPrice(id);
+      row.className = 'dkrow'; cv.width = SB.render.ICON_PX; cv.height = SB.render.ICON_PX; SB.render.icon(cv.getContext('2d'), id, 0, 0);
+      tx.className = 'dktext'; tx.innerHTML = '<b></b><span></span>'; tx.firstChild.textContent = C.wpn[id]; tx.lastChild.textContent = C.wpnSays[id];
+      b.type = 'button'; b.className = 'act'; b.textContent = C.dkDevelop.replace('{n}', price); b.disabled = !doc || doc.dp < price;
+      b.addEventListener('click', function () {
+        if (!doc || doc.dp < price || doc.prints[at] !== id) return;
+        doc.dp -= price; doc.prints.splice(at, 1); if (doc.collection.indexOf(id) < 0) doc.collection.push(id); SB.save.commit();
+        SB.audio.sfx('chest'); drawDarkroom();
+      });
+      row.appendChild(cv); row.appendChild(tx); row.appendChild(b); list.appendChild(row);
+    });
+    own.textContent = '';
+    ui.owned().forEach(function (id) {
+      var cv = document.createElement('canvas'); cv.width = SB.render.ICON_PX; cv.height = SB.render.ICON_PX; cv.title = C.wpn[id]; cv.setAttribute('aria-label', C.wpn[id]);
+      SB.render.icon(cv.getContext('2d'), id, 0, 0); own.appendChild(cv);
+    });
+    var have = ui.owned().concat(prints), left = T.WEAPONS_BUILT.filter(function (id) { return have.indexOf(id) < 0; }).length;
+    document.getElementById('dkleft').textContent = left === 0 ? C.dkAll : left === 1 ? C.dkLeftOne : C.dkLeft.replace('{n}', left);
+  }
   ui.show = function (name) {
-    if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; drawRecent(); HS.on = false; drawHouse(); ui.applyLook(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
+    if (name === 'darkroom') drawDarkroom();
+    if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; document.getElementById('darkroombtn').hidden = !ui.firstRoomDone; drawRecent(); HS.on = false; drawHouse(); ui.applyLook(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
     if (name === 'settings') fillSettings();
     if (name === 'crop') document.getElementById('croptitle').textContent = HS.on && HS.run ? ui.COPY.cropBack : ui.COPY.toTitle;
     var all = document.querySelectorAll('.screen');
@@ -7823,7 +7919,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the sitting (docs/WEAPONS-V1.md 6.5, Stephen's call 1 on its default, KEEP_GEAR): free play keeps the gear from
        room to room until Title; the room starts with it and keeps what it walked in with (Again after a death) */
     if (!SB.TUNING.KEEP_GEAR) G.gear = [0, 0, 0];
-    G.state = SB.sim.create(lv, { loadout: G.gear, carry: G.carry, lastRoom: room === T.HOUSE_ROOMS }); G.entry = G.gear.slice(); G.banked = false;
+    G.state = SB.sim.create(lv, { loadout: G.gear, carry: G.carry, lastRoom: room === T.HOUSE_ROOMS, pool: ui.owned() }); G.entry = G.gear.slice(); G.banked = false;
     if (!opts.notFirst && !ui.firstRoomDone) { ui.firstRoomDone = true; SB.save.doc.onboarding.firstRoomDone = true; SB.save.commit(); }
     else if (!opts.notFirst) ui.firstRoomDone = true;
     SB.render.buildStatic(lv);
@@ -8480,6 +8576,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       G.banked = true;
       var dp = G.state.room.dp, doc = SB.save.doc, n = HS.run.at === 0 ? Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT) : dp, total = HS.run.dp + n;
       doc.stats.clears++; SB.save.addRecent(G.record); if (n > 0) SB.Wallet.earn(n, 'house');
+      printLine('doorprint', ui.bankPrints());   /* the Darkroom: a doorway banks the blueprints (DESIGN 9.3) */
       ui.lastHash = SB.sim.hash(G.state);
       SB.Wallet.moment('first_clear', { mode: 'house' });
       var next = SB.record.runClear(HS.run, G.state.hero, n);
@@ -8532,6 +8629,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       G.banked = true;
       var dp = G.state.room.dp, n = Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT), bank = document.getElementById('clearbank');
       SB.save.doc.stats.clears++; SB.save.addRecent(G.record); if (n > 0) SB.Wallet.earn(n, 'clear');
+      printLine('clearprint', ui.bankPrints());   /* the Darkroom: the blueprints carried out become prints */
       ui.lastHash = SB.sim.hash(G.state);
       bank.textContent = n < dp ? ui.COPY.bankedOf.replace('{n}', n).replace('{of}', dp) : n === 1 ? ui.COPY.bankedOne : ui.COPY.banked.replace('{n}', n); bank.hidden = n <= 0;
       SB.Wallet.moment('first_clear', { mode: G.mode });
@@ -8607,6 +8705,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     ui.onTap(document.getElementById('resume'), function () { ui.resume(); });
     document.getElementById('pauseshare').addEventListener('click', function () { ui.openShare(); });
     document.getElementById('settingsbtn').addEventListener('click', function () { ui.show('settings'); });
+    document.getElementById('darkroombtn').addEventListener('click', function () { ui.show('darkroom'); });
+    document.getElementById('dkback').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
     document.getElementById('levelcode').placeholder = ui.COPY.levelCode;   /* the field says what it takes (t110: an empty white box) */
     document.getElementById('install').addEventListener('click', function () { var ip = ui.installPrompt; if (ip) { ui.installPrompt = null; this.hidden = true; try { ip.prompt(); } catch (e) { /* silent */ } } });
     document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });

@@ -5074,6 +5074,20 @@ group('H-wpn-C', 'the charms, step 4 (7.4): the Lantern burns a neighbour once a
   t.ok(ts.seen.length === 2 && ts.seen[0][0] === 2 && ts.seen[0][1] === 1 && ts.seen[1][0] === 1 && ts.seen[1][1] === 0, 'Thick Skin: the first hit costs nothing (SAVED), the second costs a heart (' + JSON.stringify(ts.seen) + ')');
 });
 
+group('H-dark-1', 'the Darkroom\'s pool (2 Nov): a state given a pool draws its chests from it alone (never an unowned weapon, never an equipped one), and a state without one draws from WEAPONS_BUILT as before', t => {
+  const CH = 46 * 24 + 6, pool = ['J1', 'D1', 'J6', 'C2'], codes = pool.map(code), got = new Set();
+  let bad = 0;
+  for (let k = 0; k < 120; k++) {
+    const lv = LABS.room(['', FLOOR]); lv.seed = 9100 + k;
+    lv.features = { pocket: null, enemies: [], trap: null, specks: [], scroll: null, blueprint: null, chest: CH };
+    const s = SB.sim.create(lv, { at: { x: 2 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: [k % 2 ? 'J1' : 0, 0, 0], pool });
+    for (let f = 0; f < 200 && !s.chest.open; f++) SB.sim.step(s, IN.R);
+    const c = s.room.compare ? s.room.cand : s.hero.slots.find((x, i) => x && !(k % 2 && i === 0) && x !== code('J1')) || s.hero.slots.find(Boolean);
+    if (!codes.includes(c)) bad++; else got.add(c);
+  }
+  t.ok(bad === 0 && got.size >= 3, 'over 120 seeded chests with the pool ' + pool.join(', ') + ' every draw is in it (' + bad + ' outside; drew ' + [...got].map(c => WPN_ID[c]).join(', ') + ')');
+});
+
 group('H-wpn-D1', 'Anvil Boots (7.1): a dive landing\'s shock hits 3 cells along the floor and not 4; not a row up; a wall and a ledge\'s end stop it; a dash fires it, a dash into a wall and a plain landing do not; a hold dive on its last landing only; the shake on the dive alone', t => {
   const F = SB.features, EV = SB.sim.EV, N = SB.TUNING.WEAPONS.D1.cells;
   /* the hero over column 10 at row 40, a dive to the floor; the moths [cell] frozen; the hits after 30 steps */

@@ -270,7 +270,7 @@ function unbuiltName(where, s) {
    no Darkroom, so no COPY value and no text the markup shows names one ("dark room" as two words too: that is how a
    stranger reads it). Each M2 task takes its word off this list when its thing lands and does something: T2.1 weapon,
    T2.4 charm, T2.6 blueprint, T2.9 Darkroom (its door drawn and entered) */
-const NOT_YET = [['charm', /charm/i], ['blueprint', /blueprint/i], ['Darkroom', /dark\s*room/i]];   /* weapon lifted by Weapons v1 step 1 (T2.1): weapons exist */
+const NOT_YET = [['Sunbeams', /sunbeam/i], ['Double Exposure', /double\s*exposure/i], ['Open House', /open\s*house/i]];   /* weapon lifted at T2.1; charm, blueprint and the Darkroom at sb-m1-11 (2 Nov: all three exist); these three do not yet */
 function notYet(where, s) {
   for (const [word, re] of NOT_YET) if (re.test(s)) fail('NOT_YET', where + ': names ' + word + ' before the build has one: "' + s + '"');
 }

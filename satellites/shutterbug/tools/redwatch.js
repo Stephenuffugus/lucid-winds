@@ -872,14 +872,14 @@ const MUTANTS = [
      handwritten +15 that stops nothing, M1 shows no sheet (the shell answers the sim's offer and compare on the next
      word), no player string names a weapon, a charm, a blueprint or the Darkroom, and the blueprint is neither drawn
      nor heard. The lint's rule: the old slip line, the old Grit line, the Darkroom as two words, a blueprint in markup */
-  { name: 'COPY_PROMISES_WEAPON', task: 'NOTE5', file: 'page', find: "    dp: 'Dead pixels', dpGain: '+{n}',", repl: "    dp: 'Dead pixels', dpGain: '+{n}',\n    slip: 'A weapon waits for the Darkroom.',",
-    gates: [{ gate: 'lint', expect: 'COPY.slip: names Darkroom before the build has one' }] },   /* re anchored at W1: weapon is lifted (weapons exist), so the slip line fails for its Darkroom (NOT_YET's line) */
-  { name: 'COPY_PROMISES_CHARM', task: 'NOTE5', file: 'page', find: "    dp: 'Dead pixels', dpGain: '+{n}',", repl: "    dp: 'Dead pixels', dpGain: '+{n}',\n    grit: 'Grit', gritSays: 'charms grow stronger',",
-    gates: [{ gate: 'lint', expect: 'COPY.gritSays: names charm before the build has one' }] },
-  { name: 'COPY_NAMES_DARK_ROOM', task: 'NOTE5', file: 'page', find: "nextRoom: 'Shoot the next room',", repl: "nextRoom: 'Shoot the dark room',",
-    gates: [{ gate: 'lint', expect: 'COPY.nextRoom: names Darkroom before the build has one' }] },
-  { name: 'MARKUP_NAMES_BLUEPRINT', task: 'NOTE5', file: 'page', find: '<span id="hearts" aria-label="Hearts">', repl: '<span id="hearts" aria-label="Hearts and a blueprint">',
-    gates: [{ gate: 'lint', expect: 'markup aria-label: names blueprint before the build has one' }] },
+  { name: 'COPY_PROMISES_WEAPON', task: 'NOTE5', file: 'page', find: "    dp: 'Dead pixels', dpGain: '+{n}',", repl: "    dp: 'Dead pixels', dpGain: '+{n}',\n    slip: 'A weapon waits for Open House.',",   /* re anchored at the Darkroom (it exists now): Open House does not */
+    gates: [{ gate: 'lint', expect: 'COPY.slip: names Open House before the build has one' }] },   /* re anchored at W1: weapon is lifted (weapons exist), so the slip line fails for its Darkroom (NOT_YET's line) */
+  { name: 'COPY_PROMISES_CHARM', task: 'NOTE5', file: 'page', find: "    dp: 'Dead pixels', dpGain: '+{n}',", repl: "    dp: 'Dead pixels', dpGain: '+{n}',\n    grit: 'Grit', gritSays: 'Sunbeams grow stronger',",   /* re anchored: charms exist; Sunbeams do not */
+    gates: [{ gate: 'lint', expect: 'COPY.gritSays: names Sunbeams before the build has one' }] },
+  { name: 'COPY_NAMES_DARK_ROOM', task: 'NOTE5', file: 'page', find: "nextRoom: 'Shoot the next room',", repl: "nextRoom: 'Shoot the double exposure',",   /* re anchored: the Darkroom exists */
+    gates: [{ gate: 'lint', expect: 'COPY.nextRoom: names Double Exposure before the build has one' }] },
+  { name: 'MARKUP_NAMES_BLUEPRINT', task: 'NOTE5', file: 'page', find: '<span id="hearts" aria-label="Hearts">', repl: '<span id="hearts" aria-label="Hearts and a sunbeam">',   /* re anchored: blueprints exist */
+    gates: [{ gate: 'lint', expect: 'markup aria-label: names Sunbeams before the build has one' }] },
   /* the sheets: an answer dropped holds the world for good; the old sheets back, shown and waiting for a tap; the
      answers in the wrong order hold it for good when both open on one step */
   { name: 'OFFER_HOLDS_WORLD', task: 'NOTE5', file: 'page', find: '      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);', repl: '      if (st.scrollsOffered) { /* the offer waits for a tap */ }',
@@ -892,15 +892,15 @@ const MUTANTS = [
       ['      if (st.scrollsOffered) SB.input.choose(SB.sim.CHOICE.A);', "      if (st.scrollsOffered) document.getElementById('offer').classList.add('on');"]],
     gates: [{ gate: 'loot', expect: '412: no sheet, card or dialog shows on the walk' }] },
   { name: 'SLIP_BACK', task: 'NOTE5', file: 'page', edits: [
-      ["    dp: 'Dead pixels', dpGain: '+{n}',", "    dp: 'Dead pixels', dpGain: '+{n}',\n    slip: 'A weapon waits for the Darkroom.', slipTake: 'Keep the slip',"],
+      ["    dp: 'Dead pixels', dpGain: '+{n}',", "    dp: 'Dead pixels', dpGain: '+{n}',\n    slip: 'A weapon waits for Open House.', slipTake: 'Keep the slip',"],
       ['    <div id="sharesheet" role="dialog"', '    <div id="slip" role="dialog" data-aria="slip"><h2 data-copy="slip"></h2>\n      <button id="slipok" type="button" data-copy="slipTake"></button></div>\n    <div id="sharesheet" role="dialog"'],
       ['#clear, #death { position: absolute;', '#clear, #death, #slip { position: absolute;'], ['#clear.on, #death.on { display: flex; }', '#clear.on, #death.on, #slip.on { display: flex; }'],
       ["      /* the compare is the player's own from Weapons v1 step 2: the swap card (ui.swap) answers it, never the shell */", "      document.getElementById('slip').classList.toggle('on', !!st.room.compare && !st.scrollsOffered);"],
       ["    document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });", "    document.getElementById('slipok').addEventListener('click', function () { SB.input.choose(SB.sim.CHOICE.TAKE); });\n    document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });"],
       ["var MODALS = ['clear', 'death', 'paused', 'sharesheet', 'devcard', 'swap'];", "var MODALS = ['clear', 'death', 'paused', 'slip', 'sharesheet', 'devcard', 'swap'];"]],   /* the listener and the list re anchored at NOTE3 (Q94), the TAKE line and the list at W2 */
     /* W1: its slip shows on a compare and no compare opens for an empty slot, so the loot walk can no longer see it; the
-       lint still sees its words (the Darkroom, NOT_YET's line now that weapon is lifted) */
-    gates: [{ gate: 'lint', expect: 'COPY.slip: names Darkroom before the build has one' }] },
+       lint still sees its words (Open House, NOT_YET's line now that the Darkroom is lifted) */
+    gates: [{ gate: 'lint', expect: 'COPY.slip: names Open House before the build has one' }] },
   /* ANSWER_ORDER_SWAPPED retired at W1: the offer and the chest's compare can no longer open on one step (no compare
      opens for an empty slot), so the order of the two answers is never read; step 2's swap rows replace it */
   /* the +15: never shown, never gone (with reduced motion it stands for good), taking taps over A's hit area, and
