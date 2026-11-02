@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 7351;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
+const ASSERT_FLOOR = 7411;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -4921,11 +4921,12 @@ group('H-wpn-6', 'the chest (6.1, 6.2), on the step 1 pool {J1, D1} (a core load
 
 group('H-wpn-7', 'the swap (6.4) with a hand loadout of unbuilt codes (J5, D6): the chest opens compare with the test\'s draw; the world holds until a CHOICE; TAKE equips, LEAVE keeps; the recorded choice replays to the live hash', t => {
   const EV = SB.sim.EV, C = SB.sim.CHOICE, built = BUILT_IDS.map(code), CH = 46 * 24 + 6;
-  const mk = () => { const { lv, s } = wpnLab(['', FLOOR], [[SB.features.MOTH, 40 * 24 + 18]], { hc: 3, loadout: ['J5', 'D6', 0], moving: true, chest: CH }); return { lv, s }; };
+  const mk = () => { const { lv, s } = wpnLab(['', FLOOR], [[SB.features.MOTH, 40 * 24 + 18]], { hc: 3, loadout: ['J5', 'D6', 'C2'], moving: true, chest: CH }); return { lv, s }; };
   /* step 3: D6 is built now, and the draw never offers an equipped weapon, so the pool is the built list less J5 and D6 */
-  const pool = built.filter(c => c !== code('J5') && c !== code('D6')), { s } = mk(), st = { v: s.rng }, want = pool[stepRef(st) % pool.length];
+  const pool = built.filter(c => c !== code('J5') && c !== code('D6') && c !== code('C2')),   /* step 4: the charm slot is held too, so all three are full */
+        { s } = mk(), st = { v: s.rng }, want = pool[stepRef(st) % pool.length];
   let f = 0; for (; f < 200 && !s.room.compare; f++) SB.sim.step(s, IN.R);
-  t.ok(s.room.compare === 1 && s.room.cand === want && (s.ev & EV.SWAP) && JSON.stringify(s.hero.slots) === JSON.stringify([code('J5'), code('D6'), 0]), 'both slots full: the chest opens the swap with cand ' + WPN_ID[s.room.cand] + ' (the test draws ' + WPN_ID[want] + '), SWAP on its step, the slots unchanged');
+  t.ok(s.room.compare === 1 && s.room.cand === want && (s.ev & EV.SWAP) && JSON.stringify(s.hero.slots) === JSON.stringify([code('J5'), code('D6'), code('C2')]), 'every slot full: the chest opens the swap with cand ' + WPN_ID[s.room.cand] + ' (the test draws ' + WPN_ID[want] + '), SWAP on its step, the slots unchanged');
   const world = x => JSON.stringify([x.hero, x.enemies, x.proj, x.traps, x.loot, x.chest, x.rng, x.room]);
   const before = world(s), fr = s.frame;
   for (let k = 0; k < 30; k++) SB.sim.step(s, IN.R | (k % 3 === 0 ? IN.A_TAP | IN.A : 0) | (k % 5 === 0 ? IN.B_TAP | IN.B : 0));
@@ -4933,7 +4934,7 @@ group('H-wpn-7', 'the swap (6.4) with a hand loadout of unbuilt codes (J5, D6): 
   const take = SB.sim.attach(structuredClone(s), s.level), leave = SB.sim.attach(structuredClone(s), s.level);
   SB.sim.step(take, C.TAKE * IN.CHOICE); SB.sim.step(leave, C.LEAVE * IN.CHOICE);
   t.ok(take.hero.slots[(want - 1) >> 3] === want && (take.ev & EV.EQUIP) && (take.ev & EV.PICK) && !take.room.compare && take.room.cand === 0, 'TAKE puts ' + WPN_ID[want] + ' in its slot (slots ' + take.hero.slots.join(',') + '), EQUIP and PICK, the swap closed');
-  t.ok(JSON.stringify(leave.hero.slots) === JSON.stringify([code('J5'), code('D6'), 0]) && !(leave.ev & EV.EQUIP) && (leave.ev & EV.PICK) && !leave.room.compare && leave.room.cand === 0, 'LEAVE keeps J5 and D6, PICK alone, the swap closed');
+  t.ok(JSON.stringify(leave.hero.slots) === JSON.stringify([code('J5'), code('D6'), code('C2')]) && !(leave.ev & EV.EQUIP) && (leave.ev & EV.PICK) && !leave.room.compare && leave.room.cand === 0, 'LEAVE keeps J5 and D6, PICK alone, the swap closed');
   const live1 = mk().s, words = [];
   for (let k = 0; k < 120; k++) { const w = live1.room.compare && k % 9 === 0 ? C.TAKE * IN.CHOICE : IN.R; SB.sim.step(live1, w); words.push(w); }
   const rep = mk().s; for (const w of words) SB.sim.step(rep, w);
@@ -4946,7 +4947,7 @@ group('H-wpn-7', 'the swap (6.4) with a hand loadout of unbuilt codes (J5, D6): 
   const T = SB.TUNING, slot = c => (c - 1) >> 3, CH2 = 46 * 24 + 9;
   const drawRef = (st2, slots) => { const cands = built.filter(c => slots[slot(c)] !== c), empty = cands.filter(c => slots[slot(c)] === 0); if (!cands.length) return 0; const pool = T.CHEST_FILLS_EMPTY_FIRST && empty.length ? empty : cands; return pool[stepRef(st2) % pool.length]; };
   let ok2 = 0, bad2 = '', swaps = 0, fills = 0, emptyFirst = 0, emptyCases = 0;
-  for (let k = 0; k < 200; k++) for (const lo of [[0, 0, 0], ['J1', 0, 0], [0, 'D1', 0], ['J3', 'D1', 0]]) {
+  for (let k = 0; k < 200; k++) for (const lo of [[0, 0, 0], ['J1', 0, 0], [0, 'D1', 0], ['J3', 'D1', 'C2']]) {   /* step 4: the last loadout fills the charm slot too, so it swaps */
     const lv = LABS.room(['', FLOOR]); lv.seed = 7000 + k;
     lv.features = { pocket: null, enemies: [], trap: null, specks: [], scroll: null, blueprint: null, chest: CH2 };
     const s2 = SB.sim.create(lv, { at: { x: 2 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: lo }), slots0 = s2.hero.slots.slice(), want = drawRef({ v: s2.rng }, slots0);
@@ -5049,6 +5050,28 @@ group('H-wpn-D3', 'the dive slot, step 3 (7.3): Icicle freezes within 2 cells an
   const { s: mg } = wpnLab(['', FLOOR], [[F.MOTH, 44 * 24 + 10]], { hc: 10, row: 40, air: true, loadout: [0, 'D3'], mortal: true });
   const h0 = mg.hero.hearts; for (let k = 0; k < 40; k++) SB.sim.step(mg, k === 0 ? IN.B | IN.B_TAP : 0);
   t.ok(mg.hero.hearts === h0, 'a stomp costs the bug no heart (' + mg.hero.hearts + ' of ' + h0 + ')');
+});
+
+group('H-wpn-C', 'the charms, step 4 (7.4): the Lantern burns a neighbour once a second; Magnet takes loot from 4 cells, not 5; Second Wind leaves one heart from a lethal hit once a room; Thick Skin makes the room\'s first hit free', t => {
+  const F = SB.features, EV = SB.sim.EV, r = 46 * 24;
+  /* Lantern: a frozen moth a cell off dies on the first pulse (4 quarters at Grit 0), a moth 3 cells off lives */
+  const { s: ln } = wpnLab(['', FLOOR], [[F.MOTH, r + 11 - 24], [F.MOTH, r + 13 - 24]], { hc: 10, loadout: [0, 0, 'C1'] });
+  for (let k = 0; k < K.LANTERN_PULSE_F + 2; k++) SB.sim.step(ln, 0);
+  t.ok(ln.enemies[0].hp === 0 && ln.enemies[1].hp > 0, 'Lantern: the moth a cell off dies on the pulse, the one 3 off lives (' + ln.enemies.map(e => e.hp).join(',') + ')');
+  /* Magnet: a speck 4 cells off is taken standing still; 5 off is not */
+  const mag = off => { const { lv, s } = wpnLab(['', FLOOR], [], { hc: 10, loadout: [0, 0, 'C2'] }); lv.features.specks = [r - 24 + 10 + off]; s.loot = [{ kind: SB.sim.LOOT.SPECK, idx: r - 24 + 10 + off, taken: 0 }]; for (let k = 0; k < 6; k++) SB.sim.step(s, 0); return s.loot[0].taken; };
+  t.ok(mag(4) === 1 && mag(5) === 0, 'Magnet: a speck 4 cells off flies in, 5 off stays (' + mag(4) + ', ' + mag(5) + ')');
+  /* Second Wind and Thick Skin: a moth beside a mortal bug with one heart left (two for Thick Skin) */
+  const hitBy = (charm, hearts, n) => {
+    const { s } = wpnLab(['', FLOOR], [[F.MOTH, r + 11 - 24]], { hc: 10, loadout: [0, 0, charm], moving: true, mortal: true });
+    s.hero.hearts = hearts; const seen = [];
+    for (let k = 0; k < 600 && seen.length < n && !s.room.dead; k++) { SB.sim.step(s, 0); if (s.ev & (EV.HIT | EV.SAVED)) seen.push([s.hero.hearts, (s.ev & EV.SAVED) ? 1 : 0]); }
+    return { s, seen };
+  };
+  const sw = hitBy('C3', 1, 2);
+  t.ok(sw.seen.length >= 1 && sw.seen[0][0] === 1 && sw.seen[0][1] === 1 && sw.s.hero.secondWind === 1 && (sw.seen.length < 2 || sw.s.room.dead === 1), 'Second Wind: the lethal hit leaves one heart and says SAVED, the next one ends the climb (' + JSON.stringify(sw.seen) + ', dead ' + sw.s.room.dead + ')');
+  const ts = hitBy('C4', 2, 2);
+  t.ok(ts.seen.length === 2 && ts.seen[0][0] === 2 && ts.seen[0][1] === 1 && ts.seen[1][0] === 1 && ts.seen[1][1] === 0, 'Thick Skin: the first hit costs nothing (SAVED), the second costs a heart (' + JSON.stringify(ts.seen) + ')');
 });
 
 group('H-wpn-D1', 'Anvil Boots (7.1): a dive landing\'s shock hits 3 cells along the floor and not 4; not a row up; a wall and a ledge\'s end stop it; a dash fires it, a dash into a wall and a plain landing do not; a hold dive on its last landing only; the shake on the dive alone', t => {
@@ -5622,7 +5645,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   t.ok(!!S.speck && Object.values(S.speck.frames).some(s => s.includes(GLARE)), 'the speck\'s strip carries its Glare glint (section 7.3: loot is Amber with a Glare glint)');
   /* HOUSE-B: the beacon's lighting ends on the lit beacon pixel for pixel (Astra's NOTES), so the hand over is seamless */
   t.ok(!!S.fx_beacon_light && S.fx_beacon_light.frames.light_3 === S.beacon.frames.a, 'fx_beacon_light.light_3 is beacon.a pixel for pixel (the hand over to the beacon\'s loop, HOUSE-B)');
-  t.ok(!names.some(n => ['crop_floor_band', 'crop_ceiling_band', 'crop_seek', 'fx_stat_up', 'hud_heart_new', 'fx_magnet', 'fx_second_wind', 'fx_thick_skin', 'fx_tripod', 'tab_biome', 'hero_bold'].includes(n)),
+  t.ok(!names.some(n => ['crop_floor_band', 'crop_ceiling_band', 'crop_seek', 'fx_stat_up', 'hud_heart_new', 'fx_tripod', 'tab_biome', 'hero_bold'].includes(n)),   /* step 4 drew fx_magnet, fx_second_wind and fx_thick_skin */
     'nothing parked is on the page (ART3: the parked keys wait in docs/astra/cut-art3.json for their systems)');
   /* the elites (Q160): each its own art, ELITE_PX a side (the sim's box, ELITE_SIZE_CELLS cells), with its kind's frame
      names, so the draw's beat picks a frame that exists (the sprites gate proves it is drawn 1:1, never the base scaled) */

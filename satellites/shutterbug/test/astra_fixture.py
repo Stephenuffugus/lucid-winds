@@ -57,6 +57,9 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'ui/hud_key.png': ('hud_key', None), 'world/beacon_locked.png': ('beacon_locked', None), 'fx/fx_beacon_refuse.png': ('fx_beacon_refuse', None),
     'fx/tremor_burst.png': ('tremor_burst', None), 'fx/tremor_chip.png': ('tremor_chip', None), 'fx/pogo_bounce.png': ('pogo_bounce', None),
     'fx/pile_strike.png': ('pile_strike', None),
+    # step 4's charms: round 2's Magnet, Second Wind and Thick Skin, round 5's Lantern orb and Light Meter tick
+    'fx/fx_magnet.png': ('fx_magnet', None), 'fx/fx_second_wind.png': ('fx_second_wind', None), 'fx/fx_thick_skin.png': ('fx_thick_skin', None),
+    'fx/lantern_orb.png': ('lantern_orb', None), 'fx/meter_tick.png': ('meter_tick', None),
 }
 
 

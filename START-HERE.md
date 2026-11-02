@@ -1,5 +1,10 @@
 # START HERE
 
+## 📷 2 Nov 17:55 UTC (Opus) sb-m1-9 STAMPED: CHARMS (C1 to C4, C6); CI FIXED (every gate the CI runs passed here first)
+His ruling (2 Nov): nothing goes to Play until Shutterbug is good; "finish making shutterbug now". The order: charms (this), the biome bosses, terrain, the second monsters, the Darkroom, the first 60 seconds, the ship list, then the store page.
+DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-9/deploy-sb-m1-9.sh`, then hostproof, tag sb-m1-9.
+BEFORE EVERY PUSH: the CI's own gates (lint, icons, astra, harness --fast, harness-all, redwatch: anchors by scratchpad anchors.js or the full run, plus the rows near the change). The CI emails him on every red.
+
 ## 📷 2 Nov 17:20 UTC (Opus) sb-m1-8 STAMPED: THE DIVE WEAPONS (D2 to D8) + THE KEYS (sb-m1-7 never shipped; its script now refuses); STEPHEN RUNS THE DEPLOY SCRIPT
 All 16 jump and dive weapons are in the chests. lint OK, harness 7351 OK (H-wpn-D3 new). PROGRESS sb-m1-8 has the details.
 DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-8/deploy-sb-m1-8.sh`, then hostproof, tag sb-m1-8.
