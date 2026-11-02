@@ -1,5 +1,14 @@
 # START HERE
 
+## 📷 2 Nov 00:03 UTC (Opus) STEPHEN FLAGGED THE USAGE BURN; THE NIGHT IS CUT TO THREE THINGS
+HIS WORDS: "We've used 17% of total usage on 8 hours ... Are you just burning resources on pointless tests? ... I thought it would be done and built by now". The measure: 5,084 subagent turns, 4.3M output tokens, 825M cache reads, mostly lanes waiting on the one browser lock (memory feedback_usage_burn_lanes).
+CUT:
+  - Dewball is paused (`wf_33b115cc-23b` stopped at 00:0x UTC). w5 Starfall Bay is committed as `85fc8b343` (dewball-v35 stamp, not deployed). w7's half built files are left uncommitted in /workspaces/dewball-w567 (assets/3d/w7/, index.json): rebuild them.
+  - TO RESUME DEWBALL: run plans/dewball/lanes/dewball-forge-w567-nov01.js with the setup, meshy and w5 steps removed (their commits are on the branch; the ledger stops any double spend). Do it after gh is logged in, so the vault release in /home/codespace/dewball-drafts/VAULT-PENDING.txt goes first.
+  - Weapons stops after its W2 fix (W2R). W3, the dive slot, waits for the next session.
+KEEPS RUNNING: the photo 1a fix, then the sb-m1-4 deploy line; the house lane B (the boss) with its review and fix; and climb (CLIMB-A, review, fix). Merge them for sb-m1-5 if green in time; otherwise push and ship first thing next session.
+FROM NOW: at most 2 lanes on this box, one review per lane, light checks.
+
 ## 📷 1 Nov 23:55 UTC (Opus) A MERGE RULE FOR sb-levels + sb-climb: THE BIOME VOTE MUST READ THE COLOURS BEFORE THE NORMALISATION'S WHITE BALANCE
 Photo 1a's real photo review (`wf_31d4b38c-8e6`, review-photos) found that the capture normalisation (sb-levels NORMALISE) turns almost every real photo into Attic. Frost can no longer happen, and gardens, an orange door and a ginger cat lose Overgrowth or Ember: the half strength grey world white balance washes out the colour casts.
   - sb-climb's BIOME (`049ba6925`) puts SB.capture.hueVote after gridRecord, so after the merge it would vote on the NORMALISED grid. It was measured on raw capture only.
