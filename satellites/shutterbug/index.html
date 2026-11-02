@@ -258,11 +258,12 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #guardbanner[hidden] { display: none; }
 /* the house clear card's prize (Astra's card_house_clear, 144x140 at 2x: the prize in its opening, fx_unlock over it,
    the caption in its 98x14 area at (23,100)) */
-#doorprize { position: relative; width: 288px; height: 280px; margin: 4px auto 8px; }
-#doorprize canvas { width: 288px; height: 280px; image-rendering: pixelated; display: block; }
-#doorprize p { position: absolute; left: 46px; top: 200px; width: 196px; height: 28px; margin: 0; display: flex; align-items: center; justify-content: center;
+#doorprize { position: relative; width: min(288px, 100%); aspect-ratio: 144 / 140; margin: 4px auto 8px; }
+#doorprize canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+/* the caption area in card pixels (23,100) 98x14, as shares of the 144x140 card, so a narrow card (320 wide: the
+   first shots scaled it by a transform and it spilled past the doorway card) keeps the words in their place */
+#doorprize p { position: absolute; left: 15.97%; top: 71.43%; width: 68.06%; height: 10%; margin: 0; display: flex; align-items: center; justify-content: center;
   font-size: 0.85rem; font-weight: 700; color: var(--ink); text-align: center; line-height: 1; overflow: hidden; }
-@media (max-width: 340px) { #doorprize { transform: scale(0.9); transform-origin: top center; margin-bottom: -20px; } }
 /* the frame style worn (DESIGN 9.4, Q97 ruling 4): Astra's frame_styles swatch as a nine slice border at 2x round the
    title's polaroid and the share sheet's picture; paper is the polaroid as it was */
 .framed { border-style: solid; border-width: 10px 10px 28px; border-image-slice: 5 5 14 5; border-image-width: 10px 10px 28px 10px; border-image-repeat: stretch; image-rendering: pixelated; }

@@ -335,6 +335,9 @@ try {
   R.say(JSON.stringify(pz2.cos) === JSON.stringify({ hero: 0, frame: 1, owned: ['frame.walnut'] }) && pz2.daily === true, 'the save owns and wears the walnut frame (' + JSON.stringify(pz2.cos) + '), Daily Room\'s flag set (' + pz2.daily + ')');
   sm = await small(page);
   R.say(sm.length === 0, 'every control on the house clear card is 48 px or more' + (sm.length ? ' (' + sm.join(', ') + ')' : ''));
+  /* HOUSE-B: the prize sits inside the doorway card (the first 320 shots had it spill past the card's edge) */
+  const inCard = await page.evaluate(() => { const a = document.getElementById('doorprize').getBoundingClientRect(), b = document.getElementById('doorcard').getBoundingClientRect(); return a.left >= b.left && a.right <= b.right; });
+  R.say(inCard, 'the prize sits inside the doorway card');
   await tap(page, '#doortitle');
   const tc = await page.evaluate(() => ({ count: document.getElementById('housecount').hidden ? null : document.getElementById('housecount').textContent, go: !document.getElementById('housego').hidden }));
   R.say(tc.count === 'Houses cleared 1' && !tc.go, 'the title says "' + tc.count + '" and offers no Continue the house');
