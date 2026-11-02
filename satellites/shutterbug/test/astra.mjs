@@ -108,7 +108,7 @@ say(keys.length < CAP && capped.code === 0 && capped.out.includes('a whole splic
   'a cut that would leave ' + CAP + ' names (the page\'s ' + keys.length + ' and ' + (CAP - keys.length) + ' more) is checked: a whole delivery may be checked and parked' + (capped.code === 0 ? '' : ' (exit ' + capped.code + ')'));
 say(capS.code === 1 && capS.out.includes(CAP + ' names after this splice; the page stays under ' + CAP) && !existsSync(join(TMP, 'copy-cap.html')),
   'its splice is refused at the cap, the page unwritten (splice exit ' + capS.code + ')');
-say(CAP === 52, 'the cap is 52, ART4\'s (the least that takes its 51 names) and no higher (' + CAP + ')');
+say(CAP === 65, 'the cap is 65, sb-m1-5\'s (the least that takes its 64 names: ART4\'s 51 and the house\'s 13) and no higher (' + CAP + ')');
 
 /* ART3: round 3's shapes: the game named in capitals, a 16 px and a 64 px effect, the beacon's lighting with its Sun */
 const r3 = through('round3', ['--round3']);

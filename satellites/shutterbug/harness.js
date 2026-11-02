@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 6312;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6312 at Weapons v1 step 2, 1 Nov, the --fast count) */
+const ASSERT_FLOOR = 7237;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -5243,7 +5243,7 @@ group('H-bot-8', 'Skyhook never breaks a climb: with J8 equipped every main asce
 });
 /* the corpus edges a full Skyhook hold misses, walked to the end (W2R, Q123; Q122's four counted only the first miss of
    a walk outside Deep): the count moves only with a QUESTIONS entry */
-const SKYHOOK_FULL_HOLD_MISSES = { base: 9, deep: 87 };
+const SKYHOOK_FULL_HOLD_MISSES = { base: 9, deep: 93 };   /* 87 on sb-weapons-2; 93 on the sb-m1-5 merge (the levels and climb branches' rooms) */
 
 group('H-bot-9', 'the bot\'s walks armed (J1 and D1) clear every walked level with the unarmed words, on the same step (weapons never stop the climb; a chest\'s swap, answered Keep, holds one step and moves nothing)', t => {
   const { runs } = botWalks(); let walked = 0; const bad = [];
@@ -5487,7 +5487,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   const WFX = ['dart', 'ring', 'ember', 'flash_ring', 'snap_frame', 'kick_spray', 'fire_cell', 'frost_burst'];
   for (const k of WFX) LAW[k] = [hx(I.INK, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE), true];
   const POSES = Object.keys(LAW).filter(n => n.startsWith('hero_'));
-  t.ok(names.length > 0 && names.length < 52, names.length + ' named sprites (under 52, ART4\'s cap; frames are unlimited)');
+  t.ok(names.length > 0 && names.length < 65, names.length + ' named sprites (under 65, sb-m1-5\'s cap: ART4\'s 51 and HOUSE-B\'s 13; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
     const sp = S[name];
@@ -5499,7 +5499,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
       t.ok(bad.length === 0, name + '.' + f + ' decodes to ' + sp.w + 'x' + sp.h + ', every pixel clear or a palette index' + (bad.length ? ' (' + bad.join('; ') + ')' : ''));
       if (name === 'hero') t.ok(sp.w === K.HERO_W && sp.h === K.HERO_H && rows[sp.h - 1].includes(INK), 'hero.' + f + ' is the hitbox\'s size and its bottom row holds Ink (the feet row, section 7.3)');
       else if (name.startsWith('hero_')) t.ok(rows[sp.h - 1].includes(INK), name + '.' + f + ' is a hero pose (Sun allowed) and its bottom row holds Ink (the feet row)');
-      else if (name !== 'beacon') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\' and the beacon\'s)');
+      else if (name !== 'beacon' && name !== 'fx_beacon_light') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\', the beacon\'s and its lighting\'s)');
       /* section 7.3 (the M1 review: the placeholders broke it): Film is the repairs' alone (the film tab), so help is
          never furniture; the speck is Amber with a Glare glint; every danger has an Ink outline */
       if (name !== 'tab') t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour)');
@@ -5573,7 +5573,9 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   t.ok(POSES.every(n => S[n] && S[n].w === (PW[n] || [K.HERO_W])[0] && S[n].h === (PW[n] || [0, K.HERO_H])[1]), 'the poses keep the old transform\'s rects (hero_squash 14x14, hero_stretch 10x18) and the rest the hero\'s 12x16 (' + POSES.map(n => n + ' ' + (S[n] ? S[n].w + 'x' + S[n].h : 'absent')).join(', ') + ')');
   t.ok(DANGER.every(n => names.includes(n)), 'every enemy, elite and trap the rules name has a sprite (' + DANGER.join(', ') + ')');
   t.ok(!!S.speck && Object.values(S.speck.frames).some(s => s.includes(GLARE)), 'the speck\'s strip carries its Glare glint (section 7.3: loot is Amber with a Glare glint)');
-  t.ok(!names.some(n => ['crop_floor_band', 'crop_ceiling_band', 'crop_seek', 'run_pips', 'icon_house', 'card_house_clear', 'fx_unlock', 'hero_colours_r3', 'fx_boss_wake', 'fx_boss_chip', 'fx_boss_down', 'fx_beacon_light', 'fx_stat_up', 'hud_heart_new', 'fx_magnet', 'fx_second_wind', 'fx_thick_skin', 'fx_tripod', 'tab_biome', 'hero_bold'].includes(n)),
+  /* HOUSE-B: the beacon's lighting ends on the lit beacon pixel for pixel (Astra's NOTES), so the hand over is seamless */
+  t.ok(!!S.fx_beacon_light && S.fx_beacon_light.frames.light_3 === S.beacon.frames.a, 'fx_beacon_light.light_3 is beacon.a pixel for pixel (the hand over to the beacon\'s loop, HOUSE-B)');
+  t.ok(!names.some(n => ['crop_floor_band', 'crop_ceiling_band', 'crop_seek', 'fx_stat_up', 'hud_heart_new', 'fx_magnet', 'fx_second_wind', 'fx_thick_skin', 'fx_tripod', 'tab_biome', 'hero_bold'].includes(n)),
     'nothing parked is on the page (ART3: the parked keys wait in docs/astra/cut-art3.json for their systems)');
   /* the elites (Q160): each its own art, ELITE_PX a side (the sim's box, ELITE_SIZE_CELLS cells), with its kind's frame
      names, so the draw's beat picks a frame that exists (the sprites gate proves it is drawn 1:1, never the base scaled) */
@@ -5760,8 +5762,10 @@ group('H-hue-1', 'the hue vote (Q220, shell-capture\'s hueVote): the bright room
   for (let i = 0; i < N; i++) { const p = parseInt(sage[Math.floor(i / 24)][i % 24], 16); rgb.set(p === SB.palette.I.ASH ? [178, 194, 164] : SB.palette.RGB[p], 3 * i); }
   const j = CAP.gridRecord(rgb, -1), want = CAP.hueVote(rgb).biome;
   t.ok(j.v === 2 && j.biome === want + 1 && j.rules === 0 && CAP.RULES === 0 && j.flags === 0 && SB.record.validate(j) === null, 'gridRecord writes a valid v2 record: biome the vote + 1 (' + j.biome + '), RULES 0 (today\'s rules, Q222), flags 0');
-  t.same(j.rows, Array.from(SB.SAMPLE_ROOM), 'the sage walled sample room quantizes to the sample room itself (sage is nearest Ash): only the biome byte differs');
-  const lv = SB.pipeline.build(SB.record.fromJSON(j), { firstRoom: true }), lv1 = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, j, { v: 1, biome: undefined, rules: undefined, flags: undefined })), { firstRoom: true });
+  /* sb-m1-5: gridRecord now normalises before nearest (NORMALISE), so its rows are no longer the sample room's; the vote
+     reads the raw colours (the merge rule), so the biome byte is still the sage's. Built on the sample room's own rows */
+  const js = Object.assign({}, j, { rows: Array.from(SB.SAMPLE_ROOM) });
+  const lv = SB.pipeline.build(SB.record.fromJSON(js), { firstRoom: true }), lv1 = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, js, { v: 1, biome: undefined, rules: undefined, flags: undefined })), { firstRoom: true });
   t.ok(want === 3 && lv.biome === 3 && lv1.biome === 0 && lv.features.enemies.length > 0 && lv.features.enemies.every(e => e.kind === SB.features.CRAWLER), 'a sage walled room builds Overgrowth with thorn crawlers (' + lv.features.enemies.length + '); the same grid alone is Attic');
 });
 
@@ -5922,8 +5926,482 @@ group('H-climb-2', 'the climb rules\' levels are played (Q221): the harness\'s b
   }
 });
 
+/* ================================================================ the house (T2.8, QUESTIONS Q200): the ramp and the run */
+/* every built corpus room (fixture, mode) as detected, and under each biome override, built at house rooms 1 to 5 and
+   in free play; the test's own reading of the ramp table (Stephen's "Firm ramp", 31 Oct; the proposal's 2.1), typed
+   here from the table, not read from TUNING. Room 5 is room 4's row until lane B's boss (Q201: the review of HOUSE-A
+   found the last room the easiest of the five, often empty) */
+const RAMP_WANT = { 2: { floor: 2, cap: 4, elites: 1, eliteMin: 0, hpQ: 4, fast: false }, 3: { floor: 3, cap: 4, elites: 1, eliteMin: 1, hpQ: 4, fast: true },
+  4: { floor: 4, cap: 5, elites: 2, eliteMin: 1, hpQ: 6, fast: true }, 5: { floor: 0, cap: 3, elites: 0, eliteMin: 0, hpQ: 4, fast: false } };   /* room 5: the table's own row beside the guardian (HOUSE-B) */
+let rampLevels = null;
+function rampBuilds() {
+  if (rampLevels) return rampLevels;
+  rampLevels = [];
+  for (const f of FIXTURES) for (const mode of MODES) for (const biome of [null, 0, 1, 2, 3, 4]) {
+    const rec = () => SB.record.fromJSON(Object.assign({}, f.fx.record, { mode })), o = biome === null ? {} : { biome };
+    const base = SB.pipeline.build(rec(), o);
+    if (base.needsCrop) continue;
+    const rooms = {};
+    /* the overrides at room 4 only (the hardest row: every kind's ramp fodder and its envelope); as detected, every room */
+    for (const r of biome === null ? [1, 2, 3, 4, 5] : [4]) rooms[r] = SB.pipeline.build(rec(), Object.assign({ roomIndex: r, lastRoom: r === 5 }, o));
+    rampLevels.push({ tag: f.name + ' mode ' + mode + ' ' + (biome === null ? 'as detected' : SB.palette.BIOMES[biome]), f, mode, biome, base, rooms, rec });
+  }
+  return rampLevels;
+}
+const featJSON = lv => JSON.stringify(lv.features, (k, v) => ArrayBuffer.isView(v) ? Array.from(v) : v);
+group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHash, features, the first sim state, no ramp row) and a first room never sees a room index; rooms 2, 3 and 4 hold at least 2, 3 and 4 enemies on every built corpus room, as detected and under every biome, rooms 3 and 4 an elite, within the table\'s caps; every ramp enemy is its biome\'s kind (a moth where none can keep the kind\'s rule), keeps DESIGN 7\'s cells and keeps its envelope off the ascent; the route, the safe cadence and the degrade ladder are the free play room\'s', t => {
+  const T = SB.TUNING, bad = { same: [], floor: [], elite: [], cap: [], kind: [], rules: [], env: [], fall: [], route: [], refuse: [], first: [], last: [] };
+  let falls = 0;
+  let rooms = 0, laid = 0, promoted = 0, moths = 0; const own = {};
+  for (const L of rampBuilds()) {
+    const { tag, base, rec } = L;
+    if (L.rooms[1]) {
+      const r1 = L.rooms[1];
+      if (SB.pipeline.levelHash(r1) !== SB.pipeline.levelHash(base) || featJSON(r1) !== featJSON(base) || 'ramp' in r1 || 'ramp' in base
+        || SB.sim.hash(SB.sim.create(r1, {})) !== SB.sim.hash(SB.sim.create(base, {}))) bad.same.push(tag);
+      const fr = SB.pipeline.build(rec(), { firstRoom: true }), fr3 = SB.pipeline.build(rec(), { firstRoom: true, roomIndex: 3 });
+      if (!fr.needsCrop && (SB.pipeline.levelHash(fr) !== SB.pipeline.levelHash(fr3) || 'ramp' in fr3)) bad.first.push(tag);
+    }
+    for (const [rs, lv] of Object.entries(L.rooms)) {
+      const r = +rs, want = RAMP_WANT[r];
+      if (r === 1) continue;
+      rooms++;
+      if (lv.needsCrop) { bad.refuse.push(tag + ' room ' + r); continue; }
+      const f = lv.features, E = f.enemies, w = lv.w, n = w * lv.h, stands = lv.ascent.nodes.filter(v => v < n), standSet = new Set(stands);
+      const cap = want.cap + (lv.biome === 4 ? T.EMBER_EXTRA_ENEMY : 0), elites = E.filter(e => e.elite).length;
+      if (E.length < want.floor) bad.floor.push(tag + ' room ' + r + ': ' + E.length + ' enemies');
+      if (E.length > Math.max(cap, want.floor)) bad.cap.push(tag + ' room ' + r + ': ' + E.length + ' enemies (cap ' + cap + ')');
+      if (elites > want.elites) bad.cap.push(tag + ' room ' + r + ': ' + elites + ' elites (cap ' + want.elites + ')');
+      if (elites < want.eliteMin) bad.elite.push(tag + ' room ' + r + ': ' + elites + ' elites');
+      if (!lv.ramp || lv.ramp.floor !== want.floor || lv.ramp.fodderHpQ !== want.hpQ || !!lv.ramp.fast !== want.fast) bad.same.push(tag + ' room ' + r + ': the level\'s ramp row ' + JSON.stringify(lv.ramp));
+      if (JSON.stringify(Array.from(lv.ascent.nodes)) !== JSON.stringify(Array.from(base.ascent.nodes)) || lv.degraded.join() !== base.degraded.join()) bad.route.push(tag + ' room ' + r);
+      /* the settled check the pipeline runs, run again by the test on the ramped level: the ascent still holds on its safe set */
+      const g2 = SB.reach.trapGraph(lv, SB.reach.graph(lv));
+      if (!SB.pipeline.holds(lv, lv.ascent, g2, SB.reach.safeSet(lv, g2))) bad.route.push(tag + ' room ' + r + ': the ascent no longer holds on the safe cells');
+      for (const e of E) {
+        if (e.promoted) promoted++;
+        if (!e.ramp) continue;
+        laid++; if (e.kind === KIND_WANT[lv.biome]) own[lv.biome] = (own[lv.biome] || 0) + 1;
+        const c = e.idx, at = '(' + c % w + ', ' + Math.floor(c / w) + ')';
+        if (e.kind !== KIND_WANT[lv.biome]) { if (e.kind === SB.features.MOTH) moths++; else bad.kind.push(tag + ' room ' + r + ': a ' + KIND_NAME[e.kind] + ' at ' + at); }
+        if (lv.solid[c] || lv.plat[c] || lv.trap[c] || c < w || c >= n - w) bad.rules.push(tag + ' room ' + r + ': on a solid, one way, trap or edge cell ' + at);
+        if (cheb(c, lv.spawn, w) <= T.ENEMY_SPAWN_CLEAR) bad.rules.push(tag + ' room ' + r + ': within ENEMY_SPAWN_CLEAR of spawn ' + at);
+        if (stands.some(v => cheb(c, v, w) <= T.ROUTE_SAFE_ENEMY_DIST)) bad.rules.push(tag + ' room ' + r + ': within ROUTE_SAFE_ENEMY_DIST of the ascent ' + at);
+        if (f.pocket && f.pocket.cells.includes(c)) bad.rules.push(tag + ' room ' + r + ': in the pocket ' + at);
+        if ([f.chest, f.scroll, f.blueprint, lv.exit].concat(Array.from(f.specks)).includes(c)) bad.rules.push(tag + ' room ' + r + ': on a loot cell or the exit ' + at);
+        if ((e.kind === SB.features.CRAWLER || e.kind === SB.features.SPARK) && !standableIn(lv, c)) bad.rules.push(tag + ' room ' + r + ': a ' + KIND_NAME[e.kind] + ' not standing ' + at);
+        if (e.kind === SB.features.ICICLE && !(lv.solid[c - w] || lv.plat[c - w])) bad.rules.push(tag + ' room ' + r + ': an icicle hanging from nothing ' + at);
+        if (Array.from(e.env).some(v => standSet.has(v))) bad.env.push(tag + ' room ' + r + ': the ' + KIND_NAME[e.kind] + ' at ' + at + ' covers a cell the ascent stands on');
+        /* an icicle's real fall, the test's own walk of the sim's rule (down to the first solid or one way cell, no row
+           limit; the review of HOUSE-A: envelope()'s six rows let 15 of 121 ramp icicles fall onto the ascent) */
+        if (e.kind === SB.features.ICICLE) {
+          falls++;
+          for (let q = c + w; q < n && !lv.solid[q] && !lv.plat[q]; q += w) {
+            const x = q % w, hit = standSet.has(q) || (x > 0 && standSet.has(q - 1)) || (x < w - 1 && standSet.has(q + 1));
+            if (hit) { bad.fall.push(tag + ' room ' + r + ': the icicle at ' + at + ' falls ' + (Math.floor(q / w) - Math.floor(c / w)) + ' rows onto or beside the ascent at row ' + Math.floor(q / w)); break; }
+          }
+        }
+      }
+    }
+    /* the last room is never easier than room 4: it holds the guardian on every built room (HOUSE-B; room 4's row
+       stood in for it until then) */
+    if (L.rooms[5] && !L.rooms[5].needsCrop && !(L.rooms[5].features.guardian && L.rooms[5].features.boss && L.rooms[5].features.boss.length === SB.TUNING.GUARD_W * SB.TUNING.GUARD_H))
+      bad.last.push(tag + ': room 5 has no guardian');
+  }
+  const say = (k, msg) => t.eq(bad[k].length, 0, msg + (bad[k].length ? ': ' + bad[k].slice(0, 5).join('; ') : ''));
+  say('same', 'room 1 is free play byte for byte on every built room (levelHash, features, the first sim state, no ramp row), and a ramped room carries its table row');
+  say('first', 'a first room built with a room index is the first room (the ramp never reaches the onboarding room)');
+  say('refuse', 'no room that builds in free play refuses at any house room');
+  say('floor', 'rooms 2, 3 and 4 hold at least 2, 3 and 4 enemies over ' + rooms + ' ramped builds (' + laid + ' ramp fodder laid)');
+  say('elite', 'rooms 3 and 4 hold an elite on every build (' + promoted + ' promoted where the photo gave none)');
+  say('cap', 'the table\'s caps hold: room 2 and 3 at most 4 enemies and 1 elite, rooms 4 and 5 at most 5 and 2 (Ember one more enemy)');
+  say('kind', 'every ramp enemy is its biome\'s kind or, where no cell keeps the kind\'s rule, a moth (' + moths + ' moths)');
+  const missing = [1, 2, 3, 4].filter(b => !own[b]);
+  t.ok(missing.length === 0, 'every biome\'s own kind is laid as ramp fodder (' + [0, 1, 2, 3, 4].map(b => SB.palette.BIOMES[b] + ' ' + (own[b] || 0)).join(', ') + '; ' + moths + ' moths of ' + laid + ')');
+  say('rules', 'every ramp enemy keeps DESIGN 7: open, clear of spawn by ENEMY_SPAWN_CLEAR, outside ROUTE_SAFE_ENEMY_DIST of the ascent, never on a trap, the pocket, a loot cell or the exit; crawlers and sparks standing, icicles hanging');
+  say('env', 'no ramp enemy\'s envelope covers a cell the ascent stands on');
+  say('fall', 'no ramp icicle falls onto or beside a cell the ascent stands on, all the way down (' + falls + ' ramp icicles)');
+  say('last', 'room 5 holds the guardian on every built room (HOUSE-B)');
+  say('route', 'the ramped room keeps the free play room\'s ascent and degrade ladder, and its ascent holds on the safe cells');
+});
+
+group('H-house-2', 'the ramp in the sim: room 4\'s fodder at 6 quarters a HP (1.5x; an elite as before, rooms 1 to 3 at HP_Q); rooms 3 and 4 tick their enemies 1.25x (an extra tick on every fourth step: 10 in 8 steps, a moth 10 MOTH_V along its larger axis), rooms 1 and 2 at 1x; the promotion is the fodder farthest from spawn by the test\'s own squared distance; free play\'s sim state never moves', t => {
+  const K = SB.K, T = SB.TUNING, bad = { hp: [], tick: [], promo: [] };
+  let checked = 0, promos = 0;
+  for (const L of rampBuilds()) {
+    if (L.biome !== null) continue;
+    for (const r of [1, 2, 3, 4, 5]) {
+      const lv = L.rooms[r]; if (!lv || lv.needsCrop) continue;
+      const s = SB.sim.create(lv, { immortal: true, lastRoom: r === 5 });
+      lv.features.enemies.forEach((e, k) => {
+        const hp = (e.kind === SB.features.JELLY ? T.JELLY_HP : e.kind === SB.features.CRAWLER ? T.CRAWLER_HP : 1);
+        const want = e.elite ? hp * T.ELITE_HP_MULT * 4 : hp * (r === 4 ? 6 : 4);
+        if (s.enemies[k].hp !== want) bad.hp.push(L.tag + ' room ' + r + ': a ' + (e.elite ? 'elite ' : '') + KIND_NAME[e.kind] + ' at ' + s.enemies[k].hp + ' quarters, want ' + want);
+      });
+      /* the clock: 8 steps of a held hero (immortal) tick each live enemy 8 times at 1x, 10 at 1.25x */
+      if (s.enemies.length) {
+        const x0 = s.enemies.map(e => [e.x, e.y]);
+        for (let k = 0; k < 8; k++) SB.sim.step(s, 0);
+        const want = r === 3 || r === 4 ? 10 : 8;
+        s.enemies.forEach((e, k) => {
+          if (e.stunned !== 0 || e.frozen || SB.sim.shedSlot(s, k)) return;   /* the guardian's unshed moth slots never tick */
+          if (e.timer !== want) bad.tick.push(L.tag + ' room ' + r + ': a ' + KIND_NAME[e.kind] + ' ticked ' + e.timer + ' times in 8 steps, want ' + want);
+          const d = Math.max(Math.abs(e.x - x0[k][0]), Math.abs(e.y - x0[k][1]));
+          if (e.kind === SB.features.MOTH && d !== want * K.MOTH_V) bad.tick.push(L.tag + ' room ' + r + ': a moth moved ' + d + ' sub along its larger axis in 8 steps, want ' + want * K.MOTH_V);
+        });
+        checked++;
+      }
+    }
+    /* the promotion: where room 3 lifted an elite out of the fodder, it is the fodder farthest from spawn */
+    const lv3 = L.rooms[3];
+    if (lv3 && !lv3.needsCrop && lv3.features.enemies.some(e => e.promoted)) {
+      promos++;
+      const E = lv3.features.enemies, w = lv3.w, sx = lv3.spawn % w, sy = Math.floor(lv3.spawn / w), d2 = c => (c % w - sx) ** 2 + (Math.floor(c / w) - sy) ** 2;
+      const cands = E.filter(e => !e.elite || e.promoted).map(e => e.idx).sort((a, b) => d2(b) - d2(a) || a - b);
+      const got = E.filter(e => e.promoted).map(e => e.idx);
+      if (got.length !== 1 || got[0] !== cands[0] || E.some(e => e.elite && !e.promoted)) bad.promo.push(L.tag + ': promoted ' + got.join(',') + ', the farthest fodder is ' + cands[0]);
+    }
+  }
+  t.eq(bad.hp.length, 0, 'every enemy\'s first HP is its kind\'s in quarters, room 4\'s fodder 1.5x' + (bad.hp.length ? ': ' + bad.hp.slice(0, 5).join('; ') : ''));
+  t.eq(bad.tick.length, 0, 'the enemies tick 1.25x in rooms 3 and 4 and 1x in rooms 1, 2 and 5 (the table\'s room 5, HOUSE-B), over ' + checked + ' rooms' + (bad.tick.length ? ': ' + bad.tick.slice(0, 5).join('; ') : ''));
+  t.ok(promos > 0 && bad.promo.length === 0, 'room 3\'s promoted elite is the fodder farthest from spawn (' + promos + ' rooms promote)' + (bad.promo.length ? ': ' + bad.promo.slice(0, 5).join('; ') : ''));
+  /* the same record, free play against the house's room 1, stepped 300 steps with the same words: the same hash */
+  const sr = SB.record.fromJSON(fixture('sample-room').fx.record);
+  const a = SB.sim.create(SB.pipeline.build(sr, {}), {}), b = SB.sim.create(SB.pipeline.build(sr, { roomIndex: 1 }), {}), r = hrand(97);
+  for (let k = 0; k < 300; k++) { const wd = r.int(64); SB.sim.step(a, wd); SB.sim.step(b, wd); }
+  t.eq(SB.sim.hash(b), SB.sim.hash(a), 'the sample room as house room 1 steps to free play\'s hash over 300 seeded words');
+});
+
+group('H-house-3', 'the bot walks every built corpus room, as detected, under room 4\'s rules (immortal, Q30: the ramp never touches the climb)', t => {
+  const memo = new Map(), stats = { tries: 0, found: 0, memo: 0, memoMiss: 0 }, miss = [];
+  let walked = 0;
+  for (const L of rampBuilds()) {
+    if (L.biome !== null) continue;
+    const lv = L.rooms[4]; if (!lv || lv.needsCrop) continue;
+    const r = BOT.walk(lv, memo, stats); walked++;
+    if (!r.ok) miss.push(L.tag + ': ' + (r.why || 'stopped at edge ' + (r.miss ? r.miss.i : '?')));
+  }
+  t.ok(walked > 0 && miss.length === 0, 'the bot clears ' + (walked - miss.length) + ' of ' + walked + ' rooms under room 4\'s rules' + (miss.length ? ': ' + miss.slice(0, 5).join('; ') : ''));
+});
+
+/* ---------------------------------------------------------------- the guardian (HOUSE-B; DESIGN 7.1's fallback, T2.10a, T2.11) */
+/* every built corpus room as a house's last room: as detected and under each biome, both modes */
+let bossLevels = null;
+function bossBuilds() {
+  if (bossLevels) return bossLevels;
+  bossLevels = [];
+  for (const L of rampBuilds()) {
+    const lv = L.rooms[5] || SB.pipeline.build(L.rec(), Object.assign({ roomIndex: 5, lastRoom: true }, L.biome === null ? {} : { biome: L.biome }));
+    if (!lv.needsCrop) bossLevels.push({ tag: L.tag, L, lv });
+  }
+  return bossLevels;
+}
+/* the test's own dark masses: 4 connected solid cells, by size (ties to the lower first cell) */
+function testMasses(lv) {
+  const w = lv.w, n = w * lv.h, of = new Int32Array(n).fill(-1), list = [];
+  for (let i = 0; i < n; i++) {
+    if (!lv.solid[i] || of[i] >= 0) continue;
+    const id = list.length, q = [i]; of[i] = id;
+    for (let h = 0; h < q.length; h++) { const c = q[h], x = c % w; for (const d of [x > 0 ? c - 1 : -1, x < w - 1 ? c + 1 : -1, c - w, c + w]) if (d >= 0 && d < n && lv.solid[d] && of[d] < 0) { of[d] = id; q.push(d); } }
+    list.push({ id, first: i, size: q.length });
+  }
+  const rank = list.slice().sort((a, b) => b.size - a.size || a.first - b.first).map(m => m.id);
+  return { of, rank };
+}
+const bodyOf = lv => { const g = lv.features.guardian, w = lv.w, out = []; for (let y = g.rect[1]; y < g.rect[1] + g.rect[3]; y++) for (let x = g.rect[0]; x < g.rect[0] + g.rect[2]; x++) out.push(y * w + x); return out; };
+/* a state with the guardian awake (the intro run out by steps, an immortal bug) */
+function awake(lv, o) {
+  const s = SB.sim.create(lv, Object.assign({ immortal: true, lastRoom: true }, o || {}));
+  for (let k = 0; k < K.BOSS_INTRO_F && s.boss.phase === 0; k++) SB.sim.step(s, 0);
+  return s;
+}
+group('H-boss-3', 'the guardian (HOUSE-B, Stephen\'s "Clay boss now", Q97; DESIGN 7.1\'s fallback): every built corpus room as a house room 5 holds the GUARD_W x GUARD_H clay body at BOSS_FALLBACK_HP, on open cells, resting on the dark mass its rule names (the test\'s own masses), clear of spawn, the climb and every claimed cell, no photo enemy in reach of it; free play, a code, rooms 1 to 4 and a first room never see it', t => {
+  const T = SB.TUNING, bad = { none: [], cells: [], rest: [], spawn: [], climb: [], claim: [], enemy: [], hp: [], seen: [] }, rules = {}, kinds = { mass1: 0, later: 0, air: 0, shelf: 0 };
+  let n = 0, dropped = 0;
+  for (const B of bossBuilds()) {
+    const { tag, lv } = B, g = lv.features.guardian, w = lv.w, N = w * lv.h; n++;
+    if (!g || !lv.features.boss) { bad.none.push(tag); continue; }
+    const body = bodyOf(lv), set = new Set(body);
+    if (JSON.stringify(Array.from(lv.features.boss)) !== JSON.stringify(body) || g.rect[2] !== T.GUARD_W || g.rect[3] !== T.GUARD_H) bad.cells.push(tag + ': features.boss is not the guardian\'s rect');
+    if (body.some(c => lv.solid[c] || lv.trap[c] || (lv.plat[c] && !g.shelf))) bad.cells.push(tag + ': a body cell is solid, a trap or (off the shelf rule) a one way');
+    rules[g.rule] = (rules[g.rule] || 0) + 1; dropped += g.dropped;
+    if (g.shelf) kinds.shelf++; else if (g.air) kinds.air++; else if (g.rule === 1) kinds.mass1++; else kinds.later++;
+    if (!g.air) {
+      const M = testMasses(lv), under = [], y = g.rect[1] + g.rect[3];
+      for (let x = g.rect[0]; x < g.rect[0] + g.rect[2]; x++) under.push(M.of[y * w + x]);
+      const id = M.rank[g.rule - 1], rest = under.filter(v => v === id && v >= 0).length;
+      if (rest < T.GUARD_REST) bad.rest.push(tag + ': rests on ' + rest + ' cells of the ' + g.rule + ' largest dark mass');
+    } else if (g.rule <= testMasses(lv).rank.length) bad.rest.push(tag + ': the air rule numbered inside the masses');
+    if (body.some(c => cheb(c, lv.spawn, w) <= T.ENEMY_SPAWN_CLEAR)) bad.spawn.push(tag);
+    const nodes = Array.from(lv.ascent.nodes).map(v => v < N ? v : (v - N) >> 1);
+    if (nodes.some(v => body.some(c => cheb(c, v, w) <= 1))) bad.climb.push(tag + ': within a cell of a cell the ascent stands on');
+    const f = lv.features, claimed = [lv.spawn, lv.exit, f.chest, f.scroll, f.blueprint].concat(Array.from(f.specks), Array.from(lv.beacon.cells), f.pocket ? f.pocket.cells : []);
+    if (claimed.some(c => set.has(c))) bad.claim.push(tag + ': on a claimed cell');
+    const ring = c => { const x = c % w, y = Math.floor(c / w); return x >= g.rect[0] - 1 && x <= g.rect[0] + g.rect[2] && y >= g.rect[1] - 1 && y <= g.rect[1] + g.rect[3]; };
+    if (f.enemies.some(e => ring(e.idx) || Array.from(e.env || []).some(ring))) bad.enemy.push(tag + ': a photo enemy reaches the body');
+    if (f.enemies.length > 3 + (lv.biome === 4 ? T.EMBER_EXTRA_ENEMY : 0) || f.enemies.some(e => e.elite)) bad.enemy.push(tag + ': room 5 holds ' + f.enemies.length + ' photo enemies (cap 3, no elite)');
+    const s = SB.sim.create(lv, { lastRoom: true });
+    if (!s.boss || s.boss.hp !== T.BOSS_FALLBACK_HP * K.HP_Q || s.boss.hpMax !== s.boss.hp || s.boss.phase !== 0 || s.boss.intro !== K.BOSS_INTRO_F || s.boss.cells.join() !== body.join()) bad.hp.push(tag + ': ' + JSON.stringify(s.boss));
+    /* the house's other rooms, a first room built as room 5, free play and the code's own build: no guardian */
+    const L = B.L, o = L.biome === null ? {} : { biome: L.biome }, others = [SB.pipeline.build(L.rec(), o), SB.pipeline.build(L.rec(), Object.assign({ roomIndex: 4 }, o)), SB.pipeline.build(L.rec(), Object.assign({ roomIndex: 5, lastRoom: true, firstRoom: true }, o)),
+      SB.pipeline.build(SB.record.decode(SB.record.encode(L.rec())), o), SB.pipeline.build(L.rec(), Object.assign({ lastRoom: true }, o))];
+    if (others.some(x => !x.needsCrop && (x.features.guardian || SB.sim.create(x, {}).boss))) bad.seen.push(tag);
+  }
+  const say = (k, msg) => t.eq(bad[k].length, 0, msg + (bad[k].length ? ': ' + bad[k].slice(0, 5).join('; ') : ''));
+  say('none', 'every one of ' + n + ' built rooms as room 5 holds the guardian; by rule ' + JSON.stringify(rules) + ': on the largest dark mass ' + kinds.mass1 + ', placed by a later rule ' + (kinds.later + kinds.air + kinds.shelf) + ' (a smaller mass ' + kinds.later + ', the air ' + kinds.air + ', the shelf ' + kinds.shelf + ')');
+  say('cells', 'the body is features.boss, the GUARD_W x GUARD_H rect, on open cells');
+  say('rest', 'a resting body rests on at least GUARD_REST cells of the dark mass its rule ranks (the test\'s own 4 connected masses)');
+  say('spawn', 'the body keeps ENEMY_SPAWN_CLEAR from spawn');
+  say('climb', 'no body cell is within a cell of a cell the ascent stands on');
+  say('claim', 'the body covers no claimed cell (spawn, exit, chest, scroll, blueprint, specks, the beacon, the pocket)');
+  say('enemy', 'no photo enemy\'s cell or envelope reaches the body or the cell round it (' + dropped + ' photo fodder made way), and room 5 keeps its row\'s caps');
+  say('hp', 'the sim starts it whole at BOSS_FALLBACK_HP whole HP in quarters, asleep for BOSS_INTRO_F steps');
+  say('seen', 'free play, a share code, room 4, a first room and lastRoom without its room index build no guardian and start no boss');
+});
+group('H-boss-4', 'the beacon lights only at HP 0: on every built room 5 a bug in the exit cell does not clear it asleep, awake or at one quarter left, the room\'s exitLit stays 0; the hit that takes the last quarter banks DP_BOSS once, lights it (BOSS_DOWN, KILL), drops its moths, and the next touch clears', t => {
+  const bad = { early: [], down: [], clear: [] };
+  let n = 0;
+  for (const { tag, lv } of bossBuilds()) {
+    n++;
+    const s = SB.sim.create(lv, { lastRoom: true, immortal: true }), w = lv.w, ex = lv.exit % w, ey = Math.floor(lv.exit / w);
+    const put = () => { s.hero.x = ex * CS + ((CS - HW) >> 1); s.hero.y = ey * CS; s.hero.vx = 0; s.hero.vy = 0; };
+    put(); SB.sim.step(s, 0);
+    if (s.room.cleared || s.room.exitLit) bad.early.push(tag + ': asleep');
+    if (s.room.cleared) { bad.early.push(tag + ': asleep, cleared'); continue; }   /* a cleared room never steps again: the loops below would wait for good */
+    for (let k = 0; k < 2 * K.BOSS_INTRO_F && s.boss.phase === 0; k++) SB.sim.step(s, 0);
+    put(); SB.sim.step(s, 0);
+    if (s.room.cleared || s.room.exitLit) { bad.early.push(tag + ': awake'); continue; }
+    for (let k = 0; k < 600 && s.boss.hp > 1; k++) SB.sim.hurtBoss(s, lv, s.boss.cells.findIndex(c => c >= 0), Math.min(4, s.boss.hp - 1));
+    put(); SB.sim.step(s, 0);
+    if (s.room.cleared || s.room.exitLit || s.boss.hp !== 1) bad.early.push(tag + ': at ' + s.boss.hp + ' quarter');
+    const dp0 = s.room.dp, moths = s.enemies.filter((e, m) => SB.sim.shedSlot(s, m)).length;
+    s.ev = 0; SB.sim.hurtBoss(s, lv, s.boss.cells.findIndex(c => c >= 0), 4);
+    const ev = s.ev;
+    SB.sim.hurtBoss(s, lv, 0, 4);
+    if (s.room.dp - dp0 !== SB.TUNING.DP_BOSS || !(ev & SB.sim.EV.BOSS_DOWN) || !(ev & SB.sim.EV.KILL) || !s.room.exitLit || s.boss.phase !== 2 || s.boss.cells.some(c => c >= 0) || moths !== SB.TUNING.BOSS_MOTH_COUNT || s.enemies.some((e, m) => SB.sim.shedSlot(s, m) && e.hp > 0))
+      bad.down.push(tag + ': +' + (s.room.dp - dp0) + ' DP, ev ' + ev + ', phase ' + s.boss.phase);
+    put(); SB.sim.step(s, 0);
+    if (!s.room.cleared) bad.clear.push(tag);
+  }
+  t.eq(bad.early.length, 0, 'over ' + n + ' rooms the exit stays shut and the beacon dark while the guardian stands (asleep, awake, one quarter left)' + (bad.early.length ? ': ' + bad.early.slice(0, 5).join('; ') : ''));
+  t.eq(bad.down.length, 0, 'the last quarter banks DP_BOSS once, sets BOSS_DOWN and KILL, lights the beacon and takes its moths with it' + (bad.down.length ? ': ' + bad.down.slice(0, 5).join('; ') : ''));
+  t.eq(bad.clear.length, 0, 'with the guardian down the exit clears the room' + (bad.clear.length ? ': ' + bad.clear.slice(0, 5).join('; ') : ''));
+});
+/* the shed, by steps: the TELL and SHED steps over a stretch awake, and where each shed moth starts */
+function shedLog(lv, steps) {
+  const s = awake(lv), EV = SB.sim.EV, log = { tell: [], shed: [], starts: [] }, w = lv.w;
+  for (let k = 0; k < steps; k++) {
+    SB.sim.step(s, 0);
+    if (s.ev & EV.TELL) log.tell.push(s.frame);
+    if (s.ev & EV.SHED) { log.shed.push(s.frame); s.enemies.forEach((e, m) => { if (SB.sim.shedSlot(s, m) && e.hp > 0 && e.timer <= 1) log.starts.push(Math.floor((e.y + (CS >> 1)) / CS) * w + Math.floor((e.x + (CS >> 1)) / CS)); }); }
+  }
+  return { s, log };
+}
+group('H-boss-8', 'the shed (DESIGN 7\'s Attic moveset, "sheds 3 moths every 4 s"): awake, a SHED every BOSS_MOTH_EVERY_F steps, each after its TELL; BOSS_MOTH_COUNT moth slots made at create after the level\'s enemies, the same objects through the room (none made in step); a shed fills only dead slots; its moths bank no Dead pixels', t => {
+  const T = SB.TUNING, bad = { cadence: [], slots: [], dp: [] };
+  let n = 0;
+  for (const { tag, lv } of bossBuilds().filter((b, i) => i % 3 === 0)) {
+    n++;
+    const s0 = SB.sim.create(lv, { lastRoom: true, immortal: true }), ne = lv.features.enemies.length;
+    if (s0.enemies.length !== ne + T.BOSS_MOTH_COUNT || s0.enemies.slice(ne).some(e => e.hp !== 0 || e.kind !== SB.features.MOTH)) bad.slots.push(tag + ': ' + s0.enemies.length + ' slots');
+    const objs = s0.enemies.slice();
+    for (let k = 0; k < 1300; k++) SB.sim.step(s0, 0);
+    if (s0.enemies.length !== objs.length || s0.enemies.some((e, k) => e !== objs[k])) bad.slots.push(tag + ': the slots changed in step');
+    const live = s0.enemies.filter((e, m) => SB.sim.shedSlot(s0, m) && e.hp > 0).length;
+    if (live > T.BOSS_MOTH_COUNT) bad.slots.push(tag + ': ' + live + ' shed moths');
+    const { log } = shedLog(lv, 1000), gaps = log.shed.slice(1).map((f, k) => f - log.shed[k]);
+    if (log.shed.length < 4 || gaps.some(g => g !== K.BOSS_MOTH_EVERY_F) || log.shed.some((f, k) => log.tell[k] === undefined || log.tell[k] > f)) bad.cadence.push(tag + ': sheds at ' + log.shed.join(',') + ', tells at ' + log.tell.join(','));
+    /* a shed moth killed: no Dead pixels; the slot refilled at the next shed */
+    const s = awake(lv);
+    while (!(s.ev & SB.sim.EV.SHED)) SB.sim.step(s, 0);
+    const m = s.enemies.length - 1, dp0 = s.room.dp;
+    SB.sim.hurt(s, m, 4);
+    if (s.room.dp !== dp0 || s.enemies[m].hp !== 0) bad.dp.push(tag + ': +' + (s.room.dp - dp0));
+    SB.sim.step(s, 0);
+    while (!(s.ev & SB.sim.EV.SHED)) SB.sim.step(s, 0);
+    if (s.enemies[m].hp <= 0) bad.slots.push(tag + ': a dead slot not refilled');
+  }
+  t.eq(bad.cadence.length, 0, 'over ' + n + ' rooms the guardian sheds every ' + K.BOSS_MOTH_EVERY_F + ' steps, each after its TELL' + (bad.cadence.length ? ': ' + bad.cadence.slice(0, 4).join('; ') : ''));
+  t.eq(bad.slots.length, 0, 'its ' + T.BOSS_MOTH_COUNT + ' moth slots are made at create, never in step, and refilled when dead' + (bad.slots.length ? ': ' + bad.slots.slice(0, 4).join('; ') : ''));
+  t.eq(bad.dp.length, 0, 'a shed moth killed banks nothing (no farm)' + (bad.dp.length ? ': ' + bad.dp.slice(0, 4).join('; ') : ''));
+});
+group('H-boss-5', 'the arena (T2.11, DESIGN 7.1): on every built room 5 a safe ledge: standable (the test\'s own), reached from spawn, within BOSS_SAFE_LEDGE_CELLS of the body, outside the attack cells the sim makes (the body and the cell round it, every cell a shed moth starts on and ROUTE_SAFE_ENEMY_DIST round it)', t => {
+  const T = SB.TUNING, bad = [];
+  let n = 0;
+  for (const { tag, lv } of bossBuilds()) {
+    n++;
+    const g = lv.features.guardian, w = lv.w, L = g.ledge, body = bodyOf(lv), { log } = shedLog(lv, K.BOSS_MOTH_EVERY_F + 2);
+    const gr = SB.reach.trapGraph(lv, SB.reach.graph(lv)), d = SB.reach.distances(gr, lv.spawn, lv.exit);
+    const near = Math.min(...body.map(c => cheb(c, L, w)));
+    const why = [];
+    if (!standableIn(lv, L)) why.push('not standable');
+    if (d[L] < 0) why.push('not reached');
+    if (near > T.BOSS_SAFE_LEDGE_CELLS) why.push(near + ' cells from the body');
+    if (near <= 1) why.push('in the body\'s contact');
+    if (log.starts.length !== T.BOSS_MOTH_COUNT) why.push(log.starts.length + ' moths shed');
+    if (log.starts.some(c => cheb(c, L, w) <= T.ROUTE_SAFE_ENEMY_DIST)) why.push('within ROUTE_SAFE_ENEMY_DIST of a shed moth\'s start');
+    if (lv.trap[L]) why.push('a trap');
+    if (why.length) bad.push(tag + ': ' + why.join(', '));
+  }
+  t.eq(bad.length, 0, 'over ' + n + ' rooms the guardian\'s safe ledge holds' + (bad.length ? ': ' + bad.slice(0, 5).join('; ') : ''));
+});
+group('H-boss-6', 'the arena (T2.11): every telegraph is at least 48 frames: on every built room 5, each SHED comes at least 48 steps after its TELL, with no TELL left unanswered and none overlapping', t => {
+  const bad = [];
+  let n = 0, least = Infinity;
+  for (const { tag, lv } of bossBuilds()) {
+    n++;
+    const { log } = shedLog(lv, 3 * K.BOSS_MOTH_EVERY_F);
+    const pairs = log.shed.map((f, k) => f - (log.tell[k] === undefined ? Infinity : log.tell[k]));
+    pairs.forEach(p => { least = Math.min(least, p); });
+    if (log.shed.length < 2 || pairs.some(p => !(p >= 48)) || log.tell.length > log.shed.length + 1) bad.push(tag + ': tells ' + log.tell.join(',') + ', sheds ' + log.shed.join(','));
+  }
+  t.eq(bad.length, 0, 'over ' + n + ' rooms every shed is told at least 48 frames ahead (the least ' + least + ')' + (bad.length ? ': ' + bad.slice(0, 5).join('; ') : ''));
+});
+group('H-boss-7', 'the arena (T2.11): at least BOSS_WEAK_MIN weak cells reachable from the ledge, by the real weapon: from the ledge and every stand one JUMP, JUMP_DOWN, FALL or WALK from it, a Boomerang thrown each way by a real jump strikes body cells (the cells the sim takes off, counted by the test); the core\'s own weak list is no bigger than what the sim strikes', t => {
+  const T = SB.TUNING, bad = [], W = SB.sim.WPN;
+  let n = 0, least = Infinity;
+  for (const { tag, lv } of bossBuilds()) {
+    n++;
+    const g = lv.features.guardian, w = lv.w, N = w * lv.h, gr = SB.reach.trapGraph(lv, SB.reach.graph(lv));
+    const from = [g.ledge].concat((gr.adj[g.ledge] || []).filter(e => e.to < N && ['JUMP', 'JUMP_DOWN', 'FALL', 'WALK'].includes(e.kind)).map(e => e.to));
+    const struck = new Set();
+    for (const v of new Set(from)) for (const dir of [-1, 1]) {
+      const s = awake(lv, { loadout: ['J1', null, null] }), b0 = s.boss.cells.slice();
+      s.hero.x = (v % w) * CS + ((CS - HW) >> 1); s.hero.y = Math.floor(v / w) * CS; s.hero.vx = 0; s.hero.vy = 0; s.hero.facing = dir;
+      SB.sim.step(s, 0); SB.sim.step(s, 0);
+      SB.sim.step(s, IN.A | IN.A_TAP);
+      for (let k = 0; k < 80; k++) SB.sim.step(s, IN.A);
+      s.boss.cells.forEach((c, j) => { if (c < 0 && b0[j] >= 0) struck.add(b0[j]); });
+    }
+    least = Math.min(least, struck.size);
+    if (struck.size < T.BOSS_WEAK_MIN) bad.push(tag + ': ' + struck.size + ' cells struck from the ledge (the core listed ' + g.weak.length + ')');
+  }
+  t.eq(bad.length, 0, 'over ' + n + ' rooms a Boomerang from the ledge strikes at least ' + T.BOSS_WEAK_MIN + ' body cells (the least ' + least + ')' + (bad.length ? ': ' + bad.slice(0, 5).join('; ') : ''));
+});
+group('H-boss-9', 'the weapons hurt the guardian through their own paths (hit(), never a list): a Boomerang thrown into the awake body takes a cell for its J1 damage at Focus 0 (4 quarters), Anvil Boots\' shock along its floor takes two (8); asleep it takes nothing; the struck cell goes first, then the nearest (the erosion order, the test\'s own Chebyshev)', t => {
+  const sr = bossBuilds().find(b => b.tag.startsWith('sample-room mode 0 as detected'));
+  t.ok(!!sr, 'the sample room builds as room 5 with its guardian');
+  if (!sr) return;
+  const lv = sr.lv, g = lv.features.guardian, w = lv.w, body = bodyOf(lv);
+  /* the hero on the floor beside the body's bottom row, facing it */
+  const row = g.rect[1] + g.rect[3] - 1, side = g.rect[0] > 0 && standableIn(lv, row * w + g.rect[0] - 1) ? -1 : 1, hc = side < 0 ? g.rect[0] - 2 : g.rect[0] + g.rect[2] + 1, face = -side;
+  const at = (s, c) => { s.hero.x = (c % w) * CS + ((CS - HW) >> 1); s.hero.y = Math.floor(c / w) * CS; s.hero.vx = 0; s.hero.vy = 0; s.hero.facing = face; SB.sim.step(s, 0); };
+  const hc0 = row * w + hc;
+  t.ok(standableIn(lv, hc0), 'the test\'s stand beside the body (' + hc + ', ' + row + ') is standable');
+  { const s = SB.sim.create(lv, { lastRoom: true, immortal: true, loadout: ['J1', null, null] }); at(s, hc0); SB.sim.step(s, IN.A | IN.A_TAP); for (let k = 0; k < 60; k++) SB.sim.step(s, IN.A);
+    t.eq(s.boss.hp, s.boss.hpMax, 'asleep (the intro) a Boomerang through the body takes nothing'); }
+  { const s = awake(lv, { loadout: ['J1', null, null] }); at(s, hc0); const hp0 = s.boss.hp; let hitAt = -1;
+    SB.sim.step(s, IN.A | IN.A_TAP);
+    for (let k = 0; k < 80 && hitAt < 0; k++) { SB.sim.step(s, IN.A); if (s.ev & SB.sim.EV.BOSS_HIT) hitAt = k; }
+    const gone = body.filter((c, j) => s.boss.cells[j] < 0), near = face > 0 ? row * w + g.rect[0] : row * w + g.rect[0] + g.rect[2] - 1;
+    t.ok(hitAt >= 0 && hp0 - s.boss.hp >= 4 && (hp0 - s.boss.hp) % 4 === 0, 'a Boomerang\'s pass hits the awake body (' + (hp0 - s.boss.hp) + ' quarters off, BOSS_HIT on its step)');
+    t.ok(gone.includes(near), 'the first cell struck is the body\'s near cell in the hero\'s row (' + gone.join(',') + ', near ' + near + ')');
+    t.eq(gone.length, Math.ceil(s.boss.hpMax / 4) - Math.ceil(s.boss.hp / 4), 'a cell goes for each whole HP lost'); }
+  { const s = awake(lv, { loadout: [null, 'D1', null] }), hp0 = s.boss.hp;
+    /* a dive onto the floor beside the body: the shock runs along the floor into the bottom row */
+    s.hero.x = hc * CS + ((CS - HW) >> 1); s.hero.y = (row - 3) * CS; s.hero.vx = 0; s.hero.vy = 0; s.hero.ground = 0; s.hero.facing = face;
+    SB.sim.step(s, IN.B | IN.B_TAP); for (let k = 0; k < 60; k++) SB.sim.step(s, IN.B);
+    t.ok(hp0 - s.boss.hp >= 8, 'Anvil Boots\' shock along the floor takes 2 x 4 quarters off the awake body (' + (hp0 - s.boss.hp) + ')'); }
+  { const s = awake(lv), j = 7, c0 = body[j];
+    SB.sim.hurtBoss(s, lv, j, 8);
+    const gone = body.filter((c, k) => s.boss.cells[k] < 0), want = [c0].concat(body.filter(c => c !== c0).sort((a, b) => cheb(a, c0, w) - cheb(b, c0, w) || a - b).slice(0, 1));
+    t.eq(gone.slice().sort((a, b) => a - b).join(), want.sort((a, b) => a - b).join(), 'two quarters of HP x 4 take the struck cell and the nearest live one (the test\'s erosion order)'); }
+});
+group('H-boss-10', 'determinism and the replay: the sample room as room 5, 2400 seeded words with a Boomerang, hashes alike twice and in a fresh context; the boss\'s every field moves the hash; the same words over room 5 and free play end apart (free play never sees it)', t => {
+  const rec = () => SB.record.fromJSON(fixture('sample-room').fx.record);
+  const run = (S, opts) => { const lv = S.pipeline.build(rec(), opts), s = S.sim.create(lv, { lastRoom: !!opts.lastRoom, loadout: ['J1', 'D1', null] }), r = hrand(5); for (let k = 0; k < 2400; k++) S.sim.step(s, r.int(64)); return S.sim.hash(s); };
+  const a = run(SB, { roomIndex: 5, lastRoom: true }), b = run(SB, { roomIndex: 5, lastRoom: true }), c = run(loadCoreFull(PAGE).SB, { roomIndex: 5, lastRoom: true });
+  t.ok(a === b && b === c, 'room 5 replays to one hash twice and in a fresh context (' + a + ')');
+  t.ok(run(SB, {}) !== a, 'free play over the same words ends on another hash');
+  const lv = SB.pipeline.build(rec(), { roomIndex: 5, lastRoom: true }), s = SB.sim.create(lv, { lastRoom: true }), h0 = SB.sim.hash(s), moved = [];
+  for (const k of ['hp', 'hpMax', 'phase', 'timer', 'intro', 'telegraph']) { const v = s.boss[k]; s.boss[k] = v + 1; if (SB.sim.hash(s) === h0) moved.push(k); s.boss[k] = v; }
+  { const v = s.boss.cells[3]; s.boss.cells[3] = -1; if (SB.sim.hash(s) === h0) moved.push('cells'); s.boss.cells[3] = v; }
+  t.eq(moved.length, 0, 'every guardian field moves the state hash' + (moved.length ? ' (not: ' + moved.join(', ') + ')' : ''));
+  t.eq(SB.pipeline.levelHash(lv) === SB.pipeline.levelHash(SB.pipeline.build(rec(), {})), false, 'room 5\'s level hash carries the guardian (features.boss), free play\'s does not');
+});
+
+/* ---------------------------------------------------------------- the run state (T2.8's H-run-1 and H-run-2) */
+const runRec = name => SB.record.toJSON(SB.record.fromJSON(fixture(name).fx.record));
+const runHero = o => Object.assign({ hearts: 4, heartsMax: 4, vigor: 0, focus: 0, grit: 0, scrolls: 0, slots: [0, 0, 0] }, o);
+const runOf = o => Object.assign({ v: 1, rooms: [], at: 0, hero: runHero(), entry: [0, 0, 0], dp: 0, last: 0, lost: 0 }, o);
+group('H-run-1', 'the run state\'s validator and its place in the save: runValid keeps a well formed run (a deep copy) and gives null, never a throw, for every malformed one; the save keeps a run through validateSave and loadSave and drops a broken one to null; a fresh save has none', t => {
+  const R = SB.record, a = runRec('sample-room'), b = runRec('shelves-a');
+  const good = runOf({ rooms: [a, b, a], at: 2, hero: runHero({ hearts: 3, heartsMax: 5, vigor: 1, focus: 2, scrolls: 3, slots: [1, 9, 0] }), entry: [1, 0, 0], dp: 31, last: 12 });
+  const kept = R.runValid(good);
+  t.same(kept, good, 'a well formed run is kept as it is (three rooms, a repeat among them: DESIGN 8)');
+  kept.rooms[0].rows[0] = 'x'; kept.hero.slots[0] = 7;
+  t.ok(good.rooms[0].rows[0] !== 'x' && good.hero.slots[0] === 1, 'the kept run is a copy: changing it never changes the argument');
+  const broken = {
+    'not an object': 'run', 'an array': [], 'v 2': runOf({ v: 2 }), 'six rooms': runOf({ rooms: [a, a, a, a, a, a] }), 'at 5': runOf({ rooms: [a, a, a, a, a], at: 5 }),
+    'at past the rooms': runOf({ rooms: [a], at: 2 }), 'a bad record': runOf({ rooms: [{ rows: [] }] }), 'a negative dp': runOf({ dp: -1 }), 'lost 2': runOf({ lost: 2 }),
+    'no hearts': runOf({ hero: runHero({ hearts: 0 }) }), 'hearts over the cap': runOf({ hero: runHero({ hearts: 5 }) }), 'a cap over HEARTS_CAP': runOf({ hero: runHero({ heartsMax: 9, hearts: 9 }) }),
+    'two slots': runOf({ hero: runHero({ slots: [0, 0] }) }), 'a slot 25': runOf({ entry: [25, 0, 0] }), 'a float stat': runOf({ hero: runHero({ focus: 0.5 }) }), 'no hero': runOf({ hero: null })
+  };
+  const leaked = [];
+  for (const [k, v] of Object.entries(broken)) { let got; try { got = R.runValid(v); } catch (e) { got = 'threw ' + e.message; } if (got !== null) leaked.push(k + ' (' + JSON.stringify(got).slice(0, 40) + ')'); }
+  t.eq(leaked.length, 0, 'every malformed run gives null, never a throw (' + Object.keys(broken).length + ' kinds)' + (leaked.length ? ': ' + leaked.join('; ') : ''));
+  t.eq(R.saveDefaults().run, null, 'a fresh save has no run');
+  const doc = R.loadSave(JSON.stringify(Object.assign(R.saveDefaults(), { run: good }))).doc;
+  t.same(doc.run, good, 'the save keeps a run through loadSave (the reload a house resumes from)');
+  t.same(R.validateSave(R.validateSave(doc)).run, good, 'validating the save twice keeps the run');
+  const bad = R.loadSave(JSON.stringify(Object.assign(R.saveDefaults(), { run: runOf({ at: 9 }) })));
+  t.ok(bad.doc.run === null && bad.write, 'a broken run in the save is dropped to null (and the save written)');
+});
+
+group('H-run-2', 'the run reducers: runFresh sets out with the slots and the base bug; runEnter puts the room at its place and drops the rooms after it, unless it is the room saved there; runClear banks the Dead pixels, gives one heart back up to the cap and carries the stats and slots, and the fifth clear gives null; runDie marks it lost; runRetry keeps every room so far with a fresh bug and the entry slots; no reducer touches its argument', t => {
+  const R = SB.record, T = SB.TUNING, a = runRec('sample-room'), b = runRec('shelves-a'), c = runRec('blank-wall');
+  const f = R.runFresh([1, 0, 0]);
+  t.same(f, runOf({ hero: runHero({ slots: [1, 0, 0] }), entry: [1, 0, 0] }), 'runFresh: no rooms, at 0, the base bug with the entry slots');
+  let r = R.runEnter(f, a);
+  t.ok(r.rooms.length === 1 && JSON.stringify(r.rooms[0]) === JSON.stringify(a) && r.at === 0 && f.rooms.length === 0, 'runEnter: room 1 takes its place (the argument untouched)');
+  const hero = { hearts: 2, heartsMax: 4, vigor: 1, focus: 0, grit: 2, scrolls: 3, slots: [1, 9, 0] };
+  const before = JSON.stringify(r);
+  r = R.runClear(r, hero, 17);
+  t.ok(JSON.stringify(R.runEnter(f, a)) === before, 'runClear never touches its argument');
+  t.same(r.hero, { hearts: 3, heartsMax: 4, vigor: 1, focus: 0, grit: 2, scrolls: 3, slots: [1, 9, 0] }, 'runClear: the bug carried with one heart back, its stats and slots');
+  t.ok(r.at === 1 && r.dp === 17 && r.last === 17, 'runClear: at 1, 17 banked (' + r.at + ', ' + r.dp + ', ' + r.last + ')');
+  const r2 = R.runEnter(r, b);
+  const full = R.runClear(r2, Object.assign({}, hero, { hearts: 4 }), 0), grown = R.runClear(r2, Object.assign({}, hero, { hearts: 5, heartsMax: 5 }), 0);
+  t.eq(full && full.hero.hearts, 4, 'runClear: the heart back never passes the bug\'s cap');
+  t.eq(grown && grown.hero.hearts, 5, 'runClear: a bug whose scrolls grew its cap keeps it');
+  r = R.runEnter(r, b); r = R.runClear(r, hero, 5); r = R.runEnter(r, c);
+  t.ok(r.rooms.length === 3 && r.at === 2 && r.dp === 22, 'three rooms entered, two cleared, 22 banked');
+  const lost = R.runDie(r);
+  t.ok(lost.lost === 1 && r.lost === 0, 'runDie marks the run lost (the argument untouched)');
+  const again = R.runRetry(lost);
+  t.ok(again.lost === 0 && again.at === 0 && again.dp === 22 && JSON.stringify(again.rooms) === JSON.stringify(r.rooms) && JSON.stringify(again.hero) === JSON.stringify(runHero({ slots: [1, 0, 0] })),
+    'runRetry: the same three rooms, from room 1, a fresh bug with the entry slots (T2.8\'s Retry House offers the same grids), the 22 banked kept (the House cleared card counts the house\'s whole bank)');
+  const same = R.runEnter(again, a);
+  t.ok(same.rooms.length === 3 && JSON.stringify(same.rooms) === JSON.stringify(r.rooms), 'runEnter with the room saved at its place keeps the rooms after it (Play room n, Retry House)');
+  const other = R.runEnter(R.runClear(same, hero, 0), c);
+  t.ok(other.rooms.length === 2 && JSON.stringify(other.rooms[1]) === JSON.stringify(c), 'runEnter with a new photo at room 2 drops the rooms after it (the rest still to shoot)');
+  let five = R.runFresh([0, 0, 0]);
+  for (let k = 0; k < T.HOUSE_ROOMS - 1; k++) five = R.runClear(R.runEnter(five, a), hero, 1);
+  t.ok(five.at === T.HOUSE_ROOMS - 1 && R.runClear(R.runEnter(five, a), hero, 1) === null, 'the fifth clear ends the house: runClear gives null');
+});
+
 /* ================================================================ run */
 const t0 = Date.now();
+/* ---------------------------------------------------------------- the looks (HOUSE-B, Q97 ruling 4) */
+group('H-look-1', 'the prize ladder (Stephen\'s "Cosmetic per clear"): the first house clear wins a frame style, each clear after it the next of Astra\'s skins in her order until all are owned, then the other frames, then nothing; a win is owned and worn; lookValid keeps owned ids and a worn index only when owned, never throws; the save carries cosmetics through validateSave', t => {
+  const Rr = SB.record, L = Rr.LOOKS;
+  t.same(Array.from(L.hero), ['sun', 'umber', 'teal', 'lapis', 'pinstripe', 'domino', 'crescent', 'argyle'], 'the skins are round 1\'s four (sun the approved bug) then round 3\'s four, in Astra\'s order');
+  t.same(Array.from(L.frame), ['paper', 'walnut', 'lapis', 'moss'], 'the frames are Astra\'s frame_styles in her order (paper the polaroid as it was)');
+  let c = Rr.saveDefaults().cosmetics; const got = [];
+  for (let k = 0; k < 12; k++) { const w = Rr.lookWin(c); got.push(w.id); c = w.cosmetics; if (w.id) t.ok(c[w.id.split('.')[0]] === L[w.id.split('.')[0]].indexOf(w.id.split('.')[1]), 'clear ' + (k + 1) + ' wears what it won (' + w.id + ')'); }
+  t.same(got, ['frame.walnut', 'hero.umber', 'hero.teal', 'hero.lapis', 'hero.pinstripe', 'hero.domino', 'hero.crescent', 'hero.argyle', 'frame.lapis', 'frame.moss', null, null],
+    'the ladder: a frame style first, then every skin in order until all are owned, then the other frames, then nothing new');
+  const bad = [null, 7, 'x', [], { hero: 5, frame: 2, owned: ['hero.umber'] }, { hero: 1.5, owned: 'hero.umber' }, { hero: -1, frame: 9, owned: ['nope', 'frame.moss', 'frame.moss'] }];
+  const v = bad.map(x => { try { return Rr.lookValid(x); } catch (e) { return 'threw'; } });
+  t.ok(v.every(x => x !== 'threw'), 'lookValid never throws on a malformed cosmetics');
+  t.same(v[4], { hero: 0, frame: 0, owned: ['hero.umber'] }, 'a worn index that is not owned falls back to the default (hero 5 and frame 2 not owned)');
+  t.same(v[6], { hero: 0, frame: 0, owned: ['frame.moss'] }, 'unknown ids are dropped, a repeat kept once, an index out of range is the default');
+  t.same(Rr.lookValid({ hero: 1, frame: 3, owned: ['hero.umber', 'frame.moss'] }), { hero: 1, frame: 3, owned: ['hero.umber', 'frame.moss'] }, 'a well formed cosmetics is kept as it is');
+  const d = Rr.saveDefaults(); d.cosmetics = { hero: 2, frame: 0, owned: ['hero.teal', 'bogus'] };
+  t.same(Rr.validateSave(JSON.parse(JSON.stringify(d))).cosmetics, { hero: 2, frame: 0, owned: ['hero.teal'] }, 'validateSave carries the looks through, an unknown id dropped');
+  t.same(Rr.validateSave({ v: 1 }).cosmetics, { hero: 0, frame: 0, owned: [] }, 'an old save without owned gets the defaults (no migration)');
+});
+
 const chosen = ONLY ? GROUPS.filter(g => g.id.startsWith(ONLY)) : GROUPS;
 if (ONLY && !chosen.length) { console.log('FAIL  --only ' + ONLY + ' matched no group'); console.log('\nSHUTTERBUG HARNESS FAILED'); process.exit(1); }
 for (const g of chosen) {

@@ -1396,6 +1396,7 @@ Recommendation: whichever of (a) and (b) the normalised re-measure shows with fe
 Also for him, the biome vote (Q220, tuning, not blockers; both re-measured after the normalisation): the warm band needs saturation 30 and chroma 16, every other band 9 and 12, so on raw capture a cool cast turns a grey or white wall Deep while a warm cast stays Attic; and a minority can name the room (r31's grey kitchen is Deep from 9% of its cells). Options: a higher S_MIN for Deep; or the winner must hold 15% of all cells or a clear margin, else the bright rule or Attic.
 
 DESIGN redline: none beyond Q221's, which waits with the climb.
+
 ## Q161. Astra's weapons cut (ART2): what went in, the builder's calls inside her letter, and what the shots found (the builder, 31 Oct)
 
 The delivery: the same zip as Q160 (`shutterbug-assets-oct31.zip`, sha256 `bfb811bd...`, Stephen's "just work it in"). ART2 took its weapon and hero subset: a subset folder of 17 files copied byte for byte (`/home/codespace/sb-drafts/astra/scripts/subset.py`), checked by the cutter against the page as it stood: CHECK OK, 17 sprites, 130 frames (`/home/codespace/sb-drafts/weapons2/art2/cut-weapons.json`, the report beside it in `check-weapons.txt`).
@@ -1463,6 +1464,161 @@ Plan assumes: (a).
 
 Options: (a) as built, each call above; (b) Stephen picks per item; (c) Astra's next session: a quieter pad (Ink at a lighter weight or Slate) with an active state that differs on Paper, symmetric hint chevrons, a dust mote with an Ink core, an Ember mote that is not Amber, and lighter bubbles; (d) the room name gives way: drop the badge below 360 wide, or shorten the slot boxes.
 Recommendation: (a) now; (c) for the pad, the hint and the Attic and Ember motes; (d) for the room name, Stephen's call.
+
+## Q180. The levels: the floor becomes the ledge, the exit sits under a ceiling band, a message per cause (the builder, 31 Oct, LEVELS)
+
+Stephen's note 4, from his Pixel playtest of sb-m1-1: "its also haveing trouble actaully making the levels. it make me shrink the box to as small as possible". His ruling (2026-10-31, 03:13 UTC), picked from options: "Floor becomes the ledge (Recommended)". The option was lens 3's option 1 of the playtest investigation (`/home/codespace/sb-drafts/playtest-notes-investigation.json`, index 3), built with every recommended default of its stephensCalls.
+
+Why: the spawn rule needed an open cell on row 46. In a photo of a room the bottom rows are the floor and the furniture, darker than the wall, so Otsu makes them solid and the smoothing closes the gaps: row 46 is solid wall to wall and the build stopped before repair ran. The default box is the photo's full height (shell-capture's fit), so its bottom edge is always the floor and it cannot move up; only a box shorter than the wall clears the floor, which is why he had to shrink it to the smallest. A dark ceiling band did the same at the top (the exit window solid, "exit unreached").
+
+As built (core-pipeline, only where the build was needsCrop before; core-ns has four new TUNING numbers):
+- (a) The floor band. When row 46 has no open cell, the standing row rises to the lowest row holding an open over solid run of at least 3 (`FLOOR_RUN_MIN`), the top of the photo's floor or furniture band; the spawn is the centre of that row's widest such run, ties to the leftmost. Stage A uses it too, so the crop overlay draws the room.
+- (b) The ceiling band. When repair fails and the rows from row 1 down are each at least 75% solid (`CEILING_BAND_FRAC`), the room is built once more from the record with the exit window (the light's search, the exit by reach, the light fallback and repair's target) moved to the 4 rows under that band (`level.exitTop`, not hashed, 0 on every other room).
+- (c) The guard. A room built by either fallback must climb at least 24 rows from spawn to exit (`FALLBACK_MIN_CLIMB`), else an honest needsCrop, detail "the climb left is N rows, under 24". Rooms that never used a fallback are never measured.
+- A refusal names its cause: `dark` when at least 75% of rows 1..46 are solid (`DARK_SOLID_FRAC`), else the band that took more of the climb (`floor` or `ceiling`, a tie to the floor), else none. It carries its bands and its grid, so the overlay never goes blank.
+- The crop screen: the brick bar says "The floor fills the bottom of the box. Make the box smaller and lift it off the floor." / "The top of the box is all ceiling. Lower the box." / "Too dark to find a floor. Try a brighter photo." by cause, and "Try a tighter crop" for a refusal no fallback names (the checkerboard's). The overlay marks the refusing band in Brick under a Sun edge (the floor band from its top row down, or the ceiling band from row 1), and a reading with no level (an all black photo) draws its shaded grid. The dev flag (`?perf=1`, the crop's only dev readout) prints the build's ms and, on a refusal, its cause and `lv.detail`.
+- No room that built on sb-m1-3 changed: H-lvl-3 pins the 23 built corpus rooms' levelHashes (plain and as a first room, 46 builds) from sb-m1-3's page, and two labs that built there with a ceiling band. No --regold, no --retable; both replay goldens hold.
+- Re-authored by hand, each for the rule it encoded: H-pipe-6 (it pinned the spawn to row 46; now the test's own reading of the ruled rule, cell for cell, and the rule is seen on 4 corpus rooms), gradient-v's expect (needsCrop true to builds, tabsMax 12, exitIsLight true, its notes say why: the luminance shape of a real room), all-dark's notes (still needsCrop, now by the guard, cause dark), fixtures/README. H-rep-1's authored needsCrop count is now 1.
+- The corpus: gradient-v mode 0, all-dark mode 1 and one-giant-landmark mode 1 build (the investigation's +6 without the guard; the guard refuses all-dark mode 0 at 3 rows, gradient-v mode 1 at 15 and tight-gap mode 1 at 23).
+
+Measured against his complaint, `node tools/room-model.js` (a model, not his photos: 60 seeded painted 1024x1360 rooms, a lit wall, a floor band 8 to 22% of the frame, two to four pieces of furniture on the floor line, a shadowed ceiling strip in 40%, a lamp in half; through shell-capture's own fit, the capture oracle's area average to 24x48, SB.palette.nearest and SB.pipeline.build as a first room), rooms that build at the DEFAULT box:
+
+| floor | sb-m1-3 | this build |
+| --- | --- | --- |
+| wood | 0 of 12 | 8 of 12 |
+| dark wood | 0 of 12 | 10 of 12 |
+| grey carpet | 0 of 12 | 9 of 12 |
+| beige carpet | 3 of 12 | 4 of 12 |
+| light tile | 0 of 12 | 1 of 12 |
+| all | 3 of 60 | 32 of 60 |
+
+Before, 39 of the 57 refusals were "no open cell on the standing row". After, 28 of 60 still refuse and no single cause refuses most default boxes: the floor 10 (17%; 7 of them the guard, a floor and furniture band leaving under 24 rows), unnamed 10 (17%; a dark furniture band wall to wall above a light floor, which repair cannot pass: "no tab fits" or "exit unreached"), the ceiling 7 (12%; repair still fails under the moved window), dark 1. Light tile still refuses 11 of 12 default boxes, for the unnamed cause and the ceiling: its floor is open, so (a) never applies, and the furniture above it is the wall the climb cannot cross.
+
+What I saw of Negative mode (not in this item): 3 more Negative rooms build, 22 of 26 still refuse, and every Negative refusal of a light room now names `dark`, which is the wrong sentence for an inverted room. The phone cannot make a Negative room in M1 (recordOfCrop's mode 0, unlocks.negative false). Its rule and its copy are owed before that unlock ships (the investigation's stephensCalls item 9).
+
+Not in this item: the automatic crop search, the carved shaft, the 36x64 grid, Negative's rule. Still owed: three of his real rooms through fixtures/make.html into fixtures/rooms (Q45), the only test of whether 24 rows and 75% are the right numbers. A code for a fallback room opened on a phone still running sb-m1-3 refuses there (to the title with its refusal) until this build is deployed.
+
+DESIGN 6.6 redline (DESIGN.md is a verbatim copy and is not edited; this is the text it should carry, the additions marked with asterisks):
+Spawn: the widest open run on row 46 (two above the floor). *Only when row 46 has no open cell, the spawn rises to the top of the photo's floor or furniture band: the centre of the widest open over solid run of at least 3 cells on the lowest row that has one.* Exit: the farthest cell from spawn (by reach graph distance, §6.8) among open cells in the top 4 rows. *Only when repair fails (§6.7) and the rows from row 1 down are each at least 75% solid, the room is built once more with the 4 rows under that ceiling band in place of the top 4.* A "ceiling light" (bright cluster in the top 4 rows) wins ties and becomes the beacon sprite. *A room built by either fallback climbs at least 24 rows from spawn to exit, else it asks for a new crop. A refusal names its cause (a dark photo, the floor band, the ceiling band) and the crop screen says one sentence for each.*
+Options: (a) as built; (b) the same without the guard (the investigation's +6 corpus rooms, climbs as short as 3 rows); (c) a guard of 16 rows.
+Recommendation: (a).
+Plan assumes: (a).
+
+Amended by LEVELSR (the review, 1 Nov): dark is now brightness, not the solid count (at least 75% of the cells of rows 1..46 darker than OTSU_MIN, which is Ink and Soot), because a lit room's shaded wall reached 75% solid and was told "Too dark". The floor search stops at a fully open row; a floor refusal with no spawn marks the rows from 46 up each at least 75% solid; a box solid from row 1 down names no cause and keeps the old message (this is what Negative's light rooms now say, instead of "Too dark"; Negative's own rule is still not in this item). A refusal whose row 46 holds only open runs of 1 or 2 builds once more with the band rule (a refused room only, so nothing that built moves). The room model at the default box: 3 of 60 on sb-m1-3, 32 after LEVELS, 33 now (wood 8, dark wood 10, grey carpet 10, beige carpet 4, light tile 1 of 12); refusals floor 11 (18%), none 9 (15%, light floors), ceiling 7 (12%), dark 0. The largest remaining cause in the model is Otsu reading a lit wall's shading as solid, which the floor sentence cannot fix; that is a threshold question for a later item.
+DESIGN 6.6 redline addition: *The search for the band's top stops at the first fully open row; when row 46 holds only open runs narrower than 3 and the room is refused, it is built once more with the band rule.*
+
+## Q200. The house, slice 1 lane A: the run state, the doorway, the ramp (the builder, 1 Nov, HOUSE-A)
+
+His rulings this builds, as the lead recorded them (Q96 and Q97):
+- 31 Oct, about 21:47 UTC (Q96 ruling 1), **"House run + boss"**: "Five rooms back to back, each harder (more enemies, elites, traps). Weapons, Dead pixels and scrolls carry through and level the bug up. A boss waits in room 5, and clearing it unlocks something."
+- 31 Oct, about 22:15 UTC (Q97 ruling 2), **"Firm ramp"**: "Room 1 stays as today. Rooms 2, 3 and 4 get at least 2, 3 and 4 enemies, an elite is guaranteed from room 3, and room 4's enemies have 1.5x health and 1.25x speed. The boss is in room 5. This redlines DESIGN 8 (it names no ramp)."
+- 31 Oct, about 22:15 UTC (Q97 rulings 3 and 4), "Clay boss now" and "Cosmetic per clear": lane B's, not this lane. Room 5 is a normal room flagged as the last, and its clear ends the house on a plain House cleared card.
+- Q97's defaults: "Hearts carry through a house, with one heart back at each doorway." "Once a first house is cleared, Start a house leads the title. Free play stays flat, as the relaxed mode."
+
+As built (the spec: docs/PROGRESSION-PROPOSAL-OCT31.md 2.1, 2.3 and 2.4; BUILD-PLAN T2.8; DESIGN 8):
+- **The run** is the save's `run` field (already in the defaults: no migration): `{ v: 1, rooms, at, hero, entry, dp, last, lost }`, the rooms entered as records in JSON form. Pure in core-record: `runValid` (a well formed run or null, never a throw; validateSave runs it, so a hand edited save never starts a broken house), `runFresh`, `runEnter`, `runClear`, `runDie`, `runRetry`. It is written at once (not on the 250 ms timer) when a room starts and when it ends, and resumed from the title.
+- **The title**: once a first room is cleared (stats.clears, so the very first screen keeps its two buttons, DESIGN 5.3) Start a house leads it in Sun, Continue the house under it while a run is saved, a small Houses cleared n once one is, then a Free play label over the two old buttons (Photograph a room in Paper). The polaroid shrinks while the house shows, so the fleet's chip keeps a clear seat. Start a house over a saved run asks first (a browser confirm: "Start a new house? The saved house will be lost.").
+- **The doorway** is a screen of its own (a Paper card on Soot), used three ways: the house's start (A new house, Five rooms, each one tougher than the last, Shoot the first room), the doorway after room n (Room n cleared, Banked n dead pixels, Room n+1 is tougher; Shoot the next room, Choose a photo, Use a recent room, Leave the house), and the house's clear (House cleared, 5 rooms, n dead pixels; New house, Title). When the next room's grid is already saved (Retry House, or a room left half way), Play room n leads it. Every control is 52 px tall. Use a recent room opens the recent rooms as thumbnails in the card.
+- **The strip** reads Room n of 5, and The last room in room 5.
+- **The ramp** (TUNING.RAMP, by room): behind `opts.roomIndex`, read by core-features and, through `level.ramp`, by the sim. Room 1, free play, codes and first rooms get no row: H-house-1 proves room 1 byte for byte free play on every built corpus room (levelHash, features, the first sim state) and H-house-2 steps the sample room as room 1 to free play's hash. Ramp fodder is laid after the level settles, on its own stream (seed ^ RAMP_SALT), so no draw of the placement moves: DESIGN 7's cells (outside 2 of spawn, outside 3 of every cell the ascent stands on, never a trap, the pocket, a loot cell or the exit), the biome's kind (a moth where no cell keeps the kind's rule, as the default spread does, Q76), apart from other enemies where any cell allows it, and with an envelope that covers no cell the ascent stands on, so the route, its safe cadence and the degrade ladder are the free play room's on every corpus room (H-house-1). The room 3 and 4 elite: the fodder farthest from spawn (squared cells) promoted when the photo gives none. Room 4's fodder starts at 6 quarters a HP (1.5x; elites as before). Speed: rooms 3 and 4 tick their enemies an extra time every fourth step (1.25x), moving and timing alike (a moth's flight, a spark's hop cadence, an icicle's fall and respawn), all integers, and no new state field, so no golden moves.
+- **Hearts** carry through the house with one heart back at each doorway, up to the bug's own cap (a cap grown by scrolls stays); the stats, scrolls and slots carry too (the sim takes them as `opts.carry`; the slots as before by `opts.loadout`).
+- **Dead pixels** bank at x1 at each doorway (DESIGN 8). A death loses the room's carried count (never banked): The house is lost, Lost n dead pixels, Retry House, New house, Title. The run is saved as lost; the title drops a lost run.
+- **Retry House**: the same rooms so far (every grid entered, the room the bug died in included), a fresh bug with the entry slots, straight into room 1 without the reveal; the rooms after it are still to shoot, and a new photo at any doorway replaces the room at that place and drops the ones after it.
+- **Lane B's hooks**: `SB.ui.house.hooks.boss` (null: the build and the sim already get `lastRoom` in room 5, and `level.features.boss` holds the photo's cluster of 12 or more), `hooks.prize(el, info)` for the clear card's `#doorprize`, `hooks.pips(el, run, room)` for `#doorpips` (Astra's run_pips); each does nothing yet and the words stay.
+
+The builder's calls inside the spec:
+1. **Which enemies get 1.5x HP and 1.25x speed.** His words say "room 4's enemies" for both; the proposal's table (the spec) gives 1.25x speed to rooms 3 and 4 and 1.5x HP to room 4's fodder. Built: the table. Options: (a) the table, as built; (b) his words, room 4 only for both.
+2. **Room 5 before lane B** is the table's room 5 without its boss: the photo's fodder only, at most 3 (Ember 4), 1x. On the corpus it can hold no enemy at all, so until lane B lands the last room is the easiest of the five. Options: (a) as built (lane B's boss lands next); (b) room 4's row in room 5 until then.
+3. **When Start a house shows.** The lead's brief says once a first room is cleared, Start a house leads; Q97's default says it leads once a first HOUSE is cleared. Built: the brief (the house appears and leads after the first room clear, so the mode with a goal is found at once). Options: (a) as built; (b) after the first room the house shows under Free play, and leads once a house is cleared.
+4. **Leaving a room half way** (Pause, then Title) keeps the run with that room saved: Continue the house offers Play room n with the bug as it walked in. A player can dodge a death that way. Options: (a) as built (DESIGN 8: "Walking the house is the fantasy, never the admission price"); (b) leaving a house room counts as a death.
+5. **Retry House's tally** restarts at 0 (the wallet keeps what each doorway banked); the House cleared card counts the winning attempt's rooms.
+6. **The room 4 photo caps** (5 enemies, 2 elites) apply before the route's second round, so a fifth photo fodder can still be dropped by the degrade ladder; the floor is laid after it, so it always holds. H-house-1: no corpus room refuses at any house room, and none moves its ascent or ladder.
+
+DESIGN redlines (DESIGN.md is a verbatim copy and is not edited; these are the lines to add when it is):
+- DESIGN 8, House run, Notes: *a ramp by room: room 1 as free play; rooms 2, 3 and 4 hold at least 2, 3 and 4 enemies (ramp fodder on DESIGN 7's cells, the biome's kind), an elite from room 3 (the fodder farthest from spawn promoted when the photo gives none), room 4's fodder at 1.5x HP, rooms 3 and 4's enemies at 1.25x speed; caps 4, 4 and 5 (2 elites in room 4), Ember one more; room 5 the boss and at most 3 fodder.*
+- DESIGN 8 (and 9.2 Health): *in a house the hearts carry from room to room, with one heart back at each doorway up to the bug's cap.*
+- DESIGN 8: *Dead pixels are banked at each doorway; a death loses only the room's carried count.*
+- DESIGN 5.3: *after the first room is cleared the title shows Start a house first, Continue the house when a run is saved, Houses cleared n, then Free play.*
+Recommendation: (a) on each of 1 to 4.
+Plan assumes: (a).
+
+## Q201. The review of house lane A: what changed, and four calls (the builder, 1 Nov, HOUSE-AR)
+
+The review of HOUSE-A (e0eaab541) found fourteen things. Built from it (each with its assertion and a red row):
+- **Ramp icicles keep their whole fall off the ascent.** envelope() gives an icicle six rows, but the sim lets it fall to the first solid or one way cell; 14 ramp icicles on the corpus fell onto a cell the ascent stands on (the review counted 15 of 121). A ramp icicle's envelope is now its whole fall, and that fall keeps a column clear of every stand (the stand's own column and the one each side). The photo's own icicles keep envelope()'s six rows (0 of 31 reach the ascent; free play does not move). Under Frost the ramp lays more moths where no icicle column is clear (80 to 114 over the corpus).
+- **Room 5 takes room 4's row until lane B's boss** (Q200 call 2, option b): floor 4, an elite promoted, room 4's caps, 1.5x fodder HP, 1.25x speed. On every built room room 5 holds at least room 4's enemies (it was empty on 11 of 24). The doorway after room 4 says The last room is next.
+- **Room 1 banks at free play's rate** (x0.5, floored), rooms 2 to 5 at x1. Room 1 is free play's room byte for byte, and Stephen's "Room 1 stays as today" covers its pay. At x1, starting a house, clearing room 1 and leaving paid every free play room double, and Retry House paid room 1 again. The doorway reads Banked 3 of 6 dead pixels, as free play's card does.
+- **A lost house survives a reload.** The title no longer drops a lost run: while one is saved the title leads with Retry House. Title on the death card, Android back and a killed tab all keep it. Start a house or New house replaces it.
+- **With a house saved, its button leads the title in Sun** (Continue room 3 of 5, or Retry House), and Start a house follows in Paper.
+- **The doorway**: Room 2 of 5 cleared; the bug's hearts in the strip's sprites, with the heart that came back ringed in Sun (a placeholder for Astra).
+- **The strip's name** takes the longest form that fits beside the slots and the hearts: Room 3 of 5, Room 3/5, 3/5; The last room, Last room, 5/5.
+- **The house death card** stacks its three buttons at every height, and the strip's count the death lost is struck through.
+- **Pause's Title** reads Leave the house in a house. The crop screen opened from a doorway has **Back** (to that doorway) where it had Title.
+- **Retry House keeps what the doorways banked** (Q200 call 5 is superseded), so the House cleared card counts the house's whole bank, the same as the wallet's gain.
+- tools/redwatch.js: its header and a stderr line say that a named row runs every gate it lists, browser gates included (so hold the lock). The behaviour is unchanged, because the other lanes rely on it.
+
+Refuted or left: the room 5 photo elite (finding 3) stays while room 5 is room 4's row. With the boss, lane B's row is the table's own (`{ floor: 0, cap: 3, eliteCap: 0 }`, the boss as room 5's elite). That is written in the TUNING comment.
+
+Stephen's calls:
+1. **Room 1's pay.** Options: (a) as built, room 1 at free play's x0.5 and rooms 2 to 5 at x1; (b) x0.5 at every doorway, with the other half paid when the house is cleared; (c) nothing banked until the house ends, with half of what was carried paid on a death; (d) x1 everywhere, DESIGN 8 to the letter, with the farm accepted.
+2. **Room 5 before the boss.** Options: (a) as built, room 4's row; (b) the table's room 5 without its boss (the photo's fodder only, often an empty room).
+3. **Rooms that look alike.** The ramp only lifts a floor, so a photo already at the floor gets nothing visible in room 2 (rooms 1 and 2 of the sample room are the same room), and room 4's HP and the speed are never shown. Nothing changed here. Options: (a) leave the table as ruled; (b) at least one ramp enemy over the photo from room 2 on (each room then differs from the last on every photo, and a harness line can prove it); (c) the doorway names what changes (Room 3: an elite and faster enemies; Room 4: enemies take more hits); (d) a tint on room 4's tougher fodder (Astra's art).
+4. **Retry House's capital H.** Kept, as DESIGN 8 and the proposal write it, beside New house in the same card. Options: (a) keep; (b) Retry house.
+
+DESIGN redlines (to add when DESIGN.md is next copied):
+- DESIGN 8, House run, DP: *room 1 at the free play rate (x0.5), rooms 2 to 5 at x1; the house clear counts every attempt's bank.*
+- DESIGN 8, Notes: *until the boss, room 5 takes room 4's row.*
+- DESIGN 5.3: *while a house is saved, its button (Continue room n of 5, or Retry House after a death) leads the title.*
+Recommendation: (a) on each.
+
+Plan assumes: (a).
+
+## Q202. The house with Astra's ART3: what the merge changed, and one call (the builder, 1 Nov, HOUSE-ART3)
+
+Astra's ART2 and ART3 (07dd2d1e7, from sb-weapons-2) are merged into sb-house. Both sides are kept. Two house things changed because of it, and one house bug from HOUSE-AR was found in the shots and fixed:
+- **The strip is fuller.** ART3 puts the 24 px biome badge before the room name, and ART2 widened the slot boxes from 20 to 28 px. At 320 wide, eight hearts and two weapons left the name 0 px, and fitName read a 0 px name as hidden, so the hearts never folded and the strip spilled past the screen. fitName now treats only a name with no box as hidden. With eight hearts and two weapons the hearts fold to one heart and 8/8 at every width (they folded only at 320 and 360 before), and at 320 the name reads Room 3/5 and Last room.
+- **A fresh bug at 320 reads Room 1/5**, not Room 1 of 5: four hearts, two empty slots and the badge leave the name about 64 px. The gate now takes room 1 by either form and checks that it fits.
+- **The house pause card at 320x568** (found in this merge's shots, present since HOUSE-AR; that review's own shot shows it): in its one row Leave the house kept its words' width and crushed Share this room to about 20 px, under it. In a house the row now splits the rest between the two, each on two lines (84x58 each). Free play's row is unchanged.
+
+Stephen's call:
+1. **The strip at 320 wide.** Options: (a) as built: the badge stays, the name takes its short form (Room 3/5) and many hearts fold to a count; (b) drop the badge from the strip under 360 wide (it stays on the reveal), so the full Room 3 of 5 returns at 320 with a fresh bug; (c) shrink the slot boxes back to 24 px under 360 wide (Astra's glyph would then show at less than 1:1 on a dpr 1 screen).
+Recommendation: (a). The badge is the biome read at a glance, and the short forms were built for exactly this.
+
+DESIGN redlines: none new (the strip's forms are Q201's).
+
+Plan assumes: (a).
+
+## Q203. The house, slice 1 lane B: the guardian, the house clear's prize, the looks, the pips (the builder, 1 Nov, HOUSE-B)
+
+His rulings this builds, as the lead recorded them (Q96 and Q97):
+- 31 Oct, about 21:47 UTC (Q96 ruling 1), **"House run + boss"**: "A boss waits in room 5, and clearing it unlocks something."
+- 31 Oct, about 22:15 UTC (Q97 ruling 3), **"Clay boss now"**: "DESIGN 7.1's default clay boss (5x4, 20 HP, sheds moths; Astra's boss_fallback) goes in every room 5 now, so a full house is playable soon. The boss built from the photo replaces it in a later step, its HP capped at 40."
+- 31 Oct, about 22:15 UTC (Q97 ruling 4), **"Cosmetic per clear"**: "The first house clear unlocks a frame style; each new clear after it unlocks one of Astra's hero skins until all are owned. Sunbeams can still buy them sooner." (Sunbeams are not built; no shop is.)
+
+As built:
+- **The guardian** in every house room 5 (opts.lastRoom with roomIndex 5; free play, codes, rooms 1 to 4, a first room and a share code of a room 5 never see it). Astra's boss_fallback, 5x4 cells, 20 HP (80 quarters: a cell goes with each whole HP). It rests on at least 3 cells of a dark mass (a 4 connected component of solid cells), clear of spawn by 2, never within a cell of a cell the ascent stands on nor across the box an ascent edge spans, on no claimed cell. Room 5 takes the table's own row: the photo's fodder only (at most 3, Ember 4), no photo elite, 1x HP and speed.
+- **The arena** (DESIGN 7.1, T2.11) decides each placement: a safe ledge (a reached standable cell within 6 of the body, outside the body's contact and 3 cells round the shed box), at least 3 weak cells a Boomerang reaches from it, and the telegraph of 48 frames (the sim's constant). On the corpus (156 built rooms as room 5, both modes, as detected and under each biome) the largest dark mass held 114; **42 needed a later rule**: a smaller mass 18 (the sample room among them: its largest mass is the right hand wall, the guardian rests on the floor), the air 18 (gradient-h: every floor is the climb's, so the clay hovers mid room), the shelf 6 (stripes-h: one ways closer than the body is tall, so the body hangs across them). 16 photo fodder made way for the body. H-boss-5 to 7 prove the three rules again by the sim (the shed moths' real starting cells, every tell measured, Boomerangs thrown from the ledge by real jumps).
+- **The fight**: a 2 s intro (the body outlined at a third of its alpha in a blinking Ink and Glare ring, harmless and unharmed; over the room the words The last room, Beat the guardian to light the exit), then fx_boss_wake on the body and the intro sound; a shed every 4 s, told by boss_moth_shed 48 frames ahead, into 3 moth slots made when the room starts (never in a step). The weapons hurt it through hit(), the same funnel as an enemy's, so every weapon that reaches hit() hurts it. Each hit takes the struck cell and then the nearest live ones (fx_boss_chip on each, the hit sound); the last takes it down (fx_boss_down, 60 dead pixels, its moths fall with it), the beacon lit through fx_beacon_light into its loop. The exit is shut and the lamp dark (fx_beacon_light's first frame, beacon_dark pixel for pixel) until then.
+- **The house clear card**: Astra's card_house_clear at 2x with the prize in its opening, fx_unlock over it for six frames, the caption New: <name>, then New house and Title. Daily Room's unlock flag is set (DESIGN 9.4; the mode is not built, so the card names only the prize).
+- **The looks**: the save's `cosmetics` keeps what is worn (`hero`, `frame`, both indices; T3.2's swap and frame index) and what is owned (`owned`, ids such as frame.walnut). Settings has a Look row: a button for each owned skin and frame (52x60), the worn one checked. The title's Start a house shows icon_house, with its checked seal once a house is cleared.
+- **The pips**: five run_pips at 2x in the strip in a house (todo, here, cleared; room 5 the crown), the words Room n of 5 (or The last room) kept as the name for a screen reader; the doorway card shows them too.
+
+The builder's calls (each has its assertion and a red row):
+1. **What a frame style is.** DESIGN 9.4 names "frame styles" and T3.2 "a frame style index"; Astra drew frame_styles as four 48x56 photo mounts with a transparent aperture and a nine slice (5 5 14 5), and her card's opening is that size. Built: the mount round the room's picture where the game shows one, the title's polaroid and the share sheet's preview, at 2x; paper is the polaroid as it was. Options: (a) as built; (b) also round the play view (it costs the room 10 px a side and 28 at the foot on every phone); (c) round the share preview only.
+2. **The ladder after the skins.** The ruling ends at "until all are owned". Built: first clear the walnut frame; clears 2 to 8 the seven skins in Astra's order (umber, teal, lapis from round 1; pinstripe, domino, crescent, argyle from round 3; sun is the approved bug, everyone's); clears 9 and 10 the lapis and moss frames; after that a clear wins nothing new and the card shows no prize. Options: (a) as built; (b) skins only, the other frames left for Sunbeams; (c) a different first frame.
+3. **A won look is worn at once**, so the next room shows the reward; Settings' Look row puts the old one back. Options: (a) as built; (b) owned only, worn from Settings.
+4. **The guardian's body.** It is not solid (the bug walks into it and takes an enemy's hit from a live cell); while it stands the weapons strike its whole 5x4 silhouette (DESIGN 7.1's outline), the struck cell being the live one nearest the hit. A first build struck only live cells, and the shots found the fight unwinnable: the floor's Boomerangs ate the bottom row, and the three rows left floated out of reach. The dotted outline stays until under a quarter is left. Options: (a) as built; (b) the clay slumps (what is left falls to the floor) and only live cells are struck.
+5. **The pips replace the strip's words** in a house (the name's 108 px; the hearts fold when they do not fit beside it), so The last room is read on the intro's words over the room rather than in the strip. Options: (a) as built; (b) the words and the pips both, the pips under the strip.
+6. **The skins cover the twelve base poses**; ART2's extra poses (the drop in, dash, hurt, squash, stretch) have no skinned art and draw the approved bug, so a skinned bug lands at a room's start in yellow and turns into its skin a moment later. Options: (a) ask Astra for the five poses in each skin (PROGRESS HOUSE-B, placeholders); (b) a skin swaps the palette of every pose by rule.
+
+DESIGN redlines (DESIGN.md is a verbatim copy and is not edited; these are the lines to add when it is):
+- DESIGN 7.1, Fallback: *in slice 1 every house room 5 gets the clay boss, resting on the largest dark mass (a 4 connected solid component) whose arena holds, else the next mass, else hovering mid room, else hanging across the shelves; 20 HP, one of its 20 cells for each HP; while it stands its whole silhouette is struck, the cell taken the live one nearest the hit; its moths bank no Dead pixels and fall with it.*
+- DESIGN 8, House run, Notes: *room 5 holds the photo's fodder only (at most 3, Ember 4), no photo elite, beside the boss; clearing a house unlocks the next cosmetic: a frame style first, then each hero skin, then the other frame styles.*
+- DESIGN 9.4, Cosmetics: *won by house clears (Stephen's ruling "Cosmetic per clear"); Sunbeams can buy them sooner once built.*
+- DESIGN 5.3 and 8: *in a house the strip shows five run pips for the room's name.*
+
+Recommendation: (a) on each of 1 to 5.
+
 Plan assumes: (a).
 
 ## Q163. Weapons step 2's art (W2): what went in from Astra, what the builder drew, and what the shots found (the builder, 1 Nov)

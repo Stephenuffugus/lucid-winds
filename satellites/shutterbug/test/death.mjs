@@ -64,7 +64,7 @@ try {
   const dead = await page.evaluate(() => {
     let k = 0;
     for (; k < 20000 && window.SB_DEV.screen() === 'play'; k += 30) window.SB_DEV.step(30);
-    const card = document.getElementById('death'), h2 = card.querySelector('h2'), btns = [...card.querySelectorAll('button')];
+    const card = document.getElementById('death'), h2 = card.querySelector('h2'), btns = [...card.querySelectorAll('button')].filter(b => !b.hidden);   /* free play's card: the house's Retry House and New house wait hidden (Q200) */
     const r = el => el.getBoundingClientRect();
     return { k, screen: window.SB_DEV.screen(), on: card.classList.contains('on'), text: h2.textContent, buttons: btns.map(b => [b.id, b.textContent, r(b).width, r(b).height]),
       playing: document.body.classList.contains('playing'), hearts: window.SB_DEV.state().hero.hearts, dead: window.SB_DEV.state().room.dead,
@@ -173,7 +173,7 @@ try {
         const cv = document.getElementById('view'), cr = cv.getBoundingClientRect(), hr = window.SB_DEV.spriteRects().hero, k = cr.width / cv.width, card = document.getElementById('death').getBoundingClientRect();
         const top = cr.top + hr.y * k, bottom = cr.top + (hr.y + hr.h) * k;
         return { row: Math.floor(v / G.level.w), screen: window.SB_DEV.screen(), covered: top < card.bottom && bottom > card.top, card: [Math.round(card.top), Math.round(card.bottom)], hero: [Math.round(top), Math.round(bottom)],
-          btn: [...document.querySelectorAll('#death button')].map(b => { const q = b.getBoundingClientRect(); return [q.width, q.height]; }),
+          btn: [...document.querySelectorAll('#death button')].filter(b => !b.hidden).map(b => { const q = b.getBoundingClientRect(); return [q.width, q.height]; }),
           thumbs: ['deathagain', 'deathtitle'].filter(id => { const el = document.getElementById(id), q = el.getBoundingClientRect(), t = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); return !t || !(t === el || el.contains(t)); }).map(id => id + ' under ' + ((document.elementFromPoint(...(q => [q.left + q.width / 2, q.top + q.height / 2])(document.getElementById(id).getBoundingClientRect())) || {}).id || 'nothing')) };
       }, v);
       if (r.screen !== 'dead' || r.covered) hidden.push('row ' + r.row + ' (the bug ' + r.hero.join(' to ') + ', the card ' + r.card.join(' to ') + ')');

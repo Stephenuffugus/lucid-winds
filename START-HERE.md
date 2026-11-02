@@ -1,5 +1,10 @@
 # START HERE
 
+## 📷 2 Nov 15:30 UTC (Opus) sb-m1-5 MERGED, FIXED, STAMPED: STEPHEN RUNS THE DEPLOY SCRIPT
+In it: BIOME (the room's biome from the photo's colour), weapons step 2 (J2 to J8, the swap card), Astra's round 4, the house (5 rooms, the clay guardian, prizes, looks, pips), and the room 5 soft lock fixed (the chest gives a Boomerang to an unarmed bug). lint OK, harness 7237 OK.
+DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-5/deploy-sb-m1-5.sh` at an idle prompt. Then hostproof, tag sb-m1-5, merge main back.
+NEXT (one lane, no reviews, Stephen's standing order): keys and the locked exit (ruled 14:20), then the dive weapons (W3), then the Darkroom.
+
 ## 📷 2 Nov 14:20 UTC (Opus) KEYS RULED (DEFAULTS), ASTRA ROUND 5 BRIEF IN DRIVE
 KEYS AND THE LOCKED EXIT (Stephen's idea, his ruling "defaults are fine"): it replaces SNAPSHOTS on the roadmap. Build it as its own step AFTER sb-m1-5 ships, never inside the merge.
   - 1 to 3 keys a room, as many as the photo's furniture allows (SNAPSHOTS' placement: off the climb, on the photo's own tops).

@@ -52,7 +52,11 @@ NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 # fx_impacts and fx_frozen_stunned (their step 2 clips only): 45 names, so 46 (PROGRESS W2, QUESTIONS Q122). ART4
 # (Astra's round 4, Q164) adds her eight weapon effect keys (dart, ring, ember, flash_ring, snap_frame, kick_spray,
 # fire_cell, frost_burst) and retires the round 1 fx_bursts and fx_impacts they replace: 51 names, so 52
-MAX_SPRITES = 52
+# least cap that takes it (PROGRESS ART3). HOUSE-B splices the house's 13 (round 1's boss_fallback, boss_moth_shed,
+# frame_styles and hero_colours; round 3's run_pips, icon_house, card_house_clear, fx_unlock, the boss effects,
+# fx_beacon_light and hero_colours_r3): 55 names, so 56
+# sb-m1-5 merges both: 64 names, so 65
+MAX_SPRITES = 65
 
 
 class Refuse(Exception):

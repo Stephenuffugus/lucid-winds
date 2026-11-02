@@ -45,6 +45,13 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'fx/dart.png': ('dart', None), 'fx/ring.png': ('ring', None), 'fx/ember.png': ('ember', None), 'fx/flash_ring.png': ('flash_ring', None),
     'fx/snap_frame.png': ('snap_frame', None), 'fx/kick_spray.png': ('kick_spray', None), 'fx/fire_cell.png': ('fire_cell', None),
     'fx/frost_burst.png': ('frost_burst', None),
+    # HOUSE-B's keys (the house: round 1's clay boss, its shed, the frame styles and skins; round 3's pips, house icon,
+    # clear card, unlock, the boss effects, the beacon's lighting and the second skins)
+    'boss/boss_fallback.png': ('boss_fallback', None), 'boss/boss_moth_shed.png': ('boss_moth_shed', None), 'ui/frame_styles.png': ('frame_styles', None),
+    'hero/hero_colours.png': ('hero_colours', None), 'ui/run_pips.png': ('run_pips', None), 'ui/icon_house.png': ('icon_house', None),
+    'ui/card_house_clear.png': ('card_house_clear', None), 'fx/fx_unlock.png': ('fx_unlock', None), 'fx/fx_boss_wake.png': ('fx_boss_wake', None),
+    'fx/fx_boss_chip.png': ('fx_boss_chip', None), 'fx/fx_boss_down.png': ('fx_boss_down', None), 'fx/fx_beacon_light.png': ('fx_beacon_light', None),
+    'hero/hero_colours_r3.png': ('hero_colours_r3', None),
 }
 
 
@@ -129,6 +136,7 @@ def main(argv):
         S['fx_boss_down'] = {'w': 64, 'h': 64, 'frames': {'down_0': sq(64, 8)}}
         S['fx_beacon_light'] = {'w': 16, 'h': 16, 'frames': {'light_0': S['beacon']['frames']['a']}}
         for k in ('fx_boss_chip', 'fx_boss_down', 'fx_beacon_light'):
+            plan = [e for e in plan if e[1] != k]   # HOUSE-B: the page holds them now; round 3's shapes replace the page's
             plan.append(('fx/%s.png' % k, k, list(S[k]['frames'])))
     entries, members = [], {}
     for f, key, names in plan:
