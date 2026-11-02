@@ -5456,8 +5456,13 @@
     // Share-sheet instructions. Hidden only when pointless: already installed, or
     // running inside the portal iframe where the parent owns the install.
     ib.classList[(inst||SWS_EMBED)?"add":"remove"]("hidden");
-    // only nudge people who would actually gain something: portrait, touch, not installed
-    var nudge=isPortrait() && ("ontouchstart" in window) && !isFs() && !inst;
+    // only nudge people who would actually gain something: portrait, touch, not already fullscreen.
+    // ⚖️ 2 Nov 2026, Stephen: "they should be able to play either way but its recommended in landscape". The manifest
+    // no longer locks an installed app (or the Play app) to landscape, so it gets the nudge too, without the browser bar
+    // promise (it has none).
+    var nudge=isPortrait() && ("ontouchstart" in window) && !isFs();
+    $("rotateTip").textContent=inst?"Dewball plays best sideways. Turn your phone for a wider world."
+                                   :"Turn your phone sideways for horizon mode. Bigger world, no browser bar.";
     $("rotateTip").classList[nudge?"remove":"add"]("hidden");
   }
 
@@ -5487,7 +5492,7 @@
       return;
     }
     alert(iOS()
-      ? "To add Dewball to your Home Screen:\n\nTap the Share button, then Add to Home Screen.\n\nIt opens fullscreen in landscape, with no browser bar."
+      ? "To add Dewball to your Home Screen:\n\nTap the Share button, then Add to Home Screen.\n\nIt opens fullscreen, with no browser bar. It plays best sideways."
       : "To add Dewball to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.");
   }
 
