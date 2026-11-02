@@ -1,5 +1,10 @@
 # START HERE
 
+## 📷 2 Nov 17:20 UTC (Opus) sb-m1-8 STAMPED: THE DIVE WEAPONS (D2 to D8) + THE KEYS (sb-m1-7 never shipped; its script now refuses); STEPHEN RUNS THE DEPLOY SCRIPT
+All 16 jump and dive weapons are in the chests. lint OK, harness 7351 OK (H-wpn-D3 new). PROGRESS sb-m1-8 has the details.
+DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-8/deploy-sb-m1-8.sh`, then hostproof, tag sb-m1-8.
+NEXT: charms (C1 to C8, weapons step 4: Astra's round 2 fx are parked for them), then the Darkroom.
+
 ## 📷 2 Nov 16:45 UTC (Opus) sb-m1-7 STAMPED: KEYS AND THE LOCKED EXIT; STEPHEN RUNS THE DEPLOY SCRIPT
 Every new photo room hides 1 to 3 keys; the exit lamp charges as they come in and stays shut until all are held. Old share codes and the sample room are unchanged. lint OK, harness 7297 OK (H-key-1 new). PROGRESS sb-m1-7 has the details.
 DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-7/deploy-sb-m1-7.sh`, then hostproof, tag sb-m1-7.

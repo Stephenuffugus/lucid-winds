@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 7297;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
+const ASSERT_FLOOR = 7351;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -4922,7 +4922,8 @@ group('H-wpn-6', 'the chest (6.1, 6.2), on the step 1 pool {J1, D1} (a core load
 group('H-wpn-7', 'the swap (6.4) with a hand loadout of unbuilt codes (J5, D6): the chest opens compare with the test\'s draw; the world holds until a CHOICE; TAKE equips, LEAVE keeps; the recorded choice replays to the live hash', t => {
   const EV = SB.sim.EV, C = SB.sim.CHOICE, built = BUILT_IDS.map(code), CH = 46 * 24 + 6;
   const mk = () => { const { lv, s } = wpnLab(['', FLOOR], [[SB.features.MOTH, 40 * 24 + 18]], { hc: 3, loadout: ['J5', 'D6', 0], moving: true, chest: CH }); return { lv, s }; };
-  const { s } = mk(), st = { v: s.rng }, want = built[stepRef(st) % built.length];
+  /* step 3: D6 is built now, and the draw never offers an equipped weapon, so the pool is the built list less J5 and D6 */
+  const pool = built.filter(c => c !== code('J5') && c !== code('D6')), { s } = mk(), st = { v: s.rng }, want = pool[stepRef(st) % pool.length];
   let f = 0; for (; f < 200 && !s.room.compare; f++) SB.sim.step(s, IN.R);
   t.ok(s.room.compare === 1 && s.room.cand === want && (s.ev & EV.SWAP) && JSON.stringify(s.hero.slots) === JSON.stringify([code('J5'), code('D6'), 0]), 'both slots full: the chest opens the swap with cand ' + WPN_ID[s.room.cand] + ' (the test draws ' + WPN_ID[want] + '), SWAP on its step, the slots unchanged');
   const world = x => JSON.stringify([x.hero, x.enemies, x.proj, x.traps, x.loot, x.chest, x.rng, x.room]);
@@ -5002,6 +5003,52 @@ group('H-wpn-J1', 'the Boomerang (7.1): 5 cells and not 5 cells and 1 px, both f
     s.proj.forEach((p, i) => { if (p.live && p.kind === PK.BOOMERANG) { if (p.age === 1) { born.set(i, s.frame); throws++; } if (s.frame - born.get(i) > K.J1_LIFE_F) late++; } });
   }
   t.ok(throws > 0 && late === 0, throws + ' throws on the sample room, every one caught or freed within J1_LIFE_F (' + K.J1_LIFE_F + ') steps (' + late + ' late)');
+});
+
+group('H-wpn-D3', 'the dive slot, step 3 (7.3): Icicle freezes within 2 cells and hurts nothing; Pogo Spear stomps the enemy under a dive and bounces D3_V up; Tremor hurts the next cell and shakes 1 to 3 Dead pixels to its room cap; Ember Stomp burns the foot cell; Wide Lens is a 5 cell shock; Pile Driver strikes one enemy and the dive goes on; Flashpan burns only on a dash', t => {
+  const F = SB.features, EV = SB.sim.EV, P3 = SB.sim.PROJ_KIND, W = SB.TUNING.WEAPONS, r = 46 * 24;
+  const run = (loadout, cells, opts = {}) => {
+    const { s } = wpnLab(['', FLOOR], cells.map(c => [F.MOTH, c]), Object.assign({ hc: 10, row: 40, air: true, loadout }, opts));
+    const out = { s, fires: 0, vyAt: null, diveAt: null, procs: [] };
+    for (let k = 0; k < 70; k++) {
+      SB.sim.step(s, k === 0 ? IN.B | IN.B_TAP : 0);
+      if (s.ev & EV.FIRE_D) { out.fires++; if (out.vyAt === null) { out.vyAt = s.hero.vy; out.diveAt = s.hero.dive; out.procs = s.proj.filter(p => p.live).map(p => ({ kind: p.kind, a: p.a, b: p.b, x: p.x, ttl: p.ttl, mode: p.mode })); } }
+    }
+    return out;
+  };
+  /* Icicle: the moth 2 cells off is frozen, the one 4 off is not, neither is hurt */
+  const ic = run([0, 'D2'], [r + 12, r + 14], { moving: true });
+  t.ok(ic.fires === 1 && ic.s.enemies[0].frozen > 0 && ic.s.enemies[1].frozen === 0 && ic.s.enemies.every(e => e.hp > 0), 'Icicle: a dive landing freezes the moth 2 cells off (' + ic.s.enemies[0].frozen + ') and not the one 4 off, hurting neither');
+  /* Pogo Spear: a moth under the dive at row 44 is stomped (2 x HP_Q kills a 1 HP moth) and the bug bounces */
+  const pg = run([0, 'D3'], [44 * 24 + 10]);
+  t.ok(pg.fires === 1 && pg.s.enemies[0].hp === 0 && pg.vyAt === -K.D3_V && pg.diveAt === 0, 'Pogo Spear: the moth under the dive dies, the bug bounces at -D3_V (' + pg.vyAt + ' vs ' + -K.D3_V + ') and the dive ends');
+  const pl = run([0, 'D3'], []);
+  t.ok(pl.fires === 0, 'Pogo Spear does nothing on a plain dive landing');
+  /* Tremor: the moth in the next cell dies (1 x HP_Q); the floor beside the feet shakes out 1 to 3 Dead pixels; at the cap, none */
+  const tr = run([0, 'D4'], [r + 11 - 24]);
+  t.ok(tr.fires === 1 && tr.s.enemies[0].hp === 0 && tr.s.room.tremor >= W.D4.dp[0] && tr.s.room.tremor <= W.D4.dp[1] && tr.s.room.dp >= tr.s.room.tremor, 'Tremor: the moth a cell off dies and the floor shakes out ' + tr.s.room.tremor + ' Dead pixels');
+  const { s: tc } = wpnLab(['', FLOOR], [], { hc: 10, row: 40, air: true, loadout: [0, 'D4'] }); tc.room.tremor = W.D4.roomCap;
+  const dp0 = tc.room.dp; for (let k = 0; k < 70; k++) SB.sim.step(tc, k === 0 ? IN.B | IN.B_TAP : 0);
+  t.ok(tc.room.dp === dp0 && tc.room.tremor === W.D4.roomCap, 'Tremor stops at its room cap (' + W.D4.roomCap + '): no Dead pixels past it');
+  /* Ember Stomp: one EMBER a cell wide over the foot cell, burning D5_BURN_F, striking every D5_EVERY_F */
+  const em = run([0, 'D5'], []), e5 = em.procs.find(p => p.kind === P3.EMBER);
+  t.ok(em.fires === 1 && !!e5 && e5.a === K.CELL_SUB && e5.b === K.CELL_SUB && e5.mode === K.D5_EVERY_F && e5.ttl === K.D5_BURN_F - 1,   /* aged once in its own step */ 'Ember Stomp: a cell of fire over the foot cell, ' + (e5 ? e5.ttl : '?') + ' steps, striking every ' + K.D5_EVERY_F);
+  /* Wide Lens: the shock's band reaches 5 cells each side on an open floor */
+  const wl = run([0, 'D6'], []), s6 = wl.procs.find(p => p.kind === P3.SHOCK);
+  t.ok(wl.fires === 1 && !!s6 && s6.b - s6.x === W.D6.cells * K.CELL_SUB && s6.x - s6.a === W.D6.cells * K.CELL_SUB, 'Wide Lens: a shock ' + W.D6.cells + ' cells each side (' + (s6 ? (s6.b - s6.x) / K.CELL_SUB : '?') + ')');
+  /* Pile Driver: the first moth under the dive dies, the second one lower is never struck by it, the dive goes on */
+  const pd = run([0, 'D7'], [42 * 24 + 10, 45 * 24 + 10]);
+  t.ok(pd.fires === 1 && pd.s.enemies[0].hp === 0 && pd.diveAt !== 0, 'Pile Driver: one strike a dive (' + pd.fires + '), the first moth dies and the dive goes on');
+  /* Flashpan: a dash leaves fire up to 3 cells; a dive landing leaves none */
+  const { s: fp } = wpnLab(['', FLOOR], [], { hc: 10, loadout: [0, 'D8'] }); fp.hero.facing = 1; SB.sim.step(fp, 0); SB.sim.step(fp, IN.B | IN.B_TAP);
+  const e8 = fp.proj.find(p => p.live && p.kind === P3.EMBER);
+  t.ok(!!(fp.ev & EV.FIRE_D) && !!e8 && e8.a >= K.CELL_SUB && e8.a <= W.D8.cells * K.CELL_SUB && e8.ttl === K.D8_BURN_F - 1, 'Flashpan: a dash leaves a line of fire ' + (e8 ? e8.a / K.CELL_SUB : '?') + ' cells long');
+  const fl = run([0, 'D8'], []);
+  t.ok(fl.fires === 0, 'Flashpan does nothing on a dive landing');
+  /* the stomped enemy never takes a heart in its grace: a mortal bug pogos off a moth and keeps its hearts */
+  const { s: mg } = wpnLab(['', FLOOR], [[F.MOTH, 44 * 24 + 10]], { hc: 10, row: 40, air: true, loadout: [0, 'D3'], mortal: true });
+  const h0 = mg.hero.hearts; for (let k = 0; k < 40; k++) SB.sim.step(mg, k === 0 ? IN.B | IN.B_TAP : 0);
+  t.ok(mg.hero.hearts === h0, 'a stomp costs the bug no heart (' + mg.hero.hearts + ' of ' + h0 + ')');
 });
 
 group('H-wpn-D1', 'Anvil Boots (7.1): a dive landing\'s shock hits 3 cells along the floor and not 4; not a row up; a wall and a ledge\'s end stop it; a dash fires it, a dash into a wall and a plain landing do not; a hold dive on its last landing only; the shake on the dive alone', t => {
