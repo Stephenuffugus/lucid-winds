@@ -4,7 +4,9 @@
    3D" -> Room tab -> tuner open, 3D cat painted. Every tap is reach-checked
    with elementFromPoint at the control's centre - el.click() proves nothing.
    Usage: node scripts/loaf_fullwalk.mjs [photo] */
-import puppeteer from 'puppeteer';
+import { createRequire } from 'module';
+/* Chrome lives in /workspaces/sws-tools (START-HERE); the repo has no node_modules */
+const puppeteer = createRequire('/workspaces/sws-tools/package.json')('puppeteer');
 import { createServer } from 'http';
 import { readFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
@@ -52,8 +54,12 @@ await pg.waitForSelector('#view-meter:not(.hidden)', { timeout: 120000 });
 await pg.screenshot({ path: join(OUT, '1-meter.png') });
 console.log('meter shown');
 
-/* 3. run the scan */
+/* 3. run the scan; "Does this look like her?" comes before the card */
 await tap('#goScan', 'PRINT THE CARD');
+await pg.waitForSelector('#view-check:not(.hidden)', { timeout: 60000 });
+await new Promise(r => setTimeout(r, 900));
+await pg.screenshot({ path: join(OUT, '1b-check.png') });
+await tap('#checkYes', "YES, THAT'S HER");
 await pg.waitForSelector('#view-card:not(.hidden)', { timeout: 60000 });
 console.log('card minted');
 

@@ -139,6 +139,13 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 #chooseCv{display:block;border-radius:18px;border:1px solid var(--line);touch-action:none;cursor:pointer}
 .choosehd{font-family:var(--display);font-weight:700;font-size:20px;color:var(--bone);
   text-align:center;margin:14px 0 2px}
+.checkstage{position:relative;width:100%;aspect-ratio:4/3;border-radius:18px;overflow:hidden;
+  border:1px solid var(--line);background:#9C8E8C;margin:10px 0 12px}
+.checkstage canvas{display:block;width:100%;height:100%}
+#checkPhoto{position:absolute;left:8px;top:8px;width:30%;border-radius:10px;
+  border:1px solid rgba(239,228,210,.5);pointer-events:none;z-index:1}
+.chip2 .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:7px;
+  vertical-align:-2px;border:1px solid rgba(0,0,0,.35)}
 .coatchip{display:flex;align-items:center;gap:9px;margin-top:12px;font-family:var(--mono);
   font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
 .coatchip span{width:22px;height:22px;border-radius:6px;border:1px solid var(--line);
@@ -491,6 +498,19 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
   <div class="row"><button class="btn" id="chooseGo">Meet her</button></div>
   <div class="row"><button class="ghost" id="chooseNext">The other cat</button></div>
   <div class="row"><button class="ghost" id="chooseBack">Use a different photo</button></div>
+</section>
+
+<section class="wrap hidden" id="view-check">
+  <div class="choosehd">Does this look like her?</div>
+  <div class="checkstage" id="checkStage"><img id="checkPhoto" alt="Your photo"></div>
+  <div class="hint" id="checkDiff">Tap what is different. Tap again to undo.</div>
+  <div class="tuneRow"><b>Her face</b><div class="chips" id="checkFace"></div></div>
+  <div class="tuneRow"><b>Her white</b><div class="chips" id="checkWhite"></div></div>
+  <div class="tuneRow"><b>White paws, her left and right</b><div class="chips" id="checkPaws"></div></div>
+  <div class="tuneRow"><b>Eyes</b><div class="chips" id="checkEyes"></div></div>
+  <div class="tuneRow"><b>Nose</b><div class="chips" id="checkNose"></div></div>
+  <div class="row"><button class="btn" id="checkYes">Yes, that's her</button></div>
+  <div class="row"><button class="ghost hidden" id="checkKeep">Keep her as she was</button></div>
 </section>
 
 <section class="wrap hidden" id="view-scan">
@@ -961,7 +981,7 @@ const Hooks = {
 };
 
 const $ = id => document.getElementById(id);
-const VIEWS = { slot:'view-slot', meter:'view-meter', choose:'view-choose', scan:'view-scan', card:'view-card' };
+const VIEWS = { slot:'view-slot', meter:'view-meter', choose:'view-choose', check:'view-check', scan:'view-scan', card:'view-card' };
 function show(name){
   Object.entries(VIEWS).forEach(([k,id]) => $(id).classList.toggle('hidden', k !== name));
   $('demoCard').classList.toggle('hidden', name !== 'slot');
@@ -1808,7 +1828,9 @@ async function runScan(shot){
     /* a real grader's body reading refines the on-device one; the demo
        grader returns no body, so demo scans keep the reader's word */
     if (g.body) mergeGraderBody(shot.dna, g.body);
-    mint(g, shot.url, shot.meter, shot.dna);
+    /* before her card exists she is checked against her own photo */
+    const dna = await Check.confirm(shot.dna, shot.url);
+    mint(g, shot.url, shot.meter, dna);
   } catch(e){
     clearInterval(beat);
     show('slot');
@@ -3519,6 +3541,129 @@ function subjectMask(m, subj){
   const b = subj && subj.at ? blobAt(grid, found, subj.at, 0.12) : found.list[0];
   return b ? blobMask(grid, b.px) : m;
 }
+
+/* ── DOES THIS LOOK LIKE HER? ───────────────────────────────────────────────
+   After the scan and before the card: her 3D self beside the photo and a
+   few chips for the marks that make a cat hers. Every chip is a toggle that
+   repaints her live and taps back. What the owner sets is a fact: it goes in
+   dna._fixed and survives every rescan. A rescan opens the same sheet with
+   the difference spelled out, and "Keep her as she was" changes nothing. */
+const EYE_SW = [['Green', '#8DBA45'], ['Yellow', '#D8C23C'], ['Gold', '#D9A03A'],
+                ['Copper', '#C47A3A'], ['Blue', '#6FA6D8'], ['Hazel', '#A39A4A']];
+const NOSE_SW = [['Black', '#2B2327'], ['Pink', '#DE96A0'], ['Brick', '#B8706F'], ['Slate', '#6A6170']];
+const PAW_ON = 0.12 + 0.55 / 3;          /* the tuner's "sock" */
+const Check = (() => {
+  let st = null;
+  const smo = (a, b, t) => { t = Math.max(0, Math.min(1, (t - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const grade = d => d.whiteGrade != null ? d.whiteGrade : (WHITE_STYLE_GRADE[d.whiteStyle] || 0);
+  const tabby = d => ['mackerel', 'classic', 'spotted', 'ticked'].includes(d.pattern);
+  /* keep in step with the 3D painter's defaults (paintCoat, paintEyes) */
+  const wm = d => d.whiteMuzzle != null ? d.whiteMuzzle
+    : grade(d) > 1.3 ? 0.30 + 0.40 * smo(1.3, 4.0, grade(d)) : 0;
+  const pawOn = (d, k) => d.socks && Object.keys(d.socks).length
+    ? (d.socks[k] || 0) > 0 : grade(d) > (k[0] === 'F' ? 1.7 : 2.2);
+  const FACE = [
+    ['lid', 'Narrowed eyes', d => (d.lid != null ? d.lid : 0.3) > 0.55,
+      (d, on) => { d.lid = on ? 0.3 : 0.8; }],
+    ['browFork', 'Forehead lines', d => d.browFork != null ? !!d.browFork : tabby(d),
+      (d, on) => { d.browFork = !on; }]
+  ];
+  const WHITE = [
+    ['whiteMuzzle', 'White chin', d => wm(d) >= 0.2,
+      (d, on) => { d.whiteMuzzle = on ? 0 : 0.28; d.muzzleEdge = 0.85; }],
+    ['whiteMuzzle', 'White muzzle', d => wm(d) >= 0.6,
+      (d, on) => { d.whiteMuzzle = on ? 0.28 : 0.75; d.muzzleEdge = 0.85; }],
+    ['collar', 'White collar', d => d.collar != null ? !!d.collar : grade(d) > 0.4,
+      (d, on) => { d.collar = !on; }]
+  ];
+  const PAWS4 = [['FL', 'Front left'], ['FR', 'Front right'], ['HL', 'Back left'], ['HR', 'Back right']];
+  function fix(k){ st.dna._fixed = Object.assign(st.dna._fixed || {}, { [k]: 1 }); }
+  function live(){ if (window.LoafCat3D && LoafCat3D.setDNA) LoafCat3D.setDNA(migrateDNA(st.dna)); }
+  function chip(host, label, on, tap, dot){
+    const b = document.createElement('button');
+    b.className = 'chip2'; b.type = 'button';
+    b.setAttribute('aria-pressed', String(!!on));
+    if (dot){ const i = document.createElement('span'); i.className = 'dot'; i.style.background = dot; b.appendChild(i); }
+    b.appendChild(document.createTextNode(label));
+    b.onclick = () => { tap(); live(); build(); };
+    host.appendChild(b);
+  }
+  function build(){
+    const d = st.dna;
+    [[FACE, 'checkFace'], [WHITE, 'checkWhite']].forEach(([list, id]) => {
+      const host = $(id); host.innerHTML = '';
+      list.forEach(([k, label, on, flip]) => {
+        const was = on(d);
+        chip(host, label, was, () => { flip(d, was); fix(k); if (k === 'whiteMuzzle') fix('muzzleEdge'); });
+      });
+    });
+    const pw = $('checkPaws'); pw.innerHTML = '';
+    PAWS4.forEach(([k, label]) => {
+      const was = pawOn(d, k);
+      chip(pw, label, was, () => {
+        const next = { _set: 1 };
+        PAWS4.forEach(([k2]) => {
+          const v = k2 === k ? !was : pawOn(d, k2);
+          if (v) next[k2] = (d.socks && d.socks[k2] > 0) ? d.socks[k2] : PAW_ON;
+        });
+        d.socks = next; fix('socks');
+      });
+    });
+    [[EYE_SW, 'checkEyes', 'eye'], [NOSE_SW, 'checkNose', 'nose']].forEach(([list, id, k]) => {
+      const host = $(id); host.innerHTML = '';
+      const cur = String(d[k] || '').toLowerCase();
+      const opts = list.slice();
+      if (k === 'eye' && st.orig.eye && !opts.some(o => o[1].toLowerCase() === String(st.orig.eye).toLowerCase()))
+        opts.unshift(['From photo', st.orig.eye]);
+      opts.forEach(([label, hx]) =>
+        chip(host, label, cur === hx.toLowerCase(), () => { d[k] = hx; fix(k); }, hx));
+    });
+  }
+  function open(dna, photo, mode, keepVal){
+    return new Promise(res => {
+      st = { dna: JSON.parse(JSON.stringify(dna)), orig: dna, res, mode, keepVal };
+      $('checkPhoto').src = photo || '';
+      $('checkPhoto').classList.toggle('hidden', !photo);
+      $('checkYes').textContent = mode === 'rescan' ? 'Use the new reading' : "Yes, that's her";
+      $('checkKeep').classList.toggle('hidden', mode !== 'rescan');
+      build();
+      show('check');
+      if (window.LoafCat3D && LoafCat3D.mountAt) LoafCat3D.mountAt($('checkStage'));
+      live();
+      $('view-check').scrollIntoView({ block: 'start' });
+    });
+  }
+  function close(keep){
+    if (!st) return;
+    const s2 = st; st = null;
+    if (window.LoafCat3D && LoafCat3D.mountAt) LoafCat3D.mountAt(null);
+    s2.res(keep ? s2.keepVal : s2.dna);       /* keep: the saved cat, untouched */
+  }
+  $('checkYes').onclick = () => close(false);
+  $('checkKeep').onclick = () => close(true);
+  /* spell out what a rescan would change; the owner's own marks never move */
+  function diff(a, b){
+    const out = [], fx = a._fixed || {};
+    if (a.pattern !== b.pattern && !fx.pattern)
+      out.push('pattern (' + (PATTERN_LABEL[a.pattern] || a.pattern) + ' to ' + (PATTERN_LABEL[b.pattern] || b.pattern) + ')');
+    if (a.whiteStyle !== b.whiteStyle)
+      out.push('white (' + (WHITE_LABEL[a.whiteStyle] || a.whiteStyle) + ' to ' + (WHITE_LABEL[b.whiteStyle] || b.whiteStyle) + ')');
+    const L = h => { const q = hexRGB(h); return 0.2126 * q[0] + 0.7152 * q[1] + 0.0722 * q[2]; };
+    if (!fx.base && Math.abs(L(a.base) - L(b.base)) > 18) out.push('coat colour (' + (L(b.base) > L(a.base) ? 'lighter' : 'darker') + ')');
+    if (!fx.eye && a.eye !== b.eye) out.push('eye colour');
+    return out;
+  }
+  return {
+    confirm(dna, photo){ return open(dna, photo, 'first'); },
+    rescan(old, nd, photo){
+      const p = open(nd, photo, 'rescan', old);
+      const dd = diff(old, nd);
+      $('checkDiff').textContent = (dd.length ? 'The new reading changes ' + dd.join(', ') + '.'
+        : 'The new reading matches her.') + ' Your own marks stay.';
+      return p.then(r => { $('checkDiff').textContent = 'Tap what is different. Tap again to undo.'; return r; });
+    }
+  };
+})();
 
 const Chooser = (() => {
   let st = null;
@@ -5351,6 +5496,8 @@ const Tuner = (() => {
         const nx = (idx + 1) % 4;
         if (nx === 0) delete card.dna.socks[k];
         else card.dna.socks[k] = (nx - 1) / 3 * 0.55 + 0.12;
+        card.dna.socks._set = 1;            /* her paws are decided, all four */
+        card.dna._fixed = Object.assign(card.dna._fixed || {}, { socks: 1 });
         commit(); build();
       };
       pw.appendChild(b);
@@ -5381,7 +5528,11 @@ const Tuner = (() => {
       const l = document.createElement('label'); l.textContent = label;
       const i = document.createElement('input');
       i.type = 'color'; i.value = toHex(d[k]);
-      i.oninput = () => { card.dna[k] = i.value; commit(); };
+      i.oninput = () => {
+        card.dna[k] = i.value;
+        card.dna._fixed = Object.assign(card.dna._fixed || {}, { [k]: 1 });
+        commit();
+      };
       w.append(l, i); col.appendChild(w);
     });
 
@@ -5711,16 +5862,27 @@ $('tuneReset').onclick = () => {
     cv.getContext('2d').drawImage(im, 0, 0);
     let m = null;
     try { m = await segmentCat(cv); } catch (e) {}
-    const subj = c.dna && c.dna._subject;
+    const old = c.dna || defaultDNA(), subj = old._subject;
     if (m) m = subjectMask(m, subj);
-    c.dna = readCatFromPhoto(cv, m) || defaultDNA();
-    if (subj) c.dna._subject = subj;
-    Store.update(list => {
-      const x = list.find(y => y.id === c.id);
-      if (x) x.dna = c.dna;
-      return list;
-    });
-    if (Room.card && Room.card.id === c.id) Room.card.dna = c.dna;
+    const nd = readCatFromPhoto(cv, m) || defaultDNA();
+    if (subj) nd._subject = subj;
+    /* what the owner set is a fact: a rescan never undoes it */
+    if (old._fixed){
+      for (const k in old._fixed) if (k in old) nd[k] = JSON.parse(JSON.stringify(old[k]));
+      nd._fixed = Object.assign({}, old._fixed);
+    }
+    setTab('scan');
+    const pick = await Check.rescan(old, nd, c.photo);
+    setTab('room');
+    if (pick !== old){
+      c.dna = pick;
+      Store.update(list => {
+        const x = list.find(y => y.id === c.id);
+        if (x) x.dna = c.dna;
+        return list;
+      });
+      if (Room.card && Room.card.id === c.id) Room.card.dna = c.dna;
+    }
     Tuner.open(c);
   };
   im.onerror = () => say('That photograph would not re-open.', 'bad');
@@ -5730,7 +5892,7 @@ $('tuneReset').onclick = () => {
 /* ----------------------------------------------------------------------------
    TABS
    -------------------------------------------------------------------------- */
-const SCAN_VIEWS = ['view-slot','view-meter','view-scan','view-card'];
+const SCAN_VIEWS = ['view-slot','view-meter','view-choose','view-check','view-scan','view-card'];
 let tab = 'scan';
 function setTab(next){
   tab = next;
@@ -6233,7 +6395,16 @@ if (stage) (async () => {
     }
   }
 
+  /* ⛔ THE COAT NEVER SHOWED AT FULL SIZE. The painter used to resize this
+     canvas between its 192 quick pass and its 512 final pass, but the GPU
+     texture keeps the size of its FIRST upload: every 512 repaint failed to
+     upload, silently, and every cat wore her blurry 192 coat (the brow fork
+     smeared into blocks; found 2 Nov by dumping the canvas beside a render).
+     The texture is 512 for life now; the quick pass paints small and is
+     scaled up into it. */
   const coatCanvas = document.createElement('canvas');
+  coatCanvas.width = coatCanvas.height = 512;
+  const coatQuick = document.createElement('canvas');
   let coatTex = null;
   function paintCoat(d, size){
     if (!coatMat || !window.LOAF || !window.LOAF.OK) return;
@@ -6244,8 +6415,9 @@ if (stage) (async () => {
       return;
     }
     const M = MAPS.size, step = M / size;
-    coatCanvas.width = coatCanvas.height = size;
-    const ctx = coatCanvas.getContext('2d');
+    const work = size === coatCanvas.width ? coatCanvas : coatQuick;
+    if (work.width !== size){ work.width = work.height = size; }
+    const ctx = work.getContext('2d');
     const img = ctx.createImageData(size, size);
     const px = img.data;
     const N = mkNoise((d.seed >>> 0) || 0x9E3779B9);
@@ -6274,10 +6446,15 @@ if (stage) (async () => {
       const w = WSEED3[i];
       if (grade <= w.on) continue;
       if (i === 1 && WM > 0) continue;            /* the muzzle painter owns the chin */
+      if (i === 0 && d.collar === false) continue;  /* the owner said: no collar */
       if (w.toe && d.socks && Object.keys(d.socks).length) continue;
       const jit = (N.hash(i * 91 + 7, 17, 3) - 0.5) * (w.j || 0.25);
       seeds.push({ p: w.p, r: w.r * sm(0, 1, Math.min(1, (grade - w.on) / w.span)) * (1 + jit) });
     }
+    if (d.collar === true && grade <= WSEED3[0].on)
+      seeds.push({ p: WSEED3[0].p, r: WSEED3[0].r * 0.85 });
+    const COLLAR = d.collar != null ? !!d.collar : grade > 0.4;
+    const FORK = d.browFork != null ? !!d.browFork : tabby;
     const pat = d.pattern || 'solid';
     /* marking strength: 0.65 is the neutral point that preserves the look
        every cat had before the slider existed */
@@ -6346,16 +6523,18 @@ if (stage) (async () => {
       /* THE TABBY FACE (A3): pale spectacles round the eyes, a pale muzzle,
          the brow fork (lines that start together between the eyes and fan
          out over the crown) and two cheek lines from the outer eye corner */
-      if (tabby && h > 1.30 && f > 0.70){
+      if ((tabby || FORK) && h > 1.30 && f > 0.70){
         const fa = Math.abs(s);
-        const er = Math.hypot(fa - 0.205, f - 1.445, h - 1.87);
-        if (er < 0.155) c = mix3(c, P.cream, 0.40 * sm(0.155, 0.11, er));
-        const mzp = Math.min(Math.hypot(fa - 0.13, f - 1.50, h - 1.58) / 0.17,
-                             Math.hypot(s, f - 1.52, h - 1.47) / 0.15);
-        if (mzp < 1 && f > 1.30) c = mix3(c, P.cream, 0.5 * sm(1, 0.55, mzp));
-        if (h > 1.90 && fa < 0.5){
+        if (tabby){
+          const er = Math.hypot(fa - 0.205, f - 1.445, h - 1.87);
+          if (er < 0.155) c = mix3(c, P.cream, 0.40 * sm(0.155, 0.11, er));
+          const mzp = Math.min(Math.hypot(fa - 0.13, f - 1.50, h - 1.58) / 0.17,
+                               Math.hypot(s, f - 1.52, h - 1.47) / 0.15);
+          if (mzp < 1 && f > 1.30) c = mix3(c, P.cream, 0.5 * sm(1, 0.55, mzp));
+        }
+        if (FORK && h > 1.86 && fa < 0.5){
           const v = (h - 1.93) + (1.50 - f) * 0.85;     /* up the brow, back over the crown */
-          if (v > -0.02 && v < 0.75){
+          if (v > -0.08 && v < 0.75){
             const t = s / (0.10 + 0.34 * Math.max(0, v));
             let fk = 0;
             for (let k = -3; k <= 3; k++){
@@ -6363,11 +6542,11 @@ if (stage) (async () => {
               const wk = 0.075 + 0.05 * N.hash(k + 9, 3, 1);
               fk = Math.max(fk, sm(wk, wk * 0.4, Math.abs(t - tk)) * (Math.abs(k) === 3 ? 0.75 : 1));
             }
-            fk *= sm(-0.02, 0.05, v) * sm(0.70, 0.30, v);
+            fk *= sm(-0.08, -0.01, v) * sm(0.70, 0.30, v);
             c = mix3(c, P.core, Math.min(1, fk * pAmp));
           }
         }
-        if (fa > 0.24 && Math.abs(nx) > 0.35 && f > 0.85 && f < 1.48 && h > 1.45 && h < 1.95){
+        if (tabby && fa > 0.24 && Math.abs(nx) > 0.35 && f > 0.85 && f < 1.48 && h > 1.45 && h < 1.95){
           const cl = Math.max(sm(0.034, 0.018, seg2(f, h, 1.40, 1.86, 1.02, 1.74)),
                         0.8 * sm(0.030, 0.016, seg2(f, h, 1.33, 1.73, 1.00, 1.60)));
           c = mix3(c, P.core, Math.min(1, cl * pAmp));
@@ -6392,7 +6571,7 @@ if (stage) (async () => {
         const wob = (N.fbm(s * 8 + 3, f * 8, h * 8) - 0.5) * 0.06 * (1 - ME);
         const soft = 0.008 + 0.045 * (1 - ME);
         let wv = sm(top + soft, top - soft, h + wob);
-        if (grade > 0.4 && h < 1.47 && f > 1.05 && Math.abs(s) < 0.30)
+        if (COLLAR && h < 1.47 && f > 1.05 && Math.abs(s) < 0.30)
           wv = Math.max(wv, sm(0.30, 0.22, Math.abs(s)));
         c = mix3(c, P.white, Math.min(1, wv));
       }
@@ -6430,6 +6609,12 @@ if (stage) (async () => {
     }
     dilate(px, size, 6);
     ctx.putImageData(img, 0, 0);
+    if (work !== coatCanvas){
+      const cc = coatCanvas.getContext('2d');
+      cc.imageSmoothingEnabled = true;
+      cc.clearRect(0, 0, coatCanvas.width, coatCanvas.height);
+      cc.drawImage(coatQuick, 0, 0, coatCanvas.width, coatCanvas.height);
+    }
     if (!coatTex){
       coatTex = new THREE.CanvasTexture(coatCanvas);
       coatTex.flipY = false;                       /* glTF UVs: v=0 is the TOP */
@@ -8204,6 +8389,11 @@ if (stage) (async () => {
       if (room.div) room.div.classList.add('hidden');
       playIf('Idle');
       mountTo(stage);
+    },
+    /* the check sheet borrows her: mount on any element, null for home */
+    mountAt(el){
+      if (room.on) window.LoafCat3D.roomClose();
+      mountTo(el || stage);
     },
     roomRemount(){
       if (room.card && room.bridge) window.LoafCat3D.roomOpen(room.card, room.bridge);
