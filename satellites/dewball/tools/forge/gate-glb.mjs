@@ -78,8 +78,8 @@ try {
     const logFrom = srv.log.length;
     await page.goto(srv.url + 'index.html?dbtest=1&dbseed=12345&dbglb=' + encodeURIComponent(base), { waitUntil: 'networkidle0' });
     await page.waitForFunction('window.DB_DEV && window.DB_DEV.meshes', { timeout: 20000 });
-    const n = await page.evaluate(id => { const w = window.DB_DEV.worlds().find(x => x.id === id); if (!w) return 0; window.DB_DEV.start('level', w.n); return w.n; }, wid);
-    if (!n) { fails.push(wid + ': no such world'); await page.close(); continue; }
+    const wi = await page.evaluate(id => { const w = window.DB_DEV.worlds().find(x => x.id === id); if (!w) return null; window.DB_DEV.start('level', w.n); return { n: w.n, globe: !!w.globe }; }, wid);
+    if (!wi) { fails.push(wid + ': no such world'); await page.close(); continue; }
     await page.waitForFunction('(function(){var m=window.DB_DEV.meshes();return (m.st===2||m.st===-1)&&m.loading===0;})()', { timeout: 120000, polling: 250 });
     const r = await page.evaluate(() => { const D = window.DB_DEV; D.camSettle(); D.render(); return { m: D.meshes(), p: D.perf() }; });
     const asked = srv.log.slice(logFrom);
@@ -102,9 +102,12 @@ try {
         } else {
           if (!ready) why.push(k + (failed ? ' FAILED: ' + r.m.err.filter(e => e.indexOf(k) === 0).join(' | ') : ' never finished loading'));
           else if (byId[k].role !== 'mover' && !lod) why.push(k + ' ready but drawing no model set');
-          else if (lod && (lod.near + lod.far > lod.n || lod.near + lod.far === 0)) why.push(k + ' split is impossible ' + JSON.stringify(lod));
+          /* ⚖️ on the globe a kind whose every instance lies past the visible cap (_gsMat, 2.35 rad) draws nothing at
+             the spawn, near or far: the Crown of the World's keepsake, 2 Nov 2026. More than n is still impossible. */
+          else if (lod && (lod.near + lod.far > lod.n || (lod.near + lod.far === 0 && !wi.globe))) why.push(k + ' split is impossible ' + JSON.stringify(lod));
         }
       }
+      if (wi.globe && !Object.values(r.m.lod).some(l => l.near > 0)) why.push('the globe drew no model near the ball');
     }
     if (errs.length) why.push('page errors: ' + errs.join(' | '));
     if (!(r.p.calls > 0)) why.push('rendered nothing (calls ' + r.p.calls + ')');
