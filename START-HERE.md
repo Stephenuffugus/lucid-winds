@@ -1,5 +1,15 @@
 # START HERE
 
+## 📷 2 Nov 14:20 UTC (Opus) KEYS RULED (DEFAULTS), ASTRA ROUND 5 BRIEF IN DRIVE
+KEYS AND THE LOCKED EXIT (Stephen's idea, his ruling "defaults are fine"): it replaces SNAPSHOTS on the roadmap. Build it as its own step AFTER sb-m1-5 ships, never inside the merge.
+  - 1 to 3 keys a room, as many as the photo's furniture allows (SNAPSHOTS' placement: off the climb, on the photo's own tops).
+  - One key is guarded most of the time: next to an enemy cluster, or dropped by an elite.
+  - If no reachable key fits off the climb, place 1 key on the climb. Never refuse the photo for it.
+  - The beacon stays dark until every key is held and lights a little more with each one; the top bar shows the count. Room 5's guardian is its key. New codes only, through the v2 RULES byte. The bot must collect every key before the exit counts.
+  - The STARS "find every snapshot" star needs a new meaning (an open call for him).
+ASTRA ROUND 5: satellites/shutterbug/docs/astra/ASTRA-SHUTTERBUG-ROUND5-NOV02.txt, in Drive Astra/Shutterbug as text/plain (id 1kAObWN3Lumyn1zNe8fQIALoMhUusN8Xq, 14252 bytes, equal to the repo copy). In priority order: keys and the lock, round 4's fixes (Q164, Q165), boss pieces for all five biomes, a second monster per biome (behaviours PROPOSED, his approval pending), dive and charm effects, terrain (biome edge trims, crumble, spring, one way, vent, hot coal, switch and door). He pastes it to Astra.
+NEXT: unchanged, the house fix over its findings, then the sb-m1-5 merge. One lane.
+
 ## 📷 2 Nov 03:13 UTC (Opus) sb-m1-4 IS LIVE: 95 OF 95 REAL PHOTOS DEVELOP
 LIVE: deploy commit `25fe84cc5` (BUILD sb-m1-4, CACHE shutterbug-v4, sw.js?v=4, tag sb-m1-4), the served set from add-sproing-jumper `078d1b5f0` (stamped `102c8ed7d`). Stephen ran /home/codespace/sb-drafts/sb-m1-4/deploy-sb-m1-4.sh: the long line wrapped in his terminal, so the deploy now lives in that script.
   - deploy.sh: the blob passed the lint and the fast harness (6087 assertions); 2 files (index.html, sw.js); main merged back as `3ef31c25a`.

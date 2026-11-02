@@ -1,0 +1,113 @@
+SHUTTERBUG, ART ROUND 5 FOR ASTRA (2 Nov 2026)
+
+Thank you for round 4. It arrived whole (19 strips, 76 frames, your VALIDATION passed) and it is in: the sized weapon effects, the quieter controls, the biome air, the Halo glyph, the crusher, the moth elite and the speck.
+
+WHY ROUND 5 IS BIG
+Stephen: "we have potential to really make this cool with the bosses, weapons, monsters, we can make diverse terrain and improve the gameplay."
+The game is growing in five directions at once, and every one of them needs art:
+- every room gets an objective: the exit is LOCKED and the bug collects keys to light it
+- a boss for every biome, not only the clay guardian
+- a second monster for every biome, so rooms stop feeling the same
+- the dive weapons and charms get their own effects
+- terrain pieces that change how a room plays
+Sections are in priority order. If you can only do part, do it from the top. Every section stands alone, so you can send them in pieces (round5a, round5b) if that is easier.
+
+CONTRACT (unchanged from round 4)
+- The same 16 colours as your manifest's palette, exactly those hexes. Alpha 0 or 255 only.
+- Sun (#f2d13f) only in the hero and the beacon.
+- One sprite key per PNG strip, frames left to right, all the same size. Plain, distinct frame names: letters, digits and underscores, starting with a letter.
+- A source grid per strip, and a manifest entry per file: file, sprite, w, h, frames, names, fps, anchor, sha256, notes.
+- Anything drawn over the room keeps a one pixel Ink keyline wherever it uses a saturated colour.
+- WEAPON EFFECTS keep their own colour law: an Ink outline, then only Slate, Pewter, Ash, Paper and Glare. Never Sun (hero), Film (help platforms), Brick or Magenta (danger), Amber (loot) or Teal.
+- Sizes are in native pixels. One cell is 16 px. The bug's box is about 12x16. The game draws the room at about 2.5x to 3x on a phone, so check everything at 320, 360 and 412 px wide.
+- THE SHAPE LAW (new, from round 4's shots): danger is pointed and red, loot is round and Amber, help is Film. A weapon effect must not look like a trap, an enemy, or a pickup. Round 4's kick spray looked like a spike trap and the ember mote looked like an enemy: that is the mistake to avoid.
+
+1. KEYS AND THE LOCKED EXIT (highest priority: this is the next feature built)
+   Each room hides 1 to 3 keys on the photo's own furniture (bookcase tops, cabinet tops, window sills). One of them is usually guarded by monsters, or dropped by an elite. The exit beacon stays dark until the bug holds every key, and lights a little more with each one.
+   a. key, 16x16, frames a, b, c, d, 8 fps, loops: the key resting where it was placed, with a slow glint or turn. It is loot, so Amber with an Ink keyline is right. It must not read as a speck (round, small) or a scroll at 360 px: give it a clear key silhouette, a bow and a bit.
+   b. key_get, 32x32, frames a to e, 12 fps, played once: the key collected, flying up or bursting toward the HUD. Bug centre at local (16,16).
+   c. key_drop, 16x16, frames a, b, c, 12 fps, played once: an elite dies and drops its key, which bounces once before it rests (then the game switches to `key`).
+   d. hud_key, 9x9, frames empty and full: the counter in the top bar, drawn as many times as the room has keys (so 1/3 shows one full and two empty). It must match hud_heart's weight so the two rows sit together.
+   e. beacon_locked, the beacon's own size, frames locked_0, locked_1, locked_2, locked_3: the beacon dark and sealed (locked_0), then a third, two thirds and fully charged as keys arrive. Sun is allowed here because it is the beacon. locked_3 should hand over cleanly to fx_beacon_light from round 3.
+   f. fx_beacon_refuse, 32x32, frames a, b, c, 12 fps, played once: the bug touches the exit without every key. A short "not yet" shake or flicker of the seal. It must be gentle, not a hit.
+   g. key_guard_mark (optional), 8x8, frames a and b: a tiny mark above a cluster that holds a key, only if you think the guarded key needs a hint. Say in your notes if you think it does not.
+
+2. ROUND 4 FIXES (high: these are in the game now)
+   Each replaces the key whole, with the same key name, size and frame names.
+   a. ember (Spark Trail), 8x8, frames a and b: today it reads as a water drop or an egg, so a moth it kills seems to die of nothing. Wanted: a flame silhouette in the weapon palette, a forked top, an Ash and Pewter lick, a Glare core, the TIP moving between a and b (not only the core), Ink outlined. It must read as fire at 5 CSS px.
+   b. flash_ring (Flashbulb), 64x64, frames a to d: the reach is plain now, but the ring with ticks reads as a clock face or a scope. Make it read as a burst of light: no ticks, a soft bright fill that fades outward, the outer edge still on the 64 px edge on frame b or c. Keep it clear of Amber stars.
+   c. kick_spray (Shield Kick), 16x80, frames a, b, c: the triangles point into the room like a spike trap. Draw strokes or a shock that come off the wall face without points: rounded puffs, motion lines, or a curved swipe.
+   d. dart (Twin Darts), 8x4, frame a: it reads as a bracket or a pill. Give it a point and a tail so it reads as a dart, and make it clearly different from the frost mote.
+   e. ring (Halo), 16x6, frames a and b: make it read as a ring seen from a three quarter angle (a brighter front band, a darker back band), unlike the dart.
+   f. snap_frame (Shutter Snap), corner, edge_h, edge_v: 2 px lines instead of 1 so it reads on Frost's light grey.
+   g. ember_mote (Ember air), 16x16, frames a to d: Brick with an Ink rim reads as danger and looks like the spark enemy. Ash or Pewter with a Glare core, or Brick with NO Ink rim, so it reads as floating light, not a thing.
+   h. dust_mote (Attic air): the Ink cores read as dirt or dead pixels. A paler fleck that reads as floating dust; fine if it is subtle, but it must show at 320.
+   i. crusher, 16x16, frames a, b, c: three columns side by side still read as three pistons with black seams. Add a shaft_joined variant (frames a, b, c) with no side keyline, used where another crusher stands beside it, so a row of them reads as one ram. Give the shaft a top face, and enough danger in it (teeth, a warning band) that it does not read as a plain pillar.
+   j. Stars and crystals in the hit and freeze effects (fx_enemy_hit, fx_frozen_stunned) still use Amber tips. Amber is loot: please redraw without it.
+
+3. THE BOSSES (high: one boss per biome)
+   Room 5 of a house run has a boss. The boss's BODY is cut from the player's own photo (the largest saturated patch, eroding cell by cell as it is hit), so you do not draw the body. You draw what each boss DOES, and the pieces that frame it. Every attack has a telegraph of at least 0.8 s, so each one needs a warning frame before it hits.
+   a. Shared pieces for every boss:
+      - boss_weak, 16x16, frames a and b, 6 fps: the mark on a cell the bug can hit. It must read on any colour, because the body is the photo.
+      - boss_hurt, 16x16, frames a and b: a flash laid over a cell the moment it is struck.
+      - boss_outline_h and boss_outline_v, 8x8 tiles: the ring drawn round the body during its 2 s intro (the game repeats them round the edge).
+      - hud_boss, 96x8, frames frame and fill: a health bar across the top. The game draws the fill at any width.
+      - card_boss_name, 144x24, frame base: a plate under the boss for its name in the intro. Clear text area 120x12 in the middle.
+   b. Attic (Moth Mother): the shed already exists (boss_moth_shed, round 1). Nothing new unless you want a stronger telegraph: say so in your notes.
+   c. Frost (Icefall): drops icicle volleys after a 3 s telegraph.
+      - frost_warn, 16x16, frames a, b, c: a shadow or crack on the ceiling cell that is about to drop.
+      - boss_icicle, 16x32, frames fall and shatter_a, shatter_b, shatter_c: the big icicle and its break on the floor.
+   d. Deep (Tidepulse): pulses a ring that reaches 4 cells every 5 s.
+      - pulse_warn, 32x32, frames a, b, c: the body swelling before a pulse.
+      - pulse_ring, 144x144, frames a to f, 12 fps, played once: the ring expanding to 4 cells (64 px) from the centre, its outer edge at the 144 px frame edge on its last frame. Danger, so Teal and Ink are fine here, it is not a weapon.
+   e. Overgrowth (Briarheart): grows thorn lines along nearby platforms.
+      - thorn_warn, 16x8, frames a and b: a ripple of shoots along a platform top just before the thorns come.
+      - thorn_line, 16x16, frames grow_a, grow_b, grow_c, full, wither: one cell of thorns standing on a platform top; the game repeats it along the platform.
+   f. Ember (Spark Fountain): sprays sparks upward after a 2 s telegraph.
+      - fountain_warn, 32x16, frames a, b, c: glow building at the body's top.
+      - boss_spark, 8x8, frames a and b: one spark in the air, larger and brighter than the spark enemy so the two are not confused.
+   g. boss_down variants (optional): fx_boss_down from round 3 works for all five. If you want each biome's boss to fall differently, send fx_boss_down_<biome> at the same 64x64 and six frames.
+
+4. A SECOND MONSTER FOR EVERY BIOME (medium: more variety per room)
+   Today each biome has one monster and one elite. These are the second ones. Stephen still has to approve the behaviours, so they may change; the sizes will not. Each is 16x16, 2 to 4 frames with plain names (move_a, move_b, attack, hurt), plus an elite at 24x24 with the same frame names. Clay look, like your round 1 monsters. Danger colours with an Ink keyline.
+   a. Attic, Dust Bunny: sits still until the bug comes within 3 cells, then rolls along the floor in a burst. Frames idle, roll_a, roll_b, hurt.
+   b. Frost, Snow Owl: perches on a ledge, swoops down at the bug in a straight line, flies back up. Frames perch, swoop, return, hurt.
+   c. Deep, Hermit Crab: walks a floor, hides in its shell when hit from above (shell takes no damage), comes out after 1 s. Frames walk_a, walk_b, shell, hurt.
+   d. Overgrowth, Spore Puff: sits on a platform and puffs a small cloud upward every 3 s that hurts on contact. Frames idle, swell, puff, hurt, plus puff_cloud 16x16 frames a, b, c.
+   e. Ember, Cinder Beetle: walks a platform and leaves a short lit trail behind it that hurts for 1 s. Frames walk_a, walk_b, hurt, plus cinder_trail 16x8 frames a and b.
+
+5. THE DIVE WEAPONS AND CHARMS (medium: built next on the weapons side)
+   The 27 icons are already drawn (icon_weapons). These are the effects in the room, all under the weapon colour law.
+   a. tremor_burst, 48x32, frames a to d, 12 fps, once: Tremor's shake on landing, dust kicked out of the cells beside the bug. Bug feet at local (24,32).
+   b. tremor_chip, 8x8, frames a and b: a loose fragment knocked out of a solid cell. It must not look like a Dead Pixel pickup.
+   c. wide_wave, 176x16, frames a to d, 12 fps, once: Wide Lens's shockwave, 5 cells each side of the bug (the existing fx_shockwave reaches 3). Bug centre at local (88,16).
+   d. pogo_bounce, 32x16, frames a, b, c, once: Pogo Spear striking an enemy and springing the bug up.
+   e. pile_strike, 16x48, frames a, b, c, once: Pile Driver's single heavy hit straight down the column under the bug.
+   f. lantern_orb, 8x8, frames a, b, c, d, 8 fps, loops: Lantern's orbiting light, which circles the bug at 1 cell. Not Sun (that is the hero's): Glare and Paper.
+   g. meter_tick, 4x8, frames a and b: Light Meter's tick at the screen edge pointing at an unseen speck.
+   h. fixer_seal, 16x16, frames a to d, once: Fixer saving the carried blueprints on a death.
+   i. Pogo Spear and Pile Driver keep your round 1 frames unless you want to redraw them alongside these.
+
+6. TERRAIN (medium: rooms that play differently)
+   The rooms are built from the player's photo, so you do not draw walls or floors. These are pieces the level rules place ON the photo, plus each biome's edge dressing. Each is 16x16 unless it says otherwise. Help pieces are Film; dangerous ones are red and pointed.
+   a. Biome edge trims, 16x4, frames top_a, top_b (two variants so a long run does not repeat), laid along the top edge of standable cells:
+      - edge_attic (dust and old wood grain)
+      - edge_frost (the ice edge for slick surfaces; it must say "slippery" at a glance)
+      - edge_deep (wet, a little algae)
+      - edge_overgrowth (moss and small leaves)
+      - edge_ember (glowing cracks, not lava: it is safe to stand on)
+   b. crumble_block, frames solid, crack_a, crack_b, gone: a platform that breaks 0.6 s after the bug lands and comes back 3 s later. Film is help, so draw it in a different look from the film tabs.
+   c. spring_pad, frames idle, squash, launch: bounces the bug 6 cells high.
+   d. one_way, 16x4, frame a: a thin ledge the bug can jump up through and stand on.
+   e. wind_vent, 16x16, frames a to d, 8 fps, loops: pushes the bug upward in its column (Deep and Frost rooms).
+   f. hot_coal, frames a and b: an Ember floor cell that hurts after the bug stands on it for 0.5 s. A danger warning, so red, but flat, not pointed.
+   g. switch_plate and switch_door: a floor plate (frames up, down) that opens a door of film cells (door 16x16, frames shut, opening, open) somewhere else in the room. The game draws the link between them.
+
+7. LATER, NOT NEEDED YET (only if you have time, and tell us first)
+   - The Darkroom's screens (the shop and the collector) and blueprint tier art: they wait until the Darkroom is built.
+   - More hero skins: they are the house clear prizes, so more skins mean more houses worth clearing.
+
+NOT NEEDED
+These are delivered and staying: the hero and all skins so far, the five monsters and five elites, the clay guardian, the house art (pips, icon, clear card, unlock), the round 3 boss effects (wake, chip, down, beacon light), the crop art, the controls, the stat icons, the frame styles, the charm effects from round 2 (magnet, second wind, thick skin, tripod), the weapon icons.
+
+DELIVERY: one zip named shutterbug-assets-round5.zip (or round5a, round5b if you send it in parts) with manifest.json at its root (a delta manifest like rounds 2 to 4), the PNG strips, their source grids, your verify script's output, and a short notes file listing anything you chose differently and why.
