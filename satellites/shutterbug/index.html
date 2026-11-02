@@ -960,7 +960,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (k >= 0) t = t.slice(k + 1);
     var m = /^v(\d+)\./.exec(t);
     if (m && +m[1] > V) return { why: 'newer' };
-    if ((!m || +m[1] === 2) && unknownHead(SB.rng.b64urlDecode(m ? t.slice(m[0].length) : t))) return { why: 'newer' };
+    var head = SB.rng.b64urlDecode(m ? t.slice(m[0].length) : t);
+    /* PHOTO1BR: a bare payload (no prefix) of at least a header whose version byte is past V (and under 16, so most
+       garbage stays bad) is newer, as its prefixed code is */
+    if (!m && head && head.length >= HEADER && head[0] > V && head[0] < 16) return { why: 'newer' };
+    if ((!m || +m[1] === 2) && unknownHead(head)) return { why: 'newer' };
     var rec = decode(t);
     return rec ? { rec: rec } : { why: 'bad' };
   }
@@ -1515,8 +1519,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
     var exit = fixed.exit;
     /* a fallback room climbs at least FALLBACK_MIN_CLIMB rows from its spawn to its exit, else an honest needsCrop */
-    var climb = Math.floor(spawn / w) - Math.floor(exit / w);
-    if ((fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB) return refusal(solid, plat, L, w, h, lostF, et, fell ? sy + 1 : -1, 'unreachable', 'the climb left is ' + climb + ' rows, under ' + T.FALLBACK_MIN_CLIMB + ' (the spawn on row ' + Math.floor(spawn / w) + ', the exit on row ' + Math.floor(exit / w) + ')');
+    var rise = Math.floor(spawn / w) - Math.floor(exit / w);
+    if ((fell || et > 0) && rise < T.FALLBACK_MIN_CLIMB) return refusal(solid, plat, L, w, h, lostF, et, fell ? sy + 1 : -1, 'unreachable', 'the climb left is ' + rise + ' rows, under ' + T.FALLBACK_MIN_CLIMB + ' (the spawn on row ' + Math.floor(spawn / w) + ', the exit on row ' + Math.floor(exit / w) + ')');
     /* the default spread (DESIGN 6.11): a room with no landmark and no platform got its climb from the stair's two
        legs; a speck slot and a fodder slot are reserved as data for M1 */
     if (bare && !anyPlat) level.repair.spread = spreadSlots(level, fixed.d);
@@ -3934,8 +3938,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
        4. else the largest vote; a tie goes Attic, Ember, Deep, Overgrowth (the palette's tie law, Q79).
      Integers only, so tools/capture-oracle.js's hueVoteRGB (its own copy, written apart) agrees cell for cell (H-hue-1).
      Returns { biome: 0..4 (SB.palette.BIOMES), rule: 'bright' | 'vote' | 'few', votes: [5], voters }. */
-  /* the level rules a new record names (core-record's rules byte): 1, the climb rules (Q221); 0 would build today's */
-  C.RULES = 1;
+  /* the level rules a new record names (core-record's rules byte): 0, today's rules. PHOTO1BR (Q222): the climb rules
+     (1, Q221) stay in the core for a v2 RULES 1 code, but capture does not write them until their fallbacks, their
+     extra film on bare walls and their build time are fixed */
+  C.RULES = 0;
   C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 15, GREEN_LO: 70, DEEP_LO: 170, EMBER_LO: 285, C_MIN: 12, S_MIN: 9, WARM_C_MIN: 16, WARM_S_MIN: 30, MIN_PCT: 10 });
   C.hueBand = function (r, g, b) {
     var K = C.HUE, mx = Math.max(r, g, b), d = mx - Math.min(r, g, b), band;

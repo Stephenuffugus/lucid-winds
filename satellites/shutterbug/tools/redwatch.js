@@ -1273,6 +1273,15 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'every room that builds by today\'s rules builds by the climb rules' }] },
   { name: 'SEARCH_PAYS_CLIMB', task: 'CLIMB', file: 'page', find: '    if (today.needsCrop) return today;\n', repl: '    if (today.needsCrop) { var lc = buildRules(rec, opts, 1); if (!lc.needsCrop) return lc; return today; }\n',
     gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'a box today\'s rules refuse is refused by RULES 1' }] },
+
+  /* PHOTO1BR (Q222): the review's rows. Capture writes RULES 0 until the climb's fallbacks, film and build time are
+     fixed; the climb's 8 passes are seen; a bare payload from a newer version reads as newer */
+  { name: 'CAPTURE_RULES_1', task: 'PHOTO1BR', file: 'page', find: '  C.RULES = 0;\n', repl: '  C.RULES = 1;\n',
+    gates: [{ gate: 'harness', only: 'H-hue-1', expect: 'RULES 0 (today\'s rules, Q222)' }] },
+  { name: 'CLIMB_PASSES_TODAY', task: 'PHOTO1BR', file: 'page', find: "      if (pass >= (level.climb ? T.CLIMB_PASSES : T.REPAIR_PASSES)) return", repl: "      if (pass >= T.REPAIR_PASSES) return",
+    gates: [{ gate: 'harness', only: 'H-climb-1', expect: 'some climb level needs more than today\'s 4 passes' }] },
+  { name: 'BARE_NEWER_BAD', task: 'PHOTO1BR', file: 'page', find: "    if (!m && head && head.length >= HEADER && head[0] > V && head[0] < 16) return { why: 'newer' };\n", repl: '',
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a bare v3 payload' }] },
 ];
 
 /* ---------------------------------------------------------------- run */

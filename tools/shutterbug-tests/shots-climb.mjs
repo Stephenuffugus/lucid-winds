@@ -44,8 +44,11 @@ try {
     await shot('4-play');
     /* the level as played: the record the page built, its rules, the fallback, the film share of the main ascent */
     const lvInfo = await page.evaluate(() => {
-      const SB = window.SB, l = window.SB_DEV.level(), rec = l ? SB.record.decode(l.code) : null, lv = rec ? SB.pipeline.build(rec, {}) : null;
+      /* PHOTO1BR: a fresh page's first room is built with { firstRoom: true } (as Develop builds it), and the level
+         printed must be the one played: its hash equal to SB_DEV.level().hash, else the line says so */
+      const SB = window.SB, l = window.SB_DEV.level(), rec = l ? SB.record.decode(l.code) : null, lv = rec ? SB.pipeline.build(rec, { firstRoom: true }) : null;
       if (!lv || lv.needsCrop) return null;
+      if (SB.pipeline.levelHash(lv) !== l.hash) return { mismatch: 'the rebuilt level ' + SB.pipeline.levelHash(lv) + ' is not the played ' + l.hash };
       const w = lv.w, n = w * lv.h, st = Array.from(lv.ascent.nodes).filter(v => v < n), onTab = st.filter(v => lv.tab[v + w]).length;
       return { rules: rec.rules, climb: lv.climb, fallback: !!lv.repair.wholeFallback, tabs: lv.repair.tabs, film: Math.round(100 * onTab / st.length), stones: (lv.repair.stones || []).length, passes: lv.repair.passes };
     });

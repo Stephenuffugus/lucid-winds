@@ -5231,6 +5231,10 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
     t.eq(SB.record.decode(code2(b)), null, 'decode never builds a v2 record with ' + why);
   }
   t.eq(SB.record.parseCode('https://x.example/s/#' + b64(at(7, 9))).why, 'newer', 'parseCode answers newer on RULES 9 as a bare payload after a link\'s #');
+  /* PHOTO1BR: a bare payload from a newer version reads as newer, as its prefixed code does; garbage stays bad */
+  t.eq(SB.record.parseCode(at(0, 3).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v3 payload (no prefix), as on its v3. code');
+  t.eq(SB.record.parseCode('https://x.example/s/#' + at(0, 7).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v7 payload after a link\'s #');
+  t.ok(SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode(at(0, 200).toString('base64url')).why === 'bad', 'garbage and a bare payload with version byte 200 still read as bad (control)');
   t.eq(SB.record.parseCode(code2(at(8, 1).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length)');
   t.eq(SB.record.parseCode(code2(gb.subarray(0, 300))).why, 'bad', 'a truncated v2 code with known bytes reads as bad (control)');
   t.ok(SB.record.parseCode(code2(gb)).rec && SB.record.parseCode(code2(gb)).rec.biome === 4, 'a v2 code with RULES 0 and no flags opens (control)');
@@ -5269,7 +5273,7 @@ function captureWithCore() {
   vm.runInNewContext(m[1].replace(/\}\)\(\s*[\w.]+\s*\)\s*;?\s*$/, '})(SB);'), ctx);
   return C.capture;
 }
-group('H-hue-1', 'the hue vote (Q220, shell-capture\'s hueVote): the bright room rule first, then the hue bands over the averaged colours; known walls to their biomes; the ties; the boundaries; equal to the capture oracle\'s hueVoteRGB on random grids and the room model; gridRecord writes a v2 record with the vote, RULES 1 (Q221), no flags; a sage walled room builds Overgrowth where its grid alone is Attic', t => {
+group('H-hue-1', 'the hue vote (Q220, shell-capture\'s hueVote): the bright room rule first, then the hue bands over the averaged colours; known walls to their biomes; the ties; the boundaries; equal to the capture oracle\'s hueVoteRGB on random grids and the room model; gridRecord writes a v2 record with the vote, RULES 0 (Q222), no flags; a sage walled room builds Overgrowth where its grid alone is Attic', t => {
   const CAP = captureWithCore(), { hueVoteRGB, HUE_K, downscaleRGB } = require('./tools/capture-oracle.js'), N = SB.GRID.W * SB.GRID.H;
   t.same(Object.assign({}, CAP.HUE), Object.assign({}, HUE_K), 'the page\'s HUE numbers are the oracle\'s');
   t.eq(CAP.HUE.FROST_L, SB.TUNING.FROST_MEAN_L, 'the bright room rule\'s number is TUNING\'s FROST_MEAN_L');
@@ -5322,11 +5326,11 @@ group('H-hue-1', 'the hue vote (Q220, shell-capture\'s hueVote): the bright room
   t.eq(gridBad, 0, 'the page\'s vote equals the oracle\'s on 300 seeded noisy rooms');
   t.eq(sceneBad, 0, 'the page\'s vote equals the oracle\'s on the room model\'s first ' + SCENES + ' scenes at the default box');
   console.log('  info  H-hue-1: the room model\'s first ' + SCENES + ' scenes vote ' + SB.palette.BIOMES.map((b, i) => b + ' ' + spread[i]).join(', '));
-  /* gridRecord: v2, the vote's biome + 1, RULES 1 (the climb rules, Q221), no flags */
+  /* gridRecord: v2, the vote's biome + 1, RULES 0 (today's rules; PHOTO1BR, Q222: the climb rules are not written yet), no flags */
   const sage = SB.SAMPLE_ROOM, rgb = new Uint8Array(N * 3);
   for (let i = 0; i < N; i++) { const p = parseInt(sage[Math.floor(i / 24)][i % 24], 16); rgb.set(p === SB.palette.I.ASH ? [178, 194, 164] : SB.palette.RGB[p], 3 * i); }
   const j = CAP.gridRecord(rgb, -1), want = CAP.hueVote(rgb).biome;
-  t.ok(j.v === 2 && j.biome === want + 1 && j.rules === 1 && CAP.RULES === 1 && j.flags === 0 && SB.record.validate(j) === null, 'gridRecord writes a valid v2 record: biome the vote + 1 (' + j.biome + '), RULES 1 (the climb rules), flags 0');
+  t.ok(j.v === 2 && j.biome === want + 1 && j.rules === 0 && CAP.RULES === 0 && j.flags === 0 && SB.record.validate(j) === null, 'gridRecord writes a valid v2 record: biome the vote + 1 (' + j.biome + '), RULES 0 (today\'s rules, Q222), flags 0');
   t.same(j.rows, Array.from(SB.SAMPLE_ROOM), 'the sage walled sample room quantizes to the sample room itself (sage is nearest Ash): only the biome byte differs');
   const lv = SB.pipeline.build(SB.record.fromJSON(j), { firstRoom: true }), lv1 = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, j, { v: 1, biome: undefined, rules: undefined, flags: undefined })), { firstRoom: true });
   t.ok(want === 3 && lv.biome === 3 && lv1.biome === 0 && lv.features.enemies.length > 0 && lv.features.enemies.every(e => e.kind === SB.features.CRAWLER), 'a sage walled room builds Overgrowth with thorn crawlers (' + lv.features.enemies.length + '); the same grid alone is Attic');
