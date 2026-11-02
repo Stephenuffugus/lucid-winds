@@ -9,6 +9,7 @@
  *   node tools/redwatch.js --browser        also the browser mutants (each serves its copy through SB_PAGE and runs
  *                                           the one browser gate it names; one Chrome at a time)
  *   node tools/redwatch.js --browser-only   only the browser mutants
+ *   node tools/redwatch.js --anchors        only every row's anchors counted (the CI's per push gate)
  *   node tools/redwatch.js --check          the gate form tools/check.js runs: exit 0 iff every row has its expected
  *                                           result (every mutant RED, NOOP stayed green) and REDWATCH OK is printed
  *
@@ -652,8 +653,8 @@ const MUTANTS = [
     gates: [{ gate: 'lint', expect: 'SW_SCOPE' }, { gate: 'pwa', expect: "under the worker the fleet's root files come from the network, never the worker" }] },
   { name: 'RELOAD_ON_CONTROLLERCHANGE', task: 'T1.11', file: 'page', find: "  window.addEventListener('beforeinstallprompt',", repl: "  if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', function () { location.reload(); });\n  window.addEventListener('beforeinstallprompt',",
     gates: [{ gate: 'lint', expect: 'RELOAD' }, { gate: 'pwa', expect: 'the new worker causes no navigation of its own' }] },
-  /* re anchored at the sb-m1-9 stamp (the registration is ?v=9 now) */
-  { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=9')", repl: "register('./sw.js?v=10')",
+  /* re anchored at the sb-m1-10 stamp (the registration is ?v=10 now) */
+  { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=10')", repl: "register('./sw.js?v=11')",
     gates: [{ gate: 'lint', expect: 'STAMP' }] },
   /* the card review's follow up, due at the sb-m1-2 stamp: the worker reads its own cache only; with no cacheName the
      foreign copy the gate plants before the install answers the offline shell */
@@ -1390,8 +1391,8 @@ const MUTANTS = [
     gates: [{ gate: "astra", expect: "an effect frame not named <clip>_<n> is refused" }] },
   { name: "CUT_FX_UNKNOWN", task: 'ART2', file: "astra", find: "            elif FX_RE.match(key) and key not in FX_PLAIN:\n                warnings.append(", repl: "            elif False and FX_RE.match(key) and key not in FX_PLAIN:\n                warnings.append(",   /* re anchored at round 5 (FX_PLAIN) */
     gates: [{ gate: "astra", expect: "an effect strip new to the page (fx_shockwave on a copy without it) is taken as named clips" }] },
-  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 80   #", repl: "MAX_SPRITES = 82   #",   /* re anchored at round 5 (80) */   /* re anchored at ART4 (52) */   /* re anchored at W2 (46) */   /* re anchored at ART3 (the cap at the splice, 43) */
-    gates: [{ gate: "astra", expect: "the cap is 80, round 5's" }] },
+  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 120   #", repl: "MAX_SPRITES = 122   #",   /* re anchored at round 5 (80, then 120) */   /* re anchored at ART4 (52) */   /* re anchored at W2 (46) */   /* re anchored at ART3 (the cap at the splice, 43) */
+    gates: [{ gate: "astra", expect: "the cap is 120, round 5's" }] },
   /* ART3: Astra's rounds 2 and 3 (Q98): the cutter's rules, the splice, the stick, Pause, the crusher's shaft, the speck,
      the elites' keylines, the biome's air and badges, the icons by code */
   { name: "CUT_GAME_CASE", task: 'ART3', file: "astra", find: "    if str(man.get('game', '')).lower() != 'shutterbug':", repl: "    if man.get('game') != 'shutterbug':",
@@ -1642,7 +1643,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-boss-8', expect: 'moth slots are made at create, never in step' }] },
   { name: 'SHED_FARM', task: 'HOUSE-B', file: 'page', find: "      if (!shedSlot(s, m)) s.room.dp += en.elite ? T.DP_ELITE : T.DP_FODDER;", repl: "      s.room.dp += en.elite ? T.DP_ELITE : T.DP_FODDER;",
     gates: [{ gate: 'harness', only: 'H-boss-8', expect: 'a shed moth killed banks nothing' }] },
-  { name: 'TELEGRAPH_SHORT', task: 'HOUSE-B', file: 'page', find: "{ GB.telegraph = K.BOSS_TELEGRAPH_F; s.ev |= EV.TELL; }", repl: "{ GB.telegraph = 30; s.ev |= EV.TELL; }",
+  { name: 'TELEGRAPH_SHORT', task: 'HOUSE-B', file: 'page', find: "{ GB.telegraph = bossTell(s); s.ev |= EV.TELL; bossTold(s, lv); }", repl: "{ GB.telegraph = 30; s.ev |= EV.TELL; bossTold(s, lv); }",   /* re anchored at the biome movesets */
     gates: [{ gate: 'harness', only: 'H-boss-6', expect: 'every shed is told at least 48 frames ahead' }] },
   { name: 'LEDGE_IN_ATTACK_RANGE', task: 'HOUSE-B', file: 'page', find: "    for (y = Math.max(0, sy0 - R); y <= Math.min(h - 1, sy0 + T.GUARD_SHED_H - 1 + R); y++)", repl: "    for (y = 0; y < 0; y++)",
     gates: [{ gate: 'harness', only: 'H-boss-5', expect: "the guardian's safe ledge holds" }] },
@@ -1702,6 +1703,14 @@ function anchorOf(m) {
     text = text.replace(find, () => repl);
   }
   return 'ok';
+}
+/* --anchors (2 Nov): only every row's anchors counted, nothing run: the CI's per push guard now that the rows run before
+   a deploy (tools/check.js --release) */
+if (args.includes('--anchors')) {
+  const lost = MUTANTS.map(m => [m.name, anchorOf(m)]).filter(x => x[1] !== 'ok');
+  for (const [n, a] of lost) console.log(n.padEnd(30) + a);
+  console.log(lost.length ? 'REDWATCH ANCHORS LOST: ' + lost.length + ' of ' + MUTANTS.length : 'REDWATCH ANCHORS OK: ' + MUTANTS.length + ' rows');
+  process.exit(lost.length ? 1 : 0);
 }
 const rows = [];
 for (const m of MUTANTS) {

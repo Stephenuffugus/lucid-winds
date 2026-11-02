@@ -2,6 +2,7 @@
  *
  *   node tools/check.js                      everything: every gate below, the browser gates one at a time
  *   node tools/check.js --fast               skips the slow gates and SAYS so
+ *   node tools/check.js --release            also the redwatch rows (release only: they outgrew the CI job, 2 Nov)
  *   node tools/check.js --fast --gate play   the per task run: the gates that need no browser, plus ONE browser gate
  *
  * Shape copied from satellites/gerplunk/tools/check.js with its scars: fast mode SKIPS a slow gate and never shrinks
@@ -20,6 +21,9 @@ const { join } = require('node:path');
 const ROOT = join(__dirname, '..');
 const args = process.argv.slice(2);
 const FAST = args.includes('--fast');
+/* --release: the redwatch rows too (2 Nov: 684 rows outgrew the CI's 20 minute job, and they test the tests, so they run
+   before a deploy, by hand, not on every push) */
+const RELEASE = args.includes('--release');
 const gi = args.indexOf('--gate');
 const ONE = gi >= 0 ? args[gi + 1] : null;
 if (gi >= 0 && !ONE) { console.log('usage: --gate <name>'); process.exit(2); }
@@ -30,7 +34,8 @@ const GATES = [
   { name: 'icons',    cmd: ['tools/icons.mjs', '--check'], need: 'ICONS OK' },
   { name: 'astra',    cmd: ['test/astra.mjs'], need: 'ASTRA OK' },   /* the Astra cutter: the round trip exact, every broken zip refused for its reason */   /* the three PWA icons equal what the hero's pixel string draws (T1.11) */
   { name: 'harness',  cmd: ['harness.js', '--fast'], need: 'SHUTTERBUG HARNESS OK' },
-  { name: 'redwatch', cmd: ['tools/redwatch.js', '--check'], need: 'REDWATCH OK' },
+  { name: 'redwatch-anchors', cmd: ['tools/redwatch.js', '--anchors'], need: 'REDWATCH ANCHORS OK' },   /* every row still finds the code it breaks */
+  { name: 'redwatch', cmd: ['tools/redwatch.js', '--check'], need: 'REDWATCH OK', release: true },
   /* the bot's macro search on every edge of every graph (T0.13a, BUILD-PLAN 3.9): before every deploy and the morning report */
   { name: 'harness-all', cmd: ['harness.js', '--all-edges', '--only', 'H-bot-6'], need: 'SHUTTERBUG HARNESS OK', slow: true }
 ];
@@ -88,6 +93,7 @@ for (const g of all) {
     if (browserWhy) { skipped.push(g.name + ' (' + browserWhy + ')'); console.log(g.name.padEnd(18) + 'skip'); continue; }
   }
   if (FAST && g.slow && g.name !== ONE) { skipped.push(g.name + ' (slow, --fast)'); console.log(g.name.padEnd(18) + 'skip  (slow)'); continue; }
+  if (g.release && !RELEASE && g.name !== ONE) { skipped.push(g.name + ' (release only: --release)'); console.log(g.name.padEnd(18) + 'skip  (release only)'); continue; }
   process.stdout.write(g.name.padEnd(18));
   const t0 = Date.now();
   let out = '', code = 0;

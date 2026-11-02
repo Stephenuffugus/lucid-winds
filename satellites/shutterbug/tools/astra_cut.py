@@ -58,7 +58,7 @@ NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 # frame_styles and hero_colours; round 3's run_pips, icon_house, card_house_clear, fx_unlock, the boss effects,
 # fx_beacon_light and hero_colours_r3): 55 names, so 56
 # sb-m1-5 merges both: 64 names, so 65
-MAX_SPRITES = 80   # round 5 (2 Nov): the fixes and shaft_joined now, room for the keys' 7 and more
+MAX_SPRITES = 120   # round 5 (2 Nov): the fixes, the keys, the dive and charm art, the bosses; room for the monsters and the terrain
 
 
 class Refuse(Exception):

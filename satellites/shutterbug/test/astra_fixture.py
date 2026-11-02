@@ -60,6 +60,10 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     # step 4's charms: round 2's Magnet, Second Wind and Thick Skin, round 5's Lantern orb and Light Meter tick
     'fx/fx_magnet.png': ('fx_magnet', None), 'fx/fx_second_wind.png': ('fx_second_wind', None), 'fx/fx_thick_skin.png': ('fx_thick_skin', None),
     'fx/lantern_orb.png': ('lantern_orb', None), 'fx/meter_tick.png': ('meter_tick', None),
+    # the biome movesets: round 5's warnings and attacks
+    'boss/frost_warn.png': ('frost_warn', None), 'boss/boss_icicle.png': ('boss_icicle', None), 'boss/pulse_warn.png': ('pulse_warn', None),
+    'boss/pulse_ring.png': ('pulse_ring', None), 'boss/thorn_warn.png': ('thorn_warn', None), 'boss/thorn_line.png': ('thorn_line', None),
+    'boss/fountain_warn.png': ('fountain_warn', None), 'boss/boss_spark.png': ('boss_spark', None),
 }
 
 

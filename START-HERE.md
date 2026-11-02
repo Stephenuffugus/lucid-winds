@@ -1,5 +1,9 @@
 # START HERE
 
+## 📷 2 Nov 18:50 UTC (Opus) sb-m1-10 STAMPED: BIOME BOSSES + CHARMS; CI FITS AGAIN (redwatch is a release gate, anchors per push)
+DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-10/deploy-sb-m1-10.sh` (sb-m1-9 never shipped), then hostproof, tag sb-m1-10.
+BEFORE A DEPLOY: `node tools/check.js --release --fast` adds the redwatch rows (25 min here). NEXT in his order: terrain (edge trims, crumble, spring, one way, vent, hot coal, switch and door), the second monsters, the Darkroom, the first 60 seconds, the ship list.
+
 ## 📷 2 Nov 17:55 UTC (Opus) sb-m1-9 STAMPED: CHARMS (C1 to C4, C6); CI FIXED (every gate the CI runs passed here first)
 His ruling (2 Nov): nothing goes to Play until Shutterbug is good; "finish making shutterbug now". The order: charms (this), the biome bosses, terrain, the second monsters, the Darkroom, the first 60 seconds, the ship list, then the store page.
 DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-9/deploy-sb-m1-9.sh`, then hostproof, tag sb-m1-9.

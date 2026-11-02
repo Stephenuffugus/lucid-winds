@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 7411;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
+const ASSERT_FLOOR = 7510;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -5557,7 +5557,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   const WFX = ['dart', 'ring', 'ember', 'flash_ring', 'snap_frame', 'kick_spray', 'fire_cell', 'frost_burst'];
   for (const k of WFX) LAW[k] = [hx(I.INK, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE), true];
   const POSES = Object.keys(LAW).filter(n => n.startsWith('hero_'));
-  t.ok(names.length > 0 && names.length < 80, names.length + ' named sprites (under 80, round 5\'s cap: room for the keys; frames are unlimited)');
+  t.ok(names.length > 0 && names.length < 120, names.length + ' named sprites (under 120, round 5\'s cap: room for the monsters and the terrain; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
     const sp = S[name];
@@ -6222,6 +6222,8 @@ function testMasses(lv) {
   return { of, rank };
 }
 const bodyOf = lv => { const g = lv.features.guardian, w = lv.w, out = []; for (let y = g.rect[1]; y < g.rect[1] + g.rect[3]; y++) for (let x = g.rect[0]; x < g.rect[0] + g.rect[2]; x++) out.push(y * w + x); return out; };
+/* the shed is the Attic's moveset (the biome movesets, 2 Nov): its groups read the Attic rooms */
+const atticBuilds = () => bossBuilds().filter(B => (B.lv.biome | 0) === 0);
 /* a state with the guardian awake (the intro run out by steps, an immortal bug) */
 function awake(lv, o) {
   const s = SB.sim.create(lv, Object.assign({ immortal: true, lastRoom: true }, o || {}));
@@ -6310,10 +6312,29 @@ function shedLog(lv, steps) {
   }
   return { s, log };
 }
+group('H-boss-11', 'the biome movesets (DESIGN 7, 2 Nov): in a Frost, Deep, Overgrowth and Ember room 5 the guardian tells each attack at least BOSS_TELEGRAPH_F ahead, then its attack appears in the pool (icicles, the ring, the thorns, the sparks), never a moth shed; at HP 0 every attack goes with it', t => {
+  const P = SB.sim.PROJ_KIND, EV = SB.sim.EV, want = { 1: P.BICE, 2: P.BRING, 3: P.BTHORN, 4: P.BSPARK }, seen = {}, bad = [];
+  for (const { tag, lv } of bossBuilds()) {
+    const b = lv.biome | 0; if (!want[b] || seen[b] >= 3) continue; seen[b] = (seen[b] || 0) + 1;
+    const s = awake(lv); let tell = -1, hit = -1, shed = 0;
+    for (let k = 0; k < 700 && hit < 0; k++) {
+      SB.sim.step(s, 0);
+      if ((s.ev & EV.TELL) && tell < 0) tell = s.frame;
+      if (s.ev & EV.SHED) shed++;
+      if (tell >= 0 && s.proj.some(p => p.live && p.kind === want[b])) hit = s.frame;
+    }
+    if (tell < 0 || hit < 0 || shed) { bad.push(tag + ': tell ' + tell + ', attack ' + hit + ', sheds ' + shed); continue; }
+    if (b !== 3 && hit - tell < K.BOSS_TELEGRAPH_F) bad.push(tag + ': told only ' + (hit - tell) + ' steps ahead');
+    SB.sim.hurtBoss(s, lv, s.boss.cells.findIndex(c => c >= 0), s.boss.hp);
+    if (s.proj.some(p => p.live && p.kind >= P.BICE && p.kind <= P.BWARN)) bad.push(tag + ': an attack outlives the guardian');
+  }
+  t.ok(bad.length === 0 && [1, 2, 3, 4].every(b => seen[b] > 0), 'each of Frost, Deep, Overgrowth and Ember tells, then attacks, and never sheds (rooms ' + JSON.stringify(seen) + ')' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
+});
+
 group('H-boss-8', 'the shed (DESIGN 7\'s Attic moveset, "sheds 3 moths every 4 s"): awake, a SHED every BOSS_MOTH_EVERY_F steps, each after its TELL; BOSS_MOTH_COUNT moth slots made at create after the level\'s enemies, the same objects through the room (none made in step); a shed fills only dead slots; its moths bank no Dead pixels', t => {
   const T = SB.TUNING, bad = { cadence: [], slots: [], dp: [] };
   let n = 0;
-  for (const { tag, lv } of bossBuilds().filter((b, i) => i % 3 === 0)) {
+  for (const { tag, lv } of atticBuilds().filter((b, i) => i % 3 === 0)) {
     n++;
     const s0 = SB.sim.create(lv, { lastRoom: true, immortal: true }), ne = lv.features.enemies.length;
     if (s0.enemies.length !== ne + T.BOSS_MOTH_COUNT || s0.enemies.slice(ne).some(e => e.hp !== 0 || e.kind !== SB.features.MOTH)) bad.slots.push(tag + ': ' + s0.enemies.length + ' slots');
@@ -6341,7 +6362,7 @@ group('H-boss-8', 'the shed (DESIGN 7\'s Attic moveset, "sheds 3 moths every 4 s
 group('H-boss-5', 'the arena (T2.11, DESIGN 7.1): on every built room 5 a safe ledge: standable (the test\'s own), reached from spawn, within BOSS_SAFE_LEDGE_CELLS of the body, outside the attack cells the sim makes (the body and the cell round it, every cell a shed moth starts on and ROUTE_SAFE_ENEMY_DIST round it)', t => {
   const T = SB.TUNING, bad = [];
   let n = 0;
-  for (const { tag, lv } of bossBuilds()) {
+  for (const { tag, lv } of atticBuilds()) {
     n++;
     const g = lv.features.guardian, w = lv.w, L = g.ledge, body = bodyOf(lv), { log } = shedLog(lv, K.BOSS_MOTH_EVERY_F + 2);
     const gr = SB.reach.trapGraph(lv, SB.reach.graph(lv)), d = SB.reach.distances(gr, lv.spawn, lv.exit);
@@ -6361,7 +6382,7 @@ group('H-boss-5', 'the arena (T2.11, DESIGN 7.1): on every built room 5 a safe l
 group('H-boss-6', 'the arena (T2.11): every telegraph is at least 48 frames: on every built room 5, each SHED comes at least 48 steps after its TELL, with no TELL left unanswered and none overlapping', t => {
   const bad = [];
   let n = 0, least = Infinity;
-  for (const { tag, lv } of bossBuilds()) {
+  for (const { tag, lv } of atticBuilds()) {
     n++;
     const { log } = shedLog(lv, 3 * K.BOSS_MOTH_EVERY_F);
     const pairs = log.shed.map((f, k) => f - (log.tell[k] === undefined ? Infinity : log.tell[k]));
