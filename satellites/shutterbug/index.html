@@ -99,6 +99,10 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #cropbar { display: flex; gap: 12px; padding: 10px 16px 14px; }
 #retake { min-height: 56px; flex: 0 0 auto; padding: 0 20px; border-radius: 12px; border: 2px solid var(--slate); background: transparent; color: var(--paper); font-weight: 700; }
 #develop { flex: 1 1 auto; background: var(--sun); color: var(--ink); }
+#cropseek { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; image-rendering: pixelated; }
+#crop.seeking #develop { opacity: 0.6; }
+#cropfrom { position: absolute; border: 2px dashed var(--paper); opacity: 0.5; pointer-events: none; }
+#crop.nothing #retake { background: var(--sun); color: var(--ink); border-color: var(--sun); }
 #crop.stuck #develop { background: transparent; color: var(--ash); border: 2px dashed var(--slate); }
 #cropsay { margin: 0 16px 8px; min-height: 1em; color: var(--pewter); font-size: 0.75rem; }
 
@@ -378,7 +382,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
 <main id="crop" class="screen" aria-label="Crop">
   <div id="croptop"><button id="croptitle" type="button" data-copy="toTitle"></button><p id="crophint" data-copy="cropHint"></p></div>
   <div id="cropstage"><canvas id="cropview"></canvas>
-    <div id="cropbox"><canvas id="overlay" width="96" height="192"></canvas><p id="tighter" data-copy="tighter" hidden></p></div></div>
+    <div id="cropbox"><canvas id="overlay" width="96" height="192"></canvas><canvas id="cropseek" width="16" height="16" role="img" data-aria="seeking" hidden></canvas><p id="tighter" data-copy="tighter" hidden></p></div><div id="cropfrom" hidden></div></div>
   <div id="cropbar"><button id="retake" type="button" data-copy="retake"></button><button id="develop" class="big" type="button" data-copy="develop"></button></div>
   <p id="cropsay" aria-live="polite"></p>
 </main>
@@ -473,6 +477,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
     OTSU_MIN: 70, OTSU_MAX: 140, SMOOTH_PASSES: 2, PLATFORM_RUN_MIN: 3, EDGE_DROP_L: 60,
     LANDMARK_MIN: 8, LANDMARK_COUNT: 3, SPAWN_ROW_FROM_BOTTOM: 2, EXIT_ROWS: 4, CEILING_LIGHT_L: 200, EXIT_LIGHT_SLACK: 2 /* Q11 */,
     REPAIR_REACH_FRAC: 0.4, TAB_W: 2, TAB_MAX: 12, TAB_STAIR_ACROSS: 3, TAB_STAIR_UP: 3, REPAIR_PASSES: 4, REPAIR_MAX_CHANGE: 0.15,
+    /* the floor and ceiling fallbacks (Stephen's ruling 31 Oct, "Floor becomes the ledge", Q180), only where the room
+       would be needsCrop: the floor band's top needs an open over solid run of FLOOR_RUN_MIN; a ceiling band row is at
+       least CEILING_BAND_FRAC solid; a fallback room climbs at least FALLBACK_MIN_CLIMB rows; a refusal with at least
+       DARK_CELL_FRAC of the cells of rows 1..h-2 darker than OTSU_MIN (solid under every threshold Otsu can pick) is
+       named dark (LEVELSR: by brightness, not by the solid count, which a lit room's shaded wall can reach) */
+    FLOOR_RUN_MIN: 3, CEILING_BAND_FRAC: 0.75, FALLBACK_MIN_CLIMB: 24, DARK_CELL_FRAC: 0.75,
     BIOME_SAT: 0.35, BIOME_MIN_FRAC: 0.10, FROST_MEAN_L: 170 /* Q4 */, PIPELINE_BUDGET_MS: 50,
     // 6.8 reach cone caps (the derived tables are clipped to these)
     JUMP_UP: 4, JUMP_ACROSS: 5, WALL_UP: 3, WALL_ACROSS: 4, STICKY_UP: 4, DEEP_EXTRA_UP: 1,
@@ -598,7 +608,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m1-3';
+  SB.BUILD = 'sb-m1-4';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -1299,8 +1309,21 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (var r = 0; r < runs.length && r < T.CAP_STICKY; r++) for (y = runs[r][2]; y <= runs[r][3]; y++) level.sticky[y * w + runs[r][1]] = 1;
   }
 
+  /* LEVELSR: a refusal whose standing row holds only open runs narrower than FLOOR_RUN_MIN (a floor band with a sliver
+     open at one edge) builds once more with the floor band rule (narrow); a room that built is never rebuilt */
   function build(rec, opts) {
     opts = opts || {};
+    var lv = buildAt(rec, opts, 0, 0), g = lv.needsCrop && opts.stage !== 'A' && lv.grid;
+    if (!g) return lv;
+    var y = g.h - SB.TUNING.SPAWN_ROW_FROM_BOTTOM, run = 0, best = 0, x;
+    for (x = 0; x < g.w; x++) { run = g.solid[y * g.w + x] ? 0 : run + 1; if (run > best) best = run; }
+    if (best < 1 || best >= SB.TUNING.FLOOR_RUN_MIN) return lv;
+    var again = buildAt(rec, opts, 0, 1);
+    return !again.needsCrop || again.cause ? again : lv;
+  }
+  /* et: the exit window's top row. 0 for every room; the ceiling fallback builds once more with it under the band.
+     narrow: the standing row's narrow runs are passed over and the floor band rule runs (build's second try) */
+  function buildAt(rec, opts, et, narrow) {
     var T = SB.TUNING, P = SB.palette, w = rec.w, h = rec.h, pal = rec.pal, i, x, y;
     if (rec.mode === 2) {                     /* Double Exposure: pal2 stacked above pal, a 24 x 96 climb (Q19) */
       var both = new Uint8Array(w * h * 2);
@@ -1344,14 +1367,32 @@ body.sb-modal .lwfb-fab { display: none !important; }
 
     /* DESIGN 6.6: spawn is the centre of the widest open run on the standing row above the floor (Q10). */
     var sy = h - T.SPAWN_ROW_FROM_BOTTOM, bestA = -1, bestLen = 0;
-    x = 0;
+    x = narrow ? w : 0;
     while (x < w) {
       if (solid[sy * w + x]) { x++; continue; }
       var e = x; while (e + 1 < w && !solid[sy * w + e + 1]) e++;
       if (e - x + 1 > bestLen) { bestLen = e - x + 1; bestA = x; }
       x = e + 1;
     }
-    if (bestA < 0) return { needsCrop: true, why: 'unreachable', detail: 'no open cell on the standing row above the floor' };
+    /* the floor band (Stephen's ruling 31 Oct, Q180), only where the standing row is solid wall to wall: the standing
+       row rises to the lowest row holding an open over solid run of at least FLOOR_RUN_MIN, the top of the photo's floor
+       or furniture band; the spawn is the centre of that row's widest such run, ties to the leftmost */
+    var fell = 0;
+    for (y = h - T.SPAWN_ROW_FROM_BOTTOM - 1; bestA < 0 && y >= 1; y--) {
+      var rowA = -1, rowLen = 0;
+      x = 0;
+      while (x < w) {
+        if (solid[y * w + x] || !solid[(y + 1) * w + x]) { x++; continue; }
+        var e2 = x; while (e2 + 1 < w && !solid[y * w + e2 + 1] && solid[(y + 1) * w + e2 + 1]) e2++;
+        if (e2 - x + 1 > rowLen) { rowLen = e2 - x + 1; rowA = x; }
+        x = e2 + 1;
+      }
+      if (rowLen >= T.FLOOR_RUN_MIN) { sy = y; bestA = rowA; bestLen = rowLen; fell = 1; }
+      /* LEVELSR: a fully open row ends the search: the band's top lies below it in steps too narrow to stand on (a
+         floor line seen at a slant), and a run above it is a frame on the wall, not the floor */
+      else if (openRow(solid, w, y)) break;
+    }
+    if (bestA < 0) return refusal(solid, plat, L, w, h, h, et, -1, 'unreachable', 'no open cell on the standing row above the floor, and no open over solid run of ' + T.FLOOR_RUN_MIN + ' above it');
     var spawn = sy * w + bestA + ((bestLen - 1) >> 1);
 
     /* the ceiling light: the brightest 4 connected cluster of cells over CEILING_LIGHT_L in the top EXIT_ROWS rows,
@@ -1359,7 +1400,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        sum let a big white patch beat a brighter lamp); the exit candidate (T0.11a chooses by reach distance) is its
        lowest standable cell */
     var top = new Uint8Array(n);
-    for (y = 0; y < T.EXIT_ROWS && y < h; y++) for (x = 0; x < w; x++) if (!solid[y * w + x] && L[y * w + x] > T.CEILING_LIGHT_L) top[y * w + x] = 1;
+    for (y = et; y < et + T.EXIT_ROWS && y < h; y++) for (x = 0; x < w; x++) if (!solid[y * w + x] && L[y * w + x] > T.CEILING_LIGHT_L) top[y * w + x] = 1;
     var lights = components(top, w, h), light = null, bestPeak = -1;
     for (i = 0; i < lights.length; i++) {          /* components() lists them larger first, then lowest first cell */
       var peak = 0; for (var q = 0; q < lights[i].length; q++) if (L[lights[i][q]] > peak) peak = L[lights[i][q]];
@@ -1372,7 +1413,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       negative: negative, L: L, solid: solid, plat: plat, tab: z(), slick: z(), sticky: z(), trap: z(),
       otsuT: otsuT, landmarks: landmarks, spawn: spawn, exit: -1, beacon: { idx: -1, cells: new Int32Array(0) },
       features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null },
-      repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false
+      repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false, exitTop: et
     };
     level.light = light ? Int32Array.from(light) : new Int32Array(0);
     /* the biome's surfaces (T1.1), before the reach graph reads them. The first ever free play room runs without its
@@ -1396,8 +1437,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var bare = landmarks.length === 0, anyPlat = false;
     for (i = 0; i < n && !anyPlat; i++) if (plat[i]) anyPlat = true;
     var fixed = repair(level, light, landmarks);
-    if (fixed.needsCrop) return fixed;
+    var lostF = fell ? h - T.SPAWN_ROW_FROM_BOTTOM - sy : 0;
+    if (fixed.needsCrop) {
+      /* the ceiling band (Stephen's ruling 31 Oct, Q180), only where repair fails: when the rows from row 1 down are
+         each at least CEILING_BAND_FRAC solid, build once more with the exit window moved under that band */
+      var cb = ceilingEnd(solid, w, h);
+      if (et === 0 && cb > 1) return buildAt(rec, opts, cb, narrow);
+      return refusal(solid, plat, L, w, h, lostF, et, fell ? sy + 1 : -1, fixed.why, fixed.detail);
+    }
     var exit = fixed.exit;
+    /* a fallback room climbs at least FALLBACK_MIN_CLIMB rows from its spawn to its exit, else an honest needsCrop */
+    var climb = Math.floor(spawn / w) - Math.floor(exit / w);
+    if ((fell || et > 0) && climb < T.FALLBACK_MIN_CLIMB) return refusal(solid, plat, L, w, h, lostF, et, fell ? sy + 1 : -1, 'unreachable', 'the climb left is ' + climb + ' rows, under ' + T.FALLBACK_MIN_CLIMB + ' (the spawn on row ' + Math.floor(spawn / w) + ', the exit on row ' + Math.floor(exit / w) + ')');
     /* the default spread (DESIGN 6.11): a room with no landmark and no platform got its climb from the stair's two
        legs; a speck slot and a fodder slot are reserved as data for M1 */
     if (bare && !anyPlat) level.repair.spread = spreadSlots(level, fixed.d);
@@ -1417,8 +1468,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
      reach distance from spawn, the light winning when its own farthest reachable cell is within EXIT_LIGHT_SLACK (Q11);
      every tie to the lowest index; -1 when the top rows hold no reached standable cell */
   function exitByReach(level, light, d) {
-    var T = SB.TUNING, w = level.w, exit = -1, maxD = -1, i, q;
-    for (i = 0; i < T.EXIT_ROWS * w; i++) if (standableIn(level, i) && d[i] > maxD) { maxD = d[i]; exit = i; }
+    var T = SB.TUNING, w = level.w, exit = -1, maxD = -1, i, q, et = level.exitTop || 0;
+    for (i = et * w; i < (et + T.EXIT_ROWS) * w; i++) if (standableIn(level, i) && d[i] > maxD) { maxD = d[i]; exit = i; }
     if (exit >= 0 && light) {
       var lit = Array.from(light).sort(function (a, b) { return a - b; }), lc = -1;
       for (q = 0; q < lit.length; q++) if (standableIn(level, lit[q]) && d[lit[q]] >= 0 && (lc < 0 || d[lit[q]] > d[lc])) lc = lit[q];
@@ -1429,14 +1480,36 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* a room whose top rows nothing reaches (before repair): the light's lowest standable row at its lowest index, else
      the brightest standable cell of the first top row that has one (ties to the lowest index) */
   function lightExit(level, light) {
-    var T = SB.TUNING, w = level.w, exit = -1, q, x, y;
+    var T = SB.TUNING, w = level.w, exit = -1, q, x, y, et = level.exitTop || 0;
     if (light) for (q = 0; q < light.length; q++) if (standableIn(level, light[q]) && (exit < 0 || Math.floor(light[q] / w) > Math.floor(exit / w) || (Math.floor(light[q] / w) === Math.floor(exit / w) && light[q] < exit))) exit = light[q];
-    for (y = 0; y < T.EXIT_ROWS && exit < 0; y++) {
+    for (y = et; y < et + T.EXIT_ROWS && exit < 0; y++) {
       var bl = -1;
       for (x = 0; x < w; x++) { var c = y * w + x; if (standableIn(level, c) && (bl < 0 || level.L[c] > level.L[bl])) bl = c; }
       exit = bl;
     }
     return exit;
+  }
+  /* the ceiling band: the first row from row 1 down that is under CEILING_BAND_FRAC solid (1 when row 1 is) */
+  function ceilingEnd(solid, w, h) {
+    var T = SB.TUNING, y, x, n;
+    for (y = 1; y < h - 1; y++) { n = 0; for (x = 0; x < w; x++) n += solid[y * w + x]; if (n < T.CEILING_BAND_FRAC * w) return y; }
+    return h - 1;
+  }
+  function openRow(solid, w, y) { for (var x = 0; x < w; x++) if (solid[y * w + x]) return false; return true; }
+  /* an honest needsCrop with its cause for the crop screen's copy (Q180, LEVELSR): dark when DARK_CELL_FRAC of the cells
+     of rows 1..h-2 are darker than OTSU_MIN, else the band that took more of the climb (lostF rows to the floor band,
+     lostC to the ceiling band; a tie to the floor), else none. A floor band with no spawn on it (floorTop -1) is the
+     rows from h-2 up each at least CEILING_BAND_FRAC solid; when they reach row 1 the whole box is solid, no band
+     explains it, no band is marked and no cause is named. The grid and the bands go with it, so the crop overlay marks
+     them */
+  function refusal(solid, plat, L, w, h, lostF, lostC, floorTop, why, detail) {
+    var T = SB.TUNING, dim = 0, i, x, y, k, fb = -1, cb = ceilingEnd(solid, w, h);
+    for (i = w; i < (h - 1) * w; i++) if (L[i] < T.OTSU_MIN) dim++;
+    for (y = h - 2; y >= 1; y--) { for (k = 0, x = 0; x < w; x++) k += solid[y * w + x]; if (k < T.CEILING_BAND_FRAC * w) break; fb = y; }
+    var whole = fb === 1;
+    if (whole) { floorTop = -1; cb = -1; } else if (floorTop < 0 && lostF) floorTop = fb;
+    var cause = dim >= T.DARK_CELL_FRAC * (h - 2) * w ? 'dark' : whole ? null : lostC > lostF ? 'ceiling' : lostF && floorTop > 0 ? 'floor' : null;
+    return { needsCrop: true, why: why, detail: detail, cause: cause, band: { floor: floorTop, ceiling: cb > 1 ? cb : -1 }, grid: { w: w, h: h, solid: solid, plat: plat } };
   }
   function standableIn(level, c) { var w = level.w; return c >= 0 && c + w < w * level.h && !level.solid[c] && (level.solid[c + w] === 1 || level.plat[c + w] === 1); }
 
@@ -1459,7 +1532,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return near;
   }
   function repair(level, light, landmarks) {
-    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k, pass, tabs = 0;
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k, pass, tabs = 0, et = level.exitTop || 0;
     var near = landmarkNear(level, landmarks);
     for (pass = 0; ; pass++) {
       var g = SB.reach.graph(level), d = SB.reach.distances(g, level.spawn), frac = SB.reach.reachableFrac(g, d);
@@ -1479,8 +1552,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (exit >= 0 && frac >= T.REPAIR_REACH_FRAC) { tx = exit % w; ty = (exit - tx) / w; }
       else if (exit < 0) {
         if (light) for (k = 0; k < light.length; k++) if (standableIn(level, light[k]) && d[light[k]] < 0 && (best < 0 || light[k] < best)) best = light[k];
-        for (i = 0; i < T.EXIT_ROWS * w && best < 0; i++) if (standableIn(level, i) && d[i] < 0) best = i;
-        if (best >= 0) { tx = best % w; ty = (best - tx) / w; } else ty = T.EXIT_ROWS - 1;
+        for (i = et * w; i < (et + T.EXIT_ROWS) * w && best < 0; i++) if (standableIn(level, i) && d[i] < 0) best = i;
+        if (best >= 0) { tx = best % w; ty = (best - tx) / w; } else ty = et + T.EXIT_ROWS - 1;
       } else {
         var mass = largestUnreached(level, d);
         tx = mass % w; ty = (mass - tx) / w;
@@ -3665,12 +3738,80 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return C.clamp({ x: px - fx * w, y: py - fy * w * 2, w: w, h: w * 2 }, bw, bh);
   };
 
+  /* The auto crop (QUESTIONS Q96 ruling 3, Q181, Q183): when Develop meets a box the build refuses, the crop screen tries
+     the boxes of the photo in this order until one builds. Every size from the player's own down to the smallest box,
+     by SEEK.SHRINK a step; at each size a lattice anchored the way the refusal's cause points: a floor refusal's box
+     ends SEEK.KEEP rows below the floor band's top (the bottom lifted off the floor, a ledge kept), a ceiling
+     refusal's starts SEEK.KEEP rows above the band's foot (the top lowered), any other keeps its centre; from that
+     anchor the lattice steps a quarter box sideways out to both edges of the photo and a quarter box height up and
+     down to its top and bottom. Every box is clamped into the photo; the player's own box (it already refused) and
+     any box within one grid cell of a box before it, the same size, are left out, so no two tries read nearly the
+     same grid. The order is by a cost in quarter box steps, the nearest the player's framing first (SEEK.COST, fitted
+     on 95 real photographs and the 60 model rooms, Q183): each quarter sideways 1; each size step SIZE (about how far
+     the box's sides move); each quarter height the cause's way ALONG (up off a floor, so the boxes above the
+     furniture come before the boxes that sink into it; down from a ceiling; up otherwise), the other way AGAINST (a
+     ceiling refusal's box may still rise where the band was the photo's sky); a box on the photo's left or right edge
+     less EDGE, the one predictor the probe's data supports (at the edges 37 to 44 in 100 boxes build, inside 28 to
+     32). Ties keep the lattice's own order. Pure and deterministic: tools/room-model.js runs this same function over
+     the model rooms. The search's numbers: SHRINK (the size step), KEEP (the rows of a refusing band the anchored box
+     keeps), SLICE_MS (the most one animation frame spends on the search), CAP (the most builds one search may spend
+     before the message shows: the corpus's last first build is the 62nd, CAP leaves room for the page's canvas
+     downscale reading a photo a little differently), SHOW_MS (how long the chosen box shows before it develops). */
+  C.SEEK = Object.freeze({ SHRINK: 0.88, KEEP: 4, SLICE_MS: 40, CAP: 80, SHOW_MS: 700, COST: Object.freeze({ SIZE: 0.5, ALONG: 5, AGAINST: 12, EDGE: 3.5 }) });
+  C.seekBoxes = function (c, bw, bh, cause, band) {
+    var all = [], seen = {}, w = c.w, si = 0, mw = minW(bw, bh), cx = c.x + c.w / 2, top = c.y, bot = c.y + c.h, GW = SB.GRID.W, GH = SB.GRID.H, K = C.SEEK.KEEP, T = C.SEEK.COST;
+    if (band && cause === 'floor' && band.floor > 0) bot = Math.min(bot, c.y + (band.floor + K) / GH * c.h);
+    if (band && cause === 'ceiling' && band.ceiling > 1) top = Math.max(top, c.y + (band.ceiling - K) / GH * c.h);
+    var vdir = cause === 'ceiling' ? 1 : -1;   /* the cause's way: down from a ceiling, else up */
+    var add = function (b, a, q) {
+      var k = b.x + ',' + b.y + ',' + b.w;
+      if (seen[k]) return;
+      seen[k] = 1;
+      var dx = Math.abs(b.x + b.w / 2 - cx) / q, dy = vdir * (b.y - a) / (b.h / 4);
+      all.push({ b: b, n: all.length, cost: T.SIZE * si + dx + (dy >= 0 ? T.ALONG * dy : -T.AGAINST * dy) - (b.x === 0 || b.x + b.w === bw ? T.EDGE : 0) });
+    };
+    var j, k, i, m;
+    for (;;) {
+      var h = w * 2, q = w / 4, ay = cause === 'floor' ? bot - h : cause === 'ceiling' ? top : (top + bot - h) / 2;
+      /* the lattice from the photo's top edge to its bottom and from its left edge to its right (one step past each,
+         clamped onto it) */
+      var a = Math.max(0, Math.min(bh - h, ay)), x0 = cx - w / 2, ky = h / 4;
+      var k0 = Math.floor(-x0 / q), k1 = Math.ceil((bw - w - x0) / q), j0 = Math.floor(-ay / ky), j1 = Math.ceil((bh - h - ay) / ky);
+      for (j = j0; j <= j1; j++) for (k = k0; k <= k1; k++) add(C.clamp({ x: x0 + k * q, y: ay + j * ky, w: w, h: h }, bw, bh), a, q);
+      if (w <= mw) break;
+      si++;
+      w = Math.max(mw, Math.round(w * C.SEEK.SHRINK));
+    }
+    all.sort(function (p, r) { return p.cost - r.cost || p.n - r.n; });
+    /* the near duplicate filter by buckets one grid cell square (PHOTO1R): a box kept is filed under its width and the
+       cell its corner falls in, so a box within one cell of it sits in that bucket or a neighbour, and each candidate
+       is compared with the boxes of nine buckets, never with every box kept (a long screenshot's list stalled Develop).
+       No two boxes kept share a bucket, so the comparisons are at most nine a candidate; the list is the one a scan of
+       every kept box gives. C.seekStats counts them (H-seek-1) */
+    var out = [], near = {}, b, s, cl, u, v, cmp = 0;
+    var cell = function (w, x, y) { return w + ':' + x + ',' + y; };
+    var file = function (b) { var key = cell(b.w, Math.floor(b.x * GW / b.w), Math.floor(b.y * GH / b.h)); (near[key] || (near[key] = [])).push(b); };
+    file(c);   /* the player's own box, and any box within a cell of it, already refused */
+    for (i = 0; i < all.length; i++) {
+      b = all[i].b; cl = false; j = Math.floor(b.x * GW / b.w); k = Math.floor(b.y * GH / b.h);
+      for (u = -1; u <= 1 && !cl; u++) for (v = -1; v <= 1 && !cl; v++) {
+        s = near[cell(b.w, j + u, k + v)];
+        for (m = 0; s && m < s.length && !cl; m++) { cmp++; cl = Math.abs(s[m].x - b.x) * GW < b.w && Math.abs(s[m].y - b.y) * GH < b.h; }
+      }
+      if (!cl) { file(b); out.push(b); }
+    }
+    C.seekStats = { candidates: all.length, kept: out.length, cmp: cmp };
+    return out;
+  };
+
   /* downscale(source, crop) -> Uint8Array of GRID.W x GRID.H x 3 (RGB, row major): the crop drawn by halves until it is
      under twice the target, then one smoothed draw to the grid (one draw from a 1024 photo aliases on busy rooms, Q53) */
-  C.downscale = function (src, crop, gw, gh) {
-    var W = gw || SB.GRID.W, H = gh || SB.GRID.H;
-    var w = crop.w, h = crop.h, cv = document.createElement('canvas'), cx;
-    cv.width = w; cv.height = h; cx = cv.getContext('2d');
+  /* canvasOf(w, h), optional: the canvas to draw on (the auto crop's worker passes an OffscreenCanvas; the page a
+     <canvas>), so the worker downscales by these same steps */
+  C.downscale = function (src, crop, gw, gh, canvasOf) {
+    var W = gw || SB.GRID.W, H = gh || SB.GRID.H, mk = canvasOf || pageCanvas;
+    var w = crop.w, h = crop.h, cv = mk(w, h), cx;
+    cx = cv.getContext('2d');
     cx.imageSmoothingEnabled = true; cx.imageSmoothingQuality = 'high';
     cx.drawImage(src, crop.x, crop.y, crop.w, crop.h, 0, 0, w, h);
     while (w >= 2 * W && h >= 2 * H) {
@@ -3678,14 +3819,55 @@ body.sb-modal .lwfb-fab { display: none !important; }
       cx.drawImage(cv, 0, 0, w, h, 0, 0, hw, hh);
       w = hw; h = hh;
     }
-    var out = document.createElement('canvas'), ox;
-    out.width = W; out.height = H; ox = out.getContext('2d', { willReadFrequently: true });
+    var out = mk(W, H), ox = out.getContext('2d', { willReadFrequently: true });
     ox.imageSmoothingEnabled = true; ox.imageSmoothingQuality = 'high';
     ox.drawImage(cv, 0, 0, w, h, 0, 0, W, H);
     var d = ox.getImageData(0, 0, W, H).data, rgb = new Uint8Array(W * H * 3);
     for (var i = 0, j = 0; i < d.length; i += 4, j += 3) { rgb[j] = d[i]; rgb[j + 1] = d[i + 1]; rgb[j + 2] = d[i + 2]; }
     cv.width = cv.height = 0;
     return rgb;
+  };
+  function pageCanvas(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+
+  /* The capture normalisation (QUESTIONS Q182, the investigation's photo lens, tuned on 95 real photographs): the
+     grid's RGB, after the area average and before nearest, (1) white balanced toward grey at WB strength (each channel
+     scaled by 1 - WB + WB * the mean of the three channel sums / its own sum), then (2) its luminance stretched so the
+     P_LO and P_HI percentiles of the cells' L land on L_LO and L_HI, each cell's three channels scaled by its own new
+     L over its old (its hue kept), rounded and clamped. The stretch's gain is at most MAX_GAIN: a nearly flat photo
+     (a blank wall, a black frame) has no contrast to spread, so its noise grows at most that much and, as the gain
+     is held back, the window slides back toward its own middle, so a white wall stays light and a black one dark
+     (at full gain the window is exactly L_LO..L_HI; the slide is continuous). A dim or tinted photo reaches the
+     palette's range instead of collapsing into one grey. It acts before nearest, so only a new photo's record
+     changes: a shared code or a fixture is a palette grid and never passes here. Pure and deterministic;
+     tools/capture-oracle.js holds its own copy (normalizeRGB), and H-norm-1 and the capture gate hold the two equal
+     byte for byte. */
+  C.NORM = Object.freeze({ WB: 0.5, P_LO: 0.1, P_HI: 0.9, L_LO: 40, L_HI: 224, MAX_GAIN: 4 });
+  C.normalize = function (rgb) {
+    var N = C.NORM, n = rgb.length / 3, out = new Uint8Array(rgb.length), t = new Float64Array(rgb.length), L = new Float64Array(n);
+    var sr = 0, sg = 0, sb = 0, i, c;
+    for (i = 0; i < n; i++) { sr += rgb[3 * i]; sg += rgb[3 * i + 1]; sb += rgb[3 * i + 2]; }
+    var m = (sr + sg + sb) / 3, kr = sr > 0 ? 1 - N.WB + N.WB * m / sr : 1, kg = sg > 0 ? 1 - N.WB + N.WB * m / sg : 1, kb = sb > 0 ? 1 - N.WB + N.WB * m / sb : 1;
+    for (i = 0; i < n; i++) {
+      t[3 * i] = rgb[3 * i] * kr; t[3 * i + 1] = rgb[3 * i + 1] * kg; t[3 * i + 2] = rgb[3 * i + 2] * kb;
+      L[i] = 0.299 * t[3 * i] + 0.587 * t[3 * i + 1] + 0.114 * t[3 * i + 2];
+    }
+    var s = Array.prototype.slice.call(L).sort(function (x, y) { return x - y; });
+    var lo = s[Math.floor(N.P_LO * n)], hi = s[Math.floor(N.P_HI * n)], a0 = (N.L_HI - N.L_LO) / Math.max(1, hi - lo), a = Math.min(a0, N.MAX_GAIN);
+    var ms = (lo + hi) / 2, mt = (N.L_LO + N.L_HI) / 2, cc = mt + (ms - mt) * (1 - a / a0);
+    for (i = 0; i < n; i++) {
+      var f = L[i] > 0 ? (cc + (L[i] - ms) * a) / L[i] : 1;
+      for (c = 0; c < 3; c++) out[3 * i + c] = Math.max(0, Math.min(255, Math.round(t[3 * i + c] * f)));
+    }
+    return out;
+  };
+  /* gridRecord(rgb, focal) -> the record's JSON form from the grid's RGB as the downscale gives it: normalised (above),
+     then the nearest palette colour per cell (DESIGN 6.2), the focal cell or none. The crop screen and the auto crop's
+     worker both make their records here */
+  C.gridRecord = function (rgb, focal) {
+    var W = SB.GRID.W, H = SB.GRID.H, pal = new Uint8Array(W * H);
+    rgb = C.normalize(rgb);
+    for (var i = 0; i < W * H; i++) pal[i] = SB.palette.nearest(rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2]);
+    return { v: SB.record.V, w: W, h: H, mode: 0, focal: focal >= 0 ? focal : null, rows: SB.record.palToRows(pal, W, H), rows2: null };
   };
 
   /* release(source): the decoded photo leaves memory now (an ImageBitmap closes; a canvas fallback is emptied) */
@@ -4697,7 +4879,16 @@ body.sb-modal .lwfb-fab { display: none !important; }
     retake: 'Retake',
     develop: 'Develop',
     tighter: 'Try a tighter crop',
+    tighterFloor: 'The floor fills the bottom of the box. Make the box smaller and lift it off the floor.',
+    tighterCeiling: 'The top of the box is all ceiling. Lower the box.',
+    tighterDark: 'Too dark to find a floor. Try a brighter photo.',
+    nothingClimbs: 'Nothing in this photo can be climbed. Try another photo.',
+    nothingDark: 'This photo is too dark to climb. A dim room or a night sky reads as one wall. Try a brighter photo.',
     cropHint: 'Drag and pinch to frame the room. Tap a shape to hide the chest there.',
+    seeking: 'Looking for a box that builds',
+    seekHint: 'Looking for a box that builds. Touch the photo to stop.',
+    seekFound: 'Found a box that builds.',
+    nothingHint: 'Tap Retake for another photo.',
     badPhoto: 'That photo did not open. Try another.',
     photoRoom: 'Your room',
     death: 'The bug fell out of the picture',
@@ -4910,7 +5101,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.photoAlive = function () { return !!CR.src; };
   ui.releasePhoto = function () { if (CR.src && CR.src.close) { try { CR.src.close(); } catch (e) { /* gone */ } } CR.src = null; };
   function cropSay(t) { document.getElementById('cropsay').textContent = t || ''; }
-  function openPicker(id) { CR.from = id; var inp = document.getElementById(id); inp.value = ''; inp.click(); }
+  /* the line over the photo says what the screen is doing (PHOTO1R): how to frame at rest, that the search is looking
+     and that a touch stops it, that it found a box, and after a search that found nothing, the button that gets
+     another photo (Retake, set apart in Sun while the message shows) */
+  function cropHint(key) { var h = document.getElementById('crophint'); if (h.getAttribute('data-copy') !== key) { h.setAttribute('data-copy', key); h.textContent = ui.COPY[key]; } }
+  /* a picker opened (Shoot, Choose, Retake, Next room) ends any search first: a box found behind the chooser would
+     develop the old photo's room under it (PHOTO1R) */
+  function openPicker(id) { seekStop(); CR.from = id; var inp = document.getElementById(id); inp.value = ''; inp.click(); }
   /* a decode lands only where it was asked for: a newer pick, or a room started meanwhile (Develop on the old crop
      while a retake decodes), drops it, so a late photo never releases the one a reveal shows nor pulls the player back */
   function onFile(e) {
@@ -4921,6 +5118,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var stale = function () { return tok !== CR.token || ui.screen !== from; };
     SB.capture.decode(f).then(function (bm) {
       if (stale()) { if (bm && bm.close) bm.close(); return; }
+      seekStop();
       ui.releasePhoto();
       CR.src = bm; CR.bw = bm.width; CR.bh = bm.height; CR.crop = SB.capture.fit(CR.bw, CR.bh); CR.focal = -1; CR.last = null;
       ui.show('crop');
@@ -4942,21 +5140,46 @@ body.sb-modal .lwfb-fab { display: none !important; }
     cv.style.width = (CR.bw * k) + 'px'; cv.style.height = (CR.bh * k) + 'px'; cv.style.left = CR.ox + 'px'; cv.style.top = CR.oy + 'px';
     box.style.left = (CR.ox + CR.crop.x * k) + 'px'; box.style.top = (CR.oy + CR.crop.y * k) + 'px';
     box.style.width = (CR.crop.w * k) + 'px'; box.style.height = (CR.crop.h * k) + 'px';
+    var fr = document.getElementById('cropfrom'), f = CR.fromBox;
+    fr.hidden = !f;
+    if (f) { fr.style.left = (CR.ox + f.x * k) + 'px'; fr.style.top = (CR.oy + f.y * k) + 'px'; fr.style.width = (f.w * k) + 'px'; fr.style.height = (f.h * k) + 'px'; }
   }
   /* the record from the box: the grid downscale, the nearest palette colour per cell (DESIGN 6.2), the focal cell */
-  function recordOfCrop() {
-    var W = SB.GRID.W, H = SB.GRID.H, rgb = SB.capture.downscale(CR.src, CR.crop, W, H), pal = new Uint8Array(W * H);
-    for (var i = 0; i < W * H; i++) pal[i] = SB.palette.nearest(rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2]);
-    return SB.record.fromJSON({ v: SB.record.V, w: W, h: H, mode: 0, focal: CR.focal >= 0 ? CR.focal : null, rows: SB.record.palToRows(pal, W, H), rows2: null });
-  }
+  function recordJSON(crop, focal) { return SB.capture.gridRecord(SB.capture.downscale(CR.src, crop, SB.GRID.W, SB.GRID.H), focal); }
+  function recordOfCrop() { return SB.record.fromJSON(recordJSON(CR.crop, CR.focal)); }
+  /* a refusal says its cause (Q180, Stephen's ruling 31 Oct): the floor band, the ceiling band, a dark photo; a refusal
+     with no named cause keeps the one message every refusal had before. Since the auto crop (Q181) these show only
+     with the search skipped (the dev flag ?seek=0): after a search that found nothing, NOTHING_SAYS (Q183) says that
+     nothing in the photo can be climbed and asks for another photo, never for a tighter crop; a dark photo's names a
+     night sky, the band a night photo's sky reads as */
+  var CROP_SAYS = { floor: 'tighterFloor', ceiling: 'tighterCeiling', dark: 'tighterDark' };
+  var NOTHING_SAYS = { dark: 'nothingDark' };
   function rebuild(full) {
     if (!CR.src) return;
     var t0 = performance.now(), rec = recordOfCrop(), a = SB.pipeline.build(rec, { stage: 'A' }), lv = full ? SB.pipeline.build(rec, { firstRoom: !ui.firstRoomDone }) : null;
     CR.builds++; CR.ms = performance.now() - t0; CR.lastRec = rec; CR.lastA = a; CR.full = !!full; CR.last = full ? lv : null;
-    drawOverlay(full && !lv.needsCrop ? lv : a, full && !lv.needsCrop);
-    document.getElementById('tighter').hidden = !(full && lv.needsCrop);
-    document.getElementById('crop').classList.toggle('stuck', !!(full && lv.needsCrop));   /* Develop looks unable while it is */
-    if (PERF) cropSay(CR.ms.toFixed(1) + ' ms');
+    var no = !!(full && lv.needsCrop);
+    /* a refusing box at rest shows its reading and no message: Develop searches for a box that builds (Q181), and the
+       message waits until nothing in the photo does (refused below) */
+    CR.marked = drawOverlay(full && !no ? lv : no ? lv : a, full && !no, null);
+    document.getElementById('tighter').hidden = true;
+    document.getElementById('crop').classList.remove('stuck');
+    document.getElementById('crop').classList.remove('nothing');
+    if (!CR.seek) cropHint('cropHint');
+    /* the dev readout (?perf=1): the build's time, and on a refusal its cause and the rule that failed (lv.detail) */
+    if (PERF) cropSay(CR.ms.toFixed(1) + ' ms' + (no ? '; ' + (lv.cause || 'no cause') + '; ' + lv.detail : ''));
+  }
+  /* the refusal's message, once the search has found nothing that builds: its cause's sentence, its band marked, the
+     bar in the middle of the part the band leaves so it never covers the band it names (the shots, Q180) */
+  function refused(lv, searched) {
+    var say = document.getElementById('tighter'), key = searched ? NOTHING_SAYS[lv.cause] || 'nothingClimbs' : CROP_SAYS[lv.cause] || 'tighter';
+    CR.marked = drawOverlay(lv, false, lv);
+    say.setAttribute('data-copy', key); say.textContent = ui.COPY[key];
+    say.style.top = CR.marked ? 'calc(' + (100 * (CR.markY0 > 1 ? CR.markY0 / 2 : (CR.markY1 + SB.GRID.H) / 2) / SB.GRID.H).toFixed(1) + '% - 2.5em)' : '';
+    say.hidden = false;
+    document.getElementById('crop').classList.add('stuck');   /* Develop looks unable while it is */
+    /* after a search: the hint points to Retake, set apart; dragging is no fix when nothing in the photo builds */
+    if (searched) { document.getElementById('crop').classList.add('nothing'); cropHint('nothingHint'); }
   }
   /* while the box moves: at most one build per 100 ms, the last one after the moves stop */
   function schedule() {
@@ -4965,18 +5188,33 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (!CR.timer) CR.timer = setTimeout(function () { CR.timer = 0; CR.lastAt = performance.now(); rebuild(false); }, 100 - (now - CR.lastAt));
   }
   /* the overlay, one 4 px block per cell: solids shaded, platform tops Glare, tabs Film, the exit ringed in Sun, the
-     focal ringed in Paper */
-  function drawOverlay(lv, withExit) {
-    var cv = document.getElementById('overlay'), c = cv.getContext('2d'), W = lv.w, H = lv.h, P = SB.palette, i, x, y;
+     focal ringed in Paper. A refusal (no) marks the band that refused it in Brick under a Sun edge (Q180): the floor
+     band from its top row down, or the ceiling band from row 1; a reading with no level draws the grid its refusal
+     carries, never a blank box. Returns the rows marked; CR.drawn counts the cells it shaded (for the gate) */
+  function drawOverlay(lv, withExit, no) {
+    var cv = document.getElementById('overlay'), c = cv.getContext('2d'), g = lv.w ? lv : lv.grid, P = SB.palette, i, x, y, marked = 0;
     var hx = function (k) { return '#' + P.HEX[k]; };
     c.clearRect(0, 0, cv.width, cv.height);
+    CR.drawn = 0;
+    if (!g) return 0;
+    var W = g.w, H = g.h;
     for (i = 0; i < W * H; i++) {
       x = (i % W) * 4; y = Math.floor(i / W) * 4;
-      if (lv.solid[i]) { c.fillStyle = 'rgba(11,10,15,0.55)'; c.fillRect(x, y, 4, 4); }
-      else if (lv.plat[i]) { c.fillStyle = lv.tab && lv.tab[i] ? hx(P.I.FILM) : hx(P.I.GLARE); c.fillRect(x, y, 4, 1); }
+      if (g.solid[i]) { c.fillStyle = 'rgba(11,10,15,0.55)'; c.fillRect(x, y, 4, 4); CR.drawn++; }
+      else if (g.plat[i]) { c.fillStyle = lv.tab && lv.tab[i] ? hx(P.I.FILM) : hx(P.I.GLARE); c.fillRect(x, y, 4, 1); }
     }
+    var b = no && no.band, y0 = -1, y1 = -1;
+    if (b && no.cause === 'floor' && b.floor > 0) { y0 = b.floor; y1 = H; }
+    else if (b && no.cause === 'ceiling' && b.ceiling > 1) { y0 = 1; y1 = b.ceiling; }
+    if (y0 >= 0) {
+      c.fillStyle = 'rgba(' + P.RGB[P.I.BRICK].join(',') + ',0.35)'; c.fillRect(0, y0 * 4, W * 4, (y1 - y0) * 4);
+      c.fillStyle = hx(P.I.SUN); c.fillRect(0, (no.cause === 'floor' ? y0 : y1) * 4 - 1, W * 4, 2);
+      marked = y1 - y0;
+    }
+    CR.markY0 = y0; CR.markY1 = y1;
     if (withExit && lv.exit >= 0) { x = (lv.exit % W) * 4; y = Math.floor(lv.exit / W) * 4; c.strokeStyle = hx(P.I.SUN); c.lineWidth = 1; c.strokeRect(x - 1.5, y - 1.5, 7, 7); }
     if (CR.focal >= 0) { x = (CR.focal % W) * 4 + 2; y = Math.floor(CR.focal / W) * 4 + 2; c.strokeStyle = hx(P.I.PAPER); c.beginPath(); c.arc(x, y, 5, 0, 2 * Math.PI); c.stroke(); }
+    return marked;
   }
   /* the stage's pointers: one drags the box, two pinch it; a short still tap inside the box is the focal tap */
   var ptrs = {}, gest = null;
@@ -4986,7 +5224,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (ids.length === 1) gest = { kind: 'drag', id: ids[0], at: ptrs[ids[0]], crop: CR.crop, moved: 0, t0: performance.now() };
     else if (ids.length >= 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]]; gest = { kind: 'pinch', ids: ids.slice(0, 2), d0: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, crop: CR.crop, moved: 99 }; }
   }
-  function onDown(e) { if (ui.screen !== 'crop') return; ptrs[e.pointerId] = src(e); startGesture(); e.preventDefault(); }
+  /* a touch while the search runs (or its box shows) stops it; that gesture is never the focal tap, so a poke at a box
+     that seems to think hides no chest under the finger (PHOTO1R) */
+  function onDown(e) {
+    if (ui.screen !== 'crop') return;
+    var was = !!CR.seek;
+    if (was) seekStop();
+    ptrs[e.pointerId] = src(e); startGesture(); if (was && gest) gest.stopped = true;
+    e.preventDefault();
+  }
   function onMove(e) {
     if (!ptrs[e.pointerId] || !gest) return;
     ptrs[e.pointerId] = src(e);
@@ -5001,7 +5247,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   function onUp(e) {
     if (!ptrs[e.pointerId]) return;
-    var tapped = gest && gest.kind === 'drag' && gest.moved <= 8 && performance.now() - gest.t0 < 400 ? ptrs[e.pointerId] : null;
+    var tapped = gest && gest.kind === 'drag' && !gest.stopped && gest.moved <= 8 && performance.now() - gest.t0 < 400 ? ptrs[e.pointerId] : null;
     delete ptrs[e.pointerId];
     if (Object.keys(ptrs).length) { startGesture(); return; }
     gest = null;
@@ -5013,19 +5259,220 @@ body.sb-modal .lwfb-fab { display: none !important; }
     rebuild(true);
   }
   function develop() {
-    if (!CR.src) return;
+    if (CR.seek && CR.seek.phase === 'show' && CR.src) { var F = CR.seek; seekStop(); F.phase = 'done'; F.tapped = true; }   /* the found box: a tap develops it now */
+    if (!CR.src || CR.seek) return;
     if (!CR.full || !CR.last) rebuild(true);
-    if (CR.last.needsCrop) { document.getElementById('tighter').hidden = false; return; }
+    if (CR.last.needsCrop) {
+      /* the same box of the same photo already searched to nothing: its message again, not the same search again */
+      var L = CR.lastSeek;
+      if (L && L.phase === 'none' && L.pick === CR.token && JSON.stringify(L.from) === JSON.stringify(CR.crop)) { refused(CR.last, L.boxes.length > 0); return; }
+      seekStart(CR.last); return;
+    }
     ui.startRoom(CR.lastRec, ui.COPY.photoRoom, { level: CR.last, photo: { src: CR.src, crop: CR.crop }, ms: CR.ms });
   }
+
+  /* ------------------------------------------------ the auto crop (QUESTIONS Q96 ruling 3, Stephen 31 Oct; Q181) */
+  /* Develop on a refusing box: the boxes nearest the player's framing (SB.capture.seekBoxes, the cause's way)
+     are tried one after another until one builds, at most SEEK.CAP builds. Each try (the downscale, the record, the
+     build) runs in a worker made from the page's own core blocks and shell-capture's block (the same text harness.js
+     and fixtures/make.html load) on a copy of the decoded photo, so a slow downscale or refusal never holds the
+     screen: an animation frame only posts the next try. Without a worker (or OffscreenCanvas) the tries run here, a
+     frame starting another only while the longest try seen still fits SEEK.SLICE_MS, never more than one past it. The
+     seek marker loops at the box's centre meanwhile. A box the worker builds is read and built once more here, from
+     the page's own downscale, for the level Develop takes (a box this thread refuses goes on), the box drawn where the search put it for SEEK.SHOW_MS, then the room
+     develops; when none builds the box stays where the player left it and the refusal's message shows. A touch on the
+     stage stops the search (or the pending develop) and the box is the player's again. The photo never persists: the
+     worker's copy is in memory only and is closed when the search ends. Dev flags: ?seek=0 skips the search (the
+     refusal's message at once), ?seekworker=0 tries on this thread. */
+  var SEEK_OFF = /[?&]seek=0/.test(location.search), SEEK_MAIN = /[?&]seekworker=0/.test(location.search);
+  CR.seek = null; CR.lastSeek = null; CR.seekRuns = 0; CR.worker = undefined;
+  /* the seek marker's art hook: CROP_SEEK_ART draws frame f (0..3) of a 16x16 loop at 6 fps, shown at 4x. A code
+     placeholder (an Ink keylined Sun diamond climbing up and right with a trail of three Paper dots, after Astra's round
+     3 NOTES) until her crop_seek is spliced on
+     sb-weapons-2; the merge swaps this one function for a blit of crop_seek.seek_<f> */
+  ui.CROP_SEEK_ART = function (c, f) {
+    var P = SB.palette, x = 7 + f, y = 8 - f, k, d;
+    var dia = function (r, hex) { c.fillStyle = '#' + hex; for (d = -r; d <= r; d++) c.fillRect(x - (r - Math.abs(d)), y + d, 2 * (r - Math.abs(d)) + 1, 1); };
+    c.clearRect(0, 0, 16, 16);
+    for (k = 1; k <= 3; k++) {   /* the trail: three Paper dots on Ink, back down the path the diamond climbs */
+      c.fillStyle = '#' + P.HEX[P.I.INK]; c.fillRect(x - 2 * k - 1 - 1, y + 2 * k + 1 - 1, 3, 3);
+      c.fillStyle = '#' + P.HEX[P.I.PAPER]; c.fillRect(x - 2 * k - 1, y + 2 * k + 1, 1, 1);
+    }
+    dia(3, P.HEX[P.I.INK]); dia(2, P.HEX[P.I.SUN]);
+  };
+  function seekMarker(S, now) {
+    var rm = SB.settings ? SB.settings.reducedMotion : null, still = rm === null || rm === undefined ? !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) : !!rm;
+    var cv = document.getElementById('cropseek'), f = still ? 0 : Math.floor((now - S.t0) * 6 / 1000) % 4;   /* reduced motion: the first frame, still */
+    cv.hidden = !S || S.phase !== 'seek';
+    if (!cv.hidden && f !== S.frame) { S.frame = f; ui.CROP_SEEK_ART(cv.getContext('2d'), f); S.frames++; }
+  }
+  /* the worker's own part: it holds one photo copy at a time (closed on 'drop' or the next photo), and a try answers
+     whether that box builds, with the record it made */
+  function seekWorkerMain() {
+    var photo = null, ptok = 0, mk = function (w, h) { return new OffscreenCanvas(w, h); };
+    self.onmessage = function (e) {
+      var d = e.data;
+      if (d.type === 'photo' || d.type === 'drop') { if (photo) SB.capture.release(photo); photo = d.type === 'photo' ? d.bm : null; ptok = d.tok; return; }
+      if (d.type === 'held') { self.postMessage({ type: 'held', held: !!photo }); return; }   /* the gate's probe: does it hold a photo */
+      if (!photo || d.tok !== ptok) { self.postMessage({ tok: d.tok, i: d.i, built: false, lost: true }); return; }
+      var t0 = performance.now(), j = SB.capture.gridRecord(SB.capture.downscale(photo, d.box, SB.GRID.W, SB.GRID.H, mk), d.focal);
+      var rec = SB.record.fromJSON(j), lv = rec ? SB.pipeline.build(rec, { firstRoom: d.firstRoom }) : null;
+      self.postMessage({ tok: d.tok, i: d.i, built: !!lv && !lv.needsCrop, json: j, ms: performance.now() - t0 });
+    };
+  }
+  function seekWorker() {
+    if (CR.worker !== undefined) return CR.worker;
+    CR.worker = null;
+    if (SEEK_MAIN || typeof Worker !== 'function' || typeof Blob !== 'function' || typeof OffscreenCanvas !== 'function' || typeof createImageBitmap !== 'function') return null;
+    try {
+      var text = function (sel) { return Array.prototype.map.call(document.querySelectorAll(sel), function (el) { return el.textContent; }).join('\n;\n'); };
+      var src = 'var window = self;\n' + text('script[data-core]') + '\n;\n' + text('#shell-capture') + '\n;(' + seekWorkerMain.toString() + ')();\n';
+      CR.worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+      CR.worker.onmessage = seekReply;
+      /* a worker that fails is ended with its photo copy (DESIGN 6.1), and the box it was trying is tried again here */
+      var w = CR.worker;
+      w.onerror = function (e) {
+        if (e && e.preventDefault) e.preventDefault();
+        if (CR.worker !== w) return;
+        CR.worker = null;
+        try { w.terminate(); } catch (x) { /* gone */ }
+        var S = CR.seek;
+        if (S) { if (S.pend && S.phase === 'seek') { S.i--; S.builds--; S.retried = (S.retried || 0) + 1; } S.pend = null; S.mode = 'main'; S.busy = false; S.ready = true; }
+      };
+    } catch (e) { CR.worker = null; }
+    return CR.worker;
+  }
+  /* the player's focal point carried into a candidate box: the same spot in the photo, or none when the box leaves it */
+  function focalIn(S, box) {
+    if (!S.fp) return -1;
+    var gx = Math.floor((S.fp.x - box.x) / box.w * SB.GRID.W), gy = Math.floor((S.fp.y - box.y) / box.h * SB.GRID.H);
+    return gx >= 0 && gx < SB.GRID.W && gy >= 0 && gy < SB.GRID.H ? gy * SB.GRID.W + gx : -1;
+  }
+  function seekStart(no) {
+    var c = CR.crop, W = SB.GRID.W, H = SB.GRID.H, now = performance.now();
+    var S = CR.seek = { tok: ++CR.seekRuns, no: no, from: c, boxes: SEEK_OFF ? [] : SB.capture.seekBoxes(c, CR.bw, CR.bh, no.cause, no.band), i: 0, builds: 0,
+      t0: now, pick: CR.token, slices: [], est: 0, workMax: 0, busy: false, pend: null, phase: 'seek', chosen: null, frame: -1, frames: 0, firstRoom: !ui.firstRoomDone,
+      fp: CR.focal >= 0 ? { x: c.x + ((CR.focal % W) + 0.5) / W * c.w, y: c.y + (Math.floor(CR.focal / W) + 0.5) / H * c.h } : null };
+    S.mode = seekWorker() ? 'worker' : 'main'; S.ready = S.mode === 'main';
+    /* the worker's copy of the photo; a copy that cannot be made leaves the tries on this thread */
+    if (S.mode === 'worker') createImageBitmap(CR.src).then(function (bm) {
+      if (CR.seek !== S || !CR.worker) { bm.close(); return; }
+      CR.worker.postMessage({ type: 'photo', tok: S.tok, bm: bm }, [bm]); S.ready = true;
+    }, function () { if (CR.seek === S) { S.mode = 'main'; S.ready = true; } });
+    CR.lastSeek = S;
+    document.getElementById('crop').classList.add('seeking');
+    cropHint('seekHint');
+    seekMarker(S, now);
+    requestAnimationFrame(seekTick);
+  }
+  function seekTick(now) {
+    var S = CR.seek;
+    if (!S || S.phase !== 'seek') return;
+    if (!CR.src || ui.screen !== 'crop') { seekStop(); return; }
+    var t0 = performance.now(), n = 0, T = SB.capture.SEEK;
+    while (S.ready && !S.busy && S.i < S.boxes.length && S.builds < T.CAP && (n === 0 || performance.now() - t0 + S.est <= T.SLICE_MS)) {
+      var c0 = performance.now(), box = S.boxes[S.i], focal = focalIn(S, box);
+      S.i++; S.builds++; n++;
+      if (S.mode === 'worker' && CR.worker) {
+        S.busy = true; S.pend = { box: box, focal: focal };
+        CR.worker.postMessage({ type: 'try', tok: S.tok, i: S.i, box: box, focal: focal, firstRoom: S.firstRoom });
+      } else {
+        var rec = SB.record.fromJSON(recordJSON(box, focal)), lv = rec && SB.pipeline.build(rec, { firstRoom: S.firstRoom });
+        if (lv && !lv.needsCrop) { S.slices.push({ ms: performance.now() - t0, n: n }); seekFound(S, box, focal, rec, lv); return; }
+      }
+      S.est = Math.max(S.est, performance.now() - c0);
+    }
+    S.slices.push({ ms: performance.now() - t0, n: n });
+    seekMarker(S, now || t0);
+    if (S.ready && !S.busy && (S.i >= S.boxes.length || S.builds >= T.CAP)) { seekNone(S); return; }
+    requestAnimationFrame(seekTick);
+  }
+  function seekReply(e) {
+    var S = CR.seek, d = e.data;
+    if (d && d.type === 'held') { var r = CR.heldAsk; CR.heldAsk = null; if (r) r(d.held); return; }
+    if (!S || S.phase !== 'seek' || d.tok !== S.tok || !S.pend) return;
+    S.busy = false;
+    var p = S.pend; S.pend = null;
+    if (d.ms > S.workMax) S.workMax = d.ms;
+    if (!d.built) return;   /* the next frame tries the next box */
+    /* the box the worker built, read and built once more on this thread from the page's own <canvas> downscale: the
+       level Develop takes. The worker's OffscreenCanvas reads a box a few cells differently (PHOTO1R measured it in
+       Chrome), so its record is never the room: the room is the one a touch's rebuild of this box gives. Where this
+       thread's reading refuses, the search goes on */
+    var t0 = performance.now(), rec = SB.record.fromJSON(recordJSON(p.box, p.focal)), lv = rec && SB.pipeline.build(rec, { firstRoom: S.firstRoom });
+    S.finalMs = performance.now() - t0;
+    S.drift = (S.drift || 0) + (rec && d.json && SB.record.encode(SB.record.fromJSON(d.json)) !== SB.record.encode(rec) ? 1 : 0);
+    if (lv && !lv.needsCrop) seekFound(S, p.box, p.focal, rec, lv); else S.refusedHere = (S.refusedHere || 0) + 1;
+  }
+  function seekFound(S, box, focal, rec, lv) {
+    S.phase = 'show'; S.chosen = box; S.ms = performance.now() - S.t0; S.code = SB.record.encode(rec);
+    CR.crop = box; CR.focal = focal; CR.fromBox = S.from; layoutCrop();   /* the player's box stays as a faint trace */
+    CR.lastRec = rec; CR.last = lv; CR.full = true; CR.builds++;
+    document.getElementById('tighter').hidden = true; document.getElementById('crop').classList.remove('stuck');
+    CR.marked = drawOverlay(lv, true, null);
+    seekMarker(S, performance.now());
+    document.getElementById('crop').classList.remove('seeking');   /* Develop live: a tap develops the found box now */
+    cropHint('seekFound');
+    if (PERF) cropSay(S.builds + ' builds; ' + S.ms.toFixed(0) + ' ms; the box at ' + box.x + ',' + box.y + ' ' + box.w + 'x' + box.h);
+    seekShow(S);
+  }
+  /* the found box develops by itself only while the player can see it (PHOTO1R): with the page hidden (a locked
+     phone, another app) or the window's focus lost (the notification shade) it waits, and SHOW_MS after he is back
+     it develops, so the first reveal, which no tap may skip (DESIGN 5.2), is never spent unseen nor a room left
+     running unpaused (Q94 call 7). The away signals are the ones the room's pause reads (a blur ignored in a frame) */
+  function seekAway() { return document.hidden || (CR.blurred && !(document.hasFocus && document.hasFocus())); }
+  function seekShow(S) {
+    S.timer = setTimeout(function () {
+      S.timer = 0;
+      if (CR.seek !== S || S.phase !== 'show' || ui.screen !== 'crop' || !CR.src) return;
+      if (seekAway()) { S.held = (S.held || 0) + 1; return; }
+      seekStop(); S.phase = 'done';
+      develop();
+    }, SB.capture.SEEK.SHOW_MS);
+  }
+  function seekBack() {
+    var S = CR.seek;
+    if (S && S.phase === 'show' && !S.timer && !seekAway()) seekShow(S);
+  }
+  function seekNone(S) {
+    S.phase = 'none'; S.ms = performance.now() - S.t0;
+    seekStop();
+    CR.last = S.no;
+    refused(S.no, S.boxes.length > 0);
+    if (PERF) cropSay(S.builds + ' builds, none builds; ' + (S.no.cause || 'no cause') + '; ' + S.no.detail);
+  }
+  /* the search ends: the marker hidden, Develop live, any pending develop dropped */
+  ui.seekInfo = function () {
+    var S = CR.lastSeek, b = document.getElementById('cropbox');
+    if (!S) return null;
+    return { phase: S.phase, mode: S.mode, builds: S.builds, code: S.code || null, candidates: S.boxes.length, from: S.from, chosen: S.chosen, ms: S.ms || 0, finalMs: S.finalMs || 0, workMax: S.workMax,
+      slices: S.slices.length, sliceMax: S.slices.reduce(function (m, x) { return Math.max(m, x.ms); }, 0), multiOver: S.slices.filter(function (x) { return x.n > 1 && x.ms > SB.capture.SEEK.SLICE_MS; }).length,
+      frames: S.frames, marker: !document.getElementById('cropseek').hidden, held: S.held || 0, tapped: !!S.tapped, retried: S.retried || 0, drift: S.drift || 0, refusedHere: S.refusedHere || 0,
+      hint: document.getElementById('crophint').getAttribute('data-copy'), fromShown: !document.getElementById('cropfrom').hidden, drawn: { left: parseFloat(b.style.left), top: parseFloat(b.style.top), width: parseFloat(b.style.width) }, k: CR.k, ox: CR.ox, oy: CR.oy };
+  };
+  function seekStop() {
+    var S = CR.seek;
+    if (S && S.timer) clearTimeout(S.timer);
+    if (S && S.phase === 'seek') S.phase = 'stopped';
+    if (CR.worker) CR.worker.postMessage({ type: 'drop', tok: 0 });   /* the worker's photo copy closes now */
+    CR.seek = null; CR.fromBox = null;
+    document.getElementById('cropseek').hidden = true; document.getElementById('cropfrom').hidden = true;
+    document.getElementById('crop').classList.remove('seeking');
+    cropHint('cropHint');
+  }
+  /* the gate's probe of the worker's photo copy: true while it holds one, null with no worker */
+  ui.seekWorkerHeld = function () { return new Promise(function (r) { if (!CR.worker) { r(null); return; } CR.heldAsk = r; CR.worker.postMessage({ type: 'held' }); }); };
   ui.initCrop = function () {
+    window.addEventListener('blur', function () { if (!window.SWS_EMBED) CR.blurred = true; });
+    window.addEventListener('focus', function () { CR.blurred = false; seekBack(); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { CR.blurred = false; seekBack(); } });
     document.getElementById('shoot').addEventListener('click', function () { openPicker('fileshoot'); });
     document.getElementById('choose').addEventListener('click', function () { openPicker('filechoose'); });
     document.getElementById('fileshoot').addEventListener('change', onFile);
     document.getElementById('filechoose').addEventListener('change', onFile);
     document.getElementById('retake').addEventListener('click', function () { openPicker(CR.from || 'filechoose'); });
     document.getElementById('develop').addEventListener('click', develop);
-    document.getElementById('croptitle').addEventListener('click', function () { ui.releasePhoto(); G.gear = [0, 0, 0]; G.entry = [0, 0, 0]; ui.show('title'); });   /* a Title control ends the sitting (6.5) */
+    document.getElementById('croptitle').addEventListener('click', function () { seekStop(); ui.releasePhoto(); G.gear = [0, 0, 0]; G.entry = [0, 0, 0]; ui.show('title'); });   /* a Title control ends the sitting (6.5) */
     var st = document.getElementById('cropstage');
     st.addEventListener('pointerdown', onDown); st.addEventListener('pointermove', onMove);
     st.addEventListener('pointerup', onUp); st.addEventListener('pointercancel', onUp);
@@ -5571,7 +6018,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=3').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=4').catch(function () {}); } catch (e) { /* silent */ } });
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); SB.ui.installPrompt = e; document.getElementById('install').hidden = false; });
   SB.input.initStrip();
   window.addEventListener('resize', function () { var s = SB.ui.screen; if (s === 'play' || s === 'pause' || s === 'share' || s === 'clear' || s === 'dead') { SB.render.fit(); draw(); if (s === 'pause') SB.ui.placePaused(); } });
@@ -5598,9 +6045,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
     photoAlive: function () { return SB.ui.photoAlive(); },
     tabs: function () { return G.level ? G.level.repair.tabs : -1; },
     overlay: function () {
-      var CR = SB.ui.crop, a = CR.lastA, n = 0;
-      if (a && a.solid) for (var i = 0; i < a.solid.length; i++) n += a.solid[i];
-      return { builds: CR.builds, decodes: CR.decodes, solids: n, full: CR.full, needsCrop: CR.last ? !!CR.last.needsCrop : null, ms: CR.ms, focal: CR.focal, crop: CR.crop };
+      var CR = SB.ui.crop, a = CR.lastA, n = 0, g = a && (a.solid ? a : a.grid), no = CR.last && CR.last.needsCrop ? CR.last : null;
+      if (g) for (var i = 0; i < g.solid.length; i++) n += g.solid[i];
+      return { builds: CR.builds, decodes: CR.decodes, solids: n, full: CR.full, needsCrop: CR.last ? !!CR.last.needsCrop : null, ms: CR.ms, focal: CR.focal, crop: CR.crop,
+        cause: no ? no.cause : null, detail: no ? no.detail : null, band: no ? no.band : null, marked: CR.marked || 0, drawn: CR.drawn || 0, says: document.getElementById('tighter').textContent,
+        spawnRow: CR.last && !CR.last.needsCrop ? Math.floor(CR.last.spawn / CR.last.w) : -1, exitRow: CR.last && !CR.last.needsCrop ? Math.floor(CR.last.exit / CR.last.w) : -1,
+        shown: !document.getElementById('tighter').hidden, seeking: !!CR.seek, seekRuns: CR.seekRuns, seek: SB.ui.seekInfo() };
     },
     audioMade: function () { return SB.audio.made; },
     audioPlayed: function () { return Object.assign({}, SB.audio.played); },
