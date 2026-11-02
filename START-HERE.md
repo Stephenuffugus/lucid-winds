@@ -1,12 +1,20 @@
 # START HERE
 
-## 🗒 2 Nov 21:10 UTC (Opus) HIS CALLS: SHUTTERBUG AT $0.99; DEWBALL THE NEXT $1 CANDIDATE; LOAF TO ASTRA FOR A WHOLE PACK; LUCID WINDS PUBLISHING IS FABLE'S AND HIS
+## 🎳 2 Nov 20:45 UTC (Opus) DEWBALL dewball-v36 READY ON dewball-w567 `cdc057046`: ALL SEVEN WORLDS IN MODELS; NOT DEPLOYED (HIS LINE BELOW)
+- Built today on /workspaces/dewball-w567 (no credits): The Whole World (w7, 92 kinds) and Dream Meadow (w6, 54 kinds) in models, on top of Starfall Bay (w5, `85fc8b343`). Every new kind looked at (Blender four views, game camera pairs, world shots); none kept a primitive. Record: satellites/dewball/FORGE.md, the last three sections.
+- PERF FIX (drawing only, same.sh byte identical): w7 at 22 m drew all 4,466 instances as models, 4.5M triangles (over the 3x fence). lodSync gained LOD_SPECK 20 and LOD_GLOBE 1.2: now 2.2M at 22 m, 2.5M at 5 m, 1.7M at 44 m.
+- SIGN FIX: the globe's gate signs hung over the spawn ("13.0 m" banners across the screen); now on their fences; sign_test covers the globe, both plants red.
+- Gates green: report, gate-glb w6 w7 (+ --block atlas; the gate now accepts a globe kind wholly past the visible cap), same.sh, react, sign, manifest fresh. Stamp CACHE dewball-v36, ASSET_V and sw.js?v= 24 (v35 had moved only the CACHE).
+- HIS LINE (vault first, the 1,335 credits of Meshy originals exist only on this box): in a VS Code terminal tab, `env -u GITHUB_TOKEN gh auth login -h github.com -p https -w`, then at an idle prompt `! bash /home/codespace/dewball-drafts/deploy-dewball-v36.sh` (VAULT_LATER=1 ships without the vault). Dry run built the deploy commit (217 paths, satellites/dewball only), not pushed.
+- After it: merge dewball-w567 into add-sproing-jumper; then Dewball Play readiness (no privacy.html yet; twa_ready; store kit; the manifest says landscape, his call).
+
+## 🗒 2 Nov 18:26 UTC (Opus) HIS CALLS: SHUTTERBUG AT $0.99; DEWBALL THE NEXT $1 CANDIDATE; LOAF TO ASTRA FOR A WHOLE PACK; LUCID WINDS PUBLISHING IS FABLE'S AND HIS
 - Shutterbug: $0.99 (store/shutterbug-play/index.html says so). He is testing sb-m1-12 and looking for one real room photo for the first store shot.
 - Dewball: "a strong candidate for our next one dollar game", needs building out (w5 done on dewball-w567; w6, w7 and the vault release wait).
 - Loaf: "give Astra an entire pack so it can assess and help smooth it all out, then give us a single zip back with everything so Fable can plan the build with me". The brief is in Drive Astra/Loaf (ASTRA-LOAF-PACK-NOV02.txt, id 1LC0ysEUOch0ABT26HMyR3sqt6CTEsBTH, 8384 bytes, equal to docs/briefs/loaf/). The pack zip (35 files, 698 KB: the brief, 22 screens of the real app, LOAF_PLAN.md, LOAF_FURNISHINGS.md, four photo and 3D pairs of Barthalomew and Oreo) is /home/codespace/sb-drafts/loaf-pack/loaf-pack-for-astra-nov02.zip, sha256 36dd05f7...; he downloads it and hands it to Astra with the brief. Astra returns loaf-astra-pack-v1.zip; Fable plans the build with him from it.
 - Lucid Winds publishing: "something Fable and I will have to reconcile and plan". Nothing for the builder yet.
 
-## 📷 2 Nov 20:55 UTC (Opus) sb-m1-12 IS LIVE (deploy d88c45a06, tag sb-m1-12; index sha256 bed70c84..., sw.js and manifest.webmanifest equal on both origins; privacy.html served with the email_off fence stripped by the CDN and the address in plain text, as on Hues)
+## 📷 2 Nov 18:16 UTC (Opus) sb-m1-12 IS LIVE (deploy d88c45a06, tag sb-m1-12; index sha256 bed70c84..., sw.js and manifest.webmanifest equal on both origins; privacy.html served with the email_off fence stripped by the CDN and the address in plain text, as on Hues)
 In it: charms, the biome bosses, the Darkroom, the second monsters, the edge trims, the polish pass, Play readiness. The first deploy try stopped on deploy.sh's second guard (its list had not followed SERVED): fixed 479367acd. NEXT: his play notes on the Pixel; the Play submission waits for his call (store/shutterbug-play has the kit).
 
 ## 📷 2 Nov 20:30 UTC (Opus) sb-m1-12 STAMPED: POLISH + PLAY READY (twa_ready all ok, offline cold launch ok); it carries sb-m1-9 to sb-m1-11 (charms, bosses, Darkroom, second monsters), none shipped yet
