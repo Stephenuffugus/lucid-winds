@@ -713,6 +713,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     HIT_HEARTS: 1, HIT_IFRAMES_S: 1, HIT_KNOCKBACK_CELLS: 2, HIT_KNOCKBACK_FRAMES: 8 /* T0.16's "over 8 frames" */,
     BOSS_INTRO_S: 2, BOSS_TELEGRAPH_S: 0.8, BOSS_SAFE_LEDGE_CELLS: 6, BOSS_WEAK_MIN: 3, BOSS_OUTLINE_UNTIL: 0.25, BOSS_FALLBACK_HP: 20,
     STOMP_GRACE_S: 0.5 /* W3: a stomped enemy's contact off the hero */,
+    /* the second monsters (2 Nov): the bunny's roll, the owl's swoop, the crab's shell, the puff's cloud, the beetle's trail */
+    BUNNY_SEE_CELLS: 3, BUNNY_ROLL_PX: 1.5, BUNNY_ROLL_S: 1, BUNNY_REST_S: 1.5, OWL_SEE_CELLS: 5, OWL_SWOOP_PX: 1.75, OWL_SWOOP_S: 0.75, OWL_REST_S: 1.5,
+    CRAB_WALK_S: 3, CRAB_SHELL_S: 1, PUFF_EVERY_S: 3, PUFF_SWELL_S: 0.5, PUFF_CLOUD_S: 0.6, BEETLE_TRAIL_EVERY_S: 0.35, BEETLE_TRAIL_S: 0.7,
     /* the Darkroom (2 Nov): the starting collection, each weapon's tier and the price to develop it, a print that
        cannot be new paid in Dead pixels instead */
     DEV_START: ['J1', 'D1'], DEV_PRICE: [0, 30, 100, 300], DEV_DUP_DP: 30,
@@ -849,7 +852,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m1-10';
+  SB.BUILD = 'sb-m1-11';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -1044,7 +1047,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      and their code: nothing that was shared changes. */
   var V = 2, HEADER = 6, HEADER2 = 9, HEX = '0123456789abcdef';
   /* what this client knows of v2's three bytes (raised only by the lane that builds what a value means) */
-  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAGS_KNOWN = FLAG_KEYS;   /* FLAGS bit 0: the room's exit is locked by keys (2 Nov) */
+  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAG_BESTIARY = 2, FLAGS_KNOWN = FLAG_KEYS | FLAG_BESTIARY;   /* FLAGS bit 0: the exit locked by keys; bit 1: the second monsters (2 Nov) */
   function headOf(v) { return v === 1 ? HEADER : HEADER2; }
   /* a v2 header holding a byte this client does not know (a biome past BIOME_MAX, rules past RULES_MAX, a flag bit
      outside FLAGS_KNOWN): such a code is a newer client's, never 'bad' and never built */
@@ -1339,7 +1342,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var doc = validateSave(obj);
     return { doc: doc, write: JSON.stringify(doc) !== raw };
   }
-  SB.record = { V: V, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
+  SB.record = { V: V, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, FLAG_BESTIARY: FLAG_BESTIARY, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
     encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows, parseCode: parseCode, linkOf: linkOf,
     saveDefaults: saveDefaults, validateSave: validateSave, loadSave: loadSave,
     runValid: runValid, runFresh: runFresh, runEnter: runEnter, runClear: runClear, runDie: runDie, runRetry: runRetry,
@@ -1854,6 +1857,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the features (T1.2a, T1.2b): the ladder, the pocket, the door, the chest, the loot, the trap field and the
        enemies, in core-features' fixed order, after the ascent so they keep clear of it (the pocket never carves it);
        then the second round of the ascent and, when it fails, the degrade ladder (T1.3) */
+    level.bestiary = rec.v >= 2 && (rec.flags & SB.record.FLAG_BESTIARY) !== 0 ? 1 : 0;   /* the second monsters (2 Nov) */
     var settled = settle(level, SB.features.place(level, opts, fixed.g));
     if (settled) return settled;
     SB.features.ramp(level, opts);   /* a house room after the first only (opts.roomIndex, Q200); on the settled level */
@@ -2925,6 +2929,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
           every standable cell within 3, the pocket's elite the pocket.
      A placement never changes the main ascent: the level's ascent is a promise the score made. */
   var MOTH = 1, ICICLE = 2, JELLY = 3, CRAWLER = 4, SPARK = 5, KIND_OF_BIOME = [MOTH, ICICLE, JELLY, CRAWLER, SPARK];
+  /* the second monsters (2 Nov): Dust Bunny, Snow Owl, Hermit Crab, Spore Puff, Cinder Beetle; the owl flies as the moth
+     does, the others stand on a run as the crawler does */
+  var BUNNY = 6, OWL = 7, CRAB = 8, PUFF = 9, BEETLE = 10, SECOND_OF_BIOME = [BUNNY, OWL, CRAB, PUFF, BEETLE];
+  function standsKind(k) { return k === CRAWLER || k === SPARK || k === BUNNY || k === CRAB || k === PUFF || k === BEETLE; }
   function cheb(a, b, w) { return Math.max(Math.abs(a % w - b % w), Math.abs(Math.floor(a / w) - Math.floor(b / w))); }
   function standable(level, c) { var w = level.w; return c >= 0 && c + w < w * level.h && !level.solid[c] && (level.solid[c + w] === 1 || level.plat[c + w] === 1); }
   function ascentStands(level) {
@@ -3270,7 +3278,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var w = level.w, h = level.h, out = [c], x = c % w, y = (c - x) / w, k;
     var run = function (row) { var a = x, b = x; while (a > 0 && standable(level, row * w + a - 1)) a--; while (b < w - 1 && standable(level, row * w + b + 1)) b++; return [a, b]; };
     if (kind === 'pocket') return Int32Array.from(pocket.cells).sort();
-    if (kind === CRAWLER) { var rr = run(y); out = []; for (k = rr[0]; k <= rr[1]; k++) { out.push(y * w + k); if (y > 0) out.push((y - 1) * w + k); } }
+    if (kind === CRAWLER || kind === BUNNY || kind === CRAB || kind === BEETLE) { var rr = run(y); out = []; for (k = rr[0]; k <= rr[1]; k++) { out.push(y * w + k); if (y > 0) out.push((y - 1) * w + k); } }
+    else if (kind === PUFF) { for (k = 1; k <= 2 && y - k >= 0; k++) out.push((y - k) * w + x); }
     else if (kind === ICICLE) { for (k = 1; k <= 6 && y + k < h && !level.solid[(y + k) * w + x]; k++) out.push((y + k) * w + x); }
     else if (kind === JELLY) { out = []; for (k = -2; k <= 2; k++) if (y + k >= 0 && y + k < h) out.push((y + k) * w + x); }
     else if (kind === SPARK) {
@@ -3375,6 +3384,25 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (i = 0; i < out.length; i++) if (!out[i].env) out[i].env = envelope(level, kind, out[i].idx);
     out.sort(function (a, b) { return a.idx - b.idx; });
     f.boss = boss;
+    /* the second monsters (2 Nov): with the record's FLAG_BESTIARY every other enemy (index order, the pocket's elite kept)
+       becomes its biome's second kind when its spot keeps that kind's rule (a walker stands); settle re-checks the climb */
+    if (level.bestiary) {
+      var k2 = SECOND_OF_BIOME[level.biome | 0] || BUNNY, odd = 0;
+      for (k = 0; k < out.length; k++) {
+        if (f.pocket && f.pocket.cells.indexOf(out[k].idx) >= 0) continue;   /* the pocket's elite keeps its kind */
+        if ((odd++ & 1) === 0) continue;
+        var c2 = out[k].idx;
+        if (standsKind(k2)) {   /* a walker drops from a flier's spot to the first ledge under it (8 rows at most) */
+          for (var dd = 0; dd < 8 && c2 + w < n && !standable(level, c2) && !level.solid[c2 + w]; dd++) c2 += w;
+          if (!standable(level, c2) || level.solid[c2] || level.plat[c2] || level.trap[c2] || inPocket[c2] || near[c2] || c2 === level.spawn || c2 === level.exit) continue;
+          var taken2 = false;
+          for (var q2 = 0; q2 < out.length && !taken2; q2++) if (q2 !== k && out[q2].idx === c2) taken2 = true;
+          if (taken2 || c2 === f.chest || c2 === f.scroll || c2 === f.blueprint || (f.specks && f.specks.indexOf(c2) >= 0)) continue;
+        }
+        out[k].idx = c2; out[k].kind = k2; out[k].env = envelope(level, k2, c2);
+      }
+      out.sort(function (a, b) { return a.idx - b.idx; });   /* the index order the rest reads */
+    }
     return out;
   }
   /* T0.16's name for the harness's direct calls: the enemies of a built level alone, on a stream of their own
@@ -3681,6 +3709,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return g;   /* the graph of the carved grid, for the second round (T1.3) */
   }
   SB.features = { MOTH: MOTH, ICICLE: ICICLE, JELLY: JELLY, CRAWLER: CRAWLER, SPARK: SPARK, KIND_OF_BIOME: KIND_OF_BIOME,
+    BUNNY: BUNNY, OWL: OWL, CRAB: CRAB, PUFF: PUFF, BEETLE: BEETLE, SECOND_OF_BIOME: SECOND_OF_BIOME,
     place: place, returnable: returnable, ladder: ladder, brightRect: brightRect, door: door, pocketCands: pocketCands, pocketOk: pocketOk, chest: chest, specks: specks,
     trapRects: trapRects, trapOk: trapOk, trapField: trapField, envelope: envelope, enemies: enemies, moths: moths, rampRow: rampRow, ramp: ramp,
     darkMasses: darkMasses, arena: arena, guardian: guardian, keys: keys };
@@ -3724,7 +3753,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* a loadout entry (a code, an id or null) as a code of its own slot k, else 0 */
   function codeIn(v, k) { var c = typeof v === 'string' ? WPN.indexOf(v) : typeof v === 'number' ? v : 0; return c > 0 && c < WPN.length && slotOf(c) === k ? c : 0; }
   /* the pool's kinds (section 7): step 1 built the first three, step 2 the jump slot's seven (7.2) */
-  var BOOMERANG = 1, SHOCK = 2, POP = 3, TRAIL = 4, EMBER = 5, FLASH = 6, DART = 7, RING = 8, KICK = 9, SNAP = 10, FROST = 11, STOMP = 12, DUST = 13, PULL = 14, SAVE = 16, BICE = 17, BRING = 18, BTHORN = 19, BSPARK = 20, BWARN = 21;
+  var BOOMERANG = 1, SHOCK = 2, POP = 3, TRAIL = 4, EMBER = 5, FLASH = 6, DART = 7, RING = 8, KICK = 9, SNAP = 10, FROST = 11, STOMP = 12, DUST = 13, PULL = 14, SAVE = 16, BICE = 17, BRING = 18, BTHORN = 19, BSPARK = 20, BWARN = 21, PUFFC = 22, CTRAIL = 23;
   var PROJ_KEYS = ['kind', 'x', 'y', 'vx', 'vy', 'ttl', 'dmg', 'live', 'age', 'mode', 'a', 'b', 'hit', 'freeze', 'stun'];
   function newProj() { return { kind: 0, x: 0, y: 0, vx: 0, vy: 0, ttl: 0, dmg: 0, live: 0, age: 0, mode: 0, a: 0, b: 0, hit: 0, freeze: 0, stun: 0 }; }
 
@@ -3781,7 +3810,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      spark's 0 resting, 1 in a hop (vx the cell it left, vy the cell it lands on); timer counts the steps in the state */
   var ICICLE_HANG = 0, ICICLE_FALL = 1, ICICLE_GONE = 2;
   function hpOf(kind, elite) {
-    var T = SB.TUNING, F = SB.features, hp = kind === F.JELLY ? T.JELLY_HP : kind === F.CRAWLER ? T.CRAWLER_HP : 1;
+    var T = SB.TUNING, F = SB.features, hp = kind === F.JELLY ? T.JELLY_HP : kind === F.CRAWLER || kind === F.CRAB || kind === F.BEETLE ? T.CRAWLER_HP : 1;
     return elite ? hp * T.ELITE_HP_MULT : hp;
   }
   /* the pocket of the pocket's elite (its cell one of the pocket's), else null */
@@ -3824,6 +3853,51 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var y0 = hy - up * CS, y1 = hy + dn * CS;
       en.vy = en.dir * K.JELLY_V; en.y += en.vy;
       if (en.y <= y0) { en.y = y0; en.dir = 1; } else if (en.y >= y1) { en.y = y1; en.dir = -1; }
+    } else if (en.kind === F.OWL) {
+      /* the owl (2 Nov): perched at home; the bug within OWL_SEE_CELLS (rested OWL_REST) sends it swooping straight at where
+         the bug was, OWL_SWOOP long, then home at the moth's speed */
+      var ocx = Math.floor((en.x + (sz >> 1)) / CS), ocy = Math.floor((en.y + (sz >> 1)) / CS), hcx = Math.floor((h.x + (K.HERO_W_SUB >> 1)) / CS), hcy = Math.floor((h.y + (K.HERO_H_SUB >> 1)) / CS);
+      if (en.state === 0) {
+        en.x = hx; en.y = hy;
+        if (en.timer >= K.OWL_REST_F && Math.max(Math.abs(hcx - ocx), Math.abs(hcy - ocy)) <= T.OWL_SEE_CELLS) {
+          var odx = (h.x + (K.HERO_W_SUB >> 1)) - (en.x + (sz >> 1)), ody = (h.y + (K.HERO_H_SUB >> 1)) - (en.y + (sz >> 1)), od = Math.max(1, Math.abs(odx), Math.abs(ody)), OV = Math.round(T.OWL_SWOOP_PX * K.SUB);
+          en.vx = (OV * odx / od) | 0; en.vy = (OV * ody / od) | 0; en.state = 1; en.timer = 0; en.dir = en.vx < 0 ? -1 : 1;
+        }
+      } else if (en.state === 1) {
+        en.x += en.vx; en.y += en.vy;
+        if (en.timer >= K.OWL_SWOOP_F) { en.state = 2; en.timer = 0; }
+      } else {
+        var bx = hx - en.x, by = hy - en.y, bd = Math.max(Math.abs(bx), Math.abs(by));
+        if (bd <= K.MOTH_V) { en.x = hx; en.y = hy; en.state = 0; en.timer = 0; }
+        else { en.vx = (K.MOTH_V * bx / bd) | 0; en.vy = (K.MOTH_V * by / bd) | 0; en.x += en.vx; en.y += en.vy; en.dir = en.vx < 0 ? -1 : 1; }
+      }
+    } else if (en.kind === F.BUNNY || en.kind === F.CRAB || en.kind === F.BEETLE || en.kind === F.PUFF) {
+      /* the walkers on their run (the crawler's rule): the bunny sits, then rolls at the bug seen within BUNNY_SEE_CELLS
+         (BUNNY_ROLL, then rests); the crab walks CRAB_WALK and shells CRAB_SHELL (no damage then); the beetle walks and
+         leaves a trail of embers; the puff sits, swells and puffs a cloud up every PUFF_EVERY */
+      var a2 = col, b2 = col;
+      while (a2 > 0 && standCell(lv, row * w + a2 - 1)) a2--;
+      while (b2 < w - 1 && standCell(lv, row * w + b2 + 1)) b2++;
+      var wx0 = a2 * CS, wx1 = Math.max(wx0, (b2 + 1) * CS - sz), V = 0;
+      if (en.kind === F.BUNNY) {
+        if (en.state === 0) {
+          var bcx = Math.floor((en.x + (sz >> 1)) / CS), bcy = Math.floor((en.y + (sz >> 1)) / CS), hbx = Math.floor((h.x + (K.HERO_W_SUB >> 1)) / CS), hby = Math.floor((h.y + (K.HERO_H_SUB >> 1)) / CS);
+          if (en.timer >= K.BUNNY_REST_F && Math.max(Math.abs(hbx - bcx), Math.abs(hby - bcy)) <= T.BUNNY_SEE_CELLS) { en.state = 1; en.timer = 0; en.dir = hbx < bcx ? -1 : 1; }
+        } else { V = Math.round(T.BUNNY_ROLL_PX * K.SUB); if (en.timer >= K.BUNNY_ROLL_F) { en.state = 0; en.timer = 0; } }
+      } else if (en.kind === F.CRAB) {
+        if (en.state === 0) { V = (K.CRAWLER_V * 3) >> 2; if (en.timer >= K.CRAB_WALK_F) { en.state = 1; en.timer = 0; } }
+        else if (en.timer >= K.CRAB_SHELL_F) { en.state = 0; en.timer = 0; }
+      } else if (en.kind === F.BEETLE) {
+        V = K.CRAWLER_V;
+        if (en.timer % K.BEETLE_TRAIL_EVERY_F === 0) { var tq = spawn(s, CTRAIL); if (tq >= 0) { var tp = s.proj[tq]; tp.x = Math.floor((en.x + (sz >> 1)) / CS) * CS; tp.y = (row + 1) * CS - 8 * K.SUB; tp.ttl = K.BEETLE_TRAIL_F; } }
+      } else {
+        if (en.timer >= K.PUFF_EVERY_F) {
+          en.timer = 0; en.state = 0;
+          var pq = spawn(s, PUFFC); if (pq >= 0) { var pp = s.proj[pq]; pp.x = en.x + (sz >> 1) - 8 * K.SUB; pp.y = en.y - 16 * K.SUB; pp.ttl = K.PUFF_CLOUD_F; }
+        } else en.state = en.timer >= K.PUFF_EVERY_F - K.PUFF_SWELL_F ? 1 : 0;
+      }
+      if (V) { en.vx = en.dir * V; en.x += en.vx; if (en.x <= wx0) { en.x = wx0; en.dir = 1; if (en.kind === F.BUNNY) { en.state = 0; en.timer = 0; } } else if (en.x >= wx1) { en.x = wx1; en.dir = -1; if (en.kind === F.BUNNY) { en.state = 0; en.timer = 0; } } }
+      en.y = footY(lv, en.home, sz);
     } else if (en.kind === F.CRAWLER) {
       /* the patrol: CRAWLER_V along the standable run of its home row, turning at the run's last cell, never off it */
       var a = col, b = col;
@@ -3939,6 +4013,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function hurt(s, m, q) {
     var en = s.enemies[m], T = SB.TUNING, K = SB.K;
     if (!en || !liveEnemy(en)) return 0;
+    if (en.kind === SB.features.CRAB && en.state === 1) return en.hp;   /* in its shell (2 Nov) */
     en.hp = Math.max(0, en.hp - q); en.hurt = K.HURT_FLASH_F; s.ev |= EV.HURT;
     if (en.hp === 0) {
       if (!shedSlot(s, m)) s.room.dp += en.elite ? T.DP_ELITE : T.DP_FODDER;   /* the guardian's moths bank nothing (no farm) */
@@ -4077,6 +4152,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
     p.vy += K.G >> 2; p.x += p.vx; p.y += p.vy;
     if (solidAt(lv, Math.floor((p.x + (B >> 1)) / CS), Math.floor((p.y + (B >> 1)) / CS))) { free(p); return; }
     if (h.x < p.x + B && h.x + K.HERO_W_SUB > p.x && h.y < p.y + B && h.y + K.HERO_H_SUB > p.y) { bossHurt(s, heroSide(s, p.x + (B >> 1))); free(p); }
+  }
+  /* the second monsters' hazards (2 Nov): the puff's cloud rises a px a step from its top, the beetle's trail lies on its
+     cell; each a 16 px box (the trail 16x8 on the cell's floor) costing an enemy's hit while it lasts */
+  function actHazard(s, p) {
+    var K = SB.K, h = s.hero, bw = 16 * K.SUB, bh = (p.kind === CTRAIL ? 8 : 16) * K.SUB;
+    if (p.kind === PUFFC) p.y -= K.SUB;
+    if (h.x < p.x + bw && h.x + K.HERO_W_SUB > p.x && h.y < p.y + bh && h.y + K.HERO_H_SUB > p.y) bossHurt(s, heroSide(s, p.x + (bw >> 1)));
   }
   function shed(s, lv) {
     var K = SB.K, CS = K.CELL_SUB, sh = lv.features.guardian.shed, n = SB.TUNING.BOSS_MOTH_COUNT, j = 0;
@@ -4761,6 +4843,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
         else if (pj.kind === BRING) actRingB(s, pj);
         else if (pj.kind === BTHORN) actThorn(s, lv, pj);
         else if (pj.kind === BSPARK) actSparkB(s, lv, pj);
+        else if (pj.kind === PUFFC || pj.kind === CTRAIL) actHazard(s, pj);
         if (!pj.live) continue;
         pj.age++; pj.ttl--;
         if (pj.ttl <= 0) free(pj);
@@ -4898,7 +4981,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
 
   SB.sim = { IN: IN, EV: EV, rle: rle, create: function (level, opts) { var st = attach(create(level, opts), level); if (opts && opts.pool) setPool(st, opts.pool); return st; }, attach: attach, step: step,
     FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf, trapTouch: trapTouch,
-    WPN: WPN, BUILT: BUILT, slotOf: slotOf, PROJ_KIND: Object.freeze({ BOOMERANG: BOOMERANG, SHOCK: SHOCK, POP: POP, TRAIL: TRAIL, EMBER: EMBER, FLASH: FLASH, DART: DART, RING: RING, KICK: KICK, SNAP: SNAP, FROST: FROST, STOMP: STOMP, DUST: DUST, PULL: PULL, SAVE: SAVE, BICE: BICE, BRING: BRING, BTHORN: BTHORN, BSPARK: BSPARK, BWARN: BWARN }), shockFront: shockFront, spawn: spawn, free: free, drawWeapon: drawWeapon,
+    WPN: WPN, BUILT: BUILT, slotOf: slotOf, PROJ_KIND: Object.freeze({ BOOMERANG: BOOMERANG, SHOCK: SHOCK, POP: POP, TRAIL: TRAIL, EMBER: EMBER, FLASH: FLASH, DART: DART, RING: RING, KICK: KICK, SNAP: SNAP, FROST: FROST, STOMP: STOMP, DUST: DUST, PULL: PULL, SAVE: SAVE, BICE: BICE, BRING: BRING, BTHORN: BTHORN, BSPARK: BSPARK, BWARN: BWARN, PUFFC: PUFFC, CTRAIL: CTRAIL }), shockFront: shockFront, spawn: spawn, free: free, drawWeapon: drawWeapon,
     CHOICE: CHOICE, LOOT: { SPECK: LOOT_SPECK, SCROLL: LOOT_SCROLL, BLUEPRINT: LOOT_BLUEPRINT, KEY: LOOT_KEY }, keysLeft: keysLeft, keysOf: keysOf, STAT: { VIGOR: VIGOR, FOCUS: FOCUS, GRIT: GRIT }, STAT_OF_BIOME: STAT_OF_BIOME, pickScroll: pickScroll,
     hurtBoss: hurtBoss, shedSlot: shedSlot, setPool: setPool };
 })(globalThis.SB || (globalThis.SB = {}));
@@ -5107,7 +5190,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      (1, Q221) stay in the core for a v2 RULES 1 code, but capture does not write them until their fallbacks, their
      extra film on bare walls and their build time are fixed */
   C.RULES = 0;
-  C.FLAGS = 1;   /* SB.record.FLAG_KEYS: every capture locks its exit with keys (Stephen, 2 Nov); a literal, since the room model loads this block without core-record */
+  C.FLAGS = 3;   /* SB.record.FLAG_KEYS | FLAG_BESTIARY: every capture locks its exit with keys and meets the second monsters (2 Nov); a literal, since the room model loads this block without core-record */
   C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 15, GREEN_LO: 70, DEEP_LO: 170, EMBER_LO: 285, C_MIN: 12, S_MIN: 9, WARM_C_MIN: 16, WARM_S_MIN: 30, MIN_PCT: 10 });
   C.hueBand = function (r, g, b) {
     var K = C.HUE, mx = Math.max(r, g, b), d = mx - Math.min(r, g, b), band;
@@ -5890,6 +5973,85 @@ body.sb-modal .lwfb-fab { display: none !important; }
     edge_ember: { w: 16, h: 4, frames: {
       top_a: '......00000...../2000000888022222/2088888000022222/2000000022222222',
       top_b: '........00000.../2220000008880222/2220888880000222/2220000000222222'
+    } },
+    /* dust_bunny: from Astra (enemies/dust_bunny.png) */
+    dust_bunny: { w: 16, h: 16, frames: {
+      idle: '...0000.0000..../...0440.0330..../..00240003300.../..04244033330.../..04424033330.../..04424033330.../..044333333300../..043340044000../.00334044404300./.03344464446430./005544000000430./055554099990400./055554009900000./002222200902220./.02222200002220./.00000000000000.',
+      roll_a: '................/................/.....000000...../...0004444000.../..004433334400../..044333355440../.00455555555400./.04555333555540./.04553333535340./.05500033300340./.00009033033340./.00999003363400./..000990333440../..000090334400../...0000044000.../.....000000.....',
+      roll_b: '................/................/.....000000...../...0004444000.../..004433300000../..040033309990../.00033333099900./.04363333009000./.04333533309040./.04335553300040./.04355533335550./.00435533335500./..044555555550../..004433335500../...0004444000.../.....000000.....',
+      hurt: '................/...0000.0000..../...0440003300.../..00240033330.../..04244033330.../..04424033330.../..04424033330.../..044333333300../.00333444443300./.03334000400030./005544444444430./055554000000430./055554099990300./002222009900220./.02222200902220./.00000000000000.'
+    } },
+    /* dust_bunny_elite: from Astra (enemies/dust_bunny_elite.png) */
+    dust_bunny_elite: { w: 24, h: 24, frames: {
+      idle: '......................../......000....0000......./.....00400..003300....../.....02240..033330....../....002240000330000...../....044224003300aa00..../....04422400330aaaa0..../....04442200330aaaa0..../....044422003300aa00..../....044443333330000...../....0000033333333300..../...000aa0044044333000.../..000aaaa0000440000300../..030aaaa0444440443330../..0300aa00464444464330../.005500004444444444330../.055555444000000044330../.055555444099999044300../.05555544400999904300.../.055555344400990030000../.002222222440090222220../..02222222000000222220../..000000000..000000000../........................',
+      roll_a: '......................../......................../......................../......................../........00000000000...../......0004444400aa00..../.....0044433330aaaa0..../....00443333330aaaa0..../...0044555555500aa000.../...044555555555000040.../..00400005333355555400../..0400aa00333355553440../..040aaaa0333355553440../..040aaaa0333353333440../..0400a000333333303440../..04400090333300003440../..00000990333303334400../...009999003333633440.../...000999903333334400.../....0000990333334400..../.....00009033344400...../......000004444000....../........00000000......../........................',
+      roll_b: '......................../......................../......................../......................../........00000000000...../......0004444400aa00..../.....0044433330aaaa0..../....0044333333000000..../...004430333330900900.../...040000333330099900.../..00400003333330990000../..0400aa00533330090440../..040aaaa0553333090440../..040aaaa0555333000440../..0400aa00553333353440../..04400005533333555440../..00443555333333555500../...044335553333555540.../...004435555533555500.../....0044355555555500..../.....00444335555550...../......0004444445500...../........0000000000....../........................',
+      hurt: '......................../......................../......000....0000......./.....00400..003300....../.....04440.00330000...../....002240003300aa00..../....04424400330aaaa0..../....04422400330aaaa0..../....044424003300aa00..../....044422003330000...../....000004003333330...../....00aa00333333300...../...00aaaa044444333000.../...00aaaa044444443330.../..0000aa00000440000300../.005500000000440000330../.055555444444444444330../.055555444000000044300../.05555544409999904330.../.055555344009999030000../.002222222400990022220../..02222222000090222220../..000000000..000000000../........................'
+    } },
+    /* snow_owl: from Astra (enemies/snow_owl.png) */
+    snow_owl: { w: 16, h: 16, frames: {
+      perch: '................/................/..000.......000./..0300000000030./..0330444400330./..0330055500330./..0302555024330./..0426255262400./..044200052440../..044409054440../..032400044230../..003224422330../...03244442300../...0003333030.../...0000000000.../...000....000...',
+      swoop: '................/................/................/................/.....0000000..../....00005000..../....00550500..../....05055050..../....05500050..../0000055090500000/0440045000400440/0004443333444000/..000403304000../....00003000..../.......000....../................',
+      return: '................/000..........000/040000....000040/0444400..0044440/0444440000444440/0044440050044400/.04440550544440./.04445055054440./.04445500054440./.00445509054400./..044450004440../..044433334440../..000403304000../....00003000..../.......000....../................',
+      hurt: '................/................/..000.......000./..0300000000030./..0330444400330./..0334555543330./..0302055020330./..0400055000400./..044200052440../..044409054440../..032400044230../..003224422330../...03244442300../...0003333030.../...0000000000.../...000....000...'
+    } },
+    /* snow_owl_elite: from Astra (enemies/snow_owl_elite.png) */
+    snow_owl_elite: { w: 24, h: 24, frames: {
+      perch: '......................../......................../.....000........000...../.....0a00......00a0...../....00aa0......0aa0000../....0aaa00000000aaa030../....0aaaa044440aaaa030../....000000444400000030../....033440555554403300../....03022055550220330.../....04222255552222430.../....04226255552622430.../....04522555555225430.../....04455500055554400.../....0444450905544240..../....0342440004442220..../....0022244444242230..../.....032244442222230..../.....002224444232300..../.....00303333333330...../.....00003333330330...../.....00000000000000...../.....000......00000...../................000.....',
+      swoop: '......................../......................../......................../......................../......................../......................../......................../.........00000000......./.......0005055000......./.......0000000000......./.......0055505500......./.......0505555050......./.......0555555550......./.......0555000550......./.0000.005550905500..000./.0440004455000544000040./.0004000455555540004000./...000a0033333300a000.../....0aaa00333300aaa0..../....00a0000333000a00..../.....000..00300.000...../...........000........../......................../........................',
+      return: '......................../......................../.000................000./.04000............00040./.0444000........0004440./.04400a00......00a00440./.0040aaa00....00aaa0400./..0400a0000000000a0040../..04400044505540000440../..04444400000000444440../..00444405550554444400../...044445055550544440.../...044445555555544440.../...044445550005544440.../...044445550905544440.../...004444550005444400.../....0444455555544440..../....0444433333344440..../....0000403333040000..../.......0000333000......./..........00300........./...........000........../......................../........................',
+      hurt: '......................../......................../.....000........000...../.....0a00......00a0...../....00aa0......0aa0000../....0aaa00000000aaa030../....0aaaa044440aaaa030../....000000444400000030../....033445555554433300../....03022055550220330.../....04222255552222430.../....04000055550000430.../....04000055550000430.../....04455500055554400.../....0444450905544240..../....0342440004442220..../....0022244444242230..../.....032244442222230..../.....002224444232300..../.....00303333333330...../.....00003333330330...../.....00000000000000...../.....000......00000...../................000.....'
+    } },
+    /* hermit_crab: from Astra (enemies/hermit_crab.png) */
+    hermit_crab: { w: 16, h: 16, frames: {
+      walk_a: '................/.....000000...../....00333300..../...0034444300.../..003442224300../00000024442430../0900904224423000/0990904244000090/0999900030090090/0999903303099990/0099906336009990/.090003333309990/.000203333009000/.00200200020000./.0200200.002020./.000000...00000.',
+      walk_b: '................/.....000000...../....00333300..../...0034444300.../..003442224300../00000024442430../0900904224423000/0990904244000090/0999900030090090/0999903303099990/0099906336009990/.090003333309990/.000203333009000/.00202200020000./.0200000.002000./.000......000...',
+      shell: '................/.....000000...../....00333300..../...0034444300.../..003442224300../..034224442430../..034242244230../..034242442430../..034442222430../..003200022300../..002209002200../..022000000220../..002233332200../...0022222200.../....00000000..../................',
+      hurt: '................/.....000000...../....00333300..../...0034444300.../..003442224300../00000024442430../0900904224423000/0990904244000090/0999903333090090/0999900000099990/0099903333009990/.090003333309990/.000203333009000/.00200200020000./.0200200.002020./.000000...00000.'
+    } },
+    /* hermit_crab_elite: from Astra (enemies/hermit_crab_elite.png) */
+    hermit_crab_elite: { w: 24, h: 24, frames: {
+      walk_a: '......................../......................../.........000000........./.......0000a00000......./......0000aaa00000....../.....000aaaaaaa0700...../.....070000a0000770...../....0070440002200700..../.0000700222244420070..../.0900702242224442000..../.0990702242224442070000./.0990000242222222070090./.0999990430333022070090./.0999990300030000000990./.0999990003000330999990./.0999990063303630099990./.0099000333333333099990./..090023333333333099990./..000222033333320090000./..00222002220022200000../..022200222000022222200./..0020000200..002222220./...000..000....00200200./................000000..',
+      walk_b: '......................../......................../.........000000........./.......0000a00000......./......0000aaa00000....../.....000aaaaaaa0700...../.....070000a0000770...../....0070440002200700..../.0000700222244420070..../.0900702242224442000..../.0990702242224442070000./.0990000242222222070090./.0999990430333022070090./.0999990300030000000990./.0999990003000330999990./.0999990063303630099990./.0099000333333333099990./..090023333333333099990./..000222033333320090000./..002220222200222000000./..022200020000022202220./..00200.000...002220200./...000.........0020000../................000.....',
+      shell: '......................../......................../.........000000........./.......0000a00000......./......0000aaa00000....../.....000aaaaaaa0700...../.....070000a0000770...../....0070440002200700..../....0700222244420070..../....0702242224442000..../....0702242224442070..../....0702242222222070..../....0700442222220070..../....0070044444400700..../.....07702222220770...../....0000020000200000..../....0222000000002220..../....0222000000002220..../....0222233333322220..../....0022233333322200..../.....00002222220000...../........00000000......../......................../........................',
+      hurt: '......................../......................../.........000000........./.......0000a00000......./......0000aaa00000....../.....000aaaaaaa0700...../.....070000a0000770...../....0070440002200700..../.0000700222244420070..../.0900702242224442000..../.0990702242224442070000./.0990000242222222070090./.0999990433333322070090./.0999990333333330000990./.0999990000000000999990./.0999990000000000099990./.0099000333333333099990./..090023333333333099990./..000222033333320090000./..00222002220022200000../..022200222000022222200./..0020000200..002222220./...000..000....00200200./................000000..'
+    } },
+    /* spore_puff: from Astra (enemies/spore_puff.png) */
+    spore_puff: { w: 16, h: 16, frames: {
+      idle: '................/................/......000......./...0000d0000..../..00ddddddd00.../..0dddddd00000../.00000ddd090d00./.0d090ddd000dd0./00d000dddddddd00/0dddddddddddddd0/0000000000000000/..000044044000../..000464464000../..022222422220../..022222422220../..000000000000..',
+      swell: '................/......000......./...0000d0000..../..00ddddddd00.../..0dddddd00000../.00000ddd090d00./.0d090ddd000dd0./00d000dddddddd00/0dddddddddddddd0/0000000000000000/..000044044000../....04644640..../..000444444000../..022222422220../..022222422220../..000000000000..',
+      puff: '......000.000.../...0000d00000.../..00ddddddd00.../..0dddddd00000../.00000ddd090d00./.0d090ddd000dd0./00d000dddddddd00/0dddddddddddddd0/0000000000000000/..000044044000../....04644640..../....04444440..../..000444444000../..022222422220../..022222422220../..000000000000..',
+      hurt: '................/................/................/......000......./...0000d0000..../..00ddddddd00.../..0dddddd00000../.00000ddd090d00./.0d090ddd000dd0./00d000dddddddd00/0dddddddddddddd0/0000000000000000/..000000000000../..022222422220../..022222422220../..000000000000..'
+    } },
+    /* spore_puff_elite: from Astra (enemies/spore_puff_elite.png) */
+    spore_puff_elite: { w: 24, h: 24, frames: {
+      idle: '......................../......................../......................../......................../..........000.........../.....000000000000......./....00ddd00a00dd00....../....0dddd0aaa00dd00...../...00ddd00aaaa000d00..../...0dddd0aaaaa090dd00.../..00d000000aaa000ddd00../..0dd090dd00a00dddddd0../.00dd000ddd000ddddddd00./.0dddddddddddddddddddd0./.0dddddddddddddddddddd0./.0000000000000000000000./....0222200020002220..../....0000004000440000..../......00064404640......./....0000044444400000..../....0222222244222220..../....0222222240222220..../....0000000000000000..../........................',
+      swell: '......................../......................../..........000.........../........000d000........./.....0000d000d000......./....00ddd00a00dd00....../....0dddd0aaa00dd00...../...00ddd00aaaa000d000.../..00d0000aaaaa090ddd00../..0dd0900000a0000dddd0../.00dd000ddd000ddddddd00./.0dddddddddddddddddddd0./.0dddddddddddddddddddd0./.000dddddddddddddddd000./...000000000000000000.../....0222000000002220..../....0000044404440000..../.......0464444640......./.......0044444400......./....0000044444400000..../....0222222244222220..../....0222222240222220..../....0000000000000000..../........................',
+      puff: '..........040.........../..........000...000...../.....00000000000030...../....00ddd00a00dd000...../....0dddd0aaa00dd00...../...00ddd00aaaa000d00..../...0dddd0aaaaa090dd00.../..00d000000aaa000ddd00../..0dd090dd00a00dddddd0../.00dd000ddd000ddddddd00./.0dddddddddddddddddddd0./.0dddddddddddddddddddd0./.0000000000000000000000./....0222200020002220..../....0000004000440000..../......00064404640......./.......0444444440......./.......0444444440......./.......0044444400......./....0000044444400000..../....0222222244222220..../....0222222240222220..../....0000000000000000..../........................',
+      hurt: '......................../......................../......................../......................../......................../..........000.........../........000d000........./.....0000d000d000......./....00ddd00a00dd00....../....0dddd0aaa00dd00...../...00ddd00aaaa000d000.../..00d0000aaaaa090ddd00../..0dd0900000a0000dddd0../.00dd000ddd000ddddddd00./.0dddddddddddddddddddd0./.0dddddddddddddddddddd0./.000dddddddddddddddd000./...000000000000000000.../....0222000000002220..../....0000000000000000..../....0222222244222220..../....0222222244222220..../....0000000000000000..../........................'
+    } },
+    /* cinder_beetle: from Astra (enemies/cinder_beetle.png) */
+    cinder_beetle: { w: 16, h: 16, frames: {
+      walk_a: '................/...........0000./..........00000./...000000000000./..00999990000.../.00999999900000./0099999999903300/0099000099000030/0000999900003330/0209999999036330/0000999990033330/.020000000233300/.02022222220020./.02000200200000./.000.020000...../.....000........',
+      walk_b: '................/...........0000./..........00000./...000000000000./..00999990000.../.00999999900000./0099999999903300/0099000099000030/0000999900003330/0209999999036330/0000999990033330/.020000000033300/.00222222220200./..020002002000../..000.020000..../......000.......',
+      hurt: '................/...........0000./..........00000./..........00000./...0000000000.../..00999990000.../.00999999900000./0099999999903300/0099000099003330/0000999900000030/0009999999033330/.000999990033330/.020000000233300/.02000200200000./.000.020000...../.....000........'
+    } },
+    /* cinder_beetle_elite: from Astra (enemies/cinder_beetle_elite.png) */
+    cinder_beetle_elite: { w: 24, h: 24, frames: {
+      walk_a: '......................../......................../..................000.../.................00000../...............0000000../......00000000.0000000../....00000a0020000000..../...00000aaa00000000...../..0090aaaaaaa09000000.../.00990000a000099003300../.0099999000999990333300./.0099999909999900333030./.0000000000000003000030./.0209999999999903033330./.0200990009999003363330./.0050000a09900033333330./..022220000002223333320./..022222222222222333220./..022002222220222000220./..0220000220002200.0000./..0220..0220.0220......./..0000..0220.0000......./........0000............/........................',
+      walk_b: '......................../......................../..................000.../.................00000../...............0000000../......00000000.0000000../....00000a0020000000..../...00000aaa00000000...../..0090aaaaaaa09000000.../.00990000a000099003300../.0099999000999990333300./.0099999909999900333030./.0000000000000003000030./.0209999999999903033330./.0200990009999003363330./.0050000a09900033333330./..022220000002223333300./..00222222222222033320../..02220222222022000200../..0022000022000220000.../...02220.002000220....../...00200..02200000....../....000...0000........../........................',
+      hurt: '......................../......................../..................000.../.................00000../...............0000000../........000....0000000../.......00a00...00000..../.....000aaa000.0000...../....00aaaaaaa000000...../...000000a000000000...../..0099990009999000000.../.009999999999999033300../.0099999909999990333300./.0099900000009900333330./.0000000009900003000030./.0009990a09999903000030./..000990009999003333330./..020009999900023333320./..022000000000222333220./..022000022000220000000./..0220..0220.0220......./..0000..0220.0000......./........0000............/........................'
+    } },
+    /* puff_cloud: from Astra (enemies/puff_cloud.png) */
+    puff_cloud: { w: 16, h: 16, frames: {
+      a: '................/................/................/................/.....00000....../....0090300000../....0990030090../...00999000990../..009999000990../..000000009990../..00300..00000../...000....000.../................/................/................/................',
+      b: '................/................/......00000...../.....0003300..../.....090333000../..000090333090../.00309900300900./.03009990309900./.03099990009900./.03000000099900./.00333000000000./..00000..00000../................/................/................/................',
+      c: '......00000...../.....0033300..../....000033300.../..000090333000../.00300903330900./0033099003009000/0330099903099030/0330999900099030/0330999900999030/0030000000999000/.00333000000000./..00000..00000../................/................/................/................'
+    } },
+    /* cinder_trail: from Astra (enemies/cinder_trail.png) */
+    cinder_trail: { w: 16, h: 8, frames: {
+      a: '.......000....../.......090....../..000.00900...../.0090009990000../.09990099900900./0099909999999900/0999999999999990/0000000000000000',
+      b: '................/..000..000....../..090..090.000../.00900009000900./.09990099909990./0099900999099900/0999999999999990/0000000000000000'
     } }
   };
   /* SPRITES END */
@@ -5975,7 +6137,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   /* each enemy's manifest anchor in its box (Astra's manifest, Q160): 'top' hangs it from the box's top, 'bottom'
      stands it on the box's bottom, anything else ('cell') centres it; horizontally always centred */
-  R.ELITE_ANCHOR = { icicle: 'top', crawler: 'bottom', spark: 'bottom' };
+  R.ELITE_ANCHOR = { icicle: 'top', crawler: 'bottom', spark: 'bottom', dust_bunny: 'bottom', hermit_crab: 'bottom', spore_puff: 'bottom', cinder_beetle: 'bottom' };
+  /* the second monsters' frames by their state (Astra's round 5 names; her hurt frame while the hit flash runs) */
+  function secondFrame(en, beat, frame) {
+    var two = (Math.floor(frame / beat) & 1) === 1;
+    if (en.hurt > 0) return 'hurt';
+    if (en.kind === 6) return en.state === 1 ? (two ? 'roll_b' : 'roll_a') : 'idle';
+    if (en.kind === 7) return en.state === 1 ? 'swoop' : en.state === 2 ? 'return' : 'perch';
+    if (en.kind === 8) return en.state === 1 ? 'shell' : two ? 'walk_b' : 'walk_a';
+    if (en.kind === 9) return en.timer < 8 ? 'puff' : en.state === 1 ? 'swell' : 'idle';
+    return two ? 'walk_b' : 'walk_a';
+  }
   R.CSS_SPRITES = ['stick_pad', 'stick_knob', 'stick_hint', 'pause_glyph', 'icon_biomes', 'run_pips', 'icon_house', 'frame_styles'];   /* HOUSE-B: the pips, the house icon, the frames */
   /* one sprite at the integer place (and size: the squash and the stretch), from the atlas */
   function spr(c2, key, dx, dy, dw, dh) { var r = A[key]; c2.drawImage(atlas, r.x, r.y, r.w, r.h, dx, dy, dw || r.w, dh || r.h); }
@@ -6323,14 +6495,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
        art, Astra's <kind>_elite (Q160), 1:1 and never the base art scaled; each sprite sits in the sim's box (C, or
        ELITE_PX a side) by its manifest anchor, R.ELITE_ANCHOR: centred, hung from the box's top or standing on its
        bottom. The box is the sim's alone: the art never moves it */
-    var md = R.drawn.moths, KINDS = ['', 'moth', 'icicle', 'jelly', 'crawler', 'spark'], beat = Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS); md.length = 0;
+    var md = R.drawn.moths, KINDS = ['', 'moth', 'icicle', 'jelly', 'crawler', 'spark', 'dust_bunny', 'snow_owl', 'hermit_crab', 'spore_puff', 'cinder_beetle'], beat = Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS); md.length = 0;
     for (var m = 0; m < s.enemies.length; m++) {
       var en = s.enemies[m]; if (!SB.sim.liveEnemy(en)) continue;
       var es = en.elite ? K.ELITE_PX : C, mx = en.x >> 8, my = (en.y >> 8) - cam;
       if (my < -es || my > viewH) continue;
       /* a hit flashes it Glare on alternate pairs of steps from the hit's own (8.3) */
       var kn = KINDS[en.kind] || 'moth', ek = en.elite ? kn + '_elite' : kn, esp = SPRITES[ek], an = R.ELITE_ANCHOR[kn] || 'cell';
-      var clock = en.kind === 1 ? en.timer : s.frame, mk = ek + ((Math.floor(clock / beat) & 1) ? '.a' : '.b') + (en.dir < 0 && en.kind === 4 ? '<' : '') + (en.hurt > 0 && !(((en.hurt + 1) >> 1) & 1) ? '!' : '');
+      var clock = en.kind === 1 ? en.timer : s.frame, mk = en.kind >= 6 ? ek + '.' + secondFrame(en, beat, s.frame) + (en.dir < 0 && en.kind !== 9 ? '<' : '')
+        : ek + ((Math.floor(clock / beat) & 1) ? '.a' : '.b') + (en.dir < 0 && en.kind === 4 ? '<' : '') + (en.hurt > 0 && !(((en.hurt + 1) >> 1) & 1) ? '!' : '');
       var ex2 = mx + ((es - esp.w) >> 1), ey2 = an === 'top' ? my : an === 'bottom' ? my + es - esp.h : my + ((es - esp.h) >> 1);
       /* at rest (state 0: an icicle hanging, a spark between hops, a crawler on its run) a top or bottom anchor holds to
          the ceiling or the floor of the row its box's middle is in: an elite's box starts centred on its cell, half a
@@ -6643,6 +6816,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
       /* Second Wind (a 3) and Thick Skin (a 4): Astra's burst on the bug where it stands, 4 frames at 12 fps */
       var hs = s.hero; key = (p.a === 3 ? 'fx_second_wind.second_wind_' : 'fx_thick_skin.thick_skin_') + Math.min(3, f);
       x = (hs.x >> 8) + 6 - 16; y = (hs.y >> 8) + 8 - cam - 16; spr(ctx, key, x, y); rec(p.kind, key, x, y, 32, 32, camX);
+    } else if (p.kind === PK.PUFFC) {
+      key = 'puff_cloud.' + 'abc'.charAt(Math.min(2, Math.floor(a / 12))); x = p.x >> 8; y = (p.y >> 8) - cam; spr(ctx, key, x, y); rec(p.kind, key, x, y, 16, 16, camX);
+    } else if (p.kind === PK.CTRAIL) {
+      key = 'cinder_trail.' + ((a >> 3) & 1 ? 'b' : 'a'); x = p.x >> 8; y = (p.y >> 8) - cam; spr(ctx, key, x, y); rec(p.kind, key, x, y, 16, 8, camX);
     } else if (p.kind === PK.BWARN) {
       /* Frost's mark under the ceiling over a column, frost_warn a b c, a second a frame */
       key = 'frost_warn.' + 'abc'.charAt(Math.min(2, Math.floor(a / 60))); x = p.x >> 8; y = (p.y >> 8) - cam; spr(ctx, key, x, y); rec(p.kind, key, x, y, 16, 16, camX);
@@ -8883,7 +9060,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=10').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=11').catch(function () {}); } catch (e) { /* silent */ } });
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); SB.ui.installPrompt = e; document.getElementById('install').hidden = false; });
   SB.input.initStrip();
   window.addEventListener('resize', function () { var s = SB.ui.screen; if (s === 'play' || s === 'pause' || s === 'share' || s === 'clear' || s === 'dead') { SB.render.fit(); draw(); if (s === 'pause') SB.ui.placePaused(); } });

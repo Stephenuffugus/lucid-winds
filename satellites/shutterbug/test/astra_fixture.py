@@ -67,6 +67,8 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     # the biome edge trims
     'world/edge_attic.png': ('edge_attic', None), 'world/edge_frost.png': ('edge_frost', None), 'world/edge_deep.png': ('edge_deep', None),
     'world/edge_overgrowth.png': ('edge_overgrowth', None), 'world/edge_ember.png': ('edge_ember', None),
+    # the second monsters, their elites and their hazards
+    'enemies/dust_bunny.png': ('dust_bunny', None), 'enemies/dust_bunny_elite.png': ('dust_bunny_elite', None), 'enemies/snow_owl.png': ('snow_owl', None), 'enemies/snow_owl_elite.png': ('snow_owl_elite', None), 'enemies/hermit_crab.png': ('hermit_crab', None), 'enemies/hermit_crab_elite.png': ('hermit_crab_elite', None), 'enemies/spore_puff.png': ('spore_puff', None), 'enemies/spore_puff_elite.png': ('spore_puff_elite', None), 'enemies/cinder_beetle.png': ('cinder_beetle', None), 'enemies/cinder_beetle_elite.png': ('cinder_beetle_elite', None), 'enemies/puff_cloud.png': ('puff_cloud', None), 'enemies/cinder_trail.png': ('cinder_trail', None),
 }
 
 

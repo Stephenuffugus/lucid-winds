@@ -653,8 +653,8 @@ const MUTANTS = [
     gates: [{ gate: 'lint', expect: 'SW_SCOPE' }, { gate: 'pwa', expect: "under the worker the fleet's root files come from the network, never the worker" }] },
   { name: 'RELOAD_ON_CONTROLLERCHANGE', task: 'T1.11', file: 'page', find: "  window.addEventListener('beforeinstallprompt',", repl: "  if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', function () { location.reload(); });\n  window.addEventListener('beforeinstallprompt',",
     gates: [{ gate: 'lint', expect: 'RELOAD' }, { gate: 'pwa', expect: 'the new worker causes no navigation of its own' }] },
-  /* re anchored at the sb-m1-10 stamp (the registration is ?v=10 now) */
-  { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=10')", repl: "register('./sw.js?v=11')",
+  /* re anchored at the sb-m1-11 stamp (the registration is ?v=11 now) */
+  { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=11')", repl: "register('./sw.js?v=12')",
     gates: [{ gate: 'lint', expect: 'STAMP' }] },
   /* the card review's follow up, due at the sb-m1-2 stamp: the worker reads its own cache only; with no cacheName the
      foreign copy the gate plants before the install answers the offline shell */
@@ -1311,7 +1311,7 @@ const MUTANTS = [
   { name: 'RULES_UNKNOWN_ACCEPTED', task: 'BIOME', file: 'page', find: 'b[7] > RULES_MAX || ', repl: '',
     gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a v2 code with RULES 9' }] },
   { name: 'FLAGS_UNKNOWN_ACCEPTED', task: 'BIOME', file: 'page', find: ' || (b[8] & ~FLAGS_KNOWN) !== 0);', repl: ');',
-    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a v2 code with flags bit 1' }] },   /* re anchored at sb-m1-7: bit 0 is the keys' */
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a v2 code with flags bit 2' }] },   /* re anchored at sb-m1-7: bit 0 is the keys', at sb-m1-11 bit 1 the second monsters' */
   { name: 'V1_CHANGED', task: 'BIOME', file: 'page', find: '    return biomeOf(pal, n);\n  }\n  /* Frost (DESIGN 7)', repl: '    return 0;\n  }\n  /* Frost (DESIGN 7)',
     gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'every fixture builds the level or the refusal it built on 42fc8b19a' }] },
   { name: 'V1_CODE_CHANGED', task: 'BIOME', file: 'page', find: 'grids = r.mode === 2 ? 2 : 1, head = headOf(r.v);', repl: 'grids = r.mode === 2 ? 2 : 1, head = HEADER2;',

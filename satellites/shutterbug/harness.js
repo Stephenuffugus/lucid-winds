@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 7510;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
+const ASSERT_FLOOR = 7698;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -5088,6 +5088,30 @@ group('H-dark-1', 'the Darkroom\'s pool (2 Nov): a state given a pool draws its 
   t.ok(bad === 0 && got.size >= 3, 'over 120 seeded chests with the pool ' + pool.join(', ') + ' every draw is in it (' + bad + ' outside; drew ' + [...got].map(c => WPN_ID[c]).join(', ') + ')');
 });
 
+group('H-mon-1', 'the second monsters (2 Nov): with FLAG_BESTIARY every biome\'s rooms hold its second kind (never without the flag); the crab\'s shell takes no damage; the puff\'s cloud and the beetle\'s trail appear; the owl leaves its perch for a bug in sight', t => {
+  const F = SB.features, P = SB.sim.PROJ_KIND, seen = [0, 0, 0, 0, 0], plain = [0, 0, 0, 0, 0], second = F.SECOND_OF_BIOME;
+  for (const f of FIXTURES) for (let b = 0; b < 5; b++) {
+    const j = Object.assign({}, f.fx.record, { v: 2, biome: b + 1, rules: 0, flags: SB.record.FLAG_BESTIARY });
+    const lv = SB.pipeline.build(SB.record.fromJSON(j), {});
+    if (!lv.needsCrop) seen[b] += lv.features.enemies.filter(e => e.kind === second[b]).length;
+    const lv0 = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, j, { flags: 0 })), {});
+    if (!lv0.needsCrop) plain[b] += lv0.features.enemies.filter(e => e.kind === second[b]).length;
+  }
+  t.ok(seen.every(n => n > 0) && plain.every(n => n === 0), 'with the flag each biome holds its second kind (' + seen.join('/') + '), without it none (' + plain.join('/') + ')');
+  const r = 46 * 24, lab = (kind, opts) => wpnLab(['', FLOOR], [[kind, r + 14 - 24]], Object.assign({ hc: 6, moving: true }, opts || {})).s;
+  const crab = lab(F.CRAB); crab.enemies[0].state = 1; const hp0 = crab.enemies[0].hp; SB.sim.hurtEnemy ? 0 : 0;
+  let shellOk = true; { const before = crab.enemies[0].hp; crab.ev = 0; SB.sim.step(crab, 0); }
+  const puff = lab(F.PUFF); let cloud = false; for (let k = 0; k < K.PUFF_EVERY_F + 4 && !cloud; k++) { SB.sim.step(puff, 0); cloud = puff.proj.some(p => p.live && p.kind === P.PUFFC); }
+  const bee = lab(F.BEETLE); let trail = false; for (let k = 0; k < 60 && !trail; k++) { SB.sim.step(bee, 0); trail = bee.proj.some(p => p.live && p.kind === P.CTRAIL); }
+  const owl = wpnLab(['', FLOOR], [[F.OWL, r + 14 - 24]], { hc: 11, moving: true }).s; let swoop = false;   /* the bug 3 cells off, inside OWL_SEE_CELLS */ for (let k = 0; k < K.OWL_REST_F + 10 && !swoop; k++) { SB.sim.step(owl, 0); swoop = owl.enemies[0].state === 1; }
+  t.ok(cloud && trail && swoop, 'the puff puffs a cloud (' + cloud + '), the beetle leaves a trail (' + trail + '), the owl swoops at a bug in sight (' + swoop + ')');
+  /* the shell: a Boomerang through a shelled crab takes nothing */
+  const { s: cs } = wpnLab(['', FLOOR], [[F.CRAB, r + 7 - 24]], { hc: 4, loadout: ['J1', 0, 0] });
+  cs.enemies[0].state = 1; cs.enemies[0].timer = 0; const ch0 = cs.enemies[0].hp;
+  SB.sim.step(cs, IN.A | IN.A_TAP); for (let k = 0; k < 20; k++) { cs.enemies[0].state = 1; SB.sim.step(cs, 0); }
+  t.ok(cs.enemies[0].hp === ch0, 'a shelled crab takes no damage from a Boomerang through it (' + cs.enemies[0].hp + ' of ' + ch0 + ')');
+});
+
 group('H-wpn-D1', 'Anvil Boots (7.1): a dive landing\'s shock hits 3 cells along the floor and not 4; not a row up; a wall and a ledge\'s end stop it; a dash fires it, a dash into a wall and a plain landing do not; a hold dive on its last landing only; the shake on the dive alone', t => {
   const F = SB.features, EV = SB.sim.EV, N = SB.TUNING.WEAPONS.D1.cells;
   /* the hero over column 10 at row 40, a dive to the floor; the moths [cell] frozen; the hits after 30 steps */
@@ -5774,7 +5798,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   /* the validator */
   const g2 = v2Of(sj, 4);
   const refuse = [['biome 6', { biome: 6 }], ['biome -1', { biome: -1 }], ['biome 1.5', { biome: 1.5 }], ['rules 2 (reserved for the next rules, not this client\'s)', { rules: 2 }], ['rules 9', { rules: 9 }],
-    ['flags bit 1', { flags: 2 }],   /* bit 0 is the keys' (2 Nov), known */ ['flags bit 2', { flags: 4 }], ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
+    ['flags bit 2', { flags: 4 }],   /* bit 0 is the keys' and bit 1 the second monsters' (2 Nov), both known */ ['flags bit 2', { flags: 4 }], ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
   for (const [why, o] of refuse) t.ok(SB.record.validate(Object.assign({}, g2, o)) !== null, 'validate refuses a v2 record with ' + why);
   t.ok(SB.record.validate(Object.assign({}, sj, { biome: 3 })) !== null, 'validate refuses a v1 record carrying a biome');
   t.eq(SB.record.validate(g2), null, 'validate accepts the v2 sample room with biome 4 (control)');
@@ -5783,7 +5807,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.ok(SB.record.decode('v1.' + gb.toString('base64url')) === null && SB.record.decode('v2.' + v1b.toString('base64url')) === null, 'decode refuses a v1. prefix on a v2 record and a v2. prefix on a v1 record');
   t.ok(SB.record.decode(gb.toString('base64url')) !== null && SB.record.decode(gb.toString('base64url')).biome === 4, 'a bare v2 payload decodes with its biome');
   const at = (k, v) => { const b = Buffer.from(gb); b[k] = v; return b; };
-  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 1', at(8, 2)], ['flags bit 2', at(8, 4)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
+  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 2', at(8, 4)], ['flags bit 2', at(8, 4)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
   for (const [why, b] of newer) {
     t.eq(SB.record.parseCode(code2(b)).why, 'newer', 'parseCode answers newer on a v2 code with ' + why);
     t.eq(SB.record.decode(code2(b)), null, 'decode never builds a v2 record with ' + why);
@@ -5793,7 +5817,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.eq(SB.record.parseCode(at(0, 3).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v3 payload (no prefix), as on its v3. code');
   t.eq(SB.record.parseCode('https://x.example/s/#' + at(0, 7).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v7 payload after a link\'s #');
   t.ok(SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode(at(0, 200).toString('base64url')).why === 'bad', 'garbage and a bare payload with version byte 200 still read as bad (control)');
-  t.eq(SB.record.parseCode(code2(at(8, 2).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length)');
+  t.eq(SB.record.parseCode(code2(at(8, 4).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length)');
   t.eq(SB.record.parseCode(code2(gb.subarray(0, 300))).why, 'bad', 'a truncated v2 code with known bytes reads as bad (control)');
   t.ok(SB.record.parseCode(code2(gb)).rec && SB.record.parseCode(code2(gb)).rec.biome === 4, 'a v2 code with RULES 0 and no flags opens (control)');
   /* the build: the biome byte names the biome; RULES 0 is today's rules on the same grid */
@@ -5888,7 +5912,7 @@ group('H-hue-1', 'the hue vote (Q220, shell-capture\'s hueVote): the bright room
   const sage = SB.SAMPLE_ROOM, rgb = new Uint8Array(N * 3);
   for (let i = 0; i < N; i++) { const p = parseInt(sage[Math.floor(i / 24)][i % 24], 16); rgb.set(p === SB.palette.I.ASH ? [178, 194, 164] : SB.palette.RGB[p], 3 * i); }
   const j = CAP.gridRecord(rgb, -1), want = CAP.hueVote(rgb).biome;
-  t.ok(j.v === 2 && j.biome === want + 1 && j.rules === 0 && CAP.RULES === 0 && j.flags === SB.record.FLAG_KEYS && SB.record.validate(j) === null, 'gridRecord writes a valid v2 record: biome the vote + 1 (' + j.biome + '), RULES 0 (today\'s rules, Q222), the keys flag (2 Nov)');
+  t.ok(j.v === 2 && j.biome === want + 1 && j.rules === 0 && CAP.RULES === 0 && j.flags === (SB.record.FLAG_KEYS | SB.record.FLAG_BESTIARY) && SB.record.validate(j) === null, 'gridRecord writes a valid v2 record: biome the vote + 1 (' + j.biome + '), RULES 0 (today\'s rules, Q222), the keys and second monster flags (2 Nov)');
   /* sb-m1-5: gridRecord now normalises before nearest (NORMALISE), so its rows are no longer the sample room's; the vote
      reads the raw colours (the merge rule), so the biome byte is still the sage's. Built on the sample room's own rows */
   const js = Object.assign({}, j, { rows: Array.from(SB.SAMPLE_ROOM) });

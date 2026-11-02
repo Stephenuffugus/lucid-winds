@@ -1,5 +1,10 @@
 # START HERE
 
+## 📷 2 Nov 19:45 UTC (Opus) sb-m1-11 STAMPED: THE DARKROOM, THE SECOND MONSTERS, THE EDGE TRIMS (on top of sb-m1-10's bosses and charms, none shipped yet)
+DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-11/deploy-sb-m1-11.sh` (it carries sb-m1-9 and sb-m1-10 too), then hostproof, tag sb-m1-11.
+NEXT (his order, "finish making shutterbug now"): the polish pass over every screen at 320, 360 and 412; then the ship list (unlocks with Negative, music, perf, accessibility, the store page). Interactive terrain (crumble, spring, vent, hot coal, switch) waits: each one changes the collision and the fairness proof.
+ASTRA ROUND 6 notes so far: confirm or redraw C3's glyph (the builder ringed it in Ink); a Darkroom header (a red safelight room); bigger Ember boss sparks.
+
 ## 📷 2 Nov 18:50 UTC (Opus) sb-m1-10 STAMPED: BIOME BOSSES + CHARMS; CI FITS AGAIN (redwatch is a release gate, anchors per push)
 DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-10/deploy-sb-m1-10.sh` (sb-m1-9 never shipped), then hostproof, tag sb-m1-10.
 BEFORE A DEPLOY: `node tools/check.js --release --fast` adds the redwatch rows (25 min here). NEXT in his order: terrain (edge trims, crumble, spring, one way, vent, hot coal, switch and door), the second monsters, the Darkroom, the first 60 seconds, the ship list.
