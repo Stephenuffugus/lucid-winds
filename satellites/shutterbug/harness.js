@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 7237;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
+const ASSERT_FLOOR = 7246;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -5474,20 +5474,20 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
     spore: [hx(I.INK, I.MOSS), true],
     icon_biomes: [hx(I.INK, I.ASH, I.PAPER, I.WALNUT, I.AMBER, I.BRICK, I.LAPIS, I.TEAL, I.MOSS), true],
     /* W2 (weapons step 2, Q122): the held looks, the colours Astra drew, Ink on the frozen crystals only */
-    fx_frozen_stunned: [hx(I.INK, I.GLARE, I.AMBER, I.TEAL), false],
+    fx_frozen_stunned: [hx(I.INK, I.PEWTER, I.PAPER, I.GLARE), false],   /* round 5: no Amber (loot's) and no Teal in the held looks */
     /* ART4 (Astra's round 4, Q164): the stick's pad thin Slate arcs and an Ash disc, the hint Slate, Pause Slate bars
        (pressed: Paper bars on an Ink tile), none Ink outlined; the air neutral with Ink cores (the dust's flecks, the
        frost's crystal, the bubble's hollow ring) and the ember Brick with a Glare core, never loot's Amber */
     stick_pad: [hx(I.SLATE, I.ASH), false], stick_hint: [hx(I.SLATE), false], pause_glyph: [hx(I.INK, I.SLATE, I.PAPER), false],
-    dust_mote: [hx(I.INK, I.PEWTER, I.ASH), true], frost_mote: [hx(I.INK, I.PAPER, I.GLARE), true], bubble: [hx(I.INK, I.PEWTER, I.GLARE), true],
-    ember_mote: [hx(I.INK, I.GLARE, I.BRICK), true] };
+    dust_mote: [hx(I.PEWTER, I.ASH, I.PAPER), false],   /* round 5: a pale fleck, its Ink cores read as dirt */ frost_mote: [hx(I.INK, I.PAPER, I.GLARE), true], bubble: [hx(I.INK, I.PEWTER, I.GLARE), true],
+    ember_mote: [hx(I.PEWTER, I.ASH, I.GLARE), false] };   /* round 5: floating light, not danger's Brick and Ink */
   /* ART4: the weapon colour law (8.1, Astra's round 4): every weapon effect pixel Ink, Slate, Pewter, Ash, Paper or
      Glare, Ink outlined in every frame: Twin Darts' dart, Halo's ring, Spark Trail's ember, the Flashbulb's flash_ring,
      Shutter Snap's snap_frame, Shield Kick's kick_spray, and step 3's fire_cell and frost_burst */
   const WFX = ['dart', 'ring', 'ember', 'flash_ring', 'snap_frame', 'kick_spray', 'fire_cell', 'frost_burst'];
   for (const k of WFX) LAW[k] = [hx(I.INK, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE), true];
   const POSES = Object.keys(LAW).filter(n => n.startsWith('hero_'));
-  t.ok(names.length > 0 && names.length < 65, names.length + ' named sprites (under 65, sb-m1-5\'s cap: ART4\'s 51 and HOUSE-B\'s 13; frames are unlimited)');
+  t.ok(names.length > 0 && names.length < 80, names.length + ' named sprites (under 80, round 5\'s cap: room for the keys; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
     const sp = S[name];

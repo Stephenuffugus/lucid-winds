@@ -40,7 +40,9 @@ FX_FRAME_RE = re.compile(r'^([a-z]+(?:_[a-z]+)*)_([0-9])$')
 FX_SIDES = (16, 32, 48, 64)
 # ART3: the beacon's own lighting (fx_beacon_light, round 3) starts on the dark lamp and ends on the lit beacon pixel for
 # pixel, so it carries the beacon's Sun; every other effect stays without it
-SUN_KEYS = ('beacon', 'fx_beacon_light')
+# round 5: an fx the brief itself named with plain frames (a, b, c) and a non square size
+FX_PLAIN = ('fx_beacon_refuse',)
+SUN_KEYS = ('beacon', 'fx_beacon_light', 'beacon_locked')   # round 5: the locked beacon's charge windows are the beacon's own Sun (the brief allowed it)
 HERO_NAMES = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'jump', 'fall', 'cling', 'dive', 'land', 'dead']
 NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 # the names the page may hold after a splice (the lint and H-spr-1 hold the page to the same number). ART2 counted the
@@ -56,7 +58,7 @@ NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 # frame_styles and hero_colours; round 3's run_pips, icon_house, card_house_clear, fx_unlock, the boss effects,
 # fx_beacon_light and hero_colours_r3): 55 names, so 56
 # sb-m1-5 merges both: 64 names, so 65
-MAX_SPRITES = 65
+MAX_SPRITES = 80   # round 5 (2 Nov): the fixes and shaft_joined now, room for the keys' 7 and more
 
 
 class Refuse(Exception):
@@ -253,7 +255,7 @@ def check(root, page):
                         raise Refuse('%s.%s has no Ink in its feet row' % (key, name))
             elif key not in SUN_KEYS and any('e' in s for s in frames.values()):
                 raise Refuse('Sun in %s (Sun belongs to the hero, its hero_* poses and the beacon with its fx_beacon_light)' % key)
-            if FX_RE.match(key):
+            if FX_RE.match(key) and key not in FX_PLAIN:
                 if fw != fh or fw not in FX_SIDES:
                     raise Refuse('%s is %dx%d: an effect is square, %s a side' % (key, fw, fh, ' or '.join(map(str, FX_SIDES))))
                 seen = {}
@@ -281,7 +283,7 @@ def check(root, page):
                 if nn and names != nn:
                     raise Refuse('%s frames are %r, the brief asks %r' % (key, names, nn))
                 warnings.append((f, 'a new key %s: R.draw must learn to draw it' % key))
-            elif FX_RE.match(key):
+            elif FX_RE.match(key) and key not in FX_PLAIN:
                 warnings.append((f, 'an effect %s (%s): R.draw must learn the clips it binds' % (key, ', '.join(sorted({FX_FRAME_RE.match(x).group(1) for x in names})))))
             else:
                 warnings.append((f, 'an unknown key %s: added to SPRITES, drawn by nothing yet' % key))

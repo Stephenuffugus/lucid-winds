@@ -88,3 +88,7 @@ Round 2: each 32x32, four frames at 12 fps. "Play once and remove after frame 3,
 
 - `tab_biome` (round 3, 16x5, a frame a biome, repeats along x): an optional film tab variant per biome; only the centred five pixel trim at the bottom changes, the perforations and the cream deck are the existing tab's. Stephen's call (Q162).
 - `hero_bold` (round 2, 12x16, `idle0 run0`): a fuller rear inside the 12x16 box for comparison only; the approved round 1 hero stays the default. Stephen's call.
+
+## Round 5 (2 Nov)
+
+Zip sha256 8cc89cef..., 65 strips, 203 frames, her VALIDATION PASS; `astra_cut.py check` CHECK OK once the cutter allowed what the brief asked (Sun in beacon_locked, plain frames in fx_beacon_refuse). The cut is /home/codespace/sb-drafts/astra/round5/cut-round5.json. In the page (sb-m1-6): the 11 replacements (ember, flash_ring, kick_spray, dart, ring, snap_frame, ember_mote, dust_mote, crusher, fx_enemy_hit, fx_frozen_stunned) and shaft_joined (crusher banks). Waiting for their systems: the keys set (key, key_get, key_drop, hud_key, beacon_locked, fx_beacon_refuse, key_guard_mark), the boss pieces, the second monsters, the dive and charm effects, the terrain. Not vaulted yet (needs his gh login).

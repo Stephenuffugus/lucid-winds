@@ -1613,3 +1613,8 @@ shipped: the three branches merged (conflicts kept both ways; SPRITES 64 names, 
 gates: lint OK; harness --fast 7237 assertions OK (floor 7237); H-bot-8's Skyhook pin 87 to 93 on the merged rooms; H-hue-1 builds the sage room on its own rows (gridRecord normalises now). No browser sweep (Stephen's order, 2 Nov).
 shots: one room 5 shot at 412x915, unarmed: the line fits one row; the chest is small and far on the left wall with nothing pointing to it; the bug drops in 3 cells from the guardian.
 not done, on purpose: the safe ledge (moths still reach it; that is the fight's pressure, a ledge no attack reaches would make it stand and tap), the guardian contact test, the boss HP (20 still dies in about 7 s: his call after he plays), the 9 minor findings.
+
+### 2026-11-02 16:10 UTC  sb-m1-6  Health made obvious; Astra's round 5 fixes (Opus)
+shipped: hearts over the bug through a hit's i frames (the one lost blinks), the strip's hearts at 3x up to 5 (2x when more or under 360 wide), a lost heart pops and the row shakes, the last one pulses, a hit rings the stage in Brick (none of it when reduced motion); Astra's 11 replacements and shaft_joined, crusher banks drawn joined with one top face; the cutter allows Sun in beacon_locked and plain frames in fx_beacon_refuse; sprite cap 80; stamp sb-m1-6.
+gates: lint OK; harness --fast 7246 OK (H-spr-1's colour laws moved to round 5's dust, ember mote and held looks).
+shots: a hit at 3 of 4 and at 1 of 4 (412x915): the row over the bug reads; the strip's hearts first sat 10 px too high (the class big was the big buttons' own, min-height 56: renamed hbig). A Frost crusher bank: one ram, no seams.
