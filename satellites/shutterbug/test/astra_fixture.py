@@ -52,6 +52,11 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'ui/card_house_clear.png': ('card_house_clear', None), 'fx/fx_unlock.png': ('fx_unlock', None), 'fx/fx_boss_wake.png': ('fx_boss_wake', None),
     'fx/fx_boss_chip.png': ('fx_boss_chip', None), 'fx/fx_boss_down.png': ('fx_boss_down', None), 'fx/fx_beacon_light.png': ('fx_beacon_light', None),
     'hero/hero_colours_r3.png': ('hero_colours_r3', None),
+    # round 5's keys in the page (2 Nov): the joined crusher, the locked exit's art, the dive slot's pictures
+    'world/shaft_joined.png': ('shaft_joined', None), 'loot/key.png': ('key', None), 'fx/key_get.png': ('key_get', None),
+    'ui/hud_key.png': ('hud_key', None), 'world/beacon_locked.png': ('beacon_locked', None), 'fx/fx_beacon_refuse.png': ('fx_beacon_refuse', None),
+    'fx/tremor_burst.png': ('tremor_burst', None), 'fx/tremor_chip.png': ('tremor_chip', None), 'fx/pogo_bounce.png': ('pogo_bounce', None),
+    'fx/pile_strike.png': ('pile_strike', None),
 }
 
 
