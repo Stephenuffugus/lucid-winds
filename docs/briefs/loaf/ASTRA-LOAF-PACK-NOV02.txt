@@ -1,0 +1,110 @@
+LOAF, THE WHOLE PACK FOR ASTRA (2 Nov 2026)
+
+Stephen: "Loaf holds a very unique feature and I think it could sell. We will need to give Astra an entire pack so it
+can assess and help smooth it all out, then give us a single zip back with everything so Fable can plan the build
+with me."
+
+So this round is two jobs in one zip:
+  1. ASSESS the app as it stands and smooth it out (a written review, a style guide, a plan of fixes).
+  2. PRODUCE the art the app needs to ship.
+Fable will plan the build with Stephen from your zip alone, so write as if no one can ask you a follow up question.
+
+WHAT LOAF IS
+The virtual copy of YOUR cat. You photograph your cat, the app reads her coat from the photo, and you meet a living
+3D version of her that you hang out with every day: a card with her stats, a room where she lives, toys, a laser, a
+fishing pond, toe beans to press, a daily ritual. The moat is "essence capture": the owner looks at the 3D cat and
+feels "that's her". The test the whole plan is built around is the Two Cat Test: put the owner's cat beside a
+stranger's and the owner must pick theirs instantly, without labels.
+
+THE HARD LINES (they bind the art too)
+- Comfort first. Nothing in the room dies, gets sick, runs away or is punished. A need that runs low is a reason to
+  do something, never an accusation: no alarm red, no sad cat, no "you neglected her".
+- Coat, never breed. The app never names a breed. Draw cats by coat (black, tabby, calico, tuxedo...), never as a
+  breed.
+- Chonk never reads as body condition. A big cat is a big cat, never a health warning.
+- "Days together" only counts up. No streak that breaks.
+- The owner's PHOTO stays the hero of the card.
+- The cat is the hero of every scene. Props are supporting cast: soft, rounded, muted, nothing sharp, nothing that
+  implies harm, illness, confinement or absence.
+
+WHAT IS IN THIS PACK
+- screens/: the app today on a phone (375 or 412 wide), from the real build:
+    walk-1-meter (the photo and its light meter), walk-2-card (the card, its stats), walk-2b-card-3dface (the card's 3D
+    face), walk-3-tuner (the room and the tuner), walk-4-avatar (the 3D cat), then one each of the room, the laser, the
+    fishing pond, the yarn, the toe beans, the box, the daily ritual, the poem, tricks, a visitor, the coat samples.
+- LOAF_PLAN.md: the product plan (the thesis, the Essence Engine, personality, animation, the room, the games, bond
+  and levels, the engagement loop, the ship path). Sections 0, 5, 6, 7 and 8 matter most to you.
+- LOAF_FURNISHINGS.md: the 16 furnishings for the room.
+- refcats/: two of Stephen's own cats, Barthalomew (a tuxedo) and Oreo, as the real faces of "your cat".
+- The app's own palette and type, from its code:
+    ink #150E1D, panel #221733, panel-2 #2E2044, line #3D2C58, amber #FFB23F, jade #6FE3C4, bone #EFE4D2,
+    dim #9A88B3, faint #6C5A85, seal #D93A4B; type Bricolage Grotesque (display) and DM Mono (labels).
+
+WHAT THE APP NAMES (draw these exact things)
+- The six stats: CHONK, MISCHIEF, ZOOMIES, FLOOF, CHARM, VOID.
+- The six abilities (one per lead stat): Immovable Object (chonk), The Swat (mischief), 3AM Sprint (zoomies), Full
+  Fluff (floof), The Slow Blink (charm), Vanish (void).
+- The five rarities, lowest to highest: ALLEY, HOUSE, SHOW, FOIL, MYTHIC.
+- The fifteen postures on the posture shelf (each with its Japanese name, which the app shows):
+    The Loaf (kobako-zuwari), The Sphinx, The Egyptian, Tail Wrap, The Scottish Sit, The Side Lean, The Old Man,
+    The Ammonite, Navel to the Sky (heso-ten), The Apology (gomen-ne), Too Bright (mabushii-ne), Hands Hidden
+    (otete-nai-nai), The Tsuchinoko, The Meerkat, The Hotpot (neko-nabe).
+- The eight toys: Yarn, Crinkle, Feather, Box, Treat, Laser, Pond, Beans; and the Ability and Clip buttons.
+- The daily ritual's five steps: Greet, Tend, Mood, Shape, Play.
+- The three needs: Fed, Played, Litter.
+- The nine fish of the Fish Book: Brook Minnow, Silver Dace, Moon Perch, A Frog Somehow, Marmalade Koi, Ghost Koi,
+  Blue Shubunkin, The Golden One, An Old Boot.
+
+PART 1. THE ASSESSMENT (write it first; it decides the rest)
+Walk every screen in screens/ against the plan, as a cat owner opening the app for the first time and then as one
+coming back on day 30. Then write:
+  a. ASSESSMENT.md:
+     - What already reads and should be kept.
+     - What does not read, confuses, or looks unfinished, screen by screen. Be blunt: the 3D room today is a dark empty
+       space with no floor, walls or furniture; the toy and ritual icons are small emoji like glyphs; there is no app
+       icon or store art. Find the rest.
+     - Anything that breaks a hard line visually (a colour that alarms, a prop that implies harm, a stat that reads as
+       weight shaming).
+     - The smoothing plan: a numbered list of changes, each with its size (S, M, L), what it depends on, and whether it
+       is art (yours) or code (ours). Order it by what most raises "that's her" and "I want to come back tomorrow".
+     - The three biggest risks you see to Loaf selling, and what you would do about each.
+  b. STYLE-GUIDE.md (or a PDF with the same name): the look Loaf should ship with. Keep the dark "field unit"
+     look, evolve it, or replace it, and say why. Palette (hex), type (Google Fonts only), icon grammar (stroke or fill,
+     corner radius, the grid), illustration style for the room and the fish, how the five rarities differ, how motion
+     should feel. Show it on at least the card and the room.
+
+PART 2. THE ASSETS (in this order; send what you finish if you cannot finish all)
+Formats: icons and UI marks as SVG (flat, they must read at 24 px and at 48 px), illustrations and plates as PNG at
+3x with transparent backgrounds where they float, textures as tileable PNG. Names lowercase_with_underscores. A
+manifest.json lists every file: file, id, kind (icon, card, plate, prop, texture, illustration, store), size, notes.
+
+  A. Identity: the LOAF wordmark; the app icon (512 square with no transparency for the store, a 512 maskable with
+     the safe zone respected, a 192); the store feature graphic 1024x500; a splash for the app's first frame.
+  B. The card: a frame for each of the five rarities (each rarer one reads rarer at a glance; FOIL and MYTHIC shine);
+     the card back; the six stat icons; the six ability badges; the fifteen posture silhouettes for the shelf (one
+     consistent silhouette style, a neutral coat, never a breed).
+  C. The room: a cozy room for the 3D cat to live in, as plates the code can map in 3D: a floor (tileable), a back
+     wall, a window, each for day, dusk and night. Then the sixteen furnishings of LOAF_FURNISHINGS.md, each as a
+     clean three quarter view on a transparent ground at the scale noted there. These double as the input pictures for
+     the 3D model generator we use, so draw each one alone, whole, evenly lit, nothing cropped.
+  D. The toys and games: the eight toy icons and the Ability and Clip buttons; the laser dot and its glint; the
+     rainbow yarn ball and its trail; the nine fish of the Fish Book as illustrations (each one a card in the book,
+     the Old Boot included); the pond's water surface and its ripple; toe beans in close up (pink, black, mixed) for
+     the Beans toy.
+  E. The daily ritual and the bond: the five ritual step icons; the three need icons with their calm low state (amber
+     "you could", never red "you failed"); bond level badges 1 to 10; a "days together" motif that only counts up.
+
+WHAT NOT TO DRAW
+- The cat herself as a finished character: the 3D cat is generated from the owner's own photo. Silhouettes, poses,
+  icons and reference sketches of cats are welcome; a fixed mascot cat is not.
+- Any breed name, any medical or weight cue, any sad, sick, hungry or lonely cat.
+- Store screenshots: we compose those from the real app.
+- The dog (Biscuit): it is planned only after the cat ships. If your style guide should leave room for a second
+  species, say so in one line.
+
+DELIVERY
+ONE zip named loaf-astra-pack-v1.zip, containing:
+  ASSESSMENT.md, STYLE-GUIDE.md (or .pdf), manifest.json, assets/ (sections A to E as folders), previews/ (a contact
+  sheet per section, so it can be judged at a glance), and NOTES.md (anything you chose differently and why, and what
+  you would make next).
+Stephen uploads it to Drive Astra/Loaf. Fable plans the build from it with him.

@@ -1,5 +1,11 @@
 # START HERE
 
+## 🗒 2 Nov 21:10 UTC (Opus) HIS CALLS: SHUTTERBUG AT $0.99; DEWBALL THE NEXT $1 CANDIDATE; LOAF TO ASTRA FOR A WHOLE PACK; LUCID WINDS PUBLISHING IS FABLE'S AND HIS
+- Shutterbug: $0.99 (store/shutterbug-play/index.html says so). He is testing sb-m1-12 and looking for one real room photo for the first store shot.
+- Dewball: "a strong candidate for our next one dollar game", needs building out (w5 done on dewball-w567; w6, w7 and the vault release wait).
+- Loaf: "give Astra an entire pack so it can assess and help smooth it all out, then give us a single zip back with everything so Fable can plan the build with me". The brief is in Drive Astra/Loaf (ASTRA-LOAF-PACK-NOV02.txt, id 1LC0ysEUOch0ABT26HMyR3sqt6CTEsBTH, 8384 bytes, equal to docs/briefs/loaf/). The pack zip (35 files, 698 KB: the brief, 22 screens of the real app, LOAF_PLAN.md, LOAF_FURNISHINGS.md, four photo and 3D pairs of Barthalomew and Oreo) is /home/codespace/sb-drafts/loaf-pack/loaf-pack-for-astra-nov02.zip, sha256 36dd05f7...; he downloads it and hands it to Astra with the brief. Astra returns loaf-astra-pack-v1.zip; Fable plans the build with him from it.
+- Lucid Winds publishing: "something Fable and I will have to reconcile and plan". Nothing for the builder yet.
+
 ## 📷 2 Nov 20:55 UTC (Opus) sb-m1-12 IS LIVE (deploy d88c45a06, tag sb-m1-12; index sha256 bed70c84..., sw.js and manifest.webmanifest equal on both origins; privacy.html served with the email_off fence stripped by the CDN and the address in plain text, as on Hues)
 In it: charms, the biome bosses, the Darkroom, the second monsters, the edge trims, the polish pass, Play readiness. The first deploy try stopped on deploy.sh's second guard (its list had not followed SERVED): fixed 479367acd. NEXT: his play notes on the Pixel; the Play submission waits for his call (store/shutterbug-play has the kit).
 
