@@ -235,7 +235,7 @@ try {
     const er = await page.evaluate(() => new Promise(done => {
       const t0 = performance.now(), poll = () => {
         const CR = window.SB.ui.crop, S = CR.seek, w = CR.worker;
-        if (S && S.busy && w) { let ended = false; const term = w.terminate; w.terminate = function () { ended = true; return term.call(this); }; w.dispatchEvent(new Event('error')); done({ at: S.i, ended: () => ended, worker: CR.worker, mode: S.mode, ok: true, endedNow: ended }); return; }
+        if (S && S.busy && w) { let ended = false; const term = w.terminate; w.terminate = function () { ended = true; return term.call(this); }; w.dispatchEvent(new Event('error')); done({ at: S.i + 1, ended: () => ended, worker: CR.worker, mode: S.mode, ok: true, endedNow: ended }); return; }
         if (performance.now() - t0 > 10000 || (S && S.phase !== 'seek')) { done({ ok: false, phase: S && S.phase }); return; }
         setTimeout(poll, 0);
       };
@@ -243,7 +243,7 @@ try {
     }).then(r => ({ ok: r.ok, at: r.at, ended: r.endedNow, gone: r.ok ? r.worker === null : null, mode: r.mode, phase: r.phase })));
     await settled();
     const ea = await info();
-    R.say(er.ok && er.ended && er.gone && er.mode === 'main', 'photo1r: a worker that fails mid try is ended with its copy of the photo, and the search goes on on this thread (failed at try ' + er.at + ', ended ' + er.ended + ', the worker ' + (er.gone ? 'dropped' : 'kept') + ', ' + er.mode + ' mode)');
+    R.say(er.ok && er.ended && er.gone && er.mode === 'main', 'photo1r: a worker that fails mid try is ended with its copy of the photo, and the search goes on on this thread (failed during try ' + er.at + ', the box put back for this thread, ended ' + er.ended + ', the worker ' + (er.gone ? 'dropped' : 'kept') + ', ' + er.mode + ' mode)');
     R.say(ea.retried === 1 && autoChosen && JSON.stringify(ea.chosen) === JSON.stringify(autoChosen.chosen) && ea.builds === autoChosen.builds,
       'photo1r: the box the failed worker was trying is tried again, so the search finds the same box after the same builds (retried ' + ea.retried + ', ' + ea.builds + ' builds, the box ' + JSON.stringify(ea.chosen) + '; without the failure ' + JSON.stringify(autoChosen) + ')');
     await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 15000 }).catch(() => {});
