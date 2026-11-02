@@ -1,5 +1,23 @@
 # START HERE
 
+## 📷 2 Nov 03:01 UTC (Opus) SAVED FOR THE CODESPACE REFRESH (11 hours up): EVERY BRANCH CLEAN AND PUSHED
+Stephen: "when you finish what youre on we need to save commit and push ... we will have to refresh the codespace". All lanes are stopped, and no lane process is left. Every branch equals origin:
+  - add-sproing-jumper: sb-m1-4 is merged and stamped `102c8ed7d`; its deploy line is in the 02:0x entry. Not run yet at 03:00 UTC: main still shows sb-m1-3 `dbe5274f3`.
+  - sb-levels `7a029d6ab` (merged into sb-m1-4)
+  - sb-climb `8e9ee54e2` (BIOME on, CLIMB off)
+  - sb-weapons-2 `3abb41352` (W2, ART4, W2R)
+  - sb-house `c74f38f0d` (HOUSE-B built and reviewed). Its fix was NOT run. The 13 findings (4 major) are in satellites/shutterbug/docs/lanes/house-b-review-findings-nov02.json:
+    - the safe ledge is not safe from the shed moths
+    - the guardian's contact damage has no test
+    - a weaponless or Anvil Boots bug cannot beat a hovering guardian
+    - the fight is too easy (stand still and tap A)
+  - dewball-w567 `85fc8b343` (w5 Starfall Bay). w7's half built files are left on disk, uncommitted; rebuild them.
+AFTER THE REFRESH:
+  1. Run `claude` and say "read START-HERE.md and continue".
+  2. Restart the autosaves: main, plus autosave-wt.sh for sb-house, sb-climb and sb-weapons-2. sb-levels is merged and needs none.
+  3. If sb-m1-4 is still not live, give Stephen its line first.
+  4. Then the 03:00 entry's sb-m1-5 steps, with the house fix run first over the findings file. At most 2 lanes.
+
 ## 📷 2 Nov 02:52 UTC (Opus) THE NEXT SESSION STARTS HERE: sb-m1-5 IS THREE BRANCHES TO MERGE, STAMP, CHECK AND SHIP
 STATE AT THE BOX STOP (about 04:05 UTC):
   - sb-m1-4 is stamped `102c8ed7d`, with the deploy line handed to Stephen at 02:36 (see the 02:0x entry). The timing groups pass under the lock. If main still shows sb-m1-3 (deploy `dbe5274f3`), give him the line again.

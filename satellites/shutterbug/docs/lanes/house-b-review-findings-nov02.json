@@ -1,0 +1,111 @@
+{
+ "branch": "sb-house",
+ "head": "c74f38f0d",
+ "note": "House lane B review findings (1 to 2 Nov 2026). The fix step was stopped at the box's 11 hour mark before it changed anything; run one fix over these next session (refute or fix each, with its test and redwatch row), then merge sb-house for sb-m1-5.",
+ "findings": [
+  {
+   "title": "The safe ledge is not safe: the shed moths home in on a still bug on it in every built room 5 (T2.11 says no attack reaches it)",
+   "severity": "major",
+   "evidence": "arena() (index.html:3270-3282) and H-boss-5 (harness.js:5476-5494) count as the moth's 'attack' only its start cell plus ROUTE_SAFE_ENEMY_DIST around the shed box (index.html:3276). But moveEnemy's MOTH branch (index.html:~3502) homes on the hero at MOTH_V from anywhere, through furniture, with no leash. Scratch probe /home/codespace/sb-drafts/house/revB-node/scr/probe2.js builds all 156 corpus rooms as room 5 with the photo enemies removed, puts a mortal, motionless bug on features.guardian.ledge and steps with no input. Output: 'a still bug on the safe ledge hit within 900 steps: 156 of 156 median frame 248 min 248' (248 steps after the first SHED). probe3.js traces it in the sample room: ledge (16,46), shed box at (19..21,41..42); the moths go 19,41 -> 17.8,43 -> 16.6,45 and hit the bug at frame 608. H-boss-5 is green only because it checks the moths' start cells, not where they go.",
+   "fix": "Either give the guardian's shed moths a leash (for example they home only within N cells of the shed box, back to home outside it), so a ledge outside that radius really is outside every attack. Or put the reading to Stephen in Q203 as a seventh call. Either way, make H-boss-5 run a still, mortal bug on the ledge for 3 shed cycles and assert no heart is lost, and point LEDGE_IN_ATTACK_RANGE at that.",
+   "art": false,
+   "lens": "review-code:house-b"
+  },
+  {
+   "title": "The guardian's contact damage has no harness assertion and no redwatch row",
+   "severity": "major",
+   "evidence": "The 8g block's contact hit (index.html:4120, 'if (touched) hitHero(s, (h.x + (K.HERO_W_SUB >> 1)) * glive < gmid ? -1 : 1);') is the body's only direct attack. Deleting it (scratch copy /home/codespace/sb-drafts/house/revB-node/scr/page-NO_CONTACT.html, made by scr/mut.js) and running 'nice -n 10 node harness.js --fast --page <that copy>' fails only the load-timed H-pipe-10 and H-rep-6, which pass when rerun alone (log /home/codespace/sb-drafts/house/revB-node/nocontact.log). 'harness.js --only H-boss' on it prints 'SHUTTERBUG HARNESS OK'. No HOUSE-B row in tools/redwatch.js mutates this line. The house gate fights with SB_DEV.immortal(true) (test/house.mjs:89), so no browser gate sees a hit either. The core-inset rule, the knockback side, the i frames and dash exemption, and phase 0 being harmless all ship unwatched.",
+   "fix": "Add a harness group, for example H-boss-11. Awake, a mortal bug on a live cell's core loses HIT_HEARTS and is knocked away from the body's middle. On a struck cell, during the intro, and with i frames or a dash it loses nothing. Add a row such as GUARD_NO_CONTACT that deletes the hitHero line and goes RED on it.",
+   "art": false,
+   "lens": "review-code:house-b"
+  },
+  {
+   "title": "A shed with every moth slot still alive tells and plays its release, but sheds nothing",
+   "severity": "minor",
+   "evidence": "8g (index.html, the 'GB.timer >= K.BOSS_MOTH_EVERY_F - K.BOSS_TELEGRAPH_F' branch) sets TELL and then calls shed() every 240 steps whether or not a slot is dead. shed() skips live slots but always sets EV.SHED. The render then draws boss_moth_shed.telegraph, windup, release and follow from R.gfx.shedAt. probe3.js (sample room, still bug): 'shed at 600 4/16.6/45.0 4/16.8/45.0 4/17.0/45.0'. All three first-shed moths are still alive beside the bug, nowhere near the shed box (19..21,41), so the 48-frame tell at 552 and the release at 600 announced nothing. With a bug that dodges, every cycle after the first can be an empty tell.",
+   "fix": "At the TELL decision, start the tell only when at least one guardian moth slot is dead; otherwise hold the clock (for example leave timer at the tell threshold) until a slot frees. Set EV.SHED only when a moth was placed. Add an H-boss-8 assertion that no TELL or SHED fires while all BOSS_MOTH_COUNT slots are alive, and a row that drops the guard.",
+   "art": false,
+   "lens": "review-code:house-b"
+  },
+  {
+   "title": "Under a quarter left, the weapons still strike the full 5x4 rect, but nothing is drawn there",
+   "severity": "minor",
+   "evidence": "The hit pass (index.html:3706-3713) tests the projectile box against the whole features.guardian.rect for as long as hp > 0. drawGuardian (index.html:5315) draws the dotted outline only while 'live >= Math.ceil(B.cells.length * SB.TUNING.BOSS_OUTLINE_UNTIL)', which is 5 of 20 cells. From 4 live cells down, a Boomerang thrown into empty, undrawn space anywhere in the old rect hurts the guardian and erodes a far cell. Q203 call 4 describes the outline as 'the rect the weapons still strike', and here they disagree.",
+   "fix": "Keep the two in step. Either draw the outline until hp 0, or from BOSS_OUTLINE_UNTIL on strike only the live cells (their bounding box). Assert the agreement in H-boss-9 with a hit at 4 live cells into an undrawn rect cell.",
+   "art": false,
+   "lens": "review-code:house-b"
+  },
+  {
+   "title": "Loading any older build (LIVE sb-m1-3 on a rollback) wipes every won cosmetic from the save",
+   "severity": "minor",
+   "evidence": "origin/main (SB.BUILD 'sb-m1-3') defaults to 'cosmetics: { hero: 0, frame: 0 }' (main index.html:932). Its fillSave copies only the default's keys (main index.html:934-943, 'for (var k in def) out[k] = fillSave(def[k], got[k])'), so cosmetics.owned is dropped. loadSave then returns write: JSON.stringify(doc) !== raw (main:966), and the shell writes it back (main:4628). Back on this build, lookValid (index.html, the new function in core-record) resets the worn hero and frame to 0 because they are no longer owned. Lane A's run survives this because its default is null, which fillSave passes through whole. lane B's owned list does not. Every prize from every house clear is lost for good after one visit to an older page.",
+   "fix": "Record this in the PROGRESS entry and the deploy notes: after this ships, a rollback of the page is a cosmetics wipe. Or make the shipped save forward tolerant before the first prize can be won, for example a fillSave that keeps unknown keys of an object default. Add an H-look-1 assertion that a save with owned, passed through the previous build's validateSave text (loaded with --page on the base), is reported as lossy.",
+   "art": false,
+   "lens": "review-code:house-b"
+  },
+  {
+   "title": "H-boss-7 says it checks the core's weak list against what the sim strikes, but never does",
+   "severity": "minor",
+   "evidence": "The group title (harness.js:5508) ends 'the core's own weak list is no bigger than what the sim strikes'. The only assertion is harness.js:5525 'if (struck.size < T.BOSS_WEAK_MIN) bad.push(...)'. g.weak.length shows up only in the failure text and is never compared with struck. arena()'s 'if (open || weak.length) weak.push(c)' (index.html, in arena) adds every later body cell once one is found, whether or not it is exposed, and nothing holds that list to the sim.",
+   "fix": "Assert that every cell in features.guardian.weak is in struck (or that g.weak.length <= struck.size, as the title says), or drop the claim from the title. If it becomes an assertion, add a row that inflates the weak list.",
+   "art": false,
+   "lens": "review-code:house-b"
+  },
+  {
+   "title": "A bug that reaches room 5 with no weapon can be left unable to beat a hovering guardian: the room's only chest gives Anvil Boots, and Anvil Boots never reach it",
+   "severity": "major",
+   "evidence": "The arena only counts weak cells that the J1 Boomerang reaches (index.html:3287, `var weak = [], J = T.WEAPONS.J1.cells`). The house gate arms J1 itself whenever the jump slot is empty (test/house.mjs:89, `if (!D.state().hero.slots[0]) D.arm('J1')`), so no test ever covers a bug that arrives with nothing. Arriving empty handed is easy: my real tour of the house left the chests in rooms 1 to 4 closed and reached room 5 with slots [0,0,0] (/home/codespace/sb-drafts/house/revB-seat/tour.log, `fight start {\"before\":[0,0,0]`). The scratch script /home/codespace/sb-drafts/house/revB-seat/scr/d1only.js builds all 156 corpus rooms as room 5. In 18 of them (every air placement: gradient-h in both modes and one-giant-landmark mode 1, under every biome) no reached stand puts the Anvil Boots shock across the body. The script scr/chestdraw.js uses gradient-h mode 0 as room 5 (guardian rect [14,25,5,4], air). An empty handed bug opens the chest at (14,1), and on all 86 arrival frames it draws `-,D1,-`. Diving from every one of the 47 reached stands fires 43 shocks and takes 0 HP off the guardian. The exit stays shut, so the house cannot be finished in that attempt, and nothing on screen says why.",
+   "fix": "Make the arena prove its weak cells for each weapon the bug can carry: when the guardian is placed where Anvil Boots cannot reach it, room 5's chest must give J1, or the guardian must be placed where a shock reaches it. Add a harness group and a house gate step for a bug that enters room 5 with empty slots and has to win with whatever the room's chest gives. Add a redwatch row that drops the chest's J1 rule.",
+   "art": false,
+   "lens": "review-player:house-b"
+  },
+  {
+   "title": "The arena's safe ledge is not safe: the shed moths fly to it and take the bug's hearts",
+   "severity": "major",
+   "evidence": "Moths fly toward the bug through furniture wherever it stands (index.html moveEnemy, the MOTH branch). H-boss-5 (harness.js:5476) only checks that the ledge is away from the cells where the shed moths start. The scratch script /home/codespace/sb-drafts/house/revB-seat/scr/ledge.js stands a 3 heart bug still on features.guardian.ledge in each corpus room 5 as detected. The bug loses a heart in 26 of 26 rooms, 25 of them to a shed moth at about 10 s (for example `sample-room.json m0 ledge 16,46 first heart lost at 10.1 s to a shed moth`), and dies within 60 s in 25 of 26. On gradient-h a bug that jumps on the ledge every half second never reaches the body and dies at 51 s (scr/fight.js output /home/codespace/sb-drafts/house/revB-seat/logs/fight30.txt, `gradient-h.json m0 bnull rule2air died s51.0 hp80 hurt3 firstHit-1`). T2.11 asks for a ledge that no attack reaches.",
+   "fix": "Either keep the shed moths on a leash around the shed box (a radius that stops short of the ledge), or let the arena reject a ledge that a moth's path reaches. Make H-boss-5 run the sim with a bug standing on the ledge for several shed cycles and assert it is never hit. Add a redwatch row (a leash removed) that goes RED.",
+   "art": false,
+   "lens": "review-player:house-b"
+  },
+  {
+   "title": "The frame you win is invisible on the share sheet: it is squashed into a 2 px border",
+   "severity": "minor",
+   "evidence": "index.html:213 has `#sharecanvas { ... border: 2px solid var(--ink); }`. The id selector beats `.framed` (index.html:269) on border width, and the border shorthand also resets border-image-slice and border-image-width. I wore moss and read the computed styles at 412 (scr/sharecss.mjs). The share canvas gives `bw 2px 2px 2px 2px, biw 1, bislice 100%`, while the title polaroid gives `10px 10px 28px 10px, slice 5 5 14`. In the shot /home/codespace/sb-drafts/house/revB-seat/shots/360x780-25-share-moss.png the preview has a thin edge, and the zoom /home/codespace/sb-drafts/house/revB-seat/shots/cmp-share-edge.png shows only a few green corner pixels. Q203 call 1 says the frame goes round the share sheet's preview. The house gate's titleLook only checks the polaroid.",
+   "fix": "Add `#sharecanvas.framed { border-width: 10px 10px 28px; border-image-slice: 5 5 14 5; border-image-width: 10px 10px 28px 10px; }`, or drop the id's border shorthand when framed. Add a house gate assertion on the share canvas's computed border, with a redwatch row.",
+   "art": false,
+   "lens": "review-player:house-b"
+  },
+  {
+   "title": "In room 5 the player is never told he needs a weapon: the 2 s words say Beat the guardian, then nothing, and touching it only hurts",
+   "severity": "minor",
+   "evidence": "In the shot /home/codespace/sb-drafts/house/revB-seat/shots/412x915-08-wake.png (and the 360 and 320 versions) the guardian is awake 3 cells from the bug. Both weapon slots in the strip are dashed and empty, and no words are on screen: the banner hides at wake (index.html:6675, `phase === 0`). The only weapon is the chest, halfway up the left wall at cell (0,26) (scr/exit.js). There is no stomp, so a bug with no weapon cannot hurt anything. My tour arrived like this at all three sizes (tour.log, `before [0,0,0]`).",
+   "fix": "When both slots are empty in room 5, add a line to the intro words such as Open the chest for a weapon, or mark the chest the way the beacon is marked. A house gate step should enter room 5 with empty slots and read that line.",
+   "art": false,
+   "lens": "review-player:house-b"
+  },
+  {
+   "title": "The player never sees the lamp light when the guardian falls",
+   "severity": "minor",
+   "evidence": "The beacon is at rows 1 to 3 (scr/exit.js: exit 10,3). The camera stays on the bug at the bottom. The shot /home/codespace/sb-drafts/house/revB-seat/shots/412x915-12-lighting.png, taken while fx_beacon_light.light_1 plays (tour.log, `lighting ... beacon fx_beacon_light.light_1`), shows only the guardian falling, the Boomerang and +60. The lamp is out of view at 412, 360 and 320 (viewRows 40, 36, 22). During the intro, the words naming the exit cover the top of the view, and the exit is not in view anyway. PROGRESS HOUSE-B lists this as open (a DESIGN 4.4 call), but the moment the brief asked for is not seen.",
+   "fix": "On BOSS_DOWN, pan the camera to the beacon for the length of fx_beacon_light (it is render state, so no golden moves), then back to the bug. Or draw a small lit lamp marker at the top edge when the beacon is off screen. Shoot it.",
+   "art": false,
+   "lens": "review-player:house-b"
+  },
+  {
+   "title": "The boss fight is stand still and tap A: from one spot it falls in about 7 to 11 s for one heart, and room 5 is otherwise easier than room 4",
+   "severity": "minor",
+   "evidence": "In the browser, set down once beside the body and tapping A every 30 steps without moving, the guardian died after 19 taps in 444 steps (7.4 s) and the bug lost 1 heart, the same at 412, 360 and 320 (tour.log, `after fight taps 19 frames 444 died false ... hearts 3/4`). Across the corpus, a bug on the arena's ledge jumping every half second killed it in 124 of 156 rooms at 11.3 s, losing 1 heart of 3 (logs/fight30.txt). Apart from the boss, room 5 had 2 photo moths where room 4 had 4 enemies with an elite (tour.log, room 4 `enemies 4`, room 5 `enemies 2`). Stephen asked for a FIRM RAMP (Q96) and said it is almost fun.",
+   "fix": "A design call for the lead or Stephen, recorded in a QUESTIONS entry. Options: the guardian telegraphs a lunge or slam (48 frames or more) that forces the bug off its spot, the shed moths come from both sides, or room 5 keeps room 4's fodder row beside the guardian. Then measure kill time and hearts lost with the scratch fight sim.",
+   "art": false,
+   "lens": "review-player:house-b"
+  },
+  {
+   "title": "Worn skins drop in as the approved yellow bug, and the round 3 skins barely read at phone size",
+   "severity": "minor",
+   "evidence": "With pinstripe worn, the drop in draws hero_dropin.descending in plain yellow, and the bug only turns into its skin once standing (hero_colours_r3.pinstripe_idle0; tour2.log `drop in hero_dropin.descending`, `standing hero_colours_r3.pinstripe_idle0`). See /home/codespace/sb-drafts/house/revB-seat/shots/412x915-23-skin-dropin.png and the side by side zoom /home/codespace/sb-drafts/house/revB-seat/shots/cmp-skin.png. Even standing, pinstripe is the yellow bug with three faint grey dashes, hard to tell from the approved bug at 412 wide. The dash, hurt, squash and stretch poses are not skinned either (R.skinKey comment, index.html near 5290).",
+   "fix": "Ask Astra for hero_dropin, hero_dash, hero_hurt, hero_squash and hero_stretch in each of the seven skins, in hero_colours frame order. Also ask for stronger body markings on the round 3 skins so each reads at 1x on a phone.",
+   "art": true,
+   "lens": "review-player:house-b"
+  }
+ ]
+}
