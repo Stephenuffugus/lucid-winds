@@ -1,5 +1,8 @@
 # START HERE
 
+## 🐈 LOAF MILESTONE A, BUILD LOG (Opus, from LOAF_BUILD_PLAN.md; one line per step)
+- A1 ROOM GROUNDING done 2 Nov: Astra's floor (0.8 m tile), wall plate (panels repeat, wash runs on), arched window decal, day/dusk/night plates + light sets by the local clock (neutral key, jaw fill, warm floor bounce); the seat is a level shift lens (no keystone); violet void gone. Look tool: `node scripts/loaf_look.mjs --photo <p> --out <png>` (one image, a panel per light; Chrome from sws-tools). Seen: room reads in all three, black coat separates at night.
+
 ## 🐈 2 Nov 22:50 UTC (Fable) LOAF BUILD PLAN WRITTEN: LOAF_BUILD_PLAN.md (repo root). READ IT BEFORE ANY LOAF CODE
 - Four milestones, A likeness → B meet her → C the games read → D the return and the store. Astra's order kept; the room grounding moved into A because the recognition test needs neutral light. Five decisions wait on Stephen at the end of the file (order, grader, other people's cats, PNG billboards before Meshy, the pilot).
 - THE TESTING LAW (his order, 2 Nov: "what actually needs tested when"): per step `node loaf_check.mjs` only (node, no browser, ~1 s); a visual step gets ONE screenshot of that screen, once, after all its edits; the full walk once per milestone; offline + twa_ready + the Two Cat Test once before Play. No probes per tweak, no redwatch, no review agents, no lanes. Stephen on the Pixel is the review.

@@ -5605,11 +5605,38 @@ if (stage) (async () => {
 
   const scene = new THREE.Scene();
   const cam = new THREE.PerspectiveCamera(38, 1, 0.1, 60);
-  scene.add(new THREE.HemisphereLight(0xEFE4FF, 0x2A1B3D, 1.15));
-  const sun = new THREE.DirectionalLight(0xFFE8C8, 2.2);
+  /* THREE LIGHT SETS (Astra's style guide, "Room"): a neutral key, a side
+     fill that finds the jaw on a black coat, a rim that keeps a pale coat
+     off the wall, and a warm bounce from the wooden floor. The room picks a
+     set by the owner's own clock; the tuner always judges her coat in day
+     light. The window is a picture on the wall, never a second light. */
+  const hemiL = new THREE.HemisphereLight(0xF2ECE6, 0x6E5646, 1.05); scene.add(hemiL);
+  const sun = new THREE.DirectionalLight(0xFFF3E6, 2.1);
   sun.position.set(3, 6, 4); scene.add(sun);
-  const rim = new THREE.DirectionalLight(0x8FB8FF, 0.7);
+  const fillL = new THREE.DirectionalLight(0xEDE6F2, 0.55);
+  fillL.position.set(-4, 1.2, 3.5); scene.add(fillL);
+  const rim = new THREE.DirectionalLight(0xC9DAFF, 0.55);
   rim.position.set(-4, 3, -3); scene.add(rim);
+  /* sky, ground, hemi, key, key I, fill, fill I, rim, rim I */
+  const LIGHTS = {
+    day:   [0xF2ECE6, 0x6E5646, 1.05, 0xFFF3E6, 2.1, 0xEDE6F2, 0.55, 0xC9DAFF, 0.55],
+    dusk:  [0xF4DCD2, 0x5E4238, 0.95, 0xFFD9BC, 1.9, 0xE6D2E4, 0.50, 0xB9B4F2, 0.60],
+    night: [0xCFCDEA, 0x3C3349, 0.85, 0xE9E6FF, 1.6, 0xD4CCEE, 0.50, 0xA7BEFF, 0.75]
+  };
+  let lightK = 'day';
+  function setLights(k){
+    lightK = LIGHTS[k] ? k : 'day';
+    const L = LIGHTS[lightK];
+    hemiL.color.set(L[0]); hemiL.groundColor.set(L[1]); hemiL.intensity = L[2];
+    sun.color.set(L[3]); sun.intensity = L[4];
+    fillL.color.set(L[5]); fillL.intensity = L[6];
+    rim.color.set(L[7]); rim.intensity = L[8];
+  }
+  /* day 7 to 17, night 20 to 5, dusk either side of the day */
+  function lightNow(){
+    const h = new Date().getHours();
+    return h >= 7 && h < 17 ? 'day' : (h >= 20 || h < 5) ? 'night' : 'dusk';
+  }
 
   /* ground + a soft blob shadow. Without a shadow nothing ever reads
      airborne - the pounce looked like levitation in every still. */
@@ -5695,17 +5722,111 @@ if (stage) (async () => {
   /* world-fixed: in the Room she WALKS, so the ground cannot ride the rig.
      (Radially symmetric, so the tuner's turntable never notices.) */
   scene.add(floor); scene.add(shadow);
+
+  /* ══ THE ROOM SHELL (Astra pack v1, c_room) ═══════════════════════════
+     A floor, a back wall and one arched window, painted for each light.
+     The plates are pre-lit, so they draw unlit and only the cat and her
+     toys take the scene lights. Scale: she is ~2.5 units tall and Astra's
+     sitting cat is 0.25 m, so a unit is 0.1 m and her four-board floor
+     tile is 8 units. The wall stands at z -4.6, past her wander radius
+     (RUG 2.6) plus a nose, so she can never walk into it. The plates load
+     the first time the room opens, never with the page. */
+  const ROOMART = 'assets/loaf/art/room/';
+  const TILE = 8, WALL_Z = -4.6, RAIL_H = 1.7, WALL_K = 1.9, WIN_H = 2.1;
+  const RAIL_PX = 483 / 720;            /* the plate's rail line, in all three */
+  const shell = new THREE.Group();
+  shell.visible = false; scene.add(shell);
+  const floorMat = new THREE.MeshBasicMaterial({ color: 0x8E705E });
+  const floorPl = new THREE.Mesh(new THREE.PlaneGeometry(36, 20), floorMat);
+  floorPl.rotation.x = -Math.PI / 2;
+  floorPl.position.set(0, groundY - 0.004, WALL_Z + 10);
+  shell.add(floorPl);
+  const WALL_TOP = 0.5;                 /* extra wash above the plate */
+  const plateH = RAIL_H / (1 - RAIL_PX);
+  const wallH = plateH * (1 + WALL_TOP), wallW = plateH * 1.6 * WALL_K;
+  const wallMat = new THREE.MeshBasicMaterial({ color: 0xB49A92 });
+  const wallPl = new THREE.Mesh(new THREE.PlaneGeometry(wallW, wallH), wallMat);
+  wallPl.position.set(0, groundY + wallH / 2, WALL_Z);
+  shell.add(wallPl);
+  const winMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+  const winPl = new THREE.Mesh(new THREE.PlaneGeometry(WIN_H * 432 / 468, WIN_H), winMat);
+  winPl.position.set(2.7, groundY + RAIL_H + 0.12 + WIN_H / 2, WALL_Z + 0.02);
+  shell.add(winPl);
+  /* the plate tiles its wainscot exactly (8 panels on a 144 px pitch) but
+     not its diagonal wash, so to cover the view the panels repeat and the
+     wash runs on flat from its own edge columns */
+  function widenWall(img){
+    const W = img.naturalWidth, H = img.naturalHeight, R = Math.round(RAIL_PX * H);
+    const T = Math.round(H * WALL_TOP);
+    const c = document.createElement('canvas');
+    c.width = Math.round(W * WALL_K); c.height = H + T;
+    const g = c.getContext('2d');
+    const x0 = Math.round((c.width - W) / 2);
+    g.drawImage(img, 0, 0, 1, R, 0, T, x0 + 1, R);
+    g.drawImage(img, W - 1, 0, 1, R, x0 + W - 1, T, c.width - x0 - W + 1, R);
+    for (let x = x0 - W * Math.ceil(x0 / W); x < c.width; x += W)
+      g.drawImage(img, 0, R, W, H - R, x, T + R, W, H - R);
+    g.drawImage(img, 0, 0, W, R, x0, T, W, R);
+    g.drawImage(c, 0, T, c.width, 1, 0, 0, c.width, T);   /* and runs on upward */
+    return c;
+  }
+  const SETS = {};
+  let shellK = null;
+  function putMap(m, t){
+    if (!t || m.map === t) return;
+    m.map = t; m.color.set(0xFFFFFF); m.opacity = 1; m.needsUpdate = true;
+  }
+  function shellApply(){
+    const s = SETS[shellK]; if (!s) return;
+    putMap(floorMat, s.floor); putMap(wallMat, s.wall); putMap(winMat, s.win);
+  }
+  /* a plate that fails to load leaves its calm placeholder colour */
+  function shellLoad(k){
+    shellK = k;
+    if (SETS[k]){ shellApply(); return; }
+    const s = SETS[k] = { floor: null, wall: null, win: null };
+    const done = (key, t) => {
+      t.colorSpace = THREE.SRGBColorSpace; s[key] = t;
+      if (shellK === k) shellApply();
+    };
+    const tl = new THREE.TextureLoader();
+    tl.load(ROOMART + 'floor_' + k + '.png', t => {
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(36 / TILE, 20 / TILE);
+      t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      done('floor', t);
+    });
+    tl.load(ROOMART + 'window_' + k + '.png', t => done('win', t));
+    const im = new Image();
+    im.onload = () => done('wall', new THREE.CanvasTexture(widenWall(im)));
+    im.src = ROOMART + 'back_wall_' + k + '.png';
+  }
   const hSpan = gb.max.y - gb.min.y;
   const wSpan = Math.max(gb.max.x - gb.min.x, gb.max.z - gb.min.z);
+  /* THE SEAT. The room camera looks level and its frame is shifted down,
+     like an architect's shift lens, so the wall's verticals stay vertical
+     (the tilted camera splayed the wainscot panels at both edges). It shows
+     the floor as near as the tilt did, 1.7 degrees above level to 35.8
+     below (her floor sits 4.3 under the lens, lower than it looks). The
+     lean-ins (beans, tricks, the box) call camFree() first, and frame()
+     puts the seat back when they end. */
+  let seatProj = false;
+  function camFree(){
+    if (seatProj){ seatProj = false; cam.updateProjectionMatrix(); }
+  }
   function frame(){
     const a = cam.aspect || 1, t = Math.tan(cam.fov * Math.PI / 360);
     if (room.on){
-      /* the Room: a fixed, slightly raised seat at the edge of the rug */
       const d = Math.max(9.4, 6.6 / a + 3.2);
-      cam.position.set(0, 3.1, d);
-      cam.lookAt(0, -0.5, 0);
+      cam.position.set(0, 2.45, d);
+      cam.lookAt(0, 2.45, d - 1);
+      const n = cam.near, up = 0.03, dn = 0.72, w = (up + dn) * a / 2;
+      cam.projectionMatrix.makePerspective(-w * n, w * n, up * n, -dn * n, n, cam.far);
+      cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+      seatProj = true;
       return;
     }
+    camFree();
     const dV = (hSpan * 0.62) / t;
     const dH = (wSpan * 0.42) / (t * a);
     cam.position.set(0, hSpan * 0.08, Math.max(dV, dH) + 0.9);
@@ -6932,6 +7053,7 @@ if (stage) (async () => {
       return;
     }
     /* the camera leans in while she is down */
+    camFree();
     cam.position.lerp(_v3.set(0.4, 1.8, 5.4), Math.min(1, dt * 1.6));
     cam.lookAt(0, -0.7, 1.35);
     if (BN.pulse > 0) BN.pulse -= dt;
@@ -7142,6 +7264,7 @@ if (stage) (async () => {
         break;
       case 'hold':
         /* perform-mode high five: the paw stays offered. Meet it. */
+        camFree();
         cam.position.lerp(_v3.set(0.35, 1.9, 6.7), Math.min(1, dt * 1.4));
         cam.lookAt(0, -0.05, 1.55);
         if (T.pT > HOLD_S) trickPhase('gap');
@@ -7387,6 +7510,7 @@ if (stage) (async () => {
           /* the small box needs the wider shot: too close and the joke
              (a cat overflowing a box) crops the box out of its own gag */
           const d2 = bx.small ? 5.6 : 4.8, ly = bx.small ? -0.6 : -0.35;
+          camFree();
           cam.position.lerp(_v3.set(bx.x * 0.55, bx.small ? 2.0 : 2.3, bx.z + d2),
             Math.min(1, dt * 1.2));
           cam.lookAt(bx.x, ly, bx.z);
@@ -7682,7 +7806,7 @@ if (stage) (async () => {
         d = document.createElement('div');
         d.id = 'room3d';
         d.style.cssText = 'width:100%;aspect-ratio:750/620;border-radius:16px;overflow:hidden;'
-          + 'touch-action:none;background:radial-gradient(120% 90% at 50% 20%, #2E2044, #191129)';
+          + 'touch-action:none;background:#150E1D';
         const rc = document.getElementById('room');
         rc.parentNode.insertBefore(d, rc);       /* sibling, never innerHTML */
         new ResizeObserver(size).observe(d);
@@ -7690,6 +7814,8 @@ if (stage) (async () => {
       }
       d.classList.remove('hidden');
       floor.scale.setScalar(1.5);
+      floor.visible = false; shell.visible = true;
+      setLights(lightNow()); shellLoad(lightK);
       rig.position.set(0.6, 0, -0.3);
       room.soliT = 0; room.carrying = false; room.ball = null;
       if (ballMesh) ballMesh.visible = false;
@@ -7713,6 +7839,8 @@ if (stage) (async () => {
       visitorRemove();
       room.on = false;
       floor.scale.setScalar(1);
+      floor.visible = true; shell.visible = false;
+      setLights('day');
       rig.position.set(0, 0, 0);
       shadow.position.x = 0; shadow.position.z = 0;
       if (ballMesh) ballMesh.visible = false;
@@ -7729,6 +7857,7 @@ if (stage) (async () => {
     trickClick,                                  /* also wired to the button */
     _five(up, lo){ FIVE_UP = up; FIVE_LO = lo; },   /* axis-probe dial */
     _rig(){ return rig.position.toArray(); },       /* harness peephole */
+    _light(k){ setLights(k); if (room.on) shellLoad(lightK); return lightK; },
     _boxSmall(v){ room.boxSmallNext = v; },         /* harness: force box size */
     get _vis(){ return vis && { state: vis.state, pos: vis.rig.position.toArray() }; },
     _room: room,                                 /* harness peephole */
