@@ -1,6 +1,6 @@
 # START HERE
 
-## 🎳 2 Nov 20:45 UTC (Opus) DEWBALL dewball-v36 READY ON dewball-w567 `cdc057046`: ALL SEVEN WORLDS IN MODELS; NOT DEPLOYED (HIS LINE BELOW)
+## 🎳 2 Nov 20:32 UTC (Opus) DEWBALL dewball-v36 READY ON dewball-w567 `cdc057046`: ALL SEVEN WORLDS IN MODELS; NOT DEPLOYED (HIS LINE BELOW)
 - Built today on /workspaces/dewball-w567 (no credits): The Whole World (w7, 92 kinds) and Dream Meadow (w6, 54 kinds) in models, on top of Starfall Bay (w5, `85fc8b343`). Every new kind looked at (Blender four views, game camera pairs, world shots); none kept a primitive. Record: satellites/dewball/FORGE.md, the last three sections.
 - PERF FIX (drawing only, same.sh byte identical): w7 at 22 m drew all 4,466 instances as models, 4.5M triangles (over the 3x fence). lodSync gained LOD_SPECK 20 and LOD_GLOBE 1.2: now 2.2M at 22 m, 2.5M at 5 m, 1.7M at 44 m.
 - SIGN FIX: the globe's gate signs hung over the spawn ("13.0 m" banners across the screen); now on their fences; sign_test covers the globe, both plants red.
