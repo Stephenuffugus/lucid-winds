@@ -204,11 +204,12 @@ try {
     const k0 = await walkToSwap(page); await page.keyboard.up('ArrowLeft');
     /* Pause and Resume with no other finger down (W2R): the click Chrome makes after Resume's pointerup lands where the
        finger was, over the swap card once the pause card is gone; it must take nothing */
+    await page.evaluate(() => { window.__clicks = 0; if (!window.__clickHook) { window.__clickHook = 1; document.addEventListener('click', () => { window.__clicks++; }); } });
     await tap(page, '#pause');
     const over = await page.evaluate(() => { const a = document.getElementById('resume').getBoundingClientRect(); return ['#swaptake', '#swapkeep'].filter(sel => { const b = document.querySelector(sel).getBoundingClientRect(); const x = a.left + a.width / 2, y = a.top + a.height / 2; return x >= b.left && x <= b.right && y >= b.top && y <= b.bottom; }); });
     await tap(page, '#resume'); await sleep(120);
-    const kr = await stepN(page, 1);
-    R.say(kr.compare === 1 && kr.on && JSON.stringify(kr.slots) === '[1,9,0]' && kr.screen === 'play', w + ': Pause then Resume with no other finger down leaves the card open and the slots as they were (Resume\'s centre over ' + (over.join(' ') || 'no button of the card') + '; compare ' + kr.compare + ', slots ' + kr.slots.join(',') + ')');
+    const kr = await stepN(page, 1), clicks = await page.evaluate(() => window.__clicks);
+    R.say(kr.compare === 1 && kr.on && JSON.stringify(kr.slots) === '[1,9,0]' && kr.screen === 'play' && clicks === 0, w + ': Pause then Resume with no other finger down leaves the card open and the slots as they were, and neither tap\'s own click reaches anything past its answer (clicks seen by the page ' + clicks + '; Resume\'s centre over ' + (over.join(' ') || 'no button of the card') + '; compare ' + kr.compare + ', slots ' + kr.slots.join(',') + ')');
     await tap(page, '#swapkeep');
     const k1 = await stepN(page, 1), k2 = await stepN(page, 1);
     R.say(!!k0 && k0.compare === 1 && JSON.stringify(k1.slots) === '[1,9,0]' && !k1.compare && (k1.ev & SBN.sim.EV.PICK) && !(k1.ev & SBN.sim.EV.EQUIP) && !k1.heard.includes('pick') && !k1.heard.includes('equip') && !k2.on,
