@@ -6,7 +6,9 @@ import p from "puppeteer";
 const slug = process.argv[2] || "bandits-box";
 const base = `http://127.0.0.1:8777/satellites/${slug}/`;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const b = await p.launch({ headless: "new", args: ["--no-sandbox", "--disable-gpu"] });
+/* SwiftShader flags (2 Nov 2026, Dewball): a 3D game needs WebGL to draw at all, and Chrome no longer falls back to
+   software GL by itself; a 2D game is unaffected */
+const b = await p.launch({ headless: "new", args: ["--no-sandbox", "--disable-gpu", "--enable-unsafe-swiftshader", "--use-gl=angle", "--use-angle=swiftshader", "--ignore-gpu-blocklist"] });
 const ctx = await b.createBrowserContext();
 
 const warm = await ctx.newPage();
@@ -33,11 +35,21 @@ await sleep(4000);
 const state = await cold.evaluate(() => ({
   title: document.title,
   /* interactive-surface census: bandits-box toys, or any satellite's
-     mode/start controls (FTW ships [data-m] mode cards + #startBtn, Hues [data-mode], Jimothy its #splash-tap door, OriVex #b-play, Shutterbug #shoot) */
-  toys: (window.TOYS && window.TOYS.length) || document.querySelectorAll('[data-toy],.strip button,[data-m],[data-mode],#startBtn,#splash-tap,#b-play,#shoot').length,
+     mode/start controls (FTW ships [data-m] mode cards + #startBtn, Hues [data-mode], Jimothy its #splash-tap door, OriVex #b-play, Shutterbug #shoot, Dewball its .wcard world cards) */
+  toys: (window.TOYS && window.TOYS.length) || document.querySelectorAll('[data-toy],.strip button,[data-m],[data-mode],#startBtn,#splash-tap,#b-play,#shoot,.wcard').length,
   bodyText: (document.body.innerText || "").slice(0, 90).replace(/\s+/g, " "),
   canvasOrSvg: document.querySelectorAll("svg,canvas").length
 })).catch(() => ({}));
+/* a game whose menu draws no canvas (Dewball, 2 Nov 2026: the 3D world is built when a world starts) is tapped into its
+   first open world, offline, the way a reviewer would, and counted again: the world has to draw with the network off */
+if (state.toys > 0 && !state.canvasOrSvg) {
+  const tapped = await cold.evaluate(() => { const c = document.querySelector('.wcard:not(.locked)'); if (!c) return false; c.click(); return true; }).catch(() => false);
+  if (tapped) {
+    await sleep(6000);
+    state.canvasOrSvg = await cold.evaluate(() => document.querySelectorAll("svg,canvas").length).catch(() => 0);
+    console.log(" no canvas on the menu: tapped the first open world offline");
+  }
+}
 await cold.screenshot({ path: `scratch/shots/${slug}_offline.png` });
 console.log(" offline title:", JSON.stringify(state.title));
 console.log(" offline toys/tabs:", state.toys, "| svg+canvas:", state.canvasOrSvg);
