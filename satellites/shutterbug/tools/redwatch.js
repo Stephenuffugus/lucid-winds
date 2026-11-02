@@ -1351,7 +1351,7 @@ const MUTANTS = [
   { name: 'SWAP_UNDER_OFFER', task: 'W2R', file: 'page', find: " && !st.room.dead && !st.scrollsOffered);", repl: " && !st.room.dead);",
     gates: [{ gate: 'compare', expect: "412: a scroll offer on the chest's step: the card waits" }] },
   { name: 'GHOST_CLICK_LANDS', task: 'W2R', file: 'page', find: "      document.addEventListener('click', function (e) { if (sameTap(e)) { e.stopPropagation(); e.preventDefault(); } }, true);\n", repl: "",
-    gates: [{ gate: 'compare', expect: 'Pause then Resume with no other finger down leaves the card open' }] },
+    gates: [{ gate: 'compare', expect: '412: Pause then Resume with no other finger down leaves the card open' }] },
   { name: 'TOP_NAME_SQUEEZED', task: 'W2R', file: 'page', find: "  #hearts { margin-left: 4px; gap: 3px; }\n", repl: "",
     gates: [{ gate: 'fight', expect: '320: the top strip holds Pause, the name, both icons and 4 hearts without overflow' }] },
 ];
