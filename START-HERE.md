@@ -1,5 +1,8 @@
 # START HERE
 
+## 📷 2 Nov 15:05 UTC (Opus) sb-m1-5 IS LIVE (deploy 2122731e0, tag sb-m1-5; both origins on the first probe, index sha256 883fda35...; sw.js 200, bytes equal, shutterbug-v5)
+NEXT: keys and the locked exit (ruled 14:20), one lane, no reviews.
+
 ## 📷 2 Nov 15:30 UTC (Opus) sb-m1-5 MERGED, FIXED, STAMPED: STEPHEN RUNS THE DEPLOY SCRIPT
 In it: BIOME (the room's biome from the photo's colour), weapons step 2 (J2 to J8, the swap card), Astra's round 4, the house (5 rooms, the clay guardian, prizes, looks, pips), and the room 5 soft lock fixed (the chest gives a Boomerang to an unarmed bug). lint OK, harness 7237 OK.
 DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-5/deploy-sb-m1-5.sh` at an idle prompt. Then hostproof, tag sb-m1-5, merge main back.
