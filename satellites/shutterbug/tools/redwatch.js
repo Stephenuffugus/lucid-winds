@@ -1232,9 +1232,9 @@ const MUTANTS = [
     gates: [{ gate: 'capture', expect: 'autocrop: no message while the chosen box shows' }] },
   /* SEEK_REPEATS since SEARCHR: an exact repeat is also within a grid cell of the box before it, so the near duplicate
      filter drops it whatever `seen` does (seen only spares the sort the clamped copies): the row takes both away */
-  { name: 'SEEK_REPEATS', task: 'AUTOCROP', file: 'page', edits: [['      if (seen[k]) return;\n', ''], ['for (m = 0; m < s.length && !cl; m++) cl = ', 'for (m = 0; m < 0; m++) cl = ']],
+  { name: 'SEEK_REPEATS', task: 'AUTOCROP', file: 'page', edits: [['      if (seen[k]) return;\n', ''], ['for (m = 0; s && m < s.length && !cl; m++) { cmp++; cl = ', 'for (m = 0; m < 0; m++) { cmp++; cl = ']],
     gates: [{ gate: 'harness', only: 'H-seek-1', expect: 'the default box, a floor band from row 30: no box repeats' }] },
-  { name: 'SEEK_KEEPS_OWN', task: 'AUTOCROP', file: 'page', find: "    near[c.w] = [c];   /* the player's own box, and any box within a cell of it, already refused */\n", repl: '    near[c.w] = [];\n',
+  { name: 'SEEK_KEEPS_OWN', task: 'AUTOCROP', file: 'page', find: "    file(c);   /* the player's own box, and any box within a cell of it, already refused */\n", repl: '',
     gates: [{ gate: 'harness', only: 'H-seek-1', expect: "a 400 wide box, no cause: the player's own box is not in the list" }] },
   { name: 'SEEK_FLOOR_DOWN', task: 'AUTOCROP', file: 'page', find: "var vdir = cause === 'ceiling' ? 1 : -1;", repl: 'var vdir = 1;',
     gates: [{ gate: 'harness', only: 'H-seek-2', expect: 'a floor refusal: lifted a quarter height off the anchor comes before lowered' }] },
@@ -1243,7 +1243,7 @@ const MUTANTS = [
 
   /* SEARCHR (Q183): the search reaches the boxes that build: the side edges, above the furniture, the ceiling both ways,
      an order by cost, near duplicates dropped, the cap, the message after a search that found nothing */
-  { name: 'SEEK_NEAR_DUPES', task: 'SEARCHR', file: 'page', find: 'for (m = 0; m < s.length && !cl; m++) cl = ', repl: 'for (m = 0; m < 0; m++) cl = ',
+  { name: 'SEEK_NEAR_DUPES', task: 'SEARCHR', file: 'page', find: 'for (m = 0; s && m < s.length && !cl; m++) { cmp++; cl = ', repl: 'for (m = 0; m < 0; m++) { cmp++; cl = ',
     gates: [{ gate: 'harness', only: 'H-seek-1', expect: "the default box, a floor band from row 30: no box lies within one grid cell of the player's box" }] },
   { name: 'SEEK_EDGES_DROPPED', task: 'SEARCHR', file: 'page', find: 'var k0 = Math.floor(-x0 / q), k1 = Math.ceil((bw - w - x0) / q)', repl: 'var k0 = -2, k1 = 2',
     gates: [{ gate: 'harness', only: 'H-seek-2', expect: "a landscape photo: the list holds the player's size at the photo's left edge and at its right" }] },
