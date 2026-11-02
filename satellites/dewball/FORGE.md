@@ -882,3 +882,96 @@ lanes shared both cores the whole time, so no frame time here means a phone.
 atlas` (0 ready, every kind its primitive, 69 calls), same.sh pointed at this worktree (SAME_PASS byte identical:
 physics never reads a model), react_test REACT_PASS, sign_test, `manifest.mjs --check` MANIFEST_FRESH. Stamp: sw.js
 CACHE `dewball-v35` (models, the index and the stamp only; no game code changed).
+
+## The Whole World (w7) in models from his Astra pictures, 2 Nov 2026 (no credits)
+
+**Built from the step 2 buy** (29 i2t models, 435 credits; balance 1,704, unchanged by this step). ⚠️ The vault release
+is STILL NOT MADE: the codespace token still cannot see `Stephenuffugus/lucid-winds-vault` (`Could not resolve to a
+Repository`, 2 Nov 19:53 UTC). The two same disk copies stand; the release command in `VAULT-PENDING.txt` waits for
+his own `gh auth login`. The 1 Nov lane stopped this step after the pack (fit, uvclean, atlas and pack had each exited
+0, logs in `dewball-drafts/w7/`); the looks, the record and the gates were finished on 2 Nov, nothing rebuilt.
+**Fit** (dewfit, the ladder law): the four movers came back along x; `--yaw 90` on sheepW, cowW, busW and carW put the
+sheep's black face, the cow's head, the bus's flat front and the car's bonnet on +Z (facing.mjs before and after,
+looked at). No tip, roll or fold. uvclean 29 of 29.
+**Shared kinds:** 34 rebuilt from their served files by unatlas.py (the v35 method; apple from w1 and w4, the
+biggest square winning), 25 from w5's fitted files, the three w5 keeps (kelp tangle, oar, tide pool) stay primitives
+here too (`w7-picks.json` keep). **One 2048x1536 atlas for 92 kinds** (99% full, 896 KB, 16.0 MB on the GPU), the
+tightest yet: the six landmarks keep 512; city wall, clock tower, grey peak, harbour crane, hillock, keep and moon
+shard 256; every other set piece 128 (110 step downs, most sets 512 → 256 → 128); 17 small kinds at 64. Pack `--world
+w7 --merge`: index.json +281 lines, 0 removed, the w1 to w5 entries equal as parsed; `assets/3d/w7` is 92 GLBs +
+`atlas.jpg`, 5.0 MB.
+**Looked at** (Blender four views of all 29 new kinds; shot.mjs pairs of all 29 at 412x915): ⚠️ **on the globe the
+pairs park the ball far from its subject** (the tool walks the flat plane; on the 129 m planet the curve and the ball
+hide it): the six landmarks never show in their pairs, the weathervane's and the standing stone's are blocked by a
+haystack and a cloud. The Blender views carried those. **29 ship, every one reading better than its primitive:** the
+suspension bridge (red towers over a river between grassy banks), stadium (red stands, a green pitch, floodlights),
+palace (golden domes), cathedral (blue spires), aqueduct (arches carrying a water channel), observatory (a dome with
+its telescope out); the sheep (wool, black face), cow, camper bus and red car; the five keepsakes (a brass telescope on
+its tripod, the weathervane's arrow, a red pillar postbox, the crown with red gems, a globe on its stand); cottage,
+chapel, water tower, windmill, clock tower, keep, city wall, standing stone (mossy), oak, pine, hayrick, grey peak
+(snow capped), hillock (a green mound with one pine and grey rocks), moon shard (a crystal cluster). Where the pairs
+did show the subject (car, telescope, postbox, crown, globe, cottage, water tower, windmill, hayrick, grey peak, moon
+shard, sheep, cow) the model reads better than its primitive in the game camera too. **Kept primitives: none new.**
+**Drift to know** (in `w7-picks.json`): the aqueduct a long thin span (1,290 tall, 506 deep against the primitive's
+1,950 x 2,538 block); the cathedral wider and deeper (3,020 x 2,991 against 2,140 x 1,834); the palace lower and
+shallower; the windmill's sails 649 wide against 364; the standing stone fatter; the weathervane's arrow and the
+telescope's tripod wider; the hillock a bright lime mound.
+**The world, looked at** (world_shots 45 / 500 / 2,200 cm, busy, above, rim in, rim out, models beside today from one
+frame): from above at 22 m the villages are cottages, hayricks and stalls where today they are red pyramids and boxes;
+the busy cluster at 5 m is scarecrows and mossy stone walls instead of brown sticks; rim out is green hills with pines
+instead of dark domes. Three things wrong: (1) the hillocks are lime green, louder than the muted domes, and at the
+rim one fills the frame; (2) the gate signs stretch across the middle of the screen at 5 m ("4.20 m") and at 22 m
+("13.0 m") in BOTH builds, a world fault the models did not make; (3) the spawn at 45 cm is sparse in both builds.
+**Perf** (perf.mjs, 4x CPU tick, exact counts; before = an index without w6 and w7, `tools/forge/fitted/before-w67/`):
+⛔ **the first measure broke the fence**: at 45 / 500 / 2,200 cm, triangles 922k / 924k / 931k → 1,016k / 2,735k /
+**4,503k** (4.8x the base at the goal size), every one of the 4,466 live instances drawn as its model, because
+LOD_NEAR's 16 ball widths of a 22 m ball reach round the whole 129 m planet (a 90 cm barrel at 1,509 triangles is 5
+px there). **Two drawing only rules fixed it (index.html lodSync; physics never reads them, same.sh byte identical):**
+`LOD_SPECK` 20, a thing smaller than a twentieth of the ball draws as its primitive wherever it is (every world), and
+`LOD_GLOBE` 1.2, on the globe the ball widths reach at most 1.2 planet radii of arc (69 degrees; the draw cap stays
+2.35 rad, and a thing big enough by LOD_SIZE still reaches past it: the landmarks). Measured after: 1,016k / 2,528k /
+**2,222k**, and 1,718k at the 44 m three star size; draw calls 160 / 188 / 226 / 239 against 146 / 160 / 192 (the
+fence is 3x the ~920k triangles and 2x the calls). Tried on the way: the speck rule alone at 20 gave 3,400k at 22 m,
+at 12 gave 2,971k. Looked at again at 22 m and 44 m (world_shots `w7/world2`): the hayricks, cottages, stalls and
+the horizon's landmarks still draw as models; nothing on the limb reads as a primitive swap. Textures 2.15 → 18.15
+MB. Tick times scatter run to run on this box (median 14 to 49 ms at 22 m under the 4x throttle, the same build),
+so no frame time here means a phone.
+
+## Dream Meadow (w6) in models from his Astra pictures, 2 Nov 2026 (`dewball-v36`, no credits)
+
+**Built from the step 2 buy** (6 i2t models, 90 credits; balance 1,704, unchanged). The vault caveat above holds.
+**Fit:** the moon gate, pagoda, stone circle, moth, cloud puff and dream grass. The moth came back with its head on -X
+and its wings fanned up and back (as Astra drew it): `--yaw mothZ=90` put the head and antennae on +Z (facing.mjs
+before and after, looked at). uvclean 6 of 6. **Shared kinds:** 27 more rebuilt by unatlas.py from their homes (w1:
+berry, crumb, book tower, pea, pie, sandwich, teacup; w2: crayon, die, drum, duck, kite, carousel, marble, paper plane,
+teddy; w3: birdbath, firefly, hedgehog, lantern, dovecote, gazebo pond, moonflower, moonstone, toad; w4: jug, clock
+tower), 14 from w7's set, 7 from w5 (anchor, small crab, driftwood, rowboat, sailboat, sandcastle, umbrella); the
+bicycle stays w4's primitive. **One 2048x1536 atlas for 54 kinds** (100% full, 794 KB, 16.0 MB on the GPU): the eight
+landmarks 512; bench, cart, cloud puff, driftwood, rowboat, sailboat, stall, streetlamp and umbrella 256; the rest 128
+and 64. Pack `--world w6 --merge`: index.json +167 lines, 0 removed; `assets/3d/w6` is 54 GLBs + `atlas.jpg`, 3.2 MB.
+**Looked at** (Blender four views of the six; shot.mjs pairs of the six and the seven w5 kinds): **13 ship**: the moon
+gate (a purple felt ring round its moon, on a felt base), the pagoda (red and cream tiers), the stone circle (grey
+stones on a purple disc round a glowing orb), the moth (a felt moth where today's are two flat cards), the cloud puff,
+the dream grass (a felt ball on a blue stalk, today's own lollipop shape), and from w5 the crab (a red crab with legs
+where today's is a red blob), the rowboat (a wooden boat, today's a plank box), the sandcastle (sand coloured, today's
+pink), the anchor, driftwood, sailboat and umbrella. Kept primitives: none new.
+**Drift to know** (in `w6-picks.json`): the stone circle 253 tall against 443 (low stones); the moth's wings fanned up
+(4.7 tall against 2.6); the moon joined to its ring.
+**The world, looked at** (world_shots 20 / 150 / 600 cm, busy, above, rim): the models barely change Dream Meadow at
+these sizes, because its near field is crumbs, marbles and peas and its far kinds are few. Three things wrong, all in
+both builds: (1) the spawn frame at 20 cm is nearly empty, a dark purple field with one pale band; (2) the whole world
+reads dark and sparse at 1.5 m and 6 m (night fog over a dark ground); (3) the anchor at the rim is a black hook
+against the dusk.
+**Perf** (the same probe and base): at 20 / 150 / 600 cm, triangles 265k / 266k / 269k → 305k / 382k / 734k with the
+speck rule (1,345k at 600 cm before it), draw calls 57 / 68 / 88 → 62 / 89 / 95, textures 5.42 → 21.42 MB. Starfall
+Bay (w5) with the speck rule: 494k / 695k / 1,585k at 60 / 400 / 1,500 cm (1,677k in the v35 record).
+**Gates** (2 Nov, the box quiet): report REPORT_PASS (w1 to w7 atlases 16.0 MB each), gate-glb w7 and w6 GATE_GLB_PASS
+and `--block atlas` on both (0 ready, every kind its primitive; w7 142 calls and 922k triangles, w6 57 and 265k),
+`--plant missing` red as it must be; ⚠️ gate-glb on w7 first went red on `kCrown split is impossible` (near 0, far 0
+of 1): the Crown of the World's keepsake lies past the globe's visible cap at the spawn, so it draws nothing either
+way. The gate now accepts zero on a globe world (more than n is still impossible) and fails if the globe draws no
+model at all. same.sh SAME_PASS (smoke and the w1 near bot byte identical to the Phase 0 baseline: physics never
+reads a model or the LOD), react_test REACT_PASS, sign_test SIGN_PASS, `manifest.mjs --check` MANIFEST_FRESH.
+**Stamp:** sw.js CACHE `dewball-v36`, ASSET_V and `sw.js?v=` 23 → 24 (⚠️ v35 moved only the CACHE: index.json?v=23
+would have kept a phone's old index; v36 ships w5 with them). Not deployed: the deploy script is
+`/home/codespace/dewball-drafts/deploy-dewball-v36.sh` (the vault release first, then a files only commit to main).

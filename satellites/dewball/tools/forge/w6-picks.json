@@ -1,17 +1,22 @@
 {
  "world": "w6",
- "note": "Which model ships for each w6 Dream Meadow kind. 1 Nov 2026, STEP 1 (cuts only, no credit spent): every kind under pending is to be bought as i2t (Meshy image to 3D) from its cut in tools/forge/meshy-in/<kind>.png, made by cutpicks.py from this file's \"cut\" and his Astra pictures (zip sha256 0bb5d4cda1a6281a..., picture hashes equal to Astra's asset-manifest.json). Kinds under use already wear a model of the world under home (a world draws only from its own atlas, so they are packed into this one). Kinds placed here whose model comes from another world's pictures are pending with that home. Facing, tip and drift below are what the pictures already show; yaw numbers are set from facing.mjs after the models come back.",
+ "note": "Which model ships for each w6 Dream Meadow kind. 1 Nov 2026, STEP 1 (cuts only, no credit spent): every kind under pending is to be bought as i2t (Meshy image to 3D) from its cut in tools/forge/meshy-in/<kind>.png, made by cutpicks.py from this file's \"cut\" and his Astra pictures (zip sha256 0bb5d4cda1a6281a..., picture hashes equal to Astra's asset-manifest.json). Kinds under use already wear a model of the world under home (a world draws only from its own atlas, so they are packed into this one). Kinds placed here whose model comes from another world's pictures are pending with that home. Facing, tip and drift below are what the pictures already show; yaw numbers are set from facing.mjs after the models come back. Step 3, 2 Nov 2026: the six bought kinds fitted (dewfit.py, --yaw mothZ=90), uvclean.py, 27 more shared kinds rebuilt by unatlas.py from their homes, one 2048x1536 atlas for 54 kinds, packed into assets/3d/w6; looked at in Blender four views and shot.mjs pairs at 412x915.",
  "use": {
+  "anchor": "i2t",
   "apple": "t2",
   "barrel": "i2t",
   "benchG": "i2t",
   "berry": "t2r",
   "birdbath": "i2t",
   "cartB": "i2t",
+  "cloudpuff": "i2t",
+  "crabS": "i2t",
   "crayon": "t2r",
   "crumb": "t2",
   "dewdrop": "i2t",
   "die": "t2",
+  "dreamgrass": "i2t",
+  "driftwood": "i2t",
   "drum": "t2",
   "duck": "t2",
   "firefly": "i2t",
@@ -26,14 +31,21 @@
   "lmClockTower": "i2t",
   "lmDovecote": "i2t",
   "lmGazeboPond": "i2t",
+  "lmMoonGate": "i2t",
+  "lmPagoda": "i2t",
+  "lmStoneCircle": "i2t",
   "marble": "t2",
   "moonflower": "i2t",
   "moonstone": "i2t",
+  "mothZ": "i2t",
   "mushroom": "i2t",
   "paperplane": "t2",
   "pea": "i2t",
   "pebble": "i2t",
   "pie": "t2",
+  "rowboat": "i2t",
+  "sailboat": "i2t",
+  "sandcastle": "i2t",
   "sandwich": "t2",
   "signpost": "i2t",
   "stall": "i2t",
@@ -42,26 +54,13 @@
   "teddy": "t2",
   "toadG": "i2t",
   "tulip": "i2t",
+  "umbrella": "i2t",
   "wheelbarrow": "i2t"
  },
  "keep": {
   "bicycle": "kept a primitive in w4 (Meshy filled both wheels and the frame triangle with red film); it has no model, so it stays one here"
  },
- "pending": [
-  "anchor",
-  "cloudpuff",
-  "crabS",
-  "dreamgrass",
-  "driftwood",
-  "lmMoonGate",
-  "lmPagoda",
-  "lmStoneCircle",
-  "mothZ",
-  "rowboat",
-  "sailboat",
-  "sandcastle",
-  "umbrella"
- ],
+ "pending": [],
  "home": {
   "apple": "w1",
   "barrel": "w4",
@@ -112,13 +111,18 @@
   "sandcastle": "w5",
   "umbrella": "w5"
  },
- "yaw": {},
+ "yaw": {
+  "mothZ": 90
+ },
  "facing": {
-  "mothZ": "faces right, slightly angled, four wings fanned up (the primitive lies flat, 2.6 tall at 5.1 long)"
+  "mothZ": "came back head on -X, wings fanned up and back: --yaw mothZ=90 puts the head and antennae on +Z (facing.mjs before and after)"
  },
  "tip": {},
  "drift": {
-  "lmMoonGate": "the moon is a separate piece once its glow is cleared (Meshy may float it or join it to the ring)"
+  "lmMoonGate": "the moon came back joined to the ring (one model, 29 pieces), filling the opening as Astra drew it",
+  "lmStoneCircle": "253 tall against the primitive 443 (low stones on a purple disc with a glowing orb in the middle, as Astra drew it)",
+  "mothZ": "wings fanned up: 2.8 wide, 4.7 tall, 5.1 long against the flat primitive 5.1 x 2.6 x 1.9",
+  "dreamgrass": "a felt ball on a blue stalk, the primitive's own lollipop shape"
  },
  "cutNotes": {
   "ramp": "the lit moon, orb and reed spill a glow into the sheet that no tolerance splits from the felt (the reed's halo ends 87 from the grey, its blue stem sits at 77): --ramp 6 grows the sheet through the smooth halo and stops at the felt's edge; it also took the pagoda's base shadow",

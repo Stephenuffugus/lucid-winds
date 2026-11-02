@@ -5186,13 +5186,22 @@
   //  colours land as written, so a painted texel must too (an sRGB map would
   //  be decoded and come out darker than the primitive it replaces).
   // =====================================================================
-  var ASSET_V="23";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
+  var ASSET_V="24";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
   /* ball diameters. ⛔ 8 first: the near set is rebuilt each quarter of this radius, so a model popped in at 6 to 8
      ball widths, mid screen, and Stephen saw it (10 Oct: "some things load a little slow when i get close to them").
      16: the swap at 12 to 16 widths, half the size on screen. Measured (perf.mjs): triangles +2% to +30%, the worst
      867k in Night Garden at 150 cm (1.5x the world before models; the plan's fence is 3x), draw calls under 2x. */
   var LOD_NEAR=16;
   var LOD_SIZE=6;              // ...or this many of the thing's own sizes, whichever reaches farther
+  /* ...and never a SPECK: a thing smaller than a twentieth of the ball (a few pixels beside it) draws as its
+     primitive wherever it is. 2 Nov 2026, measured (perf.mjs, the ball parked, nothing eaten): The Whole World at
+     22 m drew all 4,466 live instances as models, 4.5M triangles (1.6x the plan's 3x fence of ~920k), because 16
+     ball widths of a 22 m ball cover the whole planet; a 90 cm barrel at 1,509 triangles is 5 px there. */
+  var LOD_SPECK=20;
+  /* ...and on the globe the ball widths reach at most this many planet radii of arc (69 degrees): the draw cap
+     (_gsMat, 2.35 rad) keeps 85% of the planet on screen for the zoomed out late game, but past this the props sit
+     over the curve or on the limb, edge on. A thing big enough (LOD_SIZE) still reaches past it: the landmarks. */
+  var LOD_GLOBE=1.2;
   /* where the models come from: the shipped set, a test fixture (?dbglb=, test mode only),
      or a BENCHMARK set for a person to try on a phone before it ships (?models=bench-std or
      ?models=bench-t2: two fixed names, never a path from the address bar) */
@@ -5342,7 +5351,9 @@
   function _cp16(a,o,b,p){ for(var q=0;q<16;q++) b[p+q]=a[o+q]; }
   function lodSync(){
     if(!R||!INST.length) return;
-    var rn=R.D*LOD_NEAR, rn2=rn*rn, i, j, st, L, a, na, fa, k, f, dx, dz, o, ver, sz;
+    var rn=R.D*LOD_NEAR, rn2, i, j, st, L, a, na, fa, k, f, dx, dz, o, ver, sz;
+    if(GLOBE&&rn>GLOBE.R*LOD_GLOBE) rn=GLOBE.R*LOD_GLOBE;
+    rn2=rn*rn;
     for(i=0;i<INST.length;i++){ st=INST[i]; L=st.lod; if(!L) continue;
       ver=st.mesh.instanceMatrix.version;
       dx=wrapD(R.x-L.bx); dz=wrapD(R.z-L.bz);
@@ -5355,7 +5366,7 @@
         /* near = within 8 ball diameters OR 6 of its own sizes, whichever is farther: a
            62 cm cake stand 75 cm from a 4 cm ball towers over it, and the ball radius
            alone drew it as its primitive (found planning the benchmark shots) */
-        if(dx*dx+dz*dz<(rn2>sz*sz?rn2:sz*sz)){ _cp16(a,o,na,k*16); k++; } else { _cp16(a,o,fa,f*16); f++; } }
+        if(dx*dx+dz*dz<(rn2>sz*sz?rn2:sz*sz)&&st.size[j]*LOD_SPECK>=R.D){ _cp16(a,o,na,k*16); k++; } else { _cp16(a,o,fa,f*16); f++; } }
       L.near.count=k; L.far.count=f;
       L.near.instanceMatrix.updateRange.offset=0; L.near.instanceMatrix.updateRange.count=k*16;
       L.far.instanceMatrix.updateRange.offset=0; L.far.instanceMatrix.updateRange.count=f*16;
@@ -5430,7 +5441,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=23")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=24")["catch"](function(){});
     });
   }
   var deferredPrompt=null;
