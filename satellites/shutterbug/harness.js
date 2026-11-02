@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 7246;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
+const ASSERT_FLOOR = 7297;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6074 at HOUSE-A, Q200, 1 Nov; 6076 at HOUSE-AR, Q201, 1 Nov; 6426 at HOUSE-ART3, the union with ART2 and ART3, 1 Nov; 6889 at HOUSE-B, the guardian and the looks, Q203, 2 Nov) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -5499,7 +5499,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
       t.ok(bad.length === 0, name + '.' + f + ' decodes to ' + sp.w + 'x' + sp.h + ', every pixel clear or a palette index' + (bad.length ? ' (' + bad.join('; ') + ')' : ''));
       if (name === 'hero') t.ok(sp.w === K.HERO_W && sp.h === K.HERO_H && rows[sp.h - 1].includes(INK), 'hero.' + f + ' is the hitbox\'s size and its bottom row holds Ink (the feet row, section 7.3)');
       else if (name.startsWith('hero_')) t.ok(rows[sp.h - 1].includes(INK), name + '.' + f + ' is a hero pose (Sun allowed) and its bottom row holds Ink (the feet row)');
-      else if (name !== 'beacon' && name !== 'fx_beacon_light') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\', the beacon\'s and its lighting\'s)');
+      else if (name !== 'beacon' && name !== 'fx_beacon_light' && name !== 'beacon_locked') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\', the beacon\'s and its lighting\'s)');
       /* section 7.3 (the M1 review: the placeholders broke it): Film is the repairs' alone (the film tab), so help is
          never furniture; the speck is Amber with a Glare glint; every danger has an Ink outline */
       if (name !== 'tab') t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour)');
@@ -5606,6 +5606,49 @@ function packRefV2(j) {
   return out;
 }
 const v2Of = (j, biome, rules, flags) => ({ v: 2, w: j.w, h: j.h, mode: j.mode, focal: j.focal, biome, rules: rules || 0, flags: flags || 0, rows: j.rows, rows2: j.rows2 === undefined ? null : j.rows2 });
+/* ================================================================ KEYS: the locked exit (2 Nov, Stephen's ruling "defaults are fine") */
+group('H-key-1', 'the locked exit (features.keys): every fixture with the keys flag gets 1 to 3 keys, each on an open cell the bug reaches from spawn and leaves for the exit (the trap graph), on no other feature\'s cell; none without the flag and none in the guardian\'s room; the sim keeps the exit shut, saying LOCKED, until every key is taken, then clears', t => {
+  const R = SB.reach, T = SB.TUNING, K = SB.K, bad = [], counts = [0, 0, 0, 0];
+  let built = 0, keyed = null;
+  for (const f of FIXTURES) {
+    const j = Object.assign({}, f.fx.record, { v: 2, biome: 0, rules: 0, flags: SB.record.FLAG_KEYS });
+    const lv = SB.pipeline.build(SB.record.fromJSON(j), {});
+    if (lv.needsCrop) continue;
+    built++;
+    const k = lv.features.keys || [], n = lv.w * lv.h;
+    counts[Math.min(3, k.length)]++;
+    if (k.length > T.KEYS_MAX) bad.push(f.name + ': ' + k.length + ' keys');
+    const g = R.trapGraph(lv, R.graph(lv)), d = R.distances(g, lv.spawn, lv.exit), back = SB.features.returnable(lv, g, 3 * g.n), fz = lv.features;
+    const held = new Set([lv.spawn, lv.exit, fz.chest, fz.scroll, fz.blueprint].concat(fz.specks || [], (fz.enemies || []).map(e => e.idx)));
+    for (const c of k) {
+      if (c < 0 || c >= n || lv.solid[c] || (lv.trap && lv.trap[c])) bad.push(f.name + ': key ' + c + ' is not an open cell');
+      if (d[c] < 0) bad.push(f.name + ': key ' + c + ' is not reached from spawn');
+      if (!back[c]) bad.push(f.name + ': no way back to the exit from key ' + c);
+      if (held.has(c)) bad.push(f.name + ': key ' + c + ' on another feature\'s cell');
+    }
+    if (!keyed && k.length >= 2) keyed = lv;
+    const plain = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, j, { flags: 0 })), {});
+    if (plain.features && plain.features.keys) bad.push(f.name + ': keys without the flag');
+    const five = SB.pipeline.build(SB.record.fromJSON(j), { lastRoom: true, roomIndex: T.HOUSE_ROOMS });
+    if (!five.needsCrop && five.features.guardian && five.features.keys) bad.push(f.name + ': keys in the guardian\'s room');
+  }
+  t.ok(built > 0 && bad.length === 0, built + ' keyed fixture levels: every key open, reached, returnable and on its own cell; none unflagged, none with the guardian (0/1/2/3 keys: ' + counts.join('/') + ')' + (bad.length ? ': ' + bad.slice(0, 5).join('; ') : ''));
+  console.log('  info  H-key-1: ' + built + ' keyed fixture levels, 0/1/2/3 keys ' + counts.join('/'));
+  t.ok(counts[0] === 0, 'every keyed fixture level has at least one key (' + counts[0] + ' have none)');
+  /* the sim: the bug set down in the exit with keys out is LOCKED and not cleared; on each key, it takes it; then the exit clears */
+  t.ok(!!keyed, 'a fixture level with 2 or more keys to play');
+  if (keyed) {
+    const s = SB.sim.create(keyed), CS = K.CELL_SUB, at = c => { s.hero.x = (c % keyed.w) * CS + ((CS - K.HERO_W_SUB) >> 1); s.hero.y = Math.floor(c / keyed.w) * CS; s.hero.vx = 0; s.hero.vy = 0; };
+    s.immortal = 1;
+    at(keyed.exit); SB.sim.step(s, 0);
+    const locked = (s.ev & SB.sim.EV.LOCKED) !== 0 && !s.room.cleared && SB.sim.keysLeft(s) === keyed.features.keys.length;
+    let took = 0;
+    for (const c of keyed.features.keys) { at(c); SB.sim.step(s, 0); if (s.ev & SB.sim.EV.KEY) took++; }
+    at(keyed.exit); SB.sim.step(s, 0);
+    t.ok(locked && took === keyed.features.keys.length && SB.sim.keysLeft(s) === 0 && s.room.cleared === 1, 'the sim: the exit says LOCKED with ' + keyed.features.keys.length + ' keys out, each key is taken on touch (' + took + '), then the exit clears (' + s.room.cleared + ')');
+  }
+});
+
 group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchanged (pinned from 42fc8b19a); a v2 record carries biome, rules and flags through JSON, pack, the code and the link; RULES 0 builds the same level as the same grid in v1, the biome aside; a byte this client does not know reads as newer; the seed still the grid alone', t => {
   /* v1 unchanged: every fixture in modes 0 and 1, plain and as a first room, built to the same level or the same
      refusal as on 42fc8b19a (104 builds), and every fixture's v1 code in modes 0, 1 and 2 the same string */
@@ -5647,7 +5690,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   /* the validator */
   const g2 = v2Of(sj, 4);
   const refuse = [['biome 6', { biome: 6 }], ['biome -1', { biome: -1 }], ['biome 1.5', { biome: 1.5 }], ['rules 2 (reserved for the next rules, not this client\'s)', { rules: 2 }], ['rules 9', { rules: 9 }],
-    ['flags bit 0', { flags: 1 }], ['flags bit 1', { flags: 2 }], ['flags bit 2', { flags: 4 }], ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
+    ['flags bit 1', { flags: 2 }],   /* bit 0 is the keys' (2 Nov), known */ ['flags bit 2', { flags: 4 }], ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
   for (const [why, o] of refuse) t.ok(SB.record.validate(Object.assign({}, g2, o)) !== null, 'validate refuses a v2 record with ' + why);
   t.ok(SB.record.validate(Object.assign({}, sj, { biome: 3 })) !== null, 'validate refuses a v1 record carrying a biome');
   t.eq(SB.record.validate(g2), null, 'validate accepts the v2 sample room with biome 4 (control)');
@@ -5656,7 +5699,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.ok(SB.record.decode('v1.' + gb.toString('base64url')) === null && SB.record.decode('v2.' + v1b.toString('base64url')) === null, 'decode refuses a v1. prefix on a v2 record and a v2. prefix on a v1 record');
   t.ok(SB.record.decode(gb.toString('base64url')) !== null && SB.record.decode(gb.toString('base64url')).biome === 4, 'a bare v2 payload decodes with its biome');
   const at = (k, v) => { const b = Buffer.from(gb); b[k] = v; return b; };
-  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 0', at(8, 1)], ['flags bit 1', at(8, 2)], ['flags bit 2', at(8, 4)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
+  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 1', at(8, 2)], ['flags bit 2', at(8, 4)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
   for (const [why, b] of newer) {
     t.eq(SB.record.parseCode(code2(b)).why, 'newer', 'parseCode answers newer on a v2 code with ' + why);
     t.eq(SB.record.decode(code2(b)), null, 'decode never builds a v2 record with ' + why);
@@ -5666,7 +5709,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.eq(SB.record.parseCode(at(0, 3).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v3 payload (no prefix), as on its v3. code');
   t.eq(SB.record.parseCode('https://x.example/s/#' + at(0, 7).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v7 payload after a link\'s #');
   t.ok(SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode(at(0, 200).toString('base64url')).why === 'bad', 'garbage and a bare payload with version byte 200 still read as bad (control)');
-  t.eq(SB.record.parseCode(code2(at(8, 1).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length)');
+  t.eq(SB.record.parseCode(code2(at(8, 2).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length)');
   t.eq(SB.record.parseCode(code2(gb.subarray(0, 300))).why, 'bad', 'a truncated v2 code with known bytes reads as bad (control)');
   t.ok(SB.record.parseCode(code2(gb)).rec && SB.record.parseCode(code2(gb)).rec.biome === 4, 'a v2 code with RULES 0 and no flags opens (control)');
   /* the build: the biome byte names the biome; RULES 0 is today's rules on the same grid */
@@ -5761,7 +5804,7 @@ group('H-hue-1', 'the hue vote (Q220, shell-capture\'s hueVote): the bright room
   const sage = SB.SAMPLE_ROOM, rgb = new Uint8Array(N * 3);
   for (let i = 0; i < N; i++) { const p = parseInt(sage[Math.floor(i / 24)][i % 24], 16); rgb.set(p === SB.palette.I.ASH ? [178, 194, 164] : SB.palette.RGB[p], 3 * i); }
   const j = CAP.gridRecord(rgb, -1), want = CAP.hueVote(rgb).biome;
-  t.ok(j.v === 2 && j.biome === want + 1 && j.rules === 0 && CAP.RULES === 0 && j.flags === 0 && SB.record.validate(j) === null, 'gridRecord writes a valid v2 record: biome the vote + 1 (' + j.biome + '), RULES 0 (today\'s rules, Q222), flags 0');
+  t.ok(j.v === 2 && j.biome === want + 1 && j.rules === 0 && CAP.RULES === 0 && j.flags === SB.record.FLAG_KEYS && SB.record.validate(j) === null, 'gridRecord writes a valid v2 record: biome the vote + 1 (' + j.biome + '), RULES 0 (today\'s rules, Q222), the keys flag (2 Nov)');
   /* sb-m1-5: gridRecord now normalises before nearest (NORMALISE), so its rows are no longer the sample room's; the vote
      reads the raw colours (the merge rule), so the biome byte is still the sage's. Built on the sample room's own rows */
   const js = Object.assign({}, j, { rows: Array.from(SB.SAMPLE_ROOM) });
@@ -5778,7 +5821,7 @@ let climbCorpus = null;
 function climbRooms() {
   if (climbCorpus) return climbCorpus;
   const RM = require('./tools/room-model.js'), CAP = captureWithCore(), rooms = [];
-  const recOf = (rgb, rules) => { const j = CAP.gridRecord(rgb, -1); j.rules = rules; return SB.record.fromJSON(j); };
+  const recOf = (rgb, rules) => { const j = CAP.gridRecord(rgb, -1); j.rules = rules; j.flags = 0; return SB.record.fromJSON(j); };   /* the climb's rooms without keys (the bot walks the ascent only) */
   const cropImg = (img, c) => { const px = Buffer.alloc(c.w * c.h * 3); for (let y = 0; y < c.h; y++) img.px.copy(px, y * c.w * 3, ((c.y + y) * img.w + c.x) * 3, ((c.y + y) * img.w + c.x + c.w) * 3); return { w: c.w, h: c.h, bpp: 3, px }; };
   const { downscaleRGB } = require('./tools/capture-oracle.js');
   for (const f of FIXTURES) for (const mode of [0, 1]) {

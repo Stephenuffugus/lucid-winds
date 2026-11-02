@@ -1,5 +1,10 @@
 # START HERE
 
+## 📷 2 Nov 16:45 UTC (Opus) sb-m1-7 STAMPED: KEYS AND THE LOCKED EXIT; STEPHEN RUNS THE DEPLOY SCRIPT
+Every new photo room hides 1 to 3 keys; the exit lamp charges as they come in and stays shut until all are held. Old share codes and the sample room are unchanged. lint OK, harness 7297 OK (H-key-1 new). PROGRESS sb-m1-7 has the details.
+DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-7/deploy-sb-m1-7.sh`, then hostproof, tag sb-m1-7.
+NEXT: W3 (the dive weapons), then the Darkroom; Astra's bosses, monsters and terrain wait for their systems. Open for him: what the STARS "find every snapshot" star becomes now that keys are required.
+
 ## 📷 2 Nov 15:21 UTC (Opus) sb-m1-6 IS LIVE (deploy d6c21a15d, tag sb-m1-6; both origins on the first probe, index sha256 11eb6aeb...; sw.js 200, bytes equal, shutterbug-v6)
 NEXT: keys and the locked exit with Astra's key art.
 

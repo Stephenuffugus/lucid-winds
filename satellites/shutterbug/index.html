@@ -210,7 +210,15 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 @keyframes heartlast { 50% { transform: scale(1.25); } }
 #stage.hurt::after { content: ''; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 6px var(--brick); animation: hurtedge 0.4s linear 1 forwards; }
 @keyframes hurtedge { from { opacity: 0.9; } to { opacity: 0; } }
-#hearts b { align-self: center; font-size: 0.95rem; }   /* the count form (the review of HOUSE-A: 8 hearts at 320 wide) */
+#hearts b { align-self: center; font-size: 0.95rem; }
+/* the locked exit's keys (2 Nov): Astra's hud_key at 2x, one a key, full once taken; under 360 wide one key and n/max */
+#keys { display: flex; align-items: center; gap: 2px; flex: none; margin-left: 6px; }
+#keys[hidden] { display: none; }
+#keys i { width: 18px; height: 18px; display: block; background: var(--key-empty) 0 0 / 18px 18px no-repeat; image-rendering: pixelated; }
+#keys i.got { background-image: var(--key-full); }
+#keys i.pop { animation: keypop 0.45s ease-out 1; }
+@keyframes keypop { 0% { transform: scale(1.9); filter: brightness(1.8); } 100% { transform: scale(1); } }
+#keys b { font-size: 0.95rem; margin-left: 2px; }   /* the count form (the review of HOUSE-A: 8 hearts at 320 wide) */
 #stage { flex: 0 0 auto; display: flex; justify-content: center; position: relative; touch-action: none; }
 #view { display: block; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; background: var(--ink); }
 #strip { flex: 1 1 auto; min-height: 168px; position: relative; padding-bottom: var(--sab); touch-action: none; }
@@ -314,6 +322,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   background: var(--ink); color: var(--paper); padding: 8px 14px; text-align: center; z-index: 2; box-shadow: 0 3px 0 rgba(0,0,0,0.25); }
 #guardbanner b { display: block; font-size: 1.05rem; } #guardbanner span { display: block; font-size: 0.9rem; margin-top: 2px; }
 #guardbanner[hidden] { display: none; }
+#guardbanner.low { top: auto; bottom: 12px; }   /* docked away from a bug in the view's top part (2 Nov: it hid the shut exit) */
 /* the house clear card's prize (Astra's card_house_clear, 144x140 at 2x: the prize in its opening, fx_unlock over it,
    the caption in its 98x14 area at (23,100)) */
 #doorprize { position: relative; width: min(288px, 100%); aspect-ratio: 144 / 140; margin: 4px auto 8px; }
@@ -564,7 +573,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
 <input id="fileshoot" type="file" accept="image/*" capture="environment" hidden>
 <input id="filechoose" type="file" accept="image/*" hidden>
 <main id="play" class="screen" aria-label="Play">
-  <div id="top"><button id="pause" type="button" data-aria="pause"><i aria-hidden="true"></i></button><i id="biomebadge" aria-hidden="true" hidden></i><span id="roomname"></span><span id="hearts" aria-label="Hearts"></span></div>
+  <div id="top"><button id="pause" type="button" data-aria="pause"><i aria-hidden="true"></i></button><i id="biomebadge" aria-hidden="true" hidden></i><span id="roomname"></span><span id="keys" aria-label="Keys" hidden></span><span id="hearts" aria-label="Hearts"></span></div>
   <div id="stage"><canvas id="view" width="384" height="640"></canvas>
     <div id="guardbanner" role="status" hidden><b data-copy="lastRoom"></b><span data-copy="guardHint"></span></div>
     <div id="paused" role="dialog" data-aria="paused"><h2 data-copy="paused"></h2>
@@ -680,6 +689,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     JELLY_SPEED: 1 /* T1.4: the bob's cells per second */, SPARK_AIR_S: 0.2 /* a hop's flight */, ELITE_SIZE_CELLS: 1.5 /* 24 px (Q51) */,
     HIT_HEARTS: 1, HIT_IFRAMES_S: 1, HIT_KNOCKBACK_CELLS: 2, HIT_KNOCKBACK_FRAMES: 8 /* T0.16's "over 8 frames" */,
     BOSS_INTRO_S: 2, BOSS_TELEGRAPH_S: 0.8, BOSS_SAFE_LEDGE_CELLS: 6, BOSS_WEAK_MIN: 3, BOSS_OUTLINE_UNTIL: 0.25, BOSS_FALLBACK_HP: 20,
+    KEYS_MAX: 3, KEYS_ROWS_OVER_SPAWN: 2, KEYS_MIN_ROWS: 6, KEYS_GUARD_CELLS: 4 /* the locked exit (2 Nov, features.keys) */,
     BOSS_MOTH_EVERY_S: 4, BOSS_MOTH_COUNT: 3, BOSS_ICICLE_TELEGRAPH_S: 3, BOSS_RING_EVERY_S: 5, BOSS_RING_CELLS: 4, BOSS_SPARK_TELEGRAPH_S: 2,
     // 9 weapons, stats, economy
     JUMP_SLOT_CD_S: 0.6, VIGOR_PCT: 25, FOCUS_PCT: 25, HEARTS_BASE: 4, HEARTS_CAP: 8, SCROLLS_PER_HEART: 3, PICKUP_GRACE_FRAMES: 6 /* Q56 */, POOL_PER_SLOT: 4, PROJ_MAX: 16,
@@ -809,7 +819,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m1-6';
+  SB.BUILD = 'sb-m1-7';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -1004,7 +1014,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      and their code: nothing that was shared changes. */
   var V = 2, HEADER = 6, HEADER2 = 9, HEX = '0123456789abcdef';
   /* what this client knows of v2's three bytes (raised only by the lane that builds what a value means) */
-  var BIOME_MAX = 5, RULES_MAX = 1, FLAGS_KNOWN = 0;
+  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAGS_KNOWN = FLAG_KEYS;   /* FLAGS bit 0: the room's exit is locked by keys (2 Nov) */
   function headOf(v) { return v === 1 ? HEADER : HEADER2; }
   /* a v2 header holding a byte this client does not know (a biome past BIOME_MAX, rules past RULES_MAX, a flag bit
      outside FLAGS_KNOWN): such a code is a newer client's, never 'bad' and never built */
@@ -1299,7 +1309,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var doc = validateSave(obj);
     return { doc: doc, write: JSON.stringify(doc) !== raw };
   }
-  SB.record = { V: V, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
+  SB.record = { V: V, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
     encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows, parseCode: parseCode, linkOf: linkOf,
     saveDefaults: saveDefaults, validateSave: validateSave, loadSave: loadSave,
     runValid: runValid, runFresh: runFresh, runEnter: runEnter, runClear: runClear, runDie: runDie, runRetry: runRetry,
@@ -1818,6 +1828,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (settled) return settled;
     SB.features.ramp(level, opts);   /* a house room after the first only (opts.roomIndex, Q200); on the settled level */
     SB.features.guardian(level, opts);   /* the house's last room only (HOUSE-B, Q97 ruling 3): the clay guardian */
+    SB.features.keys(level, opts, rec.v >= 2 && (rec.flags & SB.record.FLAG_KEYS) !== 0);   /* the locked exit's keys (2 Nov) */
     return level;
   }
 
@@ -2222,7 +2233,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
     return Int32Array.from(out);
   }
-  function levelHash(lv) { return SB.rng.hashWords(serialize(lv)); }
+  function levelHash(lv) {
+    var k = lv.features && lv.features.keys;
+    if (!k) return SB.rng.hashWords(serialize(lv));
+    var a = Array.from(serialize(lv)); a.push(0x4b455953, k.length); for (var j = 0; j < k.length; j++) a.push(k[j] | 0);   /* 'KEYS', then the cells */
+    return SB.rng.hashWords(Int32Array.from(a));
+  }
 
   SB.pipeline = { toText: toText, otsu: otsu, smooth: smooth, components: components, describe: describe, build: build, climbs: climbs, wallPaint: wallPaint, biomeOf: biomeOf, biomeFor: biomeFor,
     FIELDS: FIELDS, serialize: serialize, levelHash: levelHash, exitByReach: exitByReach, DEGRADE: DEGRADE, settle: settle, holds: holds };
@@ -3547,6 +3563,75 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return null;
   }
 
+  /* KEYS (Stephen, 2 Nov: "the exit is locked and you have to collect keys"; his ruling "defaults are fine"): a record
+     that carries the keys flag (v2 FLAGS bit 0, written by every capture from sb-m1-7) gets 1 to 3 keys and its exit
+     stays shut until the bug holds them all. Pure on the settled level, no rng draw, after everything else is placed:
+       - a spot is an open cell the bug can reach from spawn and get back to the exit from (the chest's rule, Q78),
+         standing on the photo's own support (a one way or a solid above the floor row, never a film tab), at least
+         2 rows over the spawn row, on no cell another feature holds;
+       - spots run into surfaces (a row's runs); a surface's distance from the climb is its middle's least Chebyshev
+         distance to the ascent; one key goes by enemies when a surface lies within 4 cells of an enemy's home (the
+         guarded key), the rest go farthest from the climb first, then higher, each 6 rows from the keys before it;
+       - 3 at most (1 in a first room); none in the guardian's room (the guardian is its key);
+       - no surface at all: 1 key on the climb, at the ascent's middle node that stands on a cell nothing holds.
+     features.keys: the key cells in pick order, or null */
+  function keys(level, opts, on) {
+    var f = level.features;
+    if (f) f.keys = null;
+    if (!on || !f || level.needsCrop || f.guardian || level.exit < 0) return null;
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, k, x, y, c;
+    var g = SB.reach.trapGraph(level, SB.reach.graph(level)), d = SB.reach.distances(g, level.spawn, level.exit), back = returnable(level, g, 3 * g.n);
+    var claim = new Uint8Array(n), off = function (q) { if (typeof q === 'number' && q >= 0 && q < n) claim[q] = 1; };
+    off(level.spawn); off(level.exit); off(f.chest); off(f.scroll); off(f.blueprint);
+    for (k = 0; f.specks && k < f.specks.length; k++) off(f.specks[k]);
+    for (k = 0; level.beacon && k < level.beacon.cells.length; k++) off(level.beacon.cells[k]);
+    if (f.door) { var dr = f.door.rect; for (y = dr[1]; y <= dr[3]; y++) for (x = dr[0]; x <= dr[2]; x++) claim[y * w + x] = 1; }
+    if (f.pocket) for (k = 0; k < f.pocket.cells.length; k++) claim[f.pocket.cells[k]] = 1;
+    var homes = [];
+    for (k = 0; f.enemies && k < f.enemies.length; k++) { off(f.enemies[k].idx); homes.push(f.enemies[k].idx); }
+    /* the room's other loot keeps a cell of air round it, so a key never sits beside the chest or the scroll */
+    var near = new Uint8Array(n), ring = function (q) { if (typeof q !== 'number' || q < 0 || q >= n) return; for (var yy = -1; yy <= 1; yy++) for (var xx = -1; xx <= 1; xx++) { var qx = q % w + xx, qy = Math.floor(q / w) + yy; if (qx >= 0 && qx < w && qy >= 0 && qy < h) near[qy * w + qx] = 1; } };
+    ring(f.chest); ring(f.scroll); ring(f.blueprint);
+    for (k = 0; f.specks && k < f.specks.length; k++) ring(f.specks[k]);
+    var spawnRow = Math.floor(level.spawn / w), max = opts && opts.firstRoom ? 1 : T.KEYS_MAX;
+    var spot = function (q) {
+      var b = q + w;
+      if (b >= n || level.solid[q] || (level.trap && level.trap[q]) || claim[q] || near[q] || d[q] < 0 || !back[q]) return false;
+      if (level.tab[b] || !(level.plat[b] || (level.solid[b] && Math.floor(b / w) < h - 1))) return false;
+      return Math.floor(q / w) <= spawnRow - T.KEYS_ROWS_OVER_SPAWN;
+    };
+    var nodes = level.ascent ? level.ascent.nodes : [], asc = [], cellOf = function (v) { return v < n ? v : (v - n) >> 1; };
+    for (k = 0; k < nodes.length; k++) asc.push(cellOf(nodes[k]));
+    var cheb = function (a, b) { return Math.max(Math.abs(a % w - b % w), Math.abs(Math.floor(a / w) - Math.floor(b / w))); };
+    var surfaces = [];
+    for (y = 0; y < h - 1; y++) for (x = 0; x < w; ) {
+      if (!spot(y * w + x)) { x++; continue; }
+      var e = x; while (e + 1 < w && spot(y * w + e + 1)) e++;
+      var mid = y * w + ((x + e) >> 1), far = 99, foe = 99;
+      for (k = 0; k < asc.length; k++) far = Math.min(far, cheb(mid, asc[k]));
+      for (k = 0; k < homes.length; k++) foe = Math.min(foe, cheb(mid, homes[k]));
+      surfaces.push({ y: y, mid: mid, far: far, foe: foe });
+      x = e + 1;
+    }
+    var picks = [], ok = function (sf) { for (var j = 0; j < picks.length; j++) if (Math.abs(picks[j].y - sf.y) < T.KEYS_MIN_ROWS) return false; return true; };
+    var guarded = surfaces.filter(function (sf) { return sf.foe <= T.KEYS_GUARD_CELLS && sf.far >= 1; }).sort(function (a, b) { return a.foe - b.foe || b.far - a.far || a.mid - b.mid; });
+    if (guarded.length && max > 1) picks.push(guarded[0]);
+    var order = surfaces.slice().sort(function (a, b) { return b.far - a.far || a.y - b.y || a.mid - b.mid; });
+    for (k = 0; k < order.length && picks.length < max; k++) if (picks.indexOf(order[k]) < 0 && ok(order[k])) picks.push(order[k]);
+    var out = picks.map(function (sf) { return sf.mid; });
+    if (!out.length) {
+      /* no surface: one key on the climb, the standing ascent node nearest the ascent's middle that nothing holds */
+      var best = -1, bd = 1e9, half = asc.length >> 1;
+      for (k = 0; k < asc.length; k++) {
+        c = asc[k];
+        if (nodes[k] >= n || claim[c] || level.solid[c] || c === level.spawn || c === level.exit) continue;
+        if (Math.abs(k - half) < bd) { bd = Math.abs(k - half); best = c; }
+      }
+      if (best >= 0) out.push(best);
+    }
+    f.keys = out.length ? out : null;
+    return f.keys;
+  }
   function place(level, opts, g) {
     var f = level.features, stands = ascentStands(level), rng = SB.rng.mulberry32(level.seed >>> 0);
     if (!g) g = SB.reach.graph(level);
@@ -3568,7 +3653,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   SB.features = { MOTH: MOTH, ICICLE: ICICLE, JELLY: JELLY, CRAWLER: CRAWLER, SPARK: SPARK, KIND_OF_BIOME: KIND_OF_BIOME,
     place: place, returnable: returnable, ladder: ladder, brightRect: brightRect, door: door, pocketCands: pocketCands, pocketOk: pocketOk, chest: chest, specks: specks,
     trapRects: trapRects, trapOk: trapOk, trapField: trapField, envelope: envelope, enemies: enemies, moths: moths, rampRow: rampRow, ramp: ramp,
-    darkMasses: darkMasses, arena: arena, guardian: guardian };
+    darkMasses: darkMasses, arena: arena, guardian: guardian, keys: keys };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-sim" data-core>
@@ -3593,7 +3678,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   var CHOICE = { A: 1, B: 2, TAKE: 3, LEAVE: 4 };
   /* the loot (T1.6) and the stats (DESIGN 9.2): a scroll offers the room's biome's stat and one other (QUESTIONS Q84: by
      hue, Attic and Ember Vigor, Frost and Deep Focus, Overgrowth Grit) */
-  var LOOT_SPECK = 1, LOOT_SCROLL = 2, LOOT_BLUEPRINT = 3, VIGOR = 1, FOCUS = 2, GRIT = 3, STAT_OF_BIOME = [VIGOR, FOCUS, FOCUS, GRIT, VIGOR];
+  var LOOT_SPECK = 1, LOOT_SCROLL = 2, LOOT_BLUEPRINT = 3, LOOT_KEY = 4, VIGOR = 1, FOCUS = 2, GRIT = 3, STAT_OF_BIOME = [VIGOR, FOCUS, FOCUS, GRIT, VIGOR];
 
   /* the weapons (docs/WEAPONS-V1.md 2.1): the state holds integers, so every weapon id has a code, its index here; the
      slot of a code is (code - 1) >> 3 (0 the jump slot, J1..J8; 1 the dive slot, D1..D8; 2 the charm, C1..C8). BUILT is
@@ -3766,8 +3851,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (k = 0; f.specks && k < f.specks.length; k++) out.push({ kind: LOOT_SPECK, idx: f.specks[k], taken: 0 });
     if (typeof f.scroll === 'number' && f.scroll >= 0) out.push({ kind: LOOT_SCROLL, idx: f.scroll, taken: 0 });
     if (typeof f.blueprint === 'number' && f.blueprint >= 0) out.push({ kind: LOOT_BLUEPRINT, idx: f.blueprint, taken: 0 });
+    for (k = 0; f.keys && k < f.keys.length; k++) out.push({ kind: LOOT_KEY, idx: f.keys[k], taken: 0 });   /* the locked exit's keys, last */
     return out;
   }
+  /* the keys still out (0 in a room without keys) */
+  function keysLeft(s) { var n = 0; for (var i = 0; i < s.loot.length; i++) if (s.loot[i].kind === LOOT_KEY && !s.loot[i].taken) n++; return n; }
+  function keysOf(s) { var n = 0; for (var i = 0; i < s.loot.length; i++) if (s.loot[i].kind === LOOT_KEY) n++; return n; }
   /* the hero's box over a cell */
   function boxOver(h, w, c) { var K = SB.K, CS = K.CELL_SUB, cx = c % w, cy = (c - cx) / w; return h.x < (cx + 1) * CS && h.x + K.HERO_W_SUB > cx * CS && h.y < (cy + 1) * CS && h.y + K.HERO_H_SUB > cy * CS; }
   /* a scroll picked: its stat up one, the scroll counted, a heart grown every SCROLLS_PER_HEART to HEARTS_CAP (the new
@@ -4203,7 +4292,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
   var EV = { JUMP: 1, WALLJUMP: 2, DIVE: 4, LAND: 8, HIT: 16, CLEAR: 32, DEAD: 64, PICKUP: 128, CHEST: 256, OFFER: 512, PICK: 1024,
     FIRE_J: 2048, FIRE_D: 4096, HURT: 8192, KILL: 16384, EQUIP: 32768, SWAP: 65536, BURST: 131072, SAVED: 262144,
     /* the guardian (HOUSE-B): it wakes, tells a shed, sheds, takes a hit, goes down */
-    WAKE: 524288, TELL: 1048576, SHED: 2097152, BOSS_HIT: 4194304, BOSS_DOWN: 8388608 };
+    WAKE: 524288, TELL: 1048576, SHED: 2097152, BOSS_HIT: 4194304, BOSS_DOWN: 8388608,
+    /* the locked exit (2 Nov): a key taken; the bug at the exit with a key still out */
+    KEY: 16777216, LOCKED: 33554432 };
   function step(s, word) {
     var K = SB.K, h = s.hero, lv = s.level || null;
     if (!lv) throw new Error('sim.step: the state carries no level (attach with sim.attach)');
@@ -4343,10 +4434,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
        moths' contact waits on !cleared, so the step that touches the lamp is never also the step a moth takes the
        last heart (the fourth review found both on one step: the clear card over a fallen bug) */
     /* in the last room the beacon stays dark, and the exit shut, until the guardian is down (DESIGN 7.1, H-boss-4) */
+    /* KEYS (2 Nov): while a key is still out the exit stays shut, and touching it says so (EV.LOCKED, every step) */
     if (lv.exit >= 0 && !(s.boss && s.boss.phase < 2)) {
       var CS2 = K.CELL_SUB, ex = lv.exit % lv.w, ey = (lv.exit - ex) / lv.w;
       if (h.x < (ex + 1) * CS2 && h.x + K.HERO_W_SUB > ex * CS2 && h.y < (ey + 1) * CS2 && h.y + K.HERO_H_SUB > ey * CS2) {
-        s.room.cleared = 1; s.room.exitLit = 1; s.ev |= EV.CLEAR;
+        if (keysLeft(s) > 0) s.ev |= EV.LOCKED;
+        else { s.room.cleared = 1; s.room.exitLit = 1; s.ev |= EV.CLEAR; }
       }
     }
 
@@ -4363,6 +4456,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
         lt.taken = 1; s.ev |= EV.PICKUP;
         if (lt.kind === LOOT_SPECK) s.room.dp += T8.DP_SPECK[0] + SB.rng.stepU32(s, 'rng') % (T8.DP_SPECK[1] - T8.DP_SPECK[0] + 1);
         else if (lt.kind === LOOT_BLUEPRINT) s.room.blueprints.push(lt.idx);
+        else if (lt.kind === LOOT_KEY) s.ev |= EV.KEY;
         else { s.room.grace = T8.PICKUP_GRACE_FRAMES; s.room.offerWait = 1; }
       }
       /* the chest (6.1): DP_CHEST and a weapon drawn from the built pool: into an empty slot at once (EQUIP, the world
@@ -4552,7 +4646,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   SB.sim = { IN: IN, EV: EV, rle: rle, create: function (level, opts) { return attach(create(level, opts), level); }, attach: attach, step: step,
     FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf, trapTouch: trapTouch,
     WPN: WPN, BUILT: BUILT, slotOf: slotOf, PROJ_KIND: Object.freeze({ BOOMERANG: BOOMERANG, SHOCK: SHOCK, POP: POP, TRAIL: TRAIL, EMBER: EMBER, FLASH: FLASH, DART: DART, RING: RING, KICK: KICK, SNAP: SNAP }), shockFront: shockFront, spawn: spawn, free: free, drawWeapon: drawWeapon,
-    CHOICE: CHOICE, LOOT: { SPECK: LOOT_SPECK, SCROLL: LOOT_SCROLL, BLUEPRINT: LOOT_BLUEPRINT }, STAT: { VIGOR: VIGOR, FOCUS: FOCUS, GRIT: GRIT }, STAT_OF_BIOME: STAT_OF_BIOME, pickScroll: pickScroll,
+    CHOICE: CHOICE, LOOT: { SPECK: LOOT_SPECK, SCROLL: LOOT_SCROLL, BLUEPRINT: LOOT_BLUEPRINT, KEY: LOOT_KEY }, keysLeft: keysLeft, keysOf: keysOf, STAT: { VIGOR: VIGOR, FOCUS: FOCUS, GRIT: GRIT }, STAT_OF_BIOME: STAT_OF_BIOME, pickScroll: pickScroll,
     hurtBoss: hurtBoss, shedSlot: shedSlot };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
@@ -4738,7 +4832,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var raw = rgb; /* the hue vote reads the colours BEFORE the normalisation: its white balance washes out a room's cast */
     rgb = C.normalize(rgb);
     for (var i = 0; i < W * H; i++) pal[i] = SB.palette.nearest(rgb[3 * i], rgb[3 * i + 1], rgb[3 * i + 2]);
-    return { v: SB.record.V, w: W, h: H, mode: 0, focal: focal >= 0 ? focal : null, biome: C.hueVote(raw).biome + 1, rules: C.RULES, flags: 0, rows: SB.record.palToRows(pal, W, H), rows2: null };
+    return { v: SB.record.V, w: W, h: H, mode: 0, focal: focal >= 0 ? focal : null, biome: C.hueVote(raw).biome + 1, rules: C.RULES, flags: C.FLAGS, rows: SB.record.palToRows(pal, W, H), rows2: null };
   };
 
   /* The hue vote (QUESTIONS Q220, Stephen's Q97 ruling 1, the investigation's option B1 with the bright room rule
@@ -4760,6 +4854,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      (1, Q221) stay in the core for a v2 RULES 1 code, but capture does not write them until their fallbacks, their
      extra film on bare walls and their build time are fixed */
   C.RULES = 0;
+  C.FLAGS = 1;   /* SB.record.FLAG_KEYS: every capture locks its exit with keys (Stephen, 2 Nov); a literal, since the room model loads this block without core-record */
   C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 15, GREEN_LO: 70, DEEP_LO: 170, EMBER_LO: 285, C_MIN: 12, S_MIN: 9, WARM_C_MIN: 16, WARM_S_MIN: 30, MIN_PCT: 10 });
   C.hueBand = function (r, g, b) {
     var K = C.HUE, mx = Math.max(r, g, b), d = mx - Math.min(r, g, b), band;
@@ -5373,6 +5468,39 @@ body.sb-modal .lwfb-fab { display: none !important; }
       a: '2222222222222222/0000000000000000/.06660...06660../.06660...06660../.00000...00000../................/................/................/................/................/................/................/................/................/................/................',
       b: '2222222222222222/0000000000000000/0000900000090000/0009000000900000/0000000000000000/3333333333333333/0000000000000000/.06660...06660../.06660...06660../.00000...00000../................/................/................/................/................/................',
       c: '2222222222222222/2222222222222222/2222222222222222/2222222222222222/2222222222222222/2222222222222222/2222222222222222/0000000000000000/0000900000090000/0009000000900000/0000000000000000/3333333333333333/0000000000000000/.06660...06660../.06660...06660../.00000...00000..'
+    } },
+    /* key: from Astra (loot/key.png) */
+    key: { w: 16, h: 16, frames: {
+      a: '................/................/................/................/................/................/..00000........./.0088800......../0088888000000000/0880000888888880/0880..0888888880/0880000800880880/0088888000880880/.0088800.0000880/..00000.....0880/............0000',
+      b: '................/................/................/................/................/................/..00000........./.0088800......../0088888000000000/0880000888888880/08806.0888888880/0880000800880880/0088888000880880/.0088800.0000880/..00000.....0880/............0000',
+      c: '................/................/................/................/................/................/...00000......../..0088800......./.008888800000000/.088000088888880/.0880..088888880/.088000080880880/.008888800880880/..00888000000880/...00000....0880/............0000',
+      d: '................/................/................/................/................/................/..00000........./.0088800......../0088888000000000/0880000888888880/0880.60888888880/0880000800880880/0088888000880880/.0088800.0000880/..00000.....0880/............0000'
+    } },
+    /* key_get: from Astra (fx/key_get.png) */
+    key_get: { w: 32, h: 32, frames: {
+      a: '................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/..........00000................./.........0088800................/........0088888000000000......../........0880000888888880......../........0880..0888888880......../........0880000800880880......../........0088888000880880......../.........0088800.0000880......../..........00000.....0880......../....................0000......../................................/................................/................................/................................/................................/................................/................................',
+      b: '................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/...........00000................/..........0088800.............../.........0088888000000000......./.........0880000888888880......./.........08806.0888888880......./.........0880000800880880......./.........0088888000880880......./..........0008800.0000880......./...........00000.....0880......./...........5.........0000......./................................/................................/................................/................................/................................/................................/................................/................................/................................/................................',
+      c: '................................/................................/................................/................................/................................/................................/................................/................................/................................/..............00000............./.............0088800............/............008888800000000...../............088000088888880...../............0880..088888880...../............088000080880880...../............008808800880880...../.............00808000000880...../..............00000....0880...../.............5.........0000...../.............5................../............5.................../................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................',
+      d: '................................/................................/................................/................................/................................/................................/...............00000............/..............0088800.........../.............0088888000000000.../.............0880000888888880.../.............0880.60888888880.../.............0880000000880880.../.............0088888000880880.../..............0088800.0000880.../...............00000.....0880.../.................5.......0000.../................5.............../..............5................./..............5................./.............5................../................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................',
+      e: '................................/................................/................................/..................00000........./.................0088800......../................0088888000000000/................0880000888888880/................0880..0888888880/................0880000800880880/................0088888000880880/.................0088000.0000880/..................00000.....0880/....................5.......0000/..................5............./..................5............./.................5............../...............5................/...............5................/..............5................./................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................/................................'
+    } },
+    /* hud_key: from Astra (ui/hud_key.png) */
+    hud_key: { w: 9, h: 9, frames: {
+      empty: '........./.0000..../002200000/020222220/022222220/002200200/.0000000./........./.........',
+      full: '........./.0000..../008800000/080888880/088888880/008800800/.0000000./........./.........'
+    } },
+    /* beacon_locked: from Astra (world/beacon_locked.png) */
+    beacon_locked: { w: 16, h: 16, frames: {
+      locked_0: '.......00......./.......00......./.......00......./......0000....../.....033330...../....03333330..../...0333333330.../..033333333330../..000000000000../......0000....../.....004400...../.....004400...../......0000....../0000000000000000/0033000330003300/0000000000000000',
+      locked_1: '.......00......./.......00......./.......00......./......0000....../.....033330...../....03333330..../...0333333330.../..033333333330../..000000000000../......0220....../.....022220...../.....022220...../......0220....../0000000000000000/00ee000330003300/0000000000000000',
+      locked_2: '.......00......./.......00......./.......00......./......0000....../.....033330...../....03333330..../...0333333330.../..033333333330../..000000000000../......0220....../.....022220...../.....022220...../......0220....../0000000000000000/00ee000ee0003300/0000000000000000',
+      locked_3: '.......00......./.......00......./.......00......./......0000....../.....033330...../....03333330..../...0333333330.../..033333333330../..000000000000../......0220....../.....022220...../.....022220...../......0220....../0000000000000000/00ee000ee000ee00/0000000000000000'
+    } },
+    /* fx_beacon_refuse: from Astra (fx/fx_beacon_refuse.png) */
+    fx_beacon_refuse: { w: 32, h: 32, frames: {
+      a: '................................/................................/................................/................................/................................/................................/................................/................................/.............00000............../............0044400............./...........004444400............/...........044404440............/...........044000440............/...........0440.0440............/......0000004400044000........../......0300555555555550........../......0300555555555550........../......0300555522555550........../......0300555522555550........../......0000555522555550........../.........0555555555550........../.........0555555555550........../.........0000000000000........../................................/................................/................................/................................/................................/................................/................................/................................/................................',
+      b: '................................/................................/................................/................................/................................/................................/................................/................................/...............00000............/..............0044400.........../.............004444400........../.............044404440........../.............044000440........../.............0440.0440........../........0000004400044000......../........0300555555555550......../........0300555555555550......../........0300555522555550......../........0300555522555550......../........0000555522555550......../...........0555555555550......../...........0555555555550......../...........0000000000000......../................................/................................/................................/................................/................................/................................/................................/................................/................................',
+      c: '................................/................................/................................/................................/................................/................................/................................/................................/..............00000............./.............0044400............/............004444400.........../............044404440.........../............044000440.........../............0440.0440.........../..........0004400044000........./..........0555555555550........./..........0555555555550........./..........0555522555550........./..........0555522555550........./..........0555522555550........./..........0555555555550........./..........0555555555550........./..........0000000000000........./................................/................................/................................/................................/................................/................................/................................/................................/................................'
     } }
   };
   /* SPRITES END */
@@ -5438,6 +5566,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
       R.heartURL[f] = hc.toDataURL('image/png');
       document.documentElement.style.setProperty('--heart-' + f, 'url("' + R.heartURL[f] + '")');
     }
+    for (f in SPRITES.hud_key.frames) {   /* the keys' strip icons the same way (--key-empty, --key-full) */
+      var kr = A['hud_key.' + f], kc = document.createElement('canvas');
+      kc.width = kr.w; kc.height = kr.h;
+      kc.getContext('2d').drawImage(atlas, kr.x, kr.y, kr.w, kr.h, 0, 0, kr.w, kr.h);
+      document.documentElement.style.setProperty('--key-' + f, 'url("' + kc.toDataURL('image/png') + '")');
+    }
     /* ART3: the DOM's own sprites the same way, each frame a PNG data URL at 1:1 in a CSS variable (--stick-pad-idle,
        --pause-glyph-pressed, --icon-biomes-frost ...) that the strip's CSS scales with nearest neighbour: the stick's
        pad, knob and hint, the pause glyph, the room name's biome badge */
@@ -5493,7 +5627,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      (its cell, the level's hash and the room's state are unchanged) but drawn and heard nowhere until T2.6 gives it a
      use (QUESTIONS Q92: M1 shows nothing that does nothing). lootTaken counts the shown loot taken, so the shell's
      pickup sound answers only a thing the player saw */
-  R.LOOT_SHOWN = [0, 1, 1, 0];
+  R.LOOT_SHOWN = [0, 1, 1, 0, 1];   /* the speck, the scroll and (2 Nov) the key; the blueprint stays hidden (Q92) */
   R.lootTaken = function (s) { var n = 0; for (var i = 0; i < s.loot.length; i++) if (s.loot[i].taken && R.LOOT_SHOWN[s.loot[i].kind]) n++; return n; };
   /* the cell a hidden loot's cell is drawn as (QUESTIONS Q93): the first of its left, right, upper and lower neighbours
      that is open, holds no loot and is marked as the cell is (a one way's top, a tab, an ice edge), so its static
@@ -5687,8 +5821,19 @@ body.sb-modal .lwfb-fab { display: none !important; }
     ctx.save(); ctx.translate(-camX, 0);
     ctx.drawImage(stat, 0, cam, K.WORLD_W, viewH, 0, 0, K.WORLD_W, viewH);
     guardFx(s);
+    keyFx(s);   /* the keys' takes, the lamp's lighting and a refusal, read before the beacon is drawn */
     var GB = s.boss, dark = !!GB && GB.phase < 2, lit = GB && GB.phase === 2 && R.gfx.lightAt >= 0 ? s.frame - R.gfx.lightAt : 99;
-    if (lv.exit >= 0 && dark) {
+    var nk = SB.sim.keysOf(s), kl = nk ? SB.sim.keysLeft(s) : 0;
+    if (nk && !kl && R.keyFx.s === s && R.keyFx.litAt >= 0) lit = Math.min(lit, s.frame - R.keyFx.litAt);
+    if (lv.exit >= 0 && kl > 0) {
+      /* KEYS (2 Nov): the lamp shut, its charge windows filling as keys come in (Astra: 0 to 3, 0 2 3, 0 1 2 3), the
+         light not relit; touching it with a key out plays fx_beacon_refuse round it */
+      var held = nk - kl, lf = nk === 2 ? (held ? 2 : 0) : held, kx0 = (lv.exit % lv.w) * C, ky0 = Math.floor(lv.exit / lv.w) * C - cam;
+      spr(ctx, 'beacon_locked.locked_' + lf, kx0, ky0);
+      var ra = s.frame - R.keyFx.refuseAt;
+      if (ra >= 0 && ra < 15) spr(ctx, 'fx_beacon_refuse.' + 'abc'.charAt(Math.floor(ra / 5)), kx0 - 8, ky0 - 8);
+      R.drawn.beacon = { key: 'beacon_locked.locked_' + lf, x: kx0 - camX, y: ky0, w: C, h: C, locked: kl };
+    } else if (lv.exit >= 0 && dark) {
       /* HOUSE-B: while the guardian stands the beacon is dark (Astra's dark lamp, fx_beacon_light's first frame, which
          is beacon_dark pixel for pixel), the light not relit and no outline: the goal waits */
       var dx0 = (lv.exit % lv.w) * C, dy0 = Math.floor(lv.exit / lv.w) * C - cam;
@@ -5751,17 +5896,26 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the loot (T1.6): its photo cell (a Sun cell) painted the room's open Ash, so a taken speck leaves no yellow ghost
        (T1.6's shots), then every speck and the scroll not yet taken (R.LOOT_SHOWN); a hidden loot's cell is drawn as
        its neighbour's (R.coverOf, Q93), so nothing marks where it lies; the chest shut or open */
-    var LK = ['', 'speck', 'scroll', 'blueprint'], lbeat = Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS);
+    var LK = ['', 'speck', 'scroll', 'blueprint', 'key'], lbeat = Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS), KF = ['a', 'b', 'c', 'd'];
     ctx.fillStyle = rgb(P.openColour(P.I.ASH, lv.biome | 0));
     for (var li2 = 0; li2 < s.loot.length; li2++) {
       var lt2 = s.loot[li2], lx2 = (lt2.idx % lv.w) * C, ly = Math.floor(lt2.idx / lv.w) * C - cam; if (ly < -C || ly > viewH) continue;
       var cov = R.LOOT_SHOWN[lt2.kind] ? -1 : R.coverOf(s, lv, lt2.idx);
       if (cov >= 0) { ctx.drawImage(stat, (cov % lv.w) * C, Math.floor(cov / lv.w) * C, C, C, lx2, ly, C, C); continue; }
+      if (lt2.kind === 4) {   /* a key sits on an open cell (no photo speck under it): Astra's turn at 8 fps, bottom centred */
+        if (!lt2.taken) spr(ctx, 'key.' + KF[Math.floor(s.frame * 8 / SB.TUNING.STEP_HZ) & 3], lx2, ly);
+        continue;
+      }
       ctx.fillRect(lx2, ly, C, C);
       if (!lt2.taken && R.LOOT_SHOWN[lt2.kind]) spr(ctx, LK[lt2.kind] + (lt2.kind === 1 && (Math.floor(s.frame / (lbeat * 3)) & 1) ? '.b' : '.a'), lx2, ly);
       ctx.fillStyle = rgb(P.openColour(P.I.ASH, lv.biome | 0));
     }
     if (s.chest.idx >= 0) { var cy2 = Math.floor(s.chest.idx / lv.w) * C - cam; if (cy2 > -C && cy2 < viewH) spr(ctx, s.chest.open ? 'chest.b' : 'chest.a', (s.chest.idx % lv.w) * C, cy2); }
+    /* a key just taken: Astra's key_get centred on its cell, 5 frames at 12 fps */
+    for (var kg = 0; kg < R.keyFx.got.length; kg++) {
+      var gq = R.keyFx.got[kg], ga = s.frame - gq.at; if (ga < 0 || ga >= 25) continue;
+      spr(ctx, 'key_get.' + 'abcde'.charAt(Math.floor(ga / 5)), (gq.c % lv.w) * C - 8, Math.floor(gq.c / lv.w) * C - cam - 8);
+    }
     drawGuardian(s, lv, cam, camX);
     /* the enemies: each kind's two frames at 12 fps (the moth's flutter beats on its own timer: the fourth review found
        it at 7.5), facing its way (the crawler family mirrors); a shattered icicle is not drawn. An elite draws its own
@@ -5895,6 +6049,19 @@ body.sb-modal .lwfb-fab { display: none !important; }
      (fx_boss_chip, 16 square, centred on each cell the sim took off, 4 frames), the fall (fx_boss_down, 64 square,
      centred on the last cell, 6 frames, then hidden). R.gfx is made once and reset when the state changes */
   R.gfx = { s: null, phase: -1, tele: 0, cells: new Int32Array(20), chips: [], wakeAt: -1, downAt: -1, downCell: -1, shedAt: -1, lightAt: -1 };
+  /* the keys' render state (2 Nov), made once and reset when the state changes: each key's take (key_get), the step
+     the last one was taken (the lamp lights as after the guardian), the last refusal at the shut exit */
+  R.keyFx = { s: null, seen: [], got: [], litAt: -1, refuseAt: -99 };
+  function keyFx(s) {
+    var X = R.keyFx, i;
+    if (X.s !== s) { X.s = s; X.seen.length = 0; X.got.length = 0; X.litAt = -1; X.refuseAt = -99; for (i = 0; i < s.loot.length; i++) X.seen.push(s.loot[i].taken); }
+    for (i = 0; i < s.loot.length; i++) {
+      if (s.loot[i].kind !== 4 || !s.loot[i].taken || X.seen[i]) continue;
+      X.seen[i] = 1; X.got.push({ c: s.loot[i].idx, at: s.frame });
+      if (X.litAt < 0 && SB.sim.keysLeft(s) === 0) X.litAt = s.frame;
+    }
+    if ((s.ev & SB.sim.EV.LOCKED) && s.frame - X.refuseAt >= 15) X.refuseAt = s.frame;
+  }
   for (var gq = 0; gq < 20; gq++) R.gfx.chips.push({ c: -1, at: -1 });
   function guardFx(s) {
     var X = R.gfx, B = s.boss, j;
@@ -6565,7 +6732,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     houseLost: 'The house is lost', lost: 'Lost {n} dead pixels', lostOne: 'Lost 1 dead pixel', retryHouse: 'Retry House', newHouse: 'New house',
     houseReplace: 'Start a new house? The saved house will be lost.', houseCleared: 'House cleared', houseSum: '{rooms} rooms, {n} dead pixels', houseSumOne: '{rooms} rooms, 1 dead pixel',
     /* HOUSE-B: the guardian, the prize, the looks */
-    guardHint: 'Beat the guardian to light the exit', guardHintChest: 'Open the chest for a weapon', prizeNew: 'New: {name}', prizeLabel: 'Your prize, {name}',
+    guardHint: 'Beat the guardian to light the exit', keysFind: 'Find {n} keys', keysFind1: 'Find the key', keysOpen: 'They open the exit', keysOpen1: 'It opens the exit', keysLocked: 'The exit is locked', keysMore: '{n} more keys', keysMore1: '1 more key', keysOf: '{n} of {max} keys', guardHintChest: 'Open the chest for a weapon', prizeNew: 'New: {name}', prizeLabel: 'Your prize, {name}',
     setLook: 'Look', lookHero: 'Bug', lookFrame: 'Frame', lookWear: 'Wear {name}',
     look_hero_sun: 'Sun bug', look_hero_umber: 'Umber bug', look_hero_teal: 'Teal bug', look_hero_lapis: 'Lapis bug', look_hero_pinstripe: 'Pinstripe bug',
     look_hero_domino: 'Domino bug', look_hero_crescent: 'Crescent bug', look_hero_argyle: 'Argyle bug',
@@ -7206,6 +7373,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     ui.heartsCount = false;   /* each room starts with every heart drawn; fitName may fold them to the count */
     ui.badge(lv.biome | 0);
     hearts(G.state.hero.hearts, G.state.hero.heartsMax);
+    ui.keys(G.state);   /* the locked exit's keys, hidden in a room without them */
     document.getElementById('dp').classList.remove('lost');   /* a house death's struck count goes with its card */
     document.getElementById('pausetitle').textContent = G.mode === 'house' ? ui.COPY.leaveHouse : ui.COPY.toTitle;   /* in a house Pause's Title leaves it, saved (the review of HOUSE-A) */
     document.getElementById('paused').classList.toggle('house', G.mode === 'house');   /* its row shares the rest with Leave the house (HOUSE-ART3) */
@@ -7714,14 +7882,40 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.drawLook = drawLook;
   /* the guardian's intro words over the room while it sleeps (the 2 s outline): The last room, Beat the guardian to
      light the exit; hidden from its wake. Toggled only on a change, never rebuilt in a step */
-  var bannerOn = false, bannerKey = '';
+  var bannerOn = false, bannerKey = '', lockedUntil = -1;
   ui.guardian = function (st) {
+    var C = ui.COPY, play = ui.screen === 'play', head = '', line = '', key = '';
     /* a bug with no jump weapon that hurts is told where one is, and the line stays until it has one (the house review) */
     var j = st && st.hero && st.hero.slots[0] ? SB.TUNING.WEAPONS[SB.sim.WPN[st.hero.slots[0]]] : null, armed = !!(j && j.dmg > 0);
-    var on = !!(st && st.boss && ui.screen === 'play' && (st.boss.phase === 0 || (st.boss.phase === 1 && st.boss.hp > 0 && !armed)));
-    var key = armed ? 'guardHint' : 'guardHintChest';
-    if (on && key !== bannerKey) { bannerKey = key; document.querySelector('#guardbanner span').textContent = ui.COPY[key]; }
+    if (st && st.boss && play && (st.boss.phase === 0 || (st.boss.phase === 1 && st.boss.hp > 0 && !armed))) {
+      head = C.lastRoom; line = C[armed ? 'guardHint' : 'guardHintChest']; key = 'g' + armed;
+    } else if (st && play) {
+      /* KEYS (2 Nov): the room's first 2.5 s name the keys; the shut exit, touched, says how many are still out */
+      var nk = SB.sim.keysOf(st), kl = nk ? SB.sim.keysLeft(st) : 0;
+      if (kl > 0 && (st.ev & SB.sim.EV.LOCKED)) lockedUntil = st.frame + 90;
+      if (kl > 0 && st.frame < lockedUntil) { head = C.keysLocked; line = kl === 1 ? C.keysMore1 : C.keysMore.replace('{n}', kl); key = 'l' + kl; }
+      else if (nk && kl === nk && st.frame < 150) { head = nk === 1 ? C.keysFind1 : C.keysFind.replace('{n}', nk); line = nk === 1 ? C.keysOpen1 : C.keysOpen; key = 'k' + nk; }
+    }
+    var on = key !== '';
+    if (!st) lockedUntil = -1;
+    if (on && key !== bannerKey) { bannerKey = key; var gb = document.getElementById('guardbanner'); gb.querySelector('b').textContent = head; gb.querySelector('span').textContent = line; }
+    if (on) {   /* never over the bug: docked low while it is in the view's top 45% */
+      var cv = document.getElementById('view'), low = !!(cv && (st.hero.y >> 8) - SB.render.camY < cv.height * 0.45);   /* the live bug against the last camera */
+      document.getElementById('guardbanner').classList.toggle('low', low);
+    }
     if (on !== bannerOn) { bannerOn = on; document.getElementById('guardbanner').hidden = !on; }
+  };
+  /* the strip's keys (2 Nov): one hud_key a key, full once taken, the newest popping; hidden in a room without keys */
+  var keysWas = '';
+  ui.keys = function (st) {
+    var el = document.getElementById('keys'), nk = st ? SB.sim.keysOf(st) : 0, held = nk ? nk - SB.sim.keysLeft(st) : 0, k = held + '/' + nk, s = '', i;
+    if (k === keysWas) return;
+    var pop = !SB.render.reduced() && keysWas !== '' && held > parseInt(keysWas, 10) && nk === parseInt(keysWas.split('/')[1], 10);
+    keysWas = k; el.hidden = nk === 0;
+    if (nk && window.innerWidth < 360) s = '<i' + (held ? ' class="got' + (pop ? ' pop' : '') + '"' : '') + '></i><b>' + held + '/' + nk + '</b>';
+    else for (i = 0; i < nk; i++) s += '<i' + (i < held ? ' class="got' + (pop && i === held - 1 ? ' pop' : '') + '"' : '') + '></i>';
+    el.innerHTML = s; el.setAttribute('aria-label', ui.COPY.keysOf.replace('{n}', held).replace('{max}', nk));
+    fitName();
   };
   function saveRun(run) { if (!SB.save.doc) return; SB.save.doc.run = run; SB.save.write(); }
   function roomName(r) { return r === SB.TUNING.HOUSE_ROOMS ? ui.COPY.lastRoom : ui.COPY.roomOf.replace('{n}', r).replace('{of}', SB.TUNING.HOUSE_ROOMS); }
@@ -8056,6 +8250,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (ev & EV.WAKE) au.sfx('bossIntro');
       if (ev & EV.BOSS_HIT) au.sfx('bossHit');
       if (ev & EV.BOSS_DOWN) au.sfx('beacon');
+      if (ev & EV.KEY) { SB.ui.keys(G.state); if (SB.sim.keysLeft(G.state) === 0) au.sfx('beacon'); }   /* the last key lights the lamp */
       /* the scroll's pick is still the shell's own answer (ui.sheets), no choice of the player's, so it makes no sound;
          a swap's Take sounds the pick voice above (step 2) */
       if (ev & EV.PICK) SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax);
@@ -8124,7 +8319,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=6').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=7').catch(function () {}); } catch (e) { /* silent */ } });
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); SB.ui.installPrompt = e; document.getElementById('install').hidden = false; });
   SB.input.initStrip();
   window.addEventListener('resize', function () { var s = SB.ui.screen; if (s === 'play' || s === 'pause' || s === 'share' || s === 'clear' || s === 'dead') { SB.render.fit(); draw(); if (s === 'pause') SB.ui.placePaused(); } });
@@ -8195,6 +8390,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
       else if (name === 'speck' && G.state && G.level) {   /* the hero set down on the first speck not taken: the next step takes it (the loop gate's Dead pixels) */
         var L = G.state.loot.filter(function (l) { return l.kind === SB.sim.LOOT.SPECK && !l.taken; })[0], CS2 = SB.K.CELL_SUB, h2 = G.state.hero;
         if (L) { h2.x = (L.idx % G.level.w) * CS2 + ((CS2 - SB.K.HERO_W_SUB) >> 1); h2.y = Math.floor(L.idx / G.level.w) * CS2; h2.vx = 0; h2.vy = 0; }
+      }
+      else if (name === 'key' && G.state && G.level) {   /* the hero set down on the first key not taken: the next step takes it */
+        var KL = G.state.loot.filter(function (l) { return l.kind === SB.sim.LOOT.KEY && !l.taken; })[0], CS5 = SB.K.CELL_SUB, h5 = G.state.hero;
+        if (KL) { h5.x = (KL.idx % G.level.w) * CS5 + ((CS5 - SB.K.HERO_W_SUB) >> 1); h5.y = Math.floor(KL.idx / G.level.w) * CS5; h5.vx = 0; h5.vy = 0; }
       }
       else if (name === 'chest' && G.state && G.level && G.state.chest.idx >= 0) {   /* the hero set down on the chest: the next step opens it */
         var ci = G.state.chest.idx, CS4 = SB.K.CELL_SUB, h4 = G.state.hero;
