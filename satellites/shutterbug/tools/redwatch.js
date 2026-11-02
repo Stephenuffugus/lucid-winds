@@ -1126,7 +1126,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-wpn-D1', expect: 'a plain landing (no dive) fires nothing' }] },
   { name: 'DASH_FIRES_IN_PLACE', task: 'W1', file: 'page', find: "dashed = dashStart && h.x !== xBefore;", repl: "dashed = dashStart;",
     gates: [{ gate: 'harness', only: 'H-wpn-D1', expect: 'a dash pressed flush against a wall moves nothing and fires nothing' }] },
-  { name: 'KILL_NO_DP', task: 'W1', file: 'page', find: "      s.room.dp += en.elite ? T.DP_ELITE : T.DP_FODDER; s.ev |= EV.KILL;", repl: "      s.ev |= EV.KILL;",
+  { name: 'KILL_NO_DP', task: 'W1', file: 'page', find: "      if (!shedSlot(s, m)) s.room.dp += en.elite ? T.DP_ELITE : T.DP_FODDER;", repl: "",   /* re anchored at HOUSE-B (the guardian's moths bank nothing) */
     gates: [{ gate: 'harness', only: 'H-wpn-5', expect: 'a kill sets HURT and KILL and banks DP_FODDER' }] },
   { name: 'DEAD_STILL_TOUCHES', task: 'W1', file: 'page', edits: [
       ["      if (en.hp <= 0 && !(en.kind === SB.features.ICICLE && en.state === ICICLE_GONE)) continue;\n", ""], ["      if (held || !liveEnemy(en)) continue;", "      if (held) continue;"]],
@@ -1168,7 +1168,7 @@ const MUTANTS = [
     gates: [{ gate: 'fight', expect: '412: Title through the pause card ends the sitting' }] },
   { name: 'DEATH_KEEPS_PICKUP', task: 'W1', file: 'page', find: "  ui.showDeath = function () {\n", repl: "  ui.showDeath = function () {\n    if (G.state) G.gear = G.state.hero.slots.slice();\n",
     gates: [{ gate: 'fight', expect: '412: a death after the chest' }] },
-  { name: 'ROOM_OPTS_MISSING', task: 'W1', file: 'page', find: "    roomOpts: function () { var o = { loadout: (G.entry || [0, 0, 0]).map(function (c) { return c > 0 ? SB.sim.WPN[c] : null; }) }; if (G.room) { o.roomIndex = G.room; o.carry = G.carry; } return o; },", repl: "    roomOpts: function () { return {}; },",
+  { name: 'ROOM_OPTS_MISSING', task: 'W1', file: 'page', find: "    roomOpts: function () { var o = { loadout: (G.entry || [0, 0, 0]).map(function (c) { return c > 0 ? SB.sim.WPN[c] : null; }) }; if (G.room) { o.roomIndex = G.room; o.carry = G.carry; if (G.room === SB.TUNING.HOUSE_ROOMS) o.lastRoom = true; } return o; },", repl: "    roomOpts: function () { return {}; },",   /* re anchored at HOUSE-B (room 5's lastRoom) */
     gates: [{ gate: 'fight', expect: '412: the recording replayed on a fresh sim made from SB_DEV.roomOpts()' }] },
   { name: 'NAME_BEFORE_BUILT', task: 'W1', file: 'page', find: "slots: 'Weapons', slotJump:", repl: "slots: 'Weapons and a Halo', slotJump:",
     gates: [{ gate: 'lint', expect: 'names Halo (J6), a weapon this build does not have' }] },
@@ -1214,8 +1214,8 @@ const MUTANTS = [
     gates: [{ gate: "astra", expect: "an effect frame not named <clip>_<n> is refused" }] },
   { name: "CUT_FX_UNKNOWN", task: 'ART2', file: "astra", find: "            elif FX_RE.match(key):\n                warnings.append(", repl: "            elif False and FX_RE.match(key):\n                warnings.append(",
     gates: [{ gate: "astra", expect: "an effect strip new to the page (fx_shockwave on a copy without it) is taken as named clips" }] },
-  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 43\n", repl: "MAX_SPRITES = 48\n",   /* re anchored at ART3 (the cap at the splice, 43) */
-    gates: [{ gate: "astra", expect: "the cap is 43, ART3's" }] },
+  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 56\n", repl: "MAX_SPRITES = 61\n",   /* re anchored at ART3 (the cap at the splice, 43), and at HOUSE-B (56) */
+    gates: [{ gate: "astra", expect: "the cap is 56, HOUSE-B's" }] },
   /* ART3: Astra's rounds 2 and 3 (Q98): the cutter's rules, the splice, the stick, Pause, the crusher's shaft, the speck,
      the elites' keylines, the biome's air and badges, the icons by code */
   { name: "CUT_GAME_CASE", task: 'ART3', file: "astra", find: "    if str(man.get('game', '')).lower() != 'shutterbug':", repl: "    if man.get('game') != 'shutterbug':",
@@ -1364,7 +1364,7 @@ const MUTANTS = [
     gates: [{ gate: 'house', expect: 'a death in the house' }] },
   { name: 'CONTINUE_HIDDEN', task: 'HOUSE-A', file: 'page', find: "    go.hidden = !run;\n", repl: "    go.hidden = true;\n",
     gates: [{ gate: 'house', expect: 'after a reload the title offers Continue the house' }] },
-  { name: 'HOUSE_CLEAR_UNCOUNTED', task: 'HOUSE-A', file: 'page', find: '      if (!next) { doc.stats.houseClears++; HS.run = null;', repl: '      if (!next) { HS.run = null;',
+  { name: 'HOUSE_CLEAR_UNCOUNTED', task: 'HOUSE-A', file: 'page', find: '        doc.stats.houseClears++; doc.unlocks.daily = true;', repl: '        doc.unlocks.daily = true;',   /* re anchored at HOUSE-B (the prize beside it) */
     gates: [{ gate: 'house', expect: 'the house cleared: the run gone from the save' }] },
   { name: 'DOOR_BUTTON_40PX', task: 'HOUSE-A', file: 'page', find: '#doorcard button { min-height: 52px;', repl: '#doorcard button { min-height: 40px; height: 40px;',
     gates: [{ gate: 'house', expect: "every control on the house's card is 48 px or more" }] },
