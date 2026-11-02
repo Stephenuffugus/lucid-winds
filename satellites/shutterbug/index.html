@@ -101,6 +101,8 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #develop { flex: 1 1 auto; background: var(--sun); color: var(--ink); }
 #cropseek { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; image-rendering: pixelated; }
 #crop.seeking #develop { opacity: 0.6; }
+#cropfrom { position: absolute; border: 2px dashed var(--paper); opacity: 0.5; pointer-events: none; }
+#crop.nothing #retake { background: var(--sun); color: var(--ink); border-color: var(--sun); }
 #crop.stuck #develop { background: transparent; color: var(--ash); border: 2px dashed var(--slate); }
 #cropsay { margin: 0 16px 8px; min-height: 1em; color: var(--pewter); font-size: 0.75rem; }
 
@@ -380,7 +382,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
 <main id="crop" class="screen" aria-label="Crop">
   <div id="croptop"><button id="croptitle" type="button" data-copy="toTitle"></button><p id="crophint" data-copy="cropHint"></p></div>
   <div id="cropstage"><canvas id="cropview"></canvas>
-    <div id="cropbox"><canvas id="overlay" width="96" height="192"></canvas><canvas id="cropseek" width="16" height="16" role="img" data-aria="seeking" hidden></canvas><p id="tighter" data-copy="tighter" hidden></p></div></div>
+    <div id="cropbox"><canvas id="overlay" width="96" height="192"></canvas><canvas id="cropseek" width="16" height="16" role="img" data-aria="seeking" hidden></canvas><p id="tighter" data-copy="tighter" hidden></p></div><div id="cropfrom" hidden></div></div>
   <div id="cropbar"><button id="retake" type="button" data-copy="retake"></button><button id="develop" class="big" type="button" data-copy="develop"></button></div>
   <p id="cropsay" aria-live="polite"></p>
 </main>
@@ -3781,13 +3783,24 @@ body.sb-modal .lwfb-fab { display: none !important; }
       w = Math.max(mw, Math.round(w * C.SEEK.SHRINK));
     }
     all.sort(function (p, r) { return p.cost - r.cost || p.n - r.n; });
-    var out = [], near = {}, b, s, cl;
-    near[c.w] = [c];   /* the player's own box, and any box within a cell of it, already refused */
+    /* the near duplicate filter by buckets one grid cell square (PHOTO1R): a box kept is filed under its width and the
+       cell its corner falls in, so a box within one cell of it sits in that bucket or a neighbour, and each candidate
+       is compared with the boxes of nine buckets, never with every box kept (a long screenshot's list stalled Develop).
+       No two boxes kept share a bucket, so the comparisons are at most nine a candidate; the list is the one a scan of
+       every kept box gives. C.seekStats counts them (H-seek-1) */
+    var out = [], near = {}, b, s, cl, u, v, cmp = 0;
+    var cell = function (w, x, y) { return w + ':' + x + ',' + y; };
+    var file = function (b) { var key = cell(b.w, Math.floor(b.x * GW / b.w), Math.floor(b.y * GH / b.h)); (near[key] || (near[key] = [])).push(b); };
+    file(c);   /* the player's own box, and any box within a cell of it, already refused */
     for (i = 0; i < all.length; i++) {
-      b = all[i].b; s = near[b.w] || (near[b.w] = []); cl = false;
-      for (m = 0; m < s.length && !cl; m++) cl = Math.abs(s[m].x - b.x) * GW < b.w && Math.abs(s[m].y - b.y) * GH < b.h;
-      if (!cl) { s.push(b); out.push(b); }
+      b = all[i].b; cl = false; j = Math.floor(b.x * GW / b.w); k = Math.floor(b.y * GH / b.h);
+      for (u = -1; u <= 1 && !cl; u++) for (v = -1; v <= 1 && !cl; v++) {
+        s = near[cell(b.w, j + u, k + v)];
+        for (m = 0; s && m < s.length && !cl; m++) { cmp++; cl = Math.abs(s[m].x - b.x) * GW < b.w && Math.abs(s[m].y - b.y) * GH < b.h; }
+      }
+      if (!cl) { file(b); out.push(b); }
     }
+    C.seekStats = { candidates: all.length, kept: out.length, cmp: cmp };
     return out;
   };
 
@@ -4873,6 +4886,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     nothingDark: 'This photo is too dark to climb. A dim room or a night sky reads as one wall. Try a brighter photo.',
     cropHint: 'Drag and pinch to frame the room. Tap a shape to hide the chest there.',
     seeking: 'Looking for a box that builds',
+    seekHint: 'Looking for a box that builds. Touch the photo to stop.',
+    seekFound: 'Found a box that builds.',
+    nothingHint: 'Tap Retake for another photo.',
     badPhoto: 'That photo did not open. Try another.',
     photoRoom: 'Your room',
     death: 'The bug fell out of the picture',
@@ -5085,7 +5101,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.photoAlive = function () { return !!CR.src; };
   ui.releasePhoto = function () { if (CR.src && CR.src.close) { try { CR.src.close(); } catch (e) { /* gone */ } } CR.src = null; };
   function cropSay(t) { document.getElementById('cropsay').textContent = t || ''; }
-  function openPicker(id) { CR.from = id; var inp = document.getElementById(id); inp.value = ''; inp.click(); }
+  /* the line over the photo says what the screen is doing (PHOTO1R): how to frame at rest, that the search is looking
+     and that a touch stops it, that it found a box, and after a search that found nothing, the button that gets
+     another photo (Retake, set apart in Sun while the message shows) */
+  function cropHint(key) { var h = document.getElementById('crophint'); if (h.getAttribute('data-copy') !== key) { h.setAttribute('data-copy', key); h.textContent = ui.COPY[key]; } }
+  /* a picker opened (Shoot, Choose, Retake, Next room) ends any search first: a box found behind the chooser would
+     develop the old photo's room under it (PHOTO1R) */
+  function openPicker(id) { seekStop(); CR.from = id; var inp = document.getElementById(id); inp.value = ''; inp.click(); }
   /* a decode lands only where it was asked for: a newer pick, or a room started meanwhile (Develop on the old crop
      while a retake decodes), drops it, so a late photo never releases the one a reveal shows nor pulls the player back */
   function onFile(e) {
@@ -5118,6 +5140,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     cv.style.width = (CR.bw * k) + 'px'; cv.style.height = (CR.bh * k) + 'px'; cv.style.left = CR.ox + 'px'; cv.style.top = CR.oy + 'px';
     box.style.left = (CR.ox + CR.crop.x * k) + 'px'; box.style.top = (CR.oy + CR.crop.y * k) + 'px';
     box.style.width = (CR.crop.w * k) + 'px'; box.style.height = (CR.crop.h * k) + 'px';
+    var fr = document.getElementById('cropfrom'), f = CR.fromBox;
+    fr.hidden = !f;
+    if (f) { fr.style.left = (CR.ox + f.x * k) + 'px'; fr.style.top = (CR.oy + f.y * k) + 'px'; fr.style.width = (f.w * k) + 'px'; fr.style.height = (f.h * k) + 'px'; }
   }
   /* the record from the box: the grid downscale, the nearest palette colour per cell (DESIGN 6.2), the focal cell */
   function recordJSON(crop, focal) { return SB.capture.gridRecord(SB.capture.downscale(CR.src, crop, SB.GRID.W, SB.GRID.H), focal); }
@@ -5139,6 +5164,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     CR.marked = drawOverlay(full && !no ? lv : no ? lv : a, full && !no, null);
     document.getElementById('tighter').hidden = true;
     document.getElementById('crop').classList.remove('stuck');
+    document.getElementById('crop').classList.remove('nothing');
+    if (!CR.seek) cropHint('cropHint');
     /* the dev readout (?perf=1): the build's time, and on a refusal its cause and the rule that failed (lv.detail) */
     if (PERF) cropSay(CR.ms.toFixed(1) + ' ms' + (no ? '; ' + (lv.cause || 'no cause') + '; ' + lv.detail : ''));
   }
@@ -5151,6 +5178,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     say.style.top = CR.marked ? 'calc(' + (100 * (CR.markY0 > 1 ? CR.markY0 / 2 : (CR.markY1 + SB.GRID.H) / 2) / SB.GRID.H).toFixed(1) + '% - 2.5em)' : '';
     say.hidden = false;
     document.getElementById('crop').classList.add('stuck');   /* Develop looks unable while it is */
+    /* after a search: the hint points to Retake, set apart; dragging is no fix when nothing in the photo builds */
+    if (searched) { document.getElementById('crop').classList.add('nothing'); cropHint('nothingHint'); }
   }
   /* while the box moves: at most one build per 100 ms, the last one after the moves stop */
   function schedule() {
@@ -5195,7 +5224,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (ids.length === 1) gest = { kind: 'drag', id: ids[0], at: ptrs[ids[0]], crop: CR.crop, moved: 0, t0: performance.now() };
     else if (ids.length >= 2) { var a = ptrs[ids[0]], b = ptrs[ids[1]]; gest = { kind: 'pinch', ids: ids.slice(0, 2), d0: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, crop: CR.crop, moved: 99 }; }
   }
-  function onDown(e) { if (ui.screen !== 'crop') return; if (CR.seek) seekStop(); ptrs[e.pointerId] = src(e); startGesture(); e.preventDefault(); }
+  /* a touch while the search runs (or its box shows) stops it; that gesture is never the focal tap, so a poke at a box
+     that seems to think hides no chest under the finger (PHOTO1R) */
+  function onDown(e) {
+    if (ui.screen !== 'crop') return;
+    var was = !!CR.seek;
+    if (was) seekStop();
+    ptrs[e.pointerId] = src(e); startGesture(); if (was && gest) gest.stopped = true;
+    e.preventDefault();
+  }
   function onMove(e) {
     if (!ptrs[e.pointerId] || !gest) return;
     ptrs[e.pointerId] = src(e);
@@ -5210,7 +5247,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   function onUp(e) {
     if (!ptrs[e.pointerId]) return;
-    var tapped = gest && gest.kind === 'drag' && gest.moved <= 8 && performance.now() - gest.t0 < 400 ? ptrs[e.pointerId] : null;
+    var tapped = gest && gest.kind === 'drag' && !gest.stopped && gest.moved <= 8 && performance.now() - gest.t0 < 400 ? ptrs[e.pointerId] : null;
     delete ptrs[e.pointerId];
     if (Object.keys(ptrs).length) { startGesture(); return; }
     gest = null;
@@ -5222,6 +5259,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     rebuild(true);
   }
   function develop() {
+    if (CR.seek && CR.seek.phase === 'show' && CR.src) { var F = CR.seek; seekStop(); F.phase = 'done'; F.tapped = true; }   /* the found box: a tap develops it now */
     if (!CR.src || CR.seek) return;
     if (!CR.full || !CR.last) rebuild(true);
     if (CR.last.needsCrop) {
@@ -5275,6 +5313,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     self.onmessage = function (e) {
       var d = e.data;
       if (d.type === 'photo' || d.type === 'drop') { if (photo) SB.capture.release(photo); photo = d.type === 'photo' ? d.bm : null; ptok = d.tok; return; }
+      if (d.type === 'held') { self.postMessage({ type: 'held', held: !!photo }); return; }   /* the gate's probe: does it hold a photo */
       if (!photo || d.tok !== ptok) { self.postMessage({ tok: d.tok, i: d.i, built: false, lost: true }); return; }
       var t0 = performance.now(), j = SB.capture.gridRecord(SB.capture.downscale(photo, d.box, SB.GRID.W, SB.GRID.H, mk), d.focal);
       var rec = SB.record.fromJSON(j), lv = rec ? SB.pipeline.build(rec, { firstRoom: d.firstRoom }) : null;
@@ -5290,7 +5329,16 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var src = 'var window = self;\n' + text('script[data-core]') + '\n;\n' + text('#shell-capture') + '\n;(' + seekWorkerMain.toString() + ')();\n';
       CR.worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
       CR.worker.onmessage = seekReply;
-      CR.worker.onerror = function (e) { if (e && e.preventDefault) e.preventDefault(); CR.worker = null; var S = CR.seek; if (S) { S.mode = 'main'; S.busy = false; S.ready = true; } };
+      /* a worker that fails is ended with its photo copy (DESIGN 6.1), and the box it was trying is tried again here */
+      var w = CR.worker;
+      w.onerror = function (e) {
+        if (e && e.preventDefault) e.preventDefault();
+        if (CR.worker !== w) return;
+        CR.worker = null;
+        try { w.terminate(); } catch (x) { /* gone */ }
+        var S = CR.seek;
+        if (S) { if (S.pend && S.phase === 'seek') { S.i--; S.builds--; S.retried = (S.retried || 0) + 1; } S.pend = null; S.mode = 'main'; S.busy = false; S.ready = true; }
+      };
     } catch (e) { CR.worker = null; }
     return CR.worker;
   }
@@ -5313,6 +5361,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }, function () { if (CR.seek === S) { S.mode = 'main'; S.ready = true; } });
     CR.lastSeek = S;
     document.getElementById('crop').classList.add('seeking');
+    cropHint('seekHint');
     seekMarker(S, now);
     requestAnimationFrame(seekTick);
   }
@@ -5340,6 +5389,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   function seekReply(e) {
     var S = CR.seek, d = e.data;
+    if (d && d.type === 'held') { var r = CR.heldAsk; CR.heldAsk = null; if (r) r(d.held); return; }
     if (!S || S.phase !== 'seek' || d.tok !== S.tok || !S.pend) return;
     S.busy = false;
     var p = S.pend; S.pend = null;
@@ -5352,17 +5402,33 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   function seekFound(S, box, focal, rec, lv) {
     S.phase = 'show'; S.chosen = box; S.ms = performance.now() - S.t0; S.code = SB.record.encode(rec);
-    CR.crop = box; CR.focal = focal; layoutCrop();
+    CR.crop = box; CR.focal = focal; CR.fromBox = S.from; layoutCrop();   /* the player's box stays as a faint trace */
     CR.lastRec = rec; CR.last = lv; CR.full = true; CR.builds++;
     document.getElementById('tighter').hidden = true; document.getElementById('crop').classList.remove('stuck');
     CR.marked = drawOverlay(lv, true, null);
     seekMarker(S, performance.now());
+    document.getElementById('crop').classList.remove('seeking');   /* Develop live: a tap develops the found box now */
+    cropHint('seekFound');
     if (PERF) cropSay(S.builds + ' builds; ' + S.ms.toFixed(0) + ' ms; the box at ' + box.x + ',' + box.y + ' ' + box.w + 'x' + box.h);
+    seekShow(S);
+  }
+  /* the found box develops by itself only while the player can see it (PHOTO1R): with the page hidden (a locked
+     phone, another app) or the window's focus lost (the notification shade) it waits, and SHOW_MS after he is back
+     it develops, so the first reveal, which no tap may skip (DESIGN 5.2), is never spent unseen nor a room left
+     running unpaused (Q94 call 7). The away signals are the ones the room's pause reads (a blur ignored in a frame) */
+  function seekAway() { return document.hidden || (CR.blurred && !(document.hasFocus && document.hasFocus())); }
+  function seekShow(S) {
     S.timer = setTimeout(function () {
-      if (CR.seek !== S || ui.screen !== 'crop' || !CR.src) return;
+      S.timer = 0;
+      if (CR.seek !== S || S.phase !== 'show' || ui.screen !== 'crop' || !CR.src) return;
+      if (seekAway()) { S.held = (S.held || 0) + 1; return; }
       seekStop(); S.phase = 'done';
       develop();
     }, SB.capture.SEEK.SHOW_MS);
+  }
+  function seekBack() {
+    var S = CR.seek;
+    if (S && S.phase === 'show' && !S.timer && !seekAway()) seekShow(S);
   }
   function seekNone(S) {
     S.phase = 'none'; S.ms = performance.now() - S.t0;
@@ -5377,18 +5443,25 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (!S) return null;
     return { phase: S.phase, mode: S.mode, builds: S.builds, code: S.code || null, candidates: S.boxes.length, from: S.from, chosen: S.chosen, ms: S.ms || 0, finalMs: S.finalMs || 0, workMax: S.workMax,
       slices: S.slices.length, sliceMax: S.slices.reduce(function (m, x) { return Math.max(m, x.ms); }, 0), multiOver: S.slices.filter(function (x) { return x.n > 1 && x.ms > SB.capture.SEEK.SLICE_MS; }).length,
-      frames: S.frames, marker: !document.getElementById('cropseek').hidden, drawn: { left: parseFloat(b.style.left), top: parseFloat(b.style.top), width: parseFloat(b.style.width) }, k: CR.k, ox: CR.ox, oy: CR.oy };
+      frames: S.frames, marker: !document.getElementById('cropseek').hidden, held: S.held || 0, tapped: !!S.tapped, retried: S.retried || 0,
+      hint: document.getElementById('crophint').getAttribute('data-copy'), fromShown: !document.getElementById('cropfrom').hidden, drawn: { left: parseFloat(b.style.left), top: parseFloat(b.style.top), width: parseFloat(b.style.width) }, k: CR.k, ox: CR.ox, oy: CR.oy };
   };
   function seekStop() {
     var S = CR.seek;
     if (S && S.timer) clearTimeout(S.timer);
     if (S && S.phase === 'seek') S.phase = 'stopped';
     if (CR.worker) CR.worker.postMessage({ type: 'drop', tok: 0 });   /* the worker's photo copy closes now */
-    CR.seek = null;
-    document.getElementById('cropseek').hidden = true;
+    CR.seek = null; CR.fromBox = null;
+    document.getElementById('cropseek').hidden = true; document.getElementById('cropfrom').hidden = true;
     document.getElementById('crop').classList.remove('seeking');
+    cropHint('cropHint');
   }
+  /* the gate's probe of the worker's photo copy: true while it holds one, null with no worker */
+  ui.seekWorkerHeld = function () { return new Promise(function (r) { if (!CR.worker) { r(null); return; } CR.heldAsk = r; CR.worker.postMessage({ type: 'held' }); }); };
   ui.initCrop = function () {
+    window.addEventListener('blur', function () { if (!window.SWS_EMBED) CR.blurred = true; });
+    window.addEventListener('focus', function () { CR.blurred = false; seekBack(); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { CR.blurred = false; seekBack(); } });
     document.getElementById('shoot').addEventListener('click', function () { openPicker('fileshoot'); });
     document.getElementById('choose').addEventListener('click', function () { openPicker('filechoose'); });
     document.getElementById('fileshoot').addEventListener('change', onFile);

@@ -51,6 +51,7 @@ const FIX = n => JSON.parse(readFileSync(join(GAME, 'fixtures', n), 'utf8')).rec
 const banded = (from, to, d) => ROOM.map((r, y) => (y >= from && y < to ? d.repeat(24) : r));
 const TMP = '/tmp/claude-1000/shutterbug-capture'; mkdirSync(TMP, { recursive: true });
 const PHOTO = join(TMP, 'room-900x1600.png'), REC = join(TMP, 'record.json');
+let autoChosen = null;   /* the autocrop block's search of floor-tall, for PHOTO1R's worker failure */
 const srv = await serve();
 const browser = await launch();
 
@@ -143,7 +144,15 @@ try {
     R.say(rest.needsCrop === true && !rest.shown && !rest.stuck, 'autocrop: 26 rows of Walnut refuse at the default box and say nothing at rest, Develop live (needsCrop ' + rest.needsCrop + ', the message ' + (rest.shown ? 'shown: "' + rest.says + '"' : 'hidden') + ', Develop ' + (rest.stuck ? 'dashed' : 'live') + ')');
     await tap(page, '#develop');
     await page.waitForFunction(() => { const s = window.SB_DEV.overlay().seek; return s && s.phase !== 'seek'; }, { timeout: 20000 }).catch(() => {});
-    const show = await page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { screen: window.SB_DEV.screen() }));
+    /* the chosen box built once more on the page's own thread (its <canvas> downscale, not the worker's OffscreenCanvas):
+       the record Develop would take after a touch rebuilt the box (PHOTO1R) */
+    const show = await page.evaluate(() => {
+      const CR = window.SB.ui.crop, C = window.SB.capture, S = window.SB.ui.seekInfo(), ch = S && S.chosen;
+      const pr = ch && CR.src ? window.SB.record.fromJSON(C.gridRecord(C.downscale(CR.src, ch, 24, 48), CR.focal)) : null;
+      const f = document.getElementById('cropfrom');
+      return Object.assign(window.SB_DEV.overlay(), { screen: window.SB_DEV.screen(), pageCode: pr ? window.SB.record.encode(pr) : null, dim: document.getElementById('crop').classList.contains('seeking'),
+        fromAt: { left: parseFloat(f.style.left), top: parseFloat(f.style.top), width: parseFloat(f.style.width) } });
+    });
     const sk = show.seek || {}, ch = sk.chosen, dr = sk.drawn || {};
     const at = ch ? { left: sk.ox + ch.x * sk.k, top: sk.oy + ch.y * sk.k, width: ch.w * sk.k } : null;
     const near = (a, b) => Math.abs(a - b) <= 1;
@@ -151,24 +160,140 @@ try {
       'autocrop: one tap on Develop, no drag, and the search finds a box that builds (' + (sk.builds || 0) + ' builds, ' + (sk.mode || 'no') + ' mode, ' + Math.round(sk.ms || 0) + ' ms, the box ' + JSON.stringify(sk.from) + ' to ' + JSON.stringify(ch) + ', phase ' + sk.phase + ')');
     R.say(at && near(dr.left, at.left) && near(dr.top, at.top) && near(dr.width, at.width), 'autocrop: the box is drawn where the search chose it (drawn ' + JSON.stringify(dr) + ', the chosen box on screen ' + JSON.stringify(at) + ')');
     R.say(sk.phase === 'show' && !show.shown && !show.stuck && show.needsCrop === false, 'autocrop: no message while the chosen box shows (the message ' + (show.shown ? 'shown: "' + show.says + '"' : 'hidden') + ', needsCrop ' + show.needsCrop + ')');
+    R.say(sk.mode === 'worker' && sk.code && show.pageCode === sk.code, 'photo1r: the page\'s own thread builds the chosen box to the record the worker found (' + sk.mode + ' mode, the codes ' + (show.pageCode === sk.code ? 'agree' : 'differ: page ' + String(show.pageCode).slice(0, 24) + ' worker ' + String(sk.code).slice(0, 24)) + ')');
+    const fa = sk.from ? { left: sk.ox + sk.from.x * sk.k, top: sk.oy + sk.from.y * sk.k, width: sk.from.w * sk.k } : null, fr = show.fromAt || {};
+    R.say(sk.phase === 'show' && sk.fromShown && fa && near(fr.left, fa.left) && near(fr.top, fa.top) && near(fr.width, fa.width) && sk.hint === 'seekFound' && !show.dim,
+      'photo1r: while the found box shows, the player\'s box stays as a faint trace where he left it, the line over the photo says a box was found, Develop live (trace ' + (sk.fromShown ? JSON.stringify(fr) : 'hidden') + ' against ' + JSON.stringify(fa) + ', the line ' + sk.hint + ', Develop ' + (show.dim ? 'dimmed' : 'live') + ')');
+    autoChosen = ch ? { chosen: ch, builds: sk.builds } : null;
     await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 15000 }).catch(() => {});
     const dev = await page.evaluate(() => ({ screen: window.SB_DEV.screen(), code: window.SB_DEV.level() && window.SB_DEV.level().code, chosen: window.SB.ui.seekInfo().code }));
     R.say(dev.screen === 'play' && dev.code && dev.code === dev.chosen, 'autocrop: it develops by itself, the room the chosen box\'s record (screen ' + dev.screen + ', the room\'s code ' + (dev.code === dev.chosen ? 'is' : 'is not') + ' the chosen box\'s)');
+    const heldDev = await page.evaluate(() => window.SB.ui.seekWorkerHeld());
+    R.say(heldDev === false, 'photo1r: after the develop the worker holds no copy of the photo (it answers ' + heldDev + ')');
     await leaveRoom(page);
     await page.waitForFunction(() => window.SB_DEV.screen() === 'title', { timeout: 5000 }).catch(() => {});
     /* Ink to every edge: nothing in it builds */
     const bk0 = await load('void');
     await tap(page, '#develop');
     const mk = await page.evaluate(() => new Promise(r => requestAnimationFrame(() => setTimeout(() => r(Object.assign(window.SB_DEV.overlay().seek || {}, { seeking: window.SB_DEV.overlay().seeking })), 120))));
+    await sleep(300);
+    const heldMidV = await page.evaluate(() => window.SB.ui.seekWorkerHeld()), heldMid = await page.evaluate(() => ({ phase: window.SB.ui.seekInfo().phase }));
     await page.waitForFunction(() => { const s = window.SB_DEV.overlay().seek; return s && s.phase !== 'seek'; }, { timeout: 120000 }).catch(() => {});
-    const bk = await page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { stuck: document.getElementById('crop').classList.contains('stuck'), copy: Object.assign({}, window.SB.ui.COPY) }));
+    const bk = await page.evaluate(() => Object.assign(window.SB_DEV.overlay(), { stuck: document.getElementById('crop').classList.contains('stuck'), copy: Object.assign({}, window.SB.ui.COPY),
+      nothing: document.getElementById('crop').classList.contains('nothing'), hint: document.getElementById('crophint').textContent, retakeBg: getComputedStyle(document.getElementById('retake')).backgroundColor }));
     const bs = bk.seek || {};
+    const heldNone = await page.evaluate(() => window.SB.ui.seekWorkerHeld());
+    R.say(heldMid.phase === 'seek' && heldMidV === true && heldNone === false, 'photo1r: the worker holds its copy of the photo while it searches and none once the search found nothing (mid search ' + heldMidV + ', after ' + heldNone + ')');
+    R.say(bs.phase === 'none' && bk.hint === bk.copy.nothingHint && bk.nothing && bk.retakeBg !== 'rgba(0, 0, 0, 0)', 'photo1r: with the message that nothing builds, the line over the photo points to Retake and Retake is set apart (the line "' + bk.hint + '", Retake on ' + bk.retakeBg + ')');
     R.say(mk.seeking && mk.marker && mk.frames >= 1, 'autocrop: the seek marker shows while the search runs (searching ' + mk.seeking + ', the marker ' + (mk.marker ? 'shown' : 'hidden') + ', ' + (mk.frames || 0) + ' frames drawn)');
     R.say(bs.phase === 'none' && bs.builds === SEEK.CAP && bs.candidates > SEEK.CAP && bk.shown && bk.says === bk.copy.nothingDark && bk.stuck && !bs.marker && JSON.stringify(bk.crop) === JSON.stringify(bk0.crop),
       'autocrop: a photo nothing builds ends, after exactly SEEK.CAP builds, on the message that nothing in it can be climbed (its dark form), the box where the player left it (phase ' + bs.phase + ', ' + bs.builds + ' builds of ' + bs.candidates + ' boxes, CAP ' + SEEK.CAP + ', it says "' + bk.says + '", the box ' + JSON.stringify(bk.crop) + ')');
     R.say(!/tighter|crop/i.test(bk.says), 'autocrop: the message after a search never asks for a tighter crop ("' + bk.says + '")');
+    {
+      const b = await page.evaluate(() => { const r = document.getElementById('cropbox').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+      const f = await page.touchscreen.touchStart(b.x, b.y);
+      for (let k = 1; k <= 6; k++) { await f.move(b.x + k * 6, b.y); await sleep(30); }
+      await f.end(); await sleep(300);
+      const mv = await page.evaluate(() => ({ nothing: document.getElementById('crop').classList.contains('nothing'), hint: document.getElementById('crophint').getAttribute('data-copy'), shown: !document.getElementById('tighter').hidden }));
+      R.say(!mv.nothing && mv.hint === 'cropHint' && !mv.shown, 'photo1r: once the box moves, the line and Retake are back as they were (the line ' + mv.hint + ', Retake ' + (mv.nothing ? 'still set apart' : 'plain') + ')');
+    }
     R.say(bs.slices >= 2 && bs.sliceMax <= SEEK.SLICE_MS, 'autocrop: the search spreads over ' + bs.slices + ' frames and none spends more than ' + SEEK.SLICE_MS + ' ms on it (the longest ' + (bs.sliceMax || 0).toFixed(1) + ' ms, ' + bs.mode + ' mode)');
     R.say(errors.length === 0, 'autocrop: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
+  /* PHOTO1R (the review of the auto crop from the player's seat): the search with the player away, a Retake and a touch
+     while it looks, and a worker that fails mid try. The page's hidden state and its focus are set by hand (Object
+     .defineProperty on document.hidden, document.hasFocus) with the events the browser sends, since a headless page is
+     never hidden nor blurred */
+  {
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base);
+    await ready(page, { reveal: true });
+    const input = await page.$('#filechoose'), SEEK = await page.evaluate(() => Object.assign({}, window.SB.capture.SEEK));
+    const load = async name => {
+      const d = await page.evaluate(() => window.SB_DEV.overlay().decodes);
+      await input.uploadFile(join(TMP, name + '.png'));
+      await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
+    };
+    const settled = () => page.waitForFunction(() => { const s = window.SB.ui.seekInfo(); return s && s.phase !== 'seek'; }, { timeout: 60000 }).catch(() => {});
+    const info = () => page.evaluate(() => Object.assign(window.SB.ui.seekInfo() || {}, { screen: window.SB_DEV.screen(), seeking: !!window.SB.ui.crop.seek, focal: window.SB.ui.crop.focal }));
+    /* the worker fails during its first try: it is ended, and the box it was trying is tried on this thread, so the
+       search ends on the same box after the same builds as the autocrop block's search of this photo (a fresh page) */
+    await load('floor-tall');
+    await tap(page, '#develop');
+    const er = await page.evaluate(() => new Promise(done => {
+      const t0 = performance.now(), poll = () => {
+        const CR = window.SB.ui.crop, S = CR.seek, w = CR.worker;
+        if (S && S.busy && w) { let ended = false; const term = w.terminate; w.terminate = function () { ended = true; return term.call(this); }; w.dispatchEvent(new Event('error')); done({ at: S.i, ended: () => ended, worker: CR.worker, mode: S.mode, ok: true, endedNow: ended }); return; }
+        if (performance.now() - t0 > 10000 || (S && S.phase !== 'seek')) { done({ ok: false, phase: S && S.phase }); return; }
+        setTimeout(poll, 0);
+      };
+      poll();
+    }).then(r => ({ ok: r.ok, at: r.at, ended: r.endedNow, gone: r.ok ? r.worker === null : null, mode: r.mode, phase: r.phase })));
+    await settled();
+    const ea = await info();
+    R.say(er.ok && er.ended && er.gone && er.mode === 'main', 'photo1r: a worker that fails mid try is ended with its copy of the photo, and the search goes on on this thread (failed at try ' + er.at + ', ended ' + er.ended + ', the worker ' + (er.gone ? 'dropped' : 'kept') + ', ' + er.mode + ' mode)');
+    R.say(ea.retried === 1 && autoChosen && JSON.stringify(ea.chosen) === JSON.stringify(autoChosen.chosen) && ea.builds === autoChosen.builds,
+      'photo1r: the box the failed worker was trying is tried again, so the search finds the same box after the same builds (retried ' + ea.retried + ', ' + ea.builds + ' builds, the box ' + JSON.stringify(ea.chosen) + '; without the failure ' + JSON.stringify(autoChosen) + ')');
+    await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 15000 }).catch(() => {});
+    await leaveRoom(page);
+    await page.waitForFunction(() => window.SB_DEV.screen() === 'title', { timeout: 5000 }).catch(() => {});
+    /* the page hidden during the search (the phone locked, another app): the found box waits; back, it develops */
+    await load('floor-tall');
+    await tap(page, '#develop');
+    await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
+    await settled();
+    await sleep(SEEK.SHOW_MS + 900);
+    const hd = await info();
+    R.say(hd.phase === 'show' && hd.screen === 'crop' && hd.held >= 1, 'photo1r: with the page hidden the found box waits on the crop screen, never developing unseen (phase ' + hd.phase + ', screen ' + hd.screen + ', held ' + hd.held + ', ' + (SEEK.SHOW_MS + 900) + ' ms after the search)');
+    await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); });
+    const seen = await page.evaluate(() => new Promise(r => { const t0 = performance.now(), saw = []; const k = () => { const s = window.SB_DEV.screen(); if (saw[saw.length - 1] !== s) saw.push(s); if (s === 'play' || performance.now() - t0 > 15000) r(saw); else requestAnimationFrame(k); }; k(); }));
+    R.say(seen.includes('reveal') && seen[seen.length - 1] === 'play', 'photo1r: back on the page, the found box develops by itself and the reveal plays (the screens ' + seen.join(' > ') + ')');
+    await leaveRoom(page);
+    await page.waitForFunction(() => window.SB_DEV.screen() === 'title', { timeout: 5000 }).catch(() => {});
+    /* the window's focus lost during the search (the notification shade): the found box waits; a tap on Develop
+       develops it at once */
+    await load('floor-tall');
+    await tap(page, '#develop');
+    await page.evaluate(() => { document.hasFocus = () => false; window.dispatchEvent(new Event('blur')); });
+    await settled();
+    await sleep(SEEK.SHOW_MS + 900);
+    const bl = await info();
+    R.say(bl.phase === 'show' && bl.screen === 'crop' && bl.held >= 1, 'photo1r: with the window\'s focus lost the found box waits on the crop screen (phase ' + bl.phase + ', screen ' + bl.screen + ', held ' + bl.held + ')');
+    await tap(page, '#develop');
+    await sleep(150);
+    const bt = await info();
+    R.say(bt.phase === 'done' && bt.tapped && bt.screen !== 'crop', 'photo1r: a tap on Develop while the found box shows develops it at once (phase ' + bt.phase + ', by the tap ' + bt.tapped + ', screen ' + bt.screen + ')');
+    await page.evaluate(() => { delete document.hasFocus; window.dispatchEvent(new Event('focus')); });
+    await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 15000 }).catch(() => {});
+    await leaveRoom(page);
+    await page.waitForFunction(() => window.SB_DEV.screen() === 'title', { timeout: 5000 }).catch(() => {});
+    /* the stripes (nothing builds; a search of SEEK.CAP builds, seconds long): the line says it looks; Retake mid search
+       stops it, so no box found behind the chooser develops the old photo */
+    await load('stripes');
+    await tap(page, '#develop');
+    await sleep(300);
+    const sh = await page.evaluate(() => ({ hint: document.getElementById('crophint').textContent, phase: window.SB.ui.seekInfo().phase, copy: window.SB.ui.COPY.seekHint }));
+    R.say(sh.phase === 'seek' && sh.hint === sh.copy, 'photo1r: while the search runs the line over the photo says it is looking and that a touch stops it ("' + sh.hint + '", phase ' + sh.phase + ')');
+    const chooser = page.waitForFileChooser({ timeout: 5000 }).catch(() => null);
+    await tap(page, '#retake');
+    const fc = await chooser;
+    if (fc) await fc.cancel();
+    const r1 = await info();
+    await sleep(SEEK.SHOW_MS + 900);
+    const r2 = await info();
+    R.say(!!fc && r1.phase === 'stopped' && !r2.seeking && r2.builds === r1.builds && r2.screen === 'crop' && r2.hint === 'cropHint',
+      'photo1r: Retake mid search stops the search, so nothing develops behind the chooser (the chooser ' + (fc ? 'opened' : 'never opened') + ', phase ' + r1.phase + ', builds ' + r1.builds + ' then ' + r2.builds + ', screen ' + r2.screen + ', the line ' + r2.hint + ')');
+    /* a still tap inside the box while it searches stops the search and hides no chest under the finger */
+    await tap(page, '#develop');
+    await sleep(300);
+    const t1 = await info();
+    const bx = await page.evaluate(() => { const r = document.getElementById('cropbox').getBoundingClientRect(); return { x: r.left + r.width * 0.3, y: r.top + r.height * 0.6 }; });
+    await page.touchscreen.tap(bx.x, bx.y);
+    await sleep(200);
+    const t2 = await info();
+    R.say(t1.phase === 'seek' && t2.phase === 'stopped' && !t2.seeking && t2.focal === t1.focal && t2.hint === 'cropHint', 'photo1r: a tap on the box while it searches stops the search and moves no chest (phase ' + t1.phase + ' then ' + t2.phase + ', the chest cell ' + t1.focal + ' then ' + t2.focal + ', the line ' + t2.hint + ')');
+    R.say(errors.length === 0, 'photo1r: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
   /* AUTOCROP: the builds on the page's own thread (no worker): still spread over frames under the budget */

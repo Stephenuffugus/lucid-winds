@@ -30,7 +30,7 @@ const opt = n => { const i = ARGS.indexOf('--' + n); return i >= 0 ? ARGS[i + 1]
 const PAGE = path.resolve(opt('page') || path.join(__dirname, 'index.html'));
 const FAST = flag('fast');
 const ONLY = opt('only');
-const ASSERT_FLOOR = 6085;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6057 at AUTOCROP, Q181, 1 Nov; 6067 at NORMALISE, Q182, 1 Nov; 6085 at SEARCHR, Q183, 1 Nov) */
+const ASSERT_FLOOR = 6087;              /* raised per task: the count a full run must reach (5543 after the M1 review's fixes, 30 Oct; 5742 at Weapons v1 step 1, 31 Oct; 6015 at LEVELS, Q180, 31 Oct; 6033 at LEVELSR, 1 Nov; 6057 at AUTOCROP, Q181, 1 Nov; 6067 at NORMALISE, Q182, 1 Nov; 6085 at SEARCHR, Q183, 1 Nov; 6087 at PHOTO1R, 2 Nov) */
 
 const LATER = { economy: 'M2' };
 for (const k of Object.keys(LATER)) if (flag(k)) { console.log('--' + k + ' arrives in ' + LATER[k]); process.exit(2); }
@@ -2846,6 +2846,12 @@ group('H-seek-1', 'the auto crop\'s boxes (shell-capture\'s seekBoxes, read from
       t.ok(L[0].y === top && L[0].x === k.c.x, k.name + ': the first box is the anchor, starting ' + K + ' rows above the band\'s foot (y ' + top + '; the first box ' + key(L[0]) + ')');
     }
   }
+  /* a long screenshot (PHOTO1R): the decode keeps the width 1024 and any height, and the near duplicate filter scanned
+     every box kept, so its list stalled Develop. By buckets the list is the one the scan gave (pinned from d0d51015b:
+     7764 boxes, its sha1) with at most nine comparisons a candidate (the scan's grew with the list) */
+  const tc = CAP.fit(1024, 8192), TL = CAP.seekBoxes(tc, 1024, 8192, null, null), ts = CAP.seekStats || {};
+  t.eq(TL.length + ' ' + require('node:crypto').createHash('sha1').update(JSON.stringify(TL)).digest('hex').slice(0, 12), '7764 c0c36666315a', 'a long screenshot (1024 x 8192): the list is the one the scan of every kept box gave');
+  t.ok(ts.candidates >= TL.length && ts.cmp <= 9 * ts.candidates, 'a long screenshot: the near filter compares each candidate with at most nine boxes kept (' + ts.cmp + ' comparisons for ' + ts.candidates + ' candidates)');
   const img = RM.paint(3), crop = CAP.fit(img.w, img.h);
   /* the search itself on the raw grids (the capture normalisation skipped, as the page read photos before Q182): the
      floor lift is what finds this box. Normalised, the wall's shading no longer reads as a floor band and the scene
