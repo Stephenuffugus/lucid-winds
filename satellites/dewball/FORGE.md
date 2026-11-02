@@ -975,3 +975,17 @@ reads a model or the LOD), react_test REACT_PASS, sign_test SIGN_PASS, `manifest
 **Stamp:** sw.js CACHE `dewball-v36`, ASSET_V and `sw.js?v=` 23 → 24 (⚠️ v35 moved only the CACHE: index.json?v=23
 would have kept a phone's old index; v36 ships w5 with them). Not deployed: the deploy script is
 `/home/codespace/dewball-drafts/deploy-dewball-v36.sh` (the vault release first, then a files only commit to main).
+
+## The globe's gate signs stand on their fences, 2 Nov 2026 (`dewball-v36`, no credits)
+
+**Seen in the w7 world shots:** the 10 Oct sign fix (`dewball-v27`) left the globe as it was, so every ring's sign
+still stood at the rings' shared centre, the start, at twice its need: at 5 m a "4.20 m" banner filled the top third
+of the screen, at 22 m "13.0 m" and at 44 m "26.0 m" stretched across the middle, in BOTH builds. **Fixed in
+globeSync, drawing only:** as on the flat worlds, a sign stands on its fence at the point nearest the ball, sized by
+how far away it is (0.9x to 3.6x its need), just above the gold caps; its chart point and height are kept on the gate
+(`sCx`, `sCz`, `sUp`) and shown in `DB_DEV.state().gates`. **Looked at** (world_shots 5 / 22 / 44 m, before and
+after from the same frames): the banners are gone; at 5 m the "4.20 m" and "1.20 m" signs stand small on their fences
+at the horizon. **sign_test.js now covers the globe** (it skipped it): SIGN_PASS 38 signs (8 on the globe) across 6
+worlds; `--plant` (the old planar placement) and the new `--plant-globe` (the old globe placement) both go red. The
+test calls `D.sync()` after its steps, because the globe places its signs in globeSync, which a step does not run.
+same.sh SAME_PASS, react_test REACT_PASS.

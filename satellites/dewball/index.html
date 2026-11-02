@@ -4936,7 +4936,17 @@
       if(any) st.mesh.instanceMatrix.needsUpdate=true; }
     for(i=0;i<MOVERS.length;i++){ var m=MOVERS[i]; _gsPlaceMesh(m.x,m.z,m.rot,m.mesh,0); }
     for(i=0;i<GATES.length;i++){ var g=GATES[i];
-      if(g.sign) _gsPlaceMesh(g.def.x,g.def.z,0,g.sign.sprite,g.def.need*2.1);
+      /* ⛔ THE GLOBE'S SIGNS HUNG OVER THE SPAWN TOO (2 Nov 2026): the planar fix of 10 Oct left the globe alone, so
+         every ring's sign stood at the rings' shared centre, the start, at twice its need: "4.20 m", "13.0 m" and
+         "26.0 m" stretched across the middle of the screen at 5, 22 and 44 m (the world shots). Now as on the flat
+         worlds: ON its fence at the point nearest the ball, sized by how far away it is, just above the gold caps.
+         The chart point is kept on the gate for the sign test. Drawing only. */
+      if(g.sign){ var gsx=wrapD(R.x-g.def.x), gsz=wrapD(R.z-g.def.z), gsl=Math.sqrt(gsx*gsx+gsz*gsz), gux, guz;
+        if(gsl>g.def.r*0.05){ gux=gsx/gsl; guz=gsz/gsl; } else { gux=Math.sin(camYaw); guz=Math.cos(camYaw); }
+        var gpx=g.def.x+gux*g.def.r, gpz=g.def.z+guz*g.def.r, gdx=wrapD(R.x-gpx), gdz=wrapD(R.z-gpz);
+        var gsw=Math.max(g.def.need*0.9,Math.min(g.def.need*3.6,Math.sqrt(gdx*gdx+gdz*gdz)*0.22));
+        g.sCx=gpx; g.sCz=gpz; g.sUp=g.def.need*1.2+gsw*0.12;
+        _gsPlaceMesh(gpx,gpz,0,g.sign.sprite,g.sUp); g.sign.sprite.scale.set(gsw,gsw*0.35,1); }
       if(!g.postIM) continue;
       for(j=0;j<g.posts.length;j++){ var p=g.posts[j];
         /* ⚖️ CANCEL THE BALL-RELATIVE BASIS. _gsMat builds a post's local frame
@@ -5704,7 +5714,8 @@
                  cling:R.cling.map(function(c){ return c.size; }),
                  objects:objs, timer:R.timer, D:R.D, combo:R.combo,
                  gates:GATES.map(function(g){ var sp=g.sign&&g.sign.sprite; return {open:g.open,need:g.def.need,x:g.def.x,z:g.def.z,r:g.def.r,
-                   sign:sp?{x:sp.position.x,y:sp.position.y,z:sp.position.z,w:sp.scale.x}:null}; }),
+                   sign:sp?{x:sp.position.x,y:sp.position.y,z:sp.position.z,w:sp.scale.x,
+                     cx:g.sCx,cz:g.sCz,up:g.sUp}:null}; }),   // cx cz up: the globe's chart point and height (globeSync)
                  movers:MOVERS.length };
       },
       absorbAll:function(){
