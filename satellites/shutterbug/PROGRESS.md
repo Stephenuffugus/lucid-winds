@@ -1205,3 +1205,30 @@ shots (local server, LOOKED at), /home/codespace/sb-drafts/climb/climb/shots2/ (
 - every crop: the hint still says "Tap a shape to hide the chest there".
 
 open: whether climb first (Q221 option b: r54 and r58, film 46.5% against 50.8%) is worth its wait once the phone is timed; one build's p95 at 4x (137 ms); clearing film nobody stands on (lane B, rules 2); the 47% of climb rows with nothing in the photo to stand on (the new reading); the shaded wall read as solid; the real photo bot walks are scratch, not a harness gate, except the nine public domain records; his real rooms (Q45).
+
+### 2026-11-02 01:52 UTC  PHOTO1BR  The review of BIOME and CLIMB, sixteen findings: capture writes RULES 0 for sb-m1-5 (the climb refuses on the filmiest rooms, lays more film on bare walls and runs over the build budget), a bare newer payload reads as newer, buildAt's row count renamed, the shot tool builds the room played, three rows RED (Q222)  commit (this commit), on branch sb-climb, the code in the autosave `7d91321c7`
+Every number is RAW capture (no normalisation on this branch); the lead re-measures after the sb-levels merge.
+
+fixed:
+- capture writes RULES 0 (findings 1, 6, 7, 11, 12, the deadline's own way out): `C.RULES = 0` in shell-capture, so every captured room builds by today's rules with the hue vote's biome. BIOME ships in sb-m1-5; CLIMB does not. The climb stays in the core for a v2 RULES 1 code (H-climb-1, H-climb-2 unchanged and green), which no client writes. H-hue-1 and the capture gate's sage room now check RULES 0 and today's rules in Node. Q222 says why and what the climb needs.
+- parseCode (finding 5): a bare payload of at least a header whose version byte is past V and under 16 reads as newer, as its prefixed code does; garbage and a version byte of 200 stay bad. H-v2-1 +3 assertions (bare v3, v7 after a link's #, the controls).
+- buildAt (finding 4): the spawn to exit row count is `rise`, so the climb flag is never overwritten. No level changes (H-climb-1's pins hold).
+- shots-climb.mjs (finding 10): rebuilds the played code with `{ firstRoom: true }` and prints only when its levelHash equals SB_DEV.level().hash, else the mismatch. Not re-shot tonight (below).
+- rows (finding 2's two, plus one), each RED for its line: CAPTURE_RULES_1 (H-hue-1, "RULES 0 (today's rules, Q222)"), CLIMB_PASSES_TODAY (H-climb-1, "some climb level needs more than today's 4 passes"), BARE_NEWER_BAD (H-v2-1, "parseCode answers newer on a bare v3 payload"). REDWATCH OK 3 of 3.
+
+refuted or not changed here:
+- finding 13 (the Develop timing): true, the RULES 1 side reused RULES 0's grid cache. The structure gives it: Develop(RULES 1) = Develop(today) + one climb build, p50 28.1 ms, p90 59.1, max 96.1 more (the reviewer's rv.js, Node unthrottled), paid again at the reveal. CLIMB's "the whole Develop stays at today's" is withdrawn. Moot for sb-m1-5 (RULES 0).
+- findings 3, 15 (the hue vote's cast and minority wins): real on raw capture; tuning for him under Q222 after the normalisation, no change tonight.
+- findings 8, 9 (wall paint rejects shelf edges; r44 the sage room is Attic): no change on this branch, re-measured after the merge, as the reviewer says.
+- finding 14 (measure.js and board.js build rules 0, biome 0): true; those tools live outside this worktree (sb-drafts/realphotos) and are not edited here. rvp.js below builds through the page's own gridRecord.
+
+real photo measure (/home/codespace/sb-drafts/climb/p1br/rvp.js, the reviewer's rv.js pointed at a page; 95 photos, the page's own search, gridRecord records, raw):
+- as shipped (RULES 0, the vote's biome): develop 76 of 95 (15 at the default box), the search's builds median 11, p90 49; film share of the ascent 58.2% (median room 61%), rows on film 73.5%, surfaces stood on 4.16, tabs 10.30 a room; biome by the vote attic 41, ember 12, deep 15, overgrowth 5, frost 3 (by the grid alone attic 68); the bot clears 76 of 76 of these levels (rvp0.js, WALK0).
+- the climb as built (RULES 1, not shipped): film 50.8%, surfaces 5.21, tabs 9.75, 60 climb levels, 16 fallbacks; 5 rooms worse by 5 points (r33, r43, r44, r55, o28).
+- three scratch fixes, each keeping today's level when the climb lays more tabs (proto/A, B, C.html, not in the page): A, stones in the first 2 passes, 6 passes: film 52.4%, surfaces 4.96, tabs 9.28, 43 climb levels, 33 today's kept. B, no stones, today's 4 passes: film 55.0%, surfaces 4.47, tabs 9.74, 72 climb levels, 4 kept. C, today's stones and 8 passes: film 52.6%, surfaces 4.96, tabs 9.22, 42 climb levels, 34 kept. The bot 76 of 76 on each. Build times in these runs ran four jobs on two cores and are not quoted.
+
+gates: node harness.js --only H-v2-1 (55), H-hue-1 (35), H-share-1 (9), H-climb-1 (20, 202 s at load) OK; lint OK; redwatch 3 of 3 RED. check --fast: see the line below.
+
+shots: none tonight. The browser lock was held by three other lanes' runs (sb-levels' check and its browser rows, sb-house's check) from before 01:47 UTC; the capture gate is the browser gate this change touches and it runs inside check --fast. RULES 0 plays today's level with the biome, the look BIOME's shots already showed.
+
+open: the climb (Q222: a fix from A or B, re-measured on normalised capture, with a timed harness group on the RULES 1 photo records at a budget he rules on); finding 2's tab clause and row bound (no crafted record yet; the climb is not written by capture); the hue vote's cast and minority wins (Q222); wall paint and r44 after the merge; measure.js and board.js outside this worktree.
