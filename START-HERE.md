@@ -1,5 +1,8 @@
 # START HERE
 
+## 📷 2 Nov 20:55 UTC (Opus) sb-m1-12 IS LIVE (deploy d88c45a06, tag sb-m1-12; index sha256 bed70c84..., sw.js and manifest.webmanifest equal on both origins; privacy.html served with the email_off fence stripped by the CDN and the address in plain text, as on Hues)
+In it: charms, the biome bosses, the Darkroom, the second monsters, the edge trims, the polish pass, Play readiness. The first deploy try stopped on deploy.sh's second guard (its list had not followed SERVED): fixed 479367acd. NEXT: his play notes on the Pixel; the Play submission waits for his call (store/shutterbug-play has the kit).
+
 ## 📷 2 Nov 20:30 UTC (Opus) sb-m1-12 STAMPED: POLISH + PLAY READY (twa_ready all ok, offline cold launch ok); it carries sb-m1-9 to sb-m1-11 (charms, bosses, Darkroom, second monsters), none shipped yet
 DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-12/deploy-sb-m1-12.sh`, then hostproof on index.html AND privacy.html and manifest.webmanifest (new served files), tag sb-m1-12.
 His rule (2 Nov): nothing goes to Play until it is good. The store page (copy, shots from real rooms, feature graphic, IARC, Data safety: no data collected) and the bubblewrap build wait for his call to submit.
