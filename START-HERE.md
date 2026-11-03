@@ -1,5 +1,10 @@
 # START HERE
 
+## 📷 3 Nov 06:20 UTC (Opus) SHUTTERBUG sb-m1-20 STAMPED: DARKROOM V2 (the weapon wall, the start pick) + CI GREEN AGAIN
+- DEPLOY (his): `bash /home/codespace/sb-drafts/sb-m1-20/deploy-sb-m1-20.sh` (stamp b29bfe242; main is sb-m1-19).
+- His words: "there's also nothing in the dark room... so much more needs done". The wall shows all 21 weapons; the start pick (200) arms every house; a tap explains a weapon.
+- CI was red on every branch push since sb-m1-13 (bookkeeping, not the game): fixed and green. Before pushing game code run `SWS_NO_BROWSER=1 node satellites/shutterbug/tools/check.js` (memory feedback_ci_red_emails).
+
 ## 📷 3 Nov 04:50 UTC (Opus) SHUTTERBUG sb-m1-19 LIVE: ASTRA ROUND 7 IN (16 bugs, 8 frames, album medals, album covers); THE ALBUM AND ROUND 6 WENT WITH IT
 - ✅ LIVE 3 Nov 05:25 UTC: main `f3f57a9c5` (index.html + sw.js; carries sb-m1-17's album and sb-m1-18's round 6), tag sb-m1-19, main merged back; both origins serve the commit's bytes, sw.js says sb-m1-19 / shutterbug-v19. He sent the exact line as a message and the session ran it (feedback_deploy_permission).
 - STORE PICTURES DRAFTED 05:08 UTC on Astra's frames (play-shot-1..6 + the lettered feature graphic in store/shutterbug-play, a CC0 living room as the room). TOMORROW (he brings images): `node store/shutterbug-play/shoot.mjs --photo HIS.jpg` then `node tools/store-kit/compose.mjs store/shutterbug-play/kit.json`, look once, commit. The album shot is the weakest (one short page per world; more rooms fill it). Then the Play build (his license line in BUILD.md).
