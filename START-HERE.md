@@ -1,5 +1,9 @@
 # START HERE
 
+## 📷 3 Nov 04:20 UTC (Opus) SHUTTERBUG sb-m1-15 STAMPED: TROPHIES AND BUGS (his carrot idea); STEPHEN RUNS THE DEPLOY
+- A Trophies and bugs screen off the title after the first room: 13 trophies (rooms, houses, wall jumps, keys, clean clears; bronze, silver, gold steps, goal and progress), all 8 bugs and 4 frames with the locked ones grey and the next prize named. New trophies named on the clear and doorway cards. lint OK, harness --fast OK, one look at 412.
+- DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-15/deploy-sb-m1-15.sh`. Screen wrap: NO (his call 3 Nov, wall jumps need the edges).
+
 ## 📷 3 Nov 03:30 UTC (Opus) SHUTTERBUG sb-m1-14 STAMPED: THE WALL JUMP, TAUGHT; STEPHEN RUNS THE DEPLOY
 - ✅ LIVE 3 Nov: his deploy pushed main `0bd8f08eb` (index.html + sw.js only), tag sb-m1-14; both origins serve the commit's bytes.
 - His ask: players who do not know they can wall jump get stuck in pits and quit. The in-play banner now teaches it at the first wall cling ("Press jump to kick off the wall", once until learned) and whenever the bug is stuck ("Jump at a wall, hold toward it, jump again", at most every 25 s). lint OK, harness --fast OK.
