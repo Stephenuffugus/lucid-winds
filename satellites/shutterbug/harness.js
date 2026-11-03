@@ -5607,9 +5607,10 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
       t.ok(bad.length === 0, name + '.' + f + ' decodes to ' + sp.w + 'x' + sp.h + ', every pixel clear or a palette index' + (bad.length ? ' (' + bad.join('; ') + ')' : ''));
       if (name === 'hero') t.ok(sp.w === K.HERO_W && sp.h === K.HERO_H && rows[sp.h - 1].includes(INK), 'hero.' + f + ' is the hitbox\'s size and its bottom row holds Ink (the feet row, section 7.3)');
       else if (name.startsWith('hero_')) t.ok(rows[sp.h - 1].includes(INK), name + '.' + f + ' is a hero pose (Sun allowed) and its bottom row holds Ink (the feet row)');
-      /* round 6 (3 Nov): the trophy medals and the story art are menu only and the brief allowed Sun in them (the story
-         cards and the wave are the hero itself); never drawn over a room (astra_cut.py SUN_KEYS holds the same three) */
-      else if (name !== 'beacon' && name !== 'fx_beacon_light' && name !== 'beacon_locked' && name !== 'trophy_medals' && name !== 'story_cards' && name !== 'story_bug_wave') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\', the beacon\'s and its lighting\'s)');
+      /* rounds 6 and 7 (3 Nov): the menu only art the briefs allowed Sun in (the story cards and the wave are the hero
+         itself), never drawn over a room; astra_cut.py SUN_KEYS holds the same list */
+      else if (['beacon', 'fx_beacon_light', 'beacon_locked', 'trophy_medals', 'story_cards', 'story_bug_wave',
+                'trophy_medals_r7', 'frame_styles_r7', 'daily_badge', 'daily_card'].indexOf(name) < 0) t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\', the beacon\'s and its lighting\'s)');
       /* section 7.3 (the M1 review: the placeholders broke it): Film is the repairs' alone (the film tab), so help is
          never furniture; the speck is Amber with a Glare glint; every danger has an Ink outline */
       if (name !== 'tab') t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour)');
@@ -6559,12 +6560,13 @@ const t0 = Date.now();
 /* ---------------------------------------------------------------- the looks (HOUSE-B, Q97 ruling 4) */
 group('H-look-1', 'the prize ladder (Stephen\'s "Cosmetic per clear"): the first house clear wins a frame style, each clear after it the next of Astra\'s skins in her order until all are owned, then the other frames, then nothing; a win is owned and worn; lookValid keeps owned ids and a worn index only when owned, never throws; the save carries cosmetics through validateSave', t => {
   const Rr = SB.record, L = Rr.LOOKS;
-  t.same(Array.from(L.hero), ['sun', 'umber', 'teal', 'lapis', 'pinstripe', 'domino', 'crescent', 'argyle'], 'the skins are round 1\'s four (sun the approved bug) then round 3\'s four, in Astra\'s order');
-  t.same(Array.from(L.frame), ['paper', 'walnut', 'lapis', 'moss'], 'the frames are Astra\'s frame_styles in her order (paper the polaroid as it was)');
+  t.same(Array.from(L.hero), ['sun', 'umber', 'teal', 'lapis', 'pinstripe', 'domino', 'crescent', 'argyle', 'chrome', 'night', 'polaroid', 'negative', 'tiger', 'rainbow_lens', 'ghost', 'gold'], 'the skins are round 1\'s four (sun the approved bug) then round 3\'s four, then round 7\'s eight appended (saved indices keep their look), in Astra\'s order');
+  t.same(Array.from(L.frame), ['paper', 'walnut', 'lapis', 'moss', 'cork', 'brass', 'night_sky', 'filmstrip'], 'the frames are Astra\'s frame_styles in her order (paper the polaroid as it was), then round 7\'s four');
   let c = Rr.saveDefaults().cosmetics; const got = [];
-  for (let k = 0; k < 12; k++) { const w = Rr.lookWin(c); got.push(w.id); c = w.cosmetics; if (w.id) t.ok(c[w.id.split('.')[0]] === L[w.id.split('.')[0]].indexOf(w.id.split('.')[1]), 'clear ' + (k + 1) + ' wears what it won (' + w.id + ')'); }
-  t.same(got, ['frame.walnut', 'hero.umber', 'hero.teal', 'hero.lapis', 'hero.pinstripe', 'hero.domino', 'hero.crescent', 'hero.argyle', 'frame.lapis', 'frame.moss', null, null],
-    'the ladder: a frame style first, then every skin in order until all are owned, then the other frames, then nothing new');
+  for (let k = 0; k < 24; k++) { const w = Rr.lookWin(c); got.push(w.id); c = w.cosmetics; if (w.id) t.ok(c[w.id.split('.')[0]] === L[w.id.split('.')[0]].indexOf(w.id.split('.')[1]), 'clear ' + (k + 1) + ' wears what it won (' + w.id + ')'); }
+  t.same(got, ['frame.walnut', 'hero.umber', 'hero.teal', 'hero.lapis', 'hero.pinstripe', 'hero.domino', 'hero.crescent', 'hero.argyle', 'frame.lapis', 'frame.moss',
+    'hero.chrome', 'hero.night', 'frame.cork', 'hero.polaroid', 'hero.negative', 'frame.brass', 'hero.tiger', 'hero.rainbow_lens', 'frame.night_sky', 'hero.ghost', 'frame.filmstrip', 'hero.gold', null, null],
+    'the ladder: a frame style first, then every skin in order until all are owned, then the other frames, then round 7\'s bugs and frames with Gold last, then nothing new');
   const bad = [null, 7, 'x', [], { hero: 5, frame: 2, owned: ['hero.umber'] }, { hero: 1.5, owned: 'hero.umber' }, { hero: -1, frame: 9, owned: ['nope', 'frame.moss', 'frame.moss'] }];
   const v = bad.map(x => { try { return Rr.lookValid(x); } catch (e) { return 'threw'; } });
   t.ok(v.every(x => x !== 'threw'), 'lookValid never throws on a malformed cosmetics');

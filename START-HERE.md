@@ -1,5 +1,10 @@
 # START HERE
 
+## 📷 3 Nov 07:40 UTC (Opus) SHUTTERBUG sb-m1-19 STAMPED: ASTRA ROUND 7 IN (16 bugs, 8 frames, album medals, album covers); ONE DEPLOY CARRIES sb-m1-17, 18 AND 19
+- DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-19/deploy-sb-m1-19.sh` (main is still sb-m1-16; the 17 and 18 scripts now refuse).
+- TOMORROW (his word: he brings images for the store listing): compose the six shots on Astra's frames (store/shutterbug-play/astra-r7, window [108,336,864,1536], headline box [108,96,720,174]) from real captures, letter SHUTTERBUG on her feature graphic (title box [52,22,920,74]); then the Play build (his license line in BUILD.md).
+- The Daily Room art (daily_badge, daily_stamp, daily_card) is spliced and waits for the feature.
+
 ## 📷 3 Nov 06:40 UTC (Opus) SHUTTERBUG sb-m1-18 STAMPED: ASTRA ROUND 6 IN (medals, the bug's story, the album page); STEPHEN RUNS THE DEPLOY (carries sb-m1-17's album)
 - Round 6 vaulted (vault-20261103-shutterbug-astra-06), checked, cut, spliced, wired. lint OK, harness --fast OK, one look at 412.
 - DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-18/deploy-sb-m1-18.sh`. Next: the publish list (store kit refresh from the real game, the Play build) and Astra round 7.

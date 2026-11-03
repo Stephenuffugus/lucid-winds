@@ -42,7 +42,8 @@ FX_SIDES = (16, 32, 48, 64)
 # pixel, so it carries the beacon's Sun; every other effect stays without it
 # round 5: an fx the brief itself named with plain frames (a, b, c) and a non square size
 FX_PLAIN = ('fx_beacon_refuse', 'fx_trophy_new')   # round 6: the brief named the trophy shine's frames a to d
-SUN_KEYS = ('beacon', 'fx_beacon_light', 'beacon_locked', 'trophy_medals', 'story_cards', 'story_bug_wave')   # round 6: menu only art the brief allowed Sun in (the story cards and the wave are the hero itself); never drawn over a room   # round 5: the locked beacon's charge windows are the beacon's own Sun (the brief allowed it)
+SUN_KEYS = ('beacon', 'fx_beacon_light', 'beacon_locked', 'trophy_medals', 'story_cards', 'story_bug_wave',
+            'trophy_medals_r7', 'frame_styles_r7', 'daily_badge', 'daily_card')   # round 7: the same menu only allowance   # round 6: menu only art the brief allowed Sun in (the story cards and the wave are the hero itself); never drawn over a room   # round 5: the locked beacon's charge windows are the beacon's own Sun (the brief allowed it)
 HERO_NAMES = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'jump', 'fall', 'cling', 'dive', 'land', 'dead']
 NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 # the names the page may hold after a splice (the lint and H-spr-1 hold the page to the same number). ART2 counted the
