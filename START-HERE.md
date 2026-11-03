@@ -1,5 +1,9 @@
 # START HERE
 
+## 📷 3 Nov 01:10 UTC (Opus) SHUTTERBUG sb-m1-13 STAMPED: A STALE PAGE HEALS ITSELF (Jessie saw an old build); STEPHEN RUNS THE DEPLOY
+- Server proven right (lucidwinds.com and www serve sb-m1-12, sha bed70c84; skywolfstudio.com is only the landing page). Cause on her phone: the arcade frames the game, the root worker (or the game's own) serves its saved copy when the network is slow or the CDN sends 429. Fix: the page checks the live BUILD in sw.js and swaps itself for the fresh page on the title screen, once per build per session. lint OK, harness --fast OK.
+- DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-13/deploy-sb-m1-13.sh`. For Jessie today: open lucidwinds.com/satellites/shutterbug/ directly on Wi-Fi and pull to refresh; Settings shows the build.
+
 ## 🐈 LOAF MILESTONE A, BUILD LOG (Opus, from LOAF_BUILD_PLAN.md; one line per step)
 - ✅ LIVE 3 Nov: his deploy pushed main `b520f7bda` (loaf.html + the nine room plates only); lucidwinds.com/loaf.html sha matches, all nine plates 200; main merged back into add-sproing-jumper. NEXT: his Pixel play notes, corpus photos, then the real pair sheet; Milestone B only after he says his cats read.
 - A1 ROOM GROUNDING done 2 Nov: Astra's floor (0.8 m tile), wall plate (panels repeat, wash runs on), arched window decal, day/dusk/night plates + light sets by the local clock (neutral key, jaw fill, warm floor bounce); the seat is a level shift lens (no keystone); violet void gone. Look tool: `node scripts/loaf_look.mjs --photo <p> --out <png>` (one image, a panel per light; Chrome from sws-tools). Seen: room reads in all three, black coat separates at night.
