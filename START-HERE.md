@@ -1,5 +1,9 @@
 # START HERE
 
+## 📷 3 Nov 06:40 UTC (Opus) SHUTTERBUG sb-m1-18 STAMPED: ASTRA ROUND 6 IN (medals, the bug's story, the album page); STEPHEN RUNS THE DEPLOY (carries sb-m1-17's album)
+- Round 6 vaulted (vault-20261103-shutterbug-astra-06), checked, cut, spliced, wired. lint OK, harness --fast OK, one look at 412.
+- DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-18/deploy-sb-m1-18.sh`. Next: the publish list (store kit refresh from the real game, the Play build) and Astra round 7.
+
 ## 📷 3 Nov 05:45 UTC (Opus) SHUTTERBUG sb-m1-17 STAMPED: THE ALBUM; STEPHEN RUNS THE DEPLOY
 - Every cleared room becomes a photo on its biome's page (six to a page); empty biomes say what to shoot; full pages glow; a photo replays its room; the clear card says where it landed; three album trophies. lint OK, harness --fast OK, one look at 412.
 - DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-17/deploy-sb-m1-17.sh`.

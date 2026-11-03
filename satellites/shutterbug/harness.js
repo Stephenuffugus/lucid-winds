@@ -5607,7 +5607,9 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
       t.ok(bad.length === 0, name + '.' + f + ' decodes to ' + sp.w + 'x' + sp.h + ', every pixel clear or a palette index' + (bad.length ? ' (' + bad.join('; ') + ')' : ''));
       if (name === 'hero') t.ok(sp.w === K.HERO_W && sp.h === K.HERO_H && rows[sp.h - 1].includes(INK), 'hero.' + f + ' is the hitbox\'s size and its bottom row holds Ink (the feet row, section 7.3)');
       else if (name.startsWith('hero_')) t.ok(rows[sp.h - 1].includes(INK), name + '.' + f + ' is a hero pose (Sun allowed) and its bottom row holds Ink (the feet row)');
-      else if (name !== 'beacon' && name !== 'fx_beacon_light' && name !== 'beacon_locked') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\', the beacon\'s and its lighting\'s)');
+      /* round 6 (3 Nov): the trophy medals and the story art are menu only and the brief allowed Sun in them (the story
+         cards and the wave are the hero itself); never drawn over a room (astra_cut.py SUN_KEYS holds the same three) */
+      else if (name !== 'beacon' && name !== 'fx_beacon_light' && name !== 'beacon_locked' && name !== 'trophy_medals' && name !== 'story_cards' && name !== 'story_bug_wave') t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\', the beacon\'s and its lighting\'s)');
       /* section 7.3 (the M1 review: the placeholders broke it): Film is the repairs' alone (the film tab), so help is
          never furniture; the speck is Amber with a Glare glint; every danger has an Ink outline */
       if (name !== 'tab') t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour)');
