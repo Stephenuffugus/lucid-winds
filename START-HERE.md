@@ -1,6 +1,7 @@
 # START HERE
 
 ## 📷 3 Nov 03:30 UTC (Opus) SHUTTERBUG sb-m1-14 STAMPED: THE WALL JUMP, TAUGHT; STEPHEN RUNS THE DEPLOY
+- ✅ LIVE 3 Nov: his deploy pushed main `0bd8f08eb` (index.html + sw.js only), tag sb-m1-14; both origins serve the commit's bytes.
 - His ask: players who do not know they can wall jump get stuck in pits and quit. The in-play banner now teaches it at the first wall cling ("Press jump to kick off the wall", once until learned) and whenever the bug is stuck ("Jump at a wall, hold toward it, jump again", at most every 25 s). lint OK, harness --fast OK.
 - DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-14/deploy-sb-m1-14.sh`. NOT a stale cache (CORRECTION, 3 Nov): Jessie's missing "Start a house" was the design gate (the house shows only after a first room clear).
 - His open design asks (answered in the conversation, decisions his): the carrot and the bug's why, screen wrap for boxed off side pockets, Dewball held for a Meshy asset build out, Rabbit Ronin levels by his own hand, Lucid Winds' attention companion (Fable plans it).
