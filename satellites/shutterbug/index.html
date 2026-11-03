@@ -853,7 +853,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m1-13';
+  SB.BUILD = 'sb-m1-14';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -1225,7 +1225,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return { v: 1, dp: 0, collection: [], prints: [], pool: { jump: [], dive: [], charm: [] },
       unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
       settings: { mirror: false, sound: true, music: true, reducedMotion: null },
-      onboarding: { firstRoomDone: false, revealSeen: false, hints: { rocker: false, jump: false, dive: false } },
+      onboarding: { firstRoomDone: false, revealSeen: false, hints: { rocker: false, jump: false, dive: false, wall: false } },
       run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null },
       log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false }, quarantine: null };
   }
@@ -7408,7 +7408,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     houseLost: 'The house is lost', lost: 'Lost {n} dead pixels', lostOne: 'Lost 1 dead pixel', retryHouse: 'Retry House', newHouse: 'New house',
     houseReplace: 'Start a new house? The saved house will be lost.', houseCleared: 'House cleared', houseSum: '{rooms} rooms, {n} dead pixels', houseSumOne: '{rooms} rooms, 1 dead pixel',
     /* HOUSE-B: the guardian, the prize, the looks */
-    guardHint: 'Beat the guardian to light the exit', darkroom: 'Darkroom', darkroomLink: 'Darkroom', dkWallet: 'Dead pixels {n}', dkPrints: 'Prints to develop', dkOwned: 'Your weapons',
+    guardHint: 'Beat the guardian to light the exit', wallHead: 'Wall jump', wallLine: 'Press jump to kick off the wall', stuckHead: 'Stuck in a pit?', stuckLine: 'Jump at a wall, hold toward it, jump again', darkroom: 'Darkroom', darkroomLink: 'Darkroom', dkWallet: 'Dead pixels {n}', dkPrints: 'Prints to develop', dkOwned: 'Your weapons',
     dkDevelop: 'Develop for {n}', dkNoPrints: 'No prints yet. Carry a blueprint out of a room and it prints here.', dkLeft: '{n} weapons not found yet', dkLeftOne: '1 weapon not found yet',
     dkAll: 'You have found every weapon', newPrint: 'New print: {name}. Develop it in the Darkroom.', newPrints: 'New prints: {name}. Develop them in the Darkroom.', dupPrint: 'A print you had already: {n} dead pixels',
     keysFind: 'Find {n} keys', keysFind1: 'Find the key', keysOpen: 'They open the exit', keysOpen1: 'It opens the exit', keysLocked: 'The exit is locked', keysMore: '{n} more keys', keysMore1: '1 more key', keysOf: '{n} of {max} keys', guardHintChest: 'Open the chest for a weapon', prizeNew: 'New: {name}', prizeLabel: 'Your prize, {name}',
@@ -8625,8 +8625,32 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the guardian's intro words over the room while it sleeps (the 2 s outline): The last room, Beat the guardian to
      light the exit; hidden from its wake. Toggled only on a change, never rebuilt in a step */
   var bannerOn = false, bannerKey = '', lockedUntil = -1;
+  /* THE WALL JUMP, TAUGHT (sb-m1-14; Stephen, 3 Nov: if you don't know you can wall jump you get stuck in a pit, get
+     pissed off and never open the game again). Two lines in this banner, below its guardian and keys words: the first
+     time the bug clings to a plain wall, how to kick off it (until a wall jump is done once, saved in
+     onboarding.hints.wall); and whenever it is stuck (no new height for 8 s, three jumps tried, no wall jump in that
+     time), how to climb out, at most once every 25 s, for every player. UI only: the sim never sees it */
+  var WJ = { st: null, frame: -1, best: 0, bestAt: 0, jumps: 0, lastWJ: -9999, until: -1, kind: '', nextStuck: 0, shown: false };
+  function wallLesson(st) {
+    var h = st.hero, f = st.frame, o = SB.save.doc && SB.save.doc.onboarding, EV = SB.sim.EV;
+    if (st !== WJ.st || f < WJ.frame){ WJ.st = st; WJ.best = h.y; WJ.bestAt = f; WJ.jumps = 0; WJ.lastWJ = -9999; WJ.until = -1; WJ.kind = ''; WJ.nextStuck = 0; }
+    WJ.frame = f;
+    if (h.y < WJ.best - SB.K.CELL_SUB){ WJ.best = h.y; WJ.bestAt = f; WJ.jumps = 0; }
+    if (st.ev & EV.JUMP) WJ.jumps++;
+    if (st.ev & EV.WALLJUMP){
+      WJ.lastWJ = f;
+      if (o && o.hints && !o.hints.wall){ o.hints.wall = true; SB.save.commit(); }
+      if (WJ.kind === 'wall' && WJ.until > f + 30) WJ.until = f + 30;
+    }
+    if (o && o.hints && !o.hints.wall && !WJ.shown && h.wall !== 0 && !h.sticky && !h.ground){ WJ.shown = true; WJ.kind = 'wall'; WJ.until = f + 240; }
+    if (f - WJ.bestAt > 480 && WJ.jumps >= 3 && f - WJ.lastWJ > 480 && f >= WJ.nextStuck){
+      WJ.kind = 'stuck'; WJ.until = f + 300; WJ.nextStuck = f + 1500; WJ.bestAt = f; WJ.jumps = 0;
+    }
+    return f < WJ.until ? WJ.kind : '';
+  }
   ui.guardian = function (st) {
     var C = ui.COPY, play = ui.screen === 'play', head = '', line = '', key = '';
+    var wl = st && st.hero && play ? wallLesson(st) : '';
     /* a bug with no jump weapon that hurts is told where one is, and the line stays until it has one (the house review) */
     var j = st && st.hero && st.hero.slots[0] ? SB.TUNING.WEAPONS[SB.sim.WPN[st.hero.slots[0]]] : null, armed = !!(j && j.dmg > 0);
     if (st && st.boss && play && (st.boss.phase === 0 || (st.boss.phase === 1 && st.boss.hp > 0 && !armed))) {
@@ -8638,6 +8662,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (kl > 0 && st.frame < lockedUntil) { head = C.keysLocked; line = kl === 1 ? C.keysMore1 : C.keysMore.replace('{n}', kl); key = 'l' + kl; }
       else if (nk && kl === nk && st.frame < 150) { head = nk === 1 ? C.keysFind1 : C.keysFind.replace('{n}', nk); line = nk === 1 ? C.keysOpen1 : C.keysOpen; key = 'k' + nk; }
     }
+    if (!key && wl){ head = C[wl + 'Head']; line = C[wl + 'Line']; key = 'w' + wl; }
     var on = key !== '';
     if (!st) lockedUntil = -1;
     if (on && key !== bannerKey) { bannerKey = key; var gb = document.getElementById('guardbanner'); gb.querySelector('b').textContent = head; gb.querySelector('span').textContent = line; }
@@ -9074,7 +9099,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=13').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=14').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.

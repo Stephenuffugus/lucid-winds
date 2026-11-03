@@ -1,5 +1,10 @@
 # START HERE
 
+## 📷 3 Nov 03:30 UTC (Opus) SHUTTERBUG sb-m1-14 STAMPED: THE WALL JUMP, TAUGHT; STEPHEN RUNS THE DEPLOY
+- His ask: players who do not know they can wall jump get stuck in pits and quit. The in-play banner now teaches it at the first wall cling ("Press jump to kick off the wall", once until learned) and whenever the bug is stuck ("Jump at a wall, hold toward it, jump again", at most every 25 s). lint OK, harness --fast OK.
+- DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-14/deploy-sb-m1-14.sh`. NOT a stale cache (CORRECTION, 3 Nov): Jessie's missing "Start a house" was the design gate (the house shows only after a first room clear).
+- His open design asks (answered in the conversation, decisions his): the carrot and the bug's why, screen wrap for boxed off side pockets, Dewball held for a Meshy asset build out, Rabbit Ronin levels by his own hand, Lucid Winds' attention companion (Fable plans it).
+
 ## 📷 3 Nov 01:10 UTC (Opus) SHUTTERBUG sb-m1-13 STAMPED: A STALE PAGE HEALS ITSELF (Jessie saw an old build); STEPHEN RUNS THE DEPLOY
 - ✅ LIVE 3 Nov: his deploy pushed main `4790d2d31` (index.html + sw.js only), tag sb-m1-13; lucidwinds.com and www serve index sha 8ed3a64c and sw.js sha bebc01f4, equal to the commit. Players on an older saved copy heal on their next open with the network up; pages saved before sb-m1-13 have no heal code, so Jessie still needs one fresh open.
 - Server proven right (lucidwinds.com and www serve sb-m1-12, sha bed70c84; skywolfstudio.com is only the landing page). Cause on her phone: the arcade frames the game, the root worker (or the game's own) serves its saved copy when the network is slow or the CDN sends 429. Fix: the page checks the live BUILD in sw.js and swaps itself for the fresh page on the title screen, once per build per session. lint OK, harness --fast OK.
