@@ -135,6 +135,17 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 .hint{font-family:var(--mono);font-size:11px;line-height:1.5;color:var(--dim);text-align:center;
   margin-top:9px}
 .hint:empty{display:none}
+.choosewrap{display:flex;justify-content:center}
+#chooseCv{display:block;border-radius:18px;border:1px solid var(--line);touch-action:none;cursor:pointer}
+.choosehd{font-family:var(--display);font-weight:700;font-size:20px;color:var(--bone);
+  text-align:center;margin:14px 0 2px}
+.checkstage{position:relative;width:100%;aspect-ratio:4/3;border-radius:18px;overflow:hidden;
+  border:1px solid var(--line);background:#9C8E8C;margin:10px 0 12px}
+.checkstage canvas{display:block;width:100%;height:100%}
+#checkPhoto{position:absolute;left:8px;top:8px;width:30%;border-radius:10px;
+  border:1px solid rgba(239,228,210,.5);pointer-events:none;z-index:1}
+.chip2 .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:7px;
+  vertical-align:-2px;border:1px solid rgba(0,0,0,.35)}
 .coatchip{display:flex;align-items:center;gap:9px;margin-top:12px;font-family:var(--mono);
   font-size:10px;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
 .coatchip span{width:22px;height:22px;border-radius:6px;border:1px solid var(--line);
@@ -380,7 +391,7 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
   display:flex;justify-content:space-between;align-items:center;min-height:52px}
 .tunerHd .chev{color:var(--amber);font-size:16px;line-height:1}
 .tunerBody{padding:0 14px 16px}
-#stage3d{height:320px;border-radius:14px;background:radial-gradient(120% 90% at 50% 20%, #2E2044, var(--panel-2));touch-action:none;overflow:hidden}
+#stage3d{height:320px;border-radius:14px;background:#9C8E8C;touch-action:none;overflow:hidden}
 #stage3d canvas{display:block;border-radius:14px}
 #stageClips{margin:10px 0 2px;display:flex;gap:8px}
 #stageClips button{font-family:var(--mono);font-size:12px;letter-spacing:.08em;padding:10px 16px;
@@ -478,6 +489,28 @@ footer{font-family:var(--mono);font-size:10px;color:#5A4A72;margin-top:44px;lett
   <div class="row"><button class="btn" id="goScan">Print the card</button></div>
   <div class="row"><button class="ghost" id="addShot">Add another photo of her</button></div>
   <div class="row"><button class="ghost" id="reshoot">Start over with a different photo</button></div>
+</section>
+
+<section class="wrap hidden" id="view-choose">
+  <div class="choosewrap"><canvas id="chooseCv" aria-label="Your photo. The lit cat is the one you will meet."></canvas></div>
+  <div class="choosehd">Tap the cat to meet.</div>
+  <div class="hint" id="chooseHint">Touching? Drag a box around her.</div>
+  <div class="row"><button class="btn" id="chooseGo">Meet her</button></div>
+  <div class="row"><button class="ghost" id="chooseNext">The other cat</button></div>
+  <div class="row"><button class="ghost" id="chooseBack">Use a different photo</button></div>
+</section>
+
+<section class="wrap hidden" id="view-check">
+  <div class="choosehd">Does this look like her?</div>
+  <div class="checkstage" id="checkStage"><img id="checkPhoto" alt="Your photo"></div>
+  <div class="hint" id="checkDiff">Tap what is different. Tap again to undo.</div>
+  <div class="tuneRow"><b>Her face</b><div class="chips" id="checkFace"></div></div>
+  <div class="tuneRow"><b>Her white</b><div class="chips" id="checkWhite"></div></div>
+  <div class="tuneRow"><b>White paws, her left and right</b><div class="chips" id="checkPaws"></div></div>
+  <div class="tuneRow"><b>Eyes</b><div class="chips" id="checkEyes"></div></div>
+  <div class="tuneRow"><b>Nose</b><div class="chips" id="checkNose"></div></div>
+  <div class="row"><button class="btn" id="checkYes">Yes, that's her</button></div>
+  <div class="row"><button class="ghost hidden" id="checkKeep">Keep her as she was</button></div>
 </section>
 
 <section class="wrap hidden" id="view-scan">
@@ -948,7 +981,7 @@ const Hooks = {
 };
 
 const $ = id => document.getElementById(id);
-const VIEWS = { slot:'view-slot', meter:'view-meter', scan:'view-scan', card:'view-card' };
+const VIEWS = { slot:'view-slot', meter:'view-meter', choose:'view-choose', check:'view-check', scan:'view-scan', card:'view-card' };
 function show(name){
   Object.entries(VIEWS).forEach(([k,id]) => $(id).classList.toggle('hidden', k !== name));
   $('demoCard').classList.toggle('hidden', name !== 'slot');
@@ -1729,8 +1762,21 @@ async function intake(file, additive){
      how a tuxedo got graded as a brown tabby. Fails soft to no mask. */
   let segMask = null;
   try { segMask = await segmentCat(big.canvas); } catch (e) {}
+  /* More than one animal in frame: the owner says which one is hers, and
+     only her region reaches the reader. One cat goes straight through. */
+  let subject = null;
+  if (segMask){
+    const pick = await Chooser.pick(big.canvas, segMask);
+    if (!pick){
+      busy = false;
+      if (additive && pending){ show('meter'); return; }
+      pending = null; shots = []; show('slot'); return;
+    }
+    segMask = pick.mask; subject = pick.subject;
+  }
   /* Read what she actually looks like, on this device. */
   const dna = readCatFromPhoto(big.canvas, segMask) || defaultDNA();
+  if (subject) dna._subject = subject;
   const shot = { url: small.url, b64: big.url.split(',')[1], meter, dna };
   if (additive && pending && shots.length && shots.length < 3) shots.push(shot);
   else shots = [shot];
@@ -1782,7 +1828,9 @@ async function runScan(shot){
     /* a real grader's body reading refines the on-device one; the demo
        grader returns no body, so demo scans keep the reader's word */
     if (g.body) mergeGraderBody(shot.dna, g.body);
-    mint(g, shot.url, shot.meter, shot.dna);
+    /* before her card exists she is checked against her own photo */
+    const dna = await Check.confirm(shot.dna, shot.url);
+    mint(g, shot.url, shot.meter, dna);
   } catch(e){
     clearInterval(beat);
     show('slot');
@@ -3385,6 +3433,351 @@ function segmentCat(canvas){
   }));
 }
 
+/* ── THE SUBJECT CHOOSER ────────────────────────────────────────────────────
+   The segmenter marks every cat in frame as ONE mask, and the reader used to
+   sample all of it: two cats on a perch became one blended stranger. Split
+   the mask into its separate animals; with more than one, the owner taps
+   hers (the biggest starts lit, the rest dimmed). Touching cats share one
+   region, so a dragged box cuts her out. Never two cats in one read. */
+const SUBJ_G = 192;
+function petGrid(m){
+  const gw = Math.min(SUBJ_G, m.w), gh = Math.min(SUBJ_G, m.h);
+  const g = new Uint8Array(gw * gh);
+  for (let y = 0; y < gh; y++){
+    const sy = Math.min(m.h - 1, (y * m.h / gh) | 0);
+    for (let x = 0; x < gw; x++){
+      const sx = Math.min(m.w - 1, (x * m.w / gw) | 0);
+      g[y * gw + x] = m.data[sy * m.w + sx] ? 1 : 0;
+    }
+  }
+  return { data: g, w: gw, h: gh };
+}
+/* connected regions, biggest first. Specks under 1.5% of the frame or a
+   tenth of the biggest are fur at an edge, not another cat. lab[i] is the
+   1-based index of the kept region a cell belongs to, else 0. */
+function petBlobs(grid, keepAll){
+  const { data, w, h } = grid, n = w * h;
+  const raw = new Int32Array(n), all = [], st = [];
+  for (let i = 0; i < n; i++){
+    if (!data[i] || raw[i]) continue;
+    const id = all.length + 1, px = [];
+    st.length = 0; st.push(i); raw[i] = id;
+    while (st.length){
+      const q = st.pop(); px.push(q);
+      const qx = q % w;
+      if (qx > 0     && data[q - 1] && !raw[q - 1]){ raw[q - 1] = id; st.push(q - 1); }
+      if (qx < w - 1 && data[q + 1] && !raw[q + 1]){ raw[q + 1] = id; st.push(q + 1); }
+      if (q >= w     && data[q - w] && !raw[q - w]){ raw[q - w] = id; st.push(q - w); }
+      if (q < n - w  && data[q + w] && !raw[q + w]){ raw[q + w] = id; st.push(q + w); }
+    }
+    all.push({ id, px });
+  }
+  all.sort((a, b) => b.px.length - a.px.length);
+  const big = all.length ? all[0].px.length : 0;
+  const list = keepAll ? all
+    : all.filter(b => b.px.length >= Math.max(n * 0.015, big * 0.1));
+  const map = {}; list.forEach((b, k) => { map[b.id] = k + 1; });
+  const lab = new Int32Array(n);
+  for (let i = 0; i < n; i++) if (raw[i]) lab[i] = map[raw[i]] || 0;
+  return { list, lab };
+}
+function blobMask(grid, px){
+  const d = new Uint8Array(grid.w * grid.h);
+  for (let k = 0; k < px.length; k++) d[px[k]] = 1;
+  return { data: d, w: grid.w, h: grid.h };
+}
+/* her region inside a box, the largest piece only */
+function cropBlob(grid, box){
+  const d = new Uint8Array(grid.w * grid.h);
+  const X0 = Math.max(0, Math.floor(box[0] * grid.w)), X1 = Math.min(grid.w, Math.ceil(box[2] * grid.w));
+  const Y0 = Math.max(0, Math.floor(box[1] * grid.h)), Y1 = Math.min(grid.h, Math.ceil(box[3] * grid.h));
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++){ const i = y * grid.w + x; d[i] = grid.data[i]; }
+  const b = petBlobs({ data: d, w: grid.w, h: grid.h }, true).list[0];
+  return b && b.px.length >= grid.w * grid.h * 0.004 ? b.px : null;
+}
+/* the region under a point, or the nearest one within reach */
+function blobAt(grid, found, at, reach){
+  const x = Math.min(grid.w - 1, Math.max(0, (at[0] * grid.w) | 0));
+  const y = Math.min(grid.h - 1, Math.max(0, (at[1] * grid.h) | 0));
+  const k = found.lab[y * grid.w + x];
+  if (k) return found.list[k - 1];
+  let best = null, bd = (reach * grid.w) * (reach * grid.w);
+  found.list.forEach(b => {
+    for (let j = 0; j < b.px.length; j += 3){
+      const dx = b.px[j] % grid.w - x, dy = ((b.px[j] / grid.w) | 0) - y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bd){ bd = d2; best = b; }
+    }
+  });
+  return best;
+}
+/* kept with her DNA so a re-read of the stored photo finds HER again: a
+   point inside her near her middle, and the box if the owner drew one */
+function subjectOf(grid, px, box){
+  let sx = 0, sy = 0;
+  for (let k = 0; k < px.length; k++){ sx += px[k] % grid.w; sy += (px[k] / grid.w) | 0; }
+  sx /= px.length; sy /= px.length;
+  let bi = px[0], bd = Infinity;
+  for (let k = 0; k < px.length; k++){
+    const dx = px[k] % grid.w - sx, dy = ((px[k] / grid.w) | 0) - sy, d2 = dx * dx + dy * dy;
+    if (d2 < bd){ bd = d2; bi = px[k]; }
+  }
+  const r3 = v => Math.round(v * 1000) / 1000;
+  return { at: [r3(((bi % grid.w) + 0.5) / grid.w), r3((((bi / grid.w) | 0) + 0.5) / grid.h)],
+           box: box ? box.map(r3) : null };
+}
+/* a fresh mask of the same photo, narrowed to the subject on file. A card
+   from before the chooser, with two cats in its photo, keeps the biggest. */
+function subjectMask(m, subj){
+  if (!m) return m;
+  const grid = petGrid(m);
+  if (subj && subj.box){
+    const px = cropBlob(grid, subj.box);
+    return px ? blobMask(grid, px) : m;
+  }
+  const found = petBlobs(grid);
+  if (found.list.length < 2 && !subj) return m;
+  const b = subj && subj.at ? blobAt(grid, found, subj.at, 0.12) : found.list[0];
+  return b ? blobMask(grid, b.px) : m;
+}
+
+/* ── DOES THIS LOOK LIKE HER? ───────────────────────────────────────────────
+   After the scan and before the card: her 3D self beside the photo and a
+   few chips for the marks that make a cat hers. Every chip is a toggle that
+   repaints her live and taps back. What the owner sets is a fact: it goes in
+   dna._fixed and survives every rescan. A rescan opens the same sheet with
+   the difference spelled out, and "Keep her as she was" changes nothing. */
+const EYE_SW = [['Green', '#8DBA45'], ['Yellow', '#D8C23C'], ['Gold', '#D9A03A'],
+                ['Copper', '#C47A3A'], ['Blue', '#6FA6D8'], ['Hazel', '#A39A4A']];
+const NOSE_SW = [['Black', '#2B2327'], ['Pink', '#DE96A0'], ['Brick', '#B8706F'], ['Slate', '#6A6170']];
+const PAW_ON = 0.12 + 0.55 / 3;          /* the tuner's "sock" */
+const Check = (() => {
+  let st = null;
+  const smo = (a, b, t) => { t = Math.max(0, Math.min(1, (t - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const grade = d => d.whiteGrade != null ? d.whiteGrade : (WHITE_STYLE_GRADE[d.whiteStyle] || 0);
+  const tabby = d => ['mackerel', 'classic', 'spotted', 'ticked'].includes(d.pattern);
+  /* keep in step with the 3D painter's defaults (paintCoat, paintEyes) */
+  const wm = d => d.whiteMuzzle != null ? d.whiteMuzzle
+    : grade(d) > 1.3 ? 0.30 + 0.40 * smo(1.3, 4.0, grade(d)) : 0;
+  const pawOn = (d, k) => d.socks && Object.keys(d.socks).length
+    ? (d.socks[k] || 0) > 0 : grade(d) > (k[0] === 'F' ? 1.7 : 2.2);
+  const FACE = [
+    ['lid', 'Narrowed eyes', d => (d.lid != null ? d.lid : 0.3) > 0.55,
+      (d, on) => { d.lid = on ? 0.3 : 0.8; }],
+    ['browFork', 'Forehead lines', d => d.browFork != null ? !!d.browFork : tabby(d),
+      (d, on) => { d.browFork = !on; }]
+  ];
+  const WHITE = [
+    ['whiteMuzzle', 'White chin', d => wm(d) >= 0.2,
+      (d, on) => { d.whiteMuzzle = on ? 0 : 0.28; d.muzzleEdge = 0.85; }],
+    ['whiteMuzzle', 'White muzzle', d => wm(d) >= 0.6,
+      (d, on) => { d.whiteMuzzle = on ? 0.28 : 0.75; d.muzzleEdge = 0.85; }],
+    ['collar', 'White collar', d => d.collar != null ? !!d.collar : grade(d) > 0.4,
+      (d, on) => { d.collar = !on; }]
+  ];
+  const PAWS4 = [['FL', 'Front left'], ['FR', 'Front right'], ['HL', 'Back left'], ['HR', 'Back right']];
+  function fix(k){ st.dna._fixed = Object.assign(st.dna._fixed || {}, { [k]: 1 }); }
+  function live(){ if (window.LoafCat3D && LoafCat3D.setDNA) LoafCat3D.setDNA(migrateDNA(st.dna)); }
+  function chip(host, label, on, tap, dot){
+    const b = document.createElement('button');
+    b.className = 'chip2'; b.type = 'button';
+    b.setAttribute('aria-pressed', String(!!on));
+    if (dot){ const i = document.createElement('span'); i.className = 'dot'; i.style.background = dot; b.appendChild(i); }
+    b.appendChild(document.createTextNode(label));
+    b.onclick = () => { tap(); live(); build(); };
+    host.appendChild(b);
+  }
+  function build(){
+    const d = st.dna;
+    [[FACE, 'checkFace'], [WHITE, 'checkWhite']].forEach(([list, id]) => {
+      const host = $(id); host.innerHTML = '';
+      list.forEach(([k, label, on, flip]) => {
+        const was = on(d);
+        chip(host, label, was, () => { flip(d, was); fix(k); if (k === 'whiteMuzzle') fix('muzzleEdge'); });
+      });
+    });
+    const pw = $('checkPaws'); pw.innerHTML = '';
+    PAWS4.forEach(([k, label]) => {
+      const was = pawOn(d, k);
+      chip(pw, label, was, () => {
+        const next = { _set: 1 };
+        PAWS4.forEach(([k2]) => {
+          const v = k2 === k ? !was : pawOn(d, k2);
+          if (v) next[k2] = (d.socks && d.socks[k2] > 0) ? d.socks[k2] : PAW_ON;
+        });
+        d.socks = next; fix('socks');
+      });
+    });
+    [[EYE_SW, 'checkEyes', 'eye'], [NOSE_SW, 'checkNose', 'nose']].forEach(([list, id, k]) => {
+      const host = $(id); host.innerHTML = '';
+      const cur = String(d[k] || '').toLowerCase();
+      const opts = list.slice();
+      if (k === 'eye' && st.orig.eye && !opts.some(o => o[1].toLowerCase() === String(st.orig.eye).toLowerCase()))
+        opts.unshift(['From photo', st.orig.eye]);
+      opts.forEach(([label, hx]) =>
+        chip(host, label, cur === hx.toLowerCase(), () => { d[k] = hx; fix(k); }, hx));
+    });
+  }
+  function open(dna, photo, mode, keepVal){
+    return new Promise(res => {
+      st = { dna: JSON.parse(JSON.stringify(dna)), orig: dna, res, mode, keepVal };
+      $('checkPhoto').src = photo || '';
+      $('checkPhoto').classList.toggle('hidden', !photo);
+      $('checkYes').textContent = mode === 'rescan' ? 'Use the new reading' : "Yes, that's her";
+      $('checkKeep').classList.toggle('hidden', mode !== 'rescan');
+      build();
+      show('check');
+      if (window.LoafCat3D && LoafCat3D.mountAt) LoafCat3D.mountAt($('checkStage'));
+      live();
+      $('view-check').scrollIntoView({ block: 'start' });
+    });
+  }
+  function close(keep){
+    if (!st) return;
+    const s2 = st; st = null;
+    if (window.LoafCat3D && LoafCat3D.mountAt) LoafCat3D.mountAt(null);
+    s2.res(keep ? s2.keepVal : s2.dna);       /* keep: the saved cat, untouched */
+  }
+  $('checkYes').onclick = () => close(false);
+  $('checkKeep').onclick = () => close(true);
+  /* spell out what a rescan would change; the owner's own marks never move */
+  function diff(a, b){
+    const out = [], fx = a._fixed || {};
+    if (a.pattern !== b.pattern && !fx.pattern)
+      out.push('pattern (' + (PATTERN_LABEL[a.pattern] || a.pattern) + ' to ' + (PATTERN_LABEL[b.pattern] || b.pattern) + ')');
+    if (a.whiteStyle !== b.whiteStyle)
+      out.push('white (' + (WHITE_LABEL[a.whiteStyle] || a.whiteStyle) + ' to ' + (WHITE_LABEL[b.whiteStyle] || b.whiteStyle) + ')');
+    const L = h => { const q = hexRGB(h); return 0.2126 * q[0] + 0.7152 * q[1] + 0.0722 * q[2]; };
+    if (!fx.base && Math.abs(L(a.base) - L(b.base)) > 18) out.push('coat colour (' + (L(b.base) > L(a.base) ? 'lighter' : 'darker') + ')');
+    if (!fx.eye && a.eye !== b.eye) out.push('eye colour');
+    return out;
+  }
+  return {
+    confirm(dna, photo){ return open(dna, photo, 'first'); },
+    rescan(old, nd, photo){
+      const p = open(nd, photo, 'rescan', old);
+      const dd = diff(old, nd);
+      $('checkDiff').textContent = (dd.length ? 'The new reading changes ' + dd.join(', ') + '.'
+        : 'The new reading matches her.') + ' Your own marks stay.';
+      return p.then(r => { $('checkDiff').textContent = 'Tap what is different. Tap again to undo.'; return r; });
+    }
+  };
+})();
+
+const Chooser = (() => {
+  let st = null;
+  const cv = $('chooseCv');
+  const pt = e => {
+    const r = cv.getBoundingClientRect();
+    return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
+            Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))];
+  };
+  function size(){
+    const avail = (cv.parentNode && cv.parentNode.clientWidth) || 340;
+    const maxH = Math.max(220, Math.round((window.innerHeight || 640) * 0.56));
+    const ar = st.photo.width / st.photo.height;
+    let w = avail, h = Math.round(w / ar);
+    if (h > maxH){ h = maxH; w = Math.round(h * ar); }
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  }
+  function draw(){
+    if (!st) return;
+    const g = cv.getContext('2d'), W = cv.width, H = cv.height, G = st.grid;
+    g.drawImage(st.photo, 0, 0, W, H);
+    g.fillStyle = 'rgba(21,14,29,0.68)'; g.fillRect(0, 0, W, H);
+    const m = document.createElement('canvas'); m.width = G.w; m.height = G.h;
+    const mc = m.getContext('2d'), im = mc.createImageData(G.w, G.h);
+    for (let k = 0; k < st.sel.px.length; k++) im.data[st.sel.px[k] * 4 + 3] = 255;
+    mc.putImageData(im, 0, 0);
+    const lit = document.createElement('canvas'); lit.width = W; lit.height = H;
+    const lc = lit.getContext('2d');
+    lc.drawImage(st.photo, 0, 0, W, H);
+    lc.globalCompositeOperation = 'destination-in';
+    lc.drawImage(m, 0, 0, W, H);
+    g.drawImage(lit, 0, 0);
+    if (st.drag){
+      const b = st.drag, dpr = W / (parseFloat(cv.style.width) || W);
+      g.strokeStyle = '#FFB23F'; g.lineWidth = 2 * dpr; g.setLineDash([8 * dpr, 6 * dpr]);
+      g.strokeRect(b[0] * W, b[1] * H, (b[2] - b[0]) * W, (b[3] - b[1]) * H);
+      g.setLineDash([]);
+    }
+  }
+  function hint(t){ $('chooseHint').textContent = t || 'Touching? Drag a box around her.'; }
+  function finish(ok){
+    if (!st) return;
+    const s = st; st = null;
+    s.res(ok ? { mask: blobMask(s.grid, s.sel.px), subject: subjectOf(s.grid, s.sel.px, s.sel.box) } : null);
+  }
+  cv.addEventListener('pointerdown', e => {
+    if (!st) return;
+    try { cv.setPointerCapture(e.pointerId); } catch (x) {}
+    st.down = pt(e); st.drag = null;
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!st || !st.down) return;
+    const p = pt(e), d = st.down, r = cv.getBoundingClientRect();
+    if (st.drag || Math.hypot((p[0] - d[0]) * r.width, (p[1] - d[1]) * r.height) > 12){
+      st.drag = [Math.min(d[0], p[0]), Math.min(d[1], p[1]), Math.max(d[0], p[0]), Math.max(d[1], p[1])];
+      draw();
+    }
+  });
+  cv.addEventListener('pointerup', e => {
+    if (!st || !st.down) return;
+    const p = pt(e);
+    if (st.drag){
+      const box = st.drag; st.drag = null;
+      const px = cropBlob(st.grid, box);
+      if (px){ st.sel = { px, box }; hint(); }
+      else hint('No cat inside that box. Try a bigger one.');
+    } else {
+      const b = blobAt(st.grid, st.found, p, 0.12);
+      if (b){ st.sel = { px: b.px, box: null }; hint(); }
+    }
+    st.down = null; draw();
+  });
+  cv.addEventListener('pointercancel', () => { if (st){ st.down = null; st.drag = null; draw(); } });
+  $('chooseGo').onclick = () => finish(true);
+  $('chooseBack').onclick = () => finish(false);
+  $('chooseNext').onclick = () => {
+    if (!st || st.found.list.length < 2) return;
+    const k = st.found.list.findIndex(b => b.px === st.sel.px);
+    st.sel = { px: st.found.list[(k + 1) % st.found.list.length].px, box: null };
+    hint(); draw();
+  };
+  return {
+    /* resolves { mask, subject } at once for one cat, after the owner's
+       choice for several, or null when she wants a different photo */
+    pick(photo, mask){
+      const grid = petGrid(mask), found = petBlobs(grid);
+      if (found.list.length < 2) return Promise.resolve({ mask, subject: null });
+      return new Promise(res => {
+        st = { photo, grid, found, sel: { px: found.list[0].px, box: null }, res, down: null, drag: null };
+        hint();
+        show('choose');
+        size(); draw();
+        $('view-choose').scrollIntoView({ block: 'start' });
+      });
+    }
+  };
+})();
+
+/* Nose leather follows the coat the way it does in life: black coats wear
+   black noses, blues slate, browns brick, gingers, creams and whites pink.
+   A default only; the grader or the owner's swatch overrides it. (Every
+   scan used to wear the same pink nose, Barthalomew's black one included.) */
+function noseByCoat(base, whiteGrade){
+  const p = hexRGB(base || '#9A7248'), L = 0.2126*p[0] + 0.7152*p[1] + 0.0722*p[2];
+  const warm = p[0] - p[2];
+  if ((whiteGrade || 0) >= 7) return '#E3A0A8';
+  if (L < 62) return '#2B2327';
+  if (warm < 12) return '#6A6170';
+  if (L < 120 && warm < 60) return '#B8706F';
+  return '#DE96A0';
+}
+
 function readCatFromPhoto(canvas, extMask){
   const N = 128;
   const c = document.createElement('canvas');
@@ -3707,6 +4100,7 @@ function readCatFromPhoto(canvas, extMask){
 
   return Object.assign(defaultDNA(), {
     base, marking, white: whiteAmt > 0.015 ? bright : '#F2E9D8', eye,
+    nose: noseByCoat(base, whiteGrade),
     pattern, whiteStyle, whiteGrade, whiteEdge: Math.min(1, 0.3 + floof*0.6),
     seed: (hashStr(base + marking + String(Math.round(whiteAmt*1000)))) >>> 0,
     whiteAmt: Math.min(0.9, whiteAmt),
@@ -5102,6 +5496,8 @@ const Tuner = (() => {
         const nx = (idx + 1) % 4;
         if (nx === 0) delete card.dna.socks[k];
         else card.dna.socks[k] = (nx - 1) / 3 * 0.55 + 0.12;
+        card.dna.socks._set = 1;            /* her paws are decided, all four */
+        card.dna._fixed = Object.assign(card.dna._fixed || {}, { socks: 1 });
         commit(); build();
       };
       pw.appendChild(b);
@@ -5132,7 +5528,11 @@ const Tuner = (() => {
       const l = document.createElement('label'); l.textContent = label;
       const i = document.createElement('input');
       i.type = 'color'; i.value = toHex(d[k]);
-      i.oninput = () => { card.dna[k] = i.value; commit(); };
+      i.oninput = () => {
+        card.dna[k] = i.value;
+        card.dna._fixed = Object.assign(card.dna._fixed || {}, { [k]: 1 });
+        commit();
+      };
       w.append(l, i); col.appendChild(w);
     });
 
@@ -5462,13 +5862,27 @@ $('tuneReset').onclick = () => {
     cv.getContext('2d').drawImage(im, 0, 0);
     let m = null;
     try { m = await segmentCat(cv); } catch (e) {}
-    c.dna = readCatFromPhoto(cv, m) || defaultDNA();
-    Store.update(list => {
-      const x = list.find(y => y.id === c.id);
-      if (x) x.dna = c.dna;
-      return list;
-    });
-    if (Room.card && Room.card.id === c.id) Room.card.dna = c.dna;
+    const old = c.dna || defaultDNA(), subj = old._subject;
+    if (m) m = subjectMask(m, subj);
+    const nd = readCatFromPhoto(cv, m) || defaultDNA();
+    if (subj) nd._subject = subj;
+    /* what the owner set is a fact: a rescan never undoes it */
+    if (old._fixed){
+      for (const k in old._fixed) if (k in old) nd[k] = JSON.parse(JSON.stringify(old[k]));
+      nd._fixed = Object.assign({}, old._fixed);
+    }
+    setTab('scan');
+    const pick = await Check.rescan(old, nd, c.photo);
+    setTab('room');
+    if (pick !== old){
+      c.dna = pick;
+      Store.update(list => {
+        const x = list.find(y => y.id === c.id);
+        if (x) x.dna = c.dna;
+        return list;
+      });
+      if (Room.card && Room.card.id === c.id) Room.card.dna = c.dna;
+    }
     Tuner.open(c);
   };
   im.onerror = () => say('That photograph would not re-open.', 'bad');
@@ -5478,7 +5892,7 @@ $('tuneReset').onclick = () => {
 /* ----------------------------------------------------------------------------
    TABS
    -------------------------------------------------------------------------- */
-const SCAN_VIEWS = ['view-slot','view-meter','view-scan','view-card'];
+const SCAN_VIEWS = ['view-slot','view-meter','view-choose','view-check','view-scan','view-card'];
 let tab = 'scan';
 function setTab(next){
   tab = next;
@@ -5605,11 +6019,38 @@ if (stage) (async () => {
 
   const scene = new THREE.Scene();
   const cam = new THREE.PerspectiveCamera(38, 1, 0.1, 60);
-  scene.add(new THREE.HemisphereLight(0xEFE4FF, 0x2A1B3D, 1.15));
-  const sun = new THREE.DirectionalLight(0xFFE8C8, 2.2);
+  /* THREE LIGHT SETS (Astra's style guide, "Room"): a neutral key, a side
+     fill that finds the jaw on a black coat, a rim that keeps a pale coat
+     off the wall, and a warm bounce from the wooden floor. The room picks a
+     set by the owner's own clock; the tuner always judges her coat in day
+     light. The window is a picture on the wall, never a second light. */
+  const hemiL = new THREE.HemisphereLight(0xF2ECE6, 0x6E5646, 1.05); scene.add(hemiL);
+  const sun = new THREE.DirectionalLight(0xFFF3E6, 2.1);
   sun.position.set(3, 6, 4); scene.add(sun);
-  const rim = new THREE.DirectionalLight(0x8FB8FF, 0.7);
+  const fillL = new THREE.DirectionalLight(0xEDE6F2, 0.55);
+  fillL.position.set(-4, 1.2, 3.5); scene.add(fillL);
+  const rim = new THREE.DirectionalLight(0xC9DAFF, 0.55);
   rim.position.set(-4, 3, -3); scene.add(rim);
+  /* sky, ground, hemi, key, key I, fill, fill I, rim, rim I */
+  const LIGHTS = {
+    day:   [0xF2ECE6, 0x6E5646, 1.05, 0xFFF3E6, 2.1, 0xEDE6F2, 0.55, 0xC9DAFF, 0.55],
+    dusk:  [0xF4DCD2, 0x5E4238, 0.95, 0xFFD9BC, 1.9, 0xE6D2E4, 0.50, 0xB9B4F2, 0.60],
+    night: [0xCFCDEA, 0x3C3349, 0.85, 0xE9E6FF, 1.6, 0xD4CCEE, 0.50, 0xA7BEFF, 0.75]
+  };
+  let lightK = 'day';
+  function setLights(k){
+    lightK = LIGHTS[k] ? k : 'day';
+    const L = LIGHTS[lightK];
+    hemiL.color.set(L[0]); hemiL.groundColor.set(L[1]); hemiL.intensity = L[2];
+    sun.color.set(L[3]); sun.intensity = L[4];
+    fillL.color.set(L[5]); fillL.intensity = L[6];
+    rim.color.set(L[7]); rim.intensity = L[8];
+  }
+  /* day 7 to 17, night 20 to 5, dusk either side of the day */
+  function lightNow(){
+    const h = new Date().getHours();
+    return h >= 7 && h < 17 ? 'day' : (h >= 20 || h < 5) ? 'night' : 'dusk';
+  }
 
   /* ground + a soft blob shadow. Without a shadow nothing ever reads
      airborne - the pounce looked like levitation in every still. */
@@ -5695,17 +6136,111 @@ if (stage) (async () => {
   /* world-fixed: in the Room she WALKS, so the ground cannot ride the rig.
      (Radially symmetric, so the tuner's turntable never notices.) */
   scene.add(floor); scene.add(shadow);
+
+  /* ══ THE ROOM SHELL (Astra pack v1, c_room) ═══════════════════════════
+     A floor, a back wall and one arched window, painted for each light.
+     The plates are pre-lit, so they draw unlit and only the cat and her
+     toys take the scene lights. Scale: she is ~2.5 units tall and Astra's
+     sitting cat is 0.25 m, so a unit is 0.1 m and her four-board floor
+     tile is 8 units. The wall stands at z -4.6, past her wander radius
+     (RUG 2.6) plus a nose, so she can never walk into it. The plates load
+     the first time the room opens, never with the page. */
+  const ROOMART = 'assets/loaf/art/room/';
+  const TILE = 8, WALL_Z = -4.6, RAIL_H = 1.7, WALL_K = 1.9, WIN_H = 2.1;
+  const RAIL_PX = 483 / 720;            /* the plate's rail line, in all three */
+  const shell = new THREE.Group();
+  shell.visible = false; scene.add(shell);
+  const floorMat = new THREE.MeshBasicMaterial({ color: 0x8E705E });
+  const floorPl = new THREE.Mesh(new THREE.PlaneGeometry(36, 20), floorMat);
+  floorPl.rotation.x = -Math.PI / 2;
+  floorPl.position.set(0, groundY - 0.004, WALL_Z + 10);
+  shell.add(floorPl);
+  const WALL_TOP = 0.5;                 /* extra wash above the plate */
+  const plateH = RAIL_H / (1 - RAIL_PX);
+  const wallH = plateH * (1 + WALL_TOP), wallW = plateH * 1.6 * WALL_K;
+  const wallMat = new THREE.MeshBasicMaterial({ color: 0xB49A92 });
+  const wallPl = new THREE.Mesh(new THREE.PlaneGeometry(wallW, wallH), wallMat);
+  wallPl.position.set(0, groundY + wallH / 2, WALL_Z);
+  shell.add(wallPl);
+  const winMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+  const winPl = new THREE.Mesh(new THREE.PlaneGeometry(WIN_H * 432 / 468, WIN_H), winMat);
+  winPl.position.set(2.7, groundY + RAIL_H + 0.12 + WIN_H / 2, WALL_Z + 0.02);
+  shell.add(winPl);
+  /* the plate tiles its wainscot exactly (8 panels on a 144 px pitch) but
+     not its diagonal wash, so to cover the view the panels repeat and the
+     wash runs on flat from its own edge columns */
+  function widenWall(img){
+    const W = img.naturalWidth, H = img.naturalHeight, R = Math.round(RAIL_PX * H);
+    const T = Math.round(H * WALL_TOP);
+    const c = document.createElement('canvas');
+    c.width = Math.round(W * WALL_K); c.height = H + T;
+    const g = c.getContext('2d');
+    const x0 = Math.round((c.width - W) / 2);
+    g.drawImage(img, 0, 0, 1, R, 0, T, x0 + 1, R);
+    g.drawImage(img, W - 1, 0, 1, R, x0 + W - 1, T, c.width - x0 - W + 1, R);
+    for (let x = x0 - W * Math.ceil(x0 / W); x < c.width; x += W)
+      g.drawImage(img, 0, R, W, H - R, x, T + R, W, H - R);
+    g.drawImage(img, 0, 0, W, R, x0, T, W, R);
+    g.drawImage(c, 0, T, c.width, 1, 0, 0, c.width, T);   /* and runs on upward */
+    return c;
+  }
+  const SETS = {};
+  let shellK = null;
+  function putMap(m, t){
+    if (!t || m.map === t) return;
+    m.map = t; m.color.set(0xFFFFFF); m.opacity = 1; m.needsUpdate = true;
+  }
+  function shellApply(){
+    const s = SETS[shellK]; if (!s) return;
+    putMap(floorMat, s.floor); putMap(wallMat, s.wall); putMap(winMat, s.win);
+  }
+  /* a plate that fails to load leaves its calm placeholder colour */
+  function shellLoad(k){
+    shellK = k;
+    if (SETS[k]){ shellApply(); return; }
+    const s = SETS[k] = { floor: null, wall: null, win: null };
+    const done = (key, t) => {
+      t.colorSpace = THREE.SRGBColorSpace; s[key] = t;
+      if (shellK === k) shellApply();
+    };
+    const tl = new THREE.TextureLoader();
+    tl.load(ROOMART + 'floor_' + k + '.png', t => {
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(36 / TILE, 20 / TILE);
+      t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      done('floor', t);
+    });
+    tl.load(ROOMART + 'window_' + k + '.png', t => done('win', t));
+    const im = new Image();
+    im.onload = () => done('wall', new THREE.CanvasTexture(widenWall(im)));
+    im.src = ROOMART + 'back_wall_' + k + '.png';
+  }
   const hSpan = gb.max.y - gb.min.y;
   const wSpan = Math.max(gb.max.x - gb.min.x, gb.max.z - gb.min.z);
+  /* THE SEAT. The room camera looks level and its frame is shifted down,
+     like an architect's shift lens, so the wall's verticals stay vertical
+     (the tilted camera splayed the wainscot panels at both edges). It shows
+     the floor as near as the tilt did, 1.7 degrees above level to 35.8
+     below (her floor sits 4.3 under the lens, lower than it looks). The
+     lean-ins (beans, tricks, the box) call camFree() first, and frame()
+     puts the seat back when they end. */
+  let seatProj = false;
+  function camFree(){
+    if (seatProj){ seatProj = false; cam.updateProjectionMatrix(); }
+  }
   function frame(){
     const a = cam.aspect || 1, t = Math.tan(cam.fov * Math.PI / 360);
     if (room.on){
-      /* the Room: a fixed, slightly raised seat at the edge of the rug */
       const d = Math.max(9.4, 6.6 / a + 3.2);
-      cam.position.set(0, 3.1, d);
-      cam.lookAt(0, -0.5, 0);
+      cam.position.set(0, 2.45, d);
+      cam.lookAt(0, 2.45, d - 1);
+      const n = cam.near, up = 0.03, dn = 0.72, w = (up + dn) * a / 2;
+      cam.projectionMatrix.makePerspective(-w * n, w * n, up * n, -dn * n, n, cam.far);
+      cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+      seatProj = true;
       return;
     }
+    camFree();
     const dV = (hSpan * 0.62) / t;
     const dH = (wSpan * 0.42) / (t * a);
     cam.position.set(0, hSpan * 0.08, Math.max(dV, dH) + 0.9);
@@ -5860,7 +6395,16 @@ if (stage) (async () => {
     }
   }
 
+  /* ⛔ THE COAT NEVER SHOWED AT FULL SIZE. The painter used to resize this
+     canvas between its 192 quick pass and its 512 final pass, but the GPU
+     texture keeps the size of its FIRST upload: every 512 repaint failed to
+     upload, silently, and every cat wore her blurry 192 coat (the brow fork
+     smeared into blocks; found 2 Nov by dumping the canvas beside a render).
+     The texture is 512 for life now; the quick pass paints small and is
+     scaled up into it. */
   const coatCanvas = document.createElement('canvas');
+  coatCanvas.width = coatCanvas.height = 512;
+  const coatQuick = document.createElement('canvas');
   let coatTex = null;
   function paintCoat(d, size){
     if (!coatMat || !window.LOAF || !window.LOAF.OK) return;
@@ -5871,8 +6415,9 @@ if (stage) (async () => {
       return;
     }
     const M = MAPS.size, step = M / size;
-    coatCanvas.width = coatCanvas.height = size;
-    const ctx = coatCanvas.getContext('2d');
+    const work = size === coatCanvas.width ? coatCanvas : coatQuick;
+    if (work.width !== size){ work.width = work.height = size; }
+    const ctx = work.getContext('2d');
     const img = ctx.createImageData(size, size);
     const px = img.data;
     const N = mkNoise((d.seed >>> 0) || 0x9E3779B9);
@@ -5882,14 +6427,34 @@ if (stage) (async () => {
     const g0 = d.whiteGrade != null ? d.whiteGrade : (GRADES[d.whiteStyle] || 0);
     const grade = d.pattern === 'calico' ? Math.max(g0, 5.2) : g0;
     const edge = d.whiteEdge == null ? 0.5 : d.whiteEdge;
+    /* the white muzzle (A3): how far the white climbs from the chin toward
+       the nose (0..1) and how crisp its edge is. Without the owner's word it
+       follows the white grade; it replaces the old round chin blob. */
+    const WM = d.whiteMuzzle != null ? d.whiteMuzzle
+      : grade > 1.3 ? 0.30 + 0.40 * sm(1.3, 4.0, grade) : 0;
+    const ME = d.muzzleEdge != null ? d.muzzleEdge : 0.55;
+    const tabby = d.pattern === 'mackerel' || d.pattern === 'classic'
+      || d.pattern === 'spotted' || d.pattern === 'ticked';
+    /* distance in the side view (forward, up) to a segment: cheek lines */
+    const seg2 = (f, h, f0, h0, f1, h1) => {
+      const vf = f1 - f0, vh = h1 - h0, t = Math.max(0, Math.min(1,
+        ((f - f0) * vf + (h - h0) * vh) / (vf * vf + vh * vh)));
+      return Math.hypot(f - f0 - vf * t, h - h0 - vh * t);
+    };
     const seeds = [];
     for (let i = 0; i < WSEED3.length; i++){
       const w = WSEED3[i];
       if (grade <= w.on) continue;
+      if (i === 1 && WM > 0) continue;            /* the muzzle painter owns the chin */
+      if (i === 0 && d.collar === false) continue;  /* the owner said: no collar */
       if (w.toe && d.socks && Object.keys(d.socks).length) continue;
       const jit = (N.hash(i * 91 + 7, 17, 3) - 0.5) * (w.j || 0.25);
       seeds.push({ p: w.p, r: w.r * sm(0, 1, Math.min(1, (grade - w.on) / w.span)) * (1 + jit) });
     }
+    if (d.collar === true && grade <= WSEED3[0].on)
+      seeds.push({ p: WSEED3[0].p, r: WSEED3[0].r * 0.85 });
+    const COLLAR = d.collar != null ? !!d.collar : grade > 0.4;
+    const FORK = d.browFork != null ? !!d.browFork : tabby;
     const pat = d.pattern || 'solid';
     /* marking strength: 0.65 is the neutral point that preserves the look
        every cat had before the slider existed */
@@ -5908,6 +6473,7 @@ if (stage) (async () => {
       const f = -(MAPS.min.z + MAPS.pos[mi + 2] * q * MAPS.ext.z);
       const nx = MAPS.nrm[mi] * (MAPS.float ? 2 : 2 / 255) - 1,
             ny = MAPS.nrm[mi + 1] * (MAPS.float ? 2 : 2 / 255) - 1;
+      const nFwd = -(MAPS.nrm[mi + 2] * (MAPS.float ? 2 : 2 / 255) - 1);
       /* countershading — real fur is lighter underneath; this is anatomy,
          not baked lighting */
       const underAmt = Math.max(0, -ny) * (h < 1.35 ? 1 : 0.35);
@@ -5922,15 +6488,19 @@ if (stage) (async () => {
         /* stripes live on the flanks AND meet over the spine; the belly and
            chest stay clear (ny<0 kills both) */
         const flank = Math.min(1, Math.abs(nx) * 1.3 + Math.max(0, ny) * 0.7);
-        const phase = f * 5.2 + (N.fbm(s * 2.2, f * 1.3, h * 2.2) - 0.5) * 1.2;
+        /* no two bars alike (Astra: even bars read as a costume): each one
+           leans its own way down the flank, keeps its own width, and some
+           break into dashes */
+        const lean = 0.35 + (N.fbm(f * 0.9 + 11, 3.3, s * 0.4) - 0.5) * 1.6;
+        const phase = f * 5.0 + (h - 1.2) * lean + (N.fbm(s * 2.2, f * 1.3, h * 2.2) - 0.5) * 1.3;
         const b = Math.abs(((phase % 1) + 1) % 1 - 0.5) * 2;
-        if (inBody && h > 0.55) m = sm(0.50, 0.74, b) * flank;
+        const wid = 0.53 + (N.fbm(Math.floor(phase + 0.5) * 1.7 + 0.3, h * 1.6, s) - 0.5) * 0.7;
+        const brk = sm(0.28, 0.42, N.fbm(s * 4.5 + 21, f * 3.2, h * 4.5));
+        if (inBody && h > 0.55) m = sm(wid, wid + 0.22, b) * flank * (0.45 + 0.55 * brk);
         if (h <= 0.85 && Math.abs(f) < 1.15)
           m = Math.max(m, sm(0.58, 0.82, Math.abs(((h * 5 % 1) + 1) % 1 - 0.5) * 2) * 0.5);
         if (f < -1.0)
           m = Math.max(m, sm(0.55, 0.8, Math.abs((((h * 5 + f * 2) % 1) + 1) % 1 - 0.5) * 2));
-        if (f > 1.25 && h > 1.95)
-          m = Math.max(m, sm(0.55, 0.8, Math.abs(((s * 9 % 1) + 1) % 1 - 0.5) * 2) * 0.9);
         c = mix3(c, P.core, Math.min(1, m * pAmp));
       } else if (pat === 'classic'){
         const v = N.fbm(s * 0.9 + 31, f * 0.6, h * 0.7);
@@ -5950,6 +6520,38 @@ if (stage) (async () => {
         if (f < -0.95) ext = Math.max(ext, Math.min(1, (-f - 0.95) / 0.45));
         c = mix3(P.cream, P.core, Math.min(1, sm(0.12, 0.75, ext) * pAmp));
       }
+      /* THE TABBY FACE (A3): pale spectacles round the eyes, a pale muzzle,
+         the brow fork (lines that start together between the eyes and fan
+         out over the crown) and two cheek lines from the outer eye corner */
+      if ((tabby || FORK) && h > 1.30 && f > 0.70){
+        const fa = Math.abs(s);
+        if (tabby){
+          const er = Math.hypot(fa - 0.205, f - 1.445, h - 1.87);
+          if (er < 0.155) c = mix3(c, P.cream, 0.40 * sm(0.155, 0.11, er));
+          const mzp = Math.min(Math.hypot(fa - 0.13, f - 1.50, h - 1.58) / 0.17,
+                               Math.hypot(s, f - 1.52, h - 1.47) / 0.15);
+          if (mzp < 1 && f > 1.30) c = mix3(c, P.cream, 0.5 * sm(1, 0.55, mzp));
+        }
+        if (FORK && h > 1.86 && fa < 0.5){
+          const v = (h - 1.93) + (1.50 - f) * 0.85;     /* up the brow, back over the crown */
+          if (v > -0.08 && v < 0.75){
+            const t = s / (0.10 + 0.34 * Math.max(0, v));
+            let fk = 0;
+            for (let k = -3; k <= 3; k++){
+              const tk = k * 0.30 + (N.fbm(k * 5.3 + 1, v * 3.1, 2) - 0.5) * 0.22;
+              const wk = 0.075 + 0.05 * N.hash(k + 9, 3, 1);
+              fk = Math.max(fk, sm(wk, wk * 0.4, Math.abs(t - tk)) * (Math.abs(k) === 3 ? 0.75 : 1));
+            }
+            fk *= sm(-0.08, -0.01, v) * sm(0.70, 0.30, v);
+            c = mix3(c, P.core, Math.min(1, fk * pAmp));
+          }
+        }
+        if (tabby && fa > 0.24 && Math.abs(nx) > 0.35 && f > 0.85 && f < 1.48 && h > 1.45 && h < 1.95){
+          const cl = Math.max(sm(0.034, 0.018, seg2(f, h, 1.40, 1.86, 1.02, 1.74)),
+                        0.8 * sm(0.030, 0.016, seg2(f, h, 1.33, 1.73, 1.00, 1.60)));
+          c = mix3(c, P.core, Math.min(1, cl * pAmp));
+        }
+      }
       if (seeds.length){
         let w = 0;
         for (const sd of seeds){
@@ -5958,6 +6560,20 @@ if (stage) (async () => {
           w = Math.max(w, sm(sd.r, sd.r * 0.72, dd));
         }
         c = mix3(c, P.white, Math.min(1, w));
+      }
+      /* THE MUZZLE LINE (A3): white climbs from the chin under a line that
+         rises to an apex just below the nose, so the cheeks stay coat
+         (Barthalomew's black cheek against a white muzzle). The throat joins
+         it to the bib when there is one. */
+      if (WM > 0.02 && f > 1.0 && h > 1.0 && h < 1.75 && Math.abs(s) < 0.42 && nFwd > -0.15){
+        const apex = 1.46 + 0.17 * WM;
+        const top = apex - (0.55 - 0.15 * WM) * Math.abs(s);
+        const wob = (N.fbm(s * 8 + 3, f * 8, h * 8) - 0.5) * 0.06 * (1 - ME);
+        const soft = 0.008 + 0.045 * (1 - ME);
+        let wv = sm(top + soft, top - soft, h + wob);
+        if (COLLAR && h < 1.47 && f > 1.05 && Math.abs(s) < 0.30)
+          wv = Math.max(wv, sm(0.30, 0.22, Math.abs(s)));
+        c = mix3(c, P.white, Math.min(1, wv));
       }
       if (socks){
         /* a tapped paw is a fact: paint the sock as a clean vertical dip
@@ -5975,8 +6591,6 @@ if (stage) (async () => {
       }
       /* the face: philtrum + mouth line + inner-ear pink. Painted, not
          modelled - the muzzle is body-space geometry like everything else */
-      const nzg = MAPS.nrm[mi + 2] * (MAPS.float ? 2 : 2 / 255) - 1;
-      const nFwd = -nzg;
       if (f > 1.45 && h > 1.40 && h < 1.70 && nFwd > 0.1){
         if (Math.abs(s) < 0.013 && h > 1.545 && h < 1.63)
           c = mix3(c, [16, 13, 15], 0.4);
@@ -5995,6 +6609,12 @@ if (stage) (async () => {
     }
     dilate(px, size, 6);
     ctx.putImageData(img, 0, 0);
+    if (work !== coatCanvas){
+      const cc = coatCanvas.getContext('2d');
+      cc.imageSmoothingEnabled = true;
+      cc.clearRect(0, 0, coatCanvas.width, coatCanvas.height);
+      cc.drawImage(coatQuick, 0, 0, coatCanvas.width, coatCanvas.height);
+    }
     if (!coatTex){
       coatTex = new THREE.CanvasTexture(coatCanvas);
       coatTex.flipY = false;                       /* glTF UVs: v=0 is the TOP */
@@ -6012,6 +6632,14 @@ if (stage) (async () => {
   let eyeTex = null, eyeDil = 0;
   const eyeCanvas = document.createElement('canvas');
   const EYE_U = 0.75;                    /* forward longitude - probe-tuned */
+  /* eye size: smaller than v5's by default (Astra: the round projecting eyes
+     dominated every face). The eyeball sits mostly inside the skull, so
+     this trims the visible eye by about a quarter. */
+  function eyeScale(d){
+    const v = (x, dflt) => x == null ? dflt : x;
+    const kitten = Math.max(0, 0.55 - v(d.age, 0.55));
+    return (0.74 + 0.36 * v(d.eyeSize, 0.55)) * (1 + kitten * 0.30);
+  }
   function paintEyes(d){
     if (!eyeMat || !window.LOAF || !window.LOAF.OK) return;
     const S2 = 128;
@@ -6038,8 +6666,42 @@ if (stage) (async () => {
     g.beginPath();
     g.ellipse(u0 - S2 * 0.055, S2 / 2 - S2 * 0.075, S2 * 0.026, S2 * 0.038, 0, 0, Math.PI * 2);
     g.fill();
+    /* THE LIDS (A3). Only the cap of the eyeball shows through the skull,
+       so an eye reads narrowed when that cap's top is fur. lid 0 = wide,
+       1 = half closed (Barthalomew's look); 0.3 = relaxed, the default. A
+       dark rim on both edges; a tabby's lid edge is her pale spectacles. */
+    const lid = d.lid != null ? Math.max(0, Math.min(1, d.lid)) : 0.3;
+    const es = eyeScale(d), rr = 0.105 * es;
+    const al = Math.acos(Math.min(0.97, 0.075 / rr));      /* half angle of the cap */
+    const capH = al / Math.PI * S2 * 2, capW = al / (2 * Math.PI) * S2;
+    const yTop = S2 / 2 - capH / 2;
+    const yLid = yTop + lid * 0.62 * capH, yLow = yTop + capH - lid * 0.10 * capH;
+    const P = pal3D(d);
+    const tab = d.pattern === 'mackerel' || d.pattern === 'classic'
+      || d.pattern === 'spotted' || d.pattern === 'ticked';
+    const furC = 'rgb(' + P.mid.map(x => Math.round(x * 0.82)).join(',') + ')';
+    const edgeC = tab ? 'rgb(' + P.cream.join(',') + ')' : furC;
+    /* an almond: the upper edge is highest mid-eye, the lower lowest */
+    const edge = (y0, sgn, fill) => {
+      g.beginPath();
+      if (fill) g.moveTo(u0 - capW * 1.6, sgn < 0 ? 0 : S2);
+      for (let k = 0; k <= 24; k++){
+        const du = (k / 24 - 0.5) * 3.2 * capW, q = du / capW;
+        const y = y0 + sgn * 5 * (1 - Math.min(1, q * q));
+        if (!fill && k === 0) g.moveTo(u0 + du, y); else g.lineTo(u0 + du, y);
+      }
+      if (fill){ g.lineTo(u0 + capW * 1.6, sgn < 0 ? 0 : S2); g.closePath(); g.fill(); }
+      else g.stroke();
+    };
+    g.fillStyle = edgeC; edge(yLid, -1, true);
+    g.fillStyle = furC; edge(yLid - 4, -1, true);
+    g.strokeStyle = '#141015'; g.lineWidth = 2.2; edge(yLid, -1, false);
+    g.fillStyle = edgeC; edge(yLow, 1, true);
+    g.lineWidth = 1.6; edge(yLow, 1, false);
     if (!eyeTex){
       eyeTex = new THREE.CanvasTexture(eyeCanvas);
+      eyeTex.flipY = false;          /* glTF UVs: v=0 is the TOP of the eyeball
+                                        (read from cat.glb: top pole v 0.000) */
       eyeTex.colorSpace = THREE.SRGBColorSpace;
       eyeTex.wrapS = THREE.RepeatWrapping;
       eyeMat.map = eyeTex;
@@ -6176,7 +6838,7 @@ if (stage) (async () => {
     if (bones.tail1) bones.tail1.scale.y = 0.75 + 0.5 * v(d.tail, 0.6);
     const kitten = Math.max(0, 0.55 - v(d.age, 0.55));
     if (bones.head) bones.head.scale.setScalar(1 + kitten * 0.30);
-    const es = (0.84 + 0.44 * v(d.eyeSize, 0.55)) * (1 + kitten * 0.30);
+    const es = eyeScale(d);
     life.esCur = es;                               /* the blink squashes from here */
     if (bones.eyeL) bones.eyeL.scale.setScalar(es);
     if (bones.eyeR) bones.eyeR.scale.setScalar(es);
@@ -6932,6 +7594,7 @@ if (stage) (async () => {
       return;
     }
     /* the camera leans in while she is down */
+    camFree();
     cam.position.lerp(_v3.set(0.4, 1.8, 5.4), Math.min(1, dt * 1.6));
     cam.lookAt(0, -0.7, 1.35);
     if (BN.pulse > 0) BN.pulse -= dt;
@@ -7142,6 +7805,7 @@ if (stage) (async () => {
         break;
       case 'hold':
         /* perform-mode high five: the paw stays offered. Meet it. */
+        camFree();
         cam.position.lerp(_v3.set(0.35, 1.9, 6.7), Math.min(1, dt * 1.4));
         cam.lookAt(0, -0.05, 1.55);
         if (T.pT > HOLD_S) trickPhase('gap');
@@ -7387,6 +8051,7 @@ if (stage) (async () => {
           /* the small box needs the wider shot: too close and the joke
              (a cat overflowing a box) crops the box out of its own gag */
           const d2 = bx.small ? 5.6 : 4.8, ly = bx.small ? -0.6 : -0.35;
+          camFree();
           cam.position.lerp(_v3.set(bx.x * 0.55, bx.small ? 2.0 : 2.3, bx.z + d2),
             Math.min(1, dt * 1.2));
           cam.lookAt(bx.x, ly, bx.z);
@@ -7682,7 +8347,7 @@ if (stage) (async () => {
         d = document.createElement('div');
         d.id = 'room3d';
         d.style.cssText = 'width:100%;aspect-ratio:750/620;border-radius:16px;overflow:hidden;'
-          + 'touch-action:none;background:radial-gradient(120% 90% at 50% 20%, #2E2044, #191129)';
+          + 'touch-action:none;background:#150E1D';
         const rc = document.getElementById('room');
         rc.parentNode.insertBefore(d, rc);       /* sibling, never innerHTML */
         new ResizeObserver(size).observe(d);
@@ -7690,6 +8355,8 @@ if (stage) (async () => {
       }
       d.classList.remove('hidden');
       floor.scale.setScalar(1.5);
+      floor.visible = false; shell.visible = true;
+      setLights(lightNow()); shellLoad(lightK);
       rig.position.set(0.6, 0, -0.3);
       room.soliT = 0; room.carrying = false; room.ball = null;
       if (ballMesh) ballMesh.visible = false;
@@ -7713,6 +8380,8 @@ if (stage) (async () => {
       visitorRemove();
       room.on = false;
       floor.scale.setScalar(1);
+      floor.visible = true; shell.visible = false;
+      setLights('day');
       rig.position.set(0, 0, 0);
       shadow.position.x = 0; shadow.position.z = 0;
       if (ballMesh) ballMesh.visible = false;
@@ -7720,6 +8389,11 @@ if (stage) (async () => {
       if (room.div) room.div.classList.add('hidden');
       playIf('Idle');
       mountTo(stage);
+    },
+    /* the check sheet borrows her: mount on any element, null for home */
+    mountAt(el){
+      if (room.on) window.LoafCat3D.roomClose();
+      mountTo(el || stage);
     },
     roomRemount(){
       if (room.card && room.bridge) window.LoafCat3D.roomOpen(room.card, room.bridge);
@@ -7729,6 +8403,66 @@ if (stage) (async () => {
     trickClick,                                  /* also wired to the button */
     _five(up, lo){ FIVE_UP = up; FIVE_LO = lo; },   /* axis-probe dial */
     _rig(){ return rig.position.toArray(); },       /* harness peephole */
+    _light(k){ setLights(k); if (room.on) shellLoad(lightK); return lightK; },
+    /* THE BLIND PAIR SHOT (A5): every cat in the same pose, at the same
+       angle and scale, in the room's day light, so two cats differ only in
+       who they are. Off the room only. */
+    async _pairShot(){
+      if (room.on) return null;
+      shellLoad('day');
+      for (let i = 0; i < 80 && !(SETS.day.floor && SETS.day.wall && SETS.day.win); i++)
+        await new Promise(r => setTimeout(r, 50));
+      const el = renderer.domElement, ow = el.width, oh = el.height;
+      const ry = rig.rotation.y, rp = rig.position.clone();
+      try {
+        floor.visible = false; shell.visible = true; setLights('day');
+        rig.position.set(0, 0, 0); rig.rotation.y = Math.PI - 0.55;
+        _applied.forEach((q, bone) => { bone.quaternion.multiply(_qUndo.copy(q).invert()); q.identity(); });
+        mixer.setTime(1.0);                            /* the same breath of Idle */
+        if (bones.eyeL) bones.eyeL.scale.y = life.esCur;
+        if (bones.eyeR) bones.eyeR.scale.y = life.esCur;
+        shadow.position.x = 0; shadow.position.z = 0; shadow.scale.set(1, 1, 1);
+        renderer.setSize(512, 512, false);
+        cam.aspect = 1; cam.updateProjectionMatrix();
+        rig.updateMatrixWorld(true);
+        cam.position.set(0, -0.15, 5.6);
+        cam.lookAt(0, -0.55, 0);
+        renderer.render(scene, cam);
+        return el.toDataURL('image/png');
+      } finally {
+        floor.visible = true; shell.visible = false;
+        rig.rotation.y = ry; rig.position.copy(rp);
+        renderer.setSize(ow, oh, false);
+        size();
+      }
+    },
+    /* the look tool's face shot: head and shoulders, a front three-quarter
+       turn, day light on a quiet mid-value ground. Off the room only. */
+    _portrait(turn){
+      if (room.on || !bones.head) return null;
+      const el = renderer.domElement, ow = el.width, oh = el.height;
+      const bg = scene.background, ry = rig.rotation.y;
+      try {
+        rig.rotation.y = Math.PI - (turn == null ? 0.42 : turn);
+        floor.visible = false; shadow.visible = false;
+        scene.background = new THREE.Color(0x9C8E8C);
+        renderer.setSize(512, 512, false);
+        cam.aspect = 1; cam.updateProjectionMatrix();
+        rig.updateMatrixWorld(true);
+        const hp = bones.head.getWorldPosition(new THREE.Vector3());
+        const fw = new THREE.Vector3(0, 0, -1).applyQuaternion(rig.quaternion);
+        const face = hp.clone().addScaledVector(fw, 0.42); face.y += 0.30;
+        cam.position.set(face.x + 0.15, face.y + 0.12, face.z + 2.5);
+        cam.lookAt(face.x, face.y - 0.12, face.z);
+        renderer.render(scene, cam);
+        return el.toDataURL('image/png');
+      } finally {
+        rig.rotation.y = ry; floor.visible = true; shadow.visible = true;
+        scene.background = bg;
+        renderer.setSize(ow, oh, false);
+        size();
+      }
+    },
     _boxSmall(v){ room.boxSmallNext = v; },         /* harness: force box size */
     get _vis(){ return vis && { state: vis.state, pos: vis.rig.position.toArray() }; },
     _room: room,                                 /* harness peephole */
