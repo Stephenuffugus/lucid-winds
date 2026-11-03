@@ -46,7 +46,7 @@
  * FIT_IGNORES_SAB, NAVPAD_ENV_DROPPED, NAVPAD_NO_FULLSCREEN, NAVPAD_NO_MINIMAL_UI, SCROLLERS_PAD_PAST_BAR, CHIP_LIFT_DROPPED,
  * PILL_LIFT_DROPPED, CARD_LIFT_DROPPED, CHIP_LIFT_ADDS, CHIPSILL_DROPPED and CHIP_SEAT_LATE. */
 import { join } from 'node:path';
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, pastStory, GAME } from './harness.mjs';
 
 const R = reporter('LAYOUT');
 const srv = await serve();
@@ -333,7 +333,7 @@ try {
           const chipC = cleared ? await chipNow(page, true) : null;
           R.say(cleared && chipClear(chipC, BAR) && chipC.bottomSeat && Math.abs(chipC.gap - (GLYPH_LIFT + BAR)) < 0.5,
             tg + ': on the clear card the fleet\'s chip ' + chipText(chipC) + ' (want its bottom seat, the reserved box, 58 px up), on top and clear of the card');
-          if (cleared) await tap(page, '#cleartitle');
+          if (cleared) { await tap(page, '#cleartitle'); await pastStory(page); }
           await bandSay(page, tg, 'the title after a room');
           const chipA = await chipNow(page);
           R.say(chipClear(chipA, BAR), tg + ': at once on the title after a room the fleet\'s chip ' + chipText(chipA) + ', 48 or more, on top and clear of the title\'s controls');

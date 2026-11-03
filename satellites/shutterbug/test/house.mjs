@@ -38,7 +38,7 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, GAME } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, pastStory, GAME } from './harness.mjs';
 
 const R = reporter('HOUSE');
 const SAMPLE = JSON.parse(readFileSync(join(GAME, 'fixtures', 'sample-room.json'), 'utf8')).record, ROOM = SAMPLE.rows;
@@ -132,8 +132,9 @@ async function saveRun(page, o) {
   }, SAMPLE, o);
   await page.reload(); await ready(page); await page.evaluate(() => window.SB_DEV.hold(true));
 }
-/* the climb skipped: the bug set down in the exit, two steps (the clear, then the doorway) */
-const climb = page => page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(2); });
+/* the climb skipped: the room's keys taken first (since sb-m1-7 a house room's exit is locked by them; 3 Nov: the gate
+   predated keys and went stale), then the bug set down in the exit, two steps (the clear, then the doorway) */
+const climb = page => page.evaluate(() => { const D = window.SB_DEV; for (let k = 0; k < 3; k++) { D.goto('key'); D.step(1); } D.goto('exit'); D.step(2); });
 /* a speck taken first, so the room's count is more than 0 */
 const speck = page => page.evaluate(() => { window.SB_DEV.goto('speck'); window.SB_DEV.step(2); return window.SB_DEV.state().room.dp; });
 
@@ -163,6 +164,7 @@ try {
   await tap(page, '#sample');
   await climb(page);
   await tap(page, '#cleartitle');
+  await pastStory(page);
   const t1 = await page.evaluate(() => {
     const r = id => document.getElementById(id).getBoundingClientRect(), vis = id => !document.getElementById(id).hidden;
     return { house: vis('house'), go: vis('housego'), count: vis('housecount'), first: r('housestart').top < r('shoot').top, free: document.getElementById('freeplay').textContent };
@@ -360,7 +362,7 @@ try {
     const b = await newPage(browser, { width: 320, height: 568 });
     await gotoGame(b.page, srv.base); await ready(b.page);
     await b.page.evaluate(() => window.SB_DEV.hold(true));
-    await scrollTap(b.page, '#sample'); await climb(b.page); await scrollTap(b.page, '#cleartitle');
+    await scrollTap(b.page, '#sample'); await climb(b.page); await scrollTap(b.page, '#cleartitle'); await pastStory(b.page);
     await scrollTap(b.page, '#housestart');
     await fromRecent(b.page); await climb(b.page);
     const sm2 = await small(b.page);

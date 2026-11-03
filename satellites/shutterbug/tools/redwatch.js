@@ -1585,7 +1585,7 @@ const MUTANTS = [
     gates: [{ gate: 'house', expect: 'a death in the house' }] },
   { name: 'CONTINUE_HIDDEN', task: 'HOUSE-A', file: 'page', find: "    go.hidden = !run;\n", repl: "    go.hidden = true;\n",
     gates: [{ gate: 'house', expect: 'after a reload the title offers Continue the house' }] },
-  { name: 'HOUSE_CLEAR_UNCOUNTED', task: 'HOUSE-A', file: 'page', find: '        doc.stats.houseClears++; doc.unlocks.daily = true;', repl: '        doc.unlocks.daily = true;',   /* re anchored at HOUSE-B (the prize beside it) */
+  { name: 'HOUSE_CLEAR_UNCOUNTED', task: 'HOUSE-A', file: 'page', find: '        doc.stats.houseClears++; HS.dailyNew = !doc.unlocks.daily;', repl: '        HS.dailyNew = !doc.unlocks.daily;',   /* re anchored at HOUSE-B (the prize beside it) and 3 Nov (the Daily Room's note) */
     gates: [{ gate: 'house', expect: 'the house cleared: the run gone from the save' }] },
   { name: 'DOOR_BUTTON_40PX', task: 'HOUSE-A', file: 'page', find: '#doorcard button { min-height: 52px;', repl: '#doorcard button { min-height: 40px; height: 40px;',
     gates: [{ gate: 'house', expect: "every control on the house's card is 48 px or more" }] },

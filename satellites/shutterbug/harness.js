@@ -6590,6 +6590,38 @@ group('H-dk-1', 'the start pick in the save: null until bought, then empty or a 
   t.ok(T.WEAPONS_BUILT.every(id => keep(id) === id), 'every built weapon can be the pick');
 });
 
+/* ---------------------------------------------------------------- the Daily Room (3 Nov, DESIGN 9.4) */
+group('H-daily-1', 'the Daily Room: every config builds but DAILY_SKIP\'s (exactly the refused), every room in every world, never the same room twice in a row, the save counts days up', t => {
+  const Rr = SB.record, refused = [];
+  t.ok(Rr.DAILY_N === 90 && Rr.DAILY_CYCLE === Rr.DAILY_N - Rr.DAILY_SKIP.length, 'the cycle is the 90 configs less the skipped (' + Rr.DAILY_CYCLE + ' days)');
+  let noExit = 0;
+  for (let i = 0; i < Rr.DAILY_N; i++) {
+    const r = Rr.dailyAt(i), lv = SB.pipeline.build(r, { firstRoom: false });
+    if (lv.needsCrop) refused.push(i); else if (!(lv.exit >= 0)) noExit++;
+  }
+  t.same(refused, Array.from(Rr.DAILY_SKIP), 'DAILY_SKIP is exactly the configs the pipeline refuses, so a served day always builds');
+  t.ok(noExit === 0, 'every config that builds has its exit (' + noExit + ' without)');
+  const rowsOf = r => Rr.toJSON(r).rows.join(''), roomIds = [], combos = new Set();
+  let twice = 0, prev = '', shape = true;
+  for (let d = 0; d < Rr.DAILY_CYCLE; d++) {
+    const r = Rr.daily(d), rows = rowsOf(r);
+    if (r.v !== 2 || r.mode !== 0 || r.flags !== (Rr.FLAG_KEYS | Rr.FLAG_BESTIARY) || r.biome < 1 || r.biome > 5 || r.rules > 1) shape = false;
+    if (roomIds.indexOf(rows) < 0) roomIds.push(rows);
+    combos.add(roomIds.indexOf(rows) + ':' + r.biome);
+    if (rows === prev) twice++;
+    prev = rows;
+  }
+  t.ok(shape, 'every day is a v2 room with keys and the second monsters, a world of the five and rules 0 or 1');
+  const dead = Array.from({ length: 45 }, (_, i) => i).filter(i => Rr.DAILY_SKIP.indexOf(i) >= 0 && Rr.DAILY_SKIP.indexOf(i + 45) >= 0).length;   /* a pair refused under both rules */
+  t.ok(roomIds.length === 9 && combos.size === 45 - dead, 'the cycle holds all nine rooms and every room and world pair that builds (' + roomIds.length + ' rooms, ' + combos.size + ' of 45 pairs; ' + dead + ' build under neither rule set)');
+  t.ok(twice === 0, 'no room comes two days running (' + twice + ')');
+  t.ok(Rr.encode(Rr.daily(17)) === Rr.encode(Rr.daily(17 + Rr.DAILY_CYCLE)) && Rr.encode(Rr.daily(-3)) === Rr.encode(Rr.daily(Rr.DAILY_CYCLE - 3)), 'a day is a pure function of its number, the cycle wraps both ways');
+  const keep = v => { const d = Rr.saveDefaults(); d.daily = v; return Rr.validateSave(JSON.parse(JSON.stringify(d))).daily; };
+  t.same(Rr.saveDefaults().daily, { date: null, done: false, days: 0 }, 'a new save has played no day');
+  t.same(keep({ date: '2026-11-03', done: true, days: 4 }), { date: '2026-11-03', done: true, days: 4 }, 'a played day and its count are kept');
+  t.same(keep({ date: 'yesterday', done: 'yes', days: -2 }), { date: null, done: false, days: 0 }, 'a malformed date, flag or count falls back, never below zero');
+});
+
 const chosen = ONLY ? GROUPS.filter(g => g.id.startsWith(ONLY)) : GROUPS;
 if (ONLY && !chosen.length) { console.log('FAIL  --only ' + ONLY + ' matched no group'); console.log('\nSHUTTERBUG HARNESS FAILED'); process.exit(1); }
 for (const g of chosen) {

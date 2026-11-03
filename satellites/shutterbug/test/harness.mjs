@@ -141,6 +141,15 @@ export const centre = (page, sel) => page.evaluate((sel) => {
 }, sel);
 
 /* A real tap at the element's centre, after proving a thumb there lands on it. */
+/* the bug's story (sb-m1-18) plays the first time the title follows a cleared room: real taps through its cards until
+   the title is up (3 Nov: the house and layout gates read the title straight after a clear and went stale) */
+export async function pastStory(page) {
+  for (let k = 0; k < 4; k++) {
+    if (await page.evaluate(() => window.SB_DEV.screen()) !== 'story') return;
+    await tap(page, '#storynext');
+  }
+}
+
 export async function tap(page, sel) {
   const c = await centre(page, sel);
   if (!c) throw new Error('no visible element for ' + sel);
