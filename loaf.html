@@ -139,7 +139,7 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 #chooseCv{display:block;border-radius:18px;border:1px solid var(--line);touch-action:none;cursor:pointer}
 .choosehd{font-family:var(--display);font-weight:700;font-size:20px;color:var(--bone);
   text-align:center;margin:14px 0 2px}
-.checkstage{position:relative;width:100%;aspect-ratio:4/3;border-radius:18px;overflow:hidden;
+.checkstage{position:relative;width:100%;aspect-ratio:1/1;border-radius:18px;overflow:hidden;
   border:1px solid var(--line);background:#9C8E8C;margin:10px 0 12px}
 .checkstage canvas{display:block;width:100%;height:100%}
 #checkPhoto{position:absolute;left:8px;top:8px;width:30%;border-radius:10px;
@@ -3574,7 +3574,9 @@ const Check = (() => {
     ['whiteMuzzle', 'White muzzle', d => wm(d) >= 0.6,
       (d, on) => { d.whiteMuzzle = on ? 0.28 : 0.75; d.muzzleEdge = 0.85; }],
     ['collar', 'White collar', d => d.collar != null ? !!d.collar : grade(d) > 0.4,
-      (d, on) => { d.collar = !on; }]
+      (d, on) => { d.collar = !on; }],
+    ['blaze', 'White blaze', d => d.blaze != null ? !!d.blaze : grade(d) > 4.8,
+      (d, on) => { d.blaze = !on; }]
   ];
   const PAWS4 = [['FL', 'Front left'], ['FR', 'Front right'], ['HL', 'Back left'], ['HR', 'Back right']];
   function fix(k){ st.dna._fixed = Object.assign(st.dna._fixed || {}, { [k]: 1 }); }
@@ -3994,7 +3996,10 @@ function readCatFromPhoto(canvas, extMask){
   };
   const twoTone = tone(base, marking);
 
-  let pattern = 'solid';
+  const bq = hexRGB(base), mq = hexRGB(marking);
+  const baseChroma = Math.max(bq[0], bq[1], bq[2]) - Math.min(bq[0], bq[1], bq[2]);
+  const markL = 0.2126*mq[0] + 0.7152*mq[1] + 0.0722*mq[2];
+  let pattern = 'solid', sheen = false;
   if (twoTone < 42) pattern = 'solid';
   /* Glossy BLACK fur oscillates too - sheen against shadow flips a row as
      rhythmically as any stripe, and it read every black cat as a mackerel.
@@ -4002,6 +4007,17 @@ function readCatFromPhoto(canvas, extMask){
      in markings. (A black smoke tabby will read solid; the owner has a
      slider, and that error is honest.) */
   else if (trusted && baseL < 55 && twoTone < 70) pattern = 'solid';
+  /* A black coat in soft or low light: its "base" is the sheen, a neutral
+     grey over near-black, and long fur stripes every row with it. A real
+     tabby's ground is warm agouti, a blue tabby's markings are grey not
+     black, a silver's ground is light: none of them land here. Measured
+     3 Nov: a longhair tuxedo at dusk read base L 64 chroma 11 over marking
+     L 5 and came out a mackerel; Oreo (true brown mackerel) reads chroma 20
+     over L 21 and is untouched. */
+  else if (trusted && baseChroma < 15 && markL < 14 && baseL < 85){
+    pattern = 'solid';
+    sheen = true;
+  }
   /* Nothing to read at all: a flat animal is a solid animal, whatever the
      wiggle count says. */
   else if (contrast < 52) pattern = 'solid';
@@ -4098,9 +4114,12 @@ function readCatFromPhoto(canvas, extMask){
     if (meanSat >= 0.34){ eye = avg(top.map(e => e.p)); eyeConf = true; }
   }
 
+  /* a black coat read through its sheen: her colour is the black under it */
+  const coat = sheen ? '#' + bq.map((v, i) => Math.round(v * 0.45 + mq[i] * 0.55)
+    .toString(16).padStart(2, '0')).join('') : base;
   return Object.assign(defaultDNA(), {
-    base, marking, white: whiteAmt > 0.015 ? bright : '#F2E9D8', eye,
-    nose: noseByCoat(base, whiteGrade),
+    base: coat, marking, white: whiteAmt > 0.015 ? bright : '#F2E9D8', eye,
+    nose: noseByCoat(coat, whiteGrade),
     pattern, whiteStyle, whiteGrade, whiteEdge: Math.min(1, 0.3 + floof*0.6),
     seed: (hashStr(base + marking + String(Math.round(whiteAmt*1000)))) >>> 0,
     whiteAmt: Math.min(0.9, whiteAmt),
@@ -6447,12 +6466,18 @@ if (stage) (async () => {
       if (grade <= w.on) continue;
       if (i === 1 && WM > 0) continue;            /* the muzzle painter owns the chin */
       if (i === 0 && d.collar === false) continue;  /* the owner said: no collar */
+      if ((i === 8 || i === 9) && d.blaze === false) continue;   /* nor a blaze */
       if (w.toe && d.socks && Object.keys(d.socks).length) continue;
       const jit = (N.hash(i * 91 + 7, 17, 3) - 0.5) * (w.j || 0.25);
       seeds.push({ p: w.p, r: w.r * sm(0, 1, Math.min(1, (grade - w.on) / w.span)) * (1 + jit) });
     }
     if (d.collar === true && grade <= WSEED3[0].on)
       seeds.push({ p: WSEED3[0].p, r: WSEED3[0].r * 0.85 });
+    /* the blaze: up the nose and between the eyes, a tuxedo's signature */
+    if (d.blaze === true){
+      if (grade <= WSEED3[8].on) seeds.push({ p: WSEED3[8].p, r: WSEED3[8].r });
+      if (grade <= WSEED3[9].on) seeds.push({ p: WSEED3[9].p, r: WSEED3[9].r * 0.85 });
+    }
     const COLLAR = d.collar != null ? !!d.collar : grade > 0.4;
     const FORK = d.browFork != null ? !!d.browFork : tabby;
     const pat = d.pattern || 'solid';
@@ -6547,9 +6572,9 @@ if (stage) (async () => {
           }
         }
         if (tabby && fa > 0.24 && Math.abs(nx) > 0.35 && f > 0.85 && f < 1.48 && h > 1.45 && h < 1.95){
-          const cl = Math.max(sm(0.034, 0.018, seg2(f, h, 1.40, 1.86, 1.02, 1.74)),
-                        0.8 * sm(0.030, 0.016, seg2(f, h, 1.33, 1.73, 1.00, 1.60)));
-          c = mix3(c, P.core, Math.min(1, cl * pAmp));
+          const cl = Math.max(sm(0.026, 0.012, seg2(f, h, 1.40, 1.86, 1.02, 1.74)),
+                        0.7 * sm(0.022, 0.010, seg2(f, h, 1.33, 1.73, 1.00, 1.60)));
+          c = mix3(c, P.core, Math.min(1, cl * pAmp * 0.85));
         }
       }
       if (seeds.length){
