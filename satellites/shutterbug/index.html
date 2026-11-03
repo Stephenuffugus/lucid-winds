@@ -295,6 +295,21 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #codebox button { min-width: 64px; min-height: 48px; border-radius: 10px; border: 1px solid var(--pewter); background: var(--paper); color: var(--ink); }
 #codemsg { margin: 0; color: var(--brick); font-weight: 700; }   /* above the buttons: below them a returning player's refusal sat under the fold at 568 (the M1 review) */
 /* the title's small links and recent rooms (T1.10) */
+#album { overflow-y: auto; padding: calc(10px + var(--sat)) 16px calc(16px + var(--sab)); color: var(--paper); flex-direction: column; gap: 10px; }
+#albar { display: flex; align-items: center; gap: 12px; } #albar h2 { margin: 0; font-size: 1.3rem; }
+#alback { min-height: 48px; min-width: 64px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--slate); background: transparent; color: var(--ash); }
+#alcount { margin: 0; color: var(--ash); }
+.albiome h3 { display: flex; align-items: center; gap: 8px; margin: 8px 0 6px; font-size: 1rem; color: var(--paper); }
+.albadge { flex: none; width: 24px; height: 24px; background-size: contain; background-repeat: no-repeat; image-rendering: pixelated; }
+.alhint { margin: 0 0 6px; color: var(--ash); font-size: 0.9rem; }
+.alpage { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 8px; border-radius: 8px; background: #efe6d3; margin-bottom: 8px; }
+.alpage.full { box-shadow: 0 0 0 3px var(--sun) inset; }
+.alslot { aspect-ratio: 1 / 2; border: 2px dashed #c9bda4; border-radius: 3px; }
+.alprint { padding: 3px 3px 1px; background: #fbf7ee; border: 0; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,.35); display: flex; flex-direction: column; align-items: stretch; min-height: 48px; cursor: pointer; }
+.alprint canvas { width: 100%; aspect-ratio: 1 / 2; image-rendering: pixelated; }
+.alprint small { font-size: 0.7rem; color: #6b6253; text-align: center; margin-top: 1px; white-space: nowrap; overflow: hidden; }
+.alprint.clean { box-shadow: 0 0 0 2px #c99a1c, 0 1px 3px rgba(0,0,0,.35); }
+#clearalbum, #dooralbum { margin: 0; color: var(--paper); font-size: 0.95rem; }
 #trophies { overflow-y: auto; padding: calc(10px + var(--sat)) 16px calc(16px + var(--sab)); color: var(--paper); flex-direction: column; gap: 10px; }
 #trbar { display: flex; align-items: center; gap: 12px; } #trbar h2 { margin: 0; font-size: 1.3rem; }
 #trback { min-height: 48px; min-width: 64px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--slate); background: transparent; color: var(--ash); }
@@ -309,7 +324,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 .tr:not(.got) { opacity: 0.72; } .tr.new { border-color: var(--sun); }
 .trlooks { display: flex; flex-wrap: wrap; gap: 8px; } .trlooks canvas { image-rendering: pixelated; }
 #trnext, #cleartrophy, #doortrophy { margin: 0; color: var(--sun); font-size: 0.95rem; }
-#settingsbtn, #darkroombtn, #trophiesbtn { min-height: 48px; background: transparent; border: 0; color: var(--ash); text-decoration: underline; font-size: 0.95rem; }
+#settingsbtn, #darkroombtn, #trophiesbtn, #albumbtn { min-height: 48px; background: transparent; border: 0; color: var(--ash); text-decoration: underline; font-size: 0.95rem; }
 #trophiesbtn.new { color: var(--sun); }
 /* the house (QUESTIONS Q200): on the title once a first room is cleared, Start a house leads; while a run is saved
    Continue the house (or Retry House, a lost run) leads in Sun and Start a house follows in Paper (the review of
@@ -549,6 +564,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <div id="codebox" hidden><input id="levelcode" type="text" data-aria="levelCode" autocomplete="off" spellcheck="false"><button id="pastecode" type="button" data-copy="codePaste"></button><button id="playcode" type="button" data-copy="codePlay"></button></div>
     <div id="recent" hidden><p data-copy="recentRooms"></p><div id="recentlist"></div></div>
     <button id="darkroombtn" type="button" data-copy="darkroomLink" hidden></button>
+    <button id="albumbtn" type="button" data-copy="albumLink" hidden></button>
     <button id="trophiesbtn" type="button" data-copy="trophiesLink" hidden></button>
     <button id="settingsbtn" type="button" data-copy="settingsLink"></button>
   </div>
@@ -562,6 +578,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <p id="doorbank" hidden></p>
     <p id="doorprint" hidden></p>
     <p id="doornext" hidden></p>
+    <p id="dooralbum" hidden></p>
     <p id="doortrophy" hidden></p>
     <div id="doorprize" hidden></div>
     <button id="doorenter" class="big" type="button" hidden></button>
@@ -583,6 +600,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <h3 data-copy="dkOwned"></h3>
   <div id="dkowned"></div>
   <p id="dkleft"></p>
+</main>
+<main id="album" class="screen" aria-label="Album">
+  <div id="albar"><button id="alback" type="button" data-copy="toTitle"></button><h2 data-copy="albumLink"></h2></div>
+  <p id="alcount"></p>
+  <div id="alpages"></div>
 </main>
 <main id="trophies" class="screen" aria-label="Trophies and bugs">
   <div id="trbar"><button id="trback" type="button" data-copy="toTitle"></button><h2 data-copy="trophiesLink"></h2></div>
@@ -633,6 +655,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <div id="clear" role="dialog" data-aria="roomClear"><h2 data-copy="roomClear"></h2>
       <p id="clearbank" hidden></p>
       <p id="clearprint" hidden></p>
+      <p id="clearalbum" hidden></p>
       <p id="cleartrophy" hidden></p>
       <button id="nextroom" type="button" data-copy="nextRoom"></button>
       <button id="clearshare" type="button" data-copy="shareTitle"></button>
@@ -881,7 +904,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m1-16';
+  SB.BUILD = 'sb-m1-17';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -1254,7 +1277,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
       settings: { mirror: false, sound: true, music: true, reducedMotion: null },
       onboarding: { firstRoomDone: false, revealSeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0 } },
-      run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0 }, trophies: [], trophySeen: 0,
+      run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0, albumPages: 0, albumBiomes: 0 }, trophies: [], trophySeen: 0, album: [],
       log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false }, quarantine: null };
   }
   function fillSave(def, got) {
@@ -1282,6 +1305,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
     d.cosmetics = lookValid(d.cosmetics);
     d.trophies = d.trophies.filter(function (t) { return typeof t === 'string'; }).slice(0, 64);
     d.trophySeen = Math.max(0, Math.min(d.trophies.length, d.trophySeen | 0));
+    d.album = d.album.filter(function (q) {
+      if (!q || typeof q !== 'object' || (q.b | 0) < 0 || (q.b | 0) > 4 || !q.j) return false;
+      try { return !!fromJSON(q.j); } catch (e) { return false; }
+    }).slice(0, 120);
     return d;
   }
   /* the looks (HOUSE-B, Stephen's "Cosmetic per clear", 31 Oct, Q97 ruling 4; DESIGN 9.4's hero colours and frame
@@ -7313,6 +7340,23 @@ body.sb-modal .lwfb-fab { display: none !important; }
     S.doc.recent = [j].concat(S.doc.recent.filter(function (r) { return !same(r); })).slice(0, 20);
     S.commit();
   };
+  /* THE ALBUM (sb-m1-17): every room cleared is pinned as a photo on the page of its biome, six to a page. The same
+     room twice is one photo (cleared n times; clean once, clean for good). At most 120. Returns where it landed */
+  S.addPrint = function (rec, biome, clean) {
+    var j = SB.record.toJSON(rec), d = S.doc, b = Math.max(0, Math.min(4, biome | 0)), old = null, i;
+    var same = function (q) { var r = q.j; return r.mode === j.mode && JSON.stringify(r.rows) === JSON.stringify(j.rows) && JSON.stringify(r.rows2) === JSON.stringify(j.rows2); };
+    for (i = 0; i < d.album.length; i++) if (same(d.album[i])) { old = d.album[i]; break; }
+    var dt = new Date(), day = dt.getFullYear() + '-' + ('0' + (dt.getMonth() + 1)).slice(-2) + '-' + ('0' + dt.getDate()).slice(-2);
+    var added = false;
+    if (old) { old.n = (old.n | 0) + 1; if (clean) old.c = 1; }
+    else if (d.album.length < 120) { d.album.push({ j: j, b: b, t: day, c: clean ? 1 : 0, n: 1 }); added = true; }
+    var per = [0, 0, 0, 0, 0]; d.album.forEach(function (q) { per[q.b | 0]++; });
+    d.stats.albumPages = per.reduce(function (a, c) { return a + Math.floor(c / 6); }, 0);
+    d.stats.albumBiomes = per.filter(function (c) { return c >= 6; }).length;
+    S.commit();
+    var at = old ? old.b | 0 : b;
+    return { added: added, biome: at, count: per[at] };
+  };
   S.exportText = function () { return JSON.stringify({ app: 'shutterbug', v: 1, save: S.doc }); };
   S.importText = function (text) {
     var o = null; try { o = JSON.parse(text); } catch (e) { o = null; }
@@ -7438,7 +7482,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     houseLost: 'The house is lost', lost: 'Lost {n} dead pixels', lostOne: 'Lost 1 dead pixel', retryHouse: 'Retry House', newHouse: 'New house',
     houseReplace: 'Start a new house? The saved house will be lost.', houseCleared: 'House cleared', houseSum: '{rooms} rooms, {n} dead pixels', houseSumOne: '{rooms} rooms, 1 dead pixel',
     /* HOUSE-B: the guardian, the prize, the looks */
-    guardHint: 'Beat the guardian to light the exit', trophiesLink: 'Trophies and bugs', trophiesNew: 'Trophies and bugs, {n} new', trophiesHead: 'Trophies {n} of {max}', bugsHead: 'Bugs {n} of {max}', framesHead: 'Frames {n} of {max}', trophyOf: '{n} of {max}', trophyNew: 'New trophy: {name}', nextPrize: 'Clear a house to win the {name}', allLooks: 'Every bug and frame is yours', tr_first: 'First room', trg_first: 'Clear a room', tr_rooms10: 'Ten rooms', trg_rooms10: 'Clear 10 rooms', tr_rooms50: 'Fifty rooms', trg_rooms50: 'Clear 50 rooms', tr_rooms100: 'A hundred rooms', trg_rooms100: 'Clear 100 rooms', tr_house1: 'Housewarming', trg_house1: 'Clear a house', tr_house5: 'Five houses', trg_house5: 'Clear 5 houses', tr_house10: 'Ten houses', trg_house10: 'Clear 10 houses', tr_wall25: 'Wall jumper', trg_wall25: 'Wall jump 25 times', tr_wall250: 'Up the walls', trg_wall250: 'Wall jump 250 times', tr_keys10: 'Key finder', trg_keys10: 'Find 10 keys', tr_keys100: 'Key ring', trg_keys100: 'Find 100 keys', tr_clean1: 'Not a scratch', trg_clean1: 'Clear a room without a hit', tr_clean10: 'Untouchable', trg_clean10: 'Clear 10 rooms without a hit', itemSpeck: 'Dead pixels', itemSpeckSays: 'Spend them in the Darkroom on new weapons', itemBlueprint: 'Blueprint', itemBlueprintSays: 'Carry it out to print a new weapon in the Darkroom', stat_vigor: 'Vigor up', stat_focus: 'Focus up', stat_grit: 'Grit up', statSays_vigor: 'Your dive weapons hit harder', statSays_focus: 'Your jump weapons hit harder', statSays_grit: 'Your charm works stronger', statHeart: '{stat} and one more heart', wallHead: 'Wall jump', wallLine: 'Press jump to kick off the wall', stuckHead: 'Stuck in a pit?', stuckLine: 'Jump at a wall, hold toward it, jump again', darkroom: 'Darkroom', darkroomLink: 'Darkroom', dkWallet: 'Dead pixels {n}', dkPrints: 'Prints to develop', dkOwned: 'Your weapons',
+    guardHint: 'Beat the guardian to light the exit', trophiesLink: 'Trophies and bugs', trophiesNew: 'Trophies and bugs, {n} new', trophiesHead: 'Trophies {n} of {max}', bugsHead: 'Bugs {n} of {max}', framesHead: 'Frames {n} of {max}', trophyOf: '{n} of {max}', trophyNew: 'New trophy: {name}', nextPrize: 'Clear a house to win the {name}', allLooks: 'Every bug and frame is yours', tr_first: 'First room', trg_first: 'Clear a room', tr_rooms10: 'Ten rooms', trg_rooms10: 'Clear 10 rooms', tr_rooms50: 'Fifty rooms', trg_rooms50: 'Clear 50 rooms', tr_rooms100: 'A hundred rooms', trg_rooms100: 'Clear 100 rooms', tr_house1: 'Housewarming', trg_house1: 'Clear a house', tr_house5: 'Five houses', trg_house5: 'Clear 5 houses', tr_house10: 'Ten houses', trg_house10: 'Clear 10 houses', tr_wall25: 'Wall jumper', trg_wall25: 'Wall jump 25 times', tr_wall250: 'Up the walls', trg_wall250: 'Wall jump 250 times', tr_keys10: 'Key finder', trg_keys10: 'Find 10 keys', tr_keys100: 'Key ring', trg_keys100: 'Find 100 keys', tr_clean1: 'Not a scratch', trg_clean1: 'Clear a room without a hit', tr_clean10: 'Untouchable', trg_clean10: 'Clear 10 rooms without a hit', albumLink: 'Album', albumEmpty: 'Clear a room and its photo lands here', albumCount: 'Photos {n}, full pages {pages}', albumOne: '1 photo', albumN: '{n} photos', albumPinned: 'Pinned to your album: {biome} page, {n} of 6', albumFull: 'A full {biome} page in your album', albumPlay: 'Play this room again, cleared {date}', albumRoom: 'From your album', biome_attic: 'Attic', biome_frost: 'Frost', biome_deep: 'Deep', biome_overgrowth: 'Overgrowth', biome_ember: 'Ember', biomeHint_attic: 'Shoot wood, browns and warm yellows', biomeHint_frost: 'Shoot a bright, white room', biomeHint_deep: 'Shoot blues and teals', biomeHint_overgrowth: 'Shoot greens and plants', biomeHint_ember: 'Shoot reds and pinks', tr_page1: 'Full page', trg_page1: 'Fill an album page with 6 rooms', tr_pages5: 'Photo album', trg_pages5: 'Fill 5 album pages', tr_biomes5: 'Every biome', trg_biomes5: 'Fill a page in every biome', itemSpeck: 'Dead pixels', itemSpeckSays: 'Spend them in the Darkroom on new weapons', itemBlueprint: 'Blueprint', itemBlueprintSays: 'Carry it out to print a new weapon in the Darkroom', stat_vigor: 'Vigor up', stat_focus: 'Focus up', stat_grit: 'Grit up', statSays_vigor: 'Your dive weapons hit harder', statSays_focus: 'Your jump weapons hit harder', statSays_grit: 'Your charm works stronger', statHeart: '{stat} and one more heart', wallHead: 'Wall jump', wallLine: 'Press jump to kick off the wall', stuckHead: 'Stuck in a pit?', stuckLine: 'Jump at a wall, hold toward it, jump again', darkroom: 'Darkroom', darkroomLink: 'Darkroom', dkWallet: 'Dead pixels {n}', dkPrints: 'Prints to develop', dkOwned: 'Your weapons',
     dkDevelop: 'Develop for {n}', dkNoPrints: 'No prints yet. Carry a blueprint out of a room and it prints here.', dkLeft: '{n} weapons not found yet', dkLeftOne: '1 weapon not found yet',
     dkAll: 'You have found every weapon', newPrint: 'New print: {name}. Develop it in the Darkroom.', newPrints: 'New prints: {name}. Develop them in the Darkroom.', dupPrint: 'A print you had already: {n} dead pixels',
     keysFind: 'Find {n} keys', keysFind1: 'Find the key', keysOpen: 'They open the exit', keysOpen1: 'It opens the exit', keysLocked: 'The exit is locked', keysMore: '{n} more keys', keysMore1: '1 more key', keysOf: '{n} of {max} keys', guardHintChest: 'Open the chest for a weapon', prizeNew: 'New: {name}', prizeLabel: 'Your prize, {name}',
@@ -7585,7 +7629,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.show = function (name) {
     if (name === 'darkroom') drawDarkroom();
     if (name === 'trophies') drawTrophies();
-    if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; document.getElementById('darkroombtn').hidden = !ui.firstRoomDone; trophyLink(); drawRecent(); HS.on = false; drawHouse(); ui.applyLook(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
+    if (name === 'album') drawAlbum();
+    if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; document.getElementById('darkroombtn').hidden = !ui.firstRoomDone; document.getElementById('albumbtn').hidden = !ui.firstRoomDone; trophyLink(); drawRecent(); HS.on = false; drawHouse(); ui.applyLook(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
     if (name === 'settings') fillSettings();
     if (name === 'crop') document.getElementById('croptitle').textContent = HS.on && HS.run ? ui.COPY.cropBack : ui.COPY.toTitle;
     var all = document.querySelectorAll('.screen');
@@ -8653,7 +8698,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   var TROPHIES = [['first', 'clears', 1], ['rooms10', 'clears', 10], ['rooms50', 'clears', 50], ['rooms100', 'clears', 100],
     ['house1', 'houseClears', 1], ['house5', 'houseClears', 5], ['house10', 'houseClears', 10],
     ['wall25', 'wallJumps', 25], ['wall250', 'wallJumps', 250], ['keys10', 'keys', 10], ['keys100', 'keys', 100],
-    ['clean1', 'flawless', 1], ['clean10', 'flawless', 10]];
+    ['clean1', 'flawless', 1], ['clean10', 'flawless', 10], ['page1', 'albumPages', 1], ['pages5', 'albumPages', 5], ['biomes5', 'albumBiomes', 5]];
   /* PICKUPS SAY WHAT THEY ARE (sb-m1-16; Stephen, 3 Nov: "there's a coin and maybe a scroll; nothing explains what they
      are or what they do, and when I pick them up nothing happens"). A speck pops its Dead pixels on the count every
      time and names itself on the pickup card the first three times a save sees one; a blueprint names itself every
@@ -8668,6 +8713,53 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (st.room.blueprints.length > bp0) ui.showItem('blueprint.a', C.itemBlueprint, C.itemBlueprintSays);
     var k = h.vigor > v0 ? 'vigor' : h.focus > f0 ? 'focus' : h.grit > g0 ? 'grit' : '';
     if (k) ui.showItem('scroll.a', h.heartsMax > m0 ? C.statHeart.replace('{stat}', C['stat_' + k]) : C['stat_' + k], C['statSays_' + k]);
+  };
+  /* THE ALBUM's screen (sb-m1-17; Stephen, 3 Nov: "build the album next"). Five biomes, each its pages of six: the
+     player's own rooms as their developed pixels, dated, a clean clear edged in gold, a full page edged in Sun. An empty
+     biome says what to shoot to fill it (its colour band, section 7.2). A photo plays its room again */
+  function photoButton(q) {
+    var rec = null; try { rec = SB.record.fromJSON(q.j); } catch (e) { rec = null; }
+    var bt = document.createElement('button'); bt.type = 'button'; bt.className = 'alprint' + (q.c ? ' clean' : '');
+    if (!rec) { bt.disabled = true; return bt; }
+    var cv = document.createElement('canvas'), c2 = cv.getContext('2d'), P = SB.palette;
+    cv.width = rec.w; cv.height = rec.h;
+    for (var i = 0; i < rec.w * rec.h; i++) { c2.fillStyle = P.hex(P.RGB[rec.pal[i]]); c2.fillRect(i % rec.w, Math.floor(i / rec.w), 1, 1); }
+    var dt = document.createElement('small'); dt.textContent = String(q.t || '').slice(5);
+    bt.appendChild(cv); bt.appendChild(dt);
+    bt.setAttribute('aria-label', ui.COPY.albumPlay.replace('{date}', q.t || ''));
+    bt.addEventListener('click', function () { ui.startRoom(rec, ui.COPY.albumRoom); });
+    return bt;
+  }
+  function drawAlbum() {
+    var d = SB.save.doc, C = ui.COPY; if (!d) return;
+    var box = document.getElementById('alpages'), per = [[], [], [], [], []], b, pg, k;
+    box.innerHTML = '';
+    d.album.forEach(function (q) { per[q.b | 0].push(q); });
+    document.getElementById('alcount').textContent = d.album.length
+      ? C.albumCount.replace('{n}', d.album.length).replace('{pages}', d.stats.albumPages | 0) : C.albumEmpty;
+    for (b = 0; b < 5; b++) {
+      var nm = SB.palette.BIOMES[b], sec = document.createElement('section'), h = document.createElement('h3'), ic = document.createElement('i');
+      sec.className = 'albiome'; ic.className = 'albadge'; ic.style.backgroundImage = 'var(--icon-biomes-' + nm + ')';
+      h.appendChild(ic); h.appendChild(document.createTextNode(C['biome_' + nm] + ', ' + (per[b].length === 1 ? C.albumOne : C.albumN.replace('{n}', per[b].length))));
+      sec.appendChild(h);
+      if (!per[b].length) { var hint = document.createElement('p'); hint.className = 'alhint'; hint.textContent = C['biomeHint_' + nm]; sec.appendChild(hint); }
+      for (pg = 0; pg < Math.max(1, Math.ceil(per[b].length / 6)); pg++) {
+        var page = document.createElement('div'); page.className = 'alpage' + (per[b].length >= (pg + 1) * 6 ? ' full' : '');
+        for (k = 0; k < 6; k++) {
+          var q = per[b][pg * 6 + k];
+          if (q) page.appendChild(photoButton(q));
+          else { var sl = document.createElement('span'); sl.className = 'alslot'; page.appendChild(sl); }
+        }
+        sec.appendChild(page);
+      }
+      box.appendChild(sec);
+    }
+  }
+  /* where a cleared room landed, for the clear card and the doorway card ('' for a room already in the album) */
+  ui.albumText = function (ai) {
+    if (!ai || !ai.added) return '';
+    var C = ui.COPY, nm = C['biome_' + SB.palette.BIOMES[ai.biome]], k = ((ai.count - 1) % 6) + 1;
+    return k === 6 ? C.albumFull.replace('{biome}', nm) : C.albumPinned.replace('{biome}', nm).replace('{n}', k);
   };
   ui.tally = function (k) { var d = SB.save.doc; if (d) d.stats[k] = (d.stats[k] | 0) + 1; };
   /* the trophies earned and not yet on the save's list, appended (the caller commits) */
@@ -8839,6 +8931,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function showDoor(kind, info) {
     var C = ui.COPY, run = HS.run, cleared = kind === 'cleared', at = run ? run.at : 0, $ = function (id) { return document.getElementById(id); };
     $('doortrophy').hidden = !HS.trophy; $('doortrophy').textContent = HS.trophy ? C.trophyNew.replace('{name}', HS.trophy) : ''; HS.trophy = '';
+    $('dooralbum').hidden = !HS.album; $('dooralbum').textContent = HS.album || ''; HS.album = '';
     var bank = $('doorbank'), nx = $('doornext'), ent = $('doorenter');
     var of = SB.TUNING.HOUSE_ROOMS, raw = HS.raw;
     $('doorhead').textContent = cleared ? C.houseCleared : at === 0 ? C.houseNew : C.doorCleared.replace('{n}', at).replace('{of}', of);
@@ -8902,6 +8995,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var dp = G.state.room.dp, doc = SB.save.doc, n = HS.run.at === 0 ? Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT) : dp, total = HS.run.dp + n;
       doc.stats.clears++; SB.save.addRecent(G.record); if (n > 0) SB.Wallet.earn(n, 'house');
       if (!G.roomHit) doc.stats.flawless = (doc.stats.flawless | 0) + 1;
+      HS.album = ui.albumText(SB.save.addPrint(G.record, G.level ? G.level.biome : 0, !G.roomHit));
       printLine('doorprint', ui.bankPrints());   /* the Darkroom: a doorway banks the blueprints (DESIGN 9.3) */
       ui.lastHash = SB.sim.hash(G.state);
       SB.Wallet.moment('first_clear', { mode: 'house' });
@@ -8957,6 +9051,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var dp = G.state.room.dp, n = Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT), bank = document.getElementById('clearbank');
       SB.save.doc.stats.clears++; SB.save.addRecent(G.record); if (n > 0) SB.Wallet.earn(n, 'clear');
       if (!G.roomHit) SB.save.doc.stats.flawless = (SB.save.doc.stats.flawless | 0) + 1;
+      var alt = ui.albumText(SB.save.addPrint(G.record, G.level ? G.level.biome : 0, !G.roomHit)), cal = document.getElementById('clearalbum');
+      cal.hidden = !alt; cal.textContent = alt;
       var nt = ui.trophyCheck(), ctr = document.getElementById('cleartrophy');
       ctr.hidden = !nt.length; ctr.textContent = nt.length ? ui.COPY.trophyNew.replace('{name}', ui.COPY['tr_' + nt[nt.length - 1]]) : '';
       printLine('clearprint', ui.bankPrints());   /* the Darkroom: the blueprints carried out become prints */
@@ -9045,6 +9141,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('settingsbtn').addEventListener('click', function () { ui.show('settings'); });
     document.getElementById('darkroombtn').addEventListener('click', function () { ui.show('darkroom'); });
     document.getElementById('trophiesbtn').addEventListener('click', function () { ui.show('trophies'); });
+    document.getElementById('albumbtn').addEventListener('click', function () { ui.show('album'); });
+    document.getElementById('alback').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
     document.getElementById('trback').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
     document.getElementById('dkback').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
     document.getElementById('levelcode').placeholder = ui.COPY.levelCode;   /* the field says what it takes (t110: an empty white box) */
@@ -9225,7 +9323,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=16').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=17').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.

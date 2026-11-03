@@ -1,5 +1,9 @@
 # START HERE
 
+## 📷 3 Nov 05:45 UTC (Opus) SHUTTERBUG sb-m1-17 STAMPED: THE ALBUM; STEPHEN RUNS THE DEPLOY
+- Every cleared room becomes a photo on its biome's page (six to a page); empty biomes say what to shoot; full pages glow; a photo replays its room; the clear card says where it landed; three album trophies. lint OK, harness --fast OK, one look at 412.
+- DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-17/deploy-sb-m1-17.sh`.
+
 ## 📷 3 Nov 05:00 UTC (Opus) SHUTTERBUG sb-m1-16 STAMPED: PICKUPS SAY WHAT THEY ARE; STEPHEN RUNS THE DEPLOY (carries sb-m1-15's trophies if not yet live)
 - ✅ LIVE 3 Nov: his deploy pushed main `ceb2da612` (index.html + sw.js; carries sb-m1-15 trophies and bugs), tag sb-m1-16; both origins serve the commit's bytes.
 - His report: specks and scrolls did nothing visible. Now a speck pops its Dead pixels (and explains itself the first three times), a blueprint names itself, a scroll says which stat it raised and what that does (and the heart every third). lint OK, harness --fast OK, one shot.
