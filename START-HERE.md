@@ -1,7 +1,7 @@
 # START HERE
 
-## 📷 3 Nov 06:42 UTC (Opus) SHUTTERBUG sb-m1-21 STAMPED: THE DAILY ROOM + BACK GOES TO THE TITLE + CARD LINES SEEN (carries sb-m1-20's Darkroom v2)
-- DEPLOY (his): `bash /home/codespace/sb-drafts/sb-m1-21/deploy-sb-m1-21.sh` (stamp 272fa794e; main is sb-m1-19).
+## 📷 3 Nov 06:42 UTC (Opus) SHUTTERBUG sb-m1-21 LIVE: THE DAILY ROOM + BACK GOES TO THE TITLE + CARD LINES SEEN (carries sb-m1-20's Darkroom v2)
+- ✅ LIVE 3 Nov 06:52 UTC: his line pushed main `4ca176f3e` (index.html + sw.js, carries sb-m1-20), tag sb-m1-21, main merged back; both origins serve the commit's bytes (a6523ff55a2c99f8...), sw.js sb-m1-21 / shutterbug-v21.
 - Daily Room: one room a day for everyone (9 CC0 rooms x 5 worlds x 2 rules, 86 a cycle), opens with the first house, first clear a day leaves a print. HIS CALL: that print reward (easy to change), and Negatives (dropped: 1 of 9 real rooms has a buildable negative).
 - TEST DEBT: the house browser gate is stale since 2 Nov (idle bug never hit by the second monsters); fails the same on live sb-m1-19; not in CI or deploy. Needs a reliable hit hook, then its death and Retry checks.
 
