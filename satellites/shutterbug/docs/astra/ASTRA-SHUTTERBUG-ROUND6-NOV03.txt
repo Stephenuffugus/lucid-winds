@@ -1,0 +1,47 @@
+SHUTTERBUG, ART ROUND 6 FOR ASTRA (3 Nov 2026): TROPHIES, BUGS AND THE BUG'S WHY
+
+Thank you for round 5. Its keys, bosses, monsters and terrain are in the game (live build sb-m1-15).
+
+WHY ROUND 6
+Stephen, after testing with Jessie: "What are you unlocking? We need something people are playing for, even if it's
+just bragging rights." The game now has a Trophies and bugs screen off the title: 13 trophies with progress, and all
+8 bugs and 4 frames of the prize ladder, the locked ones greyed, the next prize named ("Clear a house to win the Teal
+bug"). The medals are plain CSS circles today, and nothing tells the player why the bug climbs. This round gives
+both a face. (Also new in the game: a banner that teaches the wall jump. No art needed for it.)
+
+CONTRACT (unchanged from round 5)
+- The same 16 colours as your manifest's palette, exactly those hexes. Alpha 0 or 255 only.
+- One sprite key per PNG strip, frames left to right, all the same size, plain frame names. A source grid per strip
+  and a manifest entry per file: file, sprite, w, h, frames, names, fps, anchor, sha256, notes.
+- Sizes are in native pixels; one cell is 16 px. Check everything at 320, 360 and 412 px wide.
+- EXCEPTION FOR THIS ROUND: the trophy screen and the story cards are menu screens, not the room, so Sun (#f2d13f)
+  and Amber may be used in them. Never in anything drawn over a room.
+
+1. TROPHY MEDALS (highest: the screen exists and waits for them)
+   The 13 trophies come in five families, and a family's later steps wear a better metal:
+     rooms cleared (1, 10, 50, 100), houses cleared (1, 5, 10), wall jumps (25, 250), keys found (10, 100),
+     clean clears, rooms with no hit (1, 10).
+   a. trophy_medals, 16x16, frames: room_bronze, room_silver, room_gold, house_bronze, house_silver, house_gold,
+      wall_bronze, wall_silver, key_bronze, key_silver, clean_bronze, clean_silver, locked.
+      Each is a medal with the family's emblem inside: a tiny room or photo for rooms, a house for houses, the bug's
+      wall kick for wall jumps, the round key for keys, an unbroken heart for clean clears. locked is an empty
+      socket that reads as "not yet", calm and never sad. The game draws them at 2x (32 px) beside the name.
+   b. fx_trophy_new, 32x32, frames a to d, 12 fps, played once: a small shine burst behind a medal when a new
+      trophy is named on the room's clear card. Gentle; it must not read as a hit or an explosion.
+
+2. THE BUG'S WHY (high: three wordless story cards)
+   The game will set its own words under each card; please draw no text.
+   a. story_cards, 144x96, frames camera, climb, print:
+      camera: the bug lives inside the player's camera, peeking out of the lens.
+      climb: a photo becomes a room, and the bug climbs it toward the ceiling light.
+      print: the light reached, the photo develops into a print the bug carries home.
+   b. Optional: story_bug_wave, 32x32, frames a and b, 6 fps: the bug waving from the lens, for the first card.
+
+3. OPTIONAL, IF YOU HAVE TIME: THE ALBUM (not built yet; planned as the next carrot)
+   Every cleared room becomes a print in an album, grouped by its biome.
+   a. album_page, 160x220: an album page with 6 print corners (each holding a 40x48 print), no text.
+   b. album_corner, 8x8: one photo corner, which the game repeats at each print.
+
+DELIVERY
+One zip, round6, with the PNG strips, a source grid per strip, and the manifest. Name your notes NOTES.md and say
+anything you chose differently and why.
