@@ -1,6 +1,7 @@
 # START HERE
 
 ## 📷 3 Nov 05:00 UTC (Opus) SHUTTERBUG sb-m1-16 STAMPED: PICKUPS SAY WHAT THEY ARE; STEPHEN RUNS THE DEPLOY (carries sb-m1-15's trophies if not yet live)
+- ✅ LIVE 3 Nov: his deploy pushed main `ceb2da612` (index.html + sw.js; carries sb-m1-15 trophies and bugs), tag sb-m1-16; both origins serve the commit's bytes.
 - His report: specks and scrolls did nothing visible. Now a speck pops its Dead pixels (and explains itself the first three times), a blueprint names itself, a scroll says which stat it raised and what that does (and the heart every third). lint OK, harness --fast OK, one shot.
 - DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-16/deploy-sb-m1-16.sh`.
 
