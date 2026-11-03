@@ -436,11 +436,29 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #darkroom h3 { margin: 6px 0 0; font-size: 1rem; color: var(--ash); } #dkwallet { margin: 0; font-size: 1.1rem; color: var(--sun); }
 .dkrow { display: grid; grid-template-columns: 48px 1fr; column-gap: 10px; row-gap: 6px; align-items: start; padding: 8px 0; border-bottom: 1px solid var(--slate); }
 .dkrow canvas { grid-row: 1 / span 2; }   /* the icon beside both; Develop under the words (at 320 the button squeezed the words to a column) */
-.dkrow canvas, #dkowned canvas { width: 48px; height: 48px; image-rendering: pixelated; flex: none; }
+.dkrow canvas { width: 48px; height: 48px; image-rendering: pixelated; flex: none; }
 .dktext { flex: 1 1 auto; min-width: 0; } .dktext b { display: block; } .dktext span { display: block; font-size: 0.85rem; color: var(--ash); }
 .dkrow .act { grid-column: 2; justify-self: start; min-height: 48px; padding: 0 16px; border-radius: 10px; font-weight: 700; border: 2px solid var(--ink); background: var(--sun); color: var(--ink); }
 .dkrow .act:disabled { background: var(--slate); color: var(--pewter); }
-#dkowned { display: flex; flex-wrap: wrap; gap: 6px; } .dknone, #dkleft { color: var(--ash); font-size: 0.9rem; margin: 0; }
+/* Darkroom v2 (3 Nov): the start pick, the weapon wall (yours lit, a print waiting dashed, the rest dark), the info line */
+#dkstart { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+#dkstart p, #dkinfo { margin: 0; font-size: 0.9rem; color: var(--ash); }
+#dkstartbuy, #dkuse { min-height: 48px; padding: 0 16px; border-radius: 10px; font-weight: 700; border: 2px solid var(--ink); background: var(--sun); color: var(--ink); align-self: flex-start; }
+#dkstartbuy:disabled { background: var(--slate); color: var(--pewter); }
+#dkstartbuy[hidden], #dkuse[hidden] { display: none; }
+/* the info line and its button stay in view while the wall scrolls under them (a tap on a jump weapon at the top of the
+   wall said nothing on screen when the line sat under the last charm) */
+#dkfoot { position: sticky; bottom: calc(-16px - var(--sab)); margin: 4px -16px calc(-16px - var(--sab)); padding: 10px 16px calc(12px + var(--sab));
+  display: flex; flex-direction: column; gap: 8px; background: var(--ink); border-top: 1px solid var(--slate); }
+.dkslot > span { display: block; margin: 2px 0 6px; font-size: 0.85rem; color: var(--ash); }
+.dkgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.dkw { min-height: 72px; padding: 4px 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border: 2px solid var(--slate); border-radius: 10px; background: var(--soot); color: var(--paper); }
+.dkw canvas { width: 40px; height: 40px; image-rendering: pixelated; }
+.dkw span { font-size: 0.75rem; line-height: 1.1; text-align: center; }
+.dkw.has { border-color: var(--pewter); } .dkw.print { border-style: dashed; border-color: var(--ash); }
+.dkw.start { border-color: var(--sun); } .dkw.sel { background: var(--slate); }
+.dknone { color: var(--ash); font-size: 0.9rem; margin: 0; }
 #settitle { min-width: 64px; min-height: 48px; border-radius: 10px; border: 1px solid var(--pewter); background: transparent; color: var(--paper); }
 #settings label.row { display: flex; align-items: center; gap: 12px; min-height: 48px; font-size: 1.05rem; }
 #settings input[type=checkbox] { width: 28px; height: 28px; }
@@ -611,9 +629,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <p id="dkwallet"></p>
   <h3 data-copy="dkPrints"></h3>
   <div id="dkprints"></div>
-  <h3 data-copy="dkOwned"></h3>
-  <div id="dkowned"></div>
-  <p id="dkleft"></p>
+  <h3 data-copy="dkStartHead"></h3>
+  <div id="dkstart"><p id="dkstarttext"></p><button id="dkstartbuy" type="button"></button></div>
+  <h3 id="dkwallhead"></h3>
+  <div id="dkwall"></div>
+  <div id="dkfoot"><p id="dkinfo" role="status" aria-live="polite"></p><button id="dkuse" type="button" hidden></button></div>
 </main>
 <main id="story" class="screen" aria-label="Why the bug climbs">
   <div id="storycard"><canvas id="storycv" width="144" height="96"></canvas><canvas id="storywave" width="32" height="32"></canvas></div>
@@ -790,7 +810,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     CRAB_WALK_S: 3, CRAB_SHELL_S: 1, PUFF_EVERY_S: 3, PUFF_SWELL_S: 0.5, PUFF_CLOUD_S: 0.6, BEETLE_TRAIL_EVERY_S: 0.35, BEETLE_TRAIL_S: 0.7,
     /* the Darkroom (2 Nov): the starting collection, each weapon's tier and the price to develop it, a print that
        cannot be new paid in Dead pixels instead */
-    DEV_START: ['J1', 'D1'], DEV_PRICE: [0, 30, 100, 300], DEV_DUP_DP: 30,
+    DEV_START: ['J1', 'D1'], DEV_PRICE: [0, 30, 100, 300], DEV_DUP_DP: 30, START_PICK_DP: 200 /* DESIGN 9.4 "Starting loadout pick 200" */,
     DEV_TIER: { J2: 1, J3: 1, J5: 1, D2: 1, D4: 1, D6: 1, J4: 2, J6: 2, J7: 2, D3: 2, D5: 2, D8: 2, C2: 2, C6: 2, J8: 3, D7: 3, C1: 3, C3: 3, C4: 3 }, LANTERN_PULSE_S: 1 /* W4: the Lantern burns once a second */, KEYS_MAX: 3, KEYS_ROWS_OVER_SPAWN: 2, KEYS_MIN_ROWS: 6, KEYS_GUARD_CELLS: 4 /* the locked exit (2 Nov, features.keys) */,
     BOSS_MOTH_EVERY_S: 4, BOSS_MOTH_COUNT: 3, BOSS_ICICLE_TELEGRAPH_S: 3, BOSS_RING_EVERY_S: 5, BOSS_RING_CELLS: 4, BOSS_SPARK_TELEGRAPH_S: 2,
     /* the biome movesets (2 Nov): each cycle and its tell; Frost's columns, Overgrowth's thorn life, Ember's sparks */
@@ -924,7 +944,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m1-19';
+  SB.BUILD = 'sb-m1-20';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -1323,6 +1343,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (d.settings.reducedMotion !== null && typeof d.settings.reducedMotion !== 'boolean') d.settings.reducedMotion = null;
     d.run = runValid(d.run);
     d.cosmetics = lookValid(d.cosmetics);
+    var sp = d.unlocks.startPick;   /* the Darkroom's start pick: null not bought, '' bought with none chosen, or a weapon id */
+    d.unlocks.startPick = typeof sp !== 'string' ? null : sp === '' || SB.TUNING.WEAPONS_BUILT.indexOf(sp) >= 0 ? sp : '';
     d.trophies = d.trophies.filter(function (t) { return typeof t === 'string'; }).slice(0, 64);
     d.trophySeen = Math.max(0, Math.min(d.trophies.length, d.trophySeen | 0));
     d.album = d.album.filter(function (q) {
@@ -7673,7 +7695,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       C1: 'A light circles you and burns enemies close to you.', C2: 'Loot near you flies to you.',
       C3: 'Once a room, the hit that would end your climb leaves you one heart.', C4: 'The first hit in each room costs you nothing.',
       C6: 'Loot out of sight shows at the edge of the picture.' },
-    slots: 'Weapons', slotJump: 'Jump', slotDive: 'Dive', slotHas: '{slot}: {name}', slotNone: '{slot}: nothing yet',
+    slots: 'Weapons', slotJump: 'Jump', slotDive: 'Dive', slotCharm: 'Charm', slotHas: '{slot}: {name}', slotNone: '{slot}: nothing yet',
     /* step 2 (10): the swap card's words and its comparison line (8.6) */
     swapHead: 'Swap {old} for {new}?', swapTake: 'Take {new}', swapKeep: 'Keep {old}',
     cmpLift: 'jumps higher', cmpHolds: 'stops enemies', cmpBoth: 'hits both sides', cmpOne: 'hits one side',
@@ -7689,8 +7711,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     houseLost: 'The house is lost', lost: 'Lost {n} dead pixels', lostOne: 'Lost 1 dead pixel', retryHouse: 'Retry House', newHouse: 'New house',
     houseReplace: 'Start a new house? The saved house will be lost.', houseCleared: 'House cleared', houseSum: '{rooms} rooms, {n} dead pixels', houseSumOne: '{rooms} rooms, 1 dead pixel',
     /* HOUSE-B: the guardian, the prize, the looks */
-    guardHint: 'Beat the guardian to light the exit', trophiesLink: 'Trophies and bugs', trophiesNew: 'Trophies and bugs, {n} new', trophiesHead: 'Trophies {n} of {max}', bugsHead: 'Bugs {n} of {max}', framesHead: 'Frames {n} of {max}', trophyOf: '{n} of {max}', trophyNew: 'New trophy: {name}', nextPrize: 'Clear a house to win the {name}', allLooks: 'Every bug and frame is yours', tr_first: 'First room', trg_first: 'Clear a room', tr_rooms10: 'Ten rooms', trg_rooms10: 'Clear 10 rooms', tr_rooms50: 'Fifty rooms', trg_rooms50: 'Clear 50 rooms', tr_rooms100: 'A hundred rooms', trg_rooms100: 'Clear 100 rooms', tr_house1: 'Housewarming', trg_house1: 'Clear a house', tr_house5: 'Five houses', trg_house5: 'Clear 5 houses', tr_house10: 'Ten houses', trg_house10: 'Clear 10 houses', tr_wall25: 'Wall jumper', trg_wall25: 'Wall jump 25 times', tr_wall250: 'Up the walls', trg_wall250: 'Wall jump 250 times', tr_keys10: 'Key finder', trg_keys10: 'Find 10 keys', tr_keys100: 'Key ring', trg_keys100: 'Find 100 keys', tr_clean1: 'Not a scratch', trg_clean1: 'Clear a room without a hit', tr_clean10: 'Untouchable', trg_clean10: 'Clear 10 rooms without a hit', story_camera: 'The bug lives in your camera.', story_climb: 'Every photo you take becomes a room. It climbs up to the light.', story_print: 'Each light it reaches develops your photo into the album.', storyNext: 'Next', storyDone: 'Fill the album', storyLink: 'Why the bug climbs', albumLink: 'Album', albumEmpty: 'Clear a room and its photo lands here', albumCount: 'Photos {n}, full pages {pages}', albumOne: '1 photo', albumN: '{n} photos', albumPinned: 'Pinned to your album: {biome} page, {n} of 6', albumFull: 'A full {biome} page in your album', albumPlay: 'Play this room again, cleared {date}', albumRoom: 'From your album', biome_attic: 'Attic', biome_frost: 'Frost', biome_deep: 'Deep', biome_overgrowth: 'Overgrowth', biome_ember: 'Ember', biomeHint_attic: 'Shoot wood, browns and warm yellows', biomeHint_frost: 'Shoot a bright, white room', biomeHint_deep: 'Shoot blues and teals', biomeHint_overgrowth: 'Shoot greens and plants', biomeHint_ember: 'Shoot reds and pinks', tr_page1: 'Full page', trg_page1: 'Fill an album page with 6 rooms', tr_pages5: 'Photo album', trg_pages5: 'Fill 5 album pages', tr_biomes5: 'Every biome', trg_biomes5: 'Fill a page in every biome', itemSpeck: 'Dead pixels', itemSpeckSays: 'Spend them in the Darkroom on new weapons', itemBlueprint: 'Blueprint', itemBlueprintSays: 'Carry it out to print a new weapon in the Darkroom', stat_vigor: 'Vigor up', stat_focus: 'Focus up', stat_grit: 'Grit up', statSays_vigor: 'Your dive weapons hit harder', statSays_focus: 'Your jump weapons hit harder', statSays_grit: 'Your charm works stronger', statHeart: '{stat} and one more heart', wallHead: 'Wall jump', wallLine: 'Press jump to kick off the wall', stuckHead: 'Stuck in a pit?', stuckLine: 'Jump at a wall, hold toward it, jump again', darkroom: 'Darkroom', darkroomLink: 'Darkroom', dkWallet: 'Dead pixels {n}', dkPrints: 'Prints to develop', dkOwned: 'Your weapons',
-    dkDevelop: 'Develop for {n}', dkNoPrints: 'No prints yet. Carry a blueprint out of a room and it prints here.', dkLeft: '{n} weapons not found yet', dkLeftOne: '1 weapon not found yet',
+    guardHint: 'Beat the guardian to light the exit', trophiesLink: 'Trophies and bugs', trophiesNew: 'Trophies and bugs, {n} new', trophiesHead: 'Trophies {n} of {max}', bugsHead: 'Bugs {n} of {max}', framesHead: 'Frames {n} of {max}', trophyOf: '{n} of {max}', trophyNew: 'New trophy: {name}', nextPrize: 'Clear a house to win the {name}', allLooks: 'Every bug and frame is yours', tr_first: 'First room', trg_first: 'Clear a room', tr_rooms10: 'Ten rooms', trg_rooms10: 'Clear 10 rooms', tr_rooms50: 'Fifty rooms', trg_rooms50: 'Clear 50 rooms', tr_rooms100: 'A hundred rooms', trg_rooms100: 'Clear 100 rooms', tr_house1: 'Housewarming', trg_house1: 'Clear a house', tr_house5: 'Five houses', trg_house5: 'Clear 5 houses', tr_house10: 'Ten houses', trg_house10: 'Clear 10 houses', tr_wall25: 'Wall jumper', trg_wall25: 'Wall jump 25 times', tr_wall250: 'Up the walls', trg_wall250: 'Wall jump 250 times', tr_keys10: 'Key finder', trg_keys10: 'Find 10 keys', tr_keys100: 'Key ring', trg_keys100: 'Find 100 keys', tr_clean1: 'Not a scratch', trg_clean1: 'Clear a room without a hit', tr_clean10: 'Untouchable', trg_clean10: 'Clear 10 rooms without a hit', story_camera: 'The bug lives in your camera.', story_climb: 'Every photo you take becomes a room. It climbs up to the light.', story_print: 'Each light it reaches develops your photo into the album.', storyNext: 'Next', storyDone: 'Fill the album', storyLink: 'Why the bug climbs', albumLink: 'Album', albumEmpty: 'Clear a room and its photo lands here', albumCount: 'Photos {n}, full pages {pages}', albumOne: '1 photo', albumN: '{n} photos', albumPinned: 'Pinned to your album: {biome} page, {n} of 6', albumFull: 'A full {biome} page in your album', albumPlay: 'Play this room again, cleared {date}', albumRoom: 'From your album', biome_attic: 'Attic', biome_frost: 'Frost', biome_deep: 'Deep', biome_overgrowth: 'Overgrowth', biome_ember: 'Ember', biomeHint_attic: 'Shoot wood, browns and warm yellows', biomeHint_frost: 'Shoot a bright, white room', biomeHint_deep: 'Shoot blues and teals', biomeHint_overgrowth: 'Shoot greens and plants', biomeHint_ember: 'Shoot reds and pinks', tr_page1: 'Full page', trg_page1: 'Fill an album page with 6 rooms', tr_pages5: 'Photo album', trg_pages5: 'Fill 5 album pages', tr_biomes5: 'Every biome', trg_biomes5: 'Fill a page in every biome', itemSpeck: 'Dead pixels', itemSpeckSays: 'Spend them in the Darkroom on new weapons', itemBlueprint: 'Blueprint', itemBlueprintSays: 'Carry it out to print a new weapon in the Darkroom', stat_vigor: 'Vigor up', stat_focus: 'Focus up', stat_grit: 'Grit up', statSays_vigor: 'Your dive weapons hit harder', statSays_focus: 'Your jump weapons hit harder', statSays_grit: 'Your charm works stronger', statHeart: '{stat} and one more heart', wallHead: 'Wall jump', wallLine: 'Press jump to kick off the wall', stuckHead: 'Stuck in a pit?', stuckLine: 'Jump at a wall, hold toward it, jump again', darkroom: 'Darkroom', darkroomLink: 'Darkroom', dkWallet: 'Dead pixels {n}', dkPrints: 'Prints to develop', dkDevelop: 'Develop for {n}', dkNoPrints: 'No prints yet. Some rooms hide a blueprint: carry it out of the room and it prints here.',
+    dkWall: 'Weapons {n} of {max}', dkNotFound: 'Not found yet. Some rooms hide its blueprint.', dkPrintWaiting: 'Its print is waiting above.',
+    dkStartHead: 'Start every house with', dkStartSays: 'Start every house holding one weapon you have developed.', dkStartBuy: 'Unlock for {n}',
+    dkStartPick: 'Tap one of your weapons below to start every house with it.', dkStartOn: 'Every house starts with the {name}.',
+    dkStartUse: 'Start every house with it', dkStartStop: 'Stop starting with it', dkLeft: '{n} weapons not found yet', dkLeftOne: '1 weapon not found yet',
     dkAll: 'You have found every weapon', newPrint: 'New print: {name}. Develop it in the Darkroom.', newPrints: 'New prints: {name}. Develop them in the Darkroom.', dupPrint: 'A print you had already: {n} dead pixels',
     keysFind: 'Find {n} keys', keysFind1: 'Find the key', keysOpen: 'They open the exit', keysOpen1: 'It opens the exit', keysLocked: 'The exit is locked', keysMore: '{n} more keys', keysMore1: '1 more key', keysOf: '{n} of {max} keys', guardHintChest: 'Open the chest for a weapon', prizeNew: 'New: {name}', prizeLabel: 'Your prize, {name}',
     setLook: 'Look', lookHero: 'Bug', lookFrame: 'Frame', lookWear: 'Wear {name}',
@@ -7810,7 +7835,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   function devPrice(id) { var T = SB.TUNING; return T.DEV_PRICE[T.DEV_TIER[id] || 1]; }
   function drawDarkroom() {
-    var doc = SB.save.doc, C = ui.COPY, T = SB.TUNING, list = document.getElementById('dkprints'), own = document.getElementById('dkowned');
+    var doc = SB.save.doc, C = ui.COPY, T = SB.TUNING, list = document.getElementById('dkprints');
     document.getElementById('dkwallet').textContent = C.dkWallet.replace('{n}', doc ? doc.dp : 0);
     list.textContent = '';
     var prints = doc && doc.prints ? doc.prints : [];
@@ -7827,18 +7852,65 @@ body.sb-modal .lwfb-fab { display: none !important; }
       });
       row.appendChild(cv); row.appendChild(tx); row.appendChild(b); list.appendChild(row);
     });
-    own.textContent = '';
-    ui.owned().forEach(function (id) {
-      var cv = document.createElement('canvas'); cv.width = SB.render.ICON_PX; cv.height = SB.render.ICON_PX; cv.title = C.wpn[id]; cv.setAttribute('aria-label', C.wpn[id]);
-      SB.render.icon(cv.getContext('2d'), id, 0, 0); own.appendChild(cv);
+    /* the start pick (DESIGN 9.4): bought once, then any weapon of yours starts every house */
+    var owned = ui.owned(), pick = doc && doc.unlocks ? doc.unlocks.startPick : null, bought = typeof pick === 'string';
+    var st = document.getElementById('dkstarttext'), buy = document.getElementById('dkstartbuy');
+    st.textContent = !bought ? C.dkStartSays : pick && owned.indexOf(pick) >= 0 ? C.dkStartOn.replace('{name}', C.wpn[pick]) : C.dkStartPick;
+    buy.hidden = bought; buy.textContent = C.dkStartBuy.replace('{n}', T.START_PICK_DP); buy.disabled = !doc || doc.dp < T.START_PICK_DP;
+    /* the wall: every weapon by slot, yours lit and named, a print waiting dashed, the rest dark */
+    var wall = document.getElementById('dkwall'), built = T.WEAPONS_BUILT;
+    wall.textContent = '';
+    document.getElementById('dkwallhead').textContent = C.dkWall.replace('{n}', owned.length).replace('{max}', built.length);
+    ['J', 'D', 'C'].forEach(function (s0, k) {
+      var row = document.createElement('div'), lab = document.createElement('span'), grid = document.createElement('div');
+      row.className = 'dkslot'; lab.textContent = C[['slotJump', 'slotDive', 'slotCharm'][k]]; grid.className = 'dkgrid';
+      built.filter(function (id) { return id.charAt(0) === s0; }).forEach(function (id) {
+        var has = owned.indexOf(id) >= 0, pr = !has && prints.indexOf(id) >= 0, b = document.createElement('button'), cv = document.createElement('canvas'), nm = document.createElement('span');
+        b.type = 'button'; b.className = 'dkw' + (has ? ' has' : pr ? ' print' : '') + (has && id === pick ? ' start' : '') + (id === dkSel ? ' sel' : '');
+        cv.width = SB.render.ICON_PX; cv.height = SB.render.ICON_PX;
+        var g2 = cv.getContext('2d'); SB.render.icon(g2, id, 0, 0);
+        if (!has && !pr) { g2.globalCompositeOperation = 'source-atop'; g2.fillStyle = 'rgba(92,86,104,0.96)'; g2.fillRect(0, 0, cv.width, cv.height); }
+        nm.textContent = has || pr ? C.wpn[id] : '';
+        b.setAttribute('aria-label', has || pr ? C.wpn[id] : C.dkNotFound);
+        b.appendChild(cv); b.appendChild(nm);
+        b.addEventListener('click', function () { dkSel = dkSel === id ? '' : id; drawDarkroom(); });
+        grid.appendChild(b);
+      });
+      row.appendChild(lab); row.appendChild(grid); wall.appendChild(row);
     });
-    var have = ui.owned().concat(prints), left = T.WEAPONS_BUILT.filter(function (id) { return have.indexOf(id) < 0; }).length;
-    document.getElementById('dkleft').textContent = left === 0 ? C.dkAll : left === 1 ? C.dkLeftOne : C.dkLeft.replace('{n}', left);
+    /* the info line: what a tapped weapon does, or how many are still out there; and the start pick's button */
+    var left = built.filter(function (id) { return owned.indexOf(id) < 0 && prints.indexOf(id) < 0; }).length;
+    var selHas = !!dkSel && owned.indexOf(dkSel) >= 0, selPr = !!dkSel && !selHas && prints.indexOf(dkSel) >= 0, use = document.getElementById('dkuse');
+    document.getElementById('dkinfo').textContent = !dkSel ? (left === 0 ? C.dkAll : left === 1 ? C.dkLeftOne : C.dkLeft.replace('{n}', left))
+      : selHas || selPr ? C.wpn[dkSel] + '. ' + C.wpnSays[dkSel] + (selPr ? ' ' + C.dkPrintWaiting : '') : C.dkNotFound;
+    use.hidden = !(bought && selHas);
+    use.textContent = pick === dkSel ? C.dkStartStop : C.dkStartUse;
   }
+  var dkSel = '';   /* the weapon tapped on the wall */
+  ui.drawDarkroom = drawDarkroom;
+  /* the start pick's purchase and choice (wired at boot beside the Darkroom link) */
+  ui.dkBuyStart = function () {
+    var doc = SB.save.doc, T = SB.TUNING;
+    if (!doc || typeof doc.unlocks.startPick === 'string' || doc.dp < T.START_PICK_DP) return false;
+    doc.dp -= T.START_PICK_DP; doc.unlocks.startPick = ''; SB.save.commit(); SB.audio.sfx('chest'); drawDarkroom();
+    return true;
+  };
+  ui.dkUseStart = function () {
+    var doc = SB.save.doc;
+    if (!doc || typeof doc.unlocks.startPick !== 'string' || !dkSel || ui.owned().indexOf(dkSel) < 0) return false;
+    doc.unlocks.startPick = doc.unlocks.startPick === dkSel ? '' : dkSel; SB.save.commit(); drawDarkroom();
+    return true;
+  };
+  /* a new house's slots: empty, or holding the start pick when it is one of the player's weapons */
+  ui.startGear = function () {
+    var g = [0, 0, 0], doc = SB.save.doc, id = doc && doc.unlocks ? doc.unlocks.startPick : null, c = id ? SB.sim.WPN.indexOf(id) : -1;
+    if (c > 0 && ui.owned().indexOf(id) >= 0) g[SB.sim.slotOf(c)] = c;
+    return g;
+  };
   ui.show = function (name) {
     if (name === 'title' && SB.save.doc && !SB.save.doc.onboarding.storySeen && (SB.save.doc.stats.clears | 0) > 0) { storyAt = 0; storyBack = 'title'; name = 'story'; }
     if (name === 'story') drawStory();
-    if (name === 'darkroom') drawDarkroom();
+    if (name === 'darkroom') { dkSel = ''; drawDarkroom(); }
     if (name === 'trophies') drawTrophies();
     if (name === 'album') drawAlbum();
     if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; document.getElementById('darkroombtn').hidden = !ui.firstRoomDone; document.getElementById('albumbtn').hidden = !ui.firstRoomDone; trophyLink(); drawRecent(); HS.on = false; drawHouse(); ui.applyLook(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
@@ -9192,7 +9264,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.houseStart = function () {
     var doc = SB.save.doc;
     if (doc && doc.run && !doc.run.lost && !window.confirm(ui.COPY.houseReplace)) return false;
-    G.gear = [0, 0, 0]; G.entry = [0, 0, 0];
+    G.gear = ui.startGear(); G.entry = G.gear.slice();   /* the Darkroom's start pick (DESIGN 9.4): the house starts holding it */
     HS.run = SB.record.runFresh(G.gear); saveRun(HS.run); HS.on = true;
     showDoor('door');
     return true;
@@ -9419,6 +9491,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('pauseshare').addEventListener('click', function () { ui.openShare(); });
     document.getElementById('settingsbtn').addEventListener('click', function () { ui.show('settings'); });
     document.getElementById('darkroombtn').addEventListener('click', function () { ui.show('darkroom'); });
+    document.getElementById('dkstartbuy').addEventListener('click', function () { ui.dkBuyStart(); });
+    document.getElementById('dkuse').addEventListener('click', function () { ui.dkUseStart(); });
     document.getElementById('trophiesbtn').addEventListener('click', function () { ui.show('trophies'); });
     document.getElementById('albumbtn').addEventListener('click', function () { ui.show('album'); });
     document.getElementById('alback').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
@@ -9604,7 +9678,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=19').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=20').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.

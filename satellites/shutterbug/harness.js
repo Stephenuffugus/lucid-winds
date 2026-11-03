@@ -6578,6 +6578,18 @@ group('H-look-1', 'the prize ladder (Stephen\'s "Cosmetic per clear"): the first
   t.same(Rr.validateSave({ v: 1 }).cosmetics, { hero: 0, frame: 0, owned: [] }, 'an old save without owned gets the defaults (no migration)');
 });
 
+/* ---------------------------------------------------------------- the Darkroom's start pick (3 Nov, DESIGN 9.4) */
+group('H-dk-1', 'the start pick in the save: null until bought, then empty or a weapon id; anything else never breaks a save', t => {
+  const Rr = SB.record, T = SB.TUNING, d0 = Rr.saveDefaults();
+  t.ok(d0.unlocks.startPick === null, 'a new save has not bought the start pick');
+  t.ok(T.START_PICK_DP === 200, 'it costs DESIGN 9.4\'s 200 dead pixels');
+  const keep = v => { const d = Rr.saveDefaults(); d.unlocks.startPick = v; return Rr.validateSave(JSON.parse(JSON.stringify(d))).unlocks.startPick; };
+  t.same([keep(null), keep(''), keep('J6'), keep('C2')], [null, '', 'J6', 'C2'], 'not bought, bought with none chosen, and a weapon id are kept as they are');
+  t.same([keep('Z9'), keep('j6')], ['', ''], 'a string that names no weapon becomes bought with none chosen (the purchase is never lost)');
+  t.same([keep(7), keep({}), keep(['J6']), keep(true)], [null, null, null, null], 'a value that is not a string is not bought');
+  t.ok(T.WEAPONS_BUILT.every(id => keep(id) === id), 'every built weapon can be the pick');
+});
+
 const chosen = ONLY ? GROUPS.filter(g => g.id.startsWith(ONLY)) : GROUPS;
 if (ONLY && !chosen.length) { console.log('FAIL  --only ' + ONLY + ' matched no group'); console.log('\nSHUTTERBUG HARNESS FAILED'); process.exit(1); }
 for (const g of chosen) {
