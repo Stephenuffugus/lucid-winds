@@ -1,35 +1,35 @@
 # START HERE
 
-## 📷 3 Nov 04:50 UTC (Opus) SHUTTERBUG sb-m1-19 STAMPED: ASTRA ROUND 7 IN (16 bugs, 8 frames, album medals, album covers); ONE DEPLOY CARRIES sb-m1-17, 18 AND 19
-- DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-19/deploy-sb-m1-19.sh` (main is still sb-m1-16; the 17 and 18 scripts now refuse).
-- STORE PICTURES DRAFTED 05:20 UTC on Astra's frames (play-shot-1..6 + the lettered feature graphic in store/shutterbug-play, a CC0 living room as the room). TOMORROW (he brings images): `node store/shutterbug-play/shoot.mjs --photo HIS.jpg` then `node tools/store-kit/compose.mjs store/shutterbug-play/kit.json`, look once, commit. The album shot is the weakest (one short page per world; more rooms fill it). Then the Play build (his license line in BUILD.md).
+## 📷 3 Nov 04:50 UTC (Opus) SHUTTERBUG sb-m1-19 LIVE: ASTRA ROUND 7 IN (16 bugs, 8 frames, album medals, album covers); THE ALBUM AND ROUND 6 WENT WITH IT
+- ✅ LIVE 3 Nov 05:25 UTC: main `f3f57a9c5` (index.html + sw.js; carries sb-m1-17's album and sb-m1-18's round 6), tag sb-m1-19, main merged back; both origins serve the commit's bytes, sw.js says sb-m1-19 / shutterbug-v19. He sent the exact line as a message and the session ran it (feedback_deploy_permission).
+- STORE PICTURES DRAFTED 05:08 UTC on Astra's frames (play-shot-1..6 + the lettered feature graphic in store/shutterbug-play, a CC0 living room as the room). TOMORROW (he brings images): `node store/shutterbug-play/shoot.mjs --photo HIS.jpg` then `node tools/store-kit/compose.mjs store/shutterbug-play/kit.json`, look once, commit. The album shot is the weakest (one short page per world; more rooms fill it). Then the Play build (his license line in BUILD.md).
 - The Daily Room art (daily_badge, daily_stamp, daily_card) is spliced and waits for the feature.
 
-## 📷 3 Nov 06:40 UTC (Opus) SHUTTERBUG sb-m1-18 STAMPED: ASTRA ROUND 6 IN (medals, the bug's story, the album page); STEPHEN RUNS THE DEPLOY (carries sb-m1-17's album)
+## 📷 3 Nov 04:20 UTC (Opus) SHUTTERBUG sb-m1-18 STAMPED: ASTRA ROUND 6 IN (medals, the bug's story, the album page); STEPHEN RUNS THE DEPLOY (carries sb-m1-17's album)
 - Round 6 vaulted (vault-20261103-shutterbug-astra-06), checked, cut, spliced, wired. lint OK, harness --fast OK, one look at 412.
-- DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-18/deploy-sb-m1-18.sh`. Next: the publish list (store kit refresh from the real game, the Play build) and Astra round 7.
+- ✅ Shipped inside sb-m1-19 (its own script now refuses). Next: the publish list (store kit refresh from the real game, the Play build) and Astra round 7.
 - PLAY: gates green (twa_ready, offline cold launch). Shell store/shutterbug-play/twa/twa-manifest.json (com.skywolfstudio.shutterbug), outputs git ignored. The SDK license is HIS to accept (the classifier refused an auto accept): his line `bash /home/codespace/sb-drafts/play-build/build-shutterbug-aab.sh` builds the bundle, makes and vaults the upload key. Console text updated (album, trophies). store/shutterbug-play/BUILD.md has the steps. Astra round 7 brief (store frames, 8 more bugs, album medals, Daily Room) in docs/astra.
 
-## 📷 3 Nov 05:45 UTC (Opus) SHUTTERBUG sb-m1-17 STAMPED: THE ALBUM; STEPHEN RUNS THE DEPLOY
+## 📷 3 Nov 04:08 UTC (Opus) SHUTTERBUG sb-m1-17 STAMPED: THE ALBUM; STEPHEN RUNS THE DEPLOY
 - Every cleared room becomes a photo on its biome's page (six to a page); empty biomes say what to shoot; full pages glow; a photo replays its room; the clear card says where it landed; three album trophies. lint OK, harness --fast OK, one look at 412.
-- DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-17/deploy-sb-m1-17.sh`.
+- ✅ Shipped inside sb-m1-19 (its own script now refuses).
 
-## 📷 3 Nov 05:00 UTC (Opus) SHUTTERBUG sb-m1-16 STAMPED: PICKUPS SAY WHAT THEY ARE; STEPHEN RUNS THE DEPLOY (carries sb-m1-15's trophies if not yet live)
+## 📷 3 Nov 03:53 UTC (Opus) SHUTTERBUG sb-m1-16 STAMPED: PICKUPS SAY WHAT THEY ARE; STEPHEN RUNS THE DEPLOY (carries sb-m1-15's trophies if not yet live)
 - ✅ LIVE 3 Nov: his deploy pushed main `ceb2da612` (index.html + sw.js; carries sb-m1-15 trophies and bugs), tag sb-m1-16; both origins serve the commit's bytes.
 - His report: specks and scrolls did nothing visible. Now a speck pops its Dead pixels (and explains itself the first three times), a blueprint names itself, a scroll says which stat it raised and what that does (and the heart every third). lint OK, harness --fast OK, one shot.
 - DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-16/deploy-sb-m1-16.sh`.
 
-## 📷 3 Nov 04:20 UTC (Opus) SHUTTERBUG sb-m1-15 STAMPED: TROPHIES AND BUGS (his carrot idea); STEPHEN RUNS THE DEPLOY
+## 📷 3 Nov 03:45 UTC (Opus) SHUTTERBUG sb-m1-15 STAMPED: TROPHIES AND BUGS (his carrot idea); STEPHEN RUNS THE DEPLOY
 - A Trophies and bugs screen off the title after the first room: 13 trophies (rooms, houses, wall jumps, keys, clean clears; bronze, silver, gold steps, goal and progress), all 8 bugs and 4 frames with the locked ones grey and the next prize named. New trophies named on the clear and doorway cards. lint OK, harness --fast OK, one look at 412.
 - DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-15/deploy-sb-m1-15.sh`. Screen wrap: NO (his call 3 Nov, wall jumps need the edges).
 
-## 📷 3 Nov 03:30 UTC (Opus) SHUTTERBUG sb-m1-14 STAMPED: THE WALL JUMP, TAUGHT; STEPHEN RUNS THE DEPLOY
+## 📷 3 Nov 03:11 UTC (Opus) SHUTTERBUG sb-m1-14 STAMPED: THE WALL JUMP, TAUGHT; STEPHEN RUNS THE DEPLOY
 - ✅ LIVE 3 Nov: his deploy pushed main `0bd8f08eb` (index.html + sw.js only), tag sb-m1-14; both origins serve the commit's bytes.
 - His ask: players who do not know they can wall jump get stuck in pits and quit. The in-play banner now teaches it at the first wall cling ("Press jump to kick off the wall", once until learned) and whenever the bug is stuck ("Jump at a wall, hold toward it, jump again", at most every 25 s). lint OK, harness --fast OK.
 - DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-14/deploy-sb-m1-14.sh`. NOT a stale cache (CORRECTION, 3 Nov): Jessie's missing "Start a house" was the design gate (the house shows only after a first room clear).
 - His open design asks (answered in the conversation, decisions his): the carrot and the bug's why, screen wrap for boxed off side pockets, Dewball held for a Meshy asset build out, Rabbit Ronin levels by his own hand, Lucid Winds' attention companion (Fable plans it).
 
-## 📷 3 Nov 01:10 UTC (Opus) SHUTTERBUG sb-m1-13 STAMPED: A STALE PAGE HEALS ITSELF (Jessie saw an old build); STEPHEN RUNS THE DEPLOY
+## 📷 3 Nov 00:47 UTC (Opus) SHUTTERBUG sb-m1-13 STAMPED: A STALE PAGE HEALS ITSELF (Jessie saw an old build); STEPHEN RUNS THE DEPLOY
 - ✅ LIVE 3 Nov: his deploy pushed main `4790d2d31` (index.html + sw.js only), tag sb-m1-13; lucidwinds.com and www serve index sha 8ed3a64c and sw.js sha bebc01f4, equal to the commit. Players on an older saved copy heal on their next open with the network up; pages saved before sb-m1-13 have no heal code, so Jessie still needs one fresh open.
 - Server proven right (lucidwinds.com and www serve sb-m1-12, sha bed70c84; skywolfstudio.com is only the landing page). Cause on her phone: the arcade frames the game, the root worker (or the game's own) serves its saved copy when the network is slow or the CDN sends 429. Fix: the page checks the live BUILD in sw.js and swaps itself for the fresh page on the title screen, once per build per session. lint OK, harness --fast OK.
 - DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-13/deploy-sb-m1-13.sh`. For Jessie today: open lucidwinds.com/satellites/shutterbug/ directly on Wi-Fi and pull to refresh; Settings shows the build.
