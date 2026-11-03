@@ -1,5 +1,11 @@
 # START HERE
 
+## 🌙 3 Nov 07:10 UTC (Opus) SHUT DOWN FOR THE NIGHT, NO OVERNIGHT RUN. SHUTTERBUG sb-m1-21 LIVE; NEXT SESSION STARTS HERE
+1. His room photos: `node store/shutterbug-play/shoot.mjs --photo HIS.jpg` then `node tools/store-kit/compose.mjs store/shutterbug-play/kit.json`; look once; commit (store/shutterbug-play/BUILD.md section 4).
+2. His Play Console steps (BUILD.md section 2): the bundle is built and vaulted; Internal testing first; then he sends the App signing SHA-256 and the session adds Shutterbug to .well-known/assetlinks.json for his one deploy line.
+3. His calls waiting: the Daily Room's print a day (easy to change), Negatives (1 of 9 real negatives build; would need a builder change).
+4. Test debt: the house browser gate (stale since 2 Nov, not in CI or deploy). Before pushing game code: `SWS_NO_BROWSER=1 node satellites/shutterbug/tools/check.js`.
+
 ## 📷 3 Nov 06:42 UTC (Opus) SHUTTERBUG sb-m1-21 LIVE: THE DAILY ROOM + BACK GOES TO THE TITLE + CARD LINES SEEN (carries sb-m1-20's Darkroom v2)
 - ✅ LIVE 3 Nov 06:52 UTC: his line pushed main `4ca176f3e` (index.html + sw.js, carries sb-m1-20), tag sb-m1-21, main merged back; both origins serve the commit's bytes (a6523ff55a2c99f8...), sw.js sb-m1-21 / shutterbug-v21.
 - Daily Room: one room a day for everyone (9 CC0 rooms x 5 worlds x 2 rules, 86 a cycle), opens with the first house, first clear a day leaves a print. HIS CALL: that print reward (easy to change), and Negatives (dropped: 1 of 9 real rooms has a buildable negative).
