@@ -3939,6 +3939,31 @@ function readCatFromPhoto(canvas, extMask){
   /* Where the patch sits, as a fraction down the animal's own bounding box. */
   const wY = wCount ? ((wSy / wCount) - mnY) / Math.max(1, mxY - mnY) : 0;
   const whiteAmt = wCount / q;
+  /* Face white and patch colours (3 Nov). The head is nearly always the top
+     of the animal, so white in the top band of her outline is a blaze; and
+     a calico or tortie shows GINGER and BLACK patches, which no stripe count
+     can see (every real coat, solid black included, flips its rows). */
+  const bandY = mnY + Math.round((mxY - mnY) * 0.32);
+  let bandPx = 0, bandW = 0, gingerPx = 0, blackPx = 0, allPx = 0, gR = 0, gG = 0, gB = 0;
+  for (let y = mnY; y <= mxY; y++)
+    for (let x = 0; x < N; x++){
+      if (!mask[y*N + x]) continue;
+      allPx++;
+      if (y <= bandY){ bandPx++; if (wBlob[y*N + x]) bandW++; }
+      const p = at(x, y), L = lum(p);
+      const mx3 = Math.max(p[0],p[1],p[2]), mn3 = Math.min(p[0],p[1],p[2]);
+      if (L < 45){ blackPx++; continue; }
+      if (mx3 === p[0] && mx3 > mn3){
+        const hue = (((p[1]-p[2]) / (mx3-mn3)) * 60 + 360) % 360;
+        if (hue >= 12 && hue <= 46 && (mx3 - mn3) / mx3 >= 0.38 && L >= 70 && L <= 215){
+          gingerPx++; gR += p[0]; gG += p[1]; gB += p[2];
+        }
+      }
+    }
+  const faceWhite = bandPx ? bandW / bandPx : 0;
+  const gingerAmt = allPx ? gingerPx / allPx : 0, blackAmt = allPx ? blackPx / allPx : 0;
+  const gingerHex = gingerPx ? '#' + [gR, gG, gB].map(v => Math.round(v / gingerPx)
+    .toString(16).padStart(2, '0')).join('') : null;
 
   /* pattern: count luminance sign changes along rows through the subject.
      A tabby oscillates. A bicolour steps once. A solid barely moves. */
@@ -4034,6 +4059,17 @@ function readCatFromPhoto(canvas, extMask){
   const brightSat = bMx ? (bMx - Math.min(bp[0], bp[1], bp[2])) / bMx : 0;
   if (contrast > 104 && flipRate < 1.6 && whiteAmt > 0.14 && brightSat >= 0.2)
     pattern = whiteAmt > 0.30 ? 'calico' : 'tortie';
+  /* GINGER and BLACK patches together are a tortie, and a tortie wearing
+     white is a calico. The stripe count cannot see it: every real coat flips
+     its rows, solid black included. Measured 3 Nov on the trusted mask: the
+     calico shows ginger 10%, black 23%, white 30%; the ginger tabby ginger
+     34%, black 1%; Oreo, a brown tabby, ginger 1%. Her patches are painted
+     from her own ginger, not the muted middle tone. */
+  let patchy = false;
+  if (trusted && gingerAmt >= 0.07 && blackAmt >= 0.10){
+    pattern = whiteAmt >= 0.12 ? 'calico' : 'tortie';
+    patchy = true; sheen = false;
+  }
 
   /* floof: a longhair has a much longer edge for the same area */
   let perim = 0, area = 0;
@@ -4116,9 +4152,15 @@ function readCatFromPhoto(canvas, extMask){
 
   /* a black coat read through its sheen: her colour is the black under it */
   const coat = sheen ? '#' + bq.map((v, i) => Math.round(v * 0.45 + mq[i] * 0.55)
-    .toString(16).padStart(2, '0')).join('') : base;
+    .toString(16).padStart(2, '0')).join('') : (patchy && gingerHex) ? gingerHex : base;
+  /* a blaze: real white spotting AND white in the head band. The band alone
+     lies (a tabby's pale undercoat lights it: Oreo 0.10, no white at all);
+     with spotting it is right on all six reference cats (3 Nov). A clearly
+     dark face on a high-white cat says no blaze. */
+  const blaze = whiteGrade >= 3 && faceWhite >= 0.06 ? true
+    : whiteGrade > 4.8 && faceWhite < 0.02 ? false : undefined;
   return Object.assign(defaultDNA(), {
-    base: coat, marking, white: whiteAmt > 0.015 ? bright : '#F2E9D8', eye,
+    base: coat, marking, white: whiteAmt > 0.015 ? bright : '#F2E9D8', eye, blaze,
     nose: noseByCoat(coat, whiteGrade),
     pattern, whiteStyle, whiteGrade, whiteEdge: Math.min(1, 0.3 + floof*0.6),
     seed: (hashStr(base + marking + String(Math.round(whiteAmt*1000)))) >>> 0,
@@ -4127,7 +4169,8 @@ function readCatFromPhoto(canvas, extMask){
     _read: { flipRate:+flipRate.toFixed(2), contrast:Math.round(contrast),
              raggedness:+raggedness.toFixed(2), whitePct:Math.round(whiteAmt*100),
              eyeConf: eyeConf, twoTone: Math.round(twoTone),
-             whiteY: +wY.toFixed(2), seg: trusted }
+             whiteY: +wY.toFixed(2), seg: trusted,
+             faceWhite: +faceWhite.toFixed(3), ginger: +gingerAmt.toFixed(3), black: +blackAmt.toFixed(3) }
   });
 }
 
@@ -6468,7 +6511,11 @@ if (stage) (async () => {
       if (i === 0 && d.collar === false) continue;  /* the owner said: no collar */
       if ((i === 8 || i === 9) && d.blaze === false) continue;   /* nor a blaze */
       if (w.toe && d.socks && Object.keys(d.socks).length) continue;
-      const jit = (N.hash(i * 91 + 7, 17, 3) - 0.5) * (w.j || 0.25);
+      /* toes do not jitter apart: a scan cannot see which side is white, so
+         it never invents a left that differs from the right (the plan's rule;
+         Barthalomew's two white forefeet came out one white, one black). The
+         owner's paw chips set each side when they do differ. */
+      const jit = (N.hash(i * 91 + 7, 17, 3) - 0.5) * (w.toe ? 0.12 : (w.j || 0.25));
       seeds.push({ p: w.p, r: w.r * sm(0, 1, Math.min(1, (grade - w.on) / w.span)) * (1 + jit) });
     }
     if (d.collar === true && grade <= WSEED3[0].on)
