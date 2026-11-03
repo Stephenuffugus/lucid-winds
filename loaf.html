@@ -6468,7 +6468,11 @@ if (stage) (async () => {
       if (i === 0 && d.collar === false) continue;  /* the owner said: no collar */
       if ((i === 8 || i === 9) && d.blaze === false) continue;   /* nor a blaze */
       if (w.toe && d.socks && Object.keys(d.socks).length) continue;
-      const jit = (N.hash(i * 91 + 7, 17, 3) - 0.5) * (w.j || 0.25);
+      /* toes do not jitter apart: a scan cannot see which side is white, so
+         it never invents a left that differs from the right (the plan's rule;
+         Barthalomew's two white forefeet came out one white, one black). The
+         owner's paw chips set each side when they do differ. */
+      const jit = (N.hash(i * 91 + 7, 17, 3) - 0.5) * (w.toe ? 0.12 : (w.j || 0.25));
       seeds.push({ p: w.p, r: w.r * sm(0, 1, Math.min(1, (grade - w.on) / w.span)) * (1 + jit) });
     }
     if (d.collar === true && grade <= WSEED3[0].on)
