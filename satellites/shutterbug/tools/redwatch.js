@@ -422,7 +422,7 @@ const MUTANTS = [
     gates: [{ gate: 'death', expect: 'the last heart ends the room' }] },
   { name: 'BLINK_NONE', task: 'T0.16', file: 'page', find: 'R.heroShown = s.room.dead || !(h.iframes > 0 && ((h.iframes >> 3) & 1));', repl: 'R.heroShown = true;',
     gates: [{ gate: 'death', expect: 'the hero blinks through the i frames' }] },
-  { name: 'HEARTS_STALE', task: 'T0.16', file: 'page', find: "if (ev & EV.HIT) { au.sfx('hit'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); SB.ui.hurtFlash(); }", repl: "if (ev & EV.HIT) { au.sfx('hit'); SB.ui.hurtFlash(); }",   /* re anchored at sb-m1-6 (the hurt flash) */
+  { name: 'HEARTS_STALE', task: 'T0.16', file: 'page', find: "au.sfx('hit'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); SB.ui.hurtFlash();", repl: "au.sfx('hit'); SB.ui.hurtFlash();",   /* re anchored 3 Nov: sb-m1-15 added G.roomHit to the line */   /* re anchored at sb-m1-6 (the hurt flash) */
     gates: [{ gate: 'death', expect: 'the top strip shows' }] },
   /* T0.15: capture */
   { name: 'DECODE_NO_GUARD', task: 'T0.16', file: 'page', find: "      if (stale()) { if (bm && bm.close) bm.close(); return; }\n", repl: '',
@@ -654,7 +654,7 @@ const MUTANTS = [
   { name: 'RELOAD_ON_CONTROLLERCHANGE', task: 'T1.11', file: 'page', find: "  window.addEventListener('beforeinstallprompt',", repl: "  if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('controllerchange', function () { location.reload(); });\n  window.addEventListener('beforeinstallprompt',",
     gates: [{ gate: 'lint', expect: 'RELOAD' }, { gate: 'pwa', expect: 'the new worker causes no navigation of its own' }] },
   /* re anchored at the sb-m1-12 stamp (the registration is ?v=12 now) */
-  { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=12')", repl: "register('./sw.js?v=13')",
+  { name: 'STAMP_SPLIT', task: 'T1.11', file: 'page', find: "register('./sw.js?v=", repl: "register('./sw.js?v=9",   /* any stamp: a 9 before the number splits ?v= from the CACHE (was the literal ?v=12, lost at every stamp; re anchored 3 Nov) */
     gates: [{ gate: 'lint', expect: 'STAMP' }] },
   /* the card review's follow up, due at the sb-m1-2 stamp: the worker reads its own cache only; with no cacheName the
      foreign copy the gate plants before the install answers the offline shell */
@@ -1399,7 +1399,7 @@ const MUTANTS = [
     gates: [{ gate: "astra", expect: "round 3's manifest naming its game SHUTTERBUG is the game's" }] },
   { name: "CUT_FX_SIDES_NARROW", task: 'ART3', file: "astra", find: "FX_SIDES = (16, 32, 48, 64)", repl: "FX_SIDES = (32, 48)",
     gates: [{ gate: "astra", expect: "round 3's 16 px chip and 64 px fall are cut as effects" }] },
-  { name: "CUT_BEACON_FX_SUN", task: 'ART3', file: "astra", find: "SUN_KEYS = ('beacon', 'fx_beacon_light', 'beacon_locked')", repl: "SUN_KEYS = ('beacon', 'beacon_locked')",   /* re anchored at round 5 (beacon_locked) */
+  { name: "CUT_BEACON_FX_SUN", task: 'ART3', file: "astra", find: "SUN_KEYS = ('beacon', 'fx_beacon_light', 'beacon_locked',", repl: "SUN_KEYS = ('beacon', 'beacon_locked',",   /* re anchored at round 5 (beacon_locked) and 3 Nov (rounds 6 and 7 extend the list) */
     gates: [{ gate: "astra", expect: "round 3's fx_beacon_light carries the beacon's Sun and is cut" }] },
   { name: "SPLICE_CAP_GONE", task: 'ART3', file: "astra", find: "    if n >= MAX_SPRITES:\n        raise Refuse(", repl: "    if False:\n        raise Refuse(",
     gates: [{ gate: "astra", expect: "its splice is refused at the cap, the page unwritten" }] },

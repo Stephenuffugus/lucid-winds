@@ -69,6 +69,12 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'world/edge_overgrowth.png': ('edge_overgrowth', None), 'world/edge_ember.png': ('edge_ember', None),
     # the second monsters, their elites and their hazards
     'enemies/dust_bunny.png': ('dust_bunny', None), 'enemies/dust_bunny_elite.png': ('dust_bunny_elite', None), 'enemies/snow_owl.png': ('snow_owl', None), 'enemies/snow_owl_elite.png': ('snow_owl_elite', None), 'enemies/hermit_crab.png': ('hermit_crab', None), 'enemies/hermit_crab_elite.png': ('hermit_crab_elite', None), 'enemies/spore_puff.png': ('spore_puff', None), 'enemies/spore_puff_elite.png': ('spore_puff_elite', None), 'enemies/cinder_beetle.png': ('cinder_beetle', None), 'enemies/cinder_beetle_elite.png': ('cinder_beetle_elite', None), 'enemies/puff_cloud.png': ('puff_cloud', None), 'enemies/cinder_trail.png': ('cinder_trail', None),
+    # round 6's keys (3 Nov): the trophy medals and their shine, the bug's story, the album's corner and page
+    'ui/trophy_medals.png': ('trophy_medals', None), 'fx/fx_trophy_new.png': ('fx_trophy_new', None), 'ui/story_cards.png': ('story_cards', None),
+    'ui/story_bug_wave.png': ('story_bug_wave', None), 'ui/album_corner.png': ('album_corner', None), 'ui/album_page.png': ('album_page', None),
+    # round 7's keys (3 Nov): eight more bugs, four frames, the album medals, the Daily Room, the album covers
+    'hero/hero_colours_r7.png': ('hero_colours_r7', None), 'ui/frame_styles_r7.png': ('frame_styles_r7', None), 'ui/trophy_medals_r7.png': ('trophy_medals_r7', None),
+    'ui/daily_badge.png': ('daily_badge', None), 'fx/daily_stamp.png': ('daily_stamp', None), 'ui/daily_card.png': ('daily_card', None), 'ui/album_cover.png': ('album_cover', None),
 }
 
 
