@@ -1,5 +1,9 @@
 # START HERE
 
+## 📷 3 Nov 05:00 UTC (Opus) SHUTTERBUG sb-m1-16 STAMPED: PICKUPS SAY WHAT THEY ARE; STEPHEN RUNS THE DEPLOY (carries sb-m1-15's trophies if not yet live)
+- His report: specks and scrolls did nothing visible. Now a speck pops its Dead pixels (and explains itself the first three times), a blueprint names itself, a scroll says which stat it raised and what that does (and the heart every third). lint OK, harness --fast OK, one shot.
+- DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-16/deploy-sb-m1-16.sh`.
+
 ## 📷 3 Nov 04:20 UTC (Opus) SHUTTERBUG sb-m1-15 STAMPED: TROPHIES AND BUGS (his carrot idea); STEPHEN RUNS THE DEPLOY
 - A Trophies and bugs screen off the title after the first room: 13 trophies (rooms, houses, wall jumps, keys, clean clears; bronze, silver, gold steps, goal and progress), all 8 bugs and 4 frames with the locked ones grey and the next prize named. New trophies named on the clear and doorway cards. lint OK, harness --fast OK, one look at 412.
 - DEPLOY: `bash /home/codespace/sb-drafts/sb-m1-15/deploy-sb-m1-15.sh`. Screen wrap: NO (his call 3 Nov, wall jumps need the edges).
