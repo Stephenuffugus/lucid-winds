@@ -853,7 +853,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m1-12';
+  SB.BUILD = 'sb-m1-13';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -9074,7 +9074,34 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=12').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=13').catch(function () {}); } catch (e) { /* silent */ } });
+  /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
+     worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
+     network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.
+     sw.js is served no-store and carries BUILD: ask it once on load. When the live build differs, fetch the fresh page
+     under a new address (the root worker saves it there), and only if it really holds the new build, the player is
+     still on the title screen and it took under 15 s, replace this page with that address. Once per build per
+     session, so it can never loop, and it never reloads a level in play (the rule above still holds for play). */
+  (function heal() {
+    try {
+      if (typeof fetch !== 'function' || typeof URL !== 'function') return;
+      var t0 = Date.now(), key = 'sb_heal_' + SB.BUILD;
+      if (sessionStorage.getItem(key)) return;
+      fetch('./sw.js?live=' + t0, { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+        var m = /var BUILD = '([^']+)'/.exec(t || '');
+        if (!m || m[1] === SB.BUILD) return;
+        try { sessionStorage.setItem(key, '1'); } catch (e) { return; }
+        var u = new URL('./index.html', location.href);
+        new URLSearchParams(location.search).forEach(function (v, k) { if (k !== 'b') u.searchParams.append(k, v); });
+        u.searchParams.set('b', m[1]);
+        return fetch(u.toString(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (page) {
+          if (page.indexOf("SB.BUILD = '" + m[1] + "'") < 0) return;
+          if (SB.ui.screen !== 'title' || Date.now() - t0 > 15000) return;
+          location.replace(u.toString());
+        });
+      }).catch(function () { /* silent: the saved copy still plays */ });
+    } catch (e) { /* silent */ }
+  })();
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); SB.ui.installPrompt = e; document.getElementById('install').hidden = false; });
   SB.input.initStrip();
   window.addEventListener('resize', function () { var s = SB.ui.screen; if (s === 'play' || s === 'pause' || s === 'share' || s === 'clear' || s === 'dead') { SB.render.fit(); draw(); if (s === 'pause') SB.ui.placePaused(); } });
