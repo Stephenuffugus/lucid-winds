@@ -8,14 +8,19 @@
 
    Run: node tools/store-kit/compose.mjs store/hues-play/kit.json
    kit.json: { out, font:{ css, head, body }, colors:{ bg, ink, dim, accent }, icon,
-               shots:[{ src, head, out }], feature:{ title, tagline (a string, or an array of lines), sub?, swatches?:[c1,c2], raw?: a real shot shown framed at the right (Shutterbug, 2 Nov) } } (paths from the repo root) */
+               shots:[{ src, head, out }], feature:{ title, tagline (a string, or an array of lines), sub?, swatches?:[c1,c2], raw?: a real shot shown framed at the right (Shutterbug, 2 Nov) } } (paths from the repo root)
+   Artist frames (Shutterbug, Astra's round 7, 3 Nov): kit.frame = { window:[x,y,w,h], headBox:[x,y,w,h] } and a shot with
+   overlay: the kit's background, the raw contained in the window, the overlay (its window clear) at 0,0, the headline
+   fitted inside headBox. feature.art + feature.box: her finished illustration with only the title lettered in her box
+   (feature.shadow, the hard shadow colour; the title's colour is colors.accent). */
 import { readFileSync, mkdirSync, existsSync } from 'fs';
 import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const puppeteer = createRequire(join(ROOT, 'package.json'))('puppeteer');
+const puppeteer = (() => { try { return createRequire(join(ROOT, 'package.json'))('puppeteer'); }
+  catch (e) { return createRequire('/workspaces/sws-tools/package.json')('puppeteer'); } })();   /* the box keeps it in sws-tools */
 const cfgPath = process.argv[2];
 if (!cfgPath) { console.log('usage: node tools/store-kit/compose.mjs <kit.json>'); process.exit(1); }
 const K = JSON.parse(readFileSync(join(ROOT, cfgPath), 'utf8'));
@@ -32,6 +37,7 @@ const render = async (html, w, h, file) => {
   await page.setViewport({ width: w, height: h, deviceScaleFactor: 1 });
   await page.setContent(html, { waitUntil: 'networkidle0', timeout: 60000 });
   await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(() => window.__fit && window.__fit());   /* a headline shrunk until it fits its box (artist frames) */
   await page.screenshot({ path: join(OUT, file), omitBackground: false });
   await page.close();
   console.log('  ' + K.out + '/' + file);
@@ -40,6 +46,16 @@ const render = async (html, w, h, file) => {
 /* 1. phone screenshots: the band is the only text Play shows big, so one short line, no dashes */
 for (const s of K.shots) {
   if (!existsSync(join(ROOT, s.src))) { console.log('  MISSING raw ' + s.src + ' (run the game shot driver first)'); process.exitCode = 1; continue; }
+  if (s.overlay) {
+    const [wx, wy, ww, wh] = K.frame.window, [hx, hy, hw, hh] = K.frame.headBox;
+    await render(`${head}<body style="width:1080px;height:1920px;overflow:hidden;position:relative">
+      <img src="${dataUrl(s.src)}" style="position:absolute;left:${wx}px;top:${wy}px;width:${ww}px;height:${wh}px;object-fit:contain">
+      <img src="${dataUrl(s.overlay)}" style="position:absolute;left:0;top:0;width:1080px;height:1920px">
+      <div id="hd" style="position:absolute;left:${hx}px;top:${hy}px;width:${hw}px;height:${hh}px;display:flex;align-items:center;
+        font-family:${F.head};font-size:104px;line-height:.92;color:${C.ink};overflow:hidden">${esc(s.head)}</div>
+      <script>window.__fit=()=>{const e=document.getElementById('hd');let f=104;while(f>40&&(e.scrollHeight>e.clientHeight+1||e.scrollWidth>e.clientWidth+1)){f-=2;e.style.fontSize=f+'px'}}</script></body>`, 1080, 1920, s.out);
+    continue;
+  }
   await render(`${head}<body style="width:1080px;height:1920px;overflow:hidden">
     <div style="height:240px;display:flex;align-items:center;justify-content:center;padding:0 70px;text-align:center;
       border-bottom:2px solid ${C.accent}33;font-family:${F.head};font-size:82px;line-height:1.05;letter-spacing:.005em">${esc(s.head)}</div>
@@ -47,7 +63,14 @@ for (const s of K.shots) {
 }
 
 /* 2. feature graphic */
-if (K.feature) {
+if (K.feature && K.feature.art) {
+  const fe = K.feature, [bx, by, bw, bh] = fe.box;
+  await render(`${head}<body style="width:1024px;height:500px;overflow:hidden;position:relative">
+    <img src="${dataUrl(fe.art)}" style="position:absolute;left:0;top:0;width:1024px;height:500px">
+    <div id="hd" style="position:absolute;left:${bx}px;top:${by}px;width:${bw}px;height:${bh}px;display:flex;align-items:center;justify-content:center;
+      font-family:${F.head};font-size:${Math.round(bh * 1.3)}px;line-height:1;letter-spacing:.14em;color:${C.accent};text-shadow:5px 5px 0 ${fe.shadow || '#000'};white-space:nowrap">${esc(fe.title)}</div></body>`, 1024, 500, fe.out || 'feature-graphic-1024x500.png');
+}
+else if (K.feature) {
   const fe = K.feature;
   const sw = (fe.swatches || []).map((c, i) => `<div style="display:flex;flex-direction:column;gap:12px">
       <div style="font-size:16px;letter-spacing:.24em;color:${C.dim};text-transform:uppercase">${i ? 'Yours' : 'Target'}</div>

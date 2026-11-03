@@ -27,3 +27,11 @@ vaults the bundle, the key and its password in the private vault. The bundle and
 Copy "App signing key certificate SHA-256" from Console, Test and release, App integrity. Add a Shutterbug entry to
 .well-known/assetlinks.json at the repo root with that fingerprint AND the upload key's (printed in step 1), then
 deploy that one root file. Until then the app works, with a URL bar showing at the top.
+
+## 4. The store pictures (Astra's round 7 frames)
+    node store/shutterbug-play/shoot.mjs --photo /path/to/his-room.jpg      # six raws from the real game, raw-r7/
+    node tools/store-kit/compose.mjs store/shutterbug-play/kit.json         # play-shot-1..6, feature graphic, icon
+One room photo feeds shots 1, 2, 3 and 5 (the photo turning into the room, the bug in it, the album, the guardian);
+`--only 25` retakes single shots, `--reveal 550` moves the moment of the dissolve. Headlines live in kit.json (no
+dashes, no exclamation marks). The studio music chip is hidden in the menu shots; nothing else is touched.
+
