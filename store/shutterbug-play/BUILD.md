@@ -10,6 +10,16 @@ Built the OriVex and Jimothy way: bubblewrap 1.27, JDK 21, VIBRATE the only perm
 - Offline cold launch: the app is there with the network cut (scripts/_offline_check.mjs).
 - The Console text: index.html in this folder, in the Console's order, updated with the album and trophies.
 
+## BUILT 3 Nov 2026 05:33 UTC (his run of the script; he accepted the SDK license by running it)
+- store/shutterbug-play/twa/app-release-bundle.aab, 986241 bytes: com.skywolfstudio.shutterbug 1.0.0 (versionCode 1),
+  minSdk 24, targetSdk 36, label Shutterbug, adaptive icon; permissions: only Android's own
+  DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION (matches "No data collected").
+- Upload key SHA-256 (public, safe to paste):
+  18:5C:D9:C9:EC:6E:8C:B5:78:30:36:99:5E:E9:D7:8A:87:95:6D:AF:E9:C6:DF:AD:C7:12:63:12:9D:20:86:DD
+- Vaulted: vault-20261103-shutterbug-play-1.0.0 (the bundle, the key, its password; all three read back equal).
+- The generated Android project (app/, gradle files, 36 files) is committed like Hues and Jimothy; build outputs and the
+  key stay ignored. A next version: raise appVersionCode and appVersionName in twa-manifest.json, rerun the script.
+
 ## 1. Build the bundle (Stephen runs it; it accepts Google's Android SDK license terms)
     ! bash /home/codespace/sb-drafts/play-build/build-shutterbug-aab.sh
 It installs the SDK under /tmp/bw, makes the upload key ONCE in ~/.shutterbug-keys, builds
