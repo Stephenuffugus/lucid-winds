@@ -5595,7 +5595,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   const WFX = ['dart', 'ring', 'ember', 'flash_ring', 'snap_frame', 'kick_spray', 'fire_cell', 'frost_burst'];
   for (const k of WFX) LAW[k] = [hx(I.INK, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE), true];
   const POSES = Object.keys(LAW).filter(n => n.startsWith('hero_'));
-  t.ok(names.length > 0 && names.length < 120, names.length + ' named sprites (under 120, round 5\'s cap: room for the monsters and the terrain; frames are unlimited)');
+  t.ok(names.length > 0 && names.length < 160, names.length + ' named sprites (under 160, round 8\'s cap: its 32 new keys make 149 names; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
     const sp = S[name];

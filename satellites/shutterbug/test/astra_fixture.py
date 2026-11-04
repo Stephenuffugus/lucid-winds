@@ -75,6 +75,8 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     # round 7's keys (3 Nov): eight more bugs, four frames, the album medals, the Daily Room, the album covers
     'hero/hero_colours_r7.png': ('hero_colours_r7', None), 'ui/frame_styles_r7.png': ('frame_styles_r7', None), 'ui/trophy_medals_r7.png': ('trophy_medals_r7', None),
     'ui/daily_badge.png': ('daily_badge', None), 'fx/daily_stamp.png': ('daily_stamp', None), 'ui/daily_card.png': ('daily_card', None), 'ui/album_cover.png': ('album_cover', None),
+    # round 8's keys (4 Nov, SHUTTERBUG_M2_BUILD_PLAN.md), each with the step that splices it: step 1 the Polaroid and its marks
+    'ui/polaroid_frame.png': ('polaroid_frame', None), 'ui/hero_dot.png': ('hero_dot', None), 'ui/beacon_dot.png': ('beacon_dot', None),
 }
 
 

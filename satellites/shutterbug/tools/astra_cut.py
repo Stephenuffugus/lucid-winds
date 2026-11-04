@@ -31,6 +31,8 @@ NEW_KEYS = {
     'hero_dash': (12, 16, ['dash']), 'hero_hurt': (12, 16, ['recoil']), 'hero_squash': (14, 14, ['squash']),
     'hero_stretch': (10, 18, ['stretch']), 'hero_dropin': (12, 16, ['descending', 'contact', 'settled']),
     'icon_weapons': (24, 24, None),
+    # round 8 (4 Nov, SHUTTERBUG_M2_BUILD_PLAN.md step 1): the Polaroid in the strip and its two marks
+    'polaroid_frame': (72, 96, ['base']), 'hero_dot': (4, 4, ['dot']), 'beacon_dot': (4, 4, ['dot']),
 }
 # ART2: an effect strip, fx_<name>, is named frames: square, 32 or 48 a side, each frame <clip>_<n> with every clip's n
 # running 0, 1, 2 ... in order (Astra's manifest clips); Sun is the hero's and never an effect's
@@ -42,6 +44,10 @@ FX_SIDES = (16, 32, 48, 64)
 # pixel, so it carries the beacon's Sun; every other effect stays without it
 # round 5: an fx the brief itself named with plain frames (a, b, c) and a non square size
 FX_PLAIN = ('fx_beacon_refuse', 'fx_trophy_new')   # round 6: the brief named the trophy shine's frames a to d
+# round 8 (4 Nov, SHUTTERBUG_M2_BUILD_PLAN.md): three effects the brief itself sized off the square, each admitted at its
+# exact size only (the rule widens for these keys, the art is not changed): the fan's wind column, the landing dust,
+# the floor shimmer. Their frames still follow <clip>_<n>
+FX_SHAPES = {'fx_wind': (16, 48), 'fx_land_dust': (16, 8), 'fx_floor': (48, 16)}
 SUN_KEYS = ('beacon', 'fx_beacon_light', 'beacon_locked', 'trophy_medals', 'story_cards', 'story_bug_wave',
             'trophy_medals_r7', 'frame_styles_r7', 'daily_badge', 'daily_card')   # round 7: the same menu only allowance   # round 6: menu only art the brief allowed Sun in (the story cards and the wave are the hero itself); never drawn over a room   # round 5: the locked beacon's charge windows are the beacon's own Sun (the brief allowed it)
 HERO_NAMES = ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'jump', 'fall', 'cling', 'dive', 'land', 'dead']
@@ -59,7 +65,8 @@ NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 # frame_styles and hero_colours; round 3's run_pips, icon_house, card_house_clear, fx_unlock, the boss effects,
 # fx_beacon_light and hero_colours_r3): 55 names, so 56
 # sb-m1-5 merges both: 64 names, so 65
-MAX_SPRITES = 120   # round 5 (2 Nov): the fixes, the keys, the dive and charm art, the bosses; room for the monsters and the terrain
+MAX_SPRITES = 160   # round 5 (2 Nov): the fixes, the keys, the dive and charm art, the bosses; room for the monsters and the terrain
+# round 8 (4 Nov, SHUTTERBUG_M2_BUILD_PLAN.md): 160, its 32 new keys make 149 names once every m2 step has spliced its own
 
 
 class Refuse(Exception):
@@ -257,7 +264,10 @@ def check(root, page):
             elif key not in SUN_KEYS and any('e' in s for s in frames.values()):
                 raise Refuse('Sun in %s (Sun belongs to the hero, its hero_* poses and the beacon with its fx_beacon_light)' % key)
             if FX_RE.match(key) and key not in FX_PLAIN:
-                if fw != fh or fw not in FX_SIDES:
+                if key in FX_SHAPES:
+                    if (fw, fh) != FX_SHAPES[key]:
+                        raise Refuse('%s is %dx%d, the brief asks %dx%d' % (key, fw, fh, FX_SHAPES[key][0], FX_SHAPES[key][1]))
+                elif fw != fh or fw not in FX_SIDES:
                     raise Refuse('%s is %dx%d: an effect is square, %s a side' % (key, fw, fh, ' or '.join(map(str, FX_SIDES))))
                 seen = {}
                 for name in names:

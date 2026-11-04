@@ -1391,7 +1391,7 @@ const MUTANTS = [
     gates: [{ gate: "astra", expect: "an effect frame not named <clip>_<n> is refused" }] },
   { name: "CUT_FX_UNKNOWN", task: 'ART2', file: "astra", find: "            elif FX_RE.match(key) and key not in FX_PLAIN:\n                warnings.append(", repl: "            elif False and FX_RE.match(key) and key not in FX_PLAIN:\n                warnings.append(",   /* re anchored at round 5 (FX_PLAIN) */
     gates: [{ gate: "astra", expect: "an effect strip new to the page (fx_shockwave on a copy without it) is taken as named clips" }] },
-  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 120   #", repl: "MAX_SPRITES = 122   #",   /* re anchored at round 5 (80, then 120) */   /* re anchored at ART4 (52) */   /* re anchored at W2 (46) */   /* re anchored at ART3 (the cap at the splice, 43) */
+  { name: "CUT_CAP_RAISED", task: 'ART2', file: "astra", find: "MAX_SPRITES = 160   #", repl: "MAX_SPRITES = 162   #",   /* re anchored at round 8 (160, m2 step 1) */   /* re anchored at round 5 (80, then 120) */   /* re anchored at ART4 (52) */   /* re anchored at W2 (46) */   /* re anchored at ART3 (the cap at the splice, 43) */
     gates: [{ gate: "astra", expect: "the cap is 120, round 5's" }] },
   /* ART3: Astra's rounds 2 and 3 (Q98): the cutter's rules, the splice, the stick, Pause, the crusher's shaft, the speck,
      the elites' keylines, the biome's air and badges, the icons by code */
