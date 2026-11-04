@@ -1,0 +1,2047 @@
+{
+  "game": "SHUTTERBUG",
+  "round": 8,
+  "palette": [
+    "#0b0a0f",
+    "#1f1a1d",
+    "#4a4a52",
+    "#8a8a90",
+    "#c9c7c0",
+    "#f2efe6",
+    "#fbfbff",
+    "#6b3f2a",
+    "#e07a2b",
+    "#c8302f",
+    "#d83a9b",
+    "#2f5fd0",
+    "#3fb8b4",
+    "#3f9a3a",
+    "#f2d13f",
+    "#f0dcb0"
+  ],
+  "files": [
+    {
+      "file": "hero/hero_big.png",
+      "sprite": "hero_big",
+      "w": 16,
+      "h": 24,
+      "frames": 12,
+      "names": [
+        "idle0",
+        "idle1",
+        "run0",
+        "run1",
+        "run2",
+        "run3",
+        "jump",
+        "fall",
+        "cling",
+        "dive",
+        "land",
+        "dead"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "453c2cbc17b32bf030f378c7e7d277e139dd4843419d3e1f42a7864ff7256ff0",
+      "notes": "Approved hero expanded on a native 16x24 grid. Bottom-centre anchor; 12x16 hitbox at local [2,8]. Original action timings remain game-owned.",
+      "context": "room",
+      "source": "source/hero_big.txt",
+      "colours": [
+        0,
+        6,
+        14
+      ],
+      "loop": false,
+      "pivot": [
+        8,
+        24
+      ],
+      "draw_offset_from_hitbox": [
+        -2,
+        -8
+      ],
+      "hitbox_rect": [
+        2,
+        8,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_big_dash.png",
+      "sprite": "hero_big_dash",
+      "w": 16,
+      "h": 24,
+      "frames": 1,
+      "names": [
+        "dash"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "ac26ec84a2808caf3ffa168658c815d5e1d880f67b3a5b28b83d54d84cb0d8ab",
+      "notes": "Dedicated larger dash pose. Keep physics unchanged and do not also apply the old runtime squash/stretch. Drop-in settled equals idle0.",
+      "context": "room",
+      "source": "source/hero_big_dash.txt",
+      "colours": [
+        0,
+        6,
+        7,
+        14
+      ],
+      "loop": false,
+      "pivot": [
+        8,
+        24
+      ],
+      "draw_offset_from_hitbox": [
+        -2,
+        -8
+      ],
+      "hitbox_rect": [
+        2,
+        8,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_big_hurt.png",
+      "sprite": "hero_big_hurt",
+      "w": 16,
+      "h": 24,
+      "frames": 1,
+      "names": [
+        "recoil"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "5ec6b0d1b63e7b34059e821d2429cb3529388ca4645069ef16e72d70ada9cbfa",
+      "notes": "Dedicated larger hurt pose. Keep physics unchanged and do not also apply the old runtime squash/stretch. Drop-in settled equals idle0.",
+      "context": "room",
+      "source": "source/hero_big_hurt.txt",
+      "colours": [
+        0,
+        6,
+        14
+      ],
+      "loop": false,
+      "pivot": [
+        8,
+        24
+      ],
+      "draw_offset_from_hitbox": [
+        -2,
+        -8
+      ],
+      "hitbox_rect": [
+        2,
+        8,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_big_squash.png",
+      "sprite": "hero_big_squash",
+      "w": 20,
+      "h": 20,
+      "frames": 1,
+      "names": [
+        "squash"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "58377debf7914a085ce7c9125483b348e8cdac7033e74108eccd1266661f6d3e",
+      "notes": "Dedicated larger squash pose. Keep physics unchanged and do not also apply the old runtime squash/stretch. Drop-in settled equals idle0.",
+      "context": "room",
+      "source": "source/hero_big_squash.txt",
+      "colours": [
+        0,
+        6,
+        14
+      ],
+      "loop": false,
+      "pivot": [
+        10,
+        20
+      ],
+      "draw_offset_from_hitbox": [
+        -4,
+        -4
+      ],
+      "hitbox_rect": [
+        4,
+        4,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_big_stretch.png",
+      "sprite": "hero_big_stretch",
+      "w": 14,
+      "h": 28,
+      "frames": 1,
+      "names": [
+        "stretch"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "e7ebd32980b1b401bd59cf77e46579cfd2b26f1aa6ecab6cbc6268c5563dd20d",
+      "notes": "Dedicated larger stretch pose. Keep physics unchanged and do not also apply the old runtime squash/stretch. Drop-in settled equals idle0.",
+      "context": "room",
+      "source": "source/hero_big_stretch.txt",
+      "colours": [
+        0,
+        6,
+        14
+      ],
+      "loop": false,
+      "pivot": [
+        7,
+        28
+      ],
+      "draw_offset_from_hitbox": [
+        -1,
+        -12
+      ],
+      "hitbox_rect": [
+        1,
+        12,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_big_dropin.png",
+      "sprite": "hero_big_dropin",
+      "w": 16,
+      "h": 24,
+      "frames": 3,
+      "names": [
+        "descending",
+        "contact",
+        "settled"
+      ],
+      "fps": 8,
+      "anchor": "bottom",
+      "sha256": "deb299fcb31e772d30c001a75a9c597b242d3662a5e3262ab49d8dc99a8c6876",
+      "notes": "Dedicated larger dropin pose. Keep physics unchanged and do not also apply the old runtime squash/stretch. Drop-in settled equals idle0.",
+      "context": "room",
+      "source": "source/hero_big_dropin.txt",
+      "colours": [
+        0,
+        6,
+        14
+      ],
+      "loop": false,
+      "pivot": [
+        8,
+        24
+      ],
+      "draw_offset_from_hitbox": [
+        -2,
+        -8
+      ],
+      "hitbox_rect": [
+        2,
+        8,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_colours_big.png",
+      "sprite": "hero_colours_big",
+      "w": 16,
+      "h": 24,
+      "frames": 96,
+      "names": [
+        "sun_idle0",
+        "sun_idle1",
+        "sun_run0",
+        "sun_run1",
+        "sun_run2",
+        "sun_run3",
+        "sun_jump",
+        "sun_fall",
+        "sun_cling",
+        "sun_dive",
+        "sun_land",
+        "sun_dead",
+        "umber_idle0",
+        "umber_idle1",
+        "umber_run0",
+        "umber_run1",
+        "umber_run2",
+        "umber_run3",
+        "umber_jump",
+        "umber_fall",
+        "umber_cling",
+        "umber_dive",
+        "umber_land",
+        "umber_dead",
+        "teal_idle0",
+        "teal_idle1",
+        "teal_run0",
+        "teal_run1",
+        "teal_run2",
+        "teal_run3",
+        "teal_jump",
+        "teal_fall",
+        "teal_cling",
+        "teal_dive",
+        "teal_land",
+        "teal_dead",
+        "lapis_idle0",
+        "lapis_idle1",
+        "lapis_run0",
+        "lapis_run1",
+        "lapis_run2",
+        "lapis_run3",
+        "lapis_jump",
+        "lapis_fall",
+        "lapis_cling",
+        "lapis_dive",
+        "lapis_land",
+        "lapis_dead",
+        "pinstripe_idle0",
+        "pinstripe_idle1",
+        "pinstripe_run0",
+        "pinstripe_run1",
+        "pinstripe_run2",
+        "pinstripe_run3",
+        "pinstripe_jump",
+        "pinstripe_fall",
+        "pinstripe_cling",
+        "pinstripe_dive",
+        "pinstripe_land",
+        "pinstripe_dead",
+        "domino_idle0",
+        "domino_idle1",
+        "domino_run0",
+        "domino_run1",
+        "domino_run2",
+        "domino_run3",
+        "domino_jump",
+        "domino_fall",
+        "domino_cling",
+        "domino_dive",
+        "domino_land",
+        "domino_dead",
+        "crescent_idle0",
+        "crescent_idle1",
+        "crescent_run0",
+        "crescent_run1",
+        "crescent_run2",
+        "crescent_run3",
+        "crescent_jump",
+        "crescent_fall",
+        "crescent_cling",
+        "crescent_dive",
+        "crescent_land",
+        "crescent_dead",
+        "argyle_idle0",
+        "argyle_idle1",
+        "argyle_run0",
+        "argyle_run1",
+        "argyle_run2",
+        "argyle_run3",
+        "argyle_jump",
+        "argyle_fall",
+        "argyle_cling",
+        "argyle_dive",
+        "argyle_land",
+        "argyle_dead"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "aaf43f7e5e10a3c6ead40b98de68c3a00c0685e16f78c6843d0ae568314a70e9",
+      "notes": "Skin-major complete movement set; index=12*skin_index+pose_index. Bind via skin_ids and skin_bindings.json, not by guessing the old strip suffix.",
+      "context": "room",
+      "source": "source/hero_colours_big.txt",
+      "colours": [
+        0,
+        2,
+        5,
+        6,
+        7,
+        11,
+        12,
+        14
+      ],
+      "loop": false,
+      "skin_ids": [
+        "sun",
+        "umber",
+        "teal",
+        "lapis",
+        "pinstripe",
+        "domino",
+        "crescent",
+        "argyle"
+      ],
+      "skin_pose_order": [
+        "idle0",
+        "idle1",
+        "run0",
+        "run1",
+        "run2",
+        "run3",
+        "jump",
+        "fall",
+        "cling",
+        "dive",
+        "land",
+        "dead"
+      ],
+      "pivot": [
+        8,
+        24
+      ],
+      "draw_offset_from_hitbox": [
+        -2,
+        -8
+      ],
+      "hitbox_rect": [
+        2,
+        8,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_colours_dash_big.png",
+      "sprite": "hero_colours_dash_big",
+      "w": 16,
+      "h": 24,
+      "frames": 8,
+      "names": [
+        "sun_dash",
+        "umber_dash",
+        "teal_dash",
+        "lapis_dash",
+        "pinstripe_dash",
+        "domino_dash",
+        "crescent_dash",
+        "argyle_dash"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "957c38f71f8492495732d38314778bf01f16bf4da762e4a6ced6eb5a5317a453",
+      "notes": "Skin-major dash companion. Select only this skin's action block; never run through the whole atlas.",
+      "context": "room",
+      "source": "source/hero_colours_dash_big.txt",
+      "colours": [
+        0,
+        2,
+        5,
+        6,
+        7,
+        11,
+        12,
+        14
+      ],
+      "loop": false,
+      "skin_ids": [
+        "sun",
+        "umber",
+        "teal",
+        "lapis",
+        "pinstripe",
+        "domino",
+        "crescent",
+        "argyle"
+      ],
+      "skin_pose_order": [
+        "dash"
+      ],
+      "clip_frames": 1,
+      "pivot": [
+        8,
+        24
+      ],
+      "draw_offset_from_hitbox": [
+        -2,
+        -8
+      ],
+      "hitbox_rect": [
+        2,
+        8,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_colours_hurt_big.png",
+      "sprite": "hero_colours_hurt_big",
+      "w": 16,
+      "h": 24,
+      "frames": 8,
+      "names": [
+        "sun_recoil",
+        "umber_recoil",
+        "teal_recoil",
+        "lapis_recoil",
+        "pinstripe_recoil",
+        "domino_recoil",
+        "crescent_recoil",
+        "argyle_recoil"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "e3550e622baf02124d5c61b393a2efe9abc509997010a0aa882add845ee4a101",
+      "notes": "Skin-major hurt companion. Select only this skin's action block; never run through the whole atlas.",
+      "context": "room",
+      "source": "source/hero_colours_hurt_big.txt",
+      "colours": [
+        0,
+        2,
+        5,
+        6,
+        7,
+        11,
+        12,
+        14
+      ],
+      "loop": false,
+      "skin_ids": [
+        "sun",
+        "umber",
+        "teal",
+        "lapis",
+        "pinstripe",
+        "domino",
+        "crescent",
+        "argyle"
+      ],
+      "skin_pose_order": [
+        "recoil"
+      ],
+      "clip_frames": 1,
+      "pivot": [
+        8,
+        24
+      ],
+      "draw_offset_from_hitbox": [
+        -2,
+        -8
+      ],
+      "hitbox_rect": [
+        2,
+        8,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_colours_squash_big.png",
+      "sprite": "hero_colours_squash_big",
+      "w": 20,
+      "h": 20,
+      "frames": 8,
+      "names": [
+        "sun_squash",
+        "umber_squash",
+        "teal_squash",
+        "lapis_squash",
+        "pinstripe_squash",
+        "domino_squash",
+        "crescent_squash",
+        "argyle_squash"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "f2da8577d176e881ef54fccfe37ad8b12cd0919f860ea0c58ee01824e5d3d711",
+      "notes": "Skin-major squash companion. Select only this skin's action block; never run through the whole atlas.",
+      "context": "room",
+      "source": "source/hero_colours_squash_big.txt",
+      "colours": [
+        0,
+        2,
+        5,
+        6,
+        7,
+        11,
+        12,
+        14
+      ],
+      "loop": false,
+      "skin_ids": [
+        "sun",
+        "umber",
+        "teal",
+        "lapis",
+        "pinstripe",
+        "domino",
+        "crescent",
+        "argyle"
+      ],
+      "skin_pose_order": [
+        "squash"
+      ],
+      "clip_frames": 1,
+      "pivot": [
+        10,
+        20
+      ],
+      "draw_offset_from_hitbox": [
+        -4,
+        -4
+      ],
+      "hitbox_rect": [
+        4,
+        4,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_colours_stretch_big.png",
+      "sprite": "hero_colours_stretch_big",
+      "w": 14,
+      "h": 28,
+      "frames": 8,
+      "names": [
+        "sun_stretch",
+        "umber_stretch",
+        "teal_stretch",
+        "lapis_stretch",
+        "pinstripe_stretch",
+        "domino_stretch",
+        "crescent_stretch",
+        "argyle_stretch"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "0a42dafc6289b92912606e0323bed2ee9e5c3423c83d11efe40b65ff1d68b873",
+      "notes": "Skin-major stretch companion. Select only this skin's action block; never run through the whole atlas.",
+      "context": "room",
+      "source": "source/hero_colours_stretch_big.txt",
+      "colours": [
+        0,
+        2,
+        5,
+        6,
+        7,
+        11,
+        12,
+        14
+      ],
+      "loop": false,
+      "skin_ids": [
+        "sun",
+        "umber",
+        "teal",
+        "lapis",
+        "pinstripe",
+        "domino",
+        "crescent",
+        "argyle"
+      ],
+      "skin_pose_order": [
+        "stretch"
+      ],
+      "clip_frames": 1,
+      "pivot": [
+        7,
+        28
+      ],
+      "draw_offset_from_hitbox": [
+        -1,
+        -12
+      ],
+      "hitbox_rect": [
+        1,
+        12,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_colours_dropin_big.png",
+      "sprite": "hero_colours_dropin_big",
+      "w": 16,
+      "h": 24,
+      "frames": 24,
+      "names": [
+        "sun_descending",
+        "sun_contact",
+        "sun_settled",
+        "umber_descending",
+        "umber_contact",
+        "umber_settled",
+        "teal_descending",
+        "teal_contact",
+        "teal_settled",
+        "lapis_descending",
+        "lapis_contact",
+        "lapis_settled",
+        "pinstripe_descending",
+        "pinstripe_contact",
+        "pinstripe_settled",
+        "domino_descending",
+        "domino_contact",
+        "domino_settled",
+        "crescent_descending",
+        "crescent_contact",
+        "crescent_settled",
+        "argyle_descending",
+        "argyle_contact",
+        "argyle_settled"
+      ],
+      "fps": 8,
+      "anchor": "bottom",
+      "sha256": "8801a00dbcbc4404a6025abefbca00bf6cbce8f2bc2b3ea0aca1e091b2be745f",
+      "notes": "Skin-major dropin companion. Select only this skin's action block; never run through the whole atlas.",
+      "context": "room",
+      "source": "source/hero_colours_dropin_big.txt",
+      "colours": [
+        0,
+        2,
+        5,
+        6,
+        7,
+        11,
+        12,
+        14
+      ],
+      "loop": false,
+      "skin_ids": [
+        "sun",
+        "umber",
+        "teal",
+        "lapis",
+        "pinstripe",
+        "domino",
+        "crescent",
+        "argyle"
+      ],
+      "skin_pose_order": [
+        "descending",
+        "contact",
+        "settled"
+      ],
+      "clip_frames": 3,
+      "pivot": [
+        8,
+        24
+      ],
+      "draw_offset_from_hitbox": [
+        -2,
+        -8
+      ],
+      "hitbox_rect": [
+        2,
+        8,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_colours_r3_big.png",
+      "sprite": "hero_colours_r3_big",
+      "w": 16,
+      "h": 24,
+      "frames": 96,
+      "names": [
+        "chrome_idle0",
+        "chrome_idle1",
+        "chrome_run0",
+        "chrome_run1",
+        "chrome_run2",
+        "chrome_run3",
+        "chrome_jump",
+        "chrome_fall",
+        "chrome_cling",
+        "chrome_dive",
+        "chrome_land",
+        "chrome_dead",
+        "night_idle0",
+        "night_idle1",
+        "night_run0",
+        "night_run1",
+        "night_run2",
+        "night_run3",
+        "night_jump",
+        "night_fall",
+        "night_cling",
+        "night_dive",
+        "night_land",
+        "night_dead",
+        "polaroid_idle0",
+        "polaroid_idle1",
+        "polaroid_run0",
+        "polaroid_run1",
+        "polaroid_run2",
+        "polaroid_run3",
+        "polaroid_jump",
+        "polaroid_fall",
+        "polaroid_cling",
+        "polaroid_dive",
+        "polaroid_land",
+        "polaroid_dead",
+        "negative_idle0",
+        "negative_idle1",
+        "negative_run0",
+        "negative_run1",
+        "negative_run2",
+        "negative_run3",
+        "negative_jump",
+        "negative_fall",
+        "negative_cling",
+        "negative_dive",
+        "negative_land",
+        "negative_dead",
+        "tiger_idle0",
+        "tiger_idle1",
+        "tiger_run0",
+        "tiger_run1",
+        "tiger_run2",
+        "tiger_run3",
+        "tiger_jump",
+        "tiger_fall",
+        "tiger_cling",
+        "tiger_dive",
+        "tiger_land",
+        "tiger_dead",
+        "rainbow_lens_idle0",
+        "rainbow_lens_idle1",
+        "rainbow_lens_run0",
+        "rainbow_lens_run1",
+        "rainbow_lens_run2",
+        "rainbow_lens_run3",
+        "rainbow_lens_jump",
+        "rainbow_lens_fall",
+        "rainbow_lens_cling",
+        "rainbow_lens_dive",
+        "rainbow_lens_land",
+        "rainbow_lens_dead",
+        "ghost_idle0",
+        "ghost_idle1",
+        "ghost_run0",
+        "ghost_run1",
+        "ghost_run2",
+        "ghost_run3",
+        "ghost_jump",
+        "ghost_fall",
+        "ghost_cling",
+        "ghost_dive",
+        "ghost_land",
+        "ghost_dead",
+        "gold_idle0",
+        "gold_idle1",
+        "gold_run0",
+        "gold_run1",
+        "gold_run2",
+        "gold_run3",
+        "gold_jump",
+        "gold_fall",
+        "gold_cling",
+        "gold_dive",
+        "gold_land",
+        "gold_dead"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "7d42735fd0594201dad214086ee864ef94ea8847a6db10a538f30f2f1d0a3f5a",
+      "notes": "Skin-major complete movement set; index=12*skin_index+pose_index. Bind via skin_ids and skin_bindings.json, not by guessing the old strip suffix.",
+      "context": "room",
+      "source": "source/hero_colours_r3_big.txt",
+      "colours": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "loop": false,
+      "skin_ids": [
+        "chrome",
+        "night",
+        "polaroid",
+        "negative",
+        "tiger",
+        "rainbow_lens",
+        "ghost",
+        "gold"
+      ],
+      "skin_pose_order": [
+        "idle0",
+        "idle1",
+        "run0",
+        "run1",
+        "run2",
+        "run3",
+        "jump",
+        "fall",
+        "cling",
+        "dive",
+        "land",
+        "dead"
+      ],
+      "pivot": [
+        8,
+        24
+      ],
+      "draw_offset_from_hitbox": [
+        -2,
+        -8
+      ],
+      "hitbox_rect": [
+        2,
+        8,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_colours_r3_dash_big.png",
+      "sprite": "hero_colours_r3_dash_big",
+      "w": 16,
+      "h": 24,
+      "frames": 8,
+      "names": [
+        "chrome_dash",
+        "night_dash",
+        "polaroid_dash",
+        "negative_dash",
+        "tiger_dash",
+        "rainbow_lens_dash",
+        "ghost_dash",
+        "gold_dash"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "0d9d054a43044b21b5d45d4d1e52f8f7d66944f011f6baed5f7aced8472e3e5c",
+      "notes": "Skin-major dash companion. Select only this skin's action block; never run through the whole atlas.",
+      "context": "room",
+      "source": "source/hero_colours_r3_dash_big.txt",
+      "colours": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "loop": false,
+      "skin_ids": [
+        "chrome",
+        "night",
+        "polaroid",
+        "negative",
+        "tiger",
+        "rainbow_lens",
+        "ghost",
+        "gold"
+      ],
+      "skin_pose_order": [
+        "dash"
+      ],
+      "clip_frames": 1,
+      "pivot": [
+        8,
+        24
+      ],
+      "draw_offset_from_hitbox": [
+        -2,
+        -8
+      ],
+      "hitbox_rect": [
+        2,
+        8,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_colours_r3_hurt_big.png",
+      "sprite": "hero_colours_r3_hurt_big",
+      "w": 16,
+      "h": 24,
+      "frames": 8,
+      "names": [
+        "chrome_recoil",
+        "night_recoil",
+        "polaroid_recoil",
+        "negative_recoil",
+        "tiger_recoil",
+        "rainbow_lens_recoil",
+        "ghost_recoil",
+        "gold_recoil"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "e8079d882ec6890366a1442cb457cfc7bbaebd9600c9477c80a42e9af449e077",
+      "notes": "Skin-major hurt companion. Select only this skin's action block; never run through the whole atlas.",
+      "context": "room",
+      "source": "source/hero_colours_r3_hurt_big.txt",
+      "colours": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "loop": false,
+      "skin_ids": [
+        "chrome",
+        "night",
+        "polaroid",
+        "negative",
+        "tiger",
+        "rainbow_lens",
+        "ghost",
+        "gold"
+      ],
+      "skin_pose_order": [
+        "recoil"
+      ],
+      "clip_frames": 1,
+      "pivot": [
+        8,
+        24
+      ],
+      "draw_offset_from_hitbox": [
+        -2,
+        -8
+      ],
+      "hitbox_rect": [
+        2,
+        8,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_colours_r3_squash_big.png",
+      "sprite": "hero_colours_r3_squash_big",
+      "w": 20,
+      "h": 20,
+      "frames": 8,
+      "names": [
+        "chrome_squash",
+        "night_squash",
+        "polaroid_squash",
+        "negative_squash",
+        "tiger_squash",
+        "rainbow_lens_squash",
+        "ghost_squash",
+        "gold_squash"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "2fd656d0178328a51e01b2755d524c4d7e604a01a5f412bc051e08470c250a89",
+      "notes": "Skin-major squash companion. Select only this skin's action block; never run through the whole atlas.",
+      "context": "room",
+      "source": "source/hero_colours_r3_squash_big.txt",
+      "colours": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "loop": false,
+      "skin_ids": [
+        "chrome",
+        "night",
+        "polaroid",
+        "negative",
+        "tiger",
+        "rainbow_lens",
+        "ghost",
+        "gold"
+      ],
+      "skin_pose_order": [
+        "squash"
+      ],
+      "clip_frames": 1,
+      "pivot": [
+        10,
+        20
+      ],
+      "draw_offset_from_hitbox": [
+        -4,
+        -4
+      ],
+      "hitbox_rect": [
+        4,
+        4,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_colours_r3_stretch_big.png",
+      "sprite": "hero_colours_r3_stretch_big",
+      "w": 14,
+      "h": 28,
+      "frames": 8,
+      "names": [
+        "chrome_stretch",
+        "night_stretch",
+        "polaroid_stretch",
+        "negative_stretch",
+        "tiger_stretch",
+        "rainbow_lens_stretch",
+        "ghost_stretch",
+        "gold_stretch"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "7ca14eedd5ed78bf7284fb344f28df76c3052de72d5f9b9636696b3ee171fb1c",
+      "notes": "Skin-major stretch companion. Select only this skin's action block; never run through the whole atlas.",
+      "context": "room",
+      "source": "source/hero_colours_r3_stretch_big.txt",
+      "colours": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "loop": false,
+      "skin_ids": [
+        "chrome",
+        "night",
+        "polaroid",
+        "negative",
+        "tiger",
+        "rainbow_lens",
+        "ghost",
+        "gold"
+      ],
+      "skin_pose_order": [
+        "stretch"
+      ],
+      "clip_frames": 1,
+      "pivot": [
+        7,
+        28
+      ],
+      "draw_offset_from_hitbox": [
+        -1,
+        -12
+      ],
+      "hitbox_rect": [
+        1,
+        12,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "hero/hero_colours_r3_dropin_big.png",
+      "sprite": "hero_colours_r3_dropin_big",
+      "w": 16,
+      "h": 24,
+      "frames": 24,
+      "names": [
+        "chrome_descending",
+        "chrome_contact",
+        "chrome_settled",
+        "night_descending",
+        "night_contact",
+        "night_settled",
+        "polaroid_descending",
+        "polaroid_contact",
+        "polaroid_settled",
+        "negative_descending",
+        "negative_contact",
+        "negative_settled",
+        "tiger_descending",
+        "tiger_contact",
+        "tiger_settled",
+        "rainbow_lens_descending",
+        "rainbow_lens_contact",
+        "rainbow_lens_settled",
+        "ghost_descending",
+        "ghost_contact",
+        "ghost_settled",
+        "gold_descending",
+        "gold_contact",
+        "gold_settled"
+      ],
+      "fps": 8,
+      "anchor": "bottom",
+      "sha256": "74c5c3a83749e72717ecf6eb53975962d3dec470755eacc7e21c294c0345973e",
+      "notes": "Skin-major dropin companion. Select only this skin's action block; never run through the whole atlas.",
+      "context": "room",
+      "source": "source/hero_colours_r3_dropin_big.txt",
+      "colours": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "loop": false,
+      "skin_ids": [
+        "chrome",
+        "night",
+        "polaroid",
+        "negative",
+        "tiger",
+        "rainbow_lens",
+        "ghost",
+        "gold"
+      ],
+      "skin_pose_order": [
+        "descending",
+        "contact",
+        "settled"
+      ],
+      "clip_frames": 3,
+      "pivot": [
+        8,
+        24
+      ],
+      "draw_offset_from_hitbox": [
+        -2,
+        -8
+      ],
+      "hitbox_rect": [
+        2,
+        8,
+        12,
+        16
+      ],
+      "facing": "right",
+      "base_body_mask_colours": [
+        7,
+        14
+      ]
+    },
+    {
+      "file": "world/tab_bold.png",
+      "sprite": "tab_bold",
+      "w": 16,
+      "h": 8,
+      "frames": 2,
+      "names": [
+        "plain",
+        "lit"
+      ],
+      "fps": 0,
+      "anchor": "top",
+      "sha256": "486ea91b581dd0f2d16265a0bc191b46d772dd5cc4bc8d105c1f6cbd552b43fa",
+      "notes": "16x8 repair-film tile. Collision top is local y=0; repeat horizontally without side seams. Film cream is restricted to the platform.",
+      "context": "room",
+      "source": "source/tab_bold.txt",
+      "colours": [
+        0,
+        6,
+        15
+      ],
+      "loop": false,
+      "repeat": "x",
+      "collision_edge_y": 0
+    },
+    {
+      "file": "world/ledge.png",
+      "sprite": "ledge",
+      "w": 16,
+      "h": 8,
+      "frames": 5,
+      "names": [
+        "attic",
+        "frost",
+        "deep",
+        "overgrowth",
+        "ember"
+      ],
+      "fps": 0,
+      "anchor": "top",
+      "sha256": "34e3cfc69bdff6d30aa6ee0eae9988574bf0508053c7a16c6ffb84cbe46ff48f",
+      "notes": "Biome landing rim. Repeat four cells for a 64x8 landing. Strong continuous Glare top and Ink underside; no cream and no Sun.",
+      "context": "room",
+      "source": "source/ledge.txt",
+      "colours": [
+        0,
+        2,
+        3,
+        4,
+        6,
+        8,
+        9,
+        12,
+        13
+      ],
+      "loop": false,
+      "repeat": "x",
+      "recommended_tiles": 4,
+      "collision_edge_y": 0
+    },
+    {
+      "file": "world/tripod.png",
+      "sprite": "tripod",
+      "w": 16,
+      "h": 32,
+      "frames": 4,
+      "names": [
+        "unlit",
+        "lit",
+        "flash0",
+        "flash1"
+      ],
+      "fps": 0,
+      "anchor": "bottom",
+      "sha256": "67f6b8ea4e7ee1db278a4db354d6b0c1f41e072a060e6b2777a9b08d9638e5fa",
+      "notes": "Camera checkpoint. Unlit lens is grey; lit lens is Teal with a check. On activation select flash0 then flash1 at 12 fps, then lit. White flash is not a beacon.",
+      "context": "room",
+      "source": "source/tripod.txt",
+      "colours": [
+        0,
+        2,
+        3,
+        4,
+        6,
+        7,
+        12
+      ],
+      "loop": false,
+      "pivot": [
+        8,
+        32
+      ],
+      "activation_frames": [
+        "flash0",
+        "flash1"
+      ],
+      "activation_fps": 12,
+      "activation_end": "lit",
+      "flash_origin": [
+        12,
+        4
+      ]
+    },
+    {
+      "file": "world/film_strip.png",
+      "sprite": "film_strip",
+      "w": 48,
+      "h": 8,
+      "frames": 2,
+      "names": [
+        "a",
+        "b"
+      ],
+      "fps": 4,
+      "anchor": "top",
+      "sha256": "1fd363ee3516ab74c26ad4e6256756f39f667838b4bbb9fc99499b01c25cc495",
+      "notes": "Moving 48x8 film platform. Sprocket animation scrolls; code moves the collider and sprite together. Top y=0 stays fixed across frames.",
+      "context": "room",
+      "source": "source/film_strip.txt",
+      "colours": [
+        0,
+        6,
+        15
+      ],
+      "loop": true,
+      "collision_edge_y": 0
+    },
+    {
+      "file": "world/fan.png",
+      "sprite": "fan",
+      "w": 16,
+      "h": 16,
+      "frames": 3,
+      "names": [
+        "a",
+        "b",
+        "c"
+      ],
+      "fps": 12,
+      "anchor": "bottom",
+      "sha256": "bd13e8f124e2cde8f34a4d5498f8cb17341b931aa4376ea34bb3803478ea7531",
+      "notes": "Floor fan with a rotating light rotor inside an Ink casing. Align the wind column to its top centre.",
+      "context": "room",
+      "source": "source/fan.txt",
+      "colours": [
+        0,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "loop": true,
+      "pivot": [
+        8,
+        16
+      ],
+      "wind_offset": [
+        0,
+        -48
+      ]
+    },
+    {
+      "file": "fx/fx_wind.png",
+      "sprite": "fx_wind",
+      "w": 16,
+      "h": 48,
+      "frames": 4,
+      "names": [
+        "wind_0",
+        "wind_1",
+        "wind_2",
+        "wind_3"
+      ],
+      "fps": 8,
+      "anchor": "bottom",
+      "sha256": "9aeb22aba0a8698511123ea43208d96ef585ef8e2e458720a4299fa1c7c6831c",
+      "notes": "Open updraft column with upward chevrons and quiet edge wisps. No filled rectangle; preserves the photo underneath.",
+      "context": "room",
+      "source": "source/fx_wind.txt",
+      "colours": [
+        0,
+        3,
+        4,
+        6
+      ],
+      "loop": true,
+      "pivot": [
+        8,
+        48
+      ]
+    },
+    {
+      "file": "fx/key_glint.png",
+      "sprite": "key_glint",
+      "w": 16,
+      "h": 16,
+      "frames": 4,
+      "names": [
+        "glint_0",
+        "glint_1",
+        "glint_2",
+        "glint_3"
+      ],
+      "fps": 6,
+      "anchor": "cell",
+      "sha256": "7082d36fee6590921df4384863fb5b9e9e286a248d5a8f81589bc29823bca3ff",
+      "notes": "Outlined white reflection over the furniture hiding a key; its Ink backing reads on a light photo. Place at the key centre without replacing the key glyph.",
+      "context": "room",
+      "source": "source/key_glint.txt",
+      "colours": [
+        0,
+        4,
+        6
+      ],
+      "loop": true,
+      "pivot": [
+        8,
+        8
+      ]
+    },
+    {
+      "file": "ui/polaroid_frame.png",
+      "sprite": "polaroid_frame",
+      "w": 72,
+      "h": 96,
+      "frames": 1,
+      "names": [
+        "base"
+      ],
+      "fps": 0,
+      "anchor": "cell",
+      "sha256": "88f8cd93394bd1d4babe52c0a60a305f63ca52d071838e15e971cb0eb85f9ec6",
+      "notes": "Room-safe control-strip instant print with a transparent 60x72 aperture at [6,6]. Draw grid/photo behind it; markers inside; frame last.",
+      "context": "room",
+      "source": "source/polaroid_frame.txt",
+      "colours": [
+        0,
+        4,
+        5,
+        6
+      ],
+      "loop": false,
+      "window_rect": [
+        6,
+        6,
+        60,
+        72
+      ],
+      "composite_order": [
+        "preview",
+        "hero_dot",
+        "beacon_dot",
+        "polaroid_frame"
+      ]
+    },
+    {
+      "file": "ui/hero_dot.png",
+      "sprite": "hero_dot",
+      "w": 4,
+      "h": 4,
+      "frames": 1,
+      "names": [
+        "dot"
+      ],
+      "fps": 0,
+      "anchor": "cell",
+      "sha256": "763e7726dd0f4a3b54dee93810be41d15595af649e0831ede1f5641b1167b002",
+      "notes": "Sun square with a complete Ink outline; centre over the minimap hero position.",
+      "context": "room",
+      "source": "source/hero_dot.txt",
+      "colours": [
+        0,
+        14
+      ],
+      "loop": false,
+      "pivot": [
+        2,
+        2
+      ],
+      "semantic": "hero"
+    },
+    {
+      "file": "ui/beacon_dot.png",
+      "sprite": "beacon_dot",
+      "w": 4,
+      "h": 4,
+      "frames": 1,
+      "names": [
+        "dot"
+      ],
+      "fps": 0,
+      "anchor": "cell",
+      "sha256": "a6b3fd01c461d1809fe022f77c1e83883500df147dae8a6a3c3e41e674291da8",
+      "notes": "Glare centre and chamfered Ink outline distinguish the exit from the square Sun hero marker.",
+      "context": "room",
+      "source": "source/beacon_dot.txt",
+      "colours": [
+        0,
+        6
+      ],
+      "loop": false,
+      "pivot": [
+        2,
+        2
+      ],
+      "semantic": "beacon"
+    },
+    {
+      "file": "fx/fx_pickup.png",
+      "sprite": "fx_pickup",
+      "w": 16,
+      "h": 16,
+      "frames": 4,
+      "names": [
+        "pick_0",
+        "pick_1",
+        "pick_2",
+        "pick_3"
+      ],
+      "fps": 12,
+      "anchor": "cell",
+      "sha256": "41575039ec7c1aa95d9f2e44047dc38515fa63790485a82c59bdbe32df6ec12b",
+      "notes": "Small white outward glints for collecting a speck. Play once, then remove.",
+      "context": "room",
+      "source": "source/fx_pickup.txt",
+      "colours": [
+        0,
+        4,
+        6
+      ],
+      "loop": false,
+      "pivot": [
+        8,
+        8
+      ]
+    },
+    {
+      "file": "fx/fx_land_dust.png",
+      "sprite": "fx_land_dust",
+      "w": 16,
+      "h": 8,
+      "frames": 4,
+      "names": [
+        "dust_0",
+        "dust_1",
+        "dust_2",
+        "dust_3"
+      ],
+      "fps": 12,
+      "anchor": "bottom",
+      "sha256": "c3ae33517f659f783d0e60dee44ad6460a9b29b68a1bd1cafb8ce23815ab5a43",
+      "notes": "Low sideways dust under the landing feet; does not cover the hero or landing edge. Play once, then remove.",
+      "context": "room",
+      "source": "source/fx_land_dust.txt",
+      "colours": [
+        0,
+        3,
+        4,
+        5
+      ],
+      "loop": false,
+      "pivot": [
+        8,
+        8
+      ]
+    },
+    {
+      "file": "fx/fx_checkpoint.png",
+      "sprite": "fx_checkpoint",
+      "w": 32,
+      "h": 32,
+      "frames": 4,
+      "names": [
+        "save_0",
+        "save_1",
+        "save_2",
+        "save_3"
+      ],
+      "fps": 12,
+      "anchor": "cell",
+      "sha256": "f5c847bf6c4b8e5cae3eeb705d6e7fe6c40e2ba01ab340b4d3b60c52602f53df",
+      "notes": "White camera flash radiates from the tripod flash origin. Play once, remove; keep tripod lit. Suppress in reduced-motion mode.",
+      "context": "room",
+      "source": "source/fx_checkpoint.txt",
+      "colours": [
+        0,
+        4,
+        6
+      ],
+      "loop": false,
+      "pivot": [
+        16,
+        16
+      ]
+    },
+    {
+      "file": "fx/fx_floor.png",
+      "sprite": "fx_floor",
+      "w": 48,
+      "h": 16,
+      "frames": 4,
+      "names": [
+        "floor_0",
+        "floor_1",
+        "floor_2",
+        "floor_3"
+      ],
+      "fps": 8,
+      "anchor": "cell",
+      "sha256": "eee76f3eee2c0b08582329c3023074fce888d5a33e0dbc099f572b60eb5bb0aa",
+      "notes": "Short reflection sweeps along a newly reached landing. Centre the 48px effect on the 64px four-tile landing; align local y=8 to its top. Play once then remove.",
+      "context": "room",
+      "source": "source/fx_floor.txt",
+      "colours": [
+        0,
+        4,
+        6
+      ],
+      "loop": false,
+      "pivot": [
+        24,
+        8
+      ]
+    },
+    {
+      "file": "enemies/moth.png",
+      "sprite": "moth",
+      "w": 16,
+      "h": 16,
+      "frames": 2,
+      "names": [
+        "a",
+        "b"
+      ],
+      "fps": 12,
+      "anchor": "cell",
+      "sha256": "d8b129c81f46064ff280d71677dfc6120e974d6787589cf5d53688fd15e2c011",
+      "notes": "Whole-key bold replacement. Original alpha silhouette, size, state order and timing retained; every boundary pixel is Ink, with brighter internal highlights. No Sun or Film.",
+      "context": "room",
+      "source": "source/moth.txt",
+      "colours": [
+        0,
+        4,
+        5,
+        6
+      ],
+      "loop": true,
+      "legacy_file": "enemy_moth.png",
+      "replacement_of": "moth",
+      "legacy_reference": "enemy_moth"
+    },
+    {
+      "file": "enemies/moth_elite.png",
+      "sprite": "moth_elite",
+      "w": 24,
+      "h": 24,
+      "frames": 2,
+      "names": [
+        "a",
+        "b"
+      ],
+      "fps": 12,
+      "anchor": "cell",
+      "sha256": "2f28df148a4b3551e266954f632b4ed85aef3231c526656595fd59c2efa7331d",
+      "notes": "Whole-key bold replacement. Original alpha silhouette, size, state order and timing retained; every boundary pixel is Ink, with brighter internal highlights. No Sun or Film.",
+      "context": "room",
+      "source": "source/moth_elite.txt",
+      "colours": [
+        0,
+        4,
+        5,
+        6,
+        10
+      ],
+      "loop": true,
+      "legacy_file": "enemy_moth_elite.png",
+      "replacement_of": "moth_elite",
+      "legacy_reference": "enemy_moth_elite"
+    },
+    {
+      "file": "enemies/icicle.png",
+      "sprite": "icicle",
+      "w": 16,
+      "h": 16,
+      "frames": 2,
+      "names": [
+        "a",
+        "b"
+      ],
+      "fps": 12,
+      "anchor": "top",
+      "sha256": "069784d8bbf932d68c18fb9cdab27d205b26e8a15c89ac51ac93d07d34e33d24",
+      "notes": "Whole-key bold replacement. Original alpha silhouette, size, state order and timing retained; every boundary pixel is Ink, with brighter internal highlights. No Sun or Film.",
+      "context": "room",
+      "source": "source/icicle.txt",
+      "colours": [
+        0,
+        5,
+        6
+      ],
+      "loop": true,
+      "legacy_file": "enemy_icicle.png",
+      "replacement_of": "icicle",
+      "legacy_reference": "enemy_icicle"
+    },
+    {
+      "file": "enemies/icicle_elite.png",
+      "sprite": "icicle_elite",
+      "w": 24,
+      "h": 24,
+      "frames": 2,
+      "names": [
+        "a",
+        "b"
+      ],
+      "fps": 12,
+      "anchor": "top",
+      "sha256": "94bec376fff616a9ef15e66093bac44e028939937539afdb6ba7ffc383b0b9a8",
+      "notes": "Whole-key bold replacement. Original alpha silhouette, size, state order and timing retained; every boundary pixel is Ink, with brighter internal highlights. No Sun or Film.",
+      "context": "room",
+      "source": "source/icicle_elite.txt",
+      "colours": [
+        0,
+        5,
+        6,
+        10
+      ],
+      "loop": true,
+      "legacy_file": "enemy_icicle_elite.png",
+      "replacement_of": "icicle_elite",
+      "legacy_reference": "enemy_icicle_elite"
+    },
+    {
+      "file": "enemies/jelly.png",
+      "sprite": "jelly",
+      "w": 16,
+      "h": 16,
+      "frames": 2,
+      "names": [
+        "a",
+        "b"
+      ],
+      "fps": 12,
+      "anchor": "cell",
+      "sha256": "c920a2da2c284795cdf6de64f1d8e6d18dc3fabc68f1dd469356d85b9532de20",
+      "notes": "Whole-key bold replacement. Original alpha silhouette, size, state order and timing retained; every boundary pixel is Ink, with brighter internal highlights. No Sun or Film.",
+      "context": "room",
+      "source": "source/jelly.txt",
+      "colours": [
+        0,
+        6,
+        10,
+        12
+      ],
+      "loop": true,
+      "legacy_file": "enemy_jelly.png",
+      "replacement_of": "jelly",
+      "legacy_reference": "enemy_jelly"
+    },
+    {
+      "file": "enemies/jelly_elite.png",
+      "sprite": "jelly_elite",
+      "w": 24,
+      "h": 24,
+      "frames": 2,
+      "names": [
+        "a",
+        "b"
+      ],
+      "fps": 12,
+      "anchor": "cell",
+      "sha256": "547802dd79b4273a611ea89701b63f2e87334a4ac417e231694d3bbcdcba28d0",
+      "notes": "Whole-key bold replacement. Original alpha silhouette, size, state order and timing retained; every boundary pixel is Ink, with brighter internal highlights. No Sun or Film.",
+      "context": "room",
+      "source": "source/jelly_elite.txt",
+      "colours": [
+        0,
+        6,
+        10,
+        12
+      ],
+      "loop": true,
+      "legacy_file": "enemy_jelly_elite.png",
+      "replacement_of": "jelly_elite",
+      "legacy_reference": "enemy_jelly_elite"
+    },
+    {
+      "file": "enemies/crawler.png",
+      "sprite": "crawler",
+      "w": 16,
+      "h": 16,
+      "frames": 2,
+      "names": [
+        "a",
+        "b"
+      ],
+      "fps": 12,
+      "anchor": "bottom",
+      "sha256": "37aa76b12b3529c5f7f68f60be8ab0d9a098d817aa78b63c6d558d417361701f",
+      "notes": "Whole-key bold replacement. Original alpha silhouette, size, state order and timing retained; every boundary pixel is Ink, with brighter internal highlights. No Sun or Film.",
+      "context": "room",
+      "source": "source/crawler.txt",
+      "colours": [
+        0,
+        6,
+        9,
+        13
+      ],
+      "loop": true,
+      "legacy_file": "enemy_crawler.png",
+      "replacement_of": "crawler",
+      "legacy_reference": "enemy_crawler"
+    },
+    {
+      "file": "enemies/crawler_elite.png",
+      "sprite": "crawler_elite",
+      "w": 24,
+      "h": 24,
+      "frames": 2,
+      "names": [
+        "a",
+        "b"
+      ],
+      "fps": 12,
+      "anchor": "bottom",
+      "sha256": "1b1e653de315078df512a405884cfb68b733285cc037f1025b28a68b8764bd13",
+      "notes": "Whole-key bold replacement. Original alpha silhouette, size, state order and timing retained; every boundary pixel is Ink, with brighter internal highlights. No Sun or Film.",
+      "context": "room",
+      "source": "source/crawler_elite.txt",
+      "colours": [
+        0,
+        6,
+        9,
+        10,
+        13
+      ],
+      "loop": true,
+      "legacy_file": "enemy_crawler_elite.png",
+      "replacement_of": "crawler_elite",
+      "legacy_reference": "enemy_crawler_elite"
+    },
+    {
+      "file": "enemies/spark.png",
+      "sprite": "spark",
+      "w": 16,
+      "h": 16,
+      "frames": 2,
+      "names": [
+        "a",
+        "b"
+      ],
+      "fps": 12,
+      "anchor": "bottom",
+      "sha256": "3bad2eb85052107fbf57398f8867ebcdd91204e79540dba1bcaa2de957f3350d",
+      "notes": "Whole-key bold replacement. Original alpha silhouette, size, state order and timing retained; every boundary pixel is Ink, with brighter internal highlights. No Sun or Film.",
+      "context": "room",
+      "source": "source/spark.txt",
+      "colours": [
+        0,
+        5,
+        6,
+        9
+      ],
+      "loop": true,
+      "legacy_file": "enemy_spark.png",
+      "replacement_of": "spark",
+      "legacy_reference": "enemy_spark"
+    },
+    {
+      "file": "enemies/spark_elite.png",
+      "sprite": "spark_elite",
+      "w": 24,
+      "h": 24,
+      "frames": 2,
+      "names": [
+        "a",
+        "b"
+      ],
+      "fps": 12,
+      "anchor": "bottom",
+      "sha256": "1a866773563fc6b9c66183eddf400399452b09c790b686571126fea2cb491abf",
+      "notes": "Whole-key bold replacement. Original alpha silhouette, size, state order and timing retained; every boundary pixel is Ink, with brighter internal highlights. No Sun or Film.",
+      "context": "room",
+      "source": "source/spark_elite.txt",
+      "colours": [
+        0,
+        5,
+        6,
+        9,
+        10
+      ],
+      "loop": true,
+      "legacy_file": "enemy_spark_elite.png",
+      "replacement_of": "spark_elite",
+      "legacy_reference": "enemy_spark_elite"
+    }
+  ]
+}

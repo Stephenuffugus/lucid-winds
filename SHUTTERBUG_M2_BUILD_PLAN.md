@@ -11,8 +11,16 @@ is a column of tabs with no landing and no set piece, a quarter of the screen is
 and hits are quiet. He agreed: "your assessment is pretty on point".
 Astra's round 8 brief (`satellites/shutterbug/docs/astra/ASTRA-SHUTTERBUG-ROUND8-NOV04.txt`) asks for the art this
 plan draws with: the big bug (16x24 over the 12x16 hitbox), bold tabs and landing ledges, the tripod, the film strip
-platform, the fan, the key glint, the Polaroid frame, the juice fx, a bold pass on the enemies. Steps 1 to 5 need
-none of it (placeholders drawn by code); step 6 splices it when it lands.
+platform, the fan, the key glint, the Polaroid frame, the juice fx, a bold pass on the enemies. ROUND 8 LANDED
+the same day (vault `shutterbug-astra-round8-20261104`, sha256 094ba9fe...; unpacked by the cutter's intake at
+`/home/codespace/sb-drafts/astra/round8/pack/`, its NOTES.md, manifest.json, skin_bindings.json, import_groups.json
+and hero_body_masks.json copied to `satellites/shutterbug/docs/astra/round8/`). All five sections came: 42 strips,
+386 frames. The cutter's check cut everything but three effects that are not square (fx_wind 16x48, fx_land_dust
+16x8, fx_floor 48x16): widen the cutter's effect rule for those three keys (the way FX_PLAIN admitted
+fx_beacon_refuse), not the art. So every step below splices ITS OWN strips through the cutter as it goes (intake is
+done; `check` and `splice` per step), and step 6 is the big bug alone. Read NOTES.md before step 1: the hitbox and
+draw offsets per pose family, the Polaroid aperture (x 6, y 6, 60x72), the tripod's flash origin, the wind column's
+placement, and the skin binding by skin_id (never by strip suffix).
 
 ## STATE (the builder updates this block; one line per step)
 
@@ -78,16 +86,18 @@ dropped on Title, on a new photo, and never written anywhere) and draw it behind
 the world (384x768), at about 45 percent opacity with its contrast pulled down (a canvas filter or a pre dimmed copy
 drawn once), open cells showing it, solid cells drawn over it at full, the biome's tint on top as today. Rooms with
 no photo (sample, Level code, Daily, a resumed house after reload, the album's replays) draw as today. A setting
-"Photo behind the room", on by default. The Polaroid in the strip: a 72x96 instant print at the top centre of the
-control strip, `pointer-events: none`, drawn each frame from the grid thumbnail (or the photo while it exists) with
-the bug's dot, the keys' and the beacon's marks; it hides at widths where it would touch the stick hint (360). Nothing
+"Photo behind the room", on by default. The Polaroid in the strip: Astra's `polaroid_frame` (72x96, aperture x 6, y 6, 60x72) at the top centre of the
+control strip, `pointer-events: none`, the room drawn into the aperture each frame (the grid thumbnail, or the photo
+while it exists; a 384x768 room fits as 36x72, centred) with `hero_dot` and `beacon_dot` (4x4, centre pivots) and the
+keys as `hud_key`; it hides at widths where it would touch the stick hint (360). Splice polaroid_frame, hero_dot and
+beacon_dot through the cutter in this step. Nothing
 in this step touches `core`. Gate: fast check; ONE shot: the real room climb at 412, and the same via shots-play at
 360 (`--sizes=360x780`) because of the strip; look at both.
 
-**Step 2. Readable without new art (sb-m2-2, S/M).** Tabs drawn 8 px thick by code (the 16x5 tab sprite plus a lit
-top edge and a 3 px dark underside) until Astra's tab_bold lands; every solid cell gets the 1 px darker outline
-DESIGN 11 asks for; enemies get a 1 px Ink outline drawn at draw time until the bold pass lands; the exit beacon and
-keys get a 2 px halo. A camera setting "Zoom: close": the world rendered at 2x with the camera following the bug
+**Step 2. Readable (sb-m2-2, S/M).** Splice `tab_bold` (16x8, plain and lit; its collision top stays at local y 0 and
+a one way never becomes an 8 px solid) and draw every film tab with it; every solid cell gets the 1 px darker outline
+DESIGN 11 asks for; splice the bold pass on the ten enemy keys (whole key replacements, same sizes and frame names);
+the exit beacon and keys get a 2 px halo. A camera setting "Zoom: close": the world rendered at 2x with the camera following the bug
 sideways too (viewport 192x320 game px, integer scale, the bug kept at 60 percent down and centred within 3 cells),
 off by default, no change to the sim or to replays. Gate: fast check; ONE shot: the sample climb at 412 with the
 zoom on and off (two files, one look).
@@ -98,8 +108,9 @@ of four standable cells reachable from the main ascent, placed on the photo's ow
 two rows of the boundary, else a film tab ledge. A tripod checkpoint stands on the first landing: in free play, the
 Daily Room and Level code a death respawns at the lit tripod with keys and loot kept (a house run keeps its rule: the
 run ends, Retry House replays). Keys move off open tabs into the furniture: each key sits in an open cell adjacent to
-a landmark solid, reachable, never on the main ascent's safe cells; the key glint marks it (code drawn until Astra's
-glint lands). The harness: every fixture room still completable, the route score still met, the floors asserted
+a landmark solid, reachable, never on the main ascent's safe cells; `key_glint` (16x16, 6 fps, centre pivot) marks
+it. Splice `ledge` (16x8, five biomes, four tiles make a landing), `tripod` (16x32, bottom centre pivot; unlit until
+passed, then flash0, flash1 at 12 fps, then lit) and `key_glint` in this step. The harness: every fixture room still completable, the route score still met, the floors asserted
 (`floors` gate: three landings, the tripod on the first, keys adjacent to solids); regenerate the fixtures' expected
 hashes in the same commit and say so in PROGRESS. Gate: fast check; ONE shot: the real room climb; look for the
 landings on the furniture.
@@ -108,26 +119,30 @@ landings on the furniture.
 features table's spirit (DESIGN 6.11), never intersecting the main ascent's safe cells, deterministic from the seed:
 the moving film strip (a 3 cell one way that travels 4 cells sideways on a 3 s cycle; placed across a gap in the
 furniture floor), the fan (a 3 cell updraft column above a floor cell that lifts the bug 2 extra cells while inside,
-2 s on, 2 s off, telegraphed by the blades), the crusher that exists already (trap fields, unchanged). Drawn as
-palette rectangles until Astra's strips land. The harness asserts completable with them on and off cycle. Gate:
+2 s on, 2 s off, telegraphed by the blades), the crusher that exists already (trap fields, unchanged). Splice `film_strip` (48x8, a and b at 4 fps; code moves it and carries the bug), `fan` (16x16, 12 fps, bottom
+centre pivot) and `fx_wind` (16x48, 8 fps; its bottom centre meets the fan's top centre, drawn at the fan's [0, -48];
+widen the cutter's effect rule for this key). The harness asserts completable with them on and off cycle. Gate:
 fast check; ONE shot: a room with a film strip in frame (use the sample room if the real one has none; say which).
 
 **Step 5. The juice (sb-m2-5, S; dropped first if time is short).** A pickup burst on specks and keys, a 0.2 s hold
 and flash on a key, the enemy hit flash that exists on every hit, a dust puff on landing, the camera leading the jump
 (it looks 1.5 cells ahead vertically and settles in 6 frames), the floor shimmer and a one line floor name in the
 strip when a new floor is reached ("The furniture", "The ceiling"), shake stays under 2 px and only on dive landings
-and boss hits (DESIGN 4.4). Placeholders by code until Astra's fx land. Reduced motion: no shake, no lead, static
+and boss hits (DESIGN 4.4). Splice `fx_pickup` (16x16), `fx_land_dust` (16x8, behind the hero at the feet), `fx_checkpoint` (32x32 at the tripod's
+lamp: tripod top left minus 4, 12) and `fx_floor` (48x16, centred on the landing, 8 px up), each played once then
+removed; widen the cutter's effect rule for the two that are not square. Reduced motion: no shake, no lead, static
 bursts. Gate: fast check; ONE shot: the climb at the instant of a key pickup (shots-play with a step that lands on
 a key; say the step).
 
-**Step 6. Astra's round 8 in (sb-m2-6, M; when the zip lands).** `python3 -I tools/astra_cut.py intake` the zip,
-`check` it, extend NEW_KEYS for hero_big (16x24), hero_big_dash, hero_big_hurt, hero_big_squash (20x20),
-hero_big_stretch (14x28), hero_big_dropin, hero_colours_big and hero_colours_r3_big, tab_bold (16x8), ledge (16x8),
-tripod (16x32), film_strip (48x8), fan (16x16), fx_wind (16x48), key_glint (16x16), polaroid_frame (72x96), hero_dot
-and beacon_dot (4x4), fx_pickup, fx_land_dust (16x8), fx_checkpoint, fx_floor (48x16); the hero draws 16x24 over its
-12x16 hitbox (anchor bottom centre, the feet row where the feet were), per look falling back to the small strips
-until its big strips exist; the bold enemies replace their keys whole; every placeholder from steps 2 to 5 is swapped
-for its strip; `test/astra_fixture.py` maps round 8; redwatch anchors re anchored. Gate: fast check and the astra
+**Step 6. The big bug (sb-m2-6, M).** Splice the hero: `hero_big` (16x24, the twelve poses), `hero_big_dash`,
+`hero_big_hurt`, `hero_big_squash` (20x20), `hero_big_stretch` (14x28), `hero_big_dropin` (16x24 x3), and the sixteen
+looks as `hero_colours_big` and `hero_colours_r3_big` (96 frames each: 12 times skin index plus pose) with their
+companion dash, hurt, squash, stretch and dropin strips (one frame per skin; dropin three). The hero draws over its
+unchanged 12x16 hitbox with NOTES.md's offsets (movement, dash, hurt, dropin: draw at hitbox minus 2, 8; squash minus
+4, 4; stretch minus 1, 12; bottom centre pivot; mirror about it), the runtime squash and stretch are NOT applied on
+top of the supplied squash and stretch frames, and each look binds by skin_id through `skin_bindings.json`, never by
+a strip suffix; the dash and hurt flash uses `hero_body_masks.json`. Save ids, reward conditions and unlocked looks
+are untouched. `test/astra_fixture.py` maps round 8 (every new key) and the redwatch anchors are re anchored. Gate: fast check and the astra
 gate; ONE shot: the real room climb; look at the bug's feet against a ledge.
 
 **Step 7. The walk, his lines, STOP.** `SWS_NO_BROWSER=1 node satellites/shutterbug/tools/check.js` green. The
@@ -140,7 +155,9 @@ the latest one, which carries all of them. Then stop.
 
 1. **The photo behind the room.** Built on by default (privacy intact: the photo lives in memory for the room and
    never persists). He may turn the default off after the Pixel.
-2. **Big bug or close zoom.** Both ship (the big bug from round 8, the zoom as a setting). He picks the default.
+2. **Big bug or close zoom.** Both ship (the big bug is in, the zoom is a setting). Astra's own proof says the big
+   bug reads at 412 (16x24 CSS px) but is still small on a 320 wide phone (12x19): the zoom setting is the answer
+   there. He picks the default on the Pixel.
 3. **Checkpoints in house runs.** Free play, Daily and Level code respawn at the tripod; house runs still end on a
    death. His call whether a house gets one tripod per room.
 4. **The set piece list.** Film strip and fan now, crusher as it was. A conveyor, a swinging lamp and a gust from a
