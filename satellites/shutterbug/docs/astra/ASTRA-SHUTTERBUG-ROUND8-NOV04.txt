@@ -1,0 +1,82 @@
+SHUTTERBUG, ART ROUND 8 FOR ASTRA (4 Nov 2026): THE ROOM YOU CAN READ
+
+Thank you for round 7. All of it is in the game (build sb-m1-19 and after): the sixteen bugs to win, the eight
+frames, the album and platinum medals, the album covers, the Daily Room's badge, stamp and card. Your six store
+frames wait for real captures. The game is on the store's doorstep.
+
+WHY ROUND 8
+Stephen played it, we looked at it together, and we agree on what is wrong. The hook works (a photo of your room
+becomes the level, and the reveal is still the moment) and the meta is rich (album, trophies, bugs, Darkroom,
+houses, the guardian, the Daily Room). The climb itself is where it goes flat. From the screens in this zip:
+- Once the climb starts the photo is gone. The room is grey and blue masses with 2 px dashed strips on them. The cat
+  tree, the table, the chairs: gone. You climb "a grey level", not your living room.
+- The bug is a 12 px yellow speck, the enemies the same. At arm's length nothing reads: not the feet, not the landing
+  edges, not what is about to hurt you.
+- The climb has no shape. A column of film tabs straight up, a monster or two, no landing, no set piece, no "oh, the
+  bookshelf part".
+- A quarter of the screen, the control strip under the room, is blank paper.
+- Pickups and hits are quiet.
+Code (ours) will put the dimmed photo back behind the grid during the climb, give every room three floors with a
+landing each, place set pieces on the photo's own furniture, add a checkpoint, lead the camera, and time the juice.
+Your art is what all of that is drawn with. Sections are in priority order; each stands alone, so send them in
+pieces if that is easier, and send section 1 first on its own if the rest takes longer.
+
+CONTRACT (unchanged, plus one new size)
+- The same 16 colours as your manifest's palette, exactly those hexes. Alpha 0 or 255 only.
+- One sprite key per PNG strip, frames left to right, same size, plain frame names; a source grid per strip; a
+  manifest entry per file: file, sprite, w, h, frames, names, fps, anchor, sha256, notes, context (room or menu_only).
+- Sizes in native pixels; one cell is 16 px. Check at 320, 360 and 412 px wide.
+- The hero's feet row holds Ink; Sun lives only in the hero and the beacon. Anything drawn over a room keeps the
+  room's colour laws.
+- NEW: the hero grows. The bug becomes 16 wide by 24 tall (it was 12 by 16). Its hitbox stays 12 by 16: the extra
+  pixels are drawn around it (2 px each side, 8 px above), the feet row stays the bottom row and stays Ink, the
+  anchor is the bottom centre. Same silhouette, same character, same poses, just drawn big enough to read on a
+  phone. New keys carry the suffix _big so the old ones keep working until every look has arrived.
+
+1. THE BIG BUG (highest: this alone fixes "a yellow speck")
+   a. hero_big, 16x24, frames idle0, idle1, run0, run1, run2, run3, jump, fall, cling, dive, land, dead, the base look.
+   b. hero_big_dash 16x24 (dash), hero_big_hurt 16x24 (recoil), hero_big_squash 20x20 (squash), hero_big_stretch
+      14x28 (stretch), hero_big_dropin 16x24 (descending, contact, settled). Same poses as today's small ones.
+   c. The sixteen looks at the big size, the same frames as a and b, as hero_colours_big and hero_colours_r3_big (eight
+      looks each, in the order of the small strips). Send a and b first, then c in two batches; the game falls back
+      per look to the small bug until its big strips land.
+
+2. THE ROOM'S FURNITURE AS PLACES TO STAND (high)
+   a. tab_bold, 16x8, frames plain, lit: the film tab one way platform, twice as thick as today's 16x5, a light top
+      edge and a dark underside, so a landing edge reads from across the room.
+   b. ledge, 16x8, frames attic, frost, deep, overgrowth, ember: the landing tile for each floor's landing, in that
+      biome's colours, a lit top edge, drawn in runs of four.
+   c. tripod, 16x32, frames unlit, lit, flash0, flash1: the checkpoint, a camera tripod with a small flash lamp;
+      unlit until the bug passes it, then lit; the two flash frames play once when it lights.
+   d. film_strip, 48x8, frames a, b, 4 fps: a moving one way platform, a strip of film with sprocket holes, it
+      travels sideways on a fixed cycle.
+   e. fan, 16x16, frames a, b, c, 12 fps, and fx_wind, 16x48, frames wind_0, wind_1, wind_2, wind_3, 8 fps: a floor
+      fan and the updraft column above it, drawn so the column reads as "this lifts you" without text.
+   f. key_glint, 16x16, frames glint_0, glint_1, glint_2, glint_3, 6 fps: the glint drawn where a key hides inside
+      the furniture (keys move off the open tabs and into the room's solids).
+
+3. THE POLAROID IN THE STRIP (high: it fills the blank paper and keeps the room in the frame)
+   polaroid_frame, 72x96, frame base, context room: a small instant print frame for the control strip, with a clear
+   window of 60x72 whose x, y you give in the notes. Code draws the room (the grid, or the photo while it is in
+   memory) into the window with the bug's dot climbing it. Plus hero_dot, 4x4, frame dot: the dot, Sun with an Ink
+   outline, and beacon_dot, 4x4, frame dot: the exit's mark on the print.
+
+4. THE JUICE (medium)
+   a. fx_pickup, 16x16, frames pick_0 to pick_3, 12 fps: a speck's burst when it is collected.
+   b. fx_land_dust, 16x8, frames dust_0 to dust_3, 12 fps: the puff under the feet on a landing.
+   c. fx_checkpoint, 32x32, frames save_0 to save_3, 12 fps: the tripod's flash reaching out when it lights.
+   d. fx_floor, 48x16, frames floor_0 to floor_3, 8 fps: a short shimmer along a landing when the bug first reaches a
+      new floor (a landmark moment; no text, the game names the floor).
+
+5. THE BOLD PASS ON THE ENEMIES (medium)
+   moth, icicle, jelly, crawler, spark (16x16) and their elites (24x24): the same sizes, the same frame names, redrawn
+   with a 1 px Ink outline on every frame and the body one step brighter where the palette allows, so they read
+   against the grey of a photographed wall. Each replaces its key whole.
+
+WHAT NOT TO DRAW
+- Text in any strip. No new bug silhouette: the big bug is the approved bug, larger.
+- Nothing for the Darkroom, the album or the store this round; they are done.
+
+DELIVERY
+One zip, round8, with the PNG strips, a source grid per strip and the manifest. Notes in NOTES.md, including the
+Polaroid window's rectangle, the anchors of the big hero poses, and anything you chose differently and why.
