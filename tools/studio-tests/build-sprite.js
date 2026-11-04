@@ -40,6 +40,11 @@ for (const rel of files) {
   body = body.replace(/\bid="([^"]+)"/g, (m, id) => 'id="' + name + '-' + id + '"').replace(/url\(#([^)]+)\)/g, (m, id) => 'url(#' + name + '-' + id + ')');
   out += '<symbol id="i-' + name + '" viewBox="' + vb[1] + '">' + body + '</symbol>\n';
 }
+/* Icons the pack lacks, drawn in Astra's grammar (24 box, 1.8 stroke, round ends, currentColor). */
+const EXTRA = {
+  pause: '<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5v14M15 5v14"/></g>'
+};
+for (const k in EXTRA) out += '<symbol id="i-' + k + '" viewBox="0 0 24 24">' + EXTRA[k] + '</symbol>\n';
 out += '</svg>';
 
 let html = fs.readFileSync(PAGE, 'utf8');
@@ -48,4 +53,4 @@ const s = html.indexOf(START), e = html.indexOf(END);
 if (s >= 0 && e > s) html = html.slice(0, s) + block + html.slice(e + END.length);
 else { const b = html.indexOf('<body>'); if (b < 0) { console.error('no <body> in studio.html'); process.exit(1); } html = html.slice(0, b + 6) + '\n' + block + html.slice(b + 6); }
 fs.writeFileSync(PAGE, html);
-console.log('sprite: ' + files.length + ' symbols, ' + out.length + ' bytes written into studio.html');
+console.log('sprite: ' + (files.length + Object.keys(EXTRA).length) + ' symbols, ' + out.length + ' bytes written into studio.html');

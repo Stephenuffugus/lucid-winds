@@ -14,7 +14,7 @@ circle_positions.json, ui_tokens.css). Read ASSESSMENT.md and STYLE-GUIDE.md onc
 | 0 | DONE | f5775342e (start) | check red at 60; before set in /home/codespace/studio-drafts/before/; origin/main blobs at start: studio.html 3530fca0, .htaccess 387ccde4 (equal to the branch); box booted 11:39 UTC so it stops near 23:39 UTC, not 13:56 |
 | 1 | DONE | 7c129f0c0 | assets/games/song (starters 11 + header, tools 9, frames 3, slate), 107 symbol sprite inline via tools/studio-tests/build-sprite.js + ic(); play icons 192/512 + maskable 512, og card; check still 60 (asset rule green, nothing named yet) |
 | 2 | DONE | next row | .htaccess grants microphone=(self) to studio.html, song.html, index.html only; song.js allow autoplay+microphone, ?v=20261104a; honest 3 second line + rights line; FluidR3 CC BY 3.0 comment + visible credit; grooves Loose swing / Dusty swing; Humanize; every dash and exclamation out of names, lessons and toasts; zoom on; check 57 (emoji only) |
-| 3 | TODO | | |
+| 3 | DONE | next row | Music Studio wordmark header with Save and New (PADLAB badge gone); every control emoji is an Astra icon beside its text (pause drawn in the same grammar); Astra tokens and colours; slate .24 behind the lanes; check GREEN; shot deferred to the walk (Stephen: tests at the end) |
 | 4 | TODO | | |
 | 5 | TODO | | |
 | 6 | TODO | | |
