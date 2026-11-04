@@ -57,15 +57,11 @@
     background-image:var(--a-paper,none); background-size:256px 256px;}
   #app::after{ content:""; position:absolute; inset:0; pointer-events:none; z-index:0; opacity:.8;
     background-image:var(--a-grain,none); background-size:256px 256px;}
-  @keyframes shake{ 0%,100%{transform:translate(0,0)} 20%{transform:translate(-6px,3px)} 40%{transform:translate(6px,-3px)}
-    60%{transform:translate(-5px,-3px)} 80%{transform:translate(5px,3px)} }
-  #app.shake{ animation:shake .32s linear;}
-  @keyframes whiffflash{ 0%,100%{box-shadow:inset 0 0 0 0 transparent} 50%{box-shadow:inset 0 0 80px 10px rgba(224,144,47,.5)} }
-  #app.whiff{ animation:whiffflash .5s ease;}
-
-  #flood{ position:absolute; inset:0; pointer-events:none; z-index:5;
-    background:radial-gradient(120% 100% at 50% 60%, transparent 30%, var(--crimson) 130%);
-    opacity:calc(var(--p, 0) * .72); transition:opacity .08s linear; mix-blend-mode:multiply;}
+  /* Astra's motion table: a strike is a local emphasis on the bust (no flood, no whole screen shake); a blowout or a
+     shift is one 2 px horizontal shudder of the bust, never while a leak is up */
+  @keyframes shudder{ 0%,100%{transform:translateX(-50%)} 33%{transform:translateX(calc(-50% - 2px))} 66%{transform:translateX(calc(-50% + 2px))} }
+  .bust-wrap.shudder{ animation:shudder .12s linear 1;}
+  .bust-wrap.struck{ filter:drop-shadow(0 0 10px rgba(192,57,43,.85)) drop-shadow(0 0 3px rgba(192,57,43,.9));}
 
   #introScreen{ background:rgba(28,38,32,.30);}
   .intertitle{ position:relative; isolation:isolate; width:min(82vw, 340px, 50vh); aspect-ratio:900/1200;}
@@ -128,9 +124,8 @@
   .topright{ display:flex; align-items:center; gap:10px;}
   .score{ font-variant-numeric:tabular-nums; font-size:1.1rem; font-weight:600; color:var(--sage-2); min-width:58px; text-align:right;}
   .strikes{ display:flex; gap:4px;}
-  .pip{ width:14px; height:14px; border-radius:50%; border:2px solid var(--sage-2); background:var(--sage); transition:.2s;}
-  .pip.broke{ background:transparent; border-color:var(--crimson); position:relative;}
-  .pip.broke::after{ content:""; position:absolute; inset:-3px; background:linear-gradient(45deg,transparent 42%,var(--crimson) 42% 58%,transparent 58%),linear-gradient(-45deg,transparent 42%,var(--crimson) 42% 58%,transparent 58%);}
+  .pip{ width:24px; height:24px; background:var(--a-strikeEmpty,none) center/100% 100% no-repeat;}
+  .pip.broke{ background-image:var(--a-strikeLit,none);}
   .hud-tut .topright{ visibility:hidden;} .hud-tut #pauseBtn{ visibility:hidden;}
 
   /* THE STAGE (Astra INTEGRATION layer order): room plate, witness strip, the seated bust, flush and sweat, then leaks.
@@ -154,6 +149,9 @@
   body.pal-silver .bust{ filter:grayscale(1);}
   .ribbon{ position:relative; z-index:3; margin:6px 8px 0; min-height:42px; padding:6px 14px; border:2px solid var(--sage); border-radius:8px;
     background:var(--paper); color:var(--sage-2); display:flex; align-items:center; justify-content:center; gap:8px; text-align:center; font-size:.95rem; line-height:1.25;}
+  .ribbon .ic{ width:22px; height:22px;}
+  .ribbon[data-kind="3"], .ribbon[data-kind="4"]{ border-color:var(--crimson); color:var(--deep); font-weight:600;}
+  .ribbon[data-kind="2"]{ border-color:var(--amber); color:var(--deep);}
   @keyframes jitter{ 0%,100%{transform:translate(0,0) rotate(0)} 25%{transform:translate(1.5px,-1px) rotate(.4deg)}
     50%{transform:translate(-1px,1.5px) rotate(-.5deg)} 75%{transform:translate(1px,1px) rotate(.3deg)} }
   @keyframes quake{ 0%,100%{transform:translate(0,0) rotate(0)} 20%{transform:translate(-4px,2px) rotate(-1.4deg)}
@@ -169,8 +167,10 @@
   .gauge-track{ position:relative; height:20px; border-radius:11px; background:rgba(43,58,49,.22); border:1.5px solid var(--sage-2); overflow:hidden;}
   .gauge-fill{ position:absolute; inset:0 auto 0 0; width:0%; background:linear-gradient(90deg, var(--mint-deep), var(--amber) 60%, var(--crimson)); border-radius:11px 0 0 11px; transition:width .08s linear;}
   .gauge-danger{ position:absolute; top:-2px; bottom:-2px; left:82%; width:2px; background:var(--crimson); opacity:.65;}
-  .combo{ position:absolute; right:0; top:-30px; font-weight:700; font-size:1.15rem; color:var(--mint-deep); letter-spacing:.03em; opacity:0; transform:scale(.7); transition:opacity .15s, transform .15s; font-variant-numeric:tabular-nums;}
-  .combo.on{ opacity:1; transform:scale(1);}
+  .combo{ display:inline-flex; align-items:center; gap:4px; padding:2px 10px; border-radius:12px; border:1.5px solid var(--sage); background:var(--paper);
+    font-weight:600; font-size:.9rem; letter-spacing:.02em; color:var(--sage-2); visibility:hidden; font-variant-numeric:tabular-nums; text-transform:none;}
+  .combo .ic{ width:16px; height:16px;}
+  .combo.on{ visibility:visible;}
   @keyframes cpop{ 0%{transform:scale(1)} 40%{transform:scale(1.35)} 100%{transform:scale(1)} }
   .combo.bump{ animation:cpop .3s ease;}
 
@@ -184,17 +184,23 @@
   @keyframes pop{ 0%{transform:scale(1); opacity:1} 100%{transform:scale(1.8); opacity:0} }
   .leak.plugged .core{ animation:pop .25s ease forwards;}
 
-  .cover-banner{ position:absolute; left:50%; top:calc(12px + env(safe-area-inset-top,0px)); transform:translate(-50%,-140%); z-index:14; background:var(--mint-deep); color:#062a22; padding:10px 18px; border-radius:30px; font-weight:700; letter-spacing:.05em; box-shadow:0 8px 22px rgba(0,0,0,.35); white-space:nowrap; display:flex; align-items:center; gap:8px; font-size:.98rem; transition:transform .28s cubic-bezier(.2,1.3,.4,1); pointer-events:none;}
+  .cover-banner{ position:absolute; left:50%; top:10px; transform:translate(-50%,-170%); z-index:7; isolation:isolate; min-width:min(260px,88%); height:56px; padding:0 22px; color:var(--deep);
+    display:flex; align-items:center; gap:10px; white-space:nowrap; transition:transform .12s ease-out; pointer-events:none;}
+  .cover-banner::before{ content:""; position:absolute; inset:0; z-index:-1; border:20px solid transparent; border-image:var(--a-coverBanner,none) 40 fill / 20px stretch; filter:var(--art-filter) drop-shadow(0 4px 8px rgba(0,0,0,.3));}
+  .cover-banner .ico .ic{ width:28px; height:28px;}
+  .cover-banner #coverText{ font-weight:600; font-size:1rem;}
+  .cb-count{ margin-left:auto; font-weight:600; font-size:1.05rem; font-variant-numeric:tabular-nums; display:inline-flex; align-items:center; gap:3px;}
+  .cb-count .ic{ width:16px; height:16px;}
   .cover-banner.show{ transform:translate(-50%,0);}
   .cover-banner .ico{ font-size:1.1rem;}
-  #react{ position:absolute; left:50%; top:38%; transform:translate(-50%,-50%) scale(.9); z-index:16; font-size:1.5rem; font-weight:700; color:var(--crimson); text-align:center; max-width:80%; pointer-events:none; opacity:0; transition:opacity .2s, transform .2s; text-shadow:0 2px 12px rgba(0,0,0,.3);}
-  #react.show{ opacity:1; transform:translate(-50%,-50%) scale(1);}
   #fx{ position:absolute; inset:0; z-index:15; pointer-events:none; overflow:hidden;}
   .float{ position:absolute; font-weight:700; font-size:1.05rem; letter-spacing:.02em; color:var(--mint-deep); transform:translate(-50%,0); white-space:nowrap; text-shadow:0 1px 6px rgba(0,0,0,.25);}
   .float.warn{ color:var(--crimson);} .float.gold{ color:var(--amber);}
   @keyframes floatup{ 0%{opacity:0; transform:translate(-50%,6px) scale(.9)} 15%{opacity:1} 100%{opacity:0; transform:translate(-50%,-42px) scale(1.05)} }
   .float{ animation:floatup 1s ease forwards;}
-  .callout{ position:absolute; left:50%; top:30%; transform:translate(-50%,-50%) scale(.6); z-index:17; font-weight:800; font-size:2rem; letter-spacing:.06em; color:var(--amber); text-transform:uppercase; pointer-events:none; opacity:0; text-shadow:0 2px 14px rgba(0,0,0,.35);}
+  .callout{ position:absolute; left:50%; top:26%; transform:translate(-50%,-50%) scale(.6); z-index:17; isolation:isolate; height:56px; padding:0 30px; display:flex; align-items:center;
+    font-family:var(--serif); font-weight:700; font-size:1.5rem; letter-spacing:.06em; color:var(--sage-2); text-transform:uppercase; pointer-events:none; opacity:0; white-space:nowrap;}
+  .callout::before{ content:""; position:absolute; inset:0; z-index:-1; border:20px solid transparent; border-image:var(--a-callout,none) 40 fill / 20px stretch; filter:var(--art-filter);}
   @keyframes cocall{ 0%{opacity:0; transform:translate(-50%,-50%) scale(.6)} 25%{opacity:1; transform:translate(-50%,-50%) scale(1.1)} 80%{opacity:1} 100%{opacity:0; transform:translate(-50%,-70%) scale(1)} }
   .callout.show{ animation:cocall 1.1s ease forwards;}
 
@@ -244,7 +250,7 @@
   .breath-bar.held{ color:var(--deep);}
   .breath-bar.held::before{ filter:var(--art-filter) drop-shadow(0 0 6px rgba(95,208,176,.9));}
   .breath-bar.locked{ opacity:.6;}
-  .vent{ flex:1; min-height:84px; border:0; cursor:pointer; background:none; color:#4a1512; padding:18px 12px 16px; overflow:hidden;
+  .vent{ flex:1; min-height:84px; border:0; cursor:pointer; background:none; color:#4a1512; padding:24px 12px 16px; overflow:hidden;
     display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; transition:transform .08s;}
   .vent::before{ border:20px solid transparent; border-image:var(--a-ventUnsafe,none) 40 fill / 20px stretch;}
   .vent .vent-main{ position:relative; z-index:2; font-size:clamp(.8rem, 3.7vw, .98rem); font-weight:600; letter-spacing:.06em; text-transform:uppercase; line-height:1.1;}
@@ -278,6 +284,9 @@
   .prop.na{ visibility:hidden;}
   @keyframes waftflash{ 0%,100%{opacity:1} 50%{opacity:.55} }
   .prop.alert::before{ filter:var(--art-filter) drop-shadow(0 0 8px rgba(224,144,47,.95));}
+  .rim{ position:absolute; left:0; top:0; width:100px; height:56px; z-index:1; pointer-events:none; display:none; overflow:visible;}
+  .prop.alert .rim{ display:block;}
+  .rim rect{ fill:none; stroke:var(--accent); stroke-width:4; vector-effect:non-scaling-stroke; stroke-dasharray:100; stroke-dashoffset:calc(100 * (1 - var(--left,1))); stroke-linecap:round;}
   .prop.alert{ color:#4a2c08;}
   .count-in{ position:absolute; left:50%; top:38%; z-index:20; transform:translate(-50%,-50%); width:112px; height:112px; border-radius:50%;
     display:flex; align-items:center; justify-content:center; background:var(--paper); border:3px double var(--sage); color:var(--sage-2);
@@ -333,7 +342,7 @@
 
   #pauseScreen{ background:rgba(43,58,49,.65); backdrop-filter:blur(3px);}
   .toggle-btn[aria-pressed="false"]{ opacity:.55;}
-  @media (prefers-reduced-motion: reduce){ *{ animation:none !important;} }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important;} }
 </style>
 <meta name="description" content="A silent film game of pure composure where you hold it in until a passing bus gives you cover.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/flatulence-fighter/">
@@ -421,7 +430,6 @@
 </svg>
 <!-- ff-sprite end -->
 <div id="app">
-  <div id="flood"></div>
 
   <!-- ============ START / MENU ============ -->
   <div id="startScreen" class="screen">
@@ -526,19 +534,17 @@
       </div>
       <button class="prop prop-cough" id="coughBtn" type="button" aria-label="Cough. Fake your own cover noise"><span class="pband"><span>Cough</span><span class="charges" id="coughState"></span></span></button>
       <button class="prop prop-sip" id="sipBtn" type="button" aria-label="Sip. Hold to drink the pressure down. You cannot clench while sipping"><svg class="cd-ring" viewBox="0 0 112 112" aria-hidden="true" focusable="false"><circle cx="56" cy="56" r="48" id="sipRing"/></svg><span class="pband"><span>Sip</span><span id="sipState">Ready</span></span></button>
-      <button class="prop prop-waft" id="waftBtn" type="button" aria-label="Waft. Fan a fresh strike away"><span class="pband"><span>Waft</span><span class="charges" id="waftState"></span></span></button>
+      <button class="prop prop-waft" id="waftBtn" type="button" aria-label="Waft. Fan a fresh strike away"><svg class="rim" viewBox="0 0 100 56" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect x="2" y="2" width="96" height="52" rx="10" pathLength="100" id="waftRim"/></svg><span class="pband"><span>Waft</span><span class="charges" id="waftState"></span></span></button>
       <div id="leaks"></div>
+      <div class="cover-banner" id="coverBanner"><span class="ico" id="coverIco"></span><span class="cb-txt"><span id="coverText">Applause</span><span class="cb-sub">Vent now</span></span><span class="cb-count" id="coverCount"></span></div>
       <div id="countIn" class="count-in hidden" aria-live="assertive"></div>
     </div>
-    <div class="ribbon" id="ribbon">Nobody suspects a thing</div>
+    <div class="ribbon" id="ribbon" aria-live="polite">Nobody suspects a thing</div>
       <div class="gauge">
-        <div class="combo" id="combo">×1.0</div>
-        <div class="gauge-label"><span>Pressure</span><span id="pctText">0%</span></div>
+        <div class="gauge-label"><span>Pressure</span><span class="combo" id="combo"></span><span id="pctText">0%</span></div>
         <div class="gauge-track"><div class="gauge-fill" id="gaugeFill"></div><div class="gauge-danger"></div></div>
       </div>
 
-    <div class="cover-banner" id="coverBanner"><span class="ico" id="coverIco"></span><span class="cb-txt"><span id="coverText">Applause</span><span class="cb-sub">Vent now</span></span></div>
-    <div id="react"></div>
     <div id="callout" class="callout"></div>
     <div id="fx"></div>
 
@@ -689,7 +695,8 @@
     ventUnsafe:"assets/controls/vent_unsafe.png", ventCover:"assets/controls/vent_cover.png", ventPerfect:"assets/controls/vent_perfect.png",
     breath:"assets/controls/breath_bar.png", strain:"assets/controls/strain_bar.png", posture:"assets/controls/posture_track.png", postureDot:"assets/controls/posture_dot.png",
     abCough:"assets/controls/ability_cough.png", abSip:"assets/controls/ability_sip.png", abWaft:"assets/controls/ability_waft.png",
-    chargeFull:"assets/controls/charge_full.png", chargeEmpty:"assets/controls/charge_empty.png", leakCore:"assets/controls/leak_core.png" };
+    chargeFull:"assets/controls/charge_full.png", chargeEmpty:"assets/controls/charge_empty.png", leakCore:"assets/controls/leak_core.png",
+    strikeEmpty:"assets/controls/strike_empty.png", strikeLit:"assets/controls/strike_lit.png", coverBanner:"assets/controls/cover_banner.png", callout:"assets/controls/callout_plate.png" };
 
   const SCENES=[
     {t:"The Funeral",       s:"Do not make a sound.",                 covers:["COUGH","BELLS","ORGAN"], coverMul:0.95,
@@ -866,7 +873,7 @@
   const strainLbar=$("strainL"), strainRbar=$("strainR"), padL=$("padL"), padR=$("padR");
   const ventBtn=$("ventBtn"), ventMainText=$("ventMainText"), ventSub=$("ventSub"), ventTimer=$("ventTimer"), ventMark=$("ventMark");
   const coverBanner=$("coverBanner"), coverText=$("coverText"), strikesEl=$("strikes"), leaksEl=$("leaks"),
-        reactEl=$("react"), fxEl=$("fx"), calloutEl=$("callout"), toastsEl=$("toasts");
+        fxEl=$("fx"), calloutEl=$("callout"), toastsEl=$("toasts"), ribbonEl=$("ribbon"), coverCount=$("coverCount"), waftRim=$("waftRim"), bustWrap=document.querySelector(".bust-wrap");
   const actLabel=$("actLabel"), sceneTitle=$("sceneTitle"), sceneSub=$("sceneSub");
   const tutOverlay=$("tutOverlay"), tutText=$("tutText");
   const coughBtn=$("coughBtn"), sipBtn=$("sipBtn"), waftBtn=$("waftBtn");
@@ -914,7 +921,7 @@
       coughCharges:CFG.coughStartCharges, sipCd:0, sipping:false,
       waftCharges:CFG.waftStartCharges, waftUntil:0, pendingExpose:0,
       cheekSide:0, cheekSwapAt:CFG.cheekSwapEvery,
-      stun:0, reliefUntil:0, perfectUntil:0, countIn:0, last:0,
+      stun:0, reliefUntil:0, perfectUntil:0, countIn:0, turnedUntil:0, struckUntil:0, ribbonUntil:0, ribbonPri:0, ribbonOn:false, zenHits:0, last:0,
       rp:{perfects:0, plugs:0, cleanVents:0, coughVents:0, wafts:0, sips:0},
       tut:null };
   }
@@ -938,9 +945,9 @@
       for(let i=order.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=order[i]; order[i]=order[j]; order[j]=t; }
       S.sceneOrder=order; }
     hideAllScreens(); hud.classList.remove("hidden"); hud.classList.remove("hud-tut"); tutOverlay.classList.add("hidden");
-    clearLeaks();
+    clearLeaks(); ribbonIdle(); bustWrap.classList.remove("struck");
     for(let i=0;i<strikesEl.children.length;i++) strikesEl.children[i].classList.remove("broke");
-    comboEl.classList.remove("on"); comboEl.textContent="×1.0";
+    comboEl.classList.remove("on"); comboEl.innerHTML="";
     padL.classList.remove("benched","slipped"); padR.classList.remove("benched","slipped");
     sipBtn.classList.remove("sipping");
     breathBtn.classList.remove("held","locked"); leanLbtn.classList.remove("held","down"); leanRbtn.classList.remove("held","down");
@@ -955,7 +962,7 @@
   function showIntro(idx){
     S.inIntro=true; S.introTime=CFG.introDur; S.scene=idx; S.sceneTime=CFG.sceneDur;
     const sc=SCENES[sceneIdx(idx)];
-    setSceneArt(sceneIdx(idx)); preloadScene(sceneIdx(idx+1));
+    S.turnedUntil=0; setSceneArt(sceneIdx(idx)); preloadScene(sceneIdx(idx+1));
     actLabel.textContent="Act "+ROMAN[idx%ROMAN.length]; sceneTitle.textContent=sc.t; sceneSub.textContent=sc.s; sceneChip.textContent=sc.t;
     introScreen.classList.remove("hidden");
     if(idx>0 && S.phase==="playing"){ // surviving an act restocks the pocket
@@ -1004,18 +1011,19 @@
     if(!S||!isLive()) return;
     if(S.phase==="tutorial"){ const T=S.tut;
       if(T&&T.step===7&&T.waftWin&&S.time<=T.waftWin&&!T.waftOk){ T.waftOk=true; whoosh(); haptic([10,30]);
-        floatText(app.clientWidth/2, app.clientHeight*0.5, "Wafted away", "gold"); }
+        say("Wafted away","waft",1.4,4); }
       return; }
     if(S.playMode==="zen") return;
     if(S.waftCharges<=0||S.strikes<=0||S.time>S.waftUntil) return;
     S.waftCharges--; S.strikes--; S.waftUntil=0; S.pendingExpose=0; S.rp.wafts++;
     const pips=strikesEl.children; for(let i=0;i<pips.length;i++) pips[i].classList.toggle("broke", i<S.strikes);
     S.score=Math.max(0,S.score-CFG.waftScoreCost);
-    whoosh(); haptic([10,30]); floatText(app.clientWidth/2, app.clientHeight*0.5, "Wafted away", "gold");
+    whoosh(); haptic([10,30]); say("Wafted away","waft",1.6,4);
+    S.turnedUntil=Math.min(S.turnedUntil, S.time+0.6); S.struckUntil=0;
   }
 
   // -- whiff hazard --
-  function startWhiff(){ S.whiffAt=S.time+CFG.whiffWarn; floatText(app.clientWidth/2, app.clientHeight*0.30, "A whiff. Clench", "gold"); haptic([12,70]); }
+  function startWhiff(){ S.whiffAt=S.time+CFG.whiffWarn; say("A whiff. Clench","whiff",CFG.whiffWarn+0.4,2); haptic([12,70]); }
 
   // -- leaks --
   function spawnLeak(){
@@ -1023,7 +1031,7 @@
     const life=Math.max(CFG.leakLifeMin, CFG.leakLife-rampLevel()*0.12);
     const el=document.createElement("button"); el.className="leak"; el.type="button"; el.setAttribute("aria-label","Plug the leak");
     // the stage above the props' row, never under a prop, never on another leak; the two rnd() draws are the old ones
-    const u0=rnd(), v0=rnd(), W=stageEl.clientWidth||360, H=stageEl.clientHeight||320, R=29, x0=R+8, x1=W-R-8, y0=R+8, y1=Math.max(y0, H-72-R);
+    const u0=rnd(), v0=rnd(), W=stageEl.clientWidth||360, H=stageEl.clientHeight||320, R=29, x0=R+8, x1=W-R-8, y0=R+72, y1=Math.max(y0, H-84-R);
     let lx=x0+u0*(x1-x0), ly=y0+v0*(y1-y0);
     for(let k=0;k<16;k++){ const u=(u0+k*0.618034)%1, v=(v0+k*0.381966)%1, cx=x0+u*(x1-x0), cy=y0+v*(y1-y0);
       if(S.leaks.every(o=>Math.hypot(o.x-cx,o.y-cy)>=2*R+10)){ lx=cx; ly=cy; break; } }
@@ -1052,24 +1060,24 @@
   function clearLeaks(){ leaksEl.innerHTML=""; if(S) S.leaks=[]; }
 
   // -- combo --
-  function bumpCombo(){ const m=comboMult(); comboEl.textContent="×"+m.toFixed(1);
+  function bumpCombo(){ const m=comboMult(); comboEl.innerHTML=ic("combo")+"<span>Combo ×"+m.toFixed(1)+"</span>";
     comboEl.classList.toggle("on", S.combo>0);
     comboEl.classList.remove("bump"); void comboEl.offsetWidth; comboEl.classList.add("bump");
     if(S.combo>0 && S.combo%3===0) comboSfx(m);
     for(let i=0;i<CFG.comboCallouts.length;i++){ if(S.combo>=CFG.comboCallouts[i][0] && i>S.calloutIdx){ S.calloutIdx=i; callout(CFG.comboCallouts[i][1]); } } }
-  function breakCombo(){ if(S.combo>0){ S.combo=0; S.calloutIdx=-1; comboEl.classList.remove("on"); comboEl.textContent="×1.0"; } }
+  function breakCombo(){ if(S.combo>0){ S.combo=0; S.calloutIdx=-1; comboEl.classList.remove("on"); comboEl.innerHTML=""; } }
 
   // -- strikes / vent / blowout --
   function addStrike(){
-    if(S.playMode==="zen"){ roomReact(); shake(); return; } // Zen: the room reacts, nothing counts
+    if(S.playMode==="zen"){ S.zenHits++; roomReact(); return; } // Zen: the room reacts, nothing counts
     S.strikes++; const pips=strikesEl.children;
     for(let i=0;i<pips.length;i++) pips[i].classList.toggle("broke", i<S.strikes);
-    roomReact(); shake();
+    roomReact();
     S.waftUntil=S.time+CFG.waftWindow;
     if(S.strikes>=3){
       S.strikes=3;
       if(S.waftCharges>0 && !S.pendingExpose){ S.pendingExpose=S.time+CFG.waftWindow; // one breath of borrowed time
-        floatText(app.clientWidth/2, app.clientHeight*0.5, "Waft it away", "warn"); haptic([20,40,20]); }
+        say("Waft it away","waft",CFG.waftWindow,4); haptic([20,40,20]); }
       else gameOver();
     } }
 
@@ -1098,26 +1106,26 @@
       const pts=Math.round((CFG.ventFlat+S.pressure*CFG.ventScale)*(perfect?CFG.perfectMult:1)*mult);
       S.score+=pts; S.pressure=0; S.strainL=0; S.strainR=0;
       face.dataset.tier="relief"; S.reliefUntil=S.time+0.7; bumpCombo();
-      if(perfect){ S.perfectUntil=S.time+0.45; perfectSfx(); haptic([10,20,10,20]); floatText(app.clientWidth/2, app.clientHeight*0.62, "Perfect +"+pts, "gold"); }
-      else { chime(); haptic([15,25,15]); floatText(app.clientWidth/2, app.clientHeight*0.62, "+"+pts, ""); }
+      if(perfect){ S.perfectUntil=S.time+0.45; perfectSfx(); haptic([10,20,10,20]); say("Perfect +"+pts,"perfect",1.3,1); }
+      else { chime(); haptic([15,25,15]); say("Clean vent +"+pts,"vent",1.2,1); }
       closeCover();
     } else {
       fart(0.5+S.pressure/200); S.pressure=Math.max(0,S.pressure-CFG.ventNoCoverRelief);
       face.dataset.tier="blowout"; S.reliefUntil=S.time+0.5; breakCombo(); addStrike();
     }
   }
-  function blowout(){ fart(1); S.pressure=CFG.blowoutReset; S.stun=CFG.blowoutStun;
+  function blowout(){ fart(1); S.pressure=CFG.blowoutReset; S.stun=CFG.blowoutStun; shudder();
     face.dataset.tier="blowout"; S.reliefUntil=S.time+CFG.blowoutStun; breakCombo(); addStrike(); }
 
   // -- breath / posture (the extra clench-juggle layer) --
   function gasp(){ S.breathHold=false; breathBtn.classList.remove("held"); S.breathLock=CFG.gaspLock; squeak(); haptic([20,40]);
     if(S.phase!=="tutorial") S.pressure=Math.min(100,S.pressure+CFG.gaspSpike);
-    floatText(app.clientWidth/2, app.clientHeight*0.22, "Gasp", "warn"); }
+    say("Gasp","gasp",1.2,2); }
   function wobbleShift(){ const side=S.wobble>0?1:-1;
-    S.wobble=side*-42; S.wobbleDir=-side; S.wobbleFlipAt=CFG.wobbleFlipMin; squeak(); shake();
+    S.wobble=side*-42; S.wobbleDir=-side; S.wobbleFlipAt=CFG.wobbleFlipMin; squeak(); shudder();
     if(S.phase==="tutorial"){ if(S.tut) S.tut.wobbleShifted=true; return; }
     S.pressure=Math.min(100,S.pressure+CFG.wobbleShiftPressure); spawnLeak(); haptic(24);
-    floatText(app.clientWidth/2, app.clientHeight*0.26, "You shifted", "warn"); }
+    say("You shifted","shift",1.4,2); }
   function postureTick(dt){
     const tut=S.phase==="tutorial";
     if(S.breathLock>0) S.breathLock=Math.max(0,S.breathLock-dt);
@@ -1212,7 +1220,7 @@
     else if(S.time<45){ $("overTitle").textContent="Mortified"; $("overSub").textContent="A valiant, doomed effort."; }
     else { $("overTitle").textContent="Undone at last"; $("overSub").textContent="You held for "+S.time.toFixed(0)+" long seconds."; }
     hud.classList.add("hidden"); pauseScreen.classList.add("hidden"); overScreen.classList.remove("hidden");
-    face.dataset.tier="calm"; setFlood(0);
+    face.dataset.tier="calm";
     if(med.newly.length||newWard.length) setTimeout(()=>queueToasts(med.newly.concat(newWard)), 500);
     setTimeout(()=>{ try{ if(window.SWSMusic&&SWSMusic.reveal&&S&&S.phase==="over") SWSMusic.reveal(); }catch(e){} }, 2600);
   }
@@ -1326,7 +1334,7 @@
     S.tut={ step:0, heldBoth:0, oneUp:0, ventOk:false, perfOk:false, ventTries:0, plugOk:false, lastOpen:-99, lastLeak:-99, stepT:0,
             coughed:false, coughVentOk:false, sipHeld:0, waftWin:0, waftOk:false };
     S.nextCover=Infinity; S.nextLeak=Infinity; S.nextWhiff=Infinity;
-    hideAllScreens(); clearLeaks();
+    hideAllScreens(); clearLeaks(); ribbonIdle();
     hud.classList.remove("hidden"); hud.classList.add("hud-tut"); tutOverlay.classList.remove("hidden");
     comboEl.classList.remove("on");
     setupTutStep();
@@ -1379,8 +1387,8 @@
         break;
       case 7: // waft a scripted squeak away
         if(!T.waftOk && (!T.waftWin || S.time>T.waftWin+1.4)){
-          squeak(); shake(); T.waftWin=S.time+CFG.waftWindow;
-          floatText(app.clientWidth/2, app.clientHeight*0.5, "Waft it", "warn");
+          squeak(); T.waftWin=S.time+CFG.waftWindow;
+          say("Waft it","waft",CFG.waftWindow,3);
         }
         if(T.waftOk || T.stepT>16) nextTut();
         break;
@@ -1441,7 +1449,7 @@
     if(S.pendingExpose&&S.time>=S.pendingExpose){ S.pendingExpose=0; gameOver(); return; }
 
     if(S.playMode==="cheek"&&S.time>=S.cheekSwapAt){ S.cheekSide=1-S.cheekSide; S.cheekSwapAt+=CFG.cheekSwapEvery;
-      floatText(app.clientWidth/2, app.clientHeight*0.5, S.cheekSide?"Swap. Left only":"Swap. Right only", "gold"); haptic([10,40]); }
+      say(S.cheekSide?"Swap. Left only":"Swap. Right only","mode_one_cheek",1.8,2); haptic([10,40]); }
 
     if(!S.cover && S.time>=S.nextCover) openCover();
     if(S.cover && S.time>=S.coverUntil) closeCover();
@@ -1473,7 +1481,7 @@
     // whiff hazard (sipping leaves both hands off the pads, so a whiff lands at full surge)
     if(CFG.whiffOn && S.stun<=0){
       if(S.whiffAt>0){ if(S.time>=S.whiffAt){ const both=(usableL&&usableR)||breathing; S.pressure=Math.min(100,S.pressure+CFG.whiffSurge*(both?0.3:1));
-          if(!both){ squeak(); haptic(25); if(!reduceMotion){ app.classList.remove("whiff"); void app.offsetWidth; app.classList.add("whiff"); } } S.whiffAt=0; } }
+          if(!both){ squeak(); haptic(25); } S.whiffAt=0; } }
       else if(S.time>=S.nextWhiff){ startWhiff(); S.nextWhiff=S.time+(CFG.whiffGapMin+rnd()*CFG.whiffGapRand); }
     }
 
@@ -1494,7 +1502,6 @@
   // ==================================================================
   //  RENDER
   // ==================================================================
-  function setFlood(p){ app.style.setProperty("--p", p.toFixed(3)); }
   function faceTier(p){ if(p<0.30) return "calm"; if(p<0.55) return "nervous"; if(p<0.80) return "strain"; return "critical"; }
   function sweatCount(p){ if(p<0.30) return 0; if(p<0.55) return 1; if(p<0.80) return 2; return 3; }
   function render(){
@@ -1503,7 +1510,6 @@
     pctText.textContent=Math.round(S.pressure)+"%";
     strainLbar.style.width=S.strainL.toFixed(0)+"%"; strainRbar.style.width=S.strainR.toFixed(0)+"%";
     scoreEl.textContent=Math.round(S.score);
-    setFlood(Math.min(1,p));
     face.style.setProperty("--flush", Math.min(1,Math.max(0,(p-0.25)/0.75)).toFixed(3));
     if(!(S.reliefUntil && S.time<S.reliefUntil)){ S.reliefUntil=0; face.dataset.tier=faceTier(p); }
     const sc=sweatCount(p);
@@ -1511,9 +1517,13 @@
     const armed=S.cover, perf=!armed&&S.perfectUntil>S.time; ventBtn.classList.toggle("armed",armed); ventBtn.classList.toggle("perfect",perf);
     ventMainText.textContent=armed?"Vent":(perf?"Perfect":"Do not vent"); ventSub.textContent=armed?"Release under the noise":(perf?"":"Wait for cover noise");
     padL.classList.toggle("tired", S.strainL>=70||S.slipL>0); padR.classList.toggle("tired", S.strainR>=70||S.slipR>0);
-    if(armed){ const frac=Math.max(0,(S.coverUntil-S.time)/(S.coverUntil-S.coverStart)); ventTimer.style.width=(frac*100)+"%";
-      ventTimer.style.background = frac>(1-CFG.perfectFrac) ? "var(--mint)" : "var(--amber)"; }
+    if(armed){ const left=Math.max(0,S.coverUntil-S.time), frac=left/(S.coverUntil-S.coverStart), inPerf=!S.coverSelf&&frac>(1-CFG.perfectFrac);
+      ventTimer.style.width=(frac*100)+"%"; ventTimer.style.background = inPerf ? "var(--mint)" : "var(--amber)";
+      const t=left.toFixed(1)+" s"; ventSub.textContent=t; coverCount.innerHTML=(inPerf?ic("perfect"):"")+'<span>'+t+'</span>'; }
     else ventTimer.style.width="0%";
+    if(S.turnedUntil&&S.time>=S.turnedUntil){ S.turnedUntil=0; const a=SCENE_ART[sceneIdx(S.scene)]; if(a) showArt(stripImg, art(a.backs)); }
+    bustWrap.classList.toggle("struck", S.struckUntil>S.time);
+    if(S.ribbonOn&&S.time>=S.ribbonUntil){ S.ribbonOn=false; S.ribbonPri=0; ribbonEl.dataset.kind="0"; ribbonEl.textContent=RIBBON_IDLE; }
     // breath meter + posture
     breathFill.style.width=Math.max(0,Math.min(100,S.breath)).toFixed(1)+"%";
     breathFill.style.background = S.breathLock>0 ? "rgba(192,57,43,.32)"
@@ -1538,7 +1548,10 @@
     waftState.innerHTML=tut?dotRow(2,2):dotRow(S.waftCharges,CFG.waftChargeCap);
     const waftLive=!tut&&S.playMode!=="zen"&&S.waftCharges>0&&S.strikes>0&&S.time<=S.waftUntil;
     const tutWaft=tut&&T&&T.step===7&&T.waftWin&&S.time<=T.waftWin&&!T.waftOk;
-    waftBtn.classList.toggle("alert", !!(waftLive||tutWaft||(S.pendingExpose>0&&S.time<S.pendingExpose)));
+    const pend=S.pendingExpose>0&&S.time<S.pendingExpose;
+    waftBtn.classList.toggle("alert", !!(waftLive||tutWaft||pend));
+    const wLeft = pend ? (S.pendingExpose-S.time) : (tutWaft ? (T.waftWin-S.time) : (waftLive ? (S.waftUntil-S.time) : 0));
+    waftRim.style.setProperty("--left", Math.max(0,Math.min(1,wLeft/CFG.waftWindow)).toFixed(3));
     waftBtn.classList.toggle("depleted", !tut&&S.waftCharges<=0);
     waftBtn.classList.toggle("na", S.playMode==="zen");
     if(S.playMode==="cheek"){ padL.classList.toggle("benched",S.cheekSide===0); padR.classList.toggle("benched",S.cheekSide===1); }
@@ -1552,9 +1565,21 @@
   function floatText(x,y,text,cls){ const el=document.createElement("div"); el.className="float"+(cls?" "+cls:"");
     el.textContent=text; el.style.left=x+"px"; el.style.top=y+"px"; fxEl.appendChild(el); setTimeout(()=>el.remove(),1000); }
   function callout(text){ calloutEl.textContent=text; calloutEl.classList.remove("show"); void calloutEl.offsetWidth; calloutEl.classList.add("show"); }
-  function roomReact(){ const sc=curScene(); const line=sc.reacts[Math.min(S.strikes-1, sc.reacts.length-1)];
-    reactEl.textContent=line; reactEl.classList.add("show"); setTimeout(()=>reactEl.classList.remove("show"),1400); }
-  function shake(){ if(reduceMotion) return; app.classList.remove("shake"); void app.offsetWidth; app.classList.add("shake"); }
+  // the caption ribbon under the stage: one line at a time, a higher priority line is never cut short by a lower one
+  // (1 a vent result, 2 a warning, 3 the room's reaction, 4 a waft); timed on the gameplay clock so pause freezes it
+  const RIBBON_IDLE="Nobody suspects a thing";
+  function say(text,icon,sec,pri){ if(!S) return; pri=pri||1;
+    if(S.ribbonOn&&S.time<S.ribbonUntil&&S.ribbonPri>pri) return;
+    S.ribbonOn=true; S.ribbonPri=pri; S.ribbonUntil=S.time+(sec||1.4);
+    ribbonEl.dataset.kind=String(pri); ribbonEl.innerHTML=(icon?ic(icon):"")+"<span></span>"; ribbonEl.lastChild.textContent=text; }
+  function ribbonIdle(){ ribbonEl.dataset.kind="0"; ribbonEl.textContent=RIBBON_IDLE; }
+  // a strike: the whole witness row swaps to its turned drawing at once (never a tween) and holds 2.5 s
+  function roomReact(){ const sc=curScene(), n=S.playMode==="zen"?S.zenHits:S.strikes;
+    const line=sc.reacts[Math.max(0,Math.min(n-1, sc.reacts.length-1))];
+    say(line,"strike",2.5,3);
+    const a=SCENE_ART[sceneIdx(S.scene)]; if(a){ S.turnedUntil=S.time+2.5; showArt(stripImg, art(a.turned)); }
+    S.struckUntil=S.time+0.6; }
+  function shudder(){ if(reduceMotion||(S&&S.leaks.length)) return; bustWrap.classList.remove("shudder"); void bustWrap.offsetWidth; bustWrap.classList.add("shudder"); }
 
   // ==================================================================
   //  INPUT
