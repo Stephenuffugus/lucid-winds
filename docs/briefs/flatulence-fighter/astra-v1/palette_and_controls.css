@@ -1,0 +1,16 @@
+/* Reference tokens and control specification. Integrate into the existing HTML;
+   these selectors are new examples, not a patch against verified source. */
+:root,[data-palette="matinee_sepia"]{--paper:#e7e0cb;--paper-shade:#c7bd9c;--coat:#37493d;--sage:#37493d;--deep:#1c2620;--ink:#221f18;--accent:#e0902f;--relief:#5fd0b0;--danger:#c0392b;--art-filter:none}
+[data-palette="midnight_show"]{--paper:#c9d2d8;--paper-shade:#93a3ae;--coat:#17262e;--sage:#17262e;--deep:#141a1e;--ink:#141a1e;--accent:#9ebbbd;--relief:#a8d9d6;--danger:#a32f2a;--art-filter:grayscale(.85) sepia(.18) hue-rotate(145deg) saturate(.65)}
+[data-palette="technicolor"]{--paper:#f6e7c4;--paper-shade:#dccb9d;--coat:#1f5f5b;--sage:#1f5f5b;--deep:#153c39;--ink:#20322d;--accent:#e0592f;--relief:#76d4bb;--danger:#a91e43;--art-filter:saturate(1.12) hue-rotate(8deg)}
+[data-palette="silver_screen"]{--paper:#e9e9e4;--paper-shade:#bdbdb6;--coat:#3d3d3a;--sage:#3d3d3a;--deep:#232321;--ink:#252523;--accent:#a8905c;--relief:#d2d2ca;--danger:#383836;--art-filter:grayscale(1)}
+.ff-art-layer{filter:var(--art-filter);pointer-events:none}
+.ff-control{min-width:48px;min-height:48px;touch-action:none;color:var(--ink);font:600 14px 'Open Sans',sans-serif}
+.ff-control:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.ff-pressure-track{position:relative;height:18px;border:2px solid var(--ink);border-radius:9px;background:var(--paper-shade);overflow:hidden}
+.ff-pressure-fill{position:absolute;inset:0 auto 0 0;width:calc(var(--pressure,0)*100%);background:var(--sage)}
+/* Danger threshold example is illustrative: set --danger-start from game rules. */
+.ff-pressure-danger{position:absolute;inset:0 0 0 auto;width:calc((1 - var(--danger-start,.8))*100%);border-left:2px solid var(--ink);background:repeating-linear-gradient(135deg,transparent 0 5px,var(--danger) 5px 7px)}
+.ff-pressure-label{font:600 12px 'Open Sans',sans-serif;font-variant-numeric:tabular-nums}
+.ff-cooldown circle{fill:none;stroke:var(--sage);stroke-width:5;stroke-dasharray:301.593;stroke-dashoffset:calc(301.593*(1 - var(--remaining,1)));transform:rotate(-90deg);transform-origin:center}
+@media(prefers-reduced-motion:reduce){.ff-art-layer,.ff-control{animation:none!important;transition:none!important;transform:none}}
