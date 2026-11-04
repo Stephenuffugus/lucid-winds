@@ -440,6 +440,10 @@ const poor = await page.evaluate(() => {
   return b ? b.disabled : null;
 });
 say(poor === true, 'and a pouch you cannot afford is disabled rather than failing on the tap');
+/* step 6 (4 Nov): the buy is written first, then the open pouch shows what came out; Keep it closes it */
+const reveal = await page.evaluate(() => ({ open: !document.getElementById('pouchOpen').hidden, name: document.getElementById('poName').textContent }));
+say(reveal.open === true && reveal.name.length > 0, 'the open pouch shows what came out, after the buy was written: ' + reveal.name);
+await press('poKeep');
 
 
 await press('collBack');

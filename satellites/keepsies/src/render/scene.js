@@ -15,8 +15,8 @@
  */
 import * as THREE from 'three';
 import { RoomEnvironment } from '../../lib/environments/RoomEnvironment.js';
-import { renderScale } from './quality.js?v=20260905a';
-import { art } from './art.js?v=20260905a';
+import { renderScale } from './quality.js?v=20261105a';
+import { art } from './art.js?v=20261105a';
 
 /**
  * @typedef {{update:(dt:number)=>void, getRay:(pose?:object)=>{origin:object,dir:object},

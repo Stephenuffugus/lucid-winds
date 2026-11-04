@@ -18,18 +18,18 @@ import {
   createWorld, disposeWorld, addSurface, addMarble, removeMarble, impulse, place,
   step, atRest, specOf, positionOf, velocityOf, ringDistance, resolved,
   snapshot, restore, setTimestep
-} from '../core/physics.js?v=20260905a';
-import { makeStreams, makeRng } from '../core/rng.js?v=20260905a';
-import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20260905a';
-import { STARTER_ENTRIES, CROSS_MIX } from '../core/marbleBody.js?v=20260905a';
-import { sin, cos, atan2, len2, clamp, DEG } from '../core/dmath.js?v=20260905a';
-import { frameFor } from '../core/framing.js?v=20260905a';
+} from '../core/physics.js?v=20261105a';
+import { makeStreams, makeRng } from '../core/rng.js?v=20261105a';
+import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20261105a';
+import { STARTER_ENTRIES, CROSS_MIX } from '../core/marbleBody.js?v=20261105a';
+import { sin, cos, atan2, len2, clamp, DEG } from '../core/dmath.js?v=20261105a';
+import { frameFor } from '../core/framing.js?v=20261105a';
 import {
   createMatch, skipLag, resolveLag, mayPlace, placeTaw, fireShot, resolveShot,
   summary, edgePosition, PHASE, DEFAULT_HOUSE_RULES
-} from '../core/rules-ringer.js?v=20260905a';
-import { plan } from './ai.js?v=20260905a';
-import { detect as detectTechniques } from '../core/techniques.js?v=20260905a';
+} from '../core/rules-ringer.js?v=20261105a';
+import { plan } from './ai.js?v=20261105a';
+import { detect as detectTechniques } from '../core/techniques.js?v=20261105a';
 
 const RING_FT = { 7: '7ft', 10: '10ft', 13: '13ft' };
 

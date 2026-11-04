@@ -9,40 +9,40 @@
  * DIRECTIONS BEFORE PLAY. The rules card is shown before the first match of the
  * mode, which is a studio standard and not a preference.
  */
-import { detectQuality, forceQuality } from './render/quality.js?v=20260905a';
-import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20260905a';
-import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20260905a';
-import { buildRingerGround } from './render/arenaEnv.js?v=20260905a';
-import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20260905a';
-import { attachCameraControls } from './input/cameraCtl.js?v=20260905a';
-import { createKnuckle } from './input/knuckle.js?v=20260905a';
-import { createPullback } from './input/pullback.js?v=20260905a';
-import * as AUDIO from './audio/synth.js?v=20260905a';
-import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20260905a';
-import { createRinger } from './game/ringer.js?v=20260905a';
-import { RINGER_TECHNIQUES } from './core/techniques.js?v=20260905a';
-import { launchSpeed } from './core/snap.js?v=20260905a';
-import { clamp, len2, DEG } from './core/dmath.js?v=20260905a';
-import * as SAVE from './meta/save.js?v=20260905a';
-import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260905a';
-import { playPotCeremony } from './render/ceremony.js?v=20260905a';
+import { detectQuality, forceQuality } from './render/quality.js?v=20261105a';
+import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261105a';
+import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261105a';
+import { buildRingerGround } from './render/arenaEnv.js?v=20261105a';
+import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261105a';
+import { attachCameraControls } from './input/cameraCtl.js?v=20261105a';
+import { createKnuckle } from './input/knuckle.js?v=20261105a';
+import { createPullback } from './input/pullback.js?v=20261105a';
+import * as AUDIO from './audio/synth.js?v=20261105a';
+import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261105a';
+import { createRinger } from './game/ringer.js?v=20261105a';
+import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261105a';
+import { launchSpeed } from './core/snap.js?v=20261105a';
+import { clamp, len2, DEG } from './core/dmath.js?v=20261105a';
+import * as SAVE from './meta/save.js?v=20261105a';
+import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261105a';
+import { playPotCeremony } from './render/ceremony.js?v=20261105a';
 import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
-  from './meta/collection.js?v=20260905a';
-import * as MARBLEMESH from './render/marbleMesh.js?v=20260905a';
-import { bodySpec } from './core/marbleBody.js?v=20260905a';
-import { createEconomy } from './meta/economy.js?v=20260905a';
-import { createDrops } from './meta/drops.js?v=20260905a';
-import * as RANSOM from './meta/ransom.js?v=20260905a';
-import * as PROG from './meta/progression.js?v=20260905a';
-import { createOnboarding, dustyLine } from './meta/beats.js?v=20260905a';
+  from './meta/collection.js?v=20261105a';
+import * as MARBLEMESH from './render/marbleMesh.js?v=20261105a';
+import { bodySpec } from './core/marbleBody.js?v=20261105a';
+import { createEconomy } from './meta/economy.js?v=20261105a';
+import { createDrops } from './meta/drops.js?v=20261105a';
+import * as RANSOM from './meta/ransom.js?v=20261105a';
+import * as PROG from './meta/progression.js?v=20261105a';
+import { createOnboarding, dustyLine } from './meta/beats.js?v=20261105a';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
-  from './game/match.js?v=20260905a';
-import { makeRng } from './core/rng.js?v=20260905a';
-import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260905a';
-import { art, loadIcons, ic } from './render/art.js?v=20260905a';
-import { face } from './render/portraits.js?v=20260905a';
-import * as PROV from './meta/provenance.js?v=20260905a';
-import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20260905a';
+  from './game/match.js?v=20261105a';
+import { makeRng } from './core/rng.js?v=20261105a';
+import { makeMarbleMaterial } from './render/marbleMesh.js?v=20261105a';
+import { art, loadIcons, ic } from './render/art.js?v=20261105a';
+import { face } from './render/portraits.js?v=20261105a';
+import * as PROV from './meta/provenance.js?v=20261105a';
+import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261105a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -109,7 +109,7 @@ async function boot() {
   for (const el of document.querySelectorAll('[data-art]')) el.style.backgroundImage = 'url(' + art(el.dataset.art) + ')';
   // and every plate the style sheet draws (step 5, the HUD and the tiers) is a variable made here
   for (const k in ART_VARS) document.documentElement.style.setProperty(k, 'url(' + art(ART_VARS[k]) + ')');
-  const res = await fetch('src/data/tuning.json?v=20260905a');
+  const res = await fetch('src/data/tuning.json?v=20261105a');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
   G.save = SAVE.load();
@@ -119,10 +119,10 @@ async function boot() {
   AUDIO.configure(G.tuning);
   AUDIO.setEnabled(G.save.settings.sound !== false);
 
-  const cat = await fetch('src/data/marbles.json?v=20260905a');
+  const cat = await fetch('src/data/marbles.json?v=20261105a');
   if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
   G.catalog = await cat.json();
-  const dt = await fetch('src/data/droptables.json?v=20260905a');
+  const dt = await fetch('src/data/droptables.json?v=20261105a');
   if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
   G.dropTables = await dt.json();
 
@@ -577,18 +577,22 @@ function openTin() {
     G.thumbs.paint(c, e, i++);
   }
   G.thumbs.close();
+  /* ⛔ NOTHING WAITS ON THE ROLL. The places on the cloth are named and pressable from the first frame (the
+     playthrough gate presses one at once, and so may a thumb); a press during the roll ends it there */
+  G.tinFinish = null;
   if (!still) {
-    canv.forEach(({ c, b }, k) => {
-      b.style.visibility = 'hidden';
+    canv.forEach(({ c }, k) => {
       c.className = 'roll';
       c.style.left = (20 + 30 * k) + '%';
       c.style.animationDelay = (k * 0.14) + 's';
       mouth.appendChild(c);
     });
     clearTimeout(G.tinRoll);
-    G.tinRoll = setTimeout(() => {
-      for (const { c, b } of canv) { c.className = ''; c.style.left = ''; c.style.animationDelay = ''; b.insertBefore(c, b.children[1] || null); b.style.visibility = ''; }
-    }, 1500);
+    G.tinFinish = () => {
+      clearTimeout(G.tinRoll); G.tinFinish = null;
+      for (const { c, b } of canv) { c.className = ''; c.style.left = ''; c.style.animationDelay = ''; b.insertBefore(c, b.children[1] || null); }
+    };
+    G.tinRoll = setTimeout(() => { if (G.tinFinish) G.tinFinish(); }, 1500);
   }
   // before the first tap there is nothing to read but a name and a two word kit,
   // so the cloth says what it is asking
@@ -599,6 +603,7 @@ function openTin() {
 }
 
 function pickHeirloom(entry) {
+  if (G.tinFinish) G.tinFinish();   // a pick during the roll lays them on the cloth at once
   G.heirloomPick = entry;
   for (const b of $('heirlooms').querySelectorAll('button')) {
     b.className = b.id === 'heir-' + entry.id ? 'on' : '';

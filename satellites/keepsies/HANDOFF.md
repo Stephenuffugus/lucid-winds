@@ -4,6 +4,18 @@
 
 ## Where we are
 
+**2026-11-04, Keepsies m1 (Astra's pack v1, `KEEPSIES_BUILD_PLAN.md` steps 0 to 8, Opus): the lot and the
+people, stamp `20261105a`, on add-sproing-jumper, deploy script `/home/codespace/kp-drafts/deploy-keepsies-m1.sh`
+for Stephen.** The four defects fixed (THE UNDEFINED chip, the camera's floor guard, the stale field line, the
+filter strip); Astra's runtime art in `assets/` through `render/art.js` (`ART_V`, `ic()`, the one icon sprite);
+the lot (her dirt, chalk decals sized to the match, one warm lamp at the north west, the panorama sky and a
+skyline band behind the names in the wide shot, because the brace camera never reaches the horizon); Dusty's tin
+and cloth and the faces (`render/portraits.js`); her HUD plates and the tier frames, marks and words; pouches as
+objects (one save transaction a buy, then the reveal), the case (the first rare is showcased and never staked,
+DESIGN 17), provenance (save v2, `meta/provenance.js`, append only); the marble and match share cards
+(`render/share.js`). Shots: `KP_QUALITY=high node tools/shots.mjs` draws what a Pixel draws (this box detects low).
+The tool servers now serve svg. m2 (Stephen's statues) is next; the 2026-09-04 notes below still hold.
+
 **2026-09-04, after Fable's review. K0 done. K1 done but for pass and play, and PLAYED with real pointer
 events for the first time (see `PLAYTESTS.md`). K2 done but for art: catalog, looks, collection, economy,
 pouches, the keepsies loop, the ceremonies, the ransom window, progression and the first four minutes.

@@ -8,7 +8,7 @@
  * before there is art (DESIGN 9.8).
  */
 import * as THREE from 'three';
-import { art } from './art.js?v=20260905a';
+import { art } from './art.js?v=20261105a';
 
 /* Astra's lot (pack v1, KEEPSIES_BUILD_PLAN.md step 3). One dirt tile is 60 cm: her grit then reads as grit and
    her pebbles at 3 to 7 mm sit beside a 16 mm mib the way real ones do. The tone is a plate decision, not a
