@@ -694,6 +694,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <label class="row"><input id="setsound" type="checkbox"><span data-copy="setSound"></span></label>
   <label class="row"><input id="setmusic" type="checkbox"><span data-copy="setMusic"></span></label>
   <label class="row"><input id="setphoto" type="checkbox"><span data-copy="setPhoto"></span></label>
+  <label class="row"><input id="setzoom" type="checkbox"><span data-copy="setZoom"></span></label>
   <div id="setlook" class="row" hidden><span data-copy="setLook"></span>
     <div class="lookset"><p data-copy="lookHero"></p><div id="lookhero" role="radiogroup" data-aria="lookHero"></div></div>
     <div class="lookset"><p data-copy="lookFrame"></p><div id="lookframe" role="radiogroup" data-aria="lookFrame"></div></div></div>
@@ -978,7 +979,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-1';
+  SB.BUILD = 'sb-m2-2';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -1349,7 +1350,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function saveDefaults() {
     return { v: 1, dp: 0, collection: [], prints: [], pool: { jump: [], dive: [], charm: [] },
       unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
-      settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true },
+      settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false },
       onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0 } },
       run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0, albumPages: 0, albumBiomes: 0 }, trophies: [], trophySeen: 0, album: [],
       log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false, days: 0 }, quarantine: null };
@@ -5533,28 +5534,28 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the Attic's moth (Astra, section 7.3): layered Ash forewings with Glare highlights, a Pewter body, an Ink outline
        and antennae, two flutter frames */
     moth: { w: 16, h: 16, frames: {
-      a: '................/.....0....0...../......0..0....../.000..0000..000./0444003333004440/0464403333044640/0464403333044640/0444403333044440/.04440333304440./..000033330000../..044033330440../...0403333040.../....00333300..../......0000....../................/................',
-      b: '................/................/.....0....0...../......0..0....../......0000....../..00.033330.00../.04400333300440./.04640333304640./.04640333304640./..044033330440../...0003333000.../...0403333040.../....00333300..../......0000....../................/................'
+      a: '................/.....0....0...../......0..0....../.000..0000..000./0555006444005550/0565506444055650/0565504444055650/0555504444055550/.05550444405550./..000044440000../..055044440550../...0504444050.../....00444400..../......0000....../................/................',
+      b: '................/................/.....0....0...../......0..0....../......0000....../..00.064440.00../.05500644400550./.05650444405650./.05650444405650./..055044440550../...0004444000.../...0504444050.../....00444400..../......0000....../................/................'
     } },
     /* T1.4's four (Astra, section 7.3): the Frost icicle, an Ash shard rooted in its top row with a Glare glint; the
        Deep jelly, a Teal bell with a Magenta core and Ink tentacles; the Overgrowth crawler, Moss with Brick thorns and
        Glare tips, facing right; the Ember spark, a Brick flame with a Glare core. Two frames each at 12 fps. Each elite
        is its own 24x24 art (the <kind>_elite keys below, Q160) */
     icicle: { w: 16, h: 16, frames: {
-      a: '..000000000000../..044444444440../...0464444640.../...0464444640.../....04444440..../....04444440..../.....044440...../.....064460...../......0440....../......0440....../......0440....../.......00......./.......66......./................/................/................',
-      b: '..000000000000../..044444444440../...0444444440.../...0444444440.../....04644640..../....04644640..../.....044440...../.....064460...../......0440....../......0440....../......0440....../.......00......./.......66......./................/................/................'
+      a: '..000000000000../..055565555550../...0566555650.../...0565555650.../....05555550..../....05555550..../.....055550...../.....065560...../......0550....../......0550....../......0550....../.......00......./.......00......./................/................/................',
+      b: '..000000000000../..055565555550../...0556555550.../...0555555550.../....05655650..../....05655650..../.....055550...../.....065560...../......0550....../......0550....../......0550....../.......00......./.......00......./................/................/................'
     } },
     jelly: { w: 16, h: 16, frames: {
-      a: '................/.....000000...../...00cccccc00.../..0cccccccccc0../..0c6cccccc6c0../.0ccccaaaacccc0./.0cccaaaaaaccc0./.0ccccaaaacccc0./..0cccccccccc0../...0000000000.../...0..0..0..0.../..0...0..0...0../..0....00....0../...0...00...0.../................/................',
-      b: '................/................/.....000000...../...00cccccc00.../..0cccccccccc0../.0cc6cccccc6cc0./.0ccccaaaacccc0./.0cccaaaaaaccc0./.0ccccaaaacccc0./..000000000000../...0..0..0..0.../...0..0..0..0.../....0.0..0.0..../....0..00..0..../................/................'
+      a: '................/.....000000...../...00c6cccc00.../..0ccc6cccccc0../..0c6cccccc6c0../.0ccccaaaacccc0./.0cccaaaaaaccc0./.0ccccaaaacccc0./..0cccccccccc0../...0000000000.../...0..0..0..0.../..0...0..0...0../..0....00....0../...0...00...0.../................/................',
+      b: '................/................/.....000000...../...00c6cccc00.../..0ccc6cccccc0../.0cc6cccccc6cc0./.0ccccaaaacccc0./.0cccaaaaaaccc0./.0ccccaaaacccc0./..000000000000../...0..0..0..0.../...0..0..0..0.../....0.0..0.0..../....0..00..0..../................/................'
     } },
     crawler: { w: 16, h: 16, frames: {
-      a: '................/................/...6...6...6..../..090.090.090.../..090.090.090.../.0999099909990../.0999099909990../..0dddddddddd0../.0dddddddddd660./0ddddddddddd600./0ddddddddddddd0./.0dddddddddddd0./..0dddddddddd0../...0000000000.../...00..00..00.../..000.000.000...',
-      b: '................/................/................/....6...6...6.../...090.090.090../...090.090.090../..0999099909990./..0dddddddddd0../.0dddddddddd660./0ddddddddddd600./0ddddddddddddd0./.0dddddddddddd0./..0dddddddddd0../...0000000000.../....00..00..00../...000.000.000..'
+      a: '................/................/...0...0...0..../..090.090.090.../..090.090.090.../.0999099909990../.0999099909990../..0ddd6dddddd0../.0dddd6ddddd660./0ddddddddddd600./0ddddddddddddd0./.0dddddddddddd0./..0dddddddddd0../...0000000000.../...00..00..00.../..000.000.000...',
+      b: '................/................/................/....0...0...0.../...090.090.090../...090.090.090../..0999099909990./..0ddd6dddddd0../.0dddd6ddddd660./0ddddddddddd600./0ddddddddddddd0./.0dddddddddddd0./..0dddddddddd0../...0000000000.../....00..00..00../...000.000.000..'
     } },
     spark: { w: 16, h: 16, frames: {
-      a: '.......00......./......0990....../...0..0990..0.../..090.0990.090../..090099990090../...0999999990.../..099999999990../.09996699669990./.09966666666990./0999666666669990/0999666666669990/0999966996699990/.09999999999990./..099999999990../...0999999990.../....00000000....',
-      b: '................/.......00......./......0990....../.....099990...../.....099990...../...0.099990.0.../..090999999090../.09999999999990./.09996699669990./0999666666669990/0999666666669990/0999966996699990/.09999999999990./..099999999990../...0999999990.../....00000000....'
+      a: '.......00......./......0690....../...0..0690..0.../..090.0990.090../..090099990090../...0999999990.../..099559955990../.09956655665990./.09566666666590./0995666666665990/0995666666665990/0999566556659990/.09995599559990./..099999999990../...0999999990.../....00000000....',
+      b: '................/.......00......./......0990....../.....066990...../.....099990...../...0.099990.0.../..090999999090../.09995599559990./.09956655665990./0995666666665990/0995666666665990/0999566556659990/.09995599559990./..099999999990../...0999999990.../....00000000....'
     } },
     /* T1.4b's traps (Astra, section 7.3): a spike, Brick blades with Magenta tips over Ink, sunk (a, its sockets and
        tips in sight) and standing (b); a crusher, Slate with a Brick stripe and Glare teeth, up (a), mid stroke (b) and
@@ -5608,28 +5609,28 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the five elites (Astra, Q160): each 24x24, drawn 1:1 in the sim's ELITE_SIZE_CELLS box by its anchor (R.ELITE_ANCHOR).
        moth_elite: from Astra (enemies/enemy_moth_elite.png) */
     moth_elite: { w: 24, h: 24, frames: {
-      a: '......................../........0......0......../.........0....0........./..........0000........../..0000...011110...0000../.044440..011110..044440./044664400011110004466440/040000440011110044000040/040aa04400111100440aa040/040aa04440111104440aa040/.0000044401111044400000./..04444440111104444440../...000000011110000000.../...044444011110444440.../....0000001111000000..../....00aa00111100aa00..../.....00000111100000...../......000011110000....../.........011110........./..........0000........../......................../......................../......................../........................',
-      b: '......................../......................../........0......0......../.........0....0........./..........0000........../.........011110........./...000...011110...000.../..04440..011110..04440../.0446640001111000466440./.0400000001111000000040./.040aa040011110040aa040./..00aa040011110040aa00../...000040011110040000.../....0000001111000000..../....0000001111000000..../....00aa00111100aa00..../.....00000111100000...../......000011110000....../.........011110........./..........0000........../......................../......................../......................../........................'
+      a: '......................../........0......0......../.........0....0........./..........0000........../..0000...066440...0000../.055550..066440..055550./055665500044440005566550/050000550044440055000050/050aa05500444400550aa050/050aa05550444405550aa050/.0000055504444055500000./..05555550444405555550../...000000044440000000.../...055555044440555550.../....0000004444000000..../....00aa00444400aa00..../.....00000444400000...../......000044440000....../.........044440........./..........0000........../......................../......................../......................../........................',
+      b: '......................../......................../........0......0......../.........0....0........./..........0000........../.........066440........./...000...066440...000.../..05550..044440..05550../.0556650004444000566550./.0500000004444000000050./.050aa050044440050aa050./..00aa050044440050aa00../...000050044440050000.../....0000004444000000..../....0000004444000000..../....00aa00444400aa00..../.....00000444400000...../......000044440000....../.........044440........./..........0000........../......................../......................../......................../........................'
     } },
     /* icicle_elite: from Astra (enemies/enemy_icicle_elite.png) */
     icicle_elite: { w: 24, h: 24, frames: {
-      a: '..00000000000000000000../..04444444444444444440../..04466644444444666440../...000000000000000000.../...00aaaaaaaaaaaaaa00.../...000000000000000000.../....0444444444444440..../....0444444444444440..../....0444444444444440..../....0404444444444040..../.....0.0444444440.0...../.....6.0444444440.6...../........04444440......../........04644640......../.........044440........./.........044440........./.........044440........./..........0440........../..........0660........../...........00.........../...........66.........../......................../......................../........................',
-      b: '..00000000000000000000../..04444444444444444440../..04444444444444444440../...000000000000000000.../...00aaaaaaaaaaaaaa00.../...000000000000000000.../....0444444444444440..../....0444464444644440..../....0444464444644440..../....0404444444444040..../.....0.0444444440.0...../.....6.0444444440.6...../........04444440......../........04444440......../.........044440........./.........044440........./.........044440........./..........0440........../..........0660........../...........00.........../...........66.........../......................../......................../........................'
+      a: '..00000000000000000000../..05555566555555555550../..05566666555555666550../...000000000000000000.../...00aaaaaaaaaaaaaa00.../...000000000000000000.../....0555555555555550..../....0555555555555550..../....0555555555555550..../....0505555555555050..../.....0.0555555550.0...../.....0.0555555550.0...../........05555550......../........05655650......../.........055550........./.........055550........./.........055550........./..........0550........../..........0660........../...........00.........../...........00.........../......................../......................../........................',
+      b: '..00000000000000000000../..05555566555555555550../..05555566555555555550../...000000000000000000.../...00aaaaaaaaaaaaaa00.../...000000000000000000.../....0555555555555550..../....0555565555655550..../....0555565555655550..../....0505555555555050..../.....0.0555555550.0...../.....0.0555555550.0...../........05555550......../........05555550......../.........055550........./.........055550........./.........055550........./..........0550........../..........0660........../...........00.........../...........00.........../......................../......................../........................'
     } },
     /* jelly_elite: from Astra (enemies/enemy_jelly_elite.png) */
     jelly_elite: { w: 24, h: 24, frames: {
-      a: '......................../........00000000......../......00cccccccc00....../....00cccccccccccc00..../...0cccccccccccccccc0.../..0cc66cccccccccc66cc0../..0c66ccc000000ccc66c0../.0cccccc00aaaa00cccccc0./.0cccccc0aaaaaa0cccccc0./.0cccccc00aaaa00cccccc0./.0000000000000000000000./..0aaaaaaaaaaaaaaaaaa0../..0aaaaaaaaaaaaaaaaaa0../..00000000000000000000../...00..00..00..00..00.../..00...00..00..00...00../..00....00.00.00....00../...00...00....00...00.../....00..00....00..00..../....00...00..00...00..../...00....00..00....00.../......................../......................../........................',
-      b: '......................../......................../........00000000......../......00cccccccc00....../....00cccccccccccc00..../...0cccccccccccccccc0.../..0cc66cccccccccc66cc0../.0cc66ccc000000ccc66cc0./.0cccccc00aaaa00cccccc0./.0cccccc0aaaaaa0cccccc0./.000000000aaaa000000000./.0aaaaaaaaaaaaaaaaaaaa0./.00aaaaaaaaaaaaaaaaaa00./..00000000000000000000../...00..00..00..00..00.../...00..00..00..00..00.../....00..00.00.00..00..../....00..00.00.00..00..../...00....00..00....00.../...00...00....00...00.../....00..00....00..00..../......................../......................../........................'
+      a: '......................../........00000000......../......0066cccccc00....../....00cc66cccccccc00..../...0cccccccccccccccc0.../..0cc66cccccccccc66cc0../..0c66ccc000000ccc66c0../.0cccccc00aaaa00cccccc0./.0cccccc0aaaaaa0cccccc0./.0cccccc00aaaa00cccccc0./.0000000000000000000000./..0aaaaaaaaaaaaaaaaaa0../..0aaaaaaaaaaaaaaaaaa0../..00000000000000000000../...00..00..00..00..00.../..00...00..00..00...00../..00....00.00.00....00../...00...00....00...00.../....00..00....00..00..../....00...00..00...00..../...00....00..00....00.../......................../......................../........................',
+      b: '......................../......................../........00000000......../......0066cccccc00....../....00cc66cccccccc00..../...0cccccccccccccccc0.../..0cc66cccccccccc66cc0../.0cc66ccc000000ccc66cc0./.0cccccc00aaaa00cccccc0./.0cccccc0aaaaaa0cccccc0./.000000000aaaa000000000./.0aaaaaaaaaaaaaaaaaaaa0./.00aaaaaaaaaaaaaaaaaa00./..00000000000000000000../...00..00..00..00..00.../...00..00..00..00..00.../....00..00.00.00..00..../....00..00.00.00..00..../...00....00..00....00.../...00...00....00...00.../....00..00....00..00..../......................../......................../........................'
     } },
     /* crawler_elite: from Astra (enemies/enemy_crawler_elite.png) */
     crawler_elite: { w: 24, h: 24, frames: {
-      a: '......................../......................../......................../......................../....6....6....6....6..../...090..090..090..090.../...090..090..090..090.../...090..090..090..090.../..09990099900999009990../..09990099900999009990../..09990099900999009990../...000000000000000dd0.../..00aaa00aaa00aaa0ddd0../.0d0aaa00aaa00aaa0dddd0./.0d000000000000000dd660./0ddddddddddddddddddd60d0/0dddddddddddddddddddddd0/.0ddddddddddddddddddddd0/..0ddddddddddddddddddd0./...0ddddddddddddddddd0../....00000000000000000.../....00...00....00..00.../...00...00....00..00..../..000..000...000.000....',
-      b: '......................../......................../......................../......................../......................../....6....6....6....6..../...090..090..090..090.../...090..090..090..090.../...090..090..090..090.../..09990099900999009990../..09990099900999009990../...000000000000000dd0.../..00aaa00aaa00aaa0ddd0../.0d0aaa00aaa00aaa0dddd0./.0d000000000000000dd660./0ddddddddddddddddddd60d0/0dddddddddddddddddddddd0/.0ddddddddddddddddddddd0/..0ddddddddddddddddddd0./...0ddddddddddddddddd0../....00000000000000000.../.....00...00....00..00../....00...00....00..00.../...000..000...000.000...'
+      a: '......................../......................../......................../......................../....0....0....0....0..../...090..090..090..090.../...090..090..090..090.../...090..090..090..090.../..09990099900999009990../..09990099900999009990../..09990099900999009990../...000000000000000660.../..00aaa00aaa00aaa066d0../.0d0aaa00aaa00aaa0dddd0./.0d000000000000000dd660./0ddddddddddddddddddd60d0/0dddddddddddddddddddddd0/.0ddddddddddddddddddddd0/..0ddddddddddddddddddd0./...0ddddddddddddddddd0../....00000000000000000.../....00...00....00..00.../...00...00....00..00..../..000..000...000.000....',
+      b: '......................../......................../......................../......................../......................../....0....0....0....0..../...090..090..090..090.../...090..090..090..090.../...090..090..090..090.../..09990099900999009990../..09990099900999009990../...000000000000000660.../..00aaa00aaa00aaa066d0../.0d0aaa00aaa00aaa0dddd0./.0d000000000000000dd660./0ddddddddddddddddddd60d0/0dddddddddddddddddddddd0/.0ddddddddddddddddddddd0/..0ddddddddddddddddddd0./...0ddddddddddddddddd0../....00000000000000000.../.....00...00....00..00../....00...00....00..00.../...000..000...000.000...'
     } },
     /* spark_elite: from Astra (enemies/enemy_spark_elite.png) */
     spark_elite: { w: 24, h: 24, frames: {
-      a: '...........00.........../..........0990........../.........099990........./.....0...099990...0...../....090..099990..090..../....090.09999990.090..../.....09099999999090...../..0..09999999999990..0../.0900999999999999990090./.0999999999999999999990./..09000009999990000090../..000aaa00999900aaa000../.090aa0aa066660aa0aa090./.090a000a066660a000a090./0990aa0aa066660aa0aa0990/09900aaa00666600aaa00990/099900000666666000009990/099999966666666669999990/.0999999666666669999990./.0999999966996699999990./..09999999999999999990../...099999999999999990.../....0999999999999990..../.....00000000000000.....',
-      b: '......................../...........00.........../..........0990........../.........099990........./.........099990........./.....0..09999990..0...../....090.09999990.090..../....0900999999990090..../...099999999999999990.../..09999999999999999990../..09000009999990000090../..000aaa00999900aaa000../.090aa0aa066660aa0aa090./.090a000a066660a000a090./0990aa0aa066660aa0aa0990/09900aaa00666600aaa00990/099900000666666000009990/099999966666666669999990/.0999999666666669999990./.0999999966996699999990./..09999999999999999990../...099999999999999990.../....0999999999999990..../.....00000000000000.....'
+      a: '...........00.........../..........0660........../.........066990........./.....0...099990...0...../....090..099990..090..../....090.09999990.090..../.....09099999999090...../..0..09999999999990..0../.0900999999999999990090./.0999999999999999999990./..09000009999990000090../..000aaa00555500aaa000../.090aa0aa066660aa0aa090./.090a000a066660a000a090./0990aa0aa066660aa0aa0990/09900aaa00666600aaa00990/099900000666666000009990/099999566666666665999990/.0999995666666665999990./.0999999566556659999990./..09999995599559999990../...099999999999999990.../....0999999999999990..../.....00000000000000.....',
+      b: '......................../...........00.........../..........0690........../.........066690........./.........099990........./.....0..09999990..0...../....090.09999990.090..../....0900999999990090..../...099999999999999990.../..09999999999999999990../..09000009999990000090../..000aaa00555500aaa000../.090aa0aa066660aa0aa090./.090a000a066660a000a090./0990aa0aa066660aa0aa0990/09900aaa00666600aaa00990/099900000666666000009990/099999566666666665999990/.0999995666666665999990./.0999999566556659999990./..09999995599559999990../...099999999999999990.../....0999999999999990..../.....00000000000000.....'
     } },
     /* hud_heart: from Astra (ui/hud_heart.png): an Ink contour, Brick full, Slate empty; drawn at 2x or 3x in the top strip
        (R.heartURL, Q160), and at 1x over the bug through a hit's i frames (R.draw, 2 Nov) */
@@ -6478,6 +6479,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* beacon_dot: from Astra (ui/beacon_dot.png) */
     beacon_dot: { w: 4, h: 4, frames: {
       dot: '.00./0660/0660/.00.'
+    } },
+    /* tab_bold: from Astra (world/tab_bold.png) */
+    tab_bold: { w: 16, h: 8, frames: {
+      plain: '6666666666666666/0000000000000000/ffffffffffffffff/ff000ffff000ffff/ff000ffff000ffff/ffffffffffffffff/0000000000000000/0000000000000000',
+      lit: '6666666666666666/0000000000000000/6666666666666666/ff000ffff000ffff/ff000ffff000ffff/ffffffffffffffff/0000000000000000/0000000000000000'
     } }
   };
   /* SPRITES END */
@@ -6577,6 +6583,21 @@ body.sb-modal .lwfb-fab { display: none !important; }
   R.CSS_SPRITES = ['stick_pad', 'stick_knob', 'stick_hint', 'pause_glyph', 'icon_biomes', 'run_pips', 'icon_house', 'frame_styles', 'frame_styles_r7'];   /* HOUSE-B: the pips, the house icon, the frames */
   /* one sprite at the integer place (and size: the squash and the stretch), from the atlas */
   function spr(c2, key, dx, dy, dw, dh) { var r = A[key]; c2.drawImage(atlas, r.x, r.y, r.w, r.h, dx, dy, dw || r.w, dh || r.h); }
+  /* m2 step 2: a 2 px Glare halo round a sprite's own silhouette (the exit and the keys, the goals), made once a frame key */
+  var HALOS = {};
+  function halo(c2, key, dx, dy) {
+    var hv = HALOS[key], r = A[key];
+    if (!r) return;
+    if (!hv) {
+      var sil = document.createElement('canvas'); sil.width = r.w; sil.height = r.h;
+      var sx = sil.getContext('2d'); sx.drawImage(atlas, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+      sx.globalCompositeOperation = 'source-in'; sx.fillStyle = CSS[SB.palette.I.GLARE]; sx.fillRect(0, 0, r.w, r.h);
+      hv = HALOS[key] = document.createElement('canvas'); hv.width = r.w + 4; hv.height = r.h + 4;
+      var hx = hv.getContext('2d');
+      for (var oy = -2; oy <= 2; oy++) for (var ox = -2; ox <= 2; ox++) if ((ox || oy) && ox * ox + oy * oy <= 5) hx.drawImage(sil, 2 + ox, 2 + oy);
+    }
+    c2.globalAlpha = 0.85; c2.drawImage(hv, dx - 2, dy - 2); c2.globalAlpha = 1;
+  }
   R.box = {};
   /* a weapon's icon (8.4) into a 2d context at (x, y), Astra's glyph 24 px a side, looked up by the weapon's code
      (ART3: round 2 names every glyph J1 to C8 in DESIGN 9.1's order, so the binding is the code itself and ART2's
@@ -6644,6 +6665,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
       i = y * w + x;
       sctx.fillStyle = rgb(lv.solid[i] ? P.solidColour(lv.pal[i], biome) : P.openColour(lv.pal[i], biome));
       sctx.fillRect(x * C, y * C, C, C);
+      /* m2 step 2 (DESIGN 11): every solid cell carries a 1 px outline a shade darker than its own fill, so a solid mass
+         reads as solid and never as a grey sheet; the Ink and Glare edges below still draw over its open sides */
+      if (lv.solid[i]) {
+        var sc0 = P.solidColour(lv.pal[i], biome);
+        sctx.fillStyle = 'rgb(' + Math.round(sc0[0] * 0.8) + ',' + Math.round(sc0[1] * 0.8) + ',' + Math.round(sc0[2] * 0.8) + ')';
+        sctx.fillRect(x * C, y * C, C, 1); sctx.fillRect(x * C, y * C + C - 1, C, 1); sctx.fillRect(x * C, y * C, 1, C); sctx.fillRect(x * C + C - 1, y * C, 1, C);
+      }
     }
     var ink = css(P.I.INK), glare = css(P.I.GLARE), line = css(P.TINT.line[biome]), teal = css(P.I.TEAL);
     var open = function (xx, yy) { return xx >= 0 && xx < w && yy >= 0 && yy < h && !lv.solid[yy * w + xx]; };
@@ -6658,7 +6686,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
         /* T1.5: the sticky wall over its cell, a pipe in Deep and a vine in Overgrowth (the sim's contactAt rule) */
         if (lv.sticky && lv.sticky[i] && (biome === 2 || biome === 3)) spr(sctx, biome === 2 ? 'pipe.a' : 'vine.a', x * C, y * C);
       } else if (lv.plat[i]) {
-        if (lv.tab && lv.tab[i]) spr(sctx, 'tab.a', x * C, y * C);
+        if (lv.tab && lv.tab[i]) spr(sctx, 'tab_bold.plain', x * C, y * C);   /* m2 step 2: Astra's bold tab (16x8; the one way's top is still the cell's top row) */
         else {
           sctx.fillStyle = glare; sctx.fillRect(x * C, y * C, C, 1);
           sctx.fillStyle = ink; sctx.fillRect(x * C, y * C + 1, C, 1);
@@ -6806,23 +6834,33 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var K = SB.K, P = SB.palette, C = K.CELL;
     if (!s || !lv) return;
     var heroY = s.hero.y >> 8, heroX = s.hero.x >> 8;
-    var cam = heroY + (K.HERO_H >> 1) - Math.round(viewH * SB.TUNING.CAM_HERO_FRAC);
-    cam = Math.max(0, Math.min(worldH - viewH, cam));
+    /* m2 step 2, Zoom close (a setting, off by default): the world at 2x, a 192 x viewH/2 window that follows the bug
+       sideways too, the bug at 60 percent down and kept within a 3 cell band round the centre; render state only */
+    var Z = SB.settings && SB.settings.zoom ? 2 : 1, vH = viewH / Z, vW = R.viewW / Z;
+    R.zoom = Z;
+    var cam = heroY + (K.HERO_H >> 1) - Math.round(vH * SB.TUNING.CAM_HERO_FRAC);
+    cam = Math.max(0, Math.min(worldH - vH, cam));
     /* the dive landing's shake (DESIGN 4.4: at most SHAKE_MAX_PX, only on dive landings and boss hits): while the
        state's counter runs the camera lifts on alternate steps, by the full height in the first half, or drops where
        the room's top leaves no lift (t12-dive: a landing near the top showed no shake at all) */
     if (s.hero.shake > 0 && (s.hero.shake & 1)) {
       var amp = s.hero.shake > (K.SHAKE_F >> 1) ? SB.TUNING.SHAKE_MAX_PX : 1;
-      cam = cam - amp >= 0 ? cam - amp : Math.min(worldH - viewH, cam + amp);
+      cam = cam - amp >= 0 ? cam - amp : Math.min(worldH - vH, cam + amp);
     }
     R.camY = cam;
     /* the crop alternative follows the hero sideways inside the 24 px the screen lacks; the default never moves */
     var camX = R.crop ? Math.max(0, Math.min(K.WORLD_W - R.viewW, heroX + (K.HERO_W >> 1) - (R.viewW >> 1))) : 0;
+    if (Z === 2) {
+      var want = heroX + (K.HERO_W >> 1) - (vW >> 1);
+      if (R.zoomX === undefined || R.zoomX === null || Math.abs(want - R.zoomX) > 96) R.zoomX = want;
+      else if (want > R.zoomX + 24) R.zoomX = want - 24; else if (want < R.zoomX - 24) R.zoomX = want + 24;
+      R.zoomX = Math.max(0, Math.min(K.WORLD_W - vW, R.zoomX)); camX = Math.round(R.zoomX);
+    } else R.zoomX = null;
     R.camX = camX; R.drawn.cam = cam; R.drawn.camX = camX;
-    ctx.save(); ctx.translate(-camX, 0);
-    ctx.drawImage(stat, 0, cam, K.WORLD_W, viewH, 0, 0, K.WORLD_W, viewH);
+    ctx.save(); if (Z === 2) ctx.scale(2, 2); ctx.translate(-camX, 0);
+    ctx.drawImage(stat, 0, cam, K.WORLD_W, vH, 0, 0, K.WORLD_W, vH);
     if (R.photoRoom && layer.width && !(SB.settings && SB.settings.photoBehind === false)) {
-      ctx.globalAlpha = PHOTO_ALPHA; ctx.drawImage(layer, 0, cam, K.WORLD_W, viewH, 0, 0, K.WORLD_W, viewH); ctx.globalAlpha = 1;
+      ctx.globalAlpha = PHOTO_ALPHA; ctx.drawImage(layer, 0, cam, K.WORLD_W, vH, 0, 0, K.WORLD_W, vH); ctx.globalAlpha = 1;
     }
     guardFx(s);
     keyFx(s);   /* the keys' takes, the lamp's lighting and a refusal, read before the beacon is drawn */
@@ -6833,7 +6871,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       /* KEYS (2 Nov): the lamp shut, its charge windows filling as keys come in (Astra: 0 to 3, 0 2 3, 0 1 2 3), the
          light not relit; touching it with a key out plays fx_beacon_refuse round it */
       var held = nk - kl, lf = nk === 2 ? (held ? 2 : 0) : held, kx0 = (lv.exit % lv.w) * C, ky0 = Math.floor(lv.exit / lv.w) * C - cam;
-      spr(ctx, 'beacon_locked.locked_' + lf, kx0, ky0);
+      halo(ctx, 'beacon_locked.locked_' + lf, kx0, ky0); spr(ctx, 'beacon_locked.locked_' + lf, kx0, ky0);
       var ra = s.frame - R.keyFx.refuseAt;
       if (ra >= 0 && ra < 15) spr(ctx, 'fx_beacon_refuse.' + 'abc'.charAt(Math.floor(ra / 5)), kx0 - 8, ky0 - 8);
       R.drawn.beacon = { key: 'beacon_locked.locked_' + lf, x: kx0 - camX, y: ky0, w: C, h: C, locked: kl };
@@ -6862,7 +6900,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       /* the beacon: the ceiling light sprite in the exit cell, its rays on alternate pulses; the steps after the guardian
          falls, Astra's fx_beacon_light at 12 fps (5 steps a frame) in the lamp's place, handing over to the loop at a */
       var bk = lit < 20 ? 'fx_beacon_light.light' + FX4[Math.floor(lit / 5)] : (pulse & 1) ? 'beacon.b' : 'beacon.a';
-      spr(ctx, bk, ex, ey);
+      halo(ctx, bk, ex, ey); spr(ctx, bk, ex, ey);
       R.drawn.beacon = { key: bk, x: ex - camX, y: ey, w: C, h: C };
     } else R.drawn.beacon = null;
     R.motes(s, lv, camX);
@@ -6907,7 +6945,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var cov = R.LOOT_SHOWN[lt2.kind] ? -1 : R.coverOf(s, lv, lt2.idx);
       if (cov >= 0) { ctx.drawImage(stat, (cov % lv.w) * C, Math.floor(cov / lv.w) * C, C, C, lx2, ly, C, C); continue; }
       if (lt2.kind === 4) {   /* a key sits on an open cell (no photo speck under it): Astra's turn at 8 fps, bottom centred */
-        if (!lt2.taken) spr(ctx, 'key.' + KF[Math.floor(s.frame * 8 / SB.TUNING.STEP_HZ) & 3], lx2, ly);
+        if (!lt2.taken) { var kk = 'key.' + KF[Math.floor(s.frame * 8 / SB.TUNING.STEP_HZ) & 3]; halo(ctx, kk, lx2, ly); spr(ctx, kk, lx2, ly); }
         continue;
       }
       ctx.fillRect(lx2, ly, C, C);
@@ -6961,6 +6999,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (ry < 1) ry = hy + K.HERO_H + 4;
       for (var hk = 0; hk < h.heartsMax; hk++) spr(ctx, 'hud_heart.' + (hk < h.hearts || (hk === h.hearts && since < 18 && ((since >> 2) & 1) === 0) ? 'full' : 'empty'), rx + hk * 10, ry);
       R.drawn.hitHearts = { x: rx - camX, y: ry, n: h.hearts, max: h.heartsMax };
+    }
+    if (s.hero.ground && lv.tab) {
+      var fy = Math.floor(((s.hero.y >> 8) + K.HERO_H) / C), fx0 = Math.floor(heroX / C), fx1 = Math.floor((heroX + K.HERO_W - 1) / C);
+      for (var fxx = fx0; fxx <= fx1; fxx++) { var fi = fy * lv.w + fxx; if (fy >= 0 && fy < lv.h && fxx >= 0 && fxx < lv.w && lv.tab[fi] && lv.plat[fi]) spr(ctx, 'tab_bold.lit', fxx * C, fy * C - cam); }
     }
     drawPolaroid(s, lv);
     /* a hit's i frames blink the hero at about 4 Hz (8 steps on, 8 off) */
@@ -7351,7 +7393,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (var y = r0; y <= r1; y++) for (var x = 0; x < lv.w; x++) {
       var i = y * lv.w + x, top = y * C - cam;
       if (top < 0 || top >= viewH) continue;
-      if (lv.tab && lv.tab[i] && lv.plat[i]) { if (top + 5 <= viewH) out.tabs.push({ key: 'tab.a', x: x * C - camX, y: top, w: C, h: 5 }); }
+      if (lv.tab && lv.tab[i] && lv.plat[i]) { if (top + 8 <= viewH) out.tabs.push({ key: 'tab_bold.plain', x: x * C - camX, y: top, w: C, h: 8 }); }
       else if (lv.plat[i] || (lv.solid[i] && y > 0 && !lv.solid[i - lv.w])) out.edges.push({ x: x * C - camX, y: top, w: C, h: 1 });
     }
     return out;
@@ -7822,7 +7864,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     tapToDevelop: 'Tap to develop', sharedRoom: 'A shared room',
     levelCode: 'Level code', codePaste: 'Paste', codePlay: 'Play',
     settingsLink: 'Settings', settings: 'Settings', recentRooms: 'Recent rooms', recentRoom: 'A recent room',
-    setMirror: 'Mirror the controls', setSound: 'Sound', setMusic: 'Music', setPhoto: 'Photo behind the room', setMotion: 'Reduced motion',
+    setMirror: 'Mirror the controls', setSound: 'Sound', setMusic: 'Music', setPhoto: 'Photo behind the room', setZoom: 'Zoom: close', setMotion: 'Reduced motion',
     motionOs: 'As the phone says', motionOn: 'On', motionOff: 'Off',
     saveDamaged: 'A damaged save was set aside. You can copy it from Settings.',
     setInstall: 'Install to the home screen to keep your rooms', install: 'Install',
@@ -9062,6 +9104,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('setsound').checked = !!st.sound;
     document.getElementById('setmusic').checked = !!st.music;
     document.getElementById('setphoto').checked = st.photoBehind !== false;
+    document.getElementById('setzoom').checked = !!st.zoom;
     document.getElementById('setmotion').value = st.reducedMotion === null ? 'os' : st.reducedMotion ? 'on' : 'off';
     document.getElementById('setdamaged').hidden = !SB.save.quarantined;
     drawLook();
@@ -9456,7 +9499,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (!st) lockedUntil = -1;
     if (on && key !== bannerKey) { bannerKey = key; var gb = document.getElementById('guardbanner'); gb.querySelector('b').textContent = head; gb.querySelector('span').textContent = line; }
     if (on) {   /* never over the bug: docked low while it is in the view's top 45% */
-      var cv = document.getElementById('view'), low = !!(cv && (st.hero.y >> 8) - SB.render.camY < cv.height * 0.45);   /* the live bug against the last camera */
+      var cv = document.getElementById('view'), low = !!(cv && ((st.hero.y >> 8) - SB.render.camY) * (SB.render.zoom || 1) < cv.height * 0.45);   /* the live bug against the last camera */
       document.getElementById('guardbanner').classList.toggle('low', low);
     }
     if (on !== bannerOn) { bannerOn = on; document.getElementById('guardbanner').hidden = !on; }
@@ -9745,7 +9788,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     syncModal();
     document.getElementById('settitle').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
     var setBool = function (id, key) { document.getElementById(id).addEventListener('change', function () { SB.save.doc.settings[key] = this.checked; SB.save.commit(); ui.applySettings(); }); };
-    setBool('setmirror', 'mirror'); setBool('setsound', 'sound'); setBool('setmusic', 'music'); setBool('setphoto', 'photoBehind');
+    setBool('setmirror', 'mirror'); setBool('setsound', 'sound'); setBool('setmusic', 'music'); setBool('setphoto', 'photoBehind'); setBool('setzoom', 'zoom');
     document.getElementById('setmotion').addEventListener('change', function () { SB.save.doc.settings.reducedMotion = this.value === 'os' ? null : this.value === 'on'; SB.save.commit(); });
     document.getElementById('setcopy').addEventListener('click', function () { var el = document.getElementById('setexport'); try { navigator.clipboard.writeText(el.value).catch(function () { el.select(); }); } catch (e) { el.select(); } });
     document.getElementById('setimportgo').addEventListener('click', function () {
@@ -9914,7 +9957,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=23').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=24').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.

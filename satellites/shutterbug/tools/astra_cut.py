@@ -33,6 +33,8 @@ NEW_KEYS = {
     'icon_weapons': (24, 24, None),
     # round 8 (4 Nov, SHUTTERBUG_M2_BUILD_PLAN.md step 1): the Polaroid in the strip and its two marks
     'polaroid_frame': (72, 96, ['base']), 'hero_dot': (4, 4, ['dot']), 'beacon_dot': (4, 4, ['dot']),
+    # step 2: the bold film tab (its collision top stays the cell's top row)
+    'tab_bold': (16, 8, ['plain', 'lit']),
 }
 # ART2: an effect strip, fx_<name>, is named frames: square, 32 or 48 a side, each frame <clip>_<n> with every clip's n
 # running 0, 1, 2 ... in order (Astra's manifest clips); Sun is the hero's and never an effect's

@@ -5613,7 +5613,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
                 'trophy_medals_r7', 'frame_styles_r7', 'daily_badge', 'daily_card'].indexOf(name) < 0) t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\', the beacon\'s and its lighting\'s)');
       /* section 7.3 (the M1 review: the placeholders broke it): Film is the repairs' alone (the film tab), so help is
          never furniture; the speck is Amber with a Glare glint; every danger has an Ink outline */
-      if (name !== 'tab') t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour)');
+      if (['tab', 'tab_bold'].indexOf(name) < 0) t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour; round 8: the bold tab is a repair tab too)');
       /* the speck's glint is a beat (Astra's speck, Q160: frame a the Amber diamond, b adds the Glare glint, 4 fps), so
          every frame is Amber and the strip, not each frame, carries the glint (the pin moved from per frame with the art) */
       if (name === 'speck') t.ok(str.includes(AMBER), 'speck.' + f + ' is Amber');
