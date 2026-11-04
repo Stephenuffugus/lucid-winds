@@ -70,7 +70,7 @@ families (226 procedural recipes, 14 sculpt references). The bank is a later mil
    references, contact sheets and docs never ship. Masters stay in `/workspaces/keepsies-astra-v1`.
 8. Notes: one line per step in STATE and one line in START-HERE.md; HANDOFF.md's "Where we are" paragraph updated
    at the end of each milestone. No essays, no QUESTIONS file.
-9. Scope is this plan. m1 is steps 1 to 8. m2 (the obstacles, steps 9 to 11) starts only if the box has three hours
+9. Scope is this plan. m1 is steps 1 to 8. m2 (the statues, steps 9 to 11) starts only if the box has three hours
    left after the three games' first milestones, else it is the next night's order. Nothing from the expansion bank,
    nothing from the Arena, nothing from the DECISIONS list.
 10. The box has a hard 12 hour life from boot: read it, `date -u -d @$(awk '/btime/{print $2}' /proc/stat)`, add
@@ -158,35 +158,41 @@ it builds a commit on top of origin/main from git objects carrying ONLY the serv
 main's `satellites/keepsies` tree hash against step 0's and STOPS if it moved; `DRY=1` stops before the push. Run it
 with `DRY=1` once. Put the line in START-HERE for Stephen: `! bash /home/codespace/kp-drafts/deploy-keepsies-m1.sh`.
 
-## MILESTONE m2: THE OBSTACLES, STEPHEN'S IDEA (steps 9 to 11; only with three hours left, else the next order)
+## MILESTONE m2: THE STATUES, STEPHEN'S IDEA (steps 9 to 11; only with three hours left, else the next order)
 
-**Step 9. The obstacle set and the placement input (M).** A Ringer house rule, OBSTACLES, off by default, beside
-KEEPS, SLIPS, BOMBING and POISON. Three obstacle kinds as static Rapier colliders drawn by code in the lot's palette
-(no art yet): a wall (a 1 foot chalk block), a ramp (a 1 foot wedge), a sand patch (a 1 foot disc of high friction).
-Before the lag, a placement phase: the players alternate placing two obstacles each (the AI places by a seeded rule),
-anywhere on the dirt inside the ring but never within one foot of the cross or of the ring's edge. The input is the
-whole point: a finger drags the obstacle from a tray at the bottom (48 px tiles), the obstacle follows the finger on
-the dirt with a chalk shadow showing the legal footprint (red word "Not here" when illegal, never colour alone),
+**Step 9. The statues and the placement input (M).** Stephen: "a small statue that may have different shapes." A
+Ringer house rule, STATUES, off by default, beside KEEPS, SLIPS, BOMBING and POISON. Four statue shapes, each a small
+stone figure about 60 mm tall (three marbles high, small against a ten foot ring) as a static Rapier collider built
+by code in the lot's palette (no art yet; the real figures are a Meshy lane, DECISIONS 1 and 2): the Column (tall and
+narrow, a glancing hit deflects), the Loaf (wide and low, it blocks), the Arch (a marble can be shot under it), the
+Orb on a plinth (round, a hit scatters). Each has one readable silhouette from the playing view and a chalk footprint
+on the dirt. Before the lag, a placement phase: the players alternate placing two statues each (the AI places by a
+seeded rule), anywhere on the dirt inside the ring but never within one foot of the cross or of the ring's edge. The input is the
+whole point: a finger drags the statue from a tray at the bottom (48 px tiles, one per shape), the statue follows the
+finger on the dirt with a chalk shadow showing the legal footprint (red word "Not here" when illegal, never colour alone),
 snaps to a half foot grid, and lands where the finger lifts; a Confirm button and an Undo (both 48 px) sit in the
-tray; nothing is placed by a tap alone. Deterministic: the obstacle list is part of the match setup record and the
-harness replays it. Gate: fast check with a new harness scenario `ringer_obstacles` (a match with four obstacles
-completes, the shooter never passes through a wall, the ramp lifts a marble); ONE shot: the placement phase; look.
+tray; nothing is placed by a tap alone. Deterministic: the statue list (shape, position, owner) is part of the match
+setup record and the harness replays it. Gate: fast check with a new harness scenario `ringer_statues` (a match with
+four statues completes, the shooter never passes through the Loaf, a marble passes under the Arch); ONE shot: the
+placement phase; look.
 
-**Step 10. Moving an obstacle (S/M).** During the match, a player may spend their turn moving ONE of their own
-obstacles up to two feet (the same drag, the same legality, Confirm or Undo) instead of shooting; the AI does it when
-a wall would block its best shot. A moved obstacle may not touch a marble. Gate: fast check and the scenario
+**Step 10. Moving a statue (S/M).** During the match, a player may spend their turn moving ONE of their own statues
+up to two feet (the same drag, the same legality, Confirm or Undo) instead of shooting; the AI does it when a statue
+blocks its best shot. A moved statue may not touch a marble. Gate: fast check and the scenario
 extended; ONE shot: a move in progress; look.
 
 **Step 11. The feel gate, the stamp, STOP (m2).** `node tools/frontdoor.mjs /home/codespace/kp-drafts/front-obstacles
-more` extended with a placement and a move by real pointer events (drag, lift, confirm) asserting the obstacle landed
+more` extended with a placement and a move by real pointer events (drag, lift, confirm) asserting the statue landed
 where the finger lifted and the snap still works after; open its shots. The full check once, detached. Stamp
 `20261105b`. Commit and push. A second deploy script `deploy-keepsies-m2.sh` on the same template (it carries m1 and
 m2). START-HERE gets both lines in order; Stephen runs the latest. Then stop.
 
 ## DECISIONS for Stephen (not built overnight; Fable raises them in the morning)
 
-1. **The obstacle kinds and the rules.** Built as wall, ramp, sand patch; two each; one move per turn instead of a
-   shot. His list may differ (a drain, a bumper, a lamp post); the placement input stays.
+1. **The statues.** Built as four code shapes (Column, Loaf, Arch, Orb); two each; one move per turn instead of a
+   shot. The real figures are sculpts: Astra's fourteen expansion references (boba buddy, moss boss, tiny tyrant,
+   void loaf and the rest) are small statue shapes already and could be the set, standing on the dirt instead of
+   inside glass; a Meshy lane, his. His list of shapes may differ; the placement input stays.
 2. **The grails' sculpts.** Astra's four references are ready for Meshy (and fourteen expansion figures). Meshy is
    paid and his: `satellites/ripcord/tools/forge3d/meshyfit.py` resumes by task id. Nothing was generated.
 3. **The expansion bank** (240 designs, wave 1 = 30 procedural in three families plus three sculpts): its own
