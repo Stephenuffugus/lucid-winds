@@ -47,7 +47,7 @@ circle_positions.json, ui_tokens.css). Read ASSESSMENT.md and STYLE-GUIDE.md onc
 ## THE STEPS (in order; each ends green on the check, committed and pushed)
 
 **Step 0. Prep (10 min).** `(cd /workspaces/lucid-winds && python3 -m http.server 8777 >/dev/null 2>&1 &)`. Run the
-check (red today: 59, mostly emoji, dashes, zoom). Shoot the whole studio once to `/home/codespace/studio-drafts/
+check (red today: 60, mostly emoji, dashes, zoom). Shoot the whole studio once to `/home/codespace/studio-drafts/
 before/` as the before set. `mkdir -p /home/codespace/studio-drafts`. Note the count in STATE.
 
 **Step 1. The assets in (S).** Make `assets/games/song/` from the pack: `starters/` (the eleven 320x200 PNGs, named as

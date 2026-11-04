@@ -1,5 +1,10 @@
 # START HERE
 
+## 🎛 4 Nov 04:35 UTC (Fable) MUSIC STUDIO: ASTRA'S PACK IS IN, OPUS BUILDS THE RESKIN OVERNIGHT FROM MUSIC_STUDIO_BUILD_PLAN.md
+- Astra's pack v1 (7.5 MB, 193 assets): vault `astra-music-studio-pack-v1-20261104`, unpacked at /workspaces/music-studio-astra-v1/pack/music-studio-astra-pack-v1/ (not in git), docs in docs/briefs/music-studio/astra-v1/. Blockers it found on the live site: .htaccess sends `microphone=()` (Hum and the Sampler cannot work), false copyright copy, soundfont is CC BY 3.0, targets under 48 px, swallowed save errors.
+- The order is MUSIC_STUDIO_BUILD_PLAN.md (9 steps, its STATE block says where the builder is; a session that resumes after a box stop continues from the first step not DONE). Gate: `node tools/studio-tests/check.js`; shots: `tools/studio-tests/shoot.mjs`. Never push main: the builder leaves `! bash /home/codespace/studio-drafts/deploy-studio-m1.sh` for Stephen. The box stops about 13:56 UTC.
+- Stephen's five decisions wait at the plan's end (grid cells, the name, the sound drawer, sample storage, store shots).
+
 ## 📷 4 Nov 04:05 UTC (Fable) SHUTTERBUG sb-m1-22 LIVE (main 6d5a42f31, tag sb-m1-22, both origins proven): THE DROP THROUGH. MUSIC STUDIO PACK FOR ASTRA IS IN DRIVE
 - sb-m1-22 LIVE (deploy 6d5a42f31 by his line, index sha b816a2c3 on both origins): down on the stick (a 28 px pull, let go at 16) and A on a one way drops the bug through it; on a solid it is a plain jump; ArrowDown on a keyboard. Lint OK, harness --fast OK (8114), a scratch node run proves plank to floor. Next: his feel of the 28 px deadzone on the Pixel; the three design calls below.
 - His three Shutterbug notes, answered not built (his calls): Shield Kick fires ONLY on a wall jump (code: `wallSide !== 0 && shieldKick`), so a ground jump shows nothing; the Darkroom's prints and start pick read as two unrelated lists; the weapons are 8 jump + 8 dive + 6 charms with no upgrade path.
