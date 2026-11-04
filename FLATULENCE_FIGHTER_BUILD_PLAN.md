@@ -17,7 +17,7 @@ windows, bands, anchors are all in there).
 | Step | State | Commit | Note |
 |---|---|---|---|
 | 0 | DONE | 3e7262269 (start) | check red at 72; before set in /home/codespace/ff-drafts/before/ (16 screens, no page errors); origin/main 33db6ef8f blobs at start: index.html 060c5013, og/card.jpg 46634ec2, thumb b9118678 (equal to the branch); box booted 17:41 UTC, stops 05:01 UTC (12 h less 40 min) |
-| 1 | TODO | | |
+| 1 | DONE | (next row) | satellites/flatulence-fighter/assets/ stage 18, onlookers 27, controls 29, wardrobe 10, sharing 3, store 6 (pack names kept); 75 symbol sprite inline (tools/ff-tests/build-sprite.js: 53 icons, 18 medals, equipped, lock, two wordmarks) + ic(); ART_V 20261104a + art(); icon-192/512/maskable, manifest.json (paper theme) linked, the inline blob manifest gone; og/card.jpg from social_card (q85); portal thumb square 480x480 (the portal shows .shot at 1/1, most thumbs are 480 square); check still 72 (asset rule green, nothing named yet) |
 | 2 | TODO | | |
 | 3 | TODO | | |
 | 4 | TODO | | |
