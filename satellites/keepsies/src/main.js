@@ -41,6 +41,7 @@ import { makeRng } from './core/rng.js?v=20260905a';
 import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260905a';
 import { art, loadIcons, ic } from './render/art.js?v=20260905a';
 import { face } from './render/portraits.js?v=20260905a';
+import * as PROV from './meta/provenance.js?v=20260905a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -227,11 +228,13 @@ function wireButtons() {
   });
   $('setupGo').addEventListener('click', () => { beginMatch(); });
   $('tinTake').addEventListener('click', () => { takeTheTin(); });
+  $('poKeep').addEventListener('click', () => { $('pouchOpen').hidden = true; });
   $('setupBack').addEventListener('click', () => { showScreen('title'); });
   $('rsPay').addEventListener('click', () => {
     if (!G.ransomOffer) return;
     const r = RANSOM.pay(G.ransomOffer.uid, Date.now());
     if (!r.ok) { $('rsSay').textContent = r.reason; return; }
+    PROV.record([PROV.event('reclaimed', G.ransomOffer.uid, { opp: G.ransomOffer.from || null, why: 'bought back' })]);
     G.save = SAVE.load();
     paintWallet();
     // it comes home the way anything else does, with its name said out loud
@@ -300,6 +303,31 @@ function wireButtons() {
 }
 
 /* ---------------------------------------------------------------- screens */
+
+/**
+ * Inspect's history (step 6): the latest event as a line ("Won off Dusty Coyle"; a reclaimed marble reads
+ * Returned), and the whole list under it, oldest first. A marble from before provenance has its one line.
+ */
+function paintProvenance(item) {
+  const el = $('iProv');
+  el.textContent = '';
+  const hist = item ? PROV.historyOf(G.save, item.uid) : [];
+  if (!hist.length) { el.textContent = provenance(item); return; }
+  const last = document.createElement('span');
+  last.className = 'last';
+  last.textContent = PROV.lineFor(hist[hist.length - 1]);
+  el.appendChild(last);
+  if (hist.length > 1) {
+    const ul = document.createElement('ul');
+    ul.className = 'hist';
+    for (const e of hist) {
+      const li = document.createElement('li');
+      li.textContent = PROV.lineFor(e) + ', ' + new Date(e.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      ul.appendChild(li);
+    }
+    el.appendChild(ul);
+  }
+}
 
 /* the faces (render/portraits.js): Dusty across the ring at setup, kept it on his card, the 96 px chip in the
    HUD; anyone without a face shows none, never a placeholder */
@@ -544,7 +572,18 @@ function takeTheTin() {
     id: pick.id, uid: pick.id + '-heirloom', acquired: Date.now(),
     source: 'starter', cosmeticSeed: 0.5
   });
-  SAVE.merge({ inventory: give });
+  /* each marble's first event is written with it; the heirloom, the player's first rare, goes into the case
+     (DESIGN 16.4 and 17: the first rare auto showcases, and a showcased marble is never staked), which is what
+     the tin's line promises */
+  const now = Date.now();
+  SAVE.merge({ inventory: give, provenance: give.map(i => PROV.event('owned', i.uid, { at: i.acquired || now, why: i.source })) });
+  const heir = pick.id + '-heirloom';
+  let cased = false;
+  SAVE.update((s) => {
+    s.showcase = s.showcase || [];
+    if (s.showcase.indexOf(heir) < 0 && s.inventory.some(i => i.uid === heir)) { s.showcase.push(heir); cased = true; }
+  });
+  if (cased) PROV.record([PROV.event('showcased', heir, { at: now + 1, why: 'first rare' })]);
   G.save = SAVE.load();
   G.onboard.fire('tookTheTin');
   openCollection();
@@ -556,6 +595,7 @@ function openCollection() {
   buildGrid();
   buildOffers();
   buildPouches();
+  buildCase();
   $('pouchSay').textContent = '';
   /* ⛔ THE TIN HAS TO LEAD SOMEWHERE. Beat 4 ends on this screen with a shelf full
      of marbles and, before this, no way forward except BACK to a title screen: the
@@ -595,6 +635,10 @@ function buildOffers() {
         b.appendChild(c);
       } catch (err) { }
     }
+    // Astra's envelope: the offer is a letter from whoever holds it
+    const env = document.createElement('img');
+    env.className = 'env'; env.alt = ''; env.src = art('ui/ransom_envelope.svg');
+    b.appendChild(env);
     const words = document.createElement('span');
     words.className = 'words';
     const line = document.createElement('span');
@@ -639,16 +683,25 @@ function buildPouches() {
     b.type = 'button';
     b.id = 'pouch-' + kind;
     b.disabled = bal < t.price;
+    /* ⛔ A POUCH IS AN OBJECT WITH ITS TERMS ON IT (step 6): Astra's closed pouch, its price, its odds and
+       the pity progress, all printed before the buy, never after */
+    const img = document.createElement('img');
+    img.className = 'pouchImg'; img.alt = ''; img.src = art('ui/pouch_' + kind + '_closed.webp');
+    b.appendChild(img);
     const name = document.createElement('span');
-    name.textContent = t.name + ', ' + t.price;
+    name.className = 'pname';
+    name.textContent = t.name + ', ' + t.price + ' sunbeams';
+    const odds = document.createElement('span');
+    odds.className = 'sub';
+    odds.textContent = t.odds;
     const sub = document.createElement('span');
-    sub.className = 'sub';
+    sub.className = 'sub pity';
     const guard = G.drops.nextGuarantee(kind);
     const promises = [];
     if (guard.rare != null) promises.push('a rare within ' + guard.rare);
     if (guard.epic != null) promises.push('an epic within ' + guard.epic);
-    sub.textContent = promises.length ? promises.join(', ') : t.odds;
-    b.appendChild(name); b.appendChild(sub);
+    sub.textContent = promises.length ? 'Owed: ' + promises.join(', ') : '';
+    b.appendChild(name); b.appendChild(odds); if (sub.textContent) b.appendChild(sub);
     b.addEventListener('click', () => openPouch(kind));
     row.appendChild(b);
   }
@@ -668,6 +721,66 @@ function openPouch(kind) {
   paintWallet();
   buildGrid();
   buildPouches();
+  buildCase();
+  showPouchOpen(kind, res, line);
+}
+
+/* Astra's open pouches: the mouth of each (anchors.json, in her 640 px master) as fractions of the plate */
+const POUCH_MOUTH = { standard: [174, 141, 276, 109], collector: [178, 142, 278, 112], grail: [174, 135, 280, 112] };
+
+/**
+ * The reveal (step 6). The buy is already written; this only shows it: the open pouch with the live render of
+ * what came out clipped inside its mouth, at once (no wait before Keep it; reduced motion changes nothing,
+ * because nothing here moves).
+ */
+function showPouchOpen(kind, res, line) {
+  const v = $('pouchOpen');
+  $('poHead').textContent = (G.dropTables[kind] || {}).name || 'A pouch';
+  $('poImg').src = art('ui/pouch_' + kind + '_open.webp');
+  const m = POUCH_MOUTH[kind] || POUCH_MOUTH.standard, mouth = $('poMouth');
+  mouth.style.left = (m[0] / 6.4) + '%'; mouth.style.top = (m[1] / 6.4) + '%';
+  mouth.style.width = (m[2] / 6.4) + '%'; mouth.style.height = (m[3] / 6.4) + '%';
+  mouth.textContent = '';
+  const c = document.createElement('canvas');
+  c.width = c.height = 168;
+  mouth.appendChild(c);
+  G.thumbs.open(168); G.thumbs.paint(c, res.entry, 0); G.thumbs.close();
+  $('poName').textContent = res.entry.name;
+  $('poTier').innerHTML = ic(res.entry.tier) + '<span></span>';
+  $('poTier').lastChild.textContent = TIER_LABEL[res.entry.tier] || res.entry.tier;
+  $('poTier').className = 'ribbon t-' + res.entry.tier;
+  $('poSay').textContent = line;
+  v.hidden = false;
+}
+
+/**
+ * The case (step 6): Astra's shelf plate, six wells (twelve once the case is upgraded, DESIGN 17), with the
+ * live render of each showcased marble at its well's centre. Hidden while the case is empty.
+ */
+const CASE_6 = [[150, 160], [450, 160], [750, 160], [150, 480], [450, 480], [750, 480]];
+const CASE_12 = [[120, 160], [340, 160], [560, 160], [780, 160], [120, 330], [340, 330], [560, 330], [780, 330], [120, 500], [340, 500], [560, 500], [780, 500]];
+function buildCase() {
+  const wrap = $('caseWrap'), shelf = $('case');
+  if (!wrap || !shelf) return;
+  const uids = (G.save.showcase || []).filter(u => G.save.inventory.some(i => i.uid === u));
+  wrap.hidden = !uids.length;
+  shelf.textContent = '';
+  if (!uids.length) return;
+  const big = uids.length > 6, wells = big ? CASE_12 : CASE_6;
+  shelf.style.backgroundImage = 'url(' + art(big ? 'ui/showcase_12.svg' : 'ui/showcase_6.svg') + ')';
+  G.thumbs.open(96);
+  uids.slice(0, wells.length).forEach((u, k) => {
+    const item = G.save.inventory.find(i => i.uid === u);
+    const e = item && G.catalog.marbles.find(mm => mm.id === item.id);
+    if (!e) return;
+    const c = document.createElement('canvas');
+    c.width = c.height = 96;
+    c.style.left = (wells[k][0] / 9) + '%'; c.style.top = (wells[k][1] / 6) + '%';
+    c.title = e.name;
+    shelf.appendChild(c);
+    G.thumbs.paint(c, e, k);
+  });
+  G.thumbs.close();
 }
 
 const FILTERS = [['all', 'All'], ['stakeable', 'Stakeable']].concat(
@@ -704,7 +817,7 @@ function buildFilters() {
 function buildGrid() {
   const grid = $('grid');
   grid.textContent = '';
-  const groups = groupForGrid(G.save.inventory, G.catalog, G.filter);
+  const groups = groupForGrid(G.save.inventory, G.catalog, G.filter, new Set(G.save.showcase || []));
   G.thumbs.open(128);
   let idx = 0;
   for (const g of groups) {
@@ -770,7 +883,7 @@ function openInspect(entry, item) {
     const dd = document.createElement('dd'); dd.textContent = v;
     dl.appendChild(dt); dl.appendChild(dd);
   }
-  $('iProv').textContent = provenance(item);
+  paintProvenance(item);
   // only a card that overflows its box may take the pointer; otherwise a drag on the text spins the marble
   const card = $('inspectCard');
   card.scrollTop = 0;
@@ -800,7 +913,7 @@ function buildAnte() {
   if (wrap.hidden) { G.stake = []; G.theirStake = []; G.anteOk = true; return; }
   const strip = $('stakeStrip');
   strip.textContent = '';
-  const groups = groupForGrid(G.save.inventory, G.catalog, 'stakeable');
+  const groups = groupForGrid(G.save.inventory, G.catalog, 'stakeable', new Set(G.save.showcase || []));
   G.thumbs.open(96);
   let i = 0;
   for (const g of groups) {
@@ -1005,6 +1118,7 @@ function startMatch(opts) {
     }
   });
   buildMeshes();
+  G.matchId = 'm' + Date.now().toString(36);   // the match a provenance event names
   // the chalk for THIS match: the ring at its size, the cross marker under the lay, the lag line
   if (G.ground && G.ground.dress) G.ground.dress(G.R.ringRadius, (G.R.match.houseRules || {}).formation);
   G.R.doLag();
@@ -1502,6 +1616,9 @@ function finishMatch(s) {
   const names = G.R.state.techniques.map(id => (RINGER_TECHNIQUES[id] || {}).name).filter(Boolean);
   /* the pot settles here, and it is the only place a staked marble changes hands */
   const pot = potUp() ? settle(won ? 0 : 1) : { won: [], lost: [], returned: [] };
+  // ⛔ provenance is written only AFTER the result transaction above has moved the marbles
+  PROV.record(pot.won.map(m => PROV.event('won', m.uid, { opp: oppName, match: G.matchId, why: 'keepsies' }))
+    .concat(pot.lost.map(m => PROV.event('lost', m.uid, { opp: oppName, match: G.matchId, why: 'keepsies' }))));
   G.save = SAVE.load();
   G.stake = [];
   // an inventory item carries an id, not a name: the name lives in the catalog,

@@ -106,6 +106,29 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 .t-epic .tw,#iTier.t-epic{color:#d7a0d9}
 .t-grail .tw,#iTier.t-grail{color:#e6c56a}
 #iTier .ic{width:16px;height:16px;margin-right:6px;vertical-align:-3px}
+/* ---- step 6: the economy's objects ---- */
+#collection #pouches{width:100%;max-width:23rem}
+#collection #pouches button{display:grid;grid-template-columns:72px 1fr;grid-template-rows:auto auto auto;column-gap:12px;align-items:center;
+  justify-items:start;text-align:left;padding:8px 12px;min-height:88px;width:100%;max-width:none;flex:1 1 100%}
+#pouches .pouchImg{grid-row:1 / span 3;width:72px;height:72px;object-fit:contain}
+#pouches .pname{font-size:.86rem}
+#pouches .pity{color:var(--brass)}
+#poPlate{position:relative;width:min(280px,76vw);aspect-ratio:1}
+#poImg{width:100%;height:100%;display:block}
+#poMouth{position:absolute;clip-path:ellipse(50% 50% at 50% 50%);display:flex;align-items:center;justify-content:center}
+#poMouth canvas{height:95%;width:auto;aspect-ratio:1}
+#poTier .ic{width:16px;height:16px;margin-right:6px;vertical-align:-3px}
+#pouchOpen{background:var(--bg)}
+#poTier.t-common{color:#b9b4a4}#poTier.t-uncommon{color:#85bda8}#poTier.t-rare{color:#91bce1}#poTier.t-epic{color:#d7a0d9}#poTier.t-grail{color:#e6c56a}
+#poSay{max-width:20rem;color:var(--chalk);font-size:.9rem;margin:0}
+#caseWrap{width:100%;max-width:23rem}
+#case{aspect-ratio:900/600;background-size:100% 100%}
+#case canvas{position:absolute;width:10%;height:auto;aspect-ratio:1;margin:-5% 0 0 -5%}
+#ante.cloth{background-size:100% 100%;background-repeat:no-repeat;padding:14px 16px;border-radius:12px}
+#rLevel[data-art]{background-size:100% 100%;background-repeat:no-repeat;padding:18px 16px}
+#offers .env{width:44px;height:auto;flex:none;margin-right:8px}
+#iProv .last{display:block;color:var(--chalk)}
+#iProv .hist{list-style:none;margin:6px 0 0;padding:0;font-size:.8rem;color:var(--muted)}
 /* the render sits INSIDE her frame (its edges carry her dark fill, which cropped the marble when it lay over it) */
 .tile canvas{position:absolute;left:6px;right:6px;top:15px;bottom:6px;width:auto;height:auto;object-fit:contain}
 .tile .cnt{z-index:3}
@@ -493,7 +516,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
     <p id="oppLine">Beat everyone on his street. His street is small.</p>
   </div>
   <div id="hrRow"></div>
-  <div id="ante" hidden>
+  <div id="ante" class="cloth" data-art="ui/pot_cloth.svg" hidden>
     <p class="antelabel">Your stake</p>
     <div id="stakeStrip"></div>
     <p id="anteSay"></p>
@@ -559,10 +582,22 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
        deadline on it, and under the grid it was the least visible thing here:
        the screenshot of a live offer did not contain the offer. -->
   <div id="offers"></div>
+  <!-- the case (DESIGN 17): Astra's shelf with the live render in each well -->
+  <div id="caseWrap" hidden><p class="antelabel">The case</p><div id="case" class="plate"></div></div>
   <div id="filters"></div>
   <div id="grid"></div>
   <div id="pouches"></div>
   <p id="pouchSay"></p>
+</div>
+
+<!-- the pouch reveal (step 6): the buy is written before this opens -->
+<div id="pouchOpen" class="veil" hidden>
+  <p class="studio" id="poHead">Standard Pouch</p>
+  <div id="poPlate"><img id="poImg" alt=""><div id="poMouth"></div></div>
+  <p class="ribbon" id="poTier"></p>
+  <h2 id="poName"></h2>
+  <p id="poSay"></p>
+  <button id="poKeep">Keep it</button>
 </div>
 
 <div id="inspect" hidden>
@@ -588,7 +623,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
     <div class="row"><span>Sunbeams</span><span id="rSun">0</span></div>
     <div class="row"><span>Progress</span><span id="rXp">0 XP</span></div>
     <p class="why" id="rWhy"></p>
-    <p class="levelup" id="rLevel" hidden></p>
+    <p class="levelup" id="rLevel" data-art="ui/level_up.svg" hidden></p>
   </div>
   <button id="again">Rematch</button>
   <button id="toTitle" class="quiet">Home</button>

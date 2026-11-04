@@ -18,7 +18,7 @@
  * than dying on the first save.
  */
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;   // v2 (4 Nov 2026): provenance, an append only event list
 const KEY = 'keepsies.save.v1';
 
 /* ---------------------------------------------------------------- backends */
@@ -65,6 +65,8 @@ export function blank() {
       level: 1, xp: 0, league: 1, techniques: []
     },
     inventory: [],
+    // every marble's history, append only (meta/provenance.js): { eid, uid, kind, at, opp, match, why }
+    provenance: [],
     showcase: [],
     wallet: { sunbeams: 0 },
     clayPool: { count: 10, lastRegen: 0 },
@@ -95,6 +97,17 @@ export function blank() {
  */
 const MIGRATIONS = {
   // 0: (s) => { ...; s.v = 1; return s; }
+  /* v1 to v2: provenance. Every marble already held gets ONE `owned` event dated when it arrived, from where
+     it came; no other past is invented. Nothing else moves: every uid, id, unlock and threshold survives. */
+  1: (s) => {
+    const have = new Set((s.provenance || []).map(e => e.uid));
+    s.provenance = (s.provenance || []).concat((s.inventory || []).filter(i => i && i.uid && !have.has(i.uid)).map(i => ({
+      eid: 'm1' + String(i.uid), uid: i.uid, kind: 'owned', at: i.acquired || 0, opp: i.wonFrom || null,
+      match: null, why: i.wonFrom ? 'won' : (i.source || null)
+    })));
+    s.v = 2;
+    return s;
+  }
 };
 
 export function migrate(raw) {
@@ -151,6 +164,12 @@ export function merge(partial) {
     if (partial.inventory) {
       const have = new Set(s.inventory.map(m => m.uid));
       for (const m of partial.inventory) if (!have.has(m.uid)) s.inventory.push(m);
+    }
+    // provenance is append only, by event id: a second tab can add, never remove or repeat
+    if (partial.provenance) {
+      s.provenance = s.provenance || [];
+      const seen = new Set(s.provenance.map(e => e.eid));
+      for (const e of partial.provenance) if (e && !seen.has(e.eid)) { s.provenance.push(e); seen.add(e.eid); }
     }
     // ⛔ ransoms merge by uid like the inventory, never by replacement. Two tabs
     // that both saw a loss must not end up with the marble offered twice, and a

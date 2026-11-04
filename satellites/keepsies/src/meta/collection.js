@@ -212,7 +212,7 @@ export function useMaterialFactory(mod) { MAT = mod; }
  * Group an inventory into what the grid shows: one tile per catalog entry, with
  * a count, because ten identical clay marbles are ten marbles and one tile.
  */
-export function groupForGrid(inventory, catalog, filter) {
+export function groupForGrid(inventory, catalog, filter, locked) {
   const byId = {};
   for (const m of catalog.marbles) byId[m.id] = m;
   const groups = new Map();
@@ -220,6 +220,8 @@ export function groupForGrid(inventory, catalog, filter) {
     const entry = byId[item.id];
     if (!entry) continue;
     if (filter === 'stakeable' && entry.stakeable === false) continue;
+    // DESIGN 17: a marble in the case is unstakeable, unloseable, unplayable
+    if (filter === 'stakeable' && locked && locked.has(item.uid)) continue;
     if (TIER_ORDER.indexOf(filter) >= 0 && entry.tier !== filter) continue;
     let g = groups.get(item.id);
     if (!g) { g = { entry, count: 0, items: [] }; groups.set(item.id, g); }

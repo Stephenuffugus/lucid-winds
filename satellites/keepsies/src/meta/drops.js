@@ -18,6 +18,7 @@
  * highest epic instead. A one of one that arrives twice is not a one of one.
  */
 import * as SAVE from './save.js?v=20260905a';
+import { event as provEvent } from './provenance.js?v=20260905a';
 import { TIER_ORDER } from './tiers.js?v=20260905a';
 
 /**
@@ -98,9 +99,7 @@ export function createDrops(tables, catalog, tuning) {
     const table = tables[kind];
     if (!table) throw new Error('drops: no pouch called "' + kind + '"');
     const save = SAVE.load();
-    if (!economy.spend(table.price, kind + ' pouch')) {
-      return { ok: false, why: 'not enough sunbeams' };
-    }
+    if (save.wallet.sunbeams < table.price) return { ok: false, why: 'not enough sunbeams' };
     const counters = (save.pity && save.pity[kind]) || {};
     const ownedGrails = save.inventory
       .map(i => (catalog.marbles.find(m => m.id === i.id) || {}))
@@ -111,24 +110,35 @@ export function createDrops(tables, catalog, tuning) {
 
     const already = save.inventory.some(i => i.id === res.entry.id);
     const dupe = already && res.entry.tier === 'grail';   // only grails never duplicate
-    let dust = 0;
-    if (dupe) {
-      dust = economy.dustFor(res.entry.tier);
-      economy.earn(dust, 'dust');
-    } else {
-      SAVE.merge({
-        inventory: [{
-          id: res.entry.id, uid: res.entry.id + '-' + Date.now().toString(36),
-          acquired: Date.now(), source: 'pouch', cosmeticSeed: rng.next()
-        }]
-      });
-    }
+    const dust = dupe ? economy.dustFor(res.entry.tier) : 0;
+    const now = Date.now();
+    const item = dupe ? null : { id: res.entry.id, uid: res.entry.id + '-' + now.toString(36),
+      acquired: now, source: 'pouch', cosmeticSeed: rng.next() };
+    /* ⛔ ONE TRANSACTION (step 6). The price, the pity counters, the drawn marble (or its dust) and its first
+       provenance event are written together, BEFORE anything is shown: a tab closed on the reveal has paid
+       for exactly what it holds. A second tab that spent the money first leaves nothing written at all. */
+    let ok = false;
     SAVE.update((s) => {
+      if (s.wallet.sunbeams < table.price) return;
+      s.wallet.sunbeams -= table.price;
+      s.stats.spent = (s.stats.spent || 0) + table.price;
+      if (dupe) { s.wallet.sunbeams += dust; s.stats.earned = (s.stats.earned || 0) + dust; }
+      else {
+        if (!s.inventory.some(i => i.uid === item.uid)) s.inventory.push(item);
+        s.provenance = s.provenance || [];
+        s.provenance.push(provEvent('owned', item.uid, { at: now, why: 'pouch' }));
+      }
       if (!s.pity) s.pity = {};
       s.pity[kind] = res.counters;
       s.stats.pouches = (s.stats.pouches || 0) + 1;
+      ok = true;
     });
-    return { ok: true, entry: res.entry, tier: res.tier, dust, pitied: res.pitied, rerolled: res.rerolled };
+    if (!ok) return { ok: false, why: 'not enough sunbeams' };
+    if (economy.notify) {
+      economy.notify({ kind: 'spend', amount: table.price, reason: kind + ' pouch' });
+      if (dust) economy.notify({ kind: 'earn', amount: dust, reason: 'dust' });
+    }
+    return { ok: true, entry: res.entry, tier: res.tier, dust, pitied: res.pitied, rerolled: res.rerolled, uid: item ? item.uid : null };
   }
 
   /** How many pulls until the next guarantee, for the "next rare in N" line. */

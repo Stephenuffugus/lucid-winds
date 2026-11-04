@@ -309,6 +309,17 @@ await page.evaluate(() => window.KEEPSIES_DEV.camera(20, -25, 1.2));
 await wait(400);
 await shot('k1-under');
 
+/* step 6: the pouches as objects (terms printed before the buy), then a reveal; shot last so no earlier
+   screen sees the extra sunbeams or level */
+await page.evaluate(() => { const d = window.KEEPSIES_DEV; d.grantXp(400); d.grantSunbeams(2000); d.collection(); });
+await wait(900);
+await page.evaluate(() => document.getElementById('pouches').scrollIntoView({ block: 'center' }));
+await wait(300);
+await shot('k2-pouches');
+await page.evaluate(() => { const b = document.getElementById('pouch-standard'); if (b) b.click(); });
+await wait(600);
+await shot('k2-pouch-open');
+
 await browser.close();
 server.close();
 console.log('SHOTS OK');

@@ -69,6 +69,17 @@ say(fresh.inventory.length === 0 && fresh.stats.matches === 0 && fresh.wallet.su
   'a wipe bypasses the merge and really is empty');
 say(JSON.stringify(load()) === JSON.stringify(blank()), 'and what loads afterwards is a blank save');
 
+/* ---- provenance (v2, 4 Nov 2026): a key gained, the record bumped first, nothing lost ---- */
+const v1 = { v: 1, inventory: [{ uid: 'lutz-heirloom', id: 'lutz', acquired: 5, source: 'starter' }, { uid: 'w1', id: 'commie', acquired: 9, wonFrom: 'Dusty Coyle' }], wallet: { sunbeams: 7 } };
+const up2 = migrate(JSON.parse(JSON.stringify(v1)));
+say(up2.v === 2 && up2.inventory.length === 2 && up2.wallet.sunbeams === 7, 'a v1 save migrates to v2 with every uid and the wallet as they were');
+say(up2.provenance.length === 2 && up2.provenance.every(e => e.kind === 'owned'), 'and each marble it held gains ONE owned event, no invented past');
+say(up2.provenance[1].opp === 'Dusty Coyle', 'and a marble won before v2 keeps who it came off');
+wipe();
+merge({ provenance: [{ eid: 'x1', uid: 'a', kind: 'owned', at: 1 }] });
+merge({ provenance: [{ eid: 'x1', uid: 'a', kind: 'owned', at: 1 }, { eid: 'x2', uid: 'a', kind: 'won', at: 2 }] });
+say(load().provenance.length === 2, 'provenance appends by event id: two tabs never write one event twice');
+
 console.log('');
 if (fails.length) { console.log(fails.length + ' FAILED\nSAVE FAILED'); process.exit(1); }
 console.log('SAVE OK');

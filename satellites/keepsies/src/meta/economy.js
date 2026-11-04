@@ -45,6 +45,9 @@ export function createEconomy(tuning, deps) {
 
     balance() { return SAVE.load().wallet.sunbeams; },
 
+    /** Tell the listeners about a move written elsewhere in one transaction (a pouch buy, meta/drops.js). */
+    notify(what) { fire(what); },
+
     /** Earn, with a reason. Dust is an earn reason, not a second currency. */
     earn(n, reason) {
       const amount = Math.max(0, Math.round(n));
