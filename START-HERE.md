@@ -8,6 +8,7 @@
 - Step 4 DONE: fixed two row transport, new lane heads (badge, name, sound, open button) with Mute, Solo, Volume, Dice on a second row and effects under Shape sound, section chips marked by underline and border, every control 48 px, Keys scroll at 360. One shot looked at; its three faults fixed.
 - Step 5 DONE: Start a Song is two columns of Astra's covers with name and BPM, the ribbon, Resume first when there is a draft, Blank Canvas with a cover, and the pick starts the beat. Solid panels.
 - Step 6 DONE: My Songs rows show Astra's generated covers with name and edited date, Delete asks first, empty state art; saves never claim success after a failure (index, slot, autosave, legacy promotion); Backup downloads the song file with its song code.
+- Step 7 DONE: Hum shows Astra's art and plain states with the listening dots, and a weak take or a denied mic never touches the melody. The Sampler's record control is the pad face by state, with the frame around the real waveform.
 
 ## 🎛 4 Nov 04:35 UTC (Fable) MUSIC STUDIO: ASTRA'S PACK IS IN, OPUS BUILDS THE RESKIN OVERNIGHT FROM MUSIC_STUDIO_BUILD_PLAN.md
 - Astra's pack v1 (7.5 MB, 193 assets): vault `astra-music-studio-pack-v1-20261104`, unpacked at /workspaces/music-studio-astra-v1/pack/music-studio-astra-pack-v1/ (not in git), docs in docs/briefs/music-studio/astra-v1/. Blockers it found on the live site: .htaccess sends `microphone=()` (Hum and the Sampler cannot work), false copyright copy, soundfont is CC BY 3.0, targets under 48 px, swallowed save errors.
