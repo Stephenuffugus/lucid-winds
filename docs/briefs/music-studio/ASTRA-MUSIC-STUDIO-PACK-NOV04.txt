@@ -1,0 +1,192 @@
+MUSIC STUDIO, THE WHOLE PACK FOR ASTRA (4 Nov 2026)
+
+Stephen: "I really want to push this through to production because I really like the project. Give Astra a full
+handoff and have it give a zip back full of sick assets to make it look pro as hell, and any improvements we could
+maybe want to integrate. Then we publish it once it is polished and put together."
+
+So, like Loaf, this round is two jobs in one zip:
+  1. ASSESS the studio as it stands and say what would make it feel professional (a written review, a style guide,
+     a numbered plan of fixes and improvements, art and code separated).
+  2. PRODUCE the art that gets it there and gets it onto the store.
+Fable wires your zip into the app with Stephen from the zip alone, so write as if no one can ask you a follow up.
+
+WHAT MUSIC STUDIO IS
+A phone first music maker in one HTML file (no frameworks, Web Audio, nothing installed). Pick a starter (Hip Hop,
+Trap, Lo-Fi Chill, House, Pop, Reggaeton, Rock, Drum n Bass, Funk, Dreamy, or a blank canvas) and a full beat plays
+at once; then every note can be changed. Four lanes (Drums, Bass, Chords, Melody), a 16 step grid per lane, three
+sections (Verse, Chorus, Bridge) arranged into a song, 80 plus real instruments streamed on demand, a sampler that
+records the phone's mic onto drum pads, a hum to melody tool, live keys, a circle of fifths, a world rhythm
+generator, a full screen visualiser, and export as audio (WAV), as a music video (the visualiser recorded to a file),
+or as a song code you can paste to a friend. Songs save on the device.
+It lives at lucidwinds.com/studio.html and the arcade frames it at lucidwinds.com/play/song.html (card: Music Studio,
+Creative). It also runs inside the Lucid Winds app as a mini game, where saving or exporting earns Sunbeams.
+The plan is a Google Play listing of its own, like Shutterbug and Flock the World (a Trusted Web Activity of the live
+page, so every deploy reaches store players at once).
+
+THE HARD LINES (they bind the art too)
+- One HTML file, vanilla JavaScript, no frameworks. Art arrives as files the page loads (PNG, JPG, WebP, SVG) or as
+  CSS values. Nothing that needs a build step.
+- Phone first, portrait, 360 to 430 px wide, thumbs. Every target 48 px. It must still work on a desktop browser.
+- No audio files. Sound comes from synthesis and from General MIDI soundfonts streamed from a public CDN. You may
+  write sound design notes; you cannot send sounds.
+- No real brands. Nothing that reads as a specific product (no MPC pad grid lookalike, no Ableton clip colours as
+  identity, no Roland orange as a logo). The current badge says "PADLAB  MPK" in four primary squares: treat that
+  as the first thing to replace.
+- Generated art is never called hand painted. No mascot. No text baked into a plate unless the row asks for it: we
+  set every word in the app's fonts, so wordmarks and badges are the only lettering you draw.
+- Player facing words use no dashes of any kind and no exclamation marks (the studio's own copy law). Keep that in
+  any sample copy you write.
+- Google Fonts only for type. Today: Bebas Neue (display, all caps) and DM Mono (labels and values).
+
+WHAT IS IN THIS PACK
+- screens/: the studio today on a 412 px wide phone, from the real build:
+    01-start-a-song: the first screen a player sees, the starter picker over the grid
+    02-grid-top-hip-hop: the header, the transport, the section row, the Drums lane open with Hip Hop loaded
+    03-grid-lanes: the Bass, Chords and Melody lane heads, the FX row, the Prob and Ratchet row, the arrangement row
+    05-melody-lane-open: a note lane open (scale rows by 16 steps)
+    06-tools-open: the Tools row (Songs, Video, Sampler, Rhythm, Circle, Keys, Hum, Show, Metro, Audio, Save, Undo
+    and Redo, Copy and Paste, Song code)
+    07-my-songs: the saved songs list
+    08-rhythm-generator: the Euclidean rhythm tool and its twenty world rhythm presets
+    09-circle-of-fifths: the wheel, the key, the twelve progressions
+    10-keys: the live keys pad (seven columns, record to the grid)
+    11-hum-a-melody: hum into the mic and it lands on the melody grid
+    12-sampler: record or import a sound onto a drum pad (trim, normalise, reverse, pitch)
+    13-show-visualizer: the Show, full screen, playing Hip Hop; this frame is what the music video records
+    14-arcade-shell-page: the arcade's framing page round the studio, with its How to play card and the song unlock
+    sheet; this chrome is the fleet's, not yours, but your style guide should sit well under it
+- This brief.
+- The app's own palette and type, from its code:
+    bg #0d100c, dark #1a1e16, sage #7ab356, gold #c8a84b, cream #e8dcc8, muted #8a9178, stop red #c75050,
+    grid cell rgba(36,42,30,.6), cell on rgba(122,179,86,.85), border rgba(74,124,53,.2)
+    lane spines: Drums #e88a4a, Bass #c75050, Chords #a0c4e8, Melody #c8a84b
+    section colours: A Verse #7ab356, B Chorus #c8a84b, C Bridge #a0c4e8
+    type: Bebas Neue for headings and chips, DM Mono for everything else
+  This is the studio's "midnight greenhouse" look (deep blacks, sage, gold, cream). It is the house style of the
+  whole arcade. Keep it, evolve it, or argue for a music specific variant, but say why in the style guide.
+
+WHAT THE APP NAMES (draw these exact things)
+- The four lanes: Drums, Bass, Chords, Melody. Each lane head has: randomise (a dice today), octave down and up,
+  an instrument picker, a volume slider, Mute (M) and Solo (S), and Drums alone has a pattern strip and "+ Sample
+  Pad (0/3)".
+- The drum kits: Standard, 808, Lo-Fi, Electronic, House, World, Real Drums. Drum rows: Kick, Snare, Hi-Hat, O-Hat,
+  Clap, Tom, Rim, Crash.
+- The eleven starters, with their BPM: Hip Hop 92, Trap 140, Lo-Fi Chill 75, House 124, Pop 110, Reggaeton 95,
+  Rock 120, Drum n Bass 170, Funk 105, Dreamy 80, Blank Canvas.
+- The sections: A Verse, B Chorus, C Bridge, each with variations (A1, A2...), and the arrangement row of chips.
+- The twelve instrument families of the picker: Pianos and Keys, Bells and Mallets, Organs, Guitars, Basses,
+  Strings, Voices, Brass, Winds, Synths, World, Fun Sounds (80 plus instruments under them, General MIDI names).
+- The synth presets per lane: bass (Pluck Bass and others), chords (Warm Pad and others), melody (Sine Lead and
+  others).
+- The twelve chord progressions of the circle: Pop Canon, 50s Doo-Wop, Jazz ii-V-I, 12-Bar Blues, Andalusian,
+  Royal Road, Coltrane Changes, Plagal, Minor Descent, Rhythm Changes, Neo-Soul, Backdoor ii-V.
+- The twenty world rhythms of the generator: Tresillo, Cinquillo, Son Clave, Bossa Nova, Rumba Clave, Gahu,
+  Soukous, Aksak, Jhaptaal, Rupak, Tintal, Adi Tala, Misra Chapu, Khanda Chapu, Four-on-Floor, House Offbeat,
+  Afrobeat Bell, Dembow, Bembe, Shiko.
+- The tools: New (starters), Tools, Songs, Video, Audio, Sampler, Rhythm, Circle, Keys, Hum, Show, Metro, Save,
+  Save As New, Save to Kit, Copy and Paste (a section), Song code (copy and paste), Undo, Redo, Clear, Chorus (make
+  one from the verse), the suggest bulb, Hear (play the scale), Accent, Loop, Swing, Humanize, Groove, Key and Scale.
+- The FX row per lane: Filter, Res, Delay, Fb, Reverb, Pan. The step row: Prob (probability) and Ratchet (1x to 4x).
+- The sampler's pad tools: Record, Import, Trim, Normalize, Reverse, Pitch up, Pitch down, Save to Kit.
+- The Show: a radial spectrum ring round the song's name and BPM, trail fade, the section's colour, a footer
+  "made in Music Studio  lucidwinds.com" burned into the video.
+
+WHAT IS WRONG TODAY (our read; find the rest)
+- Every icon is an emoji. On the test phone half of them render as empty boxes (see 01 and 02), and on real phones
+  they are a different drawing on every device. The dice, the mic, the music note, the clapperboard, the rainbow,
+  the bulb, the floppy disk: all of it.
+- The badge "PADLAB  MPK" in four primary squares is the only saturated primary colour in the whole arcade and it
+  names a real product line.
+- The starters, the first thing anyone sees, are eleven flat dark boxes with a tofu glyph each. No cover art, no
+  mood, nothing to pick with the eye.
+- The lane stack is one undifferentiated dark field: every panel is the same flat fill, so Drums, Bass, Chords and
+  Melody differ only by a 3 px coloured spine on the left.
+- The instrument pickers are the browser's native select boxes. The sliders are the browser's with a green thumb.
+- The transport wraps to two rows on narrow phones and reads as a row of text buttons.
+- "+ Sample Pad (0/3)" is a tall grey box in the middle of the drums panel.
+- My Songs is a text list: no cover, no waveform, no date art. A saved song has no picture of itself to share.
+- The Show has one style. The music video has no title card and no end card, just the ring and a footer.
+- There is no onboarding inside the studio. The arcade's generic How to play card (14) is all a new player gets.
+- The Hum and Sampler tools ask for the mic with no picture of what is about to happen.
+- Nothing says "make something and share it": no song card, no cover, no moment of pride after Save.
+
+PART 1. THE ASSESSMENT (write it first; it decides the rest)
+Walk every screen in screens/ as a teenager opening the studio from a link, and then as a player coming back on
+day 30 with twelve saved songs. Then write:
+  a. ASSESSMENT.md:
+     - What already reads and should be kept (the grid, the instant starter, the lane colours, the Show?).
+     - What does not read, confuses, or looks unfinished, screen by screen. Be blunt.
+     - Anything that breaks a hard line (a brand reference, a glyph that depends on the device, a target under 48 px).
+     - The smoothing plan: a numbered list, each with its size (S, M, L), what it depends on, and whether it is art
+       (yours) or code (ours). Order it by what most raises "this looks professional" and "I want to show someone
+       what I made".
+     - Improvements worth building (code, ours), ranked by hook: for example a generated cover per song, a share
+       card (song name, cover, a QR or code, the waveform), more starters by mood, a tutorial that makes a beat in
+       three taps, a daily beat challenge, a two player pass the phone jam, stems export, a pro pack as the paid
+       tier. Say which three you would ship first and why, and what each needs from the art.
+     - The three biggest risks you see to this selling (or to it being chosen in the arcade), and what you would do
+       about each.
+     - Naming: "Music Studio" is generic and unsearchable on Google Play, and PADLAB is only an in app badge. Propose
+       three names with a one line case each, and draw the wordmark for the one you recommend (Stephen decides; the
+       others can wait).
+  b. STYLE-GUIDE.md (or a PDF with the same name): the look the studio should ship with. Keep the midnight greenhouse
+     palette, evolve it, or make the case for a music variant (hardware? paper? neon?), and say why. Palette (hex),
+     type (Google Fonts only), icon grammar (stroke or fill, corner radius, the grid, how an icon reads at 24 and
+     48 px), surface rules (what a lane panel is made of, what a modal is made of, what the grid cell looks like
+     off, on, accented, under the playhead), motion (what pulses, what slides, what never moves), the four lanes'
+     identities, the three sections' identities. Show it on at least the grid (02) and the Start a Song screen (01).
+
+PART 2. THE ASSETS (in this order; send what you finish if you cannot finish all)
+Formats: icons and UI marks as SVG (flat, they must read at 24 px and at 48 px, one colour unless the row says
+otherwise, so code can tint them to a lane); raster UI art as PNG at 2x of the size named (a row that says 64x64
+means a 128x128 file) with transparent backgrounds where it floats; full bleed plates as JPG or WebP; textures as
+tileable PNG; store art at the exact pixel sizes given, opaque. Never a side over 1600 px except the store sizes
+(the host's optimiser resizes anything bigger). Names lowercase_with_underscores. A manifest.json lists every file:
+file, id, kind (icon, badge, cover, plate, texture, frame, store), size, notes.
+
+  A. Identity: the wordmark (SVG and PNG, on dark and on light); the app icon (512 opaque for the store, a 512
+     maskable with the safe zone respected, a 192); the store feature graphic 1024x500 (the idea at a glance: a grid
+     lighting up, a song coming out of a phone; leave a clear band for the name or letter it in the wordmark); a
+     promo tile 512x512 for the arcade card and social posts; a first frame 1080x1920 for the app's launch; a social
+     card 1200x630 (today play/og/song.jpg is a generic card).
+  B. The grid and the lanes: a tileable surface texture 256x256 (brushed slate or whatever the style guide chooses,
+     near black, about 4 percent contrast) behind the lane stack; four lane badges 64x64 (a drum skin, a bass
+     string, a chord fan, a melody note) each tinted to its spine; seven kit badges 48x48 (Standard, 808, Lo-Fi,
+     Electronic, House, World, Real Drums); the grid cell as a tiny sprite or an exact CSS spec for its five states
+     (off, on, accent, playhead, ghost); slider track and thumb, a knob if the guide uses knobs; the M and S toggles.
+  C. The icon set (SVG, about 45): play, stop, record, metronome, new, tools, songs, video, audio, sampler, rhythm,
+     circle, keys, hum (a mic with a note), show, save, save as new, save to kit, copy, paste, song code, undo,
+     redo, clear, dice (randomise), chorus, suggest (a bulb), hear, accent (a star), loop, swing, humanize, trim,
+     normalize, reverse, pitch up, pitch down, import, mic, close, octave up, octave down, add, delete, mute, solo,
+     expand, collapse, drag handle, share, back. Each named icon_<name>.svg.
+  D. The starters: eleven cover tiles 160x100 (Hip Hop, Trap, Lo-Fi Chill, House, Pop, Reggaeton, Rock, Drum n Bass,
+     Funk, Dreamy, Blank Canvas), each a scene or motif in the guide's style, no text; and a header plate for the
+     Start a Song screen 400x120.
+  E. The tools: the circle of fifths ring (an SVG ring and its twelve key cells; code draws the current key and the
+     progression on top); the rhythm generator's necklace (the ring of steps and the hit mark, SVG); the keys pad
+     caps (seven columns, a cap in its up, down and recording states); the Hum screen's illustration and its
+     listening dots; the Sampler's three pad faces and a waveform frame; the Show: three more visualiser styles as
+     reference boards (for example bars, particles, a turning record) plus any plate they need; the music video's
+     title card and end card as 1080x1920 and 1920x1080 frames with a clear band where code sets the song's name.
+  F. Songs and sharing: an empty state illustration for My Songs; a cover system for saved songs: a rule that makes
+     a different cover from a song's name and BPM (shapes, a palette per starter, a seed), drawn as twelve examples
+     and written as a rule code can follow; a share card frame 1080x1080 and 1080x1920 (cover, name, BPM, a code
+     band).
+  G. The store: six screenshot frames 1080x1920, each with a headline band at the top and a transparent window where
+     we place a real capture (give the window's x, y, w, h in the notes; draw no words, we set the headlines). The
+     six show: pick a starter and it plays; the grid; the instruments; hum a melody; the Show and the video; your
+     songs and sharing.
+
+WHAT NOT TO DRAW
+- Text inside plates, except the wordmark and anything a row asks for.
+- Any real product's control surface, colourway or name.
+- Store screenshots: we compose those from the real app inside your frames.
+- Sounds. Notes about sound (what a tap should sound like, how the metronome should feel) are welcome in NOTES.md.
+
+DELIVERY
+ONE zip named music-studio-astra-pack-v1.zip, containing:
+  ASSESSMENT.md, STYLE-GUIDE.md (or .pdf), manifest.json, assets/ (sections A to G as folders a_identity to
+  g_store), previews/ (a contact sheet per section, and the style guide shown on the grid and the starter screen),
+  and NOTES.md (anything you chose differently and why, the sound notes, and what you would make next).
+Stephen uploads it to Drive Astra/Music Studio. Fable wires it into studio.html with him, one section at a time,
+and looks at every screen on a phone before it is called done.
