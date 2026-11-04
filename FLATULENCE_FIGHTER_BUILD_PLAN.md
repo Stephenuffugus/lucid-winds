@@ -16,7 +16,7 @@ windows, bands, anchors are all in there).
 
 | Step | State | Commit | Note |
 |---|---|---|---|
-| 0 | TODO | | |
+| 0 | DONE | 3e7262269 (start) | check red at 72; before set in /home/codespace/ff-drafts/before/ (16 screens, no page errors); origin/main 33db6ef8f blobs at start: index.html 060c5013, og/card.jpg 46634ec2, thumb b9118678 (equal to the branch); box booted 17:41 UTC, stops 05:01 UTC (12 h less 40 min) |
 | 1 | TODO | | |
 | 2 | TODO | | |
 | 3 | TODO | | |
