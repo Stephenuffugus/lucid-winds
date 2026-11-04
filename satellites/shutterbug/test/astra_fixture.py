@@ -80,6 +80,7 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     'world/tab_bold.png': ('tab_bold', None),   # step 2 (the ten enemies' bold pass replaces keys the map holds already)
     'world/ledge.png': ('ledge', None), 'world/tripod.png': ('tripod', None), 'fx/key_glint.png': ('key_glint', None),   # step 3
     'world/film_strip.png': ('film_strip', None), 'world/fan.png': ('fan', None), 'fx/fx_wind.png': ('fx_wind', None),   # step 4
+    'fx/fx_pickup.png': ('fx_pickup', None), 'fx/fx_land_dust.png': ('fx_land_dust', None), 'fx/fx_checkpoint.png': ('fx_checkpoint', None), 'fx/fx_floor.png': ('fx_floor', None),   # step 5
 }
 
 
