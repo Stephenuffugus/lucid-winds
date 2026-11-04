@@ -145,6 +145,17 @@
 
   # Lock down browser features — only allow what we use
   Header set Permissions-Policy "geolocation=(self), camera=(), microphone=(), payment=(self)"
+  # 2026-11-04: the Music Studio's Hum and Sampler need the microphone, on the studio itself, the arcade shell
+  # (play/song.html) and Lucid Winds (index.html), which frame it. Every other page keeps microphone=().
+  <Files "studio.html">
+    Header set Permissions-Policy "geolocation=(self), camera=(), microphone=(self), payment=(self)"
+  </Files>
+  <Files "song.html">
+    Header set Permissions-Policy "geolocation=(self), camera=(), microphone=(self), payment=(self)"
+  </Files>
+  <Files "index.html">
+    Header set Permissions-Policy "geolocation=(self), camera=(), microphone=(self), payment=(self)"
+  </Files>
 
   # XSS filter (legacy browsers)
   Header set X-XSS-Protection "1; mode=block"

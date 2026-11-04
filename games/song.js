@@ -28,9 +28,9 @@ function _songAddDaySpent(n){
 
 function GSG(a){
   var fr=document.createElement('iframe');
-  fr.src='/studio.html?v=20260905a'; // bump on studio.html edits (host caches HTML)
+  fr.src='/studio.html?v=20261104a'; // bump on studio.html edits (host caches HTML)
   fr.style.cssText='width:100%;height:calc(100vh - 40px);border:none;border-radius:8px;background:#0d100c';
-  fr.allow='autoplay';
+  fr.allow='autoplay; microphone; web-share';
   a.appendChild(fr);
 
   // ── Sunbeam bridge ──────────────────────────────────────────────────
