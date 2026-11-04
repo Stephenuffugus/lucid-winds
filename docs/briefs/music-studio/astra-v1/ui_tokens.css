@@ -1,0 +1,31 @@
+/* Reference rules to merge into the existing single HTML style block.
+   Namespaced, no framework. Grid must use native buttons with aria labels. */
+:root{--ms-bg:#0d100c;--ms-panel:#1a2119;--ms-raised:#263222;--ms-line:#708666;--ms-text:#f0e8d8;--ms-muted:#a7b29e;--ms-sage:#8fc776;--ms-gold:#d6b85c;--ms-drums:#e99a62;--ms-bass:#e88686;--ms-chords:#a0c4e8;--ms-melody:#d6b85c}
+.ms-lane{--lane:var(--ms-sage);background:var(--ms-panel);border:1px solid #364332;border-radius:16px}
+.ms-lane[data-lane=drums]{--lane:var(--ms-drums)}
+.ms-lane[data-lane=bass]{--lane:var(--ms-bass)}
+.ms-lane[data-lane=chords]{--lane:var(--ms-chords)}
+.ms-lane[data-lane=melody]{--lane:var(--ms-melody)}
+.ms-grid-scroll{overflow:auto;padding:6px;scroll-padding:6px}
+.ms-grid{display:grid;grid-template-columns:48px repeat(var(--steps,16),48px);gap:4px;width:max-content}
+.ms-cell{position:relative;box-sizing:border-box;width:48px;height:48px;border:1px solid var(--ms-line);border-radius:8px;background:var(--ms-bg);color:var(--ms-text);touch-action:pan-x pan-y}
+.ms-cell[data-on=true]{background:var(--lane);color:var(--ms-bg)}
+.ms-cell[data-accent=true]::after{content:"";position:absolute;inset:5px;border:2px solid var(--ms-bg);border-radius:4px}
+.ms-cell[data-ghost=true]{background:var(--ms-raised);border-style:dashed}
+.ms-cell[data-playhead=true]{outline:2px solid var(--ms-text);outline-offset:1px;z-index:1}
+.ms-cell[aria-selected=true]{box-shadow:0 0 0 2px var(--ms-bg),0 0 0 4px var(--ms-gold);z-index:2}
+.ms-cell:focus-visible,.ms-button:focus-visible,.ms-toggle:focus-visible{outline:3px solid var(--ms-gold);outline-offset:3px}
+.ms-button,.ms-toggle{min-width:48px;min-height:48px;border:1px solid var(--ms-line);border-radius:12px;background:var(--ms-panel);color:var(--ms-text);padding:8px 12px}
+.ms-toggle[aria-pressed=true]{background:var(--ms-gold);color:var(--ms-bg);border-color:var(--ms-gold)}
+.ms-toggle[data-action=mute][aria-pressed=true]{background:var(--ms-bass);border-color:var(--ms-bass)}
+.ms-icon{width:24px;height:24px;flex:none;fill:none;stroke:currentColor}
+.ms-icon-mask{display:inline-block;width:24px;height:24px;background-color:currentColor;mask:var(--icon) center/contain no-repeat;-webkit-mask:var(--icon) center/contain no-repeat}
+.ms-range{appearance:none;-webkit-appearance:none;height:48px;min-width:120px;background:transparent;cursor:pointer}
+.ms-range::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:#708666}
+.ms-range::-moz-range-track{height:6px;border-radius:3px;background:#708666}
+.ms-range::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-9px;border-radius:50%;border:2px solid var(--ms-bg);background:var(--ms-sage)}
+.ms-range::-moz-range-thumb{width:24px;height:24px;border-radius:50%;border:2px solid var(--ms-bg);background:var(--ms-sage)}
+.ms-range:focus-visible{outline:3px solid var(--ms-gold);outline-offset:2px;border-radius:8px}
+.ms-keys{display:grid;grid-template-columns:repeat(7,minmax(48px,1fr));gap:4px;min-width:360px}
+.ms-keys-scroll{overflow-x:auto}
+@media(prefers-reduced-motion:reduce){.ms-lane,.ms-button,.ms-toggle,.ms-cell{animation:none;transition:none;scroll-behavior:auto}}

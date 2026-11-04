@@ -1,0 +1,11 @@
+/* Standalone reference, no build step or dependencies. Returns decorative SVG.
+   Persist seed and paletteIndex once. Never insert a user title into SVG markup. */
+(function(root){
+'use strict';
+const palettes=[['#e99a62','#d6b85c'],['#a0c4e8','#e88686'],['#8fc776','#d6b85c'],['#d6b85c','#8fc776'],['#e88686','#f0e8d8'],['#e99a62','#8fc776'],['#f0e8d8','#e99a62'],['#a0c4e8','#8fc776'],['#d6b85c','#e99a62'],['#a0c4e8','#f0e8d8'],['#8fc776','#f0e8d8']];
+const starters=['hip_hop','trap','lo_fi_chill','house','pop','reggaeton','rock','drum_n_bass','funk','dreamy','blank_canvas'];
+function seedFor(name,bpm){let h=2166136261;const v=String(name).normalize('NFC').trim().toLowerCase()+'|'+Math.round(Number(bpm)||120);for(const b of new TextEncoder().encode(v))h=Math.imul(h^b,16777619)>>>0;return h}
+function recipe(name,bpm,starter){const seed=seedFor(name,bpm),i=starters.indexOf(starter);return {recipeVersion:1,seed,paletteIndex:i<0?seed%palettes.length:i}}
+function render(r,size=512){if(r.recipeVersion!==1)throw Error('Unknown cover recipe');size=Math.max(64,Math.min(1600,Math.round(Number(size)||512)));let state=r.seed>>>0;const rnd=()=>((state=(Math.imul(1664525,state)+1013904223)>>>0)/4294967296);const [a,c]=palettes[((r.paletteIndex%palettes.length)+palettes.length)%palettes.length];const n=v=>Number(v.toFixed(3));const rect=(x,y,w,h,col,rx=0)=>`<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="${n(rx)}" fill="${col}"/>`;const circle=(x,y,rad,col,stroke,sw)=>`<circle cx="${n(x)}" cy="${n(y)}" r="${n(rad)}" fill="${col}"${stroke?` stroke="${stroke}" stroke-width="${n(sw)}"`:''}/>`;let b=rect(0,0,size,size,'#0d100c');const cx=size*(.35+rnd()*.3),cy=size*(.35+rnd()*.3);for(let i=0;i<8;i++)b+=circle(cx,cy,size*(.08+i*.047),'none',i%3===0?a:'#32412e',Math.max(1,size*.004));for(let i=0;i<6;i++){const x=size*(.1+rnd()*.7),y=size*(.12+rnd()*.65),h=size*(.1+rnd()*.23);b+=rect(x,y,size*.035,h,i%2?c:a,size*.0175)}b+=circle(size*.82,size*.18,size*.035,c);return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${b}</svg>`}
+const api={seedFor,recipe,render};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.MusicStudioCovers=api;
+})(typeof globalThis!=='undefined'?globalThis:this);
