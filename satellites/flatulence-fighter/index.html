@@ -174,11 +174,11 @@
   @keyframes cpop{ 0%{transform:scale(1)} 40%{transform:scale(1.35)} 100%{transform:scale(1)} }
   .combo.bump{ animation:cpop .3s ease;}
 
-  #leaks{ position:absolute; inset:44px 8px 8px; z-index:6; pointer-events:none;}
+  #leaks{ position:absolute; inset:0; z-index:6; pointer-events:none;}
   .leak{ position:absolute; width:58px; height:58px; margin:-29px 0 0 -29px; border-radius:50%; pointer-events:auto; cursor:pointer; border:none; padding:0; background:transparent; display:flex; align-items:center; justify-content:center;}
   .leak .ring{ position:absolute; inset:0; border-radius:50%; background:conic-gradient(var(--crimson) calc(var(--pp,0)*360deg), rgba(192,57,43,.16) 0);
     -webkit-mask:radial-gradient(closest-side, transparent 66%, #000 68%); mask:radial-gradient(closest-side, transparent 66%, #000 68%);}
-  .leak .core{ width:34px; height:34px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #9fe6d2, var(--mint-deep)); box-shadow:0 2px 8px rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:18px;}
+  .leak .core{ width:40px; height:40px; border-radius:50%; background:var(--a-leakCore,none) center/100% 100% no-repeat; box-shadow:0 2px 8px rgba(0,0,0,.3);}
   @keyframes leakin{ 0%{transform:scale(0)} 70%{transform:scale(1.15)} 100%{transform:scale(1)} }
   .leak{ animation:leakin .2s ease;}
   @keyframes pop{ 0%{transform:scale(1); opacity:1} 100%{transform:scale(1.8); opacity:0} }
@@ -198,69 +198,90 @@
   @keyframes cocall{ 0%{opacity:0; transform:translate(-50%,-50%) scale(.6)} 25%{opacity:1; transform:translate(-50%,-50%) scale(1.1)} 80%{opacity:1} 100%{opacity:0; transform:translate(-50%,-70%) scale(1)} }
   .callout.show{ animation:cocall 1.1s ease forwards;}
 
-  .controls{ display:flex; flex-direction:column; gap:10px; padding:0 16px calc(16px + env(safe-area-inset-bottom,0px));}
-  .pads{ display:flex; gap:12px; height:min(21vh,150px);}
-  .pad{ flex:1; border-radius:16px; position:relative; overflow:hidden; cursor:pointer; background:linear-gradient(180deg, var(--sage), var(--sage-2)); box-shadow:0 6px 0 var(--sage-3), inset 0 2px 0 rgba(255,255,255,.08); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--paper); transition:transform .05s, box-shadow .05s, filter .1s; touch-action:none;}
-  .pad .pad-label{ font-size:.74rem; letter-spacing:.28em; text-transform:uppercase; opacity:.8;}
-  .pad .pad-hint{ font-size:1.4rem; font-weight:700; letter-spacing:.14em; opacity:.5; transition:opacity .15s;}
-  .pad.down{ transform:translateY(6px); box-shadow:0 0 0 var(--sage-3), inset 0 0 40px rgba(95,208,176,.4), inset 0 2px 0 rgba(255,255,255,.08); filter:brightness(1.12);}
+  /* ======================= THE DECK: Stephen's Twister (step 4) =======================
+     Three columns above the safe area: LEAN over HOLD either side, the posture track, HOLD BREATH and VENT in the
+     middle. Cough, Sip and Waft are props on the stage. Every plate is raster art on a ::before that carries the
+     palette filter; the words on it stay outside the filter. */
+  .deck{ position:relative; z-index:12; display:grid; grid-template-columns:minmax(0,1fr) minmax(96px,.8fr) minmax(0,1fr); gap:8px;
+    padding:8px 8px calc(10px + env(safe-area-inset-bottom,0px));}
+  .dcol{ display:flex; flex-direction:column; gap:8px; min-width:0;}
+  .pad, .vent, .breath-bar, .prop{ position:relative; isolation:isolate; font-family:inherit; touch-action:none; -webkit-user-select:none; user-select:none;}
+  .pad::before, .vent::before, .breath-bar::before, .prop::before{ content:""; position:absolute; inset:0; z-index:-1; filter:var(--art-filter); pointer-events:none;}
+  .pad{ height:clamp(120px, 16vh, 150px); border:0; border-radius:16px; padding:0 0 22px; cursor:pointer; background:none; color:var(--paper);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; transition:transform .08s;}
+  .pad::before{ background:center/100% 100% no-repeat;}
+  #padL::before{ background-image:var(--a-padLIdle,none);} #padL.down::before{ background-image:var(--a-padLHeld,none);} #padL.tired::before{ background-image:var(--a-padLTired,none);}
+  #padR::before{ background-image:var(--a-padRIdle,none);} #padR.down::before{ background-image:var(--a-padRHeld,none);} #padR.tired::before{ background-image:var(--a-padRTired,none);}
+  .pad .pad-label{ font-size:.74rem; font-weight:600; letter-spacing:.24em; text-transform:uppercase; opacity:.85; padding-left:.24em;}
+  .pad .pad-hint{ font-family:var(--serif); font-size:1.5rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; opacity:.62; transition:opacity .08s;}
+  .pad.down{ transform:translateY(2px); color:var(--deep);}
   .pad.down .pad-hint{ opacity:1;}
-  .pad.slipped{ background:linear-gradient(180deg,#7a2f27,var(--crimson)); pointer-events:none; animation:slipflash .3s 2;}
+  .pad.tired{ color:var(--paper);}
+  .pad.slipped{ pointer-events:none;}
+  .pad.slipped .pad-hint{ opacity:1;}
   .pad.benched{ opacity:.4; filter:grayscale(.7);}
   .pad.benched .pad-hint{ opacity:.25;}
-  @keyframes slipflash{ 50%{filter:brightness(1.4)} }
-  .strainbar{ position:absolute; left:0; right:0; bottom:0; height:7px; background:rgba(0,0,0,.3);}
+  .strainbar{ position:absolute; left:12%; right:12%; bottom:14px; height:10px; border-radius:5px; overflow:hidden; background:var(--a-strain,none) center/100% 100% no-repeat, rgba(0,0,0,.25);}
   .strainbar > i{ display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--mint),var(--amber),var(--crimson)); transition:width .08s linear;}
-  .vent{ height:62px; border-radius:14px; border:none; cursor:pointer; font-family:inherit; font-size:1.2rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#4a1512; background:linear-gradient(180deg,#e6b8b2,#cf7a70); box-shadow:0 6px 0 #8f473f; transition:.08s; position:relative; overflow:hidden; touch-action:none;}
-  .vent .vent-main{ position:relative; z-index:2;} .vent .vent-sub{ display:block; font-size:.7rem; letter-spacing:.2em; opacity:.72; margin-top:2px; font-weight:400; position:relative; z-index:2;}
-  .vent.armed{ color:#03251d; background:linear-gradient(180deg,#8ff0d3,var(--mint-deep)); box-shadow:0 6px 0 #1d7a63, 0 0 26px rgba(95,208,176,.7); animation:ventpulse .7s infinite ease-in-out;}
-  @keyframes ventpulse{ 50%{filter:brightness(1.12)} }
-  .vent:active{ transform:translateY(4px); box-shadow:0 2px 0 #8f473f;} .vent.armed:active{ box-shadow:0 2px 0 #1d7a63;}
-  .vent-timer{ position:absolute; left:0; bottom:0; height:6px; width:0%; z-index:1; background:var(--mint);}
-  .vent-perfect-mark{ position:absolute; bottom:0; height:6px; width:2px; background:#fff; opacity:.8; z-index:2; display:none;}
-
-  /* ======================= ABILITY BUTTONS ======================= */
-  .abilities{ display:flex; gap:10px;}
-  .ability{ flex:1; min-height:52px; border-radius:12px; border:2px solid var(--sage); cursor:pointer; font-family:inherit;
-    background:linear-gradient(180deg, rgba(231,224,203,.85), rgba(216,207,178,.85)); color:var(--sage-2);
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:5px 4px;
-    box-shadow:0 4px 0 var(--sage-2); transition:transform .05s, box-shadow .05s, filter .1s; position:relative; overflow:hidden; touch-action:none;}
-  .ability:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--sage-2);}
-  .ability .ab-ico{ font-size:1.15rem; line-height:1; position:relative; z-index:2;}
-  .ability .ab-name{ font-size:.7rem; letter-spacing:.16em; text-transform:uppercase; font-weight:700; position:relative; z-index:2;}
-  .ability .ab-state{ font-size:.72rem; letter-spacing:.3em; line-height:1; position:relative; z-index:2; padding-left:.3em;}
-  .cdot{ display:inline-block; width:7px; height:7px; border-radius:50%; border:1.5px solid currentColor; margin:0 2px; vertical-align:middle;}
-  .cdot.on{ background:currentColor;}
-  .cover-banner .cb-txt{ display:flex; flex-direction:column; align-items:flex-start; line-height:1.15;}
-  .cover-banner .cb-sub{ font-size:.78rem; font-weight:600; letter-spacing:.08em; opacity:.85;}
-  .ability .ab-cd{ position:absolute; left:0; bottom:0; top:auto; height:100%; width:0%; background:rgba(95,208,176,.28); z-index:1; transition:width .12s linear;}
-  .ability.depleted{ border-style:dashed; opacity:.55; box-shadow:0 2px 0 var(--sage-2); filter:grayscale(.4);}
-  .ability.sipping{ background:linear-gradient(180deg,#bfe6f2,#8fc7de); border-color:#3a7a94; color:#0e3547; box-shadow:0 4px 0 #3a7a94;}
-  .ability.na{ visibility:hidden;}
-  @keyframes waftflash{ 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.45)} }
-  .ability.alert{ background:linear-gradient(180deg,#ffe9a8,var(--amber)); border-color:#8f5a1c; color:#4a2c08; box-shadow:0 4px 0 #8f5a1c, 0 0 22px rgba(224,144,47,.75); animation:waftflash .4s infinite;}
-
-  /* ======================= BREATH BAR (top-of-stage hold) ======================= */
-  .breath-bar{ position:absolute; top:4px; left:14px; right:14px; height:48px; z-index:8; border:2px solid var(--sage); border-radius:24px;
-    overflow:hidden; cursor:pointer; font-family:inherit; background:rgba(231,224,203,.5); color:var(--sage-2); touch-action:none;
-    display:flex; align-items:center; justify-content:center; box-shadow:0 3px 0 var(--sage-2); transition:box-shadow .08s, border-color .08s, filter .1s;}
-  .breath-bar .bf{ position:absolute; left:0; top:0; bottom:0; width:100%; z-index:1; background:linear-gradient(90deg, rgba(95,208,176,.55), rgba(95,208,176,.22)); transition:width .08s linear;}
-  .breath-bar .bl{ position:relative; z-index:2; font-size:.74rem; letter-spacing:.2em; text-transform:uppercase; font-weight:700; display:flex; align-items:center; gap:6px;}
-  .breath-bar.held{ border-color:var(--mint-deep); color:#03251d; box-shadow:0 3px 0 #1d7a63, 0 0 20px rgba(95,208,176,.6);}
-  .breath-bar.locked{ border-style:dashed; opacity:.6; filter:grayscale(.4);}
-
-  /* ======================= WOBBLE / LEAN (posture balance) ======================= */
-  .wobble-row{ display:flex; align-items:stretch; gap:8px; height:48px;}
-  .lean{ width:54px; flex:none; border:2px solid var(--sage); border-radius:12px; font-family:inherit; font-size:1.15rem; font-weight:700; cursor:pointer;
-    touch-action:none; color:var(--sage-2); background:linear-gradient(180deg, rgba(231,224,203,.85), rgba(216,207,178,.85));
-    box-shadow:0 4px 0 var(--sage-2); display:flex; align-items:center; justify-content:center; transition:transform .05s, box-shadow .05s, background .08s, color .08s;}
-  .lean:active,.lean.held{ transform:translateY(3px); box-shadow:0 1px 0 #1d7a63; background:linear-gradient(180deg,#8ff0d3,var(--mint)); color:#03251d; border-color:var(--mint-deep);}
-  .wobble-track{ flex:1; align-self:center; position:relative; height:18px; border-radius:10px; background:rgba(43,58,49,.22); border:1.5px solid var(--sage-2); overflow:hidden;}
-  .wobble-track::before{ content:""; position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px; background:var(--sage-2); opacity:.45;}
-  .wobble-track .wlabel{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:var(--sage-2); opacity:.55; z-index:0; pointer-events:none; white-space:nowrap;}
-  .wobble-track .wd{ position:absolute; top:50%; left:50%; width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%; z-index:1;
-    background:radial-gradient(circle at 35% 30%, #9fe6d2, var(--mint-deep)); box-shadow:0 1px 6px rgba(0,0,0,.35); transition:left .06s linear, background .12s;}
-  .wobble-track.danger .wd{ background:radial-gradient(circle at 35% 30%, #f0a89f, var(--crimson));}
+  .lean{ height:56px; flex:none; border:2px solid var(--sage); border-radius:12px; font-family:inherit; cursor:pointer; touch-action:none;
+    color:var(--sage-2); background:var(--paper); box-shadow:0 3px 0 var(--sage-2); display:flex; align-items:center; justify-content:center; gap:6px;
+    font-size:.9rem; font-weight:600; transition:transform .08s, box-shadow .08s, background .08s, color .08s; -webkit-user-select:none; user-select:none;}
+  .lean .ic{ width:22px; height:22px;}
+  .lean:active,.lean.held{ transform:translateY(2px); box-shadow:0 1px 0 var(--sage-2); background:var(--relief); color:var(--deep); border-color:var(--mint-deep);}
+  .wobble-track{ flex:none; position:relative; height:18px; border-radius:9px; background:var(--a-posture,none) center/100% 100% no-repeat, var(--paper-3); border:1.5px solid var(--sage-2);}
+  .wobble-track::before{ content:""; position:absolute; left:50%; top:2px; bottom:2px; width:2px; margin-left:-1px; background:var(--sage-2); opacity:.45;}
+  .mlabel{ flex:none; margin-bottom:-5px; font-size:.62rem; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--sage-2); opacity:.85; text-align:center; line-height:1;}
+  .wobble-track .wd{ position:absolute; top:50%; left:50%; width:20px; height:20px; margin:-10px 0 0 -10px; border-radius:50%; z-index:1;
+    background:var(--a-postureDot,none) center/100% 100% no-repeat, var(--relief); box-shadow:0 1px 4px rgba(0,0,0,.35); transition:left .06s linear;}
+  .wobble-track.danger .wd{ background:var(--crimson); box-shadow:0 0 0 3px rgba(192,57,43,.3);}
+  .breath-bar{ height:56px; flex:none; border:0; border-radius:28px; cursor:pointer; background:none; color:var(--sage-2); padding:0 8px;
+    display:flex; align-items:center; justify-content:center;}
+  .breath-bar::before{ border:24px solid transparent; border-image:var(--a-breath,none) 48 fill / 24px stretch;}
+  .breath-bar .bfw{ position:absolute; inset:6px; border-radius:22px; overflow:hidden; z-index:0; pointer-events:none;}
+  .breath-bar .bf{ position:absolute; left:0; top:0; bottom:0; width:100%; background:linear-gradient(90deg, rgba(95,208,176,.55), rgba(95,208,176,.22)); transition:width .08s linear;}
+  .breath-bar .bl{ position:relative; z-index:1; font-size:.82rem; font-weight:600; line-height:1.1; display:flex; align-items:center; gap:5px; text-align:left;}
+  .breath-bar .bl .ic{ width:20px; height:20px;}
+  .breath-bar.held{ color:var(--deep);}
+  .breath-bar.held::before{ filter:var(--art-filter) drop-shadow(0 0 6px rgba(95,208,176,.9));}
+  .breath-bar.locked{ opacity:.6;}
+  .vent{ flex:1; min-height:84px; border:0; cursor:pointer; background:none; color:#4a1512; padding:18px 12px 16px; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; transition:transform .08s;}
+  .vent::before{ border:20px solid transparent; border-image:var(--a-ventUnsafe,none) 40 fill / 20px stretch;}
+  .vent .vent-main{ position:relative; z-index:2; font-size:clamp(.8rem, 3.7vw, .98rem); font-weight:600; letter-spacing:.06em; text-transform:uppercase; line-height:1.1;}
+  .vent .vent-sub{ display:block; font-size:.75rem; line-height:1.2; opacity:.8; margin-top:4px; position:relative; z-index:2;}
+  .vent.armed{ color:var(--deep);}
+  .vent.armed::before{ border-image-source:var(--a-ventCover,none);}
+  .vent.perfect{ color:var(--deep);}
+  .vent.perfect::before{ border-image-source:var(--a-ventPerfect,none);}
+  .vent:active{ transform:translateY(2px);}
+  .vent-timer{ position:absolute; left:10px; bottom:8px; height:5px; width:0%; max-width:calc(100% - 20px); z-index:1; border-radius:3px; background:var(--mint);}
+  .vent-perfect-mark{ position:absolute; bottom:6px; height:9px; width:2px; background:var(--deep); opacity:.7; z-index:2; display:none;}
+  /* the props: Astra's ability plates on the stage at the pew line, 56 px tall, the label in the plate's lower band */
+  .prop{ position:absolute; bottom:4px; z-index:4; width:100px; height:78px; border:0; padding:0; cursor:pointer; background:none; color:var(--sage-2);}
+  .prop::before{ bottom:22px; background:center/100% 100% no-repeat; filter:var(--art-filter) drop-shadow(0 3px 4px rgba(0,0,0,.35));}
+  .prop-cough{ left:6px;} .prop-cough::before{ background-image:var(--a-abCough,none);}
+  .prop-sip{ right:6px;} .prop-sip::before{ background-image:var(--a-abSip,none);}
+  .prop-waft{ left:50%; margin-left:-50px;} .prop-waft::before{ background-image:var(--a-abWaft,none);}
+  .prop .pband{ position:absolute; left:4px; right:4px; bottom:0; height:20px; display:flex; align-items:center; justify-content:center; gap:5px; font-size:.75rem; font-weight:600; line-height:1; white-space:nowrap;
+    background:var(--paper); border:1.5px solid var(--sage); border-radius:10px;}
+  .prop .charges{ display:inline-flex; gap:2px;}
+  .cdot{ display:inline-block; width:10px; height:10px; background:var(--a-chargeEmpty,none) center/100% 100% no-repeat;}
+  .cdot.on{ background-image:var(--a-chargeFull,none);}
+  .cd-ring{ position:absolute; right:-4px; top:-6px; width:26px; height:26px; z-index:1; pointer-events:none; background:var(--paper); border-radius:50%; display:none;}
+  .prop.cooling .cd-ring{ display:block;}
+  .cd-ring circle{ fill:none; stroke:var(--sage); stroke-width:10; stroke-dasharray:301.593; stroke-dashoffset:calc(301.593 * (1 - var(--remaining,0))); transform:rotate(-90deg); transform-origin:center;}
+  .prop:active{ transform:translateY(2px);}
+  .prop.depleted{ opacity:.55;}
+  .prop.depleted::before{ filter:var(--art-filter) grayscale(.5);}
+  .prop.sipping{ color:var(--deep);}
+  .prop.sipping::before{ filter:var(--art-filter) drop-shadow(0 0 7px rgba(95,208,176,.95));}
+  .prop.na{ visibility:hidden;}
+  @keyframes waftflash{ 0%,100%{opacity:1} 50%{opacity:.55} }
+  .prop.alert::before{ filter:var(--art-filter) drop-shadow(0 0 8px rgba(224,144,47,.95));}
+  .prop.alert{ color:#4a2c08;}
+  .count-in{ position:absolute; left:50%; top:38%; z-index:20; transform:translate(-50%,-50%); width:112px; height:112px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; background:var(--paper); border:3px double var(--sage); color:var(--sage-2);
+    font-family:var(--serif); font-weight:700; font-size:3.2rem; box-shadow:0 8px 22px rgba(0,0,0,.35); pointer-events:none;}
 
   /* ======================= PLAY MODES / MENU ======================= */
   .modes.playrow .mode-btn .mt{ font-size:.82rem;}
@@ -316,6 +337,7 @@
 </style>
 <meta name="description" content="A silent film game of pure composure where you hold it in until a passing bus gives you cover.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/flatulence-fighter/">
+<script>window.SWS_MUSIC_HOLD=true;</script>
 <script src="/music-unlocks.js" defer></script>
 </head>
 <body>
@@ -437,6 +459,7 @@
     <div class="settings-row">
       <button class="btn ghost toggle-btn" id="soundToggle" aria-pressed="true">Sound</button>
       <button class="btn ghost toggle-btn" id="hapticToggle" aria-pressed="true">Haptics</button>
+      <button class="btn ghost" id="arcadeBtn" type="button">Arcade</button>
     </div>
   </div>
 
@@ -483,7 +506,6 @@
     <div class="stage" id="stage">
       <div class="room ff-art-layer" aria-hidden="true"><img id="roomImg" alt=""></div>
       <img class="strip ff-art-layer" id="stripImg" alt="" aria-hidden="true">
-      <button class="breath-bar" id="breathBtn" aria-label="Hold your breath to slow the pressure. Let go before you gasp"><span class="bf" id="breathFill"></span><span class="bl"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-hold_breath"/></svg> <span>Hold breath</span></span></button>
       <div class="bust-wrap" aria-hidden="true">
         <svg id="face" class="bust" viewBox="0 0 360 360" data-tier="calm" data-char="everyman" focusable="false">
           <defs><radialGradient id="ffFlushG"><stop offset="0" stop-color="#e8604f" stop-opacity=".9"/><stop offset="1" stop-color="#e8604f" stop-opacity="0"/></radialGradient></defs>
@@ -502,7 +524,11 @@
           </g>
         </svg>
       </div>
+      <button class="prop prop-cough" id="coughBtn" type="button" aria-label="Cough. Fake your own cover noise"><span class="pband"><span>Cough</span><span class="charges" id="coughState"></span></span></button>
+      <button class="prop prop-sip" id="sipBtn" type="button" aria-label="Sip. Hold to drink the pressure down. You cannot clench while sipping"><svg class="cd-ring" viewBox="0 0 112 112" aria-hidden="true" focusable="false"><circle cx="56" cy="56" r="48" id="sipRing"/></svg><span class="pband"><span>Sip</span><span id="sipState">Ready</span></span></button>
+      <button class="prop prop-waft" id="waftBtn" type="button" aria-label="Waft. Fan a fresh strike away"><span class="pband"><span>Waft</span><span class="charges" id="waftState"></span></span></button>
       <div id="leaks"></div>
+      <div id="countIn" class="count-in hidden" aria-live="assertive"></div>
     </div>
     <div class="ribbon" id="ribbon">Nobody suspects a thing</div>
       <div class="gauge">
@@ -516,34 +542,26 @@
     <div id="callout" class="callout"></div>
     <div id="fx"></div>
 
-    <div class="controls">
-      <div class="abilities">
-        <button class="ability" id="coughBtn" aria-label="Fake cough. Make your own cover noise">
-          <span class="ab-ico"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-cough"/></svg></span><span class="ab-name">Cough</span><span class="ab-state" id="coughState"></span>
-        </button>
-        <button class="ability" id="sipBtn" aria-label="Sip water. Hold to drain pressure, you cannot clench while sipping">
-          <span class="ab-cd" id="sipCd"></span>
-          <span class="ab-ico"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sip"/></svg></span><span class="ab-name">Sip</span><span class="ab-state" id="sipState">Ready</span>
-        </button>
-        <button class="ability" id="waftBtn" aria-label="Waft. Fan away a fresh strike">
-          <span class="ab-ico"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-waft"/></svg></span><span class="ab-name">Waft</span><span class="ab-state" id="waftState"></span>
+    <div class="deck" id="deck">
+      <div class="dcol dcol-l">
+        <button class="lean" id="leanLbtn" type="button" aria-label="Lean left. Hold to keep your balance"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-lean_left"/></svg><span>Lean left</span></button>
+        <button class="pad" id="padL" type="button" aria-label="Left hold"><span class="pad-label">Left</span><span class="pad-hint">Hold</span><span class="strainbar"><i id="strainL"></i></span></button>
+      </div>
+      <div class="dcol dcol-m">
+        <div class="mlabel" aria-hidden="true">Sit still</div>
+        <div class="wobble-track" id="wobbleTrack" aria-hidden="true"><span class="wd" id="wobbleDot"></span></div>
+        <button class="breath-bar" id="breathBtn" type="button" aria-label="Hold breath. Slows the pressure. Let go before you gasp"><span class="bfw"><span class="bf" id="breathFill"></span></span><span class="bl"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-hold_breath"/></svg><span>Hold breath</span></span></button>
+        <button class="vent" id="ventBtn" type="button">
+          <span class="vent-timer" id="ventTimer"></span>
+          <span class="vent-perfect-mark" id="ventMark"></span>
+          <span class="vent-main" id="ventMainText">Do not vent</span>
+          <span class="vent-sub" id="ventSub">Wait for cover noise</span>
         </button>
       </div>
-      <div class="wobble-row">
-        <button class="lean" id="leanLbtn" aria-label="Lean left to keep your balance"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-lean_left"/></svg></button>
-        <div class="wobble-track" id="wobbleTrack"><span class="wlabel">sit still</span><span class="wd" id="wobbleDot"></span></div>
-        <button class="lean" id="leanRbtn" aria-label="Lean right to keep your balance"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-lean_right"/></svg></button>
+      <div class="dcol dcol-r">
+        <button class="lean" id="leanRbtn" type="button" aria-label="Lean right. Hold to keep your balance"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-lean_right"/></svg><span>Lean right</span></button>
+        <button class="pad" id="padR" type="button" aria-label="Right hold"><span class="pad-label">Right</span><span class="pad-hint">Hold</span><span class="strainbar"><i id="strainR"></i></span></button>
       </div>
-      <div class="pads">
-        <div class="pad" id="padL"><span class="pad-label">Left</span><span class="pad-hint">HOLD</span><div class="strainbar"><i id="strainL"></i></div></div>
-        <div class="pad" id="padR"><span class="pad-label">Right</span><span class="pad-hint">HOLD</span><div class="strainbar"><i id="strainR"></i></div></div>
-      </div>
-      <button class="vent" id="ventBtn">
-        <span class="vent-timer" id="ventTimer"></span>
-        <span class="vent-perfect-mark" id="ventMark"></span>
-        <span class="vent-main" id="ventMainText">Do not vent</span>
-        <span class="vent-sub" id="ventSub">Wait for cover noise</span>
-      </button>
     </div>
   </div>
 
@@ -665,7 +683,13 @@
     {id:"babys_nap",          bg:"assets/stage/bg_babys_nap.webp",          backs:"assets/onlookers/onlookers_babys_nap_backs.png",          turned:"assets/onlookers/onlookers_babys_nap_turned.png"},
   ];
   const UI_ART={ paper:"assets/stage/paper_tile.png", grain:"assets/stage/film_grain_tile.png", card:"assets/stage/card_frame.png",
-    intertitle:"assets/controls/intertitle_frame.png", menu:"assets/stage/bg_menu_mood.webp", over:"assets/stage/bg_game_over_mood.webp" };
+    intertitle:"assets/controls/intertitle_frame.png", menu:"assets/stage/bg_menu_mood.webp", over:"assets/stage/bg_game_over_mood.webp",
+    padLIdle:"assets/controls/hold_left_idle.png", padLHeld:"assets/controls/hold_left_held.png", padLTired:"assets/controls/hold_left_tired.png",
+    padRIdle:"assets/controls/hold_right_idle.png", padRHeld:"assets/controls/hold_right_held.png", padRTired:"assets/controls/hold_right_tired.png",
+    ventUnsafe:"assets/controls/vent_unsafe.png", ventCover:"assets/controls/vent_cover.png", ventPerfect:"assets/controls/vent_perfect.png",
+    breath:"assets/controls/breath_bar.png", strain:"assets/controls/strain_bar.png", posture:"assets/controls/posture_track.png", postureDot:"assets/controls/posture_dot.png",
+    abCough:"assets/controls/ability_cough.png", abSip:"assets/controls/ability_sip.png", abWaft:"assets/controls/ability_waft.png",
+    chargeFull:"assets/controls/charge_full.png", chargeEmpty:"assets/controls/charge_empty.png", leakCore:"assets/controls/leak_core.png" };
 
   const SCENES=[
     {t:"The Funeral",       s:"Do not make a sound.",                 covers:["COUGH","BELLS","ORGAN"], coverMul:0.95,
@@ -846,7 +870,7 @@
   const actLabel=$("actLabel"), sceneTitle=$("sceneTitle"), sceneSub=$("sceneSub");
   const tutOverlay=$("tutOverlay"), tutText=$("tutText");
   const coughBtn=$("coughBtn"), sipBtn=$("sipBtn"), waftBtn=$("waftBtn");
-  const coughState=$("coughState"), sipState=$("sipState"), waftState=$("waftState"), sipCdEl=$("sipCd");
+  const coughState=$("coughState"), sipState=$("sipState"), waftState=$("waftState"), sipRing=$("sipRing"), stageEl=$("stage"), countInEl=$("countIn");
   const breathBtn=$("breathBtn"), breathFill=$("breathFill"), wobbleTrack=$("wobbleTrack"), wobbleDot=$("wobbleDot"), leanLbtn=$("leanLbtn"), leanRbtn=$("leanRbtn");
   const wardScreen=$("wardScreen"), dailyNote=$("dailyNote"), diffRow=$("diffRow"), howScreen=$("howScreen");
   const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -867,9 +891,7 @@
   function setSceneArt(i){ const a=SCENE_ART[i]; if(!a) return;
     showArt(roomImg, art(a.bg)); showArt(stripImg, art(a.backs)); loadArt(art(a.turned)); }
   function preloadScene(i){ const a=SCENE_ART[i]; if(!a) return; loadArt(art(a.bg)); loadArt(art(a.backs)); }
-  (function(){ const r=document.documentElement.style, u=k=>'url("'+art(UI_ART[k])+'")';
-    r.setProperty("--a-paper",u("paper")); r.setProperty("--a-grain",u("grain")); r.setProperty("--a-card",u("card"));
-    r.setProperty("--a-intertitle",u("intertitle")); r.setProperty("--a-menu",u("menu")); r.setProperty("--a-over",u("over")); })();
+  (function(){ const r=document.documentElement.style; for(const k in UI_ART) r.setProperty("--a-"+k,'url("'+art(UI_ART[k])+'")'); })();
 
   // ==================================================================
   //  STATE
@@ -892,7 +914,7 @@
       coughCharges:CFG.coughStartCharges, sipCd:0, sipping:false,
       waftCharges:CFG.waftStartCharges, waftUntil:0, pendingExpose:0,
       cheekSide:0, cheekSwapAt:CFG.cheekSwapEvery,
-      stun:0, reliefUntil:0, last:0,
+      stun:0, reliefUntil:0, perfectUntil:0, countIn:0, last:0,
       rp:{perfects:0, plugs:0, cleanVents:0, coughVents:0, wafts:0, sips:0},
       tut:null };
   }
@@ -999,10 +1021,15 @@
   function spawnLeak(){
     if(S.leaks.length>=CFG.leakMax) return;
     const life=Math.max(CFG.leakLifeMin, CFG.leakLife-rampLevel()*0.12);
-    const el=document.createElement("button"); el.className="leak"; el.setAttribute("aria-label","Plug leak");
-    el.style.left=(14+rnd()*72)+"%"; el.style.top=(12+rnd()*70)+"%";
+    const el=document.createElement("button"); el.className="leak"; el.type="button"; el.setAttribute("aria-label","Plug the leak");
+    // the stage above the props' row, never under a prop, never on another leak; the two rnd() draws are the old ones
+    const u0=rnd(), v0=rnd(), W=stageEl.clientWidth||360, H=stageEl.clientHeight||320, R=29, x0=R+8, x1=W-R-8, y0=R+8, y1=Math.max(y0, H-72-R);
+    let lx=x0+u0*(x1-x0), ly=y0+v0*(y1-y0);
+    for(let k=0;k<16;k++){ const u=(u0+k*0.618034)%1, v=(v0+k*0.381966)%1, cx=x0+u*(x1-x0), cy=y0+v*(y1-y0);
+      if(S.leaks.every(o=>Math.hypot(o.x-cx,o.y-cy)>=2*R+10)){ lx=cx; ly=cy; break; } }
+    el.style.left=lx.toFixed(0)+"px"; el.style.top=ly.toFixed(0)+"px";
     el.innerHTML='<span class="ring"></span><span class="core">'+ic("leak")+'</span>';
-    const leak={el,remaining:life,life};
+    const leak={el,remaining:life,life,x:lx,y:ly};
     el.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); plugLeak(leak); });
     leaksEl.appendChild(el); S.leaks.push(leak);
   }
@@ -1071,7 +1098,7 @@
       const pts=Math.round((CFG.ventFlat+S.pressure*CFG.ventScale)*(perfect?CFG.perfectMult:1)*mult);
       S.score+=pts; S.pressure=0; S.strainL=0; S.strainR=0;
       face.dataset.tier="relief"; S.reliefUntil=S.time+0.7; bumpCombo();
-      if(perfect){ perfectSfx(); haptic([10,20,10,20]); floatText(app.clientWidth/2, app.clientHeight*0.62, "Perfect +"+pts, "gold"); }
+      if(perfect){ S.perfectUntil=S.time+0.45; perfectSfx(); haptic([10,20,10,20]); floatText(app.clientWidth/2, app.clientHeight*0.62, "Perfect +"+pts, "gold"); }
       else { chime(); haptic([15,25,15]); floatText(app.clientWidth/2, app.clientHeight*0.62, "+"+pts, ""); }
       closeCover();
     } else {
@@ -1138,7 +1165,7 @@
 
   function gameOver(){
     S.phase="over"; if(raf){ cancelAnimationFrame(raf); raf=null; }
-    sipEnd();
+    releaseAll(); countInEl.classList.add("hidden");
     const finalScore=Math.round(S.score);
     const bestKey=K.best(S.playMode==="stage"?S.modeKey:S.playMode);
     const prevBest=get(bestKey,0); const isBest=finalScore>prevBest;
@@ -1187,6 +1214,7 @@
     hud.classList.add("hidden"); pauseScreen.classList.add("hidden"); overScreen.classList.remove("hidden");
     face.dataset.tier="calm"; setFlood(0);
     if(med.newly.length||newWard.length) setTimeout(()=>queueToasts(med.newly.concat(newWard)), 500);
+    setTimeout(()=>{ try{ if(window.SWSMusic&&SWSMusic.reveal&&S&&S.phase==="over") SWSMusic.reveal(); }catch(e){} }, 2600);
   }
   function awardSunbeams(n){ window.__FF_LAST_SUNBEAMS=n; }
 
@@ -1235,11 +1263,17 @@
   }
 
   // -- pause / nav --
-  function pauseGame(){ if(!S||S.phase!=="playing") return; S.phase="paused";
+  function pauseGame(){ if(!S||(S.phase!=="playing"&&S.phase!=="countin")) return; S.phase="paused"; releaseAll(); countInEl.classList.add("hidden");
     $("quitBtn").textContent = S.playMode==="zen" ? "Take a bow" : "Give up the act";
     pauseScreen.classList.remove("hidden"); }
-  function resumeGame(){ if(!S||S.phase!=="paused") return; S.phase="playing"; pauseScreen.classList.add("hidden"); S.last=performance.now(); }
-  function toMenu(){ if(raf){ cancelAnimationFrame(raf); raf=null; } sipEnd(); S=null; hud.classList.add("hidden"); tutOverlay.classList.add("hidden");
+  // resume counts three beats before pressure moves; pads may be pressed during the count
+  const BEAT=0.6;
+  function resumeGame(){ if(!S||S.phase!=="paused") return; S.phase="countin"; S.countIn=3*BEAT; pauseScreen.classList.add("hidden");
+    countInEl.textContent="3"; countInEl.classList.remove("hidden"); S.last=performance.now(); }
+  function tickCountIn(dt){ S.countIn-=dt;
+    if(S.countIn<=0){ S.countIn=0; S.phase="playing"; countInEl.classList.add("hidden"); return; }
+    countInEl.textContent=String(Math.ceil(S.countIn/BEAT)); }
+  function toMenu(){ if(raf){ cancelAnimationFrame(raf); raf=null; } releaseAll(); S=null; countInEl.classList.add("hidden"); hud.classList.add("hidden"); tutOverlay.classList.add("hidden");
     padL.classList.remove("benched","slipped","down"); padR.classList.remove("benched","slipped","down");
     breathBtn.classList.remove("held","locked"); leanLbtn.classList.remove("held","down"); leanRbtn.classList.remove("held","down");
     hideAllScreens(); startScreen.classList.remove("hidden"); refreshMenu(); }
@@ -1396,6 +1430,7 @@
     raf=requestAnimationFrame(loop);
     const now=performance.now(); let dt=(now-S.last)/1000; S.last=now; if(dt>0.1) dt=0.1;
     if(S.phase==="tutorial"){ tickTutorial(dt); return; }
+    if(S.phase==="countin"){ tickCountIn(dt); render(); return; }
     if(S.phase!=="playing") return;
     tick(dt);
   }
@@ -1473,8 +1508,9 @@
     if(!(S.reliefUntil && S.time<S.reliefUntil)){ S.reliefUntil=0; face.dataset.tier=faceTier(p); }
     const sc=sweatCount(p);
     setDrop("d1",sc>=1); setDrop("d2",sc>=2); setDrop("d3",sc>=3);
-    const armed=S.cover; ventBtn.classList.toggle("armed",armed);
-    ventMainText.textContent=armed?"Vent":"Do not vent"; ventSub.textContent=armed?"Release under the noise":"Wait for cover noise";
+    const armed=S.cover, perf=!armed&&S.perfectUntil>S.time; ventBtn.classList.toggle("armed",armed); ventBtn.classList.toggle("perfect",perf);
+    ventMainText.textContent=armed?"Vent":(perf?"Perfect":"Do not vent"); ventSub.textContent=armed?"Release under the noise":(perf?"":"Wait for cover noise");
+    padL.classList.toggle("tired", S.strainL>=70||S.slipL>0); padR.classList.toggle("tired", S.strainR>=70||S.slipR>0);
     if(armed){ const frac=Math.max(0,(S.coverUntil-S.time)/(S.coverUntil-S.coverStart)); ventTimer.style.width=(frac*100)+"%";
       ventTimer.style.background = frac>(1-CFG.perfectFrac) ? "var(--mint)" : "var(--amber)"; }
     else ventTimer.style.width="0%";
@@ -1496,7 +1532,7 @@
     coughState.innerHTML=tut?dotRow(3,3):dotRow(S.coughCharges,CFG.coughChargeCap);
     coughBtn.classList.toggle("depleted", !tut&&S.coughCharges<=0);
     const cdMax=CFG.sipCooldown*(S.M.sipCdMul||1), cd=Math.max(0,S.sipCd);
-    sipCdEl.style.width= cd>0 ? ((1-cd/cdMax)*100).toFixed(1)+"%" : "0%";
+    sipRing.style.setProperty("--remaining", cd>0 ? (cd/cdMax).toFixed(3) : "0"); sipBtn.classList.toggle("cooling", cd>0&&!S.sipping);
     sipState.textContent= S.sipping ? "Sipping" : (cd>0 ? Math.ceil(cd)+"s" : "Ready");
     sipBtn.classList.toggle("depleted", !tut&&cd>0&&!S.sipping);
     waftState.innerHTML=tut?dotRow(2,2):dotRow(S.waftCharges,CFG.waftChargeCap);
@@ -1523,25 +1559,26 @@
   // ==================================================================
   //  INPUT
   // ==================================================================
-  function bindPad(el,key){ const set=new Set();
-    el.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); set.add(e.pointerId); el.classList.add("down"); if(S) S[key]=true; try{ el.setPointerCapture(e.pointerId);}catch(_){}});
-    const up=e=>{ if(!set.has(e.pointerId)) return; set.delete(e.pointerId); if(set.size===0){ el.classList.remove("down"); if(S) S[key]=false; } };
-    el.addEventListener("pointerup",up); el.addEventListener("pointercancel",up); el.addEventListener("lostpointercapture",up); }
+  // every hold (pads, leans, sip, breath) tracks its own pointer ids with capture; releaseAll() lets go of all of them
+  // (pause, blur, a hidden page, an orientation change), and the keyboard holds with them
+  const holds=[];
+  function bindHold(el,down,up){ const ids=new Set();
+    el.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); ids.add(e.pointerId); down(); try{ el.setPointerCapture(e.pointerId);}catch(_){} });
+    const end=e=>{ if(!ids.has(e.pointerId)) return; ids.delete(e.pointerId); if(ids.size===0) up(); };
+    el.addEventListener("pointerup",end); el.addEventListener("pointercancel",end); el.addEventListener("lostpointercapture",end);
+    holds.push(()=>{ if(ids.size){ ids.clear(); up(); } }); }
+  function bindPad(el,key){ bindHold(el, ()=>{ el.classList.add("down"); if(S) S[key]=true; }, ()=>{ el.classList.remove("down"); if(S) S[key]=false; }); }
+  function releaseAll(){ holds.forEach(f=>f()); for(const k in down) down[k]=false;
+    [padL,padR].forEach(p=>p.classList.remove("down")); leanLbtn.classList.remove("held"); leanRbtn.classList.remove("held");
+    if(S){ S.padL=false; S.padR=false; S.leanL=false; S.leanR=false; } endBreath(); sipEnd(); }
   bindPad(padL,"padL"); bindPad(padR,"padR");
+  const down={};
   ventBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); doVent(); });
   coughBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); doCough(); });
   waftBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); doWaft(); });
-  (function(){ const set=new Set();
-    sipBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); set.add(e.pointerId); sipStart(); try{ sipBtn.setPointerCapture(e.pointerId);}catch(_){}});
-    const up=e=>{ if(!set.has(e.pointerId)) return; set.delete(e.pointerId); if(set.size===0) sipEnd(); };
-    sipBtn.addEventListener("pointerup",up); sipBtn.addEventListener("pointercancel",up); sipBtn.addEventListener("lostpointercapture",up); })();
-  (function(){ const set=new Set();
-    breathBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); set.add(e.pointerId); startBreath(); try{ breathBtn.setPointerCapture(e.pointerId);}catch(_){}});
-    const up=e=>{ if(!set.has(e.pointerId)) return; set.delete(e.pointerId); if(set.size===0) endBreath(); };
-    breathBtn.addEventListener("pointerup",up); breathBtn.addEventListener("pointercancel",up); breathBtn.addEventListener("lostpointercapture",up); })();
+  bindHold(sipBtn, sipStart, sipEnd);
+  bindHold(breathBtn, startBreath, endBreath);
   bindPad(leanLbtn,"leanL"); bindPad(leanRbtn,"leanR");
-
-  const down={};
   window.addEventListener("keydown",e=>{ if(down[e.code]) return; down[e.code]=true;
     if(e.code==="KeyF"){ padL.classList.add("down"); if(S) S.padL=true; }
     if(e.code==="KeyJ"){ padR.classList.add("down"); if(S) S.padR=true; }
@@ -1561,8 +1598,11 @@
     if(e.code==="KeyQ"){ if(S) S.leanL=false; leanLbtn.classList.remove("held"); }
     if(e.code==="KeyE"){ if(S) S.leanR=false; leanRbtn.classList.remove("held"); } });
 
-  document.addEventListener("visibilitychange",()=>{ if(document.hidden && S && S.phase==="playing") pauseGame(); });
-  window.addEventListener("blur",()=>{ if(S && S.phase==="playing") pauseGame(); });
+  const letGo=()=>{ if(S&&(S.phase==="playing"||S.phase==="countin")) pauseGame(); else releaseAll(); };
+  document.addEventListener("visibilitychange",()=>{ if(document.hidden) letGo(); });
+  window.addEventListener("blur",letGo);
+  window.addEventListener("orientationchange",letGo);
+  try{ if(screen.orientation&&screen.orientation.addEventListener) screen.orientation.addEventListener("change",letGo); }catch(e){}
   document.addEventListener("gesturestart",e=>e.preventDefault());
   document.addEventListener("dblclick",e=>e.preventDefault());
 
@@ -1613,6 +1653,11 @@
       s.n=(s.n||0)+n; localStorage.setItem(k,JSON.stringify(s)); granted=n; }catch(e){}
     if(granted>0 && window.Sunbeam&&Sunbeam.earn) Sunbeam.earn(granted,tag).catch(function(){}); return granted; };
   window.SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+  window.SWS_EXIT=function(){ const emb=window.SWS_EMBED||window.self!==window.top;
+    if(emb&&parent!==window){ try{ parent.postMessage({sws:"close"},"*"); }catch(e){} return; }
+    if(document.referrer.indexOf("/portal")>=0&&history.length>1){ history.back(); return; }
+    location.href="/portal/"; };
+  $("arcadeBtn").addEventListener("click",()=>window.SWS_EXIT());
   if(window.SWS_EMBED&&parent!==window){ try{ parent.postMessage({sws:'ready'},'*'); }catch(e){} }
 
   // init — first-timers get the tutorial automatically
@@ -1652,6 +1697,7 @@
         for(let i=0;i<n;i++){ if(!S) break;
           if(S.phase==="tutorial") tickTutorial(1/60);
           else if(S.phase==="playing") tick(1/60);
+          else if(S.phase==="countin") tickCountIn(1/60);
           else break; }
         return window.FF_DEV.state(); },
       autoplay:function(sec){ const n=Math.round((sec||10)*60);
