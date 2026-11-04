@@ -287,7 +287,7 @@ const MUTANTS = [
   { name: 'LATCH_OFF', task: 'T0.9', file: 'page', find: "    if (!isHeld(verb) && (verb === 'A' || verb === 'B')) edge[verb]++;", repl: "    if (false) edge[verb]++;",
     gates: [{ gate: 'input', expect: 'a sub step tap on A (4 ms) is exactly one A_TAP' }] },
   /* ZONE_FIXED_AT_DOWN became STICK_FIXED_AT_DOWN at Q140 (the stick): its moves never read */
-  { name: 'STICK_FIXED_AT_DOWN', task: 'STICK', file: 'page', find: '        p.x = pts[i].clientX; follow(p);', repl: '        follow(p);',
+  { name: 'STICK_FIXED_AT_DOWN', task: 'STICK', file: 'page', find: '        p.x = pts[i].clientX; p.cy = pts[i].clientY; follow(p);', repl: '        p.cy = pts[i].clientY; follow(p);',   /* re anchored at sb-m1-22 (the drop through reads the y too) */
     gates: [{ gate: 'input', expect: '412x915: pushed 20 px right without lifting it is right' }] },
   { name: 'CANVAS_100PCT', task: 'T0.9', file: 'page', find: "    canvas.style.width = R.cssW + 'px';", repl: "    canvas.style.width = '100%';",
     gates: [{ gate: 'layout', expect: '412x915: the canvas is' }] },
@@ -465,8 +465,8 @@ const MUTANTS = [
     gates: [{ gate: 'play', expect: '1366x843: the canvas is 1x, 384 CSS px wide' }] },
   { name: 'CANVAS_TAKES_POINTERS', task: 'T0.8b review', file: 'page', find: 'pointer-events: none; background: var(--ink); }', repl: 'background: var(--ink); }',
     gates: [{ gate: 'play', expect: 'Again leaves nothing painted over the play area' }] },
-  { name: 'STRIP_KEEPS_PRESSED', task: 'T0.8b review', file: 'page', find: "down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; if (I._stripReset) I._stripReset(); };",   /* re anchored after the M1 review */
-    repl: "down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; };",
+  { name: 'STRIP_KEEPS_PRESSED', task: 'T0.8b review', file: 'page', find: "down = { L: {}, R: {}, A: {}, B: {}, D: {} }; edge.A = 0; edge.B = 0; if (I._stripReset) I._stripReset(); };",   /* re anchored after the M1 review, and at sb-m1-22 (D) */
+    repl: "down = { L: {}, R: {}, A: {}, B: {}, D: {} }; edge.A = 0; edge.B = 0; };",
     gates: [{ gate: 'play', expect: 'a blur releases a held thumb and its pad stops showing right' }] },   /* since the stick's review the thumb re centres at Resume and presses on its own move, so the lit pad names it */
   /* TITLE_UNDER_ROCKER, retired at NOTE3 (QUESTIONS Q94): the strip's Title it watched at 320x568 is gone; Pause in the top
      strip is watched by TITLE_BACK_IN_STRIP and PAUSE_OVERHANG_UNDER (layout) and the pause gate's rows */
@@ -476,7 +476,7 @@ const MUTANTS = [
   { name: 'PHASE_ZERO', task: 'T0.8b review', file: 'page', find: '  var PHASE = STEP_MS / 4;', repl: '  var PHASE = 0;',
     gates: [{ gate: 'play', expect: 'frame by frame the page ran the steps the accumulator owes' }] },
   /* ROCKER_NO_ADOPT became STICK_NO_ADOPT at Q140 */
-  { name: 'STICK_NO_ADOPT', task: 'STICK', file: 'page', find: '      if (k === 0) setDir(stickPtrs.length ? dirOf(stickAt[stickPtrs[0]], null) : null);', repl: '      if (k === 0) setDir(null);',
+  { name: 'STICK_NO_ADOPT', task: 'STICK', file: 'page', find: '      if (k === 0) { setDir(stickPtrs.length ? dirOf(stickAt[stickPtrs[0]], null) : null); setDown(stickPtrs.length ? downOf(stickAt[stickPtrs[0]], false) : false); }', repl: '      if (k === 0) { setDir(null); setDown(false); }',   /* re anchored at sb-m1-22 */
     gates: [{ gate: 'play', expect: 'the first lifted, the thumb still down takes over from its own landing point' }] },
   { name: 'CHIP_OVER_PLAY', task: 'T0.8b review', file: 'page', find: "    document.body.classList.toggle('playing', name === 'play' || name === 'crop');", repl: '',
     gates: [{ gate: 'play', expect: "in play the fleet's chip, pill, card and toast are hidden" }] },
@@ -797,7 +797,7 @@ const MUTANTS = [
     gates: [{ gate: 'share', expect: 'every input, select and textarea is 16 px or more' }] },
   { name: 'SHARELINK_40PX', task: 'M1R', file: 'page', find: '#sharelink { min-height: 48px;', repl: '#sharelink { min-height: 40px;',
     gates: [{ gate: 'share', expect: 'the link field is 48 px tall or more' }] },
-  { name: 'EDGE_BANKED_UNDER_SHEET', task: 'M1R', file: 'page', find: 'down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; if (I._stripReset)', repl: 'down = { L: {}, R: {}, A: {}, B: {} }; if (I._stripReset)',
+  { name: 'EDGE_BANKED_UNDER_SHEET', task: 'M1R', file: 'page', find: 'down = { L: {}, R: {}, A: {}, B: {}, D: {} }; edge.A = 0; edge.B = 0; if (I._stripReset)', repl: 'down = { L: {}, R: {}, A: {}, B: {}, D: {} }; if (I._stripReset)',   /* re anchored at sb-m1-22 (D) */
     gates: [{ gate: 'loop', expect: 'round 1: a tap on A under the open share sheet does not jump at Close and Resume' }] },
   { name: 'CARD_UNDER_SHEET', task: 'M1R', file: 'page', find: '#stage:has(> #sharesheet.on) > #paused, #stage:has(> #sharesheet.on) > #clear { visibility: hidden; }', repl: '',   /* re anchored at NOTE3: the pause card's sheet (Q94) */
     gates: [{ gate: 'loop', expect: 'round 1: the clear card hides under the sheet' }] },
@@ -976,8 +976,8 @@ const MUTANTS = [
   { name: 'STICK_DRAWN_IDLE', task: 'STICK', file: 'page', find: '#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; display: none;',   /* re anchored at ART3 */
     repl: '#stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; display: block;',
     gates: [{ gate: 'input', expect: '412x915: with no thumb down the stick draws no pad' }] },
-  { name: 'STICK_ABSOLUTE', task: 'STICK', file: 'page', find: 'stickAt[e.pointerId] = { ox: e.clientX, x: e.clientX, y: e.clientY };',
-    repl: 'stickAt[e.pointerId] = { ox: (stick.getBoundingClientRect().left + stick.getBoundingClientRect().right) / 2, x: e.clientX, y: e.clientY };',
+  { name: 'STICK_ABSOLUTE', task: 'STICK', file: 'page', find: 'stickAt[e.pointerId] = { ox: e.clientX, x: e.clientX, y: e.clientY, cy: e.clientY };',   /* re anchored at sb-m1-22 */
+    repl: 'stickAt[e.pointerId] = { ox: (stick.getBoundingClientRect().left + stick.getBoundingClientRect().right) / 2, x: e.clientX, y: e.clientY, cy: e.clientY };',
     gates: [{ gate: 'input', expect: "412x915: a landing at the field's left middle" }] },
   { name: 'CORNER_DEAD', task: 'STICK', file: 'page', edits: [['body.playing #strip, body:has(#death.on) #strip { --res: 0px; }', 'body:has(#death.on) #strip { --res: 0px; }'], ['body.playing #reserve, body:has(#death.on) #reserve { display: none; }', 'body:has(#death.on) #reserve { display: none; }']],   /* re anchored at the stick's review (the death card's box) */
     gates: [{ gate: 'input', expect: '412x915: landed at the very bottom left corner, 20 px right is right' }] },
@@ -989,8 +989,8 @@ const MUTANTS = [
     gates: [{ gate: 'input', expect: '412x915: pushed 20 px and eased back to 9 px it stays right' }] },
   { name: 'NO_FOLLOW', task: 'STICK', file: 'page', find: '      if (dx > TRAVEL) p.ox = p.x - TRAVEL; else if (dx < -TRAVEL) p.ox = p.x + TRAVEL;\n', repl: '',
     gates: [{ gate: 'input', expect: '412x915: after the 80 px push, a 44 px reversal is left' }] },
-  { name: 'UP_IS_JUMP', task: 'STICK', file: 'page', find: '        p.x = pts[i].clientX; follow(p);',
-    repl: "        p.x = pts[i].clientX; follow(p);\n        if (p.y - pts[i].clientY >= ON) I.press('A', 'stick-up'); else I.release('A', 'stick-up');",
+  { name: 'UP_IS_JUMP', task: 'STICK', file: 'page', find: '        p.x = pts[i].clientX; p.cy = pts[i].clientY; follow(p);',   /* re anchored at sb-m1-22 */
+    repl: "        p.x = pts[i].clientX; p.cy = pts[i].clientY; follow(p);\n        if (p.y - pts[i].clientY >= ON) I.press('A', 'stick-up'); else I.release('A', 'stick-up');",
     gates: [{ gate: 'input', expect: '412x915: a 60 px push straight up is word 0' }] },
   { name: 'RELEASE_ON_LEAVE', task: 'STICK', file: 'page', find: '      var p = stickAt[e.pointerId];\n      if (!p) return;\n',
     repl: '      var p = stickAt[e.pointerId];\n      if (!p) return;\n      var zr = stick.getBoundingClientRect();\n      if (e.clientX > zr.right || e.clientY < zr.top) { endStick(e); return; }\n',
@@ -1015,7 +1015,7 @@ const MUTANTS = [
   { name: 'PAD_FIELD_INSET', task: 'STICKR', file: 'page', find: 'var cx = mir ? Math.max(s.left + hw, p.ox) : Math.min(s.right - hw, p.ox), cy = Math.max(s.top + hh, p.y);',
     repl: "var f = stick.querySelector('.field').getBoundingClientRect(), cx = Math.max(f.left + hw, Math.min(f.right - hw, p.ox)), cy = Math.max(f.top + hh, Math.min(f.bottom - hh, p.y));",
     gates: [{ gate: 'input', expect: '412x915: landed at the very bottom left corner the thumb is inside the drawn pad' }] },
-  { name: 'KNOB_ARROW_DARK', task: 'STICKR', file: 'page', find: "      pad.classList.toggle('l', stickDir === 'L'); pad.classList.toggle('r', stickDir === 'R');\n", repl: '',
+  { name: 'KNOB_ARROW_DARK', task: 'STICKR', file: 'page', find: "      pad.classList.toggle('l', stickDir === 'L'); pad.classList.toggle('r', stickDir === 'R'); pad.classList.toggle('d', stickDown);\n", repl: '',   /* re anchored at sb-m1-22 */
     gates: [{ gate: 'input', expect: '412x915: pushed 20 px right without lifting it is right, the knob 20 px right and the right arrow lit' }] },
   { name: 'ITALIC_ARROWS', task: 'STICKR', file: 'page', find: '#stick i { font-style: normal; }\n', repl: '',
     gates: [{ gate: 'input', expect: "412x915: the stick's arrows stand upright" }] },
@@ -1439,7 +1439,7 @@ const MUTANTS = [
     gates: [{ gate: "sprites", expect: "biome 0: the develop reveal draws icon_biomes.attic at 2x" }] },
   { name: "PAD_CSS_RING", task: 'ART3', file: "page", find: "  background: var(--stick-pad-idle) 0 0 / 116px 116px no-repeat; image-rendering: pixelated; pointer-events: none; }", repl: "  border: 2px solid rgba(11,10,15,0.45); background: rgba(11,10,15,0.08); border-radius: 50%; pointer-events: none; }",
     gates: [{ gate: "input", expect: "412x915: held neutral, the pad is stick_pad.idle at 116 css px" }] },
-  { name: "PAD_NEVER_ACTIVE", task: 'ART3', file: "page", find: "#stick .pad.l, #stick .pad.r { background-image: var(--stick-pad-active); }", repl: "",
+  { name: "PAD_NEVER_ACTIVE", task: 'ART3', file: "page", find: "#stick .pad.l, #stick .pad.r, #stick .pad.d { background-image: var(--stick-pad-active); }", repl: "",   /* re anchored at sb-m1-22 */
     gates: [{ gate: "input", expect: "412x915: steering R, the pad is stick_pad.active" }] },
   { name: "KNOB_NO_WAY", task: 'ART3', file: "page", find: "#stick .pad.r .knob { background-image: var(--stick-knob-right); }", repl: "",
     gates: [{ gate: "input", expect: "412x915: steering R, the knob is stick_knob.right" }] },

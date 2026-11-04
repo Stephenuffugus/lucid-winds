@@ -1,5 +1,10 @@
 # START HERE
 
+## 📷 4 Nov 03:50 UTC (Fable) SHUTTERBUG sb-m1-22 STAMPED: THE DROP THROUGH. MUSIC STUDIO PACK FOR ASTRA IS IN DRIVE
+- sb-m1-22 (stamp 0b5839822, not deployed): down on the stick (a 28 px pull, let go at 16) and A on a one way drops the bug through it; on a solid it is a plain jump; ArrowDown on a keyboard. Lint OK, harness --fast OK (8114), a scratch node run proves plank to floor. His line: `bash /home/codespace/sb-drafts/sb-m1-22/deploy-sb-m1-22.sh`.
+- His three Shutterbug notes, answered not built (his calls): Shield Kick fires ONLY on a wall jump (code: `wallSide !== 0 && shieldKick`), so a ground jump shows nothing; the Darkroom's prints and start pick read as two unrelated lists; the weapons are 8 jump + 8 dive + 6 charms with no upgrade path.
+- Music Studio: the whole pack brief is Drive Astra/Music Studio `ASTRA-MUSIC-STUDIO-PACK-NOV04.txt` (16339 bytes, byte exact) and `docs/briefs/music-studio/`; the zip with 13 phone screens is the vault release `music-studio-astra-pack-nov04` (sha256 47d0dda9...) and was sent to him in the session. He drops the zip into the Drive folder and hands both to Astra; Astra's zip comes back as `music-studio-astra-pack-v1.zip`; Fable wires it into studio.html one section at a time.
+
 ## 🌙 3 Nov 07:10 UTC (Opus) SHUT DOWN FOR THE NIGHT, NO OVERNIGHT RUN. SHUTTERBUG sb-m1-21 LIVE; NEXT SESSION STARTS HERE
 1. His room photos: `node store/shutterbug-play/shoot.mjs --photo HIS.jpg` then `node tools/store-kit/compose.mjs store/shutterbug-play/kit.json`; look once; commit (store/shutterbug-play/BUILD.md section 4).
 2. His Play Console steps (BUILD.md section 2): the bundle is built and vaulted; Internal testing first; then he sends the App signing SHA-256 and the session adds Shutterbug to .well-known/assetlinks.json for his one deploy line.
