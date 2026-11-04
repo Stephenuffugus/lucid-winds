@@ -60,6 +60,11 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
 /* ---- match HUD. Text, bars and sockets only: it has to be drawable to a
        canvas texture in K5, so no CSS filters live here. ---- */
 #hud{position:fixed;inset:0;pointer-events:none}
+/* Astra's skyline behind the names in the wide shot (main.js lotBand); it takes no touch and fades into the dirt */
+#lot{position:absolute;left:0;right:0;top:0;height:19%;background-repeat:repeat-x;opacity:0;transition:opacity .45s;
+  -webkit-mask-image:linear-gradient(180deg,#000 0,#000 68%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 68%,transparent 100%)}
+#lot.on{opacity:1}
+@media (prefers-reduced-motion:reduce){#lot{transition:none}}
 #scores{position:absolute;left:0;right:0;top:0;padding:calc(8px + var(--st)) 12px 8px;
   display:flex;justify-content:space-between;align-items:flex-start;
   background:linear-gradient(180deg,rgba(13,16,12,.42),rgba(13,16,12,0) 78%)}
@@ -438,6 +443,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 </div>
 
 <div id="hud" hidden>
+  <div id="lot" aria-hidden="true"></div>
   <div id="scores">
     <div class="side me"><span class="who" id="whoMe">You</span><span class="sockets" id="sockMe"></span></div>
     <div class="side them"><span class="who" id="whoThem">Dusty</span><span class="sockets" id="sockThem"></span></div>

@@ -8,6 +8,16 @@
  * before there is art (DESIGN 9.8).
  */
 import * as THREE from 'three';
+import { art } from './art.js?v=20260905a';
+
+/* Astra's lot (pack v1, KEEPSIES_BUILD_PLAN.md step 3). One dirt tile is 60 cm: her grit then reads as grit and
+   her pebbles at 3 to 7 mm sit beside a 16 mm mib the way real ones do. The tone is a plate decision, not a
+   marble one: her albedo is a warm orange, and the marbles stay the brightest thing on the ground. */
+const DIRT_TILE_M = 0.6;
+const DIRT_TONE = 0x968c84;
+/* chalk_ring.png draws its line at 466 px from the centre of a 1024 square; the cross marker draws its
+   arms across 176 of 256 px; the lag line runs across 978 of 1024 px */
+const RING_PX = 466 / 512, CROSS_DRAWN = 176 / 256, LAG_DRAWN = 978 / 1024;
 
 /** A dirt texture drawn by code: grain, a few stones, and a scuffed centre. */
 function dirtTexture(size) {
@@ -86,17 +96,84 @@ export function buildRingerGround(stage, tuning, opts) {
   // a pixel across most of its length and aliases into a dashed road marking,
   // which is what the second K0 shot showed. Real chalk on dirt is a wide, soft,
   // uneven line, so the width is also the honest answer.
-  const chalk = new THREE.Mesh(
+  const line = new THREE.Mesh(
     new THREE.RingGeometry(ringR - 0.026, ringR + 0.026, 220),
     new THREE.MeshBasicMaterial({ color: 0xf2e8d6, transparent: true, opacity: 0.88,
       depthWrite: false })
   );
-  chalk.rotation.x = -Math.PI / 2;
-  chalk.position.y = 0.0012;
+  line.rotation.x = -Math.PI / 2;
+  line.position.y = 0.0012;
+  /* ⛔ `chalk` IS EVERYTHING DRAWN ON THE DIRT, and main hides it for calibration (one marble on dirt and
+     nothing else). The procedural line is the low tier's ring and the fallback until Astra's decal loads. */
+  const chalk = new THREE.Group();
+  chalk.add(line);
   group.add(chalk);
 
+  /* Astra's dirt on every tier (it IS the ground): roughness stays a constant, no normal map is invented
+     from a photograph; the drawn grain stays until it arrives, so no frame is ever bare */
+  const loader = new THREE.TextureLoader();
+  loader.load(art('env/dirt_albedo.webp'), (t) => {
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(discR * 2 / DIRT_TILE_M, discR * 2 / DIRT_TILE_M);
+    t.anisotropy = 8;
+    const m = disc.material;
+    if (m.map) m.map.dispose();
+    m.map = t; m.color.set(DIRT_TONE); m.needsUpdate = true;
+  });
+
+  /* Astra's chalk as decals, lit by the lamp like the dirt they sit on (a basic material glowed cream in a
+     marble's shadow and outshone the marbles). They drop first on the low tier: the drawn line stays. */
+  const lot = stage.tier.name !== 'low';
+  /* chalk is granular cream, never neon (style guide): her white is toned to the cream of the line and
+     thinned, so the ring and the cross read as chalk rubbed into dirt and the marbles stay brightest */
+  const decal = (file, w, h, y, alpha) => {
+    const mat = new THREE.MeshStandardMaterial({ transparent: true, depthWrite: false, opacity: 0,
+      roughness: 1, metalness: 0, color: 0xcdc2ad });
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+    m.rotation.x = -Math.PI / 2;
+    m.position.y = y;
+    m.receiveShadow = stage.tier.shadows !== 'off';
+    m.visible = false;
+    loader.load(art(file), (t) => {
+      t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+      mat.map = t; mat.opacity = alpha; mat.needsUpdate = true;
+      m.visible = m.userData.want !== false;
+      if (m === ring) line.visible = false;
+    });
+    chalk.add(m);
+    return m;
+  };
+  let ring = null, cross = null, lag = null;
+  if (lot) {
+    ring = decal('env/chalk_ring.png', 2 * ringR / RING_PX, 2 * ringR / RING_PX, 0.0012, 0.78);
+    // the cross's arms reach a little past the outer mibs of the lay (three spacings each way)
+    const span = 6 * tuning.ringer.crossSpacing + 0.05;
+    cross = decal('env/cross_marker.png', span / CROSS_DRAWN, span / CROSS_DRAWN, 0.0010, 0.5);
+    // the lag line beyond the far arc of the first view (the player's taw starts at +z), 2.4 m across the lane
+    lag = decal('env/lag_line.png', 2.4 / LAG_DRAWN, 2.4 / LAG_DRAWN / 8, 0.0010, 0.7);
+  }
+
+  /**
+   * Lay the chalk for this match: the ring at its size (the drawn ring was always the ten foot one, so the
+   * seven foot games of the first four minutes were played inside a circle that was not theirs), the cross
+   * marker under the cross and the X, and the lag line its offset beyond the far arc.
+   */
+  function dress(radius, formation) {
+    const k = radius / ringR;
+    line.scale.setScalar(k);
+    if (!lot) return;
+    ring.scale.setScalar(k);
+    const showCross = formation == null || formation === 'cross' || formation === 'x';
+    cross.userData.want = showCross;
+    cross.visible = showCross && cross.material.opacity > 0;
+    cross.rotation.z = formation === 'x' ? Math.PI / 4 : 0;
+    lag.position.z = -(radius + tuning.ringer.lagLineOffset);
+  }
+  dress(ringR, 'cross');
+
   stage.scene.add(group);
-  return { group, disc, chalk, ringRadius: ringR, discRadius: discR };
+  return { group, disc, chalk, dress, ringRadius: ringR, discRadius: discR };
 }
 
 /** Remove the ground and give its memory back. */

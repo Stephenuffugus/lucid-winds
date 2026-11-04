@@ -38,7 +38,8 @@ const server = createServer((req, res) => {
   res.end(readFileSync(p));
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
-const BASE = 'http://127.0.0.1:' + server.address().port + '/index.html?keepsiestest=1';
+const BASE = 'http://127.0.0.1:' + server.address().port + '/index.html?keepsiestest=1'
+  + (process.env.KP_QUALITY ? '&quality=' + process.env.KP_QUALITY : '');   // this box detects low; a Pixel 9 draws high
 
 const browser = await puppeteer.launch({
   headless: 'new', protocolTimeout: 180000,

@@ -16,6 +16,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from '../../lib/environments/RoomEnvironment.js';
 import { renderScale } from './quality.js?v=20260905a';
+import { art } from './art.js?v=20260905a';
 
 /**
  * @typedef {{update:(dt:number)=>void, getRay:(pose?:object)=>{origin:object,dir:object},
@@ -36,8 +37,16 @@ export function createStage(canvas, tuning, tier) {
   // dusk, and the fog colour MATCHES the sky at the horizon. A fog that fades to
   // a different colour than the thing behind it draws a grey band where the
   // ground ends, which is the void the first K0 shot had.
-  scene.fog = new THREE.Fog(0x6a6553, 5.0, 16.0);
-  scene.add(makeSky());
+  const lot = tier.name !== 'low';
+  // Astra's lot: the far dirt fades into the field at the foot of her fence (#442e1f at rows 440 to 470)
+  scene.fog = new THREE.Fog(lot ? 0x3f2d20 : 0x6a6553, 5.0, 16.0);
+  const sky = makeSky();
+  scene.add(sky);
+  /* Astra's dusk lot as the far sky (step 3): drops first on the low tier, where the gradient stays */
+  if (lot) new THREE.TextureLoader().load(art('env/lot_panorama.webp'), (t) => {
+    t.colorSpace = THREE.NoColorSpace;   // sampled as stored and written as stored: the sky encodes by hand
+    sky.material.uniforms.uPano.value = t; sky.material.uniforms.uHas.value = 1;
+  });
 
   // ⛔ Glass and metal with nothing to reflect render as black soap. A generated
   // room gives them something, and it costs one texture, not a download.
@@ -46,9 +55,15 @@ export function createStage(canvas, tuning, tier) {
   scene.environment = envRT.texture;
   scene.environmentIntensity = tuning.render.envIntensity;
 
-  scene.add(new THREE.HemisphereLight(0xdfe6d0, 0x241c15, 0.85));
-  const key = new THREE.DirectionalLight(0xfff4dd, 2.0);
-  key.position.set(-1.6, 3.0, 1.4);
+  /* ⛔ ONE LIGHT (Astra's style guide, 4 Nov). A warm lamp at the ring's north west, 35 degrees above the
+     dirt: the player's taw starts at +z (ringer.js, angle 0) and the first shot looks toward -z, so north is
+     -z, the lamp at (-x, -z) projects upper left in that view, and the shadows fall toward the shooter and right. It is the ONLY shadow caster. The lamp, the panorama's
+     lamp and the environment are fixed in the world: the camera orbits under them and they never move. The
+     fill is neutral dusk and casts nothing. */
+  scene.add(new THREE.HemisphereLight(0xc9d0dc, 0x2a2119, 0.8));
+  const key = new THREE.DirectionalLight(0xffcf96, 2.3);
+  const KEY_EL = 35 * Math.PI / 180, KEY_AZ = 1.25 * Math.PI;
+  key.position.set(Math.sin(KEY_AZ) * Math.cos(KEY_EL) * 4, Math.sin(KEY_EL) * 4, Math.cos(KEY_AZ) * Math.cos(KEY_EL) * 4);
   if (tier.shadows !== 'off') {
     key.castShadow = true;
     key.shadow.mapSize.set(tier.shadows === 'soft' ? 1024 : 512, tier.shadows === 'soft' ? 1024 : 512);
@@ -60,8 +75,8 @@ export function createStage(canvas, tuning, tier) {
     renderer.shadowMap.type = tier.shadows === 'soft' ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
   }
   scene.add(key);
-  const rim = new THREE.DirectionalLight(0xbcd0ff, 0.55);
-  rim.position.set(1.8, 1.1, -2.0);
+  const rim = new THREE.DirectionalLight(0xaebfe0, 0.4);   // dusk from the open side, no shadow
+  rim.position.set(1.8, 1.1, 2.0);
   scene.add(rim);
 
   const stage = { renderer, scene, key, rim, pmrem, envRT, tuning, tier, width: 0, height: 0 };
@@ -86,11 +101,21 @@ function makeSky() {
     uniforms: {
       uTop: { value: new THREE.Color(0x3f4b63) },
       uMid: { value: new THREE.Color(0x6a6553) },
-      uLow: { value: new THREE.Color(0x6a6553) }
+      uLow: { value: new THREE.Color(0x6a6553) },
+      uPano: { value: null },
+      uHas: { value: 0 }
     },
-    vertexShader: 'varying float vH; void main(){ vH = normalize(position).y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-    fragmentShader: 'uniform vec3 uTop; uniform vec3 uMid; uniform vec3 uLow; varying float vH;'
-      + 'void main(){ float h = clamp(vH*0.5+0.5, 0.0, 1.0);'
+    vertexShader: 'varying float vH; varying vec3 vD; void main(){ vD = normalize(position); vH = vD.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+    /* Astra's panorama (1600 x 800) as an equirect: her horizon is the fence's foot at row 440, so the
+       horizon maps to v 0.45, and her lamp (x 135) sits at the key light's bearing, north west. Mirrored
+       for a view from inside. Stored values are written as stored, so no encode for this branch. */
+    fragmentShader: 'uniform vec3 uTop; uniform vec3 uMid; uniform vec3 uLow; uniform sampler2D uPano; uniform float uHas;'
+      + ' varying float vH; varying vec3 vD;'
+      + 'void main(){ if (uHas > 0.5) { vec3 d = normalize(vD);'
+      + ' float u = fract(0.709 - atan(d.x, d.z) / 6.2831853);'
+      + ' float v = clamp(0.45 + asin(clamp(d.y, -1.0, 1.0)) / 3.1415927, 0.002, 0.998);'
+      + ' gl_FragColor = vec4(texture2D(uPano, vec2(u, v)).rgb, 1.0); return; }'
+      + ' float h = clamp(vH*0.5+0.5, 0.0, 1.0);'
       + ' vec3 c = mix(uLow, uMid, smoothstep(0.42, 0.500, h));'
       // the fog colour holds for the first few degrees above the horizon, so the
       // dirt fades into the same colour the sky starts with, then dusk takes over

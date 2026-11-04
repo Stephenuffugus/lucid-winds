@@ -9,7 +9,7 @@
  * DIRECTIONS BEFORE PLAY. The rules card is shown before the first match of the
  * mode, which is a studio standard and not a preference.
  */
-import { detectQuality } from './render/quality.js?v=20260905a';
+import { detectQuality, forceQuality } from './render/quality.js?v=20260905a';
 import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20260905a';
 import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20260905a';
 import { buildRingerGround } from './render/arenaEnv.js?v=20260905a';
@@ -100,6 +100,10 @@ async function boot() {
   if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
   G.dropTables = await dt.json();
 
+  /* a tester's tier (?quality=low|medium|high): this box has two cores and detection gives it low, while a
+     Pixel 9 gets high, so the shot tools can ask for what the phone draws (KP_QUALITY) */
+  const qWant = new URLSearchParams(location.search).get('quality');
+  if (qWant === 'low' || qWant === 'medium' || qWant === 'high') forceQuality(qWant);
   G.tier = detectQuality(G.tuning);
   const canvas = $('stage');
   G.stage = createStage(canvas, G.tuning, G.tier);
@@ -926,6 +930,8 @@ function startMatch(opts) {
     }
   });
   buildMeshes();
+  // the chalk for THIS match: the ring at its size, the cross marker under the lay, the lag line
+  if (G.ground && G.ground.dress) G.ground.dress(G.R.ringRadius, (G.R.match.houseRules || {}).formation);
   G.R.doLag();
   G.over = false;
   say(G.R.match.turn === 0 ? 'You won the lag. Hold your shooter, then flick.'
@@ -991,6 +997,53 @@ function attachPlacement(canvas) {
   const drop = (e) => { if (G.placeDrag === e.pointerId) G.placeDrag = null; };
   canvas.addEventListener('pointerup', drop);
   canvas.addEventListener('pointercancel', drop);
+}
+
+/**
+ * ⛔ THE SKYLINE IN THE WIDE SHOT (step 3). The brace camera looks 30 degrees down through a 28 degree lens, so
+ * the top of its frame is still 16 degrees under the horizon and the far sky (scene.js) is never in it. Astra's
+ * composition puts the lot's skyline across the top of the ring, so her panorama is laid there as a backdrop
+ * band behind the names: the strip from her lamp to the fence's foot, turned by the camera's bearing so the lamp
+ * stays in the world's north west (upper left of the first view), fading into the dirt. Only in the wide shot: when
+ * the camera leans in for the last few mibs (core/framing.js, under leanFull live) a target may stand up to 8
+ * percent from the top, so the band fades out; it also leaves for top down and low views, and on the low tier.
+ */
+const LOT_ROW0 = 236, LOT_ROWS = 210;   // panorama rows 236 to 446: the lamp, the skyline, the fence's foot
+function lotBand() {
+  const el = $('lot');
+  if (!el) return;
+  const st = G.rig.state;
+  const live = G.R ? G.R.liveMibs().length : 0;
+  const on = G.tier.name !== 'low' && !G.topDown && st.elevationDeg >= 18 && st.elevationDeg <= 60
+    && live >= ((G.tuning.render.ringerCam || {}).leanFull || 5);
+  if (el.classList.contains('on') !== on) el.classList.toggle('on', on);
+  if (!on) return;
+  if (!el.dataset.art) { el.style.backgroundImage = 'url(' + art('env/lot_panorama.webp') + ')'; el.dataset.art = '1'; }
+  /* ⛔ AND NEVER OVER THE FAR ARC. The far chalk is how a player sees a mib leave the ring, and in the wide
+     shot it runs just under the names: the band ends where the arc's nearest point to the top projects, so the
+     skyline stands behind the far chalk and never on it (a floor of 44 px, a ceiling of 19 percent) */
+  const vh = G.stage.height || 667;
+  const far = G.rig.project(-Math.sin(st.azimuth) * G.R.ringRadius, 0, -Math.cos(st.azimuth) * G.R.ringRadius);
+  const want = far.visible && far.y > 0 ? Math.max(44, Math.min(vh * 0.19, far.y - 2)) : vh * 0.19;
+  if (Math.abs((el.clientHeight || 0) - want) > 1.5) el.style.height = Math.round(want) + 'px';
+  const h = Math.round(want), w = el.clientWidth || 1, s = h / LOT_ROWS, pw = 1600 * s;
+  // the camera faces -(sin az, cos az); the panorama's u at that bearing (the sky's own mapping, scene.js)
+  const u = ((0.709 - (st.azimuth - Math.PI) / (2 * Math.PI)) % 1 + 1) % 1;
+  const x = Math.round(w / 2 - u * pw), y = Math.round(-LOT_ROW0 * s);
+  /* ⛔ never over the spyglass: its picture is in the canvas under every DOM layer, so the band takes a hole
+     the size of its frame and the skyline stands either side of the scope */
+  let hole = '';
+  const sg = G.spy && G.spy.on ? $('spyglass') : null;
+  if (sg && !sg.hidden) {
+    const a = el.getBoundingClientRect(), b = sg.getBoundingClientRect();
+    if (b.top < a.bottom) {
+      const L = Math.round(b.left - a.left), T = Math.round(b.top - a.top), Rr = Math.round(b.right - a.left), B = Math.round(b.bottom - a.top);
+      hole = 'polygon(evenodd,0 0,100% 0,100% 100%,0 100%,0 0,' + L + 'px ' + T + 'px,' + Rr + 'px ' + T + 'px,' + Rr + 'px ' + B + 'px,' + L + 'px ' + B + 'px,' + L + 'px ' + T + 'px)';
+    }
+  }
+  if (el.dataset.hole !== hole) { el.dataset.hole = hole; el.style.clipPath = hole || 'none'; }
+  const key = x + ',' + y + ',' + Math.round(pw);
+  if (el.dataset.at !== key) { el.dataset.at = key; el.style.backgroundSize = Math.round(pw) + 'px auto'; el.style.backgroundPosition = x + 'px ' + y + 'px'; }
 }
 
 /** The point on the ground plane under a CSS pixel, or null above the horizon. */
@@ -1627,7 +1680,7 @@ function frame(now) {
       G.rig.state.wantDistance = G.R.ringRadius * 2.5;
     }
     else if (G.rig.state.elevationDeg > 60) G.rig.state.elevationDeg = 33;
-    if (G.screen === 'match') updateHud();
+    if (G.screen === 'match') { updateHud(); lotBand(); }
     // a thumb held perfectly still sends no pointermove, and the settle is a
     // clock: read it every frame so the reticle tightens whether or not the
     // browser has anything to say
