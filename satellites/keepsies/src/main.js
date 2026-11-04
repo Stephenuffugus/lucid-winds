@@ -42,6 +42,7 @@ import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260905a';
 import { art, loadIcons, ic } from './render/art.js?v=20260905a';
 import { face } from './render/portraits.js?v=20260905a';
 import * as PROV from './meta/provenance.js?v=20260905a';
+import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20260905a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -229,6 +230,18 @@ function wireButtons() {
   $('setupGo').addEventListener('click', () => { beginMatch(); });
   $('tinTake').addEventListener('click', () => { takeTheTin(); });
   $('poKeep').addEventListener('click', () => { $('pouchOpen').hidden = true; });
+  /* the share cards (step 7): composed from live renders on the tap that asks, then the share sheet */
+  $('inspectShare').addEventListener('click', async () => {
+    if (!G.inspecting) return;
+    const b = $('inspectShare'); b.disabled = true;
+    try { const c = await buildMarbleCard(G.inspecting.entry, G.inspecting.item); await shareCanvas(c, G.inspecting.entry.id + '.png', G.inspecting.entry.name); }
+    finally { b.disabled = false; }
+  });
+  $('shareMatch').addEventListener('click', async () => {
+    const b = $('shareMatch'); b.disabled = true;
+    try { const c = await buildMatchCard(); if (c) await shareCanvas(c, 'keepsies-match.png', $('resultTitle').textContent); }
+    finally { b.disabled = false; }
+  });
   $('setupBack').addEventListener('click', () => { showScreen('title'); });
   $('rsPay').addEventListener('click', () => {
     if (!G.ransomOffer) return;
@@ -308,6 +321,38 @@ function wireButtons() {
  * Inspect's history (step 6): the latest event as a line ("Won off Dusty Coyle"; a reclaimed marble reads
  * Returned), and the whole list under it, oldest first. A marble from before provenance has its one line.
  */
+/** A live render of a catalog entry at px, the same material the grid and the turntable draw. */
+function renderOf(entry, px) {
+  const c = document.createElement('canvas');
+  c.width = c.height = px;
+  if (!entry) return c;
+  G.thumbs.open(px); G.thumbs.paint(c, entry, 0); G.thumbs.close();
+  return c;
+}
+
+/** The marble card for an entry and, when you hold one, its history line (never a player id). */
+function buildMarbleCard(entry, item) {
+  const hist = item ? PROV.historyOf(G.save, item.uid) : [];
+  const line = hist.length ? PROV.lineFor(hist[hist.length - 1]) : (item ? provenance(item).replace(/\.$/, '') : 'Not in your collection yet');
+  return marbleCard({ render: renderOf(entry, 640), name: entry.name, lore: entry.lore || '', tier: entry.tier,
+    tierWord: TIER_LABEL[entry.tier] || entry.tier, line });
+}
+
+/** The match card from the last result: the two sides of the pot (or the two shooters, for fair). */
+function buildMatchCard() {
+  const L = G.lastCard;
+  if (!L) return null;
+  const byId = (id) => G.catalog.marbles.find(m => m.id === id);
+  const side = (id, label) => { const e = byId(id); return e ? { render: renderOf(e, 420), name: e.name, label } : null; };
+  const staked = L.mine.length || L.theirs.length;
+  const left = side(L.mine[0] || L.myTaw, staked ? 'Your stake' : 'Your shooter');
+  const right = side(L.theirs[0] || L.theirTaw, staked ? L.opp + ' put up' : L.opp + "'s shooter");
+  const stats = ['Pocketed ' + $('rPocket').textContent, 'Shots ' + $('rShots').textContent];
+  const tech = $('rTech').textContent;
+  if (tech && tech !== 'none yet') stats.push(tech);
+  return matchCard({ title: $('resultTitle').textContent, left, right, pot: $('rPot').textContent, stats });
+}
+
 function paintProvenance(item) {
   const el = $('iProv');
   el.textContent = '';
@@ -1607,6 +1652,13 @@ function paintRansomClock() {
 
 function finishMatch(s) {
   G.over = true;   // from here no line from the field reaches the voice (say)
+  // the share card's two sides, taken before the pot settles and the stakes are cleared (step 7)
+  G.lastCard = {
+    mine: G.stake.map(m => m.id), theirs: G.theirStake.map(m => m.id),
+    myTaw: G.R.taws[0] && G.R.taws[0].entry ? G.R.taws[0].entry.id : null,
+    theirTaw: G.R.taws[1] && G.R.taws[1].entry ? G.R.taws[1].entry.id : null,
+    opp: (G.R.match.players[1] || {}).name || 'Dusty Coyle'
+  };
   const won = s.winner === 0;
   // the opponent's name comes from the match, so league two does not still say Dusty
   const oppName = (G.R.match.players[1] || {}).name || 'Dusty Coyle';
@@ -1964,6 +2016,13 @@ function installDevHook() {
     inventory: () => G.save.inventory.length,
     wallet: () => G.econ.snapshot(),
     pouch: (kind) => openPouch(kind),
+    shareCard: async (id) => {
+      const e = G.catalog.marbles.find(m => m.id === id);
+      if (!e) return null;
+      const item = G.save.inventory.find(i => i.id === id) || null;
+      return (await buildMarbleCard(e, item)).toDataURL('image/png');
+    },
+    matchCard: async () => { const c = await buildMatchCard(); return c ? c.toDataURL('image/png') : null; },
     grantSunbeams: (n) => { G.econ.earn(n, 'a gate said so'); buildPouches(); return G.econ.balance(); },
     // put one named marble in the inventory, so a gate can lose something worth
     // ransoming without playing until the pouches hand it one

@@ -320,6 +320,15 @@ await page.evaluate(() => { const b = document.getElementById('pouch-standard');
 await wait(600);
 await shot('k2-pouch-open');
 
+/* step 7: the share cards, the composed PNGs themselves (no profile ids on either) */
+{
+  const { writeFileSync } = await import('node:fs');
+  const mc = await page.evaluate(() => window.KEEPSIES_DEV.shareCard('lutz'));
+  if (mc) { writeFileSync(join(OUT, 'k2-share-marble.png'), Buffer.from(mc.split(',')[1], 'base64')); console.log('  k2-share-marble.png'); }
+  const mt = await page.evaluate(() => window.KEEPSIES_DEV.matchCard());
+  if (mt) { writeFileSync(join(OUT, 'k2-share-match.png'), Buffer.from(mt.split(',')[1], 'base64')); console.log('  k2-share-match.png'); }
+}
+
 await browser.close();
 server.close();
 console.log('SHOTS OK');

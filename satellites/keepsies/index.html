@@ -363,8 +363,9 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 #iTraits dt{color:var(--muted)}
 #iTraits dd{margin:0;color:var(--chalk)}
 #iProv{margin:.7rem 0 0;font-size:.78rem;color:var(--muted)}
-#inspectBack{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(20px + var(--sb));
+#inspectBack{position:absolute;left:calc(50% - 6px);transform:translateX(-100%);bottom:calc(20px + var(--sb));
   pointer-events:auto}
+#inspectShare{position:absolute;left:calc(50% + 6px);bottom:calc(20px + var(--sb));pointer-events:auto}
 /* the pouches: the price and the odds IN WORDS, plus the pity counter as
    "next rare in N", because a number a player can watch is a promise kept */
 #pouches{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:23rem}
@@ -609,6 +610,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
     <p id="iProv"></p>
   </div>
   <button id="inspectBack" class="quiet">Back</button>
+  <button id="inspectShare" class="quiet">Share</button>
 </div>
 
 <div id="results" class="veil" hidden>
@@ -627,6 +629,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   </div>
   <button id="again">Rematch</button>
   <button id="toTitle" class="quiet">Home</button>
+  <button id="shareMatch" class="quiet">Share the match</button>
 </div>
 
 <!-- Beat 4 of DESIGN 16: the tin, and the heirloom laid on a cloth. Three rares,
