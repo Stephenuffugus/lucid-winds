@@ -28,7 +28,7 @@ families (226 procedural recipes, 14 sculpt references). The bank is a later mil
 | Step | State | Commit | Note |
 |---|---|---|---|
 | 0 | DONE |  | docs read (HANDOFF, ASSESSMENT, STYLE-GUIDE, NOTES' Practical composition, anchors.json); server on 8777; /home/codespace/kp-drafts made; fast check green (18 s; ai_budget and ringer_ai skipped by design); before set = docs/shots as committed plus /home/codespace/astra-drafts/keepsies-contact.jpg; main's keepsies tree 142f4a46c2d9b090bf703e7e2a45217015636e2c, the branch's 9ed84fc637e736f30eda5aed4ceab2a185ecf8d8 (they differ only in docs/DECISIONS.md, which never ships) |
-| 1 | TODO | | |
+| 1 | DONE | a453be621 | THE UNDEFINED was the lay chip reading a rule with no value: every chip value has its word (Seven, Ten, Thirteen foot; The cross, The X, The ring, The bunch) and the lay starts at cross (the rules' own default); the camera keeps the eye and the near plane's lower edge 4 mm over the dirt at any distance and look point (every frame, so after a zoom, a view change and a result), and a tester's under camera dies with its screen (the set's k1-under now asks for 25 degrees under and is held at the floor); no field line reaches the voice once a match is over, an empty voice hides its plate; the filter strip centres the lit filter after a tap. Fast check green. Shot k1-setup: TEN FOOT and THE CROSS; wrong: the stake strip opens mid tile at the left edge, Against theirs sits hard left under a centred column, no portrait beside Against (step 4). Box: /workspaces/lucid-winds/node_modules was missing, now a gitignored symlink to /workspaces/sws-tools/node_modules so the browser tools resolve puppeteer |
 | 2 | TODO | | |
 | 3 | TODO | | |
 | 4 | TODO | | |
