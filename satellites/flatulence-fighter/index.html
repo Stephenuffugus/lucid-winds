@@ -72,7 +72,7 @@
   .it-title{ font-family:var(--serif); font-weight:700; font-size:clamp(1.7rem, 9.5vw, 2.4rem); line-height:1.05; color:var(--sage-2);}
   .it-sub{ font-size:1rem; color:#5a5342;}
   #startScreen{ background:var(--a-menu,none) 50% 100%/cover no-repeat, var(--paper);}
-  .bust.menu-bust{ width:min(36vw, 150px, 17vh); height:auto; aspect-ratio:1; margin:-4px 0 -34px; position:relative; z-index:0; flex:none;}
+  .bust.menu-bust{ width:min(32vw, 132px, 15vh); height:auto; aspect-ratio:1; margin:-4px 0 -34px; position:relative; z-index:0; flex:none;}
   #startScreen .card{ z-index:1;}
   .wordmark{ display:block; width:100%; max-width:280px; height:auto; aspect-ratio:1000/340; margin:0 auto 2px;}
   .card h1.wm{ margin:0;}
@@ -110,7 +110,10 @@
     border:none; border-radius:8px; padding:15px 34px; cursor:pointer; box-shadow:0 6px 0 var(--sage-2), 0 10px 18px var(--shadow); transition:transform .06s ease, box-shadow .06s ease;}
   .btn:active{ transform:translateY(4px); box-shadow:0 2px 0 var(--sage-2), 0 5px 10px var(--shadow);}
   .btn:focus-visible{ outline:3px solid var(--mint-deep); outline-offset:3px;}
-  .btn.ghost{ background:transparent; color:var(--sage-2); box-shadow:none; border:2px solid var(--sage); padding:9px 18px; font-size:.82rem; min-height:48px;}
+  .btn.ghost{ background:var(--paper); color:var(--sage-2); box-shadow:0 2px 0 var(--sage-2); border:2px solid var(--sage); padding:9px 18px; font-size:.82rem; min-height:48px;}
+  .settings-row.compact .btn.ghost{ text-transform:none; letter-spacing:0; font-size:.76rem; padding:8px 7px;}
+  .settings-row.compact .btn .ic{ width:17px; height:17px;}
+  .settings-row.compact{ gap:5px; flex-wrap:nowrap;}
   .btn.ghost:active{ transform:translateY(2px);}
 
   .modes{ display:flex; gap:8px; width:100%; max-width:420px;}
@@ -277,7 +280,7 @@
   .breath-bar.locked{ opacity:.6;}
   .vent{ flex:1; min-height:84px; border:0; cursor:pointer; background:none; color:#4a1512; padding:24px 12px 16px; overflow:hidden;
     display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; transition:transform .08s;}
-  .vent::before{ border:20px solid transparent; border-image:var(--a-ventUnsafe,none) 40 fill / 20px stretch;}
+  .vent::before{ border:24px solid transparent; border-image:var(--a-ventUnsafe,none) 48 fill / 24px stretch;}
   .vent .vent-main{ position:relative; z-index:2; font-size:clamp(.8rem, 3.7vw, .98rem); font-weight:600; letter-spacing:.06em; text-transform:uppercase; line-height:1.1;}
   .vent .vent-sub{ display:block; font-size:.75rem; line-height:1.2; opacity:.8; margin-top:4px; position:relative; z-index:2;}
   .vent.armed{ color:var(--deep);}
@@ -324,7 +327,7 @@
 
   /* ======================= WARDROBE ======================= */
   .ward-grid{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:6px;}
-  .ward-card{ position:relative; isolation:isolate; width:calc(33.3% - 8px); min-width:96px; min-height:150px; border:0; padding:14px 10px 12px; background:none; color:var(--sage-2); font-family:inherit; text-align:center; cursor:pointer;
+  .ward-card{ position:relative; isolation:isolate; width:calc(33.3% - 8px); min-width:96px; min-height:150px; border:0; padding:16px 14px 24px; background:none; color:var(--sage-2); font-family:inherit; text-align:center; cursor:pointer;
     display:flex; flex-direction:column; align-items:center; gap:2px;}
   .ward-card::before{ content:""; position:absolute; inset:0; z-index:-1; border:24px solid transparent; border-image:var(--a-wardFrame,none) 48 fill / 24px stretch; filter:var(--art-filter);}
   .ward-card .wpic{ width:76%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; position:relative;}
@@ -517,7 +520,7 @@
       <span>Sunbeams <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sunbeam"/></svg> <b id="menuSun">0</b></span>
       <span>Ordeals <b id="menuPlays">0</b></span>
     </div>
-    <div class="settings-row">
+    <div class="settings-row compact">
       <button class="btn ghost toggle-btn" id="soundToggle" aria-pressed="true">Sound</button>
       <button class="btn ghost" id="musicToggle" type="button">Music</button>
       <button class="btn ghost toggle-btn" id="hapticToggle" aria-pressed="true">Haptics</button>
@@ -721,7 +724,7 @@
   //  DATA
   // ==================================================================
   // Astra's pack v1 (4 Nov 2026): every asset URL carries ?v=ART_V; bump it when any file under assets/ changes.
-  const ART_V="20261104a";
+  const ART_V="20261104b";
   const art=p=>p+"?v="+ART_V;
   // one inline sprite (tools/ff-tests/build-sprite.js): ic("vent") draws icon_vent.svg in currentColor
   const ic=(name,cls)=>'<svg class="ic'+(cls?" "+cls:"")+'" aria-hidden="true" focusable="false"><use href="#i-'+name+'"/></svg>';
@@ -1150,7 +1153,7 @@
     for(let k=0;k<16;k++){ const u=(u0+k*0.618034)%1, v=(v0+k*0.381966)%1, cx=x0+u*(x1-x0), cy=y0+v*(y1-y0);
       if(S.leaks.every(o=>Math.hypot(o.x-cx,o.y-cy)>=2*R+10)){ lx=cx; ly=cy; break; } }
     el.style.left=lx.toFixed(0)+"px"; el.style.top=ly.toFixed(0)+"px";
-    el.innerHTML='<span class="ring"></span><span class="core">'+ic("leak")+'</span>';
+    el.innerHTML='<span class="ring"></span><span class="core"></span>';
     const leak={el,remaining:life,life,x:lx,y:ly};
     el.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); plugLeak(leak); });
     leaksEl.appendChild(el); S.leaks.push(leak);
@@ -1443,7 +1446,7 @@
       case "grandma": return Math.min(Lc.lifePlugs,50)+" of 50";
       case "mime": return Math.min(Lc.bestStreak,3)+" of 3 days";
       case "bulldog": return Math.min(Lc.medalCount,8)+" of 8";
-      case "midnight": return "Best "+act(Lc.bestAct)+" of Act V";
+      case "midnight": return Lc.bestAct>0 ? "Best "+act(Lc.bestAct)+" of Act V" : "No act played yet";
       case "technicolor": return "Best "+Math.min(Lc.bestScore,5000)+" of 5000";
       case "silver": return (Math.min(Lc.modes.length,3)+(Lc.playModes.indexOf("daily")>=0?1:0)+(Lc.playModes.indexOf("zen")>=0?1:0))+" of 5";
     }
@@ -1491,15 +1494,15 @@
   // a progress line wherever a lifetime record exists for the medal's threshold
   function medalProgress(id){
     const bt=get(L.bestTime,0), bc=comboMultFrom(get(L.bestCombo,0)), ba=get(L.bestAct,0), md=get(L.modes,[]).length, dp=get(L.dailyPlays,0);
-    const act=n=>n>0?"Act "+ROMAN[Math.min(n,ROMAN.length)-1]:"none yet";
+    const act=n=>n>0?"Act "+ROMAN[Math.min(n,ROMAN.length)-1]:"";
     switch(id){
+      case "act5": return ba>0 ? "Best "+act(ba)+" of Act V" : "No act played yet";
+      case "act8": return ba>0 ? "Best "+act(ba)+" of Act VIII" : "No act played yet";
       case "c30": return "Best "+fmtTime(bt)+" of 30s";
       case "c60": return "Best "+fmtTime(bt)+" of 1m 0s";
       case "c120": return "Best "+fmtTime(bt)+" of 2m 0s";
       case "combo3": return "Best ×"+bc.toFixed(1)+" of ×3.0";
       case "combo5": return "Best ×"+bc.toFixed(1)+" of ×5.0";
-      case "act5": return "Best "+act(ba)+" of Act V";
-      case "act8": return "Best "+act(ba)+" of Act VIII";
       case "allmodes": return Math.min(md,3)+" of 3 modes";
       case "daily3": return Math.min(dp,3)+" of 3 Dailies";
     }
@@ -1554,7 +1557,7 @@
     S.tut={ step:0, heldBoth:0, oneUp:0, ventOk:false, perfOk:false, ventTries:0, plugOk:false, lastOpen:-99, lastLeak:-99, stepT:0,
             coughed:false, coughVentOk:false, sipHeld:0, waftWin:0, waftOk:false };
     S.nextCover=Infinity; S.nextLeak=Infinity; S.nextWhiff=Infinity;
-    hideAllScreens(); clearLeaks(); ribbonIdle();
+    hideAllScreens(); clearLeaks(); ribbonIdle(); setSceneArt(0);
     hud.classList.remove("hidden"); hud.classList.add("hud-tut"); tutOverlay.classList.remove("hidden");
     comboEl.classList.remove("on");
     setupTutStep();
