@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@700&family=Open+Sans:wght@400;600&display=swap">
 <meta name="theme-color" content="#e7e0cb">
 <link rel="manifest" href="manifest.json?v=20261104a">
 <link rel="apple-touch-icon" href="icon-192.png?v=20261104a">
@@ -30,16 +33,22 @@
      FLATULENCE FIGHTER — an homage to "Try Not To Fart"
      (Lucid Games / Sky Wolf) — built from the Draft handoff
      ============================================================ */
+  /* Astra's pack v1 tokens (palette_and_controls.css): matinee is matinee_sepia, the default. The palette ids that are
+     saved (matinee, midnight, technicolor, silver) stay; body.pal-* swaps the values. The older names alias the new
+     tokens on body so a palette class retints both. --art-filter only reaches .ff-art-layer (room, strips, props). */
   :root{
-    --paper:#e7e0cb; --paper-2:#d8cfb2; --paper-3:#c7bd9c;
-    --sage:#37493d; --sage-2:#2b3a31; --sage-3:#1c2620;
-    --ink:#221f18; --amber:#e0902f; --crimson:#c0392b;
-    --mint:#5fd0b0; --mint-deep:#2c9d80; --shadow:rgba(20,16,10,.35);
+    --paper:#e7e0cb; --paper-shade:#c7bd9c; --coat:#37493d; --sage:#37493d; --deep:#1c2620; --ink:#221f18;
+    --accent:#e0902f; --relief:#5fd0b0; --danger:#c0392b; --art-filter:none;
+    --paper-2:#d8cfb2; --sage-2:#2b3a31; --mint-deep:#2c9d80; --shadow:rgba(20,16,10,.35);
+    --serif:"Noto Serif","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans:"Open Sans","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   }
+  body{ --paper-3:var(--paper-shade); --sage-3:var(--deep); --amber:var(--accent); --crimson:var(--danger); --mint:var(--relief);}
+  .ff-art-layer{ filter:var(--art-filter); pointer-events:none;}
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   .ic{ width:1.25em; height:1.25em; display:inline-block; vertical-align:-.25em; flex:none; color:inherit; overflow:visible;}
   html,body{margin:0; height:100%;}
-  body{ font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  body{ font-family:var(--sans);
     background:var(--sage-3); color:var(--ink); overflow:hidden; user-select:none; -webkit-user-select:none; touch-action:none;}
   #app{ position:relative; width:100%; height:100vh; height:100dvh; max-width:560px; margin:0 auto; overflow:hidden;
     background:radial-gradient(120% 90% at 50% -10%, var(--paper) 0%, var(--paper-2) 55%, var(--paper-3) 100%);
@@ -64,9 +73,9 @@
   .card{ border:3px double var(--sage); background:linear-gradient(180deg, rgba(231,224,203,.94), rgba(216,207,178,.94));
     padding:22px 20px; border-radius:6px; max-width:420px; width:100%;
     box-shadow:0 10px 30px var(--shadow), inset 0 0 0 6px rgba(231,224,203,.6);}
-  .card .eyebrow{ font-size:.72rem; letter-spacing:.42em; text-transform:uppercase; color:var(--sage); margin-bottom:10px; padding-left:.42em;}
-  .card h1{ font-size:2.5rem; line-height:1; margin:0 0 6px; letter-spacing:.02em; color:var(--sage-2); font-weight:700;}
-  .card .sub{ font-style:italic; color:#5a5342; margin:0; font-size:1.02rem;}
+  .card .eyebrow{ font-size:.74rem; font-weight:600; letter-spacing:.32em; text-transform:uppercase; color:var(--sage); margin-bottom:10px; padding-left:.42em;}
+  .card h1{ font-family:var(--serif); font-size:2.5rem; line-height:1.05; margin:0 0 6px; letter-spacing:.01em; color:var(--sage-2); font-weight:700;}
+  .card .sub{ color:#5a5342; margin:0; font-size:1rem;}
   .rule{ height:0; border-top:1px solid var(--sage); opacity:.5; width:60%; margin:14px auto;}
   .kbd{ display:inline-block; background:var(--sage); color:var(--paper); padding:1px 8px; border-radius:4px; font-size:.8rem; letter-spacing:.05em; font-style:normal;}
   .how-list{ text-align:left; font-size:.92rem; line-height:1.45; color:#463f31; margin:0;}
@@ -74,7 +83,7 @@
   .how-list p:last-child{ margin-bottom:0;}
   .how-list b{ color:var(--sage-2);}
 
-  .btn{ font-family:inherit; font-size:1.1rem; letter-spacing:.12em; text-transform:uppercase; color:var(--paper); background:var(--sage);
+  .btn{ font-family:inherit; font-size:1.02rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--paper); background:var(--sage);
     border:none; border-radius:8px; padding:15px 34px; cursor:pointer; box-shadow:0 6px 0 var(--sage-2), 0 10px 18px var(--shadow); transition:transform .06s ease, box-shadow .06s ease;}
   .btn:active{ transform:translateY(4px); box-shadow:0 2px 0 var(--sage-2), 0 5px 10px var(--shadow);}
   .btn:focus-visible{ outline:3px solid var(--mint-deep); outline-offset:3px;}
@@ -101,11 +110,11 @@
   .scene-chip{ flex:1; min-width:0; font-size:.72rem; letter-spacing:.24em; text-transform:uppercase; color:var(--sage-2);
     border:1px solid var(--sage); border-radius:20px; padding:6px 10px; text-align:center; background:rgba(231,224,203,.55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .topright{ display:flex; align-items:center; gap:10px;}
-  .score{ font-variant-numeric:tabular-nums; font-size:1.1rem; font-weight:700; color:var(--sage-2); min-width:58px; text-align:right;}
+  .score{ font-variant-numeric:tabular-nums; font-size:1.1rem; font-weight:600; color:var(--sage-2); min-width:58px; text-align:right;}
   .strikes{ display:flex; gap:4px;}
   .pip{ width:14px; height:14px; border-radius:50%; border:2px solid var(--sage-2); background:var(--sage); transition:.2s;}
   .pip.broke{ background:transparent; border-color:var(--crimson); position:relative;}
-  .pip.broke::after{ content:"✕"; position:absolute; inset:-4px 0 0; color:var(--crimson); font-size:12px; line-height:1; text-align:center; font-weight:900;}
+  .pip.broke::after{ content:""; position:absolute; inset:-3px; background:linear-gradient(45deg,transparent 42%,var(--crimson) 42% 58%,transparent 58%),linear-gradient(-45deg,transparent 42%,var(--crimson) 42% 58%,transparent 58%);}
   .hud-tut .topright{ visibility:hidden;} .hud-tut #pauseBtn{ visibility:hidden;}
 
   .stage{ flex:1; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2px 16px; min-height:0;}
@@ -185,6 +194,10 @@
   .ability .ab-ico{ font-size:1.15rem; line-height:1; position:relative; z-index:2;}
   .ability .ab-name{ font-size:.7rem; letter-spacing:.16em; text-transform:uppercase; font-weight:700; position:relative; z-index:2;}
   .ability .ab-state{ font-size:.72rem; letter-spacing:.3em; line-height:1; position:relative; z-index:2; padding-left:.3em;}
+  .cdot{ display:inline-block; width:7px; height:7px; border-radius:50%; border:1.5px solid currentColor; margin:0 2px; vertical-align:middle;}
+  .cdot.on{ background:currentColor;}
+  .cover-banner .cb-txt{ display:flex; flex-direction:column; align-items:flex-start; line-height:1.15;}
+  .cover-banner .cb-sub{ font-size:.78rem; font-weight:600; letter-spacing:.08em; opacity:.85;}
   .ability .ab-cd{ position:absolute; left:0; bottom:0; top:auto; height:100%; width:0%; background:rgba(95,208,176,.28); z-index:1; transition:width .12s linear;}
   .ability.depleted{ border-style:dashed; opacity:.55; box-shadow:0 2px 0 var(--sage-2); filter:grayscale(.4);}
   .ability.sipping{ background:linear-gradient(180deg,#bfe6f2,#8fc7de); border-color:#3a7a94; color:#0e3547; box-shadow:0 4px 0 #3a7a94;}
@@ -232,9 +245,15 @@
   .ward-sec{ font-size:.72rem; letter-spacing:.3em; text-transform:uppercase; color:var(--sage); margin:10px 0 2px; width:100%; text-align:center;}
 
   /* ======================= THEATER PALETTES ======================= */
-  body.pal-midnight{ --paper:#c9d2d8; --paper-2:#aebbc4; --paper-3:#93a3ae; --sage:#22333c; --sage-2:#17262e; --sage-3:#0c161c; --ink:#141a1e;}
-  body.pal-technicolor{ --paper:#f6e7c4; --paper-2:#eed6a4; --paper-3:#e0bf86; --sage:#1f5f5b; --sage-2:#164743; --sage-3:#0d2c29; --amber:#e0592f; --crimson:#c22550; --mint:#5fd0b0;}
-  body.pal-silver{ --paper:#e9e9e4; --paper-2:#d6d6d0; --paper-3:#bdbdb6; --sage:#3d3d3a; --sage-2:#2b2b28; --sage-3:#191917; --ink:#1c1c1a; --amber:#a8905c; --crimson:#8a3a32;}
+  body.pal-midnight{ --paper:#c9d2d8; --paper-shade:#93a3ae; --coat:#17262e; --sage:#17262e; --deep:#141a1e; --ink:#141a1e;
+    --accent:#9ebbbd; --relief:#a8d9d6; --danger:#a32f2a; --art-filter:grayscale(.85) sepia(.18) hue-rotate(145deg) saturate(.65);
+    --paper-2:#aebac3; --sage-2:#162026; --mint-deep:#6b8e8f;}
+  body.pal-technicolor{ --paper:#f6e7c4; --paper-shade:#dccb9d; --coat:#1f5f5b; --sage:#1f5f5b; --deep:#153c39; --ink:#20322d;
+    --accent:#e0592f; --relief:#76d4bb; --danger:#a91e43; --art-filter:saturate(1.12) hue-rotate(8deg);
+    --paper-2:#e9d9b0; --sage-2:#1a4e4a; --mint-deep:#51a393;}
+  body.pal-silver{ --paper:#e9e9e4; --paper-shade:#bdbdb6; --coat:#3d3d3a; --sage:#3d3d3a; --deep:#232321; --ink:#252523;
+    --accent:#a8905c; --relief:#d2d2ca; --danger:#383836; --art-filter:grayscale(1);
+    --paper-2:#d3d3cd; --sage-2:#30302e; --mint-deep:#93938e;}
 
   .stat-row{ display:flex; justify-content:space-between; font-size:1rem; margin:.3em 0; color:#463f31;}
   .stat-row b{ color:var(--sage-2); font-variant-numeric:tabular-nums;}
@@ -350,9 +369,8 @@
   <!-- ============ START / MENU ============ -->
   <div id="startScreen" class="screen">
     <div class="card">
-      <div class="eyebrow">Lucid Games presents</div>
+      <div class="eyebrow">A silent comedy of composure</div>
       <h1 style="font-size:2.05rem;">FLATULENCE<br>FIGHTER</h1>
-      <p class="sub">an homage to “Try Not To Fart”</p>
       <div class="rule"></div>
       <p style="margin:0; color:#463f31; font-size:.98rem; line-height:1.4;">Keep your composure. Clench to hold it in, plug the leaks, and let it out only under cover of noise. Any sound the room hears is a strike.</p>
     </div>
@@ -377,12 +395,12 @@
     </div>
     <div class="menu-stats">
       <span>Best <b id="menuBest">0</b></span>
-      <span>Sunbeams ☀ <b id="menuSun">0</b></span>
+      <span>Sunbeams <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sunbeam"/></svg> <b id="menuSun">0</b></span>
       <span>Ordeals <b id="menuPlays">0</b></span>
     </div>
     <div class="settings-row">
-      <button class="btn ghost toggle-btn" id="soundToggle" aria-pressed="true">🔊 Sound</button>
-      <button class="btn ghost toggle-btn" id="hapticToggle" aria-pressed="true">📳 Haptics</button>
+      <button class="btn ghost toggle-btn" id="soundToggle" aria-pressed="true">Sound</button>
+      <button class="btn ghost toggle-btn" id="hapticToggle" aria-pressed="true">Haptics</button>
     </div>
   </div>
 
@@ -416,7 +434,7 @@
   <!-- ============ HUD ============ -->
   <div id="hud" class="hidden">
     <div class="topbar">
-      <button class="icon-btn" id="pauseBtn" aria-label="Pause">⏸</button>
+      <button class="icon-btn" id="pauseBtn" aria-label="Pause"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-pause"/></svg></button>
       <div class="scene-chip" id="sceneChip">The Funeral</div>
       <div class="topright">
         <div class="strikes" id="strikes"><div class="pip"></div><div class="pip"></div><div class="pip"></div></div>
@@ -425,7 +443,7 @@
     </div>
 
     <div class="stage">
-      <button class="breath-bar" id="breathBtn" aria-label="Hold your breath to slow the pressure. Let go before you gasp"><span class="bf" id="breathFill"></span><span class="bl">🫁 <span>Hold Breath</span></span></button>
+      <button class="breath-bar" id="breathBtn" aria-label="Hold your breath to slow the pressure. Let go before you gasp"><span class="bf" id="breathFill"></span><span class="bl"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-hold_breath"/></svg> <span>Hold breath</span></span></button>
       <div class="face-wrap">
         <svg id="face" viewBox="0 0 200 200" data-tier="calm">
           <ellipse class="ff-skin" cx="100" cy="98" rx="72" ry="76" fill="#e8c9a0" stroke="#b98f61" stroke-width="3"/>
@@ -480,7 +498,7 @@
       <div id="leaks"></div>
     </div>
 
-    <div class="cover-banner" id="coverBanner"><span class="ico">🔊</span><span id="coverText">APPLAUSE, vent now!</span></div>
+    <div class="cover-banner" id="coverBanner"><span class="ico" id="coverIco"></span><span class="cb-txt"><span id="coverText">Applause</span><span class="cb-sub">Vent now</span></span></div>
     <div id="react"></div>
     <div id="callout" class="callout"></div>
     <div id="fx"></div>
@@ -488,20 +506,20 @@
     <div class="controls">
       <div class="abilities">
         <button class="ability" id="coughBtn" aria-label="Fake cough. Make your own cover noise">
-          <span class="ab-ico">😷</span><span class="ab-name">Cough</span><span class="ab-state" id="coughState">●●</span>
+          <span class="ab-ico"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-cough"/></svg></span><span class="ab-name">Cough</span><span class="ab-state" id="coughState"></span>
         </button>
         <button class="ability" id="sipBtn" aria-label="Sip water. Hold to drain pressure, you cannot clench while sipping">
           <span class="ab-cd" id="sipCd"></span>
-          <span class="ab-ico">🥤</span><span class="ab-name">Sip</span><span class="ab-state" id="sipState">READY</span>
+          <span class="ab-ico"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sip"/></svg></span><span class="ab-name">Sip</span><span class="ab-state" id="sipState">Ready</span>
         </button>
         <button class="ability" id="waftBtn" aria-label="Waft. Fan away a fresh strike">
-          <span class="ab-ico">🪭</span><span class="ab-name">Waft</span><span class="ab-state" id="waftState">●</span>
+          <span class="ab-ico"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-waft"/></svg></span><span class="ab-name">Waft</span><span class="ab-state" id="waftState"></span>
         </button>
       </div>
       <div class="wobble-row">
-        <button class="lean" id="leanLbtn" aria-label="Lean left to keep your balance">◀</button>
+        <button class="lean" id="leanLbtn" aria-label="Lean left to keep your balance"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-lean_left"/></svg></button>
         <div class="wobble-track" id="wobbleTrack"><span class="wlabel">sit still</span><span class="wd" id="wobbleDot"></span></div>
-        <button class="lean" id="leanRbtn" aria-label="Lean right to keep your balance">▶</button>
+        <button class="lean" id="leanRbtn" aria-label="Lean right to keep your balance"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-lean_right"/></svg></button>
       </div>
       <div class="pads">
         <div class="pad" id="padL"><span class="pad-label">Left</span><span class="pad-hint">HOLD</span><div class="strainbar"><i id="strainL"></i></div></div>
@@ -510,8 +528,8 @@
       <button class="vent" id="ventBtn">
         <span class="vent-timer" id="ventTimer"></span>
         <span class="vent-perfect-mark" id="ventMark"></span>
-        <span class="vent-main" id="ventMainText">DON’T VENT</span>
-        <span class="vent-sub" id="ventSub">wait for cover noise</span>
+        <span class="vent-main" id="ventMainText">Do not vent</span>
+        <span class="vent-sub" id="ventSub">Wait for cover noise</span>
       </button>
     </div>
   </div>
@@ -581,7 +599,7 @@
       <div class="stat-row"><span>Best vent combo</span><b id="overCombo">×1.0</b></div>
       <div class="stat-row"><span>Final score</span><b id="overScore">0</b></div>
       <div class="stat-row"><span>Best (<span id="overModeName">normal</span>)</span><b id="overBest">0</b></div>
-      <div class="stat-row"><span>Sunbeams earned ☀</span><b id="overSun">0</b></div>
+      <div class="stat-row"><span>Sunbeams earned <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sunbeam"/></svg></span><b id="overSun">0</b></div>
       <div class="stat-row"><span>Medals</span><b id="overMedals">0/12</b></div>
       <div id="bestBadgeWrap" class="hidden" style="text-align:center;"><span class="badge">New personal best</span></div>
     </div>
@@ -604,18 +622,18 @@
   const ROMAN=["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
 
   const COVER_TYPES={
-    APPLAUSE:{ico:"👏",label:"APPLAUSE",arch:"burstHi"},
-    THUNDER :{ico:"⛈️",label:"THUNDER",arch:"rumble"},
-    BUS     :{ico:"🚌",label:"PASSING BUS",arch:"rumble"},
-    SNEEZE  :{ico:"🤧",label:"A SNEEZE",arch:"burstMid"},
-    BELLS   :{ico:"🔔",label:"CHURCH BELLS",arch:"bell"},
-    TRAIN   :{ico:"🚂",label:"PASSING TRAIN",arch:"rumble"},
-    COUGH   :{ico:"😷",label:"COUGHING FIT",arch:"burstMid"},
-    BOOKS   :{ico:"📚",label:"DROPPED BOOKS",arch:"burstHi"},
-    SIREN   :{ico:"🚨",label:"PASSING SIREN",arch:"siren"},
-    ORGAN   :{ico:"🎹",label:"ORGAN SWELL",arch:"organ"},
-    BABY    :{ico:"👶",label:"A CRYING BABY",arch:"cry"},
-    FAKECOUGH:{ico:"😷",label:"YOUR FAKE COUGH",arch:"burstMid"}, // self-made cover, never rolled by scenes
+    APPLAUSE:{ico:"applause",label:"Applause",arch:"burstHi"},
+    THUNDER :{ico:"thunder",label:"Thunder",arch:"rumble"},
+    BUS     :{ico:"passing_bus",label:"Passing bus",arch:"rumble"},
+    SNEEZE  :{ico:"sneeze",label:"A sneeze",arch:"burstMid"},
+    BELLS   :{ico:"church_bells",label:"Church bells",arch:"bell"},
+    TRAIN   :{ico:"passing_train",label:"Passing train",arch:"rumble"},
+    COUGH   :{ico:"coughing_fit",label:"Coughing fit",arch:"burstMid"},
+    BOOKS   :{ico:"dropped_books",label:"Dropped books",arch:"burstHi"},
+    SIREN   :{ico:"passing_siren",label:"Passing siren",arch:"siren"},
+    ORGAN   :{ico:"organ_swell",label:"Organ swell",arch:"organ"},
+    BABY    :{ico:"crying_baby",label:"A crying baby",arch:"cry"},
+    FAKECOUGH:{ico:"fake_cough",label:"Your fake cough",arch:"burstMid"}, // self-made cover, never rolled by scenes
   };
 
   const SCENES=[
@@ -676,51 +694,51 @@
   };
 
   const MEDALS=[
-    {id:"first",   ico:"🎬", name:"First Ordeal",  desc:"Face it once.",                 check:()=>true},
-    {id:"c30",     ico:"😐", name:"Composed",      desc:"Hold for 30s.",                 check:r=>r.time>=30},
-    {id:"c60",     ico:"😤", name:"Iron Cheeks",   desc:"Hold for 60s.",                 check:r=>r.time>=60},
-    {id:"c120",    ico:"🏅", name:"Marathon",      desc:"Hold for 2 minutes.",           check:r=>r.time>=120},
-    {id:"perf3",   ico:"✨", name:"Perfectionist", desc:"3 Perfect vents in one ordeal.",check:r=>r.perfects>=3},
-    {id:"plug10",  ico:"🩹", name:"Surgeon",       desc:"Plug 10 leaks in one ordeal.",  check:r=>r.plugs>=10},
-    {id:"combo3",  ico:"🧊", name:"Cool Customer", desc:"Reach a ×3 combo.",             check:r=>comboMultFrom(r.maxCombo)>=3},
-    {id:"combo5",  ico:"💎", name:"Untouchable",   desc:"Reach the ×5 combo.",           check:r=>comboMultFrom(r.maxCombo)>=5},
-    {id:"act5",    ico:"🎭", name:"Stagehand",     desc:"Reach Act V.",                  check:r=>r.scenes>=5},
-    {id:"act8",    ico:"⭐", name:"Leading Role",  desc:"Reach Act VIII.",               check:r=>r.scenes>=8},
-    {id:"panic45", ico:"🔥", name:"Panic Room",    desc:"Hold 45s on Panic.",            check:r=>r.mode==="panic"&&r.time>=45},
-    {id:"allmodes",ico:"🎨", name:"Method Actor",  desc:"Play all three modes.",         check:(r,L)=>L.modes.length>=3},
-    {id:"improv",  ico:"😷", name:"Improviser",    desc:"Vent under 3 fake coughs in one ordeal.", check:r=>r.coughVents>=3},
-    {id:"fan",     ico:"🪭", name:"Saved by the Fan", desc:"Waft away a strike.",        check:r=>r.wafts>=1},
-    {id:"hydrated",ico:"🥤", name:"Hydrated",      desc:"Sip 5 times in one ordeal.",    check:r=>r.sips>=5},
-    {id:"daily3",  ico:"📅", name:"A Regular",     desc:"Play 3 Daily Ordeals.",         check:(r,L)=>L.dailyPlays>=3},
-    {id:"bow90",   ico:"🧘", name:"Zen Master",    desc:"Bow out after 90s in Zen Theater.", check:r=>r.playMode==="zen"&&r.time>=90},
-    {id:"cheek45", ico:"🎪", name:"One Cheek Wonder", desc:"Hold 45s in One Cheek.",     check:r=>r.playMode==="cheek"&&r.time>=45},
+    {id:"first",   ico:"medal_first_ordeal", name:"First Ordeal",  desc:"Face it once.",                 check:()=>true},
+    {id:"c30",     ico:"medal_composed", name:"Composed",      desc:"Hold for 30s.",                 check:r=>r.time>=30},
+    {id:"c60",     ico:"medal_iron_cheeks", name:"Iron Cheeks",   desc:"Hold for 60s.",                 check:r=>r.time>=60},
+    {id:"c120",    ico:"medal_marathon", name:"Marathon",      desc:"Hold for 2 minutes.",           check:r=>r.time>=120},
+    {id:"perf3",   ico:"medal_perfectionist", name:"Perfectionist", desc:"3 Perfect vents in one ordeal.",check:r=>r.perfects>=3},
+    {id:"plug10",  ico:"medal_surgeon", name:"Surgeon",       desc:"Plug 10 leaks in one ordeal.",  check:r=>r.plugs>=10},
+    {id:"combo3",  ico:"medal_cool_customer", name:"Cool Customer", desc:"Reach a ×3 combo.",             check:r=>comboMultFrom(r.maxCombo)>=3},
+    {id:"combo5",  ico:"medal_untouchable", name:"Untouchable",   desc:"Reach the ×5 combo.",           check:r=>comboMultFrom(r.maxCombo)>=5},
+    {id:"act5",    ico:"medal_stagehand", name:"Stagehand",     desc:"Reach Act V.",                  check:r=>r.scenes>=5},
+    {id:"act8",    ico:"medal_leading_role", name:"Leading Role",  desc:"Reach Act VIII.",               check:r=>r.scenes>=8},
+    {id:"panic45", ico:"medal_panic_room", name:"Panic Room",    desc:"Hold 45s on Panic.",            check:r=>r.mode==="panic"&&r.time>=45},
+    {id:"allmodes",ico:"medal_method_actor", name:"Method Actor",  desc:"Play all three modes.",         check:(r,L)=>L.modes.length>=3},
+    {id:"improv",  ico:"medal_improviser", name:"Improviser",    desc:"Vent under 3 fake coughs in one ordeal.", check:r=>r.coughVents>=3},
+    {id:"fan",     ico:"medal_saved_by_the_fan", name:"Saved by the Fan", desc:"Waft away a strike.",        check:r=>r.wafts>=1},
+    {id:"hydrated",ico:"medal_hydrated", name:"Hydrated",      desc:"Sip 5 times in one ordeal.",    check:r=>r.sips>=5},
+    {id:"daily3",  ico:"medal_a_regular", name:"A Regular",     desc:"Play 3 Daily Ordeals.",         check:(r,L)=>L.dailyPlays>=3},
+    {id:"bow90",   ico:"medal_zen_master", name:"Zen Master",    desc:"Bow out after 90s in Zen Theater.", check:r=>r.playMode==="zen"&&r.time>=90},
+    {id:"cheek45", ico:"medal_one_cheek_wonder", name:"One Cheek Wonder", desc:"Hold 45s in One Cheek.",     check:r=>r.playMode==="cheek"&&r.time>=45},
   ];
 
   // ---- Cosmetics (earn by play, known thresholds, purely visual) ----
   const CHARS=[
-    {id:"everyman", ico:"🙂", name:"The Everyman", req:"Free", skin:"#e8c9a0", line:"#b98f61", back:"", front:"", check:()=>true},
-    {id:"gentleman",ico:"🎩", name:"The Gentleman", req:"10 min lifetime composure", skin:"#e8c9a0", line:"#b98f61",
+    {id:"everyman", ico:"wardrobe", name:"The Everyman", req:"Free", skin:"#e8c9a0", line:"#b98f61", back:"", front:"", check:()=>true},
+    {id:"gentleman",ico:"wardrobe", name:"The Gentleman", req:"10 min lifetime composure", skin:"#e8c9a0", line:"#b98f61",
       back:'<rect x="56" y="4" width="88" height="14" rx="4" fill="#2a2622"/><rect x="70" y="-24" width="60" height="30" rx="5" fill="#2a2622"/><rect x="70" y="-2" width="60" height="7" fill="#4a4238"/>',
       front:'<circle cx="126" cy="92" r="17" fill="none" stroke="#c8a84b" stroke-width="3"/><path d="M141 104 q8 14 2 24" fill="none" stroke="#c8a84b" stroke-width="2"/><path d="M78 121 q10 -9 22 -1 q12 -8 22 1 q-8 9 -22 3 q-14 6 -22 -3" fill="#4a3826"/>',
       check:Lc=>Lc.lifeTime>=600},
-    {id:"grandma",  ico:"👵", name:"Grandma", req:"Plug 50 lifetime leaks", skin:"#ecd2b4", line:"#b98f61",
+    {id:"grandma",  ico:"wardrobe", name:"Grandma", req:"Plug 50 lifetime leaks", skin:"#ecd2b4", line:"#b98f61",
       back:'<circle cx="100" cy="14" r="24" fill="#cfd2d6"/><circle cx="74" cy="24" r="12" fill="#cfd2d6"/><circle cx="126" cy="24" r="12" fill="#cfd2d6"/>',
       front:'<circle cx="74" cy="92" r="15" fill="none" stroke="#7a6a52" stroke-width="3"/><circle cx="126" cy="92" r="15" fill="none" stroke="#7a6a52" stroke-width="3"/><path d="M89 92 h22" stroke="#7a6a52" stroke-width="3"/><path d="M59 92 l-12 -4 M141 92 l12 -4" stroke="#7a6a52" stroke-width="3"/>',
       check:Lc=>Lc.lifePlugs>=50},
-    {id:"mime",     ico:"🎭", name:"The Mime", req:"3 day Daily streak", skin:"#f4f0e6", line:"#8a8577",
+    {id:"mime",     ico:"wardrobe", name:"The Mime", req:"3 day Daily streak", skin:"#f4f0e6", line:"#8a8577",
       back:'<path d="M52 34 q48 -30 96 0 q6 10 -4 12 q-44 -22 -88 0 q-10 -2 -4 -12" fill="#1e1c1a"/><circle cx="146" cy="34" r="7" fill="#1e1c1a"/>',
       front:'<path d="M74 72 v8 M74 108 v8" stroke="#1e1c1a" stroke-width="3"/><path d="M126 110 q0 8 -5 12" stroke="#1e1c1a" stroke-width="3" fill="none"/>',
       check:Lc=>Lc.bestStreak>=3},
-    {id:"bulldog",  ico:"🐶", name:"The Bulldog", req:"Earn 8 medals", skin:"#cfa26a", line:"#8a5a2b",
+    {id:"bulldog",  ico:"wardrobe", name:"The Bulldog", req:"Earn 8 medals", skin:"#cfa26a", line:"#8a5a2b",
       back:'<path d="M30 66 q-14 34 6 52 q14 8 18 -8 q-8 -26 -24 -44z" fill="#a97b46" stroke="#8a5a2b" stroke-width="3"/><path d="M170 66 q14 34 -6 52 q-14 8 -18 -8 q8 -26 24 -44z" fill="#a97b46" stroke="#8a5a2b" stroke-width="3"/><ellipse cx="100" cy="122" rx="27" ry="19" fill="#e5c99b"/>',
       front:'<ellipse cx="100" cy="108" rx="10" ry="7" fill="#2a2018"/>',
       check:Lc=>Lc.medalCount>=8},
   ];
   const PALS=[
-    {id:"matinee",     ico:"🎞️", name:"Matinee Sepia", req:"Free", check:()=>true},
-    {id:"midnight",    ico:"🌙", name:"Midnight Show", req:"Reach Act V", check:Lc=>Lc.bestAct>=5},
-    {id:"technicolor", ico:"🌈", name:"Technicolor",   req:"Score 5000 in one ordeal", check:Lc=>Lc.bestScore>=5000},
-    {id:"silver",      ico:"🎬", name:"Silver Screen", req:"Play Easy, Normal, Panic, Daily and Zen", check:Lc=>Lc.modes.length>=3&&Lc.playModes.indexOf("daily")>=0&&Lc.playModes.indexOf("zen")>=0},
+    {id:"matinee",     ico:"wardrobe", name:"Matinee Sepia", req:"Free", check:()=>true},
+    {id:"midnight",    ico:"wardrobe", name:"Midnight Show", req:"Reach Act V", check:Lc=>Lc.bestAct>=5},
+    {id:"technicolor", ico:"wardrobe", name:"Technicolor",   req:"Score 5000 in one ordeal", check:Lc=>Lc.bestScore>=5000},
+    {id:"silver",      ico:"wardrobe", name:"Silver Screen", req:"Play Easy, Normal, Panic, Daily and Zen", check:Lc=>Lc.modes.length>=3&&Lc.playModes.indexOf("daily")>=0&&Lc.playModes.indexOf("zen")>=0},
   ];
 
   // ==================================================================
@@ -889,7 +907,7 @@
     let dur=Math.max(CFG.coverDurMin, CFG.coverDurBase-rampLevel()*0.12)*S.M.coverDurMul;
     if(self) dur*=CFG.coughDurFrac;
     S.coverUntil=S.time+dur;
-    coverText.textContent=c.label+", vent now!"; coverBanner.querySelector(".ico").textContent=c.ico; coverBanner.classList.add("show");
+    coverText.textContent=c.label; $("coverIco").innerHTML=ic(c.ico); coverBanner.classList.add("show");
     ventMark.style.display=self?"none":"block"; ventMark.style.left=((1-CFG.perfectFrac)*100)+"%";
     coverSfx(c.arch); haptic(8);
   }
@@ -920,18 +938,18 @@
     if(!S||!isLive()) return;
     if(S.phase==="tutorial"){ const T=S.tut;
       if(T&&T.step===7&&T.waftWin&&S.time<=T.waftWin&&!T.waftOk){ T.waftOk=true; whoosh(); haptic([10,30]);
-        floatText(app.clientWidth/2, app.clientHeight*0.5, "WAFTED AWAY", "gold"); }
+        floatText(app.clientWidth/2, app.clientHeight*0.5, "Wafted away", "gold"); }
       return; }
     if(S.playMode==="zen") return;
     if(S.waftCharges<=0||S.strikes<=0||S.time>S.waftUntil) return;
     S.waftCharges--; S.strikes--; S.waftUntil=0; S.pendingExpose=0; S.rp.wafts++;
     const pips=strikesEl.children; for(let i=0;i<pips.length;i++) pips[i].classList.toggle("broke", i<S.strikes);
     S.score=Math.max(0,S.score-CFG.waftScoreCost);
-    whoosh(); haptic([10,30]); floatText(app.clientWidth/2, app.clientHeight*0.5, "WAFTED AWAY", "gold");
+    whoosh(); haptic([10,30]); floatText(app.clientWidth/2, app.clientHeight*0.5, "Wafted away", "gold");
   }
 
   // -- whiff hazard --
-  function startWhiff(){ S.whiffAt=S.time+CFG.whiffWarn; floatText(app.clientWidth/2, app.clientHeight*0.30, "😖 a whiff, clench!", "gold"); haptic([12,70]); }
+  function startWhiff(){ S.whiffAt=S.time+CFG.whiffWarn; floatText(app.clientWidth/2, app.clientHeight*0.30, "A whiff. Clench", "gold"); haptic([12,70]); }
 
   // -- leaks --
   function spawnLeak(){
@@ -939,7 +957,7 @@
     const life=Math.max(CFG.leakLifeMin, CFG.leakLife-rampLevel()*0.12);
     const el=document.createElement("button"); el.className="leak"; el.setAttribute("aria-label","Plug leak");
     el.style.left=(14+rnd()*72)+"%"; el.style.top=(12+rnd()*70)+"%";
-    el.innerHTML='<span class="ring"></span><span class="core">💨</span>';
+    el.innerHTML='<span class="ring"></span><span class="core">'+ic("leak")+'</span>';
     const leak={el,remaining:life,life};
     el.addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); plugLeak(leak); });
     leaksEl.appendChild(el); S.leaks.push(leak);
@@ -980,7 +998,7 @@
     if(S.strikes>=3){
       S.strikes=3;
       if(S.waftCharges>0 && !S.pendingExpose){ S.pendingExpose=S.time+CFG.waftWindow; // one breath of borrowed time
-        floatText(app.clientWidth/2, app.clientHeight*0.5, "WAFT IT AWAY!", "warn"); haptic([20,40,20]); }
+        floatText(app.clientWidth/2, app.clientHeight*0.5, "Waft it away", "warn"); haptic([20,40,20]); }
       else gameOver();
     } }
 
@@ -1009,7 +1027,7 @@
       const pts=Math.round((CFG.ventFlat+S.pressure*CFG.ventScale)*(perfect?CFG.perfectMult:1)*mult);
       S.score+=pts; S.pressure=0; S.strainL=0; S.strainR=0;
       face.dataset.tier="relief"; S.reliefUntil=S.time+0.7; bumpCombo();
-      if(perfect){ perfectSfx(); haptic([10,20,10,20]); floatText(app.clientWidth/2, app.clientHeight*0.62, "PERFECT +"+pts, "gold"); }
+      if(perfect){ perfectSfx(); haptic([10,20,10,20]); floatText(app.clientWidth/2, app.clientHeight*0.62, "Perfect +"+pts, "gold"); }
       else { chime(); haptic([15,25,15]); floatText(app.clientWidth/2, app.clientHeight*0.62, "+"+pts, ""); }
       closeCover();
     } else {
@@ -1023,12 +1041,12 @@
   // -- breath / posture (the extra clench-juggle layer) --
   function gasp(){ S.breathHold=false; breathBtn.classList.remove("held"); S.breathLock=CFG.gaspLock; squeak(); haptic([20,40]);
     if(S.phase!=="tutorial") S.pressure=Math.min(100,S.pressure+CFG.gaspSpike);
-    floatText(app.clientWidth/2, app.clientHeight*0.22, "😮‍💨 GASP!", "warn"); }
+    floatText(app.clientWidth/2, app.clientHeight*0.22, "Gasp", "warn"); }
   function wobbleShift(){ const side=S.wobble>0?1:-1;
     S.wobble=side*-42; S.wobbleDir=-side; S.wobbleFlipAt=CFG.wobbleFlipMin; squeak(); shake();
     if(S.phase==="tutorial"){ if(S.tut) S.tut.wobbleShifted=true; return; }
     S.pressure=Math.min(100,S.pressure+CFG.wobbleShiftPressure); spawnLeak(); haptic(24);
-    floatText(app.clientWidth/2, app.clientHeight*0.26, "😬 you shifted!", "warn"); }
+    floatText(app.clientWidth/2, app.clientHeight*0.26, "You shifted", "warn"); }
   function postureTick(dt){
     const tut=S.phase==="tutorial";
     if(S.breathLock>0) S.breathLock=Math.max(0,S.breathLock-dt);
@@ -1069,7 +1087,7 @@
   function queueToasts(list){ list.forEach(m=>toastQ.push(m)); if(!toastBusy) nextToast(); }
   function nextToast(){ if(toastQ.length===0){ toastBusy=false; return; } toastBusy=true;
     const m=toastQ.shift(); const el=document.createElement("div"); el.className="toast";
-    el.innerHTML='<span class="ti">'+m.ico+'</span><span>'+(m.kind||"Medal earned")+': <b>'+m.name+'</b></span>';
+    el.innerHTML='<span class="ti">'+ic(m.ico)+'</span><span>'+(m.kind||"Medal earned")+': <b>'+m.name+'</b></span>';
     toastsEl.appendChild(el); requestAnimationFrame(()=>el.classList.add("show"));
     haptic([10,30,10]);
     setTimeout(()=>{ el.classList.remove("show"); setTimeout(()=>{ el.remove(); nextToast(); },300); }, 1900); }
@@ -1159,7 +1177,7 @@
     const mk=(list,ownedArr,eqId,kind)=>list.map(item=>{
       const owned=ownedArr.indexOf(item.id)>=0, eq=eqId===item.id;
       return '<button class="ward-card'+(owned?"":" locked")+(eq?" eq":"")+'" data-kind="'+kind+'" data-id="'+item.id+'">'+
-        (eq?'<span class="weq">On</span>':"")+'<span class="wi">'+item.ico+'</span><span class="wn">'+item.name+
+        (eq?'<span class="weq">On</span>':"")+'<span class="wi">'+ic(item.ico)+'</span><span class="wn">'+item.name+
         '</span><span class="wr">'+(owned?(eq?"Equipped":"Tap to wear"):item.req)+'</span></button>'; }).join("");
     $("wardChars").innerHTML=mk(CHARS,W.chars,W.eqChar,"char");
     $("wardPals").innerHTML=mk(PALS,W.pals,W.eqPal,"pal");
@@ -1186,7 +1204,7 @@
   function openStats(){ buildStats(); startScreen.classList.add("hidden"); statsScreen.classList.remove("hidden"); }
   function buildMedals(){ const earned=new Set(get(L.medals,[])); const g=$("medalGrid"); g.innerHTML="";
     MEDALS.forEach(m=>{ const has=earned.has(m.id); const d=document.createElement("div"); d.className="medal"+(has?"":" locked");
-      d.innerHTML='<span class="mi">'+m.ico+'</span><span class="mn">'+m.name+'</span><span class="mdsc">'+(has?m.desc:m.desc)+'</span>'; g.appendChild(d); }); }
+      d.innerHTML='<span class="mi">'+ic(m.ico)+'</span><span class="mn">'+m.name+'</span><span class="mdsc">'+(has?m.desc:m.desc)+'</span>'; g.appendChild(d); }); }
   function buildStats(){ const rows=[
       ["Ordeals faced", get(K.plays,0)],
       ["Longest composure", fmtTime(get(L.bestTime,0))],
@@ -1194,7 +1212,7 @@
       ["Leaks plugged", get(L.plugs,0)],
       ["Perfect vents", get(L.perfects,0)],
       ["Best combo", "×"+comboMultFrom(get(L.bestCombo,0)).toFixed(1)],
-      ["Sunbeams ☀", get(K.sun,0)],
+      ["Sunbeams "+ic("sunbeam"), get(K.sun,0)],
       ["Medals", get(L.medals,[]).length+"/"+MEDALS.length],
       ["Best, Easy", get(K.best("easy"),0)],
       ["Best, Normal", get(K.best("normal"),0)],
@@ -1213,15 +1231,15 @@
   const TUT_PROMPTS=[
     "Hold <b>both pads</b> to clench it in.",
     "Each hand tires, its bar fills. <b>Lift one hand</b> to rest it, then swap.",
-    "Pressure only drops under a <b>cover noise</b>. Here comes one, tap <b>VENT!</b>",
+    "Pressure only drops under a <b>cover noise</b>. Here comes one. Tap <b>Vent</b>.",
     "Now vent the <b>instant</b> the noise starts. That is a <b>PERFECT</b>.",
-    "A <b>leak!</b> Tap it to plug before it squeaks.",
+    "A <b>leak</b>. Tap it to plug it before it squeaks.",
     "No cover in sight? Tap <b>COUGH</b> to fake your own, then <b>VENT</b> under it.",
-    "Hold <b>SIP</b> to drink the pressure down. You cannot clench while sipping!",
-    "Slipped up? For a moment you can <b>WAFT</b> a strike away. Try it now!",
+    "Hold <b>SIP</b> to drink the pressure down. You cannot clench while sipping.",
+    "Slipped up? For a moment you can <b>WAFT</b> a strike away. Try it now.",
     "Two thumbs, so many buttons. <b>HOLD BREATH</b> up top to blunt the rise, but let go before you <b>gasp</b>.",
     "Sitting still is hard. A <b>wobble</b> creeps in, hold the <b>lean</b> pad against it to keep your balance.",
-    "You’re ready. Three strikes and you’re exposed. <b>Break a leg!</b>",
+    "You’re ready. Three strikes and you’re exposed. <b>Break a leg.</b>",
   ];
   function startTutorial(){
     rngFn=Math.random;
@@ -1283,7 +1301,7 @@
       case 7: // waft a scripted squeak away
         if(!T.waftOk && (!T.waftWin || S.time>T.waftWin+1.4)){
           squeak(); shake(); T.waftWin=S.time+CFG.waftWindow;
-          floatText(app.clientWidth/2, app.clientHeight*0.5, "WAFT IT!", "warn");
+          floatText(app.clientWidth/2, app.clientHeight*0.5, "Waft it", "warn");
         }
         if(T.waftOk || T.stepT>16) nextTut();
         break;
@@ -1343,7 +1361,7 @@
     if(S.pendingExpose&&S.time>=S.pendingExpose){ S.pendingExpose=0; gameOver(); return; }
 
     if(S.playMode==="cheek"&&S.time>=S.cheekSwapAt){ S.cheekSide=1-S.cheekSide; S.cheekSwapAt+=CFG.cheekSwapEvery;
-      floatText(app.clientWidth/2, app.clientHeight*0.5, S.cheekSide?"SWAP! LEFT ONLY":"SWAP! RIGHT ONLY", "gold"); haptic([10,40]); }
+      floatText(app.clientWidth/2, app.clientHeight*0.5, S.cheekSide?"Swap. Left only":"Swap. Right only", "gold"); haptic([10,40]); }
 
     if(!S.cover && S.time>=S.nextCover) openCover();
     if(S.cover && S.time>=S.coverUntil) closeCover();
@@ -1411,7 +1429,7 @@
     const sc=sweatCount(p);
     setDrop("d1",sc>=1); setDrop("d2",sc>=2); setDrop("d3",sc>=3);
     const armed=S.cover; ventBtn.classList.toggle("armed",armed);
-    ventMainText.textContent=armed?"VENT!":"DON’T VENT"; ventSub.textContent=armed?"release under the noise":"wait for cover noise";
+    ventMainText.textContent=armed?"Vent":"Do not vent"; ventSub.textContent=armed?"Release under the noise":"Wait for cover noise";
     if(armed){ const frac=Math.max(0,(S.coverUntil-S.time)/(S.coverUntil-S.coverStart)); ventTimer.style.width=(frac*100)+"%";
       ventTimer.style.background = frac>(1-CFG.perfectFrac) ? "var(--mint)" : "var(--amber)"; }
     else ventTimer.style.width="0%";
@@ -1427,16 +1445,16 @@
     leanRbtn.classList.toggle("held", S.leanR);
     renderAbilities();
   }
-  function dotRow(n,cap){ let s=""; for(let i=0;i<cap;i++) s+= i<n ? "●" : "○"; return s; }
+  function dotRow(n,cap){ let s=""; for(let i=0;i<cap;i++) s+= i<n ? '<i class="cdot on"></i>' : '<i class="cdot"></i>'; return s; }
   function renderAbilities(){
     const tut=S.phase==="tutorial", T=S.tut;
-    coughState.textContent=tut?"●●●":dotRow(S.coughCharges,CFG.coughChargeCap);
+    coughState.innerHTML=tut?dotRow(3,3):dotRow(S.coughCharges,CFG.coughChargeCap);
     coughBtn.classList.toggle("depleted", !tut&&S.coughCharges<=0);
     const cdMax=CFG.sipCooldown*(S.M.sipCdMul||1), cd=Math.max(0,S.sipCd);
     sipCdEl.style.width= cd>0 ? ((1-cd/cdMax)*100).toFixed(1)+"%" : "0%";
-    sipState.textContent= S.sipping ? "GLUG" : (cd>0 ? Math.ceil(cd)+"s" : "READY");
+    sipState.textContent= S.sipping ? "Sipping" : (cd>0 ? Math.ceil(cd)+"s" : "Ready");
     sipBtn.classList.toggle("depleted", !tut&&cd>0&&!S.sipping);
-    waftState.textContent=tut?"●●":dotRow(S.waftCharges,CFG.waftChargeCap);
+    waftState.innerHTML=tut?dotRow(2,2):dotRow(S.waftCharges,CFG.waftChargeCap);
     const waftLive=!tut&&S.playMode!=="zen"&&S.waftCharges>0&&S.strikes>0&&S.time<=S.waftUntil;
     const tutWaft=tut&&T&&T.step===7&&T.waftWin&&S.time<=T.waftWin&&!T.waftOk;
     waftBtn.classList.toggle("alert", !!(waftLive||tutWaft||(S.pendingExpose>0&&S.time<S.pendingExpose)));
@@ -1531,8 +1549,8 @@
   $("wardClose").addEventListener("click",toMenu);
 
   const soundToggle=$("soundToggle"), hapticToggle=$("hapticToggle");
-  function syncToggles(){ soundToggle.setAttribute("aria-pressed", soundOn?"true":"false"); soundToggle.textContent=(soundOn?"🔊":"🔇")+" Sound";
-    hapticToggle.setAttribute("aria-pressed", hapticOn?"true":"false"); hapticToggle.textContent=(hapticOn?"📳":"📴")+" Haptics"; }
+  function syncToggles(){ soundToggle.setAttribute("aria-pressed", soundOn?"true":"false"); soundToggle.innerHTML=ic(soundOn?"sound_on":"sound_off")+" Sound";
+    hapticToggle.setAttribute("aria-pressed", hapticOn?"true":"false"); hapticToggle.innerHTML=ic(hapticOn?"haptics_on":"haptics_off")+" Haptics"; }
   soundToggle.addEventListener("click",()=>{ soundOn=!soundOn; set(K.snd,soundOn); if(soundOn) unlockAudio(); syncToggles(); });
   hapticToggle.addEventListener("click",()=>{ hapticOn=!hapticOn; set(K.hap,hapticOn); if(hapticOn) haptic(15); syncToggles(); });
 
