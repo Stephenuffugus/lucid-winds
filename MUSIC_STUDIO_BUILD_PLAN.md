@@ -11,8 +11,8 @@ circle_positions.json, ui_tokens.css). Read ASSESSMENT.md and STYLE-GUIDE.md onc
 
 | Step | State | Commit | Note |
 |---|---|---|---|
-| 0 | TODO | | |
-| 1 | TODO | | |
+| 0 | DONE | f5775342e (start) | check red at 60; before set in /home/codespace/studio-drafts/before/; origin/main blobs at start: studio.html 3530fca0, .htaccess 387ccde4 (equal to the branch); box booted 11:39 UTC so it stops near 23:39 UTC, not 13:56 |
+| 1 | DONE | see step 2 row | assets/games/song (starters 11 + header, tools 9, frames 3, slate), 107 symbol sprite inline via tools/studio-tests/build-sprite.js + ic(); play icons 192/512 + maskable 512, og card; check still 60 (asset rule green, nothing named yet) |
 | 2 | TODO | | |
 | 3 | TODO | | |
 | 4 | TODO | | |

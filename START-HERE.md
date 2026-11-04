@@ -1,5 +1,9 @@
 # START HERE
 
+## 🎛 4 Nov 12:50 UTC (Opus) MUSIC STUDIO RESKIN BUILD (MUSIC_STUDIO_BUILD_PLAN.md, branch add-sproing-jumper; one line per step)
+- Step 0 DONE: check red at 60, before set shot, main blobs studio.html 3530fca0 / .htaccess 387ccde4. The box booted 11:39 UTC (stops near 23:39), so law 9's 13:56 is stale; this run works to about 23:00 and writes START-HERE every step.
+- Step 1 DONE: assets/games/song/ in (starters, tools, frames, slate), the 107 symbol sprite inline in studio.html (rerun: node tools/studio-tests/build-sprite.js), ic() helper, new play icons (192, 512, maskable) and og card.
+
 ## 🎛 4 Nov 04:35 UTC (Fable) MUSIC STUDIO: ASTRA'S PACK IS IN, OPUS BUILDS THE RESKIN OVERNIGHT FROM MUSIC_STUDIO_BUILD_PLAN.md
 - Astra's pack v1 (7.5 MB, 193 assets): vault `astra-music-studio-pack-v1-20261104`, unpacked at /workspaces/music-studio-astra-v1/pack/music-studio-astra-pack-v1/ (not in git), docs in docs/briefs/music-studio/astra-v1/. Blockers it found on the live site: .htaccess sends `microphone=()` (Hum and the Sampler cannot work), false copyright copy, soundfont is CC BY 3.0, targets under 48 px, swallowed save errors.
 - The order is MUSIC_STUDIO_BUILD_PLAN.md (9 steps, its STATE block says where the builder is; a session that resumes after a box stop continues from the first step not DONE). Gate: `node tools/studio-tests/check.js`; shots: `tools/studio-tests/shoot.mjs`. Never push main: the builder leaves `! bash /home/codespace/studio-drafts/deploy-studio-m1.sh` for Stephen. The box stops about 13:56 UTC.
