@@ -40,6 +40,12 @@ NEW_KEYS = {
     'key_glint': (16, 16, ['glint_0', 'glint_1', 'glint_2', 'glint_3']),
     # step 4: the set pieces (fx_wind is an effect under FX_SHAPES)
     'film_strip': (48, 8, ['a', 'b']), 'fan': (16, 16, ['a', 'b', 'c']),
+    # step 6: the big bug, 16x24 over the 12x16 box (the squash 20x20, the stretch 14x28), and its sixteen looks
+    'hero_big': (16, 24, ['idle0', 'idle1', 'run0', 'run1', 'run2', 'run3', 'jump', 'fall', 'cling', 'dive', 'land', 'dead']), 'hero_big_dash': (16, 24, ['dash']),
+    'hero_big_hurt': (16, 24, ['recoil']), 'hero_big_squash': (20, 20, ['squash']), 'hero_big_stretch': (14, 28, ['stretch']),
+    'hero_big_dropin': (16, 24, ['descending', 'contact', 'settled']), 'hero_colours_big': (16, 24, None), 'hero_colours_r3_big': (16, 24, None),
+    'hero_colours_dash_big': (16, 24, None), 'hero_colours_hurt_big': (16, 24, None), 'hero_colours_squash_big': (20, 20, None), 'hero_colours_stretch_big': (14, 28, None), 'hero_colours_dropin_big': (16, 24, None),
+    'hero_colours_r3_dash_big': (16, 24, None), 'hero_colours_r3_hurt_big': (16, 24, None), 'hero_colours_r3_squash_big': (20, 20, None), 'hero_colours_r3_stretch_big': (14, 28, None), 'hero_colours_r3_dropin_big': (16, 24, None),
 }
 # ART2: an effect strip, fx_<name>, is named frames: square, 32 or 48 a side, each frame <clip>_<n> with every clip's n
 # running 0, 1, 2 ... in order (Astra's manifest clips); Sun is the hero's and never an effect's
