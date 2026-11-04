@@ -236,10 +236,20 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
 .gs-starter-card.st-resume .st-name{color:var(--sage)}
 .st-resume-art{display:flex;width:100%;height:100%;align-items:center;justify-content:center;color:var(--sage);background:radial-gradient(circle at 50% 50%,rgba(143,199,118,.18),transparent 70%)}
 .st-resume-art .gs-ic{width:48px;height:48px}
-.gs-song-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(26,33,25,.6);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;min-height:48px}
-.gs-song-row .sn-name{flex:1;color:var(--cream);font-size:.75rem;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gs-song-row .sn-date{font-size:.6rem;color:var(--muted)}
-.gs-song-row button{min-height:48px}
+.gs-song-row{display:flex;align-items:center;gap:8px;padding:8px;background:var(--panel);border:1.5px solid var(--divider);border-radius:16px;margin-bottom:8px;min-height:72px}
+.gs-song-row.cur{border-color:var(--sage)}
+.gs-song-row .sn-open{flex:1;min-width:0;display:flex;align-items:center;gap:12px;background:none;border:none;color:var(--cream);font:inherit;text-align:left;cursor:pointer;min-height:56px;padding:0;border-radius:10px}
+.gs-song-row .sn-open:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.gs-song-row .sn-cover{flex:none;width:56px;height:56px;border-radius:10px;overflow:hidden;background:var(--bg)}
+.gs-song-row .sn-cover img{display:block;width:56px;height:56px}
+.gs-song-row .sn-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.gs-song-row .sn-name{font-size:.95rem;color:var(--cream);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.gs-song-row .sn-date{font-size:.75rem;color:var(--muted)}
+.gs-song-row .sn-del{flex:none;border-color:var(--bass);color:var(--bass);padding:8px 10px}
+.gs-songs-empty{text-align:center;padding:8px 0 16px}
+.gs-songs-empty img{display:block;width:100%;max-width:360px;height:auto;margin:0 auto 8px}
+.gs-songs-empty p{font-size:.85rem;color:var(--muted);margin:0 0 14px;line-height:1.5}
+.st-resume-cover img{display:block;width:100%;height:100%;object-fit:cover}
 /* Keys jam panel */
 .gs-keys{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(8,10,6,.97);z-index:90;padding:12px;border-top:2px solid var(--gold);border-radius:12px 12px 0 0;max-height:75vh;overflow-y:auto}
 .gs-keys.open{display:block}
@@ -619,6 +629,7 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
     <button class="gs-btn" onclick="GS.saveAs()" style="border-color:var(--sage);color:var(--sage)"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-save_as_new"></use></svg>Save As New</button>
     <button class="gs-btn" onclick="GS.copySongCode()"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-song_code"></use></svg>Copy Song Code</button>
+    <button class="gs-btn" onclick="GS.backupSong()"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-download"></use></svg>Backup</button>
     <button class="gs-btn" onclick="GS.pasteSongCode()"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-paste"></use></svg>Paste Code</button>
   </div>
   <div class="gs-modal-sub" id="gs-songs-hint">Song codes let you share a song with a friend: copy yours, send it, they paste it here.</div>
@@ -2725,12 +2736,63 @@ var GS = (function(){
     return true;
   }
 
+  // ── Song covers: Astra's cover_system.js (pack v1, dev/cover_system.js) in this page's ES5 style. Same math, same
+  //    output; a song stores {recipeVersion:1, seed, paletteIndex} once and the art never changes on rename. No user text
+  //    ever goes into the SVG. ──
+  var MusicStudioCovers = (function(){
+    var palettes=[['#e99a62','#d6b85c'],['#a0c4e8','#e88686'],['#8fc776','#d6b85c'],['#d6b85c','#8fc776'],['#e88686','#f0e8d8'],['#e99a62','#8fc776'],['#f0e8d8','#e99a62'],['#a0c4e8','#8fc776'],['#d6b85c','#e99a62'],['#a0c4e8','#f0e8d8'],['#8fc776','#f0e8d8']];
+    var starters=['hip_hop','trap','lo_fi_chill','house','pop','reggaeton','rock','drum_n_bass','funk','dreamy','blank_canvas'];
+    function utf8(s){
+      if(typeof TextEncoder!=='undefined') return new TextEncoder().encode(s);
+      var e=unescape(encodeURIComponent(s)), out=[];
+      for(var i=0;i<e.length;i++) out.push(e.charCodeAt(i));
+      return out;
+    }
+    function seedFor(name,bpm){
+      var h=2166136261;
+      var v=String(name).normalize('NFC').trim().toLowerCase()+'|'+Math.round(Number(bpm)||120);
+      var b=utf8(v);
+      for(var i=0;i<b.length;i++) h=Math.imul(h^b[i],16777619)>>>0;
+      return h;
+    }
+    function recipe(name,bpm,starter){
+      var seed=seedFor(name,bpm), i=starters.indexOf(starter);
+      return {recipeVersion:1, seed:seed, paletteIndex:i<0?seed%palettes.length:i};
+    }
+    function render(r,size){
+      if(r.recipeVersion!==1) throw Error('Unknown cover recipe');
+      size=Math.max(64,Math.min(1600,Math.round(Number(size===undefined?512:size)||512)));
+      var state=r.seed>>>0;
+      function rnd(){ state=(Math.imul(1664525,state)+1013904223)>>>0; return state/4294967296; }
+      var pal=palettes[((r.paletteIndex%palettes.length)+palettes.length)%palettes.length], a=pal[0], c=pal[1];
+      function n(v){ return Number(v.toFixed(3)); }
+      function rect(x,y,w,hh,col,rx){ return '<rect x="'+n(x)+'" y="'+n(y)+'" width="'+n(w)+'" height="'+n(hh)+'" rx="'+n(rx||0)+'" fill="'+col+'"/>'; }
+      function circle(x,y,rad,col,stroke,sw){ return '<circle cx="'+n(x)+'" cy="'+n(y)+'" r="'+n(rad)+'" fill="'+col+'"'+(stroke?' stroke="'+stroke+'" stroke-width="'+n(sw)+'"':'')+'/>'; }
+      var b=rect(0,0,size,size,'#0d100c');
+      var cx=size*(.35+rnd()*.3), cy=size*(.35+rnd()*.3);
+      for(var i=0;i<8;i++) b+=circle(cx,cy,size*(.08+i*.047),'none',i%3===0?a:'#32412e',Math.max(1,size*.004));
+      for(var j=0;j<6;j++){ var x=size*(.1+rnd()*.7), y=size*(.12+rnd()*.65), hh=size*(.1+rnd()*.23); b+=rect(x,y,size*.035,hh,j%2?c:a,size*.0175); }
+      b+=circle(size*.82,size*.18,size*.035,c);
+      return '<svg xmlns="http://www.w3.org/2000/svg" width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'">'+b+'</svg>';
+    }
+    return {seedFor:seedFor, recipe:recipe, render:render};
+  })();
+
+  var SAVE_FAILED = 'Could not save. Keep this page open and export a backup.';
+  var _curStarterArt = null;   // which starter the working song came from (palette for its cover), never saved
+  var _coverCache = {};
+  function coverImg(rc, px){
+    if(!rc || rc.recipeVersion!==1) return '';
+    var key = rc.seed+'_'+rc.paletteIndex+'_'+px;
+    if(!_coverCache[key]) _coverCache[key] = 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(MusicStudioCovers.render(rc, px*2));
+    return '<img src="'+_coverCache[key]+'" width="'+px+'" height="'+px+'" alt="">';
+  }
   function songIndex(){
     try{ var r = localStorage.getItem('gs_songs_idx'); if(r) return JSON.parse(r)||[]; }catch(e){}
     return [];
   }
   function writeSongIndex(idx){
-    try{ localStorage.setItem('gs_songs_idx', JSON.stringify(idx)); }catch(e){}
+    try{ localStorage.setItem('gs_songs_idx', JSON.stringify(idx)); return true; }catch(e){ return false; }
   }
   function saveToSlot(id, name){
     var data = serializeState();
@@ -2738,12 +2800,13 @@ var GS = (function(){
     try{
       localStorage.setItem('gs_song_'+id, JSON.stringify(data));
       var idx = songIndex(), found = false;
-      for(var i=0;i<idx.length;i++){ if(idx[i].id===id){ idx[i].name=name; idx[i].up=Date.now(); found=true; } }
-      if(!found) idx.unshift({id:id, name:name, up:Date.now()});
-      writeSongIndex(idx);
+      for(var i=0;i<idx.length;i++){ if(idx[i].id===id){ idx[i].name=name; idx[i].up=Date.now(); found=true; if(!idx[i].cover) idx[i].cover = MusicStudioCovers.recipe(name, bpm, _curStarterArt); } }
+      // The cover is drawn from the name and tempo the first time the song is kept, then never recomputed
+      if(!found) idx.unshift({id:id, name:name, up:Date.now(), cover:MusicStudioCovers.recipe(name, bpm, _curStarterArt)});
+      if(!writeSongIndex(idx)){ _toast(SAVE_FAILED); return false; }
       _curSongId = id; _curSongName = name;
       return true;
-    }catch(e){ _toast('Save failed: '+e.message); return false; }
+    }catch(e){ _toast(SAVE_FAILED); return false; }
   }
   function newSongId(){ return 's'+Date.now().toString(36)+Math.floor(Math.random()*999).toString(36); }
   function hasAnyNotes(){
@@ -2763,46 +2826,63 @@ var GS = (function(){
     if(!hasAnyNotes()) return;
     if(_curSongId){ saveToSlot(_curSongId, _curSongName||'My Song'); return; }
     var d = new Date();
-    saveToSlot(newSongId(), 'Untitled '+(d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes());
-    _toast('Your song was kept in My Songs');
+    if(saveToSlot(newSongId(), 'Untitled '+(d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes()))
+      _toast('Your song was kept in My Songs');
   }
   function resetSongData(){
     song = {sections:{A:{name:'Verse',vars:[createEmptyVar()]},B:{name:'Chorus',vars:[createEmptyVar()]},C:{name:'Bridge',vars:[createEmptyVar()]}}, arrangement:['A1']};
     currentSection = 'A'; currentVar = 0;
     _undoStack = [];
-    _curSongId = null; _curSongName = '';
+    _curSongId = null; _curSongName = ''; _curStarterArt = null;
     layerSampleName.bass = layerSampleName.chords = layerSampleName.melody = null;
     layerInst.bass = INST_DEFAULTS.bass; layerInst.chords = INST_DEFAULTS.chords; layerInst.melody = INST_DEFAULTS.melody;
   }
 
+  var _autosaveFailed = false;
   function autosaveTick(){
     if(!_dirty) return;
-    _dirty = false;
     try{
       var s = JSON.stringify(serializeState());
-      if(s === _lastAutosave) return;
-      _lastAutosave = s;
-      localStorage.setItem('gs_autosave', s);
-    }catch(e){}
+      if(s !== _lastAutosave){ localStorage.setItem('gs_autosave', s); _lastAutosave = s; }
+      _dirty = false;
+      _autosaveFailed = false;
+    }catch(e){
+      if(!_autosaveFailed){ _autosaveFailed = true; _toast(SAVE_FAILED); }
+    }
   }
 
+  var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function editedLabel(t){
+    var d = new Date(t||0), now = new Date();
+    if(d.toDateString() === now.toDateString()) return 'Edited today, '+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();
+    return 'Edited '+d.getDate()+' '+MONTHS[d.getMonth()]+(d.getFullYear()!==now.getFullYear()?' '+d.getFullYear():'');
+  }
   function renderSongList(){
     var el = document.getElementById('gs-song-list');
     if(!el) return;
-    var idx = songIndex();
-    var html = '';
+    var idx = songIndex(), html = '', grew = false;
     for(var i=0;i<idx.length;i++){
       var s = idx[i];
-      var d = new Date(s.up||0);
+      if(!s.cover){
+        // A song saved before covers existed: draw it once from its own name and tempo, then keep it
+        var sb = 120;
+        try{ var sd = JSON.parse(localStorage.getItem('gs_song_'+s.id)||'null'); if(sd && sd.bpm) sb = sd.bpm; }catch(e){}
+        s.cover = MusicStudioCovers.recipe(s.name, sb, null); grew = true;
+      }
       var isCur = s.id === _curSongId;
-      html += '<div class="gs-song-row"'+(isCur?' style="border-color:var(--sage)"':'')+'>'
-        +'<div class="sn-name" onclick="GS.loadSong(\''+s.id+'\')">'+(isCur?'▸ ':'')+String(s.name).replace(/</g,'&lt;')+'</div>'
-        +'<div class="sn-date">'+(d.getMonth()+1)+'/'+d.getDate()+'</div>'
-        +'<button class="gs-btn" onclick="GS.loadSong(\''+s.id+'\')" style="padding:8px 12px">Open</button>'
-        +'<button class="gs-btn" onclick="GS.deleteSong(\''+s.id+'\')" style="padding:8px 12px;border-color:#e88686;color:#e88686">✕</button>'
+      html += '<div class="gs-song-row'+(isCur?' cur':'')+'">'
+        +'<button class="sn-open" onclick="GS.loadSong(\''+s.id+'\')" aria-label="Open '+esc(s.name)+'">'
+        +'<span class="sn-cover">'+coverImg(s.cover, 56)+'</span>'
+        +'<span class="sn-text"><span class="sn-name">'+esc(s.name)+'</span>'
+        +'<span class="sn-date">'+editedLabel(s.up)+(isCur?' · open now':'')+'</span></span>'
+        +'</button>'
+        +'<button class="gs-btn sn-del" onclick="GS.deleteSong(\''+s.id+'\')" aria-label="Delete '+esc(s.name)+'">'+ic('delete')+'Delete</button>'
         +'</div>';
     }
-    if(!html) html = '<div style="font-size:.7rem;color:var(--muted)">No saved songs yet. Save As New keeps the one you are working on.</div>';
+    if(grew) writeSongIndex(idx);
+    if(!html) html = '<div class="gs-songs-empty"><img src="assets/games/song/tools/songs_empty.png" width="600" height="400" alt="">'
+      +'<p>No saved songs yet. Save As New keeps the one you are working on.</p>'
+      +'<button class="gs-btn gs-btn-gold" onclick="GS.closeSongs();GS.openStarters()">'+ic('new')+'Start a song</button></div>';
     el.innerHTML = html;
   }
 
@@ -3025,7 +3105,7 @@ var GS = (function(){
     if(DRUM_KITS[st.kit]){ currentKit = st.kit; DRUMS = DRUM_KITS[st.kit]; LAYER_TYPES[0].labels = DRUMS.map(function(d){return d.name}); }
     STEPS = 32;
     resetSongData();
-    _curSongName = st.name;
+    _curSongName = st.name; _curStarterArt = st.art;
     var lids = ['bass','chords','melody'];
     var secs = ['A','B'];
     for(var si=0;si<secs.length;si++){
@@ -3101,6 +3181,10 @@ var GS = (function(){
     el.innerHTML = html;
   }
   function resumeArt(){
+    if(_curSongId){
+      var idx = songIndex();
+      for(var i=0;i<idx.length;i++) if(idx[i].id===_curSongId && idx[i].cover) return '<span class="st-resume-art st-resume-cover">'+coverImg(idx[i].cover, 100)+'</span>';
+    }
     return '<span class="st-resume-art">'+ic('play')+'</span>';
   }
 
@@ -3668,8 +3752,7 @@ var GS = (function(){
             restored = applyState(ld);
             if(restored){
               // Promote the old single-slot save into My Songs
-              saveToSlot(newSongId(), 'My First Song');
-              localStorage.removeItem('gs_song');
+              if(saveToSlot(newSongId(), 'My First Song')) localStorage.removeItem('gs_song');
             }
           }
         }catch(e){}
@@ -3851,19 +3934,35 @@ var GS = (function(){
     save: function(){
       // Quick save. First save asks for a name; after that it updates the slot.
       if(_curSongId){
-        if(saveToSlot(_curSongId, _curSongName||'My Song')) _toast('Saved "'+(_curSongName||'My Song')+'"');
+        if(saveToSlot(_curSongId, _curSongName||'My Song')) _toast('Saved "'+(_curSongName||'My Song')+'" on this device');
         return;
       }
       var name = prompt('Name your song:', _curSongName||'My Song');
       if(name === null) return;
       name = String(name).substring(0,40).trim() || 'My Song';
-      if(saveToSlot(newSongId(), name)) _toast('Saved "'+name+'"');
+      if(saveToSlot(newSongId(), name)) _toast('Saved "'+name+'" on this device');
     },
     saveAs: function(){
       var name = prompt('Name this song:', (_curSongName?_curSongName+' 2':'My Song'));
       if(name === null) return;
       name = String(name).substring(0,40).trim() || 'My Song';
-      if(saveToSlot(newSongId(), name)){ _toast('Saved "'+name+'"'); renderSongList(); }
+      if(saveToSlot(newSongId(), name)){ _toast('Saved "'+name+'" on this device'); renderSongList(); }
+    },
+    saveToSlot: function(id, name){ return saveToSlot(id || newSongId(), String(name||'My Song').substring(0,40)); },
+    backupSong: function(){
+      // One file holds the whole song and its song code; samples are audio on this device and are not inside it
+      try{
+        var data = serializeState(), name = _curSongName || 'My Song';
+        var file = {format:'music-studio-backup', version:1, savedAt:new Date().toISOString(), name:name, song:data, songCode:makeSongCode()};
+        var blob = new Blob([JSON.stringify(file, null, 1)], {type:'application/json'});
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = (name.replace(/[^A-Za-z0-9 _]+/g,'').trim().replace(/\s+/g,'_') || 'My_Song') + '.music-studio.json';
+        document.body.appendChild(a); a.click();
+        setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+        var usesSamples = !!(layerSampleName.bass || layerSampleName.chords || layerSampleName.melody || (extraDrumRows && extraDrumRows.length) || drumSamples.some(function(x){return !!x;}));
+        _toast(usesSamples ? 'Backup saved. Your samples stay on this device' : 'Backup saved');
+      }catch(e){ _toast('Could not make the backup file. Copy the song code instead.'); }
     },
     load: function(){
       // Legacy path: open the most recent saved song
@@ -3884,7 +3983,7 @@ var GS = (function(){
         if(!raw){_toast('Song not found');return;}
         stashCurrent();
         if(applyState(JSON.parse(raw))){
-          _curSongId = id;
+          _curSongId = id; _curStarterArt = null;
           GS.closeSongs();
           _toast('Loaded "'+_curSongName+'"');
           markDirty();
@@ -3895,8 +3994,8 @@ var GS = (function(){
       var idx = songIndex(), name = id;
       for(var i=0;i<idx.length;i++){ if(idx[i].id===id) name = idx[i].name; }
       if(!confirm('Delete "'+name+'"? This cannot be undone.')) return;
+      if(!writeSongIndex(idx.filter(function(s){return s.id!==id}))){ _toast('Could not delete. Try again.'); return; }
       try{ localStorage.removeItem('gs_song_'+id); }catch(e){}
-      writeSongIndex(idx.filter(function(s){return s.id!==id}));
       if(_curSongId === id){ _curSongId = null; }
       renderSongList();
     },

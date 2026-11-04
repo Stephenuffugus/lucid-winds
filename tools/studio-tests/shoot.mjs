@@ -37,6 +37,7 @@ await page.evaluate(() => window.scrollTo(0, 0));
 await ev('GS.toggleToolbar()');
 await shot('06-tools-open');
 await ev('GS.toggleToolbar()');
+await ev("GS.saveToSlot(null,'Night Walk')"); await ev("GS.saveToSlot(null,'Rain on Glass')");
 await ev('GS.openSongs()'); await shot('07-my-songs'); await ev('GS.closeSongs()');
 await ev('GS.openEuclid()'); await shot('08-rhythm-generator'); await ev('GS.closeEuclid()');
 await ev('GS.openCircle()'); await shot('09-circle-of-fifths'); await ev('GS.closeCircle()');
