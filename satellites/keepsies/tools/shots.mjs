@@ -65,7 +65,7 @@ await page.evaluate(() => {
   d.beatSkip();                     // "I have played marbles before", which lands ON the tin
   d.tin();
 });
-await wait(900);
+await wait(1700);   // the three roll in inside the tin (1.25 s) and lie on the cloth
 await shot('k2-tin');
 await page.evaluate(() => { const b = document.getElementById('heir-lutz'); if (b) b.click(); });
 await wait(400);

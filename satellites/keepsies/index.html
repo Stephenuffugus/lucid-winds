@@ -169,21 +169,45 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
    marbles somebody put down in front of you. The cloth is the surface, the tiles
    are equal height so three names on three baselines do not stagger the row, and
    every marble has a shadow so none of them floats. */
-#heirlooms{display:flex;gap:10px;justify-content:center;align-items:stretch;width:100%;
-  max-width:21rem;padding:14px 10px;border-radius:14px;
-  background:linear-gradient(160deg,rgba(74,58,42,.55),rgba(46,36,26,.5));
-  box-shadow:inset 0 1px 0 rgba(232,220,200,.08),0 8px 20px rgba(0,0,0,.45)}
-#heirlooms button{position:relative;flex:1 1 0;width:auto;min-width:0;min-height:0;padding:6px 4px 8px;
+/* Astra's plates (step 4): a plate is her image as the box's background (main.js paints every [data-art]
+   through art(), so the one query reaches it), with her anchors as percentages of the shown part */
+.plate{position:relative;width:100%;max-width:23rem;border-radius:14px;overflow:hidden;
+  background-color:#1a1712;background-repeat:no-repeat;box-shadow:0 8px 20px rgba(0,0,0,.45)}
+#tinScene{aspect-ratio:900/480;background-size:100% auto;background-position:50% 50%}
+/* the mouth: 255, 288, 355 by 82 of 900 by 600, shown from row 60 (so 47.5 percent down) */
+#tinMouth{position:absolute;left:28.33%;top:47.5%;width:39.44%;height:17.08%;clip-path:ellipse(50% 50% at 50% 50%)}
+#tinMouth canvas{position:absolute;top:4%;width:auto;height:92%;aspect-ratio:1;margin-left:-15%}
+#tinMouth canvas.roll{animation:kpRoll .95s cubic-bezier(.2,.7,.25,1) both}
+@keyframes kpRoll{from{transform:translateX(-170%) rotate(-320deg)}to{transform:none}}
+/* the cloth: 900 by 600 shown from row 112 to 512, resting places at 225, 450, 675 by 312 (50 percent down),
+   a quarter of the plate apart, so each place is 24 percent wide; the live render fills Astra's 62 px radius
+   (13.8 percent of the plate) and her ground shadow lies under it */
+#heirlooms{aspect-ratio:900/400;background-size:100% auto;background-position:50% 56%}
+#heirlooms button{position:absolute;top:8%;width:24%;height:88%;min-width:0;min-height:48px;margin-left:-12%;padding:0 2px;
   display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  border-radius:12px;border:1px solid rgba(152,160,134,.28);background:rgba(20,23,15,.5);
-  text-transform:none;letter-spacing:0;font-size:.66rem;line-height:1.25;color:var(--chalk)}
-#heirlooms canvas{display:block;width:84px;height:84px;margin:0 auto 6px;position:relative;z-index:1}
-/* a shadow under each one, so they sit on the cloth rather than over it */
-#heirlooms button::after{content:'';position:absolute;left:50%;top:88px;width:56px;height:9px;
-  margin-left:-28px;border-radius:50%;
-  background:radial-gradient(50% 50%,rgba(0,0,0,.8),rgba(0,0,0,0) 72%)}
+  border-radius:12px;border:1px solid rgba(232,220,200,.22);background:rgba(13,16,12,.28);
+  text-transform:none;letter-spacing:0;font-size:.64rem;line-height:1.15;color:var(--chalk)}
+#heirlooms button:nth-child(1){left:25%}
+#heirlooms button:nth-child(2){left:50%}
+#heirlooms button:nth-child(3){left:75%}
+#heirlooms canvas{display:block;width:57.4%;height:auto;aspect-ratio:1;margin:49% auto 3%;position:relative;z-index:1}
+/* a shadow under each one, so they sit on the cloth rather than over it (Astra's ground shadow) */
+#heirlooms .rest{position:absolute;left:50%;top:61%;width:56%;height:12%;margin-left:-28%;
+  background-size:100% 100%;background-repeat:no-repeat;opacity:.85}
 #heirlooms button.on{border-color:var(--brass);background:rgba(200,168,75,.16);
-  box-shadow:0 0 0 2px rgba(200,168,75,.5),0 8px 16px rgba(0,0,0,.55);transform:translateY(-5px)}
+  box-shadow:0 0 0 2px rgba(200,168,75,.5),0 8px 16px rgba(0,0,0,.55);transform:translateY(-4px)}
+#heirlooms span{text-shadow:0 1px 3px rgba(0,0,0,.9)}
+#tinSafe{margin:-8px 0 0;max-width:20rem;color:var(--muted);font-size:.84rem}
+@media (prefers-reduced-motion:reduce){#tinMouth canvas.roll{animation:none}}
+/* the faces: a brass ring, never a frame that competes with the marbles */
+.face{display:block;border-radius:50%;border:1px solid rgba(200,168,75,.6);background:#1a1712;object-fit:cover}
+/* ⛔ THE FACE ADDS NO HEIGHT. Play has to stay on a 375 by 667 screen (the render gate clicks it there), so
+   Dusty sits as a medallion at the start of the row, overflowing its line, not growing it */
+.row.opp{position:relative;padding-left:54px;align-items:center}
+#oppFace{position:absolute;left:0;top:50%;width:44px;height:44px;margin-top:-22px}
+#rsFace{width:96px;height:96px;margin:0 auto}
+.side.them{position:relative;padding-right:44px}
+#themFace{position:absolute;right:0;top:0;width:36px;height:36px}
 #heirlooms .kit{display:block;color:var(--brass);margin-top:2px}
 #heirSay{margin:0;min-height:2.4em;max-width:20rem;color:var(--muted);font-size:.82rem;line-height:1.45;font-style:italic}
 #tinSay{margin:0;max-width:20rem;color:var(--chalk);font-size:.92rem;line-height:1.45}
@@ -417,7 +441,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 <div id="setup" class="veil" hidden>
   <h2>Ringer</h2>
   <div class="card">
-    <div class="row"><span>Against</span><span id="oppName">Dusty Coyle</span></div>
+    <div class="row opp"><img id="oppFace" class="face" alt="" hidden><span>Against</span><span id="oppName">Dusty Coyle</span></div>
     <p id="oppLine">Beat everyone on his street. His street is small.</p>
   </div>
   <div id="hrRow"></div>
@@ -446,7 +470,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   <div id="lot" aria-hidden="true"></div>
   <div id="scores">
     <div class="side me"><span class="who" id="whoMe">You</span><span class="sockets" id="sockMe"></span></div>
-    <div class="side them"><span class="who" id="whoThem">Dusty</span><span class="sockets" id="sockThem"></span></div>
+    <div class="side them"><img id="themFace" class="face chip" alt="" hidden><span class="who" id="whoThem">Dusty</span><span class="sockets" id="sockThem"></span></div>
   </div>
   <div id="houseRules">keeps, slips, ten foot</div>
   <div id="say">Drag to place your shooter, then hold it and flick.</div>
@@ -527,9 +551,13 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
      being destroyed. -->
 <div id="tin" class="veil" hidden>
   <p class="studio">Dusty rattles the tin</p>
+  <!-- Astra's scene (900 x 600, shown from row 60 to 540): the three live renders roll in inside the tin's
+       mouth (anchors.json dusty_tin_scene.mouth, an ellipse), then lie on the cloth -->
+  <div id="tinScene" class="plate" data-art="ui/dusty_tin_scene.webp" aria-hidden="true"><div id="tinMouth"></div></div>
   <h2>Take some</h2>
+  <p id="tinSafe">Your first rare is kept safe in the case.</p>
   <p id="tinSay">Ten clay, six cat's eyes, a bearing and a swirl. And one of these three, your pick.</p>
-  <div id="heirlooms"></div>
+  <div id="heirlooms" class="plate" data-art="ui/heirloom_cloth.webp"></div>
   <p id="heirSay"></p>
   <button id="tinTake" disabled>Pick one first</button>
 </div>
@@ -537,6 +565,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 <!-- The buy back offer. DESIGN 12: one offer, no negotiation UI. It is a card,
      not a screen, and it is the only place in the game with a countdown on it. -->
 <div id="ransom" class="veil" hidden>
+  <img id="rsFace" class="face kept" alt="" hidden>
   <p class="studio" id="rsHead">Dusty Coyle kept it</p>
   <div id="ransomArt"></div>
   <p class="cer-tier" id="rsTier"></p>

@@ -40,6 +40,7 @@ import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, cur
 import { makeRng } from './core/rng.js?v=20260905a';
 import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260905a';
 import { art, loadIcons, ic } from './render/art.js?v=20260905a';
+import { face } from './render/portraits.js?v=20260905a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -83,6 +84,8 @@ const LAY_WORD = { cross: 'The cross', x: 'The X', ring: 'The ring', bunch: 'The
 
 async function boot() {
   loadIcons();   // Astra's one sprite, fetched once and injected (render/art.js); a miss leaves the labels
+  // every plate in the page names its art in data-art; this is the one place its URL is made
+  for (const el of document.querySelectorAll('[data-art]')) el.style.backgroundImage = 'url(' + art(el.dataset.art) + ')';
   const res = await fetch('src/data/tuning.json?v=20260905a');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
@@ -271,8 +274,20 @@ function wireButtons() {
 
 /* ---------------------------------------------------------------- screens */
 
+/* the faces (render/portraits.js): Dusty across the ring at setup, kept it on his card, the 96 px chip in the
+   HUD; anyone without a face shows none, never a placeholder */
+function paintFaces() {
+  const name = ($('oppName') && $('oppName').textContent) || 'Dusty Coyle';
+  const set = (id, url) => { const el = $(id); if (!el) return; if (url) { if (el.dataset.src !== url) { el.src = url; el.dataset.src = url; } el.hidden = false; } else el.hidden = true; };
+  set('oppFace', face(name, 'ring', 160));
+  set('themFace', face(G.R ? (G.R.match.players[1] || {}).name : name, 'ring', 96));
+  const head = ($('rsHead') && $('rsHead').textContent) || '';
+  set('rsFace', face(head.replace(/ kept it$/, ''), 'kept_it', 160));
+}
+
 function showScreen(name) {
   G.screen = name;
+  if (name === 'setup' || name === 'match' || name === 'ransom') paintFaces();
   // a tester's under the floor camera (KEEPSIES_DEV.camera allowUnder) never outlives the screen it was asked on
   if (G.rig) G.rig.state.allowUnder = false;
   $('title').hidden = name !== 'title';
@@ -429,6 +444,13 @@ function openTin() {
   const wrap = $('heirlooms');
   wrap.textContent = '';
   const three = G.onboard.heirlooms(G.catalog);
+  /* ⛔ THE THREE ROLL IN INSIDE THE TIN, THEN LIE ON THE CLOTH (step 4). Each render is drawn once and the
+     same canvas moves from the tin's mouth (clipped to its ellipse, Astra's anchor) to its resting place, so
+     what you pick is the marble you watched arrive. Reduced motion: straight to the cloth. */
+  const mouth = $('tinMouth');
+  mouth.textContent = '';
+  const still = (G.save.settings && G.save.settings.reducedMotion) || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const canv = [];
   G.thumbs.open(168);
   let i = 0;
   for (const e of three) {
@@ -437,7 +459,12 @@ function openTin() {
     b.id = 'heir-' + e.id;
     const c = document.createElement('canvas');
     c.width = c.height = 168;
+    const rest = document.createElement('span');
+    rest.className = 'rest';
+    rest.style.backgroundImage = 'url(' + art('env/ground_shadow.png') + ')';
+    b.appendChild(rest);
     b.appendChild(c);
+    canv.push({ c, b });
     const nm = document.createElement('span');
     nm.textContent = e.name;
     b.appendChild(nm);
@@ -450,6 +477,19 @@ function openTin() {
     G.thumbs.paint(c, e, i++);
   }
   G.thumbs.close();
+  if (!still) {
+    canv.forEach(({ c, b }, k) => {
+      b.style.visibility = 'hidden';
+      c.className = 'roll';
+      c.style.left = (20 + 30 * k) + '%';
+      c.style.animationDelay = (k * 0.14) + 's';
+      mouth.appendChild(c);
+    });
+    clearTimeout(G.tinRoll);
+    G.tinRoll = setTimeout(() => {
+      for (const { c, b } of canv) { c.className = ''; c.style.left = ''; c.style.animationDelay = ''; b.insertBefore(c, b.children[1] || null); b.style.visibility = ''; }
+    }, 1500);
+  }
   // before the first tap there is nothing to read but a name and a two word kit,
   // so the cloth says what it is asking
   $('heirSay').textContent = 'Pick one up. It is yours for good.';
