@@ -341,6 +341,12 @@
     --accent:#a8905c; --relief:#d2d2ca; --danger:#383836; --art-filter:grayscale(1);
     --paper-2:#d3d3cd; --sage-2:#30302e; --mint-deep:#93938e;}
 
+  .result-shot{ position:relative; width:100%; aspect-ratio:720/500; border-radius:10px; overflow:hidden; margin:8px 0 10px; background:var(--paper-2); box-shadow:inset 0 0 0 2px var(--sage-2);}
+  .result-shot .rs-room{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:50% 100%; display:block;}
+  .result-shot .rs-strip{ position:absolute; left:0; bottom:0; width:100%; aspect-ratio:2/1; margin-bottom:-2.78%; display:block;}
+  .result-shot .rs-strip:not([src]), .result-shot .rs-room:not([src]){ visibility:hidden;}
+  .result-shot .bust{ position:absolute; left:50%; bottom:0; width:56%; height:auto; aspect-ratio:1; transform:translateX(-50%);}
+  .result-where{ margin:6px 0 0; font-weight:600; color:var(--sage-2); font-size:.95rem;}
   .stats-lead{ font-family:var(--serif); font-weight:700; font-size:1.15rem; line-height:1.3; color:var(--sage-2); margin:6px 0 0;}
   .medal-grid + *, #medalCount{ margin-top:4px;}
   .stat-row{ display:flex; justify-content:space-between; font-size:1rem; margin:.3em 0; color:#463f31;}
@@ -664,10 +670,16 @@
 
   <!-- ============ GAME OVER ============ -->
   <div id="overScreen" class="screen hidden">
-    <div class="card" style="max-width:380px;">
+    <div class="card result-card" style="max-width:380px;">
       <div class="eyebrow">The room has spoken</div>
+      <div class="result-shot" aria-hidden="true">
+        <img class="rs-room ff-art-layer" id="overRoom" alt="">
+        <img class="rs-strip ff-art-layer" id="overStrip" alt="">
+        <svg class="bust" id="overBust" viewBox="0 0 360 360" data-tier="blowout" data-char="everyman" focusable="false"></svg>
+      </div>
       <h1 id="overTitle">Exposed</h1>
       <p class="sub" id="overSub">Three sounds too many.</p>
+      <p class="result-where" id="overWhere"></p>
       <div class="rule"></div>
       <div class="stat-row"><span>Composure held</span><b id="overTime">0s</b></div>
       <div class="stat-row"><span>Best vent combo</span><b id="overCombo">×1.0</b></div>
@@ -678,6 +690,7 @@
       <div id="bestBadgeWrap" class="hidden" style="text-align:center;"><span class="badge">New personal best</span></div>
     </div>
     <button class="btn" id="againBtn">Face it again</button>
+    <button class="btn ghost" id="shareBtn" type="button">Share this ordeal</button>
     <button class="btn ghost" id="menuBtn">Back to menu</button>
   </div>
 </div>
@@ -726,7 +739,7 @@
     {id:"babys_nap",          bg:"assets/stage/bg_babys_nap.webp",          backs:"assets/onlookers/onlookers_babys_nap_backs.png",          turned:"assets/onlookers/onlookers_babys_nap_turned.png"},
   ];
   const UI_ART={ paper:"assets/stage/paper_tile.png", grain:"assets/stage/film_grain_tile.png", card:"assets/stage/card_frame.png",
-    intertitle:"assets/controls/intertitle_frame.png", wardFrame:"assets/wardrobe/wardrobe_frame.png", menu:"assets/stage/bg_menu_mood.webp", over:"assets/stage/bg_game_over_mood.webp",
+    intertitle:"assets/controls/intertitle_frame.png", wardFrame:"assets/wardrobe/wardrobe_frame.png", shareSquare:"assets/sharing/result_square.png", menu:"assets/stage/bg_menu_mood.webp", over:"assets/stage/bg_game_over_mood.webp",
     padLIdle:"assets/controls/hold_left_idle.png", padLHeld:"assets/controls/hold_left_held.png", padLTired:"assets/controls/hold_left_tired.png",
     padRIdle:"assets/controls/hold_right_idle.png", padRHeld:"assets/controls/hold_right_held.png", padRTired:"assets/controls/hold_right_tired.png",
     ventUnsafe:"assets/controls/vent_unsafe.png", ventCover:"assets/controls/vent_cover.png", ventPerfect:"assets/controls/vent_perfect.png",
@@ -1247,7 +1260,7 @@
     $("overTime").textContent=fmtTime(S.time);
     $("overCombo").textContent="×"+comboMultFrom(S.bestCombo).toFixed(1);
     $("overScore").textContent=finalScore;
-    $("overModeName").textContent=S.playMode==="stage"?S.modeKey:S.playMode;
+    $("overModeName").textContent=S.playMode==="stage"?(DIFF_NAMES[S.modeKey]||S.modeKey):(MODE_NAMES[S.playMode]||S.playMode);
     $("overBest").textContent=Math.max(prevBest,finalScore);
     $("overSun").textContent=granted;
     $("overMedals").textContent=med.count+"/"+MEDALS.length;
@@ -1256,12 +1269,74 @@
     else if(S.time<12){ $("overTitle").textContent="Exposed"; $("overSub").textContent="You lasted no time at all."; }
     else if(S.time<45){ $("overTitle").textContent="Mortified"; $("overSub").textContent="A valiant, doomed effort."; }
     else { $("overTitle").textContent="Undone at last"; $("overSub").textContent="You held for "+S.time.toFixed(0)+" long seconds."; }
+    // the frozen record: only values this run really reached (a quit during an intertitle reports the act before it)
+    const endAct=(S.inIntro&&S.scene>0)?S.scene-1:S.scene, sIdx=sceneIdx(endAct), sa=SCENE_ART[sIdx];
+    const expr=face.dataset.tier||"calm", heard=S.strikes>=3||expr==="blowout";
+    lastRun={ mode:S.playMode, difficulty:S.modeKey, sceneId:sa.id, sceneTitle:SCENES[sIdx].t, act:endAct+1, time:S.time, expression:expr,
+      verdict:$("overTitle").textContent, score:finalScore, heard, char:face.dataset.char||"everyman",
+      flush:Math.min(1,Math.max(0,(S.pressure/100-0.25)/0.75)), version:ART_V, day:S.playMode==="daily"?dayKey():0 };
+    $("overWhere").textContent=lastRun.sceneTitle+", Act "+ROMAN[(lastRun.act-1)%ROMAN.length];
+    $("overRoom").src=art(sa.bg); $("overStrip").src=art(heard?sa.turned:sa.backs);
+    const ob=$("overBust"), rg=face.querySelector('.rig[data-rig="'+lastRun.char+'"]');
+    if(rg){ ob.innerHTML=rg.outerHTML; ob.dataset.char=lastRun.char; ob.dataset.tier=expr; }
     hud.classList.add("hidden"); pauseScreen.classList.add("hidden"); overScreen.classList.remove("hidden");
     face.dataset.tier="calm";
     if(med.newly.length||newWard.length) setTimeout(()=>queueToasts(med.newly.concat(newWard)), 500);
     setTimeout(()=>{ try{ if(window.SWSMusic&&SWSMusic.reveal&&S&&S.phase==="over") SWSMusic.reveal(); }catch(e){} }, 2600);
   }
   function awardSunbeams(n){ window.__FF_LAST_SUNBEAMS=n; }
+
+  // -- the share card (step 7): result_square.png over the run's room, its witnesses and the bust in its last
+  //    expression, the scene and act and the held time and verdict in Astra's bands; only real values, local only
+  let lastRun=null;
+  const MODE_NAMES={ stage:"Stage", daily:"Daily Ordeal", zen:"Zen Theater", cheek:"One Cheek" }, DIFF_NAMES={ easy:"Easy", normal:"Normal", panic:"Panic" };
+  function loadImg(src){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=rej; im.src=src; }); }
+  function bustImage(R){
+    const rig=face.querySelector('.rig[data-rig="'+R.char+'"]'); if(!rig) return Promise.reject(new Error("no rig"));
+    const g=rig.cloneNode(true); g.querySelectorAll(".x").forEach(e=>{ if(!e.classList.contains("x-"+R.expression)) e.remove(); });
+    const cs=getComputedStyle(document.body);
+    const inner=new XMLSerializer().serializeToString(g).replace(/var\(--(coat|paper|ink),\s*([^)]+)\)/g,(m,v,fb)=>(cs.getPropertyValue("--"+v).trim()||fb.trim()));
+    const flush='<g opacity="'+R.flush.toFixed(2)+'"><ellipse cx="132" cy="194" rx="30" ry="18" fill="url(#sf)"/><ellipse cx="228" cy="194" rx="30" ry="18" fill="url(#sf)"/></g>';
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" width="720" height="720"><defs><radialGradient id="sf"><stop offset="0" stop-color="#e8604f" stop-opacity=".9"/><stop offset="1" stop-color="#e8604f" stop-opacity="0"/></radialGradient></defs>'+inner+flush+'</svg>';
+    const url=URL.createObjectURL(new Blob([svg],{type:"image/svg+xml"}));
+    return loadImg(url).finally(()=>setTimeout(()=>URL.revokeObjectURL(url),2000)); }
+  function fitFont(x,text,weight,size,family,maxW){ let z=size; do{ x.font=weight+" "+z+"px "+family; z-=2; } while(x.measureText(text).width>maxW&&z>18); }
+  async function drawShareCard(R){
+    const c=document.createElement("canvas"); c.width=c.height=1080; const x=c.getContext("2d");
+    const sa=SCENE_ART.find(a=>a.id===R.sceneId)||SCENE_ART[0], cs=getComputedStyle(document.body);
+    const [frame,room,strip,bust]=await Promise.all([loadImg(art(UI_ART.shareSquare)), loadImg(art(sa.bg)).catch(()=>null),
+      loadImg(art(R.heard?sa.turned:sa.backs)).catch(()=>null), bustImage(R).catch(()=>null)]);
+    try{ await Promise.all([document.fonts.load('700 52px "Noto Serif"'), document.fonts.load('600 40px "Open Sans"'), document.fonts.load('400 30px "Open Sans"')]); }catch(e){}
+    const WX=180, WY=255, WW=720, WH=500, af=(cs.getPropertyValue("--art-filter")||"").trim()||"none";
+    x.fillStyle=cs.getPropertyValue("--paper-2").trim()||"#d8cfb2"; x.fillRect(WX,WY,WW,WH);
+    x.save(); x.beginPath(); const r=22; x.moveTo(WX+r,WY); x.arcTo(WX+WW,WY,WX+WW,WY+WH,r); x.arcTo(WX+WW,WY+WH,WX,WY+WH,r); x.arcTo(WX,WY+WH,WX,WY,r); x.arcTo(WX,WY,WX+WW,WY,r); x.closePath(); x.clip();
+    x.filter=af;
+    if(room){ const k=WW/room.width, sh=WH/k; x.drawImage(room, 0, Math.max(0,room.height-sh), room.width, Math.min(room.height,sh), WX, WY, WW, WH); }
+    if(strip){ const k=WW/strip.width; x.drawImage(strip, WX, WY+WH-510*k, WW, strip.height*k); }
+    x.filter=document.body.classList.contains("pal-silver")?"grayscale(1)":"none";
+    if(bust){ const b=WW*0.56; x.drawImage(bust, WX+(WW-b)/2, WY+WH-b, b, b); }
+    x.restore(); x.filter="none";
+    x.drawImage(frame,0,0,1080,1080);
+    x.textAlign="center"; x.textBaseline="middle"; x.fillStyle=cs.getPropertyValue("--sage-2").trim()||"#2b3a31";
+    const where=R.sceneTitle+", Act "+ROMAN[(R.act-1)%ROMAN.length];
+    fitFont(x,where,"700",52,'"Noto Serif", Georgia, serif',860); x.fillText(where,540,790+38);
+    const held="Held "+fmtTime(R.time)+". "+R.verdict+".";
+    fitFont(x,held,"600",40,'"Open Sans", Arial, sans-serif',860); x.fillText(held,540,885+36);
+    const line=(R.mode==="stage"?DIFF_NAMES[R.difficulty]||"Stage":MODE_NAMES[R.mode]||"Stage")+" · Score "+R.score;
+    fitFont(x,line,"400",30,'"Open Sans", Arial, sans-serif',860); x.fillText(line,540,885+86);
+    return await new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error("no image")),"image/png")); }
+  async function shareRun(){
+    const R=lastRun, btn=$("shareBtn"); if(!R||btn.disabled) return; btn.disabled=true;
+    try{
+      const blob=await drawShareCard(R), name="flatulence-fighter-"+R.sceneId+"-act-"+R.act+".png";
+      const text="Flatulence Fighter. "+R.sceneTitle+", Act "+ROMAN[(R.act-1)%ROMAN.length]+". Held "+fmtTime(R.time)+". "+R.verdict+".";
+      let file=null; try{ file=new File([blob],name,{type:"image/png"}); }catch(e){}
+      if(file&&navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+        try{ await navigator.share({files:[file], title:"Flatulence Fighter", text}); return; }
+        catch(e){ if(e&&e.name==="AbortError") return; } }
+      const url=URL.createObjectURL(blob), a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),4000);
+    }catch(e){} finally{ btn.disabled=false; } }
 
   // -- cosmetics --
   function loadWard(){ const W=get(L.save,null);
@@ -1721,6 +1796,7 @@
   $("startBtn").addEventListener("click",()=>begin(chosenMode,chosenPlay));
   $("againBtn").addEventListener("click",()=>begin(S?S.modeKey:chosenMode, S?S.playMode:chosenPlay));
   $("menuBtn").addEventListener("click",toMenu);
+  $("shareBtn").addEventListener("click",shareRun);
   $("pauseBtn").addEventListener("click",pauseGame);
   $("resumeBtn").addEventListener("click",resumeGame);
   $("quitBtn").addEventListener("click",()=>{ if(S) gameOver(); });
