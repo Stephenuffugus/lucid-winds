@@ -78,6 +78,7 @@ FILES = {   # the brief's checklist: file, sprite key, frame names (None: the ke
     # round 8's keys (4 Nov, SHUTTERBUG_M2_BUILD_PLAN.md), each with the step that splices it: step 1 the Polaroid and its marks
     'ui/polaroid_frame.png': ('polaroid_frame', None), 'ui/hero_dot.png': ('hero_dot', None), 'ui/beacon_dot.png': ('beacon_dot', None),
     'world/tab_bold.png': ('tab_bold', None),   # step 2 (the ten enemies' bold pass replaces keys the map holds already)
+    'world/ledge.png': ('ledge', None), 'world/tripod.png': ('tripod', None), 'fx/key_glint.png': ('key_glint', None),   # step 3
 }
 
 

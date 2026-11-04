@@ -262,7 +262,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   #death { width: min(320px, 94vw); padding: 12px 14px; gap: 10px; } #stage > #death h2 { font-size: 1rem; } }   /* its words on one line: about 116 px, under half the stage at 320x568 (#stage: over the cards' 1.3rem rule below) */
 #paused h2, #clear h2, #death h2 { margin: 0 0 4px; font-size: 1.3rem; }
 #paused button, #clear button, #death button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
-#resume, #nextroom, #deathagain { background: var(--sun); color: var(--ink); }
+#resume, #nextroom, #deathagain, #deathcp { background: var(--sun); color: var(--ink); }
 #clearbank { margin: 0; font-size: 0.95rem; }
 /* the share sheet (T1.8): the record's 16 colour grid, the three sentences, the link and its buttons; it scrolls on short phones */
 #sharesheet { position: absolute; left: 0; right: 0; top: 2%; bottom: 2%; margin: 0 auto; width: min(360px, 96vw); padding: 14px; overflow-y: auto;
@@ -737,7 +737,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <button id="cleartitle" type="button" data-copy="toTitle"></button></div>
     <div id="death" role="dialog" data-aria="death"><h2 id="deathhead" data-copy="death"></h2>
       <p id="deathlost" hidden></p>
-      <div class="duo"><button id="deathagain" type="button" data-copy="again"></button>
+      <div class="duo"><button id="deathcp" type="button" data-copy="toTripod" hidden></button><button id="deathagain" type="button" data-copy="again"></button>
       <button id="deathretry" type="button" data-copy="retryHouse" hidden></button>
       <button id="deathnew" type="button" data-copy="newHouse" hidden></button>
       <button id="deathtitle" type="button" data-copy="toTitle"></button></div></div>
@@ -846,7 +846,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the Darkroom (2 Nov): the starting collection, each weapon's tier and the price to develop it, a print that
        cannot be new paid in Dead pixels instead */
     DEV_START: ['J1', 'D1'], DEV_PRICE: [0, 30, 100, 300], DEV_DUP_DP: 30, START_PICK_DP: 200 /* DESIGN 9.4 "Starting loadout pick 200" */,
-    DEV_TIER: { J2: 1, J3: 1, J5: 1, D2: 1, D4: 1, D6: 1, J4: 2, J6: 2, J7: 2, D3: 2, D5: 2, D8: 2, C2: 2, C6: 2, J8: 3, D7: 3, C1: 3, C3: 3, C4: 3 }, LANTERN_PULSE_S: 1 /* W4: the Lantern burns once a second */, KEYS_MAX: 3, KEYS_ROWS_OVER_SPAWN: 2, KEYS_MIN_ROWS: 6, KEYS_GUARD_CELLS: 4 /* the locked exit (2 Nov, features.keys) */,
+    DEV_TIER: { J2: 1, J3: 1, J5: 1, D2: 1, D4: 1, D6: 1, J4: 2, J6: 2, J7: 2, D3: 2, D5: 2, D8: 2, C2: 2, C6: 2, J8: 3, D7: 3, C1: 3, C3: 3, C4: 3 }, LANTERN_PULSE_S: 1 /* W4: the Lantern burns once a second */, KEYS_MAX: 3, KEYS_ROWS_OVER_SPAWN: 2, KEYS_MIN_ROWS: 6, KEYS_GUARD_CELLS: 4 /* the locked exit (2 Nov, features.keys) */, FLOOR_ROWS: 16, LANDING_RUN: 4, LANDING_REACH: 2 /* m2 step 3: three floors from the bottom, a landing of four standable cells at the top of each within two rows */,
     BOSS_MOTH_EVERY_S: 4, BOSS_MOTH_COUNT: 3, BOSS_ICICLE_TELEGRAPH_S: 3, BOSS_RING_EVERY_S: 5, BOSS_RING_CELLS: 4, BOSS_SPARK_TELEGRAPH_S: 2,
     /* the biome movesets (2 Nov): each cycle and its tell; Frost's columns, Overgrowth's thorn life, Ember's sparks */
     BOSS_ICE_EVERY_S: 5, BOSS_ICE_COLUMNS: 3, BOSS_ICE_ROWS: 10, BOSS_RING_TELL_S: 1, BOSS_RING_GROW_S: 0.5, BOSS_THORN_EVERY_S: 5, BOSS_THORN_TELL_S: 0.9, BOSS_THORN_LIVE_S: 2,
@@ -979,7 +979,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-2';
+  SB.BUILD = 'sb-m2-3';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -2023,7 +2023,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
        enemies, in core-features' fixed order, after the ascent so they keep clear of it (the pocket never carves it);
        then the second round of the ascent and, when it fails, the degrade ladder (T1.3) */
     level.bestiary = rec.v >= 2 && (rec.flags & SB.record.FLAG_BESTIARY) !== 0 ? 1 : 0;   /* the second monsters (2 Nov) */
-    var settled = settle(level, SB.features.place(level, opts, fixed.g));
+    /* m2 step 3: the floors' landings and the tripod, before the features (they see any film tab a landing carved) */
+    var carvedL = SB.features.landings(level);
+    var settled = settle(level, SB.features.place(level, opts, carvedL ? SB.reach.graph(level) : fixed.g));
     if (settled) return settled;
     SB.features.ramp(level, opts);   /* a house room after the first only (opts.roomIndex, Q200); on the settled level */
     SB.features.guardian(level, opts);   /* the house's last room only (HOUSE-B, Q97 ruling 3): the clay guardian */
@@ -3836,6 +3838,28 @@ body.sb-modal .lwfb-fab { display: none !important; }
       surfaces.push({ y: y, mid: mid, far: far, foe: foe });
       x = e + 1;
     }
+    /* m2 step 3: a key goes into the furniture: its cell beside a solid (left, right or under), a landmark's first, and
+       never on the main ascent; the old surfaces only where the room has no such spot */
+    var lmk = new Uint8Array(n);
+    for (k = 0; level.landmarks && k < level.landmarks.length; k++) { var lc = level.landmarks[k].cells; for (var lj = 0; lj < lc.length; lj++) lmk[lc[lj]] = 1; }
+    var side = function (q, mask) { var qx = q % w; return (qx > 0 && mask[q - 1] === 1) || (qx < w - 1 && mask[q + 1] === 1) || (q + w < n && mask[q + w] === 1); };
+    var landBy = function (sf) { return side(sf.mid, lmk); };
+    /* the furniture's cells: open, against a landmark (left, right or on it), a cell the bug stands in, reached from
+       spawn with a way back to the exit (H-key-1's rule), off the main ascent, above the spawn rows */
+    var stand = function (c) { return c >= 0 && c < n && standable(level, c) && d[c] >= 0 && back[c] && !(level.trap && level.trap[c]); };
+    var ascSet = new Uint8Array(n); for (k = 0; k < asc.length; k++) ascSet[asc[k]] = 1;
+    var furn = [];
+    for (y = 1; y < h - 1; y++) for (x = 0; x < w; x++) {
+      c = y * w + x;
+      if (level.solid[c] || (level.trap && level.trap[c]) || claim[c] || near[c] || ascSet[c] || y > spawnRow - T.KEYS_ROWS_OVER_SPAWN) continue;
+      if (!side(c, lmk) || !stand(c)) continue;
+      var ff = 99, fo = 99;
+      for (var ak = 0; ak < asc.length; ak++) ff = Math.min(ff, cheb(c, asc[ak]));
+      for (var hk = 0; hk < homes.length; hk++) fo = Math.min(fo, cheb(c, homes[hk]));
+      if (ff >= 1) furn.push({ y: y, mid: c, far: ff, foe: fo });
+    }
+    f.keyFurn = furn.length;   /* how many furniture cells the room offered (the floors gate reads it) */
+    if (furn.length) surfaces = furn;
     var picks = [], ok = function (sf) { for (var j = 0; j < picks.length; j++) if (Math.abs(picks[j].y - sf.y) < T.KEYS_MIN_ROWS) return false; return true; };
     var guarded = surfaces.filter(function (sf) { return sf.foe <= T.KEYS_GUARD_CELLS && sf.far >= 1; }).sort(function (a, b) { return a.foe - b.foe || b.far - a.far || a.mid - b.mid; });
     if (guarded.length && max > 1) picks.push(guarded[0]);
@@ -3854,6 +3878,75 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
     f.keys = out.length ? out : null;
     return f.keys;
+  }
+  /* m2 step 3 (SHUTTERBUG_M2_BUILD_PLAN.md): the climb in three floors counted from the bottom, FLOOR_ROWS each (the
+     floor, the furniture, the ceiling). At the top of each floor the climb crosses (and at the exit's own surface, the
+     ceiling's top) a landing: LANDING_RUN standable cells side by side, reachable from the spawn and back to the exit,
+     never on a trap. The photo's own run within LANDING_REACH rows is taken first (nearest the ascent); where the photo
+     has none, a standing ascent cell's row is extended with film tabs under open cells (walkable from that stand, so
+     reached by construction). The first landing carries the tripod, the checkpoint: its cell nearest the ascent.
+     Deterministic from the grid alone; called before the features so they see the tabs. Returns whether it carved */
+  function landings(level) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, R = T.LANDING_RUN, carved = false;
+    level.landings = null; level.tripod = -1;
+    if (level.needsCrop || level.exit < 0 || !level.ascent) return false;
+    var spawnRow = Math.floor(level.spawn / w), exitRow = Math.floor(level.exit / w);
+    var stands = ascentStands(level), out = [], lmk = new Uint8Array(n);
+    for (var mi = 0; level.landmarks && mi < level.landmarks.length; mi++) { var mc = level.landmarks[mi].cells; for (var mj = 0; mj < mc.length; mj++) lmk[mc[mj]] = 1; }
+    level.landingTabs = 0;
+    var near = function (c) { var b = 99; for (var k = 0; k < stands.length; k++) b = Math.min(b, cheb(c, stands[k], w)); return b; };
+    var tops = [];
+    for (var f = 1; f <= 2; f++) { var sr = h - f * T.FLOOR_ROWS; if (exitRow < sr - 1 && spawnRow >= sr) tops.push(sr); }
+    var bounds = tops.length;   /* the floors' tops may carve; the exit's own surface (the ceiling's top) is a landing where the photo gives one */
+    tops.push(exitRow + 1);
+    var g = null, d = null, back = null;
+    for (var ti = 0; ti < tops.length; ti++) {
+      if (!g) { g = SB.reach.graph(level); d = SB.reach.distances(g, level.spawn, level.exit); back = returnable(level, g, 3 * g.n); }   /* again only after a carve */
+      var used = function (c) { for (var q = 0; q < out.length; q++) if (out[q].cells.indexOf(c) >= 0) return true; return false; };
+      var ok = function (c) { return standable(level, c) && d[c] >= 0 && back[c] && !(level.trap && level.trap[c]) && !used(c); };
+      var top = tops[ti], best = null, by, x, k;
+      for (var dy = 0; dy <= T.LANDING_REACH && !best; dy++) for (var sg = 0; sg < (dy ? 2 : 1) && !best; sg++) {
+        by = top - 1 + (sg ? -dy : dy);
+        if (by < 1 || by > h - 2) continue;
+        for (x = 0; x + R <= w; x++) {
+          var all = true; for (k = 0; k < R && all; k++) all = ok(by * w + x + k);
+          if (!all) continue;
+          var nb = 99; for (k = 0; k < R; k++) nb = Math.min(nb, near(by * w + x + k));
+          if (!best || nb < best.nb) best = { y: by, x: x, nb: nb, kind: 'photo' };
+        }
+      }
+      if (!best && ti < bounds) {
+        /* no photo run: extend a standing ascent cell's row with film tabs (open supports become one way tabs), by the
+           repair's own one way rules: never on another one way, never under a solid, never in a landmark */
+        var cand = stands.slice().sort(function (a, b) { return Math.abs(Math.floor(a / w) + 1 - top) - Math.abs(Math.floor(b / w) + 1 - top) || a - b; });
+        for (var ci = 0; ci < cand.length && !best; ci++) {
+          var c0 = cand[ci], cy = Math.floor(c0 / w), cx = c0 % w;
+          if (Math.abs(cy + 1 - top) > T.LANDING_REACH || cy >= h - 1 || used(c0)) continue;
+          for (var x0 = Math.max(0, cx - R + 1); x0 <= cx && x0 + R <= w && !best; x0++) {
+            var fit = true;
+            for (k = 0; k < R && fit; k++) {
+              var cc = cy * w + x0 + k, sb = cc + w;
+              fit = !level.solid[cc] && !level.plat[cc] && !(level.trap && level.trap[cc]) && !(level.trap && level.trap[sb]) && !used(cc) && cc !== level.exit &&
+                (level.solid[sb] || level.plat[sb] || (!lmk[sb] && !(sb + w < n && level.plat[sb + w])));
+            }
+            /* every cell between the stand and the run's ends is the stand's own row of air, so the bug walks it */
+            if (fit) best = { y: cy, x: x0, nb: 0, kind: 'tab' };
+          }
+        }
+        if (best) for (k = 0; k < R; k++) {
+          var sc = (best.y + 1) * w + best.x + k;
+          if (!level.solid[sc] && !level.plat[sc]) { level.plat[sc] = 1; level.tab[sc] = 1; level.landingTabs++; carved = true; g = null; }
+        }
+      }
+      if (best) { var cells = []; for (k = 0; k < R; k++) cells.push(best.y * w + best.x + k); out.push({ y: best.y, cells: cells, kind: best.kind }); }
+    }
+    level.landings = out.length ? out : null;
+    if (out.length && tops.length > 1) {
+      var L0 = out[0].cells, bc = L0[0], bn = 99;
+      for (var q = 0; q < L0.length; q++) { var nq = near(L0[q]); if (nq < bn) { bn = nq; bc = L0[q]; } }
+      level.tripod = bc;
+    }
+    return carved;
   }
   function place(level, opts, g) {
     var f = level.features, stands = ascentStands(level), rng = SB.rng.mulberry32(level.seed >>> 0);
@@ -3877,7 +3970,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     BUNNY: BUNNY, OWL: OWL, CRAB: CRAB, PUFF: PUFF, BEETLE: BEETLE, SECOND_OF_BIOME: SECOND_OF_BIOME,
     place: place, returnable: returnable, ladder: ladder, brightRect: brightRect, door: door, pocketCands: pocketCands, pocketOk: pocketOk, chest: chest, specks: specks,
     trapRects: trapRects, trapOk: trapOk, trapField: trapField, envelope: envelope, enemies: enemies, moths: moths, rampRow: rampRow, ramp: ramp,
-    darkMasses: darkMasses, arena: arena, guardian: guardian, keys: keys };
+    darkMasses: darkMasses, arena: arena, guardian: guardian, keys: keys, landings: landings };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-sim" data-core>
@@ -3899,7 +3992,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        7. ground, coyote and buffer bookkeeping; 8. the exit; 9. the frame count. */
   var IN = { L: 1, R: 2, A: 4, B: 8, A_TAP: 16, B_TAP: 32, CHOICE: 64 /* bits 6..9: CHOICE * n (section 2.6) */, D: 1024 /* bit 10: the stick pulled down; with A on a one way it drops through (4 Nov) */ };
   /* the CHOICE field's values (section 2.6): pick scroll A or B, take or leave a compare's slip */
-  var CHOICE = { A: 1, B: 2, TAKE: 3, LEAVE: 4 };
+  var CHOICE = { A: 1, B: 2, TAKE: 3, LEAVE: 4, RESPAWN: 5 /* m2 step 3: back to the lit tripod after a death */ };
   /* the loot (T1.6) and the stats (DESIGN 9.2): a scroll offers the room's biome's stat and one other (QUESTIONS Q84: by
      hue, Attic and Ember Vigor, Frost and Deep Focus, Overgrowth Grit) */
   var LOOT_SPECK = 1, LOOT_SCROLL = 2, LOOT_BLUEPRINT = 3, LOOT_KEY = 4, VIGOR = 1, FOCUS = 2, GRIT = 3, STAT_OF_BIOME = [VIGOR, FOCUS, FOCUS, GRIT, VIGOR];
@@ -3954,7 +4047,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
       }),
       proj: proj, loot: lootOf(level), chest: { idx: level.features && typeof level.features.chest === 'number' && level.features.chest >= 0 ? level.features.chest : -1, open: 0 }, scrollsOffered: null, door: { idx: -1, entered: 0 },
       traps: { phase: 0 }, boss: gd ? newBoss(level, gd) : null,
-      room: { dp: 0, blueprints: [], exitLit: 0, cleared: 0, dead: 0, deaths: 0, grace: 0, offerWait: 0, compare: 0, cand: 0, tremor: 0 }
+      room: { dp: 0, blueprints: [], exitLit: 0, cleared: 0, dead: 0, deaths: 0, grace: 0, offerWait: 0, compare: 0, cand: 0, tremor: 0 },
+      /* m2 step 3: the tripod (free play, the Daily Room, a level code: opts.checkpoint; never a house run) */
+      cp: opts.checkpoint && level.tripod >= 0 ? { idx: level.tripod, lit: 0, at: -1 } : null
     };
     /* the guardian's moths (HOUSE-B): BOSS_MOTH_COUNT enemy slots made here, after the level's, each a dead moth
        (HP 0: never moved, touched or drawn) until a shed fills it; step never allocates one */
@@ -3982,6 +4077,20 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function pocketOf(lv, home) {
     var pk = lv.features && lv.features.pocket;
     return pk && pk.cells.indexOf(home) >= 0 ? pk : null;
+  }
+  /* the bug back at the lit tripod (m2 step 3): its cell's floor, still, every heart, a hit's grace of i frames */
+  function respawn(s, lv) {
+    var K = SB.K, CS = K.CELL_SUB, w = lv.w, h = s.hero, c = s.cp.idx, cx = c % w, cy = (c - cx) / w;
+    h.x = cx * CS + ((CS - K.HERO_W_SUB) >> 1); h.y = cy * CS; h.vx = 0; h.vy = 0; h.ground = 0; h.wall = 0; h.sticky = 0;
+    h.lock = 0; h.knock = 0; h.coyote = 0; h.buffer = 0; h.held = 0; h.rising = 0; h.dive = 0; h.dash = 0; h.dashI = 0;
+    h.squash = 0; h.shake = 0; h.hearts = h.heartsMax; h.iframes = K.HIT_IFRAMES_F | 0;
+    s.room.dead = 0; s.room.grace = 0; s.ev |= EV.RESPAWN;
+  }
+  /* the tripod lights when the bug stands on its landing (once) */
+  function lightTripod(s, lv) {
+    if (!s.cp || s.cp.lit || !s.hero.ground || !lv.landings || !lv.landings.length) return;
+    var K = SB.K, CS = K.CELL_SUB, h = s.hero, fc = Math.floor((h.y + K.HERO_H_SUB - 1) / CS) * lv.w + Math.floor((h.x + (K.HERO_W_SUB >> 1)) / CS);
+    if (lv.landings[0].cells.indexOf(fc) >= 0) { s.cp.lit = 1; s.cp.at = s.frame; s.ev |= EV.CHECK; }
   }
   function standCell(lv, c) { var w = lv.w; return c >= 0 && c + w < lv.w * lv.h && !lv.solid[c] && (lv.solid[c + w] === 1 || lv.plat[c + w] === 1); }
   /* an enemy's box (sz a side) on a cell: centred across, its foot on the cell's floor */
@@ -4779,11 +4888,16 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the guardian (HOUSE-B): it wakes, tells a shed, sheds, takes a hit, goes down */
     WAKE: 524288, TELL: 1048576, SHED: 2097152, BOSS_HIT: 4194304, BOSS_DOWN: 8388608,
     /* the locked exit (2 Nov): a key taken; the bug at the exit with a key still out */
-    KEY: 16777216, LOCKED: 33554432 };
+    KEY: 16777216, LOCKED: 33554432,
+    /* m2 step 3: the tripod lit (the checkpoint taken); the bug back at it after a death */
+    CHECK: 67108864, RESPAWN: 134217728 };
   function step(s, word) {
     var K = SB.K, h = s.hero, lv = s.level || null;
     if (!lv) throw new Error('sim.step: the state carries no level (attach with sim.attach)');
     s.ev = 0;
+    /* m2 step 3: a death with the tripod lit waits for the RESPAWN word (the recording carries it like any other), then
+       the bug stands at the tripod with every heart, the keys and the loot it took kept */
+    if (s.room.dead && s.cp && s.cp.lit && ((word >> 6) & 15) === CHOICE.RESPAWN) { respawn(s, lv); s.frame++; return s; }
     if (s.room.cleared || s.room.dead) { s.frame++; return s; }
 
     /* 0. a sheet (T1.6, section 2.6): while a scroll offer or the chest's compare is open the world waits and the
@@ -5089,6 +5203,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
         hitHero(s, 2 * h.x + K.HERO_W_SUB < mid2 ? -1 : 1);
       }
     }
+    lightTripod(s, lv);   /* m2 step 3: the checkpoint, once the bug stands on the first landing */
 
     s.frame++;
     return s;
@@ -5136,7 +5251,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
     return out;
   }
-  function serialize(s) { return Int32Array.from(walk(s, FIELDS, '', [])); }
+  /* the checkpoint (m2 step 3) rides after the schema only when the room has one, so every state without it hashes as before */
+  function serialize(s) { var a = walk(s, FIELDS, '', []); if (s.cp) a.push(0x54524950, s.cp.idx | 0, s.cp.lit | 0, s.cp.at | 0); return Int32Array.from(a); }
   function hash(s) { return SB.rng.hashWords(serialize(s)); }
 
   /* section 2.6: a replay stores runs of equal words, [count, word] */
@@ -6484,6 +6600,28 @@ body.sb-modal .lwfb-fab { display: none !important; }
     tab_bold: { w: 16, h: 8, frames: {
       plain: '6666666666666666/0000000000000000/ffffffffffffffff/ff000ffff000ffff/ff000ffff000ffff/ffffffffffffffff/0000000000000000/0000000000000000',
       lit: '6666666666666666/0000000000000000/6666666666666666/ff000ffff000ffff/ff000ffff000ffff/ffffffffffffffff/0000000000000000/0000000000000000'
+    } },
+    /* ledge: from Astra (world/ledge.png) */
+    ledge: { w: 16, h: 8, frames: {
+      attic: '6666666666666666/0000000000000000/8888888888888888/8884888888848888/2222222222222222/8888888888888888/0000000000000000/0000000000000000',
+      frost: '6666666666666666/0000000000000000/3333333333333333/3334333333343333/2222222222222222/3333333333333333/0000000000000000/0000000000000000',
+      deep: '6666666666666666/0000000000000000/cccccccccccccccc/ccc4ccccccc4cccc/2222222222222222/cccccccccccccccc/0000000000000000/0000000000000000',
+      overgrowth: '6666666666666666/0000000000000000/dddddddddddddddd/ddd4ddddddd4dddd/2222222222222222/dddddddddddddddd/0000000000000000/0000000000000000',
+      ember: '6666666666666666/0000000000000000/9999999999999999/9994999999949999/2222222222222222/9999999999999999/0000000000000000/0000000000000000'
+    } },
+    /* tripod: from Astra (world/tripod.png) */
+    tripod: { w: 16, h: 32, frames: {
+      unlit: '................/................/.........000000./.........033330./.........033330./...0400..033330./...0000..000000./.00000000000000./.03333300003330./.03333002200330./.07770042220030./.07770222222030./.07770222222030./.07770022220030./.07773002200330./.07773300003330./.03333333333330./.00000000000000./.......00......./.......000....../......03000...../......03000...../.....0300300..../.....0300.30..../....03.00.300.../....03.00..30.../...03..00..300../...03..00...30../..03...00...300./..03...00....00./0000..0000..0000/0000..0000..0000',
+      lit: '................/................/.........000000./.........066660./.........066660./...0400..066660./...0000..000000./.00000000000000./.03333300003330./.0333300cc00330./.0777006ccc6030./.07770cccc6c030./.07770cc6c6c030./.077700cc6c0030./.0777300cc00330./.07773300003330./.03333333333330./.00000000000000./.......00......./.......000....../......03000...../......03000...../.....0300300..../.....0300.30..../....03.00.300.../....03.00..30.../...03..00..300../...03..00...30../..03...00...300./..03...00....00./0000..0000..0000/0000..0000..0000',
+      flash0: '...........6..../...........6..../.........000000./.....666.066660./.........066660./...0400..066660./...0000..000000./.00000000000000./.03333300003330./.0333300cc00330./.0777006ccc6030./.07770cccc6c030./.07770cc6c6c030./.077700cc6c0030./.0777300cc00330./.07773300003330./.03333333333330./.00000000000000./.......00......./.......000....../......03000...../......03000...../.....0300300..../.....0300.30..../....03.00.300.../....03.00..30.../...03..00..300../...03..00...30../..03...00...300./..03...00....00./0000..0000..0000/0000..0000..0000',
+      flash1: '...............6/.......6......../.........000000./.........066660./.........066660./...0400..066660./...0000..000000./.00000000000000./.033333000033306/.0333300cc00330./.0777006ccc6030./.07770cccc6c030./.07770cc6c6c030./.077700cc6c0030./.0777300cc00330./.07773300003330./.03333333333330./.00000000000000./.......00......./.......000....../......03000...../......03000...../.....0300300..../.....0300.30..../....03.00.300.../....03.00..30.../...03..00..300../...03..00...30../..03...00...300./..03...00....00./0000..0000..0000/0000..0000..0000'
+    } },
+    /* key_glint: from Astra (fx/key_glint.png) */
+    key_glint: { w: 16, h: 16, frames: {
+      glint_0: '................/................/................/................/................/................/.......060....../.......666....../.......060....../................/................/................/................/................/................/................',
+      glint_1: '................/................/................/............4.../................/.......060....../......00600...../......66666...../......00600...../.......060....../................/................/...4............/................/................/................',
+      glint_2: '................/................/................/............4.../.......060....../.......060....../.....0006000..../.....6666666..../.....0006000..../.......060....../.......060....../................/...4............/................/................/................',
+      glint_3: '................/................/................/................/................/.......060....../......00600...../......66666...../......00600...../.......060....../................/................/................/................/................/................'
     } }
   };
   /* SPRITES END */
@@ -6701,6 +6839,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
        the Overgrowth, the safe warm cracks in the Ember; in the Frost only the slick ledges, their pale streaks saying
        slippery where the Teal edge was. Never on a film tab: that stays the help's own cream */
     var EDGE = ['edge_attic', 'edge_frost', 'edge_deep', 'edge_overgrowth', 'edge_ember'][biome] || 'edge_attic';
+    /* m2 step 3: a landing on the photo's own surface wears Astra's ledge of its biome, four tiles on the cells' floor */
+    var LEDGE = ['attic', 'frost', 'deep', 'overgrowth', 'ember'][biome] || 'attic';
+    if (lv.landings) for (var li = 0; li < lv.landings.length; li++) if (lv.landings[li].kind === 'photo') for (var lk = 0; lk < lv.landings[li].cells.length; lk++) {
+      var lcell = lv.landings[li].cells[lk] + w; spr(sctx, 'ledge.' + LEDGE, (lcell % w) * C, Math.floor(lcell / w) * C);
+    }
     for (y = 1; y < h; y++) for (x = 0; x < w; x++) {
       i = y * w + x;
       var top = (lv.solid[i] && open(x, y - 1)) || (lv.plat[i] && !(lv.tab && lv.tab[i]));
@@ -6863,6 +7006,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
       ctx.globalAlpha = PHOTO_ALPHA; ctx.drawImage(layer, 0, cam, K.WORLD_W, vH, 0, 0, K.WORLD_W, vH); ctx.globalAlpha = 1;
     }
     guardFx(s);
+    /* m2 step 3: the tripod on the first landing (bottom centred on its cell's floor): unlit, then flash0 and flash1 at 12
+       fps once lit, then lit; reduced motion lit at once */
+    if (s.cp) {
+      var tpx = (s.cp.idx % lv.w) * C, tpy = (Math.floor(s.cp.idx / lv.w) + 1) * C - 32 - cam, tpa = s.frame - s.cp.at;
+      spr(ctx, !s.cp.lit ? 'tripod.unlit' : (R.reduced() || tpa >= 10) ? 'tripod.lit' : tpa < 5 ? 'tripod.flash0' : 'tripod.flash1', tpx, tpy);
+    }
     keyFx(s);   /* the keys' takes, the lamp's lighting and a refusal, read before the beacon is drawn */
     var GB = s.boss, dark = !!GB && GB.phase < 2, lit = GB && GB.phase === 2 && R.gfx.lightAt >= 0 ? s.frame - R.gfx.lightAt : 99;
     var nk = SB.sim.keysOf(s), kl = nk ? SB.sim.keysLeft(s) : 0;
@@ -6945,7 +7094,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var cov = R.LOOT_SHOWN[lt2.kind] ? -1 : R.coverOf(s, lv, lt2.idx);
       if (cov >= 0) { ctx.drawImage(stat, (cov % lv.w) * C, Math.floor(cov / lv.w) * C, C, C, lx2, ly, C, C); continue; }
       if (lt2.kind === 4) {   /* a key sits on an open cell (no photo speck under it): Astra's turn at 8 fps, bottom centred */
-        if (!lt2.taken) { var kk = 'key.' + KF[Math.floor(s.frame * 8 / SB.TUNING.STEP_HZ) & 3]; halo(ctx, kk, lx2, ly); spr(ctx, kk, lx2, ly); }
+        if (!lt2.taken) {
+          var kk = 'key.' + KF[Math.floor(s.frame * 8 / SB.TUNING.STEP_HZ) & 3]; halo(ctx, kk, lx2, ly); spr(ctx, kk, lx2, ly);
+          spr(ctx, 'key_glint.glint_' + (R.reduced() ? 0 : Math.floor(s.frame * 6 / SB.TUNING.STEP_HZ) & 3), lx2, ly);   /* m2 step 3: Astra's glint marks it, 6 fps */
+        }
         continue;
       }
       ctx.fillRect(lx2, ly, C, C);
@@ -7853,7 +8005,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     nothingHint: 'Tap Retake for another photo.',
     badPhoto: 'That photo did not open. Try another.',
     photoRoom: 'Your room',
-    death: 'The bug fell out of the picture',
+    death: 'The bug fell out of the picture', toTripod: 'Back to the tripod',
     dp: 'Dead pixels', dpGain: '+{n}',
     shareTitle: 'Share this room',
     pause: 'Pause', paused: 'Paused', resume: 'Resume',
@@ -8732,7 +8884,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the sitting (docs/WEAPONS-V1.md 6.5, Stephen's call 1 on its default, KEEP_GEAR): free play keeps the gear from
        room to room until Title; the room starts with it and keeps what it walked in with (Again after a death) */
     if (!SB.TUNING.KEEP_GEAR) G.gear = [0, 0, 0];
-    G.state = SB.sim.create(lv, { loadout: G.gear, carry: G.carry, lastRoom: room === T.HOUSE_ROOMS, pool: ui.owned() }); G.entry = G.gear.slice(); G.banked = false;
+    G.state = SB.sim.create(lv, { loadout: G.gear, carry: G.carry, lastRoom: room === T.HOUSE_ROOMS, pool: ui.owned(), checkpoint: G.mode !== 'house' }); G.entry = G.gear.slice(); G.banked = false;
     if (!opts.notFirst && !ui.firstRoomDone) { ui.firstRoomDone = true; SB.save.doc.onboarding.firstRoomDone = true; SB.save.commit(); }
     else if (!opts.notFirst) ui.firstRoomDone = true;
     SB.render.buildStatic(lv);
@@ -9646,6 +9798,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var house = G.mode === 'house' && !!HS.run, C = ui.COPY, $ = function (id) { return document.getElementById(id); };
     $('deathhead').textContent = house ? C.houseLost : C.death;
     $('deathagain').hidden = house; $('deathretry').hidden = !house; $('deathnew').hidden = !house; $('deathlost').hidden = !house;
+    $('deathcp').hidden = house || !(G.state && G.state.cp && G.state.cp.lit);   /* m2 step 3: the lit tripod takes the bug back */
     $('death').classList.toggle('house', house); $('dp').classList.toggle('lost', house);
     if (!house) return;
     var dp = G.state ? G.state.room.dp : 0;
@@ -9739,6 +9892,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the next room: back to the title under the camera's picker (a cancelled picker leaves the title) */
     document.getElementById('nextroom').addEventListener('click', function () { ui.toTitle({ keepGear: true }); openPicker('fileshoot'); });   /* the sitting goes on (6.5) */
     document.getElementById('deathagain').addEventListener('click', function () { ui.restart(); });
+    /* m2 step 3: back to the tripod, by the sim's own RESPAWN word on the next step (the recording carries it) */
+    document.getElementById('deathcp').addEventListener('click', function () { if (!G.state || !G.state.cp || !G.state.cp.lit) return; ui.hideDeath(); SB.input.choose(SB.sim.CHOICE.RESPAWN); ui.show('play'); });
     /* the house (Q200): the title's two buttons, the doorway's, the death card's */
     var on = function (id, fn) { document.getElementById(id).addEventListener('click', fn); };
     on('housestart', function () { ui.houseStart(); });
@@ -9889,6 +10044,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (ev & EV.BOSS_DOWN) au.sfx('beacon');
       if (ev & EV.KEY) { SB.ui.keys(G.state); SB.ui.tally('keys'); if (SB.sim.keysLeft(G.state) === 0) au.sfx('beacon'); }   /* the last key lights the lamp */
       if (ev & EV.SAVED) { au.sfx('saved'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); }   /* a charm took the hit */
+      if (ev & EV.CHECK) au.sfx('pick');   /* m2 step 3: the tripod lit */
+      if (ev & EV.RESPAWN) SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax);   /* back at the tripod, every heart */
       /* the scroll's pick is still the shell's own answer (ui.sheets), no choice of the player's, so it makes no sound;
          a swap's Take sounds the pick voice above (step 2) */
       if (ev & EV.PICK) SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax);
@@ -9957,7 +10114,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=24').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=25').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.

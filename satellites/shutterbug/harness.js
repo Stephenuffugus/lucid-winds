@@ -1938,7 +1938,8 @@ group('H-sim-7', 'coverage: every declared field moves the hash; the keys are ex
     t.ok(SB.sim.hash(s) !== base, 'perturbing ' + p.join('.') + ' (' + type + ') changes the hash');
   }
   const keysOf = (o, schema, path) => {
-    t.same(Object.keys(o), schema.map(x => x[0]), (path || 'state') + ': the keys are exactly the declared list, in order');
+    /* m2 step 3: the checkpoint (cp) rides after the schema, hashed only when a room has one (SB.sim.serialize) */
+    t.same(Object.keys(o).filter(k => path || k !== 'cp'), schema.map(x => x[0]), (path || 'state') + ': the keys are exactly the declared list, in order (the optional checkpoint after it)');
     for (const [name, type, sub] of schema) if (type === 'obj') keysOf(o[name], sub, (path ? path + '.' : '') + name);
   };
   const s = fresh();
@@ -2701,20 +2702,22 @@ group('H-lvl-2', 'the ceiling band: the sample room under a dark ceiling builds 
   }
 });
 /* every corpus room that built before Q180, its levelHash as the shipped core (b1ab7b002, sb-m1-3) made it, built
-   plain and as a first room: [plain, firstRoom]. Written once from sb-m1-3's page and never regenerated */
+   plain and as a first room: [plain, firstRoom]. Written once from sb-m1-3's page; regenerated once, at m2 step 3
+   (SHUTTERBUG_M2_BUILD_PLAN.md: the floors' landings and the keys in the furniture move placement through the seed;
+   40 of the 46 moved, the other six, the sample room's and the stripes', kept their hashes) */
 const PINNED_PRE_Q180 = {
-  'sample-room@0': ['398abc93d279c699', '398abc93d279c699'], 'all-light@0': ['9a9cc17e4084974c', '939718eb160c6c99'],
-  'biome-attic@0': ['e6162f38b71d40c6', '0feb0f667860b448'], 'biome-deep@0': ['dab9528691823ad8', '3ce7dac7d58a674d'],
-  'biome-ember@0': ['baecadd31a978df5', '7dce90830d56d765'], 'biome-frost@0': ['b19a79377c711bf1', 'b985a2e1ede54403'],
-  'biome-green@0': ['961602ae09016024', 'dcb164da90854048'], 'blank-wall@0': ['851ffa384836099a', 'cf65e0f5db2bb9c7'],
-  'bright-door@0': ['6a97a2e003e8782e', '63280740404f220e'], 'gradient-h@0': ['c56252d2b7bf54fc', '8829a9cf2c375e89'],
-  'gradient-h@1': ['af071449865d4933', '7a00bf9f0ae0c2d5'], 'ladder-stack@0': ['ecc21ea4ab5cdf9a', '55d9509cfd0ad63a'],
-  'noise-s1@0': ['a90370ccb42667f6', 'd5a42171a9baf8d3'], 'noise-s2@0': ['d04e44f838e9236e', 'd04e44f838e9236e'],
-  'one-giant-landmark@0': ['2111a029ceaae987', '6898383bfacec1c5'],
-  'pillars@0': ['34408e541b910dc2', '392a0e65216873a3'], 'saturated-blobs@0': ['e281fc74b6295b5a', 'e578d09a4f957c28'],
-  'shelves-a@0': ['6648f09e07ddab7c', '3c1866c7f4c8bb6d'], 'shelves-b@0': ['a2d1f5444721c756', '9732bb0bbb5d4a49'],
-  'stripes-h@0': ['b302cc8dddd2fb0b', 'b302cc8dddd2fb0b'], 'stripes-v@0': ['8a5ba90eefcdba64', '8a5ba90eefcdba64'],
-  'tight-gap@0': ['ae460a531a647db5', '0386a26de1c5a723'], 'trap-pattern@0': ['0209100208f07160', 'a48268897f910023']
+  'sample-room@0': ['398abc93d279c699', '398abc93d279c699'], 'all-light@0': ['8468191e8c57eeec', '603641cbb236a179'],
+  'biome-attic@0': ['6c71e148cf7a473e', '553a2976098feeb0'], 'biome-deep@0': ['ced7f93abe2a7084', 'd8cd872f5c14d7dd'],
+  'biome-ember@0': ['1e6b157b4f31e6e5', '9918ef5bd15f7695'], 'biome-frost@0': ['634da4df6403d361', '14ecf149e3ab8e13'],
+  'biome-green@0': ['17b49e967b7df554', '1c85ef4211dfd758'], 'blank-wall@0': ['97d56d98d917af7a', '03216a9534879d67'],
+  'bright-door@0': ['6df41960b7a367ae', 'e1ecfbc0ccde0b8e'], 'gradient-h@0': ['5c99629287bbf0bc', '63970f8fdcf62d49'],
+  'gradient-h@1': ['29df3a09bb36bbf3', '4ca357df3be12515'], 'ladder-stack@0': ['dc0c07846140b4fa', '2b862d7cf5ac0e9a'],
+  'noise-s1@0': ['713b12aca3ef6fd6', '406b56910ad0c0f3'], 'noise-s2@0': ['4562c7f8adfda66e', '4562c7f8adfda66e'],
+  'one-giant-landmark@0': ['1e0920e922e87047', '4a2d87fbf0024185'],
+  'pillars@0': ['a4a2f79489b66502', '9cc769255afc3e63'], 'saturated-blobs@0': ['07c01514cbe543fa', '653c6fc77e1ccdbd'],
+  'shelves-a@0': ['7810578e5fe8b9d4', 'fc7e30f7d1854025'], 'shelves-b@0': ['a2d1f5444721c756', '9732bb0bbb5d4a49'],
+  'stripes-h@0': ['b302cc8dddd2fb0b', 'b302cc8dddd2fb0b'], 'stripes-v@0': ['7e64156eaaeb98c4', '7e64156eaaeb98c4'],
+  'tight-gap@0': ['384261834c6294ad', '45ff457db4bb4eab'], 'trap-pattern@0': ['09b5a82a844a754c', '4961c9d0ae5585ae']
 };
 group('H-lvl-3', 'no room that built before the fallbacks changed: the 23 built corpus rooms\' levelHashes, plain and first room, pinned from sb-m1-3', t => {
   let n = 0;
@@ -5351,7 +5354,7 @@ group('H-bot-8', 'Skyhook never breaks a climb: with J8 equipped every main asce
 });
 /* the corpus edges a full Skyhook hold misses, walked to the end (W2R, Q123; Q122's four counted only the first miss of
    a walk outside Deep): the count moves only with a QUESTIONS entry */
-const SKYHOOK_FULL_HOLD_MISSES = { base: 9, deep: 93 };   /* 87 on sb-weapons-2; 93 on the sb-m1-5 merge (the levels and climb branches' rooms) */
+const SKYHOOK_FULL_HOLD_MISSES = { base: 9, deep: 103 };   /* 87 on sb-weapons-2; 93 on the sb-m1-5 merge (the levels and climb branches' rooms); 103 at m2 step 3 (the landings' tabs add ascent edges; every one still taken) */
 
 group('H-bot-9', 'the bot\'s walks armed (J1 and D1) clear every walked level with the unarmed words, on the same step (weapons never stop the climb; a chest\'s swap, answered Keep, holds one step and moves nothing)', t => {
   const { runs } = botWalks(); let walked = 0; const bad = [];
@@ -5718,6 +5721,78 @@ function packRefV2(j) {
 }
 const v2Of = (j, biome, rules, flags) => ({ v: 2, w: j.w, h: j.h, mode: j.mode, focal: j.focal, biome, rules: rules || 0, flags: flags || 0, rows: j.rows, rows2: j.rows2 === undefined ? null : j.rows2 });
 /* ================================================================ KEYS: the locked exit (2 Nov, Stephen's ruling "defaults are fine") */
+/* m2 step 3 (SHUTTERBUG_M2_BUILD_PLAN.md): the floors. Three floors of FLOOR_ROWS from the bottom; at the top of each floor
+   the climb crosses a landing of LANDING_RUN standable cells, reached from spawn and with a way back to the exit (the
+   photo's own run within LANDING_REACH rows, else film tabs off a standing ascent cell); the exit's own surface a third
+   where the photo gives one; the tripod on the first landing, nearest the ascent; every key beside a solid (left, right
+   or under) and off the main ascent wherever the room offers such a spot; the sim lights the tripod on its landing and a
+   death with it lit takes the RESPAWN word back to it with every heart and the keys kept */
+group('H-floors-1', 'the floors (m2 step 3): a landing at the top of every floor the climb crosses, reached and returnable, the tripod on the first; keys beside the furniture; the tripod lights and a RESPAWN word brings the bug back to it', t => {
+  const R = SB.reach, T = SB.TUNING, K = SB.K, bad = [];
+  let built = 0, landed = 0, crossedAll = 0, tabbed = 0, keyed = 0, keysBeside = 0, keysAll = 0, play = null;
+  for (const f of FIXTURES) {
+    for (const flags of [0, SB.record.FLAG_KEYS]) {
+      const j = Object.assign({}, f.fx.record, { v: 2, biome: 0, rules: 0, flags });
+      const lv = SB.pipeline.build(SB.record.fromJSON(j), {});
+      if (lv.needsCrop) continue;
+      built++;
+      const w = lv.w, h = lv.h, n = w * h, sr = Math.floor(lv.spawn / w), er = Math.floor(lv.exit / w), L = lv.landings || [];
+      let crossed = 0; for (let fl = 1; fl <= 2; fl++) { const top = h - fl * T.FLOOR_ROWS; if (er < top - 1 && sr >= top) crossed++; }
+      crossedAll += crossed;
+      const g = R.graph(lv), d = R.distances(g, lv.spawn, lv.exit), back = SB.features.returnable(lv, g, 3 * g.n);
+      if (L.length < crossed) bad.push(f.name + (flags ? ' keyed' : '') + ': ' + L.length + ' landings for ' + crossed + ' floor tops');
+      for (const ld of L) {
+        landed++; if (ld.kind === 'tab') tabbed++;
+        if (ld.cells.length !== T.LANDING_RUN) bad.push(f.name + ': a landing of ' + ld.cells.length);
+        for (let q = 0; q < ld.cells.length; q++) {
+          const c = ld.cells[q];
+          if (q && c !== ld.cells[q - 1] + 1) bad.push(f.name + ': a landing not side by side at ' + c);
+          if (lv.solid[c] || !(lv.solid[c + w] || lv.plat[c + w])) bad.push(f.name + ': landing cell ' + c + ' is not standable');
+          if (d[c] < 0) bad.push(f.name + ': landing cell ' + c + ' is not reached');
+          if (!back[c]) bad.push(f.name + ': no way back to the exit from landing cell ' + c);
+        }
+      }
+      if (crossed && (lv.tripod < 0 || !L.length || L[0].cells.indexOf(lv.tripod) < 0)) bad.push(f.name + ': the tripod ' + lv.tripod + ' is not on the first landing');
+      if (!crossed && lv.tripod >= 0) bad.push(f.name + ': a tripod in a room with no floor top crossed');
+      const ks = (lv.features && lv.features.keys) || [];
+      if (ks.length) keyed++;
+      const asc = new Set((lv.ascent ? lv.ascent.nodes : []).filter(v => v < n)), lm = new Uint8Array(n);
+      for (const L2 of lv.landmarks || []) for (const c of L2.cells) lm[c] = 1;
+      for (const c of ks) {
+        keysAll++;
+        const x = c % w, by = (x > 0 && lm[c - 1]) || (x < w - 1 && lm[c + 1]) || (c + w < n && lm[c + w]);
+        if (by && !asc.has(c)) keysBeside++;
+        else if (lv.features.keyFurn > 0) bad.push(f.name + ': key ' + c + ' is not in the furniture though the room offers ' + lv.features.keyFurn + ' cells');
+      }
+      if (!play && lv.tripod >= 0 && L.length) play = lv;
+    }
+  }
+  console.log('  info  H-floors-1: ' + built + ' fixture levels; landings ' + landed + ' (' + tabbed + ' of film tabs) for ' + crossedAll + ' floor tops crossed; keys beside the furniture ' + keysBeside + ' of ' + keysAll + ' in ' + keyed + ' keyed levels');
+  t.ok(built > 0 && bad.length === 0, built + ' fixture levels: a landing at every floor top crossed (' + landed + ' landings), each four standable cells side by side, reached and returnable; the tripod on the first' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
+  t.ok(keysAll > 0 && keysBeside > 0, 'keys in the furniture (beside a landmark, off the ascent) wherever the room offers it: ' + keysBeside + ' of ' + keysAll + ' (the rest in rooms with no such cell, on the old surfaces)');
+  /* the sim: stood on the first landing the tripod lights (CHECK, once); a death with it lit waits for RESPAWN, then
+     the bug stands at the tripod with every heart; without the checkpoint option there is no tripod */
+  t.ok(!!play, 'a fixture level with a tripod to play');
+  if (play) {
+    const none = SB.sim.create(play, {});
+    t.ok(none.cp === null, 'without the checkpoint option the state has no tripod (a house run)');
+    const s = SB.sim.create(play, { checkpoint: true }), CS = K.CELL_SUB, w = play.w;
+    t.ok(!!s.cp && s.cp.idx === play.tripod && s.cp.lit === 0, 'with it the state carries the unlit tripod at the level\'s cell');
+    const h0 = SB.sim.hash(s);
+    const at = play.landings[0].cells[0], ax = at % w, ay = (at - ax) / w;
+    s.hero.x = ax * CS + ((CS - K.HERO_W_SUB) >> 1); s.hero.y = ay * CS; s.hero.vx = 0; s.hero.vy = 0;
+    let lit = -1; for (let f = 0; f < 30 && lit < 0; f++) { SB.sim.step(s, 0); if (s.ev & SB.sim.EV.CHECK) lit = f; }
+    t.ok(lit >= 0 && s.cp.lit === 1, 'stood on the first landing the tripod lights, saying CHECK (step ' + lit + ')');
+    t.ok(SB.sim.hash(s) !== h0, 'the lit tripod moves the state hash');
+    s.hero.hearts = 0; s.room.dead = 1;
+    SB.sim.step(s, 0);
+    t.ok(s.room.dead === 1, 'dead with the tripod lit, a plain word leaves the bug where it fell');
+    SB.sim.step(s, SB.sim.CHOICE.RESPAWN * SB.sim.IN.CHOICE);
+    const tc = play.tripod, tx = tc % w, ty = (tc - tx) / w;
+    t.ok(s.room.dead === 0 && s.hero.hearts === s.hero.heartsMax && (s.ev & SB.sim.EV.RESPAWN) !== 0 && Math.floor(s.hero.y / CS) === ty && Math.floor((s.hero.x + (K.HERO_W_SUB >> 1)) / CS) === tx,
+      'the RESPAWN word stands the bug at the tripod with every heart, saying RESPAWN');
+  }
+});
 group('H-key-1', 'the locked exit (features.keys): every fixture with the keys flag gets 1 to 3 keys, each on an open cell the bug reaches from spawn and leaves for the exit (the trap graph), on no other feature\'s cell; none without the flag and none in the guardian\'s room; the sim keeps the exit shut, saying LOCKED, until every key is taken, then clears', t => {
   const R = SB.reach, T = SB.TUNING, K = SB.K, bad = [], counts = [0, 0, 0, 0];
   let built = 0, keyed = null;
@@ -5772,7 +5847,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
     for (const mode of [0, 1, 2]) codes += SB.record.encode(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode, rows2: mode === 2 ? f.fx.record.rows : null }))) + '\n';
   }
   t.eq(n, 104, 'the pin covers 26 fixtures in two modes, plain and first room');
-  t.eq(h, 0xfbe70a13, 'every fixture builds the level or the refusal it built on 42fc8b19a (the digest of 104 levelHashes and causes)');
+  t.eq(h, 0x953783fc, 'every fixture builds the level or the refusal it built on m2 step 3 (the digest of 104 levelHashes and causes; 0xfbe70a13 on 42fc8b19a, regenerated when the landings and keys moved placement)');
   t.eq(fnvRef(Buffer.from(codes)), 0xb4bad1d5, 'every fixture\'s v1 code in modes 0, 1 and 2 is the string it was on 42fc8b19a');
   const sj = fixture('sample-room').fx.record, srec = SB.record.fromJSON(sj), scode = SB.record.encode(srec);
   t.eq(SB.pipeline.levelHash(SB.pipeline.build(srec, {})), '398abc93d279c699', 'the sample room\'s levelHash is pinned');
@@ -5996,7 +6071,7 @@ group('H-climb-1', 'the climb rules (Q221, record v2 RULES 1): v1 and RULES 0 bu
   }
   t.eq(v1bad.length, 0, 'every fixture in modes 0 and 1 builds the same level by v1 and by v2 RULES 0, never by the climb rules' + (v1bad.length ? ': ' + v1bad.slice(0, 4).join('; ') : ''));
   t.eq(SB.pipeline.levelHash(SB.pipeline.build(SB.record.fromJSON(v2Of(sj, 0, 1)), {})), '3b14461ab78c5494', 'the sample room by the climb rules: its levelHash pinned (Q221)');
-  t.eq(h1, 0x700c1433, 'every fixture in modes 0 and 1 by the climb rules builds the level pinned at Q221 (the digest of ' + nv1 + ' levelHashes and refusals)');
+  t.eq(h1, 0xd04cbbe4, 'every fixture in modes 0 and 1 by the climb rules builds the level pinned at m2 step 3 (the digest of ' + nv1 + ' levelHashes and refusals; 0x700c1433 at Q221, regenerated when the landings and keys moved placement)');
   /* edge ledges: the climb's plat over today's is exactly the harness's own edge ledges, and never wall paint */
   let compared = 0, ledgeCells = 0, onWall = 0; const ledgeBad = [];
   for (const r of rooms) {
