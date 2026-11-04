@@ -710,7 +710,7 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
 </div>
 
 <div class="gs-foot">
-  <a href="/"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-back"></use></svg>Back to Lucid Winds</a> · Music Studio v2.3
+  <a href="/"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-back"></use></svg>Back to Lucid Winds</a> · Music Studio v2.4
 </div>
 
 <script>
@@ -1138,6 +1138,7 @@ var GS = (function(){
 
   var instBuffers = {};   // folder → {midi → AudioBuffer}
   var _instPending = {};  // folder/midi → true while fetching
+  var _instMissing = {};  // folder/midi → true when the bank has no such note (404)
   var _instLoadCount = 0;
   // Real recorded instruments are the DEFAULT voice of a fresh song (synths
   // cover playback until the notes stream in, and forever offline).
@@ -1154,11 +1155,12 @@ var GS = (function(){
     if(!instBuffers[inst]) instBuffers[inst] = {};
     if(instBuffers[inst][midi]){ if(cb) cb(true); return; }
     var key = inst + '/' + midi;
-    if(_instPending[key]){ if(cb) cb(false); return; }
+    if(_instPending[key] || _instMissing[key]){ if(cb) cb(false); return; }
     _instPending[key] = true;
     _instLoadUI(1);
     var url = INST_BASE + inst + '-mp3/' + midiToFile(midi) + '.mp3';
     fetch(url).then(function(r){
+      if(r.status === 404) _instMissing[key] = true;   // past the bank's range: the synth plays it, no refetching
       if(!r.ok) throw new Error('http '+r.status);
       return r.arrayBuffer();
     }).then(function(ab){
@@ -1673,18 +1675,30 @@ var GS = (function(){
     return v;
   }
 
+  // Three octaves of the scale, high to low. Rows 0 to 2L-1 are the two octave groups the studio always had; the third
+  // group is added BELOW them, so every saved row keeps its scale degree.
+  // Names count octaves from C (scientific pitch), so C5 sits above A4, and the name is exactly the pitch played.
+  // Before 4 Nov 2026 the name counted from the root while the synth counted from C, so the real instruments (they
+  // pick their sample by name) played some rows an octave away from the synth and out of order. Each group's root now
+  // sits in the lane's octave, or one below for roots from G up: that keeps the pitch the real instruments played on
+  // every note except the ones that were out of order, and keeps each lane centred on its octave.
   function getScaleNotes(octave){
     var intervals = SCALES[scaleKey] || [0,2,4,5,7,9,11];
+    var base = octave - (rootIdx >= 7 ? 1 : 0);
     var notes = [];
-    for(var oct=1;oct>=0;oct--){
+    for(var oct=1;oct>=-1;oct--){
       for(var i=intervals.length-1;i>=0;i--){
-        var semi = intervals[i] + (octave+oct) * 12;
-        var freq = 16.35 * Math.pow(2, (rootIdx + intervals[i] + (octave+oct)*12) / 12);
-        var name = ALL_NOTES[(rootIdx + intervals[i]) % 12] + (octave + oct);
+        var abs = rootIdx + intervals[i] + (base+oct)*12;   // semitones above C0
+        var freq = 16.35 * Math.pow(2, abs / 12);
+        var name = ALL_NOTES[abs % 12] + Math.floor(abs / 12);
         notes.push({freq:freq, name:name});
       }
     }
     return notes;
+  }
+  function noteRangeLabel(octave){
+    var n = getScaleNotes(octave);
+    return n.length ? n[n.length-1].name+' to '+n[0].name : '';
   }
 
   function getCurrentVar(){
@@ -2036,7 +2050,7 @@ var GS = (function(){
       html += '<div class="gs-layer ly-'+lt.id+(isExp?' expanded':'')+'">'
         +'<div class="gs-layer-head" onclick="GS.expandLayer(\''+lt.id+'\')">'
         +'<svg class="gs-lane-badge" aria-hidden="true" focusable="false"><use href="#i-lane_'+lt.id+'"></use></svg>'
-        +'<div class="gs-layer-text"><div class="gs-layer-name">'+lt.name+'</div><div class="gs-layer-sub">'+esc(sound)+(lt.type==='note'?' · Oct '+lt.octave:'')+status+'</div></div>'
+        +'<div class="gs-layer-text"><div class="gs-layer-name">'+lt.name+'</div><div class="gs-layer-sub">'+esc(sound)+(lt.type==='note'?' · '+noteRangeLabel(lt.octave):'')+status+'</div></div>'
         +'<div class="gs-layer-mini" aria-hidden="true">'+miniHtml+'</div>'
         +'<button class="gs-lane-exp" aria-expanded="'+(isExp?'true':'false')+'" aria-label="'+(isExp?'Close ':'Open ')+lt.name+'" onclick="event.stopPropagation();GS.expandLayer(\''+lt.id+'\')">'+ic(isExp?'collapse':'expand')+'</button>'
         +'</div>'
@@ -2047,7 +2061,7 @@ var GS = (function(){
         +'<label class="gs-vol"><span>Volume</span><input type="range" min="0" max="100" value="'+vol+'" style="accent-color:'+(({drums:'#e99a62',bass:'#e88686',chords:'#a0c4e8',melody:'#d6b85c'})[lt.id]||'var(--sage)')+'" oninput="GS.setVol(\''+lt.id+'\',this.value)"></label>'
         +'<button class="gs-btn" title="Roll a fresh idea" aria-label="Dice: roll a fresh '+lt.name+' idea" onclick="GS.diceLayer(\''+lt.id+'\')">'+ic('dice')+'Dice</button>'
         +(lt.id==='chords'?'<button class="gs-btn'+(chordMode?' on':'')+'" aria-pressed="'+(chordMode?'true':'false')+'" title="One tap places a full chord" onclick="GS.toggleChordMode()">'+ic('key_scale')+'Full chords</button>':'')
-        +(lt.type==='note'?'<button class="gs-btn" onclick="GS.octShift(\''+lt.id+'\',-1)" aria-label="Octave down">'+ic('octave_down')+'</button><span class="gs-oct">Oct '+lt.octave+'</span><button class="gs-btn" onclick="GS.octShift(\''+lt.id+'\',1)" aria-label="Octave up">'+ic('octave_up')+'</button>':'')
+        +(lt.type==='note'?'<button class="gs-btn" onclick="GS.octShift(\''+lt.id+'\',-1)" aria-label="Octave down">'+ic('octave_down')+'</button><span class="gs-oct">'+noteRangeLabel(lt.octave)+'</span><button class="gs-btn" onclick="GS.octShift(\''+lt.id+'\',1)" aria-label="Octave up">'+ic('octave_up')+'</button>':'')
         +(lt.id!=='drums'?'<select class="gs-btn gs-inst" aria-label="'+lt.name+' sound" onchange="GS.setPreset(\''+lt.id+'\',this.value)">'+getPresetOptions(lt.id)+'</select>':'')
         +'</div>';
 
@@ -3723,7 +3737,7 @@ var GS = (function(){
     for(var s=0;s<STEPS;s++){
       for(var r=cRows-1;r>=0;r--){ // bottom row first = lowest chord note
         if(getNoteHead(v.chords, r, s)){
-          rootDeg[s] = r < L ? (L-1-r) : (2*L-1-r);
+          rootDeg[s] = L-1-(r%L);   // the scale degree of row r in any of the three octaves
           found = true;
           break;
         }
@@ -5020,7 +5034,9 @@ var GS = (function(){
     octShift: function(layerId, dir){
       for(var i=0;i<LAYER_TYPES.length;i++){
         if(LAYER_TYPES[i].id === layerId){
-          LAYER_TYPES[i].octave = Math.max(1, Math.min(6, LAYER_TYPES[i].octave + dir));
+          // 2 to 5: with three octaves on screen that still reaches octave 1 at the bottom, and keeps the top inside
+          // the soundfont's range (C8)
+          LAYER_TYPES[i].octave = Math.max(2, Math.min(5, LAYER_TYPES[i].octave + dir));
           break;
         }
       }
