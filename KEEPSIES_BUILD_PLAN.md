@@ -27,7 +27,7 @@ families (226 procedural recipes, 14 sculpt references). The bank is a later mil
 
 | Step | State | Commit | Note |
 |---|---|---|---|
-| 0 | TODO | | |
+| 0 | DONE |  | docs read (HANDOFF, ASSESSMENT, STYLE-GUIDE, NOTES' Practical composition, anchors.json); server on 8777; /home/codespace/kp-drafts made; fast check green (18 s; ai_budget and ringer_ai skipped by design); before set = docs/shots as committed plus /home/codespace/astra-drafts/keepsies-contact.jpg; main's keepsies tree 142f4a46c2d9b090bf703e7e2a45217015636e2c, the branch's 9ed84fc637e736f30eda5aed4ceab2a185ecf8d8 (they differ only in docs/DECISIONS.md, which never ships) |
 | 1 | TODO | | |
 | 2 | TODO | | |
 | 3 | TODO | | |
