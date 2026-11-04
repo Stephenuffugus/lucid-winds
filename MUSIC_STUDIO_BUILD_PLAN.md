@@ -19,8 +19,24 @@ circle_positions.json, ui_tokens.css). Read ASSESSMENT.md and STYLE-GUIDE.md onc
 | 5 | DONE | 68280de01 | two column gallery: Astra's cover (16:10, never stretched) + name + BPM as live text, ribbon 72 px on top, Resume card first when an autosave with notes exists, Blank Canvas with its own cover, a starter tap starts playback; solid panels (start, songs, sampler, circle); STARTERS carry art ids (names unchanged as data), check reads art: too; shot waits for the walk |
 | 6 | DONE | 36e81677e | cover_system.js in ES5 (1470 renders identical to Astra's); recipe {recipeVersion:1, seed, paletteIndex} stored on the index entry the first time a song is kept (starter palette when it came from one, legacy songs drawn once from their own bpm); rows = 56 px cover, name (2 lines), Edited date, Delete with label and confirm; empty state songs_empty.png + Start a song; writeSongIndex/saveToSlot return false and say Could not save; autosave clears dirty only after the write; legacy slot removed only after it is really saved; Backup downloads JSON with the song code; shoot saves two songs before 07 |
 | 7 | DONE | b44e98362 | Hum: Astra's illustration, the listening dots beside one status line (ready, count in, listening with the note, finding notes, try again in a quieter place, microphone off); a weak take or a denied mic keeps the panel open and the old melody untouched. Sampler: the pad face is the record control (empty, ready, recording), the waveform frame sits over the real waveform as decoration, mic denied copy points to Import, trim arrows drawn as paths; reduced motion stops the pulses |
-| 8 | DONE | next row | video is portrait 720x1280: Astra's title frame 1 s (title live in Bebas Neue in the manifest band, BPM under it), the whole song (never cut), end frame 1 s with the footer line; Bars style (24 to 48 log spaced bands, falling peaks) as a toggle on the Show, radial default; Share makes a 1080x1080 PNG (cover in the frame window, name, BPM, a band saying how to play the song code) and hands it to navigator.share with the code in the message, else downloads it; song.js frame also allows web-share |
+| 8 | DONE | adeb72033 | video is portrait 720x1280: Astra's title frame 1 s (title live in Bebas Neue in the manifest band, BPM under it), the whole song (never cut), end frame 1 s with the footer line; Bars style (24 to 48 log spaced bands, falling peaks) as a toggle on the Show, radial default; Share makes a 1080x1080 PNG (cover in the frame window, name, BPM, a band saying how to play the song code) and hands it to navigator.share with the code in the message, else downloads it; song.js frame also allows web-share |
 | 9 | TODO | | |
+
+WALK (step 9, 4 Nov 13:17 UTC, /home/codespace/studio-drafts/after/, 412x915; fixes re shot once in after2/ for 06, 08, 11, 12):
+- 01 start a song: reads (covers, names, BPM, ribbon small).
+- 02 grid top: reads (drum names whole after the 60 px column; the section row scrolls past C1).
+- 03 grid lanes: reads; every arrangement chip carries its own remove cross (heavy); section row cut at C1 (scrolls).
+- 04 grid bottom: the same frame as 03 (the page is too short to reach 1200); reads.
+- 05 melody open: reads; note names count octaves from the root (C4 printed above A4), older than this build, not reskin scope.
+- 06 tools: stray group dividers and 10 px group labels, fixed; reads.
+- 07 my songs: reads (covers, edited time, labelled Delete); "open now" split over two lines, fixed.
+- 08 rhythm: lanes showing through the sheet, preset names run into their counts, the Layer arrow over Drums, the 16 step preview wrapping, all fixed; reads.
+- 09 circle: reads; wheel labels small (older than this build).
+- 10 keys: the sheet showed the lanes through it, fixed; a 10 note scale wraps the pads to two rows (older); reads.
+- 11 hum: the sheet showed the lanes through it and the dots ran 24 then 8, fixed; reads.
+- 12 sampler: Import clipped at the screen edge, fixed; reads.
+- 13 show: reads (radial default, Bars, Share, Close, footer line).
+- 14 arcade shell: the shell's own how to play and unlock sheet, untouched by this build; reads.
 
 ## THE LAWS (Stephen's standing orders; they override anything in Astra's docs)
 
