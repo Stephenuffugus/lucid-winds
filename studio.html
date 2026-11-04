@@ -275,6 +275,8 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
 .gs-show-ui{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;justify-content:space-between;padding:14px;pointer-events:none}
 .gs-show-ui .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .gs-show-ui button{pointer-events:auto}
+.gs-show-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.gs-show-actions .gs-btn{background:rgba(13,16,12,.85)}
 .gs-show-name{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--cream);letter-spacing:.08em;text-shadow:0 2px 8px rgba(0,0,0,.6)}
 .gs-rec-wrap{display:none;background:rgba(13,16,12,.85);border:1.5px solid #e88686;border-radius:10px;padding:10px 14px;pointer-events:auto}
 .gs-rec-wrap.on{display:block}
@@ -675,10 +677,14 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
   <div class="gs-show-ui">
     <div class="row">
       <div class="gs-show-name" id="gs-show-name"></div>
-      <button class="gs-btn" onclick="GS.closeShow()"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-close"></use></svg>Close</button>
+      <div class="gs-show-actions">
+        <button class="gs-btn" id="gs-show-style" onclick="GS.toggleShowStyle()" aria-pressed="false"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-audio"></use></svg>Bars</button>
+        <button class="gs-btn" onclick="GS.shareCard()"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-share"></use></svg>Share</button>
+        <button class="gs-btn" onclick="GS.closeShow()"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-close"></use></svg>Close</button>
+      </div>
     </div>
     <div class="gs-rec-wrap" id="gs-rec-wrap">
-      <div style="font-size:.8rem;color:#e88686;display:flex;align-items:center;gap:6px"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-record"></use></svg>Recording your music video. Let it play…</div>
+      <div style="font-size:.8rem;color:#e88686;display:flex;align-items:center;gap:6px"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-record"></use></svg>Recording your music video: a title card, the whole song, an end card. Let it play…</div>
       <div class="gs-rec-bar"><div id="gs-rec-bar-fill"></div></div>
       <button class="gs-btn" onclick="GS.stopVideo()" style="border-color:#e88686;color:#e88686"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-stop"></use></svg>Finish Now</button>
     </div>
@@ -3455,7 +3461,7 @@ var GS = (function(){
   function showCanvas(){ return document.getElementById('gs-show-canvas'); }
   function sizeShowCanvas(forVideo){
     var cv = showCanvas(); if(!cv) return;
-    if(forVideo){ cv.width = 720; cv.height = 720; }
+    if(forVideo){ cv.width = 720; cv.height = 1280; }
     else {
       var dpr = Math.min(window.devicePixelRatio||1, 2);
       cv.width = Math.floor((cv.clientWidth||360)*dpr);
@@ -3479,6 +3485,7 @@ var GS = (function(){
       bass = sum/10/255;
     }
     var R = m*0.2*(1 + bass*0.35);
+    if(freq && showStyle === 'bars'){ drawBars(g, freq, w, h, m, col); freq = null; }
     if(freq){
       var BARS = 56;
       g.lineWidth = Math.max(2, w*0.006);
@@ -3496,10 +3503,12 @@ var GS = (function(){
       }
       g.globalAlpha = 1;
     }
-    g.beginPath(); g.arc(cx,cy,R,0,Math.PI*2);
-    g.fillStyle = 'rgba(13,16,12,.82)'; g.fill();
-    g.strokeStyle = col; g.lineWidth = Math.max(2, w*0.005); g.stroke();
-    if(playing){
+    if(showStyle !== 'bars'){
+      g.beginPath(); g.arc(cx,cy,R,0,Math.PI*2);
+      g.fillStyle = 'rgba(13,16,12,.82)'; g.fill();
+      g.strokeStyle = col; g.lineWidth = Math.max(2, w*0.005); g.stroke();
+    }
+    if(playing && showStyle !== 'bars'){
       var pa = (step/STEPS)*Math.PI*2 - Math.PI/2;
       g.beginPath();
       g.arc(cx+Math.cos(pa)*(R+3), cy+Math.sin(pa)*(R+3), Math.max(4,w*0.01), 0, Math.PI*2);
@@ -3510,18 +3519,89 @@ var GS = (function(){
       }
     }
     g.textAlign = 'center';
-    g.fillStyle = '#f0e8d8';
-    g.font = Math.floor(m*0.055)+'px "Bebas Neue", sans-serif';
-    g.fillText((_curSongName||'MY SONG').toUpperCase().substring(0,24), cx, cy+m*0.015);
+    var onCard = _vid && (_vid.phase === 'title' || _vid.phase === 'end' || _vid.phase === 'wait');
+    var ty = showStyle === 'bars' ? h*0.3 : cy;   // bars fill the lower middle, so the name sits above them
+    if(!onCard){
+      g.fillStyle = '#f0e8d8';
+      g.font = Math.floor(m*0.055)+'px "Bebas Neue", sans-serif';
+      g.fillText((_curSongName||'MY SONG').toUpperCase().substring(0,24), cx, ty+m*0.015);
+      g.font = Math.floor(m*0.022)+'px "DM Mono", monospace';
+      g.fillStyle = 'rgba(240,232,216,.6)';
+      g.fillText(bpm+' BPM', cx, ty+m*0.055);
+    }
     g.font = Math.floor(m*0.022)+'px "DM Mono", monospace';
-    g.fillStyle = 'rgba(232,220,200,.5)';
-    g.fillText(bpm+' BPM', cx, cy+m*0.055);
+    g.fillStyle = 'rgba(240,232,216,.6)';
     g.fillText('made in Music Studio · lucidwinds.com', cx, h - m*0.03);
+  }
+  var showStyle = 'radial';   // radial stays the default; bars is the one extra look
+  var _peaks = [];
+  function drawBars(g, freq, w, h, m, col){
+    // 24 to 48 log spaced bands over the analyser bins, each with a falling peak cap
+    var N = Math.max(24, Math.min(48, Math.round(w/16)));
+    var lo = 1, hi = Math.floor(freq.length*0.7);
+    var gap = Math.max(2, w*0.006), bw = (w*0.86 - gap*(N-1))/N, x0 = w*0.07;
+    var base = h*0.62, top = m*0.34;
+    if(_peaks.length !== N){ _peaks = []; for(var p=0;p<N;p++) _peaks.push(0); }
+    for(var k=0;k<N;k++){
+      var a = Math.floor(lo*Math.pow(hi/lo, k/N)), b = Math.max(a+1, Math.floor(lo*Math.pow(hi/lo, (k+1)/N)));
+      var mag = 0;
+      for(var i=a;i<b&&i<freq.length;i++) if(freq[i] > mag) mag = freq[i];
+      mag = mag/255;
+      _peaks[k] = Math.max(mag, _peaks[k] - 0.012);
+      var x = x0 + k*(bw+gap), bh = Math.max(2, mag*top);
+      g.globalAlpha = 0.35 + mag*0.65;
+      g.fillStyle = col;
+      g.fillRect(x, base-bh, bw, bh);
+      g.globalAlpha = 0.18;
+      g.fillRect(x, base+4, bw, bh*0.35);
+      g.globalAlpha = 1;
+      g.fillStyle = '#f0e8d8';
+      g.fillRect(x, base - Math.max(2,_peaks[k]*top) - 4, bw, Math.max(2, h*0.003));
+    }
+  }
+  // Astra's portrait video frames: 1 s title card before the music, 1 s end card after it (the song is never cut)
+  var VIDEO_FRAMES = {title:'assets/games/song/frames/video_title_portrait.png', end:'assets/games/song/frames/video_end_portrait.png'};
+  var _frameImgs = {};
+  function loadFrames(list, done){
+    var left = list.length, fired = false;
+    function one(){ left--; if(left <= 0 && !fired){ fired = true; done(); } }
+    for(var i=0;i<list.length;i++){
+      var src = list[i];
+      if(_frameImgs[src] && _frameImgs[src].complete){ one(); continue; }
+      var im = new Image(); im.onload = one; im.onerror = one; im.src = src; _frameImgs[src] = im;
+    }
+    setTimeout(function(){ if(!fired){ fired = true; done(); } }, 2500);
+  }
+  function fitText(g, text, maxW, size, family){
+    do { g.font = size+'px '+family; size -= 2; } while(size > 10 && g.measureText(text).width > maxW);
+  }
+  function drawVideoCard(phase){
+    var cv = showCanvas(); if(!cv) return;
+    var g = cv.getContext('2d'), w = cv.width, h = cv.height;
+    var im = _frameImgs[VIDEO_FRAMES[phase]];
+    if(im && im.complete && im.naturalWidth) g.drawImage(im, 0, 0, w, h);
+    // the frame's reserved text band (manifest.json: x 86, y 1497, w 885, h 230 on 1080x1920)
+    var bx = w*86/1080, by = h*1497/1920, bw = w*885/1080, bh = h*230/1920;
+    var title = (_curSongName||'My Song').toUpperCase();
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#f0e8d8';
+    fitText(g, title, bw*0.92, Math.floor(bh*0.5), '"Bebas Neue", sans-serif');
+    g.fillText(title, bx+bw/2, by+bh*0.42);
+    g.font = Math.floor(bh*0.15)+'px "DM Mono", monospace';
+    g.fillStyle = 'rgba(240,232,216,.75)';
+    g.fillText(phase === 'title' ? bpm+' BPM' : 'made in Music Studio · lucidwinds.com', bx+bw/2, by+bh*0.8);
+    g.textBaseline = 'alphabetic';
+  }
+  function downloadBlob(blob, fname){
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = fname;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
   function showLoop(){
     drawShow();
+    if(_vid && (_vid.phase === 'title' || _vid.phase === 'end')) drawVideoCard(_vid.phase);
     if(_vid){
-      var pct = Math.min(100, (getCtx().currentTime - _vid.startCtxTime)/_vid.duration*100);
+      var pct = Math.max(0, Math.min(100, (getCtx().currentTime - _vid.startCtxTime)/_vid.total*100));
       var bar = document.getElementById('gs-rec-bar-fill');
       if(bar) bar.style.width = pct.toFixed(1)+'%';
     }
@@ -4120,6 +4200,53 @@ var GS = (function(){
       if(!_showRaf) showLoop();
       if(!playing) start();
     },
+    toggleShowStyle: function(){
+      showStyle = showStyle === 'bars' ? 'radial' : 'bars';
+      var b = document.getElementById('gs-show-style');
+      if(b){ b.setAttribute('aria-pressed', showStyle === 'bars' ? 'true' : 'false'); b.classList.toggle('on', showStyle === 'bars'); }
+    },
+    shareCard: function(){
+      // 1080x1080: the song's cover in Astra's frame window, name and BPM in band one, how to play it in band two
+      var name = _curSongName || 'My Song', rc = null, idx = songIndex();
+      for(var i=0;i<idx.length;i++) if(idx[i].id === _curSongId && idx[i].cover) rc = idx[i].cover;
+      if(!rc) rc = MusicStudioCovers.recipe(name, bpm, _curStarterArt);
+      var FRAME = 'assets/games/song/frames/share_frame_1080x1080.png';
+      var coverSrc = 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(MusicStudioCovers.render(rc, 540));
+      loadFrames([FRAME, coverSrc], function(){
+        try{
+          var cv = document.createElement('canvas'); cv.width = 1080; cv.height = 1080;
+          var g = cv.getContext('2d');
+          g.fillStyle = '#0d100c'; g.fillRect(0,0,1080,1080);
+          var cov = _frameImgs[coverSrc], fr = _frameImgs[FRAME];
+          if(cov && cov.naturalWidth) g.drawImage(cov, 270, 96, 540, 540);
+          if(fr && fr.naturalWidth) g.drawImage(fr, 0, 0, 1080, 1080);
+          g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#f0e8d8';
+          fitText(g, name.toUpperCase(), 936*0.92, 84, '"Bebas Neue", sans-serif');
+          g.fillText(name.toUpperCase(), 540, 666+50);
+          g.font = '30px "DM Mono", monospace'; g.fillStyle = 'rgba(240,232,216,.75)';
+          g.fillText(bpm+' BPM', 540, 666+112);
+          g.fillStyle = '#f0e8d8';
+          fitText(g, 'Paste my song code in Music Studio', 550*0.92, 30, '"DM Mono", monospace');
+          g.fillText('Paste my song code in Music Studio', 216+275, 900+46);
+          g.font = '24px "DM Mono", monospace'; g.fillStyle = 'rgba(240,232,216,.7)';
+          g.fillText('lucidwinds.com/studio.html', 216+275, 900+92);
+          var code = makeSongCode();
+          var text = name+' ('+bpm+' BPM). Open lucidwinds.com/studio.html, tap Songs, Paste Code and use this song code: '+code;
+          cv.toBlob(function(blob){
+            if(!blob){ _toast('Could not make the share card'); return; }
+            var fname = (name.replace(/[^A-Za-z0-9 _]+/g,'').trim().replace(/\s+/g,'_') || 'My_Song') + '_card.png';
+            var file = null;
+            try{ file = new File([blob], fname, {type:'image/png'}); }catch(e){}
+            if(file && navigator.canShare && navigator.canShare({files:[file]})){
+              navigator.share({files:[file], title:name, text:text}).catch(function(err){ if(err && err.name !== 'AbortError') downloadBlob(blob, fname); });
+            } else {
+              downloadBlob(blob, fname);
+              _toast('Share card saved. Copy the song code from My Songs to send it');
+            }
+          }, 'image/png');
+        }catch(e){ _toast('Could not make the share card'); }
+      });
+    },
     closeShow: function(){
       if(_vid) GS.stopVideo();
       if(_showRaf){ cancelAnimationFrame(_showRaf); _showRaf = null; }
@@ -4167,10 +4294,24 @@ var GS = (function(){
         };
         var keepArrMode = arrMode;
         arrMode = true; // a video always plays the whole song
-        _vid = {rec:rec, dest:dest, startCtxTime:ctx.currentTime + 0.1, duration:duration, keepArrMode:keepArrMode};
-        rec.start(500);
-        start();
-        _vid.timer = setTimeout(function(){ GS.stopVideo(); }, (duration + 0.4)*1000);
+        _vid = {rec:rec, dest:dest, startCtxTime:ctx.currentTime, duration:duration, total:duration + 2.4, keepArrMode:keepArrMode, phase:'wait'};
+        loadFrames([VIDEO_FRAMES.title, VIDEO_FRAMES.end], function(){
+          if(!_vid || _vid.rec !== rec) return;
+          _vid.phase = 'title';
+          _vid.startCtxTime = ctx.currentTime;
+          rec.start(500);
+          _vid.timer = setTimeout(function(){
+            if(!_vid || _vid.rec !== rec) return;
+            _vid.phase = 'song';
+            start();
+            _vid.timer = setTimeout(function(){
+              if(!_vid || _vid.rec !== rec) return;
+              stop();
+              _vid.phase = 'end';
+              _vid.timer = setTimeout(function(){ GS.stopVideo(); }, 1000);
+            }, (duration + 0.4)*1000);
+          }, 1000);
+        });
       }catch(e){
         document.getElementById('gs-rec-wrap').classList.remove('on');
         _toast('Video error: '+e.message);
@@ -4182,6 +4323,7 @@ var GS = (function(){
       clearTimeout(vv.timer);
       stop();
       arrMode = vv.keepArrMode;
+      if(vv.phase === 'wait'){ try{ masterComp.disconnect(vv.dest); }catch(e){} document.getElementById('gs-rec-wrap').classList.remove('on'); return; }
       var btn = document.getElementById('gs-arr-mode');
       if(btn){ btn.classList.toggle('on', arrMode); btn.innerHTML = arrMode ? ic('songs')+'Whole song' : ic('loop')+'This section'; }
       try{ vv.rec.stop(); }catch(e){}
