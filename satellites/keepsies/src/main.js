@@ -54,7 +54,7 @@ const G = {
   save: null, calibrator: null, lastRollAudio: 0, warming: false,
   assist: true, lastAssist: 0, lastShooter: 0,
   scopeHold: false, nudgeTimer: 0, snapShown: false, aimUiOn: false,
-  houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 },
+  houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10, formation: 'cross' },
   catalog: null, turntable: null, thumbs: null, filter: 'all', inspecting: null, econ: null,
   drops: null, dropRng: null, stake: [], theirStake: [], anteOk: false
 };
@@ -66,11 +66,17 @@ const HOUSE_RULES = [
   { key: 'slips', label: 'Slips', sub: 'one redo for a fumble' },
   { key: 'bombing', label: 'Bombing', sub: 'drop shots allowed' },
   { key: 'poison', label: 'Poison', sub: 'knock out the enemy shooter' },
-  { key: 'ringSizeFt', label: 'Ring', sub: 'seven, ten or thirteen foot', cycle: [7, 10, 13] },
+  { key: 'ringSizeFt', label: 'Ring', sub: 'seven, ten or thirteen foot', cycle: [7, 10, 13],
+    show: (v) => RING_WORD[v] || RING_WORD[10] },
   /* the lay of the thirteen: see FORMATIONS in game/ringer.js for what each one is */
   { key: 'formation', label: 'Lay', sub: 'cross, x, ring or bunch', cycle: ['cross', 'x', 'ring', 'bunch'],
-    show: (v) => 'the ' + v }
+    show: (v) => LAY_WORD[v] || LAY_WORD.cross }
 ];
+/* ⛔ EVERY VALUE A CHIP CAN HOLD HAS ITS WORD (Astra, 4 Nov: k1-setup printed THE UNDEFINED, the lay chip
+   reading a house rule that had no value until its first tap). A value with no word shows the game's
+   own default, which is also what the rules play (core/rules-ringer.js DEFAULT_HOUSE_RULES). */
+const RING_WORD = { 7: 'Seven foot', 10: 'Ten foot', 13: 'Thirteen foot' };
+const LAY_WORD = { cross: 'The cross', x: 'The X', ring: 'The ring', bunch: 'The bunch' };
 
 /* ------------------------------------------------------------------- boot */
 
@@ -261,6 +267,8 @@ function wireButtons() {
 
 function showScreen(name) {
   G.screen = name;
+  // a tester's under the floor camera (KEEPSIES_DEV.camera allowUnder) never outlives the screen it was asked on
+  if (G.rig) G.rig.state.allowUnder = false;
   $('title').hidden = name !== 'title';
   $('calib').hidden = name !== 'calib';
   $('setup').hidden = name !== 'setup';
@@ -604,6 +612,14 @@ function buildFilters() {
     b.addEventListener('click', () => { G.filter = key; buildFilters(); buildGrid(); });
     row.appendChild(b);
   }
+  /* ⛔ THE ACTIVE FILTER IS ALWAYS IN VIEW (Astra, 4 Nov, k2-collection: the strip ran past the edge). The
+     strip scrolls sideways, and rebuilding it on a tap threw the scroll back to All, so a tap on Grail
+     left the lit chip off the right edge. Centre the lit one in the strip, never the page. */
+  const lit = row.querySelector('button.on');
+  if (lit) {
+    const rr = row.getBoundingClientRect(), br = lit.getBoundingClientRect();
+    row.scrollLeft += (br.left + br.width / 2) - (rr.left + rr.width / 2);
+  }
 }
 
 /**
@@ -909,6 +925,7 @@ function startMatch(opts) {
   });
   buildMeshes();
   G.R.doLag();
+  G.over = false;
   say(G.R.match.turn === 0 ? 'You won the lag. Hold your shooter, then flick.'
     : (G.R.match.players[1].name + ' won the lag and shoots first.'));
   G.R.frameShot(G.rig, true);
@@ -1240,7 +1257,10 @@ function showSlip() {
   setTimeout(() => { $('slipCard').hidden = true; }, 1800);
 }
 function showPower(p) { $('power').hidden = false; $('powerFill').style.width = (p * 100).toFixed(0) + '%'; }
-function say(s) { G.said = s; $('say').textContent = s; }
+/* ⛔ THE VOICE BELONGS TO A LIVE MATCH (Astra, 4 Nov, k1-ceremony: "too soft to count" over the end of
+   the match). Once the match is over a late line from the field, a Knuckle cancel or the AI, is dropped;
+   the clearing call still clears, and an empty line hides its plate (#say:empty). */
+function say(s) { if (s && G.over && G.screen !== 'calib') return; G.said = s; $('say').textContent = s; }
 
 function showToast(id) {
   const t = RINGER_TECHNIQUES[id];
@@ -1340,6 +1360,7 @@ function paintRansomClock() {
 }
 
 function finishMatch(s) {
+  G.over = true;   // from here no line from the field reaches the voice (say)
   const won = s.winner === 0;
   // the opponent's name comes from the match, so league two does not still say Dusty
   const oppName = (G.R.match.players[1] || {}).name || 'Dusty Coyle';

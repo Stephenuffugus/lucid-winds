@@ -198,6 +198,18 @@ export function createOrbitRig(stage, opts) {
       if (!state.allowUnder) {
         if (state.elevationDeg < state.minElevationDeg) state.elevationDeg = state.minElevationDeg;
         if (state.elevationDeg > state.maxElevationDeg) state.elevationDeg = state.maxElevationDeg;
+        /* ⛔ AND NEVER UNDER THE DIRT AT ANY DISTANCE (Astra, 4 Nov, k1-under). The floor above is an angle;
+           a look point on the dirt with the closest pinch could still put the eye, or the near plane's
+           lower edge, under the ground plane. Both stay 4 mm above it: the angle rises until they do. This
+           runs every frame, so it holds after a zoom, a view change and a result transition alike. */
+        if (state.target.y < 0) state.target.y = 0;
+        const halfH = cam.near * Math.tan(cam.fov * Math.PI / 360);
+        for (let i = 0; i < 45; i++) {
+          const e = state.elevationDeg * Math.PI / 180;
+          const low = state.target.y + Math.sin(e) * state.distance - cam.near * Math.sin(e) - halfH * Math.cos(e);
+          if (low >= 0.004 || state.elevationDeg >= state.maxElevationDeg) break;
+          state.elevationDeg = Math.min(state.maxElevationDeg, state.elevationDeg + 2);
+        }
       }
       const el = state.elevationDeg * Math.PI / 180;
       const r = state.distance;

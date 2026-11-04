@@ -295,14 +295,16 @@ await page.evaluate(() => window.KEEPSIES_DEV.collection());
 await wait(900);
 await shot('k2-offers');
 
-/* the worst angle a player can reach, and then the one they cannot */
+/* the worst angle a player can reach, and then the camera ASKED to go 25 degrees under the dirt: the
+   clamp holds it at the floor (4 Nov: the forced under view was read as the game, so the set no longer
+   shoots the tester's override) */
 await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 909090, forceFirst: 0 }));
 await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(60));
 await wait(300);
 await page.evaluate(() => window.KEEPSIES_DEV.camera(20, -40, 1.2));
 await wait(400);
 await shot('k1-lowest');
-await page.evaluate(() => window.KEEPSIES_DEV.camera(20, -25, 1.2, { allowUnder: true }));
+await page.evaluate(() => window.KEEPSIES_DEV.camera(20, -25, 1.2));
 await wait(400);
 await shot('k1-under');
 
