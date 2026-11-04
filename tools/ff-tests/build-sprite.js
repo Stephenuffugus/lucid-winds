@@ -38,6 +38,9 @@ for (const rel of files) {
   if (!vb) { console.error('no viewBox in ' + rel); process.exit(1); }
   let body = src.slice(open.index + open[0].length, src.lastIndexOf('</svg>')).trim();
   if (/<(script|style|foreignObject|image)\b|\bon[a-z]+=|href=/i.test(body)) { console.error('refusing ' + rel + ': it carries script, style, an image or a link'); process.exit(1); }
+  /* the two wordmarks lose their opaque plate and take their letters from the palette, so they sit on any card */
+  if (name === 'wordmark_paper') body = body.replace(/^<rect x="0" y="0" width="1000" height="340"[^>]*\/>/, '').replace(/fill="#37493d"/g, 'fill="var(--sage, #37493d)"');
+  if (name === 'wordmark_dark') body = body.replace(/^<rect x="0" y="0" width="1000" height="340"[^>]*\/>/, '').replace(/fill="#e7e0cb"/g, 'fill="var(--paper, #e7e0cb)"');
   body = body.replace(/\bid="([^"]+)"/g, (m, id) => 'id="' + name + '-' + id + '"').replace(/url\(#([^)]+)\)/g, (m, id) => 'url(#' + name + '-' + id + ')');
   out += '<symbol id="i-' + name + '" viewBox="' + vb[1] + '">' + body + '</symbol>\n';
 }
