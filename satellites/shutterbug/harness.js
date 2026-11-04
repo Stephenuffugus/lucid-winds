@@ -4015,6 +4015,55 @@ group('H-bot-1', 'the generosity assertion: every main ascent edge of every buil
   console.log('  info  the macro search: ' + stats.tries + ' candidates run, ' + stats.found + ' found by search, ' + stats.memo + ' by the memo (' + stats.memoMiss + ' memo misses fell back to the search)');
 });
 
+/* m2 step 4 (SHUTTERBUG_M2_BUILD_PLAN.md): the set pieces. At most PIECES_MAX a room, off the main ascent's stands and
+   the boxes its edges cross and off every feature's cell; the bot's walk (H-bot-1 runs them at phase 0) again with every
+   piece half a cycle on, so the climb is completable with them on and off; the sim's strip catches and carries a bug,
+   the fan's column lifts it while it blows and not while it rests */
+group('H-piece-1', 'the set pieces (m2 step 4): at most two, never on the ascent or a feature; the climb completable with them on and off cycle; the strip catches and carries, the fan lifts only while it blows', t => {
+  const T = SB.TUNING, K = SB.K, CS = K.CELL_SUB, bad = [];
+  let levels = 0, strips = 0, fans = 0, walked = 0, stripLv = null, fanLv = null;
+  const { runs } = botWalks();
+  for (const run of runs) {
+    if (!run.lv || run.same || run.skipped) continue;
+    const lv = run.lv, P = lv.pieces || [], w = lv.w, n = w * lv.h;
+    if (!P.length) continue;
+    levels++;
+    if (P.length > T.PIECES_MAX) bad.push(run.tag + ': ' + P.length + ' pieces');
+    const asc = new Set(lv.ascent.nodes.filter(v => v < n)), f = lv.features;
+    const held = new Set([lv.spawn, lv.exit, f.chest, f.scroll, f.blueprint, lv.tripod].concat(f.specks || [], f.keys || [], (f.enemies || []).map(e => e.idx)));
+    for (const p of P) {
+      const cells = [];
+      if (p.kind === 'strip') { strips++; if (!stripLv) stripLv = lv; for (let k = 0; k < T.STRIP_CELLS + T.STRIP_TRAVEL; k++) { cells.push(p.row * w + p.x0 + k, (p.row - 1) * w + p.x0 + k); } }
+      else { fans++; if (!fanLv) fanLv = lv; for (let k = 0; k <= T.FAN_ROWS; k++) cells.push(p.cell - k * w); }
+      for (const c of cells) { if (asc.has(c)) bad.push(run.tag + ': a ' + p.kind + ' on the ascent at ' + c); if (held.has(c)) bad.push(run.tag + ': a ' + p.kind + ' on a feature at ' + c); if (lv.solid[c]) bad.push(run.tag + ': a ' + p.kind + ' in a solid at ' + c); }
+    }
+    /* half a cycle on: the fan resting where H-bot-1 had it blowing, the strip at the far end of its run */
+    const lv2 = Object.assign({}, lv, { pieces: P.map(p => Object.assign({}, p, { phase: p.kind === 'fan' ? T.FAN_ON_F : T.STRIP_CYCLE_F >> 1 })) });
+    const r2 = BOT.walk(lv2, new Map(), { tries: 0, found: 0, memo: 0, memoMiss: 0 });
+    walked++;
+    if (r2.miss) bad.push(run.tag + ': half a cycle on, ascent edge ' + r2.miss.i + ' has no macro');
+  }
+  console.log('  info  H-piece-1: ' + levels + ' walked levels carry pieces (' + strips + ' strips, ' + fans + ' fans); each walked again half a cycle on');
+  t.ok(levels > 0 && bad.length === 0, levels + ' levels with set pieces: at most ' + T.PIECES_MAX + ', off the ascent and every feature, the climb completable with them on and off' + (bad.length ? ': ' + bad.slice(0, 6).join('; ') : ''));
+  t.ok(strips > 0 && fans > 0, 'the corpus carries both kinds (' + strips + ' strips, ' + fans + ' fans)');
+  if (stripLv) {
+    const p = stripLv.pieces.find(q => q.kind === 'strip'), s = SB.sim.create(stripLv, { immortal: true });
+    s.frame = 0; const x0 = SB.pieceAt.stripX(p, 0);
+    s.hero.x = x0 + CS; s.hero.y = (p.row - 1) * CS - 8 * 256; s.hero.vx = 0; s.hero.vy = 0; s.hero.ground = 0;
+    let caught = -1; for (let k = 0; k < 20 && caught < 0; k++) { SB.sim.step(s, 0); if (s.hero.ground && s.hero.y + K.HERO_H_SUB === p.row * CS) caught = k; }
+    t.ok(caught >= 0, 'a bug dropped over the strip lands on it (step ' + caught + ')');
+    const hx = s.hero.x, sx0 = SB.pieceAt.stripX(p, s.frame);
+    for (let k = 0; k < 20; k++) SB.sim.step(s, 0);
+    const moved = SB.pieceAt.stripX(p, s.frame) - sx0;
+    t.ok(s.hero.ground && moved !== 0 && s.hero.x - hx === moved, 'standing still on it the bug rides it (the strip moved ' + moved + ', the bug ' + (s.hero.x - hx) + ')');
+  }
+  if (fanLv) {
+    const p = fanLv.pieces.find(q => q.kind === 'fan'), w = fanLv.w, fx = (p.cell % w) * CS, fy = Math.floor(p.cell / w);
+    const lift = phase => { const s = SB.sim.create(fanLv, { immortal: true }); s.frame = phase; s.hero.x = fx + ((CS - K.HERO_W_SUB) >> 1); s.hero.y = (fy - 2) * CS; s.hero.vx = 0; s.hero.vy = 0; s.hero.ground = 0; const y0 = s.hero.y; for (let k = 0; k < 8; k++) SB.sim.step(s, 0); return y0 - s.hero.y; };
+    const up = lift(0), rest = lift(T.FAN_ON_F);
+    t.ok(up > 0 && rest < 0, 'set in the column the bug rises while the fan blows (' + up + ' sub px up) and falls while it rests (' + (-rest) + ' down)');
+  }
+});
 group('H-bot-7', 'the generosity assertion under every biome override (T1.5): each of Attic, Frost, Deep, Overgrowth and Ember has walked levels and no ascent edge without a macro', t => {
   const { runs } = botWalks();
   for (const [b, name] of BOT_BIOMES) {
@@ -4054,6 +4103,9 @@ function botEdges(sample) {
 }
 /* every edge of one level's graph (or `sample` of them), each from the hero placed on its source */
 function levelEdges(lv, tag, sample, out, memo, stats) {
+  /* m2 step 4: the reach model is the grid's; the set pieces are run time extras placed off the main ascent (H-piece-1
+     walks the climb with them on and off), so a whole graph's edges are performed on the grid alone */
+  if (lv && lv.pieces) lv = Object.assign({}, lv, { pieces: null });
   {
     const g = SB.reach.graph(lv), run = { tag };
     let list = [];
@@ -5616,7 +5668,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
                 'trophy_medals_r7', 'frame_styles_r7', 'daily_badge', 'daily_card'].indexOf(name) < 0) t.ok(!str.includes(SUN), name + '.' + f + ' holds no Sun (the hero\'s colour, its hero_* poses\', the beacon\'s and its lighting\'s)');
       /* section 7.3 (the M1 review: the placeholders broke it): Film is the repairs' alone (the film tab), so help is
          never furniture; the speck is Amber with a Glare glint; every danger has an Ink outline */
-      if (['tab', 'tab_bold'].indexOf(name) < 0) t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour; round 8: the bold tab is a repair tab too)');
+      if (['tab', 'tab_bold', 'film_strip'].indexOf(name) < 0) t.ok(!str.includes(FILM), name + '.' + f + ' holds no Film (the repairs\' colour; round 8: the bold tab is a repair tab too, the moving strip is film)');
       /* the speck's glint is a beat (Astra's speck, Q160: frame a the Amber diamond, b adds the Glare glint, 4 fps), so
          every frame is Amber and the strip, not each frame, carries the glint (the pin moved from per frame with the art) */
       if (name === 'speck') t.ok(str.includes(AMBER), 'speck.' + f + ' is Amber');

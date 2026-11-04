@@ -846,7 +846,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the Darkroom (2 Nov): the starting collection, each weapon's tier and the price to develop it, a print that
        cannot be new paid in Dead pixels instead */
     DEV_START: ['J1', 'D1'], DEV_PRICE: [0, 30, 100, 300], DEV_DUP_DP: 30, START_PICK_DP: 200 /* DESIGN 9.4 "Starting loadout pick 200" */,
-    DEV_TIER: { J2: 1, J3: 1, J5: 1, D2: 1, D4: 1, D6: 1, J4: 2, J6: 2, J7: 2, D3: 2, D5: 2, D8: 2, C2: 2, C6: 2, J8: 3, D7: 3, C1: 3, C3: 3, C4: 3 }, LANTERN_PULSE_S: 1 /* W4: the Lantern burns once a second */, KEYS_MAX: 3, KEYS_ROWS_OVER_SPAWN: 2, KEYS_MIN_ROWS: 6, KEYS_GUARD_CELLS: 4 /* the locked exit (2 Nov, features.keys) */, FLOOR_ROWS: 16, LANDING_RUN: 4, LANDING_REACH: 2 /* m2 step 3: three floors from the bottom, a landing of four standable cells at the top of each within two rows */,
+    DEV_TIER: { J2: 1, J3: 1, J5: 1, D2: 1, D4: 1, D6: 1, J4: 2, J6: 2, J7: 2, D3: 2, D5: 2, D8: 2, C2: 2, C6: 2, J8: 3, D7: 3, C1: 3, C3: 3, C4: 3 }, LANTERN_PULSE_S: 1 /* W4: the Lantern burns once a second */, KEYS_MAX: 3, KEYS_ROWS_OVER_SPAWN: 2, KEYS_MIN_ROWS: 6, KEYS_GUARD_CELLS: 4 /* the locked exit (2 Nov, features.keys) */, FLOOR_ROWS: 16, LANDING_RUN: 4, LANDING_REACH: 2 /* m2 step 3: three floors from the bottom, a landing of four standable cells at the top of each within two rows */, PIECES_MAX: 2, STRIP_CELLS: 3, STRIP_TRAVEL: 4, STRIP_CYCLE_F: 180, FAN_ROWS: 3, FAN_ON_F: 120, FAN_V: 7 /* m2 step 4: set pieces; a 3 cell strip over 4 cells on a 3 s cycle, a fan's 3 cell column on 2 s and off 2 s holding at least 7 px a step up (a jump through it peaks about 2 cells higher) */,
     BOSS_MOTH_EVERY_S: 4, BOSS_MOTH_COUNT: 3, BOSS_ICICLE_TELEGRAPH_S: 3, BOSS_RING_EVERY_S: 5, BOSS_RING_CELLS: 4, BOSS_SPARK_TELEGRAPH_S: 2,
     /* the biome movesets (2 Nov): each cycle and its tell; Frost's columns, Overgrowth's thorn life, Ember's sparks */
     BOSS_ICE_EVERY_S: 5, BOSS_ICE_COLUMNS: 3, BOSS_ICE_ROWS: 10, BOSS_RING_TELL_S: 1, BOSS_RING_GROW_S: 0.5, BOSS_THORN_EVERY_S: 5, BOSS_THORN_TELL_S: 0.9, BOSS_THORN_LIVE_S: 2,
@@ -918,6 +918,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       AIR_CONTROL: T.AIR_CONTROL
     };
     K.DECEL = Math.round(K.RUN / T.DECEL_FRAMES);
+    K.FAN_V = Math.round(T.FAN_V * SUB);   /* m2 step 4: the fan column's lift, an upward speed held while inside */
     K.DASH_V = Math.round(T.DASH_CELLS * G.CELL * SUB / T.DASH_FRAMES);
     K.KNOCK_V = Math.round(T.HIT_KNOCKBACK_CELLS * G.CELL * SUB / T.HIT_KNOCKBACK_FRAMES);
     K.KNOCK_FRAMES = T.HIT_KNOCKBACK_FRAMES;
@@ -979,7 +980,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-3';
+  SB.BUILD = 'sb-m2-4';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -2030,6 +2031,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     SB.features.ramp(level, opts);   /* a house room after the first only (opts.roomIndex, Q200); on the settled level */
     SB.features.guardian(level, opts);   /* the house's last room only (HOUSE-B, Q97 ruling 3): the clay guardian */
     SB.features.keys(level, opts, rec.v >= 2 && (rec.flags & SB.record.FLAG_KEYS) !== 0);   /* the locked exit's keys (2 Nov) */
+    SB.features.pieces(level, opts);   /* m2 step 4: the set pieces, after every other feature */
     return level;
   }
 
@@ -3948,6 +3950,59 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
     return carved;
   }
+  /* m2 step 4 (SHUTTERBUG_M2_BUILD_PLAN.md): set pieces on the furniture, at most PIECES_MAX a room, deterministic from
+     the seed: the moving film strip (a STRIP_CELLS one way that travels STRIP_TRAVEL cells and back over STRIP_CYCLE_F
+     steps, across a gap in the furniture floor beside a ledge) and the fan (a FAN_ROWS updraft column over a floor cell,
+     on FAN_ON_F steps and off as long). Never on the main ascent's stands, never in the box any of its edges crosses
+     (a jump's arc: five rows over the higher end, a cell round), never on another feature's cell, so the climb is the
+     same with them on and off. Not in a first room or the guardian's. Called after every other feature */
+  function pieces(level, opts) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, out = [], k, x, y, c, f = level.features;
+    level.pieces = null;
+    if (level.needsCrop || level.exit < 0 || !level.ascent || !f || f.guardian || (opts && opts.firstRoom)) return null;
+    var rng = SB.rng.mulberry32((level.seed ^ 0x5e7f1d) >>> 0), bad = new Uint8Array(n), st = ascentStands(level);
+    var mark = function (x0, y0, x1, y1) { for (var yy = Math.max(0, y0); yy <= Math.min(h - 1, y1); yy++) for (var xx = Math.max(0, x0); xx <= Math.min(w - 1, x1); xx++) bad[yy * w + xx] = 1; };
+    var at = function (q) { if (typeof q === 'number' && q >= 0 && q < n) mark(q % w - 1, Math.floor(q / w) - 1, q % w + 1, Math.floor(q / w) + 1); };
+    for (k = 0; k < st.length; k++) {
+      var sx = st[k] % w, sy = Math.floor(st[k] / w);
+      mark(sx - 1, sy - 1, sx + 1, sy + 1);
+      if (k) { var px = st[k - 1] % w, py = Math.floor(st[k - 1] / w); mark(Math.min(px, sx) - 1, Math.min(py, sy) - 5, Math.max(px, sx) + 1, Math.max(py, sy) + 1); }
+    }
+    at(level.spawn); at(level.exit); at(f.chest); at(f.scroll); at(f.blueprint); at(level.tripod);
+    for (k = 0; f.specks && k < f.specks.length; k++) at(f.specks[k]);
+    for (k = 0; f.keys && k < f.keys.length; k++) at(f.keys[k]);
+    for (k = 0; f.enemies && k < f.enemies.length; k++) { var ec = f.enemies[k].idx; mark(ec % w - 3, Math.floor(ec / w) - 2, ec % w + 3, Math.floor(ec / w) + 2); }
+    for (k = 0; level.beacon && k < level.beacon.cells.length; k++) at(level.beacon.cells[k]);
+    if (f.door) { var dr = f.door.rect; mark(dr[0] - 1, dr[1] - 1, dr[2] + 1, dr[3] + 1); }
+    if (f.pocket) for (k = 0; k < f.pocket.cells.length; k++) at(f.pocket.cells[k]);
+    for (k = 0; level.landings && k < level.landings.length; k++) for (var lq = 0; lq < level.landings[k].cells.length; lq++) at(level.landings[k].cells[lq]);
+    var free = function (q) { return q >= 0 && q < n && !bad[q] && !level.solid[q] && !level.plat[q] && !(level.trap && level.trap[q]); };
+    var y0 = h - 2 * T.FLOOR_ROWS, y1 = h - T.FLOOR_ROWS - 1, span = T.STRIP_CELLS + T.STRIP_TRAVEL, strips = [], fans = [];
+    for (y = Math.max(2, y0); y <= y1; y++) for (x = 0; x + span <= w; x++) {
+      var okS = true;
+      for (k = 0; k < span && okS; k++) okS = free(y * w + x + k) && free((y - 1) * w + x + k);
+      var ledge = (x > 0 && (level.solid[y * w + x - 1] || level.plat[y * w + x - 1])) || (x + span < w && (level.solid[y * w + x + span] || level.plat[y * w + x + span]));
+      if (okS && ledge) strips.push({ kind: 'strip', row: y, x0: x });
+    }
+    for (y = Math.max(1 + T.FAN_ROWS, y0); y <= y1; y++) for (x = 0; x < w; x++) {
+      c = y * w + x;
+      if (!free(c) || !(c + w < n && level.solid[c + w])) continue;
+      var okF = true; for (k = 1; k <= T.FAN_ROWS && okF; k++) okF = free(c - k * w);
+      if (okF) fans.push({ kind: 'fan', cell: c });
+    }
+    if (strips.length) out.push(strips[Math.floor(rng.next() * strips.length)]);
+    if (fans.length && out.length < T.PIECES_MAX) {
+      var sp = out[0], fan = null;
+      for (var tries = 0; tries < 8 && !fan; tries++) {
+        var cand = fans[Math.floor(rng.next() * fans.length)], fx = cand.cell % w, fy = Math.floor(cand.cell / w);
+        if (!sp || fy < sp.row - T.FAN_ROWS - 2 || fy > sp.row + 2 || fx < sp.x0 - 1 || fx > sp.x0 + span) fan = cand;
+      }
+      if (fan) out.push(fan);
+    }
+    for (k = 0; k < out.length; k++) out[k].phase = 0;
+    level.pieces = out.length ? out : null;
+    return level.pieces;
+  }
   function place(level, opts, g) {
     var f = level.features, stands = ascentStands(level), rng = SB.rng.mulberry32(level.seed >>> 0);
     if (!g) g = SB.reach.graph(level);
@@ -3970,7 +4025,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     BUNNY: BUNNY, OWL: OWL, CRAB: CRAB, PUFF: PUFF, BEETLE: BEETLE, SECOND_OF_BIOME: SECOND_OF_BIOME,
     place: place, returnable: returnable, ladder: ladder, brightRect: brightRect, door: door, pocketCands: pocketCands, pocketOk: pocketOk, chest: chest, specks: specks,
     trapRects: trapRects, trapOk: trapOk, trapField: trapField, envelope: envelope, enemies: enemies, moths: moths, rampRow: rampRow, ramp: ramp,
-    darkMasses: darkMasses, arena: arena, guardian: guardian, keys: keys, landings: landings };
+    darkMasses: darkMasses, arena: arena, guardian: guardian, keys: keys, landings: landings, pieces: pieces };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-sim" data-core>
@@ -4845,6 +4900,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
 
   /* returns 1 when the hero lands this step; `dy` is the step's travel (an armed slide travels a third of vy) */
+  /* m2 step 4: the set pieces move on the step count alone (no state of their own): PF is the step being run */
+  var PF = 0;
+  function stripX(p, f) {
+    var C = SB.TUNING.STRIP_CYCLE_F, half = C >> 1, t = ((f + (p.phase | 0)) % C + C) % C, run = SB.TUNING.STRIP_TRAVEL * SB.K.CELL_SUB;
+    return p.x0 * SB.K.CELL_SUB + Math.floor((t < half ? t : C - t) * run / half);
+  }
+  function fanOn(p, f) { var T = SB.TUNING; return ((f + (p.phase | 0)) % (2 * T.FAN_ON_F) + 2 * T.FAN_ON_F) % (2 * T.FAN_ON_F) < T.FAN_ON_F; }
+  function inFan(h, lv, p) {
+    var K = SB.K, CS = K.CELL_SUB, w = lv.w, fx = (p.cell % w) * CS, top = (Math.floor(p.cell / w) - SB.TUNING.FAN_ROWS) * CS, bot = Math.floor(p.cell / w) * CS;
+    return h.x + K.HERO_W_SUB > fx && h.x < fx + CS && h.y + K.HERO_H_SUB > top && h.y < bot;
+  }
+  SB.pieceAt = { stripX: stripX, fanOn: fanOn };
   function moveY(h, lv, K, dy) {
     var CS = K.CELL_SUB, HH = K.HERO_H_SUB, HW = K.HERO_W_SUB;
     var prevFeet = h.y + HH;
@@ -4864,6 +4931,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
           var ov = Math.min(h.x + HW, (cx + 1) * CS) - Math.max(h.x, cx * CS);
           if (ov >= K.OVERLAP_SUB || (h.ground && ov > 0)) landed = true;
         }
+      }
+      /* m2 step 4: the moving film strip is a one way top too, where it stands this step */
+      if (!landed && lv.pieces && h.dive !== 2) for (var pi = 0; pi < lv.pieces.length && !landed; pi++) {
+        var pc = lv.pieces[pi]; if (pc.kind !== 'strip') continue;
+        var ptop = pc.row * CS, psx = stripX(pc, PF), pov = Math.min(h.x + HW, psx + SB.TUNING.STRIP_CELLS * CS) - Math.max(h.x, psx);
+        if (prevFeet <= ptop && feet > ptop && (pov >= K.OVERLAP_SUB || (h.ground && pov > 0))) { h.y = ptop - HH; h.vy = 0; return 1; }
       }
       if (landed) { h.y = top - HH; h.vy = 0; return 1; }
     } else if (h.vy < 0) {
@@ -4895,6 +4968,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var K = SB.K, h = s.hero, lv = s.level || null;
     if (!lv) throw new Error('sim.step: the state carries no level (attach with sim.attach)');
     s.ev = 0;
+    PF = s.frame;
     /* m2 step 3: a death with the tripod lit waits for the RESPAWN word (the recording carries it like any other), then
        the bug stands at the tripod with every heart, the keys and the loot it took kept */
     if (s.room.dead && s.cp && s.cp.lit && ((word >> 6) & 15) === CHOICE.RESPAWN) { respawn(s, lv); s.frame++; return s; }
@@ -4985,8 +5059,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* 4. the variable jump: the release cap, never on the jump step itself (a sub step tap is a one frame jump) */
     if (h.rising && !held && !jumped && h.vy < -K.CUT_V) h.vy = -K.CUT_V;
 
-    /* 5. gravity to terminal; a sticky wall holds the hero still */
-    if (h.sticky) h.vy = 0;
+    /* 5. gravity to terminal; a sticky wall holds the hero still; m2 step 4: inside a fan's column while it blows, no
+       gravity and at least FAN_V up */
+    var fanned = false;
+    if (lv.pieces) for (var fi = 0; fi < lv.pieces.length; fi++) { var fp = lv.pieces[fi]; if (fp.kind === 'fan' && fanOn(fp, s.frame) && inFan(h, lv, fp)) fanned = true; }
+    if (fanned && !h.sticky) h.vy = Math.min(h.vy, -K.FAN_V);
+    else if (h.sticky) h.vy = 0;
     else if (deep) h.vy = Math.min(K.DEEP_TERM, h.vy + (h.vy >= 0 && !startedGrounded ? K.DEEP_FALL_G : K.G));
     else h.vy = Math.min(K.TERM, h.vy + K.G);
     if (h.vy >= 0) h.rising = 0;
@@ -4994,6 +5072,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* 6. move: an armed slide falls a third of vy (vy keeps the unarmed fall, so the slide's speed is always a third
        of what the fall would be at the same step, capped at TERMINAL / 3; section 3.8 item 4) */
     var xBefore = h.x;
+    /* m2 step 4: a bug standing on the film strip rides it (the strip's own step, where the box is free) */
+    PF = s.frame;
+    if (h.ground && lv.pieces) for (var ri = 0; ri < lv.pieces.length; ri++) {
+      var rp = lv.pieces[ri]; if (rp.kind !== 'strip') continue;
+      var rsx = stripX(rp, s.frame - 1), rdx = stripX(rp, s.frame) - rsx;
+      if (h.y + K.HERO_H_SUB === rp.row * K.CELL_SUB && h.x + K.HERO_W_SUB > rsx && h.x < rsx + SB.TUNING.STRIP_CELLS * K.CELL_SUB && rdx && boxFree(lv, K, h.x + rdx, h.y)) h.x += rdx;
+    }
     moveX(h, lv, K);
     if (knocked && h.knock === 0) h.vx = 0;   /* the knockback's last push spent: it ends at rest, 2 cells in KNOCK_FRAMES (the fourth review: vx ran on and the hero slid 42 px) */
     /* stopped at the edge, or by a wall; a press that cannot move at all is no dash, and keeps no i frames (the third
@@ -6622,6 +6707,24 @@ body.sb-modal .lwfb-fab { display: none !important; }
       glint_1: '................/................/................/............4.../................/.......060....../......00600...../......66666...../......00600...../.......060....../................/................/...4............/................/................/................',
       glint_2: '................/................/................/............4.../.......060....../.......060....../.....0006000..../.....6666666..../.....0006000..../.......060....../.......060....../................/...4............/................/................/................',
       glint_3: '................/................/................/................/................/.......060....../......00600...../......66666...../......00600...../.......060....../................/................/................/................/................/................'
+    } },
+    /* film_strip: from Astra (world/film_strip.png) */
+    film_strip: { w: 48, h: 8, frames: {
+      a: '666666666666666666666666666666666666666666666666/000000000000000000000000000000000000000000000000/ffffffffffffffffffffffffffffffffffffffffffffffff/ffff000fffff000fffff000fffff000fffff000fffff000f/ffff000fffff000fffff000fffff000fffff000fffff000f/ffffffffffffffffffffffffffffffffffffffffffffffff/000000000000000000000000000000000000000000000000/000000000000000000000000000000000000000000000000',
+      b: '666666666666666666666666666666666666666666666666/000000000000000000000000000000000000000000000000/ffffffffffffffffffffffffffffffffffffffffffffffff/000fffff000fffff000fffff000fffff000fffff000fffff/000fffff000fffff000fffff000fffff000fffff000fffff/ffffffffffffffffffffffffffffffffffffffffffffffff/000000000000000000000000000000000000000000000000/000000000000000000000000000000000000000000000000'
+    } },
+    /* fan: from Astra (world/fan.png) */
+    fan: { w: 16, h: 16, frames: {
+      a: '......0000....../....00444400..../...0442222440.../..044225222440../..042555222240../.04222500225240./.04222060055240./.04222000055240./.04225500555240./..045555222240../..044225222440../...0442222440.../....00444400..../..000300003000../..000000000000../..000000000000..',
+      b: '......0000....../....00444400..../...0442222440.../..044225555440../..042225552240../.04222200522240./.04255060022240./.04255000022240./.04255200555240./..045222255240../..044222252440../...0442222440.../....00444400..../..000300003000../..000000000000../..000000000000..',
+      c: '......0000....../....00444400..../...0442222440.../..044222225440../..045222255240../.04255500555240./.04255060022240./.04222000022240./.04222200222240./..042225552240../..044225552440../...0442222440.../....00444400..../..000300003000../..000000000000../..000000000000..'
+    } },
+    /* fx_wind: from Astra (fx/fx_wind.png) */
+    fx_wind: { w: 16, h: 48, frames: {
+      wind_0: '................/................/................/................/................/.3............../.3....040......./.3...04640....../.3..0460640...../.3.046000640..../..04600.00640.../...000...000..../....0.....0...3./..............3./..............3./..............3./..............3./................/................/................/................/................/......040......./.....04640....../....0460640...../...046000640..../..04600.00640.../...000...000..../....0.....0...../................/................/................/................/................/................/................/................/................/......040......./.....04640....../....0460640...../...046000640..../..04600.00640.../...000...000..../....0.....0...../................/................/................',
+      wind_1: '................/................/......040......./.....04640....../....0460640...../...046000640..../..04600.00640.../...000...000..../....0.....0...../................/................/................/................/................/................/................/.3............../.3............../.3....040......./.3...04640....../.3..0460640...../...046000640..../..04600.00640.../...000...000..3./....0.....0...3./..............3./..............3./..............3./................/................/................/................/................/................/......040......./.....04640....../....0460640...../...046000640..../..04600.00640.../...000...000..../....0.....0...../................/................/................/................/................/................/................',
+      wind_2: '................/................/................/................/................/................/................/................/................/................/................/................/................/................/......040......./.....04640....../....0460640...../...046000640..../..04600.00640.../...000...000..../....0.....0...../................/................/................/................/................/................/.3............../.3............../.3............../.3....040......./.3...04640....../....0460640...../...046000640..../..04600.00640.3./...000...000..3./....0.....0...3./..............3./..............3./................/................/................/................/................/................/................/................/................',
+      wind_3: '................/................/................/................/................/................/................/................/................/..............3./......040.....3./.....04640....3./....0460640...3./...046000640..3./..04600.00640.../...000...000..../....0.....0...../................/................/................/................/................/................/................/................/................/......040......./.....04640....../....0460640...../...046000640..../..04600.00640.../...000...000..../....0.....0...../................/................/................/................/................/.3............../.3............../.3............../.3............../.3............../................/................/................/................/................'
     } }
   };
   /* SPRITES END */
@@ -7006,6 +7109,19 @@ body.sb-modal .lwfb-fab { display: none !important; }
       ctx.globalAlpha = PHOTO_ALPHA; ctx.drawImage(layer, 0, cam, K.WORLD_W, vH, 0, 0, K.WORLD_W, vH); ctx.globalAlpha = 1;
     }
     guardFx(s);
+    /* m2 step 4: the set pieces: the film strip where the sim has it this step (a, b at 4 fps), the fan (a, b, c at 12
+       fps while it blows, still a while off) and its wind column over it (8 fps, only while on); reduced motion still frames */
+    if (lv.pieces) for (var spi = 0; spi < lv.pieces.length; spi++) {
+      var sp4 = lv.pieces[spi], rm4 = R.reduced();
+      if (sp4.kind === 'strip') spr(ctx, 'film_strip.' + (rm4 || !((s.frame * 4 / SB.TUNING.STEP_HZ | 0) & 1) ? 'a' : 'b'), SB.pieceAt.stripX(sp4, s.frame) >> 8, sp4.row * C - cam);
+      else if (sp4.kind === 'fan') {
+        var fxp = (sp4.cell % lv.w) * C, fyp = Math.floor(sp4.cell / lv.w) * C - cam, on4 = SB.pieceAt.fanOn(sp4, s.frame);
+        if (on4) spr(ctx, 'fx_wind.wind_' + (rm4 ? 0 : (s.frame * 8 / SB.TUNING.STEP_HZ | 0) & 3), fxp, fyp - 48);
+        /* the blades telegraph the next gust: a slow turn (4 fps) in the last half second before it blows */
+        var cyc4 = 2 * SB.TUNING.FAN_ON_F, tt4 = ((s.frame + (sp4.phase | 0)) % cyc4 + cyc4) % cyc4, warn4 = !on4 && tt4 >= cyc4 - 30;
+        spr(ctx, 'fan.' + (rm4 ? 'a' : on4 ? 'abc'.charAt((s.frame * 12 / SB.TUNING.STEP_HZ | 0) % 3) : warn4 ? 'abc'.charAt((s.frame * 4 / SB.TUNING.STEP_HZ | 0) % 3) : 'a'), fxp, fyp);
+      }
+    }
     /* m2 step 3: the tripod on the first landing (bottom centred on its cell's floor): unlit, then flash0 and flash1 at 12
        fps once lit, then lit; reduced motion lit at once */
     if (s.cp) {
@@ -10114,7 +10230,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=25').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=26').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.

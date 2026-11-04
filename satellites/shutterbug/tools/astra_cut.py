@@ -38,6 +38,8 @@ NEW_KEYS = {
     # step 3: the landings' ledge by biome, the tripod checkpoint, the key's glint
     'ledge': (16, 8, ['attic', 'frost', 'deep', 'overgrowth', 'ember']), 'tripod': (16, 32, ['unlit', 'lit', 'flash0', 'flash1']),
     'key_glint': (16, 16, ['glint_0', 'glint_1', 'glint_2', 'glint_3']),
+    # step 4: the set pieces (fx_wind is an effect under FX_SHAPES)
+    'film_strip': (48, 8, ['a', 'b']), 'fan': (16, 16, ['a', 'b', 'c']),
 }
 # ART2: an effect strip, fx_<name>, is named frames: square, 32 or 48 a side, each frame <clip>_<n> with every clip's n
 # running 0, 1, 2 ... in order (Astra's manifest clips); Sun is the hero's and never an effect's

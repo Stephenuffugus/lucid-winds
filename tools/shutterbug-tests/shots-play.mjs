@@ -5,7 +5,7 @@
  * THEN OPEN THE IMAGES AND LOOK.
  *
  *   node tools/shutterbug-tests/shots-play.mjs <outdir> <name>:<step> [<name>:<step> ...] [--sizes=412x915,360x780]
- *        [--query=fit=crop] [--strip=R,A] [--dpr=2.625] [--zoom]   (--zoom: the Zoom close setting on, m2 step 2; --strip: after stepping, hold those strip controls with real
+ *        [--query=fit=crop] [--strip=R,A] [--dpr=2.625] [--zoom] [--played]   (--zoom: the Zoom close setting on, m2 step 2; --played: not the first room, m2 step 4; --strip: after stepping, hold those strip controls with real
  *        touches, R and L a thumb on the stick slid 20 px that way; --dpr: the device pixel ratio, 3 by default, 2.625 for a Pixel 9)
  * Serve the repo root first: (cd /workspaces/lucid-winds && python3 -m http.server 8777 >/dev/null 2>&1 &) */
 import { createRequire } from 'node:module';
@@ -20,7 +20,7 @@ const sizes = ((args.find(a => a.startsWith('--sizes=')) || '--sizes=412x915,360
 const query = (args.find(a => a.startsWith('--query=')) || '').slice(8);
 const strip = (args.find(a => a.startsWith('--strip=')) || '').slice(8).split(',').filter(Boolean);
 const dpr = Number((args.find(a => a.startsWith('--dpr=')) || '--dpr=3').slice(6));
-const zoom = args.includes('--zoom');
+const zoom = args.includes('--zoom'), played = args.includes('--played');   /* --played: not the player's first room (its plain rules have no set pieces) */
 const climb = JSON.parse(readFileSync('/workspaces/lucid-winds/satellites/shutterbug/test/climb-sample-room.json', 'utf8'));
 const KEYS = { 1: 'ArrowLeft', 2: 'ArrowRight', 4: 'KeyZ' };
 mkdirSync(out, { recursive: true });
@@ -41,6 +41,7 @@ try {
       /* the reveal's clock stands still while the loop is held, so a held climb never left it: skip it (m2 step 2) */
       await page.evaluate(() => window.SB_DEV.revealSkip && window.SB_DEV.revealSkip(true));
       if (zoom) await page.evaluate(() => { window.SB.save.doc.settings.zoom = true; });
+      if (played) await page.evaluate(() => { window.SB.ui.firstRoomDone = true; });
       const r = await page.evaluate(() => { const b = document.getElementById('sample').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
       await page.touchscreen.tap(r.x, r.y);
       let done = 0, down = 0;
