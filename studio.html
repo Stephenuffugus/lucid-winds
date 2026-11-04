@@ -24,7 +24,12 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .gs-logo span{color:var(--sage)}
 
 /* Transport */
-.gs-transport{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(16,20,14,.8);border-bottom:1px solid rgba(112,134,102,.08);flex-wrap:wrap}
+.gs-transport{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:48px 48px;gap:8px;padding:8px 12px;background:rgba(16,20,14,.92);border-bottom:1px solid var(--divider)}
+.gs-transport .gs-btn{width:100%;padding:8px 4px;min-width:0}
+.gs-transport .gs-bpm{grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:10px}
+.gs-transport .gs-bpm input[type=range]{flex:1;width:auto}
+.gs-transport .gs-bpm span{font-size:.8rem}
+.gs-transport .gs-bpm strong{font-size:.95rem;min-width:36px;text-align:right}
 .gs-btn{background:var(--panel);border:1.5px solid var(--line);color:var(--cream);font-family:'DM Mono',monospace;font-size:clamp(.8rem,2.2vw,.9rem);padding:10px 14px;border-radius:12px;cursor:pointer;min-height:48px;min-width:48px;display:inline-flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent;transition:background .08s,border-color .08s,transform .08s}
 .gs-btn:hover{background:rgba(42,48,37,.9);border-color:rgba(143,199,118,.35)}
 .gs-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -34,35 +39,58 @@ html,body{background:var(--bg);color:var(--cream);font-family:'DM Mono',monospac
 .gs-btn.stop{border-color:#e88686;color:#e88686}
 .gs-btn.accent-on{border-color:var(--gold);color:var(--gold);background:rgba(214,184,92,.12)}
 .gs-bpm{display:flex;align-items:center;gap:4px}
-.gs-bpm input[type=range]{width:90px;accent-color:var(--sage);height:28px}
-.gs-bpm span{font-size:.7rem;color:var(--muted);min-width:20px}
+.gs-bpm input[type=range]{width:120px;accent-color:var(--sage)}
+.gs-bpm span{font-size:.75rem;color:var(--muted);min-width:20px}
 .gs-bpm strong{font-size:.75rem;color:var(--cream);min-width:28px}
-input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
-input[type=range]::-webkit-slider-runnable-track{height:6px;background:rgba(143,199,118,.15);border-radius:3px;border:1px solid var(--border)}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--sage);border:2px solid var(--dark);margin-top:-8px;box-shadow:0 0 6px rgba(143,199,118,.3)}
-input[type=range]::-moz-range-track{height:6px;background:rgba(143,199,118,.15);border-radius:3px;border:1px solid var(--border)}
-input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--sage);border:2px solid var(--dark);box-shadow:0 0 6px rgba(143,199,118,.3)}
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer;height:48px;touch-action:pan-y}
+input[type=range]::-webkit-slider-runnable-track{height:6px;background:var(--line);border-radius:3px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--sage);border:2px solid var(--bg);margin-top:-9px}
+input[type=range]::-moz-range-track{height:6px;background:var(--line);border-radius:3px}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--sage);border:2px solid var(--bg)}
 input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
 /* Section tabs */
-.gs-sections{display:flex;gap:4px;padding:8px 12px;background:rgba(13,16,12,.4);border-bottom:1px solid rgba(112,134,102,.06);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.gs-sec{font-family:'Bebas Neue',sans-serif;font-size:clamp(.85rem,2.5vw,1rem);padding:8px 16px;border-radius:6px;cursor:pointer;border:1.5px solid rgba(112,134,102,.15);color:var(--muted);letter-spacing:.06em;transition:all .15s;min-height:48px;display:flex;align-items:center}
-.gs-sec:hover{background:rgba(42,48,37,.3);border-color:rgba(112,134,102,.3)}
-.gs-sec.active{border-color:var(--gold);color:var(--gold);background:rgba(214,184,92,.06)}
-.gs-sec.sec-A{border-left:3px solid #8fc776}.gs-sec.sec-A.active{border-color:#8fc776;color:#8fc776;background:rgba(143,199,118,.08)}
-.gs-sec.sec-B{border-left:3px solid #d6b85c}.gs-sec.sec-B.active{border-color:#d6b85c;color:#d6b85c;background:rgba(214,184,92,.08)}
-.gs-sec.sec-C{border-left:3px solid #a0c4e8}.gs-sec.sec-C.active{border-color:#a0c4e8;color:#a0c4e8;background:rgba(160,196,232,.08)}
-.gs-sec-var{font-size:.65rem;opacity:.6;margin-left:2px}
+.gs-sections{display:flex;gap:8px;padding:8px 12px;background:rgba(13,16,12,.4);border-bottom:1px solid rgba(112,134,102,.06);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.gs-sec{background:var(--panel);font-family:'Bebas Neue',sans-serif;font-size:1.05rem;padding:8px 14px;border-radius:12px;cursor:pointer;border:1.5px solid var(--divider);color:var(--cream);letter-spacing:.06em;min-height:48px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;flex:none;transition:border-color .08s}
+.gs-sec:hover{border-color:var(--line)}
+.gs-sec-var{font-family:'DM Mono',monospace;font-size:.75rem;letter-spacing:0;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px}
+.gs-sec.sec-A .gs-sec-var{text-decoration-color:var(--sage);text-decoration-style:solid}
+.gs-sec.sec-B .gs-sec-var{text-decoration-color:var(--gold);text-decoration-style:double}
+.gs-sec.sec-C .gs-sec-var{text-decoration-color:var(--chords);text-decoration-style:dotted}
+.gs-sec.active{border-width:2px}
+.gs-sec.sec-A.active{border-color:var(--sage);color:var(--sage)}
+.gs-sec.sec-B.active{border-color:var(--gold);color:var(--gold)}
+.gs-sec.sec-C.active{border-color:var(--chords);color:var(--chords)}
+.gs-sec.gs-sec-add{border-style:dashed;color:var(--muted);font-family:'DM Mono',monospace;font-size:.8rem;letter-spacing:0;gap:4px}
 
 /* Layer strip */
 #gs-layers{position:relative;isolation:isolate}
 #gs-layers::before{content:"";position:absolute;inset:0;background:url(assets/games/song/slate_surface.png) repeat;background-size:256px 256px;opacity:.24;pointer-events:none;z-index:-1}
 .gs-layer{border-bottom:1px solid rgba(112,134,102,.06);transition:all .2s}
-.gs-layer-head{display:flex;align-items:center;gap:6px;padding:6px 10px;cursor:pointer;background:rgba(16,20,14,.4);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%);mask-image:linear-gradient(90deg,#000 0,#000 calc(100% - 28px),transparent 100%)}
-.gs-layer-head::-webkit-scrollbar{display:none}
-.gs-layer-head>*{flex:none}
-.gs-layer-head:active{background:rgba(16,20,14,.7)}
-.gs-layer-name{font-family:'Bebas Neue',sans-serif;font-size:.75rem;letter-spacing:.06em;flex:1}
+.gs-layer-head{display:flex;align-items:center;gap:10px;min-height:64px;padding:8px 8px 8px 12px;cursor:pointer;background:rgba(26,33,25,.7)}
+.gs-layer-head:active{background:rgba(26,33,25,.9)}
+.gs-lane-badge{width:32px;height:32px;flex:none}
+.gs-layer-text{flex:1 1 auto;min-width:0}
+.gs-layer-name{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.06em;line-height:1.1}
+.gs-layer-sub{font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gs-lane-exp{width:48px;height:48px;flex:none;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);color:var(--cream);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.gs-layer-body{display:none}
+.gs-layer.expanded .gs-layer-body{display:block}
+.gs-layer-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px;background:rgba(13,16,12,.6)}
+.gs-vol{display:flex;align-items:center;gap:8px;flex:1 1 150px;min-width:150px;font-size:.75rem;color:var(--muted)}
+.gs-vol input{flex:1;min-width:80px}
+.gs-oct{font-size:.8rem;color:var(--muted);min-width:44px;text-align:center}
+.gs-inst{flex:1 1 200px;max-width:100%;font-size:.8rem!important;padding-right:28px!important}
+.gs-lane-row{padding:8px 12px;background:rgba(8,10,6,.9)}
+.gs-shape{border-top:1px solid var(--divider);background:rgba(13,16,12,.6)}
+.gs-shape summary{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 12px;cursor:pointer;font-size:.85rem;color:var(--cream);list-style:none}
+.gs-shape summary::-webkit-details-marker{display:none}
+.gs-shape summary .gs-shape-state{margin-left:auto;font-size:.75rem;color:var(--muted)}
+.gs-fx-row{display:flex;flex-wrap:wrap;align-items:center;gap:0 14px;padding:4px 12px 10px;font-size:.75rem;color:var(--muted)}
+.gs-fx-h{flex:1 1 100%;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.06em;color:var(--cream);padding-top:4px}
+.gs-fx{display:flex;align-items:center;gap:8px;flex:1 1 150px;min-width:150px}
+.gs-fx>span{min-width:52px}
+.gs-fx input{flex:1;min-width:70px}
 .gs-layer.ly-drums .gs-layer-name{color:#e99a62}
 .gs-layer.ly-bass .gs-layer-name{color:#e88686}
 .gs-layer.ly-chords .gs-layer-name{color:#a0c4e8}
@@ -78,14 +106,13 @@ input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px
 .ly-bass .gs-layer-mini div.on{background:#e88686}
 .ly-chords .gs-layer-mini div.on{background:#a0c4e8}
 .ly-melody .gs-layer-mini div.on{background:#d6b85c}
-.gs-mute,.gs-solo{background:transparent;font-size:clamp(.65rem,1.8vw,.8rem);padding:8px 12px;border-radius:6px;cursor:pointer;border:1px solid rgba(112,134,102,.15);color:var(--muted);font-family:'DM Mono',monospace;min-height:48px;min-width:48px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.gs-mute,.gs-solo{background:var(--panel);font-size:.8rem;padding:8px 12px;border-radius:12px;cursor:pointer;border:1.5px solid var(--line);color:var(--cream);font-family:'DM Mono',monospace;min-height:48px;min-width:48px;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:background .08s}
 .gs-mute:hover,.gs-solo:hover{background:rgba(42,48,37,.4)}
-.gs-mute.on{border-color:#e88686;color:#e88686;background:rgba(232,134,134,.08)}
-.gs-solo.on{border-color:var(--gold);color:var(--gold);background:rgba(214,184,92,.08)}
+.gs-mute.on{border-color:var(--bass);color:var(--bg);background:var(--bass)}
+.gs-solo.on{border-color:var(--gold);color:var(--bg);background:var(--gold)}
 
 /* Expanded layer grid */
-.gs-grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:rgba(8,10,6,.9);padding:4px;display:none}
-.gs-layer.expanded .gs-grid-wrap{display:block}
+.gs-grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;background:rgba(8,10,6,.92);padding:4px;display:block}
 .gs-grid{display:grid;gap:2px}
 .gs-grid-row{display:contents}
 .gs-cell{border-radius:3px;cursor:pointer;transition:background .08s,transform .08s;border:1px solid var(--divider);min-height:0}
@@ -105,18 +132,18 @@ input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px
 .gs-cell.note-head{border-top-right-radius:0;border-bottom-right-radius:0}
 .gs-cell.note-end{border-top-left-radius:0;border-bottom-left-radius:0;border-radius:0 3px 3px 0}
 .gs-cell.playhead{box-shadow:inset 0 0 0 2px var(--sage)}
-.gs-label{font-size:.65rem;color:var(--muted);font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;white-space:nowrap}
+.gs-label{font-size:.7rem;color:var(--muted);overflow:hidden;font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:flex-end;padding-right:4px;white-space:nowrap}
 
 /* Arrangement */
 .gs-arr{display:flex;gap:6px;padding:10px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;background:rgba(13,16,12,.3);border-top:1px solid rgba(112,134,102,.08);min-height:64px;align-items:center}
-.gs-arr-block{font-family:'Bebas Neue',sans-serif;font-size:clamp(.75rem,2.2vw,.9rem);padding:10px 14px;border-radius:6px;border:1.5px solid rgba(112,134,102,.2);color:var(--cream);cursor:pointer;white-space:nowrap;min-width:48px;min-height:48px;text-align:center;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.gs-arr-block{background:var(--panel);font-family:'Bebas Neue',sans-serif;font-size:1rem;padding:10px 14px;border-radius:12px;gap:4px;border:1.5px solid rgba(112,134,102,.2);color:var(--cream);cursor:pointer;white-space:nowrap;min-width:48px;min-height:48px;text-align:center;transition:all .15s;display:flex;align-items:center;justify-content:center}
 .gs-arr-block:hover{background:rgba(42,48,37,.3);border-color:rgba(112,134,102,.4)}
 .gs-arr-block.playing{box-shadow:0 0 10px rgba(143,199,118,.3)}
 .gs-arr-block.sec-A{border-color:rgba(143,199,118,.4);color:#8fc776}
 .gs-arr-block.sec-B{border-color:rgba(214,184,92,.4);color:#d6b85c}
 .gs-arr-block.sec-C{border-color:rgba(160,196,232,.4);color:#a0c4e8}
 .gs-arr-add{border-style:dashed;color:var(--muted);gap:6px;font-family:'DM Mono',monospace!important;font-size:.8rem!important;background:none}
-.gs-arr-del{background:none;border:none;color:var(--muted);min-width:44px;min-height:44px;margin:-8px -10px -8px 2px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.gs-arr-del{background:none;border:none;color:var(--muted);min-width:48px;min-height:48px;margin:-10px -12px -10px 0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .gs-arr-del .gs-ic{width:18px;height:18px}
 
 /* Sampler Panel */
@@ -143,9 +170,9 @@ input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px
 .gs-euclid.open{display:block}
 .gs-euclid h3{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--sage);letter-spacing:.08em;margin-bottom:8px}
 .gs-euclid .row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
-.gs-euclid .row label{font-size:.7rem;color:var(--muted);min-width:45px}
+.gs-euclid .row label{font-size:.8rem;color:var(--muted);min-width:52px}
 .gs-euclid .row strong{font-size:.75rem;color:var(--cream);min-width:22px;text-align:center}
-.gs-euclid .row input[type=range]{flex:1;max-width:180px;accent-color:var(--sage);height:28px}
+.gs-euclid .row input[type=range]{flex:1;max-width:220px;accent-color:var(--sage)}
 .gs-euclid .preview{display:flex;gap:3px;margin:10px 0;flex-wrap:wrap}
 .gs-euclid .preview div{width:22px;height:22px;border-radius:4px;background:var(--cell);border:1px solid var(--divider)}
 .gs-euclid .preview div.hit{background:var(--cell-on);border-color:var(--sage);box-shadow:0 0 6px rgba(143,199,118,.3)}
@@ -206,17 +233,18 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
 .gs-song-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(26,33,25,.6);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;min-height:48px}
 .gs-song-row .sn-name{flex:1;color:var(--cream);font-size:.75rem;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gs-song-row .sn-date{font-size:.6rem;color:var(--muted)}
-.gs-song-row button{min-height:40px}
+.gs-song-row button{min-height:48px}
 /* Keys jam panel */
 .gs-keys{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(8,10,6,.97);z-index:90;padding:12px;border-top:2px solid var(--gold);border-radius:12px 12px 0 0;max-height:75vh;overflow-y:auto}
 .gs-keys.open{display:block}
 .gs-keys h3{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--gold);letter-spacing:.08em}
-.gs-pad-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px}
+.gs-pad-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:10px;padding-bottom:4px}
+.gs-pad-grid{display:grid;grid-template-columns:repeat(7,minmax(48px,1fr));gap:5px;min-width:360px}
 .gs-pad{min-height:52px;border-radius:8px;border:1.5px solid var(--border);background:rgba(26,33,25,.8);color:var(--cream);font-family:'DM Mono',monospace;font-size:.7rem;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none;transition:background .08s,border-color .08s}
 .gs-pad.hi{background:rgba(214,184,92,.12)}
 .gs-pad.lit{background:rgba(143,199,118,.85);border-color:var(--sage);color:#0d100c}
 /* Layer tool chips (dice, chord brush) */
-.gs-chip{background:transparent;font-size:.7rem;padding:6px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(112,134,102,.15);color:var(--muted);font-family:'DM Mono',monospace;min-height:36px;min-width:36px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.gs-chip{background:transparent;font-size:.7rem;padding:6px 10px;border-radius:6px;cursor:pointer;border:1px solid rgba(112,134,102,.15);color:var(--muted);font-family:'DM Mono',monospace;min-height:48px;min-width:48px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .gs-chip:hover{background:rgba(42,48,37,.4);border-color:rgba(143,199,118,.3)}
 .gs-chip.on{border-color:#d6b85c;color:#d6b85c;background:rgba(214,184,92,.08)}
 .gs-inst-loading{font-size:.6rem;color:var(--gold);padding:2px 10px;display:none}
@@ -247,14 +275,11 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
   .gs-starter-grid{grid-template-columns:repeat(2,1fr)}
   .gs-pad-grid{gap:4px}
   .gs-pad{min-height:48px;font-size:.62rem}
-  .gs-transport{gap:4px;padding:6px 8px}
-  .gs-btn{padding:8px 10px;font-size:clamp(.65rem,2vw,.8rem)}
+  .gs-btn{padding:8px 10px;font-size:clamp(.75rem,2.4vw,.85rem)}
+  .gs-transport{padding:8px 10px;gap:6px}
+  .gs-transport .gs-btn{padding:8px 2px;gap:4px}
   .gs-bpm{flex-wrap:nowrap}
-  .gs-bpm input[type=range]{width:70px}
-  .gs-sections{gap:2px;padding:6px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .gs-sec{padding:6px 10px;font-size:clamp(.75rem,2.2vw,.9rem);white-space:nowrap}
-  .gs-layer-head{padding:8px 10px}
-  .gs-layer-name{font-size:.8rem}
+  .gs-sections{gap:6px;padding:8px 10px}
   .gs-arr{gap:4px;padding:8px}
   .gs-circle{padding:10px}
   .gs-sampler{padding:10px}
@@ -483,7 +508,7 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
   <div class="gs-credit">Instruments: FluidR3 General MIDI soundfont, CC BY 3.0, streamed from jsDelivr</div>
 </div>
 <div class="gs-sections" id="gs-sections"></div>
-<div id="gs-sec-indicator" style="padding:6px 12px;font-size:.7rem;font-family:Bebas Neue,sans-serif;letter-spacing:.08em"></div>
+<div id="gs-sec-indicator" style="padding:6px 12px;font-size:.95rem;font-family:Bebas Neue,sans-serif;letter-spacing:.08em"></div>
 <div id="gs-layers"></div>
 <div class="gs-arr" id="gs-arr"></div>
 
@@ -608,7 +633,7 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
     </div>
   </div>
   <div style="font-size:.65rem;color:var(--muted);margin-top:4px">Tap pads to jam along. Turn on Record while playing and your taps land in the grid.</div>
-  <div class="gs-pad-grid" id="gs-pad-grid"></div>
+  <div class="gs-pad-scroll"><div class="gs-pad-grid" id="gs-pad-grid"></div></div>
 </div>
 
 <div class="gs-show" id="gs-show">
@@ -1896,11 +1921,11 @@ var GS = (function(){
       var k = keys[i], sec = song.sections[k];
       for(var v=0;v<sec.vars.length;v++){
         var isActive = k===currentSection && v===currentVar;
-        html += '<div class="gs-sec sec-'+k+(isActive?' active':'')+'" onclick="GS.selectSection(\''+k+'\','+v+')">'
-          +k+(v+1)+'<span class="gs-sec-var"> '+sec.name+'</span></div>';
+        html += '<button class="gs-sec sec-'+k+(isActive?' active':'')+'"'+(isActive?' aria-current="true"':'')+' onclick="GS.selectSection(\''+k+'\','+v+')">'
+          +k+(v+1)+'<span class="gs-sec-var">'+sec.name+'</span></button>';
       }
       if(sec.vars.length < 5){
-        html += '<div class="gs-sec" onclick="GS.addVar(\''+k+'\')" style="border-style:dashed;color:var(--muted)">+'+k+'</div>';
+        html += '<button class="gs-sec gs-sec-add" aria-label="Add a variation of '+k+' '+sec.name+'" onclick="GS.addVar(\''+k+'\')">'+ic('add')+k+'</button>';
       }
     }
     el.innerHTML = html;
@@ -1908,9 +1933,19 @@ var GS = (function(){
     var colors={A:'#8fc776',B:'#d6b85c',C:'#a0c4e8'};
     var names={A:'Verse',B:'Chorus',C:'Bridge'};
     var ind=document.getElementById('gs-sec-indicator');
-    if(ind){ind.style.color=colors[currentSection]||'var(--cream)';ind.style.borderLeft='3px solid '+(colors[currentSection]||'var(--muted)');ind.textContent='Editing: '+currentSection+(currentVar+1)+': '+(names[currentSection]||'');}
+    if(ind){ind.style.color=colors[currentSection]||'var(--cream)';ind.style.borderLeft='3px solid '+(colors[currentSection]||'var(--muted)');ind.textContent='Editing '+currentSection+(currentVar+1)+', '+(names[currentSection]||'');}
   }
 
+  var KIT_LABELS = {'Lo-Fi':'Lo Fi'};
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+  function laneSound(lt, ld){
+    if(lt.type==='drum') return (KIT_LABELS[currentKit]||currentKit)+' kit';
+    var p = (ld && ld.preset) || '';
+    if(p.indexOf('inst:')===0) return INST_NAMES[p.substring(5)] || p.substring(5);
+    if(p.indexOf('smp:')===0) return 'Sample: '+p.substring(4);
+    return p || 'Synth';
+  }
+  var shapeOpen = {};
   function renderLayers(){
     var el = document.getElementById('gs-layers');
     var v = getCurrentVar();
@@ -1945,22 +1980,30 @@ var GS = (function(){
         miniHtml += '<div'+(hasNote?' class="on"':'')+'></div>';
       }
 
+      var sound = laneSound(lt, ld);
+      var status = (ld.mute?' · Muted':'')+(ld.solo?' · Solo':'');
+      var vol = ld.vol!==undefined?ld.vol:80;
       html += '<div class="gs-layer ly-'+lt.id+(isExp?' expanded':'')+'">'
         +'<div class="gs-layer-head" onclick="GS.expandLayer(\''+lt.id+'\')">'
-        +'<div class="gs-layer-name">'+lt.name+(lt.type==='note'?' <span style="font-size:.65rem;color:var(--muted);font-family:DM Mono,monospace">Oct '+lt.octave+'</span>':'')+'</div>'
-        +'<button class="gs-chip" title="Roll a fresh idea" aria-label="Roll a fresh '+lt.name+' idea" onclick="event.stopPropagation();GS.diceLayer(\''+lt.id+'\')">'+ic('dice')+'</button>'
-        +(lt.id==='chords'?'<div class="gs-chip'+(chordMode?' on':'')+'" title="One tap places a full chord" onclick="event.stopPropagation();GS.toggleChordMode()" aria-label="Full chords: one tap places a chord">'+ic('key_scale')+'</div>':'')
-        +(lt.type==='note'?'<div style="display:flex;gap:2px" onclick="event.stopPropagation()"><button class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',-1)" aria-label="Octave down">'+ic('octave_down')+'</button><button class="gs-mute" onclick="GS.octShift(\''+lt.id+'\',1)" aria-label="Octave up">'+ic('octave_up')+'</button></div>':'')
-        +(lt.id!=='drums'?'<select class="gs-mute" style="font-size:.7rem;padding:4px 6px;max-width:150px;background:rgba(26,33,25,.8);color:var(--cream);border-radius:4px;min-height:48px" onclick="event.stopPropagation()" onchange="GS.setPreset(\''+lt.id+'\',this.value)">'+getPresetOptions(lt.id)+'</select>':'')
-        +'<div class="gs-layer-mini">'+miniHtml+'</div>'
-        +'<input type="range" min="0" max="100" value="'+(ld.vol!==undefined?ld.vol:80)+'" style="width:40px;accent-color:'+(({drums:'#e99a62',bass:'#e88686',chords:'#a0c4e8',melody:'#d6b85c'})[lt.id]||'var(--sage)')+'" onclick="event.stopPropagation()" oninput="event.stopPropagation();GS.setVol(\''+lt.id+'\',this.value)">'
-        +'<div class="gs-mute'+(ld.mute?' on':'')+'" onclick="event.stopPropagation();GS.toggleMute(\''+lt.id+'\')">M</div>'
-        +'<div class="gs-solo'+(ld.solo?' on':'')+'" onclick="event.stopPropagation();GS.toggleSolo(\''+lt.id+'\')">S</div>'
+        +'<svg class="gs-lane-badge" aria-hidden="true" focusable="false"><use href="#i-lane_'+lt.id+'"></use></svg>'
+        +'<div class="gs-layer-text"><div class="gs-layer-name">'+lt.name+'</div><div class="gs-layer-sub">'+esc(sound)+(lt.type==='note'?' · Oct '+lt.octave:'')+status+'</div></div>'
+        +'<div class="gs-layer-mini" aria-hidden="true">'+miniHtml+'</div>'
+        +'<button class="gs-lane-exp" aria-expanded="'+(isExp?'true':'false')+'" aria-label="'+(isExp?'Close ':'Open ')+lt.name+'" onclick="event.stopPropagation();GS.expandLayer(\''+lt.id+'\')">'+ic(isExp?'collapse':'expand')+'</button>'
+        +'</div>'
+        +'<div class="gs-layer-body">'
+        +'<div class="gs-layer-ctl">'
+        +'<button class="gs-mute'+(ld.mute?' on':'')+'" aria-pressed="'+(ld.mute?'true':'false')+'" onclick="GS.toggleMute(\''+lt.id+'\')">'+ic('mute')+'Mute</button>'
+        +'<button class="gs-solo'+(ld.solo?' on':'')+'" aria-pressed="'+(ld.solo?'true':'false')+'" onclick="GS.toggleSolo(\''+lt.id+'\')">'+ic('solo')+'Solo</button>'
+        +'<label class="gs-vol"><span>Volume</span><input type="range" min="0" max="100" value="'+vol+'" style="accent-color:'+(({drums:'#e99a62',bass:'#e88686',chords:'#a0c4e8',melody:'#d6b85c'})[lt.id]||'var(--sage)')+'" oninput="GS.setVol(\''+lt.id+'\',this.value)"></label>'
+        +'<button class="gs-btn" title="Roll a fresh idea" aria-label="Dice: roll a fresh '+lt.name+' idea" onclick="GS.diceLayer(\''+lt.id+'\')">'+ic('dice')+'Dice</button>'
+        +(lt.id==='chords'?'<button class="gs-btn'+(chordMode?' on':'')+'" aria-pressed="'+(chordMode?'true':'false')+'" title="One tap places a full chord" onclick="GS.toggleChordMode()">'+ic('key_scale')+'Full chords</button>':'')
+        +(lt.type==='note'?'<button class="gs-btn" onclick="GS.octShift(\''+lt.id+'\',-1)" aria-label="Octave down">'+ic('octave_down')+'</button><span class="gs-oct">Oct '+lt.octave+'</span><button class="gs-btn" onclick="GS.octShift(\''+lt.id+'\',1)" aria-label="Octave up">'+ic('octave_up')+'</button>':'')
+        +(lt.id!=='drums'?'<select class="gs-btn gs-inst" aria-label="'+lt.name+' sound" onchange="GS.setPreset(\''+lt.id+'\',this.value)">'+getPresetOptions(lt.id)+'</select>':'')
         +'</div>';
 
       // Expanded grid
       var cs=cellSize();
-      html += '<div class="gs-grid-wrap"><div class="gs-grid" style="grid-template-columns:28px repeat('+STEPS+','+cs+'px)" id="gs-grid-'+lt.id+'">';
+      html += '<div class="gs-grid-wrap"><div class="gs-grid" style="grid-template-columns:60px repeat('+STEPS+','+cs+'px)" id="gs-grid-'+lt.id+'">';
       for(var r=0;r<rows;r++){
         html += '<div class="gs-label" style="height:'+cs+'px">'+labels[r]+'</div>';
         for(var s=0;s<STEPS;s++){
@@ -1985,42 +2028,43 @@ var GS = (function(){
           html += '<div class="'+cls+'" data-l="'+lt.id+'" data-r="'+r+'" data-s="'+s+'" onclick="GS.cellClick(this)" style="height:'+cs+'px;width:'+cs+'px"></div>';
         }
       }
+      html += '</div></div>';
       // Add sample button for drums
       if(lt.type==='drum' && extraDrumRows.length < MAX_EXTRA_DRUMS){
-        html += '<div style="padding:6px 10px"><button class="gs-btn" onclick="GS.addDrumSample()" style="font-size:.7rem;padding:8px 14px">+ Sample Pad ('+extraDrumRows.length+'/'+MAX_EXTRA_DRUMS+')</button></div>';
+        html += '<div class="gs-lane-row"><button class="gs-btn" onclick="GS.addDrumSample()">'+ic('add')+'Sample pad ('+extraDrumRows.length+' of '+MAX_EXTRA_DRUMS+')</button></div>';
       }
       // FX controls below grid
       var fxState = ld.fx || {filter:20000, filterQ:0.7, delay:0, delayFb:0, reverb:0, pan:0};
       var adsrState = ld.adsr || DEFAULT_ADSR;
-      html += '</div>'
-        +'<div style="display:flex;gap:10px;padding:8px 10px;flex-wrap:wrap;font-size:.65rem;color:var(--muted);align-items:center">'
-        +'<span style="color:var(--cream);font-family:Bebas Neue,sans-serif;letter-spacing:.06em">FX</span>'
-        +'<span>Filter</span><input type="range" min="100" max="20000" value="'+fxState.filter+'" style="width:80px" oninput="GS.setFX(\''+lt.id+'\',\'filter\',this.value)">'
-        +'<span>Res</span><input type="range" min="0" max="20" value="'+(fxState.filterQ*10)+'" style="width:60px" oninput="GS.setFX(\''+lt.id+'\',\'filterQ\',this.value/10)">'
-        +'<span>Delay</span><input type="range" min="0" max="80" value="'+(fxState.delay*100)+'" style="width:70px" oninput="GS.setFX(\''+lt.id+'\',\'delay\',this.value/100)">'
-        +'<span>Fb</span><input type="range" min="0" max="80" value="'+(fxState.delayFb*100)+'" style="width:60px" oninput="GS.setFX(\''+lt.id+'\',\'delayFb\',this.value/100)">'
-        +'<span>Reverb</span><input type="range" min="0" max="100" value="'+(fxState.reverb*100)+'" style="width:70px" oninput="GS.setFX(\''+lt.id+'\',\'reverb\',this.value/100)">'
-        +'<span>Pan</span><input type="range" min="-50" max="50" value="'+((fxState.pan||0)*50)+'" style="width:70px" oninput="GS.setFX(\''+lt.id+'\',\'pan\',this.value/50)">'
+      html += '<details class="gs-shape"'+(shapeOpen[lt.id]?' open':'')+' ontoggle="GS.shapeToggle(\''+lt.id+'\',this.open)"><summary>'+ic('filter')+'Shape sound<span class="gs-shape-state">'+(shapeOpen[lt.id]?'Hide':'Show')+'</span></summary>'
+        +'<div class="gs-fx-row">'
+        +'<span class="gs-fx-h">Effects</span>'
+        +'<label class="gs-fx"><span>Filter</span><input type="range" min="100" max="20000" value="'+fxState.filter+'" oninput="GS.setFX(\''+lt.id+'\',\'filter\',this.value)"></label>'
+        +'<label class="gs-fx"><span>Res</span><input type="range" min="0" max="20" value="'+(fxState.filterQ*10)+'" oninput="GS.setFX(\''+lt.id+'\',\'filterQ\',this.value/10)"></label>'
+        +'<label class="gs-fx"><span>Delay</span><input type="range" min="0" max="80" value="'+(fxState.delay*100)+'" oninput="GS.setFX(\''+lt.id+'\',\'delay\',this.value/100)"></label>'
+        +'<label class="gs-fx"><span>Fb</span><input type="range" min="0" max="80" value="'+(fxState.delayFb*100)+'" oninput="GS.setFX(\''+lt.id+'\',\'delayFb\',this.value/100)"></label>'
+        +'<label class="gs-fx"><span>Reverb</span><input type="range" min="0" max="100" value="'+(fxState.reverb*100)+'" oninput="GS.setFX(\''+lt.id+'\',\'reverb\',this.value/100)"></label>'
+        +'<label class="gs-fx"><span>Pan</span><input type="range" min="-50" max="50" value="'+((fxState.pan||0)*50)+'" oninput="GS.setFX(\''+lt.id+'\',\'pan\',this.value/50)"></label>'
         +'</div>'
-        +(lt.type==='note'?'<div style="display:flex;gap:10px;padding:6px 10px;flex-wrap:wrap;font-size:.65rem;color:var(--muted);align-items:center;border-top:1px solid rgba(112,134,102,.06)">'
-        +'<span style="color:var(--gold);font-family:Bebas Neue,sans-serif;letter-spacing:.06em">ADSR</span>'
-        +'<span>Atk</span><input type="range" min="1" max="500" value="'+(adsrState.a*1000)+'" style="width:60px" oninput="GS.setADSR(\''+lt.id+'\',\'a\',this.value/1000)">'
-        +'<span>Dec</span><input type="range" min="10" max="500" value="'+(adsrState.d*1000)+'" style="width:60px" oninput="GS.setADSR(\''+lt.id+'\',\'d\',this.value/1000)">'
-        +'<span>Sus</span><input type="range" min="0" max="100" value="'+(adsrState.s*100)+'" style="width:60px" oninput="GS.setADSR(\''+lt.id+'\',\'s\',this.value/100)">'
-        +'<span>Rel</span><input type="range" min="10" max="1000" value="'+(adsrState.r*1000)+'" style="width:60px" oninput="GS.setADSR(\''+lt.id+'\',\'r\',this.value/1000)">'
+        +(lt.type==='note'?'<div class="gs-fx-row">'
+        +'<span class="gs-fx-h">Envelope</span>'
+        +'<label class="gs-fx"><span>Atk</span><input type="range" min="1" max="500" value="'+(adsrState.a*1000)+'" oninput="GS.setADSR(\''+lt.id+'\',\'a\',this.value/1000)"></label>'
+        +'<label class="gs-fx"><span>Dec</span><input type="range" min="10" max="500" value="'+(adsrState.d*1000)+'" oninput="GS.setADSR(\''+lt.id+'\',\'d\',this.value/1000)"></label>'
+        +'<label class="gs-fx"><span>Sus</span><input type="range" min="0" max="100" value="'+(adsrState.s*100)+'" oninput="GS.setADSR(\''+lt.id+'\',\'s\',this.value/100)"></label>'
+        +'<label class="gs-fx"><span>Rel</span><input type="range" min="10" max="1000" value="'+(adsrState.r*1000)+'" oninput="GS.setADSR(\''+lt.id+'\',\'r\',this.value/1000)"></label>'
         +'</div>':'')
-        +'<div style="display:flex;gap:10px;padding:6px 10px;flex-wrap:wrap;font-size:.65rem;color:var(--muted);align-items:center;border-top:1px solid rgba(112,134,102,.06)">'
-        +'<span style="color:#d6b85c">Prob</span><input type="range" min="1" max="100" value="'+(ld.probability!==undefined?ld.probability:100)+'" style="width:80px;accent-color:#d6b85c" oninput="GS.setProb(\''+lt.id+'\',this.value)"><strong style="font-size:.65rem;color:var(--cream);min-width:28px" id="gs-prob-'+lt.id+'">'+(ld.probability!==undefined?ld.probability:100)+'%</strong>'
-        +'<span style="color:#a0c4e8">Ratchet</span><select style="font-size:.65rem;padding:6px 8px;background:rgba(26,33,25,.8);color:var(--cream);border:1px solid var(--border);border-radius:4px;min-height:36px" onchange="GS.setRatchet(\''+lt.id+'\',this.value)">'
+        +'<div class="gs-fx-row"><span class="gs-fx-h">Feel</span>'
+        +'<label class="gs-fx"><span>Chance</span><input type="range" min="1" max="100" value="'+(ld.probability!==undefined?ld.probability:100)+'" style="accent-color:#d6b85c" oninput="GS.setProb(\''+lt.id+'\',this.value)"><strong style="font-size:.65rem;color:var(--cream);min-width:28px" id="gs-prob-'+lt.id+'">'+(ld.probability!==undefined?ld.probability:100)+'%</strong></label>'
+        +'<label class="gs-fx"><span>Ratchet</span><select class="gs-btn" style="font-size:.8rem;padding-right:28px" onchange="GS.setRatchet(\''+lt.id+'\',this.value)">'
         +'<option value="1"'+(ld.ratchetAll===1||!ld.ratchetAll?' selected':'')+'>1x</option>'
         +'<option value="2"'+(ld.ratchetAll===2?' selected':'')+'>2x</option>'
         +'<option value="3"'+(ld.ratchetAll===3?' selected':'')+'>3x</option>'
         +'<option value="4"'+(ld.ratchetAll===4?' selected':'')+'>4x</option>'
         +'<option value="6"'+(ld.ratchetAll===6?' selected':'')+'>6x</option>'
         +'<option value="8"'+(ld.ratchetAll===8?' selected':'')+'>8x</option>'
-        +'</select>'
+        +'</select></label>'
         +'</div>'
-        +'</div></div>';
+        +'</details></div></div>';
     }
 
     el.innerHTML = html;
@@ -3671,6 +3715,11 @@ var GS = (function(){
       markDirty();
       renderAll();
     },
+    shapeToggle: function(id, open){
+      shapeOpen[id] = !!open;
+      var st = document.querySelector('.ly-'+id+' .gs-shape-state');
+      if(st) st.textContent = open ? 'Hide' : 'Show';
+    },
     expandLayer: function(id){
       expandedLayer = expandedLayer === id ? null : id;
       renderLayers();
@@ -3870,7 +3919,7 @@ var GS = (function(){
     },
     toggleChordMode: function(){
       chordMode = !chordMode;
-      if(chordMode) _toast('Chord brush on: one tap = full chord');
+      if(chordMode) _toast('Full chords on: one tap places a chord');
       renderLayers();
     },
     circleApplyProg: function(idx){

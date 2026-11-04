@@ -5,6 +5,7 @@
 - Step 1 DONE: assets/games/song/ in (starters, tools, frames, slate), the 107 symbol sprite inline in studio.html (rerun: node tools/studio-tests/build-sprite.js), ic() helper, new play icons (192, 512, maskable) and og card.
 - Step 2 DONE: mic allowed on the studio routes only (.htaccess Files blocks, frame allow microphone, ?v=20261104a), honest sample copy and the CC BY 3.0 credit, groove/kit/drum/progression/rhythm names without dashes, no exclamation marks, zoom allowed; check red at 57, all emoji (step 3).
 - Step 3 DONE: wordmark header with Save and New, icons beside every control's text (no emoji left in markup), Astra's colour tokens, slate behind the lanes. Check GREEN. Shots wait for the walk, per Stephen.
+- Step 4 DONE: fixed two row transport, new lane heads (badge, name, sound, open button) with Mute, Solo, Volume, Dice on a second row and effects under Shape sound, section chips marked by underline and border, every control 48 px, Keys scroll at 360. One shot looked at; its three faults fixed.
 
 ## 🎛 4 Nov 04:35 UTC (Fable) MUSIC STUDIO: ASTRA'S PACK IS IN, OPUS BUILDS THE RESKIN OVERNIGHT FROM MUSIC_STUDIO_BUILD_PLAN.md
 - Astra's pack v1 (7.5 MB, 193 assets): vault `astra-music-studio-pack-v1-20261104`, unpacked at /workspaces/music-studio-astra-v1/pack/music-studio-astra-pack-v1/ (not in git), docs in docs/briefs/music-studio/astra-v1/. Blockers it found on the live site: .htaccess sends `microphone=()` (Hum and the Sampler cannot work), false copyright copy, soundfont is CC BY 3.0, targets under 48 px, swallowed save errors.
