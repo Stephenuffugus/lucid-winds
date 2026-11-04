@@ -540,7 +540,7 @@ body.playing #reserve, body:has(#death.on) #reserve { display: none; }
    while it steers, the knob's own chevron the way it reads; no up or down marks */
 #stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; display: none;
   background: var(--stick-pad-idle) 0 0 / 116px 116px no-repeat; image-rendering: pixelated; pointer-events: none; }
-#stick .pad.l, #stick .pad.r { background-image: var(--stick-pad-active); }
+#stick .pad.l, #stick .pad.r, #stick .pad.d { background-image: var(--stick-pad-active); }
 #stick.on .pad { display: block; }
 body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad, body:has(#swap.on) #stick .pad { display: none; }   /* nothing drawn under the cards (STICKR; the swap card since W2R) */
 #stick i { font-style: normal; }
@@ -800,7 +800,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     CHIP_RESERVE_PX: 120 /* the fleet music chip's bottom left box, kept empty by the strip where the chip shows, Q48, Q140 */,
     /* the floating stick (Q140), read by the shell only: FEEL, Stephen's thumbs judge these. From neutral a slide of ON px
        is left or right; back inside OFF px is neutral; past TRAVEL px from the centre the centre follows the thumb */
-    STICK_ON_PX: 12, STICK_OFF_PX: 6, STICK_TRAVEL_PX: 32,
+    STICK_ON_PX: 12, STICK_OFF_PX: 6, STICK_TRAVEL_PX: 32, STICK_DOWN_ON_PX: 28, STICK_DOWN_OFF_PX: 16 /* the pull that reads as down, and where it lets go (4 Nov) */,
     // 5.2 develop reveal, seconds
     REVEAL_HOLD: 0.3, REVEAL_RESOLVE: 0.8, REVEAL_LIGHT: 0.5,
     // 6 pipeline
@@ -972,7 +972,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m1-21';
+  SB.BUILD = 'sb-m1-22';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -3890,7 +3890,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        4. the variable jump: rising from a jump with A released, the climb is capped at JUMP_CUT_V;
        5. gravity to terminal; 6. move x, then y, resolving against solid cells and one way tops;
        7. ground, coyote and buffer bookkeeping; 8. the exit; 9. the frame count. */
-  var IN = { L: 1, R: 2, A: 4, B: 8, A_TAP: 16, B_TAP: 32, CHOICE: 64 /* bits 6..9: CHOICE * n (section 2.6) */ };
+  var IN = { L: 1, R: 2, A: 4, B: 8, A_TAP: 16, B_TAP: 32, CHOICE: 64 /* bits 6..9: CHOICE * n (section 2.6) */, D: 1024 /* bit 10: the stick pulled down; with A on a one way it drops through (4 Nov) */ };
   /* the CHOICE field's values (section 2.6): pick scroll A or B, take or leave a compare's slip */
   var CHOICE = { A: 1, B: 2, TAKE: 3, LEAVE: 4 };
   /* the loot (T1.6) and the stats (DESIGN 9.2): a scroll offers the room's biome's stat and one other (QUESTIONS Q84: by
@@ -4662,6 +4662,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return lv.solid[cy * lv.w + cx] === 1;
   }
   function platAt(lv, cx, cy) { return cx >= 0 && cx < lv.w && cy >= 0 && cy < lv.h && lv.plat[cy * lv.w + cx] === 1; }
+  /* the drop through's ground (4 Nov): the row under the feet of a grounded hero holds no solid in any of its columns
+     and a one way in at least one (a one way's cell is open, so the step below its top is free) */
+  function oneWayUnder(h, lv, K) {
+    var CS = K.CELL_SUB, row = Math.floor((h.y + K.HERO_H_SUB) / CS), cx0 = Math.floor(h.x / CS), cx1 = Math.floor((h.x + K.HERO_W_SUB - 1) / CS), any = false;
+    for (var cx = cx0; cx <= cx1; cx++) { if (solidAt(lv, cx, row)) return false; if (platAt(lv, cx, row)) any = true; }
+    return any;
+  }
   /* the Frost slide (section 3.5, T1.5): a slick cell anywhere in the row under the feet (lv.slick, a subset of the
      one ways; it is empty outside Frost and in the first ever room) */
   function slickUnder(h, lv, K) {
@@ -4789,7 +4796,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
 
     /* 1. the word */
     var dir = ((word & IN.R) ? 1 : 0) - ((word & IN.L) ? 1 : 0);
-    var held = (word & IN.A) ? 1 : 0, pressed = (word & IN.A_TAP) !== 0;
+    var held = (word & IN.A) ? 1 : 0, pressed = (word & IN.A_TAP) !== 0, downHeld = (word & IN.D) !== 0;
     var bHeld = (word & IN.B) ? 1 : 0, bPressed = (word & IN.B_TAP) !== 0;
     /* the counters run down first, so a dash's press step is the first of DASH_FRAMES moving steps and of DASH_IFRAMES
        invulnerable ones, and a dive landing leaves SHAKE_F steps of shake; a dash holds the facing */
@@ -4818,6 +4825,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
       else if (dove || (dir !== 0 && dir === -h.wall)) { h.sticky = 0; h.wall = 0; }   /* B lets go into the dive below: no vine catches a dive */
     } else if (h.wall !== 0 && pressed && !h.ground) {
       wallSide = h.wall; h.vy = -K.WALL_V; h.lock = -h.wall * K.WALL_JUMP_LOCK; h.facing = -h.wall; h.spent = h.wall; h.wall = 0; h.rising = 1; h.coyote = 0; h.buffer = 0; jumped = 1; h.squash = -K.SQUASH_F; s.ev |= EV.WALLJUMP;
+    } else if (pressed && downHeld && h.ground && oneWayUnder(h, lv, K)) {
+      /* the drop through (4 Nov, Stephen's ask): down held and A on a one way (no solid under any column of the feet)
+         puts the feet one sub px below its top, so moveY's catch (prevFeet <= top) never sees that one way again and
+         the hero falls through; no jump, no buffer and no coyote, so a second tap in the fall does nothing */
+      h.y += 1; h.ground = 0; h.coyote = 0; h.buffer = 0;
     } else if ((pressed || h.buffer > 0) && (h.ground || h.coyote > 0)) {
       /* Skyhook (J8, 7.2): a ground, coyote or buffered jump takes J8_JUMP_V (Deep: J8_DEEP_JUMP_V); wall and sticky jumps unchanged */
       var hook = h.slots[0] === WPN_J8;
@@ -7313,8 +7325,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
      the keyboard here and the control strip in T0.8b; sample() builds one word per sim step and clears the edges, so
      a tap shorter than a step is exactly one tap step with held false, and the word is what the recorder keeps. */
   var I = SB.input = {};
-  var down = { L: {}, R: {}, A: {}, B: {} }, edge = { A: 0, B: 0 }, last = 0, rec = [];
-  var KEYS = { ArrowLeft: 'L', ArrowRight: 'R', KeyZ: 'A', Space: 'A', KeyX: 'B' };
+  var down = { L: {}, R: {}, A: {}, B: {}, D: {} }, edge = { A: 0, B: 0 }, last = 0, rec = [];
+  var KEYS = { ArrowLeft: 'L', ArrowRight: 'R', ArrowDown: 'D', KeyZ: 'A', Space: 'A', KeyX: 'B' };
   function isHeld(v) { for (var k in down[v]) if (down[v][k]) return true; return false; }
 
   I.press = function (verb, source) {
@@ -7322,7 +7334,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     down[verb][source] = 1;
   };
   I.release = function (verb, source) { delete down[verb][source]; };
-  I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {} }; edge.A = 0; edge.B = 0; if (I._stripReset) I._stripReset(); };   /* the edges too: a tap banked under a sheet never fires after it (the M1 review) */
+  I.releaseAll = function () { down = { L: {}, R: {}, A: {}, B: {}, D: {} }; edge.A = 0; edge.B = 0; if (I._stripReset) I._stripReset(); };   /* the edges too: a tap banked under a sheet never fires after it (the M1 review) */
 
   /* a choice (T1.6; in M1 the shell's own answer to a sheet, ui.sheets) rides the next word as its CHOICE field, so the
      sim, not the shell, picks (section 2.6) and the recording carries it. The sim holds the world on that word's step
@@ -7332,7 +7344,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   I.choose = function (n) { choicePending = n; };
   I.sample = function () {
     var IN = SB.sim.IN, c = choicePending;
-    var w = (isHeld('L') ? IN.L : 0) | (isHeld('R') ? IN.R : 0) | (isHeld('A') ? IN.A : 0) | (isHeld('B') ? IN.B : 0) |
+    var w = (isHeld('L') ? IN.L : 0) | (isHeld('R') ? IN.R : 0) | (isHeld('A') ? IN.A : 0) | (isHeld('B') ? IN.B : 0) | (isHeld('D') ? IN.D : 0) |
       (c ? c * IN.CHOICE : (edge.A ? IN.A_TAP : 0) | (edge.B ? IN.B_TAP : 0));
     if (!c) { edge.A = 0; edge.B = 0; }
     choicePending = 0; last = w; rec.push(w);
@@ -7348,16 +7360,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
   I.initStrip = function () {
     var stick = document.getElementById('stick'), pad = stick.querySelector('.pad'), knob = stick.querySelector('.knob');
     var stripEl = document.getElementById('strip'), paused = document.getElementById('paused');
-    var T = SB.TUNING, ON = T.STICK_ON_PX, OFF = T.STICK_OFF_PX, TRAVEL = T.STICK_TRAVEL_PX;
+    var T = SB.TUNING, ON = T.STICK_ON_PX, OFF = T.STICK_OFF_PX, TRAVEL = T.STICK_TRAVEL_PX, DOWN_ON = T.STICK_DOWN_ON_PX, DOWN_OFF = T.STICK_DOWN_OFF_PX;
     /* the pointers down on the stick, first first: the first rules it. Each keeps its centre (ox: its landing x, then
        dragged along once the thumb is TRAVEL past it), its x now, and the y it landed at (the pad's row) */
-    var stickPtrs = [], stickAt = {}, stickDir = null;
+    var stickPtrs = [], stickAt = {}, stickDir = null, stickDown = false;
     var follow = function (p) {
       var dx = p.x - p.ox;
       if (dx > TRAVEL) p.ox = p.x - TRAVEL; else if (dx < -TRAVEL) p.ox = p.x + TRAVEL;
     };
     /* ON px of slide from neutral is a direction; a direction holds until the thumb is back inside OFF px (or ON px the
-       other way); the vertical never counts: up and down do nothing (the sim has no up, jump is A and dive is B) */
+       other way); the vertical (4 Nov): a pull of DOWN_ON px below where the thumb landed reads as down, held until it is
+       back inside DOWN_OFF px, and down with A drops through a one way; up does nothing (jump is A and dive is B) */
     var dirOf = function (p, was) {
       var dx = p.x - p.ox;
       if (dx >= ON) return 'R';
@@ -7366,6 +7379,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (was === 'L' && dx <= -OFF) return 'L';
       return null;
     };
+    var downOf = function (p, was) { var dy = p.cy - p.y; return dy >= DOWN_ON || (was && dy >= DOWN_OFF); };
     /* the stick steers only while a room runs: under the pause card and the clear and death cards nothing can move, so
        it reads nothing and draws nothing there (the stick's review: a pad pushed left under "Paused") */
     var live = function () { return document.body.classList.contains('playing') && !paused.classList.contains('on'); };
@@ -7375,6 +7389,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (stickDir) I.release(stickDir, 'stick');
       stickDir = v;
       if (v) I.press(v, 'stick');
+    };
+    var setDown = function (v) {
+      if (!live()) v = false;
+      if (v === stickDown) return;
+      stickDown = v;
+      if (v) I.press('D', 'stick'); else I.release('D', 'stick');
     };
     /* the pad and the knob: drawn only while a thumb rules the stick in a running room, the pad centred on the ruling
        thumb's centre and landing row; kept off the room (its top at the strip's) and off B (its inner side at the
@@ -7389,13 +7409,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var hw = pad.offsetWidth / 2, hh = pad.offsetHeight / 2;
       var cx = mir ? Math.max(s.left + hw, p.ox) : Math.min(s.right - hw, p.ox), cy = Math.max(s.top + hh, p.y);
       pad.style.left = (cx - s.left) + 'px'; pad.style.top = (cy - s.top) + 'px';
-      knob.style.transform = 'translateX(' + Math.max(-TRAVEL, Math.min(TRAVEL, p.x - p.ox)) + 'px)';
-      pad.classList.toggle('l', stickDir === 'L'); pad.classList.toggle('r', stickDir === 'R');
+      knob.style.transform = 'translate(' + Math.max(-TRAVEL, Math.min(TRAVEL, p.x - p.ox)) + 'px,' + Math.max(0, Math.min(TRAVEL, p.cy - p.y)) + 'px)';
+      pad.classList.toggle('l', stickDir === 'L'); pad.classList.toggle('r', stickDir === 'R'); pad.classList.toggle('d', stickDown);
     };
     stick.addEventListener('pointerdown', function (e) {
       e.preventDefault();
       if (e.pointerId in stickAt) return;
-      stickPtrs.push(e.pointerId); stickAt[e.pointerId] = { ox: e.clientX, x: e.clientX, y: e.clientY };
+      stickPtrs.push(e.pointerId); stickAt[e.pointerId] = { ox: e.clientX, x: e.clientX, y: e.clientY, cy: e.clientY };
       try { stick.setPointerCapture(e.pointerId); } catch (err) { /* already captured */ }
       if (stickPtrs[0] === e.pointerId) setDir(dirOf(stickAt[e.pointerId], null));   /* a landing reads nothing; a later thumb waits */
       paint();
@@ -7410,8 +7430,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var pts = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
       if (!pts.length) pts = [e];
       for (var i = 0; i < pts.length; i++) {
-        p.x = pts[i].clientX; follow(p);
-        if (stickPtrs[0] === e.pointerId) setDir(dirOf(p, stickDir));
+        p.x = pts[i].clientX; p.cy = pts[i].clientY; follow(p);
+        if (stickPtrs[0] === e.pointerId) { setDir(dirOf(p, stickDir)); setDown(downOf(p, stickDown)); }
       }
       paint();
     });
@@ -7420,7 +7440,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var k = stickPtrs.indexOf(e.pointerId);
       if (k < 0) return;
       stickPtrs.splice(k, 1); delete stickAt[e.pointerId];
-      if (k === 0) setDir(stickPtrs.length ? dirOf(stickAt[stickPtrs[0]], null) : null);
+      if (k === 0) { setDir(stickPtrs.length ? dirOf(stickAt[stickPtrs[0]], null) : null); setDown(stickPtrs.length ? downOf(stickAt[stickPtrs[0]], false) : false); }
       paint();
     };
     stick.addEventListener('pointerup', endStick);
@@ -9802,7 +9822,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=21').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=22').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.
