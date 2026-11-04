@@ -39,6 +39,7 @@ import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, cur
   from './game/match.js?v=20260905a';
 import { makeRng } from './core/rng.js?v=20260905a';
 import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260905a';
+import { art, loadIcons, ic } from './render/art.js?v=20260905a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -81,6 +82,7 @@ const LAY_WORD = { cross: 'The cross', x: 'The X', ring: 'The ring', bunch: 'The
 /* ------------------------------------------------------------------- boot */
 
 async function boot() {
+  loadIcons();   // Astra's one sprite, fetched once and injected (render/art.js); a miss leaves the labels
   const res = await fetch('src/data/tuning.json?v=20260905a');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
