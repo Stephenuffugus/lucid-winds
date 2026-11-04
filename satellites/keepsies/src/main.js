@@ -78,6 +78,25 @@ const HOUSE_RULES = [
    reading a house rule that had no value until its first tap). A value with no word shows the game's
    own default, which is also what the rules play (core/rules-ringer.js DEFAULT_HOUSE_RULES). */
 const RING_WORD = { 7: 'Seven foot', 10: 'Ten foot', 13: 'Thirteen foot' };
+/* Astra's HUD and tier plates (step 5), as style sheet variables set once at boot through art() */
+const ART_VARS = {
+  '--pip-empty': 'ui/pip_empty.svg', '--pip-lit': 'ui/pip_lit.svg', '--chip': 'ui/player_chip.svg',
+  '--hr-on': 'ui/house_rule_on.svg', '--hr-off': 'ui/house_rule_off.svg', '--voice': 'ui/voice_bubble.svg',
+  '--toast': 'ui/technique_toast.svg', '--result': 'ui/result_card.svg', '--scope': 'ui/minimap_frame.svg',
+  '--ret-a': 'ui/reticle_settling.svg', '--ret-b': 'ui/reticle_settled.svg',
+  '--tier-common': 'ui/tier_common.svg', '--tier-uncommon': 'ui/tier_uncommon.svg', '--tier-rare': 'ui/tier_rare.svg',
+  '--tier-epic': 'ui/tier_epic.svg', '--tier-grail': 'ui/tier_grail.svg'
+};
+/* the house rules' icons (Astra's sprite); the lay has none of its own and carries none */
+const RULE_ICON = { keepsies: 'keeps', slips: 'slips', bombing: 'bombing', poison: 'poison', ringSizeFt: 'ring_size' };
+
+/** A button's label with its icon beside the words (the words stay; the 48 px target is the button). */
+function label(id, icon, text) {
+  const b = $(id);
+  if (!b) return;
+  b.innerHTML = ic(icon) + '<span class="lbl"></span>';
+  b.lastChild.textContent = text;
+}
 const LAY_WORD = { cross: 'The cross', x: 'The X', ring: 'The ring', bunch: 'The bunch' };
 
 /* ------------------------------------------------------------------- boot */
@@ -86,6 +105,8 @@ async function boot() {
   loadIcons();   // Astra's one sprite, fetched once and injected (render/art.js); a miss leaves the labels
   // every plate in the page names its art in data-art; this is the one place its URL is made
   for (const el of document.querySelectorAll('[data-art]')) el.style.backgroundImage = 'url(' + art(el.dataset.art) + ')';
+  // and every plate the style sheet draws (step 5, the HUD and the tiers) is a variable made here
+  for (const k in ART_VARS) document.documentElement.style.setProperty(k, 'url(' + art(ART_VARS[k]) + ')');
   const res = await fetch('src/data/tuning.json?v=20260905a');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
@@ -175,6 +196,12 @@ async function boot() {
   if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (resize(G.stage)) drawNow(); });
 
   wireButtons();
+  for (const [id, icon, text] of [['play', 'play', 'Play'], ['collect', 'your_marbles', 'Your marbles'],
+    ['exitTitle', 'arcade', 'Sky Wolf Studio Arcade'], ['setupGo', 'play', 'Play'], ['setupBack', 'back', 'Back'],
+    ['scopeBtn', 'zoom', 'Zoom'], ['snapHelp', 'the_snap', 'The snap'], ['topDown', 'top_down', 'Top down'],
+    ['pause', 'pause', 'Pause'], ['collBack', 'back', 'Back'], ['inspectBack', 'back', 'Back'],
+    ['again', 'rematch', 'Rematch'], ['toTitle', 'home', 'Home'], ['resume', 'resume', 'Resume'],
+    ['calibSkip', 'lag', 'I have played marbles before']]) label(id, icon, text);
   $('boot').hidden = true;
   paintWallet();
   showScreen('title');
@@ -263,7 +290,7 @@ function wireButtons() {
   });
   $('topDown').addEventListener('click', () => {
     G.topDown = !G.topDown;
-    $('topDown').textContent = G.topDown ? 'Side on' : 'Top down';
+    label('topDown', G.topDown ? 'side_on' : 'top_down', G.topDown ? 'Side on' : 'Top down');
   });
   $('pause').addEventListener('click', () => { G.paused = true; $('pauseCard').hidden = false; });
   $('resume').addEventListener('click', () => { G.paused = false; $('pauseCard').hidden = true; });
@@ -326,12 +353,12 @@ function startCalibration() {
 }
 
 function calibDots(n) {
-  const el = $('calibDots');
-  if (el.childElementCount !== 3) {
-    el.textContent = '';
-    for (let i = 0; i < 3; i++) { const d = document.createElement('span'); d.className = 'sock'; el.appendChild(d); }
-  }
-  for (let i = 0; i < 3; i++) el.children[i].className = 'sock' + (i < n ? ' full' : '');
+  // Astra's four states: none, one, two and three snaps taken (calibration_0 to 3)
+  const el = $('calibDots'), k = Math.max(0, Math.min(3, n | 0));
+  el.textContent = '';
+  el.style.backgroundImage = 'url(' + art('ui/calibration_' + k + '.svg') + ')';
+  el.setAttribute('role', 'img');
+  el.setAttribute('aria-label', k + ' of 3 snaps');
 }
 
 function finishCalibration(result) {
@@ -535,8 +562,8 @@ function openCollection() {
      one moment the game has just given the player everything, and it left them to
      guess. During the onboarding the way out IS the next beat. */
   const b = G.onboard && G.onboard.beat();
-  $('collBack').textContent = (b && b.id === 'firstKeepsies')
-    ? 'Play him for real ones' : 'Back';
+  if (b && b.id === 'firstKeepsies') label('collBack', 'play', 'Play him for real ones');
+  else label('collBack', 'back', 'Back');
 }
 
 /**
@@ -683,7 +710,7 @@ function buildGrid() {
   for (const g of groups) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'tile';
+    b.className = 'tile t-' + g.entry.tier;   // the tier's frame and mark (step 5)
     b.id = 'tile-' + g.entry.id;
     const rib = document.createElement('span');
     rib.className = 'rib ' + g.entry.tier;
@@ -700,6 +727,11 @@ function buildGrid() {
     const nm = document.createElement('span');
     nm.className = 'nm';
     nm.textContent = g.entry.name;
+    // the tier in words too: never by colour alone (the style guide)
+    const tw = document.createElement('span');
+    tw.className = 'tw';
+    tw.textContent = TIER_LABEL[g.entry.tier] || g.entry.tier;
+    nm.appendChild(tw);
     b.appendChild(nm);
     b.addEventListener('click', () => openInspect(g.entry, g.items[0]));
     grid.appendChild(b);
@@ -718,7 +750,9 @@ function openInspect(entry, item) {
   G.inspecting = { entry, item };
   showScreen('inspect');
   const spec = G.turntable.show(entry);
-  $('iTier').textContent = TIER_LABEL[entry.tier] || entry.tier;
+  $('iTier').innerHTML = ic(entry.tier) + '<span></span>';
+  $('iTier').lastChild.textContent = TIER_LABEL[entry.tier] || entry.tier;
+  $('iTier').className = 'ribbon t-' + entry.tier;
   $('iName').textContent = entry.name;
   $('iLore').textContent = entry.lore || '';
   const dl = $('iTraits');
@@ -879,6 +913,7 @@ function buildHouseRules() {
     const label = document.createElement('span');
     const sub = document.createElement('span');
     sub.className = 'sub';
+    if (RULE_ICON[r.key]) { const k = document.createElement('span'); k.className = 'hrIc'; k.innerHTML = ic(RULE_ICON[r.key]); b.appendChild(k); }
     b.appendChild(label); b.appendChild(sub);
     const paint = () => {
       const v = G.houseRules[r.key];
@@ -1160,15 +1195,17 @@ function onBrace(st) {
      and swallowed the thing you are actually looking at. It is scaled from the
      grab radius now, so at a full brace the ring sits just outside your thumb. */
   const px = (t.grabR || t.r * 1.6) * (0.70 + st.coneDeg * 0.16);
+  // Astra's reticle draws its ring at 27 of 96: the box is sized so the ring stands where the drawn one did
+  const S = px * 2 / 0.5625;
   ret.hidden = false;
   // a brace is the player saying they have read it: the guidance line and any toast go the
   // moment a thumb goes down, and come back when it lifts
   $('toast').hidden = true; $('say').hidden = true;
-  ret.style.left = (t.x - px) + 'px';
-  ret.style.top = (t.y - px) + 'px';
-  ret.style.width = ret.style.height = (px * 2) + 'px';
-  ret.style.borderColor = st.settle01 > 0.98 ? 'rgba(200,168,75,.95)' : 'rgba(232,220,200,.55)';
-  ret.style.borderWidth = st.settle01 > 0.98 ? '2px' : '1px';
+  ret.style.left = (t.x - S / 2) + 'px';
+  ret.style.top = (t.y - S / 2) + 'px';
+  ret.style.width = ret.style.height = S + 'px';
+  // settling (her broken ring) until the hold has settled, then settled (the full ring and its tick)
+  ret.classList.toggle('settled', st.settle01 > 0.98);
   // the warming shimmer, while the taw is being rubbed
   if (st.warmed && !G.warming) { G.warming = true; AUDIO.startWarming(); }
   else if (!st.warmed && G.warming) { G.warming = false; AUDIO.stopWarming(); }

@@ -14,7 +14,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SITE = join(ROOT, '..', '..');
 const OUT = join(ROOT, 'docs', 'shots');
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.jpg': 'image/jpeg' };   // Astra's art (an svg served as anything else is never drawn)
 const FLEET = ['/music-unlocks.js', '/music-player.js', '/music-catalog.js', '/music-ladder.json'];
 const server = createServer((req, res) => { const clean = decodeURIComponent(req.url.split('?')[0]); const base = FLEET.indexOf(clean) >= 0 ? SITE : ROOT; const p = join(base, normalize(clean).replace(/^(\.\.[/\\])+/, '')); if (!p.startsWith(base) || !existsSync(p)) { res.writeHead(404); res.end('no'); return; } res.writeHead(200, { 'content-type': MIME[extname(p)] || 'application/octet-stream' }); res.end(readFileSync(p)); });
 await new Promise(r => server.listen(0, '127.0.0.1', r));

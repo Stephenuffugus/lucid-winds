@@ -38,7 +38,8 @@ const DPR = parseFloat(process.argv[4] || '2');
 
 const MIME = {
   '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript',
-  '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp'
+  '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp',
+  '.svg': 'image/svg+xml'   // Astra's art: an svg served as anything else is never drawn
 };
 /* The fleet's music ladder is served from the SITE root, not from the game's
    folder, so a server that only knows this folder 404s it and the gate reports a

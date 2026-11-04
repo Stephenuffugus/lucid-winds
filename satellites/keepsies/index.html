@@ -65,6 +65,54 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
   -webkit-mask-image:linear-gradient(180deg,#000 0,#000 68%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 68%,transparent 100%)}
 #lot.on{opacity:1}
 @media (prefers-reduced-motion:reduce){#lot{transition:none}}
+/* ---- step 5: Astra's HUD and tiers. Every url is a variable main.js sets through art() at boot ---- */
+.ic{width:20px;height:20px;flex:none;vertical-align:-4px;margin-right:7px}
+/* a thumb lands on the BUTTON, never on its words or its drawing (the render gate asks elementFromPoint) */
+button .lbl,button .ic,button .hrIc{pointer-events:none}
+.chip .hrIc .ic{width:18px;height:18px;margin:0 0 2px}
+/* the plates are nine slices of her SVG: the corners keep their radius, the edges stretch */
+.chip{border-style:solid;border-width:1px;border-color:transparent;background:transparent;
+  border-image:var(--hr-off) 24 fill / 10px stretch}
+.chip.on{background:transparent;border-image-source:var(--hr-on)}
+#say{background:transparent;border:1px solid transparent;border-image:var(--voice) 24 fill / 10px stretch}
+#toast{background:var(--toast) center/100% 100% no-repeat;border:0;padding:14px 20px 14px 15%}
+#results .card{background:transparent;border:1px solid transparent;border-image:var(--result) 24 fill / 12px stretch}
+#spyglass{border:1px solid transparent;border-image:var(--scope) 24 / 10px stretch}
+/* the player chips: her chip's frame (its drawn dots stay out of the slices) behind the name and her pips */
+#scores .side{border:1px solid transparent;border-image:var(--chip) 24 20 18 20 / 10px 9px 8px 9px stretch;
+  background:rgba(13,16,12,.94);border-radius:9px;padding:6px 10px 7px;min-width:0}   /* her chip's own fill, so no inner box shows */
+#scores .side.them{padding-right:52px}
+#themFace{right:8px;top:50%;margin-top:-18px}
+.sock{border:0;background:var(--pip-empty) center/100% 100% no-repeat}
+.sock.full{background:var(--pip-lit) center/100% 100% no-repeat;border:0}
+#calibDots{width:180px;height:48px;background-size:100% 100%;background-repeat:no-repeat}
+/* the reticle: settling (her broken ring), then settled (the full ring and its tick) */
+#reticle{border:0 !important;border-radius:0;background:var(--ret-a) center/100% 100% no-repeat}
+#reticle.settled{background-image:var(--ret-b)}
+/* the tiers on every card: her frame and mark over the render, the word under the name */
+.tile::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
+  border:1px solid transparent;border-image:var(--tier-common) 64 32 32 32 / 20px 10px 10px 10px stretch}
+.tile.t-uncommon::after{border-image-source:var(--tier-uncommon)}
+.tile.t-rare::after{border-image-source:var(--tier-rare)}
+.tile.t-epic::after{border-image-source:var(--tier-epic)}
+.tile.t-grail::after{border-image-source:var(--tier-grail)}
+.tile{border-color:transparent}
+.tile .rib{display:none}
+.tile .nm{z-index:3}
+.tile .tw{display:block;font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;opacity:.9}
+.t-common .tw,#iTier.t-common{color:#b9b4a4}
+.t-uncommon .tw,#iTier.t-uncommon{color:#85bda8}
+.t-rare .tw,#iTier.t-rare{color:#91bce1}
+.t-epic .tw,#iTier.t-epic{color:#d7a0d9}
+.t-grail .tw,#iTier.t-grail{color:#e6c56a}
+#iTier .ic{width:16px;height:16px;margin-right:6px;vertical-align:-3px}
+/* the render sits INSIDE her frame (its edges carry her dark fill, which cropped the marble when it lay over it) */
+.tile canvas{position:absolute;left:6px;right:6px;top:15px;bottom:6px;width:auto;height:auto;object-fit:contain}
+.tile .cnt{z-index:3}
+/* the HUD's three buttons keep one line each with their icons */
+#corners button{white-space:nowrap;letter-spacing:.04em;font-size:.74rem;padding-left:8px;padding-right:8px}
+#corners button .ic{width:16px;height:16px;margin-right:5px;vertical-align:-3px}
+#scores #themFace{position:absolute;right:8px;top:50%;width:36px;height:36px;margin-top:-18px}
 #scores{position:absolute;left:0;right:0;top:0;padding:calc(8px + var(--st)) 12px 8px;
   display:flex;justify-content:space-between;align-items:flex-start;
   background:linear-gradient(180deg,rgba(13,16,12,.42),rgba(13,16,12,0) 78%)}
@@ -470,7 +518,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   <div id="lot" aria-hidden="true"></div>
   <div id="scores">
     <div class="side me"><span class="who" id="whoMe">You</span><span class="sockets" id="sockMe"></span></div>
-    <div class="side them"><img id="themFace" class="face chip" alt="" hidden><span class="who" id="whoThem">Dusty</span><span class="sockets" id="sockThem"></span></div>
+    <div class="side them"><img id="themFace" class="face" alt="" hidden><span class="who" id="whoThem">Dusty</span><span class="sockets" id="sockThem"></span></div>
   </div>
   <div id="houseRules">keeps, slips, ten foot</div>
   <div id="say">Drag to place your shooter, then hold it and flick.</div>
