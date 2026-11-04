@@ -146,7 +146,9 @@
   # Lock down browser features — only allow what we use
   Header set Permissions-Policy "geolocation=(self), camera=(), microphone=(), payment=(self)"
   # 2026-11-04: the Music Studio's Hum and Sampler need the microphone, on the studio itself, the arcade shell
-  # (play/song.html) and Lucid Winds (index.html), which frame it. Every other page keeps microphone=().
+  # (play/song.html) and Lucid Winds (index.html), which frame it. <Files> matches by file NAME, so EVERY index.html
+  # on the site (padlab/, satellites/*/) also gets microphone=(self) (checked live 4 Nov); the browser still asks the
+  # player first. Pages with other names keep microphone=().
   <Files "studio.html">
     Header set Permissions-Policy "geolocation=(self), camera=(), microphone=(self), payment=(self)"
   </Files>

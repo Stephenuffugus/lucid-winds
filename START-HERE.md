@@ -1,6 +1,7 @@
 # START HERE
 
 ## 🎛 4 Nov 12:50 UTC (Opus) MUSIC STUDIO RESKIN BUILD (MUSIC_STUDIO_BUILD_PLAN.md, branch add-sproing-jumper; one line per step)
+- ✅ LIVE 4 Nov 13:44 UTC by his line: main 480959a8e (tag studio-m1), lucidwinds.com/studio.html sha 2e9f460b matches; Permissions-Policy microphone=(self) on studio.html, play/song.html and / (and, by name, every index.html: padlab/, satellites/*/), microphone=() elsewhere; song.js allow autoplay, microphone, web-share; skywolfstudio.com does not host the studio (404, as before). Next: his Pixel pass, then the five DECISIONS.
 - Step 0 DONE: check red at 60, before set shot, main blobs studio.html 3530fca0 / .htaccess 387ccde4. The box booted 11:39 UTC (stops near 23:39), so law 9's 13:56 is stale; this run works to about 23:00 and writes START-HERE every step.
 - Step 1 DONE: assets/games/song/ in (starters, tools, frames, slate), the 107 symbol sprite inline in studio.html (rerun: node tools/studio-tests/build-sprite.js), ic() helper, new play icons (192, 512, maskable) and og card.
 - Step 2 DONE: mic allowed on the studio routes only (.htaccess Files blocks, frame allow microphone, ?v=20261104a), honest sample copy and the CC BY 3.0 credit, groove/kit/drum/progression/rhythm names without dashes, no exclamation marks, zoom allowed; check red at 57, all emoji (step 3).
