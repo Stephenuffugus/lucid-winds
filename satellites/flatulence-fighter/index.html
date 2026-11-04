@@ -72,13 +72,14 @@
   .it-title{ font-family:var(--serif); font-weight:700; font-size:clamp(1.7rem, 9.5vw, 2.4rem); line-height:1.05; color:var(--sage-2);}
   .it-sub{ font-size:1rem; color:#5a5342;}
   #startScreen{ background:var(--a-menu,none) 50% 100%/cover no-repeat, var(--paper);}
-  .menu-bust{ width:min(42vw, 180px, 22vh); aspect-ratio:1; height:auto; margin:-6px 0 -42px; position:relative; z-index:0; flex:none;}
+  .bust.menu-bust{ width:min(36vw, 150px, 17vh); height:auto; aspect-ratio:1; margin:-4px 0 -34px; position:relative; z-index:0; flex:none;}
   #startScreen .card{ z-index:1;}
-  .wordmark{ display:block; width:100%; max-width:330px; height:auto; aspect-ratio:1000/340; margin:0 auto 2px;}
+  .wordmark{ display:block; width:100%; max-width:280px; height:auto; aspect-ratio:1000/340; margin:0 auto 2px;}
   .card h1.wm{ margin:0;}
   #overScreen{ background:rgba(28,38,32,.25); background-image:var(--a-over,none); background-size:cover; background-position:50% 100%;}
-  .screen{ position:absolute; inset:0; z-index:30; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; padding:28px 22px; gap:14px; overflow-y:auto;}
+  .screen > :first-child{ margin-top:auto;} .screen > :last-child{ margin-bottom:auto;}
+  .screen{ position:absolute; inset:0; z-index:30; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    text-align:center; padding:24px 18px; gap:12px; overflow-y:auto;}
   .hidden{ display:none !important;}
 
   .card{ position:relative; isolation:isolate; padding:30px 28px; max-width:420px; width:100%;}
@@ -90,7 +91,17 @@
   .card .sub{ color:#5a5342; margin:0; font-size:1rem;}
   .rule{ height:0; border-top:1px solid var(--sage); opacity:.5; width:60%; margin:14px auto;}
   .kbd{ display:inline-block; background:var(--sage); color:var(--paper); padding:1px 8px; border-radius:4px; font-size:.8rem; letter-spacing:.05em; font-style:normal;}
-  .how-list{ text-align:left; font-size:.92rem; line-height:1.45; color:#463f31; margin:0;}
+  .how-steps{ list-style:none; margin:0 0 12px; padding:0; display:flex; flex-direction:column; gap:10px; text-align:left;}
+  .how-step{ display:flex; align-items:center; gap:12px; font-size:.95rem; line-height:1.35; color:#463f31;}
+  .how-step b{ color:var(--sage-2);}
+  .hs-art{ flex:none; width:76px; height:46px; display:flex; align-items:center; justify-content:center; gap:4px; position:relative; isolation:isolate;}
+  .hs-pads i{ display:block; width:34px; height:32px; background:var(--a-padLHeld,none) center/100% 100% no-repeat;}
+  .hs-pads i + i{ background-image:var(--a-padRHeld,none);}
+  .hs-vent{ color:var(--deep); font-size:.8rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em;}
+  .hs-vent::before{ content:""; position:absolute; inset:0; z-index:-1; border:12px solid transparent; border-image:var(--a-ventCover,none) 24 fill / 12px stretch;}
+  .hs-vent .ic{ width:18px; height:18px;}
+  .hs-leak::before{ content:""; width:42px; height:42px; background:var(--a-leakCore,none) center/100% 100% no-repeat;}
+  .how-list{ text-align:left; font-size:.9rem; line-height:1.45; color:#463f31; margin:0;}
   .how-list p{ margin:0 0 10px;}
   .how-list p:last-child{ margin-bottom:0;}
   .how-list b{ color:var(--sage-2);}
@@ -104,7 +115,9 @@
 
   .modes{ display:flex; gap:8px; width:100%; max-width:420px;}
   .mode-btn{ flex:1; font-family:inherit; cursor:pointer; border:2px solid var(--sage); border-radius:8px; background:rgba(231,224,203,.5); color:var(--sage-2); padding:10px 6px; transition:.12s; min-height:48px;}
-  .mode-btn .mt{ display:block; font-size:.95rem; letter-spacing:.14em; text-transform:uppercase; font-weight:700;}
+  .mode-btn .mt{ display:flex; align-items:center; justify-content:center; gap:4px; font-size:.86rem; letter-spacing:.08em; text-transform:uppercase; font-weight:600;}
+  .mode-btn .mt .ic{ width:18px; height:18px;}
+  .btn .ic{ width:20px; height:20px; vertical-align:-.28em;}
   .mode-btn .md{ display:block; font-size:.7rem; opacity:.7; margin-top:2px;}
   .mode-btn[aria-pressed="true"]{ background:var(--sage); color:var(--paper); box-shadow:0 4px 0 var(--sage-2);}
   .mode-btn:focus-visible{ outline:3px solid var(--mint-deep); outline-offset:2px;}
@@ -293,20 +306,28 @@
     font-family:var(--serif); font-weight:700; font-size:3.2rem; box-shadow:0 8px 22px rgba(0,0,0,.35); pointer-events:none;}
 
   /* ======================= PLAY MODES / MENU ======================= */
-  .modes.playrow .mode-btn .mt{ font-size:.82rem;}
+  .modes.playrow .mode-btn .mt{ font-size:.76rem; flex-direction:column; gap:2px;}
   .modes.disabled{ opacity:.45; pointer-events:none;}
   .daily-note{ font-size:.72rem; color:var(--sage-2); opacity:.85; letter-spacing:.06em; margin-top:-6px;}
 
   /* ======================= WARDROBE ======================= */
   .ward-grid{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:6px;}
-  .ward-card{ width:calc(33.3% - 8px); min-width:96px; min-height:96px; border:1.5px solid var(--sage); border-radius:8px; padding:8px 4px;
-    background:rgba(231,224,203,.4); text-align:center; cursor:pointer; font-family:inherit; position:relative;}
-  .ward-card.locked{ opacity:.5; filter:grayscale(1); cursor:default;}
-  .ward-card.eq{ border-color:var(--amber); border-width:2.5px; box-shadow:0 0 0 2px rgba(224,144,47,.25);}
-  .ward-card .wi{ font-size:1.6rem; display:block; line-height:1.15;}
+  .ward-card{ position:relative; isolation:isolate; width:calc(33.3% - 8px); min-width:96px; min-height:150px; border:0; padding:14px 10px 12px; background:none; color:var(--sage-2); font-family:inherit; text-align:center; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:2px;}
+  .ward-card::before{ content:""; position:absolute; inset:0; z-index:-1; border:24px solid transparent; border-image:var(--a-wardFrame,none) 48 fill / 24px stretch; filter:var(--art-filter);}
+  .ward-card .wpic{ width:76%; aspect-ratio:1; display:flex; align-items:center; justify-content:center; position:relative;}
+  .ward-card .wpic img{ width:100%; height:auto; display:block;}
+  .ward-card[data-kind="pal"] .wpic img{ border-radius:4px;}
+  .ward-card .wlock{ position:absolute; right:-4px; bottom:-2px; background:var(--paper); border-radius:50%; padding:2px; display:flex;}
+  .ward-card .wlock .ic, .ward-card .wr .ic{ width:16px; height:16px;}
+  .ward-card.locked .wpic img{ opacity:.45; filter:grayscale(.8);}
+  .ward-card .wprog{ font-size:.66rem; font-weight:600; color:var(--sage-2); display:block; font-variant-numeric:tabular-nums;}
+  .ward-card.locked{ cursor:default;}
+  .ward-card.eq::after{ content:""; position:absolute; inset:3px; border:2.5px solid var(--amber); border-radius:10px; pointer-events:none;}
   .ward-card .wn{ font-size:.7rem; font-weight:700; color:var(--sage-2); letter-spacing:.03em; margin-top:2px; display:block;}
   .ward-card .wr{ font-size:.7rem; color:#5a5342; margin-top:2px; display:block; line-height:1.2;}
-  .ward-card .weq{ position:absolute; top:-8px; right:-4px; background:var(--amber); color:var(--paper); font-size:.6rem; letter-spacing:.1em; padding:2px 7px; border-radius:12px; text-transform:uppercase;}
+  .ward-card .weq{ position:absolute; top:-6px; right:-4px; z-index:2; background:var(--amber); color:var(--deep); border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center;}
+  .ward-card .weq .ic{ width:18px; height:18px;}
   .ward-sec{ font-size:.72rem; letter-spacing:.3em; text-transform:uppercase; color:var(--sage); margin:10px 0 2px; width:100%; text-align:center;}
 
   /* ======================= THEATER PALETTES ======================= */
@@ -320,14 +341,22 @@
     --accent:#a8905c; --relief:#d2d2ca; --danger:#383836; --art-filter:grayscale(1);
     --paper-2:#d3d3cd; --sage-2:#30302e; --mint-deep:#93938e;}
 
+  .stats-lead{ font-family:var(--serif); font-weight:700; font-size:1.15rem; line-height:1.3; color:var(--sage-2); margin:6px 0 0;}
+  .medal-grid + *, #medalCount{ margin-top:4px;}
   .stat-row{ display:flex; justify-content:space-between; font-size:1rem; margin:.3em 0; color:#463f31;}
   .stat-row b{ color:var(--sage-2); font-variant-numeric:tabular-nums;}
   .badge{ display:inline-block; margin-top:8px; font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:var(--paper); background:var(--amber); padding:4px 12px; border-radius:20px;}
 
   .medal-grid{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:6px;}
   .medal{ width:calc(33.3% - 8px); min-width:92px; border:1.5px solid var(--sage); border-radius:8px; padding:8px 4px; background:rgba(231,224,203,.4); text-align:center;}
-  .medal.locked{ opacity:.42; filter:grayscale(1);}
-  .medal .mi{ font-size:1.5rem; display:block; line-height:1.1;}
+  .medal{ position:relative;}
+  .medal.locked{ background:rgba(199,189,156,.35); border-style:dashed;}
+  .medal .mi{ display:block; line-height:1; color:var(--sage-2);}
+  .medal .mi .ic{ width:44px; height:46px;}
+  .medal.locked .mi{ opacity:.4;}
+  .medal .mlock{ position:absolute; top:4px; right:4px; color:var(--sage-2);}
+  .medal .mlock .ic{ width:18px; height:18px;}
+  .medal .mprog{ font-size:.68rem; color:var(--sage-2); margin-top:3px; display:block; font-weight:600; font-variant-numeric:tabular-nums;}
   .medal .mn{ font-size:.68rem; font-weight:700; color:var(--sage-2); letter-spacing:.03em; margin-top:2px; display:block;}
   .medal .mdsc{ font-size:.7rem; color:#5a5342; margin-top:2px; display:block; line-height:1.2;}
 
@@ -335,10 +364,13 @@
   .toast{ background:var(--sage-2); color:var(--paper); border:2px solid var(--amber); border-radius:24px; padding:8px 16px; display:flex; align-items:center; gap:8px; box-shadow:0 6px 18px rgba(0,0,0,.4); font-size:.85rem; transform:translateY(20px); opacity:0; transition:.28s;}
   .toast.show{ transform:translateY(0); opacity:1;} .toast .ti{ font-size:1.15rem;}
 
-  #tutOverlay{ position:absolute; inset:0; z-index:25; pointer-events:none;}
-  #tutOverlay .tut-card{ position:absolute; left:50%; top:calc(54px + env(safe-area-inset-top,0px)); transform:translateX(-50%); width:min(88%,420px); background:var(--sage-2); color:var(--paper); border:2px solid var(--mint); border-radius:12px; padding:12px 16px; text-align:center; font-size:1rem; line-height:1.35; box-shadow:0 8px 22px rgba(0,0,0,.4);}
+  /* the coach card takes the ribbon's band in the tutorial, so it can never cover the control it asks for */
+  .hud-tut .ribbon{ display:none;}
+  #tutOverlay.coach{ position:relative; z-index:3; margin:6px 8px 0; display:flex; align-items:center; gap:8px; min-height:56px;}
+  #tutOverlay.coach.hidden{ display:none !important;}
+  #tutOverlay .tut-card{ flex:1; min-width:0; background:var(--sage-2); color:var(--paper); border:2px solid var(--mint); border-radius:10px; padding:8px 12px; text-align:left; font-size:.95rem; line-height:1.3;}
   #tutOverlay .tut-card b{ color:var(--mint);}
-  #tutSkip{ position:absolute; right:12px; top:calc(10px + env(safe-area-inset-top,0px)); pointer-events:auto;}
+  #tutSkip{ flex:none; padding:8px 12px; background:var(--paper);}
 
   #pauseScreen{ background:rgba(43,58,49,.65); backdrop-filter:blur(3px);}
   .toggle-btn[aria-pressed="false"]{ opacity:.55;}
@@ -438,26 +470,26 @@
       <div class="eyebrow">A silent comedy of composure</div>
       <h1 class="wm"><svg class="wordmark" viewBox="0 0 1000 340" role="img" aria-label="Flatulence Fighter"><use href="#i-wordmark_paper"/></svg></h1>
       <div class="rule"></div>
-      <p style="margin:0; color:#463f31; font-size:.98rem; line-height:1.4;">Keep your composure. Clench to hold it in, plug the leaks, and let it out only under cover of noise. Any sound the room hears is a strike.</p>
+      <p style="margin:0; color:#463f31; font-size:.92rem; line-height:1.38;">Keep your composure. Clench to hold it in, plug the leaks, and let it out only under cover of noise. Any sound the room hears is a strike.</p>
     </div>
     <div class="modes playrow" role="group" aria-label="Play mode">
-      <button class="mode-btn play-btn" data-play="stage" aria-pressed="true"><span class="mt">Stage</span><span class="md">the classic bill</span></button>
-      <button class="mode-btn play-btn" data-play="daily" aria-pressed="false"><span class="mt">Daily</span><span class="md">today's ordeal</span></button>
-      <button class="mode-btn play-btn" data-play="zen" aria-pressed="false"><span class="mt">Zen</span><span class="md">no strikes</span></button>
-      <button class="mode-btn play-btn" data-play="cheek" aria-pressed="false"><span class="mt">One Cheek</span><span class="md">half the grip</span></button>
+      <button class="mode-btn play-btn" data-play="stage" aria-pressed="true"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-mode_stage"/></svg>Stage</span><span class="md">the classic bill</span></button>
+      <button class="mode-btn play-btn" data-play="daily" aria-pressed="false"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-mode_daily"/></svg>Daily</span><span class="md">today's ordeal</span></button>
+      <button class="mode-btn play-btn" data-play="zen" aria-pressed="false"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-mode_zen"/></svg>Zen</span><span class="md">no strikes</span></button>
+      <button class="mode-btn play-btn" data-play="cheek" aria-pressed="false"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-mode_one_cheek"/></svg>One Cheek</span><span class="md">half the grip</span></button>
     </div>
     <div class="modes" id="diffRow" role="group" aria-label="Difficulty">
-      <button class="mode-btn" data-mode="easy" aria-pressed="false"><span class="mt">Easy</span><span class="md">a gentle ordeal</span></button>
-      <button class="mode-btn" data-mode="normal" aria-pressed="true"><span class="mt">Normal</span><span class="md">the full sweat</span></button>
-      <button class="mode-btn" data-mode="panic" aria-pressed="false"><span class="mt">Panic</span><span class="md">no mercy</span></button>
+      <button class="mode-btn" data-mode="easy" aria-pressed="false"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-difficulty_easy"/></svg>Easy</span><span class="md">a gentle ordeal</span></button>
+      <button class="mode-btn" data-mode="normal" aria-pressed="true"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-difficulty_normal"/></svg>Normal</span><span class="md">the full sweat</span></button>
+      <button class="mode-btn" data-mode="panic" aria-pressed="false"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-difficulty_panic"/></svg>Panic</span><span class="md">no mercy</span></button>
     </div>
     <div class="daily-note hidden" id="dailyNote">Daily streak 0. Best today 0.</div>
-    <button class="btn" id="startBtn">Begin the ordeal</button>
+    <button class="btn" id="startBtn"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-begin"/></svg> Begin the ordeal</button>
     <div class="settings-row">
-      <button class="btn ghost" id="howBtn">How to play</button>
-      <button class="btn ghost" id="medalsBtn">Medals</button>
-      <button class="btn ghost" id="wardBtn">Wardrobe</button>
-      <button class="btn ghost" id="statsBtn">Stats</button>
+      <button class="btn ghost" id="howBtn"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-how_to_play"/></svg> How to play</button>
+      <button class="btn ghost" id="medalsBtn"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-medals"/></svg> Medals</button>
+      <button class="btn ghost" id="wardBtn"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-wardrobe"/></svg> Wardrobe</button>
+      <button class="btn ghost" id="statsBtn"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-stats"/></svg> Stats</button>
     </div>
     <div class="menu-stats">
       <span>Best <b id="menuBest">0</b></span>
@@ -467,7 +499,7 @@
     <div class="settings-row">
       <button class="btn ghost toggle-btn" id="soundToggle" aria-pressed="true">Sound</button>
       <button class="btn ghost toggle-btn" id="hapticToggle" aria-pressed="true">Haptics</button>
-      <button class="btn ghost" id="arcadeBtn" type="button">Arcade</button>
+      <button class="btn ghost" id="arcadeBtn" type="button"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-back"/></svg> Arcade</button>
     </div>
   </div>
 
@@ -477,16 +509,20 @@
       <div class="eyebrow">The program notes</div>
       <h1 style="font-size:2rem;">How to play</h1>
       <div class="rule"></div>
+      <ol class="how-steps">
+        <li class="how-step"><span class="hs-art hs-pads" aria-hidden="true"><i></i><i></i></span><span class="hs-txt"><b>Hold both pads</b> to clench it in. Pressure climbs the whole time you sit there.</span></li>
+        <li class="how-step"><span class="hs-art hs-vent" aria-hidden="true"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-vent"/></svg><span>Vent</span></span><span class="hs-txt"><b>Vent under the noise.</b> Pressure only drops while a cover noise plays. Vent the instant it starts for a Perfect.</span></li>
+        <li class="how-step"><span class="hs-art hs-leak" aria-hidden="true"></span><span class="hs-txt"><b>Tap a leak</b> on the stage to plug it before it squeaks.</span></li>
+      </ol>
       <div class="how-list">
-        <p><b>Hold both pads</b> to clench it in. Pressure climbs the whole time you sit there.</p>
-        <p>Each hand tires as its bar fills. <b>Lift one hand</b> to rest it, then swap before it slips.</p>
-        <p>When a cover noise hits, tap <b>VENT</b> to drop the pressure. Vent the instant the noise starts for a perfect.</p>
-        <p><b>Tap leaks</b> to plug them. Cough makes your own cover, sip drains pressure, waft fans a fresh strike away.</p>
+        <p>Each hand tires as its bar fills. <b>Lift one hand</b> to rest it, then swap before it slips. With one hand up the pressure climbs slowly; with both up it climbs fast, so a thumb can leave a pad for a moment.</p>
+        <p>The props on the stage: <b>Cough</b> fakes your own cover noise, hold <b>Sip</b> to drink the pressure down (you cannot clench while sipping), and <b>Waft</b> fans a fresh strike away for a moment.</p>
+        <p><b>Hold breath</b> slows the rise. Let go before you gasp. A <b>wobble</b> creeps in: hold <b>Lean left</b> or <b>Lean right</b> against it.</p>
         <p>Any sound the room hears is a strike. <b>Three strikes and you are exposed.</b> Outlast the acts and run up the score.</p>
       </div>
     </div>
-    <button class="btn" id="howPractice">Practice run</button>
-    <button class="btn ghost" id="howClose">Back</button>
+    <button class="btn" id="howPractice"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-practice"/></svg> Practice run</button>
+    <button class="btn ghost" id="howClose"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-back"/></svg> Back</button>
   </div>
 
   <!-- ============ INTERTITLE ============ -->
@@ -540,6 +576,10 @@
       <div id="countIn" class="count-in hidden" aria-live="assertive"></div>
     </div>
     <div class="ribbon" id="ribbon" aria-live="polite">Nobody suspects a thing</div>
+    <div id="tutOverlay" class="coach hidden">
+      <div class="tut-card coach-card" id="tutText" aria-live="polite">Hold <b>both pads</b> to clench it in.</div>
+      <button class="btn ghost" id="tutSkip" type="button"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-skip"/></svg> Skip</button>
+    </div>
       <div class="gauge">
         <div class="gauge-label"><span>Pressure</span><span class="combo" id="combo"></span><span id="pctText">0%</span></div>
         <div class="gauge-track"><div class="gauge-fill" id="gaugeFill"></div><div class="gauge-danger"></div></div>
@@ -571,11 +611,6 @@
     </div>
   </div>
 
-  <!-- tutorial overlay -->
-  <div id="tutOverlay" class="hidden">
-    <div class="tut-card coach-card" id="tutText">Hold <b>both pads</b> to clench it in.</div>
-    <button class="btn ghost" id="tutSkip">Skip</button>
-  </div>
 
   <!-- toasts -->
   <div id="toasts"></div>
@@ -587,7 +622,7 @@
       <h1>Paused</h1>
       <p class="sub">Breathe. Nobody heard anything.</p>
     </div>
-    <button class="btn" id="resumeBtn">Resume</button>
+    <button class="btn" id="resumeBtn"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-resume"/></svg> Resume</button>
     <button class="btn ghost" id="quitBtn">Give up the act</button>
   </div>
 
@@ -596,9 +631,10 @@
     <div class="card" style="max-width:460px;">
       <div class="eyebrow">Curtain calls</div>
       <h1 style="font-size:2rem;">Medals</h1>
+      <p class="sub" id="medalCount"></p>
       <div id="medalGrid" class="medal-grid"></div>
     </div>
-    <button class="btn ghost" id="medalsClose">Back</button>
+    <button class="btn ghost" id="medalsClose"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-back"/></svg> Back</button>
   </div>
 
   <!-- ============ WARDROBE ============ -->
@@ -611,7 +647,7 @@
       <div class="ward-sec">Theater palettes</div>
       <div id="wardPals" class="ward-grid"></div>
     </div>
-    <button class="btn ghost" id="wardClose">Back</button>
+    <button class="btn ghost" id="wardClose"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-back"/></svg> Back</button>
   </div>
 
   <!-- ============ STATS ============ -->
@@ -619,10 +655,11 @@
     <div class="card" style="max-width:400px;">
       <div class="eyebrow">The record</div>
       <h1 style="font-size:2rem;">Lifetime</h1>
+      <p class="stats-lead" id="statsLead"></p>
       <div class="rule"></div>
       <div id="statsBody"></div>
     </div>
-    <button class="btn ghost" id="statsClose">Back</button>
+    <button class="btn ghost" id="statsClose"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-back"/></svg> Back</button>
   </div>
 
   <!-- ============ GAME OVER ============ -->
@@ -689,7 +726,7 @@
     {id:"babys_nap",          bg:"assets/stage/bg_babys_nap.webp",          backs:"assets/onlookers/onlookers_babys_nap_backs.png",          turned:"assets/onlookers/onlookers_babys_nap_turned.png"},
   ];
   const UI_ART={ paper:"assets/stage/paper_tile.png", grain:"assets/stage/film_grain_tile.png", card:"assets/stage/card_frame.png",
-    intertitle:"assets/controls/intertitle_frame.png", menu:"assets/stage/bg_menu_mood.webp", over:"assets/stage/bg_game_over_mood.webp",
+    intertitle:"assets/controls/intertitle_frame.png", wardFrame:"assets/wardrobe/wardrobe_frame.png", menu:"assets/stage/bg_menu_mood.webp", over:"assets/stage/bg_game_over_mood.webp",
     padLIdle:"assets/controls/hold_left_idle.png", padLHeld:"assets/controls/hold_left_held.png", padLTired:"assets/controls/hold_left_tired.png",
     padRIdle:"assets/controls/hold_right_idle.png", padRHeld:"assets/controls/hold_right_held.png", padRTired:"assets/controls/hold_right_tired.png",
     ventUnsafe:"assets/controls/vent_unsafe.png", ventCover:"assets/controls/vent_cover.png", ventPerfect:"assets/controls/vent_perfect.png",
@@ -1251,15 +1288,32 @@
     document.body.className=document.body.className.replace(/\bpal-\S+/g,"").trim();
     if(id&&id!=="matinee") document.body.classList.add("pal-"+id);
   }
+  const PORTRAITS={ everyman:"assets/wardrobe/portrait_everyman.png", gentleman:"assets/wardrobe/portrait_gentleman.png", grandma:"assets/wardrobe/portrait_grandma.png",
+    mime:"assets/wardrobe/portrait_mime.png", bulldog:"assets/wardrobe/portrait_bulldog.png" };
+  const PLAQUES={ matinee:"assets/wardrobe/palette_matinee_sepia.png", midnight:"assets/wardrobe/palette_midnight_show.png",
+    technicolor:"assets/wardrobe/palette_technicolor.png", silver:"assets/wardrobe/palette_silver_screen.png" };
+  function wardProgress(id,Lc){ const act=n=>n>0?"Act "+ROMAN[Math.min(n,ROMAN.length)-1]:"none yet";
+    switch(id){
+      case "gentleman": return fmtTime(Math.min(Lc.lifeTime,600))+" of 10m 0s";
+      case "grandma": return Math.min(Lc.lifePlugs,50)+" of 50";
+      case "mime": return Math.min(Lc.bestStreak,3)+" of 3 days";
+      case "bulldog": return Math.min(Lc.medalCount,8)+" of 8";
+      case "midnight": return "Best "+act(Lc.bestAct)+" of Act V";
+      case "technicolor": return "Best "+Math.min(Lc.bestScore,5000)+" of 5000";
+      case "silver": return (Math.min(Lc.modes.length,3)+(Lc.playModes.indexOf("daily")>=0?1:0)+(Lc.playModes.indexOf("zen")>=0?1:0))+" of 5";
+    }
+    return ""; }
   function openWard(){ buildWard(); startScreen.classList.add("hidden"); wardScreen.classList.remove("hidden"); }
   function buildWard(){
     evalCosmetics(); // menu-time unlock sweep so thresholds crossed elsewhere show up
     const W=loadWard();
+    const Lc=cosmeticCtx();
     const mk=(list,ownedArr,eqId,kind)=>list.map(item=>{
-      const owned=ownedArr.indexOf(item.id)>=0, eq=eqId===item.id;
-      return '<button class="ward-card'+(owned?"":" locked")+(eq?" eq":"")+'" data-kind="'+kind+'" data-id="'+item.id+'">'+
-        (eq?'<span class="weq">On</span>':"")+'<span class="wi">'+ic(item.ico)+'</span><span class="wn">'+item.name+
-        '</span><span class="wr">'+(owned?(eq?"Equipped":"Tap to wear"):item.req)+'</span></button>'; }).join("");
+      const owned=ownedArr.indexOf(item.id)>=0, eq=eqId===item.id, pic=kind==="char"?PORTRAITS[item.id]:PLAQUES[item.id], pr=owned?"":wardProgress(item.id,Lc);
+      return '<button type="button" class="ward-card'+(owned?"":" locked")+(eq?" eq":"")+'" data-kind="'+kind+'" data-id="'+item.id+'"'+(owned?' aria-pressed="'+(eq?"true":"false")+'"':' aria-disabled="true"')+'>'+
+        (eq?'<span class="weq" role="img" aria-label="Equipped">'+ic("wardrobe_equipped")+'</span>':"")+
+        '<span class="wpic"><img alt="" src="'+art(pic)+'">'+(owned?"":'<span class="wlock" role="img" aria-label="Locked">'+ic("wardrobe_lock")+'</span>')+'</span>'+
+        '<span class="wn">'+item.name+'</span><span class="wr">'+(owned?(eq?"Equipped":"Tap to wear"):item.req)+'</span>'+(pr?'<span class="wprog">'+pr+'</span>':"")+'</button>'; }).join("");
     $("wardChars").innerHTML=mk(CHARS,W.chars,W.eqChar,"char");
     $("wardPals").innerHTML=mk(PALS,W.pals,W.eqPal,"pal");
     wardScreen.querySelectorAll(".ward-card:not(.locked)").forEach(b=>b.addEventListener("click",()=>{
@@ -1289,9 +1343,28 @@
   function openHow(){ startScreen.classList.add("hidden"); howScreen.classList.remove("hidden"); }
   function openMedals(){ buildMedals(); startScreen.classList.add("hidden"); medalsScreen.classList.remove("hidden"); }
   function openStats(){ buildStats(); startScreen.classList.add("hidden"); statsScreen.classList.remove("hidden"); }
+  // a progress line wherever a lifetime record exists for the medal's threshold
+  function medalProgress(id){
+    const bt=get(L.bestTime,0), bc=comboMultFrom(get(L.bestCombo,0)), ba=get(L.bestAct,0), md=get(L.modes,[]).length, dp=get(L.dailyPlays,0);
+    const act=n=>n>0?"Act "+ROMAN[Math.min(n,ROMAN.length)-1]:"none yet";
+    switch(id){
+      case "c30": return "Best "+fmtTime(bt)+" of 30s";
+      case "c60": return "Best "+fmtTime(bt)+" of 1m 0s";
+      case "c120": return "Best "+fmtTime(bt)+" of 2m 0s";
+      case "combo3": return "Best ×"+bc.toFixed(1)+" of ×3.0";
+      case "combo5": return "Best ×"+bc.toFixed(1)+" of ×5.0";
+      case "act5": return "Best "+act(ba)+" of Act V";
+      case "act8": return "Best "+act(ba)+" of Act VIII";
+      case "allmodes": return Math.min(md,3)+" of 3 modes";
+      case "daily3": return Math.min(dp,3)+" of 3 Dailies";
+    }
+    return ""; }
   function buildMedals(){ const earned=new Set(get(L.medals,[])); const g=$("medalGrid"); g.innerHTML="";
+    $("medalCount").textContent=MEDALS.filter(m=>earned.has(m.id)).length+" of "+MEDALS.length+" earned";
     MEDALS.forEach(m=>{ const has=earned.has(m.id); const d=document.createElement("div"); d.className="medal"+(has?"":" locked");
-      d.innerHTML='<span class="mi">'+ic(m.ico)+'</span><span class="mn">'+m.name+'</span><span class="mdsc">'+(has?m.desc:m.desc)+'</span>'; g.appendChild(d); }); }
+      const pr=has?"":medalProgress(m.id);
+      d.innerHTML=(has?"":'<span class="mlock" role="img" aria-label="Locked">'+ic("wardrobe_lock")+'</span>')+'<span class="mi">'+ic(m.ico)+'</span><span class="mn">'+m.name+'</span><span class="mdsc">'+m.desc+'</span>'+
+        (pr?'<span class="mprog">'+pr+'</span>':""); g.appendChild(d); }); }
   function buildStats(){ const rows=[
       ["Ordeals faced", get(K.plays,0)],
       ["Longest composure", fmtTime(get(L.bestTime,0))],
@@ -1310,23 +1383,25 @@
       ["Daily streak record", get(L.bestStreak,0)],
       ["Deepest act", get(L.bestAct,0)>0?"Act "+ROMAN[Math.min(get(L.bestAct,0)-1,ROMAN.length-1)]:"None yet"],
     ];
-    $("statsBody").innerHTML = rows.map(r=>'<div class="stat-row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>').join(""); }
+    $("statsBody").innerHTML = rows.map(r=>'<div class="stat-row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>').join("");
+    const ba=get(L.bestAct,0);
+    $("statsLead").textContent="Best composure "+fmtTime(get(L.bestTime,0))+". Deepest act "+(ba>0?"Act "+ROMAN[Math.min(ba,ROMAN.length)-1]:"none yet")+"."; }
   function fmtTime(s){ s=Math.round(s); return s>=60 ? Math.floor(s/60)+"m "+(s%60)+"s" : s+"s"; }
   // ==================================================================
   //  TUTORIAL
   // ==================================================================
   const TUT_PROMPTS=[
-    "Hold <b>both pads</b> to clench it in.",
-    "Each hand tires, its bar fills. <b>Lift one hand</b> to rest it, then swap.",
-    "Pressure only drops under a <b>cover noise</b>. Here comes one. Tap <b>Vent</b>.",
-    "Now vent the <b>instant</b> the noise starts. That is a <b>PERFECT</b>.",
-    "A <b>leak</b>. Tap it to plug it before it squeaks.",
-    "No cover in sight? Tap <b>COUGH</b> to fake your own, then <b>VENT</b> under it.",
-    "Hold <b>SIP</b> to drink the pressure down. You cannot clench while sipping.",
-    "Slipped up? For a moment you can <b>WAFT</b> a strike away. Try it now.",
-    "Two thumbs, so many buttons. <b>HOLD BREATH</b> up top to blunt the rise, but let go before you <b>gasp</b>.",
-    "Sitting still is hard. A <b>wobble</b> creeps in, hold the <b>lean</b> pad against it to keep your balance.",
-    "You’re ready. Three strikes and you’re exposed. <b>Break a leg.</b>",
+    "Hold <b>both pads</b> at the bottom to clench it in.",
+    "Each hand tires as its bar fills. <b>Lift one hand</b> to rest it, then swap.",
+    "Pressure only drops under a <b>cover noise</b>. Here comes one. Tap <b>Vent</b> in the middle.",
+    "Now vent the <b>instant</b> the noise starts. That is a <b>Perfect</b>.",
+    "A <b>leak</b>. Tap it on the stage to plug it before it squeaks.",
+    "No cover in sight? Tap the <b>Cough</b> handkerchief to fake your own, then <b>Vent</b> under it.",
+    "Hold the <b>Sip</b> glass to drink the pressure down. You cannot clench while sipping.",
+    "Slipped up? For a moment the <b>Waft</b> fan can fan a strike away. Try it now.",
+    "Two thumbs, so many buttons. <b>Hold breath</b> blunts the rise. Let go before you <b>gasp</b>.",
+    "Sitting still is hard. A <b>wobble</b> creeps in. Hold <b>Lean left</b> or <b>Lean right</b> against it.",
+    "You are ready. Three strikes and you are exposed. <b>Break a leg.</b>",
   ];
   function startTutorial(){
     rngFn=Math.random;
@@ -1342,6 +1417,8 @@
   }
   function setupTutStep(){ const T=S.tut; T.stepT=0; T.heldBoth=0; T.oneUp=0; T.lastOpen=-99; T.lastLeak=-99;
     if(T.step===2){ T.ventOk=false; } if(T.step===3){ T.perfOk=false; T.ventTries=0; }
+    if(T.step===2||T.step===3||T.step===5) S.pressure=Math.max(S.pressure,55); // a lesson in venting needs something to vent
+    if(T.step===6) S.pressure=Math.max(S.pressure,65);
     if(T.step===4){ T.plugOk=false; clearLeaks(); }
     if(T.step===5){ T.coughed=false; T.coughVentOk=false; }
     if(T.step===6){ T.sipHeld=0; }
@@ -1415,10 +1492,8 @@
     const usableL=S.padL&&S.slipL<=0&&!S.sipping, usableR=S.padR&&S.slipR<=0&&!S.sipping;
     const held=(usableL?1:0)+(usableR?1:0);
     const sf=CFG.strainFill*S.M.strainFillMul;
+    // the coach card is up for the whole lesson, so pressure never ticks on its own here; a vent or a sip still moves it
     if(S.sipping){ S.pressure-=CFG.sipDrain*dt; if(S.tut) S.tut.sipHeld=(S.tut.sipHeld||0)+dt; }
-    else if(held===2) S.pressure-=CFG.bothHeldDrop*dt;
-    else if(held===1) S.pressure+=riseRate()*CFG.oneHeldFactor*dt;
-    else S.pressure+=riseRate()*dt;
     S.pressure=Math.max(0,Math.min(92,S.pressure)); // invincible in tutorial
     if(usableL) S.strainL+=sf*dt; else if(S.slipL<=0) S.strainL-=CFG.strainRecover*dt;
     if(usableR) S.strainR+=sf*dt; else if(S.slipR<=0) S.strainR-=CFG.strainRecover*dt;
@@ -1631,11 +1706,18 @@
   document.addEventListener("gesturestart",e=>e.preventDefault());
   document.addEventListener("dblclick",e=>e.preventDefault());
 
+  // Stage and Normal by default; the last choice is remembered under ff.ui.* (new keys, nothing old renamed)
+  const UI={ play:"ff.ui.play", diff:"ff.ui.diff" };
+  function syncChoice(){
+    document.querySelectorAll("#diffRow .mode-btn").forEach(x=>x.setAttribute("aria-pressed", x.dataset.mode===chosenMode?"true":"false"));
+    document.querySelectorAll(".play-btn").forEach(x=>x.setAttribute("aria-pressed", x.dataset.play===chosenPlay?"true":"false"));
+    diffRow.classList.toggle("disabled", chosenPlay==="daily"); }
+  (function(){ const pl=get(UI.play,"stage"), df=get(UI.diff,"normal");
+    if(["stage","daily","zen","cheek"].indexOf(pl)>=0) chosenPlay=pl; if(MODES[df]) chosenMode=df; syncChoice(); })();
   document.querySelectorAll("#diffRow .mode-btn").forEach(b=>b.addEventListener("click",()=>{
-    chosenMode=b.dataset.mode; document.querySelectorAll("#diffRow .mode-btn").forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false")); refreshMenu(); }));
+    chosenMode=b.dataset.mode; set(UI.diff,chosenMode); syncChoice(); refreshMenu(); }));
   document.querySelectorAll(".play-btn").forEach(b=>b.addEventListener("click",()=>{
-    chosenPlay=b.dataset.play; document.querySelectorAll(".play-btn").forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false"));
-    diffRow.classList.toggle("disabled", chosenPlay==="daily"); refreshMenu(); }));
+    chosenPlay=b.dataset.play; set(UI.play,chosenPlay); syncChoice(); refreshMenu(); }));
   $("startBtn").addEventListener("click",()=>begin(chosenMode,chosenPlay));
   $("againBtn").addEventListener("click",()=>begin(S?S.modeKey:chosenMode, S?S.playMode:chosenPlay));
   $("menuBtn").addEventListener("click",toMenu);
