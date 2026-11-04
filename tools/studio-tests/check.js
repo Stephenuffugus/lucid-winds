@@ -69,7 +69,7 @@ for (const line of markup.split('\n')) {
   ln++;
 }
 /* the STARTERS names and descs are player copy too */
-for (const m of html.matchAll(/\{name:'([^']*)',\s*emoji:'[^']*',\s*desc:'([^']*)'/g)) if (/[—–-]/.test(m[1] + ' ' + m[2])) fail('a dash in a starter name or desc: ' + m[1] + ' / ' + m[2]);
+for (const m of html.matchAll(/\{name:'([^']*)',\s*(?:emoji|art):'[^']*',\s*desc:'([^']*)'/g)) if (/[—–-]/.test(m[1] + ' ' + m[2])) fail('a dash in a starter name or desc: ' + m[1] + ' / ' + m[2]);
 
 /* 5. zoom allowed */
 const vp = (html.match(/<meta name="viewport" content="([^"]*)"/) || [])[1] || '';

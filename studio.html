@@ -147,7 +147,7 @@ input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px
 .gs-arr-del .gs-ic{width:18px;height:18px}
 
 /* Sampler Panel */
-.gs-circle{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,6,.97);z-index:95;padding:12px;overflow-y:auto}
+.gs-circle{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:95;padding:12px;overflow-y:auto}
 .gs-circle.open{display:flex;flex-direction:column}
 .gs-circle h3,.gs-euclid h3,.gs-keys h3,.gs-hum h3,.gs-sampler-head h2,.gs-modal-head h2{display:flex;align-items:center;gap:8px}
 .gs-circle h3{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold);letter-spacing:.08em;text-align:center}
@@ -181,7 +181,7 @@ input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px
 .gs-euclid .presets div{font-size:.65rem;padding:8px 12px;background:rgba(26,33,25,.8);border:1px solid var(--border);border-radius:6px;color:var(--cream);cursor:pointer;min-height:48px;display:flex;align-items:center;transition:all .15s}
 .gs-euclid .presets div:hover{border-color:rgba(143,199,118,.3);background:rgba(26,33,25,.95)}
 .gs-euclid .presets div:active{transform:scale(.95)}
-.gs-sampler{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,6,.97);z-index:100;overflow-y:auto;padding:12px}
+.gs-sampler{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:100;overflow-y:auto;padding:12px}
 .gs-sampler.open{display:block}
 .gs-sampler-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .gs-sampler-head h2{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:.08em}
@@ -217,19 +217,25 @@ input[type=range]:focus-visible{outline:2px solid var(--gold);outline-offset:2px
 select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a9178'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px}
 
 /* Modal overlays (starters, songs) */
-.gs-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(8,10,6,.97);z-index:110;overflow-y:auto;padding:14px}
+.gs-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:110;overflow-y:auto;padding:14px 16px;padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(20px,env(safe-area-inset-bottom))}
 .gs-modal.open{display:block}
 .gs-modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.gs-modal-head h2{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);letter-spacing:.08em}
-.gs-modal-sub{font-size:.7rem;color:var(--muted);margin-bottom:12px;line-height:1.5}
-.gs-starter-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-.gs-starter-card{background:rgba(26,33,25,.7);border:1.5px solid var(--border);border-radius:10px;padding:14px 12px;cursor:pointer;transition:all .15s;min-height:88px;display:flex;flex-direction:column;gap:4px}
-.gs-starter-card:hover{border-color:var(--sage);background:rgba(26,33,25,.95);transform:translateY(-2px)}
-.gs-starter-card:active{transform:scale(.97)}
-.gs-starter-card .st-emoji{font-size:1.5rem}
-.gs-starter-card .st-name{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--cream);letter-spacing:.06em}
-.gs-starter-card .st-desc{font-size:.6rem;color:var(--muted);line-height:1.4}
-.gs-starter-card.blank{border-style:dashed}
+.gs-modal-head h2{font-family:'Bebas Neue',sans-serif;font-size:1.75rem;color:var(--gold);letter-spacing:.06em}
+.gs-modal-sub{font-size:.85rem;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.gs-start-ribbon{display:block;width:100%;height:72px;object-fit:cover;border-radius:12px;margin:0 0 12px}
+.gs-starter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.gs-starter-card{background:var(--raised);border:1.5px solid var(--divider);border-radius:16px;padding:8px 8px 12px;cursor:pointer;display:flex;flex-direction:column;gap:2px;text-align:left;color:var(--cream);font:inherit;transition:border-color .08s,transform .08s}
+.gs-starter-card:hover{border-color:var(--sage)}
+.gs-starter-card:active{transform:scale(.98)}
+.gs-starter-card:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.gs-starter-card .st-cover{display:block;width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:var(--panel);margin-bottom:8px}
+.gs-starter-card .st-cover img{display:block;width:100%;height:100%;object-fit:cover}
+.gs-starter-card .st-name{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:.06em;line-height:1.1;padding:0 4px}
+.gs-starter-card .st-bpm{font-size:.8rem;color:var(--muted);padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gs-starter-card.st-resume{border-color:var(--sage)}
+.gs-starter-card.st-resume .st-name{color:var(--sage)}
+.st-resume-art{display:flex;width:100%;height:100%;align-items:center;justify-content:center;color:var(--sage);background:radial-gradient(circle at 50% 50%,rgba(143,199,118,.18),transparent 70%)}
+.st-resume-art .gs-ic{width:48px;height:48px}
 .gs-song-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(26,33,25,.6);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;min-height:48px}
 .gs-song-row .sn-name{flex:1;color:var(--cream);font-size:.75rem;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gs-song-row .sn-date{font-size:.6rem;color:var(--muted)}
@@ -272,7 +278,6 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
 
 /* Mobile breakpoints */
 @media(max-width:480px){
-  .gs-starter-grid{grid-template-columns:repeat(2,1fr)}
   .gs-pad-grid{gap:4px}
   .gs-pad{min-height:48px;font-size:.62rem}
   .gs-btn{padding:8px 10px;font-size:clamp(.75rem,2.4vw,.85rem)}
@@ -601,7 +606,8 @@ select.gs-btn{-webkit-appearance:none;appearance:none;background-image:url("data
     <h2><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-new"></use></svg>START A SONG</h2>
     <button class="gs-btn" onclick="GS.closeStarters()"><svg class="gs-ic" aria-hidden="true" focusable="false"><use href="#i-close"></use></svg>Close</button>
   </div>
-  <div class="gs-modal-sub">Pick a vibe and get a full beat instantly. Then make it yours: every note can be changed.</div>
+  <img class="gs-start-ribbon" src="assets/games/song/starters/start_header.webp" width="800" height="240" alt="">
+  <div class="gs-modal-sub">Pick a starter and it plays right away. Every note can be changed.</div>
   <div class="gs-starter-grid" id="gs-starter-grid"></div>
 </div>
 
@@ -2899,7 +2905,7 @@ var GS = (function(){
   }
 
   var STARTERS = [
-    {name:'Hip Hop', emoji:'🎤', desc:'Boom bap drums and a head nod bassline', bpm:92, kit:'Standard', groove:'MPC 60', hum:15, root:9, scale:'Min Penta',
+    {name:'Hip Hop', art:'hip_hop', desc:'Boom bap drums and a head nod bassline', bpm:92, kit:'Standard', groove:'MPC 60', hum:15, root:9, scale:'Min Penta',
      inst:{bass:'inst:electric_bass_finger', chords:'inst:electric_piano_1', melody:'inst:vibraphone'},
      A:{drums:{0:'x......x..x.....x......x..x.....',1:'........X...............X.......',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.',3:'..............................x.'},
         bass:[[0,0,4],[8,0,2],[12,3,2],[16,0,4],[24,3,2],[28,4,2]],
@@ -2910,7 +2916,7 @@ var GS = (function(){
         chords:[[0,0,8,0,1],[8,4,8,0,1],[16,3,8,0,1],[24,4,8,0,1]],
         melody:[[0,4,2,1],[4,2,2,1],[8,4,2,1],[12,5,3,1],[16,4,2,1],[20,2,2,1],[24,1,2,1],[28,0,4,1]]},
      arr:['A1','A1','B1','A1']},
-    {name:'Trap', emoji:'🔥', desc:'Rolling hats, booming 808, icy bells', bpm:140, kit:'808', groove:'none', hum:0, root:0, scale:'Min Penta',
+    {name:'Trap', art:'trap', desc:'Rolling hats, booming 808, icy bells', bpm:140, kit:'808', groove:'none', hum:0, root:0, scale:'Min Penta',
      inst:{bass:'', chords:'inst:pad_7_halo', melody:'inst:music_box'},
      preset:{bass:'Sub Bass'},
      A:{drums:{0:'x.........x.....x.....x.....x...',1:'........X...............X.......',2:'x.x.x.x.x.x.xxx.x.x.x.x.xxxxx.x.',3:'..............x.................'},
@@ -2922,7 +2928,7 @@ var GS = (function(){
         chords:[[0,0,16,0,1],[16,4,16,0,1]],
         melody:[[0,4,1,1],[2,3,1,1],[4,2,2,1],[8,4,1,1],[10,3,1,1],[12,2,2,1],[16,0,2,1],[20,2,2,1],[24,3,2,1],[28,4,4,1]]},
      arr:['A1','A1','B1','B1']},
-    {name:'Lo Fi Chill', emoji:'🌙', desc:'Dusty drums, warm keys, study vibes', bpm:75, kit:'Lo-Fi', groove:'Dilla', hum:25, root:2, scale:'Dorian',
+    {name:'Lo Fi Chill', art:'lo_fi_chill', desc:'Dusty drums, warm keys, study vibes', bpm:75, kit:'Lo-Fi', groove:'Dilla', hum:25, root:2, scale:'Dorian',
      inst:{bass:'inst:acoustic_bass', chords:'inst:electric_piano_1', melody:'inst:kalimba'},
      A:{drums:{0:'x.....x...x.....x.....x.....x...',1:'........x...............x.......',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.',7:'x.......x.......x.......x.......'},
         bass:[[0,0,6],[8,3,4],[16,5,6],[24,4,4]],
@@ -2933,7 +2939,7 @@ var GS = (function(){
         chords:[[0,0,8,0,1],[8,2,8,0,1],[16,3,8,0,1],[24,4,8,0,1]],
         melody:[[0,6,2,1],[4,5,2,1],[8,4,3,1],[14,2,2,1],[18,4,2,1],[22,5,2,1],[26,6,3,1]]},
      arr:['A1','A1','B1','A1']},
-    {name:'House', emoji:'🪩', desc:'Four on the floor, hands in the air', bpm:124, kit:'House', groove:'House', hum:0, root:9, scale:'Min Penta',
+    {name:'House', art:'house', desc:'Four on the floor, hands in the air', bpm:124, kit:'House', groove:'House', hum:0, root:9, scale:'Min Penta',
      inst:{bass:'inst:synth_bass_1', chords:'inst:electric_piano_2', melody:'inst:lead_2_sawtooth'},
      A:{drums:{0:'x...x...x...x...x...x...x...x...',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.',3:'..x...x...x...x...x...x...x...x.',4:'....X.......X.......X.......X...'},
         bass:[[2,0,1],[6,0,1],[10,0,1],[14,0,1],[18,0,1],[22,3,1],[26,0,1],[30,4,1]],
@@ -2944,7 +2950,7 @@ var GS = (function(){
         chords:[[0,0,3,0,1],[4,0,2,0,1],[8,3,3,0,1],[12,3,2,0,1],[16,4,3,0,1],[20,4,2,0,1],[24,3,3,0,1],[28,4,2,0,1]],
         melody:[[0,4,3,1],[8,3,2,1],[12,2,2,1],[16,4,3,1],[24,2,2,1],[28,1,2,1]]},
      arr:['A1','B1','A1','B1']},
-    {name:'Pop', emoji:'⭐', desc:'Bright chords and a singalong hook', bpm:110, kit:'Real Drums', groove:'none', hum:10, root:0, scale:'Ionian (Major)',
+    {name:'Pop', art:'pop', desc:'Bright chords and a singalong hook', bpm:110, kit:'Real Drums', groove:'none', hum:10, root:0, scale:'Ionian (Major)',
      inst:{bass:'inst:electric_bass_finger', chords:'inst:acoustic_grand_piano', melody:'inst:lead_3_calliope'},
      A:{drums:{0:'x.......x.x.....x.......x.x.....',1:'....X.......X.......X.......X...',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.'},
         bass:[[0,0,6],[8,4,6],[16,5,6],[24,3,6]],
@@ -2955,7 +2961,7 @@ var GS = (function(){
         chords:[[0,0,8,0,1],[8,4,8,0,1],[16,5,8,0,1],[24,3,4,0,1],[28,4,4,0,1]],
         melody:[[0,4,3,1],[4,4,2,1],[8,5,3,1],[14,4,2,1],[16,2,2,1],[20,4,2,1],[24,7,6,1]]},
      arr:['A1','B1','A1','B1']},
-    {name:'Reggaeton', emoji:'🌴', desc:'Dembow bounce, beach energy', bpm:95, kit:'808', groove:'none', hum:8, root:9, scale:'Min Penta',
+    {name:'Reggaeton', art:'reggaeton', desc:'Dembow bounce, beach energy', bpm:95, kit:'808', groove:'none', hum:8, root:9, scale:'Min Penta',
      inst:{bass:'inst:synth_bass_2', chords:'inst:acoustic_guitar_nylon', melody:'inst:marimba'},
      A:{drums:{0:'x...x...x...x...x...x...x...x...',1:'...x..x....x..x....x..x....x..x.',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.'},
         bass:[[0,0,4],[8,0,4],[16,3,4],[24,4,4]],
@@ -2966,7 +2972,7 @@ var GS = (function(){
         chords:[[0,0,4,0,1],[6,0,2,0,1],[8,2,4,0,1],[16,3,4,0,1],[22,3,2,0,1],[24,4,4,0,1]],
         melody:[[0,7,2,1],[4,4,2,1],[8,5,2,1],[12,4,2,1],[16,2,3,1],[22,3,2,1],[26,4,4,1]]},
      arr:['A1','A1','B1','B1']},
-    {name:'Rock', emoji:'🎸', desc:'Driving drums and crunchy guitars', bpm:120, kit:'Real Drums', groove:'none', hum:12, root:4, scale:'Aeolian (Minor)',
+    {name:'Rock', art:'rock', desc:'Driving drums and crunchy guitars', bpm:120, kit:'Real Drums', groove:'none', hum:12, root:4, scale:'Aeolian (Minor)',
      inst:{bass:'inst:electric_bass_pick', chords:'inst:overdriven_guitar', melody:'inst:distortion_guitar'},
      A:{drums:{0:'x.....x.....x...x.....x.....x...',1:'....X.......X.......X.......X...',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.',7:'X...............................'},
         bass:[[0,0,2],[2,0,2],[4,0,2],[6,0,2],[8,5,2],[10,5,2],[12,5,2],[14,5,2],[16,3,2],[18,3,2],[20,3,2],[22,3,2],[24,4,2],[26,4,2],[28,4,2],[30,4,2]],
@@ -2977,7 +2983,7 @@ var GS = (function(){
         chords:[[0,0,4,0,1],[4,0,4,0,1],[8,5,4,0,1],[12,5,4,0,1],[16,3,4,0,1],[20,3,4,0,1],[24,4,4,0,1],[28,4,4,0,1]],
         melody:[[0,4,2,1],[4,4,2,1],[8,5,2,1],[12,7,2,1],[16,4,4,1],[20,2,2,1],[24,0,8,1]]},
      arr:['A1','A1','B1','A1']},
-    {name:'Drum n Bass', emoji:'⚡', desc:'Fast breaks and deep rolling bass', bpm:170, kit:'Electronic', groove:'none', hum:0, root:5, scale:'Min Penta',
+    {name:'Drum n Bass', art:'drum_n_bass', desc:'Fast breaks and deep rolling bass', bpm:170, kit:'Electronic', groove:'none', hum:0, root:5, scale:'Min Penta',
      inst:{bass:'inst:synth_bass_2', chords:'inst:pad_2_warm', melody:'inst:fx_3_crystal'},
      A:{drums:{0:'x.........x.....x.........x.....',1:'........X.............X.........',2:'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.'},
         bass:[[0,0,8],[10,2,4],[16,0,8],[26,3,4]],
@@ -2988,7 +2994,7 @@ var GS = (function(){
         chords:[[0,0,16,0,1],[16,4,16,0,1]],
         melody:[[0,4,2,1],[4,3,1,1],[6,2,2,1],[10,4,2,1],[16,7,3,1],[22,4,2,1],[26,2,4,1]]},
      arr:['A1','B1','B1','A1']},
-    {name:'Funk', emoji:'🕺', desc:'Syncopated bass and clav stabs', bpm:105, kit:'Real Drums', groove:'SP-1200', hum:15, root:2, scale:'Funk (Dorian)',
+    {name:'Funk', art:'funk', desc:'Syncopated bass and clav stabs', bpm:105, kit:'Real Drums', groove:'SP-1200', hum:15, root:2, scale:'Funk (Dorian)',
      inst:{bass:'inst:slap_bass_1', chords:'inst:clavinet', melody:'inst:brass_section'},
      A:{drums:{0:'x.....x...x...x.x.....x...x.....',1:'....X.......X.x.....X..x....X...',2:'x.x.X.x.x.x.X.x.x.x.X.x.x.x.X.x.',3:'..............................x.'},
         bass:[[0,0,1],[3,0,1],[6,4,1],[8,0,2],[12,3,1],[14,4,1],[16,0,1],[19,0,1],[22,4,1],[24,5,2],[28,4,1],[30,3,1]],
@@ -2999,7 +3005,7 @@ var GS = (function(){
         chords:[[0,0,1,0,1],[4,0,1,0,1],[8,3,1,0,1],[10,0,2,0,1],[16,0,1,0,1],[20,3,1,0,1],[24,4,1,0,1],[26,3,2,0,1]],
         melody:[[0,7,2,1],[4,5,1,1],[8,4,2,1],[12,3,1,1],[16,5,3,1],[22,4,2,1],[24,7,3,1],[28,5,2,1]]},
      arr:['A1','A1','B1','A1']},
-    {name:'Dreamy', emoji:'🌌', desc:'Floating pads, harp and starlight', bpm:80, kit:'Lo-Fi', groove:'none', hum:20, root:0, scale:'Lydian',
+    {name:'Dreamy', art:'dreamy', desc:'Floating pads, harp and starlight', bpm:80, kit:'Lo-Fi', groove:'none', hum:20, root:0, scale:'Lydian',
      inst:{bass:'inst:cello', chords:'inst:string_ensemble_1', melody:'inst:orchestral_harp'},
      A:{drums:{0:'x...............x...............',2:'....x.......x.......x.......x...',6:'x.......x.......x.......x.......'},
         bass:[[0,0,16],[16,3,16]],
@@ -3056,23 +3062,46 @@ var GS = (function(){
     markDirty();
   }
 
+  // Astra's starter covers (320x200), keyed by the art id each STARTERS entry carries
+  var STARTER_ART = {
+    hip_hop:'assets/games/song/starters/starter_hip_hop.png',
+    trap:'assets/games/song/starters/starter_trap.png',
+    lo_fi_chill:'assets/games/song/starters/starter_lo_fi_chill.png',
+    house:'assets/games/song/starters/starter_house.png',
+    pop:'assets/games/song/starters/starter_pop.png',
+    reggaeton:'assets/games/song/starters/starter_reggaeton.png',
+    rock:'assets/games/song/starters/starter_rock.png',
+    drum_n_bass:'assets/games/song/starters/starter_drum_n_bass.png',
+    funk:'assets/games/song/starters/starter_funk.png',
+    dreamy:'assets/games/song/starters/starter_dreamy.png',
+    blank_canvas:'assets/games/song/starters/starter_blank_canvas.png'
+  };
+  function starterCard(onclick, art, name, sub, extraCls, title){
+    return '<button class="gs-starter-card'+(extraCls?' '+extraCls:'')+'" onclick="'+onclick+'"'+(title?' title="'+esc(title)+'"':'')+'>'
+      +'<span class="st-cover">'+art+'</span>'
+      +'<span class="st-name">'+esc(name)+'</span>'
+      +'<span class="st-bpm">'+esc(sub)+'</span>'
+      +'</button>';
+  }
   function renderStarters(){
     var el = document.getElementById('gs-starter-grid');
     if(!el) return;
     var html = '';
+    // Resume first when there is a draft worth going back to
+    var draft = null;
+    try{ draft = localStorage.getItem('gs_autosave'); }catch(e){}
+    if(draft && hasAnyNotes()){
+      html += starterCard('GS.closeStarters()', resumeArt(), 'Resume', (_curSongName||'Your song')+' · '+bpm+' BPM', 'st-resume', 'Keep working on '+(_curSongName||'your song'));
+    }
     for(var i=0;i<STARTERS.length;i++){
       var st = STARTERS[i];
-      html += '<div class="gs-starter-card" onclick="GS.useStarter('+i+')">'
-                +'<div class="st-name">'+st.name+'</div>'
-        +'<div class="st-desc">'+st.desc+'</div>'
-        +'<div class="st-desc" style="color:var(--sage)">'+st.bpm+' BPM</div>'
-        +'</div>';
+      html += starterCard('GS.useStarter('+i+')', '<img src="'+STARTER_ART[st.art]+'" width="320" height="200" alt="" loading="lazy">', st.name, st.bpm+' BPM', '', st.desc);
     }
-    html += '<div class="gs-starter-card blank" onclick="GS.useStarter(-1)">'
-            +'<div class="st-name">Blank Canvas</div>'
-      +'<div class="st-desc">Empty grid. Total freedom.</div>'
-      +'</div>';
+    html += starterCard('GS.useStarter(-1)', '<img src="'+STARTER_ART.blank_canvas+'" width="320" height="200" alt="" loading="lazy">', 'Blank Canvas', 'Empty grid', '', 'Empty grid. Total freedom.');
     el.innerHTML = html;
+  }
+  function resumeArt(){
+    return '<span class="st-resume-art">'+ic('play')+'</span>';
   }
 
   // ═══ UNDO / REDO core ═══
@@ -3910,7 +3939,8 @@ var GS = (function(){
         markDirty();
       } else {
         applyStarter(STARTERS[i]);
-        _toast(STARTERS[i].name+' ready. Press Play, then make it yours');
+        if(!playing) start();
+        _toast(STARTERS[i].name+' is playing. Change any step to make it yours');
       }
       GS.closeStarters();
     },
