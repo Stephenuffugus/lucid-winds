@@ -26,7 +26,7 @@ placement, and the skin binding by skin_id (never by strip suffix).
 
 | Step | State | Stamp | Commit | Note |
 |---|---|---|---|---|
-| 0 | TODO | | | |
+| 0 | DONE | | 85a18ecb1 (start) | LIVE sb-m1-22, main 33db6ef8f, main's index blob ded7a66d (equal to the branch); before set /home/codespace/sb-drafts/fable-look/; the fast check on the untouched build: lint, icons, astra, harness --fast, redwatch anchors PASS, and 13 of the 19 browser gates FAIL on stale expectations (play, input, layout, capture, sprites, loot, share, save, loop, pause, fight, compare, house; the house one is the known debt of 2 Nov; none is in CI or deploy.sh), log /home/codespace/sb-drafts/m2/check-fast-0.txt; so each step's gate is the no browser set (SWS_NO_BROWSER=1 tools/check.js: the lint and the fast harness deploy.sh runs, and what CI runs), once per step before its push |
 | 1 | TODO | sb-m2-1 | | |
 | 2 | TODO | sb-m2-2 | | |
 | 3 | TODO | sb-m2-3 | | |
