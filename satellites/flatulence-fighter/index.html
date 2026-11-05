@@ -1994,7 +1994,9 @@
   function renderHands(){
     [[handL,0],[handR,1]].forEach(([el,k])=>{
       const c=S?S.calls.find(o=>o.side===k):null, ph=c?c.phase:"idle";
-      const words=!c?(k?"Right hand":"Left hand"):(ph==="wait"||ph==="hold"?c.words:c.flash), icon=c?c.icon:"call_hand";
+      // a call takes only a touch that lands after it lit: a finger already resting there is asked to lift and touch
+      const resting=ph==="wait"&&S&&(k?S.handR:S.handL);
+      const words=!c?(k?"Right hand":"Left hand"):(resting?"Lift, then touch":(ph==="wait"||ph==="hold"?c.words:c.flash)), icon=c?c.icon:"call_hand";
       const key=ph+"|"+words+"|"+icon;
       if(el._key!==key){ el._key=key;
         el.classList.remove("idle","called","holding","done","missed");
