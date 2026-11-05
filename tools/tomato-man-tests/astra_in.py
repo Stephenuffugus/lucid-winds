@@ -112,7 +112,26 @@ def main():
         im = Image.open(src).convert('RGBA'); im = im.resize((im.width // 2, im.height // 2), Image.LANCZOS)
         im.save(out(rel), 'WEBP', quality=q, method=6, alpha_quality=85); total[0] += os.path.getsize(out(rel))
     for b in ('s', 'se', 'e', 'ne', 'n'): half(os.path.join(V2, 'tomato_%s_neutral.png' % b), 'hero/tomato_%s.webp' % b)
-    for k in ('respawn', 'victory'): half(os.path.join(V2, 'tomato_%s_neutral.png' % k), 'hero/tomato_%s.webp' % k)
+    # the four south facing actions (m2 step 8): her figure drifts across each 256 px cell (the head from x 164 to 103,
+    # a 60 px slide in half a second) and the feet sit at 214 to 248 by sheet, so every frame is moved to put the head
+    # (her hat anchor) on the cell's centre line and the sheet's lowest foot on the idle sheet's (236); the anchors move
+    # with it. Her sockets were right about her art; the art was off its cells.
+    import json as _json
+    _m2 = _json.load(open('/workspaces/tomato-man-astra-v1/pack-v2/manifest.json'))
+    ACT_SOCKS = {}
+    for k in ('victory', 'respawn', 'cooling', 'shade_drop'):
+        an = _m2['animations'][k]; sh = Image.open(os.path.join(V2, 'tomato_%s_neutral.png' % k)).convert('RGBA')
+        cells = [sh.crop((i * 256, 0, i * 256 + 256, 256)) for i in range(4)]
+        dy = 236 - max(c.getchannel('A').getbbox()[3] for c in cells)
+        strip = Image.new('RGBA', (1024, 256), (0, 0, 0, 0)); ACT_SOCKS[k] = []
+        for i, c in enumerate(cells):
+            ax, ay = an['sockets'][i]['hat_anchor']; dx = 128 - ax
+            strip.paste(c.transform(c.size, Image.AFFINE, (1, 0, -dx, 0, 1, -dy), resample=Image.NEAREST), (i * 256, 0))
+            ACT_SOCKS[k].append([128, ay + dy])
+        if k == 'victory':               # the postcard and the 1080 share card draw him big: the full size strip, on demand
+            strip.save(out('hero/tomato_victory_big.webp'), 'WEBP', quality=84, method=6, alpha_quality=88); total[0] += os.path.getsize(out('hero/tomato_victory_big.webp'))
+        strip = strip.resize((512, 128), Image.LANCZOS)
+        strip.save(out('hero/tomato_%s.webp' % k), 'WEBP', quality=82, method=6, alpha_quality=85); total[0] += os.path.getsize(out('hero/tomato_%s.webp' % k))
     half(os.path.join(PACK, 'a_hero', 'exposure_states.png'), 'hero/exposure_states.webp')
     PRODUCE = ['strawberry', 'orange', 'lemon', 'lime', 'peach', 'cherry', 'bell_pepper', 'eggplant', 'avocado', 'heirloom', 'pickle', 'golden', 'sunburn']
     for k in PRODUCE: half(os.path.join(PACK, 'a_hero', '%s_body.png' % k), 'hero/%s_body.webp' % k)
@@ -136,6 +155,7 @@ def main():
     import json
     m2 = json.load(open('/workspaces/tomato-man-astra-v1/pack-v2/manifest.json'))
     socks = {b: [sk['hat_anchor'] for sk in m2['animations'][b]['sockets']] for b in ('s', 'se', 'e', 'ne', 'n')}
+    socks.update(ACT_SOCKS)              # the actions, re centred above
     page0 = os.path.join(GAME, 'index.html'); h0 = open(page0).read()
     a0, b0 = '/* TM HERO SOCKETS (lucid-winds tools/tomato-man-tests/astra_in.py writes this line) */', '/* /TM HERO SOCKETS */'
     if a0 in h0:

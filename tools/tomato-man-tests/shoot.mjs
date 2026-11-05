@@ -7,6 +7,7 @@
  *   node tools/tomato-man-tests/shoot.mjs <outdir> play            one screen
  *   W=360 H=780 node tools/tomato-man-tests/shoot.mjs <outdir> play
  * Screens: title howto worlds levels play blaze burn win shop builder daily pause first longdark springtide angry pickle
+ * ne acts winhat (m2 step 8: walking north east with a hat, a shade drop frame, the postcard victory with the hat)
  * share (share writes the two composed 1080 postcards; first = an empty save, Dawn
  * Ribbon's first seconds). Every other screen starts from a save that has seen How to Play and every coach mark. */
 import { createRequire } from 'node:module';
@@ -50,6 +51,11 @@ const SCREENS = {
   daily: async () => { await ev("__TM.hold(true); __TM.startDaily(); __TM.seek(3)"); },
   pause: async () => { await ev("__TM.hold(true); __TM.startLevel(0); __TM.seek(2); __TM.togglePause()"); },
   first: async () => { await ev("__TM.hold(true); __TM.startLevel(0); __TM.seek(2.5)"); },
+  ne: async () => { await ev("__TM.look('tomato','sunhat'); __TM.hold(true); __TM.startLevel(1); __TM.seek(1.5)"); await wait(900);
+    await ev("var r=__TM._run(); __TM.P.face=-Math.PI/4; __TM.P.vx=130; __TM.P.vy=-130; r.idleT=0; __TM.render()"); },
+  acts: async () => { await ev("__TM.look('tomato','sunhat'); __TM.hold(true); __TM.startLevel(1); __TM.seek(1.5)"); await wait(900);
+    await ev("var r=__TM._run(); r.act={k:'shade_drop',t:0.3}; __TM.P.vx=0; __TM.P.vy=0; r.idleT=1; __TM.render()"); },
+  winhat: async () => { await ev("__TM.look('tomato','sunhat'); __TM.hold(true); __TM.startLevel(2); __TM.seek(2); __TM.winLevel()"); await wait(1500); },
   longdark: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='The Long Dark')); __TM.seek(4.6)"); },
   springtide: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='Spring Tide')); var r=__TM._run(); r.screenT=30; __TM.P.x=1200; __TM.P.y=2060; r.wilts[0].campT=2.0; __TM.seek(0.4)"); },
   angry: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='The Angry Sun')); __TM.seek(0.7)"); await wait(700); await ev("__TM.render()"); },
