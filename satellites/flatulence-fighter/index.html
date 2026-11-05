@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@700&family=Open+Sans:wght@400;600&display=swap">
 <meta name="theme-color" content="#e7e0cb">
-<link rel="manifest" href="manifest.json?v=20261104a">
-<link rel="apple-touch-icon" href="icon-192.png?v=20261104a">
+<link rel="manifest" href="manifest.json?v=20261105a">
+<link rel="apple-touch-icon" href="icon-192.png?v=20261105a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Flatulence Fighter">
@@ -945,7 +945,7 @@
     // rise is slower than m1's 7.5 plus 1.5 an act: a vent at each cover keeps it in the gauge's middle in Act I
     riseBase:5.5, riseRamp:0.7, rampEvery:22, rampCap:6, rampSoftSlope:0.4,
     // m2 the cheeks: a lift in the quiet squeaks after a grace; one sound is one strike however many cheeks it was
-    squeakGrace:0.15, squeakQuiet:0.5,
+    squeakGrace:0.15, squeakQuiet:0.5, squeakRepeat:2.0 /* a cheek left off is heard again every this many seconds */,
     // m2 the hands: a call waits about 2 s on Normal (less each act, scaled by mode), then holds 1.5 to 3 s; the
     // Twister: from overlapAct a call may come under a cover, from fourAct both hands at once and a call may move
     callFirst:8, callWait:2.0, callWaitMin:1.35, callWaitAct:0.06, callHoldMin:1.5, callHoldMax:3.0,
@@ -1417,8 +1417,11 @@
     for(let k=0;k<2;k++){ const on=k?S.padR:S.padL;
       if(on!==S.cPrev[k]){ S.cPrev[k]=on;
         if(on){ S.cArmed[k]=true; S.cGrace[k]=0; }
-        else if(S.cArmed[k]){ if(S.cover) S.coverLift=true; else S.cGrace[k]=S.time+CFG.squeakGrace; } }
-      if(S.cGrace[k]&&S.time>=S.cGrace[k]){ S.cGrace[k]=0; if(!on){ cheekSqueak("A squeak"); if(S.phase!=="playing"&&S.phase!=="tutorial") return; } }
+        else if(S.cArmed[k]&&S.cover) S.coverLift=true; }
+      // the walk's fix: in the quiet an armed cheek that is OFF is heard, not only the frame it lifts: after the grace,
+      // then again every squeakRepeat while it stays off (a cheek left off under a cover that gave no vent, too)
+      if(!on&&S.cArmed[k]&&!S.cover&&!S.backBy&&!S.cGrace[k]) S.cGrace[k]=S.time+CFG.squeakGrace;
+      if(S.cGrace[k]&&S.time>=S.cGrace[k]){ S.cGrace[k]=0; if(!on&&!S.cover){ cheekSqueak("A squeak"); if(S.phase!=="playing"&&S.phase!=="tutorial") return; S.cGrace[k]=S.time+CFG.squeakRepeat; } }
     }
     if(S.cover&&!S.vented&&S.coverLift&&!S.padL&&!S.padR&&S.cArmed[0]&&S.cArmed[1]) cheekVent();
     if(S.backBy&&S.time>=S.backBy){ S.backBy=0; if(!S.padL||!S.padR) cheekSqueak("Back on too late"); }
@@ -1761,7 +1764,12 @@
   }
 
   // -- pause / nav --
-  function pauseGame(){ if(!S||(S.phase!=="playing"&&S.phase!=="countin")) return; S.phase="paused"; releaseAll(); countInEl.classList.add("hidden");
+  function pauseGame(){ if(!S||(S.phase!=="playing"&&S.phase!=="countin")) return;
+    // the walk's fix: a pause does not unsay a lift the room already heard (a cheek off in the quiet, or after a vent
+    // the cheeks not back yet); under a cover a lift is silent, in the lesson nothing counts, in a title card nothing is armed
+    if(S.phase==="playing"&&!S.lesson&&!S.inIntro&&!S.cover){ const off=k=>S.cArmed[k]&&!(k?S.padR:S.padL);
+      if(off(0)||off(1)){ cheekSqueak(S.backBy?"Back on too late":"A squeak"); if(S.phase!=="playing") return; } }
+    S.phase="paused"; releaseAll(); countInEl.classList.add("hidden");
     // m2: every finger was let go; nothing squeaks for it, and a call being held waits again with a fresh window
     S.hPrev=[false,false]; S.cGrace=[0,0]; S.backBy=0;
     S.calls.forEach(c=>{ if(c.phase==="hold"){ c.phase="wait"; c.hold=Math.max(0.6,c.hold-c.ht); c.ht=0; c.t0=S.time; c.wait=callWaitDur(); c.press0=S.handPressN[c.side]; } });
@@ -1884,7 +1892,7 @@
         if(T.held>0.8) nextTut();
         break;
       case 1: // a bus: let go now (aim for a Perfect); a bus that passes unvented comes round again
-        if(T.vented){ lessonHint(T.perfect?"Perfect. Right as it started":"Vented. Let go right as it starts for a Perfect"); nextTut(); break; }
+        if(T.vented){ const vh=T.perfect?"Perfect. Right as it started":"Vented. Let go right as it starts for a Perfect"; nextTut(); lessonHint(vh); break; }
         if(!S.cover){ if(!T.again){ T.again=S.time+1.2; lessonLine("Wait for the next one"); } else if(S.time>=T.again){ T.again=0; lessonLine(LESSON[1]); lessonCover(); } }
         break;
       case 2: // cheeks back on (the bus may still be passing)
@@ -1936,7 +1944,7 @@
   function tick(dt){
     if(S.inIntro){ S.introTime-=dt; if(S.introTime<=0){ S.inIntro=false; introScreen.classList.add("hidden"); armPads(); } render(); return; }
     // an act ends once its last cover has played out (the intertitle never cuts a vent in half)
-    S.sceneTime-=dt; if(S.sceneTime<=0&&!S.cover){ showIntro(S.scene+1); render(); return; }
+    S.sceneTime-=dt; if(S.sceneTime<=0&&!S.cover&&!S.backBy&&!S.cGrace[0]&&!S.cGrace[1]){ showIntro(S.scene+1); render(); return; }   // the walk's fix: never ends over a pending squeak
     if(S.stun>0) S.stun-=dt;
 
     if(!S.cover && S.time>=S.nextCover) openCover();
@@ -2119,6 +2127,7 @@
   $("menuBtn").addEventListener("click",toMenu);
   $("shareBtn").addEventListener("click",shareRun);
   $("pauseBtn").addEventListener("click",pauseGame);
+  $("pauseBtn").addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); pauseGame(); });   // the walk's fix: works with fingers down
   $("resumeBtn").addEventListener("click",resumeGame);
   $("quitBtn").addEventListener("click",()=>{ if(S) gameOver(); });
   $("howBtn").addEventListener("click",openHow);
