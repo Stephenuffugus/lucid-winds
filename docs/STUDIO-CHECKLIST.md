@@ -11,7 +11,8 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 - [ ] Give Astra the Dewball kickoff in Drive Astra/Dewball/Store kit when a slot frees (you)
 - [ ] Shutterbug: open the Darkroom from the title; every blueprint carried out of a room is a print waiting there, a weapon once developed for dead pixels (you)
 - [ ] Play Keepsies on the Pixel with the STATUES chip on: place two, move one (you)
-- [ ] Pick from the Shutterbug proposals below (you)
+- [x] Pick from the Shutterbug proposals below (you: 5 Nov, weapons first, then times in shared codes)
+- [ ] Run the Shutterbug deploy line, then play a room, Play it again, and share one (you)
 - [ ] Pick the Flatulence Fighter redesign below (you)
 
 ## Astra queue (sent, back, wired)
@@ -27,13 +28,13 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 ## Shutterbug (m2 live, sb-m2-6)
 Decided 5 Nov, his words ("i do really like that were a little closer and i think iots cool having the backround still
 there subtly"): the photo stays faint behind the room (m2 DECISION 1), the closer view stays the default (DECISION 2).
-- [ ] Weapons he can actually find. He starts with J1 Boomerang and D1 Anvil Boots, chests only drop owned weapons
+- [x] Weapons he can actually find (BUILT 5 Nov, sb-m2-7 inside sb-m2-8; live after his deploy line). He starts with J1 Boomerang and D1 Anvil Boots, chests only drop owned weapons
       (ui.owned), a new one needs a blueprint (BLUEPRINT_CHANCE 0.25) carried out, then developing in the Darkroom
       (DEV_PRICE by tier), and the title never says a print is waiting: he has found one, J3 Shield Kick. Proposal: any
       chest can hold an unfound weapon, used on the spot, kept by clearing the room with it (Opus)
 - [ ] Fans that matter: something worth having at the top of every fan's lift (a key, the blueprint, a run of specks),
       and fans that blow enemies off ledges (Opus)
-- [ ] Replayability, he picks one or two: a time to beat inside every shared room code (codes and QR exist, the time
+- [ ] Replayability (5 Nov he said go: the time to beat is BUILT in sb-m2-8; medals per room, the faint best run, the weekly house and combos still open), he picks one or two: a time to beat inside every shared room code (codes and QR exist, the time
       is new); three medals per room (fast, no hits, every speck) on the room card; race a faint copy of your best
       climb (the hero skin called ghost is unrelated); a weekly house everyone plays with a weapon pick at each door
       (houses exist); named combos when the jump, dive and charm weapons pair up (you pick, Opus builds)
