@@ -43,8 +43,16 @@ await ev("FF_DEV.forceCover(false); FF_DEV.step(0.2)"); await shot('09-play-cove
 await ev("FF_DEV.vent(); FF_DEV.step(0.3)"); await shot('10-play-vented-cheeks-back-on');
 await ev("FF_DEV.setPads(1,1); FF_DEV.step(3); FF_DEV.forceCall(0,0); FF_DEV.step(0.6)"); await shot('11-play-a-hand-call');
 await ev("FF_DEV.setHands(1,0); FF_DEV.step(0.8)"); await shot('12-play-a-hand-call-held');
-await ev("FF_DEV.forceCall(1,1); FF_DEV.forceCover(false); FF_DEV.step(0.3); FF_DEV.setHands(1,1); FF_DEV.step(0.3)"); await shot('13-play-four-fingers-under-a-cover');
-await ev("FF_DEV.setHands(0,0); FF_DEV.step(0.2); FF_DEV.forceStrike(); FF_DEV.step(1.5)"); await shot('14-play-a-fidget-and-a-strike');
+// law 10: the four fingers are REAL touches, one CDP touchStart with four touch points at the four pad centres, and the
+// line printed is what the game read back from them
+const cdp = await page.target().createCDPSession();
+const pc = await page.evaluate(() => ['handL', 'handR', 'padL', 'padR'].map((id, i) => { const r = document.getElementById(id).getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2), id: i + 1, radiusX: 4, radiusY: 4, force: 1 }; }));
+await ev("FF_DEV.forceCall(1,1); FF_DEV.forceCover(false); FF_DEV.step(0.3)");
+await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pc });
+await ev("FF_DEV.step(0.3)"); await shot('13-play-four-fingers-under-a-cover');
+console.log('  four real touches read back:', await ev("(()=>{ const s=FF_DEV.state(); return JSON.stringify({ pads:[s.padL,s.padR,s.handL,s.handR], pointers:FF_DEV.pointers().length, cover:s.cover, calls:FF_DEV.calls().map(c=>c.side+':'+c.phase) }); })()"));
+await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+await ev("FF_DEV.setPads(1,1); FF_DEV.step(0.2); FF_DEV.forceStrike(); FF_DEV.step(1.5)"); await shot('14-play-a-fidget-and-a-strike');
 await ev("document.getElementById('pauseBtn').click()"); await shot('15-pause'); await ev("document.getElementById('resumeBtn').click()");
 await ev("FF_DEV.forceStrike(); FF_DEV.step(0.5); FF_DEV.forceStrike(); FF_DEV.step(3)"); await shot('16-game-over-exposed');
 await browser.close();
