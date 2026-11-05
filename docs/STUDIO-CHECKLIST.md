@@ -13,7 +13,7 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 - [ ] Play Keepsies on the Pixel with the STATUES chip on: place two, move one (you)
 - [x] Pick from the Shutterbug proposals below (you: 5 Nov, weapons first, then times in shared codes)
 - [ ] Run the Shutterbug deploy line, then play a room, Play it again, and share one (you)
-- [ ] Pick the Flatulence Fighter redesign below (you)
+- [x] Pick the Flatulence Fighter redesign below (you: 5 Nov, "sure")
 
 ## Astra queue (sent, back, wired)
 - [ ] Tomato Man: running (Astra)
@@ -43,6 +43,7 @@ there subtly"): the photo stays faint behind the room (m2 DECISION 1), the close
 - [ ] The Play listing: real captures in Astra's six frames, the Play build, the Console upload, assetlinks (Opus, then you)
 
 ## Flatulence Fighter (m1 live)
+- [ ] Run FLATULENCE_FIGHTER_M2_BUILD_PLAN.md (the four pads, written 5 Nov) in a fresh session (Opus); its six DECISIONS are his
 His verdict 5 Nov: no explanation of the objective or of what to touch when and why; lean and the pop ups make no
 sense to him; why only two HOLD buttons. His idea: two lower pads are the cheeks, two upper pads the hands, and you
 touch and hold the ones it tells you when it tells you; suggest setting the phone on a table to use fingers of both hands.
