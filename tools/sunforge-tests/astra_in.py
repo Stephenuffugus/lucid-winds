@@ -21,7 +21,7 @@ OUT = os.path.join(GAME, 'assets')
 
 COPY = {
   'identity': ['a_identity/first_frame.webp', 'a_identity/wordmark_on_dark.svg'],
-  'core': ['b_core/core_states.png', 'b_core/core_corona.png', 'b_core/core_rest_glow.png', 'b_core/core_heat_shimmer.png'],
+  'core': ['b_core/core_states.png', 'b_core/core_corona.png', 'b_core/core_heat_shimmer.png'],
   'cells': ['c_cells_pieces/ring_faces_unmarked.png', 'c_cells_pieces/ring_marks_dark.png', 'c_cells_pieces/weld_trim_layers.png',
             'c_cells_pieces/falling_cell.png', 'c_cells_pieces/ghost_cell.png', 'c_cells_pieces/stick_flash.png',
             'c_cells_pieces/sliding_past_streak.png'],

@@ -11,6 +11,7 @@
 - 14:38 UTC (Opus) the build run started on Fable's kickoff (work until 01:06 UTC). SF step 0 DONE: check and shoot tools in tools/sunforge-tests/, check red at 22 before the build, the before set in /home/codespace/sf-drafts/before.
 - SF step 1 DONE: Astra's runtime set in satellites/ring-stacker/assets (65 files, 426 KB, fonts subset 247 to 25 KB), icons, og card, arcade thumb, the icon sprite, the art loader, every emoji out, zoom on; check green.
 - SF step 2 DONE: the title on Astra's plate with the tagline, three mode cards and the icon row; How as her four plates; Settings with Reduced motion; check green, title shot read.
+- SF step 3 DONE: the board on Astra's plate, the grid pinned to the cells, the welded ring cells composed per neighbour pattern, her core jaws and states, the ceramic falling cell, the bracket ghost, stick flash, streak, sky flash; check green, play shot read (her resting glow dropped).
 
 ## 🎭 4 Nov 17:55 UTC (Opus) TONIGHT: FLATULENCE FIGHTER m1, THEN SHUTTERBUG m2, THEN KEEPSIES m1 (one line per step; box booted 17:41 UTC, this run stops 05:01 UTC)
 - FF step 0 DONE: check red at 72, before set in /home/codespace/ff-drafts/before/, main 33db6ef8f blobs index 060c5013, card 46634ec2, thumb b9118678.
