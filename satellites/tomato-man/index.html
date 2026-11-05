@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0b1626">
 <title>TOMATO MAN</title>
@@ -10,27 +10,33 @@
 <meta property="og:title" content="Tomato Man">
 <meta property="og:description" content="The sun is death. Shade is the only ground, and it moves. Dash the shadows, gather aloe, don't get burned.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://stephenuffugus.github.io/Tomato_Man/">
-<meta property="og:image" content="https://stephenuffugus.github.io/Tomato_Man/thumbnail.png">
-<meta property="og:image:width" content="1024">
-<meta property="og:image:height" content="1024">
+<meta property="og:url" content="https://lucidwinds.com/satellites/tomato-man/">
+<meta property="og:image" content="https://lucidwinds.com/satellites/tomato-man/art/social_card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Tomato Man">
 <meta name="twitter:description" content="The sun is death. Shade is the only ground, and it moves. Dash the shadows, gather aloe, don't get burned.">
-<meta name="twitter:image" content="https://stephenuffugus.github.io/Tomato_Man/thumbnail.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%8D%85</text></svg>">
+<meta name="twitter:image" content="https://lucidwinds.com/satellites/tomato-man/art/social_card.jpg">
+<link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-title" content="Tomato Man">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
+  /* Sunstruck type (Astra's pack v1): Bree Serif for headings, Atkinson Hyperlegible for controls and copy. Both OFL,
+     subset to Latin woff2 (lucid-winds tools/tomato-man-tests/astra_in.py) and served from art/fonts so the game is offline. */
+  @font-face{font-family:'Bree Serif';font-weight:400;font-display:swap;src:url(art/fonts/bree-serif.woff2?v=20261105c) format('woff2')}
+  @font-face{font-family:'Atkinson Hyperlegible';font-weight:400;font-display:swap;src:url(art/fonts/atkinson-regular.woff2?v=20261105c) format('woff2')}
+  @font-face{font-family:'Atkinson Hyperlegible';font-weight:700;font-display:swap;src:url(art/fonts/atkinson-bold.woff2?v=20261105c) format('woff2')}
+  .mk{width:1.15em;height:1.15em;display:inline-block;vertical-align:-.2em;flex:none}
   :root{
     --paper:#fff6e6; --ink:#23314a; --tomato:#e8332a; --leaf:#4fb56a; --beam:#ffd23f;
     --sky1:#13243f; --sky2:#0b1626; --accent:#ff8a4c;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;overflow:hidden;background:#0b1626;color:var(--paper);
-    font-family:ui-rounded,"Segoe UI",system-ui,sans-serif;user-select:none;-webkit-user-select:none;touch-action:none;}
+    font-family:"Atkinson Hyperlegible",ui-rounded,"Segoe UI",system-ui,sans-serif;user-select:none;-webkit-user-select:none;touch-action:none;}
   #game{display:block;width:100vw;height:100vh;}
 
   /* ---------- in-game HUD ---------- */
@@ -75,7 +81,7 @@
     color:var(--tomato);text-shadow:0 4px 0 #7a140f,0 0 22px rgba(232,51,42,.4);}
   h1.logo .two{display:block;color:var(--leaf);text-shadow:0 4px 0 #1f5a32;font-size:46px;}
   .tag{font-size:14px;opacity:.85;max-width:360px;line-height:1.55;margin:8px auto 16px;}
-  h2.title{font-size:30px;font-weight:900;letter-spacing:.04em;margin:6px 0 4px;}
+  h2.title{font-family:'Bree Serif',Georgia,serif;font-size:30px;font-weight:400;letter-spacing:.02em;margin:6px 0 4px;}
   .sub2{font-size:13px;opacity:.7;margin-bottom:16px;}
   .menuCol{display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px;margin-top:8px;}
   .big-btn{padding:16px 30px;border-radius:30px;border:none;font-weight:900;font-size:18px;
@@ -114,16 +120,16 @@
   .sw{width:52px;height:30px;border-radius:16px;background:rgba(255,255,255,.2);position:relative;transition:background .2s;}
   .sw.on{background:var(--leaf);} .sw .k{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
     background:#fff;transition:left .2s;} .sw.on .k{left:25px;}
-  #builderCanvas{width:170px;height:170px;margin:8px 0;}
+  #builderCanvas{width:180px;height:280px;margin:8px 0;}
   .pad{height:14px;}
   .toptabs{position:fixed;top:calc(env(safe-area-inset-top,8px) + 8px);right:14px;z-index:20;display:flex;gap:8px;}
   .badge{display:inline-block;background:var(--leaf);color:#06250e;font-size:11px;font-weight:900;border-radius:8px;padding:2px 6px;margin-left:6px;}
   /* ---------- coach marks (inline tutorial) ---------- */
-  #coach{position:fixed;left:50%;top:43%;transform:translate(-50%,-50%);
+  #coach{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 150px);transform:translate(-50%,0);
     max-width:min(84vw,410px);background:rgba(11,22,38,.92);border:2px solid rgba(255,210,120,.65);border-radius:16px;
     padding:11px 16px;color:#fff6e6;font-weight:700;font-size:14px;line-height:1.35;text-align:center;z-index:9;
     opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;box-shadow:0 6px 24px rgba(0,0,0,.45);}
-  #coach.show{opacity:1;transform:translate(-50%,calc(-50% - 4px));}
+  #coach.show{opacity:1;transform:translate(-50%,-4px);}
   #coach .ic{font-size:21px;display:block;margin-bottom:1px;}
   /* ---------- how to play ---------- */
   #howto .htList{display:flex;flex-direction:column;gap:9px;width:100%;max-width:440px;margin-top:4px;text-align:left;}
@@ -133,6 +139,92 @@
   .htCard .ht{font-weight:900;font-size:15px;margin-bottom:1px;}
   .htCard .hb{font-weight:600;font-size:13px;opacity:.82;line-height:1.4;}
   #howto .htHero{font-size:14px;opacity:.9;max-width:420px;line-height:1.5;margin:2px auto 10px;}
+  /* ===== SUNSTRUCK (step 5): every screen in pale daylight paper with ink text and Astra's frames, so the game looks
+     like its thumbnail and not like a night menu; the shade blue, the tomato red and the aloe green keep their jobs ===== */
+  :root{ --paper:#f4e8c2; --ink:#2b2a20; --inkSoft:#5c5846; --tomatoR:#d9452a; --calyx:#087b61; --aloeG:#4f9a5c; }
+  .overlay{background:linear-gradient(180deg,#f6ebc8 0%,#e4cf96 100%);color:var(--ink);}
+  #title{background:var(--tm-menu,linear-gradient(180deg,#f6ebc8,#e4cf96)) center/cover no-repeat;justify-content:space-between;}
+  h1.logo{margin:4px 0 0;line-height:0;text-shadow:none} h1.logo img{width:min(80vw,330px);height:auto} h1.logo img+.txt{display:none}
+  h1.logo .txt{line-height:.95}
+  .tag{color:var(--ink);background:rgba(255,248,226,.82);border-radius:12px;padding:8px 14px;font-size:15px;max-width:330px;margin:4px auto 0}
+  #title .hintline{display:none}
+  h2.title{color:var(--ink)} .sub2,.hintline,.statline{color:var(--inkSoft);opacity:1}
+  .big-btn{background:var(--tomatoR);color:#fff8ea;box-shadow:0 4px 0 #8f2a17;font-family:'Bree Serif',Georgia,serif;font-weight:400;font-size:20px;min-height:52px}
+  .big-btn:active{box-shadow:0 1px 0 #8f2a17} .big-btn.green{background:var(--calyx);color:#fff8ea;box-shadow:0 4px 0 #04503f}
+  .ghost-btn{background:rgba(255,248,226,.94);color:var(--ink);border:2px solid rgba(43,42,32,.45);min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:16px}
+  .iconbtn{background:rgba(255,248,226,.94);color:var(--ink);border:2px solid rgba(43,42,32,.35);width:48px;height:48px;font-size:22px}
+  .wallet{color:var(--ink);text-shadow:none;border:10px solid transparent;border-image:url(art/ui/aloe_wallet_chip_frame.png?v=20261105c) 28 fill / 10px stretch;padding:0 4px;font-size:16px}
+  .wallet .ic{display:none}   /* her chip carries its own aloe */ .wallet{padding-left:22px}
+  .tab{color:var(--ink);border-color:rgba(43,42,32,.4);background:rgba(255,248,226,.7);min-height:44px} .tab.on{background:var(--tomatoR);color:#fff8ea;border-color:var(--tomatoR)}
+  .toggleRow{background:rgba(255,248,226,.85);color:var(--ink);min-height:52px} .sw{background:rgba(43,42,32,.25)} .sw.on{background:var(--calyx)}
+  /* world postcards: her scene, the name in her band, the finds on a chip */
+  .worldCard{padding:0;border:0;border-radius:12px;min-height:0;aspect-ratio:640/360;background:#efe0b4 center/cover no-repeat;color:var(--ink);
+    box-shadow:0 3px 0 rgba(43,42,32,.22),0 8px 18px rgba(43,42,32,.14);overflow:hidden;text-align:left}
+  .worldCard .wname{position:absolute;left:4%;right:4%;bottom:2.4%;height:11.5%;display:flex;align-items:center;justify-content:space-between;gap:8px;font:400 18px 'Bree Serif',Georgia,serif;white-space:nowrap}
+  .worldCard .wprog{position:static;font:700 13px 'Atkinson Hyperlegible',sans-serif;color:var(--inkSoft)}
+  .worldCard .wchip{position:absolute;left:3%;top:5%;background:rgba(255,248,226,.9);border-radius:10px;padding:3px 9px;font:700 13px 'Atkinson Hyperlegible',sans-serif}
+  .worldCard.locked{filter:grayscale(.6) brightness(.93);cursor:not-allowed}
+  /* level, shop and builder cards: her paper frames */
+  .card{background:none;color:var(--ink);border:12px solid transparent;border-image:url(art/ui/level_card_frame.png?v=20261105c) 28 fill / 12px stretch;border-radius:0;padding:2px 4px 4px}
+  #shopGrid .card,#buildGrid .card{border-image:url(art/ui/shop_card_frame.png?v=20261105c) 28 fill / 12px stretch}
+  .card small{color:var(--inkSoft);opacity:1;font-size:14px;line-height:1.35} .sub2{font-size:15px} .card .price{color:var(--ink);top:2px;right:4px} .card.hascost{padding-right:48px}
+  .card.equipped,.card.owned{box-shadow:0 0 0 3px var(--calyx)} .card.locked,.card.cant{opacity:.55}
+  .card .lname{font:400 16px 'Bree Serif',Georgia,serif}
+  .card .rec{display:flex;align-items:center;gap:4px;color:var(--ink);margin-top:6px;letter-spacing:0}
+  .card .rec .sock{width:22px;height:22px} .card .rec .sock.off{opacity:.25;filter:grayscale(1)}
+  .card .rec .lmedal{width:26px;height:26px;margin-left:4px} .card .rec .lbest{margin-left:auto;font-weight:700;font-size:13px}
+  #builderCanvas{border:14px solid transparent;border-image:url(art/ui/builder_frame_frame.png?v=20261105c) 28 fill / 14px stretch;box-sizing:content-box}
+  /* How to Play: four picture cards first, every rule one tap further */
+  .htQuick{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px;margin:6px 0 10px}
+  .htQ{border:12px solid transparent;border-image:url(art/ui/level_card_frame.png?v=20261105c) 28 fill / 12px stretch;padding:4px;text-align:center;font-size:16px;line-height:1.3}
+  .htQ .mk{width:44px;height:44px;display:block;margin:2px auto 6px;color:var(--ink)}
+  .htCard{background:rgba(255,248,226,.85);border-color:rgba(43,42,32,.18);color:var(--ink)} .htCard .hb{opacity:1;color:var(--inkSoft)}
+  .htCard .hi .mk{width:26px;height:26px}
+  /* the coach, the toast and the win in her paper */
+  #coach{background:none;border:14px solid transparent;border-image:url(art/ui/coach_bubble_frame.png?v=20261105c) 28 fill / 14px stretch;border-radius:0;box-shadow:none;color:var(--ink);font-size:16px;padding:4px 8px}
+  #coach .ic .mk{width:26px;height:26px}
+  #toast{left:50%;right:auto;width:max-content;max-width:88vw;transform:translateX(-50%);font-size:20px;color:var(--ink)!important;text-shadow:none;
+    border:12px solid transparent;border-image:url(art/ui/toast_pill_frame.png?v=20261105c) 28 fill / 12px stretch;padding:2px 10px;letter-spacing:.02em}
+  #toast .tdot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:1px}
+  #winTitle{color:var(--calyx)!important;font-family:'Bree Serif',Georgia,serif;font-weight:400} .medalImg{width:96px;height:96px}
+  .earnLine{color:var(--calyx)}
+  /* the HUD on light sand: ink with a pale edge, her meter, her buttons, the pause mark */
+  #heatWrap .lbl{color:var(--ink);text-shadow:0 1px 0 rgba(255,248,226,.9);font-size:12px;opacity:1}
+  #heatBar{position:relative;height:30px;border:0;border-radius:0;background:url(art/ui/exposure_meter_frame.png?v=20261105c) center/100% 100% no-repeat;overflow:visible}
+  #heatFill{position:absolute;left:3.1%;top:20.8%;width:93.8%!important;height:58.4%;border-radius:2px;background:url(art/ui/exposure_fill.png?v=20261105c) left/100% 100% no-repeat!important;transition:clip-path .05s linear}
+  #heatFill.spf{background:#7fd0ff!important} #heatFill.dark{background:#9fb0ff!important}
+  #topRight{color:var(--ink);text-shadow:0 1px 0 rgba(255,248,226,.95),0 0 6px rgba(255,248,226,.8)}
+  #lvlFlash{color:var(--ink);text-shadow:0 2px 0 rgba(255,248,226,.95),0 0 10px rgba(255,248,226,.9);font-family:'Bree Serif',Georgia,serif;font-weight:400}
+  #lvlFlash small{font-family:'Atkinson Hyperlegible',sans-serif;font-weight:700}
+  #comboTag{text-shadow:0 3px 0 #7a5a00,0 0 8px rgba(43,42,32,.4)}
+  #burnStrip{top:calc(env(safe-area-inset-top,8px) + 96px);left:50%;transform:translateX(-50%);white-space:nowrap;opacity:0;transition:opacity .25s;
+    background:rgba(255,248,226,.94);color:#8f2a17;border:2px solid rgba(143,42,23,.5);border-radius:14px;padding:6px 14px;font:400 18px 'Bree Serif',Georgia,serif;text-shadow:none}
+  #burnStrip.show{opacity:1}
+  #winCard{width:min(92vw,400px);aspect-ratio:1;margin:0 auto}
+  #winCv{width:100%;height:100%;display:block}
+  .srOnly{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  #pauseBtn{width:48px;height:48px;background:rgba(255,248,226,.92);color:var(--ink);border:2px solid rgba(43,42,32,.4);font-size:22px}
+  #btns .btn{position:relative;border:0;background-color:rgba(35,49,74,.5);background-position:center;background-size:100% 100%;background-repeat:no-repeat;color:var(--ink)}
+  #bDash{background-image:url(art/ui/button_dash.svg?v=20261105c)} #bShade{background-image:url(art/ui/button_shade.svg?v=20261105c)}
+  #bScreen{background-image:url(art/ui/button_spf.svg?v=20261105c)} #bIce{background-image:url(art/ui/button_ice.svg?v=20261105c)}
+  #btns .btn .w{position:absolute;left:-10px;right:-10px;bottom:-17px;text-align:center;font-size:11px;font-weight:700;text-shadow:0 1px 0 rgba(255,248,226,.95)}
+  #btns .btn .c{position:absolute;top:-4px;right:-4px;min-width:22px;height:22px;border-radius:11px;background:var(--ink);color:#fff8ea;font-size:12px;display:flex;align-items:center;justify-content:center;opacity:1;margin:0}
+  #btns .btn.empty{opacity:1} #btns .btn.empty::after{content:'';position:absolute;inset:0;background:url(art/ui/disabled_overlay.svg?v=20261105c) center/100% 100% no-repeat;pointer-events:none}
+  #bDash::before{content:'';position:absolute;inset:8%;border-radius:50%;background:conic-gradient(rgba(43,42,32,.5) calc(var(--cd,0)*360deg),transparent 0);pointer-events:none}
+  #bDash.stock{box-shadow:0 0 0 4px rgba(127,208,255,.85)}
+  /* the walk (step 7): labels clear of the next button; the level name below the right column; the HUD in cream
+     under an eclipse; the titles clear of the back and wallet chips */
+  #btns{gap:22px}
+  #lvlFlash{top:calc(env(safe-area-inset-top,0px) + 166px)}
+  #play-ui.night #topRight,#play-ui.night #heatWrap .lbl,#play-ui.night #btns .btn .w{color:#fff8ea;text-shadow:0 1px 0 rgba(20,18,30,.95),0 0 6px rgba(20,18,30,.85)}
+  h2.title{padding:0 50px} #builder h2.title{padding:0;margin-top:50px;font-size:clamp(22px,7vw,30px)}
+  h1.logo{margin-top:46px}
+  /* m2 step 10: her cue marks, one at a time under the meter */
+  #cue{top:calc(env(safe-area-inset-top,8px) + 54px);left:14px;display:flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;border-radius:14px;
+    background:rgba(255,248,226,.92);color:var(--ink);border:2px solid rgba(43,42,32,.35);font:700 13px 'Atkinson Hyperlegible',sans-serif;opacity:0;transition:opacity .2s;pointer-events:none;text-shadow:none}
+  #cue.show{opacity:1} #cue .mk{width:22px;height:22px} #cue.warn{color:#8f2a17;border-color:rgba(143,42,23,.6)}
+  #play-ui.night #cue{background:rgba(20,18,30,.78);color:#fff8ea;border-color:rgba(255,248,226,.45)}
+
 </style>
 <link rel="canonical" href="https://lucidwinds.com/satellites/tomato-man/">
 </head>
@@ -159,29 +251,34 @@
   if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
 })();
 </script>
+<!-- TM ICONS (lucid-winds tools/tomato-man-tests/astra_in.py writes this line) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><symbol id="tm-aloe" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path d="M32 4q11 15 9 23 17-12 22-8-3 18-18 20 10 14 6 23-18-4-19-17-7 16-21 17-3-16 10-23Q3 37 1 19q16-2 24 8-2-14 7-23z"/></g></symbol><symbol id="tm-back" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path d="M31 8l-24 24 24 24 6-6-14-14h34v-8H23l14-14z"/></g></symbol><symbol id="tm-builder" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path d="M30 3l6 9 13-4-4 12q15 5 15 20 0 21-28 21S4 61 4 40q0-17 18-21l-8-9 15 4z"/></g></symbol><symbol id="tm-check" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path d="M8 31l13 13L53 10l7 7-39 41L1 38z"/></g></symbol><symbol id="tm-cone" viewBox="0 0 96 96"><g fill="currentColor" transform="scale(1.5)"><path d="M13 25q-7-13 5-16 2-15 14-5 14-7 15 6 13 4 5 15zM16 31h32L32 61z"/></g></symbol><symbol id="tm-daily" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path fill-rule="evenodd" d="M10 12h7V4h7v8h16V4h7v8h7v47H10zm7 14v26h30V26zm6 6h18v6H23zm0 11h12v5H23z"/></g></symbol><symbol id="tm-dash" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path d="M27 8h24L38 26h17L25 58l7-23H18zM4 17h15v5H4zM2 29h13v5H2zM7 41h11v5H7z"/></g></symbol><symbol id="tm-gem" viewBox="0 0 96 96"><g fill="currentColor" transform="scale(1.5)"><path d="M16 7h32l14 19-30 35L2 26zm3 6L10 25h17zm6 0l7 12 7-12zm20 0L37 25h17z"/></g></symbol><symbol id="tm-heart-off" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path fill-rule="evenodd" d="M32 57C2 37 1 23 9 13q12-13 23 2 11-15 23-2 16 19-23 44zM14 18c-8 10 1 22 18 32 17-10 26-22 18-32-6-7-13-3-18 7-5-10-12-14-18-7z"/></g></symbol><symbol id="tm-heart-on" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path d="M32 57C2 37 1 23 9 13q12-13 23 2 11-15 23-2 16 19-23 44z"/></g></symbol><symbol id="tm-ice" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path fill-rule="evenodd" d="M8 17l24-12 24 12v30L32 60 8 47zm8 5v20l12 7V29zm19 7v20l13-7V22z"/></g></symbol><symbol id="tm-lock" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path fill-rule="evenodd" d="M18 27V18a14 14 0 0128 0v9h6v32H12V27zm7 0h14v-9a7 7 0 00-14 0zm4 12v11h6V39z"/></g></symbol><symbol id="tm-move" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path d="M32 3l10 12h-7v14h14v-7l12 10-12 10v-7H35v14h7L32 61 22 49h7V35H15v7L3 32l12-10v7h14V15h-7z"/></g></symbol><symbol id="tm-next" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path d="M33 8l24 24-24 24-6-6 14-14H7v-8h34L27 14z"/></g></symbol><symbol id="tm-pause" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path d="M15 9h12v46H15zM37 9h12v46H37z"/></g></symbol><symbol id="tm-retry" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path d="M13 23V7l8 7a25 25 0 11-11 30l7-3a17 17 0 1010-20l8 7H13z"/></g></symbol><symbol id="tm-settings" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path fill-rule="evenodd" d="M26 4h12l3 9 9 4 9-1 4 12-7 6-1 10 3 8-10 8-9-4-9 2-7 5-10-7 1-10-5-8-8-5 3-12 10-2 7-7zm6 17a11 11 0 100 22 11 11 0 000-22z"/></g></symbol><symbol id="tm-shade" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path d="M5 30C7 3 57 3 59 30H5zm24 4h6v15q0 10 11 4l3 5q-19 11-20-9z"/></g></symbol><symbol id="tm-shell" viewBox="0 0 96 96"><g fill="currentColor" transform="scale(1.5)"><path d="M30 58C-2 46 0 20 13 11l16 38-10-43q8-5 13-1l1 44 9-44q10 3 13 12L40 51l20-28q8 25-23 35z"/></g></symbol><symbol id="tm-shop" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path d="M9 7h46l6 18q-5 10-14 2-8 9-15 0-8 9-15 0-9 8-14-2zm1 26h7v20h30V33h7v27H10zm15 3h14v17H25z"/></g></symbol><symbol id="tm-spf" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><path fill-rule="evenodd" d="M24 4h16v10H24zm-7 13h30l5 9v32H12V26zm15 11a9 9 0 100 18 9 9 0 000-18z"/></g></symbol><symbol id="tm-star" viewBox="0 0 96 96"><g fill="currentColor" transform="scale(1.5)"><path d="M32 3l9 18 20 3-15 14 4 22-18-10-18 10 4-22L3 24l20-3z"/></g></symbol><symbol id="tm-sun" viewBox="0 0 128 128"><g fill="currentColor" transform="scale(2)"><circle cx="32" cy="32" r="13"/><path d="M29 3h6v10h-6zM29 51h6v10h-6zM3 29h10v6H3zM51 29h10v6H51zM9 12l4-4 8 8-4 4zM44 48l4-4 8 8-4 4zM9 52l8-8 4 4-8 8zM44 16l8-8 4 4-8 8z"/></g></symbol><symbol id="tm-boss-target" viewBox="0 0 256 256"><circle cx="128" cy="128" r="83" fill="none" stroke="currentColor" stroke-width="12" stroke-dasharray="91 39"/><path d="M128 20v39M128 197v39M20 128h39M197 128h39" fill="none" stroke="currentColor" stroke-width="12"/></symbol><symbol id="tm-lunge-lane" viewBox="0 0 256 256"><path d="M24 36h208M24 220h208" fill="none" stroke="currentColor" stroke-width="10" stroke-dasharray="24 12"/><path d="m62 83 45 45-45 45m73-90 45 45-45 45" fill="none" stroke="currentColor" stroke-width="16" stroke-linejoin="round"/></symbol><symbol id="tm-safe-exit" viewBox="0 0 256 256"><path d="M38 201V39h103l-18 30 18 30H49" fill="none" stroke="currentColor" stroke-width="15" stroke-linecap="round"/><path d="m103 172 35 34 80-82" fill="none" stroke="currentColor" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="tm-awning-warning" viewBox="0 0 256 256"><path d="M28 78h200l-24 58-46-17-30 37-32-37-43 17Z" fill="none" stroke="currentColor" stroke-width="12" stroke-linejoin="round"/><path d="M128 177v26m0 13v8" stroke="currentColor" stroke-width="14"/></symbol><symbol id="tm-umbrella-turn" viewBox="0 0 256 256"><path d="M48 128a80 80 0 0 1 160 0ZM128 128v79q0 25-24 25" fill="none" stroke="currentColor" stroke-width="12"/><path d="M35 58q45-50 99-29m-7-18 14 24-28 9" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/></symbol><symbol id="tm-cooling" viewBox="0 0 256 256"><path d="M128 25C109 69 61 121 61 158a67 67 0 0 0 134 0c0-37-48-89-67-133Z" fill="none" stroke="currentColor" stroke-width="12"/><path d="M128 101v84m-31-53 62 35m-62 0 62-35" stroke="currentColor" stroke-width="10"/></symbol><symbol id="tm-eclipse-window" viewBox="0 0 256 256"><circle cx="128" cy="128" r="63" fill="currentColor"/><path d="M128 15v27m0 172v27M15 128h27m172 0h27M48 48l20 20m120 120 20 20M48 208l20-20M188 68l20-20" stroke="currentColor" stroke-width="10"/></symbol><symbol id="tm-shade-ready" viewBox="0 0 256 256"><path d="M26 153q102-115 204 0Z" fill="currentColor"/><path d="M49 191h158M76 219h104" stroke="currentColor" stroke-width="12" stroke-linecap="round"/></symbol></svg>
+<!-- /TM ICONS -->
 <canvas id="game"></canvas>
 
 <!-- wallet (persistent on menus) -->
-<div id="wallet" class="wallet"><span class="ic">🌿</span><span id="walletN">0</span></div>
+<div id="wallet" class="wallet"><span class="ic"><svg class="mk" aria-hidden="true"><use href="#tm-aloe"/></svg></span><span id="walletN">0</span></div>
 
 <!-- ===== in-game HUD ===== -->
 <div id="play-ui" class="hidden">
+  <div id="cue" class="panel" role="status" aria-live="polite"></div>
   <div id="heatWrap" class="panel"><div class="lbl" id="heatLbl">Exposure</div><div id="heatBar"><div id="heatFill"></div></div></div>
   <div id="topRight" class="panel">
     <div><b id="timeT">0.0</b>s</div>
     <div id="bestT" style="opacity:.8;font-size:11px;margin:1px 0 3px">best · </div>
     <div id="findRun" style="font-size:15px"></div>
-    <div id="beamRun">🌿 <span id="beamRunN">0</span></div>
+    <div id="beamRun"><svg class="mk" aria-hidden="true"><use href="#tm-aloe"/></svg> <span id="beamRunN">0</span></div>
     <div id="deathT" style="opacity:.8">burns 0</div>
   </div>
-  <div id="pauseBtn">II</div>
+  <div id="pauseBtn" role="button" aria-label="Pause"><svg class="mk" aria-hidden="true"><use href="#tm-pause"/></svg></div>
   <div id="comboTag"></div>
   <div id="lvlFlash" class="panel"></div>
+  <div id="burnStrip" class="panel" role="status"></div>
   <div id="btns">
-    <div id="bIce" class="btn hidden">ICE<span class="c" id="cIce">0</span></div>
-    <div id="bScreen" class="btn">SPF<span class="c" id="cScreen">0</span></div>
-    <div id="bShade" class="btn">SHADE<span class="c" id="cShade">0</span></div>
-    <div id="bDash" class="btn">DASH</div>
+    <div id="bIce" class="btn hidden" role="button" aria-label="Ice"><span class="w">ICE</span><span class="c" id="cIce">0</span></div>
+    <div id="bScreen" class="btn" role="button" aria-label="SPF"><span class="w">SPF</span><span class="c" id="cScreen">0</span></div>
+    <div id="bShade" class="btn" role="button" aria-label="Shade"><span class="w">SHADE</span><span class="c" id="cShade">0</span></div>
+    <div id="bDash" class="btn" role="button" aria-label="Dash"><span class="w">DASH</span></div>
   </div>
 </div>
 <div id="toast"></div>
@@ -189,26 +286,26 @@
 
 <!-- ===== TITLE ===== -->
 <div id="title" class="overlay center show">
-  <h1 class="logo">TOMATO<span class="two">MAN</span></h1>
-  <div class="tag">The sun is death. Shade is the only ground. Sweep through the shadows, gather the aloe, beat the heat, and don't get burned.</div>
+  <h1 class="logo"><img src="art/ui/logo_on_sand.svg?v=20261105c" alt="Tomato Man" onerror="this.remove()"><span class="txt">TOMATO<span class="two">MAN</span></span></h1>
+  <div class="tag">The sun is death. Shade is the only ground, and it moves.</div>
   <div class="menuCol">
     <button class="big-btn green" id="tPlay">PLAY</button>
-    <button class="ghost-btn" id="tDaily">📅 Daily Challenge</button>
-    <button class="ghost-btn" id="tEndless">☀️ Shadow Run (Endless)</button>
-    <button class="ghost-btn" id="tHow">❓ How to Play</button>
+    <button class="ghost-btn" id="tDaily"><svg class="mk" aria-hidden="true"><use href="#tm-daily"/></svg> Daily Challenge</button>
+    <button class="ghost-btn" id="tEndless"><svg class="mk" aria-hidden="true"><use href="#tm-sun"/></svg> Shadow Run</button>
+    <button class="ghost-btn" id="tHow">How to Play</button>
     <div class="row" style="margin-top:4px">
-      <button class="ghost-btn" id="tShop">🛒 Shop</button>
-      <button class="ghost-btn" id="tBuild">🍅 Customize</button>
-      <button class="ghost-btn" id="tSet">⚙︎</button>
+      <button class="ghost-btn" id="tShop"><svg class="mk" aria-hidden="true"><use href="#tm-shop"/></svg> Shop</button>
+      <button class="ghost-btn" id="tBuild"><svg class="mk" aria-hidden="true"><use href="#tm-builder"/></svg> Customize</button>
+      <button class="ghost-btn" id="tSet" aria-label="Settings"><svg class="mk" aria-hidden="true"><use href="#tm-settings"/></svg></button>
     </div>
-    <button class="ghost-btn" id="tExit" style="font-size:14px;opacity:.8">← All Sky Wolf games</button>
+    <button class="ghost-btn" id="tExit" style="font-size:14px;opacity:.8"><svg class="mk" aria-hidden="true"><use href="#tm-back"/></svg> All Sky Wolf games</button>
   </div>
   <div class="hintline">The sun is death. Shade is the only ground, and it moves. New here? Tap <b>How to Play</b>.</div>
 </div>
 
 <!-- ===== WORLD MAP ===== -->
 <div id="map" class="overlay">
-  <div class="backRow"><div class="iconbtn" id="mapBack">‹</div></div>
+  <div class="backRow"><div class="iconbtn" id="mapBack" role="button" aria-label="Back"><svg class="mk" aria-hidden="true"><use href="#tm-back"/></svg></div></div>
   <h2 class="title">Choose a World</h2>
   <div class="sub2">Clear levels to unlock the next world.</div>
   <div class="menuCol" id="worldList" style="max-width:380px"></div>
@@ -217,7 +314,7 @@
 
 <!-- ===== LEVEL SELECT ===== -->
 <div id="levels" class="overlay">
-  <div class="backRow"><div class="iconbtn" id="lvlBack">‹</div></div>
+  <div class="backRow"><div class="iconbtn" id="lvlBack" role="button" aria-label="Back"><svg class="mk" aria-hidden="true"><use href="#tm-back"/></svg></div></div>
   <h2 class="title" id="lvlWorldName">World</h2>
   <div class="sub2" id="lvlWorldSub"></div>
   <div class="grid" id="lvlGrid"></div>
@@ -226,15 +323,17 @@
 
 <!-- ===== WIN ===== -->
 <div id="win" class="overlay center">
-  <h2 class="title" id="winTitle" style="color:var(--leaf)">YOU MADE IT</h2>
-  <div class="medal" id="winMedal">🥉</div>
-  <div class="statline" id="winTime"></div>
-  <div class="statline" id="winDeaths"></div>
-  <div id="winEarn" style="margin:10px 0"></div>
-  <div class="row">
+  <div id="winCard"><canvas id="winCv" width="760" height="760" aria-hidden="true"></canvas></div>
+  <h2 class="title srOnly" id="winTitle">YOU MADE IT</h2>
+  <div class="medal srOnly" id="winMedal"></div>
+  <div class="statline srOnly" id="winTime"></div>
+  <div class="statline srOnly" id="winDeaths"></div>
+  <div id="winEarn" style="margin:8px 0 2px"></div>
+  <div class="row" style="margin-top:8px">
+    <button class="big-btn green" id="winNext">Next <svg class="mk" aria-hidden="true"><use href="#tm-next"/></svg></button>
+    <button class="ghost-btn" id="winRetry"><svg class="mk" aria-hidden="true"><use href="#tm-retry"/></svg> Again</button>
     <button class="ghost-btn" id="winMenu">Levels</button>
-    <button class="ghost-btn" id="winRetry">Retry</button>
-    <button class="big-btn green" id="winNext">Next →</button>
+    <button class="ghost-btn" id="winShare"><svg class="mk" aria-hidden="true"><use href="#tm-next"/></svg> Share</button>
   </div>
 </div>
 
@@ -245,13 +344,14 @@
     <button class="big-btn green" id="pResume">Resume</button>
     <button class="ghost-btn" id="pRetry">Restart Level</button>
     <button class="ghost-btn" id="pMenu">Quit to Levels</button>
+    <button class="ghost-btn" id="pHow">How to Play</button>
   </div>
 </div>
 
 <!-- ===== SHOP ===== -->
 <div id="shop" class="overlay">
-  <div class="backRow"><div class="iconbtn" id="shopBack">‹</div></div>
-  <h2 class="title">🌿 Aloe Shop</h2>
+  <div class="backRow"><div class="iconbtn" id="shopBack" role="button" aria-label="Back"><svg class="mk" aria-hidden="true"><use href="#tm-back"/></svg></div></div>
+  <h2 class="title"><svg class="mk" aria-hidden="true"><use href="#tm-aloe"/></svg> Aloe Shop</h2>
   <div class="sub2" id="shopWallet">0 aloe</div>
   <div class="tabs">
     <button class="tab on" data-tab="upgrades">Upgrades</button>
@@ -264,9 +364,9 @@
 
 <!-- ===== CHARACTER BUILDER ===== -->
 <div id="builder" class="overlay">
-  <div class="backRow"><div class="iconbtn" id="buildBack">‹</div></div>
+  <div class="backRow"><div class="iconbtn" id="buildBack" role="button" aria-label="Back"><svg class="mk" aria-hidden="true"><use href="#tm-back"/></svg></div></div>
   <h2 class="title">Build Your Tomato Man</h2>
-  <canvas id="builderCanvas" width="340" height="340"></canvas>
+  <canvas id="builderCanvas" width="360" height="560"></canvas>
   <div class="tabs">
     <button class="tab on" data-bt="body">Produce</button>
     <button class="tab" data-bt="hat">Hat</button>
@@ -278,22 +378,23 @@
 
 <!-- ===== SETTINGS ===== -->
 <div id="settings" class="overlay center">
-  <div class="backRow"><div class="iconbtn" id="setBack">‹</div></div>
+  <div class="backRow"><div class="iconbtn" id="setBack" role="button" aria-label="Back"><svg class="mk" aria-hidden="true"><use href="#tm-back"/></svg></div></div>
   <h2 class="title">Settings</h2>
   <div class="toggleRow">Sound FX <div class="sw on" id="swSfx"><div class="k"></div></div></div>
   <div class="toggleRow">Music <div class="sw on" id="swMusic"><div class="k"></div></div></div>
   <div class="toggleRow">Reduce Motion <div class="sw" id="swReduce"><div class="k"></div></div></div>
   <div class="row"><button class="ghost-btn" id="resetSave">Reset All Progress</button></div>
-  <div class="hintline">Tomato Man v6, a sunburnt platformer. Made with ☀️.</div>
+  <div class="hintline">Tomato Man v7, a sunburnt platformer, made in the sun.</div>
 </div>
 
 <!-- ===== HOW TO PLAY ===== -->
 <div id="howto" class="overlay">
-  <div class="backRow"><div class="iconbtn" id="howBack">‹</div></div>
+  <div class="backRow"><div class="iconbtn" id="howBack" role="button" aria-label="Back"><svg class="mk" aria-hidden="true"><use href="#tm-back"/></svg></div></div>
   <h2 class="title">How to Play</h2>
-  <div class="htHero">You're <b>Tomato Man</b> ☀️🍅. Direct sun cooks you in about a second, so <b>shade is the only safe ground, and it slides as the sun sweeps the sky.</b> Ride the moving shadows up to the green flag.</div>
-  <div class="htList" id="htList"></div>
-  <button class="big-btn green" id="howPlay" style="margin-top:14px;max-width:320px">Got it, play ▶</button>
+  <div class="htQuick" id="htQuick"></div>
+  <button class="ghost-btn" id="htMore">Every rule</button>
+  <div class="htList" id="htList" hidden></div>
+  <button class="big-btn green" id="howPlay" style="margin-top:14px;max-width:320px">Got it, play</button>
   <div class="pad"></div>
 </div>
 
@@ -432,14 +533,71 @@ function stopMusic(){ if(Audio2.musicTimer){ clearInterval(Audio2.musicTimer); A
 
 /* ===================== ASSETS (optional drop-in art) ===================== */
 // Manifest of optional images. If art/<path> exists it's used, else procedural fallback.
+/* Astra's packs (Sunstruck Stop Motion), dropped in by lucid-winds tools/tomato-man-tests/astra_in.py. Every image goes
+   through A(key): null until it has loaded, so every draw keeps its code drawn fallback. One ART_V token on every URL.
+   The first visit loads the title, the HUD, the pickups, the sun and Morning Tide; a world's ground, horizon and decor
+   load when that world is first shown (needWorld), the Angry Sun with the Eclipse world, the share frames on a share. */
+const ART_V='20261105c';
+const WORLD_DIRS=['morning_tide','midday_blaze','tide_pools','dunes_at_dusk','eclipse'];
 const ASSET_PATHS={
-  hero_body:'art/hero/tomato_body.png',
-  logo:'art/ui/logo.png',
+  menu:'art/ui/menu_plate.webp', logo_sand:'art/ui/logo_on_sand.svg', logo_dark:'art/ui/logo_on_dark.svg',
+  sun:'art/sun/roaming_sun.webp', sun_rays:'art/sun/sun_rays.webp', sun_hud:'art/sun/sun_position_hud.png',
+  awning_striped:'art/casters/striped_awning.webp', awning_solid:'art/casters/solid_awning.webp', umbrella:'art/casters/umbrella.webp',
+  cart_terracotta:'art/casters/cart_terracotta.webp', cart_slate:'art/casters/cart_slate.webp', cart_sage:'art/casters/cart_sage.webp', cloud_platform:'art/casters/cloud_platform.webp', cloud_elevator:'art/casters/cloud_elevator.webp',
+  far:'art/casters/far_silhouette.png',
+  aloe_lit:'art/pickups/aloe_lit.webp', aloe_dim:'art/pickups/aloe_dim.webp', popsicle:'art/pickups/popsicle.webp',
+  shade_pool:'art/pickups/shade_pool.webp', checkpoints:'art/pickups/checkpoint_pair.webp', exit_flag:'art/pickups/exit_flag.webp',
+  find_shell:'art/pickups/seashell.webp', find_cone:'art/pickups/ice_cream.webp', find_gem:'art/pickups/gem.webp', sparkle:'art/pickups/sparkle.webp',
+  hot_patch:'art/fx/hot_sand_patch.webp', shimmer:'art/fx/heat_shimmer.webp', wind_streak:'art/fx/wind_streak.webp',
+  collect_burst:'art/fx/collect_burst.webp', respawn_flash:'art/fx/respawn_flash.webp', burn_smoke:'art/fx/burn_smoke.webp',
+  dash_puff:'art/fx/dash_puff.webp', near_burn:'art/fx/near_burn_vignette.webp', eclipse_vig:'art/fx/eclipse_dark_vignette.webp',
+  btn_dash:'art/ui/button_dash.svg', btn_shade:'art/ui/button_shade.svg', btn_spf:'art/ui/button_spf.svg', btn_ice:'art/ui/button_ice.svg',
+  btn_off:'art/ui/disabled_overlay.svg', stick_base:'art/ui/joystick_base.png', stick_thumb:'art/ui/joystick_thumb.png',
+  meter_frame:'art/ui/exposure_meter_frame.png', meter_fill:'art/ui/exposure_fill.png',
+  card_morning_tide:'art/worlds/morning_tide/card.webp', card_midday_blaze:'art/worlds/midday_blaze/card.webp',
+  card_tide_pools:'art/worlds/tide_pools/card.webp', card_dunes_at_dusk:'art/worlds/dunes_at_dusk/card.webp', card_eclipse:'art/worlds/eclipse/card.webp',
+  hero_s:'art/hero/tomato_s.webp', hero_se:'art/hero/tomato_se.webp', hero_e:'art/hero/tomato_e.webp', hero_ne:'art/hero/tomato_ne.webp', hero_n:'art/hero/tomato_n.webp',
+  hero_respawn:'art/hero/tomato_respawn.webp', hero_victory:'art/hero/tomato_victory.webp', hero_cooling:'art/hero/tomato_cooling.webp', hero_shade_drop:'art/hero/tomato_shade_drop.webp', hero_states:'art/hero/exposure_states.webp', face_neutral:'art/hero/face_neutral.webp',
+  trail_classic:'art/hero/trails/ember.png', trail_cool:'art/hero/trails/cool.png', trail_mint:'art/hero/trails/aloe.png', trail_rainbow:'art/hero/trails/rainbow.png',
+};
+/* loaded on demand: each world's ground, horizon, decor sheet and key art; the Angry Sun; the share frames */
+const ASSET_LAZY={
+  ground_morning_tide:'art/worlds/morning_tide/ground.webp', decor_morning_tide:'art/worlds/morning_tide/decor.webp', key_morning_tide:'art/worlds/morning_tide/key_art.webp',
+  ground_midday_blaze:'art/worlds/midday_blaze/ground.webp', decor_midday_blaze:'art/worlds/midday_blaze/decor.webp', key_midday_blaze:'art/worlds/midday_blaze/key_art.webp',
+  ground_tide_pools:'art/worlds/tide_pools/ground.webp', decor_tide_pools:'art/worlds/tide_pools/decor.webp', key_tide_pools:'art/worlds/tide_pools/key_art.webp',
+  ground_dunes_at_dusk:'art/worlds/dunes_at_dusk/ground.webp', decor_dunes_at_dusk:'art/worlds/dunes_at_dusk/decor.webp', key_dunes_at_dusk:'art/worlds/dunes_at_dusk/key_art.webp',
+  ground_eclipse:'art/worlds/eclipse/ground.webp', decor_eclipse:'art/worlds/eclipse/decor.webp', key_eclipse:'art/worlds/eclipse/key_art.webp',
+  angry_glare:'art/sun/angry_sun_glare.webp', angry_wind_up:'art/sun/angry_sun_wind_up.webp', angry_lunge:'art/sun/angry_sun_lunge.webp',
+  angry_panting:'art/sun/angry_sun_panting.webp', corona:'art/sun/eclipse_corona.webp',
+  share_result:'art/sharing/result_square.webp', share_daily:'art/sharing/daily_card.webp',
+  hero_victory_big:'art/hero/tomato_victory_big.webp',
+  wilt_solid:'art/casters/solid_awning_states.webp', umb_states:'art/casters/umbrella_states.webp',
+  cactus_blink:'art/worlds/cactus_blink.webp', cactus_wave:'art/worlds/cactus_wave.webp', cactus_wind:'art/worlds/cactus_wind.webp',
+  sun_wind_up:'art/sun/angry_sun_wind_up_sheet.webp', sun_lunge:'art/sun/angry_sun_lunge_sheet.webp', sun_recovery:'art/sun/angry_sun_recovery_sheet.webp',
+  ring_boss:'art/effects/boss_telegraph.webp', ring_safe:'art/effects/safe_window.webp', lane:'art/ui/lunge_lane.png',
+  m_gold:'art/ui/medal_gold.svg', m_silver:'art/ui/medal_silver.svg', m_bronze:'art/ui/medal_bronze.svg',
+  sock_shell:'art/ui/progress_shell.png', sock_cone:'art/ui/progress_cone.png', sock_gem:'art/ui/progress_gem.png',
+  body_strawberry:'art/hero/strawberry_body.webp', body_orange:'art/hero/orange_body.webp', body_lemon:'art/hero/lemon_body.webp', body_lime:'art/hero/lime_body.webp', body_peach:'art/hero/peach_body.webp', body_cherry:'art/hero/cherry_body.webp', body_bellpepper:'art/hero/bell_pepper_body.webp', body_eggplant:'art/hero/eggplant_body.webp', body_avocado:'art/hero/avocado_body.webp', body_heirloom:'art/hero/heirloom_body.webp', body_pickle:'art/hero/pickle_body.webp', body_golden:'art/hero/golden_body.webp', body_sunburn:'art/hero/sunburn_body.webp',
+  hat_sunhat:'art/hero/hats/sun_hat.webp', hat_cap:'art/hero/hats/ball_cap.webp', hat_sombrero:'art/hero/hats/tiny_sombrero.webp', hat_lettuce:'art/hero/hats/lettuce_cap.webp', hat_visor:'art/hero/hats/lifeguard_visor.webp', hat_umbrella:'art/hero/hats/umbrella_hat.webp', hat_crown:'art/hero/hats/sun_crown.webp', hat_shell_crown:'art/hero/hats/shell_crown.webp', hat_cone_hat:'art/hero/hats/ice_cream_hat.webp', hat_cool_shades:'art/hero/hats/cool_shades.webp', hat_gem_crown:'art/hero/hats/gem_crown.webp', hat_eclipse_halo:'art/hero/hats/eclipse_halo.webp',
+  bbody:'art/builder/body.webp', bhead_tomato:'art/builder/tomato_head.webp', bhead_strawberry:'art/builder/strawberry_head.webp', bhead_orange:'art/builder/orange_head.webp', bhead_lemon:'art/builder/lemon_head.webp', bhead_lime:'art/builder/lime_head.webp', bhead_peach:'art/builder/peach_head.webp', bhead_cherry:'art/builder/cherry_head.webp', bhead_bellpepper:'art/builder/bell_pepper_head.webp', bhead_eggplant:'art/builder/eggplant_head.webp', bhead_avocado:'art/builder/avocado_head.webp', bhead_heirloom:'art/builder/heirloom_head.webp', bhead_pickle:'art/builder/pickle_head.webp', bhead_golden:'art/builder/golden_head.webp', bhead_sunburn:'art/builder/sunburn_head.webp',
+  bhat_sunhat:'art/builder/hats/sun_hat.webp', bhat_cap:'art/builder/hats/ball_cap.webp', bhat_sombrero:'art/builder/hats/tiny_sombrero.webp', bhat_lettuce:'art/builder/hats/lettuce_cap.webp', bhat_visor:'art/builder/hats/lifeguard_visor.webp', bhat_umbrella:'art/builder/hats/umbrella_hat.webp', bhat_crown:'art/builder/hats/sun_crown.webp', bhat_shell_crown:'art/builder/hats/shell_crown.webp', bhat_cone_hat:'art/builder/hats/ice_cream_hat.webp', bhat_cool_shades:'art/builder/hats/cool_shades.webp', bhat_gem_crown:'art/builder/hats/gem_crown.webp', bhat_eclipse_halo:'art/builder/hats/eclipse_halo.webp',
 };
 const ASSETS={};
-function loadAssets(){ for(const k in ASSET_PATHS){ const img=new Image();
-  img.onload=()=>{ ASSETS[k]=img; }; img.onerror=()=>{ ASSETS[k]=null; }; img.src=ASSET_PATHS[k]; } }
+function loadOne(k,path){ if(k in ASSETS) return; ASSETS[k]=null; const img=new Image();
+  img.onload=()=>{ ASSETS[k]=img; if(screen==='builder'&&typeof drawBuilderPreview==='function') drawBuilderPreview();
+    if(k==='menu') document.documentElement.style.setProperty('--tm-menu','url("'+img.src+'")');
+    if(screen==='win'&&typeof drawWinCard==='function') drawWinCard(); };
+  img.onerror=()=>{ ASSETS[k]=null; }; img.src=path+'?v='+ART_V; }
+/* the equipped produce and hat for play, and everything the builder shows */
+function needLook(){ const b=save.cosmetics.body, h=save.cosmetics.hat; if(b!=='tomato') need('body_'+b); if(h!=='none') need('hat_'+h); }
+function needBuilder(){ need('bbody'); need('bhead_'+save.cosmetics.body); if(save.cosmetics.hat!=='none') need('bhat_'+save.cosmetics.hat); }
+function loadAssets(){ for(const k in ASSET_PATHS) loadOne(k,ASSET_PATHS[k]); needWorld(0); }
+function need(k){ if(ASSET_LAZY[k]) loadOne(k,ASSET_LAZY[k]); }
+function needWorld(w){ const d=WORLD_DIRS[w%5]; ['ground_','decor_','key_'].forEach(p=>need(p+d));
+  if(w===4){ ['angry_glare','angry_wind_up','angry_lunge','angry_panting','corona'].forEach(need); } }
 const A=k=>ASSETS[k]||null;
+/* one of Astra's one colour marks from the inline sprite, sized by the text around it */
+function mk(n){ return '<svg class="mk" aria-hidden="true"><use href="#tm-'+n+'"/></svg>'; }
 
 /* ===================== FEEL (movement + tuning) ===================== */
 // Base constants; upgrades modify them per-run via FEEL()
@@ -521,7 +679,7 @@ const COSMETICS=[
   {id:'crown',name:'Sun Crown',cat:'hat',price:600,color:'#ffd23f',kind:'crown'},
   // exclusive hats — earned by 100%-collecting a whole world (not buyable)
   {id:'shell_crown',name:'Shell Crown',cat:'hat',price:null,earn:0,color:'#f7a8c4',kind:'shell'},
-  {id:'cone_hat',name:'Ice-Cream Hat',cat:'hat',price:null,earn:1,kind:'cone'},
+  {id:'cone_hat',name:'Ice Cream Hat',cat:'hat',price:null,earn:1,kind:'cone'},
   {id:'cool_shades',name:'Cool Shades',cat:'hat',price:null,earn:2,color:'#20242c',kind:'shades'},
   {id:'gem_crown',name:'Gem Crown',cat:'hat',price:null,earn:3,color:'#37b6e0',kind:'gem'},
   {id:'eclipse_halo',name:'Eclipse Halo',cat:'hat',price:null,earn:4,color:'#b48aff',kind:'eclipse'},
@@ -556,8 +714,8 @@ const WORLDS=[
 // 5 worlds x 4 levels. world: 0-based. Tunable data — edit freely on a phone.
 let LEVELS=[
 {"name":"Dawn Ribbon","sub":"the sun is up and the floor sways with the shade","worldW":2000,"worldH":2600,"start":[1000,2480],"exit":[1000,150],"sun":{"azC":1.57,"azAmp":0.42,"azSpeed":0.45,"elev":0.55},"shade":2,"spf":0,"par":24,"casters":[["R",840,2440,360,90,440],["R",900,2090,340,66,440],["R",780,1790,340,66,440],["R",900,1500,340,66,460],["R",1020,1220,340,66,460],["R",880,940,340,66,460],["R",780,680,340,66,440],["R",900,410,340,66,440],["R",860,150,360,70,400]],"clouds":[],"checkpoints":[[1010,2475],[1070,1533],[950,713]],"beams":[[1320,1700],[600,1010]],"world":0},
-{"name":"Sliver Step","sub":"when the sun swings, a gap opens - dash it","worldW":2000,"worldH":2600,"start":[1000,2480],"exit":[1000,150],"sun":{"azC":1.57,"azAmp":0.46,"azSpeed":0.5,"elev":0.58},"shade":3,"spf":0,"par":32,"casters":[["R",840,2440,360,90,440],["R",900,2090,340,66,440],["R",820,1810,340,66,440],["R",980,1260,330,64,440],["R",860,980,340,66,460],["R",1000,700,340,66,460],["R",880,400,340,66,440],["R",900,200,340,66,420],["R",860,150,300,60,380]],"clouds":[],"checkpoints":[[1010,2475],[1010,1290],[1030,730]],"beams":[[1280,1560],[700,900]],"world":0},
-{"name":"Cloud Ferry","sub":"the shade quits - catch the morning cloud across","worldW":2200,"worldH":2600,"start":[760,2480],"exit":[1480,150],"sun":{"azC":1.57,"azAmp":0.4,"azSpeed":0.45,"elev":0.6},"shade":2,"spf":0,"par":36,"casters":[["R",600,2440,340,90,440],["R",620,2110,320,66,440],["R",560,1820,320,66,440],["R",600,1560,320,64,440],["R",1320,1560,320,64,440],["R",1360,1280,320,66,460],["R",1300,1000,320,66,460],["R",1380,720,320,66,440],["R",1320,420,320,66,420],["R",1320,150,340,70,400]],"clouds":[{"x":760,"y":1500,"r":165,"vx":80,"minx":760,"maxx":1380}],"checkpoints":[[770,2475],[755,1593],[1480,1593]],"beams":[[1060,1430],[1080,1720]],"world":0},
+{"name":"Sliver Step","sub":"when the sun swings, a gap opens, dash it","worldW":2000,"worldH":2600,"start":[1000,2480],"exit":[1000,150],"sun":{"azC":1.57,"azAmp":0.46,"azSpeed":0.5,"elev":0.58},"shade":3,"spf":0,"par":32,"casters":[["R",840,2440,360,90,440],["R",900,2090,340,66,440],["R",820,1810,340,66,440],["R",980,1260,330,64,440],["R",860,980,340,66,460],["R",1000,700,340,66,460],["R",880,400,340,66,440],["R",900,200,340,66,420],["R",860,150,300,60,380]],"clouds":[],"checkpoints":[[1010,2475],[1010,1290],[1030,730]],"beams":[[1280,1560],[700,900]],"world":0},
+{"name":"Cloud Ferry","sub":"the shade quits, catch the morning cloud across","worldW":2200,"worldH":2600,"start":[760,2480],"exit":[1480,150],"sun":{"azC":1.57,"azAmp":0.4,"azSpeed":0.45,"elev":0.6},"shade":2,"spf":0,"par":36,"casters":[["R",600,2440,340,90,440],["R",620,2110,320,66,440],["R",560,1820,320,66,440],["R",600,1560,320,64,440],["R",1320,1560,320,64,440],["R",1360,1280,320,66,460],["R",1300,1000,320,66,460],["R",1380,720,320,66,440],["R",1320,420,320,66,420],["R",1320,150,340,70,400]],"clouds":[{"x":760,"y":1500,"r":165,"vx":80,"minx":760,"maxx":1380}],"checkpoints":[[770,2475],[755,1593],[1480,1593]],"beams":[[1060,1430],[1080,1720]],"world":0},
 {"name":"The Rising Tide","sub":"ribbon, sliver, and a long ride to the flag","worldW":2200,"worldH":2900,"start":[1100,2780],"exit":[1100,160],"sun":{"azC":1.57,"azAmp":0.4,"azSpeed":0.52,"elev":0.6},"shade":3,"spf":0,"par":48,"casters":[["R",940,2740,360,90,440],["R",1000,2380,340,66,440],["R",900,2110,340,66,440],["R",1020,1540,330,64,440],["R",860,1500,360,66,460],["R",960,420,360,66,460],["R",1000,250,340,66,420],["R",940,150,340,70,400]],"clouds":[{"x":1080,"y":948,"r":165,"vy":-80,"miny":300,"maxy":948}],"checkpoints":[[1110,2775],[1090,1560],[1010,453]],"beams":[[1340,1980],[820,900],[1320,560]],"world":0},
 {"name":"Sand Underfoot","sub":"orange means gone","worldW":2200,"worldH":2600,"start":[1100,2460],"exit":[1100,160],"sun":{"azC":1.57,"azAmp":0.45,"azSpeed":0.5,"elev":0.85},"shade":2,"spf":1,"par":40,"casters":[["R",920,2400,360,70,440],["R",940,2120,340,64,440],["R",900,1840,340,64,440],["R",960,1560,340,64,440],["U",1100,1340,95,0,360],["R",920,1060,340,64,460],["R",980,780,340,64,460],["R",900,520,340,64,440],["R",940,220,360,70,420]],"movers":[],"clouds":[],"hot":[[1300,2120,80],[900,1560,80],[1280,780,80],[1140,420,70]],"pops":[],"checkpoints":[[1100,2440],[1100,1340],[1080,540]],"beams":[[1340,1980],[820,1180],[1330,400]],"world":1},
 {"name":"Popsicle Run","sub":"keep the cold close","worldW":2000,"worldH":2800,"start":[1000,2660],"exit":[1000,160],"sun":{"azC":1.57,"azAmp":0.4,"azSpeed":0.55,"elev":0.9},"shade":2,"spf":1,"par":46,"casters":[["R",860,2620,300,70,420],["R",880,2120,260,64,420],["R",870,1620,260,64,420],["R",880,1120,260,64,420],["R",870,620,260,64,420],["R",880,220,300,70,400]],"movers":[],"clouds":[],"hot":[[1140,1870,70],[860,1370,70],[1140,870,70]],"pops":[[1000,2150],[1000,1650],[1000,650]],"checkpoints":[[1000,2640],[1000,1150],[1000,250]],"beams":[[1140,2370],[860,870],[1140,400]],"world":1},
@@ -582,13 +740,13 @@ let LEVELS=[
 {"name":"Reef Ferry","sub":"ride the tide-cart, then round the big awning","world":2,"worldW":2200,"worldH":2600,"start":[640,2460],"exit":[1480,300],"sun":{"azC":1.57,"azAmp":0.44,"azSpeed":0.5,"elev":0.72},"shade":2,"spf":0,"ice":1,"par":40,"casters":[["R",460,2400,360,80,440],["U",640,2120,95,1.57,360],["U",640,1840,95,1.57,360],["U",1460,2060,95,1.57,360],["R",1120,1180,620,80,500],["U",1480,720,95,1.57,360],["R",1300,300,360,80,440]],"movers":[{"x":1360,"y":1900,"w":240,"d":60,"sh":440,"vx":-120,"minx":560,"maxx":1560}],"checkpoints":[[640,2460],[640,1700],[1460,1780],[1480,760]],"beams":[[1080,1740],[1748,1300],[900,2050]]},
 {"name":"The Long Dark","sub":"cross the blackout maze while the sun blinks","world":4,"worldW":1900,"worldH":2600,"start":[980,2460],"exit":[980,220],"sun":{"azC":1.57,"azAmp":0.24,"azSpeed":0.5,"elev":1.2,"dark":{"period":4,"dur":2.7}},"shade":2,"spf":1,"ice":0,"par":60,"casters":[["R",800,2400,360,90,470],["R",620,1780,340,90,490],["R",960,1160,340,90,490],["R",620,300,340,90,490],["R",800,150,360,90,460]],"checkpoints":[[980,2460],[790,1660],[1130,1040],[790,460]],"beams":[[1150,2050],[790,1420],[1150,900]]}
 ];
-/* per-world hidden collectibles: 🐚 shells (beach worlds) · 🍦 ice-cream (blaze) · 💎 treasure (dunes/eclipse). 3 per campaign level. */
+/* per-world hidden collectibles: shells (beach worlds), ice cream (the blaze), gems (dunes and eclipse). 3 per campaign level. */
 const COLLECT=[
-  {emoji:'🐚',name:'Seashell',plural:'Seashells',kind:'shell'},   // W0 Morning Tide
-  {emoji:'🍦',name:'Ice Cream',plural:'Ice Creams',kind:'cone'},  // W1 Midday Blaze
-  {emoji:'🐚',name:'Seashell',plural:'Seashells',kind:'shell'},   // W2 Tide Pools
-  {emoji:'💎',name:'Gem',plural:'Buried Gems',kind:'gem'},        // W3 Dunes at Dusk
-  {emoji:'💎',name:'Gem',plural:'Buried Gems',kind:'gem'},        // W4 Eclipse
+  {name:'Seashell',plural:'Seashells',kind:'shell'},   // W0 Morning Tide
+  {name:'Ice Cream',plural:'Ice Creams',kind:'cone'},  // W1 Midday Blaze
+  {name:'Seashell',plural:'Seashells',kind:'shell'},   // W2 Tide Pools
+  {name:'Gem',plural:'Buried Gems',kind:'gem'},        // W3 Dunes at Dusk
+  {name:'Gem',plural:'Buried Gems',kind:'gem'},        // W4 Eclipse
 ];
 function collectOf(w){ return COLLECT[w%COLLECT.length]; }
 const FINDS={0:[[1620,1788],[1668,1452],[1788,636]],1:[[1620,1860],[1644,1452],[1740,660]],2:[[228,1812],[204,1188],[228,924]],3:[[1692,1932],[516,1524],[468,900]],4:[[1572,1788],[1596,1212],[612,708]],5:[[1404,1860],[612,1332],[1404,828]],6:[[180,1860],[156,1236],[2244,828]],7:[[852,2052],[348,1380],[2364,756]],8:[[1548,1740],[444,1164],[1572,900]],9:[[1644,1860],[1644,1260],[612,660]],10:[[1764,1788],[2244,1260],[2268,900]],11:[[1788,2076],[2244,1356],[2268,1044]],12:[[1812,1644],[1884,1140],[84,636]],13:[[204,1788],[204,1428],[252,636]],14:[[2004,1668],[2004,1188],[2172,660]],15:[[2076,1812],[2340,1212],[2436,948]],16:[[1476,1692],[1476,1116],[1476,780]],17:[[1572,1932],[1572,1380],[1572,660]],18:[[540,1716],[420,1356],[420,636]],19:[[708,2052],[1860,1476],[708,708]],20:[[1332,1524],[1332,1212],[1332,564]],21:[[1212,1836],[1212,1092],[1212,612]],22:[[228,1236],[1188,756],[348,420]],23:[[1284,1260],[276,780],[324,420]],24:[[1908,1908],[1932,1524],[2100,804]],25:[[468,1716],[1428,1212],[1452,924]]};
@@ -701,7 +859,7 @@ function startLevel(i,opts){ opts=opts||{}; const L=opts.level||LEVELS[i]; li=(o
   const ch=startCharges(L); const feel=FEEL();
   // tag umbrella casters with facing index for wind re-tilt
   let fi=0; const facings={}; for(const c of L.casters){ if(c[0]==='U'){ c.__fi=fi; facings[fi]=c[4]; fi++; } }
-  run={ L,t:0,az:L.sun.azC,deaths:0,screenT:0,darkT:0,slowT:0,shake:0,lastSafe:true,grazeT:0,sinceSafe:0,graceT:1.0,
+  run={ L,t:0,act:null,hotAt:-9,az:L.sun.azC,deaths:0,screenT:0,darkT:0,slowT:0,shake:0,lastSafe:true,grazeT:0,sinceSafe:0,graceT:1.0,
         rings:[],floats:[],flash:0,flashC:'255,80,40',
         shadePolys:[],shadeEll:[],popups:[],trail:[],parts:[],facings,
         movers:(L.movers||[]).map(m=>({...m})),
@@ -719,7 +877,9 @@ function startLevel(i,opts){ opts=opts||{}; const L=opts.level||LEVELS[i]; li=(o
         beamsGot:0, beamScore:0, combo:0, comboT:0, comboMax:0,
         cp:{x:L.checkpoints[0][0],y:L.checkpoints[0][1]}, cpHit:[],
         charges:{shade:ch.shade,spf:ch.spf,ice:ch.ice},
-        coolerBox: !!save.loadout.cooler_box, siesta: !!save.loadout.siesta, magnet: !!save.loadout.magnet_pop, spawnAt:0, feel };
+        coolerBox: !!save.loadout.cooler_box, siesta: !!save.loadout.siesta, magnet: !!save.loadout.magnet_pop, spawnAt:0, feel,
+        fx:[], decor:scatterDecor(L) };
+  cueKey='~'; run.cacti=cactiFor(L,run.decor); run.crnd=mulberry32(((L.worldW*5+L.worldH*3)|0)+7); run.blinkNext=3; run.blinkI=-1; run.blinkAt=-9;
   // make the orange 'R' awnings solid — but never the ones the player spawns / respawns / exits on (start, exit, checkpoints)
   run.walls=(L.casters||[]).filter(c=>c[0]==='R').map(c=>({x:c[1],y:c[2],w:c[3],h:c[4]}))
     .filter(w=>![L.start,L.exit,...(L.checkpoints||[])].some(p=>p[0]>w.x-18&&p[0]<w.x+w.w+18&&p[1]>w.y-18&&p[1]<w.y+w.h+18));
@@ -727,15 +887,74 @@ function startLevel(i,opts){ opts=opts||{}; const L=opts.level||LEVELS[i]; li=(o
   cam.x=clamp(P.x-W/2,0,Math.max(0,L.worldW-W)); cam.y=clamp(P.y-H/2,0,Math.max(0,L.worldH-H));
   // consume loadout (single-use boosts)
   save.loadout={}; persist();
-  applyTheme(L.world);
+  applyTheme(L.world); needWorld(L.world); needLook(); needLevel(L);
   screen='play'; mode='play'; showScreen(null); $('play-ui').classList.remove('hidden');
   $('bIce').classList.toggle('hidden', run.charges.ice<=0 && !(L.ice));
   flash(L); sync(); startMusic(L.world); }
 
+/* DECOR (step 4): six to nine of the world's props from her decor sheet beside the route (start, checkpoints, flag), in
+   the open sand 150 to 350 px to the side, never inside an awning or umbrella, never within 80 px of a pickup, a find or
+   hot sand, never on each other; the planet tomato far off at the top. Seeded by the level's own shape, so a level
+   always wears the same props. Decor never blocks, never shades, never hurts. */
+/* m2 step 9: the moving world's art, loaded with the level that uses it */
+function needLevel(L){ need('cactus_blink'); if(L.wind) need('cactus_wind');
+  if((L.wilts||[]).length) need('wilt_solid'); if((L.casters||[]).some(c=>c[0]==='U')) need('umb_states');
+  if(L.sun&&L.sun.lunge){ need('sun_wind_up'); need('sun_lunge'); need('sun_recovery'); need('ring_boss'); need('lane'); }
+  if(L.sun&&L.sun.dark) need('ring_safe'); }
+/* her cactus spectators: two per level, one each side of the route, near enough to its line to stand at the screen's
+   edges, clear of casters, carts, pickups and the decor; scenery only (no shade, no collision) */
+function cactiFor(L,decor){ const rnd=mulberry32(((L.worldW*11+L.worldH*7+L.world*53)|0)+3), out=[];
+  const pts=[L.start,...(L.checkpoints||[]),L.exit].slice().sort((a,b)=>b[1]-a[1]);
+  const rects=(L.casters||[]).filter(c=>c[0]==='R').map(c=>({x:c[1],y:c[2],w:c[3],h:c[4]}));
+  const umbs=(L.casters||[]).filter(c=>c[0]==='U').map(c=>({x:c[1],y:c[2],r:c[3]}));
+  const avoid=[...(L.beams||[]),...(L.finds||[]),...(L.pops||[]),...(L.hot||[]),...(L.checkpoints||[]),L.exit,L.start];
+  let tries=0; while(out.length<2&&tries<600){ tries++;
+    const k=Math.floor(rnd()*(pts.length-1)), a=pts[k], b=pts[k+1]||pts[k], t=0.15+rnd()*0.7, side=out.length?-out[0].side:(rnd()<0.5?-1:1);
+    const x=a[0]+(b[0]-a[0])*t+side*(140+rnd()*40), y=a[1]+(b[1]-a[1])*t;
+    if(x<60||x>L.worldW-60||y<200||y>L.worldH-80) continue;
+    if(rects.some(r=>x>r.x-60&&x<r.x+r.w+60&&y>r.y-150&&y<r.y+r.h+80)) continue;
+    if(umbs.some(u=>Math.hypot(x-u.x,y-u.y)<u.r+90)) continue;
+    if((L.movers||[]).some(m=>y>m.y-140&&y<m.y+m.d+120&&x>m.minx-60&&x<m.maxx+m.w+60)) continue;
+    if(avoid.some(p=>Math.hypot(x-p[0],y-p[1])<100)) continue;
+    if((decor||[]).some(d=>Math.hypot(x-d.x,y-d.y)<110)) continue;
+    if(out.some(d=>Math.abs(y-d.y)<420)) continue;
+    out.push({x,y,side}); }
+  return out; }
+function scatterDecor(L){ const seed=((L.casters||[]).length*7919+Math.round(L.worldW*3+L.worldH*5)+L.world*101)|0, rnd=mulberry32(seed), out=[];
+  const pts=[L.start,...(L.checkpoints||[]),L.exit].slice().sort((a,b)=>b[1]-a[1]);
+  const rects=(L.casters||[]).filter(c=>c[0]==='R').map(c=>({x:c[1],y:c[2],w:c[3],h:c[4]}));
+  const umbs=(L.casters||[]).filter(c=>c[0]==='U').map(c=>({x:c[1],y:c[2],r:c[3]}));
+  const avoid=[...(L.beams||[]),...(L.finds||[]),...(L.pops||[]),...(L.hot||[]),...(L.checkpoints||[]),L.exit];
+  const n=clamp(Math.round(L.worldH/380),5,9); let tries=0;
+  while(out.length<n&&tries<500){ tries++;
+    const k=Math.floor(rnd()*(pts.length-1)), a=pts[k], b=pts[k+1]||pts[k], t=rnd();
+    const x=a[0]+(b[0]-a[0])*t+(rnd()<0.5?-1:1)*(150+rnd()*200), y=a[1]+(b[1]-a[1])*t+(rnd()-0.5)*90;
+    if(x<60||x>L.worldW-60||y<120||y>L.worldH-60) continue;
+    if(rects.some(r=>x>r.x-70&&x<r.x+r.w+70&&y>r.y-150&&y<r.y+r.h+70)) continue;
+    if(umbs.some(u=>Math.hypot(x-u.x,y-u.y)<u.r+90)) continue;
+    if(avoid.some(p=>Math.hypot(x-p[0],y-p[1])<80)) continue;
+    if(out.some(d=>Math.hypot(x-d.x,y-d.y)<170)) continue;
+    out.push({x,y,f:Math.floor(rnd()*7)}); }
+  out.push({x:L.worldW*(0.2+rnd()*0.6),y:90,f:7,far:true});
+  return out; }
+/* a short effect from her strips: the dash puff (4 frames), the collect burst and the respawn flash (one image, grown and faded) */
+function fxAt(k,x,y,size,dur){ if(save.settings.reduce||!A(k)) return; run.fx.push({k,x,y,size,dur,t:0}); }
 function flash(L){ const f=$('lvlFlash'); f.innerHTML=`${L.name}<small>${L.sub}</small>`;
   f.style.opacity='1'; clearTimeout(flash._t); flash._t=setTimeout(()=>f.style.opacity='0',2100); }
-function toast(msg,col){ const t=$('toast'); t.textContent=msg; t.style.color=col||'var(--tomato)';
+/* the toast: her pill, ink text, a dot in the call's colour (internal strings only, they may carry a mark) */
+function toast(msg,col){ const t=$('toast'); t.innerHTML=`<span class="tdot" style="background:${col||'var(--tomato)'}"></span>`+msg;
   t.style.transition='none'; t.style.opacity='1'; requestAnimationFrame(()=>{ t.style.transition='opacity .7s'; t.style.opacity='0'; }); }
+let cueKey='~';
+function cueNow(){ const L=run.L;
+  if(run.lunge&&run.lunge.state==='warn') return ['boss-target','lunge coming',1];
+  for(const wlt of run.wilts) if(!wlt.closed&&wlt.under&&wlt.campT/(wlt.camp||3)>=0.25) return ['awning-warning','shade wilting',1];
+  if(run.darkT>0) return ['eclipse-window','eclipse, cross now',0];
+  if(run.act&&run.act.k==='cooling') return ['cooling','cooling down',0];
+  if(run.wind&&run.wind.spin&&(L.casters||[]).some(c=>c[0]==='U'&&dist(P.x,P.y,c[1],c[2])<300)) return ['umbrella-turn','umbrella turning',0];
+  if(run.charges.shade>0&&!run.lastSafe&&P.exp>=40) return ['shade-ready','drop shade',0];
+  if(dist(P.x,P.y,L.exit[0],L.exit[1])<320) return ['safe-exit','the flag',0];
+  return null; }
+function burnStrip(msg){ const b=$('burnStrip'); if(!b) return; const lf=$('lvlFlash'); if(lf) lf.style.opacity='0'; b.textContent=msg; b.classList.add('show'); clearTimeout(burnStrip._t); burnStrip._t=setTimeout(()=>b.classList.remove('show'),2000); }
 function showCombo(n){ const c=$('comboTag'); c.textContent='x'+n+' COMBO'; c.style.transition='none'; c.style.opacity='1';
   requestAnimationFrame(()=>{ c.style.transition='opacity .6s'; c.style.opacity='0'; }); }
 
@@ -752,15 +971,15 @@ function collectFind(fnd){ fnd.got=true; run.findsRun++;
   let arr=save.finds[run.findId]; if(!arr){ arr=[]; save.finds[run.findId]=arr; } arr[fnd.i]=true;
   const total=run.finds.length, have=run.finds.filter(f=>f.got).length;
   addBeams(12);                                                    // bonus aloe per find (addBeams persists)
-  SFX.pop(); spawnParts(fnd.x,fnd.y,22,'255,225,150',160,0.65);
+  SFX.pop(); spawnParts(fnd.x,fnd.y,22,'255,225,150',160,0.65); fxAt('collect_burst',fnd.x,fnd.y,96,0.36);
   spawnRing(fnd.x,fnd.y,'255,225,150',52); floatText(fnd.x,fnd.y-6,'+12','255,230,150'); popSquash(0.78,1.26); jShake(0.14);
-  if(have>=total){ addBeams(40); spawnRing(fnd.x,fnd.y,'255,235,120',110,0.6); screenFlash('255,220,120',0.3); jShake(0.32); floatText(fnd.x,fnd.y-30,'ALL '+total+'!','255,235,140'); toast(cd.emoji+'  all '+total+'! +40 aloe','var(--beam)'); SFX.win(); }
-  else toast(cd.emoji+'  '+cd.name+'!  +12','var(--beam)');
+  if(have>=total){ addBeams(40); spawnRing(fnd.x,fnd.y,'255,235,120',110,0.6); screenFlash('255,220,120',0.3); jShake(0.32); floatText(fnd.x,fnd.y-30,'ALL '+total,'255,235,140'); toast(mk(cd.kind)+' all '+total+' found, +40 aloe','var(--beam)'); SFX.win(); }
+  else toast(mk(cd.kind)+' '+cd.name+', +12','var(--beam)');
   // world 100% → unlock that world's exclusive hat (once)
   const w=run.L.world, rid=WORLD_REWARD[w];
   if(rid && !save.cosmetics.owned.includes(rid) && worldFindsComplete(w)){
     save.cosmetics.owned.push(rid); persist();
-    setTimeout(()=>toast('🏆 WORLD 100%! Unlocked: '+cosmetic(rid).name,'var(--leaf)'),700); SFX.win(); } }
+    setTimeout(()=>toast('World complete. Unlocked '+cosmetic(rid).name,'var(--leaf)'),700); SFX.win(); } }
 function levelFindCount(id,L){ const arr=save.finds[id]||[]; const n=(L.finds||[]).length; let c=0; for(let i=0;i<n;i++) if(arr[i]) c++; return {have:c,total:n}; }
 
 /* ===================== INPUT ===================== */
@@ -785,11 +1004,11 @@ function doDash(){ const f=run.feel; if(P.dashStock>0){P.dashStock--;} else { if
   P.dashT=f.dashDur; dashBuf=0; run.dashUses=(run.dashUses||0)+1; SFX.dash();
   const mv=mvVec(); if(Math.hypot(mv.x,mv.y)>0.05) P.face=Math.atan2(mv.y,mv.x);
   P.sx=1.4;P.sy=0.7; // stretch along axis
-  spawnParts(P.x,P.y,9,'255,185,95',115,0.34); spawnRing(P.x,P.y,'255,195,110',30,0.28); jShake(0.08); // dash burst
+  spawnParts(P.x,P.y,9,'255,185,95',115,0.34); spawnRing(P.x,P.y,'255,195,110',30,0.28); jShake(0.08); fxAt('dash_puff',P.x,P.y+8,72,0.33); // dash burst
   freeze=Math.max(freeze, save.settings.reduce?0.03:0.045); // dash hitstop — the burst "fires"
   spawnParts(P.x,P.y,7,'255,210,150',150,0.35);
   if(!save.settings.reduce) run.shake=Math.max(run.shake,0.06); }
-function drop(){ if(run.charges.shade>0){ run.popups.push({x:P.x,y:P.y,r:82}); run.charges.shade--; SFX.shade(); spawnParts(P.x,P.y,8,'80,120,180',120,0.5); sync(); } else SFX.deny(); }
+function drop(){ if(run.charges.shade>0){ run.popups.push({x:P.x,y:P.y,r:82}); run.charges.shade--; act('shade_drop'); SFX.shade(); spawnParts(P.x,P.y,8,'80,120,180',120,0.5); sync(); } else SFX.deny(); }
 function spf(){ if(run.charges.spf>0&&run.screenT<=0){ run.screenT=run.feel.spfDur||2.6; run.charges.spf--; SFX.spf(); sync(); } else SFX.deny(); }
 function ice(){ if(run.charges.ice>0&&run.slowT<=0){ run.slowT=3.0; run.charges.ice--; SFX.ice(); sync(); } else SFX.deny(); }
 function sync(){ setC('bShade','cShade',run.charges.shade); setC('bScreen','cScreen',run.charges.spf); setC('bIce','cIce',run.charges.ice); }
@@ -801,10 +1020,10 @@ function mvVec(){ if(stick.active){ let x=stick.dx/stick.max,y=stick.dy/stick.ma
   const m=Math.hypot(x,y); if(m>1){x/=m;y/=m;} return {x,y}; }
 
 /* ===================== LOOP ===================== */
-let last=performance.now(), nowT=0;
+let last=performance.now(), nowT=0, devHold=false;   // devHold: the shot tool stops the clock (window.__TM.hold)
 function frame(ts){ let dt=Math.min((ts-last)/1000,0.05); last=ts; nowT=ts/1000;
   if(freeze>0){ freeze-=dt; dt=0; }
-  if(screen==='play'&&mode==='play') update(dt);
+  if(screen==='play'&&mode==='play'&&!devHold) update(dt);
   render(); requestAnimationFrame(frame); }
 
 function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
@@ -835,6 +1054,7 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
     else { const sp=Math.hypot(P.vx,P.vy); if(sp>0){ const nd=Math.max(0,sp-f.friction*dt); P.vx=P.vx/sp*nd; P.vy=P.vy/sp*nd; } }
   }
   P.x=clamp(P.x+P.vx*dt,P.r,L.worldW-P.r); P.y=clamp(P.y+P.vy*dt,P.r,L.worldH-P.r);
+  run.idleT=(mag>0.05||P.dashT>0)?0:(run.idleT||0)+dt; if(run.respawnT>0) run.respawnT=Math.max(0,run.respawnT-dt); if(run.burnFx) run.burnFx.t+=dt;
   if(run.wind){ let wx=run.wind.ax||0; if(run.wind.gust) wx+=run.wind.gust.amp*Math.sin(run.t*TAU/run.wind.gust.period);
     P.x=clamp(P.x+wx*dt,P.r,L.worldW-P.r); P.y=clamp(P.y+(run.wind.ay||0)*dt,P.r,L.worldH-P.r); } // steady lean-against drift
   collideWalls(); // awnings are solid — go around them
@@ -846,6 +1066,7 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
   if(mag>0.5 && Math.random()<0.3 && !save.settings.reduce) spawnParts(P.x,P.y+8,1,'180,150,90',40,0.3);
   for(const tr of run.trail) tr.a-=dt*3.2; run.trail=run.trail.filter(tr=>tr.a>0);
   for(const pt of run.parts){ pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.vx*=0.92; pt.vy*=0.92; pt.t-=dt; } run.parts=run.parts.filter(p=>p.t>0);
+  for(const f of run.fx) f.t+=dt; run.fx=run.fx.filter(f=>f.t<f.dur);
   for(const rg of run.rings){ rg.r=lerp(rg.r,rg.r1,Math.min(1,dt*11)); rg.t-=dt; } run.rings=run.rings.filter(r=>r.t>0);
   for(const fl of run.floats){ fl.y+=fl.vy*dt; fl.vy*=0.88; fl.t-=dt; } run.floats=run.floats.filter(f=>f.t>0);
   if(run.flash>0) run.flash=Math.max(0,run.flash-dt*2.4);
@@ -856,8 +1077,8 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
 
   // ---- wilting awnings ----
   for(const wlt of run.wilts){ const dir=run.az+Math.PI,ux=Math.cos(dir),uy=Math.sin(dir);
-    const poly=sweptRect(wlt.x,wlt.y,wlt.w,wlt.d,wlt.sh,ux,uy,L.sun.elev); const under=inPoly(P.x,P.y,poly);
-    if(!wlt.closed){ if(under){ wlt.campT+=dt; if(wlt.campT>=(wlt.camp||3)){ wlt.closed=true; wlt.regrow=2.4; toast('shade wilted!','#cda'); } }
+    const poly=sweptRect(wlt.x,wlt.y,wlt.w,wlt.d,wlt.sh,ux,uy,L.sun.elev); const under=inPoly(P.x,P.y,poly); wlt.under=under;
+    if(!wlt.closed){ if(under){ wlt.campT+=dt; if(wlt.campT>=(wlt.camp||3)){ wlt.closed=true; wlt.regrow=2.4; toast('shade wilted','#cda'); } }
       else wlt.campT=Math.max(0,wlt.campT-dt*0.6); }
     else { wlt.regrow-=dt; if(wlt.regrow<=0 && !under){ wlt.closed=false; wlt.campT=0; } } }
 
@@ -871,6 +1092,7 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
       if(dist(P.x,P.y,lg.zx,lg.zy)<lg.reach && run.screenT<=0 && run.darkT<=0 && run.graceT<=0) lungeBurn=420; }
     else lg.state='idle'; }
 
+  if(run.cacti&&run.cacti.length&&run.t>=run.blinkNext){ run.blinkI=Math.floor(run.crnd()*run.cacti.length); run.blinkAt=run.t; run.blinkNext=run.t+4+run.crnd()*5; }
   // ---- exposure ----
   const safe=safeAt(P.x,P.y); run.lastSafe=safe;
   if(safe) run.sinceSafe=0; else run.sinceSafe+=dt;
@@ -882,6 +1104,10 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
   rate += lungeBurn;
   P.exp=clamp(P.exp+rate*dt,0,f.burnThreshold);
   if(P.exp>=f.burnThreshold){ burn(); return; }
+  // the cooling beat: hot in the sun (half the meter or more), then standing still in shade, he fans himself once
+  if(!safe&&P.exp>=50) run.hotAt=run.t;
+  if(run.act){ run.act.t+=dt; if(run.act.t>=4/ACT_FPS[run.act.k]) run.act=null; }
+  else if(safe&&run.hotAt>0&&run.t-run.hotAt<1.5&&Math.hypot(P.vx,P.vy)<30&&P.dashT<=0&&run.respawnT<=0){ act('cooling'); run.hotAt=-9; }
 
   // ---- pickups: beams (combo), pops ----
   const pr=(run.magnet?2:1)*f.pickupR;
@@ -889,10 +1115,10 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
       b.got=true; run.beamsGot++; run.combo++; run.comboT=comboWindow();
       const mult=comboMult(run.combo), near=P.exp>55?2:1, val=Math.round(ECON.beamValue*mult*near);
       run.beamScore+=val; run.comboMax=Math.max(run.comboMax,mult);
-      SFX.beam(run.combo); spawnParts(b.x,b.y,14,'140,240,180',150,0.6);
+      SFX.beam(run.combo); spawnParts(b.x,b.y,14,'140,240,180',150,0.6); fxAt('collect_burst',b.x,b.y,78,0.32);
       spawnRing(b.x,b.y,'150,245,190',30+mult*7); floatText(b.x,b.y-4,'+'+val, mult>1?'255,214,90':'150,245,190');
       popSquash(0.82,1.2); if(mult>1)jShake(0.10+mult*0.02);
-      if(near>1){ toast('SIZZLE! ×2','#ffd23f'); screenFlash('255,180,60',0.18); } else if(mult>1) showCombo(mult); } }
+      if(near>1){ toast('SIZZLE ×2','#ffd23f'); screenFlash('255,180,60',0.18); } else if(mult>1) showCombo(mult); } }
   run.comboT-=dt; if(run.comboT<=0&&run.combo>0){ run.combo=Math.max(0,run.combo-comboNotch()); run.comboT=run.combo>0?comboWindow():0; }
   for(const p of run.pops){ if(!p.got && dist(P.x,P.y,p.x,p.y)<40+P.r){ p.got=true; P.dashCd=0; P.dashStock++; SFX.pop();  // forgiving grab (was 26): a near-miss still counts
       spawnParts(p.x,p.y,16,'120,200,255',150,0.55); spawnRing(p.x,p.y,'130,205,255',40); floatText(p.x,p.y-4,'+DASH','130,205,255'); popSquash(0.8,1.24); jShake(0.12); toast('+dash','#7fd0ff'); } }
@@ -908,29 +1134,32 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
   checkTut(dt);
 }
 function updateHUD(onHot){ const f=run.feel;
-  $('heatFill').style.width=P.exp+'%';
-  $('heatFill').style.background=run.screenT>0?'#7fd0ff':(run.darkT>0?'#9fb0ff':skin(P.exp/100));
+  const hf=$('heatFill'); hf.style.clipPath='inset(0 '+(100-P.exp).toFixed(1)+'% 0 0)'; hf.style.webkitClipPath=hf.style.clipPath;
+  hf.className=run.screenT>0?'spf':(run.darkT>0?'dark':''); $('play-ui').classList.toggle('night',run.darkT>0);
+  const cu=cueNow(), ck=cu?cu[0]:''; if(ck!==cueKey){ cueKey=ck; const ce=$('cue'); if(cu){ ce.innerHTML=mk(cu[0])+'<span>'+cu[1]+'</span>'; ce.className='panel show'+(cu[2]?' warn':''); } else ce.className='panel'; }
   $('heatLbl').textContent=run.graceT>0?'get ready…':(run.screenT>0?'SPF active':(run.darkT>0?'eclipse':(run.slowT>0?'ICE · time slow':(onHot?'HOT SAND':'Exposure'))));
   $('timeT').textContent=run.t.toFixed(1);
-  if(run.findId){ const bt=save.best[run.findId]; $('bestT').style.display=''; $('bestT').textContent=bt?('best '+bt.toFixed(1)+'s'):'best · ';
+  if(run.findId){ const bt=save.best[run.findId]; $('bestT').style.display=bt?'':'none'; $('bestT').textContent=bt?('best '+bt.toFixed(1)+'s'):'';
     const total=run.finds.length, have=run.finds.filter(f=>f.got).length;
-    $('findRun').style.display=total?'':'none'; if(total) $('findRun').textContent=collectOf(run.L.world).emoji+' '+have+'/'+total;
+    $('findRun').style.display=total?'':'none'; if(total){ const ft=collectOf(run.L.world).kind+'|'+have+'/'+total; if($('findRun')._v!==ft){ $('findRun')._v=ft; $('findRun').innerHTML=mk(collectOf(run.L.world).kind)+' '+have+'/'+total; } }
   } else { $('bestT').style.display='none'; $('findRun').style.display='none'; }
   $('beamRunN').textContent=run.beamsGot;
   $('deathT').textContent='burns '+run.deaths;
   const frac=P.dashCd>0?P.dashCd/f.dashCd:0;
-  $('bDash').style.background=(P.dashStock>0)?'rgba(120,200,255,.7)':(P.dashCd>0?`conic-gradient(rgba(35,49,74,.7) ${frac*360}deg, rgba(232,93,60,.6) 0)`:'rgba(232,93,60,.6)');
+  const bd=$('bDash'); bd.style.setProperty('--cd',frac.toFixed(3)); bd.classList.toggle('stock',P.dashStock>0);
 }
 function burn(){ if(run.coolerBox){ run.coolerBox=false; P.exp=0; P.vx=0;P.vy=0; run.screenT=Math.max(run.screenT,1.2);
-    run.spawnAt=run.t; toast('COOLER BOX!','#9fe0a0'); SFX.spf(); return; } // revive in place, keep combo
-  run.deaths++; save.totalBurns++; persist(); toast('BURNED'); run.shake=save.settings.reduce?0:0.58; freeze=save.settings.reduce?0:0.09;
+    run.spawnAt=run.t; toast('COOLER BOX','#9fe0a0'); SFX.spf(); return; } // revive in place, keep combo
+  run.deaths++; save.totalBurns++; persist(); burnStrip('Burned at '+run.t.toFixed(1)+' s'); run.shake=save.settings.reduce?0:0.58; freeze=save.settings.reduce?0:0.09;
   SFX.burn(); spawnParts(P.x,P.y,24,'255,80,40',190,0.75); spawnRing(P.x,P.y,'255,95,55',72,0.5); screenFlash('255,55,30',0.55);
-  run.combo=0; P.exp=0; P.x=run.cp.x; P.y=run.cp.y; P.vx=0;P.vy=0; P.dashT=0; P.dashCd=0; P.dashStock=0; run.sinceSafe=0; run.spawnAt=run.t;
-  run.screenT=Math.max(run.screenT,run.feel.respawnGrace); run.trail.length=0; }
+  run.burnFx={x:P.x,y:P.y,t:0}; run.respawnT=save.settings.reduce?0:0.4;
+  run.combo=0; run.act=null; P.exp=0; P.x=run.cp.x; P.y=run.cp.y; P.vx=0;P.vy=0; P.dashT=0; P.dashCd=0; P.dashStock=0; run.sinceSafe=0; run.spawnAt=run.t;
+  run.screenT=Math.max(run.screenT,run.feel.respawnGrace); run.trail.length=0; fxAt('respawn_flash',P.x,P.y,96,0.4); }
 
+const MEDAL={gold:'art/ui/medal_gold.svg',silver:'art/ui/medal_silver.svg',bronze:'art/ui/medal_bronze.svg'};
 function winLevel(){ mode='win'; const L=run.L; SFX.win(); stopMusic(); freeze=0;
   const noDeath=run.deaths===0, underPar=run.t<=L.par;
-  const medal=(noDeath&&underPar)?'🥇':(noDeath||underPar)?'🥈':'🥉';
+  const medal=(noDeath&&underPar)?'gold':(noDeath||underPar)?'silver':'bronze';
   const score=(noDeath?1:0)+(underPar?1:0)+1; // 1..3 stars
   // ---- earn aloe ----
   let earn=ECON.levelComplete + run.beamScore;
@@ -950,14 +1179,65 @@ function winLevel(){ mode='win'; const L=run.L; SFX.win(); stopMusic(); freeze=0
   addBeams(earn);
   // ---- win screen ----
   $('winTitle').textContent=endless?'NICE RUN':'YOU MADE IT';
-  $('winMedal').textContent=medal;
-  $('winTime').innerHTML=`Time ${run.t.toFixed(1)}s  (par ${L.par}s) ${underPar?'✓':''}`+(isNewBest?`  <span style="color:var(--beam)">🏆 NEW BEST!</span>`:(prevBest?`  ·  <span style="opacity:.7">best ${prevBest.toFixed(1)}s</span>`:''));
+  $('winMedal').innerHTML='<img class="medalImg" src="'+MEDAL[medal]+'?v='+ART_V+'" alt="'+medal+' medal" width="96" height="96">';
+  $('winTime').innerHTML=`Time ${run.t.toFixed(1)}s  (par ${L.par}s) ${underPar?mk('check'):''}`+(isNewBest?`  <span style="color:var(--beam)">NEW BEST</span>`:(prevBest?`  ·  <span style="opacity:.7">best ${prevBest.toFixed(1)}s</span>`:''));
   const fcw = endless?{have:0,total:0}:levelFindCount(id,L);
-  $('winDeaths').innerHTML=`Burns ${run.deaths} ${noDeath?', flawless ✓':''}  ·  🌿 ${run.beamsGot}${run.comboMax>1?'  ·  x'+run.comboMax:''}`+(fcw.total?`  ·  ${collectOf(L.world).emoji} ${fcw.have}/${fcw.total}${fcw.have>=fcw.total?' ✓':' <span style="opacity:.6">(replay for more)</span>'}`:'');
-  $('winEarn').innerHTML=`<div class="earnLine">+ ${earn} aloe 🌿</div>`+(first?`<div class="earnLine">first clear bonus!</div>`:'');
+  $('winDeaths').innerHTML=`Burns ${run.deaths} ${noDeath?', flawless '+mk('check'):''}  ·  ${mk('aloe')} ${run.beamsGot}${run.comboMax>1?'  ·  x'+run.comboMax:''}`+(fcw.total?`  ·  ${mk(collectOf(L.world).kind)} ${fcw.have}/${fcw.total}${fcw.have>=fcw.total?' '+mk('check'):' <span style="opacity:.6">(replay for more)</span>'}`:'');
+  $('winEarn').innerHTML=`<div class="earnLine">+ ${earn} aloe ${mk('aloe')}</div>`+(first?`<div class="earnLine">first clear bonus</div>`:'');
   $('winNext').style.display=(!endless && nextLevelIndex()!==-1)?'':'none';
-  $('play-ui').classList.add('hidden'); showScreen('win'); updateWallet();
+  run.winInfo={name:L.name, world:L.world, t:run.t, par:L.par, medal, isNewBest, deaths:run.deaths, finds:fcw, kind:collectOf(L.world).kind, endless, daily:!!dailyKey};
+  run.winInfo.at=performance.now(); need('hero_victory_big'); need('cactus_wave');
+  need(dailyKey?'share_daily':'share_result'); need('m_'+medal); need('sock_'+run.winInfo.kind);
+  $('play-ui').classList.add('hidden'); showScreen('win'); updateWallet(); drawWinCard();
 }
+/* THE POSTCARD (step 6): Astra's result frame; in its window the world's ground under one long cool shadow and him
+   waving in it; the level's name in her top band, the time and the medal in the next, the treasures and burns in the
+   last. Redrawn as her pieces load. */
+const CARD_LAYOUT={
+  result:{frame:'share_result',win:[100,290,880,540],bands:[[80,222,920,52],[80,866,920,70],[80,950,920,64]]},
+  daily:{frame:'share_daily',win:[100,376,880,484],bands:[[80,238,920,58],[80,306,920,58],[80,900,920,100]]} };
+function drawWinCard(){ const c=$('winCv'); if(!c||!run||!run.winInfo) return; const w=run.winInfo;
+  const el=(performance.now()-(w.at||0))/1000, f=save.settings.reduce?3:Math.min(3,Math.floor(el*ACT_FPS.victory));
+  const cf=save.settings.reduce?0:(el<4/6?Math.floor(el*6):0);    // her cactus waves once at 6 fps
+  drawPostcard(c,w,f,cf); if(el<0.75&&!save.settings.reduce&&screen==='win') requestAnimationFrame(drawWinCard); }
+const cardTmp=document.createElement('canvas'); cardTmp.width=cardTmp.height=256; const cardTx=cardTmp.getContext('2d');
+function drawPostcard(c,w,vf,cf){ if(vf==null) vf=3; if(cf==null) cf=2; const g=c.getContext('2d'), S=c.width/1080, Lay=CARD_LAYOUT[w.daily?'daily':'result'];
+  g.clearRect(0,0,c.width,c.height);
+  const wx=Lay.win[0]*S, wy=Lay.win[1]*S, ww=Lay.win[2]*S, wh=Lay.win[3]*S;
+  g.save(); g.beginPath(); g.rect(wx,wy,ww,wh); g.clip();
+  const gt=A('ground_'+WORLD_DIRS[w.world]); if(gt){ g.fillStyle=g.createPattern(gt,'repeat'); } else g.fillStyle='#ead7a0'; g.fillRect(wx,wy,ww,wh);
+  g.fillStyle='rgba(101,126,148,.55)'; g.beginPath(); g.moveTo(wx+ww*0.52,wy); g.lineTo(wx+ww*0.86,wy); g.lineTo(wx+ww*0.5,wy+wh); g.lineTo(wx+ww*0.16,wy+wh); g.closePath(); g.fill();
+  const hs=wh*0.92, hx=wx+ww*0.5-hs/2, hy=wy+wh-hs*0.98, tom=save.cosmetics.body==='tomato';
+  g.fillStyle='rgba(0,0,0,.14)'; g.beginPath(); g.ellipse(wx+ww*0.5,wy+wh-hs*0.1,hs*0.2,hs*0.06,0,0,TAU); g.fill();
+  const fig=tom?(A('hero_victory_big')||A('hero_victory')):A('body_'+save.cosmetics.body);
+  if(fig){ composeHero(cardTx,256,fig,4,1,tom?vf:0,tom?HAT_ANCHOR.victory[vf]:HAT_ANCHOR.s[0],0,tom); g.drawImage(cardTmp,hx,hy,hs,hs); }
+  const cwv=A('cactus_wave'); if(cwv){ const cw=cwv.width/4, ch=cwv.height, dh=wh*0.46, dw=dh*cw/ch;
+    g.fillStyle='rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(wx+ww*0.87,wy+wh*0.955,dw*0.22,dh*0.04,0,0,TAU); g.fill();
+    g.drawImage(cwv,cf*cw,0,cw,ch,wx+ww*0.87-dw/2,wy+wh*0.97-dh*(180/192),dw,dh); }
+  g.restore();
+  const fr=A(Lay.frame); if(fr) g.drawImage(fr,0,0,c.width,c.height); else { g.strokeStyle='#8a7a56'; g.lineWidth=3; g.strokeRect(wx,wy,ww,wh); }
+  const B=Lay.bands, band=(r,txt,font)=>{ g.font=font; g.fillStyle='#2b2a20'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(txt,(r[0]+r[2]/2)*S,(r[1]+r[3]/2)*S); };
+  const bree=n=>`400 ${Math.round(n*S)}px "Bree Serif",Georgia,serif`, atk=n=>`700 ${Math.round(n*S)}px "Atkinson Hyperlegible",sans-serif`;
+  const burns=w.deaths?('burned '+w.deaths+(w.deaths===1?' time':' times')):'never burned';
+  if(w.daily){ const d=new Date(), MON=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    band(B[0],'DAILY CHALLENGE',bree(46)); band(B[1],d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear()+'   seed '+seedWord(dailyKey||dateKey())+'   rules '+RULES_V,atk(30));
+    band(B[2],'Time '+w.t.toFixed(1)+' s   '+burns,atk(42)); return; }
+  band(B[0],w.endless?'Shadow Run':w.name,bree(44));
+  const md=A('m_'+w.medal), ms=62*S;
+  band(B[1],'Time '+w.t.toFixed(1)+' s'+(w.endless?'':'   par '+w.par+' s')+(w.isNewBest?'   new best':''),atk(40));
+  if(md&&!w.endless) g.drawImage(md,96*S,(B[1][1]+B[1][3]/2)*S-ms/2,ms,ms);
+  const sk=A('sock_'+w.kind);
+  band(B[2],(w.finds.total?w.finds.have+' of '+w.finds.total+' found   ':'')+burns,atk(34));
+  if(sk&&w.finds.total) g.drawImage(sk,96*S,(B[2][1]+B[2][3]/2)*S-26*S,52*S,52*S); }
+/* Share (step 7): the postcard at 1080 as a file after the tap (the system sheet), else a download, else the words */
+function shareWin(){ if(!run||!run.winInfo) return; const w=run.winInfo, c=document.createElement('canvas'); c.width=c.height=1080; drawPostcard(c,w);
+  const url='https://lucidwinds.com/satellites/tomato-man/', txt=w.daily?('Tomato Man daily challenge in '+w.t.toFixed(1)+' s, '+(w.deaths?'burned '+w.deaths:'never burned')):('Tomato Man, '+w.name+' in '+w.t.toFixed(1)+' s');
+  const words=()=>{ try{ if(navigator.share){ navigator.share({text:txt,url}).catch(()=>{}); return; } }catch(e){} try{ navigator.clipboard.writeText(txt+' '+url); toast('copied','var(--leaf)'); }catch(e){} };
+  if(!c.toBlob){ words(); return; }
+  c.toBlob(b=>{ if(!b){ words(); return; } const name=(w.daily?'tomato-man-daily':'tomato-man-'+w.name.toLowerCase().replace(/[^a-z0-9]+/g,'-'))+'.png'; let f=null;
+    try{ f=new File([b],name,{type:'image/png'}); }catch(e){}
+    try{ if(f&&navigator.canShare&&navigator.canShare({files:[f]})){ navigator.share({files:[f],text:txt+' '+url}).catch(()=>{}); return; } }catch(e){}
+    try{ const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); }catch(e){ words(); } },'image/png'); }
 function nextLevelIndex(){ const w=LEVELS[li].world, wl=levelsOfWorld(w), pos=wl.findIndex(o=>o.i===li);
   if(pos>=0 && pos<wl.length-1) return wl[pos+1].i;                                  // next level within this world
   for(let nw=w+1;nw<WORLDS.length;nw++){ const nl=levelsOfWorld(nw); if(nl.length&&worldUnlocked(nw)) return nl[0].i; } // else first of next world
@@ -968,81 +1248,142 @@ function render(){ const inPlay=(screen==='play');
   if(!inPlay){ ctx.clearRect(0,0,W,H); return; }
   const L=run.L; const _sm=Math.min(20,run.shake*46); const shx=run.shake>0?(Math.random()-0.5)*_sm:0, shy=run.shake>0?(Math.random()-0.5)*_sm:0;
   const ox=-cam.x+shx, oy=-cam.y+shy; const pal=WORLDS[L.world].pal;
-  // sky/ground
-  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,pal.sand1); g.addColorStop(1,pal.sand2);
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-  // world-locked sand ripples (parallax with camera)
-  if(!save.settings.reduce){ ctx.strokeStyle='rgba(120,80,30,.05)'; ctx.lineWidth=6;
+  // the ground (step 3): her world tile, locked to the world, light enough that the shade reads on it
+  const gt=A('ground_'+WORLD_DIRS[L.world]);
+  if(gt){ if(render.gpImg!==gt){ render.gp=ctx.createPattern(gt,'repeat'); render.gpImg=gt; }
+    if(render.gp.setTransform&&window.DOMMatrix) render.gp.setTransform(new DOMMatrix([1,0,0,1,ox,oy]));
+    ctx.fillStyle=render.gp; ctx.fillRect(0,0,W,H); }
+  else { const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,pal.sand1); g.addColorStop(1,pal.sand2); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); }
+  // her far silhouette along the top of the world, a dusty skyline past the flag (decor only, under everything)
+  const far=A('far'); if(far&&oy>-160){ const fh=110, fw=fh*far.width/far.height;
+    if(!render.farC||render.farW!==L.world){ const c2=document.createElement('canvas'); c2.width=far.width; c2.height=far.height; const g2=c2.getContext('2d');
+      g2.drawImage(far,0,0); g2.globalCompositeOperation='source-in'; g2.fillStyle=pal.ink||'#5a4a60'; g2.fillRect(0,0,c2.width,c2.height); render.farC=c2; render.farW=L.world; }
+    ctx.globalAlpha=0.22; for(let fx=ox%fw-fw;fx<W;fx+=fw) ctx.drawImage(render.farC,fx,oy+8,fw,fh); ctx.globalAlpha=1; }
+  // world-locked sand ripples (parallax with camera), only without her tile
+  if(!gt&&!save.settings.reduce){ ctx.strokeStyle='rgba(120,80,30,.05)'; ctx.lineWidth=6;
     for(let y=-((cam.y*0.6)%46);y<H+46;y+=46){ ctx.beginPath();
       for(let x=0;x<=W;x+=40){ const yy=y+Math.sin((x+cam.x*0.6)*0.012)*5; x?ctx.lineTo(x,yy):ctx.moveTo(x,yy); } ctx.stroke(); } }
-  ctx.fillStyle='rgba(90,60,25,.05)';
-  for(let i=0;i<70;i++){ const x=((i*131.7)-cam.x*0.5)%W, y=((i*197.3+i*i*11)-cam.y*0.5)%H; ctx.fillRect((x+W)%W,(y+H)%H,2,2); }
+  if(!gt){ ctx.fillStyle='rgba(90,60,25,.05)';
+    for(let i=0;i<70;i++){ const x=((i*131.7)-cam.x*0.5)%W, y=((i*197.3+i*i*11)-cam.y*0.5)%H; ctx.fillRect((x+W)%W,(y+H)%H,2,2); } }
   // directional sun wash — the ground glows brighter toward the sun
   const gx=W/2+Math.cos(run.az)*W*0.7, gy=H/2+Math.sin(run.az)*H*0.7;
   const gl=ctx.createRadialGradient(gx,gy,0,gx,gy,Math.max(W,H)*1.25);
-  gl.addColorStop(0,'rgba(255,246,190,.34)'); gl.addColorStop(.5,'rgba(255,240,170,.12)'); gl.addColorStop(1,'rgba(255,244,180,0)');
+  gl.addColorStop(0,gt?'rgba(255,246,190,.2)':'rgba(255,246,190,.34)'); gl.addColorStop(.5,'rgba(255,240,170,.08)'); gl.addColorStop(1,'rgba(255,244,180,0)');
   ctx.fillStyle=gl; ctx.fillRect(0,0,W,H);
 
-  // hot sand
-  for(const h of run.hot){ const x=h[0]+ox,y=h[1]+oy,r=h[2];
+  // decor: her world's props beside the route (under the shade, so a prop in shade is shaded)
+  const dsh=A('decor_'+WORLD_DIRS[L.world]);
+  // her cactus spectators: blink one at a time, lean only in real wind (more wind, more lean), frame zero when reduced
+  const cbl=A('cactus_blink'), cwi=A('cactus_wind');
+  if(cbl&&run.cacti) for(let ci=0;ci<run.cacti.length;ci++){ const c=run.cacti[ci]; let img=cbl, f=0, dir=1;
+    if(!save.settings.reduce){
+      const wx=run.wind?((run.wind.ax||0)+(run.wind.gust?run.wind.gust.amp*Math.sin((run.t-ci*0.3)*TAU/run.wind.gust.period):0)):0;
+      if(cwi&&Math.abs(wx)>15){ img=cwi; f=Math.abs(wx)>60?3:(Math.abs(wx)>35?2:1); dir=wx<0?-1:1; }
+      else if(ci===run.blinkI&&run.t-run.blinkAt<4/6) f=Math.floor((run.t-run.blinkAt)*6); }
+    const cw=img.width/4, ch=img.height, sc=0.57;
+    ctx.save(); ctx.translate(c.x+ox,c.y+oy); if(dir<0) ctx.scale(-1,1);
+    ctx.fillStyle='rgba(0,0,0,.12)'; ctx.beginPath(); ctx.ellipse(0,-4,26,7,0,0,TAU); ctx.fill();
+    ctx.drawImage(img,f*cw,0,cw,ch,-64*sc,-180*sc,cw*sc,ch*sc); ctx.restore(); }
+  if(dsh&&run.decor) for(const d of run.decor){ const cw=dsh.width/4, chh=dsh.height/2, k=d.far?0.5:0.21, x=d.x+ox, y=d.y+oy;
+    if(x<-90||x>W+90||y<-60||y>H+140) continue;
+    ctx.globalAlpha=d.far?0.65:1; ctx.drawImage(dsh,(d.f%4)*cw,(d.f>>2)*chh,cw,chh,x-128*k,y-480*k,256*k,512*k); }
+  ctx.globalAlpha=1;
+  // hot sand: her patch (warm, patterned) with her shimmer crawling over it; the drawn patch without her art
+  const hp=A('hot_patch'), shm=A('shimmer');
+  if(hp) for(const h of run.hot){ const x=h[0]+ox,y=h[1]+oy,r=h[2]; ctx.drawImage(hp,x-r*1.15,y-r*1.15,r*2.3,r*2.3);
+    if(shm&&!save.settings.reduce){ const t=(nowT*0.6+h[0]*0.01)%1; ctx.globalAlpha=0.55*Math.sin(t*Math.PI); ctx.drawImage(shm,x-r,y-r*0.6-t*r*0.8,r*2,r); ctx.globalAlpha=1; } }
+  if(!hp) for(const h of run.hot){ const x=h[0]+ox,y=h[1]+oy,r=h[2];
     ctx.save(); ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.clip();
     ctx.fillStyle='rgba(235,110,40,.5)'; ctx.fillRect(x-r,y-r,r*2,r*2);
     ctx.strokeStyle='rgba(160,50,10,.5)'; ctx.lineWidth=3;
     for(let i=-r;i<r;i+=11){ctx.beginPath();ctx.moveTo(x-r,y+i);ctx.lineTo(x+r,y+i+r);ctx.stroke();} ctx.restore();
     ctx.strokeStyle='rgba(200,70,20,.75)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y,r,0,TAU); ctx.stroke(); }
 
-  // SHADE (safe ground) via multiply — soft feathered penumbra + cool depth
-  ctx.save(); ctx.globalCompositeOperation='multiply';
-  if(!save.settings.reduce){ ctx.shadowColor='rgba(58,78,120,.85)'; ctx.shadowBlur=15; }
-  ctx.fillStyle='rgba(74,94,134,1)';
-  for(const poly of run.shadePolys){ ctx.beginPath(); poly.forEach((p,i)=>{const sx=p.x+ox,sy=p.y+oy;i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);}); ctx.closePath(); ctx.fill(); }
-  for(const e of run.shadeEll){ ctx.save(); ctx.translate(e.cx+ox,e.cy+oy); ctx.rotate(e.ang);
-    ctx.beginPath(); ctx.ellipse(0,0,e.major,e.minor,0,0,TAU); ctx.fill(); ctx.restore(); }
-  ctx.fillStyle='rgba(60,80,120,1)'; for(const p of run.popups){ ctx.beginPath(); ctx.arc(p.x+ox,p.y+oy,p.r,0,TAU); ctx.fill(); }
-  ctx.fillStyle='rgba(80,100,140,1)'; for(const cl of run.clouds){ ctx.beginPath(); ctx.arc(cl.x+ox,cl.y+oy,cl.r,0,TAU); ctx.fill(); }
-  ctx.restore();
-  // cool inner edge glow (reads as a crisp-but-soft shadow lip)
-  ctx.lineWidth=2; ctx.strokeStyle='rgba(40,60,110,.22)';
-  for(const poly of run.shadePolys){ ctx.beginPath(); poly.forEach((p,i)=>{const sx=p.x+ox,sy=p.y+oy;i?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);}); ctx.closePath(); ctx.stroke(); }
-
-  // popup markers + clouds
-  for(const p of run.popups){ ctx.fillStyle='#3a7bd5'; ctx.beginPath(); ctx.arc(p.x+ox,p.y+oy,7,0,TAU); ctx.fill(); }
-  for(const cl of run.clouds){ ctx.fillStyle='rgba(255,255,255,.85)';
+  // SHADE (step 3): every shadow, dropped pool and cloud shadow drawn ONCE into a mask, then laid down once in her safe
+  // shade (#657E94 at 0.55), so overlaps never stack into black walls and cool always means safe on her light ground
+  if(!render.sc){ render.sc=document.createElement('canvas'); render.sx=render.sc.getContext('2d'); }
+  const sc=render.sc, sx=render.sx;
+  if(sc.width!==cv.width||sc.height!==cv.height){ sc.width=cv.width; sc.height=cv.height; }
+  sx.setTransform(1,0,0,1,0,0); sx.globalCompositeOperation='source-over'; sx.clearRect(0,0,sc.width,sc.height);
+  sx.setTransform(DPR,0,0,DPR,0,0); sx.fillStyle='#000';
+  for(const poly of run.shadePolys){ sx.beginPath(); poly.forEach((p,i)=>{const X=p.x+ox,Y=p.y+oy; i?sx.lineTo(X,Y):sx.moveTo(X,Y);}); sx.closePath(); sx.fill(); }
+  for(const e of run.shadeEll){ sx.save(); sx.translate(e.cx+ox,e.cy+oy); sx.rotate(e.ang); sx.beginPath(); sx.ellipse(0,0,e.major,e.minor,0,0,TAU); sx.fill(); sx.restore(); }
+  for(const p of run.popups){ sx.beginPath(); sx.arc(p.x+ox,p.y+oy,p.r,0,TAU); sx.fill(); }
+  for(const cl of run.clouds){ sx.beginPath(); sx.arc(cl.x+ox,cl.y+oy,cl.r,0,TAU); sx.fill(); }
+  sx.setTransform(1,0,0,1,0,0); sx.globalCompositeOperation='source-in'; sx.fillStyle='#657e94'; sx.fillRect(0,0,sc.width,sc.height);
+  ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha=gt?0.55:0.62; ctx.drawImage(sc,0,0); ctx.restore();
+  // a dropped shade is her soft cool pool over its circle (the circle is the truth)
+  const pool=A('shade_pool');
+  for(const p of run.popups){ if(pool){ ctx.globalAlpha=0.45; ctx.drawImage(pool,p.x+ox-p.r*1.12,p.y+oy-p.r*1.12,p.r*2.24,p.r*2.24); ctx.globalAlpha=1; }
+    else { ctx.fillStyle='#3a7bd5'; ctx.beginPath(); ctx.arc(p.x+ox,p.y+oy,7,0,TAU); ctx.fill(); } }
+  // a cloud floats toward the sun from its own shadow, so the safe ground under it stays in view
+  const sux=Math.cos(run.az), suy=Math.sin(run.az);
+  for(const cl of run.clouds){ const ca=A(cl.vy?'cloud_elevator':'cloud_platform');
+    if(ca){ const w=cl.r*2.2, h=w*ca.height/ca.width; ctx.globalAlpha=0.78; ctx.drawImage(ca,cl.x+ox+sux*cl.r*0.85-w/2,cl.y+oy+suy*cl.r*0.85-h/2,w,h); ctx.globalAlpha=1; continue; }
+    ctx.fillStyle='rgba(255,255,255,.85)';
     for(let i=0;i<5;i++){const a=i/5*TAU,rr=cl.r*0.55; ctx.beginPath(); ctx.arc(cl.x+ox+Math.cos(a)*rr*0.6,cl.y+oy+Math.sin(a)*rr*0.6,cl.r*0.42,0,TAU); ctx.fill();}
     ctx.beginPath(); ctx.arc(cl.x+ox,cl.y+oy,cl.r*0.5,0,TAU); ctx.fill(); }
 
   // static casters
   const cream=rgbStr(mixRGB(toRGB(pal.accent),[255,250,230],0.6));
+  const awS=A('awning_striped'), umA=A('umbrella');
   for(const c of L.casters){ if(c[0]==='R'){ const x=c[1]+ox,y=c[2]+oy,w=c[3],h=c[4];
       ctx.fillStyle='rgba(0,0,0,.10)'; ctx.fillRect(x+3,y+h,w,5);                       // ground contact shadow
+      if(awS){ ctx.drawImage(awS,x,y,w,h); continue; }                                  // her canopy, the size of the solid awning
       for(let i=0,sx=0;sx<w;i++,sx+=34){ ctx.fillStyle=(i%2)?pal.accent:cream; ctx.fillRect(x+sx,y,Math.min(34,w-sx),h); } // beach stripes
       const cg=ctx.createLinearGradient(0,y,0,y+h); cg.addColorStop(0,'rgba(255,255,255,.22)'); cg.addColorStop(.5,'rgba(255,255,255,0)'); cg.addColorStop(1,'rgba(0,0,0,.16)');
       ctx.fillStyle=cg; ctx.fillRect(x,y,w,h);                                          // canopy sheen
       ctx.fillStyle=pal.accent; for(let sx=0;sx<w-1;sx+=18){ ctx.beginPath(); ctx.arc(x+sx+9,y+h,9,0,Math.PI); ctx.fill(); } // scalloped hem
       ctx.fillStyle='rgba(110,64,36,.55)'; ctx.fillRect(x,y-2,w,3); }                   // top rail
     else { const facing=run.facings[c.__fi]!==undefined?run.facings[c.__fi]:c[4];
+      const ust=A('umb_states');
+      if(ust&&WORLD_FIT.umb){ const gu=run.wind&&run.wind.gust?Math.abs(Math.sin(run.t*TAU/run.wind.gust.period)):0;
+        let dd=run.az-facing; dd=Math.atan2(Math.sin(dd),Math.cos(dd));
+        const st=gu>0.75?3:(dd>0.35?0:(dd<-0.35?2:1)), cs=WORLD_FIT.umb[0], k=(c[3]*1.08)/WORLD_FIT.umb[1];
+        ctx.save(); ctx.translate(c[1]+ox,c[2]+oy); ctx.rotate(facing+Math.PI/2);   // her pole runs away from the sun
+        ctx.drawImage(ust,(st%2)*cs,Math.floor(st/2)*cs,cs,cs,-cs/2*k,-cs/2*k,cs*k,cs*k); ctx.restore(); continue; }
+      if(umA){ ctx.save(); ctx.translate(c[1]+ox,c[2]+oy); ctx.rotate(facing); const R=c[3]*1.08; ctx.drawImage(umA,-R,-R,R*2,R*2); ctx.restore(); continue; }
       ctx.save(); ctx.translate(c[1]+ox,c[2]+oy); ctx.rotate(facing);
       const ug=ctx.createRadialGradient(0,-c[3]*0.2,2,0,0,c[3]); ug.addColorStop(0,'#ff8a5c'); ug.addColorStop(1,pal.accent);
       ctx.fillStyle=ug; ctx.beginPath(); ctx.arc(0,0,c[3],0,TAU); ctx.fill();
       ctx.strokeStyle='rgba(0,0,0,.2)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-c[3],0); ctx.lineTo(c[3],0); ctx.stroke(); ctx.restore(); } }
   // wilting awnings (visibly closing)
+  const awSo=A('awning_solid'), wsh=A('wilt_solid');
   for(const wlt of run.wilts){ const open=wlt.closed?0.15:clamp(1-wlt.campT/(wlt.camp||3),0.3,1);
+    // her states by the engine's camp clock: healthy, drooping, sagging while it climbs; collapsed only once closed
+    // (the engine has taken its shade away); the canvas pinned to the caster's top left by her healthy canopy
+    if(wsh&&WORLD_FIT.wilt){ const rr=wlt.campT/(wlt.camp||3), st=wlt.closed?3:(rr<0.25?0:(rr<0.6?1:2)), F=WORLD_FIT.wilt;
+      const sx=wlt.w/(F[2]-F[0]), sy=wlt.d/(F[3]-F[1]);
+      if(st<3){ ctx.fillStyle='rgba(0,0,0,.10)'; ctx.fillRect(wlt.x+ox+3,wlt.y+oy+wlt.d,wlt.w,5); }
+      ctx.drawImage(wsh,(st%2)*F[4],Math.floor(st/2)*F[5],F[4],F[5],wlt.x+ox-F[0]*sx,wlt.y+oy-F[1]*sy,F[4]*sx,F[5]*sy); continue; }   // her four states on one rail
+    if(awSo){ const w=wlt.w*open; ctx.globalAlpha=0.5+0.5*open; ctx.drawImage(awSo,wlt.x+ox+(wlt.w-w)/2,wlt.y+oy,w,wlt.d); ctx.globalAlpha=1; continue; }
     ctx.fillStyle=`rgba(120,160,90,${0.5+0.5*open})`; const w=wlt.w*open;
     ctx.fillRect(wlt.x+ox+(wlt.w-w)/2,wlt.y+oy,w,wlt.d);
     ctx.strokeStyle='rgba(60,90,40,.7)'; ctx.lineWidth=2; ctx.strokeRect(wlt.x+ox+(wlt.w-w)/2,wlt.y+oy,w,wlt.d); }
   // movers (carts)
-  for(const m of run.movers){ const x=m.x+ox,y=m.y+oy; ctx.fillStyle='#7a5230'; ctx.fillRect(x,y,m.w,m.d);
+  const cartA=A(['cart_terracotta','cart_slate','cart_sage','cart_terracotta','cart_slate'][L.world%5]);
+  for(const m of run.movers){ const x=m.x+ox,y=m.y+oy;
+    if(cartA){ const n=Math.max(1,Math.round(m.w/120)), cw=m.w/n, chh=cw*cartA.height/cartA.width;   // a convoy of her carts on the footprint
+      for(let k=0;k<n;k++) ctx.drawImage(cartA,x+k*cw,y+m.d-chh,cw,chh); continue; }
+    ctx.fillStyle='#7a5230'; ctx.fillRect(x,y,m.w,m.d);
     ctx.fillStyle='#e8c06a'; ctx.fillRect(x,y,m.w,7);
     ctx.fillStyle='#2a2a2a'; ctx.beginPath(); ctx.arc(x+14,y+m.d,6,0,TAU); ctx.arc(x+m.w-14,y+m.d,6,0,TAU); ctx.fill(); }
   // popsicle pickups
+  const popA=A('popsicle');
   for(const p of run.pops){ if(p.got)continue; const x=p.x+ox,y=p.y+oy,bob=Math.sin(nowT*4+p.x)*3;
+    if(popA){ ctx.drawImage(popA,x-18,y-20+bob,36,36); continue; }
     ctx.fillStyle='#ff6aa0'; ctx.beginPath(); roundRect(x-8,y-16+bob,16,22,6); ctx.fill();
     ctx.fillStyle='#9a5a2a'; ctx.fillRect(x-2,y+6+bob,4,12);
     ctx.fillStyle='rgba(255,255,255,.5)'; ctx.fillRect(x-5,y-13+bob,3,12); }
 
   // aloe (currency pickups) — LIT in sun (grab it!) vs DORMANT in shade (asleep)
+  const alL=A('aloe_lit'), alD=A('aloe_dim'), spk=A('sparkle');
   for(const b of run.beams){ if(b.got) continue; const x=b.x+ox,y=b.y+oy;
     const lit=b.lit!==undefined?b.lit:!shadedGeom(b.x,b.y);
+    if(lit&&alL){ const sz=38*(0.94+0.06*Math.sin(b.t*4)); ctx.drawImage(alL,x-sz/2,y-sz/2,sz,sz);   // her aloe, awake in the sun
+      if(spk&&!save.settings.reduce){ const ph=(b.t*0.6)%1; if(ph<0.3){ const ss=20*Math.sin(ph/0.3*Math.PI); ctx.drawImage(spk,x+9-ss/2,y-13-ss/2,ss,ss); } }
+      continue; }
+    if(!lit&&alD){ ctx.globalAlpha=0.9; ctx.drawImage(alD,x-14,y-14,28,28); ctx.globalAlpha=1; continue; }  // asleep in shade
     if(lit){ const pulse=0.6+0.4*Math.sin(b.t*4);
       const gr=ctx.createRadialGradient(x,y,0,x,y,22); gr.addColorStop(0,'rgba(150,255,190,.5)'); gr.addColorStop(1,'rgba(150,255,190,0)');
       ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(x,y,22,0,TAU); ctx.fill();
@@ -1056,32 +1397,58 @@ function render(){ const inPlay=(screen==='play');
   for(const fnd of run.finds){ if(fnd.got) continue; drawFindIcon(fnd.x+ox, fnd.y+oy+Math.sin(nowT*3+fnd.x*0.05)*3, collectOf(L.world).kind); }
 
   // checkpoints
-  L.checkpoints.forEach((c,i)=>{ const hit=run.cpHit[i]; ctx.strokeStyle=hit?'rgba(79,181,106,.9)':'rgba(255,255,255,.45)'; ctx.lineWidth=3;
+  const cpA=A('checkpoints');
+  L.checkpoints.forEach((c,i)=>{ const hit=run.cpHit[i];
+    if(cpA){ const cw=cpA.width/2, ch=cpA.height, k=0.19*(256/cw);                        // her flag, off or on, its base on the point
+      ctx.strokeStyle=hit?'rgba(79,181,106,.35)':'rgba(60,70,90,.18)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(c[0]+ox,c[1]+oy,16,0,TAU); ctx.stroke();
+      ctx.drawImage(cpA,(hit?1:0)*cw,0,cw,ch,c[0]+ox-64*k*(cw/256),c[1]+oy-366*k*(cw/256),cw*k,ch*k); return; }
+    ctx.strokeStyle=hit?'rgba(79,181,106,.9)':'rgba(255,255,255,.45)'; ctx.lineWidth=3;
     ctx.beginPath(); ctx.arc(c[0]+ox,c[1]+oy,16,0,TAU); ctx.stroke();
     ctx.fillStyle=hit?'rgba(79,181,106,.5)':'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.arc(c[0]+ox,c[1]+oy,7,0,TAU); ctx.fill(); });
 
   // exit flag
   const ex=L.exit[0]+ox, ey=L.exit[1]+oy;
   ctx.strokeStyle='rgba(35,49,74,.6)'; ctx.lineWidth=3; ctx.setLineDash([7,7]); ctx.beginPath(); ctx.arc(ex,ey,46,0,TAU); ctx.stroke(); ctx.setLineDash([]);
-  ctx.strokeStyle='#23314a'; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(ex,ey+30); ctx.lineTo(ex,ey-46); ctx.stroke();
-  ctx.fillStyle='#4fb56a'; ctx.beginPath(); ctx.moveTo(ex,ey-46); ctx.lineTo(ex+34,ey-32); ctx.lineTo(ex,ey-18); ctx.fill();
+  const exA=A('exit_flag');
+  if(exA){ const k=0.22*(384/exA.width); ctx.drawImage(exA,ex-96*k*(exA.width/384),ey+18-494*k*(exA.height/512),exA.width*k,exA.height*k); }   // her pennant
+  else { ctx.strokeStyle='#23314a'; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(ex,ey+30); ctx.lineTo(ex,ey-46); ctx.stroke();
+    ctx.fillStyle='#4fb56a'; ctx.beginPath(); ctx.moveTo(ex,ey-46); ctx.lineTo(ex+34,ey-32); ctx.lineTo(ex,ey-18); ctx.fill(); }
 
-  // angry sun lunge zone
-  if(run.lunge && run.lunge.state!=='idle'){ const lg=run.lunge; const x=lg.zx+ox,y=lg.zy+oy;
-    if(lg.state==='warn'){ ctx.strokeStyle='rgba(255,60,40,.8)'; ctx.lineWidth=4; ctx.setLineDash([6,6]); ctx.beginPath(); ctx.arc(x,y,lg.reach,0,TAU); ctx.stroke(); ctx.setLineDash([]); }
+  // the dark window: her slate ring round him, an availability cue only (never a safe pool), closing as the window does
+  const rsf=A('ring_safe');
+  if(run.dark&&run.darkT>0&&rsf&&WORLD_FIT.safe_window){ const cyc=run.dark.period+run.dark.dur, pd=((run.dark.timer%cyc)-run.dark.period)/run.dark.dur;
+    const f=save.settings.reduce?0:clamp(Math.floor(pd*4),0,3), k=(P.r*3)/WORLD_FIT.safe_window;
+    ctx.drawImage(rsf,f*256,0,256,256,P.x+ox-128*k,P.y+oy-128*k,256*k,256*k); }
+  // angry sun lunge zone: her broken ring at the zone's real reach, closing over the engine's own warning; her lane
+  // from the sun's marker to the zone, turned to that bearing
+  if(run.lunge && run.lunge.state!=='idle'){ const lg=run.lunge; const x=lg.zx+ox,y=lg.zy+oy, rb=A('ring_boss');
+    if(lg.state==='warn'&&rb&&WORLD_FIT.boss_telegraph){ const ph=lg.timer%lg.period, f=save.settings.reduce?0:clamp(Math.floor(ph/lg.warn*4),0,3), k=lg.reach/WORLD_FIT.boss_telegraph;
+      ctx.drawImage(rb,f*256,0,256,256,x-128*k,y-128*k,256*k,256*k);
+      const ln=A('lane'); if(ln){ const sp=sunXY(), ang=Math.atan2(y-sp.y,x-sp.x), d0=58+39, lw=78, lh=lw*ln.height/ln.width;   // just off the sun's disc, toward the zone
+        ctx.save(); ctx.translate(sp.x+Math.cos(ang)*d0,sp.y+Math.sin(ang)*d0); ctx.rotate(ang); ctx.globalAlpha=0.9; ctx.drawImage(ln,-lw/2,-lh/2,lw,lh); ctx.restore(); } }
+    else if(lg.state==='warn'){ ctx.strokeStyle='rgba(255,60,40,.8)'; ctx.lineWidth=4; ctx.setLineDash([6,6]); ctx.beginPath(); ctx.arc(x,y,lg.reach,0,TAU); ctx.stroke(); ctx.setLineDash([]); }
     else { const rg=ctx.createRadialGradient(x,y,0,x,y,lg.reach); rg.addColorStop(0,'rgba(255,120,40,.7)'); rg.addColorStop(1,'rgba(255,40,20,0)');
       ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(x,y,lg.reach,0,TAU); ctx.fill(); } }
 
   // dash trail (cosmetic color)
-  const tc=cosmetic(save.cosmetics.trail);
-  for(const tr of run.trail){ let col=tc.color; if(col==='rainbow'){ const h=(nowT*200+tr.a*120)%360; ctx.fillStyle=`hsla(${h},90%,60%,${tr.a*0.5})`; }
+  const tc=cosmetic(save.cosmetics.trail), tsp=A('trail_'+tc.id);
+  if(tsp) for(const tr of run.trail){ const f=Math.min(3,Math.floor((1-tr.a)*4)); ctx.globalAlpha=clamp(tr.a,0,1)*0.85;
+    ctx.drawImage(tsp,f*(tsp.width/4),0,tsp.width/4,tsp.height,tr.x+ox-20,tr.y+oy-20,40,40); }
+  ctx.globalAlpha=1;
+  if(!tsp) for(const tr of run.trail){ let col=tc.color; if(col==='rainbow'){ const h=(nowT*200+tr.a*120)%360; ctx.fillStyle=`hsla(${h},90%,60%,${tr.a*0.5})`; }
     else ctx.fillStyle=`rgba(${col},${tr.a*0.5})`; ctx.beginPath(); ctx.arc(tr.x+ox,tr.y+oy,P.r*0.85,0,TAU); ctx.fill(); }
   // particles
   for(const pt of run.parts){ ctx.fillStyle=`rgba(${pt.col},${clamp(pt.t/pt.life,0,1)})`; ctx.beginPath(); ctx.arc(pt.x+ox,pt.y+oy,pt.r,0,TAU); ctx.fill(); }
+  // her effects: the dash puff's four frames, the collect burst and respawn flash grown and faded
+  for(const f of run.fx){ const im=A(f.k); if(!im) continue; const p=clamp(f.t/f.dur,0,1), x=f.x+ox, y=f.y+oy;
+    if(f.k==='dash_puff'){ const fr=Math.min(3,Math.floor(p*4)), cw=im.width/4; ctx.globalAlpha=1-p*0.6; ctx.drawImage(im,fr*cw,0,cw,im.height,x-f.size/2,y-f.size/2,f.size,f.size); }
+    else { const sz=f.size*(0.6+0.6*p); ctx.globalAlpha=1-p; ctx.drawImage(im,x-sz/2,y-sz/2,sz,sz); } }
+  ctx.globalAlpha=1;
   // impact rings (juice)
   for(const rg of run.rings){ const a=clamp(rg.t/rg.life,0,1); ctx.strokeStyle=`rgba(${rg.col},${a*0.75})`; ctx.lineWidth=1+a*3; ctx.beginPath(); ctx.arc(rg.x+ox,rg.y+oy,rg.r,0,TAU); ctx.stroke(); }
 
-  // player
+  // player (and where he last burned)
+  drawBurnFx(ox,oy);
   drawHero(P.x+ox,P.y+oy);
   // floating score numbers (juice)
   if(run.floats.length){ ctx.save(); ctx.font='800 17px system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineWidth=3.5; ctx.strokeStyle='rgba(18,12,8,.8)';
@@ -1089,13 +1456,18 @@ function render(){ const inPlay=(screen==='play');
     ctx.restore(); }
 
   // joystick
-  if(stick.active){ ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(stick.ox,stick.oy,stick.max,0,TAU); ctx.stroke();
+  const jsB=A('stick_base'), jsT=A('stick_thumb');
+  if(stick.active&&jsB&&jsT){ const R=stick.max+10; ctx.globalAlpha=0.9; ctx.drawImage(jsB,stick.ox-R,stick.oy-R,R*2,R*2);   // her stick
+    ctx.drawImage(jsT,stick.ox+stick.dx-30,stick.oy+stick.dy-30,60,60); ctx.globalAlpha=1; }
+  else if(stick.active){ ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(stick.ox,stick.oy,stick.max,0,TAU); ctx.stroke();
     ctx.fillStyle='rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(stick.ox+stick.dx,stick.oy+stick.dy,25,0,TAU); ctx.fill(); }
 
   // dark eclipse overlay
-  if(run.darkT>0){ ctx.fillStyle='rgba(20,10,40,.45)'; ctx.fillRect(0,0,W,H); }
+  if(run.darkT>0){ const ev=A('eclipse_vig'); if(ev){ ctx.globalAlpha=0.9; ctx.drawImage(ev,0,0,W,H); ctx.globalAlpha=1; } else { ctx.fillStyle='rgba(20,10,40,.45)'; ctx.fillRect(0,0,W,H); } }
   // danger vignette
-  if(!run.lastSafe && run.darkT<=0 && P.exp>12){ const v=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.3,W/2,H/2,Math.max(W,H)*0.7);
+  const nbv=A('near_burn');
+  if(nbv&&!run.lastSafe&&run.darkT<=0){ const a=clamp((P.exp-55)/45,0,1)*0.85; if(a>0){ ctx.globalAlpha=a; ctx.drawImage(nbv,0,0,W,H); ctx.globalAlpha=1; } }
+  if(!nbv && !run.lastSafe && run.darkT<=0 && P.exp>12){ const v=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.3,W/2,H/2,Math.max(W,H)*0.7);
     const a=clamp(P.exp/100,0,1)*0.5; v.addColorStop(0,'rgba(200,30,20,0)'); v.addColorStop(1,`rgba(200,30,20,${a})`);
     ctx.fillStyle=v; ctx.fillRect(0,0,W,H); }
   // juice flash (burn / all-collected / big sizzle)
@@ -1108,7 +1480,61 @@ function render(){ const inPlay=(screen==='play');
 
   sunToken(run.lunge);
 }
-function drawHero(x,y){ const body=cosmetic(save.cosmetics.body), hat=cosmetic(save.cosmetics.hat);
+/* THE HERO (step 2), Astra's v2 bearings: e se s sw w nw n ne by 45 degree sector of P.face (screen y down); sw, w and nw
+   are her mirrored exports, drawn here as se, e and ne flipped. A 256 cell is drawn 64 world px wide so his head is about
+   28 across (the collider stays radius 14; his legs and arms overhang it). Cells: 0 idle, 1 to 4 the walk at 8 fps,
+   5 and 6 the dash at 12 fps, 7 a hop. Standing still for half a second he turns to face you. */
+/* TM HERO SOCKETS (lucid-winds tools/tomato-man-tests/astra_in.py writes this line) */
+const HAT_ANCHOR={"s":[[128,41],[128,41],[128,41],[129,41],[128,42],[128,56],[129,61],[129,39]],"se":[[131,40],[133,44],[134,48],[136,52],[136,54],[141,63],[153,64],[137,43]],"e":[[129,46],[129,46],[129,46],[129,46],[129,46],[140,60],[156,65],[133,39]],"ne":[[129,42],[129,43],[135,46],[136,46],[136,47],[144,58],[157,51],[135,40]],"n":[[129,51],[129,51],[129,51],[130,51],[129,52],[130,63],[131,46],[129,40]],"victory":[[128,51],[128,51],[128,50],[128,51]],"respawn":[[128,114],[128,72],[128,51],[128,49]],"cooling":[[128,66],[128,56],[128,55],[128,47]],"shade_drop":[[128,49],[128,49],[128,51],[128,50]]};
+/* /TM HERO SOCKETS */
+/* TM WORLD FITS (lucid-winds tools/tomato-man-tests/astra_in.py writes this line) */
+const WORLD_FIT={"wilt":[1,0,652,144,664,163],"umb":[384,144.5],"sunK":1.1,"boss_telegraph":114.0,"safe_window":114.0};
+/* /TM WORLD FITS */
+const HERO_B=['e','se','s','sw','w','nw','n','ne'], HERO_SRC={s:'s',se:'se',e:'e',ne:'ne',n:'n',sw:'se',w:'e',nw:'ne'};
+const HERO_FLIP={sw:1,w:1,nw:1}, HAT_DIR={s:'s',se:'e',e:'e',ne:'n',n:'n',nw:'n',w:'w',sw:'w'}, HAT_COL={s:0,e:1,n:2,w:3};
+const heroTmp=document.createElement('canvas'); heroTmp.width=heroTmp.height=128; const heroTx=heroTmp.getContext('2d');
+function heroBearing(){ if(run&&run.idleT>0.5) return 's'; let a=P.face; return HERO_B[((Math.round(a/(Math.PI/4))%8)+8)%8]; }
+/* m2 step 8: her four south facing actions at their fps, played once (the physics never turned by them), each on
+   its own per frame hat anchor; the dash her crouch then her stretch held, as her manifest says (no loop). The engine
+   has no hop, so her hop cell waits. */
+const ACT_FPS={victory:8,respawn:10,cooling:8,shade_drop:8};
+function act(k){ if(!run||save.settings.reduce||save.cosmetics.body!=='tomato') return; run.act={k,t:0}; }
+/* one figure into a square scratch canvas of N px: a tomato cell of a sheet (cols by rows), or a produce body with her
+   face; the hat at the cell's anchor (her 256 px cell space), from its bearing column hc */
+function composeHero(tx,N,img,cols,rows,cell,an,hc,tomato){ const k=N/128; tx.clearRect(0,0,N,N);
+  if(tomato){ const cw=img.width/cols, ch=img.height/rows; tx.drawImage(img,(cell%cols)*cw,Math.floor(cell/cols)*ch,cw,ch,0,0,N,N); }
+  else { tx.drawImage(img,0,0,img.width,img.height,0,0,N,N); const fc=A('face_neutral'); if(fc) tx.drawImage(fc,0,40,128,128,22*k,10*k,84*k,84*k); }
+  const hat=cosmetic(save.cosmetics.hat);
+  if(hat.kind!=='none'&&an){ const hs=A('hat_'+hat.id); if(hs) tx.drawImage(hs,hc*128,0,128,128,(an[0]-64)/2*k,(an[1]-28)/2*k,64*k,64*k); } }
+function drawHero(x,y){ const body=cosmetic(save.cosmetics.body);
+  const tomato=body.id==='tomato'; let bb=heroBearing(); const src=HERO_SRC[bb];
+  const sheet=tomato?A('hero_'+src):A('body_'+body.id);
+  if(!sheet){ drawHeroCode(x,y); return; }
+  // ground shadow and the state rings, as before
+  ctx.fillStyle='rgba(0,0,0,.14)'; ctx.beginPath(); ctx.ellipse(x,y+P.r*0.8,P.r*0.95,P.r*0.4,0,0,TAU); ctx.fill();
+  if(run.screenT>0){ ctx.strokeStyle='rgba(150,210,255,.95)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(x,y,P.r+9+Math.sin(nowT*12)*1.5,0,TAU); ctx.stroke(); }
+  else if(run.slowT>0){ ctx.strokeStyle='rgba(160,240,255,.8)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y,P.r+9,0,TAU); ctx.stroke(); }
+  const moving=Math.hypot(P.vx,P.vy)>30&&!(run.idleT>0.5);
+  let img=sheet, rows=tomato?2:1, cell=0, an=null, hc=HAT_COL[HAT_DIR[src]];
+  const actImg=(tomato&&run.act)?A('hero_'+run.act.k):null;
+  if(tomato&&run.respawnT>0&&A('hero_respawn')){ img=A('hero_respawn'); rows=1; cell=Math.min(3,Math.floor((0.4-run.respawnT)*ACT_FPS.respawn)); an=HAT_ANCHOR.respawn[cell]; hc=0; bb='s'; }
+  else if(tomato&&P.dashT>0){ cell=(run.feel.dashDur-P.dashT)<1/12?5:6; an=HAT_ANCHOR[src][cell]; }
+  else if(actImg){ img=actImg; rows=1; cell=Math.min(3,Math.floor(run.act.t*ACT_FPS[run.act.k])); an=HAT_ANCHOR[run.act.k][cell]; hc=0; bb='s'; }
+  else if(tomato){ cell=moving&&!save.settings.reduce?1+(Math.floor(nowT*8)%4):0; an=HAT_ANCHOR[src][cell]; }
+  else an=(HAT_ANCHOR[src]||HAT_ANCHOR.s)[0];
+  composeHero(heroTx,128,img,4,rows,cell,an,hc,tomato);   // drawn small first, so the exposure tint touches only the figure
+  const burnT=clamp((P.exp-25)/75,0,1);
+  if(burnT>0){ heroTx.save(); heroTx.globalCompositeOperation='source-atop'; heroTx.fillStyle=`rgba(225,50,40,${(burnT*0.42).toFixed(3)})`; heroTx.fillRect(0,0,128,128); heroTx.restore(); }
+  ctx.save(); ctx.translate(x,y); ctx.scale(P.sx,P.sy); if(HERO_FLIP[bb]) ctx.scale(-1,1);
+  ctx.drawImage(heroTmp,-32,-32,64,64); ctx.restore();
+}
+/* where he burned: Astra's small sad char and her smoke, for a moment, while he pops back at the checkpoint */
+function drawBurnFx(ox,oy){ const b=run.burnFx; if(!b) return; const a=clamp(1-b.t/0.9,0,1); if(a<=0) return;
+  const st=A('hero_states'), sm=A('burn_smoke'); ctx.save(); ctx.globalAlpha=a;
+  if(st) ctx.drawImage(st,3*(st.width/4),0,st.width/4,st.height,b.x+ox-32,b.y+oy-32,64,64);
+  if(sm&&!save.settings.reduce){ const f=Math.min(3,Math.floor(b.t*12/2)); ctx.drawImage(sm,f*(sm.width/4),0,sm.width/4,sm.height,b.x+ox-30,b.y+oy-64,60,60); }
+  ctx.restore(); }
+function drawHeroCode(x,y){ const body=cosmetic(save.cosmetics.body), hat=cosmetic(save.cosmetics.hat);
   // ground shadow (not squashed)
   ctx.fillStyle='rgba(0,0,0,.14)'; ctx.beginPath(); ctx.ellipse(x,y+P.r*0.8,P.r*0.95,P.r*0.4,0,0,TAU); ctx.fill();
   ctx.save(); ctx.translate(x,y); ctx.scale(P.sx,P.sy);
@@ -1164,7 +1590,7 @@ function mixRGB(a,b,t){ t=clamp(t,0,1); return [lerp(a[0],b[0],t),lerp(a[1],b[1]
 function rgbStr(a){ return `rgb(${Math.round(a[0])},${Math.round(a[1])},${Math.round(a[2])})`; }
 function star(x,y,r,p){ctx.beginPath();for(let i=0;i<p*2;i++){const a=i*Math.PI/p,rr=i%2?r*0.5:r;const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();ctx.fill();}
 function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
-function drawFindIcon(x,y,kind){
+function drawFindIcon(x,y,kind){ const fa=A('find_'+kind); if(fa){ ctx.drawImage(fa,x-20,y-20,40,40); return; }
   const gr=ctx.createRadialGradient(x,y,0,x,y,20); gr.addColorStop(0,'rgba(255,244,190,.5)'); gr.addColorStop(1,'rgba(255,244,190,0)');
   ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(x,y,20,0,TAU); ctx.fill();
   ctx.save(); ctx.translate(x,y);
@@ -1206,8 +1632,28 @@ function drawHatExtra(g,cx,cy,hr,kind,hc){ g.save(); g.translate(cx,cy); const u
     g.strokeStyle=hc; g.lineWidth=2.4; g.beginPath(); g.ellipse(0,-20,9,3.4,0,0,TAU); g.stroke(); }
   g.restore(); }
 const EXTRA_HATS=['shell','cone','shades','gem','eclipse'];
-function sunToken(lunge){ const m=42,angry=lunge&&lunge.state!=='idle';
+function sunXY(){ const m=46; return {x:clamp(W/2+Math.cos(run.az)*(W/2-m),m,W-m), y:clamp(H/2+Math.sin(run.az)*(H/2-m),m,H-m)}; }
+function sunToken(lunge){ const m=46,angry=lunge&&lunge.state!=='idle'; let fc=-1;
   const x=clamp(W/2+Math.cos(run.az)*(W/2-m),m,W-m),y=clamp(H/2+Math.sin(run.az)*(H/2-m),m,H-m);
+  /* her sun (step 3): the face disc with its rays turning apart from it; in the Eclipse world the Angry Sun in her four
+     states (glare, wind up while it warns, the lunge, panting after); the disc turns slowly to look at him (DECISION 5) */
+  let face=A('sun'), rays=A('sun_rays');
+  if(lunge){ const ph=lunge.timer%lunge.period, pant=lunge.state==='idle'&&ph-(lunge.warn+lunge.dur)<1.2;
+    const k=lunge.state==='warn'?'angry_wind_up':(lunge.state==='strike'?'angry_lunge':(pant?'angry_panting':'angry_glare'));
+    const shk=lunge.state==='warn'?'sun_wind_up':(lunge.state==='strike'?'sun_lunge':(pant?'sun_recovery':null));
+    if(shk&&A(shk)){ const end=lunge.warn+lunge.dur, tt=lunge.state==='warn'?ph:(lunge.state==='strike'?ph-lunge.warn:ph-end);
+      face=A(shk); rays=null; fc=save.settings.reduce?3:clamp(Math.floor(tt*(lunge.state==='strike'?12:8)),0,3); }
+    else if(A(k)){ face=A(k); rays=null; } }
+  if(face){ const R=lunge?(angry?42:34):27;   // a marker at the edge, not a set piece: it must not crowd his ground
+    if(run.darkT>0&&A('corona')){ ctx.drawImage(A('corona'),x-R*2.1,y-R*2.1,R*4.2,R*4.2); }
+    if(rays&&!save.settings.reduce){ ctx.save(); ctx.translate(x,y); ctx.rotate(nowT*0.3); ctx.drawImage(rays,-R*1.4,-R*1.4,R*2.8,R*2.8); ctx.restore(); }
+    else if(rays){ ctx.drawImage(rays,x-R*1.4,y-R*1.4,R*2.8,R*2.8); }
+    let want=Math.atan2((P.y-cam.y)-y,(P.x-cam.x)-x)-Math.PI/2; want=Math.atan2(Math.sin(want),Math.cos(want)); want=clamp(want,-0.45,0.45);
+    run.sunLook=save.settings.reduce?0:lerp(run.sunLook||0,want,0.04);
+    ctx.save(); ctx.translate(x,y); ctx.rotate(run.sunLook);
+    if(fc>=0){ const cw=face.width/4, Rs=R*(WORLD_FIT.sunK||1); ctx.drawImage(face,fc*cw,0,cw,face.height,-Rs,-Rs,Rs*2,Rs*2); }   // her v2 sheet, the same disc size
+    else ctx.drawImage(face,-R,-R,R*2,R*2);
+    ctx.restore(); return; }
   // radiant halo
   const gr=ctx.createRadialGradient(x,y,4,x,y,angry?74:58);
   gr.addColorStop(0,angry?'rgba(255,120,50,.6)':'rgba(255,222,120,.55)'); gr.addColorStop(1,'rgba(255,200,90,0)');
@@ -1249,15 +1695,17 @@ function worldUnlocked(w){ if(w===0) return true; const prev=levelsOfWorld(w-1);
 function unlockedLevel(i){ const L=LEVELS[i]; const wl=levelsOfWorld(L.world); const pos=wl.findIndex(o=>o.i===i);
   if(!worldUnlocked(L.world)) return false; if(pos===0) return true; const prev=wl[pos-1]; return !!save.stars[levelId(prev.L,prev.i)]; }
 
+const CARD_SRC=['art/worlds/morning_tide/card.webp','art/worlds/midday_blaze/card.webp','art/worlds/tide_pools/card.webp','art/worlds/dunes_at_dusk/card.webp','art/worlds/eclipse/card.webp'];
+const SOCK={shell:'art/ui/progress_shell.png',cone:'art/ui/progress_cone.png',gem:'art/ui/progress_gem.png'};
 function buildWorldMap(){ const list=$('worldList'); list.innerHTML='';
   WORLDS.forEach((w,wi)=>{ const unlocked=worldUnlocked(wi); const lv=levelsOfWorld(wi);
     const cleared=lv.filter(o=>save.stars[levelId(o.L,o.i)]).length; const stars=lv.reduce((a,o)=>a+(save.stars[levelId(o.L,o.i)]||0),0);
-    const em=collectOf(wi).emoji; const fTot=lv.reduce((a,o)=>a+((o.L.finds||[]).length),0);
+    const em=mk(collectOf(wi).kind); const fTot=lv.reduce((a,o)=>a+((o.L.finds||[]).length),0);
     const fGot=lv.reduce((a,o)=>{ const arr=save.finds[levelId(o.L,o.i)]||[]; return a+arr.filter(Boolean).length; },0);
     const done100=unlocked&&worldFindsComplete(wi);
-    const c=document.createElement('div'); c.className='worldCard'+(unlocked?'':' locked');
-    c.style.background=`linear-gradient(120deg,${w.pal.sky1},${w.pal.accent}55)`;
-    c.innerHTML=`${wi+1}. ${w.name}<span class="wsub">${w.sub}${unlocked?`  ·  ${em} ${fGot}/${fTot}${done100?' 🏆 hat!':''}`:''}</span><span class="wprog">${unlocked?(cleared+'/'+lv.length+' ✓  ⭐'+stars):'🔒 locked'}</span>`;
+    const c=document.createElement('div'); c.className='worldCard'+(unlocked?'':' locked'); c.title=w.sub;
+    c.style.backgroundImage=`url(${CARD_SRC[wi]}?v=${ART_V})`;      // her postcard; the name rides in her band
+    c.innerHTML=`<span class="wchip">${unlocked?`${em} ${fGot}/${fTot}${done100?', hat earned':''}`:mk('lock')+' Locked'}</span><span class="wname"><span>${w.name}</span><span class="wprog">${unlocked?(cleared+'/'+lv.length+' cleared · '+stars+' '+mk('star')):'clear a level in '+(wi>0?WORLDS[wi-1].name:'')}</span></span>`;
     if(unlocked) c.addEventListener('click',()=>{SFX.click();openWorld(wi);});
     list.appendChild(c); }); }
 let curWorld=0;
@@ -1265,9 +1713,10 @@ function openWorld(wi){ curWorld=wi; $('lvlWorldName').textContent=WORLDS[wi].na
   const grid=$('lvlGrid'); grid.innerHTML='';
   levelsOfWorld(wi).forEach(o=>{ const i=o.i,L=o.L; const id=levelId(L,i); const st=save.stars[id]||0; const unlocked=unlockedLevel(i);
     const b=document.createElement('div'); b.className='card'+(unlocked?'':' locked');
-    const stars=st?'★'.repeat(st)+'☆'.repeat(3-st):'';
-    const fc=levelFindCount(id,L); const findStr=fc.total?`  ·  ${collectOf(L.world).emoji} ${fc.have}/${fc.total}${fc.have===fc.total?'✓':''}`:'';
-    b.innerHTML=`${L.name}<small>${L.sub}</small>${unlocked?`<div class="rec">${st?stars:'play ▶'}${save.best[id]?'  ·  '+save.best[id].toFixed(1)+'s':''}${findStr}</div>`:'<div class="rec">🔒 clear previous</div>'}`;
+    const kind=collectOf(L.world).kind, got=save.finds[id]||[], nF=(L.finds||[]).length;
+    const socks=Array.from({length:nF},(_,k)=>`<img class="sock${got[k]?'':' off'}" src="${SOCK[kind]}?v=${ART_V}" alt="">`).join('');
+    const md=['','bronze','silver','gold'][st]||'', medal=md?`<img class="lmedal" src="${MEDAL[md]}?v=${ART_V}" alt="${md} medal">`:'';
+    b.innerHTML=`<span class="lname">${L.name}</span><small>${L.sub}</small>${unlocked?`<div class="rec">${socks}${medal}<span class="lbest">${save.best[id]?save.best[id].toFixed(1)+'s':'Play'}</span></div>`:'<div class="rec">'+mk('lock')+' clear the one before</div>'}`;
     if(unlocked) b.addEventListener('click',()=>{SFX.click();startLevel(i);});
     grid.appendChild(o.b=b); });
   showScreen('levels'); }
@@ -1276,18 +1725,18 @@ function openWorld(wi){ curWorld=wi; $('lvlWorldName').textContent=WORLDS[wi].na
 let shopTab='upgrades';
 function buildShop(){ updateWallet(); const grid=$('shopGrid'); grid.innerHTML='';
   if(shopTab==='upgrades'){ UPGRADES.forEach(u=>{ const t=upgTier(u.id), maxed=t>=UPG_MAX, price=upgPrice(u), gated=upgGateLocked(u);
-    const sub=u.desc+' — '+(maxed?'maxed out':'next: '+u.eff(t+1))+(gated?` · needs ${GOLD_GATE}🥇 (have ${goldCount()})`:'');
-    const label=maxed?'MAX':(gated?'🔒':price);
+    const sub=u.desc.replace(/\.$/,'')+', '+(maxed?'maxed out':'next: '+u.eff(t+1))+(gated?` · needs ${GOLD_GATE} gold medals (have ${goldCount()})`:'');
+    const label=maxed?'MAX':(gated?mk('lock'):price);
     const c=card(`${u.name} <span class="badge">${t}/${UPG_MAX}</span>`, sub, label, maxed||gated||save.beams<price);
     if(!maxed&&!gated) c.addEventListener('click',()=>{ if(save.beams>=price){ save.beams-=price; save.upgrades[u.id]=t+1; persist(); SFX.buy(); buildShop(); } else SFX.deny(); });
     grid.appendChild(c); }); }
   else if(shopTab==='consumables'){ CONSUMABLES.forEach(k=>{ const have=save.loadout[k.id]||0, full=have>=(k.cap||9);
     const c=card(`${k.name}${have?` <span class="badge">×${have} queued</span>`:''}`, k.desc+(full?' · max queued':''), k.price, full||save.beams<k.price);
-    if(!full) c.addEventListener('click',()=>{ if(save.beams>=k.price){ save.beams-=k.price; save.loadout[k.id]=have+1; persist(); SFX.buy(); toast('queued for next run!','#9fe0a0'); buildShop(); } else SFX.deny(); });
+    if(!full) c.addEventListener('click',()=>{ if(save.beams>=k.price){ save.beams-=k.price; save.loadout[k.id]=have+1; persist(); SFX.buy(); toast('queued for next run','#9fe0a0'); buildShop(); } else SFX.deny(); });
     grid.appendChild(c); }); }
   else { COSMETICS.forEach(k=>{ const isEarn=k.earn!==undefined;
     const owned=save.cosmetics.owned.includes(k.id)||k.price===0; const equipped=save.cosmetics[k.cat]===k.id;
-    const label=owned?(equipped?'worn':'wear'):(isEarn?'🔒':k.price);
+    const label=owned?(equipped?'worn':'wear'):(isEarn?mk('lock'):k.price);
     const sub=isEarn&&!owned?('earn: 100% '+WORLDS[k.earn].name):k.cat;
     const c=card(k.name, sub, label, !owned&&(isEarn||save.beams<k.price));
     c.classList.toggle('owned',owned); c.classList.toggle('equipped',equipped);
@@ -1297,18 +1746,27 @@ function buildShop(){ updateWallet(); const grid=$('shopGrid'); grid.innerHTML='
     grid.appendChild(c); }); }
 }
 function card(title,sub,price,cant){ const c=document.createElement('div'); c.className='card hascost'+(cant?' cant':'');
-  c.innerHTML=`${title}<small>${sub}</small><span class="price">${typeof price==='number'?'🌿'+price:price}</span>`; return c; }
+  c.innerHTML=`${title}<small>${sub}</small><span class="price">${typeof price==='number'?mk('aloe')+price:price}</span>`; return c; }
 
 /* ----- builder ----- */
 let buildTab='body';
 function buildBuilder(){ const grid=$('buildGrid'); grid.innerHTML='';
   COSMETICS.filter(k=>k.cat===buildTab).forEach(k=>{ const isEarn=k.earn!==undefined; const owned=save.cosmetics.owned.includes(k.id)||k.price===0; const equipped=save.cosmetics[k.cat]===k.id;
-    const c=card(k.name, owned?'':(isEarn?('🔒 100% '+WORLDS[k.earn].name):'locked, buy in shop'), owned?(equipped?'ON':'wear'):'🔒', false);
+    const c=card(k.name, owned?'':(isEarn?(mk('lock')+' 100% '+WORLDS[k.earn].name):'locked, buy in shop'), owned?(equipped?'ON':'wear'):mk('lock'), false);
     c.classList.toggle('equipped',equipped); c.classList.toggle('locked',!owned);
-    if(owned) c.addEventListener('click',()=>{ save.cosmetics[k.cat]=k.id; persist(); SFX.click(); buildBuilder(); drawBuilderPreview(); });
+    if(owned) c.addEventListener('click',()=>{ save.cosmetics[k.cat]=k.id; persist(); SFX.click(); needBuilder(); needLook(); buildBuilder(); drawBuilderPreview(); });
     grid.appendChild(c); });
   drawBuilderPreview(); }
-function drawBuilderPreview(){ const bc=$('builderCanvas'), bx=bc.getContext('2d'); bx.clearRect(0,0,340,340);
+/* Astra's builder figure: her headless body on a 512x840 parent at (0,180), the produce's head (with its face) at (64,6)
+   so the neck sockets meet at (256,346), the hat on the head's own 384 canvas; the old drawing until they load */
+function drawBuilderPreview(){ const bc=$('builderCanvas'), bx=bc.getContext('2d'); bx.clearRect(0,0,bc.width,bc.height);
+  const bodyA=A('bbody'), headA=A('bhead_'+save.cosmetics.body), hatId=save.cosmetics.hat, hatA=hatId==='none'?null:A('bhat_'+hatId);
+  if(bodyA&&headA&&(hatId==='none'||hatA)){ const k=Math.min(bc.width/512,bc.height/840), ox=(bc.width-512*k)/2;
+    bx.fillStyle='rgba(0,0,0,.14)'; bx.beginPath(); bx.ellipse(bc.width/2,(180+626)*k,150*k,26*k,0,0,TAU); bx.fill();
+    bx.drawImage(bodyA,ox,180*k,512*k,640*k); bx.drawImage(headA,ox+64*k,6*k,384*k,384*k);
+    if(hatA) bx.drawImage(hatA,ox+64*k,6*k,384*k,384*k); return; }
+  bx.save(); bx.translate((bc.width-340)/2,(bc.height-340)/2); drawBuilderCode(bx); bx.restore(); }
+function drawBuilderCode(bx){
   const body=cosmetic(save.cosmetics.body), hat=cosmetic(save.cosmetics.hat); const cx=170,cy=180,R=70;
   bx.fillStyle='rgba(0,0,0,.12)'; bx.beginPath(); bx.ellipse(cx,cy+R*0.85,R*0.9,R*0.3,0,0,TAU); bx.fill();
   bx.fillStyle=body.color; bx.beginPath(); bx.arc(cx,cy,R,0,TAU); bx.fill();
@@ -1328,24 +1786,28 @@ function drawBuilderPreview(){ const bc=$('builderCanvas'), bx=bc.getContext('2d
 
 /* ----- how to play ----- */
 const HOWTO=[
-  {i:'☀️',t:'The sun is death',b:'Direct sunlight fills your Exposure bar in about a second. Fill it and you burn (and respawn at your last checkpoint).'},
-  {i:'🌑',t:'Shade is the only ground',b:'Stand in a shadow to stay cool and drop your Exposure. Shadows slide as the sun sweeps, so ride them like moving platforms.'},
-  {i:'🕹️',t:'Move',b:'Drag your left thumb anywhere on the left half of the screen to walk. Let go to stop.'},
-  {i:'💨',t:'Dash',b:'Tap DASH for a fast burst, just enough to cross a thin sliver of sun. It burns you quicker in the open, so aim it.'},
-  {i:'⛱️',t:'Drop Shade',b:'Tap SHADE to drop a circle of safe ground right under you. Only a few charges, so save them for the impossible-looking gaps.'},
-  {i:'🧴',t:'SPF',b:'Tap SPF for a few seconds of total sun-proof. Perfect for sprinting across wide-open light.'},
-  {i:'🧊',t:'Ice Water',b:'Tap ICE to slow the sun’s sweep way down, buys you time when the shadows move too fast.'},
-  {i:'🌿',t:'Aloe = money',b:'Green stars GLOW when the sun lights them, grab a glowing one to bank aloe for the shop. Dim buds are asleep in the shade; wait for the sun to reach them.'},
-  {i:'🐚',t:'Hidden treasure',b:'Every level hides 3 collectibles · 🐚 shells, 🍦 ice-cream or 💎 gems, depending on the world. The level shows how many you’ve found; grab all 3 to 100% it. Some are tucked away!'},
-  {i:'⏱️',t:'Beat your time',b:'Your best time shows while you play, race yourself. A gold medal needs no burns AND finishing under the target time.'},
-  {i:'🚩',t:'Flag & checkpoints',b:'Reach the green flag at the top to win. Ringed dots are checkpoints, touch them so a burn sends you back there, not to the start.'},
-  {i:'🔥',t:'Hot sand',b:'Glowing orange patches scorch you even out of direct sun. Don’t linger on them.'},
-  {i:'🌥️',t:'Clouds & carts',b:'Cloud and cart shadows drift across the map. Step aboard and let them ferry you over the bright gaps.'},
-  {i:'😡',t:'Late-game trouble',b:'Striped awnings wilt if you camp under them; the Angry Sun lunges where you’re standing (move when it flashes); an eclipse turns everything safe-dark for a moment, fly!'},
+  {i:'sun',t:'The sun is death',b:'Direct sunlight fills your Exposure bar in about a second. Fill it and you burn (and respawn at your last checkpoint).'},
+  {i:'shade',t:'Shade is the only ground',b:'Stand in a shadow to stay cool and drop your Exposure. Shadows slide as the sun sweeps, so ride them like moving platforms.'},
+  {i:'move',t:'Move',b:'Drag your left thumb anywhere on the left half of the screen to walk. Let go to stop.'},
+  {i:'dash',t:'Dash',b:'Tap DASH for a fast burst, just enough to cross a thin sliver of sun. It burns you quicker in the open, so aim it.'},
+  {i:'shade',t:'Drop Shade',b:'Tap SHADE to drop a circle of safe ground right under you. Only a few charges, so save them for the gaps that look impossible.'},
+  {i:'spf',t:'SPF',b:'Tap SPF for a few seconds of total sunproofing. Perfect for sprinting across wide open light.'},
+  {i:'ice',t:'Ice Water',b:'Tap ICE to slow the sun’s sweep way down, buys you time when the shadows move too fast.'},
+  {i:'aloe',t:'Aloe = money',b:'Green stars GLOW when the sun lights them, grab a glowing one to bank aloe for the shop. Dim buds are asleep in the shade; wait for the sun to reach them.'},
+  {i:'shell',t:'Hidden treasure',b:'Every level hides 3 collectibles: shells, ice cream or gems, depending on the world. The level shows how many you’ve found; grab all 3 to 100% it. Some are tucked away.'},
+  {i:'star',t:'Beat your time',b:'Your best time shows while you play, race yourself. A gold medal needs no burns AND finishing under the target time.'},
+  {i:'check',t:'Flag & checkpoints',b:'Reach the green flag at the top to win. Ringed dots are checkpoints, touch them so a burn sends you back there, not to the start.'},
+  {i:'sun',t:'Hot sand',b:'Glowing orange patches scorch you even out of direct sun. Don’t linger on them.'},
+  {i:'shade',t:'Clouds & carts',b:'Cloud and cart shadows drift across the map. Step aboard and let them ferry you over the bright gaps.'},
+  {i:'sun',t:'Late game trouble',b:'Striped awnings wilt if you camp under them; the Angry Sun lunges where you’re standing (move when it flashes); an eclipse makes everything dark and safe for a moment, so fly.'},
 ];
-function buildHowto(){ save.seenHowto=true; persist(); const l=$('htList'); if(!l) return; l.innerHTML='';
+const HOWTO_QUICK=[{i:'sun',b:'The sun burns you. Stay out of it.'},{i:'shade',b:'Shade is safe ground, and it moves with the sun.'},
+  {i:'move',b:'Drag your left thumb to walk.'},{i:'dash',b:'Tap DASH to cross a thin strip of sun fast.'}];
+function buildHowto(){ save.seenHowto=true; persist(); const q=$('htQuick');
+  if(q){ q.innerHTML=HOWTO_QUICK.map(c=>`<div class="htQ">${mk(c.i)}${c.b}</div>`).join(''); }
+  const l=$('htList'); if(!l) return; l.innerHTML=''; l.hidden=true; const more=$('htMore'); if(more){ more.style.display=''; more.onclick=()=>{ SFX.click(); l.hidden=false; more.style.display='none'; }; }
   HOWTO.forEach(c=>{ const d=document.createElement('div'); d.className='htCard';
-    d.innerHTML=`<div class="hi">${c.i}</div><div><div class="ht">${c.t}</div><div class="hb">${c.b}</div></div>`; l.appendChild(d); }); }
+    d.innerHTML=`<div class="hi">${mk(c.i)}</div><div><div class="ht">${c.t}</div><div class="hb">${c.b}</div></div>`; l.appendChild(d); }); }
 
 /* ----- inline coach marks (first-run tutorial, each fires once ever) -----
    Jessie 2026-07-15: the marks chained back-to-back — "by the time I was done
@@ -1356,7 +1818,7 @@ function buildHowto(){ save.seenHowto=true; persist(); const l=$('htList'); if(!
    can't perform right now never wedges the tutorial). Informational tips keep
    the 5.2s read time. A 5s quiet gap of real play still separates marks. */
 let coachHideT=0, coachGapT=0, coachDone=null, coachSnap=null;
-function coach(text,ic,d){ const c=$('coach'); if(!c) return; c.innerHTML=(ic?`<span class="ic">${ic}</span>`:'')+text; c.classList.add('show');
+function coach(text,ic,d){ const c=$('coach'); if(!c) return; const lf=$('lvlFlash'); if(lf) lf.style.opacity='0'; c.innerHTML=(ic?`<span class="ic">${mk(ic)}</span>`:'')+text; c.classList.add('show');
   coachDone=d||null;
   coachSnap={x:(typeof P!=='undefined'?P.x:0), y:(typeof P!=='undefined'?P.y:0),
              sh:run&&run.charges?run.charges.shade:0, sp:run&&run.charges?run.charges.spf:0,
@@ -1364,28 +1826,29 @@ function coach(text,ic,d){ const c=$('coach'); if(!c) return; c.innerHTML=(ic?`<
   coachHideT=d?12:5.2; }
 function hideCoach(){ const c=$('coach'); if(c) c.classList.remove('show'); coachHideT=0; coachDone=null; }
 const TUT=[
-  {id:'move', ic:'🕹️', x:'Drag your left thumb to move. The sun cooks you, get into the shadow.', t:()=>run.t<3,
+  {id:'move', ic:'move', x:'Stay in the shade. Move with your left thumb.', t:()=>run.t<3,
     d:s=>dist(P.x,P.y,s.x,s.y)>70},
-  {id:'shade', ic:'🌑', x:'You’re on shade, safe ground. It slides with the sun, so ride it upward.', t:()=>run.t>1.6 && shadedGeom(P.x,P.y)},
-  {id:'aloe', ic:'🌿', x:'A glowing aloe! Dash into the sunlight to grab it, then dash back to shade.', t:()=>run.beams.some(b=>!b.got&&b.lit&&dist(P.x,P.y,b.x,b.y)<230),
+  {id:'shade', ic:'shade', x:'You’re on shade, safe ground. It slides with the sun, so ride it upward.', t:()=>run.t>1.6 && shadedGeom(P.x,P.y)},
+  {id:'aloe', ic:'aloe', x:'A glowing aloe. Dash into the sunlight to grab it, then dash back to shade.', t:()=>run.beams.some(b=>!b.got&&b.lit&&dist(P.x,P.y,b.x,b.y)<230),
     d:()=>run.beams.some(b=>b.got)},
-  {id:'find', ic:'🐚', x:'Hidden treasure! Grab all 3 in a level to 100% it, some are off the beaten path.', t:()=>run.finds.some(f=>!f.got&&dist(P.x,P.y,f.x,f.y)<250)},
-  {id:'dash', ic:'💨', x:'Tap DASH to burst across a thin strip of sun.', t:()=>run.t>6,
+  {id:'find', ic:'shell', x:'Hidden treasure. Grab all 3 in a level to 100% it, some are off the beaten path.', t:()=>run.finds.some(f=>!f.got&&dist(P.x,P.y,f.x,f.y)<250)},
+  {id:'dash', ic:'dash', x:'A thin strip of sun ahead? Tap DASH and cross it fast.', t:()=>run.t>6,
     d:s=>(run.dashUses||0)>s.da},
-  {id:'shadeDrop', ic:'⛱️', x:'No shadow ahead? Tap SHADE to drop your own safe ground and inch across.', t:()=>run.charges.shade>0 && run.t>4 && !shadedGeom(P.x,P.y),
+  {id:'shadeDrop', ic:'shade-ready', x:'No shade ahead? Tap SHADE to drop your own.', t:()=>run.charges.shade>0 && run.t>4 && !shadedGeom(P.x,P.y),
     d:s=>run.charges.shade<s.sh},
-  {id:'checkpoint', ic:'🚩', x:'Checkpoint! Burn now and you respawn right here.', t:()=>run.cpHit.some(Boolean)},
-  {id:'burn', ic:'🔥', x:'Burned. Keep an eye on the Exposure bar, reach shade before it fills.', t:()=>run.deaths>0},
-  {id:'hot', ic:'🔥', x:'Orange sand scorches you even off the sun. Don’t stand on it.', t:()=>run.hot.length>0 && run.t>1.2},
-  {id:'spf', ic:'🧴', x:'You have SPF · pop it for a few seconds of sun-proof to cross the open.', t:()=>run.charges.spf>0 && run.t>2,
+  {id:'checkpoint', ic:'check', x:'Checkpoint. Burn now and you respawn right here.', t:()=>run.cpHit.some(Boolean)},
+  {id:'burn', ic:'sun', x:'Burned. Keep an eye on the Exposure bar, reach shade before it fills.', t:()=>run.deaths>0},
+  {id:'hot', ic:'sun', x:'Orange sand scorches you even off the sun. Don’t stand on it.', t:()=>run.hot.length>0 && run.t>1.2},
+  {id:'spf', ic:'spf', x:'You have SPF. Pop it for a few seconds of sunproofing to cross the open.', t:()=>run.charges.spf>0 && run.t>2,
     d:s=>run.charges.spf<s.sp},
-  {id:'cart', ic:'🛒', x:'That cart’s shadow moves. Board it at the right moment and ride.', t:()=>run.movers.length>0 && run.t>1.2},
-  {id:'cloud', ic:'🌥️', x:'A drifting cloud is a moving island of shade, hop on.', t:()=>run.clouds.length>0 && run.t>1.2},
-  {id:'wilt', ic:'🥀', x:'Striped awnings wilt if you camp under them. Keep moving.', t:()=>run.wilts.length>0 && run.t>1.2},
-  {id:'ice', ic:'🧊', x:'ICE slows the sun’s sweep. Sip it when the timing is brutal.', t:()=>run.charges.ice>0 && run.t>2,
+  {id:'cart', ic:'shade', x:'That cart’s shadow moves. Board it at the right moment and ride.', t:()=>run.movers.length>0 && run.t>1.2},
+  {id:'cloud', ic:'shade', x:'A drifting cloud is a moving island of shade, hop on.', t:()=>run.clouds.length>0 && run.t>1.2},
+  {id:'wilt', ic:'awning-warning', x:'Plain awnings wilt if you camp under them. Keep moving.', t:()=>run.wilts.length>0 && run.t>1.2},
+  {id:'umbrella', ic:'umbrella-turn', x:'Wind turns the umbrellas, and their shade swings with them.', t:()=>run.wind&&run.wind.spin&&run.L.casters.some(c=>c[0]==='U')&&run.t>1.5},
+  {id:'ice', ic:'ice', x:'ICE slows the sun’s sweep. Sip it when the timing is brutal.', t:()=>run.charges.ice>0 && run.t>2,
     d:s=>run.charges.ice<s.ic2},
-  {id:'lunge', ic:'😡', x:'The Angry Sun is winding up a lunge, move off the flashing ring!', t:()=>run.lunge&&run.lunge.state==='warn'},
-  {id:'eclipse', ic:'🌚', x:'Eclipse! Everything is safe-dark for a moment, sprint!', t:()=>run.darkT>0},
+  {id:'lunge', ic:'boss-target', x:'The Angry Sun is winding up a lunge. Move off the flashing ring.', t:()=>run.lunge&&run.lunge.state==='warn'},
+  {id:'eclipse', ic:'eclipse-window', x:'Eclipse. Everything is dark and safe for a moment, so sprint.', t:()=>run.darkT>0},
 ];
 function checkTut(dt){
   if(coachHideT>0){
@@ -1403,7 +1866,7 @@ function togglePause(){ if(screen!=='play') return; if(mode==='play'){ mode='pau
 
 /* ===================== NAV WIRING ===================== */
 function go(name){ SFX.click(); if(name==='map') buildWorldMap(); if(name==='shop'){shopTab='upgrades';setTabs('#shop .tab','upgrades');buildShop();}
-  if(name==='builder'){buildTab='body';setTabs('#builder .tab','body','data-bt');buildBuilder();} if(name==='settings') syncSettings();
+  if(name==='builder'){buildTab='body';setTabs('#builder .tab','body','data-bt');needBuilder();buildBuilder();} if(name==='settings') syncSettings();
   showScreen(name); }
 $('tPlay').onclick=()=>go('map');
 $('tDaily').onclick=()=>{ SFX.click(); startDaily(); };
@@ -1411,14 +1874,17 @@ $('tEndless').onclick=()=>{ SFX.click(); startEndless(); };
 $('tShop').onclick=()=>go('shop'); $('tBuild').onclick=()=>go('builder'); $('tSet').onclick=()=>go('settings');
 $('tHow').onclick=()=>{ SFX.click(); buildHowto(); showScreen('howto'); };
 $('tExit').onclick=()=>{ SFX.click(); window.SWS_EXIT(); };
-$('howBack').onclick=()=>{ SFX.click(); showScreen('title'); };
-$('howPlay').onclick=()=>{ SFX.click(); go('map'); };
+let howFromPause=false;   // How to Play opened from pause goes back to pause, not to the title
+$('howBack').onclick=()=>{ SFX.click(); if(howFromPause){ howFromPause=false; $('howto').classList.remove('show'); $('pause').classList.add('show'); return; } showScreen('title'); };
+$('howPlay').onclick=()=>{ SFX.click(); if(howFromPause){ howFromPause=false; $('howto').classList.remove('show'); $('pause').classList.add('show'); return; } go('map'); };
 $('mapBack').onclick=()=>{SFX.click();showScreen('title');}; $('lvlBack').onclick=()=>{SFX.click();buildWorldMap();showScreen('map');};
 $('shopBack').onclick=()=>{SFX.click();showScreen('title');}; $('buildBack').onclick=()=>{SFX.click();showScreen('title');}; $('setBack').onclick=()=>{SFX.click();showScreen('title');};
 $('winMenu').onclick=()=>{SFX.click(); if(endless){showScreen('title');} else {openWorld(LEVELS[li].world);} };
 $('winRetry').onclick=()=>{SFX.click(); if(endless) startEndless(); else startLevel(li);};
 $('winNext').onclick=()=>{SFX.click(); const n=nextLevelIndex(); if(n!==-1) startLevel(n);};
-$('pResume').onclick=()=>{SFX.click();togglePause();}; $('pRetry').onclick=()=>{SFX.click(); if(endless)startEndless(); else startLevel(li);};
+$('winShare').onclick=()=>{ SFX.click(); shareWin(); };
+$('pResume').onclick=()=>{SFX.click();togglePause();};
+$('pHow').onclick=()=>{ SFX.click(); buildHowto(); $('pause').classList.remove('show'); $('howto').classList.add('show'); howFromPause=true; }; $('pRetry').onclick=()=>{SFX.click(); if(endless)startEndless(); else startLevel(li);};
 $('pMenu').onclick=()=>{SFX.click(); stopMusic(); if(endless)showScreen('title'); else openWorld(LEVELS[li].world);};
 function startEndless(){ endlessWorld=Math.min(4, Math.floor(save.levelsCleared/3));
   const seed=(Date.now()%1000000)+save.levelsCleared*7; const diff=3+Math.min(8,Math.floor(save.endlessBest/4));
@@ -1428,8 +1894,12 @@ function dateKey(){ const d=new Date(); return d.getFullYear()*10000+(d.getMonth
 function keyToDate(k){ const y=Math.floor(k/10000),m=Math.floor(k/100)%100,d=k%100; return new Date(y,m-1,d).getTime(); }
 function bumpStreak(k){ if(save.dailyLast===k) return; const prev=save.dailyLast; save.dailyLast=k;
   if(prev){ const diff=Math.round((keyToDate(k)-keyToDate(prev))/86400000); save.dailyStreak=(diff===1)?save.dailyStreak+1:1; } else save.dailyStreak=1; }
+const SEED_WORDS=['SALT','TIDE','DUNE','KELP','SHELL','GULL','CRAB','REEF','SURF','WAVE','SAND','PIER','PALM','CONE','LIME',
+  'MANGO','PEACH','MELON','BASIL','OLIVE','CORAL','PEARL','AMBER','EMBER','BLAZE','NOON','DUSK','DAWN','HAZE','GLARE'];
+const RULES_V='v7';   // the daily's ruleset: bump when genLevel or the physics change, so two cards compare like for like
+function seedWord(k){ return SEED_WORDS[(k*7919)%SEED_WORDS.length]; }
 function startDaily(){ const k=dateKey(); const world=k%5; const L=genLevel(world,5,k);
-  L.name='Daily Challenge'; L.sub='Everyone gets the same climb today.';
+  L.name='Daily Challenge'; L.sub='Seed '+seedWord(k)+'. Everyone gets the same climb today.';
   const done=!!save.dailyBest[k];
   startLevel(0,{level:L,endless:true,daily:k});
   if(done) setTimeout(()=>toast('today\'s best '+save.dailyBest[k].toFixed(1)+'s','var(--beam)'),900); }
@@ -1446,9 +1916,17 @@ $('resetSave').onclick=()=>{ if(confirm('Reset ALL progress, aloe and unlocks?')
 
 /* ===================== BOOT ===================== */
 loadAssets(); resize(); updateWallet(); buildWorldMap(); showScreen('title');
-if(!save.seenHowto){ buildHowto(); showScreen('howto'); }   // first-ever launch: teach before you play
+/* step 6 (DECISION 4): no How to Play wall before the first move; Dawn Ribbon's coach marks teach in play, and How to
+   Play is one tap away on the title and from pause */
 requestAnimationFrame(frame);
-window.__TM={save,LEVELS,WORLDS,genLevel,startLevel,frame,P,keys,winLevel,burn,_run:()=>run,_mode:()=>mode}; // debug hook
+window.__TM={save,LEVELS,WORLDS,genLevel,startLevel,frame,P,keys,winLevel,burn,_run:()=>run,_mode:()=>mode, // debug hook
+  // the shot tool's handles (lucid-winds tools/tomato-man-tests/shoot.mjs): screens, a held clock, simulated time
+  go, showScreen, openWorld, startDaily, togglePause, buildHowto, render:()=>render(),
+  hold:on=>{ devHold=!!on; }, exposure:v=>{ P.exp=v; },
+  seek:t=>{ const n=Math.round(t*60); for(let k=0;k<n;k++){ if(screen==='play'&&mode==='play') update(1/60); } render(); },
+  look:(b,h)=>{ if(!save.cosmetics.owned.includes(b)) save.cosmetics.owned.push(b); if(h&&!save.cosmetics.owned.includes(h)) save.cosmetics.owned.push(h);
+    save.cosmetics.body=b; save.cosmetics.hat=h||'none'; needLook(); needBuilder(); },
+  postcard:()=>{ if(!run||!run.winInfo) return null; const c=document.createElement('canvas'); c.width=c.height=1080; drawPostcard(c,run.winInfo); return c.toDataURL('image/png'); }};
 })();
 </script>
 <script>

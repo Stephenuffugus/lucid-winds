@@ -1,12 +1,12 @@
 /* Tomato Man service worker — offline app shell for standalone install.
    Bump CACHE to force-refresh the cached shell on a new release. */
-const CACHE = 'tomato-man-v3';
+const CACHE = 'tomato-man-v6';
 /* Only ever delete caches that belong to THIS app. `caches` is shared by the
    whole origin, so an unfiltered sweep deletes every sibling app's cache too. */
 const OWNED = /^tomato\-man\-/;
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest',
-  'thumbnail.png', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png'
+  'icon-192.png', 'icon-512.png', 'icon-512-maskable.png'   // the art is cached on first fetch, never precached
 ];
 
 self.addEventListener('install', e => {
