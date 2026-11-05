@@ -48,6 +48,7 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
 .screen.on{display:flex}
 #s-play{background:transparent; pointer-events:none}
 #s-play .tbtn,#s-play .cbtn,#s-play #slambtn{pointer-events:auto}
+#s-play .hf{pointer-events:none}
 .pad{padding:26px; flex:1; width:100%; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch} /* width:100%: .screen.center otherwise shrinks the pad to content and the result-screen buttons collapse narrow */
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:46px; line-height:1.05; font-weight:800; letter-spacing:1px;
@@ -139,6 +140,49 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
 .settingline .ic{font-size:26px; color:#dfff4f}
 .foot{font-size:16px; color:#8297a5}
 #s-how,#s-set,#s-go{background:linear-gradient(180deg,#182431 0%, #080d15 100%)}
+/* ---- the play HUD (step 4): Astra's frames as nine slices (her insets 18 18 18 34 at 2x, so 9 9 9 17 here; the lower
+   strip holds the acid cuts and is never stretched), her 96 px control skins at 100 stage px, SLAM 328x94 (250x72 CSS px
+   on a 412 wide phone). Until a skin loads the drawn look stays and the svg icon shows. ---- */
+.hf{position:absolute; box-sizing:border-box; border:solid rgba(130,151,165,.45); border-width:9px 9px 17px 9px; border-radius:10px;
+  background:rgba(24,36,49,.78); color:#fff5cb; display:flex; align-items:center; justify-content:center; pointer-events:none;
+  border-image-slice:18 18 34 18 fill; border-image-width:9px 9px 17px 9px; border-image-repeat:stretch}
+.hf-score{left:92px; top:10px; width:188px; height:86px; border-image-source:var(--a-score_plaque, none)}
+.hf-hold{left:366px; top:10px; width:78px; height:86px; flex-direction:column; border-image-source:var(--a-hold_frame, none)}
+.hf-next{left:450px; top:10px; width:78px; height:86px; flex-direction:column; border-image-source:var(--a-next_frame, none)}
+.hf-level{left:92px; top:100px; width:96px; height:46px; border-image-source:var(--a-level_badge, none)}
+.hf-rings{left:194px; top:100px; width:124px; height:46px; border-image-source:var(--a-rings_counter, none)}
+#hud-left{left:324px; width:120px}
+.hf-next2{left:450px; top:100px; width:78px; height:46px; border-image-source:var(--a-next_frame, none)}
+#stage.has-score_plaque .hf-score, #stage.has-hold_frame .hf-hold, #stage.has-next_frame .hf-next, #stage.has-next_frame .hf-next2,
+#stage.has-level_badge .hf-level, #stage.has-rings_counter .hf-rings{background:none; border-radius:0; border-color:transparent}
+#h-score{font:900 46px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:.5px; font-variant-numeric:tabular-nums; margin-top:4px}
+.hf .hl{font:900 18px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:1px; color:#c8d5e8}
+.hf canvas{width:56px; height:36px; margin-top:4px}
+.hf-next2 canvas{width:56px; height:26px; margin-top:0}
+#h-level,#h-rings,#h-left{font:900 22px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:1px; white-space:nowrap}
+#s-play .tbtn{top:14px; width:72px; height:72px}
+#b-pause{left:12px} #b-hold{left:288px}
+#s-play .cbtn{top:auto; bottom:12px; width:100px; height:100px; border-radius:14px}
+#c-left{left:14px} #c-right{left:126px} #c-down{left:314px} #c-rot{left:426px}
+.sk{background-size:100% 100%; background-repeat:no-repeat; background-position:center}
+.sk .ic{font-size:34px}
+#b-pause{background-image:var(--a-btn_pause)} #b-pause.pressed{background-image:var(--a-btn_pause_p)}
+#b-hold{background-image:var(--a-btn_hold)} #b-hold.pressed{background-image:var(--a-btn_hold_p)}
+#c-left{background-image:var(--a-btn_left)} #c-left.pressed{background-image:var(--a-btn_left_p)}
+#c-right{background-image:var(--a-btn_right)} #c-right.pressed{background-image:var(--a-btn_right_p)}
+#c-down{background-image:var(--a-btn_down)} #c-down.pressed{background-image:var(--a-btn_down_p)}
+#c-rot{background-image:var(--a-btn_rotate)} #c-rot.pressed{background-image:var(--a-btn_rotate_p)}
+#stage.has-btn_pause #b-pause, #stage.has-btn_hold #b-hold, #stage.has-btn_left #c-left, #stage.has-btn_right #c-right,
+#stage.has-btn_down #c-down, #stage.has-btn_rotate #c-rot{border:0; background-color:transparent; box-shadow:none}
+#stage.has-btn_pause #b-pause .ic, #stage.has-btn_hold #b-hold .ic, #stage.has-btn_left #c-left .ic, #stage.has-btn_right #c-right .ic,
+#stage.has-btn_down #c-down .ic, #stage.has-btn_rotate #c-rot .ic{display:none}
+#s-play #slambtn{bottom:116px; width:328px; height:94px; display:flex; align-items:center; justify-content:center; gap:12px;
+  font:900 44px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:2px; color:#080d15}
+#slambtn .ic{font-size:40px}
+#stage.has-slam_idle #slambtn{background:var(--a-slam_idle) center/100% 100% no-repeat; border:0; border-radius:0; box-shadow:none}
+#stage.has-slam_idle #slambtn.charged{background-image:var(--a-slam_charged, var(--a-slam_idle))}
+#stage.has-slam_idle #slambtn.pressed{background-image:var(--a-slam_pressed, var(--a-slam_idle))}
+#s-pause{background:rgba(8,13,21,.82)}
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
 </style>
 <meta name="description" content="Stick falling pieces to the golden sun and finish rings to crush them inward.">
@@ -170,16 +214,34 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
     </div>
   </div>
 
-  <!-- PLAY chrome -->
+  <!-- PLAY chrome (step 4): Astra's HUD frames as nine slices, her control skins, pause. Stage px; the stage scales by
+       the phone's width (0.67 at 360, 0.76 at 412), so 72 stage px is 48 CSS px at 360 and every target is at least that. -->
   <div class="screen" id="s-play">
-    <button class="tbtn" id="b-home" aria-label="Back to menu"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg></button>
-    <button class="cbtn" id="c-left"  style="left:10px;  bottom:calc(18px + env(safe-area-inset-bottom,0px))" aria-label="Left"><svg class="ic" aria-hidden="true"><use href="#i-left"/></svg></button>
-    <button class="cbtn" id="c-right" style="left:136px; bottom:calc(18px + env(safe-area-inset-bottom,0px))" aria-label="Right"><svg class="ic" aria-hidden="true"><use href="#i-right"/></svg></button>
-    <button class="cbtn" id="c-down"  style="right:136px; bottom:calc(18px + env(safe-area-inset-bottom,0px))" aria-label="Down"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg></button>
-    <button class="cbtn" id="c-rot"   style="right:10px; bottom:calc(18px + env(safe-area-inset-bottom,0px))" aria-label="Turn"><svg class="ic" aria-hidden="true"><use href="#i-rotate"/></svg></button>
-    <button class="tbtn" id="b-hold" style="left:300px; top:calc(env(safe-area-inset-top,0px) + 10px)" title="Hold piece" aria-label="Hold"><svg class="ic" aria-hidden="true"><use href="#i-hold"/></svg></button>
-    <button id="slambtn">SLAM</button>
+    <button class="tbtn sk" id="b-pause" aria-label="Pause"><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg></button>
+    <div class="hf hf-score" id="hud-score"><span id="h-score">0</span></div>
+    <button class="tbtn sk" id="b-hold" aria-label="Hold"><svg class="ic" aria-hidden="true"><use href="#i-hold"/></svg></button>
+    <div class="hf hf-hold" id="hud-hold"><span class="hl">HOLD</span><canvas id="cv-hold" width="140" height="88"></canvas></div>
+    <div class="hf hf-next" id="hud-next"><span class="hl">NEXT</span><canvas id="cv-next" width="140" height="88"></canvas></div>
+    <div class="hf hf-level" id="hud-level"><span id="h-level">LEVEL 1</span></div>
+    <div class="hf hf-rings" id="hud-rings"><span id="h-rings">RINGS 0/2</span></div>
+    <div class="hf hf-rings" id="hud-left"><span id="h-left">120 LEFT</span></div>
+    <div class="hf hf-next2" id="hud-next2"><canvas id="cv-next2" width="140" height="64"></canvas></div>
+    <button class="cbtn sk" id="c-left" aria-label="Left"><svg class="ic" aria-hidden="true"><use href="#i-left"/></svg></button>
+    <button class="cbtn sk" id="c-right" aria-label="Right"><svg class="ic" aria-hidden="true"><use href="#i-right"/></svg></button>
+    <button class="cbtn sk" id="c-down" aria-label="Down"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg></button>
+    <button class="cbtn sk" id="c-rot" aria-label="Turn"><svg class="ic" aria-hidden="true"><use href="#i-rotate"/></svg></button>
+    <button id="slambtn" aria-label="Slam"><svg class="ic" aria-hidden="true"><use href="#i-rotate"/></svg><span>SLAM</span></button>
   </div>
+
+  <!-- PAUSE -->
+  <div class="screen center" id="s-pause"><div class="pad center">
+    <h2 class="sc-h">Paused</h2>
+    <div class="stack">
+      <button class="btn primary" id="p-resume">Resume</button>
+      <button class="btn" id="p-retry"><svg class="ic" aria-hidden="true"><use href="#i-retry"/></svg>Retry</button>
+      <button class="btn" id="p-menu"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg>Menu</button>
+    </div>
+  </div></div>
 
   <!-- HOW: Astra's four wordless plates, one live line each (step 2) -->
   <div class="screen" id="s-how"><div class="pad">
@@ -358,7 +420,7 @@ var RMAX=11;                        // outermost ring
    puzzle and the edge never sneaks up on you. All board drawing goes
    through cellPx()/VCELL, recomputed each frame from G.view (half-extent
    in cells). */
-var PANEL={x:8, y:100, w:524, h:664};                 // board window on stage
+var PANEL={x:8, y:152, w:524, h:590};                 // board window on stage (step 4: under the two HUD rows, over SLAM)
 var PCX=PANEL.x+PANEL.w/2, PCY=PANEL.y+PANEL.h/2;    // sun sits at center
 var VCELL=24, VPITCH=26;                              // updated per frame
 function viewTarget(){
@@ -374,7 +436,7 @@ function updateView(dt){
   if(!G)return;
   var t=viewTarget();
   G.view+= (t-G.view)*Math.min(1,dt*2.6);
-  VCELL=Math.min(30, PANEL.w/(2*G.view+1)-1);
+  VCELL=Math.min(34, PANEL.w/(2*G.view+1)-1);   // 34 stage px is Astra's 26 CSS px cell on a 412 wide phone
   VPITCH=VCELL+1;
 }
 /* tetromino cell sets, 4 rotations each (x,y offsets from piece origin) */
@@ -416,6 +478,7 @@ function bagFeed(rng){
   };
 }
 function newGame(mode){
+  HUDC={};   // the HUD frames are reused between runs, so their cache starts over
   var seed = mode==='daily' ? ((dayNum()*2654435761)>>>0) : ((Math.random()*2147483647)|0);
   var rng=mulberry32(seed);
   G={ mode:mode, seed:seed, rng:rng, feed:bagFeed(rng), grid:emptyGrid(), hold:null, holdUsed:false, next2:null,
@@ -437,8 +500,12 @@ function dropInterval(){
 }
 function spawn(){
   var k=G.next; G.next=G.next2; G.next2=G.feed();
-  var topRow=Math.max(-3, C-Math.ceil(G.view||C));
-  G.cur={ k:k, rot:0, x:C-2, y:topRow-4 };
+  /* the piece enters at the window's top edge, its lower row in view at once (step 4: the HUD rows moved the
+     window's top down, and the old rule, four rows above the view, then hid a new piece for two or three drops) */
+  updateView(0);
+  var vis=Math.floor((PCY-PANEL.y-VCELL/2)/VPITCH+0.1);
+  var topRow=Math.max(-2, C-vis);
+  G.cur={ k:k, rot:0, x:C-2, y:topRow-1 };
   G.holdUsed=false;
   G.pieces++;
   if(G.pieceBudget&&G.pieces>G.pieceBudget){ endRun(); return; }
@@ -752,6 +819,7 @@ function ghostLost(){ if(_ghostLost)return _ghostLost; var gi=art('ghost'); if(!
   x.drawImage(gi,0,0,64,64); x.globalCompositeOperation='source-in'; x.fillStyle='#f15370'; x.fillRect(0,0,64,64);
   _ghostLost=c; return c; }
 function render(){
+  var i;
   updateView(0.033);
   ctx.clearRect(0,0,540,960);
   var plate=art('play_plate');
@@ -759,31 +827,8 @@ function render(){
   var sx=G.shakeT>0?(Math.random()*6-3)*G.shakeT*4:0;
   var sy=G.shakeT>0?(Math.random()*6-3)*G.shakeT*4:0;
   ctx.save(); ctx.translate(sx,sy);
-  // header
-  ctx.textAlign='center'; ctx.fillStyle='#eef0f6';
-  ctx.font='900 40px '+DSF;
-  ctx.fillText(G.score.toLocaleString(), 236, 58);
-  ctx.font='600 12px '+UIF; ctx.fillStyle='#8d90a8';
-  var sub = G.mode==='journey' ? ('LEVEL '+(G.level+1)+' · RINGS '+G.quotaDone+'/'+G.quota)
-          : G.mode==='daily' ? ('DAILY #'+dayNum()+' · '+Math.max(0,G.pieceBudget-G.pieces)+' pieces left · rings '+G.rings)
-          : 'ZEN · rings '+G.rings;
-  ctx.fillText(sub, 236, 84);
-  // next / after / hold previews
-  ctx.fillStyle='rgba(255,255,255,0.04)'; rr(452,24,68,46,10); ctx.fill();
-  ctx.fillStyle='#8d90a8'; ctx.font='600 9px '+UIF; ctx.fillText('NEXT',486,20);
-  var ns=SHAPES[G.next][0],i;
-  for(i=0;i<4;i++){ ctx.fillStyle=PCOLS[G.next]; rr(452+14+ns[i][0]*10,24+8+ns[i][1]*10,8,8,2); ctx.fill(); }
-  if(G.next2){
-    ctx.fillStyle='rgba(255,255,255,0.03)'; rr(452,76,68,32,8); ctx.fill();
-    var n2=SHAPES[G.next2][0];
-    for(i=0;i<4;i++){ ctx.fillStyle=hexA(PCOLS[G.next2],0.6); rr(452+18+n2[i][0]*7,76+5+n2[i][1]*7,5.5,5.5,1.5); ctx.fill(); }
-  }
-  ctx.fillStyle='rgba(255,255,255,0.04)'; rr(376,24,64,46,10); ctx.fill();
-  ctx.fillStyle='#8d90a8'; ctx.font='600 9px '+UIF; ctx.fillText('HOLD',408,20);
-  if(G.hold){
-    var hs=SHAPES[G.hold][0];
-    for(i=0;i<4;i++){ ctx.fillStyle=G.holdUsed?hexA(PCOLS[G.hold],0.35):PCOLS[G.hold]; rr(376+13+hs[i][0]*9,24+9+hs[i][1]*9,7,7,2); ctx.fill(); }
-  }
+  hudPaint();
+  ctx.textAlign='center';
   // board panel
   if(!plate){ ctx.fillStyle='rgba(255,255,255,0.028)'; rr(PANEL.x-4,PANEL.y-4,PANEL.w+8,PANEL.h+8,14); ctx.fill(); }
   ctx.save();
@@ -957,14 +1002,45 @@ function render(){
     ctx.fillStyle=f.big?'#ffd76a':'#eef0f6'; ctx.font=f.big?('900 34px '+DSF):('700 22px '+UIF);
     ctx.fillText(f.txt, f.x, f.y); }
   ctx.globalAlpha=1;
-  // footer hint
-  ctx.fillStyle='#8d90a8'; ctx.font='600 11px '+UIF;
-  ctx.fillText('pieces stick to the sun · grow rings outward · SLAM spins the gyre', 270, PANEL.y+PANEL.h-12);
   ctx.restore();
+}
+/* ---------- the HUD (step 4): DOM in Astra's frames; written only when a value changes ---------- */
+var HUDC={};
+function hudSet(id,v,prop){ if(HUDC[id]===v)return; HUDC[id]=v; var el=$(id); if(el)el[prop||'textContent']=v; }
+function drawPreview(id,k,alpha){
+  var key=k+'|'+alpha+'|'+(art('falling')?1:0); if(HUDC[id]===key)return; HUDC[id]=key;
+  var cvp=$(id); if(!cvp)return; var g=cvp.getContext('2d'); g.clearRect(0,0,cvp.width,cvp.height); if(!k)return;
+  var sh=SHAPES[k][0], minx=9,maxx=-9,miny=9,maxy=-9,i;
+  for(i=0;i<4;i++){ minx=Math.min(minx,sh[i][0]); maxx=Math.max(maxx,sh[i][0]); miny=Math.min(miny,sh[i][1]); maxy=Math.max(maxy,sh[i][1]); }
+  var cols=maxx-minx+1, rows=maxy-miny+1, cs=Math.min((cvp.width-8)/cols,(cvp.height-8)/rows, cvp.height*0.42);
+  var ox=(cvp.width-cols*cs)/2, oy=(cvp.height-rows*cs)/2, fi=art('falling');
+  g.globalAlpha=alpha;
+  for(i=0;i<4;i++){ var x=ox+(sh[i][0]-minx)*cs, y=oy+(sh[i][1]-miny)*cs;
+    if(fi)g.drawImage(fi,x,y,cs,cs); else { g.fillStyle=PCOLS[k]; g.fillRect(x+1,y+1,cs-2,cs-2); } }
+  g.globalAlpha=1;
+}
+function hudPaint(){
+  if(!G)return;
+  hudSet('h-score',G.score.toLocaleString());
+  hudSet('h-level',G.mode==='journey'?('LEVEL '+(G.level+1)):(G.mode==='daily'?('DAILY '+dayNum()):'ZEN'));
+  hudSet('h-rings',G.mode==='journey'?('RINGS '+G.quotaDone+'/'+G.quota):('RINGS '+G.rings));
+  var daily=G.mode==='daily';
+  if(HUDC.daily!==daily){ HUDC.daily=daily; var hl=$('hud-left'); if(hl)hl.style.display=daily?'flex':'none'; }
+  if(daily)hudSet('h-left',Math.max(0,G.pieceBudget-G.pieces)+' LEFT');
+  drawPreview('cv-next',G.next,1);
+  drawPreview('cv-next2',G.next2,0.6);
+  drawPreview('cv-hold',G.hold,G.holdUsed?0.35:1);
+  var sb=$('slambtn'), ch=!!almostRing(); if(sb&&HUDC.charged!==ch){ HUDC.charged=ch; sb.classList.toggle('charged',ch); }
 }
 function rr(x,y,w,h,rad){ ctx.beginPath(); ctx.moveTo(x+rad,y); ctx.arcTo(x+w,y,x+w,y+h,rad); ctx.arcTo(x+w,y+h,x,y+h,rad); ctx.arcTo(x,y+h,x,y,rad); ctx.arcTo(x,y,x+w,y,rad); ctx.closePath(); }
 
 /* ---------- input ---------- */
+/* every skinned control shows Astra's pressed skin while a finger is on it */
+(function(){ var ids=['b-pause','b-hold','c-left','c-right','c-down','c-rot','slambtn'],i;
+  for(i=0;i<ids.length;i++)(function(el){ if(!el)return;
+    el.addEventListener('pointerdown',function(){ el.classList.add('pressed'); });
+    ['pointerup','pointercancel','pointerleave'].forEach(function(t){ el.addEventListener(t,function(){ el.classList.remove('pressed'); }); });
+  })($(ids[i])); })();
 function hold(id,fn,first){
   var el=$(id),t=null,r=null; if(!el)return;
   function stop(){ if(t){clearTimeout(t);t=null;} if(r){clearInterval(r);r=null;} }
@@ -980,6 +1056,8 @@ tap('b-hold',function(){ holdPiece(); });
 tap('slambtn',function(){ slam(); });
 cv.addEventListener('pointerdown',function(e){
   if(curScreen!=='s-play'||!G||G.over)return; e.preventDefault(); ac();
+  var r=cv.getBoundingClientRect(), sy=(e.clientY-r.top)*960/r.height;
+  if(sy<PANEL.y||sy>PANEL.y+PANEL.h)return;          // a tap on the HUD or below the window turns nothing
   tryRotate();
 },{passive:false});
 document.addEventListener('keydown',function(e){
@@ -990,7 +1068,13 @@ document.addEventListener('keydown',function(e){
   else if(e.key==='ArrowDown'){ e.preventDefault(); softStep(); }
   else if(e.key===' '){ e.preventDefault(); slam(); }
   else if(e.key==='c'||e.key==='C'||e.key==='Shift'){ e.preventDefault(); holdPiece(); }
+  else if(e.key==='Escape'||e.key==='p'||e.key==='P'){ e.preventDefault(); pauseGame(); }
 });
+document.addEventListener('keydown',function(e){ if(curScreen==='s-pause'&&(e.key==='Escape'||e.key==='p'||e.key==='P')){ e.preventDefault(); resumeGame(); } });
+/* pause: the run stops where it is (no tick, so no drop, no clock, the Daily's pieces untouched); a hidden tab pauses */
+function pauseGame(){ if(curScreen!=='s-play'||!G||G.over)return; show('s-pause'); }
+function resumeGame(){ if(!G||G.over){ show('s-title'); return; } show('s-play'); running=true; lastTs=0; requestAnimationFrame(loop); }
+document.addEventListener('visibilitychange',function(){ if(document.hidden)pauseGame(); });
 
 /* ---------- screens ---------- */
 var curScreen='s-title';
@@ -1018,7 +1102,10 @@ tap('b-how',function(){ SFX.ui(); show('s-how'); });
 tap('b-set',function(){ SFX.ui(); show('s-set'); });
 tap('how-back',function(){ SFX.ui(); show('s-title'); });
 tap('set-back',function(){ SFX.ui(); show('s-title'); });
-tap('b-home',function(){ SFX.ui(); running=false; if(G&&!G.over)endRunQuiet(); show('s-title'); });
+tap('b-pause',function(){ SFX.ui(); pauseGame(); });
+tap('p-resume',function(){ SFX.ui(); resumeGame(); });
+tap('p-retry',function(){ SFX.ui(); if(G&&!G.over)endRunQuiet(); newGame(G?G.mode:'journey'); });
+tap('p-menu',function(){ SFX.ui(); if(G&&!G.over)endRunQuiet(); show('s-title'); });
 tap('go-retry',function(){ SFX.ui(); newGame(G?G.mode:'journey'); });
 tap('go-home',function(){ SFX.ui(); show('s-title'); });
 tap('go-share',function(){ SFX.ui(); shareIt(); });
