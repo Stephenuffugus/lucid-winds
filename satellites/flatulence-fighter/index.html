@@ -320,6 +320,46 @@
     display:flex; align-items:center; justify-content:center; background:var(--paper); border:3px double var(--sage); color:var(--sage-2);
     font-family:var(--serif); font-weight:700; font-size:3.2rem; box-shadow:0 8px 22px rgba(0,0,0,.35); pointer-events:none;}
 
+  /* ======================= THE DECK, m2: the four pads (m2 step 1) =======================
+     A 2 by 2 block across the bottom: the hands on top, the cheeks below, each pad 19 percent of the screen tall
+     (174 px at 412x915, 108 px at 320x568). The cheeks wear Astra's hold plates as m1's pads did (idle, held, and the
+     tired plate when a lifted cheek is about to be heard); the hands are plain styled placeholders until Astra draws
+     them in round 2. The deck owns every touch on it: no scroll, no zoom, no selection, no callout, no context menu. */
+  .deck4{ position:relative; z-index:12; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px;
+    padding:8px 8px calc(10px + env(safe-area-inset-bottom,0px)); touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+  .deck4 > button{ height:clamp(56px, 19vh, 196px); height:clamp(56px, 19dvh, 196px); min-width:0; margin:0; touch-action:none; -webkit-touch-callout:none;}
+  .deck4 .pad{ padding:0 6px 4px;}
+  .deck4 .pad .pad-label{ letter-spacing:.16em; padding-left:.16em;}
+  .deck4 .pad .pad-hint{ font-size:clamp(1.05rem, 3.2vh, 1.5rem);}
+  #padL.warn::before{ background-image:var(--a-padLTired,none);} #padR.warn::before{ background-image:var(--a-padRTired,none);}
+  .pad.warn{ color:var(--paper);}
+  .pad.warn .pad-hint{ opacity:1;}
+  .hand{ position:relative; isolation:isolate; font-family:inherit; cursor:pointer; border:2px dashed var(--sage); border-radius:16px;
+    background:rgba(231,224,203,.62); color:var(--sage-2); padding:6px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    text-align:center; transition:transform .08s, background .08s, border-color .08s; -webkit-user-select:none; user-select:none;}
+  .hand .hring{ position:relative; width:clamp(30px, 8.5vh, 80px); aspect-ratio:1; flex:none; display:flex; align-items:center; justify-content:center;}
+  .hand .hring svg{ position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); overflow:visible;}
+  .hand .hring circle{ fill:none; stroke-width:7;}
+  .hand .hr-bg{ stroke:rgba(43,58,49,.16);}
+  .hand .hr-fg{ stroke:var(--accent); stroke-dasharray:100; stroke-dashoffset:calc(100 * (1 - var(--ring,0))); stroke-linecap:round;}
+  .hand .hico{ position:relative; width:60%; height:60%; display:flex; align-items:center; justify-content:center; opacity:.5;}
+  .hand .hico .ic{ width:100%; height:100%;}
+  #handL.idle .hico .ic{ transform:scaleX(-1);}
+  .hand-words{ font-size:clamp(.74rem, 2.1vh, .98rem); font-weight:600; line-height:1.15; letter-spacing:.02em; max-width:100%; overflow-wrap:break-word;}
+  .hand.idle .hand-words{ font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; padding-left:.16em; opacity:.85;}
+  .hand.down{ transform:translateY(2px); background:rgba(199,189,156,.75);}
+  .hand.called{ border:3px solid var(--accent); background:var(--paper); color:var(--deep); box-shadow:0 0 0 3px rgba(224,144,47,.25), 0 0 16px rgba(224,144,47,.55);}
+  .hand.called .hico, .hand.holding .hico, .hand.done .hico{ opacity:1;}
+  .hand.holding{ border:3px solid var(--mint-deep); background:var(--relief); color:var(--deep); box-shadow:0 0 14px rgba(95,208,176,.6);}
+  .hand.holding .hr-fg, .hand.done .hr-fg{ stroke:var(--mint-deep);}
+  .hand.done{ border:3px solid var(--mint-deep); background:var(--paper);}
+  .hand.missed{ border:3px solid var(--danger); background:var(--paper); color:var(--danger);}
+  .hand.missed .hr-fg{ stroke:var(--danger);}
+  .hand:focus-visible, .deck4 .pad:focus-visible{ outline:3px solid var(--mint-deep); outline-offset:2px;}
+  /* m1's leaks and props are retired from play; the intertitle lets touches through so the cheeks can be held across it */
+  #leaks{ display:none;}
+  #introScreen{ pointer-events:none;}
+
   /* ======================= PLAY MODES / MENU ======================= */
   .modes.playrow .mode-btn .mt{ font-size:.76rem; flex-direction:column; gap:2px;}
   .modes.disabled{ opacity:.45; pointer-events:none;}
@@ -485,6 +525,11 @@
 <symbol id="i-wordmark_paper" viewBox="0 0 1000 340"><g transform="translate(500 40) scale(1.1)"><path d="M-65 0H-20 M20 0H65" fill="none" stroke="#c8a84b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /><path d="M0 -10L10 0 0 10 -10 0Z" fill="#c8a84b" stroke="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /><circle cx="-30" cy="0" r="3" fill="#c8a84b" stroke="none" stroke-width="1"/><circle cx="30" cy="0" r="3" fill="#c8a84b" stroke="none" stroke-width="1"/></g><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V600Q121 640 106.0 650.5Q91 661 70 661H28V714H582L587 530H517L512 578Q508 618 488.5 635.5Q469 653 438 653H279V380H516V321H279V118Q279 75 294.0 64.0Q309 53 331 53H393V0Z" transform="translate(170.176 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q92 53 106.5 64.0Q121 75 121 118V596Q121 639 106.5 650.0Q92 661 70 661H28V714H373V661H331Q310 661 295.0 650.5Q280 640 280 600V61H466Q501 61 520.5 83.5Q540 106 549 148L565 223H621L614 0Z" transform="translate(230.308 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M4 0V53H16Q43 53 61.5 67.0Q80 81 96 126L313 714H450L659 125Q674 83 692.5 68.0Q711 53 735 53H753V0H423V53H462Q477 53 491.0 62.0Q505 71 505 92Q505 104 502.0 115.5Q499 127 496 135L461 235H218L189 149Q185 137 181.0 120.5Q177 104 177 92Q177 73 191.0 63.0Q205 53 222 53H264V0ZM239 296H441L388 460Q378 494 365.5 536.0Q353 578 345 613Q336 581 323.0 540.5Q310 500 298 465Z" transform="translate(293.476 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M154 0V53H196Q218 53 232.5 64.0Q247 75 247 118V653H167Q122 653 105.0 634.0Q88 615 84 582L77 520H10L15 714H638L643 520H576L569 582Q565 615 548.0 634.0Q531 653 486 653H406V118Q406 75 420.5 64.0Q435 53 457 53H499V0Z" transform="translate(365.752 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M387 -10Q257 -10 183.5 42.5Q110 95 110 218V600Q110 640 94.5 650.5Q79 661 59 661H16V714H361V661H319Q298 661 283.0 650.0Q268 639 268 596V210Q268 126 308.5 93.5Q349 61 417 61Q484 61 523.0 96.5Q562 132 562 208V600Q562 640 547.0 650.5Q532 661 511 661H469V714H731V661H688Q667 661 652.0 650.0Q637 639 637 596V206Q637 106 577.5 48.0Q518 -10 387 -10Z" transform="translate(428.828 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q92 53 106.5 64.0Q121 75 121 118V596Q121 639 106.5 650.0Q92 661 70 661H28V714H373V661H331Q310 661 295.0 650.5Q280 640 280 600V61H466Q501 61 520.5 83.5Q540 106 549 148L565 223H621L614 0Z" transform="translate(500.552 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V596Q121 639 106.5 650.0Q92 661 70 661H28V714H583L587 530H517L512 577Q508 614 493.5 633.5Q479 653 448 653H280V403H517V343H280V61H480Q510 61 524.5 82.5Q539 104 544 137L552 184H621L614 0Z" transform="translate(563.720 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 64.0Q121 75 121 118V600Q121 640 105.5 650.5Q90 661 70 661H28V714H250L603 215V600Q603 640 587.5 650.5Q572 661 552 661H510V714H771V661H729Q708 661 693.0 650.0Q678 639 678 596V0H586L196 551V118Q196 75 211.0 64.0Q226 53 247 53H289V0Z" transform="translate(626.796 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M401 -10Q285 -10 208.0 36.0Q131 82 93.0 164.5Q55 247 55 358Q55 466 94.0 548.5Q133 631 210.0 677.5Q287 724 400 724Q515 724 571.5 690.5Q628 657 628 608Q628 571 596.0 546.0Q564 521 503 521Q503 554 493.0 586.0Q483 618 459.0 639.0Q435 660 393 660Q298 660 260.5 581.5Q223 503 223 358Q223 213 268.5 141.5Q314 70 425 70Q474 70 509.0 84.5Q544 99 568.5 121.0Q593 143 610 165Q627 151 627 122Q627 94 606.0 63.5Q585 33 536.0 11.5Q487 -10 401 -10Z" transform="translate(702.292 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V596Q121 639 106.5 650.0Q92 661 70 661H28V714H583L587 530H517L512 577Q508 614 493.5 633.5Q479 653 448 653H280V403H517V343H280V61H480Q510 61 524.5 82.5Q539 104 544 137L552 184H621L614 0Z" transform="translate(766.748 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V600Q121 640 106.0 650.5Q91 661 70 661H28V714H582L587 530H517L512 578Q508 618 488.5 635.5Q469 653 438 653H279V380H516V321H279V118Q279 75 294.0 64.0Q309 53 331 53H393V0Z" transform="translate(225.858 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q92 53 106.5 64.0Q121 75 121 118V596Q121 639 106.5 650.0Q92 661 70 661H28V714H373V661H331Q309 661 294.5 650.0Q280 639 280 596V118Q280 75 294.5 64.0Q309 53 331 53H373V0Z" transform="translate(299.926 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M423 -10Q299 -10 217.5 36.0Q136 82 95.5 164.5Q55 247 55 358Q55 466 97.0 548.5Q139 631 222.5 677.5Q306 724 428 724Q553 724 615.5 690.5Q678 657 678 608Q678 573 645.0 548.0Q612 523 549 523Q549 584 519.0 622.0Q489 660 425 660Q316 660 269.5 581.5Q223 503 223 358Q223 213 271.5 135.5Q320 58 438 58Q457 58 475.5 59.5Q494 61 511 65V212Q511 252 493.0 267.5Q475 283 440 283H427V336H741V283H728Q697 283 683.0 267.0Q669 251 669 208V44Q611 17 551.0 3.5Q491 -10 423 -10Z" transform="translate(350.234 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 64.0Q121 75 121 118V600Q121 640 105.5 650.5Q90 661 70 661H28V714H373V661H330Q309 661 294.0 650.0Q279 639 279 596V403H540V596Q540 639 525.0 650.0Q510 661 489 661H446V714H791V661H749Q728 661 713.0 650.0Q698 639 698 596V113Q698 73 713.5 63.0Q729 53 749 53H791V0H446V53H489Q510 53 525.0 64.0Q540 75 540 118V342H279V118Q279 75 294.0 64.0Q309 53 330 53H373V0Z" transform="translate(440.286 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M154 0V53H196Q218 53 232.5 64.0Q247 75 247 118V653H167Q122 653 105.0 634.0Q88 615 84 582L77 520H10L15 714H638L643 520H576L569 582Q565 615 548.0 634.0Q531 653 486 653H406V118Q406 75 420.5 64.0Q435 53 457 53H499V0Z" transform="translate(535.738 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V596Q121 639 106.5 650.0Q92 661 70 661H28V714H583L587 530H517L512 577Q508 614 493.5 633.5Q479 653 448 653H280V403H517V343H280V61H480Q510 61 524.5 82.5Q539 104 544 137L552 184H621L614 0Z" transform="translate(613.262 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q90 53 105.5 63.0Q121 73 121 113V600Q121 640 105.5 650.5Q90 661 70 661H28V714H350Q492 714 558.0 666.5Q624 619 624 529Q624 476 604.0 439.0Q584 402 553.0 378.0Q522 354 488 340L607 135Q633 92 656.0 72.5Q679 53 707 53H711V0H678Q618 0 578.0 7.0Q538 14 511.5 33.5Q485 53 464 90L345 310H279V113Q279 73 294.5 63.0Q310 53 330 53H373V0ZM335 368Q404 368 430.0 405.0Q456 442 456 515Q456 591 428.0 623.0Q400 655 333 655H279V368Z" transform="translate(690.786 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><g transform="translate(500 311) scale(1.1)"><path d="M-65 0H-20 M20 0H65" fill="none" stroke="#c8a84b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /><path d="M0 -10L10 0 0 10 -10 0Z" fill="#c8a84b" stroke="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /><circle cx="-30" cy="0" r="3" fill="#c8a84b" stroke="none" stroke-width="1"/><circle cx="30" cy="0" r="3" fill="#c8a84b" stroke="none" stroke-width="1"/></g></symbol>
 </svg>
 <!-- ff-sprite end -->
+<!-- ff-calls start: placeholder line icons for the hand pads and their calls, in the sprite's style, until Astra's round 2 -->
+<svg id="ff-calls" aria-hidden="true" style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-call_hand" viewBox="0 0 48 48"><path d="M15 27V12Q15 9 17.5 9Q20 9 20 12V22 M20 21V8Q20 5 22.5 5Q25 5 25 8V21 M25 21V9Q25 6 27.5 6Q30 6 30 9V22 M30 22V14Q30 11 32.5 11Q35 11 35 14V28Q35 41 25 42Q17 42 13 36L8 28Q6 25 9 24Q11 23 13 26L15 29" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+<!-- ff-calls end -->
 <div id="app">
 
   <!-- ============ START / MENU ============ -->
@@ -595,9 +640,6 @@
           </g>
         </svg>
       </div>
-      <button class="prop prop-cough" id="coughBtn" type="button" aria-label="Cough. Fake your own cover noise"><span class="pband"><span>Cough</span><span class="charges" id="coughState"></span></span></button>
-      <button class="prop prop-sip" id="sipBtn" type="button" aria-label="Sip. Hold to drink the pressure down. You cannot clench while sipping"><svg class="cd-ring" viewBox="0 0 112 112" aria-hidden="true" focusable="false"><circle cx="56" cy="56" r="48" id="sipRing"/></svg><span class="pband"><span>Sip</span><span id="sipState">Ready</span></span></button>
-      <button class="prop prop-waft" id="waftBtn" type="button" aria-label="Waft. Fan a fresh strike away"><svg class="rim" viewBox="0 0 100 56" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect x="2" y="2" width="96" height="52" rx="10" pathLength="100" id="waftRim"/></svg><span class="pband"><span>Waft</span><span class="charges" id="waftState"></span></span></button>
       <div id="leaks"></div>
       <div class="cover-banner" id="coverBanner"><span class="ico" id="coverIco"></span><span class="cb-txt"><span id="coverText">Applause</span><span class="cb-sub">Vent now</span></span><span class="cb-count" id="coverCount"></span></div>
       <div id="countIn" class="count-in hidden" aria-live="assertive"></div>
@@ -615,10 +657,20 @@
     <div id="callout" class="callout"></div>
     <div id="fx"></div>
 
-    <div class="deck" id="deck">
+    <!-- THE DECK (m2): the four pads in a 2 by 2 block, the hands on top and the cheeks below (law 10: one deck owns
+         every touch on it; the input section hit tests each pointer against the four boxes) -->
+    <div class="deck4" id="deck" role="group" aria-label="The four pads">
+      <button class="hand idle" id="handL" type="button" aria-label="Left hand"><span class="hring" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><circle class="hr-bg" cx="50" cy="50" r="44" pathLength="100"/><circle class="hr-fg" cx="50" cy="50" r="44" pathLength="100"/></svg><span class="hico" id="handLIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handLText">Left hand</span></button>
+      <button class="hand idle" id="handR" type="button" aria-label="Right hand"><span class="hring" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><circle class="hr-bg" cx="50" cy="50" r="44" pathLength="100"/><circle class="hr-fg" cx="50" cy="50" r="44" pathLength="100"/></svg><span class="hico" id="handRIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handRText">Right hand</span></button>
+      <button class="pad cheek" id="padL" type="button" aria-label="Left cheek"><span class="pad-label">Left cheek</span><span class="pad-hint" id="padLHint">Hold</span></button>
+      <button class="pad cheek" id="padR" type="button" aria-label="Right cheek"><span class="pad-label">Right cheek</span><span class="pad-hint" id="padRHint">Hold</span></button>
+    </div>
+    <!-- m1's controls, retired from play in m2: their code is dormant and still finds them here; nothing of them shows -->
+    <div class="retired hidden" aria-hidden="true">
+      <div class="deck" id="deckOld">
       <div class="dcol dcol-l">
         <button class="lean" id="leanLbtn" type="button" aria-label="Lean left. Hold to keep your balance"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-lean_left"/></svg><span>Lean left</span></button>
-        <button class="pad" id="padL" type="button" aria-label="Left hold"><span class="pad-label">Left</span><span class="pad-hint">Hold</span><span class="strainbar"><i id="strainL"></i></span></button>
+        <span class="strainbar"><i id="strainL"></i></span>
       </div>
       <div class="dcol dcol-m">
         <div class="mlabel" aria-hidden="true">Sit still</div>
@@ -633,8 +685,12 @@
       </div>
       <div class="dcol dcol-r">
         <button class="lean" id="leanRbtn" type="button" aria-label="Lean right. Hold to keep your balance"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-lean_right"/></svg><span>Lean right</span></button>
-        <button class="pad" id="padR" type="button" aria-label="Right hold"><span class="pad-label">Right</span><span class="pad-hint">Hold</span><span class="strainbar"><i id="strainR"></i></span></button>
+        <span class="strainbar"><i id="strainR"></i></span>
       </div>
+      </div>
+      <button class="prop prop-cough" id="coughBtn" type="button" aria-label="Cough. Fake your own cover noise"><span class="pband"><span>Cough</span><span class="charges" id="coughState"></span></span></button>
+      <button class="prop prop-sip" id="sipBtn" type="button" aria-label="Sip. Hold to drink the pressure down. You cannot clench while sipping"><svg class="cd-ring" viewBox="0 0 112 112" aria-hidden="true" focusable="false"><circle cx="56" cy="56" r="48" id="sipRing"/></svg><span class="pband"><span>Sip</span><span id="sipState">Ready</span></span></button>
+      <button class="prop prop-waft" id="waftBtn" type="button" aria-label="Waft. Fan a fresh strike away"><svg class="rim" viewBox="0 0 100 56" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect x="2" y="2" width="96" height="52" rx="10" pathLength="100" id="waftRim"/></svg><span class="pband"><span>Waft</span><span class="charges" id="waftState"></span></span></button>
     </div>
   </div>
 
@@ -973,6 +1029,7 @@
         overScreen=$("overScreen"), medalsScreen=$("medalsScreen"), statsScreen=$("statsScreen");
   const gaugeFill=$("gaugeFill"), pctText=$("pctText"), scoreEl=$("score"), sceneChip=$("sceneChip"), comboEl=$("combo");
   const strainLbar=$("strainL"), strainRbar=$("strainR"), padL=$("padL"), padR=$("padR");
+  const deckEl=$("deck"), handL=$("handL"), handR=$("handR"), padLHint=$("padLHint"), padRHint=$("padRHint");
   const ventBtn=$("ventBtn"), ventMainText=$("ventMainText"), ventSub=$("ventSub"), ventTimer=$("ventTimer"), ventMark=$("ventMark");
   const coverBanner=$("coverBanner"), coverText=$("coverText"), strikesEl=$("strikes"), leaksEl=$("leaks"),
         fxEl=$("fx"), calloutEl=$("callout"), toastsEl=$("toasts"), ribbonEl=$("ribbon"), coverCount=$("coverCount"), waftRim=$("waftRim"), bustWrap=document.querySelector(".bust-wrap");
@@ -1027,7 +1084,7 @@
   function dayKey(off){ const d=new Date(); if(off) d.setDate(d.getDate()+off); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
   function newState(modeKey, playKey){
     return { phase:"playing", modeKey, M:MODES[modeKey], playMode:playKey||"stage",
-      pressure:0, strainL:0, strainR:0, padL:false, padR:false, slipL:0, slipR:0,
+      pressure:0, strainL:0, strainR:0, padL:false, padR:false, slipL:0, slipR:0, handL:false, handR:false,
       breath:CFG.breathMax, breathHold:false, breathLock:0,
       wobble:0, wobbleDir:1, wobbleFlipAt:CFG.wobbleFlipMin, leanL:false, leanR:false,
       strikes:0, score:0, time:0, combo:0, bestCombo:0, calloutIdx:-1,
@@ -1068,7 +1125,7 @@
     padL.classList.remove("benched","slipped"); padR.classList.remove("benched","slipped");
     sipBtn.classList.remove("sipping");
     breathBtn.classList.remove("held","locked"); leanLbtn.classList.remove("held","down"); leanRbtn.classList.remove("held","down");
-    showIntro(0);
+    showIntro(0); syncPads();
     S.last=performance.now();
     if(raf) cancelAnimationFrame(raf);
     loop();
@@ -1809,8 +1866,11 @@
   // ==================================================================
   //  INPUT
   // ==================================================================
-  // every hold (pads, leans, sip, breath) tracks its own pointer ids with capture; releaseAll() lets go of all of them
-  // (pause, blur, a hidden page, an orientation change), and the keyboard holds with them
+  // m2 (law 10): the four pads are one deck. Every pointer that lands on the deck is captured by it and hit tested
+  // against the four pad boxes on its down and on every move, so each pad counts its own pointer ids, a finger that
+  // slides off a pad lets go of it and a finger that slides onto one presses it. F and J are the cheeks, R and U the
+  // hands; Escape pauses. releaseAll() lets go of everything (pause, blur, a hidden page, an orientation change).
+  // bindHold and bindPad stay for m1's retired controls (dormant, hidden; their keys are gone).
   const holds=[];
   function bindHold(el,down,up){ const ids=new Set();
     el.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); ids.add(e.pointerId); down(); try{ el.setPointerCapture(e.pointerId);}catch(_){} });
@@ -1818,35 +1878,33 @@
     el.addEventListener("pointerup",end); el.addEventListener("pointercancel",end); el.addEventListener("lostpointercapture",end);
     holds.push(()=>{ if(ids.size){ ids.clear(); up(); } }); }
   function bindPad(el,key){ bindHold(el, ()=>{ el.classList.add("down"); if(S) S[key]=true; }, ()=>{ el.classList.remove("down"); if(S) S[key]=false; }); }
+  const PADS=[{el:padL,key:"padL"},{el:padR,key:"padR"},{el:handL,key:"handL"},{el:handR,key:"handR"}];
+  const PAD_KEY={KeyF:0,KeyJ:1,KeyR:2,KeyU:3}, padKey=code=>Object.prototype.hasOwnProperty.call(PAD_KEY,code)?PAD_KEY[code]:-1;
+  const ptrPad=new Map(), keyPad=[false,false,false,false];
+  function padAt(x,y){ for(let i=0;i<PADS.length;i++){ const r=PADS[i].el.getBoundingClientRect();
+      if(x>=r.left&&x<r.right&&y>=r.top&&y<r.bottom) return i; } return -1; }
+  function syncPad(i){ let on=keyPad[i]; if(!on) ptrPad.forEach(v=>{ if(v===i) on=true; });
+    PADS[i].el.classList.toggle("down",on); if(S) S[PADS[i].key]=on; }
+  function syncPads(){ for(let i=0;i<PADS.length;i++) syncPad(i); }
+  deckEl.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio();
+    const i=padAt(e.clientX,e.clientY); ptrPad.set(e.pointerId,i); try{ deckEl.setPointerCapture(e.pointerId); }catch(_){}
+    if(i>=0) syncPad(i); });
+  deckEl.addEventListener("pointermove",e=>{ if(!ptrPad.has(e.pointerId)) return;
+    const was=ptrPad.get(e.pointerId), i=padAt(e.clientX,e.clientY); if(i===was) return;
+    ptrPad.set(e.pointerId,i); if(was>=0) syncPad(was); if(i>=0) syncPad(i); });
+  const ptrEnd=e=>{ if(!ptrPad.has(e.pointerId)) return; const was=ptrPad.get(e.pointerId); ptrPad.delete(e.pointerId); if(was>=0) syncPad(was); };
+  ["pointerup","pointercancel","lostpointercapture"].forEach(t=>deckEl.addEventListener(t,ptrEnd));
+  deckEl.addEventListener("contextmenu",e=>e.preventDefault());
   function releaseAll(){ holds.forEach(f=>f()); for(const k in down) down[k]=false;
-    [padL,padR].forEach(p=>p.classList.remove("down")); leanLbtn.classList.remove("held"); leanRbtn.classList.remove("held");
-    if(S){ S.padL=false; S.padR=false; S.leanL=false; S.leanR=false; } endBreath(); sipEnd(); }
-  bindPad(padL,"padL"); bindPad(padR,"padR");
+    ptrPad.clear(); keyPad.fill(false); syncPads();
+    leanLbtn.classList.remove("held"); leanRbtn.classList.remove("held");
+    if(S){ S.leanL=false; S.leanR=false; } endBreath(); sipEnd(); }
   const down={};
-  ventBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); doVent(); });
-  coughBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); doCough(); });
-  waftBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); doWaft(); });
-  bindHold(sipBtn, sipStart, sipEnd);
-  bindHold(breathBtn, startBreath, endBreath);
-  bindPad(leanLbtn,"leanL"); bindPad(leanRbtn,"leanR");
   window.addEventListener("keydown",e=>{ if(down[e.code]) return; down[e.code]=true;
-    if(e.code==="KeyF"){ padL.classList.add("down"); if(S) S.padL=true; }
-    if(e.code==="KeyJ"){ padR.classList.add("down"); if(S) S.padR=true; }
-    if(e.code==="Space"){ e.preventDefault(); doVent(); }
-    if(e.code==="KeyC"){ doCough(); }
-    if(e.code==="KeyS"){ sipStart(); }
-    if(e.code==="KeyW"){ doWaft(); }
-    if(e.code==="KeyB"){ startBreath(); }
-    if(e.code==="KeyQ"){ if(S) S.leanL=true; leanLbtn.classList.add("held"); }
-    if(e.code==="KeyE"){ if(S) S.leanR=true; leanRbtn.classList.add("held"); }
+    const k=padKey(e.code); if(k>=0){ e.preventDefault(); unlockAudio(); keyPad[k]=true; syncPad(k); }
     if(e.code==="Escape"){ if(S&&S.phase==="playing") pauseGame(); else if(S&&S.phase==="paused") resumeGame(); } });
   window.addEventListener("keyup",e=>{ down[e.code]=false;
-    if(e.code==="KeyF"){ padL.classList.remove("down"); if(S) S.padL=false; }
-    if(e.code==="KeyJ"){ padR.classList.remove("down"); if(S) S.padR=false; }
-    if(e.code==="KeyS"){ sipEnd(); }
-    if(e.code==="KeyB"){ endBreath(); }
-    if(e.code==="KeyQ"){ if(S) S.leanL=false; leanLbtn.classList.remove("held"); }
-    if(e.code==="KeyE"){ if(S) S.leanR=false; leanRbtn.classList.remove("held"); } });
+    const k=padKey(e.code); if(k>=0){ keyPad[k]=false; syncPad(k); } });
 
   const letGo=()=>{ if(S&&(S.phase==="playing"||S.phase==="countin")) pauseGame(); else releaseAll(); };
   document.addEventListener("visibilitychange",()=>{ if(document.hidden) letGo(); });
@@ -1943,9 +2001,12 @@
           sipping:S.sipping, scene:S.scene, leaks:S.leaks.length, cover:S.cover, coverType:S.coverType,
           coverSelf:S.coverSelf, strainL:S.strainL, strainR:S.strainR, pendingExpose:S.pendingExpose,
           breath:S.breath, breathHold:S.breathHold, wobble:S.wobble, breathLock:S.breathLock,
-          tutStep:S.tut?S.tut.step:-1 };
+          tutStep:S.tut?S.tut.step:-1, padL:S.padL, padR:S.padR, handL:S.handL, handR:S.handR };
         o.nan=Object.keys(o).some(k=>typeof o[k]==="number"&&!isFinite(o[k])); return o; },
       setPads:function(l,r){ if(S){ S.padL=!!l; S.padR=!!r; } },
+      setHands:function(l,r){ if(S){ S.handL=!!l; S.handR=!!r; } },
+      deck:function(){ return PADS.map(p=>({ id:p.el.id, down:p.el.classList.contains("down"), cls:p.el.className, text:p.el.textContent.trim() })); },
+      pointers:function(){ return [...ptrPad.entries()]; },
       setBreath:function(on){ if(S){ if(on) startBreath(); else endBreath(); } },
       setLean:function(l,r){ if(S){ S.leanL=!!l; S.leanR=!!r; } },
       vent:doVent, cough:doCough, waft:doWaft,
