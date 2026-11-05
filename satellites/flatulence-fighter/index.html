@@ -1002,7 +1002,7 @@
     // m2 THE FOUR PADS (new ids; their names are DECISION 3 of the m2 plan). The five marked retired above keep their
     // ids and stay earned and shown for whoever has them; their feats left play with m1's controls, so nobody wins them now
     {id:"calls10", ico:"medal_helping_hands", name:"Helping Hands", desc:"Hold 10 hand calls in one ordeal.", check:r=>r.calls>=10},
-    {id:"four",    ico:"medal_twister", name:"Twister", desc:"Four fingers down at once.", check:r=>r.maxPads>=4},
+    {id:"four",    ico:"medal_twister", name:"Twister", desc:"Four fingers down at once, both hands on a call.", check:r=>r.maxPads>=4},
     {id:"cleanact",ico:"medal_steady_hands", name:"Steady Hands", desc:"A whole act of hand calls with no fidget.", check:r=>r.cleanActs>=1},
   ];
 
@@ -1950,7 +1950,8 @@
     if(S.pressure>=100) blowout();
     if(S.phase!=="playing") return;
 
-    const pads=(S.padL?1:0)+(S.padR?1:0)+(S.handL?1:0)+(S.handR?1:0); if(pads>S.rp.maxPads) S.rp.maxPads=pads;
+    // the Twister's count: both cheeks held plus each hand that is holding a call (a hand resting on a pad is not counted)
+    const pads=(S.padL?1:0)+(S.padR?1:0)+S.calls.filter(c=>c.phase==="hold").length; if(pads>S.rp.maxPads) S.rp.maxPads=pads;
     S.score+=CFG.scoreIdle*dt*(1+rampLevel()*0.12);
     S.time+=dt;
     render();
