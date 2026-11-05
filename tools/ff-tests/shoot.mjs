@@ -3,7 +3,7 @@
  * screen, after all the step's edits; then OPEN THE IMAGE AND LOOK (name three things wrong).
  *
  *   (cd /workspaces/lucid-winds && python3 -m http.server 8777 >/dev/null 2>&1 &)     serve the repo first
- *   node tools/ff-tests/shoot.mjs <outdir>                       all 16 screens
+ *   node tools/ff-tests/shoot.mjs <outdir>                       all 17 screens
  *   node tools/ff-tests/shoot.mjs <outdir> 08-play-calm-both-pads   one screen
  *   W=360 node tools/ff-tests/shoot.mjs <outdir> 08-play-calm-both-pads   the same at 360 wide
  * Chrome lives in /workspaces/sws-tools. One browser at a time. The fleet's song card and feedback tip are closed
@@ -33,7 +33,8 @@ await ev("document.getElementById('howBtn').click()"); await shot('02-how-to-pla
 await ev("document.getElementById('medalsBtn').click()"); await shot('03-medals'); await ev("document.getElementById('medalsClose').click()");
 await ev("document.getElementById('wardBtn').click()"); await shot('04-wardrobe'); await ev("document.getElementById('wardClose').click()");
 await ev("document.getElementById('statsBtn').click()"); await shot('05-stats'); await ev("document.getElementById('statsClose').click()");
-await ev("FF_DEV.startTut(); FF_DEV.step(1.2)"); await shot('06-tutorial'); await ev("FF_DEV.endTut && FF_DEV.endTut()");
+await ev("FF_DEV.table(true)"); await shot('06-table-card');
+await ev("FF_DEV.startTut(); FF_DEV.step(1.2)"); await shot('06b-the-lesson-first-beat'); await ev("FF_DEV.endTut && FF_DEV.endTut()");
 await ev("FF_DEV.start('stage','normal'); FF_DEV.step(0.3)"); await shot('07-intertitle-act-one');
 // m2, the four pads: the cheeks held, a cover (let go now), the vent (cheeks back on), a hand call, held, four fingers
 // under a cover (the worst angle), a fidget then a strike

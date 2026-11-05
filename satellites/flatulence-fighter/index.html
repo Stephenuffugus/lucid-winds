@@ -441,6 +441,20 @@
   #tutOverlay .tut-card{ flex:1; min-width:0; background:var(--sage-2); color:var(--paper); border:2px solid var(--mint); border-radius:10px; padding:8px 12px; text-align:left; font-size:.95rem; line-height:1.3;}
   #tutOverlay .tut-card b{ color:var(--mint);}
   #tutSkip{ flex:none; padding:8px 12px; background:var(--paper);}
+  /* m2 the lesson's band: one big line; the objective above it on the first beat; a short note under it after a slip */
+  #tutOverlay .tut-card{ display:flex; flex-direction:column; gap:2px;}
+  .tut-obj{ font-size:.76rem; font-weight:600; letter-spacing:.03em; opacity:.85;}
+  .tut-big{ font-family:var(--serif); font-weight:700; font-size:clamp(1.02rem, 2.9vh, 1.34rem); line-height:1.2;}
+  .tut-hint{ font-size:.8rem; line-height:1.25; color:var(--mint);}
+  .tut-obj:empty, .tut-hint:empty{ display:none;}
+  .hud-tut.show-pips .topright{ visibility:visible;} .hud-tut .score{ visibility:hidden;}
+  /* m2 the objective line and the table card (its art is a placeholder until Astra's round 2) */
+  .objective{ font-family:var(--serif); font-weight:700; font-size:1.12rem; line-height:1.3; color:var(--sage-2); margin:0;}
+  .table-art{ display:block; width:100%; max-width:300px; height:auto; aspect-ratio:240/150; margin:0 auto; color:var(--sage-2);}
+  .table-line{ font-family:var(--serif); font-weight:700; font-size:1.15rem; line-height:1.3; color:var(--sage-2); margin:10px 0 0;}
+  .how-table{ margin:0 0 14px;} .how-table .table-art{ max-width:220px;} .how-table .table-line{ font-size:1rem; margin-top:6px;}
+  .hs-hand{ border:2.5px solid var(--accent); border-radius:10px; background:var(--paper); color:var(--deep);}
+  .hs-hand .ic{ width:28px; height:28px;}
 
   #pauseScreen{ background:rgba(43,58,49,.65); backdrop-filter:blur(3px);}
   .toggle-btn[aria-pressed="false"]{ opacity:.55;}
@@ -565,6 +579,7 @@
 <symbol id="i-call_cradle" viewBox="0 0 48 48"><path d="M8 18Q8 34 24 34Q40 34 40 18Z M5 40Q24 47 43 40 M14 32L10 41 M34 32L38 41 M6 18H42 M30 18Q30 12 36 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-call_bottle" viewBox="0 0 48 48"><path d="M21 4H27 M19 12H29V16Q34 18 34 24V40Q34 44 30 44H18Q14 44 14 40V24Q14 18 19 16Z M22 4L20 12 M26 4L28 12 M14 28H21 M14 34H19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-call_mobile" viewBox="0 0 48 48"><path d="M24 3V9 M7 9H41 M10 9V18 M24 9V24 M38 9V18 M6 22A4 4 0 1 0 14 22A4 4 0 1 0 6 22 M34 22A4 4 0 1 0 42 22A4 4 0 1 0 34 22 M19 28Q24 38 30 31Q24 33 19 28Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-table_card" viewBox="0 0 240 150"><path d="M34 62H206L236 138H4Z" fill="var(--paper-3,#c7bd9c)" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M4 138H236V145H4Z" fill="currentColor" opacity=".35"/><path d="M92 68H148L157 128H83Z" fill="var(--deep,#1c2620)" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M93 92H118V106H91Z M122 92H147L149 106H122Z M90.5 109H118V124H88.5Z M122 109H149.5L151.5 124H122Z" fill="var(--paper,#e7e0cb)" opacity=".92"/><path d="M36 150Q62 130 102 117 M36 150Q70 118 105 99 M204 150Q178 130 138 117 M204 150Q170 118 135 99" fill="none" stroke="var(--coat,#37493d)" stroke-width="7" stroke-linecap="round"/><g fill="var(--accent,#e0902f)"><ellipse cx="104" cy="99" rx="5" ry="3.6"/><ellipse cx="136" cy="99" rx="5" ry="3.6"/><ellipse cx="103" cy="117" rx="5" ry="3.6"/><ellipse cx="137" cy="117" rx="5" ry="3.6"/></g></symbol>
 </svg>
 <!-- ff-calls end -->
 <div id="app">
@@ -576,7 +591,7 @@
       <div class="eyebrow">A silent comedy of composure</div>
       <h1 class="wm"><svg class="wordmark" viewBox="0 0 1000 340" role="img" aria-label="Flatulence Fighter"><use href="#i-wordmark_paper"/></svg></h1>
       <div class="rule"></div>
-      <p style="margin:0; color:#463f31; font-size:.92rem; line-height:1.38;">Keep your composure. Clench to hold it in, plug the leaks, and let it out only under cover of noise. Any sound the room hears is a strike.</p>
+      <p class="objective">Get through the scene without anyone hearing you.</p>
     </div>
     <div class="modes playrow" role="group" aria-label="Play mode">
       <button class="mode-btn play-btn" data-play="stage" aria-pressed="true"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-mode_stage"/></svg>Stage</span><span class="md">the classic bill</span></button>
@@ -609,26 +624,34 @@
     </div>
   </div>
 
-  <!-- ============ HOW TO PLAY ============ -->
+  <!-- ============ HOW TO PLAY (m2: the objective, the table card, the three steps of the four pads) ============ -->
   <div id="howScreen" class="screen hidden">
     <div class="card" style="max-width:420px;">
       <div class="eyebrow">The program notes</div>
       <h1 style="font-size:2rem;">How to play</h1>
+      <p class="objective">Get through the scene without anyone hearing you.</p>
       <div class="rule"></div>
+      <div class="how-table"><svg class="table-art" viewBox="0 0 240 150" aria-hidden="true" focusable="false"><use href="#i-table_card"/></svg><p class="table-line">Set your phone flat on a table and use both hands.</p></div>
       <ol class="how-steps">
-        <li class="how-step"><span class="hs-art hs-pads" aria-hidden="true"><i></i><i></i></span><span class="hs-txt"><b>Hold both pads</b> to clench it in. Pressure climbs the whole time you sit there.</span></li>
-        <li class="how-step"><span class="hs-art hs-vent" aria-hidden="true"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-vent"/></svg><span>Vent</span></span><span class="hs-txt"><b>Vent under the noise.</b> Pressure only drops while a cover noise plays. Vent the instant it starts for a Perfect.</span></li>
-        <li class="how-step"><span class="hs-art hs-leak" aria-hidden="true"></span><span class="hs-txt"><b>Tap a leak</b> on the stage to plug it before it squeaks.</span></li>
+        <li class="how-step"><span class="hs-art hs-pads" aria-hidden="true"><i></i><i></i></span><span class="hs-txt"><b>Hold both cheeks,</b> the two lower pads. Pressure rises the whole time, and a cheek lifted in the quiet is heard.</span></li>
+        <li class="how-step"><span class="hs-art hs-vent" aria-hidden="true"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-passing_bus"/></svg><span>Let go</span></span><span class="hs-txt"><b>Let go under the noise.</b> When a bus, the organ or applause plays, lift both cheeks to vent and put them back before it ends. Lift right as it starts for a Perfect.</span></li>
+        <li class="how-step"><span class="hs-art hs-hand" aria-hidden="true"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_book"/></svg></span><span class="hs-txt"><b>Answer the hands,</b> the two upper pads. One lights with what the scene wants. Touch it before its ring runs out and hold it until it lets go.</span></li>
       </ol>
       <div class="how-list">
-        <p>Each hand tires as its bar fills. <b>Lift one hand</b> to rest it, then swap before it slips. With one hand up the pressure climbs slowly; with both up it climbs fast, so a thumb can leave a pad for a moment.</p>
-        <p>The props on the stage: <b>Cough</b> fakes your own cover noise, hold <b>Sip</b> to drink the pressure down (you cannot clench while sipping), and <b>Waft</b> fans a fresh strike away for a moment.</p>
-        <p><b>Hold breath</b> slows the rise. Let go before you gasp. A <b>wobble</b> creeps in: hold <b>Lean left</b> or <b>Lean right</b> against it.</p>
-        <p>Any sound the room hears is a strike. <b>Three strikes and you are exposed.</b> Outlast the acts and run up the score.</p>
+        <p>A missed call is a fidget, and the second fidget is a strike. <b>Three strikes and the room knows.</b> Later acts call both hands at once, even under the noise.</p>
       </div>
     </div>
-    <button class="btn" id="howPractice"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-practice"/></svg> Practice run</button>
+    <button class="btn" id="howPractice"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-practice"/></svg> Play the lesson</button>
     <button class="btn ghost" id="howClose"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-back"/></svg> Back</button>
+  </div>
+
+  <!-- ============ THE TABLE CARD (m2): before the first lesson ============ -->
+  <div id="tableScreen" class="screen hidden">
+    <div class="card table-card" style="max-width:380px;">
+      <svg class="table-art" viewBox="0 0 240 150" aria-hidden="true" focusable="false"><use href="#i-table_card"/></svg>
+      <p class="table-line">Set your phone flat on a table and use both hands.</p>
+    </div>
+    <button class="btn" id="tableGotIt" type="button">Got it</button>
   </div>
 
   <!-- ============ INTERTITLE ============ -->
@@ -682,7 +705,7 @@
     </div>
     <div class="ribbon" id="ribbon" aria-live="polite">Nobody suspects a thing</div>
     <div id="tutOverlay" class="coach hidden">
-      <div class="tut-card coach-card" id="tutText" aria-live="polite">Hold <b>both pads</b> to clench it in.</div>
+      <div class="tut-card coach-card" id="tutText" aria-live="polite"><span class="tut-obj" id="tutObj"></span><span class="tut-big" id="tutBig">Hold both cheeks</span><span class="tut-hint" id="tutHint"></span></div>
       <button class="btn ghost" id="tutSkip" type="button"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-skip"/></svg> Skip</button>
     </div>
       <div class="gauge">
@@ -1001,7 +1024,8 @@
   const L={ time:"ff.l.time", plugs:"ff.l.plugs", perfects:"ff.l.perfects", bestCombo:"ff.l.bestcombo",
             bestTime:"ff.l.besttime", modes:"ff.l.modes", medals:"ff.medals", tut:"ff.tutseen",
             daily:"ff.daily", bestStreak:"ff.l.beststreak", bestAct:"ff.l.bestact", bestScore:"ff.l.bestscore",
-            playModes:"ff.l.playmodes", dailyPlays:"ff.l.dailyplays", save:"ff_save" };
+            playModes:"ff.l.playmodes", dailyPlays:"ff.l.dailyplays", save:"ff_save",
+            tut2:"ff.tut2seen" }; // m2: the lesson has been seen (a new key; m1's ff.tutseen is left as it is)
   const get=(k,d)=>store.get(k,d), set=(k,v)=>store.set(k,v);
 
   // ==================================================================
@@ -1096,7 +1120,7 @@
   const coverBanner=$("coverBanner"), coverText=$("coverText"), coverSub=$("coverSub"), strikesEl=$("strikes"), leaksEl=$("leaks"),
         fxEl=$("fx"), calloutEl=$("callout"), toastsEl=$("toasts"), ribbonEl=$("ribbon"), coverCount=$("coverCount"), waftRim=$("waftRim"), bustWrap=document.querySelector(".bust-wrap");
   const actLabel=$("actLabel"), sceneTitle=$("sceneTitle"), sceneSub=$("sceneSub");
-  const tutOverlay=$("tutOverlay"), tutText=$("tutText");
+  const tutOverlay=$("tutOverlay"), tutText=$("tutText"), tutObj=$("tutObj"), tutBig=$("tutBig"), tutHint=$("tutHint"), tableScreen=$("tableScreen");
   const coughBtn=$("coughBtn"), sipBtn=$("sipBtn"), waftBtn=$("waftBtn");
   const coughState=$("coughState"), sipState=$("sipState"), waftState=$("waftState"), sipRing=$("sipRing"), stageEl=$("stage"), countInEl=$("countIn");
   const breathBtn=$("breathBtn"), breathFill=$("breathFill"), wobbleTrack=$("wobbleTrack"), wobbleDot=$("wobbleDot"), leanLbtn=$("leanLbtn"), leanRbtn=$("leanRbtn");
@@ -1196,7 +1220,7 @@
     if(raf) cancelAnimationFrame(raf);
     loop();
   }
-  function hideAllScreens(){ [startScreen,introScreen,pauseScreen,overScreen,medalsScreen,statsScreen,wardScreen,howScreen].forEach(s=>s.classList.add("hidden")); }
+  function hideAllScreens(){ [startScreen,introScreen,pauseScreen,overScreen,medalsScreen,statsScreen,wardScreen,howScreen,tableScreen].forEach(s=>s.classList.add("hidden")); }
 
   function sceneIdx(i){ return S.sceneOrder? S.sceneOrder[i%S.sceneOrder.length] : (i%SCENES.length); }
   function showIntro(idx){
@@ -1217,9 +1241,10 @@
   }
   function curScene(){ return SCENES[sceneIdx(S.scene)]; }
 
-  function openCover(self){
+  function openCover(self,force){
     let key, c;
-    if(self){ key="FAKECOUGH"; c=COVER_TYPES[key]; }
+    if(force){ key=force; c=COVER_TYPES[key]; }
+    else if(self){ key="FAKECOUGH"; c=COVER_TYPES[key]; }
     else { const sc=curScene(); key=sc.covers[Math.floor(rnd()*sc.covers.length)]; c=COVER_TYPES[key]; }
     S.cover=true; S.coverSelf=!!self; S.coverType=key; S.coverStart=S.time;
     let dur=Math.max(CFG.coverDurMin, CFG.coverDurBase-rampLevel()*0.12)*S.M.coverDurMul;
@@ -1777,122 +1802,87 @@
     $("statsLead").textContent="Best composure "+fmtTime(get(L.bestTime,0))+". Deepest act "+(ba>0?"Act "+ROMAN[Math.min(ba,ROMAN.length)-1]:"none yet")+"."; }
   function fmtTime(s){ s=Math.round(s); return s>=60 ? Math.floor(s/60)+"m "+(s%60)+"s" : s+"s"; }
   // ==================================================================
-  //  TUTORIAL
+  //  THE LESSON (m2 step 3). It replaces m1's tutorial for every save without ff.tut2seen (ff.tutseen is left as it
+  //  is), after the table card on a first boot, and runs again from How to play. The first scene; it cannot be lost
+  //  (no strike counts, the pressure only moves when you vent); one beat at a time, each waiting for the player; the
+  //  words sit on the pads plus one big line in the coach band, never a paragraph.
   // ==================================================================
-  const TUT_PROMPTS=[
-    "Hold <b>both pads</b> at the bottom to clench it in.",
-    "Each hand tires as its bar fills. <b>Lift one hand</b> to rest it, then swap.",
-    "Pressure only drops under a <b>cover noise</b>. Here comes one. Tap <b>Vent</b> in the middle.",
-    "Now vent the <b>instant</b> the noise starts. That is a <b>Perfect</b>.",
-    "A <b>leak</b>. Tap it on the stage to plug it before it squeaks.",
-    "No cover in sight? Tap the <b>Cough</b> handkerchief to fake your own, then <b>Vent</b> under it.",
-    "Hold the <b>Sip</b> glass to drink the pressure down. You cannot clench while sipping.",
-    "Slipped up? For a moment the <b>Waft</b> fan can fan a strike away. Try it now.",
-    "Two thumbs, so many buttons. <b>Hold breath</b> blunts the rise. Let go before you <b>gasp</b>.",
-    "Sitting still is hard. A <b>wobble</b> creeps in. Hold <b>Lean left</b> or <b>Lean right</b> against it.",
-    "You are ready. Three strikes and you are exposed. <b>Break a leg.</b>",
-  ];
+  const OBJECTIVE="Get through the scene without anyone hearing you";
+  const LESSON=["Hold both cheeks","A bus. Let go now","Cheeks back on","Hold the hymn book","A hand call while a bus comes","You are ready. Three strikes and the room knows"];
+  const LESSON_COVER=3.0, LESSON_HOLD=[2.0,5.0];
   function startTutorial(){
     rngFn=Math.random;
-    S=newState(chosenMode,"stage"); S.phase="tutorial";
-    S.tut={ step:0, heldBoth:0, oneUp:0, ventOk:false, perfOk:false, ventTries:0, plugOk:false, lastOpen:-99, lastLeak:-99, stepT:0,
-            coughed:false, coughVentOk:false, sipHeld:0, waftWin:0, waftOk:false };
-    S.nextCover=Infinity; S.nextLeak=Infinity; S.nextWhiff=Infinity;
-    hideAllScreens(); clearLeaks(); ribbonIdle(); setSceneArt(0);
-    hud.classList.remove("hidden"); hud.classList.add("hud-tut"); tutOverlay.classList.remove("hidden");
-    comboEl.classList.remove("on");
+    S=newState("normal","stage"); S.phase="tutorial"; S.lesson=true;
+    S.tut={ step:0, stepT:0, held:0, vented:false, perfect:false, squeaks:0, fidgets:0, callsDone:0, seenSq:0, seenFd:0, hintUntil:0, again:0, ventIn4:false, cover4:false };
+    S.nextCover=Infinity; S.nextCallAt=Infinity;
+    hideAllScreens(); clearLeaks(); ribbonIdle(); setSceneArt(0); sceneChip.textContent=SCENES[0].t; coverBanner.classList.remove("show");
+    hud.classList.remove("hidden"); hud.classList.add("hud-tut"); hud.classList.remove("show-pips"); tutOverlay.classList.remove("hidden");
+    comboEl.classList.remove("on"); renderPips(); syncPads(); armPads(); renderHands();
     setupTutStep();
     S.last=performance.now(); if(raf) cancelAnimationFrame(raf); loop();
   }
-  function setupTutStep(){ const T=S.tut; T.stepT=0; T.heldBoth=0; T.oneUp=0; T.lastOpen=-99; T.lastLeak=-99;
-    if(T.step===2){ T.ventOk=false; } if(T.step===3){ T.perfOk=false; T.ventTries=0; }
-    if(T.step===2||T.step===3||T.step===5) S.pressure=Math.max(S.pressure,55); // a lesson in venting needs something to vent
-    if(T.step===6) S.pressure=Math.max(S.pressure,65);
-    if(T.step===4){ T.plugOk=false; clearLeaks(); }
-    if(T.step===5){ T.coughed=false; T.coughVentOk=false; }
-    if(T.step===6){ T.sipHeld=0; }
-    if(T.step===7){ T.waftWin=0; T.waftOk=false; }
-    if(T.step===8){ T.breathHeld=0; S.breath=CFG.breathMax; S.breathLock=0; }
-    if(T.step===9){ T.leanHeld=0; T.wobbleShifted=false; S.wobble=0; S.wobbleDir=(rnd()<0.5?-1:1); S.wobbleFlipAt=CFG.wobbleFlipMin; }
-    if(S.cover) closeCover();
-    tutText.innerHTML=TUT_PROMPTS[T.step]; }
+  function lessonCover(){ openCover(false,"BUS"); S.coverUntil=S.time+LESSON_COVER; }
+  function lessonCall(side,k){ const it=CALLS[0][k]; return newCall(side,Infinity,it[0],it[1],LESSON_HOLD[side]); }
+  function lessonLine(t){ if(tutBig.textContent!==t) tutBig.textContent=t; }
+  function lessonHint(t){ tutHint.textContent=t; S.tut.hintUntil=S.time+2.4; }
+  function setupTutStep(){ const T=S.tut; T.stepT=0; T.again=0;
+    if(T.step===1){ S.pressure=Math.max(S.pressure,60); T.vented=false; lessonCover(); }
+    if(T.step===3){ S.pressure=Math.max(S.pressure,35); T.callsDone=0; lessonCall(0,0); }
+    if(T.step===4){ S.pressure=Math.max(S.pressure,55); T.callsDone=0; T.vented=false; T.ventIn4=false; T.cover4=false; lessonCall(1,1); }
+    hud.classList.toggle("show-pips", T.step===5);
+    tutObj.textContent=T.step===0?OBJECTIVE:"";
+    lessonLine(LESSON[T.step]); tutHint.textContent=""; }
   function nextTut(){ S.tut.step++; setupTutStep(); }
-  function endTutorial(){ set(L.tut,true); if(raf){ cancelAnimationFrame(raf); raf=null; } sipEnd(); S=null;
-    hud.classList.add("hidden"); hud.classList.remove("hud-tut"); tutOverlay.classList.add("hidden"); clearLeaks();
-    hideAllScreens(); startScreen.classList.remove("hidden"); refreshMenu(); }
+  function endTutorial(){ set(L.tut2,true); if(raf){ cancelAnimationFrame(raf); raf=null; } releaseAll(); S=null;
+    hud.classList.add("hidden"); hud.classList.remove("hud-tut","show-pips"); tutOverlay.classList.add("hidden"); coverBanner.classList.remove("show");
+    clearLeaks(); renderHands(); hideAllScreens(); startScreen.classList.remove("hidden"); refreshMenu(); }
 
-  function tutStep(dt, usableL, usableR){
+  function lessonStep(dt){
     const T=S.tut; T.stepT+=dt;
+    // a slip gets one short note under the line (the room still turns; nothing counts)
+    if(T.squeaks>T.seenSq){ T.seenSq=T.squeaks; lessonHint(T.step<=1||T.step===3?"They heard that. Keep both cheeks on until a noise":"They heard that. Back on before the noise ends"); }
+    if(T.fidgets>T.seenFd){ T.seenFd=T.fidgets; lessonHint("Touch the pad that lights and hold it until it lets go"); }
+    if(T.hintUntil&&S.time>=T.hintUntil){ T.hintUntil=0; tutHint.textContent=""; }
+    const live=k=>S.calls.find(o=>o.side===k&&(o.phase==="wait"||o.phase==="hold"));
     switch(T.step){
-      case 0:
-        if(usableL&&usableR) T.heldBoth+=dt; else T.heldBoth=0;
-        if(T.heldBoth>0.7) nextTut();
+      case 0: // hold both cheeks
+        if(S.padL&&S.padR) T.held+=dt; else T.held=0;
+        if(T.held>0.8) nextTut();
         break;
-      case 1:
-        if(((usableL?1:0)+(usableR?1:0))===1) T.oneUp+=dt; else T.oneUp=0;
-        if(T.oneUp>0.7 || T.stepT>14) nextTut();
+      case 1: // a bus: let go now (aim for a Perfect); a bus that passes unvented comes round again
+        if(T.vented){ lessonHint(T.perfect?"Perfect. Right as it started":"Vented. Let go right as it starts for a Perfect"); nextTut(); break; }
+        if(!S.cover){ if(!T.again){ T.again=S.time+1.2; lessonLine("Wait for the next one"); } else if(S.time>=T.again){ T.again=0; lessonLine(LESSON[1]); lessonCover(); } }
         break;
-      case 2:
-        if(!S.cover && S.time-T.lastOpen>0.7){ openCover(); T.lastOpen=S.time; }
-        if(T.ventOk) nextTut();
+      case 2: // cheeks back on (the bus may still be passing)
+        if(S.padL&&S.padR&&!S.cover) nextTut();
+        else if(S.padL&&S.padR) lessonLine("Now hold until it passes");
         break;
-      case 3:
-        if(!S.cover && S.time-T.lastOpen>0.7){ openCover(); T.lastOpen=S.time; }
-        if(T.perfOk || T.ventTries>=2) nextTut();
+      case 3: // the hymn book: a hand call that waits for the player; let go too soon and it lights again
+        if(T.callsDone>0){ nextTut(); break; }
+        if(!S.calls.length) lessonCall(0,0);
         break;
-      case 4:
-        if(S.leaks.length===0 && S.time-T.lastLeak>1.2){ spawnLeak(); T.lastLeak=S.time; }
-        if(T.plugOk) nextTut();
-        break;
-      case 5: // fake cough then vent under it
-        if(!S.cover) T.coughed=false;
-        if(T.coughVentOk || T.stepT>18) nextTut();
-        break;
-      case 6: // hold sip
-        if(T.sipHeld>0.8 || T.stepT>14){ if(S.sipping) sipEnd(); nextTut(); }
-        break;
-      case 7: // waft a scripted squeak away
-        if(!T.waftOk && (!T.waftWin || S.time>T.waftWin+1.4)){
-          squeak(); T.waftWin=S.time+CFG.waftWindow;
-          say("Waft it","waft",CFG.waftWindow,3);
-        }
-        if(T.waftOk || T.stepT>16) nextTut();
-        break;
-      case 8: // hold breath
-        if(S.breathHold) T.breathHeld=(T.breathHeld||0)+dt;
-        if((T.breathHeld||0)>0.8 || T.stepT>14) nextTut();
-        break;
-      case 9: // fight the wobble with a lean pad
-        if(S.leanL||S.leanR) T.leanHeld=(T.leanHeld||0)+dt;
-        if((T.leanHeld||0)>1.0 || T.wobbleShifted || T.stepT>16) nextTut();
-        break;
-      case 10:
-        if(T.stepT>2.6) endTutorial();
+      case 4: { // a hand call while a bus comes: hold the hand, lift the cheeks under the bus, cheeks back on
+        const c=live(1);
+        if(T.vented&&!T.ventIn4){ T.ventIn4=true; lessonLine("Cheeks back on. Keep the hand"); }
+        if(c&&c.phase==="hold"&&c.ht>0.5&&!T.cover4&&!S.cover){ T.cover4=true; lessonCover(); lessonLine("Keep the hand. Let go with both cheeks"); }
+        if(T.ventIn4&&T.callsDone>0&&S.padL&&S.padR&&!S.cover){ nextTut(); break; }
+        if(!c&&!S.calls.length&&!(T.ventIn4&&T.callsDone>0)){ // dropped, or held to the end without a vent: again
+          T.callsDone=0; T.cover4=false; lessonCall(1,1); lessonLine(LESSON[4]); }
+        break; }
+      case 5: // you are ready
+        if(T.stepT>3.4) endTutorial();
         break;
     }
   }
 
   function tickTutorial(dt){
-    if(S.cover && S.time>=S.coverUntil) closeCover();
-    for(let i=S.leaks.length-1;i>=0;i--){ const lk=S.leaks[i]; lk.remaining-=dt; const pp=1-lk.remaining/lk.life;
-      lk.el.style.setProperty("--pp", Math.max(0,Math.min(1,pp)).toFixed(3)); if(lk.remaining<=0) burstLeak(lk); }
-    if(S.slipL>0){ S.slipL-=dt; if(S.slipL<=0) padL.classList.remove("slipped"); }
-    if(S.slipR>0){ S.slipR-=dt; if(S.slipR<=0) padR.classList.remove("slipped"); }
-    const usableL=S.padL&&S.slipL<=0&&!S.sipping, usableR=S.padR&&S.slipR<=0&&!S.sipping;
-    const held=(usableL?1:0)+(usableR?1:0);
-    const sf=CFG.strainFill*S.M.strainFillMul;
-    // the coach card is up for the whole lesson, so pressure never ticks on its own here; a vent or a sip still moves it
-    if(S.sipping){ S.pressure-=CFG.sipDrain*dt; if(S.tut) S.tut.sipHeld=(S.tut.sipHeld||0)+dt; }
-    S.pressure=Math.max(0,Math.min(92,S.pressure)); // invincible in tutorial
-    if(usableL) S.strainL+=sf*dt; else if(S.slipL<=0) S.strainL-=CFG.strainRecover*dt;
-    if(usableR) S.strainR+=sf*dt; else if(S.slipR<=0) S.strainR-=CFG.strainRecover*dt;
-    S.strainL=Math.max(0,Math.min(100,S.strainL)); S.strainR=Math.max(0,Math.min(100,S.strainR));
-    if(usableL&&S.strainL>=100){ S.slipL=CFG.slipDuration; S.strainL=0; padL.classList.add("slipped"); squeak(); haptic(20); }
-    if(usableR&&S.strainR>=100){ S.slipR=CFG.slipDuration; S.strainR=0; padR.classList.add("slipped"); squeak(); haptic(20); }
-    postureTick(dt);
+    if(S.cover&&S.time>=S.coverUntil) endCover();
+    if(S.tut.step<5){ handEdges(); cheekTick(); callTick(dt); } // the last beat lets every finger go in peace
+    if(!S||S.phase!=="tutorial") return;
+    S.pressure=Math.max(0,Math.min(92,S.pressure)); // it only moves when you vent
     S.time+=dt;
-    tutStep(dt, usableL, usableR);
-    if(S && S.phase==="tutorial") render();  // endTutorial() may have torn down S mid-frame
+    lessonStep(dt);
+    if(S&&S.phase==="tutorial") render();  // endTutorial() may have torn down S mid frame
   }
 
   // ==================================================================
@@ -2144,7 +2134,11 @@
   const FFTEST=/[?&]fftest=1/.test(location.search);
   const W0=loadWard(); applyCharacter(W0.eqChar); applyPalette(W0.eqPal);
   syncToggles(); refreshMenu();
-  if(!get(L.tut,false) && !FFTEST){ startTutorial(); }
+  // m2: a save that has not seen the lesson gets the table card, then the lesson (m1 players too: ff.tut2seen is new)
+  let tableThen=false;
+  function openTable(thenLesson){ tableThen=!!thenLesson; hideAllScreens(); tableScreen.classList.remove("hidden"); }
+  $("tableGotIt").addEventListener("click",()=>{ unlockAudio(); tableScreen.classList.add("hidden"); if(tableThen) startTutorial(); else toMenu(); });
+  if(!get(L.tut2,false) && !FFTEST){ openTable(true); }
 
   // ==================================================================
   //  HEADLESS TEST HOOK (?fftest=1)
@@ -2154,6 +2148,8 @@
       start:function(play,diff){ chosenPlay=play||"stage"; chosenMode=diff||"normal";
         begin(chosenMode,chosenPlay); if(raf){ cancelAnimationFrame(raf); raf=null; } return true; },
       startTut:function(){ startTutorial(); if(raf){ cancelAnimationFrame(raf); raf=null; } return true; },
+      table:function(then){ openTable(then); return true; },
+      lesson:function(){ return S&&S.tut?{ step:S.tut.step, line:tutBig.textContent, obj:tutObj.textContent, hint:tutHint.textContent, vented:S.tut.vented, perfect:S.tut.perfect, callsDone:S.tut.callsDone, squeaks:S.tut.squeaks, fidgets:S.tut.fidgets, strikes:S.strikes, zen:S.zenHits }:null; },
       endTut:endTutorial,
       state:function(){ if(!S) return null;
         const o={ phase:S.phase, playMode:S.playMode, mode:S.modeKey, pressure:S.pressure, strikes:S.strikes,
