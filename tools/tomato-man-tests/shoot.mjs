@@ -61,6 +61,17 @@ const SCREENS = {
   warn: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='The Angry Sun')); var r=__TM._run(); r.screenT=60; for(var i=0;i<400&&r.lunge.state!=='idle';i++) __TM.seek(0.05); for(var i=0;i<400&&r.lunge.state!=='warn';i++) __TM.seek(0.05); __TM.seek(0.7)"); await wait(900); await ev("__TM.render()"); },
   gust: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='Dusk Gauntlet')); var r=__TM._run(); r.screenT=60; __TM.seek(2.6); __TM.P.x=1650; __TM.P.y=1580; __TM.seek(1.4)"); await wait(900); await ev("__TM.render()"); },
   cactus: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='Dusk Gauntlet')); var r=__TM._run(); r.screenT=60; __TM.seek(2.6); var c=r.cacti[0]; __TM.P.x=c.x-c.side*110+60; __TM.P.y=c.y+30; __TM.seek(1.4)"); await wait(900); await ev("__TM.render()"); },
+  cues: async () => {   // m2 step 10: what the cue chip says in each case (printed, no image needed)
+    const say = async (name, js) => { const v = await ev("(function(){" + js + "; __TM.seek(1/60); var c=document.getElementById('cue'); return c.className+' | '+c.textContent; })()"); console.log('  cue ' + name + ': ' + v); };
+    const lv = n => "__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='" + n + "')); var r=__TM._run(); r.screenT=60;";
+    await say('lunge warn', lv('The Angry Sun') + " __TM.seek(0.5)");
+    await say('wilt', lv('Spring Tide') + " var w=r.wilts[0]; __TM.P.x=w.x+w.w/2; __TM.P.y=w.y+w.d/2; w.campT=1.5;");
+    await say('eclipse', lv('The Long Dark') + " for(var i=0;i<400&&r.darkT<=0;i++) __TM.seek(0.05);");
+    await say('cooling', lv('Dawn Ribbon') + " r.act={k:'cooling',t:0.1};");
+    await say('umbrella', lv('Dusk Gauntlet') + " __TM.P.x=1600; __TM.P.y=1560;");
+    await say('shade ready', lv('Dawn Ribbon') + " r.screenT=0; r.graceT=0; r.charges.shade=2; var found=0; for(var yy=r.L.start[1]-60;yy>200&&!found;yy-=40) for(var xx=r.L.start[0]-300;xx<r.L.start[0]+300&&!found;xx+=40) { __TM.P.x=xx; __TM.P.y=yy; __TM.P.exp=0; __TM.seek(1/60); if(!r.lastSafe) found=1; } __TM.P.exp=55;");
+    await say('exit', lv('Dawn Ribbon') + " __TM.P.x=r.L.exit[0]; __TM.P.y=r.L.exit[1]+200;");
+    await say('none', lv('Dawn Ribbon') + " __TM.seek(0.2)"); },
   longdark: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='The Long Dark')); __TM.seek(4.6)"); },
   springtide: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='Spring Tide')); var r=__TM._run(); r.screenT=30; __TM.P.x=1200; __TM.P.y=2060; r.wilts[0].campT=2.0; __TM.seek(0.4)"); },
   angry: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='The Angry Sun')); __TM.seek(0.7)"); await wait(700); await ev("__TM.render()"); },

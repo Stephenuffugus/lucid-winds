@@ -236,6 +236,12 @@ def main():
         vb = re.search(r'viewBox="([^"]+)"', svg).group(1)
         inner = re.sub(r'^.*?<svg[^>]*>|</svg>\s*$', '', svg, flags=re.S).strip()
         syms.append('<symbol id="tm-%s" viewBox="%s">%s</symbol>' % (f[:-9].replace('_', '-'), vb, inner))
+    # m2 step 10: her eight v2 cue marks (one colour, currentColor) join the sprite under their own names
+    for n in ('boss_target', 'lunge_lane', 'safe_exit', 'awning_warning', 'umbrella_turn', 'cooling', 'eclipse_window', 'shade_ready'):
+        svg = open(os.path.join('/workspaces/tomato-man-astra-v1/pack-v2/assets/f_ui', n + '.svg')).read()
+        vb = re.search(r'viewBox="([^"]+)"', svg).group(1)
+        inner = re.sub(r'^.*?<svg[^>]*>|</svg>\s*$', '', svg, flags=re.S).strip()
+        syms.append('<symbol id="tm-%s" viewBox="%s">%s</symbol>' % (n.replace('_', '-'), vb, inner))
     sprite = ('<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">'
               + ''.join(syms) + '</svg>')
     page = os.path.join(GAME, 'index.html'); h = open(page).read()
