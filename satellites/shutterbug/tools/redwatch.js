@@ -1152,7 +1152,7 @@ const MUTANTS = [
     gates: [{ gate: 'fight', expect: '412: the HUD is written 0 times over 30 quiet steps' }] },
   { name: 'GOT_TAKES_TAPS', task: 'W1', file: 'page', find: "width: min(300px, 90%); z-index: 4; pointer-events: none;", repl: "width: min(300px, 90%); z-index: 4;",
     gates: [{ gate: 'fight', expect: '412: the card is in view' }] },
-  { name: 'GOT_STAYS', task: 'W1', file: 'page', find: "clearTimeout(el.sbGotT); el.sbGotT = setTimeout(function () { el.classList.remove('on'); }, GOT_MS);", repl: "clearTimeout(el.sbGotT);",
+  { name: 'GOT_STAYS', task: 'W1', file: 'page', find: "clearTimeout(el.sbGotT); el.sbGotT = setTimeout(function () { el.classList.remove('on'); }, long ? GOT_LONG_MS : GOT_MS);", repl: "clearTimeout(el.sbGotT);",
     gates: [{ gate: 'fight', expect: '412: the card goes in about 2.5 s' }] },
   { name: 'GOT_OVER_BUG', task: 'W1', file: 'page', find: "      if (top - pad < cr.bottom && top + hd.h * k + pad > cr.top) el.classList.add('low');\n", repl: '',
     gates: [{ gate: 'fight', expect: "412: a chest near the room's top with the bug beside it: the card docks low" }] },
