@@ -20,6 +20,7 @@
 - TM step 0 DONE: Tomato_Man cloned, branch sunstruck pushed (his login, this clone only), the arcade copy's drift carried upstream first, check (83 reds before) and shoot tools in tools/tomato-man-tests/, the before set in /home/codespace/tm-drafts/before.
 - TM step 1 DONE: Astra's art in the clone's art/ (1.6 MB, lazy per world), the loader, her marks as a sprite, the fonts, every emoji and dash out, zoom on, worker v4; check green.
 - TM step 2 DONE: the hero in Astra's v2 bearings (eight, faces you when still), respawn, the burn char, hats, trails, the builder figure at her sockets; check green, play and builder shots read.
+- TM step 3 DONE: the shade as one cool union on Astra's ground, her sun looking at him, hot sand, clouds, eclipse and near burn vignettes; check green, play shot read.
 
 ## 🎭 4 Nov 17:55 UTC (Opus) TONIGHT: FLATULENCE FIGHTER m1, THEN SHUTTERBUG m2, THEN KEEPSIES m1 (one line per step; box booted 17:41 UTC, this run stops 05:01 UTC)
 - FF step 0 DONE: check red at 72, before set in /home/codespace/ff-drafts/before/, main 33db6ef8f blobs index 060c5013, card 46634ec2, thumb b9118678.

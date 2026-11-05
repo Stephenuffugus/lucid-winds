@@ -49,7 +49,6 @@ def main():
     # the five worlds: ground (opaque, lossy), horizon, decor sheet, the world card and key art
     for w in WORLDS:
         webp('c_worlds/%s_ground.png' % w, 'worlds/%s/ground.webp' % w, q=78, opaque=True)
-        copy('c_worlds/%s_horizon.webp' % w, 'worlds/%s/horizon.webp' % w)
         webp('c_worlds/%s_decor.png' % w, 'worlds/%s/decor.webp' % w, q=82)
         copy('c_worlds/%s_card.webp' % w, 'worlds/%s/card.webp' % w)
         copy('c_worlds/%s_key_art.webp' % w, 'worlds/%s/key_art.webp' % w)
