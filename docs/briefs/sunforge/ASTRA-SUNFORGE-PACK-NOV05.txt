@@ -1,0 +1,144 @@
+SUNFORGE, THE WHOLE PACK FOR ASTRA (5 Nov 2026)
+
+Stephen: "I want one for Sunforge. We need a really cool, popular, catchy and edgy theme and aesthetic to build upon,
+and it will be great."
+
+This pack starts one step earlier than the others. Sunforge has a mechanic and no identity. Your first job is to GIVE
+IT ONE: propose three directions, recommend one, and build the recommended one out to the last button. The theme must
+be cool, popular, catchy and edgy, in his words: something a sixteen year old would screenshot, something that looks
+like now and not like a 2015 puzzle app, with an edge to it (dark, loud, a little dangerous), and a hook you can say in
+three words. Then produce the art.
+Fable wires your zip into the game with Stephen from the zip alone, so write as if no one can ask you a follow up.
+
+HOW TO WORK (Stephen's standing order; it binds this pack)
+- No tests. No checks. No validation scripts, no pixel audits, no scripts that prove your own files, no reports about
+  reports. The last rounds of work on other games spent most of their time on tests that proved nothing, and he pays
+  for every minute of it. The art is the deliverable. Nobody reads a test log.
+- Look at each sheet ONCE with your own eyes when it is done, fix what is wrong, move on. Never re-render a thing that
+  already reads.
+- One assessment, written once. One contact sheet per section. One zip. No progress notes, no plans about plans.
+- If something is ambiguous, pick the reading that ships and write one line about it in NOTES.md. Do not stop to ask.
+
+WHAT SUNFORGE IS
+A falling piece puzzle built around a sun. One HTML file, canvas 2D, a 540 by 960 virtual stage, portrait, one thumb.
+The board is a square grid with a golden core at its centre. Seven piece shapes of four cells each (the I, O, T, S, Z,
+J and L you know) fall from the top. A piece STICKS when it lands on the core or on anything already stuck; sides never
+grab, so a falling piece slides past the structure into deeper gaps; the floor and walls hold nothing; miss everything
+and the piece drifts off into the void below. You grow the structure outward from the core into square RINGS. Fill
+every cell of a ring and it erases, and everything outside crushes inward one ring. Chains score big. Every locked
+cell is drawn in the colour of the ring it sits on (its distance from the core), not of the piece it came from, so when
+a ring clears the whole gyre visibly flows one colour band inward toward the sun. Twelve ring colours out from the
+core, in today's pastel code: gold, coral, orange, yellow, green, cyan, blue, violet, pink, lavender, mint, sand.
+SLAM drops the piece instantly and spins the whole gyre a quarter turn as it lands. That is how the structure grows
+sideways and underneath: build a tower upward, slam to swing it around the sun. Set a piece down gently and nothing
+spins. Controls: left, right, rotate (or tap the board), nudge down, SLAM (a big gold bar), hold. Previews: next, the
+one after, hold. A ghost piece option. Topping out clears the sky.
+Modes: Journey (levels asking for more rings, faster each time), Daily Gyre (the same piece run for everyone, once a
+day), Zen (never ends). A score, a best, a ring count, a level; a game over card with Again, Share, Menu; settings
+(sound, ghost piece, add to home screen); it earns Sunbeams, the arcade's currency.
+It lives at https://lucidwinds.com/satellites/ring-stacker/ (the folder keeps its old name; the game was Ring Stacker,
+and one install alert still says so, which is a code fix) in the Sky Wolf Studio arcade, open to players, installable,
+offline, 57 KB. Everything on screen is drawn by code: rounded pastel tiles, a radial gradient halo for the core, a
+gradient text wordmark on a flat navy page.
+
+WHAT IS WRONG TODAY
+- The title screen is a hole: the word SUNFORGE in a teal to gold to rose gradient in the middle of flat navy, four
+  lines of instructions, 140 px of nothing, then a gold Journey button and two rows of dark buttons that read as holes
+  cut in the page. No art, no board, no sun.
+- The core, the thing the whole game is about, is a soft radial blur. The pieces are flat rounded rectangles in
+  nursery pastels. A landed structure looks stacked, not forged, not welded, not anything.
+- Rings clearing and crushing inward is the best moment in the game and it is a colour shift with a few shards.
+- The HUD fonts render at 6 and 8 real px on a phone (code fix). SLAM is the biggest control and it is a yellow bar
+  with the word on it.
+- No identity at all: no wordmark worth the name, placeholder app icons, a social card that is a screenshot of pastel
+  tiles.
+
+THE HARD LINES
+- One HTML file, vanilla JavaScript, canvas 2D, no frameworks. Art arrives as PNG with alpha (cells, pieces, FX, HUD
+  parts), JPG or WebP (plates), SVG (marks). Code keeps the drawn fallback behind an image loaded check.
+- Phone first, portrait. A cell is 24 to 30 px on screen; the board shows seven cells each way around the core, so
+  fifteen across. Every ring colour must be told from its neighbours at that size, and a piece must be told from the
+  structure while it falls. Dark grounds are welcome; the board must still read in daylight.
+- Every target 48 px. SLAM stays huge.
+- Whatever the theme, this is a general audience arcade. Edgy means attitude, contrast and a bit of menace: no gore,
+  no drugs, no weapons pointed at people, no slurs, no real brands, no real logos, nothing a store reviewer flags.
+- Generated art is never called hand painted. No text in plates except the wordmark and what a row asks for. No
+  dashes or exclamation marks in sample copy. Google Fonts only (name it; a display face is part of the theme). Never
+  a side over 1600 px except store sizes; web files small (a plate under 200 KB, a sheet under 150 KB).
+- The arcade's own palette (midnight greenhouse, sage and gold) does NOT apply here. Sunforge gets its own skin; it
+  only has to sit on the arcade shelf without clashing.
+
+PART 1. THE THEME (write it first; it decides everything)
+  a. ASSESSMENT.md, first half: play it in a phone sized window (three Journey levels, a Daily, a minute of Zen). What
+     is fun (the stick rule, the slide past, the ring crush, the slam spin), what confuses, what looks unfinished,
+     screen by screen. Anything that breaks a hard line.
+  b. THREE DIRECTIONS, each on one page: a name (three words at most), the pitch in a paragraph, why it is popular now
+     and where (what it borrows from: a music scene, a fashion, a design movement, a film), why it is edgy, a palette
+     (hex) with the twelve ring colours worked out at 26 px, a type choice (Google Fonts), and what these five things
+     look like in that direction: the core, a falling piece, a landed structure, a ring crushing inward, the SLAM.
+     One mocked title screen per direction over a real capture.
+     Seeds, not orders:
+       - CHROME SUN: liquid chrome and black, a blown out white sun, acid green or hot magenta as the one accent,
+         brutalist condensed type, lens streaks, the pieces as mirror polished slabs, the crush as a car compactor.
+       - REACTOR: a dark industrial core, the pieces as fuel cells and containment plates, warning stripes, red alarm
+         light when a ring is one cell from closing, the slam as a reactor pulse, synthwave edges.
+       - SOLAR CULT: black and gold, sigils and rings of script, the gyre as a ritual circle, the pieces as offerings,
+         the crush as the sun taking them, tarot and alchemy with a modern edge.
+       - SCRAP FORGE: welds, sparks, oxide and brass, a sun that is a furnace mouth, the structure as hammered metal,
+         grunge type, phonk edit energy.
+       - Or your own; one of the three may be yours.
+  c. THE PICK: recommend one in a paragraph and say why it sells on a thumbnail, on a phone in daylight, and after a
+     hundred games. Then build that one.
+  d. STYLE-GUIDE.md (or .pdf) for the pick: palette (hex: the twelve rings, the core, the void, the sky, the seven
+     piece colours if pieces keep a colour while falling), type, surface rules (what a cell is made of, how cells of
+     one ring read as one body, what the core is, what the void is), icon grammar (one colour marks at 24 and 48),
+     motion (what the slam does to the frame, what a crush does, what pulses, what never moves, what reduced motion
+     keeps). Show it on a real play capture and on the title.
+  e. ASSESSMENT.md, second half: improvements worth building (code, ours), ranked by hook. Seeds: a ring about to
+     close glows; a combo callout; the gyre's spin as a real camera move; a level up that changes the sky; a core
+     overload mode; a share card with your gyre drawn on it; a weekly gyre with a leaderboard; a hold that shows the
+     piece on the board. Say which three first. The three biggest risks to this selling. The store read.
+
+PART 2. THE ASSETS (for the picked direction; in this order; send what you finish)
+Formats: cell and piece art as PNG at 2x (64 px cells), FX as sprite strips, HUD parts as PNG at 2x or nine slices
+with corners stated, marks as SVG, plates as JPG or WebP at 900x1600, store art at exact sizes. Names
+lowercase_with_underscores. A manifest.json lists every file: file, id, kind, size, notes, the cell grid for sheets.
+  A. Identity: the wordmark (SVG and PNG, on dark and on light); app icon 512 opaque, 512 maskable, 192; feature
+     graphic 1024x500; promo tile 512x512 for the arcade card; social card 1200x630; first frame 900x1600.
+  B. The core: idle, charged (a ring one cell from closing), crushing, overloaded, as a 4 state strip at 256 cells,
+     with a corona layer and a light or heat shimmer layer separate; the core's resting glow as a soft 512 plate.
+  C. Cells and pieces: for each of the twelve ring colours a cell set on one sheet: a single cell plus edge and corner
+     variants (top, right, bottom, left, inner corner, outer corner) so cells of one ring read as one welded body
+     (give the grid); the falling piece cell (seven, if pieces keep their own look while falling); the ghost cell;
+     the stick flash (a piece locking on); the sliding past streak.
+  D. The board: the play plate 900x1600 (the void below, the sky above, the stage frame, and a clear central square
+     where the grid draws); a grid texture tile 64x64; the void edge (what a piece falls into) as a soft layer; the
+     sky clear flash for a top out.
+  E. HUD and controls: next and hold frames; the score plaque; the rings counter; the level badge; the control buttons
+     left, right, rotate, down at 48 px and the SLAM bar 250x72 in idle, pressed and charged; hold button; pause;
+     icons as SVG (sound, music, ghost, settings, home, share, retry, how to play, install, back); the three mode
+     cards Journey, Daily Gyre, Zen with a clear band for the name; the How to Play step plates (four, 540x300, no
+     words).
+  F. FX as sprite strips (6 frames, 256 cells unless stated): the slam shockwave; the quarter turn spin streak (a full
+     frame overlay 540x960, 4 frames); the ring crush burst; the inward flow (a band sweep the code can tint); chain
+     callout plates for x2 to x6 (text allowed, exact strings "x2" to "x6"); the void swallow; level up plate; game
+     over plate.
+  G. Results and sharing: the game over card frame; share cards 1080x1080 and 1080x1920 (a window where we draw the
+     player's gyre, bands for score, rings, level, the wordmark); a Daily Gyre card 1080x1080 with a band for the
+     date.
+  H. Store: six screenshot frames 1080x1920 with a headline band and a transparent window (give x, y, w, h; draw no
+     words): stick, don't stack; close the ring; the crush; SLAM to spin; the daily gyre; zen.
+
+WHAT NOT TO DRAW
+- Nursery pastels, rounded candy tiles, anything that reads as a kids' block game.
+- Brands, real logos, real people, another game's pieces (the shapes are generic; the look of the tiles must be ours).
+- Text in plates beyond the wordmark, the chain callouts and what a row asks. Store screenshots. Sounds (notes go in
+  NOTES.md: what the slam should sound like in this theme is worth a paragraph).
+
+DELIVERY
+ONE zip named sunforge-astra-pack-v1.zip, containing: ASSESSMENT.md (with the three directions and the pick),
+STYLE-GUIDE.md (or .pdf), manifest.json, assets/ (sections A to H as folders a_identity to h_store), previews/ (the
+three title mocks, a contact sheet per section, the style guide on a real play capture), and NOTES.md (what you chose
+differently and why, sound and motion notes, and what you would make next).
+Stephen uploads it to Drive Astra/Sunforge. Fable wires it into the game with him, one section at a time, and looks at
+every screen on a phone before it is called done.

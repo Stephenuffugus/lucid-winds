@@ -1,0 +1,182 @@
+# SUNFORGE BUILD PLAN (5 Nov 2026): Astra's pack v1, the Sunbreaker skin and the three hooks. Fable with Stephen, for Opus
+
+The game is `satellites/ring-stacker/index.html` (one file, 57 KB, canvas 2D on a 540 by 960 virtual stage, vanilla JS;
+the folder keeps its old name, the game is SUNFORGE). Live at lucidwinds.com/satellites/ring-stacker/ in the arcade, open
+to players, installable, offline (`sw.js` CACHE ring-stacker-v8, network first; `manifest.webmanifest`; `icons/`).
+NOT vendored: edit it here on `add-sproing-jumper`. The Sunbeam SDK is loaded with gameId "ringstacker" (never changes).
+Astra's pack v1: `/workspaces/sunforge-astra-v1/pack/` (NOT in git; vault release `astra-sunforge-pack-v1-nov05`, sha256
+a5585e72...). Docs mirrored in `docs/briefs/sunforge/astra-v1/` (ASSESSMENT, STYLE-GUIDE, NOTES, manifest.json). Read the
+three docs once, then manifest.json's `coordinates`, `ring_index`, `cell_layer_recipe` and every window, band and insets
+entry before placing a plate; never infer a rectangle from a thumbnail.
+The pick is SUNBREAKER; the name stays SUNFORGE. A white hot square sun in four black turbine jaws, enamel cells in a
+welded chassis, one ceramic falling cell, acid yellow #DFFF4F on void #080D15, sky #182431, Barlow Condensed Black for
+display and Space Grotesk for live UI (both in the pack with OFL). Stephen's brief asked for "cool, popular, catchy and
+edgy"; Astra's own read: a loud shell around a precise quiet puzzle.
+What came (130 files, 3 MB; the runtime set is about 400 KB plus 250 KB of fonts): A identity (wordmark svg and png on
+dark and on light, icons 192, 512, maskable, feature graphic, promo tile 512, social card, first_frame 900x1600 with the
+wordmark and hero baked and the bottom open for buttons, hero_gyre, the fonts); B core (core_states 4 at 256: idle,
+charged, crushing, overloaded; corona and heat shimmer layers; rest glow 512); C cells (twelve ring sheets, each eight
+64 px frames in this order: single, top, right, bottom, left, inner corner TL, outer corner TL, interior; faces unmarked,
+marks, dark marks and weld trim layers for assembly; falling_cell, ghost_cell, stick_flash, sliding_past_streak);
+D board (play_plate 900x1600, grid_texture 64, void_edge, sky_clear_flash); E HUD and controls (left, right, rotate,
+down, hold, pause at 96 px idle and pressed; slam_idle, pressed, charged 500x144 for 250x72 CSS px; next and hold
+frames, score plaque, rings counter, level badge as nine slices, insets left 18 top 18 right 18 bottom 34; three mode
+cards with a clear band for the name; four wordless How plates 540x300; 18 svg icons on currentColor); F FX (slam
+shockwave, ring crush burst, inward flow, void swallow as 6 frame strips at 256; quarter_turn_spin_01 to 04 as 540x960
+overlays at 60 ms each; chain_x2 to x6 callouts; level up and game over plates); G results (game over card frame, share
+square 1080 and portrait 1080x1920, daily card, their windows and bands in the manifest); H store (six 1080x1920 frames,
+window 100,448,880,1280, headline band 100,150,880,150; never served, the store kit is a later milestone).
+
+## STATE (the builder updates this block; one line per step)
+
+| Step | State | Commit | Note |
+|---|---|---|---|
+| 0 |  |  |  |
+| 1 |  |  |  |
+| 2 |  |  |  |
+| 3 |  |  |  |
+| 4 |  |  |  |
+| 5 |  |  |  |
+| 6 |  |  |  |
+| 7 |  |  |  |
+| 8 |  |  |  |
+
+## THE LAWS (Stephen's standing orders; they override anything in Astra's docs)
+
+1. Code directly in the one session. No Workflow, no lanes, no subagents, no review agents, no mutant runs.
+2. THE TESTING LAW. Per step: `node tools/sunforge-tests/check.js` (seconds, no browser; made in step 0 from
+   tools/ff-tests/check.js). A visual step: ONE shot of THAT screen with `node tools/sunforge-tests/shoot.mjs <outdir>
+   <screen>` after all the step's edits, then OPEN it and write three things wrong in one line. The walk (every screen,
+   two widths) ONCE at step 8. Never re-run a green to confirm it. One browser at a time.
+3. Never push main. Never run a deploy. Commit and push `add-sproing-jumper` after EVERY step. The deploy is one script
+   at step 8, run once with DRY=1, its line written for Stephen.
+4. One HTML file plus `satellites/ring-stacker/assets/`. Every image loads through one `art()` helper with one ART_V
+   token and an image loaded guard; the code drawn fallback stays behind every plate. Icons are ONE inline svg sprite
+   (`ic(name)`), never 18 requests. Fonts by @font-face from assets/fonts, never a CDN (the game is offline). Nothing a
+   side over 1600 px is served; assets/store/, previews and docs never ship. Budget: the title screen loads under 700 KB
+   (plate, wordmark, fonts, icons), the whole game under 1.3 MB.
+5. Never change a saved key or id: Sunbeam gameId "ringstacker" and the earn tags, LS keys `rs_*`, the PROG and SET
+   shapes (keys may be added), the daily seed formula. The old "Ring Stacker" install alert text becomes SUNFORGE.
+6. The copy law: no dashes of any kind and no exclamation marks in anything a player reads; 48 px targets; live labels
+   at least 14 CSS px, buttons at least 16, the score 28 to 36 (CSS px on the phone, not virtual stage px; today's
+   canvas HUD draws 9 to 12 virtual px, which is 6 to 8 real px: the bug the brief names). Every emoji out (the ☀, the
+   🌀, the ✨, the ◎, the ⚙, the ♫) for sprite icons or words.
+7. The rules of play are frozen: pieces stick on the core or on stuck cells, sides never grab, no floor, SLAM drops and
+   spins the gyre a quarter turn clockwise, ring colour is the ring's not the piece's, ring scoring and chains, Journey
+   quotas and speeds, the Daily's seed and 120 piece budget, Zen's wind. Only the hooks this plan names touch play.
+8. Notes: one line per step in STATE and one line in START-HERE.md. No essays, no QUESTIONS file.
+9. The box has a hard 12 hour life from boot: `date -u -d @$(awk '/btime/{print $2}' /proc/stat)`, add 12 h, stop 40
+   minutes before with START-HERE written, whatever step you are on.
+10. Scope is steps 0 to 8. The m2 list at the end waits for his pick.
+
+## THE STEPS (in order; each ends green on the check, committed and pushed)
+
+**Step 0. Prep (20 min).** Read the docs named above. `pgrep -f "http.server 8777" || (cd /workspaces/lucid-winds &&
+python3 -m http.server 8777 >/dev/null 2>&1 &)`. `mkdir -p /home/codespace/sf-drafts`. Make `tools/sunforge-tests/check.js`
+from tools/ff-tests/check.js (default page satellites/ring-stacker/index.html, the label SF, the same rules: every script
+block parses, style braces, named assets exist and under 1600 px, no emoji outside comments, the copy law in markup and
+prose strings, zoom allowed, manifest parses); run it and note the red count (emoji and copy law reds are expected today).
+Make `tools/sunforge-tests/shoot.mjs` from tools/ff-tests/shoot.mjs: 412x915 at 2x with touch, screens title, how, settings,
+play (Journey, six slams in), almost (ring 1 one cell short), crush (the frame after that cell lands), gameover, daily
+result; driven by a `?sftest=1` hook you add to the game (`window.SF_DEV = { start(mode), seedRing(d, gapAt), place(k,x,rot),
+slam(), end() }`, a few lines beside the existing dev counters, inert without the query). Shoot the before set to
+/home/codespace/sf-drafts/before/. Note in STATE main's ring-stacker tree hash (`git rev-parse origin/main:satellites/ring-stacker`).
+
+**Step 1. The assets in, the loader, the identity (S; A).** `tools/sunforge-tests/astra_in.mjs` (re runnable) copies from
+the pack into `satellites/ring-stacker/assets/`: identity/ (wordmark svgs, first_frame.webp, hero_gyre.webp, promo_tile
+for the arcade card), core/, cells/, board/, hud/, fx/, sharing/, fonts/ (the two ttf and both OFL texts); never
+assets/store (keep the six frames and feature graphic out of the served folder: `assets/store/` is listed in .gitignore
+for this folder or simply not copied), never previews or docs. Astra's icons over icons/ (manifest names kept); the
+promo tile over portal-assets/thumbs/ring-stacker.png at that file's size. The one inline sprite from the 18 svg icons
+(`i-<name>`, currentColor) and `ic()`. `art(path)` with ART_V. @font-face for Barlow Condensed Black (display: the score,
+level and chain callouts) and Space Grotesk (everything live). Every emoji out (a drawn 24 px one colour sun for the
+Sunbeam lines, in the icon grammar: 2 unit stroke, square caps). The install alert says SUNFORGE. The social meta
+(og:image) points at assets/identity/social_card.jpg. Check green (the emoji and copy reds gone). No shot.
+
+**Step 2. The title that shows the game, the modes, How (M; A, E).** s-title: the first_frame plate as the screen's
+background (cover, the wordmark and hero gyre are baked in; the open band at the bottom holds the buttons), the arcade
+back button kept, the prose ribbon replaced by one line, Build. Turn. Collapse., the three mode cards (mode_journey,
+mode_daily_gyre, mode_zen with the live name in the clear band; Journey stays primary and shows the level; the Daily
+shows its tick when played today), How, Music and Settings as icon buttons with words. How: the four wordless plates
+with one short live line each (stick, slide past, close the ring, SLAM spins). Settings: icons beside Sound, Ghost
+piece, Add to home screen; a Reduced motion toggle added (SET.reduce, new key). Shot: title.
+
+**Step 3. The board, the core, the cells (L; B, C, D).** The play plate behind the board window (PANEL is 524x664 at
+8,100 on the 540 stage; the plate's clear central square takes the grid, the void below, the sky above), the grid tile
+inside it, the void edge at the bottom of the window, the sky clear flash on a top out. The core: core_states idle at
+rest with the corona layer looping opacity 0.55 to 0.75 over 1800 ms (no scale), charged when any ring is one cell from
+complete, crushing during a crush, overloaded reserved (DECISION 4); body about 1.5 cells, corona at most 2.5. Cells by
+ring: ring d (1 to 11, RMAX) draws from sheet ring_<d>; the twelfth sheet is spare. Each landed cell draws per
+manifest.cell_layer_recipe: the face and its mark, then the weld trim for every EXPOSED side (no landed cell beyond it)
+and the corner variants (rotated per the manifest; never rotate the mark). The falling piece: every shape in the one
+ceramic cell (#F3F0DC, black slash, cream keyline), never PCOLS while falling (PCOLS stay for the fallback). The ghost
+hollow with corner brackets. The stick flash (6 frames, 120 ms) at the locked piece's centre; the sliding past streak
+when a piece passes beside the structure. The ring outline frames stay but quiet (alpha as today or lower). Cell size:
+VCELL tops out at 30 virtual px, about 26 CSS px on a 412 wide phone, the size Astra drew for. Shot: play, six slams in.
+
+**Step 4. The HUD and the controls (M; E).** The canvas header (score, the mode line, NEXT and HOLD) moves to DOM
+elements over the stage in CSS px sizes (law 6), on the score plaque, rings counter, level badge, next and hold nine
+slices (insets 18 18 18 34; the lower strip is never stretched). The control skins: left, right, rotate, down, hold at
+48 CSS px from the 96 px files, idle and pressed; SLAM 250x72 CSS px from the 500x144 skins, idle, pressed, and charged
+whenever a ring is one cell from complete (the same test as the core's charged state), with the word SLAM and the
+quarter turn icon drawn live over it. Pause (DECISION 1): the pause skin top right, running stops, a plate with Resume,
+Retry, Menu; the Daily's budget and the clock stop with it. Targets stay 48 px whatever the glyph. Shot: play at
+W=360 (the narrow phone).
+
+**Step 5. The reward moment (M; F).** The almost ring: a steady notch on the missing cell and the ring's exterior seam
+lit (no strobe), the core and SLAM charged. The crush, retimed to the motion contract: the completed outline held 35 ms,
+the band contracts over 300 ms (the existing popAnim and slideAnim carry it: pop 300 ms, slide 300 ms), the inward flow
+strip tinted with the outgoing ring's colour at alpha 0.35 or less, the ring crush burst at the band; chains: the
+callout plate outside the falling corridor for 450 ms, x2 to x6, no screen shake beyond today's. SLAM: land, 35 ms hold,
+the board's quarter turn eased over 240 ms (spinA today, retimed), the four spin overlays at 60 ms each over the board
+window only, the HUD and controls fixed; the shockwave strip at the core. The void swallow when a piece is lost (the
+"lost to the void" line stays, no buzzer). Level up and game over plates for 480 ms with the live words over their blank
+centres. Reduced motion (SET.reduce): the final state in 80 ms, no overlays, no shake, no shards, the charged rim steady.
+Sound per NOTES: SLAM is a dry click, a short descending torque note, one bright latch (retune beep() calls, no new
+files); a ring crush a short inward suction and a bright chime stepping up the chain; the lost piece a small descending
+tick. Shot: crush (via SF_DEV.seedRing(1, gap) then the filling piece).
+
+**Step 6. Results, share, the Daily (M; G).** The game over screen on the game over card frame with the REAL final gyre
+drawn into its window (cells by ring colour from the last grid, the core in the middle), score, best, rings, chain in
+the bands, Again, Share, Menu as 48 px buttons in order of weight. Share: share_square (1080) by default, share_portrait
+when the system share sheet is absent (download), the gyre in the window, the four bands filled, the wordmark baked;
+the Daily uses daily_gyre_card with the date band; navigator.share with the file after the tap, else download. The Daily
+after its first completion: Again reads Practice run and the result says Practice, the recorded score untouched. Zen: the
+perimeter calmer (no shake, the spin overlays softer), the "wind clears the gyre" line kept. Shot: gameover.
+
+**Step 7. The guided first ring (S; a hook).** On a fresh save (PROG.ringsEver === 0) a Journey game pre builds ring 1
+except the cell directly above the core, the first piece in the feed is a T, the notch marks the gap, the core is
+charged, one coach line over the board: Close the ring. Drop it on the sun. The crush then teaches itself. The old
+go-hint tip text is rewritten without the markup colour span. Shot: the first ring moment (SF_DEV.start('journey') on an
+empty save).
+
+**Step 8. The walk, the stamp, the deploy script (M).** Every screen at 412x915 and 320x568, plus the worst angle on
+purpose: a Zen board grown to 11 rings at 320 wide, the crush of ring 9, the game over with a 10 ring gyre in the share
+window; open every image, three things wrong each, fix, re shoot only the screens the fixes touched. Bump sw.js CACHE to
+ring-stacker-v9 (the activate step deletes other caches by name, so keep the ring-stacker prefix) and ART_V.
+Check green. The deploy script `/home/codespace/sf-drafts/deploy-sunforge-m1.sh` on the Flatulence Fighter m1 pattern
+(/home/codespace/ff-drafts/deploy-ff-m1.sh: the served set of a pinned branch commit, satellites/ring-stacker/** without
+assets/store, plus portal-assets/thumbs/ring-stacker.png, on top of origin/main from git objects; STOP if main's
+index.html or the thumb moved; DRY=1 before the push; after the push prove lucidwinds.com serves the index hash). DRY=1
+once. His line into START-HERE: `! bash /home/codespace/sf-drafts/deploy-sunforge-m1.sh`.
+
+## THE m2 LIST (not built; Stephen picks one or two, then it is the next Sunforge order)
+
+- SLAM with a direction: a swipe on the SLAM bar to the left spins the gyre counter clockwise, to the right clockwise, a
+  tap keeps today's clockwise. The tower can be swung to either side; the whole strategy opens up. Small to build.
+- Chapter skies: the perimeter tint changes by level band (Astra 7); ring colours never change.
+- The hold consequence: a hollow outline of the swapped piece at its real spawn for 300 ms (Astra 6).
+- Overload: a charged core that doubles the next chain for one crush, earned by a chain of three (Astra 8, the
+  overloaded state is drawn already).
+- A weekly gyre: a seeded week long run shared by code, local bests only (no backend; Astra 9).
+- The store listing: real captures in the six frames, the Play build, $0.99 or free (his call; Shutterbug's kit is the
+  pattern).
+
+## DECISIONS for Stephen (built as written until he says otherwise)
+
+1. Pause: built (a phone game without pause is a store flag; Astra drew the control). He may drop it.
+2. The fonts ship in the game (250 KB, offline). The alternative is system fonts and the svg wordmark only.
+3. The guided first ring on a fresh save: built. He may prefer the How plates alone.
+4. The overloaded core state stays unused in m1 (the m2 Overload item).
+5. SLAM's sound is retuned to Astra's note; the old slam sound is one line to restore.
+6. The arcade card keeps the name SUNFORGE and the folder stays ring-stacker (a rename moves every install and link).

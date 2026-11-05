@@ -1,0 +1,177 @@
+ORB ORCHARD, THE WHOLE PACK FOR ASTRA (5 Nov 2026)
+
+Stephen: "I think we should do Orb Orchard too. It may need a different name, but we could really smooth it out,
+improve the gameplay, and make it look a lot better."
+
+Three jobs in one zip:
+  1. NAME it: say whether Orb Orchard should stay, propose alternatives, and draw the wordmark for your pick.
+  2. ASSESS it: what already plays well, what is rough, and a numbered plan to smooth the play (code, ours) and to
+     make it look a lot better (art, yours).
+  3. PRODUCE the art, down to the last icon.
+Fable wires your zip into the game with Stephen from the zip alone, so write as if no one can ask you a follow up.
+
+HOW TO WORK (Stephen's standing order; it binds this pack)
+- No tests. No checks. No validation scripts, no pixel audits, no scripts that prove your own files, no reports about
+  reports. The last rounds of work on other games spent most of their time on tests that proved nothing, and he pays
+  for every minute of it. The art is the deliverable. Nobody reads a test log.
+- Look at each sheet ONCE with your own eyes when it is done, fix what is wrong, move on. Never re-render a thing that
+  already reads.
+- One assessment, written once. One contact sheet per section. One zip. No progress notes, no plans about plans.
+- If something is ambiguous, pick the reading that ships and write one line about it in NOTES.md. Do not stop to ask.
+
+WHAT ORB ORCHARD IS
+A run across a tiny world that curls away beneath your feet. One HTML file, canvas 2D, portrait, two thumbs: TURN
+left, TURN right, JUMP (or tap either half of the field to turn). The world is a 32 by 32 wrapping checkerboard seen
+from behind the runner, with a curved horizon, so the floor rolls over the edge like a small planet. You run forward
+on your own; all you choose is where to turn (it takes at the next tile) and when to jump (two tiles). On the floor:
+dew orbs, the harvest, gather every one to clear the stage; thorns, touch one and the run ends; sunbeads, optional gold
+rings, take them all for a PERFECT; silver bumpers that knock you back; green springs that throw you three tiles.
+The old orchard secret, and the best idea in the game: walk a closed ring of dew orbs around other dew, and everything
+sealed inside turns to sunbeads in one burst. The pace speeds up as you linger. Tiles you have walked change colour,
+so the floor records your path.
+Twelve hand made stages, clear one to open the next: First Rows, Orchard Columns, Ring Cage, Thorn Hedge, Spiral Bed,
+Four Gardens, Bumper Alley, Spring Meadow, Double Cage, Thorn Maze, Checker Storm, The Great Loop. Modes: The Orchard
+(the twelve), Daily Sphere (one seeded stage for everyone, with a streak), Zen Stroll (never ends a run, pays nothing),
+Blitz (a best time chase). A wardrobe earned by play, no purchases: three runners (Seedling free, Firefly for clearing
+six stages, Comet for three perfects), three floors (Meadow free, Twilight for a daily streak of three, Ember for
+clearing nine), three skies (Dawn free, Nebula for clearing all twelve, Aurora for five perfects). The Grove, a
+gallery that grows a tree per clear and presses a golden bloom per perfect (24 blooms at most). A clear card (dew,
+sunbeads, seconds, next stage, retry), a HOW TO STROLL page. Sunbeams, the arcade's currency, pay per clear, perfect,
+daily and blitz. A run is under two minutes.
+It lives at https://lucidwinds.com/satellites/orb-orchard/ in the Sky Wolf Studio arcade, open to players, 55 KB.
+Everything on screen is drawn by code on a 270 by 410 canvas shown at twice its size with pixel snapping: the sky is
+a three stop gradient with a sun disc and 24 stars; the floor is flat colour quads fogged toward the sky; every pickup
+is a circle; the runner is a cream ellipse with a sprout and two feet; the grove trees are procedural; the UI is DOM
+with 24 emoji for icons. No image file exists but the arcade card.
+The lineage, said plainly: this is a homage to a 1990s console special stage, the one with blue spheres on a
+checkered planet. The genre is open and the mechanic is ours to use. That game's look, names and characters are not.
+Nothing you draw may resemble it.
+
+THE HARD LINES (they bind the art too)
+- One HTML file, vanilla JavaScript, canvas 2D, no frameworks. The floor is perspective projected flat colour quads,
+  not a texture: it cannot take a mapped image without an engine rewrite, which is out of scope. What you can give the
+  floor is colour (a tile pair and a walked pair per palette) and a painted horizon band. Pickups, the runner, the sky,
+  the FX and every UI surface can take images: the renderer draws an image at a point scaled to a radius, so author at
+  256 px cells and we scale.
+- Phone first, portrait, two thumbs. The pads are 96 px; every other target 48 px. The game runs at speed: every
+  silhouette must read at 24 px and in motion, and the five pickups must be told apart at a glance (today they are
+  five circles). The runner must stand out against every floor, every sky and every orb.
+- Not that other game. No blue spheres on a blue and white checker, no hedgehog, no star posts, none of its palette or
+  its type. If a screenshot could be mistaken for it, redo it. No real brands, no real people, no mascot from anywhere.
+- An earlier direction for this game carried a rule to avoid a garden or botanical look (the orchard is a place you
+  run, not a plant catalogue). Confirm it or argue against it in the assessment; whichever, say why in a paragraph.
+- Player facing words use no dashes of any kind and no exclamation marks (the fleet's copy law; the game's "SPEED UP!"
+  is being removed). Google Fonts only for type. Generated art is never called hand painted. No text in a plate except
+  the wordmark and what a row asks for. Never a side over 1600 px except the store sizes. Web files small: a plate
+  under 200 KB, a sheet under 150 KB.
+- The arcade's own palette (midnight greenhouse, sage and gold) is not required here. The game has its own hexes
+  (below); you may keep, retune or replace them, and say which.
+
+THE PRIOR READ (ours, from September; a first read, not orders)
+Five art sheets exist in the repo (art-asset-lists/orb-orchard/). They picked a look called Chrome Horizon: glossy
+1990s arcade lacquer and chrome, candy surfaces with bright speculars, airbrushed gradient light, jewel colours over
+deep dusk blues, clean rounded silhouettes. They listed two alternatives (Marble Orrery, a Victorian brass and enamel
+instrument; Lantern Orchard, the house botanical look, listed only as a fallback), kept the name, and worked out the
+wiring per asset. Treat it as our first read: your assessment decides, and if you keep Chrome Horizon, make it yours.
+The live hexes, so nothing needs retuning if you keep them:
+  floors: Meadow 79B356 / 3F5C2F (walked B06842 / 7C482E); Twilight 6874C4 / 363C6E (walked C46E96 / 824664);
+          Ember D69654 / 7A4A2A (walked DC6050 / 8C3A32)
+  skies:  Dawn 0A1230 / 27406E / C8A84B; Nebula 180A2C / 4A286E / E58FA0; Aurora 061A1E / 1E5A54 / BFE0F2
+  dew 8FC4EC; sunbead gold E2B34D; cream E8DCC8; sage 7AB356; gold C8A84B
+
+WHAT IS WRONG TODAY (the fleet audit's read and ours; find the rest)
+- The game boots onto HOW TO STROLL, five paragraphs of body copy, before the title screen.
+- The floor is a saturated bright green and dark green checker at full contrast. It is the loudest thing on screen, it
+  fights the sky, and it meets the sky on a hard one pixel line with no haze, so the world looks pasted on.
+- Five pickups and the runner are near identical spheres. The runner, a cream ellipse, vanishes against a blue orb;
+  the thing you control has the weakest silhouette in a frame where nothing has a strong one.
+- The pixel upscale makes every edge chunky and uneven (code).
+- The Grove's empty state is a heading, one grey sentence and 470 px of black.
+- Every icon is an emoji: the mode buttons, the wardrobe portraits, the grove marks.
+- The name: Orb Orchard promises fruit and a garden. The game is a planet you run across. Stephen thinks it may need
+  a different name.
+- The feel (ours to raise; test each yourself): a turn commits at the next tile with no telegraph, so a late tap feels
+  like the game's fault; the speed up punishes the exploring the stages ask for; a thorn ends the run on one touch
+  with no shield, no stumble, no rewind; the seal rule, the best mechanic, is explained in text and never taught by a
+  stage; long stages have no checkpoint; the 32 by 32 world has no landmarks, so you cannot tell where the last three
+  dew are; the clear card is a table; nothing after a run is worth showing anyone.
+
+PART 1. THE ASSESSMENT (write it first; it decides the rest)
+Play it in a phone sized window: the first four stages, Ring Cage until you land a seal, a Daily, a minute of Zen, a
+Blitz. Then write:
+  a. ASSESSMENT.md:
+     - THE NAME: keep or change, in a paragraph. Propose three names, each with a one line case; each must fit a tiny
+       world that curls away under your feet; none may use sphere, blue, sonic or orchard unless you are arguing to
+       keep the old name; check each is not already a known game. Draw the wordmark for your pick and the runner up.
+       Stephen chooses.
+     - THE LOOK: Chrome Horizon or your own, in a paragraph; it must survive at speed and at 24 px; say how the three
+       floors and three skies become three distinct places rather than three tints.
+     - SMOOTH IT OUT: a numbered list of feel and gameplay fixes (code, ours), each with why it matters and what art it
+       needs, ordered by how much it raises "this is fair" and "one more go". Seeds: a turn telegraph (the next tile
+       lights and the runner leans); a remaining dew pointer or a tiny globe map; a first hit shield or a stumble
+       instead of a death; a three second rewind; the seal taught by Ring Cage with a slow motion burst; checkpoints on
+       the long stages; a stage intro card with the name and the dew count; the speed up as a visible wave on the
+       floor; a combo for dew taken without turning; a share card ("The Great Loop, PERFECT, 48 seconds"); a Blitz
+       ladder; a Daily seed word to send a friend. Say which three you would ship first and why.
+     - What already reads and must be kept (the curve of the world, the seal, the three skies, the wardrobe economy,
+       the grove idea).
+     - What does not read, screen by screen. Be blunt. Anything that breaks a hard line.
+     - The three biggest risks to this selling and what you would do about each. One is ours: on a store, a screenshot
+       that looks like the other game gets a takedown, not a sale.
+     - The store read: the first screenshot and the six in order.
+  b. STYLE-GUIDE.md (or .pdf): palette (hex: the three floor pairs and walked pairs, the three skies, the dew, the
+     gold, the runner colours), type (Google Fonts), surface rules (what a chip is made of, what a pad is, what the
+     horizon band does), icon grammar (one colour marks that read at 24 and 48), motion (what bobs, what shakes, what
+     the seal burst does, what reduced motion keeps), the wordmark. Show it on the play screen (a real capture, your
+     art over it) and on the title.
+
+PART 2. THE ASSETS (in this order; send what you finish if you cannot finish all)
+Formats: sprites and pickups as PNG with alpha in 256 px cells on sheets with the grid stated (we cut and scale);
+sky panels as JPG or WebP at 540x820; horizon bands as PNG with alpha at 540x260 (deliver at 1080x520); UI marks as
+SVG (flat, one colour unless the row says otherwise); UI plates as PNG at 2x or nine slices with the corners stated;
+store art at exact sizes. Names lowercase_with_underscores. A manifest.json lists every file: file, id, kind, size,
+anchor, notes, the cell grid for sheets.
+
+  A. Identity: the wordmark for the chosen name (SVG and PNG, on dark and on light; the old name too if it stays);
+     app icon 512 opaque, 512 maskable, 192; a title hero plate 900x1600 (the runner small on the crest of the planet
+     under the Dawn sky, dew orbs along the curve, the sky vast); feature graphic 1024x500; promo tile 512x512; social
+     card 1200x630; first frame 900x1600.
+  B. The runner, three times (Seedling, Firefly, Comet): seen from behind at a slight high angle, each on one sheet
+     with run A, run B, jump, stumble, celebrate, idle (3x2, 256 cells, feet on a stated baseline); a face on portrait
+     256 for the wardrobe; a silhouette that is not a circle and that reads on every floor and sky.
+  C. The pickups, 256 each with a stated anchor: dew orb, dew orb in its sealed state (about to convert), sunbead,
+     thorn, bumper, spring (compressed and sprung), a collected ghost; the walked tile mark if your look wants one.
+  D. Skies and horizons: three sky panels 540x820 (Dawn, Nebula, Aurora; the lower third kept dark so the orbs, the
+     runner and the HUD read; the mid band close to the listed mid hex because the floor fog mixes toward it); three
+     horizon bands 540x260 transparent, bottom aligned to the horizon line (haze, a low cloud shelf, faint far
+     silhouettes, no hard edges); the sun disc 256; star twinkles 256.
+  E. Floors: the tile pair and the walked pair for Meadow, Twilight and Ember as hex (retuned so the floor sits under
+     the sky instead of fighting it) and a fog note; three wardrobe floor medallions 256.
+  F. FX as sprite strips (3 to 6 frames, 256 cells): seal burst, dew sparkle, sunbead glint, thorn hit, bumper bonk,
+     spring launch, jump dust, turn telegraph glow, speed wave plate (a clear centre for text), checkpoint ping,
+     perfect burst, clear burst.
+  G. UI: HUD chips (dew left, sunbeads, time) with an empty centre; TURN pads left and right and the JUMP pad in idle
+     and pressed; toast plate; the four mode plaques (The Orchard, Daily Sphere, Zen Stroll, Blitz) as marks on tiles;
+     the level card frame in locked, open, cleared and perfect states; clear and perfect medallions; the Grove plot
+     plate 540x300 (twelve sockets, one seedling) plus a tree and a golden bloom at 256 (seed varied by tint); the
+     wardrobe card frame, lock and equipped seal; icons as SVG (home, back, retry, next, pause, sound, fx, haptics,
+     reduced motion, how to play, wardrobe, grove, share); four How to Play step plates 540x300 (no words).
+  H. Sharing and the store: result card frames 1080x1080 and 1080x1920 (a window for the runner on the planet, bands
+     for the stage, the verdict and the time, the wordmark); a Daily Sphere card 1080x1080 with a band for the date and
+     the seed word; six screenshot frames 1080x1920 with a headline band and a transparent window (give x, y, w, h;
+     draw no words): the world curves away; gather the dew; seal a ring; the thorn maze; three skies; the grove.
+
+WHAT NOT TO DRAW
+- Anything that could be mistaken for the other game. No blue sphere on a blue and white checker, ever.
+- A mapped floor texture: the floor cannot take one. Give it colour and a horizon.
+- Text in plates beyond the wordmark and what a row asks. Store screenshots (we compose those). Sounds (notes go in
+  NOTES.md; what the seal burst should sound like is worth a paragraph).
+
+DELIVERY
+ONE zip named orb-orchard-astra-pack-v1.zip (keep that file name whatever the game is renamed), containing:
+ASSESSMENT.md (with the three names and your pick), STYLE-GUIDE.md (or .pdf), manifest.json, assets/ (sections A to H
+as folders a_identity to h_store), previews/ (a contact sheet per section, each runner shown on each floor, the style
+guide on a real play capture and on the title), and NOTES.md (what you chose differently and why, sound notes, and
+what you would make next).
+Stephen uploads it to Drive Astra/Orb Orchard. Fable wires it into the game with him, one section at a time, and
+looks at every screen on a phone before it is called done.

@@ -1,0 +1,183 @@
+SIXFOLD, THE WHOLE PACK FOR ASTRA (5 Nov 2026)
+
+Stephen: "I want Sixfold really built out. We made a bunch of assets, and some are not cut very well. If we have to
+remake them we can. We need to really make it feel involved, because the game is unique and super good."
+
+Two jobs in one zip:
+  1. ASSESS the game and its existing art (71 fighter sheets, 16 arenas): what reads, what is cut badly, what to re-cut,
+     what to remake, and what the duel needs to feel like an event.
+  2. PRODUCE the art that makes it feel involved, from the stance seals to the store.
+Fable wires your zip into the game with Stephen from the zip alone, so write as if no one can ask you a follow up.
+
+HOW TO WORK (Stephen's standing order; it binds this pack)
+- No tests. No checks. No validation scripts, no pixel audits, no scripts that prove your own files, no reports about
+  reports. The last rounds of work on other games spent most of their time on tests that proved nothing, and he pays
+  for every minute of it. The art is the deliverable. Nobody reads a test log.
+- Look at each sheet ONCE with your own eyes when it is done, fix what is wrong, move on. Never re-render a thing that
+  already reads.
+- One assessment, written once. One contact sheet per section. One zip. No progress notes, no plans about plans.
+- If something is ambiguous, pick the reading that ships and write one line about it in NOTES.md. Do not stop to ask.
+
+WHAT SIXFOLD IS
+A stance duel, under a minute a match, played in portrait with one thumb. Six stances on a wheel: Heaven (up), Tiger
+(up right), River (down right), Earth (down), Crane (down left), Shadow (up left). Each round both fighters lock a
+hidden stance; the clockwise distance between the two picks decides the exchange: the same stance clashes (blades
+lock), one step ahead is a clean hit (2), two steps a glance (1), three a whiff, four and five are theirs. Every stance
+beats two, loses to two, whiffs one and mirrors one, so nothing is safe and nothing is strong: there is no counterpick,
+only a read. Four health. After round six every hit does one more. When blades lock, a Clash Bind: a fast three way
+pick, Drive, Slip, Trap, best of one; the winner lands a glance, a tie sparks off harmlessly.
+What makes it unique: the game reads YOU. A Predictor (an ensemble of cheap pattern readers: favourite stance, repeat,
+rotation, markov, anti repeat) watches your picks. The AI uses it to read you; your Unpredictability score (0 to 100)
+comes from it and is shown live for both fighters; after a match you are told your biggest tell and your most
+exploitable round. Eight AI personalities, each a habit you can exploit and a quality of read that threatens you:
+Berserker (repeats the stance that just hit), Stone (bunches picks in one arc), Drunkard (never repeats), Mirror
+(plays your last stance), Metronome (marches a fixed step), Trickster (beats your counter), Ghost (near random with a
+sharp read), Echo (learns you in real time). Difficulty is one knob: it scales the read up and the telegraph down. No
+stat ever changes.
+A Resolve meter (3 beads) fills on whiffs and binds and buys only information: Insight (see their last ten picks and
+their Resolve), Foresight (highlight the Predictor's guess at their next pick on the wheel). Assist charms (Hourglass,
+Eye, Compass, Scroll) are for casual play only and go inert in anything ranked or seeded. Accessibility is free.
+Modes: The Ascent, a ladder of 70 rungs (each a personality at a difficulty on an arena, with a fighter skin as the
+reward; the start is the Crimson Ronin in the Dojo); Daily Duel (seeded, the same foe for everyone); Ranked Duel
+(Find a rival, a Firebase matchmaker, tiers Iron, Bronze, Silver, Gold, Jade, Onyx); a Collection; a Profile; a
+result screen with the tell readout and a win streak. Its own music (two tracks, Locked Blades and Last Breath) and
+synthesised stings. Sunbeams, the arcade's currency, pay out for skill and style, never power.
+The pillar, which binds the art: SKILL IS THE ONLY CURRENCY, ART IS THE ONLY PURCHASE. A skin, an arena, a charm never
+touches damage or odds. Make it beautiful; it stays cosmetic.
+It lives at https://lucidwinds.com/satellites/sixfold/ in the Sky Wolf Studio arcade, open to players, installable,
+offline. Source of truth is the GitHub repo Stephenuffugus/sixfold (the arcade carries a vendored copy). 34 MB in 123
+files, most of it the skins and the arenas.
+
+THE ART THAT EXISTS (look at all of it before you write a word)
+- 71 fighter skins at https://lucidwinds.com/satellites/sixfold/skins/<id>.png, each ONE sheet, 768x512, a 3 by 2
+  grid of 256 px cells: idle, strike, hit on the top row; ko, guard, win on the bottom. The engine slices frames by
+  position, mirrors the opponent, and makes all six stance leans by tilting idle and strike, so six frames cover
+  everything. The contract every cell must meet: facing RIGHT; feet on a fixed anchor at 50 percent across and 88
+  percent down; identical scale cell to cell; transparent background; no baked ground shadow; one light and one
+  palette across the sheet. The full artist brief is at https://lucidwinds.com/satellites/sixfold/ART_SHEET.md.
+  The ids: ronin, kage, tetsu, onibi, sora, honekage, raiden, yurei, mukade, tengu, kitsune, kappa, lantern,
+  jorogumo, moth, painter, heron, beetle, tanuki, shikigami, seaserpent, kirin, zato, raijin, onnabugeisha, daimyo,
+  yukionna, kabukimono, baku, tsukiusagi, fujin, nue, rikishi, kasaobake, nekomata, hannya, mochiknight, komainu,
+  kyudoka, gashadokuro, yamabiko, karakasa, moondeer, kitsunebi, shisa, tancho, nureonna, komainucub, mizuchi,
+  tsuchinoko, toranokami, bakucalf, jinmenju, kawauso, yatagarasu, maskmaker, tidelion, tengugeneral, frogshogun,
+  umibozu, tatsumaiden, kappaknight, bakeneko, mujina, shachihoko, spectraldog, battocat, kijimuna, tsuchigumo, hoo.
+  (Display names are in the game's Collection; most are the obvious yokai or warrior.) If you cannot open URLs, ask
+  Stephen for the skins and backgrounds folders as a zip; they are in the repo.
+- 16 arena backgrounds at https://lucidwinds.com/satellites/sixfold/backgrounds/<id>.jpg: dojo, darkdojo (Shadow
+  Dojo), torii, bamboo, cherry (Cherry Riverbank), maple (Maple Temple), graveyard (Misty Graveyard), palace (Dragon
+  Palace), coast (Stormy Coast), cloudsea (Cloud Sea), frozen (Frozen Lake), ash (Ash Plain), bloodmtn (Blood
+  Mountains), market (Lantern Market), sunset, village (Burning Village). Shown blurred behind a scrim and a vignette
+  with a grain layer; the fighters stand on nothing.
+- The house style, locked in June: watercolour pigment on washi paper, wet edge washes, visible paper grain, sumi-e
+  brush lines, muted pigments with seal red and gold accents. Most of the roster was generated to that line. The
+  arcade card (a red sun, a katana and bamboo in cut paper) is a different, flatter register; the wordmark is type.
+- What we know is wrong with the cuts (the raw drops were deleted; only these sheets exist): the sheets were knocked
+  out by a de-alpha script from flat backgrounds, so many carry a pale fringe or halo, torn soft edges where washes
+  bled, specks and debris left in the cell, holes where a baked in label was stripped, ground shadows and floor lines
+  the contract forbids, feet that drift off the anchor between cells so a fighter hops when the frame swaps, scale
+  that changes cell to cell, weapon tips clipped by the cell edge, and in a few sheets a cell where the character
+  design itself drifted (a different mask, a lost tail). Look at every one of the 71 at 2x on a dark ground and on
+  the cherry arena and sort them.
+
+THE HARD LINES
+- One HTML file at ship, vanilla JavaScript, no frameworks. Art arrives as PNG (sheets, sprites), JPG or WebP
+  (plates), SVG (marks). The skin contract above is frozen: 3 by 2, facing right, anchor 50/88, square cells.
+- Phone first, portrait, one thumb. The wheel is the control; the two fighters are the show. Every target 48 px.
+- The pillar: nothing you draw may imply power. No rarity tiers that read as strength, no glow on a skin that
+  suggests it hits harder. Rank seals and charms are about the player, not the fighter.
+- Nothing from another game, no real people, no brands. Yokai and warriors are folklore and fair; do not copy a known
+  character design.
+- No text in plates except the wordmark and what a row asks for; no dashes or exclamation marks in sample copy; Google
+  Fonts only (the game sets a serif today; propose one that reads like brushed type if the look wants it); generated
+  art is never called hand painted; never a side over 1600 px except store sizes; a sheet under 200 KB at web size.
+
+WHAT "FEEL INVOLVED" MEANS (the bar)
+Today a duel is two cutouts on a blurred photograph with a wheel of arrows under them. The systems underneath are the
+best in the arcade and none of it shows. Every exchange should be an event with four beats the player can feel: the
+lock in (both commit, tension), the reveal (both pivot and lunge), the hit (something real happens to a body), the
+consequence (a pip goes, the escalation rises, the read bar moves). Between duels: a ladder you can see yourself on,
+foes who look like their tells, a collection that feels like a shrine, a rank that feels earned, a result card worth
+sending. The six stances should be a real iconographic system you could put on a shirt. The Clash Bind should look
+like a held breath. The Predictor's read of you should be visible as ink spreading, not a percentage.
+
+PART 1. THE ASSESSMENT (write it first; it decides the rest)
+Play it in a phone sized window: three Ascent rungs, a Daily, the Collection, the Profile, the ranked duel door. Then:
+  a. ASSESSMENT.md:
+     - The skin audit: a table of all 71 with a verdict (KEEP, RE-CUT, REMAKE), the defects seen, and for REMAKE
+       whether the design is worth keeping. Say how many you will remake in this pack and which first (the Ronin and
+       the Ascent's first ten rungs come first; every player meets those).
+     - The arena audit: which of the 16 work blurred as they are, which need a ground plane, which to repaint.
+     - What already reads and must be kept.
+     - What does not read, screen by screen. Be blunt. (Ours to raise: the ranked duel modal's unstyled close button,
+       the crossed swords glyph on the primary button that reads as a close, 10 px notes over photography, the card
+       stack landing on the photo with no scrim: those are code, but they are the first thing anyone sees.)
+     - THE LOOK: keep the washi watercolour or argue for something else in one paragraph; whichever, define it so the
+       71 (kept and remade) read as one scroll. If you keep it, make it yours: the paper, the seal red, the gold.
+     - THE DUEL: how the four beats look, drawn: the lock in, the reveal, the hit, the consequence. What a clean looks
+       like against a glance against a whiff against a bind. What the escalation after round six does to the stage.
+     - THE READ: how the Unpredictability score and the Predictor's tell become something you see (ink, a brush
+       stroke, an eye opening).
+     - Improvements worth building (code, ours), ranked by hook. Seeds: foe cards with a portrait and the tell written
+       as a riddle; a "you are being read" moment (the foe's eye opens when its confidence passes a line); a round by
+       round replay strip on the result; a share card ("Read in four rounds. Biggest tell: you never repeat."); a
+       chaptered Ascent (seventy rungs in seven chapters, each with a gatekeeper); taunts; a blood moon rising after
+       round six; a ghost of your own past self to duel. Say which three you would ship first and what each needs.
+     - The three biggest risks to this selling and what you would do about each.
+     - The store read: the first screenshot and the six in order.
+  b. STYLE-GUIDE.md (or .pdf): palette (hex), paper and ink rules, type (Google Fonts), the stance seal grammar, icon
+     grammar (one colour, readable at 24 and 48), surface rules (card, button, scrim, stage floor), motion (what the
+     lunge does, what shakes, what never moves, what reduced motion keeps), the fighter contract restated with a
+     diagram of the anchor. Show it on the duel screen (a real capture, your art mocked over it) and on the Ascent.
+
+PART 2. THE ASSETS (in this order; send what you finish if you cannot finish all)
+Formats: fighter sheets as PNG 1536x1024 (512 px cells; we cut the 768x512 web copy ourselves), transparent, meeting
+the contract; sprites and FX as PNG at 2x of the size named; plates as JPG or WebP at 900x1600; marks as SVG; store
+art at exact sizes. Names lowercase_with_underscores; fighter sheets keep their ids. A manifest.json lists every file:
+file, id, kind, size, anchor, notes, the cell grid for sheets, and for every fighter sheet the verdict it replaces.
+
+  A. Identity: the wordmark (SVG and PNG, brushed, on paper and on dark); app icon 512 opaque, 512 maskable, 192; a
+     feature graphic 1024x500; a promo tile 512x512 for the arcade card; a social card 1200x630; a first frame
+     900x1600.
+  B. The six stances and the bind: six stance seals (SVG one colour, plus a painted 256 version); the wheel (hub and
+     six segments in idle, selected, revealed and locked states, and the relationship rings: clean, glance, safe); the
+     direction arrows; the three bind seals Drive, Slip, Trap as marks and as 48 px buttons; the locked blades
+     emblem; the clash spark.
+  C. The fighters: every sheet your audit marks RE-CUT or REMAKE, delivered to the contract. Then the eight
+     personalities as foe portraits 256x256 (a mask or a face for Berserker, Stone, Drunkard, Mirror, Metronome,
+     Trickster, Ghost, Echo) and a tell glyph for each (SVG), so a foe card can show who is behind the skin.
+  D. The arenas: for each of the 16, a ground plane strip 1800x400 (the floor the fighters stand on, with the anchor
+     line stated) and a foreground overlay 900x1600 transparent (a branch, a lantern, mist, falling petals) so the
+     stage has depth; a scrim 900x1600; a blood moon escalation overlay; and repaints at 900x1600 for any arena your
+     audit says cannot be saved.
+  E. Impact and FX as sprite strips (4 to 6 frames, 256 cells): clean slash, glance nick, whiff wind, clash spark,
+     bind shove, bind tie spark, hit flinch dust, KO ink burst, round win stamp, escalation flare, resolve bead fill,
+     foresight reveal (an eye), insight scroll unrolling.
+  F. HUD: four health pips in lit, dark and just lost; the ribbon glyphs (six stances in three outcome tints) as SVG;
+     the Unpredictability gauge as ink (track and fill, both sides); the three Resolve beads; Insight and Foresight
+     buttons; the round counter and escalation badge; a bind snap timer ring; toast pill; coach card frame.
+  G. The Ascent and the ranks: an Ascent map plate 900x1600 or a tall scroll (give its tile height) with 70 rung
+     nodes in locked, open, current and cleared states, chaptered if your assessment chapters it; a rung card frame;
+     rank seals Iron, Bronze, Silver, Gold, Jade, Onyx as 96 px painted discs on a 576x96 atlas plus SVG; promotion
+     and demotion plates; the Daily Duel card; the Ranked Duel card and the "finding a rival" plate.
+  H. Collection and profile: gallery frame, lock, equipped seal, the four charm icons (Hourglass, Eye, Compass,
+     Scroll), settings icons (sound, music, haptics, reduced motion, colourblind, larger targets), back, close.
+  I. Results and sharing: Victory and Defeat plates with calligraphy; the tell readout card; the streak flame; share
+     cards 1080x1080 and 1080x1920 (a window for the winner's win frame, bands for the foe, rounds, the tell and the
+     unpredictability, the wordmark); a Daily Duel share card.
+  J. Store: six screenshot frames 1080x1920 with a headline band and a transparent window (give x, y, w, h; draw no
+     words): the wheel and the read; the reveal; the clash bind; the Ascent; the collection; the ranked tiers.
+
+WHAT NOT TO DRAW
+- Anything that implies power. No rarity glow, no stat plaques.
+- Left facing fighters, ground shadows baked under feet, cells at different scales. The contract is the contract.
+- Known characters from anime or games wearing a yokai name.
+- Text inside plates beyond the wordmark and what a row asks. Store screenshots (we compose those). Sounds (notes go
+  in NOTES.md).
+
+DELIVERY
+ONE zip named sixfold-astra-pack-v1.zip, containing: ASSESSMENT.md (with the 71 row audit table), STYLE-GUIDE.md (or
+.pdf), manifest.json, assets/ (sections A to J as folders a_identity to j_store), previews/ (a contact sheet per
+section, every remade fighter shown in all six cells on the cherry arena, the style guide on the duel and the Ascent),
+and NOTES.md (what you chose differently and why, sound notes, and what you would make next).
+Stephen uploads it to Drive Astra/Sixfold. Fable wires it into the game with him, one section at a time, and looks at
+every screen on a phone before it is called done.

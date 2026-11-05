@@ -17,12 +17,14 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 - [x] Zoom in the top right corner, the Darkroom a big title button, the start pick retired (Opus: sb-m2-9 built 5 Nov)
 - [x] Run the sb-m2-9 deploy line (you: LIVE 5 Nov, main 616ba530e)
 - [ ] Harder rooms: pick the tuning step and which new challenges (you, then Opus; Astra draws the new pieces)
+- [ ] Start Opus on a fresh box with docs/briefs/opus-kickoff-nov05/PROMPT.txt (Sunforge m1, Tomato Man m1 and m2, then Shutterbug harder rooms, then FF m2) (you)
+- [ ] Pick from the Pixel Petri proposal, docs/briefs/pixel-petri/EXPANSION-PROPOSAL-NOV05.md: which expansion first, free everywhere or packs first on Play and Pi, the commercial's timing, Penny's pack (you)
 - [x] Pick the Flatulence Fighter redesign below (you: 5 Nov, "sure")
 
 ## Astra queue (sent, back, wired)
-- [ ] Tomato Man: running (Astra)
+- [x] Tomato Man: back 5 Nov as v1 and v2, vaulted, TOMATO_MAN_BUILD_PLAN.md written (Astra, Fable)
 - [ ] Sixfold: brief ready (Astra)
-- [ ] Sunforge: brief ready (Astra)
+- [x] Sunforge: back 5 Nov, the Sunbreaker pick, vaulted, SUNFORGE_BUILD_PLAN.md written (Astra, Fable)
 - [ ] Aura Farm: brief ready (Astra)
 - [ ] Orb Orchard: brief ready (Astra)
 - [ ] Keepsies round 2: brief ready, materials zip with Stephen (Astra; docs/briefs/keepsies/round2/)
@@ -73,6 +75,25 @@ touch and hold the ones it tells you when it tells you; suggest setting the phon
 - [ ] The ladder: four rungs and a boss, or five (you)
 - [ ] The Arena's damage numbers and conditions, which unblock the Arena (you)
 - [ ] Fix the shot tool's end game loop (Opus, small)
+
+## Sunforge (m1 planned, 5 Nov)
+- [ ] m1 from SUNFORGE_BUILD_PLAN.md: the Sunbreaker skin, the title that shows the game, the almost ring and the crush, SLAM's states, the gyre on the share card, the guided first ring, pause (Opus)
+- [ ] Run the Sunforge deploy line, then the Pixel pass (you)
+- [ ] The 6 DECISIONS in the plan (pause, fonts, the guided first ring, overload, the slam sound, the name) (you)
+- [ ] Pick one or two from the m2 list: SLAM with a direction by swipe, chapter skies, the hold outline, overload, a weekly gyre, the store listing (you)
+- [ ] The store kit, if the listing is a go: real captures in Astra's six frames (Opus, then you)
+
+## Tomato Man (m1 and m2 planned, 5 Nov)
+- [ ] m1 from TOMATO_MAN_BUILD_PLAN.md, built on branch sunstruck of Stephenuffugus/Tomato_Man: the hero, the shade union mask, the worlds and casters, the postcards, teach by crossing one shadow, the burn and the result card (Opus)
+- [ ] Run the Tomato Man deploy line (it pushes Tomato_Man main, re vendors, pushes ours), then the Pixel pass (you)
+- [ ] m2 from pack v2: eight bearings, wilt and tilt states, the Angry Sun sequences, the cue marks (Opus)
+- [ ] The 7 DECISIONS: the planet tomato's passing shadow, pass the phone races, hats that do a tiny thing, the How to Play wall, the sun's eyes, the listing and Penny's credit, the Pages mirror (you)
+- [ ] Astra round 2 after your yes on the passing shadow (the encounter frames) and the thirteen produce in eight bearings (Astra)
+
+## Pixel Petri (on sale, $0.99, 7 buyers in 7 countries)
+- [ ] Pick the first expansion from the proposal (the Living Year, Many Peoples, or Themed Packs) (you)
+- [ ] Fable plans the first milestone with you from design/09-expansion.md in the tiny-world repo; Astra's first Pixel Petri brief in its own Drive folder (Fable, then Astra)
+- [ ] The commercial after milestone one is live: real play captured, Astra's title and end cards, MP4 for the Play promo slot and a square for social (Opus, Astra, then you upload)
 
 ## Dewball
 - [ ] The store pack back from Astra (Astra)
