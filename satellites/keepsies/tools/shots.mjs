@@ -336,6 +336,39 @@ await wait(1500);
   await shot('k3-statues-not-here');
   await page.mouse.move(spot.x, spot.y); await wait(60); await page.mouse.up(); await wait(200);
   console.log('  statue pending: ' + JSON.stringify(await page.evaluate(() => window.KEEPSIES_DEV.placing())));
+  /* confirm it, let Dusty answer, place a second (a Loaf on the player's side), let Dusty answer, then the lag */
+  await page.evaluate(() => document.getElementById('stConfirm').click());
+  await wait(1400);
+  const two = await page.evaluate(() => {
+    const sp = window.KEEPSIES_DEV.spotsFor('loaf').filter(p => p.z > 0.2).sort((a, b) => Math.abs(a.x + 0.45) - Math.abs(b.x + 0.45))[0];
+    const r = document.getElementById('st-loaf').getBoundingClientRect();
+    return { tile: { x: r.left + r.width / 2, y: r.top + r.height / 2 }, at: sp ? window.KEEPSIES_DEV.projectGround(sp.x, sp.z) : null };
+  });
+  if (two.at) {
+    await page.mouse.move(two.tile.x, two.tile.y); await page.mouse.down();
+    for (let k = 1; k <= 10; k++) { await page.mouse.move(two.tile.x + (two.at.x - two.tile.x) * k / 10, two.tile.y + (two.at.y - two.tile.y) * k / 10); await wait(30); }
+    await page.mouse.up(); await wait(200);
+    await page.evaluate(() => document.getElementById('stConfirm').click());
+  }
+  await wait(2200);
+  console.log('  statues: ' + JSON.stringify(await page.evaluate(() => window.KEEPSIES_DEV.statues())));
+  /* m2 step 10: a move in progress, by a real drag on the player's own statue */
+  await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(40));
+  await page.evaluate(() => { const b = document.getElementById('moveStatue'); if (b && !b.hidden) b.click(); });
+  await wait(900);
+  const mv = await page.evaluate(() => {
+    const s = window.KEEPSIES_DEV.statues().filter(q => q.owner === 0)[0];
+    if (!s) return null;
+    return { from: window.KEEPSIES_DEV.projectGround(s.x, s.z, 0.03), to: window.KEEPSIES_DEV.projectGround(s.x + 0.3048, s.z - 0.1524, 0.03) };
+  });
+  if (mv) {
+    await page.mouse.move(mv.from.x, mv.from.y); await page.mouse.down();
+    for (let k = 1; k <= 10; k++) { await page.mouse.move(mv.from.x + (mv.to.x - mv.from.x) * k / 10, mv.from.y + (mv.to.y - mv.from.y) * k / 10); await wait(30); }
+    await wait(300);
+    await shot('k3-statues-move');
+    await page.mouse.up(); await wait(200);
+    console.log('  move pending: ' + JSON.stringify(await page.evaluate(() => window.KEEPSIES_DEV.moving())));
+  } else console.log('  no statue of the player to move');
 }
 
 /* step 7: the share cards, the composed PNGs themselves (no profile ids on either) */

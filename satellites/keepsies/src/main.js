@@ -44,7 +44,7 @@ import { face } from './render/portraits.js?v=20261105a';
 import * as PROV from './meta/provenance.js?v=20261105a';
 import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261105a';
 import { makeStatueMesh, markGhost, disposeStatueMesh } from './render/statues.js?v=20261105a';
-import { SHAPES, SHAPE_ORDER, PER_PLAYER, snap as snapGrid, legal as statueLegal } from './core/statues.js?v=20261105a';
+import { SHAPES, SHAPE_ORDER, PER_PLAYER, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261105a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -2269,6 +2269,7 @@ function installDevHook() {
     statues: () => (G.R ? G.R.statues().map(s => Object.assign({}, s)) : []),
     placing: () => (G.statuesPlacing ? { placed: G.statuesPlacing.placed, pending: G.stPending ? Object.assign({}, G.stPending) : null } : null),
     moving: () => (G.moving ? { index: G.moving.index, pending: G.stPending ? Object.assign({}, G.stPending) : null } : null),
+    spotsFor: (shape) => (G.R ? legalSpots(shape, G.R.ringRadius, G.R.statues(), G.R.lay) : []),
     projectGround: (x, z, y) => {
       const p = G.rig.project(x, y || 0, z), r = G.stage.renderer.domElement.getBoundingClientRect();
       return { x: r.left + p.x, y: r.top + p.y, visible: p.visible };

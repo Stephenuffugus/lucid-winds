@@ -109,7 +109,8 @@ function fireAim(W, id, aimSpec, rng, extraDeg, dirOverride) {
 /* The STATUES house rule (core/statues.js): played through the game's own Ringer, statues and all, because the
    statue list is part of the setup record and a replay of it has to be the same match. */
 const { createRinger } = await import('../src/game/ringer.js?v=20261105a');
-const { SHAPES, aiPlacement, inside } = await import('../src/core/statues.js?v=20261105a');
+const STATUE_CORE = await import('../src/core/statues.js?v=20261105a');
+const { SHAPES, aiPlacement, inside } = STATUE_CORE;
 const { FORMATIONS } = await import('../src/game/ringer.js?v=20261105a');
 
 /** The four statues for a seed, by the AI's seeded rule for both owners in turn, as the record a match keeps. */
@@ -176,20 +177,50 @@ function shotAtStatue(shape, speed, secs) {
   return { z: p.z - z0, inn, maxY, maxX };
 }
 
+/**
+ * Step 10, a move: Dusty's own Loaf stands straight between his shooter and the cross, so his turn is spent
+ * moving it (up to two feet, clear of every marble) and the turn passes; and a statue is never moved onto a marble.
+ */
+function aiMoveCase() {
+  const { legal } = STATUE_CORE;
+  const R = createRinger({ tuning: TUNING, seed: 11, forceFirst: 1, houseRules: { statues: true, ringSizeFt: 10 },
+    // Dusty stands at the bearing of the first mib of the lay (game/ringer.js aiTurn), which is (-R, 0)
+    statues: [{ shape: 'loaf', x: -0.762, z: 0, owner: 1 }],
+    players: [{ name: 'A', ai: null, tawEntry: 'taw_clearie' }, { name: 'B', ai: 'rookie', tawEntry: 'taw_clearie' }] });
+  R.doLag();
+  const before = Object.assign({}, R.statues()[0]), turn0 = R.match.turn;
+  const res = R.aiTurn();
+  const after = R.statues()[0];
+  const dist = Math.hypot(after.x - before.x, after.z - before.z);
+  let touching = 0;
+  for (const m of R.world.marbles.values()) {
+    const p = m.body.translation();
+    if (Math.hypot(p.x - after.x, p.z - after.z) < SHAPES.loaf.foot + m.spec.radius + 0.005) touching++;
+  }
+  const out = {
+    aiMoved: res && res.moved === 0 ? 1 : 0, moveWithin: dist > 0 && dist <= 2 * 0.3048 + 1e-9 ? 1 : 0,
+    moveClear: touching === 0 ? 1 : 0, movePassed: R.match.turn !== turn0 && turn0 === 1 ? 1 : 0,
+    refusedOnMarble: legal('loaf', 0.6, 0.6, 1.525, [], [], { marbles: [{ x: 0.62, z: 0.6, r: 0.008 }] }).ok ? 0 : 1
+  };
+  R.dispose();
+  return out;
+}
+
 /* ----------------------------------------------------------------- runners */
 
 const RUNNERS = {
   /** STATUES (KEEPSIES_BUILD_PLAN.md step 9): whole matches, the Loaf holds, the Arch lets a marble under. */
   statues(sc) {
     const rows = [];
-    const loaf = shotAtStatue('loaf', 5.0, 2.0), arch = shotAtStatue('arch', 2.0, 2.0);
+    const loaf = shotAtStatue('loaf', 5.0, 2.0), arch = shotAtStatue('arch', 2.0, 2.0), mv = aiMoveCase();
     for (let s = sc.seeds.from; s <= sc.seeds.to; s++) {
       const rec = statueRecord(sc, s);
       const a = playStatueMatch(sc, s, rec), b = playStatueMatch(sc, s, rec);
       rows.push({
         seed: s, statues: rec.length, completed: a.done, loafHeld: a.through === 0 ? 1 : 0, moved: a.moved, through: a.through,
         loafStopped: loaf.inn === 0 && loaf.z < 0 ? 1 : 0, underArch: arch.inn === 0 && arch.z > 0.05 && arch.maxX < 0.012 ? 1 : 0,
-        loafZ: loaf.z, archZ: arch.z, a: a.fp.length + ':' + hashStr(a.fp), b: b.fp.length + ':' + hashStr(b.fp)
+        loafZ: loaf.z, archZ: arch.z, a: a.fp.length + ':' + hashStr(a.fp), b: b.fp.length + ':' + hashStr(b.fp),
+        aiMoved: mv.aiMoved, moveWithin: mv.moveWithin, moveClear: mv.moveClear, movePassed: mv.movePassed, refusedOnMarble: mv.refusedOnMarble
       });
     }
     return rows;
