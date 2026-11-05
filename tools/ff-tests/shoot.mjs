@@ -35,13 +35,15 @@ await ev("document.getElementById('wardBtn').click()"); await shot('04-wardrobe'
 await ev("document.getElementById('statsBtn').click()"); await shot('05-stats'); await ev("document.getElementById('statsClose').click()");
 await ev("FF_DEV.startTut(); FF_DEV.step(1.2)"); await shot('06-tutorial'); await ev("FF_DEV.endTut && FF_DEV.endTut()");
 await ev("FF_DEV.start('stage','normal'); FF_DEV.step(0.3)"); await shot('07-intertitle-act-one');
-await ev("FF_DEV.setPads(1,1); FF_DEV.step(3)"); await shot('08-play-calm-both-pads');
-await ev("FF_DEV.forceCover(false); FF_DEV.step(0.2)"); await shot('09-play-cover-noise-vent-now');
-await ev("FF_DEV.vent(); FF_DEV.step(0.4)"); await shot('10-play-after-a-vent');
-await ev("FF_DEV.forceLeak(); FF_DEV.forceLeak(); FF_DEV.setPads(1,0); FF_DEV.step(6)"); await shot('11-play-leaks-one-hand-strain');
-await ev("FF_DEV.forceWhiff(); FF_DEV.step(0.3)"); await shot('12-play-whiff-warning');
-await ev("FF_DEV.setPads(0,0); FF_DEV.step(5)"); await shot('13-play-critical-pressure');
-await ev("FF_DEV.forceStrike(); FF_DEV.step(1.5)"); await shot('14-play-a-strike-the-room-reacts');
+// m2, the four pads: the cheeks held, a cover (let go now), the vent (cheeks back on), a hand call, held, four fingers
+// under a cover (the worst angle), a fidget then a strike
+await ev("FF_DEV.setPads(1,1); FF_DEV.step(3)"); await shot('08-play-calm-both-cheeks');
+await ev("FF_DEV.forceCover(false); FF_DEV.step(0.2)"); await shot('09-play-cover-let-go-now');
+await ev("FF_DEV.vent(); FF_DEV.step(0.3)"); await shot('10-play-vented-cheeks-back-on');
+await ev("FF_DEV.setPads(1,1); FF_DEV.step(3); FF_DEV.forceCall(0,0); FF_DEV.step(0.6)"); await shot('11-play-a-hand-call');
+await ev("FF_DEV.setHands(1,0); FF_DEV.step(0.8)"); await shot('12-play-a-hand-call-held');
+await ev("FF_DEV.forceCall(1,1); FF_DEV.forceCover(false); FF_DEV.step(0.3); FF_DEV.setHands(1,1); FF_DEV.step(0.3)"); await shot('13-play-four-fingers-under-a-cover');
+await ev("FF_DEV.setHands(0,0); FF_DEV.step(0.2); FF_DEV.forceStrike(); FF_DEV.step(1.5)"); await shot('14-play-a-fidget-and-a-strike');
 await ev("document.getElementById('pauseBtn').click()"); await shot('15-pause'); await ev("document.getElementById('resumeBtn').click()");
 await ev("FF_DEV.forceStrike(); FF_DEV.step(0.5); FF_DEV.forceStrike(); FF_DEV.step(3)"); await shot('16-game-over-exposed');
 await browser.close();
