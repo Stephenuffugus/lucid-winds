@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@700&family=Open+Sans:wght@400;600&display=swap">
 <meta name="theme-color" content="#e7e0cb">
-<link rel="manifest" href="manifest.json?v=20261104a">
-<link rel="apple-touch-icon" href="icon-192.png?v=20261104a">
+<link rel="manifest" href="manifest.json?v=20261105a">
+<link rel="apple-touch-icon" href="icon-192.png?v=20261105a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Flatulence Fighter">
@@ -142,6 +142,9 @@
   .strikes{ display:flex; gap:4px;}
   .pip{ width:24px; height:24px; background:var(--a-strikeEmpty,none) center/100% 100% no-repeat;}
   .pip.broke{ background-image:var(--a-strikeLit,none);}
+  /* m2: one fidget is a warning, shown as the next pip half lit; a second fidget is the strike */
+  .pip{ position:relative;}
+  .pip.half::after{ content:""; position:absolute; inset:0; background:var(--a-strikeLit,none) center/100% 100% no-repeat; clip-path:inset(0 50% 0 0);}
   .hud-tut .topright{ visibility:hidden;} .hud-tut #pauseBtn{ visibility:hidden;}
 
   /* THE STAGE (Astra INTEGRATION layer order): room plate, witness strip, the seated bust, flush and sweat, then leaks.
@@ -320,6 +323,49 @@
     display:flex; align-items:center; justify-content:center; background:var(--paper); border:3px double var(--sage); color:var(--sage-2);
     font-family:var(--serif); font-weight:700; font-size:3.2rem; box-shadow:0 8px 22px rgba(0,0,0,.35); pointer-events:none;}
 
+  /* ======================= THE DECK, m2: the four pads (m2 step 1) =======================
+     A 2 by 2 block across the bottom: the hands on top, the cheeks below, each pad 19 percent of the screen tall
+     (174 px at 412x915, 108 px at 320x568). The cheeks wear Astra's hold plates as m1's pads did (idle, held, and the
+     tired plate when a lifted cheek is about to be heard); the hands are plain styled placeholders until Astra draws
+     them in round 2. The deck owns every touch on it: no scroll, no zoom, no selection, no callout, no context menu. */
+  .deck4{ position:relative; z-index:12; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px;
+    padding:8px 8px calc(10px + env(safe-area-inset-bottom,0px)); touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
+  .deck4 > button{ height:clamp(56px, 19vh, 196px); height:clamp(56px, 19dvh, 196px); min-width:0; margin:0; touch-action:none; -webkit-touch-callout:none;}
+  .deck4 .pad{ padding:0 6px 4px;}
+  .deck4 .pad .pad-label{ letter-spacing:.16em; padding-left:.16em;}
+  .deck4 .pad .pad-hint{ font-size:clamp(1.05rem, 3.2vh, 1.5rem);}
+  #padL.warn::before{ background-image:var(--a-padLTired,none);} #padR.warn::before{ background-image:var(--a-padRTired,none);}
+  .pad.warn{ color:var(--paper);}
+  @keyframes letgo{ 0%,100%{ box-shadow:0 0 0 0 rgba(95,208,176,0);} 50%{ box-shadow:0 0 0 4px rgba(95,208,176,.85), 0 0 18px rgba(95,208,176,.7);} }
+  .pad.cue{ animation:letgo .6s ease-in-out infinite; border-radius:16px;}
+  .pad.cue .pad-hint{ opacity:1;}
+  .pad.warn .pad-hint{ opacity:1;}
+  .hand{ position:relative; isolation:isolate; font-family:inherit; cursor:pointer; border:2px dashed var(--sage); border-radius:16px;
+    background:rgba(231,224,203,.62); color:var(--sage-2); padding:6px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    text-align:center; transition:transform .08s, background .08s, border-color .08s; -webkit-user-select:none; user-select:none;}
+  .hand .hring{ position:relative; width:clamp(30px, 8.5vh, 80px); aspect-ratio:1; flex:none; display:flex; align-items:center; justify-content:center;}
+  .hand .hring svg{ position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); overflow:visible;}
+  .hand .hring circle{ fill:none; stroke-width:7;}
+  .hand .hr-bg{ stroke:rgba(43,58,49,.16);}
+  .hand .hr-fg{ stroke:var(--accent); stroke-dasharray:100; stroke-dashoffset:calc(100 * (1 - var(--ring,0))); stroke-linecap:round;}
+  .hand .hico{ position:relative; width:60%; height:60%; display:flex; align-items:center; justify-content:center; opacity:.5;}
+  .hand .hico .ic{ width:100%; height:100%;}
+  #handL.idle .hico .ic{ transform:scaleX(-1);}
+  .hand-words{ font-size:clamp(.74rem, 2.1vh, .98rem); font-weight:600; line-height:1.15; letter-spacing:.02em; max-width:100%; overflow-wrap:break-word;}
+  .hand.idle .hand-words{ font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; padding-left:.16em; opacity:.85;}
+  .hand.down{ transform:translateY(2px); background:rgba(199,189,156,.75);}
+  .hand.called{ border:3px solid var(--accent); background:var(--paper); color:var(--deep); box-shadow:0 0 0 3px rgba(224,144,47,.25), 0 0 16px rgba(224,144,47,.55);}
+  .hand.called .hico, .hand.holding .hico, .hand.done .hico{ opacity:1;}
+  .hand.holding{ border:3px solid var(--mint-deep); background:var(--relief); color:var(--deep); box-shadow:0 0 14px rgba(95,208,176,.6);}
+  .hand.holding .hr-fg, .hand.done .hr-fg{ stroke:var(--mint-deep);}
+  .hand.done{ border:3px solid var(--mint-deep); background:var(--paper);}
+  .hand.missed{ border:3px solid var(--danger); background:var(--paper); color:var(--danger);}
+  .hand.missed .hr-fg{ stroke:var(--danger);}
+  .hand:focus-visible, .deck4 .pad:focus-visible{ outline:3px solid var(--mint-deep); outline-offset:2px;}
+  /* m1's leaks and props are retired from play; the intertitle lets touches through so the cheeks can be held across it */
+  #leaks{ display:none;}
+  #introScreen{ pointer-events:none;}
+
   /* ======================= PLAY MODES / MENU ======================= */
   .modes.playrow .mode-btn .mt{ font-size:.76rem; flex-direction:column; gap:2px;}
   .modes.disabled{ opacity:.45; pointer-events:none;}
@@ -382,6 +428,8 @@
   .medal .mlock .ic{ width:18px; height:18px;}
   .medal .mprog{ font-size:.68rem; color:var(--sage-2); margin-top:3px; display:block; font-weight:600; font-variant-numeric:tabular-nums;}
   .medal .mn{ font-size:.68rem; font-weight:700; color:var(--sage-2); letter-spacing:.03em; margin-top:2px; display:block;}
+  .medal .mret{ display:block; margin-top:3px; font-size:.62rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#8a5a12;}
+  .medal.retired{ border-style:dotted;}
   .medal .mdsc{ font-size:.7rem; color:#5a5342; margin-top:2px; display:block; line-height:1.2;}
 
   #toasts{ position:absolute; left:0; right:0; bottom:calc(20px + env(safe-area-inset-bottom,0px)); z-index:40; display:flex; flex-direction:column; align-items:center; gap:6px; pointer-events:none;}
@@ -395,6 +443,20 @@
   #tutOverlay .tut-card{ flex:1; min-width:0; background:var(--sage-2); color:var(--paper); border:2px solid var(--mint); border-radius:10px; padding:8px 12px; text-align:left; font-size:.95rem; line-height:1.3;}
   #tutOverlay .tut-card b{ color:var(--mint);}
   #tutSkip{ flex:none; padding:8px 12px; background:var(--paper);}
+  /* m2 the lesson's band: one big line; the objective above it on the first beat; a short note under it after a slip */
+  #tutOverlay .tut-card{ display:flex; flex-direction:column; gap:2px;}
+  .tut-obj{ font-size:.76rem; font-weight:600; letter-spacing:.03em; opacity:.85;}
+  .tut-big{ font-family:var(--serif); font-weight:700; font-size:clamp(1.02rem, 2.9vh, 1.34rem); line-height:1.2;}
+  .tut-hint{ font-size:.8rem; line-height:1.25; color:var(--mint);}
+  .tut-obj:empty, .tut-hint:empty{ display:none;}
+  .hud-tut.show-pips .topright{ visibility:visible;} .hud-tut .score{ visibility:hidden;}
+  /* m2 the objective line and the table card (its art is a placeholder until Astra's round 2) */
+  .objective{ font-family:var(--serif); font-weight:700; font-size:1.12rem; line-height:1.3; color:var(--sage-2); margin:0;}
+  .table-art{ display:block; width:100%; max-width:300px; height:auto; aspect-ratio:240/150; margin:0 auto; color:var(--sage-2);}
+  .table-line{ font-family:var(--serif); font-weight:700; font-size:1.15rem; line-height:1.3; color:var(--sage-2); margin:10px 0 0;}
+  .how-table{ margin:0 0 14px;} .how-table .table-art{ max-width:220px;} .how-table .table-line{ font-size:1rem; margin-top:6px;}
+  .hs-hand{ border:2.5px solid var(--accent); border-radius:10px; background:var(--paper); color:var(--deep);}
+  .hs-hand .ic{ width:28px; height:28px;}
 
   #pauseScreen{ background:rgba(43,58,49,.65); backdrop-filter:blur(3px);}
   .toggle-btn[aria-pressed="false"]{ opacity:.55;}
@@ -485,6 +547,46 @@
 <symbol id="i-wordmark_paper" viewBox="0 0 1000 340"><g transform="translate(500 40) scale(1.1)"><path d="M-65 0H-20 M20 0H65" fill="none" stroke="#c8a84b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /><path d="M0 -10L10 0 0 10 -10 0Z" fill="#c8a84b" stroke="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /><circle cx="-30" cy="0" r="3" fill="#c8a84b" stroke="none" stroke-width="1"/><circle cx="30" cy="0" r="3" fill="#c8a84b" stroke="none" stroke-width="1"/></g><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V600Q121 640 106.0 650.5Q91 661 70 661H28V714H582L587 530H517L512 578Q508 618 488.5 635.5Q469 653 438 653H279V380H516V321H279V118Q279 75 294.0 64.0Q309 53 331 53H393V0Z" transform="translate(170.176 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q92 53 106.5 64.0Q121 75 121 118V596Q121 639 106.5 650.0Q92 661 70 661H28V714H373V661H331Q310 661 295.0 650.5Q280 640 280 600V61H466Q501 61 520.5 83.5Q540 106 549 148L565 223H621L614 0Z" transform="translate(230.308 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M4 0V53H16Q43 53 61.5 67.0Q80 81 96 126L313 714H450L659 125Q674 83 692.5 68.0Q711 53 735 53H753V0H423V53H462Q477 53 491.0 62.0Q505 71 505 92Q505 104 502.0 115.5Q499 127 496 135L461 235H218L189 149Q185 137 181.0 120.5Q177 104 177 92Q177 73 191.0 63.0Q205 53 222 53H264V0ZM239 296H441L388 460Q378 494 365.5 536.0Q353 578 345 613Q336 581 323.0 540.5Q310 500 298 465Z" transform="translate(293.476 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M154 0V53H196Q218 53 232.5 64.0Q247 75 247 118V653H167Q122 653 105.0 634.0Q88 615 84 582L77 520H10L15 714H638L643 520H576L569 582Q565 615 548.0 634.0Q531 653 486 653H406V118Q406 75 420.5 64.0Q435 53 457 53H499V0Z" transform="translate(365.752 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M387 -10Q257 -10 183.5 42.5Q110 95 110 218V600Q110 640 94.5 650.5Q79 661 59 661H16V714H361V661H319Q298 661 283.0 650.0Q268 639 268 596V210Q268 126 308.5 93.5Q349 61 417 61Q484 61 523.0 96.5Q562 132 562 208V600Q562 640 547.0 650.5Q532 661 511 661H469V714H731V661H688Q667 661 652.0 650.0Q637 639 637 596V206Q637 106 577.5 48.0Q518 -10 387 -10Z" transform="translate(428.828 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q92 53 106.5 64.0Q121 75 121 118V596Q121 639 106.5 650.0Q92 661 70 661H28V714H373V661H331Q310 661 295.0 650.5Q280 640 280 600V61H466Q501 61 520.5 83.5Q540 106 549 148L565 223H621L614 0Z" transform="translate(500.552 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V596Q121 639 106.5 650.0Q92 661 70 661H28V714H583L587 530H517L512 577Q508 614 493.5 633.5Q479 653 448 653H280V403H517V343H280V61H480Q510 61 524.5 82.5Q539 104 544 137L552 184H621L614 0Z" transform="translate(563.720 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 64.0Q121 75 121 118V600Q121 640 105.5 650.5Q90 661 70 661H28V714H250L603 215V600Q603 640 587.5 650.5Q572 661 552 661H510V714H771V661H729Q708 661 693.0 650.0Q678 639 678 596V0H586L196 551V118Q196 75 211.0 64.0Q226 53 247 53H289V0Z" transform="translate(626.796 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M401 -10Q285 -10 208.0 36.0Q131 82 93.0 164.5Q55 247 55 358Q55 466 94.0 548.5Q133 631 210.0 677.5Q287 724 400 724Q515 724 571.5 690.5Q628 657 628 608Q628 571 596.0 546.0Q564 521 503 521Q503 554 493.0 586.0Q483 618 459.0 639.0Q435 660 393 660Q298 660 260.5 581.5Q223 503 223 358Q223 213 268.5 141.5Q314 70 425 70Q474 70 509.0 84.5Q544 99 568.5 121.0Q593 143 610 165Q627 151 627 122Q627 94 606.0 63.5Q585 33 536.0 11.5Q487 -10 401 -10Z" transform="translate(702.292 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V596Q121 639 106.5 650.0Q92 661 70 661H28V714H583L587 530H517L512 577Q508 614 493.5 633.5Q479 653 448 653H280V403H517V343H280V61H480Q510 61 524.5 82.5Q539 104 544 137L552 184H621L614 0Z" transform="translate(766.748 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V600Q121 640 106.0 650.5Q91 661 70 661H28V714H582L587 530H517L512 578Q508 618 488.5 635.5Q469 653 438 653H279V380H516V321H279V118Q279 75 294.0 64.0Q309 53 331 53H393V0Z" transform="translate(225.858 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q92 53 106.5 64.0Q121 75 121 118V596Q121 639 106.5 650.0Q92 661 70 661H28V714H373V661H331Q309 661 294.5 650.0Q280 639 280 596V118Q280 75 294.5 64.0Q309 53 331 53H373V0Z" transform="translate(299.926 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M423 -10Q299 -10 217.5 36.0Q136 82 95.5 164.5Q55 247 55 358Q55 466 97.0 548.5Q139 631 222.5 677.5Q306 724 428 724Q553 724 615.5 690.5Q678 657 678 608Q678 573 645.0 548.0Q612 523 549 523Q549 584 519.0 622.0Q489 660 425 660Q316 660 269.5 581.5Q223 503 223 358Q223 213 271.5 135.5Q320 58 438 58Q457 58 475.5 59.5Q494 61 511 65V212Q511 252 493.0 267.5Q475 283 440 283H427V336H741V283H728Q697 283 683.0 267.0Q669 251 669 208V44Q611 17 551.0 3.5Q491 -10 423 -10Z" transform="translate(350.234 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 64.0Q121 75 121 118V600Q121 640 105.5 650.5Q90 661 70 661H28V714H373V661H330Q309 661 294.0 650.0Q279 639 279 596V403H540V596Q540 639 525.0 650.0Q510 661 489 661H446V714H791V661H749Q728 661 713.0 650.0Q698 639 698 596V113Q698 73 713.5 63.0Q729 53 749 53H791V0H446V53H489Q510 53 525.0 64.0Q540 75 540 118V342H279V118Q279 75 294.0 64.0Q309 53 330 53H373V0Z" transform="translate(440.286 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M154 0V53H196Q218 53 232.5 64.0Q247 75 247 118V653H167Q122 653 105.0 634.0Q88 615 84 582L77 520H10L15 714H638L643 520H576L569 582Q565 615 548.0 634.0Q531 653 486 653H406V118Q406 75 420.5 64.0Q435 53 457 53H499V0Z" transform="translate(535.738 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V596Q121 639 106.5 650.0Q92 661 70 661H28V714H583L587 530H517L512 577Q508 614 493.5 633.5Q479 653 448 653H280V403H517V343H280V61H480Q510 61 524.5 82.5Q539 104 544 137L552 184H621L614 0Z" transform="translate(613.262 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q90 53 105.5 63.0Q121 73 121 113V600Q121 640 105.5 650.5Q90 661 70 661H28V714H350Q492 714 558.0 666.5Q624 619 624 529Q624 476 604.0 439.0Q584 402 553.0 378.0Q522 354 488 340L607 135Q633 92 656.0 72.5Q679 53 707 53H711V0H678Q618 0 578.0 7.0Q538 14 511.5 33.5Q485 53 464 90L345 310H279V113Q279 73 294.5 63.0Q310 53 330 53H373V0ZM335 368Q404 368 430.0 405.0Q456 442 456 515Q456 591 428.0 623.0Q400 655 333 655H279V368Z" transform="translate(690.786 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><g transform="translate(500 311) scale(1.1)"><path d="M-65 0H-20 M20 0H65" fill="none" stroke="#c8a84b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /><path d="M0 -10L10 0 0 10 -10 0Z" fill="#c8a84b" stroke="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /><circle cx="-30" cy="0" r="3" fill="#c8a84b" stroke="none" stroke-width="1"/><circle cx="30" cy="0" r="3" fill="#c8a84b" stroke="none" stroke-width="1"/></g></symbol>
 </svg>
 <!-- ff-sprite end -->
+<!-- ff-calls start: placeholder line icons for the hand pads and their calls, in the sprite's style, until Astra's round 2 -->
+<svg id="ff-calls" aria-hidden="true" style="display:none" xmlns="http://www.w3.org/2000/svg">
+<symbol id="i-call_hand" viewBox="0 0 48 48"><path d="M15 27V12Q15 9 17.5 9Q20 9 20 12V22 M20 21V8Q20 5 22.5 5Q25 5 25 8V21 M25 21V9Q25 6 27.5 6Q30 6 30 9V22 M30 22V14Q30 11 32.5 11Q35 11 35 14V28Q35 41 25 42Q17 42 13 36L8 28Q6 25 9 24Q11 23 13 26L15 29" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_book" viewBox="0 0 48 48"><path d="M24 13Q16 8 7 10V37Q16 35 24 40Q32 35 41 37V10Q32 8 24 13Z M24 13V40 M12 17Q17 16 20 18 M28 18Q31 16 36 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_shake" viewBox="0 0 48 48"><path d="M3 25H10L18 18Q21 15 25 17L32 21 M45 25H38L31 32Q28 35 25 33L17 28 M25 17L19 23Q18 26 21 26L26 24 M26 24L31 28 M23 29L27 32 M29 21L34 25" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_tissues" viewBox="0 0 48 48"><path d="M8 24H40V40H8Z M17 24Q15 16 20 12Q24 9 26 13Q27 17 31 15Q34 14 33 19L31 24 M17 32H31" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_pen" viewBox="0 0 48 48"><path d="M33 7L41 15L18 38L8 40L10 30Z M29 11L37 19 M10 30L18 38" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_cup" viewBox="0 0 48 48"><path d="M10 20H32V30Q32 38 21 38Q10 38 10 30Z M32 23Q39 23 39 27Q39 31 32 31 M6 42H36 M17 7Q15 10 17 14 M24 7Q22 10 24 14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_menu" viewBox="0 0 48 48"><path d="M12 6H36V42H12Z M18 14H30 M18 21H30 M18 27H27 M18 33H29" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_glass" viewBox="0 0 48 48"><path d="M15 6H33Q34 18 24 23Q14 18 15 6Z M24 23V38 M16 42H32 M16 12H32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_hands" viewBox="0 0 48 48"><path d="M7 41Q7 29 13 23L19 16Q21 14 23.5 16 M41 41Q41 29 35 23L29 16Q27 14 24.5 16 M17 25L24 31L31 25 M15 31L24 37L33 31" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_mic" viewBox="0 0 48 48"><path d="M18 9Q18 4 24 4Q30 4 30 9V21Q30 26 24 26Q18 26 18 21Z M12 20Q12 32 24 32Q36 32 36 20 M24 32V42 M16 42H32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_headphones" viewBox="0 0 48 48"><path d="M9 30V24Q9 8 24 8Q39 8 39 24V30 M8 28H15V41H8Z M33 28H40V41H33Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_camera" viewBox="0 0 48 48"><path d="M5 14H31V33H5Z M31 20L43 14V33L31 27 M12 40L17 33 M24 33L29 40 M14 23.5A4 4 0 1 0 22 23.5A4 4 0 1 0 14 23.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_pose" viewBox="0 0 48 48"><path d="M20.5 9A3.5 3.5 0 1 0 27.5 9A3.5 3.5 0 1 0 20.5 9 M24 13V28 M24 17L15 7 M24 17L33 7 M24 28V44 M24 28L32 32L24 36" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_palms" viewBox="0 0 48 48"><path d="M24 6Q20 10 19 18L15 30Q13 36 18 40H24 M24 6Q28 10 29 18L33 30Q35 36 30 40H24 M24 9V40 M14 44H34" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_toes" viewBox="0 0 48 48"><path d="M17 5Q13 20 15 30Q16 41 26 41H38Q43 41 42 37Q41 33 34 32L27 30Q25 19 27 5 M30 32V29 M34 33V30 M38 34V31" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_rings" viewBox="0 0 48 48"><path d="M7 28A10 10 0 1 0 27 28A10 10 0 1 0 7 28 M21 28A10 10 0 1 0 41 28A10 10 0 1 0 21 28 M17 18L14 13L17 9L20 13Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_bouquet" viewBox="0 0 48 48"><path d="M9 14A5 5 0 1 0 19 14A5 5 0 1 0 9 14 M19 9A5 5 0 1 0 29 9A5 5 0 1 0 19 9 M29 14A5 5 0 1 0 39 14A5 5 0 1 0 29 14 M14 19L22 31 M24 14V31 M34 19L26 31 M17 31H31L27 44H21Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_page" viewBox="0 0 48 48"><path d="M10 6H30L38 14V42H10Z M30 6V14H38 M16 22H32 M16 28H32 M16 34H26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_stamp" viewBox="0 0 48 48"><path d="M18 6H30V16Q30 20 34 22H38V30H10V22H14Q18 20 18 16Z M8 36H40 M13 42H35" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_button" viewBox="0 0 48 48"><path d="M13 4H35V44H13Z M18 16A6 6 0 1 0 30 16A6 6 0 1 0 18 16 M18 32A6 6 0 1 0 30 32A6 6 0 1 0 18 32 M21 17.5L24 14L27 17.5 M21 30.5L24 34L27 30.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_rail" viewBox="0 0 48 48"><path d="M4 17H44 M4 22H44 M10 22V42 M24 22V42 M38 22V42 M4 42H44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_door" viewBox="0 0 48 48"><path d="M7 5H41V43H7Z M24 5V43 M19 24H12 M15 21L12 24L15 27 M29 24H36 M33 21L36 24L33 27" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_program" viewBox="0 0 48 48"><path d="M10 6H38V42H10Z M16 12H32 M24 18L26.2 23H31.5L27.2 26.2L28.8 31.4L24 28.3L19.2 31.4L20.8 26.2L16.5 23H21.8Z M16 37H32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_wave" viewBox="0 0 48 48"><path d="M15 27V12Q15 9 17.5 9Q20 9 20 12V22 M20 21V8Q20 5 22.5 5Q25 5 25 8V21 M25 21V9Q25 6 27.5 6Q30 6 30 9V22 M30 22V14Q30 11 32.5 11Q35 11 35 14V28Q35 41 25 42Q17 42 13 36L8 28Q6 25 9 24Q11 23 13 26L15 29 M39 6Q44 10 44 17 M38 13Q40 15 40 18 M9 6Q4 10 4 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_rosary" viewBox="0 0 48 48"><circle cx="24" cy="18" r="12" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="0.1 6.2"/><path d="M24 30V45 M19 36H29" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_grille" viewBox="0 0 48 48"><path d="M8 6H40V42H8Z M8 18H40 M8 30H40 M18.7 6V42 M29.3 6V42" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_bowl" viewBox="0 0 48 48"><path d="M6 22H42Q42 38 24 38Q6 38 6 22Z M15 42H33 M29 6L40 17 M8 15Q12 11 16 13 M36 4Q41 3 44 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_mudra" viewBox="0 0 48 48"><path d="M11 29A6 6 0 1 0 23 29A6 6 0 1 0 11 29 M26 27V8 M31 27V10 M36 28V14 M23 33Q22 44 30 44Q38 44 38 33V27 M11 33Q9 25 14 21" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_candle" viewBox="0 0 48 48"><path d="M18 20H30V42H18Z M24 20V16 M24 4Q19 10 24 15Q29 10 24 4Z M11 42H37" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_cradle" viewBox="0 0 48 48"><path d="M8 18Q8 34 24 34Q40 34 40 18Z M5 40Q24 47 43 40 M14 32L10 41 M34 32L38 41 M6 18H42 M30 18Q30 12 36 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_bottle" viewBox="0 0 48 48"><path d="M21 4H27 M19 12H29V16Q34 18 34 24V40Q34 44 30 44H18Q14 44 14 40V24Q14 18 19 16Z M22 4L20 12 M26 4L28 12 M14 28H21 M14 34H19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_mobile" viewBox="0 0 48 48"><path d="M24 3V9 M7 9H41 M10 9V18 M24 9V24 M38 9V18 M6 22A4 4 0 1 0 14 22A4 4 0 1 0 6 22 M34 22A4 4 0 1 0 42 22A4 4 0 1 0 34 22 M19 28Q24 38 30 31Q24 33 19 28Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-table_card" viewBox="0 0 240 150"><path d="M34 62H206L236 138H4Z" fill="var(--paper-3,#c7bd9c)" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M4 138H236V145H4Z" fill="currentColor" opacity=".35"/><path d="M92 68H148L157 128H83Z" fill="var(--deep,#1c2620)" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M93 92H118V106H91Z M122 92H147L149 106H122Z M90.5 109H118V124H88.5Z M122 109H149.5L151.5 124H122Z" fill="var(--paper,#e7e0cb)" opacity=".92"/><path d="M36 150Q62 130 102 117 M36 150Q70 118 105 99 M204 150Q178 130 138 117 M204 150Q170 118 135 99" fill="none" stroke="var(--coat,#37493d)" stroke-width="7" stroke-linecap="round"/><g fill="var(--accent,#e0902f)"><ellipse cx="104" cy="99" rx="5" ry="3.6"/><ellipse cx="136" cy="99" rx="5" ry="3.6"/><ellipse cx="103" cy="117" rx="5" ry="3.6"/><ellipse cx="137" cy="117" rx="5" ry="3.6"/></g></symbol>
+<symbol id="i-medal_helping_hands" viewBox="0 0 96 100"><circle cx="48" cy="45" r="35" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 72L19 93 35 85 45 96 47 80 M72 72L77 93 61 85 51 96 49 80" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /><g transform="translate(24 21)"><path d="M15 27V12Q15 9 17.5 9Q20 9 20 12V22 M20 21V8Q20 5 22.5 5Q25 5 25 8V21 M25 21V9Q25 6 27.5 6Q30 6 30 9V22 M30 22V14Q30 11 32.5 11Q35 11 35 14V28Q35 41 25 42Q17 42 13 36L8 28Q6 25 9 24Q11 23 13 26L15 29" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g></symbol>
+<symbol id="i-medal_twister" viewBox="0 0 96 100"><circle cx="48" cy="45" r="35" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 72L19 93 35 85 45 96 47 80 M72 72L77 93 61 85 51 96 49 80" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /><g transform="translate(24 21)"><path d="M8 8H40V40H8Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><g fill="currentColor"><circle cx="17" cy="17" r="4.5"/><circle cx="31" cy="17" r="4.5"/><circle cx="17" cy="31" r="4.5"/><circle cx="31" cy="31" r="4.5"/></g></g></symbol>
+<symbol id="i-medal_steady_hands" viewBox="0 0 96 100"><circle cx="48" cy="45" r="35" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 72L19 93 35 85 45 96 47 80 M72 72L77 93 61 85 51 96 49 80" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /><g transform="translate(24 21)"><path d="M24 6Q20 10 19 18L15 30Q13 36 18 40H24 M24 6Q28 10 29 18L33 30Q35 36 30 40H24 M24 9V40 M14 44H34" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g></symbol>
+</svg>
+<!-- ff-calls end -->
 <div id="app">
 
   <!-- ============ START / MENU ============ -->
@@ -494,13 +596,12 @@
       <div class="eyebrow">A silent comedy of composure</div>
       <h1 class="wm"><svg class="wordmark" viewBox="0 0 1000 340" role="img" aria-label="Flatulence Fighter"><use href="#i-wordmark_paper"/></svg></h1>
       <div class="rule"></div>
-      <p style="margin:0; color:#463f31; font-size:.92rem; line-height:1.38;">Keep your composure. Clench to hold it in, plug the leaks, and let it out only under cover of noise. Any sound the room hears is a strike.</p>
+      <p class="objective">Get through the scene without anyone hearing you.</p>
     </div>
     <div class="modes playrow" role="group" aria-label="Play mode">
       <button class="mode-btn play-btn" data-play="stage" aria-pressed="true"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-mode_stage"/></svg>Stage</span><span class="md">the classic bill</span></button>
       <button class="mode-btn play-btn" data-play="daily" aria-pressed="false"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-mode_daily"/></svg>Daily</span><span class="md">today's ordeal</span></button>
       <button class="mode-btn play-btn" data-play="zen" aria-pressed="false"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-mode_zen"/></svg>Zen</span><span class="md">no strikes</span></button>
-      <button class="mode-btn play-btn" data-play="cheek" aria-pressed="false"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-mode_one_cheek"/></svg>One Cheek</span><span class="md">half the grip</span></button>
     </div>
     <div class="modes" id="diffRow" role="group" aria-label="Difficulty">
       <button class="mode-btn" data-mode="easy" aria-pressed="false"><span class="mt"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-difficulty_easy"/></svg>Easy</span><span class="md">a gentle ordeal</span></button>
@@ -528,26 +629,34 @@
     </div>
   </div>
 
-  <!-- ============ HOW TO PLAY ============ -->
+  <!-- ============ HOW TO PLAY (m2: the objective, the table card, the three steps of the four pads) ============ -->
   <div id="howScreen" class="screen hidden">
     <div class="card" style="max-width:420px;">
       <div class="eyebrow">The program notes</div>
       <h1 style="font-size:2rem;">How to play</h1>
+      <p class="objective">Get through the scene without anyone hearing you.</p>
       <div class="rule"></div>
+      <div class="how-table"><svg class="table-art" viewBox="0 0 240 150" aria-hidden="true" focusable="false"><use href="#i-table_card"/></svg><p class="table-line">Set your phone flat on a table and use both hands.</p></div>
       <ol class="how-steps">
-        <li class="how-step"><span class="hs-art hs-pads" aria-hidden="true"><i></i><i></i></span><span class="hs-txt"><b>Hold both pads</b> to clench it in. Pressure climbs the whole time you sit there.</span></li>
-        <li class="how-step"><span class="hs-art hs-vent" aria-hidden="true"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-vent"/></svg><span>Vent</span></span><span class="hs-txt"><b>Vent under the noise.</b> Pressure only drops while a cover noise plays. Vent the instant it starts for a Perfect.</span></li>
-        <li class="how-step"><span class="hs-art hs-leak" aria-hidden="true"></span><span class="hs-txt"><b>Tap a leak</b> on the stage to plug it before it squeaks.</span></li>
+        <li class="how-step"><span class="hs-art hs-pads" aria-hidden="true"><i></i><i></i></span><span class="hs-txt"><b>Hold both cheeks,</b> the two lower pads. Pressure rises the whole time, and a cheek lifted in the quiet is heard.</span></li>
+        <li class="how-step"><span class="hs-art hs-vent" aria-hidden="true"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-passing_bus"/></svg><span>Let go</span></span><span class="hs-txt"><b>Let go under the noise.</b> When a bus, the organ or applause plays, lift both cheeks to vent and put them back before it ends. Lift right as it starts for a Perfect.</span></li>
+        <li class="how-step"><span class="hs-art hs-hand" aria-hidden="true"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_book"/></svg></span><span class="hs-txt"><b>Answer the hands,</b> the two upper pads. One lights with what the scene wants. Touch it before its ring runs out and hold it until it lets go.</span></li>
       </ol>
       <div class="how-list">
-        <p>Each hand tires as its bar fills. <b>Lift one hand</b> to rest it, then swap before it slips. With one hand up the pressure climbs slowly; with both up it climbs fast, so a thumb can leave a pad for a moment.</p>
-        <p>The props on the stage: <b>Cough</b> fakes your own cover noise, hold <b>Sip</b> to drink the pressure down (you cannot clench while sipping), and <b>Waft</b> fans a fresh strike away for a moment.</p>
-        <p><b>Hold breath</b> slows the rise. Let go before you gasp. A <b>wobble</b> creeps in: hold <b>Lean left</b> or <b>Lean right</b> against it.</p>
-        <p>Any sound the room hears is a strike. <b>Three strikes and you are exposed.</b> Outlast the acts and run up the score.</p>
+        <p>A missed call is a fidget, and the second fidget is a strike. <b>Three strikes and the room knows.</b> Later acts call both hands at once, even under the noise.</p>
       </div>
     </div>
-    <button class="btn" id="howPractice"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-practice"/></svg> Practice run</button>
+    <button class="btn" id="howPractice"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-practice"/></svg> Play the lesson</button>
     <button class="btn ghost" id="howClose"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-back"/></svg> Back</button>
+  </div>
+
+  <!-- ============ THE TABLE CARD (m2): before the first lesson ============ -->
+  <div id="tableScreen" class="screen hidden">
+    <div class="card table-card" style="max-width:380px;">
+      <svg class="table-art" viewBox="0 0 240 150" aria-hidden="true" focusable="false"><use href="#i-table_card"/></svg>
+      <p class="table-line">Set your phone flat on a table and use both hands.</p>
+    </div>
+    <button class="btn" id="tableGotIt" type="button">Got it</button>
   </div>
 
   <!-- ============ INTERTITLE ============ -->
@@ -595,16 +704,13 @@
           </g>
         </svg>
       </div>
-      <button class="prop prop-cough" id="coughBtn" type="button" aria-label="Cough. Fake your own cover noise"><span class="pband"><span>Cough</span><span class="charges" id="coughState"></span></span></button>
-      <button class="prop prop-sip" id="sipBtn" type="button" aria-label="Sip. Hold to drink the pressure down. You cannot clench while sipping"><svg class="cd-ring" viewBox="0 0 112 112" aria-hidden="true" focusable="false"><circle cx="56" cy="56" r="48" id="sipRing"/></svg><span class="pband"><span>Sip</span><span id="sipState">Ready</span></span></button>
-      <button class="prop prop-waft" id="waftBtn" type="button" aria-label="Waft. Fan a fresh strike away"><svg class="rim" viewBox="0 0 100 56" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect x="2" y="2" width="96" height="52" rx="10" pathLength="100" id="waftRim"/></svg><span class="pband"><span>Waft</span><span class="charges" id="waftState"></span></span></button>
       <div id="leaks"></div>
-      <div class="cover-banner" id="coverBanner"><span class="ico" id="coverIco"></span><span class="cb-txt"><span id="coverText">Applause</span><span class="cb-sub">Vent now</span></span><span class="cb-count" id="coverCount"></span></div>
+      <div class="cover-banner" id="coverBanner"><span class="ico" id="coverIco"></span><span class="cb-txt"><span id="coverText">Applause</span><span class="cb-sub" id="coverSub">Let go now</span></span><span class="cb-count" id="coverCount"></span></div>
       <div id="countIn" class="count-in hidden" aria-live="assertive"></div>
     </div>
     <div class="ribbon" id="ribbon" aria-live="polite">Nobody suspects a thing</div>
     <div id="tutOverlay" class="coach hidden">
-      <div class="tut-card coach-card" id="tutText" aria-live="polite">Hold <b>both pads</b> to clench it in.</div>
+      <div class="tut-card coach-card" id="tutText" aria-live="polite"><span class="tut-obj" id="tutObj"></span><span class="tut-big" id="tutBig">Hold both cheeks</span><span class="tut-hint" id="tutHint"></span></div>
       <button class="btn ghost" id="tutSkip" type="button"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-skip"/></svg> Skip</button>
     </div>
       <div class="gauge">
@@ -615,10 +721,20 @@
     <div id="callout" class="callout"></div>
     <div id="fx"></div>
 
-    <div class="deck" id="deck">
+    <!-- THE DECK (m2): the four pads in a 2 by 2 block, the hands on top and the cheeks below (law 10: one deck owns
+         every touch on it; the input section hit tests each pointer against the four boxes) -->
+    <div class="deck4" id="deck" role="group" aria-label="The four pads">
+      <button class="hand idle" id="handL" type="button" aria-label="Left hand"><span class="hring" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><circle class="hr-bg" cx="50" cy="50" r="44" pathLength="100"/><circle class="hr-fg" cx="50" cy="50" r="44" pathLength="100"/></svg><span class="hico" id="handLIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handLText">Left hand</span></button>
+      <button class="hand idle" id="handR" type="button" aria-label="Right hand"><span class="hring" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><circle class="hr-bg" cx="50" cy="50" r="44" pathLength="100"/><circle class="hr-fg" cx="50" cy="50" r="44" pathLength="100"/></svg><span class="hico" id="handRIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handRText">Right hand</span></button>
+      <button class="pad cheek" id="padL" type="button" aria-label="Left cheek"><span class="pad-label">Left cheek</span><span class="pad-hint" id="padLHint">Hold</span></button>
+      <button class="pad cheek" id="padR" type="button" aria-label="Right cheek"><span class="pad-label">Right cheek</span><span class="pad-hint" id="padRHint">Hold</span></button>
+    </div>
+    <!-- m1's controls, retired from play in m2: their code is dormant and still finds them here; nothing of them shows -->
+    <div class="retired hidden" aria-hidden="true">
+      <div class="deck" id="deckOld">
       <div class="dcol dcol-l">
         <button class="lean" id="leanLbtn" type="button" aria-label="Lean left. Hold to keep your balance"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-lean_left"/></svg><span>Lean left</span></button>
-        <button class="pad" id="padL" type="button" aria-label="Left hold"><span class="pad-label">Left</span><span class="pad-hint">Hold</span><span class="strainbar"><i id="strainL"></i></span></button>
+        <span class="strainbar"><i id="strainL"></i></span>
       </div>
       <div class="dcol dcol-m">
         <div class="mlabel" aria-hidden="true">Sit still</div>
@@ -633,8 +749,12 @@
       </div>
       <div class="dcol dcol-r">
         <button class="lean" id="leanRbtn" type="button" aria-label="Lean right. Hold to keep your balance"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-lean_right"/></svg><span>Lean right</span></button>
-        <button class="pad" id="padR" type="button" aria-label="Right hold"><span class="pad-label">Right</span><span class="pad-hint">Hold</span><span class="strainbar"><i id="strainR"></i></span></button>
+        <span class="strainbar"><i id="strainR"></i></span>
       </div>
+      </div>
+      <button class="prop prop-cough" id="coughBtn" type="button" aria-label="Cough. Fake your own cover noise"><span class="pband"><span>Cough</span><span class="charges" id="coughState"></span></span></button>
+      <button class="prop prop-sip" id="sipBtn" type="button" aria-label="Sip. Hold to drink the pressure down. You cannot clench while sipping"><svg class="cd-ring" viewBox="0 0 112 112" aria-hidden="true" focusable="false"><circle cx="56" cy="56" r="48" id="sipRing"/></svg><span class="pband"><span>Sip</span><span id="sipState">Ready</span></span></button>
+      <button class="prop prop-waft" id="waftBtn" type="button" aria-label="Waft. Fan a fresh strike away"><svg class="rim" viewBox="0 0 100 56" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect x="2" y="2" width="96" height="52" rx="10" pathLength="100" id="waftRim"/></svg><span class="pband"><span>Waft</span><span class="charges" id="waftState"></span></span></button>
     </div>
   </div>
 
@@ -705,6 +825,7 @@
       <div class="rule"></div>
       <div class="stat-row"><span>Composure held</span><b id="overTime">0s</b></div>
       <div class="stat-row"><span>Best vent combo</span><b id="overCombo">×1.0</b></div>
+      <div class="stat-row"><span>Hand calls held</span><b id="overCalls">0</b></div>
       <div class="stat-row"><span>Final score</span><b id="overScore">0</b></div>
       <div class="stat-row"><span>Best (<span id="overModeName">normal</span>)</span><b id="overBest">0</b></div>
       <div class="stat-row"><span>Sunbeams earned <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sunbeam"/></svg></span><b id="overSun">0</b></div>
@@ -801,9 +922,35 @@
       reacts:["A tiny eyelid flutters.","Do not wake the baby.","…the baby is awake. The baby is awake."]},
   ];
 
+  // m2 THE HAND CALLS, three a scene in SCENES order (the lead's drafts, DECISION 1 of the m2 plan): [words, icon].
+  // The icons are placeholder line drawings in the ff-calls sprite until Astra's round 2.
+  const CALLS=[
+    [["Hold the hymn book","call_book"],["Shake hands","call_shake"],["Pass the tissues","call_tissues"]],
+    [["Shake hands","call_shake"],["Hold the pen","call_pen"],["Take the coffee","call_cup"]],
+    [["Hold the menu","call_menu"],["Raise your glass","call_glass"],["Hold hands","call_hands"]],
+    [["Hold the microphone","call_mic"],["Hold the headphones","call_headphones"],["Wave to the camera","call_camera"]],
+    [["Hold the pose","call_pose"],["Press your palms","call_palms"],["Touch your toes","call_toes"]],
+    [["Hold the rings","call_rings"],["Hold the bouquet","call_bouquet"],["Hold hands","call_hands"]],
+    [["Hold the book","call_book"],["Turn the page","call_page"],["Stamp the card","call_stamp"]],
+    [["Press the button","call_button"],["Hold the rail","call_rail"],["Hold the door","call_door"]],
+    [["Clap","applause"],["Hold the program","call_program"],["Wave to your child","call_wave"]],
+    [["Fold your hands","call_palms"],["Hold the rosary","call_rosary"],["Open the grille","call_grille"]],
+    [["Ring the bowl","call_bowl"],["Hold the mudra","call_mudra"],["Hold the candle","call_candle"]],
+    [["Rock the cradle","call_cradle"],["Hold the bottle","call_bottle"],["Wind the mobile","call_mobile"]],
+  ];
+
   // Base tuning (Normal). Codespace: adjust freely.
   const CFG={
-    riseBase:7.5, riseRamp:1.5, rampEvery:22, rampCap:6, rampSoftSlope:0.4,
+    // m2: pressure rises the whole time you sit there (holding the cheeks keeps it in, it never lets it down), so the
+    // rise is slower than m1's 7.5 plus 1.5 an act: a vent at each cover keeps it in the gauge's middle in Act I
+    riseBase:5.5, riseRamp:0.7, rampEvery:22, rampCap:6, rampSoftSlope:0.4,
+    // m2 the cheeks: a lift in the quiet squeaks after a grace; one sound is one strike however many cheeks it was
+    squeakGrace:0.15, squeakQuiet:0.5, squeakRepeat:2.0 /* a cheek left off is heard again every this many seconds */,
+    // m2 the hands: a call waits about 2 s on Normal (less each act, scaled by mode), then holds 1.5 to 3 s; the
+    // Twister: from overlapAct a call may come under a cover, from fourAct both hands at once and a call may move
+    callFirst:8, callWait:2.0, callWaitMin:1.35, callWaitAct:0.06, callHoldMin:1.5, callHoldMax:3.0,
+    callGapMin:1.6, callGapRand:3.2, callGapAct:0.07, callCoverClear:0.6, overlapAct:3, fourAct:5,
+    callPairBase:0.30, callPairStep:0.06, callPairMax:0.6, callMoveChance:0.3, callScore:30, comboCall:1, flashDur:0.6,
     oneHeldFactor:0.22, bothHeldDrop:7,
     strainFill:23, strainRecover:33, slipDuration:1.3, slipSpike:13,
     coverFirst:4.5, coverGapMin:6.5, coverGapRand:5, coverDurBase:2.4, coverDurMin:1.5, perfectFrac:0.40,
@@ -826,9 +973,11 @@
     sceneDur:22, introDur:1.9,
   };
   const MODES={
-    easy  :{riseMul:0.80, coverGapMul:0.80, coverDurMul:1.25, leakGapMul:1.6, strainFillMul:0.85, leakMul:0.7, sipCdMul:0.75, breathDrainMul:0.80, wobbleDriftMul:0.65},
-    normal:{riseMul:1.00, coverGapMul:1.00, coverDurMul:1.00, leakGapMul:1.0, strainFillMul:1.00, leakMul:1.0, sipCdMul:1.00, breathDrainMul:1.00, wobbleDriftMul:1.00},
-    panic :{riseMul:1.32, coverGapMul:1.28, coverDurMul:0.85, leakGapMul:0.6, strainFillMul:1.15, leakMul:1.4, sipCdMul:1.25, breathDrainMul:1.25, wobbleDriftMul:1.45},
+    // m2 step 4: Easy is a real first game: a slower rise, longer covers, longer windows for the hand calls, calls further
+    // apart, nothing overlaps before Act IV and both hands are not called before Act VI
+    easy  :{riseMul:0.65, coverGapMul:0.80, coverDurMul:1.45, leakGapMul:1.6, strainFillMul:0.85, leakMul:0.7, sipCdMul:0.75, breathDrainMul:0.80, wobbleDriftMul:0.65, callWaitMul:1.6, callGapMul:1.3, overlapAct:4, fourAct:6, coverCap:78},
+    normal:{riseMul:1.00, coverGapMul:1.00, coverDurMul:1.00, leakGapMul:1.0, strainFillMul:1.00, leakMul:1.0, sipCdMul:1.00, breathDrainMul:1.00, wobbleDriftMul:1.00, callWaitMul:1.0, callGapMul:1.0, overlapAct:3, fourAct:5, coverCap:88},
+    panic :{riseMul:1.32, coverGapMul:1.28, coverDurMul:0.85, leakGapMul:0.6, strainFillMul:1.15, leakMul:1.4, sipCdMul:1.25, breathDrainMul:1.25, wobbleDriftMul:1.45, callWaitMul:0.8, callGapMul:0.85, overlapAct:3, fourAct:5, coverCap:96},
   };
 
   const MEDALS=[
@@ -837,19 +986,24 @@
     {id:"c60",     ico:"medal_iron_cheeks", name:"Iron Cheeks",   desc:"Hold for 60s.",                 check:r=>r.time>=60},
     {id:"c120",    ico:"medal_marathon", name:"Marathon",      desc:"Hold for 2 minutes.",           check:r=>r.time>=120},
     {id:"perf3",   ico:"medal_perfectionist", name:"Perfectionist", desc:"3 Perfect vents in one ordeal.",check:r=>r.perfects>=3},
-    {id:"plug10",  ico:"medal_surgeon", name:"Surgeon",       desc:"Plug 10 leaks in one ordeal.",  check:r=>r.plugs>=10},
+    {id:"plug10", retired:true,  ico:"medal_surgeon", name:"Surgeon",       desc:"Plug 10 leaks in one ordeal.",  check:r=>r.plugs>=10},
     {id:"combo3",  ico:"medal_cool_customer", name:"Cool Customer", desc:"Reach a ×3 combo.",             check:r=>comboMultFrom(r.maxCombo)>=3},
     {id:"combo5",  ico:"medal_untouchable", name:"Untouchable",   desc:"Reach the ×5 combo.",           check:r=>comboMultFrom(r.maxCombo)>=5},
     {id:"act5",    ico:"medal_stagehand", name:"Stagehand",     desc:"Reach Act V.",                  check:r=>r.scenes>=5},
     {id:"act8",    ico:"medal_leading_role", name:"Leading Role",  desc:"Reach Act VIII.",               check:r=>r.scenes>=8},
     {id:"panic45", ico:"medal_panic_room", name:"Panic Room",    desc:"Hold 45s on Panic.",            check:r=>r.mode==="panic"&&r.time>=45},
     {id:"allmodes",ico:"medal_method_actor", name:"Method Actor",  desc:"Play all three modes.",         check:(r,L)=>L.modes.length>=3},
-    {id:"improv",  ico:"medal_improviser", name:"Improviser",    desc:"Vent under 3 fake coughs in one ordeal.", check:r=>r.coughVents>=3},
-    {id:"fan",     ico:"medal_saved_by_the_fan", name:"Saved by the Fan", desc:"Waft away a strike.",        check:r=>r.wafts>=1},
-    {id:"hydrated",ico:"medal_hydrated", name:"Hydrated",      desc:"Sip 5 times in one ordeal.",    check:r=>r.sips>=5},
+    {id:"improv", retired:true,  ico:"medal_improviser", name:"Improviser",    desc:"Vent under 3 fake coughs in one ordeal.", check:r=>r.coughVents>=3},
+    {id:"fan", retired:true,     ico:"medal_saved_by_the_fan", name:"Saved by the Fan", desc:"Waft away a strike.",        check:r=>r.wafts>=1},
+    {id:"hydrated", retired:true,ico:"medal_hydrated", name:"Hydrated",      desc:"Sip 5 times in one ordeal.",    check:r=>r.sips>=5},
     {id:"daily3",  ico:"medal_a_regular", name:"A Regular",     desc:"Play 3 Daily Ordeals.",         check:(r,L)=>L.dailyPlays>=3},
     {id:"bow90",   ico:"medal_zen_master", name:"Zen Master",    desc:"Bow out after 90s in Zen Theater.", check:r=>r.playMode==="zen"&&r.time>=90},
-    {id:"cheek45", ico:"medal_one_cheek_wonder", name:"One Cheek Wonder", desc:"Hold 45s in One Cheek.",     check:r=>r.playMode==="cheek"&&r.time>=45},
+    {id:"cheek45", retired:true, ico:"medal_one_cheek_wonder", name:"One Cheek Wonder", desc:"Hold 45s in One Cheek.",     check:r=>r.playMode==="cheek"&&r.time>=45},
+    // m2 THE FOUR PADS (new ids; their names are DECISION 3 of the m2 plan). The five marked retired above keep their
+    // ids and stay earned and shown for whoever has them; their feats left play with m1's controls, so nobody wins them now
+    {id:"calls10", ico:"medal_helping_hands", name:"Helping Hands", desc:"Hold 10 hand calls in one ordeal.", check:r=>r.calls>=10},
+    {id:"four",    ico:"medal_twister", name:"Twister", desc:"Four fingers down at once, both hands on a call.", check:r=>r.maxPads>=4},
+    {id:"cleanact",ico:"medal_steady_hands", name:"Steady Hands", desc:"A whole act of hand calls with no fidget.", check:r=>r.cleanActs>=1},
   ];
 
   // ---- Cosmetics (earn by play, known thresholds, purely visual) ----
@@ -857,8 +1011,8 @@
     {id:"everyman", ico:"wardrobe", name:"The Everyman", req:"Free", check:()=>true},
     {id:"gentleman",ico:"wardrobe", name:"The Gentleman", req:"10 min lifetime composure",
       check:Lc=>Lc.lifeTime>=600},
-    {id:"grandma",  ico:"wardrobe", name:"Grandma", req:"Plug 50 lifetime leaks",
-      check:Lc=>Lc.lifePlugs>=50},
+    {id:"grandma",  ico:"wardrobe", name:"Grandma", req:"Hold 50 lifetime hand calls",
+      check:Lc=>Lc.lifeCalls>=50||Lc.lifePlugs>=50},
     {id:"mime",     ico:"wardrobe", name:"The Mime", req:"3 day Daily streak",
       check:Lc=>Lc.bestStreak>=3},
     {id:"bulldog",  ico:"wardrobe", name:"The Bulldog", req:"Earn 8 medals",
@@ -883,7 +1037,8 @@
   const L={ time:"ff.l.time", plugs:"ff.l.plugs", perfects:"ff.l.perfects", bestCombo:"ff.l.bestcombo",
             bestTime:"ff.l.besttime", modes:"ff.l.modes", medals:"ff.medals", tut:"ff.tutseen",
             daily:"ff.daily", bestStreak:"ff.l.beststreak", bestAct:"ff.l.bestact", bestScore:"ff.l.bestscore",
-            playModes:"ff.l.playmodes", dailyPlays:"ff.l.dailyplays", save:"ff_save" };
+            playModes:"ff.l.playmodes", dailyPlays:"ff.l.dailyplays", save:"ff_save",
+            tut2:"ff.tut2seen", vents:"ff.l.vents", calls:"ff.l.calls", fidgets:"ff.l.fidgets", bestCalls:"ff.l.bestcalls", bestPads:"ff.l.bestpads" }; // m2: the lesson has been seen (a new key; m1's ff.tutseen is left as it is)
   const get=(k,d)=>store.get(k,d), set=(k,v)=>store.set(k,v);
 
   // ==================================================================
@@ -973,11 +1128,12 @@
         overScreen=$("overScreen"), medalsScreen=$("medalsScreen"), statsScreen=$("statsScreen");
   const gaugeFill=$("gaugeFill"), pctText=$("pctText"), scoreEl=$("score"), sceneChip=$("sceneChip"), comboEl=$("combo");
   const strainLbar=$("strainL"), strainRbar=$("strainR"), padL=$("padL"), padR=$("padR");
+  const deckEl=$("deck"), handL=$("handL"), handR=$("handR"), padLHint=$("padLHint"), padRHint=$("padRHint");
   const ventBtn=$("ventBtn"), ventMainText=$("ventMainText"), ventSub=$("ventSub"), ventTimer=$("ventTimer"), ventMark=$("ventMark");
-  const coverBanner=$("coverBanner"), coverText=$("coverText"), strikesEl=$("strikes"), leaksEl=$("leaks"),
+  const coverBanner=$("coverBanner"), coverText=$("coverText"), coverSub=$("coverSub"), strikesEl=$("strikes"), leaksEl=$("leaks"),
         fxEl=$("fx"), calloutEl=$("callout"), toastsEl=$("toasts"), ribbonEl=$("ribbon"), coverCount=$("coverCount"), waftRim=$("waftRim"), bustWrap=document.querySelector(".bust-wrap");
   const actLabel=$("actLabel"), sceneTitle=$("sceneTitle"), sceneSub=$("sceneSub");
-  const tutOverlay=$("tutOverlay"), tutText=$("tutText");
+  const tutOverlay=$("tutOverlay"), tutText=$("tutText"), tutObj=$("tutObj"), tutBig=$("tutBig"), tutHint=$("tutHint"), tableScreen=$("tableScreen");
   const coughBtn=$("coughBtn"), sipBtn=$("sipBtn"), waftBtn=$("waftBtn");
   const coughState=$("coughState"), sipState=$("sipState"), waftState=$("waftState"), sipRing=$("sipRing"), stageEl=$("stage"), countInEl=$("countIn");
   const breathBtn=$("breathBtn"), breathFill=$("breathFill"), wobbleTrack=$("wobbleTrack"), wobbleDot=$("wobbleDot"), leanLbtn=$("leanLbtn"), leanRbtn=$("leanRbtn");
@@ -1027,7 +1183,7 @@
   function dayKey(off){ const d=new Date(); if(off) d.setDate(d.getDate()+off); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
   function newState(modeKey, playKey){
     return { phase:"playing", modeKey, M:MODES[modeKey], playMode:playKey||"stage",
-      pressure:0, strainL:0, strainR:0, padL:false, padR:false, slipL:0, slipR:0,
+      pressure:0, strainL:0, strainR:0, padL:false, padR:false, slipL:0, slipR:0, handL:false, handR:false,
       breath:CFG.breathMax, breathHold:false, breathLock:0,
       wobble:0, wobbleDir:1, wobbleFlipAt:CFG.wobbleFlipMin, leanL:false, leanR:false,
       strikes:0, score:0, time:0, combo:0, bestCombo:0, calloutIdx:-1,
@@ -1039,7 +1195,11 @@
       waftCharges:CFG.waftStartCharges, waftUntil:0, pendingExpose:0,
       cheekSide:0, cheekSwapAt:CFG.cheekSwapEvery,
       stun:0, reliefUntil:0, perfectUntil:0, countIn:0, turnedUntil:0, struckUntil:0, ribbonUntil:0, ribbonPri:0, ribbonOn:false, zenHits:0, last:0,
-      rp:{perfects:0, plugs:0, cleanVents:0, coughVents:0, wafts:0, sips:0},
+      // m2: the cheeks (last seen, armed since the act began, a squeak's grace, a lift under this cover, this cover's
+      // vent, the back on deadline after one), the hands (last seen, presses counted) and the caller's calls
+      cPrev:[false,false], cArmed:[false,false], cGrace:[0,0], coverLift:false, vented:false, ventAt:0, backBy:0, quietUntil:0,
+      hPrev:[false,false], handPressN:[0,0], calls:[], nextCallAt:CFG.callFirst, lastCall:"", fidgets:0, actFidget:false, actCalls:0, lesson:false,
+      rp:{perfects:0, plugs:0, cleanVents:0, coughVents:0, wafts:0, sips:0, vents:0, calls:0, fidgets:0, squeaks:0, maxPads:0, cleanActs:0},
       tut:null };
   }
   const rampCont=()=>S.time/CFG.rampEvery;
@@ -1063,20 +1223,25 @@
       S.sceneOrder=order; }
     hideAllScreens(); hud.classList.remove("hidden"); hud.classList.remove("hud-tut"); tutOverlay.classList.add("hidden");
     clearLeaks(); ribbonIdle(); bustWrap.classList.remove("struck");
-    for(let i=0;i<strikesEl.children.length;i++) strikesEl.children[i].classList.remove("broke");
+    renderPips(); renderHands();
     comboEl.classList.remove("on"); comboEl.innerHTML="";
     padL.classList.remove("benched","slipped"); padR.classList.remove("benched","slipped");
     sipBtn.classList.remove("sipping");
     breathBtn.classList.remove("held","locked"); leanLbtn.classList.remove("held","down"); leanRbtn.classList.remove("held","down");
-    showIntro(0);
+    showIntro(0); syncPads();
     S.last=performance.now();
     if(raf) cancelAnimationFrame(raf);
     loop();
   }
-  function hideAllScreens(){ [startScreen,introScreen,pauseScreen,overScreen,medalsScreen,statsScreen,wardScreen,howScreen].forEach(s=>s.classList.add("hidden")); }
+  function hideAllScreens(){ [startScreen,introScreen,pauseScreen,overScreen,medalsScreen,statsScreen,wardScreen,howScreen,tableScreen].forEach(s=>s.classList.add("hidden")); }
 
   function sceneIdx(i){ return S.sceneOrder? S.sceneOrder[i%S.sceneOrder.length] : (i%SCENES.length); }
   function showIntro(idx){
+    // m2: an act ends with its calls and any cover; a whole act with calls and no fidget is counted
+    if(idx>0&&S.phase==="playing"&&S.actCalls>0&&!S.actFidget) S.rp.cleanActs++;
+    S.actFidget=false; S.actCalls=0; S.calls=[]; S.cGrace=[0,0]; S.backBy=0;
+    if(S.cover){ S.vented=false; S.coverLift=false; closeCover(); }
+    renderHands();
     S.inIntro=true; S.introTime=CFG.introDur; S.scene=idx; S.sceneTime=CFG.sceneDur;
     const sc=SCENES[sceneIdx(idx)];
     S.turnedUntil=0; setSceneArt(sceneIdx(idx)); preloadScene(sceneIdx(idx+1));
@@ -1089,9 +1254,10 @@
   }
   function curScene(){ return SCENES[sceneIdx(S.scene)]; }
 
-  function openCover(self){
+  function openCover(self,force){
     let key, c;
-    if(self){ key="FAKECOUGH"; c=COVER_TYPES[key]; }
+    if(force){ key=force; c=COVER_TYPES[key]; }
+    else if(self){ key="FAKECOUGH"; c=COVER_TYPES[key]; }
     else { const sc=curScene(); key=sc.covers[Math.floor(rnd()*sc.covers.length)]; c=COVER_TYPES[key]; }
     S.cover=true; S.coverSelf=!!self; S.coverType=key; S.coverStart=S.time;
     let dur=Math.max(CFG.coverDurMin, CFG.coverDurBase-rampLevel()*0.12)*S.M.coverDurMul;
@@ -1099,11 +1265,22 @@
     S.coverUntil=S.time+dur;
     coverText.textContent=c.label; $("coverIco").innerHTML=ic(c.ico); coverBanner.classList.add("show");
     ventMark.style.display=self?"none":"block"; ventMark.style.left=((1-CFG.perfectFrac)*100)+"%";
+    // m2: a cheek lifted inside its squeak grace as the noise begins is covered by it (and counts toward the vent)
+    S.vented=false; S.coverLift=false;
+    for(let k=0;k<2;k++) if(S.cGrace[k]){ S.cGrace[k]=0; S.coverLift=true; }
     cueSfx(); coverSfx(c.arch); haptic(8);
   }
+  // m2: the cover runs its whole length (a vent no longer ends it); after a vent both cheeks are back on by its end
+  function endCover(){ const vented=S.vented; S.vented=false; S.coverLift=false; closeCover();
+    if(vented&&(!S.padL||!S.padR)) S.backBy=S.time+CFG.squeakGrace; }
   function closeCover(){ const wasSelf=S.coverSelf; S.cover=false; S.coverSelf=false;
     let base=(CFG.coverGapMin+rnd()*CFG.coverGapRand)*S.M.coverGapMul/(curScene().coverMul||1);
     if(wasSelf) base*=CFG.coughRegapFrac; // a fake cough only half-postpones the room's next real noise
+    // m2: pressure never stops rising, so the next cover is booked before a player who vented at this one would burst
+    // (the cap is the mode's coverCap percent of the gauge at the rate right now; a missed cover still bursts)
+    const nextDur=Math.max(CFG.coverDurMin, CFG.coverDurBase-rampLevel()*0.12)*S.M.coverDurMul;
+    const capGap=Math.max(3, (S.M.coverCap||88)/(riseRate()*1.05)-nextDur);
+    base=Math.min(base, capGap); S.coverSlack=capGap-base; // how far an early act's hand call may still push it back
     S.nextCover=S.time+base; coverBanner.classList.remove("show"); ventMark.style.display="none"; }
 
   // -- ability buttons --
@@ -1185,18 +1362,13 @@
   function breakCombo(){ if(S.combo>0){ S.combo=0; S.calloutIdx=-1; comboEl.classList.remove("on"); comboEl.innerHTML=""; } }
 
   // -- strikes / vent / blowout --
-  function addStrike(){
-    if(S.playMode==="zen"){ S.zenHits++; roomReact(); return; } // Zen: the room reacts, nothing counts
-    S.strikes++; const pips=strikesEl.children;
-    for(let i=0;i<pips.length;i++) pips[i].classList.toggle("broke", i<S.strikes);
-    roomReact();
-    S.waftUntil=S.time+CFG.waftWindow;
-    if(S.strikes>=3){
-      S.strikes=3;
-      if(S.waftCharges>0 && !S.pendingExpose){ S.pendingExpose=S.time+CFG.waftWindow; // one breath of borrowed time
-        say("Waft it away","waft",CFG.waftWindow,4); haptic([20,40,20]); }
-      else gameOver();
-    } }
+  // m2: the Waft is retired, so the third strike is the end (no borrowed breath); cause names what the room heard
+  function addStrike(cause){
+    if(S.lesson){ roomReact(cause); return; }                             // the lesson cannot be lost
+    if(S.playMode==="zen"){ S.zenHits++; roomReact(cause); return; } // Zen: the room reacts, nothing counts
+    S.strikes++; renderPips();
+    roomReact(cause);
+    if(S.strikes>=3){ S.strikes=3; gameOver(); } }
 
   function doVent(){
     if(!isLive()||S.inIntro||S.stun>0) return;
@@ -1232,7 +1404,121 @@
     }
   }
   function blowout(){ fart(1); S.pressure=CFG.blowoutReset; S.stun=CFG.blowoutStun; shudder();
-    face.dataset.tier="blowout"; S.reliefUntil=S.time+CFG.blowoutStun; breakCombo(); addStrike(); }
+    face.dataset.tier="blowout"; S.reliefUntil=S.time+CFG.blowoutStun; breakCombo(); addStrike("It slipped out"); }
+
+  // ==================================================================
+  //  m2: THE CHEEKS AND THE HANDS (THE FOUR PADS)
+  // ==================================================================
+  // the cheeks: arming starts again when an act's intertitle or a resume count ends, from what is held right then
+  function armPads(){ S.cPrev=[S.padL,S.padR]; S.cArmed=[S.padL,S.padR]; S.cGrace=[0,0]; }
+  // a cheek let go in the quiet squeaks after the grace (touched again inside it, nothing); let go under a cover it is
+  // silent; both off at once under a cover, both armed and one of them let go under it, is the vent, once a cover
+  function cheekTick(){
+    for(let k=0;k<2;k++){ const on=k?S.padR:S.padL;
+      if(on!==S.cPrev[k]){ S.cPrev[k]=on;
+        if(on){ S.cArmed[k]=true; S.cGrace[k]=0; }
+        else if(S.cArmed[k]&&S.cover) S.coverLift=true; }
+      // the walk's fix: in the quiet an armed cheek that is OFF is heard, not only the frame it lifts: after the grace,
+      // then again every squeakRepeat while it stays off (a cheek left off under a cover that gave no vent, too)
+      if(!on&&S.cArmed[k]&&!S.cover&&!S.backBy&&!S.cGrace[k]) S.cGrace[k]=S.time+CFG.squeakGrace;
+      if(S.cGrace[k]&&S.time>=S.cGrace[k]){ S.cGrace[k]=0; if(!on&&!S.cover){ cheekSqueak("A squeak"); if(S.phase!=="playing"&&S.phase!=="tutorial") return; S.cGrace[k]=S.time+CFG.squeakRepeat; } }
+    }
+    if(S.cover&&!S.vented&&S.coverLift&&!S.padL&&!S.padR&&S.cArmed[0]&&S.cArmed[1]) cheekVent();
+    if(S.backBy&&S.time>=S.backBy){ S.backBy=0; if(!S.padL||!S.padR) cheekSqueak("Back on too late"); }
+  }
+  function cheekSqueak(cause){ if(S.time<S.quietUntil) return; // one sound, one strike
+    S.quietUntil=S.time+CFG.squeakQuiet; S.rp.squeaks++;
+    squeak(); haptic(30); breakCombo(); face.dataset.tier="blowout"; S.reliefUntil=S.time+0.6;
+    if(S.lesson&&S.tut) S.tut.squeaks=(S.tut.squeaks||0)+1;
+    addStrike(cause); }
+  // the vent: m1's scoring (Perfect when it comes within perfectFrac of the cover's start), relief to nothing
+  function cheekVent(){
+    S.vented=true; S.ventAt=S.time; S.rp.vents++;
+    const perfect=(S.time-S.coverStart)<=(S.coverUntil-S.coverStart)*CFG.perfectFrac;
+    if(S.lesson){ S.pressure=0; face.dataset.tier="relief"; S.reliefUntil=S.time+0.7;
+      if(perfect){ S.perfectUntil=S.time+0.45; perfectSfx(); } else chime(); haptic([12,20]);
+      if(S.tut){ S.tut.vented=true; S.tut.perfect=perfect; } return; }
+    S.combo+=perfect?CFG.comboPerfect:CFG.comboVent; if(S.combo>S.bestCombo) S.bestCombo=S.combo;
+    S.rp.cleanVents++; if(perfect) S.rp.perfects++;
+    const mult=comboMult();
+    const pts=Math.round((CFG.ventFlat+S.pressure*CFG.ventScale)*(perfect?CFG.perfectMult:1)*mult);
+    S.score+=pts; S.pressure=0;
+    face.dataset.tier="relief"; S.reliefUntil=S.time+0.7; bumpCombo();
+    if(perfect){ S.perfectUntil=S.time+0.45; perfectSfx(); haptic([10,20,10,20]); say("Perfect +"+pts+". Cheeks back on","perfect",1.4,1); }
+    else { chime(); haptic([15,25,15]); say("Vented +"+pts+". Cheeks back on","vent",1.3,1); }
+  }
+  // the hands: presses are counted per pad, so a call only takes a touch that lands after it lit
+  function handEdges(){ for(let k=0;k<2;k++){ const on=k?S.handR:S.handL; if(on&&!S.hPrev[k]) S.handPressN[k]++; S.hPrev[k]=on; } }
+  const rollHold=()=>CFG.callHoldMin+rnd()*(CFG.callHoldMax-CFG.callHoldMin);
+  function callWaitDur(){ return Math.max(CFG.callWaitMin, CFG.callWait-S.scene*CFG.callWaitAct)*(S.M.callWaitMul||1); }
+  function newCall(side,wait,words,icon,hold){
+    if(!words){ const list=CALLS[sceneIdx(S.scene)]||CALLS[0]; let k=Math.floor(rnd()*list.length);
+      if(list[k][0]===S.lastCall&&list.length>1) k=(k+1)%list.length; words=list[k][0]; icon=list[k][1]; }
+    S.lastCall=words; S.actCalls++;
+    const c={ side, words, icon, phase:"wait", t0:S.time, wait, hold:hold||rollHold(), ht:0, press0:S.handPressN[side], until:0, move:null, flash:"" };
+    S.calls=S.calls.filter(o=>o.side!==side); S.calls.push(c); return c; }
+  // the caller: every roll is made as a call starts and the next start is booked from the rolls alone, so the Daily's
+  // calls never depend on the player's timing. The Twister by act: one call at a time and never under a cover (the
+  // whole call ends before the next cover begins) until overlapAct; from fourAct both hands at once, or a call that
+  // moves straight across to the other hand pad
+  function scheduleCalls(){
+    const act=S.scene+1, M=S.M, early=act<(M.overlapAct||CFG.overlapAct), four=act>=(M.fourAct||CFG.fourAct);
+    if(S.calls.some(c=>c.phase==="wait"||c.phase==="hold")){ S.nextCallAt=S.time+0.5; return; }
+    const wait=callWaitDur();
+    if(early&&S.cover){ S.nextCallAt=S.coverUntil+CFG.callCoverClear; return; }
+    const hold=rollHold();
+    // acts I and II: the whole call ends before the next cover begins; the cover may wait for it, but only as long as the
+    // pressure cap allows (the slack booked with the cover), else the call waits for the cover to pass
+    const need=S.time+wait+hold+CFG.callCoverClear;
+    if(early&&S.nextCover<need){ if(!S.cover&&need-S.nextCover<=(S.coverSlack||0)){ S.coverSlack-=need-S.nextCover; S.nextCover=need; }
+      else { S.nextCallAt=S.nextCover+CFG.callCoverClear; return; } }
+    // a call never starts that the act's intertitle would cut short; it waits for the next act
+    if(S.sceneTime<wait+hold+0.3){ S.nextCallAt=S.time+Math.max(0.5,S.sceneTime)+0.8; return; }
+    const pair=four&&rnd()<Math.min(CFG.callPairMax, CFG.callPairBase+(act-(M.fourAct||CFG.fourAct))*CFG.callPairStep);
+    const sides=pair?[0,1]:[rnd()<0.5?0:1];
+    let span=0;
+    sides.forEach((side,i)=>{ const c=newCall(side,wait,"","",i?0:hold); if(four&&!pair&&rnd()<CFG.callMoveChance) c.move={wait, hold:rollHold()};
+      span=Math.max(span, c.wait+c.hold+(c.move?c.move.wait+c.move.hold:0)); });
+    cueSfx(); haptic(6);
+    S.nextCallAt=S.time+span+(CFG.callGapMin+rnd()*CFG.callGapRand)*Math.max(0.45,1-S.scene*CFG.callGapAct)*(M.callGapMul||1);
+  }
+  function callTick(dt){
+    for(const c of S.calls.slice()){ const on=c.side?S.handR:S.handL;
+      if(c.phase==="wait"){
+        if(on&&S.handPressN[c.side]>c.press0){ c.phase="hold"; c.ht=0; haptic(8); }
+        else if(S.time-c.t0>=c.wait){ c.phase="miss"; c.until=S.time+CFG.flashDur; c.flash="Missed"; fidget("late"); }
+      } else if(c.phase==="hold"){
+        if(!on){ c.phase="miss"; c.until=S.time+CFG.flashDur; c.flash="Too soon"; fidget("early"); }
+        else { c.ht+=dt; if(c.ht>=c.hold) callDone(c); }
+      }
+      if(S.phase!=="playing"&&S.phase!=="tutorial") return;
+    }
+    S.calls=S.calls.filter(c=>(c.phase==="wait"||c.phase==="hold")||S.time<c.until);
+    if(!S.lesson&&S.time>=S.nextCallAt) scheduleCalls();
+  }
+  function callDone(c){
+    S.rp.calls++; plugSfx(); haptic(10);
+    if(S.lesson){ if(S.tut) S.tut.callsDone=(S.tut.callsDone||0)+1; }
+    else { const pts=Math.round(CFG.callScore*comboMult()); S.score+=pts;
+      S.combo+=CFG.comboCall; if(S.combo>S.bestCombo) S.bestCombo=S.combo; bumpCombo(); floatAtPad(c.side,"+"+pts); }
+    const other=1-c.side, otherBusy=S.calls.some(o=>o.side===other&&(o.phase==="wait"||o.phase==="hold"));
+    c.phase="done"; c.until=S.time+CFG.flashDur; c.flash="Done";
+    if(c.move&&!otherBusy){ const m=c.move; c.move=null; c.flash="Other hand";
+      newCall(other,m.wait,c.words,c.icon,m.hold); S.actCalls--; }
+  }
+  // a missed call is a fidget the witnesses notice: the first is a warning (a glance, the next pip half lit), the second
+  // a strike, and the count starts again (DECISION 2's default)
+  function fidget(why){
+    S.rp.fidgets++; S.actFidget=true; breakCombo(); haptic([12,40]);
+    if(S.lesson){ if(S.tut) S.tut.fidgets=(S.tut.fidgets||0)+1; say(why==="early"?"Hold until it lets go":"Touch the pad that lights","strike",1.8,3); glance(); return; }
+    if(S.fidgets>=1){ S.fidgets=0; addStrike("Fidgeting"); }
+    else { S.fidgets=1; say(why==="early"?"You let go too soon. They glance over":"You missed the call. They glance over","strike",1.8,3); glance(); }
+    renderPips(); }
+  function glance(){ const a=SCENE_ART[sceneIdx(S.scene)]; if(a){ S.turnedUntil=S.time+0.9; setStrip(art(a.turned)); } }
+  function renderPips(){ const pips=strikesEl.children, f=S?S.fidgets:0, n=S?S.strikes:0;
+    for(let i=0;i<pips.length;i++){ pips[i].classList.toggle("broke", i<n); pips[i].classList.toggle("half", i===n&&f>0); } }
+  function floatAtPad(side,text){ const el=side?handR:handL, r=el.getBoundingClientRect(), a=app.getBoundingClientRect();
+    floatText(r.left-a.left+r.width/2, r.top-a.top+8, text, "gold"); }
 
   // -- breath / posture (the extra clench-juggle layer) --
   function gasp(){ S.breathHold=false; breathBtn.classList.remove("held"); S.breathLock=CFG.gaspLock; squeak(); haptic([20,40]);
@@ -1272,10 +1558,11 @@
     const earned=new Set(get(L.medals,[]));
     const modes=new Set(get(L.modes,[])); modes.add(S.modeKey); set(L.modes,[...modes]);
     const r={ time:S.time, perfects:S.rp.perfects, plugs:S.rp.plugs, maxCombo:S.bestCombo, scenes:S.scene+1, mode:S.modeKey,
-      playMode:S.playMode, coughVents:S.rp.coughVents, wafts:S.rp.wafts, sips:S.rp.sips };
+      playMode:S.playMode, coughVents:S.rp.coughVents, wafts:S.rp.wafts, sips:S.rp.sips,
+      calls:S.rp.calls, maxPads:S.rp.maxPads, cleanActs:S.rp.cleanActs };
     const Lc={ modes:[...modes], dailyPlays:get(L.dailyPlays,0) };
     const newly=[];
-    MEDALS.forEach(m=>{ if(!earned.has(m.id) && m.check(r,Lc)){ earned.add(m.id); newly.push(m); } });
+    MEDALS.forEach(m=>{ if(!m.retired && !earned.has(m.id) && m.check(r,Lc)){ earned.add(m.id); newly.push(m); } });
     set(L.medals,[...earned]);
     return {newly, count:earned.size};
   }
@@ -1300,6 +1587,9 @@
     set(L.time, get(L.time,0)+S.time);
     set(L.plugs, get(L.plugs,0)+S.rp.plugs);
     set(L.perfects, get(L.perfects,0)+S.rp.perfects);
+    set(L.vents, get(L.vents,0)+S.rp.vents); set(L.calls, get(L.calls,0)+S.rp.calls); set(L.fidgets, get(L.fidgets,0)+S.rp.fidgets);
+    if(S.rp.calls>get(L.bestCalls,0)) set(L.bestCalls,S.rp.calls);
+    if(S.rp.maxPads>get(L.bestPads,0)) set(L.bestPads,S.rp.maxPads);
     if(S.bestCombo>get(L.bestCombo,0)) set(L.bestCombo,S.bestCombo);
     if(S.time>get(L.bestTime,0)) set(L.bestTime,S.time);
     if(S.scene+1>get(L.bestAct,0)) set(L.bestAct,S.scene+1);
@@ -1330,7 +1620,8 @@
     $("overModeName").textContent=S.playMode==="stage"?(DIFF_NAMES[S.modeKey]||S.modeKey):(MODE_NAMES[S.playMode]||S.playMode);
     $("overBest").textContent=Math.max(prevBest,finalScore);
     $("overSun").textContent=granted;
-    $("overMedals").textContent=med.count+"/"+MEDALS.length;
+    { const ea=new Set(get(L.medals,[])), sh=shownMedals(ea); $("overMedals").textContent=sh.filter(m=>ea.has(m.id)).length+"/"+sh.length; }
+    $("overCalls").textContent=S.rp.calls;
     $("bestBadgeWrap").classList.toggle("hidden", !isBest);
     if(S.playMode==="zen"){ $("overTitle").textContent="Curtain Call"; $("overSub").textContent="You bowed out with grace."; }
     else if(S.time<12){ $("overTitle").textContent="Exposed"; $("overSub").textContent="You lasted no time at all."; }
@@ -1415,7 +1706,7 @@
   function loadWard(){ const W=get(L.save,null);
     return W&&W.chars? W : {chars:["everyman"],pals:["matinee"],eqChar:"everyman",eqPal:"matinee"}; }
   function cosmeticCtx(){ const D=get(L.daily,{streak:0});
-    return { lifeTime:get(L.time,0), lifePlugs:get(L.plugs,0),
+    return { lifeTime:get(L.time,0), lifePlugs:get(L.plugs,0), lifeCalls:get(L.calls,0),
       bestStreak:Math.max(get(L.bestStreak,0), D.streak||0),
       medalCount:get(L.medals,[]).length, bestAct:get(L.bestAct,0), bestScore:get(L.bestScore,0),
       modes:get(L.modes,[]), playModes:get(L.playModes,[]) }; }
@@ -1443,7 +1734,7 @@
   function wardProgress(id,Lc){ const act=n=>n>0?"Act "+ROMAN[Math.min(n,ROMAN.length)-1]:"none yet";
     switch(id){
       case "gentleman": return fmtTime(Math.min(Lc.lifeTime,600))+" of 10m 0s";
-      case "grandma": return Math.min(Lc.lifePlugs,50)+" of 50";
+      case "grandma": return Math.min(Lc.lifeCalls,50)+" of 50";
       case "mime": return Math.min(Lc.bestStreak,3)+" of 3 days";
       case "bulldog": return Math.min(Lc.medalCount,8)+" of 8";
       case "midnight": return Lc.bestAct>0 ? "Best "+act(Lc.bestAct)+" of Act V" : "No act played yet";
@@ -1473,7 +1764,15 @@
   }
 
   // -- pause / nav --
-  function pauseGame(){ if(!S||(S.phase!=="playing"&&S.phase!=="countin")) return; S.phase="paused"; releaseAll(); countInEl.classList.add("hidden");
+  function pauseGame(){ if(!S||(S.phase!=="playing"&&S.phase!=="countin")) return;
+    // the walk's fix: a pause does not unsay a lift the room already heard (a cheek off in the quiet, or after a vent
+    // the cheeks not back yet); under a cover a lift is silent, in the lesson nothing counts, in a title card nothing is armed
+    if(S.phase==="playing"&&!S.lesson&&!S.inIntro&&!S.cover){ const off=k=>S.cArmed[k]&&!(k?S.padR:S.padL);
+      if(off(0)||off(1)){ cheekSqueak(S.backBy?"Back on too late":"A squeak"); if(S.phase!=="playing") return; } }
+    S.phase="paused"; releaseAll(); countInEl.classList.add("hidden");
+    // m2: every finger was let go; nothing squeaks for it, and a call being held waits again with a fresh window
+    S.hPrev=[false,false]; S.cGrace=[0,0]; S.backBy=0;
+    S.calls.forEach(c=>{ if(c.phase==="hold"){ c.phase="wait"; c.hold=Math.max(0.6,c.hold-c.ht); c.ht=0; c.t0=S.time; c.wait=callWaitDur(); c.press0=S.handPressN[c.side]; } });
     $("quitBtn").textContent = S.playMode==="zen" ? "Take a bow" : "Give up the act";
     pauseScreen.classList.remove("hidden"); }
   // resume counts three beats before pressure moves; pads may be pressed during the count
@@ -1481,7 +1780,7 @@
   function resumeGame(){ if(!S||S.phase!=="paused") return; S.phase="countin"; S.countIn=3*BEAT; pauseScreen.classList.add("hidden");
     countInEl.textContent="3"; countInEl.classList.remove("hidden"); S.last=performance.now(); }
   function tickCountIn(dt){ S.countIn-=dt;
-    if(S.countIn<=0){ S.countIn=0; S.phase="playing"; countInEl.classList.add("hidden"); return; }
+    if(S.countIn<=0){ S.countIn=0; S.phase="playing"; countInEl.classList.add("hidden"); armPads(); return; }
     countInEl.textContent=String(Math.ceil(S.countIn/BEAT)); }
   function toMenu(){ if(raf){ cancelAnimationFrame(raf); raf=null; } releaseAll(); S=null; countInEl.classList.add("hidden"); hud.classList.add("hidden"); tutOverlay.classList.add("hidden");
     padL.classList.remove("benched","slipped","down"); padR.classList.remove("benched","slipped","down");
@@ -1505,153 +1804,127 @@
       case "combo5": return "Best ×"+bc.toFixed(1)+" of ×5.0";
       case "allmodes": return Math.min(md,3)+" of 3 modes";
       case "daily3": return Math.min(dp,3)+" of 3 Dailies";
+      case "calls10": return "Best "+Math.min(get(L.bestCalls,0),10)+" of 10 in one ordeal";
+      case "four": return "Best "+Math.min(get(L.bestPads,0),4)+" of 4 at once";
     }
     return ""; }
+  // m2: the medals on show are every winnable one, and a retired one only where it was earned (marked Retired)
+  function shownMedals(earned){ return MEDALS.filter(m=>!m.retired||earned.has(m.id)); }
   function buildMedals(){ const earned=new Set(get(L.medals,[])); const g=$("medalGrid"); g.innerHTML="";
-    $("medalCount").textContent=MEDALS.filter(m=>earned.has(m.id)).length+" of "+MEDALS.length+" earned";
-    MEDALS.forEach(m=>{ const has=earned.has(m.id); const d=document.createElement("div"); d.className="medal"+(has?"":" locked");
+    const list=shownMedals(earned);
+    $("medalCount").textContent=list.filter(m=>earned.has(m.id)).length+" of "+list.length+" earned";
+    list.forEach(m=>{ const has=earned.has(m.id); const d=document.createElement("div"); d.className="medal"+(has?"":" locked")+(m.retired?" retired":"");
       const pr=has?"":medalProgress(m.id);
       d.innerHTML=(has?"":'<span class="mlock" role="img" aria-label="Locked">'+ic("wardrobe_lock")+'</span>')+'<span class="mi">'+ic(m.ico)+'</span><span class="mn">'+m.name+'</span><span class="mdsc">'+m.desc+'</span>'+
-        (pr?'<span class="mprog">'+pr+'</span>':""); g.appendChild(d); }); }
-  function buildStats(){ const rows=[
+        (m.retired?'<span class="mret">Retired, kept</span>':"")+(pr?'<span class="mprog">'+pr+'</span>':""); g.appendChild(d); }); }
+  function buildStats(){ const ea=new Set(get(L.medals,[])), sh=shownMedals(ea); const rows=[
       ["Ordeals faced", get(K.plays,0)],
       ["Longest composure", fmtTime(get(L.bestTime,0))],
       ["Total time held", fmtTime(get(L.time,0))],
-      ["Leaks plugged", get(L.plugs,0)],
+      ["Vents", get(L.vents,0)],
       ["Perfect vents", get(L.perfects,0)],
+      ["Hand calls held", get(L.calls,0)],
+      ["Fidgets", get(L.fidgets,0)],
       ["Best combo", "×"+comboMultFrom(get(L.bestCombo,0)).toFixed(1)],
       ["Sunbeams "+ic("sunbeam"), get(K.sun,0)],
-      ["Medals", get(L.medals,[]).length+"/"+MEDALS.length],
+      ["Medals", sh.filter(m=>ea.has(m.id)).length+"/"+sh.length],
       ["Best, Easy", get(K.best("easy"),0)],
       ["Best, Normal", get(K.best("normal"),0)],
       ["Best, Panic", get(K.best("panic"),0)],
       ["Best, Daily Ordeal", get(K.best("daily"),0)],
       ["Best, Zen Theater", get(K.best("zen"),0)],
-      ["Best, One Cheek", get(K.best("cheek"),0)],
       ["Daily streak record", get(L.bestStreak,0)],
       ["Deepest act", get(L.bestAct,0)>0?"Act "+ROMAN[Math.min(get(L.bestAct,0)-1,ROMAN.length-1)]:"None yet"],
     ];
+    // m1's records whose play is retired stay on the record where they exist
+    if(get(L.plugs,0)>0) rows.push(["Leaks plugged, retired", get(L.plugs,0)]);
+    if(get(K.best("cheek"),0)>0) rows.push(["Best, One Cheek, retired", get(K.best("cheek"),0)]);
     $("statsBody").innerHTML = rows.map(r=>'<div class="stat-row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>').join("");
     const ba=get(L.bestAct,0);
     $("statsLead").textContent="Best composure "+fmtTime(get(L.bestTime,0))+". Deepest act "+(ba>0?"Act "+ROMAN[Math.min(ba,ROMAN.length)-1]:"none yet")+"."; }
   function fmtTime(s){ s=Math.round(s); return s>=60 ? Math.floor(s/60)+"m "+(s%60)+"s" : s+"s"; }
   // ==================================================================
-  //  TUTORIAL
+  //  THE LESSON (m2 step 3). It replaces m1's tutorial for every save without ff.tut2seen (ff.tutseen is left as it
+  //  is), after the table card on a first boot, and runs again from How to play. The first scene; it cannot be lost
+  //  (no strike counts, the pressure only moves when you vent); one beat at a time, each waiting for the player; the
+  //  words sit on the pads plus one big line in the coach band, never a paragraph.
   // ==================================================================
-  const TUT_PROMPTS=[
-    "Hold <b>both pads</b> at the bottom to clench it in.",
-    "Each hand tires as its bar fills. <b>Lift one hand</b> to rest it, then swap.",
-    "Pressure only drops under a <b>cover noise</b>. Here comes one. Tap <b>Vent</b> in the middle.",
-    "Now vent the <b>instant</b> the noise starts. That is a <b>Perfect</b>.",
-    "A <b>leak</b>. Tap it on the stage to plug it before it squeaks.",
-    "No cover in sight? Tap the <b>Cough</b> handkerchief to fake your own, then <b>Vent</b> under it.",
-    "Hold the <b>Sip</b> glass to drink the pressure down. You cannot clench while sipping.",
-    "Slipped up? For a moment the <b>Waft</b> fan can fan a strike away. Try it now.",
-    "Two thumbs, so many buttons. <b>Hold breath</b> blunts the rise. Let go before you <b>gasp</b>.",
-    "Sitting still is hard. A <b>wobble</b> creeps in. Hold <b>Lean left</b> or <b>Lean right</b> against it.",
-    "You are ready. Three strikes and you are exposed. <b>Break a leg.</b>",
-  ];
+  const OBJECTIVE="Get through the scene without anyone hearing you";
+  const LESSON=["Hold both cheeks","A bus. Let go now","Cheeks back on","Hold the hymn book","A hand call while a bus comes","You are ready. Three strikes and the room knows"];
+  const LESSON_COVER=3.0, LESSON_HOLD=[2.0,5.0];
   function startTutorial(){
     rngFn=Math.random;
-    S=newState(chosenMode,"stage"); S.phase="tutorial";
-    S.tut={ step:0, heldBoth:0, oneUp:0, ventOk:false, perfOk:false, ventTries:0, plugOk:false, lastOpen:-99, lastLeak:-99, stepT:0,
-            coughed:false, coughVentOk:false, sipHeld:0, waftWin:0, waftOk:false };
-    S.nextCover=Infinity; S.nextLeak=Infinity; S.nextWhiff=Infinity;
-    hideAllScreens(); clearLeaks(); ribbonIdle(); setSceneArt(0);
-    hud.classList.remove("hidden"); hud.classList.add("hud-tut"); tutOverlay.classList.remove("hidden");
-    comboEl.classList.remove("on");
+    S=newState("normal","stage"); S.phase="tutorial"; S.lesson=true;
+    S.tut={ step:0, stepT:0, held:0, vented:false, perfect:false, squeaks:0, fidgets:0, callsDone:0, seenSq:0, seenFd:0, hintUntil:0, again:0, ventIn4:false, cover4:false };
+    S.nextCover=Infinity; S.nextCallAt=Infinity;
+    hideAllScreens(); clearLeaks(); ribbonIdle(); setSceneArt(0); sceneChip.textContent=SCENES[0].t; coverBanner.classList.remove("show");
+    hud.classList.remove("hidden"); hud.classList.add("hud-tut"); hud.classList.remove("show-pips"); tutOverlay.classList.remove("hidden");
+    comboEl.classList.remove("on"); renderPips(); syncPads(); armPads(); renderHands();
     setupTutStep();
     S.last=performance.now(); if(raf) cancelAnimationFrame(raf); loop();
   }
-  function setupTutStep(){ const T=S.tut; T.stepT=0; T.heldBoth=0; T.oneUp=0; T.lastOpen=-99; T.lastLeak=-99;
-    if(T.step===2){ T.ventOk=false; } if(T.step===3){ T.perfOk=false; T.ventTries=0; }
-    if(T.step===2||T.step===3||T.step===5) S.pressure=Math.max(S.pressure,55); // a lesson in venting needs something to vent
-    if(T.step===6) S.pressure=Math.max(S.pressure,65);
-    if(T.step===4){ T.plugOk=false; clearLeaks(); }
-    if(T.step===5){ T.coughed=false; T.coughVentOk=false; }
-    if(T.step===6){ T.sipHeld=0; }
-    if(T.step===7){ T.waftWin=0; T.waftOk=false; }
-    if(T.step===8){ T.breathHeld=0; S.breath=CFG.breathMax; S.breathLock=0; }
-    if(T.step===9){ T.leanHeld=0; T.wobbleShifted=false; S.wobble=0; S.wobbleDir=(rnd()<0.5?-1:1); S.wobbleFlipAt=CFG.wobbleFlipMin; }
-    if(S.cover) closeCover();
-    tutText.innerHTML=TUT_PROMPTS[T.step]; }
+  function lessonCover(){ openCover(false,"BUS"); S.coverUntil=S.time+LESSON_COVER; }
+  function lessonCall(side,k){ const it=CALLS[0][k]; return newCall(side,Infinity,it[0],it[1],LESSON_HOLD[side]); }
+  function lessonLine(t){ if(tutBig.textContent!==t) tutBig.textContent=t; }
+  function lessonHint(t){ tutHint.textContent=t; S.tut.hintUntil=S.time+2.4; }
+  function setupTutStep(){ const T=S.tut; T.stepT=0; T.again=0;
+    if(T.step===1){ S.pressure=Math.max(S.pressure,60); T.vented=false; lessonCover(); }
+    if(T.step===3){ S.pressure=Math.max(S.pressure,35); T.callsDone=0; lessonCall(0,0); }
+    if(T.step===4){ S.pressure=Math.max(S.pressure,55); T.callsDone=0; T.vented=false; T.ventIn4=false; T.cover4=false; lessonCall(1,1); }
+    hud.classList.toggle("show-pips", T.step===5);
+    tutObj.textContent=T.step===0?OBJECTIVE:"";
+    lessonLine(LESSON[T.step]); tutHint.textContent=""; }
   function nextTut(){ S.tut.step++; setupTutStep(); }
-  function endTutorial(){ set(L.tut,true); if(raf){ cancelAnimationFrame(raf); raf=null; } sipEnd(); S=null;
-    hud.classList.add("hidden"); hud.classList.remove("hud-tut"); tutOverlay.classList.add("hidden"); clearLeaks();
-    hideAllScreens(); startScreen.classList.remove("hidden"); refreshMenu(); }
+  function endTutorial(){ set(L.tut2,true); if(raf){ cancelAnimationFrame(raf); raf=null; } releaseAll(); S=null;
+    hud.classList.add("hidden"); hud.classList.remove("hud-tut","show-pips"); tutOverlay.classList.add("hidden"); coverBanner.classList.remove("show");
+    clearLeaks(); renderHands(); hideAllScreens(); startScreen.classList.remove("hidden"); refreshMenu(); }
 
-  function tutStep(dt, usableL, usableR){
+  function lessonStep(dt){
     const T=S.tut; T.stepT+=dt;
+    // a slip gets one short note under the line (the room still turns; nothing counts)
+    if(T.squeaks>T.seenSq){ T.seenSq=T.squeaks; lessonHint(T.step<=1||T.step===3?"They heard that. Keep both cheeks on until a noise":"They heard that. Back on before the noise ends"); }
+    if(T.fidgets>T.seenFd){ T.seenFd=T.fidgets; lessonHint("Touch the pad that lights and hold it until it lets go"); }
+    if(T.hintUntil&&S.time>=T.hintUntil){ T.hintUntil=0; tutHint.textContent=""; }
+    const live=k=>S.calls.find(o=>o.side===k&&(o.phase==="wait"||o.phase==="hold"));
     switch(T.step){
-      case 0:
-        if(usableL&&usableR) T.heldBoth+=dt; else T.heldBoth=0;
-        if(T.heldBoth>0.7) nextTut();
+      case 0: // hold both cheeks
+        if(S.padL&&S.padR) T.held+=dt; else T.held=0;
+        if(T.held>0.8) nextTut();
         break;
-      case 1:
-        if(((usableL?1:0)+(usableR?1:0))===1) T.oneUp+=dt; else T.oneUp=0;
-        if(T.oneUp>0.7 || T.stepT>14) nextTut();
+      case 1: // a bus: let go now (aim for a Perfect); a bus that passes unvented comes round again
+        if(T.vented){ const vh=T.perfect?"Perfect. Right as it started":"Vented. Let go right as it starts for a Perfect"; nextTut(); lessonHint(vh); break; }
+        if(!S.cover){ if(!T.again){ T.again=S.time+1.2; lessonLine("Wait for the next one"); } else if(S.time>=T.again){ T.again=0; lessonLine(LESSON[1]); lessonCover(); } }
         break;
-      case 2:
-        if(!S.cover && S.time-T.lastOpen>0.7){ openCover(); T.lastOpen=S.time; }
-        if(T.ventOk) nextTut();
+      case 2: // cheeks back on (the bus may still be passing)
+        if(S.padL&&S.padR&&!S.cover) nextTut();
+        else if(S.padL&&S.padR) lessonLine("Now hold until it passes");
         break;
-      case 3:
-        if(!S.cover && S.time-T.lastOpen>0.7){ openCover(); T.lastOpen=S.time; }
-        if(T.perfOk || T.ventTries>=2) nextTut();
+      case 3: // the hymn book: a hand call that waits for the player; let go too soon and it lights again
+        if(T.callsDone>0){ nextTut(); break; }
+        if(!S.calls.length) lessonCall(0,0);
         break;
-      case 4:
-        if(S.leaks.length===0 && S.time-T.lastLeak>1.2){ spawnLeak(); T.lastLeak=S.time; }
-        if(T.plugOk) nextTut();
-        break;
-      case 5: // fake cough then vent under it
-        if(!S.cover) T.coughed=false;
-        if(T.coughVentOk || T.stepT>18) nextTut();
-        break;
-      case 6: // hold sip
-        if(T.sipHeld>0.8 || T.stepT>14){ if(S.sipping) sipEnd(); nextTut(); }
-        break;
-      case 7: // waft a scripted squeak away
-        if(!T.waftOk && (!T.waftWin || S.time>T.waftWin+1.4)){
-          squeak(); T.waftWin=S.time+CFG.waftWindow;
-          say("Waft it","waft",CFG.waftWindow,3);
-        }
-        if(T.waftOk || T.stepT>16) nextTut();
-        break;
-      case 8: // hold breath
-        if(S.breathHold) T.breathHeld=(T.breathHeld||0)+dt;
-        if((T.breathHeld||0)>0.8 || T.stepT>14) nextTut();
-        break;
-      case 9: // fight the wobble with a lean pad
-        if(S.leanL||S.leanR) T.leanHeld=(T.leanHeld||0)+dt;
-        if((T.leanHeld||0)>1.0 || T.wobbleShifted || T.stepT>16) nextTut();
-        break;
-      case 10:
-        if(T.stepT>2.6) endTutorial();
+      case 4: { // a hand call while a bus comes: hold the hand, lift the cheeks under the bus, cheeks back on
+        const c=live(1);
+        if(T.vented&&!T.ventIn4){ T.ventIn4=true; lessonLine("Cheeks back on. Keep the hand"); }
+        if(c&&c.phase==="hold"&&c.ht>0.5&&!T.cover4&&!S.cover){ T.cover4=true; lessonCover(); lessonLine("Keep the hand. Let go with both cheeks"); }
+        if(T.ventIn4&&T.callsDone>0&&S.padL&&S.padR&&!S.cover){ nextTut(); break; }
+        if(!c&&!S.calls.length&&!(T.ventIn4&&T.callsDone>0)){ // dropped, or held to the end without a vent: again
+          T.callsDone=0; T.cover4=false; lessonCall(1,1); lessonLine(LESSON[4]); }
+        break; }
+      case 5: // you are ready
+        if(T.stepT>3.4) endTutorial();
         break;
     }
   }
 
   function tickTutorial(dt){
-    if(S.cover && S.time>=S.coverUntil) closeCover();
-    for(let i=S.leaks.length-1;i>=0;i--){ const lk=S.leaks[i]; lk.remaining-=dt; const pp=1-lk.remaining/lk.life;
-      lk.el.style.setProperty("--pp", Math.max(0,Math.min(1,pp)).toFixed(3)); if(lk.remaining<=0) burstLeak(lk); }
-    if(S.slipL>0){ S.slipL-=dt; if(S.slipL<=0) padL.classList.remove("slipped"); }
-    if(S.slipR>0){ S.slipR-=dt; if(S.slipR<=0) padR.classList.remove("slipped"); }
-    const usableL=S.padL&&S.slipL<=0&&!S.sipping, usableR=S.padR&&S.slipR<=0&&!S.sipping;
-    const held=(usableL?1:0)+(usableR?1:0);
-    const sf=CFG.strainFill*S.M.strainFillMul;
-    // the coach card is up for the whole lesson, so pressure never ticks on its own here; a vent or a sip still moves it
-    if(S.sipping){ S.pressure-=CFG.sipDrain*dt; if(S.tut) S.tut.sipHeld=(S.tut.sipHeld||0)+dt; }
-    S.pressure=Math.max(0,Math.min(92,S.pressure)); // invincible in tutorial
-    if(usableL) S.strainL+=sf*dt; else if(S.slipL<=0) S.strainL-=CFG.strainRecover*dt;
-    if(usableR) S.strainR+=sf*dt; else if(S.slipR<=0) S.strainR-=CFG.strainRecover*dt;
-    S.strainL=Math.max(0,Math.min(100,S.strainL)); S.strainR=Math.max(0,Math.min(100,S.strainR));
-    if(usableL&&S.strainL>=100){ S.slipL=CFG.slipDuration; S.strainL=0; padL.classList.add("slipped"); squeak(); haptic(20); }
-    if(usableR&&S.strainR>=100){ S.slipR=CFG.slipDuration; S.strainR=0; padR.classList.add("slipped"); squeak(); haptic(20); }
-    postureTick(dt);
+    if(S.cover&&S.time>=S.coverUntil) endCover();
+    if(S.tut.step<5){ handEdges(); cheekTick(); callTick(dt); } // the last beat lets every finger go in peace
+    if(!S||S.phase!=="tutorial") return;
+    S.pressure=Math.max(0,Math.min(92,S.pressure)); // it only moves when you vent
     S.time+=dt;
-    tutStep(dt, usableL, usableR);
-    if(S && S.phase==="tutorial") render();  // endTutorial() may have torn down S mid-frame
+    lessonStep(dt);
+    if(S&&S.phase==="tutorial") render();  // endTutorial() may have torn down S mid frame
   }
 
   // ==================================================================
@@ -1666,59 +1939,27 @@
     if(S.phase!=="playing") return;
     tick(dt);
   }
+  // m2: pressure rises the whole time; the cheeks, the covers and the hand calls are the play. m1's leaks, whiff,
+  // posture, breath, strain and slips, Cough, Sip, Waft and One Cheek are retired from play (their code is dormant).
   function tick(dt){
-    if(S.inIntro){ S.introTime-=dt; if(S.introTime<=0){ S.inIntro=false; introScreen.classList.add("hidden"); } render(); return; }
-    S.sceneTime-=dt; if(S.sceneTime<=0){ showIntro(S.scene+1); render(); return; }
+    if(S.inIntro){ S.introTime-=dt; if(S.introTime<=0){ S.inIntro=false; introScreen.classList.add("hidden"); armPads(); } render(); return; }
+    // an act ends once its last cover has played out (the intertitle never cuts a vent in half)
+    S.sceneTime-=dt; if(S.sceneTime<=0&&!S.cover&&!S.backBy&&!S.cGrace[0]&&!S.cGrace[1]){ showIntro(S.scene+1); render(); return; }   // the walk's fix: never ends over a pending squeak
     if(S.stun>0) S.stun-=dt;
-    if(S.pendingExpose&&S.time>=S.pendingExpose){ S.pendingExpose=0; gameOver(); return; }
-
-    if(S.playMode==="cheek"&&S.time>=S.cheekSwapAt){ S.cheekSide=1-S.cheekSide; S.cheekSwapAt+=CFG.cheekSwapEvery;
-      say(S.cheekSide?"Swap. Left only":"Swap. Right only","mode_one_cheek",1.8,2); haptic([10,40]); }
 
     if(!S.cover && S.time>=S.nextCover) openCover();
-    if(S.cover && S.time>=S.coverUntil) closeCover();
+    if(S.cover && S.time>=S.coverUntil) endCover();
 
-    if(S.time>=S.nextLeak){ if(rnd()<0.85*S.M.leakMul) spawnLeak(); S.nextLeak=S.time+(CFG.leakGapMin+rnd()*CFG.leakGapRand)*S.M.leakGapMul; }
-    for(let i=S.leaks.length-1;i>=0;i--){ const lk=S.leaks[i]; lk.remaining-=dt; const pp=1-lk.remaining/lk.life;
-      lk.el.style.setProperty("--pp", Math.max(0,Math.min(1,pp)).toFixed(3)); if(lk.remaining<=0) burstLeak(lk); }
+    handEdges();
+    cheekTick(); if(S.phase!=="playing") return;   // a third strike ends the run mid frame
+    callTick(dt); if(S.phase!=="playing") return;
 
-    if(S.slipL>0){ S.slipL-=dt; if(S.slipL<=0) padL.classList.remove("slipped"); }
-    if(S.slipR>0){ S.slipR-=dt; if(S.slipR<=0) padR.classList.remove("slipped"); }
-    if(S.sipCd>0) S.sipCd=Math.max(0,S.sipCd-dt);
-
-    const benchL=S.playMode==="cheek"&&S.cheekSide===0, benchR=S.playMode==="cheek"&&S.cheekSide===1;
-    const usableL=S.padL&&S.slipL<=0&&S.stun<=0&&!S.sipping&&!benchL,
-          usableR=S.padR&&S.slipR<=0&&S.stun<=0&&!S.sipping&&!benchR;
-    const held=(usableL?1:0)+(usableR?1:0);
-    const sf=CFG.strainFill*S.M.strainFillMul;
-    postureTick(dt);
-    const breathing=S.breathHold && S.breath>0 && S.stun<=0;
-    const rMul=breathing?CFG.breathRiseCut:1;
-
-    if(S.stun>0){ /* frozen */ }
-    else if(S.sipping){ S.pressure-=CFG.sipDrain*dt; if(S.pressure<=0){ S.pressure=0; sipEnd(); } }
-    else if(held===2) S.pressure-=CFG.bothHeldDrop*dt;
-    else if(held===1) S.pressure+=riseRate()*CFG.oneHeldFactor*rMul*dt;
-    else S.pressure+=riseRate()*rMul*dt;
-    if(S.pressure<0) S.pressure=0;
-
-    // whiff hazard (sipping leaves both hands off the pads, so a whiff lands at full surge)
-    if(CFG.whiffOn && S.stun<=0){
-      if(S.whiffAt>0){ if(S.time>=S.whiffAt){ const both=(usableL&&usableR)||breathing; S.pressure=Math.min(100,S.pressure+CFG.whiffSurge*(both?0.3:1));
-          if(!both){ squeak(); haptic(25); } S.whiffAt=0; } }
-      else if(S.time>=S.nextWhiff){ startWhiff(); S.nextWhiff=S.time+(CFG.whiffGapMin+rnd()*CFG.whiffGapRand); }
-    }
-
-    if(usableL) S.strainL+=sf*dt; else if(S.slipL<=0) S.strainL-=CFG.strainRecover*dt;
-    if(usableR) S.strainR+=sf*dt; else if(S.slipR<=0) S.strainR-=CFG.strainRecover*dt;
-    S.strainL=Math.max(0,Math.min(100,S.strainL)); S.strainR=Math.max(0,Math.min(100,S.strainR));
-
-    if(usableL&&S.strainL>=100){ S.slipL=CFG.slipDuration; S.strainL=0; S.pressure=Math.min(100,S.pressure+CFG.slipSpike); padL.classList.add("slipped"); squeak(); haptic(20); }
-    if(usableR&&S.strainR>=100){ S.slipR=CFG.slipDuration; S.strainR=0; S.pressure=Math.min(100,S.pressure+CFG.slipSpike); padR.classList.add("slipped"); squeak(); haptic(20); }
-
+    if(S.stun<=0) S.pressure+=riseRate()*dt;
     if(S.pressure>=100) blowout();
-    if(S.phase!=="playing") return; // a blowout third strike may have ended the run mid-frame
+    if(S.phase!=="playing") return;
 
+    // the Twister's count: both cheeks held plus each hand that is holding a call (a hand resting on a pad is not counted)
+    const pads=(S.padL?1:0)+(S.padR?1:0)+S.calls.filter(c=>c.phase==="hold").length; if(pads>S.rp.maxPads) S.rp.maxPads=pads;
     S.score+=CFG.scoreIdle*dt*(1+rampLevel()*0.12);
     S.time+=dt;
     render();
@@ -1732,34 +1973,46 @@
     const p=S.pressure/100;
     gaugeFill.style.width=Math.min(100,S.pressure).toFixed(1)+"%";
     pctText.textContent=Math.round(S.pressure)+"%";
-    strainLbar.style.width=S.strainL.toFixed(0)+"%"; strainRbar.style.width=S.strainR.toFixed(0)+"%";
     scoreEl.textContent=Math.round(S.score);
     face.style.setProperty("--flush", Math.min(1,Math.max(0,(p-0.25)/0.75)).toFixed(3));
     if(!(S.reliefUntil && S.time<S.reliefUntil)){ S.reliefUntil=0; face.dataset.tier=faceTier(p); }
     const sc=sweatCount(p);
     setDrop("d1",sc>=1); setDrop("d2",sc>=2); setDrop("d3",sc>=3);
-    const armed=S.cover, perf=!armed&&S.perfectUntil>S.time; ventBtn.classList.toggle("armed",armed); ventBtn.classList.toggle("perfect",perf);
-    ventMainText.textContent=armed?"Vent":(perf?"Perfect":"Do not vent"); ventSub.textContent=armed?"Release under the noise":(perf?"":"Wait for cover noise");
-    padL.classList.toggle("tired", S.strainL>=70||S.slipL>0); padR.classList.toggle("tired", S.strainR>=70||S.slipR>0);
-    if(armed){ const left=Math.max(0,S.coverUntil-S.time), frac=left/(S.coverUntil-S.coverStart), inPerf=!S.coverSelf&&frac>(1-CFG.perfectFrac);
-      ventTimer.style.width=(frac*100)+"%"; ventTimer.style.background = inPerf ? "var(--mint)" : "var(--amber)";
-      const t=left.toFixed(1)+" s"; ventSub.textContent=t; coverCount.innerHTML=(inPerf?ic("perfect"):"")+'<span>'+t+'</span>'; }
-    else ventTimer.style.width="0%";
+    renderCheeks(); renderHands();
+    if(S.cover){ const left=Math.max(0,S.coverUntil-S.time), frac=left/(S.coverUntil-S.coverStart), inPerf=!S.vented&&frac>(1-CFG.perfectFrac);
+      coverCount.innerHTML=(inPerf?ic("perfect"):"")+'<span>'+left.toFixed(1)+" s</span>";
+      coverSub.textContent=S.vented?(S.padL&&S.padR?"Now hold":"Cheeks back on"):"Let go now"; }
     renderCoverProps();
     if(S.turnedUntil&&S.time>=S.turnedUntil){ S.turnedUntil=0; const a=SCENE_ART[sceneIdx(S.scene)]; if(a) setStrip(art(a.backs)); }
     bustWrap.classList.toggle("struck", S.struckUntil>S.time);
     if(S.ribbonOn&&S.time>=S.ribbonUntil){ S.ribbonOn=false; S.ribbonPri=0; ribbonEl.dataset.kind="0"; ribbonEl.textContent=RIBBON_IDLE; }
-    // breath meter + posture
-    breathFill.style.width=Math.max(0,Math.min(100,S.breath)).toFixed(1)+"%";
-    breathFill.style.background = S.breathLock>0 ? "rgba(192,57,43,.32)"
-      : (S.breath<25 ? "linear-gradient(90deg,rgba(192,57,43,.55),rgba(192,57,43,.22))" : "linear-gradient(90deg,rgba(95,208,176,.55),rgba(95,208,176,.22))");
-    breathBtn.classList.toggle("held", S.breathHold && S.breath>0);
-    breathBtn.classList.toggle("locked", S.breathLock>0);
-    wobbleDot.style.left=((S.wobble+100)/2).toFixed(1)+"%";
-    wobbleTrack.classList.toggle("danger", Math.abs(S.wobble)>68);
-    leanLbtn.classList.toggle("held", S.leanL);
-    leanRbtn.classList.toggle("held", S.leanR);
-    renderAbilities();
+  }
+  // the cheeks' words say what to do right now: Hold, Let go (a cover, not vented yet), Back on (after a vent, or a
+  // lift the room is about to hear); the tired plate warns while a lifted cheek is about to be heard
+  function renderCheeks(){
+    const play=!S.inIntro&&(S.phase==="playing"||S.phase==="tutorial");
+    [[padL,padLHint,0],[padR,padRHint,1]].forEach(([el,hint,k])=>{ const on=k?S.padR:S.padL;
+      const cue=play&&S.cover&&!S.vented&&on, back=play&&!on&&S.cArmed[k]&&(S.cGrace[k]>0||(S.cover&&S.vented)||S.backBy>0);
+      const t=cue?"Let go":(back?"Back on":"Hold");
+      if(hint.textContent!==t) hint.textContent=t;
+      el.classList.toggle("cue",cue); el.classList.toggle("warn",back); });
+  }
+  // the hands: Left hand or Right hand until called; then the call's words and its icon, a ring that counts the time
+  // left to touch it down, then fills as it is held; Done, Other hand, Missed or Too soon for a moment after
+  function renderHands(){
+    [[handL,0],[handR,1]].forEach(([el,k])=>{
+      const c=S?S.calls.find(o=>o.side===k):null, ph=c?c.phase:"idle";
+      // a call takes only a touch that lands after it lit: a finger already resting there is asked to lift and touch
+      const resting=ph==="wait"&&S&&(k?S.handR:S.handL);
+      const words=!c?(k?"Right hand":"Left hand"):(resting?"Lift, then touch":(ph==="wait"||ph==="hold"?c.words:c.flash)), icon=c?c.icon:"call_hand";
+      const key=ph+"|"+words+"|"+icon;
+      if(el._key!==key){ el._key=key;
+        el.classList.remove("idle","called","holding","done","missed");
+        el.classList.add(ph==="wait"?"called":ph==="hold"?"holding":ph==="done"?"done":ph==="miss"?"missed":"idle");
+        el.querySelector(".hico").innerHTML=ic(icon); el.querySelector(".hand-words").textContent=words;
+        el.setAttribute("aria-label",(k?"Right hand":"Left hand")+(c&&(ph==="wait"||ph==="hold")?". "+c.words:"")); }
+      const ring=!c?0:ph==="wait"?Math.max(0,1-(S.time-c.t0)/c.wait):ph==="hold"?Math.min(1,c.ht/c.hold):ph==="done"?1:0;
+      el.style.setProperty("--ring",ring.toFixed(3)); });
   }
   function dotRow(n,cap){ let s=""; for(let i=0;i<cap;i++) s+= i<n ? '<i class="cdot on"></i>' : '<i class="cdot"></i>'; return s; }
   function renderAbilities(){
@@ -1799,9 +2052,9 @@
     ribbonEl.dataset.kind=String(pri); ribbonEl.innerHTML=(icon?ic(icon):"")+"<span></span>"; ribbonEl.lastChild.textContent=text; }
   function ribbonIdle(){ ribbonEl.dataset.kind="0"; ribbonEl.textContent=RIBBON_IDLE; }
   // a strike: the whole witness row swaps to its turned drawing at once (never a tween) and holds 2.5 s
-  function roomReact(){ const sc=curScene(), n=S.playMode==="zen"?S.zenHits:S.strikes;
+  function roomReact(cause){ const sc=curScene(), n=S.playMode==="zen"?S.zenHits:Math.max(1,S.strikes);
     const line=sc.reacts[Math.max(0,Math.min(n-1, sc.reacts.length-1))];
-    say(line,"strike",2.5,3);
+    say((cause?cause+". ":"")+line,"strike",2.5,3);
     const a=SCENE_ART[sceneIdx(S.scene)]; if(a){ S.turnedUntil=S.time+2.5; setStrip(art(a.turned)); }
     S.struckUntil=S.time+0.6; }
   function shudder(){ if(reduceMotion||(S&&S.leaks.length)) return; bustWrap.classList.remove("shudder"); void bustWrap.offsetWidth; bustWrap.classList.add("shudder"); }
@@ -1809,8 +2062,11 @@
   // ==================================================================
   //  INPUT
   // ==================================================================
-  // every hold (pads, leans, sip, breath) tracks its own pointer ids with capture; releaseAll() lets go of all of them
-  // (pause, blur, a hidden page, an orientation change), and the keyboard holds with them
+  // m2 (law 10): the four pads are one deck. Every pointer that lands on the deck is captured by it and hit tested
+  // against the four pad boxes on its down and on every move, so each pad counts its own pointer ids, a finger that
+  // slides off a pad lets go of it and a finger that slides onto one presses it. F and J are the cheeks, R and U the
+  // hands; Escape pauses. releaseAll() lets go of everything (pause, blur, a hidden page, an orientation change).
+  // bindHold and bindPad stay for m1's retired controls (dormant, hidden; their keys are gone).
   const holds=[];
   function bindHold(el,down,up){ const ids=new Set();
     el.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); ids.add(e.pointerId); down(); try{ el.setPointerCapture(e.pointerId);}catch(_){} });
@@ -1818,35 +2074,33 @@
     el.addEventListener("pointerup",end); el.addEventListener("pointercancel",end); el.addEventListener("lostpointercapture",end);
     holds.push(()=>{ if(ids.size){ ids.clear(); up(); } }); }
   function bindPad(el,key){ bindHold(el, ()=>{ el.classList.add("down"); if(S) S[key]=true; }, ()=>{ el.classList.remove("down"); if(S) S[key]=false; }); }
+  const PADS=[{el:padL,key:"padL"},{el:padR,key:"padR"},{el:handL,key:"handL"},{el:handR,key:"handR"}];
+  const PAD_KEY={KeyF:0,KeyJ:1,KeyR:2,KeyU:3}, padKey=code=>Object.prototype.hasOwnProperty.call(PAD_KEY,code)?PAD_KEY[code]:-1;
+  const ptrPad=new Map(), keyPad=[false,false,false,false];
+  function padAt(x,y){ for(let i=0;i<PADS.length;i++){ const r=PADS[i].el.getBoundingClientRect();
+      if(x>=r.left&&x<r.right&&y>=r.top&&y<r.bottom) return i; } return -1; }
+  function syncPad(i){ let on=keyPad[i]; if(!on) ptrPad.forEach(v=>{ if(v===i) on=true; });
+    PADS[i].el.classList.toggle("down",on); if(S) S[PADS[i].key]=on; }
+  function syncPads(){ for(let i=0;i<PADS.length;i++) syncPad(i); }
+  deckEl.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio();
+    const i=padAt(e.clientX,e.clientY); ptrPad.set(e.pointerId,i); try{ deckEl.setPointerCapture(e.pointerId); }catch(_){}
+    if(i>=0) syncPad(i); });
+  deckEl.addEventListener("pointermove",e=>{ if(!ptrPad.has(e.pointerId)) return;
+    const was=ptrPad.get(e.pointerId), i=padAt(e.clientX,e.clientY); if(i===was) return;
+    ptrPad.set(e.pointerId,i); if(was>=0) syncPad(was); if(i>=0) syncPad(i); });
+  const ptrEnd=e=>{ if(!ptrPad.has(e.pointerId)) return; const was=ptrPad.get(e.pointerId); ptrPad.delete(e.pointerId); if(was>=0) syncPad(was); };
+  ["pointerup","pointercancel","lostpointercapture"].forEach(t=>deckEl.addEventListener(t,ptrEnd));
+  deckEl.addEventListener("contextmenu",e=>e.preventDefault());
   function releaseAll(){ holds.forEach(f=>f()); for(const k in down) down[k]=false;
-    [padL,padR].forEach(p=>p.classList.remove("down")); leanLbtn.classList.remove("held"); leanRbtn.classList.remove("held");
-    if(S){ S.padL=false; S.padR=false; S.leanL=false; S.leanR=false; } endBreath(); sipEnd(); }
-  bindPad(padL,"padL"); bindPad(padR,"padR");
+    ptrPad.clear(); keyPad.fill(false); syncPads();
+    leanLbtn.classList.remove("held"); leanRbtn.classList.remove("held");
+    if(S){ S.leanL=false; S.leanR=false; } endBreath(); sipEnd(); }
   const down={};
-  ventBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); doVent(); });
-  coughBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); doCough(); });
-  waftBtn.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio(); doWaft(); });
-  bindHold(sipBtn, sipStart, sipEnd);
-  bindHold(breathBtn, startBreath, endBreath);
-  bindPad(leanLbtn,"leanL"); bindPad(leanRbtn,"leanR");
   window.addEventListener("keydown",e=>{ if(down[e.code]) return; down[e.code]=true;
-    if(e.code==="KeyF"){ padL.classList.add("down"); if(S) S.padL=true; }
-    if(e.code==="KeyJ"){ padR.classList.add("down"); if(S) S.padR=true; }
-    if(e.code==="Space"){ e.preventDefault(); doVent(); }
-    if(e.code==="KeyC"){ doCough(); }
-    if(e.code==="KeyS"){ sipStart(); }
-    if(e.code==="KeyW"){ doWaft(); }
-    if(e.code==="KeyB"){ startBreath(); }
-    if(e.code==="KeyQ"){ if(S) S.leanL=true; leanLbtn.classList.add("held"); }
-    if(e.code==="KeyE"){ if(S) S.leanR=true; leanRbtn.classList.add("held"); }
+    const k=padKey(e.code); if(k>=0){ e.preventDefault(); unlockAudio(); keyPad[k]=true; syncPad(k); }
     if(e.code==="Escape"){ if(S&&S.phase==="playing") pauseGame(); else if(S&&S.phase==="paused") resumeGame(); } });
   window.addEventListener("keyup",e=>{ down[e.code]=false;
-    if(e.code==="KeyF"){ padL.classList.remove("down"); if(S) S.padL=false; }
-    if(e.code==="KeyJ"){ padR.classList.remove("down"); if(S) S.padR=false; }
-    if(e.code==="KeyS"){ sipEnd(); }
-    if(e.code==="KeyB"){ endBreath(); }
-    if(e.code==="KeyQ"){ if(S) S.leanL=false; leanLbtn.classList.remove("held"); }
-    if(e.code==="KeyE"){ if(S) S.leanR=false; leanRbtn.classList.remove("held"); } });
+    const k=padKey(e.code); if(k>=0){ keyPad[k]=false; syncPad(k); } });
 
   const letGo=()=>{ if(S&&(S.phase==="playing"||S.phase==="countin")) pauseGame(); else releaseAll(); };
   document.addEventListener("visibilitychange",()=>{ if(document.hidden) letGo(); });
@@ -1863,7 +2117,7 @@
     document.querySelectorAll(".play-btn").forEach(x=>x.setAttribute("aria-pressed", x.dataset.play===chosenPlay?"true":"false"));
     diffRow.classList.toggle("disabled", chosenPlay==="daily"); }
   (function(){ const pl=get(UI.play,"stage"), df=get(UI.diff,"normal");
-    if(["stage","daily","zen","cheek"].indexOf(pl)>=0) chosenPlay=pl; if(MODES[df]) chosenMode=df; syncChoice(); })();
+    if(["stage","daily","zen"].indexOf(pl)>=0) chosenPlay=pl; if(MODES[df]) chosenMode=df; syncChoice(); })();
   document.querySelectorAll("#diffRow .mode-btn").forEach(b=>b.addEventListener("click",()=>{
     chosenMode=b.dataset.mode; set(UI.diff,chosenMode); syncChoice(); refreshMenu(); }));
   document.querySelectorAll(".play-btn").forEach(b=>b.addEventListener("click",()=>{
@@ -1873,6 +2127,7 @@
   $("menuBtn").addEventListener("click",toMenu);
   $("shareBtn").addEventListener("click",shareRun);
   $("pauseBtn").addEventListener("click",pauseGame);
+  $("pauseBtn").addEventListener("pointerdown",e=>{ e.preventDefault(); e.stopPropagation(); pauseGame(); });   // the walk's fix: works with fingers down
   $("resumeBtn").addEventListener("click",resumeGame);
   $("quitBtn").addEventListener("click",()=>{ if(S) gameOver(); });
   $("howBtn").addEventListener("click",openHow);
@@ -1926,7 +2181,11 @@
   const FFTEST=/[?&]fftest=1/.test(location.search);
   const W0=loadWard(); applyCharacter(W0.eqChar); applyPalette(W0.eqPal);
   syncToggles(); refreshMenu();
-  if(!get(L.tut,false) && !FFTEST){ startTutorial(); }
+  // m2: a save that has not seen the lesson gets the table card, then the lesson (m1 players too: ff.tut2seen is new)
+  let tableThen=false;
+  function openTable(thenLesson){ tableThen=!!thenLesson; hideAllScreens(); tableScreen.classList.remove("hidden"); }
+  $("tableGotIt").addEventListener("click",()=>{ unlockAudio(); tableScreen.classList.add("hidden"); if(tableThen) startTutorial(); else toMenu(); });
+  if(!get(L.tut2,false) && !FFTEST){ openTable(true); }
 
   // ==================================================================
   //  HEADLESS TEST HOOK (?fftest=1)
@@ -1936,6 +2195,8 @@
       start:function(play,diff){ chosenPlay=play||"stage"; chosenMode=diff||"normal";
         begin(chosenMode,chosenPlay); if(raf){ cancelAnimationFrame(raf); raf=null; } return true; },
       startTut:function(){ startTutorial(); if(raf){ cancelAnimationFrame(raf); raf=null; } return true; },
+      table:function(then){ openTable(then); return true; },
+      lesson:function(){ return S&&S.tut?{ step:S.tut.step, line:tutBig.textContent, obj:tutObj.textContent, hint:tutHint.textContent, vented:S.tut.vented, perfect:S.tut.perfect, callsDone:S.tut.callsDone, squeaks:S.tut.squeaks, fidgets:S.tut.fidgets, strikes:S.strikes, zen:S.zenHits }:null; },
       endTut:endTutorial,
       state:function(){ if(!S) return null;
         const o={ phase:S.phase, playMode:S.playMode, mode:S.modeKey, pressure:S.pressure, strikes:S.strikes,
@@ -1943,12 +2204,21 @@
           sipping:S.sipping, scene:S.scene, leaks:S.leaks.length, cover:S.cover, coverType:S.coverType,
           coverSelf:S.coverSelf, strainL:S.strainL, strainR:S.strainR, pendingExpose:S.pendingExpose,
           breath:S.breath, breathHold:S.breathHold, wobble:S.wobble, breathLock:S.breathLock,
-          tutStep:S.tut?S.tut.step:-1 };
+          tutStep:S.tut?S.tut.step:-1, padL:S.padL, padR:S.padR, handL:S.handL, handR:S.handR,
+          armed:S.cArmed.slice(), vented:S.vented, coverLift:S.coverLift, backBy:S.backBy, fidgets:S.fidgets, calls:S.calls.length,
+          nextCallAt:S.nextCallAt, nextCover:S.nextCover, coverUntil:S.coverUntil, zenHits:S.zenHits, rp:Object.assign({},S.rp) };
         o.nan=Object.keys(o).some(k=>typeof o[k]==="number"&&!isFinite(o[k])); return o; },
       setPads:function(l,r){ if(S){ S.padL=!!l; S.padR=!!r; } },
+      setHands:function(l,r){ if(S){ S.handL=!!l; S.handR=!!r; } },
+      deck:function(){ return PADS.map(p=>({ id:p.el.id, down:p.el.classList.contains("down"), cls:p.el.className, text:p.el.textContent.trim() })); },
+      pointers:function(){ return [...ptrPad.entries()]; },
       setBreath:function(on){ if(S){ if(on) startBreath(); else endBreath(); } },
       setLean:function(l,r){ if(S){ S.leanL=!!l; S.leanR=!!r; } },
-      vent:doVent, cough:doCough, waft:doWaft,
+      vent:function(){ if(S){ S.padL=false; S.padR=false; } }, cough:doCough, waft:doWaft,
+      forceCall:function(side,k){ if(!S) return null; const list=CALLS[sceneIdx(S.scene)]||CALLS[0], it=list[(k||0)%list.length];
+        const c=newCall(side?1:0, callWaitDur(), it[0], it[1]); return c.words; },
+      calls:function(){ return S?S.calls.map(c=>({side:c.side, phase:c.phase, words:c.words, wait:+c.wait.toFixed(2), hold:+c.hold.toFixed(2), ht:+c.ht.toFixed(2), move:!!c.move, flash:c.flash})):[]; },
+      CALLS:CALLS,
       sip:function(on){ if(on) sipStart(); else sipEnd(); },
       forceCover:function(self){ if(S&&!S.cover) openCover(!!self); },
       forceLeak:function(){ if(S) spawnLeak(); },
@@ -1962,23 +2232,15 @@
           else if(S.phase==="countin") tickCountIn(1/60);
           else break; }
         return window.FF_DEV.state(); },
+      // m2 autoplay: the cheeks held, both lifted on a cover's first frame and back on 0.4 s after the vent; each call
+      // touched 0.4 s after it lights and held until it lets go
       autoplay:function(sec){ const n=Math.round((sec||10)*60);
         for(let i=0;i<n;i++){ if(!S||(S.phase!=="playing"&&S.phase!=="tutorial")) break;
-          if(i%6===0&&S.phase==="playing"&&!S.inIntro){
-            if(!S.sipping){
-              if(S.strainL>=80&&S.strainR<80){ S.padL=false; S.padR=true; }
-              else if(S.strainR>=80&&S.strainL<80){ S.padR=false; S.padL=true; }
-              else { S.padL=S.strainL<55; S.padR=S.strainR<55; }
-            }
-            // posture: counter the wobble, breathe when pinned and hands are busy
-            S.leanL = S.wobble>25; S.leanR = S.wobble<-25;
-            S.breathHold = (S.pressure>60 && S.breath>25 && S.breathLock<=0 && !(S.padL&&S.padR));
-            if(S.cover) doVent();
-            if(S.leaks.length) plugLeak(S.leaks[0]);
-            if((S.pendingExpose>0||(S.strikes>0&&S.time<=S.waftUntil))&&S.waftCharges>0) doWaft();
-            if(!S.cover&&S.pressure>72&&S.coughCharges>0&&S.stun<=0) doCough();
-            if(S.pressure>85&&S.sipCd<=0&&!S.sipping&&S.stun<=0) sipStart();
-            if(S.sipping&&S.pressure<25) sipEnd();
+          if(S.phase==="playing"&&!S.inIntro){
+            if(S.cover&&!S.vented){ S.padL=false; S.padR=false; }
+            else if(!S.cover||S.time-S.ventAt>0.4){ S.padL=true; S.padR=true; }
+            for(let k=0;k<2;k++){ const c=S.calls.find(o=>o.side===k&&(o.phase==="wait"||o.phase==="hold")), key=k?"handR":"handL";
+              S[key]=!!c&&(c.phase==="hold"||S.time-c.t0>0.4); }
           }
           if(S.phase==="tutorial") tickTutorial(1/60); else tick(1/60); }
         return window.FF_DEV.state(); },
