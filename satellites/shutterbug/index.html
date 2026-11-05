@@ -869,10 +869,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
     // 6.9 route score
     ROUTE_MAX_WALL_CHAIN: 2, ROUTE_SLACK: 1, ROUTE_SLACK_BOTH_AXES: false /* Q8 */, ROUTE_SAFE_EVERY_ROWS: 8, ROUTE_SAFE_ENEMY_DIST: 3,
     // 6.11 feature caps and thresholds
-    CAP_LADDER: 1, CAP_POCKET: 1, CAP_DOOR: 1, CAP_SPECK: 6, CAP_STICKY: 3, CAP_ENEMY: 4, CAP_ELITE: 1, CAP_TRAP: 1,
+    CAP_LADDER: 1, CAP_POCKET: 1, CAP_DOOR: 1, CAP_SPECK: 6, CAP_STICKY: 3, CAP_ENEMY: 7, CAP_ELITE: 2, CAP_TRAP: 1 /* read by nothing: a room holds one trap by structure (features.trap) */,
     LADDER_STACK_ROWS: 3, LADDER_MIN_RUNS: 3, POCKET_LANDMARK_MIN: 20, POCKET_TUNNEL_MAX: 2, POCKET_TRIES: 4, DOOR_L: 200, DOOR_MIN: 3, SPECK_S: 0.5, SPECK_L: 150,
     STICKY_RUN_MIN: 6, FODDER_CELLS: [2, 5], ELITE_CELLS: [6, 11], ELITE_HP_MULT: 2 /* Q51 */, BOSS_CELLS: 12, TRAP_MIN: 4, TRAP_PERIOD_S: 1.5, TRAP_TRIES: 4,
-    ENEMY_SPAWN_CLEAR: 2, BLUEPRINT_CHANCE: 0.25, EMBER_EXTRA_ENEMY: 1, EMBER_EXTRA_SPECKS: 2,
+    ENEMY_SPAWN_CLEAR: 2, BLUEPRINT_CHANCE: 0.25, EMBER_EXTRA_ENEMY: 1, SHED_CAP: 4 /* the caps before HARDER ROOMS: the ladder's last rung sheds back to it */, EMBER_EXTRA_SPECKS: 2,
     // 7 biomes and enemies
     FROST_SLICK_MIN_W: 5, FROST_SLIDE_CELLS: 1, DEEP_FALL_MULT: 0.8, DEEP_JUMP_V: 9.5 /* gives the +1 cell apex, section 3.2 */,
     MOTH_SPEED: 1, ICICLE_TRIGGER_COLS: 2, ICICLE_RESPAWN_S: 6, JELLY_BOB_CELLS: 2, JELLY_HP: 2, CRAWLER_SPEED: 2, CRAWLER_HP: 2, SPARK_HOP_S: 1.5,
@@ -925,9 +925,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
        takes the table's own row, the photo's fodder only (at most 3, Ember 4), no photo elite (the guardian is the
        room's elite), 1x HP and speed */
     RAMP: [null, null,
-      { floor: 2, cap: 4, eliteCap: 1, eliteMin: 0, fodderHpQ: 4, fast: 0 },
-      { floor: 3, cap: 4, eliteCap: 1, eliteMin: 1, fodderHpQ: 4, fast: 4 },
-      { floor: 4, cap: 5, eliteCap: 2, eliteMin: 1, fodderHpQ: 6, fast: 4 },
+      /* HARDER ROOMS step 1 (5 Nov): about 8 enemies by room 4, fast moths from room 2 (was floors 2 3 4, caps 4 4 5, fast from 3) */
+      { floor: 4, cap: 6, eliteCap: 1, eliteMin: 0, fodderHpQ: 4, fast: 4 },
+      { floor: 5, cap: 7, eliteCap: 2, eliteMin: 1, fodderHpQ: 4, fast: 4 },
+      { floor: 7, cap: 8, eliteCap: 2, eliteMin: 1, fodderHpQ: 6, fast: 4 },
       { floor: 0, cap: 3, eliteCap: 0, eliteMin: 0, fodderHpQ: 4, fast: 0 }],
     /* the guardian (HOUSE-B; DESIGN 7.1's fallback, Stephen's "Clay boss now"): the clay body is GUARD_W x GUARD_H
        cells (Astra's boss_fallback, 80x64 at 16 px a cell), resting on GUARD_REST or more cells of a dark mass; its
@@ -1020,7 +1021,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-9';
+  SB.BUILD = 'sb-m2-10';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -2381,6 +2382,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var laid = repairPass(level, g);
     level.degraded.push(DEGRADE.REPAIR, laid);
     if (laid && 2 * level.repair.tabs / n <= SB.TUNING.REPAIR_MAX_CHANGE) { g = R.graph(level); if (check()) return null; }
+    /* HARDER ROOMS (5 Nov): the higher caps can fill a room the old caps built with more enemies than its route can
+       keep clear of; before refusing, the enemy nearest the route goes one at a time, back down to the old cap
+       (SHED_CAP, Ember one more), checking after each. A room that builds today never reaches this rung */
+    var shedTo = SB.TUNING.SHED_CAP + (level.biome === 4 ? SB.TUNING.EMBER_EXTRA_ENEMY : 0);
+    while (f.enemies.length > shedTo) { k = nearestEnemy(level); if (k < 0) break; var e2 = f.enemies.splice(k, 1)[0]; level.degraded.push(DEGRADE.ENEMY, e2.idx); if (check()) return null; }
     return { needsCrop: true, why: 'route', detail: 'the degrade ladder ran out (' + level.degraded.join(' ') + '): ' + (level.ascent.score.reasons[0] || 'no reason'), degraded: level.degraded.slice() };
   }
 
@@ -10899,7 +10905,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=31').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=32').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.
