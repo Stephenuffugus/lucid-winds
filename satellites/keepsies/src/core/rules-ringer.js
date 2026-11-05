@@ -244,6 +244,16 @@ function passTurn(M) {
   say(M, 'turnPassed', { player: M.turn });
 }
 
+/**
+ * A turn spent moving one of your own statues instead of shooting (STATUES, step 10): nothing was shot, so
+ * nothing is pocketed, and the turn passes as after a miss.
+ */
+export function moveStatueTurn(M, info) {
+  if (M.phase !== PHASE.TURN) throw new Error('ringer: a statue moved out of phase (' + M.phase + ')');
+  say(M, 'statueMoved', Object.assign({ player: M.turn }, info || {}));
+  passTurn(M);
+}
+
 /** Abandon. The pot returns; nobody wins. */
 export function abandon(M) {
   M.phase = PHASE.OVER;

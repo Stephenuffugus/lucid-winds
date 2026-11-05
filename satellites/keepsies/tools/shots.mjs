@@ -320,6 +320,24 @@ await page.evaluate(() => { const b = document.getElementById('pouch-standard');
 await wait(600);
 await shot('k2-pouch-open');
 
+/* m2 step 9: STATUES, the placement phase, driven by a real mouse drag from the tray onto the dirt */
+await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 4242, forceFirst: 0, houseRules: { statues: true } }));
+await wait(1500);
+{
+  const tile = await page.evaluate(() => { const r = document.getElementById('st-arch').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+  const spot = await page.evaluate(() => window.KEEPSIES_DEV.projectGround(0.4572, 0.4572));
+  await page.mouse.move(tile.x, tile.y); await page.mouse.down();
+  for (let k = 1; k <= 12; k++) { await page.mouse.move(tile.x + (spot.x - tile.x) * k / 12, tile.y + (spot.y - tile.y) * k / 12); await wait(30); }
+  await wait(300);
+  await shot('k3-statues-place');
+  const bad = await page.evaluate(() => window.KEEPSIES_DEV.projectGround(0.1524, 0));
+  for (let k = 1; k <= 6; k++) { await page.mouse.move(spot.x + (bad.x - spot.x) * k / 6, spot.y + (bad.y - spot.y) * k / 6); await wait(30); }
+  await wait(300);
+  await shot('k3-statues-not-here');
+  await page.mouse.move(spot.x, spot.y); await wait(60); await page.mouse.up(); await wait(200);
+  console.log('  statue pending: ' + JSON.stringify(await page.evaluate(() => window.KEEPSIES_DEV.placing())));
+}
+
 /* step 7: the share cards, the composed PNGs themselves (no profile ids on either) */
 {
   const { writeFileSync } = await import('node:fs');

@@ -1,0 +1,16 @@
+{
+  "name": "ringer_statues",
+  "kind": "statues",
+  "_": "STATUES, Stephen's idea (KEEPSIES_BUILD_PLAN.md step 9): four statues placed by the AI's seeded rule for both owners, then whole Rookie matches through the game's own Ringer. A match with four statues completes; no marble ever stands inside a Loaf; a straight 5 m/s shot at a Loaf stops on the near side; a 2 m/s shot through an Arch passes under it untouched; the same statue record replays to the same match.",
+  "ringRadius": 1.525,
+  "statues": 4,
+  "ai": "rookie",
+  "seeds": { "from": 1, "to": 2 },
+  "asserts": [
+    { "id": "a match with four statues completes", "kind": "fraction", "metric": "completed", "atLeast": 1 },
+    { "id": "no marble ever passes through a Loaf", "kind": "fraction", "metric": "loafHeld", "atLeast": 1 },
+    { "id": "a 5 m/s shot at a Loaf stops on the near side", "kind": "fraction", "metric": "loafStopped", "atLeast": 1 },
+    { "id": "a marble shot through an Arch passes under it", "kind": "fraction", "metric": "underArch", "atLeast": 1 },
+    { "id": "the same statue record replays to the same match", "kind": "replayEqual" }
+  ]
+}

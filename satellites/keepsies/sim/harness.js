@@ -36,6 +36,8 @@ const WANT = arg('scenario', 'all');
 const CSV = arg('csv', null);
 const SEED_OVERRIDE = arg('seeds', null);
 
+function hashStr(t) { let h = 2166136261 >>> 0; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); }
+
 function entryFor(name) {
   const e = STARTER_ENTRIES[name];
   if (!e) throw new Error('harness: no catalog entry "' + name + '" (K0 has the starters only)');
@@ -103,9 +105,96 @@ function fireAim(W, id, aimSpec, rng, extraDeg, dirOverride) {
   return imp;
 }
 
+/* ------------------------------------------------------------- statues (step 9) */
+/* The STATUES house rule (core/statues.js): played through the game's own Ringer, statues and all, because the
+   statue list is part of the setup record and a replay of it has to be the same match. */
+const { createRinger } = await import('../src/game/ringer.js?v=20261105a');
+const { SHAPES, aiPlacement, inside } = await import('../src/core/statues.js?v=20261105a');
+const { FORMATIONS } = await import('../src/game/ringer.js?v=20261105a');
+
+/** The four statues for a seed, by the AI's seeded rule for both owners in turn, as the record a match keeps. */
+function statueRecord(sc, seed) {
+  const R0 = sc.ringRadius, sp = TUNING.ringer.crossSpacing;
+  const lay = FORMATIONS.cross(sp).map(([x, z]) => ({ x, z }));
+  const taws = [{ x: 0, z: R0 }, { x: 0, z: -R0 }];
+  const rng = makeRng((seed * 7919) ^ 0x5a7e);
+  const out = [];
+  for (let i = 0; i < sc.statues; i++) {
+    const owner = i % 2, s = aiPlacement(rng, R0, out, lay, owner, taws[1 - owner]);
+    if (s) out.push(s);
+  }
+  return out;
+}
+
+/** One whole AI match with the record's statues; every step, no marble may stand inside a Loaf. */
+function playStatueMatch(sc, seed, statues) {
+  const R = createRinger({
+    tuning: TUNING, seed, houseRules: { keepsies: true, slips: true, statues: true, ringSizeFt: 10 }, statues,
+    players: [{ name: 'A', ai: sc.ai, tawEntry: 'taw_clearie' }, { name: 'B', ai: sc.ai, tawEntry: 'taw_clearie' }]
+  });
+  R.doLag();
+  // the live statues, never the record passed in: a statue the AI moved stands somewhere else now
+  const loaves = () => R.statues().filter(s => s.shape === 'loaf');
+  let through = 0, guard = 0, moved = 0;
+  while (R.state.phase !== 'over' && guard++ < 400) {
+    if (!R.state.simulating) { const r = R.aiTurn(); if (r && r.moved != null) moved++; }
+    let k = 0;
+    while (R.state.simulating && k++ < 1400) {
+      R.tick();
+      for (const m of R.world.marbles.values()) {
+        const p = m.body.translation();
+        for (const L of loaves()) if (inside(L, p.x, p.y, p.z, m.spec.radius)) through++;
+      }
+    }
+  }
+  const sum = R.summary();
+  const fp = JSON.stringify(sum) + '|' + JSON.stringify(R.statues());
+  R.dispose();
+  return { done: R.state.phase === 'over' && sum.winner != null ? 1 : 0, through, moved, fp };
+}
+
+/** A straight shot at one statue from 30 cm, along +z: where the shooter is after `secs`, and if it went inside. */
+function shotAtStatue(shape, speed, secs) {
+  const z0 = 0.4572;
+  const R = createRinger({ tuning: TUNING, seed: 1, bare: true, skipLag: true, statues: [{ shape, x: 0, z: z0, owner: 0 }],
+    players: [{ name: 'A', ai: null, tawEntry: 'taw_clearie' }, { name: 'B', ai: null, tawEntry: 'taw_clearie' }] });
+  const W = R.world, id = R.taws[0].id;
+  place(W, id, { x: 0, z: z0 - 0.3 });
+  const aim = makeAim({ dir: dirFromDeg(0), power01: powerForSpeed(speed, TUNING), contactOffset: { x: 0, y: 0 }, wildness01: 0, braced01: 1, coneDegOverride: 0 });
+  impulse(W, id, aimToImpulse(aim, specOf(W, id), TUNING, makeRng(5)));
+  let inn = 0, maxY = 0, maxX = 0;
+  const S = R.statues()[0];
+  for (let n = 0; n < Math.round(secs / W.dt); n++) {
+    step(W);
+    const p = positionOf(W, id);
+    if (inside(S, p.x, p.y, p.z, specOf(W, id).radius)) inn++;
+    if (p.y > maxY) maxY = p.y;
+    if (Math.abs(p.x) > maxX) maxX = Math.abs(p.x);
+  }
+  const p = positionOf(W, id);
+  R.dispose();
+  return { z: p.z - z0, inn, maxY, maxX };
+}
+
 /* ----------------------------------------------------------------- runners */
 
 const RUNNERS = {
+  /** STATUES (KEEPSIES_BUILD_PLAN.md step 9): whole matches, the Loaf holds, the Arch lets a marble under. */
+  statues(sc) {
+    const rows = [];
+    const loaf = shotAtStatue('loaf', 5.0, 2.0), arch = shotAtStatue('arch', 2.0, 2.0);
+    for (let s = sc.seeds.from; s <= sc.seeds.to; s++) {
+      const rec = statueRecord(sc, s);
+      const a = playStatueMatch(sc, s, rec), b = playStatueMatch(sc, s, rec);
+      rows.push({
+        seed: s, statues: rec.length, completed: a.done, loafHeld: a.through === 0 ? 1 : 0, moved: a.moved, through: a.through,
+        loafStopped: loaf.inn === 0 && loaf.z < 0 ? 1 : 0, underArch: arch.inn === 0 && arch.z > 0.05 && arch.maxX < 0.012 ? 1 : 0,
+        loafZ: loaf.z, archZ: arch.z, a: a.fp.length + ':' + hashStr(a.fp), b: b.fp.length + ':' + hashStr(b.fp)
+      });
+    }
+    return rows;
+  },
+
   /** One clean snap through the centre of the cross. The physics gate. */
   break(sc) {
     const rows = [];

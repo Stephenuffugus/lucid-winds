@@ -201,6 +201,38 @@ export function addMarble(W, entry, pos, uid) {
   return id;
 }
 
+/**
+ * A statue (core/statues.js, the STATUES house rule): one fixed body at its foot point with a collider for each
+ * part, stone on dirt. It is NOT a surface: the floor patch model reads W.statics only, so a marble against a
+ * statue is a marble against a wall, which Rapier's own contact answers. Returns the body handle.
+ */
+export function addStatue(W, statue, shapes) {
+  const S = shapes[statue.shape];
+  if (!S) throw new Error('physics: no statue called "' + statue.shape + '"');
+  const t = W.tuning.physics;
+  const body = W.rapier.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(statue.x, 0, statue.z));
+  for (const p of S.parts) {
+    let desc;
+    if (p.box) desc = RAPIER.ColliderDesc.cuboid(p.box.hx, p.box.hy, p.box.hz);
+    else if (p.cyl) desc = RAPIER.ColliderDesc.cylinder(p.cyl.hh, p.cyl.r);
+    else desc = RAPIER.ColliderDesc.ball(p.ball.r);
+    desc.setTranslation(p.at[0], p.at[1], p.at[2])
+      .setFriction(t.statueFriction == null ? 0.3 : t.statueFriction)
+      .setRestitution(t.statueRestitution == null ? 0.45 : t.statueRestitution);
+    W.rapier.createCollider(desc, body);
+  }
+  W.statues = W.statues || [];
+  W.statues.push(body.handle);
+  return body.handle;
+}
+
+/** Take a statue's body out (a move rebuilds it where it was put). */
+export function removeStatue(W, handle) {
+  const b = W.rapier.getRigidBody(handle);
+  if (b) W.rapier.removeRigidBody(b);
+  if (W.statues) W.statues = W.statues.filter(h => h !== handle);
+}
+
 /** Remove a marble from the world (pocketed, shattered, ringed out). */
 export function removeMarble(W, id) {
   const m = W.marbles.get(id);
