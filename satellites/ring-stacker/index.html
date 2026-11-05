@@ -393,9 +393,14 @@ var SFX={
   move:function(){ beep(340,0.03,'square',0.02); },
   rot:function(){ beep(450,0.05,'triangle',0.04); },
   lock:function(){ beep(220,0.07,'triangle',0.06); },
-  slam:function(){ beep(160,0.18,'sawtooth',0.08,60); },
-  spin:function(){ beep(300,0.2,'sine',0.06,600); },
-  ring:function(ch){ var b=440*Math.pow(1.25,ch||0); beep(b,0.14,'triangle',0.1); setTimeout(function(){beep(b*1.25,0.14,'triangle',0.1);},90); setTimeout(function(){beep(b*1.5,0.2,'triangle',0.1);},190); },
+  /* Astra's sound notes (step 5): SLAM is a dry low click at contact and a short rubbery torque note going down while
+     the gyre turns; the latch lands when the turn settles (35 ms hold plus 240 ms). A crush is a short inward suction,
+     then a bright alloy chime that steps up the chain at the same length. A lost piece is a small descending tick. */
+  slam:function(){ beep(190,0.025,'square',0.05); beep(240,0.2,'sawtooth',0.045,95); },
+  spin:function(){ setTimeout(function(){ beep(1320,0.05,'triangle',0.06); beep(1980,0.04,'sine',0.025); },SET.reduce?60:275); },
+  ring:function(ch){ var b=660*[1,1.125,1.25,1.5,1.667,2][Math.min(5,ch||0)]; beep(900,0.11,'sine',0.045,240);
+    setTimeout(function(){ beep(b,0.12,'triangle',0.08); beep(b*2,0.09,'sine',0.03); },100); },
+  lost:function(){ beep(760,0.07,'sine',0.03,360); },
   bad:function(){ beep(150,0.12,'square',0.05); },
   win:function(){ beep(523,0.1,'triangle',0.1); setTimeout(function(){beep(659,0.1,'triangle',0.1);},100); setTimeout(function(){beep(784,0.16,'triangle',0.1);},200); },
   over:function(){ beep(300,0.3,'sine',0.08,90); }
@@ -486,7 +491,7 @@ function newGame(mode){
       cur:null, next:null, dropT:0, over:false, pieces:0,
       pieceBudget:(mode==='daily'?120:0), sbRun:0,
       fx:[], floats:[], spinA:0, pulse:[], shakeT:0, t:0, shards:[], popAnim:null, slideAnim:null, chainN:0, view:7,
-      sticks:[], skyT:0 };
+      sticks:[], skyT:0, spinT:0, shockT:-1, swallows:[], callouts:[], levelUp:null, endAnim:null };
   G.next=G.feed(); G.next2=G.feed();
   spawn();
   show('s-play'); running=true; lastTs=0; requestAnimationFrame(loop);
@@ -508,7 +513,7 @@ function spawn(){
   G.cur={ k:k, rot:0, x:C-2, y:topRow-1 };
   G.holdUsed=false;
   G.pieces++;
-  if(G.pieceBudget&&G.pieces>G.pieceBudget){ endRun(); return; }
+  if(G.pieceBudget&&G.pieces>G.pieceBudget){ endRun('budget'); return; }
   if(collides(G.cur.x,G.cur.y,G.cur.rot)){
     if(G.mode==='zen'){ // no-fail: the wind clears the sky
       G.grid=emptyGrid(); G.floats.push({x:270,y:PCY-60,txt:'the wind clears the gyre',life:1.6,big:true}); G.skyT=0.18;
@@ -556,7 +561,9 @@ function losePiece(slammed){
   var cs=cellsOf(G.cur.x,G.cur.y,G.cur.rot,G.cur.k),i;
   for(i=0;i<4;i++){ if(cs[i][1]>=0&&cs[i][1]<N)G.pulse.push({x:cs[i][0],y:cs[i][1],life:0.35}); }
   G.floats.push({x:270,y:PANEL.y+PANEL.h-40,txt:'lost to the void',life:1.0});
-  SFX.move();
+  if(!SET.reduce){ var lx=0,ly=0; for(i=0;i<4;i++){ lx+=cs[i][0]; ly+=cs[i][1]; } lx/=4; ly/=4;
+    G.swallows.push({px:PCX+(lx-C)*VPITCH, py:Math.min(PCY+(ly-C)*VPITCH, PANEL.y+PANEL.h-VPITCH*1.5), t:0}); }
+  SFX.lost();
   G.cur=null;
   spawn();
 }
@@ -605,10 +612,10 @@ function slam(){
   var sd=stickDrop();
   G.cur.y=sd.y;
   if(sd.stick){
-    SFX.slam(); G.shakeT=0.25;
+    SFX.slam(); G.shakeT=SET.reduce?0:0.25;
     lockPiece(true);
   } else {
-    SFX.slam(); G.shakeT=0.15;
+    SFX.slam(); G.shakeT=SET.reduce?0:0.15;
     losePiece(true);
   }
 }
@@ -629,7 +636,7 @@ function lockPiece(slammed){
   }
   G.score+=8; SFX.lock();
   G.cur=null;
-  if(slammed){ spinStructure(); SFX.spin(); G.spinA=1; }
+  if(slammed){ spinStructure(); SFX.spin(); G.spinA=SET.reduce?0:1; G.spinT=0; G.shockT=SET.reduce?-1:0; }
   if(mn){ mx/=mn; my/=mn; if(slammed){ var qx=mx-C, qy=my-C; mx=C-qy; my=C+qx; } G.sticks.push({x:mx,y:my,t:0}); }
   resolveRingsStaged();
 }
@@ -668,16 +675,17 @@ function nextRingStage(){
   PROG.ringsEver++; saveProg();
   if(chain>G.chainBest)G.chainBest=chain;
   SFX.ring(chain-1);
-  G.floats.push({x:270,y:PCY+90,txt:'RING '+D+(chain>1?' · CHAIN x'+chain:'')+' +'+pts,life:1.5,big:true});
+  G.floats.push({x:270,y:PANEL.y+PANEL.h-96,txt:'RING '+D+((chain>1&&!art('chain2'))?' · CHAIN x'+chain:'')+' +'+pts,life:1.1,big:true});   // at the window's foot, off the action
+  if(chain>1)G.callouts.push({n:Math.min(6,chain),t:0});
   var rc=RINGS[D-1],i,pop=[];
   for(i=0;i<rc.length;i++){
     var px=rc[i][0], py=rc[i][1];
     if(!G.grid[py][px])continue;
-    pop.push({x:px,y:py,col:ringColOf(px,py)});
+    pop.push({x:px,y:py,col:ringColOf(px,py),d:D});
     G.grid[py][px]=null;
     // shards burst outward from the sun through each popped cell
     var ang=Math.atan2(py-C,px-C);
-    for(var k2=0;k2<3;k2++){
+    for(var k2=0;k2<(SET.reduce?0:3);k2++){
       G.shards.push({x:px,y:py,col:ringColOf(px,py),
         vx:Math.cos(ang)*(3+Math.random()*5)+(Math.random()*2-1)*2,
         vy:Math.sin(ang)*(3+Math.random()*5)-2-Math.random()*3,
@@ -685,8 +693,8 @@ function nextRingStage(){
         life:0.6+Math.random()*0.35});
     }
   }
-  G.popAnim={cells:pop, t:0, dur:0.45, D:D};
-  G.shakeT=Math.max(G.shakeT,0.18);
+  G.popAnim={cells:pop, t:SET.reduce?0:-0.035, dur:SET.reduce?0.04:0.30, D:D};   // the closed band holds 35 ms first
+  if(!SET.reduce)G.shakeT=Math.max(G.shakeT,0.18);
 }
 function doCrush(D){
   // compute the inward crush and remember every move for the slide animation
@@ -705,8 +713,8 @@ function doCrush(D){
     }
   }
   G.grid=ng;
-  if(moves.length)G.slideAnim={t:0, dur:0.28, moves:moves};
-  else G.slideAnim={t:0, dur:0.06, moves:[]};
+  if(moves.length)G.slideAnim={t:0, dur:SET.reduce?0.04:0.30, moves:moves, D:D};
+  else G.slideAnim={t:0, dur:0.06, moves:[], D:D};
 }
 function stepAnims(dt){
   if(G.popAnim){
@@ -723,11 +731,11 @@ function checkQuota(){
   if(G.quotaDone<G.quota)return;
   G.level++; PROG.level=G.level; saveProg();
   G.quotaDone=0; G.quota=quotaFor(G.level);
-  SFX.win(); G.floats.push({x:270,y:110,txt:'LEVEL '+(G.level+1),life:1.6,big:true});
+  SFX.win(); if(art('levelup')&&!SET.reduce)G.levelUp={t:0,n:G.level+1}; else G.floats.push({x:270,y:PANEL.y+110,txt:'LEVEL '+(G.level+1),life:1.6,big:true});
   if(G.sbRun<12){ try{ if(window._sbCapEarn){ var got=window._sbCapEarn(2,'ringstacker:level')||0; G.sbRun+=got; if(got>0)G.floats.push({x:270,y:150,txt:'+'+got+' Sunbeams',life:1.2}); } }catch(e){} }
 }
-function endRun(){
-  if(!G||G.over)return; G.over=true; G.cur=null; running=false; SFX.over();
+function endRun(reason){
+  if(!G||G.over)return; G.over=true; G.cur=null; SFX.over();
   var b=PROG.best[G.mode]||0, nb=G.score>b;
   if(nb){ PROG.best[G.mode]=G.score; saveProg(); }
   var sb=0;
@@ -748,7 +756,9 @@ function endRun(){
     if(showHint){ hint.innerHTML='Tip: fill a whole square ring around the golden core to clear it. Try <b style="color:var(--teal)">Zen</b> from the menu to practice with no game over.'; hint.style.display='block'; }
     else hint.style.display='none';
   }
-  show('s-go');
+  /* Astra's game over plate over the frozen board first (cooling brackets, 480 ms, held a moment), then the card */
+  if(running&&art('overplate')){ G.endAnim={t:0,dur:SET.reduce?0.08:0.7,txt:reason==='budget'?'OUT OF PIECES':'TOPPED OUT'}; return; }
+  running=false; show('s-go');
 }
 
 /* ---------- render ---------- */
@@ -774,10 +784,15 @@ function tick(dt){
   for(i=G.shards.length-1;i>=0;i--){ var sh=G.shards[i]; sh.vy+=22*dt; sh.x+=sh.vx*dt; sh.y+=sh.vy*dt; sh.rot+=sh.vr*dt; sh.life-=dt; if(sh.life<=0)G.shards.splice(i,1); }
   for(i=G.pulse.length-1;i>=0;i--){ G.pulse[i].life-=dt; if(G.pulse[i].life<=0)G.pulse.splice(i,1); }
   for(i=G.floats.length-1;i>=0;i--){ var f=G.floats[i]; f.y-=24*dt; f.life-=dt*0.8; if(f.life<=0)G.floats.splice(i,1); }
-  if(G.spinA>0)G.spinA=Math.max(0,G.spinA-dt*3.2);
+  if(G.spinA>0){ G.spinT+=dt; var sp=Math.max(0,Math.min(1,(G.spinT-0.035)/0.24)); G.spinA=sp>=1?0:Math.pow(1-sp,3); }
   if(G.shakeT>0)G.shakeT=Math.max(0,G.shakeT-dt);
   for(i=G.sticks.length-1;i>=0;i--){ G.sticks[i].t+=dt; if(G.sticks[i].t>0.12)G.sticks.splice(i,1); }
   if(G.skyT>0)G.skyT=Math.max(0,G.skyT-dt);
+  if(G.shockT>=0){ G.shockT+=dt; if(G.shockT>0.24)G.shockT=-1; }
+  for(i=G.swallows.length-1;i>=0;i--){ G.swallows[i].t+=dt; if(G.swallows[i].t>0.3)G.swallows.splice(i,1); }
+  for(i=G.callouts.length-1;i>=0;i--){ G.callouts[i].t+=dt; if(G.callouts[i].t>0.45)G.callouts.splice(i,1); }
+  if(G.levelUp){ G.levelUp.t+=dt; if(G.levelUp.t>1.2)G.levelUp=null; }
+  if(G.endAnim){ G.endAnim.t+=dt; if(G.endAnim.t>=G.endAnim.dur){ G.endAnim=null; show('s-go'); } }
 }
 function cellPx(x,y){ return { x:PCX+(x-C)*VPITCH-VCELL/2, y:PCY+(y-C)*VPITCH-VCELL/2 }; }
 /* WELDED CELLS (step 3, manifest.cell_layer_recipe): a ring cell is the ring's enamel face, the 1 px seam, a weld trim
@@ -813,21 +828,33 @@ function almostRing(){
     if(miss===1)return {d:d,x:gap[0],y:gap[1]}; }
   return null;
 }
-var _ghostLost=null;   /* the ghost of a piece that would miss everything: Astra's brackets in her warning coral */
-function ghostLost(){ if(_ghostLost)return _ghostLost; var gi=art('ghost'); if(!gi)return null;
+/* Astra's ghost brackets in another colour: her warning coral for a piece that would be lost, acid for the notch */
+var _tint={};
+function tintedGhost(col){ if(_tint[col])return _tint[col]; var gi=art('ghost'); if(!gi)return null;
   var c=document.createElement('canvas'); c.width=c.height=64; var x=c.getContext('2d');
-  x.drawImage(gi,0,0,64,64); x.globalCompositeOperation='source-in'; x.fillStyle='#f15370'; x.fillRect(0,0,64,64);
-  _ghostLost=c; return c; }
+  x.drawImage(gi,0,0,64,64); x.globalCompositeOperation='source-in'; x.fillStyle=col; x.fillRect(0,0,64,64);
+  _tint[col]=c; return c; }
+function ghostLost(){ return tintedGhost('#f15370'); }
+/* Astra's inward flow strip (a white mask) in the broken ring's colour, once per ring */
+var _flow={};
+function flowTint(d){ if(_flow[d])return _flow[d]; var fm=art('flow'); if(!fm)return null;
+  var c=document.createElement('canvas'); c.width=1536; c.height=256; var x=c.getContext('2d');
+  x.drawImage(fm,0,0); x.globalCompositeOperation='source-in'; x.fillStyle=RING_COL[d]||RING_COL[RMAX]; x.fillRect(0,0,1536,256);
+  _flow[d]=c; return c; }
+/* the live words over a plate's blank centre: display type, cream, a dark edge so it reads over anything */
+function plateText(t,x,y){ ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='900 44px '+DSF;
+  ctx.lineWidth=6; ctx.strokeStyle='rgba(8,13,21,0.9)'; ctx.strokeText(t,x,y); ctx.fillStyle='#fff5cb'; ctx.fillText(t,x,y); ctx.restore(); }
 function render(){
   var i;
   updateView(0.033);
+  var AR=almostRing();
   ctx.clearRect(0,0,540,960);
   var plate=art('play_plate');
   if(plate)ctx.drawImage(plate,0,0,540,960);
   var sx=G.shakeT>0?(Math.random()*6-3)*G.shakeT*4:0;
   var sy=G.shakeT>0?(Math.random()*6-3)*G.shakeT*4:0;
   ctx.save(); ctx.translate(sx,sy);
-  hudPaint();
+  hudPaint(AR);
   ctx.textAlign='center';
   // board panel
   if(!plate){ ctx.fillStyle='rgba(255,255,255,0.028)'; rr(PANEL.x-4,PANEL.y-4,PANEL.w+8,PANEL.h+8,14); ctx.fill(); }
@@ -837,7 +864,7 @@ function render(){
   var ve=art('void_edge'); if(ve){ var vh=PANEL.w*320/900; ctx.drawImage(ve,PANEL.x,PANEL.y+PANEL.h-vh,PANEL.w,vh); }
   // spin flourish: the whole board eases out of a slight rotation after a slam
   if(G.spinA>0){
-    ctx.translate(PCX,PCY); ctx.rotate(-G.spinA*G.spinA*Math.PI/2); ctx.translate(-PCX,-PCY);
+    ctx.translate(PCX,PCY); ctx.rotate(-G.spinA*Math.PI/2); ctx.translate(-PCX,-PCY);
   }
   // the grid tile, scaled to the cell pitch and pinned to the cells, so its lines are the board's
   var gtex=art('grid_tex');
@@ -891,6 +918,17 @@ function render(){
     var p=cellPx(x,y), dd=cheb(x,y);
     drawRingCell(p.x,p.y,dd,cellMask(x,y,dd));
   }
+  // the almost ring: its outline lit steady in its own colour, an acid notch on its one missing cell (no strobe)
+  if(AR&&!G.popAnim&&!G.slideAnim){
+    var a0=cellPx(C-AR.d,C-AR.d), aw=(2*AR.d+1)*VPITCH-1;
+    ctx.strokeStyle=hexA(RING_COL[AR.d],0.95); ctx.lineWidth=3; rr(a0.x-2.5,a0.y-2.5,aw+5,aw+5,8); ctx.stroke();
+    var ntc=tintedGhost('#dfff4f'), nq=cellPx(AR.x,AR.y);
+    if(ntc)ctx.drawImage(ntc,nq.x-0.5,nq.y-0.5,VPITCH,VPITCH); else { ctx.strokeStyle='#dfff4f'; ctx.lineWidth=2; rr(nq.x+3,nq.y+3,VCELL-6,VCELL-6,4); ctx.stroke(); }
+  }
+  // the inward flow while the outside slides in: Astra's mask in the broken ring's colour, 0.35 at most
+  if(G.slideAnim&&!SET.reduce){ var flw=flowTint(G.slideAnim.D);
+    if(flw){ var ftf=Math.min(5,Math.floor(G.slideAnim.t/0.05)), fsz=(2*(G.slideAnim.D+1)+1)*VPITCH*1.15;
+      ctx.globalAlpha=0.35; ctx.drawImage(flw,ftf*256,0,256,256,PCX-fsz/2,PCY-fsz/2,fsz,fsz); ctx.globalAlpha=1; } }
   // crush slide — outer cells glide one ring toward the sun
   if(G.slideAnim&&G.slideAnim.moves.length){
     var st=Math.min(1,G.slideAnim.t/G.slideAnim.dur);
@@ -901,19 +939,20 @@ function render(){
       drawRingCell(fp.x+(tp.x-fp.x)*ease, fp.y+(tp.y-fp.y)*ease, cheb(mv.tx,mv.ty), 15);
     }
   }
-  // ring POP — cleared cells swell, glow and burst
+  // the crush (Astra's motion table): the closed band holds 35 ms, then contracts toward the sun and goes over 300 ms
   if(G.popAnim){
-    var pt=Math.min(1,G.popAnim.t/G.popAnim.dur);
-    var scale=1+pt*1.1, pa=1-pt*pt;
+    var pt=Math.max(0,Math.min(1,G.popAnim.t/G.popAnim.dur)), pe=pt*pt;
     for(i=0;i<G.popAnim.cells.length;i++){
-      var pc=G.popAnim.cells[i];
-      var pp=cellPx(pc.x,pc.y);
-      var cxm=pp.x+VCELL/2, cym=pp.y+VCELL/2, half=VCELL/2*scale;
-      ctx.globalAlpha=pa;
-      ctx.fillStyle=pc.col; rr(cxm-half,cym-half,half*2,half*2,6); ctx.fill();
-      ctx.fillStyle='rgba(255,251,230,'+(0.65*pa).toFixed(2)+')'; rr(cxm-half*0.6,cym-half*0.6,half*1.2,half*1.2,5); ctx.fill();
+      var pc=G.popAnim.cells[i], pp=cellPx(pc.x,pc.y), csz=VPITCH*(1-0.6*pe);
+      var pcx=pp.x+VCELL/2+(PCX-(pp.x+VCELL/2))*0.4*pe, pcy=pp.y+VCELL/2+(PCY-(pp.y+VCELL/2))*0.4*pe;
+      var psp=cellSprite(pc.d,15);
+      ctx.globalAlpha=1-pe;
+      if(psp)ctx.drawImage(psp,pcx-csz/2,pcy-csz/2,csz,csz); else { ctx.fillStyle=pc.col; rr(pcx-csz/2,pcy-csz/2,csz,csz,5); ctx.fill(); }
       ctx.globalAlpha=1;
     }
+    var bu=art('burst');
+    if(bu&&!SET.reduce&&G.popAnim.t>=0){ var bfr=Math.min(5,Math.floor(G.popAnim.t/0.05)), bsz=(2*G.popAnim.D+1)*VPITCH*1.25;
+      ctx.globalAlpha=0.85; ctx.drawImage(bu,bfr*256,0,256,256,PCX-bsz/2,PCY-bsz/2,bsz,bsz); ctx.globalAlpha=1; }
   }
   // shards — colored fragments flying out of popped rings
   for(i=0;i<G.shards.length;i++){
@@ -943,7 +982,7 @@ function render(){
   var ccx=cp.x+VCELL/2, ccy=cp.y+VCELL/2;
   var cst=art('core_states');
   if(cst){
-    var cstate=(G.popAnim||G.slideAnim)?2:(almostRing()?1:0), bs=VCELL*2;
+    var cstate=(G.popAnim||G.slideAnim)?2:(AR?1:0), bs=VCELL*2;
     ctx.drawImage(cst,cstate*256,0,256,256,ccx-bs/2,ccy-bs/2,bs,bs);
     var csh=art('core_shimmer'); if(csh&&!SET.reduce){ ctx.globalAlpha=0.25; ctx.drawImage(csh,(Math.floor(G.t*10)%6)*256,0,256,256,ccx-bs/2,ccy-bs/2,bs,bs); ctx.globalAlpha=1; }
   } else {
@@ -962,6 +1001,9 @@ function render(){
   ctx.fillStyle='#ffe38a'; rr(cp.x+3,cp.y+3,VCELL-6,VCELL-6,6); ctx.fill();
   ctx.fillStyle='rgba(255,255,255,'+(0.72+0.28*pls)+')'; rr(cp.x+8,cp.y+8,VCELL-16,VCELL-16,4); ctx.fill(); // white-hot center
   }
+  // the slam's shockwave at the core: six frames at 40 ms
+  if(G.shockT>=0){ var shw=art('shock'); if(shw){ var swf=Math.min(5,Math.floor(G.shockT/0.04)), sws=VPITCH*7;
+    ctx.globalAlpha=0.75; ctx.drawImage(shw,swf*256,0,256,256,ccx-sws/2,ccy-sws/2,sws,sws); ctx.globalAlpha=1; } }
   // ghost — where the piece will GRAB ON; red when it would miss everything
   // and drift into the void
   if(G.cur&&SET.ghost&&!G.over){
@@ -997,6 +1039,24 @@ function render(){
     ctx.globalAlpha=Math.max(0,Math.min(1,pu.life*2)); ctx.fillStyle='#fffbe6';
     rr(ppx.x-2-e,ppx.y-2-e,VCELL+4+e*2,VCELL+4+e*2,6); ctx.fill(); ctx.globalAlpha=1; }
   ctx.restore();
+  ctx.save(); rr(PANEL.x,PANEL.y,PANEL.w,PANEL.h,12); ctx.clip();
+  if(G.spinA>0&&G.spinT>=0.035){ var sfi=Math.floor((G.spinT-0.035)/0.06), sim=sfi<4?art('spin'+(sfi+1)):null;
+    if(sim){ ctx.globalAlpha=0.85; ctx.drawImage(sim,0,PCY-440,540,960); ctx.globalAlpha=1; } }
+  var vsw=art('swallow');
+  if(vsw)for(i=0;i<G.swallows.length;i++){ var sw=G.swallows[i], vss=VPITCH*3;
+    ctx.drawImage(vsw,Math.min(5,Math.floor(sw.t/0.05))*256,0,256,256,sw.px-vss/2,sw.py-vss/2,vss,vss); }
+  for(i=0;i<G.callouts.length;i++){ var co=G.callouts[i], cim=art('chain'+co.n); if(!cim)continue;
+    ctx.globalAlpha=co.t<0.08?co.t/0.08:(co.t>0.37?Math.max(0,(0.45-co.t)/0.08):1);
+    ctx.drawImage(cim,PANEL.x+PANEL.w-150,PANEL.y+14,136,68); ctx.globalAlpha=1; }
+  if(G.levelUp){ var lu=art('levelup'), lt=G.levelUp.t;
+    ctx.globalAlpha=lt>1?Math.max(0,(1.2-lt)/0.2):1;
+    if(lu)ctx.drawImage(lu,Math.min(5,Math.floor(lt/0.08))*256,0,256,256,270-130,PANEL.y+150-130,260,260);
+    plateText('LEVEL '+G.levelUp.n,270,PANEL.y+150); ctx.globalAlpha=1; }
+  if(G.endAnim){ var eo=art('overplate'), et=G.endAnim.t;
+    ctx.fillStyle='rgba(8,13,21,'+(0.5*Math.min(1,et/0.48)).toFixed(3)+')'; ctx.fillRect(PANEL.x,PANEL.y,PANEL.w,PANEL.h);
+    if(eo)ctx.drawImage(eo,Math.min(5,Math.floor(et/0.08))*256,0,256,256,270-150,PCY-150,300,300);
+    plateText(G.endAnim.txt,270,PCY); }
+  ctx.restore();
   // floats
   for(i=0;i<G.floats.length;i++){ var f=G.floats[i]; ctx.globalAlpha=Math.max(0,Math.min(1,f.life));
     ctx.fillStyle=f.big?'#ffd76a':'#eef0f6'; ctx.font=f.big?('900 34px '+DSF):('700 22px '+UIF);
@@ -1019,7 +1079,7 @@ function drawPreview(id,k,alpha){
     if(fi)g.drawImage(fi,x,y,cs,cs); else { g.fillStyle=PCOLS[k]; g.fillRect(x+1,y+1,cs-2,cs-2); } }
   g.globalAlpha=1;
 }
-function hudPaint(){
+function hudPaint(AR){
   if(!G)return;
   hudSet('h-score',G.score.toLocaleString());
   hudSet('h-level',G.mode==='journey'?('LEVEL '+(G.level+1)):(G.mode==='daily'?('DAILY '+dayNum()):'ZEN'));
@@ -1030,7 +1090,7 @@ function hudPaint(){
   drawPreview('cv-next',G.next,1);
   drawPreview('cv-next2',G.next2,0.6);
   drawPreview('cv-hold',G.hold,G.holdUsed?0.35:1);
-  var sb=$('slambtn'), ch=!!almostRing(); if(sb&&HUDC.charged!==ch){ HUDC.charged=ch; sb.classList.toggle('charged',ch); }
+  var sb=$('slambtn'), ch=!!AR; if(sb&&HUDC.charged!==ch){ HUDC.charged=ch; sb.classList.toggle('charged',ch); }
 }
 function rr(x,y,w,h,rad){ ctx.beginPath(); ctx.moveTo(x+rad,y); ctx.arcTo(x+w,y,x+w,y+h,rad); ctx.arcTo(x+w,y+h,x,y+h,rad); ctx.arcTo(x,y+h,x,y,rad); ctx.arcTo(x,y,x+w,y,rad); ctx.closePath(); }
 
@@ -1294,7 +1354,7 @@ if(/[?&]rstest=1/.test(location.search)){
     render:function(){ render(); return true; },
     /* the shot tool's handles (tools/sunforge-tests/shoot.mjs) */
     freeze:function(){ running=false; return true; },
-    art:function(k,on){ if(IMG[k])IMG[k]._ok=!!on; CELLC={}; _ghostLost=null; render.pat=null; render(); return !!IMG[k]; },
+    art:function(k,on){ if(IMG[k])IMG[k]._ok=!!on; CELLC={}; _tint={}; _flow={}; render.pat=null; render(); return !!IMG[k]; },
     step:function(dt,n,drop){ dt=dt||1/60; for(var i=0;i<(n||1);i++){ if(!drop&&G)G.dropT=0; tick(dt); } render(); return true; },
     flush:function(){ var g=400; while(G&&(G.popAnim||G.slideAnim)&&g--)stepAnims(0.05); render(); return true; },
     seedRing:function(d,gx,gy){ var rc=RINGS[d-1],i; for(i=0;i<rc.length;i++){ if(rc[i][0]===gx&&rc[i][1]===gy)continue; G.grid[rc[i][1]][rc[i][0]]='#fff'; } render(); return true; },

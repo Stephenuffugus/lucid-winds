@@ -13,6 +13,7 @@
 - SF step 2 DONE: the title on Astra's plate with the tagline, three mode cards and the icon row; How as her four plates; Settings with Reduced motion; check green, title shot read.
 - SF step 3 DONE: the board on Astra's plate, the grid pinned to the cells, the welded ring cells composed per neighbour pattern, her core jaws and states, the ceramic falling cell, the bracket ghost, stick flash, streak, sky flash; check green, play shot read (her resting glow dropped).
 - SF step 4 DONE: the HUD in Astra's frames (two rows), her control and SLAM skins with pressed and charged states, Pause (Resume, Retry, Menu, also on a hidden tab), taps turn only inside the board; check green, play shot at 360 read (spawn row and cell size fixed after it).
+- SF step 5 DONE: the almost ring's notch and lit seam, the crush and SLAM to Astra's motion table with her burst, flow, streaks, shockwave, chain callouts, swallow, level up and game over plates; reduced motion; sound to her notes; check green, crush shot read.
 
 ## 🎭 4 Nov 17:55 UTC (Opus) TONIGHT: FLATULENCE FIGHTER m1, THEN SHUTTERBUG m2, THEN KEEPSIES m1 (one line per step; box booted 17:41 UTC, this run stops 05:01 UTC)
 - FF step 0 DONE: check red at 72, before set in /home/codespace/ff-drafts/before/, main 33db6ef8f blobs index 060c5013, card 46634ec2, thumb b9118678.
