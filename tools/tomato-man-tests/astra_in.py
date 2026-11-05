@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+"""Astra's Tomato Man packs into the game's art folder (TOMATO_MAN_BUILD_PLAN.md step 1, and the hero in step 2).
+Re runnable; overwrites what it made.
+
+    python3 tools/tomato-man-tests/astra_in.py
+
+Source: /workspaces/tomato-man-astra-v1/pack-v1 (and pack-v2 for the hero's bearings in m2). Target: the clone
+/workspaces/Tomato_Man/art/ (branch sunstruck; never satellites/tomato-man in lucid-winds, it is vendored). Only what the
+engine draws: the levels use two caster kinds (R awnings and U umbrellas) plus carts and clouds, so the cabana,
+billboard, palms, lifeguard tower, rock arch and cliff stay in the pack. Heavy PNGs become webp (opaque grounds lossy,
+alpha art lossy with alpha); nine slices, marks and small UI stay as they are. The 23 one colour marks become ONE
+inline svg sprite between the TM ICONS markers in index.html. Fonts: Bree Serif and Atkinson Hyperlegible from
+google/fonts (OFL, fetched to /home/codespace/tm-drafts/fonts-src) subset to Latin woff2. The arcade thumb
+(lucid-winds portal-assets/thumbs/tomato-man.png, 480 square) comes from Astra's promo tile. Store frames, previews and
+docs never ship."""
+import os, re, shutil, subprocess, sys
+from PIL import Image
+
+PACK = '/workspaces/tomato-man-astra-v1/pack-v1/assets'
+GAME = '/workspaces/Tomato_Man'
+ART = os.path.join(GAME, 'art')
+ARCADE = '/workspaces/lucid-winds'
+FONTS = '/home/codespace/tm-drafts/fonts-src'
+WORLDS = ['morning_tide', 'midday_blaze', 'tide_pools', 'dunes_at_dusk', 'eclipse']
+total = [0]
+
+def out(rel):
+    p = os.path.join(ART, rel); os.makedirs(os.path.dirname(p), exist_ok=True); return p
+def copy(src, rel):
+    shutil.copyfile(os.path.join(PACK, src), out(rel)); total[0] += os.path.getsize(out(rel))
+def webp(src, rel, q=80, opaque=False, scale=1.0):
+    """webp at the size the game draws it (scale), lossy; soft alpha effects compress badly as lossy webp, so the PNG is
+    written instead (same name, .png) whenever it is smaller. Returns the path actually written, relative to art/."""
+    im = Image.open(os.path.join(PACK, src)); im = im.convert('RGB' if opaque else 'RGBA')
+    if scale != 1.0: im = im.resize((max(1, round(im.width * scale)), max(1, round(im.height * scale))), Image.LANCZOS)
+    im.save(out(rel), 'WEBP', quality=q, method=6, alpha_quality=80)
+    png = rel[:-5] + '.png'
+    im.save(out(png), 'PNG', optimize=True)
+    if os.path.getsize(out(png)) < os.path.getsize(out(rel)): os.remove(out(rel)); rel = png
+    else: os.remove(out(png))
+    total[0] += os.path.getsize(out(rel)); return rel
+
+def main():
+    # the sun (the angry states and the corona load only in the Eclipse world)
+    webp('b_sun/roaming_sun.png', 'sun/roaming_sun.webp'); webp('b_sun/sun_rays.png', 'sun/sun_rays.webp')
+    copy('b_sun/sun_position_hud.png', 'sun/sun_position_hud.png')
+    for st in ('glare', 'wind_up', 'lunge', 'panting'): webp('b_sun/angry_sun_%s.png' % st, 'sun/angry_sun_%s.webp' % st)
+    webp('b_sun/eclipse_corona.png', 'sun/eclipse_corona.webp', scale=0.5)
+    # the five worlds: ground (opaque, lossy), horizon, decor sheet, the world card and key art
+    for w in WORLDS:
+        webp('c_worlds/%s_ground.png' % w, 'worlds/%s/ground.webp' % w, q=78, opaque=True)
+        copy('c_worlds/%s_horizon.webp' % w, 'worlds/%s/horizon.webp' % w)
+        webp('c_worlds/%s_decor.png' % w, 'worlds/%s/decor.webp' % w, q=82)
+        copy('c_worlds/%s_card.webp' % w, 'worlds/%s/card.webp' % w)
+        copy('c_worlds/%s_key_art.webp' % w, 'worlds/%s/key_art.webp' % w)
+    # the casters the engine draws
+    for c in ('striped_awning', 'solid_awning', 'umbrella', 'vendor_cart_reskins', 'cloud_platform', 'cloud_elevator'):
+        webp('c_worlds/%s.png' % c, 'casters/%s.webp' % c, q=82)
+    copy('c_worlds/far_silhouette.png', 'casters/far_silhouette.png')
+    # pickups and markers
+    for k in ('aloe_lit', 'aloe_dim', 'popsicle', 'shade_pool', 'checkpoint_pair', 'exit_flag', 'seashell', 'ice_cream', 'gem', 'sparkle'):
+        webp('d_pickups/%s.png' % k, 'pickups/%s.webp' % k, q=82)
+    # effects
+    # at the size they are drawn: the patch about 200 px across, the puffs and bursts under 100, the shimmer a strip
+    for k, sc in (('hot_sand_patch', 0.5), ('heat_shimmer', 0.5), ('wind_streak', 1.0), ('collect_burst', 0.5), ('respawn_flash', 0.5),
+                  ('burn_smoke', 0.5), ('dash_puff', 0.5), ('near_burn_vignette', 1.0), ('eclipse_dark_vignette', 1.0)):
+        webp('e_fx/%s.png' % k, 'fx/%s.webp' % k, q=80, scale=sc)
+    # the interface: wordmarks, the menu plate, buttons, joystick, meter, medals, progress marks, nine slices
+    for k in ('logo_on_sand.svg', 'logo_on_dark.svg', 'menu_plate.webp', 'button_dash.svg', 'button_shade.svg', 'button_spf.svg',
+              'button_ice.svg', 'disabled_overlay.svg', 'joystick_base.png', 'joystick_thumb.png', 'exposure_meter_frame.png',
+              'exposure_fill.png', 'medal_gold.svg', 'medal_silver.svg', 'medal_bronze.svg', 'progress_star.png',
+              'progress_shell.png', 'progress_cone.png', 'progress_gem.png', 'level_card_frame.png', 'shop_card_frame.png',
+              'builder_frame_frame.png', 'coach_bubble_frame.png', 'toast_pill_frame.png', 'aloe_wallet_chip_frame.png'):
+        copy('f_ui/' + k, 'ui/' + k)
+    # the share frames (loaded only when a card is shared)
+    webp('../../pack-v1/assets/g_store/result_square.png', 'sharing/result_square.webp', q=82)
+    webp('../../pack-v1/assets/g_store/daily_card.png', 'sharing/daily_card.webp', q=82)
+    # app icons over the manifest's names, the arcade thumb from the promo tile
+    for src, dst in (('app_icon_192.png', 'icon-192.png'), ('app_icon_512.png', 'icon-512.png'), ('app_icon_maskable_512.png', 'icon-512-maskable.png')):
+        shutil.copyfile(os.path.join(PACK, 'f_ui', src), os.path.join(GAME, dst))
+    tile = Image.open(os.path.join(PACK, 'g_store', 'promo_tile.webp')).convert('RGB').resize((480, 480), Image.LANCZOS)
+    tile.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.FLOYDSTEINBERG).save(
+        os.path.join(ARCADE, 'portal-assets', 'thumbs', 'tomato-man.png'), optimize=True)
+    # fonts: Latin subsets as woff2, OFL beside them
+    uni = 'U+0020-007E,U+00A0,U+00B7,U+00D7,U+2018,U+2019,U+201C,U+201D,U+2026'
+    for src, dst in (('breeserif_BreeSerif-Regular.ttf', 'bree-serif.woff2'),
+                     ('atkinsonhyperlegible_AtkinsonHyperlegible-Regular.ttf', 'atkinson-regular.woff2'),
+                     ('atkinsonhyperlegible_AtkinsonHyperlegible-Bold.ttf', 'atkinson-bold.woff2')):
+        subprocess.run([sys.executable, '-m', 'fontTools.subset', os.path.join(FONTS, src), '--unicodes=' + uni, '--flavor=woff2',
+                        '--layout-features=kern,liga,tnum', '--output-file=' + out('fonts/' + dst)], check=True)
+        total[0] += os.path.getsize(out('fonts/' + dst))
+    shutil.copyfile(os.path.join(FONTS, 'breeserif_OFL.txt'), out('fonts/bree-serif-OFL.txt'))
+    shutil.copyfile(os.path.join(FONTS, 'atkinsonhyperlegible_OFL.txt'), out('fonts/atkinson-hyperlegible-OFL.txt'))
+    # the one inline sprite of her one colour marks
+    syms = []
+    for f in sorted(os.listdir(os.path.join(PACK, 'f_ui'))):
+        if not f.endswith('_mark.svg'): continue
+        svg = open(os.path.join(PACK, 'f_ui', f)).read()
+        vb = re.search(r'viewBox="([^"]+)"', svg).group(1)
+        inner = re.sub(r'^.*?<svg[^>]*>|</svg>\s*$', '', svg, flags=re.S).strip()
+        syms.append('<symbol id="tm-%s" viewBox="%s">%s</symbol>' % (f[:-9].replace('_', '-'), vb, inner))
+    sprite = ('<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">'
+              + ''.join(syms) + '</svg>')
+    page = os.path.join(GAME, 'index.html'); h = open(page).read()
+    a, b = '<!-- TM ICONS (lucid-winds tools/tomato-man-tests/astra_in.py writes this line) -->', '<!-- /TM ICONS -->'
+    if a in h:
+        i, j = h.index(a) + len(a), h.index(b); h = h[:i] + '\n' + sprite + '\n' + h[j:]; open(page, 'w').write(h)
+    else: print('no TM ICONS markers in index.html yet: sprite not written')
+    print('art: %d KB written (fonts included); %d marks in the sprite; thumb %d KB' % (
+        total[0] // 1024, len(syms), os.path.getsize(os.path.join(ARCADE, 'portal-assets', 'thumbs', 'tomato-man.png')) // 1024))
+
+main()
