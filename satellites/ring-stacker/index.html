@@ -2,48 +2,53 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0e1018">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#080d15">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Sunforge">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='%230e1018'/%3E%3Crect x='7' y='7' width='18' height='18' rx='3' fill='none' stroke='%234ac8b4' stroke-width='2'/%3E%3Crect x='12' y='12' width='8' height='8' rx='2' fill='none' stroke='%23e0a843' stroke-width='2'/%3E%3Crect x='14.5' y='14.5' width='3' height='3' fill='%23ffd76a'/%3E%3C/svg%3E">
+<link rel="icon" href="icons/icon-192.png">
 <title>Sunforge · Sky Wolf Studio</title>
 <!-- Social preview (2026-07-25). 80 of 83 satellites had no og:image, so every
      link posted rendered as a bare grey box. Card art from the portal thumb. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sky Wolf Studio">
 <meta property="og:title" content="Sunforge">
-<meta property="og:description" content="Sunforge. Free to play at Sky Wolf Studio.">
+<meta property="og:description" content="Stick falling pieces to the sun, close the square rings, slam to spin the gyre. Free at Sky Wolf Studio.">
 <meta property="og:url" content="https://lucidwinds.com/satellites/ring-stacker/">
 <meta property="og:image" content="https://lucidwinds.com/satellites/ring-stacker/og/card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Sunforge">
-<meta name="twitter:description" content="Sunforge. Free to play at Sky Wolf Studio.">
+<meta name="twitter:description" content="Stick falling pieces to the sun, close the square rings, slam to spin the gyre. Free at Sky Wolf Studio.">
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/ring-stacker/og/card.jpg">
 
 <!-- Same-origin Sunbeam SDK (guarded; harmless 404 if absent) -->
 <script src="/sunbeam-sdk.js?v=7"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"ringstacker"}).catch(function(){});</script>
 <style>
+/* Sunbreaker type (Astra's pack v1): Barlow Condensed Black for display, Space Grotesk for live UI. Both OFL, subset to
+   Latin woff2 by tools/sunforge-tests/astra_in.py, served from here so the game stays offline. */
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:900;font-display:swap;src:url(assets/fonts/barlow-condensed-black.woff2?v=20261105a) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:300 700;font-display:swap;src:url(assets/fonts/space-grotesk.woff2?v=20261105a) format('woff2')}
 :root{ --bg:#0e1018; --panel:#171a26; --line:#2a2e40; --ink:#eef0f6; --muted:#8d90a8;
   --gold:#ffd76a; --teal:#4ac8b4; --rose:#e07a9a; }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
 html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif; color:var(--ink); user-select:none; -webkit-user-select:none}
+  font-family:"Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--ink); user-select:none; -webkit-user-select:none}
 #wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-  background:radial-gradient(120% 80% at 50% 0%, #141828 0%, #090a12 70%, #000 100%)}
+  background:#080d15}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:var(--bg); overflow:hidden; box-shadow:0 0 60px #000a}
 canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
 .screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20; background:linear-gradient(180deg,#131624 0%, #0c0e16 100%)}
 .screen.on{display:flex}
 #s-play{background:transparent; pointer-events:none}
 #s-play .tbtn,#s-play .cbtn,#s-play #slambtn{pointer-events:auto}
+#s-play .hf{pointer-events:none}
 .pad{padding:26px; flex:1; width:100%; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch} /* width:100%: .screen.center otherwise shrinks the pad to content and the result-screen buttons collapse narrow */
 .center{align-items:center; justify-content:center; text-align:center}
 .title-word{font-size:46px; line-height:1.05; font-weight:800; letter-spacing:1px;
@@ -55,10 +60,10 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
    72 CSS renders ~52 real px. Do NOT "simplify" back to 48 — it renders ~35. */
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1d2130,#14161f); color:var(--ink);
-  font-size:18px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+  font-size:23px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.15)}
 .btn.primary{background:linear-gradient(180deg,#ffd76a,#d8a437); color:#241a04; border-color:#ffe49a; box-shadow:0 4px 0 #8a6a1e, 0 8px 20px #0006}
-.btn.sm{min-height:72px; font-size:15px}
+.btn.sm{min-height:72px; font-size:22px}
 .btn.ghost{background:#12141c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -84,7 +89,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
    this can never sit on top of a control. */
 .swsback{position:absolute; left:10px; top:calc(env(safe-area-inset-top,0px) + 10px); z-index:31;
   min-height:48px; padding:0 15px; border-radius:14px; border:1px solid var(--line);
-  background:rgba(18,16,12,0.82); color:var(--muted); font-size:12.5px; font-weight:700;
+  background:rgba(8,13,21,0.86); color:#c8d5e8; font-size:18px; font-weight:700;
   letter-spacing:.5px; display:flex; align-items:center; gap:7px; cursor:pointer}
 .swsback:active{filter:brightness(1.35)}
 .cbtn{position:absolute; width:118px; height:96px; border-radius:18px; border:1px solid var(--line);
@@ -99,7 +104,103 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .go-score{font-size:58px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#1b1e2c; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
-#b-music{flex:0 0 72px; font-size:20px}
+button{touch-action:manipulation; font-family:inherit}
+.ic{width:1em; height:1em; flex:none; display:inline-block; vertical-align:-0.14em}
+/* ---- Sunbreaker shell (step 2): void, graphite and acid; the title is Astra's plate with the live menu in its band ---- */
+#s-title{background:var(--a-first_frame, linear-gradient(180deg,#131624 0%, #080d15 100%)) center top/540px 960px no-repeat, #080d15}
+#t-word{position:absolute; left:0; right:0; top:84px; text-align:center; font:900 92px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#fff5cb; letter-spacing:1px; font-style:italic}
+#stage.has-first_frame #t-word{display:none}
+#t-tag{position:absolute; left:104px; top:718px; height:32px; padding:0 12px; background:#080e15; color:#fff5cb;
+  font:900 27px/32px 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:1.5px; text-transform:uppercase}
+.t-modes{position:absolute; left:0; right:0; top:760px; height:81px}
+.mode{position:absolute; top:0; width:168px; height:81px; border:0; border-radius:10px; padding:5px 4px 0 51px; cursor:pointer;
+  background:linear-gradient(180deg,#263442,#182431); background-size:100% 100%; color:#fff5cb; text-align:left;
+  display:flex; flex-direction:column; align-items:flex-start; transition:transform .06s ease, filter .12s ease}
+.mode:active{transform:translateY(2px); filter:brightness(1.2)}
+.mode .mn{font:900 25px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:.3px; white-space:nowrap}
+.mode .ms{font:600 18px/1.1 'Space Grotesk',sans-serif; color:#c8d5e8; margin-top:3px; white-space:nowrap}
+#b-journey{left:9px; background-image:var(--a-mode_journey, linear-gradient(180deg,#263442,#182431)); box-shadow:0 0 0 2px #dfff4f, 0 0 18px rgba(223,255,79,.28)}
+#b-daily{left:186px; background-image:var(--a-mode_daily, linear-gradient(180deg,#263442,#182431))}
+#b-zen{left:363px; background-image:var(--a-mode_zen, linear-gradient(180deg,#263442,#182431))}
+#b-daily.played .ms{color:#dfff4f}
+.t-row{position:absolute; left:0; right:0; top:853px; height:72px}
+.t-row .btn{position:absolute; top:0; width:168px; min-height:72px; height:72px; font-size:21px}
+#b-how{left:9px} #b-music{left:186px} #b-set{left:363px}
+.btn .ic{font-size:26px}
+.btn{background:linear-gradient(180deg,#263442,#182431); border:1px solid rgba(130,151,165,.55); border-radius:12px; color:#fff5cb}
+.btn.primary{background:#dfff4f; color:#080d15; border-color:#efff9a; box-shadow:0 4px 0 #6d7d1f, 0 8px 20px #0006}
+.btn.ghost{background:#0f1620; color:#c8d5e8}
+h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#dfff4f; letter-spacing:.5px; margin:8px 0 14px; text-transform:uppercase}
+.howrow{display:flex; gap:16px; align-items:center; margin:0 0 14px}
+.howimg{flex:none; width:236px; height:131px; border-radius:10px; border:1px solid rgba(130,151,165,.4); background:#080e15 center/cover no-repeat}
+.howrow p{font:600 22px/1.3 'Space Grotesk',sans-serif; color:#fff5cb}
+.howmodes{font:500 20px/1.4 'Space Grotesk',sans-serif; color:#c8d5e8; margin:4px 0 16px}
+.settingline{font:600 22px/1.2 'Space Grotesk',sans-serif}
+.settingline span{display:flex; align-items:center; gap:12px}
+.settingline .ic{font-size:26px; color:#dfff4f}
+.foot{font-size:16px; color:#8297a5}
+#s-how,#s-set,#s-go{background:linear-gradient(180deg,#182431 0%, #080d15 100%)}
+/* ---- the play HUD (step 4): Astra's frames as nine slices (her insets 18 18 18 34 at 2x, so 9 9 9 17 here; the lower
+   strip holds the acid cuts and is never stretched), her 96 px control skins at 100 stage px, SLAM 328x94 (250x72 CSS px
+   on a 412 wide phone). Until a skin loads the drawn look stays and the svg icon shows. ---- */
+.hf{position:absolute; box-sizing:border-box; border:solid rgba(130,151,165,.45); border-width:9px 9px 17px 9px; border-radius:10px;
+  background:rgba(24,36,49,.78); color:#fff5cb; display:flex; align-items:center; justify-content:center; pointer-events:none;
+  border-image-slice:18 18 34 18 fill; border-image-width:9px 9px 17px 9px; border-image-repeat:stretch}
+.hf-score{left:92px; top:10px; width:188px; height:86px; border-image-source:var(--a-score_plaque, none)}
+.hf-hold{left:366px; top:10px; width:78px; height:86px; flex-direction:column; border-image-source:var(--a-hold_frame, none)}
+.hf-next{left:450px; top:10px; width:78px; height:86px; flex-direction:column; border-image-source:var(--a-next_frame, none)}
+.hf-level{left:92px; top:100px; width:96px; height:46px; border-image-source:var(--a-level_badge, none)}
+.hf-rings{left:194px; top:100px; width:124px; height:46px; border-image-source:var(--a-rings_counter, none)}
+#hud-left{left:324px; width:120px}
+.hf-next2{left:450px; top:100px; width:78px; height:46px; border-image-source:var(--a-next_frame, none)}
+#stage.has-score_plaque .hf-score, #stage.has-hold_frame .hf-hold, #stage.has-next_frame .hf-next, #stage.has-next_frame .hf-next2,
+#stage.has-level_badge .hf-level, #stage.has-rings_counter .hf-rings{background:none; border-radius:0; border-color:transparent}
+#h-score{font:900 46px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:.5px; font-variant-numeric:tabular-nums; margin-top:4px}
+.hf .hl{font:900 18px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:1px; color:#c8d5e8}
+.hf canvas{width:56px; height:36px; margin-top:4px}
+.hf-next2 canvas{width:56px; height:26px; margin-top:0}
+#h-level,#h-rings,#h-left{font:900 22px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:1px; white-space:nowrap}
+#s-play .tbtn{top:14px; width:72px; height:72px}
+#b-pause{left:12px} #b-hold{left:288px}
+#s-play .cbtn{top:auto; bottom:12px; width:100px; height:100px; border-radius:14px}
+#c-left{left:14px} #c-right{left:126px} #c-down{left:314px} #c-rot{left:426px}
+.sk{background-size:100% 100%; background-repeat:no-repeat; background-position:center}
+.sk .ic{font-size:34px}
+#b-pause{background-image:var(--a-btn_pause)} #b-pause.pressed{background-image:var(--a-btn_pause_p)}
+#b-hold{background-image:var(--a-btn_hold)} #b-hold.pressed{background-image:var(--a-btn_hold_p)}
+#c-left{background-image:var(--a-btn_left)} #c-left.pressed{background-image:var(--a-btn_left_p)}
+#c-right{background-image:var(--a-btn_right)} #c-right.pressed{background-image:var(--a-btn_right_p)}
+#c-down{background-image:var(--a-btn_down)} #c-down.pressed{background-image:var(--a-btn_down_p)}
+#c-rot{background-image:var(--a-btn_rotate)} #c-rot.pressed{background-image:var(--a-btn_rotate_p)}
+#stage.has-btn_pause #b-pause, #stage.has-btn_hold #b-hold, #stage.has-btn_left #c-left, #stage.has-btn_right #c-right,
+#stage.has-btn_down #c-down, #stage.has-btn_rotate #c-rot{border:0; background-color:transparent; box-shadow:none}
+#stage.has-btn_pause #b-pause .ic, #stage.has-btn_hold #b-hold .ic, #stage.has-btn_left #c-left .ic, #stage.has-btn_right #c-right .ic,
+#stage.has-btn_down #c-down .ic, #stage.has-btn_rotate #c-rot .ic{display:none}
+#s-play #slambtn{bottom:116px; width:328px; height:94px; display:flex; align-items:center; justify-content:center; gap:12px;
+  font:900 44px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:2px; color:#080d15}
+#slambtn .ic{font-size:40px}
+#stage.has-slam_idle #slambtn{background:var(--a-slam_idle) center/100% 100% no-repeat; border:0; border-radius:0; box-shadow:none}
+#stage.has-slam_idle #slambtn.charged{background-image:var(--a-slam_charged, var(--a-slam_idle))}
+#stage.has-slam_idle #slambtn.pressed{background-image:var(--a-slam_pressed, var(--a-slam_idle))}
+#s-pause{background:rgba(8,13,21,.82)}
+#coach{position:absolute; left:44px; right:44px; top:652px; display:none; text-align:center; padding:12px 16px; border-radius:12px;
+  background:rgba(8,13,21,.9); border:2px solid #dfff4f; color:#fff5cb; font:600 24px/1.25 'Space Grotesk',sans-serif; pointer-events:none}
+/* ---- the result card (step 6): her 800x1100 frame at 0.6, the gyre canvas behind its window (90 240 620 620 at 2x),
+   the three stat bands (85 305 525, 918, 190x80 at 2x) ---- */
+#go-card{position:absolute; left:30px; top:16px; width:480px; height:660px; border-radius:16px; background:#182431; border:1px solid rgba(130,151,165,.45)}
+#stage.has-go_card #go-card{background:none; border:0}
+#go-gyre{position:absolute; left:54px; top:144px; width:372px; height:372px}
+#go-frame{position:absolute; inset:0; background:var(--a-go_card) center/100% 100% no-repeat; pointer-events:none}
+#go-head{position:absolute; left:0; right:0; top:40px; text-align:center; font:900 italic 64px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#fff5cb}
+#stage.has-go_card #go-head{display:none}
+.go-band{position:absolute; top:551px; width:114px; height:48px; display:flex; flex-direction:column; align-items:center; justify-content:center}
+#gb-score{left:51px} #gb-rings{left:183px} #gb-level{left:315px}
+.go-band .bl{font:900 17px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:1.5px; color:#c8d5e8}
+.go-band .bv{font:900 28px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#fff5cb; font-variant-numeric:tabular-nums; margin-top:2px}
+#go-line{position:absolute; left:20px; right:20px; top:688px; text-align:center; font:600 22px/1.2 'Space Grotesk',sans-serif; color:#fff5cb}
+#go-line #go-sun{color:#dfff4f}
+.go-btns{position:absolute; left:50px; right:50px; top:726px; display:flex; flex-direction:column; gap:12px}
+#go-hint{position:absolute; left:40px; right:40px; top:900px; display:none; font:500 18px/1.35 'Space Grotesk',sans-serif; color:#c8d5e8; text-align:center}
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
 </style>
 <meta name="description" content="Stick falling pieces to the golden sun and finish rings to crush them inward.">
@@ -107,93 +208,112 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script src="/music-unlocks.js" defer></script>
 </head>
 <body>
+<!-- SF ICONS (tools/sunforge-tests/astra_in.py writes this line) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5L8 12L15 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5L16 12L9 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="M5 9L12 16L19 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-rotate" viewBox="0 0 24 24"><path d="M19 10A7 7 0 1 0 18 17 M19 4V10H13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-hold" viewBox="0 0 24 24"><path d="M4 8H20L16 4 M20 16H4L8 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5V19 M16 5V19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-sound" viewBox="0 0 24 24"><path d="M3 9H7L12 5V19L7 15H3Z M16 8Q21 12 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-music" viewBox="0 0 24 24"><path d="M9 17V6L19 4V15 M9 6L19 4 M4 17A3 2 0 1 0 10 17A3 2 0 1 0 4 17 M14 15A3 2 0 1 0 20 15A3 2 0 1 0 14 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-ghost" viewBox="0 0 24 24"><path d="M5 20V10A7 7 0 0 1 19 10V20L16 17L12 20L8 17Z M9 10V12 M15 10V12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M9 3H15L16 6L19 7L21 12L19 17L16 18L15 21H9L8 18L5 17L3 12L5 7L8 6Z M9 12A3 3 0 1 0 15 12A3 3 0 1 0 9 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11L12 3L21 11 M6 9V21H18V9 M10 21V15H14V21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-share" viewBox="0 0 24 24"><path d="M8 12L17 6 M8 12L17 18 M3 12A3 3 0 1 0 9 12A3 3 0 1 0 3 12 M16 5A2 2 0 1 0 20 5A2 2 0 1 0 16 5 M16 19A2 2 0 1 0 20 19A2 2 0 1 0 16 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-retry" viewBox="0 0 24 24"><path d="M5 10A7 7 0 1 1 6 17 M5 4V10H11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-how-to-play" viewBox="0 0 24 24"><path d="M7 8A5 5 0 1 1 15 12L12 14V16 M12 19V21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-install" viewBox="0 0 24 24"><path d="M12 3V15 M7 10L12 15L17 10 M4 16V21H20V16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="M10 4L3 12L10 20 M3 12H21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><path d="M12 8A4 4 0 1 0 12 16A4 4 0 1 0 12 8 M12 2V4 M12 20V22 M2 12H4 M20 12H22 M4.9 4.9L6.3 6.3 M17.7 17.7L19.1 19.1 M4.9 19.1L6.3 17.7 M17.7 6.3L19.1 4.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol></svg>
+<!-- /SF ICONS -->
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">Sunforge</h1>
 <div id="wrap"><div id="stage">
   <canvas id="game" width="540" height="960"></canvas>
 
-  <!-- TITLE -->
-  <div class="screen center on" id="s-title">
-    <button class="swsback" id="sws-back" type="button" aria-label="Back to the arcade">&#8249; Back to the arcade</button>
-    <div class="pad center">
-    <div style="flex:1"></div>
-    <div class="title-word">SUNFORGE</div>
-    <div class="title-sub">Sky Wolf Studio</div>
-    <div class="ribbon">Pieces <b style="color:var(--teal)">stick when they land</b> on the golden core or on anything already stuck. Sides never grab, so pieces slide right past. <b style="color:var(--gold)">SLAM</b> spins the whole gyre a quarter turn: swing your tower around the sun to close the <b style="color:var(--teal)">square rings</b>. Miss everything and the piece is lost to the void.</div>
-    <div style="flex:1"></div>
-    <div class="stack">
-      <button class="btn primary" id="b-journey">Journey <span id="j-lvl" style="font-weight:600;font-size:14px;opacity:.8"></span></button>
-      <div class="row">
-        <button class="btn sm" id="b-daily">Daily Gyre</button>
-        <button class="btn sm" id="b-zen">Zen</button>
-      </div>
-      <div class="row">
-        <button class="btn sm" id="b-how">How</button>
-        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
-        <button class="btn sm" id="b-set">⚙</button>
-      </div>
+  <!-- TITLE: Astra's plate carries the wordmark and the hero gyre; the live menu sits in its band (step 2) -->
+  <div class="screen on" id="s-title">
+    <button class="swsback" id="sws-back" type="button" aria-label="Back to the arcade"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>Back to the arcade</button>
+    <div id="t-word" aria-hidden="true">SUNFORGE</div>
+    <div id="t-tag">Build. Turn. Collapse.</div>
+    <div class="t-modes">
+      <button class="mode" id="b-journey"><span class="mn">Journey</span><span class="ms" id="j-lvl">Level 1</span></button>
+      <button class="mode" id="b-daily"><span class="mn">Daily Gyre</span><span class="ms" id="d-sub">Once a day</span></button>
+      <button class="mode" id="b-zen"><span class="mn">Zen</span><span class="ms">Never ends</span></button>
     </div>
-    <div class="foot" id="buildstamp"></div>
-  </div></div>
-
-  <!-- PLAY chrome -->
-  <div class="screen" id="s-play">
-    <button class="tbtn" id="b-home" aria-label="Back to menu">‹</button>
-    <button class="cbtn" id="c-left"  style="left:10px;  bottom:calc(18px + env(safe-area-inset-bottom,0px))">◀</button>
-    <button class="cbtn" id="c-right" style="left:136px; bottom:calc(18px + env(safe-area-inset-bottom,0px))">▶</button>
-    <button class="cbtn" id="c-down"  style="right:136px; bottom:calc(18px + env(safe-area-inset-bottom,0px))">▼</button>
-    <button class="cbtn" id="c-rot"   style="right:10px; bottom:calc(18px + env(safe-area-inset-bottom,0px))">⟳</button>
-    <button class="tbtn" id="b-hold" style="left:300px; top:calc(env(safe-area-inset-top,0px) + 10px)" title="Hold piece">&#8646;</button>
-    <button id="slambtn">SLAM</button>
+    <div class="t-row">
+      <button class="btn sm" id="b-how"><svg class="ic" aria-hidden="true"><use href="#i-how-to-play"/></svg>How</button>
+      <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack"><svg class="ic" aria-hidden="true"><use href="#i-music"/></svg>Music</button>
+      <button class="btn sm" id="b-set" aria-label="Settings"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg>Settings</button>
+    </div>
   </div>
 
-  <!-- HOW -->
+  <!-- PLAY chrome (step 4): Astra's HUD frames as nine slices, her control skins, pause. Stage px; the stage scales by
+       the phone's width (0.67 at 360, 0.76 at 412), so 72 stage px is 48 CSS px at 360 and every target is at least that. -->
+  <div class="screen" id="s-play">
+    <button class="tbtn sk" id="b-pause" aria-label="Pause"><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg></button>
+    <div class="hf hf-score" id="hud-score"><span id="h-score">0</span></div>
+    <button class="tbtn sk" id="b-hold" aria-label="Hold"><svg class="ic" aria-hidden="true"><use href="#i-hold"/></svg></button>
+    <div class="hf hf-hold" id="hud-hold"><span class="hl">HOLD</span><canvas id="cv-hold" width="140" height="88"></canvas></div>
+    <div class="hf hf-next" id="hud-next"><span class="hl">NEXT</span><canvas id="cv-next" width="140" height="88"></canvas></div>
+    <div class="hf hf-level" id="hud-level"><span id="h-level">LEVEL 1</span></div>
+    <div class="hf hf-rings" id="hud-rings"><span id="h-rings">RINGS 0/2</span></div>
+    <div class="hf hf-rings" id="hud-left"><span id="h-left">120 LEFT</span></div>
+    <div class="hf hf-next2" id="hud-next2"><canvas id="cv-next2" width="140" height="64"></canvas></div>
+    <button class="cbtn sk" id="c-left" aria-label="Left"><svg class="ic" aria-hidden="true"><use href="#i-left"/></svg></button>
+    <button class="cbtn sk" id="c-right" aria-label="Right"><svg class="ic" aria-hidden="true"><use href="#i-right"/></svg></button>
+    <button class="cbtn sk" id="c-down" aria-label="Down"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg></button>
+    <button class="cbtn sk" id="c-rot" aria-label="Turn"><svg class="ic" aria-hidden="true"><use href="#i-rotate"/></svg></button>
+    <div id="coach" role="status">Close the ring. Drop it on the sun.</div>
+    <button id="slambtn" aria-label="Slam"><svg class="ic" aria-hidden="true"><use href="#i-rotate"/></svg><span>SLAM</span></button>
+  </div>
+
+  <!-- PAUSE -->
+  <div class="screen center" id="s-pause"><div class="pad center">
+    <h2 class="sc-h">Paused</h2>
+    <div class="stack">
+      <button class="btn primary" id="p-resume">Resume</button>
+      <button class="btn" id="p-retry"><svg class="ic" aria-hidden="true"><use href="#i-retry"/></svg>Retry</button>
+      <button class="btn" id="p-menu"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg>Menu</button>
+    </div>
+  </div></div>
+
+  <!-- HOW: Astra's four wordless plates, one live line each (step 2) -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">1</div><div><b>Pieces fall from the top and STICK when they land</b> on the golden core or on anything already stuck. Sides never grab, so a falling piece slides past the structure into deeper gaps. The floor and walls hold nothing: miss everything and the piece drifts into the void. Move with ◀ ▶, spin with ⟳ (or tap the board), nudge down with ▼.</div></div>
-    <div class="helprow"><div class="hi">2</div><div>Grow the structure from the core outward into <b style="color:var(--teal)">square rings</b>. Fill every cell of a ring and it <b>erases</b>, and everything outside crushes inward one ring. Chains score big.</div></div>
-    <div class="helprow"><div class="hi">3</div><div><b style="color:var(--gold)">SLAM</b> drops the piece instantly and spins the whole gyre a quarter turn as it lands. This is how the gyre grows sideways and underneath: build a tower upward, then slam to swing it around the sun. Set a piece down gently and nothing spins.</div></div>
-    <div class="helprow"><div class="hi">4</div><div><b>Journey</b> asks for more rings each level and speeds up. <b>Daily Gyre</b> is the same piece run for everyone, once a day. <b>Zen</b> never ends. Topping out just clears the sky.</div></div>
-    <div style="height:18px"></div>
+    <div class="howrow"><div class="howimg" style="background-image:var(--a-how1)"></div><p>Land on the sun or on anything stuck and the piece sticks.</p></div>
+    <div class="howrow"><div class="howimg" style="background-image:var(--a-how2)"></div><p>Sides never grab. Miss everything and it falls into the void.</p></div>
+    <div class="howrow"><div class="howimg" style="background-image:var(--a-how3)"></div><p>Close a square ring. It breaks and the outside crushes in.</p></div>
+    <div class="howrow"><div class="howimg" style="background-image:var(--a-how4)"></div><p>SLAM drops it and turns the whole gyre a quarter turn.</p></div>
+    <p class="howmodes">Journey asks for more rings each level. Daily Gyre is the same run for everyone, once a day. Zen never ends. Tap the board to turn a piece.</p>
     <button class="btn primary" id="how-back" style="max-width:400px;margin:0 auto">Got it</button>
   </div></div>
 
   <!-- SETTINGS -->
   <div class="screen" id="s-set"><div class="pad">
     <h2 class="sc-h">Settings</h2>
+    <div class="settingline"><span><svg class="ic" aria-hidden="true"><use href="#i-sound"/></svg>Sound</span><div class="toggle on" id="tg-sound" role="switch" aria-label="Sound"><b></b></div></div>
+    <div class="settingline"><span><svg class="ic" aria-hidden="true"><use href="#i-ghost"/></svg>Ghost piece</span><div class="toggle on" id="tg-ghost" role="switch" aria-label="Ghost piece"><b></b></div></div>
+    <div class="settingline"><span><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg>Reduced motion</span><div class="toggle" id="tg-reduce" role="switch" aria-label="Reduced motion"><b></b></div></div>
     <div style="height:8px"></div>
-    <div class="settingline"><span>Sound</span><div class="toggle on" id="tg-sound"><b></b></div></div>
-    <div class="settingline"><span>Ghost piece</span><div class="toggle on" id="tg-ghost"><b></b></div></div>
-    <div style="height:8px"></div>
-    <button class="btn sm" id="b-install" style="max-width:400px;margin:0 auto 8px">Add to Home Screen</button>
-    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+    <button class="btn sm" id="b-install" style="max-width:420px;margin:0 auto 12px"><svg class="ic" aria-hidden="true"><use href="#i-install"/></svg>Add to Home Screen</button>
+    <button class="btn ghost sm" id="set-back" style="max-width:420px;margin:0 auto"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>Back</button>
+    <div class="foot" id="buildstamp"></div>
   </div></div>
 
-  <!-- OVER / RESULT -->
-  <div class="screen center" id="s-go"><div class="pad center">
-    <div style="flex:1"></div>
-    <div style="font-size:44px" id="go-emoji">🌀</div>
-    <div class="go-score" id="go-score">0</div>
-    <div class="go-lab" id="go-lab">points</div>
-    <div class="pill" id="go-best">Best 0</div>
-    <div class="pill" id="go-rings" style="margin-left:8px">Rings 0</div>
-    <div class="foot" id="go-sun" style="margin-top:14px;font-size:16px;color:var(--gold)"></div>
-    <div id="go-hint" style="display:none;margin:14px auto 0;max-width:360px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:#0d1220;font-size:15px;line-height:1.5;color:var(--ink)"></div>
-    <div style="flex:1"></div>
-    <div class="stack">
-      <button class="btn primary" id="go-retry">↻ Again</button>
+  <!-- OVER / RESULT (step 6): Astra's card frame over the player's real gyre, the stats in her bands -->
+  <div class="screen" id="s-go">
+    <div id="go-card">
+      <canvas id="go-gyre" width="744" height="744" aria-label="Your gyre"></canvas>
+      <div id="go-frame"></div>
+      <div id="go-head" aria-hidden="true">SUNFORGE</div>
+      <div class="go-band" id="gb-score"><span class="bl">SCORE</span><span class="bv" id="go-score">0</span></div>
+      <div class="go-band" id="gb-rings"><span class="bl">RINGS</span><span class="bv" id="go-rings">0</span></div>
+      <div class="go-band" id="gb-level"><span class="bl" id="go-lab">LEVEL</span><span class="bv" id="go-level">1</span></div>
+    </div>
+    <div id="go-line"><span id="go-best">Best 0</span> <span id="go-sun"></span></div>
+    <div class="go-btns">
+      <button class="btn primary" id="go-retry"><svg class="ic" aria-hidden="true"><use href="#i-retry"/></svg>Again</button>
       <div class="row">
-        <button class="btn sm" id="go-share">↗ Share</button>
-        <button class="btn sm" id="go-home">◄ Menu</button>
+        <button class="btn sm" id="go-share"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg>Share</button>
+        <button class="btn sm" id="go-home"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg>Menu</button>
       </div>
     </div>
-  </div></div>
+    <div id="go-hint"></div>
+  </div>
 </div></div>
 
 <script>
 (function(){
 "use strict";
-var BUILD="v4.0";
+var BUILD="v5.0";
 function $(id){ return document.getElementById(id); }
+function icon(n){ return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'; }
+var UIF='"Space Grotesk",system-ui,sans-serif', DSF='"Barlow Condensed","Space Grotesk",'+UIF;
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
 /* ---------- stage fit ---------- */
@@ -224,12 +344,63 @@ window.addEventListener('resize',fit); window.addEventListener('orientationchang
 
 /* ---------- storage ---------- */
 var LS={ g:function(k){try{return localStorage.getItem(k);}catch(e){return null;}}, s:function(k,v){try{localStorage.setItem(k,v);}catch(e){}} };
-var SET={ sound:true, ghost:true };
-(function(){ try{ var s=JSON.parse(LS.g('rs_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.ghost==='boolean')SET.ghost=s.ghost; }catch(e){} })();
+var SET={ sound:true, ghost:true, reduce:false };
+try{ SET.reduce=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){}
+(function(){ try{ var s=JSON.parse(LS.g('rs_set')||'{}'); if(typeof s.sound==='boolean')SET.sound=s.sound; if(typeof s.ghost==='boolean')SET.ghost=s.ghost; if(typeof s.reduce==='boolean')SET.reduce=s.reduce; }catch(e){} })();
 function saveSet(){ LS.s('rs_set', JSON.stringify(SET)); }
 var PROG={ level:0, best:{journey:0,daily:0,zen:0}, ringsEver:0 };
 (function(){ try{ var p=JSON.parse(LS.g('rs_prog')||'{}'); var k; for(k in PROG) if(p[k]!=null)PROG[k]=p[k]; }catch(e){} })();
 function saveProg(){ LS.s('rs_prog', JSON.stringify(PROG)); }
+
+/* ---------- art (Astra's pack v1, the Sunbreaker skin; tools/sunforge-tests/astra_in.py puts the files) ----------
+   Every image goes through art(key): null until it has loaded, so every draw keeps its code drawn fallback. One ART_V
+   token on every URL (the stamp bumps it). The title's art loads first, everything else after the title plate. Images
+   that CSS draws get a custom property on the stage once loaded (--a-<key>), so a missing file leaves the old look. */
+var ART_V='20261105a';
+var ART_FIRST={
+  first_frame:'assets/identity/first_frame.webp', mode_journey:'assets/hud/mode_journey.png',
+  mode_daily:'assets/hud/mode_daily_gyre.png', mode_zen:'assets/hud/mode_zen.png'
+};
+var ART={
+  wordmark:'assets/identity/wordmark_on_dark.svg',
+  core_states:'assets/core/core_states.png', core_corona:'assets/core/core_corona.png',
+  core_shimmer:'assets/core/core_heat_shimmer.png',
+  faces:'assets/cells/ring_faces_unmarked.png', marks:'assets/cells/ring_marks_dark.png', trim:'assets/cells/weld_trim_layers.png',
+  falling:'assets/cells/falling_cell.png', ghost:'assets/cells/ghost_cell.png', stick:'assets/cells/stick_flash.png',
+  streak:'assets/cells/sliding_past_streak.png',
+  play_plate:'assets/board/play_plate.webp', grid_tex:'assets/board/grid_texture.png', void_edge:'assets/board/void_edge.png',
+  sky_flash:'assets/board/sky_clear_flash.png',
+  next_frame:'assets/hud/next_frame.png', hold_frame:'assets/hud/hold_frame.png', score_plaque:'assets/hud/score_plaque.png',
+  rings_counter:'assets/hud/rings_counter.png', level_badge:'assets/hud/level_badge.png',
+  slam_idle:'assets/hud/slam_idle.png', slam_pressed:'assets/hud/slam_pressed.png', slam_charged:'assets/hud/slam_charged.png',
+  how1:'assets/hud/how_to_play_01.png', how2:'assets/hud/how_to_play_02.png', how3:'assets/hud/how_to_play_03.png', how4:'assets/hud/how_to_play_04.png',
+  btn_left:'assets/hud/button_left_idle.png', btn_left_p:'assets/hud/button_left_pressed.png',
+  btn_right:'assets/hud/button_right_idle.png', btn_right_p:'assets/hud/button_right_pressed.png',
+  btn_rotate:'assets/hud/button_rotate_idle.png', btn_rotate_p:'assets/hud/button_rotate_pressed.png',
+  btn_down:'assets/hud/button_down_idle.png', btn_down_p:'assets/hud/button_down_pressed.png',
+  btn_hold:'assets/hud/button_hold_idle.png', btn_hold_p:'assets/hud/button_hold_pressed.png',
+  btn_pause:'assets/hud/button_pause_idle.png', btn_pause_p:'assets/hud/button_pause_pressed.png',
+  shock:'assets/fx/slam_shockwave.png', burst:'assets/fx/ring_crush_burst.png', swallow:'assets/fx/void_swallow.png',
+  flow:'assets/fx/inward_flow.png', spin1:'assets/fx/quarter_turn_spin_01.png', spin2:'assets/fx/quarter_turn_spin_02.png',
+  spin3:'assets/fx/quarter_turn_spin_03.png', spin4:'assets/fx/quarter_turn_spin_04.png',
+  chain2:'assets/fx/chain_x2.png', chain3:'assets/fx/chain_x3.png', chain4:'assets/fx/chain_x4.png',
+  chain5:'assets/fx/chain_x5.png', chain6:'assets/fx/chain_x6.png',
+  levelup:'assets/fx/level_up_plate.png', overplate:'assets/fx/game_over_plate.png',
+  go_card:'assets/sharing/game_over_card_frame.png', share_sq:'assets/sharing/share_square.png',
+  share_daily:'assets/sharing/daily_gyre_card.png'
+};
+var IMG={};
+function art(k){ var im=IMG[k]; return (im&&im._ok)?im:null; }
+function loadArt(set,done){
+  var left=0,k;
+  for(k in set){ left++; (function(k){ var im=new Image();
+    im.onload=function(){ im._ok=true; var st=document.getElementById('stage'); if(st){ st.style.setProperty('--a-'+k,'url("'+im.src+'")'); st.classList.add('has-'+k); }
+      if(--left===0&&done)done(); };
+    im.onerror=function(){ if(--left===0&&done)done(); };
+    im.src=set[k]+'?v='+ART_V; IMG[k]=im; })(k); }
+  if(!left&&done)done();
+}
+loadArt(ART_FIRST,function(){ loadArt(ART); });
 
 /* ---------- audio ---------- */
 var AC=null;
@@ -243,9 +414,14 @@ var SFX={
   move:function(){ beep(340,0.03,'square',0.02); },
   rot:function(){ beep(450,0.05,'triangle',0.04); },
   lock:function(){ beep(220,0.07,'triangle',0.06); },
-  slam:function(){ beep(160,0.18,'sawtooth',0.08,60); },
-  spin:function(){ beep(300,0.2,'sine',0.06,600); },
-  ring:function(ch){ var b=440*Math.pow(1.25,ch||0); beep(b,0.14,'triangle',0.1); setTimeout(function(){beep(b*1.25,0.14,'triangle',0.1);},90); setTimeout(function(){beep(b*1.5,0.2,'triangle',0.1);},190); },
+  /* Astra's sound notes (step 5): SLAM is a dry low click at contact and a short rubbery torque note going down while
+     the gyre turns; the latch lands when the turn settles (35 ms hold plus 240 ms). A crush is a short inward suction,
+     then a bright alloy chime that steps up the chain at the same length. A lost piece is a small descending tick. */
+  slam:function(){ beep(190,0.025,'square',0.05); beep(240,0.2,'sawtooth',0.045,95); },
+  spin:function(){ setTimeout(function(){ beep(1320,0.05,'triangle',0.06); beep(1980,0.04,'sine',0.025); },SET.reduce?60:275); },
+  ring:function(ch){ var b=660*[1,1.125,1.25,1.5,1.667,2][Math.min(5,ch||0)]; beep(900,0.11,'sine',0.045,240);
+    setTimeout(function(){ beep(b,0.12,'triangle',0.08); beep(b*2,0.09,'sine',0.03); },100); },
+  lost:function(){ beep(760,0.07,'sine',0.03,360); },
   bad:function(){ beep(150,0.12,'square',0.05); },
   win:function(){ beep(523,0.1,'triangle',0.1); setTimeout(function(){beep(659,0.1,'triangle',0.1);},100); setTimeout(function(){beep(784,0.16,'triangle',0.1);},200); },
   over:function(){ beep(300,0.3,'sine',0.08,90); }
@@ -270,7 +446,7 @@ var RMAX=11;                        // outermost ring
    puzzle and the edge never sneaks up on you. All board drawing goes
    through cellPx()/VCELL, recomputed each frame from G.view (half-extent
    in cells). */
-var PANEL={x:8, y:100, w:524, h:664};                 // board window on stage
+var PANEL={x:8, y:152, w:524, h:590};                 // board window on stage (step 4: under the two HUD rows, over SLAM)
 var PCX=PANEL.x+PANEL.w/2, PCY=PANEL.y+PANEL.h/2;    // sun sits at center
 var VCELL=24, VPITCH=26;                              // updated per frame
 function viewTarget(){
@@ -286,7 +462,7 @@ function updateView(dt){
   if(!G)return;
   var t=viewTarget();
   G.view+= (t-G.view)*Math.min(1,dt*2.6);
-  VCELL=Math.min(30, PANEL.w/(2*G.view+1)-1);
+  VCELL=Math.min(34, PANEL.w/(2*G.view+1)-1);   // 34 stage px is Astra's 26 CSS px cell on a 412 wide phone
   VPITCH=VCELL+1;
 }
 /* tetromino cell sets, 4 rotations each (x,y offsets from piece origin) */
@@ -308,7 +484,7 @@ var PKEYS=['I','O','T','S','Z','J','L'];
    Because color is chosen live at render time, when a ring clears and the
    outside crushes inward, every surviving cell recolors to its new ring — the
    whole gyre visibly flows one color-band toward the core. */
-var RING_COL=[ '#ffd76a', '#ff5d6c', '#ff9f45', '#ffd93b', '#4fd67a', '#33c2d6', '#4d9bf7', '#c56bf0', '#f06bb8', '#9b8cf7', '#6fe0c0', '#e0b06f' ];
+var RING_COL=[ '#fff5cb', '#ffd84a', '#9961e8', '#2dd5da', '#f15370', '#bced55', '#477dd9', '#ff9947', '#c8d5e8', '#ba4fbe', '#39bc8a', '#a8a1e8', '#d5a36b' ];
 function ringColOf(x,y){ var d=cheb(x,y); return RING_COL[d]||RING_COL[RMAX]; }
 function hexA(h,a){ var n=parseInt(h.slice(1),16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
 
@@ -328,14 +504,23 @@ function bagFeed(rng){
   };
 }
 function newGame(mode){
+  HUDC={};   // the HUD frames are reused between runs, so their cache starts over
   var seed = mode==='daily' ? ((dayNum()*2654435761)>>>0) : ((Math.random()*2147483647)|0);
   var rng=mulberry32(seed);
   G={ mode:mode, seed:seed, rng:rng, feed:bagFeed(rng), grid:emptyGrid(), hold:null, holdUsed:false, next2:null,
       score:0, rings:0, chainBest:0, level:PROG.level, quota:quotaFor(PROG.level), quotaDone:0,
       cur:null, next:null, dropT:0, over:false, pieces:0,
       pieceBudget:(mode==='daily'?120:0), sbRun:0,
-      fx:[], floats:[], spinA:0, pulse:[], shakeT:0, t:0, shards:[], popAnim:null, slideAnim:null, chainN:0, view:7 };
+      fx:[], floats:[], spinA:0, pulse:[], shakeT:0, t:0, shards:[], popAnim:null, slideAnim:null, chainN:0, view:7,
+      sticks:[], skyT:0, spinT:0, shockT:-1, swallows:[], callouts:[], levelUp:null, endAnim:null };
   G.next=G.feed(); G.next2=G.feed();
+  /* the guided first ring (step 7): on a save that has never broken a ring, Journey starts with ring 1 built but for its
+     top left cell, the notch on the gap and the sun charged; the first piece is a T already pointing down at it, so it
+     falls into the gap by itself and the crush teaches the rest */
+  if(mode==='journey'&&PROG.ringsEver===0){
+    var rc1=RINGS[0],q; for(q=0;q<rc1.length;q++){ if(rc1[q][0]===C-1&&rc1[q][1]===C-1)continue; G.grid[rc1[q][1]][rc1[q][0]]='#fff'; }
+    G.next='T'; G.guide=1;
+  }
   spawn();
   show('s-play'); running=true; lastTs=0; requestAnimationFrame(loop);
 }
@@ -348,14 +533,19 @@ function dropInterval(){
 }
 function spawn(){
   var k=G.next; G.next=G.next2; G.next2=G.feed();
-  var topRow=Math.max(-3, C-Math.ceil(G.view||C));
-  G.cur={ k:k, rot:0, x:C-2, y:topRow-4 };
+  /* the piece enters at the window's top edge, its lower row in view at once (step 4: the HUD rows moved the
+     window's top down, and the old rule, four rows above the view, then hid a new piece for two or three drops) */
+  updateView(0);
+  var vis=Math.floor((PCY-PANEL.y-VCELL/2)/VPITCH+0.1);
+  var topRow=Math.max(-2, C-vis);
+  G.cur={ k:k, rot:0, x:C-2, y:topRow-1 };
+  if(G.guide===1&&k==='T'){ G.cur.rot=2; G.guide=2; }
   G.holdUsed=false;
   G.pieces++;
-  if(G.pieceBudget&&G.pieces>G.pieceBudget){ endRun(); return; }
+  if(G.pieceBudget&&G.pieces>G.pieceBudget){ endRun('budget'); return; }
   if(collides(G.cur.x,G.cur.y,G.cur.rot)){
     if(G.mode==='zen'){ // no-fail: the wind clears the sky
-      G.grid=emptyGrid(); G.floats.push({x:270,y:PCY-60,txt:'the wind clears the gyre',life:1.6,big:true});
+      G.grid=emptyGrid(); G.floats.push({x:270,y:PCY-60,txt:'the wind clears the gyre',life:1.6,big:true}); G.skyT=0.18;
       SFX.spin();
     } else { endRun(); }
   }
@@ -400,7 +590,9 @@ function losePiece(slammed){
   var cs=cellsOf(G.cur.x,G.cur.y,G.cur.rot,G.cur.k),i;
   for(i=0;i<4;i++){ if(cs[i][1]>=0&&cs[i][1]<N)G.pulse.push({x:cs[i][0],y:cs[i][1],life:0.35}); }
   G.floats.push({x:270,y:PANEL.y+PANEL.h-40,txt:'lost to the void',life:1.0});
-  SFX.move();
+  if(!SET.reduce){ var lx=0,ly=0; for(i=0;i<4;i++){ lx+=cs[i][0]; ly+=cs[i][1]; } lx/=4; ly/=4;
+    G.swallows.push({px:PCX+(lx-C)*VPITCH, py:Math.min(PCY+(ly-C)*VPITCH, PANEL.y+PANEL.h-VPITCH*1.5), t:0}); }
+  SFX.lost();
   G.cur=null;
   spawn();
 }
@@ -444,15 +636,16 @@ function holdPiece(){
   }
   SFX.rot();
 }
+function calm(){ return SET.reduce||(G&&G.mode==='zen'); }   // Zen never shakes (step 6); reduced motion never does
 function slam(){
   if(!G.cur||G.over)return;
   var sd=stickDrop();
   G.cur.y=sd.y;
   if(sd.stick){
-    SFX.slam(); G.shakeT=0.25;
+    SFX.slam(); G.shakeT=calm()?0:0.25;
     lockPiece(true);
   } else {
-    SFX.slam(); G.shakeT=0.15;
+    SFX.slam(); G.shakeT=calm()?0:0.15;
     losePiece(true);
   }
 }
@@ -460,18 +653,21 @@ function lockPiece(slammed){
   var cs=cellsOf(G.cur.x,G.cur.y,G.cur.rot,G.cur.k),i;
   for(i=0;i<4;i++){
     if(cs[i][1]<0){ // the structure reached the ceiling
-      if(G.mode==='zen'){ G.grid=emptyGrid(); G.cur=null; G.floats.push({x:270,y:PCY-60,txt:'the wind clears the gyre',life:1.6,big:true}); spawn(); return; }
+      if(G.mode==='zen'){ G.grid=emptyGrid(); G.cur=null; G.skyT=0.18; G.floats.push({x:270,y:PCY-60,txt:'the wind clears the gyre',life:1.6,big:true}); spawn(); return; }
       endRun(); return;
     }
   }
+  var mx=0,my=0,mn=0;
   for(i=0;i<4;i++){
     if(isCore(cs[i][0],cs[i][1])){ G.pulse.push({x:cs[i][0],y:cs[i][1],life:0.5}); continue; } // burned by the sun
     G.grid[cs[i][1]][cs[i][0]]=PCOLS[G.cur.k];
-    G.pulse.push({x:cs[i][0],y:cs[i][1],life:0.22});
+    mx+=cs[i][0]; my+=cs[i][1]; mn++;
+    if(!art('stick'))G.pulse.push({x:cs[i][0],y:cs[i][1],life:0.22});
   }
   G.score+=8; SFX.lock();
   G.cur=null;
-  if(slammed){ spinStructure(); SFX.spin(); G.spinA=1; }
+  if(slammed){ spinStructure(); SFX.spin(); G.spinA=SET.reduce?0:1; G.spinT=0; G.shockT=SET.reduce?-1:0; }
+  if(mn){ mx/=mn; my/=mn; if(slammed){ var qx=mx-C, qy=my-C; mx=C-qy; my=C+qx; } G.sticks.push({x:mx,y:my,t:0}); }
   resolveRingsStaged();
 }
 function spinStructure(){ // 90° clockwise around the core
@@ -509,16 +705,17 @@ function nextRingStage(){
   PROG.ringsEver++; saveProg();
   if(chain>G.chainBest)G.chainBest=chain;
   SFX.ring(chain-1);
-  G.floats.push({x:270,y:PCY+90,txt:'RING '+D+(chain>1?' · CHAIN x'+chain:'')+' +'+pts,life:1.5,big:true});
+  G.floats.push({x:270,y:PANEL.y+PANEL.h-96,txt:'RING '+D+((chain>1&&!art('chain2'))?' · CHAIN x'+chain:'')+' +'+pts,life:1.1,big:true});   // at the window's foot, off the action
+  if(chain>1)G.callouts.push({n:Math.min(6,chain),t:0});
   var rc=RINGS[D-1],i,pop=[];
   for(i=0;i<rc.length;i++){
     var px=rc[i][0], py=rc[i][1];
     if(!G.grid[py][px])continue;
-    pop.push({x:px,y:py,col:ringColOf(px,py)});
+    pop.push({x:px,y:py,col:ringColOf(px,py),d:D});
     G.grid[py][px]=null;
     // shards burst outward from the sun through each popped cell
     var ang=Math.atan2(py-C,px-C);
-    for(var k2=0;k2<3;k2++){
+    for(var k2=0;k2<(SET.reduce?0:3);k2++){
       G.shards.push({x:px,y:py,col:ringColOf(px,py),
         vx:Math.cos(ang)*(3+Math.random()*5)+(Math.random()*2-1)*2,
         vy:Math.sin(ang)*(3+Math.random()*5)-2-Math.random()*3,
@@ -526,8 +723,8 @@ function nextRingStage(){
         life:0.6+Math.random()*0.35});
     }
   }
-  G.popAnim={cells:pop, t:0, dur:0.45, D:D};
-  G.shakeT=Math.max(G.shakeT,0.18);
+  G.popAnim={cells:pop, t:SET.reduce?0:-0.035, dur:SET.reduce?0.04:0.30, D:D};   // the closed band holds 35 ms first
+  if(!calm())G.shakeT=Math.max(G.shakeT,0.18);
 }
 function doCrush(D){
   // compute the inward crush and remember every move for the slide animation
@@ -546,8 +743,8 @@ function doCrush(D){
     }
   }
   G.grid=ng;
-  if(moves.length)G.slideAnim={t:0, dur:0.28, moves:moves};
-  else G.slideAnim={t:0, dur:0.06, moves:[]};
+  if(moves.length)G.slideAnim={t:0, dur:SET.reduce?0.04:0.30, moves:moves, D:D};
+  else G.slideAnim={t:0, dur:0.06, moves:[], D:D};
 }
 function stepAnims(dt){
   if(G.popAnim){
@@ -564,33 +761,39 @@ function checkQuota(){
   if(G.quotaDone<G.quota)return;
   G.level++; PROG.level=G.level; saveProg();
   G.quotaDone=0; G.quota=quotaFor(G.level);
-  SFX.win(); G.floats.push({x:270,y:110,txt:'✨ LEVEL '+(G.level+1)+' ✨',life:1.6,big:true});
-  if(G.sbRun<12){ try{ if(window._sbCapEarn){ var got=window._sbCapEarn(2,'ringstacker:level')||0; G.sbRun+=got; if(got>0)G.floats.push({x:270,y:150,txt:'☀ +'+got,life:1.2}); } }catch(e){} }
+  SFX.win(); if(art('levelup')&&!SET.reduce)G.levelUp={t:0,n:G.level+1}; else G.floats.push({x:270,y:PANEL.y+110,txt:'LEVEL '+(G.level+1),life:1.6,big:true});
+  if(G.sbRun<12){ try{ if(window._sbCapEarn){ var got=window._sbCapEarn(2,'ringstacker:level')||0; G.sbRun+=got; if(got>0)G.floats.push({x:270,y:150,txt:'+'+got+' Sunbeams',life:1.2}); } }catch(e){} }
 }
-function endRun(){
-  if(!G||G.over)return; G.over=true; G.cur=null; running=false; SFX.over();
-  var b=PROG.best[G.mode]||0, nb=G.score>b;
-  if(nb){ PROG.best[G.mode]=G.score; saveProg(); }
-  var sb=0;
+function endRun(reason){
+  if(!G||G.over)return; G.over=true; G.cur=null; SFX.over();
+  /* the Daily is recorded once a day (rs_daily, as before); a run after that is a practice run: same pieces, and it
+     leaves the recorded score, the Sunbeams and the best alone (step 6) */
+  var sb=0, first=true;
   if(G.mode==='daily'){
     var rec=null; try{ rec=JSON.parse(LS.g('rs_daily')||'null'); }catch(e){}
-    var first=!(rec&&rec.day===todayKey());
+    first=!(rec&&rec.day===todayKey());
     if(first){ LS.s('rs_daily', JSON.stringify({day:todayKey(),num:dayNum(),score:G.score})); try{ if(window._sbCapEarn) sb=window._sbCapEarn(4,'ringstacker:daily')||0; }catch(e){} }
   }
-  $('go-emoji').textContent = '◎';
+  var b=PROG.best[G.mode]||0, nb=first&&G.score>b;
+  if(nb){ PROG.best[G.mode]=G.score; saveProg(); }
   $('go-score').textContent = G.score.toLocaleString();
-  $('go-lab').textContent = G.mode==='daily'?('daily #'+dayNum()+' · 80 pieces'):'points';
-  $('go-best').textContent = (nb?'★ New best ':'Best ')+(PROG.best[G.mode]||0).toLocaleString();
-  $('go-rings').textContent = 'Rings '+G.rings+(G.chainBest>1?' · chain x'+G.chainBest:'');
-  $('go-sun').textContent = sb>0?('☀ +'+sb+' sunbeams'):'';
+  $('go-rings').textContent = String(G.rings);
+  $('go-lab').textContent = G.mode==='journey'?'LEVEL':(G.mode==='daily'?'DAILY':'MODE');
+  $('go-level').textContent = G.mode==='journey'?String(G.level+1):(G.mode==='daily'?String(dayNum()):'ZEN');
+  $('go-best').textContent = (G.mode==='daily'&&!first?'Practice. ':'')+(nb?'New best ':'Best ')+(PROG.best[G.mode]||0).toLocaleString()+(G.chainBest>1?' · chain x'+G.chainBest:'');
+  $('go-sun').innerHTML = sb>0?(icon('sun')+' +'+sb+' Sunbeams'):'';
+  $('go-retry').innerHTML = icon('retry')+(G.mode==='daily'?'Practice run':'Again');
+  var gg=$('go-gyre'); if(gg){ var g2=gg.getContext('2d'); g2.clearRect(0,0,gg.width,gg.height); drawGyre(g2,0,0,gg.width,G.grid); }
   var hint=$('go-hint');
   if(hint){
     var showHint=false;
     if(G.mode==='journey'&&G.rings===0&&LS.g('rs_ziphint')!=='1'){ showHint=true; LS.s('rs_ziphint','1'); }
-    if(showHint){ hint.innerHTML='Tip: fill a whole square ring around the golden core to clear it. Try <b style="color:var(--teal)">Zen</b> from the menu to practice with no game over.'; hint.style.display='block'; }
+    if(showHint){ hint.textContent='Fill a whole square ring around the sun to break it. Zen has no game over, a good place to practise.'; hint.style.display='block'; }
     else hint.style.display='none';
   }
-  show('s-go');
+  /* Astra's game over plate over the frozen board first (cooling brackets, 480 ms, held a moment), then the card */
+  if(running&&art('overplate')){ G.endAnim={t:0,dur:SET.reduce?0.08:0.7,txt:reason==='budget'?'OUT OF PIECES':'TOPPED OUT'}; return; }
+  running=false; show('s-go');
 }
 
 /* ---------- render ---------- */
@@ -600,6 +803,11 @@ cv.width=540*DPR; cv.height=960*DPR; ctx.setTransform(DPR,0,0,DPR,0,0);
 function loop(ts){
   if(!running)return;
   if(!lastTs)lastTs=ts; var dt=Math.min(0.05,(ts-lastTs)/1000); lastTs=ts;
+  tick(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+function tick(dt){
   G.t+=dt;
   if(G.cur&&!G.over){
     G.dropT+=dt;
@@ -611,54 +819,137 @@ function loop(ts){
   for(i=G.shards.length-1;i>=0;i--){ var sh=G.shards[i]; sh.vy+=22*dt; sh.x+=sh.vx*dt; sh.y+=sh.vy*dt; sh.rot+=sh.vr*dt; sh.life-=dt; if(sh.life<=0)G.shards.splice(i,1); }
   for(i=G.pulse.length-1;i>=0;i--){ G.pulse[i].life-=dt; if(G.pulse[i].life<=0)G.pulse.splice(i,1); }
   for(i=G.floats.length-1;i>=0;i--){ var f=G.floats[i]; f.y-=24*dt; f.life-=dt*0.8; if(f.life<=0)G.floats.splice(i,1); }
-  if(G.spinA>0)G.spinA=Math.max(0,G.spinA-dt*3.2);
+  if(G.spinA>0){ G.spinT+=dt; var sp=Math.max(0,Math.min(1,(G.spinT-0.035)/0.24)); G.spinA=sp>=1?0:Math.pow(1-sp,3); }
   if(G.shakeT>0)G.shakeT=Math.max(0,G.shakeT-dt);
-  render();
-  requestAnimationFrame(loop);
+  for(i=G.sticks.length-1;i>=0;i--){ G.sticks[i].t+=dt; if(G.sticks[i].t>0.12)G.sticks.splice(i,1); }
+  if(G.skyT>0)G.skyT=Math.max(0,G.skyT-dt);
+  if(G.shockT>=0){ G.shockT+=dt; if(G.shockT>0.24)G.shockT=-1; }
+  for(i=G.swallows.length-1;i>=0;i--){ G.swallows[i].t+=dt; if(G.swallows[i].t>0.3)G.swallows.splice(i,1); }
+  for(i=G.callouts.length-1;i>=0;i--){ G.callouts[i].t+=dt; if(G.callouts[i].t>0.45)G.callouts.splice(i,1); }
+  if(G.levelUp){ G.levelUp.t+=dt; if(G.levelUp.t>1.2)G.levelUp=null; }
+  if(G.endAnim){ G.endAnim.t+=dt; if(G.endAnim.t>=G.endAnim.dur){ G.endAnim=null; show('s-go'); } }
 }
 function cellPx(x,y){ return { x:PCX+(x-C)*VPITCH-VCELL/2, y:PCY+(y-C)*VPITCH-VCELL/2 }; }
+/* WELDED CELLS (step 3, manifest.cell_layer_recipe): a ring cell is the ring's enamel face, the 1 px seam, a weld trim
+   on every side whose neighbour is not the same ring (empty, another ring, the core), the inner corner trim where two
+   same ring sides meet round a missing diagonal (the trim rotates, the face and the mark never do), then the ring's
+   upright dark mark. Each ring and neighbour pattern is composed ONCE at 64 px and then drawn as one image. */
+var CELLC={};
+function cellSprite(d,mask){
+  var key=d*256+mask, c=CELLC[key]; if(c)return c;
+  var faces=art('faces'), trim=art('trim'), marks=art('marks'); if(!faces||!trim||!marks)return null;
+  c=document.createElement('canvas'); c.width=c.height=64; var g=c.getContext('2d'), f=(d-1)%12, k;
+  g.drawImage(faces,f*64,0,64,64,0,0,64,64);
+  g.drawImage(trim,7*64,0,64,64,0,0,64,64);
+  if((mask&15)===15) g.drawImage(trim,0,0,64,64,0,0,64,64);
+  else for(k=0;k<4;k++){ if(mask&(1<<k)) g.drawImage(trim,(k+1)*64,0,64,64,0,0,64,64); }   // top right bottom left
+  for(k=0;k<4;k++){ if(mask&(16<<k)){ g.save(); g.translate(32,32); g.rotate(k*Math.PI/2); g.drawImage(trim,5*64,0,64,64,-32,-32,64,64); g.restore(); } }
+  g.drawImage(marks,f*64,0,64,64,0,0,64,64);
+  CELLC[key]=c; return c;
+}
+function sameRing(x,y,d,g){ g=g||G.grid; return x>=0&&x<N&&y>=0&&y<N&&!!g[y][x]&&cheb(x,y)===d; }
+function cellMask(x,y,d,g){
+  var t=sameRing(x,y-1,d,g), r=sameRing(x+1,y,d,g), b=sameRing(x,y+1,d,g), l=sameRing(x-1,y,d,g), m=0;
+  if(!t)m|=1; if(!r)m|=2; if(!b)m|=4; if(!l)m|=8;
+  if(t&&l&&!sameRing(x-1,y-1,d,g))m|=16; if(t&&r&&!sameRing(x+1,y-1,d,g))m|=32;
+  if(b&&r&&!sameRing(x+1,y+1,d,g))m|=64; if(b&&l&&!sameRing(x-1,y+1,d,g))m|=128;
+  return m;
+}
+/* the player's real gyre, small (step 6): the last grid in its rings' welded cells round the sun, one empty ring of
+   margin, on the void; the result card's window and the share card's window both come from here */
+function drawGyre(g,x,y,size,grid){
+  var E=2,yy,xx,d;
+  for(yy=0;yy<N;yy++)for(xx=0;xx<N;xx++){ if(grid[yy][xx]){ d=cheb(xx,yy); if(d>E)E=d; } }
+  var n=2*E+3, cs=size/n, ox=x+size/2, oy=y+size/2;
+  g.save(); g.beginPath(); g.rect(x,y,size,size); g.clip();
+  g.fillStyle='#080e15'; g.fillRect(x,y,size,size);
+  g.lineWidth=Math.max(1,cs*0.06);
+  for(d=1;d<=E;d++){ var hw=(d+0.5)*cs; g.strokeStyle=hexA(RING_COL[d],0.2); g.strokeRect(ox-hw,oy-hw,hw*2,hw*2); }
+  for(yy=0;yy<N;yy++)for(xx=0;xx<N;xx++){
+    if(!grid[yy][xx])continue; d=cheb(xx,yy);
+    var sp=cellSprite(d,cellMask(xx,yy,d,grid)), px=ox+(xx-C)*cs-cs/2, py=oy+(yy-C)*cs-cs/2;
+    if(sp)g.drawImage(sp,px,py,cs,cs); else { g.fillStyle=RING_COL[d]||RING_COL[RMAX]; g.fillRect(px+0.5,py+0.5,cs-1,cs-1); }
+  }
+  var cst=art('core_states');
+  if(cst){ var bs=cs*2; g.drawImage(cst,0,0,256,256,ox-bs/2,oy-bs/2,bs,bs); } else { g.fillStyle='#fff5cb'; g.fillRect(ox-cs/2,oy-cs/2,cs,cs); }
+  g.restore();
+}
+var MONTHS=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+/* Astra's 1080 share card: the gyre behind her window, her frame (the wordmark is baked), live words in her bands */
+function shareCard(){
+  if(!G)return null;
+  var daily=G.mode==='daily', frame=art(daily?'share_daily':'share_sq'); if(!frame)return null;
+  var c=document.createElement('canvas'); c.width=c.height=1080; var g=c.getContext('2d');
+  g.fillStyle='#080d15'; g.fillRect(0,0,1080,1080);
+  if(daily)drawGyre(g,240,300,600,G.grid); else drawGyre(g,240,275,600,G.grid);
+  g.drawImage(frame,0,0,1080,1080);
+  function band(rx,lab,val){ g.textAlign='center'; g.fillStyle='#c8d5e8'; g.font='900 30px '+DSF; g.fillText(lab,rx+138,940+32);
+    g.fillStyle='#fff5cb'; g.font='900 50px '+DSF; g.fillText(val,rx+138,940+78); }
+  band(76,'SCORE',G.score.toLocaleString()); band(402,'RINGS',String(G.rings));
+  band(728,G.mode==='journey'?'LEVEL':(daily?'DAILY':'MODE'),G.mode==='journey'?String(G.level+1):(daily?String(dayNum()):'ZEN'));
+  if(daily){ var dt=new Date(); g.textAlign='center'; g.fillStyle='#dfff4f'; g.font='900 34px '+DSF;
+    g.fillText('DAILY GYRE '+dayNum()+' · '+dt.getDate()+' '+MONTHS[dt.getMonth()]+' '+dt.getFullYear(),540,244+33); }
+  return c;
+}
+/* the smallest ring that is one cell from closing, and that cell (the core charges, SLAM charges, the notch shows) */
+function almostRing(){
+  if(!G)return null;
+  for(var d=1;d<=RMAX;d++){ var rc=RINGS[d-1],gap=null,miss=0,i;
+    for(i=0;i<rc.length;i++){ if(!G.grid[rc[i][1]][rc[i][0]]){ miss++; gap=rc[i]; if(miss>1)break; } }
+    if(miss===1)return {d:d,x:gap[0],y:gap[1]}; }
+  return null;
+}
+/* Astra's ghost brackets in another colour: her warning coral for a piece that would be lost, acid for the notch */
+var _tint={};
+function tintedGhost(col){ if(_tint[col])return _tint[col]; var gi=art('ghost'); if(!gi)return null;
+  var c=document.createElement('canvas'); c.width=c.height=64; var x=c.getContext('2d');
+  x.drawImage(gi,0,0,64,64); x.globalCompositeOperation='source-in'; x.fillStyle=col; x.fillRect(0,0,64,64);
+  _tint[col]=c; return c; }
+function ghostLost(){ return tintedGhost('#f15370'); }
+/* Astra's inward flow strip (a white mask) in the broken ring's colour, once per ring */
+var _flow={};
+function flowTint(d){ if(_flow[d])return _flow[d]; var fm=art('flow'); if(!fm)return null;
+  var c=document.createElement('canvas'); c.width=1536; c.height=256; var x=c.getContext('2d');
+  x.drawImage(fm,0,0); x.globalCompositeOperation='source-in'; x.fillStyle=RING_COL[d]||RING_COL[RMAX]; x.fillRect(0,0,1536,256);
+  _flow[d]=c; return c; }
+/* the live words over a plate's blank centre: display type, cream, a dark edge so it reads over anything */
+function plateText(t,x,y){ ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='900 44px '+DSF;
+  ctx.lineWidth=6; ctx.strokeStyle='rgba(8,13,21,0.9)'; ctx.strokeText(t,x,y); ctx.fillStyle='#fff5cb'; ctx.fillText(t,x,y); ctx.restore(); }
 function render(){
+  var i;
   updateView(0.033);
+  var AR=almostRing();
   ctx.clearRect(0,0,540,960);
+  var plate=art('play_plate');
+  if(plate)ctx.drawImage(plate,0,0,540,960);
   var sx=G.shakeT>0?(Math.random()*6-3)*G.shakeT*4:0;
   var sy=G.shakeT>0?(Math.random()*6-3)*G.shakeT*4:0;
   ctx.save(); ctx.translate(sx,sy);
-  // header
-  ctx.textAlign='center'; ctx.fillStyle='#eef0f6';
-  ctx.font='800 32px system-ui,sans-serif';
-  ctx.fillText(G.score.toLocaleString(), 236, 58);
-  ctx.font='600 12px system-ui,sans-serif'; ctx.fillStyle='#8d90a8';
-  var sub = G.mode==='journey' ? ('LEVEL '+(G.level+1)+' · RINGS '+G.quotaDone+'/'+G.quota)
-          : G.mode==='daily' ? ('DAILY #'+dayNum()+' · '+Math.max(0,G.pieceBudget-G.pieces)+' pieces left · rings '+G.rings)
-          : 'ZEN · rings '+G.rings;
-  ctx.fillText(sub, 236, 84);
-  // next / after / hold previews
-  ctx.fillStyle='rgba(255,255,255,0.04)'; rr(452,24,68,46,10); ctx.fill();
-  ctx.fillStyle='#8d90a8'; ctx.font='600 9px system-ui,sans-serif'; ctx.fillText('NEXT',486,20);
-  var ns=SHAPES[G.next][0],i;
-  for(i=0;i<4;i++){ ctx.fillStyle=PCOLS[G.next]; rr(452+14+ns[i][0]*10,24+8+ns[i][1]*10,8,8,2); ctx.fill(); }
-  if(G.next2){
-    ctx.fillStyle='rgba(255,255,255,0.03)'; rr(452,76,68,32,8); ctx.fill();
-    var n2=SHAPES[G.next2][0];
-    for(i=0;i<4;i++){ ctx.fillStyle=hexA(PCOLS[G.next2],0.6); rr(452+18+n2[i][0]*7,76+5+n2[i][1]*7,5.5,5.5,1.5); ctx.fill(); }
-  }
-  ctx.fillStyle='rgba(255,255,255,0.04)'; rr(376,24,64,46,10); ctx.fill();
-  ctx.fillStyle='#8d90a8'; ctx.font='600 9px system-ui,sans-serif'; ctx.fillText('HOLD',408,20);
-  if(G.hold){
-    var hs=SHAPES[G.hold][0];
-    for(i=0;i<4;i++){ ctx.fillStyle=G.holdUsed?hexA(PCOLS[G.hold],0.35):PCOLS[G.hold]; rr(376+13+hs[i][0]*9,24+9+hs[i][1]*9,7,7,2); ctx.fill(); }
-  }
+  hudPaint(AR);
+  ctx.textAlign='center';
   // board panel
-  ctx.fillStyle='rgba(255,255,255,0.028)';
-  rr(PANEL.x-4,PANEL.y-4,PANEL.w+8,PANEL.h+8,14); ctx.fill();
+  if(!plate){ ctx.fillStyle='rgba(255,255,255,0.028)'; rr(PANEL.x-4,PANEL.y-4,PANEL.w+8,PANEL.h+8,14); ctx.fill(); }
   ctx.save();
   rr(PANEL.x,PANEL.y,PANEL.w,PANEL.h,12); ctx.clip();
+  // the void below: a soft fade at the window's foot, under everything (gravity never turns, so neither does it)
+  var ve=art('void_edge'); if(ve){ var vh=PANEL.w*320/900; ctx.drawImage(ve,PANEL.x,PANEL.y+PANEL.h-vh,PANEL.w,vh); }
   // spin flourish: the whole board eases out of a slight rotation after a slam
   if(G.spinA>0){
-    ctx.translate(PCX,PCY); ctx.rotate(-G.spinA*G.spinA*Math.PI/2); ctx.translate(-PCX,-PCY);
+    ctx.translate(PCX,PCY); ctx.rotate(-G.spinA*Math.PI/2); ctx.translate(-PCX,-PCY);
   }
-  // ring frames — every ring drawn as a colored square target that brightens
-  // and thickens as it fills, so the concentric colored rings are unmistakable
+  // the grid tile, scaled to the cell pitch and pinned to the cells, so its lines are the board's
+  var gtex=art('grid_tex');
+  if(gtex){ if(!render.pat)render.pat=ctx.createPattern(gtex,'repeat');
+    var go=cellPx(0,0);
+    if(render.pat&&render.pat.setTransform&&window.DOMMatrix){
+      render.pat.setTransform(new DOMMatrix([VPITCH/64,0,0,VPITCH/64,go.x-0.5,go.y-0.5]));
+      ctx.globalAlpha=0.4; ctx.fillStyle=render.pat; ctx.fillRect(PANEL.x-80,PANEL.y-80,PANEL.w+160,PANEL.h+160); ctx.globalAlpha=1; } }
+  // the sun's corona under the cells (opacity only, slow; steady in reduced motion). Astra's resting glow plate is not
+  // drawn: yellow at its strength over the navy void read as an olive smudge in the empty slots of ring 1 (step 3 shot)
+  var cq=cellPx(C,C), qx0=cq.x+VCELL/2, qy0=cq.y+VCELL/2;
+  var ccor=art('core_corona'); if(ccor){ var cs2=VCELL*2.5;
+    ctx.globalAlpha=SET.reduce?0.65:(0.65+0.1*Math.sin(G.t*Math.PI*2/1.8)); ctx.drawImage(ccor,qx0-cs2/2,qy0-cs2/2,cs2,cs2); ctx.globalAlpha=1; }
+  // ring frames: quiet scaffolding that brightens as the ring fills
   var d;
   for(d=RMAX-1;d>=1;d--){
     var p0=cellPx(C-d,C-d);
@@ -666,8 +957,8 @@ function render(){
     var done=0, rc=RINGS[d-1];
     for(i=0;i<rc.length;i++)if(G.grid[rc[i][1]][rc[i][0]])done++;
     var frac=done/rc.length;
-    ctx.strokeStyle=hexA(RING_COL[d], 0.18+frac*0.72);
-    ctx.lineWidth=frac>=1?3:(frac>0.6?2:1.25);
+    ctx.strokeStyle=hexA(RING_COL[d], (plate?0.10:0.18)+frac*(plate?0.5:0.72));
+    ctx.lineWidth=frac>=1?2.5:(frac>0.6?1.6:1);
     rr(p0.x-2,p0.y-2,w+4,w+4,7); ctx.stroke();
   }
   // cells — colored by their RING (distance from the core) => concentric bands
@@ -676,6 +967,13 @@ function render(){
   if(G.slideAnim&&G.slideAnim.moves.length){
     slideSkip={};
     for(i=0;i<G.slideAnim.moves.length;i++){ var mv0=G.slideAnim.moves[i]; slideSkip[mv0.tx+','+mv0.ty]=true; }
+  }
+  function drawRingCell(px,py,d,mask,alpha){
+    var sp=cellSprite(d,mask);
+    if(!sp){ drawCell(px,py,RING_COL[d]||RING_COL[RMAX],alpha); return; }
+    if(alpha!==undefined)ctx.globalAlpha=alpha;
+    ctx.drawImage(sp,px-0.5,py-0.5,VPITCH,VPITCH);
+    if(alpha!==undefined)ctx.globalAlpha=1;
   }
   function drawCell(px,py,col,alpha){
     if(alpha!==undefined)ctx.globalAlpha=alpha;
@@ -688,9 +986,18 @@ function render(){
   for(y=0;y<N;y++)for(x=0;x<N;x++){
     if(!G.grid[y][x])continue;
     if(slideSkip&&slideSkip[x+','+y])continue;   // drawn mid-slide below
-    var p=cellPx(x,y);
-    drawCell(p.x,p.y,ringColOf(x,y));
+    var p=cellPx(x,y), dd=cheb(x,y);
+    drawRingCell(p.x,p.y,dd,cellMask(x,y,dd));
   }
+  // the almost ring: its outline lit steady in its own colour, an acid notch on its one missing cell (no strobe)
+  if(AR&&!G.popAnim&&!G.slideAnim){
+    var a0=cellPx(C-AR.d,C-AR.d), aw=(2*AR.d+1)*VPITCH-1;
+    ctx.strokeStyle=hexA(RING_COL[AR.d],0.95); ctx.lineWidth=3; rr(a0.x-2.5,a0.y-2.5,aw+5,aw+5,8); ctx.stroke();
+  }
+  // the inward flow while the outside slides in: Astra's mask in the broken ring's colour, 0.35 at most
+  if(G.slideAnim&&!SET.reduce){ var flw=flowTint(G.slideAnim.D);
+    if(flw){ var ftf=Math.min(5,Math.floor(G.slideAnim.t/0.05)), fsz=(2*(G.slideAnim.D+1)+1)*VPITCH*1.15;
+      ctx.globalAlpha=0.35; ctx.drawImage(flw,ftf*256,0,256,256,PCX-fsz/2,PCY-fsz/2,fsz,fsz); ctx.globalAlpha=1; } }
   // crush slide — outer cells glide one ring toward the sun
   if(G.slideAnim&&G.slideAnim.moves.length){
     var st=Math.min(1,G.slideAnim.t/G.slideAnim.dur);
@@ -698,22 +1005,23 @@ function render(){
     for(i=0;i<G.slideAnim.moves.length;i++){
       var mv=G.slideAnim.moves[i];
       var fp=cellPx(mv.fx,mv.fy), tp=cellPx(mv.tx,mv.ty);
-      drawCell(fp.x+(tp.x-fp.x)*ease, fp.y+(tp.y-fp.y)*ease, ringColOf(mv.tx,mv.ty));
+      drawRingCell(fp.x+(tp.x-fp.x)*ease, fp.y+(tp.y-fp.y)*ease, cheb(mv.tx,mv.ty), 15);
     }
   }
-  // ring POP — cleared cells swell, glow and burst
+  // the crush (Astra's motion table): the closed band holds 35 ms, then contracts toward the sun and goes over 300 ms
   if(G.popAnim){
-    var pt=Math.min(1,G.popAnim.t/G.popAnim.dur);
-    var scale=1+pt*1.1, pa=1-pt*pt;
+    var pt=Math.max(0,Math.min(1,G.popAnim.t/G.popAnim.dur)), pe=pt*pt;
     for(i=0;i<G.popAnim.cells.length;i++){
-      var pc=G.popAnim.cells[i];
-      var pp=cellPx(pc.x,pc.y);
-      var cxm=pp.x+VCELL/2, cym=pp.y+VCELL/2, half=VCELL/2*scale;
-      ctx.globalAlpha=pa;
-      ctx.fillStyle=pc.col; rr(cxm-half,cym-half,half*2,half*2,6); ctx.fill();
-      ctx.fillStyle='rgba(255,251,230,'+(0.65*pa).toFixed(2)+')'; rr(cxm-half*0.6,cym-half*0.6,half*1.2,half*1.2,5); ctx.fill();
+      var pc=G.popAnim.cells[i], pp=cellPx(pc.x,pc.y), csz=VPITCH*(1-0.6*pe);
+      var pcx=pp.x+VCELL/2+(PCX-(pp.x+VCELL/2))*0.4*pe, pcy=pp.y+VCELL/2+(PCY-(pp.y+VCELL/2))*0.4*pe;
+      var psp=cellSprite(pc.d,15);
+      ctx.globalAlpha=1-pe;
+      if(psp)ctx.drawImage(psp,pcx-csz/2,pcy-csz/2,csz,csz); else { ctx.fillStyle=pc.col; rr(pcx-csz/2,pcy-csz/2,csz,csz,5); ctx.fill(); }
       ctx.globalAlpha=1;
     }
+    var bu=art('burst');
+    if(bu&&!SET.reduce&&G.popAnim.t>=0){ var bfr=Math.min(5,Math.floor(G.popAnim.t/0.05)), bsz=(2*G.popAnim.D+1)*VPITCH*1.25;
+      ctx.globalAlpha=0.85; ctx.drawImage(bu,bfr*256,0,256,256,PCX-bsz/2,PCY-bsz/2,bsz,bsz); ctx.globalAlpha=1; }
   }
   // shards — colored fragments flying out of popped rings
   for(i=0;i<G.shards.length;i++){
@@ -741,6 +1049,12 @@ function render(){
   // core — the golden SUN everything rings around
   var cp=cellPx(C,C);
   var ccx=cp.x+VCELL/2, ccy=cp.y+VCELL/2;
+  var cst=art('core_states');
+  if(cst){
+    var cstate=(G.popAnim||G.slideAnim)?2:(AR?1:0), bs=VCELL*2;
+    ctx.drawImage(cst,cstate*256,0,256,256,ccx-bs/2,ccy-bs/2,bs,bs);
+    var csh=art('core_shimmer'); if(csh&&!SET.reduce){ ctx.globalAlpha=0.25; ctx.drawImage(csh,(Math.floor(G.t*10)%6)*256,0,256,256,ccx-bs/2,ccy-bs/2,bs,bs); ctx.globalAlpha=1; }
+  } else {
   var pls=0.5+0.5*Math.sin(G.t*2.2);
   var halo=ctx.createRadialGradient(ccx,ccy,2, ccx,ccy, VCELL*2.0);
   halo.addColorStop(0,'rgba(255,236,160,'+(0.55+0.28*pls)+')');
@@ -755,41 +1069,112 @@ function render(){
   ctx.fillStyle='#ffcf4d'; rr(cp.x-1,cp.y-1,VCELL+2,VCELL+2,8); ctx.fill();       // sun body
   ctx.fillStyle='#ffe38a'; rr(cp.x+3,cp.y+3,VCELL-6,VCELL-6,6); ctx.fill();
   ctx.fillStyle='rgba(255,255,255,'+(0.72+0.28*pls)+')'; rr(cp.x+8,cp.y+8,VCELL-16,VCELL-16,4); ctx.fill(); // white-hot center
+  }
+  // the slam's shockwave at the core: six frames at 40 ms
+  if(G.shockT>=0){ var shw=art('shock'); if(shw){ var swf=Math.min(5,Math.floor(G.shockT/0.04)), sws=VPITCH*7;
+    ctx.globalAlpha=0.75; ctx.drawImage(shw,swf*256,0,256,256,ccx-sws/2,ccy-sws/2,sws,sws); ctx.globalAlpha=1; } }
   // ghost — where the piece will GRAB ON; red when it would miss everything
   // and drift into the void
   if(G.cur&&SET.ghost&&!G.over){
     var gd=stickDrop();
     var gc=cellsOf(G.cur.x,gd.y,G.cur.rot,G.cur.k);
+    var gimg=gd.stick?art('ghost'):ghostLost();
     for(i=0;i<4;i++){ if(gc[i][1]<0)continue; var gp=cellPx(gc[i][0],gc[i][1]);
+      if(gimg){ ctx.globalAlpha=0.75; ctx.drawImage(gimg,gp.x-0.5,gp.y-0.5,VPITCH,VPITCH); ctx.globalAlpha=1; continue; }
       ctx.strokeStyle=gd.stick?'rgba(238,240,246,0.3)':'rgba(255,93,108,0.55)';
       ctx.lineWidth=1.5; rr(gp.x+1,gp.y+1,VCELL-2,VCELL-2,5); ctx.stroke(); }
   }
+  // the almost ring's notch, after the ghost so the gap always shows acid (step 7 shot)
+  if(AR&&!G.popAnim&&!G.slideAnim){ var ntc=tintedGhost('#dfff4f'), nq=cellPx(AR.x,AR.y);
+    if(ntc)ctx.drawImage(ntc,nq.x-0.5,nq.y-0.5,VPITCH,VPITCH); else { ctx.strokeStyle='#dfff4f'; ctx.lineWidth=2; rr(nq.x+3,nq.y+3,VCELL-6,VCELL-6,4); ctx.stroke(); } }
   // falling piece
   if(G.cur&&!G.over){
-    var pc=cellsOf(G.cur.x,G.cur.y,G.cur.rot,G.cur.k);
+    var pc=cellsOf(G.cur.x,G.cur.y,G.cur.rot,G.cur.k), fimg=art('falling'), stk=art('streak');
+    if(stk&&!SET.reduce){ var sfr=Math.floor(G.t*1000/35)%6;
+      for(i=0;i<4;i++){ var qx=pc[i][0], qy=pc[i][1]; if(qy<0||qy>=N)continue;
+        if((qx>0&&G.grid[qy][qx-1])||(qx<N-1&&G.grid[qy][qx+1])){ var sq=cellPx(qx,qy);
+          ctx.globalAlpha=0.8; ctx.drawImage(stk,sfr*64,0,64,128,sq.x-0.5,sq.y-VPITCH,VPITCH,VPITCH*2); ctx.globalAlpha=1; } } }
     for(i=0;i<4;i++){ if(pc[i][1]<0)continue; var pp=cellPx(pc[i][0],pc[i][1]);
+      if(fimg){ ctx.drawImage(fimg,pp.x-0.5,pp.y-0.5,VPITCH,VPITCH); continue; }
       ctx.fillStyle=PCOLS[G.cur.k]; rr(pp.x,pp.y,VCELL,VCELL,5); ctx.fill();
       ctx.fillStyle='rgba(255,255,255,0.22)'; rr(pp.x,pp.y,VCELL,VCELL*0.4,5); ctx.fill(); }
   }
+  // the stick flash: six frames over 120 ms at the locked piece's centre
+  var sfl=art('stick');
+  if(sfl)for(i=0;i<G.sticks.length;i++){ var sk=G.sticks[i], sfx=PCX+(sk.x-C)*VPITCH, sfy=PCY+(sk.y-C)*VPITCH, ss=VPITCH*2.6;
+    ctx.drawImage(sfl,Math.min(5,Math.floor(sk.t/0.02))*64,0,64,64,sfx-ss/2,sfy-ss/2,ss,ss); }
+  // the sky clear: a short fade over the top of the window when Zen's wind clears the gyre
+  if(G.skyT>0&&!SET.reduce){ var skf=art('sky_flash'); if(skf){ ctx.globalAlpha=0.25*(G.skyT/0.18); ctx.drawImage(skf,PANEL.x,PANEL.y,PANEL.w,PANEL.w*600/900); ctx.globalAlpha=1; } }
   // ring pulses — an expanding white flash where a completed ring collapsed in
   for(i=0;i<G.pulse.length;i++){ var pu=G.pulse[i]; var ppx=cellPx(pu.x,pu.y);
     var e=(0.55-pu.life)*14; if(e<0)e=0;
     ctx.globalAlpha=Math.max(0,Math.min(1,pu.life*2)); ctx.fillStyle='#fffbe6';
     rr(ppx.x-2-e,ppx.y-2-e,VCELL+4+e*2,VCELL+4+e*2,6); ctx.fill(); ctx.globalAlpha=1; }
   ctx.restore();
+  ctx.save(); rr(PANEL.x,PANEL.y,PANEL.w,PANEL.h,12); ctx.clip();
+  if(G.spinA>0&&G.spinT>=0.035){ var sfi=Math.floor((G.spinT-0.035)/0.06), sim=sfi<4?art('spin'+(sfi+1)):null;
+    if(sim){ ctx.globalAlpha=G.mode==='zen'?0.4:0.85; ctx.drawImage(sim,0,PCY-440,540,960); ctx.globalAlpha=1; } }
+  var vsw=art('swallow');
+  if(vsw)for(i=0;i<G.swallows.length;i++){ var sw=G.swallows[i], vss=VPITCH*3;
+    ctx.drawImage(vsw,Math.min(5,Math.floor(sw.t/0.05))*256,0,256,256,sw.px-vss/2,sw.py-vss/2,vss,vss); }
+  for(i=0;i<G.callouts.length;i++){ var co=G.callouts[i], cim=art('chain'+co.n); if(!cim)continue;
+    ctx.globalAlpha=co.t<0.08?co.t/0.08:(co.t>0.37?Math.max(0,(0.45-co.t)/0.08):1);
+    ctx.drawImage(cim,PANEL.x+PANEL.w-150,PANEL.y+14,136,68); ctx.globalAlpha=1; }
+  if(G.levelUp){ var lu=art('levelup'), lt=G.levelUp.t;
+    ctx.globalAlpha=lt>1?Math.max(0,(1.2-lt)/0.2):1;
+    if(lu)ctx.drawImage(lu,Math.min(5,Math.floor(lt/0.08))*256,0,256,256,270-130,PANEL.y+150-130,260,260);
+    plateText('LEVEL '+G.levelUp.n,270,PANEL.y+150); ctx.globalAlpha=1; }
+  if(G.endAnim){ var eo=art('overplate'), et=G.endAnim.t;
+    ctx.fillStyle='rgba(8,13,21,'+(0.5*Math.min(1,et/0.48)).toFixed(3)+')'; ctx.fillRect(PANEL.x,PANEL.y,PANEL.w,PANEL.h);
+    if(eo)ctx.drawImage(eo,Math.min(5,Math.floor(et/0.08))*256,0,256,256,270-150,PCY-150,300,300);
+    plateText(G.endAnim.txt,270,PCY); }
+  ctx.restore();
   // floats
   for(i=0;i<G.floats.length;i++){ var f=G.floats[i]; ctx.globalAlpha=Math.max(0,Math.min(1,f.life));
-    ctx.fillStyle=f.big?'#ffd76a':'#eef0f6'; ctx.font=(f.big?'800 26px':'700 18px')+' system-ui,sans-serif';
+    ctx.fillStyle=f.big?'#ffd76a':'#eef0f6'; ctx.font=f.big?('900 34px '+DSF):('700 22px '+UIF);
     ctx.fillText(f.txt, f.x, f.y); }
   ctx.globalAlpha=1;
-  // footer hint
-  ctx.fillStyle='#8d90a8'; ctx.font='600 11px system-ui,sans-serif';
-  ctx.fillText('pieces stick to the sun · grow rings outward · SLAM spins the gyre', 270, PANEL.y+PANEL.h-12);
   ctx.restore();
+}
+/* ---------- the HUD (step 4): DOM in Astra's frames; written only when a value changes ---------- */
+var HUDC={};
+function hudSet(id,v,prop){ if(HUDC[id]===v)return; HUDC[id]=v; var el=$(id); if(el)el[prop||'textContent']=v; }
+function drawPreview(id,k,alpha){
+  var key=k+'|'+alpha+'|'+(art('falling')?1:0); if(HUDC[id]===key)return; HUDC[id]=key;
+  var cvp=$(id); if(!cvp)return; var g=cvp.getContext('2d'); g.clearRect(0,0,cvp.width,cvp.height); if(!k)return;
+  var sh=SHAPES[k][0], minx=9,maxx=-9,miny=9,maxy=-9,i;
+  for(i=0;i<4;i++){ minx=Math.min(minx,sh[i][0]); maxx=Math.max(maxx,sh[i][0]); miny=Math.min(miny,sh[i][1]); maxy=Math.max(maxy,sh[i][1]); }
+  var cols=maxx-minx+1, rows=maxy-miny+1, cs=Math.min((cvp.width-8)/cols,(cvp.height-8)/rows, cvp.height*0.42);
+  var ox=(cvp.width-cols*cs)/2, oy=(cvp.height-rows*cs)/2, fi=art('falling');
+  g.globalAlpha=alpha;
+  for(i=0;i<4;i++){ var x=ox+(sh[i][0]-minx)*cs, y=oy+(sh[i][1]-miny)*cs;
+    if(fi)g.drawImage(fi,x,y,cs,cs); else { g.fillStyle=PCOLS[k]; g.fillRect(x+1,y+1,cs-2,cs-2); } }
+  g.globalAlpha=1;
+}
+function hudPaint(AR){
+  if(!G)return;
+  hudSet('h-score',G.score.toLocaleString());
+  hudSet('h-level',G.mode==='journey'?('LEVEL '+(G.level+1)):(G.mode==='daily'?('DAILY '+dayNum()):'ZEN'));
+  hudSet('h-rings',G.mode==='journey'?('RINGS '+G.quotaDone+'/'+G.quota):('RINGS '+G.rings));
+  var daily=G.mode==='daily';
+  if(HUDC.daily!==daily){ HUDC.daily=daily; var hl=$('hud-left'); if(hl)hl.style.display=daily?'flex':'none'; }
+  if(daily)hudSet('h-left',Math.max(0,G.pieceBudget-G.pieces)+' LEFT');
+  drawPreview('cv-next',G.next,1);
+  drawPreview('cv-next2',G.next2,0.6);
+  drawPreview('cv-hold',G.hold,G.holdUsed?0.35:1);
+  var coach=!!G.guide&&G.rings===0&&G.pieces<=4;
+  if(HUDC.coach!==coach){ HUDC.coach=coach; var ce=$('coach'); if(ce)ce.style.display=coach?'block':'none'; }
+  var sb=$('slambtn'), ch=!!AR; if(sb&&HUDC.charged!==ch){ HUDC.charged=ch; sb.classList.toggle('charged',ch); }
 }
 function rr(x,y,w,h,rad){ ctx.beginPath(); ctx.moveTo(x+rad,y); ctx.arcTo(x+w,y,x+w,y+h,rad); ctx.arcTo(x+w,y+h,x,y+h,rad); ctx.arcTo(x,y+h,x,y,rad); ctx.arcTo(x,y,x+w,y,rad); ctx.closePath(); }
 
 /* ---------- input ---------- */
+/* every skinned control shows Astra's pressed skin while a finger is on it */
+(function(){ var ids=['b-pause','b-hold','c-left','c-right','c-down','c-rot','slambtn'],i;
+  for(i=0;i<ids.length;i++)(function(el){ if(!el)return;
+    el.addEventListener('pointerdown',function(){ el.classList.add('pressed'); });
+    ['pointerup','pointercancel','pointerleave'].forEach(function(t){ el.addEventListener(t,function(){ el.classList.remove('pressed'); }); });
+  })($(ids[i])); })();
 function hold(id,fn,first){
   var el=$(id),t=null,r=null; if(!el)return;
   function stop(){ if(t){clearTimeout(t);t=null;} if(r){clearInterval(r);r=null;} }
@@ -805,6 +1190,8 @@ tap('b-hold',function(){ holdPiece(); });
 tap('slambtn',function(){ slam(); });
 cv.addEventListener('pointerdown',function(e){
   if(curScreen!=='s-play'||!G||G.over)return; e.preventDefault(); ac();
+  var r=cv.getBoundingClientRect(), sy=(e.clientY-r.top)*960/r.height;
+  if(sy<PANEL.y||sy>PANEL.y+PANEL.h)return;          // a tap on the HUD or below the window turns nothing
   tryRotate();
 },{passive:false});
 document.addEventListener('keydown',function(e){
@@ -815,23 +1202,40 @@ document.addEventListener('keydown',function(e){
   else if(e.key==='ArrowDown'){ e.preventDefault(); softStep(); }
   else if(e.key===' '){ e.preventDefault(); slam(); }
   else if(e.key==='c'||e.key==='C'||e.key==='Shift'){ e.preventDefault(); holdPiece(); }
+  else if(e.key==='Escape'||e.key==='p'||e.key==='P'){ e.preventDefault(); pauseGame(); }
 });
+document.addEventListener('keydown',function(e){ if(curScreen==='s-pause'&&(e.key==='Escape'||e.key==='p'||e.key==='P')){ e.preventDefault(); resumeGame(); } });
+/* pause: the run stops where it is (no tick, so no drop, no clock, the Daily's pieces untouched); a hidden tab pauses */
+function pauseGame(){ if(curScreen!=='s-play'||!G||G.over)return; show('s-pause'); }
+function resumeGame(){ if(!G||G.over){ show('s-title'); return; } show('s-play'); running=true; lastTs=0; requestAnimationFrame(loop); }
+document.addEventListener('visibilitychange',function(){ if(document.hidden)pauseGame(); });
 
 /* ---------- screens ---------- */
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id;
   if(id!=='s-play')running=false;
   paintTitle(); }
-function paintTitle(){ var j=$('j-lvl'); if(j)j.textContent='· level '+(PROG.level+1);
+function paintTitle(){ var j=$('j-lvl'); if(j)j.textContent='Level '+(PROG.level+1);
   var rec=null; try{ rec=JSON.parse(LS.g('rs_daily')||'null'); }catch(e){}
-  var bd=$('b-daily'); if(bd)bd.innerHTML='Daily Gyre'+((rec&&rec.day===todayKey())?' ✓':''); }
+  var played=!!(rec&&rec.day===todayKey()), bd=$('b-daily'), ds=$('d-sub');
+  if(bd)bd.classList.toggle('played',played); if(ds)ds.textContent=played?'Played today':'Once a day'; }
 function shareIt(){
   var txt = G&&G.mode==='daily'
     ? 'Sunforge Daily #'+dayNum()+'\n'+(G?G.score.toLocaleString():0)+' pts · '+(G?G.rings:0)+' rings\nSame pieces for everyone, can you beat it?'
     : 'Sunforge · '+(G?G.score.toLocaleString():0)+' pts, '+(G?G.rings:0)+' rings around the core';
   var url='https://lucidwinds.com/satellites/ring-stacker/';
-  try{ if(navigator.share){ navigator.share({text:txt,url:url})['catch'](function(){}); return; } }catch(e){}
-  try{ navigator.clipboard.writeText(txt+'\n'+url); }catch(e){}
+  function textShare(){ try{ if(navigator.share){ navigator.share({text:txt,url:url})['catch'](function(){}); return; } }catch(e){}
+    try{ navigator.clipboard.writeText(txt+'\n'+url); }catch(e){} }
+  var card=null; try{ card=shareCard(); }catch(e){ card=null; }
+  if(!card||!card.toBlob){ textShare(); return; }
+  card.toBlob(function(blob){
+    if(!blob){ textShare(); return; }
+    var name=(G&&G.mode==='daily'?'sunforge-daily-'+dayNum():'sunforge-'+(G?G.score:0))+'.png', file=null;
+    try{ file=new File([blob],name,{type:'image/png'}); }catch(e){}
+    try{ if(file&&navigator.canShare&&navigator.canShare({files:[file]})){ navigator.share({files:[file],text:txt+'\n'+url})['catch'](function(){}); return; } }catch(e){}
+    try{ var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1500); }catch(e){ textShare(); }
+  },'image/png');
 }
 
 /* ---------- wiring ---------- */
@@ -842,7 +1246,10 @@ tap('b-how',function(){ SFX.ui(); show('s-how'); });
 tap('b-set',function(){ SFX.ui(); show('s-set'); });
 tap('how-back',function(){ SFX.ui(); show('s-title'); });
 tap('set-back',function(){ SFX.ui(); show('s-title'); });
-tap('b-home',function(){ SFX.ui(); running=false; if(G&&!G.over)endRunQuiet(); show('s-title'); });
+tap('b-pause',function(){ SFX.ui(); pauseGame(); });
+tap('p-resume',function(){ SFX.ui(); resumeGame(); });
+tap('p-retry',function(){ SFX.ui(); if(G&&!G.over)endRunQuiet(); newGame(G?G.mode:'journey'); });
+tap('p-menu',function(){ SFX.ui(); if(G&&!G.over)endRunQuiet(); show('s-title'); });
 tap('go-retry',function(){ SFX.ui(); newGame(G?G.mode:'journey'); });
 tap('go-home',function(){ SFX.ui(); show('s-title'); });
 tap('go-share',function(){ SFX.ui(); shareIt(); });
@@ -851,7 +1258,8 @@ function wireToggle(id,key){ var el=$(id); function paint(){ if(SET[key])el.clas
   el.addEventListener('click',function(e){ e.preventDefault(); SET[key]=!SET[key]; paint(); saveSet(); SFX.ui(); }); }
 wireToggle('tg-sound','sound');
 wireToggle('tg-ghost','ghost');
-$('buildstamp').textContent='Sunforge '+BUILD+' · level '+(PROG.level+1)+' · rings ever '+PROG.ringsEver;
+wireToggle('tg-reduce','reduce');
+$('buildstamp').textContent='Sunforge '+BUILD+' by Sky Wolf Studio · level '+(PROG.level+1)+' · rings ever '+PROG.ringsEver;
 
 /* headless test hook — only exists with ?rsdev=1 in the URL */
 if(/[?&]rsdev=1/.test(location.search)){
@@ -876,7 +1284,7 @@ if(/[?&]rsdev=1/.test(location.search)){
 /* ---------- add to home screen (Dewball pattern) ---------- */
 (function(){
   var btn=$('b-install'); if(!btn)return;
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=8'); }catch(e){} }
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=9'); }catch(e){} }
   function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
   if(standalone()){ btn.style.display='none'; return; }
   var deferred=null;
@@ -885,8 +1293,8 @@ if(/[?&]rsdev=1/.test(location.search)){
     SFX.ui();
     if(deferred){ deferred.prompt(); deferred=null; return; }
     var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
-    alert(ios ? 'To add Ring Stacker to your Home Screen:\n\nTap the Share button, then Add to Home Screen.'
-              : 'To add Ring Stacker to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.');
+    alert(ios ? 'To add Sunforge to your Home Screen:\n\nTap the Share button, then Add to Home Screen.'
+              : 'To add Sunforge to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.');
   });
 })();
 
@@ -1004,12 +1412,12 @@ if(/[?&]rstest=1/.test(location.search)){
     if(!b){ if(G&&G.cur){ slam(); return !G.over; } return false; }   // jammed: forced slam (zen wipes, others end)
     G.cur.rot=b.rot; G.cur.x=b.x;
     if(collides(G.cur.x,G.cur.y,G.cur.rot))return false;
-    if(b.slam){ slam(); } else { G.cur.y=hardDropY(); lockPiece(false); }
+    if(b.slam){ slam(); } else { var sd=stickDrop(); G.cur.y=sd.y; if(sd.stick)lockPiece(false); else losePiece(false); }
     return true;
   }
   window.RS_DEV={
     start:function(m,seed){ newGame(m||'journey'); running=false;
-      if(seed!=null){ G.seed=seed; G.rng=mulberry32(seed); G.feed=bagFeed(G.rng); G.next=G.feed(); G.cur=null; G.grid=emptyGrid(); G.pieces=0; spawn(); }
+      if(seed!=null){ G.seed=seed; G.rng=mulberry32(seed); G.feed=bagFeed(G.rng); G.next=G.feed(); G.next2=G.feed(); G.guide=0; G.cur=null; G.grid=emptyGrid(); G.pieces=0; HUDC={}; spawn(); }
       return true; },
     state:function(){ if(!G)return null; return { mode:G.mode, score:G.score, rings:G.rings, level:G.level,
       over:G.over, pieces:G.pieces, chainBest:G.chainBest, quotaDone:G.quotaDone, quota:G.quota, seed:G.seed }; },
@@ -1028,6 +1436,19 @@ if(/[?&]rstest=1/.test(location.search)){
       return { pass:pass, runs:out };
     },
     render:function(){ render(); return true; },
+    /* the shot tool's handles (tools/sunforge-tests/shoot.mjs) */
+    freeze:function(){ running=false; return true; },
+    art:function(k,on){ if(IMG[k])IMG[k]._ok=!!on; CELLC={}; _tint={}; _flow={}; render.pat=null; render(); return !!IMG[k]; },
+    step:function(dt,n,drop){ dt=dt||1/60; for(var i=0;i<(n||1);i++){ if(!drop&&G)G.dropT=0; tick(dt); } render(); return true; },
+    flush:function(){ var g=400; while(G&&(G.popAnim||G.slideAnim)&&g--)stepAnims(0.05); render(); return true; },
+    seedRing:function(d,gx,gy){ var rc=RINGS[d-1],i; for(i=0;i<rc.length;i++){ if(rc[i][0]===gx&&rc[i][1]===gy)continue; G.grid[rc[i][1]][rc[i][0]]='#fff'; } render(); return true; },
+    put:function(k,x,y,rot){ G.cur={k:k,rot:rot||0,x:x,y:y}; render(); return !collides(x,y,rot||0); },
+    lock:function(slammed){ if(G&&G.cur)lockPiece(!!slammed); render(); return true; },
+    drop:function(){ if(!G||!G.cur)return false; var sd=stickDrop(); G.cur.y=sd.y; if(sd.stick)lockPiece(false); else losePiece(false); render(); return sd.stick; },
+    fill:function(R,dens,seed){ var r=mulberry32(seed||7),x,y; for(y=0;y<N;y++)for(x=0;x<N;x++){ var d=cheb(x,y); if(d>=1&&d<=R&&r()<(dens||0.8))G.grid[y][x]='#fff'; } render(); return true; },
+    end:function(){ endRun(); return true; },
+    shareCard:function(){ var c=shareCard(); return c?c.toDataURL('image/png'):null; },
+    show:function(id){ show(id); return true; },
     earnTest:function(){ try{ return window._sbCapEarn(2,'test'); }catch(e){ return -1; } }
   };
 }
