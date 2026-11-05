@@ -12,7 +12,8 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 - [ ] Shutterbug: open the Darkroom from the title; every blueprint carried out of a room is a print waiting there, a weapon once developed for dead pixels (you)
 - [ ] Play Keepsies on the Pixel with the STATUES chip on: place two, move one (you)
 - [x] Pick from the Shutterbug proposals below (you: 5 Nov, weapons first, then times in shared codes)
-- [ ] Run the Shutterbug deploy line, then play a room, Play it again, and share one (you)
+- [x] Run the Shutterbug deploy line (you: sb-m2-8 LIVE 5 Nov, main d349e54e2)
+- [ ] Play a room, Play it again, and share one to a friend on the Pixel (you)
 - [x] Pick the Flatulence Fighter redesign below (you: 5 Nov, "sure")
 
 ## Astra queue (sent, back, wired)
