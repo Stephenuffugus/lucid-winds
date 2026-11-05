@@ -162,6 +162,72 @@ def main():
         i0, j0 = h0.index(a0) + len(a0), h0.index(b0)
         h0 = h0[:i0] + '\nconst HAT_ANCHOR=' + json.dumps(socks, separators=(',', ':')) + ';\n' + h0[j0:]; open(page0, 'w').write(h0)
     else: print('no TM HERO SOCKETS markers yet: anchors not written')
+    # m2 step 9: the world moves. Her wilt states for the solid awning (the wilting kind), the umbrella postures, the
+    # cactus spectators, the Angry Sun's three sheets, the two rings, the lunge lane mark; and the fits the page needs
+    C2 = '/workspaces/tomato-man-astra-v1/pack-v2/assets'
+    def wsave(im, rel, q=82, aq=88):
+        im.save(out(rel), 'WEBP', quality=q, method=6, alpha_quality=aq); total[0] += os.path.getsize(out(rel))
+    fits = {}
+    # her awning sheet is cut on a grid the art does not keep (the healthy canopy runs off its cell's right edge, slivers
+    # of the neighbours sit at the edges), so the four states are cut from the whole sheet at the empty gaps between
+    # them, then set on one canvas by their rail (top aligned, rail centres aligned); the healthy canopy is fitted to
+    # the caster's footprint the way her v1 canopy is, and every state keeps that transform
+    wl = Image.open(os.path.join(C2, 'c_worlds', 'solid_awning_states.png')).convert('RGBA'); WA = solid_mask = wl.getchannel('A').point(lambda a: 255 if a > 128 else 0)
+    def gap(lo, hi, empty):                                   # the middle of the longest empty run in [lo, hi)
+        best, run0, bl = None, None, 0
+        for v in range(lo, hi + 1):
+            if v < hi and empty(v):
+                if run0 is None: run0 = v
+            elif run0 is not None:
+                if v - run0 > bl: bl, best = v - run0, (run0 + v) // 2
+                run0 = None
+        return best
+    ys = gap(120, 320, lambda y: WA.crop((0, y, wl.width, y + 1)).getbbox() is None)
+    quads = []
+    for (y0, y1) in ((0, ys), (ys, wl.height)):
+        xs = gap(560, 880, lambda x: WA.crop((x, y0, x + 1, y1)).getbbox() is None)
+        for (x0, x1) in ((0, xs), (xs, wl.width)):
+            bb = WA.crop((x0, y0, x1, y1)).getbbox()
+            # keep the awning's own rows: her sagging state carries a stray sliver below its hem, after empty rows
+            runs, r0 = [], None
+            for yy in range(bb[1], bb[3] + 1):
+                full = yy < bb[3] and WA.crop((x0, y0 + yy, x1, y0 + yy + 1)).getbbox() is not None
+                if full and r0 is None: r0 = yy
+                elif not full and r0 is not None: runs.append((r0, yy)); r0 = None
+            ra, rb2 = max(runs, key=lambda t: t[1] - t[0])
+            cb = WA.crop((x0, y0 + ra, x1, y0 + rb2)).getbbox()
+            quads.append(wl.crop((x0 + cb[0], y0 + ra, x0 + cb[2], y0 + rb2)))
+    rails = []
+    for q in quads:
+        rb = q.getchannel('A').point(lambda a: 255 if a > 128 else 0).crop((0, 0, q.width, 14)).getbbox(); rails.append((rb[0] + rb[2]) / 2)
+    half_w = max(max(rc, q.width - rc) for q, rc in zip(quads, rails)); CW = int(2 * half_w + 2); CH = max(q.height for q in quads)
+    strip = Image.new('RGBA', (CW * 2, CH * 2), (0, 0, 0, 0))   # 2 by 2: healthy, drooping / sagging, collapsed
+    for i, (q, rc) in enumerate(zip(quads, rails)): strip.paste(q, ((i % 2) * CW + int(round(CW / 2 - rc)), (i // 2) * CH))
+    hx0 = int(round(CW / 2 - rails[0])); fits['wilt'] = [hx0, 0, hx0 + quads[0].width, quads[0].height, CW, CH]
+    wsave(strip, 'casters/solid_awning_states.webp')
+    um = Image.open(os.path.join(C2, 'c_worlds', 'umbrella_tilt_states.png')).convert('RGBA').resize((768, 768), Image.LANCZOS)
+    nb = um.crop((384, 0, 768, 384)).getchannel('A').getbbox(); fits['umb'] = [384, (nb[2] - nb[0]) / 2]   # cell, canopy radius
+    wsave(um, 'casters/umbrella_states.webp')
+    for k in ('blink', 'wave', 'wind'):
+        wsave(Image.open(os.path.join(C2, 'c_worlds', 'cactus_%s.png' % k)).convert('RGBA').resize((512, 192), Image.LANCZOS), 'worlds/cactus_%s.webp' % k)
+    for k in ('wind_up', 'lunge', 'recovery'):
+        wsave(Image.open(os.path.join(C2, 'b_sun', 'angry_sun_%s.png' % k)).convert('RGBA').resize((768, 192), Image.LANCZOS), 'sun/angry_sun_%s_sheet.webp' % k)
+    # the same disc on screen: her v1 state fills its square this much, her v2 cell this much
+    v1 = Image.open(os.path.join(GAME, 'art', 'sun', 'angry_sun_wind_up.webp')).convert('RGBA'); b1 = v1.getchannel('A').getbbox()
+    v2 = Image.open(os.path.join(C2, 'b_sun', 'angry_sun_wind_up.png')).convert('RGBA').crop((0, 0, 384, 384)); b2 = v2.getchannel('A').getbbox()
+    fits['sunK'] = round(((b1[2] - b1[0]) / v1.width) / ((b2[2] - b2[0]) / 384), 3)
+    for k in ('boss_telegraph', 'safe_window'):
+        im = Image.open(os.path.join(C2, 'e_fx', '%s.png' % k)).convert('RGBA'); bb = im.crop((0, 0, 256, 256)).getchannel('A').getbbox()
+        fits[k] = (bb[2] - bb[0]) / 2                                                  # the first frame's outer radius
+        wsave(im, 'effects/%s.webp' % k, q=90, aq=95)
+    shutil.copyfile(os.path.join(C2, 'f_ui', 'lunge_lane.png'), out('ui/lunge_lane.png')); total[0] += os.path.getsize(out('ui/lunge_lane.png'))
+    a1, b1m = '/* TM WORLD FITS (lucid-winds tools/tomato-man-tests/astra_in.py writes this line) */', '/* /TM WORLD FITS */'
+    h1 = open(page0).read()
+    if a1 in h1:
+        i1, j1 = h1.index(a1) + len(a1), h1.index(b1m)
+        h1 = h1[:i1] + '\nconst WORLD_FIT=' + json.dumps(fits, separators=(',', ':')) + ';\n' + h1[j1:]; open(page0, 'w').write(h1)
+    else: print('no TM WORLD FITS markers yet: fits not written')
+    print('fits', fits)
     # the one inline sprite of her one colour marks
     syms = []
     for f in sorted(os.listdir(os.path.join(PACK, 'f_ui'))):

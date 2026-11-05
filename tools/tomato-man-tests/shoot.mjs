@@ -8,6 +8,7 @@
  *   W=360 H=780 node tools/tomato-man-tests/shoot.mjs <outdir> play
  * Screens: title howto worlds levels play blaze burn win shop builder daily pause first longdark springtide angry pickle
  * ne acts winhat (m2 step 8: walking north east with a hat, a shade drop frame, the postcard victory with the hat)
+ * lunge warn gust cactus (m2 step 9: the Angry Sun mid lunge and warning, an umbrella in a gust, a cactus in the wind)
  * share (share writes the two composed 1080 postcards; first = an empty save, Dawn
  * Ribbon's first seconds). Every other screen starts from a save that has seen How to Play and every coach mark. */
 import { createRequire } from 'node:module';
@@ -56,6 +57,10 @@ const SCREENS = {
   acts: async () => { await ev("__TM.look('tomato','sunhat'); __TM.hold(true); __TM.startLevel(1); __TM.seek(1.5)"); await wait(900);
     await ev("var r=__TM._run(); r.act={k:'shade_drop',t:0.3}; __TM.P.vx=0; __TM.P.vy=0; r.idleT=1; __TM.render()"); },
   winhat: async () => { await ev("__TM.look('tomato','sunhat'); __TM.hold(true); __TM.startLevel(2); __TM.seek(2); __TM.winLevel()"); await wait(1500); },
+  lunge: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='The Angry Sun')); var r=__TM._run(); r.screenT=60; for(var i=0;i<300&&r.lunge.state!=='strike';i++) __TM.seek(0.05); __TM.seek(0.45)"); await wait(900); await ev("__TM.render()"); },
+  warn: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='The Angry Sun')); var r=__TM._run(); r.screenT=60; for(var i=0;i<400&&r.lunge.state!=='idle';i++) __TM.seek(0.05); for(var i=0;i<400&&r.lunge.state!=='warn';i++) __TM.seek(0.05); __TM.seek(0.7)"); await wait(900); await ev("__TM.render()"); },
+  gust: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='Dusk Gauntlet')); var r=__TM._run(); r.screenT=60; __TM.seek(2.6); __TM.P.x=1650; __TM.P.y=1580; __TM.seek(1.4)"); await wait(900); await ev("__TM.render()"); },
+  cactus: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='Dusk Gauntlet')); var r=__TM._run(); r.screenT=60; __TM.seek(2.6); var c=r.cacti[0]; __TM.P.x=c.x-c.side*110+60; __TM.P.y=c.y+30; __TM.seek(1.4)"); await wait(900); await ev("__TM.render()"); },
   longdark: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='The Long Dark')); __TM.seek(4.6)"); },
   springtide: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='Spring Tide')); var r=__TM._run(); r.screenT=30; __TM.P.x=1200; __TM.P.y=2060; r.wilts[0].campT=2.0; __TM.seek(0.4)"); },
   angry: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='The Angry Sun')); __TM.seek(0.7)"); await wait(700); await ev("__TM.render()"); },
