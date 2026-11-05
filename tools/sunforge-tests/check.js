@@ -36,7 +36,7 @@ if (!parsed) fail('no inline script block found');
 
 /* 2. the style blocks' braces balance (strings and url() stripped first) */
 for (const m of html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)) {
-  const css = m[1].replace(/url\([^)]*\)/g, 'url()').replace(/"[^"]*"|'[^']*'/g, '""');
+  const css = m[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/url\([^)]*\)/g, 'url()').replace(/"[^"]*"|'[^']*'/g, '""');
   let depth = 0, line = 1, bad = 0;
   for (const ch of css) { if (ch === '\n') line++; if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth < 0) { bad = line; break; } } }
   if (bad || depth !== 0) fail('style block braces do not balance (depth ' + depth + (bad ? ', closes too early at line ' + bad : '') + ')');

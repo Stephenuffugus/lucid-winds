@@ -2,40 +2,44 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0e1018">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#080d15">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Sunforge">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='%230e1018'/%3E%3Crect x='7' y='7' width='18' height='18' rx='3' fill='none' stroke='%234ac8b4' stroke-width='2'/%3E%3Crect x='12' y='12' width='8' height='8' rx='2' fill='none' stroke='%23e0a843' stroke-width='2'/%3E%3Crect x='14.5' y='14.5' width='3' height='3' fill='%23ffd76a'/%3E%3C/svg%3E">
+<link rel="icon" href="icons/icon-192.png">
 <title>Sunforge · Sky Wolf Studio</title>
 <!-- Social preview (2026-07-25). 80 of 83 satellites had no og:image, so every
      link posted rendered as a bare grey box. Card art from the portal thumb. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sky Wolf Studio">
 <meta property="og:title" content="Sunforge">
-<meta property="og:description" content="Sunforge. Free to play at Sky Wolf Studio.">
+<meta property="og:description" content="Stick falling pieces to the sun, close the square rings, slam to spin the gyre. Free at Sky Wolf Studio.">
 <meta property="og:url" content="https://lucidwinds.com/satellites/ring-stacker/">
 <meta property="og:image" content="https://lucidwinds.com/satellites/ring-stacker/og/card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Sunforge">
-<meta name="twitter:description" content="Sunforge. Free to play at Sky Wolf Studio.">
+<meta name="twitter:description" content="Stick falling pieces to the sun, close the square rings, slam to spin the gyre. Free at Sky Wolf Studio.">
 <meta name="twitter:image" content="https://lucidwinds.com/satellites/ring-stacker/og/card.jpg">
 
 <!-- Same-origin Sunbeam SDK (guarded; harmless 404 if absent) -->
 <script src="/sunbeam-sdk.js?v=7"></script>
 <script>window.Sunbeam&&Sunbeam.init({gameId:"ringstacker"}).catch(function(){});</script>
 <style>
+/* Sunbreaker type (Astra's pack v1): Barlow Condensed Black for display, Space Grotesk for live UI. Both OFL, subset to
+   Latin woff2 by tools/sunforge-tests/astra_in.py, served from here so the game stays offline. */
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:900;font-display:swap;src:url(assets/fonts/barlow-condensed-black.woff2?v=20261105a) format('woff2')}
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:300 700;font-display:swap;src:url(assets/fonts/space-grotesk.woff2?v=20261105a) format('woff2')}
 :root{ --bg:#0e1018; --panel:#171a26; --line:#2a2e40; --ink:#eef0f6; --muted:#8d90a8;
   --gold:#ffd76a; --teal:#4ac8b4; --rose:#e07a9a; }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
 html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif; color:var(--ink); user-select:none; -webkit-user-select:none}
+  font-family:"Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--ink); user-select:none; -webkit-user-select:none}
 #wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
   background:radial-gradient(120% 80% at 50% 0%, #141828 0%, #090a12 70%, #000 100%)}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:var(--bg); overflow:hidden; box-shadow:0 0 60px #000a}
@@ -100,6 +104,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 .go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
 .pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#1b1e2c; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
 #b-music{flex:0 0 72px; font-size:20px}
+button{touch-action:manipulation; font-family:inherit}
+.ic{width:1em; height:1em; flex:none; display:inline-block; vertical-align:-0.14em}
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
 </style>
 <meta name="description" content="Stick falling pieces to the golden sun and finish rings to crush them inward.">
@@ -107,13 +113,16 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 <script src="/music-unlocks.js" defer></script>
 </head>
 <body>
+<!-- SF ICONS (tools/sunforge-tests/astra_in.py writes this line) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5L8 12L15 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5L16 12L9 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-down" viewBox="0 0 24 24"><path d="M5 9L12 16L19 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-rotate" viewBox="0 0 24 24"><path d="M19 10A7 7 0 1 0 18 17 M19 4V10H13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-hold" viewBox="0 0 24 24"><path d="M4 8H20L16 4 M20 16H4L8 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5V19 M16 5V19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-sound" viewBox="0 0 24 24"><path d="M3 9H7L12 5V19L7 15H3Z M16 8Q21 12 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-music" viewBox="0 0 24 24"><path d="M9 17V6L19 4V15 M9 6L19 4 M4 17A3 2 0 1 0 10 17A3 2 0 1 0 4 17 M14 15A3 2 0 1 0 20 15A3 2 0 1 0 14 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-ghost" viewBox="0 0 24 24"><path d="M5 20V10A7 7 0 0 1 19 10V20L16 17L12 20L8 17Z M9 10V12 M15 10V12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M9 3H15L16 6L19 7L21 12L19 17L16 18L15 21H9L8 18L5 17L3 12L5 7L8 6Z M9 12A3 3 0 1 0 15 12A3 3 0 1 0 9 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11L12 3L21 11 M6 9V21H18V9 M10 21V15H14V21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-share" viewBox="0 0 24 24"><path d="M8 12L17 6 M8 12L17 18 M3 12A3 3 0 1 0 9 12A3 3 0 1 0 3 12 M16 5A2 2 0 1 0 20 5A2 2 0 1 0 16 5 M16 19A2 2 0 1 0 20 19A2 2 0 1 0 16 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-retry" viewBox="0 0 24 24"><path d="M5 10A7 7 0 1 1 6 17 M5 4V10H11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-how-to-play" viewBox="0 0 24 24"><path d="M7 8A5 5 0 1 1 15 12L12 14V16 M12 19V21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-install" viewBox="0 0 24 24"><path d="M12 3V15 M7 10L12 15L17 10 M4 16V21H20V16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-back" viewBox="0 0 24 24"><path d="M10 4L3 12L10 20 M3 12H21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><path d="M12 8A4 4 0 1 0 12 16A4 4 0 1 0 12 8 M12 2V4 M12 20V22 M2 12H4 M20 12H22 M4.9 4.9L6.3 6.3 M17.7 17.7L19.1 19.1 M4.9 19.1L6.3 17.7 M17.7 6.3L19.1 4.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel"/></symbol></svg>
+<!-- /SF ICONS -->
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">Sunforge</h1>
 <div id="wrap"><div id="stage">
   <canvas id="game" width="540" height="960"></canvas>
 
   <!-- TITLE -->
   <div class="screen center on" id="s-title">
-    <button class="swsback" id="sws-back" type="button" aria-label="Back to the arcade">&#8249; Back to the arcade</button>
+    <button class="swsback" id="sws-back" type="button" aria-label="Back to the arcade"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>Back to the arcade</button>
     <div class="pad center">
     <div style="flex:1"></div>
     <div class="title-word">SUNFORGE</div>
@@ -128,8 +137,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
       </div>
       <div class="row">
         <button class="btn sm" id="b-how">How</button>
-        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack">&#9835;</button>
-        <button class="btn sm" id="b-set">⚙</button>
+        <button class="btn sm" id="b-music" title="Soundtrack" aria-label="Open studio soundtrack"><svg class="ic" aria-hidden="true"><use href="#i-music"/></svg></button>
+        <button class="btn sm" id="b-set" aria-label="Settings"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg></button>
       </div>
     </div>
     <div class="foot" id="buildstamp"></div>
@@ -137,19 +146,19 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 
   <!-- PLAY chrome -->
   <div class="screen" id="s-play">
-    <button class="tbtn" id="b-home" aria-label="Back to menu">‹</button>
-    <button class="cbtn" id="c-left"  style="left:10px;  bottom:calc(18px + env(safe-area-inset-bottom,0px))">◀</button>
-    <button class="cbtn" id="c-right" style="left:136px; bottom:calc(18px + env(safe-area-inset-bottom,0px))">▶</button>
-    <button class="cbtn" id="c-down"  style="right:136px; bottom:calc(18px + env(safe-area-inset-bottom,0px))">▼</button>
-    <button class="cbtn" id="c-rot"   style="right:10px; bottom:calc(18px + env(safe-area-inset-bottom,0px))">⟳</button>
-    <button class="tbtn" id="b-hold" style="left:300px; top:calc(env(safe-area-inset-top,0px) + 10px)" title="Hold piece">&#8646;</button>
+    <button class="tbtn" id="b-home" aria-label="Back to menu"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="cbtn" id="c-left"  style="left:10px;  bottom:calc(18px + env(safe-area-inset-bottom,0px))" aria-label="Left"><svg class="ic" aria-hidden="true"><use href="#i-left"/></svg></button>
+    <button class="cbtn" id="c-right" style="left:136px; bottom:calc(18px + env(safe-area-inset-bottom,0px))" aria-label="Right"><svg class="ic" aria-hidden="true"><use href="#i-right"/></svg></button>
+    <button class="cbtn" id="c-down"  style="right:136px; bottom:calc(18px + env(safe-area-inset-bottom,0px))" aria-label="Down"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg></button>
+    <button class="cbtn" id="c-rot"   style="right:10px; bottom:calc(18px + env(safe-area-inset-bottom,0px))" aria-label="Turn"><svg class="ic" aria-hidden="true"><use href="#i-rotate"/></svg></button>
+    <button class="tbtn" id="b-hold" style="left:300px; top:calc(env(safe-area-inset-top,0px) + 10px)" title="Hold piece" aria-label="Hold"><svg class="ic" aria-hidden="true"><use href="#i-hold"/></svg></button>
     <button id="slambtn">SLAM</button>
   </div>
 
   <!-- HOW -->
   <div class="screen" id="s-how"><div class="pad">
     <h2 class="sc-h">How to play</h2>
-    <div class="helprow"><div class="hi">1</div><div><b>Pieces fall from the top and STICK when they land</b> on the golden core or on anything already stuck. Sides never grab, so a falling piece slides past the structure into deeper gaps. The floor and walls hold nothing: miss everything and the piece drifts into the void. Move with ◀ ▶, spin with ⟳ (or tap the board), nudge down with ▼.</div></div>
+    <div class="helprow"><div class="hi">1</div><div><b>Pieces fall from the top and STICK when they land</b> on the golden core or on anything already stuck. Sides never grab, so a falling piece slides past the structure into deeper gaps. The floor and walls hold nothing: miss everything and the piece drifts into the void. Move left and right, turn it (or tap the board), nudge it down.</div></div>
     <div class="helprow"><div class="hi">2</div><div>Grow the structure from the core outward into <b style="color:var(--teal)">square rings</b>. Fill every cell of a ring and it <b>erases</b>, and everything outside crushes inward one ring. Chains score big.</div></div>
     <div class="helprow"><div class="hi">3</div><div><b style="color:var(--gold)">SLAM</b> drops the piece instantly and spins the whole gyre a quarter turn as it lands. This is how the gyre grows sideways and underneath: build a tower upward, then slam to swing it around the sun. Set a piece down gently and nothing spins.</div></div>
     <div class="helprow"><div class="hi">4</div><div><b>Journey</b> asks for more rings each level and speeds up. <b>Daily Gyre</b> is the same piece run for everyone, once a day. <b>Zen</b> never ends. Topping out just clears the sky.</div></div>
@@ -165,13 +174,12 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div class="settingline"><span>Ghost piece</span><div class="toggle on" id="tg-ghost"><b></b></div></div>
     <div style="height:8px"></div>
     <button class="btn sm" id="b-install" style="max-width:400px;margin:0 auto 8px">Add to Home Screen</button>
-    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto">◄ Back</button>
+    <button class="btn ghost sm" id="set-back" style="max-width:400px;margin:0 auto"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>Back</button>
   </div></div>
 
   <!-- OVER / RESULT -->
   <div class="screen center" id="s-go"><div class="pad center">
     <div style="flex:1"></div>
-    <div style="font-size:44px" id="go-emoji">🌀</div>
     <div class="go-score" id="go-score">0</div>
     <div class="go-lab" id="go-lab">points</div>
     <div class="pill" id="go-best">Best 0</div>
@@ -180,10 +188,10 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
     <div id="go-hint" style="display:none;margin:14px auto 0;max-width:360px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:#0d1220;font-size:15px;line-height:1.5;color:var(--ink)"></div>
     <div style="flex:1"></div>
     <div class="stack">
-      <button class="btn primary" id="go-retry">↻ Again</button>
+      <button class="btn primary" id="go-retry"><svg class="ic" aria-hidden="true"><use href="#i-retry"/></svg>Again</button>
       <div class="row">
-        <button class="btn sm" id="go-share">↗ Share</button>
-        <button class="btn sm" id="go-home">◄ Menu</button>
+        <button class="btn sm" id="go-share"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg>Share</button>
+        <button class="btn sm" id="go-home"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg>Menu</button>
       </div>
     </div>
   </div></div>
@@ -194,6 +202,8 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
 "use strict";
 var BUILD="v4.0";
 function $(id){ return document.getElementById(id); }
+function icon(n){ return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'; }
+var UIF='"Space Grotesk",system-ui,sans-serif', DSF='"Barlow Condensed","Space Grotesk",'+UIF;
 function tap(id,fn){ var el=$(id); if(el)el.addEventListener('click',function(e){e.preventDefault();fn();}); }
 
 /* ---------- stage fit ---------- */
@@ -230,6 +240,56 @@ function saveSet(){ LS.s('rs_set', JSON.stringify(SET)); }
 var PROG={ level:0, best:{journey:0,daily:0,zen:0}, ringsEver:0 };
 (function(){ try{ var p=JSON.parse(LS.g('rs_prog')||'{}'); var k; for(k in PROG) if(p[k]!=null)PROG[k]=p[k]; }catch(e){} })();
 function saveProg(){ LS.s('rs_prog', JSON.stringify(PROG)); }
+
+/* ---------- art (Astra's pack v1, the Sunbreaker skin; tools/sunforge-tests/astra_in.py puts the files) ----------
+   Every image goes through art(key): null until it has loaded, so every draw keeps its code drawn fallback. One ART_V
+   token on every URL (the stamp bumps it). The title's art loads first, everything else after the title plate. Images
+   that CSS draws get a custom property on the stage once loaded (--a-<key>), so a missing file leaves the old look. */
+var ART_V='20261105a';
+var ART_FIRST={
+  first_frame:'assets/identity/first_frame.webp', mode_journey:'assets/hud/mode_journey.png',
+  mode_daily:'assets/hud/mode_daily_gyre.png', mode_zen:'assets/hud/mode_zen.png'
+};
+var ART={
+  wordmark:'assets/identity/wordmark_on_dark.svg',
+  core_states:'assets/core/core_states.png', core_corona:'assets/core/core_corona.png',
+  core_glow:'assets/core/core_rest_glow.png', core_shimmer:'assets/core/core_heat_shimmer.png',
+  faces:'assets/cells/ring_faces_unmarked.png', marks:'assets/cells/ring_marks_dark.png', trim:'assets/cells/weld_trim_layers.png',
+  falling:'assets/cells/falling_cell.png', ghost:'assets/cells/ghost_cell.png', stick:'assets/cells/stick_flash.png',
+  streak:'assets/cells/sliding_past_streak.png',
+  play_plate:'assets/board/play_plate.webp', grid_tex:'assets/board/grid_texture.png', void_edge:'assets/board/void_edge.png',
+  sky_flash:'assets/board/sky_clear_flash.png',
+  next_frame:'assets/hud/next_frame.png', hold_frame:'assets/hud/hold_frame.png', score_plaque:'assets/hud/score_plaque.png',
+  rings_counter:'assets/hud/rings_counter.png', level_badge:'assets/hud/level_badge.png',
+  slam_idle:'assets/hud/slam_idle.png', slam_pressed:'assets/hud/slam_pressed.png', slam_charged:'assets/hud/slam_charged.png',
+  how1:'assets/hud/how_to_play_01.png', how2:'assets/hud/how_to_play_02.png', how3:'assets/hud/how_to_play_03.png', how4:'assets/hud/how_to_play_04.png',
+  btn_left:'assets/hud/button_left_idle.png', btn_left_p:'assets/hud/button_left_pressed.png',
+  btn_right:'assets/hud/button_right_idle.png', btn_right_p:'assets/hud/button_right_pressed.png',
+  btn_rotate:'assets/hud/button_rotate_idle.png', btn_rotate_p:'assets/hud/button_rotate_pressed.png',
+  btn_down:'assets/hud/button_down_idle.png', btn_down_p:'assets/hud/button_down_pressed.png',
+  btn_hold:'assets/hud/button_hold_idle.png', btn_hold_p:'assets/hud/button_hold_pressed.png',
+  btn_pause:'assets/hud/button_pause_idle.png', btn_pause_p:'assets/hud/button_pause_pressed.png',
+  shock:'assets/fx/slam_shockwave.png', burst:'assets/fx/ring_crush_burst.png', swallow:'assets/fx/void_swallow.png',
+  flow:'assets/fx/inward_flow.png', spin1:'assets/fx/quarter_turn_spin_01.png', spin2:'assets/fx/quarter_turn_spin_02.png',
+  spin3:'assets/fx/quarter_turn_spin_03.png', spin4:'assets/fx/quarter_turn_spin_04.png',
+  chain2:'assets/fx/chain_x2.png', chain3:'assets/fx/chain_x3.png', chain4:'assets/fx/chain_x4.png',
+  chain5:'assets/fx/chain_x5.png', chain6:'assets/fx/chain_x6.png',
+  levelup:'assets/fx/level_up_plate.png', overplate:'assets/fx/game_over_plate.png',
+  go_card:'assets/sharing/game_over_card_frame.png', share_sq:'assets/sharing/share_square.png',
+  share_tall:'assets/sharing/share_portrait.png', share_daily:'assets/sharing/daily_gyre_card.png'
+};
+var IMG={};
+function art(k){ var im=IMG[k]; return (im&&im._ok)?im:null; }
+function loadArt(set,done){
+  var left=0,k;
+  for(k in set){ left++; (function(k){ var im=new Image();
+    im.onload=function(){ im._ok=true; var st=document.getElementById('stage'); if(st)st.style.setProperty('--a-'+k,'url("'+im.src+'")');
+      if(--left===0&&done)done(); };
+    im.onerror=function(){ if(--left===0&&done)done(); };
+    im.src=set[k]+'?v='+ART_V; IMG[k]=im; })(k); }
+  if(!left&&done)done();
+}
+loadArt(ART_FIRST,function(){ loadArt(ART); });
 
 /* ---------- audio ---------- */
 var AC=null;
@@ -564,8 +624,8 @@ function checkQuota(){
   if(G.quotaDone<G.quota)return;
   G.level++; PROG.level=G.level; saveProg();
   G.quotaDone=0; G.quota=quotaFor(G.level);
-  SFX.win(); G.floats.push({x:270,y:110,txt:'✨ LEVEL '+(G.level+1)+' ✨',life:1.6,big:true});
-  if(G.sbRun<12){ try{ if(window._sbCapEarn){ var got=window._sbCapEarn(2,'ringstacker:level')||0; G.sbRun+=got; if(got>0)G.floats.push({x:270,y:150,txt:'☀ +'+got,life:1.2}); } }catch(e){} }
+  SFX.win(); G.floats.push({x:270,y:110,txt:'LEVEL '+(G.level+1),life:1.6,big:true});
+  if(G.sbRun<12){ try{ if(window._sbCapEarn){ var got=window._sbCapEarn(2,'ringstacker:level')||0; G.sbRun+=got; if(got>0)G.floats.push({x:270,y:150,txt:'+'+got+' Sunbeams',life:1.2}); } }catch(e){} }
 }
 function endRun(){
   if(!G||G.over)return; G.over=true; G.cur=null; running=false; SFX.over();
@@ -577,12 +637,11 @@ function endRun(){
     var first=!(rec&&rec.day===todayKey());
     if(first){ LS.s('rs_daily', JSON.stringify({day:todayKey(),num:dayNum(),score:G.score})); try{ if(window._sbCapEarn) sb=window._sbCapEarn(4,'ringstacker:daily')||0; }catch(e){} }
   }
-  $('go-emoji').textContent = '◎';
   $('go-score').textContent = G.score.toLocaleString();
   $('go-lab').textContent = G.mode==='daily'?('daily #'+dayNum()+' · 80 pieces'):'points';
-  $('go-best').textContent = (nb?'★ New best ':'Best ')+(PROG.best[G.mode]||0).toLocaleString();
+  $('go-best').textContent = (nb?'New best ':'Best ')+(PROG.best[G.mode]||0).toLocaleString();
   $('go-rings').textContent = 'Rings '+G.rings+(G.chainBest>1?' · chain x'+G.chainBest:'');
-  $('go-sun').textContent = sb>0?('☀ +'+sb+' sunbeams'):'';
+  $('go-sun').innerHTML = sb>0?(icon('sun')+' +'+sb+' Sunbeams'):'';
   var hint=$('go-hint');
   if(hint){
     var showHint=false;
@@ -628,16 +687,16 @@ function render(){
   ctx.save(); ctx.translate(sx,sy);
   // header
   ctx.textAlign='center'; ctx.fillStyle='#eef0f6';
-  ctx.font='800 32px system-ui,sans-serif';
+  ctx.font='900 40px '+DSF;
   ctx.fillText(G.score.toLocaleString(), 236, 58);
-  ctx.font='600 12px system-ui,sans-serif'; ctx.fillStyle='#8d90a8';
+  ctx.font='600 12px '+UIF; ctx.fillStyle='#8d90a8';
   var sub = G.mode==='journey' ? ('LEVEL '+(G.level+1)+' · RINGS '+G.quotaDone+'/'+G.quota)
           : G.mode==='daily' ? ('DAILY #'+dayNum()+' · '+Math.max(0,G.pieceBudget-G.pieces)+' pieces left · rings '+G.rings)
           : 'ZEN · rings '+G.rings;
   ctx.fillText(sub, 236, 84);
   // next / after / hold previews
   ctx.fillStyle='rgba(255,255,255,0.04)'; rr(452,24,68,46,10); ctx.fill();
-  ctx.fillStyle='#8d90a8'; ctx.font='600 9px system-ui,sans-serif'; ctx.fillText('NEXT',486,20);
+  ctx.fillStyle='#8d90a8'; ctx.font='600 9px '+UIF; ctx.fillText('NEXT',486,20);
   var ns=SHAPES[G.next][0],i;
   for(i=0;i<4;i++){ ctx.fillStyle=PCOLS[G.next]; rr(452+14+ns[i][0]*10,24+8+ns[i][1]*10,8,8,2); ctx.fill(); }
   if(G.next2){
@@ -646,7 +705,7 @@ function render(){
     for(i=0;i<4;i++){ ctx.fillStyle=hexA(PCOLS[G.next2],0.6); rr(452+18+n2[i][0]*7,76+5+n2[i][1]*7,5.5,5.5,1.5); ctx.fill(); }
   }
   ctx.fillStyle='rgba(255,255,255,0.04)'; rr(376,24,64,46,10); ctx.fill();
-  ctx.fillStyle='#8d90a8'; ctx.font='600 9px system-ui,sans-serif'; ctx.fillText('HOLD',408,20);
+  ctx.fillStyle='#8d90a8'; ctx.font='600 9px '+UIF; ctx.fillText('HOLD',408,20);
   if(G.hold){
     var hs=SHAPES[G.hold][0];
     for(i=0;i<4;i++){ ctx.fillStyle=G.holdUsed?hexA(PCOLS[G.hold],0.35):PCOLS[G.hold]; rr(376+13+hs[i][0]*9,24+9+hs[i][1]*9,7,7,2); ctx.fill(); }
@@ -782,11 +841,11 @@ function render(){
   ctx.restore();
   // floats
   for(i=0;i<G.floats.length;i++){ var f=G.floats[i]; ctx.globalAlpha=Math.max(0,Math.min(1,f.life));
-    ctx.fillStyle=f.big?'#ffd76a':'#eef0f6'; ctx.font=(f.big?'800 26px':'700 18px')+' system-ui,sans-serif';
+    ctx.fillStyle=f.big?'#ffd76a':'#eef0f6'; ctx.font=f.big?('900 34px '+DSF):('700 22px '+UIF);
     ctx.fillText(f.txt, f.x, f.y); }
   ctx.globalAlpha=1;
   // footer hint
-  ctx.fillStyle='#8d90a8'; ctx.font='600 11px system-ui,sans-serif';
+  ctx.fillStyle='#8d90a8'; ctx.font='600 11px '+UIF;
   ctx.fillText('pieces stick to the sun · grow rings outward · SLAM spins the gyre', 270, PANEL.y+PANEL.h-12);
   ctx.restore();
 }
@@ -827,7 +886,7 @@ function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.l
   paintTitle(); }
 function paintTitle(){ var j=$('j-lvl'); if(j)j.textContent='· level '+(PROG.level+1);
   var rec=null; try{ rec=JSON.parse(LS.g('rs_daily')||'null'); }catch(e){}
-  var bd=$('b-daily'); if(bd)bd.innerHTML='Daily Gyre'+((rec&&rec.day===todayKey())?' ✓':''); }
+  var bd=$('b-daily'); if(bd)bd.innerHTML='Daily Gyre'+((rec&&rec.day===todayKey())?' · played':''); }
 function shareIt(){
   var txt = G&&G.mode==='daily'
     ? 'Sunforge Daily #'+dayNum()+'\n'+(G?G.score.toLocaleString():0)+' pts · '+(G?G.rings:0)+' rings\nSame pieces for everyone, can you beat it?'
@@ -888,8 +947,8 @@ if(/[?&]rsdev=1/.test(location.search)){
     SFX.ui();
     if(deferred){ deferred.prompt(); deferred=null; return; }
     var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
-    alert(ios ? 'To add Ring Stacker to your Home Screen:\n\nTap the Share button, then Add to Home Screen.'
-              : 'To add Ring Stacker to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.');
+    alert(ios ? 'To add Sunforge to your Home Screen:\n\nTap the Share button, then Add to Home Screen.'
+              : 'To add Sunforge to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.');
   });
 })();
 
