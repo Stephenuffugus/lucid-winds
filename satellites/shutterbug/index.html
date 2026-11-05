@@ -159,6 +159,10 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   display: none; align-items: center; gap: 10px; padding: 8px 12px; background: var(--paper); color: var(--ink); border: 2px solid var(--ink);
   box-shadow: 0 4px 12px rgba(0,0,0,0.35); text-align: left; }
 #got.on { display: flex; animation: sbgot 2.5s linear forwards; }
+#got.on.long { animation-duration: 4s; }   /* a weapon not found yet: the tag and two sentences (WEAPONS ARRIVE) */
+#got i.newtag, #swap i.newtag { display: inline-block; font-style: normal; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.04em; background: var(--sun); color: var(--ink); padding: 1px 6px; border-radius: 4px; margin: 0 0 3px; }
+#got em.keep, #swap em.keep { display: block; font-style: normal; font-weight: 700; font-size: 0.85rem; line-height: 1.25; margin-top: 3px; }
+#got .newtag[hidden], #got .keep[hidden], #swap .newtag[hidden], #swap .keep[hidden] { display: none; }
 #got.on.still { animation: none; }
 #got.low { top: auto; bottom: 8px; }
 #got canvas { flex: none; width: 48px; height: 48px; image-rendering: pixelated; }   /* ART2: Astra's 24 px glyph at 2x */
@@ -240,6 +244,10 @@ body:not(.playing) #floorname { display: none; }
    into the count it adds to (Q93: it rose 10 px across the count's 15 as it faded). It takes no tap and holds nothing,
    so the climb goes on under it. With reduced motion it stands still for the same second */
 #dpplus { position: absolute; right: 0; top: 100%; opacity: 0; white-space: nowrap; font-weight: 700; }
+/* A TIME TO BEAT (5 Nov): a room opened from a link with a time says it, handwritten like the count, on the strip's other
+   side; narrow enough to wrap rather than reach the Polaroid in the middle */
+#beat { position: absolute; top: 10px; left: calc(14px + var(--sal)); width: min(130px, calc(50% - 60px)); margin: 0; color: var(--lapis); pointer-events: none;
+  font-family: 'Segoe Print', 'Bradley Hand', 'Chalkboard SE', 'Comic Sans MS', cursive; font-size: 1.05rem; transform: rotate(3deg); text-align: left; }
 #dpplus.on { animation: sbplus 1.2s ease-out forwards; }
 #dpplus.on.still { animation: none; opacity: 1; }
 @keyframes sbplus { 0% { opacity: 0; transform: translateY(8px); } 15% { opacity: 1; transform: translateY(0); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(0); } }
@@ -249,7 +257,12 @@ body:not(.playing) #floorname { display: none; }
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
   display: none; flex-direction: column; gap: 12px; align-items: stretch; text-align: center; z-index: 10; }
 #paused.on, #clear.on, #death.on { display: flex; }
-#paused { top: 0; bottom: 0; margin: auto; height: fit-content; }   /* in the middle of the room at every height; taller than the room, it starts at the room's top */
+#paused { top: 0; bottom: 0; margin: auto; height: fit-content; }
+/* the clear card fits the screen (5 Nov look: at 320x568 a clear with its kept line, a print, the album and a trophy ran
+   Play it again and Title off the bottom, the card measured from the room's 30%): fixed in the middle of the screen,
+   never taller than it (it scrolls then), and on a short screen its lines and buttons pack tighter (48 px kept) */
+#clear { position: fixed; top: 0; bottom: 0; margin: auto; height: fit-content; max-height: calc(100dvh - 16px); overflow-y: auto; }
+@media (max-height: 700px) { #clear { padding: 12px 14px; gap: 8px; } #clear button { min-height: 48px; } }   /* in the middle of the room at every height; taller than the room, it starts at the room's top */
 /* the pause card docks away from the bug (the review of Q94: at 320x568 the card in the middle hid the bug paused mid
    jump, so he resumed blind): at the room's top or its bottom, and in one row (Resume, Share this room, Title side by
    side, about 110 px tall) when the stacked card cannot clear it either way; ui.placePaused measures, as the death card */
@@ -268,7 +281,7 @@ body:not(.playing) #floorname { display: none; }
 #paused h2, #clear h2, #death h2 { margin: 0 0 4px; font-size: 1.3rem; }
 #paused button, #clear button, #death button { min-height: 52px; border-radius: 10px; font-weight: 700; font-size: 1.05rem; border: 2px solid var(--ink); }
 #resume, #nextroom, #deathagain, #deathcp { background: var(--sun); color: var(--ink); }
-#clearbank { margin: 0; font-size: 0.95rem; }
+#clearbank { margin: 0; font-size: 0.95rem; } #clearkept, #clearprint, #cleartime, #clearbeat { margin: 0; font-size: 0.95rem; } #clearbeat, #sharetime { font-weight: 700; }   /* the print line had the default margins (5 Nov look) */
 /* the share sheet (T1.8): the record's 16 colour grid, the three sentences, the link and its buttons; it scrolls on short phones */
 #sharesheet { position: absolute; left: 0; right: 0; top: 2%; bottom: 2%; margin: 0 auto; width: min(360px, 96vw); padding: 14px; overflow-y: auto;
   background: var(--paper); color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,0.45);
@@ -364,7 +377,7 @@ body:not(.playing) #floorname { display: none; }
 #storynext { min-width: 220px; background: var(--sun); color: var(--ink); }
 #alstory { align-self: flex-start; min-height: 48px; background: transparent; border: 0; padding: 0; color: var(--ash); text-decoration: underline; font-size: 0.95rem; }
 #settingsbtn, #darkroombtn, #trophiesbtn, #albumbtn { min-height: 48px; background: transparent; border: 0; color: var(--ash); text-decoration: underline; font-size: 0.95rem; }
-#trophiesbtn.new { color: var(--sun); }
+#trophiesbtn.new { color: var(--sun); } #darkroombtn.new { color: var(--sun); }
 /* the house (QUESTIONS Q200): on the title once a first room is cleared, Start a house leads; while a run is saved
    Continue the house (or Retry House, a lost run) leads in Sun and Start a house follows in Paper (the review of
    HOUSE-A: the Sun button asked to throw the saved house away); a small Houses cleared n, then Free play as before */
@@ -635,6 +648,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <h2 id="doorhead"></h2>
     <p id="doorhearts" hidden></p>
     <p id="doorbank" hidden></p>
+    <p id="doorkept" hidden></p>
     <p id="doorprint" hidden></p>
     <p id="doornext" hidden></p>
     <p id="dooralbum" hidden></p>
@@ -732,6 +746,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <button id="pausetitle" type="button" data-copy="toTitle"></button></div></div>
     <div id="clear" role="dialog" data-aria="roomClear"><h2 data-copy="roomClear"></h2>
       <p id="clearbank" hidden></p>
+      <p id="cleartime" hidden></p>
+      <p id="clearbeat" hidden></p>
+      <p id="clearkept" hidden></p>
       <p id="clearprint" hidden></p>
       <p id="clearalbum" hidden></p>
       <p id="cleardaily" hidden></p>
@@ -748,6 +765,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <button id="deathtitle" type="button" data-copy="toTitle"></button></div></div>
     <div id="sharesheet" role="dialog" data-aria="shareTitle"><div id="sharehead"><h2 data-copy="shareTitle"></h2><button id="shareclose" type="button" data-copy="shareClose"></button></div>
       <canvas id="sharecanvas" width="192" height="384"></canvas>
+      <p id="sharetime" hidden></p>
       <p data-copy="shareAbstract"></p><p data-copy="shareOffline1"></p><p data-copy="shareOffline2"></p>
       <input id="sharelink" type="text" readonly data-aria="shareLink">
       <div class="sharerow"><button id="copylink" type="button" data-copy="copyLink"></button><button id="sharenative" type="button" data-copy="shareNative" hidden></button></div>
@@ -757,6 +775,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   </div>
   <div id="strip">
     <p id="dp"><span data-copy="dp"></span> <span id="dpn">0</span><span id="dpplus" aria-hidden="true"></span></p>
+    <p id="beat" hidden></p>
     <div id="reserve" aria-hidden="true"></div>
     <canvas id="polaroid" width="72" height="96" aria-hidden="true"></canvas>
     <p id="floorname" aria-live="polite"></p>
@@ -986,7 +1005,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-6';
+  SB.BUILD = 'sb-m2-8';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -1360,7 +1379,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false },
       onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0 } },
       run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0, albumPages: 0, albumBiomes: 0 }, trophies: [], trophySeen: 0, album: [],
-      log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false, days: 0 }, quarantine: null };
+      log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false, days: 0 }, best: {}, quarantine: null };
   }
   function fillSave(def, got) {
     if (got === null || got === undefined) return def;
@@ -1382,6 +1401,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
     d.log.runs = d.log.runs.slice(-50);
     var m = {}; if (obj && obj.moments && typeof obj.moments === 'object') for (k in obj.moments) if (obj.moments[k] === true) m[k] = true;
     d.moments = m;
+    /* A TIME TO BEAT (5 Nov): each room's best clear in hundredths of a second, by its seed (r + base 36), at most 64 */
+    var bt = {}, nb = 0;
+    if (obj && obj.best && typeof obj.best === 'object' && !Array.isArray(obj.best)) for (k in obj.best) {
+      var cs = obj.best[k];
+      if (nb < 64 && /^r[0-9a-z]{1,8}$/.test(k) && typeof cs === 'number' && cs % 1 === 0 && cs > 0 && cs <= 360000) { bt[k] = cs; nb++; }
+    }
+    d.best = bt;
     if (d.settings.reducedMotion !== null && typeof d.settings.reducedMotion !== 'boolean') d.settings.reducedMotion = null;
     d.run = runValid(d.run);
     d.cosmetics = lookValid(d.cosmetics);
@@ -5650,6 +5676,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
   };
   function drawJuice(s, cam) {
     var rm = R.reduced(), HZ = SB.TUNING.STEP_HZ;
+    /* the effects belong to the state that made them (5 Nov look, live since sb-m2-5): Again, a death's Again or the next
+       room draws its new state, frame 0, before its first step lets R.juice drop the last room's effects; their ages ran
+       negative, a frame index of -3 found no sprite, and the throw skipped the bug and the draw's ctx.restore (so with the
+       zoom on, every such frame doubled the scale) */
+    if (jState !== s) { JFX.length = 0; return; }
     for (var i = JFX.length - 1; i >= 0; i--) {
       var e = JFX[i], age = s.frame - e.f0;
       if (e.held) { if (age >= e.steps) { JFX.splice(i, 1); continue; } if (rm || (age >> 1) & 1) halo(ctx, 'key.a', e.x, e.y - cam); spr(ctx, 'key.a', e.x, e.y - cam); continue; }
@@ -8661,8 +8692,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     houseReplace: 'Start a new house? The saved house will be lost.', houseCleared: 'House cleared', houseSum: '{rooms} rooms, {n} dead pixels', houseSumOne: '{rooms} rooms, 1 dead pixel',
     /* HOUSE-B: the guardian, the prize, the looks */
     guardHint: 'Beat the guardian to light the exit', trophiesLink: 'Trophies and bugs', trophiesNew: 'Trophies and bugs, {n} new', trophiesHead: 'Trophies {n} of {max}', bugsHead: 'Bugs {n} of {max}', framesHead: 'Frames {n} of {max}', trophyOf: '{n} of {max}', trophyNew: 'New trophy: {name}', nextPrize: 'Clear a house to win the {name}', allLooks: 'Every bug and frame is yours', tr_first: 'First room', trg_first: 'Clear a room', tr_rooms10: 'Ten rooms', trg_rooms10: 'Clear 10 rooms', tr_rooms50: 'Fifty rooms', trg_rooms50: 'Clear 50 rooms', tr_rooms100: 'A hundred rooms', trg_rooms100: 'Clear 100 rooms', tr_house1: 'Housewarming', trg_house1: 'Clear a house', tr_house5: 'Five houses', trg_house5: 'Clear 5 houses', tr_house10: 'Ten houses', trg_house10: 'Clear 10 houses', tr_wall25: 'Wall jumper', trg_wall25: 'Wall jump 25 times', tr_wall250: 'Up the walls', trg_wall250: 'Wall jump 250 times', tr_keys10: 'Key finder', trg_keys10: 'Find 10 keys', tr_keys100: 'Key ring', trg_keys100: 'Find 100 keys', tr_clean1: 'Not a scratch', trg_clean1: 'Clear a room without a hit', tr_clean10: 'Untouchable', trg_clean10: 'Clear 10 rooms without a hit', story_camera: 'The bug lives in your camera.', story_climb: 'Every photo you take becomes a room. It climbs up to the light.', story_print: 'Each light it reaches develops your photo into the album.', storyNext: 'Next', storyDone: 'Fill the album', storyLink: 'Why the bug climbs', albumLink: 'Album', albumEmpty: 'Clear a room and its photo lands here', albumCount: 'Photos {n}, full pages {pages}', albumOne: '1 photo', albumN: '{n} photos', albumPinned: 'Pinned to your album: {biome} page, {n} of 6', albumFull: 'A full {biome} page in your album', albumPlay: 'Play this room again, cleared {date}', albumRoom: 'From your album', biome_attic: 'Attic', biome_frost: 'Frost', biome_deep: 'Deep', biome_overgrowth: 'Overgrowth', biome_ember: 'Ember', biomeHint_attic: 'Shoot wood, browns and warm yellows', biomeHint_frost: 'Shoot a bright, white room', biomeHint_deep: 'Shoot blues and teals', biomeHint_overgrowth: 'Shoot greens and plants', biomeHint_ember: 'Shoot reds and pinks', tr_page1: 'Full page', trg_page1: 'Fill an album page with 6 rooms', tr_pages5: 'Photo album', trg_pages5: 'Fill 5 album pages', tr_biomes5: 'Every biome', trg_biomes5: 'Fill a page in every biome', itemSpeck: 'Dead pixels', itemSpeckSays: 'Spend them in the Darkroom on new weapons', itemBlueprint: 'Blueprint', itemBlueprintSays: 'Carry it out to print a new weapon in the Darkroom', stat_vigor: 'Vigor up', stat_focus: 'Focus up', stat_grit: 'Grit up', statSays_vigor: 'Your dive weapons hit harder', statSays_focus: 'Your jump weapons hit harder', statSays_grit: 'Your charm works stronger', statHeart: '{stat} and one more heart', wallHead: 'Wall jump', wallLine: 'Press jump to kick off the wall', stuckHead: 'Stuck in a pit?', stuckLine: 'Jump at a wall, hold toward it, jump again', darkroom: 'Darkroom', darkroomLink: 'Darkroom', dkWallet: 'Dead pixels {n}', dkPrints: 'Prints to develop', dkDevelop: 'Develop for {n}', dkNoPrints: 'No prints yet. Some rooms hide a blueprint: carry it out of the room and it prints here.',
-    dkWall: 'Weapons {n} of {max}', dkNotFound: 'Not found yet. Some rooms hide its blueprint.', dkPrintWaiting: 'Its print is waiting above.',
-    dkStartHead: 'Start every house with', dkStartSays: 'Start every house holding one weapon you have developed.', dkStartBuy: 'Unlock for {n}',
+    dkWall: 'Weapons {n} of {max}', dkNotFound: 'Not found yet. Any chest may hold it, and some rooms hide its blueprint.', dkPrintWaiting: 'Its print is waiting above.',
+    dkStartHead: 'Start every house with', dkStartSays: 'Start every house holding one of your weapons.', dkStartBuy: 'Unlock for {n}',
     dkStartPick: 'Tap one of your weapons below to start every house with it.', dkStartOn: 'Every house starts with the {name}.',
     dkStartUse: 'Start every house with it', dkStartStop: 'Stop starting with it',
     dailyHead: 'Daily Room', dailyRoom: 'Daily Room', dailyWaiting: 'Today\'s room is waiting', dailyDoneToday: 'Done today. A new room tomorrow',
@@ -8671,6 +8702,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     dailyCleared: 'Daily Room done. Days played: {n}.', dailyPrint: 'It left you a print: {name}.', dailyDup: 'It left you {n} dead pixels.',
     dailyOpenNote: 'The Daily Room is open. Find it on the title.', dkLeft: '{n} weapons not found yet', dkLeftOne: '1 weapon not found yet',
     dkAll: 'You have found every weapon', newPrint: 'New print: {name}. Develop it in the Darkroom.', newPrints: 'New prints: {name}. Develop them in the Darkroom.', dupPrint: 'A print you had already: {n} dead pixels',
+    /* WEAPONS ARRIVE (5 Nov): a chest's weapon not found yet, the clear that keeps it, the title's waiting prints */
+    gotNew: 'New weapon', keepByClear: 'Clear the room to keep it.', keptLine: 'Yours now: {name}', darkroomPrints: 'Darkroom, {n} to develop',
+    /* A TIME TO BEAT (5 Nov): the clear's time and best, a time sent with a link, the strip's line, the share sheet's line */
+    timeYours: 'Your time {t}', timeBestNew: 'Your time {t}, your best yet', timeBestWas: 'Your time {t}. Your best {b}',
+    beatWon: 'You beat the {b} you were sent', beatShort: 'The time to beat is {b}', beatStrip: 'To beat {b}', shareTime: 'Your best time, {t}, goes with the link',
     keysFind: 'Find {n} keys', keysFind1: 'Find the key', keysOpen: 'They open the exit', keysOpen1: 'It opens the exit', keysLocked: 'The exit is locked', keysMore: '{n} more keys', keysMore1: '1 more key', keysOf: '{n} of {max} keys', guardHintChest: 'Open the chest for a weapon', prizeNew: 'New: {name}', prizeLabel: 'Your prize, {name}',
     setLook: 'Look', lookHero: 'Bug', lookFrame: 'Frame', lookWear: 'Wear {name}',
     look_hero_sun: 'Sun bug', look_hero_umber: 'Umber bug', look_hero_teal: 'Teal bug', look_hero_lapis: 'Lapis bug', look_hero_pinstripe: 'Pinstripe bug',
@@ -8771,6 +8807,67 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (doc && doc.collection) for (var i = 0; i < doc.collection.length; i++) if (out.indexOf(doc.collection[i]) < 0) out.push(doc.collection[i]);
     return out;
   };
+  /* WEAPONS ARRIVE (Stephen, 5 Nov: "the only things ive found have been the boomerang, the shield kick and the anvil
+     boots. i dont knwo why i dont see the rest"): a chest may hold any built weapon, not only an owned one. A weapon not
+     found yet that goes into a slot is noted for the room (G.found) and becomes the player's on the room's clear (free
+     play's card or a house's doorway), its waiting print, if any, gone with it; a death or Title before the clear loses
+     it. The first ever room keeps the owned pool (the starting pair teaches the slots). The sim is unchanged: it draws
+     from whatever pool the shell gives (H-dark-1), and the same room now offers every player the same chests */
+  ui.chestPool = function () { return SB.TUNING.WEAPONS_BUILT.slice(); };
+  ui.isNew = function (id) { return !!G.found && G.found.indexOf(id) >= 0 && ui.owned().indexOf(id) < 0; };
+  ui.noteFound = function (code) {
+    var id = SB.sim.WPN[code];
+    if (!id || ui.owned().indexOf(id) >= 0) return false;
+    if (!G.found) G.found = [];
+    if (G.found.indexOf(id) < 0) G.found.push(id);
+    return true;
+  };
+  ui.keepFound = function () {
+    var doc = SB.save.doc, T = SB.TUNING, got = [], found = G.found || [];
+    G.found = [];
+    if (!doc) return got;
+    if (!doc.prints) doc.prints = [];
+    for (var i = 0; i < found.length; i++) {
+      var id = found[i];
+      if (T.WEAPONS_BUILT.indexOf(id) < 0 || ui.owned().indexOf(id) >= 0) continue;
+      doc.collection.push(id); got.push(id);
+      var at = doc.prints.indexOf(id); if (at >= 0) doc.prints.splice(at, 1);
+    }
+    if (got.length) SB.save.commit();
+    return got;
+  };
+  /* A TIME TO BEAT (Stephen, 5 Nov, picked from the replay list: "a time to beat inside every room code you share"): a
+     room's time is the sim's steps from its start to its clear, in hundredths of a second. The best is kept per room by
+     its seed for free play, a link or a code, Recent and the album (never a house room, the Daily or the first ever
+     room: they build differently from the link). A shared link carries the sharer's best as ?t= before the '#' (old
+     copies read only the code after it), and a room opened from one shows it as the time to beat; Again keeps it */
+  ui.timeOf = function (frames) { return Math.max(1, Math.round(frames * 100 / SB.TUNING.STEP_HZ)); };
+  ui.fmtTime = function (cs) { var m = Math.floor(cs / 6000), sec = Math.floor(cs / 100) % 60, d = Math.floor(cs / 10) % 10; return m + ':' + (sec < 10 ? '0' : '') + sec + '.' + d; };
+  ui.bestKey = function (rec) { return 'r' + (SB.record.seedOf(rec) >>> 0).toString(36); };
+  ui.bestOf = function (rec) { var d = SB.save.doc; return d && d.best && rec ? d.best[ui.bestKey(rec)] | 0 : 0; };
+  ui.keepTime = function (rec, cs) {   /* the clear's time against the room's best; returns the best before it (0 for none) */
+    var d = SB.save.doc; if (!d || !rec || !(cs > 0)) return 0;
+    if (!d.best) d.best = {};
+    var k = ui.bestKey(rec), was = d.best[k] | 0;
+    if (!was || cs < was) {
+      if (!was) { var ks = Object.keys(d.best); if (ks.length >= 64) delete d.best[ks[0]]; }
+      d.best[k] = cs; SB.save.commit();
+    }
+    return was;
+  };
+  ui.beatStrip = function () {
+    var el = document.getElementById('beat'); if (!el) return;
+    el.textContent = G.beat > 0 ? ui.COPY.beatStrip.replace('{b}', ui.fmtTime(G.beat)) : ''; el.hidden = !(G.beat > 0);
+  };
+  function timeLines(cs) {
+    var C = ui.COPY, el = document.getElementById('cleartime'), bt = document.getElementById('clearbeat');
+    el.hidden = true; bt.hidden = true;
+    if (!cs) return;
+    var was = ui.keepTime(G.record, cs), t = ui.fmtTime(cs);
+    el.textContent = !was ? C.timeYours.replace('{t}', t) : cs < was ? C.timeBestNew.replace('{t}', t) : C.timeBestWas.replace('{t}', t).replace('{b}', ui.fmtTime(was));
+    el.hidden = false;
+    if (G.beat > 0) { bt.textContent = (cs < G.beat ? C.beatWon : C.beatShort).replace('{b}', ui.fmtTime(G.beat)); bt.hidden = false; }
+  }
   ui.bankPrints = function () {
     var doc = SB.save.doc, T = SB.TUNING, bp = G.state && G.state.room.blueprints, got = [];
     if (!doc || !bp || !bp.length) return got;
@@ -8790,6 +8887,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var names = got.filter(Boolean).map(function (id) { return ui.COPY.wpn[id]; }), dup = got.filter(function (x) { return !x; }).length;
     el.textContent = names.length ? ui.COPY[names.length > 1 ? 'newPrints' : 'newPrint'].replace('{name}', names.join(ui.COPY.cmpAnd)) : dup ? ui.COPY.dupPrint.replace('{n}', dup * SB.TUNING.DEV_DUP_DP) : '';
     el.hidden = !names.length && !dup;
+  }
+  function keptLine(elId, kept) {
+    var el = document.getElementById(elId); if (!el) return;
+    var names = kept.map(function (id) { return ui.COPY.wpn[id]; }), last = names.length > 1 ? names.pop() : '';
+    el.textContent = last ? ui.COPY.keptLine.replace('{name}', names.join(', ') + ui.COPY.cmpAnd + last) : names.length ? ui.COPY.keptLine.replace('{name}', names[0]) : '';
+    el.hidden = !names.length;
   }
   function devPrice(id) { var T = SB.TUNING; return T.DEV_PRICE[T.DEV_TIER[id] || 1]; }
   function drawDarkroom() {
@@ -8926,7 +9029,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (name === 'daily') drawDaily();
     if (name === 'trophies') drawTrophies();
     if (name === 'album') drawAlbum();
-    if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; document.getElementById('darkroombtn').hidden = !ui.firstRoomDone; document.getElementById('albumbtn').hidden = !ui.firstRoomDone; trophyLink(); drawRecent(); HS.on = false; drawHouse(); drawDailyBtn(); ui.applyLook(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
+    if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; document.getElementById('darkroombtn').hidden = !ui.firstRoomDone; document.getElementById('albumbtn').hidden = !ui.firstRoomDone; trophyLink(); darkroomLink(); drawRecent(); HS.on = false; drawHouse(); drawDailyBtn(); ui.applyLook(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
     if (name === 'settings') fillSettings();
     if (name === 'title') { SB.render.dropPhoto(); G.photoRecord = null; }   /* m2 step 1: the room's photo goes on Title */
     if (name === 'crop') document.getElementById('croptitle').textContent = HS.on && HS.run ? ui.COPY.cropBack : ui.COPY.toTitle;
@@ -9459,6 +9562,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      twice), then the reveal with the photo when there is one (opts.photo), then play */
   ui.startRoom = function (record, name, opts) {
     opts = opts || {};
+    var same = record === G.record, keepBeat = same ? G.beat | 0 : 0, keepTimed = same && opts.level && opts.level === G.level ? !!G.timed : null;   /* A TIME TO BEAT: Again keeps both */
     if (record !== G.photoRecord) { SB.render.dropPhoto(); G.photoRecord = null; }   /* m2 step 1: another room, its photo gone */
     G.roomHit = false;                         /* trophies: a clean clear is a room with no hit */
     var t0 = performance.now();
@@ -9478,11 +9582,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
     G.room = room; G.carry = hs ? HS.run.hero : null;
     G.record = record; G.level = lv; G.name = name; G.mode = opts.mode || 'free';
+    G.timed = keepTimed !== null ? keepTimed : !hs && !first && opts.biome === undefined && G.mode !== 'daily';   /* A TIME TO BEAT: a build the link reproduces */
+    G.beat = opts.beat > 0 ? opts.beat | 0 : keepBeat; ui.beatStrip();
     G.notFirst = !!opts.notFirst;   /* Again and Play it again keep the room's origin: a link stays a link (the M1 review) */
     /* the sitting (docs/WEAPONS-V1.md 6.5, Stephen's call 1 on its default, KEEP_GEAR): free play keeps the gear from
        room to room until Title; the room starts with it and keeps what it walked in with (Again after a death) */
     if (!SB.TUNING.KEEP_GEAR) G.gear = [0, 0, 0];
-    G.state = SB.sim.create(lv, { loadout: G.gear, carry: G.carry, lastRoom: room === T.HOUSE_ROOMS, pool: ui.owned(), checkpoint: G.mode !== 'house' }); G.entry = G.gear.slice(); G.banked = false;
+    G.found = [];   /* WEAPONS ARRIVE: the weapons not found yet that this room put in a slot, kept on its clear */
+    G.state = SB.sim.create(lv, { loadout: G.gear, carry: G.carry, lastRoom: room === T.HOUSE_ROOMS, pool: first ? ui.owned() : ui.chestPool(), checkpoint: G.mode !== 'house' }); G.entry = G.gear.slice(); G.banked = false;
     if (!opts.notFirst && !ui.firstRoomDone) { ui.firstRoomDone = true; SB.save.doc.onboarding.firstRoomDone = true; SB.save.commit(); }
     else if (!opts.notFirst) ui.firstRoomDone = true;
     SB.render.buildStatic(lv);
@@ -9572,14 +9679,26 @@ body.sb-modal .lwfb-fab { display: none !important; }
      would cover the bug's drawn box (measured as the death card is); it takes no tap and holds nothing (never modal), a
      newer weapon replaces it and a new room clears it (ui.hideOverlays). Reduced motion (the setting, else the phone's):
      no fade */
-  var GOT_MS = 2500;
+  var GOT_MS = 2500, GOT_LONG_MS = 4000;
   ui.showGot = function (code) {
-    var el = document.getElementById('got'), id = SB.sim.WPN[code];
-    if (!el || !id || !ui.COPY.wpn[id]) return false;
+    var el = document.getElementById('got'), id = SB.sim.WPN[code], C = ui.COPY;
+    if (!el || !id || !C.wpn[id]) return false;
     var c2 = el.querySelector('canvas').getContext('2d');
     c2.clearRect(0, 0, c2.canvas.width, c2.canvas.height); SB.render.icon(c2, id, 0, 0);
-    return gotCard(el, ui.COPY.wpn[id], ui.COPY.wpnSays[id]);
+    /* WEAPONS ARRIVE (5 Nov): a weapon not found yet wears the New weapon tag over its name and says, under what it
+       does, that the clear keeps it; that card stays up longer */
+    return gotCard(el, C.wpn[id], C.wpnSays[id], ui.isNew(id));
   };
+  /* the tag over a name and the keep line under its sentence, made once in a text box (the pickup card's, the swap
+     card's new row) and shown only for a weapon not found yet */
+  function newBits(t, on) {
+    if (!t) return;
+    var tag = t.querySelector('i.newtag'), keep = t.querySelector('em.keep');
+    if (!tag) { tag = document.createElement('i'); tag.className = 'newtag'; t.insertBefore(tag, t.firstChild); }
+    if (!keep) { keep = document.createElement('em'); keep.className = 'keep'; t.appendChild(keep); }
+    tag.textContent = ui.COPY.gotNew; keep.textContent = ui.COPY.keepByClear;
+    tag.hidden = !on; keep.hidden = !on;
+  }
   /* the same card for a picked up thing (sb-m1-16): its 16 px loot sprite centred in the 24 px icon box */
   ui.showItem = function (key, head, line) {
     var el = document.getElementById('got'); if (!el) return false;
@@ -9587,17 +9706,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
     c2.clearRect(0, 0, c2.canvas.width, c2.canvas.height); SB.render.sprite(c2, key, 4, 4);
     return gotCard(el, head, line);
   };
-  function gotCard(el, head, line) {
+  function gotCard(el, head, line, long) {
     var rm = SB.settings ? SB.settings.reducedMotion : null;
-    el.querySelector('b').textContent = head; el.querySelector('span').textContent = line;
+    el.querySelector('b').textContent = head; el.querySelector('span').textContent = line; newBits(el.querySelector('div'), !!long);
     var still = rm === null || rm === undefined ? !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) : !!rm;
-    el.classList.remove('on', 'low'); void el.offsetWidth; el.classList.toggle('still', still); el.classList.add('on');
+    el.classList.remove('on', 'low'); void el.offsetWidth; el.classList.toggle('still', still); el.classList.toggle('long', !!long); el.classList.add('on');
     var hd = SB.render.drawn.hero, vc = document.getElementById('view');
     if (hd && hd.key !== null) {
       var vr = vc.getBoundingClientRect(), k = vr.height / vc.height, top = vr.top + hd.y * k, cr = el.getBoundingClientRect(), pad = 8;
       if (top - pad < cr.bottom && top + hd.h * k + pad > cr.top) el.classList.add('low');
     }
-    clearTimeout(el.sbGotT); el.sbGotT = setTimeout(function () { el.classList.remove('on'); }, GOT_MS);
+    clearTimeout(el.sbGotT); el.sbGotT = setTimeout(function () { el.classList.remove('on'); }, long ? GOT_LONG_MS : GOT_MS);
     return true;
   };
   /* while the card shows, the bug may climb or fall into it (the shots: a card docked low over a bug that then fell
@@ -9723,6 +9842,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       el.querySelector('h2').textContent = C.swapHead.replace('{old}', C.wpn[old] || '').replace('{new}', C.wpn[nu] || '');
       el.setAttribute('aria-label', el.querySelector('h2').textContent);
       fillRow(el.querySelector('.srow.new'), nu); fillRow(el.querySelector('.srow.old'), old);
+      newBits(el.querySelector('.srow.new > div'), ui.owned().indexOf(nu) < 0);   /* WEAPONS ARRIVE (5 Nov): a weapon not found yet wears the tag */
       el.querySelector('.cmp').textContent = ui.compareLine(nu, old);
       document.getElementById('swaptake').textContent = C.swapTake.replace('{new}', C.wpn[nu] || '');
       document.getElementById('swapkeep').textContent = C.swapKeep.replace('{old}', C.wpn[old] || '');
@@ -9758,7 +9878,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   ui.openShare = function () {
     if (!G.record || ui.screen === 'reveal') return false;
-    var link = SB.record.linkOf(location.origin, location.pathname, G.record), el = document.getElementById('sharelink');
+    var cs = G.timed ? ui.bestOf(G.record) : 0, st = document.getElementById('sharetime');   /* A TIME TO BEAT: the best rides as ?t= */
+    var link = SB.record.linkOf(location.origin, location.pathname + (cs ? '?t=' + cs : ''), G.record), el = document.getElementById('sharelink');
+    st.textContent = cs ? ui.COPY.shareTime.replace('{t}', ui.fmtTime(cs)) : ''; st.hidden = !cs;
     drawShare(G.record); el.value = link; ui.shareLink = link;   /* the sheet's link (Copy link, the QR, Share), never the field's text: Copy code's fallback writes the code there */
     ['copylink', 'copycode'].forEach(function (id) { var b = document.getElementById(id); b.textContent = ui.COPY[b.getAttribute('data-copy')]; });
     var nat = document.getElementById('sharenative');
@@ -9817,10 +9939,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   /* a link or a pasted code (section 1.5): a room opens behind the Tap to develop card (so the shutter may sound), in
      mode Level code, never as the first room; a code that does not open says so on the title */
-  ui.openCode = function (text) {
+  ui.openCode = function (text, beat) {
     var r = SB.record.parseCode(text), msg = document.getElementById('codemsg');
     if (!r.rec) { msg.textContent = r.why === 'newer' ? ui.COPY.codeNewer : ui.COPY.codeBad; msg.hidden = false; ui.toTitle(); return false; }
-    msg.hidden = true; ui.pendingCode = r.rec;
+    msg.hidden = true; ui.pendingCode = r.rec; ui.pendingBeat = beat > 0 ? beat | 0 : 0;   /* A TIME TO BEAT: only a link's */
     /* a link that arrives during play (a hashchange) holds the room under the card: the loop runs only on 'play' (the M1
        review: the moths kept coming under a card that hides the room, the rotate card's bug) */
     if (ui.screen === 'reveal') ui.endReveal();   /* the reveal ends (its photo released); the room holds as below */
@@ -9832,9 +9954,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return true;
   };
   ui.developCode = function () {
-    var rec = ui.pendingCode; ui.pendingCode = null;
+    var rec = ui.pendingCode, beat = ui.pendingBeat | 0; ui.pendingCode = null; ui.pendingBeat = 0;
     document.getElementById('devcard').classList.remove('on');
-    if (rec && ui.startRoom(rec, ui.COPY.sharedRoom, { mode: 'code', notFirst: true })) return;
+    if (rec && ui.startRoom(rec, ui.COPY.sharedRoom, { mode: 'code', notFirst: true, beat: beat })) return;
     /* a link that parses but builds no room (all dark, a checkerboard: needsCrop) goes to the title with its refusal, as a
        code that does not parse does: arrived mid room, the screen stayed 'code' with no Pause, no Title, no back and a
        dead Resume under it (the review of Q94) */
@@ -10147,6 +10269,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
     b.hidden = !ui.firstRoomDone; b.classList.toggle('new', n > 0);
     b.textContent = n > 0 ? ui.COPY.trophiesNew.replace('{n}', n) : ui.COPY.trophiesLink;
   }
+  /* WEAPONS ARRIVE (5 Nov): the title's Darkroom link says when prints wait there (they were found only by looking) */
+  function darkroomLink() {
+    var d = SB.save.doc, b = document.getElementById('darkroombtn'); if (!b) return;
+    var n = d && d.prints ? d.prints.length : 0;
+    b.classList.toggle('new', n > 0);
+    b.textContent = n > 0 ? ui.COPY.darkroomPrints.replace('{n}', n) : ui.COPY.darkroomLink;
+  }
   function drawTrophies() {
     var d = SB.save.doc, C = ui.COPY; if (!d) return;
     if (ui.trophyCheck().length) SB.save.commit();
@@ -10371,6 +10500,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       doc.stats.clears++; SB.save.addRecent(G.record); if (n > 0) SB.Wallet.earn(n, 'house');
       if (!G.roomHit) doc.stats.flawless = (doc.stats.flawless | 0) + 1;
       HS.album = ui.albumText(SB.save.addPrint(G.record, G.level ? G.level.biome : 0, !G.roomHit));
+      keptLine('doorkept', ui.keepFound());   /* WEAPONS ARRIVE: the doorway keeps what this room found (before the prints) */
       printLine('doorprint', ui.bankPrints());   /* the Darkroom: a doorway banks the blueprints (DESIGN 9.3) */
       ui.lastHash = SB.sim.hash(G.state);
       SB.Wallet.moment('first_clear', { mode: 'house' });
@@ -10422,6 +10552,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      pixels` under the strip's 15 (Q85's (b), Q93: the chest's +15 then a bare `Banked 7` read as 8 lost) */
   ui.showClear = function () {
     if (SB.TUNING.KEEP_GEAR && G.state) G.gear = G.state.hero.slots.slice();   /* the sitting keeps what the bug carried out (6.5) */
+    var gotEl = document.getElementById('got'); if (gotEl) { clearTimeout(gotEl.sbGotT); gotEl.classList.remove('on'); }   /* WEAPONS ARRIVE: the pickup card's keep line goes when the clear says Yours now */
     if (G.mode === 'house' && HS.run) return houseClear();   /* in a house the doorway replaces the clear card (Q200) */
     if (G.record && SB.save.doc && !G.banked) {
       G.banked = true;
@@ -10432,6 +10563,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
       cal.hidden = !alt; cal.textContent = alt;
       var nt = ui.trophyCheck();
       trophyMoment(document.getElementById('cleartrophy'), nt.length ? nt[nt.length - 1] : '');
+      keptLine('clearkept', ui.keepFound());   /* WEAPONS ARRIVE: the clear keeps what this room found (before the prints) */
+      timeLines(G.timed ? ui.timeOf(G.state.frame) : 0);   /* A TIME TO BEAT: the time, the best, the time sent */
       printLine('clearprint', ui.bankPrints());   /* the Darkroom: the blueprints carried out become prints */
       dailyClear();
       ui.lastHash = SB.sim.hash(G.state);
@@ -10652,6 +10785,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     SB.ui.sheets(G.state);
     SB.ui.swap(G.state);
     var put = SB.ui.slots(G.state);
+    if (put) SB.ui.noteFound(put);   /* WEAPONS ARRIVE: a weapon not found yet, noted for the clear */
     if (put && (ev & EV.EQUIP)) SB.ui.showGot(put);
     else SB.ui.gotFollow();
     SB.ui.hints(G.state, G.level);
@@ -10705,15 +10839,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function fromHash() {
     var h = location.hash;
     if (!h || h.length < 2) return;
-    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* silent */ }
-    SB.ui.openCode(h);
+    /* A TIME TO BEAT (5 Nov): the sharer's ?t= (hundredths, an hour at most) read and taken off with the hash */
+    var parts = (location.search || '').replace(/^\?/, '').split('&'), keep = [], beat = 0;
+    for (var i = 0; i < parts.length; i++) { var tm = /^t=(\d{1,6})$/.exec(parts[i]); if (tm) beat = +tm[1]; else if (parts[i]) keep.push(parts[i]); }
+    try { history.replaceState(null, '', location.pathname + (keep.length ? '?' + keep.join('&') : '')); } catch (e) { /* silent */ }
+    SB.ui.openCode(h, beat > 0 && beat <= 360000 ? beat : 0);
   }
   fromHash();
   window.addEventListener('hashchange', fromHash);
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=28').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=30').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.
