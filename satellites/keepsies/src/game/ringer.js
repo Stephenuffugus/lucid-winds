@@ -17,19 +17,20 @@
 import {
   createWorld, disposeWorld, addSurface, addMarble, removeMarble, impulse, place,
   step, atRest, specOf, positionOf, velocityOf, ringDistance, resolved,
-  snapshot, restore, setTimestep
-} from '../core/physics.js?v=20260905a';
-import { makeStreams, makeRng } from '../core/rng.js?v=20260905a';
-import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20260905a';
-import { STARTER_ENTRIES, CROSS_MIX } from '../core/marbleBody.js?v=20260905a';
-import { sin, cos, atan2, len2, clamp, DEG } from '../core/dmath.js?v=20260905a';
-import { frameFor } from '../core/framing.js?v=20260905a';
+  snapshot, restore, setTimestep, addStatue, removeStatue
+} from '../core/physics.js?v=20261105b';
+import { SHAPES, legal, aiPlacement, blocks, legalSpots, MOVE_MAX } from '../core/statues.js?v=20261105b';
+import { makeStreams, makeRng } from '../core/rng.js?v=20261105b';
+import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20261105b';
+import { STARTER_ENTRIES, CROSS_MIX } from '../core/marbleBody.js?v=20261105b';
+import { sin, cos, atan2, len2, clamp, DEG } from '../core/dmath.js?v=20261105b';
+import { frameFor } from '../core/framing.js?v=20261105b';
 import {
   createMatch, skipLag, resolveLag, mayPlace, placeTaw, fireShot, resolveShot,
-  summary, edgePosition, PHASE, DEFAULT_HOUSE_RULES
-} from '../core/rules-ringer.js?v=20260905a';
-import { plan } from './ai.js?v=20260905a';
-import { detect as detectTechniques } from '../core/techniques.js?v=20260905a';
+  summary, edgePosition, PHASE, DEFAULT_HOUSE_RULES, moveStatueTurn
+} from '../core/rules-ringer.js?v=20261105b';
+import { plan } from './ai.js?v=20261105b';
+import { detect as detectTechniques } from '../core/techniques.js?v=20261105b';
 
 const RING_FT = { 7: '7ft', 10: '10ft', 13: '13ft' };
 
@@ -121,6 +122,27 @@ export function createRinger(setup) {
     players: setup.players.map((p, i) => ({ name: p.name, tawUid: 'taw-' + i, ai: p.ai })),
     houseRules: hr
   });
+
+  /* ⛔ STATUES (step 9) ARE PART OF THE SETUP RECORD. A statue is { shape, x, z, owner }; the list rides in
+     M.statues, and a match built with setup.statues is the same world as one whose statues were placed before
+     the lag, because both add the same bodies, in the same order, before the first step. The lay is where the
+     mibs were laid, which is what "a foot from the cross" is measured from. */
+  const lay = mibs.map(m => { const p = positionOf(W, m.id); return { x: p.x, z: p.z }; });
+  M.statues = [];
+  const statueBodies = [];
+  const statueRng = makeRng((setup.seed | 0) ^ 0x57a7e5);
+  function placeStatue(s, opts) {
+    if (!SHAPES[s.shape]) return { ok: false, why: 'no such statue' };
+    if (!(opts && opts.trusted)) {
+      const ok = legal(s.shape, s.x, s.z, ringRadius, M.statues, lay);
+      if (!ok.ok) return ok;
+    }
+    const rec = { shape: s.shape, x: s.x, z: s.z, owner: s.owner | 0 };
+    statueBodies.push(addStatue(W, rec, SHAPES));
+    M.statues.push(rec);
+    return { ok: true, why: null, statue: rec };
+  }
+  for (const s of setup.statues || []) placeStatue(s, { trusted: true });
 
   const G = {
     W, M, mibs, taws, rng, tuning: T, ringRadius,
@@ -334,8 +356,63 @@ export function createRinger(setup) {
       rng: rng.ai, tuning: T
     }, opts || {}));
     G.aiThinking = false;
+    /* step 10: when one of ITS OWN statues stands in its best shot, the AI spends the turn moving it, up to two
+       feet, to the nearest legal spot out of the line (a statue of the other player's it has to play around) */
+    if (M.statues.length && res.aim && res.aim.plannedDeg != null) {
+      const tw = shooterTaw(), tp = positionOf(W, tw.id), r = specOf(W, tw.id).radius;
+      const d = dirFromDeg(res.aim.plannedDeg);
+      const to = { x: tp.x + d.x * ringRadius * 2, z: tp.z + d.z * ringRadius * 2 };
+      const k = M.statues.findIndex(s => s.owner === M.turn && blocks(s, tp, to, r));
+      if (k >= 0) {
+        const s = M.statues[k], others = M.statues.filter((_, i) => i !== k);
+        const marbles = marblesForMove();
+        const spots = legalSpots(s.shape, ringRadius, others, lay, { from: s, marbles })
+          .filter(q => !blocks({ shape: s.shape, x: q.x, z: q.z }, tp, to, r))
+          .sort((a, b) => len2(a.x - s.x, a.z - s.z) - len2(b.x - s.x, b.z - s.z));
+        if (spots.length && moveStatue(k, spots[0].x, spots[0].z).ok) return Object.assign({ moved: k }, res);
+      }
+    }
     shoot(res.aim);
     return res;
+  }
+
+  /* ---------------------------------------------------------- the statues */
+
+  /** Every marble on the dirt, for "a moved statue may not touch a marble". */
+  function marblesForMove() {
+    const out = [];
+    for (const m of W.marbles.values()) { const p = m.body.translation(); out.push({ x: p.x, z: p.z, r: m.spec.radius }); }
+    return out;
+  }
+
+  /** The AI places one statue by its seeded rule (core/statues.js aiPlacement), for `owner`. */
+  function aiPlaceStatue(owner) {
+    const foe = taws[(owner + 1) % taws.length];
+    const fp = W.marbles.has(foe.id) ? positionOf(W, foe.id) : null;
+    const s = aiPlacement(statueRng, ringRadius, M.statues, lay, owner, fp ? { x: fp.x, z: fp.z } : null);
+    return s ? placeStatue(s) : { ok: false, why: 'nowhere legal' };
+  }
+
+  /**
+   * Move one of the shooter's own statues instead of shooting (step 10): up to two feet, the same legality, and
+   * it may not touch a marble. The body is rebuilt where it was put, and the turn passes.
+   */
+  function moveStatue(index, x, z) {
+    if (M.phase !== PHASE.TURN || G.simulating || G.phase === 'over') return { ok: false, why: 'not now' };
+    const s = M.statues[index];
+    if (!s || s.owner !== M.turn) return { ok: false, why: 'not your statue' };
+    const others = M.statues.filter((_, i) => i !== index);
+    const ok = legal(s.shape, x, z, ringRadius, others, lay, { from: s, marbles: marblesForMove() });
+    if (!ok.ok) return ok;
+    const from = { x: s.x, z: s.z };
+    removeStatue(W, statueBodies[index]);
+    s.x = x; s.z = z;
+    statueBodies[index] = addStatue(W, s, SHAPES);
+    moveStatueTurn(M, { index, from, to: { x, z } });
+    G.phase = mayPlace(M) ? 'place' : 'aim';
+    if (G.phase === 'place') resetPlacement();
+    if (hooks.onPhase) hooks.onPhase(G.phase);
+    return { ok: true, why: null };
   }
 
   function liveMibs() { return G.mibs.filter(m => W.marbles.has(m.id)); }
@@ -444,6 +521,7 @@ export function createRinger(setup) {
       return W.marbles.has(t.id) && ringDistance(W, t.id) <= ringRadius;
     },
     doLag, setPlaceAngle, resetPlacement, commitPlace, shoot, tick, aiTurn, frameShot, tawOnScreen,
+    lay, statues: () => M.statues, placeStatue, aiPlaceStatue, moveStatue,
     liveMibs, uidOf, idOfUid,
     shooterTaw,
     isAiTurn: () => !!M.players[M.turn].ai,

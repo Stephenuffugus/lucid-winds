@@ -17,7 +17,7 @@
  * Every write goes through `meta/save.js`, which merges rather than overwrites,
  * so a second tab cannot spend your marbles out from under you.
  */
-import * as SAVE from './save.js?v=20260905a';
+import * as SAVE from './save.js?v=20261105b';
 
 /** Local midnight as a day number. The only clock reading in the game. */
 export function today(now) {
@@ -44,6 +44,9 @@ export function createEconomy(tuning, deps) {
     },
 
     balance() { return SAVE.load().wallet.sunbeams; },
+
+    /** Tell the listeners about a move written elsewhere in one transaction (a pouch buy, meta/drops.js). */
+    notify(what) { fire(what); },
 
     /** Earn, with a reason. Dust is an earn reason, not a second currency. */
     earn(n, reason) {

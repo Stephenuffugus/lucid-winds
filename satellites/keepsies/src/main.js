@@ -9,36 +9,42 @@
  * DIRECTIONS BEFORE PLAY. The rules card is shown before the first match of the
  * mode, which is a studio standard and not a preference.
  */
-import { detectQuality } from './render/quality.js?v=20260905a';
-import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20260905a';
-import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20260905a';
-import { buildRingerGround } from './render/arenaEnv.js?v=20260905a';
-import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20260905a';
-import { attachCameraControls } from './input/cameraCtl.js?v=20260905a';
-import { createKnuckle } from './input/knuckle.js?v=20260905a';
-import { createPullback } from './input/pullback.js?v=20260905a';
-import * as AUDIO from './audio/synth.js?v=20260905a';
-import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20260905a';
-import { createRinger } from './game/ringer.js?v=20260905a';
-import { RINGER_TECHNIQUES } from './core/techniques.js?v=20260905a';
-import { launchSpeed } from './core/snap.js?v=20260905a';
-import { clamp, len2, DEG } from './core/dmath.js?v=20260905a';
-import * as SAVE from './meta/save.js?v=20260905a';
-import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20260905a';
-import { playPotCeremony } from './render/ceremony.js?v=20260905a';
+import { detectQuality, forceQuality } from './render/quality.js?v=20261105b';
+import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261105b';
+import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261105b';
+import { buildRingerGround } from './render/arenaEnv.js?v=20261105b';
+import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261105b';
+import { attachCameraControls } from './input/cameraCtl.js?v=20261105b';
+import { createKnuckle } from './input/knuckle.js?v=20261105b';
+import { createPullback } from './input/pullback.js?v=20261105b';
+import * as AUDIO from './audio/synth.js?v=20261105b';
+import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261105b';
+import { createRinger } from './game/ringer.js?v=20261105b';
+import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261105b';
+import { launchSpeed } from './core/snap.js?v=20261105b';
+import { clamp, len2, DEG } from './core/dmath.js?v=20261105b';
+import * as SAVE from './meta/save.js?v=20261105b';
+import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261105b';
+import { playPotCeremony } from './render/ceremony.js?v=20261105b';
 import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
-  from './meta/collection.js?v=20260905a';
-import * as MARBLEMESH from './render/marbleMesh.js?v=20260905a';
-import { bodySpec } from './core/marbleBody.js?v=20260905a';
-import { createEconomy } from './meta/economy.js?v=20260905a';
-import { createDrops } from './meta/drops.js?v=20260905a';
-import * as RANSOM from './meta/ransom.js?v=20260905a';
-import * as PROG from './meta/progression.js?v=20260905a';
-import { createOnboarding, dustyLine } from './meta/beats.js?v=20260905a';
+  from './meta/collection.js?v=20261105b';
+import * as MARBLEMESH from './render/marbleMesh.js?v=20261105b';
+import { bodySpec } from './core/marbleBody.js?v=20261105b';
+import { createEconomy } from './meta/economy.js?v=20261105b';
+import { createDrops } from './meta/drops.js?v=20261105b';
+import * as RANSOM from './meta/ransom.js?v=20261105b';
+import * as PROG from './meta/progression.js?v=20261105b';
+import { createOnboarding, dustyLine } from './meta/beats.js?v=20261105b';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
-  from './game/match.js?v=20260905a';
-import { makeRng } from './core/rng.js?v=20260905a';
-import { makeMarbleMaterial } from './render/marbleMesh.js?v=20260905a';
+  from './game/match.js?v=20261105b';
+import { makeRng } from './core/rng.js?v=20261105b';
+import { makeMarbleMaterial } from './render/marbleMesh.js?v=20261105b';
+import { art, loadIcons, ic } from './render/art.js?v=20261105b';
+import { face } from './render/portraits.js?v=20261105b';
+import * as PROV from './meta/provenance.js?v=20261105b';
+import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261105b';
+import { makeStatueMesh, markGhost, disposeStatueMesh } from './render/statues.js?v=20261105b';
+import { SHAPES, SHAPE_ORDER, PER_PLAYER, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261105b';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -54,7 +60,7 @@ const G = {
   save: null, calibrator: null, lastRollAudio: 0, warming: false,
   assist: true, lastAssist: 0, lastShooter: 0,
   scopeHold: false, nudgeTimer: 0, snapShown: false, aimUiOn: false,
-  houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10 },
+  houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10, formation: 'cross', statues: false },
   catalog: null, turntable: null, thumbs: null, filter: 'all', inspecting: null, econ: null,
   drops: null, dropRng: null, stake: [], theirStake: [], anteOk: false
 };
@@ -66,16 +72,48 @@ const HOUSE_RULES = [
   { key: 'slips', label: 'Slips', sub: 'one redo for a fumble' },
   { key: 'bombing', label: 'Bombing', sub: 'drop shots allowed' },
   { key: 'poison', label: 'Poison', sub: 'knock out the enemy shooter' },
-  { key: 'ringSizeFt', label: 'Ring', sub: 'seven, ten or thirteen foot', cycle: [7, 10, 13] },
+  /* Stephen's idea (step 9): two stone statues each, placed by drag before the lag */
+  { key: 'statues', label: 'Statues', sub: 'two each' },
+  { key: 'ringSizeFt', label: 'Ring', sub: 'seven, ten or thirteen foot', cycle: [7, 10, 13],
+    show: (v) => RING_WORD[v] || RING_WORD[10] },
   /* the lay of the thirteen: see FORMATIONS in game/ringer.js for what each one is */
   { key: 'formation', label: 'Lay', sub: 'cross, x, ring or bunch', cycle: ['cross', 'x', 'ring', 'bunch'],
-    show: (v) => 'the ' + v }
+    show: (v) => LAY_WORD[v] || LAY_WORD.cross }
 ];
+/* ⛔ EVERY VALUE A CHIP CAN HOLD HAS ITS WORD (Astra, 4 Nov: k1-setup printed THE UNDEFINED, the lay chip
+   reading a house rule that had no value until its first tap). A value with no word shows the game's
+   own default, which is also what the rules play (core/rules-ringer.js DEFAULT_HOUSE_RULES). */
+const RING_WORD = { 7: 'Seven foot', 10: 'Ten foot', 13: 'Thirteen foot' };
+/* Astra's HUD and tier plates (step 5), as style sheet variables set once at boot through art() */
+const ART_VARS = {
+  '--pip-empty': 'ui/pip_empty.svg', '--pip-lit': 'ui/pip_lit.svg', '--chip': 'ui/player_chip.svg',
+  '--hr-on': 'ui/house_rule_on.svg', '--hr-off': 'ui/house_rule_off.svg', '--voice': 'ui/voice_bubble.svg',
+  '--toast': 'ui/technique_toast.svg', '--result': 'ui/result_card.svg', '--scope': 'ui/minimap_frame.svg',
+  '--ret-a': 'ui/reticle_settling.svg', '--ret-b': 'ui/reticle_settled.svg',
+  '--tier-common': 'ui/tier_common.svg', '--tier-uncommon': 'ui/tier_uncommon.svg', '--tier-rare': 'ui/tier_rare.svg',
+  '--tier-epic': 'ui/tier_epic.svg', '--tier-grail': 'ui/tier_grail.svg'
+};
+/* the house rules' icons (Astra's sprite); the lay has none of its own and carries none */
+const RULE_ICON = { keepsies: 'keeps', slips: 'slips', bombing: 'bombing', poison: 'poison', ringSizeFt: 'ring_size' };
+
+/** A button's label with its icon beside the words (the words stay; the 48 px target is the button). */
+function label(id, icon, text) {
+  const b = $(id);
+  if (!b) return;
+  b.innerHTML = ic(icon) + '<span class="lbl"></span>';
+  b.lastChild.textContent = text;
+}
+const LAY_WORD = { cross: 'The cross', x: 'The X', ring: 'The ring', bunch: 'The bunch' };
 
 /* ------------------------------------------------------------------- boot */
 
 async function boot() {
-  const res = await fetch('src/data/tuning.json?v=20260905a');
+  loadIcons();   // Astra's one sprite, fetched once and injected (render/art.js); a miss leaves the labels
+  // every plate in the page names its art in data-art; this is the one place its URL is made
+  for (const el of document.querySelectorAll('[data-art]')) el.style.backgroundImage = 'url(' + art(el.dataset.art) + ')';
+  // and every plate the style sheet draws (step 5, the HUD and the tiers) is a variable made here
+  for (const k in ART_VARS) document.documentElement.style.setProperty(k, 'url(' + art(ART_VARS[k]) + ')');
+  const res = await fetch('src/data/tuning.json?v=20261105b');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
   G.save = SAVE.load();
@@ -85,13 +123,17 @@ async function boot() {
   AUDIO.configure(G.tuning);
   AUDIO.setEnabled(G.save.settings.sound !== false);
 
-  const cat = await fetch('src/data/marbles.json?v=20260905a');
+  const cat = await fetch('src/data/marbles.json?v=20261105b');
   if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
   G.catalog = await cat.json();
-  const dt = await fetch('src/data/droptables.json?v=20260905a');
+  const dt = await fetch('src/data/droptables.json?v=20261105b');
   if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
   G.dropTables = await dt.json();
 
+  /* a tester's tier (?quality=low|medium|high): this box has two cores and detection gives it low, while a
+     Pixel 9 gets high, so the shot tools can ask for what the phone draws (KP_QUALITY) */
+  const qWant = new URLSearchParams(location.search).get('quality');
+  if (qWant === 'low' || qWant === 'medium' || qWant === 'high') forceQuality(qWant);
   G.tier = detectQuality(G.tuning);
   const canvas = $('stage');
   G.stage = createStage(canvas, G.tuning, G.tier);
@@ -136,7 +178,7 @@ async function boot() {
     onAim: onAim,
     onCancel: () => { say('That was too soft to count, so it does not. Take it again.'); hideAim(); },
     haptic: (k) => { if (navigator.vibrate) { try { navigator.vibrate(k === 'settle' ? 8 : 14); } catch (e) { } } },
-    enabled: () => !G.usePullback && (G.screen === 'match' || G.screen === 'calib') && !G.paused
+    enabled: () => !G.usePullback && (G.screen === 'match' || G.screen === 'calib') && !G.paused && !G.moving && !G.statuesPlacing
   });
   G.knuckle.attach();
 
@@ -151,8 +193,9 @@ async function boot() {
   });
   G.pullback.attach();
 
+  attachStatues(canvas);   // before the camera: a statue move's finger is claimed first (step 10)
   G.cam = attachCameraControls(canvas, G.rig, {
-    isClaimed: (id) => G.knuckle.owns(id) || G.pullback.owns(id) || (G.placeDrag === id)
+    isClaimed: (id) => G.knuckle.owns(id) || G.pullback.owns(id) || (G.placeDrag === id) || (G.moveDrag === id)
   });
   attachPlacement(canvas);
 
@@ -160,6 +203,12 @@ async function boot() {
   if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (resize(G.stage)) drawNow(); });
 
   wireButtons();
+  for (const [id, icon, text] of [['play', 'play', 'Play'], ['collect', 'your_marbles', 'Your marbles'],
+    ['exitTitle', 'arcade', 'Sky Wolf Studio Arcade'], ['setupGo', 'play', 'Play'], ['setupBack', 'back', 'Back'],
+    ['scopeBtn', 'zoom', 'Zoom'], ['snapHelp', 'the_snap', 'The snap'], ['topDown', 'top_down', 'Top down'],
+    ['pause', 'pause', 'Pause'], ['collBack', 'back', 'Back'], ['inspectBack', 'back', 'Back'],
+    ['again', 'rematch', 'Rematch'], ['toTitle', 'home', 'Home'], ['resume', 'resume', 'Resume'],
+    ['calibSkip', 'lag', 'I have played marbles before']]) label(id, icon, text);
   $('boot').hidden = true;
   paintWallet();
   showScreen('title');
@@ -185,11 +234,25 @@ function wireButtons() {
   });
   $('setupGo').addEventListener('click', () => { beginMatch(); });
   $('tinTake').addEventListener('click', () => { takeTheTin(); });
+  $('poKeep').addEventListener('click', () => { $('pouchOpen').hidden = true; });
+  /* the share cards (step 7): composed from live renders on the tap that asks, then the share sheet */
+  $('inspectShare').addEventListener('click', async () => {
+    if (!G.inspecting) return;
+    const b = $('inspectShare'); b.disabled = true;
+    try { const c = await buildMarbleCard(G.inspecting.entry, G.inspecting.item); await shareCanvas(c, G.inspecting.entry.id + '.png', G.inspecting.entry.name); }
+    finally { b.disabled = false; }
+  });
+  $('shareMatch').addEventListener('click', async () => {
+    const b = $('shareMatch'); b.disabled = true;
+    try { const c = await buildMatchCard(); if (c) await shareCanvas(c, 'keepsies-match.png', $('resultTitle').textContent); }
+    finally { b.disabled = false; }
+  });
   $('setupBack').addEventListener('click', () => { showScreen('title'); });
   $('rsPay').addEventListener('click', () => {
     if (!G.ransomOffer) return;
     const r = RANSOM.pay(G.ransomOffer.uid, Date.now());
     if (!r.ok) { $('rsSay').textContent = r.reason; return; }
+    PROV.record([PROV.event('reclaimed', G.ransomOffer.uid, { opp: G.ransomOffer.from || null, why: 'bought back' })]);
     G.save = SAVE.load();
     paintWallet();
     // it comes home the way anything else does, with its name said out loud
@@ -248,7 +311,7 @@ function wireButtons() {
   });
   $('topDown').addEventListener('click', () => {
     G.topDown = !G.topDown;
-    $('topDown').textContent = G.topDown ? 'Side on' : 'Top down';
+    label('topDown', G.topDown ? 'side_on' : 'top_down', G.topDown ? 'Side on' : 'Top down');
   });
   $('pause').addEventListener('click', () => { G.paused = true; $('pauseCard').hidden = false; });
   $('resume').addEventListener('click', () => { G.paused = false; $('pauseCard').hidden = true; });
@@ -259,8 +322,81 @@ function wireButtons() {
 
 /* ---------------------------------------------------------------- screens */
 
+/**
+ * Inspect's history (step 6): the latest event as a line ("Won off Dusty Coyle"; a reclaimed marble reads
+ * Returned), and the whole list under it, oldest first. A marble from before provenance has its one line.
+ */
+/** A live render of a catalog entry at px, the same material the grid and the turntable draw. */
+function renderOf(entry, px) {
+  const c = document.createElement('canvas');
+  c.width = c.height = px;
+  if (!entry) return c;
+  G.thumbs.open(px); G.thumbs.paint(c, entry, 0); G.thumbs.close();
+  return c;
+}
+
+/** The marble card for an entry and, when you hold one, its history line (never a player id). */
+function buildMarbleCard(entry, item) {
+  const hist = item ? PROV.historyOf(G.save, item.uid) : [];
+  const line = hist.length ? PROV.lineFor(hist[hist.length - 1]) : (item ? provenance(item).replace(/\.$/, '') : 'Not in your collection yet');
+  return marbleCard({ render: renderOf(entry, 640), name: entry.name, lore: entry.lore || '', tier: entry.tier,
+    tierWord: TIER_LABEL[entry.tier] || entry.tier, line });
+}
+
+/** The match card from the last result: the two sides of the pot (or the two shooters, for fair). */
+function buildMatchCard() {
+  const L = G.lastCard;
+  if (!L) return null;
+  const byId = (id) => G.catalog.marbles.find(m => m.id === id);
+  const side = (id, label) => { const e = byId(id); return e ? { render: renderOf(e, 420), name: e.name, label } : null; };
+  const staked = L.mine.length || L.theirs.length;
+  const left = side(L.mine[0] || L.myTaw, staked ? 'Your stake' : 'Your shooter');
+  const right = side(L.theirs[0] || L.theirTaw, staked ? L.opp + ' put up' : L.opp + "'s shooter");
+  const stats = ['Pocketed ' + $('rPocket').textContent, 'Shots ' + $('rShots').textContent];
+  const tech = $('rTech').textContent;
+  if (tech && tech !== 'none yet') stats.push(tech);
+  return matchCard({ title: $('resultTitle').textContent, left, right, pot: $('rPot').textContent, stats });
+}
+
+function paintProvenance(item) {
+  const el = $('iProv');
+  el.textContent = '';
+  const hist = item ? PROV.historyOf(G.save, item.uid) : [];
+  if (!hist.length) { el.textContent = provenance(item); return; }
+  const last = document.createElement('span');
+  last.className = 'last';
+  last.textContent = PROV.lineFor(hist[hist.length - 1]);
+  el.appendChild(last);
+  if (hist.length > 1) {
+    const ul = document.createElement('ul');
+    ul.className = 'hist';
+    for (const e of hist) {
+      const li = document.createElement('li');
+      li.textContent = PROV.lineFor(e) + ', ' + new Date(e.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      ul.appendChild(li);
+    }
+    el.appendChild(ul);
+  }
+}
+
+/* the faces (render/portraits.js): Dusty across the ring at setup, kept it on his card, the 96 px chip in the
+   HUD; anyone without a face shows none, never a placeholder */
+function paintFaces() {
+  const name = ($('oppName') && $('oppName').textContent) || 'Dusty Coyle';
+  const set = (id, url) => { const el = $(id); if (!el) return; if (url) { if (el.dataset.src !== url) { el.src = url; el.dataset.src = url; } el.hidden = false; } else el.hidden = true; };
+  set('oppFace', face(name, 'ring', 160));
+  set('themFace', face(G.R ? (G.R.match.players[1] || {}).name : name, 'ring', 96));
+  const head = ($('rsHead') && $('rsHead').textContent) || '';
+  set('rsFace', face(head.replace(/ kept it$/, ''), 'kept_it', 160));
+}
+
 function showScreen(name) {
   G.screen = name;
+  // the pouch reveal belongs to the moment of the buy: any screen change closes it (it is not a screen)
+  if ($('pouchOpen')) $('pouchOpen').hidden = true;
+  if (name === 'setup' || name === 'match' || name === 'ransom') paintFaces();
+  // a tester's under the floor camera (KEEPSIES_DEV.camera allowUnder) never outlives the screen it was asked on
+  if (G.rig) G.rig.state.allowUnder = false;
   $('title').hidden = name !== 'title';
   $('calib').hidden = name !== 'calib';
   $('setup').hidden = name !== 'setup';
@@ -297,12 +433,12 @@ function startCalibration() {
 }
 
 function calibDots(n) {
-  const el = $('calibDots');
-  if (el.childElementCount !== 3) {
-    el.textContent = '';
-    for (let i = 0; i < 3; i++) { const d = document.createElement('span'); d.className = 'sock'; el.appendChild(d); }
-  }
-  for (let i = 0; i < 3; i++) el.children[i].className = 'sock' + (i < n ? ' full' : '');
+  // Astra's four states: none, one, two and three snaps taken (calibration_0 to 3)
+  const el = $('calibDots'), k = Math.max(0, Math.min(3, n | 0));
+  el.textContent = '';
+  el.style.backgroundImage = 'url(' + art('ui/calibration_' + k + '.svg') + ')';
+  el.setAttribute('role', 'img');
+  el.setAttribute('aria-label', k + ' of 3 snaps');
 }
 
 function finishCalibration(result) {
@@ -415,6 +551,13 @@ function openTin() {
   const wrap = $('heirlooms');
   wrap.textContent = '';
   const three = G.onboard.heirlooms(G.catalog);
+  /* ⛔ THE THREE ROLL IN INSIDE THE TIN, THEN LIE ON THE CLOTH (step 4). Each render is drawn once and the
+     same canvas moves from the tin's mouth (clipped to its ellipse, Astra's anchor) to its resting place, so
+     what you pick is the marble you watched arrive. Reduced motion: straight to the cloth. */
+  const mouth = $('tinMouth');
+  mouth.textContent = '';
+  const still = (G.save.settings && G.save.settings.reducedMotion) || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const canv = [];
   G.thumbs.open(168);
   let i = 0;
   for (const e of three) {
@@ -423,7 +566,12 @@ function openTin() {
     b.id = 'heir-' + e.id;
     const c = document.createElement('canvas');
     c.width = c.height = 168;
+    const rest = document.createElement('span');
+    rest.className = 'rest';
+    rest.style.backgroundImage = 'url(' + art('env/ground_shadow.png') + ')';
+    b.appendChild(rest);
     b.appendChild(c);
+    canv.push({ c, b });
     const nm = document.createElement('span');
     nm.textContent = e.name;
     b.appendChild(nm);
@@ -436,6 +584,23 @@ function openTin() {
     G.thumbs.paint(c, e, i++);
   }
   G.thumbs.close();
+  /* ⛔ NOTHING WAITS ON THE ROLL. The places on the cloth are named and pressable from the first frame (the
+     playthrough gate presses one at once, and so may a thumb); a press during the roll ends it there */
+  G.tinFinish = null;
+  if (!still) {
+    canv.forEach(({ c }, k) => {
+      c.className = 'roll';
+      c.style.left = (20 + 30 * k) + '%';
+      c.style.animationDelay = (k * 0.14) + 's';
+      mouth.appendChild(c);
+    });
+    clearTimeout(G.tinRoll);
+    G.tinFinish = () => {
+      clearTimeout(G.tinRoll); G.tinFinish = null;
+      for (const { c, b } of canv) { c.className = ''; c.style.left = ''; c.style.animationDelay = ''; b.insertBefore(c, b.children[1] || null); }
+    };
+    G.tinRoll = setTimeout(() => { if (G.tinFinish) G.tinFinish(); }, 1500);
+  }
   // before the first tap there is nothing to read but a name and a two word kit,
   // so the cloth says what it is asking
   $('heirSay').textContent = 'Pick one up. It is yours for good.';
@@ -445,6 +610,7 @@ function openTin() {
 }
 
 function pickHeirloom(entry) {
+  if (G.tinFinish) G.tinFinish();   // a pick during the roll lays them on the cloth at once
   G.heirloomPick = entry;
   for (const b of $('heirlooms').querySelectorAll('button')) {
     b.className = b.id === 'heir-' + entry.id ? 'on' : '';
@@ -463,7 +629,18 @@ function takeTheTin() {
     id: pick.id, uid: pick.id + '-heirloom', acquired: Date.now(),
     source: 'starter', cosmeticSeed: 0.5
   });
-  SAVE.merge({ inventory: give });
+  /* each marble's first event is written with it; the heirloom, the player's first rare, goes into the case
+     (DESIGN 16.4 and 17: the first rare auto showcases, and a showcased marble is never staked), which is what
+     the tin's line promises */
+  const now = Date.now();
+  SAVE.merge({ inventory: give, provenance: give.map(i => PROV.event('owned', i.uid, { at: i.acquired || now, why: i.source })) });
+  const heir = pick.id + '-heirloom';
+  let cased = false;
+  SAVE.update((s) => {
+    s.showcase = s.showcase || [];
+    if (s.showcase.indexOf(heir) < 0 && s.inventory.some(i => i.uid === heir)) { s.showcase.push(heir); cased = true; }
+  });
+  if (cased) PROV.record([PROV.event('showcased', heir, { at: now + 1, why: 'first rare' })]);
   G.save = SAVE.load();
   G.onboard.fire('tookTheTin');
   openCollection();
@@ -475,14 +652,15 @@ function openCollection() {
   buildGrid();
   buildOffers();
   buildPouches();
+  buildCase();
   $('pouchSay').textContent = '';
   /* ⛔ THE TIN HAS TO LEAD SOMEWHERE. Beat 4 ends on this screen with a shelf full
      of marbles and, before this, no way forward except BACK to a title screen: the
      one moment the game has just given the player everything, and it left them to
      guess. During the onboarding the way out IS the next beat. */
   const b = G.onboard && G.onboard.beat();
-  $('collBack').textContent = (b && b.id === 'firstKeepsies')
-    ? 'Play him for real ones' : 'Back';
+  if (b && b.id === 'firstKeepsies') label('collBack', 'play', 'Play him for real ones');
+  else label('collBack', 'back', 'Back');
 }
 
 /**
@@ -514,6 +692,10 @@ function buildOffers() {
         b.appendChild(c);
       } catch (err) { }
     }
+    // Astra's envelope: the offer is a letter from whoever holds it
+    const env = document.createElement('img');
+    env.className = 'env'; env.alt = ''; env.src = art('ui/ransom_envelope.svg');
+    b.appendChild(env);
     const words = document.createElement('span');
     words.className = 'words';
     const line = document.createElement('span');
@@ -558,16 +740,25 @@ function buildPouches() {
     b.type = 'button';
     b.id = 'pouch-' + kind;
     b.disabled = bal < t.price;
+    /* ⛔ A POUCH IS AN OBJECT WITH ITS TERMS ON IT (step 6): Astra's closed pouch, its price, its odds and
+       the pity progress, all printed before the buy, never after */
+    const img = document.createElement('img');
+    img.className = 'pouchImg'; img.alt = ''; img.src = art('ui/pouch_' + kind + '_closed.webp');
+    b.appendChild(img);
     const name = document.createElement('span');
-    name.textContent = t.name + ', ' + t.price;
+    name.className = 'pname';
+    name.textContent = t.name + ', ' + t.price + ' sunbeams';
+    const odds = document.createElement('span');
+    odds.className = 'sub';
+    odds.textContent = t.odds;
     const sub = document.createElement('span');
-    sub.className = 'sub';
+    sub.className = 'sub pity';
     const guard = G.drops.nextGuarantee(kind);
     const promises = [];
     if (guard.rare != null) promises.push('a rare within ' + guard.rare);
     if (guard.epic != null) promises.push('an epic within ' + guard.epic);
-    sub.textContent = promises.length ? promises.join(', ') : t.odds;
-    b.appendChild(name); b.appendChild(sub);
+    sub.textContent = promises.length ? 'Owed: ' + promises.join(', ') : '';
+    b.appendChild(name); b.appendChild(odds); if (sub.textContent) b.appendChild(sub);
     b.addEventListener('click', () => openPouch(kind));
     row.appendChild(b);
   }
@@ -587,6 +778,66 @@ function openPouch(kind) {
   paintWallet();
   buildGrid();
   buildPouches();
+  buildCase();
+  showPouchOpen(kind, res, line);
+}
+
+/* Astra's open pouches: the mouth of each (anchors.json, in her 640 px master) as fractions of the plate */
+const POUCH_MOUTH = { standard: [174, 141, 276, 109], collector: [178, 142, 278, 112], grail: [174, 135, 280, 112] };
+
+/**
+ * The reveal (step 6). The buy is already written; this only shows it: the open pouch with the live render of
+ * what came out clipped inside its mouth, at once (no wait before Keep it; reduced motion changes nothing,
+ * because nothing here moves).
+ */
+function showPouchOpen(kind, res, line) {
+  const v = $('pouchOpen');
+  $('poHead').textContent = (G.dropTables[kind] || {}).name || 'A pouch';
+  $('poImg').src = art('ui/pouch_' + kind + '_open.webp');
+  const m = POUCH_MOUTH[kind] || POUCH_MOUTH.standard, mouth = $('poMouth');
+  mouth.style.left = (m[0] / 6.4) + '%'; mouth.style.top = (m[1] / 6.4) + '%';
+  mouth.style.width = (m[2] / 6.4) + '%'; mouth.style.height = (m[3] / 6.4) + '%';
+  mouth.textContent = '';
+  const c = document.createElement('canvas');
+  c.width = c.height = 168;
+  mouth.appendChild(c);
+  G.thumbs.open(168); G.thumbs.paint(c, res.entry, 0); G.thumbs.close();
+  $('poName').textContent = res.entry.name;
+  $('poTier').innerHTML = ic(res.entry.tier) + '<span></span>';
+  $('poTier').lastChild.textContent = TIER_LABEL[res.entry.tier] || res.entry.tier;
+  $('poTier').className = 'ribbon t-' + res.entry.tier;
+  $('poSay').textContent = line;
+  v.hidden = false;
+}
+
+/**
+ * The case (step 6): Astra's shelf plate, six wells (twelve once the case is upgraded, DESIGN 17), with the
+ * live render of each showcased marble at its well's centre. Hidden while the case is empty.
+ */
+const CASE_6 = [[150, 160], [450, 160], [750, 160], [150, 480], [450, 480], [750, 480]];
+const CASE_12 = [[120, 160], [340, 160], [560, 160], [780, 160], [120, 330], [340, 330], [560, 330], [780, 330], [120, 500], [340, 500], [560, 500], [780, 500]];
+function buildCase() {
+  const wrap = $('caseWrap'), shelf = $('case');
+  if (!wrap || !shelf) return;
+  const uids = (G.save.showcase || []).filter(u => G.save.inventory.some(i => i.uid === u));
+  wrap.hidden = !uids.length;
+  shelf.textContent = '';
+  if (!uids.length) return;
+  const big = uids.length > 6, wells = big ? CASE_12 : CASE_6;
+  shelf.style.backgroundImage = 'url(' + art(big ? 'ui/showcase_12.svg' : 'ui/showcase_6.svg') + ')';
+  G.thumbs.open(96);
+  uids.slice(0, wells.length).forEach((u, k) => {
+    const item = G.save.inventory.find(i => i.uid === u);
+    const e = item && G.catalog.marbles.find(mm => mm.id === item.id);
+    if (!e) return;
+    const c = document.createElement('canvas');
+    c.width = c.height = 96;
+    c.style.left = (wells[k][0] / 9) + '%'; c.style.top = (wells[k][1] / 6) + '%';
+    c.title = e.name;
+    shelf.appendChild(c);
+    G.thumbs.paint(c, e, k);
+  });
+  G.thumbs.close();
 }
 
 const FILTERS = [['all', 'All'], ['stakeable', 'Stakeable']].concat(
@@ -604,6 +855,14 @@ function buildFilters() {
     b.addEventListener('click', () => { G.filter = key; buildFilters(); buildGrid(); });
     row.appendChild(b);
   }
+  /* ⛔ THE ACTIVE FILTER IS ALWAYS IN VIEW (Astra, 4 Nov, k2-collection: the strip ran past the edge). The
+     strip scrolls sideways, and rebuilding it on a tap threw the scroll back to All, so a tap on Grail
+     left the lit chip off the right edge. Centre the lit one in the strip, never the page. */
+  const lit = row.querySelector('button.on');
+  if (lit) {
+    const rr = row.getBoundingClientRect(), br = lit.getBoundingClientRect();
+    row.scrollLeft += (br.left + br.width / 2) - (rr.left + rr.width / 2);
+  }
 }
 
 /**
@@ -615,13 +874,13 @@ function buildFilters() {
 function buildGrid() {
   const grid = $('grid');
   grid.textContent = '';
-  const groups = groupForGrid(G.save.inventory, G.catalog, G.filter);
+  const groups = groupForGrid(G.save.inventory, G.catalog, G.filter, new Set(G.save.showcase || []));
   G.thumbs.open(128);
   let idx = 0;
   for (const g of groups) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'tile';
+    b.className = 'tile t-' + g.entry.tier;   // the tier's frame and mark (step 5)
     b.id = 'tile-' + g.entry.id;
     const rib = document.createElement('span');
     rib.className = 'rib ' + g.entry.tier;
@@ -638,6 +897,11 @@ function buildGrid() {
     const nm = document.createElement('span');
     nm.className = 'nm';
     nm.textContent = g.entry.name;
+    // the tier in words too: never by colour alone (the style guide)
+    const tw = document.createElement('span');
+    tw.className = 'tw';
+    tw.textContent = TIER_LABEL[g.entry.tier] || g.entry.tier;
+    nm.appendChild(tw);
     b.appendChild(nm);
     b.addEventListener('click', () => openInspect(g.entry, g.items[0]));
     grid.appendChild(b);
@@ -656,7 +920,9 @@ function openInspect(entry, item) {
   G.inspecting = { entry, item };
   showScreen('inspect');
   const spec = G.turntable.show(entry);
-  $('iTier').textContent = TIER_LABEL[entry.tier] || entry.tier;
+  $('iTier').innerHTML = ic(entry.tier) + '<span></span>';
+  $('iTier').lastChild.textContent = TIER_LABEL[entry.tier] || entry.tier;
+  $('iTier').className = 'ribbon t-' + entry.tier;
   $('iName').textContent = entry.name;
   $('iLore').textContent = entry.lore || '';
   const dl = $('iTraits');
@@ -674,7 +940,7 @@ function openInspect(entry, item) {
     const dd = document.createElement('dd'); dd.textContent = v;
     dl.appendChild(dt); dl.appendChild(dd);
   }
-  $('iProv').textContent = provenance(item);
+  paintProvenance(item);
   // only a card that overflows its box may take the pointer; otherwise a drag on the text spins the marble
   const card = $('inspectCard');
   card.scrollTop = 0;
@@ -704,7 +970,7 @@ function buildAnte() {
   if (wrap.hidden) { G.stake = []; G.theirStake = []; G.anteOk = true; return; }
   const strip = $('stakeStrip');
   strip.textContent = '';
-  const groups = groupForGrid(G.save.inventory, G.catalog, 'stakeable');
+  const groups = groupForGrid(G.save.inventory, G.catalog, 'stakeable', new Set(G.save.showcase || []));
   G.thumbs.open(96);
   let i = 0;
   for (const g of groups) {
@@ -803,11 +1069,13 @@ function buildHouseRules() {
     G.houseRules.slips = true;
     G.houseRules.ringSizeFt = 7;
     G.houseRules.formation = 'cross';     // the beat that teaches you to break the cross
+    G.houseRules.statues = false;          // the first games are the plain game
   } else if (beat && beat.id === 'firstKeepsies') {
     G.houseRules.keepsies = true;
     G.houseRules.slips = true;
     G.houseRules.ringSizeFt = 7;
     G.houseRules.formation = 'cross';
+    G.houseRules.statues = false;
   }
   for (const r of HOUSE_RULES) {
     const b = document.createElement('button');
@@ -817,6 +1085,7 @@ function buildHouseRules() {
     const label = document.createElement('span');
     const sub = document.createElement('span');
     sub.className = 'sub';
+    if (RULE_ICON[r.key]) { const k = document.createElement('span'); k.className = 'hrIc'; k.innerHTML = ic(RULE_ICON[r.key]); b.appendChild(k); }
     b.appendChild(label); b.appendChild(sub);
     const paint = () => {
       const v = G.houseRules[r.key];
@@ -908,6 +1177,18 @@ function startMatch(opts) {
     }
   });
   buildMeshes();
+  G.matchId = 'm' + Date.now().toString(36);   // the match a provenance event names
+  // the chalk for THIS match: the ring at its size, the cross marker under the lay, the lag line
+  if (G.ground && G.ground.dress) G.ground.dress(G.R.ringRadius, (G.R.match.houseRules || {}).formation);
+  G.over = false;
+  syncStatues();
+  // STATUES (step 9): the players place two each BEFORE the lag; the lag waits for the fourth
+  if ((G.R.match.houseRules || {}).statues && !o.calibrating) { beginStatues(); updateHud(); return; }
+  lagAndFrame();
+}
+
+/** The lag, its line, and the cut to the first shooter (after the statues, when there are any). */
+function lagAndFrame() {
   G.R.doLag();
   say(G.R.match.turn === 0 ? 'You won the lag. Hold your shooter, then flick.'
     : (G.R.match.players[1].name + ' won the lag and shoots first.'));
@@ -919,6 +1200,213 @@ function startMatch(opts) {
   updateHud();
 }
 
+/* ----------------------------------------------------------- the statues */
+
+/** One stone mesh per statue in the match's record (rebuilt after a place or a move). */
+function syncStatues() {
+  for (const m of G.statueMeshes || []) { G.stage.scene.remove(m); disposeStatueMesh(m); }
+  G.statueMeshes = (G.R ? G.R.statues() : []).map(s => { const g = makeStatueMesh(s); G.stage.scene.add(g); return g; });
+}
+
+function dropGhost() {
+  if (G.stGhost) { G.stage.scene.remove(G.stGhost); disposeStatueMesh(G.stGhost); G.stGhost = null; }
+  $('stNot').hidden = true;
+}
+
+/**
+ * The statue under a finger: where the finger is on the dirt, snapped to the half foot grid, whole chalk when
+ * the spot is allowed and broken chalk with the words Not here when it is not. Returns the spot and its verdict.
+ */
+function ghostAt(shape, cx, cy) {
+  const cr = G.stage.renderer.domElement.getBoundingClientRect();
+  const gp = groundPoint(cx - cr.left, cy - cr.top);
+  if (!gp) { dropGhost(); $('stNot').hidden = false; placeNot(cx, cy); return null; }
+  const at = snapGrid(gp.x, gp.z);
+  let verdict;
+  if (G.moving && G.moving.index != null) {
+    const s = G.R.statues()[G.moving.index];
+    const others = G.R.statues().filter((_, i) => i !== G.moving.index);
+    verdict = statueLegal(shape, at.x, at.z, G.R.ringRadius, others, G.R.lay, { from: s, marbles: marblesNow() });
+  } else verdict = statueLegal(shape, at.x, at.z, G.R.ringRadius, G.R.statues(), G.R.lay);
+  if (!G.stGhost || G.stGhost.userData.shape !== shape) {
+    dropGhost();
+    G.stGhost = makeStatueMesh({ shape, x: at.x, z: at.z, owner: 0 }, { ghost: true });
+    G.stGhost.userData.shape = shape;
+    G.stage.scene.add(G.stGhost);
+  }
+  G.stGhost.position.set(at.x, 0, at.z);
+  markGhost(G.stGhost, verdict.ok);
+  $('stNot').hidden = verdict.ok;
+  if (!verdict.ok) placeNot(cx, cy);
+  return { shape, x: at.x, z: at.z, ok: verdict.ok };
+}
+function placeNot(cx, cy) { const n = $('stNot'); n.style.left = Math.round(cx) + 'px'; n.style.top = Math.round(cy - 64) + 'px'; }
+
+function marblesNow() {
+  const out = [];
+  for (const m of G.R.world.marbles.values()) { const p = m.body.translation(); out.push({ x: p.x, z: p.z, r: m.spec.radius }); }
+  return out;
+}
+
+/** The placement phase: the player first, then Dusty by his seeded rule, two each, top down so the whole ring shows. */
+function beginStatues() {
+  G.statuesPlacing = { placed: 0, total: PER_PLAYER * 2 };
+  document.body.classList.add('statuing');
+  G.stPending = null;
+  G.topDownBefore = G.topDown; G.topDown = true;
+  say('');
+  $('statueTray').hidden = false;
+  paintTray();
+}
+
+function paintTray() {
+  const P = G.statuesPlacing, mv = G.moving;
+  const mine = P ? P.placed % 2 === 0 : !!mv;
+  for (const b of $('stTiles').querySelectorAll('button')) b.disabled = !P || !mine;
+  $('stTiles').hidden = !P;
+  $('stConfirm').disabled = !G.stPending;
+  $('stUndo').disabled = !G.stPending && !mv;
+  if (P) $('stLine').textContent = mine
+    ? 'Your statue, ' + (P.placed / 2 + 1) + ' of 2. Drag one onto the dirt, a foot clear of the cross and the line.'
+    : 'Dusty Coyle is placing one.';
+  else if (mv) $('stLine').textContent = G.stPending ? 'Confirm the move, or Undo.' : 'Drag one of your statues, up to two feet. It costs the turn.';
+}
+
+/** Confirm: the pending statue goes down for good (or the move is made), then whoever is next. */
+function confirmStatue() {
+  if (!G.stPending) return;
+  if (G.moving) {
+    const r = G.R.moveStatue(G.moving.index, G.stPending.x, G.stPending.z);
+    if (!r.ok) { $('stLine').textContent = 'Not there: ' + r.why + '.'; return; }
+    endMove();
+    syncStatues();
+    G.lastShooter = 0;
+    say('You moved a statue. ' + G.R.match.players[G.R.match.turn].name + ' to shoot.');
+    updateHud();
+    return;
+  }
+  const r = G.R.placeStatue({ shape: G.stPending.shape, x: G.stPending.x, z: G.stPending.z, owner: 0 });
+  if (!r.ok) { $('stLine').textContent = 'Not there: ' + r.why + '.'; return; }
+  dropGhost(); G.stPending = null;
+  syncStatues();
+  G.statuesPlacing.placed++;
+  nextStatue();
+}
+
+function nextStatue() {
+  const P = G.statuesPlacing;
+  if (!P) return;
+  if (P.placed >= P.total) { endStatues(); return; }
+  paintTray();
+  if (P.placed % 2 === 1) {
+    clearTimeout(G.stTimer);
+    G.stTimer = setTimeout(() => {
+      if (!G.statuesPlacing || !G.R) return;
+      G.R.aiPlaceStatue(1);
+      syncStatues();
+      G.statuesPlacing.placed++;
+      nextStatue();
+    }, 700);
+  }
+}
+
+function endStatues() {
+  G.statuesPlacing = null; G.stPending = null; dropGhost();
+  document.body.classList.remove('statuing');
+  $('statueTray').hidden = true;
+  G.topDown = !!G.topDownBefore;
+  lagAndFrame();
+}
+
+/** Undo: the statue under the finger goes back to the tray (or the move is called off). */
+function undoStatue() {
+  dropGhost(); G.stPending = null;
+  if (G.moving) { endMove(); return; }
+  paintTray();
+}
+
+/* step 10: moving one of your own statues instead of shooting */
+function startMove() {
+  if (!G.R || !canAim() || G.R.isAiTurn() || G.statuesPlacing) return;
+  G.moving = { index: null };
+  G.stPending = null;
+  document.body.classList.add('statuing');
+  $('statueTray').hidden = false;
+  paintTray();
+}
+function endMove() {
+  if (G.moving && G.moving.index != null && G.statueMeshes[G.moving.index]) G.statueMeshes[G.moving.index].visible = true;
+  G.moving = null; G.moveDrag = null; G.stPending = null; dropGhost();
+  document.body.classList.remove('statuing');
+  $('statueTray').hidden = true;
+}
+
+/** The tray's tiles and buttons, and the drag onto the dirt (pointer capture, so a finger can leave the tile). */
+function attachStatues(canvas) {
+  const tiles = $('stTiles');
+  for (const shape of SHAPE_ORDER) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.id = 'st-' + shape; b.className = 'stTile';
+    b.textContent = SHAPES[shape].name;
+    b.addEventListener('pointerdown', (e) => {
+      if (!G.statuesPlacing || G.statuesPlacing.placed % 2 !== 0) return;
+      e.preventDefault();
+      try { b.setPointerCapture(e.pointerId); } catch (err) { }
+      dropGhost(); G.stPending = null;
+      G.stDrag = { id: e.pointerId, shape, last: null };
+    });
+    b.addEventListener('pointermove', (e) => { if (G.stDrag && G.stDrag.id === e.pointerId) G.stDrag.last = ghostAt(G.stDrag.shape, e.clientX, e.clientY); });
+    const lift = (e) => {
+      if (!G.stDrag || G.stDrag.id !== e.pointerId) return;
+      const last = e.type === 'pointercancel' ? null : ghostAt(G.stDrag.shape, e.clientX, e.clientY);
+      G.stDrag = null;
+      // ⛔ NOTHING IS PLACED BY A TAP: only a drag that lifts on an allowed spot leaves a statue, and only Confirm keeps it
+      if (last && last.ok) { G.stPending = last; $('stNot').hidden = true; }
+      else dropGhost();
+      paintTray();
+    };
+    b.addEventListener('pointerup', lift);
+    b.addEventListener('pointercancel', lift);
+    tiles.appendChild(b);
+  }
+  $('stConfirm').addEventListener('click', confirmStatue);
+  $('stUndo').addEventListener('click', undoStatue);
+  $('moveStatue').addEventListener('click', startMove);
+  // a move starts on the statue itself: captured before the camera's orbit and the Knuckle see the finger
+  canvas.addEventListener('pointerdown', (e) => {
+    if (!G.moving || G.moveDrag != null || !G.R) return;
+    const cr = canvas.getBoundingClientRect(), x = e.clientX - cr.left, y = e.clientY - cr.top;
+    let best = -1, bd = 46;
+    G.R.statues().forEach((s, i) => {
+      if (s.owner !== 0) return;
+      const p = G.rig.project(s.x, SHAPES[s.shape].height * 0.5, s.z);
+      const d = Math.hypot(p.x - x, p.y - y);
+      if (p.visible && d < bd) { bd = d; best = i; }
+    });
+    if (best < 0) return;
+    e.stopImmediatePropagation();
+    G.moveDrag = e.pointerId; G.moving.index = best;
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { }
+    if (G.statueMeshes[best]) G.statueMeshes[best].visible = false;
+    G.stPending = null;
+    G.moving.last = ghostAt(G.R.statues()[best].shape, e.clientX, e.clientY);
+  }, { capture: true });
+  canvas.addEventListener('pointermove', (e) => {
+    if (G.moveDrag !== e.pointerId || !G.moving) return;
+    G.moving.last = ghostAt(G.R.statues()[G.moving.index].shape, e.clientX, e.clientY);
+  }, { capture: true });
+  const liftMove = (e) => {
+    if (G.moveDrag !== e.pointerId || !G.moving) return;
+    G.moveDrag = null;
+    const last = e.type === 'pointercancel' ? null : ghostAt(G.R.statues()[G.moving.index].shape, e.clientX, e.clientY);
+    if (last && last.ok) { G.stPending = last; $('stNot').hidden = true; }
+    else { dropGhost(); if (G.statueMeshes[G.moving.index]) G.statueMeshes[G.moving.index].visible = true; G.moving.index = null; }
+    paintTray();
+  };
+  canvas.addEventListener('pointerup', liftMove, { capture: true });
+  canvas.addEventListener('pointercancel', liftMove, { capture: true });
+}
+
 function endMatch() {
   if (!G.R) return;
   AUDIO.stopAll();
@@ -926,6 +1414,9 @@ function endMatch() {
   for (const [, mesh] of G.meshes) { G.stage.scene.remove(mesh); mesh.material.dispose(); }
   for (const [, sh] of G.shadows) { G.stage.scene.remove(sh); sh.material.dispose(); sh.geometry.dispose(); }
   G.meshes.clear(); G.shadows.clear(); G.prev.clear();
+  clearTimeout(G.stTimer); G.statuesPlacing = null; if (G.moving) endMove();
+  for (const m of G.statueMeshes || []) { G.stage.scene.remove(m); disposeStatueMesh(m); }
+  G.statueMeshes = []; dropGhost(); $('statueTray').hidden = true; document.body.classList.remove('statuing');
   G.R.dispose();
   G.R = null;
 }
@@ -956,6 +1447,7 @@ const canAim = () => !!G.R && !G.R.state.simulating && !G.R.isAiTurn()
  */
 function attachPlacement(canvas) {
   canvas.addEventListener('pointerdown', (e) => {
+    if (G.moving || G.statuesPlacing) return;
     if (!canAim() || G.R.state.phase !== 'place') return;
     const t = G.R.tawOnScreen(G.rig);
     const r = canvas.getBoundingClientRect();
@@ -972,6 +1464,53 @@ function attachPlacement(canvas) {
   const drop = (e) => { if (G.placeDrag === e.pointerId) G.placeDrag = null; };
   canvas.addEventListener('pointerup', drop);
   canvas.addEventListener('pointercancel', drop);
+}
+
+/**
+ * ⛔ THE SKYLINE IN THE WIDE SHOT (step 3). The brace camera looks 30 degrees down through a 28 degree lens, so
+ * the top of its frame is still 16 degrees under the horizon and the far sky (scene.js) is never in it. Astra's
+ * composition puts the lot's skyline across the top of the ring, so her panorama is laid there as a backdrop
+ * band behind the names: the strip from her lamp to the fence's foot, turned by the camera's bearing so the lamp
+ * stays in the world's north west (upper left of the first view), fading into the dirt. Only in the wide shot: when
+ * the camera leans in for the last few mibs (core/framing.js, under leanFull live) a target may stand up to 8
+ * percent from the top, so the band fades out; it also leaves for top down and low views, and on the low tier.
+ */
+const LOT_ROW0 = 236, LOT_ROWS = 210;   // panorama rows 236 to 446: the lamp, the skyline, the fence's foot
+function lotBand() {
+  const el = $('lot');
+  if (!el) return;
+  const st = G.rig.state;
+  const live = G.R ? G.R.liveMibs().length : 0;
+  const on = G.tier.name !== 'low' && !G.topDown && st.elevationDeg >= 18 && st.elevationDeg <= 60
+    && live >= ((G.tuning.render.ringerCam || {}).leanFull || 5);
+  if (el.classList.contains('on') !== on) el.classList.toggle('on', on);
+  if (!on) return;
+  if (!el.dataset.art) { el.style.backgroundImage = 'url(' + art('env/lot_panorama.webp') + ')'; el.dataset.art = '1'; }
+  /* ⛔ AND NEVER OVER THE FAR ARC. The far chalk is how a player sees a mib leave the ring, and in the wide
+     shot it runs just under the names: the band ends where the arc's nearest point to the top projects, so the
+     skyline stands behind the far chalk and never on it (a floor of 44 px, a ceiling of 19 percent) */
+  const vh = G.stage.height || 667;
+  const far = G.rig.project(-Math.sin(st.azimuth) * G.R.ringRadius, 0, -Math.cos(st.azimuth) * G.R.ringRadius);
+  const want = far.visible && far.y > 0 ? Math.max(44, Math.min(vh * 0.19, far.y - 2)) : vh * 0.19;
+  if (Math.abs((el.clientHeight || 0) - want) > 1.5) el.style.height = Math.round(want) + 'px';
+  const h = Math.round(want), w = el.clientWidth || 1, s = h / LOT_ROWS, pw = 1600 * s;
+  // the camera faces -(sin az, cos az); the panorama's u at that bearing (the sky's own mapping, scene.js)
+  const u = ((0.709 - (st.azimuth - Math.PI) / (2 * Math.PI)) % 1 + 1) % 1;
+  const x = Math.round(w / 2 - u * pw), y = Math.round(-LOT_ROW0 * s);
+  /* ⛔ never over the spyglass: its picture is in the canvas under every DOM layer, so the band takes a hole
+     the size of its frame and the skyline stands either side of the scope */
+  let hole = '';
+  const sg = G.spy && G.spy.on ? $('spyglass') : null;
+  if (sg && !sg.hidden) {
+    const a = el.getBoundingClientRect(), b = sg.getBoundingClientRect();
+    if (b.top < a.bottom) {
+      const L = Math.round(b.left - a.left), T = Math.round(b.top - a.top), Rr = Math.round(b.right - a.left), B = Math.round(b.bottom - a.top);
+      hole = 'polygon(evenodd,0 0,100% 0,100% 100%,0 100%,0 0,' + L + 'px ' + T + 'px,' + Rr + 'px ' + T + 'px,' + Rr + 'px ' + B + 'px,' + L + 'px ' + B + 'px,' + L + 'px ' + T + 'px)';
+    }
+  }
+  if (el.dataset.hole !== hole) { el.dataset.hole = hole; el.style.clipPath = hole || 'none'; }
+  const key = x + ',' + y + ',' + Math.round(pw);
+  if (el.dataset.at !== key) { el.dataset.at = key; el.style.backgroundSize = Math.round(pw) + 'px auto'; el.style.backgroundPosition = x + 'px ' + y + 'px'; }
 }
 
 /** The point on the ground plane under a CSS pixel, or null above the horizon. */
@@ -1048,15 +1587,17 @@ function onBrace(st) {
      and swallowed the thing you are actually looking at. It is scaled from the
      grab radius now, so at a full brace the ring sits just outside your thumb. */
   const px = (t.grabR || t.r * 1.6) * (0.70 + st.coneDeg * 0.16);
+  // Astra's reticle draws its ring at 27 of 96: the box is sized so the ring stands where the drawn one did
+  const S = px * 2 / 0.5625;
   ret.hidden = false;
   // a brace is the player saying they have read it: the guidance line and any toast go the
   // moment a thumb goes down, and come back when it lifts
   $('toast').hidden = true; $('say').hidden = true;
-  ret.style.left = (t.x - px) + 'px';
-  ret.style.top = (t.y - px) + 'px';
-  ret.style.width = ret.style.height = (px * 2) + 'px';
-  ret.style.borderColor = st.settle01 > 0.98 ? 'rgba(200,168,75,.95)' : 'rgba(232,220,200,.55)';
-  ret.style.borderWidth = st.settle01 > 0.98 ? '2px' : '1px';
+  ret.style.left = (t.x - S / 2) + 'px';
+  ret.style.top = (t.y - S / 2) + 'px';
+  ret.style.width = ret.style.height = S + 'px';
+  // settling (her broken ring) until the hold has settled, then settled (the full ring and its tick)
+  ret.classList.toggle('settled', st.settle01 > 0.98);
   // the warming shimmer, while the taw is being rubbed
   if (st.warmed && !G.warming) { G.warming = true; AUDIO.startWarming(); }
   else if (!st.warmed && G.warming) { G.warming = false; AUDIO.stopWarming(); }
@@ -1240,7 +1781,10 @@ function showSlip() {
   setTimeout(() => { $('slipCard').hidden = true; }, 1800);
 }
 function showPower(p) { $('power').hidden = false; $('powerFill').style.width = (p * 100).toFixed(0) + '%'; }
-function say(s) { G.said = s; $('say').textContent = s; }
+/* ⛔ THE VOICE BELONGS TO A LIVE MATCH (Astra, 4 Nov, k1-ceremony: "too soft to count" over the end of
+   the match). Once the match is over a late line from the field, a Knuckle cancel or the AI, is dropped;
+   the clearing call still clears, and an empty line hides its plate (#say:empty). */
+function say(s) { if (s && G.over && G.screen !== 'calib') return; G.said = s; $('say').textContent = s; }
 
 function showToast(id) {
   const t = RINGER_TECHNIQUES[id];
@@ -1255,6 +1799,11 @@ function updateHud() {
   if (!G.R) return;
   const M = G.R.match;
   if (M.players.length < 2) return;        // calibration is a world of one, and it has no HUD
+  // step 10: Move a statue, only on your own turn with nothing in flight and a statue of yours on the dirt
+  const ks = !G.usePullback && G.knuckle ? G.knuckle.state() : null;
+  const canMove = !!(G.R.statues().some(st => st.owner === 0) && canAim() && !G.R.isAiTurn()
+    && !G.moving && !G.statuesPlacing && !(ks && ks.bracing));
+  if ($('moveStatue').hidden === canMove) $('moveStatue').hidden = !canMove;
   for (const [el, i] of [[$('sockMe'), 0], [$('sockThem'), 1]]) {
     const have = M.players[i].pocketed.length;
     if (el.childElementCount !== M.toWin) {
@@ -1340,6 +1889,14 @@ function paintRansomClock() {
 }
 
 function finishMatch(s) {
+  G.over = true;   // from here no line from the field reaches the voice (say)
+  // the share card's two sides, taken before the pot settles and the stakes are cleared (step 7)
+  G.lastCard = {
+    mine: G.stake.map(m => m.id), theirs: G.theirStake.map(m => m.id),
+    myTaw: G.R.taws[0] && G.R.taws[0].entry ? G.R.taws[0].entry.id : null,
+    theirTaw: G.R.taws[1] && G.R.taws[1].entry ? G.R.taws[1].entry.id : null,
+    opp: (G.R.match.players[1] || {}).name || 'Dusty Coyle'
+  };
   const won = s.winner === 0;
   // the opponent's name comes from the match, so league two does not still say Dusty
   const oppName = (G.R.match.players[1] || {}).name || 'Dusty Coyle';
@@ -1349,6 +1906,9 @@ function finishMatch(s) {
   const names = G.R.state.techniques.map(id => (RINGER_TECHNIQUES[id] || {}).name).filter(Boolean);
   /* the pot settles here, and it is the only place a staked marble changes hands */
   const pot = potUp() ? settle(won ? 0 : 1) : { won: [], lost: [], returned: [] };
+  // ⛔ provenance is written only AFTER the result transaction above has moved the marbles
+  PROV.record(pot.won.map(m => PROV.event('won', m.uid, { opp: oppName, match: G.matchId, why: 'keepsies' }))
+    .concat(pot.lost.map(m => PROV.event('lost', m.uid, { opp: oppName, match: G.matchId, why: 'keepsies' }))));
   G.save = SAVE.load();
   G.stake = [];
   // an inventory item carries an id, not a name: the name lives in the catalog,
@@ -1567,7 +2127,7 @@ function frame(now) {
       G.R.frameShot(G.rig, true);
       G.rig.update(1 / 60);
     }
-    if (G.screen === 'match' && !G.R.state.simulating && G.R.state.phase !== 'over'
+    if (G.screen === 'match' && !G.R.state.simulating && G.R.state.phase !== 'over' && !G.statuesPlacing && !G.moving
       && G.R.isAiTurn() && !G.R.state.aiThinking) {
       say(G.R.match.players[G.R.match.turn].name + ' is lining one up.');
       G.lastShooter = 1;
@@ -1592,7 +2152,18 @@ function frame(now) {
        under the message bubble: the one view that exists to show where the
        marbles are hid them. Centred between the shooter and the cross, from a
        little higher, both are in the clear middle of the frame. */
-    if (G.topDown) {
+    /* STATUES (steps 9 and 10): placing or moving looks straight down on the WHOLE ring from the player's side,
+       centred on the cross, far enough that the ring's height fills the frame above the tray */
+    if (G.statuesPlacing || G.moving) {
+      /* the far chalk at the top of the screen and the near chalk at the tray's edge (the top three quarters):
+         at 80 degrees the view spans 0.249 d each side of the look point, so d = 5.35 (R + m), and the look point
+         sits toward the player by (R + m) minus an eighth of that span */
+      const az = G.rig.state.azimuth, Rm = G.R.ringRadius + 0.05, d = 5.35 * Rm, off = Rm - 0.1245 * d;
+      G.rig.setTarget(Math.sin(az) * off, 0.012, Math.cos(az) * off);
+      G.rig.state.elevationDeg = 80;
+      G.rig.state.wantDistance = d;
+    }
+    else if (G.topDown) {
       const t = G.R.shooterTaw();
       const tp = positionOf(G.R.world, t.id);
       const live = G.R.liveMibs();
@@ -1604,7 +2175,7 @@ function frame(now) {
       G.rig.state.wantDistance = G.R.ringRadius * 2.5;
     }
     else if (G.rig.state.elevationDeg > 60) G.rig.state.elevationDeg = 33;
-    if (G.screen === 'match') updateHud();
+    if (G.screen === 'match') { updateHud(); lotBand(); }
     // a thumb held perfectly still sends no pointermove, and the settle is a
     // clock: read it every frame so the reticle tightens whether or not the
     // browser has anything to say
@@ -1694,6 +2265,27 @@ function installDevHook() {
     inventory: () => G.save.inventory.length,
     wallet: () => G.econ.snapshot(),
     pouch: (kind) => openPouch(kind),
+    /* STATUES (m2): the record, the placement state, and where a spot on the dirt is on the screen */
+    statues: () => (G.R ? G.R.statues().map(s => Object.assign({}, s)) : []),
+    placing: () => (G.statuesPlacing ? { placed: G.statuesPlacing.placed, pending: G.stPending ? Object.assign({}, G.stPending) : null } : null),
+    moving: () => (G.moving ? { index: G.moving.index, pending: G.stPending ? Object.assign({}, G.stPending) : null } : null),
+    spotsFor: (shape) => (G.R ? legalSpots(shape, G.R.ringRadius, G.R.statues(), G.R.lay) : []),
+    // the half foot grid point under a screen point, which is where a statue must land when a finger lifts there
+    groundAt: (cx, cy) => {
+      const r = G.stage.renderer.domElement.getBoundingClientRect(), gp = groundPoint(cx - r.left, cy - r.top);
+      return gp ? snapGrid(gp.x, gp.z) : null;
+    },
+    projectGround: (x, z, y) => {
+      const p = G.rig.project(x, y || 0, z), r = G.stage.renderer.domElement.getBoundingClientRect();
+      return { x: r.left + p.x, y: r.top + p.y, visible: p.visible };
+    },
+    shareCard: async (id) => {
+      const e = G.catalog.marbles.find(m => m.id === id);
+      if (!e) return null;
+      const item = G.save.inventory.find(i => i.id === id) || null;
+      return (await buildMarbleCard(e, item)).toDataURL('image/png');
+    },
+    matchCard: async () => { const c = await buildMatchCard(); return c ? c.toDataURL('image/png') : null; },
     grantSunbeams: (n) => { G.econ.earn(n, 'a gate said so'); buildPouches(); return G.econ.balance(); },
     // put one named marble in the inventory, so a gate can lose something worth
     // ransoming without playing until the pouches hand it one

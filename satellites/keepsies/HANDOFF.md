@@ -4,6 +4,29 @@
 
 ## Where we are
 
+**2026-11-05, Keepsies m2 (Stephen's statues, `KEEPSIES_BUILD_PLAN.md` steps 9 to 11, Opus): stamp `20261105b`,
+deploy script `/home/codespace/kp-drafts/deploy-keepsies-m2.sh` (it carries m1; it accepts main before or after
+the m1 script).** STATUES is a Ringer house rule, off by default: `core/statues.js` (pure: four shapes as collider
+parts, a half foot snap, legality a foot clear of the lay and the line, the AI's seeded placement, `blocks`),
+`core/physics.js addStatue` (fixed bodies, never surfaces), `render/statues.js` (stone and a chalk footprint), the
+players place two each by drag before the lag in a whole ring view (Not here in words, Confirm and Undo, nothing
+by a tap), and a turn may move one of your own up to two feet instead of a shot (`rules-ringer moveStatueTurn`);
+Dusty places by his rule and moves his own when it blocks his best shot. The list rides in the setup record and
+`sim/scenarios/ringer_statues.json` replays it. The front door's `more` run places and moves by real touches and
+checks each landed under the lifted finger. Real figures for the statues are a Meshy lane (DECISIONS 1 and 2).
+
+**2026-11-04, Keepsies m1 (Astra's pack v1, `KEEPSIES_BUILD_PLAN.md` steps 0 to 8, Opus): the lot and the
+people, stamp `20261105a`, on add-sproing-jumper, deploy script `/home/codespace/kp-drafts/deploy-keepsies-m1.sh`
+for Stephen.** The four defects fixed (THE UNDEFINED chip, the camera's floor guard, the stale field line, the
+filter strip); Astra's runtime art in `assets/` through `render/art.js` (`ART_V`, `ic()`, the one icon sprite);
+the lot (her dirt, chalk decals sized to the match, one warm lamp at the north west, the panorama sky and a
+skyline band behind the names in the wide shot, because the brace camera never reaches the horizon); Dusty's tin
+and cloth and the faces (`render/portraits.js`); her HUD plates and the tier frames, marks and words; pouches as
+objects (one save transaction a buy, then the reveal), the case (the first rare is showcased and never staked,
+DESIGN 17), provenance (save v2, `meta/provenance.js`, append only); the marble and match share cards
+(`render/share.js`). Shots: `KP_QUALITY=high node tools/shots.mjs` draws what a Pixel draws (this box detects low).
+The tool servers now serve svg. m2 (Stephen's statues) is next; the 2026-09-04 notes below still hold.
+
 **2026-09-04, after Fable's review. K0 done. K1 done but for pass and play, and PLAYED with real pointer
 events for the first time (see `PLAYTESTS.md`). K2 done but for art: catalog, looks, collection, economy,
 pouches, the keepsies loop, the ceremonies, the ransom window, progression and the first four minutes.

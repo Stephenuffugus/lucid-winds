@@ -24,8 +24,8 @@
  * carries `touch-action: none` and `user-select: none`, and the brace takes
  * setPointerCapture, or the snap never arrives at all.
  */
-import { clamp, len2, DEG } from '../core/dmath.js?v=20260905a';
-import { makeAim } from '../core/snap.js?v=20260905a';
+import { clamp, len2, DEG } from '../core/dmath.js?v=20261105b';
+import { makeAim } from '../core/snap.js?v=20261105b';
 
 /** A CSS pixel is about 0.264 mm of real glass, and that is already device
  *  independent: devicePixelRatio would count the same thing twice. */

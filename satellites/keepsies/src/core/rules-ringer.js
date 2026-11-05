@@ -11,7 +11,7 @@
  * win, and 7 + 7 is fourteen. Somebody gets there. The only way a game ends
  * without a winner is abandonment, which the pot returns from.
  */
-import { clamp, sin, cos } from './dmath.js?v=20260905a';
+import { clamp, sin, cos } from './dmath.js?v=20261105b';
 
 export const PHASE = { LAG: 'lag', TURN: 'turn', SHOT: 'shot', RESOLVE: 'resolve', OVER: 'over' };
 
@@ -242,6 +242,16 @@ function passTurn(M) {
   M.phase = PHASE.TURN;
   for (const p of M.players) p.placedThisTurn = false;
   say(M, 'turnPassed', { player: M.turn });
+}
+
+/**
+ * A turn spent moving one of your own statues instead of shooting (STATUES, step 10): nothing was shot, so
+ * nothing is pocketed, and the turn passes as after a miss.
+ */
+export function moveStatueTurn(M, info) {
+  if (M.phase !== PHASE.TURN) throw new Error('ringer: a statue moved out of phase (' + M.phase + ')');
+  say(M, 'statueMoved', Object.assign({ player: M.turn }, info || {}));
+  passTurn(M);
 }
 
 /** Abandon. The pot returns; nobody wins. */

@@ -278,7 +278,8 @@ export function makeContactShadow(radius) {
     // right under the body, then a long soft falloff, and pushed away from the
     // key light instead of sitting concentric.
     fragmentShader: 'uniform float uStrength; varying vec2 vUv;'
-      + 'void main(){ vec2 q = vUv - vec2(0.44, 0.40);'
+      // the lamp is at the north west (-x, -z), so the shadow leans to +x and +z (v up is -z on this plane)
+      + 'void main(){ vec2 q = vUv - vec2(0.56, 0.40);'
       + ' float d = length(q) * 2.0;'
       + ' float core = 1.0 - smoothstep(0.0, 0.34, d);'
       + ' float soft = 1.0 - smoothstep(0.10, 1.0, d);'

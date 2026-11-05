@@ -18,8 +18,8 @@
  * a player cannot understand is indistinguishable from a bug, so every one of
  * them says which rule it was and what would fix it.
  */
-import * as SAVE from '../meta/save.js?v=20260905a';
-import { TIER_ORDER, tierRank } from '../meta/tiers.js?v=20260905a';
+import * as SAVE from '../meta/save.js?v=20261105b';
+import { TIER_ORDER, tierRank } from '../meta/tiers.js?v=20261105b';
 
 /**
  * May these two stakes be played against each other?
@@ -88,6 +88,8 @@ export function escrow(mine, theirs, opponent) {
     if (s.pot && s.pot.inMatch) return;                       // a pot is already up
     const have = new Set(s.inventory.map(i => i.uid));
     for (const uid of uids) if (!have.has(uid)) return;        // staking what you do not own
+    const cased = new Set(s.showcase || []);
+    for (const uid of uids) if (cased.has(uid)) return;        // the case is safe (DESIGN 17)
     const taken = [];
     s.inventory = s.inventory.filter((i) => {
       if (uids.indexOf(i.uid) < 0) return true;
