@@ -16,8 +16,10 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 - [ ] Play a room, Play it again, and share one to a friend on the Pixel (you)
 - [x] Zoom in the top right corner, the Darkroom a big title button, the start pick retired (Opus: sb-m2-9 built 5 Nov)
 - [x] Run the sb-m2-9 deploy line (you: LIVE 5 Nov, main 616ba530e)
-- [ ] Harder rooms: pick the tuning step and which new challenges (you, then Opus; Astra draws the new pieces)
-- [ ] Start Opus on a fresh box with docs/briefs/opus-kickoff-nov05/PROMPT.txt (Sunforge m1, Tomato Man m1 and m2, then Shutterbug harder rooms, then FF m2) (you)
+- [x] Harder rooms step 1, the tuning (Opus: sb-m2-10 stamped 5 Nov; free play caps 7 and 2, houses about 7 by room 4, fast moths from room 2)
+- [x] Run the sb-m2-10 deploy line (you: LIVE 5 Nov, main 24f5f6e45, index 7dd6ca7c784ffb03 on both hosts)
+- [ ] Harder rooms step 2: two of conveyor, crumbling shelf, swinging lamp, window gust; also a free play floor and more traps a room, both found to need code (you pick, then Opus; Astra draws the new pieces)
+- [x] Start Opus on a fresh box with docs/briefs/opus-kickoff-nov05/PROMPT.txt (Sunforge m1, Tomato Man m1 and m2, then Shutterbug harder rooms, then FF m2) (you: 5 Nov; Opus built all five that night)
 - [ ] Pick from the Pixel Petri proposal, docs/briefs/pixel-petri/EXPANSION-PROPOSAL-NOV05.md: which expansion first, free everywhere or packs first on Play and Pi, the commercial's timing, Penny's pack (you)
 - [x] Pick the Flatulence Fighter redesign below (you: 5 Nov, "sure")
 
@@ -49,7 +51,10 @@ there subtly"): the photo stays faint behind the room (m2 DECISION 1), the close
 - [ ] The Play listing: real captures in Astra's six frames, the Play build, the Console upload, assetlinks (Opus, then you)
 
 ## Flatulence Fighter (m1 live)
-- [ ] Run FLATULENCE_FIGHTER_M2_BUILD_PLAN.md (the four pads, written 5 Nov) in a fresh session (Opus); its six DECISIONS are his
+- [x] Run FLATULENCE_FIGHTER_M2_BUILD_PLAN.md (the four pads) (Opus: built 5 Nov, 89176521d, the six DECISIONS at their defaults)
+- [ ] Run the FF m2 deploy line `! bash /home/codespace/ff-drafts/deploy-ff-m2.sh`, then play it on the Pixel flat on a table (you)
+- [ ] Drop docs/briefs/flatulence-fighter/round2/ into Drive Astra/Flatulence Fighter/Round 2 and give Astra its KICKOFF-PROMPT.txt (you)
+- [ ] The six DECISIONS in FLATULENCE_FIGHTER_M2_BUILD_PLAN.md: the call lists, a miss as a fidget or a strike, the new medals' names, a Classic mode or not, the table card's line, landscape or not (you)
 His verdict 5 Nov: no explanation of the objective or of what to touch when and why; lean and the pop ups make no
 sense to him; why only two HOLD buttons. His idea: two lower pads are the cheeks, two upper pads the hands, and you
 touch and hold the ones it tells you when it tells you; suggest setting the phone on a table to use fingers of both hands.
@@ -78,15 +83,17 @@ touch and hold the ones it tells you when it tells you; suggest setting the phon
 
 ## Sunforge (m1 planned, 5 Nov)
 - [x] m1 from SUNFORGE_BUILD_PLAN.md: the Sunbreaker skin, the title that shows the game, the almost ring and the crush, SLAM's states, the gyre on the share card, the guided first ring, pause (Opus: built 5 Nov, deploy line in START-HERE)
-- [ ] Run the Sunforge deploy line, then the Pixel pass (you)
+- [x] Run the Sunforge deploy line (you: LIVE 5 Nov, main 83528f0ec, index d4ec258c1a49)
+- [ ] The Pixel pass on Sunforge m1 (you)
 - [ ] The 6 DECISIONS in the plan (pause, fonts, the guided first ring, overload, the slam sound, the name) (you)
 - [ ] Pick one or two from the m2 list: SLAM with a direction by swipe, chapter skies, the hold outline, overload, a weekly gyre, the store listing (you)
 - [ ] The store kit, if the listing is a go: real captures in Astra's six frames (Opus, then you)
 
 ## Tomato Man (m1 and m2 planned, 5 Nov)
-- [ ] m1 from TOMATO_MAN_BUILD_PLAN.md, built on branch sunstruck of Stephenuffugus/Tomato_Man: the hero, the shade union mask, the worlds and casters, the postcards, teach by crossing one shadow, the burn and the result card (Opus)
-- [ ] Run the Tomato Man deploy line (it pushes Tomato_Man main, re vendors, pushes ours), then the Pixel pass (you)
-- [ ] m2 from pack v2: eight bearings, wilt and tilt states, the Angry Sun sequences, the cue marks (Opus)
+- [x] m1 from TOMATO_MAN_BUILD_PLAN.md, built on branch sunstruck of Stephenuffugus/Tomato_Man (Opus: built 5 Nov): the hero, the shade union mask, the worlds and casters, the postcards, teach by crossing one shadow, the burn and the result card (Opus)
+- [x] Run the Tomato Man deploy line (you: m1 and m2 LIVE 5 Nov, main 315687db3, Tomato_Man main 58dbdeae, index 8de3a5338c39 on both lucidwinds.com and the Pages copy)
+- [ ] The Pixel pass on Tomato Man (you)
+- [x] m2 from pack v2: eight bearings, wilt and tilt states, the Angry Sun sequences, the cue marks (Opus: built 5 Nov)
 - [ ] The 7 DECISIONS: the planet tomato's passing shadow, pass the phone races, hats that do a tiny thing, the How to Play wall, the sun's eyes, the listing and Penny's credit, the Pages mirror (you)
 - [ ] Astra round 2 after your yes on the passing shadow (the encounter frames) and the thirteen produce in eight bearings (Astra)
 
