@@ -428,6 +428,8 @@
   .medal .mlock .ic{ width:18px; height:18px;}
   .medal .mprog{ font-size:.68rem; color:var(--sage-2); margin-top:3px; display:block; font-weight:600; font-variant-numeric:tabular-nums;}
   .medal .mn{ font-size:.68rem; font-weight:700; color:var(--sage-2); letter-spacing:.03em; margin-top:2px; display:block;}
+  .medal .mret{ display:block; margin-top:3px; font-size:.62rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#8a5a12;}
+  .medal.retired{ border-style:dotted;}
   .medal .mdsc{ font-size:.7rem; color:#5a5342; margin-top:2px; display:block; line-height:1.2;}
 
   #toasts{ position:absolute; left:0; right:0; bottom:calc(20px + env(safe-area-inset-bottom,0px)); z-index:40; display:flex; flex-direction:column; align-items:center; gap:6px; pointer-events:none;}
@@ -580,6 +582,9 @@
 <symbol id="i-call_bottle" viewBox="0 0 48 48"><path d="M21 4H27 M19 12H29V16Q34 18 34 24V40Q34 44 30 44H18Q14 44 14 40V24Q14 18 19 16Z M22 4L20 12 M26 4L28 12 M14 28H21 M14 34H19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-call_mobile" viewBox="0 0 48 48"><path d="M24 3V9 M7 9H41 M10 9V18 M24 9V24 M38 9V18 M6 22A4 4 0 1 0 14 22A4 4 0 1 0 6 22 M34 22A4 4 0 1 0 42 22A4 4 0 1 0 34 22 M19 28Q24 38 30 31Q24 33 19 28Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 <symbol id="i-table_card" viewBox="0 0 240 150"><path d="M34 62H206L236 138H4Z" fill="var(--paper-3,#c7bd9c)" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M4 138H236V145H4Z" fill="currentColor" opacity=".35"/><path d="M92 68H148L157 128H83Z" fill="var(--deep,#1c2620)" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M93 92H118V106H91Z M122 92H147L149 106H122Z M90.5 109H118V124H88.5Z M122 109H149.5L151.5 124H122Z" fill="var(--paper,#e7e0cb)" opacity=".92"/><path d="M36 150Q62 130 102 117 M36 150Q70 118 105 99 M204 150Q178 130 138 117 M204 150Q170 118 135 99" fill="none" stroke="var(--coat,#37493d)" stroke-width="7" stroke-linecap="round"/><g fill="var(--accent,#e0902f)"><ellipse cx="104" cy="99" rx="5" ry="3.6"/><ellipse cx="136" cy="99" rx="5" ry="3.6"/><ellipse cx="103" cy="117" rx="5" ry="3.6"/><ellipse cx="137" cy="117" rx="5" ry="3.6"/></g></symbol>
+<symbol id="i-medal_helping_hands" viewBox="0 0 96 100"><circle cx="48" cy="45" r="35" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 72L19 93 35 85 45 96 47 80 M72 72L77 93 61 85 51 96 49 80" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /><g transform="translate(24 21)"><path d="M15 27V12Q15 9 17.5 9Q20 9 20 12V22 M20 21V8Q20 5 22.5 5Q25 5 25 8V21 M25 21V9Q25 6 27.5 6Q30 6 30 9V22 M30 22V14Q30 11 32.5 11Q35 11 35 14V28Q35 41 25 42Q17 42 13 36L8 28Q6 25 9 24Q11 23 13 26L15 29" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g></symbol>
+<symbol id="i-medal_twister" viewBox="0 0 96 100"><circle cx="48" cy="45" r="35" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 72L19 93 35 85 45 96 47 80 M72 72L77 93 61 85 51 96 49 80" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /><g transform="translate(24 21)"><path d="M8 8H40V40H8Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><g fill="currentColor"><circle cx="17" cy="17" r="4.5"/><circle cx="31" cy="17" r="4.5"/><circle cx="17" cy="31" r="4.5"/><circle cx="31" cy="31" r="4.5"/></g></g></symbol>
+<symbol id="i-medal_steady_hands" viewBox="0 0 96 100"><circle cx="48" cy="45" r="35" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 72L19 93 35 85 45 96 47 80 M72 72L77 93 61 85 51 96 49 80" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /><g transform="translate(24 21)"><path d="M24 6Q20 10 19 18L15 30Q13 36 18 40H24 M24 6Q28 10 29 18L33 30Q35 36 30 40H24 M24 9V40 M14 44H34" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g></symbol>
 </svg>
 <!-- ff-calls end -->
 <div id="app">
@@ -820,6 +825,7 @@
       <div class="rule"></div>
       <div class="stat-row"><span>Composure held</span><b id="overTime">0s</b></div>
       <div class="stat-row"><span>Best vent combo</span><b id="overCombo">×1.0</b></div>
+      <div class="stat-row"><span>Hand calls held</span><b id="overCalls">0</b></div>
       <div class="stat-row"><span>Final score</span><b id="overScore">0</b></div>
       <div class="stat-row"><span>Best (<span id="overModeName">normal</span>)</span><b id="overBest">0</b></div>
       <div class="stat-row"><span>Sunbeams earned <svg class="ic" aria-hidden="true" focusable="false"><use href="#i-sunbeam"/></svg></span><b id="overSun">0</b></div>
@@ -967,7 +973,9 @@
     sceneDur:22, introDur:1.9,
   };
   const MODES={
-    easy  :{riseMul:0.80, coverGapMul:0.80, coverDurMul:1.25, leakGapMul:1.6, strainFillMul:0.85, leakMul:0.7, sipCdMul:0.75, breathDrainMul:0.80, wobbleDriftMul:0.65, callWaitMul:1.3, callGapMul:1.15, overlapAct:3, fourAct:5, coverCap:80},
+    // m2 step 4: Easy is a real first game: a slower rise, longer covers, longer windows for the hand calls, calls further
+    // apart, nothing overlaps before Act IV and both hands are not called before Act VI
+    easy  :{riseMul:0.65, coverGapMul:0.80, coverDurMul:1.45, leakGapMul:1.6, strainFillMul:0.85, leakMul:0.7, sipCdMul:0.75, breathDrainMul:0.80, wobbleDriftMul:0.65, callWaitMul:1.6, callGapMul:1.3, overlapAct:4, fourAct:6, coverCap:78},
     normal:{riseMul:1.00, coverGapMul:1.00, coverDurMul:1.00, leakGapMul:1.0, strainFillMul:1.00, leakMul:1.0, sipCdMul:1.00, breathDrainMul:1.00, wobbleDriftMul:1.00, callWaitMul:1.0, callGapMul:1.0, overlapAct:3, fourAct:5, coverCap:88},
     panic :{riseMul:1.32, coverGapMul:1.28, coverDurMul:0.85, leakGapMul:0.6, strainFillMul:1.15, leakMul:1.4, sipCdMul:1.25, breathDrainMul:1.25, wobbleDriftMul:1.45, callWaitMul:0.8, callGapMul:0.85, overlapAct:3, fourAct:5, coverCap:96},
   };
@@ -978,19 +986,24 @@
     {id:"c60",     ico:"medal_iron_cheeks", name:"Iron Cheeks",   desc:"Hold for 60s.",                 check:r=>r.time>=60},
     {id:"c120",    ico:"medal_marathon", name:"Marathon",      desc:"Hold for 2 minutes.",           check:r=>r.time>=120},
     {id:"perf3",   ico:"medal_perfectionist", name:"Perfectionist", desc:"3 Perfect vents in one ordeal.",check:r=>r.perfects>=3},
-    {id:"plug10",  ico:"medal_surgeon", name:"Surgeon",       desc:"Plug 10 leaks in one ordeal.",  check:r=>r.plugs>=10},
+    {id:"plug10", retired:true,  ico:"medal_surgeon", name:"Surgeon",       desc:"Plug 10 leaks in one ordeal.",  check:r=>r.plugs>=10},
     {id:"combo3",  ico:"medal_cool_customer", name:"Cool Customer", desc:"Reach a ×3 combo.",             check:r=>comboMultFrom(r.maxCombo)>=3},
     {id:"combo5",  ico:"medal_untouchable", name:"Untouchable",   desc:"Reach the ×5 combo.",           check:r=>comboMultFrom(r.maxCombo)>=5},
     {id:"act5",    ico:"medal_stagehand", name:"Stagehand",     desc:"Reach Act V.",                  check:r=>r.scenes>=5},
     {id:"act8",    ico:"medal_leading_role", name:"Leading Role",  desc:"Reach Act VIII.",               check:r=>r.scenes>=8},
     {id:"panic45", ico:"medal_panic_room", name:"Panic Room",    desc:"Hold 45s on Panic.",            check:r=>r.mode==="panic"&&r.time>=45},
     {id:"allmodes",ico:"medal_method_actor", name:"Method Actor",  desc:"Play all three modes.",         check:(r,L)=>L.modes.length>=3},
-    {id:"improv",  ico:"medal_improviser", name:"Improviser",    desc:"Vent under 3 fake coughs in one ordeal.", check:r=>r.coughVents>=3},
-    {id:"fan",     ico:"medal_saved_by_the_fan", name:"Saved by the Fan", desc:"Waft away a strike.",        check:r=>r.wafts>=1},
-    {id:"hydrated",ico:"medal_hydrated", name:"Hydrated",      desc:"Sip 5 times in one ordeal.",    check:r=>r.sips>=5},
+    {id:"improv", retired:true,  ico:"medal_improviser", name:"Improviser",    desc:"Vent under 3 fake coughs in one ordeal.", check:r=>r.coughVents>=3},
+    {id:"fan", retired:true,     ico:"medal_saved_by_the_fan", name:"Saved by the Fan", desc:"Waft away a strike.",        check:r=>r.wafts>=1},
+    {id:"hydrated", retired:true,ico:"medal_hydrated", name:"Hydrated",      desc:"Sip 5 times in one ordeal.",    check:r=>r.sips>=5},
     {id:"daily3",  ico:"medal_a_regular", name:"A Regular",     desc:"Play 3 Daily Ordeals.",         check:(r,L)=>L.dailyPlays>=3},
     {id:"bow90",   ico:"medal_zen_master", name:"Zen Master",    desc:"Bow out after 90s in Zen Theater.", check:r=>r.playMode==="zen"&&r.time>=90},
-    {id:"cheek45", ico:"medal_one_cheek_wonder", name:"One Cheek Wonder", desc:"Hold 45s in One Cheek.",     check:r=>r.playMode==="cheek"&&r.time>=45},
+    {id:"cheek45", retired:true, ico:"medal_one_cheek_wonder", name:"One Cheek Wonder", desc:"Hold 45s in One Cheek.",     check:r=>r.playMode==="cheek"&&r.time>=45},
+    // m2 THE FOUR PADS (new ids; their names are DECISION 3 of the m2 plan). The five marked retired above keep their
+    // ids and stay earned and shown for whoever has them; their feats left play with m1's controls, so nobody wins them now
+    {id:"calls10", ico:"medal_helping_hands", name:"Helping Hands", desc:"Hold 10 hand calls in one ordeal.", check:r=>r.calls>=10},
+    {id:"four",    ico:"medal_twister", name:"Twister", desc:"Four fingers down at once.", check:r=>r.maxPads>=4},
+    {id:"cleanact",ico:"medal_steady_hands", name:"Steady Hands", desc:"A whole act of hand calls with no fidget.", check:r=>r.cleanActs>=1},
   ];
 
   // ---- Cosmetics (earn by play, known thresholds, purely visual) ----
@@ -998,8 +1011,8 @@
     {id:"everyman", ico:"wardrobe", name:"The Everyman", req:"Free", check:()=>true},
     {id:"gentleman",ico:"wardrobe", name:"The Gentleman", req:"10 min lifetime composure",
       check:Lc=>Lc.lifeTime>=600},
-    {id:"grandma",  ico:"wardrobe", name:"Grandma", req:"Plug 50 lifetime leaks",
-      check:Lc=>Lc.lifePlugs>=50},
+    {id:"grandma",  ico:"wardrobe", name:"Grandma", req:"Hold 50 lifetime hand calls",
+      check:Lc=>Lc.lifeCalls>=50||Lc.lifePlugs>=50},
     {id:"mime",     ico:"wardrobe", name:"The Mime", req:"3 day Daily streak",
       check:Lc=>Lc.bestStreak>=3},
     {id:"bulldog",  ico:"wardrobe", name:"The Bulldog", req:"Earn 8 medals",
@@ -1025,7 +1038,7 @@
             bestTime:"ff.l.besttime", modes:"ff.l.modes", medals:"ff.medals", tut:"ff.tutseen",
             daily:"ff.daily", bestStreak:"ff.l.beststreak", bestAct:"ff.l.bestact", bestScore:"ff.l.bestscore",
             playModes:"ff.l.playmodes", dailyPlays:"ff.l.dailyplays", save:"ff_save",
-            tut2:"ff.tut2seen" }; // m2: the lesson has been seen (a new key; m1's ff.tutseen is left as it is)
+            tut2:"ff.tut2seen", vents:"ff.l.vents", calls:"ff.l.calls", fidgets:"ff.l.fidgets", bestCalls:"ff.l.bestcalls", bestPads:"ff.l.bestpads" }; // m2: the lesson has been seen (a new key; m1's ff.tutseen is left as it is)
   const get=(k,d)=>store.get(k,d), set=(k,v)=>store.set(k,v);
 
   // ==================================================================
@@ -1535,10 +1548,11 @@
     const earned=new Set(get(L.medals,[]));
     const modes=new Set(get(L.modes,[])); modes.add(S.modeKey); set(L.modes,[...modes]);
     const r={ time:S.time, perfects:S.rp.perfects, plugs:S.rp.plugs, maxCombo:S.bestCombo, scenes:S.scene+1, mode:S.modeKey,
-      playMode:S.playMode, coughVents:S.rp.coughVents, wafts:S.rp.wafts, sips:S.rp.sips };
+      playMode:S.playMode, coughVents:S.rp.coughVents, wafts:S.rp.wafts, sips:S.rp.sips,
+      calls:S.rp.calls, maxPads:S.rp.maxPads, cleanActs:S.rp.cleanActs };
     const Lc={ modes:[...modes], dailyPlays:get(L.dailyPlays,0) };
     const newly=[];
-    MEDALS.forEach(m=>{ if(!earned.has(m.id) && m.check(r,Lc)){ earned.add(m.id); newly.push(m); } });
+    MEDALS.forEach(m=>{ if(!m.retired && !earned.has(m.id) && m.check(r,Lc)){ earned.add(m.id); newly.push(m); } });
     set(L.medals,[...earned]);
     return {newly, count:earned.size};
   }
@@ -1563,6 +1577,9 @@
     set(L.time, get(L.time,0)+S.time);
     set(L.plugs, get(L.plugs,0)+S.rp.plugs);
     set(L.perfects, get(L.perfects,0)+S.rp.perfects);
+    set(L.vents, get(L.vents,0)+S.rp.vents); set(L.calls, get(L.calls,0)+S.rp.calls); set(L.fidgets, get(L.fidgets,0)+S.rp.fidgets);
+    if(S.rp.calls>get(L.bestCalls,0)) set(L.bestCalls,S.rp.calls);
+    if(S.rp.maxPads>get(L.bestPads,0)) set(L.bestPads,S.rp.maxPads);
     if(S.bestCombo>get(L.bestCombo,0)) set(L.bestCombo,S.bestCombo);
     if(S.time>get(L.bestTime,0)) set(L.bestTime,S.time);
     if(S.scene+1>get(L.bestAct,0)) set(L.bestAct,S.scene+1);
@@ -1593,7 +1610,8 @@
     $("overModeName").textContent=S.playMode==="stage"?(DIFF_NAMES[S.modeKey]||S.modeKey):(MODE_NAMES[S.playMode]||S.playMode);
     $("overBest").textContent=Math.max(prevBest,finalScore);
     $("overSun").textContent=granted;
-    $("overMedals").textContent=med.count+"/"+MEDALS.length;
+    { const ea=new Set(get(L.medals,[])), sh=shownMedals(ea); $("overMedals").textContent=sh.filter(m=>ea.has(m.id)).length+"/"+sh.length; }
+    $("overCalls").textContent=S.rp.calls;
     $("bestBadgeWrap").classList.toggle("hidden", !isBest);
     if(S.playMode==="zen"){ $("overTitle").textContent="Curtain Call"; $("overSub").textContent="You bowed out with grace."; }
     else if(S.time<12){ $("overTitle").textContent="Exposed"; $("overSub").textContent="You lasted no time at all."; }
@@ -1678,7 +1696,7 @@
   function loadWard(){ const W=get(L.save,null);
     return W&&W.chars? W : {chars:["everyman"],pals:["matinee"],eqChar:"everyman",eqPal:"matinee"}; }
   function cosmeticCtx(){ const D=get(L.daily,{streak:0});
-    return { lifeTime:get(L.time,0), lifePlugs:get(L.plugs,0),
+    return { lifeTime:get(L.time,0), lifePlugs:get(L.plugs,0), lifeCalls:get(L.calls,0),
       bestStreak:Math.max(get(L.bestStreak,0), D.streak||0),
       medalCount:get(L.medals,[]).length, bestAct:get(L.bestAct,0), bestScore:get(L.bestScore,0),
       modes:get(L.modes,[]), playModes:get(L.playModes,[]) }; }
@@ -1706,7 +1724,7 @@
   function wardProgress(id,Lc){ const act=n=>n>0?"Act "+ROMAN[Math.min(n,ROMAN.length)-1]:"none yet";
     switch(id){
       case "gentleman": return fmtTime(Math.min(Lc.lifeTime,600))+" of 10m 0s";
-      case "grandma": return Math.min(Lc.lifePlugs,50)+" of 50";
+      case "grandma": return Math.min(Lc.lifeCalls,50)+" of 50";
       case "mime": return Math.min(Lc.bestStreak,3)+" of 3 days";
       case "bulldog": return Math.min(Lc.medalCount,8)+" of 8";
       case "midnight": return Lc.bestAct>0 ? "Best "+act(Lc.bestAct)+" of Act V" : "No act played yet";
@@ -1771,32 +1789,41 @@
       case "combo5": return "Best ×"+bc.toFixed(1)+" of ×5.0";
       case "allmodes": return Math.min(md,3)+" of 3 modes";
       case "daily3": return Math.min(dp,3)+" of 3 Dailies";
+      case "calls10": return "Best "+Math.min(get(L.bestCalls,0),10)+" of 10 in one ordeal";
+      case "four": return "Best "+Math.min(get(L.bestPads,0),4)+" of 4 at once";
     }
     return ""; }
+  // m2: the medals on show are every winnable one, and a retired one only where it was earned (marked Retired)
+  function shownMedals(earned){ return MEDALS.filter(m=>!m.retired||earned.has(m.id)); }
   function buildMedals(){ const earned=new Set(get(L.medals,[])); const g=$("medalGrid"); g.innerHTML="";
-    $("medalCount").textContent=MEDALS.filter(m=>earned.has(m.id)).length+" of "+MEDALS.length+" earned";
-    MEDALS.forEach(m=>{ const has=earned.has(m.id); const d=document.createElement("div"); d.className="medal"+(has?"":" locked");
+    const list=shownMedals(earned);
+    $("medalCount").textContent=list.filter(m=>earned.has(m.id)).length+" of "+list.length+" earned";
+    list.forEach(m=>{ const has=earned.has(m.id); const d=document.createElement("div"); d.className="medal"+(has?"":" locked")+(m.retired?" retired":"");
       const pr=has?"":medalProgress(m.id);
       d.innerHTML=(has?"":'<span class="mlock" role="img" aria-label="Locked">'+ic("wardrobe_lock")+'</span>')+'<span class="mi">'+ic(m.ico)+'</span><span class="mn">'+m.name+'</span><span class="mdsc">'+m.desc+'</span>'+
-        (pr?'<span class="mprog">'+pr+'</span>':""); g.appendChild(d); }); }
-  function buildStats(){ const rows=[
+        (m.retired?'<span class="mret">Retired, kept</span>':"")+(pr?'<span class="mprog">'+pr+'</span>':""); g.appendChild(d); }); }
+  function buildStats(){ const ea=new Set(get(L.medals,[])), sh=shownMedals(ea); const rows=[
       ["Ordeals faced", get(K.plays,0)],
       ["Longest composure", fmtTime(get(L.bestTime,0))],
       ["Total time held", fmtTime(get(L.time,0))],
-      ["Leaks plugged", get(L.plugs,0)],
+      ["Vents", get(L.vents,0)],
       ["Perfect vents", get(L.perfects,0)],
+      ["Hand calls held", get(L.calls,0)],
+      ["Fidgets", get(L.fidgets,0)],
       ["Best combo", "×"+comboMultFrom(get(L.bestCombo,0)).toFixed(1)],
       ["Sunbeams "+ic("sunbeam"), get(K.sun,0)],
-      ["Medals", get(L.medals,[]).length+"/"+MEDALS.length],
+      ["Medals", sh.filter(m=>ea.has(m.id)).length+"/"+sh.length],
       ["Best, Easy", get(K.best("easy"),0)],
       ["Best, Normal", get(K.best("normal"),0)],
       ["Best, Panic", get(K.best("panic"),0)],
       ["Best, Daily Ordeal", get(K.best("daily"),0)],
       ["Best, Zen Theater", get(K.best("zen"),0)],
-      ["Best, One Cheek", get(K.best("cheek"),0)],
       ["Daily streak record", get(L.bestStreak,0)],
       ["Deepest act", get(L.bestAct,0)>0?"Act "+ROMAN[Math.min(get(L.bestAct,0)-1,ROMAN.length-1)]:"None yet"],
     ];
+    // m1's records whose play is retired stay on the record where they exist
+    if(get(L.plugs,0)>0) rows.push(["Leaks plugged, retired", get(L.plugs,0)]);
+    if(get(K.best("cheek"),0)>0) rows.push(["Best, One Cheek, retired", get(K.best("cheek"),0)]);
     $("statsBody").innerHTML = rows.map(r=>'<div class="stat-row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>').join("");
     const ba=get(L.bestAct,0);
     $("statsLead").textContent="Best composure "+fmtTime(get(L.bestTime,0))+". Deepest act "+(ba>0?"Act "+ROMAN[Math.min(ba,ROMAN.length)-1]:"none yet")+"."; }
@@ -1901,7 +1928,8 @@
   // posture, breath, strain and slips, Cough, Sip, Waft and One Cheek are retired from play (their code is dormant).
   function tick(dt){
     if(S.inIntro){ S.introTime-=dt; if(S.introTime<=0){ S.inIntro=false; introScreen.classList.add("hidden"); armPads(); } render(); return; }
-    S.sceneTime-=dt; if(S.sceneTime<=0){ showIntro(S.scene+1); render(); return; }
+    // an act ends once its last cover has played out (the intertitle never cuts a vent in half)
+    S.sceneTime-=dt; if(S.sceneTime<=0&&!S.cover){ showIntro(S.scene+1); render(); return; }
     if(S.stun>0) S.stun-=dt;
 
     if(!S.cover && S.time>=S.nextCover) openCover();
