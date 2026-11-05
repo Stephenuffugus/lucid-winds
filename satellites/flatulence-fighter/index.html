@@ -1279,7 +1279,8 @@
     // m2: pressure never stops rising, so the next cover is booked before a player who vented at this one would burst
     // (the cap is the mode's coverCap percent of the gauge at the rate right now; a missed cover still bursts)
     const nextDur=Math.max(CFG.coverDurMin, CFG.coverDurBase-rampLevel()*0.12)*S.M.coverDurMul;
-    base=Math.min(base, Math.max(3, (S.M.coverCap||88)/(riseRate()*1.05)-nextDur));
+    const capGap=Math.max(3, (S.M.coverCap||88)/(riseRate()*1.05)-nextDur);
+    base=Math.min(base, capGap); S.coverSlack=capGap-base; // how far an early act's hand call may still push it back
     S.nextCover=S.time+base; coverBanner.classList.remove("show"); ventMark.style.display="none"; }
 
   // -- ability buttons --
@@ -1463,7 +1464,13 @@
     const wait=callWaitDur();
     if(early&&S.cover){ S.nextCallAt=S.coverUntil+CFG.callCoverClear; return; }
     const hold=rollHold();
-    if(early&&S.nextCover<S.time+wait+hold+CFG.callCoverClear){ S.nextCallAt=S.nextCover+CFG.callCoverClear; return; }
+    // acts I and II: the whole call ends before the next cover begins; the cover may wait for it, but only as long as the
+    // pressure cap allows (the slack booked with the cover), else the call waits for the cover to pass
+    const need=S.time+wait+hold+CFG.callCoverClear;
+    if(early&&S.nextCover<need){ if(!S.cover&&need-S.nextCover<=(S.coverSlack||0)){ S.coverSlack-=need-S.nextCover; S.nextCover=need; }
+      else { S.nextCallAt=S.nextCover+CFG.callCoverClear; return; } }
+    // a call never starts that the act's intertitle would cut short; it waits for the next act
+    if(S.sceneTime<wait+hold+0.3){ S.nextCallAt=S.time+Math.max(0.5,S.sceneTime)+0.8; return; }
     const pair=four&&rnd()<Math.min(CFG.callPairMax, CFG.callPairBase+(act-(M.fourAct||CFG.fourAct))*CFG.callPairStep);
     const sides=pair?[0,1]:[rnd()<0.5?0:1];
     let span=0;
