@@ -2704,12 +2704,14 @@ group('H-lvl-2', 'the ceiling band: the sample room under a dark ceiling builds 
 /* every corpus room that built before Q180, its levelHash as the shipped core (b1ab7b002, sb-m1-3) made it, built
    plain and as a first room: [plain, firstRoom]. Written once from sb-m1-3's page; regenerated once, at m2 step 3
    (SHUTTERBUG_M2_BUILD_PLAN.md: the floors' landings and the keys in the furniture move placement through the seed;
-   40 of the 46 moved, the other six, the sample room's and the stripes', kept their hashes) */
+   40 of the 46 moved, the other six, the sample room's and the stripes', kept their hashes); four plain ones moved again
+   at HARDER ROOMS step 1 (5 Nov: CAP_ENEMY 4 to 7, CAP_ELITE 1 to 2), the biome labs of attic, deep, ember and green, the
+   rooms with more clusters than the old cap */
 const PINNED_PRE_Q180 = {
   'sample-room@0': ['398abc93d279c699', '398abc93d279c699'], 'all-light@0': ['8468191e8c57eeec', '603641cbb236a179'],
-  'biome-attic@0': ['6c71e148cf7a473e', '553a2976098feeb0'], 'biome-deep@0': ['ced7f93abe2a7084', 'd8cd872f5c14d7dd'],
-  'biome-ember@0': ['1e6b157b4f31e6e5', '9918ef5bd15f7695'], 'biome-frost@0': ['634da4df6403d361', '14ecf149e3ab8e13'],
-  'biome-green@0': ['17b49e967b7df554', '1c85ef4211dfd758'], 'blank-wall@0': ['97d56d98d917af7a', '03216a9534879d67'],
+  'biome-attic@0': ['923c1e19a62c1293', '553a2976098feeb0'], 'biome-deep@0': ['46a7608d1351353f', 'd8cd872f5c14d7dd'],
+  'biome-ember@0': ['e2aede98b240d53a', '9918ef5bd15f7695'], 'biome-frost@0': ['634da4df6403d361', '14ecf149e3ab8e13'],
+  'biome-green@0': ['7b2acebc6bb20a82', '1c85ef4211dfd758'], 'blank-wall@0': ['97d56d98d917af7a', '03216a9534879d67'],
   'bright-door@0': ['6df41960b7a367ae', 'e1ecfbc0ccde0b8e'], 'gradient-h@0': ['5c99629287bbf0bc', '63970f8fdcf62d49'],
   'gradient-h@1': ['29df3a09bb36bbf3', '4ca357df3be12515'], 'ladder-stack@0': ['dc0c07846140b4fa', '2b862d7cf5ac0e9a'],
   'noise-s1@0': ['713b12aca3ef6fd6', '406b56910ad0c0f3'], 'noise-s2@0': ['4562c7f8adfda66e', '4562c7f8adfda66e'],
@@ -3526,15 +3528,16 @@ group('H-en-1b', 'the claims of Q50: no moth from the lamp, lit or not, nor from
   const sixLv = SB.pipeline.build(labRecord(plank(six)), { biome: 0 }), sixFirst = SB.pipeline.build(labRecord(plank(six)), { biome: 0, firstRoom: true });
   const sixE = sixLv.needsCrop ? [] : sixLv.features.enemies;
   t.ok(sixE.length === 1 && sixE[0].elite === true && !sixFirst.needsCrop && sixFirst.features.enemies.length === 0, 'a 6 cell cluster spawns one elite and never a fodder, and none in a first room (' + sixE.map(e => (e.elite ? 'elite ' : 'fodder ') + e.idx).join(', ') + ')');
-  /* six fodder clusters, more than CAP_ENEMY */
-  const many = {}; for (const [y, x] of [[8, 2], [8, 12], [16, 6], [16, 18], [24, 2], [24, 14]]) many[y] = (many[y] || '4'.repeat(24)).slice(0, x) + '99' + (many[y] || '4'.repeat(24)).slice(x + 2);
+  /* nine fodder clusters, more than CAP_ENEMY (7 since HARDER ROOMS step 1; six were enough when the cap was 4) */
+  const MANY = [[8, 2], [8, 12], [16, 6], [16, 18], [24, 2], [24, 14], [32, 4], [32, 16], [12, 20]];
+  const many = {}; for (const [y, x] of MANY) many[y] = (many[y] || '4'.repeat(24)).slice(0, x) + '99' + (many[y] || '4'.repeat(24)).slice(x + 2);
   /* the same level under three other seeds (the geometry untouched): some pick differs */
   const a = SB.pipeline.build(labRecord(plank(many)), { biome: 0 }), pa = a.needsCrop ? '' : a.features.enemies.map(e => e.idx).join();
   const others = a.needsCrop ? [] : [1, 2, 3].map(x => SB.features.moths(Object.assign({}, a, { seed: (a.seed ^ x) >>> 0 }), {}).map(e => e.idx).join());
   /* which clusters get an enemy (the shuffle over the cap): each enemy belongs to its nearest cluster */
-  const clusterOf = idx => { let best = -1, bd = 1e9; [[8, 2], [8, 12], [16, 6], [16, 18], [24, 2], [24, 14]].forEach(([y, x], k) => { const dd = Math.max(Math.abs(idx % 24 - x), Math.abs(Math.floor(idx / 24) - y)); if (dd < bd) { bd = dd; best = k; } }); return best; };
+  const clusterOf = idx => { let best = -1, bd = 1e9; MANY.forEach(([y, x], k) => { const dd = Math.max(Math.abs(idx % 24 - x), Math.abs(Math.floor(idx / 24) - y)); if (dd < bd) { bd = dd; best = k; } }); return best; };
   const setOf = list => list.split(',').filter(Boolean).map(Number).map(clusterOf).sort().join('');
-  t.ok(!a.needsCrop && a.features.enemies.length === SB.TUNING.CAP_ENEMY && others.some(o => setOf(o) !== setOf(pa)), 'six clusters over CAP_ENEMY, four seeds: which clusters get an enemy differs (' + [pa].concat(others).map(setOf).join(' / ') + ')');
+  t.ok(!a.needsCrop && a.features.enemies.length === SB.TUNING.CAP_ENEMY && others.some(o => setOf(o) !== setOf(pa)), 'nine clusters over CAP_ENEMY, four seeds: which clusters get an enemy differs (' + [pa].concat(others).map(setOf).join(' / ') + ')');
   /* the door's claim (the fifth review: nothing tested it): a Sun pair, a yellow frame, inside bright-door's window */
   const bdRec = fixture('bright-door').fx.record, bd0 = SB.pipeline.build(SB.record.fromJSON(bdRec), { biome: 0 }), bdr = bd0.needsCrop ? null : bd0.features.door;
   let inDoor = null, sunIn = false;
@@ -4320,7 +4323,7 @@ function mothLab(spots) {
 }
 const cheb = (a, b, w) => Math.max(Math.abs(a % w - b % w), Math.abs(Math.floor(a / w) - Math.floor(b / w)));
 
-group('H-en-1', 'moth spawns: on open cells, clear of spawn, at most 4 (2 in a first room), picked by the seed, never on a claimed cell', t => {
+group('H-en-1', 'moth spawns: on open cells, clear of spawn, at most CAP_ENEMY (2 in a first room), picked by the seed, never on a claimed cell', t => {
   let levels = 0, moths = 0;
   for (const f of FIXTURES) for (const mode of MODES) {
     const lv = buildFx(f, mode);
@@ -4333,9 +4336,10 @@ group('H-en-1', 'moth spawns: on open cells, clear of spawn, at most 4 (2 in a f
   }
   console.log('  info  H-en-1: ' + moths + ' moths over ' + levels + ' built levels');
   /* six clusters: the cap and the first room cap, the same pick twice */
-  const six = mothLab([[2, 10], [8, 14], [14, 18], [3, 22], [10, 26], [16, 30]]);
+  /* nine clusters, more than CAP_ENEMY (7 since HARDER ROOMS step 1; six were enough when the cap was 4) */
+  const six = mothLab([[2, 10], [8, 14], [14, 18], [3, 22], [10, 26], [16, 30], [18, 6], [5, 34], [12, 38]]);
   const all = SB.features.moths(six, {}), first = SB.features.moths(six, { firstRoom: true }), again = SB.features.moths(six, {});
-  t.ok(all.length === 4 && first.length === SB.TUNING.FIRST_ROOM_MAX_FODDER && JSON.stringify(all) === JSON.stringify(again), 'six clusters give 4 moths, 2 in a first room, and the same 4 every time (' + all.map(e => e.idx).join(' ') + ')');
+  t.ok(all.length === SB.TUNING.CAP_ENEMY && first.length === SB.TUNING.FIRST_ROOM_MAX_FODDER && JSON.stringify(all) === JSON.stringify(again), 'nine clusters give CAP_ENEMY (' + SB.TUNING.CAP_ENEMY + ') moths, 2 in a first room, and the same ones every time (' + all.map(e => e.idx).join(' ') + ')');
   /* the spawn rule alone (the ascent's cells set aside): a cluster beside spawn never spawns within ENEMY_SPAWN_CLEAR */
   const near = mothLab([[12, 44]]), bare = Object.assign({}, near, { ascent: { nodes: [] } }), m = SB.features.moths(bare, {});
   t.ok(m.every(e => cheb(e.idx, near.spawn, near.w) > SB.TUNING.ENEMY_SPAWN_CLEAR), 'a cluster beside spawn (' + near.spawn % 24 + ', ' + Math.floor(near.spawn / 24) + ') spawns its moth more than ENEMY_SPAWN_CLEAR away (' + m.map(e => e.idx % 24 + ',' + Math.floor(e.idx / 24)).join(' ') + ')');
@@ -5899,7 +5903,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
     for (const mode of [0, 1, 2]) codes += SB.record.encode(SB.record.fromJSON(Object.assign({}, f.fx.record, { mode, rows2: mode === 2 ? f.fx.record.rows : null }))) + '\n';
   }
   t.eq(n, 104, 'the pin covers 26 fixtures in two modes, plain and first room');
-  t.eq(h, 0x953783fc, 'every fixture builds the level or the refusal it built on m2 step 3 (the digest of 104 levelHashes and causes; 0xfbe70a13 on 42fc8b19a, regenerated when the landings and keys moved placement)');
+  t.eq(h, 0xf1e68ce6, 'every fixture builds the level or the refusal it built at HARDER ROOMS step 1 (the digest of 104 levelHashes and causes; 0x953783fc at m2 step 3, moved by CAP_ENEMY 7 and CAP_ELITE 2 in the rooms with more clusters than four; 0xfbe70a13 on 42fc8b19a, regenerated when the landings and keys moved placement)');
   t.eq(fnvRef(Buffer.from(codes)), 0xb4bad1d5, 'every fixture\'s v1 code in modes 0, 1 and 2 is the string it was on 42fc8b19a');
   const sj = fixture('sample-room').fx.record, srec = SB.record.fromJSON(sj), scode = SB.record.encode(srec);
   t.eq(SB.pipeline.levelHash(SB.pipeline.build(srec, {})), '398abc93d279c699', 'the sample room\'s levelHash is pinned');
@@ -6123,7 +6127,7 @@ group('H-climb-1', 'the climb rules (Q221, record v2 RULES 1): v1 and RULES 0 bu
   }
   t.eq(v1bad.length, 0, 'every fixture in modes 0 and 1 builds the same level by v1 and by v2 RULES 0, never by the climb rules' + (v1bad.length ? ': ' + v1bad.slice(0, 4).join('; ') : ''));
   t.eq(SB.pipeline.levelHash(SB.pipeline.build(SB.record.fromJSON(v2Of(sj, 0, 1)), {})), '3b14461ab78c5494', 'the sample room by the climb rules: its levelHash pinned (Q221)');
-  t.eq(h1, 0xd04cbbe4, 'every fixture in modes 0 and 1 by the climb rules builds the level pinned at m2 step 3 (the digest of ' + nv1 + ' levelHashes and refusals; 0x700c1433 at Q221, regenerated when the landings and keys moved placement)');
+  t.eq(h1, 0x1b673250, 'every fixture in modes 0 and 1 by the climb rules builds the level pinned at HARDER ROOMS step 1 (the digest of ' + nv1 + ' levelHashes and refusals; 0xd04cbbe4 at m2 step 3, moved by the higher caps; 0x700c1433 at Q221, regenerated when the landings and keys moved placement)');
   /* edge ledges: the climb's plat over today's is exactly the harness's own edge ledges, and never wall paint */
   let compared = 0, ledgeCells = 0, onWall = 0; const ledgeBad = [];
   for (const r of rooms) {
@@ -6212,8 +6216,9 @@ group('H-climb-2', 'the climb rules\' levels are played (Q221): the harness\'s b
    in free play; the test's own reading of the ramp table (Stephen's "Firm ramp", 31 Oct; the proposal's 2.1), typed
    here from the table, not read from TUNING. Room 5 is room 4's row until lane B's boss (Q201: the review of HOUSE-A
    found the last room the easiest of the five, often empty) */
-const RAMP_WANT = { 2: { floor: 2, cap: 4, elites: 1, eliteMin: 0, hpQ: 4, fast: false }, 3: { floor: 3, cap: 4, elites: 1, eliteMin: 1, hpQ: 4, fast: true },
-  4: { floor: 4, cap: 5, elites: 2, eliteMin: 1, hpQ: 6, fast: true }, 5: { floor: 0, cap: 3, elites: 0, eliteMin: 0, hpQ: 4, fast: false } };   /* room 5: the table's own row beside the guardian (HOUSE-B) */
+/* HARDER ROOMS step 1 (5 Nov): floors 4 5 7, caps 6 7 8, room 3 two elites, every ramped room 1.25x (was 2 3 4, 4 4 5, fast from 3) */
+const RAMP_WANT = { 2: { floor: 4, cap: 6, elites: 1, eliteMin: 0, hpQ: 4, fast: true }, 3: { floor: 5, cap: 7, elites: 2, eliteMin: 1, hpQ: 4, fast: true },
+  4: { floor: 7, cap: 8, elites: 2, eliteMin: 1, hpQ: 6, fast: true }, 5: { floor: 0, cap: 3, elites: 0, eliteMin: 0, hpQ: 4, fast: false } };   /* room 5: the table's own row beside the guardian (HOUSE-B) */
 let rampLevels = null;
 function rampBuilds() {
   if (rampLevels) return rampLevels;
@@ -6230,7 +6235,7 @@ function rampBuilds() {
   return rampLevels;
 }
 const featJSON = lv => JSON.stringify(lv.features, (k, v) => ArrayBuffer.isView(v) ? Array.from(v) : v);
-group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHash, features, the first sim state, no ramp row) and a first room never sees a room index; rooms 2, 3 and 4 hold at least 2, 3 and 4 enemies on every built corpus room, as detected and under every biome, rooms 3 and 4 an elite, within the table\'s caps; every ramp enemy is its biome\'s kind (a moth where none can keep the kind\'s rule), keeps DESIGN 7\'s cells and keeps its envelope off the ascent; the route, the safe cadence and the degrade ladder are the free play room\'s', t => {
+group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHash, features, the first sim state, no ramp row) and a first room never sees a room index; rooms 2, 3 and 4 hold at least 4, 5 and 7 enemies on every built corpus room, as detected and under every biome, rooms 3 and 4 an elite, within the table\'s caps; every ramp enemy is its biome\'s kind (a moth where none can keep the kind\'s rule), keeps DESIGN 7\'s cells and keeps its envelope off the ascent; the route, the safe cadence and the degrade ladder are the free play room\'s', t => {
   const T = SB.TUNING, bad = { same: [], floor: [], elite: [], cap: [], kind: [], rules: [], env: [], fall: [], route: [], refuse: [], first: [], last: [] };
   let falls = 0;
   let rooms = 0, laid = 0, promoted = 0, moths = 0; const own = {};
@@ -6293,9 +6298,9 @@ group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHas
   say('same', 'room 1 is free play byte for byte on every built room (levelHash, features, the first sim state, no ramp row), and a ramped room carries its table row');
   say('first', 'a first room built with a room index is the first room (the ramp never reaches the onboarding room)');
   say('refuse', 'no room that builds in free play refuses at any house room');
-  say('floor', 'rooms 2, 3 and 4 hold at least 2, 3 and 4 enemies over ' + rooms + ' ramped builds (' + laid + ' ramp fodder laid)');
+  say('floor', 'rooms 2, 3 and 4 hold at least 4, 5 and 7 enemies over ' + rooms + ' ramped builds (' + laid + ' ramp fodder laid)');
   say('elite', 'rooms 3 and 4 hold an elite on every build (' + promoted + ' promoted where the photo gave none)');
-  say('cap', 'the table\'s caps hold: room 2 and 3 at most 4 enemies and 1 elite, rooms 4 and 5 at most 5 and 2 (Ember one more enemy)');
+  say('cap', 'the table\'s caps hold: room 2 at most 6 enemies and 1 elite, room 3 at most 7 and 2, room 4 at most 8 and 2, room 5 at most 3 and none (Ember one more enemy)');
   say('kind', 'every ramp enemy is its biome\'s kind or, where no cell keeps the kind\'s rule, a moth (' + moths + ' moths)');
   const missing = [1, 2, 3, 4].filter(b => !own[b]);
   t.ok(missing.length === 0, 'every biome\'s own kind is laid as ramp fodder (' + [0, 1, 2, 3, 4].map(b => SB.palette.BIOMES[b] + ' ' + (own[b] || 0)).join(', ') + '; ' + moths + ' moths of ' + laid + ')');
@@ -6306,7 +6311,7 @@ group('H-house-1', 'the ramp (Q200): room 1 is byte for byte free play (levelHas
   say('route', 'the ramped room keeps the free play room\'s ascent and degrade ladder, and its ascent holds on the safe cells');
 });
 
-group('H-house-2', 'the ramp in the sim: room 4\'s fodder at 6 quarters a HP (1.5x; an elite as before, rooms 1 to 3 at HP_Q); rooms 3 and 4 tick their enemies 1.25x (an extra tick on every fourth step: 10 in 8 steps, a moth 10 MOTH_V along its larger axis), rooms 1 and 2 at 1x; the promotion is the fodder farthest from spawn by the test\'s own squared distance; free play\'s sim state never moves', t => {
+group('H-house-2', 'the ramp in the sim: room 4\'s fodder at 6 quarters a HP (1.5x; an elite as before, rooms 1 to 3 at HP_Q); rooms 2, 3 and 4 tick their enemies 1.25x (an extra tick on every fourth step: 10 in 8 steps, a moth 10 MOTH_V along its larger axis), rooms 1 and 5 at 1x; the promotion is the fodder farthest from spawn by the test\'s own squared distance; free play\'s sim state never moves', t => {
   const K = SB.K, T = SB.TUNING, bad = { hp: [], tick: [], promo: [] };
   let checked = 0, promos = 0;
   for (const L of rampBuilds()) {
@@ -6323,7 +6328,7 @@ group('H-house-2', 'the ramp in the sim: room 4\'s fodder at 6 quarters a HP (1.
       if (s.enemies.length) {
         const x0 = s.enemies.map(e => [e.x, e.y]);
         for (let k = 0; k < 8; k++) SB.sim.step(s, 0);
-        const want = r === 3 || r === 4 ? 10 : 8;
+        const want = r >= 2 && r <= 4 ? 10 : 8;
         s.enemies.forEach((e, k) => {
           if (e.stunned !== 0 || e.frozen || SB.sim.shedSlot(s, k)) return;   /* the guardian's unshed moth slots never tick */
           if (e.timer !== want) bad.tick.push(L.tag + ' room ' + r + ': a ' + KIND_NAME[e.kind] + ' ticked ' + e.timer + ' times in 8 steps, want ' + want);
@@ -6344,7 +6349,7 @@ group('H-house-2', 'the ramp in the sim: room 4\'s fodder at 6 quarters a HP (1.
     }
   }
   t.eq(bad.hp.length, 0, 'every enemy\'s first HP is its kind\'s in quarters, room 4\'s fodder 1.5x' + (bad.hp.length ? ': ' + bad.hp.slice(0, 5).join('; ') : ''));
-  t.eq(bad.tick.length, 0, 'the enemies tick 1.25x in rooms 3 and 4 and 1x in rooms 1, 2 and 5 (the table\'s room 5, HOUSE-B), over ' + checked + ' rooms' + (bad.tick.length ? ': ' + bad.tick.slice(0, 5).join('; ') : ''));
+  t.eq(bad.tick.length, 0, 'the enemies tick 1.25x in rooms 2, 3 and 4 and 1x in rooms 1 and 5 (the table\'s room 5, HOUSE-B), over ' + checked + ' rooms' + (bad.tick.length ? ': ' + bad.tick.slice(0, 5).join('; ') : ''));
   t.ok(promos > 0 && bad.promo.length === 0, 'room 3\'s promoted elite is the fodder farthest from spawn (' + promos + ' rooms promote)' + (bad.promo.length ? ': ' + bad.promo.slice(0, 5).join('; ') : ''));
   /* the same record, free play against the house's room 1, stepped 300 steps with the same words: the same hash */
   const sr = SB.record.fromJSON(fixture('sample-room').fx.record);
