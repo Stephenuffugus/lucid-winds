@@ -14,7 +14,9 @@ the next `--vendor` overwrites it. GitHub Pages is ON for that repo and serves i
 stephenuffugus.github.io/Tomato_Man/, so pushing its main is a public deploy too. Therefore:
 - `env -u GITHUB_TOKEN gh repo clone Stephenuffugus/Tomato_Man /workspaces/Tomato_Man` (the vendor script expects sibling
   clones under /workspaces), `git checkout -b sunstruck origin/main`; every edit on that branch; `git push -u origin
-  sunstruck` after every step. Never push its main. Never touch satellites/tomato-man/ by hand.
+  sunstruck` after every step. Never push its main. Never touch satellites/tomato-man/ by hand. Both the codespace
+  token and his login have push on that repo (checked 5 Nov); if the first `git push` asks for a login, run
+  `gh auth setup-git` once and push again.
 - The game is `/workspaces/Tomato_Man/index.html` (128 KB, one file, canvas 2D, a 2000 to 2600 px world scrolled under a
   portrait camera; it already uses const, arrows and template strings, so the Lucid Winds ES5 rule does not bind it).
   Beside it: manifest.webmanifest, sw.js (CACHE tomato-man-v3, a precached shell), the three icons, thumbnail.png.
