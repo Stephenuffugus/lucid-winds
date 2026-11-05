@@ -91,6 +91,44 @@ def main():
         total[0] += os.path.getsize(out('fonts/' + dst))
     shutil.copyfile(os.path.join(FONTS, 'breeserif_OFL.txt'), out('fonts/bree-serif-OFL.txt'))
     shutil.copyfile(os.path.join(FONTS, 'atkinsonhyperlegible_OFL.txt'), out('fonts/atkinson-hyperlegible-OFL.txt'))
+    # THE HERO (step 2). The default tomato in v2's bearings: her neutral composite sheets (8 cells: idle, walk 1 to 4,
+    # dash crouch, dash stretch, hop) at half size, 128 px cells, which is what a 64 px sprite needs on a 2x phone; the
+    # three west bearings are her mirrored exports, so the game draws e, se and ne flipped instead of shipping them.
+    V2 = '/workspaces/tomato-man-astra-v1/pack-v2/assets/a_hero'
+    def half(src, rel, q=82):
+        im = Image.open(src).convert('RGBA'); im = im.resize((im.width // 2, im.height // 2), Image.LANCZOS)
+        im.save(out(rel), 'WEBP', quality=q, method=6, alpha_quality=85); total[0] += os.path.getsize(out(rel))
+    for b in ('s', 'se', 'e', 'ne', 'n'): half(os.path.join(V2, 'tomato_%s_neutral.png' % b), 'hero/tomato_%s.webp' % b)
+    for k in ('respawn', 'victory'): half(os.path.join(V2, 'tomato_%s_neutral.png' % k), 'hero/tomato_%s.webp' % k)
+    half(os.path.join(PACK, 'a_hero', 'exposure_states.png'), 'hero/exposure_states.webp')
+    PRODUCE = ['strawberry', 'orange', 'lemon', 'lime', 'peach', 'cherry', 'bell_pepper', 'eggplant', 'avocado', 'heirloom', 'pickle', 'golden', 'sunburn']
+    for k in PRODUCE: half(os.path.join(PACK, 'a_hero', '%s_body.png' % k), 'hero/%s_body.webp' % k)
+    half(os.path.join(PACK, 'a_hero', 'face_neutral.png'), 'hero/face_neutral.webp')
+    HATS = ['sun_hat', 'ball_cap', 'tiny_sombrero', 'lettuce_cap', 'lifeguard_visor', 'umbrella_hat', 'sun_crown', 'shell_crown',
+            'ice_cream_hat', 'cool_shades', 'gem_crown', 'eclipse_halo']
+    for k in HATS:                       # four bearings s e n w in one 512x128 sheet each (v2)
+        im = Image.open(os.path.join(V2, 'hat_%s_directions.png' % k)).convert('RGBA')
+        im.save(out('hero/hats/%s.webp' % k), 'WEBP', quality=84, method=6, alpha_quality=90); total[0] += os.path.getsize(out('hero/hats/%s.webp' % k))
+    for k in ('ember', 'cool', 'aloe', 'rainbow'): copy('a_hero/trail_%s.png' % k, 'hero/trails/%s.png' % k)
+    # the builder (on demand): her headless body, the fourteen heads with their faces, the twelve hats at head scale
+    for src, rel in [('builder_body.png', 'builder/body.webp'), ('tomato_head.png', 'builder/tomato_head.webp')] + \
+                    [('%s_head.png' % k, 'builder/%s_head.webp' % k) for k in PRODUCE] + [('hat_%s.png' % k, 'builder/hats/%s.webp' % k) for k in HATS]:
+        im = Image.open(os.path.join(PACK, 'a_hero', src)).convert('RGBA')
+        if src == 'builder_body.png':    # her body file carries a stray second collar below the boots (rows 588 down)
+            px = im.load()
+            for yy in range(588, im.height):
+                for xx in range(im.width): px[xx, yy] = (0, 0, 0, 0)
+        im.save(out(rel), 'WEBP', quality=84, method=6, alpha_quality=90); total[0] += os.path.getsize(out(rel))
+    # the hat anchors of every authored bearing and frame (manifest.animations sockets), written into the page
+    import json
+    m2 = json.load(open('/workspaces/tomato-man-astra-v1/pack-v2/manifest.json'))
+    socks = {b: [sk['hat_anchor'] for sk in m2['animations'][b]['sockets']] for b in ('s', 'se', 'e', 'ne', 'n')}
+    page0 = os.path.join(GAME, 'index.html'); h0 = open(page0).read()
+    a0, b0 = '/* TM HERO SOCKETS (lucid-winds tools/tomato-man-tests/astra_in.py writes this line) */', '/* /TM HERO SOCKETS */'
+    if a0 in h0:
+        i0, j0 = h0.index(a0) + len(a0), h0.index(b0)
+        h0 = h0[:i0] + '\nconst HAT_ANCHOR=' + json.dumps(socks, separators=(',', ':')) + ';\n' + h0[j0:]; open(page0, 'w').write(h0)
+    else: print('no TM HERO SOCKETS markers yet: anchors not written')
     # the one inline sprite of her one colour marks
     syms = []
     for f in sorted(os.listdir(os.path.join(PACK, 'f_ui'))):
