@@ -70,6 +70,13 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
 /* a thumb lands on the BUTTON, never on its words or its drawing (the render gate asks elementFromPoint) */
 button .lbl,button .ic,button .hrIc{pointer-events:none}
 .chip .hrIc .ic{width:18px;height:18px;margin:0 0 2px}
+/* seven house rule chips in three rows at every ring size (THIRTEEN FOOT is the widest word): Play stays on a
+   375 by 667 screen, which the render gate and the playthrough both press */
+.chip{padding:0 8px;min-width:80px;letter-spacing:.03em}
+/* ⛔ PLAY AND BACK ARE ALWAYS ON THE SCREEN. Seven house rules and two stake strips outgrow a 667 px phone at
+   some ring sizes, so the setup scrolls and its two buttons stick to the foot of the scroll, Play over Back */
+#setupGo{position:sticky;bottom:calc(70px + var(--sb));z-index:3;box-shadow:0 -10px 16px rgba(13,16,12,.85)}
+#setupBack{position:sticky;bottom:calc(12px + var(--sb));z-index:3;background:rgba(13,16,12,.96)}
 /* the plates are nine slices of her SVG: the corners keep their radius, the edges stretch */
 .chip{border-style:solid;border-width:1px;border-color:transparent;background:transparent;
   border-image:var(--hr-off) 24 fill / 10px stretch}
