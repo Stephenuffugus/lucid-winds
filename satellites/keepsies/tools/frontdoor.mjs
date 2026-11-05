@@ -181,6 +181,93 @@ async function snap(opts) {
   return { aim, r };
 }
 
+/* ---- STATUES (KEEPSIES_BUILD_PLAN.md step 11): placed and moved by REAL touch drags, and checked ---- */
+const fails = [];
+function check(ok, msg) { log((ok ? 'ok    ' : 'FAIL  ') + msg); if (!ok) fails.push(msg); }
+
+/** A finger down at `from`, `steps` moves to `to`, then up: puppeteer's touchscreen, so the game sees touches. */
+async function drag(from, to, steps) {
+  await page.touchscreen.touchStart(from.x, from.y);
+  for (let k = 1; k <= steps; k++) { await page.touchscreen.touchMove(from.x + (to.x - from.x) * k / steps, from.y + (to.y - from.y) * k / steps); await wait(16); }
+  await page.touchscreen.touchEnd();
+}
+
+/** The player's two placements (Dusty answers each by his rule), each landing where the finger lifted. */
+async function statuesLeg() {
+  for (let k = 0; k < 2; k++) {
+    await page.waitForFunction(() => { const p = window.KEEPSIES_DEV.placing(); return p && p.placed % 2 === 0; }, { timeout: 15000 });
+    await page.evaluate(() => window.KEEPSIES_DEV.settleCamera(60));
+    await wait(150);
+    const pick = await page.evaluate((k) => {
+      const d = window.KEEPSIES_DEV, shape = ['arch', 'loaf'][k];
+      // a finger only reaches what is on the screen: a spot whose point is on the dirt above the tray
+      const trayTop = document.getElementById('statueTray').getBoundingClientRect().top;
+      const seen = d.spotsFor(shape).map(p => ({ p, s: d.projectGround(p.x, p.z) }))
+        .filter(q => q.s.visible && q.s.x > 40 && q.s.x < innerWidth - 40 && q.s.y > 110 && q.s.y < trayTop - 30);
+      const q = seen[(k * 7) % Math.max(1, seen.length)];
+      const r = document.getElementById('st-' + shape).getBoundingClientRect();
+      return q ? { shape, sp: q.p, tile: { x: r.left + r.width / 2, y: r.top + r.height / 2 }, at: q.s } : null;
+    }, k);
+    if (!pick) { check(false, 'a legal spot on the screen for statue ' + (k + 1)); return; }
+    await drag(pick.tile, { x: pick.at.x, y: pick.at.y }, 14);
+    await wait(200);
+    const want = await page.evaluate((x, y) => window.KEEPSIES_DEV.groundAt(x, y), pick.at.x, pick.at.y);
+    const pend = ((await page.evaluate(() => window.KEEPSIES_DEV.placing())) || {}).pending;
+    check(!!pend && !!want && Math.abs(pend.x - want.x) < 1e-9 && Math.abs(pend.z - want.z) < 1e-9,
+      'statue ' + (k + 1) + ' (' + pick.shape + ') lands where the finger lifted: ' + JSON.stringify(pend) + ', the grid point under the finger ' + JSON.stringify(want));
+    await tap('stConfirm'); await wait(250);
+    const rec = (await page.evaluate(() => window.KEEPSIES_DEV.statues())).filter(s => s.owner === 0)[k];
+    check(!!rec && !!want && rec.x === want.x && rec.z === want.z, 'and Confirm keeps it there: ' + JSON.stringify(rec));
+    await shot('statue-placed-' + (k + 1));
+  }
+  await page.waitForFunction(() => !window.KEEPSIES_DEV.placing(), { timeout: 15000 }).catch(() => {});
+  const all = await page.evaluate(() => window.KEEPSIES_DEV.statues());
+  check(all.length === 4, 'four statues stand before the lag (two each): ' + JSON.stringify(all));
+}
+
+/** A move on my turn by a real drag, checked, then a real snap on my next turn: the snap still works after. */
+async function moveLeg() {
+  const why = await myTurn();
+  if (why !== 'mine') { check(false, 'a turn of mine came for the move: ' + why); return; }
+  // the HUD offers the move on the next frame of my turn: wait for it the way a player waits for a button to appear
+  await page.waitForFunction(() => { const b = document.getElementById('moveStatue'); return b && !b.hidden && b.offsetParent !== null; }, { timeout: 8000 }).catch(() => {});
+  if (!(await tap('moveStatue'))) { check(false, 'Move a statue is offered on my turn'); return; }
+  check(true, 'Move a statue is offered on my turn');
+  // the view eases to the whole ring in real time (the frame loop drives it): let it arrive before aiming a finger
+  await wait(2200);
+  const mv = await page.evaluate(() => {
+    const d = window.KEEPSIES_DEV, ss = d.statues();
+    const trayTop = document.getElementById('statueTray').getBoundingClientRect().top;
+    // one of MINE that a finger can reach on the screen
+    const k = ss.findIndex(q => { if (q.owner !== 0) return false; const p = d.projectGround(q.x, q.z, 0.02); return p.visible && p.x > 30 && p.x < innerWidth - 30 && p.y > 100 && p.y < trayTop - 20; });
+    if (k < 0) return null;
+    const s = ss[k];
+    const spots = d.spotsFor(s.shape).filter(p => Math.hypot(p.x - s.x, p.z - s.z) > 0.1 && Math.hypot(p.x - s.x, p.z - s.z) <= 0.6)
+      .map(p => ({ p, s: d.projectGround(p.x, p.z, 0) }))
+      .filter(q => q.s.visible && q.s.x > 40 && q.s.x < innerWidth - 40 && q.s.y > 110 && q.s.y < trayTop - 30);
+    const from = d.projectGround(s.x, s.z, 0.02);
+    return spots.length && from.y < trayTop - 10 ? { k, from, to: spots[0].s } : null;
+  });
+  if (!mv) { check(false, 'a legal spot within two feet for the move'); await tap('stUndo'); return; }
+  await drag(mv.from, mv.to, 14);
+  await wait(200);
+  const want = await page.evaluate((x, y) => window.KEEPSIES_DEV.groundAt(x, y), mv.to.x, mv.to.y);
+  const pend = ((await page.evaluate(() => window.KEEPSIES_DEV.moving())) || {}).pending;
+  check(!!pend && !!want && Math.abs(pend.x - want.x) < 1e-9 && Math.abs(pend.z - want.z) < 1e-9,
+    'the moved statue lands where the finger lifted: ' + JSON.stringify(pend) + ', want ' + JSON.stringify(want));
+  await shot('statue-move');
+  await tap('stConfirm'); await wait(300);
+  const after = (await page.evaluate(() => window.KEEPSIES_DEV.statues()))[mv.k];
+  check(!!after && !!want && after.x === want.x && after.z === want.z, 'and Confirm moves it there: ' + JSON.stringify(after));
+  const t = (await state()).match;
+  check(t && t.turn === 1, 'and the move spends my turn (Dusty to shoot): turn ' + (t ? t.turn : '?'));
+  const again = await myTurn();
+  if (again !== 'mine') { check(again === 'ceremony' || again === 'over', 'my next turn came: ' + again); return; }
+  const sn = await snap({ label: 'the snap after a move' });
+  check(!!sn && !!sn.r && (sn.r.simulating || !!sn.aim), 'the snap still works after: ' + (sn && sn.r ? 'simulating=' + sn.r.simulating : 'no snap'));
+  await settle();
+}
+
 /** Run the physics to rest through the dev hook, and let the camera follow. */
 async function settle() {
   const k = await page.evaluate(() => { const d = window.KEEPSIES_DEV; const k = d.settle(1500); d.settleCamera(40); return k; });
@@ -409,6 +496,9 @@ if (MODE === 'all' || MODE === 'more') {
     if (RING) { for (let k = 0; k < 3; k++) { if ((await page.evaluate(() => window.KEEPSIES_DEV.houseRules().ringSizeFt)) === RING) break; await tap('hr-ringSizeFt'); await wait(150); } }
     else if (n === 4) { await tap('hr-ringSizeFt'); await wait(200); }
     if (n === 6 && !RING) { await tap('hr-bombing'); await wait(200); }
+    // match 3 is played with STATUES on (m2 step 11): placed and moved by real touches
+    if (n === 3) { await tap('hr-statues'); await wait(200); }
+    if (n === 4) { await tap('hr-statues'); await wait(200); }
     const staked = await page.evaluate(() => window.KEEPSIES_DEV.stakeNow());
     if (!staked.length) {
       const id = n === 5 ? 'stake-cats_eye_banana' : (n === 7 ? 'stake-lutz' : 'stake-dirt_plain');
@@ -420,6 +510,7 @@ if (MODE === 'all' || MODE === 'more') {
     if (!(await tap('setupGo'))) { log('match ' + n + ': PLAY not tappable'); await shot('play-blocked-' + n); break; }
     await wait(600);
     await frames();
+    if (n === 3) { await shot('statues-tray-3'); await statuesLeg(); await moveLeg(); }
     if (n === 4) { await wait(200); await shot('board-' + n); }
     const end = await playOut('match' + n, 60, 0);
     const sm = await state();
@@ -448,6 +539,8 @@ if (MODE === 'all' || MODE === 'more') {
 }
 
 log('errors: ' + (errors.length ? '\n  ' + errors.join('\n  ') : 'none'));
+if (fails.length) { log('STATUE CHECKS FAILED: ' + fails.length); process.exitCode = 1; }
+else if (MODE === 'all' || MODE === 'more') log('STATUE CHECKS OK');
 writeFileSync(join(OUT, 'log.txt'), lines.join('\n') + '\n');
 await browser.close();
 server.close();

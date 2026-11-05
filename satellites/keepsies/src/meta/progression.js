@@ -23,7 +23,7 @@
  * asks `unlocked('pouches')`, and the level lives in `tuning.json` only. The
  * moment a screen writes `level >= 2` the table has two homes.
  */
-import * as SAVE from './save.js?v=20261105a';
+import * as SAVE from './save.js?v=20261105b';
 
 /**
  * What ONE level up costs, leaving `level`. DESIGN writes "level N needs 120×N",

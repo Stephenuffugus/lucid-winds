@@ -11,7 +11,7 @@
  * them. Nothing on a card identifies the player: no profile id, no uid, no name but the opponent's.
  * The file goes to navigator.share after the tap that asked for it, else it downloads.
  */
-import { art } from './art.js?v=20261105a';
+import { art } from './art.js?v=20261105b';
 
 const CREAM = '#e8dcc8', BRASS = '#c8a84b', MUTED = '#98a086', NIGHT = '#0d100c';
 const FONT = 'ui-rounded,"Avenir Next",Avenir,Corbel,"Segoe UI",system-ui,sans-serif';

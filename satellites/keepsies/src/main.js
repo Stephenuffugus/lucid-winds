@@ -9,42 +9,42 @@
  * DIRECTIONS BEFORE PLAY. The rules card is shown before the first match of the
  * mode, which is a studio standard and not a preference.
  */
-import { detectQuality, forceQuality } from './render/quality.js?v=20261105a';
-import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261105a';
-import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261105a';
-import { buildRingerGround } from './render/arenaEnv.js?v=20261105a';
-import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261105a';
-import { attachCameraControls } from './input/cameraCtl.js?v=20261105a';
-import { createKnuckle } from './input/knuckle.js?v=20261105a';
-import { createPullback } from './input/pullback.js?v=20261105a';
-import * as AUDIO from './audio/synth.js?v=20261105a';
-import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261105a';
-import { createRinger } from './game/ringer.js?v=20261105a';
-import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261105a';
-import { launchSpeed } from './core/snap.js?v=20261105a';
-import { clamp, len2, DEG } from './core/dmath.js?v=20261105a';
-import * as SAVE from './meta/save.js?v=20261105a';
-import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261105a';
-import { playPotCeremony } from './render/ceremony.js?v=20261105a';
+import { detectQuality, forceQuality } from './render/quality.js?v=20261105b';
+import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261105b';
+import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261105b';
+import { buildRingerGround } from './render/arenaEnv.js?v=20261105b';
+import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261105b';
+import { attachCameraControls } from './input/cameraCtl.js?v=20261105b';
+import { createKnuckle } from './input/knuckle.js?v=20261105b';
+import { createPullback } from './input/pullback.js?v=20261105b';
+import * as AUDIO from './audio/synth.js?v=20261105b';
+import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261105b';
+import { createRinger } from './game/ringer.js?v=20261105b';
+import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261105b';
+import { launchSpeed } from './core/snap.js?v=20261105b';
+import { clamp, len2, DEG } from './core/dmath.js?v=20261105b';
+import * as SAVE from './meta/save.js?v=20261105b';
+import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261105b';
+import { playPotCeremony } from './render/ceremony.js?v=20261105b';
 import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
-  from './meta/collection.js?v=20261105a';
-import * as MARBLEMESH from './render/marbleMesh.js?v=20261105a';
-import { bodySpec } from './core/marbleBody.js?v=20261105a';
-import { createEconomy } from './meta/economy.js?v=20261105a';
-import { createDrops } from './meta/drops.js?v=20261105a';
-import * as RANSOM from './meta/ransom.js?v=20261105a';
-import * as PROG from './meta/progression.js?v=20261105a';
-import { createOnboarding, dustyLine } from './meta/beats.js?v=20261105a';
+  from './meta/collection.js?v=20261105b';
+import * as MARBLEMESH from './render/marbleMesh.js?v=20261105b';
+import { bodySpec } from './core/marbleBody.js?v=20261105b';
+import { createEconomy } from './meta/economy.js?v=20261105b';
+import { createDrops } from './meta/drops.js?v=20261105b';
+import * as RANSOM from './meta/ransom.js?v=20261105b';
+import * as PROG from './meta/progression.js?v=20261105b';
+import { createOnboarding, dustyLine } from './meta/beats.js?v=20261105b';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
-  from './game/match.js?v=20261105a';
-import { makeRng } from './core/rng.js?v=20261105a';
-import { makeMarbleMaterial } from './render/marbleMesh.js?v=20261105a';
-import { art, loadIcons, ic } from './render/art.js?v=20261105a';
-import { face } from './render/portraits.js?v=20261105a';
-import * as PROV from './meta/provenance.js?v=20261105a';
-import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261105a';
-import { makeStatueMesh, markGhost, disposeStatueMesh } from './render/statues.js?v=20261105a';
-import { SHAPES, SHAPE_ORDER, PER_PLAYER, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261105a';
+  from './game/match.js?v=20261105b';
+import { makeRng } from './core/rng.js?v=20261105b';
+import { makeMarbleMaterial } from './render/marbleMesh.js?v=20261105b';
+import { art, loadIcons, ic } from './render/art.js?v=20261105b';
+import { face } from './render/portraits.js?v=20261105b';
+import * as PROV from './meta/provenance.js?v=20261105b';
+import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261105b';
+import { makeStatueMesh, markGhost, disposeStatueMesh } from './render/statues.js?v=20261105b';
+import { SHAPES, SHAPE_ORDER, PER_PLAYER, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261105b';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -113,7 +113,7 @@ async function boot() {
   for (const el of document.querySelectorAll('[data-art]')) el.style.backgroundImage = 'url(' + art(el.dataset.art) + ')';
   // and every plate the style sheet draws (step 5, the HUD and the tiers) is a variable made here
   for (const k in ART_VARS) document.documentElement.style.setProperty(k, 'url(' + art(ART_VARS[k]) + ')');
-  const res = await fetch('src/data/tuning.json?v=20261105a');
+  const res = await fetch('src/data/tuning.json?v=20261105b');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
   G.save = SAVE.load();
@@ -123,10 +123,10 @@ async function boot() {
   AUDIO.configure(G.tuning);
   AUDIO.setEnabled(G.save.settings.sound !== false);
 
-  const cat = await fetch('src/data/marbles.json?v=20261105a');
+  const cat = await fetch('src/data/marbles.json?v=20261105b');
   if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
   G.catalog = await cat.json();
-  const dt = await fetch('src/data/droptables.json?v=20261105a');
+  const dt = await fetch('src/data/droptables.json?v=20261105b');
   if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
   G.dropTables = await dt.json();
 
@@ -2270,6 +2270,11 @@ function installDevHook() {
     placing: () => (G.statuesPlacing ? { placed: G.statuesPlacing.placed, pending: G.stPending ? Object.assign({}, G.stPending) : null } : null),
     moving: () => (G.moving ? { index: G.moving.index, pending: G.stPending ? Object.assign({}, G.stPending) : null } : null),
     spotsFor: (shape) => (G.R ? legalSpots(shape, G.R.ringRadius, G.R.statues(), G.R.lay) : []),
+    // the half foot grid point under a screen point, which is where a statue must land when a finger lifts there
+    groundAt: (cx, cy) => {
+      const r = G.stage.renderer.domElement.getBoundingClientRect(), gp = groundPoint(cx - r.left, cy - r.top);
+      return gp ? snapGrid(gp.x, gp.z) : null;
+    },
     projectGround: (x, z, y) => {
       const p = G.rig.project(x, y || 0, z), r = G.stage.renderer.domElement.getBoundingClientRect();
       return { x: r.left + p.x, y: r.top + p.y, visible: p.visible };

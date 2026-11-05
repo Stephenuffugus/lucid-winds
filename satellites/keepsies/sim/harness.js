@@ -15,12 +15,12 @@ import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import { initPhysics, createWorld, disposeWorld, addSurface, addMarble, removeMarble, impulse, place, step, atRest, hash, positionOf, specOf, ringDistance } from '../src/core/physics.js?v=20261105a';
-import { makeRng, makeStreams } from '../src/core/rng.js?v=20261105a';
-import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../src/core/snap.js?v=20261105a';
-import { sin, cos, normalize, DEG } from '../src/core/dmath.js?v=20261105a';
-import { STARTER_ENTRIES } from '../src/core/marbleBody.js?v=20261105a';
-import { len2 as _len2 } from '../src/core/dmath.js?v=20261105a';
+import { initPhysics, createWorld, disposeWorld, addSurface, addMarble, removeMarble, impulse, place, step, atRest, hash, positionOf, specOf, ringDistance } from '../src/core/physics.js?v=20261105b';
+import { makeRng, makeStreams } from '../src/core/rng.js?v=20261105b';
+import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../src/core/snap.js?v=20261105b';
+import { sin, cos, normalize, DEG } from '../src/core/dmath.js?v=20261105b';
+import { STARTER_ENTRIES } from '../src/core/marbleBody.js?v=20261105b';
+import { len2 as _len2 } from '../src/core/dmath.js?v=20261105b';
 const len2 = _len2;
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -108,10 +108,10 @@ function fireAim(W, id, aimSpec, rng, extraDeg, dirOverride) {
 /* ------------------------------------------------------------- statues (step 9) */
 /* The STATUES house rule (core/statues.js): played through the game's own Ringer, statues and all, because the
    statue list is part of the setup record and a replay of it has to be the same match. */
-const { createRinger } = await import('../src/game/ringer.js?v=20261105a');
-const STATUE_CORE = await import('../src/core/statues.js?v=20261105a');
+const { createRinger } = await import('../src/game/ringer.js?v=20261105b');
+const STATUE_CORE = await import('../src/core/statues.js?v=20261105b');
 const { SHAPES, aiPlacement, inside } = STATUE_CORE;
-const { FORMATIONS } = await import('../src/game/ringer.js?v=20261105a');
+const { FORMATIONS } = await import('../src/game/ringer.js?v=20261105b');
 
 /** The four statues for a seed, by the AI's seeded rule for both owners in turn, as the record a match keeps. */
 function statueRecord(sc, seed) {

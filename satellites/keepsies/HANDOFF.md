@@ -4,6 +4,17 @@
 
 ## Where we are
 
+**2026-11-05, Keepsies m2 (Stephen's statues, `KEEPSIES_BUILD_PLAN.md` steps 9 to 11, Opus): stamp `20261105b`,
+deploy script `/home/codespace/kp-drafts/deploy-keepsies-m2.sh` (it carries m1; it accepts main before or after
+the m1 script).** STATUES is a Ringer house rule, off by default: `core/statues.js` (pure: four shapes as collider
+parts, a half foot snap, legality a foot clear of the lay and the line, the AI's seeded placement, `blocks`),
+`core/physics.js addStatue` (fixed bodies, never surfaces), `render/statues.js` (stone and a chalk footprint), the
+players place two each by drag before the lag in a whole ring view (Not here in words, Confirm and Undo, nothing
+by a tap), and a turn may move one of your own up to two feet instead of a shot (`rules-ringer moveStatueTurn`);
+Dusty places by his rule and moves his own when it blocks his best shot. The list rides in the setup record and
+`sim/scenarios/ringer_statues.json` replays it. The front door's `more` run places and moves by real touches and
+checks each landed under the lifted finger. Real figures for the statues are a Meshy lane (DECISIONS 1 and 2).
+
 **2026-11-04, Keepsies m1 (Astra's pack v1, `KEEPSIES_BUILD_PLAN.md` steps 0 to 8, Opus): the lot and the
 people, stamp `20261105a`, on add-sproing-jumper, deploy script `/home/codespace/kp-drafts/deploy-keepsies-m1.sh`
 for Stephen.** The four defects fixed (THE UNDEFINED chip, the camera's floor guard, the stale field line, the

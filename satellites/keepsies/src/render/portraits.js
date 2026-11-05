@@ -8,7 +8,7 @@
  * nowhere yet. The rung list is Astra's proposal (four rungs and the boss a league), not the design's five:
  * that call is the Director's (DECISIONS 6).
  */
-import { art } from './art.js?v=20261105a';
+import { art } from './art.js?v=20261105b';
 
 const BOSS_FILE = {
   dusty_coyle: 'dusty', marlene_knuckles_ito: 'marlene', the_pit_boss: 'pitboss',
