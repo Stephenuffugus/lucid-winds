@@ -82,6 +82,9 @@ def main():
               'progress_shell.png', 'progress_cone.png', 'progress_gem.png', 'level_card_frame.png', 'shop_card_frame.png',
               'builder_frame_frame.png', 'coach_bubble_frame.png', 'toast_pill_frame.png', 'aloe_wallet_chip_frame.png'):
         copy('f_ui/' + k, 'ui/' + k)
+    # the social card for link previews (og:image), as a JPG the crawlers all read
+    Image.open(os.path.join(PACK, 'g_store', 'social_card.webp')).convert('RGB').save(out('social_card.jpg'), 'JPEG', quality=84, optimize=True)
+    total[0] += os.path.getsize(out('social_card.jpg'))
     # the share frames (loaded only when a card is shared)
     webp('../../pack-v1/assets/g_store/result_square.png', 'sharing/result_square.webp', q=82)
     webp('../../pack-v1/assets/g_store/daily_card.png', 'sharing/daily_card.webp', q=82)

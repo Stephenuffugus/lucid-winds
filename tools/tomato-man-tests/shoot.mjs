@@ -6,7 +6,8 @@
  *   node tools/tomato-man-tests/shoot.mjs <outdir>                 every screen
  *   node tools/tomato-man-tests/shoot.mjs <outdir> play            one screen
  *   W=360 H=780 node tools/tomato-man-tests/shoot.mjs <outdir> play
- * Screens: title howto worlds levels play blaze burn win shop builder daily pause first (first = an empty save, Dawn
+ * Screens: title howto worlds levels play blaze burn win shop builder daily pause first longdark springtide angry pickle
+ * share (share writes the two composed 1080 postcards; first = an empty save, Dawn
  * Ribbon's first seconds). Every other screen starts from a save that has seen How to Play and every coach mark. */
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
@@ -33,6 +34,8 @@ const fresh = async (save) => {
 };
 const shot = async n => { await wait(400); await page.screenshot({ path: `${out}/${n}.jpg`, type: 'jpeg', quality: 82 }); console.log(n); };
 const want = n => !only || only === n;
+import { writeFileSync } from 'node:fs';
+const savePng = async n => { const d = await ev('__TM.postcard()'); if (d) { writeFileSync(`${out}/${n}.png`, Buffer.from(d.split(',')[1], 'base64')); console.log(n + ' (composed)'); } else console.log(n + ' NOT composed'); };
 const SCREENS = {
   title: async () => {},
   howto: async () => { await ev("__TM.buildHowto(); __TM.showScreen('howto')"); },
@@ -47,6 +50,12 @@ const SCREENS = {
   daily: async () => { await ev("__TM.hold(true); __TM.startDaily(); __TM.seek(3)"); },
   pause: async () => { await ev("__TM.hold(true); __TM.startLevel(0); __TM.seek(2); __TM.togglePause()"); },
   first: async () => { await ev("__TM.hold(true); __TM.startLevel(0); __TM.seek(2.5)"); },
+  longdark: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='The Long Dark')); __TM.seek(4.6)"); },
+  springtide: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='Spring Tide')); var r=__TM._run(); r.screenT=30; __TM.P.x=1200; __TM.P.y=2060; r.wilts[0].campT=2.0; __TM.seek(0.4)"); },
+  angry: async () => { await ev("__TM.hold(true); __TM.startLevel(__TM.LEVELS.findIndex(l=>l.name==='The Angry Sun')); __TM.seek(0.7)"); await wait(700); await ev("__TM.render()"); },
+  pickle: async () => { await ev("__TM.look('pickle','eclipse_halo'); __TM.go('builder')"); await wait(1500); },
+  share: async () => { await ev("__TM.hold(true); __TM.startLevel(2); __TM.seek(2); __TM.winLevel()"); await wait(1200); await savePng('share-result');
+    await ev("__TM.hold(true); __TM.startDaily(); __TM.seek(2); __TM.winLevel()"); await wait(1200); await savePng('share-daily'); },
 };
 for (const name of Object.keys(SCREENS)) {
   if (!want(name)) continue;
