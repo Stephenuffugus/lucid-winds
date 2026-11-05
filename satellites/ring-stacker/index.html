@@ -60,10 +60,10 @@ canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block
    72 CSS renders ~52 real px. Do NOT "simplify" back to 48 — it renders ~35. */
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
   border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1d2130,#14161f); color:var(--ink);
-  font-size:18px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
+  font-size:23px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.15)}
 .btn.primary{background:linear-gradient(180deg,#ffd76a,#d8a437); color:#241a04; border-color:#ffe49a; box-shadow:0 4px 0 #8a6a1e, 0 8px 20px #0006}
-.btn.sm{min-height:72px; font-size:15px}
+.btn.sm{min-height:72px; font-size:22px}
 .btn.ghost{background:#12141c; color:var(--muted)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
@@ -89,7 +89,7 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
    this can never sit on top of a control. */
 .swsback{position:absolute; left:10px; top:calc(env(safe-area-inset-top,0px) + 10px); z-index:31;
   min-height:48px; padding:0 15px; border-radius:14px; border:1px solid var(--line);
-  background:rgba(18,16,12,0.82); color:var(--muted); font-size:12.5px; font-weight:700;
+  background:rgba(8,13,21,0.86); color:#c8d5e8; font-size:18px; font-weight:700;
   letter-spacing:.5px; display:flex; align-items:center; gap:7px; cursor:pointer}
 .swsback:active{filter:brightness(1.35)}
 .cbtn{position:absolute; width:118px; height:96px; border-radius:18px; border:1px solid var(--line);
@@ -310,7 +310,7 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
 <script>
 (function(){
 "use strict";
-var BUILD="v4.0";
+var BUILD="v5.0";
 function $(id){ return document.getElementById(id); }
 function icon(n){ return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'; }
 var UIF='"Space Grotesk",system-ui,sans-serif', DSF='"Barlow Condensed","Space Grotesk",'+UIF;
@@ -1284,7 +1284,7 @@ if(/[?&]rsdev=1/.test(location.search)){
 /* ---------- add to home screen (Dewball pattern) ---------- */
 (function(){
   var btn=$('b-install'); if(!btn)return;
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=8'); }catch(e){} }
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=9'); }catch(e){} }
   function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
   if(standalone()){ btn.style.display='none'; return; }
   var deferred=null;
@@ -1417,7 +1417,7 @@ if(/[?&]rstest=1/.test(location.search)){
   }
   window.RS_DEV={
     start:function(m,seed){ newGame(m||'journey'); running=false;
-      if(seed!=null){ G.seed=seed; G.rng=mulberry32(seed); G.feed=bagFeed(G.rng); G.next=G.feed(); G.cur=null; G.grid=emptyGrid(); G.pieces=0; spawn(); }
+      if(seed!=null){ G.seed=seed; G.rng=mulberry32(seed); G.feed=bagFeed(G.rng); G.next=G.feed(); G.next2=G.feed(); G.guide=0; G.cur=null; G.grid=emptyGrid(); G.pieces=0; HUDC={}; spawn(); }
       return true; },
     state:function(){ if(!G)return null; return { mode:G.mode, score:G.score, rings:G.rings, level:G.level,
       over:G.over, pieces:G.pieces, chainBest:G.chainBest, quotaDone:G.quotaDone, quota:G.quota, seed:G.seed }; },
@@ -1447,6 +1447,7 @@ if(/[?&]rstest=1/.test(location.search)){
     drop:function(){ if(!G||!G.cur)return false; var sd=stickDrop(); G.cur.y=sd.y; if(sd.stick)lockPiece(false); else losePiece(false); render(); return sd.stick; },
     fill:function(R,dens,seed){ var r=mulberry32(seed||7),x,y; for(y=0;y<N;y++)for(x=0;x<N;x++){ var d=cheb(x,y); if(d>=1&&d<=R&&r()<(dens||0.8))G.grid[y][x]='#fff'; } render(); return true; },
     end:function(){ endRun(); return true; },
+    shareCard:function(){ var c=shareCard(); return c?c.toDataURL('image/png'):null; },
     show:function(id){ show(id); return true; },
     earnTest:function(){ try{ return window._sbCapEarn(2,'test'); }catch(e){ return -1; } }
   };
