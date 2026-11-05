@@ -15,7 +15,7 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 - [x] Run the Shutterbug deploy line (you: sb-m2-8 LIVE 5 Nov, main d349e54e2)
 - [ ] Play a room, Play it again, and share one to a friend on the Pixel (you)
 - [x] Zoom in the top right corner, the Darkroom a big title button, the start pick retired (Opus: sb-m2-9 built 5 Nov)
-- [ ] Run the sb-m2-9 deploy line (you)
+- [x] Run the sb-m2-9 deploy line (you: LIVE 5 Nov, main 616ba530e)
 - [ ] Harder rooms: pick the tuning step and which new challenges (you, then Opus; Astra draws the new pieces)
 - [x] Pick the Flatulence Fighter redesign below (you: 5 Nov, "sure")
 
