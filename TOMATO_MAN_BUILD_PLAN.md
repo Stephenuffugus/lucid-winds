@@ -69,7 +69,7 @@ NOTES; the game's own warning and travel durations always win over the clip leng
 
 | Step | State | Commit (Tomato_Man sunstruck) | Note |
 |---|---|---|---|
-| 0 |  |  |  |
+| 0 | DONE | 6483d31 | cloned to /workspaces/Tomato_Man, branch sunstruck from main f0e47a3; the arcade copy had DRIFTED (vendor check EDITED: the fleet's canonical link, Sky Wolf Studio, the dashes out of the copy in index.html and umbra-v4.html), so sunstruck's first commit 9286b68 carries those edits upstream and a re vendor loses nothing; the push needed his login (the codespace token is lucid-winds only): this clone's local credential helper is env -u GITHUB_TOKEN gh auth git-credential, nothing global changed; tools/tomato-man-tests/check.js red at 83 before the build (64 emoji lines, 16 copy law lines, the two art files the loader asks for and never gets, zoom off) and shoot.mjs (title howto worlds levels play blaze burn win shop builder daily pause first) through the EXISTING window.__TM hook, extended (go showScreen openWorld startDaily togglePause buildHowto, hold, seek, exposure; devHold stops the clock) instead of a new ?tmtest; the clone served on 8778; before set in /home/codespace/tm-drafts/before (emoji draw as boxes in headless Chrome); Tomato_Man main f0e47a3, lucid-winds main's satellites/tomato-man tree 5fb588e0 |
 | 1 |  |  |  |
 | 2 |  |  |  |
 | 3 |  |  |  |
