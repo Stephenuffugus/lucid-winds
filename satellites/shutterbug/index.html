@@ -123,7 +123,15 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
   background: transparent; display: flex; justify-content: center; align-items: flex-start; visibility: hidden; }
 #pause.on { visibility: visible; }
 #pause i { width: 32px; height: 32px; display: block; background: var(--pause-glyph-normal) 0 0 / 32px 32px no-repeat; image-rendering: pixelated; }
-#pause.down i { background-image: var(--pause-glyph-pressed); }   /* a finger or the pointer on it (ui wiring: pointerdown to up) */
+#pause.down i { background-image: var(--pause-glyph-pressed); }
+/* ZOOM IN THE CORNER (Stephen, 5 Nov: "the zoom in and out needs to be in the top right hand corner"): Pause's mirror at the
+   strip's right end, its 48 px hit area hanging the same 12 px over the room's top right corner; a magnifier with a plus
+   to come closer and a minus to step back (placeholder glyphs until Astra draws them) */
+#zoombtn { flex: 0 0 48px; width: 48px; height: 48px; align-self: flex-start; margin: 0 -12px 0 4px; padding: 4px 0 0; border: 0;
+  background: transparent; display: flex; justify-content: center; align-items: flex-start; visibility: hidden; }
+#zoombtn.on { visibility: visible; }
+#zoombtn i { width: 32px; height: 32px; display: block; background: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%20shape-rendering='crispEdges'%3E%3Cg%20fill='%230b0a0f'%3E%3Crect%20x='1'%20y='3'%20width='1'%20height='1'/%3E%3Crect%20x='1'%20y='4'%20width='1'%20height='1'/%3E%3Crect%20x='1'%20y='5'%20width='1'%20height='1'/%3E%3Crect%20x='1'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='1'%20y='7'%20width='1'%20height='1'/%3E%3Crect%20x='1'%20y='8'%20width='1'%20height='1'/%3E%3Crect%20x='1'%20y='9'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='3'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='4'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='5'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='7'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='8'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='9'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='3'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='3'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='3'%20y='3'%20width='1'%20height='1'/%3E%3Crect%20x='3'%20y='9'%20width='1'%20height='1'/%3E%3Crect%20x='3'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='3'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='4'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='4'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='4'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='4'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='4'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='5'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='5'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='5'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='5'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='5'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='4'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='5'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='7'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='8'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='7'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='7'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='7'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='7'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='7'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='8'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='8'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='8'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='8'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='8'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='9'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='9'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='9'%20y='3'%20width='1'%20height='1'/%3E%3Crect%20x='9'%20y='9'%20width='1'%20height='1'/%3E%3Crect%20x='9'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='9'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='3'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='4'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='5'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='7'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='8'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='9'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='3'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='4'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='5'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='7'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='8'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='9'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='12'%20width='1'%20height='1'/%3E%3Crect%20x='12'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='12'%20y='12'%20width='1'%20height='1'/%3E%3Crect%20x='12'%20y='13'%20width='1'%20height='1'/%3E%3Crect%20x='13'%20y='12'%20width='1'%20height='1'/%3E%3Crect%20x='13'%20y='13'%20width='1'%20height='1'/%3E%3Crect%20x='13'%20y='14'%20width='1'%20height='1'/%3E%3Crect%20x='14'%20y='13'%20width='1'%20height='1'/%3E%3Crect%20x='14'%20y='14'%20width='1'%20height='1'/%3E%3Crect%20x='14'%20y='15'%20width='1'%20height='1'/%3E%3Crect%20x='15'%20y='14'%20width='1'%20height='1'/%3E%3Crect%20x='15'%20y='15'%20width='1'%20height='1'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 32px 32px no-repeat; }
+#zoombtn.zoomed i { background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2016%2016'%20shape-rendering='crispEdges'%3E%3Cg%20fill='%230b0a0f'%3E%3Crect%20x='1'%20y='3'%20width='1'%20height='1'/%3E%3Crect%20x='1'%20y='4'%20width='1'%20height='1'/%3E%3Crect%20x='1'%20y='5'%20width='1'%20height='1'/%3E%3Crect%20x='1'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='1'%20y='7'%20width='1'%20height='1'/%3E%3Crect%20x='1'%20y='8'%20width='1'%20height='1'/%3E%3Crect%20x='1'%20y='9'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='3'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='4'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='5'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='7'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='8'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='9'%20width='1'%20height='1'/%3E%3Crect%20x='2'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='3'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='3'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='3'%20y='3'%20width='1'%20height='1'/%3E%3Crect%20x='3'%20y='9'%20width='1'%20height='1'/%3E%3Crect%20x='3'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='3'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='4'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='4'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='4'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='4'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='4'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='5'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='5'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='5'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='5'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='5'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='6'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='7'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='7'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='7'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='7'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='7'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='8'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='8'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='8'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='8'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='8'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='9'%20y='1'%20width='1'%20height='1'/%3E%3Crect%20x='9'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='9'%20y='3'%20width='1'%20height='1'/%3E%3Crect%20x='9'%20y='9'%20width='1'%20height='1'/%3E%3Crect%20x='9'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='9'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='2'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='3'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='4'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='5'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='7'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='8'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='9'%20width='1'%20height='1'/%3E%3Crect%20x='10'%20y='10'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='3'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='4'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='5'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='6'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='7'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='8'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='9'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='11'%20y='12'%20width='1'%20height='1'/%3E%3Crect%20x='12'%20y='11'%20width='1'%20height='1'/%3E%3Crect%20x='12'%20y='12'%20width='1'%20height='1'/%3E%3Crect%20x='12'%20y='13'%20width='1'%20height='1'/%3E%3Crect%20x='13'%20y='12'%20width='1'%20height='1'/%3E%3Crect%20x='13'%20y='13'%20width='1'%20height='1'/%3E%3Crect%20x='13'%20y='14'%20width='1'%20height='1'/%3E%3Crect%20x='14'%20y='13'%20width='1'%20height='1'/%3E%3Crect%20x='14'%20y='14'%20width='1'%20height='1'/%3E%3Crect%20x='14'%20y='15'%20width='1'%20height='1'/%3E%3Crect%20x='15'%20y='14'%20width='1'%20height='1'/%3E%3Crect%20x='15'%20y='15'%20width='1'%20height='1'/%3E%3C/g%3E%3C/svg%3E"); }   /* a finger or the pointer on it (ui wiring: pointerdown to up) */
 #roomname { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }   /* six hearts still fit at 320 wide */
 /* the room's biome badge (ART3: Astra's icon_biomes, round 3, "use on reveal and room label"): 24x24 at 1:1 before the
    name, nearest neighbour; ui.badge sets the frame of the room's biome */
@@ -146,6 +154,7 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 @media (max-width: 359px) {
   #top { padding: 0 calc(10px + var(--sar)) 0 calc(10px + var(--sal)); }
   #pause { margin: 0 0 0 -10px; }
+  #zoombtn { margin: 0 -10px 0 0; }
   #biomebadge { margin-right: 3px; }
   #slots { margin-left: 4px; gap: 2px; }
   #slots .slot { width: 26px; height: 26px; }
@@ -315,7 +324,7 @@ body:not(.playing) #floorname { display: none; }
 #codebox { display: flex; gap: 6px; align-items: stretch; } #codebox[hidden] { display: none; }
 #levelcode { flex: 1 1 auto; min-width: 0; min-height: 48px; border: 1px solid var(--pewter); padding: 0 8px; font-size: 16px; }
 #codebox button { min-width: 64px; min-height: 48px; border-radius: 10px; border: 1px solid var(--pewter); background: var(--paper); color: var(--ink); }
-#codemsg { margin: 0; color: var(--brick); font-weight: 700; }   /* above the buttons: below them a returning player's refusal sat under the fold at 568 (the M1 review) */
+#codemsg { margin: 0; color: var(--brick); font-weight: 700; } #codemsg.note { color: var(--film); font-weight: 400; }   /* the start pick's refund is news, not a refusal */   /* above the buttons: below them a returning player's refusal sat under the fold at 568 (the M1 review) */
 /* the title's small links and recent rooms (T1.10) */
 #album { overflow-y: auto; padding: calc(10px + var(--sat)) 16px calc(16px + var(--sab)); color: var(--paper); flex-direction: column; gap: 10px; }
 #albar { display: flex; align-items: center; gap: 12px; } #albar h2 { margin: 0; font-size: 1.3rem; }
@@ -376,8 +385,14 @@ body:not(.playing) #floorname { display: none; }
 #storytext { margin: 0; max-width: 300px; text-align: center; font-size: 1.05rem; line-height: 1.45; min-height: 3em; }
 #storynext { min-width: 220px; background: var(--sun); color: var(--ink); }
 #alstory { align-self: flex-start; min-height: 48px; background: transparent; border: 0; padding: 0; color: var(--ash); text-decoration: underline; font-size: 0.95rem; }
-#settingsbtn, #darkroombtn, #trophiesbtn, #albumbtn { min-height: 48px; background: transparent; border: 0; color: var(--ash); text-decoration: underline; font-size: 0.95rem; }
-#trophiesbtn.new { color: var(--sun); } #darkroombtn.new { color: var(--sun); }
+#settingsbtn, #trophiesbtn, #albumbtn { min-height: 48px; background: transparent; border: 0; color: var(--ash); text-decoration: underline; font-size: 0.95rem; }
+/* THE DARKROOM IS A PLACE (Stephen, 5 Nov: "the darkroom is a small menu which is dumb if its going to be important"): a big
+   button in the house group under the Daily, the blueprint as its badge, its second line the prints waiting or the wall */
+#darkroombtn { display: flex; align-items: center; justify-content: center; gap: 12px; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); }
+#darkroombtn canvas { width: 48px; height: 48px; image-rendering: pixelated; flex: none; }
+#darkroombtn span { display: flex; flex-direction: column; align-items: flex-start; } #darkroombtn small { font-size: 0.8rem; font-weight: 400; }
+#darkroombtn.new { border-color: var(--sun); box-shadow: inset 0 0 0 2px var(--sun); } #darkroombtn.new small { background: var(--sun); padding: 1px 6px; border-radius: 4px; font-weight: 700; }
+#trophiesbtn.new { color: var(--sun); }
 /* the house (QUESTIONS Q200): on the title once a first room is cleared, Start a house leads; while a run is saved
    Continue the house (or Retry House, a lost run) leads in Sun and Start a house follows in Paper (the review of
    HOUSE-A: the Sun button asked to throw the saved house away); a small Houses cleared n, then Free play as before */
@@ -628,6 +643,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <button id="housestart" class="big" type="button" data-copy="houseStart"></button>
       <p id="housecount" hidden></p>
       <button id="dailybtn" class="big" type="button" hidden><canvas id="dailybadge" width="24" height="24"></canvas><span><b data-copy="dailyHead"></b><small id="dailystate"></small></span></button>
+      <button id="darkroombtn" class="big" type="button" hidden><canvas id="darkroombadge" width="24" height="24"></canvas><span><b data-copy="darkroomLink"></b><small id="darkroomstate"></small></span></button>
       <p id="freeplay" data-copy="freePlay"></p></div>
     <button id="shoot" class="big" type="button" data-copy="shoot"></button>
     <button id="choose" class="big" type="button" data-copy="choose"></button>
@@ -635,7 +651,6 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <button id="sample" type="button" data-copy="sample"></button>
     <div id="codebox" hidden><input id="levelcode" type="text" data-aria="levelCode" autocomplete="off" spellcheck="false"><button id="pastecode" type="button" data-copy="codePaste"></button><button id="playcode" type="button" data-copy="codePlay"></button></div>
     <div id="recent" hidden><p data-copy="recentRooms"></p><div id="recentlist"></div></div>
-    <button id="darkroombtn" type="button" data-copy="darkroomLink" hidden></button>
     <button id="albumbtn" type="button" data-copy="albumLink" hidden></button>
     <button id="trophiesbtn" type="button" data-copy="trophiesLink" hidden></button>
     <button id="settingsbtn" type="button" data-copy="settingsLink"></button>
@@ -679,7 +694,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <p id="dkwallet"></p>
   <h3 data-copy="dkPrints"></h3>
   <div id="dkprints"></div>
-  <h3 data-copy="dkStartHead"></h3>
+  <h3 id="dkstarthead" data-copy="dkStartHead"></h3>
   <div id="dkstart"><p id="dkstarttext"></p><button id="dkstartbuy" type="button"></button></div>
   <h3 id="dkwallhead"></h3>
   <div id="dkwall"></div>
@@ -870,7 +885,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     CRAB_WALK_S: 3, CRAB_SHELL_S: 1, PUFF_EVERY_S: 3, PUFF_SWELL_S: 0.5, PUFF_CLOUD_S: 0.6, BEETLE_TRAIL_EVERY_S: 0.35, BEETLE_TRAIL_S: 0.7,
     /* the Darkroom (2 Nov): the starting collection, each weapon's tier and the price to develop it, a print that
        cannot be new paid in Dead pixels instead */
-    DEV_START: ['J1', 'D1'], DEV_PRICE: [0, 30, 100, 300], DEV_DUP_DP: 30, START_PICK_DP: 200 /* DESIGN 9.4 "Starting loadout pick 200" */,
+    DEV_START: ['J1', 'D1'], DEV_PRICE: [0, 30, 100, 300], DEV_DUP_DP: 30, START_PICK_DP: 200 /* DESIGN 9.4 "Starting loadout pick 200" */, START_PICK_ON: false /* 5 Nov, Stephen: "starting every house with a weapon is kind of cheating unless we made things a little more complicated": retired, the key kept, a bought pick refunded once; true brings it back */,
     DEV_TIER: { J2: 1, J3: 1, J5: 1, D2: 1, D4: 1, D6: 1, J4: 2, J6: 2, J7: 2, D3: 2, D5: 2, D8: 2, C2: 2, C6: 2, J8: 3, D7: 3, C1: 3, C3: 3, C4: 3 }, LANTERN_PULSE_S: 1 /* W4: the Lantern burns once a second */, KEYS_MAX: 3, KEYS_ROWS_OVER_SPAWN: 2, KEYS_MIN_ROWS: 6, KEYS_GUARD_CELLS: 4 /* the locked exit (2 Nov, features.keys) */, FLOOR_ROWS: 16, LANDING_RUN: 4, LANDING_REACH: 2 /* m2 step 3: three floors from the bottom, a landing of four standable cells at the top of each within two rows */, PIECES_MAX: 2, STRIP_CELLS: 3, STRIP_TRAVEL: 4, STRIP_CYCLE_F: 180, FAN_ROWS: 3, FAN_ON_F: 120, FAN_V: 7 /* m2 step 4: set pieces; a 3 cell strip over 4 cells on a 3 s cycle, a fan's 3 cell column on 2 s and off 2 s holding at least 7 px a step up (a jump through it peaks about 2 cells higher) */,
     BOSS_MOTH_EVERY_S: 4, BOSS_MOTH_COUNT: 3, BOSS_ICICLE_TELEGRAPH_S: 3, BOSS_RING_EVERY_S: 5, BOSS_RING_CELLS: 4, BOSS_SPARK_TELEGRAPH_S: 2,
     /* the biome movesets (2 Nov): each cycle and its tell; Frost's columns, Overgrowth's thorn life, Ember's sparks */
@@ -1005,7 +1020,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-8';
+  SB.BUILD = 'sb-m2-9';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -8703,7 +8718,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     dailyOpenNote: 'The Daily Room is open. Find it on the title.', dkLeft: '{n} weapons not found yet', dkLeftOne: '1 weapon not found yet',
     dkAll: 'You have found every weapon', newPrint: 'New print: {name}. Develop it in the Darkroom.', newPrints: 'New prints: {name}. Develop them in the Darkroom.', dupPrint: 'A print you had already: {n} dead pixels',
     /* WEAPONS ARRIVE (5 Nov): a chest's weapon not found yet, the clear that keeps it, the title's waiting prints */
-    gotNew: 'New weapon', keepByClear: 'Clear the room to keep it.', keptLine: 'Yours now: {name}', darkroomPrints: 'Darkroom, {n} to develop',
+    gotNew: 'New weapon', keepByClear: 'Clear the room to keep it.', keptLine: 'Yours now: {name}', dkBtnPrint: '1 print to develop', dkBtnPrints: '{n} prints to develop', pickRefund: 'Houses start empty handed now. Your {n} dead pixels for the start pick are back.', zoomIn: 'Zoom in', zoomOut: 'Zoom out',
     /* A TIME TO BEAT (5 Nov): the clear's time and best, a time sent with a link, the strip's line, the share sheet's line */
     timeYours: 'Your time {t}', timeBestNew: 'Your time {t}, your best yet', timeBestWas: 'Your time {t}. Your best {b}',
     beatWon: 'You beat the {b} you were sent', beatShort: 'The time to beat is {b}', beatStrip: 'To beat {b}', shareTime: 'Your best time, {t}, goes with the link',
@@ -8727,6 +8742,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     set: function (v) { screenNow = v; if (ui.onScreen) ui.onScreen(v); } });
   ui.onScreen = function (name) {
     document.getElementById('pause').classList.toggle('on', name === 'play');
+    var zb = document.getElementById('zoombtn'); if (zb) zb.classList.toggle('on', name === 'play');   /* ZOOM IN THE CORNER: with Pause */
     armBack(name);
   };
   /* the pause card (Stephen's note 3 of 31 Oct: the strip's Title, one bare tap, ended his run; his ruling "Pause in the
@@ -8918,6 +8934,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var st = document.getElementById('dkstarttext'), buy = document.getElementById('dkstartbuy');
     st.textContent = !bought ? C.dkStartSays : pick && owned.indexOf(pick) >= 0 ? C.dkStartOn.replace('{name}', C.wpn[pick]) : C.dkStartPick;
     buy.hidden = bought; buy.textContent = C.dkStartBuy.replace('{n}', T.START_PICK_DP); buy.disabled = !doc || doc.dp < T.START_PICK_DP;
+    document.getElementById('dkstart').hidden = !T.START_PICK_ON; document.getElementById('dkstarthead').hidden = !T.START_PICK_ON;   /* retired 5 Nov */
     /* the wall: every weapon by slot, yours lit and named, a print waiting dashed, the rest dark */
     var wall = document.getElementById('dkwall'), built = T.WEAPONS_BUILT;
     wall.textContent = '';
@@ -8927,7 +8944,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       row.className = 'dkslot'; lab.textContent = C[['slotJump', 'slotDive', 'slotCharm'][k]]; grid.className = 'dkgrid';
       built.filter(function (id) { return id.charAt(0) === s0; }).forEach(function (id) {
         var has = owned.indexOf(id) >= 0, pr = !has && prints.indexOf(id) >= 0, b = document.createElement('button'), cv = document.createElement('canvas'), nm = document.createElement('span');
-        b.type = 'button'; b.className = 'dkw' + (has ? ' has' : pr ? ' print' : '') + (has && id === pick ? ' start' : '') + (id === dkSel ? ' sel' : '');
+        b.type = 'button'; b.className = 'dkw' + (has ? ' has' : pr ? ' print' : '') + (T.START_PICK_ON && has && id === pick ? ' start' : '') + (id === dkSel ? ' sel' : '');
         cv.width = SB.render.ICON_PX; cv.height = SB.render.ICON_PX;
         var g2 = cv.getContext('2d'); SB.render.icon(g2, id, 0, 0);
         if (!has && !pr) { g2.globalCompositeOperation = 'source-atop'; g2.fillStyle = 'rgba(92,86,104,0.96)'; g2.fillRect(0, 0, cv.width, cv.height); }
@@ -8944,7 +8961,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var selHas = !!dkSel && owned.indexOf(dkSel) >= 0, selPr = !!dkSel && !selHas && prints.indexOf(dkSel) >= 0, use = document.getElementById('dkuse');
     document.getElementById('dkinfo').textContent = !dkSel ? (left === 0 ? C.dkAll : left === 1 ? C.dkLeftOne : C.dkLeft.replace('{n}', left))
       : selHas || selPr ? C.wpn[dkSel] + '. ' + C.wpnSays[dkSel] + (selPr ? ' ' + C.dkPrintWaiting : '') : C.dkNotFound;
-    use.hidden = !(bought && selHas);
+    use.hidden = !(T.START_PICK_ON && bought && selHas);
     use.textContent = pick === dkSel ? C.dkStartStop : C.dkStartUse;
   }
   var dkSel = '';   /* the weapon tapped on the wall */
@@ -9019,6 +9036,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* a new house's slots: empty, or holding the start pick when it is one of the player's weapons */
   ui.startGear = function () {
     var g = [0, 0, 0], doc = SB.save.doc, id = doc && doc.unlocks ? doc.unlocks.startPick : null, c = id ? SB.sim.WPN.indexOf(id) : -1;
+    if (!SB.TUNING.START_PICK_ON) return g;   /* retired 5 Nov: every house starts empty handed */
     if (c > 0 && ui.owned().indexOf(id) >= 0) g[SB.sim.slotOf(c)] = c;
     return g;
   };
@@ -9638,6 +9656,23 @@ body.sb-modal .lwfb-fab { display: none !important; }
      after every step and writes the DOM only when a slot's code or the jump box's cooling changed; it returns the code
      newly put in a slot (0 if none, and always 0 on a room's first call), which the pickup card reads */
   var SLOT_NAMES = ['slotJump', 'slotDive', 'slotCharm'], slotBoxes = [], shownSlots = [-1, -1, -1], shownCool = -1;
+  /* ZOOM IN THE CORNER (Stephen, 5 Nov): the Settings toggle (settings.zoom, render only, so the sim never knows) as a
+     button at the top strip's right end; a tap flips it and draws the room at once */
+  ui.initZoom = function () {
+    var b = document.createElement('button'), i = document.createElement('i');
+    b.id = 'zoombtn'; b.type = 'button'; i.setAttribute('aria-hidden', 'true'); b.appendChild(i);
+    document.getElementById('top').appendChild(b);
+    ui.onTap(b, function () {
+      var st = SB.save.doc.settings; st.zoom = !st.zoom; SB.save.commit(); ui.zoomSync();
+      SB.render.fit(); if (G.state) SB.render.draw(G.state, G.level, performance.now());
+    });
+    ui.zoomSync();
+  };
+  ui.zoomSync = function () {
+    var b = document.getElementById('zoombtn'), on = !!(SB.save.doc && SB.save.doc.settings.zoom); if (!b) return;
+    b.classList.toggle('zoomed', on); b.setAttribute('aria-label', on ? ui.COPY.zoomOut : ui.COPY.zoomIn);
+    var cb = document.getElementById('setzoom'); if (cb) cb.checked = on;
+  };
   ui.initSlots = function () {
     var box = document.createElement('span'); box.id = 'slots'; box.setAttribute('role', 'group'); box.setAttribute('aria-label', ui.COPY.slots);
     for (var k = 0; k < 3; k++) {
@@ -9941,7 +9976,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      mode Level code, never as the first room; a code that does not open says so on the title */
   ui.openCode = function (text, beat) {
     var r = SB.record.parseCode(text), msg = document.getElementById('codemsg');
-    if (!r.rec) { msg.textContent = r.why === 'newer' ? ui.COPY.codeNewer : ui.COPY.codeBad; msg.hidden = false; ui.toTitle(); return false; }
+    if (!r.rec) { msg.classList.remove('note'); msg.textContent = r.why === 'newer' ? ui.COPY.codeNewer : ui.COPY.codeBad; msg.hidden = false; ui.toTitle(); return false; }
     msg.hidden = true; ui.pendingCode = r.rec; ui.pendingBeat = beat > 0 ? beat | 0 : 0;   /* A TIME TO BEAT: only a link's */
     /* a link that arrives during play (a hashchange) holds the room under the card: the loop runs only on 'play' (the M1
        review: the moths kept coming under a card that hides the room, the rotate card's bug) */
@@ -9961,7 +9996,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        code that does not parse does: arrived mid room, the screen stayed 'code' with no Pause, no Title, no back and a
        dead Resume under it (the review of Q94) */
     ui.toTitle();
-    if (rec) { var msg = document.getElementById('codemsg'); msg.textContent = ui.COPY.codeBad; msg.hidden = false; }
+    if (rec) { var msg = document.getElementById('codemsg'); msg.classList.remove('note'); msg.textContent = ui.COPY.codeBad; msg.hidden = false; }
   };
   /* recent rooms on the title (T1.10): after the first room, each a thumbnail of its grid; a tap plays it again */
   function drawRecent() {
@@ -9990,6 +10025,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   ui.applySettings = function () {
     var st = SB.save.doc.settings;
+    if (ui.zoomSync) ui.zoomSync();
     document.getElementById('strip').classList.toggle('mirror', !!st.mirror);
     SB.audio.setSound(!!st.sound);
   };
@@ -10269,12 +10305,24 @@ body.sb-modal .lwfb-fab { display: none !important; }
     b.hidden = !ui.firstRoomDone; b.classList.toggle('new', n > 0);
     b.textContent = n > 0 ? ui.COPY.trophiesNew.replace('{n}', n) : ui.COPY.trophiesLink;
   }
-  /* WEAPONS ARRIVE (5 Nov): the title's Darkroom link says when prints wait there (they were found only by looking) */
+  /* THE DARKROOM IS A PLACE (5 Nov): the title's big Darkroom button says when prints wait there, else how full the wall is */
   function darkroomLink() {
-    var d = SB.save.doc, b = document.getElementById('darkroombtn'); if (!b) return;
-    var n = d && d.prints ? d.prints.length : 0;
+    var d = SB.save.doc, b = document.getElementById('darkroombtn'), C = ui.COPY; if (!b) return;
+    refundStartPick();
+    var n = d && d.prints ? d.prints.length : 0, st = document.getElementById('darkroomstate');
     b.classList.toggle('new', n > 0);
-    b.textContent = n > 0 ? ui.COPY.darkroomPrints.replace('{n}', n) : ui.COPY.darkroomLink;
+    st.textContent = n === 1 ? C.dkBtnPrint : n > 1 ? C.dkBtnPrints.replace('{n}', n) : C.dkWall.replace('{n}', ui.owned().length).replace('{max}', SB.TUNING.WEAPONS_BUILT.length);
+    b.setAttribute('aria-label', C.darkroomLink + ', ' + st.textContent);
+    var g = document.getElementById('darkroombadge').getContext('2d'); g.imageSmoothingEnabled = false; g.clearRect(0, 0, 24, 24); SB.render.sprite(g, 'blueprint.a', 4, 4);
+  }
+  /* the start pick retired (TUNING.START_PICK_ON, 5 Nov): a save that bought it gets its dead pixels back once and the
+     key goes back to not bought (null), so it can never pay twice; the title says so */
+  function refundStartPick() {
+    var d = SB.save.doc, T = SB.TUNING;
+    if (T.START_PICK_ON || !d || !d.unlocks || typeof d.unlocks.startPick !== 'string') return false;
+    d.unlocks.startPick = null; SB.Wallet.earn(T.START_PICK_DP, 'refund');
+    var msg = document.getElementById('codemsg'); if (msg) { msg.textContent = ui.COPY.pickRefund.replace('{n}', T.START_PICK_DP); msg.classList.add('note'); msg.hidden = false; }
+    return true;
   }
   function drawTrophies() {
     var d = SB.save.doc, C = ui.COPY; if (!d) return;
@@ -10601,6 +10649,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.init = function () {
     ui.fillCopy();
     ui.initSlots();
+    ui.initZoom();
     ui.initSwap();
     var exit = document.getElementById('exit');
     /* the Play app (a Trusted Web Activity, 2 Nov): Chrome opens it with document.referrer android-app://<package>, and
@@ -10850,7 +10899,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=30').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=31').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.
