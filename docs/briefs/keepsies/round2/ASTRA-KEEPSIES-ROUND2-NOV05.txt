@@ -1,0 +1,224 @@
+KEEPSIES, ROUND 2 FOR ASTRA (5 Nov 2026)
+
+Stephen, on his idea that became this round: "some levels could have obstacles and players could even take turns or
+each place their obstacles on the field and maybe even move them. this would turn it into a completely unique game
+and it will be very important that the controls are impeccable." Then: "a small statue that may have different
+shapes." And on the art: "i also articulated that i want a ton of assets."
+
+Your round 1 pack (keepsies-astra-pack-v1) is in the game and LIVE since 5 Nov. Round 2 has four jobs in one zip:
+  1. ASSESS the live build again, short: what your v1 art does in the real game, and what the statues should be.
+  2. DESIGN THE STATUES, Stephen's idea and now the game's most original thing: four stone figures a player places on
+     the dirt before the lag and may move instead of shooting. Today they are grey primitives. Give them a look, a
+     silhouette that reads at a few pixels, owner marks, Meshy references, and the whole placement kit.
+  3. FIX the v1 plates that did not fit the real screens. The list below says exactly what broke and why.
+  4. PRODUCE the screens v1 had objects for but no composition: the title, level up, chores, the clay pool, the case,
+     calibration, and the placement phase.
+Fable wires your zip into the game with Stephen from the zip alone, so write as if no one can ask you a follow up.
+
+HOW TO WORK (Stephen's standing order; it binds this pack)
+- No tests. No checks. No validation scripts, no pixel audits, no scripts that prove your own files, no reports about
+  reports. Your v1 zip carried a VALIDATION.json; this one carries none. The art is the deliverable. Nobody reads a
+  test log.
+- Look at each sheet ONCE with your own eyes when it is done, fix what is wrong, move on. Never render again a thing
+  that already reads.
+- One assessment, written once. One contact sheet per section. One zip. No progress notes, no plans about plans.
+- If something is ambiguous, pick the reading that ships and write one line about it in NOTES.md. Do not stop to ask.
+
+WHERE KEEPSIES IS NOW
+Live at https://lucidwinds.com/satellites/keepsies/ (build 20261105b; not listed in the arcade yet; play it on a phone
+in portrait, or a desktop window narrowed to a phone). A fresh visit runs the first four minutes: calibration, the
+Ringer card, the break against Dusty Coyle, the tin and the heirloom, a first game for a clay. Turn on the STATUES chip
+in the match setup to play a match with statues.
+
+What your v1 became, section by section (screens/ shows each one):
+- A identity: your three icons over the game's, your keepsies.jpg as the arcade thumb, both wordmarks in the one
+  icon sprite (the title still sets the name in type; see C1).
+- B the lot: your dirt tiled at 60 cm a tile, toned a step darker so the marbles stay brightest; your chalk ring,
+  cross marker and lag line as decals lit by the lamp, sized to each match's ring (7, 10 or 13 foot); the one light as
+  your style guide set it, a warm lamp at the ring's north west, 35 degrees up, the only shadow caster, fixed in the
+  world; your panorama as the true sky (equirect, horizon at the fence's foot, the lamp at the key light's bearing);
+  and your skyline as a band behind the score names in the wide shot, because the brace camera looks 30 degrees down
+  through a 28 degree lens and the top of its frame is still 16 degrees under the horizon. The band ends just above
+  the far chalk arc and steps aside for the scope.
+- C the people: the tin scene with the three heirlooms rolling in inside the mouth, then lying on your cloth; Dusty's
+  ring face as a medallion beside Against, his kept it face on the buy back card, his 96 px face as the HUD chip; the
+  other four bosses and your twenty rung opponents registered for the ladder (not built: the ladder is blocked on a
+  design call).
+- E the economy: the pouches as your closed plates with price, odds and pity owed printed before a buy, your open
+  plates for the reveal; the case on your six well shelf (the first rare is put in it and can never be staked); the
+  pot cloth under the ante; the envelope on every buy back offer.
+- F your 49 icons as one sprite, beside the words on every button.
+- G the HUD: your reticle in both states, the player chip frame with your pips, the house rule plates, the voice
+  bubble, the toast, the result card, the scope frame, the calibration dots in four states, your tier frames and marks
+  on every collection card and the inspect header.
+- I sharing: the marble card and the match card, composed from live renders on your plates.
+- D the grail references wait for Stephen's Meshy lane; H the arenas wait for the Arena; the 240 design bank waits
+  for its own milestone. None of those are this round.
+
+WHAT DID NOT FIT, AND WHY (each one is a row in section B)
+1. The aim line. aim_line.svg is a fixed 400 px arrow; the real aim runs from 40 to 420 px at any angle and is drawn
+   as a stretched strip, so the arrow could not follow it. The game still draws its own brass gradient.
+2. The snap trail. No moment in the game draws a trail yet. Skip it unless you see where it belongs.
+3. The player chip. player_chip.svg bakes seven grey dots at fixed places; the game draws seven 16 px pips of yours
+   that never land on them, so only the frame could be used, and its edges were sliced around the dots.
+4. The tier frames. Each tier frame carries its mark in the top edge; a frame has to stretch to a 96 px square tile
+   and to a header pill, and a nine slice squashes the mark. The frames went on the tiles with the mark distorted.
+5. The level up plate. level_up.png is a 3 by 2 card with a sun over two rules; the only level up moment today is one
+   line on the result card, and the card squashed onto that line put the sun inside the words. It was taken off.
+6. The pot cloth. pot_cloth's skewed shape cannot hold the ante block cleanly: two strips of 48 px stakes, a line of
+   words between them, about 335 by 240 CSS px on a 375 px phone.
+7. The heirloom cloth. Its three resting places a quarter of the plate apart, at your 62 px radius, give each live
+   render about 46 CSS px on a 375 px phone. The marble the player is choosing is too small to choose.
+8. The ground shadow. Under a marble on your dark cloth (and the shelf, and the pouch) the shadow does not show.
+9. The chalk ring. One 1024 decal stretched across a three metre ring is about 3 mm a texel: from the brace camera
+   the far arc is crisp and the near arc, a metre from the lens, is a broad cloudy smear.
+10. The panorama. 1600 px for 360 degrees: magnified as the skyline band and at the lowest camera it goes soft.
+11. The pouch reveal. The open pouch's mouth is 109 of 640 px tall, so the drawn marble inside it is small.
+12. The clay bowl and the chores board. No screen names the clay pool or lists chores yet, so both plates wait.
+13. The share cards. On the marble card the name crowds the window's lower edge; on the match card the band under
+    the numbers is mostly empty.
+
+THE STATUES TODAY (exact; the physics is the truth, so draw to it)
+- A Ringer house rule, off by default. Each player places TWO, alternating, before the lag. On your own turn you may
+  move ONE of your statues up to two feet instead of shooting; that spends the turn. Dusty places and moves his by his
+  own rule (he moves his own when it blocks his best shot).
+- Where: anywhere on the dirt inside the ring, but never within one foot of any mib of the lay or of the ring's
+  line, and clear of the other statues. Spots snap to a half foot grid. A moved statue may never touch a marble.
+- The four roles (sizes in millimetres; marbles are 16 mm, shooters 22 mm; the ring is ten foot, three metres):
+    COLUMN, tall and narrow, a glancing hit deflects: a base cylinder radius 18, 8 tall, and a shaft radius 12, 52
+      tall, 60 in all. Footprint radius 20.
+    LOAF, wide and low, it blocks: a box 90 wide, 34 tall, 52 deep. Footprint radius 52.
+    ARCH, a marble can be shot under it: two legs 16 wide, 48 tall, 24 deep, centred 28 either side of the middle,
+      and a lintel 72 wide, 12 tall, 24 deep laid on top, 60 in all; the opening is 40 wide by 48 tall, through the
+      depth. Footprint radius 38.
+    ORB, round, a hit scatters: a plinth radius 16, 10 tall, and a ball radius 22 centred 32 up, 54 in all.
+      Footprint radius 22.
+  You may propose other envelopes for each role (give the millimetres and we rebuild the colliders), but a role keeps
+  its job: one deflects, one blocks, one lets a marble through, one scatters.
+- The two views a statue lives in (statues/ and front-door/statues/ in the materials):
+    the playing view: side on, 30 degrees down, two to five metres away, where a 60 mm statue is about 15 to 25 CSS
+      px tall on a 375 by 667 phone;
+    the placement view: straight down on the whole ring above the tray, where a footprint is about 6 to 17 px across.
+  Silhouette first, then surface.
+- The input (Stephen: the controls must be impeccable): a finger drags a shape from its 48 px tile in a tray at the
+  bottom; the statue follows the finger on the dirt, snapped, its chalk footprint whole where it may stand and broken,
+  with the words Not here, where it may not; it lands where the finger lifts; Confirm keeps it, Undo takes it back;
+  nothing is placed by a tap. A move is the same drag on one of your own statues on the dirt.
+- What is wrong with them today (our read; find the rest): grey boxes and cylinders with a chalk ring; owner told
+  apart only by a slightly darker stone (colour alone, against the style guide); the tray tiles are words with no
+  drawing; from straight above every statue is a grey chip; the spot a moved statue left is not marked.
+
+THE HARD LINES (round 1's still bind; these are the ones this round touches)
+- Procedural by law: never paint a marble, never draw a marble where a real render goes.
+- What you draw for a statue must fit its collider. A Meshy reference must keep the Arch's opening open and every
+  part at least 12 mm thick.
+- Never by colour alone: tier, owner, legal and illegal each carry a mark or a word too.
+- Formats as round 1: SVG for icons and marks (24 unit viewBox, 1.8 unit rounded strokes, one currentColor ink, read
+  at 24 and 48 px); raster UI art as PNG at 2x with transparent backgrounds where it floats; plates and boards as WebP
+  or JPG; textures 1024 at most (except where a row names a size); nothing over 1600 px a side except the store and
+  the rows that name a larger strip; names lowercase_with_underscores.
+- One light, as your style guide set it. One hand, portrait, 375 px wide must read; every target 48 px.
+- Copy: spare and wry; no exclamation marks; no dashes of any kind; no text inside plates except a wordmark and what a
+  row asks for.
+
+WHAT IS IN THIS ROUND'S MATERIALS (keepsies-round2-materials.zip, from the live build)
+- screens/: the game today at 375 px wide, shot at the phone's quality tier (a Pixel draws this): k1-title,
+  k1-calibration, k1-rules, k1-setup, k1-brace (your skyline over the far arc, the scope open), k1-break, k1-topdown,
+  k1-lowest and k1-under (the lowest camera the game allows; under the floor is held at the floor now), k2-tin,
+  k2-tin-picked, k2-collection, k2-inspect, k2-inspect-rare, k2-inspect-epic, k2-inspect-grail, k2-offers, k2-ransom,
+  k2-loss-ceremony, k2-loss-results, k2-levelup, k2-pouches, k2-pouch-open, k2-share-marble, k2-share-match,
+  k2-endgame-one, k2-endgame-two, k2-endgame-orbit, k2-endgame-pinch, k2-endgame-spyglass.
+- statues/: k3-statues-place (a ghost arch on the dirt), k3-statues-not-here (the broken footprint and the words),
+  k3-statues-move (a move in progress), taken at the game's lowest quality tier because the moment matters there,
+  not the lot; and k3-placement-view-high, the whole ring from above at the phone's tier, your chalk ring and cross
+  marker as a placing player sees them.
+- front-door/first/: thirty frames of a real player's first four minutes, driven by real pointer events.
+- front-door/statues/: a match with statues placed and moved by real touches, and four more matches after it.
+  Both front door sets were taken at the game's lowest quality tier, which drops your skyline band and draws its own
+  chalk line in place of your decals: judge the lot from screens/, the flow from front-door/.
+- marbles/contact.jpg: all sixty five marbles as the game draws them. Still the one thing already beautiful.
+- v1/anchors.json and v1/manifest.json: your round 1 numbers as the game uses them.
+
+PART 1. THE ASSESSMENT (write it first, short)
+Walk the live build and the screens as round 1's two players (a kid who has never played marbles; a collector on day
+30), and once more as a player meeting the statues for the first time. Write ASSESSMENT-R2.md:
+  - What your v1 art does in the real game: what reads, what does not, screen by screen. Be blunt.
+  - The statues: what they should be in this world (stone garden figures, chalk marked yard ornaments, swap meet
+    curios, something else) and why; how a player tells his from Dusty's without colour; what makes a placement feel
+    deliberate and a move feel like a play.
+  - DECISION 1 is Stephen's and still open: the four code shapes, or four of your fourteen expansion sculpts (boba
+    buddy, moss boss, tiny tyrant, void loaf and the rest) standing on the dirt instead of inside glass. Make the case
+    for each, map the best four of yours onto the four roles above, and say which you would ship.
+  - A ranked list for round 3 and beyond (art, yours; code, ours; sculpt, the Meshy lane), each with its size.
+
+PART 2. THE ASSETS (in this order; send what you finish if you cannot finish all)
+  A. The statues (first; this is the round).
+     A1. A design board 1600x900: the four statues in the lot's stone and weather, each at front, side, top and three
+         quarter, at their millimetre sizes beside a 16 mm marble and a 22 mm shooter; and the same four shown at the
+         size a phone draws them (the two views above), so we can see the silhouettes hold at 15 px and 6 px.
+     A2. If you recommend your expansion figures for DECISION 1: the same board for your four, mapped to the roles.
+     A3. Owner marks that read without colour: yours and Dusty's, on the statue (a chalk mark on the base, a band, a
+         notch: your call), shown in both views. Dusty's are his; future rung opponents' and bosses' follow the rule.
+     A4. Meshy references, one per statue you recommend (the grail rules: 1024 square, a flat mid grey #808080
+         ground, three quarter view from slightly above, one solid mass, no thin parts, the Arch's opening open).
+     A5. The tray: a tile icon per shape as SVG (the shape's silhouette, one ink); the tile plate in idle, pressed and
+         dragging; the tray plate (a band across the bottom about 375 by 190 CSS px, give its nine slice insets).
+     A6. On the dirt: the footprint decal in two states per footprint size, allowed (whole chalk) and not allowed
+         (broken chalk), 256 square with alpha, give the ring's radius in pixels; a Not here chip plate (the words
+         are ours); the two foot reach circle for a move (chalk, 1024 square, give its radius in pixels); a mark for
+         the spot a moved statue left; a ghost treatment note (how the statue under a finger should look).
+     A7. A preview of the placement phase and of a move, drawn over front-door/statues/ captures: the tray, the
+         whole ring from above, a ghost, Not here. We match it.
+  B. The fixes (rows 1 to 13 above):
+     B1. The aim line as a tileable dash segment SVG and a separate arrowhead cap SVG, one ink, readable over dirt.
+     B2. The player chip frame without baked dots, with nine slice insets in anchors.json.
+     B3. The five tier frames without their marks (we place your tier marks from the icon set at the top centre),
+         with nine slice insets, for a 96 px square tile and for the inspect header pill.
+     B4. A level up strip for the result card (about 320 by 60 CSS px, nine slice, a place for a small mark).
+     B5. A rectangular pot cloth with nine slice insets, for the ante block above.
+     B6. An heirloom cloth in portrait proportions with three resting places of at least 90 px radius at 900 px wide;
+         give the centres and radii.
+     B7. A ground shadow sprite made for dark plates (cloth, shelf, pouch), beside the dirt one.
+     B8. The chalk ring as a stroke: a strip 2048 by 64 with alpha, tileable along its length, the line about 40 of the
+         64 px, worn breaks every so often, that we bend around the ring at 7, 10 and 13 foot. Keep or redraw the lag
+         line and the cross marker in the same chalk.
+     B9. A horizon strip 4096 by 512 PNG with alpha: the same lot as your panorama (the lamp about a quarter from the
+         left, the skyline, the fence), its foot fading into the dirt at the bottom edge, for the band behind the
+         names. Keep the equirect for the true sky.
+     B10. The open pouches (three) with mouths that frame a live render of about 120 CSS px on a 375 px phone; give
+         each mouth's ellipse.
+     B11. The share cards: move the bands so the name sits clear of the window, and give the match card's lower
+         third a job (the techniques, the provenance line, the pot cloth); new anchors.
+  C. The screens (a composition preview on a real capture, plus the plates each one needs, with windows and bands in
+     anchors.json; the words, buttons and live renders are ours):
+     C1. The title: the lot at dusk, your Keepsies wordmark, a window for one live hero marble, and bands for PLAY,
+         YOUR MARBLES, the arcade link and "0 sunbeams, 10 of 10 clay".
+     C2. Level up as its own moment: the level, the reward, and the unlock line (Pouches open at level 2 is the first).
+     C3. Chores: a screen built on your chores board, three chore slips with progress, and where it opens from.
+     C4. The clay pool: your bowl where the clay is named, with its count (10 of 10 clay) and the refill.
+     C5. The case as a screen you open from the collection: your shelf, six and twelve wells, a name band per well.
+     C6. Calibration: something to flick toward. Round 1 said the launch destination is unclear; give the snap a
+         destination on the dirt.
+  D. Icons (SVG, the round 1 grammar): share, statues (the house rule), column, loaf, arch, orb, move a statue,
+     confirm, undo, the four lays (the cross, the X, the ring, the bunch), provenance (a ledger), level up.
+  E. One more store frame 1080x1920 for the statues ("place your statues" is the idea, the words are ours), in the
+     same format as your six: a headline band and a transparent window, give x, y, w, h, draw no words.
+
+WHAT NOT TO DRAW
+- A marble's surface, or a marble where a real render goes. The sixty five are code.
+- Text inside plates, except the wordmark and anything a row asks for.
+- Store screenshots (we compose those from the real game inside your frames). Sounds (what a marble striking stone
+  should sound like is worth a paragraph in NOTES.md: today it is silent).
+- The Arena, the ladder screens and the 240 design bank: still waiting on Stephen's calls, not this round.
+- Any real product, brand or person. No mascot.
+
+DELIVERY
+ONE zip named keepsies-astra-round2.zip, containing: ASSESSMENT-R2.md, STYLE-GUIDE-R2.md (only what is new or changed:
+the statues' stone, the owner marks, the chalk stroke, the new screens), manifest.json (every file: file, id, kind,
+size, notes), anchors.json (every new window, mouth, ellipse, slot centre, resting place, band, radius and nine slice
+inset, in each file's own pixels), assets/ (sections A to E as folders a_statues, b_fixes, c_screens, d_icons,
+e_store), previews/ (a contact sheet per section; the statues shown at phone size on a real capture of the playing
+view and of the placement view; each screen in C on a real capture), and NOTES.md (what you chose differently and why,
+the sound notes, and what you would make next).
+Stephen uploads it to Drive Astra/Keepsies/Round 2. Fable wires it into the game with him, one section at a time, and
+looks at every screen on a phone before it is called done.
