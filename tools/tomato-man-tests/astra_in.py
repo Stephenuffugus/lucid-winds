@@ -53,8 +53,19 @@ def main():
         copy('c_worlds/%s_card.webp' % w, 'worlds/%s/card.webp' % w)
         copy('c_worlds/%s_key_art.webp' % w, 'worlds/%s/key_art.webp' % w)
     # the casters the engine draws
-    for c in ('striped_awning', 'solid_awning', 'umbrella', 'vendor_cart_reskins', 'cloud_platform', 'cloud_elevator'):
+    for c in ('umbrella', 'cloud_platform', 'cloud_elevator'):
         webp('c_worlds/%s.png' % c, 'casters/%s.webp' % c, q=82)
+    # her awning canopies fill only the middle of their frames: cropped to the art, so stretching it to an awning's
+    # footprint makes the drawn canopy the same size as the solid one; her three cart pigments cut apart the same way
+    def crop_alpha(im):
+        bb = im.split()[3].point(lambda v: 255 if v > 24 else 0).getbbox(); return im.crop(bb)
+    for c in ('striped_awning', 'solid_awning'):
+        im = crop_alpha(Image.open(os.path.join(PACK, 'c_worlds', c + '.png')).convert('RGBA'))
+        im.save(out('casters/%s.webp' % c), 'WEBP', quality=82, method=6, alpha_quality=88); total[0] += os.path.getsize(out('casters/%s.webp' % c))
+    sheet = Image.open(os.path.join(PACK, 'c_worlds', 'vendor_cart_reskins.png')).convert('RGBA')
+    for k, name in enumerate(('terracotta', 'slate', 'sage')):
+        im = crop_alpha(sheet.crop((k * 512, 0, k * 512 + 512, 320)))
+        im.save(out('casters/cart_%s.webp' % name), 'WEBP', quality=82, method=6, alpha_quality=88); total[0] += os.path.getsize(out('casters/cart_%s.webp' % name))
     copy('c_worlds/far_silhouette.png', 'casters/far_silhouette.png')
     # pickups and markers
     for k in ('aloe_lit', 'aloe_dim', 'popsicle', 'shade_pool', 'checkpoint_pair', 'exit_flag', 'seashell', 'ice_cream', 'gem', 'sparkle'):

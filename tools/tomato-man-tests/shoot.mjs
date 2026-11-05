@@ -39,7 +39,7 @@ const SCREENS = {
   worlds: async () => { await ev("__TM.go('map')"); },
   levels: async () => { await ev("__TM.openWorld(0)"); },
   play: async () => { await ev("__TM.hold(true); __TM.startLevel(0); __TM.seek(6)"); },
-  blaze: async () => { await ev("__TM.hold(true); __TM.startLevel(6); __TM.seek(8)"); },
+  blaze: async () => { await ev("__TM.hold(true); __TM.startLevel(6); __TM.seek(2); var r=__TM._run(), m=r.movers[1]; r.screenT=9; __TM.P.x=m.x+m.w/2; __TM.P.y=m.y+170; __TM.seek(1.6)"); },
   burn: async () => { await ev("__TM.hold(true); __TM.startLevel(0); __TM.seek(1.5); __TM.burn(); __TM.seek(0.1)"); },
   win: async () => { await ev("__TM.hold(true); __TM.startLevel(0); __TM.seek(3); __TM.winLevel()"); },
   shop: async () => { await ev("__TM.go('shop')"); },
