@@ -737,7 +737,7 @@ const MUTANTS = [
     gates: [{ gate: 'loop', expect: 'Settings opens after a room ran unheld' }] },
   { name: 'PERF_DASH', task: 'M1R', file: 'page', find: "(ms >= 0 ? ms.toFixed(1) + ' ms p95' : ui.COPY.perfNone)", repl: "(ms >= 0 ? ms.toFixed(1) + ' ms p95' : '-')",
     gates: [{ gate: 'save', expect: 'a fresh Settings says so in words, no dash' }] },
-  { name: 'LINK_TAKES_FIRST_ROOM', task: 'M1R', file: 'page', find: "ui.startRoom(rec, ui.COPY.sharedRoom, { mode: 'code', notFirst: true })", repl: "ui.startRoom(rec, ui.COPY.sharedRoom, { mode: 'code' })",
+  { name: 'LINK_TAKES_FIRST_ROOM', task: 'M1R', file: 'page', find: "ui.startRoom(rec, ui.COPY.sharedRoom, { mode: 'code', notFirst: true, beat: beat })", repl: "ui.startRoom(rec, ui.COPY.sharedRoom, { mode: 'code', beat: beat })",
     gates: [{ gate: 'share', expect: 'a fresh profile opens the link to the sharer' }] },
   { name: 'AGAIN_FORGETS_LINK', task: 'M1R', file: 'page', find: '{ level: G.level, noReveal: true, notFirst: G.notFirst, mode: G.mode }', repl: '{ level: G.level, noReveal: true }',
     gates: [{ gate: 'share', expect: "its death card's Again keeps it a link" }] },
