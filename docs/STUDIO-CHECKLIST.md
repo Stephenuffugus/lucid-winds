@@ -52,7 +52,8 @@ there subtly"): the photo stays faint behind the room (m2 DECISION 1), the close
 
 ## Flatulence Fighter (m1 live)
 - [x] Run FLATULENCE_FIGHTER_M2_BUILD_PLAN.md (the four pads) (Opus: built 5 Nov, 89176521d, the six DECISIONS at their defaults)
-- [ ] Run the FF m2 deploy line `! bash /home/codespace/ff-drafts/deploy-ff-m2.sh`, then play it on the Pixel flat on a table (you)
+- [x] Run the FF m2 deploy line (you: LIVE 5 Nov, main 8187f3a32, index 6255c1247ce2)
+- [ ] Play FF m2 on the Pixel flat on a table (you)
 - [ ] Drop docs/briefs/flatulence-fighter/round2/ into Drive Astra/Flatulence Fighter/Round 2 and give Astra its KICKOFF-PROMPT.txt (you)
 - [ ] The six DECISIONS in FLATULENCE_FIGHTER_M2_BUILD_PLAN.md: the call lists, a miss as a fidget or a strike, the new medals' names, a Classic mode or not, the table card's line, landscape or not (you)
 His verdict 5 Nov: no explanation of the objective or of what to touch when and why; lean and the pop ups make no
