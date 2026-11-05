@@ -16,6 +16,7 @@
 - SF step 5 DONE: the almost ring's notch and lit seam, the crush and SLAM to Astra's motion table with her burst, flow, streaks, shockwave, chain callouts, swallow, level up and game over plates; reduced motion; sound to her notes; check green, crush shot read.
 - SF step 6 DONE: the result on Astra's card with the player's real gyre, the 1080 share card (and the Daily's with its date) shared as a file or downloaded, practice runs after the day's Daily, Zen calm; check green, gameover shot read.
 - SF step 7 DONE: the guided first ring on a fresh save (ring 1 built but one cell, a T pointing at the gap, one coach line); check green, first shot read.
+- SF step 8 DONE (15:20 UTC): the walk at 412 and 320 plus the worst angles, its faults fixed (button labels, the arcade link, the build label, the seeded test start), stamp ring-stacker-v9, check green. SUNFORGE m1 DEPLOY LINE FOR STEPHEN (idle prompt): `! bash /home/codespace/sf-drafts/deploy-sunforge-m1.sh` (dry run OK: 72 files and the arcade thumb on top of main 616ba530e; stops if main's index, og card or thumb moved). Then his Pixel pass and the plan's 6 DECISIONS and m2 list.
 
 ## 🎭 4 Nov 17:55 UTC (Opus) TONIGHT: FLATULENCE FIGHTER m1, THEN SHUTTERBUG m2, THEN KEEPSIES m1 (one line per step; box booted 17:41 UTC, this run stops 05:01 UTC)
 - FF step 0 DONE: check red at 72, before set in /home/codespace/ff-drafts/before/, main 33db6ef8f blobs index 060c5013, card 46634ec2, thumb b9118678.

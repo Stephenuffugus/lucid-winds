@@ -77,7 +77,7 @@ touch and hold the ones it tells you when it tells you; suggest setting the phon
 - [ ] Fix the shot tool's end game loop (Opus, small)
 
 ## Sunforge (m1 planned, 5 Nov)
-- [ ] m1 from SUNFORGE_BUILD_PLAN.md: the Sunbreaker skin, the title that shows the game, the almost ring and the crush, SLAM's states, the gyre on the share card, the guided first ring, pause (Opus)
+- [x] m1 from SUNFORGE_BUILD_PLAN.md: the Sunbreaker skin, the title that shows the game, the almost ring and the crush, SLAM's states, the gyre on the share card, the guided first ring, pause (Opus: built 5 Nov, deploy line in START-HERE)
 - [ ] Run the Sunforge deploy line, then the Pixel pass (you)
 - [ ] The 6 DECISIONS in the plan (pause, fonts, the guided first ring, overload, the slam sound, the name) (you)
 - [ ] Pick one or two from the m2 list: SLAM with a direction by swipe, chapter skies, the hold outline, overload, a weekly gyre, the store listing (you)
