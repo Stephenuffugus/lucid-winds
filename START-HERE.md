@@ -8,6 +8,7 @@
 - Opus kickoff: docs/briefs/opus-kickoff-nov05/PROMPT.txt (Sunforge m1, Tomato Man m1, Tomato Man m2, then Shutterbug harder rooms step 1, then FF m2, as the box allows; each ends in a deploy line for him).
 - Pixel Petri: docs/briefs/pixel-petri/EXPANSION-PROPOSAL-NOV05.md (three expansion shapes from the bible's own design/09-expansion.md, the commercial's pipeline, his four calls). The seven buys in seven countries read as organic Play search, not theft: the Play app is a window onto the free web page.
 - The studio checklist (docs/STUDIO-CHECKLIST.md) updated: Tomato Man and Sunforge ticked as back, new Sunforge, Tomato Man and Pixel Petri sections; the Doc copy needs a new Doc only if he wants it.
+- 14:55 UTC (Opus) the build run started on Fable's kickoff (work until 01:06 UTC). SF step 0 DONE: check and shoot tools in tools/sunforge-tests/, check red at 22 before the build, the before set in /home/codespace/sf-drafts/before.
 
 ## 🎭 4 Nov 17:55 UTC (Opus) TONIGHT: FLATULENCE FIGHTER m1, THEN SHUTTERBUG m2, THEN KEEPSIES m1 (one line per step; box booted 17:41 UTC, this run stops 05:01 UTC)
 - FF step 0 DONE: check red at 72, before set in /home/codespace/ff-drafts/before/, main 33db6ef8f blobs index 060c5013, card 46634ec2, thumb b9118678.

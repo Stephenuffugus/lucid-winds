@@ -31,7 +31,7 @@ window 100,448,880,1280, headline band 100,150,880,150; never served, the store 
 
 | Step | State | Commit | Note |
 |---|---|---|---|
-| 0 |  |  |  |
+| 0 | DONE |  | docs and manifest read; server on 8777; /home/codespace/sf-drafts; tools/sunforge-tests/check.js (the FF rules plus entities decoded before the emoji test, store art never named, the old name, the saved keys and Sunbeam ids) red at 22 before the build (19 emoji, Ring Stacker twice, zoom off); tools/sunforge-tests/shoot.mjs (title how settings play almost crush gameover daily first) through the EXISTING ?rstest=1 hook (RS_DEV, extended: freeze step flush seedRing put lock drop fill end show) instead of a new ?sftest=1; the frame loop's body is now tick(dt); the dev bot's missing hardDropY fixed; before set in /home/codespace/sf-drafts/before (its crush frame missed: the handle locked in place, drop added after); main's ring-stacker tree 4da73f7e = the branch's; CI runs only the fourteen games with their own tools/check.js, Sunforge is not one |
 | 1 |  |  |  |
 | 2 |  |  |  |
 | 3 |  |  |  |
