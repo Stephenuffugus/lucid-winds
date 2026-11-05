@@ -23,6 +23,7 @@
 - TM step 3 DONE: the shade as one cool union on Astra's ground, her sun looking at him, hot sand, clouds, eclipse and near burn vignettes; check green, play shot read.
 - TM step 4 DONE: Astra's canopies at the solid footprints, parasols, cart convoys, aloe, treasures, flags, pennant, her effects, the seeded world decor; check green, blaze shot read.
 - TM step 5 DONE: every screen in Astra's daylight paper (the title on her menu plate, world and level postcards, How to Play cards, her frames), the HUD readable on sand with her meter, buttons and stick; check green, worlds and levels shots read.
+- TM step 6 DONE: no rules wall before play (the coach teaches off the crossing), the burn strip, the win as Astra's postcard with him waving in a shadow; check green, win shot read.
 
 ## 🎭 4 Nov 17:55 UTC (Opus) TONIGHT: FLATULENCE FIGHTER m1, THEN SHUTTERBUG m2, THEN KEEPSIES m1 (one line per step; box booted 17:41 UTC, this run stops 05:01 UTC)
 - FF step 0 DONE: check red at 72, before set in /home/codespace/ff-drafts/before/, main 33db6ef8f blobs index 060c5013, card 46634ec2, thumb b9118678.
