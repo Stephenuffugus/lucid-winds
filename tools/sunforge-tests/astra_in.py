@@ -33,7 +33,7 @@ COPY = {
   'fx': ['f_fx/%s.png' % n for n in ('slam_shockwave', 'ring_crush_burst', 'void_swallow', 'inward_flow', 'quarter_turn_spin_01',
                                        'quarter_turn_spin_02', 'quarter_turn_spin_03', 'quarter_turn_spin_04', 'chain_x2', 'chain_x3',
                                        'chain_x4', 'chain_x5', 'chain_x6', 'level_up_plate', 'game_over_plate')],
-  'sharing': ['g_results_sharing/%s.png' % n for n in ('game_over_card_frame', 'share_square', 'share_portrait', 'daily_gyre_card')],
+  'sharing': ['g_results_sharing/%s.png' % n for n in ('game_over_card_frame', 'share_square', 'daily_gyre_card')],
 }
 ICONS = ['left', 'right', 'down', 'rotate', 'hold', 'pause', 'sound', 'music', 'ghost', 'settings', 'home', 'share', 'retry',
          'how_to_play', 'install', 'back']

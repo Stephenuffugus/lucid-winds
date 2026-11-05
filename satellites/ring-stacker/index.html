@@ -183,6 +183,22 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
 #stage.has-slam_idle #slambtn.charged{background-image:var(--a-slam_charged, var(--a-slam_idle))}
 #stage.has-slam_idle #slambtn.pressed{background-image:var(--a-slam_pressed, var(--a-slam_idle))}
 #s-pause{background:rgba(8,13,21,.82)}
+/* ---- the result card (step 6): her 800x1100 frame at 0.6, the gyre canvas behind its window (90 240 620 620 at 2x),
+   the three stat bands (85 305 525, 918, 190x80 at 2x) ---- */
+#go-card{position:absolute; left:30px; top:16px; width:480px; height:660px; border-radius:16px; background:#182431; border:1px solid rgba(130,151,165,.45)}
+#stage.has-go_card #go-card{background:none; border:0}
+#go-gyre{position:absolute; left:54px; top:144px; width:372px; height:372px}
+#go-frame{position:absolute; inset:0; background:var(--a-go_card) center/100% 100% no-repeat; pointer-events:none}
+#go-head{position:absolute; left:0; right:0; top:40px; text-align:center; font:900 italic 64px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#fff5cb}
+#stage.has-go_card #go-head{display:none}
+.go-band{position:absolute; top:551px; width:114px; height:48px; display:flex; flex-direction:column; align-items:center; justify-content:center}
+#gb-score{left:51px} #gb-rings{left:183px} #gb-level{left:315px}
+.go-band .bl{font:900 17px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:1.5px; color:#c8d5e8}
+.go-band .bv{font:900 28px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#fff5cb; font-variant-numeric:tabular-nums; margin-top:2px}
+#go-line{position:absolute; left:20px; right:20px; top:688px; text-align:center; font:600 22px/1.2 'Space Grotesk',sans-serif; color:#fff5cb}
+#go-line #go-sun{color:#dfff4f}
+.go-btns{position:absolute; left:50px; right:50px; top:726px; display:flex; flex-direction:column; gap:12px}
+#go-hint{position:absolute; left:40px; right:40px; top:900px; display:none; font:500 18px/1.35 'Space Grotesk',sans-serif; color:#c8d5e8; text-align:center}
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
 </style>
 <meta name="description" content="Stick falling pieces to the golden sun and finish rings to crush them inward.">
@@ -266,24 +282,26 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
     <div class="foot" id="buildstamp"></div>
   </div></div>
 
-  <!-- OVER / RESULT -->
-  <div class="screen center" id="s-go"><div class="pad center">
-    <div style="flex:1"></div>
-    <div class="go-score" id="go-score">0</div>
-    <div class="go-lab" id="go-lab">points</div>
-    <div class="pill" id="go-best">Best 0</div>
-    <div class="pill" id="go-rings" style="margin-left:8px">Rings 0</div>
-    <div class="foot" id="go-sun" style="margin-top:14px;font-size:16px;color:var(--gold)"></div>
-    <div id="go-hint" style="display:none;margin:14px auto 0;max-width:360px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:#0d1220;font-size:15px;line-height:1.5;color:var(--ink)"></div>
-    <div style="flex:1"></div>
-    <div class="stack">
+  <!-- OVER / RESULT (step 6): Astra's card frame over the player's real gyre, the stats in her bands -->
+  <div class="screen" id="s-go">
+    <div id="go-card">
+      <canvas id="go-gyre" width="744" height="744" aria-label="Your gyre"></canvas>
+      <div id="go-frame"></div>
+      <div id="go-head" aria-hidden="true">SUNFORGE</div>
+      <div class="go-band" id="gb-score"><span class="bl">SCORE</span><span class="bv" id="go-score">0</span></div>
+      <div class="go-band" id="gb-rings"><span class="bl">RINGS</span><span class="bv" id="go-rings">0</span></div>
+      <div class="go-band" id="gb-level"><span class="bl" id="go-lab">LEVEL</span><span class="bv" id="go-level">1</span></div>
+    </div>
+    <div id="go-line"><span id="go-best">Best 0</span> <span id="go-sun"></span></div>
+    <div class="go-btns">
       <button class="btn primary" id="go-retry"><svg class="ic" aria-hidden="true"><use href="#i-retry"/></svg>Again</button>
       <div class="row">
         <button class="btn sm" id="go-share"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg>Share</button>
         <button class="btn sm" id="go-home"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg>Menu</button>
       </div>
     </div>
-  </div></div>
+    <div id="go-hint"></div>
+  </div>
 </div></div>
 
 <script>
@@ -366,7 +384,7 @@ var ART={
   chain5:'assets/fx/chain_x5.png', chain6:'assets/fx/chain_x6.png',
   levelup:'assets/fx/level_up_plate.png', overplate:'assets/fx/game_over_plate.png',
   go_card:'assets/sharing/game_over_card_frame.png', share_sq:'assets/sharing/share_square.png',
-  share_tall:'assets/sharing/share_portrait.png', share_daily:'assets/sharing/daily_gyre_card.png'
+  share_daily:'assets/sharing/daily_gyre_card.png'
 };
 var IMG={};
 function art(k){ var im=IMG[k]; return (im&&im._ok)?im:null; }
@@ -607,15 +625,16 @@ function holdPiece(){
   }
   SFX.rot();
 }
+function calm(){ return SET.reduce||(G&&G.mode==='zen'); }   // Zen never shakes (step 6); reduced motion never does
 function slam(){
   if(!G.cur||G.over)return;
   var sd=stickDrop();
   G.cur.y=sd.y;
   if(sd.stick){
-    SFX.slam(); G.shakeT=SET.reduce?0:0.25;
+    SFX.slam(); G.shakeT=calm()?0:0.25;
     lockPiece(true);
   } else {
-    SFX.slam(); G.shakeT=SET.reduce?0:0.15;
+    SFX.slam(); G.shakeT=calm()?0:0.15;
     losePiece(true);
   }
 }
@@ -694,7 +713,7 @@ function nextRingStage(){
     }
   }
   G.popAnim={cells:pop, t:SET.reduce?0:-0.035, dur:SET.reduce?0.04:0.30, D:D};   // the closed band holds 35 ms first
-  if(!SET.reduce)G.shakeT=Math.max(G.shakeT,0.18);
+  if(!calm())G.shakeT=Math.max(G.shakeT,0.18);
 }
 function doCrush(D){
   // compute the inward crush and remember every move for the slide animation
@@ -736,24 +755,29 @@ function checkQuota(){
 }
 function endRun(reason){
   if(!G||G.over)return; G.over=true; G.cur=null; SFX.over();
-  var b=PROG.best[G.mode]||0, nb=G.score>b;
-  if(nb){ PROG.best[G.mode]=G.score; saveProg(); }
-  var sb=0;
+  /* the Daily is recorded once a day (rs_daily, as before); a run after that is a practice run: same pieces, and it
+     leaves the recorded score, the Sunbeams and the best alone (step 6) */
+  var sb=0, first=true;
   if(G.mode==='daily'){
     var rec=null; try{ rec=JSON.parse(LS.g('rs_daily')||'null'); }catch(e){}
-    var first=!(rec&&rec.day===todayKey());
+    first=!(rec&&rec.day===todayKey());
     if(first){ LS.s('rs_daily', JSON.stringify({day:todayKey(),num:dayNum(),score:G.score})); try{ if(window._sbCapEarn) sb=window._sbCapEarn(4,'ringstacker:daily')||0; }catch(e){} }
   }
+  var b=PROG.best[G.mode]||0, nb=first&&G.score>b;
+  if(nb){ PROG.best[G.mode]=G.score; saveProg(); }
   $('go-score').textContent = G.score.toLocaleString();
-  $('go-lab').textContent = G.mode==='daily'?('daily #'+dayNum()+' · 80 pieces'):'points';
-  $('go-best').textContent = (nb?'New best ':'Best ')+(PROG.best[G.mode]||0).toLocaleString();
-  $('go-rings').textContent = 'Rings '+G.rings+(G.chainBest>1?' · chain x'+G.chainBest:'');
+  $('go-rings').textContent = String(G.rings);
+  $('go-lab').textContent = G.mode==='journey'?'LEVEL':(G.mode==='daily'?'DAILY':'MODE');
+  $('go-level').textContent = G.mode==='journey'?String(G.level+1):(G.mode==='daily'?String(dayNum()):'ZEN');
+  $('go-best').textContent = (G.mode==='daily'&&!first?'Practice. ':'')+(nb?'New best ':'Best ')+(PROG.best[G.mode]||0).toLocaleString()+(G.chainBest>1?' · chain x'+G.chainBest:'');
   $('go-sun').innerHTML = sb>0?(icon('sun')+' +'+sb+' Sunbeams'):'';
+  $('go-retry').innerHTML = icon('retry')+(G.mode==='daily'?'Practice run':'Again');
+  var gg=$('go-gyre'); if(gg){ var g2=gg.getContext('2d'); g2.clearRect(0,0,gg.width,gg.height); drawGyre(g2,0,0,gg.width,G.grid); }
   var hint=$('go-hint');
   if(hint){
     var showHint=false;
     if(G.mode==='journey'&&G.rings===0&&LS.g('rs_ziphint')!=='1'){ showHint=true; LS.s('rs_ziphint','1'); }
-    if(showHint){ hint.innerHTML='Tip: fill a whole square ring around the golden core to clear it. Try <b style="color:var(--teal)">Zen</b> from the menu to practice with no game over.'; hint.style.display='block'; }
+    if(showHint){ hint.textContent='Fill a whole square ring around the sun to break it. Zen has no game over, a good place to practise.'; hint.style.display='block'; }
     else hint.style.display='none';
   }
   /* Astra's game over plate over the frozen board first (cooling brackets, 480 ms, held a moment), then the card */
@@ -812,13 +836,49 @@ function cellSprite(d,mask){
   g.drawImage(marks,f*64,0,64,64,0,0,64,64);
   CELLC[key]=c; return c;
 }
-function sameRing(x,y,d){ return x>=0&&x<N&&y>=0&&y<N&&!!G.grid[y][x]&&cheb(x,y)===d; }
-function cellMask(x,y,d){
-  var t=sameRing(x,y-1,d), r=sameRing(x+1,y,d), b=sameRing(x,y+1,d), l=sameRing(x-1,y,d), m=0;
+function sameRing(x,y,d,g){ g=g||G.grid; return x>=0&&x<N&&y>=0&&y<N&&!!g[y][x]&&cheb(x,y)===d; }
+function cellMask(x,y,d,g){
+  var t=sameRing(x,y-1,d,g), r=sameRing(x+1,y,d,g), b=sameRing(x,y+1,d,g), l=sameRing(x-1,y,d,g), m=0;
   if(!t)m|=1; if(!r)m|=2; if(!b)m|=4; if(!l)m|=8;
-  if(t&&l&&!sameRing(x-1,y-1,d))m|=16; if(t&&r&&!sameRing(x+1,y-1,d))m|=32;
-  if(b&&r&&!sameRing(x+1,y+1,d))m|=64; if(b&&l&&!sameRing(x-1,y+1,d))m|=128;
+  if(t&&l&&!sameRing(x-1,y-1,d,g))m|=16; if(t&&r&&!sameRing(x+1,y-1,d,g))m|=32;
+  if(b&&r&&!sameRing(x+1,y+1,d,g))m|=64; if(b&&l&&!sameRing(x-1,y+1,d,g))m|=128;
   return m;
+}
+/* the player's real gyre, small (step 6): the last grid in its rings' welded cells round the sun, one empty ring of
+   margin, on the void; the result card's window and the share card's window both come from here */
+function drawGyre(g,x,y,size,grid){
+  var E=2,yy,xx,d;
+  for(yy=0;yy<N;yy++)for(xx=0;xx<N;xx++){ if(grid[yy][xx]){ d=cheb(xx,yy); if(d>E)E=d; } }
+  var n=2*E+3, cs=size/n, ox=x+size/2, oy=y+size/2;
+  g.save(); g.beginPath(); g.rect(x,y,size,size); g.clip();
+  g.fillStyle='#080e15'; g.fillRect(x,y,size,size);
+  g.lineWidth=Math.max(1,cs*0.06);
+  for(d=1;d<=E;d++){ var hw=(d+0.5)*cs; g.strokeStyle=hexA(RING_COL[d],0.2); g.strokeRect(ox-hw,oy-hw,hw*2,hw*2); }
+  for(yy=0;yy<N;yy++)for(xx=0;xx<N;xx++){
+    if(!grid[yy][xx])continue; d=cheb(xx,yy);
+    var sp=cellSprite(d,cellMask(xx,yy,d,grid)), px=ox+(xx-C)*cs-cs/2, py=oy+(yy-C)*cs-cs/2;
+    if(sp)g.drawImage(sp,px,py,cs,cs); else { g.fillStyle=RING_COL[d]||RING_COL[RMAX]; g.fillRect(px+0.5,py+0.5,cs-1,cs-1); }
+  }
+  var cst=art('core_states');
+  if(cst){ var bs=cs*2; g.drawImage(cst,0,0,256,256,ox-bs/2,oy-bs/2,bs,bs); } else { g.fillStyle='#fff5cb'; g.fillRect(ox-cs/2,oy-cs/2,cs,cs); }
+  g.restore();
+}
+var MONTHS=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+/* Astra's 1080 share card: the gyre behind her window, her frame (the wordmark is baked), live words in her bands */
+function shareCard(){
+  if(!G)return null;
+  var daily=G.mode==='daily', frame=art(daily?'share_daily':'share_sq'); if(!frame)return null;
+  var c=document.createElement('canvas'); c.width=c.height=1080; var g=c.getContext('2d');
+  g.fillStyle='#080d15'; g.fillRect(0,0,1080,1080);
+  if(daily)drawGyre(g,240,300,600,G.grid); else drawGyre(g,240,275,600,G.grid);
+  g.drawImage(frame,0,0,1080,1080);
+  function band(rx,lab,val){ g.textAlign='center'; g.fillStyle='#c8d5e8'; g.font='900 30px '+DSF; g.fillText(lab,rx+138,940+32);
+    g.fillStyle='#fff5cb'; g.font='900 50px '+DSF; g.fillText(val,rx+138,940+78); }
+  band(76,'SCORE',G.score.toLocaleString()); band(402,'RINGS',String(G.rings));
+  band(728,G.mode==='journey'?'LEVEL':(daily?'DAILY':'MODE'),G.mode==='journey'?String(G.level+1):(daily?String(dayNum()):'ZEN'));
+  if(daily){ var dt=new Date(); g.textAlign='center'; g.fillStyle='#dfff4f'; g.font='900 34px '+DSF;
+    g.fillText('DAILY GYRE '+dayNum()+' · '+dt.getDate()+' '+MONTHS[dt.getMonth()]+' '+dt.getFullYear(),540,244+33); }
+  return c;
 }
 /* the smallest ring that is one cell from closing, and that cell (the core charges, SLAM charges, the notch shows) */
 function almostRing(){
@@ -1041,7 +1101,7 @@ function render(){
   ctx.restore();
   ctx.save(); rr(PANEL.x,PANEL.y,PANEL.w,PANEL.h,12); ctx.clip();
   if(G.spinA>0&&G.spinT>=0.035){ var sfi=Math.floor((G.spinT-0.035)/0.06), sim=sfi<4?art('spin'+(sfi+1)):null;
-    if(sim){ ctx.globalAlpha=0.85; ctx.drawImage(sim,0,PCY-440,540,960); ctx.globalAlpha=1; } }
+    if(sim){ ctx.globalAlpha=G.mode==='zen'?0.4:0.85; ctx.drawImage(sim,0,PCY-440,540,960); ctx.globalAlpha=1; } }
   var vsw=art('swallow');
   if(vsw)for(i=0;i<G.swallows.length;i++){ var sw=G.swallows[i], vss=VPITCH*3;
     ctx.drawImage(vsw,Math.min(5,Math.floor(sw.t/0.05))*256,0,256,256,sw.px-vss/2,sw.py-vss/2,vss,vss); }
@@ -1150,8 +1210,18 @@ function shareIt(){
     ? 'Sunforge Daily #'+dayNum()+'\n'+(G?G.score.toLocaleString():0)+' pts · '+(G?G.rings:0)+' rings\nSame pieces for everyone, can you beat it?'
     : 'Sunforge · '+(G?G.score.toLocaleString():0)+' pts, '+(G?G.rings:0)+' rings around the core';
   var url='https://lucidwinds.com/satellites/ring-stacker/';
-  try{ if(navigator.share){ navigator.share({text:txt,url:url})['catch'](function(){}); return; } }catch(e){}
-  try{ navigator.clipboard.writeText(txt+'\n'+url); }catch(e){}
+  function textShare(){ try{ if(navigator.share){ navigator.share({text:txt,url:url})['catch'](function(){}); return; } }catch(e){}
+    try{ navigator.clipboard.writeText(txt+'\n'+url); }catch(e){} }
+  var card=null; try{ card=shareCard(); }catch(e){ card=null; }
+  if(!card||!card.toBlob){ textShare(); return; }
+  card.toBlob(function(blob){
+    if(!blob){ textShare(); return; }
+    var name=(G&&G.mode==='daily'?'sunforge-daily-'+dayNum():'sunforge-'+(G?G.score:0))+'.png', file=null;
+    try{ file=new File([blob],name,{type:'image/png'}); }catch(e){}
+    try{ if(file&&navigator.canShare&&navigator.canShare({files:[file]})){ navigator.share({files:[file],text:txt+'\n'+url})['catch'](function(){}); return; } }catch(e){}
+    try{ var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1500); }catch(e){ textShare(); }
+  },'image/png');
 }
 
 /* ---------- wiring ---------- */
