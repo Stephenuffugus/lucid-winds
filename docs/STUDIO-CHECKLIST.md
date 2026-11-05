@@ -7,7 +7,8 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 
 ## You, now
 - [ ] Drop keepsies-round2-materials.zip into Drive Astra/Keepsies/Round 2 (you)
-- [ ] Give Astra the Keepsies round 2 kickoff (KICKOFF-PROMPT.txt in that folder) when a slot frees (you)
+- [x] Give Astra the Keepsies round 2 kickoff (you: back 5 Nov 23:10, vaulted, unpacked at /workspaces/keepsies-astra-round2)
+- [ ] Keepsies rework from his 5 Nov verdict (the view, the circle three times bigger, the aim that skips, the flick): KEEPSIES_M3_BUILD_PLAN.md (Opus)
 - [ ] Give Astra the Dewball kickoff in Drive Astra/Dewball/Store kit when a slot frees (you)
 - [ ] Shutterbug: open the Darkroom from the title; every blueprint carried out of a room is a print waiting there, a weapon once developed for dead pixels (you)
 - [ ] Play Keepsies on the Pixel with the STATUES chip on: place two, move one (you)
