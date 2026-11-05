@@ -183,6 +183,8 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
 #stage.has-slam_idle #slambtn.charged{background-image:var(--a-slam_charged, var(--a-slam_idle))}
 #stage.has-slam_idle #slambtn.pressed{background-image:var(--a-slam_pressed, var(--a-slam_idle))}
 #s-pause{background:rgba(8,13,21,.82)}
+#coach{position:absolute; left:44px; right:44px; top:652px; display:none; text-align:center; padding:12px 16px; border-radius:12px;
+  background:rgba(8,13,21,.9); border:2px solid #dfff4f; color:#fff5cb; font:600 24px/1.25 'Space Grotesk',sans-serif; pointer-events:none}
 /* ---- the result card (step 6): her 800x1100 frame at 0.6, the gyre canvas behind its window (90 240 620 620 at 2x),
    the three stat bands (85 305 525, 918, 190x80 at 2x) ---- */
 #go-card{position:absolute; left:30px; top:16px; width:480px; height:660px; border-radius:16px; background:#182431; border:1px solid rgba(130,151,165,.45)}
@@ -246,6 +248,7 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
     <button class="cbtn sk" id="c-right" aria-label="Right"><svg class="ic" aria-hidden="true"><use href="#i-right"/></svg></button>
     <button class="cbtn sk" id="c-down" aria-label="Down"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg></button>
     <button class="cbtn sk" id="c-rot" aria-label="Turn"><svg class="ic" aria-hidden="true"><use href="#i-rotate"/></svg></button>
+    <div id="coach" role="status">Close the ring. Drop it on the sun.</div>
     <button id="slambtn" aria-label="Slam"><svg class="ic" aria-hidden="true"><use href="#i-rotate"/></svg><span>SLAM</span></button>
   </div>
 
@@ -511,6 +514,13 @@ function newGame(mode){
       fx:[], floats:[], spinA:0, pulse:[], shakeT:0, t:0, shards:[], popAnim:null, slideAnim:null, chainN:0, view:7,
       sticks:[], skyT:0, spinT:0, shockT:-1, swallows:[], callouts:[], levelUp:null, endAnim:null };
   G.next=G.feed(); G.next2=G.feed();
+  /* the guided first ring (step 7): on a save that has never broken a ring, Journey starts with ring 1 built but for its
+     top left cell, the notch on the gap and the sun charged; the first piece is a T already pointing down at it, so it
+     falls into the gap by itself and the crush teaches the rest */
+  if(mode==='journey'&&PROG.ringsEver===0){
+    var rc1=RINGS[0],q; for(q=0;q<rc1.length;q++){ if(rc1[q][0]===C-1&&rc1[q][1]===C-1)continue; G.grid[rc1[q][1]][rc1[q][0]]='#fff'; }
+    G.next='T'; G.guide=1;
+  }
   spawn();
   show('s-play'); running=true; lastTs=0; requestAnimationFrame(loop);
 }
@@ -529,6 +539,7 @@ function spawn(){
   var vis=Math.floor((PCY-PANEL.y-VCELL/2)/VPITCH+0.1);
   var topRow=Math.max(-2, C-vis);
   G.cur={ k:k, rot:0, x:C-2, y:topRow-1 };
+  if(G.guide===1&&k==='T'){ G.cur.rot=2; G.guide=2; }
   G.holdUsed=false;
   G.pieces++;
   if(G.pieceBudget&&G.pieces>G.pieceBudget){ endRun('budget'); return; }
@@ -982,8 +993,6 @@ function render(){
   if(AR&&!G.popAnim&&!G.slideAnim){
     var a0=cellPx(C-AR.d,C-AR.d), aw=(2*AR.d+1)*VPITCH-1;
     ctx.strokeStyle=hexA(RING_COL[AR.d],0.95); ctx.lineWidth=3; rr(a0.x-2.5,a0.y-2.5,aw+5,aw+5,8); ctx.stroke();
-    var ntc=tintedGhost('#dfff4f'), nq=cellPx(AR.x,AR.y);
-    if(ntc)ctx.drawImage(ntc,nq.x-0.5,nq.y-0.5,VPITCH,VPITCH); else { ctx.strokeStyle='#dfff4f'; ctx.lineWidth=2; rr(nq.x+3,nq.y+3,VCELL-6,VCELL-6,4); ctx.stroke(); }
   }
   // the inward flow while the outside slides in: Astra's mask in the broken ring's colour, 0.35 at most
   if(G.slideAnim&&!SET.reduce){ var flw=flowTint(G.slideAnim.D);
@@ -1075,6 +1084,9 @@ function render(){
       ctx.strokeStyle=gd.stick?'rgba(238,240,246,0.3)':'rgba(255,93,108,0.55)';
       ctx.lineWidth=1.5; rr(gp.x+1,gp.y+1,VCELL-2,VCELL-2,5); ctx.stroke(); }
   }
+  // the almost ring's notch, after the ghost so the gap always shows acid (step 7 shot)
+  if(AR&&!G.popAnim&&!G.slideAnim){ var ntc=tintedGhost('#dfff4f'), nq=cellPx(AR.x,AR.y);
+    if(ntc)ctx.drawImage(ntc,nq.x-0.5,nq.y-0.5,VPITCH,VPITCH); else { ctx.strokeStyle='#dfff4f'; ctx.lineWidth=2; rr(nq.x+3,nq.y+3,VCELL-6,VCELL-6,4); ctx.stroke(); } }
   // falling piece
   if(G.cur&&!G.over){
     var pc=cellsOf(G.cur.x,G.cur.y,G.cur.rot,G.cur.k), fimg=art('falling'), stk=art('streak');
@@ -1150,6 +1162,8 @@ function hudPaint(AR){
   drawPreview('cv-next',G.next,1);
   drawPreview('cv-next2',G.next2,0.6);
   drawPreview('cv-hold',G.hold,G.holdUsed?0.35:1);
+  var coach=!!G.guide&&G.rings===0&&G.pieces<=4;
+  if(HUDC.coach!==coach){ HUDC.coach=coach; var ce=$('coach'); if(ce)ce.style.display=coach?'block':'none'; }
   var sb=$('slambtn'), ch=!!AR; if(sb&&HUDC.charged!==ch){ HUDC.charged=ch; sb.classList.toggle('charged',ch); }
 }
 function rr(x,y,w,h,rad){ ctx.beginPath(); ctx.moveTo(x+rad,y); ctx.arcTo(x+w,y,x+w,y+h,rad); ctx.arcTo(x+w,y+h,x,y+h,rad); ctx.arcTo(x,y+h,x,y,rad); ctx.arcTo(x,y,x+w,y,rad); ctx.closePath(); }
