@@ -1,6 +1,7 @@
 # START HERE
 
 ## 6 Nov (Opus, overnight run from docs/briefs/opus-kickoff-nov06/PROMPT.txt; box stops 14:54 UTC, stop 14:14)
+- KEEPSIES M3 (in progress, no deploy line yet; the milestone is step 12): steps 2 to 9 in (2f909257d). The camera holds still while a shot plays; the circle is 154 px; the flick reads its own timestamps; the aim line is the aim; the new close aim frame, the watch frame and LOOK; the five foot ring is the default. The ten foot scenarios keep their hashes. Next: step 10 statues, step 11 plates, step 12 the walk and the stamp.
 - SHUTTERBUG R9 DONE, sb-m2-12 stamped (283b99f79): Astra's round 9 spliced (49 strips); five guardian bodies by biome and pose, her shove tiles; every guardian alternates a second attack (dust cloud, frost breath, floor whip, seed pods, floor flame), told by her marks and a new tell sound; under half HP a cycle runs 3/4 as long; ten new bugs and the harder rooms behind FLAG_R9 so older codes keep their rooms (captures and the Daily carry it): free play floor 4, floor spikes up to CAP_TRAP, conveyor, crumbling shelf, swinging lamp, window gust. No browser check green; the walk with no page errors. Browser gates in test/ were already red before tonight (stale at #sample), left alone. LINE FOR STEPHEN (idle prompt): `! bash /home/codespace/sb-drafts/sb-m2-12/deploy-sb-m2-12.sh` (dry run OK).
 
 ## 6 Nov 03:45 UTC (Fable) HIS NOTES ON FIVE GAMES ANSWERED IN CODE: FOUR DEPLOY LINES, THREE ASTRA ROUNDS, THE TOMATO MAN LEVEL LAB

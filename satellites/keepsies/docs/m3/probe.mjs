@@ -21,7 +21,7 @@ export const server = createServer((req, res) => {
   res.end(readFileSync(p));
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
-export const BASE = 'http://127.0.0.1:' + server.address().port + '/index.html?keepsiestest=1';
+export const BASE = 'http://127.0.0.1:' + server.address().port + '/index.html?keepsiestest=1' + (process.env.KP_QUALITY ? '&quality=' + process.env.KP_QUALITY : '');
 export const browser = await puppeteer.launch({ headless: 'new', protocolTimeout: 180000, args: ['--no-sandbox', '--disable-dev-shm-usage', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 export const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 export async function open(w, h, opts) {

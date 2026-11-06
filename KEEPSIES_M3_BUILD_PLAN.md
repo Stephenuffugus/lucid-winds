@@ -168,8 +168,8 @@ minutes before with START-HERE written). Their law 2 is replaced by law 11. Adde
 | 5 | done 6 Nov | (git) | astra_in round 2 pass, 40 files, 68 symbols, ASTRA IN OK; nothing wired |
 | 6 | done 6 Nov | c72f90fd1 | timeStamp samples, the fastest 30 to 50 ms, graded settle, read before reset, calibration v2; found on the way: every flick spoiled its own hold (3.75 degrees from a settled hold, now 1.50) |
 | 7 | done 6 Nov | (git) | fineAngleMaxDeg 0, the dial, the line for the whole aim phase in her dash and cap (her tip on the true end point), the target at 0.5 m at 90 mm (120 ran off the sides), nudges beside the bottom corners |
-| 8 |  |  |  |
-| 9 |  |  |  |
+| 8 | done 6 Nov | 4ab0314ab, f55fd790a | close aim frame by ring (five foot 24 degrees and 28 lens, 412x915: shooter 72.4 px, centre mib 26.1; ten foot 35.7 and 14; 360x780: 57.7 and 21.5, 28.6 and 11.5; circle 154 clear of the chips; 4 of 13 outer side mibs off the edges at five foot's opening as VIEW.md said, LOOK shows them); watch frame; LOOK held on a real touch fits the chalk in 21 to 391 at 412, 15 to 398 at ten foot; scope re-picked (under 16 px, in the dirt under the cross, 0 mibs covered); off the line reads on the screen. Frame time at high quality on this box's software GL, ten foot: 3078 ms a frame before, 3334 after, plus 8.3 percent over 12 to 13 frames; five foot's closer marbles 3637 (no before: it is a new ring) |
+| 9 | done 6 Nov | 2f909257d | five foot default, launch 0.4 to 4.2, break 3.0 (96.7 percent 1 to 3 out), AI by hit rate per ring and speed scale 0.85; ladder at five foot OK (Shark 100 percent, seat one 60, mirror 13 to 45 shots, 27 mean); seven foot's Rookie unchanged. HASHES (law 16): replay_hash first 4a3ef9c9, ringer_statues 321:7e7e6170, ringer_break, sticking: every row byte identical against a CSV taken before the change (only the injected Math.random column moves, as it must). New: ringer_statues_five first 406:2d3546ac; ringer_five has no hash, its numbers are above |
 | 10 |  |  |  |
 | 11 |  |  |  |
 | 12 |  |  |  |
