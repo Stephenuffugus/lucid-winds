@@ -17,7 +17,7 @@ register('data:text/javascript,' + encodeURIComponent(
 let CLOCK = 0;
 export const clock = { set: (t) => { CLOCK = t; }, get: () => CLOCK };
 Object.defineProperty(globalThis, 'performance', { value: { now: () => CLOCK }, configurable: true, writable: true });
-const scene = await import('../src/render/scene.js?v=20261105b');
+export const scene = await import('../src/render/scene.js?v=20261105b');
 const { createKnuckle } = await import('../src/input/knuckle.js?v=20261105b');
 const { createPullback } = await import('../src/input/pullback.js?v=20261105b');
 const { attachCameraControls } = await import('../src/input/cameraCtl.js?v=20261105b');

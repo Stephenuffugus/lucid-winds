@@ -2140,7 +2140,10 @@ function frame(now) {
     // is a cut; the drift within a turn stays smooth.
     if (!G.freeCam) {
       const t = G.R.match.turn;
-      const snapIt = t !== G.lastFramedTurn;
+      /* m3 step 4: when a shot comes to rest the frame cuts to the shooter where it lies, as a turn change does, so the look point never jumps under an easing camera */
+      const simNow = !!G.R.state.simulating, restCut = !!G.camSim && !simNow;
+      G.camSim = simNow;
+      const snapIt = t !== G.lastFramedTurn || restCut;
       // the cut also forgets the last shooter's orbit and pinch, BEFORE the frame
       // is computed, or the hard cut would land on the previous player's offsets
       if (snapIt && G.rig.resetUser) G.rig.resetUser();

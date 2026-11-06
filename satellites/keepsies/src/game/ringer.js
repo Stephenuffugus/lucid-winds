@@ -428,6 +428,9 @@ export function createRinger(setup) {
    * in core/framing.js so it can be gated without a world; this feeds it real
    * positions and the player's own orbit and pinch, and applies the answer. */
   function frameShot(rig, snap) {
+    /* m3 step 4: the camera never follows a shot. It holds while the shot plays, and the turn's cut still lands (main.js calls this
+       every frame; TOP DOWN and the statues' view set absolute values after it, so nothing accumulates) */
+    if (G.simulating && !snap) return;
     const taw = shooterTaw();
     if (!W.marbles.has(taw.id)) return;
     const tp = positionOf(W, taw.id);
