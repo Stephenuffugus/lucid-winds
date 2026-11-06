@@ -1,5 +1,8 @@
 # START HERE
 
+## 6 Nov (Opus, overnight run from docs/briefs/opus-kickoff-nov06/PROMPT.txt; box stops 14:54 UTC, stop 14:14)
+- SHUTTERBUG R9 DONE, sb-m2-12 stamped (283b99f79): Astra's round 9 spliced (49 strips); five guardian bodies by biome and pose, her shove tiles; every guardian alternates a second attack (dust cloud, frost breath, floor whip, seed pods, floor flame), told by her marks and a new tell sound; under half HP a cycle runs 3/4 as long; ten new bugs and the harder rooms behind FLAG_R9 so older codes keep their rooms (captures and the Daily carry it): free play floor 4, floor spikes up to CAP_TRAP, conveyor, crumbling shelf, swinging lamp, window gust. No browser check green; the walk with no page errors. Browser gates in test/ were already red before tonight (stale at #sample), left alone. LINE FOR STEPHEN (idle prompt): `! bash /home/codespace/sb-drafts/sb-m2-12/deploy-sb-m2-12.sh` (dry run OK).
+
 ## 6 Nov 03:45 UTC (Fable) HIS NOTES ON FIVE GAMES ANSWERED IN CODE: FOUR DEPLOY LINES, THREE ASTRA ROUNDS, THE TOMATO MAN LEVEL LAB
 
 - Opus's work checked: all four games were live as recorded, both repos clean; the Tomato Man perf line and the Keepsies step 1 patch were the only things in flight. The step 1 patch is applied and in (14e09fcea, fast check with the browser gates green). The perf line is folded into the Tomato Man line below.

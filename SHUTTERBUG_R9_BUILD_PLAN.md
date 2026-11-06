@@ -34,7 +34,7 @@ gameplay mechanics are leaving a lot to be desired." The shove is live (sb-m2-11
 - Step 3: DONE. Second attacks alternate with the first (BDUST, BBREATH, BWHIP, BPOD, BFLAME), told by her marks; under half HP a cycle runs 3/4 (added: a fight that speeds up); boss schema holds near, shove, cycle, the mark. H-boss-8 re rated, H-boss-12 new.
 - Step 4: DONE. Ten kinds 11 to 20 behind a new record flag (FLAG_R9 = 4; captures and the Daily carry it, every older code keeps its room), rolled 50/30/10/10 on a stream of their own, ramp fodder too; a room of three or more meets at least one new kind. H-mon-2.
 - Step 5: DONE. Free play floor 4 (R9_FREE_ROW), CAP_TRAP read at last (floor spike fields off the climb), belt, shelf, lamp, gust off the climb's stands (the lamp may cross an arc, never a stand). H-r9-rooms.
-- Step 6:
+- Step 6: DONE. No browser check green once; the walk drew all ten kinds in both sizes, hurt and dead, all five attacks and marks, all four pieces, in all five biomes through the real R.draw, then real rooms through the shell, page errors 0. Stamp sb-m2-12 (283b99f79). Line: `! bash /home/codespace/sb-drafts/sb-m2-12/deploy-sb-m2-12.sh`, dry run OK. The browser gates in test/ were already red on the commit before tonight (no visible #sample after an earlier page's save; stale since the story, never run under the testing law): not touched, a fresh session's call.
 
 ## THE STEPS (in order; each ends green on lint, committed and pushed)
 **Step 0. The cut (S).** tools/astra_cut.py: add the 49 keys to NEW_KEYS with their sizes and frame names from her
