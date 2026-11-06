@@ -106,6 +106,15 @@ for (let i = 0; i < 25; i++) lines.push(O.dustyLine(i));
 say(lines.every(l => typeof l === 'string' && l.length > 0),
   '   and Dusty has a line for all 25 turns of a long game, wrapping rather than running dry');
 
+/* m3 step 6: a v1 calibration (the old estimator) is measured again once, a v2 kept, no key lost */
+{
+  const v1 = { profile: { calib: { max: 1.4, samples: [1.4] }, handedness: 'left', name: 'Stephen' } }, v2 = { profile: { calib: { v: 2, max: 2.2, samples: [2.2] }, handedness: 'left', name: 'Stephen' } };
+  const CAL = await import(join(ROOT, 'src/meta/onboarding.js') + '?v=20261105b'), c1 = CAL.calibrationFrom(v1, T), c2 = CAL.calibrationFrom(v2, T);
+  say(c1.own === false && c1.max === T.snap.thumbSpeedMaxDefault, 'a v1 calibration is measured again (own ' + c1.own + ')');
+  say(c2.own === true && c2.max === 2.2 && c2.handedness === 'left', 'a v2 calibration is kept (max ' + c2.max + ', ' + c2.handedness + ')');
+  say(v1.profile.calib.max === 1.4 && v1.profile.name === 'Stephen', 'and reading it loses no key');
+}
+
 console.log('');
 if (fails.length) { console.log(fails.length + ' FAILED\nONBOARDING FAILED'); process.exit(1); }
 console.log('ONBOARDING OK');

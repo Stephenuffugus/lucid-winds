@@ -451,7 +451,7 @@ function finishCalibration(result) {
   if (G.ground) G.ground.chalk.visible = true;
   if (result) {
     G.calib = { max: result.max, own: true, handedness: result.handedness };
-    SAVE.merge({ profile: { calib: { max: result.max, samples: result.samples }, handedness: result.handedness } });
+    SAVE.merge({ profile: { calib: { v: 2, max: result.max, samples: result.samples }, handedness: result.handedness } });
     G.save = SAVE.load();
   }
   endMatch();
@@ -2336,6 +2336,7 @@ function installDevHook() {
     nudge(dir) { return nudgeAim(dir); },
     scopeHold(on) { setScopeHold(on); return G.scopeHold; },
     tawScreen() { const t = G.R && G.R.tawOnScreen(G.rig); return t ? { x: +t.x.toFixed(1), y: +t.y.toFixed(1), grabR: t.grabR, spinR: t.spinR, r: t.r } : null; },
+    aimNow: () => G.knuckle.lastAim(),
     aimUi() { return { nudge: !$('aimNudge').hidden, scope: !$('scopeBtn').hidden, scopeOn: G.scopeHold, spy: !!(G.spy && G.spy.on), line: !$('aimline').hidden, lineInfo: G.aimLineInfo || null }; },
     snapCard() { return { open: !$('snapCard').hidden, seen: !!(G.save && G.save.seen && G.save.seen.snapHelp) }; },
     said() { return G.said; },

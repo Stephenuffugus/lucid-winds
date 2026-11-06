@@ -121,9 +121,9 @@ export const ev = (id, x, y, ts, list) => ({ pointerId: id, clientX: x, clientY:
 
 /** one finger, Chrome on Android: 120 Hz samples, rAF aligned moves with coalesced lists */
 export function playTouch(game, path, dur, o) {
-  const frameMs = 1000 / 60, sampleMs = 1000 / 120, id = o.id || 7, t0 = 1000;
-  let t = t0 - 90 * frameMs;
-  for (let i = 0; i < 90; i++) { CLOCK = t; game.frame(frameMs / 1000); t += frameMs; }
+  const frameMs = 1000 / (o.fps || 60), sampleMs = 1000 / (o.touchHz || 120), id = o.id || 7, t0 = o.t0 || 1000, pre = o.pre === undefined ? 90 : o.pre;
+  let t = t0 - pre * frameMs;
+  for (let i = 0; i < pre; i++) { CLOCK = t; game.frame(frameMs / 1000); t += frameMs; }
   const p0 = path(0);
   CLOCK = t0;
   game.canvas.dispatch('pointerdown', ev(id, p0.x, p0.y, t0));
@@ -135,14 +135,14 @@ export function playTouch(game, path, dur, o) {
     if (nf <= tEnd) {
       CLOCK = nf;
       if (pending.length) { const l = pending[pending.length - 1]; game.canvas.dispatch('pointermove', ev(id, l.clientX, l.clientY, l.timeStamp, pending.slice())); pending = []; }
-      game.frame(frameMs / 1000); o.each(false); nf += frameMs; continue;
+      game.frame(frameMs / 1000); if (o.each) o.each(false, nf - t0); nf += frameMs; continue;
     }
     break;
   }
   CLOCK = tEnd;
   if (pending.length) { const l = pending[pending.length - 1]; game.canvas.dispatch('pointermove', ev(id, l.clientX, l.clientY, l.timeStamp, pending.slice())); }
   const pe = path(dur);
-  game.canvas.dispatch('pointerup', ev(id, pe.x, pe.y, tEnd));
-  for (let i = 0; i < (o.post || 0); i++) { CLOCK = nf; game.frame(frameMs / 1000); o.each(true); nf += frameMs; }
+  if (!o.noUp) game.canvas.dispatch('pointerup', ev(id, pe.x, pe.y, tEnd));
+  for (let i = 0; i < (o.post || 0); i++) { CLOCK = nf; game.frame(frameMs / 1000); if (o.each) o.each(true); nf += frameMs; }
 }
 

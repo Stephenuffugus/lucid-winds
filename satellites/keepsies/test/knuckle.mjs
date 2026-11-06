@@ -101,10 +101,19 @@ async function gesture(from, dx, dy, ms, steps, hookDeg) {
     const ry = dx * f * Math.sin(a) + dy * f * Math.cos(a);
     pts.push({ x: from.x + rx, y: from.y + ry, t: ms * f });
   }
-  return page.evaluate((pts, t0) => {
-    const s = pts.map(p => ({ x: p.x, y: p.y, t: t0 + p.t }));
-    return window.KEEPSIES_DEV.flick(s);
-  }, pts, 1000);
+  /* m3 step 6: real pointer events through the module, each carrying its own timeStamp, never _feed: a hold, the path, the lift */
+  return page.evaluate((pts) => {
+    const canvas = document.getElementById('stage'), r = canvas.getBoundingClientRect(), base = performance.now() - 500;
+    const fire = (type, p, t) => { const e = new PointerEvent(type, { pointerId: 41, pointerType: 'touch', clientX: r.left + p.x, clientY: r.top + p.y, bubbles: true, cancelable: true, isPrimary: true }); Object.defineProperty(e, 'timeStamp', { value: t }); canvas.dispatchEvent(e); };
+    const hold = pts[0], D = window.KEEPSIES_DEV, prev = D.aimNow();
+    fire('pointerdown', hold, base);
+    for (let i = 1; i <= 10; i++) fire('pointermove', hold, base + i * 16);
+    const t0 = base + 180;
+    for (const p of pts) fire('pointermove', p, t0 + p.t);
+    fire('pointerup', pts[pts.length - 1], t0 + pts[pts.length - 1].t);
+    const a = D.aimNow();
+    return a === prev ? null : a;
+  }, pts);
 }
 
 const cases = [

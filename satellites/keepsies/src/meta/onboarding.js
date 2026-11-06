@@ -79,6 +79,7 @@ export function createCalibration(deps) {
  */
 export function calibrationFrom(save, tuning) {
   const c = save && save.profile && save.profile.calib;
-  if (c && c.max) return { max: c.max, own: true, handedness: save.profile.handedness || 'right' };
+  /* m3 step 6: a max taken with the old estimator (the last 90 ms, handler time) is measured again once, the next time calibration would run */
+  if (c && c.max && c.v === 2) return { max: c.max, own: true, handedness: save.profile.handedness || 'right' };
   return { max: tuning.snap.thumbSpeedMaxDefault, own: false, handedness: 'right' };
 }
