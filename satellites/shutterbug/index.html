@@ -1047,7 +1047,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-11';
+  SB.BUILD = 'sb-m2-12';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -3812,6 +3812,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var c = from[from.length === 1 ? 0 : rng.int(from.length)];
       es.push({ kind: kind, idx: c, env: envFor(kind, c), ramp: 1 });
       keep[c] = 1; laid++;
+    }
+    /* round 9: a room of three or more, where they may come, meets one of the new kinds: if the roll gave none, the last plain
+       fodder laid or found goes to a spot that keeps a new kind's rule */
+    if (rampRng && r9MayCome(opts) && es.length >= 3) {
+      var hasNew = false, nq = [K9[2 + (level.seed & 1)], K9[3 - (level.seed & 1)]], pv;
+      for (k = 0; k < es.length; k++) if (es[k].kind === K9[2] || es[k].kind === K9[3]) hasNew = true;
+      for (pv = 0; pv < 2 && !hasNew; pv++) {
+        var nc = []; for (i = 0; i < n; i++) if (ok(i, nq[pv])) nc.push(i);
+        if (!nc.length) continue;
+        for (k = es.length - 1; k >= 0 && !hasNew; k--) { if (es[k].elite || (f.pocket && f.pocket.cells.indexOf(es[k].idx) >= 0)) continue; var nc2 = nc[rampRng.int(nc.length)]; es[k] = { kind: nq[pv], idx: nc2, env: envFor(nq[pv], nc2), ramp: 1 }; hasNew = true; }
+      }
     }
     var elites = 0;
     for (k = 0; k < es.length; k++) if (es[k].elite) elites++;
@@ -9266,6 +9277,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     door: function (t) { thud(600, 0.06, 0.2, t); tone('triangle', 392, 523, 0.18, 0.06, t + 0.05); },
     bossIntro: function (t) { tone('sawtooth', 110, 82, 0.6, 0.08, t); tone('sawtooth', 165, 123, 0.6, 0.05, t + 0.15); },
     bossHit: function (t) { tone('square', 520, 260, 0.1, 0.07, t); thud(1400, 0.05, 0.2, t); },
+    bossTell: function (t) { tone('triangle', 196, 262, 0.14, 0.06, t); tone('triangle', 262, 349, 0.16, 0.05, t + 0.12); },   /* round 9: an attack or a shove is coming */
     /* Weapons v1 step 1 (docs/WEAPONS-V1.md 9, a DESIGN 11 redline in QUESTIONS Q120): the Boomerang's throw (soft: it
        sounds on every jump), Anvil Boots' shock, a hit (zap), a kill (pop) and a weapon equipped */
     throw: function (t) { tone('triangle', 700, 1100, 0.07, 0.04, t); },
@@ -11596,6 +11608,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       /* the guardian (HOUSE-B): its wake, each hit, its fall lighting the lamp */
       if (ev & EV.WAKE) au.sfx('bossIntro');
       if (ev & EV.BOSS_HIT) au.sfx('bossHit');
+      if (ev & EV.TELL) au.sfx('bossTell');
       if (ev & EV.BOSS_DOWN) au.sfx('beacon');
       if (ev & EV.KEY) { SB.ui.keys(G.state); SB.ui.tally('keys'); if (SB.sim.keysLeft(G.state) === 0) au.sfx('beacon'); }   /* the last key lights the lamp */
       if (ev & EV.SAVED) { au.sfx('saved'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); }   /* a charm took the hit */
@@ -11673,7 +11686,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=33').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=34').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.

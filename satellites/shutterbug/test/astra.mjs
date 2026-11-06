@@ -79,7 +79,7 @@ writeFileSync(join(TMP, 'page-no-elite.html'), noEl);
 const plainNoEl = Object.assign({}, plain); delete plainNoEl.moth_elite;
 writeFileSync(join(TMP, 'sprites-no-elite.json'), JSON.stringify(Object.assign({ _palette: Array.from(SB.palette.HEX) }, plainNoEl)));
 const keysNoEl = Object.keys(plainNoEl);
-say(noEl !== html && !/moth_elite/.test(noEl.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1]), 'the copy of the page without moth_elite holds no moth_elite (' + keysNoEl.length + ' keys)');
+say(noEl !== html && !/\bmoth_elite\b/.test(noEl.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1]), 'the copy of the page without moth_elite holds no moth_elite (' + keysNoEl.length + ' keys)');
 const el = through('elite', ['--elite'], join(TMP, 'sprites-no-elite.json'), join(TMP, 'page-no-elite.html'));
 writeFileSync(join(TMP, 'elite.sprites.json'), JSON.stringify(el.json || {}));
 py([CUT, 'splice', join(TMP, 'elite.sprites.json'), join(TMP, 'page-no-elite.html'), '--out', join(TMP, 'copy-elite.html')]);

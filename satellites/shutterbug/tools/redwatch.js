@@ -1547,7 +1547,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-house-2', expect: "room 3's promoted elite is the fodder farthest from spawn" }] },
   { name: 'RAMP_IN_ROOM_1', task: 'HOUSE-A', file: 'page', find: '    return r >= 2 && r < T.RAMP.length ? T.RAMP[r] : null;\n', repl: '    return T.RAMP[Math.max(2, Math.min(r, 4))];\n',
     gates: [{ gate: 'harness', only: 'H-house-1', expect: 'room 1 is free play byte for byte on every built room' }] },
-  { name: 'RAMP_KIND_MOTH', task: 'HOUSE-A', file: 'page', find: '      var kind = base, cands = [], wide = [];\n', repl: '      var kind = MOTH, cands = [], wide = [];\n',
+  { name: 'RAMP_KIND_MOTH', task: 'HOUSE-A', file: 'page', find: '      var kind = rampRng ? K9[r9Roll(rampRng, r9MayCome(opts))] : base, cands = [], wide = [];\n', repl: '      var kind = rampRng ? K9[r9Roll(rampRng, r9MayCome(opts))] : MOTH, cands = [], wide = [];\n',
     gates: [{ gate: 'harness', only: 'H-house-1', expect: "every biome's own kind is laid as ramp fodder" }] },
   { name: 'RAMP_ON_ASCENT', task: 'HOUSE-A', file: 'page', find: '      for (var q = 0; q < env.length; q++) if (stand[env[q]] || (kind === ICICLE && beside[env[q]])) return false;\n', repl: '',
     gates: [{ gate: 'harness', only: 'H-house-1', expect: "no ramp enemy's envelope covers a cell the ascent stands on" }] },

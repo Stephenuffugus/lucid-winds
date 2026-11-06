@@ -1939,7 +1939,7 @@ group('H-sim-7', 'coverage: every declared field moves the hash; the keys are ex
   }
   const keysOf = (o, schema, path) => {
     /* m2 step 3: the checkpoint (cp) rides after the schema, hashed only when a room has one (SB.sim.serialize) */
-    t.same(Object.keys(o).filter(k => path || k !== 'cp'), schema.map(x => x[0]), (path || 'state') + ': the keys are exactly the declared list, in order (the optional checkpoint after it)');
+    t.same(Object.keys(o).filter(k => path || (k !== 'cp' && k !== 'crumb')), schema.map(x => x[0]), (path || 'state') + ': the keys are exactly the declared list, in order (the optional checkpoint after it)');
     for (const [name, type, sub] of schema) if (type === 'obj') keysOf(o[name], sub, (path ? path + '.' : '') + name);
   };
   const s = fresh();
@@ -6000,7 +6000,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   /* the validator */
   const g2 = v2Of(sj, 4);
   const refuse = [['biome 6', { biome: 6 }], ['biome -1', { biome: -1 }], ['biome 1.5', { biome: 1.5 }], ['rules 2 (reserved for the next rules, not this client\'s)', { rules: 2 }], ['rules 9', { rules: 9 }],
-    ['flags bit 2', { flags: 4 }],   /* bit 0 is the keys' and bit 1 the second monsters' (2 Nov), both known */ ['flags bit 2', { flags: 4 }], ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
+    ['flags bit 3', { flags: 8 }],   /* bit 0 is the keys', bit 1 the second monsters' (2 Nov) and bit 2 round 9's (6 Nov), all known */ ['flags bit 3', { flags: 8 }], ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
   for (const [why, o] of refuse) t.ok(SB.record.validate(Object.assign({}, g2, o)) !== null, 'validate refuses a v2 record with ' + why);
   t.ok(SB.record.validate(Object.assign({}, sj, { biome: 3 })) !== null, 'validate refuses a v1 record carrying a biome');
   t.eq(SB.record.validate(g2), null, 'validate accepts the v2 sample room with biome 4 (control)');
@@ -6009,7 +6009,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.ok(SB.record.decode('v1.' + gb.toString('base64url')) === null && SB.record.decode('v2.' + v1b.toString('base64url')) === null, 'decode refuses a v1. prefix on a v2 record and a v2. prefix on a v1 record');
   t.ok(SB.record.decode(gb.toString('base64url')) !== null && SB.record.decode(gb.toString('base64url')).biome === 4, 'a bare v2 payload decodes with its biome');
   const at = (k, v) => { const b = Buffer.from(gb); b[k] = v; return b; };
-  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 2', at(8, 4)], ['flags bit 2', at(8, 4)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
+  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 3', at(8, 8)], ['flags bit 3', at(8, 8)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
   for (const [why, b] of newer) {
     t.eq(SB.record.parseCode(code2(b)).why, 'newer', 'parseCode answers newer on a v2 code with ' + why);
     t.eq(SB.record.decode(code2(b)), null, 'decode never builds a v2 record with ' + why);
@@ -6019,7 +6019,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.eq(SB.record.parseCode(at(0, 3).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v3 payload (no prefix), as on its v3. code');
   t.eq(SB.record.parseCode('https://x.example/s/#' + at(0, 7).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v7 payload after a link\'s #');
   t.ok(SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode(at(0, 200).toString('base64url')).why === 'bad', 'garbage and a bare payload with version byte 200 still read as bad (control)');
-  t.eq(SB.record.parseCode(code2(at(8, 4).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length)');
+  t.eq(SB.record.parseCode(code2(at(8, 8).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length)');
   t.eq(SB.record.parseCode(code2(gb.subarray(0, 300))).why, 'bad', 'a truncated v2 code with known bytes reads as bad (control)');
   t.ok(SB.record.parseCode(code2(gb)).rec && SB.record.parseCode(code2(gb)).rec.biome === 4, 'a v2 code with RULES 0 and no flags opens (control)');
   /* the build: the biome byte names the biome; RULES 0 is today's rules on the same grid */
@@ -6114,7 +6114,7 @@ group('H-hue-1', 'the hue vote (Q220, shell-capture\'s hueVote): the bright room
   const sage = SB.SAMPLE_ROOM, rgb = new Uint8Array(N * 3);
   for (let i = 0; i < N; i++) { const p = parseInt(sage[Math.floor(i / 24)][i % 24], 16); rgb.set(p === SB.palette.I.ASH ? [178, 194, 164] : SB.palette.RGB[p], 3 * i); }
   const j = CAP.gridRecord(rgb, -1), want = CAP.hueVote(rgb).biome;
-  t.ok(j.v === 2 && j.biome === want + 1 && j.rules === 0 && CAP.RULES === 0 && j.flags === (SB.record.FLAG_KEYS | SB.record.FLAG_BESTIARY) && SB.record.validate(j) === null, 'gridRecord writes a valid v2 record: biome the vote + 1 (' + j.biome + '), RULES 0 (today\'s rules, Q222), the keys and second monster flags (2 Nov)');
+  t.ok(j.v === 2 && j.biome === want + 1 && j.rules === 0 && CAP.RULES === 0 && j.flags === SB.record.FLAGS_KNOWN && SB.record.validate(j) === null, 'gridRecord writes a valid v2 record: biome the vote + 1 (' + j.biome + '), RULES 0 (today\'s rules, Q222), the keys and second monster flags (2 Nov)');
   /* sb-m1-5: gridRecord now normalises before nearest (NORMALISE), so its rows are no longer the sample room's; the vote
      reads the raw colours (the merge rule), so the biome byte is still the sage's. Built on the sample room's own rows */
   const js = Object.assign({}, j, { rows: Array.from(SB.SAMPLE_ROOM) });
@@ -6845,13 +6845,13 @@ group('H-daily-1', 'the Daily Room: every config builds but DAILY_SKIP\'s (exact
   let twice = 0, prev = '', shape = true;
   for (let d = 0; d < Rr.DAILY_CYCLE; d++) {
     const r = Rr.daily(d), rows = rowsOf(r);
-    if (r.v !== 2 || r.mode !== 0 || r.flags !== (Rr.FLAG_KEYS | Rr.FLAG_BESTIARY) || r.biome < 1 || r.biome > 5 || r.rules > 1) shape = false;
+    if (r.v !== 2 || r.mode !== 0 || r.flags !== Rr.FLAGS_KNOWN || r.biome < 1 || r.biome > 5 || r.rules > 1) shape = false;
     if (roomIds.indexOf(rows) < 0) roomIds.push(rows);
     combos.add(roomIds.indexOf(rows) + ':' + r.biome);
     if (rows === prev) twice++;
     prev = rows;
   }
-  t.ok(shape, 'every day is a v2 room with keys and the second monsters, a world of the five and rules 0 or 1');
+  t.ok(shape, 'every day is a v2 room with keys, the second monsters and round 9, a world of the five and rules 0 or 1');
   const dead = Array.from({ length: 45 }, (_, i) => i).filter(i => Rr.DAILY_SKIP.indexOf(i) >= 0 && Rr.DAILY_SKIP.indexOf(i + 45) >= 0).length;   /* a pair refused under both rules */
   t.ok(roomIds.length === 9 && combos.size === 45 - dead, 'the cycle holds all nine rooms and every room and world pair that builds (' + roomIds.length + ' rooms, ' + combos.size + ' of 45 pairs; ' + dead + ' build under neither rule set)');
   t.ok(twice === 0, 'no room comes two days running (' + twice + ')');
