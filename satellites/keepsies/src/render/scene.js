@@ -15,8 +15,8 @@
  */
 import * as THREE from 'three';
 import { RoomEnvironment } from '../../lib/environments/RoomEnvironment.js';
-import { renderScale } from './quality.js?v=20261105b';
-import { art } from './art.js?v=20261105b';
+import { renderScale } from './quality.js?v=20261106a';
+import { art } from './art.js?v=20261106a';
 
 /**
  * @typedef {{update:(dt:number)=>void, getRay:(pose?:object)=>{origin:object,dir:object},
@@ -204,7 +204,7 @@ export function createOrbitRig(stage, opts) {
        KEEPSIES_DEV.camera(..., {allowUnder:true}), which is how that shot gets
        taken. */
     minElevationDeg: o.minElevationDeg == null ? 3 : o.minElevationDeg,
-    maxElevationDeg: o.maxElevationDeg == null ? 86 : o.maxElevationDeg,
+    maxElevationDeg: o.maxElevationDeg == null ? 89.5 : o.maxElevationDeg,
     allowUnder: false,
     /* The player's orbit and pinch, as offsets the auto-frame lays on top of its
        own answer. Before these existed cameraCtl wrote wantAzimuth/wantDistance
@@ -220,6 +220,14 @@ export function createOrbitRig(stage, opts) {
       const k = 1 - Math.pow(1 - state.damping, Math.max(1, dt * 60));
       state.azimuth += (state.wantAzimuth - state.azimuth) * k;
       state.distance += (state.wantDistance - state.distance) * k;
+      /* m3 step 8: the watch frame's look point and height ease too, over about half a second */
+      if (state.wantTarget || state.wantElevation != null) {
+        const kw = 1 - Math.pow(1 - 0.12, Math.max(1, dt * 60));
+        if (state.wantTarget) { state.target.x += (state.wantTarget.x - state.target.x) * kw; state.target.z += (state.wantTarget.z - state.target.z) * kw; }
+        if (state.wantElevation != null) state.elevationDeg += (state.wantElevation - state.elevationDeg) * kw;
+      }
+      /* m3 step 2: a frame that turns about the shooter keeps its look point on the eased azimuth, not the wanted one */
+      if (state.pivot) { state.target.x = state.pivot.x - state.pivot.look * Math.sin(state.azimuth); state.target.z = state.pivot.z - state.pivot.look * Math.cos(state.azimuth); }
       if (!state.allowUnder) {
         if (state.elevationDeg < state.minElevationDeg) state.elevationDeg = state.minElevationDeg;
         if (state.elevationDeg > state.maxElevationDeg) state.elevationDeg = state.maxElevationDeg;
@@ -263,7 +271,8 @@ export function createOrbitRig(stage, opts) {
         visible: v.z < 1
       };
     },
-    setTarget(x, y, z) { state.target.set(x, y, z); },
+    setTarget(x, y, z) { state.pivot = null; state.wantTarget = null; state.wantElevation = null; state.target.set(x, y, z); },
+    setFov(v) { if (v && cam.fov !== v) { cam.fov = v; cam.updateProjectionMatrix(); } },
     /** Forget the player's orbit and pinch. Called on the turn-change cut. */
     resetUser() { state.userAz = 0; state.userZoom = 1; },
     /** The drawing surface in CSS pixels, so callers can ask if a point is on it. */

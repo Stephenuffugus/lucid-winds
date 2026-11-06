@@ -98,6 +98,7 @@
   "ringer": {
     "ringRadius": 1.525,
     "ringSizeRadius": {
+      "5ft": 0.762,
       "7ft": 1.0668,
       "10ft": 1.525,
       "13ft": 1.9812
@@ -105,25 +106,40 @@
     "crossSpacing": 0.075,
     "mibCount": 13,
     "pocketedToWin": 7,
+    "ringTune": {
+      "_": "m3 step 9, measured by the harness (40 seeds a speed, ringer_five): a clean snap through the centre at five foot puts out what ten foot's 4.5 m/s does (mean 1.3 mibs) at 3.0 m/s; at 4.5 it is 2.4 and at 6 it is 2.6. So the launch range is ten foot's times 0.7, a full flick is still a break and the bar's middle still means the middle of the ring. Only the rings named here change: ten foot's scenarios keep their hashes.",
+      "_ai": "Whole AI matches, 40 a set: ten foot runs Rookie against Rookie 31 shots (5 to 79) and Shark against Rookie 9.7 (4 to 26, the Rookie never shooting in 4 of 40). Five foot on ten foot's habits ran 26 (3 to 58) and 6.9 (3 to 16, never shooting in 12 of 40): the cross stands nearer the chalk, so a hit is a pocket. aiSpeedScale 0.85 (the AI's own rule for how hard to hit) and these hit rates (tuning ai._hitRate's law) give 29 (8 to 62) and 10.1 (5 to 24, never shooting in 1 of 40). At 0.7 the mirror ran to 101.",
+      "5ft": { "launchMin": 0.4, "launchMax": 4.2, "breakSpeed": 3.0, "aiSpeedScale": 0.85, "aiHitRate": { "rookie": 0.172, "sharp": 0.33, "shark": 0.5 } },
+      "7ft": { "aiHitRate": { "rookie": 0.172, "sharp": 0.36, "shark": 0.6 } }
+    },
     "breakSpeed": 4.5,
     "lagLineOffset": 0.3,
     "_breakSpeed": "4.5 m/s is 0.73 of the 0.5 to 6.0 launch range: a firm snap, not a maximum one. The design's 3.5 knocks nothing out at any tested setting, and the plan's 4.0 lands at 93 percent rather than 100 once the contact patch became ours. See surface.__retune."
   },
   "snap": {
+    "_flick": "m3 step 6: thumb speeds are now the fastest 30 to 50 ms of the flick, not the last 90 ms before the lift. A brisk 220 px flick in 70 ms peaks about 1.4 m/s, a hard 300 px flick in 55 ms about 2.1; a slow 160 px push over 220 ms is 0.19, a soft legal shot. thumbSpeedMin meets cancelBelow at 0.15 so the gentle nudge can be played; 1.7 is a stranger's full strength until calibration measures their own.",
+    "grabRadiusPx": 77,
+    "offLineDeg": 45,
+    "spinRadiusFrac": 0.6,
+    "spinDeadZone": 0.2,
+    "_grabRadiusPx": "m3 step 3, Stephen 5 Nov: the circle you hold and flick on, 154 CSS px across in every frame, calibration included; grabR is max(this, the drawn radius + 12). Spin is read against 0.6 of it with a dead zone under 0.2: near the middle is a centre ball, the edge of the spin ring is full spin.",
     "launchMin": 0.5,
     "launchMax": 6.0,
     "powerEaseSixteenths": 21,
-    "thumbSpeedMin": 0.35,
-    "thumbSpeedMaxDefault": 1.2,
+    "thumbSpeedMin": 0.15,
+    "thumbSpeedMaxDefault": 1.7,
     "_thumbSpeed": "DESIGN 7.2 maps thumb speed 0.2 to 2.4 metres per second onto launch 0.5 to 6.0. Measured, 2.4 m/s of screen travel is 9 CSS pixels per millisecond, which is twenty four screen widths a second and no thumb does it: a brisk 220 pixel flick in 70 ms is 0.83 m/s and a hard 300 pixel flick in 55 ms is 1.44. The band is now 0.35 to 1.2. The floor is 0.35 rather than 0.2 so that it MEETS cancelBelow: with a 0.2 floor the band from 0.2 to 0.35 was unreachable, every legal shot started at 1.55 m/s of launch, and the design's gentle 0.5 m/s nudge could not be played at all. Calibration replaces the 1.2 with the player's own 90th percentile in the first twenty seconds anyway.",
-    "cancelBelow": 0.35,
-    "softNudgeTo": 0.6,
-    "sampleWindowMs": 90,
+    "cancelBelow": 0.15,
+    "softNudgeTo": 0.65,
+    "flickMinMs": 30, "flickMaxMs": 50, "settleSpikePx": 12,
     "jitterWindowMs": 600,
     "settleSeconds": 1.2,
     "coneWideDeg": 6.0,
     "coneTightDeg": 1.5,
-    "fineAngleMaxDeg": 25,
+    "fineAngleMaxDeg": 0,
+    "_fineAngle": "m3 step 7, DECISION 2: the aim line is the aim. 25 let a 5 degree thumb wander miss by 8 cm at 1.5 m. The other choice is about 3, the flick scaled by 0.25.",
+    "dialStartPx": 8,
+    "wildYawDeg": 25,
     "knuckledConeFactor": 0.6,
     "knuckledPowerCap": 0.9,
     "kBack": 3.0,
@@ -187,6 +203,7 @@
       "sharp": 0.85,
       "shark": 1.0
     },
+    "_hitRate": "m3 step 9, the Arena's law (game/arena.js noiseDegFor): uniform error inside plus or minus N degrees hits a window of w degrees with probability w/N, so N = w / hitRate, with w one mib's width from the ring's edge. The rates are per ring (ringer.ringTune); noiseDeg stays the floor and is all that ten and thirteen foot use, so their scenarios keep their hashes, and the Rookie's 5 degrees at seven foot (measured there) comes out unchanged. A smaller ring would otherwise hand every tier a bigger window: at five foot N is 7, 3.6 and 2.4.",
     "noiseDeg": {
       "rookie": 5.0,
       "sharp": 1.5,
@@ -277,8 +294,14 @@
     "fleetSunbeamsPerMatchMax": 6
   },
   "render": {
+    "orbitRadPerPx": 0.0035,
+    "_orbitRadPerPx": "m3 step 2: half the old 0.007: 0.2 degrees of aim per px of thumb.",
     "envIntensity": 0.55,
     "ringerCam": {
+      "__m3": "m3 step 8 (core/framing.js): the aim frame by ring radius, close and low; five foot at 24 degrees and a 28 degree lens gives the shooter 76 px and a centre mib 24 at 412x915 where VIEW.md's 28 and 34 gave 68 and 20. fitBottomPx is the bottom chips, fitTopPx the far arm's height (it stands in the gap between the two name chips). aimMinSpan keeps a lone close mib from pushing the camera into the shooter.",
+      "aimClose": [{ "ringR": 0.762, "elevationDeg": 24, "fov": 28 }, { "ringR": 1.0668, "elevationDeg": 24, "fov": 26 }, { "ringR": 1.525, "elevationDeg": 24, "fov": 24 }, { "ringR": 1.98, "elevationDeg": 22, "fov": 22 }],
+      "fitBottomPx": 94, "fitTopPx": 44, "fitTopClearPx": 70, "fitGapPx": 7, "aimMinSpan": 0.45, "aimWideTan": 0.404, "lookElevationDeg": 89.5,
+      "watch": { "elevationDeg": 38, "pastTarget": 0.3, "minSpan": 0.7, "edgeBottom": 0.72, "chalkFrac": 0.55 },
       "_": "Sports framing for a Ringer shot, and every number here was chosen by looking at a contact sheet of them rather than by deriving one. targetBias is how far from the shooter toward the cross the camera looks, spanFactor and spanAdd set how far back it stands as a function of the gap between them, and elevationDeg is the angle DESIGN 8.5 asks for.",
       "__retune": "2026-09-04, chosen from a contact sheet of five framings (docs/shots/k1-cam-before.png and k1-cam-after.png). A longer lens further back compresses the empty dirt between the shooter and the cross and makes a mib at ten foot about ten pixels rather than eight, with the far chalk arc sitting clear between the score pips and the message instead of running through the pips. The shooter stays at about four fifths of the screen height, clear of the house rules chip. Elevation is thirty rather than DESIGN 8.5's ~35 because at 35 the longer lens put the far arc into the HUD.",
       "targetBias": 0.5,
@@ -290,12 +313,13 @@
       "spreadMargin": 1.15,
       "elevationDeg": 30,
       "fov": 28,
-      "minDistance": 0.9,
+      "minDistance": 0.3,
       "maxDistance": 5.5,
       "fitEdgeTop": 0.84,
       "fitEdgeBottom": 0.56
     },
     "calibCam": {
+      "targetAhead": 0.5,
       "_": "Calibration is one marble on dirt and DESIGN 16.1 means one marble, close enough to be a thing you touch. Framed at the whole ring it was a single dot on a big empty ellipse.",
       "distance": 0.42,
       "elevationDeg": 17
@@ -336,7 +360,7 @@
       "fovDeg": 3.5,
       "sizePx": 180,
       "top": 64,
-      "openBelowPx": 14,
+      "openBelowPx": 16,
       "minAhead": 0.05,
       "_nudge": "Sep 05, Stephen: 'a button to incrementally aim too while zoomed or before zoom would make it so I didn't have to spend so long trying to get the aim just right.' The two aim buttons turn the player's orbit offset (the aim IS camera forward, DESIGN 7.7) by nudgeCoarseDeg a tap with the scope closed and nudgeFineDeg with it open, repeating every nudgeRepeatMs while held. The settled cone is 1.5 degrees either side, so the fine step is a third of it.",
       "nudgeCoarseDeg": 2,

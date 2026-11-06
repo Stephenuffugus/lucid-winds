@@ -2,16 +2,15 @@
  * The share cards (KEEPSIES_BUILD_PLAN.md step 7; Astra's ship first number 3): a great shot should make a
  * story worth showing. Two cards on Astra's plates, composed on a canvas from live renders:
  *
- *   marble card 1080 x 1080   the window 90, 90, 900 by 630; bands at 730 (name), 800 (lore), 920 (tier and
- *                             history), from anchors.json marble_card
- *   match card  1080 x 1920   two windows 420 by 660 at 90 and 570, 280; bands at 90 (the result), 1000 (the
- *                             pot), 1150 (the match), 1500 (the name of the game), anchors.json match_card
+ *   marble card 1080 x 1080   her render window, wordmark, name and provenance bands (m3 step 11, render/plates.js)
+ *   match card  1080 x 1920   her ONE render window, score, techniques, the pot cloth with three pot renders, provenance, footer
  *
- * Her plates are dark with the windows cut out, so the window's contents are drawn FIRST and the plate over
+ * Her plates are dark with the windows cut out (share_*_r2.png: alpha 0 in the window), so the window's contents are drawn FIRST and the plate over
  * them. Nothing on a card identifies the player: no profile id, no uid, no name but the opponent's.
  * The file goes to navigator.share after the tap that asked for it, else it downloads.
  */
-import { art } from './art.js?v=20261105b';
+import { art } from './art.js?v=20261106a';
+import { SHARE_MARBLE, SHARE_MATCH } from './plates.js?v=20261106a';
 
 const CREAM = '#e8dcc8', BRASS = '#c8a84b', MUTED = '#98a086', NIGHT = '#0d100c';
 const FONT = 'ui-rounded,"Avenir Next",Avenir,Corbel,"Segoe UI",system-ui,sans-serif';
@@ -81,72 +80,88 @@ function wrap(g, text, x, y, w, lh, lines) {
 }
 
 /**
- * The marble card. o: { render (a square canvas of the live render), name, lore, tier, tierWord, line }.
+ * The marble card on her plate. o: { render (a square canvas of the live render), name, lore, tier, tierWord, line }.
  * `line` is the marble's history in one line (inspect's latest event), never a player id.
  */
 export async function marbleCard(o) {
-  const c = document.createElement('canvas');
-  c.width = c.height = 1080;
-  const g = c.getContext('2d');
-  g.fillStyle = NIGHT; g.fillRect(0, 0, 1080, 1080);
-  await dirtWindow(g, 90, 90, 900, 630);
-  await lay(g, o.render, 540, 395, 540);
-  try { g.drawImage(await loadImg(art('sharing/marble_card.png')), 0, 0, 1080, 1080); } catch (e) { }
+  const P = SHARE_MARBLE, c = document.createElement('canvas');
+  c.width = P.w; c.height = P.h;
+  const g = c.getContext('2d'), W = P.render_window;
+  g.fillStyle = NIGHT; g.fillRect(0, 0, P.w, P.h);
+  await dirtWindow(g, W[0], W[1], W[2], W[3]);
+  const size = 540, cx = W[0] + W[2] / 2, cy = W[1] + W[3] / 2 - 10;
+  await lay(g, o.render, cx, cy, size);
+  try { g.drawImage(await loadImg(art('sharing/share_marble_r2.png')), 0, 0, P.w, P.h); } catch (e) { }
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  // the name stands on the plate's first rule (770), not across it
-  g.fillStyle = CREAM; g.font = '600 ' + fit(g, o.name, 54, 880) + 'px ' + FONT;
-  g.fillText(o.name, 540, 740);
-  g.fillStyle = MUTED; g.font = 'italic 30px ' + FONT;
-  wrap(g, o.lore, 540, 823, 860, 38, 2);
-  // the tier by mark, word and colour together, then the history
-  const m = await mark(o.tier);
+  const wm = await symbol('wordmark_keepsies', BRASS, 1000, 210), B = P.wordmark_band;
+  if (wm) g.drawImage(wm, B[0] + B[2] / 2 - 200, B[1], 400, 84);
+  else { g.fillStyle = BRASS; g.font = '600 48px ' + FONT; g.fillText('Keepsies', B[0] + B[2] / 2, B[1] + B[3] / 2); }
+  const N = P.name_band;
+  g.fillStyle = CREAM; g.font = '600 ' + fit(g, o.name, 54, N[2] - 24) + 'px ' + FONT;
+  g.fillText(o.name, N[0] + N[2] / 2, N[1] + N[3] / 2);
+  // the tier by mark, word and colour together, then the history; the lore under it
+  const Pv = P.provenance_band, m = await mark(o.tier);
   const words = (o.tierWord || '') + (o.line ? ', ' + o.line.charAt(0).toLowerCase() + o.line.slice(1) : '');
-  g.font = '600 32px ' + FONT;
-  const tw = g.measureText(words).width, x0 = 540 - (tw + 52) / 2;
-  if (m) g.drawImage(m, x0, 925, 40, 40);
+  g.font = '600 30px ' + FONT;
+  const tw = Math.min(Pv[2] - 76, g.measureText(words).width), x0 = Pv[0] + Pv[2] / 2 - (tw + 48) / 2, y1 = Pv[1] + 28;
+  if (m) g.drawImage(m, x0, y1 - 18, 36, 36);
   g.textAlign = 'left';
   g.fillStyle = TIER_HEX[o.tier] || CREAM;
-  g.fillText(o.tierWord || '', x0 + 52, 946);
+  g.fillText(o.tierWord || '', x0 + 48, y1, Pv[2] - 60);
   const tierW = g.measureText(o.tierWord || '').width;
   g.fillStyle = CREAM;
-  g.fillText(words.slice((o.tierWord || '').length), x0 + 52 + tierW, 946);
-  const wm = await symbol('wordmark_keepsies', BRASS, 1000, 210);
-  if (wm) g.drawImage(wm, 540 - 105, 1002, 210, 44);
-  else { g.textAlign = 'center'; g.fillStyle = BRASS; g.font = '600 26px ' + FONT; g.fillText('Keepsies', 540, 1024); }
+  g.fillText(words.slice((o.tierWord || '').length), x0 + 48 + tierW, y1, Pv[2] - 60 - tierW);
+  g.textAlign = 'center';
+  g.fillStyle = MUTED; g.font = 'italic 26px ' + FONT;
+  wrap(g, o.lore, Pv[0] + Pv[2] / 2, Pv[1] + 70, Pv[2] - 32, 30, 1);
+  c.layout = { window: W, render: [cx - size / 2, cy - size / 2, size, size] };
   return c;
 }
 
 /**
- * The match card. o: { title, left, right (each { render, name, label }), pot, stats (lines) }.
- * The two windows are the two sides of the pot: yours on the left, theirs on the right.
+ * The match card on her plate: ONE window, three places on the pot cloth. o: { title, hero { render, name, label }, pots (up to three square canvases), pot (the words),
+ * score, shots, techniques }.
  */
 export async function matchCard(o) {
-  const c = document.createElement('canvas');
-  c.width = 1080; c.height = 1920;
-  const g = c.getContext('2d');
-  g.fillStyle = NIGHT; g.fillRect(0, 0, 1080, 1920);
-  const sides = [[90, o.left], [570, o.right]];
-  for (const [x, s] of sides) {
-    await dirtWindow(g, x, 280, 420, 660);
-    if (s) await lay(g, s.render, x + 210, 560, 330);
-  }
-  try { g.drawImage(await loadImg(art('sharing/match_card.png')), 0, 0, 1080, 1920); } catch (e) { }
+  const P = SHARE_MATCH, c = document.createElement('canvas');
+  c.width = P.w; c.height = P.h;
+  const g = c.getContext('2d'), W = P.render_window;
+  g.fillStyle = NIGHT; g.fillRect(0, 0, P.w, P.h);
+  await dirtWindow(g, W[0], W[1], W[2], W[3]);
+  const size = 780, cx = W[0] + W[2] / 2, cy = W[1] + W[3] / 2 - 50;
+  if (o.hero) await lay(g, o.hero.render, cx, cy, size);
+  try { g.drawImage(await loadImg(art('sharing/share_match_r2.png')), 0, 0, P.w, P.h); } catch (e) { }
   g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillStyle = BRASS; g.font = '600 ' + fit(g, o.title, 84, 880) + 'px ' + FONT;
-  g.fillText(o.title, 540, 155);
-  for (const [x, s] of sides) {
-    if (!s) continue;
-    g.fillStyle = MUTED; g.font = '600 24px ' + FONT; g.fillText((s.label || '').toUpperCase(), x + 210, 820);
-    g.fillStyle = CREAM; g.font = '600 ' + fit(g, s.name || '', 34, 380) + 'px ' + FONT; g.fillText(s.name || '', x + 210, 870);
+  const Tb = P.title_band;
+  g.fillStyle = BRASS; g.font = '600 ' + fit(g, o.title, 84, Tb[2] - 40) + 'px ' + FONT;
+  g.fillText(o.title, Tb[0] + Tb[2] / 2, Tb[1] + Tb[3] / 2);
+  if (o.hero) {
+    g.fillStyle = MUTED; g.font = '600 24px ' + FONT; g.fillText((o.hero.label || '').toUpperCase(), cx, W[1] + W[3] - 76);
+    g.fillStyle = CREAM; g.font = '600 ' + fit(g, o.hero.name || '', 38, W[2] - 80) + 'px ' + FONT; g.fillText(o.hero.name || '', cx, W[1] + W[3] - 38);
   }
-  g.fillStyle = CREAM; g.font = '600 38px ' + FONT;
-  wrap(g, o.pot, 540, 1030, 880, 46, 2);
-  g.fillStyle = MUTED; g.font = '30px ' + FONT;
-  (o.stats || []).slice(0, 5).forEach((t, i) => g.fillText(t, 540, 1190 + i * 44));
-  const wm = await symbol('wordmark_keepsies', BRASS, 1000, 210);
-  if (wm) g.drawImage(wm, 540 - 300, 1500, 600, 126);
-  else { g.fillStyle = BRASS; g.font = '600 64px ' + FONT; g.fillText('Keepsies', 540, 1560); }
-  g.fillStyle = MUTED; g.font = '28px ' + FONT; g.fillText('Marbles, for keeps', 540, 1660);
+  const Sb = P.score_band;
+  g.fillStyle = CREAM; g.font = '600 ' + fit(g, o.score || '', 46, Sb[2] - 40) + 'px ' + FONT; g.fillText(o.score || '', Sb[0] + Sb[2] / 2, Sb[1] + 42);
+  g.fillStyle = MUTED; g.font = '30px ' + FONT; g.fillText(o.shots || '', Sb[0] + Sb[2] / 2, Sb[1] + 92);
+  const Tc = P.techniques_band;
+  if (o.techniques) { g.fillStyle = CREAM; g.font = '600 ' + fit(g, o.techniques, 32, Tc[2] - 40) + 'px ' + FONT; g.fillText(o.techniques, Tc[0] + Tc[2] / 2, Tc[1] + Tc[3] / 2); }
+  // the pot on her cloth: lift, dark shadow, render (her layer order)
+  const pots = [], r = P.pot_render_radius, n = (o.pots || []).length, places = n === 1 ? [P.pot_render_centers[1]] : n === 2 ? [P.pot_render_centers[0], P.pot_render_centers[2]] : P.pot_render_centers;
+  let lift = null, dark = null;
+  try { lift = await loadImg(art('ui/contact_lift.png')); dark = await loadImg(art('env/shadow_dark.png')); } catch (e) { }
+  for (let k = 0; k < Math.min(n, 3); k++) {
+    const q = places[k], R = r * 2 * 256 / 224;
+    if (lift) g.drawImage(lift, q[0] - R / 2, q[1] + r * 0.62 - R / 2, R, R);
+    if (dark) g.drawImage(dark, q[0] - R / 2, q[1] + r * 0.62 - R / 2, R, R);
+    g.drawImage(o.pots[k], q[0] - r, q[1] - r, r * 2, r * 2);
+    pots.push([q[0] - r, q[1] - r, r * 2, r * 2]);
+  }
+  const Pv = P.provenance_band;
+  g.fillStyle = CREAM; g.font = '600 ' + fit(g, o.pot || '', 32, Pv[2] - 24) + 'px ' + FONT;
+  g.fillText(o.pot || '', Pv[0] + Pv[2] / 2, Pv[1] + Pv[3] / 2);
+  const Fb = P.footer_band, wm = await symbol('wordmark_keepsies', BRASS, 1000, 210);
+  if (wm) g.drawImage(wm, Fb[0] + Fb[2] / 2 - 114, Fb[1], 228, 48);
+  else { g.fillStyle = BRASS; g.font = '600 32px ' + FONT; g.fillText('Keepsies', Fb[0] + Fb[2] / 2, Fb[1] + Fb[3] / 2); }
+  c.layout = { window: W, render: [cx - size / 2, cy - size / 2, size, size], pots, cloth: P.pot_cloth_box };
   return c;
 }
 

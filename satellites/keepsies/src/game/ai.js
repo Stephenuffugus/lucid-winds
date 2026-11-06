@@ -21,9 +21,17 @@
  * `{batch:true}` takes a fixed small N and a shorter marble time cap and no
  * wall clock deadline at all.
  */
-import { snapshot, restore, disposeWorld, impulse, step, atRest, specOf, positionOf, ringDistance, removeMarble, setTimestep } from '../core/physics.js?v=20261105b';
-import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20261105b';
-import { atan2, clamp, len2, DEG } from '../core/dmath.js?v=20261105b';
+import { snapshot, restore, disposeWorld, impulse, step, atRest, specOf, positionOf, ringDistance, removeMarble, setTimestep } from '../core/physics.js?v=20261106a';
+import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20261106a';
+import { atan, atan2, clamp, len2, DEG } from '../core/dmath.js?v=20261106a';
+
+/** m3 step 9: the hand's error at this ring: a window of one mib's width from the ring's edge at the ring's hit rate for the tier (tuning ringer.ringTune), never tighter than the table; a ring with no rates plays the table */
+function noiseFor(W, T, level) {
+  const cfg = T.ai, base = cfg.noiseDeg[level] == null ? cfg.noiseDeg.rookie : cfg.noiseDeg[level];
+  const rates = T.snap.aiHitRate, rate = rates && (rates[level] == null ? rates.rookie : rates[level]);
+  if (!rate || !W.ringRadius) return base;
+  return Math.max(base, atan(T.diameterMm.mib / 1000 / W.ringRadius) / DEG / rate);
+}
 
 /**
  * @param {object} W the live world
@@ -41,7 +49,7 @@ export function plan(W, opts) {
   let N = batch ? cfg.batch.candidates : (cfg.candidates[opts.difficulty] || cfg.candidates.rookie);
   if (!batch && opts.quality === 'low') N = Math.max(2, Math.floor(N / cfg.lowQualityDivisor));
   const marbleSeconds = batch ? cfg.batch.marbleSeconds : cfg.candidateMarbleSeconds;
-  const noiseDeg = cfg.noiseDeg[opts.difficulty] == null ? cfg.noiseDeg.rookie : cfg.noiseDeg[opts.difficulty];
+  const noiseDeg = noiseFor(W, T, opts.difficulty);
   const pct = cfg.percentile[opts.difficulty] == null ? cfg.percentile.rookie : cfg.percentile[opts.difficulty];
 
   const bytes = snapshot(W);
@@ -84,7 +92,7 @@ export function plan(W, opts) {
     if (!batch && clock() - t0 > deadline * 0.82) break;   // leave room for the last candidate
     const tgt = targets[i % targets.length];
     const spread = (opts.rng.next() * 2 - 1) * 1.5;
-    const speed = clamp(1.5 + tgt.dist * 1.6 + opts.rng.next() * 1.6, T.snap.launchMin, T.snap.launchMax);
+    const speed = clamp((1.5 + tgt.dist * 1.6 + opts.rng.next() * 1.6) * (T.snap.aiSpeedScale || 1), T.snap.launchMin, T.snap.launchMax);
     const aim = makeAim({
       dir: dirFromDeg(tgt.deg + spread),
       power01: powerForSpeed(speed, T),

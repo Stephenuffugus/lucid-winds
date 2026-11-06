@@ -13,12 +13,14 @@
  *
  * A statue is { shape, x, z, owner } and the list is part of the match's setup record.
  */
-import { len2 } from './dmath.js?v=20261105b';
+import { len2 } from './dmath.js?v=20261106a';
 
 export const FOOT = 0.3048;
 export const GRID = FOOT / 2;            // statues snap to a half foot grid
 export const MOVE_MAX = 2 * FOOT;        // a move is up to two feet (step 10)
 export const PER_PLAYER = 2;             // the players alternate placing two each
+/** m3 step 9: the clearances, the grid and the reach scale with the ring by R / 1.525 (the numbers above are ten foot's, exact there), so five foot keeps legal spots. The SHAPES do not scale: the Loaf still blocks and the Arch still passes. */
+export function scaleFor(ringRadius) { return ringRadius == null ? 1 : ringRadius / 1.525; }
 
 /* parts: box (half extents) or cyl (radius, half height) or ball (radius), each at an offset from the statue's
    foot point; `foot` is the radius of its chalk footprint, the circle legality uses */
@@ -42,9 +44,10 @@ export const SHAPES = {
 };
 export const SHAPE_ORDER = ['column', 'loaf', 'arch', 'orb'];
 
-/** The nearest half foot grid point. */
-export function snap(x, z) {
-  return { x: Math.round(x / GRID) * GRID, z: Math.round(z / GRID) * GRID };
+/** The nearest grid point (a half foot at ten foot). */
+export function snap(x, z, ringRadius) {
+  const g = GRID * scaleFor(ringRadius);
+  return { x: Math.round(x / g) * g, z: Math.round(z / g) * g };
 }
 
 /**
@@ -56,26 +59,26 @@ export function snap(x, z) {
 export function legal(shape, x, z, ringRadius, statues, lay, opts) {
   const S = SHAPES[shape];
   if (!S) return { ok: false, why: 'no such statue' };
-  const o = opts || {};
+  const o = opts || {}, k = scaleFor(ringRadius), foot = FOOT * k;
   const d = len2(x, z);
-  if (d > ringRadius - FOOT) return { ok: false, why: 'too near the ring' };
-  for (const p of lay || []) if (len2(x - p.x, z - p.z) < FOOT) return { ok: false, why: 'too near the cross' };
+  if (d > ringRadius - foot) return { ok: false, why: 'too near the ring' };
+  for (const p of lay || []) if (len2(x - p.x, z - p.z) < foot) return { ok: false, why: 'too near the cross' };
   for (let i = 0; i < (statues || []).length; i++) {
     if (i === o.skip) continue;
     const s = statues[i], T = SHAPES[s.shape];
     if (len2(x - s.x, z - s.z) < S.foot + T.foot + 0.02) return { ok: false, why: 'on another statue' };
   }
-  if (o.from && len2(x - o.from.x, z - o.from.z) > MOVE_MAX + 1e-9) return { ok: false, why: 'more than two feet' };
+  if (o.from && len2(x - o.from.x, z - o.from.z) > MOVE_MAX * k + 1e-9) return { ok: false, why: 'too far' };
   for (const m of o.marbles || []) if (len2(x - m.x, z - m.z) < S.foot + m.r + 0.005) return { ok: false, why: 'on a marble' };
   return { ok: true, why: null };
 }
 
 /** Every legal grid point for a shape, in a fixed order (rows of z, then x), so a seeded pick is a replay. */
 export function legalSpots(shape, ringRadius, statues, lay, opts) {
-  const out = [];
-  const n = Math.floor(ringRadius / GRID);
+  const out = [], g = GRID * scaleFor(ringRadius);
+  const n = Math.floor(ringRadius / g);
   for (let k = -n; k <= n; k++) for (let i = -n; i <= n; i++) {
-    const x = i * GRID, z = k * GRID;
+    const x = i * g, z = k * g;
     if (legal(shape, x, z, ringRadius, statues, lay, opts).ok) out.push({ x, z });
   }
   return out;

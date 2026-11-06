@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#0d100c">
 <meta name="description" content="Snap real marbles for keeps in the playground game and a marble battle arena, and risk the most beautiful thing you own.">
 <title>Keepsies</title>
-<link rel="manifest" href="manifest.json?v=20261105b">
-<link rel="icon" href="icon-192.png?v=20261105b">
-<link rel="apple-touch-icon" href="icon-192.png?v=20261105b">
+<link rel="manifest" href="manifest.json?v=20261106a">
+<link rel="icon" href="icon-192.png?v=20261106a">
+<link rel="apple-touch-icon" href="icon-192.png?v=20261106a">
 <style>
 :root{
   --dirt:#4a3f31; --bg:#0d100c; --chalk:#e8dcc8; --brass:#c8a84b;
@@ -61,7 +61,7 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
        canvas texture in K5, so no CSS filters live here. ---- */
 #hud{position:fixed;inset:0;pointer-events:none}
 /* Astra's skyline behind the names in the wide shot (main.js lotBand); it takes no touch and fades into the dirt */
-#lot{position:absolute;left:0;right:0;top:0;height:19%;background-repeat:repeat-x;opacity:0;transition:opacity .45s;
+#lot{position:absolute;left:0;right:0;top:0;height:19%;background-repeat:no-repeat;opacity:0;transition:opacity .45s;
   -webkit-mask-image:linear-gradient(180deg,#000 0,#000 68%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 68%,transparent 100%)}
 #lot.on{opacity:1}
 @media (prefers-reduced-motion:reduce){#lot{transition:none}}
@@ -86,10 +86,14 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 #results .card{background:transparent;border:1px solid transparent;border-image:var(--result) 24 fill / 12px stretch}
 #spyglass{border:1px solid transparent;border-image:var(--scope) 24 / 10px stretch}
 /* the player chips: her chip's frame (its drawn dots stay out of the slices) behind the name and her pips */
-#scores .side{border:1px solid transparent;border-image:var(--chip) 24 20 18 20 / 10px 9px 8px 9px stretch;
-  background:rgba(13,16,12,.94);border-radius:9px;padding:6px 10px 7px;min-width:0}   /* her chip's own fill, so no inner box shows */
-#scores .side.them{padding-right:52px}
-#themFace{right:8px;top:50%;margin-top:-18px}
+/* m3 step 11, B2: her chip, 176 by 56, nine slice 24; the seven pips on her centres (16 + 24k, 39) at that width, and evenly on a narrower phone, where the middle gap stands for the far arm */
+#scores .side{position:relative;display:block;flex:0 1 calc(50% - 16px);max-width:176px;height:56px;box-sizing:border-box;min-width:0;padding:0;
+  border:12px solid transparent;border-image:var(--chip) 24 fill / 12px stretch;background:none}
+#scores .who{position:absolute;left:-2px;right:-2px;top:-5px;height:15px;line-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#scores .side.them{padding:0}
+#scores .side.them .who{text-align:right;right:22px}
+#scores .sockets{position:absolute;left:-4px;right:-4px;top:19px;justify-content:space-between;gap:0}
+#scores .sock{flex:none;width:16px;height:16px}
 .sock{border:0;background:var(--pip-empty) center/100% 100% no-repeat}
 .sock.full{background:var(--pip-lit) center/100% 100% no-repeat;border:0}
 #calibDots{width:180px;height:48px;background-size:100% 100%;background-repeat:no-repeat}
@@ -98,7 +102,7 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 #reticle.settled{background-image:var(--ret-b)}
 /* the tiers on every card: her frame and mark over the render, the word under the name */
 .tile::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
-  border:1px solid transparent;border-image:var(--tier-common) 64 32 32 32 / 20px 10px 10px 10px stretch}
+  border:1px solid transparent;border-image:var(--tier-common) 32 / 16px stretch}
 .tile.t-uncommon::after{border-image-source:var(--tier-uncommon)}
 .tile.t-rare::after{border-image-source:var(--tier-rare)}
 .tile.t-epic::after{border-image-source:var(--tier-epic)}
@@ -106,13 +110,25 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 .tile{border-color:transparent}
 .tile .rib{display:none}
 .tile .nm{z-index:3}
+/* m3 step 11, B3: the mark is its own icon at her centre (48, 10), never stretched with the frame */
+.tile .tmark{position:absolute;left:50%;top:2px;width:16px;height:16px;margin-left:-8px;z-index:3}
+.tile .tmark .ic{display:block;width:16px;height:16px;margin:0}
+.t-common .tmark{color:#b9b4a4}.t-uncommon .tmark{color:#85bda8}.t-rare .tmark{color:#91bce1}.t-epic .tmark{color:#d7a0d9}.t-grail .tmark{color:#e6c56a}
 .tile .tw{display:block;font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;opacity:.9}
 .t-common .tw,#iTier.t-common{color:#b9b4a4}
 .t-uncommon .tw,#iTier.t-uncommon{color:#85bda8}
 .t-rare .tw,#iTier.t-rare{color:#91bce1}
 .t-epic .tw,#iTier.t-epic{color:#d7a0d9}
 .t-grail .tw,#iTier.t-grail{color:#e6c56a}
-#iTier .ic{width:16px;height:16px;margin-right:6px;vertical-align:-3px}
+/* B3: her pill, 280 by 48, the mark at (140, 10), the word in her content box at 14 px */
+#inspectCard #iTier,#iTier,#poTier{position:relative;display:block;width:280px;max-width:100%;height:48px;box-sizing:border-box;margin:0 auto;padding:0;
+  border:16px solid transparent;border-image:var(--pill-common) 32 fill / 16px stretch;letter-spacing:.06em}
+#iTier.t-uncommon,#poTier.t-uncommon{border-image-source:var(--pill-uncommon)}
+#iTier.t-rare,#poTier.t-rare{border-image-source:var(--pill-rare)}
+#iTier.t-epic,#poTier.t-epic{border-image-source:var(--pill-epic)}
+#iTier.t-grail,#poTier.t-grail{border-image-source:var(--pill-grail)}
+#iTier .ic,#poTier .ic{position:absolute;left:50%;top:-14px;width:16px;height:16px;margin:0 0 0 -8px}
+#iTier span,#poTier span{position:absolute;left:-4px;right:-4px;top:5px;height:15px;line-height:15px;font-size:14px;text-align:center}
 /* ---- step 6: the economy's objects ---- */
 #collection #pouches{width:100%;max-width:23rem}
 #collection #pouches button{display:grid;grid-template-columns:72px 1fr;grid-template-rows:auto auto auto;column-gap:12px;align-items:center;
@@ -120,10 +136,12 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 #pouches .pouchImg{grid-row:1 / span 3;width:72px;height:72px;object-fit:contain}
 #pouches .pname{font-size:.86rem}
 #pouches .pity{color:var(--brass)}
-#poPlate{position:relative;width:min(280px,76vw);aspect-ratio:1}
+#poPlate{position:relative;width:min(320px,86vw);aspect-ratio:1}
+/* B7: pouch, lift, dark shadow, render */
+#poRest{position:absolute;width:42.8%;aspect-ratio:1;transform:translate(-50%,-50%);background:var(--shadow-dark) center/100% 100% no-repeat,var(--contact-lift) center/100% 100% no-repeat}
 #poImg{width:100%;height:100%;display:block}
-#poMouth{position:absolute;clip-path:ellipse(50% 50% at 50% 50%);display:flex;align-items:center;justify-content:center}
-#poMouth canvas{height:95%;width:auto;aspect-ratio:1}
+#poMouth{position:absolute;display:flex;align-items:center;justify-content:center}
+#poMouth canvas{height:auto;aspect-ratio:1;flex:none}
 #poTier .ic{width:16px;height:16px;margin-right:6px;vertical-align:-3px}
 #pouchOpen{background:var(--bg)}
 #poTier.t-common{color:#b9b4a4}#poTier.t-uncommon{color:#85bda8}#poTier.t-rare{color:#91bce1}#poTier.t-epic{color:#d7a0d9}#poTier.t-grail{color:#e6c56a}
@@ -131,33 +149,53 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 #caseWrap{width:100%;max-width:23rem}
 #case{aspect-ratio:900/600;background-size:100% 100%}
 #case canvas{position:absolute;width:10%;height:auto;aspect-ratio:1;margin:-5% 0 0 -5%}
+#case .wellRest{position:absolute;width:12%;aspect-ratio:1;transform:translate(-50%,-50%);background:var(--shadow-dark) center/100% 100% no-repeat,var(--contact-lift) center/100% 100% no-repeat}
 /* ⛔ THE CLOTH ADDS NO HEIGHT: the setup's Back must stay on a 375 by 667 screen (the playthrough presses it there) */
-#ante.cloth{background-size:100% 100%;background-repeat:no-repeat;padding:0 12px;border-radius:12px}
+/* m3 step 11, B5: her cloth behind the stake rows, drawn on a pseudo element so it adds no border to the box */
+#ante.cloth{position:relative;padding:4px 19px;box-sizing:border-box}
+@media (max-width:360px){#ante.cloth{padding:4px 16px}}   /* five slots, 288 px, on the 360 phone */
+#ante.cloth::before{content:'';position:absolute;inset:0;border:20px solid transparent;border-image:var(--pot-cloth) 40 fill / 20px stretch;pointer-events:none}
+#ante.cloth>*{position:relative}
 #offers .env{width:44px;height:auto;flex:none;margin-right:8px}
 #iProv .last{display:block;color:var(--chalk)}
 #iProv .hist{list-style:none;margin:6px 0 0;padding:0;font-size:.8rem;color:var(--muted)}
 /* ---- m2: the statues' tray (steps 9 and 10) ---- */
-#statueTray{position:absolute;left:0;right:0;bottom:0;padding:10px 12px calc(12px + var(--sb));pointer-events:auto;
-  background:linear-gradient(0deg,rgba(13,16,12,.96),rgba(13,16,12,.88) 80%,rgba(13,16,12,0));z-index:5}
-#stLine{margin:0 0 8px;text-align:center;font-size:.86rem;color:var(--chalk)}
-#stTiles{display:flex;gap:8px;justify-content:center;margin-bottom:8px}
-.stTile{min-width:72px;min-height:48px;padding:0 10px;font-size:.8rem;letter-spacing:.04em;touch-action:none;
-  background:rgba(232,220,200,.08);color:var(--chalk);border:1px solid rgba(200,168,75,.55)}
+/* m3 step 10: Astra's plate, 375x190 CSS, nine slice 32; every band below is her anchor less the 16 px border */
+#statueTray{position:absolute;left:0;right:0;bottom:0;height:calc(190px + var(--sb));box-sizing:border-box;pointer-events:auto;
+  border:16px solid transparent;border-image:var(--tray) 32 fill / 16px stretch;z-index:5}
+#statueTray.moveMode{height:calc(122px + var(--sb))}
+#stHead{position:absolute;left:0;right:0;top:-4px;height:20px;margin:0;line-height:20px;text-align:center;font-size:.92rem;font-weight:600;color:var(--chalk)}
+#stLine{position:absolute;left:0;right:0;top:20px;height:20px;margin:0;line-height:20px;text-align:center;font-size:.8rem;color:var(--chalk);opacity:.86;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#stTiles{position:absolute;left:14.5px;right:14.5px;top:51px;display:flex;justify-content:space-between}
+.stTile{position:relative;flex:0 0 56px;width:56px;height:56px;min-width:0;min-height:0;padding:0;box-sizing:border-box;touch-action:none;background:none;color:var(--chalk);
+  border:10px solid transparent;border-image:var(--tile-idle) 20 fill / 10px stretch}
+.stTile:active,.stTile.pressed{border-image-source:var(--tile-pressed)}
+.stTile.dragging{border-image-source:var(--tile-drag)}
+.stTile .ic{position:absolute;left:6px;top:0;width:24px;height:24px;margin:0}
+.stTile .lbl{position:absolute;left:-4px;right:-4px;top:28px;height:12px;line-height:12px;font-size:10.5px;letter-spacing:.02em;text-align:center}
 .stTile:disabled{opacity:.4}
-.stBtns{display:flex;gap:10px;justify-content:center}
-.stBtns button{min-height:48px;min-width:120px}
-#stNot{position:absolute;transform:translateX(-50%);padding:6px 12px;border-radius:8px;pointer-events:none;z-index:6;
-  background:rgba(13,16,12,.9);color:#d86a5a;border:1px solid #d86a5a;font-size:.9rem;letter-spacing:.04em}
-#moveStatue{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(122px + var(--sb));min-height:48px;pointer-events:auto}
+.stBtns{position:absolute;left:0;right:0;bottom:calc(var(--sb) - 13px);display:flex;gap:8px}
+.stBtns button{height:48px;min-height:48px;min-width:0;padding:0 8px;white-space:nowrap}
+#stUndo{flex:0 0 105px}
+#stConfirm{flex:1 1 0}
+#stNot{position:absolute;width:112px;height:40px;box-sizing:border-box;border:12px solid transparent;border-image:var(--not-here) 24 fill / 12px stretch;
+  line-height:16px;text-align:center;font-size:.85rem;letter-spacing:.04em;color:#e0806f;pointer-events:none;z-index:6}
+
+#stNot::after{content:'';position:absolute;left:calc(50% - .75px);top:calc(100% + 12px);width:1.5px;height:var(--ll,0);background:rgba(234,223,201,.85);transform-origin:50% 0;transform:rotate(var(--la,0deg))}
+#stNot.below::after{top:-12px}
+.stBadge{position:absolute;width:12px;height:12px;border-radius:3px;background:#23291e;color:#eadfc9;pointer-events:none;z-index:4;overflow:hidden}
+.stBadge .ic{display:block;width:12px;height:12px;margin:0;stroke-width:3}
+/* m3 step 10: the Zoom's mirror, out of the 154 px circle it stood on */
+#moveStatue{position:absolute;left:10px;top:calc(60px + env(safe-area-inset-top,0px));min-height:48px;pointer-events:auto;font-size:.74rem;padding:0 10px;white-space:nowrap}
 /* while statues are placed or moved, the tray IS the bottom of the screen: the shot's controls step aside */
 body.statuing #corners,body.statuing #houseRules,body.statuing #aimNudge,body.statuing #scopeBtn,body.statuing #moveStatue,body.statuing #say{display:none}
 /* the render sits INSIDE her frame (its edges carry her dark fill, which cropped the marble when it lay over it) */
-.tile canvas{position:absolute;left:6px;right:6px;top:15px;bottom:6px;width:auto;height:auto;object-fit:contain}
+.tile canvas{position:absolute;left:12px;top:21px;width:calc(100% - 24px);height:calc(100% - 33px);object-fit:contain}   /* her content box */
 .tile .cnt{z-index:3}
 /* the HUD's three buttons keep one line each with their icons */
 #corners button{white-space:nowrap;letter-spacing:.04em;font-size:.74rem;padding-left:8px;padding-right:8px}
 #corners button .ic{width:16px;height:16px;margin-right:5px;vertical-align:-3px}
-#scores #themFace{position:absolute;right:8px;top:50%;width:36px;height:36px;margin-top:-18px}
+#scores #themFace{position:absolute;right:-6px;top:-8px;width:26px;height:26px;margin:0}   /* over the pips, her name band's right end */
 #scores{position:absolute;left:0;right:0;top:0;padding:calc(8px + var(--st)) 12px 8px;
   display:flex;justify-content:space-between;align-items:flex-start;
   background:linear-gradient(180deg,rgba(13,16,12,.42),rgba(13,16,12,0) 78%)}
@@ -231,7 +269,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 .tile{width:96px;height:96px;min-width:0;min-height:0;border-radius:12px;
   border:1px solid rgba(152,160,134,.35);
   background:rgba(20,23,15,.72);position:relative;padding:0;display:block;cursor:pointer;overflow:hidden}
-.tile canvas{width:100%;height:100%;display:block}
+.tile canvas{display:block}
 .tile .nm{position:absolute;left:0;right:0;bottom:0;font-size:.56rem;line-height:1.2;padding:3px 4px;
   color:var(--chalk);background:linear-gradient(180deg,rgba(13,16,12,0),rgba(13,16,12,.92) 45%);
   text-transform:none;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -275,18 +313,21 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 /* the cloth: 900 by 600 shown from row 112 to 512, resting places at 225, 450, 675 by 312 (50 percent down),
    a quarter of the plate apart, so each place is 24 percent wide; the live render fills Astra's 62 px radius
    (13.8 percent of the plate) and her ground shadow lies under it */
-#heirlooms{aspect-ratio:900/400;background-size:100% auto;background-position:50% 56%}
-#heirlooms button{position:absolute;top:8%;width:24%;height:88%;min-width:0;min-height:48px;margin-left:-12%;padding:0 2px;
+/* m3 step 11, B6: her 900 by 1200 plate shown from row 320 to 712, under the height the v1 cloth took: her render windows at 30, 330 and 630 by 340, 240 square; a button runs from her window's top to the foot of her name band, 24 + 300k wide 252 */
+#heirlooms{aspect-ratio:900/392;background-size:100% auto;background-position:50% 39.6%}
+#heirlooms button{position:absolute;top:5.1%;width:28%;height:92.86%;min-width:0;min-height:48px;margin:0;padding:0;
   display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
   border-radius:12px;border:1px solid rgba(232,220,200,.22);background:rgba(13,16,12,.28);
   text-transform:none;letter-spacing:0;font-size:.64rem;line-height:1.15;color:var(--chalk)}
-#heirlooms button:nth-child(1){left:25%}
-#heirlooms button:nth-child(2){left:50%}
-#heirlooms button:nth-child(3){left:75%}
-#heirlooms canvas{display:block;width:57.4%;height:auto;aspect-ratio:1;margin:49% auto 3%;position:relative;z-index:1}
+#heirlooms button:nth-child(1){left:2.667%}
+#heirlooms button:nth-child(2){left:36%}
+#heirlooms button:nth-child(3){left:69.333%}
+#heirlooms canvas{display:block;position:absolute;left:2.38%;top:0;width:95.24%;height:auto;aspect-ratio:1;margin:0;z-index:1}
+#heirlooms .nm{position:absolute;left:0;right:0;top:72.5%;z-index:1}
+#heirlooms .kit{position:absolute;left:0;right:0;top:85%;margin:0;z-index:1}
 /* a shadow under each one, so they sit on the cloth rather than over it (Astra's ground shadow) */
-#heirlooms .rest{position:absolute;left:50%;top:61%;width:56%;height:12%;margin-left:-28%;
-  background-size:100% 100%;background-repeat:no-repeat;opacity:.85}
+#heirlooms .rest{position:absolute;left:50%;top:52.2%;width:112.5%;aspect-ratio:1;transform:translate(-50%,-50%);
+  background:var(--shadow-dark) center/100% 100% no-repeat,var(--contact-lift) center/100% 100% no-repeat}
 #heirlooms button.on{border-color:var(--brass);background:rgba(200,168,75,.16);
   box-shadow:0 0 0 2px rgba(200,168,75,.5),0 8px 16px rgba(0,0,0,.55);transform:translateY(-4px)}
 #heirlooms span{text-shadow:0 1px 3px rgba(0,0,0,.9)}
@@ -402,9 +443,9 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
    pressed, so the strip has to make it obvious what is being risked. */
 #ante{display:flex;flex-direction:column;align-items:center;gap:6px;max-width:23rem;width:100%}
 .antelabel{margin:0;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
-#stakeStrip,#theirStrip{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;width:100%;
-  padding:2px;justify-content:flex-start;min-height:62px}
-.stake{flex:0 0 auto;min-width:56px;min-height:56px;width:56px;height:56px;padding:0;border-radius:10px;
+#stakeStrip,#theirStrip{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:12px;width:100%;
+  padding:2px;justify-content:flex-start;min-height:54px}
+.stake{flex:0 0 auto;min-width:48px;min-height:48px;width:48px;height:48px;padding:0;border-radius:10px;
   border:1px solid rgba(152,160,134,.4);background:rgba(20,23,15,.7);position:relative;overflow:hidden;
   cursor:pointer}
 .stake canvas{width:100%;height:100%;display:block}
@@ -437,6 +478,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   max-width:88%;text-align:center;font-size:.82rem;line-height:1.3;color:var(--chalk);
   background:rgba(13,16,12,.62);border-radius:8px;padding:6px 12px}
 #reticle{position:absolute;border:2px solid rgba(232,220,200,.8);border-radius:50%}
+#grabRing{position:fixed;box-sizing:border-box;border:2px dashed rgba(232,220,200,.34);border-radius:50%;pointer-events:none}
 /* the spyglass: a square viewfinder over a narrow lens render of the same dirt, looking down the
    aim line to the mib the shot is pointed at; the bracket is the cone's width at that range */
 #spyglass{position:absolute;left:50%;transform:translateX(-50%);width:180px;height:180px;border:2px solid var(--brass);
@@ -444,9 +486,11 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 #spyHair{position:absolute;left:50%;top:0;bottom:0;width:1px;margin-left:-.5px;background:rgba(232,220,200,.3)}
 #spyCone{position:absolute;top:50%;left:50%;height:28px;transform:translate(-50%,-50%);box-sizing:border-box;
   border-left:2px solid rgba(232,220,200,.6);border-right:2px solid rgba(232,220,200,.6)}
-#aimline{position:absolute;height:3px;border-radius:2px;
-  background:linear-gradient(90deg,rgba(200,168,75,.95),rgba(200,168,75,0));
-  transform-origin:0 50%}
+/* m3 step 7: Astra's dash as a mask over brass (her tile is square, so the strip's height is the dash period: 24 px inks 1.8 px) and her cap at the true end point */
+#aimline{position:fixed;height:24px;margin-top:-12px;background:var(--brass);pointer-events:none;
+  -webkit-mask:var(--aim-dash) 0 50%/24px 24px repeat-x;mask:var(--aim-dash) 0 50%/24px 24px repeat-x;transform-origin:0 50%}
+#aimcap{position:fixed;width:24px;height:24px;margin:-12px 0 0 -18px;background:var(--brass);pointer-events:none;
+  -webkit-mask:var(--aim-cap) center/24px 24px no-repeat;mask:var(--aim-cap) center/24px 24px no-repeat;transform-origin:18px 12px}
 #power{position:absolute;left:50%;bottom:calc(98px + var(--sb));width:150px;height:6px;margin-left:-75px;
   background:rgba(232,220,200,.22);border-radius:3px;overflow:hidden}
 #powerFill{height:100%;width:0;background:var(--brass)}
@@ -459,7 +503,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 #corners button{min-width:0;flex:1 1 0;padding:0 8px}
 /* the fine aim: a round 56 px button on each side at mid height, where an off hand thumb
    lands while the other holds the shooter; the Zoom under the score row on the right */
-#aimNudge{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;
+#aimNudge{position:absolute;left:0;right:0;bottom:calc(84px + var(--sb));display:flex;
   justify-content:space-between;padding:0 8px;pointer-events:none}
 #aimNudge button{pointer-events:auto;width:56px;height:56px;min-width:0;min-height:0;padding:0;
   border-radius:50%;font-size:1.1rem;background:rgba(13,16,12,.7);color:var(--chalk);
@@ -499,8 +543,12 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 .why{margin:.3rem 0 0;font-size:.72rem;line-height:1.4;color:var(--muted)}
 /* a level up is the only line on this card that is news, and it is a line
    rather than a filled slab: a brass block reads as a button and is not one */
-.levelup{margin:.8rem 0 0;padding:.2rem 0 .2rem .8rem;font-size:1.02rem;line-height:1.45;
-  color:var(--brass);border-left:3px solid var(--brass);text-align:left;font-weight:600}
+/* m3 step 11, B4: her strip, 320 by 60, the mark centred on (27, 30) at 24, the level and reward in her bands */
+.levelup{position:relative;display:block;width:320px;max-width:100%;height:60px;box-sizing:border-box;margin:.8rem auto 0;padding:0;
+  border:14px solid transparent;border-image:var(--level-strip) 28 fill / 14px stretch;color:var(--brass);text-align:left;font-weight:600}
+.levelup .ic{position:absolute;left:1px;top:4px;width:24px;height:24px;margin:0}
+.levelup .lv{position:absolute;left:33px;right:0;top:-5px;height:18px;line-height:18px;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.levelup .rw{position:absolute;left:33px;right:0;top:18px;height:16px;line-height:16px;font-size:.74rem;font-weight:500;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 <script type="importmap">
 { "imports": { "three": "./lib/three.module.min.js" } }
@@ -514,7 +562,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 <div id="title" class="veil" hidden>
   <p class="studio">Sky Wolf Studio</p>
   <h1 class="wordmark">Keepsies</h1>
-  <p class="rules" style="text-align:center;padding:0">Thirteen marbles in a cross, a ten foot ring, and a shooter you snap with your thumb.</p>
+  <p class="rules" style="text-align:center;padding:0">Thirteen marbles in a cross, a chalk ring, and a shooter you snap with your thumb.</p>
   <button id="play">Play</button>
   <p id="wallet" class="studio" style="letter-spacing:.1em"></p>
   <button id="collect" class="quiet">Your marbles</button>
@@ -539,7 +587,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
     <p id="oppLine">Beat everyone on his street. His street is small.</p>
   </div>
   <div id="hrRow"></div>
-  <div id="ante" class="cloth" data-art="ui/pot_cloth.svg" hidden>
+  <div id="ante" class="cloth" hidden>
     <p class="antelabel">Your stake</p>
     <div id="stakeStrip"></div>
     <p id="anteSay"></p>
@@ -555,21 +603,23 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   <ul class="rules">
     <li><b>The objective.</b> Knock seven of the thirteen mibs out of the ring before your opponent does.</li>
     <li><b>The turn.</b> Knock one out and you shoot again from where your shooter lies. Knock none out and the turn passes.</li>
-    <li><b>The shot.</b> Hold your thumb on the shooter and keep it still, the reticle tightens as your aim settles, then flick through the marble. Flick from below it for backspin, from above for follow, from the side for english.</li>
+    <li><b>The shot.</b> Hold your thumb in the circle round your shooter and keep it still, the reticle tightens as your aim settles, then flick up the screen. Slide sideways first to turn your aim. Flick from low in the circle for backspin, from high for follow, from the side for english.</li>
   </ul>
   <button id="rulesGo">Knuckle down</button>
 </div>
 
+<div id="grabRing" hidden></div>
+<div id="aimline" hidden></div>
+<div id="aimcap" hidden></div>
 <div id="hud" hidden>
   <div id="lot" aria-hidden="true"></div>
   <div id="scores">
     <div class="side me"><span class="who" id="whoMe">You</span><span class="sockets" id="sockMe"></span></div>
     <div class="side them"><img id="themFace" class="face" alt="" hidden><span class="who" id="whoThem">Dusty</span><span class="sockets" id="sockThem"></span></div>
   </div>
-  <div id="houseRules">keeps, slips, ten foot</div>
+  <div id="houseRules">keeps, slips, five foot</div>
   <div id="say">Drag to place your shooter, then hold it and flick.</div>
   <div id="reticle" hidden></div>
-  <div id="aimline" hidden></div>
   <!-- the spyglass (core/spyglass.js): the frame is DOM, the picture underneath is a second lens
        render on the same canvas -->
   <div id="spyglass" hidden><div id="spyHair"></div><div id="spyCone"></div></div>
@@ -584,11 +634,13 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   <button id="scopeBtn" hidden>Zoom</button>
   <!-- STATUES (steps 9 and 10): the tray at the bottom, a tile a shape, Confirm and Undo; Not here follows the finger -->
   <div id="statueTray" hidden>
+    <p id="stHead"></p>
     <p id="stLine"></p>
     <div id="stTiles"></div>
     <div class="stBtns"><button id="stUndo" class="quiet">Undo</button><button id="stConfirm">Confirm</button></div>
   </div>
   <div id="stNot" hidden>Not here</div>
+  <div id="stBadges"></div>
   <button id="moveStatue" class="quiet" hidden>Move a statue</button>
   <div id="corners">
     <button id="snapHelp">The snap</button>
@@ -624,7 +676,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 <!-- the pouch reveal (step 6): the buy is written before this opens -->
 <div id="pouchOpen" class="veil" hidden>
   <p class="studio" id="poHead">Standard Pouch</p>
-  <div id="poPlate"><img id="poImg" alt=""><div id="poMouth"></div></div>
+  <div id="poPlate"><img id="poImg" alt=""><span id="poRest"></span><div id="poMouth"></div></div>
   <p class="ribbon" id="poTier"></p>
   <h2 id="poName"></h2>
   <p id="poSay"></p>
@@ -673,7 +725,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   <h2>Take some</h2>
   <p id="tinSafe">Your first rare is kept safe in the case.</p>
   <p id="tinSay">Ten clay, six cat's eyes, a bearing and a swirl. And one of these three, your pick.</p>
-  <div id="heirlooms" class="plate" data-art="ui/heirloom_cloth.webp"></div>
+  <div id="heirlooms" class="plate" data-art="ui/heirloom_cloth_r2.webp"></div>
   <p id="heirSay"></p>
   <button id="tinTake" disabled>Pick one first</button>
 </div>
@@ -710,8 +762,9 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
     <circle cx="180" cy="24" r="6" fill="#e0b060"/>
     <path d="M180 104 L204 62" stroke="#d86a5a" stroke-width="4" stroke-linecap="round"/>
     <path d="M194 66 L206 58 L206 71" fill="none" stroke="#d86a5a" stroke-width="4" stroke-linecap="round"/>
-    <line x1="180" y1="118" x2="236" y2="24" stroke="#d86a5a" stroke-width="1.5" stroke-dasharray="3 4"/>
-    <text x="196" y="142" font-size="10" fill="#e8dcc8" text-anchor="middle" font-family="system-ui">off the line, off the shot</text>
+    <line x1="180" y1="118" x2="162" y2="24" stroke="#d86a5a" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <line x1="180" y1="118" x2="198" y2="24" stroke="#d86a5a" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <text x="196" y="142" font-size="10" fill="#e8dcc8" text-anchor="middle" font-family="system-ui">off the line, a wild one</text>
     <circle cx="286" cy="60" r="13" fill="#7fb0d6" stroke="#e8dcc8" stroke-width="1.5"/>
     <circle cx="286" cy="70" r="3" fill="#c8a84b"/>
     <text x="286" y="96" font-size="9" fill="#98a086" text-anchor="middle" font-family="system-ui">low, backspin</text>
@@ -720,11 +773,11 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
     <text x="286" y="142" font-size="9" fill="#98a086" text-anchor="middle" font-family="system-ui">high, follow</text>
   </svg>
   <ul class="rules snapRules">
-    <li><b>Line it up first.</b> The gold line is where a straight snap goes. Turn it with the arrows or by dragging the dirt. Zoom shows it land.</li>
-    <li><b>Hold still.</b> Thumb on the shooter. The ring goes gold when your aim has settled.</li>
-    <li><b>Snap straight up the line.</b> Speed is power. Distance is nothing.</li>
-    <li><b>Leave the line and the shot leaves with you.</b> Ten degrees off is ten degrees off, up to twenty five. The game says when a snap pulled.</li>
-    <li><b>Where your thumb sits is spin.</b> Low is backspin, the stop shot. High is follow. A hook is a wild one.</li>
+    <li><b>Line it up first.</b> The gold line is where the shot goes. Turn it with the arrows, by dragging the dirt, or by sliding your thumb sideways on the shooter. Zoom shows it land.</li>
+    <li><b>Hold still.</b> Thumb in the circle. The ring goes gold when your aim has settled.</li>
+    <li><b>Snap up the screen.</b> Speed is power. Distance is nothing.</li>
+    <li><b>The shot goes up the line.</b> A snap off the line runs wilder, and past forty five degrees it is no shot at all. The game says when a snap pulled.</li>
+    <li><b>Where your thumb sits is spin.</b> Low in the circle is backspin, the stop shot. High is follow. A hook is a wild one.</li>
   </ul>
   <button id="snapGo">Got it</button>
 </div>
@@ -778,6 +831,6 @@ window._sbCapEarn=function(n,tag){
   return granted;
 };
 </script>
-<script type="module" src="src/main.js?v=20261105b"></script>
+<script type="module" src="src/main.js?v=20261106a"></script>
 </body>
 </html>

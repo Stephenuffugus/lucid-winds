@@ -12,10 +12,12 @@
 /**
  * @param {HTMLCanvasElement} canvas
  * @param {object} rig an OrbitRig from render/scene.js
- * @param {{isClaimed?:(id:number)=>boolean, onTap?:(x:number,y:number)=>void}} [hooks]
+ * @param {{isClaimed?:(id:number)=>boolean, onTap?:(x:number,y:number)=>void, orbitRadPerPx?:number}} [hooks]
  */
 export function attachCameraControls(canvas, rig, hooks) {
   const h = hooks || {};
+  /* m3 step 2: half the old 0.007 rad per px: at the old gain a 4 px thumb wobble was more than the settled cone */
+  const gain = h.orbitRadPerPx == null ? 0.0035 : h.orbitRadPerPx;
   const pointers = new Map();
   let lastPinch = 0;
   let moved = 0;
@@ -39,6 +41,9 @@ export function attachCameraControls(canvas, rig, hooks) {
   function onMove(e) {
     const p = pointers.get(e.pointerId);
     if (!p) return;
+    /* ⛔ THE CLAIM IS RECHECKED ON EVERY MOVE (m3 law 14), not only on the down: a finger the brace or the
+       place drag takes after it went down is the camera's no longer */
+    if (claimed(e.pointerId)) { pointers.delete(e.pointerId); lastPinch = 0; return; }
     const dx = e.clientX - p.x;
     p.x = e.clientX; p.y = e.clientY;
     moved += Math.abs(dx) + Math.abs(e.clientY - p.oy);
@@ -47,8 +52,8 @@ export function attachCameraControls(canvas, rig, hooks) {
        so writing the offsets is what makes the gesture survive; in freeCam nothing
        rebuilds them and the direct write is what moves the camera. */
     if (pointers.size === 1) {
-      rig.state.wantAzimuth -= dx * 0.007;
-      rig.state.userAz = (rig.state.userAz || 0) - dx * 0.007;
+      rig.state.wantAzimuth -= dx * gain;
+      rig.state.userAz = (rig.state.userAz || 0) - dx * gain;
     } else if (pointers.size === 2) {
       const span = pinchSpan();
       if (lastPinch > 0) {

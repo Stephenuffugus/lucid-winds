@@ -9,42 +9,45 @@
  * DIRECTIONS BEFORE PLAY. The rules card is shown before the first match of the
  * mode, which is a studio standard and not a preference.
  */
-import { detectQuality, forceQuality } from './render/quality.js?v=20261105b';
-import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261105b';
-import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261105b';
-import { buildRingerGround } from './render/arenaEnv.js?v=20261105b';
-import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261105b';
-import { attachCameraControls } from './input/cameraCtl.js?v=20261105b';
-import { createKnuckle } from './input/knuckle.js?v=20261105b';
-import { createPullback } from './input/pullback.js?v=20261105b';
-import * as AUDIO from './audio/synth.js?v=20261105b';
-import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261105b';
-import { createRinger } from './game/ringer.js?v=20261105b';
-import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261105b';
-import { launchSpeed } from './core/snap.js?v=20261105b';
-import { clamp, len2, DEG } from './core/dmath.js?v=20261105b';
-import * as SAVE from './meta/save.js?v=20261105b';
-import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261105b';
-import { playPotCeremony } from './render/ceremony.js?v=20261105b';
+import { detectQuality, forceQuality } from './render/quality.js?v=20261106a';
+import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261106a';
+import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261106a';
+import { lookFit } from './core/framing.js?v=20261106a';
+import { POUCH_MOUTH, POUCH, HEIRLOOM, HORIZON } from './render/plates.js?v=20261106a';
+import { buildRingerGround } from './render/arenaEnv.js?v=20261106a';
+import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261106a';
+import { attachCameraControls } from './input/cameraCtl.js?v=20261106a';
+import { createKnuckle } from './input/knuckle.js?v=20261106a';
+import { createPullback } from './input/pullback.js?v=20261106a';
+import { attachPlacement } from './input/placement.js?v=20261106a';
+import * as AUDIO from './audio/synth.js?v=20261106a';
+import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261106a';
+import { createRinger } from './game/ringer.js?v=20261106a';
+import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261106a';
+import { launchSpeed } from './core/snap.js?v=20261106a';
+import { clamp, len2, DEG, wrapPi } from './core/dmath.js?v=20261106a';
+import * as SAVE from './meta/save.js?v=20261106a';
+import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261106a';
+import { playPotCeremony } from './render/ceremony.js?v=20261106a';
 import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
-  from './meta/collection.js?v=20261105b';
-import * as MARBLEMESH from './render/marbleMesh.js?v=20261105b';
-import { bodySpec } from './core/marbleBody.js?v=20261105b';
-import { createEconomy } from './meta/economy.js?v=20261105b';
-import { createDrops } from './meta/drops.js?v=20261105b';
-import * as RANSOM from './meta/ransom.js?v=20261105b';
-import * as PROG from './meta/progression.js?v=20261105b';
-import { createOnboarding, dustyLine } from './meta/beats.js?v=20261105b';
+  from './meta/collection.js?v=20261106a';
+import * as MARBLEMESH from './render/marbleMesh.js?v=20261106a';
+import { bodySpec } from './core/marbleBody.js?v=20261106a';
+import { createEconomy } from './meta/economy.js?v=20261106a';
+import { createDrops } from './meta/drops.js?v=20261106a';
+import * as RANSOM from './meta/ransom.js?v=20261106a';
+import * as PROG from './meta/progression.js?v=20261106a';
+import { createOnboarding, dustyLine } from './meta/beats.js?v=20261106a';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
-  from './game/match.js?v=20261105b';
-import { makeRng } from './core/rng.js?v=20261105b';
-import { makeMarbleMaterial } from './render/marbleMesh.js?v=20261105b';
-import { art, loadIcons, ic } from './render/art.js?v=20261105b';
-import { face } from './render/portraits.js?v=20261105b';
-import * as PROV from './meta/provenance.js?v=20261105b';
-import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261105b';
-import { makeStatueMesh, markGhost, disposeStatueMesh } from './render/statues.js?v=20261105b';
-import { SHAPES, SHAPE_ORDER, PER_PLAYER, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261105b';
+  from './game/match.js?v=20261106a';
+import { makeRng } from './core/rng.js?v=20261106a';
+import { makeMarbleMaterial } from './render/marbleMesh.js?v=20261106a';
+import { art, loadIcons, ic } from './render/art.js?v=20261106a';
+import { face } from './render/portraits.js?v=20261106a';
+import * as PROV from './meta/provenance.js?v=20261106a';
+import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261106a';
+import { makeStatueMesh, makeMoveMarks, markGhost, disposeStatueMesh } from './render/statues.js?v=20261106a';
+import { SHAPES, SHAPE_ORDER, PER_PLAYER, MOVE_MAX, scaleFor, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261106a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -60,7 +63,7 @@ const G = {
   save: null, calibrator: null, lastRollAudio: 0, warming: false,
   assist: true, lastAssist: 0, lastShooter: 0,
   scopeHold: false, nudgeTimer: 0, snapShown: false, aimUiOn: false,
-  houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10, formation: 'cross', statues: false },
+  houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 5, formation: 'cross', statues: false },
   catalog: null, turntable: null, thumbs: null, filter: 'all', inspecting: null, econ: null,
   drops: null, dropRng: null, stake: [], theirStake: [], anteOk: false
 };
@@ -74,7 +77,7 @@ const HOUSE_RULES = [
   { key: 'poison', label: 'Poison', sub: 'knock out the enemy shooter' },
   /* Stephen's idea (step 9): two stone statues each, placed by drag before the lag */
   { key: 'statues', label: 'Statues', sub: 'two each' },
-  { key: 'ringSizeFt', label: 'Ring', sub: 'seven, ten or thirteen foot', cycle: [7, 10, 13],
+  { key: 'ringSizeFt', label: 'Ring', sub: 'five, seven, ten or thirteen foot', cycle: [5, 7, 10, 13],
     show: (v) => RING_WORD[v] || RING_WORD[10] },
   /* the lay of the thirteen: see FORMATIONS in game/ringer.js for what each one is */
   { key: 'formation', label: 'Lay', sub: 'cross, x, ring or bunch', cycle: ['cross', 'x', 'ring', 'bunch'],
@@ -83,15 +86,19 @@ const HOUSE_RULES = [
 /* ⛔ EVERY VALUE A CHIP CAN HOLD HAS ITS WORD (Astra, 4 Nov: k1-setup printed THE UNDEFINED, the lay chip
    reading a house rule that had no value until its first tap). A value with no word shows the game's
    own default, which is also what the rules play (core/rules-ringer.js DEFAULT_HOUSE_RULES). */
-const RING_WORD = { 7: 'Seven foot', 10: 'Ten foot', 13: 'Thirteen foot' };
+const RING_WORD = { 5: 'Five foot', 7: 'Seven foot', 10: 'Ten foot', 13: 'Thirteen foot' };
 /* Astra's HUD and tier plates (step 5), as style sheet variables set once at boot through art() */
 const ART_VARS = {
-  '--pip-empty': 'ui/pip_empty.svg', '--pip-lit': 'ui/pip_lit.svg', '--chip': 'ui/player_chip.svg',
+  '--pip-empty': 'ui/pip_empty.svg', '--pip-lit': 'ui/pip_lit.svg', '--chip': 'ui/player_chip_r2.png',
+  '--level-strip': 'ui/level_up_strip.png', '--pot-cloth': 'ui/pot_cloth_r2.png', '--shadow-dark': 'env/shadow_dark.png', '--contact-lift': 'ui/contact_lift.png',
   '--hr-on': 'ui/house_rule_on.svg', '--hr-off': 'ui/house_rule_off.svg', '--voice': 'ui/voice_bubble.svg',
   '--toast': 'ui/technique_toast.svg', '--result': 'ui/result_card.svg', '--scope': 'ui/minimap_frame.svg',
-  '--ret-a': 'ui/reticle_settling.svg', '--ret-b': 'ui/reticle_settled.svg',
-  '--tier-common': 'ui/tier_common.svg', '--tier-uncommon': 'ui/tier_uncommon.svg', '--tier-rare': 'ui/tier_rare.svg',
-  '--tier-epic': 'ui/tier_epic.svg', '--tier-grail': 'ui/tier_grail.svg'
+  '--tray': 'ui/tray.png', '--tile-idle': 'ui/tile_idle.png', '--tile-pressed': 'ui/tile_pressed.png', '--tile-drag': 'ui/tile_dragging.png', '--not-here': 'ui/not_here_chip.png',
+  '--ret-a': 'ui/reticle_settling.svg', '--ret-b': 'ui/reticle_settled.svg', '--aim-dash': 'ui/aim_dash.svg', '--aim-cap': 'ui/aim_cap.svg',
+  '--tier-common': 'ui/tier_common_tile.png', '--tier-uncommon': 'ui/tier_uncommon_tile.png', '--tier-rare': 'ui/tier_rare_tile.png',
+  '--tier-epic': 'ui/tier_epic_tile.png', '--tier-grail': 'ui/tier_grail_tile.png',
+  '--pill-common': 'ui/tier_common_pill.png', '--pill-uncommon': 'ui/tier_uncommon_pill.png', '--pill-rare': 'ui/tier_rare_pill.png',
+  '--pill-epic': 'ui/tier_epic_pill.png', '--pill-grail': 'ui/tier_grail_pill.png'
 };
 /* the house rules' icons (Astra's sprite); the lay has none of its own and carries none */
 const RULE_ICON = { keepsies: 'keeps', slips: 'slips', bombing: 'bombing', poison: 'poison', ringSizeFt: 'ring_size' };
@@ -113,7 +120,7 @@ async function boot() {
   for (const el of document.querySelectorAll('[data-art]')) el.style.backgroundImage = 'url(' + art(el.dataset.art) + ')';
   // and every plate the style sheet draws (step 5, the HUD and the tiers) is a variable made here
   for (const k in ART_VARS) document.documentElement.style.setProperty(k, 'url(' + art(ART_VARS[k]) + ')');
-  const res = await fetch('src/data/tuning.json?v=20261105b');
+  const res = await fetch('src/data/tuning.json?v=20261106a');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
   G.save = SAVE.load();
@@ -123,10 +130,10 @@ async function boot() {
   AUDIO.configure(G.tuning);
   AUDIO.setEnabled(G.save.settings.sound !== false);
 
-  const cat = await fetch('src/data/marbles.json?v=20261105b');
+  const cat = await fetch('src/data/marbles.json?v=20261106a');
   if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
   G.catalog = await cat.json();
-  const dt = await fetch('src/data/droptables.json?v=20261105b');
+  const dt = await fetch('src/data/droptables.json?v=20261106a');
   if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
   G.dropTables = await dt.json();
 
@@ -167,7 +174,7 @@ async function boot() {
 
   G.knuckle = createKnuckle(canvas, G.tuning, {
     taw: () => (G.R && (G.screen === 'match' || G.screen === 'calib') && canAim() ? G.R.tawOnScreen(G.rig) : null),
-    aimAzimuth: () => G.rig.state.azimuth + Math.PI,
+    aimAzimuth: () => wrapPi(G.rig.state.azimuth + Math.PI),
     // where a screen point lands on the dirt, so a flick's angle is the angle
     // between the two places the thumb was OVER, not an angle on glass
     groundPoint: (x, y) => groundPoint(x, y),
@@ -176,7 +183,9 @@ async function boot() {
     bombingAllowed: () => !!G.R && G.screen === 'match' && G.R.canBomb(),
     onBrace: onBrace,
     onAim: onAim,
-    onCancel: () => { say('That was too soft to count, so it does not. Take it again.'); hideAim(); },
+    onCancel: (why) => { if (why !== 'dial') say(why === 'offLine' ? 'That went sideways, so it does not count. Flick up the line.' : 'That was too soft to count, so it does not. Take it again.'); hideAim(); },
+    /* m3 step 7: the dial turns the aim by the orbit's own gain, written where the orbit writes it */
+    onDial: (dx) => { const k = dx * G.tuning.render.orbitRadPerPx; G.rig.state.userAz = (G.rig.state.userAz || 0) - k; G.rig.state.wantAzimuth -= k; },
     haptic: (k) => { if (navigator.vibrate) { try { navigator.vibrate(k === 'settle' ? 8 : 14); } catch (e) { } } },
     enabled: () => !G.usePullback && (G.screen === 'match' || G.screen === 'calib') && !G.paused && !G.moving && !G.statuesPlacing
   });
@@ -184,7 +193,7 @@ async function boot() {
 
   G.pullback = createPullback(canvas, G.tuning, {
     taw: () => (G.R && G.screen === 'match' && canAim() ? G.R.tawOnScreen(G.rig) : null),
-    aimAzimuth: () => G.rig.state.azimuth + Math.PI,
+    aimAzimuth: () => wrapPi(G.rig.state.azimuth + Math.PI),
     groundFactor: () => Math.sin(G.rig.state.elevationDeg * DEG),
     onDrag: (r) => { showPower(r.power01); },
     onAim: onAim,
@@ -194,10 +203,15 @@ async function boot() {
   G.pullback.attach();
 
   attachStatues(canvas);   // before the camera: a statue move's finger is claimed first (step 10)
+  /* ⛔ ONE OWNER PER FINGER (m3 law 14): the place drag registers before the camera, and while the thumb is
+     braced the brace owns every finger, so a second finger can neither orbit nor turn the aim */
+  G.place = attachPlacement(canvas, G, { canAim: () => canAim() });
+  canvas.addEventListener('pointerdown', () => { if (G.R && G.R.state.simulating) { G.rig.state.watchSkip = true; G.rig.state.wantTarget = null; G.rig.state.wantElevation = null; G.rig.state.wantDistance = G.rig.state.distance; } });
   G.cam = attachCameraControls(canvas, G.rig, {
+    orbitRadPerPx: G.tuning.render.orbitRadPerPx,
     isClaimed: (id) => G.knuckle.owns(id) || G.pullback.owns(id) || (G.placeDrag === id) || (G.moveDrag === id)
+      || G.knuckle.state().bracing
   });
-  attachPlacement(canvas);
 
   addEventListener('resize', () => { if (resize(G.stage)) drawNow(); });
   if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (resize(G.stage)) drawNow(); });
@@ -205,10 +219,11 @@ async function boot() {
   wireButtons();
   for (const [id, icon, text] of [['play', 'play', 'Play'], ['collect', 'your_marbles', 'Your marbles'],
     ['exitTitle', 'arcade', 'Sky Wolf Studio Arcade'], ['setupGo', 'play', 'Play'], ['setupBack', 'back', 'Back'],
-    ['scopeBtn', 'zoom', 'Zoom'], ['snapHelp', 'the_snap', 'The snap'], ['topDown', 'top_down', 'Top down'],
+    ['scopeBtn', 'zoom', 'Zoom'], ['snapHelp', 'the_snap', 'The snap'], ['topDown', 'top_down', 'Look'],
     ['pause', 'pause', 'Pause'], ['collBack', 'back', 'Back'], ['inspectBack', 'back', 'Back'],
     ['again', 'rematch', 'Rematch'], ['toTitle', 'home', 'Home'], ['resume', 'resume', 'Resume'],
-    ['calibSkip', 'lag', 'I have played marbles before']]) label(id, icon, text);
+    ['calibSkip', 'lag', 'I have played marbles before'],
+    ['stUndo', 'undo', 'Undo'], ['stConfirm', 'confirm', 'Confirm'], ['moveStatue', 'move_statue', 'Move']]) label(id, icon, text);
   $('boot').hidden = true;
   paintWallet();
   showScreen('title');
@@ -309,10 +324,10 @@ function wireButtons() {
     SAVE.merge({ seen: { snapHelp: true } });
     G.save = SAVE.load();
   });
-  $('topDown').addEventListener('click', () => {
-    G.topDown = !G.topDown;
-    label('topDown', G.topDown ? 'side_on' : 'top_down', G.topDown ? 'Side on' : 'Top down');
-  });
+  /* m3 step 8: LOOK is held: straight down on the whole ring for as long as a finger stays on it */
+  { const b = $('topDown'), on = (v) => (e) => { e.preventDefault(); G.topDown = v; };
+    b.addEventListener('pointerdown', (e) => { on(true)(e); try { b.setPointerCapture(e.pointerId); } catch (err) { } });
+    for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(t, on(false)); }
   $('pause').addEventListener('click', () => { G.paused = true; $('pauseCard').hidden = false; });
   $('resume').addEventListener('click', () => { G.paused = false; $('pauseCard').hidden = true; });
   $('abandon').addEventListener('click', () => {
@@ -348,14 +363,13 @@ function buildMatchCard() {
   const L = G.lastCard;
   if (!L) return null;
   const byId = (id) => G.catalog.marbles.find(m => m.id === id);
-  const side = (id, label) => { const e = byId(id); return e ? { render: renderOf(e, 420), name: e.name, label } : null; };
-  const staked = L.mine.length || L.theirs.length;
-  const left = side(L.mine[0] || L.myTaw, staked ? 'Your stake' : 'Your shooter');
-  const right = side(L.theirs[0] || L.theirTaw, staked ? L.opp + ' put up' : L.opp + "'s shooter");
-  const stats = ['Pocketed ' + $('rPocket').textContent, 'Shots ' + $('rShots').textContent];
+  /* m3 step 11, B11: her card has one window and three places on the pot cloth: the shooter in the window, the pot on the cloth (the two shooters when it was for fair) */
+  const hero = byId(L.myTaw) || byId(L.mine[0]);
+  const potIds = (L.mine.length || L.theirs.length) ? L.mine.concat(L.theirs) : [L.myTaw, L.theirTaw];
+  const pots = potIds.map(byId).filter(Boolean).slice(0, 3).map(e => renderOf(e, 264));
   const tech = $('rTech').textContent;
-  if (tech && tech !== 'none yet') stats.push(tech);
-  return matchCard({ title: $('resultTitle').textContent, left, right, pot: $('rPot').textContent, stats });
+  return matchCard({ title: $('resultTitle').textContent, hero: hero ? { render: renderOf(hero, 840), name: hero.name, label: 'Your shooter' } : null, pots, pot: $('rPot').textContent,
+    score: 'Pocketed ' + $('rPocket').textContent, shots: 'Shots ' + $('rShots').textContent, techniques: tech && tech !== 'none yet' ? tech : '' });
 }
 
 function paintProvenance(item) {
@@ -446,7 +460,7 @@ function finishCalibration(result) {
   if (G.ground) G.ground.chalk.visible = true;
   if (result) {
     G.calib = { max: result.max, own: true, handedness: result.handedness };
-    SAVE.merge({ profile: { calib: { max: result.max, samples: result.samples }, handedness: result.handedness } });
+    SAVE.merge({ profile: { calib: { v: 2, max: result.max, samples: result.samples }, handedness: result.handedness } });
     G.save = SAVE.load();
   }
   endMatch();
@@ -558,21 +572,21 @@ function openTin() {
   mouth.textContent = '';
   const still = (G.save.settings && G.save.settings.reducedMotion) || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   const canv = [];
-  G.thumbs.open(168);
+  G.thumbs.open(HEIRLOOM.canvasPx);
   let i = 0;
   for (const e of three) {
     const b = document.createElement('button');
     b.type = 'button';
     b.id = 'heir-' + e.id;
     const c = document.createElement('canvas');
-    c.width = c.height = 168;
+    c.width = c.height = HEIRLOOM.canvasPx;
     const rest = document.createElement('span');
     rest.className = 'rest';
-    rest.style.backgroundImage = 'url(' + art('env/ground_shadow.png') + ')';
     b.appendChild(rest);
     b.appendChild(c);
     canv.push({ c, b });
     const nm = document.createElement('span');
+    nm.className = 'nm';
     nm.textContent = e.name;
     b.appendChild(nm);
     const kit = document.createElement('span');
@@ -783,7 +797,6 @@ function openPouch(kind) {
 }
 
 /* Astra's open pouches: the mouth of each (anchors.json, in her 640 px master) as fractions of the plate */
-const POUCH_MOUTH = { standard: [174, 141, 276, 109], collector: [178, 142, 278, 112], grail: [174, 135, 280, 112] };
 
 /**
  * The reveal (step 6). The buy is already written; this only shows it: the open pouch with the live render of
@@ -793,15 +806,18 @@ const POUCH_MOUTH = { standard: [174, 141, 276, 109], collector: [178, 142, 278,
 function showPouchOpen(kind, res, line) {
   const v = $('pouchOpen');
   $('poHead').textContent = (G.dropTables[kind] || {}).name || 'A pouch';
-  $('poImg').src = art('ui/pouch_' + kind + '_open.webp');
-  const m = POUCH_MOUTH[kind] || POUCH_MOUTH.standard, mouth = $('poMouth');
-  mouth.style.left = (m[0] / 6.4) + '%'; mouth.style.top = (m[1] / 6.4) + '%';
-  mouth.style.width = (m[2] / 6.4) + '%'; mouth.style.height = (m[3] / 6.4) + '%';
+  $('poImg').src = art('ui/pouch_' + kind + '_open_r2.webp');
+  /* m3 step 11, B10: her mouth ellipse at her 320 display, the render r 60 at its centre; B7: her lift and dark shadow under it, on the contact patch */
+  const m = POUCH_MOUTH[kind] || POUCH_MOUTH.standard, mouth = $('poMouth'), pc = 100 / POUCH.display;
+  mouth.style.left = (m[0] - m[2]) * pc + '%'; mouth.style.top = (m[1] - m[3]) * pc + '%';
+  mouth.style.width = m[2] * 2 * pc + '%'; mouth.style.height = m[3] * 2 * pc + '%';
+  $('poRest').style.left = m[0] * pc + '%'; $('poRest').style.top = (m[1] + POUCH.renderR * 0.6) * pc + '%';
   mouth.textContent = '';
   const c = document.createElement('canvas');
-  c.width = c.height = 168;
+  c.width = c.height = POUCH.canvasPx;
+  c.style.width = (POUCH.renderR / m[2] * 100) + '%';
   mouth.appendChild(c);
-  G.thumbs.open(168); G.thumbs.paint(c, res.entry, 0); G.thumbs.close();
+  G.thumbs.open(POUCH.canvasPx); G.thumbs.paint(c, res.entry, 0); G.thumbs.close();
   $('poName').textContent = res.entry.name;
   $('poTier').innerHTML = ic(res.entry.tier) + '<span></span>';
   $('poTier').lastChild.textContent = TIER_LABEL[res.entry.tier] || res.entry.tier;
@@ -834,6 +850,9 @@ function buildCase() {
     c.width = c.height = 96;
     c.style.left = (wells[k][0] / 9) + '%'; c.style.top = (wells[k][1] / 6) + '%';
     c.title = e.name;
+    const well = document.createElement('span');   // B7: her lift and dark shadow, under the render
+    well.className = 'wellRest'; well.style.left = (wells[k][0] / 9) + '%'; well.style.top = (wells[k][1] / 6 + 3) + '%';
+    shelf.appendChild(well);
     shelf.appendChild(c);
     G.thumbs.paint(c, e, k);
   });
@@ -894,6 +913,9 @@ function buildGrid() {
       n.textContent = String(g.count);
       b.appendChild(n);
     }
+    const mk = document.createElement('span');
+    mk.className = 'tmark'; mk.innerHTML = ic(g.entry.tier);
+    b.appendChild(mk);
     const nm = document.createElement('span');
     nm.className = 'nm';
     nm.textContent = g.entry.name;
@@ -1060,20 +1082,20 @@ function buildHouseRules() {
   const row = $('hrRow');
   row.textContent = '';
   /* ⛔ THE FIRST TWO GAMES ARE SET UP BY THE GAME, NOT BY THE PLAYER. DESIGN 16
-     is exact: beat 3 is a seven foot game, slips on, FOR FAIR, and beat 5 is the
+     is exact: beat 3 is a five foot game (m3 step 9, DECISION 1), slips on, FOR FAIR, and beat 5 is the
      same table with one clay each on it. A player handed five chips before they
      have played once is being asked a question they cannot answer yet. */
   const beat = G.onboard && G.onboard.beat();
   if (beat && (beat.id === 'dusty' || beat.id === 'break' || beat.id === 'sticking')) {
     G.houseRules.keepsies = false;
     G.houseRules.slips = true;
-    G.houseRules.ringSizeFt = 7;
+    G.houseRules.ringSizeFt = 5;
     G.houseRules.formation = 'cross';     // the beat that teaches you to break the cross
     G.houseRules.statues = false;          // the first games are the plain game
   } else if (beat && beat.id === 'firstKeepsies') {
     G.houseRules.keepsies = true;
     G.houseRules.slips = true;
-    G.houseRules.ringSizeFt = 7;
+    G.houseRules.ringSizeFt = 5;
     G.houseRules.formation = 'cross';
     G.houseRules.statues = false;
   }
@@ -1206,6 +1228,30 @@ function lagAndFrame() {
 function syncStatues() {
   for (const m of G.statueMeshes || []) { G.stage.scene.remove(m); disposeStatueMesh(m); }
   G.statueMeshes = (G.R ? G.R.statues() : []).map(s => { const g = makeStatueMesh(s); G.stage.scene.add(g); return g; });
+  const box = $('stBadges');
+  box.textContent = '';
+  (G.R ? G.R.statues() : []).forEach((s, i) => {
+    const b = document.createElement('div');
+    b.className = 'stBadge'; b.hidden = true; b.dataset.i = i; b.dataset.owner = s.owner;
+    b.innerHTML = ic(s.owner === 0 ? 'owner_you' : 'owner_dusty');
+    box.appendChild(b);
+  });
+}
+
+/** m3 step 10: in the whole ring view a surface bar is under a pixel, so a 12 px badge stands over each statue: one bar you, two an opponent */
+function updateStatueBadges() {
+  const box = $('stBadges');
+  if (!box.firstChild) return;
+  const whole = !!G.R && G.screen === 'match' && (G.topDown || !!G.statuesPlacing || !!G.moving) && G.rig.state.elevationDeg > 80;
+  const list = whole ? G.R.statues() : null;
+  for (const b of box.children) {
+    const s = list && list[+b.dataset.i];
+    const here = s && !(G.moving && G.moving.index === +b.dataset.i && G.moveDrag != null) ? G.rig.project(s.x, SHAPES[s.shape].height, s.z) : null;
+    if (!here || !here.visible) { b.hidden = true; continue; }
+    b.hidden = false;
+    b.style.left = (here.x - 6) + 'px';
+    b.style.top = (here.y - 16) + 'px';
+  }
 }
 
 function dropGhost() {
@@ -1221,7 +1267,7 @@ function ghostAt(shape, cx, cy) {
   const cr = G.stage.renderer.domElement.getBoundingClientRect();
   const gp = groundPoint(cx - cr.left, cy - cr.top);
   if (!gp) { dropGhost(); $('stNot').hidden = false; placeNot(cx, cy); return null; }
-  const at = snapGrid(gp.x, gp.z);
+  const at = snapGrid(gp.x, gp.z, G.R.ringRadius);
   let verdict;
   if (G.moving && G.moving.index != null) {
     const s = G.R.statues()[G.moving.index];
@@ -1240,7 +1286,26 @@ function ghostAt(shape, cx, cy) {
   if (!verdict.ok) placeNot(cx, cy);
   return { shape, x: at.x, z: at.z, ok: verdict.ok };
 }
-function placeNot(cx, cy) { const n = $('stNot'); n.style.left = Math.round(cx) + 'px'; n.style.top = Math.round(cy - 64) + 'px'; }
+/* m3 step 10: her 112 by 40 chip above the finger, toward the free side, with a short leader to it; under the finger when the names leave no room above */
+function placeNot(cx, cy) {
+  const n = $('stNot'), W = G.stage.width, dir = cx < W / 2 ? 1 : -1;
+  const x = clamp(cx + dir * 62, 60, W - 60), up = cy - 92 >= 62, y = up ? cy - 72 : cy + 72;
+  n.style.left = Math.round(x - 56) + 'px'; n.style.top = Math.round(y - 20) + 'px';
+  const fx = cx + dir * 8, fy = up ? cy - 26 : cy + 26, sx = x, sy = up ? y + 20 : y - 20, dx = fx - sx, dy = fy - sy;
+  n.style.setProperty('--ll', Math.hypot(dx, dy).toFixed(1) + 'px');
+  // the leader leaves the chip's foot (or its head, under the finger)
+  n.style.setProperty('--la', (Math.atan2(-dx, dy) * 180 / Math.PI).toFixed(1) + 'deg');
+  n.classList.toggle('below', !up);
+}
+function moveMarks(s) {
+  dropMoveMarks();
+  if (!s) return;
+  G.moveMarks = makeMoveMarks(s, MOVE_MAX * scaleFor(G.R.ringRadius));
+  G.stage.scene.add(G.moveMarks);
+}
+function dropMoveMarks() {
+  if (G.moveMarks) { G.stage.scene.remove(G.moveMarks); disposeStatueMesh(G.moveMarks); G.moveMarks = null; }
+}
 
 function marblesNow() {
   const out = [];
@@ -1266,10 +1331,14 @@ function paintTray() {
   $('stTiles').hidden = !P;
   $('stConfirm').disabled = !G.stPending;
   $('stUndo').disabled = !G.stPending && !mv;
-  if (P) $('stLine').textContent = mine
-    ? 'Your statue, ' + (P.placed / 2 + 1) + ' of 2. Drag one onto the dirt, a foot clear of the cross and the line.'
-    : 'Dusty Coyle is placing one.';
-  else if (mv) $('stLine').textContent = G.stPending ? 'Confirm the move, or Undo.' : 'Drag one of your statues, up to two feet. It costs the turn.';
+  $('statueTray').classList.toggle('moveMode', !P && !!mv);
+  if (P) {
+    $('stHead').textContent = mine ? 'Your statue, ' + (P.placed / 2 + 1) + ' of 2' : 'Dusty Coyle is placing one';
+    $('stLine').textContent = mine ? 'Drag one onto the dirt, clear of the cross.' : '';
+  } else if (mv) {
+    $('stHead').textContent = 'Move a statue';
+    $('stLine').textContent = G.stPending ? 'Confirm the move, or Undo.' : 'Drag one of yours a short way. It costs the turn.';
+  }
 }
 
 /** Confirm: the pending statue goes down for good (or the move is made), then whoever is next. */
@@ -1336,7 +1405,7 @@ function startMove() {
 }
 function endMove() {
   if (G.moving && G.moving.index != null && G.statueMeshes[G.moving.index]) G.statueMeshes[G.moving.index].visible = true;
-  G.moving = null; G.moveDrag = null; G.stPending = null; dropGhost();
+  G.moving = null; G.moveDrag = null; G.stPending = null; dropGhost(); dropMoveMarks();
   document.body.classList.remove('statuing');
   $('statueTray').hidden = true;
 }
@@ -1347,19 +1416,21 @@ function attachStatues(canvas) {
   for (const shape of SHAPE_ORDER) {
     const b = document.createElement('button');
     b.type = 'button'; b.id = 'st-' + shape; b.className = 'stTile';
-    b.textContent = SHAPES[shape].name;
+    b.innerHTML = ic(shape) + '<span class="lbl">' + SHAPES[shape].name + '</span>';
     b.addEventListener('pointerdown', (e) => {
       if (!G.statuesPlacing || G.statuesPlacing.placed % 2 !== 0) return;
       e.preventDefault();
       try { b.setPointerCapture(e.pointerId); } catch (err) { }
       dropGhost(); G.stPending = null;
       G.stDrag = { id: e.pointerId, shape, last: null };
+      b.classList.add('dragging');
     });
     b.addEventListener('pointermove', (e) => { if (G.stDrag && G.stDrag.id === e.pointerId) G.stDrag.last = ghostAt(G.stDrag.shape, e.clientX, e.clientY); });
     const lift = (e) => {
       if (!G.stDrag || G.stDrag.id !== e.pointerId) return;
       const last = e.type === 'pointercancel' ? null : ghostAt(G.stDrag.shape, e.clientX, e.clientY);
       G.stDrag = null;
+      b.classList.remove('dragging');
       // ⛔ NOTHING IS PLACED BY A TAP: only a drag that lifts on an allowed spot leaves a statue, and only Confirm keeps it
       if (last && last.ok) { G.stPending = last; $('stNot').hidden = true; }
       else dropGhost();
@@ -1388,6 +1459,7 @@ function attachStatues(canvas) {
     G.moveDrag = e.pointerId; G.moving.index = best;
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { }
     if (G.statueMeshes[best]) G.statueMeshes[best].visible = false;
+    moveMarks(G.R.statues()[best]);
     G.stPending = null;
     G.moving.last = ghostAt(G.R.statues()[best].shape, e.clientX, e.clientY);
   }, { capture: true });
@@ -1400,7 +1472,7 @@ function attachStatues(canvas) {
     G.moveDrag = null;
     const last = e.type === 'pointercancel' ? null : ghostAt(G.R.statues()[G.moving.index].shape, e.clientX, e.clientY);
     if (last && last.ok) { G.stPending = last; $('stNot').hidden = true; }
-    else { dropGhost(); if (G.statueMeshes[G.moving.index]) G.statueMeshes[G.moving.index].visible = true; G.moving.index = null; }
+    else { dropGhost(); dropMoveMarks(); if (G.statueMeshes[G.moving.index]) G.statueMeshes[G.moving.index].visible = true; G.moving.index = null; }
     paintTray();
   };
   canvas.addEventListener('pointerup', liftMove, { capture: true });
@@ -1445,26 +1517,6 @@ const canAim = () => !!G.R && !G.R.state.simulating && !G.R.isAiTurn()
  * commits it and begins the brace. There is no PLACE button: pre commitment over
  * buttons, and one gesture flows straight into the next.
  */
-function attachPlacement(canvas) {
-  canvas.addEventListener('pointerdown', (e) => {
-    if (G.moving || G.statuesPlacing) return;
-    if (!canAim() || G.R.state.phase !== 'place') return;
-    const t = G.R.tawOnScreen(G.rig);
-    const r = canvas.getBoundingClientRect();
-    const x = e.clientX - r.left, y = e.clientY - r.top;
-    if (t && len2(x - t.x, y - t.y) <= t.r * 1.6) return;   // that is a brace, not a placement
-    G.placeDrag = e.pointerId;
-  }, { passive: false });
-  canvas.addEventListener('pointermove', (e) => {
-    if (G.placeDrag !== e.pointerId || !G.R || G.R.state.phase !== 'place') return;
-    const r = canvas.getBoundingClientRect();
-    const frac = clamp((e.clientX - r.left) / Math.max(1, r.width), 0, 1);
-    G.R.setPlaceAngle(G.rig.state.azimuth + Math.PI + (frac - 0.5) * Math.PI * 1.4);
-  });
-  const drop = (e) => { if (G.placeDrag === e.pointerId) G.placeDrag = null; };
-  canvas.addEventListener('pointerup', drop);
-  canvas.addEventListener('pointercancel', drop);
-}
 
 /**
  * ⛔ THE SKYLINE IN THE WIDE SHOT (step 3). The brace camera looks 30 degrees down through a 28 degree lens, so
@@ -1475,17 +1527,18 @@ function attachPlacement(canvas) {
  * the camera leans in for the last few mibs (core/framing.js, under leanFull live) a target may stand up to 8
  * percent from the top, so the band fades out; it also leaves for top down and low views, and on the low tier.
  */
-const LOT_ROW0 = 236, LOT_ROWS = 210;   // panorama rows 236 to 446: the lamp, the skyline, the fence's foot
 function lotBand() {
   const el = $('lot');
   if (!el) return;
   const st = G.rig.state;
   const live = G.R ? G.R.liveMibs().length : 0;
-  const on = G.tier.name !== 'low' && !G.topDown && st.elevationDeg >= 18 && st.elevationDeg <= 60
-    && live >= ((G.tuning.render.ringerCam || {}).leanFull || 5);
+  /* m3 step 8, DECISION 6: only where a frame shows the far chalk, and never over a live mib: the aim frame is dirt and the cross */
+  const far0 = G.R ? G.rig.project(-Math.sin(st.azimuth) * G.R.ringRadius, 0, -Math.cos(st.azimuth) * G.R.ringRadius) : null;
+  let on = G.tier.name !== 'low' && !G.topDown && Math.abs(wrapPi(st.azimuth)) <= HORIZON.windowDeg * DEG && st.elevationDeg >= 18 && st.elevationDeg <= 60 && live >= ((G.tuning.render.ringerCam || {}).leanFull || 5) && !!far0 && far0.visible && far0.y > 44;
+  if (on) for (const m of G.R.liveMibs()) { const p = positionOf(G.R.world, m.id), c = G.rig.project(p.x, p.y, p.z); if (c.visible && c.y < far0.y) { on = false; break; } }
   if (el.classList.contains('on') !== on) el.classList.toggle('on', on);
   if (!on) return;
-  if (!el.dataset.art) { el.style.backgroundImage = 'url(' + art('env/lot_panorama.webp') + ')'; el.dataset.art = '1'; }
+  if (!el.dataset.art) { el.style.backgroundImage = 'url(' + art('env/horizon_strip.webp') + ')'; el.dataset.art = '1'; }
   /* ⛔ AND NEVER OVER THE FAR ARC. The far chalk is how a player sees a mib leave the ring, and in the wide
      shot it runs just under the names: the band ends where the arc's nearest point to the top projects, so the
      skyline stands behind the far chalk and never on it (a floor of 44 px, a ceiling of 19 percent) */
@@ -1493,10 +1546,10 @@ function lotBand() {
   const far = G.rig.project(-Math.sin(st.azimuth) * G.R.ringRadius, 0, -Math.cos(st.azimuth) * G.R.ringRadius);
   const want = far.visible && far.y > 0 ? Math.max(44, Math.min(vh * 0.19, far.y - 2)) : vh * 0.19;
   if (Math.abs((el.clientHeight || 0) - want) > 1.5) el.style.height = Math.round(want) + 'px';
-  const h = Math.round(want), w = el.clientWidth || 1, s = h / LOT_ROWS, pw = 1600 * s;
-  // the camera faces -(sin az, cos az); the panorama's u at that bearing (the sky's own mapping, scene.js)
-  const u = ((0.709 - (st.azimuth - Math.PI) / (2 * Math.PI)) % 1 + 1) % 1;
-  const x = Math.round(w / 2 - u * pw), y = Math.round(-LOT_ROW0 * s);
+  /* m3 step 11, B9: her strip stands on the fence's foot; it does not tile, so it pans in a window of bearings about the first view (camera azimuth 0) and the band steps aside beyond it (above). The true sky behind stays the whole panorama */
+  const h = Math.round(want), w = el.clientWidth || 1, s = h / HORIZON.footY, pw = HORIZON.w * s;
+  const cs = HORIZON.w / 2 - (wrapPi(st.azimuth) / (HORIZON.windowDeg * DEG)) * Math.max(0, HORIZON.w / 2 - (w / 2) / s);
+  const x = Math.round(w / 2 - cs * s), y = 0;
   /* ⛔ never over the spyglass: its picture is in the canvas under every DOM layer, so the band takes a hole
      the size of its frame and the skyline stands either side of the scope */
   let hole = '';
@@ -1536,7 +1589,7 @@ function updateSpyglass(st, t, force) {
   const taw = G.R.shooterTaw();
   const tp = positionOf(G.R.world, taw.id);
   const live = G.R.liveMibs().map(m => { const p = positionOf(G.R.world, m.id); return { x: p.x, z: p.z, id: m.id }; });
-  const s = spyglassFor({ tawX: tp.x, tawZ: tp.z, azimuth: G.rig.state.azimuth + Math.PI, live, coneDeg: st.coneDeg }, C);
+  const s = spyglassFor({ tawX: tp.x, tawZ: tp.z, azimuth: wrapPi(G.rig.state.azimuth + Math.PI), live, coneDeg: st.coneDeg }, C);
   if (!s) return hideSpyglass();
   // how big that mib is on the MAIN screen decides whether the scope is worth opening
   const r = specOf(G.R.world, s.mib.id).radius;
@@ -1544,7 +1597,11 @@ function updateSpyglass(st, t, force) {
   const mainPx = Math.abs(e.y - c.y) * 2;
   // held open by the Zoom button it stays open whatever size the marble is on the main screen
   if (!(force || G.scopeHold) && !(mainPx < (C.openBelowPx == null ? 14 : C.openBelowPx))) return hideSpyglass();
-  const size = C.sizePx || 180, top = C.top == null ? 96 : C.top;
+  /* m3 step 8: the aim frame has the cross at the top of the screen. The scope opens in the dirt under the mibs ahead, clear of the circle */
+  const size = C.sizePx || 180, tt = t || G.R.tawOnScreen(G.rig), roof = tt ? tt.y - tt.grabR : G.stage.height;
+  let low = 0;
+  for (const m of live) { const q = G.rig.project(m.x, r, m.z); if (q.visible && q.y < roof && q.y > low) low = q.y; }
+  const top = Math.round(Math.max(C.top == null ? 96 : C.top, Math.min(low + 16, roof - size - 8)));
   const el = $('spyglass');
   el.hidden = false;
   el.style.top = top + 'px'; el.style.width = el.style.height = size + 'px';
@@ -1575,7 +1632,7 @@ function onBrace(st) {
   const t = G.R.tawOnScreen(G.rig);
   const ret = $('reticle'), line = $('aimline');
   if (!st.bracing || !t) {
-    ret.hidden = true; line.hidden = true; $('power').hidden = true; $('assist').hidden = true;
+    ret.hidden = true; $('power').hidden = true; $('assist').hidden = true;
     $('say').hidden = false;
     hideSpyglass();
     if (G.warming) { G.warming = false; AUDIO.stopWarming(); }
@@ -1586,7 +1643,8 @@ function onBrace(st) {
      up to four times, which drew a big gold hoop around a sixteen pixel marble
      and swallowed the thing you are actually looking at. It is scaled from the
      grab radius now, so at a full brace the ring sits just outside your thumb. */
-  const px = (t.grabR || t.r * 1.6) * (0.70 + st.coneDeg * 0.16);
+  /* m3 step 3: inside the circle, wide at 0.95 of it, settled at 0.45 */
+  const px = t.grabR * clamp(0.45 + (st.coneDeg - G.tuning.snap.coneTightDeg) / (G.tuning.snap.coneWideDeg - G.tuning.snap.coneTightDeg) * 0.5, 0.3, 0.95);
   // Astra's reticle draws its ring at 27 of 96: the box is sized so the ring stands where the drawn one did
   const S = px * 2 / 0.5625;
   ret.hidden = false;
@@ -1603,9 +1661,7 @@ function onBrace(st) {
   else if (!st.warmed && G.warming) { G.warming = false; AUDIO.stopWarming(); }
   updateSpyglass(st, t);
   // DIRECTION ONLY, never a predicted path. That is DESIGN 7.1 and it is not
-  // negotiable in ranked play, so it is not built at all. It starts OUTSIDE the
-  // reticle so the two do not read as one shape.
-  drawAimLine(t, px);
+  // negotiable in ranked play, so it is not built at all. It starts at the circle's edge (updateAimLine, every frame).
   // the drop shot only exists when the rule is on AND your taw is inside the
   // ring, so the game says so at the moment it becomes possible
   if (G.R.canBomb() && G.said.indexOf('drop shot') < 0 && G.R.state.phase === 'aim') {
@@ -1622,24 +1678,31 @@ function onBrace(st) {
  * (Sep 05, Stephen: "deviating makes the ball go off line": this is the line.)
  */
 function drawAimLine(t, px) {
-  const line = $('aimline');
-  if (!G.R || !t) { line.hidden = true; return; }
+  const line = $('aimline'), cap = $('aimcap');
+  const off = () => { line.hidden = true; cap.hidden = true; };
+  if (!G.R || !t) return off();
   const taw = G.R.shooterTaw();
-  if (!G.R.world.marbles.has(taw.id)) { line.hidden = true; return; }
+  if (!G.R.world.marbles.has(taw.id)) return off();
   const tp = positionOf(G.R.world, taw.id), r = specOf(G.R.world, taw.id).radius;
-  const az = G.rig.state.azimuth + Math.PI;
-  let d = 1.2;
-  if (G.spy && G.spy.on && G.spy.info && G.spy.info.range > 0.3) d = G.spy.info.range;
-  const e = G.rig.project(tp.x + Math.sin(az) * d, r, tp.z + Math.cos(az) * d);
+  const az = wrapPi(G.rig.state.azimuth + Math.PI), C = G.tuning.render.spyglass;
+  /* to the mib the scope would look at (the shot's real range), half a metre in calibration, else 1.2 m */
+  let d = G.screen === 'calib' ? G.tuning.render.calibCam.targetAhead : 1.2;
+  if (G.screen === 'match' && C) {
+    const live = G.R.liveMibs().map(m => { const p = positionOf(G.R.world, m.id); return { x: p.x, z: p.z, id: m.id }; });
+    const s = spyglassFor({ tawX: tp.x, tawZ: tp.z, azimuth: az, live, coneDeg: G.tuning.snap.coneTightDeg }, C);
+    if (s && s.range > 0.1) d = s.range;
+  }
+  const e = G.rig.project(tp.x + Math.sin(az) * d, G.screen === 'calib' ? 0 : r, tp.z + Math.cos(az) * d);
   const dx = e.x - t.x, dy = e.y - t.y, L = Math.hypot(dx, dy);
-  if (!e.visible || L < px + 14) { line.hidden = true; return; }
-  const ang = Math.atan2(dy, dx), start = px + 6;
-  line.hidden = false;
+  if (!e.visible || L < px + 14) return off();
+  const ang = Math.atan2(dy, dx), start = px, deg = (ang * 180 / Math.PI).toFixed(2) + 'deg';
+  line.hidden = false; cap.hidden = false;
   line.style.left = (t.x + Math.cos(ang) * start) + 'px';
   line.style.top = (t.y + Math.sin(ang) * start) + 'px';
-  line.style.width = Math.max(0, Math.min(L - start, 420)) + 'px';
-  line.style.transform = 'rotate(' + (ang * 180 / Math.PI).toFixed(2) + 'deg)';
-  G.aimLineInfo = { x: t.x, y: t.y, angleDeg: ang * 180 / Math.PI, length: L - start, endX: e.x, endY: e.y };
+  line.style.width = Math.max(0, L - start) + 'px';
+  line.style.transform = 'rotate(' + deg + ')';
+  cap.style.left = e.x + 'px'; cap.style.top = e.y + 'px'; cap.style.transform = 'rotate(' + deg + ')';
+  G.aimLineInfo = { x: t.x, y: t.y, angleDeg: ang * 180 / Math.PI, length: L - start, endX: e.x, endY: e.y, range: d };
 }
 
 /**
@@ -1666,21 +1729,59 @@ function setScopeHold(on) {
   G.scopeHold = !!on;
   $('scopeBtn').classList.toggle('on', G.scopeHold);
   $('scopeBtn').textContent = G.scopeHold ? 'Zoom on' : 'Zoom';
-  if (!G.scopeHold && !(G.knuckle && G.knuckle.state().bracing)) { hideSpyglass(); $('aimline').hidden = true; }
+  if (!G.scopeHold && !(G.knuckle && G.knuckle.state().bracing)) hideSpyglass();
 }
 
 /** The scope and the line while the thumb is NOT down: the wide cone, the reticle away. */
 function holdScope() {
   const t = G.R.tawOnScreen(G.rig);
-  if (!t) { hideSpyglass(); $('aimline').hidden = true; return; }
+  if (!t) { hideSpyglass(); return; }
   const T = G.tuning.snap;
   updateSpyglass({ coneDeg: T.coneWideDeg, settle01: 0 }, t, true);
-  drawAimLine(t, (t.grabR || t.r * 1.6) * 0.7);
 }
 
 function openSnapCard() { $('snapCard').hidden = false; }
 
 /** The aim buttons and the Zoom belong to the human's aim phase and nothing else. */
+/* m3 step 8: LOOK and the statues' view: straight down, the whole chalk in the width, between the names and whatever owns the bottom */
+function applyLook(botPx) {
+  const L = lookFit({ ringR: G.R.ringRadius, vw: G.stage.width, vh: G.stage.height, topPx: G.tuning.render.ringerCam.fitTopClearPx - 4, botPx, az: G.rig.state.azimuth }, G.tuning.render.ringerCam);
+  G.rig.setTarget(L.tx, 0.012, L.tz);
+  G.rig.state.elevationDeg = L.elevation;
+  G.rig.state.wantDistance = L.distance;
+  if (G.rig.setFov) G.rig.setFov(L.fov);
+}
+
+/* m3 step 3: the circle is drawn, a faint chalk ring round the shooter whenever the player may brace, so it is seen before the
+   thumb lands; the reticle settles inside it */
+function mayBrace() { return !!G.R && (G.screen === 'match' || G.screen === 'calib') && !G.usePullback && !G.paused && !G.moving && !G.statuesPlacing && canAim(); }
+/* m3 step 7: the aim line for the whole aim phase, from the circle's edge to where the shot points */
+function updateAimLine() {
+  const t = mayBrace() ? G.R.tawOnScreen(G.rig) : null;
+  if (!t) { $('aimline').hidden = true; $('aimcap').hidden = true; return; }
+  drawAimLine(t, t.grabR);
+}
+/* m3 step 7: Astra's calibration target on the aim ray, half a metre ahead, so the first thing a player learns is that the line points at a place */
+function updateCalibTarget() {
+  if (!G.ground || !G.ground.target) return;
+  if (G.screen !== 'calib' || !G.R) { G.ground.target.visible = false; return; }
+  const taw = G.R.shooterTaw();
+  if (!G.R.world.marbles.has(taw.id) || G.R.state.simulating) return;
+  const tp = positionOf(G.R.world, taw.id), az = G.rig.state.azimuth + Math.PI, D = G.tuning.render.calibCam.targetAhead;
+  G.ground.target.position.set(tp.x + Math.sin(az) * D, 0.0016, tp.z + Math.cos(az) * D);
+  G.ground.target.visible = G.ground.target.material.opacity > 0;
+}
+function updateGrabRing() {
+  const el = $('grabRing');
+  const t = mayBrace() ? G.R.tawOnScreen(G.rig) : null;
+  if (!t) { el.hidden = true; return; }
+  el.hidden = false;
+  const d = 2 * t.grabR;
+  el.style.width = el.style.height = d + 'px';
+  el.style.left = (t.x - t.grabR) + 'px';
+  el.style.top = (t.y - t.grabR) + 'px';
+}
+
 function updateAimUi() {
   const on = G.screen === 'match' && !!G.R && canAim() && !G.usePullback && !G.paused && G.R.match.players.length > 1;
   if (on !== G.aimUiOn) {
@@ -1759,9 +1860,8 @@ function onAim(aim) {
 function describe(aim, imp) {
   if (aim.bomb) return 'Straight down on top of them.';
   if (aim.wildness01 >= 0.5) return 'That was a wild one.';
-  // the snap pointed off the aim line and took the shot with it (DESIGN 7.7's fine angle)
-  if (Math.abs(aim.fineDeg || 0) >= 5) return 'Your snap turned the shot ' + Math.round(Math.abs(aim.fineDeg))
-    + ' degrees ' + (aim.fineDeg * NUDGE_SIGN > 0 ? 'right' : 'left') + ' of the line.';
+  // the snap pulled off the aim line: the line still aimed it, the pull made it wilder (m3 step 7)
+  if (Math.abs(aim.fineDeg || 0) >= 5) return 'Your snap pulled ' + Math.round(Math.abs(aim.fineDeg)) + ' degrees off the line, so it ran wilder.';
   if (aim.contactOffset.y <= -0.35) return 'Low across the ball.';
   if (aim.contactOffset.y >= 0.35) return 'Over the top of it.';
   if (Math.abs(aim.contactOffset.x) >= 0.4) return 'A bit of english on that one.';
@@ -1770,7 +1870,7 @@ function describe(aim, imp) {
 }
 
 function hideAim() {
-  $('reticle').hidden = true; $('aimline').hidden = true;
+  $('reticle').hidden = true; $('aimline').hidden = true; $('aimcap').hidden = true;
   $('power').hidden = true; $('assist').hidden = true;
 }
 
@@ -1970,8 +2070,9 @@ function finishMatch(s) {
     const opened = [];
     for (const lv of lvl.levels) for (const k of PROG.unlocksAt(lv, G.tuning)) opened.push(UNLOCK_WORDS[k] || k);
     $('rLevel').hidden = false;
-    $('rLevel').textContent = 'Level ' + lvl.level + '. ' + lvl.paid + ' sunbeams'
-      + (opened.length ? ', and ' + opened.join(' and ') + ' now open.' : '.');
+    $('rLevel').innerHTML = ic('level_up') + '<span class="lv"></span> <span class="rw"></span>';
+    $('rLevel').children[1].textContent = 'Level ' + lvl.level + '.';
+    $('rLevel').children[2].textContent = lvl.paid + ' sunbeams' + (opened.length ? ', and ' + opened.join(' and ') + ' now open.' : '.');
   } else {
     $('rLevel').hidden = true;
   }
@@ -2140,11 +2241,15 @@ function frame(now) {
     // is a cut; the drift within a turn stays smooth.
     if (!G.freeCam) {
       const t = G.R.match.turn;
-      const snapIt = t !== G.lastFramedTurn;
+      /* m3 step 4: when a shot comes to rest the frame cuts to the shooter where it lies, as a turn change does, so the look point never jumps under an easing camera */
+      const simNow = !!G.R.state.simulating, restCut = !!G.camSim && !simNow;
+      G.camSim = simNow;
+      const snapIt = t !== G.lastFramedTurn || restCut;
       // the cut also forgets the last shooter's orbit and pinch, BEFORE the frame
       // is computed, or the hard cut would land on the previous player's offsets
       if (snapIt && G.rig.resetUser) G.rig.resetUser();
-      G.R.frameShot(G.rig, snapIt);
+      // the place drag holds the camera still (m3 step 1); the lift lets the frame ease back behind the shooter
+      if (snapIt || !(G.place && G.place.live())) G.R.frameShot(G.rig, snapIt);
       if (snapIt) { G.lastFramedTurn = t; G.rig.update(1 / 60); }
     }
     /* ⛔ TOP DOWN LOOKS AT THE WHOLE PROBLEM. At 1.9 radii over the sports
@@ -2158,33 +2263,25 @@ function frame(now) {
       /* the far chalk at the top of the screen and the near chalk at the tray's edge (the top three quarters):
          at 80 degrees the view spans 0.249 d each side of the look point, so d = 5.35 (R + m), and the look point
          sits toward the player by (R + m) minus an eighth of that span */
-      const az = G.rig.state.azimuth, Rm = G.R.ringRadius + 0.05, d = 5.35 * Rm, off = Rm - 0.1245 * d;
-      G.rig.setTarget(Math.sin(az) * off, 0.012, Math.cos(az) * off);
-      G.rig.state.elevationDeg = 80;
-      G.rig.state.wantDistance = d;
+      applyLook(G.stage.height - ($('statueTray').hidden ? 94 : $('statueTray').getBoundingClientRect().top));
     }
     else if (G.topDown) {
-      const t = G.R.shooterTaw();
-      const tp = positionOf(G.R.world, t.id);
-      const live = G.R.liveMibs();
-      let cx = 0, cz = 0;
-      for (const m of live) { const p = positionOf(G.R.world, m.id); cx += p.x; cz += p.z; }
-      if (live.length) { cx /= live.length; cz /= live.length; }
-      G.rig.setTarget((tp.x + cx) * 0.5, 0.012, (tp.z + cz) * 0.5);
-      G.rig.state.elevationDeg = 84;
-      G.rig.state.wantDistance = G.R.ringRadius * 2.5;
+      applyLook(94);
     }
-    else if (G.rig.state.elevationDeg > 60) G.rig.state.elevationDeg = 33;
     if (G.screen === 'match') { updateHud(); lotBand(); }
     // a thumb held perfectly still sends no pointermove, and the settle is a
     // clock: read it every frame so the reticle tightens whether or not the
     // browser has anything to say
     updateAimUi();
+    updateGrabRing();
+    updateAimLine();
+    updateCalibTarget();
+    updateStatueBadges();
     if (!G.usePullback && G.knuckle) {
       const ks = G.knuckle.state();
       if (ks.bracing) onBrace(ks);
       else if (G.scopeHold && canAim()) holdScope();
-      else { if (G.spy && G.spy.on) hideSpyglass(); if (G.scopeHold) $('aimline').hidden = true; }
+      else if (G.spy && G.spy.on) hideSpyglass();
     }
     if (now - G.lastRollAudio > 60) { G.lastRollAudio = now; updateRollingAudio(); }
     if (!$('toast').hidden && now - G.lastToast > 2400) $('toast').hidden = true;
@@ -2267,13 +2364,15 @@ function installDevHook() {
     pouch: (kind) => openPouch(kind),
     /* STATUES (m2): the record, the placement state, and where a spot on the dirt is on the screen */
     statues: () => (G.R ? G.R.statues().map(s => Object.assign({}, s)) : []),
+    placeAngle: (a) => { if (a != null && G.R) G.R.setPlaceAngle(a); return G.R ? G.R.state.placeAngle : null; },
+    placeStatueNow: (shape, x, z) => { G.stPending = { shape, x, z, ok: true }; confirmStatue(); },
     placing: () => (G.statuesPlacing ? { placed: G.statuesPlacing.placed, pending: G.stPending ? Object.assign({}, G.stPending) : null } : null),
     moving: () => (G.moving ? { index: G.moving.index, pending: G.stPending ? Object.assign({}, G.stPending) : null } : null),
     spotsFor: (shape) => (G.R ? legalSpots(shape, G.R.ringRadius, G.R.statues(), G.R.lay) : []),
     // the half foot grid point under a screen point, which is where a statue must land when a finger lifts there
     groundAt: (cx, cy) => {
       const r = G.stage.renderer.domElement.getBoundingClientRect(), gp = groundPoint(cx - r.left, cy - r.top);
-      return gp ? snapGrid(gp.x, gp.z) : null;
+      return gp ? snapGrid(gp.x, gp.z, G.R.ringRadius) : null;
     },
     projectGround: (x, z, y) => {
       const p = G.rig.project(x, y || 0, z), r = G.stage.renderer.domElement.getBoundingClientRect();
@@ -2286,6 +2385,8 @@ function installDevHook() {
       return (await buildMarbleCard(e, item)).toDataURL('image/png');
     },
     matchCard: async () => { const c = await buildMatchCard(); return c ? c.toDataURL('image/png') : null; },
+    /* where each live render lies on the two cards, for the probe to hold to her windows */
+    cardLayouts: async (id) => { const e = G.catalog.marbles.find(m => m.id === id), a = await buildMarbleCard(e, null), b = await buildMatchCard(); return { marble: a.layout, match: b ? b.layout : null }; },
     grantSunbeams: (n) => { G.econ.earn(n, 'a gate said so'); buildPouches(); return G.econ.balance(); },
     // put one named marble in the inventory, so a gate can lose something worth
     // ransoming without playing until the pouches hand it one
@@ -2330,6 +2431,9 @@ function installDevHook() {
     /* the fine aim and the snap card, for test/aimnudge.mjs */
     nudge(dir) { return nudgeAim(dir); },
     scopeHold(on) { setScopeHold(on); return G.scopeHold; },
+    tawScreen() { const t = G.R && G.R.tawOnScreen(G.rig); return t ? { x: +t.x.toFixed(1), y: +t.y.toFixed(1), grabR: t.grabR, spinR: t.spinR, r: t.r } : null; },
+    aimNow: () => G.knuckle.lastAim(),
+    groundTarget() { const t = G.ground && G.ground.target; if (!t) return null; const c = G.rig.project(t.position.x, 0, t.position.z), R = t.geometry.parameters.width * 178 / 512, e = G.rig.project(t.position.x + R, 0, t.position.z); return { visible: t.visible, x: +c.x.toFixed(1), y: +c.y.toFixed(1), rx: +Math.abs(e.x - c.x).toFixed(1) }; },
     aimUi() { return { nudge: !$('aimNudge').hidden, scope: !$('scopeBtn').hidden, scopeOn: G.scopeHold, spy: !!(G.spy && G.spy.on), line: !$('aimline').hidden, lineInfo: G.aimLineInfo || null }; },
     snapCard() { return { open: !$('snapCard').hidden, seen: !!(G.save && G.save.seen && G.save.seen.snapHelp) }; },
     said() { return G.said; },
@@ -2445,6 +2549,10 @@ function installDevHook() {
         userAz: +(G.rig.state.userAz || 0).toFixed(4), userZoom: +(G.rig.state.userZoom || 1).toFixed(4),
         frameInfo: G.rig.state.frameInfo || null, mibsLeft: G.R.liveMibs().length,
         spy: G.spy && G.spy.on ? G.spy.info : null,
+        spyRect: G.spy && G.spy.on ? G.spy.rect : null,
+        mibsOnScreen: G.R.liveMibs().map(m => { const q = positionOf(G.R.world, m.id), s = G.rig.project(q.x, q.y, q.z), r = specOf(G.R.world, m.id).radius, e = G.rig.project(q.x, q.y + r, q.z); return { x: +s.x.toFixed(1), y: +s.y.toFixed(1), px: +(Math.abs(e.y - s.y) * 2 / Math.cos(G.rig.state.elevationDeg * Math.PI / 180)).toFixed(1), visible: s.visible }; }),
+        shooterPx: (() => { const r = specOf(G.R.world, t.id).radius, e = G.rig.project(p.x, p.y + r, p.z); return +(Math.abs(e.y - c.y) * 2 / Math.cos(G.rig.state.elevationDeg * Math.PI / 180)).toFixed(1); })(),
+        ringRect: (() => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; const R = G.R.ringRadius; for (let a = 0; a < 6.28; a += 0.06) { const q = G.rig.project(Math.sin(a) * R, 0, Math.cos(a) * R); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); } return { x0: +x0.toFixed(0), x1: +x1.toFixed(0), y0: +y0.toFixed(0), y1: +y1.toFixed(0) }; })(),
         cam: {
           az: +G.rig.state.azimuth.toFixed(3), wantAz: +G.rig.state.wantAzimuth.toFixed(3),
           dist: +G.rig.state.distance.toFixed(2), wantDist: +G.rig.state.wantDistance.toFixed(2),
