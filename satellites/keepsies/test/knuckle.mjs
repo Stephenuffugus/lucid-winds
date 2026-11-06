@@ -121,7 +121,7 @@ const cases = [
   { id: 'the same path at a quarter of the speed', d: [0, -300], ms: 220, hook: 0 },
   { id: 'a flick from under the centre', d: [0, -300], ms: 55, hook: 0, rel: { x: 0, y: 0.85 } },
   { id: 'a flick from above the centre', d: [0, -300], ms: 55, hook: 0, rel: { x: 0, y: -0.85 } },
-  { id: 'a hooked path', d: [0, -300], ms: 55, hook: 55 },
+  { id: 'a hooked path', d: [0, -300], ms: 55, hook: 20 },   // m3 step 8: off the line reads on the screen and a turn past 45 degrees is the dial, so the old 55 is no shot at all
   { id: 'a slow tap', d: [0, -6], ms: 200, hook: 0 }
 ];
 const got = {};

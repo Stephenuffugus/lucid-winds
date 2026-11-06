@@ -133,6 +133,13 @@ say(!!line0 && !!line1 && Math.abs(line1.endX - line0.endX) < 4 && world1 < worl
 const ui1 = await ui();
 const spy0 = (await cam()).spy;
 say(ui1.scopeOn && ui1.spy && !!spy0, 'with Zoom on the scope is open with no thumb on the shooter, looking at range ' + (spy0 && spy0.range) + ' m');
+/* m3 step 8: the aim frame has the cross at the top of the screen; the scope opens in the dirt under it, never over a live mib, and clear of the circle */
+{
+  const c0 = await cam(), rect = c0.spyRect, covered = rect ? (c0.mibsOnScreen || []).filter(m => m.x > rect.left && m.x < rect.left + rect.size && m.y > rect.top && m.y < rect.top + rect.size).length : -1;
+  const ts = await page.evaluate(() => window.KEEPSIES_DEV.tawScreen());
+  say(covered === 0, 'the scope (' + (rect ? rect.left + ',' + rect.top + ' ' + rect.size : 'none') + ') covers ' + covered + ' live mibs of ' + (c0.mibsOnScreen || []).length);
+  say(!!rect && rect.top + rect.size <= ts.y - ts.grabR, 'and its foot ' + (rect && rect.top + rect.size) + ' stands above the circle at ' + (ts.y - ts.grabR).toFixed(0));
+}
 const fine = (C.nudgeFineDeg == null ? 0.5 : C.nudgeFineDeg) * Math.PI / 180;
 const az2 = (await cam()).userAz;
 await tap('nudgeL');

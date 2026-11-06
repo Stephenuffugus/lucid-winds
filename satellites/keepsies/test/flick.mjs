@@ -103,5 +103,14 @@ const noisy = (sigma, g, ts, ms) => {
   ok(g3.aims.length === 1 && Math.abs(((g3.rig.state.userAz || 0) - az3) * 180 / Math.PI + 60 * T.render.orbitRadPerPx * 180 / Math.PI) < 1.5, 'a dial turn, a rest, then a forward flick shoots along the turned line (' + g3.aims.length + ' shot, turned ' + (((g3.rig.state.userAz || 0) - az3) * 180 / Math.PI).toFixed(1) + ' degrees)');
 }
 
+/* 7. off the line is read on the SCREEN, where the thumb is: at the close camera a 40 degree flick is a wild shot and a 50 degree one is no shot at any length. On the ground the perspective made the same flick 20 or 60 degrees depending how far up the screen it ended */
+for (const ring of [0.762, 1.525]) for (const [deg, len] of [[40, 120], [40, 300], [50, 120], [50, 300]]) {
+  const g = makeGame({ w: 412, h: 915, phase: 'aim', ringRadius: ring }); for (let i = 0; i < 120; i++) g.frame(1 / 60);
+  const ts = g.taw(), a = deg * Math.PI / 180;
+  playTouch(g, (t) => { const f = t > 300 ? mj((t - 300) / 60) : 0; return { x: ts.x + Math.sin(a) * len * f, y: ts.y - Math.cos(a) * len * f }; }, 360, { pre: 5 });
+  if (deg === 40) ok(g.aims.length === 1 && g.aims[0].wildness01 >= 0.9, 'ring ' + ring + ': ' + deg + ' degrees off, ' + len + ' px: a wild shot (wildness ' + (g.aims[0] ? g.aims[0].wildness01.toFixed(2) : 'cancelled') + ')');
+  else ok(g.aims.length === 0, 'ring ' + ring + ': ' + deg + ' degrees off, ' + len + ' px: no shot');
+}
+
 console.log(fails ? fails + ' FAILED' : 'FLICK OK');
 process.exit(fails ? 1 : 0);

@@ -380,7 +380,7 @@ export function createKnuckle(canvas, tuning, hooks) {
     /* m3 step 3: the bigger circle would turn a sideways aim drag into a 25 degree shot. A release more than 45 degrees off
        the aim line's forward is no shot at all (step 7: that motion was the dial, and a dial turn then a forward flick reads the flick alone);
        with Bombing on the flick down keeps its meaning */
-    const yaw0 = flickYaw(dialed ? win : fl.path), down0 = anchor && lastY - anchor.y > 40 && win.length >= 2 && win[win.length - 1].y > win[0].y;
+    const yaw0 = screenYaw(dialed ? win : fl.path), down0 = anchor && lastY - anchor.y > 40 && win.length >= 2 && win[win.length - 1].y > win[0].y;
     if (yaw0 !== null && Math.abs(yaw0) > T.offLineDeg * DEG && !(down0 && hooks.bombingAllowed && hooks.bombingAllowed())) {
       S.lastCancel = { thumbSpeed: v, why: dialed ? 'dial' : 'offLine' };
       if (hooks.onCancel) hooks.onCancel(S.lastCancel.why);
@@ -451,6 +451,15 @@ export function createKnuckle(canvas, tuning, hooks) {
     return y === null ? 0 : clamp(y, -cap, cap);
   }
   /** the flick's yaw off the aim on the ground, in radians, uncapped; null when the thumb hardly moved */
+  /** m3 step 8: how far a flick went off straight up the screen, where the thumb is. Up the screen IS the aim line (the camera faces it); on the ground the close camera's perspective made the same flick 20 or 60 degrees depending on how far up it ended */
+  function screenYaw(win0) {
+    const win = motion(win0);
+    if (win.length < 2) return null;
+    const a = win[0], b = win[win.length - 1];
+    if (len2(b.x - a.x, b.y - a.y) < 4) return null;
+    return Math.atan2(b.x - a.x, a.y - b.y);
+  }
+
   function flickYaw(win0) {
     const win = motion(win0);
     if (win.length < 2) return null;

@@ -1535,7 +1535,11 @@ function updateSpyglass(st, t, force) {
   const mainPx = Math.abs(e.y - c.y) * 2;
   // held open by the Zoom button it stays open whatever size the marble is on the main screen
   if (!(force || G.scopeHold) && !(mainPx < (C.openBelowPx == null ? 14 : C.openBelowPx))) return hideSpyglass();
-  const size = C.sizePx || 180, top = C.top == null ? 96 : C.top;
+  /* m3 step 8: the aim frame has the cross at the top of the screen. The scope opens in the dirt under the mibs ahead, clear of the circle */
+  const size = C.sizePx || 180, tt = t || G.R.tawOnScreen(G.rig), roof = tt ? tt.y - tt.grabR : G.stage.height;
+  let low = 0;
+  for (const m of live) { const q = G.rig.project(m.x, r, m.z); if (q.visible && q.y < roof && q.y > low) low = q.y; }
+  const top = Math.round(Math.max(C.top == null ? 96 : C.top, Math.min(low + 16, roof - size - 8)));
   const el = $('spyglass');
   el.hidden = false;
   el.style.top = top + 'px'; el.style.width = el.style.height = size + 'px';
@@ -2477,6 +2481,8 @@ function installDevHook() {
         userAz: +(G.rig.state.userAz || 0).toFixed(4), userZoom: +(G.rig.state.userZoom || 1).toFixed(4),
         frameInfo: G.rig.state.frameInfo || null, mibsLeft: G.R.liveMibs().length,
         spy: G.spy && G.spy.on ? G.spy.info : null,
+        spyRect: G.spy && G.spy.on ? G.spy.rect : null,
+        mibsOnScreen: G.R.liveMibs().map(m => { const q = positionOf(G.R.world, m.id), s = G.rig.project(q.x, q.y, q.z); return { x: +s.x.toFixed(1), y: +s.y.toFixed(1), visible: s.visible }; }),
         cam: {
           az: +G.rig.state.azimuth.toFixed(3), wantAz: +G.rig.state.wantAzimuth.toFixed(3),
           dist: +G.rig.state.distance.toFixed(2), wantDist: +G.rig.state.wantDistance.toFixed(2),
