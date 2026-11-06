@@ -17,6 +17,7 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 - [ ] Open Tomato Man with ?lab=1 on the Pixel and fix one level you hate; Copy JSON and paste it to Fable (you)
 - [ ] Pick Tomato Man's real gameplay from docs/briefs/tomato-man/TOMATO-MAN-NEXT-NOV06.md: the seed toss, sun critters, the squirt (you)
 - [ ] Say if the new fart sounds are funny on the Pixel; if not, a pack of recorded ones (CC0, freesound) is the next step (you)
+- [ ] Start Opus on a fresh box with docs/briefs/opus-kickoff-nov06/PROMPT.txt: Keepsies m3 steps 2 to 12, Shutterbug harder rooms step 2 (all four hazards, the free play floor, more traps), Tomato Man seed toss and sun critters, then each Astra zip as it lands (you)
 - [ ] Keepsies m3 steps 2 to 12 (Opus; step 1 is in, 14e09fcea)
 - [ ] Drop keepsies-round2-materials.zip into Drive Astra/Keepsies/Round 2 (you)
 - [x] Give Astra the Keepsies round 2 kickoff (you: back 5 Nov 23:10, vaulted, unpacked at /workspaces/keepsies-astra-round2)
