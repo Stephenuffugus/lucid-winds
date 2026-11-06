@@ -10,7 +10,7 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 - [x] Run the Tomato Man line (you: LIVE 6 Nov, main f9535ce13, both hosts serve 8167e672e466; Tomato_Man main 260e9899) (Opus's two draw fixes plus the sun wash image; nine levels no longer start in the sun; stars grabbed in the shade; awnings on poles; the LEVEL LAB at ?lab=1) (you)
 - [x] Run the Sunforge line (you: LIVE 6 Nov, main 3a3a4a37e, index b01c1dc3a562) (the Tetris lock delay, drag to move on the board, faster buttons) (you)
 - [x] Run the Flatulence Fighter line (LIVE 6 Nov, main e4bf2e8df, index 4a21137e6b40; run here after he sent the line) (six pads, calls that move and light on their own, the new fart and squeak sounds) (you)
-- [ ] Run the Shutterbug line: `! bash /home/codespace/sb-drafts/sb-m2-11/deploy-sb-m2-11.sh` (the guardian shoves a bug that camps beside it) (you)
+- [x] Run the Shutterbug line (you: sb-m2-11 LIVE 6 Nov, main 4aace3f56, tag sb-m2-11) (the guardian shoves a bug that camps beside it) (you)
 - [ ] Give Astra the Sunforge round 2 kickoff, the blocks: Drive Astra/Sunforge/Round 2 (you)
 - [ ] Give Astra the Shutterbug round 9 kickoff, five guardians and ten enemy kinds: Drive Astra/Shutterbug/Round 9 (you)
 - [ ] Give Astra the Flatulence Fighter round 2 kickoff, now with the six pads: Drive Astra/Flatulence Fighter/Round 2 (you)

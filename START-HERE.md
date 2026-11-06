@@ -11,6 +11,7 @@
 - 6 Nov 03:55 UTC: TOMATO MAN LIVE by his line (lucid-winds main f9535ce13, Tomato_Man main 260e9899, index 8167e672e466 on both hosts; the branch carries the vendored copy at 193583476). The other three lines still wait.
 - 6 Nov 04:05 UTC: SUNFORGE m2 step 1 LIVE by his line (main 3a3a4a37e, index b01c1dc3a562). The FF and Shutterbug lines still wait (the classifier denied running them here: Production Deploy).
 - 6 Nov 04:15 UTC: FLATULENCE FIGHTER m3 step 1 LIVE (main e4bf2e8df, index 4a21137e6b40): he sent the exact line as a message and the classifier let the session run it. Only the Shutterbug line waits.
+- 6 Nov 04:25 UTC: SHUTTERBUG sb-m2-11 LIVE by his line (main 4aace3f56, tag sb-m2-11; the host serves BUILD sb-m2-11 and shutterbug-v33; the wrapper merged main into the branch and deploy.sh merged it back). ALL FOUR OF TODAY'S LINES ARE LIVE.
 - Not done: Keepsies m3 steps 2 to 12 (his notes are the plan, step 1 in); Shutterbug's more bosses and enemies wait on Astra's round 9 art, then a build plan; the harder rooms step 2 waits on his pick; recorded fart sounds if the synth is not funny.
 
 
