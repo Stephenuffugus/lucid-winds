@@ -212,6 +212,8 @@
   #btns .btn.empty{opacity:1} #btns .btn.empty::after{content:'';position:absolute;inset:0;background:url(art/ui/disabled_overlay.svg?v=20261105c) center/100% 100% no-repeat;pointer-events:none}
   #bDash::before{content:'';position:absolute;inset:8%;border-radius:50%;background:conic-gradient(rgba(43,42,32,.5) calc(var(--cd,0)*360deg),transparent 0);pointer-events:none}
   #bDash.stock{box-shadow:0 0 0 4px rgba(127,208,255,.85)}
+  /* THE SEED beside DASH; placeholder art until the Astra round */
+  #btns #bSeed{position:absolute;right:96px;bottom:8px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cellipse cx='32' cy='42' rx='11' ry='14' fill='%237a4f24'/%3E%3Cpath d='M32 28C32 20 33 16 37 12' stroke='%234d7c32' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='43' cy='13' rx='8' ry='5' fill='%236aa83f'/%3E%3C/svg%3E")}
   /* the walk (step 7): labels clear of the next button; the level name below the right column; the HUD in cream
      under an eclipse; the titles clear of the back and wallet chips */
   #btns{gap:22px}
@@ -279,6 +281,7 @@
     <div id="bScreen" class="btn" role="button" aria-label="SPF"><span class="w">SPF</span><span class="c" id="cScreen">0</span></div>
     <div id="bShade" class="btn" role="button" aria-label="Shade"><span class="w">SHADE</span><span class="c" id="cShade">0</span></div>
     <div id="bDash" class="btn" role="button" aria-label="Dash"><span class="w">DASH</span></div>
+    <div id="bSeed" class="btn" role="button" aria-label="Seed"><span class="w">SEED</span><span class="c" id="cSeed">3</span></div>
   </div>
 </div>
 <div id="toast"></div>
@@ -494,6 +497,10 @@ const SFX={
   shade(){ tone({type:'sine',f0:300,f1:200,dur:0.18,gain:0.14,filter:{type:'lowpass',freq:700}}); },
   spf(){ tone({type:'sine',f0:400,f1:900,dur:0.3,gain:0.13}); },
   ice(){ tone({type:'triangle',f0:1200,f1:500,dur:0.35,gain:0.12}); noiseBurst(0.2,0.06,3000,1500); },
+  seed(){ tone({type:'triangle',f0:420,f1:680,dur:0.09,gain:0.1}); },
+  sprout(){ tone({type:'sine',f0:500,f1:820,dur:0.14,gain:0.1}); },
+  burst(){ noiseBurst(0.2,0.16,1800,500); tone({type:'triangle',f0:880,f1:240,dur:0.22,gain:0.14}); },
+  sting(){ noiseBurst(0.12,0.14,2400,900); tone({type:'sawtooth',f0:640,f1:300,dur:0.14,gain:0.12}); },
   pop(){ tone({type:'square',f0:700,f1:1300,dur:0.12,gain:0.13}); },
   graze(){ tone({type:'sine',f0:180,f1:120,dur:0.08,gain:0.05}); },
   buy(){ tone({type:'triangle',f0:600,f1:900,dur:0.1,gain:0.14}); tone({type:'sine',f0:900,f1:1300,dur:0.12,gain:0.08}); },
@@ -605,6 +612,8 @@ const BASE_FEEL={
   maxSpeed:240, accel:2600, friction:3200, turnBoost:1.8,
   dashSpeed:600, dashDur:0.16, dashCd:1.2,
   edgeGrace:0.11, inputBuffer:0.12, deadzone:0.18,
+  seedsALevel:3, seedRange:210, seedSpeed:560, saplingLife:3, saplingR:58,   // THE SEED TOSS (6 Nov): a tool and an attack in one
+  critterSight:300, critterSpeed:230, critterPatrol:110, critterHitR:26, pinR:40, pinFor:2, stingScorpion:42, stingMirage:30, mirageDelay:0.35,   // SUN CRITTERS (6 Nov): open sun burns in two thirds of a second, so a critter is a matter of that crossing: a scorpion across the route, a mirage a third of a second behind him
   burnSun:150, burnDashSun:270, recover:200, hotSand:260, burnThreshold:100, respawnGrace:0.4,
   pickupR:24,
 };
@@ -831,6 +840,7 @@ function shadedGeom(px,py){
     const xr=dx*c-dy*s,yr=dx*s+dy*c; if((xr*xr)/(e.major*e.major)+(yr*yr)/(e.minor*e.minor)<=1) return true; }
   for(const cl of run.clouds) if(dist(px,py,cl.x,cl.y)<cl.r) return true;
   for(const p of run.popups) if(dist(px,py,p.x,p.y)<p.r) return true;
+  for(const sp of run.saplings) if(dist(px,py,sp.x,sp.y)<sp.r) return true;
   return false; }
 // player is safe when personally immune (SPF / eclipse / spawn-grace) OR standing on shade
 function safeAt(px,py){ if(run.screenT>0||run.darkT>0||run.graceT>0) return true; return shadedGeom(px,py); }
@@ -878,6 +888,7 @@ function startLevel(i,opts){ opts=opts||{}; const L=opts.level||LEVELS[i]; li=(o
         cp:{x:L.checkpoints[0][0],y:L.checkpoints[0][1]}, cpHit:[],
         charges:{shade:ch.shade,spf:ch.spf,ice:ch.ice},
         coolerBox: !!save.loadout.cooler_box, siesta: !!save.loadout.siesta, magnet: !!save.loadout.magnet_pop, spawnAt:0, feel,
+        seeds:feel.seedsALevel, tosses:[], saplings:[], critters:[], heatTrail:[],
         fx:[], decor:scatterDecor(L) };
   cueKey='~'; run.cacti=cactiFor(L,run.decor); run.crnd=mulberry32(((L.worldW*5+L.worldH*3)|0)+7); run.blinkNext=3; run.blinkI=-1; run.blinkAt=-9;
   // make the orange 'R' awnings solid — but never the ones the player spawns / respawns / exits on (start, exit, checkpoints)
@@ -890,6 +901,7 @@ function startLevel(i,opts){ opts=opts||{}; const L=opts.level||LEVELS[i]; li=(o
   applyTheme(L.world); needWorld(L.world); needLook(); needLevel(L);
   screen='play'; mode='play'; showScreen(null); $('play-ui').classList.remove('hidden');
   $('bIce').classList.toggle('hidden', run.charges.ice<=0 && !(L.ice));
+  computeShade(); run.critters=makeCritters(L,opts);
   flash(L); sync(); startMusic(L.world); }
 
 /* DECOR (step 4): six to nine of the world's props from her decor sheet beside the route (start, checkpoints, flag), in
@@ -946,10 +958,12 @@ function toast(msg,col){ const t=$('toast'); t.innerHTML=`<span class="tdot" sty
   t.style.transition='none'; t.style.opacity='1'; requestAnimationFrame(()=>{ t.style.transition='opacity .7s'; t.style.opacity='0'; }); }
 let cueKey='~';
 function cueNow(){ const L=run.L;
-  if(run.lunge&&run.lunge.state==='warn') return ['boss-target','lunge coming',1];
+  if(run.lunge&&run.lunge.state==='warn') return ['boss-target',run.seeds>0?'lunge coming, toss a seed':'lunge coming',1];
   for(const wlt of run.wilts) if(!wlt.closed&&wlt.under&&wlt.campT/(wlt.camp||3)>=0.25) return ['awning-warning','shade wilting',1];
   if(run.darkT>0) return ['eclipse-window','eclipse, cross now',0];
   if(run.act&&run.act.k==='cooling') return ['cooling','cooling down',0];
+  if(run.critters.some(c=>c.state==='hunt'&&c.pin<=0)) return ['sun','scorpion, reach shade',1];
+  if(run.critters.some(c=>c.kind==='mirage'&&c.on&&c.pin<=0)) return ['sun','mirage, keep moving',0];
   if(run.wind&&run.wind.spin&&(L.casters||[]).some(c=>c[0]==='U'&&dist(P.x,P.y,c[1],c[2])<300)) return ['umbrella-turn','umbrella turning',0];
   if(run.charges.shade>0&&!run.lastSafe&&P.exp>=40) return ['shade-ready','drop shade',0];
   if(dist(P.x,P.y,L.exit[0],L.exit[1])<320) return ['safe-exit','the flag',0];
@@ -986,7 +1000,7 @@ function levelFindCount(id,L){ const arr=save.finds[id]||[]; const n=(L.finds||[
 const stick={active:false,id:null,ox:0,oy:0,dx:0,dy:0,max:66}, keys={};
 let dashBuf=0;
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();keys[k]=true;
-  if(screen==='play'&&mode==='play'){ if(k===' ')queueDash(); if(k==='q')drop(); if(k==='e')spf(); if(k==='f')ice(); if(k==='escape')togglePause(); }});
+  if(screen==='play'&&mode==='play'){ if(k===' ')queueDash(); if(k==='q')drop(); if(k==='r')toss(); if(k==='e')spf(); if(k==='f')ice(); if(k==='escape')togglePause(); }});
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
 cv.addEventListener('touchstart',e=>{ for(const t of e.changedTouches){
   if(screen==='play'&&mode==='play'&&t.clientX<W*0.55&&!stick.active){stick.active=true;stick.id=t.identifier;stick.ox=t.clientX;stick.oy=t.clientY;stick.dx=0;stick.dy=0;} } e.preventDefault(); },{passive:false});
@@ -998,7 +1012,7 @@ cv.addEventListener('touchend',endT); cv.addEventListener('touchcancel',endT);
 function bind(id,fn){const el=$(id); if(!el)return;
   el.addEventListener('touchstart',ev=>{ev.preventDefault();ev.stopPropagation();fn();},{passive:false});
   el.addEventListener('click',e=>{e.preventDefault();fn();});}
-bind('bDash',queueDash); bind('bShade',drop); bind('bScreen',spf); bind('bIce',ice); bind('pauseBtn',togglePause);
+bind('bDash',queueDash); bind('bSeed',toss); bind('bShade',drop); bind('bScreen',spf); bind('bIce',ice); bind('pauseBtn',togglePause);
 function queueDash(){ if(P.dashCd<=0||P.dashStock>0) doDash(); else dashBuf=run.feel.inputBuffer; }
 function doDash(){ const f=run.feel; if(P.dashStock>0){P.dashStock--;} else { if(P.dashCd>0) return; P.dashCd=f.dashCd; }
   P.dashT=f.dashDur; dashBuf=0; run.dashUses=(run.dashUses||0)+1; SFX.dash();
@@ -1009,9 +1023,107 @@ function doDash(){ const f=run.feel; if(P.dashStock>0){P.dashStock--;} else { if
   spawnParts(P.x,P.y,7,'255,210,150',150,0.35);
   if(!save.settings.reduce) run.shake=Math.max(run.shake,0.06); }
 function drop(){ if(run.charges.shade>0){ run.popups.push({x:P.x,y:P.y,r:82}); run.charges.shade--; act('shade_drop'); SFX.shade(); spawnParts(P.x,P.y,8,'80,120,180',120,0.5); sync(); } else SFX.deny(); }
+/* THE SEED TOSS (6 Nov, his "maybe he needs an attack"): a tap throws a seed the facing way. Where it lands a sapling sprouts and casts a small round shade for three seconds;
+   into the Angry Sun's ring it bursts the lunge and the sun pants for two seconds of calm. Three a level, refilled at a checkpoint and on a respawn. Placeholder art, drawn in code. */
+function toss(){ if(run.seeds<=0){ SFX.deny(); return; }
+  const f=run.feel, L=run.L, mv=mvVec(); if(Math.hypot(mv.x,mv.y)>0.05) P.face=Math.atan2(mv.y,mv.x);
+  const tx=clamp(P.x+Math.cos(P.face)*f.seedRange,10,L.worldW-10), ty=clamp(P.y+Math.sin(P.face)*f.seedRange,10,L.worldH-10);
+  run.tosses.push({sx:P.x,sy:P.y,tx,ty,x:P.x,y:P.y,h:0,t:0,dur:Math.max(0.12,dist(P.x,P.y,tx,ty)/f.seedSpeed)});
+  run.seeds--; run.tossUses=(run.tossUses||0)+1; SFX.seed(); popSquash(0.9,1.1); sync(); }
+function sprout(x,y){ run.saplings.push({x,y,t:0,r:0}); SFX.sprout(); spawnParts(x,y,8,'120,170,80',80,0.4); spawnRing(x,y,'130,190,90',34,0.3); }
+function burstLunge(sd){ const lg=run.lunge; lg.calm=2; lg.state='idle'; SFX.burst(); run.bursts=(run.bursts||0)+1;
+  spawnParts(sd.x,sd.y,22,'255,190,90',210,0.6); spawnRing(lg.zx,lg.zy,'255,170,70',lg.reach,0.4); spawnRing(sd.x,sd.y,'150,230,120',70,0.4);
+  jShake(0.14); screenFlash('255,190,90',0.16); floatText(sd.x,sd.y-10,'BURST','255,214,90'); toast('the sun pants','#ffb454'); }
+function updateSeeds(dt){ const f=run.feel;
+  for(const sd of run.tosses){ sd.t+=dt; const k=clamp(sd.t/sd.dur,0,1); sd.x=lerp(sd.sx,sd.tx,k); sd.y=lerp(sd.sy,sd.ty,k); sd.h=Math.sin(k*Math.PI)*46;
+    if(run.lunge&&run.lunge.state!=='idle'&&k>0.25&&dist(sd.x,sd.y,run.lunge.zx,run.lunge.zy)<run.lunge.reach){ burstLunge(sd); sd.done=true; continue; }
+    let pinned=false; for(const c of run.critters){ if(k>0.1&&c.pin<=0&&(c.kind==='mirage'?c.on:(c.sink<=0&&c.rise<=0))&&dist(sd.x,sd.y,c.x,c.y)<f.pinR){ pinCritter(c); sd.done=true; pinned=true; break; } }
+    if(pinned) continue;
+    if(k>=1){ sd.done=true; sprout(sd.tx,sd.ty); } }
+  if(run.tosses.length) run.tosses=run.tosses.filter(sd=>!sd.done);
+  for(const sp of run.saplings){ sp.t+=dt; const left=f.saplingLife-sp.t;   // up in a fifth of a second, drooping to a little over half for the last half second, so its end is seen coming
+    sp.r=f.saplingR*(sp.t<0.2?sp.t/0.2:(left<0.5?0.55+0.45*Math.max(0,left)/0.5:1)); }
+  if(run.saplings.length) run.saplings=run.saplings.filter(sp=>sp.t<f.saplingLife); }
+/* SUN CRITTERS (6 Nov): things that live in the light and chase him across it. He cannot hurt them; he loses them by reaching shade, and a seed pins one for two seconds.
+   A sand scorpion walks a lane in the sun square across his route, charges when he steps into the light within sight, and stops at the edge of any shadow (it lives in the light), sinks, and comes back to its lane. So a crossing is timed against it.
+   A heat mirage walks his own last steps a third of a second behind him while he is in the sun: stop or double back and it catches him, so a crossing is a commitment; shade dissolves it.
+   They come in by the world, never in Morning Tide, never in a custom level (the lab tests the shade). No LEVELS data: a scorpion's home comes from the level's shape, seeded, so a level always has the same ones. Placeholder art, drawn in code. */
+function makeCritters(L,opts){ const out=[]; if(!L||opts.level||L.world===0&&!endless) return out;
+  const j=li%4, w=L.world||0, nS=w===1?(j>=1?1:0):w===2?(j>=1?2:1):w===3?2:3, rnd=mulberry32(((L.worldW*7+L.worldH*11+w*97+j*13)|0)+5);
+  const keep=[L.start,L.exit,...(L.checkpoints||[])], homes=[], route=[L.start,...(L.checkpoints||[]).filter(c=>c[0]!==L.start[0]||c[1]!==L.start[1]),L.exit];
+  const blocked=(x,y)=>shadedGeom(x,y)||(L.casters||[]).some(c=>c[0]==='R'?(x>c[1]-16&&x<c[1]+c[3]+16&&y>c[2]-16&&y<c[2]+c[4]+16):dist(x,y,c[1],c[2])<c[3]+16);
+  /* a scorpion's lane crosses the route: a sun lane between two shadows the player has to cross, walked square to his way, spread along the level */
+  const legs=[]; for(let q=0;q+1<route.length;q++) legs.push([route[q],route[q+1]]);
+  for(let g=0;g<600&&homes.length<nS;g++){ const leg=legs[(homes.length*Math.max(1,Math.floor(legs.length/Math.max(1,nS)))+g)%legs.length], A=leg[0], B=leg[1], t=0.15+rnd()*0.7, side=(rnd()*2-1)*(g<300?140:320);   // close to the line first, then wider: on some levels the line itself runs a chain of shadows
+    const lx=B[0]-A[0], ly=B[1]-A[1], ll=Math.hypot(lx,ly)||1, nx=-ly/ll, ny=lx/ll, x=A[0]+lx*t+nx*side, y=A[1]+ly*t+ny*side;
+    if(x<60||y<60||x>L.worldW-60||y>L.worldH-60||blocked(x,y)||keep.some(p=>dist(x,y,p[0],p[1])<260)||homes.some(h=>dist(x,y,h.x,h.y)<320)) continue;
+    let a=0,b=0; while(a<190&&!blocked(x-nx*(a+20),y-ny*(a+20))&&x-nx*(a+20)>40&&y-ny*(a+20)>40&&x-nx*(a+20)<L.worldW-40&&y-ny*(a+20)<L.worldH-40) a+=20; while(b<190&&!blocked(x+nx*(b+20),y+ny*(b+20))&&x+nx*(b+20)>40&&y+ny*(b+20)>40&&x+nx*(b+20)<L.worldW-40&&y+ny*(b+20)<L.worldH-40) b+=20;
+    if(a+b<80) continue;
+    homes.push({x,y,ax:x-nx*a,ay:y-ny*a,bx:x+nx*b,by:y+ny*b}); }
+  for(const h of homes) out.push({kind:'scorpion',x:h.x,y:h.y,hx:h.x,hy:h.y,ax:h.ax,ay:h.ay,bx:h.bx,by:h.by,dir:1,state:'patrol',pin:0,sink:0,rise:0,lostT:0,face:0,t:0});
+  if(w>=3&&j>=1) out.push({kind:'mirage',x:L.start[0],y:L.start[1],on:false,fade:0,cool:0,born:0,pin:0,t:0,state:'mirage',sink:0,rise:0});
+  return out; }
+function pinCritter(c){ c.pin=run.feel.pinFor; SFX.sprout(); spawnRing(c.x,c.y,'150,230,120',46,0.35); spawnParts(c.x,c.y,10,'130,190,90',110,0.4); floatText(c.x,c.y-18,'PINNED','170,235,130'); run.pins=(run.pins||0)+1; }
+function stingBy(c,amount){ P.exp=clamp(P.exp+amount,0,run.feel.burnThreshold); SFX.sting(); jShake(0.16); screenFlash('255,120,50',0.22); floatText(P.x,P.y-24,'STING','255,150,90'); spawnParts(P.x,P.y,10,'255,120,60',150,0.4); run.stings=(run.stings||0)+1; }
+function updateCritters(dt,safe){ const f=run.feel, hidden=run.darkT>0||run.graceT>0;
+  for(const c of run.critters){ c.t+=dt;
+    if(c.pin>0){ c.pin=Math.max(0,c.pin-dt); if(c.kind!=='mirage') continue; }
+    if(c.kind==='mirage'){
+      if(safe||hidden){ if(c.on){ c.on=false; c.fade=0.35; c.pin=0; } run.heatTrail.length=0; c.fade=Math.max(0,c.fade-dt); continue; }
+      run.heatTrail.push({x:P.x,y:P.y,t:run.t}); const back=run.t-f.mirageDelay;
+      while(run.heatTrail.length>1&&run.heatTrail[1].t<=back) run.heatTrail.shift();
+      if(run.heatTrail[0].t>back) continue;           // he has not been in the sun long enough to cast one
+      if(!c.on){ c.on=true; c.born=run.t; }
+      if(c.pin>0) continue;
+      c.x=run.heatTrail[0].x; c.y=run.heatTrail[0].y;
+      if(c.cool>0){ c.cool-=dt; continue; }
+      if(run.t-c.born>0.15&&dist(P.x,P.y,c.x,c.y)<22&&run.screenT<=0&&!(run.respawnT>0)){ stingBy(c,f.stingMirage); c.cool=2.5; }
+      continue; }
+    if(c.sink>0){ c.sink-=dt; if(c.sink<=0){ c.sink=0; c.x=c.hx; c.y=c.hy; c.rise=0.35; c.state='patrol'; } continue; }
+    if(c.rise>0){ c.rise=Math.max(0,c.rise-dt); continue; }
+    const d=dist(P.x,P.y,c.x,c.y), sees=!safe&&!hidden&&d<f.critterSight;
+    if(c.state==='hunt'&&!sees){ c.state='lost'; c.lostT=0.5; }
+    else if(c.state==='patrol'&&sees){ c.state='hunt'; floatText(c.x,c.y-20,'!','255,120,60'); }
+    if(c.state==='lost'){ c.lostT-=dt; if(c.lostT<=0) c.sink=0.4; continue; }
+    let tx,ty,sp; if(c.state==='hunt'){ tx=P.x; ty=P.y; sp=f.critterSpeed; } else { tx=c.dir>0?c.bx:c.ax; ty=c.dir>0?c.by:c.ay; sp=f.critterPatrol; if(dist(c.x,c.y,tx,ty)<6) c.dir=-c.dir; }
+    const a=Math.atan2(ty-c.y,tx-c.x), nx=c.x+Math.cos(a)*sp*dt, ny=c.y+Math.sin(a)*sp*dt;
+    if(shadedGeom(nx,ny)){ if(c.state==='hunt'){ c.state='lost'; c.lostT=0.5; } else c.dir=-c.dir; }   // it lives in the light: a shadow stops it
+    else { c.x=nx; c.y=ny; c.face=a; }
+    if(c.state==='hunt'&&d<f.critterHitR&&!safe&&!hidden&&run.screenT<=0&&!(run.respawnT>0)){ stingBy(c,f.stingScorpion); c.state='lost'; c.lostT=0.2; const b=Math.atan2(P.y-c.y,P.x-c.x); P.vx+=Math.cos(b)*260; P.vy+=Math.sin(b)*260; } } }
+function resetCritters(){ for(const c of run.critters){ c.pin=0; if(c.kind==='mirage'){ c.on=false; c.fade=0; c.cool=0; continue; } c.x=c.hx; c.y=c.hy; c.state='patrol'; c.sink=0; c.rise=0; } run.heatTrail.length=0; }
+function drawCritters(ox,oy){ for(const c of run.critters){ const x=c.x+ox, y=c.y+oy;
+    if(x<-60||x>W+60||y<-60||y>H+60) continue;
+    if(c.kind==='mirage'){ if(!c.on&&c.fade<=0) continue; const a=c.on?1:c.fade/0.35, pin=c.pin>0; ctx.save(); ctx.globalAlpha=0.5*a;
+      for(let i=0;i<4;i++){ const yy=y-10+i*7, off=save.settings.reduce?0:Math.sin(c.t*9+i*1.4)*3; ctx.fillStyle=pin?'rgba(150,200,120,.8)':'rgba(255,150,70,.8)'; ctx.beginPath(); ctx.ellipse(x+off,yy,12-i*0.6,5,0,0,TAU); ctx.fill(); }
+      ctx.restore(); if(pin) drawPinSprout(x,y-10); continue; }
+    const k=c.sink>0?clamp(c.sink/0.4,0,1):(c.rise>0?1-clamp(c.rise/0.35,0,1):1); if(k<=0.02) continue;
+    const moving=c.pin<=0&&c.state!=='lost', w=moving&&!save.settings.reduce?Math.sin(c.t*22):0;
+    ctx.save(); ctx.translate(x,y); ctx.rotate(c.face); ctx.scale(k,k);
+    ctx.fillStyle='rgba(30,20,12,.28)'; ctx.beginPath(); ctx.ellipse(0,3,17,8,0,0,TAU); ctx.fill();
+    ctx.strokeStyle='#5a2c10'; ctx.lineWidth=2; ctx.lineCap='round';
+    for(let i=-1;i<=1;i++){ const lx=i*5, sw=w*(i%2?2.5:-2.5); ctx.beginPath(); ctx.moveTo(lx,-4); ctx.lineTo(lx+sw,-11); ctx.moveTo(lx,4); ctx.lineTo(lx-sw,11); ctx.stroke(); }
+    ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(10,-3); ctx.lineTo(18,-7); ctx.moveTo(10,3); ctx.lineTo(18,7); ctx.stroke();
+    ctx.fillStyle=c.state==='hunt'?'#c2491c':'#a4581f'; ctx.beginPath(); ctx.ellipse(18,-8,4,3,0,0,TAU); ctx.fill(); ctx.beginPath(); ctx.ellipse(18,8,4,3,0,0,TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(2,0,11,6.5,0,0,TAU); ctx.fill();
+    ctx.strokeStyle=c.state==='hunt'?'#c2491c':'#a4581f'; ctx.lineWidth=3.5; ctx.beginPath(); ctx.moveTo(-8,0); ctx.quadraticCurveTo(-22,0,-18,-9+w); ctx.stroke();
+    ctx.fillStyle='#2e1608'; ctx.beginPath(); ctx.arc(-18,-10+w,2.6,0,TAU); ctx.fill();
+    ctx.restore(); if(c.pin>0) drawPinSprout(x,y-6); } }
+function drawPinSprout(x,y){ ctx.strokeStyle='#4d7c32'; ctx.lineWidth=2.5; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y-14); ctx.stroke(); ctx.fillStyle='#6aa83f'; ctx.beginPath(); ctx.ellipse(x-5,y-14,5,3,0.5,0,TAU); ctx.fill(); ctx.beginPath(); ctx.ellipse(x+5,y-16,5,3,-0.5,0,TAU); ctx.fill(); }
+function drawSeeds(ox,oy){ const f=run.feel;
+  for(const sp of run.saplings){ const k=clamp(sp.t/0.2,0,1), w=clamp((f.saplingLife-sp.t)/0.5,0,1), h=30*k, x=sp.x+ox, y=sp.y+oy;
+    ctx.fillStyle='rgba(92,66,40,.75)'; ctx.beginPath(); ctx.ellipse(x,y,12*k,5*k,0,0,TAU); ctx.fill();
+    ctx.save(); ctx.translate(x,y); ctx.rotate((1-w)*0.55); ctx.lineCap='round'; ctx.strokeStyle='#4d7c32'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(3,-h*0.5,0,-h); ctx.stroke();
+    ctx.fillStyle=w<1?'#a9a650':'#6aa83f'; ctx.beginPath(); ctx.ellipse(-8*k,-h*0.72,8*k,4*k,0.5,0,TAU); ctx.fill(); ctx.beginPath(); ctx.ellipse(8*k,-h*0.92,8*k,4*k,-0.5,0,TAU); ctx.fill(); ctx.restore(); }
+  for(const sd of run.tosses){ const x=sd.x+ox, y=sd.y+oy;
+    ctx.fillStyle='rgba(35,30,20,.3)'; ctx.beginPath(); ctx.ellipse(x,y,6,3,0,0,TAU); ctx.fill();
+    ctx.fillStyle='#7a4f24'; ctx.beginPath(); ctx.ellipse(x,y-sd.h,5,6.5,sd.t*14,0,TAU); ctx.fill(); }
+  // where a seed would land
+  if(run.seeds>0&&mode==='play'){ const a=P.face, x=clamp(P.x+Math.cos(a)*f.seedRange,10,run.L.worldW-10)+ox, y=clamp(P.y+Math.sin(a)*f.seedRange,10,run.L.worldH-10)+oy;
+    ctx.strokeStyle='rgba(70,100,50,.4)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y,7,0,TAU); ctx.stroke(); } }
 function spf(){ if(run.charges.spf>0&&run.screenT<=0){ run.screenT=run.feel.spfDur||2.6; run.charges.spf--; SFX.spf(); sync(); } else SFX.deny(); }
 function ice(){ if(run.charges.ice>0&&run.slowT<=0){ run.slowT=3.0; run.charges.ice--; SFX.ice(); sync(); } else SFX.deny(); }
-function sync(){ setC('bShade','cShade',run.charges.shade); setC('bScreen','cScreen',run.charges.spf); setC('bIce','cIce',run.charges.ice); }
+function sync(){ setC('bSeed','cSeed',run.seeds); setC('bShade','cShade',run.charges.shade); setC('bScreen','cScreen',run.charges.spf); setC('bIce','cIce',run.charges.ice); }
 function setC(b,s,n){ $(s).textContent=n; $(b).classList.toggle('empty',n<=0); }
 function mvVec(){ if(stick.active){ let x=stick.dx/stick.max,y=stick.dy/stick.max; const m=Math.hypot(x,y);
     const dz=0.18; if(m<dz) return {x:0,y:0}; const n=(m-dz)/(1-dz)/m; return {x:x*n,y:y*n}; }
@@ -1084,7 +1196,8 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
 
   // ---- angry sun lunge ----
   let lungeBurn=0;
-  if(run.lunge){ const lg=run.lunge; lg.timer+=dt; const cyc=lg.period;
+  if(run.lunge&&run.lunge.calm>0){ const lg=run.lunge; lg.calm-=dt; lg.state='idle'; if(lg.calm<=0){ lg.calm=0; lg.timer=0; } }
+  else if(run.lunge){ const lg=run.lunge; lg.timer+=dt; const cyc=lg.period;
     const ph=lg.timer%cyc;
     if(ph<lg.warn){ lg.state='warn'; lg.zx=P.x; lg.zy=P.y; }
     else if(ph<lg.warn+lg.dur){ lg.state='strike'; // lethal zone dives toward telegraphed spot then chases a bit
@@ -1092,9 +1205,11 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
       if(dist(P.x,P.y,lg.zx,lg.zy)<lg.reach && run.screenT<=0 && run.darkT<=0 && run.graceT<=0) lungeBurn=420; }
     else lg.state='idle'; }
 
+  updateSeeds(dt);
   if(run.cacti&&run.cacti.length&&run.t>=run.blinkNext){ run.blinkI=Math.floor(run.crnd()*run.cacti.length); run.blinkAt=run.t; run.blinkNext=run.t+4+run.crnd()*5; }
   // ---- exposure ----
   const safe=safeAt(P.x,P.y); run.lastSafe=safe;
+  updateCritters(dt,safe);
   if(safe) run.sinceSafe=0; else run.sinceSafe+=dt;
   const graced=!safe && run.sinceSafe<f.edgeGrace; // coyote grace
   if(!safe && !graced && run.grazeT<=0 && P.exp<60){ run.grazeT=0.4; SFX.graze(); }
@@ -1126,7 +1241,7 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
   for(const fnd of run.finds){ if(!fnd.got && dist(P.x,P.y,fnd.x,fnd.y)<pr+P.r+22) collectFind(fnd); }  // forgiving grab so tucked-away finds are actually gettable
 
   // ---- checkpoints / exit ----
-  L.checkpoints.forEach((c,idx)=>{ if(!run.cpHit[idx]&&dist(P.x,P.y,c[0],c[1])<70){ run.cpHit[idx]=true; run.cp={x:c[0],y:c[1]}; spawnRing(c[0],c[1],'120,220,140',60,0.5); floatText(c[0],c[1]-8,'CHECKPOINT','130,225,150'); jShake(0.1); toast('checkpoint','var(--leaf)'); SFX.checkpoint(); } });
+  L.checkpoints.forEach((c,idx)=>{ if(!run.cpHit[idx]&&dist(P.x,P.y,c[0],c[1])<70){ run.cpHit[idx]=true; run.cp={x:c[0],y:c[1]}; run.seeds=run.feel.seedsALevel; sync(); spawnRing(c[0],c[1],'120,220,140',60,0.5); floatText(c[0],c[1]-8,'CHECKPOINT','130,225,150'); jShake(0.1); toast('checkpoint','var(--leaf)'); SFX.checkpoint(); } });
   if(endless){ const prog=clamp(1-(P.y/(L.worldH)),0,1); /* endless score by height */ }
   if(dist(P.x,P.y,L.exit[0],L.exit[1])<48){ winLevel(); return; }
 
@@ -1153,6 +1268,7 @@ function burn(){ if(run.coolerBox){ run.coolerBox=false; P.exp=0; P.vx=0;P.vy=0;
   run.deaths++; save.totalBurns++; persist(); burnStrip('Burned at '+run.t.toFixed(1)+' s'); run.shake=save.settings.reduce?0:0.58; freeze=save.settings.reduce?0:0.09;
   SFX.burn(); spawnParts(P.x,P.y,24,'255,80,40',190,0.75); spawnRing(P.x,P.y,'255,95,55',72,0.5); screenFlash('255,55,30',0.55);
   run.burnFx={x:P.x,y:P.y,t:0}; run.respawnT=save.settings.reduce?0:0.4;
+  run.seeds=run.feel.seedsALevel; run.tosses.length=0; sync(); resetCritters();
   run.combo=0; run.act=null; P.exp=0; P.x=run.cp.x; P.y=run.cp.y; P.vx=0;P.vy=0; P.dashT=0; P.dashCd=0; P.dashStock=0; run.sinceSafe=0; run.spawnAt=run.t;
   run.screenT=Math.max(run.screenT,run.feel.respawnGrace); run.trail.length=0; fxAt('respawn_flash',P.x,P.y,96,0.4); }
 
@@ -1311,6 +1427,7 @@ function render(){ const inPlay=(screen==='play');
   for(const poly of run.shadePolys){ for(let i=0;i<poly.length;i++){ const X=poly[i].x+ox,Y=poly[i].y+oy; i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); } ctx.closePath(); }
   for(const e of run.shadeEll){ const X=e.cx+ox,Y=e.cy+oy; ctx.moveTo(X+Math.cos(e.ang)*e.major,Y+Math.sin(e.ang)*e.major); ctx.ellipse(X,Y,e.major,e.minor,e.ang,0,TAU); ctx.closePath(); }
   for(const p of run.popups){ ctx.moveTo(p.x+ox+p.r,p.y+oy); ctx.arc(p.x+ox,p.y+oy,p.r,0,TAU); ctx.closePath(); }
+  for(const sp of run.saplings){ if(sp.r>0){ ctx.moveTo(sp.x+ox+sp.r,sp.y+oy); ctx.arc(sp.x+ox,sp.y+oy,sp.r,0,TAU); ctx.closePath(); } }
   for(const cl of run.clouds){ ctx.moveTo(cl.x+ox+cl.r,cl.y+oy); ctx.arc(cl.x+ox,cl.y+oy,cl.r,0,TAU); ctx.closePath(); }
   ctx.fill(); ctx.restore();
   // a dropped shade is her soft cool pool over its circle (the circle is the truth)
@@ -1456,6 +1573,7 @@ function render(){ const inPlay=(screen==='play');
   // impact rings (juice)
   for(const rg of run.rings){ const a=clamp(rg.t/rg.life,0,1); ctx.strokeStyle=`rgba(${rg.col},${a*0.75})`; ctx.lineWidth=1+a*3; ctx.beginPath(); ctx.arc(rg.x+ox,rg.y+oy,rg.r,0,TAU); ctx.stroke(); }
 
+  drawSeeds(ox,oy); drawCritters(ox,oy);
   // player (and where he last burned)
   drawBurnFx(ox,oy);
   drawHero(P.x+ox,P.y+oy);
@@ -1647,10 +1765,10 @@ function sunToken(lunge){ const m=46,angry=lunge&&lunge.state!=='idle'; let fc=-
   /* her sun (step 3): the face disc with its rays turning apart from it; in the Eclipse world the Angry Sun in her four
      states (glare, wind up while it warns, the lunge, panting after); the disc turns slowly to look at him (DECISION 5) */
   let face=A('sun'), rays=A('sun_rays');
-  if(lunge){ const ph=lunge.timer%lunge.period, pant=lunge.state==='idle'&&ph-(lunge.warn+lunge.dur)<1.2;
+  if(lunge){ const ph=lunge.timer%lunge.period, pant=lunge.calm>0||(lunge.state==='idle'&&ph-(lunge.warn+lunge.dur)<1.2);
     const k=lunge.state==='warn'?'angry_wind_up':(lunge.state==='strike'?'angry_lunge':(pant?'angry_panting':'angry_glare'));
     const shk=lunge.state==='warn'?'sun_wind_up':(lunge.state==='strike'?'sun_lunge':(pant?'sun_recovery':null));
-    if(shk&&A(shk)){ const end=lunge.warn+lunge.dur, tt=lunge.state==='warn'?ph:(lunge.state==='strike'?ph-lunge.warn:ph-end);
+    if(shk&&A(shk)){ const end=lunge.warn+lunge.dur, tt=lunge.calm>0?2-lunge.calm:(lunge.state==='warn'?ph:(lunge.state==='strike'?ph-lunge.warn:ph-end));
       face=A(shk); rays=null; fc=save.settings.reduce?3:clamp(Math.floor(tt*(lunge.state==='strike'?12:8)),0,3); }
     else if(A(k)){ face=A(k); rays=null; } }
   if(face){ const R=lunge?(angry?42:34):27;   // a marker at the edge, not a set piece: it must not crowd his ground
@@ -1800,6 +1918,8 @@ const HOWTO=[
   {i:'move',t:'Move',b:'Drag your left thumb anywhere on the left half of the screen to walk. Let go to stop.'},
   {i:'dash',t:'Dash',b:'Tap DASH for a fast burst, just enough to cross a thin sliver of sun. It burns you quicker in the open, so aim it.'},
   {i:'shade',t:'Drop Shade',b:'Tap SHADE to drop a circle of safe ground right under you. Only a few charges, so save them for the gaps that look impossible.'},
+  {i:'shade-ready',t:'The Seed',b:'Tap SEED to throw a seed the way you are facing. A sapling sprouts where it lands and casts a small round shade for three seconds. Thrown into the Angry Sun’s ring it bursts the lunge and the sun pants. Three a level, refilled at each checkpoint.'},
+  {i:'sun',t:'Sun critters',b:'Sand scorpions walk the sun lanes across your way and charge when you step into the light, so time your crossing. A heat mirage walks your last steps right behind you, so turning back in the sun runs you into it. You cannot hurt them. Reach shade and you lose them, or throw a seed at one to pin it for two seconds.'},
   {i:'spf',t:'SPF',b:'Tap SPF for a few seconds of total sunproofing. Perfect for sprinting across wide open light.'},
   {i:'ice',t:'Ice Water',b:'Tap ICE to slow the sun’s sweep way down, buys you time when the shadows move too fast.'},
   {i:'aloe',t:'Aloe = money',b:'Green stars bank aloe for the shop. Grab them in the shade or in the sun; a star glows when the sun lights it.'},
@@ -1831,7 +1951,7 @@ function coach(text,ic,d){ const c=$('coach'); if(!c) return; const lf=$('lvlFla
   coachDone=d||null;
   coachSnap={x:(typeof P!=='undefined'?P.x:0), y:(typeof P!=='undefined'?P.y:0),
              sh:run&&run.charges?run.charges.shade:0, sp:run&&run.charges?run.charges.spf:0,
-             ic2:run&&run.charges?run.charges.ice:0, da:run?(run.dashUses||0):0};
+             ic2:run&&run.charges?run.charges.ice:0, da:run?(run.dashUses||0):0, tu:run?(run.tossUses||0):0};
   coachHideT=d?12:5.2; }
 function hideCoach(){ const c=$('coach'); if(c) c.classList.remove('show'); coachHideT=0; coachDone=null; }
 const TUT=[
@@ -1845,6 +1965,10 @@ const TUT=[
     d:s=>(run.dashUses||0)>s.da},
   {id:'shadeDrop', ic:'shade-ready', x:'No shade ahead? Tap SHADE to drop your own.', t:()=>run.charges.shade>0 && run.t>4 && !shadedGeom(P.x,P.y),
     d:s=>run.charges.shade<s.sh},
+  {id:'seed', ic:'shade-ready', x:'Tap SEED to throw a seed ahead of you. A sapling grows where it lands and shades you for three seconds.', t:()=>run.seeds>0 && run.t>3 && !run.lastSafe && P.exp>=25,
+    d:s=>(run.tossUses||0)>(s.tu||0)},
+  {id:'critter', ic:'sun', x:'A sand scorpion. It hunts you in the light. Reach shade to lose it, or throw a seed to pin it.', t:()=>run.critters.some(c=>c.state==='hunt')},
+  {id:'mirage', ic:'sun', x:'A heat mirage walks your last steps. Do not turn back in the sun. Reach shade.', t:()=>run.critters.some(c=>c.kind==='mirage'&&c.on)},
   {id:'checkpoint', ic:'check', x:'Checkpoint. Burn now and you respawn right here.', t:()=>run.cpHit.some(Boolean)},
   {id:'burn', ic:'sun', x:'Burned. Keep an eye on the Exposure bar, reach shade before it fills.', t:()=>run.deaths>0},
   {id:'hot', ic:'sun', x:'Orange sand scorches you even off the sun. Don’t stand on it.', t:()=>run.hot.length>0 && run.t>1.2},
@@ -1856,7 +1980,7 @@ const TUT=[
   {id:'umbrella', ic:'umbrella-turn', x:'Wind turns the umbrellas, and their shade swings with them.', t:()=>run.wind&&run.wind.spin&&run.L.casters.some(c=>c[0]==='U')&&run.t>1.5},
   {id:'ice', ic:'ice', x:'ICE slows the sun’s sweep. Sip it when the timing is brutal.', t:()=>run.charges.ice>0 && run.t>2,
     d:s=>run.charges.ice<s.ic2},
-  {id:'lunge', ic:'boss-target', x:'The Angry Sun is winding up a lunge. Move off the flashing ring.', t:()=>run.lunge&&run.lunge.state==='warn'},
+  {id:'lunge', ic:'boss-target', x:'The Angry Sun is winding up a lunge. Move off the flashing ring, or throw a seed into it.', t:()=>run.lunge&&run.lunge.state==='warn'},
   {id:'eclipse', ic:'eclipse-window', x:'Eclipse. Everything is dark and safe for a moment, so sprint.', t:()=>run.darkT>0},
 ];
 function checkTut(dt){
@@ -1928,7 +2052,7 @@ loadAssets(); resize(); updateWallet(); buildWorldMap(); showScreen('title');
 /* step 6 (DECISION 4): no How to Play wall before the first move; Dawn Ribbon's coach marks teach in play, and How to
    Play is one tap away on the title and from pause */
 requestAnimationFrame(frame);
-window.__TM={save,LEVELS,WORLDS,genLevel,startLevel,frame,P,keys,winLevel,burn,sweptRect,clamp,_run:()=>run,_mode:()=>mode, // debug hook (sweptRect, clamp: the level lab's shade preview)
+window.__TM={save,LEVELS,WORLDS,genLevel,startLevel,frame,P,keys,winLevel,burn,sweptRect,clamp,toss,update:dt=>update(dt),shadedGeom,safeAt,_cam:()=>cam,_run:()=>run,_mode:()=>mode, // debug hook (sweptRect, clamp: the level lab's shade preview)
   // the shot tool's handles (lucid-winds tools/tomato-man-tests/shoot.mjs): screens, a held clock, simulated time
   go, showScreen, openWorld, startDaily, togglePause, buildHowto, render:()=>render(),
   hold:on=>{ devHold=!!on; }, exposure:v=>{ P.exp=v; },
