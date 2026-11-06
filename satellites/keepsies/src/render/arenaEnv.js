@@ -9,15 +9,13 @@
  */
 import * as THREE from 'three';
 import { art } from './art.js?v=20261105b';
+import { CHALK_REPEATS, CHALK_STRIP, CROSS_R2, LAG_R2 } from './plates.js?v=20261105b';
 
 /* Astra's lot (pack v1, KEEPSIES_BUILD_PLAN.md step 3). One dirt tile is 60 cm: her grit then reads as grit and
    her pebbles at 3 to 7 mm sit beside a 16 mm mib the way real ones do. The tone is a plate decision, not a
    marble one: her albedo is a warm orange, and the marbles stay the brightest thing on the ground. */
 const DIRT_TILE_M = 0.6;
 const DIRT_TONE = 0x968c84;
-/* chalk_ring.png draws its line at 466 px from the centre of a 1024 square; the cross marker draws its
-   arms across 176 of 256 px; the lag line runs across 978 of 1024 px */
-const RING_PX = 466 / 512, CROSS_DRAWN = 176 / 256, LAG_DRAWN = 978 / 1024;
 
 /** A dirt texture drawn by code: grain, a few stones, and a scuffed centre. */
 function dirtTexture(size) {
@@ -61,6 +59,25 @@ function dirtTexture(size) {
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.anisotropy = 4;
   return t;
+}
+
+/** m3 step 11, B8: an annulus with u along the circumference (an integer repeat of her stroke) and v across the 83 mm band her 52 mm line is drawn in; faces up. */
+function chalkStrip(radius) {
+  const seg = 256, half = CHALK_STRIP.bandM / 2, reps = CHALK_REPEATS[Math.round(radius / 0.1524)] || 4;
+  const pos = [], uv = [], nor = [], idx = [];
+  for (let i = 0; i <= seg; i++) {
+    const a = (2 * Math.PI * i) / seg, s = Math.sin(a), c = Math.cos(a), u = (reps * i) / seg;
+    pos.push(s * (radius - half), 0, c * (radius - half), s * (radius + half), 0, c * (radius + half));
+    uv.push(u, 0, u, 1);
+    nor.push(0, 1, 0, 0, 1, 0);
+  }
+  for (let i = 0; i < seg; i++) { const k = i * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setIndex(idx);
+  return g;
 }
 
 /**
@@ -127,7 +144,7 @@ export function buildRingerGround(stage, tuning, opts) {
   const lot = stage.tier.name !== 'low';
   /* chalk is granular cream, never neon (style guide): her white is toned to the cream of the line and
      thinned, so the ring and the cross read as chalk rubbed into dirt and the marbles stay brightest */
-  const decal = (file, w, h, y, alpha) => {
+  const decal = (file, w, h, y, alpha, repeatX) => {
     const mat = new THREE.MeshStandardMaterial({ transparent: true, depthWrite: false, opacity: 0,
       roughness: 1, metalness: 0, color: 0xcdc2ad });
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
@@ -137,21 +154,33 @@ export function buildRingerGround(stage, tuning, opts) {
     m.visible = false;
     loader.load(art(file), (t) => {
       t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+      if (repeatX) { t.wrapS = THREE.RepeatWrapping; t.repeat.x = repeatX; }
       mat.map = t; mat.opacity = alpha; mat.needsUpdate = true;
       m.visible = m.userData.want !== false;
-      if (m === ring) line.visible = false;
     });
     chalk.add(m);
     return m;
   };
-  let ring = null, cross = null, lag = null;
+  let ring = null, cross = null, lag = null, dressedR = ringR;
   if (lot) {
-    ring = decal('env/chalk_ring.png', 2 * ringR / RING_PX, 2 * ringR / RING_PX, 0.0012, 0.78);
+    /* m3 step 11, B8: her chalk stroke laid along the ring, an integer repeat round it, rebuilt per ring size so it is never stretched */
+    const stroke = new THREE.MeshStandardMaterial({ transparent: true, depthWrite: false, opacity: 0, roughness: 1, metalness: 0, color: 0xcdc2ad });
+    ring = new THREE.Mesh(chalkStrip(ringR), stroke);
+    ring.position.y = 0.0012;
+    ring.receiveShadow = stage.tier.shadows !== 'off';
+    ring.visible = false;
+    loader.load(art('env/chalk_stroke.webp'), (t) => {
+      t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.wrapS = THREE.RepeatWrapping;
+      stroke.map = t; stroke.opacity = 0.85; stroke.needsUpdate = true;
+      ring.visible = true; line.visible = false;
+    });
+    chalk.add(ring);
     // the cross's arms reach a little past the outer mibs of the lay (three spacings each way)
     const span = 6 * tuning.ringer.crossSpacing + 0.05;
-    cross = decal('env/cross_marker.png', span / CROSS_DRAWN, span / CROSS_DRAWN, 0.0010, 0.5);
+    const crossW = span * CROSS_R2.sizePx / (2 * CROSS_R2.armPx);
+    cross = decal('env/cross_marker_r2.png', crossW, crossW, 0.0010, 0.5);
     // the lag line beyond the far arc of the first view (the player's taw starts at +z), 2.4 m across the lane
-    lag = decal('env/lag_line.png', 2.4 / LAG_DRAWN, 2.4 / LAG_DRAWN / 8, 0.0010, 0.7);
+    lag = decal('env/lag_line_r2.png', 2 * LAG_R2.widthPx * CHALK_STRIP.lineM / CHALK_STRIP.linePx, CHALK_STRIP.bandM, 0.0010, 0.7, 2);
   }
 
   /**
@@ -160,10 +189,14 @@ export function buildRingerGround(stage, tuning, opts) {
    * marker under the cross and the X, and the lag line its offset beyond the far arc.
    */
   function dress(radius, formation) {
-    const k = radius / ringR;
-    line.scale.setScalar(k);
+    /* rebuilt, never scaled: a scaled ring stretched its line and its grain with the ring */
+    if (dressedR !== radius) {
+      dressedR = radius;
+      line.geometry.dispose();
+      line.geometry = new THREE.RingGeometry(radius - 0.026, radius + 0.026, 220);
+      if (ring) { ring.geometry.dispose(); ring.geometry = chalkStrip(radius); }
+    }
     if (!lot) return;
-    ring.scale.setScalar(k);
     const showCross = formation == null || formation === 'cross' || formation === 'x';
     cross.userData.want = showCross;
     cross.visible = showCross && cross.material.opacity > 0;

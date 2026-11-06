@@ -61,7 +61,7 @@ button.quiet{background:transparent;color:var(--muted);border:1px solid rgba(152
        canvas texture in K5, so no CSS filters live here. ---- */
 #hud{position:fixed;inset:0;pointer-events:none}
 /* Astra's skyline behind the names in the wide shot (main.js lotBand); it takes no touch and fades into the dirt */
-#lot{position:absolute;left:0;right:0;top:0;height:19%;background-repeat:repeat-x;opacity:0;transition:opacity .45s;
+#lot{position:absolute;left:0;right:0;top:0;height:19%;background-repeat:no-repeat;opacity:0;transition:opacity .45s;
   -webkit-mask-image:linear-gradient(180deg,#000 0,#000 68%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 68%,transparent 100%)}
 #lot.on{opacity:1}
 @media (prefers-reduced-motion:reduce){#lot{transition:none}}
@@ -86,10 +86,14 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 #results .card{background:transparent;border:1px solid transparent;border-image:var(--result) 24 fill / 12px stretch}
 #spyglass{border:1px solid transparent;border-image:var(--scope) 24 / 10px stretch}
 /* the player chips: her chip's frame (its drawn dots stay out of the slices) behind the name and her pips */
-#scores .side{border:1px solid transparent;border-image:var(--chip) 24 20 18 20 / 10px 9px 8px 9px stretch;
-  background:rgba(13,16,12,.94);border-radius:9px;padding:6px 10px 7px;min-width:0}   /* her chip's own fill, so no inner box shows */
-#scores .side.them{padding-right:52px}
-#themFace{right:8px;top:50%;margin-top:-18px}
+/* m3 step 11, B2: her chip, 176 by 56, nine slice 24; the seven pips on her centres (16 + 24k, 39) at that width, and evenly on a narrower phone, where the middle gap stands for the far arm */
+#scores .side{position:relative;display:block;flex:0 1 calc(50% - 16px);max-width:176px;height:56px;box-sizing:border-box;min-width:0;padding:0;
+  border:12px solid transparent;border-image:var(--chip) 24 / 12px stretch;background:none}
+#scores .who{position:absolute;left:-2px;right:-2px;top:-5px;height:15px;line-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#scores .side.them{padding:0}
+#scores .side.them .who{text-align:right;right:22px}
+#scores .sockets{position:absolute;left:-4px;right:-4px;top:19px;justify-content:space-between;gap:0}
+#scores .sock{flex:none;width:16px;height:16px}
 .sock{border:0;background:var(--pip-empty) center/100% 100% no-repeat}
 .sock.full{background:var(--pip-lit) center/100% 100% no-repeat;border:0}
 #calibDots{width:180px;height:48px;background-size:100% 100%;background-repeat:no-repeat}
@@ -98,7 +102,7 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 #reticle.settled{background-image:var(--ret-b)}
 /* the tiers on every card: her frame and mark over the render, the word under the name */
 .tile::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
-  border:1px solid transparent;border-image:var(--tier-common) 64 32 32 32 / 20px 10px 10px 10px stretch}
+  border:1px solid transparent;border-image:var(--tier-common) 32 / 16px stretch}
 .tile.t-uncommon::after{border-image-source:var(--tier-uncommon)}
 .tile.t-rare::after{border-image-source:var(--tier-rare)}
 .tile.t-epic::after{border-image-source:var(--tier-epic)}
@@ -106,13 +110,25 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 .tile{border-color:transparent}
 .tile .rib{display:none}
 .tile .nm{z-index:3}
+/* m3 step 11, B3: the mark is its own icon at her centre (48, 10), never stretched with the frame */
+.tile .tmark{position:absolute;left:50%;top:2px;width:16px;height:16px;margin-left:-8px;z-index:3}
+.tile .tmark .ic{display:block;width:16px;height:16px;margin:0}
+.t-common .tmark{color:#b9b4a4}.t-uncommon .tmark{color:#85bda8}.t-rare .tmark{color:#91bce1}.t-epic .tmark{color:#d7a0d9}.t-grail .tmark{color:#e6c56a}
 .tile .tw{display:block;font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;opacity:.9}
 .t-common .tw,#iTier.t-common{color:#b9b4a4}
 .t-uncommon .tw,#iTier.t-uncommon{color:#85bda8}
 .t-rare .tw,#iTier.t-rare{color:#91bce1}
 .t-epic .tw,#iTier.t-epic{color:#d7a0d9}
 .t-grail .tw,#iTier.t-grail{color:#e6c56a}
-#iTier .ic{width:16px;height:16px;margin-right:6px;vertical-align:-3px}
+/* B3: her pill, 280 by 48, the mark at (140, 10), the word in her content box at 14 px */
+#inspectCard #iTier,#iTier,#poTier{position:relative;display:block;width:280px;max-width:100%;height:48px;box-sizing:border-box;margin:0 auto;padding:0;
+  border:16px solid transparent;border-image:var(--pill-common) 32 fill / 16px stretch;letter-spacing:.06em}
+#iTier.t-uncommon,#poTier.t-uncommon{border-image-source:var(--pill-uncommon)}
+#iTier.t-rare,#poTier.t-rare{border-image-source:var(--pill-rare)}
+#iTier.t-epic,#poTier.t-epic{border-image-source:var(--pill-epic)}
+#iTier.t-grail,#poTier.t-grail{border-image-source:var(--pill-grail)}
+#iTier .ic,#poTier .ic{position:absolute;left:50%;top:-14px;width:16px;height:16px;margin:0 0 0 -8px}
+#iTier span,#poTier span{position:absolute;left:-4px;right:-4px;top:5px;height:15px;line-height:15px;font-size:14px;text-align:center}
 /* ---- step 6: the economy's objects ---- */
 #collection #pouches{width:100%;max-width:23rem}
 #collection #pouches button{display:grid;grid-template-columns:72px 1fr;grid-template-rows:auto auto auto;column-gap:12px;align-items:center;
@@ -120,10 +136,12 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 #pouches .pouchImg{grid-row:1 / span 3;width:72px;height:72px;object-fit:contain}
 #pouches .pname{font-size:.86rem}
 #pouches .pity{color:var(--brass)}
-#poPlate{position:relative;width:min(280px,76vw);aspect-ratio:1}
+#poPlate{position:relative;width:min(320px,86vw);aspect-ratio:1}
+/* B7: pouch, lift, dark shadow, render */
+#poRest{position:absolute;width:42.8%;aspect-ratio:1;transform:translate(-50%,-50%);background:var(--shadow-dark) center/100% 100% no-repeat,var(--contact-lift) center/100% 100% no-repeat}
 #poImg{width:100%;height:100%;display:block}
-#poMouth{position:absolute;clip-path:ellipse(50% 50% at 50% 50%);display:flex;align-items:center;justify-content:center}
-#poMouth canvas{height:95%;width:auto;aspect-ratio:1}
+#poMouth{position:absolute;display:flex;align-items:center;justify-content:center}
+#poMouth canvas{height:auto;aspect-ratio:1;flex:none}
 #poTier .ic{width:16px;height:16px;margin-right:6px;vertical-align:-3px}
 #pouchOpen{background:var(--bg)}
 #poTier.t-common{color:#b9b4a4}#poTier.t-uncommon{color:#85bda8}#poTier.t-rare{color:#91bce1}#poTier.t-epic{color:#d7a0d9}#poTier.t-grail{color:#e6c56a}
@@ -131,8 +149,13 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 #caseWrap{width:100%;max-width:23rem}
 #case{aspect-ratio:900/600;background-size:100% 100%}
 #case canvas{position:absolute;width:10%;height:auto;aspect-ratio:1;margin:-5% 0 0 -5%}
+#case .wellRest{position:absolute;width:12%;aspect-ratio:1;transform:translate(-50%,-50%);background:var(--shadow-dark) center/100% 100% no-repeat,var(--contact-lift) center/100% 100% no-repeat}
 /* ⛔ THE CLOTH ADDS NO HEIGHT: the setup's Back must stay on a 375 by 667 screen (the playthrough presses it there) */
-#ante.cloth{background-size:100% 100%;background-repeat:no-repeat;padding:0 12px;border-radius:12px}
+/* m3 step 11, B5: her cloth behind the stake rows, drawn on a pseudo element so it adds no border to the box */
+#ante.cloth{position:relative;padding:4px 19px;box-sizing:border-box}
+@media (max-width:360px){#ante.cloth{padding:4px 16px}}   /* five slots, 288 px, on the 360 phone */
+#ante.cloth::before{content:'';position:absolute;inset:0;border:20px solid transparent;border-image:var(--pot-cloth) 40 fill / 20px stretch;pointer-events:none}
+#ante.cloth>*{position:relative}
 #offers .env{width:44px;height:auto;flex:none;margin-right:8px}
 #iProv .last{display:block;color:var(--chalk)}
 #iProv .hist{list-style:none;margin:6px 0 0;padding:0;font-size:.8rem;color:var(--muted)}
@@ -167,12 +190,12 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 /* while statues are placed or moved, the tray IS the bottom of the screen: the shot's controls step aside */
 body.statuing #corners,body.statuing #houseRules,body.statuing #aimNudge,body.statuing #scopeBtn,body.statuing #moveStatue,body.statuing #say{display:none}
 /* the render sits INSIDE her frame (its edges carry her dark fill, which cropped the marble when it lay over it) */
-.tile canvas{position:absolute;left:6px;right:6px;top:15px;bottom:6px;width:auto;height:auto;object-fit:contain}
+.tile canvas{position:absolute;left:12px;top:21px;width:calc(100% - 24px);height:calc(100% - 33px);object-fit:contain}   /* her content box */
 .tile .cnt{z-index:3}
 /* the HUD's three buttons keep one line each with their icons */
 #corners button{white-space:nowrap;letter-spacing:.04em;font-size:.74rem;padding-left:8px;padding-right:8px}
 #corners button .ic{width:16px;height:16px;margin-right:5px;vertical-align:-3px}
-#scores #themFace{position:absolute;right:8px;top:50%;width:36px;height:36px;margin-top:-18px}
+#scores #themFace{position:absolute;right:-6px;top:-8px;width:26px;height:26px;margin:0}   /* over the pips, her name band's right end */
 #scores{position:absolute;left:0;right:0;top:0;padding:calc(8px + var(--st)) 12px 8px;
   display:flex;justify-content:space-between;align-items:flex-start;
   background:linear-gradient(180deg,rgba(13,16,12,.42),rgba(13,16,12,0) 78%)}
@@ -246,7 +269,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 .tile{width:96px;height:96px;min-width:0;min-height:0;border-radius:12px;
   border:1px solid rgba(152,160,134,.35);
   background:rgba(20,23,15,.72);position:relative;padding:0;display:block;cursor:pointer;overflow:hidden}
-.tile canvas{width:100%;height:100%;display:block}
+.tile canvas{display:block}
 .tile .nm{position:absolute;left:0;right:0;bottom:0;font-size:.56rem;line-height:1.2;padding:3px 4px;
   color:var(--chalk);background:linear-gradient(180deg,rgba(13,16,12,0),rgba(13,16,12,.92) 45%);
   text-transform:none;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -290,18 +313,21 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 /* the cloth: 900 by 600 shown from row 112 to 512, resting places at 225, 450, 675 by 312 (50 percent down),
    a quarter of the plate apart, so each place is 24 percent wide; the live render fills Astra's 62 px radius
    (13.8 percent of the plate) and her ground shadow lies under it */
-#heirlooms{aspect-ratio:900/400;background-size:100% auto;background-position:50% 56%}
-#heirlooms button{position:absolute;top:8%;width:24%;height:88%;min-width:0;min-height:48px;margin-left:-12%;padding:0 2px;
+/* m3 step 11, B6: her 900 by 1200 plate shown from row 320 to 712, under the height the v1 cloth took: her render windows at 30, 330 and 630 by 340, 240 square; a button runs from her window's top to the foot of her name band, 24 + 300k wide 252 */
+#heirlooms{aspect-ratio:900/392;background-size:100% auto;background-position:50% 39.6%}
+#heirlooms button{position:absolute;top:5.1%;width:28%;height:92.86%;min-width:0;min-height:48px;margin:0;padding:0;
   display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
   border-radius:12px;border:1px solid rgba(232,220,200,.22);background:rgba(13,16,12,.28);
   text-transform:none;letter-spacing:0;font-size:.64rem;line-height:1.15;color:var(--chalk)}
-#heirlooms button:nth-child(1){left:25%}
-#heirlooms button:nth-child(2){left:50%}
-#heirlooms button:nth-child(3){left:75%}
-#heirlooms canvas{display:block;width:57.4%;height:auto;aspect-ratio:1;margin:49% auto 3%;position:relative;z-index:1}
+#heirlooms button:nth-child(1){left:2.667%}
+#heirlooms button:nth-child(2){left:36%}
+#heirlooms button:nth-child(3){left:69.333%}
+#heirlooms canvas{display:block;position:absolute;left:2.38%;top:0;width:95.24%;height:auto;aspect-ratio:1;margin:0;z-index:1}
+#heirlooms .nm{position:absolute;left:0;right:0;top:72.5%;z-index:1}
+#heirlooms .kit{position:absolute;left:0;right:0;top:85%;margin:0;z-index:1}
 /* a shadow under each one, so they sit on the cloth rather than over it (Astra's ground shadow) */
-#heirlooms .rest{position:absolute;left:50%;top:61%;width:56%;height:12%;margin-left:-28%;
-  background-size:100% 100%;background-repeat:no-repeat;opacity:.85}
+#heirlooms .rest{position:absolute;left:50%;top:52.2%;width:112.5%;aspect-ratio:1;transform:translate(-50%,-50%);
+  background:var(--shadow-dark) center/100% 100% no-repeat,var(--contact-lift) center/100% 100% no-repeat}
 #heirlooms button.on{border-color:var(--brass);background:rgba(200,168,75,.16);
   box-shadow:0 0 0 2px rgba(200,168,75,.5),0 8px 16px rgba(0,0,0,.55);transform:translateY(-4px)}
 #heirlooms span{text-shadow:0 1px 3px rgba(0,0,0,.9)}
@@ -417,9 +443,9 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
    pressed, so the strip has to make it obvious what is being risked. */
 #ante{display:flex;flex-direction:column;align-items:center;gap:6px;max-width:23rem;width:100%}
 .antelabel{margin:0;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
-#stakeStrip,#theirStrip{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;width:100%;
-  padding:2px;justify-content:flex-start;min-height:62px}
-.stake{flex:0 0 auto;min-width:56px;min-height:56px;width:56px;height:56px;padding:0;border-radius:10px;
+#stakeStrip,#theirStrip{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:12px;width:100%;
+  padding:2px;justify-content:flex-start;min-height:54px}
+.stake{flex:0 0 auto;min-width:48px;min-height:48px;width:48px;height:48px;padding:0;border-radius:10px;
   border:1px solid rgba(152,160,134,.4);background:rgba(20,23,15,.7);position:relative;overflow:hidden;
   cursor:pointer}
 .stake canvas{width:100%;height:100%;display:block}
@@ -517,8 +543,12 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 .why{margin:.3rem 0 0;font-size:.72rem;line-height:1.4;color:var(--muted)}
 /* a level up is the only line on this card that is news, and it is a line
    rather than a filled slab: a brass block reads as a button and is not one */
-.levelup{margin:.8rem 0 0;padding:.2rem 0 .2rem .8rem;font-size:1.02rem;line-height:1.45;
-  color:var(--brass);border-left:3px solid var(--brass);text-align:left;font-weight:600}
+/* m3 step 11, B4: her strip, 320 by 60, the mark centred on (27, 30) at 24, the level and reward in her bands */
+.levelup{position:relative;display:block;width:320px;max-width:100%;height:60px;box-sizing:border-box;margin:.8rem auto 0;padding:0;
+  border:14px solid transparent;border-image:var(--level-strip) 28 fill / 14px stretch;color:var(--brass);text-align:left;font-weight:600}
+.levelup .ic{position:absolute;left:1px;top:4px;width:24px;height:24px;margin:0}
+.levelup .lv{position:absolute;left:33px;right:0;top:-5px;height:18px;line-height:18px;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.levelup .rw{position:absolute;left:33px;right:0;top:18px;height:16px;line-height:16px;font-size:.74rem;font-weight:500;color:var(--chalk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 <script type="importmap">
 { "imports": { "three": "./lib/three.module.min.js" } }
@@ -557,7 +587,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
     <p id="oppLine">Beat everyone on his street. His street is small.</p>
   </div>
   <div id="hrRow"></div>
-  <div id="ante" class="cloth" data-art="ui/pot_cloth.svg" hidden>
+  <div id="ante" class="cloth" hidden>
     <p class="antelabel">Your stake</p>
     <div id="stakeStrip"></div>
     <p id="anteSay"></p>
@@ -646,7 +676,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 <!-- the pouch reveal (step 6): the buy is written before this opens -->
 <div id="pouchOpen" class="veil" hidden>
   <p class="studio" id="poHead">Standard Pouch</p>
-  <div id="poPlate"><img id="poImg" alt=""><div id="poMouth"></div></div>
+  <div id="poPlate"><img id="poImg" alt=""><span id="poRest"></span><div id="poMouth"></div></div>
   <p class="ribbon" id="poTier"></p>
   <h2 id="poName"></h2>
   <p id="poSay"></p>
@@ -695,7 +725,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   <h2>Take some</h2>
   <p id="tinSafe">Your first rare is kept safe in the case.</p>
   <p id="tinSay">Ten clay, six cat's eyes, a bearing and a swirl. And one of these three, your pick.</p>
-  <div id="heirlooms" class="plate" data-art="ui/heirloom_cloth.webp"></div>
+  <div id="heirlooms" class="plate" data-art="ui/heirloom_cloth_r2.webp"></div>
   <p id="heirSay"></p>
   <button id="tinTake" disabled>Pick one first</button>
 </div>

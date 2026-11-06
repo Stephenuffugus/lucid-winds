@@ -92,6 +92,11 @@ for (const [W, H] of [[412, 915], [360, 780]]) for (const R of [0.762, 1.525]) {
     ok(st.y + T.snap.grabRadiusPx <= H - C.fitBottomPx + 0.5 && st.y > 0, tag + name + ': the shooter stands clear (y ' + st.y.toFixed(0) + ')');
     for (const q of live) { const sc = screenOf(g, { x: q.x, y: 0.008, z: q.z }, W, H); ok(sc.depth > 0 && sc.x >= 0 && sc.x <= W && sc.y >= C.fitTopPx - 1 && sc.y < st.y, tag + name + ': a mib stands at ' + sc.x.toFixed(0) + ', ' + sc.y.toFixed(0) + ' in the frame'); }
   }
+  /* the names stand either side of a gap on the centre line: a far mib in the gap may stand level with them, a far mib off the line stands under their foot */
+  {
+    const off = aim(R, W, H, [{ x: 0.14 * R, z: 0.3 * R }, { x: 0, z: 0 }]), st0 = screenOf(off, { x: 0.14 * R, y: 0.008, z: 0.3 * R }, W, H);
+    ok(st0.y >= C.fitTopClearPx - 1, tag + 'a far mib off the centre line stands at y ' + st0.y.toFixed(0) + ', under the chips at ' + C.fitTopClearPx);
+  }
   /* the watch frame: up and back, the same facing */
   const w = watchFor({ tawX: 0, tawZ: -R, az: Math.atan2(0, 1) + Math.PI, range: R, ringR: R, vh: H, aspect: W / H }, C);
   ok(w.elevation > f.elevation && w.distance > f.distance, tag + 'the watch frame stands up and back (' + w.elevation + ' degrees, ' + w.distance.toFixed(2) + ' m, the aim frame ' + f.distance.toFixed(2) + ' m)');

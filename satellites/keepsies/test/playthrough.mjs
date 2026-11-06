@@ -271,7 +271,7 @@ await press('again');
 await page.waitForFunction(() => window.KEEPSIES_DEV.state().screen === 'tin', { timeout: 20000 });
 const cloth = await page.evaluate(() => ({
   count: document.getElementById('heirlooms').querySelectorAll('button').length,
-  drew: [...document.querySelectorAll('#heirlooms canvas')].every(c => c.width === 168),
+  drew: [...document.querySelectorAll('#heirlooms canvas')].every(c => c.width === 200),
   takeDisabled: document.getElementById('tinTake').disabled,
   label: document.getElementById('tinTake').textContent
 }));

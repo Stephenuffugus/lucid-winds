@@ -42,6 +42,7 @@ const GATES = [
   { name: 'flick',        cmd: ['test/flick.mjs'],        need: 'FLICK OK' },
   { name: 'camwatch',     cmd: ['test/camwatch.mjs'],     need: 'CAMWATCH OK' },
   { name: 'astra_in',     cmd: ['tools/astra_in.mjs', '--check'], need: 'ASTRA IN OK' },
+  { name: 'plates',       cmd: ['test/plates.mjs'], need: 'PLATES OK' },
   { name: 'spyglass',     cmd: ['test/spyglass.mjs'],     need: 'SPYGLASS OK' },
   { name: 'formations',   cmd: ['test/formations.mjs'],   need: 'FORMATIONS OK' },
   { name: 'ai_budget',    cmd: ['test/ai_budget.mjs'],   need: 'AI BUDGET OK', slow: true },

@@ -99,8 +99,15 @@ export function frameFor(inp, C, calib) {
   const A = aimRow(C, inp.ringR == null ? L : inp.ringR);
   const e = A.elevationDeg * DEG, se = sin(e), ce = cos(e), halfV = (A.fov * DEG) / 2, tanV = sin(halfV) / cos(halfV);
   const aspect = Math.max(0.3, inp.aspect || 0.56), tanH = tanV * aspect;
-  const S = Math.max(C.aimMinSpan, L + spreadAlong), edgeB = edgeOf(inp.vh, C.fitBottomPx + (inp.grabPx || 77) + 4), edgeT = edgeOf(inp.vh, C.fitTopPx);
+  const S = Math.max(C.aimMinSpan, L + spreadAlong), edgeB = edgeOf(inp.vh, C.fitBottomPx + (inp.grabPx || 77) + 4);
+  let edgeT = edgeOf(inp.vh, C.fitTopPx);
   let fit = fitSpan(S, se, ce, tanV, edgeB, edgeT), fov = A.fov;
+  /* m3 step 11: the names stand either side of a gap on the centre line. A far mib in the gap may stand level with them (the opening's far arm); one off the line would stand behind a chip, so the top edge falls to their foot */
+  const yClear = edgeOf(inp.vh, C.fitTopClearPx), gap = C.fitGapPx / ((inp.vh || 915) / 2);
+  for (const p of live) {
+    const rx = p.x - tawX, rz = p.z - tawZ, a = rx * ndx + rz * ndz, l = rx * ndz - rz * ndx, dep = (a - fit.b) * ce + fit.d;
+    if (dep > 0 && ((a - fit.b) * se) / (dep * tanV) > yClear && Math.abs(l) / (dep * tanV) > gap) { edgeT = yClear; fit = fitSpan(S, se, ce, tanV, edgeB, edgeT); break; }
+  }
   /* below a full board a survivor off the side would be the whole game, so the frame widens to keep every one of them: first the lens, to 44 degrees, then the distance */
   const margin = C.spreadMargin == null ? 1.15 : C.spreadMargin;
   let floor = spreadLat > 0 && t < 1 ? (spreadLat / tanH) * margin : 0;
@@ -157,7 +164,7 @@ function fitSpan(S, se, ce, tanV, edgeB, edgeT) {
 export function watchFor(inp, C) {
   const W = C.watch, A = aimRow(C, inp.ringR), e = W.elevationDeg * DEG, se = sin(e), ce = cos(e), halfV = (A.fov * DEG) / 2, tanV = sin(halfV) / cos(halfV);
   const S = clamp(inp.range + W.pastTarget, W.minSpan, 2 * inp.ringR + 0.1);
-  const fit = fitSpan(S, se, ce, tanV, W.edgeBottom, edgeOf(inp.vh, C.fitTopPx));
+  const fit = fitSpan(S, se, ce, tanV, W.edgeBottom, edgeOf(inp.vh, C.fitTopClearPx));
   const aspect = Math.max(0.3, inp.aspect || 0.56), wide = (inp.ringR * W.chalkFrac) / (tanV * aspect);
   return { tx: inp.tawX + sin(inp.az) * fit.b, tz: inp.tawZ + cos(inp.az) * fit.b, distance: clamp(Math.max(fit.d, wide), C.minDistance, C.maxDistance), elevation: W.elevationDeg, fov: A.fov };
 }

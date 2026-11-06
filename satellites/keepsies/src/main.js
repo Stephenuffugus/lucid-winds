@@ -13,6 +13,7 @@ import { detectQuality, forceQuality } from './render/quality.js?v=20261105b';
 import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261105b';
 import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261105b';
 import { lookFit } from './core/framing.js?v=20261105b';
+import { POUCH_MOUTH, POUCH, HEIRLOOM, HORIZON } from './render/plates.js?v=20261105b';
 import { buildRingerGround } from './render/arenaEnv.js?v=20261105b';
 import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261105b';
 import { attachCameraControls } from './input/cameraCtl.js?v=20261105b';
@@ -88,13 +89,16 @@ const HOUSE_RULES = [
 const RING_WORD = { 5: 'Five foot', 7: 'Seven foot', 10: 'Ten foot', 13: 'Thirteen foot' };
 /* Astra's HUD and tier plates (step 5), as style sheet variables set once at boot through art() */
 const ART_VARS = {
-  '--pip-empty': 'ui/pip_empty.svg', '--pip-lit': 'ui/pip_lit.svg', '--chip': 'ui/player_chip.svg',
+  '--pip-empty': 'ui/pip_empty.svg', '--pip-lit': 'ui/pip_lit.svg', '--chip': 'ui/player_chip_r2.png',
+  '--level-strip': 'ui/level_up_strip.png', '--pot-cloth': 'ui/pot_cloth_r2.png', '--shadow-dark': 'env/shadow_dark.png', '--contact-lift': 'ui/contact_lift.png',
   '--hr-on': 'ui/house_rule_on.svg', '--hr-off': 'ui/house_rule_off.svg', '--voice': 'ui/voice_bubble.svg',
   '--toast': 'ui/technique_toast.svg', '--result': 'ui/result_card.svg', '--scope': 'ui/minimap_frame.svg',
   '--tray': 'ui/tray.png', '--tile-idle': 'ui/tile_idle.png', '--tile-pressed': 'ui/tile_pressed.png', '--tile-drag': 'ui/tile_dragging.png', '--not-here': 'ui/not_here_chip.png',
   '--ret-a': 'ui/reticle_settling.svg', '--ret-b': 'ui/reticle_settled.svg', '--aim-dash': 'ui/aim_dash.svg', '--aim-cap': 'ui/aim_cap.svg',
-  '--tier-common': 'ui/tier_common.svg', '--tier-uncommon': 'ui/tier_uncommon.svg', '--tier-rare': 'ui/tier_rare.svg',
-  '--tier-epic': 'ui/tier_epic.svg', '--tier-grail': 'ui/tier_grail.svg'
+  '--tier-common': 'ui/tier_common_tile.png', '--tier-uncommon': 'ui/tier_uncommon_tile.png', '--tier-rare': 'ui/tier_rare_tile.png',
+  '--tier-epic': 'ui/tier_epic_tile.png', '--tier-grail': 'ui/tier_grail_tile.png',
+  '--pill-common': 'ui/tier_common_pill.png', '--pill-uncommon': 'ui/tier_uncommon_pill.png', '--pill-rare': 'ui/tier_rare_pill.png',
+  '--pill-epic': 'ui/tier_epic_pill.png', '--pill-grail': 'ui/tier_grail_pill.png'
 };
 /* the house rules' icons (Astra's sprite); the lay has none of its own and carries none */
 const RULE_ICON = { keepsies: 'keeps', slips: 'slips', bombing: 'bombing', poison: 'poison', ringSizeFt: 'ring_size' };
@@ -359,14 +363,13 @@ function buildMatchCard() {
   const L = G.lastCard;
   if (!L) return null;
   const byId = (id) => G.catalog.marbles.find(m => m.id === id);
-  const side = (id, label) => { const e = byId(id); return e ? { render: renderOf(e, 420), name: e.name, label } : null; };
-  const staked = L.mine.length || L.theirs.length;
-  const left = side(L.mine[0] || L.myTaw, staked ? 'Your stake' : 'Your shooter');
-  const right = side(L.theirs[0] || L.theirTaw, staked ? L.opp + ' put up' : L.opp + "'s shooter");
-  const stats = ['Pocketed ' + $('rPocket').textContent, 'Shots ' + $('rShots').textContent];
+  /* m3 step 11, B11: her card has one window and three places on the pot cloth: the shooter in the window, the pot on the cloth (the two shooters when it was for fair) */
+  const hero = byId(L.myTaw) || byId(L.mine[0]);
+  const potIds = (L.mine.length || L.theirs.length) ? L.mine.concat(L.theirs) : [L.myTaw, L.theirTaw];
+  const pots = potIds.map(byId).filter(Boolean).slice(0, 3).map(e => renderOf(e, 264));
   const tech = $('rTech').textContent;
-  if (tech && tech !== 'none yet') stats.push(tech);
-  return matchCard({ title: $('resultTitle').textContent, left, right, pot: $('rPot').textContent, stats });
+  return matchCard({ title: $('resultTitle').textContent, hero: hero ? { render: renderOf(hero, 840), name: hero.name, label: 'Your shooter' } : null, pots, pot: $('rPot').textContent,
+    score: 'Pocketed ' + $('rPocket').textContent, shots: 'Shots ' + $('rShots').textContent, techniques: tech && tech !== 'none yet' ? tech : '' });
 }
 
 function paintProvenance(item) {
@@ -569,21 +572,21 @@ function openTin() {
   mouth.textContent = '';
   const still = (G.save.settings && G.save.settings.reducedMotion) || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   const canv = [];
-  G.thumbs.open(168);
+  G.thumbs.open(HEIRLOOM.canvasPx);
   let i = 0;
   for (const e of three) {
     const b = document.createElement('button');
     b.type = 'button';
     b.id = 'heir-' + e.id;
     const c = document.createElement('canvas');
-    c.width = c.height = 168;
+    c.width = c.height = HEIRLOOM.canvasPx;
     const rest = document.createElement('span');
     rest.className = 'rest';
-    rest.style.backgroundImage = 'url(' + art('env/ground_shadow.png') + ')';
     b.appendChild(rest);
     b.appendChild(c);
     canv.push({ c, b });
     const nm = document.createElement('span');
+    nm.className = 'nm';
     nm.textContent = e.name;
     b.appendChild(nm);
     const kit = document.createElement('span');
@@ -794,7 +797,6 @@ function openPouch(kind) {
 }
 
 /* Astra's open pouches: the mouth of each (anchors.json, in her 640 px master) as fractions of the plate */
-const POUCH_MOUTH = { standard: [174, 141, 276, 109], collector: [178, 142, 278, 112], grail: [174, 135, 280, 112] };
 
 /**
  * The reveal (step 6). The buy is already written; this only shows it: the open pouch with the live render of
@@ -804,15 +806,18 @@ const POUCH_MOUTH = { standard: [174, 141, 276, 109], collector: [178, 142, 278,
 function showPouchOpen(kind, res, line) {
   const v = $('pouchOpen');
   $('poHead').textContent = (G.dropTables[kind] || {}).name || 'A pouch';
-  $('poImg').src = art('ui/pouch_' + kind + '_open.webp');
-  const m = POUCH_MOUTH[kind] || POUCH_MOUTH.standard, mouth = $('poMouth');
-  mouth.style.left = (m[0] / 6.4) + '%'; mouth.style.top = (m[1] / 6.4) + '%';
-  mouth.style.width = (m[2] / 6.4) + '%'; mouth.style.height = (m[3] / 6.4) + '%';
+  $('poImg').src = art('ui/pouch_' + kind + '_open_r2.webp');
+  /* m3 step 11, B10: her mouth ellipse at her 320 display, the render r 60 at its centre; B7: her lift and dark shadow under it, on the contact patch */
+  const m = POUCH_MOUTH[kind] || POUCH_MOUTH.standard, mouth = $('poMouth'), pc = 100 / POUCH.display;
+  mouth.style.left = (m[0] - m[2]) * pc + '%'; mouth.style.top = (m[1] - m[3]) * pc + '%';
+  mouth.style.width = m[2] * 2 * pc + '%'; mouth.style.height = m[3] * 2 * pc + '%';
+  $('poRest').style.left = m[0] * pc + '%'; $('poRest').style.top = (m[1] + POUCH.renderR * 0.6) * pc + '%';
   mouth.textContent = '';
   const c = document.createElement('canvas');
-  c.width = c.height = 168;
+  c.width = c.height = POUCH.canvasPx;
+  c.style.width = (POUCH.renderR / m[2] * 100) + '%';
   mouth.appendChild(c);
-  G.thumbs.open(168); G.thumbs.paint(c, res.entry, 0); G.thumbs.close();
+  G.thumbs.open(POUCH.canvasPx); G.thumbs.paint(c, res.entry, 0); G.thumbs.close();
   $('poName').textContent = res.entry.name;
   $('poTier').innerHTML = ic(res.entry.tier) + '<span></span>';
   $('poTier').lastChild.textContent = TIER_LABEL[res.entry.tier] || res.entry.tier;
@@ -845,6 +850,9 @@ function buildCase() {
     c.width = c.height = 96;
     c.style.left = (wells[k][0] / 9) + '%'; c.style.top = (wells[k][1] / 6) + '%';
     c.title = e.name;
+    const well = document.createElement('span');   // B7: her lift and dark shadow, under the render
+    well.className = 'wellRest'; well.style.left = (wells[k][0] / 9) + '%'; well.style.top = (wells[k][1] / 6 + 3) + '%';
+    shelf.appendChild(well);
     shelf.appendChild(c);
     G.thumbs.paint(c, e, k);
   });
@@ -905,6 +913,9 @@ function buildGrid() {
       n.textContent = String(g.count);
       b.appendChild(n);
     }
+    const mk = document.createElement('span');
+    mk.className = 'tmark'; mk.innerHTML = ic(g.entry.tier);
+    b.appendChild(mk);
     const nm = document.createElement('span');
     nm.className = 'nm';
     nm.textContent = g.entry.name;
@@ -1516,7 +1527,6 @@ const canAim = () => !!G.R && !G.R.state.simulating && !G.R.isAiTurn()
  * the camera leans in for the last few mibs (core/framing.js, under leanFull live) a target may stand up to 8
  * percent from the top, so the band fades out; it also leaves for top down and low views, and on the low tier.
  */
-const LOT_ROW0 = 236, LOT_ROWS = 210;   // panorama rows 236 to 446: the lamp, the skyline, the fence's foot
 function lotBand() {
   const el = $('lot');
   if (!el) return;
@@ -1524,11 +1534,11 @@ function lotBand() {
   const live = G.R ? G.R.liveMibs().length : 0;
   /* m3 step 8, DECISION 6: only where a frame shows the far chalk, and never over a live mib: the aim frame is dirt and the cross */
   const far0 = G.R ? G.rig.project(-Math.sin(st.azimuth) * G.R.ringRadius, 0, -Math.cos(st.azimuth) * G.R.ringRadius) : null;
-  let on = G.tier.name !== 'low' && !G.topDown && st.elevationDeg >= 18 && st.elevationDeg <= 60 && live >= ((G.tuning.render.ringerCam || {}).leanFull || 5) && !!far0 && far0.visible && far0.y > 44;
+  let on = G.tier.name !== 'low' && !G.topDown && Math.abs(wrapPi(st.azimuth)) <= HORIZON.windowDeg * DEG && st.elevationDeg >= 18 && st.elevationDeg <= 60 && live >= ((G.tuning.render.ringerCam || {}).leanFull || 5) && !!far0 && far0.visible && far0.y > 44;
   if (on) for (const m of G.R.liveMibs()) { const p = positionOf(G.R.world, m.id), c = G.rig.project(p.x, p.y, p.z); if (c.visible && c.y < far0.y) { on = false; break; } }
   if (el.classList.contains('on') !== on) el.classList.toggle('on', on);
   if (!on) return;
-  if (!el.dataset.art) { el.style.backgroundImage = 'url(' + art('env/lot_panorama.webp') + ')'; el.dataset.art = '1'; }
+  if (!el.dataset.art) { el.style.backgroundImage = 'url(' + art('env/horizon_strip.webp') + ')'; el.dataset.art = '1'; }
   /* ⛔ AND NEVER OVER THE FAR ARC. The far chalk is how a player sees a mib leave the ring, and in the wide
      shot it runs just under the names: the band ends where the arc's nearest point to the top projects, so the
      skyline stands behind the far chalk and never on it (a floor of 44 px, a ceiling of 19 percent) */
@@ -1536,10 +1546,10 @@ function lotBand() {
   const far = G.rig.project(-Math.sin(st.azimuth) * G.R.ringRadius, 0, -Math.cos(st.azimuth) * G.R.ringRadius);
   const want = far.visible && far.y > 0 ? Math.max(44, Math.min(vh * 0.19, far.y - 2)) : vh * 0.19;
   if (Math.abs((el.clientHeight || 0) - want) > 1.5) el.style.height = Math.round(want) + 'px';
-  const h = Math.round(want), w = el.clientWidth || 1, s = h / LOT_ROWS, pw = 1600 * s;
-  // the camera faces -(sin az, cos az); the panorama's u at that bearing (the sky's own mapping, scene.js)
-  const u = ((0.709 - (st.azimuth - Math.PI) / (2 * Math.PI)) % 1 + 1) % 1;
-  const x = Math.round(w / 2 - u * pw), y = Math.round(-LOT_ROW0 * s);
+  /* m3 step 11, B9: her strip stands on the fence's foot; it does not tile, so it pans in a window of bearings about the first view (camera azimuth 0) and the band steps aside beyond it (above). The true sky behind stays the whole panorama */
+  const h = Math.round(want), w = el.clientWidth || 1, s = h / HORIZON.footY, pw = HORIZON.w * s;
+  const cs = HORIZON.w / 2 - (wrapPi(st.azimuth) / (HORIZON.windowDeg * DEG)) * Math.max(0, HORIZON.w / 2 - (w / 2) / s);
+  const x = Math.round(w / 2 - cs * s), y = 0;
   /* ⛔ never over the spyglass: its picture is in the canvas under every DOM layer, so the band takes a hole
      the size of its frame and the skyline stands either side of the scope */
   let hole = '';
@@ -1735,7 +1745,7 @@ function openSnapCard() { $('snapCard').hidden = false; }
 /** The aim buttons and the Zoom belong to the human's aim phase and nothing else. */
 /* m3 step 8: LOOK and the statues' view: straight down, the whole chalk in the width, between the names and whatever owns the bottom */
 function applyLook(botPx) {
-  const L = lookFit({ ringR: G.R.ringRadius, vw: G.stage.width, vh: G.stage.height, topPx: 59, botPx, az: G.rig.state.azimuth }, G.tuning.render.ringerCam);
+  const L = lookFit({ ringR: G.R.ringRadius, vw: G.stage.width, vh: G.stage.height, topPx: G.tuning.render.ringerCam.fitTopClearPx - 4, botPx, az: G.rig.state.azimuth }, G.tuning.render.ringerCam);
   G.rig.setTarget(L.tx, 0.012, L.tz);
   G.rig.state.elevationDeg = L.elevation;
   G.rig.state.wantDistance = L.distance;
@@ -2060,8 +2070,9 @@ function finishMatch(s) {
     const opened = [];
     for (const lv of lvl.levels) for (const k of PROG.unlocksAt(lv, G.tuning)) opened.push(UNLOCK_WORDS[k] || k);
     $('rLevel').hidden = false;
-    $('rLevel').textContent = 'Level ' + lvl.level + '. ' + lvl.paid + ' sunbeams'
-      + (opened.length ? ', and ' + opened.join(' and ') + ' now open.' : '.');
+    $('rLevel').innerHTML = ic('level_up') + '<span class="lv"></span> <span class="rw"></span>';
+    $('rLevel').children[1].textContent = 'Level ' + lvl.level + '.';
+    $('rLevel').children[2].textContent = lvl.paid + ' sunbeams' + (opened.length ? ', and ' + opened.join(' and ') + ' now open.' : '.');
   } else {
     $('rLevel').hidden = true;
   }
@@ -2373,6 +2384,8 @@ function installDevHook() {
       return (await buildMarbleCard(e, item)).toDataURL('image/png');
     },
     matchCard: async () => { const c = await buildMatchCard(); return c ? c.toDataURL('image/png') : null; },
+    /* where each live render lies on the two cards, for the probe to hold to her windows */
+    cardLayouts: async (id) => { const e = G.catalog.marbles.find(m => m.id === id), a = await buildMarbleCard(e, null), b = await buildMatchCard(); return { marble: a.layout, match: b ? b.layout : null }; },
     grantSunbeams: (n) => { G.econ.earn(n, 'a gate said so'); buildPouches(); return G.econ.balance(); },
     // put one named marble in the inventory, so a gate can lose something worth
     // ransoming without playing until the pouches hand it one
