@@ -160,7 +160,7 @@ minutes before with START-HERE written). Their law 2 is replaced by law 11. Adde
 
 | Step | State | Commit | Note |
 |---|---|---|---|
-| 0 |  |  |  |
+| 0 | done 6 Nov | (this commit) | docs/m3 holds INPUT, VIEW, ASTRA, the harness (reg.mjs now finds hooks.mjs beside it; knuckle_ts.js and knuckle_peak.js added, harness.mjs imports them) and the scripts; fast check green on the baseline; main 8187f3a32, its keepsies tree c0b040670951, stamp 20261105b |
 | 1 |  |  |  |
 | 2 |  |  |  |
 | 3 |  |  |  |
