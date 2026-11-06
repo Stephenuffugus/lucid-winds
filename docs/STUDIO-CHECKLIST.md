@@ -1,104 +1,109 @@
 # Studio checklist
 
 The repo copy of Stephen's Google Doc "Studio checklist" in Drive Astra
-(https://docs.google.com/document/d/1gzUSKkQqPa0wR-gpLL8CDBi4pcYk0YEQd4LvO3-Z1hc/edit). He ticks the Doc; a session
-that finishes an item ticks it here too, and when the plan changes, both change. Written 5 Nov 2026.
-Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (plans with him).
+(https://docs.google.com/document/d/1A60Pk-DBKPJWF47FZN2YZmEFkBgtQC4_oS4ojh3lKiY/edit). The Doc has real checkboxes. The old Doc (1gzUSKkQ...) sat unchanged from 5 Nov 02:20 until this one replaced it on 6 Nov; it is renamed OLD and left in place.
+When a line changes here, the Doc must change too: export the Doc as text/markdown first to carry over his ticks, then upload this file as text/markdown (Drive converts it to a Doc with live checkboxes) and rename the one it replaces. There is no Docs editor here.
+
+Everything planned, by game, as of 6 Nov 2026, 13:40 UTC. Open items come first in each section, finished ones under Done. Who does each one is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans with you). The working copy is docs/STUDIO-CHECKLIST.md in the repo. Nothing new from Astra has reached Drive, the vault or a session upload since Shutterbug round 9, so if you hold a zip that is not ticked below, drop it in that game's folder.
 
 ## You, now
-### 6 Nov, from your notes on the five games (Fable; everything below is built, checked and committed; nothing is live until you run a line)
-- [x] Run the Tomato Man line (you: LIVE 6 Nov, main f9535ce13, both hosts serve 8167e672e466; Tomato_Man main 260e9899) (Opus's two draw fixes plus the sun wash image; nine levels no longer start in the sun; stars grabbed in the shade; awnings on poles; the LEVEL LAB at ?lab=1) (you)
-- [x] Run the Sunforge line (you: LIVE 6 Nov, main 3a3a4a37e, index b01c1dc3a562) (the Tetris lock delay, drag to move on the board, faster buttons) (you)
-- [x] Run the Flatulence Fighter line (LIVE 6 Nov, main e4bf2e8df, index 4a21137e6b40; run here after he sent the line) (six pads, calls that move and light on their own, the new fart and squeak sounds) (you)
-- [x] Run the Shutterbug line (you: sb-m2-11 LIVE 6 Nov, main 4aace3f56, tag sb-m2-11) (the guardian shoves a bug that camps beside it) (you)
-- [ ] Give Astra the Sunforge round 2 kickoff, the blocks: Drive Astra/Sunforge/Round 2 (you)
-- [x] Give Astra the Shutterbug round 9 kickoff (you: back 6 Nov)
-- [ ] Give Astra the Flatulence Fighter round 2 kickoff, now with the six pads: Drive Astra/Flatulence Fighter/Round 2 (you)
-- [ ] Open Tomato Man with ?lab=1 on the Pixel and fix one level you hate; Copy JSON and paste it to Fable (you)
-- [x] Pick Tomato Man's real gameplay (the kickoff picked the seed toss, then sun critters; both built by Opus 6 Nov, the squirt not built)
-- [x] Run the Tomato Man gameplay line (you: LIVE 6 Nov, main 9550354e0, Tomato_Man main 6c056f3f)
-- [ ] Play Tomato Man's seed toss and critters on the Pixel: the critters' balance is not proven (you)
-- [ ] Give Astra the Tomato Man gameplay art kickoff: docs/briefs/tomato-man/gameplay-art/ (you)
-- [x] Run the Shutterbug R9 line (you: sb-m2-12 LIVE 6 Nov, main e37264aa7)
+
+- [ ] Play the new Keepsies shot on the Pixel: no one has looked at it on a screen yet (you)
+- [ ] Play Keepsies with the STATUES chip on: place two, move one (you)
+- [ ] Play Tomato Man's seed toss and sun critters on the Pixel: the critters' balance is not proven (you)
+- [ ] Play Shutterbug's five guardians, second attacks, ten new bugs and harder rooms on the Pixel (you)
 - [ ] Say if the new fart sounds are funny on the Pixel; if not, a pack of recorded ones (CC0, freesound) is the next step (you)
-- [x] Start Opus tonight with docs/briefs/opus-kickoff-nov06/PROMPT.txt: Shutterbug R9 (the plan), then Keepsies m3 steps 2 to 12, Shutterbug harder rooms step 2 (all four hazards, the free play floor, more traps), Tomato Man seed toss and sun critters, then each Astra zip as it lands (you)
-- [x] Keepsies m3 steps 2 to 12 (Opus, 6 Nov: stamp 20261106a, full check green, feel gate at four phones)
-- [x] Run the Keepsies m3 line (you: LIVE 6 Nov, main fbcfe26fe, build 20261106a)
-- [ ] Play the new Keepsies shot on the Pixel: nobody has looked at it on a screen yet (you)
-- [ ] Give Astra the Keepsies round 3 kickoff with its materials zip: docs/briefs/keepsies/round3/ (you)
-- [ ] Drop keepsies-round2-materials.zip into Drive Astra/Keepsies/Round 2 (you)
-- [x] Give Astra the Keepsies round 2 kickoff (you: back 5 Nov 23:10, vaulted, unpacked at /workspaces/keepsies-astra-round2)
-- [x] Keepsies rework from his 5 Nov verdict (the view, the circle three times bigger, the aim that skips, the flick): KEEPSIES_M3_BUILD_PLAN.md (Opus, 6 Nov)
-- [ ] Give Astra the Dewball kickoff in Drive Astra/Dewball/Store kit when a slot frees (you)
+- [ ] Give Astra the Keepsies round 3 kickoff from [Astra / Keepsies / Round 3](https://drive.google.com/drive/folders/1TzLMsgrjGfqWsDRVunfCh73kVjcLEvdT), with its [materials zip](https://github.com/Stephenuffugus/lucid-winds/raw/add-sproing-jumper/docs/briefs/keepsies/round3/keepsies-round3-materials.zip) (you)
+- [ ] Give Astra the Tomato Man gameplay art kickoff from [Astra / Tomato Man / Gameplay Art](https://drive.google.com/drive/folders/1AmFaALTb3wBPtJE8MTFkSEVXd7Vx9nqB) (you)
+- [ ] Give Astra the Sunforge round 2 kickoff, the blocks, from [Astra / Sunforge / Round 2](https://drive.google.com/drive/folders/1PPdQPL6l2dr3yQiS88dwlyL9JhGRHFSp); tick it if you already have (you)
+- [ ] Give Astra the Flatulence Fighter round 2 kickoff, with the six pads, from [Astra / Flatulence Fighter / Round 2](https://drive.google.com/drive/folders/1o2vbY_Q6Qee-UVDXpdh3rcy71QudsE0N); tick it if you already have (you)
+- [ ] Give Astra the Dewball kickoff from [Astra / Dewball / Store kit](https://drive.google.com/drive/folders/19CCGoJDoG27NxRya3YFHiZRSjrCz2rrp) when a slot frees (you)
+- [ ] Bring each zip back: Fable plans the wiring from it before anything is built (you, then Fable)
+- [ ] Open Tomato Man with ?lab=1 on the Pixel and fix one level you hate; Copy JSON and paste it to Fable (you)
 - [ ] Shutterbug: open the Darkroom from the title; every blueprint carried out of a room is a print waiting there, a weapon once developed for dead pixels (you)
-- [ ] Play Keepsies on the Pixel with the STATUES chip on: place two, move one (you)
-- [x] Pick from the Shutterbug proposals below (you: 5 Nov, weapons first, then times in shared codes)
-- [x] Run the Shutterbug deploy line (you: sb-m2-8 LIVE 5 Nov, main d349e54e2)
-- [ ] Play a room, Play it again, and share one to a friend on the Pixel (you)
-- [x] Zoom in the top right corner, the Darkroom a big title button, the start pick retired (Opus: sb-m2-9 built 5 Nov)
-- [x] Run the sb-m2-9 deploy line (you: LIVE 5 Nov, main 616ba530e)
-- [x] Harder rooms step 1, the tuning (Opus: sb-m2-10 stamped 5 Nov; free play caps 7 and 2, houses about 7 by room 4, fast moths from room 2)
-- [x] Run the sb-m2-10 deploy line (you: LIVE 5 Nov, main 24f5f6e45, index 7dd6ca7c784ffb03 on both hosts)
-- [ ] Run the Shutterbug R9 line: `! bash /home/codespace/sb-drafts/sb-m2-12/deploy-sb-m2-12.sh` (five guardians, second attacks, ten new bugs, the harder rooms) (you)
-- [x] Harder rooms step 2 (Opus: built in sb-m2-12 with Astra's art; was: two of conveyor, crumbling shelf, swinging lamp, window gust; also a free play floor and more traps a room, both found to need code  )
-- [x] Start Opus on a fresh box with docs/briefs/opus-kickoff-nov05/PROMPT.txt (Sunforge m1, Tomato Man m1 and m2, then Shutterbug harder rooms, then FF m2) (you: 5 Nov; Opus built all five that night)
+- [ ] Play a Shutterbug room, Play it again, and share one to a friend on the Pixel (you)
 - [ ] Pick from the Pixel Petri proposal, docs/briefs/pixel-petri/EXPANSION-PROPOSAL-NOV05.md: which expansion first, free everywhere or packs first on Play and Pi, the commercial's timing, Penny's pack (you)
-- [x] Pick the Flatulence Fighter redesign below (you: 5 Nov, "sure")
+- [ ] Before the next overnight run, allow commits in the Tomato Man repo or add it as a working directory, so a permission prompt cannot stall the run (you)
+
+### Done
+
+- [x] Run the Shutterbug R9 line: LIVE 6 Nov, sb-m2-12 (you)
+- [x] Run the Keepsies m3 line: LIVE 6 Nov, build 20261106a (you)
+- [x] Run the Tomato Man gameplay line: LIVE 6 Nov (you)
+- [x] Start Opus overnight on the 6 Nov kickoff (you)
+- [x] Run the Tomato Man 6 Nov line: LIVE 6 Nov (you)
+- [x] Run the Sunforge lock delay line: LIVE 6 Nov (you)
+- [x] Run the Flatulence Fighter six pads line: LIVE 6 Nov (you)
+- [x] Run the Shutterbug shove line: sb-m2-11 LIVE 6 Nov (you)
+- [x] Give Astra the Shutterbug round 9 kickoff: back 6 Nov (you)
+- [x] Give Astra the Keepsies round 2 kickoff: back 5 Nov (you)
+- [x] The Keepsies round 2 materials zip: no longer needed, her round 2 came back 5 Nov (you)
+- [x] Pick Tomato Man's real gameplay: the seed toss and sun critters are built, the squirt is not (you)
+- [x] Pick from the Shutterbug proposals: weapons first, then times in shared codes (you)
+- [x] Pick the Flatulence Fighter redesign: "sure" (you)
+- [x] Run the Shutterbug deploy lines sb-m2-8, sb-m2-9 and sb-m2-10: LIVE 5 Nov (you)
+- [x] Start Opus on the 5 Nov kickoff: Sunforge m1, Tomato Man m1 and m2, Shutterbug harder rooms step 1, Flatulence Fighter m2 (you)
 
 ## Astra queue (sent, back, wired)
-- [x] Tomato Man: back 5 Nov as v1 and v2, vaulted, TOMATO_MAN_BUILD_PLAN.md written (Astra, Fable)
-- [ ] Sunforge round 2, the blocks: brief and kickoff in Drive Astra/Sunforge/Round 2 (Astra)
-- [x] Shutterbug round 9: back 6 Nov (49 strips, 174 frames), vaulted astra-shutterbug-round9-nov06, unpacked outside git, SHUTTERBUG_R9_BUILD_PLAN.md written (Astra, Fable)
-- [ ] Flatulence Fighter round 2 with the six pads: Drive Astra/Flatulence Fighter/Round 2 (Astra)
-- [ ] Sixfold: brief ready (Astra)
-- [x] Sunforge: back 5 Nov, the Sunbreaker pick, vaulted, SUNFORGE_BUILD_PLAN.md written (Astra, Fable)
-- [ ] Aura Farm: brief ready (Astra)
-- [ ] Orb Orchard: brief ready (Astra)
-- [ ] Keepsies round 2: brief ready, materials zip with Stephen (Astra; docs/briefs/keepsies/round2/)
-- [ ] Dewball store kit: brief ready (Astra; docs/briefs/dewball/store-kit/)
-- [ ] Each zip that comes back: vaulted, unpacked and wired one section at a time, every screen looked at on a phone (Opus)
 
-## Shutterbug (m2 live, sb-m2-6)
-Decided 5 Nov, his words ("i do really like that were a little closer and i think iots cool having the backround still
-there subtly"): the photo stays faint behind the room (m2 DECISION 1), the closer view stays the default (DECISION 2).
-- [x] Weapons he can actually find (BUILT 5 Nov, sb-m2-7 inside sb-m2-8; live after his deploy line). He starts with J1 Boomerang and D1 Anvil Boots, chests only drop owned weapons
-      (ui.owned), a new one needs a blueprint (BLUEPRINT_CHANCE 0.25) carried out, then developing in the Darkroom
-      (DEV_PRICE by tier), and the title never says a print is waiting: he has found one, J3 Shield Kick. Proposal: any
-      chest can hold an unfound weapon, used on the spot, kept by clearing the room with it (Opus)
-- [ ] Fans that matter: something worth having at the top of every fan's lift (a key, the blueprint, a run of specks),
-      and fans that blow enemies off ledges (Opus)
-- [ ] Replayability (5 Nov he said go: the time to beat is BUILT in sb-m2-8; medals per room, the faint best run, the weekly house and combos still open), he picks one or two: a time to beat inside every shared room code (codes and QR exist, the time
-      is new); three medals per room (fast, no hits, every speck) on the room card; race a faint copy of your best
-      climb (the hero skin called ghost is unrelated); a weekly house everyone plays with a weapon pick at each door
-      (houses exist); named combos when the jump, dive and charm weapons pair up (you pick, Opus builds)
-- [ ] Still open from m2: one tripod per room in house runs or none; the m3 set pieces (a conveyor, a swinging lamp, a
-      gust from a window); whether the Polaroid shows the photo or only the grid (you)
+- [ ] Keepsies round 3: the hold circle and reticle at their real size, the snap card, the close view, brief ready (Astra)
+- [ ] Tomato Man gameplay art: the seed, the sapling, the burst, the scorpion, the mirage, brief ready (Astra)
+- [ ] Sunforge round 2, the blocks: brief ready, nothing back yet (Astra)
+- [ ] Flatulence Fighter round 2 with the six pads: brief ready, nothing back yet (Astra)
+- [ ] [Sixfold](https://drive.google.com/drive/folders/1_oNXfJWWox5-vz8CJUEx5PE7O-QMO6hm): brief ready, nothing back yet (Astra)
+- [ ] [Aura Farm](https://drive.google.com/drive/folders/19G9FuxQEIJ2XfOi_sFE0edkFVYQ-MIkj): brief ready, nothing back yet (Astra)
+- [ ] [Orb Orchard](https://drive.google.com/drive/folders/1Wo7AtBoFvg0ONNU7NSbdVVWF6m0mRaY4): brief ready, nothing back yet (Astra)
+- [ ] Dewball store kit: brief ready, nothing back yet (Astra)
+- [ ] Each zip that comes back: vaulted, unpacked, planned by Fable, then wired one section at a time (Fable, then Opus)
+
+### Done
+
+- [x] Shutterbug round 9: back 6 Nov, wired and LIVE in sb-m2-12 (Astra, Opus)
+- [x] Keepsies round 2: back 5 Nov, wired and LIVE in m3 (Astra, Opus)
+- [x] Sunforge pack v1: back 5 Nov, wired and LIVE in m1 (Astra, Opus)
+- [x] Tomato Man packs v1 and v2: back 5 Nov, wired and LIVE in m1 and m2 (Astra, Opus)
+
+## Shutterbug (R9 live, sb-m2-12)
+
+- [ ] Fans that matter: something worth having at the top of every fan's lift (a key, the blueprint, a run of specks), and fans that blow enemies off ledges (Opus)
+- [ ] Replayability, pick what is next: three medals per room (fast, no hits, every speck) on the room card; race a faint copy of your best climb; a weekly house everyone plays with a weapon pick at each door; named combos when the jump, dive and charm weapons pair up (you pick, Opus builds)
+- [ ] Still open: one tripod per room in house runs or none; whether the Polaroid shows the photo or only the grid (you)
+- [ ] Fix the browser checks that fail on a missing element, already failing before R9 (Opus)
 - [ ] The Play listing: real captures in Astra's six frames, the Play build, the Console upload, assetlinks (Opus, then you)
 
-## Flatulence Fighter (m1 live)
-- [x] Run FLATULENCE_FIGHTER_M2_BUILD_PLAN.md (the four pads) (Opus: built 5 Nov, 89176521d, the six DECISIONS at their defaults)
-- [x] Run the FF m2 deploy line (you: LIVE 5 Nov, main 8187f3a32, index 6255c1247ce2)
-- [ ] Play FF m2 on the Pixel flat on a table (you)
-- [ ] Drop docs/briefs/flatulence-fighter/round2/ into Drive Astra/Flatulence Fighter/Round 2 and give Astra its KICKOFF-PROMPT.txt (you)
-- [ ] The six DECISIONS in FLATULENCE_FIGHTER_M2_BUILD_PLAN.md: the call lists, a miss as a fidget or a strike, the new medals' names, a Classic mode or not, the table card's line, landscape or not (you)
-His verdict 5 Nov: no explanation of the objective or of what to touch when and why; lean and the pop ups make no
-sense to him; why only two HOLD buttons. His idea: two lower pads are the cheeks, two upper pads the hands, and you
-touch and hold the ones it tells you when it tells you; suggest setting the phone on a table to use fingers of both hands.
-- [ ] Teach it inside the first scene, one thing at a time: the objective in one line, each control the moment it
-      first matters, a practice scene that cannot be lost (Opus, after he picks)
-- [ ] A start card: set your phone on the table and use both hands (Opus; Astra draws it in her next round)
-- [ ] His control idea: lower pads the cheeks, upper pads the hands; the scene lights the pads it wants held and says
-      when, like Twister; you vent by letting go of the cheeks while a loud noise covers you (Fable plans it with him,
-      Opus builds)
-- [ ] Retire lean left and right, the breath button and the Vent button; the leaks and the cough, sip and waft props
-      come back only as called moves, or not at all (part of the redesign)
-- [ ] A second Astra round for the four pads, the table card and the calls, once the redesign is picked (Astra)
-- [ ] Still open from m1: the strike sound; the Silver Screen modes; the assist toggles; the arcade chrome (you)
-- [ ] The Play listing, after the redesign (Opus, then you)
+### Done
 
-## Keepsies (m1 and m2 live)
-- [ ] Round 2 back from Astra and wired (Astra, then Opus)
-- [ ] Statues: the four code shapes, or four of Astra's figures (you)
+- [x] R9: five guardian bodies, a second attack for each, the shove tell, ten new bugs (Astra, Opus)
+- [x] Harder rooms: all four hazards (conveyor, crumbling shelf, swinging lamp, window gust), a free play floor, more traps a room (Opus)
+- [x] The guardian shoves a bug that camps beside it (Opus)
+- [x] Weapons you can actually find: any chest can hold an unfound weapon, kept by clearing the room with it (Opus)
+- [x] The time to beat inside every shared room code (Opus)
+- [x] Zoom in the top right corner, the Darkroom a big title button (Opus)
+- [x] The photo stays faint behind the room and the closer view stays the default: your words, 5 Nov (you)
+
+## Flatulence Fighter (m3 live)
+
+- [ ] Round 2 back from Astra and wired into the six pad deck: the pads and their states, the call icons, the table card, the lesson line (Astra, then Fable and Opus)
+- [ ] The six DECISIONS in FLATULENCE_FIGHTER_M2_BUILD_PLAN.md: the call lists, a miss as a fidget or a strike, the new medals' names, a Classic mode or not, the table card's line, landscape or not (you)
+- [ ] Still open from m1: the strike sound; the Silver Screen modes; the assist toggles; the arcade chrome (you)
+- [ ] The Play listing (Opus, then you)
+
+### Done
+
+- [x] m3: six pads, calls that move and light on their own, the new fart and squeak sounds (Fable)
+- [x] m2: your control idea, lower pads the cheeks and upper pads the hands, the scene lights what it wants held, you vent under a loud noise (Opus)
+- [x] Teach it inside the first scene: a lesson one thing at a time, the objective in one line (Opus)
+- [x] The table card: set your phone on the table and use both hands; placeholder art until round 2 (Opus)
+- [x] Retire lean left and right, the breath button, the Vent button and the tapped props (Opus)
+- [x] Play m2 on the Pixel: your 6 Nov notes (you)
+- [x] Put the round 2 brief and kickoff in Drive (Fable)
+
+## Keepsies (m1, m2 and m3 live)
+
+- [ ] Your calls on m3, built at their defaults, in KEEPSIES_M3_BUILD_PLAN.md: the five foot ring, the flick's own direction, the circle's size, the place phase, the camera during a shot, the skyline (you)
+- [ ] Statues: the four code shapes, or four of Astra's figures; envelopes; Meshy (you)
+- [ ] The four screens Astra drew in round 2 (level up, chores, clay pool, the case): not built, after m3 (you)
+- [ ] The title: her layout drops "Thirteen marbles in a cross" (you)
 - [ ] The grails' sculpts through Meshy, paid (you)
 - [ ] The 240 design bank as its own milestone (you)
 - [ ] The name: Keepsies stays, or Pocket Legends for the store (you)
@@ -107,36 +112,56 @@ touch and hold the ones it tells you when it tells you; suggest setting the phon
 - [ ] The Arena's damage numbers and conditions, which unblock the Arena (you)
 - [ ] Fix the shot tool's end game loop (Opus, small)
 
-## Sunforge (m1 planned, 5 Nov)
-- [x] m1 from SUNFORGE_BUILD_PLAN.md: the Sunbreaker skin, the title that shows the game, the almost ring and the crush, SLAM's states, the gyre on the share card, the guided first ring, pause (Opus: built 5 Nov, deploy line in START-HERE)
-- [x] Run the Sunforge deploy line (you: LIVE 5 Nov, main 83528f0ec, index d4ec258c1a49)
-- [ ] The Pixel pass on Sunforge m1 (you)
-- [ ] The 6 DECISIONS in the plan (pause, fonts, the guided first ring, overload, the slam sound, the name) (you)
+### Done
+
+- [x] m3, your 5 Nov verdict on the shot: the camera holds still during a shot, the 154 px circle, the flick reads its own timing, the aim line is the aim, a sideways slide turns it, the close camera, Look held, the five foot ring (Opus)
+- [x] Round 2 back from Astra and wired: the statues kit, chip, tier frames, level strip, pot cloth, heirloom cloth, open pouches, chalk, horizon, share cards (Astra, Opus)
+- [x] m2: STATUES, your idea (Opus)
+- [x] m1: the lot and the people from Astra's pack v1 (Opus)
+
+## Sunforge (m1 and the lock delay live)
+
+- [ ] Round 2, the blocks: back from Astra and swapped in (Astra, then Fable and Opus)
+- [ ] The 6 DECISIONS in SUNFORGE_BUILD_PLAN.md: pause, fonts, the guided first ring, overload, the slam sound, the name (you)
 - [ ] Pick one or two from the m2 list: SLAM with a direction by swipe, chapter skies, the hold outline, overload, a weekly gyre, the store listing (you)
 - [ ] The store kit, if the listing is a go: real captures in Astra's six frames (Opus, then you)
 
-## Tomato Man (m1 and m2 planned, 5 Nov)
-- [x] m1 from TOMATO_MAN_BUILD_PLAN.md, built on branch sunstruck of Stephenuffugus/Tomato_Man (Opus: built 5 Nov): the hero, the shade union mask, the worlds and casters, the postcards, teach by crossing one shadow, the burn and the result card (Opus)
-- [x] Run the Tomato Man deploy line (you: m1 and m2 LIVE 5 Nov, main 315687db3, Tomato_Man main 58dbdeae, index 8de3a5338c39 on both lucidwinds.com and the Pages copy)
-- [ ] The Pixel pass on Tomato Man (you)
-- [ ] Run the Tomato Man smoother play line: `! bash /home/codespace/tm-drafts/deploy-tomato-man-perf.sh` (you; built 6 Nov, dry run OK)
-- [x] m2 from pack v2: eight bearings, wilt and tilt states, the Angry Sun sequences, the cue marks (Opus: built 5 Nov)
+### Done
+
+- [x] The lock delay: a resting piece waits half a second, drag to move on the board, faster buttons (Fable)
+- [x] m1: the Sunbreaker skin, the title that shows the game, the almost ring and the crush, SLAM's states, the guided first ring, pause (Opus)
+- [x] The Pixel pass on m1: your 6 Nov notes (you)
+
+## Tomato Man (m1, m2, the 6 Nov fixes and the gameplay live)
+
+- [ ] The real art for the seed toss and critters, placeholders drawn in code until then (Astra, then Fable and Opus)
+- [ ] The critters' balance, from your play (you, then Opus)
+- [ ] The squirt, the third gameplay idea: not built (you)
 - [ ] The 7 DECISIONS: the planet tomato's passing shadow, pass the phone races, hats that do a tiny thing, the How to Play wall, the sun's eyes, the listing and Penny's credit, the Pages mirror (you)
 - [ ] Astra round 2 after your yes on the passing shadow (the encounter frames) and the thirteen produce in eight bearings (Astra)
 
+### Done
+
+- [x] The seed toss and sun critters (Opus)
+- [x] 6 Nov: smoother play, nine levels no longer start in the sun, stars grabbed in the shade, awnings on poles, the level lab at ?lab=1 (Opus, Fable)
+- [x] m1 and m2: the hero, the shade, the worlds, the postcards, eight bearings, wilt and tilt, the Angry Sun (Opus)
+- [x] The Pixel pass: your 6 Nov notes (you)
+
 ## Pixel Petri (on sale, $0.99, 7 buyers in 7 countries)
-- [ ] Pick the first expansion from the proposal (the Living Year, Many Peoples, or Themed Packs) (you)
+
+- [ ] Pick the first expansion from the proposal: the Living Year, Many Peoples, or Themed Packs (you)
 - [ ] Fable plans the first milestone with you from design/09-expansion.md in the tiny-world repo; Astra's first Pixel Petri brief in its own Drive folder (Fable, then Astra)
 - [ ] The commercial after milestone one is live: real play captured, Astra's title and end cards, MP4 for the Play promo slot and a square for social (Opus, Astra, then you upload)
 
 ## Dewball
+
 - [ ] The store pack back from Astra (Astra)
 - [ ] The store kit, store/dewball-play: real captures in her frames, both orientations, best in landscape (Opus)
-- [ ] The v37 stamp with the landscape tip (built on dewball-w567), and its deploy line (Opus, then you)
+- [ ] The v37 stamp with the landscape tip, and its deploy line (Opus, then you)
 - [ ] The Console listing at $0.99 (you)
 - [ ] The Meshy build out (you)
 
-## Waiting on him elsewhere
-- [ ] Music Studio: his musician friend's feedback; the grid cells (paging, scrolling, or the dense grid); the name
-      (Grovewave, Mossbeat, Liltroom, or Music Studio); the sound library drawer; sample storage; the store shots (you)
-- [ ] Loaf: his pair sheet verdict and the corpus photos, which start milestone B (you)
+## Waiting on you elsewhere
+
+- [ ] Music Studio: your musician friend's feedback; the grid cells (paging, scrolling, or the dense grid); the name (Grovewave, Mossbeat, Liltroom, or Music Studio); the sound library drawer; sample storage; the store shots (you)
+- [ ] Loaf: your pair sheet verdict and the corpus photos, which start milestone B (you)
