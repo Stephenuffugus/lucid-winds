@@ -6504,6 +6504,45 @@ group('H-boss-11', 'the biome movesets (DESIGN 7, 2 Nov): in a Frost, Deep, Over
   t.ok(bad.length === 0 && [1, 2, 3, 4].every(b => seen[b] > 0), 'each of Frost, Deep, Overgrowth and Ember tells, then attacks, and never sheds (rooms ' + JSON.stringify(seen) + ')' + (bad.length ? ': ' + bad.slice(0, 4).join('; ') : ''));
 });
 
+group('H-boss-12', 'the second attacks (round 9 step 3): every biome\'s guardian alternates: its second cycle tells at least 48 steps with Astra\'s mark fixed in place, then its own attack is in the pool (the dust cloud, the breath, the whip, the pods, the flame); it costs a heart to a bug that stands in it and nothing to a bug away from it; under half its HP a cycle runs 3/4 as long; its attacks go when it falls', t => {
+  const P = SB.sim.PROJ_KIND, want = { 0: P.BDUST, 1: P.BBREATH, 2: P.BWHIP, 3: P.BPOD, 4: P.BFLAME }, seen = {}, bad = [];
+  const toSecond = lv => { const s = awake(lv); s.immortal = 1; let tell = -1, mark = null; for (let k = 0; k < 1200; k++) { SB.sim.step(s, 0); if (s.boss.cycle === 1 && s.boss.telegraph > 0 && tell < 0) { tell = s.frame; mark = [s.boss.mx, s.boss.my]; } if (s.boss.cycle === 1 && s.boss.telegraph > 0 && (mark[0] !== s.boss.mx || mark[1] !== s.boss.my)) mark = 'moved'; if (s.boss.cycle === 2) return { s, tell, fired: s.frame, mark }; } return { s, tell, fired: -1, mark }; };
+  for (const { tag, lv } of bossBuilds()) {
+    const b = lv.biome | 0; if (seen[b] >= 2) continue; seen[b] = (seen[b] || 0) + 1;
+    const { s, tell, fired, mark } = toSecond(lv);
+    if (tell < 0 || fired < 0) { bad.push(tag + ': no second cycle (tell ' + tell + ', fired ' + fired + ')'); continue; }
+    if (fired - tell < 48) bad.push(tag + ': told only ' + (fired - tell) + ' steps ahead');
+    if (mark === 'moved' || !Array.isArray(mark)) bad.push(tag + ': the mark moved during its tell');
+    const live = () => s.proj.filter(p => p.live && p.kind === want[b]);
+    if (!live().length) { bad.push(tag + ': no attack of kind ' + want[b] + ' in the pool'); continue; }
+    /* a bug away: the farthest stand from the body, held there; the next attacks held off, the moths dead: no heart lost */
+    const gr = lv.features.guardian.rect, CS = K.CELL_SUB, w = lv.w, far = (() => { let best = lv.spawn, bd = -1; for (let c = 0; c < w * lv.h; c++) { if (lv.solid[c] || c + w >= w * lv.h || !(lv.solid[c + w] || lv.plat[c + w])) continue; const d = Math.max(Math.abs(c % w - gr[0]), Math.abs(Math.floor(c / w) - gr[1])); if (d > bd) { bd = d; best = c; } } return best; })();
+    const park = st => { st.hero.x = (far % w) * CS + ((CS - K.HERO_W_SUB) >> 1); st.hero.y = Math.floor(far / w) * CS; st.hero.vx = 0; st.hero.vy = 0; st.boss.timer = 0; st.boss.telegraph = 0; st.enemies.forEach(e => { e.hp = 0; }); };
+    s.immortal = 0; s.hero.hearts = 4; s.hero.iframes = 0; let lostAway = 0, k0 = 0;
+    const b2 = toSecond(lv), s2 = b2.s; s2.immortal = 0; s2.hero.hearts = 4; s2.hero.iframes = 0;
+    while (s2.proj.some(p => p.live && p.kind === want[b]) && k0++ < 600) { park(s2); s2.hero.hearts = Math.max(s2.hero.hearts, 1); const h0 = s2.hero.hearts; SB.sim.step(s2, 0); if (s2.hero.hearts < h0) lostAway++; }
+    if (lostAway && Math.max(Math.abs(far % w - gr[0]), Math.abs(Math.floor(far / w) - gr[1])) >= 8) bad.push(tag + ': a bug ' + 'far away lost ' + lostAway + ' hearts');
+    /* a bug in it: set on the attack's middle each step until it hits */
+    let lost = 0, k1 = 0;
+    const box = { [P.BDUST]: [32, 32], [P.BBREATH]: [48, 24], [P.BWHIP]: [16, 48], [P.BPOD]: [16, 16], [P.BFLAME]: [16, 16] }[want[b]];
+    while (k1++ < 90 && !lost) {
+      const p = live()[0]; if (!p) break;
+      s.hero.x = p.x + ((box[0] * K.SUB - K.HERO_W_SUB) >> 1); s.hero.y = p.y + (box[1] * K.SUB - K.HERO_H_SUB) - 6 * K.SUB; s.hero.vx = 0; s.hero.vy = 0; s.boss.shove = 0; s.boss.near = 0;
+      s.enemies.forEach(e => { e.hp = 0; });
+      const h0 = s.hero.hearts; SB.sim.step(s, 0); if (s.hero.hearts < h0) lost = 1;
+    }
+    if (!lost) bad.push(tag + ': a bug standing in the attack lost no heart');
+    /* the fall ends them */
+    const b3 = toSecond(lv), s3 = b3.s; SB.sim.hurtBoss(s3, lv, s3.boss.cells.findIndex(c => c >= 0), s3.boss.hp);
+    if (s3.proj.some(p => p.live && p.kind >= P.BDUST && p.kind <= P.BFLAME)) bad.push(tag + ': a second attack outlives the guardian');
+  }
+  t.ok(bad.length === 0 && [0, 1, 2, 3, 4].every(b => seen[b] > 0), 'each of the five tells its second attack, it hits a bug in it and misses a bug away from it, and goes when the guardian falls (rooms ' + JSON.stringify(seen) + ')' + (bad.length ? ': ' + bad.slice(0, 5).join('; ') : ''));
+  /* the rage: under half its HP every cycle runs 3/4 as long */
+  const one = bossBuilds()[0].lv, sr = awake(one), e0 = (() => { sr.boss.cycle = 1; const e = sr.boss.hp; return e; })(); void e0;
+  const full = SB.sim.bossEvery ? SB.sim.bossEvery(sr) : 0; sr.boss.hp = sr.boss.hpMax >> 1; sr.boss.hp -= 1; const low = SB.sim.bossEvery ? SB.sim.bossEvery(sr) : 0;
+  t.eq(low, (full * 3) >> 2, 'under half its HP a cycle of ' + full + ' steps runs ' + low);
+});
+
 group('H-boss-8', 'the shed (DESIGN 7\'s Attic moveset, "sheds 3 moths every 4 s"): awake, a SHED every BOSS_MOTH_EVERY_F steps, each after its TELL; BOSS_MOTH_COUNT moth slots made at create after the level\'s enemies, the same objects through the room (none made in step); a shed fills only dead slots; its moths bank no Dead pixels', t => {
   const T = SB.TUNING, bad = { cadence: [], slots: [], dp: [] };
   let n = 0;
@@ -6516,8 +6555,9 @@ group('H-boss-8', 'the shed (DESIGN 7\'s Attic moveset, "sheds 3 moths every 4 s
     if (s0.enemies.length !== objs.length || s0.enemies.some((e, k) => e !== objs[k])) bad.slots.push(tag + ': the slots changed in step');
     const live = s0.enemies.filter((e, m) => SB.sim.shedSlot(s0, m) && e.hp > 0).length;
     if (live > T.BOSS_MOTH_COUNT) bad.slots.push(tag + ': ' + live + ' shed moths');
-    const { log } = shedLog(lv, 1000), gaps = log.shed.slice(1).map((f, k) => f - log.shed[k]);
-    if (log.shed.length < 4 || gaps.some(g => g !== K.BOSS_MOTH_EVERY_F) || log.shed.some((f, k) => log.tell[k] === undefined || log.tell[k] > f)) bad.cadence.push(tag + ': sheds at ' + log.shed.join(',') + ', tells at ' + log.tell.join(','));
+    /* round 9 step 3: a shed every other cycle, the second attack (BOSS_SECOND_EVERY_F) between them; its own tell in the log */
+    const { log } = shedLog(lv, 2000), gaps = log.shed.slice(1).map((f, k) => f - log.shed[k]);
+    if (log.shed.length < 4 || gaps.some(g => g !== K.BOSS_MOTH_EVERY_F + K.BOSS_SECOND_EVERY_F) || log.shed.some(f => log.tell.indexOf(f - K.BOSS_TELEGRAPH_F) < 0)) bad.cadence.push(tag + ': sheds at ' + log.shed.join(',') + ', tells at ' + log.tell.join(','));
     /* a shed moth killed: no Dead pixels; the slot refilled at the next shed */
     const s = awake(lv);
     while (!(s.ev & SB.sim.EV.SHED)) SB.sim.step(s, 0);
@@ -6528,7 +6568,7 @@ group('H-boss-8', 'the shed (DESIGN 7\'s Attic moveset, "sheds 3 moths every 4 s
     while (!(s.ev & SB.sim.EV.SHED)) SB.sim.step(s, 0);
     if (s.enemies[m].hp <= 0) bad.slots.push(tag + ': a dead slot not refilled');
   }
-  t.eq(bad.cadence.length, 0, 'over ' + n + ' rooms the guardian sheds every ' + K.BOSS_MOTH_EVERY_F + ' steps, each after its TELL' + (bad.cadence.length ? ': ' + bad.cadence.slice(0, 4).join('; ') : ''));
+  t.eq(bad.cadence.length, 0, 'over ' + n + ' rooms the guardian sheds every ' + (K.BOSS_MOTH_EVERY_F + K.BOSS_SECOND_EVERY_F) + ' steps (its second attack between), each after its TELL' + (bad.cadence.length ? ': ' + bad.cadence.slice(0, 4).join('; ') : ''));
   t.eq(bad.slots.length, 0, 'its ' + T.BOSS_MOTH_COUNT + ' moth slots are made at create, never in step, and refilled when dead' + (bad.slots.length ? ': ' + bad.slots.slice(0, 4).join('; ') : ''));
   t.eq(bad.dp.length, 0, 'a shed moth killed banks nothing (no farm)' + (bad.dp.length ? ': ' + bad.dp.slice(0, 4).join('; ') : ''));
 });

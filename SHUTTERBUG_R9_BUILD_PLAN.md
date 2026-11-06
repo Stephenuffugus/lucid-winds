@@ -29,9 +29,9 @@ gameplay mechanics are leaving a lot to be desired." The shove is live (sb-m2-11
 
 ## STATE (the builder updates this block; one line per step)
 - Step 0: DONE. 49 keys cut and spliced (198 names, page 1.80 MB), cap 200 in the cutter, lint, H-spr-1, redwatch and the astra gate; fixture map holds round 9. Palette clean, no Sun, source grids equal.
-- Step 1:
-- Step 2:
-- Step 3:
+- Step 1: DONE. Five bodies by biome and pose (one mask), remnant at the fall.
+- Step 2: DONE. The shove in her tiles on an Ink line, one phase.
+- Step 3: DONE. Second attacks alternate with the first (BDUST, BBREATH, BWHIP, BPOD, BFLAME), told by her marks; under half HP a cycle runs 3/4 (added: a fight that speeds up); boss schema holds near, shove, cycle, the mark. H-boss-8 re rated, H-boss-12 new.
 - Step 4:
 - Step 5:
 - Step 6:
