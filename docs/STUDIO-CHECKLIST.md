@@ -6,6 +6,18 @@ that finishes an item ticks it here too, and when the plan changes, both change.
 Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (plans with him).
 
 ## You, now
+### 6 Nov, from your notes on the five games (Fable; everything below is built, checked and committed; nothing is live until you run a line)
+- [ ] Run the Tomato Man line: `! bash /home/codespace/tm-drafts/deploy-tomato-man-nov06.sh` (Opus's two draw fixes plus the sun wash image; nine levels no longer start in the sun; stars grabbed in the shade; awnings on poles; the LEVEL LAB at ?lab=1) (you)
+- [ ] Run the Sunforge line: `! bash /home/codespace/sf-drafts/deploy-sunforge-m2.sh` (the Tetris lock delay, drag to move on the board, faster buttons) (you)
+- [ ] Run the Flatulence Fighter line: `! bash /home/codespace/ff-drafts/deploy-ff-m3.sh` (six pads, calls that move and light on their own, the new fart and squeak sounds) (you)
+- [ ] Run the Shutterbug line: `! bash /home/codespace/sb-drafts/sb-m2-11/deploy-sb-m2-11.sh` (the guardian shoves a bug that camps beside it) (you)
+- [ ] Give Astra the Sunforge round 2 kickoff, the blocks: Drive Astra/Sunforge/Round 2 (you)
+- [ ] Give Astra the Shutterbug round 9 kickoff, five guardians and ten enemy kinds: Drive Astra/Shutterbug/Round 9 (you)
+- [ ] Give Astra the Flatulence Fighter round 2 kickoff, now with the six pads: Drive Astra/Flatulence Fighter/Round 2 (you)
+- [ ] Open Tomato Man with ?lab=1 on the Pixel and fix one level you hate; Copy JSON and paste it to Fable (you)
+- [ ] Pick Tomato Man's real gameplay from docs/briefs/tomato-man/TOMATO-MAN-NEXT-NOV06.md: the seed toss, sun critters, the squirt (you)
+- [ ] Say if the new fart sounds are funny on the Pixel; if not, a pack of recorded ones (CC0, freesound) is the next step (you)
+- [ ] Keepsies m3 steps 2 to 12 (Opus; step 1 is in, 14e09fcea)
 - [ ] Drop keepsies-round2-materials.zip into Drive Astra/Keepsies/Round 2 (you)
 - [x] Give Astra the Keepsies round 2 kickoff (you: back 5 Nov 23:10, vaulted, unpacked at /workspaces/keepsies-astra-round2)
 - [ ] Keepsies rework from his 5 Nov verdict (the view, the circle three times bigger, the aim that skips, the flick): KEEPSIES_M3_BUILD_PLAN.md (Opus; step 0 in, step 1 as a patch, steps 2 to 12 next)
@@ -26,6 +38,9 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 
 ## Astra queue (sent, back, wired)
 - [x] Tomato Man: back 5 Nov as v1 and v2, vaulted, TOMATO_MAN_BUILD_PLAN.md written (Astra, Fable)
+- [ ] Sunforge round 2, the blocks: brief and kickoff in Drive Astra/Sunforge/Round 2 (Astra)
+- [ ] Shutterbug round 9, five guardians, second attacks, ten enemy kinds, the harder room pieces: Drive Astra/Shutterbug/Round 9 (Astra)
+- [ ] Flatulence Fighter round 2 with the six pads: Drive Astra/Flatulence Fighter/Round 2 (Astra)
 - [ ] Sixfold: brief ready (Astra)
 - [x] Sunforge: back 5 Nov, the Sunbreaker pick, vaulted, SUNFORGE_BUILD_PLAN.md written (Astra, Fable)
 - [ ] Aura Farm: brief ready (Astra)
