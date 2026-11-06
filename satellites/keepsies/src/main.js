@@ -45,8 +45,8 @@ import { art, loadIcons, ic } from './render/art.js?v=20261105b';
 import { face } from './render/portraits.js?v=20261105b';
 import * as PROV from './meta/provenance.js?v=20261105b';
 import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261105b';
-import { makeStatueMesh, markGhost, disposeStatueMesh } from './render/statues.js?v=20261105b';
-import { SHAPES, SHAPE_ORDER, PER_PLAYER, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261105b';
+import { makeStatueMesh, makeMoveMarks, markGhost, disposeStatueMesh } from './render/statues.js?v=20261105b';
+import { SHAPES, SHAPE_ORDER, PER_PLAYER, MOVE_MAX, scaleFor, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261105b';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -91,6 +91,7 @@ const ART_VARS = {
   '--pip-empty': 'ui/pip_empty.svg', '--pip-lit': 'ui/pip_lit.svg', '--chip': 'ui/player_chip.svg',
   '--hr-on': 'ui/house_rule_on.svg', '--hr-off': 'ui/house_rule_off.svg', '--voice': 'ui/voice_bubble.svg',
   '--toast': 'ui/technique_toast.svg', '--result': 'ui/result_card.svg', '--scope': 'ui/minimap_frame.svg',
+  '--tray': 'ui/tray.png', '--tile-idle': 'ui/tile_idle.png', '--tile-pressed': 'ui/tile_pressed.png', '--tile-drag': 'ui/tile_dragging.png', '--not-here': 'ui/not_here_chip.png',
   '--ret-a': 'ui/reticle_settling.svg', '--ret-b': 'ui/reticle_settled.svg', '--aim-dash': 'ui/aim_dash.svg', '--aim-cap': 'ui/aim_cap.svg',
   '--tier-common': 'ui/tier_common.svg', '--tier-uncommon': 'ui/tier_uncommon.svg', '--tier-rare': 'ui/tier_rare.svg',
   '--tier-epic': 'ui/tier_epic.svg', '--tier-grail': 'ui/tier_grail.svg'
@@ -217,7 +218,8 @@ async function boot() {
     ['scopeBtn', 'zoom', 'Zoom'], ['snapHelp', 'the_snap', 'The snap'], ['topDown', 'top_down', 'Look'],
     ['pause', 'pause', 'Pause'], ['collBack', 'back', 'Back'], ['inspectBack', 'back', 'Back'],
     ['again', 'rematch', 'Rematch'], ['toTitle', 'home', 'Home'], ['resume', 'resume', 'Resume'],
-    ['calibSkip', 'lag', 'I have played marbles before']]) label(id, icon, text);
+    ['calibSkip', 'lag', 'I have played marbles before'],
+    ['stUndo', 'undo', 'Undo'], ['stConfirm', 'confirm', 'Confirm'], ['moveStatue', 'move_statue', 'Move']]) label(id, icon, text);
   $('boot').hidden = true;
   paintWallet();
   showScreen('title');
@@ -1215,6 +1217,30 @@ function lagAndFrame() {
 function syncStatues() {
   for (const m of G.statueMeshes || []) { G.stage.scene.remove(m); disposeStatueMesh(m); }
   G.statueMeshes = (G.R ? G.R.statues() : []).map(s => { const g = makeStatueMesh(s); G.stage.scene.add(g); return g; });
+  const box = $('stBadges');
+  box.textContent = '';
+  (G.R ? G.R.statues() : []).forEach((s, i) => {
+    const b = document.createElement('div');
+    b.className = 'stBadge'; b.hidden = true; b.dataset.i = i; b.dataset.owner = s.owner;
+    b.innerHTML = ic(s.owner === 0 ? 'owner_you' : 'owner_dusty');
+    box.appendChild(b);
+  });
+}
+
+/** m3 step 10: in the whole ring view a surface bar is under a pixel, so a 12 px badge stands over each statue: one bar you, two an opponent */
+function updateStatueBadges() {
+  const box = $('stBadges');
+  if (!box.firstChild) return;
+  const whole = !!G.R && G.screen === 'match' && (G.topDown || !!G.statuesPlacing || !!G.moving) && G.rig.state.elevationDeg > 80;
+  const list = whole ? G.R.statues() : null;
+  for (const b of box.children) {
+    const s = list && list[+b.dataset.i];
+    const here = s && !(G.moving && G.moving.index === +b.dataset.i && G.moveDrag != null) ? G.rig.project(s.x, SHAPES[s.shape].height, s.z) : null;
+    if (!here || !here.visible) { b.hidden = true; continue; }
+    b.hidden = false;
+    b.style.left = (here.x - 6) + 'px';
+    b.style.top = (here.y - 16) + 'px';
+  }
 }
 
 function dropGhost() {
@@ -1249,7 +1275,26 @@ function ghostAt(shape, cx, cy) {
   if (!verdict.ok) placeNot(cx, cy);
   return { shape, x: at.x, z: at.z, ok: verdict.ok };
 }
-function placeNot(cx, cy) { const n = $('stNot'); n.style.left = Math.round(cx) + 'px'; n.style.top = Math.round(cy - 64) + 'px'; }
+/* m3 step 10: her 112 by 40 chip above the finger, toward the free side, with a short leader to it; under the finger when the names leave no room above */
+function placeNot(cx, cy) {
+  const n = $('stNot'), W = G.stage.width, dir = cx < W / 2 ? 1 : -1;
+  const x = clamp(cx + dir * 62, 60, W - 60), up = cy - 92 >= 62, y = up ? cy - 72 : cy + 72;
+  n.style.left = Math.round(x - 56) + 'px'; n.style.top = Math.round(y - 20) + 'px';
+  const fx = cx + dir * 8, fy = up ? cy - 26 : cy + 26, sx = x, sy = up ? y + 20 : y - 20, dx = fx - sx, dy = fy - sy;
+  n.style.setProperty('--ll', Math.hypot(dx, dy).toFixed(1) + 'px');
+  // the leader leaves the chip's foot (or its head, under the finger)
+  n.style.setProperty('--la', (Math.atan2(-dx, dy) * 180 / Math.PI).toFixed(1) + 'deg');
+  n.classList.toggle('below', !up);
+}
+function moveMarks(s) {
+  dropMoveMarks();
+  if (!s) return;
+  G.moveMarks = makeMoveMarks(s, MOVE_MAX * scaleFor(G.R.ringRadius));
+  G.stage.scene.add(G.moveMarks);
+}
+function dropMoveMarks() {
+  if (G.moveMarks) { G.stage.scene.remove(G.moveMarks); disposeStatueMesh(G.moveMarks); G.moveMarks = null; }
+}
 
 function marblesNow() {
   const out = [];
@@ -1275,10 +1320,14 @@ function paintTray() {
   $('stTiles').hidden = !P;
   $('stConfirm').disabled = !G.stPending;
   $('stUndo').disabled = !G.stPending && !mv;
-  if (P) $('stLine').textContent = mine
-    ? 'Your statue, ' + (P.placed / 2 + 1) + ' of 2. Drag one onto the dirt, a foot clear of the cross and the line.'
-    : 'Dusty Coyle is placing one.';
-  else if (mv) $('stLine').textContent = G.stPending ? 'Confirm the move, or Undo.' : 'Drag one of your statues a short way. It costs the turn.';
+  $('statueTray').classList.toggle('moveMode', !P && !!mv);
+  if (P) {
+    $('stHead').textContent = mine ? 'Your statue, ' + (P.placed / 2 + 1) + ' of 2' : 'Dusty Coyle is placing one';
+    $('stLine').textContent = mine ? 'Drag one onto the dirt, clear of the cross.' : '';
+  } else if (mv) {
+    $('stHead').textContent = 'Move a statue';
+    $('stLine').textContent = G.stPending ? 'Confirm the move, or Undo.' : 'Drag one of yours a short way. It costs the turn.';
+  }
 }
 
 /** Confirm: the pending statue goes down for good (or the move is made), then whoever is next. */
@@ -1345,7 +1394,7 @@ function startMove() {
 }
 function endMove() {
   if (G.moving && G.moving.index != null && G.statueMeshes[G.moving.index]) G.statueMeshes[G.moving.index].visible = true;
-  G.moving = null; G.moveDrag = null; G.stPending = null; dropGhost();
+  G.moving = null; G.moveDrag = null; G.stPending = null; dropGhost(); dropMoveMarks();
   document.body.classList.remove('statuing');
   $('statueTray').hidden = true;
 }
@@ -1356,19 +1405,21 @@ function attachStatues(canvas) {
   for (const shape of SHAPE_ORDER) {
     const b = document.createElement('button');
     b.type = 'button'; b.id = 'st-' + shape; b.className = 'stTile';
-    b.textContent = SHAPES[shape].name;
+    b.innerHTML = ic(shape) + '<span class="lbl">' + SHAPES[shape].name + '</span>';
     b.addEventListener('pointerdown', (e) => {
       if (!G.statuesPlacing || G.statuesPlacing.placed % 2 !== 0) return;
       e.preventDefault();
       try { b.setPointerCapture(e.pointerId); } catch (err) { }
       dropGhost(); G.stPending = null;
       G.stDrag = { id: e.pointerId, shape, last: null };
+      b.classList.add('dragging');
     });
     b.addEventListener('pointermove', (e) => { if (G.stDrag && G.stDrag.id === e.pointerId) G.stDrag.last = ghostAt(G.stDrag.shape, e.clientX, e.clientY); });
     const lift = (e) => {
       if (!G.stDrag || G.stDrag.id !== e.pointerId) return;
       const last = e.type === 'pointercancel' ? null : ghostAt(G.stDrag.shape, e.clientX, e.clientY);
       G.stDrag = null;
+      b.classList.remove('dragging');
       // ⛔ NOTHING IS PLACED BY A TAP: only a drag that lifts on an allowed spot leaves a statue, and only Confirm keeps it
       if (last && last.ok) { G.stPending = last; $('stNot').hidden = true; }
       else dropGhost();
@@ -1397,6 +1448,7 @@ function attachStatues(canvas) {
     G.moveDrag = e.pointerId; G.moving.index = best;
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { }
     if (G.statueMeshes[best]) G.statueMeshes[best].visible = false;
+    moveMarks(G.R.statues()[best]);
     G.stPending = null;
     G.moving.last = ghostAt(G.R.statues()[best].shape, e.clientX, e.clientY);
   }, { capture: true });
@@ -1409,7 +1461,7 @@ function attachStatues(canvas) {
     G.moveDrag = null;
     const last = e.type === 'pointercancel' ? null : ghostAt(G.R.statues()[G.moving.index].shape, e.clientX, e.clientY);
     if (last && last.ok) { G.stPending = last; $('stNot').hidden = true; }
-    else { dropGhost(); if (G.statueMeshes[G.moving.index]) G.statueMeshes[G.moving.index].visible = true; G.moving.index = null; }
+    else { dropGhost(); dropMoveMarks(); if (G.statueMeshes[G.moving.index]) G.statueMeshes[G.moving.index].visible = true; G.moving.index = null; }
     paintTray();
   };
   canvas.addEventListener('pointerup', liftMove, { capture: true });
@@ -2213,6 +2265,7 @@ function frame(now) {
     updateGrabRing();
     updateAimLine();
     updateCalibTarget();
+    updateStatueBadges();
     if (!G.usePullback && G.knuckle) {
       const ks = G.knuckle.state();
       if (ks.bracing) onBrace(ks);
@@ -2300,6 +2353,7 @@ function installDevHook() {
     pouch: (kind) => openPouch(kind),
     /* STATUES (m2): the record, the placement state, and where a spot on the dirt is on the screen */
     statues: () => (G.R ? G.R.statues().map(s => Object.assign({}, s)) : []),
+    placeStatueNow: (shape, x, z) => { G.stPending = { shape, x, z, ok: true }; confirmStatue(); },
     placing: () => (G.statuesPlacing ? { placed: G.statuesPlacing.placed, pending: G.stPending ? Object.assign({}, G.stPending) : null } : null),
     moving: () => (G.moving ? { index: G.moving.index, pending: G.stPending ? Object.assign({}, G.stPending) : null } : null),
     spotsFor: (shape) => (G.R ? legalSpots(shape, G.R.ringRadius, G.R.statues(), G.R.lay) : []),

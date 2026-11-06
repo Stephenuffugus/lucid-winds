@@ -137,18 +137,33 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 #iProv .last{display:block;color:var(--chalk)}
 #iProv .hist{list-style:none;margin:6px 0 0;padding:0;font-size:.8rem;color:var(--muted)}
 /* ---- m2: the statues' tray (steps 9 and 10) ---- */
-#statueTray{position:absolute;left:0;right:0;bottom:0;padding:10px 12px calc(12px + var(--sb));pointer-events:auto;
-  background:linear-gradient(0deg,rgba(13,16,12,.96),rgba(13,16,12,.88) 80%,rgba(13,16,12,0));z-index:5}
-#stLine{margin:0 0 8px;text-align:center;font-size:.86rem;color:var(--chalk)}
-#stTiles{display:flex;gap:8px;justify-content:center;margin-bottom:8px}
-.stTile{min-width:72px;min-height:48px;padding:0 10px;font-size:.8rem;letter-spacing:.04em;touch-action:none;
-  background:rgba(232,220,200,.08);color:var(--chalk);border:1px solid rgba(200,168,75,.55)}
+/* m3 step 10: Astra's plate, 375x190 CSS, nine slice 32; every band below is her anchor less the 16 px border */
+#statueTray{position:absolute;left:0;right:0;bottom:0;height:calc(190px + var(--sb));box-sizing:border-box;pointer-events:auto;
+  border:16px solid transparent;border-image:var(--tray) 32 / 16px stretch;z-index:5}
+#statueTray.moveMode{height:calc(122px + var(--sb))}
+#stHead{position:absolute;left:0;right:0;top:-4px;height:20px;margin:0;line-height:20px;text-align:center;font-size:.92rem;font-weight:600;color:var(--chalk)}
+#stLine{position:absolute;left:0;right:0;top:20px;height:20px;margin:0;line-height:20px;text-align:center;font-size:.8rem;color:var(--chalk);opacity:.86;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#stTiles{position:absolute;left:14.5px;right:14.5px;top:51px;display:flex;justify-content:space-between}
+.stTile{position:relative;flex:0 0 56px;width:56px;height:56px;min-width:0;min-height:0;padding:0;box-sizing:border-box;touch-action:none;background:none;color:var(--chalk);
+  border:10px solid transparent;border-image:var(--tile-idle) 20 / 10px stretch}
+.stTile:active,.stTile.pressed{border-image-source:var(--tile-pressed)}
+.stTile.dragging{border-image-source:var(--tile-drag)}
+.stTile .ic{position:absolute;left:6px;top:0;width:24px;height:24px;margin:0}
+.stTile .lbl{position:absolute;left:-4px;right:-4px;top:28px;height:12px;line-height:12px;font-size:10.5px;letter-spacing:.02em;text-align:center}
 .stTile:disabled{opacity:.4}
-.stBtns{display:flex;gap:10px;justify-content:center}
-.stBtns button{min-height:48px;min-width:120px}
-#stNot{position:absolute;transform:translateX(-50%);padding:6px 12px;border-radius:8px;pointer-events:none;z-index:6;
-  background:rgba(13,16,12,.9);color:#d86a5a;border:1px solid #d86a5a;font-size:.9rem;letter-spacing:.04em}
-#moveStatue{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(122px + var(--sb));min-height:48px;pointer-events:auto}
+.stBtns{position:absolute;left:0;right:0;bottom:calc(var(--sb) - 13px);display:flex;gap:8px}
+.stBtns button{height:48px;min-height:48px;min-width:0;padding:0 8px;white-space:nowrap}
+#stUndo{flex:0 0 105px}
+#stConfirm{flex:1 1 0}
+#stNot{position:absolute;width:112px;height:40px;box-sizing:border-box;border:12px solid transparent;border-image:var(--not-here) 24 / 12px stretch;
+  line-height:16px;text-align:center;font-size:.85rem;letter-spacing:.04em;color:#e0806f;pointer-events:none;z-index:6}
+
+#stNot::after{content:'';position:absolute;left:calc(50% - .75px);top:calc(100% + 12px);width:1.5px;height:var(--ll,0);background:rgba(234,223,201,.85);transform-origin:50% 0;transform:rotate(var(--la,0deg))}
+#stNot.below::after{top:-12px}
+.stBadge{position:absolute;width:12px;height:12px;border-radius:3px;background:#23291e;color:#eadfc9;pointer-events:none;z-index:4;overflow:hidden}
+.stBadge .ic{display:block;width:12px;height:12px;margin:0;stroke-width:3}
+/* m3 step 10: the Zoom's mirror, out of the 154 px circle it stood on */
+#moveStatue{position:absolute;left:10px;top:calc(60px + env(safe-area-inset-top,0px));min-height:48px;pointer-events:auto;font-size:.74rem;padding:0 10px;white-space:nowrap}
 /* while statues are placed or moved, the tray IS the bottom of the screen: the shot's controls step aside */
 body.statuing #corners,body.statuing #houseRules,body.statuing #aimNudge,body.statuing #scopeBtn,body.statuing #moveStatue,body.statuing #say{display:none}
 /* the render sits INSIDE her frame (its edges carry her dark fill, which cropped the marble when it lay over it) */
@@ -589,11 +604,13 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   <button id="scopeBtn" hidden>Zoom</button>
   <!-- STATUES (steps 9 and 10): the tray at the bottom, a tile a shape, Confirm and Undo; Not here follows the finger -->
   <div id="statueTray" hidden>
+    <p id="stHead"></p>
     <p id="stLine"></p>
     <div id="stTiles"></div>
     <div class="stBtns"><button id="stUndo" class="quiet">Undo</button><button id="stConfirm">Confirm</button></div>
   </div>
   <div id="stNot" hidden>Not here</div>
+  <div id="stBadges"></div>
   <button id="moveStatue" class="quiet" hidden>Move a statue</button>
   <div id="corners">
     <button id="snapHelp">The snap</button>
