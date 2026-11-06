@@ -1,0 +1,84 @@
+/* Tomato Man's real gameplay in numbers (6 Nov): THE SEED TOSS and SUN CRITTERS through the game's own update, clock held, no image opened.
+ *   (cd /workspaces/Tomato_Man && python3 -m http.server 8778 >/dev/null 2>&1 &)     serve the clone first
+ *   node tools/tomato-man-tests/gameplay.mjs [seed|critters]
+ * Ends GAMEPLAY OK or GAMEPLAY FAILED. One browser at a time on this box. */
+import { createRequire } from 'node:module';
+const require = createRequire('/workspaces/sws-tools/package.json');
+const puppeteer = require('puppeteer');
+const only = process.argv[2] || null;
+const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-gpu', '--autoplay-policy=no-user-gesture-required'], protocolTimeout: 120000 });
+const page = await browser.newPage();
+const errs = [];
+page.on('pageerror', e => errs.push(e.message));
+await page.setViewport({ width: 412, height: 915, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+const TUT = ['move','shade','aloe','find','dash','seed','critter','mirage','shadeDrop','checkpoint','burn','hot','spf','cart','cloud','wilt','ice','lunge','eclipse'];
+const SEEN = JSON.stringify({ seenHowto: true, tut: Object.fromEntries(TUT.map(k => [k, true])) });
+await page.evaluateOnNewDocument(s => { try { localStorage.setItem('tomatoman_save_v1', s); } catch (e) {} }, SEEN);
+await page.goto('http://localhost:8778/?tmtest=1', { waitUntil: 'networkidle0', timeout: 90000 });
+await new Promise(r => setTimeout(r, 900));
+let bad = 0;
+const say = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) bad++; };
+const ev = (fn, ...a) => page.evaluate(fn, ...a);
+/* a helper in the page: an open sunny spot far from any shade at the sun's centre swing */
+await ev(() => { window.__sunny = (R) => { const T = __TM, r = T._run(), L = r.L; for (let y = L.worldH - 200; y > 200; y -= 37) for (let x = 200; x < L.worldW - 200; x += 41) { let ok = true; for (let a = 0; a < 6.28 && ok; a += 0.5) { if (T.shadedGeom(x + Math.cos(a) * (R || 90), y + Math.sin(a) * (R || 90))) ok = false; } if (ok && !T.shadedGeom(x, y)) return { x, y }; } return null; }; });
+
+/* a sunny point about d px from a critter whose straight line to it is in the light too, so it can charge */
+await ev(() => { window.__sunNear = (c, d) => { const T = __TM; for (const k of [1, 0.85, 1.15, 0.7, 1.3]) for (let a = 0; a < 6.28; a += 0.26) { const x = c.x + Math.cos(a) * d * k, y = c.y + Math.sin(a) * d * k; let ok = true; for (let q = 1; q <= 12 && ok; q++) if (T.shadedGeom(c.x + (x - c.x) * q / 12, c.y + (y - c.y) * q / 12)) ok = false; if (ok) return { x, y }; } return { x: c.x + d, y: c.y }; }; });
+
+if (!only || only === 'seed') {
+  const a = await ev(() => { const T = __TM; T.hold(true); T.startLevel(0); T.seek(0.5); const r = T._run(), b = document.getElementById('bSeed').getBoundingClientRect(), d = document.getElementById('bDash').getBoundingClientRect(); return { seeds: r.seeds, txt: document.getElementById('cSeed').textContent, b: { l: b.left, r: b.right, t: b.top, bo: b.bottom, w: b.width }, d: { l: d.left, r: d.right, t: d.top, bo: d.bottom } }; });
+  say(a.seeds === 3 && a.txt === '3', 'three seeds a level, the button says ' + a.txt);
+  say(a.b.w >= 48 && a.b.l >= 206 && a.b.r <= a.d.l + 1 && a.b.bo > a.d.t && a.b.t < a.d.bo, 'SEED stands beside DASH, on the right half: x ' + a.b.l.toFixed(0) + ' to ' + a.b.r.toFixed(0) + ', DASH from ' + a.d.l.toFixed(0));
+  const b = await ev(() => { const T = __TM, r = T._run(), s = window.__sunny(120); T.P.x = s.x; T.P.y = s.y; T.P.face = -Math.PI / 2; T.P.exp = 0; r.graceT = 0; r.screenT = 99; T.seek(0.05); const f = r.feel, tx = T.P.x, ty = T.P.y - f.seedRange; const before = T.shadedGeom(tx, ty); T.toss(); const n = r.seeds, flying = r.tosses.length; T.seek(f.seedRange / f.seedSpeed + 0.3); const sp = r.saplings[0]; const on = sp ? { x: sp.x, y: sp.y, r: sp.r } : null, shaded = T.shadedGeom(tx, ty), edge = T.shadedGeom(tx + 40, ty); T.seek(1.8); const still = r.saplings.length; T.seek(1.1); const after = r.saplings.length, shadedAfter = T.shadedGeom(tx, ty); return { before, n, flying, on, tx, ty, shaded, edge, still, after, shadedAfter, R: f.saplingR }; });
+  say(b.n === 2 && b.flying === 1, 'a tap throws a seed: ' + b.n + ' left, one in the air');
+  say(!!b.on && Math.abs(b.on.x - b.tx) < 1 && Math.abs(b.on.y - b.ty) < 1, 'a sapling sprouts where it lands, the facing way: ' + JSON.stringify(b.on));
+  say(!b.before && b.shaded && b.edge, 'its small round shade makes shade of open sun (radius ' + b.R + ')');
+  say(b.still === 1 && b.after === 0 && !b.shadedAfter, 'and it lasts three seconds: alive at about 2.2 s, gone at 3.3');
+  const c = await ev(() => { const T = __TM; T.hold(true); T.startLevel(0); T.seek(0.5); const r = T._run(), s = window.__sunny(120); T.P.x = s.x; T.P.y = s.y; r.graceT = 0; r.screenT = 0; T.P.face = -Math.PI / 2; T.P.exp = 0; r.saplings.length = 0; const f = r.feel; /* stand on it: a sapling at his feet */ r.saplings.push({ x: s.x, y: s.y, t: 0, r: f.saplingR }); T.seek(2.2); const under = T.P.exp; T.seek(1.1); const out = T.P.exp; return { under, out }; });
+  say(c.under === 0 && c.out > 0, 'standing on one cools him: exposure ' + c.under.toFixed(1) + ' under it, ' + c.out.toFixed(1) + ' after it wilts');
+  const d = await ev(() => { const T = __TM; T.hold(true); T.startLevel(0); T.seek(0.5); const r = T._run(); r.screenT = 99; T.toss(); T.toss(); T.toss(); const none = r.seeds; T.toss(); const flying = r.tosses.length; const txt = document.getElementById('cSeed').textContent, empty = document.getElementById('bSeed').classList.contains('empty'); T.seek(0.1); r.screenT = 0; T.burn(); const afterBurn = r.seeds; r.seeds = 0; const L = r.L, cp = L.checkpoints[1] || L.checkpoints[0]; r.cpHit = []; T.P.x = cp[0]; T.P.y = cp[1]; r.screenT = 9; T.seek(0.05); const afterCp = r.seeds; return { none, flying, txt, empty, afterBurn, afterCp }; });
+  say(d.none === 0 && d.flying === 3 && d.txt === '0' && d.empty, 'the fourth tap throws nothing, the button shows 0 and empty');
+  say(d.afterBurn === 3, 'a respawn hands the three back');
+  say(d.afterCp === 3, 'and a checkpoint refills them');
+  const e = await ev(() => { const T = __TM, i = T.LEVELS.findIndex(l => l.sun && l.sun.lunge); T.hold(true); T.startLevel(i); const r = T._run(); r.screenT = 999; let g = 0; while (r.lunge.state !== 'warn' && g++ < 900) T.seek(1 / 60); const reach = r.lunge.reach, warned = r.lunge.state; T.P.face = 0; T.toss(); T.seek(0.2); const burst = r.lunge.calm, st0 = r.lunge.state, n = r.bursts; let strike = 0; for (let k = 0; k < 110; k++) { T.seek(1 / 60); if (r.lunge.state !== 'idle') strike++; } const calmLeft = r.lunge.calm; g = 0; while (r.lunge.state === 'idle' && g++ < 400) T.seek(1 / 60); const next = r.lunge.state, wait = g / 60, sap = r.saplings.length; return { name: T.LEVELS[i].name, reach, warned, burst, st0, n, strike, calmLeft, next, wait, sap }; });
+  say(e.warned === 'warn' && e.burst > 1.5 && e.st0 === 'idle' && e.n === 1, 'in ' + e.name + ': a seed into the ring (reach ' + e.reach + ') bursts the lunge: calm ' + (e.burst || 0).toFixed(2) + ' s, the state ' + e.st0);
+  say(e.strike === 0 && e.next === 'warn' && e.wait < 0.6, 'two seconds of calm, no strike in them, then it winds up again');
+  say(e.sap === 0, 'and that seed grows no sapling');
+  const f = await ev(() => { const T = __TM; T.hold(true); T.startLevel(0); T.seek(0.5); T.toss(); T.seek(0.15); T.seek(0.3); T.render(); return true; });
+  say(f === true, 'a sapling and a seed in the air draw without an error');
+}
+if (!only || only === 'critters') {
+  const list = await ev(() => { const T = __TM; T.hold(true); const out = []; T.LEVELS.forEach((L, i) => { T.startLevel(i); const r = T._run(); const near = r.critters.filter(c => c.kind === 'scorpion').map(c => { const d = (p) => Math.hypot(c.x - p[0], c.y - p[1]); return Math.min(d(L.start), d(L.exit), ...(L.checkpoints || []).map(d)); }); out.push({ i, w: L.world, s: r.critters.filter(c => c.kind === 'scorpion').length, m: r.critters.filter(c => c.kind === 'mirage').length, near: near.length ? Math.min(...near) : null, shaded: r.critters.filter(c => c.kind === 'scorpion' && T.shadedGeom(c.x, c.y)).length }); }); return out; });
+  console.log('levels by world and index: ' + list.map(l => l.w + ':' + l.s + (l.m ? '+m' : '')).join(' '));
+  say(list.filter(l => l.w === 0).every(l => l.s === 0 && l.m === 0), 'Morning Tide stays the sun alone');
+  say(list.filter(l => l.w > 0).some(l => l.s > 0) && list.some(l => l.m > 0), 'scorpions from Midday Blaze, the mirage from the Dunes');
+  say(list.every(l => l.near === null || l.near >= 240), 'no scorpion lives within 240 px of a start, a checkpoint or the flag (nearest ' + Math.min(...list.filter(l => l.near !== null).map(l => l.near)).toFixed(0) + ')');
+  say(list.every(l => l.shaded === 0), 'every scorpion starts in the light');
+  const i2 = list.find(l => l.s > 0).i;
+  const g = await ev((i) => { const T = __TM; T.hold(true); T.startLevel(i); const r = T._run(), c = r.critters.find(q => q.kind === 'scorpion'); T.seek(1.2); r.graceT = 0; r.screenT = 0;
+    /* patrol: it walks its lane */ T.P.x = 40; T.P.y = 40; T.P.exp = 0; r.screenT = 99; let walked = 0, lx = c.x, ly = c.y; for (let q = 0; q < 90; q++) { T.seek(1 / 60); walked += Math.hypot(c.x - lx, c.y - ly); lx = c.x; ly = c.y; } const st0 = c.state; r.screenT = 0;
+    /* hunt: in the sun near it */ const near = window.__sunNear(c, 200); T.P.x = near.x; T.P.y = near.y; const sunny = !T.shadedGeom(T.P.x, T.P.y); T.P.exp = 0; const d0 = Math.hypot(T.P.x - c.x, T.P.y - c.y); T.seek(0.5); const hunt = c.state, d1 = Math.hypot(T.P.x - c.x, T.P.y - c.y), exp1 = T.P.exp; T.P.exp = 0;
+    /* a sting */ T.P.x = c.x + 10; T.P.y = c.y; T.P.vx = 0; T.P.vy = 0; const e0 = T.P.exp; T.seek(0.05); const stung = T.P.exp - e0, stateAfter = c.state; T.P.exp = 0;
+    return { walked, st0, sunny, hunt, d0, d1, stung, stateAfter, exp1 }; }, i2);
+  say(g.st0 === 'patrol' && g.walked > 30, 'a scorpion patrols its lane: ' + g.walked.toFixed(0) + ' px in 1.5 s');
+  say(g.sunny && g.hunt === 'hunt' && g.d1 < g.d0, 'it hunts him in the sun: ' + g.d0.toFixed(0) + ' px down to ' + g.d1.toFixed(0) + ' in half a second');
+  say(g.stung >= 30, 'a sting costs ' + g.stung.toFixed(0) + ' exposure, then it backs off (' + g.stateAfter + ')');
+  const h = await ev((i) => { const T = __TM; T.hold(true); T.startLevel(i); const r = T._run(), c = r.critters.find(q => q.kind === 'scorpion'); T.seek(1.2); r.graceT = 0; r.screenT = 0; const near = window.__sunNear(c, 170); T.P.x = near.x; T.P.y = near.y; T.P.exp = 0; T.seek(0.25); const st0 = c.state;
+    /* into shade: a sapling at his feet is shade too */ r.saplings.push({ x: T.P.x, y: T.P.y, t: 0, r: 80 }); T.seek(0.2); const st1 = c.state; let k = 0; while (c.state !== 'patrol' && k++ < 300) T.seek(1 / 60); const backAfter = k / 60, atHome = Math.hypot(c.x - c.hx, c.y - c.hy); return { st0, st1, backAfter, atHome }; }, i2);
+  say(h.st0 === 'hunt' && h.st1 !== 'hunt', 'reaching shade loses it: ' + h.st0 + ' to ' + h.st1);
+  say(h.backAfter < 3 && h.atHome < 1, 'it sinks and comes back to its lane in ' + h.backAfter.toFixed(1) + ' s');
+  const j = await ev((i) => { const T = __TM; T.hold(true); T.startLevel(i); const r = T._run(), c = r.critters.find(q => q.kind === 'scorpion'); T.seek(1.2); r.graceT = 0; r.screenT = 99; T.P.x = c.x; T.P.y = c.y + 120; T.P.face = -Math.PI / 2; T.toss(); T.seek(0.3); const pinned = c.pin, x0 = c.x, y0 = c.y; T.seek(1.5); const held = Math.hypot(c.x - x0, c.y - y0), left = c.pin; T.seek(0.5); const free = c.pin; return { pinned, held, left, free, sap: r.saplings.length }; }, i2);
+  say(j.pinned > 1.4 && j.held === 0 && j.left > 0, 'a seed pins one for two seconds: pinned ' + j.pinned.toFixed(2) + ', it moved ' + j.held.toFixed(1) + ' px in 1.5 s');
+  say(j.free <= 0, 'and it gets up again');
+  const iM = list.find(l => l.m > 0).i;
+  const m = await ev((i) => { const T = __TM; T.hold(true); T.startLevel(i); const r = T._run(), c = r.critters.find(q => q.kind === 'mirage'); r.critters = [c]; T.seek(1.2); r.graceT = 0; r.screenT = 0; const s = window.__sunny(160) || { x: T.P.x, y: T.P.y }; T.P.x = s.x; T.P.y = s.y; T.P.exp = 0; const f = r.feel; T.keys.d = true; const pos = []; for (let k = 0; k < 36; k++) { T.P.exp = 0; T.seek(1 / 60); pos.push({ x: T.P.x, y: T.P.y, t: r.t }); } T.keys.d = false; const on = c.on, back = pos.find(q => Math.abs(q.t - (r.t - f.mirageDelay)) < 0.02), off = back ? Math.hypot(c.x - back.x, c.y - back.y) : null; const d0 = Math.hypot(T.P.x - c.x, T.P.y - c.y); /* stops: it walks up to him and stings */ const n0 = r.stings || 0; for (let k = 0; k < 90; k++) { T.P.exp = 0; T.seek(1 / 60); } const stung = (r.stings || 0) > n0 ? 1 : 0; const sapl = (r.saplings.push({ x: T.P.x, y: T.P.y, t: 0, r: 80 }), T.seek(0.1), c.on); return { on, off, d0, stung, sapl }; }, iM);
+  say(m.on && m.off !== null && m.off < 12, 'a heat mirage walks his last steps a third of a second behind: ' + (m.off === null ? '?' : m.off.toFixed(1)) + ' px off where he was, ' + m.d0.toFixed(0) + ' px behind him');
+  say(m.stung === 1, 'stand still in the sun and it catches him');
+  say(m.sapl === false, 'reaching shade dissolves it');
+  const n = await ev((i) => { const T = __TM; T.hold(true); T.startLevel(i); const r = T._run(); T.seek(1.2); r.graceT = 0; r.screenT = 99; const c = r.critters[0]; T.P.x = c.x + 80; T.P.y = c.y; T.seek(0.1); T.render(); c.pin = 1; T.render(); c.pin = 0; c.sink = 0.2; T.render(); c.sink = 0; return true; }, i2);
+  say(n === true, 'run, pin and sink all draw without an error');
+}
+say(errs.length === 0, 'page errors ' + errs.length + ' ' + errs.slice(0, 3).join(' | ').slice(0, 300));
+console.log(bad ? 'GAMEPLAY FAILED ' + bad : 'GAMEPLAY OK');
+await browser.close();
+process.exit(bad ? 1 : 0);
