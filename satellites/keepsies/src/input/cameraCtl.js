@@ -39,6 +39,9 @@ export function attachCameraControls(canvas, rig, hooks) {
   function onMove(e) {
     const p = pointers.get(e.pointerId);
     if (!p) return;
+    /* ⛔ THE CLAIM IS RECHECKED ON EVERY MOVE (m3 law 14), not only on the down: a finger the brace or the
+       place drag takes after it went down is the camera's no longer */
+    if (claimed(e.pointerId)) { pointers.delete(e.pointerId); lastPinch = 0; return; }
     const dx = e.clientX - p.x;
     p.x = e.clientX; p.y = e.clientY;
     moved += Math.abs(dx) + Math.abs(e.clientY - p.oy);

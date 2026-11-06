@@ -17,6 +17,7 @@ import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/
 import { attachCameraControls } from './input/cameraCtl.js?v=20261105b';
 import { createKnuckle } from './input/knuckle.js?v=20261105b';
 import { createPullback } from './input/pullback.js?v=20261105b';
+import { attachPlacement } from './input/placement.js?v=20261105b';
 import * as AUDIO from './audio/synth.js?v=20261105b';
 import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261105b';
 import { createRinger } from './game/ringer.js?v=20261105b';
@@ -194,10 +195,13 @@ async function boot() {
   G.pullback.attach();
 
   attachStatues(canvas);   // before the camera: a statue move's finger is claimed first (step 10)
+  /* ⛔ ONE OWNER PER FINGER (m3 law 14): the place drag registers before the camera, and while the thumb is
+     braced the brace owns every finger, so a second finger can neither orbit nor turn the aim */
+  G.place = attachPlacement(canvas, G, { canAim: () => canAim() });
   G.cam = attachCameraControls(canvas, G.rig, {
     isClaimed: (id) => G.knuckle.owns(id) || G.pullback.owns(id) || (G.placeDrag === id) || (G.moveDrag === id)
+      || G.knuckle.state().bracing
   });
-  attachPlacement(canvas);
 
   addEventListener('resize', () => { if (resize(G.stage)) drawNow(); });
   if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (resize(G.stage)) drawNow(); });
@@ -1445,26 +1449,6 @@ const canAim = () => !!G.R && !G.R.state.simulating && !G.R.isAiTurn()
  * commits it and begins the brace. There is no PLACE button: pre commitment over
  * buttons, and one gesture flows straight into the next.
  */
-function attachPlacement(canvas) {
-  canvas.addEventListener('pointerdown', (e) => {
-    if (G.moving || G.statuesPlacing) return;
-    if (!canAim() || G.R.state.phase !== 'place') return;
-    const t = G.R.tawOnScreen(G.rig);
-    const r = canvas.getBoundingClientRect();
-    const x = e.clientX - r.left, y = e.clientY - r.top;
-    if (t && len2(x - t.x, y - t.y) <= t.r * 1.6) return;   // that is a brace, not a placement
-    G.placeDrag = e.pointerId;
-  }, { passive: false });
-  canvas.addEventListener('pointermove', (e) => {
-    if (G.placeDrag !== e.pointerId || !G.R || G.R.state.phase !== 'place') return;
-    const r = canvas.getBoundingClientRect();
-    const frac = clamp((e.clientX - r.left) / Math.max(1, r.width), 0, 1);
-    G.R.setPlaceAngle(G.rig.state.azimuth + Math.PI + (frac - 0.5) * Math.PI * 1.4);
-  });
-  const drop = (e) => { if (G.placeDrag === e.pointerId) G.placeDrag = null; };
-  canvas.addEventListener('pointerup', drop);
-  canvas.addEventListener('pointercancel', drop);
-}
 
 /**
  * ⛔ THE SKYLINE IN THE WIDE SHOT (step 3). The brace camera looks 30 degrees down through a 28 degree lens, so
@@ -2144,7 +2128,8 @@ function frame(now) {
       // the cut also forgets the last shooter's orbit and pinch, BEFORE the frame
       // is computed, or the hard cut would land on the previous player's offsets
       if (snapIt && G.rig.resetUser) G.rig.resetUser();
-      G.R.frameShot(G.rig, snapIt);
+      // the place drag holds the camera still (m3 step 1); the lift lets the frame ease back behind the shooter
+      if (snapIt || !(G.place && G.place.live())) G.R.frameShot(G.rig, snapIt);
       if (snapIt) { G.lastFramedTurn = t; G.rig.update(1 / 60); }
     }
     /* ⛔ TOP DOWN LOOKS AT THE WHOLE PROBLEM. At 1.9 radii over the sports
