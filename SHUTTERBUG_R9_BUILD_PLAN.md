@@ -28,7 +28,7 @@ gameplay mechanics are leaving a lot to be desired." The shove is live (sb-m2-11
 - Nothing from the pack is copied into git but the cut pixel strings the splice writes into SPRITES.
 
 ## STATE (the builder updates this block; one line per step)
-- Step 0:
+- Step 0: DONE. 49 keys cut and spliced (198 names, page 1.80 MB), cap 200 in the cutter, lint, H-spr-1, redwatch and the astra gate; fixture map holds round 9. Palette clean, no Sun, source grids equal.
 - Step 1:
 - Step 2:
 - Step 3:

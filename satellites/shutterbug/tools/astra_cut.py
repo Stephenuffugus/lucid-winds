@@ -46,6 +46,12 @@ NEW_KEYS = {
     'hero_big_dropin': (16, 24, ['descending', 'contact', 'settled']), 'hero_colours_big': (16, 24, None), 'hero_colours_r3_big': (16, 24, None),
     'hero_colours_dash_big': (16, 24, None), 'hero_colours_hurt_big': (16, 24, None), 'hero_colours_squash_big': (20, 20, None), 'hero_colours_stretch_big': (14, 28, None), 'hero_colours_dropin_big': (16, 24, None),
     'hero_colours_r3_dash_big': (16, 24, None), 'hero_colours_r3_hurt_big': (16, 24, None), 'hero_colours_r3_squash_big': (20, 20, None), 'hero_colours_r3_stretch_big': (14, 28, None), 'hero_colours_r3_dropin_big': (16, 24, None),
+    # round 9 (6 Nov, SHUTTERBUG_R9_BUILD_PLAN.md): five guardian bodies, the second attacks and their marks, the shove tiles, ten bugs, the room pieces
+    'boss_moth_mother': (80, 64, ['breathe', 'brace', 'tell', 'hurt', 'down']), 'boss_rime_mass': (80, 64, ['breathe', 'brace', 'tell', 'hurt', 'down']), 'boss_anemone': (80, 64, ['breathe', 'brace', 'tell', 'hurt', 'down']), 'boss_thorn_heart': (80, 64, ['breathe', 'brace', 'tell', 'hurt', 'down']), 'boss_cinder_kiln': (80, 64, ['breathe', 'brace', 'tell', 'hurt', 'down']),
+    'boss_dust_cloud': (32, 32, ['drift0', 'drift1', 'drift2']), 'boss_dust_cloud_tell': (16, 16, ['tell']), 'boss_frost_breath': (48, 24, ['breath0', 'breath1', 'breath2']), 'boss_frost_breath_tell': (16, 16, ['tell']), 'boss_floor_whip': (16, 48, ['rise0', 'rise1', 'rise2']), 'boss_floor_whip_tell': (16, 16, ['tell']), 'boss_seed_pod': (16, 16, ['roll0', 'roll1', 'roll2', 'roll3']), 'boss_seed_pod_tell': (16, 16, ['tell']), 'boss_floor_flame': (16, 16, ['crawl0', 'crawl1', 'crawl2']), 'boss_floor_flame_tell': (16, 16, ['tell']),
+    'fx_shove_attic_edge': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_attic_corner': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_frost_edge': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_frost_corner': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_deep_edge': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_deep_corner': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_bramble_edge': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_bramble_corner': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_ember_edge': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_ember_corner': (16, 16, ['windup', 'flash', 'peak']),
+    'silverfish': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'silverfish_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'thread_spider': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'thread_spider_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'snow_flea': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'snow_flea_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'icicle_bat': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'icicle_bat_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'lamprey': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'lamprey_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'lamp_jelly': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'lamp_jelly_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'bramble_tick': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'bramble_tick_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'seed_wasp': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'seed_wasp_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'cinder_mite': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'cinder_mite_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'ash_moth': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'ash_moth_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']),
+    'conveyor': (16, 16, ['right0', 'right1', 'right2', 'right3', 'left0', 'left1', 'left2', 'left3']), 'crumbling_shelf': (16, 16, ['whole', 'cracked', 'falling', 'gone']), 'swinging_lamp': (96, 96, ['left', 'centre', 'right']), 'window_gust': (16, 48, ['gust0', 'gust1', 'gust2']),
 }
 # ART2: an effect strip, fx_<name>, is named frames: square, 32 or 48 a side, each frame <clip>_<n> with every clip's n
 # running 0, 1, 2 ... in order (Astra's manifest clips); Sun is the hero's and never an effect's
@@ -56,7 +62,7 @@ FX_SIDES = (16, 32, 48, 64)
 # ART3: the beacon's own lighting (fx_beacon_light, round 3) starts on the dark lamp and ends on the lit beacon pixel for
 # pixel, so it carries the beacon's Sun; every other effect stays without it
 # round 5: an fx the brief itself named with plain frames (a, b, c) and a non square size
-FX_PLAIN = ('fx_beacon_refuse', 'fx_trophy_new')   # round 6: the brief named the trophy shine's frames a to d
+FX_PLAIN = ('fx_beacon_refuse', 'fx_trophy_new', 'fx_shove_attic_edge', 'fx_shove_attic_corner', 'fx_shove_frost_edge', 'fx_shove_frost_corner', 'fx_shove_deep_edge', 'fx_shove_deep_corner', 'fx_shove_bramble_edge', 'fx_shove_bramble_corner', 'fx_shove_ember_edge', 'fx_shove_ember_corner')   # round 6: the brief named the trophy shine's frames a to d
 # round 8 (4 Nov, SHUTTERBUG_M2_BUILD_PLAN.md): three effects the brief itself sized off the square, each admitted at its
 # exact size only (the rule widens for these keys, the art is not changed): the fan's wind column, the landing dust,
 # the floor shimmer. Their frames still follow <clip>_<n>
@@ -78,7 +84,8 @@ NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 # frame_styles and hero_colours; round 3's run_pips, icon_house, card_house_clear, fx_unlock, the boss effects,
 # fx_beacon_light and hero_colours_r3): 55 names, so 56
 # sb-m1-5 merges both: 64 names, so 65
-MAX_SPRITES = 160   # round 5 (2 Nov): the fixes, the keys, the dive and charm art, the bosses; room for the monsters and the terrain
+MAX_SPRITES = 200   # round 9 (6 Nov): 149 names and its 49 strips make 198
+# round 5's cap note: (160) round 5 (2 Nov): the fixes, the keys, the dive and charm art, the bosses; room for the monsters and the terrain
 # round 8 (4 Nov, SHUTTERBUG_M2_BUILD_PLAN.md): 160, its 32 new keys make 149 names once every m2 step has spliced its own
 
 
