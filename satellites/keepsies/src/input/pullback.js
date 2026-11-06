@@ -41,7 +41,7 @@ export function createPullback(canvas, tuning, hooks) {
       S.offY = clamp(-(y - taw.y) / taw.r, -1, 1);
       return;
     }
-    if (len2(x - taw.x, y - taw.y) > (taw.grabR || taw.r * 1.6) * 1.15) return;
+    if (len2(x - taw.x, y - taw.y) > taw.grabR * 1.15) return;
     S.active = true; S.id = e.pointerId;
     S.sx = x; S.sy = y; S.x = x; S.y = y;
     S.offX = 0; S.offY = 0; S.offsetId = -1;

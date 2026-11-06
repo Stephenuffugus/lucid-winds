@@ -179,11 +179,14 @@ export function createKnuckle(canvas, tuning, hooks) {
     // your thumb was SITTING on the marble is the contact, which is also what it
     // means in the dirt.
     const p = anchor;
-    let ox = (p.x - taw.x) / taw.r;
-    let oy = -(p.y - taw.y) / taw.r;
+    /* m3 step 3: read against the spin ring, 0.6 of the circle, with a dead zone: near the middle is a centre ball */
+    const R = taw.spinR || taw.r, dz = T.spinDeadZone || 0;
+    let ox = (p.x - taw.x) / R;
+    let oy = -(p.y - taw.y) / R;
     const L = len2(ox, oy);
-    if (L > 1) { ox /= L; oy /= L; }     // clamped to the rim, never past it
-    return { x: ox, y: oy };
+    if (L <= dz) return { x: 0, y: 0 };
+    const k = (Math.min(L, 1) - dz) / (1 - dz) / L;     // clamped to the rim, never past it
+    return { x: ox * k, y: oy * k };
   }
 
   /** A slow deliberate circular rub, which is not jitter and is not a flick. */
@@ -191,7 +194,8 @@ export function createKnuckle(canvas, tuning, hooks) {
     if (!taw) return;
     const dx = x - taw.x, dy = y - taw.y;
     const rad = len2(dx, dy);
-    if (rad < taw.r * 0.4 || rad > taw.r * 2.4) { S.warmArc *= 0.96; return; }
+    const R = taw.spinR || taw.r;
+    if (rad < R * 0.2 || rad > R * 1.3) { S.warmArc *= 0.96; return; }
     const ang = Math.atan2(dy, dx);
     if (S.warmT) {
       let d = ang - S.warmAngle;
@@ -216,7 +220,7 @@ export function createKnuckle(canvas, tuning, hooks) {
     if (S.active) { S.secondFinger = true; return; }   // a planted second finger
     const r = canvas.getBoundingClientRect();
     const x = e.clientX - r.left, y = e.clientY - r.top;
-    if (len2(x - taw.x, y - taw.y) > (taw.grabR || taw.r * 1.6)) return;   // not on the shooter
+    if (len2(x - taw.x, y - taw.y) > taw.grabR) return;   // not on the circle
     S.active = true;
     S.pointerId = e.pointerId;
     S.samples.length = 0;
@@ -319,6 +323,15 @@ export function createKnuckle(canvas, tuning, hooks) {
       return null;
     }
 
+    /* m3 step 3: the bigger circle would turn a sideways aim drag into a 25 degree shot. A release more than 45 degrees off
+       the aim line's forward is no shot at all (step 7 makes it a dial); with Bombing on the flick down keeps its meaning */
+    const yaw0 = flickYaw(win), down0 = win.length >= 2 && (win[win.length - 1].y - win[0].y) > 40;
+    if (yaw0 !== null && Math.abs(yaw0) > T.offLineDeg * DEG && !(down0 && hooks.bombingAllowed && hooks.bombingAllowed())) {
+      S.lastCancel = { thumbSpeed: v, why: 'offLine' };
+      if (hooks.onCancel) hooks.onCancel('offLine');
+      return null;
+    }
+
     const curv = curvature(win);
     const offset = contactOffset(anchor, taw);
     const wild = clamp(Math.abs(curv) / T.kWild, 0, 1);
@@ -379,12 +392,16 @@ export function createKnuckle(canvas, tuning, hooks) {
    * yaw is atan(tan(screen) x sin(elevation)); at top down it is the identity.
    */
   function fineAngle(win0) {
+    const y = flickYaw(win0), cap = T.fineAngleMaxDeg * DEG;
+    return y === null ? 0 : clamp(y, -cap, cap);
+  }
+  /** the flick's yaw off the aim on the ground, in radians, uncapped; null when the thumb hardly moved */
+  function flickYaw(win0) {
     const win = motion(win0);
-    if (win.length < 2) return 0;
+    if (win.length < 2) return null;
     const a = win[0], b = win[win.length - 1];
     const dx = b.x - a.x, dy = b.y - a.y;
-    if (len2(dx, dy) < 4) return 0;
-    const cap = T.fineAngleMaxDeg * DEG;
+    if (len2(dx, dy) < 4) return null;
     // exact where it can be: the two points on the dirt under where the flick
     // began and ended, and the yaw between them, relative to the camera's forward
     if (hooks.groundPoint && hooks.aimAzimuth) {
@@ -393,13 +410,14 @@ export function createKnuckle(canvas, tuning, hooks) {
         let yaw = Math.atan2(pb.x - pa.x, pb.z - pa.z) - hooks.aimAzimuth();
         while (yaw > Math.PI) yaw -= Math.PI * 2;
         while (yaw < -Math.PI) yaw += Math.PI * 2;
-        return clamp(yaw, -cap, cap);
+        return yaw;
       }
     }
-    // otherwise the foreshortening alone: screen up is the camera's forward
-    const screen = clamp(Math.atan2(dx, -dy), -80 * DEG, 80 * DEG);
+    // otherwise the foreshortening alone: screen up is the camera's forward; a flick behind the line is off it whatever the camera
+    const screen = Math.atan2(dx, -dy);
+    if (Math.abs(screen) > 80 * DEG) return screen;
     const k = hooks.groundFactor ? clamp(hooks.groundFactor(), 0.05, 1) : 1;
-    return clamp(Math.atan(Math.tan(screen) * k), -cap, cap);
+    return Math.atan(Math.tan(screen) * k);
   }
 
   function reset() {

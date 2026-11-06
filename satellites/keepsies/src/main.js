@@ -177,7 +177,7 @@ async function boot() {
     bombingAllowed: () => !!G.R && G.screen === 'match' && G.R.canBomb(),
     onBrace: onBrace,
     onAim: onAim,
-    onCancel: () => { say('That was too soft to count, so it does not. Take it again.'); hideAim(); },
+    onCancel: (why) => { say(why === 'offLine' ? 'That went sideways, so it does not count. Flick up the line.' : 'That was too soft to count, so it does not. Take it again.'); hideAim(); },
     haptic: (k) => { if (navigator.vibrate) { try { navigator.vibrate(k === 'settle' ? 8 : 14); } catch (e) { } } },
     enabled: () => !G.usePullback && (G.screen === 'match' || G.screen === 'calib') && !G.paused && !G.moving && !G.statuesPlacing
   });
@@ -1571,7 +1571,8 @@ function onBrace(st) {
      up to four times, which drew a big gold hoop around a sixteen pixel marble
      and swallowed the thing you are actually looking at. It is scaled from the
      grab radius now, so at a full brace the ring sits just outside your thumb. */
-  const px = (t.grabR || t.r * 1.6) * (0.70 + st.coneDeg * 0.16);
+  /* m3 step 3: inside the circle, wide at 0.95 of it, settled at 0.45 */
+  const px = t.grabR * clamp(0.45 + (st.coneDeg - G.tuning.snap.coneTightDeg) / (G.tuning.snap.coneWideDeg - G.tuning.snap.coneTightDeg) * 0.5, 0.3, 0.95);
   // Astra's reticle draws its ring at 27 of 96: the box is sized so the ring stands where the drawn one did
   const S = px * 2 / 0.5625;
   ret.hidden = false;
@@ -1660,12 +1661,26 @@ function holdScope() {
   if (!t) { hideSpyglass(); $('aimline').hidden = true; return; }
   const T = G.tuning.snap;
   updateSpyglass({ coneDeg: T.coneWideDeg, settle01: 0 }, t, true);
-  drawAimLine(t, (t.grabR || t.r * 1.6) * 0.7);
+  drawAimLine(t, t.grabR);
 }
 
 function openSnapCard() { $('snapCard').hidden = false; }
 
 /** The aim buttons and the Zoom belong to the human's aim phase and nothing else. */
+/* m3 step 3: the circle is drawn, a faint chalk ring round the shooter whenever the player may brace, so it is seen before the
+   thumb lands; the reticle settles inside it */
+function updateGrabRing() {
+  const el = $('grabRing');
+  const may = !!G.R && (G.screen === 'match' || G.screen === 'calib') && !G.usePullback && !G.paused && !G.moving && !G.statuesPlacing && !G.topDown && !G.R.state.simulating && canAim();
+  const t = may ? G.R.tawOnScreen(G.rig) : null;
+  if (!t) { el.hidden = true; return; }
+  el.hidden = false;
+  const d = 2 * t.grabR;
+  el.style.width = el.style.height = d + 'px';
+  el.style.left = (t.x - t.grabR) + 'px';
+  el.style.top = (t.y - t.grabR) + 'px';
+}
+
 function updateAimUi() {
   const on = G.screen === 'match' && !!G.R && canAim() && !G.usePullback && !G.paused && G.R.match.players.length > 1;
   if (on !== G.aimUiOn) {
@@ -2166,6 +2181,7 @@ function frame(now) {
     // clock: read it every frame so the reticle tightens whether or not the
     // browser has anything to say
     updateAimUi();
+    updateGrabRing();
     if (!G.usePullback && G.knuckle) {
       const ks = G.knuckle.state();
       if (ks.bracing) onBrace(ks);
@@ -2316,6 +2332,7 @@ function installDevHook() {
     /* the fine aim and the snap card, for test/aimnudge.mjs */
     nudge(dir) { return nudgeAim(dir); },
     scopeHold(on) { setScopeHold(on); return G.scopeHold; },
+    tawScreen() { const t = G.R && G.R.tawOnScreen(G.rig); return t ? { x: +t.x.toFixed(1), y: +t.y.toFixed(1), grabR: t.grabR, spinR: t.spinR, r: t.r } : null; },
     aimUi() { return { nudge: !$('aimNudge').hidden, scope: !$('scopeBtn').hidden, scopeOn: G.scopeHold, spy: !!(G.spy && G.spy.on), line: !$('aimline').hidden, lineInfo: G.aimLineInfo || null }; },
     snapCard() { return { open: !$('snapCard').hidden, seen: !!(G.save && G.save.seen && G.save.seen.snapHelp) }; },
     said() { return G.said; },

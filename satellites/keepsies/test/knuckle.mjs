@@ -87,8 +87,8 @@ const hit = await page.evaluate((t) => {
 }, taw);
 say(hit.id === 'stage', 'what a thumb lands on at the shooter\'s centre is the game canvas, not a HUD panel: '
   + (hit.id || hit.tag));
-say(taw.grabR * 2 >= 48, 'the shooter\'s grab area measures ' + (taw.grabR * 2).toFixed(0)
-  + ' rendered px across at 375 wide (drawn ' + (taw.r * 2).toFixed(0) + '), the floor is 48');
+say(Math.abs(taw.grabR * 2 - 154) < 0.5, 'the circle measures ' + (taw.grabR * 2).toFixed(0)
+  + ' rendered px across at 375 wide (drawn ' + (taw.r * 2).toFixed(0) + '): 154 across, m3 step 3');
 
 /* ---- a real pointer gesture, sampled the way a thumb is ---- */
 async function gesture(from, dx, dy, ms, steps, hookDeg) {

@@ -463,9 +463,10 @@ export function createRinger(setup) {
    * screen is not a grab target, and saying so out loud is cheaper than a
    * silently unplayable turn.
    *
-   * `grabR` is the radius a thumb may land inside, which is 1.6 times the drawn
-   * radius, and the drawn radius has a floor so that a marble at real scale in a
-   * three metre ring is still a 48 px target.
+   * `grabR` is the radius a thumb may land inside (m3 step 3, law 15): a CSS px constant from tuning, 154 across in
+   * every frame, calibration and the match alike, and never derived from the marble alone again (his 5 Nov verdict:
+   * "Doesn't have to be the size of the marble"). `spinR` is the ring contact is read against. `r` stays the old
+   * measure for the pull back's second finger.
    */
   function tawOnScreen(rig, viewport) {
     const taw = shooterTaw();
@@ -479,7 +480,8 @@ export function createRinger(setup) {
     const vw = viewport ? viewport.w : (rig.viewport ? rig.viewport.w : null);
     const vh = viewport ? viewport.h : (rig.viewport ? rig.viewport.h : null);
     if (vw && vh && (c.x < -r || c.y < -r || c.x > vw + r || c.y > vh + r)) return null;
-    return { x: c.x, y: c.y, r, grabR: r * 1.6 };
+    const grabR = Math.max(T.snap.grabRadiusPx, len2(e.x - c.x, e.y - c.y) + 12);
+    return { x: c.x, y: c.y, r, grabR, spinR: T.snap.spinRadiusFrac * grabR };
   }
 
   return {
