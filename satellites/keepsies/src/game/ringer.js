@@ -436,9 +436,12 @@ export function createRinger(setup) {
     const f = frameFor({
       tawX: tp.x, tawZ: tp.z, live, bare: !!setup.bare,
       aspect: vp && vp.h ? vp.w / vp.h : 0.56,
-      user: { az: rig.state.userAz || 0, zoom: rig.state.userZoom || 1 }
+      user: { az: rig.state.userAz || 0, zoom: rig.state.userZoom || 1 },
+      currentAz: rig.state.azimuth
     }, T.render.ringerCam, T.render.calibCam);
     rig.setTarget(f.tx, 0.012, f.tz);
+    /* the look point turns about the shooter WITH the eased azimuth, so the shooter holds still while the camera catches up */
+    rig.state.pivot = f.auto.lookDist == null ? null : { x: tp.x, z: tp.z, look: f.auto.lookDist };
     rig.state.wantAzimuth = f.azimuth;
     rig.state.wantDistance = f.distance;
     rig.state.elevationDeg = f.elevation;

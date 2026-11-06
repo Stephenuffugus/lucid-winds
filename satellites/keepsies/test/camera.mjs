@@ -178,10 +178,11 @@ let full, lone;
   ok(zoomed.auto.bias > base.auto.bias, 'pinch: zooming in should slide the look point toward the target');
   // ⛔ the shot k2-endgame-pinch showed dirt: orbited 48 degrees and pinched to 0.24x, the lone
   // mib sat 0.24 m beside a look point 16% short of it, off the right edge at 1.15 m depth
+  /* m3 step 2 retires the old rule here on purpose: the orbit now turns about the shooter, so a pinch after an orbit looks along the AIM (the same distance out, at the orbit's angle), the way the shooter is pointing, and not back at a target the player has turned away from */
   const swung = { ...inpRing, user: { az: -0.84, zoom: 0.24 } };
-  const fs = frameFor(swung, C, CAL);
-  const ms = project(fs, swung, { x: 0, z: 0 });
-  ok(Math.abs(ms.x) <= 0.8 && Math.abs(ms.y) <= 0.8 && ms.depth > 0, `pinch after orbit: the lone mib projects at x ${ms.x.toFixed(2)} y ${ms.y.toFixed(2)}, the scene the Director pinched into is dirt (bias ${fs.auto.bias.toFixed(2)})`);
+  const pz = frameFor(swung, C, CAL), L0 = Math.hypot(pz.tx - inpRing.tawX, pz.tz - inpRing.tawZ), ang = Math.atan2(-(pz.tx - inpRing.tawX), -(pz.tz - inpRing.tawZ));
+  const straight = frameFor({ ...inpRing, user: { zoom: 0.24 } }, C, CAL);
+  ok(near(L0, Math.hypot(straight.tx - inpRing.tawX, straight.tz - inpRing.tawZ), 1e-6) && Math.abs(Math.atan2(Math.sin(ang - pz.azimuth), Math.cos(ang - pz.azimuth))) < 1e-3, 'pinch after orbit: the look point stays the same distance out from the shooter and turns with the orbit');
   ok(near(tiny.distance, C.minDistance, 1e-9), `pinch: extreme zoom in must clamp to minDistance ${C.minDistance}, got ${tiny.distance}`);
   ok(near(huge.distance, C.maxDistance, 1e-9), `pinch: extreme zoom out must clamp to maxDistance ${C.maxDistance}, got ${huge.distance}`);
   ok(near(half.azimuth, base.azimuth, 1e-12), 'pinch: zooming must not change azimuth');
@@ -192,6 +193,49 @@ let full, lone;
   const f = frameFor({ ...TAW, live: cross({ x: 0, z: 0.4 }), bare: true, user: { zoom: 3, az: 1 } }, C, CAL);
   ok(near(f.distance, CAL.distance, 1e-12), `bare: distance should be calibCam ${CAL.distance}, got ${f.distance}`);
   ok(near(f.elevation, CAL.elevationDeg, 1e-12), 'bare: elevation should be calibCam');
+}
+
+/* m3 step 2, THE SEAM: the wanted angle is the nearest equivalent of the current one, so the camera never goes the long way
+   round. The shooter walked from 170 to 190 degrees round the ring at half a degree a frame, the rig's own damping: today a
+   64 degree step in one frame where the angle wraps */
+{
+  const R = 1.525, live = cross({ x: 0, z: 0 });
+  let az = null, worst = 0;
+  for (let deg = 170; deg <= 190; deg += 0.5) {
+    const a = deg * DEG, f = frameFor({ tawX: Math.sin(a) * R, tawZ: Math.cos(a) * R, live, aspect: 412 / 915, currentAz: az === null ? undefined : az }, C, CAL);
+    if (az === null) az = f.azimuth;
+    const next = az + (f.azimuth - az) * 0.18;
+    worst = Math.max(worst, Math.abs(next - az) / DEG);
+    az = next;
+  }
+  ok(worst <= 2, `the seam: walking the shooter over 180 degrees steps the camera ${worst.toFixed(2)} degrees in a frame (under 2; shipped 64.3)`);
+}
+
+/* m3 step 2, THE PIVOT: the player's orbit turns about the SHOOTER, so it stays where it is on the screen. An independent
+   camera (the rig's own formula) at userAz -60 to 60 degrees in 5 degree steps: the shooter holds the centre line and the
+   userAz 0 height; shipped it left the screen past 27 to 30 degrees */
+{
+  const camProject = (f, p, aspect) => {
+    const e = f.elevation * DEG, r = f.distance, cam = { x: f.tx + Math.sin(f.azimuth) * Math.cos(e) * r, y: 0.012 + Math.sin(e) * r, z: f.tz + Math.cos(f.azimuth) * Math.cos(e) * r };
+    let fx = f.tx - cam.x, fy = 0.012 - cam.y, fz = f.tz - cam.z; const fl = Math.hypot(fx, fy, fz); fx /= fl; fy /= fl; fz /= fl;
+    let sx = fz * -1, sz = fx; const sl = Math.hypot(sx, sz); sx /= sl; sz /= sl;   /* the camera's right, level */
+    sx = -fz / sl; sz = fx / sl; const rx = sz * fy * -1 + 0, ry = fx * sz - fz * sx * 1, rz = 0; void rx; void ry; void rz;
+    const ux = (fz * 0 - fy * sz) * -1, uy = -(fx * sz - fz * sx), uz = -(fy * sx - fx * 0); void ux; void uy; void uz;
+    const dx = p.x - cam.x, dy = p.y - cam.y, dz = p.z - cam.z;
+    const depth = dx * fx + dy * fy + dz * fz, side = dx * sx + dz * sz, upv = { x: sz * fy - 0 * fz, y: fx * sz * -1 + fz * sx * 1, z: 0 * fx - sx * fy };
+    const up = dx * upv.x + dy * upv.y + dz * upv.z, tanV = Math.tan((C.fov * DEG) / 2);
+    return { x: side / (depth * tanV * aspect), y: up / (depth * tanV) };
+  };
+  for (const [w, h] of [[412, 915], [360, 780]]) {
+    const aspect = w / h, live = cross({ x: 0, z: 0 }), base = frameFor({ ...TAW, aspect, live }, C, CAL), p0 = camProject(base, { x: TAW.tawX, y: 0.012, z: TAW.tawZ }, aspect);
+    let worstX = 0, worstY = 0;
+    for (let d = -60; d <= 60; d += 5) {
+      const f = frameFor({ ...TAW, aspect, live, user: { az: d * DEG } }, C, CAL), q = camProject(f, { x: TAW.tawX, y: 0.012, z: TAW.tawZ }, aspect);
+      worstX = Math.max(worstX, Math.abs(q.x - p0.x)); worstY = Math.max(worstY, Math.abs(q.y - p0.y));
+    }
+    ok(worstX <= 0.02 && worstY <= 0.02, `the pivot at ${w}x${h}: over a 60 degree orbit the shooter stays within ${worstX.toFixed(4)} of a half width and ${worstY.toFixed(4)} of a half height (0.02)`);
+  }
+  ok(near(T.render.orbitRadPerPx * 100 / DEG, 20, 0.5), `a 100 px drag turns the aim ${(T.render.orbitRadPerPx * 100 / DEG).toFixed(2)} degrees (20 plus or minus 0.5)`);
 }
 
 if (fails.length) {

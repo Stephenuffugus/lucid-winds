@@ -104,6 +104,8 @@ const coarse = (C.nudgeCoarseDeg == null ? 2 : C.nudgeCoarseDeg) * Math.PI / 180
 // the line only draws while the scope is held or the thumb is down: hold the scope to read it, then release
 await page.evaluate(() => window.KEEPSIES_DEV.scopeHold(true)); await sleep(900);
 const line0 = (await ui()).lineInfo;
+const mibX = async () => { const m = await page.evaluate(() => window.KEEPSIES_DEV.mibs()); return m.reduce((a, q) => a + q.sx, 0) / Math.max(1, m.length); };
+const world0 = await mibX();
 await page.evaluate(() => window.KEEPSIES_DEV.scopeHold(false)); await sleep(200);
 const az0 = (await cam()).userAz;
 for (let i = 0; i < 3; i++) { await tap('nudgeR'); await sleep(120); }
@@ -112,7 +114,9 @@ const az1 = (await cam()).userAz;
 say(Math.abs(Math.abs(az1 - az0) - 3 * coarse) < 1e-3, 'three taps turned the aim by ' + ((az1 - az0) * 180 / Math.PI).toFixed(2) + ' degrees (three coarse steps are ' + (3 * coarse * 180 / Math.PI).toFixed(2) + ')');
 await page.evaluate(() => window.KEEPSIES_DEV.scopeHold(true)); await sleep(900);
 const line1 = (await ui()).lineInfo;
-say(!!line0 && !!line1 && line1.endX > line0.endX + 2, 'the aim line\'s far end moved right on screen, from x ' + (line0 && line0.endX.toFixed(1)) + ' to ' + (line1 && line1.endX.toFixed(1)));
+/* m3 step 2: the camera turns about the shooter, so the line holds still up the screen and the WORLD turns under it: aiming right moves the mibs left */
+const world1 = await mibX();
+say(!!line0 && !!line1 && Math.abs(line1.endX - line0.endX) < 4 && world1 < world0 - 2, 'aiming right: the aim line holds (x ' + (line0 && line0.endX.toFixed(1)) + ' to ' + (line1 && line1.endX.toFixed(1)) + ') and the mibs move left under it (x ' + world0.toFixed(1) + ' to ' + world1.toFixed(1) + ')');
 
 /* 3. the Zoom holds the scope open with no thumb down, and the step is fine */
 const ui1 = await ui();

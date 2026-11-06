@@ -12,10 +12,12 @@
 /**
  * @param {HTMLCanvasElement} canvas
  * @param {object} rig an OrbitRig from render/scene.js
- * @param {{isClaimed?:(id:number)=>boolean, onTap?:(x:number,y:number)=>void}} [hooks]
+ * @param {{isClaimed?:(id:number)=>boolean, onTap?:(x:number,y:number)=>void, orbitRadPerPx?:number}} [hooks]
  */
 export function attachCameraControls(canvas, rig, hooks) {
   const h = hooks || {};
+  /* m3 step 2: half the old 0.007 rad per px: at the old gain a 4 px thumb wobble was more than the settled cone */
+  const gain = h.orbitRadPerPx == null ? 0.0035 : h.orbitRadPerPx;
   const pointers = new Map();
   let lastPinch = 0;
   let moved = 0;
@@ -50,8 +52,8 @@ export function attachCameraControls(canvas, rig, hooks) {
        so writing the offsets is what makes the gesture survive; in freeCam nothing
        rebuilds them and the direct write is what moves the camera. */
     if (pointers.size === 1) {
-      rig.state.wantAzimuth -= dx * 0.007;
-      rig.state.userAz = (rig.state.userAz || 0) - dx * 0.007;
+      rig.state.wantAzimuth -= dx * gain;
+      rig.state.userAz = (rig.state.userAz || 0) - dx * gain;
     } else if (pointers.size === 2) {
       const span = pinchSpan();
       if (lastPinch > 0) {

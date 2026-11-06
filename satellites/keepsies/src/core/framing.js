@@ -49,7 +49,7 @@
  * ⛔ Nothing here touches the accuracy cone. DESIGN 9.6: never rubber-band aim. A closer
  * camera lets you SEE the marble and turn to face it; it does not make the thumb steadier.
  */
-import { sin, cos, atan2, len2, clamp, DEG } from './dmath.js?v=20261105b';
+import { sin, cos, atan2, len2, clamp, DEG, PI } from './dmath.js?v=20261105b';
 
 /**
  * @param {object} inp
@@ -59,6 +59,7 @@ import { sin, cos, atan2, len2, clamp, DEG } from './dmath.js?v=20261105b';
  * @param {number} [inp.aspect]  viewport w/h; portrait phone ≈ 0.56
  * @param {boolean} [inp.bare]   calibration: one marble, close
  * @param {{az?:number, zoom?:number}} [inp.user]  the player's orbit (rad) and pinch (×)
+ * @param {number} [inp.currentAz]  the rig's azimuth now: the answer is the nearest equivalent of the wanted angle (m3 step 2)
  * @param {object} C   tuning.render.ringerCam
  * @param {object} [calib]   tuning.render.calibCam, for bare
  */
@@ -156,11 +157,23 @@ export function frameFor(inp, C, calib) {
   const autoAz = atan2(-dx, -dz);
   const autoDist = clamp(distance, C.minDistance, C.maxDistance);
   const ua = inp.user && inp.user.az ? inp.user.az : 0;
+  /* ⛔ m3 step 2. THE SEAM: atan2 wraps at plus or minus 180 degrees and the rig eases toward whatever it is handed, so a
+     shooter walking across the ring's far side sent the camera 64 degrees in a frame the long way round. The wanted angle
+     is the nearest equivalent of where the camera is. THE PIVOT: the orbit turned about a point 0.76 m in front of the
+     shooter, so the shooter slid 3.3 to 3.6 px per px of thumb and left the screen after 70 px. The look point now turns
+     with the orbit about the SHOOTER: the shooter stays where it is and the aim is straight up the screen from it. */
+  const ta = autoAz + ua, L = len2(dx, dz);
+  let wantAz = ta;
+  if (inp.currentAz != null) {
+    const TWO = 2 * PI;
+    while (wantAz - inp.currentAz > PI) wantAz -= TWO;
+    while (wantAz - inp.currentAz < -PI) wantAz += TWO;
+  }
   return {
-    tx: tawX + dx * biasUser, tz: tawZ + dz * biasUser,
-    azimuth: autoAz + ua,
+    tx: tawX - L * sin(ta) * biasUser, tz: tawZ - L * cos(ta) * biasUser,
+    azimuth: wantAz,
     distance: clamp(autoDist * uz, C.minDistance, C.maxDistance),
     elevation: C.elevationDeg,
-    auto: { azimuth: autoAz, distance: autoDist, t, spread, spreadLat, spreadAlong, floor, span, bias: biasUser, autoBias: bias, tawFloor, mibFloor, fit }
+    auto: { azimuth: autoAz, distance: autoDist, t, spread, spreadLat, spreadAlong, floor, span, bias: biasUser, autoBias: bias, tawFloor, mibFloor, fit, lookDist: L * biasUser }
   };
 }

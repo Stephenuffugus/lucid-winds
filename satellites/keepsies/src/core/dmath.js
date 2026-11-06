@@ -106,6 +106,9 @@ export function atan2(y, x) {
 }
 
 /** sqrt(x*x + y*y). Math.hypot is not exactly specified, so it never appears in core. */
+/** An angle brought to plus or minus PI (m3 step 2: the rig's azimuth is unwrapped, a shot takes it normalised). */
+export function wrapPi(a) { const T = 2 * PI; a = a - T * Math.floor(a / T); return a > PI ? a - T : a; }
+
 export function len2(x, y) { return Math.sqrt(x * x + y * y); }
 
 /** sqrt(x*x + y*y + z*z). */

@@ -23,7 +23,7 @@ import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from
 import { createRinger } from './game/ringer.js?v=20261105b';
 import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261105b';
 import { launchSpeed } from './core/snap.js?v=20261105b';
-import { clamp, len2, DEG } from './core/dmath.js?v=20261105b';
+import { clamp, len2, DEG, wrapPi } from './core/dmath.js?v=20261105b';
 import * as SAVE from './meta/save.js?v=20261105b';
 import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261105b';
 import { playPotCeremony } from './render/ceremony.js?v=20261105b';
@@ -168,7 +168,7 @@ async function boot() {
 
   G.knuckle = createKnuckle(canvas, G.tuning, {
     taw: () => (G.R && (G.screen === 'match' || G.screen === 'calib') && canAim() ? G.R.tawOnScreen(G.rig) : null),
-    aimAzimuth: () => G.rig.state.azimuth + Math.PI,
+    aimAzimuth: () => wrapPi(G.rig.state.azimuth + Math.PI),
     // where a screen point lands on the dirt, so a flick's angle is the angle
     // between the two places the thumb was OVER, not an angle on glass
     groundPoint: (x, y) => groundPoint(x, y),
@@ -185,7 +185,7 @@ async function boot() {
 
   G.pullback = createPullback(canvas, G.tuning, {
     taw: () => (G.R && G.screen === 'match' && canAim() ? G.R.tawOnScreen(G.rig) : null),
-    aimAzimuth: () => G.rig.state.azimuth + Math.PI,
+    aimAzimuth: () => wrapPi(G.rig.state.azimuth + Math.PI),
     groundFactor: () => Math.sin(G.rig.state.elevationDeg * DEG),
     onDrag: (r) => { showPower(r.power01); },
     onAim: onAim,
@@ -199,6 +199,7 @@ async function boot() {
      braced the brace owns every finger, so a second finger can neither orbit nor turn the aim */
   G.place = attachPlacement(canvas, G, { canAim: () => canAim() });
   G.cam = attachCameraControls(canvas, G.rig, {
+    orbitRadPerPx: G.tuning.render.orbitRadPerPx,
     isClaimed: (id) => G.knuckle.owns(id) || G.pullback.owns(id) || (G.placeDrag === id) || (G.moveDrag === id)
       || G.knuckle.state().bracing
   });
@@ -1520,7 +1521,7 @@ function updateSpyglass(st, t, force) {
   const taw = G.R.shooterTaw();
   const tp = positionOf(G.R.world, taw.id);
   const live = G.R.liveMibs().map(m => { const p = positionOf(G.R.world, m.id); return { x: p.x, z: p.z, id: m.id }; });
-  const s = spyglassFor({ tawX: tp.x, tawZ: tp.z, azimuth: G.rig.state.azimuth + Math.PI, live, coneDeg: st.coneDeg }, C);
+  const s = spyglassFor({ tawX: tp.x, tawZ: tp.z, azimuth: wrapPi(G.rig.state.azimuth + Math.PI), live, coneDeg: st.coneDeg }, C);
   if (!s) return hideSpyglass();
   // how big that mib is on the MAIN screen decides whether the scope is worth opening
   const r = specOf(G.R.world, s.mib.id).radius;
