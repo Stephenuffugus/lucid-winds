@@ -17,7 +17,7 @@ import { dirname, join } from 'node:path';
 
 import { initPhysics, createWorld, disposeWorld, addSurface, addMarble, removeMarble, impulse, place, step, atRest, hash, positionOf, specOf, ringDistance } from '../src/core/physics.js?v=20261105b';
 import { makeRng, makeStreams } from '../src/core/rng.js?v=20261105b';
-import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../src/core/snap.js?v=20261105b';
+import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed, launchSpeed } from '../src/core/snap.js?v=20261105b';
 import { sin, cos, normalize, DEG } from '../src/core/dmath.js?v=20261105b';
 import { STARTER_ENTRIES } from '../src/core/marbleBody.js?v=20261105b';
 import { len2 as _len2 } from '../src/core/dmath.js?v=20261105b';
@@ -108,9 +108,9 @@ function fireAim(W, id, aimSpec, rng, extraDeg, dirOverride) {
 /* ------------------------------------------------------------- statues (step 9) */
 /* The STATUES house rule (core/statues.js): played through the game's own Ringer, statues and all, because the
    statue list is part of the setup record and a replay of it has to be the same match. */
-const { createRinger } = await import('../src/game/ringer.js?v=20261105b');
+const { createRinger, ringTuning } = await import('../src/game/ringer.js?v=20261105b');
 const STATUE_CORE = await import('../src/core/statues.js?v=20261105b');
-const { SHAPES, aiPlacement, inside } = STATUE_CORE;
+const { SHAPES, SHAPE_ORDER, aiPlacement, inside, legalSpots } = STATUE_CORE;
 const { FORMATIONS } = await import('../src/game/ringer.js?v=20261105b');
 
 /** The four statues for a seed, by the AI's seeded rule for both owners in turn, as the record a match keeps. */
@@ -130,7 +130,7 @@ function statueRecord(sc, seed) {
 /** One whole AI match with the record's statues; every step, no marble may stand inside a Loaf. */
 function playStatueMatch(sc, seed, statues) {
   const R = createRinger({
-    tuning: TUNING, seed, houseRules: { keepsies: true, slips: true, statues: true, ringSizeFt: 10 }, statues,
+    tuning: TUNING, seed, houseRules: { keepsies: true, slips: true, statues: true, ringSizeFt: sc.ringFt || 10 }, statues,
     players: [{ name: 'A', ai: sc.ai, tawEntry: 'taw_clearie' }, { name: 'B', ai: sc.ai, tawEntry: 'taw_clearie' }]
   });
   R.doLag();
@@ -155,9 +155,9 @@ function playStatueMatch(sc, seed, statues) {
 }
 
 /** A straight shot at one statue from 30 cm, along +z: where the shooter is after `secs`, and if it went inside. */
-function shotAtStatue(shape, speed, secs) {
+function shotAtStatue(shape, speed, secs, ft) {
   const z0 = 0.4572;
-  const R = createRinger({ tuning: TUNING, seed: 1, bare: true, skipLag: true, statues: [{ shape, x: 0, z: z0, owner: 0 }],
+  const R = createRinger({ tuning: TUNING, seed: 1, bare: true, skipLag: true, houseRules: { ringSizeFt: ft || 10 }, statues: [{ shape, x: 0, z: z0, owner: 0 }],
     players: [{ name: 'A', ai: null, tawEntry: 'taw_clearie' }, { name: 'B', ai: null, tawEntry: 'taw_clearie' }] });
   const W = R.world, id = R.taws[0].id;
   place(W, id, { x: 0, z: z0 - 0.3 });
@@ -181,11 +181,12 @@ function shotAtStatue(shape, speed, secs) {
  * Step 10, a move: Dusty's own Loaf stands straight between his shooter and the cross, so his turn is spent
  * moving it (up to two feet, clear of every marble) and the turn passes; and a statue is never moved onto a marble.
  */
-function aiMoveCase() {
+function aiMoveCase(ft) {
   const { legal } = STATUE_CORE;
-  const R = createRinger({ tuning: TUNING, seed: 11, forceFirst: 1, houseRules: { statues: true, ringSizeFt: 10 },
+  const ft0 = ft || 10, Rr = TUNING.ringer.ringSizeRadius[ft0 + 'ft'], k = Rr / 1.525;
+  const R = createRinger({ tuning: TUNING, seed: 11, forceFirst: 1, houseRules: { statues: true, ringSizeFt: ft0 },
     // Dusty stands at the bearing of the first mib of the lay (game/ringer.js aiTurn), which is (-R, 0)
-    statues: [{ shape: 'loaf', x: -0.762, z: 0, owner: 1 }],
+    statues: [{ shape: 'loaf', x: -0.762 * k, z: 0, owner: 1 }],
     players: [{ name: 'A', ai: null, tawEntry: 'taw_clearie' }, { name: 'B', ai: 'rookie', tawEntry: 'taw_clearie' }] });
   R.doLag();
   const before = Object.assign({}, R.statues()[0]), turn0 = R.match.turn;
@@ -198,9 +199,9 @@ function aiMoveCase() {
     if (Math.hypot(p.x - after.x, p.z - after.z) < SHAPES.loaf.foot + m.spec.radius + 0.005) touching++;
   }
   const out = {
-    aiMoved: res && res.moved === 0 ? 1 : 0, moveWithin: dist > 0 && dist <= 2 * 0.3048 + 1e-9 ? 1 : 0,
+    aiMoved: res && res.moved === 0 ? 1 : 0, moveWithin: dist > 0 && dist <= 2 * 0.3048 * k + 1e-9 ? 1 : 0,
     moveClear: touching === 0 ? 1 : 0, movePassed: R.match.turn !== turn0 && turn0 === 1 ? 1 : 0,
-    refusedOnMarble: legal('loaf', 0.6, 0.6, 1.525, [], [], { marbles: [{ x: 0.62, z: 0.6, r: 0.008 }] }).ok ? 0 : 1
+    refusedOnMarble: legal('loaf', 0.6 * k, 0.6 * k, Rr, [], [], { marbles: [{ x: 0.62 * k, z: 0.6 * k, r: 0.008 }] }).ok ? 0 : 1
   };
   R.dispose();
   return out;
@@ -212,7 +213,9 @@ const RUNNERS = {
   /** STATUES (KEEPSIES_BUILD_PLAN.md step 9): whole matches, the Loaf holds, the Arch lets a marble under. */
   statues(sc) {
     const rows = [];
-    const loaf = shotAtStatue('loaf', 5.0, 2.0), arch = shotAtStatue('arch', 2.0, 2.0), mv = aiMoveCase();
+    const loaf = shotAtStatue('loaf', 5.0, 2.0, sc.ringFt), arch = shotAtStatue('arch', 2.0, 2.0, sc.ringFt), mv = aiMoveCase(sc.ringFt);
+    const lay0 = FORMATIONS.cross(TUNING.ringer.crossSpacing).map(([x, z]) => ({ x, z }));
+    const spots = Math.min(...SHAPE_ORDER.map(sh => legalSpots(sh, sc.ringRadius, [], lay0).length));
     for (let s = sc.seeds.from; s <= sc.seeds.to; s++) {
       const rec = statueRecord(sc, s);
       const a = playStatueMatch(sc, s, rec), b = playStatueMatch(sc, s, rec);
@@ -220,8 +223,41 @@ const RUNNERS = {
         seed: s, statues: rec.length, completed: a.done, loafHeld: a.through === 0 ? 1 : 0, moved: a.moved, through: a.through,
         loafStopped: loaf.inn === 0 && loaf.z < 0 ? 1 : 0, underArch: arch.inn === 0 && arch.z > 0.05 && arch.maxX < 0.012 ? 1 : 0,
         loafZ: loaf.z, archZ: arch.z, a: a.fp.length + ':' + hashStr(a.fp), b: b.fp.length + ':' + hashStr(b.fp),
-        aiMoved: mv.aiMoved, moveWithin: mv.moveWithin, moveClear: mv.moveClear, movePassed: mv.movePassed, refusedOnMarble: mv.refusedOnMarble
+        aiMoved: mv.aiMoved, moveWithin: mv.moveWithin, moveClear: mv.moveClear, movePassed: mv.movePassed, refusedOnMarble: mv.refusedOnMarble,
+        spots, enoughSpots: spots >= 36 ? 1 : 0
       });
+    }
+    return rows;
+  },
+
+  /** m3 step 9: the ring's own break, its launch range, and whole AI matches through the game's own Ringer. */
+  five(sc) {
+    const key = sc.ringFt + 'ft', R = TUNING.ringer.ringSizeRadius[key], tune = (TUNING.ringer.ringTune || {})[key] || {};
+    const scene = { ringRadius: R, surface: 'dirt', floor: { hx: 30, hy: 0.05, hz: 30 }, cross: { entry: 'commie', spacing: TUNING.ringer.crossSpacing }, taw: { entry: 'taw_clearie', z: -(R - 0.075), jitterX: 0.02 } };
+    const shot = { speedMps: tune.breakSpeed || TUNING.ringer.breakSpeed, dirDeg: 0, contactOffset: { x: 0, y: 0 }, wildness01: 0, braced01: 1, coneDegOverride: 0.5 };
+    const top = launchSpeed(1, ringTuning(TUNING, sc.ringFt));
+    let done = 0, shots = 0;
+    for (let g = 0; g < sc.matches; g++) {
+      const M = createRinger({ tuning: TUNING, seed: 9000 + g, houseRules: { keepsies: true, slips: true, ringSizeFt: sc.ringFt }, players: [{ name: 'A', ai: sc.ai, tawEntry: 'taw_clearie' }, { name: 'B', ai: sc.ai, tawEntry: 'taw_clearie' }] });
+      if (M.ringRadius !== R) throw new Error('five: the match stands in a ring of ' + M.ringRadius);
+      M.doLag();
+      let guard = 0;
+      while (M.state.phase !== 'over' && guard++ < 400) {
+        if (!M.state.simulating) M.aiTurn();
+        let k = 0;
+        while (M.state.simulating && k++ < 1400) M.tick();
+      }
+      const sum = M.summary();
+      if (M.state.phase === 'over' && sum.winner != null) { done++; shots += sum.shots; }
+      M.dispose();
+    }
+    const rows = [];
+    for (let s = sc.seeds.from; s <= sc.seeds.to; s++) {
+      const { W, rng, mibs, taw } = buildRingerScene(scene, s);
+      fireAim(W, taw, shot, rng.match);
+      const end = settle(W, sc.maxSeconds, { watch: mibs });
+      rows.push({ seed: s, mibsOut: end.pocketed.length, allAsleep: end.settled ? 1 : 0, restSeconds: end.seconds, completed: done === sc.matches ? 1 : 0, shots: done ? shots / done : 0, topSpeedOk: top <= (tune.launchMax || 0) + 1e-9 && top < TUNING.snap.launchMax ? 1 : 0 });
+      disposeWorld(W);
     }
     return rows;
   },

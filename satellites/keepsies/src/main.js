@@ -62,7 +62,7 @@ const G = {
   save: null, calibrator: null, lastRollAudio: 0, warming: false,
   assist: true, lastAssist: 0, lastShooter: 0,
   scopeHold: false, nudgeTimer: 0, snapShown: false, aimUiOn: false,
-  houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 10, formation: 'cross', statues: false },
+  houseRules: { keepsies: true, slips: true, bombing: false, poison: false, ringSizeFt: 5, formation: 'cross', statues: false },
   catalog: null, turntable: null, thumbs: null, filter: 'all', inspecting: null, econ: null,
   drops: null, dropRng: null, stake: [], theirStake: [], anteOk: false
 };
@@ -76,7 +76,7 @@ const HOUSE_RULES = [
   { key: 'poison', label: 'Poison', sub: 'knock out the enemy shooter' },
   /* Stephen's idea (step 9): two stone statues each, placed by drag before the lag */
   { key: 'statues', label: 'Statues', sub: 'two each' },
-  { key: 'ringSizeFt', label: 'Ring', sub: 'seven, ten or thirteen foot', cycle: [7, 10, 13],
+  { key: 'ringSizeFt', label: 'Ring', sub: 'five, seven, ten or thirteen foot', cycle: [5, 7, 10, 13],
     show: (v) => RING_WORD[v] || RING_WORD[10] },
   /* the lay of the thirteen: see FORMATIONS in game/ringer.js for what each one is */
   { key: 'formation', label: 'Lay', sub: 'cross, x, ring or bunch', cycle: ['cross', 'x', 'ring', 'bunch'],
@@ -85,7 +85,7 @@ const HOUSE_RULES = [
 /* ⛔ EVERY VALUE A CHIP CAN HOLD HAS ITS WORD (Astra, 4 Nov: k1-setup printed THE UNDEFINED, the lay chip
    reading a house rule that had no value until its first tap). A value with no word shows the game's
    own default, which is also what the rules play (core/rules-ringer.js DEFAULT_HOUSE_RULES). */
-const RING_WORD = { 7: 'Seven foot', 10: 'Ten foot', 13: 'Thirteen foot' };
+const RING_WORD = { 5: 'Five foot', 7: 'Seven foot', 10: 'Ten foot', 13: 'Thirteen foot' };
 /* Astra's HUD and tier plates (step 5), as style sheet variables set once at boot through art() */
 const ART_VARS = {
   '--pip-empty': 'ui/pip_empty.svg', '--pip-lit': 'ui/pip_lit.svg', '--chip': 'ui/player_chip.svg',
@@ -1069,20 +1069,20 @@ function buildHouseRules() {
   const row = $('hrRow');
   row.textContent = '';
   /* ⛔ THE FIRST TWO GAMES ARE SET UP BY THE GAME, NOT BY THE PLAYER. DESIGN 16
-     is exact: beat 3 is a seven foot game, slips on, FOR FAIR, and beat 5 is the
+     is exact: beat 3 is a five foot game (m3 step 9, DECISION 1), slips on, FOR FAIR, and beat 5 is the
      same table with one clay each on it. A player handed five chips before they
      have played once is being asked a question they cannot answer yet. */
   const beat = G.onboard && G.onboard.beat();
   if (beat && (beat.id === 'dusty' || beat.id === 'break' || beat.id === 'sticking')) {
     G.houseRules.keepsies = false;
     G.houseRules.slips = true;
-    G.houseRules.ringSizeFt = 7;
+    G.houseRules.ringSizeFt = 5;
     G.houseRules.formation = 'cross';     // the beat that teaches you to break the cross
     G.houseRules.statues = false;          // the first games are the plain game
   } else if (beat && beat.id === 'firstKeepsies') {
     G.houseRules.keepsies = true;
     G.houseRules.slips = true;
-    G.houseRules.ringSizeFt = 7;
+    G.houseRules.ringSizeFt = 5;
     G.houseRules.formation = 'cross';
     G.houseRules.statues = false;
   }
@@ -1230,7 +1230,7 @@ function ghostAt(shape, cx, cy) {
   const cr = G.stage.renderer.domElement.getBoundingClientRect();
   const gp = groundPoint(cx - cr.left, cy - cr.top);
   if (!gp) { dropGhost(); $('stNot').hidden = false; placeNot(cx, cy); return null; }
-  const at = snapGrid(gp.x, gp.z);
+  const at = snapGrid(gp.x, gp.z, G.R.ringRadius);
   let verdict;
   if (G.moving && G.moving.index != null) {
     const s = G.R.statues()[G.moving.index];
@@ -1278,7 +1278,7 @@ function paintTray() {
   if (P) $('stLine').textContent = mine
     ? 'Your statue, ' + (P.placed / 2 + 1) + ' of 2. Drag one onto the dirt, a foot clear of the cross and the line.'
     : 'Dusty Coyle is placing one.';
-  else if (mv) $('stLine').textContent = G.stPending ? 'Confirm the move, or Undo.' : 'Drag one of your statues, up to two feet. It costs the turn.';
+  else if (mv) $('stLine').textContent = G.stPending ? 'Confirm the move, or Undo.' : 'Drag one of your statues a short way. It costs the turn.';
 }
 
 /** Confirm: the pending statue goes down for good (or the move is made), then whoever is next. */
@@ -2306,7 +2306,7 @@ function installDevHook() {
     // the half foot grid point under a screen point, which is where a statue must land when a finger lifts there
     groundAt: (cx, cy) => {
       const r = G.stage.renderer.domElement.getBoundingClientRect(), gp = groundPoint(cx - r.left, cy - r.top);
-      return gp ? snapGrid(gp.x, gp.z) : null;
+      return gp ? snapGrid(gp.x, gp.z, G.R.ringRadius) : null;
     },
     projectGround: (x, z, y) => {
       const p = G.rig.project(x, y || 0, z), r = G.stage.renderer.domElement.getBoundingClientRect();
@@ -2482,7 +2482,9 @@ function installDevHook() {
         frameInfo: G.rig.state.frameInfo || null, mibsLeft: G.R.liveMibs().length,
         spy: G.spy && G.spy.on ? G.spy.info : null,
         spyRect: G.spy && G.spy.on ? G.spy.rect : null,
-        mibsOnScreen: G.R.liveMibs().map(m => { const q = positionOf(G.R.world, m.id), s = G.rig.project(q.x, q.y, q.z); return { x: +s.x.toFixed(1), y: +s.y.toFixed(1), visible: s.visible }; }),
+        mibsOnScreen: G.R.liveMibs().map(m => { const q = positionOf(G.R.world, m.id), s = G.rig.project(q.x, q.y, q.z), r = specOf(G.R.world, m.id).radius, e = G.rig.project(q.x, q.y + r, q.z); return { x: +s.x.toFixed(1), y: +s.y.toFixed(1), px: +(Math.abs(e.y - s.y) * 2 / Math.cos(G.rig.state.elevationDeg * Math.PI / 180)).toFixed(1), visible: s.visible }; }),
+        shooterPx: (() => { const r = specOf(G.R.world, t.id).radius, e = G.rig.project(p.x, p.y + r, p.z); return +(Math.abs(e.y - c.y) * 2 / Math.cos(G.rig.state.elevationDeg * Math.PI / 180)).toFixed(1); })(),
+        ringRect: (() => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; const R = G.R.ringRadius; for (let a = 0; a < 6.28; a += 0.06) { const q = G.rig.project(Math.sin(a) * R, 0, Math.cos(a) * R); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); } return { x0: +x0.toFixed(0), x1: +x1.toFixed(0), y0: +y0.toFixed(0), y1: +y1.toFixed(0) }; })(),
         cam: {
           az: +G.rig.state.azimuth.toFixed(3), wantAz: +G.rig.state.wantAzimuth.toFixed(3),
           dist: +G.rig.state.distance.toFixed(2), wantDist: +G.rig.state.wantDistance.toFixed(2),

@@ -493,7 +493,7 @@ if (MODE === 'all' || MODE === 'more') {
     else if (s.screen === 'setup') { }
     s = await state();
     if (s.screen !== 'setup') { log('match ' + n + ': expected setup, got ' + s.screen); await shot('unexpected-' + n); break; }
-    if (RING) { for (let k = 0; k < 3; k++) { if ((await page.evaluate(() => window.KEEPSIES_DEV.houseRules().ringSizeFt)) === RING) break; await tap('hr-ringSizeFt'); await wait(150); } }
+    if (RING) { for (let k = 0; k < 4; k++) { if ((await page.evaluate(() => window.KEEPSIES_DEV.houseRules().ringSizeFt)) === RING) break; await tap('hr-ringSizeFt'); await wait(150); } }
     else if (n === 4) { await tap('hr-ringSizeFt'); await wait(200); }
     if (n === 6 && !RING) { await tap('hr-bombing'); await wait(200); }
     // match 3 is played with STATUES on (m2 step 11): placed and moved by real touches

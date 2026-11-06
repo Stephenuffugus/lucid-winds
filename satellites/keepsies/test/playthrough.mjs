@@ -130,7 +130,7 @@ async function drag() {
 /** Play a whole match. Returns what the result card said. */
 async function playAMatch(usePullback, label) {
   await page.evaluate((pb) => window.KEEPSIES_DEV.setPullback(pb), usePullback);
-  await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 909090, forceFirst: 0, houseRules: { ringSizeFt: 7, bombing: false } }));
+  await page.evaluate(() => window.KEEPSIES_DEV.start({ seed: 909090, forceFirst: 0, houseRules: { ringSizeFt: 5, bombing: false } }));
   let turns = 0, shots = 0, cancels = 0, seenCeremony = null;
   while (turns++ < 90) {
     const alive = await waitPlayerTurn();
@@ -240,7 +240,7 @@ const firstSetup = await page.evaluate(() => ({
 }));
 say(firstSetup.beat === 'dusty' || firstSetup.beat === 'break',
   'the first setup is still inside the onboarding: beat ' + firstSetup.beat);
-say(firstSetup.hr.keepsies === false && firstSetup.hr.ringSizeFt === 7,
+say(firstSetup.hr.keepsies === false && firstSetup.hr.ringSizeFt === 5,
   'and the game has set the table itself: For Fair, ' + firstSetup.hr.ringSizeFt + ' foot, slips '
   + firstSetup.hr.slips);
 say(firstSetup.go === true,

@@ -19,7 +19,7 @@ import {
   step, atRest, specOf, positionOf, velocityOf, ringDistance, resolved,
   snapshot, restore, setTimestep, addStatue, removeStatue
 } from '../core/physics.js?v=20261105b';
-import { SHAPES, legal, aiPlacement, blocks, legalSpots, MOVE_MAX } from '../core/statues.js?v=20261105b';
+import { SHAPES, legal, aiPlacement, blocks, legalSpots } from '../core/statues.js?v=20261105b';
 import { makeStreams, makeRng } from '../core/rng.js?v=20261105b';
 import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20261105b';
 import { STARTER_ENTRIES, CROSS_MIX } from '../core/marbleBody.js?v=20261105b';
@@ -32,7 +32,14 @@ import {
 import { plan } from './ai.js?v=20261105b';
 import { detect as detectTechniques } from '../core/techniques.js?v=20261105b';
 
-const RING_FT = { 7: '7ft', 10: '10ft', 13: '13ft' };
+const RING_FT = { 5: '5ft', 7: '7ft', 10: '10ft', 13: '13ft' };
+
+/** m3 step 9: a ring may carry its own launch range and AI hand (tuning.ringer.ringTune). A ring not named there plays the shared tuning itself, so its hashes cannot move. */
+export function ringTuning(T0, ft) {
+  const o = (T0.ringer.ringTune || {})[RING_FT[ft]];
+  if (!o) return T0;
+  return Object.assign({}, T0, { snap: Object.assign({}, T0.snap, o) });
+}
 
 const SQ3 = 1.7320508075688772;
 const PI = 3.141592653589793;
@@ -79,9 +86,9 @@ export const FORMATION_NAMES = Object.keys(FORMATIONS);
  *   hooks?:object}} setup
  */
 export function createRinger(setup) {
-  const T = setup.tuning;
   const hooks = setup.hooks || {};
   const hr = Object.assign({}, DEFAULT_HOUSE_RULES, setup.houseRules || {});
+  const T = ringTuning(setup.tuning, hr.ringSizeFt);
   const ringRadius = T.ringer.ringSizeRadius[RING_FT[hr.ringSizeFt] || '10ft'];
   const rng = makeStreams(setup.seed);
 

@@ -17,7 +17,7 @@ import { FORMATIONS, FORMATION_NAMES } from '../src/game/ringer.js?v=20261105b';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const T = JSON.parse(readFileSync(join(HERE, '..', 'src', 'data', 'tuning.json'), 'utf8'));
 const SP = T.ringer.crossSpacing;
-const SMALLEST_RING = T.ringer.ringSizeRadius['7ft'];
+const SMALLEST_RING = T.ringer.ringSizeRadius['5ft'];   // m3 step 9
 
 const fails = [];
 const ok = (c, m) => { if (!c) fails.push(m); };
@@ -38,7 +38,7 @@ for (const name of FORMATION_NAMES) {
   }
   cx /= lay.length; cz /= lay.length;
   ok(minPair >= SP * 0.999, `${name}: two mibs are ${minPair.toFixed(4)} m apart, spacing is ${SP}`);
-  ok(maxR < SMALLEST_RING * 0.5, `${name}: a mib sits ${maxR.toFixed(3)} m out, past half the seven foot ring (${(SMALLEST_RING * 0.5).toFixed(3)})`);
+  ok(maxR < SMALLEST_RING * 0.5, `${name}: a mib sits ${maxR.toFixed(3)} m out, past half the five foot ring (${(SMALLEST_RING * 0.5).toFixed(3)})`);
   ok(Math.hypot(cx, cz) < 1e-6, `${name}: lay is off centre by ${Math.hypot(cx, cz).toFixed(4)} m`);
   // a shape signature: sorted pairwise distances, so a rotation of the same lay still reads as distinct only if it IS
   shapes[name] = lay.map(p => Math.hypot(p[0], p[1]).toFixed(4)).sort().join(',');
@@ -57,4 +57,4 @@ for (let i = 0; i < FORMATION_NAMES.length; i++) for (let j = i + 1; j < FORMATI
 }
 
 if (fails.length) { console.log('FORMATIONS FAILED'); for (const f of fails) console.log('  - ' + f); process.exit(1); }
-console.log(`FORMATIONS OK  ${FORMATION_NAMES.join(', ')}: thirteen each, ${SP} m apart, all inside half the seven foot ring`);
+console.log(`FORMATIONS OK  ${FORMATION_NAMES.join(', ')}: thirteen each, ${SP} m apart, all inside half the five foot ring`);

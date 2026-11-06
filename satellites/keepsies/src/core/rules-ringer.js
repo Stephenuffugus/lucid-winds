@@ -20,7 +20,7 @@ export const DEFAULT_HOUSE_RULES = {
   slips: true,
   bombing: false,
   poison: false,
-  ringSizeFt: 10,
+  ringSizeFt: 5,
   formation: 'cross'
 };
 

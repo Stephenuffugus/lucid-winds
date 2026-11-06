@@ -1,7 +1,7 @@
 /**
  * Ringer played for real, by two planners, with the actual physics.
  *
- *   node test/ringer_ai.mjs [games]
+ *   node test/ringer_ai.mjs [games] [ring in feet, five by default as the game is]
  *
  * `ringer_rules` proves the referee against a generator. This proves the whole
  * thing together: the planner, the contact patch, the pocketing rule and the
@@ -21,6 +21,7 @@ import { createRinger } from '../src/game/ringer.js?v=20261105b';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const T = JSON.parse(readFileSync(join(ROOT, 'src/data/tuning.json'), 'utf8'));
 const GAMES = parseInt(process.argv[2] || '20', 10);
+const RING_FT = parseInt(process.argv[3] || '5', 10);
 
 await initPhysics();
 
@@ -31,7 +32,7 @@ function playSet(label, a, b, n, seed0) {
   for (let g = 0; g < n; g++) {
     const R = createRinger({
       tuning: T, seed: seed0 + g, skipLag: false,
-      houseRules: { keepsies: true, slips: true, bombing: false, poison: g % 4 === 0, ringSizeFt: 10 },
+      houseRules: { keepsies: true, slips: true, bombing: false, poison: g % 4 === 0, ringSizeFt: RING_FT },
       players: [
         { name: 'A', ai: a, tawEntry: 'taw_clearie' },
         { name: 'B', ai: b, tawEntry: 'taw_clearie' }
