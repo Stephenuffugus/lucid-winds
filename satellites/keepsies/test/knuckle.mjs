@@ -123,7 +123,7 @@ for (const c of cases) {
   // measured against it is nonsense.
   const here = await page.evaluate(() => window.KEEPSIES_DEV.state().match.taw);
   if (!here) { say(false, c.id + ': the shooter was not on screen'); continue; }
-  const at = c.rel ? { x: here.x + c.rel.x * here.r, y: here.y + c.rel.y * here.r } : here;
+  const at = c.rel ? { x: here.x + c.rel.x * here.spinR, y: here.y + c.rel.y * here.spinR } : here;   // m3 step 3: contact reads against the spin ring
   const aim = await gesture(at, c.d[0], c.d[1], c.ms, 18, c.hook);
   got[c.id] = aim;
   console.log('  ' + c.id.padEnd(42) + (aim

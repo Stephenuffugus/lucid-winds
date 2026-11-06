@@ -9,7 +9,7 @@
  * aim jump more than 10 degrees in one frame 37 times (42.4 at worst), the shooter was off the screen for 25
  * frames, and with the thumb braced a second finger drifting 30 px turned the aim 12.0 degrees.
  */
-import { HERE, ROOT, clock, T, D, wrap, mainSrc, makeGame, ev, playTouch } from './inputlab.mjs';
+import { HERE, ROOT, clock, T, D, wrap, mainSrc, makeGame, ev, playTouch } from './inputlab.mjs?v=20261105b';
 
 let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };

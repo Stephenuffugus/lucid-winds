@@ -238,7 +238,8 @@ const b1 = await stat(await page.screenshot());
 await new Promise(r => setTimeout(r, 600));
 const b2 = await stat(await page.screenshot());
 const d = diff(b1, b2);
-say(d.movedFrac > 0.02, '(d) two frames 600 ms apart differ: ' + (d.movedFrac * 100).toFixed(1)
+/* m3 step 4: the camera holds while a shot plays, so only the marbles move: a tenth of a percent of the cells, not the two percent the follow camera gave */
+say(d.movedFrac > 0.001, '(d) two frames 600 ms apart differ: ' + (d.movedFrac * 100).toFixed(1)
   + '% of cells moved, mean difference ' + d.meanDiff.toFixed(2) + ' of 255');
 
 const st = await page.evaluate(() => { window.KEEPSIES_DEV.settle(1400); return window.KEEPSIES_DEV.state(); });
