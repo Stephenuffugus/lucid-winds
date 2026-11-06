@@ -2364,6 +2364,7 @@ function installDevHook() {
     pouch: (kind) => openPouch(kind),
     /* STATUES (m2): the record, the placement state, and where a spot on the dirt is on the screen */
     statues: () => (G.R ? G.R.statues().map(s => Object.assign({}, s)) : []),
+    placeAngle: (a) => { if (a != null && G.R) G.R.setPlaceAngle(a); return G.R ? G.R.state.placeAngle : null; },
     placeStatueNow: (shape, x, z) => { G.stPending = { shape, x, z, ok: true }; confirmStatue(); },
     placing: () => (G.statuesPlacing ? { placed: G.statuesPlacing.placed, pending: G.stPending ? Object.assign({}, G.stPending) : null } : null),
     moving: () => (G.moving ? { index: G.moving.index, pending: G.stPending ? Object.assign({}, G.stPending) : null } : null),
