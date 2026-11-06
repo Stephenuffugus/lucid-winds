@@ -879,6 +879,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     JELLY_SPEED: 1 /* T1.4: the bob's cells per second */, SPARK_AIR_S: 0.2 /* a hop's flight */, ELITE_SIZE_CELLS: 1.5 /* 24 px (Q51) */,
     HIT_HEARTS: 1, HIT_IFRAMES_S: 1, HIT_KNOCKBACK_CELLS: 2, HIT_KNOCKBACK_FRAMES: 8 /* T0.16's "over 8 frames" */,
     BOSS_INTRO_S: 2, BOSS_TELEGRAPH_S: 0.8, BOSS_SAFE_LEDGE_CELLS: 6, BOSS_WEAK_MIN: 3, BOSS_OUTLINE_UNTIL: 0.25, BOSS_FALLBACK_HP: 20,
+    /* the shove (6 Nov, Stephen: he sat beside the Ember guardian and hit it with no answer): a bug that stays within
+       BOSS_SHOVE_CELLS of the body for BOSS_SHOVE_AFTER_S is told for BOSS_SHOVE_TELL_S, then struck if still there */
+    BOSS_SHOVE_CELLS: 2, BOSS_SHOVE_AFTER_S: 1.2, BOSS_SHOVE_TELL_S: 0.45,
     STOMP_GRACE_S: 0.5 /* W3: a stomped enemy's contact off the hero */,
     /* the second monsters (2 Nov): the bunny's roll, the owl's swoop, the crab's shell, the puff's cloud, the beetle's trail */
     BUNNY_SEE_CELLS: 3, BUNNY_ROLL_PX: 1.5, BUNNY_ROLL_S: 1, BUNNY_REST_S: 1.5, OWL_SEE_CELLS: 5, OWL_SWOOP_PX: 1.75, OWL_SWOOP_S: 0.75, OWL_REST_S: 1.5,
@@ -1021,7 +1024,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-10';
+  SB.BUILD = 'sb-m2-11';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -4414,7 +4417,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function newBoss(level, gd) {
     var T = SB.TUNING, K = SB.K, cells = [], b = level.features.boss;
     for (var i = 0; i < b.length; i++) cells.push(b[i] | 0);
-    return { cells: cells, hp: T.BOSS_FALLBACK_HP * K.HP_Q, hpMax: T.BOSS_FALLBACK_HP * K.HP_Q, phase: 0, timer: 0, intro: K.BOSS_INTRO_F, telegraph: 0 };
+    return { cells: cells, hp: T.BOSS_FALLBACK_HP * K.HP_Q, hpMax: T.BOSS_FALLBACK_HP * K.HP_Q, phase: 0, timer: 0, intro: K.BOSS_INTRO_F, telegraph: 0, near: 0, shove: 0 };
   }
   function shedSlot(s, m) { return !!s.boss && m >= s.enemies.length - SB.TUNING.BOSS_MOTH_COUNT; }
   /* a weapon's hit on the guardian (the same funnel as an enemy's, hit()): q quarters off; the struck cell goes, then
@@ -5291,6 +5294,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
         /* the biome's moveset (2 Nov): its cycle and its tell (Attic's are the shed's own, unchanged) */
         if (GB.telegraph > 0) { GB.telegraph--; if (GB.telegraph === 0) { bossAttack(s, lv); GB.timer = 0; } }
         else if (GB.timer >= bossEvery(s) - bossTell(s)) { GB.telegraph = bossTell(s); s.ev |= EV.TELL; bossTold(s, lv); }
+        /* the shove: camping beside the body is answered in every biome. The bug's box within BOSS_SHOVE_CELLS of the
+           body box for BOSS_SHOVE_AFTER_F steps starts a tell of BOSS_SHOVE_TELL_F; at its end a bug still that close is
+           hit (the plain hit: hearts, i frames, knockback away from the body) and the count starts over */
+        var sbb = bodyBox(lv), sr = SB.TUNING.BOSS_SHOVE_CELLS * K.CELL_SUB;
+        var sNear = h.x < sbb[2] + sr && h.x + K.HERO_W_SUB > sbb[0] - sr && h.y < sbb[3] + sr && h.y + K.HERO_H_SUB > sbb[1] - sr;
+        if (GB.shove > 0) { GB.shove--; if (GB.shove === 0) { GB.near = 0; if (sNear) bossHurt(s, heroSide(s, (sbb[0] + sbb[2]) >> 1)); } }
+        else if (sNear) { GB.near++; if (GB.near >= K.BOSS_SHOVE_AFTER_F) { GB.shove = K.BOSS_SHOVE_TELL_F; s.ev |= EV.TELL; } }
+        else GB.near = 0;
         if (!s.immortal && h.iframes === 0 && h.dashI === 0) {
           var gc = 2 * K.SUB, gmid = 0, glive = 0, touched = false;
           for (var gi = 0; gi < GB.cells.length; gi++) {
@@ -7885,6 +7896,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
         var ow = g.rect[2] * C, oh = g.rect[3] * C;
         for (var ox2 = 0; ox2 < ow; ox2 += 2) { ctx.fillRect(rx + ox2, ry, 1, 1); ctx.fillRect(rx + ox2, ry + oh - 1, 1, 1); }
         for (var oy2 = 0; oy2 < oh; oy2 += 2) { ctx.fillRect(rx, ry + oy2, 1, 1); ctx.fillRect(rx + ow - 1, ry + oy2, 1, 1); }
+      }
+      if (B.phase === 1 && B.shove > 0) {
+        var sc2 = SB.TUNING.BOSS_SHOVE_CELLS * C, sw2 = g.rect[2] * C + sc2 * 2, sh2 = g.rect[3] * C + sc2 * 2, sx2 = rx - sc2, sy2 = ry - sc2, son = (s.frame >> 2) & 1;
+        ctx.fillStyle = CSS[son ? P.I.GLARE : P.I.INK];
+        ctx.fillRect(sx2, sy2, sw2, 2); ctx.fillRect(sx2, sy2 + sh2 - 2, sw2, 2); ctx.fillRect(sx2, sy2, 2, sh2); ctx.fillRect(sx2 + sw2 - 2, sy2, 2, sh2);
       }
       if (B.phase === 0) {
         var on = (s.frame >> 3) & 1, w5 = g.rect[2] * C, h4 = g.rect[3] * C;
@@ -10905,7 +10921,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=32').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=33').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.
