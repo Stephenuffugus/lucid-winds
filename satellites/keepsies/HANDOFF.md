@@ -5,7 +5,7 @@
 ## Where we are
 
 **2026-11-06, Keepsies m3 (his 5 Nov verdict on the shot, `KEEPSIES_M3_BUILD_PLAN.md` steps 1 to 12, Opus): stamp `20261106a`,
-deploy script `/home/codespace/kp-drafts/deploy-keepsies-m3.sh` (on top of m2 live).** The shot is rebuilt: one owner per
+deploy script `/home/codespace/kp-drafts/deploy-keepsies-m3.sh` (on top of m2), LIVE 6 Nov at main fbcfe26fe.** The shot is rebuilt: one owner per
 finger, the camera holds still while a shot plays (median turn 234 degrees before, 0.00 now), a 154 px circle fixed in CSS
 px, the flick reads each sample's own timestamp and the fastest 30 to 50 ms, the aim line is the aim (the flick's angle feeds
 the wildness only), a sideways slide on the shooter is a dial, the close aim frame by ring table, the watch frame, LOOK held,
