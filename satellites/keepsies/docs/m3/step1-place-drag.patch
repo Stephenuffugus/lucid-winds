@@ -1,0 +1,391 @@
+diff --git a/satellites/keepsies/src/input/cameraCtl.js b/satellites/keepsies/src/input/cameraCtl.js
+index c6d79b707..8223c3950 100644
+--- a/satellites/keepsies/src/input/cameraCtl.js
++++ b/satellites/keepsies/src/input/cameraCtl.js
+@@ -39,6 +39,9 @@ export function attachCameraControls(canvas, rig, hooks) {
+   function onMove(e) {
+     const p = pointers.get(e.pointerId);
+     if (!p) return;
++    /* ⛔ THE CLAIM IS RECHECKED ON EVERY MOVE (m3 law 14), not only on the down: a finger the brace or the
++       place drag takes after it went down is the camera's no longer */
++    if (claimed(e.pointerId)) { pointers.delete(e.pointerId); lastPinch = 0; return; }
+     const dx = e.clientX - p.x;
+     p.x = e.clientX; p.y = e.clientY;
+     moved += Math.abs(dx) + Math.abs(e.clientY - p.oy);
+diff --git a/satellites/keepsies/src/input/placement.js b/satellites/keepsies/src/input/placement.js
+new file mode 100644
+index 000000000..38fa6658f
+--- /dev/null
++++ b/satellites/keepsies/src/input/placement.js
+@@ -0,0 +1,71 @@
++/**
++ * The place drag (m3 step 1): the finger that slides the shooter along the chalk at the start of a turn.
++ *
++ * ⛔ ONE OWNER PER FINGER. Until m3 this lived in main.js and was registered AFTER the camera, so one drag both
++ * orbited the camera and moved the shooter, and it placed the shooter from the camera's own moving azimuth plus
++ * half a turn: the shooter went to the far side of the ring, the camera chased it, and a slow 60 px drag made the
++ * aim jump 37 times by more than 10 degrees (42.4 at worst) with the shooter off the screen for 25 frames. That is
++ * the "freaks out and skips around" of his 5 Nov verdict (docs/m3/INPUT.md). Now:
++ *   - this registers before the camera, and the camera drops any pointer it has claimed (cameraCtl.js);
++ *   - the drag is RELATIVE: the ring angle at the down plus the finger's x travel times a gain, so the shooter
++ *     slides along the NEAR edge the finger's way and a still finger moves nothing. The gain is measured at the
++ *     down from the frozen camera so the shooter keeps pace with the finger on the glass (1 px for 1 px), capped
++ *     at `gainRadPerPx` (0.006 rad per px, the plan's figure): at that cap a ten foot shooter ran 3.6 px for
++ *     every px of thumb and left the screen inside a 60 px drag, so the cap is only reached where the ring is
++ *     seen edge on. Lift and drag again to go further; after the lift the camera eases behind it;
++ *   - it never reads the camera's azimuth, and while the drag is live `live()` is true and main.js holds the
++ *     camera still; after the lift the frame eases back behind the shooter.
++ *
++ * @param {HTMLCanvasElement} canvas
++ * @param {object} G the game state of main.js (R, rig, moving, statuesPlacing, knuckle, placeDrag)
++ * @param {{canAim:()=>boolean, gainRadPerPx?:number}} hooks
++ */
++import { len2, sin, cos } from '../core/dmath.js?v=20261105b';
++
++export function attachPlacement(canvas, G, hooks) {
++  const h = hooks || {};
++  const gain = h.gainRadPerPx == null ? 0.006 : h.gainRadPerPx;
++  let x0 = 0, a0 = 0, k = gain;
++
++  /** radians of ring angle per px of finger, signed so the shooter goes the finger's way on the screen */
++  function gainAt(a) {
++    const R = G.R.ringRadius, d = 0.02;
++    if (!R || !G.rig || !G.rig.project) return gain;
++    const p = G.rig.project(sin(a + d) * R, 0, cos(a + d) * R);
++    const q = G.rig.project(sin(a - d) * R, 0, cos(a - d) * R);
++    const pxPerRad = (p.x - q.x) / (2 * d);
++    if (!(Math.abs(pxPerRad) > 1 / gain)) return pxPerRad < 0 ? -gain : gain;
++    return 1 / pxPerRad;
++  }
++
++  canvas.addEventListener('pointerdown', (e) => {
++    if (G.placeDrag !== null && G.placeDrag !== undefined) return;   // one finger places
++    if (G.moving || G.statuesPlacing) return;
++    if (!G.R || !h.canAim() || G.R.state.phase !== 'place') return;
++    if (G.knuckle && G.knuckle.owns(e.pointerId)) return;              // the brace took it first
++    if (G.knuckle && G.knuckle.state && G.knuckle.state().bracing) return;
++    const t = G.R.tawOnScreen(G.rig);
++    const r = canvas.getBoundingClientRect();
++    const x = e.clientX - r.left, y = e.clientY - r.top;
++    if (t && len2(x - t.x, y - t.y) <= t.grabR) return;   // that is a brace, not a placement
++    G.placeDrag = e.pointerId;
++    x0 = e.clientX;
++    a0 = G.R.state.placeAngle;
++    k = gainAt(a0);
++  }, { passive: false });
++
++  canvas.addEventListener('pointermove', (e) => {
++    if (G.placeDrag !== e.pointerId) return;
++    if (!G.R || G.R.state.phase !== 'place') { G.placeDrag = null; return; }
++    G.R.setPlaceAngle(a0 + (e.clientX - x0) * k);
++  });
++
++  const drop = (e) => { if (G.placeDrag === e.pointerId) G.placeDrag = null; };
++  canvas.addEventListener('pointerup', drop);
++  canvas.addEventListener('pointercancel', drop);
++
++  return {
++    /** true while a finger is placing: the camera holds its facing */
++    live: () => G.placeDrag !== null && G.placeDrag !== undefined
++  };
++}
+diff --git a/satellites/keepsies/src/main.js b/satellites/keepsies/src/main.js
+index e2379fac9..b4db91e4a 100644
+--- a/satellites/keepsies/src/main.js
++++ b/satellites/keepsies/src/main.js
+@@ -17,6 +17,7 @@ import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/
+ import { attachCameraControls } from './input/cameraCtl.js?v=20261105b';
+ import { createKnuckle } from './input/knuckle.js?v=20261105b';
+ import { createPullback } from './input/pullback.js?v=20261105b';
++import { attachPlacement } from './input/placement.js?v=20261105b';
+ import * as AUDIO from './audio/synth.js?v=20261105b';
+ import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261105b';
+ import { createRinger } from './game/ringer.js?v=20261105b';
+@@ -194,10 +195,13 @@ async function boot() {
+   G.pullback.attach();
+ 
+   attachStatues(canvas);   // before the camera: a statue move's finger is claimed first (step 10)
++  /* ⛔ ONE OWNER PER FINGER (m3 law 14): the place drag registers before the camera, and while the thumb is
++     braced the brace owns every finger, so a second finger can neither orbit nor turn the aim */
++  G.place = attachPlacement(canvas, G, { canAim: () => canAim() });
+   G.cam = attachCameraControls(canvas, G.rig, {
+     isClaimed: (id) => G.knuckle.owns(id) || G.pullback.owns(id) || (G.placeDrag === id) || (G.moveDrag === id)
++      || G.knuckle.state().bracing
+   });
+-  attachPlacement(canvas);
+ 
+   addEventListener('resize', () => { if (resize(G.stage)) drawNow(); });
+   if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (resize(G.stage)) drawNow(); });
+@@ -1445,26 +1449,6 @@ const canAim = () => !!G.R && !G.R.state.simulating && !G.R.isAiTurn()
+  * commits it and begins the brace. There is no PLACE button: pre commitment over
+  * buttons, and one gesture flows straight into the next.
+  */
+-function attachPlacement(canvas) {
+-  canvas.addEventListener('pointerdown', (e) => {
+-    if (G.moving || G.statuesPlacing) return;
+-    if (!canAim() || G.R.state.phase !== 'place') return;
+-    const t = G.R.tawOnScreen(G.rig);
+-    const r = canvas.getBoundingClientRect();
+-    const x = e.clientX - r.left, y = e.clientY - r.top;
+-    if (t && len2(x - t.x, y - t.y) <= t.r * 1.6) return;   // that is a brace, not a placement
+-    G.placeDrag = e.pointerId;
+-  }, { passive: false });
+-  canvas.addEventListener('pointermove', (e) => {
+-    if (G.placeDrag !== e.pointerId || !G.R || G.R.state.phase !== 'place') return;
+-    const r = canvas.getBoundingClientRect();
+-    const frac = clamp((e.clientX - r.left) / Math.max(1, r.width), 0, 1);
+-    G.R.setPlaceAngle(G.rig.state.azimuth + Math.PI + (frac - 0.5) * Math.PI * 1.4);
+-  });
+-  const drop = (e) => { if (G.placeDrag === e.pointerId) G.placeDrag = null; };
+-  canvas.addEventListener('pointerup', drop);
+-  canvas.addEventListener('pointercancel', drop);
+-}
+ 
+ /**
+  * ⛔ THE SKYLINE IN THE WIDE SHOT (step 3). The brace camera looks 30 degrees down through a 28 degree lens, so
+@@ -2144,7 +2128,8 @@ function frame(now) {
+       // the cut also forgets the last shooter's orbit and pinch, BEFORE the frame
+       // is computed, or the hard cut would land on the previous player's offsets
+       if (snapIt && G.rig.resetUser) G.rig.resetUser();
+-      G.R.frameShot(G.rig, snapIt);
++      // the place drag holds the camera still (m3 step 1); the lift lets the frame ease back behind the shooter
++      if (snapIt || !(G.place && G.place.live())) G.R.frameShot(G.rig, snapIt);
+       if (snapIt) { G.lastFramedTurn = t; G.rig.update(1 / 60); }
+     }
+     /* ⛔ TOP DOWN LOOKS AT THE WHOLE PROBLEM. At 1.9 radii over the sports
+diff --git a/satellites/keepsies/test/placement.mjs b/satellites/keepsies/test/placement.mjs
+new file mode 100644
+index 000000000..f5a3a6ab0
+--- /dev/null
++++ b/satellites/keepsies/test/placement.mjs
+@@ -0,0 +1,218 @@
++/* PLACEMENT (m3 step 1): the place drag has one owner per finger, and a still thumb moves nothing.
++ *
++ * Runs the SHIPPED input path in node, the way docs/m3/harness.mjs does: render/scene.js's orbit rig,
++ * input/knuckle.js, input/pullback.js, input/cameraCtl.js, input/placement.js, core/framing.js, and the exact
++ * source text of ringer.js frameShot / tawOnScreen / setPlaceAngle. Touch arrives as Chrome on Android delivers
++ * it: 120 Hz samples, one rAF aligned pointermove per frame with its coalesced list and their own timeStamps.
++ *
++ * Before m3 (docs/m3/INPUT.md, measured on the shipped code): a slow 60 px drag in the place phase made the
++ * aim jump more than 10 degrees in one frame 37 times (42.4 at worst), the shooter was off the screen for 25
++ * frames, and with the thumb braced a second finger drifting 30 px turned the aim 12.0 degrees.
++ */
++import { readFileSync } from 'node:fs';
++import { register } from 'node:module';
++import { fileURLToPath, pathToFileURL } from 'node:url';
++import { dirname, join } from 'node:path';
++
++const HERE = dirname(fileURLToPath(import.meta.url));
++const ROOT = join(HERE, '..');
++const THREE_URL = pathToFileURL(join(ROOT, 'lib', 'three.module.min.js')).href;
++register('data:text/javascript,' + encodeURIComponent(
++  'export async function resolve(s, c, n) { if (s === "three") return { url: ' + JSON.stringify(THREE_URL)
++  + ', shortCircuit: true }; return n(s, c); }'));
++
++let CLOCK = 0;
++Object.defineProperty(globalThis, 'performance', { value: { now: () => CLOCK }, configurable: true, writable: true });
++const scene = await import('../src/render/scene.js?v=20261105b');
++const { createKnuckle } = await import('../src/input/knuckle.js?v=20261105b');
++const { createPullback } = await import('../src/input/pullback.js?v=20261105b');
++const { attachCameraControls } = await import('../src/input/cameraCtl.js?v=20261105b');
++const { attachPlacement } = await import('../src/input/placement.js?v=20261105b');
++const { frameFor } = await import('../src/core/framing.js?v=20261105b');
++const { len2, clamp, sin, cos, DEG } = await import('../src/core/dmath.js?v=20261105b');
++const T = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'tuning.json'), 'utf8'));
++
++let fails = 0;
++const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
++const D = 180 / Math.PI;
++const wrap = (a) => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
++
++/* the shipped source, by name */
++function fnSrc(src, name) {
++  const i = src.indexOf('function ' + name + '(');
++  if (i < 0) throw new Error(name + ' not found');
++  let k = src.indexOf('{', i), depth = 0;
++  for (; k < src.length; k++) { if (src[k] === '{') depth++; else if (src[k] === '}') { depth--; if (!depth) break; } }
++  return src.slice(i, k + 1);
++}
++const ringSrc = readFileSync(join(ROOT, 'src', 'game', 'ringer.js'), 'utf8');
++const mainSrc = readFileSync(join(ROOT, 'src', 'main.js'), 'utf8');
++/* the frame loop's camera line, which this gate mirrors: it has to be in main.js word for word */
++const HOLD = 'if (snapIt || !(G.place && G.place.live())) G.R.frameShot(G.rig, snapIt);';
++ok(mainSrc.indexOf(HOLD) >= 0, 'main.js holds the camera while the place drag is live');
++ok(mainSrc.indexOf("G.place = attachPlacement(canvas, G,") >= 0
++  && mainSrc.indexOf("G.place = attachPlacement(") < mainSrc.indexOf('G.cam = attachCameraControls('),
++  'main.js registers the place drag BEFORE the camera');
++ok(/G\.knuckle\.state\(\)\.bracing/.test(mainSrc.slice(mainSrc.indexOf('G.cam = attachCameraControls('), mainSrc.indexOf('G.cam = attachCameraControls(') + 400)),
++  'while braced the brace owns every finger (isClaimed)');
++ok(!/attachPlacement\(canvas\) \{/.test(mainSrc), 'the old in-file attachPlacement is gone');
++
++function makeCanvas(w, h) {
++  const L = {};
++  return {
++    clientWidth: w, clientHeight: h,
++    addEventListener(type, fn) { (L[type] = L[type] || []).push(fn); },
++    getBoundingClientRect() { return { left: 0, top: 0, width: w, height: h, right: w, bottom: h }; },
++    setPointerCapture() { }, releasePointerCapture() { }, hasPointerCapture() { return false; },
++    dispatch(type, ev) { for (const fn of (L[type] || []).slice()) fn(ev); }
++  };
++}
++
++function makeGame(o) {
++  const W = o.w, H = o.h;
++  const stage = { width: W, height: H };
++  const rig = scene.createOrbitRig(stage, { target: { x: 0, y: 0.012, z: 0 }, distance: 2.2, elevationDeg: 33, fov: T.render.ringerCam.fov });
++  rig.camera.updateMatrixWorld();
++  const R = T.ringer.ringRadius, tawRadius = T.diameterMm.taw / 2000;
++  const mibs = [{ x: 0, z: 0 }];
++  for (let k = 1; k <= 3; k++) for (const [ux, uz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) mibs.push({ x: ux * k * T.ringer.crossSpacing, z: uz * k * T.ringer.crossSpacing });
++  const a = o.placeAngle || 0;
++  const world = { taw: { x: sin(a) * R, y: tawRadius, z: cos(a) * R }, phase: o.phase, placeAngle: a, simulating: false };
++  const posOf = (Wd, id) => (id === 'taw' ? world.taw : mibs[+id.slice(1)]);
++  const scope = [{ marbles: { has: () => true } }, () => ({ id: 'taw' }), posOf, () => ({ radius: tawRadius }),
++    () => mibs.map((m, i) => ({ id: 'm' + i })), { bare: false }, T, frameFor, len2, { ringRadius: R },
++    (M, ang) => ({ x: sin(ang) * M.ringRadius, z: cos(ang) * M.ringRadius }),
++    (Wd, id, p) => { world.taw.x = p.x; world.taw.z = p.z; }, world];
++  const mk = (name) => new Function('W', 'shooterTaw', 'positionOf', 'specOf', 'liveMibs', 'setup', 'T', 'frameFor', 'len2', 'M',
++    'edgePosition', 'place', 'G', fnSrc(ringSrc, name) + '\nreturn ' + name + ';')(...scope);
++  const frameShot = mk('frameShot'), tawOnScreen = mk('tawOnScreen'), setPlaceAngle = mk('setPlaceAngle');
++  const canvas = makeCanvas(W, H);
++  const G = {
++    rig, screen: 'match', paused: false, moving: null, statuesPlacing: false, usePullback: false, placeDrag: null, moveDrag: null,
++    R: {
++      state: world,
++      tawOnScreen: (rg) => tawOnScreen(rg),
++      setPlaceAngle: (ang) => setPlaceAngle(ang),
++      frameShot: (rg, s) => frameShot(rg, s),
++      ringRadius: R,
++      isAiTurn: () => false
++    }
++  };
++  const canAim = () => !!G.R && !G.R.state.simulating && !G.R.isAiTurn();
++  /* main.js's order: knuckle, pullback, statues, PLACEMENT, camera */
++  G.knuckle = createKnuckle(canvas, T, {
++    taw: () => (canAim() ? G.R.tawOnScreen(G.rig) : null),
++    aimAzimuth: () => G.rig.state.azimuth + Math.PI,
++    groundPoint: () => null,
++    groundFactor: () => sin(G.rig.state.elevationDeg * DEG),
++    calib: () => ({ max: T.snap.thumbSpeedMaxDefault }),
++    bombingAllowed: () => false,
++    onBrace: (st) => { if (st.bracing && world.phase === 'place') world.phase = 'aim'; },
++    onAim: () => { }, onCancel: () => { },
++    enabled: () => true
++  });
++  G.knuckle.attach();
++  G.pullback = createPullback(canvas, T, { taw: () => null, aimAzimuth: () => 0, groundFactor: () => 1, onAim: () => { }, onCancel: () => { }, enabled: () => false });
++  G.pullback.attach();
++  G.place = attachPlacement(canvas, G, { canAim });
++  G.cam = attachCameraControls(canvas, G.rig, {
++    isClaimed: (id) => G.knuckle.owns(id) || G.pullback.owns(id) || (G.placeDrag === id) || (G.moveDrag === id)
++      || G.knuckle.state().bracing
++  });
++  let lastFramedTurn = -1;
++  function frame(dt) {
++    const snapIt = lastFramedTurn !== 0;
++    if (snapIt && G.rig.resetUser) G.rig.resetUser();
++    if (snapIt || !(G.place && G.place.live())) G.R.frameShot(G.rig, snapIt);   // = HOLD
++    if (snapIt) { lastFramedTurn = 0; G.rig.update(1 / 60); }
++    G.rig.update(dt);
++    G.rig.camera.updateMatrixWorld();
++  }
++  return { G, world, canvas, rig, frame, taw: () => tawOnScreen(rig) };
++}
++
++const ev = (id, x, y, ts, list) => ({ pointerId: id, clientX: x, clientY: y, timeStamp: ts, pointerType: 'touch',
++  preventDefault() { }, getCoalescedEvents() { return list || []; } });
++
++/** one finger, Chrome on Android: 120 Hz samples, rAF aligned moves with coalesced lists */
++function playTouch(game, path, dur, o) {
++  const frameMs = 1000 / 60, sampleMs = 1000 / 120, id = o.id || 7, t0 = 1000;
++  let t = t0 - 90 * frameMs;
++  for (let i = 0; i < 90; i++) { CLOCK = t; game.frame(frameMs / 1000); t += frameMs; }
++  const p0 = path(0);
++  CLOCK = t0;
++  game.canvas.dispatch('pointerdown', ev(id, p0.x, p0.y, t0));
++  let pending = [], ns = t0 + sampleMs, nf = Math.ceil(t0 / frameMs) * frameMs;
++  if (nf <= t0) nf += frameMs;
++  const tEnd = t0 + dur;
++  while (true) {
++    if (ns <= nf && ns <= tEnd) { const p = path(ns - t0); pending.push(ev(id, p.x, p.y, ns)); ns += sampleMs; continue; }
++    if (nf <= tEnd) {
++      CLOCK = nf;
++      if (pending.length) { const l = pending[pending.length - 1]; game.canvas.dispatch('pointermove', ev(id, l.clientX, l.clientY, l.timeStamp, pending.slice())); pending = []; }
++      game.frame(frameMs / 1000); o.each(false); nf += frameMs; continue;
++    }
++    break;
++  }
++  CLOCK = tEnd;
++  if (pending.length) { const l = pending[pending.length - 1]; game.canvas.dispatch('pointermove', ev(id, l.clientX, l.clientY, l.timeStamp, pending.slice())); }
++  const pe = path(dur);
++  game.canvas.dispatch('pointerup', ev(id, pe.x, pe.y, tEnd));
++  for (let i = 0; i < (o.post || 0); i++) { CLOCK = nf; game.frame(frameMs / 1000); o.each(true); nf += frameMs; }
++}
++
++/* 1. the place drag: 60 px to the left over 500 ms, off the shooter, at 412x839 and 360x780 */
++for (const [w, h] of [[412, 839], [360, 780], [412, 915]]) {
++  const g = makeGame({ w, h, phase: 'place' });
++  let prevAim = null, maxStep = 0, off = 0, prevRing = null, dirs = new Set(), firstStep = null, maxUserAz = 0;
++  let sx0 = null, sxEnd = null, maxStepDrag = 0;
++  playTouch(g, (t) => ({ x: 300 - 60 * Math.min(1, t / 500), y: 500 }), 500, { post: 90, each: (post) => {
++    const st = g.rig.state, aim = wrap(st.azimuth + Math.PI), ring = Math.atan2(g.world.taw.x, g.world.taw.z), ts = g.taw();
++    if (!ts) off++;
++    if (prevAim !== null) { const j = Math.abs(wrap(aim - prevAim)) * D; maxStep = Math.max(maxStep, j); if (!post) maxStepDrag = Math.max(maxStepDrag, j); }
++    if (prevRing !== null) { const d = wrap(ring - prevRing); if (Math.abs(d) > 1e-9) dirs.add(Math.sign(d)); if (firstStep === null && !post) firstStep = Math.abs(d) * D; }
++    if (!post && ts) { if (sx0 === null) sx0 = ts.x; sxEnd = ts.x; }
++    maxUserAz = Math.max(maxUserAz, Math.abs(st.userAz || 0) * D);
++    prevAim = aim; prevRing = ring;
++  } });
++  const tag = w + 'x' + h + ': ';
++  ok(maxStep <= 3, tag + 'no aim change over 3 degrees in any frame (largest ' + maxStep.toFixed(2) + ', during the drag ' + maxStepDrag.toFixed(2) + '; shipped 42.4)');
++  ok(off === 0, tag + 'the shooter is never off the screen (' + off + ' frames; shipped 25)');
++  ok(dirs.size === 1, tag + 'its ring angle moves one way only');
++  ok(sx0 !== null && sxEnd < sx0 - 5, tag + 'its screen x goes the finger\'s way (' + (sx0 || 0).toFixed(1) + ' to ' + (sxEnd || 0).toFixed(1) + ')');
++  ok(maxUserAz < 1e-9, tag + 'userAz stays 0 (' + maxUserAz.toFixed(3) + ')');
++  ok(firstStep !== null && firstStep < 1, tag + 'the first move does not jump (' + (firstStep || 0).toFixed(3) + ' degrees)');
++}
++
++/* 2. a still finger moves nothing */
++{
++  const g = makeGame({ w: 412, h: 839, phase: 'place' });
++  const ring0 = Math.atan2(g.world.taw.x, g.world.taw.z);
++  let maxAz = 0, az0 = null;
++  playTouch(g, () => ({ x: 300, y: 500 }), 500, { each: () => { if (az0 === null) az0 = g.rig.state.azimuth; maxAz = Math.max(maxAz, Math.abs(wrap(g.rig.state.azimuth - az0)) * D); } });
++  const ring1 = Math.atan2(g.world.taw.x, g.world.taw.z);
++  ok(Math.abs(wrap(ring1 - ring0)) * D < 1e-6 && maxAz < 1e-6, 'a still finger moves neither the shooter (' + (Math.abs(wrap(ring1 - ring0)) * D).toFixed(4) + ') nor the camera (' + maxAz.toFixed(4) + ')');
++}
++
++/* 3. braced, a second finger drifting 30 px turns nothing */
++{
++  const g = makeGame({ w: 412, h: 839, phase: 'aim' });
++  const frameMs = 1000 / 60;
++  let t = 0;
++  const tick = (n) => { for (let i = 0; i < n; i++) { CLOCK = t; g.frame(frameMs / 1000); t += frameMs; } };
++  tick(90);
++  const s = g.taw();
++  CLOCK = t; g.canvas.dispatch('pointerdown', ev(1, s.x, s.y, t));
++  tick(20);
++  const braced = g.G.knuckle.state().bracing;
++  const az0 = g.rig.state.azimuth;
++  CLOCK = t; g.canvas.dispatch('pointerdown', ev(2, 100, 400, t));
++  for (let k = 1; k <= 18; k++) { CLOCK = t; g.canvas.dispatch('pointermove', ev(2, 100 + 30 * k / 18, 400, t)); tick(1); g.canvas.dispatch('pointermove', ev(1, s.x, s.y, t)); }
++  tick(10);
++  const turned = Math.abs(wrap(g.rig.state.azimuth - az0)) * D;
++  ok(braced, 'the thumb on the shooter braces');
++  ok(turned < 0.1, 'braced, a second finger drifting 30 px turns the aim ' + turned.toFixed(3) + ' degrees (under 0.1; shipped 12.0)');
++}
++
++console.log(fails ? fails + ' FAILED' : 'PLACEMENT OK');
++process.exit(fails ? 1 : 0);
+diff --git a/satellites/keepsies/tools/check.js b/satellites/keepsies/tools/check.js
+index 56c38ac81..c4716dc04 100644
+--- a/satellites/keepsies/tools/check.js
++++ b/satellites/keepsies/tools/check.js
+@@ -37,6 +37,7 @@ const GATES = [
+   { name: 'arena',        cmd: ['test/arena.mjs'],        need: 'ARENA OK' },
+   { name: 'ringer_rules', cmd: ['test/ringer_rules.mjs'], need: 'RINGER RULES OK' },
+   { name: 'camera',       cmd: ['test/camera.mjs'],       need: 'CAMERA OK' },
++  { name: 'placement',    cmd: ['test/placement.mjs'],    need: 'PLACEMENT OK' },
+   { name: 'spyglass',     cmd: ['test/spyglass.mjs'],     need: 'SPYGLASS OK' },
+   { name: 'formations',   cmd: ['test/formations.mjs'],   need: 'FORMATIONS OK' },
+   { name: 'ai_budget',    cmd: ['test/ai_budget.mjs'],   need: 'AI BUDGET OK', slow: true },

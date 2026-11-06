@@ -8,7 +8,7 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 ## You, now
 - [ ] Drop keepsies-round2-materials.zip into Drive Astra/Keepsies/Round 2 (you)
 - [x] Give Astra the Keepsies round 2 kickoff (you: back 5 Nov 23:10, vaulted, unpacked at /workspaces/keepsies-astra-round2)
-- [ ] Keepsies rework from his 5 Nov verdict (the view, the circle three times bigger, the aim that skips, the flick): KEEPSIES_M3_BUILD_PLAN.md (Opus)
+- [ ] Keepsies rework from his 5 Nov verdict (the view, the circle three times bigger, the aim that skips, the flick): KEEPSIES_M3_BUILD_PLAN.md (Opus; step 0 in, step 1 as a patch, steps 2 to 12 next)
 - [ ] Give Astra the Dewball kickoff in Drive Astra/Dewball/Store kit when a slot frees (you)
 - [ ] Shutterbug: open the Darkroom from the title; every blueprint carried out of a room is a print waiting there, a weapon once developed for dead pixels (you)
 - [ ] Play Keepsies on the Pixel with the STATUES chip on: place two, move one (you)
@@ -95,6 +95,7 @@ touch and hold the ones it tells you when it tells you; suggest setting the phon
 - [x] m1 from TOMATO_MAN_BUILD_PLAN.md, built on branch sunstruck of Stephenuffugus/Tomato_Man (Opus: built 5 Nov): the hero, the shade union mask, the worlds and casters, the postcards, teach by crossing one shadow, the burn and the result card (Opus)
 - [x] Run the Tomato Man deploy line (you: m1 and m2 LIVE 5 Nov, main 315687db3, Tomato_Man main 58dbdeae, index 8de3a5338c39 on both lucidwinds.com and the Pages copy)
 - [ ] The Pixel pass on Tomato Man (you)
+- [ ] Run the Tomato Man smoother play line: `! bash /home/codespace/tm-drafts/deploy-tomato-man-perf.sh` (you; built 6 Nov, dry run OK)
 - [x] m2 from pack v2: eight bearings, wilt and tilt states, the Angry Sun sequences, the cue marks (Opus: built 5 Nov)
 - [ ] The 7 DECISIONS: the planet tomato's passing shadow, pass the phone races, hats that do a tiny thing, the How to Play wall, the sun's eyes, the listing and Penny's credit, the Pages mirror (you)
 - [ ] Astra round 2 after your yes on the passing shadow (the encounter frames) and the thirteen produce in eight bearings (Astra)
