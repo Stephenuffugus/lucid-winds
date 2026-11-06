@@ -4,7 +4,9 @@
  * Pulled out of game/ringer.js so the framing can be gated without a physics world.
  * `frameShot` in ringer.js feeds this real positions and applies the answer to the rig.
  *
- * Two things this fixes, both found on the Director's phone on 2026-09-04 ("the end game
+ * m3 step 8 replaced the sports framing and the lean (below, the history) with the aim frame, the watch frame and LOOK.
+ *
+ * Two things the old version fixed, both found on the Director's phone on 2026-09-04 ("the end game
  * is almost impossible, there needs to be a zoom aim something"):
  *
  *  1. THE LEAN. The sports framing stood a fixed 1.9 m back from the gap between the
@@ -49,7 +51,7 @@
  * ⛔ Nothing here touches the accuracy cone. DESIGN 9.6: never rubber-band aim. A closer
  * camera lets you SEE the marble and turn to face it; it does not make the thumb steadier.
  */
-import { sin, cos, atan2, len2, clamp, DEG, PI } from './dmath.js?v=20261105b';
+import { sin, cos, atan, atan2, len2, clamp, DEG, PI } from './dmath.js?v=20261105b';
 
 /**
  * @param {object} inp
@@ -72,41 +74,21 @@ export function frameFor(inp, C, calib) {
   let dx = cx - tawX, dz = cz - tawZ;
   if (len2(dx, dz) < 1e-3) { dx = -tawX; dz = -tawZ; }      // nothing to shoot at: look inward
   if (len2(dx, dz) < 1e-3) { dx = 0; dz = 1; }
-  const span = Math.max(0.9, len2(dx, dz));
 
   if (inp.bare && calib) {
     // one marble, close, the way you look at a marble you are about to snap
     return { tx: tawX, tz: tawZ, azimuth: atan2(-tawX, -tawZ), distance: calib.distance,
-      elevation: calib.elevationDeg, auto: { t: 1, spread: 0, floor: 0 } };
+      elevation: calib.elevationDeg, fov: C.fov, auto: { t: 1, spread: 0, floor: 0 } };
   }
 
-  // t = 1 is the full sports framing (leanFull or more live), t = 0 is the full
-  // endgame lean, reached at exactly ONE mib left, which is the shot the Director
-  // called almost impossible.
+  /* m3 step 8, THE AIM FRAME (his 5 Nov verdict: "The view is terrible"; docs/m3/VIEW.md Framing 3). Close and low behind the shooter, by a table keyed by the ring: the shooter
+     stands where its 154 px circle clears the bottom chips, the far side of the live mibs under the names. For a camera at elevation e looking at a point on the ground, a ground point
+     a metres along the view axis lands at y / halfHeight = a sin e / ((a cos e + d) tanV); holding the shooter at the bottom edge and the far side at the top gives two floors on d, and
+     the closest camera is where they balance. The sports framing and the lean are retired (docs/DECISIONS.md): at ten foot today's camera drew the shooter 14.6 px and a mib 7.2. */
   const leanFull = Math.max(2, C.leanFull == null ? 5 : C.leanFull);
   const t = clamp((live.length - 1) / (leanFull - 1), 0, 1);
-  const biasEnd = C.targetBiasEnd == null ? C.targetBias : C.targetBiasEnd;
-  const bias = biasEnd + (C.targetBias - biasEnd) * t;
-  // the pinch looks AT the target: zooming in slides the look point onto the mibs, so a
-  // player who leans in sees the lay and not the dirt under their own shooter
   const uz = inp.user && inp.user.zoom ? inp.user.zoom : 1;
-  // ⛔ the look point must REACH the target by half zoom: at 0.24x after a 48 degree orbit
-  // the first slide (linear, reaching it only at zero) left the mib 0.24 m beside the look
-  // point, which at 1.15 m depth is off the right edge of a portrait frame (k2-endgame-pinch
-  // showed dirt and nothing else). And the floors below belong to the AUTO frame: a player
-  // who pinches in has chosen to give up the shooter for a look at the lay, so the pinch
-  // multiplies the auto distance and the shooter floor does not refuse it (the second pass
-  // took the floors at the slid look point and a 0.24x pinch stopped at 1.39 m).
-  const biasUser = bias + (1 - bias) * clamp((1 - uz) / 0.5, 0, 1);
-  const sports = span * C.spanFactor + C.spanAdd;
-
-  // The spread floor. Two survivors on opposite sides of the ring must both stay on a
-  // portrait screen, so the camera may not come closer than the cluster's radius needs at
-  // this lens. Horizontal half-angle from the vertical fov and the aspect.
-  // ⛔ measured ACROSS the view axis and ALONG it, not as a radius: a mib knocked to the far
-  // ring edge on the axis needs vertical room and no horizontal room at all, and a radius
-  // charged it for both (an eleven mib frame went from 3.42 m to 4.13 m after one scatter)
-  const ndx = dx / Math.max(1e-6, len2(dx, dz)), ndz = dz / Math.max(1e-6, len2(dx, dz));
+  const L = len2(dx, dz), ndx = dx / Math.max(1e-6, L), ndz = dz / Math.max(1e-6, L);
   let spread = 0, spreadLat = 0, spreadAlong = 0;
   for (const p of live) {
     const rx = p.x - cx, rz = p.z - cz;
@@ -114,55 +96,31 @@ export function frameFor(inp, C, calib) {
     spreadLat = Math.max(spreadLat, Math.abs(rx * ndz - rz * ndx));
     spreadAlong = Math.max(spreadAlong, rx * ndx + rz * ndz);
   }
-  // ⛔ core/ may not call Math transcendentals: the azimuth this returns feeds the
-  // shot, the shot feeds the deterministic physics, and replay verification wants
-  // identical hashes on every platform. tan(hHalf) = tan(fov/2) * aspect exactly, and
-  // tan is sin over cos from dmath, so no Math.atan or Math.tan is needed here.
-  const aspect = Math.max(0.3, inp.aspect || 0.56);
-  const halfV = (C.fov * DEG) / 2;
-  const tanH = (sin(halfV) / cos(halfV)) * aspect;
+  const A = aimRow(C, inp.ringR == null ? L : inp.ringR);
+  const e = A.elevationDeg * DEG, se = sin(e), ce = cos(e), halfV = (A.fov * DEG) / 2, tanV = sin(halfV) / cos(halfV);
+  const aspect = Math.max(0.3, inp.aspect || 0.56), tanH = tanV * aspect;
+  const S = Math.max(C.aimMinSpan, L + spreadAlong), edgeB = edgeOf(inp.vh, C.fitBottomPx + (inp.grabPx || 77) + 4), edgeT = edgeOf(inp.vh, C.fitTopPx);
+  let fit = fitSpan(S, se, ce, tanV, edgeB, edgeT), fov = A.fov;
+  /* below a full board a survivor off the side would be the whole game, so the frame widens to keep every one of them: first the lens, to 44 degrees, then the distance */
   const margin = C.spreadMargin == null ? 1.15 : C.spreadMargin;
-  // ⛔ the horizontal floor belongs to the LEAN only. The ring is 3 m across and a portrait 28
-  // degree lens cannot hold it: the approved sports frame lets side mibs leave the screen and
-  // the player orbits or goes top down. Below leanFull a survivor off the side would be the
-  // whole game, so from there the frame widens to keep every one of them.
-  const floor = spreadLat > 0 && t < 1 ? (spreadLat / tanH) * margin : 0;
-
-  // The vertical fit: the shooter at the bottom edge, the far side of the cluster at the top.
-  const tanV = sin(halfV) / cos(halfV);
-  const e = C.elevationDeg * DEG, se = sin(e), ce = cos(e);
-  // ⛔ two edges, not one: the HUD owns the bottom of the screen (the house rules chip and
-  // the TOP DOWN and PAUSE buttons, the bottom 17 percent at 375 by 667) and the names and
-  // pocket dots own the top 8. A shooter put at 0.85 of the half height sat between the two
-  // buttons with the chip over its grab radius (k2-endgame-one, first pass of the fit).
-  const edgeT = C.fitEdgeTop == null ? 0.84 : C.fitEdgeTop;
-  // ⛔ the lean may never put the shooter LOWER than the approved sports frame does, and it
-  // may never move the approved frame either: the bottom edge is fitEdgeBottom or the sports
-  // frame's own shooter height, whichever is lower on the screen. At a full cross the floor
-  // then reproduces the sports framing exactly (a fixed 0.56 edge pushed a full cross from
-  // 3.80 m to 4.22 m in the gate), and in the lean the shooter stays above the house rules
-  // chip on a 568 px screen, where the chip tops out at 83% of the height.
-  const tanV0 = sin(halfV) / cos(halfV);
-  const e0 = C.elevationDeg * DEG;
-  const sT = C.targetBias * span;
-  const ySports = (sT * sin(e0)) / Math.max(1e-6, (sports - sT * cos(e0)) * tanV0);
-  const edgeB = Math.max(C.fitEdgeBottom == null ? 0.56 : C.fitEdgeBottom, ySports);
-  const tawFloor = (bias * span) * (ce + se / (edgeB * tanV));
-  const mibFloor = ((1 - bias) * span + spreadAlong) * (se / (edgeT * tanV) - ce);
-  const fit = Math.max(tawFloor, mibFloor, floor);
-  // t = 1 stands where the contact sheet put it, t = 0 stands as close as the fit allows,
-  // and the fit is a floor at every t
-  let distance = Math.max(sports * t + fit * (1 - t), fit);
-
+  let floor = spreadLat > 0 && t < 1 ? (spreadLat / tanH) * margin : 0;
+  if (floor > fit.d) {
+    const tanWide = clamp((spreadLat * margin) / (fit.d * aspect), tanV, C.aimWideTan);
+    fit = fitSpan(S, se, ce, tanWide, edgeB, edgeT);
+    floor = (spreadLat * margin) / (tanWide * aspect);
+    if (floor > fit.d) { const tw2 = clamp((spreadLat * margin) / (fit.d * aspect), tanV, C.aimWideTan); fit = fitSpan(S, se, ce, tw2, edgeB, edgeT); floor = (spreadLat * margin) / (tw2 * aspect); fov = (2 * atan(tw2)) / DEG; } else fov = (2 * atan(tanWide)) / DEG;
+  }
+  // the pinch looks AT the target: zooming in slides the look point onto the mibs, by half zoom it has reached them
+  const look = fit.b + Math.max(0, L - fit.b) * clamp((1 - uz) / 0.5, 0, 1);
   const autoAz = atan2(-dx, -dz);
-  const autoDist = clamp(distance, C.minDistance, C.maxDistance);
+  const autoDist = clamp(Math.max(fit.d, floor), C.minDistance, C.maxDistance);
   const ua = inp.user && inp.user.az ? inp.user.az : 0;
   /* ⛔ m3 step 2. THE SEAM: atan2 wraps at plus or minus 180 degrees and the rig eases toward whatever it is handed, so a
      shooter walking across the ring's far side sent the camera 64 degrees in a frame the long way round. The wanted angle
      is the nearest equivalent of where the camera is. THE PIVOT: the orbit turned about a point 0.76 m in front of the
      shooter, so the shooter slid 3.3 to 3.6 px per px of thumb and left the screen after 70 px. The look point now turns
      with the orbit about the SHOOTER: the shooter stays where it is and the aim is straight up the screen from it. */
-  const ta = autoAz + ua, L = len2(dx, dz);
+  const ta = autoAz + ua;
   let wantAz = ta;
   if (inp.currentAz != null) {
     const TWO = 2 * PI;
@@ -170,10 +128,48 @@ export function frameFor(inp, C, calib) {
     while (wantAz - inp.currentAz < -PI) wantAz += TWO;
   }
   return {
-    tx: tawX - L * sin(ta) * biasUser, tz: tawZ - L * cos(ta) * biasUser,
+    tx: tawX - look * sin(ta), tz: tawZ - look * cos(ta),
     azimuth: wantAz,
     distance: clamp(autoDist * uz, C.minDistance, C.maxDistance),
-    elevation: C.elevationDeg,
-    auto: { azimuth: autoAz, distance: autoDist, t, spread, spreadLat, spreadAlong, floor, span, bias: biasUser, autoBias: bias, tawFloor, mibFloor, fit, lookDist: L * biasUser }
+    elevation: A.elevationDeg, fov,
+    auto: { azimuth: autoAz, distance: autoDist, t, spread, spreadLat, spreadAlong, floor, span: L, bias: look / Math.max(1e-6, L), lookDist: look, fit: fit.d }
   };
+}
+
+/** the ring's row of the aim table: its nearest by radius */
+function aimRow(C, R) {
+  let best = C.aimClose[0];
+  for (const r of C.aimClose) if (Math.abs(r.ringR - R) < Math.abs(best.ringR - R)) best = r;
+  return best;
+}
+/** a screen height in CSS px from an edge as a fraction of the half height */
+function edgeOf(vh, px) { const H = vh || 915; return (H / 2 - px) / (H / 2); }
+/** the closest camera holding the near point at the bottom edge and a point S beyond it at the top: b is how far past the near point it looks, d how far it stands */
+function fitSpan(S, se, ce, tanV, edgeB, edgeT) {
+  const k1 = ce + se / (edgeB * tanV), k2 = se / (edgeT * tanV) - ce, b = (S * k2) / (k1 + k2);
+  return { b, d: b * k1 };
+}
+
+/**
+ * The watch frame (m3 step 8): on the flick the camera holds its facing and eases up and back to show the struck mibs and their side of the chalk. Same azimuth: the camera never follows the shot.
+ * @param {{tawX:number,tawZ:number,az:number,range:number,ringR:number,vh?:number,aspect?:number}} inp  az is the aim's own bearing
+ */
+export function watchFor(inp, C) {
+  const W = C.watch, A = aimRow(C, inp.ringR), e = W.elevationDeg * DEG, se = sin(e), ce = cos(e), halfV = (A.fov * DEG) / 2, tanV = sin(halfV) / cos(halfV);
+  const S = clamp(inp.range + W.pastTarget, W.minSpan, 2 * inp.ringR + 0.1);
+  const fit = fitSpan(S, se, ce, tanV, W.edgeBottom, edgeOf(inp.vh, C.fitTopPx));
+  const aspect = Math.max(0.3, inp.aspect || 0.56), wide = (inp.ringR * W.chalkFrac) / (tanV * aspect);
+  return { tx: inp.tawX + sin(inp.az) * fit.b, tz: inp.tawZ + cos(inp.az) * fit.b, distance: clamp(Math.max(fit.d, wide), C.minDistance, C.maxDistance), elevation: W.elevationDeg, fov: A.fov };
+}
+
+/**
+ * LOOK (m3 step 8, today's TOP DOWN refit; the statues' placement and move view too): straight down, the chalk plus 5 cm fitted to the width minus 16 px, between topPx and the height minus botPx.
+ * @param {{ringR:number,vw:number,vh:number,topPx:number,botPx:number,az:number}} inp
+ */
+export function lookFit(inp, C) {
+  const A = aimRow(C, inp.ringR), halfV = (A.fov * DEG) / 2, tanV = sin(halfV) / cos(halfV), Rm = inp.ringR + 0.05;
+  const byWidth = (Rm * inp.vh) / (tanV * (inp.vw - 16)), byHeight = (2 * Rm * inp.vh) / (2 * tanV * (inp.vh - inp.topPx - inp.botPx));
+  const d = Math.max(byWidth, byHeight), ppm = inp.vh / (2 * d * tanV), off = (inp.topPx - inp.botPx) / 2 / ppm;
+  /* the ring's middle stands off the screen's by off (positive: below it), so the look point stands that far ahead of the ring's middle, away from the camera */
+  return { tx: -sin(inp.az) * off, tz: -cos(inp.az) * off, distance: d, elevation: C.lookElevationDeg, fov: A.fov };
 }

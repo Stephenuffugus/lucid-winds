@@ -67,7 +67,7 @@ export function makeGame(o) {
     (M, ang) => ({ x: sin(ang) * M.ringRadius, z: cos(ang) * M.ringRadius }),
     (Wd, id, p) => { world.taw.x = p.x; world.taw.z = p.z; }, world];
   const mk = (name) => new Function('W', 'shooterTaw', 'positionOf', 'specOf', 'liveMibs', 'setup', 'T', 'frameFor', 'len2', 'M',
-    'edgePosition', 'place', 'G', fnSrc(ringSrc, name) + '\nreturn ' + name + ';')(...scope);
+    'edgePosition', 'place', 'G', 'ringRadius', 'watchFor', fnSrc(ringSrc, name) + '\nreturn ' + name + ';')(...scope, R, () => ({}));
   const frameShot = mk('frameShot'), tawOnScreen = mk('tawOnScreen'), setPlaceAngle = mk('setPlaceAngle');
   const canvas = makeCanvas(W, H);
   const G = {

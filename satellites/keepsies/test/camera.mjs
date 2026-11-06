@@ -20,7 +20,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { frameFor } from '../src/core/framing.js?v=20261105b';
+import { frameFor, watchFor, lookFit } from '../src/core/framing.js?v=20261105b';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const T = JSON.parse(readFileSync(join(HERE, '..', 'src', 'data', 'tuning.json'), 'utf8'));
@@ -65,92 +65,44 @@ function cross(cxz) {
 }
 const TAW = { tawX: 0, tawZ: -1.5, aspect: 375 / 667 };
 
-/* 1. a full cross: the sports framing is unchanged */
-{
-  const live = cross({ x: 0, z: 0.4 });
-  const f = frameFor({ ...TAW, live }, C, CAL);
-  const span = 1.9;
-  const expect = Math.min(C.maxDistance, Math.max(C.minDistance, span * C.spanFactor + C.spanAdd));
-  ok(near(f.distance, expect, 0.02), `full cross: distance ${f.distance.toFixed(3)} should be the sports framing ${expect.toFixed(3)}`);
-  ok(near(f.auto.t, 1, 1e-9), `full cross: lean t should be 1, got ${f.auto.t}`);
-  ok(near(f.tx, 0 + 0 * C.targetBias, 1e-9) && near(f.tz, -1.5 + 1.9 * C.targetBias, 1e-6), 'full cross: look point should sit at targetBias along the gap');
+/* m3 step 8: blocks 1, 1b, 2, 2b and 3 (the sports framing "unchanged", the lean, the fit at 375x667) retired on purpose, docs/DECISIONS.md: the aim frame stands close and low, turns about the shooter and fits by CSS px. An independent camera below, the rig's own formula */
+const camOf = (f) => { const e = f.elevation * DEG, r = f.distance; return { x: f.tx + Math.sin(f.azimuth) * Math.cos(e) * r, y: 0.012 + Math.sin(e) * r, z: f.tz + Math.cos(f.azimuth) * Math.cos(e) * r }; };
+function screenOf(f, p, W, H) {
+  const c = camOf(f), lx = f.tx - c.x, ly = 0.012 - c.y, lz = f.tz - c.z, ll = Math.hypot(lx, ly, lz), fx = lx / ll, fy = ly / ll, fz = lz / ll;
+  const sl = Math.hypot(fz, fx), sx = -fz / sl, sz = fx / sl, ux = -sz * fy, uy = sz * fx - sx * fz, uz = sx * fy;   /* right = forward x world up, up = right x forward */
+  const dx = p.x - c.x, dy = (p.y || 0) - c.y, dz = p.z - c.z, depth = dx * fx + dy * fy + dz * fz, side = dx * sx + dz * sz, up = dx * ux + dy * uy + dz * uz, tanV = Math.tan(((f.fov || C.fov) * DEG) / 2);
+  return { x: W / 2 + (W / 2) * side / (depth * tanV * (W / H)), y: H / 2 - (H / 2) * up / (depth * tanV), dist: Math.hypot(dx, dy, dz), px: (dia) => (H / 2) * dia / (Math.hypot(dx, dy, dz) * tanV), depth };
 }
-
-/* 1b. a full board is not the tidy cross for long: a mib knocked to the far ring edge along the
-   axis, and one to the side edge, must NOT move the approved framing. The ring is 3 m across and a
-   portrait 28 degree lens cannot hold it; the approved frame lets side mibs leave the screen and
-   the player orbits or goes top down, and the first lean pulled an eleven mib frame from 3.42 m to
-   4.13 m in the engine because a scatter tripped the spread floor. */
-{
-  const live = cross({ x: 0, z: 0.4 }).slice(0, 11).concat([{ x: 0, z: 1.85 }, { x: 1.4, z: 0.4 }]);
-  const f = frameFor({ ...TAW, live }, C, CAL);
-  let cx = 0, cz = 0; for (const p of live) { cx += p.x; cz += p.z; } cx /= live.length; cz /= live.length;
-  const span = Math.hypot(cx - TAW.tawX, cz - TAW.tawZ);
-  const expect = Math.min(C.maxDistance, Math.max(C.minDistance, span * C.spanFactor + C.spanAdd));
-  ok(near(f.distance, expect, 0.02), `scattered full board: distance ${f.distance.toFixed(3)} should still be the sports framing ${expect.toFixed(3)} (a stray at the side edge must not pull the whole frame back)`);
-}
-
-/* 2. one mib left: the camera leans in, and the mib gets bigger on screen */
-let full, lone;
-{
-  full = frameFor({ ...TAW, live: cross({ x: 0, z: 0.4 }) }, C, CAL);
-  lone = frameFor({ ...TAW, live: [{ x: 0, z: -0.5 }] }, C, CAL);       // 1.0 m away
-  const oldStyle = 1.0 * C.spanFactor + C.spanAdd;                       // what it used to do
-  ok(lone.distance / oldStyle < 0.7, `one mib: distance ${lone.distance.toFixed(3)} is not markedly closer than the old ${oldStyle.toFixed(3)} (ratio ${(lone.distance / oldStyle).toFixed(2)}, want < 0.7)`);
-  // the pixels a mib gets depend on the CAMERA TO MIB distance, not the look point distance
-  const inpLone = { ...TAW, live: [{ x: 0, z: -0.5 }] };
-  const oldFrame = { tx: 0, tz: -1.5 + 1.0 * C.targetBias, distance: oldStyle };
-  const oldCam = project(oldFrame, inpLone, { x: 0, z: -0.5 }).camDist;
-  const newCam = project(lone, inpLone, { x: 0, z: -0.5 }).camDist;
-  ok(mibPx(newCam) / mibPx(oldCam) >= 1.4, `one mib: 16 mm mib is ${mibPx(newCam).toFixed(1)} px from ${newCam.toFixed(2)} m, was ${mibPx(oldCam).toFixed(1)} px from ${oldCam.toFixed(2)} m, want at least 1.4x`);
-  lone.px = mibPx(newCam); lone.camDist = newCam;
-  ok(near(lone.auto.t, 0, 1e-9), `one mib: the lean should be FULL (t = 0) at exactly one mib, got ${lone.auto.t}`);
-  const two = frameFor({ ...TAW, live: [{ x: 0, z: -0.5 }, { x: 0.05, z: -0.5 }] }, C, CAL);
-  ok(two.auto.t > 0 && two.auto.t < 1, `two mibs: lean t should be strictly between 0 and 1, got ${two.auto.t}`);
-  ok(lone.distance >= C.minDistance, 'one mib: never below minDistance');
-}
-
-/* 2b. the fit: from the ring edge (the placing spot, 1.525 m from the centre) at 13, 3, 2 and
-   1 mibs, the SHOOTER projects inside the bottom of the frame and every mib inside the top */
-{
-  // ⛔ the screen's edges are the TEST's numbers, not tuning's: the first fail-watch mutated
-  // fitEdge to 9 and this gate, reading its edge from the same field, stayed green. A shooter
-  // under the chip cannot be braced. The top edge is under the names and pocket dots.
-  // the bottom edge is the SHORT screen's: at 320 by 568 the house rules chip (pixels from the bottom)
-  // tops out at 83% of the height, 0.664 of the half height, and the braced reticle needs 24 px more
-  const EDGE_B = 0.60, EDGE_T = 0.86;   // the top edge is under the names and pocket dots (7% of the height)
-  const RING = { tawX: 0, tawZ: -1.525, aspect: 375 / 667 };
-  const lays = {
-    13: cross({ x: 0, z: 0 }),
-    3: [{ x: -0.075, z: 0 }, { x: 0, z: 0 }, { x: 0.15, z: 0.075 }],
-    2: [{ x: -0.3, z: 0.1 }, { x: 0.25, z: -0.05 }],
-    1: [{ x: 0, z: 0 }]
-  };
-  for (const n of Object.keys(lays)) {
-    const inp = { ...RING, live: lays[n] };
-    const f = frameFor(inp, C, CAL);
-    const taw = project(f, inp, { x: inp.tawX, z: inp.tawZ });
-    ok(taw.y >= -EDGE_B && Math.abs(taw.x) <= 1 && taw.depth > 0, `fit ${n} mibs: the SHOOTER projects at y ${taw.y.toFixed(2)} x ${taw.x.toFixed(2)} of the half frame (${-EDGE_B} is the top of the HUD chip), camera ${f.distance.toFixed(2)} m, bias ${f.auto.bias.toFixed(2)}`);
-    ok(taw.y < 0, `fit ${n} mibs: the shooter should sit BELOW centre, got y ${taw.y.toFixed(2)}`);
-    for (const m of lays[n]) {
-      const q = project(f, inp, m);
-      ok(q.y <= EDGE_T && Math.abs(q.x) <= 1 && q.depth > 0, `fit ${n} mibs: a mib at (${m.x}, ${m.z}) projects at y ${q.y.toFixed(2)} x ${q.x.toFixed(2)}, off the frame or under the top HUD (${EDGE_T})`);
-      ok(q.y > taw.y, `fit ${n} mibs: a mib should sit above the shooter`);
-    }
-    if (n === '1') ok(f.distance <= f.auto.fit + 1e-9, `fit 1 mib: should stand AT the fit ${f.auto.fit.toFixed(3)}, stands at ${f.distance.toFixed(3)}`);
+const crossAt0 = () => cross({ x: 0, z: 0 });
+const aim = (R, W, H, live, user) => { const inp = { tawX: 0, tawZ: -R, live, aspect: W / H, vh: H, ringR: R, grabPx: T.snap.grabRadiusPx, user }; return frameFor(inp, C, CAL); };
+const FLOORS = { '412x915': { 0.762: [70, 20], 1.525: [37, 12.5] }, '360x780': { 0.762: [54, 17], 1.525: [29, 10] } };
+for (const [W, H] of [[412, 915], [360, 780]]) for (const R of [0.762, 1.525]) {
+  const f = aim(R, W, H, crossAt0()), tag = W + 'x' + H + ' ' + (R < 1 ? 'five' : 'ten') + ' foot: ';
+  const s = screenOf(f, { x: 0, y: 0.011, z: -R }, W, H), m = screenOf(f, { x: 0, y: 0.008, z: 0 }, W, H), far = screenOf(f, { x: 0, y: 0.008, z: 0.225 }, W, H), F = FLOORS[W + 'x' + H][R];
+  ok(s.px(0.022) >= F[0] && m.px(0.016) >= F[1], tag + 'the shooter draws ' + s.px(0.022).toFixed(1) + ' px and the centre mib ' + m.px(0.016).toFixed(1) + ' (at least ' + F.join(' and ') + '; shipped 14.6 and 7.2 at ten foot)');
+  ok(s.y + T.snap.grabRadiusPx <= H - C.fitBottomPx + 0.5, tag + 'the circle clears the bottom chips (' + (s.y + T.snap.grabRadiusPx).toFixed(0) + ' against ' + (H - C.fitBottomPx) + ')');
+  ok(far.y >= C.fitTopPx - 1, tag + 'the far arm stays under the names (y ' + far.y.toFixed(0) + ')');
+  ok(Math.abs(s.x - W / 2) < 1, tag + 'the shooter stands on the centre line');
+  /* the shooter holds under any orbit */
+  let worst = 0; for (let d = -60; d <= 60; d += 5) { const q = screenOf(aim(R, W, H, crossAt0(), { az: d * DEG }), { x: 0, y: 0.011, z: -R }, W, H); worst = Math.max(worst, Math.hypot(q.x - s.x, q.y - s.y)); }
+  ok(worst < 1, tag + 'the shooter moves ' + worst.toFixed(2) + ' px under a 60 degree orbit (under 1)');
+  /* a lone mib and two wide survivors stay in the frame */
+  for (const [name, live] of [['one mib', [{ x: 0, z: 0 }]], ['three mibs', [{ x: -0.075, z: 0 }, { x: 0, z: 0 }, { x: 0.15, z: 0.075 }]], ['two wide', [{ x: -0.5 * R, z: 0.1 }, { x: 0.45 * R, z: -0.05 }]]]) {
+    const g = aim(R, W, H, live), st = screenOf(g, { x: 0, y: 0.011, z: -R }, W, H);
+    ok(st.y + T.snap.grabRadiusPx <= H - C.fitBottomPx + 0.5 && st.y > 0, tag + name + ': the shooter stands clear (y ' + st.y.toFixed(0) + ')');
+    for (const q of live) { const sc = screenOf(g, { x: q.x, y: 0.008, z: q.z }, W, H); ok(sc.depth > 0 && sc.x >= 0 && sc.x <= W && sc.y >= C.fitTopPx - 1 && sc.y < st.y, tag + name + ': a mib stands at ' + sc.x.toFixed(0) + ', ' + sc.y.toFixed(0) + ' in the frame'); }
   }
+  /* the watch frame: up and back, the same facing */
+  const w = watchFor({ tawX: 0, tawZ: -R, az: Math.atan2(0, 1) + Math.PI, range: R, ringR: R, vh: H, aspect: W / H }, C);
+  ok(w.elevation > f.elevation && w.distance > f.distance, tag + 'the watch frame stands up and back (' + w.elevation + ' degrees, ' + w.distance.toFixed(2) + ' m, the aim frame ' + f.distance.toFixed(2) + ' m)');
 }
-
-/* 3. two survivors on opposite sides: neither can be leaned off the screen */
-{
-  const live = [{ x: -0.6, z: 0.2 }, { x: 0.6, z: 0.2 }];               // 1.2 m apart
-  const f = frameFor({ ...TAW, live }, C, CAL);
-  const hHalf = Math.atan(Math.tan((C.fov * DEG) / 2) * TAW.aspect);
-  const halfWidthAtTarget = f.distance * Math.tan(hHalf);
-  ok(f.auto.spread > 0.59 && f.auto.spread < 0.61, `two wide: spread should be 0.6, got ${f.auto.spread}`);
-  ok(f.distance >= f.auto.floor - 1e-9, `two wide: distance ${f.distance.toFixed(3)} fell under the spread floor ${f.auto.floor.toFixed(3)}`);
-  ok(halfWidthAtTarget >= f.auto.spread, `two wide: frame half width ${halfWidthAtTarget.toFixed(3)} m does not cover the spread ${f.auto.spread.toFixed(3)} m, a survivor is off screen`);
-  ok(f.distance > lone.distance, 'two wide survivors must be framed from further back than one lone mib');
+/* LOOK: the chalk plus 5 cm in the width minus 16 px, between the names and the bottom chips */
+for (const [W, H] of [[412, 915], [412, 839], [360, 780]]) for (const R of [0.762, 1.0668, 1.525, 1.98]) {
+  const az = 0.7, L = lookFit({ ringR: R, vw: W, vh: H, topPx: 59, botPx: 94, az }, C), f = { tx: L.tx, tz: L.tz, azimuth: az, distance: L.distance, elevation: L.elevation, fov: L.fov };
+  const sc = (a) => screenOf(f, { x: Math.sin(a) * (R + 0.05), y: 0, z: Math.cos(a) * (R + 0.05) }, W, H); let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  for (let a = 0; a < 6.28; a += 0.05) { const q = sc(a); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }
+  ok(x0 >= 7 && x1 <= W - 7 && y0 >= 59 - 1 && y1 <= H - 94 + 1, 'LOOK ' + W + 'x' + H + ' ring ' + R + ': the chalk spans x ' + x0.toFixed(0) + ' to ' + x1.toFixed(0) + ', y ' + y0.toFixed(0) + ' to ' + y1.toFixed(0));
+  ok(x1 - x0 >= W - 16 - 3 || y1 - y0 >= H - 59 - 94 - 3, 'LOOK ' + W + 'x' + H + ' ring ' + R + ': and it fills the width (' + (x1 - x0).toFixed(0) + ' of ' + (W - 16) + ')');
 }
 
 /* 4. the player's orbit survives as an offset on the auto azimuth */
@@ -223,7 +175,7 @@ let full, lone;
     const ux = (fz * 0 - fy * sz) * -1, uy = -(fx * sz - fz * sx), uz = -(fy * sx - fx * 0); void ux; void uy; void uz;
     const dx = p.x - cam.x, dy = p.y - cam.y, dz = p.z - cam.z;
     const depth = dx * fx + dy * fy + dz * fz, side = dx * sx + dz * sz, upv = { x: sz * fy - 0 * fz, y: fx * sz * -1 + fz * sx * 1, z: 0 * fx - sx * fy };
-    const up = dx * upv.x + dy * upv.y + dz * upv.z, tanV = Math.tan((C.fov * DEG) / 2);
+    const up = dx * upv.x + dy * upv.y + dz * upv.z, tanV = Math.tan(((f.fov || C.fov) * DEG) / 2);
     return { x: side / (depth * tanV * aspect), y: up / (depth * tanV) };
   };
   for (const [w, h] of [[412, 915], [360, 780]]) {
@@ -243,4 +195,4 @@ if (fails.length) {
   for (const f of fails) console.log('  - ' + f);
   process.exit(1);
 }
-console.log(`CAMERA OK  full cross ${full.distance.toFixed(2)} m, one mib stands ${lone.distance.toFixed(2)} m from the look point and ${lone.camDist.toFixed(2)} m from the mib (${lone.px.toFixed(1)} px/mib, shooter in frame)`);
+console.log('CAMERA OK');

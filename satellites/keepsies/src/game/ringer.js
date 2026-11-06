@@ -24,7 +24,7 @@ import { makeStreams, makeRng } from '../core/rng.js?v=20261105b';
 import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20261105b';
 import { STARTER_ENTRIES, CROSS_MIX } from '../core/marbleBody.js?v=20261105b';
 import { sin, cos, atan2, len2, clamp, DEG } from '../core/dmath.js?v=20261105b';
-import { frameFor } from '../core/framing.js?v=20261105b';
+import { frameFor, watchFor } from '../core/framing.js?v=20261105b';
 import {
   createMatch, skipLag, resolveLag, mayPlace, placeTaw, fireShot, resolveShot,
   summary, edgePosition, PHASE, DEFAULT_HOUSE_RULES, moveStatueTurn
@@ -430,7 +430,25 @@ export function createRinger(setup) {
   function frameShot(rig, snap) {
     /* m3 step 4: the camera never follows a shot. It holds while the shot plays, and the turn's cut still lands (main.js calls this
        every frame; TOP DOWN and the statues' view set absolute values after it, so nothing accumulates) */
-    if (G.simulating && !snap) return;
+    if (G.simulating && !snap) {
+      /* m3 step 8: the watch frame, fixed once as the shot starts: the same facing, eased up and back; a tap (main.js) stops the ease where it is */
+      if (!rig.state.watching) {
+        rig.state.watching = true;
+        const tw = shooterTaw();
+        if (!rig.state.watchSkip && W.marbles.has(tw.id)) {
+          const q = positionOf(W, tw.id), vq = rig.viewport, az = rig.state.azimuth + Math.PI;
+          let range = 0, n = 0;
+          for (const m of liveMibs()) { const p = positionOf(W, m.id), along = (p.x - q.x) * Math.sin(az) + (p.z - q.z) * Math.cos(az); if (along > 0) { range += along; n++; } }
+          const w = watchFor({ tawX: q.x, tawZ: q.z, az, range: n ? range / n : ringRadius, ringR: ringRadius, vh: vq && vq.h, aspect: vq && vq.h ? vq.w / vq.h : 0.56 }, T.render.ringerCam);
+          rig.state.pivot = null;
+          rig.state.wantTarget = { x: w.tx, z: w.tz };
+          rig.state.wantElevation = w.elevation;
+          rig.state.wantDistance = w.distance;
+        }
+      }
+      return;
+    }
+    rig.state.watching = false; rig.state.watchSkip = false;
     const taw = shooterTaw();
     if (!W.marbles.has(taw.id)) return;
     const tp = positionOf(W, taw.id);
@@ -440,8 +458,9 @@ export function createRinger(setup) {
       tawX: tp.x, tawZ: tp.z, live, bare: !!setup.bare,
       aspect: vp && vp.h ? vp.w / vp.h : 0.56,
       user: { az: rig.state.userAz || 0, zoom: rig.state.userZoom || 1 },
-      currentAz: rig.state.azimuth
+      currentAz: rig.state.azimuth, ringR: ringRadius, vh: vp && vp.h, grabPx: T.snap.grabRadiusPx
     }, T.render.ringerCam, T.render.calibCam);
+    if (rig.setFov) rig.setFov(f.fov);
     rig.setTarget(f.tx, 0.012, f.tz);
     /* the look point turns about the shooter WITH the eased azimuth, so the shooter holds still while the camera catches up */
     rig.state.pivot = f.auto.lookDist == null ? null : { x: tp.x, z: tp.z, look: f.auto.lookDist };

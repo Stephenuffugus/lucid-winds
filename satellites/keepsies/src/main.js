@@ -12,6 +12,7 @@
 import { detectQuality, forceQuality } from './render/quality.js?v=20261105b';
 import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261105b';
 import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261105b';
+import { lookFit } from './core/framing.js?v=20261105b';
 import { buildRingerGround } from './render/arenaEnv.js?v=20261105b';
 import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261105b';
 import { attachCameraControls } from './input/cameraCtl.js?v=20261105b';
@@ -200,6 +201,7 @@ async function boot() {
   /* ⛔ ONE OWNER PER FINGER (m3 law 14): the place drag registers before the camera, and while the thumb is
      braced the brace owns every finger, so a second finger can neither orbit nor turn the aim */
   G.place = attachPlacement(canvas, G, { canAim: () => canAim() });
+  canvas.addEventListener('pointerdown', () => { if (G.R && G.R.state.simulating) { G.rig.state.watchSkip = true; G.rig.state.wantTarget = null; G.rig.state.wantElevation = null; G.rig.state.wantDistance = G.rig.state.distance; } });
   G.cam = attachCameraControls(canvas, G.rig, {
     orbitRadPerPx: G.tuning.render.orbitRadPerPx,
     isClaimed: (id) => G.knuckle.owns(id) || G.pullback.owns(id) || (G.placeDrag === id) || (G.moveDrag === id)
@@ -212,7 +214,7 @@ async function boot() {
   wireButtons();
   for (const [id, icon, text] of [['play', 'play', 'Play'], ['collect', 'your_marbles', 'Your marbles'],
     ['exitTitle', 'arcade', 'Sky Wolf Studio Arcade'], ['setupGo', 'play', 'Play'], ['setupBack', 'back', 'Back'],
-    ['scopeBtn', 'zoom', 'Zoom'], ['snapHelp', 'the_snap', 'The snap'], ['topDown', 'top_down', 'Top down'],
+    ['scopeBtn', 'zoom', 'Zoom'], ['snapHelp', 'the_snap', 'The snap'], ['topDown', 'top_down', 'Look'],
     ['pause', 'pause', 'Pause'], ['collBack', 'back', 'Back'], ['inspectBack', 'back', 'Back'],
     ['again', 'rematch', 'Rematch'], ['toTitle', 'home', 'Home'], ['resume', 'resume', 'Resume'],
     ['calibSkip', 'lag', 'I have played marbles before']]) label(id, icon, text);
@@ -316,10 +318,10 @@ function wireButtons() {
     SAVE.merge({ seen: { snapHelp: true } });
     G.save = SAVE.load();
   });
-  $('topDown').addEventListener('click', () => {
-    G.topDown = !G.topDown;
-    label('topDown', G.topDown ? 'side_on' : 'top_down', G.topDown ? 'Side on' : 'Top down');
-  });
+  /* m3 step 8: LOOK is held: straight down on the whole ring for as long as a finger stays on it */
+  { const b = $('topDown'), on = (v) => (e) => { e.preventDefault(); G.topDown = v; };
+    b.addEventListener('pointerdown', (e) => { on(true)(e); try { b.setPointerCapture(e.pointerId); } catch (err) { } });
+    for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(t, on(false)); }
   $('pause').addEventListener('click', () => { G.paused = true; $('pauseCard').hidden = false; });
   $('resume').addEventListener('click', () => { G.paused = false; $('pauseCard').hidden = true; });
   $('abandon').addEventListener('click', () => {
@@ -1468,8 +1470,10 @@ function lotBand() {
   if (!el) return;
   const st = G.rig.state;
   const live = G.R ? G.R.liveMibs().length : 0;
-  const on = G.tier.name !== 'low' && !G.topDown && st.elevationDeg >= 18 && st.elevationDeg <= 60
-    && live >= ((G.tuning.render.ringerCam || {}).leanFull || 5);
+  /* m3 step 8, DECISION 6: only where a frame shows the far chalk, and never over a live mib: the aim frame is dirt and the cross */
+  const far0 = G.R ? G.rig.project(-Math.sin(st.azimuth) * G.R.ringRadius, 0, -Math.cos(st.azimuth) * G.R.ringRadius) : null;
+  let on = G.tier.name !== 'low' && !G.topDown && st.elevationDeg >= 18 && st.elevationDeg <= 60 && live >= ((G.tuning.render.ringerCam || {}).leanFull || 5) && !!far0 && far0.visible && far0.y > 44;
+  if (on) for (const m of G.R.liveMibs()) { const p = positionOf(G.R.world, m.id), c = G.rig.project(p.x, p.y, p.z); if (c.visible && c.y < far0.y) { on = false; break; } }
   if (el.classList.contains('on') !== on) el.classList.toggle('on', on);
   if (!on) return;
   if (!el.dataset.art) { el.style.backgroundImage = 'url(' + art('env/lot_panorama.webp') + ')'; el.dataset.art = '1'; }
@@ -1673,6 +1677,15 @@ function holdScope() {
 function openSnapCard() { $('snapCard').hidden = false; }
 
 /** The aim buttons and the Zoom belong to the human's aim phase and nothing else. */
+/* m3 step 8: LOOK and the statues' view: straight down, the whole chalk in the width, between the names and whatever owns the bottom */
+function applyLook(botPx) {
+  const L = lookFit({ ringR: G.R.ringRadius, vw: G.stage.width, vh: G.stage.height, topPx: 59, botPx, az: G.rig.state.azimuth }, G.tuning.render.ringerCam);
+  G.rig.setTarget(L.tx, 0.012, L.tz);
+  G.rig.state.elevationDeg = L.elevation;
+  G.rig.state.wantDistance = L.distance;
+  if (G.rig.setFov) G.rig.setFov(L.fov);
+}
+
 /* m3 step 3: the circle is drawn, a faint chalk ring round the shooter whenever the player may brace, so it is seen before the
    thumb lands; the reticle settles inside it */
 function mayBrace() { return !!G.R && (G.screen === 'match' || G.screen === 'calib') && !G.usePullback && !G.paused && !G.moving && !G.statuesPlacing && canAim(); }
@@ -2183,23 +2196,11 @@ function frame(now) {
       /* the far chalk at the top of the screen and the near chalk at the tray's edge (the top three quarters):
          at 80 degrees the view spans 0.249 d each side of the look point, so d = 5.35 (R + m), and the look point
          sits toward the player by (R + m) minus an eighth of that span */
-      const az = G.rig.state.azimuth, Rm = G.R.ringRadius + 0.05, d = 5.35 * Rm, off = Rm - 0.1245 * d;
-      G.rig.setTarget(Math.sin(az) * off, 0.012, Math.cos(az) * off);
-      G.rig.state.elevationDeg = 80;
-      G.rig.state.wantDistance = d;
+      applyLook(G.stage.height - ($('statueTray').hidden ? 94 : $('statueTray').getBoundingClientRect().top));
     }
     else if (G.topDown) {
-      const t = G.R.shooterTaw();
-      const tp = positionOf(G.R.world, t.id);
-      const live = G.R.liveMibs();
-      let cx = 0, cz = 0;
-      for (const m of live) { const p = positionOf(G.R.world, m.id); cx += p.x; cz += p.z; }
-      if (live.length) { cx /= live.length; cz /= live.length; }
-      G.rig.setTarget((tp.x + cx) * 0.5, 0.012, (tp.z + cz) * 0.5);
-      G.rig.state.elevationDeg = 84;
-      G.rig.state.wantDistance = G.R.ringRadius * 2.5;
+      applyLook(94);
     }
-    else if (G.rig.state.elevationDeg > 60) G.rig.state.elevationDeg = 33;
     if (G.screen === 'match') { updateHud(); lotBand(); }
     // a thumb held perfectly still sends no pointermove, and the settle is a
     // clock: read it every frame so the reticle tightens whether or not the

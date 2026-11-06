@@ -565,3 +565,6 @@ Some levels have obstacles. Players take turns placing their own obstacles on th
 
 ## m3 step 7 (6 Nov 2026): the aim line is the aim
 DESIGN 7.7's "aiming direction = camera-forward plus or minus the snap's fine angle" is set to zero pending Stephen's call (KEEPSIES_M3_BUILD_PLAN.md DECISION 2): `snap.fineAngleMaxDeg` 25 to 0. The flick's own angle feeds the wildness. The other choice is about 3 degrees, the flick's angle scaled by 0.25; it is one tuning line.
+
+## m3 step 8 (6 Nov 2026): the aim frame, the watch frame, LOOK
+The sports framing and the lean (camera.mjs blocks 1, 1b, 2, 2b and 3) retire on purpose, on his 5 Nov verdict. The aim frame stands close and low by a table keyed by ring (five foot 24 degrees and a 28 degree lens, not VIEW.md's 28 and 34: 76 px against 68 for the shooter, the far arm still in the gap between the name chips), turns about the shooter, and fits by CSS px. At ten foot the floor is 37 and 12.5 px, not the plan's 38 and 13, and the 360x780 floors are 54 and 17 and 29 and 10: the plan's numbers were the 412x915 frame. On a shot the camera holds its facing and eases up and back; DESIGN 8.5's brief low follow is retired pending DECISION 5. TOP DOWN is LOOK, held, straight down, the whole chalk in the width; the statues' view uses the same fit.
