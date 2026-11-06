@@ -8197,10 +8197,22 @@ body.sb-modal .lwfb-fab { display: none !important; }
      ring that blinks at 4 Hz. The shed's tell over its top, Astra's boss_moth_shed (48x32, the shed box): telegraph
      the tell's first half, windup its second, release and follow 6 steps each after the shed */
   R.drawn.boss = null;
+  /* round 9 (6 Nov, SHUTTERBUG_R9_BUILD_PLAN.md step 1): five bodies, one a biome, in boss_fallback's 80x64 and 5x4 cells.
+     The pose is the sim's moment: tell while an attack or a shove is told, hurt for BOSS_HURT_POSE_F after a hit (the
+     render's own clock, R.gfx.hurtAt), else breathe and brace at 4 fps as before; the erosion loop below skips struck
+     cells for every pose, one mask, and the body's origin never moves. Down is her remnant, whole, under the fall's effect:
+     every cell is gone by then and it never disappears */
+  var BOSS_BODY = ['boss_moth_mother', 'boss_rime_mass', 'boss_anemone', 'boss_thorn_heart', 'boss_cinder_kiln'], BOSS_HURT_POSE_F = 8;
+  R.BOSS_BODY = BOSS_BODY;
+  /* a 16 px tile turned q quarter turns clockwise about its middle, whole pixels only */
+  function turnTile(key, x, y, q) { var r = A[key]; ctx.save(); ctx.translate(x + 8, y + 8); ctx.rotate(q * Math.PI / 2); ctx.drawImage(atlas, r.x, r.y, 16, 16, -8, -8, 16, 16); ctx.restore(); }
   function drawGuardian(s, lv, cam, camX) {
     var B = s.boss, g = lv.features && lv.features.guardian, C = SB.K.CELL, P = SB.palette;
     if (!B || !g) { R.drawn.boss = null; return; }
-    var rx = g.rect[0] * C, ry = g.rect[1] * C - cam, fk = (Math.floor(s.frame / 15) & 1) ? 'boss_fallback.breathe' : 'boss_fallback.brace', r = A[fk], live = 0, d = R.drawn.boss || (R.drawn.boss = { phase: 0, live: 0, key: '', x: 0, y: 0, outline: false, tell: '' });
+    var body = BOSS_BODY[s.biome | 0] || 'boss_fallback', since0 = R.gfx.hurtAt >= 0 ? s.frame - R.gfx.hurtAt : 99;
+    var pose = B.phase === 2 ? 'down' : B.phase === 1 && (B.telegraph > 0 || B.shove > 0) ? 'tell' : B.phase === 1 && since0 < BOSS_HURT_POSE_F ? 'hurt' : (Math.floor(s.frame / 15) & 1) ? 'breathe' : 'brace';
+    var rx = g.rect[0] * C, ry = g.rect[1] * C - cam, fk = body + '.' + pose, r = A[fk], live = 0, d = R.drawn.boss || (R.drawn.boss = { phase: 0, live: 0, key: '', x: 0, y: 0, outline: false, tell: '' });
+    if (B.phase === 2) ctx.drawImage(atlas, r.x, r.y, r.w, r.h, rx, ry, r.w, r.h);
     if (B.phase < 2) {
       if (B.phase === 0) ctx.globalAlpha = 0.35;
       for (var j = 0; j < B.cells.length; j++) {
@@ -8218,10 +8230,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
         for (var ox2 = 0; ox2 < ow; ox2 += 2) { ctx.fillRect(rx + ox2, ry, 1, 1); ctx.fillRect(rx + ox2, ry + oh - 1, 1, 1); }
         for (var oy2 = 0; oy2 < oh; oy2 += 2) { ctx.fillRect(rx, ry + oy2, 1, 1); ctx.fillRect(rx + ow - 1, ry + oy2, 1, 1); }
       }
+      /* the shove's tell (round 9 step 2): the whole body's rect two cells out, always the whole rect so a lost cell never
+         moves it, in Astra's biome tiles: her 1 px stroke on an Ink line just outside it (so it reads on any photo), corners
+         and edges turned in quarter turns and never scaled, all on one phase: windup, flash, peak across the tell */
       if (B.phase === 1 && B.shove > 0) {
-        var sc2 = SB.TUNING.BOSS_SHOVE_CELLS * C, sw2 = g.rect[2] * C + sc2 * 2, sh2 = g.rect[3] * C + sc2 * 2, sx2 = rx - sc2, sy2 = ry - sc2, son = (s.frame >> 2) & 1;
-        ctx.fillStyle = CSS[son ? P.I.GLARE : P.I.INK];
-        ctx.fillRect(sx2, sy2, sw2, 2); ctx.fillRect(sx2, sy2 + sh2 - 2, sw2, 2); ctx.fillRect(sx2, sy2, 2, sh2); ctx.fillRect(sx2 + sw2 - 2, sy2, 2, sh2);
+        var sc2 = SB.TUNING.BOSS_SHOVE_CELLS * C, sw2 = g.rect[2] * C + sc2 * 2, sh2 = g.rect[3] * C + sc2 * 2, sx2 = rx - sc2, sy2 = ry - sc2;
+        var TF2 = SB.K.BOSS_SHOVE_TELL_F, el2 = TF2 - B.shove, ph2 = el2 * 3 < TF2 ? 'windup' : el2 * 3 < TF2 * 2 ? 'flash' : 'peak';
+        var nm2 = 'fx_shove_' + (['attic', 'frost', 'deep', 'bramble', 'ember'][s.biome | 0] || 'attic'), ek2 = nm2 + '_edge.' + ph2, ck2 = nm2 + '_corner.' + ph2, nx2 = sw2 / C, ny2 = sh2 / C, ti2;
+        ctx.fillStyle = CSS[P.I.INK];
+        ctx.fillRect(sx2 - 1, sy2 - 1, sw2 + 2, 1); ctx.fillRect(sx2 - 1, sy2 + sh2, sw2 + 2, 1); ctx.fillRect(sx2 - 1, sy2 - 1, 1, sh2 + 2); ctx.fillRect(sx2 + sw2, sy2 - 1, 1, sh2 + 2);
+        for (ti2 = 1; ti2 < nx2 - 1; ti2++) { turnTile(ek2, sx2 + ti2 * C, sy2, 0); turnTile(ek2, sx2 + ti2 * C, sy2 + sh2 - C, 2); }
+        for (ti2 = 1; ti2 < ny2 - 1; ti2++) { turnTile(ek2, sx2 + sw2 - C, sy2 + ti2 * C, 1); turnTile(ek2, sx2, sy2 + ti2 * C, 3); }
+        turnTile(ck2, sx2, sy2, 0); turnTile(ck2, sx2 + sw2 - C, sy2, 1); turnTile(ck2, sx2 + sw2 - C, sy2 + sh2 - C, 2); turnTile(ck2, sx2, sy2 + sh2 - C, 3);
       }
       if (B.phase === 0) {
         var on = (s.frame >> 3) & 1, w5 = g.rect[2] * C, h4 = g.rect[3] * C;
@@ -8243,7 +8263,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      sim): the wake (fx_boss_wake, 48 square, centred on the body, 4 frames at 12 fps from the step it wakes), a chip
      (fx_boss_chip, 16 square, centred on each cell the sim took off, 4 frames), the fall (fx_boss_down, 64 square,
      centred on the last cell, 6 frames, then hidden). R.gfx is made once and reset when the state changes */
-  R.gfx = { s: null, phase: -1, tele: 0, cells: new Int32Array(20), chips: [], wakeAt: -1, downAt: -1, downCell: -1, shedAt: -1, lightAt: -1 };
+  R.gfx = { s: null, phase: -1, tele: 0, cells: new Int32Array(20), chips: [], wakeAt: -1, downAt: -1, downCell: -1, shedAt: -1, lightAt: -1, hurtAt: -1 };
   /* the keys' render state (2 Nov), made once and reset when the state changes: each key's take (key_get), the step
      the last one was taken (the lamp lights as after the guardian), the last refusal at the shut exit */
   R.keyFx = { s: null, seen: [], got: [], litAt: -1, refuseAt: -99 };
@@ -8261,7 +8281,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function guardFx(s) {
     var X = R.gfx, B = s.boss, j;
     if (X.s !== s) {
-      X.s = s; X.phase = B ? B.phase : -1; X.tele = B ? B.telegraph : 0; X.wakeAt = X.downAt = X.downCell = X.shedAt = X.lightAt = -1;
+      X.s = s; X.phase = B ? B.phase : -1; X.tele = B ? B.telegraph : 0; X.wakeAt = X.downAt = X.downCell = X.shedAt = X.lightAt = X.hurtAt = -1;
       for (j = 0; j < 20; j++) { X.cells[j] = B && j < B.cells.length ? B.cells[j] : -1; X.chips[j].c = -1; X.chips[j].at = -1; }
       return;
     }
@@ -8272,6 +8292,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       X.cells[j] = B.cells[j];
     }
     if (X.phase === 0 && B.phase >= 1) X.wakeAt = s.frame;
+    if (s.ev & SB.sim.EV.BOSS_HIT) X.hurtAt = s.frame;
     if (X.phase < 2 && B.phase === 2) { X.downAt = s.frame; X.lightAt = s.frame; X.downCell = last; }
     if (X.tele > 0 && B.telegraph === 0 && B.phase === 1) X.shedAt = s.frame;
     X.phase = B.phase; X.tele = B.telegraph;
