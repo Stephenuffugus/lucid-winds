@@ -1653,7 +1653,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-boss-9', expect: "a Boomerang's pass hits the awake body" }] },
   { name: 'EROSION_FAR', task: 'HOUSE-B', file: 'page', find: "        if (dd < bd) { bd = dd; best = i; }", repl: "        if (best < 0 || dd > -bd) { bd = -dd; best = i; }",
     gates: [{ gate: 'harness', only: 'H-boss-9', expect: 'two quarters of HP x 4 take the struck cell and the nearest live one' }] },
-  { name: 'BOSS_FIELD_UNHASHED', task: 'HOUSE-B', file: 'page', find: "['intro', 'i32'], ['telegraph', 'i32']];", repl: "['intro', 'i32']];",
+  { name: 'BOSS_FIELD_UNHASHED', task: 'HOUSE-B', file: 'page', find: "['intro', 'i32'], ['telegraph', 'i32'], ['near',", repl: "['intro', 'i32'], ['near',",
     gates: [{ gate: 'harness', only: 'H-boss-10', expect: 'every guardian field moves the state hash' }] },
   { name: 'PRIZE_SKIN_FIRST', task: 'HOUSE-B', file: 'page', find: "var PRIZES = Object.freeze(['frame.walnut', 'hero.umber',", repl: "var PRIZES = Object.freeze(['hero.umber', 'frame.walnut',",
     gates: [{ gate: 'harness', only: 'H-look-1', expect: 'the ladder: a frame style first' }] },

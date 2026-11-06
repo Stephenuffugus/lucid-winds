@@ -32,8 +32,8 @@ gameplay mechanics are leaving a lot to be desired." The shove is live (sb-m2-11
 - Step 1: DONE. Five bodies by biome and pose (one mask), remnant at the fall.
 - Step 2: DONE. The shove in her tiles on an Ink line, one phase.
 - Step 3: DONE. Second attacks alternate with the first (BDUST, BBREATH, BWHIP, BPOD, BFLAME), told by her marks; under half HP a cycle runs 3/4 (added: a fight that speeds up); boss schema holds near, shove, cycle, the mark. H-boss-8 re rated, H-boss-12 new.
-- Step 4:
-- Step 5:
+- Step 4: DONE. Ten kinds 11 to 20 behind a new record flag (FLAG_R9 = 4; captures and the Daily carry it, every older code keeps its room), rolled 50/30/10/10 on a stream of their own, ramp fodder too; a room of three or more meets at least one new kind. H-mon-2.
+- Step 5: DONE. Free play floor 4 (R9_FREE_ROW), CAP_TRAP read at last (floor spike fields off the climb), belt, shelf, lamp, gust off the climb's stands (the lamp may cross an arc, never a stand). H-r9-rooms.
 - Step 6:
 
 ## THE STEPS (in order; each ends green on lint, committed and pushed)
@@ -103,6 +103,7 @@ sb-m2-12/deploy-sb-m2-12.sh with the new stamp commit and numbers, DRY=1 once. T
 `! bash /home/codespace/sb-drafts/sb-m2-12/deploy-sb-m2-12.sh`.
 
 ## DECISIONS for Stephen (built as written until he says otherwise)
+0. Added by the builder: under half HP a guardian's cycle runs 3/4 as long; a room of three or more enemies always meets one new kind (at 10 percent each most rooms would show none); the lamp is Astra's centre pose turned by the sim's swing, not her three poses (smooth, and what you see is what hits).
 1. Attacks alternate first, second, first. (Or: the second only under half HP.)
 2. New kinds from a house's room 3 (free play room 2), at 10 percent each.
 3. The shelf regrows in 4 s; the lamp swings a 3 s period; the gust 2 s on, 2 s off.

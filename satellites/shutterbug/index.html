@@ -869,7 +869,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     // 6.9 route score
     ROUTE_MAX_WALL_CHAIN: 2, ROUTE_SLACK: 1, ROUTE_SLACK_BOTH_AXES: false /* Q8 */, ROUTE_SAFE_EVERY_ROWS: 8, ROUTE_SAFE_ENEMY_DIST: 3,
     // 6.11 feature caps and thresholds
-    CAP_LADDER: 1, CAP_POCKET: 1, CAP_DOOR: 1, CAP_SPECK: 6, CAP_STICKY: 3, CAP_ENEMY: 7, CAP_ELITE: 2, CAP_TRAP: 1 /* read by nothing: a room holds one trap by structure (features.trap) */,
+    CAP_LADDER: 1, CAP_POCKET: 1, CAP_DOOR: 1, CAP_SPECK: 6, CAP_STICKY: 3, CAP_ENEMY: 7, CAP_ELITE: 2, CAP_TRAP: 2 /* round 9 (6 Nov): a FLAG_R9 room's trap fields, the photo's pattern and floor spikes (features.moreTraps), one more from a house's room 3 */,
     LADDER_STACK_ROWS: 3, LADDER_MIN_RUNS: 3, POCKET_LANDMARK_MIN: 20, POCKET_TUNNEL_MAX: 2, POCKET_TRIES: 4, DOOR_L: 200, DOOR_MIN: 3, SPECK_S: 0.5, SPECK_L: 150,
     STICKY_RUN_MIN: 6, FODDER_CELLS: [2, 5], ELITE_CELLS: [6, 11], ELITE_HP_MULT: 2 /* Q51 */, BOSS_CELLS: 12, TRAP_MIN: 4, TRAP_PERIOD_S: 1.5, TRAP_TRIES: 4,
     ENEMY_SPAWN_CLEAR: 2, BLUEPRINT_CHANCE: 0.25, EMBER_EXTRA_ENEMY: 1, SHED_CAP: 4 /* the caps before HARDER ROOMS: the ladder's last rung sheds back to it */, EMBER_EXTRA_SPECKS: 2,
@@ -892,6 +892,19 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the second monsters (2 Nov): the bunny's roll, the owl's swoop, the crab's shell, the puff's cloud, the beetle's trail */
     BUNNY_SEE_CELLS: 3, BUNNY_ROLL_PX: 1.5, BUNNY_ROLL_S: 1, BUNNY_REST_S: 1.5, OWL_SEE_CELLS: 5, OWL_SWOOP_PX: 1.75, OWL_SWOOP_S: 0.75, OWL_REST_S: 1.5,
     CRAB_WALK_S: 3, CRAB_SHELL_S: 1, PUFF_EVERY_S: 3, PUFF_SWELL_S: 0.5, PUFF_CLOUD_S: 0.6, BEETLE_TRAIL_EVERY_S: 0.35, BEETLE_TRAIL_S: 0.7,
+    /* the third and fourth monsters (round 9 step 4, FLAG_R9 records only): a room's kinds by weight (first, second, third,
+       fourth), the new two from a house's room R9_FROM_ROOM on and in free play after the first room; each kind's rule is in
+       moveEnemy: the silverfish runs its wall, the spider drops on its thread, the flea hops at the bug, the bat dives, the
+       lamprey swims its row, the lamp jelly pulses up and sinks, the tick crawls, the wasp orbits, the mite scurries, the
+       ash moth burns a trail */
+    /* the harder rooms (round 9 step 5, FLAG_R9 records only): the free play floor (a ramp row of its own: every photo gets
+       at least this many enemies after the first room); the room pieces a room holds (a house's from room 2, two from room 4,
+       one in free play), each off the climb's stands: the conveyor carries a standing bug at CONVEYOR_PCT of RUN, the shelf
+       cracks when stood on and gives way SHELF_CRACK later, back SHELF_BACK after that; the lamp swings LAMP_DEG each way
+       every LAMP_PERIOD and hurts; the gust lifts as the fan does, GUST_ON on and off, over its three rows */
+    R9_FREE_ROW: { floor: 4, cap: 7, eliteCap: 2, eliteMin: 0, fodderHpQ: 4, fast: 0 }, CONVEYOR_PCT: 50, CONVEYOR_MIN: 3, CONVEYOR_MAX: 6, SHELF_CELLS: 3, SHELF_CRACK_S: 0.5, SHELF_FALL_S: 0.2, SHELF_BACK_S: 4, LAMP_PERIOD_S: 3, LAMP_SWING_PX: 22, LAMP_DROP_PX: 62, GUST_ON_S: 2, GUST_ROWS: 3, MORE_TRAP_CELLS: 3,
+    R9_KIND_W: [50, 30, 10, 10], R9_FROM_ROOM: 3, SILVERFISH_SPEED: 3, SPIDER_DROP_CELLS: 6, SPIDER_DROP_SPEED: 7, SPIDER_CLIMB_S: 1.5, SPIDER_REST_S: 1, FLEA_REST_S: 0.7, FLEA_AIR_S: 0.35, FLEA_CELLS: 2,
+    BAT_SEE_CELLS: 4, BAT_SWOOP_PX: 2, BAT_SWOOP_S: 0.6, BAT_REST_S: 1.2, LAMPREY_SPEED: 2.5, LAMPJ_RISE_CELLS: 3, LAMPJ_PULSE_S: 2, LAMPJ_PUSH_S: 0.5, LAMPJ_SINK_SPEED: 1, TICK_SPEED: 1, WASP_CELLS: 2, WASP_ORBIT_S: 3, MITE_SPEED: 4, ASH_TRAIL_EVERY_S: 0.8, ASH_TRAIL_S: 1,
     /* the Darkroom (2 Nov): the starting collection, each weapon's tier and the price to develop it, a print that
        cannot be new paid in Dead pixels instead */
     DEV_START: ['J1', 'D1'], DEV_PRICE: [0, 30, 100, 300], DEV_DUP_DP: 30, START_PICK_DP: 200 /* DESIGN 9.4 "Starting loadout pick 200" */, START_PICK_ON: false /* 5 Nov, Stephen: "starting every house with a weapon is kind of cheating unless we made things a little more complicated": retired, the key kept, a bought pick refunded once; true brings it back */,
@@ -971,6 +984,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     K.FAN_V = Math.round(T.FAN_V * SUB);   /* m2 step 4: the fan column's lift, an upward speed held while inside */
     K.BOSS_DUST_V = Math.round(T.BOSS_DUST_CPS * G.CELL * SUB / HZ); K.BOSS_POD_V = Math.round(T.BOSS_POD_CPS * G.CELL * SUB / HZ); K.BOSS_FLAME_V = Math.round(T.BOSS_FLAME_CPS * G.CELL * SUB / HZ);   /* round 9: the second attacks' speeds */
     K.DASH_V = Math.round(T.DASH_CELLS * G.CELL * SUB / T.DASH_FRAMES);
+    K.CONVEYOR_V = Math.round(K.RUN * T.CONVEYOR_PCT / 100);
     K.KNOCK_V = Math.round(T.HIT_KNOCKBACK_CELLS * G.CELL * SUB / T.HIT_KNOCKBACK_FRAMES);
     K.KNOCK_FRAMES = T.HIT_KNOCKBACK_FRAMES;
     K.DEEP_FALL_G = Math.round(K.G * T.DEEP_FALL_MULT);
@@ -983,6 +997,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     })();
     K.MOTH_V = Math.round(T.MOTH_SPEED * G.CELL * SUB / HZ);
     K.CRAWLER_V = Math.round(T.CRAWLER_SPEED * G.CELL * SUB / HZ);
+    K.SILVERFISH_V = Math.round(T.SILVERFISH_SPEED * G.CELL * SUB / HZ); K.SPIDER_DROP_V = Math.round(T.SPIDER_DROP_SPEED * G.CELL * SUB / HZ); K.SPIDER_CLIMB_V = Math.round(T.SPIDER_DROP_CELLS * G.CELL * SUB / (T.SPIDER_CLIMB_S * HZ));
+    K.LAMPREY_V = Math.round(T.LAMPREY_SPEED * G.CELL * SUB / HZ); K.LAMPJ_UP_V = Math.round(G.CELL * SUB / (T.LAMPJ_PUSH_S * HZ)); K.LAMPJ_SINK_V = Math.round(T.LAMPJ_SINK_SPEED * G.CELL * SUB / HZ); K.TICK_V = Math.round(T.TICK_SPEED * G.CELL * SUB / HZ); K.MITE_V = Math.round(T.MITE_SPEED * G.CELL * SUB / HZ);
     K.JELLY_V = Math.round(T.JELLY_SPEED * G.CELL * SUB / HZ);
     K.ELITE_SUB = Math.round(T.ELITE_SIZE_CELLS * G.CELL * SUB); K.ELITE_PX = Math.round(T.ELITE_SIZE_CELLS * G.CELL);
     /* every seconds value as frames: X_S -> X_F */
@@ -1226,7 +1242,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      and their code: nothing that was shared changes. */
   var V = 2, HEADER = 6, HEADER2 = 9, HEX = '0123456789abcdef';
   /* what this client knows of v2's three bytes (raised only by the lane that builds what a value means) */
-  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAG_BESTIARY = 2, FLAGS_KNOWN = FLAG_KEYS | FLAG_BESTIARY;   /* FLAGS bit 0: the exit locked by keys; bit 1: the second monsters (2 Nov) */
+  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAG_BESTIARY = 2, FLAG_R9 = 4, FLAGS_KNOWN = FLAG_KEYS | FLAG_BESTIARY | FLAG_R9;   /* FLAGS bit 0: the exit locked by keys; bit 1: the second monsters (2 Nov); bit 2: round 9's third and fourth monsters, room pieces and floors (6 Nov): a code made before it keeps its room */
   function headOf(v) { return v === 1 ? HEADER : HEADER2; }
   /* a v2 header holding a byte this client does not know (a biome past BIOME_MAX, rules past RULES_MAX, a flag bit
      outside FLAGS_KNOWN): such a code is a newer client's, never 'bad' and never built */
@@ -1562,11 +1578,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
   var DAILY_CFG = (function () { var a = []; for (var i = 0; i < DAILY_N; i++) if (DAILY_SKIP.indexOf(i) < 0) a.push(i); return Object.freeze(a); })();
   function dailyAt(i) {   /* config i of 90, skipped or not (the gate builds every one) */
     var j = toJSON(decode(DAILY_CODES[i % DAILY_CODES.length]));
-    j.v = 2; j.mode = 0; j.biome = 1 + i % BIOME_MAX; j.rules = Math.floor(i / 45) % (RULES_MAX + 1); j.flags = FLAG_KEYS | FLAG_BESTIARY;
+    j.v = 2; j.mode = 0; j.biome = 1 + i % BIOME_MAX; j.rules = Math.floor(i / 45) % (RULES_MAX + 1); j.flags = FLAGS_KNOWN;
     return fromJSON(j);
   }
   function daily(day) { var n = DAILY_CFG.length; return dailyAt(DAILY_CFG[((day % n) + n) % n]); }
-  SB.record = { V: V, daily: daily, dailyAt: dailyAt, DAILY_N: DAILY_N, DAILY_SKIP: DAILY_SKIP, DAILY_CYCLE: DAILY_CFG.length, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, FLAG_BESTIARY: FLAG_BESTIARY, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
+  SB.record = { V: V, daily: daily, dailyAt: dailyAt, DAILY_N: DAILY_N, DAILY_SKIP: DAILY_SKIP, DAILY_CYCLE: DAILY_CFG.length, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, FLAG_BESTIARY: FLAG_BESTIARY, FLAG_R9: FLAG_R9, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
     encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows, parseCode: parseCode, linkOf: linkOf,
     saveDefaults: saveDefaults, validateSave: validateSave, loadSave: loadSave,
     runValid: runValid, runFresh: runFresh, runEnter: runEnter, runClear: runClear, runDie: runDie, runRetry: runRetry,
@@ -2082,6 +2098,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        enemies, in core-features' fixed order, after the ascent so they keep clear of it (the pocket never carves it);
        then the second round of the ascent and, when it fails, the degrade ladder (T1.3) */
     level.bestiary = rec.v >= 2 && (rec.flags & SB.record.FLAG_BESTIARY) !== 0 ? 1 : 0;   /* the second monsters (2 Nov) */
+    level.r9 = rec.v >= 2 && (rec.flags & SB.record.FLAG_R9) !== 0 ? 1 : 0;   /* round 9's monsters, room pieces and floors (6 Nov) */
     /* m2 step 3: the floors' landings and the tripod, before the features (they see any film tab a landing carved) */
     var carvedL = SB.features.landings(level);
     var settled = settle(level, SB.features.place(level, opts, carvedL ? SB.reach.graph(level) : fixed.g));
@@ -3164,7 +3181,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the second monsters (2 Nov): Dust Bunny, Snow Owl, Hermit Crab, Spore Puff, Cinder Beetle; the owl flies as the moth
      does, the others stand on a run as the crawler does */
   var BUNNY = 6, OWL = 7, CRAB = 8, PUFF = 9, BEETLE = 10, SECOND_OF_BIOME = [BUNNY, OWL, CRAB, PUFF, BEETLE];
-  function standsKind(k) { return k === CRAWLER || k === SPARK || k === BUNNY || k === CRAB || k === PUFF || k === BEETLE; }
+  /* round 9 (6 Nov, SHUTTERBUG_R9_BUILD_PLAN.md step 4): the third and fourth monsters of each biome, in FLAG_R9 rooms */
+  var SILVERFISH = 11, SPIDER = 12, FLEA = 13, BAT = 14, LAMPREY = 15, LAMPJELLY = 16, TICK = 17, WASP = 18, MITE = 19, ASHMOTH = 20, THIRD_OF_BIOME = [SILVERFISH, FLEA, LAMPREY, TICK, MITE], FOURTH_OF_BIOME = [SPIDER, BAT, LAMPJELLY, WASP, ASHMOTH];
+  function standsKind(k) { return k === CRAWLER || k === SPARK || k === BUNNY || k === CRAB || k === PUFF || k === BEETLE || k === FLEA || k === TICK || k === MITE; }
   function cheb(a, b, w) { return Math.max(Math.abs(a % w - b % w), Math.abs(Math.floor(a / w) - Math.floor(b / w))); }
   function standable(level, c) { var w = level.w; return c >= 0 && c + w < w * level.h && !level.solid[c] && (level.solid[c + w] === 1 || level.plat[c + w] === 1); }
   function ascentStands(level) {
@@ -3505,15 +3524,53 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return null;
   }
 
+  /* round 9 step 5: more trap fields in a FLAG_R9 room, up to CAP_TRAP (one more from a house's room 3): a photo's pattern is
+     rare, so a field is MORE_TRAP_CELLS of floor off the climb: standing cells on solid, two cells clear of any cell the ascent
+     stands on and of anything placed, each field walled keeping every ascent edge (trapOk), on a stream of its own */
+  function moreTraps(level, opts, f, stands) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, L = T.MORE_TRAP_CELLS, i, k, x, y, ri = opts ? opts.roomIndex | 0 : 0;
+    if ((opts && opts.firstRoom) || level.needsCrop) return;
+    var cap = T.CAP_TRAP + (ri >= T.R9_FROM_ROOM ? 1 : 0), have = f.trap ? 1 : 0;
+    if (have >= cap || (ri && ri < 2)) return;
+    var keep = new Uint8Array(n), mk = function (c, r) { if (c === null || c === undefined || c < 0 || c >= n) return; var cx = c % w, cy = (c - cx) / w; for (var yy = Math.max(0, cy - r); yy <= Math.min(h - 1, cy + r); yy++) for (var xx = Math.max(0, cx - r); xx <= Math.min(w - 1, cx + r); xx++) keep[yy * w + xx] = 1; };
+    for (i = 0; i < stands.length; i++) mk(stands[i], 2);
+    mk(level.spawn, 3); mk(level.exit, 2); mk(f.chest, 1); mk(f.scroll, 1); mk(f.blueprint, 1); if (f.door) mk(f.door.idx, 1);
+    for (i = 0; i < f.specks.length; i++) mk(f.specks[i], 1);
+    if (f.pocket) for (i = 0; i < f.pocket.cells.length; i++) keep[f.pocket.cells[i]] = 1;
+    if (f.trap) for (i = 0; i < f.trap.length; i++) mk(f.trap[i], 2);
+    var cands = [], ok = function (c) { return !keep[c] && !level.solid[c] && !level.plat[c] && !level.trap[c] && !level.tab[c] && c + w < n && level.solid[c + w] === 1 && !level.tab[c + w]; };
+    for (y = 2; y < h - 1; y++) for (x = 0; x + L <= w; x++) { var all = true; for (k = 0; k < L && all; k++) all = ok(y * w + x + k); if (all) cands.push(y * w + x); }
+    var rng = SB.rng.mulberry32((level.seed ^ 0x52390003) >>> 0), list = f.trap ? Array.from(f.trap) : [], rects = f.trapRect ? [f.trapRect] : [];
+    while (have < cap && cands.length) {
+      var at = rng.int(cands.length), c0 = cands[at], cells = [];
+      cands.splice(at, 1);
+      for (k = 0; k < L; k++) { if (keep[c0 + k]) { cells = null; break; } cells.push(c0 + k); }
+      if (!cells || !trapOk(level, cells)) continue;
+      for (k = 0; k < L; k++) { level.trap[cells[k]] = 1; list.push(cells[k]); mk(cells[k], 2); }
+      rects.push([c0 % w, Math.floor(c0 / w), c0 % w + L - 1, Math.floor(c0 / w)]); have++;
+    }
+    if (!list.length) return;
+    f.trap = Int32Array.from(list); f.trapRect = rects[0]; f.trapRects = rects; f.trapKind = f.trapKind || (level.biome === 1 || level.biome === 2 ? 'crushers' : 'spikes');
+  }
+
   /* 7. the enemies, after the claims; each with its envelope (section 3.7) */
   function envelope(level, kind, c, pocket) {
     var w = level.w, h = level.h, out = [c], x = c % w, y = (c - x) / w, k;
     var run = function (row) { var a = x, b = x; while (a > 0 && standable(level, row * w + a - 1)) a--; while (b < w - 1 && standable(level, row * w + b + 1)) b++; return [a, b]; };
     if (kind === 'pocket') return Int32Array.from(pocket.cells).sort();
-    if (kind === CRAWLER || kind === BUNNY || kind === CRAB || kind === BEETLE) { var rr = run(y); out = []; for (k = rr[0]; k <= rr[1]; k++) { out.push(y * w + k); if (y > 0) out.push((y - 1) * w + k); } }
+    if (kind === CRAWLER || kind === BUNNY || kind === CRAB || kind === BEETLE || kind === FLEA || kind === TICK || kind === MITE) { var rr = run(y); out = []; for (k = rr[0]; k <= rr[1]; k++) { out.push(y * w + k); if (y > 0) out.push((y - 1) * w + k); } }
     else if (kind === PUFF) { for (k = 1; k <= 2 && y - k >= 0; k++) out.push((y - k) * w + x); }
     else if (kind === ICICLE) { for (k = 1; k <= 6 && y + k < h && !level.solid[(y + k) * w + x]; k++) out.push((y + k) * w + x); }
     else if (kind === JELLY) { out = []; for (k = -2; k <= 2; k++) if (y + k >= 0 && y + k < h) out.push((y + k) * w + x); }
+    else if (kind === SILVERFISH) {
+      var wl = x === 0 || level.solid[c - 1], wr = x === w - 1 || level.solid[c + 1];
+      if (wl || wr) { var sd = wl ? -1 : 1, solidSide = function (yy2) { var xs = x + sd; return xs < 0 || xs >= w || level.solid[yy2 * w + xs]; }, ya = y, yb = y; while (ya > 0 && !level.solid[(ya - 1) * w + x] && !level.plat[(ya - 1) * w + x] && solidSide(ya - 1)) ya--; while (yb < h - 1 && !level.solid[(yb + 1) * w + x] && !level.plat[(yb + 1) * w + x] && solidSide(yb + 1)) yb++; out = []; for (k = ya; k <= yb; k++) out.push(k * w + x); }
+      else { var rf = run(y); out = []; for (k = rf[0]; k <= rf[1]; k++) { out.push(y * w + k); if (y > 0) out.push((y - 1) * w + k); } }
+    }
+    else if (kind === SPIDER) { for (k = 1; k <= SB.TUNING.SPIDER_DROP_CELLS && y + k < h && !level.solid[(y + k) * w + x] && !level.plat[(y + k) * w + x]; k++) out.push((y + k) * w + x); }
+    else if (kind === LAMPREY) { var la = x, lb = x; while (la > 0 && !level.solid[y * w + la - 1] && !level.plat[y * w + la - 1]) la--; while (lb < w - 1 && !level.solid[y * w + lb + 1] && !level.plat[y * w + lb + 1]) lb++; out = []; for (k = la; k <= lb; k++) out.push(y * w + k); }
+    else if (kind === LAMPJELLY) { for (k = 1; k <= SB.TUNING.LAMPJ_RISE_CELLS && y - k >= 0 && !level.solid[(y - k) * w + x] && !level.plat[(y - k) * w + x]; k++) out.push((y - k) * w + x); }
+    else if (kind === WASP) { var WR = SB.TUNING.WASP_CELLS; out = []; for (var wy = Math.max(0, y - WR); wy <= Math.min(h - 1, y + WR); wy++) for (var wx = Math.max(0, x - WR); wx <= Math.min(w - 1, x + WR); wx++) if (!level.solid[wy * w + wx]) out.push(wy * w + wx); if (out.indexOf(c) < 0) out.push(c); }
     else if (kind === SPARK) {
       var rs = run(y); out = [];
       for (k = rs[0]; k <= rs[1]; k++) out.push(y * w + k);
@@ -3521,6 +3578,52 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
     out.sort(function (a, b) { return a - b; });
     return Int32Array.from(out);
+  }
+  /* round 9: a kind's own rule for a cell: walkers stand, hangers hang, the silverfish has a wall or a floor, the lamprey a
+     row of three to swim, the lamp jelly two cells over it; the fliers want only open air */
+  function kindFits(level, kind, c) {
+    var w = level.w, n = w * level.h, x = c % w, up = function (k) { var q = c - k * w; return q >= 0 && !level.solid[q] && !level.plat[q]; };
+    if (standsKind(kind)) return standable(level, c);
+    if (kind === ICICLE || kind === SPIDER || kind === BAT) return c >= w && (level.solid[c - w] === 1 || level.plat[c - w] === 1);
+    if (kind === SILVERFISH) return x === 0 || x === w - 1 || level.solid[c - 1] === 1 || level.solid[c + 1] === 1 || standable(level, c);
+    if (kind === LAMPREY) { var a = x, b = x; while (a > 0 && !level.solid[c - x + a - 1] && !level.plat[c - x + a - 1]) a--; while (b < w - 1 && !level.solid[c - x + b + 1] && !level.plat[c - x + b + 1]) b++; return b - a >= 2; }
+    if (kind === LAMPJELLY) return up(1) && up(2);
+    return n > 0;
+  }
+  /* the cell a kind takes for a spot chosen for another: a walker drops to the first ledge under it, a hanger rises to the
+     first ceiling over it (8 rows at most), anything else stays; -1 when the rule still fails */
+  function kindSpot(level, kind, c) {
+    var w = level.w, n = w * level.h, k;
+    if (standsKind(kind)) for (k = 0; k < 8 && c + w < n && !standable(level, c) && !level.solid[c + w]; k++) c += w;
+    else if (kind === SPIDER || kind === BAT) for (k = 0; k < 8 && c - w >= 0 && !level.solid[c - w] && !level.plat[c - w]; k++) c -= w;
+    return c >= 0 && c < n && !level.solid[c] && !level.plat[c] && kindFits(level, kind, c) ? c : -1;
+  }
+  /* round 9's roll over a built room's enemies, on its own stream so no other draw moves: each by R9_KIND_W; the third and
+     fourth only where they may come (never a first room, a house from R9_FROM_ROOM); a room of three or more where they may
+     come holds at least one of them when any spot keeps a rule, so the new bugs are met */
+  function r9MayCome(opts) { var T = SB.TUNING; return !(opts && opts.firstRoom) && (!(opts && opts.roomIndex) || opts.roomIndex >= T.R9_FROM_ROOM); }
+  function r9Roll(rng, may) {
+    var W = SB.TUNING.R9_KIND_W, r = rng.int(W[0] + W[1] + W[2] + W[3]), i = 0;
+    while (i < 3 && r >= W[i]) { r -= W[i]; i++; }
+    return may || i < 2 ? i : i - 2;
+  }
+  function r9Kinds(level, opts, f, out, inPocket, near) {
+    var b = level.biome | 0, kinds = [KIND_OF_BIOME[b] || MOTH, SECOND_OF_BIOME[b] || BUNNY, THIRD_OF_BIOME[b] || SILVERFISH, FOURTH_OF_BIOME[b] || SPIDER];
+    var rng = SB.rng.mulberry32((level.seed ^ 0x52390001) >>> 0), may = r9MayCome(opts), k, fresh = 0, free = [];
+    var clash = function (c, me) { for (var q = 0; q < out.length; q++) if (q !== me && out[q].idx === c) return true; return c === level.spawn || c === level.exit || c === f.chest || c === f.scroll || c === f.blueprint || (f.specks && f.specks.indexOf(c) >= 0); };
+    var assign = function (e, q, kind) {
+      var c = kindSpot(level, kind, e.idx);
+      if (c < 0 || level.trap[c] || inPocket[c] || near[c] || clash(c, q)) return false;
+      e.idx = c; e.kind = kind; e.env = envelope(level, kind, c); return true;
+    };
+    for (k = 0; k < out.length; k++) {
+      if (f.pocket && f.pocket.cells.indexOf(out[k].idx) >= 0) continue;   /* the pocket's elite keeps its kind */
+      var i = r9Roll(rng, may);
+      if (i > 0 && assign(out[k], k, kinds[i]) && i >= 2) fresh++;
+      if (out[k].kind === kinds[0] || out[k].kind === kinds[1]) free.push(k);
+    }
+    if (may && !fresh && free.length && out.length >= 3) for (k = free.length - 1; k >= 0 && !fresh; k--) if (assign(out[free[k]], free[k], kinds[2 + (level.seed & 1)]) || assign(out[free[k]], free[k], kinds[3 - (level.seed & 1)])) fresh++;
+    out.sort(function (x, y) { return x.idx - y.idx; });
   }
   function enemies(level, opts, f, rng, stands) {
     var T = SB.TUNING, w = level.w, h = level.h, n = w * h, i, k;
@@ -3618,7 +3721,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     f.boss = boss;
     /* the second monsters (2 Nov): with the record's FLAG_BESTIARY every other enemy (index order, the pocket's elite kept)
        becomes its biome's second kind when its spot keeps that kind's rule (a walker stands); settle re-checks the climb */
-    if (level.bestiary) {
+    if (level.r9) r9Kinds(level, opts, f, out, inPocket, near);
+    else if (level.bestiary) {
       var k2 = SECOND_OF_BIOME[level.biome | 0] || BUNNY, odd = 0;
       for (k = 0; k < out.length; k++) {
         if (f.pocket && f.pocket.cells.indexOf(out[k].idx) >= 0) continue;   /* the pocket's elite keeps its kind */
@@ -3661,6 +3765,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   function ramp(level, opts) {
     var R = rampRow(opts);
+    if (!R && level.r9 && !(opts && (opts.firstRoom || opts.roomIndex))) R = SB.TUNING.R9_FREE_ROW;   /* round 9 step 5: the free play floor */
     if (!R || level.needsCrop) return 0;
     level.ramp = R;
     var T = SB.TUNING, w = level.w, h = level.h, n = w * h, f = level.features, es = f.enemies, stands = ascentStands(level), i, k, laid = 0;
@@ -3689,14 +3794,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (c < w || c >= n - w || level.solid[c] || level.plat[c] || level.trap[c] || near[c] || keep[c]) return false;
       if (kind === CRAWLER || kind === SPARK) { if (!standable(level, c)) return false; }
       else if (kind === ICICLE && !level.solid[c - w] && !level.plat[c - w]) return false;
+      else if (level.r9 && !kindFits(level, kind, c)) return false;
       var env = envFor(kind, c);
       for (var q = 0; q < env.length; q++) if (stand[env[q]] || (kind === ICICLE && beside[env[q]])) return false;
       return true;
     };
     var apart = function (c) { for (var q = 0; q < es.length; q++) if (cheb(c, es[q].idx, w) <= T.ROUTE_SAFE_ENEMY_DIST) return false; return true; };
+    var rampRng = level.r9 ? SB.rng.mulberry32((level.seed ^ 0x52390002) >>> 0) : null, B9 = level.biome | 0, K9 = [base, SECOND_OF_BIOME[B9] || BUNNY, THIRD_OF_BIOME[B9] || SILVERFISH, FOURTH_OF_BIOME[B9] || SPIDER];
     while (es.length < R.floor) {
-      var kind = base, cands = [], wide = [];
+      var kind = rampRng ? K9[r9Roll(rampRng, r9MayCome(opts))] : base, cands = [], wide = [];
       for (i = 0; i < n; i++) if (ok(i, kind)) cands.push(i);
+      if (!cands.length && kind !== base) { kind = base; for (i = 0; i < n; i++) if (ok(i, kind)) cands.push(i); }
       if (!cands.length && kind !== MOTH) { kind = MOTH; for (i = 0; i < n; i++) if (ok(i, kind)) cands.push(i); }
       for (i = 0; i < cands.length; i++) if (apart(cands[i])) wide.push(cands[i]);
       var from = wide.length ? wide : cands;
@@ -4013,6 +4121,71 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
     return carved;
   }
+  /* round 9 step 5: Astra's room pieces, FLAG_R9 only, on a stream of their own: one a room in free play and from a house's
+     room 2, two from room 4. free(q) is pieces()'s own (off the climb, its arcs and everything placed), so the climb is the same
+     with them on and off; only the lamp may hang over an arc (its swing is timed and a stand is always safe): its box keeps a
+     cell off every stand. The belt lies on three to six floor cells on solid, the shelf hangs in the air beside a ledge or a
+     wall nearest the room's loot, the gust stands on a floor cell, in a shaft when one fits */
+  function r9Pieces(level, opts, out, free, mark, stands) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, ri = opts ? opts.roomIndex | 0 : 0, want = ri ? (ri >= 4 ? 2 : ri >= 2 ? 1 : 0) : 1, f = level.features, x, y, k, c;
+    if (!want) return;
+    var rng = SB.rng.mulberry32((level.seed ^ 0x52390004) >>> 0), kinds = ['belt', 'shelf', 'lamp', 'gust'];
+    for (k = 3; k > 0; k--) { var j0 = rng.int(k + 1), t0 = kinds[k]; kinds[k] = kinds[j0]; kinds[j0] = t0; }
+    var solidOr = function (q) { return q >= 0 && q < n && (level.solid[q] === 1 || level.plat[q] === 1); };
+    var lootAt = []; if (typeof f.chest === 'number' && f.chest >= 0) lootAt.push(f.chest); for (k = 0; f.specks && k < f.specks.length; k++) lootAt.push(f.specks[k]);
+    var lootD = function (q) { var b = 99, qx = q % w, qy = (q - qx) / w; for (var i = 0; i < lootAt.length; i++) b = Math.min(b, Math.max(Math.abs(lootAt[i] % w - qx), Math.abs(Math.floor(lootAt[i] / w) - qy))); return b; };
+    var make = {
+      belt: function () {
+        var c2 = [];
+        for (y = 2; y < h - 1; y++) for (x = 0; x + T.CONVEYOR_MIN <= w; x++) {
+          var L = 0; while (L < T.CONVEYOR_MAX && x + L < w && free(y * w + x + L) && free((y - 1) * w + x + L) && (y + 1) * w + x + L < n && level.solid[(y + 1) * w + x + L] === 1) L++;
+          if (L >= T.CONVEYOR_MIN) c2.push({ kind: 'belt', row: y, x0: x, len: L, dir: 0 });
+        }
+        if (!c2.length) return null;
+        var b = c2[rng.int(c2.length)]; b.dir = rng.int(2) ? 1 : -1; return b;
+      },
+      shelf: function () {
+        var c2 = [], best = 99, L = T.SHELF_CELLS;
+        for (y = 3; y < h - 3; y++) for (x = 0; x + L <= w; x++) {
+          var okS = true; for (k = 0; k < L && okS; k++) okS = free(y * w + x + k) && free((y - 1) * w + x + k) && free((y + 1) * w + x + k);
+          if (!okS || !(x === 0 || x + L === w || solidOr(y * w + x - 1) || solidOr(y * w + x + L))) continue;
+          var d = lootD(y * w + x + 1); if (d < best) { best = d; c2 = []; } if (d === best) c2.push({ kind: 'shelf', row: y, x0: x, len: L });
+        }
+        return c2.length ? c2[rng.int(c2.length)] : null;
+      },
+      lamp: function () {
+        var c2 = [], nearS = new Uint8Array(n), q;
+        for (k = 0; k < stands.length; k++) { var sx = stands[k] % w, sy = Math.floor(stands[k] / w); for (var yy = Math.max(0, sy - 1); yy <= Math.min(h - 1, sy + 1); yy++) for (var xx = Math.max(0, sx - 1); xx <= Math.min(w - 1, sx + 1); xx++) nearS[yy * w + xx] = 1; }
+        if (level.exit >= 0) nearS[level.exit] = 1; nearS[level.spawn] = 1;
+        for (y = 1; y + 5 < h; y++) for (x = 2; x + 2 < w; x++) {
+          c = y * w + x;
+          if (level.solid[c] || !solidOr(c - w)) continue;
+          var okL = true; for (var r = 0; r <= 5 && okL; r++) for (q = r < 3 ? 0 : -2; q <= (r < 3 ? 0 : 2) && okL; q++) { var cc = (y + r) * w + x + q; okL = !level.solid[cc] && !level.plat[cc] && !level.trap[cc] && !(r >= 3 && nearS[cc]); }
+          if (okL) c2.push({ kind: 'lamp', cell: c });
+        }
+        return c2.length ? c2[rng.int(c2.length)] : null;
+      },
+      gust: function () {
+        var c2 = [], shaft = [], R = T.GUST_ROWS;
+        for (y = R; y < h - 1; y++) for (x = 0; x < w; x++) {
+          c = y * w + x;
+          if (!(level.solid[c + w] === 1)) continue;
+          var okG = true, walls = 0; for (k = 0; k < R && okG; k++) { var q2 = c - k * w; okG = free(q2); if ((x > 0 && level.solid[q2 - 1]) || (x < w - 1 && level.solid[q2 + 1])) walls++; }
+          if (!okG) continue;
+          c2.push({ kind: 'gust', cell: c, dir: 1 }); if (walls >= 2) shaft.push(c2[c2.length - 1]);
+        }
+        var pool = shaft.length ? shaft : c2;
+        if (!pool.length) return null;
+        var g = pool[rng.int(pool.length)]; g.dir = rng.int(2) ? 1 : -1; return g;
+      }
+    };
+    for (k = 0; k < kinds.length && want > 0; k++) {
+      var pc = make[kinds[k]](); if (!pc) continue;
+      out.push(pc); want--;
+      if (pc.kind === 'belt' || pc.kind === 'shelf') mark(pc.x0 - 1, pc.row - 1, pc.x0 + pc.len, pc.row + 1);
+      else { var pcx = pc.cell % w, pcy = Math.floor(pc.cell / w); mark(pcx - 2, pcy - 3, pcx + 2, pcy + 5); }
+    }
+  }
   /* m2 step 4 (SHUTTERBUG_M2_BUILD_PLAN.md): set pieces on the furniture, at most PIECES_MAX a room, deterministic from
      the seed: the moving film strip (a STRIP_CELLS one way that travels STRIP_TRAVEL cells and back over STRIP_CYCLE_F
      steps, across a gap in the furniture floor beside a ledge) and the fan (a FAN_ROWS updraft column over a floor cell,
@@ -4062,6 +4235,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       }
       if (fan) out.push(fan);
     }
+    if (level.r9) r9Pieces(level, opts, out, free, mark, st);
     for (k = 0; k < out.length; k++) out[k].phase = 0;
     level.pieces = out.length ? out : null;
     return level.pieces;
@@ -4081,13 +4255,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
     f.specks = sp.specks; f.scroll = sp.scroll; f.blueprint = sp.blueprint;
     var tf = trapField(level, opts, f, stands);
     f.trap = tf ? tf.cells : null; f.trapRect = tf ? tf.rect : null; f.trapKind = tf ? tf.kind : null;
+    if (level.r9) moreTraps(level, opts, f, stands);
     f.enemies = enemies(level, opts, f, rng, stands);
     return g;   /* the graph of the carved grid, for the second round (T1.3) */
   }
   SB.features = { MOTH: MOTH, ICICLE: ICICLE, JELLY: JELLY, CRAWLER: CRAWLER, SPARK: SPARK, KIND_OF_BIOME: KIND_OF_BIOME,
+    SILVERFISH: SILVERFISH, SPIDER: SPIDER, FLEA: FLEA, BAT: BAT, LAMPREY: LAMPREY, LAMPJELLY: LAMPJELLY, TICK: TICK, WASP: WASP, MITE: MITE, ASHMOTH: ASHMOTH, THIRD_OF_BIOME: THIRD_OF_BIOME, FOURTH_OF_BIOME: FOURTH_OF_BIOME, kindFits: kindFits,
     BUNNY: BUNNY, OWL: OWL, CRAB: CRAB, PUFF: PUFF, BEETLE: BEETLE, SECOND_OF_BIOME: SECOND_OF_BIOME,
     place: place, returnable: returnable, ladder: ladder, brightRect: brightRect, door: door, pocketCands: pocketCands, pocketOk: pocketOk, chest: chest, specks: specks,
-    trapRects: trapRects, trapOk: trapOk, trapField: trapField, envelope: envelope, enemies: enemies, moths: moths, rampRow: rampRow, ramp: ramp,
+    trapRects: trapRects, trapOk: trapOk, trapField: trapField, moreTraps: moreTraps, r9Pieces: r9Pieces, envelope: envelope, enemies: enemies, moths: moths, rampRow: rampRow, ramp: ramp,
     darkMasses: darkMasses, arena: arena, guardian: guardian, keys: keys, landings: landings, pieces: pieces };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
@@ -4167,7 +4343,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
       traps: { phase: 0 }, boss: gd ? newBoss(level, gd) : null,
       room: { dp: 0, blueprints: [], exitLit: 0, cleared: 0, dead: 0, deaths: 0, grace: 0, offerWait: 0, compare: 0, cand: 0, tremor: 0 },
       /* m2 step 3: the tripod (free play, the Daily Room, a level code: opts.checkpoint; never a house run) */
-      cp: opts.checkpoint && level.tripod >= 0 ? { idx: level.tripod, lit: 0, at: -1 } : null
+      cp: opts.checkpoint && level.tripod >= 0 ? { idx: level.tripod, lit: 0, at: -1 } : null,
+      /* round 9 step 5: each piece's shelf count (0 whole), only in a room with a shelf; hashed after the schema */
+      crumb: level.pieces && level.pieces.some(function (pc) { return pc.kind === 'shelf'; }) ? level.pieces.map(function () { return 0; }) : null
     };
     /* the guardian's moths (HOUSE-B): BOSS_MOTH_COUNT enemy slots made here, after the level's, each a dead moth
        (HP 0: never moved, touched or drawn) until a shed fills it; step never allocates one */
@@ -4188,7 +4366,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      spark's 0 resting, 1 in a hop (vx the cell it left, vy the cell it lands on); timer counts the steps in the state */
   var ICICLE_HANG = 0, ICICLE_FALL = 1, ICICLE_GONE = 2;
   function hpOf(kind, elite) {
-    var T = SB.TUNING, F = SB.features, hp = kind === F.JELLY ? T.JELLY_HP : kind === F.CRAWLER || kind === F.CRAB || kind === F.BEETLE ? T.CRAWLER_HP : 1;
+    var T = SB.TUNING, F = SB.features, hp = kind === F.JELLY || kind === F.LAMPJELLY ? T.JELLY_HP : kind === F.CRAWLER || kind === F.CRAB || kind === F.BEETLE || kind === F.TICK ? T.CRAWLER_HP : 1;
     return elite ? hp * T.ELITE_HP_MULT : hp;
   }
   /* the pocket of the pocket's elite (its cell one of the pocket's), else null */
@@ -4220,7 +4398,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var K = SB.K, T = SB.TUNING, F = SB.features, CS = K.CELL_SUB, h = s.hero, w = lv.w, sz = en.elite ? K.ELITE_SUB : CS;
     var col = en.home % w, row = (en.home - col) / w, hx = col * CS + ((CS - sz) >> 1), hy = row * CS + ((CS - sz) >> 1);
     if (en.hp <= 0) return;
-    if (en.kind === F.MOTH) {
+    if (en.kind === F.MOTH || en.kind === F.ASHMOTH) {
+      /* the ash moth (round 9) flies as the moth does and burns a trail behind it, CTRAIL's hazard, at most two a moth */
+      if (en.kind === F.ASHMOTH && en.timer % K.ASH_TRAIL_EVERY_F === 0) { var aq = spawn(s, CTRAIL); if (aq >= 0) { var ap = s.proj[aq]; ap.x = en.x + (sz >> 1) - 8 * K.SUB; ap.y = en.y + sz - 8 * K.SUB; ap.ttl = K.ASH_TRAIL_F; } }
       /* homes in at MOTH_V through furniture (Q29): the larger axis at full speed, the other in proportion */
       var mdx = (h.x + (K.HERO_W_SUB >> 1)) - (en.x + (sz >> 1)), mdy = (h.y + (K.HERO_H_SUB >> 1)) - (en.y + (sz >> 1)), md = Math.max(Math.abs(mdx), Math.abs(mdy));
       if (md > 0) { en.vx = (K.MOTH_V * mdx / md) | 0; en.vy = (K.MOTH_V * mdy / md) | 0; en.x += en.vx; en.y += en.vy; en.dir = en.vx < 0 ? -1 : 1; }
@@ -4245,25 +4425,27 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var y0 = hy - up * CS, y1 = hy + dn * CS;
       en.vy = en.dir * K.JELLY_V; en.y += en.vy;
       if (en.y <= y0) { en.y = y0; en.dir = 1; } else if (en.y >= y1) { en.y = y1; en.dir = -1; }
-    } else if (en.kind === F.OWL) {
+    } else if (en.kind === F.OWL || en.kind === F.BAT) {
       /* the owl (2 Nov): perched at home; the bug within OWL_SEE_CELLS (rested OWL_REST) sends it swooping straight at where
-         the bug was, OWL_SWOOP long, then home at the moth's speed */
+         the bug was, OWL_SWOOP long, then home at the moth's speed; the icicle bat (round 9) the same under its own numbers,
+         hung from the ceiling */
+      var isBat = en.kind === F.BAT, restF = isBat ? K.BAT_REST_F : K.OWL_REST_F, seeC = isBat ? T.BAT_SEE_CELLS : T.OWL_SEE_CELLS, swoopF = isBat ? K.BAT_SWOOP_F : K.OWL_SWOOP_F, swoopPx = isBat ? T.BAT_SWOOP_PX : T.OWL_SWOOP_PX;
       var ocx = Math.floor((en.x + (sz >> 1)) / CS), ocy = Math.floor((en.y + (sz >> 1)) / CS), hcx = Math.floor((h.x + (K.HERO_W_SUB >> 1)) / CS), hcy = Math.floor((h.y + (K.HERO_H_SUB >> 1)) / CS);
       if (en.state === 0) {
         en.x = hx; en.y = hy;
-        if (en.timer >= K.OWL_REST_F && Math.max(Math.abs(hcx - ocx), Math.abs(hcy - ocy)) <= T.OWL_SEE_CELLS) {
-          var odx = (h.x + (K.HERO_W_SUB >> 1)) - (en.x + (sz >> 1)), ody = (h.y + (K.HERO_H_SUB >> 1)) - (en.y + (sz >> 1)), od = Math.max(1, Math.abs(odx), Math.abs(ody)), OV = Math.round(T.OWL_SWOOP_PX * K.SUB);
+        if (en.timer >= restF && Math.max(Math.abs(hcx - ocx), Math.abs(hcy - ocy)) <= seeC) {
+          var odx = (h.x + (K.HERO_W_SUB >> 1)) - (en.x + (sz >> 1)), ody = (h.y + (K.HERO_H_SUB >> 1)) - (en.y + (sz >> 1)), od = Math.max(1, Math.abs(odx), Math.abs(ody)), OV = Math.round(swoopPx * K.SUB);
           en.vx = (OV * odx / od) | 0; en.vy = (OV * ody / od) | 0; en.state = 1; en.timer = 0; en.dir = en.vx < 0 ? -1 : 1;
         }
       } else if (en.state === 1) {
         en.x += en.vx; en.y += en.vy;
-        if (en.timer >= K.OWL_SWOOP_F) { en.state = 2; en.timer = 0; }
+        if (en.timer >= swoopF) { en.state = 2; en.timer = 0; }
       } else {
         var bx = hx - en.x, by = hy - en.y, bd = Math.max(Math.abs(bx), Math.abs(by));
         if (bd <= K.MOTH_V) { en.x = hx; en.y = hy; en.state = 0; en.timer = 0; }
         else { en.vx = (K.MOTH_V * bx / bd) | 0; en.vy = (K.MOTH_V * by / bd) | 0; en.x += en.vx; en.y += en.vy; en.dir = en.vx < 0 ? -1 : 1; }
       }
-    } else if (en.kind === F.BUNNY || en.kind === F.CRAB || en.kind === F.BEETLE || en.kind === F.PUFF) {
+    } else if (en.kind === F.BUNNY || en.kind === F.CRAB || en.kind === F.BEETLE || en.kind === F.PUFF || en.kind === F.TICK || en.kind === F.MITE) {
       /* the walkers on their run (the crawler's rule): the bunny sits, then rolls at the bug seen within BUNNY_SEE_CELLS
          (BUNNY_ROLL, then rests); the crab walks CRAB_WALK and shells CRAB_SHELL (no damage then); the beetle walks and
          leaves a trail of embers; the puff sits, swells and puffs a cloud up every PUFF_EVERY */
@@ -4282,6 +4464,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
       } else if (en.kind === F.BEETLE) {
         V = K.CRAWLER_V;
         if (en.timer % K.BEETLE_TRAIL_EVERY_F === 0) { var tq = spawn(s, CTRAIL); if (tq >= 0) { var tp = s.proj[tq]; tp.x = Math.floor((en.x + (sz >> 1)) / CS) * CS; tp.y = (row + 1) * CS - 8 * K.SUB; tp.ttl = K.BEETLE_TRAIL_F; } }
+      } else if (en.kind === F.TICK) { V = K.TICK_V;   /* round 9: the tick crawls, the mite scurries; both turn at the run's ends */
+      } else if (en.kind === F.MITE) { V = K.MITE_V;
       } else {
         if (en.timer >= K.PUFF_EVERY_F) {
           en.timer = 0; en.state = 0;
@@ -4290,6 +4474,73 @@ body.sb-modal .lwfb-fab { display: none !important; }
       }
       if (V) { en.vx = en.dir * V; en.x += en.vx; if (en.x <= wx0) { en.x = wx0; en.dir = 1; if (en.kind === F.BUNNY) { en.state = 0; en.timer = 0; } } else if (en.x >= wx1) { en.x = wx1; en.dir = -1; if (en.kind === F.BUNNY) { en.state = 0; en.timer = 0; } } }
       en.y = footY(lv, en.home, sz);
+    } else if (en.kind === F.SILVERFISH) {
+      /* round 9: it runs the wall beside its home from corner to corner (state 1 the wall on its left, 2 on its right: the
+         render turns it to the wall); with no wall it runs its floor (state 0) */
+      var wlS = solidAt(lv, col - 1, row), wrS = solidAt(lv, col + 1, row);
+      if (wlS || wrS) {
+        var sdS = wlS ? -1 : 1, topS = row, botS = row;
+        while (topS > 0 && !solidAt(lv, col, topS - 1) && !platAt(lv, col, topS - 1) && solidAt(lv, col + sdS, topS - 1)) topS--;
+        while (botS < lv.h - 1 && !solidAt(lv, col, botS + 1) && !platAt(lv, col, botS + 1) && solidAt(lv, col + sdS, botS + 1)) botS++;
+        var y2S = topS * CS, y3S = Math.max(y2S, (botS + 1) * CS - sz);
+        en.state = wlS ? 1 : 2; en.x = wlS ? col * CS : (col + 1) * CS - sz; en.vy = en.dir * K.SILVERFISH_V; en.y += en.vy;
+        if (en.y <= y2S) { en.y = y2S; en.dir = 1; } else if (en.y >= y3S) { en.y = y3S; en.dir = -1; }
+      } else {
+        var aS = col, bS = col;
+        while (aS > 0 && standCell(lv, row * w + aS - 1)) aS--;
+        while (bS < w - 1 && standCell(lv, row * w + bS + 1)) bS++;
+        var x0S = aS * CS, x1S = Math.max(x0S, (bS + 1) * CS - sz);
+        en.state = 0; en.vx = en.dir * K.SILVERFISH_V; en.x += en.vx;
+        if (en.x <= x0S) { en.x = x0S; en.dir = 1; } else if (en.x >= x1S) { en.x = x1S; en.dir = -1; }
+        en.y = footY(lv, en.home, sz);
+      }
+    } else if (en.kind === F.SPIDER) {
+      /* round 9: hung at home (state 0), rested it drops on its thread at a bug passing under (ICICLE_TRIGGER_COLS, as the
+         icicle), down to the first floor or SPIDER_DROP_CELLS (state 1), then climbs back (state 2) */
+      var dnS = 0; while (dnS < T.SPIDER_DROP_CELLS && !solidAt(lv, col, row + dnS + 1) && !platAt(lv, col, row + dnS + 1)) dnS++;
+      var ybS = hy + dnS * CS;
+      if (en.state === 0) {
+        en.x = hx; en.y = hy;
+        if (en.timer >= K.SPIDER_REST_F && dnS > 0 && h.y > en.y && Math.abs(Math.floor((h.x + (K.HERO_W_SUB >> 1)) / CS) - col) <= T.ICICLE_TRIGGER_COLS) { en.state = 1; en.timer = 0; }
+      } else if (en.state === 1) { en.y = Math.min(ybS, en.y + K.SPIDER_DROP_V); if (en.y >= ybS) { en.state = 2; en.timer = 0; } }
+      else { en.y = Math.max(hy, en.y - K.SPIDER_CLIMB_V); if (en.y <= hy) { en.y = hy; en.state = 0; en.timer = 0; } }
+    } else if (en.kind === F.FLEA) {
+      /* round 9: rests FLEA_REST, then hops FLEA_CELLS along its run toward the bug (vx the cell it left, vy the cell it lands
+         on, as the spark); at the run's end it waits for the bug to pass */
+      if (en.state === 0) {
+        en.y = footY(lv, en.home, sz);
+        if (en.timer >= K.FLEA_REST_F) {
+          var aF = col, bF = col;
+          while (aF > 0 && standCell(lv, row * w + aF - 1)) aF--;
+          while (bF < w - 1 && standCell(lv, row * w + bF + 1)) bF++;
+          var hereF = Math.floor((en.x + (sz >> 1)) / CS), toF = Math.max(aF, Math.min(bF, hereF + (Math.floor((h.x + (K.HERO_W_SUB >> 1)) / CS) < hereF ? -T.FLEA_CELLS : T.FLEA_CELLS)));
+          en.timer = 0;
+          if (toF !== hereF) { en.vx = row * w + hereF; en.vy = row * w + toF; en.state = 1; en.dir = toF < hereF ? -1 : 1; }
+        }
+      } else {
+        var tF = en.timer, AF = K.FLEA_AIR_F, fxF = footX(lv, en.vx, sz), fyF = footY(lv, en.vx, sz), txF = footX(lv, en.vy, sz);
+        if (tF >= AF) { en.x = txF; en.y = fyF; en.state = 0; en.timer = 0; }
+        else { en.x = fxF + (((txF - fxF) * tF / AF) | 0); en.y = fyF - ((6 * CS * tF * (AF - tF) / (AF * AF)) | 0); }
+      }
+    } else if (en.kind === F.LAMPREY) {
+      /* round 9: it swims its row at LAMPREY_V, turning at a wall, with a small wriggle of its body */
+      var aL = col, bL = col;
+      while (aL > 0 && !solidAt(lv, aL - 1, row) && !platAt(lv, aL - 1, row)) aL--;
+      while (bL < w - 1 && !solidAt(lv, bL + 1, row) && !platAt(lv, bL + 1, row)) bL++;
+      var x0L = aL * CS, x1L = Math.max(x0L, (bL + 1) * CS - sz), phL = (en.timer >> 2) & 15;
+      en.vx = en.dir * K.LAMPREY_V; en.x += en.vx;
+      if (en.x <= x0L) { en.x = x0L; en.dir = 1; } else if (en.x >= x1L) { en.x = x1L; en.dir = -1; }
+      en.y = hy + ((phL < 8 ? phL : 15 - phL) - 4) * (K.SUB >> 1);
+    } else if (en.kind === F.LAMPJELLY) {
+      /* round 9: from its floor it pulses up a cell every LAMPJ_PULSE (state 0), LAMPJ_RISE_CELLS at most, then sinks (state 1) */
+      var upJ = 0; while (upJ < T.LAMPJ_RISE_CELLS && !solidAt(lv, col, row - upJ - 1) && !platAt(lv, col, row - upJ - 1)) upJ++;
+      var ytJ = hy - upJ * CS;
+      if (en.state === 0) { if (en.timer % K.LAMPJ_PULSE_F < K.LAMPJ_PUSH_F) en.y -= K.LAMPJ_UP_V; if (en.y <= ytJ) { en.y = ytJ; en.state = 1; en.timer = 0; } }
+      else { en.y += K.LAMPJ_SINK_V; if (en.y >= hy) { en.y = hy; en.state = 0; en.timer = 0; } }
+    } else if (en.kind === F.WASP) {
+      /* round 9: a diamond round its home, WASP_CELLS out, once every WASP_ORBIT (vx its own step count, so a freeze holds it) */
+      var RW = T.WASP_CELLS * CS, PW = K.WASP_ORBIT_F, uW = Math.floor((en.vx % PW) * 4 * RW / PW), qW = Math.floor(uW / RW) & 3, fW = uW % RW, dxW = qW === 0 ? RW - fW : qW === 1 ? -fW : qW === 2 ? fW - RW : fW, dyW = qW === 0 ? fW : qW === 1 ? RW - fW : qW === 2 ? -fW : fW - RW, nxW = hx + dxW;
+      en.vx++; en.dir = nxW < en.x ? -1 : 1; en.x = nxW; en.y = hy + dyW;
     } else if (en.kind === F.CRAWLER) {
       /* the patrol: CRAWLER_V along the standable run of its home row, turning at the run's last cell, never off it */
       var a = col, b = col;
@@ -5036,7 +5287,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
 
   /* returns 1 when the hero lands this step; `dy` is the step's travel (an armed slide travels a third of vy) */
   /* m2 step 4: the set pieces move on the step count alone (no state of their own): PF is the step being run */
-  var PF = 0;
+  var PF = 0, PC = null;
   function stripX(p, f) {
     var C = SB.TUNING.STRIP_CYCLE_F, half = C >> 1, t = ((f + (p.phase | 0)) % C + C) % C, run = SB.TUNING.STRIP_TRAVEL * SB.K.CELL_SUB;
     return p.x0 * SB.K.CELL_SUB + Math.floor((t < half ? t : C - t) * run / half);
@@ -5046,7 +5297,20 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var K = SB.K, CS = K.CELL_SUB, w = lv.w, fx = (p.cell % w) * CS, top = (Math.floor(p.cell / w) - SB.TUNING.FAN_ROWS) * CS, bot = Math.floor(p.cell / w) * CS;
     return h.x + K.HERO_W_SUB > fx && h.x < fx + CS && h.y + K.HERO_H_SUB > top && h.y < bot;
   }
-  SB.pieceAt = { stripX: stripX, fanOn: fanOn };
+  /* round 9 step 5: the gust's clock and box; the lamp's swing, an eased triangle in whole numbers (u -P..P to the eased
+     -P..P), its lamp's middle in sub pixels; the shelf's frame by its count */
+  function gustOn(p, f) { var G = SB.K.GUST_ON_F; return ((f + (p.phase | 0)) % (2 * G) + 2 * G) % (2 * G) < G; }
+  function inGust(h, lv, p) {
+    var K = SB.K, CS = K.CELL_SUB, fx = (p.cell % lv.w) * CS, row = Math.floor(p.cell / lv.w);
+    return h.x + K.HERO_W_SUB > fx && h.x < fx + CS && h.y + K.HERO_H_SUB > (row - SB.TUNING.GUST_ROWS + 1) * CS && h.y < (row + 1) * CS;
+  }
+  function lampAt(p, f, w) {
+    var K = SB.K, T = SB.TUNING, P = K.LAMP_PERIOD_F, t = ((f + (p.phase | 0)) % P + P) % P, tri = Math.abs(2 * t - P), u = 2 * tri - P, e = Math.floor(u * (3 * P * P - u * u) / (2 * P * P));
+    var CS = K.CELL_SUB, cx = p.cell % w, cy = Math.floor(p.cell / w);
+    return { swing: e / P, x: cx * CS + (CS >> 1) + Math.floor(e * T.LAMP_SWING_PX * K.SUB / P), y: cy * CS + (T.LAMP_DROP_PX - Math.floor(4 * Math.abs(e) / P)) * K.SUB };
+  }
+  function shelfFrame(n) { var K = SB.K; return n <= 0 ? 'whole' : n < K.SHELF_CRACK_F ? 'cracked' : n < K.SHELF_CRACK_F + K.SHELF_FALL_F ? 'falling' : 'gone'; }
+  SB.pieceAt = { stripX: stripX, fanOn: fanOn, gustOn: gustOn, lampAt: lampAt, shelfFrame: shelfFrame };
   function moveY(h, lv, K, dy) {
     var CS = K.CELL_SUB, HH = K.HERO_H_SUB, HW = K.HERO_W_SUB;
     var prevFeet = h.y + HH;
@@ -5069,7 +5333,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
       }
       /* m2 step 4: the moving film strip is a one way top too, where it stands this step */
       if (!landed && lv.pieces && h.dive !== 2) for (var pi = 0; pi < lv.pieces.length && !landed; pi++) {
-        var pc = lv.pieces[pi]; if (pc.kind !== 'strip') continue;
+        var pc = lv.pieces[pi];
+        if (pc.kind === 'shelf') {   /* round 9: the shelf is a one way top until it gives way */
+          if (PC && PC[pi] >= K.SHELF_CRACK_F) continue;
+          var stop = pc.row * CS, ssx = pc.x0 * CS, sov = Math.min(h.x + HW, ssx + pc.len * CS) - Math.max(h.x, ssx);
+          if (prevFeet <= stop && feet > stop && (sov >= K.OVERLAP_SUB || (h.ground && sov > 0))) { h.y = stop - HH; h.vy = 0; return 1; }
+          continue;
+        }
+        if (pc.kind !== 'strip') continue;
         var ptop = pc.row * CS, psx = stripX(pc, PF), pov = Math.min(h.x + HW, psx + SB.TUNING.STRIP_CELLS * CS) - Math.max(h.x, psx);
         if (prevFeet <= ptop && feet > ptop && (pov >= K.OVERLAP_SUB || (h.ground && pov > 0))) { h.y = ptop - HH; h.vy = 0; return 1; }
       }
@@ -5197,7 +5468,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* 5. gravity to terminal; a sticky wall holds the hero still; m2 step 4: inside a fan's column while it blows, no
        gravity and at least FAN_V up */
     var fanned = false;
-    if (lv.pieces) for (var fi = 0; fi < lv.pieces.length; fi++) { var fp = lv.pieces[fi]; if (fp.kind === 'fan' && fanOn(fp, s.frame) && inFan(h, lv, fp)) fanned = true; }
+    if (lv.pieces) for (var fi = 0; fi < lv.pieces.length; fi++) { var fp = lv.pieces[fi]; if ((fp.kind === 'fan' && fanOn(fp, s.frame) && inFan(h, lv, fp)) || (fp.kind === 'gust' && gustOn(fp, s.frame) && inGust(h, lv, fp))) fanned = true; }
     if (fanned && !h.sticky) h.vy = Math.min(h.vy, -K.FAN_V);
     else if (h.sticky) h.vy = 0;
     else if (deep) h.vy = Math.min(K.DEEP_TERM, h.vy + (h.vy >= 0 && !startedGrounded ? K.DEEP_FALL_G : K.G));
@@ -5208,9 +5479,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
        of what the fall would be at the same step, capped at TERMINAL / 3; section 3.8 item 4) */
     var xBefore = h.x;
     /* m2 step 4: a bug standing on the film strip rides it (the strip's own step, where the box is free) */
-    PF = s.frame;
+    PF = s.frame; PC = s.crumb || null;
     if (h.ground && lv.pieces) for (var ri = 0; ri < lv.pieces.length; ri++) {
-      var rp = lv.pieces[ri]; if (rp.kind !== 'strip') continue;
+      var rp = lv.pieces[ri];
+      if (rp.kind === 'belt') {   /* round 9: a bug standing on the belt is carried, where the box is free */
+        var bdx = rp.dir * K.CONVEYOR_V;
+        if (h.y + K.HERO_H_SUB === (rp.row + 1) * K.CELL_SUB && h.x + K.HERO_W_SUB > rp.x0 * K.CELL_SUB && h.x < (rp.x0 + rp.len) * K.CELL_SUB && boxFree(lv, K, h.x + bdx, h.y)) h.x += bdx;
+        continue;
+      }
+      if (rp.kind !== 'strip') continue;
       var rsx = stripX(rp, s.frame - 1), rdx = stripX(rp, s.frame) - rsx;
       if (h.y + K.HERO_H_SUB === rp.row * K.CELL_SUB && h.x + K.HERO_W_SUB > rsx && h.x < rsx + SB.TUNING.STRIP_CELLS * K.CELL_SUB && rdx && boxFree(lv, K, h.x + rdx, h.y)) h.x += rdx;
     }
@@ -5220,6 +5497,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
        review: a hero drumming B at a wall was invulnerable in place) */
     if (h.dash > 0 && (dashCut || h.vx === 0)) { if (dashStart && h.x === xBefore) h.dashI = 0; h.dash = 0; h.vx = 0; }
     var landed = moveY(h, lv, K, h.wall !== 0 && !h.sticky && h.vy > 0 ? Math.floor(h.vy / K.WALL_SLIDE_DIV) : h.vy);
+    /* round 9: a shelf cracks under a standing bug and counts on: it gives way at SHELF_CRACK, whole again SHELF_BACK after */
+    if (s.crumb) for (var ci = 0; ci < lv.pieces.length; ci++) {
+      var cp2 = lv.pieces[ci]; if (cp2.kind !== 'shelf') continue;
+      if (s.crumb[ci] > 0) { s.crumb[ci]++; if (s.crumb[ci] >= K.SHELF_CRACK_F + K.SHELF_BACK_F) s.crumb[ci] = 0; }
+      else if (h.y + K.HERO_H_SUB === cp2.row * K.CELL_SUB && h.x + K.HERO_W_SUB > cp2.x0 * K.CELL_SUB && h.x < (cp2.x0 + cp2.len) * K.CELL_SUB) s.crumb[ci] = 1;
+    }
 
     /* 7. the walls: on the ground nothing clings; in the air a full height contact on the rocker's side arms the slide
        (DESIGN 4.2, outside the wall jump's lock); a sticky contact on either side arms only on a descending step after
@@ -5431,9 +5714,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (lv.features && lv.features.trap) {
       s.traps.phase = (s.traps.phase + 1) % K.TRAP_PERIOD_F;
       if (s.traps.phase >= (K.TRAP_PERIOD_F >> 1) && !s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && trapTouch(lv, h)) {
-        var tr = lv.features.trapRect, mid2 = tr ? (tr[0] + tr[2] + 1) * K.CELL_SUB : 0;
+        var tr = lv.features.trapRect, trs = lv.features.trapRects;
+        if (trs) { var tbd = 1e9; for (var tq = 0; tq < trs.length; tq++) { var tdd = Math.abs((trs[tq][0] + trs[tq][2] + 1) * (K.CELL_SUB >> 1) - h.x); if (tdd < tbd) { tbd = tdd; tr = trs[tq]; } } }   /* round 9: knocked away from the nearest field */
+        var mid2 = tr ? (tr[0] + tr[2] + 1) * K.CELL_SUB : 0;
         hitHero(s, 2 * h.x + K.HERO_W_SUB < mid2 ? -1 : 1);
       }
+    }
+    /* round 9 step 5: the swinging lamp costs an enemy's hit where its 20 px middle meets the bug */
+    if (lv.pieces && !s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared) for (var li = 0; li < lv.pieces.length; li++) {
+      var lpc = lv.pieces[li]; if (lpc.kind !== 'lamp') continue;
+      var lam = lampAt(lpc, s.frame, lv.w), LB = 10 * K.SUB;
+      if (h.x < lam.x + LB && h.x + K.HERO_W_SUB > lam.x - LB && h.y < lam.y + LB && h.y + K.HERO_H_SUB > lam.y - LB) hitHero(s, 2 * h.x + K.HERO_W_SUB < 2 * lam.x ? -1 : 1);
     }
     lightTripod(s, lv);   /* m2 step 3: the checkpoint, once the bug stands on the first landing */
 
@@ -5484,7 +5775,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return out;
   }
   /* the checkpoint (m2 step 3) rides after the schema only when the room has one, so every state without it hashes as before */
-  function serialize(s) { var a = walk(s, FIELDS, '', []); if (s.cp) a.push(0x54524950, s.cp.idx | 0, s.cp.lit | 0, s.cp.at | 0); return Int32Array.from(a); }
+  function serialize(s) { var a = walk(s, FIELDS, '', []); if (s.cp) a.push(0x54524950, s.cp.idx | 0, s.cp.lit | 0, s.cp.at | 0); if (s.crumb) { a.push(0x4352554d); for (var cq = 0; cq < s.crumb.length; cq++) a.push(s.crumb[cq] | 0); } return Int32Array.from(a); }
   function hash(s) { return SB.rng.hashWords(serialize(s)); }
 
   /* section 2.6: a replay stores runs of equal words, [count, word] */
@@ -5715,7 +6006,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      (1, Q221) stay in the core for a v2 RULES 1 code, but capture does not write them until their fallbacks, their
      extra film on bare walls and their build time are fixed */
   C.RULES = 0;
-  C.FLAGS = 3;   /* SB.record.FLAG_KEYS | FLAG_BESTIARY: every capture locks its exit with keys and meets the second monsters (2 Nov); a literal, since the room model loads this block without core-record */
+  C.FLAGS = 7;   /* SB.record.FLAG_KEYS | FLAG_BESTIARY | FLAG_R9: every capture locks its exit with keys and meets the second monsters (2 Nov) and round 9's (6 Nov); a literal, since the room model loads this block without core-record */
   C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 15, GREEN_LO: 70, DEEP_LO: 170, EMBER_LO: 285, C_MIN: 12, S_MIN: 9, WARM_C_MIN: 16, WARM_S_MIN: 30, MIN_PCT: 10 });
   C.hueBand = function (r, g, b) {
     var K = C.HUE, mx = Math.max(r, g, b), d = mx - Math.min(r, g, b), band;
@@ -7744,7 +8035,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   /* each enemy's manifest anchor in its box (Astra's manifest, Q160): 'top' hangs it from the box's top, 'bottom'
      stands it on the box's bottom, anything else ('cell') centres it; horizontally always centred */
-  R.ELITE_ANCHOR = { icicle: 'top', crawler: 'bottom', spark: 'bottom', dust_bunny: 'bottom', hermit_crab: 'bottom', spore_puff: 'bottom', cinder_beetle: 'bottom' };
+  R.ELITE_ANCHOR = { icicle: 'top', crawler: 'bottom', spark: 'bottom', dust_bunny: 'bottom', hermit_crab: 'bottom', spore_puff: 'bottom', cinder_beetle: 'bottom', silverfish: 'bottom', thread_spider: 'top', snow_flea: 'bottom', bramble_tick: 'bottom', cinder_mite: 'bottom' };
   /* the second monsters' frames by their state (Astra's round 5 names; her hurt frame while the hit flash runs) */
   function secondFrame(en, beat, frame) {
     var two = (Math.floor(frame / beat) & 1) === 1;
@@ -7754,6 +8045,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (en.kind === 8) return en.state === 1 ? 'shell' : two ? 'walk_b' : 'walk_a';
     if (en.kind === 9) return en.timer < 8 ? 'puff' : en.state === 1 ? 'swell' : 'idle';
     return two ? 'walk_b' : 'walk_a';
+  }
+  /* round 9's kinds: hurt and dead by state; the hangers and diver idle at rest and move in flight; the rest alternate idle
+     and move at Astra's 8 fps */
+  function thirdFrame(en, frame, alive) {
+    if (!alive) return 'dead';
+    if (en.hurt > 0) return 'hurt';
+    if (en.kind === 12 || en.kind === 14) return en.state === 0 ? 'idle' : 'move';
+    return (Math.floor(frame * 8 / SB.TUNING.STEP_HZ) & 1) ? 'move' : 'idle';
   }
   R.CSS_SPRITES = ['stick_pad', 'stick_knob', 'stick_hint', 'pause_glyph', 'icon_biomes', 'run_pips', 'icon_house', 'frame_styles', 'frame_styles_r7'];   /* HOUSE-B: the pips, the house icon, the frames */
   /* one sprite at the integer place (and size: the squash and the stretch), from the atlas */
@@ -8050,7 +8349,19 @@ body.sb-modal .lwfb-fab { display: none !important; }
        fps while it blows, still a while off) and its wind column over it (8 fps, only while on); reduced motion still frames */
     if (lv.pieces) for (var spi = 0; spi < lv.pieces.length; spi++) {
       var sp4 = lv.pieces[spi], rm4 = R.reduced();
-      if (sp4.kind === 'strip') spr(ctx, 'film_strip.' + (rm4 || !((s.frame * 4 / SB.TUNING.STEP_HZ | 0) & 1) ? 'a' : 'b'), SB.pieceAt.stripX(sp4, s.frame) >> 8, sp4.row * C - cam);
+      if (sp4.kind === 'belt') { for (var bi4 = 0; bi4 < sp4.len; bi4++) spr(ctx, 'conveyor.' + (sp4.dir > 0 ? 'right' : 'left') + (rm4 ? 0 : (s.frame * 12 / SB.TUNING.STEP_HZ | 0) & 3), (sp4.x0 + bi4) * C, (sp4.row + 1) * C - cam); }
+      else if (sp4.kind === 'shelf') { var sf4 = SB.pieceAt.shelfFrame(s.crumb ? s.crumb[spi] : 0); for (var bj4 = 0; bj4 < sp4.len; bj4++) spr(ctx, 'crumbling_shelf.' + sf4, (sp4.x0 + bj4) * C, sp4.row * C - cam); }
+      else if (sp4.kind === 'lamp') {
+        /* Astra's centre pose turned about her ceiling pivot by the sim's own swing, so what you see is what hits */
+        var lam4 = SB.pieceAt.lampAt(sp4, s.frame, lv.w), lr4 = A['swinging_lamp.centre'], pvx4 = (sp4.cell % lv.w) * C + (C >> 1), pvy4 = Math.floor(sp4.cell / lv.w) * C - cam;
+        ctx.save(); ctx.translate(pvx4, pvy4); ctx.rotate(-lam4.swing * 20 * Math.PI / 180); ctx.drawImage(atlas, lr4.x, lr4.y, lr4.w, lr4.h, -48, -2, lr4.w, lr4.h); ctx.restore();
+      }
+      else if (sp4.kind === 'gust') {
+        var gx4 = (sp4.cell % lv.w) * C, gy4 = (Math.floor(sp4.cell / lv.w) + 1) * C - 48 - cam, gn4 = (s.frame * 8 / SB.TUNING.STEP_HZ | 0) % 3, gcy4 = 2 * SB.K.GUST_ON_F, gt4 = ((s.frame + (sp4.phase | 0)) % gcy4 + gcy4) % gcy4;
+        if (gt4 < SB.K.GUST_ON_F) spr(ctx, 'window_gust.gust' + (rm4 ? 0 : gn4) + (sp4.dir < 0 ? '<' : ''), gx4, gy4);
+        else if (gt4 >= gcy4 - 30 && ((s.frame >> 3) & 1)) { ctx.globalAlpha = 0.45; spr(ctx, 'window_gust.gust0' + (sp4.dir < 0 ? '<' : ''), gx4, gy4); ctx.globalAlpha = 1; }   /* the half second before it blows */
+      }
+      else if (sp4.kind === 'strip') spr(ctx, 'film_strip.' + (rm4 || !((s.frame * 4 / SB.TUNING.STEP_HZ | 0) & 1) ? 'a' : 'b'), SB.pieceAt.stripX(sp4, s.frame) >> 8, sp4.row * C - cam);
       else if (sp4.kind === 'fan') {
         var fxp = (sp4.cell % lv.w) * C, fyp = Math.floor(sp4.cell / lv.w) * C - cam, on4 = SB.pieceAt.fanOn(sp4, s.frame);
         if (on4) spr(ctx, 'fx_wind.wind_' + (rm4 ? 0 : (s.frame * 8 / SB.TUNING.STEP_HZ | 0) & 3), fxp, fyp - 48);
@@ -8169,14 +8480,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
        art, Astra's <kind>_elite (Q160), 1:1 and never the base art scaled; each sprite sits in the sim's box (C, or
        ELITE_PX a side) by its manifest anchor, R.ELITE_ANCHOR: centred, hung from the box's top or standing on its
        bottom. The box is the sim's alone: the art never moves it */
-    var md = R.drawn.moths, KINDS = ['', 'moth', 'icicle', 'jelly', 'crawler', 'spark', 'dust_bunny', 'snow_owl', 'hermit_crab', 'spore_puff', 'cinder_beetle'], beat = Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS); md.length = 0;
+    var md = R.drawn.moths, KINDS = ['', 'moth', 'icicle', 'jelly', 'crawler', 'spark', 'dust_bunny', 'snow_owl', 'hermit_crab', 'spore_puff', 'cinder_beetle', 'silverfish', 'thread_spider', 'snow_flea', 'icicle_bat', 'lamprey', 'lamp_jelly', 'bramble_tick', 'seed_wasp', 'cinder_mite', 'ash_moth'], beat = Math.round(SB.TUNING.STEP_HZ / SB.TUNING.ANIM_FPS); md.length = 0;
     for (var m = 0; m < s.enemies.length; m++) {
-      var en = s.enemies[m]; if (!SB.sim.liveEnemy(en)) continue;
+      var en = s.enemies[m], enLive = SB.sim.liveEnemy(en);
+      if (!enLive && !(en.kind >= 11 && en.hurt > 0)) continue;   /* round 9's kinds show their dead frame through the kill's flash */
       var es = en.elite ? K.ELITE_PX : C, mx = en.x >> 8, my = (en.y >> 8) - cam;
       if (my < -es || my > viewH) continue;
       /* a hit flashes it Glare on alternate pairs of steps from the hit's own (8.3) */
       var kn = KINDS[en.kind] || 'moth', ek = en.elite ? kn + '_elite' : kn, esp = SPRITES[ek], an = R.ELITE_ANCHOR[kn] || 'cell';
-      var clock = en.kind === 1 ? en.timer : s.frame, mk = en.kind >= 6 ? ek + '.' + secondFrame(en, beat, s.frame) + (en.dir < 0 && en.kind !== 9 ? '<' : '')
+      var clock = en.kind === 1 ? en.timer : s.frame, mk = en.kind >= 11 ? ek + '.' + thirdFrame(en, s.frame, enLive) + (en.dir < 0 && en.kind !== 12 && en.kind !== 16 ? '<' : '') : en.kind >= 6 ? ek + '.' + secondFrame(en, beat, s.frame) + (en.dir < 0 && en.kind !== 9 ? '<' : '')
         : ek + ((Math.floor(clock / beat) & 1) ? '.a' : '.b') + (en.dir < 0 && en.kind === 4 ? '<' : '') + (en.hurt > 0 && !(((en.hurt + 1) >> 1) & 1) ? '!' : '');
       var ex2 = mx + ((es - esp.w) >> 1), ey2 = an === 'top' ? my : an === 'bottom' ? my + es - esp.h : my + ((es - esp.h) >> 1);
       /* at rest (state 0: an icicle hanging, a spark between hops, a crawler on its run) a top or bottom anchor holds to
@@ -8187,7 +8499,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
         var row2 = Math.floor(((en.y >> 8) + (es >> 1)) / C) * C - cam;
         ey2 = an === 'top' ? row2 : row2 + C - esp.h;
       }
-      spr(ctx, mk, ex2, ey2);
+      /* round 9: the spider's thread, Ink, from its home cell's top to its back; the silverfish turned to its wall */
+      if (en.kind === 12) { var thX = mx + (es >> 1), thY = Math.floor(en.home / lv.w) * C - cam; if (ey2 > thY) { ctx.fillStyle = CSS[P.I.INK]; ctx.fillRect(thX, thY, 1, ey2 - thY + 1); } }
+      if (en.kind === 11 && en.state) { var rS = A[mk]; ctx.save(); ctx.translate(mx + (es >> 1), my + (es >> 1)); ctx.rotate(en.state === 1 ? Math.PI / 2 : -Math.PI / 2); ctx.drawImage(atlas, rS.x, rS.y, rS.w, rS.h, -(rS.w >> 1), -(rS.h >> 1), rS.w, rS.h); ctx.restore(); }
+      else spr(ctx, mk, ex2, ey2);
       md.push({ key: mk, x: ex2 - camX, y: ey2, w: esp.w, h: esp.h, box: { x: mx - camX, y: my, w: es, h: es } });
     }
     drawPool(s, cam, camX);

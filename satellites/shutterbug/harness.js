@@ -5171,6 +5171,74 @@ group('H-mon-1', 'the second monsters (2 Nov): with FLAG_BESTIARY every biome\'s
   t.ok(cs.enemies[0].hp === ch0, 'a shelled crab takes no damage from a Boomerang through it (' + cs.enemies[0].hp + ' of ' + ch0 + ')');
 });
 
+group('H-mon-2', 'the third and fourth monsters (round 9 step 4): with FLAG_R9 every biome\'s rooms hold both its new kinds (never without the flag, in a first room or before a house\'s room 3); each kind keeps its rule: the silverfish runs its wall, the spider drops and climbs back, the flea hops at the bug, the bat dives, the lamprey turns at walls, the lamp jelly rises and sinks, the tick is slower than the crawler and the mite faster, the wasp stays round its home, the ash moth burns at most two trails', t => {
+  const F = SB.features, P = SB.sim.PROJ_KIND, third = F.THIRD_OF_BIOME, fourth = F.FOURTH_OF_BIOME, seen3 = [0, 0, 0, 0, 0], seen4 = [0, 0, 0, 0, 0], none = [0, 0, 0, 0, 0], early = [0, 0, 0, 0, 0], ruleBad = [];
+  const isNew = (e, b) => e.kind === third[b] || e.kind === fourth[b];
+  for (const f of FIXTURES) for (let b = 0; b < 5; b++) {
+    const j = Object.assign({}, f.fx.record, { v: 2, biome: b + 1, rules: 0, flags: SB.record.FLAGS_KNOWN });
+    const lv = SB.pipeline.build(SB.record.fromJSON(j), {});
+    if (!lv.needsCrop) for (const e of lv.features.enemies) { if (e.kind === third[b]) seen3[b]++; if (e.kind === fourth[b]) seen4[b]++; if (isNew(e, b) && !F.kindFits(lv, e.kind, e.idx)) ruleBad.push(f.name + ' kind ' + e.kind + ' at ' + e.idx); }
+    const old = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, j, { flags: SB.record.FLAG_KEYS | SB.record.FLAG_BESTIARY })), {});
+    if (!old.needsCrop) none[b] += old.features.enemies.filter(e => isNew(e, b)).length;
+    for (const o of [{ firstRoom: true }, { roomIndex: 1 }, { roomIndex: 2 }]) { const lv2 = SB.pipeline.build(SB.record.fromJSON(j), o); if (!lv2.needsCrop) early[b] += lv2.features.enemies.filter(e => isNew(e, b)).length; }
+  }
+  t.ok(seen3.every(n => n > 0) && seen4.every(n => n > 0) && none.every(n => n === 0) && early.every(n => n === 0) && !ruleBad.length, 'with the flag each biome holds its third (' + seen3.join('/') + ') and fourth (' + seen4.join('/') + '), without it none (' + none.join('/') + '), none early (' + early.join('/') + ')' + (ruleBad.length ? '; off their rule: ' + ruleBad.slice(0, 4).join(', ') : ''));
+  const R = 46 * 24, W = '#' + ' '.repeat(23), lab = (lines, kind, cell, opts) => wpnLab(lines, [[kind, cell]], Object.assign({ moving: true, hc: 20 }, opts || {})).s;
+  const wall = Array.from({ length: 6 }, () => '#'); const sf = lab(wall.concat([FLOOR]), F.SILVERFISH, (43) * 24 + 1);
+  let y0 = 1e9, y1 = -1; const xs = new Set(); for (let k = 0; k < 400; k++) { SB.sim.step(sf, 0); y0 = Math.min(y0, sf.enemies[0].y); y1 = Math.max(y1, sf.enemies[0].y); xs.add(sf.enemies[0].x); }
+  t.ok(sf.enemies[0].state === 1 && xs.size === 1 && y1 - y0 >= 3 * CS, 'the silverfish runs its wall, the wall on its left, x fixed, over ' + ((y1 - y0) / CS).toFixed(1) + ' cells');
+  const sp = lab([FLOOR, '', '', '', '', '', '', '', FLOOR], F.SPIDER, 40 * 24 + 6, { hc: 6 }); let st = []; for (let k = 0; k < 500; k++) { SB.sim.step(sp, 0); if (st[st.length - 1] !== sp.enemies[0].state) st.push(sp.enemies[0].state); if (st.length > 3) break; }
+  t.ok(st.slice(0, 4).join() === '0,1,2,0', 'the spider hangs, drops at a bug under it, climbs back (' + st.join() + ')');
+  const fl = lab(['', FLOOR], F.FLEA, R + 4, { hc: 12 }); const fx0 = fl.enemies[0].x; let air = false; for (let k = 0; k < K.FLEA_REST_F + K.FLEA_AIR_F + 4; k++) { SB.sim.step(fl, 0); if (fl.enemies[0].state === 1) air = true; }
+  t.ok(air && fl.enemies[0].x - fx0 === SB.TUNING.FLEA_CELLS * CS, 'the flea hops ' + SB.TUNING.FLEA_CELLS + ' cells at the bug (' + ((fl.enemies[0].x - fx0) / CS) + ')');
+  const bat = lab([FLOOR, '', '', '', '', FLOOR], F.BAT, 43 * 24 + 8, { hc: 10 }); let dive = false; for (let k = 0; k < K.BAT_REST_F + 10 && !dive; k++) { SB.sim.step(bat, 0); dive = bat.enemies[0].state === 1; }
+  t.ok(dive, 'the bat dives at a bug within ' + SB.TUNING.BAT_SEE_CELLS + ' cells');
+  const lm = lab(['#' + ' '.repeat(10) + '#', FLOOR], F.LAMPREY, R + 4); let lo = 1e9, hi = -1, turns = 0, d = lm.enemies[0].dir; for (let k = 0; k < 600; k++) { SB.sim.step(lm, 0); lo = Math.min(lo, lm.enemies[0].x); hi = Math.max(hi, lm.enemies[0].x); if (lm.enemies[0].dir !== d) { d = lm.enemies[0].dir; turns++; } }
+  t.ok(turns >= 2 && lo >= CS && hi <= 10 * CS, 'the lamprey swims between its walls and turns (' + turns + ' turns)');
+  const lj = lab(['', FLOOR], F.LAMPJELLY, R + 8); const hy = lj.enemies[0].y; let top = hy, back = false; for (let k = 0; k < 1500; k++) { SB.sim.step(lj, 0); top = Math.min(top, lj.enemies[0].y); if (top < hy && lj.enemies[0].y === hy) back = true; }
+  t.ok(hy - top === SB.TUNING.LAMPJ_RISE_CELLS * CS && back, 'the lamp jelly rises ' + ((hy - top) / CS) + ' cells and sinks back (' + back + ')');
+  const go = (kind) => { const e = lab(['', FLOOR], kind, R + 2, { hc: 22 }); const x0 = e.enemies[0].x; for (let k = 0; k < 40; k++) SB.sim.step(e, 0); return Math.abs(e.enemies[0].x - x0); };
+  t.ok(go(F.TICK) < go(F.CRAWLER) && go(F.CRAWLER) < go(F.MITE), 'the tick (' + go(F.TICK) + ') crawls under the crawler (' + go(F.CRAWLER) + '), the mite (' + go(F.MITE) + ') over it');
+  const wp = lab(['', FLOOR], F.WASP, 42 * 24 + 8); let far = 0; const hx = wp.enemies[0].x, hy2 = wp.enemies[0].y; for (let k = 0; k < 400; k++) { SB.sim.step(wp, 0); far = Math.max(far, Math.abs(wp.enemies[0].x - hx), Math.abs(wp.enemies[0].y - hy2)); }
+  t.ok(far === SB.TUNING.WASP_CELLS * CS || far === SB.TUNING.WASP_CELLS * CS - 1, 'the wasp orbits ' + (far / CS).toFixed(2) + ' cells round its home');
+  const am = lab(['', FLOOR], F.ASHMOTH, 40 * 24 + 8); let most = 0; for (let k = 0; k < 400; k++) { SB.sim.step(am, 0); most = Math.max(most, live(am, P.CTRAIL).length); }
+  t.ok(most >= 1 && most <= 2, 'the ash moth burns a trail, at most ' + most + ' pieces at once');
+});
+
+group('H-r9-rooms', 'the harder rooms (round 9 step 5): with FLAG_R9 free play holds its floor of enemies after the first room, more trap fields and a room piece a room off the climb; a code made before the flag keeps its room; the belt carries a standing bug; the shelf cracks, gives way and comes back; the lamp hits where it swings and never on a stand; the gust lifts while it blows', t => {
+  const F = SB.features, kinds = {}, under = [], onStand = [], oldBad = []; let rooms = 0, ens = 0, traps = 0;
+  for (const f of FIXTURES) for (let b = 0; b < 5; b++) {
+    const j = Object.assign({}, f.fx.record, { v: 2, biome: b + 1, rules: 0, flags: SB.record.FLAGS_KNOWN });
+    const lv = SB.pipeline.build(SB.record.fromJSON(j), {});
+    if (lv.needsCrop) continue;
+    rooms++; ens += lv.features.enemies.length; if (lv.features.trapRects) traps += lv.features.trapRects.length;
+    const st = lv.ascent.nodes.filter(c => c < lv.w * lv.h);
+    for (const p of lv.pieces || []) {
+      kinds[p.kind] = (kinds[p.kind] || 0) + 1;
+      if (p.kind === 'belt' || p.kind === 'shelf') for (let k = 0; k < p.len; k++) if (st.indexOf(p.row * lv.w + p.x0 + k) >= 0) onStand.push(f.name + ' ' + p.kind);
+      if (p.kind === 'gust' && st.indexOf(p.cell) >= 0) onStand.push(f.name + ' gust');
+    }
+    if (lv.features.trap) for (const c of lv.features.trap) if (st.indexOf(c) >= 0) onStand.push(f.name + ' trap');
+    if (lv.features.enemies.length < 2) under.push(f.name + ' b' + b + ': ' + lv.features.enemies.length);
+    const j3 = Object.assign({}, j, { flags: SB.record.FLAG_KEYS | SB.record.FLAG_BESTIARY }), lv3 = SB.pipeline.build(SB.record.fromJSON(j3), {});
+    if (!lv3.needsCrop && ((lv3.pieces || []).some(p => ['belt', 'shelf', 'lamp', 'gust'].indexOf(p.kind) >= 0) || lv3.features.trapRects || lv3.r9)) oldBad.push(f.name);
+  }
+  t.ok(['belt', 'shelf', 'lamp', 'gust'].every(k => kinds[k] > 0) && !onStand.length && !oldBad.length, 'over ' + rooms + ' rooms: ' + JSON.stringify(kinds) + ', ' + (ens / rooms).toFixed(1) + ' enemies a room, ' + traps + ' trap fields; none on a stand' + (onStand.length ? ' (' + onStand.slice(0, 4).join(', ') + ')' : '') + '; flags 3 rooms have none' + (oldBad.length ? ' (' + oldBad.slice(0, 3).join(', ') + ')' : ''));
+  t.ok(ens / rooms >= 3.5, 'the free play floor: ' + (ens / rooms).toFixed(1) + ' enemies a room on average (a floor of ' + SB.TUNING.R9_FREE_ROW.floor + ' where the room has spots)' + (under.length ? '; under 2 in ' + under.slice(0, 3).join(', ') : ''));
+  /* the pieces' rules on a lab room: row 46 stands on the floor at 47 */
+  const room = (lines, pieces, opts) => { const lv = LABS.room(lines, {}); lv.features = { pocket: null, enemies: [], trap: null, specks: [], scroll: null, blueprint: null, chest: null, boss: null, keys: null, door: null }; lv.pieces = pieces; pieces.forEach(p => { p.phase = 0; }); const s0 = SB.sim.create(lv, Object.assign({ at: { x: 8 * CS + ((CS - HW) >> 1), y: 46 * CS }, loadout: [0, 0, 0], immortal: false }, opts || {})); s0.hero.ground = 1; return { lv, s: s0 }; };
+  const b1 = room(['', FLOOR], [{ kind: 'belt', row: 46, x0: 6, len: 6, dir: 1 }]); const bx0 = b1.s.hero.x; for (let k = 0; k < 30; k++) SB.sim.step(b1.s, 0);
+  t.ok(b1.s.hero.x - bx0 === 30 * K.CONVEYOR_V || b1.s.hero.x - bx0 > 20 * K.CONVEYOR_V, 'the belt carries a standing bug (' + ((b1.s.hero.x - bx0) / CS).toFixed(2) + ' cells in 30 steps)');
+  const sh = room(['', FLOOR], [{ kind: 'shelf', row: 44, x0: 7, len: 3 }], { at: { x: 8 * CS + ((CS - HW) >> 1), y: 42 * CS } }); sh.s.hero.ground = 0; let stood = false, fell = false; const log = [];
+  for (let k = 0; k < 40 + K.SHELF_CRACK_F + K.SHELF_BACK_F + 10; k++) { SB.sim.step(sh.s, 0); const on = sh.s.hero.y + K.HERO_H_SUB === 44 * CS; if (on) stood = true; if (stood && sh.s.hero.y + K.HERO_H_SUB > 44 * CS) fell = true; log.push(sh.s.crumb[0]); }
+  const peak = Math.max.apply(null, log), back = log[log.length - 1] === 0 && peak > 0;
+  t.ok(stood && fell && back && peak >= K.SHELF_CRACK_F + K.SHELF_BACK_F - 1, 'the shelf holds a bug (' + stood + '), gives way (' + fell + ') and is whole again (' + back + ', count to ' + peak + ')');
+  const la = room(['', FLOOR, '', ''].slice(0, 2), [{ kind: 'lamp', cell: 41 * 24 + 8 }], { at: { x: 8 * CS + ((CS - HW) >> 1), y: 44 * CS } }); let lost = 0; for (let k = 0; k < K.LAMP_PERIOD_F + 10; k++) { la.s.hero.x = 8 * CS + ((CS - HW) >> 1); la.s.hero.y = 45 * CS; la.s.hero.vy = 0; const h0 = la.s.hero.hearts; SB.sim.step(la.s, 0); if (la.s.hero.hearts < h0) lost++; }
+  t.ok(lost >= 1, 'the lamp costs a bug under its swing a heart (' + lost + ')');
+  const gu = room(['', FLOOR], [{ kind: 'gust', cell: 46 * 24 + 8, dir: 1 }]); let top2 = gu.s.hero.y; for (let k = 0; k < 60; k++) { SB.sim.step(gu.s, 0); top2 = Math.min(top2, gu.s.hero.y); }
+  t.ok(top2 < 46 * CS - CS, 'the gust lifts a bug in its column (' + ((46 * CS - top2) / CS).toFixed(2) + ' cells)');
+});
+
 group('H-wpn-D1', 'Anvil Boots (7.1): a dive landing\'s shock hits 3 cells along the floor and not 4; not a row up; a wall and a ledge\'s end stop it; a dash fires it, a dash into a wall and a plain landing do not; a hold dive on its last landing only; the shake on the dive alone', t => {
   const F = SB.features, EV = SB.sim.EV, N = SB.TUNING.WEAPONS.D1.cells;
   /* the hero over column 10 at row 40, a dive to the floor; the moths [cell] frozen; the hits after 30 steps */
