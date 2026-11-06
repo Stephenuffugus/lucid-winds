@@ -1,0 +1,68 @@
+KEEPSIES, ROUND 3 FOR ASTRA (6 Nov 2026)
+
+Stephen on the shot, 5 Nov: "The view is terrible." "The circle needs to be like three times bigger." "The aiming is
+horrible." All of that is rebuilt in code (the plan is KEEPSIES_M3_BUILD_PLAN.md): the camera stands close and low behind
+the shooter and holds still while a shot plays; the shooter sits in a circle 154 CSS px across; the aim line is the aim;
+the default ring is five foot. Your round 2 is wired in (tray, tiles, footprints, owner marks, chip, tier frames, level
+strip, pot cloth, heirloom cloth, open pouches, chalk strip, horizon, share cards). Round 3 draws what the new shot needs
+and fixes what your art now looks like at the new distance. Fable wires your zip from the zip alone, so write as if no one
+can ask you a follow up.
+
+THE MATERIALS: keepsies-round3-materials.zip, handed to you as a file with this brief, no Drive link and no sign in. It
+holds nineteen captures of this build at 412x915 at 2x on the phone tier (the shot, the watch frame, Look, the statues in
+both views, the plates) and the numbers below. If the live page is up (https://lucidwinds.com/satellites/keepsies/, build
+20261106a or later) play it too; do not wait for it.
+
+HOW TO WORK (Stephen's standing order; it binds this pack)
+- No tests. No checks. No validation scripts, no pixel audits, no scripts that prove your own files, no reports about
+  reports. The art is the deliverable. Nobody reads a test log.
+- Look at each sheet ONCE with your own eyes when it is done, fix what is wrong, move on.
+- One assessment, written once. One contact sheet per section. One zip. No progress notes, no plans about plans.
+- If something is ambiguous, pick the reading that ships and write one line about it in NOTES.md. Do not stop to ask.
+
+THE NEW SHOT IN NUMBERS (412x915 CSS, five foot ring; the 360x780 phone is 80 percent of each marble size)
+- The circle: 154 px across, fixed in CSS px, centred on the shooter, at y 743. Its top edge is at y 666, its foot clears
+  the house rules chip by 1 px. It is drawn today as a faint chalk ring in CSS. The inner 60 percent is the spin ring: a
+  thumb there reads as contact offset (low is backspin, high is follow), and the outer 40 percent is neutral grip.
+- The reticle sits inside the circle and breathes with the aim: 0.95 of the circle wide when the hold is loose, 0.45 of
+  the circle settled. Today it is your v1 SVGs scaled: dashed ring at stroke 3 of 96, settled ring at stroke 4 of 96
+  with a tick. At 154 px those strokes come out far thicker than you drew them.
+- The thumb covers the middle of the circle, and the shooter is 72 px wide under it. A pad that hides the shooter is
+  worse than no pad.
+- The marbles: the shooter 72 px, a mib 23 to 31 px at the cross, 14 at ten foot. So the dirt is seen at about 3200 CSS px
+  a metre under the shooter and 1600 at the cross. Your dirt tile (1024 across 0.6 m) is 1.7 px a millimetre, so at a
+  2x phone the near dirt is magnified about four times.
+- The aim line runs from the circle's top edge to the shot's real range, in your dash and cap.
+
+THE JOBS
+A. THE HOLD CIRCLE AND RETICLE, drawn at their real size (the heart of this round). SVG at 154 CSS px, strokes as they will
+   show, in the chalk and brass of the style guide:
+   A1 hold_circle: at rest, the invitation. Reads on sunlit dirt and on shadow. Not a target, a place to put a thumb.
+   A2 hold_circle_braced: the thumb is down.
+   A3 reticle_settling and A4 reticle_settled: at the sizes above; A3 a broken ring, A4 the full ring and its tick. Say
+      in anchors.json what scales and what must not (a stroke must stay a stroke at 0.45 and 0.95).
+   A5 spin_marks: the faintest mark of where low and high begin (the inner 60 percent). Optional; say if it hurts more
+      than it helps.
+   A6 dial_cue: a small mark for "slide sideways to turn" shown the first few turns. 48 px, one glyph.
+B. THE SNAP CARD, redrawn for the new input. index.html #snapArt is a hand drawn SVG (320 by 150) saying three things: hold,
+   turn, flick. Draw it as one plate with three panels: a thumb in the circle; the thumb sliding sideways and the line
+   turning; the flick up the screen. A low and a high thumb for spin as a fourth small panel if it fits. The words stay in
+   code.
+C. THE CLOSE VIEW, from the captures (01, 02, 03, 05, 06). Your dirt albedo and chalk stroke were drawn for a far camera.
+   C1 look at the near dirt in 01 and say if it holds at that size; if not, a detail tile for the near frame (a 1024
+      WebP that tiles at 0.25 m, under 150 KB).
+   C2 the chalk stroke's near arc in 05 and 07. Three breaks went missing in the round 2 PNG export (its alpha is 212 in
+      every column); export it again with the breaks, 2048x64, the same anchors.
+   C3 ground_shadow and shadow_dark under a 72 px shooter: does the contact read. Redraw if not.
+D. THE STATUES ON THE NEW VIEW, from the captures (09 to 13). They are still the grey primitive parts with your footprints,
+   bars and badges. Say in ASSESSMENT-R3.md whether the bars read in 12; if not, redraw owner_you and owner_dusty and tell
+   us the new boxes. The Meshy references are Stephen's paid lane; no job here.
+E. THE PLATES ON THE REAL SCREENS, from the captures (14 to 19): the chip on a 360 phone is 152 wide (the pips spread 20 apart
+   instead of your 24), the pill on the inspect card, the tile's render in your content box (70 by 61). Anything that
+   no longer looks right, redraw it to the numbers in the capture. If it reads, say so in one line and leave it.
+
+DELIVERY
+ONE zip named keepsies-astra-round3.zip: ASSESSMENT-R3.md (short), manifest.json (every file: file, id, kind, size, notes),
+anchors.json (every centre, band, radius and nine slice inset in each file's own pixels), assets/ (a_circle, b_snap_card,
+c_close_view, d_statues, e_plates), previews/ (one contact sheet per section, on the real captures), NOTES.md (what you
+chose differently and why, and what you would make next). Stephen uploads it. Fable wires it one section at a time.

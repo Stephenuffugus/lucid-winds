@@ -4,6 +4,18 @@
 
 ## Where we are
 
+**2026-11-06, Keepsies m3 (his 5 Nov verdict on the shot, `KEEPSIES_M3_BUILD_PLAN.md` steps 1 to 12, Opus): stamp `20261106a`,
+deploy script `/home/codespace/kp-drafts/deploy-keepsies-m3.sh` (on top of m2 live).** The shot is rebuilt: one owner per
+finger, the camera holds still while a shot plays (median turn 234 degrees before, 0.00 now), a 154 px circle fixed in CSS
+px, the flick reads each sample's own timestamp and the fastest 30 to 50 ms, the aim line is the aim (the flick's angle feeds
+the wildness only), a sideways slide on the shooter is a dial, the close aim frame by ring table, the watch frame, LOOK held,
+and the scope under the cross. The five foot ring is the default (launch 0.4 to 4.2, AI by a hit rate per ring and a speed
+scale; every ten foot scenario hash unchanged, ringer_five and ringer_statues_five new). Astra's round 2 statues kit and
+plates are wired, with `test/plates.mjs` holding every number to `src/data/astra_r2.json`. `tools/frontdoor.mjs feel` walks
+the new input at four phones; `docs/m3/probe_*.mjs` print the screens' numbers; `docs/m3/probe_pixels.mjs` and `pngpx.py` read
+real screenshot pixels on a run that may not open an image. His open calls are DECISIONS in the plan. Astra round 3 is in
+`docs/briefs/keepsies/round3/`.
+
 **2026-11-05, Keepsies m2 (Stephen's statues, `KEEPSIES_BUILD_PLAN.md` steps 9 to 11, Opus): stamp `20261105b`,
 deploy script `/home/codespace/kp-drafts/deploy-keepsies-m2.sh` (it carries m1; it accepts main before or after
 the m1 script).** STATUES is a Ringer house rule, off by default: `core/statues.js` (pure: four shapes as collider

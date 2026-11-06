@@ -25,7 +25,7 @@ const errs = [];
 page.on('pageerror', e => errs.push(e.message));
 await page.setViewport({ width: W, height: H, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 const URL = 'http://localhost:8778/?tmtest=1';
-const TUT = ['move','shade','aloe','find','dash','shadeDrop','checkpoint','burn','hot','spf','cart','cloud','wilt','ice','lunge','eclipse'];
+const TUT = ['move','shade','aloe','find','dash','seed','shadeDrop','checkpoint','burn','hot','spf','cart','cloud','wilt','ice','lunge','eclipse'];
 const SEEN = JSON.stringify({ seenHowto: true, tut: Object.fromEntries(TUT.map(k => [k, true])) });
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const ev = async js => { try { return await page.evaluate(js); } catch (e) { console.log('  failed:', js.slice(0, 80), e.message.slice(0, 120)); } };
