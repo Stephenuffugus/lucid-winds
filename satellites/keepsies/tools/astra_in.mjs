@@ -12,14 +12,57 @@
  * Never shipped: store/ holds the six store frames for the store kit (exempt from the size rule, never loaded,
  * and left out of the deploy's served set); the 640 px pouch masters, the 320 px portrait masters, the Meshy
  * references, the promo art and the contact sheets stay in the pack.
+ *
+ * ROUND 2 (m3 step 5): after v1, from /workspaces/keepsies-astra-round2 (ASTRA2 to change it): the 15 D icons and the two owner marks join the
+ * one sprite, the runtime files go to assets/env, assets/ui and assets/sharing under law 7 (R2 below; the heavy PNGs become WebP in a real
+ * Chrome canvas), her anchors for those files go to src/data/astra_r2.json. Never her previews, boards or Meshy references.
+ *
+ *   node tools/astra_in.mjs --check      ASTRA IN OK: every round 2 output exists, under 1600 px a side (store excepted) and under its byte cap,
+ *                                        the sprite holds all 49 old ids plus the 17 new. Never reads a pack, so CI can run it.
  */
-import { readFileSync, writeFileSync, copyFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, copyFileSync, mkdirSync, readdirSync, existsSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const PACK = join(process.argv[2] || '/workspaces/keepsies-astra-v1/pack', 'assets');
+const CHECK = process.argv.includes('--check');
+const PACK = join((process.argv[2] && process.argv[2] !== '--check' && process.argv[2]) || '/workspaces/keepsies-astra-v1/pack', 'assets');
+const PACK2 = process.env.ASTRA2 || '/workspaces/keepsies-astra-round2';
 const OUT = join(ROOT, 'assets');
+const R2_JSON = join(ROOT, 'src', 'data', 'astra_r2.json');
+const OLD_IDS = 51 /* 49 icons and the 2 wordmarks */, NEW_ICONS = ['d_icons/arch', 'd_icons/column', 'd_icons/confirm', 'd_icons/lay_bunch', 'd_icons/lay_cross', 'd_icons/lay_ring', 'd_icons/lay_x', 'd_icons/level_up', 'd_icons/loaf', 'd_icons/move_statue', 'd_icons/orb', 'd_icons/provenance', 'd_icons/share', 'd_icons/statues', 'd_icons/undo', 'a_statues/owner_you', 'a_statues/owner_dusty'];
+
+/* the size of a PNG or WebP on disk, from its header */
+function imageSize(file) {
+  const b = readFileSync(file);
+  if (b.slice(1, 4).toString() === 'PNG') return [b.readUInt32BE(16), b.readUInt32BE(20)];
+  if (b.slice(0, 4).toString() === 'RIFF' && b.slice(8, 12).toString() === 'WEBP') {
+    const fmt = b.slice(12, 16).toString();
+    if (fmt === 'VP8X') return [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)];
+    if (fmt === 'VP8L') { const v = b.readUInt32LE(21); return [1 + (v & 0x3fff), 1 + ((v >> 14) & 0x3fff)]; }
+    if (fmt === 'VP8 ') return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff];
+  }
+  return null;
+}
+if (CHECK) {
+  const bad = [], meta = JSON.parse(readFileSync(R2_JSON, 'utf8')), files = meta.files;
+  let bytes = 0;
+  for (const rel of Object.keys(files)) {
+    const f = join(OUT, rel), cap = files[rel].cap;
+    if (!existsSync(f)) { bad.push(rel + ' is missing'); continue; }
+    const n = statSync(f).size; bytes += n;
+    if (n > cap) bad.push(rel + ' is ' + n + ' bytes, its cap is ' + cap);
+    if (!/\.svg$/.test(rel) && !rel.startsWith('store/')) { const sz = imageSize(f); if (!sz) bad.push(rel + ': no size read'); else if (Math.max(sz[0], sz[1]) > 1600 && !files[rel].over) bad.push(rel + ' is ' + sz.join('x') + ', over 1600 px a side'); }
+  }
+  const sprite = readFileSync(join(OUT, 'ui', 'icons.svg'), 'utf8'), ids = (sprite.match(/<symbol id="i-/g) || []).length;
+  if (ids !== OLD_IDS + NEW_ICONS.length) bad.push('the sprite holds ' + ids + ' ids, not ' + (OLD_IDS + NEW_ICONS.length));
+  for (const nm of NEW_ICONS) if (sprite.indexOf('id="i-' + nm.split('/')[1] + '"') < 0) bad.push('the sprite lacks i-' + nm.split('/')[1]);
+  for (const nm of ['top_down', 'zoom', 'play', 'wordmark_keepsies']) if (sprite.indexOf('id="i-' + nm + '"') < 0) bad.push('an old id is gone: i-' + nm);
+  if (bad.length) { console.log('ASTRA IN FAILED\n  ' + bad.join('\n  ')); process.exit(1); }
+  console.log('ASTRA IN OK: ' + Object.keys(files).length + ' round 2 files, ' + (bytes / 1024).toFixed(0) + ' KB, ' + ids + ' symbols');
+  process.exit(0);
+}
 
 const BOSSES = ['dusty', 'marlene', 'pitboss', 'ironsides', 'curator'];
 const COPY = {
@@ -59,11 +102,17 @@ function parts(file) {
   return { vb, body };
 }
 const syms = [];
+const icons2 = NEW_ICONS.map(nm => ({ id: nm.split('/')[1], file: join(PACK2, 'assets', nm + '.svg') }));
 const icons = readdirSync(join(PACK, 'f_icons')).filter(f => /^icon_.*\.svg$/.test(f)).sort();
 for (const f of icons) {
   const { vb, body } = parts(join(PACK, 'f_icons', f));
   if (/#[0-9a-f]{3,6}/i.test(body)) throw new Error(f + ' carries a fixed colour; the sprite is currentColor only');
   syms.push('<symbol id="i-' + f.slice(5, -4) + '" viewBox="' + vb + '">' + body + '</symbol>');
+}
+for (const ic2 of icons2) {
+  const { vb, body } = parts(ic2.file);
+  if (/#[0-9a-f]{3,6}/i.test(body)) throw new Error(ic2.file + ' carries a fixed colour; the sprite is currentColor only');
+  syms.push('<symbol id="i-' + ic2.id + '" viewBox="' + vb + '">' + body + '</symbol>');
 }
 for (const w of ['keepsies', 'pocket_legends']) {
   let { vb, body } = parts(join(PACK, 'a_identity', 'wordmark_' + w + '_light.svg'));
@@ -80,4 +129,52 @@ copyFileSync(join(PACK, 'a_identity/icon_512.png'), join(ROOT, 'icon-512.png'));
 copyFileSync(join(PACK, 'a_identity/icon_maskable_512.png'), join(ROOT, 'icon-maskable-512.png'));
 copyFileSync(join(PACK, 'a_identity/keepsies.jpg'), join(ROOT, '..', '..', 'portal-assets', 'thumbs', 'keepsies.jpg'));
 
-console.log('ASTRA IN: ' + n + ' files, ' + syms.length + ' symbols (' + icons.length + ' icons and 2 wordmarks), 3 icons, the thumb');
+/* ---------------------------------------------------------------- round 2 */
+/* out, source, byte cap, anchors key; webp: [w, h, quality, cropBottomRow] drawn through a real Chrome canvas; every other file copied as is */
+const R2 = [
+  ['env/horizon_strip.webp', 'b_fixes/horizon_strip.png', 160000, 'b_fixes/horizon_strip.png', { webp: [2048, 220, 0.8, 440], over: 1 }],
+  ['env/chalk_stroke.webp', 'b_fixes/chalk_stroke.svg', 40000, 'b_fixes/chalk_stroke.svg', { webp: [2048, 64, 0.9], over: 1 }],
+  ['env/cross_marker_r2.png', 'b_fixes/cross_marker.png', 4000, 'b_fixes/cross_marker.svg'], ['env/lag_line_r2.png', 'b_fixes/lag_line.png', 2000, 'b_fixes/lag_line.svg'],
+  ['env/shadow_dark.png', 'b_fixes/shadow_dark.png', 12000, 'b_fixes/shadow_dark.svg'], ['ui/contact_lift.png', 'b_fixes/dark_plate_contact_lift.png', 24000, 'b_fixes/dark_plate_contact_lift.svg'],
+  ['ui/tray.png', 'a_statues/tray.png', 10000, 'a_statues/tray.svg'], ['ui/tile_idle.png', 'a_statues/tile_idle.png', 5000, 'a_statues/tile_idle.svg'], ['ui/tile_pressed.png', 'a_statues/tile_pressed.png', 5000, 'a_statues/tile_pressed.svg'], ['ui/tile_dragging.png', 'a_statues/tile_dragging.png', 5000, 'a_statues/tile_dragging.svg'],
+  ['ui/not_here_chip.png', 'a_statues/not_here_chip.png', 5000, 'a_statues/not_here_chip.svg'], ['env/footprint_allowed.png', 'a_statues/footprint_arch_allowed.png', 14000, 'a_statues/footprint_arch_allowed.svg'], ['env/footprint_blocked.png', 'a_statues/footprint_arch_blocked.png', 14000, 'a_statues/footprint_arch_blocked.svg'],
+  ['env/move_reach.png', 'a_statues/move_reach.png', 60000, 'a_statues/move_reach.svg'], ['env/move_origin.png', 'a_statues/move_origin.png', 3000, 'a_statues/move_origin.svg'],
+  ['ui/aim_dash.svg', 'b_fixes/aim_dash.svg', 1000, 'b_fixes/aim_dash.svg'], ['ui/aim_cap.svg', 'b_fixes/aim_cap.svg', 1000, 'b_fixes/aim_cap.svg'],
+  ['env/calibration_target.png', 'c_screens/calibration_target.png', 40000, 'c_screens/calibration_target.svg'], ['ui/calibration_hint.png', 'c_screens/calibration_hint.png', 6000, 'c_screens/calibration_hint.svg'],
+  ['ui/player_chip_r2.png', 'b_fixes/player_chip.png', 6000, 'b_fixes/player_chip.svg'], ['ui/level_up_strip.png', 'b_fixes/level_up_strip.png', 6000, 'b_fixes/level_up_strip.svg'],
+  ['ui/pot_cloth_r2.png', 'b_fixes/pot_cloth.png', 14000, 'b_fixes/pot_cloth.svg'], ['ui/heirloom_cloth_r2.webp', 'b_fixes/heirloom_cloth.png', 60000, 'b_fixes/heirloom_cloth.svg', { webp: [900, 1200, 0.85] }]
+].concat(['common', 'uncommon', 'rare', 'epic', 'grail'].flatMap(t => [['ui/tier_' + t + '_pill.png', 'b_fixes/tier_' + t + '_pill.png', 6000, 'b_fixes/tier_' + t + '_pill.svg'], ['ui/tier_' + t + '_tile.png', 'b_fixes/tier_' + t + '_tile.png', 6000, 'b_fixes/tier_' + t + '_tile.svg']]),
+  ['standard', 'collector', 'grail'].map(p => ['ui/pouch_' + p + '_open_r2.webp', 'b_fixes/pouch_' + p + '_open.png', 40000, 'b_fixes/pouch_' + p + '_open.png', { webp: [320, 320, 0.85], halve: 1 }]),
+  [['sharing/share_marble_r2.png', 'b_fixes/share_marble.png', 12000, 'b_fixes/share_marble.svg'], ['sharing/share_match_r2.png', 'b_fixes/share_match.png', 20000, 'b_fixes/share_match.svg', { over: 1 }],
+   ['store/frame_7_statues.png', 'e_store/statues_store_frame.png', 40000, 'e_store/statues_store_frame.svg']]);
+const anchors2 = JSON.parse(readFileSync(join(PACK2, 'anchors.json'), 'utf8')), meta2 = { _: 'Astra round 2: the anchors of the files in use and each file byte cap (tools/astra_in.mjs). Written by the tool.', files: {}, anchors: {}, owner_decals_mm: anchors2._owner_decal_placements_mm, statue_geometry_mm: anchors2._statue_geometry_mm };
+const toConvert = [];
+for (const [out, src, cap, key, o] of R2) {
+  mkdirSync(dirname(join(OUT, out)), { recursive: true });
+  const a = anchors2['assets/' + key];
+  meta2.files[out] = o && o.over ? { cap, over: 1 } : { cap };
+  if (a) {
+    const c = JSON.parse(JSON.stringify(a));
+    if (o && o.halve && c.mouth_ellipse) { c.mouth_ellipse = c.mouth_ellipse.map(v => v / 2); c.live_render_center = c.live_render_center.map(v => v / 2); c.live_render_radius /= 2; }
+    meta2.anchors[out] = c;
+  }
+  if (o && o.webp) toConvert.push({ out, src: join(PACK2, 'assets', src), w: o.webp[0], h: o.webp[1], q: o.webp[2], crop: o.webp[3] || 0 });
+  else copyFileSync(join(PACK2, 'assets', src), join(OUT, out));
+}
+const require = createRequire(import.meta.url), puppeteer = require('/workspaces/lucid-winds/node_modules/puppeteer');
+const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-dev-shm-usage'] }), page = await browser.newPage();
+for (const c of toConvert) {
+  const mime = /\.svg$/.test(c.src) ? 'image/svg+xml' : 'image/png', data = 'data:' + mime + ';base64,' + readFileSync(c.src).toString('base64');
+  const url = await page.evaluate(async (data, c) => {
+    const im = new Image(); im.src = data; await im.decode();
+    const cv = document.createElement('canvas'); cv.width = c.w; cv.height = c.h;
+    const srcH = c.crop || im.naturalHeight || c.h;
+    cv.getContext('2d').drawImage(im, 0, 0, im.naturalWidth || c.w, srcH, 0, 0, c.w, c.h);
+    return cv.toDataURL('image/webp', c.q);
+  }, data, c);
+  writeFileSync(join(OUT, c.out), Buffer.from(url.slice(url.indexOf(',') + 1), 'base64'));
+}
+await browser.close();
+writeFileSync(R2_JSON, JSON.stringify(meta2, null, 1) + '\n');
+
+console.log('ASTRA IN: ' + n + ' files, ' + syms.length + ' symbols (' + icons.length + ' + ' + icons2.length + ' icons and 2 wordmarks), 3 icons, the thumb');

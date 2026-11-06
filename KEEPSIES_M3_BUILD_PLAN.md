@@ -161,11 +161,11 @@ minutes before with START-HERE written). Their law 2 is replaced by law 11. Adde
 | Step | State | Commit | Note |
 |---|---|---|---|
 | 0 | done 6 Nov | (this commit) | docs/m3 holds INPUT, VIEW, ASTRA, the harness (reg.mjs now finds hooks.mjs beside it; knuckle_ts.js and knuckle_peak.js added, harness.mjs imports them) and the scripts; fast check green on the baseline; main 8187f3a32, its keepsies tree c0b040670951, stamp 20261105b |
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | done 6 Nov | 14e09fcea | the place drag, one owner per finger |
+| 2 | done 6 Nov | (git) | seam 64.31 to under 2 degrees a frame; orbit about the shooter, a 2 degree step 0.00 px; gain in tuning |
+| 3 | done 6 Nov | (git) | circle 154 px everywhere, drawn; spin ring; off line is no shot; probe clean at 412x915, 412x839, 360x780 |
+| 4 | done 6 Nov | (git) | camera turns 0.00 degrees during a shot (shipped median 234) |
+| 5 | done 6 Nov | (git) | astra_in round 2 pass, 40 files, 68 symbols, ASTRA IN OK; nothing wired |
 | 6 |  |  |  |
 | 7 |  |  |  |
 | 8 |  |  |  |
