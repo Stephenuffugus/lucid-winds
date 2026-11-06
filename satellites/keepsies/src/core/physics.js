@@ -40,8 +40,8 @@
  *    the effect the whole input scheme exists to give the player.
  */
 import RAPIER from '../../lib/rapier.js';
-import { len2, len3 } from './dmath.js?v=20261105b';
-import { bodySpec } from './marbleBody.js?v=20261105b';
+import { len2, len3 } from './dmath.js?v=20261106a';
+import { bodySpec } from './marbleBody.js?v=20261106a';
 
 let _ready = false;
 

@@ -8,8 +8,8 @@
  * is legal and broken when it is not (the tray also says "Not here" in words: never by colour alone).
  */
 import * as THREE from 'three';
-import { SHAPES } from '../core/statues.js?v=20261105b';
-import { art } from './art.js?v=20261105b';
+import { SHAPES } from '../core/statues.js?v=20261106a';
+import { art } from './art.js?v=20261106a';
 
 const STONE = 0x8f877b, STONE_P1 = 0x7d7468;
 const INK = 0xeadfc9;

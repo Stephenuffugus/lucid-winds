@@ -21,9 +21,9 @@
  * `{batch:true}` takes a fixed small N and a shorter marble time cap and no
  * wall clock deadline at all.
  */
-import { snapshot, restore, disposeWorld, impulse, step, atRest, specOf, positionOf, ringDistance, removeMarble, setTimestep } from '../core/physics.js?v=20261105b';
-import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20261105b';
-import { atan, atan2, clamp, len2, DEG } from '../core/dmath.js?v=20261105b';
+import { snapshot, restore, disposeWorld, impulse, step, atRest, specOf, positionOf, ringDistance, removeMarble, setTimestep } from '../core/physics.js?v=20261106a';
+import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20261106a';
+import { atan, atan2, clamp, len2, DEG } from '../core/dmath.js?v=20261106a';
 
 /** m3 step 9: the hand's error at this ring: a window of one mib's width from the ring's edge at the ring's hit rate for the tier (tuning ringer.ringTune), never tighter than the table; a ring with no rates plays the table */
 function noiseFor(W, T, level) {

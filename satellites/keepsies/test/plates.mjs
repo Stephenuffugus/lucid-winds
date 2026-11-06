@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { CHIP, TIER_TILE, TIER_PILL, LEVEL_STRIP, POT_CLOTH, HEIRLOOM, POUCH_MOUTH, POUCH, SHARE_MARBLE, SHARE_MATCH, CHALK_REPEATS, CHALK_STRIP, HORIZON, CROSS_R2, LAG_R2 } from '../src/render/plates.js?v=20261105b';
+import { CHIP, TIER_TILE, TIER_PILL, LEVEL_STRIP, POT_CLOTH, HEIRLOOM, POUCH_MOUTH, POUCH, SHARE_MARBLE, SHARE_MATCH, CHALK_REPEATS, CHALK_STRIP, HORIZON, CROSS_R2, LAG_R2 } from '../src/render/plates.js?v=20261106a';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const A = JSON.parse(readFileSync(join(ROOT, 'src/data/astra_r2.json'), 'utf8')).anchors;

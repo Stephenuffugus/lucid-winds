@@ -9,45 +9,45 @@
  * DIRECTIONS BEFORE PLAY. The rules card is shown before the first match of the
  * mode, which is a studio standard and not a preference.
  */
-import { detectQuality, forceQuality } from './render/quality.js?v=20261105b';
-import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261105b';
-import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261105b';
-import { lookFit } from './core/framing.js?v=20261105b';
-import { POUCH_MOUTH, POUCH, HEIRLOOM, HORIZON } from './render/plates.js?v=20261105b';
-import { buildRingerGround } from './render/arenaEnv.js?v=20261105b';
-import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261105b';
-import { attachCameraControls } from './input/cameraCtl.js?v=20261105b';
-import { createKnuckle } from './input/knuckle.js?v=20261105b';
-import { createPullback } from './input/pullback.js?v=20261105b';
-import { attachPlacement } from './input/placement.js?v=20261105b';
-import * as AUDIO from './audio/synth.js?v=20261105b';
-import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261105b';
-import { createRinger } from './game/ringer.js?v=20261105b';
-import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261105b';
-import { launchSpeed } from './core/snap.js?v=20261105b';
-import { clamp, len2, DEG, wrapPi } from './core/dmath.js?v=20261105b';
-import * as SAVE from './meta/save.js?v=20261105b';
-import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261105b';
-import { playPotCeremony } from './render/ceremony.js?v=20261105b';
+import { detectQuality, forceQuality } from './render/quality.js?v=20261106a';
+import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261106a';
+import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261106a';
+import { lookFit } from './core/framing.js?v=20261106a';
+import { POUCH_MOUTH, POUCH, HEIRLOOM, HORIZON } from './render/plates.js?v=20261106a';
+import { buildRingerGround } from './render/arenaEnv.js?v=20261106a';
+import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261106a';
+import { attachCameraControls } from './input/cameraCtl.js?v=20261106a';
+import { createKnuckle } from './input/knuckle.js?v=20261106a';
+import { createPullback } from './input/pullback.js?v=20261106a';
+import { attachPlacement } from './input/placement.js?v=20261106a';
+import * as AUDIO from './audio/synth.js?v=20261106a';
+import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261106a';
+import { createRinger } from './game/ringer.js?v=20261106a';
+import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261106a';
+import { launchSpeed } from './core/snap.js?v=20261106a';
+import { clamp, len2, DEG, wrapPi } from './core/dmath.js?v=20261106a';
+import * as SAVE from './meta/save.js?v=20261106a';
+import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261106a';
+import { playPotCeremony } from './render/ceremony.js?v=20261106a';
 import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
-  from './meta/collection.js?v=20261105b';
-import * as MARBLEMESH from './render/marbleMesh.js?v=20261105b';
-import { bodySpec } from './core/marbleBody.js?v=20261105b';
-import { createEconomy } from './meta/economy.js?v=20261105b';
-import { createDrops } from './meta/drops.js?v=20261105b';
-import * as RANSOM from './meta/ransom.js?v=20261105b';
-import * as PROG from './meta/progression.js?v=20261105b';
-import { createOnboarding, dustyLine } from './meta/beats.js?v=20261105b';
+  from './meta/collection.js?v=20261106a';
+import * as MARBLEMESH from './render/marbleMesh.js?v=20261106a';
+import { bodySpec } from './core/marbleBody.js?v=20261106a';
+import { createEconomy } from './meta/economy.js?v=20261106a';
+import { createDrops } from './meta/drops.js?v=20261106a';
+import * as RANSOM from './meta/ransom.js?v=20261106a';
+import * as PROG from './meta/progression.js?v=20261106a';
+import { createOnboarding, dustyLine } from './meta/beats.js?v=20261106a';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
-  from './game/match.js?v=20261105b';
-import { makeRng } from './core/rng.js?v=20261105b';
-import { makeMarbleMaterial } from './render/marbleMesh.js?v=20261105b';
-import { art, loadIcons, ic } from './render/art.js?v=20261105b';
-import { face } from './render/portraits.js?v=20261105b';
-import * as PROV from './meta/provenance.js?v=20261105b';
-import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261105b';
-import { makeStatueMesh, makeMoveMarks, markGhost, disposeStatueMesh } from './render/statues.js?v=20261105b';
-import { SHAPES, SHAPE_ORDER, PER_PLAYER, MOVE_MAX, scaleFor, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261105b';
+  from './game/match.js?v=20261106a';
+import { makeRng } from './core/rng.js?v=20261106a';
+import { makeMarbleMaterial } from './render/marbleMesh.js?v=20261106a';
+import { art, loadIcons, ic } from './render/art.js?v=20261106a';
+import { face } from './render/portraits.js?v=20261106a';
+import * as PROV from './meta/provenance.js?v=20261106a';
+import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261106a';
+import { makeStatueMesh, makeMoveMarks, markGhost, disposeStatueMesh } from './render/statues.js?v=20261106a';
+import { SHAPES, SHAPE_ORDER, PER_PLAYER, MOVE_MAX, scaleFor, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261106a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -120,7 +120,7 @@ async function boot() {
   for (const el of document.querySelectorAll('[data-art]')) el.style.backgroundImage = 'url(' + art(el.dataset.art) + ')';
   // and every plate the style sheet draws (step 5, the HUD and the tiers) is a variable made here
   for (const k in ART_VARS) document.documentElement.style.setProperty(k, 'url(' + art(ART_VARS[k]) + ')');
-  const res = await fetch('src/data/tuning.json?v=20261105b');
+  const res = await fetch('src/data/tuning.json?v=20261106a');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
   G.save = SAVE.load();
@@ -130,10 +130,10 @@ async function boot() {
   AUDIO.configure(G.tuning);
   AUDIO.setEnabled(G.save.settings.sound !== false);
 
-  const cat = await fetch('src/data/marbles.json?v=20261105b');
+  const cat = await fetch('src/data/marbles.json?v=20261106a');
   if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
   G.catalog = await cat.json();
-  const dt = await fetch('src/data/droptables.json?v=20261105b');
+  const dt = await fetch('src/data/droptables.json?v=20261106a');
   if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
   G.dropTables = await dt.json();
 

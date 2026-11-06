@@ -20,7 +20,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { frameFor, watchFor, lookFit } from '../src/core/framing.js?v=20261105b';
+import { frameFor, watchFor, lookFit } from '../src/core/framing.js?v=20261106a';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const T = JSON.parse(readFileSync(join(HERE, '..', 'src', 'data', 'tuning.json'), 'utf8'));

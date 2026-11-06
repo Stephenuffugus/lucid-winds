@@ -17,13 +17,13 @@ register('data:text/javascript,' + encodeURIComponent(
 let CLOCK = 0;
 export const clock = { set: (t) => { CLOCK = t; }, get: () => CLOCK };
 Object.defineProperty(globalThis, 'performance', { value: { now: () => CLOCK }, configurable: true, writable: true });
-export const scene = await import('../src/render/scene.js?v=20261105b');
-const { createKnuckle } = await import('../src/input/knuckle.js?v=20261105b');
-const { createPullback } = await import('../src/input/pullback.js?v=20261105b');
-const { attachCameraControls } = await import('../src/input/cameraCtl.js?v=20261105b');
-const { attachPlacement } = await import('../src/input/placement.js?v=20261105b');
-const { frameFor } = await import('../src/core/framing.js?v=20261105b');
-const { len2, clamp, sin, cos, DEG } = await import('../src/core/dmath.js?v=20261105b');
+export const scene = await import('../src/render/scene.js?v=20261106a');
+const { createKnuckle } = await import('../src/input/knuckle.js?v=20261106a');
+const { createPullback } = await import('../src/input/pullback.js?v=20261106a');
+const { attachCameraControls } = await import('../src/input/cameraCtl.js?v=20261106a');
+const { attachPlacement } = await import('../src/input/placement.js?v=20261106a');
+const { frameFor } = await import('../src/core/framing.js?v=20261106a');
+const { len2, clamp, sin, cos, DEG } = await import('../src/core/dmath.js?v=20261106a');
 export const T = JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'tuning.json'), 'utf8'));
 
 export const D = 180 / Math.PI;

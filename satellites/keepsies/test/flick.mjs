@@ -4,7 +4,7 @@
  * 60 ms was cancelled 19 times in 24; the cone settled only under 2 px of jitter; finish() reset the gesture before reading the second finger
  * and the slip, so the knuckle down and the slip never fired.
  */
-import { T, clock, makeGame, ev, playTouch } from './inputlab.mjs?v=20261105b';
+import { T, clock, makeGame, ev, playTouch } from './inputlab.mjs?v=20261106a';
 
 let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };

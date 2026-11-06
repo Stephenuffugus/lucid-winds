@@ -2,9 +2,9 @@
  * own smoothing at 60 fps, one match at ten foot and one at seven. Before m3 (docs/m3/VIEW.md) the camera followed the rolling shooter: a
  * median 234 degrees of turn a shot, up to 3880 degrees a second, the long way round the seam in 57% of shots.
  */
-import { T, scene, D } from './inputlab.mjs?v=20261105b';
-import { initPhysics } from '../src/core/physics.js?v=20261105b';
-import { createRinger } from '../src/game/ringer.js?v=20261105b';
+import { T, scene, D } from './inputlab.mjs?v=20261106a';
+import { initPhysics } from '../src/core/physics.js?v=20261106a';
+import { createRinger } from '../src/game/ringer.js?v=20261106a';
 
 let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
