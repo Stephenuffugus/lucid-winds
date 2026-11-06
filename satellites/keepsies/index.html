@@ -445,9 +445,11 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 #spyHair{position:absolute;left:50%;top:0;bottom:0;width:1px;margin-left:-.5px;background:rgba(232,220,200,.3)}
 #spyCone{position:absolute;top:50%;left:50%;height:28px;transform:translate(-50%,-50%);box-sizing:border-box;
   border-left:2px solid rgba(232,220,200,.6);border-right:2px solid rgba(232,220,200,.6)}
-#aimline{position:absolute;height:3px;border-radius:2px;
-  background:linear-gradient(90deg,rgba(200,168,75,.95),rgba(200,168,75,0));
-  transform-origin:0 50%}
+/* m3 step 7: Astra's dash as a mask over brass (her tile is square, so the strip's height is the dash period: 24 px inks 1.8 px) and her cap at the true end point */
+#aimline{position:fixed;height:24px;margin-top:-12px;background:var(--brass);pointer-events:none;
+  -webkit-mask:var(--aim-dash) 0 50%/24px 24px repeat-x;mask:var(--aim-dash) 0 50%/24px 24px repeat-x;transform-origin:0 50%}
+#aimcap{position:fixed;width:24px;height:24px;margin:-12px 0 0 -18px;background:var(--brass);pointer-events:none;
+  -webkit-mask:var(--aim-cap) center/24px 24px no-repeat;mask:var(--aim-cap) center/24px 24px no-repeat;transform-origin:18px 12px}
 #power{position:absolute;left:50%;bottom:calc(98px + var(--sb));width:150px;height:6px;margin-left:-75px;
   background:rgba(232,220,200,.22);border-radius:3px;overflow:hidden}
 #powerFill{height:100%;width:0;background:var(--brass)}
@@ -460,7 +462,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 #corners button{min-width:0;flex:1 1 0;padding:0 8px}
 /* the fine aim: a round 56 px button on each side at mid height, where an off hand thumb
    lands while the other holds the shooter; the Zoom under the score row on the right */
-#aimNudge{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);display:flex;
+#aimNudge{position:absolute;left:0;right:0;bottom:calc(84px + var(--sb));display:flex;
   justify-content:space-between;padding:0 8px;pointer-events:none}
 #aimNudge button{pointer-events:auto;width:56px;height:56px;min-width:0;min-height:0;padding:0;
   border-radius:50%;font-size:1.1rem;background:rgba(13,16,12,.7);color:var(--chalk);
@@ -562,6 +564,8 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 </div>
 
 <div id="grabRing" hidden></div>
+<div id="aimline" hidden></div>
+<div id="aimcap" hidden></div>
 <div id="hud" hidden>
   <div id="lot" aria-hidden="true"></div>
   <div id="scores">
@@ -571,7 +575,6 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   <div id="houseRules">keeps, slips, ten foot</div>
   <div id="say">Drag to place your shooter, then hold it and flick.</div>
   <div id="reticle" hidden></div>
-  <div id="aimline" hidden></div>
   <!-- the spyglass (core/spyglass.js): the frame is DOM, the picture underneath is a second lens
        render on the same canvas -->
   <div id="spyglass" hidden><div id="spyHair"></div><div id="spyCone"></div></div>

@@ -59,6 +59,7 @@ export function createKnuckle(canvas, tuning, hooks) {
     lastAim: null, lastCancel: null,
     outsideCanvas: false,
     lastTick: 0, spiked: false,  // the settle clock, and whether the last jitter reading was a jump
+    dialing: false, dialed: false, refX: 0, refY: 0, dialX: 0,   // m3 step 7: a sideways motion inside the circle turns the aim
     settleLog: []                // { t, v }: the settle back through the window, so a flick is read from the hold before it
   };
 
@@ -247,6 +248,7 @@ export function createKnuckle(canvas, tuning, hooks) {
     S.outsideCanvas = false;
     S.downAt = stamp(e); S.downX = x; S.downY = y;
     S.lastTick = S.downAt; S.spiked = false; S.settleLog.length = 0;
+    S.dialing = false; S.dialed = false; S.refX = x; S.refY = y; S.dialX = x;
     if (S.handedness === null) S.handedness = x < r.width / 2 ? 'left' : 'right';
     push(x, y, S.downAt);
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { }
@@ -267,7 +269,7 @@ export function createKnuckle(canvas, tuning, hooks) {
     // a hard flick after a long brace read as a nudge and cancelled.
     let list = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
     if (!list || !list.length) list = [e];
-    for (const ev of list) { push(ev.clientX - r.left, ev.clientY - r.top, stamp(ev)); tickSettle(stamp(ev)); }
+    for (const ev of list) { push(ev.clientX - r.left, ev.clientY - r.top, stamp(ev)); tickSettle(stamp(ev)); dial(ev.clientX - r.left, ev.clientY - r.top); }
     const x = e.clientX - r.left, y = e.clientY - r.top;
     S.outsideCanvas = x < 0 || y < 0 || x > r.width || y > r.height;
 
@@ -308,6 +310,25 @@ export function createKnuckle(canvas, tuning, hooks) {
     }
   }
 
+  /**
+   * THE DIAL (m3 step 7, his "the aiming is horrible"). The bigger circle would turn sideways aim drags into shots. Now a motion more than offLineDeg
+   * off the aim line (straight up the screen: the camera turns about the shooter) turns the aim at the orbit gain, and only a forward flick shoots.
+   * It takes dialStartPx of travel to read a direction, so a thumb's tremor is neither; moving forward again leaves the dial, ready to flick.
+   */
+  function dial(x, y) {
+    const dx = x - S.refX, dy = y - S.refY, L = len2(dx, dy);
+    if (S.dialing) {
+      const d = x - S.dialX;
+      if (d && hooks.onDial) hooks.onDial(d);
+      S.dialX = x;
+      if (L >= T.dialStartPx) { if (Math.abs(Math.atan2(dx, -dy)) <= T.offLineDeg * DEG) S.dialing = false; S.refX = x; S.refY = y; }
+      return;
+    }
+    if (L < T.dialStartPx) return;
+    if (Math.abs(Math.atan2(dx, -dy)) > T.offLineDeg * DEG && Math.abs(dx) > Math.abs(dy) * 0.5) { S.dialing = true; S.dialed = true; S.dialX = x; if (hooks.onDial) hooks.onDial(dx); }
+    S.refX = x; S.refY = y;
+  }
+
   /** the settle as it stood just before time t, the flick's onset */
   function settleBefore(t) {
     const L = S.settleLog;
@@ -346,6 +367,7 @@ export function createKnuckle(canvas, tuning, hooks) {
     // where the thumb LANDED: the samples are trimmed to the jitter window, so on a long hold the first one is not it
     const anchor = S.samples.length ? { x: S.downX, y: S.downY } : null;
     const lastY = S.samples.length ? S.samples[S.samples.length - 1].y : 0;
+    const dialed = S.dialed;
     reset();
 
     if (v < T.cancelBelow) {
@@ -356,17 +378,19 @@ export function createKnuckle(canvas, tuning, hooks) {
     }
 
     /* m3 step 3: the bigger circle would turn a sideways aim drag into a 25 degree shot. A release more than 45 degrees off
-       the aim line's forward is no shot at all (step 7 makes it a dial); with Bombing on the flick down keeps its meaning */
-    const yaw0 = flickYaw(fl.path), down0 = anchor && lastY - anchor.y > 40 && win.length >= 2 && win[win.length - 1].y > win[0].y;
+       the aim line's forward is no shot at all (step 7: that motion was the dial, and a dial turn then a forward flick reads the flick alone);
+       with Bombing on the flick down keeps its meaning */
+    const yaw0 = flickYaw(dialed ? win : fl.path), down0 = anchor && lastY - anchor.y > 40 && win.length >= 2 && win[win.length - 1].y > win[0].y;
     if (yaw0 !== null && Math.abs(yaw0) > T.offLineDeg * DEG && !(down0 && hooks.bombingAllowed && hooks.bombingAllowed())) {
-      S.lastCancel = { thumbSpeed: v, why: 'offLine' };
-      if (hooks.onCancel) hooks.onCancel('offLine');
+      S.lastCancel = { thumbSpeed: v, why: dialed ? 'dial' : 'offLine' };
+      if (hooks.onCancel) hooks.onCancel(S.lastCancel.why);
       return null;
     }
 
     const curv = curvature(win);
     const offset = contactOffset(anchor, taw);
-    const wild = clamp(Math.abs(curv) / T.kWild, 0, 1);
+    /* m3 step 7: the aim line is the aim. The flick's own angle no longer steers (snap.fineAngleMaxDeg 0): it feeds the wildness */
+    const wild = clamp(Math.abs(curv) / T.kWild + (yaw0 === null ? 0 : Math.abs(yaw0) / (T.wildYawDeg * DEG)), 0, 1);
     // the snap's fine angle: how far the flick pointed off the camera's forward,
     // capped so a snap stays a snap and never becomes a steering wheel
     const fine = fineAngle(win);
@@ -398,7 +422,7 @@ export function createKnuckle(canvas, tuning, hooks) {
     });
     aim.thumbSpeed = v;
     // how far the flick pointed off the aim line, in degrees, so the game can say so
-    aim.fineDeg = fine / DEG;
+    aim.fineDeg = (yaw0 === null ? 0 : yaw0) / DEG;
     aim.softNudge = v <= T.softNudgeTo;
     aim.knuckledDown = knuckled;
     // ⛔ A SLIP IS DECLARED HERE, never pressed. The thumb left the canvas mid

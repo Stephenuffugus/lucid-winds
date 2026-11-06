@@ -166,8 +166,8 @@ minutes before with START-HERE written). Their law 2 is replaced by law 11. Adde
 | 3 | done 6 Nov | (git) | circle 154 px everywhere, drawn; spin ring; off line is no shot; probe clean at 412x915, 412x839, 360x780 |
 | 4 | done 6 Nov | (git) | camera turns 0.00 degrees during a shot (shipped median 234) |
 | 5 | done 6 Nov | (git) | astra_in round 2 pass, 40 files, 68 symbols, ASTRA IN OK; nothing wired |
-| 6 |  |  |  |
-| 7 |  |  |  |
+| 6 | done 6 Nov | c72f90fd1 | timeStamp samples, the fastest 30 to 50 ms, graded settle, read before reset, calibration v2; found on the way: every flick spoiled its own hold (3.75 degrees from a settled hold, now 1.50) |
+| 7 | done 6 Nov | (git) | fineAngleMaxDeg 0, the dial, the line for the whole aim phase in her dash and cap (her tip on the true end point), the target at 0.5 m at 90 mm (120 ran off the sides), nudges beside the bottom corners |
 | 8 |  |  |  |
 | 9 |  |  |  |
 | 10 |  |  |  |

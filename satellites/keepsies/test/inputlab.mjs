@@ -92,6 +92,7 @@ export function makeGame(o) {
     bombingAllowed: () => !!o.bombing,
     onBrace: (st) => { if (st.bracing && world.phase === 'place') world.phase = 'aim'; },
     onAim: (a) => { game.aims.push(a); }, onCancel: (why) => { game.cancels.push(why); },
+    onDial: (dx) => { const k = dx * T.render.orbitRadPerPx; rig.state.userAz = (rig.state.userAz || 0) - k; rig.state.wantAzimuth -= k; },
     enabled: () => true
   });
   G.knuckle.attach();

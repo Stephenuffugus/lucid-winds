@@ -35,7 +35,7 @@ for (const [w, h] of [[412, 839], [360, 780]]) {
   clock.set(1000); g.canvas.dispatch('pointerdown', ev(3, t.x + 70, t.y, 1000));
   ok(g.G.knuckle.state().bracing, 'a touch 70 px from the shooter braces (shipped: an orbit)');
   ok(g.G.cam.activePointers() === 0, 'the camera never gets that finger');
-  for (let k = 1; k <= 10; k++) { clock.set(1000 + 16 * k); g.canvas.dispatch('pointermove', ev(3, t.x + 70 + k, t.y, 1000 + 16 * k)); g.frame(1 / 60); }
+  for (let k = 1; k <= 10; k++) { clock.set(1000 + 16 * k); g.canvas.dispatch('pointermove', ev(3, t.x + 70 + k * 0.5, t.y, 1000 + 16 * k)); g.frame(1 / 60); }
   ok(Math.abs(g.rig.state.azimuth - az0) < 1e-9, 'and its small moves turn nothing');
   g.canvas.dispatch('pointercancel', ev(3, t.x + 80, t.y, 1200));
 }

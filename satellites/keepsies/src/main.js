@@ -90,7 +90,7 @@ const ART_VARS = {
   '--pip-empty': 'ui/pip_empty.svg', '--pip-lit': 'ui/pip_lit.svg', '--chip': 'ui/player_chip.svg',
   '--hr-on': 'ui/house_rule_on.svg', '--hr-off': 'ui/house_rule_off.svg', '--voice': 'ui/voice_bubble.svg',
   '--toast': 'ui/technique_toast.svg', '--result': 'ui/result_card.svg', '--scope': 'ui/minimap_frame.svg',
-  '--ret-a': 'ui/reticle_settling.svg', '--ret-b': 'ui/reticle_settled.svg',
+  '--ret-a': 'ui/reticle_settling.svg', '--ret-b': 'ui/reticle_settled.svg', '--aim-dash': 'ui/aim_dash.svg', '--aim-cap': 'ui/aim_cap.svg',
   '--tier-common': 'ui/tier_common.svg', '--tier-uncommon': 'ui/tier_uncommon.svg', '--tier-rare': 'ui/tier_rare.svg',
   '--tier-epic': 'ui/tier_epic.svg', '--tier-grail': 'ui/tier_grail.svg'
 };
@@ -177,7 +177,9 @@ async function boot() {
     bombingAllowed: () => !!G.R && G.screen === 'match' && G.R.canBomb(),
     onBrace: onBrace,
     onAim: onAim,
-    onCancel: (why) => { say(why === 'offLine' ? 'That went sideways, so it does not count. Flick up the line.' : 'That was too soft to count, so it does not. Take it again.'); hideAim(); },
+    onCancel: (why) => { if (why !== 'dial') say(why === 'offLine' ? 'That went sideways, so it does not count. Flick up the line.' : 'That was too soft to count, so it does not. Take it again.'); hideAim(); },
+    /* m3 step 7: the dial turns the aim by the orbit's own gain, written where the orbit writes it */
+    onDial: (dx) => { const k = dx * G.tuning.render.orbitRadPerPx; G.rig.state.userAz = (G.rig.state.userAz || 0) - k; G.rig.state.wantAzimuth -= k; },
     haptic: (k) => { if (navigator.vibrate) { try { navigator.vibrate(k === 'settle' ? 8 : 14); } catch (e) { } } },
     enabled: () => !G.usePullback && (G.screen === 'match' || G.screen === 'calib') && !G.paused && !G.moving && !G.statuesPlacing
   });
@@ -1560,7 +1562,7 @@ function onBrace(st) {
   const t = G.R.tawOnScreen(G.rig);
   const ret = $('reticle'), line = $('aimline');
   if (!st.bracing || !t) {
-    ret.hidden = true; line.hidden = true; $('power').hidden = true; $('assist').hidden = true;
+    ret.hidden = true; $('power').hidden = true; $('assist').hidden = true;
     $('say').hidden = false;
     hideSpyglass();
     if (G.warming) { G.warming = false; AUDIO.stopWarming(); }
@@ -1589,9 +1591,7 @@ function onBrace(st) {
   else if (!st.warmed && G.warming) { G.warming = false; AUDIO.stopWarming(); }
   updateSpyglass(st, t);
   // DIRECTION ONLY, never a predicted path. That is DESIGN 7.1 and it is not
-  // negotiable in ranked play, so it is not built at all. It starts OUTSIDE the
-  // reticle so the two do not read as one shape.
-  drawAimLine(t, px);
+  // negotiable in ranked play, so it is not built at all. It starts at the circle's edge (updateAimLine, every frame).
   // the drop shot only exists when the rule is on AND your taw is inside the
   // ring, so the game says so at the moment it becomes possible
   if (G.R.canBomb() && G.said.indexOf('drop shot') < 0 && G.R.state.phase === 'aim') {
@@ -1608,24 +1608,31 @@ function onBrace(st) {
  * (Sep 05, Stephen: "deviating makes the ball go off line": this is the line.)
  */
 function drawAimLine(t, px) {
-  const line = $('aimline');
-  if (!G.R || !t) { line.hidden = true; return; }
+  const line = $('aimline'), cap = $('aimcap');
+  const off = () => { line.hidden = true; cap.hidden = true; };
+  if (!G.R || !t) return off();
   const taw = G.R.shooterTaw();
-  if (!G.R.world.marbles.has(taw.id)) { line.hidden = true; return; }
+  if (!G.R.world.marbles.has(taw.id)) return off();
   const tp = positionOf(G.R.world, taw.id), r = specOf(G.R.world, taw.id).radius;
-  const az = G.rig.state.azimuth + Math.PI;
-  let d = 1.2;
-  if (G.spy && G.spy.on && G.spy.info && G.spy.info.range > 0.3) d = G.spy.info.range;
-  const e = G.rig.project(tp.x + Math.sin(az) * d, r, tp.z + Math.cos(az) * d);
+  const az = wrapPi(G.rig.state.azimuth + Math.PI), C = G.tuning.render.spyglass;
+  /* to the mib the scope would look at (the shot's real range), half a metre in calibration, else 1.2 m */
+  let d = G.screen === 'calib' ? G.tuning.render.calibCam.targetAhead : 1.2;
+  if (G.screen === 'match' && C) {
+    const live = G.R.liveMibs().map(m => { const p = positionOf(G.R.world, m.id); return { x: p.x, z: p.z, id: m.id }; });
+    const s = spyglassFor({ tawX: tp.x, tawZ: tp.z, azimuth: az, live, coneDeg: G.tuning.snap.coneTightDeg }, C);
+    if (s && s.range > 0.1) d = s.range;
+  }
+  const e = G.rig.project(tp.x + Math.sin(az) * d, G.screen === 'calib' ? 0 : r, tp.z + Math.cos(az) * d);
   const dx = e.x - t.x, dy = e.y - t.y, L = Math.hypot(dx, dy);
-  if (!e.visible || L < px + 14) { line.hidden = true; return; }
-  const ang = Math.atan2(dy, dx), start = px + 6;
-  line.hidden = false;
+  if (!e.visible || L < px + 14) return off();
+  const ang = Math.atan2(dy, dx), start = px, deg = (ang * 180 / Math.PI).toFixed(2) + 'deg';
+  line.hidden = false; cap.hidden = false;
   line.style.left = (t.x + Math.cos(ang) * start) + 'px';
   line.style.top = (t.y + Math.sin(ang) * start) + 'px';
-  line.style.width = Math.max(0, Math.min(L - start, 420)) + 'px';
-  line.style.transform = 'rotate(' + (ang * 180 / Math.PI).toFixed(2) + 'deg)';
-  G.aimLineInfo = { x: t.x, y: t.y, angleDeg: ang * 180 / Math.PI, length: L - start, endX: e.x, endY: e.y };
+  line.style.width = Math.max(0, L - start) + 'px';
+  line.style.transform = 'rotate(' + deg + ')';
+  cap.style.left = e.x + 'px'; cap.style.top = e.y + 'px'; cap.style.transform = 'rotate(' + deg + ')';
+  G.aimLineInfo = { x: t.x, y: t.y, angleDeg: ang * 180 / Math.PI, length: L - start, endX: e.x, endY: e.y, range: d };
 }
 
 /**
@@ -1652,16 +1659,15 @@ function setScopeHold(on) {
   G.scopeHold = !!on;
   $('scopeBtn').classList.toggle('on', G.scopeHold);
   $('scopeBtn').textContent = G.scopeHold ? 'Zoom on' : 'Zoom';
-  if (!G.scopeHold && !(G.knuckle && G.knuckle.state().bracing)) { hideSpyglass(); $('aimline').hidden = true; }
+  if (!G.scopeHold && !(G.knuckle && G.knuckle.state().bracing)) hideSpyglass();
 }
 
 /** The scope and the line while the thumb is NOT down: the wide cone, the reticle away. */
 function holdScope() {
   const t = G.R.tawOnScreen(G.rig);
-  if (!t) { hideSpyglass(); $('aimline').hidden = true; return; }
+  if (!t) { hideSpyglass(); return; }
   const T = G.tuning.snap;
   updateSpyglass({ coneDeg: T.coneWideDeg, settle01: 0 }, t, true);
-  drawAimLine(t, t.grabR);
 }
 
 function openSnapCard() { $('snapCard').hidden = false; }
@@ -1669,10 +1675,26 @@ function openSnapCard() { $('snapCard').hidden = false; }
 /** The aim buttons and the Zoom belong to the human's aim phase and nothing else. */
 /* m3 step 3: the circle is drawn, a faint chalk ring round the shooter whenever the player may brace, so it is seen before the
    thumb lands; the reticle settles inside it */
+function mayBrace() { return !!G.R && (G.screen === 'match' || G.screen === 'calib') && !G.usePullback && !G.paused && !G.moving && !G.statuesPlacing && canAim(); }
+/* m3 step 7: the aim line for the whole aim phase, from the circle's edge to where the shot points */
+function updateAimLine() {
+  const t = mayBrace() ? G.R.tawOnScreen(G.rig) : null;
+  if (!t) { $('aimline').hidden = true; $('aimcap').hidden = true; return; }
+  drawAimLine(t, t.grabR);
+}
+/* m3 step 7: Astra's calibration target on the aim ray, half a metre ahead, so the first thing a player learns is that the line points at a place */
+function updateCalibTarget() {
+  if (!G.ground || !G.ground.target) return;
+  if (G.screen !== 'calib' || !G.R) { G.ground.target.visible = false; return; }
+  const taw = G.R.shooterTaw();
+  if (!G.R.world.marbles.has(taw.id) || G.R.state.simulating) return;
+  const tp = positionOf(G.R.world, taw.id), az = G.rig.state.azimuth + Math.PI, D = G.tuning.render.calibCam.targetAhead;
+  G.ground.target.position.set(tp.x + Math.sin(az) * D, 0.0016, tp.z + Math.cos(az) * D);
+  G.ground.target.visible = G.ground.target.material.opacity > 0;
+}
 function updateGrabRing() {
   const el = $('grabRing');
-  const may = !!G.R && (G.screen === 'match' || G.screen === 'calib') && !G.usePullback && !G.paused && !G.moving && !G.statuesPlacing && !G.topDown && !G.R.state.simulating && canAim();
-  const t = may ? G.R.tawOnScreen(G.rig) : null;
+  const t = mayBrace() ? G.R.tawOnScreen(G.rig) : null;
   if (!t) { el.hidden = true; return; }
   el.hidden = false;
   const d = 2 * t.grabR;
@@ -1759,9 +1781,8 @@ function onAim(aim) {
 function describe(aim, imp) {
   if (aim.bomb) return 'Straight down on top of them.';
   if (aim.wildness01 >= 0.5) return 'That was a wild one.';
-  // the snap pointed off the aim line and took the shot with it (DESIGN 7.7's fine angle)
-  if (Math.abs(aim.fineDeg || 0) >= 5) return 'Your snap turned the shot ' + Math.round(Math.abs(aim.fineDeg))
-    + ' degrees ' + (aim.fineDeg * NUDGE_SIGN > 0 ? 'right' : 'left') + ' of the line.';
+  // the snap pulled off the aim line: the line still aimed it, the pull made it wilder (m3 step 7)
+  if (Math.abs(aim.fineDeg || 0) >= 5) return 'Your snap pulled ' + Math.round(Math.abs(aim.fineDeg)) + ' degrees off the line, so it ran wilder.';
   if (aim.contactOffset.y <= -0.35) return 'Low across the ball.';
   if (aim.contactOffset.y >= 0.35) return 'Over the top of it.';
   if (Math.abs(aim.contactOffset.x) >= 0.4) return 'A bit of english on that one.';
@@ -1770,7 +1791,7 @@ function describe(aim, imp) {
 }
 
 function hideAim() {
-  $('reticle').hidden = true; $('aimline').hidden = true;
+  $('reticle').hidden = true; $('aimline').hidden = true; $('aimcap').hidden = true;
   $('power').hidden = true; $('assist').hidden = true;
 }
 
@@ -2185,11 +2206,13 @@ function frame(now) {
     // browser has anything to say
     updateAimUi();
     updateGrabRing();
+    updateAimLine();
+    updateCalibTarget();
     if (!G.usePullback && G.knuckle) {
       const ks = G.knuckle.state();
       if (ks.bracing) onBrace(ks);
       else if (G.scopeHold && canAim()) holdScope();
-      else { if (G.spy && G.spy.on) hideSpyglass(); if (G.scopeHold) $('aimline').hidden = true; }
+      else if (G.spy && G.spy.on) hideSpyglass();
     }
     if (now - G.lastRollAudio > 60) { G.lastRollAudio = now; updateRollingAudio(); }
     if (!$('toast').hidden && now - G.lastToast > 2400) $('toast').hidden = true;
@@ -2337,6 +2360,7 @@ function installDevHook() {
     scopeHold(on) { setScopeHold(on); return G.scopeHold; },
     tawScreen() { const t = G.R && G.R.tawOnScreen(G.rig); return t ? { x: +t.x.toFixed(1), y: +t.y.toFixed(1), grabR: t.grabR, spinR: t.spinR, r: t.r } : null; },
     aimNow: () => G.knuckle.lastAim(),
+    groundTarget() { const t = G.ground && G.ground.target; if (!t) return null; const c = G.rig.project(t.position.x, 0, t.position.z), R = t.geometry.parameters.width * 178 / 512, e = G.rig.project(t.position.x + R, 0, t.position.z); return { visible: t.visible, x: +c.x.toFixed(1), y: +c.y.toFixed(1), rx: +Math.abs(e.x - c.x).toFixed(1) }; },
     aimUi() { return { nudge: !$('aimNudge').hidden, scope: !$('scopeBtn').hidden, scopeOn: G.scopeHold, spy: !!(G.spy && G.spy.on), line: !$('aimline').hidden, lineInfo: G.aimLineInfo || null }; },
     snapCard() { return { open: !$('snapCard').hidden, seen: !!(G.save && G.save.seen && G.save.seen.snapHelp) }; },
     said() { return G.said; },

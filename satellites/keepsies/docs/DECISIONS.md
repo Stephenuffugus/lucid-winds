@@ -562,3 +562,6 @@ zero. Shots `docs/shots/k3-aim-*.png` at 375 and 412.
 ## 2026-11-04 Director idea (Stephen, for the Astra pack plan)
 
 Some levels have obstacles. Players take turns placing their own obstacles on the field, and maybe moving them. "This would turn it into a completely unique game and it will be very important that the controls are impeccable." Not resolved: which obstacles, whether it is an Arena variant or its own mode, how a move costs a turn. Belongs in KEEPSIES_BUILD_PLAN.md as its own milestone after the world and identity land, with a front door (real pointer) gate on the placing and moving input and his Pixel pass before content. Obstacle art is a v2 ask to Astra once the set is named.
+
+## m3 step 7 (6 Nov 2026): the aim line is the aim
+DESIGN 7.7's "aiming direction = camera-forward plus or minus the snap's fine angle" is set to zero pending Stephen's call (KEEPSIES_M3_BUILD_PLAN.md DECISION 2): `snap.fineAngleMaxDeg` 25 to 0. The flick's own angle feeds the wildness. The other choice is about 3 degrees, the flick's angle scaled by 0.25; it is one tuning line.

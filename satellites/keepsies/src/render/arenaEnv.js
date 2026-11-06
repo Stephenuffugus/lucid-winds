@@ -172,8 +172,14 @@ export function buildRingerGround(stage, tuning, opts) {
   }
   dress(ringR, 'cross');
 
+  /* m3 step 7: Astra's calibration target, outside the chalk group (calibration hides the chalk): her outer ring r 178 of 512 at 90 mm, not her 120: at 0.5 m ahead 120 mm ran off a 412 px phone's sides */
+  const target = new THREE.Mesh(new THREE.PlaneGeometry(0.09 * 512 / 178, 0.09 * 512 / 178), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0 }));
+  target.rotation.x = -Math.PI / 2; target.visible = false;
+  loader.load(art('env/calibration_target.png'), (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; target.material.map = t; target.material.opacity = 0.9; target.material.needsUpdate = true; });
+  group.add(target);
+
   stage.scene.add(group);
-  return { group, disc, chalk, dress, ringRadius: ringR, discRadius: discR };
+  return { group, disc, chalk, dress, target, ringRadius: ringR, discRadius: discR };
 }
 
 /** Remove the ground and give its memory back. */

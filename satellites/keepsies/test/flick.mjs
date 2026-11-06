@@ -82,5 +82,26 @@ const noisy = (sigma, g, ts, ms) => {
   ok(!!g3.aims[0] && g3.aims[0].contactOffset.y <= -0.3, 'a 2 s hold reads its spin from where the thumb landed (' + (g3.aims[0] ? g3.aims[0].contactOffset.y.toFixed(2) : 'no shot') + ')');
 }
 
+/* 6. m3 step 7: the aim line is the aim. A flick off the line no longer steers (its wobble feeds the wildness), and a sideways motion inside the circle turns the aim like a dial */
+{
+  const g = game(), ts = g.taw(), azAim = g.rig.state.azimuth + Math.PI;
+  const off = 10 * Math.PI / 180;
+  playTouch(g, (t) => { const f = t > 300 ? mj((t - 300) / 70) : 0; return { x: ts.x + 220 * f * Math.sin(off), y: ts.y - 220 * f * Math.cos(off) }; }, 370, { pre: 0 });
+  const a = g.aims[0];
+  const shotOff = a ? Math.abs(Math.atan2(Math.sin(Math.atan2(a.dir.x, a.dir.z) - azAim), Math.cos(Math.atan2(a.dir.x, a.dir.z) - azAim))) * 180 / Math.PI : null;
+  ok(!!a && shotOff <= 0.5, 'a flick 10 degrees off vertical fires ' + (a ? shotOff.toFixed(2) : 'no') + ' degrees off the aim line (within 0.5; shipped 6.24)');
+  const b0 = game(), bt = b0.taw();
+  playTouch(b0, (t) => { const f = t > 300 ? mj((t - 300) / 70) : 0; return { x: bt.x, y: bt.y - 220 * f }; }, 370, { pre: 0 });
+  ok(!!a && !!b0.aims[0] && a.wildness01 > b0.aims[0].wildness01 + 0.05, 'the wobble feeds the wildness (' + (a ? a.wildness01.toFixed(2) : '-') + ' against ' + (b0.aims[0] ? b0.aims[0].wildness01.toFixed(2) : '-') + ')');
+  const g2 = game(), t2 = g2.taw(), az0 = g2.rig.state.userAz || 0;
+  playTouch(g2, (t) => ({ x: t2.x + 300 * Math.min(1, t / 120), y: t2.y }), 120, { pre: 0 });
+  const turned = ((g2.rig.state.userAz || 0) - az0) * 180 / Math.PI, want = -300 * T.render.orbitRadPerPx * 180 / Math.PI;
+  ok(g2.aims.length === 0, 'thumb on the marble, 300 px sideways in 120 ms fires no shot');
+  ok(Math.abs(turned - want) < 3, 'and turns the aim by the orbit gain (' + turned.toFixed(1) + ' degrees, ' + want.toFixed(1) + ' wanted)');
+  const g3 = game(), t3 = g3.taw(), az3 = g3.rig.state.userAz || 0;
+  playTouch(g3, (t) => { if (t < 300) return { x: t3.x + 60 * t / 300, y: t3.y }; const f = t > 600 ? mj((t - 600) / 70) : 0; return { x: t3.x + 60, y: t3.y - 220 * f }; }, 670, { pre: 0 });
+  ok(g3.aims.length === 1 && Math.abs(((g3.rig.state.userAz || 0) - az3) * 180 / Math.PI + 60 * T.render.orbitRadPerPx * 180 / Math.PI) < 1.5, 'a dial turn, a rest, then a forward flick shoots along the turned line (' + g3.aims.length + ' shot, turned ' + (((g3.rig.state.userAz || 0) - az3) * 180 / Math.PI).toFixed(1) + ' degrees)');
+}
+
 console.log(fails ? fails + ' FAILED' : 'FLICK OK');
 process.exit(fails ? 1 : 0);

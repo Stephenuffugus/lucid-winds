@@ -118,6 +118,17 @@ const line1 = (await ui()).lineInfo;
 const world1 = await mibX();
 say(!!line0 && !!line1 && Math.abs(line1.endX - line0.endX) < 4 && world1 < world0 - 2, 'aiming right: the aim line holds (x ' + (line0 && line0.endX.toFixed(1)) + ' to ' + (line1 && line1.endX.toFixed(1)) + ') and the mibs move left under it (x ' + world0.toFixed(1) + ' to ' + world1.toFixed(1) + ')');
 
+/* m3 step 7: a step moves the shooter under 1 px, and no nudge rect meets the resting thumb's band (45 to 55% of the height) */
+{
+  const tb = await page.evaluate(() => { const D = window.KEEPSIES_DEV, s = D.tawScreen(); return { x: s.x, y: s.y }; });
+  await tap('nudgeR'); await sleep(900);
+  const ta = await page.evaluate(() => { const D = window.KEEPSIES_DEV, s = D.tawScreen(); return { x: s.x, y: s.y }; });
+  say(Math.hypot(ta.x - tb.x, ta.y - tb.y) < 1, 'a fine aim step moves the shooter ' + Math.hypot(ta.x - tb.x, ta.y - tb.y).toFixed(2) + ' px (under 1; shipped 16)');
+  const band = await page.evaluate(() => { const H = innerHeight, q = (id) => { const r = document.getElementById(id).getBoundingClientRect(); return { t: r.top, b: r.bottom }; }; return { H, l: q('nudgeL'), r: q('nudgeR') }; });
+  const inBand = (q) => q.b > band.H * 0.45 && q.t < band.H * 0.55;
+  say(!inBand(band.l) && !inBand(band.r), 'the aim buttons are out of the resting thumb\'s band (' + band.l.t.toFixed(0) + ' to ' + band.l.b.toFixed(0) + ' of ' + band.H + ')');
+}
+
 /* 3. the Zoom holds the scope open with no thumb down, and the step is fine */
 const ui1 = await ui();
 const spy0 = (await cam()).spy;
@@ -163,7 +174,7 @@ for (let i = 0; i <= 18; i++) { const f = i / 18; pts.push({ x: here.x + 110 * f
 const aim = await page.evaluate((s) => window.KEEPSIES_DEV.flick(s), pts);
 const said = await page.evaluate(() => window.KEEPSIES_DEV.said());
 say(!!aim && Math.abs(aim.fineDeg) >= 5, 'a flick angled off the line reads as ' + (aim ? aim.fineDeg.toFixed(1) : '?') + ' degrees off');
-say(/degrees (left|right) of the line/.test(said), 'and the game names it: "' + said + '"');
+say(/off the line/.test(said) || /wild one/.test(said), 'and the game names it: "' + said + '"');
 
 say(errors.length === 0, 'no page errors' + (errors.length ? ': ' + errors.slice(0, 3).join(' | ') : ''));
 await browser.close(); server.close();
