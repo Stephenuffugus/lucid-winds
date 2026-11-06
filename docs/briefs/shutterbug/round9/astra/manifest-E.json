@@ -1,0 +1,179 @@
+{
+  "game": "SHUTTERBUG",
+  "round": 9,
+  "section": "E",
+  "palette": [
+    "#0b0a0f",
+    "#1f1a1d",
+    "#4a4a52",
+    "#8a8a90",
+    "#c9c7c0",
+    "#f2efe6",
+    "#fbfbff",
+    "#6b3f2a",
+    "#e07a2b",
+    "#c8302f",
+    "#d83a9b",
+    "#2f5fd0",
+    "#3fb8b4",
+    "#3f9a3a",
+    "#f2d13f",
+    "#f0dcb0"
+  ],
+  "files": [
+    {
+      "file": "conveyor.png",
+      "sprite": "conveyor",
+      "w": 16,
+      "h": 16,
+      "frames": 8,
+      "names": [
+        "right0",
+        "right1",
+        "right2",
+        "right3",
+        "left0",
+        "left1",
+        "left2",
+        "left3"
+      ],
+      "fps": 0,
+      "anchor": "top_left",
+      "sha256": "e96b4d8664c42367e1af58ef11b90316603b4d912cab41e9e8b5311f6e68dd93",
+      "notes": "16px seamless tile. Select one direction block and loop its four frames. Art does not convey collision velocity.",
+      "context": "room",
+      "source": "source/conveyor.txt",
+      "colours": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6
+      ],
+      "loop": false,
+      "pivot": [
+        0,
+        0
+      ],
+      "direction_blocks": {
+        "right": {
+          "start": 0,
+          "count": 4
+        },
+        "left": {
+          "start": 4,
+          "count": 4
+        }
+      },
+      "animation_fps": 12,
+      "collision_top_y": 0
+    },
+    {
+      "file": "crumbling_shelf.png",
+      "sprite": "crumbling_shelf",
+      "w": 16,
+      "h": 16,
+      "frames": 4,
+      "names": [
+        "whole",
+        "cracked",
+        "falling",
+        "gone"
+      ],
+      "fps": 0,
+      "anchor": "top_left",
+      "sha256": "4ed94d2ee2c26da5592e1a76f1ce38d685a8eeea140f76cf8bdf7bb217deba2a",
+      "notes": "Four ordered states, not an endless loop. Gone is deliberately transparent. Keep the platform collider until the game decides it gives way.",
+      "context": "room",
+      "source": "source/crumbling_shelf.txt",
+      "colours": [
+        0,
+        3,
+        4,
+        6,
+        7
+      ],
+      "loop": false,
+      "pivot": [
+        0,
+        0
+      ],
+      "collision_top_y": 0
+    },
+    {
+      "file": "swinging_lamp.png",
+      "sprite": "swinging_lamp",
+      "w": 96,
+      "h": 96,
+      "frames": 3,
+      "names": [
+        "left",
+        "centre",
+        "right"
+      ],
+      "fps": 0,
+      "anchor": "ceiling",
+      "sha256": "d85b326d743e0dd065e256553221602ce6679d9c1c67551430499ef438f619a6",
+      "notes": "Native 32px lamp on a 48px chain. Padded 96x96 canvas keeps one fixed ceiling pivot through the \u00b120 degree swing. Pendulum playback is left, centre, right, centre; do not wrap right directly to left.",
+      "context": "room",
+      "source": "source/swinging_lamp.txt",
+      "colours": [
+        0,
+        2,
+        3,
+        4,
+        6
+      ],
+      "loop": false,
+      "pivot": [
+        48,
+        2
+      ],
+      "lamp_size": [
+        32,
+        32
+      ],
+      "chain_length": 48,
+      "angles_degrees": [
+        -20,
+        0,
+        20
+      ],
+      "playback": [
+        0,
+        1,
+        2,
+        1
+      ],
+      "animation_fps": 4
+    },
+    {
+      "file": "window_gust.png",
+      "sprite": "window_gust",
+      "w": 16,
+      "h": 48,
+      "frames": 3,
+      "names": [
+        "gust0",
+        "gust1",
+        "gust2"
+      ],
+      "fps": 8,
+      "anchor": "bottom",
+      "sha256": "ba27d66426b0663b392550ee88ff9c86a2ad705824d83fd5aeb33f8778924708",
+      "notes": "Sparse rightward curls in a 16x48 window column. Mirror for leftward gusts; the game supplies the wind force and activation timing.",
+      "context": "room",
+      "source": "source/window_gust.txt",
+      "colours": [
+        3,
+        4
+      ],
+      "loop": true,
+      "pivot": [
+        8,
+        48
+      ]
+    }
+  ]
+}
