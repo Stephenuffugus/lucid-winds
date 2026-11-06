@@ -1,7 +1,7 @@
 # Studio checklist
 
 The repo copy of Stephen's Google Doc "Studio checklist" in Drive Astra
-(https://docs.google.com/document/d/1A60Pk-DBKPJWF47FZN2YZmEFkBgtQC4_oS4ojh3lKiY/edit). The Doc has real checkboxes. The old Doc (1gzUSKkQ...) sat unchanged from 5 Nov 02:20 until this one replaced it on 6 Nov; it is renamed OLD and left in place.
+(https://docs.google.com/document/d/1rymE9tjSMsNmjoKkWqrmvw_oOQt2AaqOpAXwXYVmUq0/edit). The Doc has real checkboxes. The old Doc (1gzUSKkQ...) sat unchanged from 5 Nov 02:20 until this one replaced it on 6 Nov; it is renamed OLD and left in place.
 When a line changes here, the Doc must change too: export the Doc as text/markdown first to carry over his ticks, then upload this file as text/markdown (Drive converts it to a Doc with live checkboxes) and rename the one it replaces. There is no Docs editor here.
 
 Everything planned, by game, as of 6 Nov 2026, 13:40 UTC. Open items come first in each section, finished ones under Done. Who does each one is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans with you). The working copy is docs/STUDIO-CHECKLIST.md in the repo. Nothing new from Astra has reached Drive, the vault or a session upload since Shutterbug round 9, so if you hold a zip that is not ticked below, drop it in that game's folder.
@@ -13,7 +13,7 @@ Everything planned, by game, as of 6 Nov 2026, 13:40 UTC. Open items come first 
 - [ ] Play Tomato Man's seed toss and sun critters on the Pixel: the critters' balance is not proven (you)
 - [ ] Play Shutterbug's five guardians, second attacks, ten new bugs and harder rooms on the Pixel (you)
 - [ ] Say if the new fart sounds are funny on the Pixel; if not, a pack of recorded ones (CC0, freesound) is the next step (you)
-- [ ] Give Astra the Keepsies round 3 kickoff from [Astra / Keepsies / Round 3](https://drive.google.com/drive/folders/1TzLMsgrjGfqWsDRVunfCh73kVjcLEvdT), with its [materials zip](https://github.com/Stephenuffugus/lucid-winds/raw/add-sproing-jumper/docs/briefs/keepsies/round3/keepsies-round3-materials.zip) (you)
+- [ ] Give Astra the Keepsies round 3 kickoff from [Astra / Keepsies / Round 3](https://drive.google.com/drive/folders/1TzLMsgrjGfqWsDRVunfCh73kVjcLEvdT), with its materials zip: sent to you in the chat on 6 Nov, and kept in [the vault](https://github.com/Stephenuffugus/lucid-winds-vault/releases/tag/astra-keepsies-round3-nov06) (you)
 - [ ] Give Astra the Tomato Man gameplay art kickoff from [Astra / Tomato Man / Gameplay Art](https://drive.google.com/drive/folders/1AmFaALTb3wBPtJE8MTFkSEVXd7Vx9nqB) (you)
 - [ ] Give Astra the Sunforge round 2 kickoff, the blocks, from [Astra / Sunforge / Round 2](https://drive.google.com/drive/folders/1PPdQPL6l2dr3yQiS88dwlyL9JhGRHFSp); tick it if you already have (you)
 - [ ] Give Astra the Flatulence Fighter round 2 kickoff, with the six pads, from [Astra / Flatulence Fighter / Round 2](https://drive.google.com/drive/folders/1o2vbY_Q6Qee-UVDXpdh3rcy71QudsE0N); tick it if you already have (you)
