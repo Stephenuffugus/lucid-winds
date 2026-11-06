@@ -310,7 +310,7 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
 <script>
 (function(){
 "use strict";
-var BUILD="v5.0";
+var BUILD="v5.1";
 function $(id){ return document.getElementById(id); }
 function icon(n){ return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'; }
 var UIF='"Space Grotesk",system-ui,sans-serif', DSF='"Barlow Condensed","Space Grotesk",'+UIF;
@@ -509,7 +509,7 @@ function newGame(mode){
   var rng=mulberry32(seed);
   G={ mode:mode, seed:seed, rng:rng, feed:bagFeed(rng), grid:emptyGrid(), hold:null, holdUsed:false, next2:null,
       score:0, rings:0, chainBest:0, level:PROG.level, quota:quotaFor(PROG.level), quotaDone:0,
-      cur:null, next:null, dropT:0, over:false, pieces:0,
+      cur:null, next:null, dropT:0, lockT:0, lockR:0, over:false, pieces:0,
       pieceBudget:(mode==='daily'?120:0), sbRun:0,
       fx:[], floats:[], spinA:0, pulse:[], shakeT:0, t:0, shards:[], popAnim:null, slideAnim:null, chainN:0, view:7,
       sticks:[], skyT:0, spinT:0, shockT:-1, swallows:[], callouts:[], levelUp:null, endAnim:null };
@@ -539,6 +539,7 @@ function spawn(){
   var vis=Math.floor((PCY-PANEL.y-VCELL/2)/VPITCH+0.1);
   var topRow=Math.max(-2, C-vis);
   G.cur={ k:k, rot:0, x:C-2, y:topRow-1 };
+  G.lockT=0; G.lockR=0;
   if(G.guide===1&&k==='T'){ G.cur.rot=2; G.guide=2; }
   G.holdUsed=false;
   G.pieces++;
@@ -596,19 +597,26 @@ function losePiece(slammed){
   G.cur=null;
   spawn();
 }
-function tryMove(dx){ if(!G.cur||G.over)return false; if(!collides(G.cur.x+dx,G.cur.y,G.cur.rot)){ G.cur.x+=dx; SFX.move(); return true; } return false; }
+/* LOCK DELAY (6 Nov, his call: "a little leeway just like in Tetris"): a piece that comes to rest on support is not
+   stuck at once. It waits LOCK_DELAY seconds, and every move or turn that succeeds while it rests restarts the wait (at
+   most LOCK_RESETS times a piece, so it cannot hover forever), so it can slide along a shelf or under an overhang into
+   place. Pressing down while it rests commits it now; SLAM always commits. */
+var LOCK_DELAY=0.5, LOCK_RESETS=15;
+function grounded(){ return !!G.cur&&touchingAt(G.cur.x,G.cur.y,G.cur.rot); }
+function lockReset(){ if(G.lockT>0&&G.lockR<LOCK_RESETS){ G.lockT=0; G.lockR++; } }
+function tryMove(dx){ if(!G.cur||G.over)return false; if(!collides(G.cur.x+dx,G.cur.y,G.cur.rot)){ G.cur.x+=dx; SFX.move(); lockReset(); return true; } return false; }
 function tryRotate(){
   if(!G.cur||G.over)return false;
   var nr=(G.cur.rot+1)%4, kicks=[0,-1,1,-2,2],i;
-  for(i=0;i<kicks.length;i++){ if(!collides(G.cur.x+kicks[i],G.cur.y,nr)){ G.cur.x+=kicks[i]; G.cur.rot=nr; SFX.rot(); return true; } }
+  for(i=0;i<kicks.length;i++){ if(!collides(G.cur.x+kicks[i],G.cur.y,nr)){ G.cur.x+=kicks[i]; G.cur.rot=nr; SFX.rot(); lockReset(); return true; } }
   return false;
 }
-function softStep(){ // one row down; returns false if it locked or was lost
+function softStep(commit){ // one row down; returns false if it rests, locked or was lost. commit: a down press on a resting piece sticks it now
   if(!G.cur||G.over)return false;
-  if(touchingAt(G.cur.x,G.cur.y,G.cur.rot)){ lockPiece(false); return false; }
+  if(touchingAt(G.cur.x,G.cur.y,G.cur.rot)){ if(commit)lockPiece(false); return false; }
   if(!collides(G.cur.x,G.cur.y+1,G.cur.rot)){
     G.cur.y++;
-    if(touchingAt(G.cur.x,G.cur.y,G.cur.rot)){ lockPiece(false); return false; }
+    if(touchingAt(G.cur.x,G.cur.y,G.cur.rot)){ G.lockT=0.0001; return false; }   // came to rest: the lock clock starts in tick
     return true;
   }
   // Bottom of the board with nothing grabbed: no floor support in the gyre
@@ -630,7 +638,7 @@ function holdPiece(){
     if(G.cur)G.holdUsed=true;
   } else {
     var h=G.hold;
-    G.cur={k:h,rot:0,x:C-2,y:-2};
+    G.cur={k:h,rot:0,x:C-2,y:-2}; G.lockT=0; G.lockR=0;
     if(collides(G.cur.x,G.cur.y,G.cur.rot)){ G.cur={k:k,rot:0,x:C-2,y:-2}; return; }
     G.hold=k; G.holdUsed=true;
   }
@@ -812,7 +820,8 @@ function tick(dt){
   if(G.cur&&!G.over){
     G.dropT+=dt;
     var iv=dropInterval();
-    while(G.dropT>=iv&&G.cur){ G.dropT-=iv; softStep(); }
+    while(G.dropT>=iv&&G.cur){ G.dropT-=iv; softStep(false); }
+    if(G.cur){ if(grounded()){ G.lockT+=dt; if(G.lockT>=LOCK_DELAY)lockPiece(false); } else G.lockT=0; }
   }
   stepAnims(dt);
   var i;
@@ -1094,10 +1103,13 @@ function render(){
       for(i=0;i<4;i++){ var qx=pc[i][0], qy=pc[i][1]; if(qy<0||qy>=N)continue;
         if((qx>0&&G.grid[qy][qx-1])||(qx<N-1&&G.grid[qy][qx+1])){ var sq=cellPx(qx,qy);
           ctx.globalAlpha=0.8; ctx.drawImage(stk,sfr*64,0,64,128,sq.x-0.5,sq.y-VPITCH,VPITCH,VPITCH*2); ctx.globalAlpha=1; } } }
+    var restA=G.lockT>0&&!SET.reduce ? 0.62+0.38*Math.abs(Math.cos(G.lockT*Math.PI/LOCK_DELAY*1.5)) : 1;   // the resting piece breathes while its lock clock runs
+    ctx.globalAlpha=restA;
     for(i=0;i<4;i++){ if(pc[i][1]<0)continue; var pp=cellPx(pc[i][0],pc[i][1]);
       if(fimg){ ctx.drawImage(fimg,pp.x-0.5,pp.y-0.5,VPITCH,VPITCH); continue; }
       ctx.fillStyle=PCOLS[G.cur.k]; rr(pp.x,pp.y,VCELL,VCELL,5); ctx.fill();
       ctx.fillStyle='rgba(255,255,255,0.22)'; rr(pp.x,pp.y,VCELL,VCELL*0.4,5); ctx.fill(); }
+    ctx.globalAlpha=1;
   }
   // the stick flash: six frames over 120 ms at the locked piece's centre
   var sfl=art('stick');
@@ -1179,27 +1191,49 @@ function hold(id,fn,first){
   var el=$(id),t=null,r=null; if(!el)return;
   function stop(){ if(t){clearTimeout(t);t=null;} if(r){clearInterval(r);r=null;} }
   el.addEventListener('pointerdown',function(e){ e.preventDefault(); ac(); fn();
-    t=setTimeout(function(){ r=setInterval(fn, 70); }, first||220); });
+    t=setTimeout(function(){ r=setInterval(fn, 45); }, first||150); });
   el.addEventListener('pointerup',stop); el.addEventListener('pointercancel',stop); el.addEventListener('pointerleave',stop);
 }
 hold('c-left',function(){ tryMove(-1); });
 hold('c-right',function(){ tryMove(1); });
-hold('c-down',function(){ if(G&&G.cur)softStep(); },160);
+hold('c-down',function(){ if(G&&G.cur)softStep(true); },160);
 tap('c-rot',function(){ tryRotate(); });
 tap('b-hold',function(){ holdPiece(); });
 tap('slambtn',function(){ slam(); });
-cv.addEventListener('pointerdown',function(e){
-  if(curScreen!=='s-play'||!G||G.over)return; e.preventDefault(); ac();
-  var r=cv.getBoundingClientRect(), sy=(e.clientY-r.top)*960/r.height;
-  if(sy<PANEL.y||sy>PANEL.y+PANEL.h)return;          // a tap on the HUD or below the window turns nothing
-  tryRotate();
-},{passive:false});
+/* BOARD GESTURES (6 Nov, his "it also doesn't move very well"): a finger on the window drags the piece, one cell per
+   cell of travel sideways (so a slide reads as a slide), one row per cell of travel down (a soft drop that never
+   commits); a tap that never travelled turns it. The buttons still do everything. */
+(function(){
+  var gs=null;
+  function sxy(e){ var r=cv.getBoundingClientRect(); return { x:(e.clientX-r.left)*540/r.width, y:(e.clientY-r.top)*960/r.height }; }
+  cv.addEventListener('pointerdown',function(e){
+    if(curScreen!=='s-play'||!G||G.over)return; e.preventDefault(); ac();
+    var p=sxy(e);
+    if(p.y<PANEL.y||p.y>PANEL.y+PANEL.h)return;          // a touch on the HUD or below the window does nothing
+    gs={ id:e.pointerId, x0:p.x, y0:p.y, ax:0, ay:0, moved:false, t0:performance.now() };
+    try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+  },{passive:false});
+  cv.addEventListener('pointermove',function(e){
+    if(!gs||e.pointerId!==gs.id||!G||!G.cur||G.over)return;
+    var p=sxy(e), dx=p.x-gs.x0-gs.ax, dy=p.y-gs.y0-gs.ay, step=VPITCH;
+    while(dx>=step){ gs.ax+=step; dx-=step; gs.moved=true; tryMove(1); }
+    while(dx<=-step){ gs.ax-=step; dx+=step; gs.moved=true; tryMove(-1); }
+    while(dy>=step*1.2){ gs.ay+=step*1.2; dy-=step*1.2; gs.moved=true; softStep(false); }
+    if(!gs.moved&&(Math.abs(p.x-gs.x0)>12||Math.abs(p.y-gs.y0)>12))gs.moved=true;
+  });
+  function end(e){
+    if(!gs||e.pointerId!==gs.id)return;
+    var g=gs; gs=null;
+    if(e.type==='pointerup'&&!g.moved&&performance.now()-g.t0<400)tryRotate();
+  }
+  cv.addEventListener('pointerup',end); cv.addEventListener('pointercancel',end);
+})();
 document.addEventListener('keydown',function(e){
   if(curScreen!=='s-play'||!G||G.over)return;
   if(e.key==='ArrowLeft'){ e.preventDefault(); tryMove(-1); }
   else if(e.key==='ArrowRight'){ e.preventDefault(); tryMove(1); }
   else if(e.key==='ArrowUp'||e.key==='x'||e.key==='X'){ e.preventDefault(); tryRotate(); }
-  else if(e.key==='ArrowDown'){ e.preventDefault(); softStep(); }
+  else if(e.key==='ArrowDown'){ e.preventDefault(); softStep(true); }
   else if(e.key===' '){ e.preventDefault(); slam(); }
   else if(e.key==='c'||e.key==='C'||e.key==='Shift'){ e.preventDefault(); holdPiece(); }
   else if(e.key==='Escape'||e.key==='p'||e.key==='P'){ e.preventDefault(); pauseGame(); }
@@ -1284,7 +1318,7 @@ if(/[?&]rsdev=1/.test(location.search)){
 /* ---------- add to home screen (Dewball pattern) ---------- */
 (function(){
   var btn=$('b-install'); if(!btn)return;
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=9'); }catch(e){} }
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=10'); }catch(e){} }
   function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
   if(standalone()){ btn.style.display='none'; return; }
   var deferred=null;
