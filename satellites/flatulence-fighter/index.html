@@ -331,6 +331,7 @@
   .deck4{ position:relative; z-index:12; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px;
     padding:8px 8px calc(10px + env(safe-area-inset-bottom,0px)); touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
   .deck4 > button{ height:clamp(56px, 19vh, 196px); height:clamp(56px, 19dvh, 196px); min-width:0; margin:0; touch-action:none; -webkit-touch-callout:none;}
+  .deck4.deck6 > button{ height:clamp(46px, 12.6vh, 132px); height:clamp(46px, 12.6dvh, 132px);}   /* m3: three rows, two fingers more */
   .deck4 .pad{ padding:0 6px 4px;}
   .deck4 .pad .pad-label{ letter-spacing:.16em; padding-left:.16em;}
   .deck4 .pad .pad-hint{ font-size:clamp(1.05rem, 3.2vh, 1.5rem);}
@@ -350,7 +351,7 @@
   .hand .hr-fg{ stroke:var(--accent); stroke-dasharray:100; stroke-dashoffset:calc(100 * (1 - var(--ring,0))); stroke-linecap:round;}
   .hand .hico{ position:relative; width:60%; height:60%; display:flex; align-items:center; justify-content:center; opacity:.5;}
   .hand .hico .ic{ width:100%; height:100%;}
-  #handL.idle .hico .ic{ transform:scaleX(-1);}
+  #handL.idle .hico .ic, #handL2.idle .hico .ic{ transform:scaleX(-1);}
   .hand-words{ font-size:clamp(.74rem, 2.1vh, .98rem); font-weight:600; line-height:1.15; letter-spacing:.02em; max-width:100%; overflow-wrap:break-word;}
   .hand.idle .hand-words{ font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; padding-left:.16em; opacity:.85;}
   .hand.down{ transform:translateY(2px); background:rgba(199,189,156,.75);}
@@ -360,6 +361,7 @@
   .hand.holding .hr-fg, .hand.done .hr-fg{ stroke:var(--mint-deep);}
   .hand.done{ border:3px solid var(--mint-deep); background:var(--paper);}
   .hand.missed{ border:3px solid var(--danger); background:var(--paper); color:var(--danger);}
+  .hand.leave{ border:3px solid var(--accent); background:var(--paper); color:var(--deep); animation:letgo .6s ease-in-out infinite;}   /* m3: the pad a call just left, let go of it */
   .hand.missed .hr-fg{ stroke:var(--danger);}
   .hand:focus-visible, .deck4 .pad:focus-visible{ outline:3px solid var(--mint-deep); outline-offset:2px;}
   /* m1's leaks and props are retired from play; the intertitle lets touches through so the cheeks can be held across it */
@@ -643,7 +645,7 @@
         <li class="how-step"><span class="hs-art hs-hand" aria-hidden="true"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_book"/></svg></span><span class="hs-txt"><b>Answer the hands,</b> the two upper pads. One lights with what the scene wants. Touch it before its ring runs out and hold it until it lets go.</span></li>
       </ol>
       <div class="how-list">
-        <p>A missed call is a fidget, and the second fidget is a strike. <b>Three strikes and the room knows.</b> Later acts call both hands at once, even under the noise.</p>
+        <p>A missed call is a fidget, and the second fidget is a strike. <b>Three strikes and the room knows.</b> Later acts call two pads at once, even under the noise, and a call can move to another pad while you hold it. Let go of the one it left.</p>
       </div>
     </div>
     <button class="btn" id="howPractice"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-practice"/></svg> Play the lesson</button>
@@ -723,7 +725,9 @@
 
     <!-- THE DECK (m2): the four pads in a 2 by 2 block, the hands on top and the cheeks below (law 10: one deck owns
          every touch on it; the input section hit tests each pointer against the four boxes) -->
-    <div class="deck4" id="deck" role="group" aria-label="The four pads">
+    <div class="deck4 deck6" id="deck" role="group" aria-label="The six pads">
+      <button class="hand idle" id="handL2" type="button" aria-label="Left finger"><span class="hring" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><circle class="hr-bg" cx="50" cy="50" r="44" pathLength="100"/><circle class="hr-fg" cx="50" cy="50" r="44" pathLength="100"/></svg><span class="hico" id="handLIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handLText">Left hand</span></button>
+      <button class="hand idle" id="handR2" type="button" aria-label="Right finger"><span class="hring" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><circle class="hr-bg" cx="50" cy="50" r="44" pathLength="100"/><circle class="hr-fg" cx="50" cy="50" r="44" pathLength="100"/></svg><span class="hico" id="handRIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handRText">Right hand</span></button>
       <button class="hand idle" id="handL" type="button" aria-label="Left hand"><span class="hring" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><circle class="hr-bg" cx="50" cy="50" r="44" pathLength="100"/><circle class="hr-fg" cx="50" cy="50" r="44" pathLength="100"/></svg><span class="hico" id="handLIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handLText">Left hand</span></button>
       <button class="hand idle" id="handR" type="button" aria-label="Right hand"><span class="hring" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><circle class="hr-bg" cx="50" cy="50" r="44" pathLength="100"/><circle class="hr-fg" cx="50" cy="50" r="44" pathLength="100"/></svg><span class="hico" id="handRIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handRText">Right hand</span></button>
       <button class="pad cheek" id="padL" type="button" aria-label="Left cheek"><span class="pad-label">Left cheek</span><span class="pad-hint" id="padLHint">Hold</span></button>
@@ -951,6 +955,10 @@
     callFirst:8, callWait:2.0, callWaitMin:1.35, callWaitAct:0.06, callHoldMin:1.5, callHoldMax:3.0,
     callGapMin:1.6, callGapRand:3.2, callGapAct:0.07, callCoverClear:0.6, overlapAct:3, fourAct:5,
     callPairBase:0.30, callPairStep:0.06, callPairMax:0.6, callMoveChance:0.3, callScore:30, comboCall:1, flashDur:0.6,
+    // m3 (6 Nov, Stephen: "constantly switching up what you have to hold"): from hopAct a call moves to another pad part way
+    // through its hold (twice from hopTwoAct), the new pad lights, the old one says let go; a finger left on the old pad
+    // past hopLetGo is a fidget
+    hopAct:2, hopTwoAct:4, hopWait:0.9, hopLetGo:0.7,
     oneHeldFactor:0.22, bothHeldDrop:7,
     strainFill:23, strainRecover:33, slipDuration:1.3, slipSpike:13,
     coverFirst:4.5, coverGapMin:6.5, coverGapRand:5, coverDurBase:2.4, coverDurMin:1.5, perfectFrac:0.40,
@@ -1050,16 +1058,38 @@
   function noiseBuf(dur,brown){ const n=Math.max(1,Math.floor(actx.sampleRate*dur)), b=actx.createBuffer(1,n,actx.sampleRate), d=b.getChannelData(0);
     let last=0; for(let i=0;i<n;i++){ const w=Math.random()*2-1; if(brown){ last=(last+0.02*w)/1.02; d[i]=last*3.2; } else d[i]=w; } return b; }
   function env(g,t,a,peak,dur){ g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); }
-  function fart(bigness){ if(!actx||!soundOn) return; const t=actx.currentTime, dur=0.32+bigness*0.55+Math.random()*0.1;
-    const src=actx.createBufferSource(); src.buffer=noiseBuf(dur,true);
-    const lp=actx.createBiquadFilter(); lp.type="lowpass"; const hz=320+bigness*180+Math.random()*80;
-    lp.frequency.setValueAtTime(hz,t); lp.frequency.exponentialRampToValueAtTime(80,t+dur); lp.Q.value=6;
-    const lfo=actx.createOscillator(), lg=actx.createGain(); lfo.frequency.setValueAtTime(14+bigness*22+Math.random()*10,t);
-    lfo.frequency.linearRampToValueAtTime(6,t+dur); lg.gain.value=0.5; lfo.connect(lg).connect(lp.frequency); lfo.start(t); lfo.stop(t+dur);
-    const g=actx.createGain(); env(g,t,0.03,0.28+bigness*0.5,dur); src.connect(lp).connect(g).connect(actx.destination); src.start(t); src.stop(t+dur); }
-  function squeak(){ if(!actx||!soundOn) return; const t=actx.currentTime, o=actx.createOscillator(), g=actx.createGain();
-    o.type="sawtooth"; o.frequency.setValueAtTime(560,t); o.frequency.exponentialRampToValueAtTime(1100,t+0.09);
-    o.frequency.exponentialRampToValueAtTime(300,t+0.2); env(g,t,0.02,0.12,0.24); o.connect(g).connect(actx.destination); o.start(t); o.stop(t+0.25); }
+  function distCurve(k){ const n=256, c=new Float32Array(n); for(let i=0;i<n;i++){ const x=i*2/n-1; c[i]=(1+k)*x/(1+k*Math.abs(x)); } return c; }
+  // m3 (6 Nov): a fart is a flap. A low buzz whose pitch droops, chopped by a sputter (a square gate at 14 to 40 Hz that
+  // slows down as it runs out), a wet brown rumble under it, and for the big ones a few loose pops at the end. Every one
+  // rolls its own pitch, rate and length, so no two are the same
+  function fart(bigness){ if(!actx||!soundOn) return; const t=actx.currentTime, big=Math.max(0,Math.min(1.2,bigness)), dur=0.25+big*0.75+Math.random()*0.15;
+    const master=actx.createGain(); env(master,t,0.015,0.55+big*0.45,dur); master.connect(actx.destination);
+    const f0=62+Math.random()*34+big*18, o=actx.createOscillator(); o.type="sawtooth"; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(f0*(0.45+Math.random()*0.15),t+dur);
+    const wob=actx.createOscillator(), wg=actx.createGain(); wob.type="sine"; wob.frequency.value=4+Math.random()*5; wg.gain.value=6+big*8; wob.connect(wg).connect(o.frequency);
+    const sh=actx.createWaveShaper(); sh.curve=distCurve(28);
+    const bp=actx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.setValueAtTime(240+big*220+Math.random()*80,t); bp.frequency.exponentialRampToValueAtTime(95,t+dur); bp.Q.value=1.8;
+    const r0=14+Math.random()*14+big*12, lfo=actx.createOscillator(); lfo.type="square"; lfo.frequency.setValueAtTime(r0,t); lfo.frequency.linearRampToValueAtTime(r0*(0.4+Math.random()*0.3),t+dur);
+    const lg=actx.createGain(); lg.gain.value=0.5; const gate=actx.createGain(); gate.gain.value=0.5; lfo.connect(lg).connect(gate.gain);
+    const buzz=actx.createGain(); buzz.gain.value=0.9;
+    o.connect(sh).connect(bp).connect(gate).connect(buzz).connect(master);
+    const n=actx.createBufferSource(); n.buffer=noiseBuf(dur,true); const lp=actx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.setValueAtTime(380+big*260,t); lp.frequency.exponentialRampToValueAtTime(70,t+dur); lp.Q.value=4;
+    const ng=actx.createGain(); ng.gain.value=0.35+big*0.35; n.connect(lp).connect(ng).connect(master);
+    [o,wob,lfo].forEach(x=>{ x.start(t); x.stop(t+dur+0.05); }); n.start(t); n.stop(t+dur);
+    const pops=big>0.6?2+Math.floor(Math.random()*3):(Math.random()<0.4?1:0);
+    for(let i=0;i<pops;i++){ const pt=t+dur*(0.55+0.45*(i+1)/(pops+1)), po=actx.createOscillator(), pg=actx.createGain(); po.type="triangle";
+      po.frequency.setValueAtTime(90+Math.random()*60,pt); po.frequency.exponentialRampToValueAtTime(45,pt+0.08);
+      env(pg,pt,0.004,0.3+big*0.2,0.09+Math.random()*0.05); po.connect(pg).connect(actx.destination); po.start(pt); po.stop(pt+0.16); } }
+  // the slip: a short high squeaker, a fast flutter through a narrow band with a pitch droop (the one that gets heard)
+  function squeak(){ if(!actx||!soundOn) return; const t=actx.currentTime, dur=0.16+Math.random()*0.12;
+    const master=actx.createGain(); env(master,t,0.008,0.4,dur); master.connect(actx.destination);
+    const f0=180+Math.random()*120, o=actx.createOscillator(); o.type="sawtooth"; o.frequency.setValueAtTime(f0,t); o.frequency.exponentialRampToValueAtTime(f0*0.5,t+dur);
+    const sh=actx.createWaveShaper(); sh.curve=distCurve(20);
+    const bp=actx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.setValueAtTime(900+Math.random()*500,t); bp.frequency.exponentialRampToValueAtTime(320,t+dur); bp.Q.value=4;
+    const lfo=actx.createOscillator(); lfo.type="square"; lfo.frequency.setValueAtTime(38+Math.random()*22,t); lfo.frequency.linearRampToValueAtTime(22,t+dur);
+    const lg=actx.createGain(); lg.gain.value=0.5; const gate=actx.createGain(); gate.gain.value=0.5; lfo.connect(lg).connect(gate.gain);
+    o.connect(sh).connect(bp).connect(gate).connect(master);
+    const n=actx.createBufferSource(); n.buffer=noiseBuf(dur,false); const hp=actx.createBiquadFilter(); hp.type="bandpass"; hp.frequency.value=1400; hp.Q.value=1.2; const ng=actx.createGain(); ng.gain.value=0.12; n.connect(hp).connect(ng).connect(master);
+    o.start(t); o.stop(t+dur+0.02); lfo.start(t); lfo.stop(t+dur+0.02); n.start(t); n.stop(t+dur); }
   function plugSfx(){ if(!actx||!soundOn) return; const t=actx.currentTime, o=actx.createOscillator(), g=actx.createGain();
     o.type="sine"; o.frequency.setValueAtTime(680,t); o.frequency.exponentialRampToValueAtTime(240,t+0.12); env(g,t,0.01,0.16,0.15);
     o.connect(g).connect(actx.destination); o.start(t); o.stop(t+0.16); }
@@ -1128,7 +1158,8 @@
         overScreen=$("overScreen"), medalsScreen=$("medalsScreen"), statsScreen=$("statsScreen");
   const gaugeFill=$("gaugeFill"), pctText=$("pctText"), scoreEl=$("score"), sceneChip=$("sceneChip"), comboEl=$("combo");
   const strainLbar=$("strainL"), strainRbar=$("strainR"), padL=$("padL"), padR=$("padR");
-  const deckEl=$("deck"), handL=$("handL"), handR=$("handR"), padLHint=$("padLHint"), padRHint=$("padRHint");
+  const deckEl=$("deck"), handL=$("handL"), handR=$("handR"), handL2=$("handL2"), handR2=$("handR2"), padLHint=$("padLHint"), padRHint=$("padRHint");
+  const HAND_EL=[handL,handR,handL2,handR2], HAND_NAME=["Left hand","Right hand","Left finger","Right finger"];
   const ventBtn=$("ventBtn"), ventMainText=$("ventMainText"), ventSub=$("ventSub"), ventTimer=$("ventTimer"), ventMark=$("ventMark");
   const coverBanner=$("coverBanner"), coverText=$("coverText"), coverSub=$("coverSub"), strikesEl=$("strikes"), leaksEl=$("leaks"),
         fxEl=$("fx"), calloutEl=$("callout"), toastsEl=$("toasts"), ribbonEl=$("ribbon"), coverCount=$("coverCount"), waftRim=$("waftRim"), bustWrap=document.querySelector(".bust-wrap");
@@ -1198,7 +1229,7 @@
       // m2: the cheeks (last seen, armed since the act began, a squeak's grace, a lift under this cover, this cover's
       // vent, the back on deadline after one), the hands (last seen, presses counted) and the caller's calls
       cPrev:[false,false], cArmed:[false,false], cGrace:[0,0], coverLift:false, vented:false, ventAt:0, backBy:0, quietUntil:0,
-      hPrev:[false,false], handPressN:[0,0], calls:[], nextCallAt:CFG.callFirst, lastCall:"", fidgets:0, actFidget:false, actCalls:0, lesson:false,
+      hand:[false,false,false,false], hPrev:[false,false,false,false], handPressN:[0,0,0,0], calls:[], nextCallAt:CFG.callFirst, lastCall:"", fidgets:0, actFidget:false, actCalls:0, lesson:false,
       rp:{perfects:0, plugs:0, cleanVents:0, coughVents:0, wafts:0, sips:0, vents:0, calls:0, fidgets:0, squeaks:0, maxPads:0, cleanActs:0},
       tut:null };
   }
@@ -1448,14 +1479,15 @@
     else { chime(); haptic([15,25,15]); say("Vented +"+pts+". Cheeks back on","vent",1.3,1); }
   }
   // the hands: presses are counted per pad, so a call only takes a touch that lands after it lit
-  function handEdges(){ for(let k=0;k<2;k++){ const on=k?S.handR:S.handL; if(on&&!S.hPrev[k]) S.handPressN[k]++; S.hPrev[k]=on; } }
+  function handEdges(){ for(let k=0;k<4;k++){ const on=S.hand[k]; if(on&&!S.hPrev[k]) S.handPressN[k]++; S.hPrev[k]=on; } }
+  function freePads(){ return [0,1,2,3].filter(k=>!S.calls.some(c=>c.side===k&&(c.phase==="wait"||c.phase==="hold"))); }
   const rollHold=()=>CFG.callHoldMin+rnd()*(CFG.callHoldMax-CFG.callHoldMin);
   function callWaitDur(){ return Math.max(CFG.callWaitMin, CFG.callWait-S.scene*CFG.callWaitAct)*(S.M.callWaitMul||1); }
   function newCall(side,wait,words,icon,hold){
     if(!words){ const list=CALLS[sceneIdx(S.scene)]||CALLS[0]; let k=Math.floor(rnd()*list.length);
       if(list[k][0]===S.lastCall&&list.length>1) k=(k+1)%list.length; words=list[k][0]; icon=list[k][1]; }
     S.lastCall=words; S.actCalls++;
-    const c={ side, words, icon, phase:"wait", t0:S.time, wait, hold:hold||rollHold(), ht:0, press0:S.handPressN[side], until:0, move:null, flash:"" };
+    const c={ side, words, icon, phase:"wait", t0:S.time, wait, hold:hold||rollHold(), ht:0, press0:S.handPressN[side], until:0, move:null, flash:"", hops:0, hopAt:0, from:-1, fromAt:0 };
     S.calls=S.calls.filter(o=>o.side!==side); S.calls.push(c); return c; }
   // the caller: every roll is made as a call starts and the next start is booked from the rolls alone, so the Daily's
   // calls never depend on the player's timing. The Twister by act: one call at a time and never under a cover (the
@@ -1475,44 +1507,53 @@
     // a call never starts that the act's intertitle would cut short; it waits for the next act
     if(S.sceneTime<wait+hold+0.3){ S.nextCallAt=S.time+Math.max(0.5,S.sceneTime)+0.8; return; }
     const pair=four&&rnd()<Math.min(CFG.callPairMax, CFG.callPairBase+(act-(M.fourAct||CFG.fourAct))*CFG.callPairStep);
-    const sides=pair?[0,1]:[rnd()<0.5?0:1];
+    const free=freePads(); if(!free.length){ S.nextCallAt=S.time+0.5; return; }
+    const first=free[Math.floor(rnd()*free.length)], rest=free.filter(k=>k!==first);
+    const sides=pair&&rest.length?[first,rest[Math.floor(rnd()*rest.length)]]:[first];
+    const hops=act>=(M.hopTwoAct||CFG.hopTwoAct)?2:act>=(M.hopAct||CFG.hopAct)?1:0, hopW=CFG.hopWait*(M.callWaitMul||1);
     let span=0;
-    sides.forEach((side,i)=>{ const c=newCall(side,wait,"","",i?0:hold); if(four&&!pair&&rnd()<CFG.callMoveChance) c.move={wait, hold:rollHold()};
-      span=Math.max(span, c.wait+c.hold+(c.move?c.move.wait+c.move.hold:0)); });
+    sides.forEach((side,i)=>{ const c=newCall(side,wait,"","",i?0:hold); c.hops=hops; c.hopAt=c.hold*(0.35+rnd()*0.3);
+      span=Math.max(span, c.wait+c.hold+c.hops*hopW); });
     cueSfx(); haptic(6);
     S.nextCallAt=S.time+span+(CFG.callGapMin+rnd()*CFG.callGapRand)*Math.max(0.45,1-S.scene*CFG.callGapAct)*(M.callGapMul||1);
   }
   function callTick(dt){
-    for(const c of S.calls.slice()){ const on=c.side?S.handR:S.handL;
+    for(const c of S.calls.slice()){ const on=S.hand[c.side];
+      // the pad a call left: a finger still on it past hopLetGo is a fidget (the room sees you stuck)
+      if(c.from>=0){ if(!S.hand[c.from]) c.from=-1; else if(S.time-c.fromAt>=CFG.hopLetGo){ c.from=-1; fidget("stuck"); if(S.phase!=="playing"&&S.phase!=="tutorial") return; } }
       if(c.phase==="wait"){
         if(on&&S.handPressN[c.side]>c.press0){ c.phase="hold"; c.ht=0; haptic(8); }
         else if(S.time-c.t0>=c.wait){ c.phase="miss"; c.until=S.time+CFG.flashDur; c.flash="Missed"; fidget("late"); }
       } else if(c.phase==="hold"){
         if(!on){ c.phase="miss"; c.until=S.time+CFG.flashDur; c.flash="Too soon"; fidget("early"); }
-        else { c.ht+=dt; if(c.ht>=c.hold) callDone(c); }
+        else { c.ht+=dt; if(c.hops>0&&c.ht>=c.hopAt) hopCall(c); else if(c.ht>=c.hold) callDone(c); }
       }
       if(S.phase!=="playing"&&S.phase!=="tutorial") return;
     }
     S.calls=S.calls.filter(c=>(c.phase==="wait"||c.phase==="hold")||S.time<c.until);
     if(!S.lesson&&S.time>=S.nextCallAt) scheduleCalls();
   }
+  // m3: the call moves. The rest of its hold goes to another free pad, which lights with the same words; the old pad asks
+  // for the finger to lift. Nothing to move to, it stays
+  function hopCall(c){ const free=freePads().filter(k=>k!==c.side); if(!free.length){ c.hops=0; return; }
+    const to=free[Math.floor(rnd()*free.length)];
+    c.from=c.side; c.fromAt=S.time; c.side=to; c.hold=Math.max(0.6,c.hold-c.ht); c.ht=0; c.hops--; c.hopAt=c.hold*(0.35+rnd()*0.3);
+    c.phase="wait"; c.t0=S.time; c.wait=CFG.hopWait*(S.M.callWaitMul||1); c.press0=S.handPressN[to];
+    cueSfx(); haptic([6,30,6]); }
   function callDone(c){
     S.rp.calls++; plugSfx(); haptic(10);
     if(S.lesson){ if(S.tut) S.tut.callsDone=(S.tut.callsDone||0)+1; }
     else { const pts=Math.round(CFG.callScore*comboMult()); S.score+=pts;
       S.combo+=CFG.comboCall; if(S.combo>S.bestCombo) S.bestCombo=S.combo; bumpCombo(); floatAtPad(c.side,"+"+pts); }
-    const other=1-c.side, otherBusy=S.calls.some(o=>o.side===other&&(o.phase==="wait"||o.phase==="hold"));
-    c.phase="done"; c.until=S.time+CFG.flashDur; c.flash="Done";
-    if(c.move&&!otherBusy){ const m=c.move; c.move=null; c.flash="Other hand";
-      newCall(other,m.wait,c.words,c.icon,m.hold); S.actCalls--; }
+    c.phase="done"; c.until=S.time+CFG.flashDur; c.flash="Done"; c.from=-1;
   }
   // a missed call is a fidget the witnesses notice: the first is a warning (a glance, the next pip half lit), the second
   // a strike, and the count starts again (DECISION 2's default)
   function fidget(why){
     S.rp.fidgets++; S.actFidget=true; breakCombo(); haptic([12,40]);
-    if(S.lesson){ if(S.tut) S.tut.fidgets=(S.tut.fidgets||0)+1; say(why==="early"?"Hold until it lets go":"Touch the pad that lights","strike",1.8,3); glance(); return; }
+    if(S.lesson){ if(S.tut) S.tut.fidgets=(S.tut.fidgets||0)+1; say(why==="early"?"Hold until it lets go":why==="stuck"?"Let go of the pad it left":"Touch the pad that lights","strike",1.8,3); glance(); return; }
     if(S.fidgets>=1){ S.fidgets=0; addStrike("Fidgeting"); }
-    else { S.fidgets=1; say(why==="early"?"You let go too soon. They glance over":"You missed the call. They glance over","strike",1.8,3); glance(); }
+    else { S.fidgets=1; say(why==="early"?"You let go too soon. They glance over":why==="stuck"?"Your hand stayed on the old pad. They glance over":"You missed the call. They glance over","strike",1.8,3); glance(); }
     renderPips(); }
   function glance(){ const a=SCENE_ART[sceneIdx(S.scene)]; if(a){ S.turnedUntil=S.time+0.9; setStrip(art(a.turned)); } }
   function renderPips(){ const pips=strikesEl.children, f=S?S.fidgets:0, n=S?S.strikes:0;
@@ -1771,7 +1812,7 @@
       if(off(0)||off(1)){ cheekSqueak(S.backBy?"Back on too late":"A squeak"); if(S.phase!=="playing") return; } }
     S.phase="paused"; releaseAll(); countInEl.classList.add("hidden");
     // m2: every finger was let go; nothing squeaks for it, and a call being held waits again with a fresh window
-    S.hPrev=[false,false]; S.cGrace=[0,0]; S.backBy=0;
+    S.hPrev=[false,false,false,false]; S.cGrace=[0,0]; S.backBy=0;
     S.calls.forEach(c=>{ if(c.phase==="hold"){ c.phase="wait"; c.hold=Math.max(0.6,c.hold-c.ht); c.ht=0; c.t0=S.time; c.wait=callWaitDur(); c.press0=S.handPressN[c.side]; } });
     $("quitBtn").textContent = S.playMode==="zen" ? "Take a bow" : "Give up the act";
     pauseScreen.classList.remove("hidden"); }
@@ -2000,17 +2041,18 @@
   // the hands: Left hand or Right hand until called; then the call's words and its icon, a ring that counts the time
   // left to touch it down, then fills as it is held; Done, Other hand, Missed or Too soon for a moment after
   function renderHands(){
-    [[handL,0],[handR,1]].forEach(([el,k])=>{
-      const c=S?S.calls.find(o=>o.side===k):null, ph=c?c.phase:"idle";
+    HAND_EL.forEach((el,k)=>{
+      const c=S?S.calls.find(o=>o.side===k&&(o.phase==="wait"||o.phase==="hold"))||S.calls.find(o=>o.side===k):null, left=!c&&S?S.calls.find(o=>o.from===k):null;
+      const ph=c?c.phase:left?"leave":"idle";
       // a call takes only a touch that lands after it lit: a finger already resting there is asked to lift and touch
-      const resting=ph==="wait"&&S&&(k?S.handR:S.handL);
-      const words=!c?(k?"Right hand":"Left hand"):(resting?"Lift, then touch":(ph==="wait"||ph==="hold"?c.words:c.flash)), icon=c?c.icon:"call_hand";
+      const resting=ph==="wait"&&S&&S.hand[k];
+      const words=ph==="leave"?"Let go":!c?HAND_NAME[k]:(resting?"Lift, then touch":(ph==="wait"||ph==="hold"?c.words:c.flash)), icon=c?c.icon:left?left.icon:"call_hand";
       const key=ph+"|"+words+"|"+icon;
       if(el._key!==key){ el._key=key;
-        el.classList.remove("idle","called","holding","done","missed");
-        el.classList.add(ph==="wait"?"called":ph==="hold"?"holding":ph==="done"?"done":ph==="miss"?"missed":"idle");
+        el.classList.remove("idle","called","holding","done","missed","leave");
+        el.classList.add(ph==="wait"?"called":ph==="hold"?"holding":ph==="done"?"done":ph==="miss"?"missed":ph==="leave"?"leave":"idle");
         el.querySelector(".hico").innerHTML=ic(icon); el.querySelector(".hand-words").textContent=words;
-        el.setAttribute("aria-label",(k?"Right hand":"Left hand")+(c&&(ph==="wait"||ph==="hold")?". "+c.words:"")); }
+        el.setAttribute("aria-label",HAND_NAME[k]+(c&&(ph==="wait"||ph==="hold")?". "+c.words:ph==="leave"?". Let go":"")); }
       const ring=!c?0:ph==="wait"?Math.max(0,1-(S.time-c.t0)/c.wait):ph==="hold"?Math.min(1,c.ht/c.hold):ph==="done"?1:0;
       el.style.setProperty("--ring",ring.toFixed(3)); });
   }
@@ -2074,13 +2116,13 @@
     el.addEventListener("pointerup",end); el.addEventListener("pointercancel",end); el.addEventListener("lostpointercapture",end);
     holds.push(()=>{ if(ids.size){ ids.clear(); up(); } }); }
   function bindPad(el,key){ bindHold(el, ()=>{ el.classList.add("down"); if(S) S[key]=true; }, ()=>{ el.classList.remove("down"); if(S) S[key]=false; }); }
-  const PADS=[{el:padL,key:"padL"},{el:padR,key:"padR"},{el:handL,key:"handL"},{el:handR,key:"handR"}];
-  const PAD_KEY={KeyF:0,KeyJ:1,KeyR:2,KeyU:3}, padKey=code=>Object.prototype.hasOwnProperty.call(PAD_KEY,code)?PAD_KEY[code]:-1;
-  const ptrPad=new Map(), keyPad=[false,false,false,false];
+  const PADS=[{el:padL,key:"padL"},{el:padR,key:"padR"},{el:handL,key:"hand0"},{el:handR,key:"hand1"},{el:handL2,key:"hand2"},{el:handR2,key:"hand3"}];
+  const PAD_KEY={KeyF:0,KeyJ:1,KeyR:2,KeyU:3,KeyE:4,KeyI:5}, padKey=code=>Object.prototype.hasOwnProperty.call(PAD_KEY,code)?PAD_KEY[code]:-1;
+  const ptrPad=new Map(), keyPad=[false,false,false,false,false,false];
   function padAt(x,y){ for(let i=0;i<PADS.length;i++){ const r=PADS[i].el.getBoundingClientRect();
       if(x>=r.left&&x<r.right&&y>=r.top&&y<r.bottom) return i; } return -1; }
   function syncPad(i){ let on=keyPad[i]; if(!on) ptrPad.forEach(v=>{ if(v===i) on=true; });
-    PADS[i].el.classList.toggle("down",on); if(S) S[PADS[i].key]=on; }
+    PADS[i].el.classList.toggle("down",on); if(S){ const k=PADS[i].key; if(k.charAt(0)==="h"){ S.hand[+k.charAt(4)]=on; S.handL=S.hand[0]; S.handR=S.hand[1]; } else S[k]=on; } }
   function syncPads(){ for(let i=0;i<PADS.length;i++) syncPad(i); }
   deckEl.addEventListener("pointerdown",e=>{ e.preventDefault(); unlockAudio();
     const i=padAt(e.clientX,e.clientY); ptrPad.set(e.pointerId,i); try{ deckEl.setPointerCapture(e.pointerId); }catch(_){}
@@ -2204,12 +2246,12 @@
           sipping:S.sipping, scene:S.scene, leaks:S.leaks.length, cover:S.cover, coverType:S.coverType,
           coverSelf:S.coverSelf, strainL:S.strainL, strainR:S.strainR, pendingExpose:S.pendingExpose,
           breath:S.breath, breathHold:S.breathHold, wobble:S.wobble, breathLock:S.breathLock,
-          tutStep:S.tut?S.tut.step:-1, padL:S.padL, padR:S.padR, handL:S.handL, handR:S.handR,
+          tutStep:S.tut?S.tut.step:-1, padL:S.padL, padR:S.padR, handL:S.handL, handR:S.handR, hand:S.hand.slice(),
           armed:S.cArmed.slice(), vented:S.vented, coverLift:S.coverLift, backBy:S.backBy, fidgets:S.fidgets, calls:S.calls.length,
           nextCallAt:S.nextCallAt, nextCover:S.nextCover, coverUntil:S.coverUntil, zenHits:S.zenHits, rp:Object.assign({},S.rp) };
         o.nan=Object.keys(o).some(k=>typeof o[k]==="number"&&!isFinite(o[k])); return o; },
       setPads:function(l,r){ if(S){ S.padL=!!l; S.padR=!!r; } },
-      setHands:function(l,r){ if(S){ S.handL=!!l; S.handR=!!r; } },
+      setHands:function(l,r,a,b){ if(S){ S.hand=[!!l,!!r,!!a,!!b]; S.handL=S.hand[0]; S.handR=S.hand[1]; } },
       deck:function(){ return PADS.map(p=>({ id:p.el.id, down:p.el.classList.contains("down"), cls:p.el.className, text:p.el.textContent.trim() })); },
       pointers:function(){ return [...ptrPad.entries()]; },
       setBreath:function(on){ if(S){ if(on) startBreath(); else endBreath(); } },
