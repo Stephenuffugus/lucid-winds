@@ -88,7 +88,7 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 /* the player chips: her chip's frame (its drawn dots stay out of the slices) behind the name and her pips */
 /* m3 step 11, B2: her chip, 176 by 56, nine slice 24; the seven pips on her centres (16 + 24k, 39) at that width, and evenly on a narrower phone, where the middle gap stands for the far arm */
 #scores .side{position:relative;display:block;flex:0 1 calc(50% - 16px);max-width:176px;height:56px;box-sizing:border-box;min-width:0;padding:0;
-  border:12px solid transparent;border-image:var(--chip) 24 / 12px stretch;background:none}
+  border:12px solid transparent;border-image:var(--chip) 24 fill / 12px stretch;background:none}
 #scores .who{position:absolute;left:-2px;right:-2px;top:-5px;height:15px;line-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #scores .side.them{padding:0}
 #scores .side.them .who{text-align:right;right:22px}
@@ -162,13 +162,13 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 /* ---- m2: the statues' tray (steps 9 and 10) ---- */
 /* m3 step 10: Astra's plate, 375x190 CSS, nine slice 32; every band below is her anchor less the 16 px border */
 #statueTray{position:absolute;left:0;right:0;bottom:0;height:calc(190px + var(--sb));box-sizing:border-box;pointer-events:auto;
-  border:16px solid transparent;border-image:var(--tray) 32 / 16px stretch;z-index:5}
+  border:16px solid transparent;border-image:var(--tray) 32 fill / 16px stretch;z-index:5}
 #statueTray.moveMode{height:calc(122px + var(--sb))}
 #stHead{position:absolute;left:0;right:0;top:-4px;height:20px;margin:0;line-height:20px;text-align:center;font-size:.92rem;font-weight:600;color:var(--chalk)}
 #stLine{position:absolute;left:0;right:0;top:20px;height:20px;margin:0;line-height:20px;text-align:center;font-size:.8rem;color:var(--chalk);opacity:.86;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #stTiles{position:absolute;left:14.5px;right:14.5px;top:51px;display:flex;justify-content:space-between}
 .stTile{position:relative;flex:0 0 56px;width:56px;height:56px;min-width:0;min-height:0;padding:0;box-sizing:border-box;touch-action:none;background:none;color:var(--chalk);
-  border:10px solid transparent;border-image:var(--tile-idle) 20 / 10px stretch}
+  border:10px solid transparent;border-image:var(--tile-idle) 20 fill / 10px stretch}
 .stTile:active,.stTile.pressed{border-image-source:var(--tile-pressed)}
 .stTile.dragging{border-image-source:var(--tile-drag)}
 .stTile .ic{position:absolute;left:6px;top:0;width:24px;height:24px;margin:0}
@@ -178,7 +178,7 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 .stBtns button{height:48px;min-height:48px;min-width:0;padding:0 8px;white-space:nowrap}
 #stUndo{flex:0 0 105px}
 #stConfirm{flex:1 1 0}
-#stNot{position:absolute;width:112px;height:40px;box-sizing:border-box;border:12px solid transparent;border-image:var(--not-here) 24 / 12px stretch;
+#stNot{position:absolute;width:112px;height:40px;box-sizing:border-box;border:12px solid transparent;border-image:var(--not-here) 24 fill / 12px stretch;
   line-height:16px;text-align:center;font-size:.85rem;letter-spacing:.04em;color:#e0806f;pointer-events:none;z-index:6}
 
 #stNot::after{content:'';position:absolute;left:calc(50% - .75px);top:calc(100% + 12px);width:1.5px;height:var(--ll,0);background:rgba(234,223,201,.85);transform-origin:50% 0;transform:rotate(var(--la,0deg))}
@@ -603,7 +603,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   <ul class="rules">
     <li><b>The objective.</b> Knock seven of the thirteen mibs out of the ring before your opponent does.</li>
     <li><b>The turn.</b> Knock one out and you shoot again from where your shooter lies. Knock none out and the turn passes.</li>
-    <li><b>The shot.</b> Hold your thumb on the shooter and keep it still, the reticle tightens as your aim settles, then flick through the marble. Flick from below it for backspin, from above for follow, from the side for english.</li>
+    <li><b>The shot.</b> Hold your thumb in the circle round your shooter and keep it still, the reticle tightens as your aim settles, then flick up the screen. Slide sideways first to turn your aim. Flick from low in the circle for backspin, from high for follow, from the side for english.</li>
   </ul>
   <button id="rulesGo">Knuckle down</button>
 </div>
@@ -762,8 +762,9 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
     <circle cx="180" cy="24" r="6" fill="#e0b060"/>
     <path d="M180 104 L204 62" stroke="#d86a5a" stroke-width="4" stroke-linecap="round"/>
     <path d="M194 66 L206 58 L206 71" fill="none" stroke="#d86a5a" stroke-width="4" stroke-linecap="round"/>
-    <line x1="180" y1="118" x2="236" y2="24" stroke="#d86a5a" stroke-width="1.5" stroke-dasharray="3 4"/>
-    <text x="196" y="142" font-size="10" fill="#e8dcc8" text-anchor="middle" font-family="system-ui">off the line, off the shot</text>
+    <line x1="180" y1="118" x2="162" y2="24" stroke="#d86a5a" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <line x1="180" y1="118" x2="198" y2="24" stroke="#d86a5a" stroke-width="1.5" stroke-dasharray="3 4"/>
+    <text x="196" y="142" font-size="10" fill="#e8dcc8" text-anchor="middle" font-family="system-ui">off the line, a wild one</text>
     <circle cx="286" cy="60" r="13" fill="#7fb0d6" stroke="#e8dcc8" stroke-width="1.5"/>
     <circle cx="286" cy="70" r="3" fill="#c8a84b"/>
     <text x="286" y="96" font-size="9" fill="#98a086" text-anchor="middle" font-family="system-ui">low, backspin</text>
@@ -772,11 +773,11 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
     <text x="286" y="142" font-size="9" fill="#98a086" text-anchor="middle" font-family="system-ui">high, follow</text>
   </svg>
   <ul class="rules snapRules">
-    <li><b>Line it up first.</b> The gold line is where a straight snap goes. Turn it with the arrows or by dragging the dirt. Zoom shows it land.</li>
-    <li><b>Hold still.</b> Thumb on the shooter. The ring goes gold when your aim has settled.</li>
-    <li><b>Snap straight up the line.</b> Speed is power. Distance is nothing.</li>
-    <li><b>Leave the line and the shot leaves with you.</b> Ten degrees off is ten degrees off, up to twenty five. The game says when a snap pulled.</li>
-    <li><b>Where your thumb sits is spin.</b> Low is backspin, the stop shot. High is follow. A hook is a wild one.</li>
+    <li><b>Line it up first.</b> The gold line is where the shot goes. Turn it with the arrows, by dragging the dirt, or by sliding your thumb sideways on the shooter. Zoom shows it land.</li>
+    <li><b>Hold still.</b> Thumb in the circle. The ring goes gold when your aim has settled.</li>
+    <li><b>Snap up the screen.</b> Speed is power. Distance is nothing.</li>
+    <li><b>The shot goes up the line.</b> A snap off the line runs wilder, and past forty five degrees it is no shot at all. The game says when a snap pulled.</li>
+    <li><b>Where your thumb sits is spin.</b> Low in the circle is backspin, the stop shot. High is follow. A hook is a wild one.</li>
   </ul>
   <button id="snapGo">Got it</button>
 </div>

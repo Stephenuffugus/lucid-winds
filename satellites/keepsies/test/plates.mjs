@@ -19,7 +19,7 @@ same(chip.pip_centers.map(half), Array.from({ length: 7 }, (_, k) => [CHIP.pipX0
 same(half(chip.pip_size)[0], CHIP.pipSize, 'chip pip size');
 same(half(chip.name_band), CHIP.nameBand, 'chip name band');
 same(chip.nine_slice[0], CHIP.slice, 'chip slice');
-css('border-image:var(--chip) ' + CHIP.slice + ' / ' + CHIP.slice / 2 + 'px stretch', 'the chip draws on her slice');
+css('border-image:var(--chip) ' + CHIP.slice + ' fill / ' + CHIP.slice / 2 + 'px stretch', 'the chip draws on her slice, its middle filled');
 css('max-width:' + CHIP.w + 'px', 'the chip stands at her width');
 
 /* B3 the tier frames: the mark is its own icon at her centre, never stretched with the frame */
