@@ -18,7 +18,7 @@ Who: **you** = Stephen, **Astra** (art packs), **Opus** (builds), **Fable** (pla
 - [x] Pick Tomato Man's real gameplay (the kickoff picked the seed toss, then sun critters; both built by Opus 6 Nov, the squirt not built)
 - [ ] Run the Tomato Man gameplay line: `! bash /home/codespace/tm-drafts/deploy-tomato-man-gameplay.sh`, and play it: the critters' balance is not proven (you)
 - [ ] Give Astra the Tomato Man gameplay art kickoff: docs/briefs/tomato-man/gameplay-art/ (you)
-- [ ] Run the Shutterbug R9 line: `! bash /home/codespace/sb-drafts/sb-m2-12/deploy-sb-m2-12.sh` (you)
+- [x] Run the Shutterbug R9 line (you: sb-m2-12 LIVE 6 Nov, main e37264aa7)
 - [ ] Say if the new fart sounds are funny on the Pixel; if not, a pack of recorded ones (CC0, freesound) is the next step (you)
 - [x] Start Opus tonight with docs/briefs/opus-kickoff-nov06/PROMPT.txt: Shutterbug R9 (the plan), then Keepsies m3 steps 2 to 12, Shutterbug harder rooms step 2 (all four hazards, the free play floor, more traps), Tomato Man seed toss and sun critters, then each Astra zip as it lands (you)
 - [x] Keepsies m3 steps 2 to 12 (Opus, 6 Nov: stamp 20261106a, full check green, feel gate at four phones)
