@@ -336,6 +336,12 @@ body:not(.playing) #floorname { display: none; }
 #albar { display: flex; align-items: center; gap: 12px; } #albar h2 { margin: 0; font-size: 1.3rem; }
 #alback { min-height: 48px; min-width: 64px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--slate); background: transparent; color: var(--ash); }
 #alcount { margin: 0; color: var(--ash); }
+/* R10 keepsakes: the collection page on top of the album */
+.curiohead { margin: 12px 0 6px; font-weight: 400; font-size: 1rem; }
+.curiogrid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 10px; }
+.curio { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 0.7rem; line-height: 1.1; text-align: center; color: var(--pewter); }
+.curio canvas { width: 32px; height: 32px; image-rendering: pixelated; }
+.curio.got { color: var(--film); }
 .alcover { position: relative; width: min(320px, 100%); margin: 12px 0 6px; font-weight: 400; }
 .alcover canvas { display: block; width: 100%; aspect-ratio: 160 / 48; image-rendering: pixelated; }
 .alcover span { position: absolute; left: 29.4%; top: 22.9%; width: 55%; height: 50%; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.9rem; line-height: 1.1; color: var(--paper); }
@@ -935,6 +941,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
        stats the save already keeps (clears, house clears, flawless rooms, keys, wall jumps, album pages), so every player ranks at
        once; the film stock each rank opens (Attic always; Frost at 2, Deep at 3, Overgrowth at 4, Ember at 5); the XP weights */
     RANK_XP: [0, 150, 400, 800, 1400, 2200, 3300, 4800, 6800, 9500], RANK_STOCK_AT: [0, 0, 2, 3, 4, 5],
+    /* R10 KEEPSAKES (Stephen: "unlock collectibles"): a FLAG_R10 room rolls one at CURIO_CHANCE on a stream of its own, on a photo cell the bug can stand on, off the climb; six a biome, thirty */
+    CURIO_CHANCE: 0.3, CURIO_PER_BIOME: 6, CURIO_CLEAR: 2,
     XP_CLEAR: 20, XP_HOUSE: 100, XP_FLAWLESS: 15, XP_KEY: 5, XP_WALL_CAP: 500, XP_PAGE: 10,
     PRICE_DEVELOP: [30, 100, 300], PRICE_REROLL: 20 /* Q52 */, PRICE_START_PICK: 200, PRICE_NEGATIVE: 400, PRICE_DOUBLE: 600, PRICE_OPEN_HOUSE: 600,
     REPEAT_DECAY: 0 /* off by default, 9.3 */,
@@ -1262,7 +1270,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      and their code: nothing that was shared changes. */
   var V = 2, HEADER = 6, HEADER2 = 9, HEX = '0123456789abcdef';
   /* what this client knows of v2's three bytes (raised only by the lane that builds what a value means) */
-  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAG_BESTIARY = 2, FLAG_R9 = 4, FLAGS_KNOWN = FLAG_KEYS | FLAG_BESTIARY | FLAG_R9;   /* FLAGS bit 0: the exit locked by keys; bit 1: the second monsters (2 Nov); bit 2: round 9's third and fourth monsters, room pieces and floors (6 Nov): a code made before it keeps its room */
+  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAG_BESTIARY = 2, FLAG_R9 = 4, FLAG_R10 = 8, FLAGS_KNOWN = FLAG_KEYS | FLAG_BESTIARY | FLAG_R9 | FLAG_R10;   /* bit 3: round 10's keepsakes (7 Nov): a code made before it keeps its room */   /* FLAGS bit 0: the exit locked by keys; bit 1: the second monsters (2 Nov); bit 2: round 9's third and fourth monsters, room pieces and floors (6 Nov): a code made before it keeps its room */
   function headOf(v) { return v === 1 ? HEADER : HEADER2; }
   /* a v2 header holding a byte this client does not know (a biome past BIOME_MAX, rules past RULES_MAX, a flag bit
      outside FLAGS_KNOWN): such a code is a newer client's, never 'bad' and never built */
@@ -1440,7 +1448,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
       settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false, stock: 0 },   /* R10: the film stock picked at develop, 0 Auto, 1 to 5 a biome */
       onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0 } },
-      run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0, albumPages: 0, albumBiomes: 0 }, trophies: [], trophySeen: 0, album: [],
+      run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0, albumPages: 0, albumBiomes: 0, curios: 0, curioSets: 0 }, trophies: [], trophySeen: 0, album: [], curios: [],
       log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false, days: 0 }, best: {}, quarantine: null, rank: 0 };   /* R10: the rank last granted (its rewards given) */
   }
   function fillSave(def, got) {
@@ -1480,6 +1488,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     d.trophies = d.trophies.filter(function (t) { return typeof t === 'string'; }).slice(0, 64);
     d.trophySeen = Math.max(0, Math.min(d.trophies.length, d.trophySeen | 0));
     d.rank = Math.max(0, Math.min(SB.TUNING.RANK_XP.length - 1, d.rank | 0)); d.settings.stock = Math.max(0, Math.min(5, d.settings.stock | 0));   /* R10 */
+    var cu = {}; d.curios = d.curios.filter(function (c) { if (typeof c !== 'number' || c % 1 !== 0 || c < 0 || c >= 30 || cu[c]) return false; cu[c] = 1; return true; }).slice(0, 30);   /* R10: the keepsakes found, by id */
     d.album = d.album.filter(function (q) {
       if (!q || typeof q !== 'object' || (q.b | 0) < 0 || (q.b | 0) > 4 || !q.j) return false;
       try { return !!fromJSON(q.j); } catch (e) { return false; }
@@ -1603,7 +1612,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return fromJSON(j);
   }
   function daily(day) { var n = DAILY_CFG.length; return dailyAt(DAILY_CFG[((day % n) + n) % n]); }
-  SB.record = { V: V, daily: daily, dailyAt: dailyAt, DAILY_N: DAILY_N, DAILY_SKIP: DAILY_SKIP, DAILY_CYCLE: DAILY_CFG.length, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, FLAG_BESTIARY: FLAG_BESTIARY, FLAG_R9: FLAG_R9, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
+  SB.record = { V: V, daily: daily, dailyAt: dailyAt, DAILY_N: DAILY_N, DAILY_SKIP: DAILY_SKIP, DAILY_CYCLE: DAILY_CFG.length, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, FLAG_R10: FLAG_R10, FLAG_BESTIARY: FLAG_BESTIARY, FLAG_R9: FLAG_R9, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
     encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows, parseCode: parseCode, linkOf: linkOf,
     saveDefaults: saveDefaults, validateSave: validateSave, loadSave: loadSave,
     runValid: runValid, runFresh: runFresh, runEnter: runEnter, runClear: runClear, runDie: runDie, runRetry: runRetry,
@@ -2120,6 +2129,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        then the second round of the ascent and, when it fails, the degrade ladder (T1.3) */
     level.bestiary = rec.v >= 2 && (rec.flags & SB.record.FLAG_BESTIARY) !== 0 ? 1 : 0;   /* the second monsters (2 Nov) */
     level.r9 = rec.v >= 2 && (rec.flags & SB.record.FLAG_R9) !== 0 ? 1 : 0;   /* round 9's monsters, room pieces and floors (6 Nov) */
+    level.r10 = rec.v >= 2 && (rec.flags & SB.record.FLAG_R10) !== 0 ? 1 : 0;   /* round 10's keepsake (7 Nov) */
     /* m2 step 3: the floors' landings and the tripod, before the features (they see any film tab a landing carved) */
     var carvedL = SB.features.landings(level);
     var settled = settle(level, SB.features.place(level, opts, carvedL ? SB.reach.graph(level) : fixed.g));
@@ -2513,7 +2523,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     ['solid', 'grid'], ['plat', 'grid'], ['tab', 'grid'], ['slick', 'grid'], ['sticky', 'grid'], ['trap', 'grid'],
     ['spawn', 'i32'], ['exit', 'i32'], ['beacon.idx', 'i32'], ['beacon.cells', 'list'],
     ['landmarks', 'lists'], ['ascent.nodes', 'list'],
-    ['features.specks', 'idxs'], ['features.chest', 'idx'], ['features.scroll', 'idx'], ['features.blueprint', 'idx'],
+    ['features.specks', 'idxs'], ['features.chest', 'idx'], ['features.scroll', 'idx'], ['features.blueprint', 'idx'], ['features.curio', 'idx'], ['features.curioId', 'i32'],
     ['features.enemies', 'enemies'], ['features.trap', 'list'], ['features.door', 'idx'], ['features.boss', 'list'],
     ['repair.tabs', 'i32'], ['degraded', 'list']
   ];
@@ -4272,6 +4282,29 @@ body.sb-modal .lwfb-fab { display: none !important; }
     level.pieces = out.length ? out : null;
     return level.pieces;
   }
+  /* R10 KEEPSAKES (7 Nov): in a FLAG_R10 room, one keepsake at CURIO_CHANCE on a stream of its own (the other features never
+     move): a photo cell (its floor from the photo, not a film tab) the bug can stand on, reached with the exit still reachable,
+     CURIO_CLEAR cells or more (Chebyshev) from every climb stand and from spawn, not the exit, nothing else's cell. Its kind is
+     one of the biome's six. No cell, no keepsake. */
+  function curio(level, opts, f, d, back, stands) {
+    if (!level.r10) return { idx: -1, id: -1 };
+    var T = SB.TUNING, rng = SB.rng.mulberry32((level.seed ^ 0x52390010) >>> 0), w = level.w, h = level.h, n = w * h, i, k;
+    if (rng.next() >= T.CURIO_CHANCE) return { idx: -1, id: -1 };
+    var near = new Uint8Array(n), R = T.CURIO_CLEAR, marks = stands.concat([level.spawn]);
+    for (k = 0; k < marks.length; k++) { var mx = marks[k] % w, my = (marks[k] - mx) / w;
+      for (var yy = Math.max(0, my - R); yy <= Math.min(h - 1, my + R); yy++) for (var xx = Math.max(0, mx - R); xx <= Math.min(w - 1, mx + R); xx++) near[yy * w + xx] = 1; }
+    if (level.exit >= 0) near[level.exit] = 1;
+    if (f.chest >= 0) near[f.chest] = 1;
+    if (f.door) near[f.door.idx] = 1;
+    if (f.pocket) for (i = 0; i < f.pocket.cells.length; i++) near[f.pocket.cells[i]] = 1;
+    for (i = 0; f.specks && i < f.specks.length; i++) near[f.specks[i]] = 1;
+    if (typeof f.scroll === 'number' && f.scroll >= 0) near[f.scroll] = 1;
+    if (typeof f.blueprint === 'number' && f.blueprint >= 0) near[f.blueprint] = 1;
+    var cand = [];
+    for (i = 0; i + w < n; i++) if (!near[i] && !level.tab[i + w] && d[i] >= 0 && (!back || back[i]) && standable(level, i)) cand.push(i);
+    if (!cand.length) return { idx: -1, id: -1 };
+    return { idx: cand[rng.int(cand.length)], id: (level.biome | 0) * T.CURIO_PER_BIOME + rng.int(T.CURIO_PER_BIOME) };
+  }
   function place(level, opts, g) {
     var f = level.features, stands = ascentStands(level), rng = SB.rng.mulberry32(level.seed >>> 0);
     if (!g) g = SB.reach.graph(level);
@@ -4285,6 +4318,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     f.chest = chest(level, f, g, d, stands, back);
     var sp = specks(level, opts, f, g, d, rng, back);
     f.specks = sp.specks; f.scroll = sp.scroll; f.blueprint = sp.blueprint;
+    var cu = curio(level, opts, f, d, back, stands); f.curio = cu.idx; f.curioId = cu.id;   /* R10 */
     var tf = trapField(level, opts, f, stands);
     f.trap = tf ? tf.cells : null; f.trapRect = tf ? tf.rect : null; f.trapKind = tf ? tf.kind : null;
     if (level.r9) moreTraps(level, opts, f, stands);
@@ -4295,7 +4329,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     SILVERFISH: SILVERFISH, SPIDER: SPIDER, FLEA: FLEA, BAT: BAT, LAMPREY: LAMPREY, LAMPJELLY: LAMPJELLY, TICK: TICK, WASP: WASP, MITE: MITE, ASHMOTH: ASHMOTH, THIRD_OF_BIOME: THIRD_OF_BIOME, FOURTH_OF_BIOME: FOURTH_OF_BIOME, kindFits: kindFits,
     BUNNY: BUNNY, OWL: OWL, CRAB: CRAB, PUFF: PUFF, BEETLE: BEETLE, SECOND_OF_BIOME: SECOND_OF_BIOME,
     place: place, returnable: returnable, ladder: ladder, brightRect: brightRect, door: door, pocketCands: pocketCands, pocketOk: pocketOk, chest: chest, specks: specks,
-    trapRects: trapRects, trapOk: trapOk, trapField: trapField, moreTraps: moreTraps, r9Pieces: r9Pieces, envelope: envelope, enemies: enemies, moths: moths, rampRow: rampRow, ramp: ramp,
+    trapRects: trapRects, trapOk: trapOk, trapField: trapField, moreTraps: moreTraps, r9Pieces: r9Pieces, envelope: envelope, enemies: enemies, moths: moths, rampRow: rampRow, ramp: ramp, curio: curio,
     darkMasses: darkMasses, arena: arena, guardian: guardian, keys: keys, landings: landings, pieces: pieces };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
@@ -4321,7 +4355,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   var CHOICE = { A: 1, B: 2, TAKE: 3, LEAVE: 4, RESPAWN: 5 /* m2 step 3: back to the lit tripod after a death */ };
   /* the loot (T1.6) and the stats (DESIGN 9.2): a scroll offers the room's biome's stat and one other (QUESTIONS Q84: by
      hue, Attic and Ember Vigor, Frost and Deep Focus, Overgrowth Grit) */
-  var LOOT_SPECK = 1, LOOT_SCROLL = 2, LOOT_BLUEPRINT = 3, LOOT_KEY = 4, VIGOR = 1, FOCUS = 2, GRIT = 3, STAT_OF_BIOME = [VIGOR, FOCUS, FOCUS, GRIT, VIGOR];
+  var LOOT_SPECK = 1, LOOT_SCROLL = 2, LOOT_BLUEPRINT = 3, LOOT_KEY = 4, LOOT_CURIO = 5 /* R10: the keepsake */, VIGOR = 1, FOCUS = 2, GRIT = 3, STAT_OF_BIOME = [VIGOR, FOCUS, FOCUS, GRIT, VIGOR];
 
   /* the weapons (docs/WEAPONS-V1.md 2.1): the state holds integers, so every weapon id has a code, its index here; the
      slot of a code is (code - 1) >> 3 (0 the jump slot, J1..J8; 1 the dive slot, D1..D8; 2 the charm, C1..C8). BUILT is
@@ -4646,6 +4680,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (typeof f.scroll === 'number' && f.scroll >= 0) out.push({ kind: LOOT_SCROLL, idx: f.scroll, taken: 0 });
     if (typeof f.blueprint === 'number' && f.blueprint >= 0) out.push({ kind: LOOT_BLUEPRINT, idx: f.blueprint, taken: 0 });
     for (k = 0; f.keys && k < f.keys.length; k++) out.push({ kind: LOOT_KEY, idx: f.keys[k], taken: 0 });   /* the locked exit's keys, last */
+    if (typeof f.curio === 'number' && f.curio >= 0) out.push({ kind: LOOT_CURIO, idx: f.curio, taken: 0 });   /* R10: the keepsake, after the keys */
     return out;
   }
   /* C2 Magnet (W4, 7.4): the loot's cell within min(cellsCap, cells + gritCells x grit) cells (Chebyshev) of the hero's
@@ -5401,7 +5436,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the locked exit (2 Nov): a key taken; the bug at the exit with a key still out */
     KEY: 16777216, LOCKED: 33554432,
     /* m2 step 3: the tripod lit (the checkpoint taken); the bug back at it after a death */
-    CHECK: 67108864, RESPAWN: 134217728 };
+    CHECK: 67108864, RESPAWN: 134217728,
+    CURIO: 268435456 /* R10: the keepsake taken (its id is the level's features.curioId; the shell banks it) */ };
   function step(s, word) {
     var K = SB.K, h = s.hero, lv = s.level || null;
     if (!lv) throw new Error('sim.step: the state carries no level (attach with sim.attach)');
@@ -5596,6 +5632,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
         if (lt.kind === LOOT_SPECK) s.room.dp += T8.DP_SPECK[0] + SB.rng.stepU32(s, 'rng') % (T8.DP_SPECK[1] - T8.DP_SPECK[0] + 1);
         else if (lt.kind === LOOT_BLUEPRINT) s.room.blueprints.push(lt.idx);
         else if (lt.kind === LOOT_KEY) s.ev |= EV.KEY;
+        else if (lt.kind === LOOT_CURIO) s.ev |= EV.CURIO;
         else { s.room.grace = T8.PICKUP_GRACE_FRAMES; s.room.offerWait = 1; }
       }
       /* the chest (6.1): DP_CHEST and a weapon drawn from the built pool: into an empty slot at once (EQUIP, the world
@@ -5830,7 +5867,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   SB.sim = { IN: IN, EV: EV, rle: rle, create: function (level, opts) { var st = attach(create(level, opts), level); if (opts && opts.pool) setPool(st, opts.pool); return st; }, attach: attach, step: step,
     FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf, trapTouch: trapTouch,
     WPN: WPN, BUILT: BUILT, slotOf: slotOf, PROJ_KIND: Object.freeze({ BOOMERANG: BOOMERANG, SHOCK: SHOCK, POP: POP, TRAIL: TRAIL, EMBER: EMBER, FLASH: FLASH, DART: DART, RING: RING, KICK: KICK, SNAP: SNAP, FROST: FROST, STOMP: STOMP, DUST: DUST, PULL: PULL, SAVE: SAVE, BICE: BICE, BRING: BRING, BTHORN: BTHORN, BSPARK: BSPARK, BWARN: BWARN, PUFFC: PUFFC, CTRAIL: CTRAIL, BDUST: BDUST, BBREATH: BBREATH, BWHIP: BWHIP, BPOD: BPOD, BFLAME: BFLAME }), shockFront: shockFront, spawn: spawn, free: free, drawWeapon: drawWeapon,
-    CHOICE: CHOICE, LOOT: { SPECK: LOOT_SPECK, SCROLL: LOOT_SCROLL, BLUEPRINT: LOOT_BLUEPRINT, KEY: LOOT_KEY }, keysLeft: keysLeft, keysOf: keysOf, STAT: { VIGOR: VIGOR, FOCUS: FOCUS, GRIT: GRIT }, STAT_OF_BIOME: STAT_OF_BIOME, pickScroll: pickScroll,
+    CHOICE: CHOICE, LOOT: { SPECK: LOOT_SPECK, SCROLL: LOOT_SCROLL, BLUEPRINT: LOOT_BLUEPRINT, KEY: LOOT_KEY, CURIO: LOOT_CURIO }, keysLeft: keysLeft, keysOf: keysOf, STAT: { VIGOR: VIGOR, FOCUS: FOCUS, GRIT: GRIT }, STAT_OF_BIOME: STAT_OF_BIOME, pickScroll: pickScroll,
     hurtBoss: hurtBoss, shedSlot: shedSlot, setPool: setPool, bossEvery: bossEvery };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
@@ -6038,7 +6075,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      (1, Q221) stay in the core for a v2 RULES 1 code, but capture does not write them until their fallbacks, their
      extra film on bare walls and their build time are fixed */
   C.RULES = 0;
-  C.FLAGS = 7;   /* SB.record.FLAG_KEYS | FLAG_BESTIARY | FLAG_R9: every capture locks its exit with keys and meets the second monsters (2 Nov) and round 9's (6 Nov); a literal, since the room model loads this block without core-record */
+  C.FLAGS = 15;   /* R10: every capture rolls a keepsake too */   /* SB.record.FLAG_KEYS | FLAG_BESTIARY | FLAG_R9: every capture locks its exit with keys and meets the second monsters (2 Nov) and round 9's (6 Nov); a literal, since the room model loads this block without core-record */
   C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 15, GREEN_LO: 70, DEEP_LO: 170, EMBER_LO: 285, C_MIN: 12, S_MIN: 9, WARM_C_MIN: 16, WARM_S_MIN: 30, MIN_PCT: 10 });
   C.hueBand = function (r, g, b) {
     var K = C.HUE, mx = Math.max(r, g, b), d = mx - Math.min(r, g, b), band;
@@ -8141,7 +8178,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      (its cell, the level's hash and the room's state are unchanged) but drawn and heard nowhere until T2.6 gives it a
      use (QUESTIONS Q92: M1 shows nothing that does nothing). lootTaken counts the shown loot taken, so the shell's
      pickup sound answers only a thing the player saw */
-  R.LOOT_SHOWN = [0, 1, 1, 1, 1];   /* the speck, the scroll, the blueprint (the Darkroom prints it, 2 Nov) and the key */
+  R.LOOT_SHOWN = [0, 1, 1, 1, 1, 1];   /* R10: the keepsake shows */   /* the speck, the scroll, the blueprint (the Darkroom prints it, 2 Nov) and the key */
   R.lootTaken = function (s) { var n = 0; for (var i = 0; i < s.loot.length; i++) if (s.loot[i].taken && R.LOOT_SHOWN[s.loot[i].kind]) n++; return n; };
   /* the cell a hidden loot's cell is drawn as (QUESTIONS Q93): the first of its left, right, upper and lower neighbours
      that is open, holds no loot and is marked as the cell is (a one way's top, a tab, an ice edge), so its static
@@ -8489,6 +8526,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var lt2 = s.loot[li2], lx2 = (lt2.idx % lv.w) * C, ly = Math.floor(lt2.idx / lv.w) * C - cam; if (ly < -C || ly > viewH) continue;
       var cov = R.LOOT_SHOWN[lt2.kind] ? -1 : R.coverOf(s, lv, lt2.idx);
       if (cov >= 0) { ctx.drawImage(stat, (cov % lv.w) * C, Math.floor(cov / lv.w) * C, C, C, lx2, ly, C, C); continue; }
+      if (lt2.kind === 5) {   /* R10: the keepsake, a small polaroid in the palette tinted by its biome until Astra's round 10 (a sprite curio_<id>.a when the atlas holds it) */
+        if (!lt2.taken) { var ck = 'curio_' + (lv.features.curioId | 0) + '.a'; if (A[ck]) spr(ctx, ck, lx2, ly); else R.drawCurio(ctx, lx2, ly, lv.biome | 0, lv.features.curioId | 0, s.frame); }
+        continue;
+      }
       if (lt2.kind === 4) {   /* a key sits on an open cell (no photo speck under it): Astra's turn at 8 fps, bottom centred */
         if (!lt2.taken) {
           var kk = 'key.' + KF[Math.floor(s.frame * 8 / SB.TUNING.STEP_HZ) & 3]; halo(ctx, kk, lx2, ly); spr(ctx, kk, lx2, ly);
@@ -8621,6 +8662,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
     c2.drawImage(atlas, r.x, r.y, r.w, r.h, 0, 0, r.w * k, r.h * k);
   };
   R.sprite = function (c2, key, x, y, w, h) { spr(c2, key, x, y, w, h); };
+  /* R10: the keepsake placeholder, a 12 by 14 polaroid: paper, a window in the biome's colour, the ink edge, one pixel of bob at 4 fps */
+  R.drawCurio = function (c2, x, y, biome, id, frame) {
+    var P = SB.palette, bob = R.reduced() ? 0 : (Math.floor(frame * 4 / SB.TUNING.STEP_HZ) & 1), x0 = x + 2, y0 = y + 1 + bob;
+    c2.fillStyle = rgb(P.RGB[P.I.INK]); c2.fillRect(x0, y0, 12, 14);
+    c2.fillStyle = rgb(P.RGB[P.I.PAPER]); c2.fillRect(x0 + 1, y0 + 1, 10, 12);
+    c2.fillStyle = rgb(P.openColour(P.I.SUN, biome)); c2.fillRect(x0 + 2, y0 + 2, 8, 7);
+    c2.fillStyle = rgb(P.RGB[P.I.INK]); c2.fillRect(x0 + 3 + (id % 6), y0 + 11, 1, 1);
+  };
   /* the guardian (HOUSE-B; DESIGN 7.1's fallback, Astra's boss_fallback, 80x64: 5x4 cells): each live cell its own
      16 px of the brace or breathe frame (4 fps: 15 steps a frame), so the body erodes cell by cell where the sim takes
      them off. Asleep (the 2 s intro) the body is outlined in its place: a third of its alpha inside an Ink and Glare
@@ -8879,7 +8928,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       /* Magnet (C2): the loot's own sprite flying from its cell to the bug over the PULL's 8 steps, Astra's fx_magnet
          on the bug while it comes in */
       var hh = s.hero, tx = (hh.x >> 8) + 6, ty = (hh.y >> 8) + 8, sx = (p.x >> 8) + 8, sy = (p.y >> 8) + 8, u = Math.min(1, a / 8);
-      var LKS = ['', 'speck.a', 'scroll.a', '', 'key.a'];
+      var LKS = ['', 'speck.a', 'scroll.a', '', 'key.a', ''];
       if (LKS[p.a]) { x = Math.round(sx + (tx - sx) * u) - 8; y = Math.round(sy + (ty - sy) * u) - cam - 8; spr(ctx, LKS[p.a], x, y); rec(p.kind, LKS[p.a], x, y, 16, 16, camX); }
       key = 'fx_magnet.magnet_' + Math.min(3, Math.floor(a / 2)); x = tx - 16; y = ty - cam - 16; spr(ctx, key, x, y); rec(p.kind, key, x, y, 32, 32, camX);
     } else if (p.kind === PK.SAVE) {
@@ -9470,6 +9519,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     rankNames: ['Shutterbug', 'Snapshot', 'Focus Puller', 'Darkroom Hand', 'Exposure', 'Lensman', 'Developer', 'Enlarger', 'Archivist', 'The Light'],
     rankLine: '{xp} XP', rankNext: '{n} to {rank}', rankTop: 'the top of the ladder', rankGain: '{n} XP this room, {m} to {rank}', rankUp: 'Rank up: {rank}. {gift}',
     rankGiftStock: '{name} film is yours.', rankGiftLook: 'A new look is yours, worn now.', rankGiftNone: '',
+    /* R10 keepsakes: thirty small photographs hidden on the furniture, six a biome */
+    curioHead: 'A keepsake', curioNames: ['The Dusty Globe', 'A Doll\'s Eye', 'The Stopped Clock', 'Grandmother\'s Fan', 'The Tin Soldier', 'A Moth in Amber', 'The Frozen Key', 'A Snow Globe', 'The Blue Bottle', 'The Icicle Comb', 'A Lost Mitten', 'The Last Match', 'The Glass Float', 'A Ship in a Bottle', 'The Anchor Charm', 'A Pearl Button', 'The Diver\'s Watch', 'The Conch', 'The Seed Packet', 'A Pressed Fern', 'The Garden Gnome', 'The Watering Can', 'A Snail Shell', 'The Thorn Crown', 'The Brass Lantern', 'A Matchbook', 'The Kiln Key', 'The Ash Jar', 'A Red Thread', 'The Coal Heart'], curioCount: 'Keepsakes {n} of 30', curioNone: 'None found yet. One hides on the furniture of some rooms, off the climb', curioUnknown: 'Not found', curioSet: 'The {biome} set is complete, a new look is yours',
+    tr_curio6: 'Six keepsakes', trg_curio6: 'Find six keepsakes', tr_curio30: 'Every keepsake', trg_curio30: 'Find all thirty keepsakes', tr_set1: 'A set', trg_set1: 'Complete one biome\'s keepsakes', tr_set5: 'Every set', trg_set5: 'Complete all five sets',
     levelCode: 'Level code', codePaste: 'Paste', codePlay: 'Play',
     settingsLink: 'Settings', settings: 'Settings', recentRooms: 'Recent rooms', recentRoom: 'A recent room',
     setMirror: 'Mirror the controls', setSound: 'Sound', setMusic: 'Music', setPhoto: 'Photo behind the room', setZoom: 'Zoom: close', setMotion: 'Reduced motion',
@@ -10986,7 +11038,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   var TROPHIES = [['first', 'clears', 1], ['rooms10', 'clears', 10], ['rooms50', 'clears', 50], ['rooms100', 'clears', 100],
     ['house1', 'houseClears', 1], ['house5', 'houseClears', 5], ['house10', 'houseClears', 10],
     ['wall25', 'wallJumps', 25], ['wall250', 'wallJumps', 250], ['keys10', 'keys', 10], ['keys100', 'keys', 100],
-    ['clean1', 'flawless', 1], ['clean10', 'flawless', 10], ['page1', 'albumPages', 1], ['pages5', 'albumPages', 5], ['biomes5', 'albumBiomes', 5]];
+    ['clean1', 'flawless', 1], ['clean10', 'flawless', 10], ['page1', 'albumPages', 1], ['pages5', 'albumPages', 5], ['biomes5', 'albumBiomes', 5],
+    ['curio6', 'curios', 6], ['curio30', 'curios', 30], ['set1', 'curioSets', 1], ['set5', 'curioSets', 5]];   /* R10 */
   /* PICKUPS SAY WHAT THEY ARE (sb-m1-16; Stephen, 3 Nov: "there's a coin and maybe a scroll; nothing explains what they
      are or what they do, and when I pick them up nothing happens"). A speck pops its Dead pixels on the count every
      time and names itself on the pickup card the first three times a save sees one; a blueprint names itself every
@@ -10999,6 +11052,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (o && o.hints && (o.hints.specks | 0) < 3){ o.hints.specks = (o.hints.specks | 0) + 1; ui.showItem('speck.a', C.itemSpeck, C.itemSpeckSays); }
     }
     if (st.room.blueprints.length > bp0) ui.showItem('blueprint.a', C.itemBlueprint, C.itemBlueprintSays);
+    if (ev & EV.CURIO) ui.curioFound();   /* R10 */
     var k = h.vigor > v0 ? 'vigor' : h.focus > f0 ? 'focus' : h.grit > g0 ? 'grit' : '';
     if (k) ui.showItem('scroll.a', h.heartsMax > m0 ? C.statHeart.replace('{stat}', C['stat_' + k]) : C['stat_' + k], C['statSays_' + k]);
   };
@@ -11033,10 +11087,27 @@ body.sb-modal .lwfb-fab { display: none !important; }
     });
     return wrap;
   }
+  /* R10 KEEPSAKES: the collection, five rows of six, a tile drawn by code (the placeholder polaroid, the name under a found one,
+     a dim silhouette and Not found under the rest) until Astra's round 10 tiles */
+  function curioPage() {
+    var d = SB.save.doc, C = ui.COPY, T = SB.TUNING, sec = document.createElement('section'), h = document.createElement('h3'), grid = document.createElement('div'), b, k;
+    sec.className = 'albiome curios'; h.className = 'curiohead'; h.textContent = C.curioCount.replace('{n}', d.curios.length); sec.appendChild(h);
+    if (!d.curios.length) { var hint = document.createElement('p'); hint.className = 'alhint'; hint.textContent = C.curioNone; sec.appendChild(hint); }
+    grid.className = 'curiogrid';
+    for (b = 0; b < 5; b++) for (k = 0; k < T.CURIO_PER_BIOME; k++) {
+      var id = b * T.CURIO_PER_BIOME + k, got = d.curios.indexOf(id) >= 0, tile = document.createElement('div'), cv = document.createElement('canvas'), nm = document.createElement('span');
+      tile.className = 'curio' + (got ? ' got' : ''); cv.width = 16; cv.height = 16; var g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+      if (got) SB.render.drawCurio(g, 0, 0, b, id, 0); else { g.fillStyle = '#cfc3aa'; g.fillRect(2, 1, 12, 14); }
+      nm.textContent = got ? C.curioNames[id] : C.curioUnknown;
+      tile.appendChild(cv); tile.appendChild(nm); grid.appendChild(tile);
+    }
+    sec.appendChild(grid); return sec;
+  }
   function drawAlbum() {
     var d = SB.save.doc, C = ui.COPY; if (!d) return;
     var box = document.getElementById('alpages'), per = [[], [], [], [], []], b, pg, k;
     box.innerHTML = '';
+    box.appendChild(curioPage());   /* R10 */
     d.album.forEach(function (q) { per[q.b | 0].push(q); });
     document.getElementById('alcount').textContent = d.album.length
       ? C.albumCount.replace('{n}', d.album.length).replace('{pages}', d.stats.albumPages | 0) : C.albumEmpty;
@@ -11064,7 +11135,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* ROUND 6 (Astra, 3 Nov): the medals. Five families by count, the step's metal (bronze, silver, gold; rooms 50 and 100
      share room_gold, her mapping); the album's trophies wear the room's photo emblem; an unearned one the locked socket.
      Menu only: drawn on the trophy screen and on the clear and doorway cards, both opaque, never over a room */
-  var MEDAL_FAM = { clears: 'room', houseClears: 'house', wallJumps: 'wall', keys: 'key', flawless: 'clean', albumPages: 'room', albumBiomes: 'room' };
+  var MEDAL_FAM = { clears: 'room', houseClears: 'house', wallJumps: 'wall', keys: 'key', flawless: 'clean', albumPages: 'room', albumBiomes: 'room', curios: 'room', curioSets: 'room' };
   var MEDAL_STEPS = { room: ['bronze', 'silver', 'gold'], house: ['bronze', 'silver', 'gold'], wall: ['bronze', 'silver'], key: ['bronze', 'silver'], clean: ['bronze', 'silver'] };
   var MEDAL_R7 = { page1: 'album_bronze', pages5: 'album_silver', biomes5: 'album_gold', rooms100: 'room_platinum' };   /* round 7 */
   function medalKey(t, lvl, on) {
@@ -11117,6 +11188,19 @@ body.sb-modal .lwfb-fab { display: none !important; }
     ui.show(storyBack);
   };
   ui.tally = function (k) { var d = SB.save.doc; if (d) d.stats[k] = (d.stats[k] | 0) + 1; };
+  /* R10 KEEPSAKES: the one this room hid, taken: into the save by id (once), the counts, a full biome set grants the next look */
+  ui.curioFound = function () {
+    var d = SB.save.doc, lv = G.level, C = ui.COPY; if (!d || !lv || !lv.features || !(lv.features.curioId >= 0)) return;
+    var id = lv.features.curioId | 0, per = SB.TUNING.CURIO_PER_BIOME, b = Math.floor(id / per), name = C.curioNames[id] || '';
+    if (d.curios.indexOf(id) < 0) {
+      d.curios.push(id); d.stats.curios = d.curios.length;
+      var sets = 0, k, n; for (k = 0; k < 5; k++) { n = 0; d.curios.forEach(function (c) { if (Math.floor(c / per) === k) n++; }); if (n >= per) sets++; }
+      var newSet = sets > (d.stats.curioSets | 0); d.stats.curioSets = sets;
+      if (newSet) { var won = SB.record.lookWin(d.cosmetics); d.cosmetics = won.cosmetics; ui.showItem('blueprint.a', C.curioHead, C.curioSet.replace('{biome}', C['biome_' + SB.palette.BIOMES[b]])); }
+      else ui.showItem('blueprint.a', C.curioHead, name);
+      SB.save.commit();
+    } else ui.showItem('blueprint.a', C.curioHead, name);
+  };
   /* R10 RANK (7 Nov): XP from the stats the save already keeps, so every player ranks at once and nothing is backfilled; ten
      ranks by SB.TUNING.RANK_XP; a rank up grants once (doc.rank remembers): the film stock it opens is implicit (RANK_STOCK_AT),
      ranks 3, 5, 6, 7, 8, 9 and 10 grant the next look on the prize ladder, worn (lookWin, as a house clear does) */
