@@ -25,6 +25,8 @@ The deploy wrapper pattern: /home/codespace/sb-drafts/sb-m2-12/deploy-sb-m2-12.s
 first, then tools/shutterbug-tests/deploy.sh with the stamp). The browser gates in test/ are red since before R9 on a
 stale #sample: not tonight's job.
 
+## LIVE 7 Nov ~22:25 UTC by his line (lucid-winds main e5dfd0c44; lucidwinds.com/satellites/shutterbug/ serves BUILD sb-m2-18, sw.js?v=40, shutterbug-v40): sb-m2-16 (the moves taught), 17 (the Loom and the Wasp) and 18 (the phases) in one push
+
 ## ROUND 11 CODE, THE PHASES (sb-m2-18, aae6eef16, 7 Nov ~22:20 UTC): under half its HP every guardian's attack grows (a cloud with the shed, five icicle columns, a wider ring, faster pods and flame, two more sparks, two strands, a pair of darts) and EV.RAGE marks the crossing once; H-boss-14. ONE line ships 16, 17 and 18: `! bash /home/codespace/sb-drafts/sb-m2-18/deploy-sb-m2-18.sh`. Her rage tell frames (round 11 art) will dress the moment when they land.
 
 ## ROUND 11 CODE (sb-m2-17, e38d6e78e, 7 Nov ~21:40 UTC): THE LOOM AND THE WASP live in Attic and Ember houses by a seed bit under FLAG_VERBS (features.guardian.kind): the strand and the puff, the dart and the Kiln's flame, her round 10 marks as the tells; H-boss-13. ONE line ships 16 and 17: `! bash /home/codespace/sb-drafts/sb-m2-17/deploy-sb-m2-17.sh` (the 16 line is stale). Still waiting on Astra's round 11 art: the staircase, the swinging strands, the crosswind, the rage tells.

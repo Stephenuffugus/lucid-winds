@@ -1774,3 +1774,4 @@ shipped: bossRaged(s) (HP under BOSS_RAGE_PCT, no state); EV.RAGE in hurtBoss on
 gates: lint green; H-boss-8, 11, 12, 13, 14 green; redwatch anchors 684; the fast harness alone 10513 assertions 0 failing
 shots: none (numbers in existing attacks; her rage tells come with round 11's art)
 line: `! bash /home/codespace/sb-drafts/sb-m2-18/deploy-sb-m2-18.sh`
+LIVE 7 Nov ~22:25 UTC by his line (lucid-winds main e5dfd0c44; lucidwinds.com/satellites/shutterbug/ serves BUILD sb-m2-18, sw.js?v=40, shutterbug-v40); ships sb-m2-16 and 17 too
