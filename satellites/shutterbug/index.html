@@ -97,6 +97,12 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #overlay { width: 100%; height: 100%; display: block; image-rendering: pixelated; opacity: 0.8; }
 #tighter { position: absolute; left: 0; right: 0; top: 40%; margin: 0; padding: 10px; text-align: center; background: var(--brick); color: var(--glare); font-weight: 700; }
 #cropbar { display: flex; gap: 12px; padding: 10px 16px 14px; }
+/* R10 FILM STOCKS: six film boxes above Develop (Auto and the five biomes); placeholder tiles with the biome badge until Astra's boxes */
+#stocks { display: flex; gap: 6px; padding: 8px 12px 0; }
+#stocks .stock { flex: 1; min-width: 0; min-height: 48px; padding: 4px 2px; border: 1px solid var(--ash); border-radius: 8px; background: var(--paper); color: var(--ink); font-size: 0.72rem; font-weight: 700; line-height: 1.1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+#stocks .stock i { width: 24px; height: 24px; background: 0 0 / 24px 24px no-repeat; image-rendering: pixelated; }
+#stocks .stock.on { border: 2px solid var(--amber); background: var(--film); }
+#stocks .stock.locked { color: var(--pewter); background: var(--ash); } #stocks .stock.locked small { font-size: 0.7rem; font-weight: 400; }
 #retake { min-height: 56px; flex: 0 0 auto; padding: 0 20px; border-radius: 12px; border: 2px solid var(--slate); background: transparent; color: var(--paper); font-weight: 700; }
 #develop { flex: 1 1 auto; background: var(--sun); color: var(--ink); }
 #cropseek { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; image-rendering: pixelated; }
@@ -440,6 +446,12 @@ body:not(.playing) #floorname { display: none; }
 #setlook button[aria-checked=true] { border-color: var(--ink); outline: 3px solid var(--sun); }
 #setlook canvas { image-rendering: pixelated; }
 #freeplay { margin: 6px 0 0; color: var(--ash); font-size: 0.9rem; }
+/* R10 RANK: the title's rank line, a name, a bar to the next rank, the XP left */
+#rankline { margin: 4px 0 0; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--film); }
+#rankline[hidden] { display: none; }
+#rankbar { flex: 1; height: 4px; background: var(--slate); border-radius: 2px; overflow: hidden; } #rankbar i { display: block; height: 100%; width: 0; background: var(--sun); }
+#rankline small { color: var(--ash); font-size: 0.78rem; white-space: nowrap; }
+#clearrank { margin: 0; font-size: 0.95rem; }
 #title:has(#house:not([hidden])) #shoot { background: var(--paper); }   /* one Sun button on the title: Start a house */
 /* with the house shown the polaroid shrinks, so the title keeps its old length and the fleet's chip its clear seat in the
    bottom corner (the 320x568 shot: the chip sat on Photograph a room; the layout gate at 390x844 and 360x780 after a
@@ -644,7 +656,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <p id="housecount" hidden></p>
       <button id="dailybtn" class="big" type="button" hidden><canvas id="dailybadge" width="24" height="24"></canvas><span><b data-copy="dailyHead"></b><small id="dailystate"></small></span></button>
       <button id="darkroombtn" class="big" type="button" hidden><canvas id="darkroombadge" width="24" height="24"></canvas><span><b data-copy="darkroomLink"></b><small id="darkroomstate"></small></span></button>
-      <p id="freeplay" data-copy="freePlay"></p></div>
+      <p id="freeplay" data-copy="freePlay"></p>
+      <p id="rankline" hidden><span id="rankname"></span><span id="rankbar"><i></i></span><small id="ranknext"></small></p></div>
     <button id="shoot" class="big" type="button" data-copy="shoot"></button>
     <button id="choose" class="big" type="button" data-copy="choose"></button>
     <p id="soon" role="status" hidden></p>
@@ -745,6 +758,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <div id="croptop"><button id="croptitle" type="button" data-copy="toTitle"></button><p id="crophint" data-copy="cropHint"></p></div>
   <div id="cropstage"><canvas id="cropview"></canvas>
     <div id="cropbox"><canvas id="overlay" width="96" height="192"></canvas><canvas id="cropseek" width="16" height="16" role="img" data-aria="seeking" hidden></canvas><p id="tighter" data-copy="tighter" hidden></p></div><div id="cropfrom" hidden></div></div>
+  <div id="stocks" role="radiogroup" data-aria="film"></div>
   <div id="cropbar"><button id="retake" type="button" data-copy="retake"></button><button id="develop" class="big" type="button" data-copy="develop"></button></div>
   <p id="cropsay" aria-live="polite"></p>
 </main>
@@ -766,6 +780,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <p id="clearkept" hidden></p>
       <p id="clearprint" hidden></p>
       <p id="clearalbum" hidden></p>
+      <p id="clearrank" hidden></p>
       <p id="cleardaily" hidden></p>
       <div id="cleartrophy" class="trmoment" hidden><span class="trfx"><canvas class="shine" width="32" height="32"></canvas><canvas class="medal" width="16" height="16"></canvas></span><span class="trtext"></span></div>
       <button id="nextroom" type="button" data-copy="nextRoom"></button>
@@ -916,6 +931,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     // 9 weapons, stats, economy
     JUMP_SLOT_CD_S: 0.6, VIGOR_PCT: 25, FOCUS_PCT: 25, HEARTS_BASE: 4, HEARTS_CAP: 8, SCROLLS_PER_HEART: 3, PICKUP_GRACE_FRAMES: 6 /* Q56 */, POOL_PER_SLOT: 4, PROJ_MAX: 16,
     DP_FODDER: 3, DP_ELITE: 10, DP_BOSS: 60, DP_SPECK: [2, 6], DP_CHEST: 15, DP_FREE_PLAY_MULT: 0.5, DP_OPEN_HOUSE_MULT: 1.5,
+    /* R10 (7 Nov, Stephen: "level up their character ... a way to change biomes"): the rank ladder's XP steps, computed from the
+       stats the save already keeps (clears, house clears, flawless rooms, keys, wall jumps, album pages), so every player ranks at
+       once; the film stock each rank opens (Attic always; Frost at 2, Deep at 3, Overgrowth at 4, Ember at 5); the XP weights */
+    RANK_XP: [0, 150, 400, 800, 1400, 2200, 3300, 4800, 6800, 9500], RANK_STOCK_AT: [0, 0, 2, 3, 4, 5],
+    XP_CLEAR: 20, XP_HOUSE: 100, XP_FLAWLESS: 15, XP_KEY: 5, XP_WALL_CAP: 500, XP_PAGE: 10,
     PRICE_DEVELOP: [30, 100, 300], PRICE_REROLL: 20 /* Q52 */, PRICE_START_PICK: 200, PRICE_NEGATIVE: 400, PRICE_DOUBLE: 600, PRICE_OPEN_HOUSE: 600,
     REPEAT_DECAY: 0 /* off by default, 9.3 */,
     /* Weapons v1 step 1 (docs/WEAPONS-V1.md, QUESTIONS Q120): every HP and every hit counted in quarters, so a stat
@@ -1418,10 +1438,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function saveDefaults() {
     return { v: 1, dp: 0, collection: [], prints: [], pool: { jump: [], dive: [], charm: [] },
       unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
-      settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false },
+      settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false, stock: 0 },   /* R10: the film stock picked at develop, 0 Auto, 1 to 5 a biome */
       onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0 } },
       run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0, albumPages: 0, albumBiomes: 0 }, trophies: [], trophySeen: 0, album: [],
-      log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false, days: 0 }, best: {}, quarantine: null };
+      log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false, days: 0 }, best: {}, quarantine: null, rank: 0 };   /* R10: the rank last granted (its rewards given) */
   }
   function fillSave(def, got) {
     if (got === null || got === undefined) return def;
@@ -1459,6 +1479,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     d.daily.days = Math.max(0, Math.min(1e6, d.daily.days | 0));   /* days played: only ever counts up */
     d.trophies = d.trophies.filter(function (t) { return typeof t === 'string'; }).slice(0, 64);
     d.trophySeen = Math.max(0, Math.min(d.trophies.length, d.trophySeen | 0));
+    d.rank = Math.max(0, Math.min(SB.TUNING.RANK_XP.length - 1, d.rank | 0)); d.settings.stock = Math.max(0, Math.min(5, d.settings.stock | 0));   /* R10 */
     d.album = d.album.filter(function (q) {
       if (!q || typeof q !== 'object' || (q.b | 0) < 0 || (q.b | 0) > 4 || !q.j) return false;
       try { return !!fromJSON(q.j); } catch (e) { return false; }
@@ -9444,6 +9465,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     shareOffline2: 'A phone that has opened Shutterbug once can open this link offline. A new phone needs one online load.',
     shareLink: 'The room\'s link', copyLink: 'Copy link', copyCode: 'Copy code', shareNative: 'Share', shareClose: 'Close', copied: 'Copied',
     tapToDevelop: 'Tap to develop', sharedRoom: 'A shared room',
+    /* R10: film stocks and the rank ladder */
+    film: 'Film', stockAuto: 'Auto', stockNames: ['Attic', 'Frost', 'Deep', 'Overgrowth', 'Ember'], stockLocked: 'at {rank}', stockSays: '{name} film opens at {rank}',
+    rankNames: ['Shutterbug', 'Snapshot', 'Focus Puller', 'Darkroom Hand', 'Exposure', 'Lensman', 'Developer', 'Enlarger', 'Archivist', 'The Light'],
+    rankLine: '{xp} XP', rankNext: '{n} to {rank}', rankTop: 'the top of the ladder', rankGain: '{n} XP this room, {m} to {rank}', rankUp: 'Rank up: {rank}. {gift}',
+    rankGiftStock: '{name} film is yours.', rankGiftLook: 'A new look is yours, worn now.', rankGiftNone: '',
     levelCode: 'Level code', codePaste: 'Paste', codePlay: 'Play',
     settingsLink: 'Settings', settings: 'Settings', recentRooms: 'Recent rooms', recentRoom: 'A recent room',
     setMirror: 'Mirror the controls', setSound: 'Sound', setMusic: 'Music', setPhoto: 'Photo behind the room', setZoom: 'Zoom: close', setMotion: 'Reduced motion',
@@ -9833,6 +9859,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (name === 'daily') drawDaily();
     if (name === 'trophies') drawTrophies();
     if (name === 'album') drawAlbum();
+    if (name === 'crop' && ui.drawStocks) ui.drawStocks();   /* R10: the film stocks, fresh for the rank */
     if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; document.getElementById('darkroombtn').hidden = !ui.firstRoomDone; document.getElementById('albumbtn').hidden = !ui.firstRoomDone; trophyLink(); darkroomLink(); drawRecent(); HS.on = false; drawHouse(); drawDailyBtn(); ui.applyLook(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
     if (name === 'settings') fillSettings();
     if (name === 'title') { SB.render.dropPhoto(); G.photoRecord = null; }   /* m2 step 1: the room's photo goes on Title */
@@ -10029,7 +10056,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   /* the record from the box: the grid downscale, the nearest palette colour per cell (DESIGN 6.2), the focal cell */
   function recordJSON(crop, focal) { return SB.capture.gridRecord(SB.capture.downscale(CR.src, crop, SB.GRID.W, SB.GRID.H), focal); }
-  function recordOfCrop() { return SB.record.fromJSON(recordJSON(CR.crop, CR.focal)); }
+  /* R10 FILM STOCKS: the stock picked on the develop screen writes the record's biome byte (1 to 5; Auto keeps the hue vote), so
+     biomeFor honours it, the sim is untouched and every shared code carries it with no new flag. The seek worker's records are
+     only asked which box builds; the record Develop takes is made here */
+  function stockRec(rec) { var k = SB.save.doc ? SB.save.doc.settings.stock | 0 : 0; if (k > 0 && k <= SB.record.BIOME_MAX && rec && rec.v === 2) rec.biome = k; return rec; }
+  function recordOfCrop() { return stockRec(SB.record.fromJSON(recordJSON(CR.crop, CR.focal))); }
   /* a refusal says its cause (Q180, Stephen's ruling 31 Oct): the floor band, the ceiling band, a dark photo; a refusal
      with no named cause keeps the one message every refusal had before. Since the auto crop (Q181) these show only
      with the search skipped (the dev flag ?seek=0): after a search that found nothing, NOTHING_SAYS (Q183) says that
@@ -10288,6 +10319,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (lv && !lv.needsCrop) seekFound(S, p.box, p.focal, rec, lv); else S.refusedHere = (S.refusedHere || 0) + 1;
   }
   function seekFound(S, box, focal, rec, lv) {
+    if (SB.save.doc && (SB.save.doc.settings.stock | 0) > 0) { var sr = stockRec(SB.record.fromJSON(SB.record.toJSON(rec))), sl = SB.pipeline.build(sr, { firstRoom: !ui.firstRoomDone }); if (!sl.needsCrop) { rec = sr; lv = sl; } }   /* R10: the stock, when it builds */
     S.phase = 'show'; S.chosen = box; S.ms = performance.now() - S.t0; S.code = SB.record.encode(rec);
     CR.crop = box; CR.focal = focal; CR.fromBox = S.from; layoutCrop();   /* the player's box stays as a faint trace */
     CR.lastRec = rec; CR.last = lv; CR.full = true; CR.builds++;
@@ -10355,6 +10387,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('filechoose').addEventListener('change', onFile);
     document.getElementById('retake').addEventListener('click', function () { openPicker(CR.from || 'filechoose'); });
     document.getElementById('develop').addEventListener('click', develop);
+    document.getElementById('stocks').addEventListener('click', function (e) {   /* R10: pick a film, the preview rebuilds with it */
+      var b = e.target.closest ? e.target.closest('.stock') : null; if (!b) return;
+      var k = b.getAttribute('data-stock') | 0, d = SB.save.doc; if (!d) return;
+      if (!ui.stockOpen(d, k)) { cropSay(ui.COPY.stockSays.replace('{name}', ui.COPY.stockNames[k - 1]).replace('{rank}', ui.COPY.rankNames[SB.TUNING.RANK_STOCK_AT[k]])); return; }
+      d.settings.stock = k; SB.save.commit(); ui.drawStocks(); if (CR.src && !CR.seek) rebuild(true);
+    });
     document.getElementById('croptitle').addEventListener('click', function () { seekStop(); ui.releasePhoto(); G.gear = [0, 0, 0]; G.entry = [0, 0, 0]; ui.show('title'); });   /* a Title control ends the sitting (6.5) */
     var st = document.getElementById('cropstage');
     st.addEventListener('pointerdown', onDown); st.addEventListener('pointermove', onMove);
@@ -10369,6 +10407,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var same = record === G.record, keepBeat = same ? G.beat | 0 : 0, keepTimed = same && opts.level && opts.level === G.level ? !!G.timed : null;   /* A TIME TO BEAT: Again keeps both */
     if (record !== G.photoRecord) { SB.render.dropPhoto(); G.photoRecord = null; }   /* m2 step 1: another room, its photo gone */
     G.roomHit = false;                         /* trophies: a clean clear is a room with no hit */
+    G.xpBefore = SB.save.doc ? ui.xpOf(SB.save.doc) : 0;   /* R10: the XP before this room, for the clear card's line */
     var t0 = performance.now();
     if (window.performance && performance.mark) performance.mark('sb-reveal-start');
     var first = !opts.notFirst && !ui.firstRoomDone;   /* a link or a pasted code is never the player's first room (Q32) */
@@ -11078,6 +11117,53 @@ body.sb-modal .lwfb-fab { display: none !important; }
     ui.show(storyBack);
   };
   ui.tally = function (k) { var d = SB.save.doc; if (d) d.stats[k] = (d.stats[k] | 0) + 1; };
+  /* R10 RANK (7 Nov): XP from the stats the save already keeps, so every player ranks at once and nothing is backfilled; ten
+     ranks by SB.TUNING.RANK_XP; a rank up grants once (doc.rank remembers): the film stock it opens is implicit (RANK_STOCK_AT),
+     ranks 3, 5, 6, 7, 8, 9 and 10 grant the next look on the prize ladder, worn (lookWin, as a house clear does) */
+  ui.xpOf = function (d) { var T = SB.TUNING, st = d.stats; return (st.clears | 0) * T.XP_CLEAR + (st.houseClears | 0) * T.XP_HOUSE + (st.flawless | 0) * T.XP_FLAWLESS + (st.keys | 0) * T.XP_KEY + Math.min(st.wallJumps | 0, T.XP_WALL_CAP) + (st.albumPages | 0) * T.XP_PAGE; };
+  ui.rankOf = function (xp) { var L = SB.TUNING.RANK_XP, i = 0; while (i + 1 < L.length && xp >= L[i + 1]) i++; return i; };
+  ui.rankInfo = function (d) { var xp = ui.xpOf(d), i = ui.rankOf(xp), L = SB.TUNING.RANK_XP, top = i + 1 >= L.length;
+    return { xp: xp, i: i, name: ui.COPY.rankNames[i], next: top ? '' : ui.COPY.rankNames[i + 1], toNext: top ? 0 : L[i + 1] - xp, frac: top ? 1 : (xp - L[i]) / (L[i + 1] - L[i]) }; };
+  ui.stockOpen = function (d, k) { return k <= 1 || (d ? ui.rankOf(ui.xpOf(d)) : 0) >= SB.TUNING.RANK_STOCK_AT[k]; };
+  /* the ranks reached since the last grant, their gifts given; returns the lines to say (the caller commits) */
+  ui.rankCheck = function () {
+    var d = SB.save.doc, out = []; if (!d) return out;
+    var now = ui.rankOf(ui.xpOf(d)), C = ui.COPY, T = SB.TUNING;
+    while ((d.rank | 0) < now) {
+      var r = (d.rank | 0) + 1, gift = C.rankGiftNone, k = T.RANK_STOCK_AT.indexOf(r);
+      if (k > 0) gift = C.rankGiftStock.replace('{name}', C.stockNames[k - 1]);
+      else if (r >= 2) { var won = SB.record.lookWin(d.cosmetics); d.cosmetics = won.cosmetics; if (won.id) gift = C.rankGiftLook; }
+      d.rank = r; out.push(C.rankUp.replace('{rank}', C.rankNames[r]).replace('{gift}', gift).replace(/\s+$/, ''));
+    }
+    return out;
+  };
+  /* the clear card's rank line: the XP this room brought and the way to the next rank, or the rank up and its gift */
+  ui.rankLine = function (el, xpBefore, ups) {
+    if (!el) return; var d = SB.save.doc; if (!d) { el.hidden = true; return; }
+    var r = ui.rankInfo(d), C = ui.COPY;
+    el.textContent = ups.length ? ups[ups.length - 1] : C.rankGain.replace('{n}', r.xp - xpBefore).replace('{m}', r.toNext).replace('{rank}', r.next || C.rankTop);
+    el.hidden = false;
+  };
+  ui.drawRank = function () {
+    var d = SB.save.doc, el = document.getElementById('rankline'); if (!el) return;
+    if (!d || !(d.stats.clears > 0)) { el.hidden = true; return; }
+    var r = ui.rankInfo(d), C = ui.COPY;
+    document.getElementById('rankname').textContent = r.name + ', ' + C.rankLine.replace('{xp}', r.xp);
+    document.getElementById('rankbar').firstChild.style.width = Math.round(r.frac * 100) + '%';
+    document.getElementById('ranknext').textContent = r.next ? C.rankNext.replace('{n}', r.toNext).replace('{rank}', r.next) : C.rankTop;
+    el.hidden = false;
+  };
+  /* R10 FILM STOCKS: the six boxes on the develop screen; a locked one says the rank that opens it */
+  ui.drawStocks = function () {
+    var row = document.getElementById('stocks'), d = SB.save.doc, C = ui.COPY, B = SB.palette.BIOMES; if (!row) return;
+    var cur = d ? d.settings.stock | 0 : 0, h = '';
+    for (var k = 0; k <= 5; k++) {
+      var open = ui.stockOpen(d, k), nm = k ? C.stockNames[k - 1] : C.stockAuto;
+      h += '<button type="button" class="stock' + (k === cur ? ' on' : '') + (open ? '' : ' locked') + '" data-stock="' + k + '" role="radio" aria-checked="' + (k === cur) + '"' + (open ? '' : ' aria-disabled="true"') + '>'
+        + (k ? '<i style="background-image:var(--icon-biomes-' + B[k - 1] + ')"></i>' : '<i></i>') + nm + (open ? '' : '<small>' + C.stockLocked.replace('{rank}', C.rankNames[SB.TUNING.RANK_STOCK_AT[k]]) + '</small>') + '</button>';
+    }
+    row.innerHTML = h;
+  };
   /* the trophies earned and not yet on the save's list, appended (the caller commits) */
   ui.trophyCheck = function () {
     var d = SB.save.doc, fresh = []; if (!d) return fresh;
@@ -11238,6 +11324,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      with it every room shot so far); Start a house or New house replaces it */
   function drawHouse() {
     var doc = SB.save.doc; if (!doc) return;
+    ui.drawRank();   /* R10 */
     var n = doc.stats.houseClears | 0, cnt = document.getElementById('housecount'), go = document.getElementById('housego'), run = doc.run, C = ui.COPY;
     document.getElementById('house').hidden = !(doc.stats.clears > 0);
     go.hidden = !run;
@@ -11349,7 +11436,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
         HS.run = null; saveRun(null); HS.done = { dp: total, prize: won.id };
       }
       else { HS.run = next; saveRun(next); G.gear = next.hero.slots.slice(); }
-      var ntr = ui.trophyCheck(); HS.trophy = ntr.length ? ntr[ntr.length - 1] : '';
+      var ntr = ui.trophyCheck(); HS.trophy = ntr.length ? ntr[ntr.length - 1] : ''; HS.rankUps = ui.rankCheck();   /* R10 */
     }
     if (HS.run) showDoor('door'); else showDoor('cleared', HS.done);   /* G.state stays: the frame's remaining steps step it */
     return true;
@@ -11397,6 +11484,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       cal.hidden = !alt; cal.textContent = alt;
       var nt = ui.trophyCheck();
       trophyMoment(document.getElementById('cleartrophy'), nt.length ? nt[nt.length - 1] : '');
+      ui.rankLine(document.getElementById('clearrank'), G.xpBefore | 0, ui.rankCheck());   /* R10: the XP this room brought, or the rank up */
       keptLine('clearkept', ui.keepFound());   /* WEAPONS ARRIVE: the clear keeps what this room found (before the prints) */
       timeLines(G.timed ? ui.timeOf(G.state.frame) : 0);   /* A TIME TO BEAT: the time, the best, the time sent */
       printLine('clearprint', ui.bankPrints());   /* the Darkroom: the blueprints carried out become prints */
