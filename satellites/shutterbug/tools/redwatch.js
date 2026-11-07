@@ -716,7 +716,7 @@ const MUTANTS = [
     gates: [{ gate: 'astra', expect: 'Sun in the moth is refused' }] },
   { name: 'CUT_FEET_UNCHECKED', task: 'ASTRA', file: 'astra', find: `                    if '0' not in frames[name].split('/')[-1]:\n                        raise Refuse('hero.%s has no Ink in its feet row' % name)\n`, repl: ``,
     gates: [{ gate: 'astra', expect: 'a hero frame without Ink in its feet row is refused' }] },
-  { name: 'CUT_NO_SHA', task: 'ASTRA', file: 'astra', find: `            if sha != str(e.get('sha256', '')).lower():\n                raise Refuse(`, repl: `            if False:\n                raise Refuse(`,
+  { name: 'CUT_NO_SHA', task: 'ASTRA', file: 'astra', find: `            elif sha != str(e.get('sha256', '')).lower():\n                raise Refuse(`, repl: `            elif False:\n                raise Refuse(`,   /* re anchored at round 10 (a manifest without sha256 warns; one with a wrong one still refuses) */
     gates: [{ gate: 'astra', expect: 'a wrong sha256 is refused' }] },
   { name: 'SPLICE_JOINS_LINES', task: 'ASTRA', file: 'astra', find: `body = body[:em.start()] + em.group(1) + em.group(2)`, repl: `body = body[:em.start()] + em.group(2)`,
     gates: [{ gate: 'astra', expect: 'splicing the cut back leaves the page byte for byte' }] },

@@ -16,8 +16,8 @@ When the box dies, the next night starts from the same kickoff and resumes from 
 | 3 | Keepsies m4, round 3 on the new shot | KEEPSIES_M4_BUILD_PLAN.md | round 3 (back) | deploy-keepsies-m4.sh |
 | 4 | Tomato Man A: canopies, the walk, the gameplay art | TOMATO_MAN_RUN_BUILD_PLAN.md, A0 to A4 | gameplay art (back) | deploy-tomato-man-art.sh |
 | 5 | Tomato Man B: THE RUN | TOMATO_MAN_RUN_BUILD_PLAN.md, B0 to B7 | The Run art (placeholders until it lands) | deploy-tomato-man-run.sh |
-| 6 | Shutterbug R10: film stocks, rank, prints, four new verbs | SHUTTERBUG_R10_BUILD_PLAN.md | round 10 art (placeholders until it lands) | sb-m2-13 and sb-m2-14 |
-| 7 | Shutterbug round 10 art wired | written by Fable when the pack lands | round 10 | sb-m2-15 |
+| 6 | Shutterbug R10: film stocks, rank, prints, four new verbs | SHUTTERBUG_R10_BUILD_PLAN.md | round 10 art (placeholders until it lands) | sb-m2-13 and sb-m2-15 (step 4) |
+| 7 | Shutterbug round 10 art wired | SHUTTERBUG_R10_BUILD_PLAN.md, the art rows | round 10 (back 7 Nov) | sb-m2-14 |
 | 8 | Tomato Man The Run's art wired | written when the pack lands | The Run | deploy-tomato-man-run-art.sh |
 | 9 | Keepsies m5, round 4 wired | written when the pack lands | round 4 | deploy-keepsies-m5.sh |
 | 10 | Tomato Man The Hero wired (thirteen bodies, the planet) | written when the pack lands | The Hero | deploy-tomato-man-hero.sh |
@@ -52,7 +52,7 @@ one commit as its own command, last.
 | 4 | DONE, waits for his line | 7 Nov (Fable, daytime) | sunstruck 5097685; `! bash /home/codespace/tm-drafts/deploy-tomato-man-art.sh` |
 | 5 | | | |
 | 6 | steps 0 to 3 DONE, waits for his line; step 4 (four new verbs) open | 7 Nov (Fable, daytime) | sb-m2-13 at 97c420f42; `! bash /home/codespace/sb-drafts/sb-m2-13/deploy-sb-m2-13.sh` |
-| 7 | waits on the pack | | |
+| 7 | DONE, waits for his line | 7 Nov (Fable, daytime) | sb-m2-14 at 50d436f32; `! bash /home/codespace/sb-drafts/sb-m2-14/deploy-sb-m2-14.sh` (ships sb-m2-13 too; sb-m2-13's own line is stale) |
 | 8 | waits on the pack | | |
 | 9 | waits on the pack | | |
 | 10 | waits on the pack | | |

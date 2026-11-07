@@ -1744,3 +1744,9 @@ Goldens: every replay still clears and ends on its golden (no regold: the replay
 gates: the harness alone 145 s, 0 failing; SWS_NO_BROWSER=1 tools/check.js green alone (282 s)
 shots: none opened. In auto mode every image open raised a permission prompt on Stephen's screen and he asked four times tonight for none, so the look (the sample room and two fixtures at 412 and 320, a house room 4) is his, on the phone, after the deploy line
 in flight: none. blocked: the trap count (code) and step 2's new hazards (two of conveyor, crumbling shelf, swinging lamp, window gust, Astra draws them) wait on his pick
+
+## sb-m2-14 (7 Nov 2026, Fable): Astra's round 10 art wired (SHUTTERBUG_R10_BUILD_PLAN.md chapter 7)
+shipped: 118 new keys cut through tools/astra_cut.py (the cutter reads her manifest's key field, warns on a missing sha256; cap 320) and spliced (316 names, 2.12 MB page); film boxes, rank badges and plate, keepsake pickups and tiles, the tinted silhouette (Ash to Amber/Lapis/Teal/Moss/Brick inside [5,4,38,34]), the five frame plates as grants (lookGrant, LOOKS.frame 13, border slices 6 6 18 6 at 2x, the strip's Polaroid wears the plate), the weather as the air (eight 8x8 particles). Parked on the page: dust_lobber, cinder_lobber, jelly_dropper, seed_dropper, ice_shellback, slag_shellback (fodder and elite), pellet_dust, pellet_cinder, splitter_elite, splitter_halves, boss_cobweb_loom, boss_lantern_wasp and their attacks and tells.
+gates: lint green, the fast harness 10465 assertions 0 failing, SWS_NO_BROWSER=1 tools/check.js once; test/sprites.mjs re anchored to the weather (eight particles, 8 px)
+shots: one of the develop screen, probed by pixels (six boxes 48 px, 100 percent on the palette, 5 to 7 colours each; the row 119 px tall, 111 px buttons: taller than the 24 px icons' row, his call if it crowds the photo), not opened
+line: `! bash /home/codespace/sb-drafts/sb-m2-14/deploy-sb-m2-14.sh`

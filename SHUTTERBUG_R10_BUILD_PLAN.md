@@ -33,7 +33,9 @@ stale #sample: not tonight's job.
 | 1 | DONE 7 Nov | sb-m2-13 | 5e56e4052 | XP from the stats (RANK_XP, XP_ weights in TUNING), ten ranks, stocks at 2 to 5, a look at 3 and 5 and from 6 up (lookWin), doc.rank remembers; the title's rank line and bar, the clear card's XP line or the rank up and its gift |
 | 2 | DONE 7 Nov | sb-m2-13 | e0130047b | THE UI WORD IS KEEPSAKE, not print (the Darkroom already calls its developed blueprints prints): FLAG_R10 = 8, C.FLAGS 15; curio() in the features pass on its own stream (30 percent; a photo cell the bug can stand on, 2 off every stand and spawn); LOOT_CURIO through the sim with EV.CURIO; a palette polaroid until her sprites (curio_<id>.a); doc.curios by id, stats curios and curioSets, four trophies, a full set grants a look; the album opens with the collection, five rows of six. The level hash's FIELDS unchanged (the keepsake is derived at build time), so no room's hash moved; the harness's unknown flag bit moved to 4 |
 | 3 | DONE 7 Nov | sb-m2-13 | 97c420f42 | THE GATES THAT NEED NO BROWSER PASSED; stamp sb-m2-13, shutterbug-v35, sw.js?v=35; /home/codespace/sb-drafts/sb-m2-13/deploy-sb-m2-13.sh DRY OK. LINE: `! bash /home/codespace/sb-drafts/sb-m2-13/deploy-sb-m2-13.sh` |
-| 4 | | | | |
+| 4 | OPEN | sb-m2-15 | | the four new verbs with her art (dust_lobber, cinder_lobber, jelly_dropper, seed_dropper, ice_shellback, slag_shellback, splitter) |
+| art | DONE 7 Nov | sb-m2-14 | d9b5b5557 | CHAPTER 7, Astra's round 10 wired: 118 keys cut and spliced (cap 320), film boxes, rank badges and plate, keepsake pickups and tiles, the tinted silhouette, the five frame plates as grants (lookGrant), the weather as the air; the verbs and guardians parked on the page |
+| art stamp | DONE 7 Nov | sb-m2-14 | 50d436f32 | the no browser check, lint and the fast harness green; /home/codespace/sb-drafts/sb-m2-14/deploy-sb-m2-14.sh DRY OK. LINE: `! bash /home/codespace/sb-drafts/sb-m2-14/deploy-sb-m2-14.sh` (ships sb-m2-13 too; sb-m2-13's line is stale) |
 
 ## THE LAWS
 SHUTTERBUG_R9_BUILD_PLAN.md's laws bind (the sim is pure and deterministic: no Math.random, no Date.now inside it; a
@@ -103,3 +105,4 @@ Ember: The Brass Lantern, A Matchbook, The Kiln Key, The Ash Jar, A Red Thread, 
 3. The print names above (his to rename before Astra draws them).
 4. The stock row lives on the develop screen (default); the title's settings could hold it too.
 5. Kinds 21 to 24 may wait for Astra's art rather than ship as placeholders (default: placeholders, then her art).
+6. Astra's ten round 10 ideas (docs/briefs/shutterbug/round10/astra/ASSESSMENT.md): a side route to each keepsake, a replay silhouette of the best climb, a collapsing staircase, a shutter beetle, the Loom's cut strands as footholds, a crosswind from bright windows, a one stock expedition, a clue to the last missing keepsake, a guardian's last part changing its attack, a contact print of a flawless room. None built; his yes per line.

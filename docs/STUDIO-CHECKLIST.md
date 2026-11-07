@@ -8,7 +8,7 @@ As of 7 Nov 2026, 03:50 UTC. The order: you get the art (1), you make your calls
 
 Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt, as before; paste the kickoff, attach the brief. The two rounds marked IDEAS ask Astra for gameplay ideas first, then art.
 
-- [ ] Shutterbug round 10, IDEAS plus film boxes, rank, thirty keepsakes, four new enemy kinds, two guardians, weather: [Astra / Shutterbug / Round 10](https://drive.google.com/drive/folders/1pgh0aI7l9h9OgBNBuyTi5Y6mAQ8JQOUg) (you)  
+- [x] Shutterbug round 10: back 7 Nov, vaulted, wired in sb-m2-14 (Astra, Fable)  
 - [ ] Tomato Man The Run, IDEAS plus motes, gull, crab, the burn line, seed pods, the badges, the RUN plate: [Astra / Tomato Man / The Run](https://drive.google.com/drive/folders/1cC6Ej9obi3dZYPNFM7Stj2b2bdiTLTwT) (you)  
 - [ ] Keepsies round 4, the nineteen captures judged (the captures are public links inside the brief, nothing to attach), the four limestone statues, the plates: [Astra / Keepsies / Round 4](https://drive.google.com/drive/folders/1_gT-vVZ4H8kq6qOPhMW13xM9xjZ1TxKj) (you)  
 - [ ] Tomato Man The Hero, the thirteen produce bodies in his five sheets so hats and the walk work on every body, the planet tomato: [Astra / Tomato Man / The Hero](https://drive.google.com/drive/folders/1DZmS0paU0pbfgeP1lwaqGbEHI_LWOqAz) (you)  
@@ -30,6 +30,7 @@ Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt
 
 Each is built at its default if you say nothing; say the word and the plan changes.
 
+- [ ] Shutterbug: Astra's ten round 10 ideas, yes or no each (docs/briefs/shutterbug/round10/astra/ASSESSMENT.md: a side route to each keepsake, a replay silhouette, a collapsing staircase, a shutter beetle, web strands as footholds, a window crosswind, a one stock expedition, a clue to the last keepsake, a guardian's last part, a contact print of a flawless room) (you)  
 - [ ] Shutterbug: the ten rank names and the thirty keepsake names (SHUTTERBUG_R10_BUILD_PLAN.md); a permanent heart at rank 8 or none; the replayability pick (three medals a room, race your best climb, a weekly house, named combos); one tripod per house room or none; the Polaroid shows the photo or the grid (you)  
 - [ ] Tomato Man: the run's burn line pace, no checkpoints or one a mile, motes unshootable, RUN first on the title, the daily as a run, canopies walkable in levels too (TOMATO_MAN_RUN_BUILD_PLAN.md); the planet tomato yes or no; pass the phone races; hats that do a tiny thing; the listing free or $0.99; Penny's credit; the Pages mirror (you)  
 - [ ] Flatulence Fighter: a miss as a fidget or a strike; Classic mode or not; landscape or not; the medals' names; the table card's line; the lesson's move beat (you)  
@@ -56,11 +57,13 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Chapter 4 Tomato Man A, canopies you walk under, the walk fixed, the seed and critter art in (Opus)  
 - [ ] Chapter 5 Tomato Man B, THE RUN (Opus)  
 - [ ] Chapter 6 Shutterbug R10, film stocks, rank, prints, then the four new verbs (Opus)  
-- [ ] Chapters 7 on, the new packs' wiring as each lands: Shutterbug round 10 art, The Run's art, Keepsies round 4, The Hero, FF round 3, Sunforge round 3 (Fable writes, Opus builds)  
+- [x] Chapter 7 Shutterbug round 10 art wired, sb-m2-14 (Fable, 7 Nov)  
+- [ ] Chapters 8 on, the new packs' wiring as each lands: The Run's art, Keepsies round 4, The Hero, FF round 3, Sunforge round 3 (Fable writes, Opus builds)  
 - [ ] If the box dies mid chapter, the next night starts the same kickoff and resumes from the first step not DONE (you, Opus)
 
 ## 5. The lines and the Pixel (you)
 
+- [ ] Shutterbug sb-m2-14 (round 10 art; ships sb-m2-13 too): `! bash /home/codespace/sb-drafts/sb-m2-14/deploy-sb-m2-14.sh` (you)  
 - [ ] Run each deploy line Opus left at the top of START-HERE.md, one at a time at an idle prompt (you)  
 - [ ] Play each game on the Pixel after its line and write your notes in one message; Fable turns them into the next chapter (you)  
 - [ ] Open Tomato Man with ?lab=1 and fix one level you hate; Copy JSON and paste it to Fable (you)  
