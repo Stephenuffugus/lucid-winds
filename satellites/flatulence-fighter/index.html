@@ -142,7 +142,7 @@
   .strikes{ display:flex; gap:4px;}
   .pip{ width:24px; height:24px; background:var(--a-strikeEmpty,none) center/100% 100% no-repeat;}
   .pip.broke{ background-image:var(--a-strikeLit,none);}
-  /* m2: one fidget is a warning, shown as the next pip half lit; a second fidget is the strike */
+  /* m2: one fidget was a warning, the next pip half lit; m5 (Stephen, 7 Nov): a miss is a strike, so .half never shows now */
   .pip{ position:relative;}
   .pip.half::after{ content:""; position:absolute; inset:0; background:var(--a-strikeLit,none) center/100% 100% no-repeat; clip-path:inset(0 50% 0 0);}
   .hud-tut .topright{ visibility:hidden;} .hud-tut #pauseBtn{ visibility:hidden;}
@@ -246,12 +246,16 @@
   .pad::before, .vent::before, .breath-bar::before, .prop::before{ content:""; position:absolute; inset:0; z-index:-1; filter:var(--art-filter); pointer-events:none;}
   .pad{ height:clamp(120px, 16vh, 150px); border:0; border-radius:16px; padding:0 0 22px; cursor:pointer; background:none; color:var(--paper);
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; transition:transform .08s;}
-  .pad::before{ background:center/100% 100% no-repeat;}
-  #padL::before{ background-image:var(--a-padLIdle,none);} #padL.down::before{ background-image:var(--a-padLHeld,none);} #padL.tired::before{ background-image:var(--a-padLTired,none);}
-  #padR::before{ background-image:var(--a-padRIdle,none);} #padR.down::before{ background-image:var(--a-padRHeld,none);} #padR.tired::before{ background-image:var(--a-padRTired,none);}
+  /* m4: the cheeks are her theatre seat, nine sliced like the hands; idle, held, cover (let go now), lifted (venting), squeak */
+  .pad::before{ border:28px 28px 26px 28px solid transparent; border-image-slice:56 56 52 56 fill; border-image-width:28px 28px 26px 28px; border-image-repeat:stretch; border-image-source:var(--pad-plate,none);}
+  #padL{ --pad-plate:var(--a-deck_cheek_left_idle);} #padL.down{ --pad-plate:var(--a-deck_cheek_left_held);} #padL.down.cue{ --pad-plate:var(--a-deck_cheek_left_cover);}
+  #padL.lifted{ --pad-plate:var(--a-deck_cheek_left_lifted);} #padL.squeak{ --pad-plate:var(--a-deck_cheek_left_squeak);}
+  #padR{ --pad-plate:var(--a-deck_cheek_right_idle);} #padR.down{ --pad-plate:var(--a-deck_cheek_right_held);} #padR.down.cue{ --pad-plate:var(--a-deck_cheek_right_cover);}
+  #padR.lifted{ --pad-plate:var(--a-deck_cheek_right_lifted);} #padR.squeak{ --pad-plate:var(--a-deck_cheek_right_squeak);}
+  .pad .rim-ring .rim-bg{ stroke:rgba(231,224,203,.14);}
   .pad .pad-label{ font-size:.74rem; font-weight:600; letter-spacing:.24em; text-transform:uppercase; opacity:.85; padding-left:.24em;}
   .pad .pad-hint{ font-family:var(--serif); font-size:1.5rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; opacity:.62; transition:opacity .08s;}
-  .pad.down{ transform:translateY(2px); color:var(--deep);}
+  .pad.down{ transform:translateY(2px);}
   .pad.down .pad-hint{ opacity:1;}
   .pad.tired{ color:var(--paper);}
   .pad.slipped{ pointer-events:none;}
@@ -331,38 +335,53 @@
   .deck4{ position:relative; z-index:12; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px;
     padding:8px 8px calc(10px + env(safe-area-inset-bottom,0px)); touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;}
   .deck4 > button{ height:clamp(56px, 19vh, 196px); height:clamp(56px, 19dvh, 196px); min-width:0; margin:0; touch-action:none; -webkit-touch-callout:none;}
-  .deck4.deck6 > button{ height:clamp(46px, 12.6vh, 132px); height:clamp(46px, 12.6dvh, 132px);}   /* m3: three rows, two fingers more */
+  .deck4.deck6 > button{ height:clamp(120px, 15.3vh, 170px); height:clamp(120px, 15.3dvh, 170px);}   /* m4: her sizes, 120 at 320x568 up to 170 at the 560 cap; the stage gives up height first */
   .deck4 .pad{ padding:0 6px 4px;}
   .deck4 .pad .pad-label{ letter-spacing:.16em; padding-left:.16em;}
   .deck4 .pad .pad-hint{ font-size:clamp(1.05rem, 3.2vh, 1.5rem);}
   #padL.warn::before{ background-image:var(--a-padLTired,none);} #padR.warn::before{ background-image:var(--a-padRTired,none);}
   .pad.warn{ color:var(--paper);}
   @keyframes letgo{ 0%,100%{ box-shadow:0 0 0 0 rgba(95,208,176,0);} 50%{ box-shadow:0 0 0 4px rgba(95,208,176,.85), 0 0 18px rgba(95,208,176,.7);} }
-  .pad.cue{ animation:letgo .6s ease-in-out infinite; border-radius:16px;}
+  .pad.cue{ border-radius:16px;}   /* m4: her cover plate carries the outward arrows; no blink */
   .pad.cue .pad-hint{ opacity:1;}
   .pad.warn .pad-hint{ opacity:1;}
-  .hand{ position:relative; isolation:isolate; font-family:inherit; cursor:pointer; border:2px dashed var(--sage); border-radius:16px;
-    background:rgba(231,224,203,.62); color:var(--sage-2); padding:6px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-    text-align:center; transition:transform .08s, background .08s, border-color .08s; -webkit-user-select:none; user-select:none;}
-  .hand .hring{ position:relative; width:clamp(30px, 8.5vh, 80px); aspect-ratio:1; flex:none; display:flex; align-items:center; justify-content:center;}
-  .hand .hring svg{ position:absolute; inset:0; width:100%; height:100%; transform:rotate(-90deg); overflow:visible;}
-  .hand .hring circle{ fill:none; stroke-width:7;}
-  .hand .hr-bg{ stroke:rgba(43,58,49,.16);}
-  .hand .hr-fg{ stroke:var(--accent); stroke-dasharray:100; stroke-dashoffset:calc(100 * (1 - var(--ring,0))); stroke-linecap:round;}
-  .hand .hico{ position:relative; width:60%; height:60%; display:flex; align-items:center; justify-content:center; opacity:.5;}
+  /* m4 (Astra round 2): every hand and finger pad wears her plate for its state, nine sliced on a layer behind the
+     content (her insets 56 56 52 56 source px, half that in CSS at 2x); the content stays its own CSS size at her
+     anchors (icon 48, words 15, role 11); the rim ring runs the pad's perimeter (inset 9, radius 12, stroke 3) */
+  .hand{ position:relative; isolation:isolate; font-family:inherit; cursor:pointer; border:0; border-radius:16px;
+    background:none; color:var(--sage-2); padding:12px 10px 8px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:4px;
+    text-align:center; transition:transform .08s; -webkit-user-select:none; user-select:none;}
+  .hand::before{ content:""; position:absolute; inset:0; z-index:-1; pointer-events:none; filter:var(--art-filter);
+    border:28px 28px 26px 28px solid transparent; border-image-slice:56 56 52 56 fill; border-image-width:28px 28px 26px 28px; border-image-repeat:stretch; border-image-source:var(--pad-plate,none);}
+  #handL.idle{ --pad-plate:var(--a-deck_hand_left_idle);} #handL.called{ --pad-plate:var(--a-deck_hand_left_called);} #handL.holding{ --pad-plate:var(--a-deck_hand_left_holding);}
+  #handL.done{ --pad-plate:var(--a-deck_hand_left_done);} #handL.missed{ --pad-plate:var(--a-deck_hand_left_missed);} #handL.leave{ --pad-plate:var(--a-deck_hand_left_leave);}
+  #handR.idle{ --pad-plate:var(--a-deck_hand_right_idle);} #handR.called{ --pad-plate:var(--a-deck_hand_right_called);} #handR.holding{ --pad-plate:var(--a-deck_hand_right_holding);}
+  #handR.done{ --pad-plate:var(--a-deck_hand_right_done);} #handR.missed{ --pad-plate:var(--a-deck_hand_right_missed);} #handR.leave{ --pad-plate:var(--a-deck_hand_right_leave);}
+  #handL2.idle{ --pad-plate:var(--a-deck_finger_left_idle);} #handL2.called{ --pad-plate:var(--a-deck_finger_left_called);} #handL2.holding{ --pad-plate:var(--a-deck_finger_left_holding);}
+  #handL2.done{ --pad-plate:var(--a-deck_finger_left_done);} #handL2.missed{ --pad-plate:var(--a-deck_finger_left_missed);} #handL2.leave{ --pad-plate:var(--a-deck_finger_left_leave);}
+  #handR2.idle{ --pad-plate:var(--a-deck_finger_right_idle);} #handR2.called{ --pad-plate:var(--a-deck_finger_right_called);} #handR2.holding{ --pad-plate:var(--a-deck_finger_right_holding);}
+  #handR2.done{ --pad-plate:var(--a-deck_finger_right_done);} #handR2.missed{ --pad-plate:var(--a-deck_finger_right_missed);} #handR2.leave{ --pad-plate:var(--a-deck_finger_right_leave);}
+  .rim-ring{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:0;}
+  .rim-ring path{ fill:none; stroke-width:3; stroke-linecap:round;}
+  .rim-ring .rim-bg{ stroke:rgba(43,58,49,.12);}
+  .rim-ring .rim-fg{ stroke:var(--ring-c, var(--accent)); stroke-dasharray:var(--ring-a,0) calc(100 - var(--ring-a,0)); stroke-dashoffset:var(--ring-o,0);}
+  .hand.idle .rim-ring, .pad:not(.cue):not(.lifted) .rim-ring{ display:none;}
+  .hand .hring{ position:relative; width:48px; height:48px; flex:none; display:flex; align-items:center; justify-content:center;}
+  .hand .hico{ position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; opacity:1;}
   .hand .hico .ic{ width:100%; height:100%;}
-  #handL.idle .hico .ic, #handL2.idle .hico .ic{ transform:scaleX(-1);}
-  .hand-words{ font-size:clamp(.74rem, 2.1vh, .98rem); font-weight:600; line-height:1.15; letter-spacing:.02em; max-width:100%; overflow-wrap:break-word;}
-  .hand.idle .hand-words{ font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; padding-left:.16em; opacity:.85;}
-  .hand.down{ transform:translateY(2px); background:rgba(199,189,156,.75);}
-  .hand.called{ border:3px solid var(--accent); background:var(--paper); color:var(--deep); box-shadow:0 0 0 3px rgba(224,144,47,.25), 0 0 16px rgba(224,144,47,.55);}
-  .hand.called .hico, .hand.holding .hico, .hand.done .hico{ opacity:1;}
-  .hand.holding{ border:3px solid var(--mint-deep); background:var(--relief); color:var(--deep); box-shadow:0 0 14px rgba(95,208,176,.6);}
-  .hand.holding .hr-fg, .hand.done .hr-fg{ stroke:var(--mint-deep);}
-  .hand.done{ border:3px solid var(--mint-deep); background:var(--paper);}
-  .hand.missed{ border:3px solid var(--danger); background:var(--paper); color:var(--danger);}
-  .hand.leave{ border:3px solid var(--accent); background:var(--paper); color:var(--deep); animation:letgo .6s ease-in-out infinite;}   /* m3: the pad a call just left, let go of it */
-  .hand.missed .hr-fg{ stroke:var(--danger);}
+  .hand.idle .hring{ height:34px;}
+  .hand.idle .hico{ opacity:0;}   /* her idle plate draws the gesture itself */
+  .hand-words{ font-size:15px; font-weight:600; line-height:1.15; letter-spacing:.02em; max-width:100%; overflow-wrap:break-word;}
+  .hand.idle .hand-words{ font-size:11px; letter-spacing:.16em; text-transform:uppercase; padding-left:.16em; opacity:.85; position:absolute; left:0; right:0; top:9px;}
+  .hand.down{ transform:translateY(2px);}
+  .hand.called{ color:var(--deep);}
+  .hand.holding{ color:var(--deep);}
+  .hand.holding .rim-ring .rim-fg, .hand.done .rim-ring .rim-fg{ stroke:var(--mint-deep);}
+  .hand.done{ color:var(--deep);}
+  .hand.missed{ color:var(--danger);}
+  .hand.missed .rim-ring .rim-fg{ stroke:var(--danger);}
+  .hand.leave{ color:var(--deep);}   /* m3: the pad a call just left; her LEAVE plate carries the arrows, so no blink (reduced motion keeps it steady) */
+  .hand.leave .hico .ic{ transform:rotate(var(--move-rot,0deg));}
   .hand:focus-visible, .deck4 .pad:focus-visible{ outline:3px solid var(--mint-deep); outline-offset:2px;}
   /* m1's leaks and props are retired from play; the intertitle lets touches through so the cheeks can be held across it */
   #leaks{ display:none;}
@@ -447,6 +466,14 @@
   #tutSkip{ flex:none; padding:8px 12px; background:var(--paper);}
   /* m2 the lesson's band: one big line; the objective above it on the first beat; a short note under it after a slip */
   #tutOverlay .tut-card{ display:flex; flex-direction:column; gap:2px;}
+  /* m4: her lesson line plate (792 by 128 at 2x, nine slice 92 32 28 64), the text in her band clear of the left mark */
+  #tutOverlay .tut-card{ position:relative; isolation:isolate; background:none; border:0; color:var(--sage-2); padding:9px 12px 9px 38px; min-height:64px; justify-content:center;}
+  #tutOverlay .tut-card::before{ content:""; position:absolute; inset:0; z-index:-1; pointer-events:none; filter:var(--art-filter);
+    border:46px 16px 14px 32px solid transparent; border-image-slice:92 32 28 64 fill; border-image-width:46px 16px 14px 32px; border-image-repeat:stretch; border-image-source:var(--a-lessonLine,none);}
+  #tutOverlay .tut-card.done::before{ border-image-source:var(--a-lessonDone,none);}
+  #tutOverlay .tut-card b{ color:var(--sage-2);}
+  .tut-big{ font-size:22px; line-height:24px;} .tut-hint{ color:var(--sage);}
+  @media (max-width:340px){ .tut-big{ font-size:18px; line-height:22px;} }
   .tut-obj{ font-size:.76rem; font-weight:600; letter-spacing:.03em; opacity:.85;}
   .tut-big{ font-family:var(--serif); font-weight:700; font-size:clamp(1.02rem, 2.9vh, 1.34rem); line-height:1.2;}
   .tut-hint{ font-size:.8rem; line-height:1.25; color:var(--mint);}
@@ -457,6 +484,12 @@
   .table-art{ display:block; width:100%; max-width:300px; height:auto; aspect-ratio:240/150; margin:0 auto; color:var(--sage-2);}
   .table-line{ font-family:var(--serif); font-weight:700; font-size:1.15rem; line-height:1.3; color:var(--sage-2); margin:10px 0 0;}
   .how-table{ margin:0 0 14px;} .how-table .table-art{ max-width:220px;} .how-table .table-line{ font-size:1rem; margin-top:6px;}
+  /* m4: her table card (720 by 600 at 360 by 300) with the one line rendered into its paper band; the How screen keeps
+     the small picture with the line under it (her rule at 200 px: full size text below, never shrunk with it) */
+  .table-pic{ position:relative; width:100%; max-width:360px; aspect-ratio:720/600; margin:0 auto; background:var(--a-tableCard,none) center/100% 100% no-repeat; border-radius:8px; overflow:hidden; filter:var(--art-filter);}
+  .table-pic .table-line{ position:absolute; left:5.5%; right:5.5%; top:77.7%; height:20%; margin:0; display:flex; align-items:center; justify-content:center; font-size:1.05rem; line-height:1.25; text-align:center;}
+  .how-table .table-pic{ max-width:220px; aspect-ratio:720/456; background-size:100% auto; background-position:top;}
+  .hs-move{ background:var(--a-howMove,none) center/cover no-repeat; border-radius:6px; width:76px; height:63px;}
   .hs-hand{ border:2.5px solid var(--accent); border-radius:10px; background:var(--paper); color:var(--deep);}
   .hs-hand .ic{ width:28px; height:28px;}
 
@@ -549,44 +582,46 @@
 <symbol id="i-wordmark_paper" viewBox="0 0 1000 340"><g transform="translate(500 40) scale(1.1)"><path d="M-65 0H-20 M20 0H65" fill="none" stroke="#c8a84b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /><path d="M0 -10L10 0 0 10 -10 0Z" fill="#c8a84b" stroke="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /><circle cx="-30" cy="0" r="3" fill="#c8a84b" stroke="none" stroke-width="1"/><circle cx="30" cy="0" r="3" fill="#c8a84b" stroke="none" stroke-width="1"/></g><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V600Q121 640 106.0 650.5Q91 661 70 661H28V714H582L587 530H517L512 578Q508 618 488.5 635.5Q469 653 438 653H279V380H516V321H279V118Q279 75 294.0 64.0Q309 53 331 53H393V0Z" transform="translate(170.176 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q92 53 106.5 64.0Q121 75 121 118V596Q121 639 106.5 650.0Q92 661 70 661H28V714H373V661H331Q310 661 295.0 650.5Q280 640 280 600V61H466Q501 61 520.5 83.5Q540 106 549 148L565 223H621L614 0Z" transform="translate(230.308 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M4 0V53H16Q43 53 61.5 67.0Q80 81 96 126L313 714H450L659 125Q674 83 692.5 68.0Q711 53 735 53H753V0H423V53H462Q477 53 491.0 62.0Q505 71 505 92Q505 104 502.0 115.5Q499 127 496 135L461 235H218L189 149Q185 137 181.0 120.5Q177 104 177 92Q177 73 191.0 63.0Q205 53 222 53H264V0ZM239 296H441L388 460Q378 494 365.5 536.0Q353 578 345 613Q336 581 323.0 540.5Q310 500 298 465Z" transform="translate(293.476 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M154 0V53H196Q218 53 232.5 64.0Q247 75 247 118V653H167Q122 653 105.0 634.0Q88 615 84 582L77 520H10L15 714H638L643 520H576L569 582Q565 615 548.0 634.0Q531 653 486 653H406V118Q406 75 420.5 64.0Q435 53 457 53H499V0Z" transform="translate(365.752 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M387 -10Q257 -10 183.5 42.5Q110 95 110 218V600Q110 640 94.5 650.5Q79 661 59 661H16V714H361V661H319Q298 661 283.0 650.0Q268 639 268 596V210Q268 126 308.5 93.5Q349 61 417 61Q484 61 523.0 96.5Q562 132 562 208V600Q562 640 547.0 650.5Q532 661 511 661H469V714H731V661H688Q667 661 652.0 650.0Q637 639 637 596V206Q637 106 577.5 48.0Q518 -10 387 -10Z" transform="translate(428.828 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q92 53 106.5 64.0Q121 75 121 118V596Q121 639 106.5 650.0Q92 661 70 661H28V714H373V661H331Q310 661 295.0 650.5Q280 640 280 600V61H466Q501 61 520.5 83.5Q540 106 549 148L565 223H621L614 0Z" transform="translate(500.552 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V596Q121 639 106.5 650.0Q92 661 70 661H28V714H583L587 530H517L512 577Q508 614 493.5 633.5Q479 653 448 653H280V403H517V343H280V61H480Q510 61 524.5 82.5Q539 104 544 137L552 184H621L614 0Z" transform="translate(563.720 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 64.0Q121 75 121 118V600Q121 640 105.5 650.5Q90 661 70 661H28V714H250L603 215V600Q603 640 587.5 650.5Q572 661 552 661H510V714H771V661H729Q708 661 693.0 650.0Q678 639 678 596V0H586L196 551V118Q196 75 211.0 64.0Q226 53 247 53H289V0Z" transform="translate(626.796 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M401 -10Q285 -10 208.0 36.0Q131 82 93.0 164.5Q55 247 55 358Q55 466 94.0 548.5Q133 631 210.0 677.5Q287 724 400 724Q515 724 571.5 690.5Q628 657 628 608Q628 571 596.0 546.0Q564 521 503 521Q503 554 493.0 586.0Q483 618 459.0 639.0Q435 660 393 660Q298 660 260.5 581.5Q223 503 223 358Q223 213 268.5 141.5Q314 70 425 70Q474 70 509.0 84.5Q544 99 568.5 121.0Q593 143 610 165Q627 151 627 122Q627 94 606.0 63.5Q585 33 536.0 11.5Q487 -10 401 -10Z" transform="translate(702.292 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V596Q121 639 106.5 650.0Q92 661 70 661H28V714H583L587 530H517L512 577Q508 614 493.5 633.5Q479 653 448 653H280V403H517V343H280V61H480Q510 61 524.5 82.5Q539 104 544 137L552 184H621L614 0Z" transform="translate(766.748 155) scale(0.092000 -0.092000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V600Q121 640 106.0 650.5Q91 661 70 661H28V714H582L587 530H517L512 578Q508 618 488.5 635.5Q469 653 438 653H279V380H516V321H279V118Q279 75 294.0 64.0Q309 53 331 53H393V0Z" transform="translate(225.858 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q92 53 106.5 64.0Q121 75 121 118V596Q121 639 106.5 650.0Q92 661 70 661H28V714H373V661H331Q309 661 294.5 650.0Q280 639 280 596V118Q280 75 294.5 64.0Q309 53 331 53H373V0Z" transform="translate(299.926 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M423 -10Q299 -10 217.5 36.0Q136 82 95.5 164.5Q55 247 55 358Q55 466 97.0 548.5Q139 631 222.5 677.5Q306 724 428 724Q553 724 615.5 690.5Q678 657 678 608Q678 573 645.0 548.0Q612 523 549 523Q549 584 519.0 622.0Q489 660 425 660Q316 660 269.5 581.5Q223 503 223 358Q223 213 271.5 135.5Q320 58 438 58Q457 58 475.5 59.5Q494 61 511 65V212Q511 252 493.0 267.5Q475 283 440 283H427V336H741V283H728Q697 283 683.0 267.0Q669 251 669 208V44Q611 17 551.0 3.5Q491 -10 423 -10Z" transform="translate(350.234 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 64.0Q121 75 121 118V600Q121 640 105.5 650.5Q90 661 70 661H28V714H373V661H330Q309 661 294.0 650.0Q279 639 279 596V403H540V596Q540 639 525.0 650.0Q510 661 489 661H446V714H791V661H749Q728 661 713.0 650.0Q698 639 698 596V113Q698 73 713.5 63.0Q729 53 749 53H791V0H446V53H489Q510 53 525.0 64.0Q540 75 540 118V342H279V118Q279 75 294.0 64.0Q309 53 330 53H373V0Z" transform="translate(440.286 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M154 0V53H196Q218 53 232.5 64.0Q247 75 247 118V653H167Q122 653 105.0 634.0Q88 615 84 582L77 520H10L15 714H638L643 520H576L569 582Q565 615 548.0 634.0Q531 653 486 653H406V118Q406 75 420.5 64.0Q435 53 457 53H499V0Z" transform="translate(535.738 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q91 53 106.0 63.0Q121 73 121 113V596Q121 639 106.5 650.0Q92 661 70 661H28V714H583L587 530H517L512 577Q508 614 493.5 633.5Q479 653 448 653H280V403H517V343H280V61H480Q510 61 524.5 82.5Q539 104 544 137L552 184H621L614 0Z" transform="translate(613.262 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><path d="M28 0V53H70Q90 53 105.5 63.0Q121 73 121 113V600Q121 640 105.5 650.5Q90 661 70 661H28V714H350Q492 714 558.0 666.5Q624 619 624 529Q624 476 604.0 439.0Q584 402 553.0 378.0Q522 354 488 340L607 135Q633 92 656.0 72.5Q679 53 707 53H711V0H678Q618 0 578.0 7.0Q538 14 511.5 33.5Q485 53 464 90L345 310H279V113Q279 73 294.5 63.0Q310 53 330 53H373V0ZM335 368Q404 368 430.0 405.0Q456 442 456 515Q456 591 428.0 623.0Q400 655 333 655H279V368Z" transform="translate(690.786 270) scale(0.108000 -0.108000)" fill="var(--sage, #37493d)"/><g transform="translate(500 311) scale(1.1)"><path d="M-65 0H-20 M20 0H65" fill="none" stroke="#c8a84b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /><path d="M0 -10L10 0 0 10 -10 0Z" fill="#c8a84b" stroke="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" /><circle cx="-30" cy="0" r="3" fill="#c8a84b" stroke="none" stroke-width="1"/><circle cx="30" cy="0" r="3" fill="#c8a84b" stroke="none" stroke-width="1"/></g></symbol>
 </svg>
 <!-- ff-sprite end -->
-<!-- ff-calls start: placeholder line icons for the hand pads and their calls, in the sprite's style, until Astra's round 2 -->
+<!-- ff-calls start: Astra's round 2 call icons (34 calls, the move mark, the three pad marks), 48 unit box, 3 unit rounded strokes, currentColor; tools/ff-tests/build-sprite.js does not write this block -->
 <svg id="ff-calls" aria-hidden="true" style="display:none" xmlns="http://www.w3.org/2000/svg">
-<symbol id="i-call_hand" viewBox="0 0 48 48"><path d="M15 27V12Q15 9 17.5 9Q20 9 20 12V22 M20 21V8Q20 5 22.5 5Q25 5 25 8V21 M25 21V9Q25 6 27.5 6Q30 6 30 9V22 M30 22V14Q30 11 32.5 11Q35 11 35 14V28Q35 41 25 42Q17 42 13 36L8 28Q6 25 9 24Q11 23 13 26L15 29" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_book" viewBox="0 0 48 48"><path d="M24 13Q16 8 7 10V37Q16 35 24 40Q32 35 41 37V10Q32 8 24 13Z M24 13V40 M12 17Q17 16 20 18 M28 18Q31 16 36 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_shake" viewBox="0 0 48 48"><path d="M3 25H10L18 18Q21 15 25 17L32 21 M45 25H38L31 32Q28 35 25 33L17 28 M25 17L19 23Q18 26 21 26L26 24 M26 24L31 28 M23 29L27 32 M29 21L34 25" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_tissues" viewBox="0 0 48 48"><path d="M8 24H40V40H8Z M17 24Q15 16 20 12Q24 9 26 13Q27 17 31 15Q34 14 33 19L31 24 M17 32H31" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_pen" viewBox="0 0 48 48"><path d="M33 7L41 15L18 38L8 40L10 30Z M29 11L37 19 M10 30L18 38" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_cup" viewBox="0 0 48 48"><path d="M10 20H32V30Q32 38 21 38Q10 38 10 30Z M32 23Q39 23 39 27Q39 31 32 31 M6 42H36 M17 7Q15 10 17 14 M24 7Q22 10 24 14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_menu" viewBox="0 0 48 48"><path d="M12 6H36V42H12Z M18 14H30 M18 21H30 M18 27H27 M18 33H29" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_glass" viewBox="0 0 48 48"><path d="M15 6H33Q34 18 24 23Q14 18 15 6Z M24 23V38 M16 42H32 M16 12H32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_hands" viewBox="0 0 48 48"><path d="M7 41Q7 29 13 23L19 16Q21 14 23.5 16 M41 41Q41 29 35 23L29 16Q27 14 24.5 16 M17 25L24 31L31 25 M15 31L24 37L33 31" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_mic" viewBox="0 0 48 48"><path d="M18 9Q18 4 24 4Q30 4 30 9V21Q30 26 24 26Q18 26 18 21Z M12 20Q12 32 24 32Q36 32 36 20 M24 32V42 M16 42H32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_headphones" viewBox="0 0 48 48"><path d="M9 30V24Q9 8 24 8Q39 8 39 24V30 M8 28H15V41H8Z M33 28H40V41H33Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_camera" viewBox="0 0 48 48"><path d="M5 14H31V33H5Z M31 20L43 14V33L31 27 M12 40L17 33 M24 33L29 40 M14 23.5A4 4 0 1 0 22 23.5A4 4 0 1 0 14 23.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_pose" viewBox="0 0 48 48"><path d="M20.5 9A3.5 3.5 0 1 0 27.5 9A3.5 3.5 0 1 0 20.5 9 M24 13V28 M24 17L15 7 M24 17L33 7 M24 28V44 M24 28L32 32L24 36" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_palms" viewBox="0 0 48 48"><path d="M24 6Q20 10 19 18L15 30Q13 36 18 40H24 M24 6Q28 10 29 18L33 30Q35 36 30 40H24 M24 9V40 M14 44H34" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_toes" viewBox="0 0 48 48"><path d="M17 5Q13 20 15 30Q16 41 26 41H38Q43 41 42 37Q41 33 34 32L27 30Q25 19 27 5 M30 32V29 M34 33V30 M38 34V31" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_rings" viewBox="0 0 48 48"><path d="M7 28A10 10 0 1 0 27 28A10 10 0 1 0 7 28 M21 28A10 10 0 1 0 41 28A10 10 0 1 0 21 28 M17 18L14 13L17 9L20 13Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_bouquet" viewBox="0 0 48 48"><path d="M9 14A5 5 0 1 0 19 14A5 5 0 1 0 9 14 M19 9A5 5 0 1 0 29 9A5 5 0 1 0 19 9 M29 14A5 5 0 1 0 39 14A5 5 0 1 0 29 14 M14 19L22 31 M24 14V31 M34 19L26 31 M17 31H31L27 44H21Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_page" viewBox="0 0 48 48"><path d="M10 6H30L38 14V42H10Z M30 6V14H38 M16 22H32 M16 28H32 M16 34H26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_stamp" viewBox="0 0 48 48"><path d="M18 6H30V16Q30 20 34 22H38V30H10V22H14Q18 20 18 16Z M8 36H40 M13 42H35" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_button" viewBox="0 0 48 48"><path d="M13 4H35V44H13Z M18 16A6 6 0 1 0 30 16A6 6 0 1 0 18 16 M18 32A6 6 0 1 0 30 32A6 6 0 1 0 18 32 M21 17.5L24 14L27 17.5 M21 30.5L24 34L27 30.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_rail" viewBox="0 0 48 48"><path d="M4 17H44 M4 22H44 M10 22V42 M24 22V42 M38 22V42 M4 42H44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_door" viewBox="0 0 48 48"><path d="M7 5H41V43H7Z M24 5V43 M19 24H12 M15 21L12 24L15 27 M29 24H36 M33 21L36 24L33 27" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_program" viewBox="0 0 48 48"><path d="M10 6H38V42H10Z M16 12H32 M24 18L26.2 23H31.5L27.2 26.2L28.8 31.4L24 28.3L19.2 31.4L20.8 26.2L16.5 23H21.8Z M16 37H32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_wave" viewBox="0 0 48 48"><path d="M15 27V12Q15 9 17.5 9Q20 9 20 12V22 M20 21V8Q20 5 22.5 5Q25 5 25 8V21 M25 21V9Q25 6 27.5 6Q30 6 30 9V22 M30 22V14Q30 11 32.5 11Q35 11 35 14V28Q35 41 25 42Q17 42 13 36L8 28Q6 25 9 24Q11 23 13 26L15 29 M39 6Q44 10 44 17 M38 13Q40 15 40 18 M9 6Q4 10 4 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_rosary" viewBox="0 0 48 48"><circle cx="24" cy="18" r="12" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="0.1 6.2"/><path d="M24 30V45 M19 36H29" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_grille" viewBox="0 0 48 48"><path d="M8 6H40V42H8Z M8 18H40 M8 30H40 M18.7 6V42 M29.3 6V42" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_bowl" viewBox="0 0 48 48"><path d="M6 22H42Q42 38 24 38Q6 38 6 22Z M15 42H33 M29 6L40 17 M8 15Q12 11 16 13 M36 4Q41 3 44 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_mudra" viewBox="0 0 48 48"><path d="M11 29A6 6 0 1 0 23 29A6 6 0 1 0 11 29 M26 27V8 M31 27V10 M36 28V14 M23 33Q22 44 30 44Q38 44 38 33V27 M11 33Q9 25 14 21" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_candle" viewBox="0 0 48 48"><path d="M18 20H30V42H18Z M24 20V16 M24 4Q19 10 24 15Q29 10 24 4Z M11 42H37" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_cradle" viewBox="0 0 48 48"><path d="M8 18Q8 34 24 34Q40 34 40 18Z M5 40Q24 47 43 40 M14 32L10 41 M34 32L38 41 M6 18H42 M30 18Q30 12 36 12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_bottle" viewBox="0 0 48 48"><path d="M21 4H27 M19 12H29V16Q34 18 34 24V40Q34 44 30 44H18Q14 44 14 40V24Q14 18 19 16Z M22 4L20 12 M26 4L28 12 M14 28H21 M14 34H19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-call_mobile" viewBox="0 0 48 48"><path d="M24 3V9 M7 9H41 M10 9V18 M24 9V24 M38 9V18 M6 22A4 4 0 1 0 14 22A4 4 0 1 0 6 22 M34 22A4 4 0 1 0 42 22A4 4 0 1 0 34 22 M19 28Q24 38 30 31Q24 33 19 28Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-<symbol id="i-table_card" viewBox="0 0 240 150"><path d="M34 62H206L236 138H4Z" fill="var(--paper-3,#c7bd9c)" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M4 138H236V145H4Z" fill="currentColor" opacity=".35"/><path d="M92 68H148L157 128H83Z" fill="var(--deep,#1c2620)" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M93 92H118V106H91Z M122 92H147L149 106H122Z M90.5 109H118V124H88.5Z M122 109H149.5L151.5 124H122Z" fill="var(--paper,#e7e0cb)" opacity=".92"/><path d="M36 150Q62 130 102 117 M36 150Q70 118 105 99 M204 150Q178 130 138 117 M204 150Q170 118 135 99" fill="none" stroke="var(--coat,#37493d)" stroke-width="7" stroke-linecap="round"/><g fill="var(--accent,#e0902f)"><ellipse cx="104" cy="99" rx="5" ry="3.6"/><ellipse cx="136" cy="99" rx="5" ry="3.6"/><ellipse cx="103" cy="117" rx="5" ry="3.6"/><ellipse cx="137" cy="117" rx="5" ry="3.6"/></g></symbol>
-<symbol id="i-medal_helping_hands" viewBox="0 0 96 100"><circle cx="48" cy="45" r="35" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 72L19 93 35 85 45 96 47 80 M72 72L77 93 61 85 51 96 49 80" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /><g transform="translate(24 21)"><path d="M15 27V12Q15 9 17.5 9Q20 9 20 12V22 M20 21V8Q20 5 22.5 5Q25 5 25 8V21 M25 21V9Q25 6 27.5 6Q30 6 30 9V22 M30 22V14Q30 11 32.5 11Q35 11 35 14V28Q35 41 25 42Q17 42 13 36L8 28Q6 25 9 24Q11 23 13 26L15 29" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g></symbol>
-<symbol id="i-medal_twister" viewBox="0 0 96 100"><circle cx="48" cy="45" r="35" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 72L19 93 35 85 45 96 47 80 M72 72L77 93 61 85 51 96 49 80" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /><g transform="translate(24 21)"><path d="M8 8H40V40H8Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><g fill="currentColor"><circle cx="17" cy="17" r="4.5"/><circle cx="31" cy="17" r="4.5"/><circle cx="17" cy="31" r="4.5"/><circle cx="31" cy="31" r="4.5"/></g></g></symbol>
-<symbol id="i-medal_steady_hands" viewBox="0 0 96 100"><circle cx="48" cy="45" r="35" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24 72L19 93 35 85 45 96 47 80 M72 72L77 93 61 85 51 96 49 80" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /><g transform="translate(24 21)"><path d="M24 6Q20 10 19 18L15 30Q13 36 18 40H24 M24 6Q28 10 29 18L33 30Q35 36 30 40H24 M24 9V40 M14 44H34" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g></symbol>
+<symbol id="i-call_book" viewBox="0 0 48 48"><path d="M12 6H37V41H12Q7 41 7 36V11Q7 6 12 6 M12 6V35M8 35H37 M23 17V28Q18 25 18 30Q23 34 23 28 M23 17L30 15V25Q25 22 25 27Q30 31 30 25" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_book_library" viewBox="0 0 48 48"><path d="M12 6H38V42H12Q7 42 7 37V11Q7 6 12 6 M12 6V35M8 35H38 M20 13H31V27H20Z M23 18H28M23 22H28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_shake" viewBox="0 0 48 48"><path d="M4 16L12 10L21 16L28 12L43 21L37 31L29 37L12 27Z M21 16L16 21Q18 26 23 21L27 19L37 28 M12 27L17 22M18 31L22 27M24 34L27 30 M4 16L9 24M43 21L39 28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_tissues" viewBox="0 0 48 48"><path d="M7 25H41V40H7Z M13 25L16 13L25 17L31 8L36 25 M18 30H30" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_pen" viewBox="0 0 48 48"><path d="M11 34L31 7Q34 3 38 7Q40 9 37 13L17 39L8 42Z M11 34L17 39M29 10L35 15 M8 42H39" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_cup" viewBox="0 0 48 48"><path d="M10 14H32V29Q21 39 10 29Z M32 17H36Q43 24 32 28 M5 37Q24 44 43 37 M13 10H29" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_menu" viewBox="0 0 48 48"><path d="M5 9L24 13L43 9V37L24 41L5 37Z M24 13V41 M11 18L18 20M11 25L18 27M31 19L37 17M31 26L37 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_glass" viewBox="0 0 48 48"><path d="M12 7H36L32 41H16Z M14 22H34 M18 12H27" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_hands" viewBox="0 0 48 48"><path d="M6 8V24L15 34Q20 39 24 34Q28 39 33 34L42 24V8 M14 8V20L21 27M34 8V20L27 27 M21 27Q24 20 27 27V34M18 33L14 29M30 33L34 29" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_mic" viewBox="0 0 48 48"><path d="M17 6Q24 1 31 6V28Q24 33 17 28Z M11 21V27Q11 38 24 38Q37 38 37 27V21 M24 38V43M15 43H33 M21 10H27M21 16H27M21 22H27" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_headphones" viewBox="0 0 48 48"><path d="M7 28V23Q7 5 24 5Q41 5 41 23V28 M12 23H7V39H15V23Z M36 23H41V39H33V23Z M12 20Q12 10 24 10Q36 10 36 20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_camera" viewBox="0 0 48 48"><path d="M7 34L4 23Q4 19 7 21L10 25V12Q13 9 14 13V22V9Q17 6 18 10V22V13Q21 10 22 14V28L18 37H10Z M29 19H38V35H29Z M38 23L44 20V34L38 31 M30 14H37" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_pose" viewBox="0 0 48 48"><path d="M21 6A4 4 0 1 0 29 6A4 4 0 1 0 21 6 M25 15V30L14 37L25 35V43 M25 30L35 43 M25 15L14 20L18 11M25 15L36 20L32 11" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_palms" viewBox="0 0 48 48"><path d="M6 39L14 30L17 12Q17 7 21 9L24 28V39 M42 39L34 30L31 12Q31 7 27 9L24 28 M14 30L19 33M34 30L29 33" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_fold" viewBox="0 0 48 48"><path d="M5 33L12 25L22 20L32 22L42 31L38 39H10Z M12 25L24 33L31 24M17 23L30 34L35 28M24 21L36 33 M11 33L18 38M5 33L10 39" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_toes" viewBox="0 0 48 48"><path d="M32 14A4 4 0 1 0 40 14A4 4 0 1 0 32 14 M13 12Q24 4 32 12 M14 12L17 29L11 42H20 M17 29L26 42H33 M29 15L32 39L26 41" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_rings" viewBox="0 0 48 48"><path d="M7 27A11 11 0 1 0 29 27A11 11 0 1 0 7 27 M22 25A10 10 0 1 0 42 25A10 10 0 1 0 22 25 M14 15L18 8L23 15 M27 15L32 8L37 15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_bouquet" viewBox="0 0 48 48"><path d="M15 26L21 42H29L35 26 M10 22Q3 16 10 12Q8 4 16 6Q21 1 25 8Q31 1 36 7Q43 7 40 15Q47 22 38 26Q31 31 25 25Q18 32 10 22Z M19 30L31 37M30 30L20 37" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_page" viewBox="0 0 48 48"><path d="M4 14Q14 9 24 15Q34 9 44 14V39Q34 34 24 40Q14 34 4 39Z M24 15V40 M24 15L34 4V28L24 40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_stamp" viewBox="0 0 48 48"><path d="M7 31H41V43H7Z M14 24H34V30H14Z M19 24V16Q14 12 19 6H29Q34 12 29 16V24 M13 37H25M31 37H35" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_button" viewBox="0 0 48 48"><path d="M27 6A11 11 0 1 0 27 28A11 11 0 1 0 27 6 M23 16L27 12L31 16 M7 41L10 28L21 18Q25 17 25 21L19 29L28 27Q32 27 32 31L26 41Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_rail" viewBox="0 0 48 48"><path d="M4 22H17M31 22H44 M4 28H17M31 28H44 M11 28V39M38 28V39 M19 31L16 21Q15 17 19 17L21 21V12Q25 8 26 13V20Q32 16 33 21L30 32Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_door" viewBox="0 0 48 48"><path d="M29 5H42V43H29V5 M24 37H15L8 28L6 20Q8 17 11 22L15 26V12Q18 9 19 13V23V9Q23 6 24 11V27L29 31 M35 22V27" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_clap" viewBox="0 0 48 48"><path d="M8 40L12 28L8 14Q10 10 13 14L20 25L18 8Q22 5 24 10L28 28L23 39Z M28 28L33 13Q36 9 38 13L36 30L40 40H29 M24 13L29 8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_program" viewBox="0 0 48 48"><path d="M12 5H36V43H12Z M17 11H31V26H17Z M17 11Q24 18 31 11M21 12V23M27 12V23 M18 33H30M18 38H26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_wave" viewBox="0 0 48 48"><path d="M7 34L4 23Q4 19 7 21L10 25V12Q13 9 14 13V22V9Q17 6 18 10V22V13Q21 10 22 14V28L18 37H10Z M28 24A7 7 0 1 0 42 24A7 7 0 1 0 28 24 M26 41Q35 31 44 41 M30 20Q34 14 39 20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_rosary" viewBox="0 0 48 48"><path d="M24 5Q7 5 9 19Q10 30 24 33Q38 30 39 19Q41 5 24 5 M24 33V43M19 39H29 M16 7V9M10 13L12 14M11 21L13 21M17 27L18 25M32 7V9M38 13L36 14M37 21L35 21M31 27L30 25" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_grille" viewBox="0 0 48 48"><path d="M5 7H43V41H5Z M9 11H27V37H9Z M10 14L26 30M10 25L21 36M16 11L26 21M10 30L26 14M15 36L26 25M32 24H40M36 20L40 24L36 28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_bowl" viewBox="0 0 48 48"><path d="M7 25H35Q34 39 21 39Q8 39 7 25Z M16 42H26 M30 17L40 7L44 11L34 21 M5 15Q1 19 4 23M11 17Q8 19 10 22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_mudra" viewBox="0 0 48 48"><path d="M12 41L9 29L13 13Q15 9 18 13L17 24L24 20Q29 17 32 22Q35 27 29 30L21 30 M20 30L25 41H35L40 27L38 10Q35 7 33 12L34 23 M25 20L27 9Q24 6 22 11L20 21" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_candle" viewBox="0 0 48 48"><path d="M18 22H30V40H18Z M11 43H37 M24 19Q14 13 24 4Q34 13 24 19Z M24 19V23" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_cradle" viewBox="0 0 48 48"><path d="M8 20H40V32H8Z M8 20Q8 7 21 7V20 M13 32V39M35 32V39 M5 39Q24 48 43 39 M26 25H35" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_bottle" viewBox="0 0 48 48"><path d="M19 5H29V11L33 17V39Q24 44 15 39V17L19 11Z M15 19H33M19 11H29M27 25H32M25 31H32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_mobile" viewBox="0 0 48 48"><path d="M24 4V11M7 17Q24 5 41 17 M9 16V26M24 11V24M39 16V26 M5 27H13V35H5Z M20 28L24 23L28 28L24 34Z M35 30A4 4 0 1 0 43 30A4 4 0 1 0 35 30 M24 35V43M24 39Q13 32 15 39Q16 43 24 39Q35 32 33 39Q32 43 24 39" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_move" viewBox="0 0 48 48"><path d="M6 24H41M29 12L41 24L29 36" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_hand" viewBox="0 0 48 48"><path d="M10 40V27L7 21Q5 16 9 15L15 21V9Q15 4 19 7V21V5Q22 1 24 6V21V8Q28 4 29 10V22V14Q33 10 34 16V28Q34 35 30 40Z M15 35H30" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_finger" viewBox="0 0 48 48"><path d="M14 40V29L8 22Q6 18 10 16L18 23V7Q18 2 23 4V23L27 19Q31 17 33 21L36 25V31L30 40Z M18 35H31" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-call_cheeks" viewBox="0 0 48 48"><path d="M4 11Q24 5 44 11V36Q24 42 4 36Z M24 9V39 M13 24H15M33 24H35" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 <!-- ff-calls end -->
 <div id="app">
@@ -638,14 +673,15 @@
       <h1 style="font-size:2rem;">How to play</h1>
       <p class="objective">Get through the scene without anyone hearing you.</p>
       <div class="rule"></div>
-      <div class="how-table"><svg class="table-art" viewBox="0 0 240 150" aria-hidden="true" focusable="false"><use href="#i-table_card"/></svg><p class="table-line">Set your phone flat on a table and use both hands.</p></div>
+      <div class="how-table"><div class="table-pic" aria-hidden="true"></div><p class="table-line">Set your phone flat on a table and use both hands.</p></div>
       <ol class="how-steps">
         <li class="how-step"><span class="hs-art hs-pads" aria-hidden="true"><i></i><i></i></span><span class="hs-txt"><b>Hold both cheeks,</b> the two lower pads. Pressure rises the whole time, and a cheek lifted in the quiet is heard.</span></li>
         <li class="how-step"><span class="hs-art hs-vent" aria-hidden="true"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-passing_bus"/></svg><span>Let go</span></span><span class="hs-txt"><b>Let go under the noise.</b> When a bus, the organ or applause plays, lift both cheeks to vent and put them back before it ends. Lift right as it starts for a Perfect.</span></li>
         <li class="how-step"><span class="hs-art hs-hand" aria-hidden="true"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_book"/></svg></span><span class="hs-txt"><b>Answer the hands,</b> the two upper pads. One lights with what the scene wants. Touch it before its ring runs out and hold it until it lets go.</span></li>
+        <li class="how-step"><span class="hs-art hs-move" aria-hidden="true"></span><span class="hs-txt"><b>A call can move.</b> Follow it, and let go of the pad it left.</span></li>
       </ol>
       <div class="how-list">
-        <p>A missed call is a fidget, and the second fidget is a strike. <b>Three strikes and the room knows.</b> Later acts call two pads at once, even under the noise, and a call can move to another pad while you hold it. Let go of the one it left.</p>
+        <p>A missed call is a strike, and the room hears a little toot. <b>Three strikes and the room knows.</b> Later acts call two pads at once, even under the noise, and a call can move to another pad while you hold it. Let go of the one it left.</p>
       </div>
     </div>
     <button class="btn" id="howPractice"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-practice"/></svg> Play the lesson</button>
@@ -655,8 +691,7 @@
   <!-- ============ THE TABLE CARD (m2): before the first lesson ============ -->
   <div id="tableScreen" class="screen hidden">
     <div class="card table-card" style="max-width:380px;">
-      <svg class="table-art" viewBox="0 0 240 150" aria-hidden="true" focusable="false"><use href="#i-table_card"/></svg>
-      <p class="table-line">Set your phone flat on a table and use both hands.</p>
+      <div class="table-pic" role="img" aria-label="A phone flat on a table, two fingers of each hand on it"><p class="table-line">Set your phone flat on a table and use both hands.</p></div>
     </div>
     <button class="btn" id="tableGotIt" type="button">Got it</button>
   </div>
@@ -726,12 +761,12 @@
     <!-- THE DECK (m2): the four pads in a 2 by 2 block, the hands on top and the cheeks below (law 10: one deck owns
          every touch on it; the input section hit tests each pointer against the four boxes) -->
     <div class="deck4 deck6" id="deck" role="group" aria-label="The six pads">
-      <button class="hand idle" id="handL2" type="button" aria-label="Left finger"><span class="hring" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><circle class="hr-bg" cx="50" cy="50" r="44" pathLength="100"/><circle class="hr-fg" cx="50" cy="50" r="44" pathLength="100"/></svg><span class="hico" id="handLIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handLText">Left hand</span></button>
-      <button class="hand idle" id="handR2" type="button" aria-label="Right finger"><span class="hring" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><circle class="hr-bg" cx="50" cy="50" r="44" pathLength="100"/><circle class="hr-fg" cx="50" cy="50" r="44" pathLength="100"/></svg><span class="hico" id="handRIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handRText">Right hand</span></button>
-      <button class="hand idle" id="handL" type="button" aria-label="Left hand"><span class="hring" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><circle class="hr-bg" cx="50" cy="50" r="44" pathLength="100"/><circle class="hr-fg" cx="50" cy="50" r="44" pathLength="100"/></svg><span class="hico" id="handLIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handLText">Left hand</span></button>
-      <button class="hand idle" id="handR" type="button" aria-label="Right hand"><span class="hring" aria-hidden="true"><svg viewBox="0 0 100 100" focusable="false"><circle class="hr-bg" cx="50" cy="50" r="44" pathLength="100"/><circle class="hr-fg" cx="50" cy="50" r="44" pathLength="100"/></svg><span class="hico" id="handRIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handRText">Right hand</span></button>
-      <button class="pad cheek" id="padL" type="button" aria-label="Left cheek"><span class="pad-label">Left cheek</span><span class="pad-hint" id="padLHint">Hold</span></button>
-      <button class="pad cheek" id="padR" type="button" aria-label="Right cheek"><span class="pad-label">Right cheek</span><span class="pad-hint" id="padRHint">Hold</span></button>
+      <button class="hand idle" id="handL2" type="button" aria-label="Left finger"><svg class="rim-ring" aria-hidden="true" focusable="false"><path class="rim-bg" d=""/><path class="rim-fg" d="" pathLength="100"/></svg><span class="hring" aria-hidden="true"><span class="hico" id="handLIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handLText">Left hand</span></button>
+      <button class="hand idle" id="handR2" type="button" aria-label="Right finger"><svg class="rim-ring" aria-hidden="true" focusable="false"><path class="rim-bg" d=""/><path class="rim-fg" d="" pathLength="100"/></svg><span class="hring" aria-hidden="true"><span class="hico" id="handRIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handRText">Right hand</span></button>
+      <button class="hand idle" id="handL" type="button" aria-label="Left hand"><svg class="rim-ring" aria-hidden="true" focusable="false"><path class="rim-bg" d=""/><path class="rim-fg" d="" pathLength="100"/></svg><span class="hring" aria-hidden="true"><span class="hico" id="handLIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handLText">Left hand</span></button>
+      <button class="hand idle" id="handR" type="button" aria-label="Right hand"><svg class="rim-ring" aria-hidden="true" focusable="false"><path class="rim-bg" d=""/><path class="rim-fg" d="" pathLength="100"/></svg><span class="hring" aria-hidden="true"><span class="hico" id="handRIco"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-call_hand"/></svg></span></span><span class="hand-words" id="handRText">Right hand</span></button>
+      <button class="pad cheek" id="padL" type="button" aria-label="Left cheek"><svg class="rim-ring" aria-hidden="true" focusable="false"><path class="rim-bg" d=""/><path class="rim-fg" d="" pathLength="100"/></svg><span class="pad-label">Left cheek</span><span class="pad-hint" id="padLHint">Hold</span></button>
+      <button class="pad cheek" id="padR" type="button" aria-label="Right cheek"><svg class="rim-ring" aria-hidden="true" focusable="false"><path class="rim-bg" d=""/><path class="rim-fg" d="" pathLength="100"/></svg><span class="pad-label">Right cheek</span><span class="pad-hint" id="padRHint">Hold</span></button>
     </div>
     <!-- m1's controls, retired from play in m2: their code is dormant and still finds them here; nothing of them shows -->
     <div class="retired hidden" aria-hidden="true">
@@ -849,7 +884,7 @@
   //  DATA
   // ==================================================================
   // Astra's pack v1 (4 Nov 2026): every asset URL carries ?v=ART_V; bump it when any file under assets/ changes.
-  const ART_V="20261104b";
+  const ART_V="20261107a";
   const art=p=>p+"?v="+ART_V;
   // one inline sprite (tools/ff-tests/build-sprite.js): ic("vent") draws icon_vent.svg in currentColor
   const ic=(name,cls)=>'<svg class="ic'+(cls?" "+cls:"")+'" aria-hidden="true" focusable="false"><use href="#i-'+name+'"/></svg>';
@@ -897,7 +932,46 @@
     breath:"assets/controls/breath_bar.png", strain:"assets/controls/strain_bar.png", posture:"assets/controls/posture_track.png", postureDot:"assets/controls/posture_dot.png",
     abCough:"assets/controls/ability_cough.png", abSip:"assets/controls/ability_sip.png", abWaft:"assets/controls/ability_waft.png",
     chargeFull:"assets/controls/charge_full.png", chargeEmpty:"assets/controls/charge_empty.png", leakCore:"assets/controls/leak_core.png",
-    strikeEmpty:"assets/controls/strike_empty.png", strikeLit:"assets/controls/strike_lit.png", coverBanner:"assets/controls/cover_banner.png", callout:"assets/controls/callout_plate.png" };
+    strikeEmpty:"assets/controls/strike_empty.png", strikeLit:"assets/controls/strike_lit.png", coverBanner:"assets/controls/cover_banner.png", callout:"assets/controls/callout_plate.png",
+    // m4 (Astra round 2): the six pad plates by state, the table card, the move card, the lesson line
+    deck_finger_left_idle:"assets/deck/pad_finger_left_idle.png",
+    deck_finger_left_called:"assets/deck/pad_finger_left_called.png",
+    deck_finger_left_holding:"assets/deck/pad_finger_left_holding.png",
+    deck_finger_left_done:"assets/deck/pad_finger_left_done.png",
+    deck_finger_left_missed:"assets/deck/pad_finger_left_missed.png",
+    deck_finger_left_leave:"assets/deck/pad_finger_left_leave.png",
+    deck_finger_right_idle:"assets/deck/pad_finger_right_idle.png",
+    deck_finger_right_called:"assets/deck/pad_finger_right_called.png",
+    deck_finger_right_holding:"assets/deck/pad_finger_right_holding.png",
+    deck_finger_right_done:"assets/deck/pad_finger_right_done.png",
+    deck_finger_right_missed:"assets/deck/pad_finger_right_missed.png",
+    deck_finger_right_leave:"assets/deck/pad_finger_right_leave.png",
+    deck_hand_left_idle:"assets/deck/pad_hand_left_idle.png",
+    deck_hand_left_called:"assets/deck/pad_hand_left_called.png",
+    deck_hand_left_holding:"assets/deck/pad_hand_left_holding.png",
+    deck_hand_left_done:"assets/deck/pad_hand_left_done.png",
+    deck_hand_left_missed:"assets/deck/pad_hand_left_missed.png",
+    deck_hand_left_leave:"assets/deck/pad_hand_left_leave.png",
+    deck_hand_right_idle:"assets/deck/pad_hand_right_idle.png",
+    deck_hand_right_called:"assets/deck/pad_hand_right_called.png",
+    deck_hand_right_holding:"assets/deck/pad_hand_right_holding.png",
+    deck_hand_right_done:"assets/deck/pad_hand_right_done.png",
+    deck_hand_right_missed:"assets/deck/pad_hand_right_missed.png",
+    deck_hand_right_leave:"assets/deck/pad_hand_right_leave.png",
+    deck_cheek_left_idle:"assets/deck/pad_cheek_left_idle.png",
+    deck_cheek_left_held:"assets/deck/pad_cheek_left_held.png",
+    deck_cheek_left_cover:"assets/deck/pad_cheek_left_cover.png",
+    deck_cheek_left_lifted:"assets/deck/pad_cheek_left_lifted.png",
+    deck_cheek_left_squeak:"assets/deck/pad_cheek_left_squeak.png",
+    deck_cheek_right_idle:"assets/deck/pad_cheek_right_idle.png",
+    deck_cheek_right_held:"assets/deck/pad_cheek_right_held.png",
+    deck_cheek_right_cover:"assets/deck/pad_cheek_right_cover.png",
+    deck_cheek_right_lifted:"assets/deck/pad_cheek_right_lifted.png",
+    deck_cheek_right_squeak:"assets/deck/pad_cheek_right_squeak.png",
+    tableCard:"assets/deck/table_card.webp",
+    howMove:"assets/deck/how_to_play_move.webp",
+    lessonLine:"assets/deck/lesson_line.png",
+    lessonDone:"assets/deck/lesson_line_done.png" };
 
   const SCENES=[
     {t:"The Funeral",       s:"Do not make a sound.",                 covers:["COUGH","BELLS","ORGAN"], coverMul:0.95,
@@ -935,10 +1009,10 @@
     [["Hold the microphone","call_mic"],["Hold the headphones","call_headphones"],["Wave to the camera","call_camera"]],
     [["Hold the pose","call_pose"],["Press your palms","call_palms"],["Touch your toes","call_toes"]],
     [["Hold the rings","call_rings"],["Hold the bouquet","call_bouquet"],["Hold hands","call_hands"]],
-    [["Hold the book","call_book"],["Turn the page","call_page"],["Stamp the card","call_stamp"]],
+    [["Hold the book","call_book_library"],["Turn the page","call_page"],["Stamp the card","call_stamp"]],
     [["Press the button","call_button"],["Hold the rail","call_rail"],["Hold the door","call_door"]],
-    [["Clap","applause"],["Hold the program","call_program"],["Wave to your child","call_wave"]],
-    [["Fold your hands","call_palms"],["Hold the rosary","call_rosary"],["Open the grille","call_grille"]],
+    [["Clap","call_clap"],["Hold the program","call_program"],["Wave to your child","call_wave"]],
+    [["Fold your hands","call_fold"],["Hold the rosary","call_rosary"],["Open the grille","call_grille"]],
     [["Ring the bowl","call_bowl"],["Hold the mudra","call_mudra"],["Hold the candle","call_candle"]],
     [["Rock the cradle","call_cradle"],["Hold the bottle","call_bottle"],["Wind the mobile","call_mobile"]],
   ];
@@ -1011,7 +1085,7 @@
     // ids and stay earned and shown for whoever has them; their feats left play with m1's controls, so nobody wins them now
     {id:"calls10", ico:"medal_helping_hands", name:"Helping Hands", desc:"Hold 10 hand calls in one ordeal.", check:r=>r.calls>=10},
     {id:"four",    ico:"medal_twister", name:"Twister", desc:"Four fingers down at once, both hands on a call.", check:r=>r.maxPads>=4},
-    {id:"cleanact",ico:"medal_steady_hands", name:"Steady Hands", desc:"A whole act of hand calls with no fidget.", check:r=>r.cleanActs>=1},
+    {id:"cleanact",ico:"medal_steady_hands", name:"Steady Hands", desc:"A whole act of hand calls with no miss.", check:r=>r.cleanActs>=1},
   ];
 
   // ---- Cosmetics (earn by play, known thresholds, purely visual) ----
@@ -1547,13 +1621,13 @@
       S.combo+=CFG.comboCall; if(S.combo>S.bestCombo) S.bestCombo=S.combo; bumpCombo(); floatAtPad(c.side,"+"+pts); }
     c.phase="done"; c.until=S.time+CFG.flashDur; c.flash="Done"; c.from=-1;
   }
-  // a missed call is a fidget the witnesses notice: the first is a warning (a glance, the next pip half lit), the second
+  // m5 (Stephen, 7 Nov: "a miss is a strike with a little fart"): a missed call is a strike at once, a small toot the room hears;
+  // the lesson keeps its teaching words and loses nothing. Below, m2's words for the record: a fidget the witnesses notice, the first a warning, the second
   // a strike, and the count starts again (DECISION 2's default)
   function fidget(why){
     S.rp.fidgets++; S.actFidget=true; breakCombo(); haptic([12,40]);
     if(S.lesson){ if(S.tut) S.tut.fidgets=(S.tut.fidgets||0)+1; say(why==="early"?"Hold until it lets go":why==="stuck"?"Let go of the pad it left":"Touch the pad that lights","strike",1.8,3); glance(); return; }
-    if(S.fidgets>=1){ S.fidgets=0; addStrike("Fidgeting"); }
-    else { S.fidgets=1; say(why==="early"?"You let go too soon. They glance over":why==="stuck"?"Your hand stayed on the old pad. They glance over":"You missed the call. They glance over","strike",1.8,3); glance(); }
+    S.fidgets=0; fart(0.3); addStrike(why==="early"?"Let go too soon":why==="stuck"?"Stuck on the old pad":"Missed the call");
     renderPips(); }
   function glance(){ const a=SCENE_ART[sceneIdx(S.scene)]; if(a){ S.turnedUntil=S.time+0.9; setStrip(art(a.turned)); } }
   function renderPips(){ const pips=strikesEl.children, f=S?S.fidgets:0, n=S?S.strikes:0;
@@ -1865,7 +1939,7 @@
       ["Vents", get(L.vents,0)],
       ["Perfect vents", get(L.perfects,0)],
       ["Hand calls held", get(L.calls,0)],
-      ["Fidgets", get(L.fidgets,0)],
+      ["Misses", get(L.fidgets,0)],
       ["Best combo", "×"+comboMultFrom(get(L.bestCombo,0)).toFixed(1)],
       ["Sunbeams "+ic("sunbeam"), get(K.sun,0)],
       ["Medals", sh.filter(m=>ea.has(m.id)).length+"/"+sh.length],
@@ -1891,7 +1965,7 @@
   //  words sit on the pads plus one big line in the coach band, never a paragraph.
   // ==================================================================
   const OBJECTIVE="Get through the scene without anyone hearing you";
-  const LESSON=["Hold both cheeks","A bus. Let go now","Cheeks back on","Hold the hymn book","A hand call while a bus comes","You are ready. Three strikes and the room knows"];
+  const LESSON=["Hold both cheeks","A bus. Let go now","Cheeks back on","Hold the hymn book","A hand call while a bus comes","A call can move. Follow it","You are ready. Three strikes and the room knows"];   // m4: the move beat (Astra round 2), before the last
   const LESSON_COVER=3.0, LESSON_HOLD=[2.0,5.0];
   function startTutorial(){
     rngFn=Math.random;
@@ -1912,10 +1986,14 @@
     if(T.step===1){ S.pressure=Math.max(S.pressure,60); T.vented=false; lessonCover(); }
     if(T.step===3){ S.pressure=Math.max(S.pressure,35); T.callsDone=0; lessonCall(0,0); }
     if(T.step===4){ S.pressure=Math.max(S.pressure,55); T.callsDone=0; T.vented=false; T.ventIn4=false; T.cover4=false; lessonCall(1,1); }
-    hud.classList.toggle("show-pips", T.step===5);
+    if(T.step===5){ T.callsDone=0; T.hopped=false; lessonHop(); }   // m4: the call that moves
+    hud.classList.toggle("show-pips", T.step===6);
     tutObj.textContent=T.step===0?OBJECTIVE:"";
+    if(T.step===6&&innerHeight<=600){ lessonLine("You are ready."); tutHint.textContent="Three strikes and the room knows."; S.tut.hintUntil=S.time+9; return; }   // her short screen split
     lessonLine(LESSON[T.step]); tutHint.textContent=""; }
-  function nextTut(){ S.tut.step++; setupTutStep(); }
+  function lessonHop(){ const c=lessonCall(0,0); c.hold=3.2; c.hops=1; c.hopAt=0.9; return c; }
+  // m4: her done plate shows for a moment between beats
+  function nextTut(){ S.tut.step++; tutText.classList.add("done"); clearTimeout(nextTut._t); nextTut._t=setTimeout(()=>tutText.classList.remove("done"),600); setupTutStep(); }
   function endTutorial(){ set(L.tut2,true); if(raf){ cancelAnimationFrame(raf); raf=null; } releaseAll(); S=null;
     hud.classList.add("hidden"); hud.classList.remove("hud-tut","show-pips"); tutOverlay.classList.add("hidden"); coverBanner.classList.remove("show");
     clearLeaks(); renderHands(); hideAllScreens(); startScreen.classList.remove("hidden"); refreshMenu(); }
@@ -1924,7 +2002,7 @@
     const T=S.tut; T.stepT+=dt;
     // a slip gets one short note under the line (the room still turns; nothing counts)
     if(T.squeaks>T.seenSq){ T.seenSq=T.squeaks; lessonHint(T.step<=1||T.step===3?"They heard that. Keep both cheeks on until a noise":"They heard that. Back on before the noise ends"); }
-    if(T.fidgets>T.seenFd){ T.seenFd=T.fidgets; lessonHint("Touch the pad that lights and hold it until it lets go"); }
+    if(T.fidgets>T.seenFd){ T.seenFd=T.fidgets; lessonHint(T.step===5?"Follow the call to its new pad and let go of the old one":"Touch the pad that lights and hold it until it lets go"); }
     if(T.hintUntil&&S.time>=T.hintUntil){ T.hintUntil=0; tutHint.textContent=""; }
     const live=k=>S.calls.find(o=>o.side===k&&(o.phase==="wait"||o.phase==="hold"));
     switch(T.step){
@@ -1952,7 +2030,13 @@
         if(!c&&!S.calls.length&&!(T.ventIn4&&T.callsDone>0)){ // dropped, or held to the end without a vent: again
           T.callsDone=0; T.cover4=false; lessonCall(1,1); lessonLine(LESSON[4]); }
         break; }
-      case 5: // you are ready
+      case 5: { // m4: a call that moves: it lights the left hand, hops after 0.9 s of its hold, and finishes on the pad it moved to
+        const c=S.calls.find(o=>o.phase==="wait"||o.phase==="hold");
+        if(c&&c.from>=0&&!T.hopped){ T.hopped=true; lessonLine("Follow it"); lessonHint("Let go of the pad it left"); }
+        if(T.callsDone>0){ nextTut(); break; }
+        if(!c&&!S.calls.length){ T.hopped=false; lessonHop(); lessonLine(LESSON[5]); }   // dropped or missed: again
+        break; }
+      case 6: // you are ready
         if(T.stepT>3.4) endTutorial();
         break;
     }
@@ -2036,7 +2120,14 @@
       const cue=play&&S.cover&&!S.vented&&on, back=play&&!on&&S.cArmed[k]&&(S.cGrace[k]>0||(S.cover&&S.vented)||S.backBy>0);
       const t=cue?"Let go":(back?"Back on":"Hold");
       if(hint.textContent!==t) hint.textContent=t;
-      el.classList.toggle("cue",cue); el.classList.toggle("warn",back); });
+      el.classList.toggle("cue",cue); el.classList.toggle("warn",back);
+      // m4: her seat plates: lifted under a cover (venting), or lifted in the quiet and about to be heard (the squeak plate)
+      const lifted=play&&!on&&S.cover, squeak=play&&!on&&!S.cover&&S.cArmed[k];
+      el.classList.toggle("lifted",lifted); el.classList.toggle("squeak",squeak);
+      // the remaining noise on the rim: brass through the Perfect window (the first 40 percent), then relief
+      if(play&&S.cover&&(cue||lifted)){ const r=Math.max(0,Math.min(1,(S.coverUntil-S.time)/Math.max(0.01,S.coverUntil-S.coverStart)));
+        el.style.setProperty("--ring-a",(100*r).toFixed(2)); el.style.setProperty("--ring-o",(-100*(1-r)).toFixed(2)); el.style.setProperty("--ring-c",(1-r)<CFG.perfectFrac?"#c8a84b":"var(--relief)"); }
+      else { el.style.setProperty("--ring-a","0"); el.style.setProperty("--ring-o","0"); } });
   }
   // the hands: Left hand or Right hand until called; then the call's words and its icon, a ring that counts the time
   // left to touch it down, then fills as it is held; Done, Other hand, Missed or Too soon for a moment after
@@ -2046,15 +2137,21 @@
       const ph=c?c.phase:left?"leave":"idle";
       // a call takes only a touch that lands after it lit: a finger already resting there is asked to lift and touch
       const resting=ph==="wait"&&S&&S.hand[k];
-      const words=ph==="leave"?"Let go":!c?HAND_NAME[k]:(resting?"Lift, then touch":(ph==="wait"||ph==="hold"?c.words:c.flash)), icon=c?c.icon:left?left.icon:"call_hand";
-      const key=ph+"|"+words+"|"+icon;
+      // m4 (Astra round 2): the idle mark is the pad's own (hands, fingers); the pad a call left shows her move mark turned
+      // toward the destination, with the words Let go; the destination keeps the call's icon and words
+      const words=ph==="leave"?"Let go":!c?HAND_NAME[k]:(resting?"Lift, then touch":(ph==="wait"||ph==="hold"?c.words:c.flash)), icon=c?c.icon:left?"call_move":(k>=2?"call_finger":"call_hand");
+      const rot=ph==="leave"&&left?Math.round(Math.atan2((left.side<2?1:0)-(k<2?1:0),(left.side%2)-(k%2))*180/Math.PI):0;
+      const key=ph+"|"+words+"|"+icon+"|"+rot;
       if(el._key!==key){ el._key=key;
         el.classList.remove("idle","called","holding","done","missed","leave");
         el.classList.add(ph==="wait"?"called":ph==="hold"?"holding":ph==="done"?"done":ph==="miss"?"missed":ph==="leave"?"leave":"idle");
-        el.querySelector(".hico").innerHTML=ic(icon); el.querySelector(".hand-words").textContent=words;
+        el.querySelector(".hico").innerHTML=ic(icon); el.querySelector(".hand-words").textContent=words; el.style.setProperty("--move-rot",rot+"deg");
         el.setAttribute("aria-label",HAND_NAME[k]+(c&&(ph==="wait"||ph==="hold")?". "+c.words:ph==="leave"?". Let go":"")); }
-      const ring=!c?0:ph==="wait"?Math.max(0,1-(S.time-c.t0)/c.wait):ph==="hold"?Math.min(1,c.ht/c.hold):ph==="done"?1:0;
-      el.style.setProperty("--ring",ring.toFixed(3)); });
+      // the rim ring (her specimen): a countdown erases clockwise from the top (dash 100r, offset minus 100(1 minus r)); a hold fills from the top (dash 100p, offset 0)
+      if(c&&ph==="wait"){ const r=Math.max(0,1-(S.time-c.t0)/c.wait); el.style.setProperty("--ring-a",(100*r).toFixed(2)); el.style.setProperty("--ring-o",(-100*(1-r)).toFixed(2)); }
+      else if(c&&ph==="hold"){ el.style.setProperty("--ring-a",(100*Math.min(1,c.ht/c.hold)).toFixed(2)); el.style.setProperty("--ring-o","0"); }
+      else if(c&&ph==="done"){ el.style.setProperty("--ring-a","100"); el.style.setProperty("--ring-o","0"); }
+      else { el.style.setProperty("--ring-a","0"); el.style.setProperty("--ring-o","0"); } });
   }
   function dotRow(n,cap){ let s=""; for(let i=0;i<cap;i++) s+= i<n ? '<i class="cdot on"></i>' : '<i class="cdot"></i>'; return s; }
   function renderAbilities(){
@@ -2118,6 +2215,14 @@
   function bindPad(el,key){ bindHold(el, ()=>{ el.classList.add("down"); if(S) S[key]=true; }, ()=>{ el.classList.remove("down"); if(S) S[key]=false; }); }
   const PADS=[{el:padL,key:"padL"},{el:padR,key:"padR"},{el:handL,key:"hand0"},{el:handR,key:"hand1"},{el:handL2,key:"hand2"},{el:handR2,key:"hand3"}];
   const PAD_KEY={KeyF:0,KeyJ:1,KeyR:2,KeyU:3,KeyE:4,KeyI:5}, padKey=code=>Object.prototype.hasOwnProperty.call(PAD_KEY,code)?PAD_KEY[code]:-1;
+  // m4 (Astra round 2): the rim ring is a rounded rectangle on each pad's real size, inset 9, radius 12, stroke 3, starting at
+  // the top centre and running clockwise (pathLength 100 keeps the dash maths in percent); rebuilt whenever a pad resizes
+  function rimPath(w,h){ const i=9, r=12, x0=i, y0=i, x1=w-i, y1=h-i, cx=w/2;
+    return "M"+cx+" "+y0+"H"+(x1-r)+"A"+r+" "+r+" 0 0 1 "+x1+" "+(y0+r)+"V"+(y1-r)+"A"+r+" "+r+" 0 0 1 "+(x1-r)+" "+y1+"H"+(x0+r)+"A"+r+" "+r+" 0 0 1 "+x0+" "+(y1-r)+"V"+(y0+r)+"A"+r+" "+r+" 0 0 1 "+(x0+r)+" "+y0+"Z"; }
+  function fitRims(){ PADS.forEach(({el})=>{ const w=el.clientWidth, h=el.clientHeight; if(!w||!h) return; const d=rimPath(w,h);
+      el.querySelectorAll(".rim-ring").forEach(svg=>{ svg.setAttribute("viewBox","0 0 "+w+" "+h); svg.querySelectorAll("path").forEach(pa=>{ if(pa.getAttribute("d")!==d) pa.setAttribute("d",d); }); }); }); }
+  if(window.ResizeObserver){ const ro=new ResizeObserver(fitRims); PADS.forEach(({el})=>ro.observe(el)); } else addEventListener("resize",fitRims);
+  addEventListener("orientationchange",()=>setTimeout(fitRims,80)); setTimeout(fitRims,0);
   const ptrPad=new Map(), keyPad=[false,false,false,false,false,false];
   function padAt(x,y){ for(let i=0;i<PADS.length;i++){ const r=PADS[i].el.getBoundingClientRect();
       if(x>=r.left&&x<r.right&&y>=r.top&&y<r.bottom) return i; } return -1; }
