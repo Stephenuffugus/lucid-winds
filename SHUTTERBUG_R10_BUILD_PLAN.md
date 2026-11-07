@@ -25,6 +25,8 @@ The deploy wrapper pattern: /home/codespace/sb-drafts/sb-m2-12/deploy-sb-m2-12.s
 first, then tools/shutterbug-tests/deploy.sh with the stamp). The browser gates in test/ are red since before R9 on a
 stale #sample: not tonight's job.
 
+## ROUND 11 CODE (sb-m2-17, e38d6e78e, 7 Nov ~21:40 UTC): THE LOOM AND THE WASP live in Attic and Ember houses by a seed bit under FLAG_VERBS (features.guardian.kind): the strand and the puff, the dart and the Kiln's flame, her round 10 marks as the tells; H-boss-13. ONE line ships 16 and 17: `! bash /home/codespace/sb-drafts/sb-m2-17/deploy-sb-m2-17.sh` (the 16 line is stale). Still waiting on Astra's round 11 art: the staircase, the swinging strands, the crosswind, the rage tells.
+
 ## LIVE 7 Nov ~18:20 UTC: sb-m2-13, 14 and 15 by his one line (lucid-winds main 5bfb72309). sb-m2-16 (step 5, the moves taught) STAMPED 8e070b1e4, waits for his line. Open: round 11 when Astra's pack is back.
 
 ## STATE (the builder updates this block; one line per step)
