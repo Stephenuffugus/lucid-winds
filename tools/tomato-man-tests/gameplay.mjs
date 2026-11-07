@@ -1,6 +1,6 @@
 /* Tomato Man's real gameplay in numbers (6 Nov): THE SEED TOSS and SUN CRITTERS through the game's own update, clock held, no image opened.
  *   (cd /workspaces/Tomato_Man && python3 -m http.server 8778 >/dev/null 2>&1 &)     serve the clone first
- *   node tools/tomato-man-tests/gameplay.mjs [seed|critters|run|runbot|hero|planet]
+ *   node tools/tomato-man-tests/gameplay.mjs [seed|critters|run|runbot|hero|planet|split]
  * Ends GAMEPLAY OK or GAMEPLAY FAILED. One browser at a time on this box. */
 import { createRequire } from 'node:module';
 const require = createRequire('/workspaces/sws-tools/package.json');
@@ -151,6 +151,38 @@ if (only === 'planet') {
   say(c.has && c.dark, 'an Eclipse level has one too, beside its dark windows (' + c.name + ')');
   const d = await ev(() => { const T = __TM; T.hold(true); T.startRun(5, 3); return __TM._run().planet; });
   say(d === null, 'the run has none');
+}
+if (only === 'split') {
+  /* THE SPLIT (7 Nov, Stephen): in the Dunes and the Eclipse the awnings stand in two lanes; each has its own sway clock */
+  const lv = await ev(() => { const T = __TM; const out = []; T.LEVELS.forEach((L, i) => { if (!(L.world === 3 || L.world === 4)) return; const R = L.casters.filter(c => c[0] === 'R').sort((a, b) => b[2] - a[2]); const cx = R.map(c => c[1] + c[3] / 2); const gaps = cx.slice(1).map((x, k) => Math.abs(x - cx[k]));
+      const inside = (p) => L.casters.some(c => c[0] === 'R' && p[0] >= c[1] && p[0] <= c[1] + c[3] && p[1] >= c[2] - 10 && p[1] <= c[2] + c[4] + 10);
+      out.push({ i, name: L.name, n: R.length, wide: gaps.filter(g => g >= 480).length, gaps, clocks: R.filter(c => c.length > 6 && (c[6] || c[7] !== 1)).length, cpsOn: L.checkpoints.filter(inside).length, cps: L.checkpoints.length, inBounds: R.every(c => c[1] >= 0 && c[1] + c[3] <= L.worldW) }); }); return out; });
+  console.log(lv.map(l => l.i + ':' + l.name + ' lanes ' + l.wide + '/' + (l.n - 1) + ' clocks ' + l.clocks + ' cps ' + l.cpsOn + '/' + l.cps).join(' | '));
+  say(lv.length === 9 && lv.every(l => l.wide >= l.n - 3), 'in all nine Dunes and Eclipse levels the awnings stand in two lanes 500 px apart (all but the start and exit steps)');
+  say(lv.every(l => l.cpsOn === l.cps - (l.i === 25 ? 2 : 0) && l.inBounds), 'every checkpoint that stood on an awning still does (The Long Dark keeps its two dark ones), every awning inside its level');
+  say(lv.every(l => l.clocks >= l.n - 3), 'every moved awning carries its own sway clock');
+  const sw = await ev((i) => { const T = __TM; T.hold(true); T.startLevel(i); const r = T._run(), L = r.L; r.screenT = 999; T.seek(3);
+    /* two swayed awnings: the lean of each shade (its swept vector) at the same moment; and the start awning leans with the sun */
+    const R = L.casters.map((c, k) => ({ c, k })).filter(o => o.c.c0 !== 'U' && o.c[0] === 'R');
+    const lean = (k) => { const poly = r.shadePolys[k]; let minY = 1e9, maxY = -1e9; for (const p of poly) { minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); } const tip = poly.filter(p => p.y < minY + 1), base = poly.filter(p => p.y > maxY - 1), mx = a => a.reduce((s, p) => s + p.x, 0) / a.length; return Math.atan2(mx(tip) - mx(base), maxY - minY); };
+    const leans = R.map(o => ({ k: o.k, ph: o.c[6] || 0, sp: o.c[7] || 1, lean: lean(o.k) }));
+    const sunLean = Math.atan2(Math.cos(r.az + Math.PI), -Math.sin(r.az + Math.PI));
+    const spread = Math.max(...leans.map(l => l.lean)) - Math.min(...leans.map(l => l.lean));
+    const fixed = leans.find(l => l.ph === 0 && l.sp === 1);
+    return { spread, n: leans.length, fixedLean: fixed ? fixed.lean : null, sunLean, name: L.name }; }, lv[0].i);
+  say(sw.spread > 0.15, 'in ' + sw.name + ' at 3 s the shades lean apart by ' + (sw.spread * 180 / Math.PI).toFixed(0) + ' degrees across the awnings');
+  say(sw.fixedLean !== null && Math.abs(Math.atan2(Math.sin(sw.fixedLean - sw.sunLean), Math.cos(sw.fixedLean - sw.sunLean))) < 0.2, 'and the start awning leans with the sun (' + (sw.fixedLean * 180 / Math.PI).toFixed(0) + ' vs ' + (sw.sunLean * 180 / Math.PI).toFixed(0) + ')');
+  const play = await ev((idx) => { const T = __TM; const out = []; for (const i of idx) { T.hold(true); T.startLevel(i); const r = T._run(), L = r.L; r.screenT = 999; T.seek(2); T.render(); const on = L.casters.some(c => c[0] === 'R' && r.cp.x >= c[1] && r.cp.x <= c[1] + c[3] && r.cp.y >= c[2] - 10 && r.cp.y <= c[2] + c[4] + 10); out.push({ i, name: L.name, cp: [r.cp.x, r.cp.y], on, shaded: T.shadedGeom(r.cp.x, r.cp.y), startShaded: T.shadedGeom(L.start[0], L.start[1]) }); } return out; }, lv.map(l => l.i));
+  console.log(play.map(p => p.i + ':' + (p.on ? 'on' : 'off') + (p.shaded ? '+shade' : '-shade') + (p.startShaded ? ' start+' : ' start-')).join(' '));
+  say(play.every(p => p.startShaded && (!p.on || p.shaded)), 'each of the nine levels runs two seconds and draws, its start in shade and its first checkpoint too where it stands on an awning');
+  /* the walk order: facing north the frames go 1,3,2,4 by the stride; south 1,2,4,3 */
+  const wo = await ev(() => { const T = __TM; T.hold(true); T.look('tomato', 'none'); T.startLevel(0); T.seek(0.3); const r = T._run(); r.idleT = 0; T.P.vx = 0; T.P.vy = -120; T.P.face = -Math.PI / 2; T.P.sx = T.P.sy = 1;
+    const cv = document.getElementById('game'), g = cv.getContext('2d'), DPR = cv.width / cv.clientWidth, cam = T._cam(); cam.x = T.P.x - cv.clientWidth / 2; cam.y = T.P.y - cv.clientHeight / 2; const w = Math.round(64 * DPR);
+    const grab = () => { T.render(); return g.getImageData(Math.round((T.P.x - cam.x - 32) * DPR), Math.round((T.P.y - cam.y - 32) * DPR), w, w).data; };
+    const cellPx = (cell) => { const img = T.A('hero_n'), o = document.createElement('canvas'); o.width = o.height = w; const q = o.getContext('2d'); q.drawImage(img, (cell % 4) * (img.width / 4), Math.floor(cell / 4) * (img.height / 2), img.width / 4, img.height / 2, 0, 0, w, w); return q.getImageData(0, 0, w, w).data; };
+    const best = (box) => { let bi = -1, bm = 1e9; for (let c = 1; c <= 4; c++) { const cell = cellPx(c); let n = 0, s = 0; for (let i = 0; i < cell.length; i += 4) { if (cell[i + 3] < 250) continue; n++; s += Math.abs(box[i] - cell[i]) + Math.abs(box[i + 1] - cell[i + 1]) + Math.abs(box[i + 2] - cell[i + 2]); } const m = s / n; if (m < bm) { bm = m; bi = c; } } return bi; };
+    const seq = []; for (const st of [0, 14, 28, 42]) { r.stride = st; seq.push(best(grab())); } return seq; });
+  say(wo.join(',') === '1,3,2,4', 'walking north the frames land 1,3,2,4 by the stride (left, right, left, right): ' + wo.join(','));
 }
 say(errs.length === 0, 'page errors ' + errs.length + ' ' + errs.slice(0, 3).join(' | ').slice(0, 300));
 console.log(bad ? 'GAMEPLAY FAILED ' + bad : 'GAMEPLAY OK');

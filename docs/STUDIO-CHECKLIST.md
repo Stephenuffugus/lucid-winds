@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 7 Nov 2026, 22:47 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 7 Nov 2026, 23:52 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 1. The art, in this order (you, then Astra)
 
@@ -15,6 +15,7 @@ Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt
 - [ ] Flatulence Fighter round 3, the moving call's travel accent, the final teaching cards, a result line, IDEAS: [Astra / Flatulence Fighter / Round 3](https://drive.google.com/drive/folders/1ZP52O4yxsaJogYj22uusAX2qyzjTlh3O) (you)  
 - [ ] Sunforge round 3, only if you want any of chapter skies, the hold outline, overload, a weekly gyre: [Astra / Sunforge / Round 3](https://drive.google.com/drive/folders/1oZg8rD3G2y7ERX3Zm0se5McD9r4h4mWe) (you)  
 - [ ] Shutterbug round 11, the four yeses (the collapsing staircase, the swinging web strands, the window crosswind, the guardians' rage tells) and the Loom and Wasp arena pieces, her ideas last: [Astra / Shutterbug / Round 11](https://drive.google.com/drive/folders/1ukat54v_fLwi-Js-S_JqbgWfeJB_g-oU) (you)  
+- [ ] Tomato Man The Walk (small): the four walk cells as one strict cycle that alternates the feet, in the tomato's five sheets and under the thirteen heads; the side views gallop in the art today: [Astra / Tomato Man / The Walk](https://drive.google.com/drive/folders/19RuMksHJHAQtdoIq2Uy_1TpSs1mmorWJ) (you)  
 - [ ] Pixel Petri round 1, THE LIVING YEAR (seasons, weather, eggs, sleep, migration, the marks), IDEAS first: [Astra / Pixel Petri](https://drive.google.com/drive/folders/1SAbhhQGta1tbX1oBz0QyK66nwaC_dhb7) (you)  
 - [ ] Still out from before, when a slot frees: [Sixfold](https://drive.google.com/drive/folders/1_oNXfJWWox5-vz8CJUEx5PE7O-QMO6hm), [Aura Farm](https://drive.google.com/drive/folders/19G9FuxQEIJ2XfOi_sFE0edkFVYQ-MIkj), [Orb Orchard](https://drive.google.com/drive/folders/1Wo7AtBoFvg0ONNU7NSbdVVWF6m0mRaY4), [Dewball store kit](https://drive.google.com/drive/folders/19CCGoJDoG27NxRya3YFHiZRSjrCz2rrp) (you)  
 - [ ] Upload each zip into a Fable session as it comes back (or drop it in the game's Drive folder and say so); Fable vaults it, unpacks it and adds its wiring chapter to the one plan (you, then Fable)
@@ -38,6 +39,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Tomato Man ruled 7 Nov: pace, checkpoints and motes at their defaults until you play; canopies walkable AND awnings you walk under, more gaps in the shade (you)  
 - [ ] Tomato Man: Astra's ten run ideas, yes or no each (TOMATO_MAN_RUN_BUILD_PLAN.md RULINGS 2: the first eclipse as the goal, a rescued sapling garden, the gull's beak dip tell, crabs as route choices, mote gates, pods on the sunny side, the best as a sand marker, the next shade shown in an eclipse, the line's one beat pause at a world change) (you)  
 - [x] Tomato Man: PLANET TOMATÓ, your name and accent (7 Nov); built and LIVE the same hour (you)  
+- [x] Tomato Man, your Pixel notes 7 Nov (more space between the shadows, split left to right, moving at different times; the walk still wonky): built as chapter 12 in the Dunes and the Eclipse; say if the split should reach worlds 0 to 2 as well (you)  
 - [ ] Tomato Man: a new name for the RUN mode; hats later; the listing free or $0.99; Penny's credit; the Pages mirror (you)  
 - [x] Flatulence Fighter ruled 7 Nov: a miss is a strike with a little fart; story only, a Challenge mode later; portrait stays; seven beats for now (you)  
 - [ ] Flatulence Fighter: the medals' names; the table card's line; the lesson's move beat once Fable explains it (you)  
@@ -67,6 +69,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Chapter 7 Shutterbug round 10 art wired, sb-m2-14 (Fable, 7 Nov)  
 - [x] Chapter 10 Tomato Man The Hero wired, sunstruck d5e80d9: LIVE 7 Nov by your line (Fable)  
 - [x] Chapter 11 Tomato Man Planet Tomató (the moon crosses the Dunes and the Eclipse once a level, its shadow is shade; the cue, a coach mark, a How card): LIVE 7 Nov by your line (Fable)  
+- [x] Chapter 12 Tomato Man THE SPLIT and the walk order (two lanes of awnings in the Dunes and the Eclipse, each shade on its own clock; the walk frames alternate the feet) (Fable, 7 Nov; waits for your line)  
 - [ ] Chapters 9 on, the new packs' wiring as each lands: Keepsies round 4, FF round 3, Sunforge round 3, Pixel Petri round 1, Shutterbug round 11 (Fable writes, Opus builds)  
 - [ ] If the box dies mid chapter, the next night starts the same kickoff and resumes from the first step not DONE (you, Opus)
 
@@ -78,6 +81,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Flatulence Fighter m4 and m5 (the plates and cards; a miss is a strike with a little toot): LIVE 7 Nov, main 692ca6b87 (you ran the line)  
 - [x] Tomato Man The Hero (the thirteen produce bodies on the tomato's rig; her builder heads): LIVE 7 Nov, main 1c2388105 (you ran the line)  
 - [x] Tomato Man Planet Tomató (a tomato moon crosses the Dunes and the Eclipse once a level; ride its shadow): LIVE 7 Nov, main d5b3a7a75 (you ran the line)  
+- [ ] Tomato Man THE SPLIT and the walk order (two lanes of awnings, shades on their own clocks, the feet alternate): `! bash /home/codespace/tm-drafts/deploy-tomato-man-split.sh` (you)  
 - [ ] Run each deploy line Opus left at the top of START-HERE.md, one at a time at an idle prompt (you)  
 - [ ] Play each game on the Pixel after its line and write your notes in one message; Fable turns them into the next chapter (you)  
 - [ ] Open Tomato Man with ?lab=1 and fix one level you hate; Copy JSON and paste it to Fable (you)  

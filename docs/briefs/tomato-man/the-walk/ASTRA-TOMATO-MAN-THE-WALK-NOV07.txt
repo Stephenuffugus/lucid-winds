@@ -1,0 +1,64 @@
+TOMATO MAN, THE WALK: FOUR WALK CELLS THAT ALTERNATE THE FEET, IN ALL FOURTEEN BODIES (7 Nov 2026)
+
+Stephen played the hero round on his phone and said the walk still looks a little wonky. Fable measured the walk
+cells in your sheets (the foot that touches the ground in each cell) and found the cause in the art, not the code:
+- tomato_s.webp (south): cells 1 to 4 put the RIGHT foot down, then LEFT, LEFT, RIGHT. Played in order, two steps in
+  a row land on the same foot: a limp.
+- tomato_n.webp (north): LEFT, LEFT, RIGHT, RIGHT. The same limp, and north is the way he walks most (every level
+  climbs).
+- tomato_e.webp, tomato_se.webp, tomato_ne.webp (east, south east, north east): the cells are contact, pass,
+  contact, pass, which is the right shape, but the SAME foot leads at both contacts (the near leg both times), so
+  every step is the same step: a gallop.
+The code now plays south as 1,2,4,3 and north as 1,3,2,4 so the feet alternate there; the gallop in the three side
+views cannot be fixed by reordering. This round redraws the four walk cells as one strict cycle, in the tomato's five
+sheets and in the sixty five produce sheets you composited on his rig. Fable wires your zip from the zip alone, so
+write as if no one can ask you a follow up.
+
+HOW TO WORK (Stephen's standing order; it binds this pack)
+- No tests. No checks. No validation scripts, no pixel audits, no reports about reports. The art is the deliverable.
+- Look at each sheet ONCE with your own eyes when it is done, fix what is wrong, move on.
+- One assessment, written once. One contact sheet per section. One zip. If something is ambiguous, pick the reading
+  that ships and write one line about it in NOTES.md. Do not stop to ask.
+- Do not open or play the live game: it spends your session for nothing. Everything you need is in this brief and
+  its links.
+
+THE CYCLE (the same in every bearing)
+  cell 1  CONTACT LEFT: the left foot forward and planted, the right foot back, legs apart.
+  cell 2  PASS: the right leg swinging through under him, feet close, the body a touch higher (2 cell px at most).
+  cell 3  CONTACT RIGHT: the mirror step, the right foot forward and planted, the left back.
+  cell 4  PASS: the left leg swinging through.
+  The forward foot at a contact stands about 96 cell px (256 px cells; 24 world px) ahead of the rear foot, so the
+  code's 14 world px of ground per frame reads as walking, not skating. The head, the body's centre and the hat seat
+  keep the same x and y in all four cells (no side to side wobble; the bob only in the pass cells, 2 px at most), so the
+  hat does not swim. Left and right mean the character's own left and right: in the south sheet his left foot is on the
+  viewer's right. In the side views (e, se, ne) the far leg is drawn a little darker, as your sheets already do, and it
+  must be the LEADING leg in one contact and the trailing leg in the other.
+
+THE PIECES
+A. THE TOMATO'S FIVE SHEETS, redrawn at 1024 by 512 (256 px cells, four by two, the format of your hero round): only
+   cells 1 to 4 change (the walk); cells 0, 5, 6, 7 (idle, the dash crouch, the dash stretch, the hop) are the same
+   drawings as today scaled by two with their pivots where they are. The live five sheets (512 by 256) are public
+   links; copy their look exactly:
+   https://raw.githubusercontent.com/Stephenuffugus/Tomato_Man/main/art/hero/tomato_s.webp
+   https://raw.githubusercontent.com/Stephenuffugus/Tomato_Man/main/art/hero/tomato_se.webp
+   https://raw.githubusercontent.com/Stephenuffugus/Tomato_Man/main/art/hero/tomato_e.webp
+   https://raw.githubusercontent.com/Stephenuffugus/Tomato_Man/main/art/hero/tomato_ne.webp
+   https://raw.githubusercontent.com/Stephenuffugus/Tomato_Man/main/art/hero/tomato_n.webp
+   Files: hero/tomato_<bearing>.webp, <bearing> in s, se, e, ne, n.
+B. THE THIRTEEN PRODUCE BODIES on the new walk: your sixty five sheets from the hero round with cells 1 to 4 replaced
+   by the new cycle under each body's head (the same compositing as the hero round), everything else unchanged. Files:
+   hero/<body>_<bearing>.webp, <body> in strawberry, orange, lemon, lime, peach, cherry, bell_pepper, eggplant,
+   avocado, heirloom, pickle, golden, sunburn. The live sixty five are public at
+   https://github.com/Stephenuffugus/Tomato_Man/tree/main/art/hero
+C. ANCHORS: the per cell hat seats for cells 1 to 4 in each bearing, in the tomato's 256 px cell space, as the hero
+   round's anchors.json gave them (the current table for reference, s then se, e, ne, n, cells 0 to 7:
+   s [128,41] [128,41] [128,41] [129,41] [128,42] [128,56] [129,61] [129,39]; se [131,40] [133,44] [134,48] [136,52]
+   [136,54] [141,63] [153,64] [137,43]; e [129,46] x5 [140,60] [156,65] [133,39]; ne [129,42] [129,43] [135,46]
+   [136,46] [136,47] [144,58] [157,51] [135,40]; n [129,51] [129,51] [129,51] [130,51] [129,52] [130,63] [131,46]
+   [129,40]). If your walk cells keep the head still, say "unchanged" and the code keeps the table.
+
+DELIVERY
+ONE zip named tomato-man-astra-walk.zip: ASSESSMENT.md (short), manifest.json (every file: file, id, kind, size,
+grid, frame_names, the foot down per walk cell as a note), anchors.json (cells 1 to 4 per bearing, or "unchanged"),
+assets/ (a_tomato with five sheets, b_bodies with sixty five), previews/ (one contact sheet per section; in the walk
+contact sheet mark the planted foot in each cell with a small arrow), NOTES.md. WebP, 1024 by 512. Stephen uploads it.
