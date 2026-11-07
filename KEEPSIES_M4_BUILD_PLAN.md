@@ -25,13 +25,13 @@ Check: `node tools/check.js --fast` from satellites/keepsies. Browser gates seri
 
 | Step | State | Commit | Note |
 |---|---|---|---|
-| 0 | | | |
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
-| 6 | | | |
+| 0 | DONE 7 Nov | 3ba0a05cc | tools/astra_in.mjs gained a round 3 section (seven files into assets/ui and assets/env, src/data/astra_r3.json with her anchors and caps, the retained tiles' and pills' round 3 anchors recorded; --check covers round 2 and 3); her tier tiles, pills and shadow_dark are byte equal to the game's (retained), her ground_shadow is round 2's under a new name (left); the stamp tool bumped 27 files to 20261107a |
+| 1 | DONE 7 Nov | 3ba0a05cc | #grabRing draws her hold_circle.svg at 2 grabR (154) and hold_circle_braced.svg while bracing (onBrace toggles the class); the dashed CSS ring is gone; the hit region unchanged. Aim shot at 412x915 probed (docs/m3/probe_pixels.mjs, not opened): her cream ring at the circle's left and right edges (129,743 and 283,743: 25 and 28 cream pixels of 49), the top and foot clear by her design (her two arcs leave breaks at the top and bottom centre), the shooter at the centre, page errors 0 |
+| 2 | DONE 7 Nov | 3ba0a05cc | #reticle is a fixed 154 box; drawReticle builds her rings inline (eight 29 degree arcs every 45 degrees at radius 33.15 + k (71.65 minus 33.15) from the cone, the full ring and her tick at settle01 > 0.98), keyline 3 and chalk 1.5 constant, no CSS scale; spin marks behind tuning snap.spinMarks (false); the dial cue 48 px at the circle's right edge while localStorage kp_dial_cue < 3, a brace that ends counts one, hidden while braced. Feel gate FEEL OK at 412x915 (30 oks: circle 72.4 px shooter at 206,743, orbit 20.1 for 20.1, dial 9.6, a brace on the edge at 71 px, the flick 0.001 off the line, the camera 0.00 in a shot, LOOK, the knuckle) and 360x780 |
+| 3 | DONE 7 Nov | 3ba0a05cc | #snapArt is her snap_card.svg inline (hold, slide to turn, flick up), three words in code under it |
+| 4 | DONE 7 Nov | 3ba0a05cc | the chalk strip loads env/chalk_stroke_r3.png (her export; node proved three alpha breaks at y 32: 4, 6 and 4 px at x 384, 909, 1504); her dirt tile behind tuning render.dirtDetail (false): a detail sample at 0.25 m repeat mixed at 0.18, faded out from 0.3 to 0.65 m camera distance through onBeforeCompile |
+| 5 | DONE 7 Nov | 3ba0a05cc | CHIP 152 by 56, pips 16 + 20k at 39 (her 304 by 112 chip as ui/player_chip_r3.png, the CSS max width 152); TIER_TILE.content 13 22 70 61; test/plates.mjs reads her round 3 anchors; PLATES OK |
+| 6 | DONE 7 Nov | 3ba0a05cc | stamp 20261107a (tools/stamp.mjs --bump, STAMP OK); fast check: THE GATES THAT CAN RUN FAST PASSED; feel FEEL OK at two phones; /home/codespace/kp-drafts/deploy-keepsies-m4.sh DRY OK (44 files) against main 9550354e0. LINE: `! bash /home/codespace/kp-drafts/deploy-keepsies-m4.sh` |
 
 ## THE LAWS
 The LAWS of KEEPSIES_M3_BUILD_PLAN.md bind (code directly; the fast check per step; the probes read screenshot PIXELS,

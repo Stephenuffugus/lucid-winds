@@ -1,6 +1,7 @@
 # START HERE
 
 ## 7 Nov (Fable, while Astra's limit refreshes): THE BUILD STARTED WITH THE ART IN HAND
+- KEEPSIES m4 DONE (3ba0a05cc): Astra's round 3, her hold circle and braced circle, the reticle drawn inline at 154 px, the dial cue, her snap card, the chalk with its breaks, the chip at 152, the tiles' render box; stamp 20261107a; fast check green, FEEL OK at 412x915 and 360x780, the aim shot probed. LINE: `! bash /home/codespace/kp-drafts/deploy-keepsies-m4.sh` (DRY OK)
 - FLATULENCE FIGHTER m4 DONE (3d8c92165): Astra's round 2 on the six pad deck, her plates by state on every pad, the rim ring on the pad's perimeter, her 34 icons, the move mark, the table card, the move beat, her lesson line plate; ART_V 20261107a; check green; three shots probed from the shell. LINE: `! bash /home/codespace/ff-drafts/deploy-ff-m4.sh` (DRY OK)
 - SUNFORGE v5.2 DONE (2403070e0): Astra's v2 obsidian shards swapped in through the extended importer (merged pack), the resting piece heats to her hot frame over its lock clock, her notch and lit seam on the almost ring, the fifth How plate; ART_V 20261107a, CACHE ring-stacker-v11; check green; two shots probed from the shell, not opened. LINE: `! bash /home/codespace/sf-drafts/deploy-sunforge-m3.sh` (DRY OK against main 9550354e0)
 

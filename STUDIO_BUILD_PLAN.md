@@ -48,7 +48,7 @@ one commit as its own command, last.
 |---|---|---|---|
 | 1 | DONE, waits for his line | 7 Nov (Fable, daytime) | v5.2 at 2403070e0; `! bash /home/codespace/sf-drafts/deploy-sunforge-m3.sh` |
 | 2 | DONE, waits for his line | 7 Nov (Fable, daytime) | m4 at 3d8c92165; `! bash /home/codespace/ff-drafts/deploy-ff-m4.sh` |
-| 3 | | | |
+| 3 | DONE, waits for his line | 7 Nov (Fable, daytime) | m4 at 3ba0a05cc; `! bash /home/codespace/kp-drafts/deploy-keepsies-m4.sh` |
 | 4 | | | |
 | 5 | | | |
 | 6 | | | |
