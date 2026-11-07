@@ -25,6 +25,8 @@ The deploy wrapper pattern: /home/codespace/sb-drafts/sb-m2-12/deploy-sb-m2-12.s
 first, then tools/shutterbug-tests/deploy.sh with the stamp). The browser gates in test/ are red since before R9 on a
 stale #sample: not tonight's job.
 
+## LIVE 7 Nov ~18:20 UTC: sb-m2-13, 14 and 15 by his one line (lucid-winds main 5bfb72309; both origins serve sb-m2-15, shutterbug-v37). Open: step 5 TEACH THE MOVES (sb-m2-16), round 11 when Astra's pack is back.
+
 ## STATE (the builder updates this block; one line per step)
 
 | Step | State | Stamp | Commit | Note |
