@@ -95,6 +95,14 @@ commit; BASE the blobs main holds NOW for the game's index.html, og/card.jpg and
 rev-parse origin/main:<path> when you write it; m3 went live on main e4bf2e8df). `DRY=1 bash ...` once. The line into
 START-HERE.md: `! bash /home/codespace/ff-drafts/deploy-ff-m4.sh`
 
+## RULINGS (Stephen, 7 Nov 2026 ~15:40 UTC)
+1. A miss is a STRIKE, with a little fart on it.
+2. Modes: the story is the game; no separate Classic. Later a CHALLENGE mode (how long you last, faster and harder as it
+   goes), not needed right away.
+3. Portrait stays (the game is drawn for it).
+4. The lesson's move beat (seven beats) stays; he wants it explained before he rules.
+5. The sounds: not checked yet.
+
 ## DECISIONS for Stephen (built as written until he says otherwise)
 1. Her Noto Serif Bold for the lesson line: default the game's own display serif (no new font file, offline law).
 2. The lesson's move beat is added (default); he may want the lesson to stay six beats.

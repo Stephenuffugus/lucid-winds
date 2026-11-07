@@ -98,6 +98,32 @@ Deep: The Glass Float, A Ship in a Bottle, The Anchor Charm, A Pearl Button, The
 Overgrowth: The Seed Packet, A Pressed Fern, The Garden Gnome, The Watering Can, A Snail Shell, The Thorn Crown.
 Ember: The Brass Lantern, A Matchbook, The Kiln Key, The Ash Jar, A Red Thread, The Coal Heart.
 
+## RULINGS (Stephen, 7 Nov 2026 ~15:40 UTC; the DECISIONS list below is answered)
+1. No permanent heart at rank 8. Rank rewards stay films and looks.
+2. Rank names and keepsake names stay as written ("extra at this point").
+3. The strip's Polaroid keeps the photo (the grid was "filler").
+4. No tripod in house rooms (as today). FREE PLAY: he did not know what the tripod camera is ("when you touch it it goes
+   off, not sure what it's doing"): it is the checkpoint, lit when the bug first stands on the first landing, and a
+   death offers Back to the tripod with every heart. It must SAY so once (the teaching step below).
+5. Replayability: three medals a room by time or steps is "not a bad idea", low weight, keep the idea; a weekly house
+   later; named combos only if they are weapon combos. Not built this round.
+6. Astra's ten ideas: YES to the collapsing staircase (c), the Loom's cut strands as swinging footholds (e, he reads it
+   as swinging or moving platforms, "sounds cool"), the window crosswind (f, "diversity, a feel change"), and a
+   guardian whose attack changes as its health goes (i, "two or three phases, at least two"). NO to the side route (a,
+   "glitches, generic"), the replay silhouette (b, "muddle"), the shutter beetle (d), the expedition (g, packs later),
+   the clue to the last keepsake (h, keepsakes are not the focus), the contact print (j, storage). The four yeses are
+   round 11 work (art from Astra for the staircase and the strands; the crosswind and the phases are code).
+7. TEACHING (his ask, "needs to be articulated to players at least once"): a tester did not know the bug can wall
+   jump, drop through a platform, or hold jump to go higher. Step 5 below teaches each once, at the moment it applies,
+   plus the tripod when it lights.
+8. The film box row: no opinion; stays.
+
+**Step 5. TEACH THE MOVES (M; sb-m2-16, after step 4).** Four one line hints in the strip's floor text pattern, each
+once per save (doc.onboarding.hints): HOLD JUMP ("Hold jump to go higher", the first jump that lands), WALL ("Jump off
+the wall", the first wall slide), DROP ("Hold down and jump to drop through", the first stand on a one way tab with
+nothing under), TRIPOD ("The tripod: a fall brings you back here", when it lights). Never in a house room, never
+twice. Lint, the no browser check, stamp sb-m2-16, its wrapper and line.
+
 ## DECISIONS for Stephen (built as written until he says otherwise)
 1. Rank rewards are access and looks only (default). A permanent heart (+1 heartsMax at rank 8) is his call; the ramp's
    attrition was tuned at four.

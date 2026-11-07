@@ -178,6 +178,17 @@ Keys the code draws as placeholders until her art lands: mote, gull (fly, swoop,
 seed_pod, burn_line (a tileable band), run_badge_0 to run_badge_4, the RUN title plate. She draws to the live build after
 line B runs.
 
+## RULINGS (Stephen, 7 Nov 2026 ~15:40 UTC)
+1. Burn line pace: the default, judged on the Pixel ("we'll have to just check it").
+2. Checkpoints: not sure; the default (none, the Cooler Box revives once) until he plays it.
+3. Motes: not sure; the default (unshootable).
+4. The mode wants ANOTHER NAME than RUN (he will come up with one); RUN first on the title and the Daily as a run stand.
+5. Canopies walkable, AND some awnings the hero walks UNDER (both kinds in a run), AND MORE GAPS IN THE SHADE (the
+   generator leaves more sun between shade pieces).
+6. The planet tomato: not sure, he may find something catchier; not built until he says.
+7. Hats that do a tiny thing: he likes it, after the run is fleshed out.
+8. Listing free or $0.99: not answered.
+
 ## DECISIONS for Stephen (built as written until he says otherwise)
 1. The burn line's pace: 90 px per s, +6 every 20 s, cap 220 (the hero walks 240, dashes 600). Faster is one line.
 2. No checkpoints in a run (default; a burn ends it, the Cooler Box revives once). The other choice: a checkpoint at

@@ -30,10 +30,13 @@ Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt
 
 Each is built at its default if you say nothing; say the word and the plan changes.
 
-- [ ] Shutterbug: Astra's ten round 10 ideas, yes or no each (docs/briefs/shutterbug/round10/astra/ASSESSMENT.md: a side route to each keepsake, a replay silhouette, a collapsing staircase, a shutter beetle, web strands as footholds, a window crosswind, a one stock expedition, a clue to the last keepsake, a guardian's last part, a contact print of a flawless room) (you)  
-- [ ] Shutterbug: the ten rank names and the thirty keepsake names (SHUTTERBUG_R10_BUILD_PLAN.md); a permanent heart at rank 8 or none; the replayability pick (three medals a room, race your best climb, a weekly house, named combos); one tripod per house room or none; the Polaroid shows the photo or the grid (you)  
-- [ ] Tomato Man: the run's burn line pace, no checkpoints or one a mile, motes unshootable, RUN first on the title, the daily as a run, canopies walkable in levels too (TOMATO_MAN_RUN_BUILD_PLAN.md); the planet tomato yes or no; pass the phone races; hats that do a tiny thing; the listing free or $0.99; Penny's credit; the Pages mirror (you)  
-- [ ] Flatulence Fighter: a miss as a fidget or a strike; Classic mode or not; landscape or not; the medals' names; the table card's line; the lesson's move beat (you)  
+- [x] Shutterbug: Astra's ten ideas ruled 7 Nov: YES the collapsing staircase, swinging web strand footholds, the window crosswind, guardian phases (two or three as its health goes); NO the rest (round 11 work; SHUTTERBUG_R10_BUILD_PLAN.md RULINGS) (you)  
+- [ ] Shutterbug: a name for what the three medals a room would measure (time or steps), when you want it; a weekly house later (you)  
+- [x] Shutterbug: names stay, no heart, no house tripod, the Polaroid keeps the photo; the tripod in free play is the checkpoint and the game will say so (ruled 7 Nov) (you)  
+- [x] Tomato Man ruled 7 Nov: pace, checkpoints and motes at their defaults until you play; canopies walkable AND awnings you walk under, more gaps in the shade (you)  
+- [ ] Tomato Man: a new name for the RUN mode; the planet tomato or something catchier; hats later; the listing free or $0.99; Penny's credit; the Pages mirror (you)  
+- [x] Flatulence Fighter ruled 7 Nov: a miss is a strike with a little fart; story only, a Challenge mode later; portrait stays; seven beats for now (you)  
+- [ ] Flatulence Fighter: the medals' names; the table card's line; the lesson's move beat once Fable explains it (you)  
 - [ ] Keepsies: the five foot ring, the flick's own direction, the circle's size, the place phase, the camera during a shot, the skyline; the statues (the limestone shapes Astra draws in round 4, or her figures); the title drops "Thirteen marbles in a cross"; the name; the ladder's rungs; the Arena's numbers; Meshy, paid (you)  
 - [ ] Sunforge: pause, fonts, the guided first ring, overload, the slam sound, the name; and the m2 pick (SLAM by swipe, chapter skies, the hold outline, overload, a weekly gyre, the store listing) (you)  
 - [ ] Pixel Petri: the first expansion (the Living Year, Many Peoples, Themed Packs), free everywhere or packs first, the commercial's timing, Penny's pack (you)  
