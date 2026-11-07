@@ -52,6 +52,44 @@ NEW_KEYS = {
     'fx_shove_attic_edge': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_attic_corner': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_frost_edge': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_frost_corner': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_deep_edge': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_deep_corner': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_bramble_edge': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_bramble_corner': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_ember_edge': (16, 16, ['windup', 'flash', 'peak']), 'fx_shove_ember_corner': (16, 16, ['windup', 'flash', 'peak']),
     'silverfish': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'silverfish_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'thread_spider': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'thread_spider_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'snow_flea': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'snow_flea_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'icicle_bat': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'icicle_bat_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'lamprey': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'lamprey_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'lamp_jelly': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'lamp_jelly_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'bramble_tick': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'bramble_tick_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'seed_wasp': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'seed_wasp_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'cinder_mite': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'cinder_mite_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'ash_moth': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'ash_moth_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']),
     'conveyor': (16, 16, ['right0', 'right1', 'right2', 'right3', 'left0', 'left1', 'left2', 'left3']), 'crumbling_shelf': (16, 16, ['whole', 'cracked', 'falling', 'gone']), 'swinging_lamp': (96, 96, ['left', 'centre', 'right']), 'window_gust': (16, 48, ['gust0', 'gust1', 'gust2']),
+    # round 10 (7 Nov, SHUTTERBUG_R10_BUILD_PLAN.md chapter 7, Astra's round 10): 118 new keys
+    # the six film boxes and their locked states
+    'film_auto': (48, 48, ['ready']), 'film_auto_locked': (48, 48, ['locked']), 'film_attic': (48, 48, ['ready']), 'film_attic_locked': (48, 48, ['locked']), 'film_frost': (48, 48, ['ready']),
+    'film_frost_locked': (48, 48, ['locked']), 'film_deep': (48, 48, ['ready']), 'film_deep_locked': (48, 48, ['locked']), 'film_overgrowth': (48, 48, ['ready']), 'film_overgrowth_locked': (48, 48, ['locked']),
+    'film_ember': (48, 48, ['ready']), 'film_ember_locked': (48, 48, ['locked']),
+    # the ten rank badges and the rank up plate
+    'rank_01': (24, 24, ['badge']), 'rank_02': (24, 24, ['badge']), 'rank_03': (24, 24, ['badge']), 'rank_04': (24, 24, ['badge']), 'rank_05': (24, 24, ['badge']), 'rank_06': (24, 24, ['badge']), 'rank_07': (24, 24, ['badge']),
+    'rank_08': (24, 24, ['badge']), 'rank_09': (24, 24, ['badge']), 'rank_10': (24, 24, ['badge']), 'rank_up': (128, 16, ['plate']),
+    # the thirty keepsakes (16 px pickups, 48 px album tiles), the silhouette, the five row frames
+    'print_attic_1': (16, 16, ['pickup']), 'print_tile_attic_1': (48, 48, ['found']), 'print_attic_2': (16, 16, ['pickup']), 'print_tile_attic_2': (48, 48, ['found']), 'print_attic_3': (16, 16, ['pickup']),
+    'print_tile_attic_3': (48, 48, ['found']), 'print_attic_4': (16, 16, ['pickup']), 'print_tile_attic_4': (48, 48, ['found']), 'print_attic_5': (16, 16, ['pickup']), 'print_tile_attic_5': (48, 48, ['found']),
+    'print_attic_6': (16, 16, ['pickup']), 'print_tile_attic_6': (48, 48, ['found']), 'print_frost_1': (16, 16, ['pickup']), 'print_tile_frost_1': (48, 48, ['found']), 'print_frost_2': (16, 16, ['pickup']),
+    'print_tile_frost_2': (48, 48, ['found']), 'print_frost_3': (16, 16, ['pickup']), 'print_tile_frost_3': (48, 48, ['found']), 'print_frost_4': (16, 16, ['pickup']), 'print_tile_frost_4': (48, 48, ['found']),
+    'print_frost_5': (16, 16, ['pickup']), 'print_tile_frost_5': (48, 48, ['found']), 'print_frost_6': (16, 16, ['pickup']), 'print_tile_frost_6': (48, 48, ['found']), 'print_deep_1': (16, 16, ['pickup']),
+    'print_tile_deep_1': (48, 48, ['found']), 'print_deep_2': (16, 16, ['pickup']), 'print_tile_deep_2': (48, 48, ['found']), 'print_deep_3': (16, 16, ['pickup']), 'print_tile_deep_3': (48, 48, ['found']),
+    'print_deep_4': (16, 16, ['pickup']), 'print_tile_deep_4': (48, 48, ['found']), 'print_deep_5': (16, 16, ['pickup']), 'print_tile_deep_5': (48, 48, ['found']), 'print_deep_6': (16, 16, ['pickup']),
+    'print_tile_deep_6': (48, 48, ['found']), 'print_overgrowth_1': (16, 16, ['pickup']), 'print_tile_overgrowth_1': (48, 48, ['found']), 'print_overgrowth_2': (16, 16, ['pickup']), 'print_tile_overgrowth_2': (48, 48, ['found']),
+    'print_overgrowth_3': (16, 16, ['pickup']), 'print_tile_overgrowth_3': (48, 48, ['found']), 'print_overgrowth_4': (16, 16, ['pickup']), 'print_tile_overgrowth_4': (48, 48, ['found']),
+    'print_overgrowth_5': (16, 16, ['pickup']), 'print_tile_overgrowth_5': (48, 48, ['found']), 'print_overgrowth_6': (16, 16, ['pickup']), 'print_tile_overgrowth_6': (48, 48, ['found']), 'print_ember_1': (16, 16, ['pickup']),
+    'print_tile_ember_1': (48, 48, ['found']), 'print_ember_2': (16, 16, ['pickup']), 'print_tile_ember_2': (48, 48, ['found']), 'print_ember_3': (16, 16, ['pickup']), 'print_tile_ember_3': (48, 48, ['found']),
+    'print_ember_4': (16, 16, ['pickup']), 'print_tile_ember_4': (48, 48, ['found']), 'print_ember_5': (16, 16, ['pickup']), 'print_tile_ember_5': (48, 48, ['found']), 'print_ember_6': (16, 16, ['pickup']),
+    'print_tile_ember_6': (48, 48, ['found']), 'print_silhouette': (48, 48, ['unknown']), 'frame_attic': (72, 96, ['unlocked']), 'frame_frost': (72, 96, ['unlocked']), 'frame_deep': (72, 96, ['unlocked']),
+    'frame_overgrowth': (72, 96, ['unlocked']), 'frame_ember': (72, 96, ['unlocked']),
+    # the four new verbs: two lobbers and their pellets, two droppers, two shellbacks, the splitter and its halves
+    'dust_lobber': (16, 16, ['idle', 'move', 'hurt', 'dead', 'windup']), 'dust_lobber_elite': (24, 24, ['idle', 'move', 'hurt', 'dead', 'windup']), 'cinder_lobber': (16, 16, ['idle', 'move', 'hurt', 'dead', 'windup']),
+    'cinder_lobber_elite': (24, 24, ['idle', 'move', 'hurt', 'dead', 'windup']), 'jelly_dropper': (16, 16, ['idle', 'move', 'hurt', 'dead', 'hanging', 'drop', 'climb']),
+    'jelly_dropper_elite': (24, 24, ['idle', 'move', 'hurt', 'dead', 'hanging', 'drop', 'climb']), 'seed_dropper': (16, 16, ['idle', 'move', 'hurt', 'dead', 'hanging', 'drop', 'climb']),
+    'seed_dropper_elite': (24, 24, ['idle', 'move', 'hurt', 'dead', 'hanging', 'drop', 'climb']), 'ice_shellback': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'ice_shellback_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']),
+    'slag_shellback': (16, 16, ['idle', 'move', 'hurt', 'dead']), 'slag_shellback_elite': (24, 24, ['idle', 'move', 'hurt', 'dead']), 'pellet_dust': (8, 8, ['spin0', 'spin1']), 'pellet_cinder': (8, 8, ['spin0', 'spin1']),
+    'splitter_elite': (24, 24, ['idle', 'move', 'hurt', 'dead', 'split']), 'splitter_halves': (16, 16, ['left_idle', 'left_move', 'left_hurt', 'left_dead', 'right_idle', 'right_move', 'right_hurt', 'right_dead']),
+    # the Cobweb Loom and the Lantern Wasp with their attacks and tells (the Ember flame is round 9's, reused)
+    'boss_cobweb_loom': (80, 64, ['breathe', 'brace', 'tell', 'hurt', 'down']), 'boss_lantern_wasp': (80, 64, ['breathe', 'brace', 'tell', 'hurt', 'down']), 'boss_web_strand': (16, 48, ['drop0', 'drop1', 'drop2']),
+    'boss_web_strand_tell': (16, 16, ['tell']), 'boss_dust_puff': (32, 32, ['puff0', 'puff1', 'puff2']), 'boss_dust_puff_tell': (16, 16, ['tell']), 'boss_stinger_dart': (8, 8, ['spin0', 'spin1', 'spin2']),
+    'boss_stinger_dart_tell': (16, 16, ['tell']),
+    # the five weather strips
+    'weather_attic': (8, 8, ['particle0', 'particle1', 'particle2', 'particle3']), 'weather_frost': (8, 8, ['particle0', 'particle1', 'particle2', 'particle3']),
+    'weather_deep': (8, 8, ['particle0', 'particle1', 'particle2', 'particle3']), 'weather_overgrowth': (8, 8, ['particle0', 'particle1', 'particle2', 'particle3']),
+    'weather_ember': (8, 8, ['particle0', 'particle1', 'particle2', 'particle3']),
 }
 # ART2: an effect strip, fx_<name>, is named frames: square, 32 or 48 a side, each frame <clip>_<n> with every clip's n
 # running 0, 1, 2 ... in order (Astra's manifest clips); Sun is the hero's and never an effect's
@@ -84,7 +122,8 @@ NAME_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
 # frame_styles and hero_colours; round 3's run_pips, icon_house, card_house_clear, fx_unlock, the boss effects,
 # fx_beacon_light and hero_colours_r3): 55 names, so 56
 # sb-m1-5 merges both: 64 names, so 65
-MAX_SPRITES = 200   # round 9 (6 Nov): 149 names and its 49 strips make 198
+MAX_SPRITES = 320   # round 10 (7 Nov): 198 names and its 118 strips make 316
+# round 9's cap note: (200) round 9 (6 Nov): 149 names and its 49 strips make 198
 # round 5's cap note: (160) round 5 (2 Nov): the fixes, the keys, the dive and charm art, the bosses; room for the monsters and the terrain
 # round 8 (4 Nov, SHUTTERBUG_M2_BUILD_PLAN.md): 160, its 32 new keys make 149 names once every m2 step has spliced its own
 
@@ -232,14 +271,18 @@ def check(root, page):
     for e in man.get('files', []):
         f = e.get('file', '?')
         try:
-            key, fw, fh, n, names = e['sprite'], int(e['w']), int(e['h']), int(e['frames']), list(e['names'])
+            # round 10 (7 Nov): Astra's manifest names the sprite key 'key' (round 9's 'sprite' still read), carries no sha256
+            # (the zip's own sha256 is in the vault release) and no colours list; each is read when present
+            key, fw, fh, n, names = e['sprite'] if 'sprite' in e else e['key'], int(e['w']), int(e['h']), int(e['frames']), list(e['names'])
             if not NAME_RE.match(str(key)):
                 raise Refuse('the sprite key %r is not a plain name' % key)
             if len(names) != n or len(set(names)) != n or not all(NAME_RE.match(str(x)) for x in names):
                 raise Refuse('names %r do not give %d plain, distinct frame names' % (names, n))
             data = open(safe_join(root, f), 'rb').read()
             sha = hashlib.sha256(data).hexdigest()
-            if sha != str(e.get('sha256', '')).lower():
+            if 'sha256' not in e:
+                warnings.append((f, 'no sha256 in the manifest (round 10 carries none); the file\'s is %s' % sha[:16]))
+            elif sha != str(e.get('sha256', '')).lower():
                 raise Refuse('sha256 %s is not the manifest\'s %s' % (sha[:16], str(e.get('sha256', ''))[:16]))
             w, h, px = read_png(data)
             if w != fw * n or h != fh:
@@ -318,7 +361,7 @@ def check(root, page):
                 warnings.append((f, 'an effect %s (%s): R.draw must learn the clips it binds' % (key, ', '.join(sorted({FX_FRAME_RE.match(x).group(1) for x in names})))))
             else:
                 warnings.append((f, 'an unknown key %s: added to SPRITES, drawn by nothing yet' % key))
-            if sorted(used) != sorted(int(c) for c in e.get('colours', [])):
+            if 'colours' in e and sorted(used) != sorted(int(c) for c in e.get('colours', [])):
                 warnings.append((f, 'colours lists %s, the frames use %s' % (sorted(int(c) for c in e.get('colours', [])), sorted(used))))
             sp = sprites.setdefault(key, {'w': fw, 'h': fh, 'frames': {}, 'files': []})
             if (sp['w'], sp['h']) != (fw, fh):

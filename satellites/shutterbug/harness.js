@@ -5722,7 +5722,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   const WFX = ['dart', 'ring', 'ember', 'flash_ring', 'snap_frame', 'kick_spray', 'fire_cell', 'frost_burst'];
   for (const k of WFX) LAW[k] = [hx(I.INK, I.SLATE, I.PEWTER, I.ASH, I.PAPER, I.GLARE), true];
   const POSES = Object.keys(LAW).filter(n => n.startsWith('hero_'));
-  t.ok(names.length > 0 && names.length < 200, names.length + ' named sprites (under 200, round 9\'s cap: its 49 new keys make 198 names; frames are unlimited)');
+  t.ok(names.length > 0 && names.length < 320, names.length + ' named sprites (under 320, round 10\'s cap: its 118 new keys make 316 names; frames are unlimited)');
   let frames = 0;
   for (const name of names) {
     const sp = S[name];
@@ -5807,6 +5807,7 @@ group('H-spr-1', 'every sprite string decodes to its declared size in the key; t
   t.ok(shapeOk('fx_skyhook', 32, 32, ['skyhook_0', 'skyhook_1', 'skyhook_2', 'skyhook_3']), 'fx_skyhook is spliced for J8, four 32x32 frames skyhook_0 to skyhook_3');
   t.ok(['dust_mote', 'frost_mote', 'bubble', 'spore', 'ember_mote'].every(k => shapeOk(k, 16, 16, ['a', 'b', 'c', 'd'])) && shapeOk('icon_biomes', 24, 24, SB.palette.BIOMES),
     'the biome\'s air (dust_mote, frost_mote, bubble, spore, ember_mote, each 16x16 a b c d) and icon_biomes (24x24, ' + SB.palette.BIOMES.join(' ') + ')');
+  t.ok(['weather_attic', 'weather_frost', 'weather_deep', 'weather_overgrowth', 'weather_ember'].every(k => shapeOk(k, 8, 8, ['particle0', 'particle1', 'particle2', 'particle3'])), 'round 10\'s weather (weather_attic to weather_ember, each 8x8 particle0 to particle3), the air drawn since sb-m2-14');
   const PW = { hero_squash: [14, 14], hero_stretch: [10, 18] };
   t.ok(POSES.every(n => S[n] && S[n].w === (PW[n] || [K.HERO_W])[0] && S[n].h === (PW[n] || [0, K.HERO_H])[1]), 'the poses keep the old transform\'s rects (hero_squash 14x14, hero_stretch 10x18) and the rest the hero\'s 12x16 (' + POSES.map(n => n + ' ' + (S[n] ? S[n].w + 'x' + S[n].h : 'absent')).join(', ') + ')');
   t.ok(DANGER.every(n => names.includes(n)), 'every enemy, elite and trap the rules name has a sprite (' + DANGER.join(', ') + ')');
@@ -6801,7 +6802,7 @@ const t0 = Date.now();
 group('H-look-1', 'the prize ladder (Stephen\'s "Cosmetic per clear"): the first house clear wins a frame style, each clear after it the next of Astra\'s skins in her order until all are owned, then the other frames, then nothing; a win is owned and worn; lookValid keeps owned ids and a worn index only when owned, never throws; the save carries cosmetics through validateSave', t => {
   const Rr = SB.record, L = Rr.LOOKS;
   t.same(Array.from(L.hero), ['sun', 'umber', 'teal', 'lapis', 'pinstripe', 'domino', 'crescent', 'argyle', 'chrome', 'night', 'polaroid', 'negative', 'tiger', 'rainbow_lens', 'ghost', 'gold'], 'the skins are round 1\'s four (sun the approved bug) then round 3\'s four, then round 7\'s eight appended (saved indices keep their look), in Astra\'s order');
-  t.same(Array.from(L.frame), ['paper', 'walnut', 'lapis', 'moss', 'cork', 'brass', 'night_sky', 'filmstrip'], 'the frames are Astra\'s frame_styles in her order (paper the polaroid as it was), then round 7\'s four');
+  t.same(Array.from(L.frame), ['paper', 'walnut', 'lapis', 'moss', 'cork', 'brass', 'night_sky', 'filmstrip', 'attic', 'frost', 'deep', 'overgrowth', 'ember'], 'the frames are Astra\'s frame_styles in her order (paper the polaroid as it was), then round 7\'s four, then round 10\'s five biome plates (granted by a keepsake set, never a prize)');
   let c = Rr.saveDefaults().cosmetics; const got = [];
   for (let k = 0; k < 24; k++) { const w = Rr.lookWin(c); got.push(w.id); c = w.cosmetics; if (w.id) t.ok(c[w.id.split('.')[0]] === L[w.id.split('.')[0]].indexOf(w.id.split('.')[1]), 'clear ' + (k + 1) + ' wears what it won (' + w.id + ')'); }
   t.same(got, ['frame.walnut', 'hero.umber', 'hero.teal', 'hero.lapis', 'hero.pinstripe', 'hero.domino', 'hero.crescent', 'hero.argyle', 'frame.lapis', 'frame.moss',
