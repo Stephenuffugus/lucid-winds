@@ -1,5 +1,8 @@
 # START HERE
 
+## 7 Nov (Fable, while Astra's limit refreshes): THE BUILD STARTED WITH THE ART IN HAND
+- SUNFORGE v5.2 DONE (2403070e0): Astra's v2 obsidian shards swapped in through the extended importer (merged pack), the resting piece heats to her hot frame over its lock clock, her notch and lit seam on the almost ring, the fifth How plate; ART_V 20261107a, CACHE ring-stacker-v11; check green; two shots probed from the shell, not opened. LINE: `! bash /home/codespace/sf-drafts/deploy-sunforge-m3.sh` (DRY OK against main 9550354e0)
+
 ## 7 Nov ~03:50 UTC (Fable): HIS ORDER, THE GAPS CLOSED: SIX ASTRA HANDOFFS, ONE ORDERED CHECKLIST, ONE PLAN
 - Stephen, 7 Nov: no complaining about caveats; close the gaps, erase the old checklists, make every handoff, one ordered list, art first, then one plan that runs night after night. Done: six handoffs in their Drive folders and docs/briefs (Shutterbug round 10 and Tomato Man The Run now ask Astra for her IDEAS first; Keepsies round 4 with the nineteen captures as PUBLIC raw.github links inside the brief, docs/briefs/keepsies/round4/captures/, so nothing has to be attached; Tomato Man The Hero, the thirteen produce in his sheets and the planet tomato; Flatulence Fighter round 3; Sunforge round 3 only on his pick). docs/STUDIO-CHECKLIST.md rewritten as THE ORDER (1 art, 2 his calls, 3 the plan, 4 the build, 5 lines and Pixel, 6 after); the three older Docs trashed and one new Doc in Drive Astra. STUDIO_BUILD_PLAN.md is the single plan (twelve chapters, the six written ones plus six that wait on packs); the kickoff docs/briefs/opus-kickoff-nov07/PROMPT.txt points at it and says more than one night is fine.
 

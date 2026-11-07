@@ -16,11 +16,11 @@ Shot: `node tools/sunforge-tests/shoot.mjs <outdir> <screen>` (title how setting
 
 | Step | State | Commit | Note |
 |---|---|---|---|
-| 0 | | | |
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
+| 0 | DONE 7 Nov | 2403070e0 | merged pack /workspaces/sunforge-astra-merged/pack; importer extended (resting, notch, lit seam, How 05; cell_seam, weld_side, weld_inner_corner are byte equal to trim frames 7, 1, 5 so not copied; compat sheets and the 128 core unused); 16 files changed and 4 added, proven by sha256 before and after; ART_V 20261107a; check green |
+| 1 | DONE 7 Nov | 2403070e0 | the composer unchanged: v2's trim sheet is the same eight frame cut, its frame 7 the quiet seam; the marks sheet is transparent (no stamps). Shot play (412x915, probed, not opened): the board's centre 76 percent dark pixels, 4 percent saturated vein pixels, HUD untouched, no page errors |
+| 2 | DONE 7 Nov | 2403070e0 | heat = ease over lockT/LOCK_DELAY, her resting frame drawn over the cold cell at that alpha, cooling again on a reset; reduced motion holds the hot frame; the old alpha breath only when her frame is missing |
+| 3 | DONE 7 Nov | 2403070e0 | her notch on the gap, rotated by the gap's side; her lit seam on every edge of the band's cells that borders another ring or the gap; the code outline under at 0.5. Shot almost (probed, not opened): 85 percent dark, 4 percent vein, acid pixels present, no page errors |
+| 4 | DONE 7 Nov | 2403070e0 | How 05 in the ART table and on the How screen (Drag to slide the piece. Tap to turn it.); BUILD v5.2, ART_V 20261107a, CACHE ring-stacker-v11 and sw.js?v=11; the spent core frame not wired. /home/codespace/sf-drafts/deploy-sunforge-m3.sh DRY OK. LINE: `! bash /home/codespace/sf-drafts/deploy-sunforge-m3.sh` |
 
 ## THE LAWS
 The laws of SUNFORGE_BUILD_PLAN.md bind (code directly, the check per step, ONE shot per visual step described from the

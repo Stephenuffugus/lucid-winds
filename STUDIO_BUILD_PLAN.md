@@ -46,7 +46,7 @@ one commit as its own command, last.
 
 | # | State | Night | Note |
 |---|---|---|---|
-| 1 | | | |
+| 1 | DONE, waits for his line | 7 Nov (Fable, daytime) | v5.2 at 2403070e0; `! bash /home/codespace/sf-drafts/deploy-sunforge-m3.sh` |
 | 2 | | | |
 | 3 | | | |
 | 4 | | | |
