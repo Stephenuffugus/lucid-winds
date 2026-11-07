@@ -559,7 +559,7 @@ function stopMusic(){ if(Audio2.musicTimer){ clearInterval(Audio2.musicTimer); A
    through A(key): null until it has loaded, so every draw keeps its code drawn fallback. One ART_V token on every URL.
    The first visit loads the title, the HUD, the pickups, the sun and Morning Tide; a world's ground, horizon and decor
    load when that world is first shown (needWorld), the Angry Sun with the Eclipse world, the share frames on a share. */
-const ART_V='20261107b';   // THE RUN's art (Astra, 7 Nov)
+const ART_V='20261107c';   // THE HERO's sheets and heads (Astra, 7 Nov) over THE RUN's art
 const WORLD_DIRS=['morning_tide','midday_blaze','tide_pools','dunes_at_dusk','eclipse'];
 const ASSET_PATHS={
   menu:'art/ui/menu_plate.webp', logo_sand:'art/ui/logo_on_sand.svg', logo_dark:'art/ui/logo_on_dark.svg',
@@ -592,6 +592,24 @@ const ASSET_PATHS={
 };
 /* loaded on demand: each world's ground, horizon, decor sheet and key art; the Angry Sun; the share frames */
 const ASSET_LAZY={
+  /* TM HERO ASSETS (lucid-winds tools/tomato-man-tests/astra_hero_in.py writes this block) */
+  hero_strawberry_s:'art/hero/strawberry_s.webp', hero_strawberry_se:'art/hero/strawberry_se.webp', hero_strawberry_e:'art/hero/strawberry_e.webp', hero_strawberry_ne:'art/hero/strawberry_ne.webp', hero_strawberry_n:'art/hero/strawberry_n.webp',
+  hero_orange_s:'art/hero/orange_s.webp', hero_orange_se:'art/hero/orange_se.webp', hero_orange_e:'art/hero/orange_e.webp', hero_orange_ne:'art/hero/orange_ne.webp', hero_orange_n:'art/hero/orange_n.webp',
+  hero_lemon_s:'art/hero/lemon_s.webp', hero_lemon_se:'art/hero/lemon_se.webp', hero_lemon_e:'art/hero/lemon_e.webp', hero_lemon_ne:'art/hero/lemon_ne.webp', hero_lemon_n:'art/hero/lemon_n.webp',
+  hero_lime_s:'art/hero/lime_s.webp', hero_lime_se:'art/hero/lime_se.webp', hero_lime_e:'art/hero/lime_e.webp', hero_lime_ne:'art/hero/lime_ne.webp', hero_lime_n:'art/hero/lime_n.webp',
+  hero_peach_s:'art/hero/peach_s.webp', hero_peach_se:'art/hero/peach_se.webp', hero_peach_e:'art/hero/peach_e.webp', hero_peach_ne:'art/hero/peach_ne.webp', hero_peach_n:'art/hero/peach_n.webp',
+  hero_cherry_s:'art/hero/cherry_s.webp', hero_cherry_se:'art/hero/cherry_se.webp', hero_cherry_e:'art/hero/cherry_e.webp', hero_cherry_ne:'art/hero/cherry_ne.webp', hero_cherry_n:'art/hero/cherry_n.webp',
+  hero_bellpepper_s:'art/hero/bell_pepper_s.webp', hero_bellpepper_se:'art/hero/bell_pepper_se.webp', hero_bellpepper_e:'art/hero/bell_pepper_e.webp', hero_bellpepper_ne:'art/hero/bell_pepper_ne.webp', hero_bellpepper_n:'art/hero/bell_pepper_n.webp',
+  hero_eggplant_s:'art/hero/eggplant_s.webp', hero_eggplant_se:'art/hero/eggplant_se.webp', hero_eggplant_e:'art/hero/eggplant_e.webp', hero_eggplant_ne:'art/hero/eggplant_ne.webp', hero_eggplant_n:'art/hero/eggplant_n.webp',
+  hero_avocado_s:'art/hero/avocado_s.webp', hero_avocado_se:'art/hero/avocado_se.webp', hero_avocado_e:'art/hero/avocado_e.webp', hero_avocado_ne:'art/hero/avocado_ne.webp', hero_avocado_n:'art/hero/avocado_n.webp',
+  hero_heirloom_s:'art/hero/heirloom_s.webp', hero_heirloom_se:'art/hero/heirloom_se.webp', hero_heirloom_e:'art/hero/heirloom_e.webp', hero_heirloom_ne:'art/hero/heirloom_ne.webp', hero_heirloom_n:'art/hero/heirloom_n.webp',
+  hero_pickle_s:'art/hero/pickle_s.webp', hero_pickle_se:'art/hero/pickle_se.webp', hero_pickle_e:'art/hero/pickle_e.webp', hero_pickle_ne:'art/hero/pickle_ne.webp', hero_pickle_n:'art/hero/pickle_n.webp',
+  hero_golden_s:'art/hero/golden_s.webp', hero_golden_se:'art/hero/golden_se.webp', hero_golden_e:'art/hero/golden_e.webp', hero_golden_ne:'art/hero/golden_ne.webp', hero_golden_n:'art/hero/golden_n.webp',
+  hero_sunburn_s:'art/hero/sunburn_s.webp', hero_sunburn_se:'art/hero/sunburn_se.webp', hero_sunburn_e:'art/hero/sunburn_e.webp', hero_sunburn_ne:'art/hero/sunburn_ne.webp', hero_sunburn_n:'art/hero/sunburn_n.webp',
+  planet_approaching_0:'art/planet/planet_approaching_0.webp', planet_approaching_1:'art/planet/planet_approaching_1.webp', planet_approaching_2:'art/planet/planet_approaching_2.webp', planet_leaving_0:'art/planet/planet_leaving_0.webp', planet_leaving_1:'art/planet/planet_leaving_1.webp',
+  planet_leaving_2:'art/planet/planet_leaving_2.webp', planet_passing_0:'art/planet/planet_passing_0.webp', planet_passing_1:'art/planet/planet_passing_1.webp', planet_passing_2:'art/planet/planet_passing_2.webp', planet_passing_3:'art/planet/planet_passing_3.webp',
+  planet_shadow:'art/planet/planet_shadow.webp', tm_planet:'art/planet/tm-planet.webp',
+  /* /TM HERO ASSETS */
   // THE RUN's art (Astra's pack of 7 Nov, tools/tomato-man-tests/astra_run_in.py): the critters, the burn line, the pod, the badges, the card's ornament
   mote:'art/run/mote.webp', gull_fly:'art/run/gull_fly.webp', gull_swoop:'art/run/gull_swoop.webp', gull_hit:'art/run/gull_hit.webp', gull_knocked:'art/run/gull_knocked.webp', gull_carry:'art/run/gull_carry.webp',
   crab_walk:'art/run/crab_walk.webp', crab_pinned:'art/run/crab_pinned.webp', crab_flipped:'art/run/crab_flipped.webp', burn_line:'art/run/burn_line.webp', seed_pod:'art/run/seed_pod.webp',
@@ -623,7 +641,7 @@ function loadOne(k,path){ if(k in ASSETS) return; ASSETS[k]=null; const img=new 
     if(screen==='win'&&typeof drawWinCard==='function') drawWinCard(); };
   img.onerror=()=>{ ASSETS[k]=null; }; img.src=path+'?v='+ART_V; }
 /* the equipped produce and hat for play, and everything the builder shows */
-function needLook(){ const b=save.cosmetics.body, h=save.cosmetics.hat; if(b!=='tomato') need('body_'+b); if(h!=='none') need('hat_'+h); }
+function needLook(){ const b=save.cosmetics.body, h=save.cosmetics.hat; if(b!=='tomato'){ need('body_'+b); ['s','se','e','ne','n'].forEach(d=>need('hero_'+b+'_'+d)); } if(h!=='none') need('hat_'+h); }   // THE HERO (7 Nov): every body has its five bearing sheets
 function needBuilder(){ need('bbody'); need('bhead_'+save.cosmetics.body); if(save.cosmetics.hat!=='none') need('bhat_'+save.cosmetics.hat); }
 function loadAssets(){ for(const k in ASSET_PATHS) loadOne(k,ASSET_PATHS[k]); needWorld(0); }
 function need(k){ if(ASSET_LAZY[k]) loadOne(k,ASSET_LAZY[k]); }
@@ -1886,27 +1904,30 @@ function act(k){ if(!run||save.settings.reduce||save.cosmetics.body!=='tomato') 
 /* one figure into a square scratch canvas of N px: a tomato cell of a sheet (cols by rows), or a produce body with her
    face; the hat at the cell's anchor (her 256 px cell space), from its bearing column hc */
 function composeHero(tx,N,img,cols,rows,cell,an,hc,tomato){ const k=N/128; tx.clearRect(0,0,N,N);
-  if(tomato){ const cw=img.width/cols, ch=img.height/rows; tx.drawImage(img,(cell%cols)*cw,Math.floor(cell/cols)*ch,cw,ch,0,0,N,N); }
+  if(tomato){ const cw=img.width/cols, ch=img.height/rows; tx.drawImage(img,(cell%cols)*cw,Math.floor(cell/cols)*ch,cw,ch,0,0,N,N); }   // a rigged sheet: the tomato's, or a produce body's of THE HERO (her 256 px cells scale the same way; the face is baked in)
   else { tx.drawImage(img,0,0,img.width,img.height,0,0,N,N); const fc=A('face_neutral'); if(fc) tx.drawImage(fc,0,40,128,128,22*k,10*k,84*k,84*k); }
   const hat=cosmetic(save.cosmetics.hat);
   if(hat.kind!=='none'&&an){ const hs=A('hat_'+hat.id); if(hs) tx.drawImage(hs,hc*128,0,128,128,(an[0]-64)/2*k,(an[1]-28)/2*k,64*k,64*k); } }
 function drawHero(x,y){ const body=cosmetic(save.cosmetics.body);
   const tomato=body.id==='tomato'; let bb=heroBearing(); const src=HERO_SRC[bb];
-  const sheet=tomato?A('hero_'+src):A('body_'+body.id);
+  /* THE HERO (Astra, 7 Nov): every produce body has the tomato's five bearing sheets, so it walks, dashes and turns as he does (rigged);
+     the still body with the laid on face is the fallback until its sheets load, and the card's figure */
+  const rigSheet=tomato?A('hero_'+src):A('hero_'+body.id+'_'+src), rigged=!!rigSheet;
+  const sheet=rigSheet||A('body_'+body.id);
   if(!sheet){ drawHeroCode(x,y); return; }
   // ground shadow and the state rings, as before
   ctx.fillStyle='rgba(0,0,0,.14)'; ctx.beginPath(); ctx.ellipse(x,y+P.r*0.8,P.r*0.95,P.r*0.4,0,0,TAU); ctx.fill();
   if(run.screenT>0){ ctx.strokeStyle='rgba(150,210,255,.95)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(x,y,P.r+9+Math.sin(nowT*12)*1.5,0,TAU); ctx.stroke(); }
   else if(run.slowT>0){ ctx.strokeStyle='rgba(160,240,255,.8)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(x,y,P.r+9,0,TAU); ctx.stroke(); }
   const moving=Math.hypot(P.vx,P.vy)>30&&!(run.idleT>0.5);
-  let img=sheet, rows=tomato?2:1, cell=0, an=null, hc=HAT_COL[HAT_DIR[src]];
+  let img=sheet, rows=rigged?2:1, cell=0, an=null, hc=HAT_COL[HAT_DIR[src]];
   const actImg=(tomato&&run.act)?A('hero_'+run.act.k):null;
   if(tomato&&run.respawnT>0&&A('hero_respawn')){ img=A('hero_respawn'); rows=1; cell=Math.min(3,Math.floor((0.4-run.respawnT)*ACT_FPS.respawn)); an=HAT_ANCHOR.respawn[cell]; hc=0; bb='s'; }
-  else if(tomato&&P.dashT>0){ cell=(run.feel.dashDur-P.dashT)<1/12?5:6; an=HAT_ANCHOR[src][cell]; }
+  else if(rigged&&P.dashT>0){ cell=(run.feel.dashDur-P.dashT)<1/12?5:6; an=HAT_ANCHOR[src][cell]; }
   else if(actImg){ img=actImg; rows=1; cell=Math.min(3,Math.floor(run.act.t*ACT_FPS[run.act.k])); an=HAT_ANCHOR[run.act.k][cell]; hc=0; bb='s'; }
-  else if(tomato){ cell=moving&&!save.settings.reduce?1+(Math.floor((run.stride||0)/14)%4):0; an=HAT_ANCHOR[src][cell]; }   // 7 Nov: a frame every 14 px of ground, so the feet never slide
+  else if(rigged){ cell=moving&&!save.settings.reduce?1+(Math.floor((run.stride||0)/14)%4):0; an=HAT_ANCHOR[src][cell]; }   // 7 Nov: a frame every 14 px of ground, so the feet never slide; her hat seats are the tomato's for every body
   else an=(HAT_ANCHOR[src]||HAT_ANCHOR.s)[0];
-  composeHero(heroTx,128,img,4,rows,cell,an,hc,tomato);   // drawn small first, so the exposure tint touches only the figure
+  composeHero(heroTx,128,img,4,rows,cell,an,hc,rigged);   // drawn small first, so the exposure tint touches only the figure
   const burnT=clamp((P.exp-25)/75,0,1);
   if(burnT>0){ heroTx.save(); heroTx.globalCompositeOperation='source-atop'; heroTx.fillStyle=`rgba(225,50,40,${(burnT*0.42).toFixed(3)})`; heroTx.fillRect(0,0,128,128); heroTx.restore(); }
   ctx.save(); ctx.translate(x,y); ctx.scale(P.sx,P.sy); if(HERO_FLIP[bb]) ctx.scale(-1,1);
