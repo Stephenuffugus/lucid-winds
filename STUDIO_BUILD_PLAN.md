@@ -50,10 +50,10 @@ one commit as its own command, last.
 | 2 | DONE, waits for his line | 7 Nov (Fable, daytime) | m4 at 3d8c92165; `! bash /home/codespace/ff-drafts/deploy-ff-m4.sh` |
 | 3 | DONE, waits for his line | 7 Nov (Fable, daytime) | m4 at 3ba0a05cc; `! bash /home/codespace/kp-drafts/deploy-keepsies-m4.sh` |
 | 4 | DONE, waits for his line | 7 Nov (Fable, daytime) | sunstruck 5097685; `! bash /home/codespace/tm-drafts/deploy-tomato-man-art.sh` |
-| 5 | | | |
+| 5 | DONE, waits for his line | 7 Nov (Fable, daytime) | sunstruck 1125c0d4 (B0 to B7, with chapter 8 inside); `! bash /home/codespace/tm-drafts/deploy-tomato-man-run.sh` |
 | 6 | steps 0 to 3 DONE, waits for his line; step 4 (four new verbs) open | 7 Nov (Fable, daytime) | sb-m2-13 at 97c420f42; `! bash /home/codespace/sb-drafts/sb-m2-13/deploy-sb-m2-13.sh` |
 | 7 | DONE, waits for his line | 7 Nov (Fable, daytime) | sb-m2-14 at 50d436f32; `! bash /home/codespace/sb-drafts/sb-m2-14/deploy-sb-m2-14.sh` (ships sb-m2-13 too; sb-m2-13's own line is stale) |
-| 8 | waits on the pack | | |
+| 8 | DONE inside chapter 5's stamp | 7 Nov (Fable, daytime) | her run pack back and wired the same afternoon (astra_run_in.py); the same line |
 | 9 | waits on the pack | | |
 | 10 | waits on the pack | | |
 | 11 | waits on the pack | | |

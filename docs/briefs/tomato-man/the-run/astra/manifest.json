@@ -1,0 +1,884 @@
+{
+  "pack": "tomato-man-astra-run",
+  "source_pixels_per_world_pixel": 2,
+  "units": "source pixels unless explicitly stated",
+  "files": [
+    {
+      "file": "assets/a_critters/mote.webp",
+      "id": "mote",
+      "kind": "sheet",
+      "size": [
+        192,
+        48
+      ],
+      "notes": "Downward ember; tail points up. Roughly 12 world-pixel total silhouette in 24px padded cell. Core anchor, no rotation toward travel required.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 48,
+        "cell_height": 48
+      },
+      "durations": [
+        80,
+        80,
+        80,
+        80
+      ],
+      "loop": true,
+      "shootable": false,
+      "world_cell": [
+        24,
+        24
+      ]
+    },
+    {
+      "file": "assets/a_critters/gull_fly.webp",
+      "id": "gull_fly",
+      "kind": "sheet",
+      "size": [
+        384,
+        96
+      ],
+      "notes": "Facing right, overhead. About 40 world px full wingspan. Rotate about body centre.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "durations": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "world_cell": [
+        48,
+        48
+      ],
+      "bearing_zero": "right"
+    },
+    {
+      "file": "assets/a_critters/gull_swoop.webp",
+      "id": "gull_swoop",
+      "kind": "sheet",
+      "size": [
+        192,
+        96
+      ],
+      "notes": "Wings sweep left/back; play once then hold final pose for dive.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "durations": [
+        100,
+        100
+      ],
+      "loop": false,
+      "hold_last": true
+    },
+    {
+      "file": "assets/a_critters/gull_hit.webp",
+      "id": "gull_hit",
+      "kind": "sheet",
+      "size": [
+        192,
+        96
+      ],
+      "notes": "Seed impact recoil and feathers. Decorative fragments have no collision.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "durations": [
+        80,
+        80
+      ],
+      "loop": false
+    },
+    {
+      "file": "assets/a_critters/gull_knocked.webp",
+      "id": "gull_knocked",
+      "kind": "sheet",
+      "size": [
+        96,
+        96
+      ],
+      "notes": "Tumbling-away state; movement and removal belong to code.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "durations": [
+        0
+      ],
+      "loop": false
+    },
+    {
+      "file": "assets/a_critters/gull_carry.webp",
+      "id": "gull_carry",
+      "kind": "sheet",
+      "size": [
+        128,
+        112
+      ],
+      "notes": "Existing gameplay two-leaf sprout held at beak. Same art at half planted scale for a carried seedling; no second plant overlay.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 128,
+        "cell_height": 112
+      },
+      "durations": [
+        0
+      ],
+      "beak_anchor": [
+        78,
+        64
+      ],
+      "sprout_root": [
+        78,
+        64
+      ]
+    },
+    {
+      "file": "assets/a_critters/crab_walk.webp",
+      "id": "crab_walk",
+      "kind": "sheet",
+      "size": [
+        320,
+        80
+      ],
+      "notes": "Facing right at zero bearing. About 28 world px across. Legs scuttle sideways without body translation.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 80,
+        "cell_height": 80
+      },
+      "durations": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "bearing_zero": "right"
+    },
+    {
+      "file": "assets/a_critters/crab_pinned.webp",
+      "id": "crab_pinned",
+      "kind": "sheet",
+      "size": [
+        160,
+        128
+      ],
+      "notes": "Exact existing gameplay sprout precomposed on shell. Padded cell preserves body anchor; do not centre whole texture or add another sprout.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 80,
+        "cell_height": 128
+      },
+      "durations": [
+        300,
+        300
+      ],
+      "loop": true,
+      "sprout_root": [
+        40,
+        88
+      ]
+    },
+    {
+      "file": "assets/a_critters/crab_flipped.webp",
+      "id": "crab_flipped",
+      "kind": "sheet",
+      "size": [
+        160,
+        80
+      ],
+      "notes": "Third-seed result: brief rock into persistent legs-up pose. Hold frame 1; stays on sand.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 80,
+        "cell_height": 80
+      },
+      "durations": [
+        100,
+        0
+      ],
+      "loop": false,
+      "hold_last": true
+    },
+    {
+      "file": "assets/a_critters/tm-mote.svg",
+      "id": "tm-mote",
+      "kind": "icon",
+      "size": [
+        128,
+        128
+      ],
+      "notes": "One-colour broad cue mark. Exact SVG id; currentColor.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 128,
+        "cell_height": 128
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/a_critters/tm-gull.svg",
+      "id": "tm-gull",
+      "kind": "icon",
+      "size": [
+        128,
+        128
+      ],
+      "notes": "One-colour broad cue mark. Exact SVG id; currentColor.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 128,
+        "cell_height": 128
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/a_critters/tm-crab.svg",
+      "id": "tm-crab",
+      "kind": "icon",
+      "size": [
+        128,
+        128
+      ],
+      "notes": "One-colour broad cue mark. Exact SVG id; currentColor.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 128,
+        "cell_height": 128
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/a_critters/critter_icons.webp",
+      "id": "critter_icons",
+      "kind": "sheet",
+      "size": [
+        384,
+        128
+      ],
+      "notes": "One-colour cue marks: mote, gull, crab. Default slate ink; render at 24 CSS px.",
+      "grid": {
+        "columns": 3,
+        "rows": 1,
+        "cell_width": 128,
+        "cell_height": 128
+      },
+      "durations": [
+        0,
+        0,
+        0
+      ],
+      "frame_names": [
+        "tm-mote",
+        "tm-gull",
+        "tm-crab"
+      ]
+    },
+    {
+      "file": "assets/b_sand/burn_line.webp",
+      "id": "burn_line",
+      "kind": "sheet",
+      "size": [
+        1024,
+        128
+      ],
+      "notes": "One neutral tintable strip. Tile horizontally at 128 by 64 world px. Anchor is exact top-left leading boundary. Mirror-periodic edges; white bottom joins solid wash below.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 256,
+        "cell_height": 128
+      },
+      "durations": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "loop": true,
+      "world_cell": [
+        128,
+        64
+      ],
+      "tile_x": true,
+      "opaque": true,
+      "render_order": "above terrain and shade, below hero and HUD",
+      "danger_edge_source_y": 0
+    },
+    {
+      "file": "assets/b_sand/seed_pod.webp",
+      "id": "seed_pod",
+      "kind": "sheet",
+      "size": [
+        96,
+        48
+      ],
+      "notes": "Dry pod visibly contains three seeds; glint is decorative, pickup grants three seeds under game inventory rules. About 16 world px within 24px padded cell.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 48,
+        "cell_height": 48
+      },
+      "durations": [
+        700,
+        100
+      ],
+      "loop": true,
+      "world_cell": [
+        24,
+        24
+      ],
+      "frame_names": [
+        "idle",
+        "glint"
+      ]
+    },
+    {
+      "file": "assets/c_face/run_plate_ready.svg",
+      "id": "run_plate_ready",
+      "kind": "icon",
+      "size": [
+        440,
+        132
+      ],
+      "notes": "RUN plate at 220 by 66 CSS px. Exact DASH/SHADE rim and ink. Words and best distance in code. Nine-slice margins 36 source px.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 440,
+        "cell_height": 132
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/c_face/run_plate_pressed.svg",
+      "id": "run_plate_pressed",
+      "kind": "icon",
+      "size": [
+        440,
+        132
+      ],
+      "notes": "RUN plate at 220 by 66 CSS px. Exact DASH/SHADE rim and ink. Words and best distance in code. Nine-slice margins 36 source px.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 440,
+        "cell_height": 132
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/c_face/run_plate_disabled.svg",
+      "id": "run_plate_disabled",
+      "kind": "icon",
+      "size": [
+        440,
+        132
+      ],
+      "notes": "RUN plate at 220 by 66 CSS px. Exact DASH/SHADE rim and ink. Words and best distance in code. Nine-slice margins 36 source px.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 440,
+        "cell_height": 132
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/c_face/run_plate.webp",
+      "id": "run_plate",
+      "kind": "sheet",
+      "size": [
+        1320,
+        132
+      ],
+      "notes": "Start-mode plate: ready, pressed, disabled. Draw at 220x66 CSS px. Text safe rect [64,22,312,88] source; RUN baseline 62, best baseline 99.",
+      "grid": {
+        "columns": 3,
+        "rows": 1,
+        "cell_width": 440,
+        "cell_height": 132
+      },
+      "durations": [
+        0,
+        0,
+        0
+      ],
+      "frame_names": [
+        "ready",
+        "pressed",
+        "disabled"
+      ],
+      "nine_slice": [
+        36,
+        36,
+        36,
+        36
+      ],
+      "world_cell": [
+        220,
+        66
+      ]
+    },
+    {
+      "file": "assets/c_face/run_badge_0.webp",
+      "id": "run_badge_0",
+      "kind": "sheet",
+      "size": [
+        192,
+        96
+      ],
+      "notes": "Morning Tide badge; earned then dark unlit state. Draw one cell at 48 CSS px. World label and accessible earned status live in code.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "durations": [
+        0,
+        0
+      ],
+      "frame_names": [
+        "earned",
+        "unlit"
+      ],
+      "world_cell": [
+        48,
+        48
+      ],
+      "world_index": 0
+    },
+    {
+      "file": "assets/c_face/run_badge_1.webp",
+      "id": "run_badge_1",
+      "kind": "sheet",
+      "size": [
+        192,
+        96
+      ],
+      "notes": "Midday Blaze badge; earned then dark unlit state. Draw one cell at 48 CSS px. World label and accessible earned status live in code.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "durations": [
+        0,
+        0
+      ],
+      "frame_names": [
+        "earned",
+        "unlit"
+      ],
+      "world_cell": [
+        48,
+        48
+      ],
+      "world_index": 1
+    },
+    {
+      "file": "assets/c_face/run_badge_2.webp",
+      "id": "run_badge_2",
+      "kind": "sheet",
+      "size": [
+        192,
+        96
+      ],
+      "notes": "Tide Pools badge; earned then dark unlit state. Draw one cell at 48 CSS px. World label and accessible earned status live in code.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "durations": [
+        0,
+        0
+      ],
+      "frame_names": [
+        "earned",
+        "unlit"
+      ],
+      "world_cell": [
+        48,
+        48
+      ],
+      "world_index": 2
+    },
+    {
+      "file": "assets/c_face/run_badge_3.webp",
+      "id": "run_badge_3",
+      "kind": "sheet",
+      "size": [
+        192,
+        96
+      ],
+      "notes": "Dunes at Dusk badge; earned then dark unlit state. Draw one cell at 48 CSS px. World label and accessible earned status live in code.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "durations": [
+        0,
+        0
+      ],
+      "frame_names": [
+        "earned",
+        "unlit"
+      ],
+      "world_cell": [
+        48,
+        48
+      ],
+      "world_index": 3
+    },
+    {
+      "file": "assets/c_face/run_badge_4.webp",
+      "id": "run_badge_4",
+      "kind": "sheet",
+      "size": [
+        192,
+        96
+      ],
+      "notes": "Eclipse badge; earned then dark unlit state. Draw one cell at 48 CSS px. World label and accessible earned status live in code.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "durations": [
+        0,
+        0
+      ],
+      "frame_names": [
+        "earned",
+        "unlit"
+      ],
+      "world_cell": [
+        48,
+        48
+      ],
+      "world_index": 4
+    },
+    {
+      "file": "assets/c_face/run_card_ornament.svg",
+      "id": "run_card_ornament",
+      "kind": "icon",
+      "size": [
+        640,
+        80
+      ],
+      "notes": "320x40 CSS-pixel band. Leave central x180..460 source empty for THE SUN WON in code; reuse v2 postcard frame.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 640,
+        "cell_height": 80
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/c_face/run_card_ornament.webp",
+      "id": "run_card_ornament",
+      "kind": "sheet",
+      "size": [
+        640,
+        80
+      ],
+      "notes": "Slate line ornament; 320x40 CSS px. Central live text safe rect [180,12,280,56] source. No baked words.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 640,
+        "cell_height": 80
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/c_face/tm-mile-500.svg",
+      "id": "tm-mile-500",
+      "kind": "icon",
+      "size": [
+        48,
+        48
+      ],
+      "notes": "500 m milestone, ordinal 1 of 5 shown by tally bars; distance text stays in code. Render at 24 CSS px.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 48,
+        "cell_height": 48
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/c_face/tm-mile-1000.svg",
+      "id": "tm-mile-1000",
+      "kind": "icon",
+      "size": [
+        48,
+        48
+      ],
+      "notes": "1000 m milestone, ordinal 2 of 5 shown by tally bars; distance text stays in code. Render at 24 CSS px.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 48,
+        "cell_height": 48
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/c_face/tm-mile-2000.svg",
+      "id": "tm-mile-2000",
+      "kind": "icon",
+      "size": [
+        48,
+        48
+      ],
+      "notes": "2000 m milestone, ordinal 3 of 5 shown by tally bars; distance text stays in code. Render at 24 CSS px.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 48,
+        "cell_height": 48
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/c_face/tm-mile-3000.svg",
+      "id": "tm-mile-3000",
+      "kind": "icon",
+      "size": [
+        48,
+        48
+      ],
+      "notes": "3000 m milestone, ordinal 4 of 5 shown by tally bars; distance text stays in code. Render at 24 CSS px.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 48,
+        "cell_height": 48
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/c_face/tm-mile-5000.svg",
+      "id": "tm-mile-5000",
+      "kind": "icon",
+      "size": [
+        48,
+        48
+      ],
+      "notes": "5000 m milestone, ordinal 5 of 5 shown by tally bars; distance text stays in code. Render at 24 CSS px.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 48,
+        "cell_height": 48
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "assets/c_face/tm-mile.webp",
+      "id": "tm-mile",
+      "kind": "sheet",
+      "size": [
+        240,
+        48
+      ],
+      "notes": "Milestones at 500, 1000, 2000, 3000, 5000 m, left to right. One-colour flag plus increasing tally bars. Numbers in code.",
+      "grid": {
+        "columns": 5,
+        "rows": 1,
+        "cell_width": 48,
+        "cell_height": 48
+      },
+      "durations": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "frame_names": [
+        "500",
+        "1000",
+        "2000",
+        "3000",
+        "5000"
+      ],
+      "world_cell": [
+        24,
+        24
+      ]
+    },
+    {
+      "file": "assets/c_face/tm-mile.svg",
+      "id": "tm-mile",
+      "kind": "icon",
+      "size": [
+        48,
+        48
+      ],
+      "notes": "SVG symbol bundle: generic tm-mile plus tm-mile-500, tm-mile-1000, tm-mile-2000, tm-mile-3000, tm-mile-5000. Default visible mark is 500 m.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 48,
+        "cell_height": 48
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "previews/a_critters_contact.webp",
+      "id": "a_critters_contact",
+      "kind": "preview",
+      "size": [
+        1560,
+        1540
+      ],
+      "notes": "Contact sheet on a real live Shadow Run capture; proposed art overlay, not a built THE RUN or phone capture.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 1560,
+        "cell_height": 1540
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "previews/b_sand_contact.webp",
+      "id": "b_sand_contact",
+      "kind": "preview",
+      "size": [
+        1560,
+        1240
+      ],
+      "notes": "Contact sheet on a real live Shadow Run capture; proposed art overlay, not a built THE RUN or phone capture.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 1560,
+        "cell_height": 1240
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "previews/c_face_contact.webp",
+      "id": "c_face_contact",
+      "kind": "preview",
+      "size": [
+        1560,
+        1540
+      ],
+      "notes": "Contact sheet on a real live Shadow Run capture; proposed art overlay, not a built THE RUN or phone capture.",
+      "grid": {
+        "columns": 1,
+        "rows": 1,
+        "cell_width": 1560,
+        "cell_height": 1540
+      },
+      "durations": [
+        0
+      ]
+    },
+    {
+      "file": "ASSESSMENT.md",
+      "id": "assessment",
+      "kind": "document",
+      "size": null,
+      "notes": "Ten optional gameplay proposals, then short assessment.",
+      "grid": null,
+      "durations": []
+    },
+    {
+      "file": "NOTES.md",
+      "id": "notes",
+      "kind": "document",
+      "size": null,
+      "notes": "Import directions, timings, scope choices and sound.",
+      "grid": null,
+      "durations": []
+    },
+    {
+      "file": "manifest.json",
+      "id": "manifest",
+      "kind": "document",
+      "size": null,
+      "notes": "Every delivered file with size, grid, durations and notes.",
+      "grid": null,
+      "durations": []
+    },
+    {
+      "file": "anchors.json",
+      "id": "anchors",
+      "kind": "document",
+      "size": null,
+      "notes": "Every image frame rectangle and source-pixel anchor.",
+      "grid": null,
+      "durations": []
+    }
+  ]
+}

@@ -36,14 +36,14 @@ desktop Dawn Ribbon only (no phone, later worlds locked): the critter art follow
 | A2 | DONE 7 Nov | sunstruck 5097685 | tools/tomato-man-tests/astra_gameplay_in.py copies her 17 sheets to art/gameplay, the three SEED plates to art/ui, writes GP (cells, anchors, durations) and her three marks into the page; cellAt() draws a cell at half size with its anchor on the world point, rotated when asked; the seed tumbles with its shadow, the sapling sprouts, sways and wilts at the root, her soft shade over the circle, the burst and the sting through the fx list, the landing mark, the SEED plate by state (ready, :active pressed, .empty disabled). Shot (Dawn Ribbon, 1 s after a toss; probed, not opened): 186 green pixels above the root against 0 in a control box, 6270 cool shade pixels in the circle against 168 outside |
 | A3 | DONE 7 Nov | sunstruck 5097685 | the scorpion runs, charges (huntAt marks the alert frame), sinks, rises and sits pinned on her sheets, turned about the thorax by its bearing; the mirage shimmers, dissolves over 0.35 s and sits pinned; the cue line uses her marks; reduced motion holds one pose. Shot (Midday Blaze level 5, the hero 70 px off the first scorpion; probed): 219 dark clay pixels within 24 px of the thorax against 36 on open sand |
 | A4 | DONE 7 Nov | sunstruck 5097685 | CACHE tomato-man-v10, ART_V 20261107a; check green; GAMEPLAY OK (30), page errors 0; sunstruck pushed; /home/codespace/tm-drafts/deploy-tomato-man-art.sh DRY OK (Tomato_Man main 6c056f3f, lucid-winds main 9550354e0). LINE: `! bash /home/codespace/tm-drafts/deploy-tomato-man-art.sh` |
-| B0 | | | |
-| B1 | | | |
-| B2 | | | |
-| B3 | | | |
-| B4 | | | |
-| B5 | | | |
-| B6 | | | |
-| B7 | | | |
+| B0 | DONE 7 Nov | sunstruck 2e4e30a, 1125c0d | startRun and genRun; RUN first on the title, Levels under it, the Daily a run; the locked scroll 80 px/s +5 every 20 s cap 200 (B6 left it); he starts 160 px over the burn line with 1.5 s of grace and the screen's foot holds him; below the line exposure runs at three times burnSun; a burn ends the run (the Cooler Box still revives once) |
+| B1 | DONE 7 Nov | sunstruck 2e4e30a | runBandNext every 240 px, twelve ahead as the camera climbs, each band on the other side of the last and within 120 to 150 px of its shade at the sun's three swings (runReachOk through sweptRect, re rolled six times at most); awnings, umbrellas, carts and clouds by roll; stars, seed pods, popsicles, hot sand along the shade; pruneBelow behind the line |
+| B2 | DONE 7 Nov | sunstruck 2e4e30a | a hold on the right 45 percent fires a seed every 0.33 s (the R key too), seeds fly 260 px, a pouch of six, one back every 1.5 s, three from a pod; a second seed sends a pinned critter under, a mirage dissolves at once, a crab flips on its third |
+| B3 | DONE 7 Nov | sunstruck 2e4e30a, 1125c0d | motes from 30 s in (fans, a wall with one gap from Tide Pools, a spiral in Eclipse), the gull that snatches saplings and drops hot sand and tumbles off two seeds, the sand crab on a band's edge; the cue line says motes, gull, crab with her marks |
+| B4 | DONE 7 Nov | sunstruck 2e4e30a | every 6,000 px (600 m) the sun flares twenty seconds (the lunge, motes doubled), three seconds of eclipse, the world steps on; the HUD shows metres, the pouch, the mile; milestone toasts at 500 to 5,000 m with her mile marks |
+| B5 | DONE 7 Nov | sunstruck 2e4e30a, 1125c0d | THE SUN WON on her ornament band: distance, the world, aloe, pinned, new best; aloe 1 per 25 m plus the stars plus 50 a new world; runBest and runWorlds in the save; the title's RUN plate with the best and five badges |
+| B6 | DONE 7 Nov | lucid-winds tools/tomato-man-tests/gameplay.mjs runbot | the runner bot through the real update: twenty seeds in world 0, 303 to 1,815 m, MEDIAN 576 m, inside 400 to 800: no number moved |
+| B7 | DONE 7 Nov | sunstruck 1125c0d4 | CACHE tomato-man-v11, ART_V 20261107b; TM CHECK OK, GAMEPLAY OK (run), page errors 0; sunstruck pushed; /home/codespace/tm-drafts/deploy-tomato-man-run.sh DRY OK (accepts Tomato_Man main at 6c056f3f or 50976858, lucid-winds main's tomato tree the gameplay copy or A's). LINE: `! bash /home/codespace/tm-drafts/deploy-tomato-man-run.sh` |
 
 ## THE LAWS
 TOMATO_MAN_BUILD_PLAN.md's laws bind: code directly; the node check per step; ONE shot per visual step, described from
@@ -196,3 +196,9 @@ line B runs.
 3. Motes cannot be shot (default; they are light). The other choice: a seed snuffs one.
 4. RUN is the title's first button (default); Levels second; the Daily is a run (default) rather than a level.
 5. Canopies walkable in LEVELS too (default, A0) rather than only in the run.
+
+## CHAPTER 8 (7 Nov): Astra's run pack wired, in the same stamp as B7
+Her pack (astra-tomato-man-run-nov07 in the vault; docs/briefs/tomato-man/the-run/astra/) came back the same afternoon, so chapter 8 landed inside milestone B: tools/tomato-man-tests/astra_run_in.py copies her seventeen sheets to art/run/ and the plate and ornament SVGs to art/ui/, writes RP (cells, anchors, durations) between TM RUN FITS markers and merges it into GP, and puts her nine marks (tm-mote, tm-gull, tm-crab, tm-mile-500 to 5000, tm-mile) in a TM RUN ICONS block. The page: the mote's core on its point at 80 ms; the gull's fly, carry, hit and knocked poses, mirrored for a leftward flight, tilted on its sine; the crab's walk, pinned (its own sprout) and flip; her burn strip tiled at 128 by 64 world px with the world's wash multiplied in (her five tints), over every shade and under the hero; her pod; the RUN plate (ready and pressed, the words in code on her baselines) and the five badges earned or unlit; THE SUN WON on her ornament; the mile marks. Her ten ideas are DECISIONS below.
+
+## RULINGS 2 (Astra's ten run ideas, docs/briefs/tomato-man/the-run/astra/ASSESSMENT.md; none built; Stephen's yes per line)
+1. The first eclipse as the clear first goal (five badges as a journey). 2. A rescued sapling counts toward an end card garden. 3. The gull dips its beak before a snatch (a tell). 4. Crabs as route choices (three seeds to clear an edge, or cross elsewhere). 5. Motes in sparse falling gates to steer through. 6. Seed pods on the sunny side of a safe route. 7. The previous best as a quiet sand marker. 8. In an eclipse, the next three shade islands shown. 9. The burn line hesitates one beat at a world change. 10. A daily fixed route beside the random run (the Daily Run is that already).

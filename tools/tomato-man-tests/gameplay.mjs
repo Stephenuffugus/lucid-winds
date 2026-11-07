@@ -78,6 +78,31 @@ if (!only || only === 'critters') {
   const n = await ev((i) => { const T = __TM; T.hold(true); T.startLevel(i); const r = T._run(); T.seek(1.2); r.graceT = 0; r.screenT = 99; const c = r.critters[0]; T.P.x = c.x + 80; T.P.y = c.y; T.seek(0.1); T.render(); c.pin = 1; T.render(); c.pin = 0; c.sink = 0.2; T.render(); c.sink = 0; return true; }, i2);
   say(n === true, 'run, pin and sink all draw without an error');
 }
+if (only === 'run' || only === 'runbot') {
+  /* THE RUN (7 Nov, TOMATO_MAN_RUN_BUILD_PLAN.md B6): the runner bot through the real update at 60 Hz, the clock held: it holds up,
+     fires, and steers to the nearest band of shade ahead (a greedy pick every 0.25 s); a run ends at the burn (THE SUN WON) or
+     at 240 s. Twenty seeds in world 0; the median distance before a burn is the number the plan tunes to (400 to 800 m) */
+  const r0 = await ev(() => { const T = __TM; T.hold(true); T.startRun(1234, 0); const r = T._run(); return { isRun: !!r.isRun, bands: r.L.casters.length, seeds: r.seeds, name: r.L.name, bestT: document.getElementById('runBestT') ? document.getElementById('runBestT').textContent : null, plate: !!document.querySelector('#tEndless.runPlate'), marks: ['tm-mote', 'tm-gull', 'tm-crab', 'tm-mile-500', 'tm-mile-5000'].map(id => !!document.getElementById(id)), rp: Object.keys(window.__TM_RP || {}).length }; });
+  say(r0.isRun && r0.bands >= 10 && r0.seeds === 6, 'a run starts: ' + r0.bands + ' bands made ahead, a pouch of ' + r0.seeds + ', ' + r0.name);
+  say(r0.plate && r0.marks.every(Boolean), 'the title wears her RUN plate and her marks are in the page (' + r0.marks.join(',') + ')');
+  const one = await ev((seed) => { const T = __TM; T.hold(true); T.startRun(seed, 0); const r = T._run(), P = T.P, k = T.keys; r.graceT = 0; let t = 0, pick = 0, tx = P.x;
+    while (T._mode() === 'play' && t < 240) { if (t >= pick) { pick = t + 0.25; let best = null, bd = 1e9; for (const c of r.L.casters) { const cx = c[0] === 'R' ? c[1] + c[3] / 2 : c[1], cy = c[2]; const dy = P.y - cy; if (dy < 40) continue; const d = Math.abs(dy) + Math.abs(cx - P.x) * 0.6; if (d < bd) { bd = d; best = cx; } } tx = best === null ? P.x : best; }
+      k.w = true; k.a = tx < P.x - 24; k.d = tx > P.x + 24; k.r = true; T.update(1 / 60); t += 1 / 60; }
+    k.w = k.a = k.d = k.r = false; return { m: Math.floor(r.dist / 10), t: Math.round(t), mode: T._mode(), world: r.L.world, miles: r.miles, pins: r.pins || 0, motes: r.motes.length, gulls: r.gulls.length }; }, 777);
+  say(one.mode === 'win' || one.t >= 240, 'one run plays through to its end: ' + one.m + ' m in ' + one.t + ' s, ' + one.mode + ', world ' + one.world + ', mile ' + one.miles + ', pinned ' + one.pins);
+  const card = await ev(() => { const T = __TM; T.render(); return { title: document.getElementById('winTitle').textContent, time: document.getElementById('winTime').textContent, screen: document.querySelector('.show') ? document.querySelector('.show').id : '' }; });
+  say(card.title === 'THE SUN WON' && /\d m/.test(card.time), 'the card says THE SUN WON with the distance: ' + card.time.slice(0, 40));
+  if (only === 'runbot') {
+    const ms = [];
+    for (let s = 1; s <= 20; s++) { const q = await ev((seed) => { const T = __TM; T.hold(true); T.startRun(seed, 0); const r = T._run(), P = T.P, k = T.keys; r.graceT = 0; let t = 0, pick = 0, tx = P.x;
+      while (T._mode() === 'play' && t < 240) { if (t >= pick) { pick = t + 0.25; let best = null, bd = 1e9; for (const c of r.L.casters) { const cx = c[0] === 'R' ? c[1] + c[3] / 2 : c[1], cy = c[2]; const dy = P.y - cy; if (dy < 40) continue; const d = Math.abs(dy) + Math.abs(cx - P.x) * 0.6; if (d < bd) { bd = d; best = cx; } } tx = best === null ? P.x : best; }
+        k.w = true; k.a = tx < P.x - 24; k.d = tx > P.x + 24; k.r = true; T.update(1 / 60); t += 1 / 60; }
+      k.w = k.a = k.d = k.r = false; return Math.floor(r.dist / 10); }, 1000 + s * 37); ms.push(q); }
+    ms.sort((a, b) => a - b); const med = ms[10];
+    console.log('runner bot, 20 seeds in world 0, metres before the burn: ' + ms.join(' ') + ' | median ' + med);
+    say(med >= 400 && med <= 800, 'the bot\'s world 0 median is ' + med + ' m (400 to 800)');
+  }
+}
 say(errs.length === 0, 'page errors ' + errs.length + ' ' + errs.slice(0, 3).join(' | ').slice(0, 300));
 console.log(bad ? 'GAMEPLAY FAILED ' + bad : 'GAMEPLAY OK');
 await browser.close();
