@@ -6000,7 +6000,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   /* the validator */
   const g2 = v2Of(sj, 4);
   const refuse = [['biome 6', { biome: 6 }], ['biome -1', { biome: -1 }], ['biome 1.5', { biome: 1.5 }], ['rules 2 (reserved for the next rules, not this client\'s)', { rules: 2 }], ['rules 9', { rules: 9 }],
-    ['flags bit 3', { flags: 8 }],   /* bit 0 is the keys', bit 1 the second monsters' (2 Nov) and bit 2 round 9's (6 Nov), all known */ ['flags bit 3', { flags: 8 }], ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
+    ['flags bit 4', { flags: 16 }],   /* bit 0 is the keys', bit 1 the second monsters' (2 Nov), bit 2 round 9's (6 Nov) and bit 3 round 10's keepsakes (7 Nov), all known */ ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
   for (const [why, o] of refuse) t.ok(SB.record.validate(Object.assign({}, g2, o)) !== null, 'validate refuses a v2 record with ' + why);
   t.ok(SB.record.validate(Object.assign({}, sj, { biome: 3 })) !== null, 'validate refuses a v1 record carrying a biome');
   t.eq(SB.record.validate(g2), null, 'validate accepts the v2 sample room with biome 4 (control)');
@@ -6009,7 +6009,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.ok(SB.record.decode('v1.' + gb.toString('base64url')) === null && SB.record.decode('v2.' + v1b.toString('base64url')) === null, 'decode refuses a v1. prefix on a v2 record and a v2. prefix on a v1 record');
   t.ok(SB.record.decode(gb.toString('base64url')) !== null && SB.record.decode(gb.toString('base64url')).biome === 4, 'a bare v2 payload decodes with its biome');
   const at = (k, v) => { const b = Buffer.from(gb); b[k] = v; return b; };
-  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 3', at(8, 8)], ['flags bit 3', at(8, 8)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
+  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 4', at(8, 16)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
   for (const [why, b] of newer) {
     t.eq(SB.record.parseCode(code2(b)).why, 'newer', 'parseCode answers newer on a v2 code with ' + why);
     t.eq(SB.record.decode(code2(b)), null, 'decode never builds a v2 record with ' + why);
@@ -6019,7 +6019,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.eq(SB.record.parseCode(at(0, 3).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v3 payload (no prefix), as on its v3. code');
   t.eq(SB.record.parseCode('https://x.example/s/#' + at(0, 7).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v7 payload after a link\'s #');
   t.ok(SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode(at(0, 200).toString('base64url')).why === 'bad', 'garbage and a bare payload with version byte 200 still read as bad (control)');
-  t.eq(SB.record.parseCode(code2(at(8, 8).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length)');
+  t.eq(SB.record.parseCode(code2(at(8, 16).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length)');
   t.eq(SB.record.parseCode(code2(gb.subarray(0, 300))).why, 'bad', 'a truncated v2 code with known bytes reads as bad (control)');
   t.ok(SB.record.parseCode(code2(gb)).rec && SB.record.parseCode(code2(gb)).rec.biome === 4, 'a v2 code with RULES 0 and no flags opens (control)');
   /* the build: the biome byte names the biome; RULES 0 is today's rules on the same grid */

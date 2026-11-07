@@ -1311,7 +1311,7 @@ const MUTANTS = [
   { name: 'RULES_UNKNOWN_ACCEPTED', task: 'BIOME', file: 'page', find: 'b[7] > RULES_MAX || ', repl: '',
     gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a v2 code with RULES 9' }] },
   { name: 'FLAGS_UNKNOWN_ACCEPTED', task: 'BIOME', file: 'page', find: ' || (b[8] & ~FLAGS_KNOWN) !== 0);', repl: ');',
-    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a v2 code with flags bit 2' }] },   /* re anchored at sb-m1-7: bit 0 is the keys', at sb-m1-11 bit 1 the second monsters' */
+    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a v2 code with flags bit 4' }] },   /* re anchored at sb-m1-7: bit 0 is the keys', at sb-m1-11 bit 1 the second monsters', at sb-m2-13 bit 3 the keepsakes */
   { name: 'V1_CHANGED', task: 'BIOME', file: 'page', find: '    return biomeOf(pal, n);\n  }\n  /* Frost (DESIGN 7)', repl: '    return 0;\n  }\n  /* Frost (DESIGN 7)',
     gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'every fixture builds the level or the refusal it built on 42fc8b19a' }] },
   { name: 'V1_CODE_CHANGED', task: 'BIOME', file: 'page', find: 'grids = r.mode === 2 ? 2 : 1, head = headOf(r.v);', repl: 'grids = r.mode === 2 ? 2 : 1, head = HEADER2;',
@@ -1597,7 +1597,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-run-2', expect: 'runRetry: the same three rooms' }, { gate: 'house', expect: "the House cleared card counts the house's whole bank" }] },
   { name: 'ROOM1_FULL_PAY', task: 'HOUSE-AR', file: 'page', find: 'n = HS.run.at === 0 ? Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT) : dp,', repl: 'n = dp,',
     gates: [{ gate: 'house', expect: "room 1 banks at free play's rate" }] },
-  { name: 'TITLE_DROPS_LOST', task: 'HOUSE-AR', file: 'page', find: "    var doc = SB.save.doc; if (!doc) return;\n    var n = doc.stats.houseClears", repl: "    var doc = SB.save.doc; if (!doc) return;\n    if (doc.run && doc.run.lost) { doc.run = null; SB.save.commit(); }\n    var n = doc.stats.houseClears",
+  { name: 'TITLE_DROPS_LOST', task: 'HOUSE-AR', file: 'page', find: "    var doc = SB.save.doc; if (!doc) return;\n    ui.drawRank();   /* R10 */\n    var n = doc.stats.houseClears", repl: "    var doc = SB.save.doc; if (!doc) return;\n    ui.drawRank();   /* R10 */\n    if (doc.run && doc.run.lost) { doc.run = null; SB.save.commit(); }\n    var n = doc.stats.houseClears",
     gates: [{ gate: 'house', expect: 'after a reload on the death card the title offers Retry House' }] },
   { name: 'CONTINUE_PAPER', task: 'HOUSE-AR', file: 'page', find: '#housego:not([hidden]) ~ #housestart { background: var(--paper); }', repl: '#housego:not([hidden]) { background: var(--paper); }',
     gates: [{ gate: 'house', expect: 'with a house saved its button leads the title in Sun' }] },
