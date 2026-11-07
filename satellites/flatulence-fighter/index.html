@@ -142,7 +142,7 @@
   .strikes{ display:flex; gap:4px;}
   .pip{ width:24px; height:24px; background:var(--a-strikeEmpty,none) center/100% 100% no-repeat;}
   .pip.broke{ background-image:var(--a-strikeLit,none);}
-  /* m2: one fidget is a warning, shown as the next pip half lit; a second fidget is the strike */
+  /* m2: one fidget was a warning, the next pip half lit; m5 (Stephen, 7 Nov): a miss is a strike, so .half never shows now */
   .pip{ position:relative;}
   .pip.half::after{ content:""; position:absolute; inset:0; background:var(--a-strikeLit,none) center/100% 100% no-repeat; clip-path:inset(0 50% 0 0);}
   .hud-tut .topright{ visibility:hidden;} .hud-tut #pauseBtn{ visibility:hidden;}
@@ -681,7 +681,7 @@
         <li class="how-step"><span class="hs-art hs-move" aria-hidden="true"></span><span class="hs-txt"><b>A call can move.</b> Follow it, and let go of the pad it left.</span></li>
       </ol>
       <div class="how-list">
-        <p>A missed call is a fidget, and the second fidget is a strike. <b>Three strikes and the room knows.</b> Later acts call two pads at once, even under the noise, and a call can move to another pad while you hold it. Let go of the one it left.</p>
+        <p>A missed call is a strike, and the room hears a little toot. <b>Three strikes and the room knows.</b> Later acts call two pads at once, even under the noise, and a call can move to another pad while you hold it. Let go of the one it left.</p>
       </div>
     </div>
     <button class="btn" id="howPractice"><svg class="ic" aria-hidden="true" focusable="false"><use href="#i-practice"/></svg> Play the lesson</button>
@@ -1085,7 +1085,7 @@
     // ids and stay earned and shown for whoever has them; their feats left play with m1's controls, so nobody wins them now
     {id:"calls10", ico:"medal_helping_hands", name:"Helping Hands", desc:"Hold 10 hand calls in one ordeal.", check:r=>r.calls>=10},
     {id:"four",    ico:"medal_twister", name:"Twister", desc:"Four fingers down at once, both hands on a call.", check:r=>r.maxPads>=4},
-    {id:"cleanact",ico:"medal_steady_hands", name:"Steady Hands", desc:"A whole act of hand calls with no fidget.", check:r=>r.cleanActs>=1},
+    {id:"cleanact",ico:"medal_steady_hands", name:"Steady Hands", desc:"A whole act of hand calls with no miss.", check:r=>r.cleanActs>=1},
   ];
 
   // ---- Cosmetics (earn by play, known thresholds, purely visual) ----
@@ -1621,13 +1621,13 @@
       S.combo+=CFG.comboCall; if(S.combo>S.bestCombo) S.bestCombo=S.combo; bumpCombo(); floatAtPad(c.side,"+"+pts); }
     c.phase="done"; c.until=S.time+CFG.flashDur; c.flash="Done"; c.from=-1;
   }
-  // a missed call is a fidget the witnesses notice: the first is a warning (a glance, the next pip half lit), the second
+  // m5 (Stephen, 7 Nov: "a miss is a strike with a little fart"): a missed call is a strike at once, a small toot the room hears;
+  // the lesson keeps its teaching words and loses nothing. Below, m2's words for the record: a fidget the witnesses notice, the first a warning, the second
   // a strike, and the count starts again (DECISION 2's default)
   function fidget(why){
     S.rp.fidgets++; S.actFidget=true; breakCombo(); haptic([12,40]);
     if(S.lesson){ if(S.tut) S.tut.fidgets=(S.tut.fidgets||0)+1; say(why==="early"?"Hold until it lets go":why==="stuck"?"Let go of the pad it left":"Touch the pad that lights","strike",1.8,3); glance(); return; }
-    if(S.fidgets>=1){ S.fidgets=0; addStrike("Fidgeting"); }
-    else { S.fidgets=1; say(why==="early"?"You let go too soon. They glance over":why==="stuck"?"Your hand stayed on the old pad. They glance over":"You missed the call. They glance over","strike",1.8,3); glance(); }
+    S.fidgets=0; fart(0.3); addStrike(why==="early"?"Let go too soon":why==="stuck"?"Stuck on the old pad":"Missed the call");
     renderPips(); }
   function glance(){ const a=SCENE_ART[sceneIdx(S.scene)]; if(a){ S.turnedUntil=S.time+0.9; setStrip(art(a.turned)); } }
   function renderPips(){ const pips=strikesEl.children, f=S?S.fidgets:0, n=S?S.strikes:0;
@@ -1939,7 +1939,7 @@
       ["Vents", get(L.vents,0)],
       ["Perfect vents", get(L.perfects,0)],
       ["Hand calls held", get(L.calls,0)],
-      ["Fidgets", get(L.fidgets,0)],
+      ["Misses", get(L.fidgets,0)],
       ["Best combo", "×"+comboMultFrom(get(L.bestCombo,0)).toFixed(1)],
       ["Sunbeams "+ic("sunbeam"), get(K.sun,0)],
       ["Medals", sh.filter(m=>ea.has(m.id)).length+"/"+sh.length],
