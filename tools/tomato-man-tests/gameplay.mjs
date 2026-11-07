@@ -1,6 +1,6 @@
 /* Tomato Man's real gameplay in numbers (6 Nov): THE SEED TOSS and SUN CRITTERS through the game's own update, clock held, no image opened.
  *   (cd /workspaces/Tomato_Man && python3 -m http.server 8778 >/dev/null 2>&1 &)     serve the clone first
- *   node tools/tomato-man-tests/gameplay.mjs [seed|critters|run|runbot|hero]
+ *   node tools/tomato-man-tests/gameplay.mjs [seed|critters|run|runbot|hero|planet]
  * Ends GAMEPLAY OK or GAMEPLAY FAILED. One browser at a time on this box. */
 import { createRequire } from 'node:module';
 const require = createRequire('/workspaces/sws-tools/package.json');
@@ -11,7 +11,7 @@ const page = await browser.newPage();
 const errs = [];
 page.on('pageerror', e => errs.push(e.message));
 await page.setViewport({ width: 412, height: 915, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-const TUT = ['move','shade','aloe','find','dash','seed','critter','mirage','shadeDrop','checkpoint','burn','hot','spf','cart','cloud','wilt','ice','lunge','eclipse'];
+const TUT = ['move','shade','aloe','find','dash','seed','critter','mirage','shadeDrop','checkpoint','burn','hot','spf','cart','cloud','planet','wilt','ice','lunge','eclipse'];
 const SEEN = JSON.stringify({ seenHowto: true, tut: Object.fromEntries(TUT.map(k => [k, true])) });
 await page.evaluateOnNewDocument(s => { try { localStorage.setItem('tomatoman_save_v1', s); } catch (e) {} }, SEEN);
 await page.goto('http://localhost:8778/?tmtest=1', { waitUntil: 'networkidle0', timeout: 90000 });
@@ -128,6 +128,29 @@ if (only === 'hero') {
   say(hat.body === 'cherry' && hat.hat === 'cap', 'a cherry in a cap walks north and west without an error');
   const heads = await ev(() => { const T = __TM; return ['strawberry', 'bellpepper', 'pickle', 'sunburn'].map(b => { const i = T.A('bhead_' + b); return i ? i.naturalWidth : 0; }); });
   say(heads.every(w => w === 384 || w === 0), 'the builder heads that are loaded are her 384 px faces (' + heads.join(',') + ')');
+}
+if (only === 'planet') {
+  /* PLANET TOMATÓ (7 Nov, Stephen's name): once in a Dunes or Eclipse level a tomato moon crosses; its circle is shade while it passes */
+  const idx = await ev(() => { const T = __TM; return { d: T.LEVELS.findIndex(l => l.world === 3), e: T.LEVELS.findIndex(l => l.world === 4 && l.sun.dark), z: T.LEVELS.findIndex(l => !l.world) }; });
+  const a = await ev((i) => { const T = __TM; T.hold(true); T.startLevel(i); const r = T._run(); return { has: !!r.planet, st: r.planet && r.planet.state, at: r.planet && r.planet.at, name: r.L.name }; }, idx.d);
+  const z = await ev((i) => { const T = __TM; T.hold(true); T.startLevel(i); return __TM._run().planet; }, idx.z);
+  say(a.has && a.st === 'wait' && a.at >= 9 && a.at <= 13 && z === null, 'a Dunes level has a planet waiting (' + a.name + ', at ' + a.at + ' s); a Morning Tide level has none');
+  const b = await ev((i) => { const T = __TM; T.hold(true); T.startLevel(i); const r = T._run(); r.graceT = 0; T.P.exp = 0; r.screenT = 999; let t = 0;
+    while (r.planet.state === 'wait' && t < 20) { T.update(1 / 60); t += 1 / 60; } const appr = r.planet.state, y0 = r.planet.y, py = T.P.y; T.render();
+    let tA = 0; while (r.planet.state === 'approach' && tA < 2) { T.update(1 / 60); tA += 1 / 60; } const pass = r.planet.state; T.render();
+    const pl = r.planet, x1 = pl.x; T.update(1 / 60); const moved = Math.abs(pl.x - x1), centre = T.shadedGeom(pl.x, pl.y), out = T.shadedGeom(pl.x - pl.dir * (pl.r + 30), pl.y), cue = document.getElementById('cue').textContent;
+    r.screenT = 0; T.P.exp = 0; const e0 = T.P.exp, inside = []; for (let k = 0; k < 60; k++) { T.P.x = pl.x; T.P.y = pl.y; T.P.vx = T.P.vy = 0; T.update(1 / 60); inside.push(T.shadedGeom(T.P.x, T.P.y)); } const e1 = T.P.exp;
+    let tP = 0, leaveDrawn = false; while (r.planet.state !== 'done' && tP < 40) { T.P.x = Math.max(40, Math.min(r.L.worldW - 40, pl.x)); T.P.y = Math.max(200, pl.y); T.update(1 / 60); tP += 1 / 60; if (r.planet.state === 'leave' && !leaveDrawn) { leaveDrawn = true; T.render(); } } T.render();
+    return { appr, dy: py - y0, pass, moved, centre, out, cue, e0, e1, allIn: inside.every(Boolean), tP, done: r.planet.state, afterShade: T.shadedGeom(pl.x, pl.y), leaveDrawn }; }, idx.d);
+  say(b.appr === 'approach' && Math.abs(b.dy - 140) < 1, 'at its time it approaches from one side, ' + b.dy + ' px above him');
+  say(b.pass === 'pass' && b.moved > 2 && b.centre && !b.out, 'then it passes: the circle moves ' + b.moved.toFixed(1) + ' px a step, shade at its centre, sun a step past its rim');
+  say(b.cue.indexOf('Planet Tomató') >= 0, 'the cue line says ' + JSON.stringify(b.cue));
+  say(b.allIn && b.e1 <= b.e0 + 0.01, 'standing in it for a second he stays in shade (exposure ' + b.e0.toFixed(1) + ' to ' + b.e1.toFixed(1) + ')');
+  say(b.done === 'done' && b.tP < 20 && !b.afterShade && b.leaveDrawn, 'it leaves by the far side in ' + b.tP.toFixed(1) + ' s and its shade goes with it (approach, pass and leave all drawn)');
+  const c = await ev((i) => { const T = __TM; T.hold(true); T.startLevel(i); const r = T._run(); return { has: !!r.planet, dark: !!r.dark, name: r.L.name }; }, idx.e);
+  say(c.has && c.dark, 'an Eclipse level has one too, beside its dark windows (' + c.name + ')');
+  const d = await ev(() => { const T = __TM; T.hold(true); T.startRun(5, 3); return __TM._run().planet; });
+  say(d === null, 'the run has none');
 }
 say(errs.length === 0, 'page errors ' + errs.length + ' ' + errs.slice(0, 3).join(' | ').slice(0, 300));
 console.log(bad ? 'GAMEPLAY FAILED ' + bad : 'GAMEPLAY OK');
