@@ -31,11 +31,11 @@ desktop Dawn Ribbon only (no phone, later worlds locked): the critter art follow
 
 | Step | State | Commit | Note |
 |---|---|---|---|
-| A0 | | | |
-| A1 | | | |
-| A2 | | | |
-| A3 | | | |
-| A4 | | | |
+| A0 | DONE 7 Nov | sunstruck 5097685 | run.walls is empty (collideWalls keeps the world clamp); the canopy he stands under draws after him at alpha 0.82 (canopy() shared by both passes); GAMEPLAY OK through 26 levels |
+| A1 | DONE 7 Nov | sunstruck 5097685 | heroBearing holds the last bearing unless the new sector lasts 90 ms or the angle is 12 degrees past the old sector's edge; run.stride drives the walk cycle (a frame every 14 px); the camera ease k = 1 minus 0.88 to the power (dt times 60). Measured through the real update with the stick along the n to nw edge and a 10 percent wobble for 3 s: 21 bearing changes the old way, 0 now; a plain 10 percent wobble straight up: 0 both ways |
+| A2 | DONE 7 Nov | sunstruck 5097685 | tools/tomato-man-tests/astra_gameplay_in.py copies her 17 sheets to art/gameplay, the three SEED plates to art/ui, writes GP (cells, anchors, durations) and her three marks into the page; cellAt() draws a cell at half size with its anchor on the world point, rotated when asked; the seed tumbles with its shadow, the sapling sprouts, sways and wilts at the root, her soft shade over the circle, the burst and the sting through the fx list, the landing mark, the SEED plate by state (ready, :active pressed, .empty disabled). Shot (Dawn Ribbon, 1 s after a toss; probed, not opened): 186 green pixels above the root against 0 in a control box, 6270 cool shade pixels in the circle against 168 outside |
+| A3 | DONE 7 Nov | sunstruck 5097685 | the scorpion runs, charges (huntAt marks the alert frame), sinks, rises and sits pinned on her sheets, turned about the thorax by its bearing; the mirage shimmers, dissolves over 0.35 s and sits pinned; the cue line uses her marks; reduced motion holds one pose. Shot (Midday Blaze level 5, the hero 70 px off the first scorpion; probed): 219 dark clay pixels within 24 px of the thorax against 36 on open sand |
+| A4 | DONE 7 Nov | sunstruck 5097685 | CACHE tomato-man-v10, ART_V 20261107a; check green; GAMEPLAY OK (30), page errors 0; sunstruck pushed; /home/codespace/tm-drafts/deploy-tomato-man-art.sh DRY OK (Tomato_Man main 6c056f3f, lucid-winds main 9550354e0). LINE: `! bash /home/codespace/tm-drafts/deploy-tomato-man-art.sh` |
 | B0 | | | |
 | B1 | | | |
 | B2 | | | |
