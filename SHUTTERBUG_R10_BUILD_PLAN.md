@@ -25,7 +25,7 @@ The deploy wrapper pattern: /home/codespace/sb-drafts/sb-m2-12/deploy-sb-m2-12.s
 first, then tools/shutterbug-tests/deploy.sh with the stamp). The browser gates in test/ are red since before R9 on a
 stale #sample: not tonight's job.
 
-## LIVE 7 Nov ~18:20 UTC: sb-m2-13, 14 and 15 by his one line (lucid-winds main 5bfb72309; both origins serve sb-m2-15, shutterbug-v37). Open: step 5 TEACH THE MOVES (sb-m2-16), round 11 when Astra's pack is back.
+## LIVE 7 Nov ~18:20 UTC: sb-m2-13, 14 and 15 by his one line (lucid-winds main 5bfb72309). sb-m2-16 (step 5, the moves taught) STAMPED 8e070b1e4, waits for his line. Open: round 11 when Astra's pack is back.
 
 ## STATE (the builder updates this block; one line per step)
 
@@ -38,6 +38,7 @@ stale #sample: not tonight's job.
 | 4 | DONE 7 Nov | sb-m2-15 | 49238f362, ec80c00e0 | THE FOUR VERBS behind FLAG_VERBS (bit 4; captures carry 31; the harness's unknown bit moved to 5): verbKinds after round 9's roll (30 percent, at least one in a room of three where they may come); the lobber and its arcing pellet, the dropper's fall and climb, the shellback's armoured front (a bounce unharmed, a hit shrugged, CLANG), the splitter's halves; her bodies by biome; H-mon-3; the no browser check green; the wrapper /home/codespace/sb-drafts/sb-m2-15/deploy-sb-m2-15.sh DRY OK. LINE: `! bash /home/codespace/sb-drafts/sb-m2-15/deploy-sb-m2-15.sh` (ships sb-m2-13 and 14 too; their lines are stale) |
 | art | DONE 7 Nov | sb-m2-14 | d9b5b5557 | CHAPTER 7, Astra's round 10 wired: 118 keys cut and spliced (cap 320), film boxes, rank badges and plate, keepsake pickups and tiles, the tinted silhouette, the five frame plates as grants (lookGrant), the weather as the air; the verbs and guardians parked on the page |
 | art stamp | DONE 7 Nov | sb-m2-14 | 50d436f32 | the no browser check, lint and the fast harness green; /home/codespace/sb-drafts/sb-m2-14/deploy-sb-m2-14.sh DRY OK. LINE: `! bash /home/codespace/sb-drafts/sb-m2-14/deploy-sb-m2-14.sh` (ships sb-m2-13 too; sb-m2-13's line is stale) |
+| 5 | DONE 7 Nov | sb-m2-16 | 3edb5400a, 8e070b1e4 | TEACH THE MOVES: hold jump, drop through and the tripod, once each per save in the strip's banner after the wall lesson, never in a house room; lint and the no browser check green; probed on the live state (each once, gone at 3 s). LINE: `! bash /home/codespace/sb-drafts/sb-m2-16/deploy-sb-m2-16.sh` |
 
 ## THE LAWS
 SHUTTERBUG_R9_BUILD_PLAN.md's laws bind (the sim is pure and deterministic: no Math.random, no Date.now inside it; a

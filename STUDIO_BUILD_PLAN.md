@@ -51,7 +51,7 @@ one commit as its own command, last.
 | 3 | DONE, waits for his line | 7 Nov (Fable, daytime) | m4 at 3ba0a05cc; `! bash /home/codespace/kp-drafts/deploy-keepsies-m4.sh` |
 | 4 | LIVE 7 Nov ~18:05 UTC | 7 Nov (Fable, daytime) | sunstruck 5097685, carried by milestone B's line (its own line never ran and is stale) |
 | 5 | LIVE 7 Nov ~18:05 UTC | 7 Nov (Fable, daytime) | sunstruck 1125c0d4 (B0 to B7, with chapter 8 inside) on lucid-winds main b3c737e20 and Tomato_Man main |
-| 6 | LIVE 7 Nov ~18:20 UTC | 7 Nov (Fable, daytime) | sb-m2-13 (steps 0 to 3) and sb-m2-15 (step 4) live on main 5bfb72309; step 5 TEACH THE MOVES open (sb-m2-16) |
+| 6 | LIVE to step 4; step 5 stamped, waits for his line | 7 Nov (Fable, daytime) | sb-m2-13 and 15 live on main 5bfb72309; sb-m2-16 (TEACH THE MOVES) at 8e070b1e4: `! bash /home/codespace/sb-drafts/sb-m2-16/deploy-sb-m2-16.sh` |
 | 7 | LIVE 7 Nov ~18:20 UTC | 7 Nov (Fable, daytime) | sb-m2-14 live inside sb-m2-15's line |
 | 8 | LIVE 7 Nov ~18:05 UTC | 7 Nov (Fable, daytime) | her run pack wired inside chapter 5's stamp |
 | 9 | waits on the pack | | |

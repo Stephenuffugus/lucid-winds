@@ -1757,3 +1757,9 @@ gates: lint green; the fast harness 10490 assertions 0 failing (H-mon-3 new); SW
 shots: a headless build of the sample room in each biome: Ember placed a slag shellback (drawn slag_shellback.idle); the other three verbs are proven in the sim's labs and their keys are on the atlas; no image opened
 line: `! bash /home/codespace/sb-drafts/sb-m2-15/deploy-sb-m2-15.sh`
 LIVE 7 Nov ~18:20 UTC: sb-m2-13, 14 and 15 by his line; main 5bfb72309 (files only, from the branch's 9dffd298a); the merge of main into the branch hit 36 Keepsies conflicts (main's files only m3 against the branch's m4), resolved to the branch; both origins serve BUILD sb-m2-15, shutterbug-v37; tag sb-m2-15
+
+## sb-m2-16 (7 Nov 2026, Fable): R10 step 5, the moves taught
+shipped: moveLesson beside wallLesson in the strip's banner (ui.guardian): hold (EV.JUMP then EV.LAND), drop (grounded on a one way with open air under, onOneWay), tripod (EV.CHECK); onboarding.hints gains hold, drop, tripod; never in a house room; three seconds; the wall lesson keeps its turn first. UI only.
+gates: lint green; SWS_NO_BROWSER=1 tools/check.js THE GATES THAT NEED NO BROWSER PASSED; a headless probe on the live state object (the first probe on copied state objects reset the lesson each call and misled: the lesson keys on state identity)
+shots: none (words in the existing banner); no image opened
+line: `! bash /home/codespace/sb-drafts/sb-m2-16/deploy-sb-m2-16.sh`
