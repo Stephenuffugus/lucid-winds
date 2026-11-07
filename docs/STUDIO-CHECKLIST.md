@@ -58,7 +58,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 
 - [ ] Start the session with the Tomato Man repo added as a working directory (`claude --add-dir /workspaces/Tomato_Man`), then paste docs/briefs/opus-kickoff-nov07/PROMPT.txt (you)  
 - [ ] Chapter 1 Sunforge v5.2, the obsidian shards (Opus)  
-- [x] Chapter 2 Flatulence Fighter m4, the six pad plates, the ring, moving calls, the cards, the lesson line, and m5 (a miss is a strike) (Fable, 7 Nov; waits for your line)  
+- [x] Chapter 2 Flatulence Fighter m4, the six pad plates, the ring, moving calls, the cards, the lesson line, and m5 (a miss is a strike): LIVE 7 Nov by your line (Fable)  
 - [ ] Chapter 3 Keepsies m4, the circle and reticles at 154 px, the snap card, the chalk, the chip (Opus)  
 - [x] Chapter 4 Tomato Man A, canopies you walk under, the walk fixed, the seed and critter art in: LIVE 7 Nov under milestone B's line (Fable)  
 - [x] Chapter 5 Tomato Man B, THE RUN, with chapter 8 (her run art) inside it, sunstruck 1125c0d4 (Fable, 7 Nov)  
@@ -73,7 +73,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Tomato Man milestone B, THE RUN with Astra's art (and milestone A under it): LIVE 7 Nov, main b3c737e20 (you ran the line)  
 - [x] Shutterbug sb-m2-13, 14 and 15 (R10 code, round 10 art, the four verbs): LIVE 7 Nov, main 5bfb72309 (you ran the line)  
 - [ ] Shutterbug sb-m2-18 (the guardians' phases; ships 17, the Loom and the Wasp, and 16, the moves taught, too): `! bash /home/codespace/sb-drafts/sb-m2-18/deploy-sb-m2-18.sh` (you)  
-- [ ] Flatulence Fighter m5 (a miss is a strike with a little toot; m4's plates and cards under it): `! bash /home/codespace/ff-drafts/deploy-ff-m5.sh` (you)  
+- [x] Flatulence Fighter m4 and m5 (the plates and cards; a miss is a strike with a little toot): LIVE 7 Nov, main 692ca6b87 (you ran the line)  
 - [x] Tomato Man The Hero (the thirteen produce bodies on the tomato's rig; her builder heads): LIVE 7 Nov, main 1c2388105 (you ran the line)  
 - [ ] Run each deploy line Opus left at the top of START-HERE.md, one at a time at an idle prompt (you)  
 - [ ] Play each game on the Pixel after its line and write your notes in one message; Fable turns them into the next chapter (you)  
