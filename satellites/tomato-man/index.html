@@ -906,7 +906,7 @@ function runBandNext(){ const g=run.gen, L=run.L, f=run.feel, r=(a,b)=>a+g.rnd()
   g.prev={x:cx-w/2,y,w,d:64,sh:440}; g.cx=cx; g.y-=240; g.n++; }
 function startRun(seed,daily){ const L=genRun(seed); if(daily){ L.name='Daily Run'; L.sub='Seed '+seedWord(daily)+'. Everyone runs the same sand today.'; }
   endlessWorld=0; startLevel(0,{level:L,endless:true,daily:daily||0}); const f=run.feel;
-  run.isRun=true; run.gen={rnd:mulberry32(seed|0),y:L.start[1]-40-240,cx:L.worldW/2,side:1,n:0,world:0,diff:1,fi:0,prev:{x:L.worldW/2-180,y:L.start[1]-40,w:360,d:70,sh:440}};
+  run.isRun=true; run.planet=null; run.gen={rnd:mulberry32(seed|0),y:L.start[1]-40-240,cx:L.worldW/2,side:1,n:0,world:0,diff:1,fi:0,prev:{x:L.worldW/2-180,y:L.start[1]-40,w:360,d:70,sh:440}};
   cam.y=clamp(P.y-(H-f.runLineH-160),0,Math.max(0,L.worldH-H)); run.graceT=Math.max(run.graceT||0,1.5);   // he starts 160 px over the burn line with a breath and a half before it bites
   run.scroll=f.runScroll; run.scrollY=cam.y; run.dist=0; run.miles=0; run.pods=[]; run.motes=[]; run.gulls=[]; run.seeds=f.runPouch; run.regenT=0; run.fireT=0; run.fireId=null;
   run.moteT=f.runMoteEvery; run.gullT=f.runGullEvery; run.flareT=0; run.worldMask=1; run.pins=0; run.cacti=[]; run.decor=[];
@@ -960,6 +960,31 @@ function sweptRect(x,y,w,d,sh,ux,uy,elev){
   const len=clamp(sh/Math.tan(clamp(elev,0.18,1.45)), sh*0.4, sh*3); const vx=ux*len,vy=uy*len;
   const base=[{x,y},{x:x+w,y},{x:x+w,y:y+d},{x,y:y+d}];
   return hull(base.concat(base.map(p=>({x:p.x+vx,y:p.y+vy})))); }
+/* PLANET TOMATÓ (Stephen, 7 Nov: "lets call it planet tomato with an accent"; Astra's hero pack, art/planet/): in a Dunes at Dusk or
+   Eclipse level, once, a far faceless tomato moon crosses the sky and its round shadow is shade on the move. The shadow is the code's
+   exact circle (radius PLANET_R, world px); her soft edged texture is clipped to it and never decides safety. It enters from one side
+   at PLANET_AT seconds, a little above him, rises slowly as it crosses (he is climbing), and leaves by the far side; 0.75 s of her
+   approaching frames, the passing frames as a slow ping pong while it crosses, 0.75 s of her leaving frames. Safety only while it
+   passes; approaching and leaving the circle is off the level anyway. Never in the run (startRun clears it). */
+const PLANET_R=220, PLANET_PX=420 /* her 560 is wider than the phone; the fruit is still about 360 px */, PLANET_FR={approach:[0,1,2],pass:[0,1,2,3,2,1],leave:[0,1,2]}, PLANET_IMG={approach:'approaching',pass:'passing',leave:'leaving'};
+const PLANET_KEYS=['planet_approaching_0','planet_approaching_1','planet_approaching_2','planet_passing_0','planet_passing_1','planet_passing_2','planet_passing_3','planet_leaving_0','planet_leaving_1','planet_leaving_2','planet_shadow'];
+function planetFor(L){ const dir=(((L.worldW/100)|0)&1)?1:-1;
+  return { state:'wait', at:9+(((L.worldW+L.worldH)/100)|0)%5, t:0, dir, r:PLANET_R, x:dir>0?-PLANET_R-120:L.worldW+PLANET_R+120, y:0, vx:dir*(L.worldW+2*PLANET_R+240)/14, vy:-45 }; }
+function updatePlanet(dt){ const pl=run.planet, L=run.L; if(!pl||pl.state==='done'||run.isRun) return;
+  if(pl.state==='wait'){ if(run.t>=pl.at){ pl.state='approach'; pl.t=0; pl.y=P.y-140; } return; }
+  pl.t+=dt; pl.x+=pl.vx*dt; pl.y+=pl.vy*dt;
+  if(pl.state==='approach'){ if(pl.t>=0.75){ pl.state='pass'; pl.t=0; } }
+  else if(pl.state==='pass'){ if(pl.dir>0?pl.x>L.worldW+pl.r:pl.x<-pl.r){ pl.state='leave'; pl.t=0; } }
+  else if(pl.state==='leave'){ if(pl.t>=0.75) pl.state='done'; } }
+function planetShade(px,py){ const pl=run.planet; return !!pl&&pl.state==='pass'&&!run.isRun&&dist(px,py,pl.x,pl.y)<pl.r; }
+function drawPlanet(ox,oy){ const pl=run.planet; if(!pl||pl.state==='wait'||pl.state==='done'||run.isRun) return;
+  const X=pl.x+ox, Y=pl.y+oy;
+  if(pl.state==='pass'){ const sh=A('planet_shadow'); if(sh){ ctx.save(); ctx.beginPath(); ctx.arc(X,Y,pl.r,0,TAU); ctx.clip(); ctx.globalAlpha=0.6; ctx.drawImage(sh,X-pl.r,Y-pl.r,pl.r*2,pl.r*2); ctx.restore(); } }
+  // the moon floats toward the sun from its shadow, as a cloud does; drawn under him, over the ground
+  const seq=PLANET_FR[pl.state], per=pl.state==='pass'?0.5:0.25, fr=save.settings.reduce?seq[0]:seq[Math.min(seq.length-1,Math.floor(pl.t/per)%seq.length)];
+  const im=A('planet_'+PLANET_IMG[pl.state]+'_'+fr); if(!im) return;
+  const mx=X+Math.cos(run.az)*pl.r*0.85, my=Y+Math.sin(run.az)*pl.r*0.85;
+  ctx.globalAlpha=0.85; ctx.drawImage(im,mx-PLANET_PX/2,my-PLANET_PX/2,PLANET_PX,PLANET_PX); ctx.globalAlpha=1; }
 function computeShade(){ const L=run.L, dir=run.az+Math.PI, ux=Math.cos(dir),uy=Math.sin(dir),el=L.sun.elev;
   run.shadePolys.length=0; run.shadeEll.length=0;
   for(const c of L.casters){
@@ -976,6 +1001,7 @@ function shadedGeom(px,py){
   for(const e of run.shadeEll){ const dx=px-e.cx,dy=py-e.cy,c=Math.cos(-e.ang),s=Math.sin(-e.ang);
     const xr=dx*c-dy*s,yr=dx*s+dy*c; if((xr*xr)/(e.major*e.major)+(yr*yr)/(e.minor*e.minor)<=1) return true; }
   for(const cl of run.clouds) if(dist(px,py,cl.x,cl.y)<cl.r) return true;
+  if(planetShade(px,py)) return true;   // PLANET TOMATÓ's shadow, while it passes
   for(const p of run.popups) if(dist(px,py,p.x,p.y)<p.r) return true;
   for(const sp of run.saplings) if(dist(px,py,sp.x,sp.y)<sp.r) return true;
   return false; }
@@ -1027,6 +1053,7 @@ function startLevel(i,opts){ opts=opts||{}; const L=opts.level||LEVELS[i]; li=(o
         coolerBox: !!save.loadout.cooler_box, siesta: !!save.loadout.siesta, magnet: !!save.loadout.magnet_pop, spawnAt:0, feel,
         seeds:feel.seedsALevel, tosses:[], saplings:[], critters:[], heatTrail:[],
         fx:[], decor:scatterDecor(L) };
+  run.planet=(L.world===3||L.world===4)?planetFor(L):null;   // PLANET TOMATÓ: once a level in the Dunes and the Eclipse (startRun clears it)
   cueKey='~'; run.cacti=cactiFor(L,run.decor); run.crnd=mulberry32(((L.worldW*5+L.worldH*3)|0)+7); run.blinkNext=3; run.blinkI=-1; run.blinkAt=-9;
   // make the orange 'R' awnings solid — but never the ones the player spawns / respawns / exits on (start, exit, checkpoints)
   // 7 Nov (Stephen: "the awnings that are in your way ... feels like a tedious task"): an awning is a canopy on poles, so
@@ -1047,7 +1074,7 @@ function startLevel(i,opts){ opts=opts||{}; const L=opts.level||LEVELS[i]; li=(o
    hot sand, never on each other; the planet tomato far off at the top. Seeded by the level's own shape, so a level
    always wears the same props. Decor never blocks, never shades, never hurts. */
 /* m2 step 9: the moving world's art, loaded with the level that uses it */
-function needLevel(L){ need('cactus_blink'); if(L.wind) need('cactus_wind');
+function needLevel(L){ need('cactus_blink'); if(L.wind) need('cactus_wind'); if(L.world===3||L.world===4) PLANET_KEYS.forEach(need);
   if((L.wilts||[]).length) need('wilt_solid'); if((L.casters||[]).some(c=>c[0]==='U')) need('umb_states');
   if(L.sun&&L.sun.lunge){ need('sun_wind_up'); need('sun_lunge'); need('sun_recovery'); need('ring_boss'); need('lane'); }
   if(L.sun&&L.sun.dark) need('ring_safe'); }
@@ -1102,6 +1129,7 @@ function cueNow(){ const L=run.L;
   if(run.act&&run.act.k==='cooling') return ['cooling','cooling down',0];
   if(run.critters.some(c=>c.state==='hunt'&&c.pin<=0)) return ['scorpion','scorpion, reach shade',1];
   if(run.critters.some(c=>c.kind==='mirage'&&c.on&&c.pin<=0)) return ['mirage','mirage, keep moving',0];
+  if(run.planet&&run.planet.state==='pass'&&!run.isRun) return ['planet','Planet Tomató, ride its shadow',0];
   if(run.isRun&&run.motes.length) return ['mote','motes, dodge',1];
   if(run.isRun&&run.gulls.length) return ['gull','gull, shoot it',0];
   if(run.isRun&&run.critters.some(c=>c.kind==='crab'&&!c.flipped&&c.pin<=0&&dist(P.x,P.y,c.x,c.y)<220)) return ['crab','crab on the edge',0];
@@ -1395,6 +1423,7 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
     if(m.vy){m.y+=m.vy*dt; if(m.y<m.miny||m.y>m.maxy) m.vy*=-1;} }
   for(const cl of run.clouds){ if(cl.vx){cl.x+=cl.vx*dt; if(cl.x<cl.minx||cl.x>cl.maxx) cl.vx*=-1;}
     if(cl.vy){cl.y+=cl.vy*dt; if(cl.y<cl.miny||cl.y>cl.maxy) cl.vy*=-1;} }
+  updatePlanet(dt);
   computeShade();
 
   // ---- movement with momentum ----
@@ -1495,7 +1524,7 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
 function updateHUD(onHot){ const f=run.feel;
   const hf=$('heatFill'); hf.style.clipPath='inset(0 '+(100-P.exp).toFixed(1)+'% 0 0)'; hf.style.webkitClipPath=hf.style.clipPath;
   hf.className=run.screenT>0?'spf':(run.darkT>0?'dark':''); $('play-ui').classList.toggle('night',run.darkT>0);
-  const cu=cueNow(), ck=cu?cu[0]:''; if(ck!==cueKey){ cueKey=ck; const ce=$('cue'); if(cu){ ce.innerHTML=mk(cu[0])+'<span>'+cu[1]+'</span>'; ce.className='panel show'+(cu[2]?' warn':''); } else ce.className='panel'; }
+  const cu=cueNow(), ck=cu?cu[0]:''; if(ck!==cueKey){ cueKey=ck; const ce=$('cue'); if(cu){ ce.innerHTML=(cu[0]==='planet'?'<img class="mk" src="art/planet/tm-planet.webp" alt="">':mk(cu[0]))+'<span>'+cu[1]+'</span>'; ce.className='panel show'+(cu[2]?' warn':''); } else ce.className='panel'; }
   $('heatLbl').textContent=run.graceT>0?'get ready…':(run.screenT>0?'SPF active':(run.darkT>0?'eclipse':(run.slowT>0?'ICE · time slow':(onHot?'HOT SAND':'Exposure'))));
   if(run.isRun){ $('timeT').textContent=Math.floor(run.dist/10).toLocaleString(); $('timeU').textContent=' m'; $('bestT').style.display=save.runBest?'':'none'; $('bestT').textContent=save.runBest?('best '+save.runBest.toLocaleString()+' m'):''; $('findRun').style.display='none'; }
   else { $('timeT').textContent=run.t.toFixed(1); $('timeU').textContent='s'; }
@@ -1677,6 +1706,7 @@ function render(){ const inPlay=(screen==='play');
   for(const p of run.popups){ ctx.moveTo(p.x+ox+p.r,p.y+oy); ctx.arc(p.x+ox,p.y+oy,p.r,0,TAU); ctx.closePath(); }
   for(const sp of run.saplings){ if(sp.r>0){ ctx.moveTo(sp.x+ox+sp.r,sp.y+oy); ctx.arc(sp.x+ox,sp.y+oy,sp.r,0,TAU); ctx.closePath(); } }
   for(const cl of run.clouds){ ctx.moveTo(cl.x+ox+cl.r,cl.y+oy); ctx.arc(cl.x+ox,cl.y+oy,cl.r,0,TAU); ctx.closePath(); }
+  if(run.planet&&run.planet.state==='pass'&&!run.isRun){ const pl=run.planet; ctx.moveTo(pl.x+ox+pl.r,pl.y+oy); ctx.arc(pl.x+ox,pl.y+oy,pl.r,0,TAU); ctx.closePath(); }   // PLANET TOMATÓ
   ctx.fill(); ctx.restore();
   // a dropped shade is her soft cool pool over its circle (the circle is the truth)
   const pool=A('shade_pool');
@@ -1692,6 +1722,7 @@ function render(){ const inPlay=(screen==='play');
     ctx.fillStyle='rgba(255,255,255,.85)';
     for(let i=0;i<5;i++){const a=i/5*TAU,rr=cl.r*0.55; ctx.beginPath(); ctx.arc(cl.x+ox+Math.cos(a)*rr*0.6,cl.y+oy+Math.sin(a)*rr*0.6,cl.r*0.42,0,TAU); ctx.fill();}
     ctx.beginPath(); ctx.arc(cl.x+ox,cl.y+oy,cl.r*0.5,0,TAU); ctx.fill(); }
+  drawPlanet(ox,oy);
 
   // static casters
   const cream=rgbStr(mixRGB(toRGB(pal.accent),[255,250,230],0.6));
@@ -2196,6 +2227,7 @@ function drawBuilderCode(bx){
 const HOWTO=[
   {i:'sun',t:'The sun is death',b:'Direct sunlight fills your Exposure bar in about a second. Fill it and you burn (and respawn at your last checkpoint).'},
   {i:'shade',t:'Shade is the only ground',b:'Stand in a shadow to stay cool and drop your Exposure. Shadows slide as the sun sweeps, so ride them like moving platforms.'},
+  {i:'shade',t:'Planet Tomató',b:'In the Dunes and the Eclipse a far tomato moon crosses once a level. Its round shadow is shade on the move. Ride it while it lasts.'},
   {i:'move',t:'Move',b:'Drag your left thumb anywhere on the left half of the screen to walk. Let go to stop.'},
   {i:'dash',t:'Dash',b:'Tap DASH for a fast burst, just enough to cross a thin sliver of sun. It burns you quicker in the open, so aim it.'},
   {i:'shade',t:'Drop Shade',b:'Tap SHADE to drop a circle of safe ground right under you. Only a few charges, so save them for the gaps that look impossible.'},
@@ -2257,6 +2289,7 @@ const TUT=[
     d:s=>run.charges.spf<s.sp},
   {id:'cart', ic:'shade', x:'That cart’s shadow moves. Board it at the right moment and ride.', t:()=>run.movers.length>0 && run.t>1.2},
   {id:'cloud', ic:'shade', x:'A drifting cloud is a moving island of shade, hop on.', t:()=>run.clouds.length>0 && run.t>1.2},
+  {id:'planet', ic:'shade', x:'Planet Tomató is passing. Its shadow is shade on the move, ride it.', t:()=>!!run.planet && run.planet.state==='pass'},
   {id:'wilt', ic:'awning-warning', x:'Plain awnings wilt if you camp under them. Keep moving.', t:()=>run.wilts.length>0 && run.t>1.2},
   {id:'umbrella', ic:'umbrella-turn', x:'Wind turns the umbrellas, and their shade swings with them.', t:()=>run.wind&&run.wind.spin&&run.L.casters.some(c=>c[0]==='U')&&run.t>1.5},
   {id:'ice', ic:'ice', x:'ICE slows the sun’s sweep. Sip it when the timing is brutal.', t:()=>run.charges.ice>0 && run.t>2,
