@@ -1,6 +1,6 @@
 /* Tomato Man service worker — offline app shell for standalone install.
    Bump CACHE to force-refresh the cached shell on a new release. */
-const CACHE = 'tomato-man-v11';
+const CACHE = 'tomato-man-v12';
 /* Only ever delete caches that belong to THIS app. `caches` is shared by the
    whole origin, so an unfiltered sweep deletes every sibling app's cache too. */
 const OWNED = /^tomato\-man\-/;
