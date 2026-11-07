@@ -6647,6 +6647,49 @@ group('H-boss-12', 'the second attacks (round 9 step 3): every biome\'s guardian
   t.eq(low, (full * 3) >> 2, 'under half its HP a cycle of ' + full + ' steps runs ' + low);
 });
 
+group('H-boss-13', 'the Cobweb Loom and the Lantern Wasp (round 11, sb-m2-17): in a FLAG_VERBS room 5 the Attic and Ember guardian is kind 1 when the seed\'s bit 9 is set, else kind 0 (never without the flag, never in another biome); the Loom tells with its mark fixed then drops a strand (BWEB) that hurts a bug under it, its second cycle a puff (BPUFF); the Wasp a dart (BDART) at the bug then the Kiln\'s flame; all three go when the guardian falls; a kind 0 room keeps its shed and sparks', t => {
+  const F = SB.features, P = SB.sim.PROJ_KIND, EV = SB.sim.EV, found = { a1: null, a0: null, e1: null, e0: null }, bad = [], wrong = [];
+  for (const f of FIXTURES) for (const [b, k1, k0] of [[1, 'a1', 'a0'], [5, 'e1', 'e0']]) {
+    const j = Object.assign({}, f.fx.record, { v: 2, biome: b, rules: 0, flags: SB.record.FLAGS_KNOWN });
+    const lv = SB.pipeline.build(SB.record.fromJSON(j), { roomIndex: 5, lastRoom: true });
+    if (lv.needsCrop || !lv.features.guardian) continue;
+    const want = ((lv.seed >>> 9) & 1) ? 1 : 0;
+    if ((lv.features.guardian.kind | 0) !== want) wrong.push(f.name + ' b' + b + ' kind ' + lv.features.guardian.kind + ' want ' + want);
+    const old = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, j, { flags: SB.record.FLAGS_KNOWN & ~SB.record.FLAG_VERBS })), { roomIndex: 5, lastRoom: true });
+    if (!old.needsCrop && old.features.guardian && (old.features.guardian.kind | 0) !== 0) wrong.push(f.name + ' b' + b + ' kind without the flag');
+    for (const ob of [2, 3, 4]) { const o2 = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, j, { biome: ob })), { roomIndex: 5, lastRoom: true }); if (!o2.needsCrop && o2.features.guardian && (o2.features.guardian.kind | 0) !== 0) wrong.push(f.name + ' biome ' + ob + ' kind 1'); }
+    if (want === 1 && !found[k1]) found[k1] = { tag: f.name, lv }; if (want === 0 && !found[k0]) found[k0] = { tag: f.name, lv };
+  }
+  t.ok(found.a1 && found.a0 && found.e1 && found.e0 && !wrong.length, 'the kind follows the seed bit under the flag in Attic and Ember (' + Object.keys(found).filter(k => found[k]).join(' ') + ')' + (wrong.length ? '; wrong: ' + wrong.slice(0, 3).join('; ') : ''));
+  const run = (lv, firstKind, secondKind) => {
+    const s = awake(lv); s.immortal = 1; let tell = -1, mark = null, fired = -1, first = false, second = false, moved = false;
+    for (let k = 0; k < 2000 && !second; k++) {
+      SB.sim.step(s, 0);
+      if (s.boss.cycle === 0 && s.boss.telegraph > 0) { if (tell < 0) { tell = s.frame; mark = [s.boss.mx, s.boss.my]; } else if (mark[0] !== s.boss.mx || mark[1] !== s.boss.my) moved = true; }
+      if (s.boss.cycle === 1 && fired < 0) fired = s.frame;
+      if (s.proj.some(p => p.live && p.kind === firstKind)) first = true;
+      if (s.boss.cycle >= 2 && s.proj.some(p => p.live && p.kind === secondKind)) second = true;
+    }
+    return { s, tell, fired, first, second, moved };
+  };
+  const lo = run(found.a1.lv, P.BWEB, P.BPUFF);
+  t.ok(lo.tell >= 0 && lo.fired - lo.tell >= 30 && !lo.moved && lo.first && lo.second, 'the Loom tells (' + (lo.fired - lo.tell) + ' steps, the mark fixed ' + !lo.moved + '), drops its strand (' + lo.first + ') and puffs on its second cycle (' + lo.second + ')');
+  const wa = run(found.e1.lv, P.BDART, P.BFLAME);
+  t.ok(wa.tell >= 0 && wa.fired - wa.tell >= 30 && !wa.moved && wa.first && wa.second, 'the Wasp tells (' + (wa.fired - wa.tell) + ' steps, the mark fixed ' + !wa.moved + '), throws its dart (' + wa.first + ') and the floor flame on its second cycle (' + wa.second + ')');
+  /* a bug under the strand loses a heart; the strand hangs where the mark was */
+  const s2 = awake(found.a1.lv); s2.immortal = 1; let web = null; for (let k = 0; k < 1500 && !web; k++) { SB.sim.step(s2, 0); web = s2.proj.find(p => p.live && p.kind === P.BWEB) || null; }
+  let lostUnder = 0; if (web) { s2.immortal = 0; s2.hero.hearts = 4; s2.hero.iframes = 0; s2.enemies.forEach(e => { e.hp = 0; }); for (let k = 0; k < 40 && !lostUnder; k++) { s2.hero.x = web.x + 8 * K.SUB - (K.HERO_W_SUB >> 1); s2.hero.y = web.y + 20 * K.SUB; s2.hero.vx = 0; s2.hero.vy = 0; s2.boss.shove = 0; s2.boss.near = 0; const h0 = s2.hero.hearts; SB.sim.step(s2, 0); if (s2.hero.hearts < h0) lostUnder = 1; } }
+  t.ok(!!web && lostUnder === 1 && web.x === s2.boss.mx && web.y === s2.boss.my, 'the strand hangs where the mark was and costs a bug under it a heart (' + lostUnder + ')');
+  /* the fall ends them */
+  const s3 = awake(found.e1.lv); s3.immortal = 1; for (let k = 0; k < 1500 && !s3.proj.some(p => p.live && p.kind === P.BDART); k++) SB.sim.step(s3, 0);
+  SB.sim.hurtBoss(s3, found.e1.lv, s3.boss.cells.findIndex(c => c >= 0), s3.boss.hp);
+  t.ok(!s3.proj.some(p => p.live && p.kind >= P.BWEB && p.kind <= P.BDART), 'the Wasp\'s dart goes when the guardian falls');
+  /* kind 0 under the same flags keeps the Attic shed and the Ember sparks */
+  const k0 = awake(found.a0.lv); let shed = false; for (let k = 0; k < 1500 && !shed; k++) { SB.sim.step(k0, 0); if (k0.ev & EV.SHED) shed = true; }
+  const k0e = awake(found.e0.lv); let spark = false; for (let k = 0; k < 1500 && !spark; k++) { SB.sim.step(k0e, 0); if (k0e.proj.some(p => p.live && p.kind === P.BSPARK)) spark = true; }
+  t.ok(shed && spark, 'a kind 0 room under the flag keeps the Moth Mother\'s shed (' + shed + ') and the Cinder Kiln\'s sparks (' + spark + ')');
+});
+
 group('H-boss-8', 'the shed (DESIGN 7\'s Attic moveset, "sheds 3 moths every 4 s"): awake, a SHED every BOSS_MOTH_EVERY_F steps, each after its TELL; BOSS_MOTH_COUNT moth slots made at create after the level\'s enemies, the same objects through the room (none made in step); a shed fills only dead slots; its moths bank no Dead pixels', t => {
   const T = SB.TUNING, bad = { cadence: [], slots: [], dp: [] };
   let n = 0;
