@@ -1456,7 +1456,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return { v: 1, dp: 0, collection: [], prints: [], pool: { jump: [], dive: [], charm: [] },
       unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
       settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false, stock: 0 },   /* R10: the film stock picked at develop, 0 Auto, 1 to 5 a biome */
-      onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0 } },
+      onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0, hold: false, drop: false, tripod: false } },   /* sb-m2-16: hold, drop, tripod, the moves taught once */
       run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0, albumPages: 0, albumBiomes: 0, curios: 0, curioSets: 0 }, trophies: [], trophySeen: 0, album: [], curios: [],
       log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false, days: 0 }, best: {}, quarantine: null, rank: 0 };   /* R10: the rank last granted (its rewards given) */
   }
@@ -10231,6 +10231,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     film: 'Film', stockAuto: 'Auto', stockNames: ['Attic', 'Frost', 'Deep', 'Overgrowth', 'Ember'], stockLocked: 'at {rank}', stockSays: '{name} film opens at {rank}',
     rankNames: ['Shutterbug', 'Snapshot', 'Focus Puller', 'Darkroom Hand', 'Exposure', 'Lensman', 'Developer', 'Enlarger', 'Archivist', 'The Light'],
     rankLine: '{xp} XP', rankNext: '{n} to {rank}', rankTop: 'the top of the ladder', rankGain: '{n} XP this room, {m} to {rank}', rankUp: 'Rank up: {rank}. {gift}', rankUpPlate: 'Rank up: {rank}',
+    /* sb-m2-16 (R10 step 5): the moves taught once each, in the strip's banner */
+    holdHead: 'Hold jump', holdLine: 'Hold the jump button down to go higher', dropHead: 'Drop through', dropLine: 'Hold down and press jump to drop through this ledge', tripodHead: 'The tripod', tripodLine: 'A fall brings you back here',
     rankGiftStock: '{name} film is yours.', rankGiftLook: 'A new look is yours, worn now.', rankGiftNone: '',
     /* R10 keepsakes: thirty small photographs hidden on the furniture, six a biome */
     curioHead: 'A keepsake', curioNames: ['The Dusty Globe', 'A Doll\'s Eye', 'The Stopped Clock', 'Grandmother\'s Fan', 'The Tin Soldier', 'A Moth in Amber', 'The Frozen Key', 'A Snow Globe', 'The Blue Bottle', 'The Icicle Comb', 'A Lost Mitten', 'The Last Match', 'The Glass Float', 'A Ship in a Bottle', 'The Anchor Charm', 'A Pearl Button', 'The Diver\'s Watch', 'The Conch', 'The Seed Packet', 'A Pressed Fern', 'The Garden Gnome', 'The Watering Can', 'A Snail Shell', 'The Thorn Crown', 'The Brass Lantern', 'A Matchbook', 'The Kiln Key', 'The Ash Jar', 'A Red Thread', 'The Coal Heart'], curioCount: 'Keepsakes {n} of 30', curioNone: 'None found yet. One hides on the furniture of some rooms, off the climb', curioUnknown: 'Not found', curioSet: 'The {biome} set is complete, its frame is yours, worn now',
@@ -12084,9 +12086,33 @@ body.sb-modal .lwfb-fab { display: none !important; }
     }
     return f < WJ.until ? WJ.kind : '';
   }
+  /* THE MOVES, TAUGHT (sb-m2-16, R10 step 5; Stephen, 7 Nov: a tester never learned the hold jump, the drop through or what the
+     tripod is): three more lines in this banner, once each per save (onboarding.hints.hold, drop, tripod), never in a house
+     room: HOLD on the first landing after a jump, DROP the first time the bug stands on a one way with open air under it,
+     TRIPOD when the checkpoint lights. Three seconds each, after the wall lesson's turn. UI only: the sim never sees it */
+  var ML = { st: null, kind: '', until: -1, jumped: false };
+  function onOneWay(h, lv, K) {
+    var CS = K.CELL_SUB, r = Math.floor((h.y + K.HERO_H_SUB) / CS), c0 = Math.floor(h.x / CS), c1 = Math.floor((h.x + K.HERO_W_SUB - 1) / CS), w = lv.w, c, plat = false;
+    if (r < 0 || r + 1 >= lv.h) return false;
+    for (c = c0; c <= c1; c++) { if (c < 0 || c >= w || lv.solid[r * w + c] || lv.solid[(r + 1) * w + c] || lv.plat[(r + 1) * w + c]) return false; if (lv.plat[r * w + c]) plat = true; }
+    return plat;
+  }
+  function moveLesson(st) {
+    var h = st.hero, f = st.frame, o = SB.save.doc && SB.save.doc.onboarding, EV = SB.sim.EV, lv = G.level;
+    if (!o || !o.hints || G.mode === 'house' || !lv) return '';
+    if (st !== ML.st || f < ML.until - 180) { ML.st = st; ML.kind = ''; ML.until = -1; ML.jumped = false; }
+    var H = o.hints, show = function (k) { H[k] = true; SB.save.commit(); ML.kind = k; ML.until = f + 180; };
+    if (st.ev & EV.JUMP) ML.jumped = true;
+    if (f >= ML.until) {
+      if (!H.tripod && (st.ev & EV.CHECK)) show('tripod');
+      else if (!H.hold && ML.jumped && (st.ev & EV.LAND)) show('hold');
+      else if (!H.drop && h.ground && onOneWay(h, lv, SB.K)) show('drop');
+    }
+    return f < ML.until ? ML.kind : '';
+  }
   ui.guardian = function (st) {
     var C = ui.COPY, play = ui.screen === 'play', head = '', line = '', key = '';
-    var wl = st && st.hero && play ? wallLesson(st) : '';
+    var wl = st && st.hero && play ? wallLesson(st) : '', ml = st && st.hero && play ? moveLesson(st) : '';
     /* a bug with no jump weapon that hurts is told where one is, and the line stays until it has one (the house review) */
     var j = st && st.hero && st.hero.slots[0] ? SB.TUNING.WEAPONS[SB.sim.WPN[st.hero.slots[0]]] : null, armed = !!(j && j.dmg > 0);
     if (st && st.boss && play && (st.boss.phase === 0 || (st.boss.phase === 1 && st.boss.hp > 0 && !armed))) {
@@ -12099,6 +12125,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       else if (nk && kl === nk && st.frame < 150) { head = nk === 1 ? C.keysFind1 : C.keysFind.replace('{n}', nk); line = nk === 1 ? C.keysOpen1 : C.keysOpen; key = 'k' + nk; }
     }
     if (!key && wl){ head = C[wl + 'Head']; line = C[wl + 'Line']; key = 'w' + wl; }
+    else if (!key && ml){ head = C[ml + 'Head']; line = C[ml + 'Line']; key = 'm' + ml; }   /* sb-m2-16: the moves, after the wall's turn */
     var on = key !== '';
     if (!st) lockedUntil = -1;
     if (on && key !== bannerKey) { bannerKey = key; var gb = document.getElementById('guardbanner'); gb.querySelector('b').textContent = head; gb.querySelector('span').textContent = line; }
