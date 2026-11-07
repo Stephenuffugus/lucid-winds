@@ -55,6 +55,6 @@ one commit as its own command, last.
 | 7 | LIVE 7 Nov ~18:20 UTC | 7 Nov (Fable, daytime) | sb-m2-14 live inside sb-m2-15's line |
 | 8 | LIVE 7 Nov ~18:05 UTC | 7 Nov (Fable, daytime) | her run pack wired inside chapter 5's stamp |
 | 9 | waits on the pack | | |
-| 10 | STAMPED 7 Nov ~22:03 UTC, waits for his line | 7 Nov (Fable, daytime) | sunstruck d5e80d9: thirteen bodies on the tomato's rig, her builder heads; the planet art in and parked for his call; `! bash /home/codespace/tm-drafts/deploy-tomato-man-hero.sh` |
+| 10 | LIVE 7 Nov ~22:11 UTC | 7 Nov (Fable, daytime) | sunstruck d5e80d9 (thirteen bodies on the tomato's rig, her builder heads; the planet art in and parked for his call) on lucid-winds main 1c2388105 and Tomato_Man main |
 | 11 | waits on the pack | | |
 | 12 | waits on the pack and his pick | | |
