@@ -26,6 +26,7 @@ CFG.hopLetGo 0.7 at line 951; hopCall at 1538; renderHands 2043; syncPads 2126; 
 | 4 | DONE 7 Nov | 3d8c92165 | the table screen draws her card at up to 360 by 300 with the line in her paper band (top 77.7 percent, 20 percent tall); the How screen keeps the small picture with the line under it and gains the move step; the lesson has the move beat (a 3.2 s hymn book call that hops at 0.9 s; Follow it; Let go of the pad it left), You are ready splits on a screen 600 tall or less, her done plate shows 0.6 s between beats. Shot table card (probed): the picture region has a 60 lum stdev (an illustration, not a blank) |
 | 5 | DONE 7 Nov | 3d8c92165 | the lesson line is her plate on the tut card's ::before (nine slice 92 32 28 64 at half), the serif at 22 px (18 under 340 wide), text from 38 px in, clear of her mark; the deck keeps six 120 px targets at 320x568 and the stage gives up the height. Shot lesson beat 1 at 320x568 (probed): the sage seats at the foot, paper plates in the two rows above, no page errors |
 | 6 | DONE 7 Nov | 3d8c92165 | check green; the three visual shots above stand for the walk (one each, no image opened); /home/codespace/ff-drafts/deploy-ff-m4.sh DRY OK against main 9550354e0. LINE: `! bash /home/codespace/ff-drafts/deploy-ff-m4.sh` |
+| 7 (m5) | DONE 7 Nov | 5fb6ecb5e | his ruling 1 built: a miss is a strike at once with a little toot (fart 0.3), the half pip gone, the lesson unchanged, the How screen and the ledger say it; FF CHECK OK; /home/codespace/ff-drafts/deploy-ff-m5.sh DRY OK (m4's line is stale, this one ships both). LINE: `! bash /home/codespace/ff-drafts/deploy-ff-m5.sh` |
 
 ## THE LAWS
 The laws of FLATULENCE_FIGHTER_M2_BUILD_PLAN.md bind (code directly; the check per step; ONE shot per visual step,
@@ -96,7 +97,7 @@ rev-parse origin/main:<path> when you write it; m3 went live on main e4bf2e8df).
 START-HERE.md: `! bash /home/codespace/ff-drafts/deploy-ff-m4.sh`
 
 ## RULINGS (Stephen, 7 Nov 2026 ~15:40 UTC)
-1. A miss is a STRIKE, with a little fart on it.
+1. A miss is a STRIKE, with a little fart on it. BUILT as m5 (5fb6ecb5e).
 2. Modes: the story is the game; no separate Classic. Later a CHALLENGE mode (how long you last, faster and harder as it
    goes), not needed right away.
 3. Portrait stays (the game is drawn for it).

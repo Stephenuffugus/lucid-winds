@@ -47,7 +47,7 @@ one commit as its own command, last.
 | # | State | Night | Note |
 |---|---|---|---|
 | 1 | DONE, waits for his line | 7 Nov (Fable, daytime) | v5.2 at 2403070e0; `! bash /home/codespace/sf-drafts/deploy-sunforge-m3.sh` |
-| 2 | DONE, waits for his line | 7 Nov (Fable, daytime) | m4 at 3d8c92165; `! bash /home/codespace/ff-drafts/deploy-ff-m4.sh` |
+| 2 | DONE, waits for his line | 7 Nov (Fable, daytime) | m4 at 3d8c92165 and m5 (a miss is a strike, his ruling) at 5fb6ecb5e; ONE line ships both: `! bash /home/codespace/ff-drafts/deploy-ff-m5.sh` |
 | 3 | DONE, waits for his line | 7 Nov (Fable, daytime) | m4 at 3ba0a05cc; `! bash /home/codespace/kp-drafts/deploy-keepsies-m4.sh` |
 | 4 | LIVE 7 Nov ~18:05 UTC | 7 Nov (Fable, daytime) | sunstruck 5097685, carried by milestone B's line (its own line never ran and is stale) |
 | 5 | LIVE 7 Nov ~18:05 UTC | 7 Nov (Fable, daytime) | sunstruck 1125c0d4 (B0 to B7, with chapter 8 inside) on lucid-winds main b3c737e20 and Tomato_Man main |
