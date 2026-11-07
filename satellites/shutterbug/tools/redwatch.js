@@ -377,7 +377,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-en-2c', expect: 'a moth on the left: the hero is knocked' }] },
   { name: 'IFRAMES_HALF', task: 'review 4', file: 'page', find: '    if (h.iframes > 0) h.iframes--;', repl: '    if (h.iframes > 0) h.iframes = Math.max(0, h.iframes - 2);',
     gates: [{ gate: 'harness', only: 'H-en-2d', expect: 'exactly HIT_IFRAMES_S after the first' }] },
-  { name: 'DASH_UNPROTECTED', task: 'review 4', file: 'page', find: '      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && ', repl: '      if (!s.immortal && h.iframes === 0 && !s.room.cleared && ',
+  { name: 'DASH_UNPROTECTED', task: 'review 4', file: 'page', find: '      var touching = !s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && ', repl: '      var touching = !s.immortal && h.iframes === 0 && !s.room.cleared && ',   /* re anchored at round 10 step 4 (the touch is a named test) */
     gates: [{ gate: 'harness', only: 'H-en-2e', expect: 'a dash from point blank through a moth keeps every heart' }] },
   { name: 'CORE_3PX', task: 'review 4', file: 'page', find: 'var core = 2 * K.SUB, mx0 = en.x + core,', repl: 'var core = 3 * K.SUB, mx0 = en.x + core,',
     gates: [{ gate: 'harness', only: 'H-en-2f', expect: '1 px into the hero hits on that step' }] },
@@ -395,7 +395,7 @@ const MUTANTS = [
     gates: [{ gate: 'harness', only: 'H-en-2', expect: 'the knockback ends at rest' }] },
   { name: 'HIT_KEEPS_CLING', task: 'review 4', file: 'page', find: 'h.lock = 0; h.dash = 0; h.sticky = 0; h.wall = 0; s.ev |= EV.HIT;', repl: 'h.lock = 0; h.dash = 0; s.ev |= EV.HIT;',
     gates: [{ gate: 'harness', only: 'H-en-2b', expect: 'never held sticky away from the vine' }] },
-  { name: 'DEATH_AND_CLEAR', task: 'review 4', file: 'page', find: '      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && ', repl: '      if (!s.immortal && h.iframes === 0 && h.dashI === 0 && ',
+  { name: 'DEATH_AND_CLEAR', task: 'review 4', file: 'page', find: '      var touching = !s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared && ', repl: '      var touching = !s.immortal && h.iframes === 0 && h.dashI === 0 && ',   /* re anchored at round 10 step 4 */
     gates: [{ gate: 'harness', only: 'H-sim-21', expect: 'the clear wins' }] },
   { name: 'HINT_STAYS', task: 'review 4', file: 'page', find: "clearTimeout(el.sbHintT); el.sbHintT = setTimeout(function () { el.classList.remove('hint'); }, HINT_MS);", repl: '',
     gates: [{ gate: 'death', expect: 'under reduced motion the hint leaves after the pulse' }] },
@@ -1085,7 +1085,7 @@ const MUTANTS = [
   { name: 'REVEAL_AWAY_STUCK', task: 'NOTE3R', file: 'page', find: "    window.addEventListener('focus', back);\n", repl: '',
     gates: [{ gate: 'pause', expect: 'back on the page by a real tap, the first reveal plays on' }] },
   /* ART1: Astra's in room art (Q160) */
-  { name: 'ELITE_DRAWS_BASE', task: 'ART1', file: 'page', edits: [["ek = en.elite ? kn + '_elite' : kn", "ek = kn"], ['spr(ctx, mk, ex2, ey2);', 'spr(ctx, mk, mx, my, es, es);']],
+  { name: 'ELITE_DRAWS_BASE', task: 'ART1', file: 'page', edits: [[": en.elite ? kn + '_elite' : kn, esp", ": kn, esp"], ['spr(ctx, mk, ex2, ey2);', 'spr(ctx, mk, mx, my, es, es);']],   /* re anchored at round 10 step 4 */
     gates: [{ gate: 'sprites', expect: 'biome 0: the moth elite drawn as' }] },
   { name: 'ELITE_SUNK', task: 'ART1', file: 'page', find: "if (en.state === 0 && an !== 'cell') {", repl: "if (false) {",
     gates: [{ gate: 'sprites', expect: ['biome 1: the icicle elite drawn as', 'biome 4: the spark elite drawn as'] }] },

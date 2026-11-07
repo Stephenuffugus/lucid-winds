@@ -5205,6 +5205,41 @@ group('H-mon-2', 'the third and fourth monsters (round 9 step 4): with FLAG_R9 e
   t.ok(most >= 1 && most <= 2, 'the ash moth burns a trail, at most ' + most + ' pieces at once');
 });
 
+group('H-mon-3', 'the four verbs (round 10 step 4, sb-m2-15): with FLAG_VERBS every biome\'s rooms meet a verb somewhere (never without the bit, in a first room or before a house\'s room 3, never off its rule, the splitter an elite); the lobber winds up and lobs a pellet that rises then dies on the floor, a pellet costs a heart; the dropper hangs, falls at a bug under it and climbs back; the shellback\'s front bounces the bug unharmed and shrugs a hit, its back costs a heart and takes one; the splitter\'s first hit makes two halves that run apart', t => {
+  const F = SB.features, P = SB.sim.PROJ_KIND, EV = SB.sim.EV, isVerb = e => e.kind >= F.LOBBER && e.kind <= F.SPLITTER, seen = [0, 0, 0, 0, 0], none = [0, 0, 0, 0, 0], early = [0, 0, 0, 0, 0], ruleBad = [];
+  for (const f of FIXTURES) for (let b = 0; b < 5; b++) {
+    const j = Object.assign({}, f.fx.record, { v: 2, biome: b + 1, rules: 0, flags: SB.record.FLAGS_KNOWN });
+    const lv = SB.pipeline.build(SB.record.fromJSON(j), {});
+    if (!lv.needsCrop) for (const e of lv.features.enemies) if (isVerb(e)) { seen[b]++; if (!F.kindFits(lv, e.kind, e.idx)) ruleBad.push(f.name + ' kind ' + e.kind + ' at ' + e.idx); if (e.kind === F.SPLITTER && !e.elite) ruleBad.push(f.name + ' a fodder splitter'); }
+    const old = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, j, { flags: SB.record.FLAGS_KNOWN & ~SB.record.FLAG_VERBS })), {});
+    if (!old.needsCrop) none[b] += old.features.enemies.filter(isVerb).length;
+    for (const o of [{ firstRoom: true }, { roomIndex: 1 }, { roomIndex: 2 }]) { const lv2 = SB.pipeline.build(SB.record.fromJSON(j), o); if (!lv2.needsCrop) early[b] += lv2.features.enemies.filter(isVerb).length; }
+  }
+  t.ok(seen.every(n => n > 0) && none.every(n => n === 0) && early.every(n => n === 0) && !ruleBad.length, 'with the bit each biome meets its verbs (' + seen.join('/') + '), without it none (' + none.join('/') + '), none early (' + early.join('/') + ')' + (ruleBad.length ? '; off rule: ' + ruleBad.slice(0, 3).join(', ') : ''));
+  const R = 46 * 24, lab = (lines, kind, cell, opts) => wpnLab(lines, [[kind, cell, !!(opts && opts.elite)]], Object.assign({ moving: true, hc: 4 }, opts || {})).s;
+  /* the lobber: the bug six cells off on the floor; after its rest and windup a pellet comes, rising, and is gone on the floor inside its life */
+  const lb = lab(['', FLOOR], F.LOBBER, R + 10, { hc: 4 }); let windup = false, born = -1, vyUp = 0, gone = -1;
+  for (let k = 0; k < K.LOBBER_EVERY_F + K.PELLET_LIFE_F + 10; k++) { SB.sim.step(lb, 0); if (lb.enemies[0].state === 1) windup = true; const l = live(lb, P.PELLET); if (l.length && born < 0) { born = k; vyUp = l[0].vy; } if (born >= 0 && gone < 0 && !l.length) gone = k; }
+  t.ok(windup && born > 0 && born <= K.LOBBER_EVERY_F + 2 && vyUp < 0 && gone > born && gone - born < K.PELLET_LIFE_F, 'the lobber winds up (' + windup + ') and lobs a pellet at step ' + born + ', rising (vy ' + vyUp + '), gone on the floor at step ' + gone);
+  const pm = lab(['', FLOOR], F.LOBBER, R + 20, { hc: 4, mortal: true, moving: false }); const h0 = pm.hero.hearts, pk = SB.sim.spawn(pm, P.PELLET); pm.proj[pk].x = pm.hero.x; pm.proj[pk].y = pm.hero.y; pm.proj[pk].ttl = 60; SB.sim.step(pm, 0);
+  t.ok(pm.hero.hearts === h0 - SB.TUNING.HIT_HEARTS && !live(pm, P.PELLET).length, 'a pellet on the bug costs ' + SB.TUNING.HIT_HEARTS + ' heart (' + h0 + ' to ' + pm.hero.hearts + ') and is spent');
+  /* the dropper under a ceiling, the bug under it */
+  const dp = lab([FLOOR, '', '', '', '', '', '', FLOOR], F.DROPPER, 41 * 24 + 6, { hc: 6 }); let st = []; for (let k = 0; k < 600; k++) { SB.sim.step(dp, 0); if (st[st.length - 1] !== dp.enemies[0].state) st.push(dp.enemies[0].state); if (st.length > 3) break; }
+  t.ok(st.slice(0, 4).join() === '0,1,2,0', 'the dropper hangs, falls at a bug under it, climbs back (' + st.join() + ')');
+  /* the shellback walks right (dir 1), its armour on its right: a mortal bug walking into that side bounces (CLANG, hearts kept); one walking into its back is hit */
+  const sbR = lab(['', FLOOR], F.SHELLBACK, R + 8, { hc: 12, mortal: true }); const hr0 = sbR.hero.hearts; let bounced = false, hurtR = false;
+  for (let k = 0; k < 90; k++) { SB.sim.step(sbR, IN.L); if (sbR.ev & EV.CLANG) bounced = true; if (sbR.hero.hearts < hr0) hurtR = true; }
+  const sbL = lab(['', FLOOR], F.SHELLBACK, R + 8, { hc: 2, mortal: true }); let hurtL = false; for (let k = 0; k < 150; k++) { SB.sim.step(sbL, IN.R); if (sbL.hero.hearts < hr0) hurtL = true; }
+  t.ok(bounced && !hurtR && hurtL, 'the shellback\'s front bounces the bug (' + bounced + ') unharmed (' + !hurtR + '); its back costs a heart (' + hurtL + ')');
+  const sh = lab(['', FLOOR], F.SHELLBACK, R + 8); const hp0 = sh.enemies[0].hp, ex = sh.enemies[0].x + (CS >> 1);
+  const front = SB.sim.hurt(sh, 0, 4, ex + CS), back = SB.sim.hurt(sh, 0, 4, ex - CS);
+  t.ok(front === hp0 && back < hp0, 'a hit on its armoured front does nothing (' + front + ' of ' + hp0 + ' quarters), one from behind lands (' + back + ')');
+  /* the splitter, an elite: one hit, two halves, running apart */
+  const sp = lab(['', FLOOR], F.SPLITTER, R + 10, { elite: true }); const halves = sp.enemies.filter(e => e.kind === F.SPLITHALF), hpS = sp.enemies[0].hp;
+  SB.sim.hurt(sp, 0, 4); const liveH = halves.filter(e => e.hp > 0), x0 = liveH.map(e => e.x); for (let k = 0; k < 30; k++) SB.sim.step(sp, 0);
+  t.ok(halves.length === 2 && sp.enemies[0].hp === 0 && sp.enemies[0].state === 1 && liveH.length === 2 && liveH[0].x < x0[0] && liveH[1].x > x0[1], 'the splitter (' + hpS + ' quarters) splits on its first hit into two halves (' + liveH.length + ' live) that run apart');
+});
+
 group('H-r9-rooms', 'the harder rooms (round 9 step 5): with FLAG_R9 free play holds its floor of enemies after the first room, more trap fields and a room piece a room off the climb; a code made before the flag keeps its room; the belt carries a standing bug; the shelf cracks, gives way and comes back; the lamp hits where it swings and never on a stand; the gust lifts while it blows', t => {
   const F = SB.features, kinds = {}, under = [], onStand = [], oldBad = []; let rooms = 0, ens = 0, traps = 0;
   for (const f of FIXTURES) for (let b = 0; b < 5; b++) {
@@ -6001,7 +6036,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   /* the validator */
   const g2 = v2Of(sj, 4);
   const refuse = [['biome 6', { biome: 6 }], ['biome -1', { biome: -1 }], ['biome 1.5', { biome: 1.5 }], ['rules 2 (reserved for the next rules, not this client\'s)', { rules: 2 }], ['rules 9', { rules: 9 }],
-    ['flags bit 4', { flags: 16 }],   /* bit 0 is the keys', bit 1 the second monsters' (2 Nov), bit 2 round 9's (6 Nov) and bit 3 round 10's keepsakes (7 Nov), all known */ ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
+    ['flags bit 5', { flags: 32 }],   /* bit 0 is the keys', bit 1 the second monsters' (2 Nov), bit 2 round 9's (6 Nov), bit 3 round 10's keepsakes (7 Nov) and bit 4 its four verbs (sb-m2-15), all known */ ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
   for (const [why, o] of refuse) t.ok(SB.record.validate(Object.assign({}, g2, o)) !== null, 'validate refuses a v2 record with ' + why);
   t.ok(SB.record.validate(Object.assign({}, sj, { biome: 3 })) !== null, 'validate refuses a v1 record carrying a biome');
   t.eq(SB.record.validate(g2), null, 'validate accepts the v2 sample room with biome 4 (control)');
@@ -6010,7 +6045,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.ok(SB.record.decode('v1.' + gb.toString('base64url')) === null && SB.record.decode('v2.' + v1b.toString('base64url')) === null, 'decode refuses a v1. prefix on a v2 record and a v2. prefix on a v1 record');
   t.ok(SB.record.decode(gb.toString('base64url')) !== null && SB.record.decode(gb.toString('base64url')).biome === 4, 'a bare v2 payload decodes with its biome');
   const at = (k, v) => { const b = Buffer.from(gb); b[k] = v; return b; };
-  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 4', at(8, 16)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
+  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 5', at(8, 32)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
   for (const [why, b] of newer) {
     t.eq(SB.record.parseCode(code2(b)).why, 'newer', 'parseCode answers newer on a v2 code with ' + why);
     t.eq(SB.record.decode(code2(b)), null, 'decode never builds a v2 record with ' + why);
@@ -6020,7 +6055,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.eq(SB.record.parseCode(at(0, 3).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v3 payload (no prefix), as on its v3. code');
   t.eq(SB.record.parseCode('https://x.example/s/#' + at(0, 7).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v7 payload after a link\'s #');
   t.ok(SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode(at(0, 200).toString('base64url')).why === 'bad', 'garbage and a bare payload with version byte 200 still read as bad (control)');
-  t.eq(SB.record.parseCode(code2(at(8, 16).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length)');
+  t.eq(SB.record.parseCode(code2(at(8, 32).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length; bit 5, since bit 4 is the verbs\' from sb-m2-15)');
   t.eq(SB.record.parseCode(code2(gb.subarray(0, 300))).why, 'bad', 'a truncated v2 code with known bytes reads as bad (control)');
   t.ok(SB.record.parseCode(code2(gb)).rec && SB.record.parseCode(code2(gb)).rec.biome === 4, 'a v2 code with RULES 0 and no flags opens (control)');
   /* the build: the biome byte names the biome; RULES 0 is today's rules on the same grid */
