@@ -29,10 +29,10 @@ stale #sample: not tonight's job.
 
 | Step | State | Stamp | Commit | Note |
 |---|---|---|---|---|
-| 0 | | | | |
-| 1 | | | | |
-| 2 | | | | |
-| 3 | | | | |
+| 0 | DONE 7 Nov | sb-m2-13 | 5e56e4052 | the stock row on the develop screen (Auto and the five biomes, placeholder boxes with the biome badge); the pick writes the record's biome byte (stockRec in recordOfCrop; the seek's found box is built once more with the stock when it builds); a locked box says its rank; the save remembers the stock; the Daily untouched |
+| 1 | DONE 7 Nov | sb-m2-13 | 5e56e4052 | XP from the stats (RANK_XP, XP_ weights in TUNING), ten ranks, stocks at 2 to 5, a look at 3 and 5 and from 6 up (lookWin), doc.rank remembers; the title's rank line and bar, the clear card's XP line or the rank up and its gift |
+| 2 | DONE 7 Nov | sb-m2-13 | e0130047b | THE UI WORD IS KEEPSAKE, not print (the Darkroom already calls its developed blueprints prints): FLAG_R10 = 8, C.FLAGS 15; curio() in the features pass on its own stream (30 percent; a photo cell the bug can stand on, 2 off every stand and spawn); LOOT_CURIO through the sim with EV.CURIO; a palette polaroid until her sprites (curio_<id>.a); doc.curios by id, stats curios and curioSets, four trophies, a full set grants a look; the album opens with the collection, five rows of six. The level hash's FIELDS unchanged (the keepsake is derived at build time), so no room's hash moved; the harness's unknown flag bit moved to 4 |
+| 3 | DONE 7 Nov | sb-m2-13 | 97c420f42 | THE GATES THAT NEED NO BROWSER PASSED; stamp sb-m2-13, shutterbug-v35, sw.js?v=35; /home/codespace/sb-drafts/sb-m2-13/deploy-sb-m2-13.sh DRY OK. LINE: `! bash /home/codespace/sb-drafts/sb-m2-13/deploy-sb-m2-13.sh` |
 | 4 | | | | |
 
 ## THE LAWS
@@ -89,7 +89,7 @@ Overgrowth, Shellback Frost and Ember, Splitter any. The R9 roll (50/30/10/10 on
 room of three or more meets at least one. H-mon rows for each. Lint, the no browser check, stamp sb-m2-14, its
 wrapper and line.
 
-## APPENDIX: THE THIRTY PRINTS (six a biome; Astra draws them in round 10)
+## APPENDIX: THE THIRTY KEEPSAKES (six a biome; Astra draws them in round 10; the game calls them keepsakes because the Darkroom's developed blueprints are already its prints)
 Attic: The Dusty Globe, A Doll's Eye, The Stopped Clock, Grandmother's Fan, The Tin Soldier, A Moth in Amber.
 Frost: The Frozen Key, A Snow Globe, The Blue Bottle, The Icicle Comb, A Lost Mitten, The Last Match.
 Deep: The Glass Float, A Ship in a Bottle, The Anchor Charm, A Pearl Button, The Diver's Watch, The Conch.

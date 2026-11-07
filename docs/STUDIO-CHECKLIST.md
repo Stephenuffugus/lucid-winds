@@ -8,7 +8,7 @@ As of 7 Nov 2026, 03:50 UTC. The order: you get the art (1), you make your calls
 
 Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt, as before; paste the kickoff, attach the brief. The two rounds marked IDEAS ask Astra for gameplay ideas first, then art.
 
-- [ ] Shutterbug round 10, IDEAS plus film boxes, rank, thirty prints, four new enemy kinds, two guardians, weather: [Astra / Shutterbug / Round 10](https://drive.google.com/drive/folders/1pgh0aI7l9h9OgBNBuyTi5Y6mAQ8JQOUg) (you)  
+- [ ] Shutterbug round 10, IDEAS plus film boxes, rank, thirty keepsakes, four new enemy kinds, two guardians, weather: [Astra / Shutterbug / Round 10](https://drive.google.com/drive/folders/1pgh0aI7l9h9OgBNBuyTi5Y6mAQ8JQOUg) (you)  
 - [ ] Tomato Man The Run, IDEAS plus motes, gull, crab, the burn line, seed pods, the badges, the RUN plate: [Astra / Tomato Man / The Run](https://drive.google.com/drive/folders/1cC6Ej9obi3dZYPNFM7Stj2b2bdiTLTwT) (you)  
 - [ ] Keepsies round 4, the nineteen captures judged (the captures are public links inside the brief, nothing to attach), the four limestone statues, the plates: [Astra / Keepsies / Round 4](https://drive.google.com/drive/folders/1_gT-vVZ4H8kq6qOPhMW13xM9xjZ1TxKj) (you)  
 - [ ] Tomato Man The Hero, the thirteen produce bodies in his five sheets so hats and the walk work on every body, the planet tomato: [Astra / Tomato Man / The Hero](https://drive.google.com/drive/folders/1DZmS0paU0pbfgeP1lwaqGbEHI_LWOqAz) (you)  
@@ -30,7 +30,7 @@ Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt
 
 Each is built at its default if you say nothing; say the word and the plan changes.
 
-- [ ] Shutterbug: the ten rank names and the thirty print names (SHUTTERBUG_R10_BUILD_PLAN.md); a permanent heart at rank 8 or none; the replayability pick (three medals a room, race your best climb, a weekly house, named combos); one tripod per house room or none; the Polaroid shows the photo or the grid (you)  
+- [ ] Shutterbug: the ten rank names and the thirty keepsake names (SHUTTERBUG_R10_BUILD_PLAN.md); a permanent heart at rank 8 or none; the replayability pick (three medals a room, race your best climb, a weekly house, named combos); one tripod per house room or none; the Polaroid shows the photo or the grid (you)  
 - [ ] Tomato Man: the run's burn line pace, no checkpoints or one a mile, motes unshootable, RUN first on the title, the daily as a run, canopies walkable in levels too (TOMATO_MAN_RUN_BUILD_PLAN.md); the planet tomato yes or no; pass the phone races; hats that do a tiny thing; the listing free or $0.99; Penny's credit; the Pages mirror (you)  
 - [ ] Flatulence Fighter: a miss as a fidget or a strike; Classic mode or not; landscape or not; the medals' names; the table card's line; the lesson's move beat (you)  
 - [ ] Keepsies: the five foot ring, the flick's own direction, the circle's size, the place phase, the camera during a shot, the skyline; the statues (the limestone shapes Astra draws in round 4, or her figures); the title drops "Thirteen marbles in a cross"; the name; the ladder's rungs; the Arena's numbers; Meshy, paid (you)  
