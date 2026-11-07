@@ -60,7 +60,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Chapter 1 Sunforge v5.2, the obsidian shards (Opus)  
 - [ ] Chapter 2 Flatulence Fighter m4, the six pad plates, the ring, moving calls, the cards, the lesson line (Opus)  
 - [ ] Chapter 3 Keepsies m4, the circle and reticles at 154 px, the snap card, the chalk, the chip (Opus)  
-- [ ] Chapter 4 Tomato Man A, canopies you walk under, the walk fixed, the seed and critter art in (Opus)  
+- [x] Chapter 4 Tomato Man A, canopies you walk under, the walk fixed, the seed and critter art in: LIVE 7 Nov under milestone B's line (Fable)  
 - [x] Chapter 5 Tomato Man B, THE RUN, with chapter 8 (her run art) inside it, sunstruck 1125c0d4 (Fable, 7 Nov)  
 - [x] Chapter 6 Shutterbug R10, film stocks, rank, keepsakes (sb-m2-13), the four verbs (sb-m2-15) (Fable, 7 Nov)  
 - [x] Chapter 7 Shutterbug round 10 art wired, sb-m2-14 (Fable, 7 Nov)  
@@ -69,7 +69,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 
 ## 5. The lines and the Pixel (you)
 
-- [ ] Tomato Man milestone B, THE RUN with Astra's art (carries milestone A if its line never ran): `! bash /home/codespace/tm-drafts/deploy-tomato-man-run.sh` (you)  
+- [x] Tomato Man milestone B, THE RUN with Astra's art (and milestone A under it): LIVE 7 Nov, main b3c737e20 (you ran the line)  
 - [ ] Shutterbug sb-m2-15 (the four verbs; ships sb-m2-13 and 14 too, their lines are stale): `! bash /home/codespace/sb-drafts/sb-m2-15/deploy-sb-m2-15.sh` (you)  
 - [ ] Run each deploy line Opus left at the top of START-HERE.md, one at a time at an idle prompt (you)  
 - [ ] Play each game on the Pixel after its line and write your notes in one message; Fable turns them into the next chapter (you)  

@@ -197,6 +197,8 @@ line B runs.
 4. RUN is the title's first button (default); Levels second; the Daily is a run (default) rather than a level.
 5. Canopies walkable in LEVELS too (default, A0) rather than only in the run.
 
+## LIVE 7 Nov ~18:05 UTC: milestones A and B by his one line (lucid-winds main b3c737e20, Tomato_Man main 1125c0d4; both hosts serve it)
+
 ## CHAPTER 8 (7 Nov): Astra's run pack wired, in the same stamp as B7
 Her pack (astra-tomato-man-run-nov07 in the vault; docs/briefs/tomato-man/the-run/astra/) came back the same afternoon, so chapter 8 landed inside milestone B: tools/tomato-man-tests/astra_run_in.py copies her seventeen sheets to art/run/ and the plate and ornament SVGs to art/ui/, writes RP (cells, anchors, durations) between TM RUN FITS markers and merges it into GP, and puts her nine marks (tm-mote, tm-gull, tm-crab, tm-mile-500 to 5000, tm-mile) in a TM RUN ICONS block. The page: the mote's core on its point at 80 ms; the gull's fly, carry, hit and knocked poses, mirrored for a leftward flight, tilted on its sine; the crab's walk, pinned (its own sprout) and flip; her burn strip tiled at 128 by 64 world px with the world's wash multiplied in (her five tints), over every shade and under the hero; her pod; the RUN plate (ready and pressed, the words in code on her baselines) and the five badges earned or unlit; THE SUN WON on her ornament; the mile marks. Her ten ideas are DECISIONS below.
 
