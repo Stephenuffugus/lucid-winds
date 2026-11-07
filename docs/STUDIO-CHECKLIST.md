@@ -14,6 +14,7 @@ Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt
 - [ ] Tomato Man The Hero, the thirteen produce bodies in his five sheets so hats and the walk work on every body, the planet tomato: [Astra / Tomato Man / The Hero](https://drive.google.com/drive/folders/1DZmS0paU0pbfgeP1lwaqGbEHI_LWOqAz) (you)  
 - [ ] Flatulence Fighter round 3, the moving call's travel accent, the final teaching cards, a result line, IDEAS: [Astra / Flatulence Fighter / Round 3](https://drive.google.com/drive/folders/1ZP52O4yxsaJogYj22uusAX2qyzjTlh3O) (you)  
 - [ ] Sunforge round 3, only if you want any of chapter skies, the hold outline, overload, a weekly gyre: [Astra / Sunforge / Round 3](https://drive.google.com/drive/folders/1oZg8rD3G2y7ERX3Zm0se5McD9r4h4mWe) (you)  
+- [ ] Pixel Petri round 1, THE LIVING YEAR (seasons, weather, eggs, sleep, migration, the marks), IDEAS first: [Astra / Pixel Petri](https://drive.google.com/drive/folders/1SAbhhQGta1tbX1oBz0QyK66nwaC_dhb7) (you)  
 - [ ] Still out from before, when a slot frees: [Sixfold](https://drive.google.com/drive/folders/1_oNXfJWWox5-vz8CJUEx5PE7O-QMO6hm), [Aura Farm](https://drive.google.com/drive/folders/19G9FuxQEIJ2XfOi_sFE0edkFVYQ-MIkj), [Orb Orchard](https://drive.google.com/drive/folders/1Wo7AtBoFvg0ONNU7NSbdVVWF6m0mRaY4), [Dewball store kit](https://drive.google.com/drive/folders/19CCGoJDoG27NxRya3YFHiZRSjrCz2rrp) (you)  
 - [ ] Upload each zip into a Fable session as it comes back (or drop it in the game's Drive folder and say so); Fable vaults it, unpacks it and adds its wiring chapter to the one plan (you, then Fable)
 
@@ -81,7 +82,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Keepsies: the four screens Astra drew in round 2 (level up, chores, clay pool, the case); the shot tool's end game loop; the 240 design bank; the grails through Meshy (Opus, you)  
 - [ ] Tomato Man: the squirt, if you still want it (you)  
 - [ ] Dewball: the store pack back, the store kit with real captures, the v37 stamp and its line, the Console listing, the Meshy build out (Astra, Opus, you)  
-- [ ] Pixel Petri: Fable plans the first milestone from your pick; Astra's first Pixel Petri brief in its own folder; the commercial (Fable, Astra, Opus, you)  
+- [ ] Pixel Petri: Fable plans the first milestone (THE LIVING YEAR by default) in the tiny-world repo once Astra's round 1 is back; the commercial after it (Fable, Opus, you)  
 - [ ] Music Studio: your musician friend's feedback, the grid cells, the name, the sound library drawer, sample storage, the store shots (you)  
 - [ ] Loaf: your pair sheet verdict and the corpus photos, which start milestone B (you)
 

@@ -1,0 +1,74 @@
+PIXEL PETRI, ROUND 1 FOR ASTRA: THE LIVING YEAR (7 Nov 2026)
+
+Pixel Petri is Stephen's tiny world sandbox (play it free at https://lucidwinds.com/satellites/tiny-world/ ; on Google
+Play as Pixel Petri, $0.99). A finger paints terrain, drops creatures, people, things and powers, and watches what
+happens: 126 creatures, a village that grows, reactions the game tells back. It is his best seller so far, seven buyers
+in seven countries with no marketing, and he wants a MASSIVE expansion and a commercial. The first expansion is THE
+LIVING YEAR: seasons and weather over every world, ponds that freeze, snow that spreads, harvests, migrations, nocturnal
+creatures that sleep by day, eggs and nests, populations that boom and crash on their own. Your round 1 is the art for
+it, and your ideas first. Fable wires your zip from the zip alone, so write as if no one can ask you a follow up.
+
+HOW TO WORK (Stephen's standing order; it binds this pack)
+- No tests. No checks. No validation scripts, no pixel audits, no reports about reports. The art is the deliverable.
+- Look at each sheet ONCE with your own eyes when it is done, fix what is wrong, move on.
+- One assessment, one contact sheet per section, one zip. No progress notes.
+- If something is ambiguous, pick the reading that ships and write one line about it in NOTES.md. Do not stop to ask.
+
+THE RULES OF THE CUT (the game's own art law, design/05-art-audio.md; every line binds)
+- Sprites are 8x8 or 16x16 STRING GRIDS: one character a pixel, '.' transparent. Nothing rotated, nothing scaled to a
+  non integer. Babies draw at 6x6, giants at 10x10, by the renderer, never by you.
+- ONE master palette, letters in the grid: k #1b1b26 ink, w #f4f4f0 white, l #c9c9d4 light gray, e #8c8c99 gray,
+  E #55555f dark gray, s #f2c29b skin, p #f2a0b5 pink, r #d43b3b red, o #e8842a orange, y #f2d03b yellow, g #4fb04a green,
+  G #26663a dark green, z #8fbf6a sick green, c #7fd4e8 cyan, b #3b6fd4 blue, n #8a5a32 brown, N #4f2e1a dark brown,
+  A the species primary, B the species secondary. Recolours pick from it; a new hex needs a reason and a line in NOTES.md.
+  Extended hexes exist for recolour targets only: #ffffff #e9dcb0 #d9b44a #c9a35a #b98a4a #a8703a #7a4a2a #5a4030
+  #2a1e16 #a82a2a #7a1f1f #5a1010 #f28c2a #f2f060 #7be04a #3f7a3a #3f5a34 #2a9d8f #5fa8e8 #34507a #30206a #6a3fa0
+  #8e44ad #e87ad4 #22222c.
+- Read at 2x on a phone: the silhouette alone, filled one colour, must be identifiable against grass.
+- Every living thing has an eye: one k pixel (two for front facing). Side view faces RIGHT; the renderer mirrors.
+- Shading: at most one darker shade per material, bottom or right. No dithering, no anti aliasing, no outlines.
+- Animation is TWO frames at 4 fps while moving, frame A when idle. Frame B is built by rule from frame A (legs shift,
+  wings shift, tails flick) unless you give frames[1] yourself: give it only where the rule would be wrong.
+- Terrain is not a sprite: each terrain is THREE colours the renderer noise mixes (a triple), animated terrains have
+  four pre rendered phases. So a season's ground is a triple, not a tile.
+- Night is the renderer's blue wash with light pools. Weather sits on top of that.
+Deliver every grid as text in the manifest (the game stores sprites as text, data/sprites.json), and a PNG of each at
+1:1 beside it for your contact sheets. The text is what gets imported.
+
+YOUR IDEAS FIRST (write before you draw; one line each, up to ten, in ASSESSMENT.md)
+Stephen's words: "a massive expansion ... since it's my highest grossing". The question for you: what should a child
+SEE happen over a year in this world that makes them come back tomorrow? Season events, weather with consequences,
+things creatures do only at night, what a village does in winter, what the first snow changes, a migration worth
+watching, anything that makes a world feel alive without a score. Stephen reads these; nobody builds them without his yes.
+
+THE PIECES
+A. THE FOUR SEASONS OF THE GROUND: for each terrain that changes (grass, forest floor, meadow, farmland, the pond's
+   bank, the shallow water), a colour TRIPLE per season (spring fresh, summer deep, autumn gold and rust, winter white
+   with the ground showing through), in the palette or the extended hexes; plus ICE (a frozen pond triple) and SNOW
+   COVER (a triple that lies over any ground). Write them as a table in seasons.json: terrain, season, three hexes.
+B. TREES AND PLANTS THROUGH THE YEAR: the game's tree, pine, bush and berry sprites in four seasonal states each, 16x16
+   trees and 8x8 bushes and berries, frame A only (they are things): spring blossom, summer full, autumn colour, winter
+   bare (the pine keeps its needles, gains snow). Berries: bud, ripe, picked. Farmland crops: sown, grown, harvest, stubble.
+C. WEATHER OVER THE WORLD, each a strip of four 8x8 frames the code scatters and moves: RAIN (streaks), SNOW (flakes),
+   LEAVES on the wind (autumn), PETALS (spring), HEAT shimmer (summer, sparse). And a 16x16 two tone CLOUD (two
+   frames) whose shadow the renderer casts; a LIGHTNING flash is the game's own.
+D. EGGS AND NESTS: an EGG at 8x8 for five families (bird, reptile, fish roe, bug, dragon), each with a CRACKED frame;
+   a NEST at 8x8 (twigs) and a dragon nest at 16x16 (stones and bones); a HATCH puff is the game's own.
+E. SLEEPING: an overlay the renderer lays on any creature asleep, 8 wide: closed eye marks (two k dashes) and a small
+   'z' glyph in w rising, two frames; and for the five nocturnal species the game has (owl, bat, raccoon, wolf, firefly)
+   a frame A asleep pose in their own template (the owl tucked, the bat hung, the raccoon curled, the wolf lying, the
+   firefly dark) at the size the species draws.
+F. MIGRATION: a V of birds as one 16x16 two frame sprite (seven dots and wings), a school of fish at 16x16 two frames,
+   a herd marker is not needed (the game moves herds itself).
+G. THE SEASON AND WEATHER MARKS for the top bar: four 16x16 season icons (a sprout, a sun, a leaf, a flake) and four
+   weather icons (clear, rain, snow, wind) in the game's UI grammar (05 section 6), two tone, no words.
+
+WHAT NOT TO DRAW
+No new creatures (the next round), no new terrains, no UI screens, no title art, nothing off the palette, nothing over
+16x16 except the dragon nest.
+
+DELIVERY
+ONE zip named pixel-petri-astra-round1.zip: ASSESSMENT.md (your ideas, then a short assessment), manifest.json (every
+sprite: key, size, frames as text grids in the palette letters, the frame rule or your own frame B), seasons.json (the
+triples), assets/ (a_ground, b_plants, c_weather, d_eggs, e_sleep, f_migration, g_marks; a PNG per sprite at 1:1),
+previews/ (one contact sheet per section), NOTES.md (what you chose differently and why). Stephen uploads it.
