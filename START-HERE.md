@@ -1,5 +1,12 @@
 # START HERE
 
+## 7 Nov ~03:20 UTC (Fable): FOUR ASTRA PACKS BACK, FIVE PLANS, THE OPUS KICKOFF, TWO NEW ASTRA ROUNDS
+- The four packs Stephen uploaded (Keepsies round 3, Flatulence Fighter round 2, Tomato Man gameplay art, Sunforge v2): vault release astra-four-packs-back-nov07 (SHA256SUMS beside them), unpacked OUTSIDE git at /workspaces/keepsies-astra-round3/pack, /workspaces/flatulence-fighter-astra-round2/pack, /workspaces/tomato-man-astra-gameplay/pack, /workspaces/sunforge-astra-v2/pack; only their docs are in git under docs/briefs/<game>/<round>/astra/.
+- Astra's caveats, from her own notes: Keepsies never received the materials zip and the live page died for her on a WebGL error (her capture dependent calls are unfinished; the circle, reticles, snap card, chalk, chip are drawn to the numbers); Flatulence Fighter was reviewed with a single pointer; Tomato Man on a desktop with later worlds locked; Sunforge picked OBSIDIAN SHARDS over forged slugs and ember tiles.
+- The plans (repo root): SUNFORGE_V2_BUILD_PLAN.md, FLATULENCE_FIGHTER_M4_BUILD_PLAN.md, KEEPSIES_M4_BUILD_PLAN.md, TOMATO_MAN_RUN_BUILD_PLAN.md (milestone A the art and the walk, milestone B THE RUN), SHUTTERBUG_R10_BUILD_PLAN.md (film stocks, rank, prints, four new verbs). The kickoff: docs/briefs/opus-kickoff-nov07/PROMPT.txt. The box booted 02:11 UTC and dies 14:11.
+- Two Astra rounds written, in their folders with their own kickoff: docs/briefs/tomato-man/the-run/ (goes out once the run is live) and docs/briefs/shutterbug/round10/; both in Drive Astra too.
+- docs/STUDIO-CHECKLIST.md and the Google Doc brought up to date.
+
 ## 6 Nov (Opus, overnight run from docs/briefs/opus-kickoff-nov06/PROMPT.txt; box stops 14:54 UTC, stop 14:14)
 - THE RUN'S LOST TIME: a command of mine waited unrun from 09:19 to about 12:12 UTC (173 minutes), and the next commit in the same repo from 12:23 to 12:47. Each held a git commit in /workspaces/Tomato_Man; no commit in lucid-winds waited. No AskUserQuestion was called (the transcript has none). Before another unattended run, allow commits in that repo or start the session with it added as a working directory.
 - THE CHECKLIST (6 Nov 13:40 UTC, his ask): the Google Doc had not changed since 5 Nov 02:20. Replaced by a new Doc with real checkboxes, 1rymE9tjSMsNmjoKkWqrmvw_oOQt2AaqOpAXwXYVmUq0 in Drive Astra; the old one is renamed OLD, not trashed. docs/STUDIO-CHECKLIST.md is its copy and says how to replace it.

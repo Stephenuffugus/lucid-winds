@@ -1,0 +1,65 @@
+TOMATO MAN, THE RUN: ART FOR THE NEW MAIN MODE (7 Nov 2026)
+
+Stephen, 7 Nov: "Tomato man needs some enemies and something to work towards ... it's almost like a top scrolling
+shooter so maybe we need to be shooting as we go or avoiding something else ... I love the way it looks." So the game
+gets a new first mode, THE RUN, built tonight with placeholder art drawn in code. Your job is the real art, in the look
+of your v2 pack and your gameplay pack (the seed, the sapling, the scorpion, the mirage are yours already and stay).
+Fable wires your zip from the zip alone, so write as if no one can ask you a follow up.
+
+HOW TO WORK (Stephen's standing order; it binds this pack)
+- No tests. No checks. No validation scripts, no pixel audits, no reports about reports. The art is the deliverable.
+- Look at each sheet ONCE with your own eyes when it is done, fix what is wrong, move on.
+- One assessment, written once. One contact sheet per section. One zip. If something is ambiguous, pick the reading
+  that ships and write one line about it in NOTES.md. Do not stop to ask.
+
+THE RUN IN ONE PARAGRAPH
+Play it at https://lucidwinds.com/satellites/tomato-man/ on a phone once the build is live (the title's first button
+says RUN; if it still says Shadow Run, the build is not live yet: draw to this brief, it is the truth). The screen
+climbs on its own. A band of hard light, THE BURN LINE, rises from the foot of the screen; below it he burns whatever
+the shade. Shade is staggered left and right up the sand (awnings, umbrellas, carts, clouds) and he zigzags up it.
+Holding the right side of the screen fires seeds up the screen three a second; a seed that lands sprouts a sapling
+and its small round shade, so shooting ahead lays the road; a seed pins a critter and a second seed sends it under.
+Five critters live in the light: your scorpion and mirage, and three new ones below. Every mile (1,200 px of climb)
+THE SUN FLARES for twenty seconds (the Angry Sun's lunge ring, from your v2 pack), then three seconds of eclipse dark,
+and the world steps on: Morning Tide, Midday Blaze, Tide Pools, Dunes at Dusk, Eclipse, then round again. A burn ends
+the run: distance in metres, stars, critters pinned, the world reached, a best to beat, five world badges on the title.
+
+THE UNITS (as your gameplay pack): 2 source px per world px; every anchor in anchors.json in SOURCE px from the file's
+top left; discrete frames in horizontal strips, no gutters, never trimmed; a zero duration is a state picked by code.
+
+THE PIECES
+A. THE CRITTERS (top down, drawn facing right where they turn; dark enough to read on every world's light sand, as
+   your scorpion is)
+   A1 the SUN MOTE (key mote): an ember the sun spits down the screen, 12 world px, a glowing core with a short tail
+      trailing up (it falls down the screen). Four frames of flicker at 80 ms. It cannot be shot; it is light. No face.
+   A2 the GULL (key gull): a beach gull, about 40 world px wingspan, seen from above, that swoops across the screen.
+      Fly (four frames at 10 fps), swoop (two frames, wings back, when it dives at a sapling), hit (two frames when a
+      seed strikes it, feathers), and a knocked off pose (one frame, tumbling away). It snatches a sapling in its beak:
+      a one frame carry pose with your two leaf sprout in the beak.
+   A3 the SAND CRAB (key crab): about 28 world px, walks sideways along the edge of a shadow. Walk (four frames at
+      10 fps, sideways scuttle), pinned (two frames, your sprout on its back, as the scorpion's pin), flipped (two
+      frames on its back, legs in the air, the state after three seeds; it stays).
+   A4 a mark for each in your one colour icon grammar: tm-mote, tm-gull, tm-crab (for the cue line and How to play).
+B. THE SAND AND THE LIGHT
+   B1 THE BURN LINE (key burn_line): a horizontal band 64 world px tall that tiles across the screen, the hard light
+      catching up: bleached, shimmering, the sand below it washed to white. Four frames of shimmer at 100 ms. One
+      strip per world palette (five), or one strip the code tints (say which in NOTES.md).
+   B2 the SEED POD (key seed_pod): a pickup, 16 world px, a dry pod that holds three seeds; a glint frame for the
+      pickup sparkle (two frames).
+C. THE RUN'S FACE
+   C1 the title's RUN plate: the button that starts a run, 66 px tall in the set of your DASH and SHADE buttons' rim and
+      ink, wide enough for the word RUN and a best distance under it (both in code).
+   C2 five WORLD BADGES (keys run_badge_0 to run_badge_4), 48 px, one per world in that world's palette (a sunrise, a
+      high sun, a tide pool, a dune at dusk, an eclipse), with a dark unlit state each.
+   C3 the run card's header line art: the postcard frame from your v2 pack is reused; give us a 320 by 40 px band
+      ornament for THE SUN WON (the words in code) if it reads better than the bands you drew; else say so.
+   C4 milestone marks at 500, 1,000, 2,000, 3,000, 5,000 m: five small 24 px marks in the icon grammar (tm-mile).
+
+SOUND
+No audio files; the game synthesises. One line each in NOTES.md on how a mote, a gull and a crab should sound.
+
+DELIVERY
+ONE zip named tomato-man-astra-run.zip: ASSESSMENT.md (short), manifest.json (every file: file, id, kind, size, notes,
+grid, durations), anchors.json (every anchor and frame cell in each file's own pixels), assets/ (a_critters, b_sand,
+c_face), previews/ (one contact sheet per section, on a real capture of the run), NOTES.md. WebP for the sheets, under
+1600 px a side. Stephen uploads it.

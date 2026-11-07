@@ -1,0 +1,705 @@
+{
+  "pack": "tomato_man_astra_gameplay",
+  "style": "Sunstruck Stop Motion",
+  "texture_scale": 2,
+  "files": [
+    {
+      "file": "assets/a_seed/seed_spin.webp",
+      "id": "seed_spin",
+      "kind": "sheet",
+      "size": [
+        192,
+        48
+      ],
+      "notes": "16 world-pixel seed inside a 24 world-pixel cell. Rotate visual only; engine owns 46-pixel arc.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 48,
+        "cell_height": 48
+      },
+      "duration_ms": [
+        70,
+        70,
+        70,
+        70
+      ],
+      "frame_names": [
+        "face",
+        "edge",
+        "reverse_face",
+        "reverse_edge"
+      ],
+      "world_cell": [
+        24,
+        24
+      ],
+      "visible_extent_world": 16,
+      "loop": true
+    },
+    {
+      "file": "assets/a_seed/seed_shadow.webp",
+      "id": "seed_shadow",
+      "kind": "sprite",
+      "size": [
+        32,
+        16
+      ],
+      "notes": "Ground projection for the projectile; does not move vertically with arc and never grants shade.",
+      "world_size": [
+        16,
+        8
+      ]
+    },
+    {
+      "file": "assets/a_seed/sapling_sprout.webp",
+      "id": "sapling_sprout",
+      "kind": "sheet",
+      "size": [
+        320,
+        80
+      ],
+      "notes": "Four frames over 0.2 s. Root anchored at landing point. Mature plant 30 world px tall.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 80,
+        "cell_height": 80
+      },
+      "duration_ms": [
+        50,
+        50,
+        50,
+        50
+      ],
+      "frame_names": [
+        "split_seed",
+        "stem",
+        "opening",
+        "grown"
+      ],
+      "world_cell": [
+        40,
+        40
+      ],
+      "loop": false
+    },
+    {
+      "file": "assets/a_seed/sapling_alive.webp",
+      "id": "sapling_alive",
+      "kind": "sheet",
+      "size": [
+        160,
+        80
+      ],
+      "notes": "Slow two-frame sway. Hold either pose for reduced motion. Root never moves.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 80,
+        "cell_height": 80
+      },
+      "duration_ms": [
+        600,
+        600
+      ],
+      "frame_names": [
+        "sway_left",
+        "sway_right"
+      ],
+      "world_cell": [
+        40,
+        40
+      ],
+      "loop": true
+    },
+    {
+      "file": "assets/a_seed/sapling_wilt.webp",
+      "id": "sapling_wilt",
+      "kind": "sheet",
+      "size": [
+        320,
+        80
+      ],
+      "notes": "Final 0.5 s of life. Engine owns lifespan and safety, then removes plant.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 80,
+        "cell_height": 80
+      },
+      "duration_ms": [
+        125,
+        125,
+        125,
+        125
+      ],
+      "frame_names": [
+        "green",
+        "curl",
+        "yellow",
+        "droop"
+      ],
+      "world_cell": [
+        40,
+        40
+      ],
+      "loop": false
+    },
+    {
+      "file": "assets/a_seed/sapling_shade.webp",
+      "id": "sapling_shade",
+      "kind": "sprite",
+      "size": [
+        232,
+        232
+      ],
+      "notes": "Soft edge lies inside the exact radius-58 world circle. Do not multiply overlapping shade opacity.",
+      "world_size": [
+        116,
+        116
+      ],
+      "safety_radius_world": 58
+    },
+    {
+      "file": "assets/a_seed/seed_burst.webp",
+      "id": "seed_burst",
+      "kind": "sheet",
+      "size": [
+        1120,
+        280
+      ],
+      "notes": "Four frames over 0.3 s; 140-world-pixel effect canvas. Thin open fragments keep boss tell visible.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 280,
+        "cell_height": 280
+      },
+      "duration_ms": [
+        75,
+        75,
+        75,
+        75
+      ],
+      "frame_names": [
+        "crack",
+        "release",
+        "scatter",
+        "fade"
+      ],
+      "world_cell": [
+        140,
+        140
+      ],
+      "loop": false
+    },
+    {
+      "file": "assets/a_seed/button_seed_ready.svg",
+      "id": "button_seed_ready",
+      "kind": "icon",
+      "size": [
+        132,
+        132
+      ],
+      "notes": "66 CSS-pixel button, matching v1 DASH/SHADE rim and ink. SEED label and count are live code.",
+      "world_size": [
+        66,
+        66
+      ]
+    },
+    {
+      "file": "assets/a_seed/button_seed_pressed.svg",
+      "id": "button_seed_pressed",
+      "kind": "icon",
+      "size": [
+        132,
+        132
+      ],
+      "notes": "66 CSS-pixel button, matching v1 DASH/SHADE rim and ink. SEED label and count are live code.",
+      "world_size": [
+        66,
+        66
+      ]
+    },
+    {
+      "file": "assets/a_seed/button_seed_disabled.svg",
+      "id": "button_seed_disabled",
+      "kind": "icon",
+      "size": [
+        132,
+        132
+      ],
+      "notes": "66 CSS-pixel button, matching v1 DASH/SHADE rim and ink. SEED label and count are live code.",
+      "world_size": [
+        66,
+        66
+      ]
+    },
+    {
+      "file": "assets/a_seed/button_seed_states.webp",
+      "id": "button_seed_states",
+      "kind": "sheet",
+      "size": [
+        396,
+        132
+      ],
+      "notes": "Select by UI state; no animation. Word SEED remains in code.",
+      "grid": {
+        "columns": 3,
+        "rows": 1,
+        "cell_width": 132,
+        "cell_height": 132
+      },
+      "duration_ms": [
+        0,
+        0,
+        0
+      ],
+      "frame_names": [
+        "ready",
+        "pressed",
+        "disabled"
+      ],
+      "world_cell": [
+        66,
+        66
+      ]
+    },
+    {
+      "file": "assets/a_seed/landing_mark.webp",
+      "id": "landing_mark",
+      "kind": "sprite",
+      "size": [
+        28,
+        28
+      ],
+      "notes": "14-world-pixel faint aim ring; project at landing point, not airborne seed.",
+      "world_size": [
+        14,
+        14
+      ]
+    },
+    {
+      "file": "assets/b_critters/scorpion_run.webp",
+      "id": "scorpion_run",
+      "kind": "sheet",
+      "size": [
+        384,
+        96
+      ],
+      "notes": "Right-facing scorpion, approximately 40 world px long. Rotate about thorax. Four gait beats at 12 fps.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "duration_ms": [
+        83.33333333333333,
+        83.33333333333333,
+        83.33333333333333,
+        83.33333333333333
+      ],
+      "frame_names": [
+        "step_1",
+        "step_2",
+        "step_3",
+        "step_4"
+      ],
+      "world_cell": [
+        48,
+        48
+      ],
+      "loop": true,
+      "rotation_zero": "right",
+      "rotation_anchor": "thorax"
+    },
+    {
+      "file": "assets/b_critters/scorpion_pin.webp",
+      "id": "scorpion_pin",
+      "kind": "sheet",
+      "size": [
+        192,
+        144
+      ],
+      "notes": "Same living sapling attached to thorax. Rotate creature and attached sapling as one image. Pin logic remains 2 seconds.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 144
+      },
+      "duration_ms": [
+        300,
+        300
+      ],
+      "frame_names": [
+        "held_left",
+        "held_right"
+      ],
+      "world_cell": [
+        48,
+        72
+      ],
+      "loop": true,
+      "sprout_root": [
+        48,
+        96
+      ],
+      "rotation_zero": "right"
+    },
+    {
+      "file": "assets/b_critters/scorpion_charge.webp",
+      "id": "scorpion_charge",
+      "kind": "sheet",
+      "size": [
+        192,
+        96
+      ],
+      "notes": "Lifted tail, open pincers and warmer shell clearly distinguish charge. Hold frame 1 until engine charge ends.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "duration_ms": [
+        100,
+        100
+      ],
+      "frame_names": [
+        "alert",
+        "commit"
+      ],
+      "world_cell": [
+        48,
+        48
+      ],
+      "loop": false,
+      "rotation_zero": "right"
+    },
+    {
+      "file": "assets/b_critters/scorpion_sink.webp",
+      "id": "scorpion_sink",
+      "kind": "sheet",
+      "size": [
+        384,
+        96
+      ],
+      "notes": "0.4 seconds. Last frame is disturbed sand only. Physical collision follows engine submerged state.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "duration_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "frame_names": [
+        "lower",
+        "half",
+        "tips",
+        "submerged"
+      ],
+      "world_cell": [
+        48,
+        48
+      ],
+      "loop": false,
+      "rotation_zero": "right"
+    },
+    {
+      "file": "assets/b_critters/scorpion_rise.webp",
+      "id": "scorpion_rise",
+      "kind": "sheet",
+      "size": [
+        384,
+        96
+      ],
+      "notes": "0.4 seconds. Emergence retains same thorax anchor and direction as run.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "duration_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "frame_names": [
+        "sand",
+        "tips",
+        "half",
+        "emerged"
+      ],
+      "world_cell": [
+        48,
+        48
+      ],
+      "loop": false,
+      "rotation_zero": "right"
+    },
+    {
+      "file": "assets/b_critters/mirage_shimmer.webp",
+      "id": "mirage_shimmer",
+      "kind": "sheet",
+      "size": [
+        384,
+        96
+      ],
+      "notes": "Approximately 32 world px tall, orange hollow heat echo. Follow existing 1/3-second delayed path. Texture does not encode movement.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "duration_ms": [
+        100,
+        100,
+        100,
+        100
+      ],
+      "frame_names": [
+        "ripple_1",
+        "ripple_2",
+        "ripple_3",
+        "ripple_4"
+      ],
+      "world_cell": [
+        48,
+        48
+      ],
+      "loop": true
+    },
+    {
+      "file": "assets/b_critters/mirage_dissolve.webp",
+      "id": "mirage_dissolve",
+      "kind": "sheet",
+      "size": [
+        384,
+        96
+      ],
+      "notes": "Four frames over exactly 0.35 seconds. Remove after final frame.",
+      "grid": {
+        "columns": 4,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 96
+      },
+      "duration_ms": [
+        87.5,
+        87.5,
+        87.5,
+        87.5
+      ],
+      "frame_names": [
+        "break",
+        "separate",
+        "strips",
+        "flecks"
+      ],
+      "world_cell": [
+        48,
+        48
+      ],
+      "loop": false
+    },
+    {
+      "file": "assets/b_critters/mirage_pin.webp",
+      "id": "mirage_pin",
+      "kind": "sheet",
+      "size": [
+        192,
+        144
+      ],
+      "notes": "Stationary orange mirage with the same living sprout. Green is restraint feedback, not a hero reskin. Pin duration remains engine-owned.",
+      "grid": {
+        "columns": 2,
+        "rows": 1,
+        "cell_width": 96,
+        "cell_height": 144
+      },
+      "duration_ms": [
+        300,
+        300
+      ],
+      "frame_names": [
+        "held_left",
+        "held_right"
+      ],
+      "world_cell": [
+        48,
+        72
+      ],
+      "loop": true,
+      "sprout_root": [
+        48,
+        88
+      ]
+    },
+    {
+      "file": "assets/b_critters/sting.webp",
+      "id": "sting",
+      "kind": "sheet",
+      "size": [
+        432,
+        144
+      ],
+      "notes": "Three-frame non-gory impact cue, 72 world px canvas. Chosen duration 0.18 s. No screen flash.",
+      "grid": {
+        "columns": 3,
+        "rows": 1,
+        "cell_width": 144,
+        "cell_height": 144
+      },
+      "duration_ms": [
+        60,
+        60,
+        60
+      ],
+      "frame_names": [
+        "tap",
+        "impact",
+        "fade"
+      ],
+      "world_cell": [
+        72,
+        72
+      ],
+      "loop": false
+    },
+    {
+      "file": "assets/b_critters/tm-seed.svg",
+      "id": "tm-seed",
+      "kind": "icon",
+      "size": [
+        128,
+        128
+      ],
+      "notes": "One colour UI mark. Exact requested symbol ID tm-seed. Use at 24 or 48 CSS px with live accessible text."
+    },
+    {
+      "file": "assets/b_critters/tm-scorpion.svg",
+      "id": "tm-scorpion",
+      "kind": "icon",
+      "size": [
+        128,
+        128
+      ],
+      "notes": "One colour UI mark. Exact requested symbol ID tm-scorpion. Use at 24 or 48 CSS px with live accessible text."
+    },
+    {
+      "file": "assets/b_critters/tm-mirage.svg",
+      "id": "tm-mirage",
+      "kind": "icon",
+      "size": [
+        128,
+        128
+      ],
+      "notes": "One colour UI mark. Exact requested symbol ID tm-mirage. Use at 24 or 48 CSS px with live accessible text."
+    },
+    {
+      "file": "assets/b_critters/tm_icons.svg",
+      "id": "tm_icons",
+      "kind": "icon",
+      "size": [
+        384,
+        128
+      ],
+      "notes": "Combined one-colour SVG symbol sprite. Import symbols by tm-seed, tm-scorpion, tm-mirage. The WebP counterpart is for canvas.",
+      "grid": {
+        "columns": 3,
+        "rows": 1,
+        "cell_width": 128,
+        "cell_height": 128
+      }
+    },
+    {
+      "file": "assets/b_critters/tm_icons.webp",
+      "id": "tm_icons",
+      "kind": "sheet",
+      "size": [
+        384,
+        128
+      ],
+      "notes": "Canvas icon strip matching the exact SVG symbol IDs. Colour slate.",
+      "grid": {
+        "columns": 3,
+        "rows": 1,
+        "cell_width": 128,
+        "cell_height": 128
+      },
+      "duration_ms": [
+        0,
+        0,
+        0
+      ],
+      "frame_names": [
+        "tm-seed",
+        "tm-scorpion",
+        "tm-mirage"
+      ],
+      "world_cell": [
+        64,
+        64
+      ]
+    },
+    {
+      "file": "previews/a_seed_contact.webp",
+      "id": "a_seed_contact",
+      "kind": "preview",
+      "size": [
+        1560,
+        1440
+      ],
+      "notes": "One section contact sheet. Left: actual desktop capture and explicitly labelled proposed-art composite. Right: every WebP sheet and standalone raster. No claim of integrated phone gameplay."
+    },
+    {
+      "file": "previews/b_critters_contact.webp",
+      "id": "b_critters_contact",
+      "kind": "preview",
+      "size": [
+        1560,
+        1440
+      ],
+      "notes": "One section contact sheet. Left: actual desktop capture and explicitly labelled proposed-art composite. Right: every WebP sheet and standalone raster. No claim of integrated phone gameplay."
+    },
+    {
+      "file": "ASSESSMENT.md",
+      "id": "assessment",
+      "kind": "document",
+      "size": null,
+      "notes": "Text file; size is not a pixel dimension. No image anchor applies."
+    },
+    {
+      "file": "NOTES.md",
+      "id": "notes",
+      "kind": "document",
+      "size": null,
+      "notes": "Text file; size is not a pixel dimension. No image anchor applies."
+    },
+    {
+      "file": "manifest.json",
+      "id": "manifest",
+      "kind": "metadata",
+      "size": null,
+      "notes": "Text file; size is not a pixel dimension. No image anchor applies."
+    },
+    {
+      "file": "anchors.json",
+      "id": "anchors",
+      "kind": "metadata",
+      "size": null,
+      "notes": "Text file; size is not a pixel dimension. No image anchor applies."
+    }
+  ]
+}
