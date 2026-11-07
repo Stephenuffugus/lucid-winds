@@ -1,6 +1,7 @@
 # START HERE
 
 ## 7 Nov (Fable, while Astra's limit refreshes): THE BUILD STARTED WITH THE ART IN HAND
+- SHUTTERBUG sb-m2-18 STAMPED (aae6eef16, 7 Nov ~22:20 UTC): round 11 code, THE GUARDIANS' PHASES (under half its HP every guardian's attack grows; EV.RAGE once at the crossing); H-boss-14 green, the fast harness green alone. LINE: `! bash /home/codespace/sb-drafts/sb-m2-18/deploy-sb-m2-18.sh` (ships 16 and 17 too; their lines are STALE)
 - SHUTTERBUG sb-m2-17 STAMPED (e38d6e78e, 7 Nov ~21:40 UTC): round 11 code, THE COBWEB LOOM AND THE LANTERN WASP live as house guardians (a seed bit in Attic and Ember houses under FLAG_VERBS): the web strand and dust puff, the stinger dart and the floor flame, her round 10 tells; H-boss-13 green, lint and the fast harness green. LINE: `! bash /home/codespace/sb-drafts/sb-m2-17/deploy-sb-m2-17.sh` (ships sb-m2-16 too; the 16 line is STALE)
 - FLATULENCE FIGHTER m5 (5fb6ecb5e, 7 Nov ~20:35 UTC): his ruling, a miss is a strike with a little toot (m4's plates and cards under it). FF CHECK OK. LINE: `! bash /home/codespace/ff-drafts/deploy-ff-m5.sh` (ships m4 too; deploy-ff-m4.sh is stale)
 - SHUTTERBUG sb-m2-16 STAMPED (8e070b1e4, 7 Nov ~19:55 UTC): R10 step 5, TEACH THE MOVES (hold jump, drop through, the tripod, once each in the strip's banner; his 7 Nov ask after a tester never learned them). Lint and the no browser check green, probed on the live state. LINE: `! bash /home/codespace/sb-drafts/sb-m2-16/deploy-sb-m2-16.sh`
