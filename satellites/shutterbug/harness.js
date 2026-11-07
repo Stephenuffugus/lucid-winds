@@ -6690,6 +6690,31 @@ group('H-boss-13', 'the Cobweb Loom and the Lantern Wasp (round 11, sb-m2-17): i
   t.ok(shed && spark, 'a kind 0 room under the flag keeps the Moth Mother\'s shed (' + shed + ') and the Cinder Kiln\'s sparks (' + spark + ')');
 });
 
+group('H-boss-14', 'the phases (round 11, sb-m2-18; Stephen: two or three phases): the hit that takes a guardian under half its HP raises RAGE once; raged, the Rime Mass marks five columns not three, the Kiln throws two more sparks, the Thorn Heart\'s pods roll 1.5x, the Moth Mother\'s shed brings a dust cloud, the Loom drops two strands, the Wasp a pair of darts; above half nothing of it', t => {
+  const P = SB.sim.PROJ_KIND, EV = SB.sim.EV, T = SB.TUNING, by = {};
+  for (const { tag, lv } of bossBuilds()) { const b = lv.biome | 0; if (!by[b]) by[b] = lv; }
+  const rage = s => { s.boss.hp = (s.boss.hpMax >> 1) - 1; };
+  const firstAttack = (lv, raged, kind) => { const s = awake(lv); s.immortal = 1; if (raged) rage(s); let n = -1; for (let k = 0; k < 1500 && n < 0; k++) { SB.sim.step(s, 0); if (s.boss.cycle === 1 || (kind === P.BWARN && s.boss.telegraph > 0)) { const live = s.proj.filter(p => p.live && p.kind === kind); if (live.length) n = live.length; else if (s.boss.cycle === 1 && kind !== P.BWARN) n = 0; } } return { s, n }; };
+  /* RAGE once, on the crossing hit */
+  const s0 = awake(by[1]); const i0 = s0.boss.cells.findIndex(c => c >= 0); SB.sim.hurtBoss(s0, by[1], i0, 1); const before = s0.ev & EV.RAGE; s0.ev = 0;
+  SB.sim.hurtBoss(s0, by[1], s0.boss.cells.findIndex(c => c >= 0), (s0.boss.hp - (s0.boss.hpMax >> 1)) + 1); const at = !!(s0.ev & EV.RAGE); s0.ev = 0; SB.sim.hurtBoss(s0, by[1], s0.boss.cells.findIndex(c => c >= 0), 1); const again = !!(s0.ev & EV.RAGE);
+  t.ok(!before && at && !again && SB.sim.bossRaged(s0), 'RAGE rises once, on the hit that crosses half (' + !before + ' ' + at + ' ' + !again + ')');
+  const fr = firstAttack(by[1], false, P.BWARN).n, frR = firstAttack(by[1], true, P.BWARN).n;
+  t.ok(fr === T.BOSS_ICE_COLUMNS && frR === T.BOSS_RAGE_ICE_COLUMNS, 'the Rime Mass marks ' + fr + ' columns, raged ' + frR);
+  const em = firstAttack(by[4], false, P.BSPARK).n, emR = firstAttack(by[4], true, P.BSPARK).n;
+  t.ok(em === T.BOSS_SPARKS && emR === T.BOSS_SPARKS + T.BOSS_RAGE_SPARKS, 'the Kiln throws ' + em + ' sparks, raged ' + emR);
+  const podV = (raged) => { const s = awake(by[3]); s.immortal = 1; if (raged) rage(s); for (let k = 0; k < 2500; k++) { SB.sim.step(s, 0); const p = s.proj.find(q => q.live && q.kind === P.BPOD); if (p) return Math.abs(p.vx); } return -1; };
+  const pv = podV(false), pvR = podV(true);
+  t.ok(pv === K.BOSS_POD_V && pvR === Math.round(K.BOSS_POD_V * T.BOSS_RAGE_SPEED), 'the Thorn Heart\'s pods roll at ' + pv + ' a step, raged ' + pvR);
+  const dustWith = (raged) => { const s = awake(by[0]); s.immortal = 1; if (raged) rage(s); for (let k = 0; k < 1500; k++) { SB.sim.step(s, 0); if (s.ev & EV.SHED) return s.proj.some(p => p.live && p.kind === P.BDUST); } return null; };
+  t.ok(dustWith(false) === false && dustWith(true) === true, 'the Moth Mother\'s shed brings a dust cloud only raged');
+  /* the Loom and the Wasp (kind 1 rooms under the flag, as H-boss-13 finds them) */
+  const found = {};
+  for (const f of FIXTURES) for (const [b, key] of [[1, 'a'], [5, 'e']]) { if (found[key]) continue; const lv = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, f.fx.record, { v: 2, biome: b, rules: 0, flags: SB.record.FLAGS_KNOWN })), { roomIndex: 5, lastRoom: true }); if (!lv.needsCrop && lv.features.guardian && lv.features.guardian.kind) found[key] = lv; }
+  const lw = firstAttack(found.a, false, P.BWEB).n, lwR = firstAttack(found.a, true, P.BWEB).n, wd = firstAttack(found.e, false, P.BDART).n, wdR = firstAttack(found.e, true, P.BDART).n;
+  t.ok(lw === 1 && lwR === 2 && wd === 1 && wdR === 2, 'the Loom drops ' + lw + ' strand, raged ' + lwR + '; the Wasp throws ' + wd + ' dart, raged ' + wdR);
+});
+
 group('H-boss-8', 'the shed (DESIGN 7\'s Attic moveset, "sheds 3 moths every 4 s"): awake, a SHED every BOSS_MOTH_EVERY_F steps, each after its TELL; BOSS_MOTH_COUNT moth slots made at create after the level\'s enemies, the same objects through the room (none made in step); a shed fills only dead slots; its moths bank no Dead pixels', t => {
   const T = SB.TUNING, bad = { cadence: [], slots: [], dp: [] };
   let n = 0;

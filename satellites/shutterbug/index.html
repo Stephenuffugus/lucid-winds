@@ -913,7 +913,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        Astra's mark for BOSS_SECOND_TELL_S and BOSS_SECOND_EVERY_S a cycle; under BOSS_RAGE_PCT of its HP a cycle runs 3/4
        as long (the fight gets faster as it erodes). Attic's dust cloud drifts at BOSS_DUST_CPS cells a second, Frost's breath
        blows, Deep's whip rises and holds, Bramble's pods roll and Ember's flame crawls along the floor */
-    BOSS_SECOND_EVERY_S: 4, BOSS_SECOND_TELL_S: 0.9, BOSS_RAGE_PCT: 50, BOSS_DUST_LIFE_S: 6, BOSS_DUST_CPS: 1, BOSS_BREATH_LIFE_S: 1.2, BOSS_WHIP_RISE_S: 0.3, BOSS_WHIP_HOLD_S: 0.4,
+    BOSS_SECOND_EVERY_S: 4, BOSS_SECOND_TELL_S: 0.9, BOSS_RAGE_PCT: 50, BOSS_RAGE_ICE_COLUMNS: 5, BOSS_RAGE_SPARKS: 2, BOSS_RAGE_SPEED: 1.5, BOSS_RAGE_RING_CELLS: 2 /* round 11 phases (Stephen: two or three phases): under half its HP every guardian's attack grows */, BOSS_DUST_LIFE_S: 6, BOSS_DUST_CPS: 1, BOSS_BREATH_LIFE_S: 1.2, BOSS_WHIP_RISE_S: 0.3, BOSS_WHIP_HOLD_S: 0.4,
     BOSS_POD_LIFE_S: 5, BOSS_POD_CPS: 2, BOSS_FLAME_LIFE_S: 3, BOSS_FLAME_CPS: 1.5,
     STOMP_GRACE_S: 0.5 /* W3: a stomped enemy's contact off the hero */,
     /* the second monsters (2 Nov): the bunny's roll, the owl's swoop, the crab's shell, the puff's cloud, the beetle's trail */
@@ -4855,7 +4855,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function hurtBoss(s, lv, struck, q) {
     var B = s.boss, K = SB.K, w = lv.w, i;
     if (!B || B.hp <= 0 || B.cells[struck] < 0) return 0;
+    var wasRaged = bossRaged(s);
     B.hp = Math.max(0, B.hp - q); s.ev |= EV.BOSS_HIT;
+    if (!wasRaged && B.hp > 0 && bossRaged(s)) s.ev |= EV.RAGE;   /* round 11: its second phase begins */
     var want = Math.ceil(B.hp / K.HP_Q), live = 0, sc = B.cells[struck], sx = sc % w, sy = (sc - sx) / w;
     for (i = 0; i < B.cells.length; i++) if (B.cells[i] >= 0) live++;
     if (live > want) { B.cells[struck] = -1; live--; }
@@ -4885,7 +4887,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
      costs an enemy's hit; nothing here draws the rng */
   function bossEvery(s) {
     var K = SB.K, B = s.boss, e = B && (B.cycle & 1) ? K.BOSS_SECOND_EVERY_F : [K.BOSS_MOTH_EVERY_F, K.BOSS_ICE_EVERY_F, K.BOSS_RING_EVERY_F, K.BOSS_THORN_EVERY_F, K.BOSS_SPARK_EVERY_F][s.biome | 0] || K.BOSS_MOTH_EVERY_F;
-    return B && B.hp * 100 < B.hpMax * SB.TUNING.BOSS_RAGE_PCT ? (e * 3) >> 2 : e;   /* under half its HP each cycle runs 3/4 as long */
+    return bossRaged(s) ? (e * 3) >> 2 : e;   /* under half its HP each cycle runs 3/4 as long */
+  }
+  /* round 11, THE PHASES (Stephen, 7 Nov: "two or three phases, at least two"): under BOSS_RAGE_PCT of its HP a guardian's attacks grow:
+     the Moth Mother's shed brings a dust cloud with it, the Rime Mass drops BOSS_RAGE_ICE_COLUMNS columns, the Anemone's ring reaches
+     BOSS_RAGE_RING_CELLS farther, the Thorn Heart's pods roll BOSS_RAGE_SPEED faster, the Kiln throws BOSS_RAGE_SPARKS more sparks and its
+     flame runs faster, the Loom drops a second strand toward itself, the Wasp throws a pair of darts; every cycle 3/4 as long (above) */
+  function bossRaged(s) { var B = s.boss; return !!B && B.hp * 100 < B.hpMax * SB.TUNING.BOSS_RAGE_PCT;
   }
   function bossTell(s) { var K = SB.K; if (s.boss && (s.boss.cycle & 1)) return K.BOSS_SECOND_TELL_F; return [K.BOSS_TELEGRAPH_F, K.BOSS_ICICLE_TELEGRAPH_F, K.BOSS_RING_TELL_F, K.BOSS_THORN_TELL_F, K.BOSS_SPARK_TELEGRAPH_F][s.biome | 0] || K.BOSS_TELEGRAPH_F; }
   function bossHurt(s, side) { var h = s.hero; if (!s.immortal && h.iframes === 0 && h.dashI === 0 && !s.room.cleared) hitHero(s, side); }
@@ -4920,9 +4928,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
       for (sd = -1; sd <= 1; sd += 2) {   /* one pod rolls each way along the floor from the body's two sides */
         var col = Math.max(0, Math.min(lv.w - 1, sd < 0 ? g[0] - 1 : g[0] + g[2])), row = baseRow(lv, col, g[1] + g[3] - 1);
         q = spawn(s, BPOD); if (q < 0) break;
-        p = s.proj[q]; p.x = col * CS; p.y = row * CS; p.vx = sd * K.BOSS_POD_V; p.ttl = K.BOSS_POD_LIFE_F;
+        p = s.proj[q]; p.x = col * CS; p.y = row * CS; p.vx = sd * (bossRaged(s) ? Math.round(K.BOSS_POD_V * SB.TUNING.BOSS_RAGE_SPEED) : K.BOSS_POD_V); p.ttl = K.BOSS_POD_LIFE_F;
       }
-    } else if (b === 4) { q = spawn(s, BFLAME); if (q >= 0) { p = s.proj[q]; p.x = B.mx; p.y = B.my; p.vx = B.md * K.BOSS_FLAME_V; p.ttl = K.BOSS_FLAME_LIFE_F; } }
+    } else if (b === 4) { q = spawn(s, BFLAME); if (q >= 0) { p = s.proj[q]; p.x = B.mx; p.y = B.my; p.vx = B.md * (bossRaged(s) ? Math.round(K.BOSS_FLAME_V * SB.TUNING.BOSS_RAGE_SPEED) : K.BOSS_FLAME_V); p.ttl = K.BOSS_FLAME_LIFE_F; } }
   }
   function boxHurt(s, x0, y0, x1, y1) { var K = SB.K, h = s.hero; if (h.x < x1 && h.x + K.HERO_W_SUB > x0 && h.y < y1 && h.y + K.HERO_H_SUB > y0) { bossHurt(s, heroSide(s, (x0 + x1) >> 1)); return true; } return false; }
   /* the dust cloud homes in on the bug at its drift, through furniture as a moth does, and stays until its life ends */
@@ -4981,7 +4989,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var K = SB.K, PX = K.SUB, B = s.boss, b = s.biome | 0, h = s.hero, q, p;
     if (b === 0) {
       if (odd) { q = spawn(s, BPUFF); if (q >= 0) { p = s.proj[q]; p.x = B.mx; p.y = B.my; p.ttl = K.BOSS_PUFF_LIFE_F; } }
-      else { q = spawn(s, BWEB); if (q >= 0) { p = s.proj[q]; p.x = B.mx; p.y = B.my; p.ttl = K.BOSS_WEB_DROP_F + K.BOSS_WEB_HOLD_F; } }
+      else {
+        q = spawn(s, BWEB); if (q >= 0) { p = s.proj[q]; p.x = B.mx; p.y = B.my; p.ttl = K.BOSS_WEB_DROP_F + K.BOSS_WEB_HOLD_F; }
+        if (bossRaged(s)) {   /* raged: a second strand two columns toward the body, from that column's own ceiling */
+          var CS2 = K.CELL_SUB, c2 = Math.max(0, Math.min(lv.w - 1, Math.floor(B.mx / CS2) - B.md * 2)), hr2 = Math.floor((h.y + K.HERO_H_SUB - 1) / CS2), r2;
+          for (r2 = hr2; r2 > 0 && !solidAt(lv, c2, r2 - 1); r2--) ;
+          q = spawn(s, BWEB); if (q >= 0) { p = s.proj[q]; p.x = c2 * CS2; p.y = r2 * CS2; p.ttl = K.BOSS_WEB_DROP_F + K.BOSS_WEB_HOLD_F; }
+        }
+      }
       return;
     }
     if (odd) { bossSecondAttack(s, lv); return; }
@@ -4990,6 +5005,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       p = s.proj[q]; p.x = B.mx; p.y = B.my;
       var dx = (h.x + (K.HERO_W_SUB >> 1)) - (p.x + 4 * PX), dy = (h.y + (K.HERO_H_SUB >> 1)) - (p.y + 4 * PX), md = Math.max(1, Math.abs(dx), Math.abs(dy));
       p.vx = (K.BOSS_DART_V * dx / md) | 0; p.vy = (K.BOSS_DART_V * dy / md) | 0; p.ttl = K.BOSS_DART_LIFE_F;
+      if (bossRaged(s)) { var q2 = spawn(s, BDART); if (q2 >= 0) { var p2 = s.proj[q2]; p2.x = p.x; p2.y = p.y; p2.vx = p.vx - ((p.vy / 3) | 0); p2.vy = p.vy + ((p.vx / 3) | 0); p2.ttl = p.ttl; } }   /* raged: a pair, the second a few degrees off */
     }
   }
   /* the strand hurts over the height it has reached; the puff over its grown box; the dart flies straight and ends on a solid, the edge or the bug */
@@ -5008,8 +5024,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (s.boss.cycle & 1) { bossSecondTold(s, lv); return; }
     var hc = Math.floor((h.x + (K.HERO_W_SUB >> 1)) / CS), hr = Math.floor((h.y + K.HERO_H_SUB - 1) / CS);
     if (b === 1) {
-      var cols = [hc, hc - 3, hc + 3], seen = {};
-      for (k = 0; k < T.BOSS_ICE_COLUMNS && k < cols.length; k++) {
+      var raged = bossRaged(s), cols = raged ? [hc, hc - 3, hc + 3, hc - 6, hc + 6] : [hc, hc - 3, hc + 3], nCols = raged ? T.BOSS_RAGE_ICE_COLUMNS : T.BOSS_ICE_COLUMNS, seen = {};
+      for (k = 0; k < nCols && k < cols.length; k++) {
         c = Math.max(0, Math.min(lv.w - 1, cols[k])); if (seen[c]) continue; seen[c] = 1;
         for (r = hr; r > 0 && r > hr - T.BOSS_ICE_ROWS && !solidAt(lv, c, r - 1); r--) ;   /* under the ceiling, at most BOSS_ICE_ROWS over the bug: the mark in view */
         var q = spawn(s, BWARN); if (q < 0) continue;
@@ -5039,7 +5055,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     s.boss.cycle++;
     if (lv.features.guardian.kind) { bossNewAttack(s, lv, odd); return; }   /* round 11: the Loom's and the Wasp's own two */
     if (odd) { bossSecondAttack(s, lv); return; }
-    if (b === 0) { shed(s, lv); return; }
+    if (b === 0) { shed(s, lv); if (bossRaged(s)) { bb = bodyBox(lv); q = spawn(s, BDUST); if (q >= 0) { p = s.proj[q]; p.x = ((bb[0] + bb[2]) >> 1) - 16 * K.SUB; p.y = bb[1] - 32 * K.SUB; p.ttl = K.BOSS_DUST_LIFE_F; } } return; }   /* raged: a cloud with the shed */
     if (b === 1) {
       for (i = 0; i < s.proj.length; i++) { p = s.proj[i]; if (p.live && p.kind === BWARN) { p.kind = BICE; p.vy = 0; p.ttl = 240; p.age = 0; p.mode = 0; } }
     } else if (b === 2) {
@@ -5047,10 +5063,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (q >= 0) { p = s.proj[q]; p.x = (bb[0] + bb[2]) >> 1; p.y = (bb[1] + bb[3]) >> 1; p.ttl = K.BOSS_RING_GROW_F + 6; }
     } else if (b === 4) {
       bb = bodyBox(lv);
-      for (i = 0; i < T.BOSS_SPARKS; i++) {
+      var nSp = T.BOSS_SPARKS + (bossRaged(s) ? T.BOSS_RAGE_SPARKS : 0);   /* raged: a wider fan */
+      for (i = 0; i < nSp; i++) {
         q = spawn(s, BSPARK); if (q < 0) break;
         p = s.proj[q]; p.x = ((bb[0] + bb[2]) >> 1) - 4 * K.SUB; p.y = bb[1] - 8 * K.SUB;
-        p.vx = (i - (T.BOSS_SPARKS >> 1)) * ((3 * K.SUB) >> 1); p.vy = -(5 * K.SUB + (i & 1) * (K.SUB >> 1)); p.ttl = 150;
+        p.vx = (i - (nSp >> 1)) * ((3 * K.SUB) >> 1); p.vy = -(5 * K.SUB + (i & 1) * (K.SUB >> 1)); p.ttl = 150;
       }
     }
   }
@@ -5067,7 +5084,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (h.x < bx1 && h.x + K.HERO_W_SUB > bx0 && h.y < by1 && h.y + K.HERO_H_SUB > p.y) { bossHurt(s, heroSide(s, p.x + 8 * K.SUB)); p.mode = 1; p.b = p.age; p.ttl = Math.min(p.ttl, 15); }
   }
   function actRingB(s, p) {
-    var K = SB.K, h = s.hero, R0 = SB.TUNING.BOSS_RING_CELLS * K.CELL_SUB, r = Math.min(R0, Math.floor(R0 * (p.age + 1) / K.BOSS_RING_GROW_F)), B = 8 * K.SUB;
+    var K = SB.K, h = s.hero, R0 = (SB.TUNING.BOSS_RING_CELLS + (bossRaged(s) ? SB.TUNING.BOSS_RAGE_RING_CELLS : 0)) * K.CELL_SUB, r = Math.min(R0, Math.floor(R0 * (p.age + 1) / K.BOSS_RING_GROW_F)), B = 8 * K.SUB;
     if (p.hit) return;
     var dx = h.x + (K.HERO_W_SUB >> 1) - p.x, dy = h.y + (K.HERO_H_SUB >> 1) - p.y, d2 = dx * dx + dy * dy, lo = Math.max(0, r - B);
     if (d2 >= lo * lo && d2 <= (r + B) * (r + B)) { bossHurt(s, dx < 0 ? -1 : 1); p.hit = 1; }
@@ -5592,7 +5609,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the guardian (HOUSE-B): it wakes, tells a shed, sheds, takes a hit, goes down */
     WAKE: 524288, TELL: 1048576, SHED: 2097152, BOSS_HIT: 4194304, BOSS_DOWN: 8388608,
     /* the locked exit (2 Nov): a key taken; the bug at the exit with a key still out */
-    KEY: 16777216, LOCKED: 33554432, CLANG: 1073741824 /* round 10 step 4: a bug bounced off a shellback's front, or a hit shrugged by it */,
+    KEY: 16777216, LOCKED: 33554432, RAGE: 536870912 /* round 11: the hit that took the guardian under half its health, its second phase */, CLANG: 1073741824 /* round 10 step 4: a bug bounced off a shellback's front, or a hit shrugged by it */,
     /* m2 step 3: the tripod lit (the checkpoint taken); the bug back at it after a death */
     CHECK: 67108864, RESPAWN: 134217728,
     CURIO: 268435456 /* R10: the keepsake taken (its id is the level's features.curioId; the shell banks it) */ };
@@ -6034,7 +6051,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf, trapTouch: trapTouch,
     WPN: WPN, BUILT: BUILT, slotOf: slotOf, PROJ_KIND: Object.freeze({ BOOMERANG: BOOMERANG, SHOCK: SHOCK, POP: POP, TRAIL: TRAIL, EMBER: EMBER, FLASH: FLASH, DART: DART, RING: RING, KICK: KICK, SNAP: SNAP, FROST: FROST, STOMP: STOMP, DUST: DUST, PULL: PULL, SAVE: SAVE, BICE: BICE, BRING: BRING, BTHORN: BTHORN, BSPARK: BSPARK, BWARN: BWARN, PUFFC: PUFFC, CTRAIL: CTRAIL, BDUST: BDUST, BBREATH: BBREATH, BWHIP: BWHIP, BPOD: BPOD, BFLAME: BFLAME, PELLET: PELLET, BWEB: BWEB, BPUFF: BPUFF, BDART: BDART }), shockFront: shockFront, spawn: spawn, free: free, drawWeapon: drawWeapon,
     CHOICE: CHOICE, LOOT: { SPECK: LOOT_SPECK, SCROLL: LOOT_SCROLL, BLUEPRINT: LOOT_BLUEPRINT, KEY: LOOT_KEY, CURIO: LOOT_CURIO }, keysLeft: keysLeft, keysOf: keysOf, STAT: { VIGOR: VIGOR, FOCUS: FOCUS, GRIT: GRIT }, STAT_OF_BIOME: STAT_OF_BIOME, pickScroll: pickScroll,
-    hurtBoss: hurtBoss, shedSlot: shedSlot, setPool: setPool, bossEvery: bossEvery };
+    hurtBoss: hurtBoss, shedSlot: shedSlot, setPool: setPool, bossEvery: bossEvery, bossRaged: bossRaged };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="shell-capture" data-tool>
