@@ -1,6 +1,6 @@
 /* Tomato Man's real gameplay in numbers (6 Nov): THE SEED TOSS and SUN CRITTERS through the game's own update, clock held, no image opened.
  *   (cd /workspaces/Tomato_Man && python3 -m http.server 8778 >/dev/null 2>&1 &)     serve the clone first
- *   node tools/tomato-man-tests/gameplay.mjs [seed|critters]
+ *   node tools/tomato-man-tests/gameplay.mjs [seed|critters|run|runbot|hero]
  * Ends GAMEPLAY OK or GAMEPLAY FAILED. One browser at a time on this box. */
 import { createRequire } from 'node:module';
 const require = createRequire('/workspaces/sws-tools/package.json');
@@ -102,6 +102,32 @@ if (only === 'run' || only === 'runbot') {
     console.log('runner bot, 20 seeds in world 0, metres before the burn: ' + ms.join(' ') + ' | median ' + med);
     say(med >= 400 && med <= 800, 'the bot\'s world 0 median is ' + med + ' m (400 to 800)');
   }
+}
+if (only === 'hero') {
+  /* THE HERO (7 Nov, chapter 10): a produce body walks on the tomato's rig. Pickle in the open, facing east: its five sheets load,
+     the walk frame changes with the stride (a still body could not), the dash frame differs again, and the figure's pixels on the
+     game canvas are green where the tomato's are red; a hat sits on it without an error */
+  await ev(() => { const T = __TM; T.hold(true); T.look('pickle', 'none'); T.startLevel(0); });
+  let loaded = false; for (let k = 0; k < 60 && !loaded; k++) { loaded = await ev(() => { const T = __TM; return ['s', 'se', 'e', 'ne', 'n'].every(d => { const i = T.A('hero_pickle_' + d); return i && i.naturalWidth === 1024 && i.naturalHeight === 512; }); }); if (!loaded) await new Promise(r => setTimeout(r, 250)); }
+  say(loaded, 'the pickle\'s five bearing sheets load lazily, 1024 by 512 each');
+  const box = (body) => ev((body) => { const T = __TM; T.hold(true); T.look(body, 'none'); T.startLevel(0); T.seek(0.5); const r = T._run(), s = window.__sunny(120); r.graceT = 0; r.screenT = 99; T.P.x = s.x; T.P.y = s.y; T.P.exp = 0; T.P.face = 0; T.P.vx = 120; T.P.vy = 0; T.P.sx = T.P.sy = 1; r.idleT = 0;
+    const cv = document.getElementById('game'), g = cv.getContext('2d'), DPR = cv.width / cv.clientWidth, cam = T._cam(); cam.x = T.P.x - cv.clientWidth / 2; cam.y = T.P.y - cv.clientHeight / 2;   /* the camera does not follow a teleport while the clock is held */
+    const grab = () => { T.render(); const x = Math.round((T.P.x - cam.x - 32) * DPR), y = Math.round((T.P.y - cam.y - 32) * DPR), w = Math.round(64 * DPR); return Array.from(g.getImageData(x, y, w, w).data); };
+    /* her cell drawn alone at the same size: the figure's pixels on the game canvas should match this body's cell and not the other's */
+    const cellPx = (key, cell) => { const img = T.A(key), o = document.createElement('canvas'), w = Math.round(64 * DPR); o.width = o.height = w; const q = o.getContext('2d'); if (img) q.drawImage(img, (cell % 4) * (img.width / 4), Math.floor(cell / 4) * (img.height / 2), img.width / 4, img.height / 2, 0, 0, w, w); return Array.from(q.getImageData(0, 0, w, w).data); };
+    const match = (box, cell) => { let n = 0, sum = 0; for (let i = 0; i < cell.length; i += 4) { if (cell[i + 3] < 250) continue; n++; sum += Math.abs(box[i] - cell[i]) + Math.abs(box[i + 1] - cell[i + 1]) + Math.abs(box[i + 2] - cell[i + 2]); } return { n, mean: n ? sum / n : 999 }; };
+    r.stride = 0; const walk1 = grab(); r.stride = 20; const walk2 = grab(); r.stride = 34; const walk3 = grab(); T.P.dashT = r.feel.dashDur - 0.5; const dash = grab(); T.P.dashT = 0;
+    const diff = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if (Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]) > 60) n++; return n; };
+    const own = match(walk1, cellPx(body === 'tomato' ? 'hero_e' : 'hero_' + body + '_e', 1)), other = match(walk1, cellPx(body === 'tomato' ? 'hero_pickle_e' : 'hero_e', 1));
+    return { dWalk: diff(walk1, walk2), dWalkWalk: diff(walk2, walk3), dWalkDash: diff(walk2, dash), own, other }; }, body);
+  const pk = await box('pickle'), tm = await box('tomato');
+  say(pk.dWalk > 80 && pk.dWalkWalk > 80 && pk.dWalkDash > 80, 'the pickle\'s frames change with the stride and the dash (walk 1 to 2: ' + pk.dWalk + ' px, 2 to 3: ' + pk.dWalkWalk + ', walk to dash: ' + pk.dWalkDash + ')');
+  say(pk.own.n > 1500 && pk.own.mean < 30 && pk.other.mean > pk.own.mean * 3, 'on the canvas the pickle IS her pickle cell (' + pk.own.n + ' figure px, mean colour gap ' + pk.own.mean.toFixed(1) + '; against the tomato\'s cell ' + pk.other.mean.toFixed(1) + ')');
+  say(tm.own.mean < 30 && tm.other.mean > tm.own.mean * 3, 'and the tomato is still the tomato (gap ' + tm.own.mean.toFixed(1) + ', against the pickle ' + tm.other.mean.toFixed(1) + ')');
+  const hat = await ev(() => { const T = __TM; T.hold(true); T.look('cherry', 'cap'); T.startLevel(0); T.seek(0.3); const r = T._run(); T.P.face = -Math.PI / 2; r.stride = 20; T.P.vx = 0; T.P.vy = -120; T.render(); T.P.face = Math.PI; T.render(); return { body: T.save.cosmetics.body, hat: T.save.cosmetics.hat }; });
+  say(hat.body === 'cherry' && hat.hat === 'cap', 'a cherry in a cap walks north and west without an error');
+  const heads = await ev(() => { const T = __TM; return ['strawberry', 'bellpepper', 'pickle', 'sunburn'].map(b => { const i = T.A('bhead_' + b); return i ? i.naturalWidth : 0; }); });
+  say(heads.every(w => w === 384 || w === 0), 'the builder heads that are loaded are her 384 px faces (' + heads.join(',') + ')');
 }
 say(errs.length === 0, 'page errors ' + errs.length + ' ' + errs.slice(0, 3).join(' | ').slice(0, 300));
 console.log(bad ? 'GAMEPLAY FAILED ' + bad : 'GAMEPLAY OK');

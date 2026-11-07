@@ -20,7 +20,7 @@ When the box dies, the next night starts from the same kickoff and resumes from 
 | 7 | Shutterbug round 10 art wired | SHUTTERBUG_R10_BUILD_PLAN.md, the art rows | round 10 (back 7 Nov) | sb-m2-14 |
 | 8 | Tomato Man The Run's art wired | written when the pack lands | The Run | deploy-tomato-man-run-art.sh |
 | 9 | Keepsies m5, round 4 wired | written when the pack lands | round 4 | deploy-keepsies-m5.sh |
-| 10 | Tomato Man The Hero wired (thirteen bodies, the planet) | written when the pack lands | The Hero | deploy-tomato-man-hero.sh |
+| 10 | Tomato Man The Hero wired (thirteen bodies on the rig, her heads; the planet art parked) | TOMATO_MAN_RUN_BUILD_PLAN.md, chapter 10 | The Hero (back 7 Nov) | deploy-tomato-man-hero.sh |
 | 11 | Flatulence Fighter m5, round 3 wired | written when the pack lands | round 3 | deploy-ff-m5.sh |
 | 12 | Sunforge v5.3, round 3 wired | written when the pack lands, only if Stephen picked it | round 3 | deploy-sunforge-m4.sh |
 
@@ -55,6 +55,6 @@ one commit as its own command, last.
 | 7 | LIVE 7 Nov ~18:20 UTC | 7 Nov (Fable, daytime) | sb-m2-14 live inside sb-m2-15's line |
 | 8 | LIVE 7 Nov ~18:05 UTC | 7 Nov (Fable, daytime) | her run pack wired inside chapter 5's stamp |
 | 9 | waits on the pack | | |
-| 10 | waits on the pack | | |
+| 10 | STAMPED 7 Nov ~22:03 UTC, waits for his line | 7 Nov (Fable, daytime) | sunstruck d5e80d9: thirteen bodies on the tomato's rig, her builder heads; the planet art in and parked for his call; `! bash /home/codespace/tm-drafts/deploy-tomato-man-hero.sh` |
 | 11 | waits on the pack | | |
 | 12 | waits on the pack and his pick | | |

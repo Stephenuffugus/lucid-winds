@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 7 Nov 2026, 22:25 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 7 Nov 2026, 22:03 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 1. The art, in this order (you, then Astra)
 
@@ -11,7 +11,7 @@ Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt
 - [x] Shutterbug round 10: back 7 Nov, vaulted, wired in sb-m2-14 (Astra, Fable)  
 - [x] Tomato Man The Run: back 7 Nov, vaulted, wired inside milestone B (Astra, Fable)  
 - [ ] Keepsies round 4, the nineteen captures judged (the captures are public links inside the brief, nothing to attach), the four limestone statues, the plates: [Astra / Keepsies / Round 4](https://drive.google.com/drive/folders/1_gT-vVZ4H8kq6qOPhMW13xM9xjZ1TxKj) (you)  
-- [ ] Tomato Man The Hero, the thirteen produce bodies in his five sheets so hats and the walk work on every body, the planet tomato: [Astra / Tomato Man / The Hero](https://drive.google.com/drive/folders/1DZmS0paU0pbfgeP1lwaqGbEHI_LWOqAz) (you)  
+- [x] Tomato Man The Hero: back 7 Nov, vaulted, wired in chapter 10 (thirteen bodies on the tomato's rig, her builder heads); the planet art in and parked for your call (Astra, Fable)  
 - [ ] Flatulence Fighter round 3, the moving call's travel accent, the final teaching cards, a result line, IDEAS: [Astra / Flatulence Fighter / Round 3](https://drive.google.com/drive/folders/1ZP52O4yxsaJogYj22uusAX2qyzjTlh3O) (you)  
 - [ ] Sunforge round 3, only if you want any of chapter skies, the hold outline, overload, a weekly gyre: [Astra / Sunforge / Round 3](https://drive.google.com/drive/folders/1oZg8rD3G2y7ERX3Zm0se5McD9r4h4mWe) (you)  
 - [ ] Shutterbug round 11, the four yeses (the collapsing staircase, the swinging web strands, the window crosswind, the guardians' rage tells) and the Loom and Wasp arena pieces, her ideas last: [Astra / Shutterbug / Round 11](https://drive.google.com/drive/folders/1ukat54v_fLwi-Js-S_JqbgWfeJB_g-oU) (you)  
@@ -37,7 +37,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Shutterbug: names stay, no heart, no house tripod, the Polaroid keeps the photo; the tripod in free play is the checkpoint and the game will say so (ruled 7 Nov) (you)  
 - [x] Tomato Man ruled 7 Nov: pace, checkpoints and motes at their defaults until you play; canopies walkable AND awnings you walk under, more gaps in the shade (you)  
 - [ ] Tomato Man: Astra's ten run ideas, yes or no each (TOMATO_MAN_RUN_BUILD_PLAN.md RULINGS 2: the first eclipse as the goal, a rescued sapling garden, the gull's beak dip tell, crabs as route choices, mote gates, pods on the sunny side, the best as a sand marker, the next shade shown in an eclipse, the line's one beat pause at a world change) (you)  
-- [ ] Tomato Man: a new name for the RUN mode; the planet tomato or something catchier; hats later; the listing free or $0.99; Penny's credit; the Pages mirror (you)  
+- [ ] Tomato Man: a new name for the RUN mode; the planet tomato (her art is in, parked: say yes and it crosses Dunes at Dusk and Eclipse once a level) or something catchier; hats later; the listing free or $0.99; Penny's credit; the Pages mirror (you)  
 - [x] Flatulence Fighter ruled 7 Nov: a miss is a strike with a little fart; story only, a Challenge mode later; portrait stays; seven beats for now (you)  
 - [ ] Flatulence Fighter: the medals' names; the table card's line; the lesson's move beat once Fable explains it (you)  
 - [ ] Keepsies: the five foot ring, the flick's own direction, the circle's size, the place phase, the camera during a shot, the skyline; the statues (the limestone shapes Astra draws in round 4, or her figures); the title drops "Thirteen marbles in a cross"; the name; the ladder's rungs; the Arena's numbers; Meshy, paid (you)  
@@ -64,7 +64,8 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Chapter 5 Tomato Man B, THE RUN, with chapter 8 (her run art) inside it, sunstruck 1125c0d4 (Fable, 7 Nov)  
 - [x] Chapter 6 Shutterbug R10, film stocks, rank, keepsakes (sb-m2-13), the four verbs (sb-m2-15) (Fable, 7 Nov)  
 - [x] Chapter 7 Shutterbug round 10 art wired, sb-m2-14 (Fable, 7 Nov)  
-- [ ] Chapters 9 on, the new packs' wiring as each lands: Keepsies round 4, The Hero, FF round 3, Sunforge round 3, Pixel Petri round 1 (Fable writes, Opus builds)  
+- [x] Chapter 10 Tomato Man The Hero wired, sunstruck d5e80d9 (Fable, 7 Nov; waits for your line)  
+- [ ] Chapters 9 on, the new packs' wiring as each lands: Keepsies round 4, FF round 3, Sunforge round 3, Pixel Petri round 1, Shutterbug round 11 (Fable writes, Opus builds)  
 - [ ] If the box dies mid chapter, the next night starts the same kickoff and resumes from the first step not DONE (you, Opus)
 
 ## 5. The lines and the Pixel (you)
@@ -73,6 +74,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Shutterbug sb-m2-13, 14 and 15 (R10 code, round 10 art, the four verbs): LIVE 7 Nov, main 5bfb72309 (you ran the line)  
 - [ ] Shutterbug sb-m2-18 (the guardians' phases; ships 17, the Loom and the Wasp, and 16, the moves taught, too): `! bash /home/codespace/sb-drafts/sb-m2-18/deploy-sb-m2-18.sh` (you)  
 - [ ] Flatulence Fighter m5 (a miss is a strike with a little toot; m4's plates and cards under it): `! bash /home/codespace/ff-drafts/deploy-ff-m5.sh` (you)  
+- [ ] Tomato Man The Hero (the thirteen produce bodies walk, dash and turn on the tomato's rig; her builder heads): `! bash /home/codespace/tm-drafts/deploy-tomato-man-hero.sh` (you)  
 - [ ] Run each deploy line Opus left at the top of START-HERE.md, one at a time at an idle prompt (you)  
 - [ ] Play each game on the Pixel after its line and write your notes in one message; Fable turns them into the next chapter (you)  
 - [ ] Open Tomato Man with ?lab=1 and fix one level you hate; Copy JSON and paste it to Fable (you)  
