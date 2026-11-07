@@ -14,14 +14,14 @@
  * here as data.
  */
 import * as THREE from 'three';
-import { makeMarbleMesh } from '../render/marbleMesh.js?v=20261106a';
-import { bodySpec } from '../core/marbleBody.js?v=20261106a';
+import { makeMarbleMesh } from '../render/marbleMesh.js?v=20261107a';
+import { bodySpec } from '../core/marbleBody.js?v=20261107a';
 
-export { TIER_ORDER, TIER_LABEL } from './tiers.js?v=20261106a';
-import { TIER_ORDER } from './tiers.js?v=20261106a';
+export { TIER_ORDER, TIER_LABEL } from './tiers.js?v=20261107a';
+import { TIER_ORDER } from './tiers.js?v=20261107a';
 // the word ladders live in a file with no imports so they can be measured
 // against the catalogue in Node, where three.js cannot follow
-export { hardnessWord, weightWord } from './words.js?v=20261106a';
+export { hardnessWord, weightWord } from './words.js?v=20261107a';
 
 
 /**

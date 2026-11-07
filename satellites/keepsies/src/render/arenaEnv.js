@@ -8,8 +8,8 @@
  * before there is art (DESIGN 9.8).
  */
 import * as THREE from 'three';
-import { art } from './art.js?v=20261106a';
-import { CHALK_REPEATS, CHALK_STRIP, CROSS_R2, LAG_R2 } from './plates.js?v=20261106a';
+import { art } from './art.js?v=20261107a';
+import { CHALK_REPEATS, CHALK_STRIP, CROSS_R2, LAG_R2 } from './plates.js?v=20261107a';
 
 /* Astra's lot (pack v1, KEEPSIES_BUILD_PLAN.md step 3). One dirt tile is 60 cm: her grit then reads as grit and
    her pebbles at 3 to 7 mm sit beside a 16 mm mib the way real ones do. The tone is a plate decision, not a
@@ -138,6 +138,23 @@ export function buildRingerGround(stage, tuning, opts) {
     if (m.map) m.map.dispose();
     m.map = t; m.color.set(DIRT_TONE); m.needsUpdate = true;
   });
+  /* m4 (Astra round 3, DECISION 2): her fine dirt tile for the near camera, OFF by default (tuning render.dirtDetail):
+     a second sample at 0.25 m repeat blended at 0.18 over the albedo and faded out between 0.3 and 0.65 m of camera
+     distance; colour only, never a normal map */
+  if (tuning.render && tuning.render.dirtDetail) {
+    loader.load(art('env/dirt_detail.webp'), (dt) => {
+      dt.colorSpace = THREE.SRGBColorSpace; dt.wrapS = dt.wrapT = THREE.RepeatWrapping; dt.anisotropy = 8;
+      const m = disc.material, rep = discR * 2 / 0.25;
+      m.onBeforeCompile = (sh) => {
+        sh.uniforms.uDetail = { value: dt }; sh.uniforms.uDetailRep = { value: rep };
+        sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vCamDist; varying vec2 vDetailUv;')
+          .replace('#include <fog_vertex>', '#include <fog_vertex>\nvCamDist = length((modelViewMatrix * vec4(position, 1.0)).xyz); vDetailUv = uv;');
+        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D uDetail; uniform float uDetailRep; varying float vCamDist; varying vec2 vDetailUv;')
+          .replace('#include <map_fragment>', '#include <map_fragment>\n{ vec4 dd = texture2D(uDetail, vDetailUv * uDetailRep); float k = 0.18 * (1.0 - smoothstep(0.3, 0.65, vCamDist)); diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * (dd.rgb * 2.0), k); }');
+      };
+      m.needsUpdate = true;
+    });
+  }
 
   /* Astra's chalk as decals, lit by the lamp like the dirt they sit on (a basic material glowed cream in a
      marble's shadow and outshone the marbles). They drop first on the low tier: the drawn line stays. */
@@ -169,7 +186,7 @@ export function buildRingerGround(stage, tuning, opts) {
     ring.position.y = 0.0012;
     ring.receiveShadow = stage.tier.shadows !== 'off';
     ring.visible = false;
-    loader.load(art('env/chalk_stroke.webp'), (t) => {
+    loader.load(art('env/chalk_stroke_r3.png'), (t) => {   // m4: her round 3 export with its three breaks back (explicit clip polygons)
       t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.wrapS = THREE.RepeatWrapping;
       stroke.map = t; stroke.opacity = 0.85; stroke.needsUpdate = true;
       ring.visible = true; line.visible = false;

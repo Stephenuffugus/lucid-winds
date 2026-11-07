@@ -17,7 +17,7 @@
  * Every write goes through `meta/save.js`, which merges rather than overwrites,
  * so a second tab cannot spend your marbles out from under you.
  */
-import * as SAVE from './save.js?v=20261106a';
+import * as SAVE from './save.js?v=20261107a';
 
 /** Local midnight as a day number. The only clock reading in the game. */
 export function today(now) {

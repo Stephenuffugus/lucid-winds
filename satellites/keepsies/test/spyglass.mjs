@@ -13,7 +13,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { spyglassFor, scopePxPerM } from '../src/core/spyglass.js?v=20261106a';
+import { spyglassFor, scopePxPerM } from '../src/core/spyglass.js?v=20261107a';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const T = JSON.parse(readFileSync(join(HERE, '..', 'src', 'data', 'tuning.json'), 'utf8'));

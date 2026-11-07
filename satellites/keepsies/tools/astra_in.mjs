@@ -46,7 +46,7 @@ function imageSize(file) {
   return null;
 }
 if (CHECK) {
-  const bad = [], meta = JSON.parse(readFileSync(R2_JSON, 'utf8')), files = meta.files;
+  const bad = [], meta = JSON.parse(readFileSync(R2_JSON, 'utf8')), files = Object.assign({}, meta.files, JSON.parse(readFileSync(join(ROOT, 'src', 'data', 'astra_r3.json'), 'utf8')).files);   // round 2 and round 3
   let bytes = 0;
   for (const rel of Object.keys(files)) {
     const f = join(OUT, rel), cap = files[rel].cap;
@@ -176,5 +176,35 @@ for (const c of toConvert) {
 }
 await browser.close();
 writeFileSync(R2_JSON, JSON.stringify(meta2, null, 1) + '\n');
+
+/* ---------------------------------------------------------------- round 3 (m4, KEEPSIES_M4_BUILD_PLAN.md step 0) */
+/* from /workspaces/keepsies-astra-round3 (ASTRA3 to change it): the hold circle and its braced state, the spin marks, the dial cue
+   (SVG, 154 and 48 px, drawn as they will show), her chip at 152 by 56, the chalk stroke with its breaks (PNG, 2048 by 64, over
+   1600 wide by nature), the optional fine dirt tile (off by default). Her reticles are drawn inline by main.js from her numbers
+   (the radius moves, the strokes never scale), her snap card is inlined in index.html, her tier tiles, pills, shadow_dark and
+   owner marks are byte equal to what the game holds (retained), and her ground_shadow is round 2's under a new name (left). */
+const PACK3 = process.env.ASTRA3 || '/workspaces/keepsies-astra-round3/pack';
+const R3 = [
+  ['ui/hold_circle.svg', 'a_circle/hold_circle.svg', 2000], ['ui/hold_circle_braced.svg', 'a_circle/hold_circle_braced.svg', 2000],
+  ['ui/spin_marks.svg', 'a_circle/spin_marks.svg', 2000], ['ui/dial_cue.svg', 'a_circle/dial_cue.svg', 2000],
+  ['ui/player_chip_r3.png', 'e_plates/player_chip.png', 6000],
+  ['env/chalk_stroke_r3.png', 'c_close_view/chalk_stroke.png', 12000, { over: 1 }],
+  ['env/dirt_detail.webp', 'c_close_view/dirt_detail.webp', 150000]
+];
+if (existsSync(PACK3)) {
+  const anchors3 = JSON.parse(readFileSync(join(PACK3, 'anchors.json'), 'utf8')), meta3 = { _: 'Astra round 3: the anchors of the files in use and each file byte cap (tools/astra_in.mjs). Written by the tool.', files: {}, anchors: {} };
+  for (const [out, src, cap, o] of R3) {
+    mkdirSync(dirname(join(OUT, out)), { recursive: true });
+    copyFileSync(join(PACK3, 'assets', src), join(OUT, out));
+    meta3.files[out] = o && o.over ? { cap, over: 1 } : { cap };
+    const a = anchors3['assets/' + src]; if (a) meta3.anchors[out] = a;
+  }
+  // retained files whose round 3 anchors moved (the tier tiles' render box, the pills): recorded, never copied (byte equal to what the game holds)
+  for (const t of ['common', 'uncommon', 'rare', 'epic', 'grail']) for (const kind of ['tile', 'pill']) {
+    const a = anchors3['assets/e_plates/tier_' + t + '_' + kind + '.png']; if (a) meta3.anchors['ui/tier_' + t + '_' + kind + '.png'] = a;
+  }
+  writeFileSync(join(ROOT, 'src', 'data', 'astra_r3.json'), JSON.stringify(meta3, null, 1) + '\n');
+  console.log('ASTRA IN: round 3, ' + R3.length + ' files');
+}
 
 console.log('ASTRA IN: ' + n + ' files, ' + syms.length + ' symbols (' + icons.length + ' + ' + icons2.length + ' icons and 2 wordmarks), 3 icons, the thumb');

@@ -2,8 +2,8 @@
  * Astra's round 2 plates in numbers (m3 step 11). Every number the code uses for a plate lives here, in the unit her anchors use for that plate or at her
  * CSS display size where the plate draws at half its pixels; test/plates.mjs holds each one to src/data/astra_r2.json, and index.html's style sheet writes the same ones.
  */
-export const CHIP = { w: 176, h: 56, slice: 24, pipX0: 16, pipStep: 24, pipY: 39, pipSize: 16, nameBand: [10, 7, 156, 15] };
-export const TIER_TILE = { slice: 32, mark: [48, 10], markSize: 16, content: [12, 21, 72, 63] };
+export const CHIP = { w: 152, h: 56, slice: 24, pipX0: 16, pipStep: 20, pipY: 39, pipSize: 16, nameBand: [10, 7, 132, 15] };   // m4: her round 3 chip, 304 by 112 at 152 by 56, pips 20 apart
+export const TIER_TILE = { slice: 32, mark: [48, 10], markSize: 16, content: [13, 22, 70, 61] };   // m4: her round 3 render box inside the retained 192 tile
 export const TIER_PILL = { w: 280, h: 48, slice: 32, mark: [140, 10], markSize: 16, content: [12, 21, 256, 15] };
 export const LEVEL_STRIP = { w: 320, h: 60, slice: 28, mark: [27, 30], markSize: 24, level: [47, 9, 260, 18], reward: [47, 32, 260, 16] };
 export const POT_CLOTH = { w: 335, h: 240, slice: 40, stakeX0: 47.5, stakeStep: 60, stakeSize: 48 };

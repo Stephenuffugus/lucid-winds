@@ -2,10 +2,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { CHIP, TIER_TILE, TIER_PILL, LEVEL_STRIP, POT_CLOTH, HEIRLOOM, POUCH_MOUTH, POUCH, SHARE_MARBLE, SHARE_MATCH, CHALK_REPEATS, CHALK_STRIP, HORIZON, CROSS_R2, LAG_R2 } from '../src/render/plates.js?v=20261106a';
+import { CHIP, TIER_TILE, TIER_PILL, LEVEL_STRIP, POT_CLOTH, HEIRLOOM, POUCH_MOUTH, POUCH, SHARE_MARBLE, SHARE_MATCH, CHALK_REPEATS, CHALK_STRIP, HORIZON, CROSS_R2, LAG_R2 } from '../src/render/plates.js?v=20261107a';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const A = JSON.parse(readFileSync(join(ROOT, 'src/data/astra_r2.json'), 'utf8')).anchors;
+const A3 = JSON.parse(readFileSync(join(ROOT, 'src/data/astra_r3.json'), 'utf8')).anchors;   // m4: round 3 moved the chip and the tiles' render box
 const H = readFileSync(join(ROOT, 'index.html'), 'utf8');
 let fails = 0;
 const ok = (c, m) => { if (!c) { console.log('FAIL ' + m); fails++; } };
@@ -13,8 +14,8 @@ const same = (a, b, m) => ok(JSON.stringify(a) === JSON.stringify(b), m + ': cod
 const half = (a) => a.map(v => v / 2);
 const css = (t, m) => ok(H.indexOf(t) >= 0, 'index.html lacks ' + t + ' (' + m + ')');
 
-/* B2 the player chip: her pip centres are at x = 32 + 48k, y 78 of 352 by 112, drawn at half size */
-const chip = A['ui/player_chip_r2.png'];
+/* B2 the player chip: round 3, her pip centres are at x = 32 + 40k, y 78 of 304 by 112, drawn at half size */
+const chip = A3['ui/player_chip_r3.png'];   // m4: her round 3 chip, 304 by 112 at 152 by 56, pips 20 apart
 same(chip.pip_centers.map(half), Array.from({ length: 7 }, (_, k) => [CHIP.pipX0 + CHIP.pipStep * k, CHIP.pipY]), 'chip pip centres');
 same(half(chip.pip_size)[0], CHIP.pipSize, 'chip pip size');
 same(half(chip.name_band), CHIP.nameBand, 'chip name band');
@@ -26,7 +27,7 @@ css('max-width:' + CHIP.w + 'px', 'the chip stands at her width');
 for (const t of ['common', 'uncommon', 'rare', 'epic', 'grail']) {
   const tile = A['ui/tier_' + t + '_tile.png'], pill = A['ui/tier_' + t + '_pill.png'];
   same(half(tile.mark_center), TIER_TILE.mark, t + ' tile mark');
-  same(half(tile.content_box), TIER_TILE.content, t + ' tile content box');
+  same(half(A3['ui/tier_' + t + '_tile.png'].content_box), TIER_TILE.content, t + ' tile content box (round 3)');
   same(half(pill.mark_center), TIER_PILL.mark, t + ' pill mark');
   same(half(pill.content_box), TIER_PILL.content, t + ' pill content box');
   same(tile.nine_slice[0], TIER_TILE.slice, t + ' tile slice');

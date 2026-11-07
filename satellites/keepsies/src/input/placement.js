@@ -20,7 +20,7 @@
  * @param {object} G the game state of main.js (R, rig, moving, statuesPlacing, knuckle, placeDrag)
  * @param {{canAim:()=>boolean, gainRadPerPx?:number}} hooks
  */
-import { len2, sin, cos } from '../core/dmath.js?v=20261106a';
+import { len2, sin, cos } from '../core/dmath.js?v=20261107a';
 
 export function attachPlacement(canvas, G, hooks) {
   const h = hooks || {};

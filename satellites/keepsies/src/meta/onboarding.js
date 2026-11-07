@@ -15,7 +15,7 @@
  *
  * Handedness comes free: the side of the screen the first brace lands on.
  */
-import { clamp } from '../core/dmath.js?v=20261106a';
+import { clamp } from '../core/dmath.js?v=20261107a';
 
 /**
  * @param {{tuning:object, save:object, onSay:Function, onProgress:Function,
