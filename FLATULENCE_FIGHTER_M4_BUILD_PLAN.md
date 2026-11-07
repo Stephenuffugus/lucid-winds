@@ -19,13 +19,13 @@ CFG.hopLetGo 0.7 at line 951; hopCall at 1538; renderHands 2043; syncPads 2126; 
 
 | Step | State | Commit | Note |
 |---|---|---|---|
-| 0 | | | |
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
-| 6 | | | |
+| 0 | DONE 7 Nov | 3d8c92165 | 36 pad PNGs, the table card, the move card, the two lesson line plates into assets/deck/; her 34 call icons and the three pad marks inline in the ff-calls sprite (the Library's book call_book_library, Fold your hands call_fold, Clap call_clap, the move mark call_move, the fingers' idle mark call_finger); check green |
+| 1 | DONE 7 Nov | 3d8c92165 | every pad a nine sliced ::before layer (her insets 56 56 52 56, half in CSS) picked by state through a --pad-plate variable per id and class; cheeks gain lifted and squeak classes from renderCheeks; the idle plate draws its own gesture (the icon hidden, the role label 11 px at her band); words 15 px; pads clamp(120px, 15.3dvh, 170px). Shot play at 412x915 (probed, not opened): fingers and hands 84 percent paper plate pixels, the called left hand 6 percent accent and its rim band half accent, the cheeks 78 percent sage seat; no page errors |
+| 2 | DONE 7 Nov | 3d8c92165 | the circle ring is gone; a rim ring path per pad built from its real size (inset 9, radius 12, stroke 3, top centre clockwise, pathLength 100, refit by ResizeObserver); wait: dash 100r offset minus 100(1 minus r); hold: dash 100p offset 0; cheeks under a cover: the remaining noise, brass through perfectFrac then relief |
+| 3 | DONE 7 Nov | 3d8c92165 | hopCall already kept the icon and words at the destination and the 0.7 s grace from the hop event (c.fromAt); the source now shows her move mark rotated toward the destination with Let go; the letgo blink is off (her LEAVE plate carries the arrows), so reduced motion needs nothing |
+| 4 | DONE 7 Nov | 3d8c92165 | the table screen draws her card at up to 360 by 300 with the line in her paper band (top 77.7 percent, 20 percent tall); the How screen keeps the small picture with the line under it and gains the move step; the lesson has the move beat (a 3.2 s hymn book call that hops at 0.9 s; Follow it; Let go of the pad it left), You are ready splits on a screen 600 tall or less, her done plate shows 0.6 s between beats. Shot table card (probed): the picture region has a 60 lum stdev (an illustration, not a blank) |
+| 5 | DONE 7 Nov | 3d8c92165 | the lesson line is her plate on the tut card's ::before (nine slice 92 32 28 64 at half), the serif at 22 px (18 under 340 wide), text from 38 px in, clear of her mark; the deck keeps six 120 px targets at 320x568 and the stage gives up the height. Shot lesson beat 1 at 320x568 (probed): the sage seats at the foot, paper plates in the two rows above, no page errors |
+| 6 | DONE 7 Nov | 3d8c92165 | check green; the three visual shots above stand for the walk (one each, no image opened); /home/codespace/ff-drafts/deploy-ff-m4.sh DRY OK against main 9550354e0. LINE: `! bash /home/codespace/ff-drafts/deploy-ff-m4.sh` |
 
 ## THE LAWS
 The laws of FLATULENCE_FIGHTER_M2_BUILD_PLAN.md bind (code directly; the check per step; ONE shot per visual step,
