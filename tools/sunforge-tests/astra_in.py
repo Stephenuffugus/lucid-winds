@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Astra's Sunforge pack v1 into the game folder (SUNFORGE_BUILD_PLAN.md step 1). Re runnable; overwrites what it made.
+"""Astra's Sunforge pack into the game folder (SUNFORGE_BUILD_PLAN.md step 1; v2 the blocks, SUNFORGE_V2_BUILD_PLAN.md
+step 0). Re runnable; overwrites what it made. v2 is a delta over v1, so the pack dir is the MERGED one (v1's assets with
+v2's copied over them: /workspaces/sunforge-astra-merged/pack). v2's cell_seam.png, weld_side.png and weld_inner_corner.png
+are byte equal to frames 7, 1 and 5 of its weld_trim_layers.png, which the composer already reads, so they are not copied;
+the twelve ring_XX compatibility sheets and the 128 core are not used by the game.
 
     python3 tools/sunforge-tests/astra_in.py [pack_dir]
 
@@ -14,7 +18,7 @@ import os, re, shutil, subprocess, sys
 from PIL import Image
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-PACK = sys.argv[1] if len(sys.argv) > 1 else '/workspaces/sunforge-astra-v1/pack'
+PACK = sys.argv[1] if len(sys.argv) > 1 else '/workspaces/sunforge-astra-merged/pack'
 A = os.path.join(PACK, 'assets')
 GAME = os.path.join(ROOT, 'satellites', 'ring-stacker')
 OUT = os.path.join(GAME, 'assets')
@@ -24,15 +28,18 @@ COPY = {
   'core': ['b_core/core_states.png', 'b_core/core_corona.png', 'b_core/core_heat_shimmer.png'],
   'cells': ['c_cells_pieces/ring_faces_unmarked.png', 'c_cells_pieces/ring_marks_dark.png', 'c_cells_pieces/weld_trim_layers.png',
             'c_cells_pieces/falling_cell.png', 'c_cells_pieces/ghost_cell.png', 'c_cells_pieces/stick_flash.png',
-            'c_cells_pieces/sliding_past_streak.png'],
+            'c_cells_pieces/sliding_past_streak.png',
+            'c_cells_pieces/falling_cell_resting.png'],   # v2: the resting frame the piece heats to during the lock delay
   'board': ['d_board/play_plate.webp', 'd_board/grid_texture.png', 'd_board/void_edge.png', 'd_board/sky_clear_flash.png'],
   'hud': ['e_hud_controls/button_%s_%s.png' % (b, s) for b in ('left', 'right', 'rotate', 'down', 'hold', 'pause') for s in ('idle', 'pressed')]
        + ['e_hud_controls/%s.png' % n for n in ('next_frame', 'hold_frame', 'score_plaque', 'rings_counter', 'level_badge',
                                                  'slam_idle', 'slam_pressed', 'slam_charged', 'mode_journey', 'mode_daily_gyre', 'mode_zen',
-                                                 'how_to_play_01', 'how_to_play_02', 'how_to_play_03', 'how_to_play_04')],
+                                                 'how_to_play_01', 'how_to_play_02', 'how_to_play_03', 'how_to_play_04',
+                                                 'how_to_play_05_drag_tap')],   # v2: the drag and tap plate
   'fx': ['f_fx/%s.png' % n for n in ('slam_shockwave', 'ring_crush_burst', 'void_swallow', 'inward_flow', 'quarter_turn_spin_01',
                                        'quarter_turn_spin_02', 'quarter_turn_spin_03', 'quarter_turn_spin_04', 'chain_x2', 'chain_x3',
-                                       'chain_x4', 'chain_x5', 'chain_x6', 'level_up_plate', 'game_over_plate')],
+                                       'chain_x4', 'chain_x5', 'chain_x6', 'level_up_plate', 'game_over_plate',
+                                       'almost_ring_notch', 'almost_ring_lit_seam')],   # v2: the almost ring's two cues
   'sharing': ['g_results_sharing/%s.png' % n for n in ('game_over_card_frame', 'share_square', 'daily_gyre_card')],
 }
 ICONS = ['left', 'right', 'down', 'rotate', 'hold', 'pause', 'sound', 'music', 'ghost', 'settings', 'home', 'share', 'retry',
