@@ -1,7 +1,7 @@
 # Studio checklist
 
 The repo copy of Stephen's Google Doc "Studio checklist" in Drive Astra
-(https://docs.google.com/document/d/1rymE9tjSMsNmjoKkWqrmvw_oOQt2AaqOpAXwXYVmUq0/edit). The Doc has real checkboxes. The old Doc (1gzUSKkQ...) sat unchanged from 5 Nov 02:20 until this one replaced it on 6 Nov; it is renamed OLD and left in place.
+(https://docs.google.com/document/d/1eOgqORzNs06-mjKWJsyZrDJGmWUTSV_CVJHaqvs44Gk/edit). The Doc has real checkboxes. Replaced 7 Nov 03:00 UTC (the 6 Nov Doc 1rymE9tj... is renamed OLD (6 Nov) and left in place; the 5 Nov one 1gzUSKkQ... too).
 When a line changes here, the Doc must change too: export the Doc as text/markdown first to carry over his ticks, then upload this file as text/markdown (Drive converts it to a Doc with live checkboxes) and rename the one it replaces. There is no Docs editor here.
 
 Everything planned, by game, as of 7 Nov 2026, 03:20 UTC. Open items come first in each section, finished ones under Done. Who does each one is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans with you). The working copy is docs/STUDIO-CHECKLIST.md in the repo. Four Astra packs came back on 7 Nov (Keepsies round 3, Flatulence Fighter round 2, Tomato Man gameplay art, Sunforge v2): vaulted as astra-four-packs-back-nov07, unpacked, planned; Opus wires them on the 7 Nov kickoff. Two new Astra rounds are written (Tomato Man The Run, Shutterbug round 10).
