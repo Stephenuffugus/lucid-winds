@@ -57,6 +57,6 @@ one commit as its own command, last.
 | 8 | LIVE 7 Nov ~18:05 UTC | 7 Nov (Fable, daytime) | her run pack wired inside chapter 5's stamp |
 | 9 | waits on the pack | | |
 | 10 | LIVE 7 Nov ~22:11 UTC | 7 Nov (Fable, daytime) | sunstruck d5e80d9 (thirteen bodies on the tomato's rig, her builder heads; the planet art in and parked for his call) on lucid-winds main 1c2388105 and Tomato_Man main |
-| 11 | STAMPED 7 Nov ~22:36 UTC, waits for his line | 7 Nov (Fable, daytime) | sunstruck fe645b1: Planet Tomató crosses the Dunes and the Eclipse once a level, its shadow the code's circle; `! bash /home/codespace/tm-drafts/deploy-tomato-man-planet.sh` |
+| 11 | LIVE 7 Nov ~22:47 UTC | 7 Nov (Fable, daytime) | sunstruck fe645b1 (Planet Tomató crosses the Dunes and the Eclipse once a level, its shadow the code's circle) on lucid-winds main d5b3a7a75 and Tomato_Man main, his line |
 | 11 | waits on the pack | | |
 | 12 | waits on the pack and his pick | | |
