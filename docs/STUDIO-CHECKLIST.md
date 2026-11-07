@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 7 Nov 2026, 15:05 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 7 Nov 2026, 17:55 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 1. The art, in this order (you, then Astra)
 
@@ -14,7 +14,7 @@ Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt
 - [ ] Tomato Man The Hero, the thirteen produce bodies in his five sheets so hats and the walk work on every body, the planet tomato: [Astra / Tomato Man / The Hero](https://drive.google.com/drive/folders/1DZmS0paU0pbfgeP1lwaqGbEHI_LWOqAz) (you)  
 - [ ] Flatulence Fighter round 3, the moving call's travel accent, the final teaching cards, a result line, IDEAS: [Astra / Flatulence Fighter / Round 3](https://drive.google.com/drive/folders/1ZP52O4yxsaJogYj22uusAX2qyzjTlh3O) (you)  
 - [ ] Sunforge round 3, only if you want any of chapter skies, the hold outline, overload, a weekly gyre: [Astra / Sunforge / Round 3](https://drive.google.com/drive/folders/1oZg8rD3G2y7ERX3Zm0se5McD9r4h4mWe) (you)  
-- [ ] Shutterbug round 11, the four yeses (the collapsing staircase, the swinging web strands, the window crosswind, the guardians' rage tells) and the Loom and Wasp arena pieces, her ideas last: [Astra / Shutterbug / Round 11] (the brief and KICKOFF-PROMPT.txt there and in docs/briefs/shutterbug/round11/) (you)  
+- [ ] Shutterbug round 11, the four yeses (the collapsing staircase, the swinging web strands, the window crosswind, the guardians' rage tells) and the Loom and Wasp arena pieces, her ideas last: [Astra / Shutterbug / Round 11](https://drive.google.com/drive/folders/1ukat54v_fLwi-Js-S_JqbgWfeJB_g-oU) (you)  
 - [ ] Pixel Petri round 1, THE LIVING YEAR (seasons, weather, eggs, sleep, migration, the marks), IDEAS first: [Astra / Pixel Petri](https://drive.google.com/drive/folders/1SAbhhQGta1tbX1oBz0QyK66nwaC_dhb7) (you)  
 - [ ] Still out from before, when a slot frees: [Sixfold](https://drive.google.com/drive/folders/1_oNXfJWWox5-vz8CJUEx5PE7O-QMO6hm), [Aura Farm](https://drive.google.com/drive/folders/19G9FuxQEIJ2XfOi_sFE0edkFVYQ-MIkj), [Orb Orchard](https://drive.google.com/drive/folders/1Wo7AtBoFvg0ONNU7NSbdVVWF6m0mRaY4), [Dewball store kit](https://drive.google.com/drive/folders/19CCGoJDoG27NxRya3YFHiZRSjrCz2rrp) (you)  
 - [ ] Upload each zip into a Fable session as it comes back (or drop it in the game's Drive folder and say so); Fable vaults it, unpacks it and adds its wiring chapter to the one plan (you, then Fable)
@@ -62,7 +62,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Chapter 3 Keepsies m4, the circle and reticles at 154 px, the snap card, the chalk, the chip (Opus)  
 - [ ] Chapter 4 Tomato Man A, canopies you walk under, the walk fixed, the seed and critter art in (Opus)  
 - [x] Chapter 5 Tomato Man B, THE RUN, with chapter 8 (her run art) inside it, sunstruck 1125c0d4 (Fable, 7 Nov)  
-- [ ] Chapter 6 Shutterbug R10, film stocks, rank, prints, then the four new verbs (Opus)  
+- [x] Chapter 6 Shutterbug R10, film stocks, rank, keepsakes (sb-m2-13), the four verbs (sb-m2-15) (Fable, 7 Nov)  
 - [x] Chapter 7 Shutterbug round 10 art wired, sb-m2-14 (Fable, 7 Nov)  
 - [ ] Chapters 9 on, the new packs' wiring as each lands: Keepsies round 4, The Hero, FF round 3, Sunforge round 3, Pixel Petri round 1 (Fable writes, Opus builds)  
 - [ ] If the box dies mid chapter, the next night starts the same kickoff and resumes from the first step not DONE (you, Opus)
@@ -70,7 +70,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 ## 5. The lines and the Pixel (you)
 
 - [ ] Tomato Man milestone B, THE RUN with Astra's art (carries milestone A if its line never ran): `! bash /home/codespace/tm-drafts/deploy-tomato-man-run.sh` (you)  
-- [ ] Shutterbug sb-m2-14 (round 10 art; ships sb-m2-13 too): `! bash /home/codespace/sb-drafts/sb-m2-14/deploy-sb-m2-14.sh` (you)  
+- [ ] Shutterbug sb-m2-15 (the four verbs; ships sb-m2-13 and 14 too, their lines are stale): `! bash /home/codespace/sb-drafts/sb-m2-15/deploy-sb-m2-15.sh` (you)  
 - [ ] Run each deploy line Opus left at the top of START-HERE.md, one at a time at an idle prompt (you)  
 - [ ] Play each game on the Pixel after its line and write your notes in one message; Fable turns them into the next chapter (you)  
 - [ ] Open Tomato Man with ?lab=1 and fix one level you hate; Copy JSON and paste it to Fable (you)  
