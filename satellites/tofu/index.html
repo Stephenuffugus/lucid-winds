@@ -75,6 +75,7 @@ html,body{height:100%;background:#1c1e24;overflow:hidden;font-family:system-ui,-
 .blob:before{left:26px}.blob:after{right:26px}
 @keyframes wob{0%,100%{transform:scale(1,1)}30%{transform:scale(1.06,.94)}60%{transform:scale(.96,1.05)}}
 .wordmark{max-width:min(420px,80%);display:block;margin:0 auto}
+.dish{display:block;width:min(240px,62vw);height:auto;aspect-ratio:4/3;margin:4px auto 0;object-fit:contain}
 .foot{font-size:16px;opacity:.55;margin-top:14px;line-height:1.6}
 .chip.ok:after,.dishBtn.done b:after{content:"";display:inline-block;width:4px;height:8px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg);margin-left:7px;vertical-align:1px}
 .land{display:none;font-size:16px;opacity:.7;margin:10px auto 0;max-width:420px;line-height:1.5}
@@ -275,8 +276,13 @@ const ASSET_FILES = [
   'tile_wall','tile_wall_top','tile_crack','tile_grate','tile_knife','water_body','water_surface_4f',
   'pool_soy','pool_brine','pool_brine_bubbles_4f','floor_freezer','pan_slab','pan_glow_3f','bowl','bowl_ring',
   'eye_block_3f','shadow_tile','bg_counter','chopsticks_patrol_4f','chopsticks_chase_4f','chopsticks_flee_4f',
-  'btn_jump','btn_squeeze','wordmark','label_zone','p_stink'
+  'btn_jump','btn_squeeze','wordmark','label_zone','p_stink',
+  'p_droplet','p_splat','p_steam','p_frost','p_bubble','p_spark','p_chunk',
+  'dish_plated','dish_hiyayakko','dish_dougan','dish_agedashi','dish_korid','dish_braised','dish_choudoufu','dish_special'
 ];
+const DISH_ART = ['dish_plated','dish_hiyayakko','dish_dougan','dish_agedashi','dish_korid','dish_braised','dish_choudoufu','dish_special']; // by level
+const dishImg = i => DISH_ART[i] ? `<img class="dish" src="${assetUrl(DISH_ART[i])}" alt="" onerror="this.remove()">` : '';
+const FRAME_MS = { water: 140, brine: 160, pan: 100, patrol: 160, chase: 80, flee: 90 }; // Astra's strip timings
 const ART_V = 1; // bump with every art change so the host's hard cache never serves old art
 const HI = (typeof devicePixelRatio === 'number' ? devicePixelRatio : 1) >= 2; // @2x only on dense screens
 const assetUrl = name => 'assets/' + name + (HI ? '@2x' : '') + '.png?v=' + ART_V;
@@ -487,7 +493,7 @@ function collideAxis(axis, delta) {
 }
 function smash(tx, ty) {
   world.grid[ty][tx] = '.'; SFX.smash(); squash(1.15, 0.9);
-  for (let i = 0; i < 12; i++) spawn({ x: tx + 0.5, y: ty + 0.5, vx: rnd(-5, 5), vy: rnd(-7, 1), g: 30, life: rnd(0.5, 0.9), r: rnd(0.06, 0.14), col: '#5a6375', shape: 'r' });
+  for (let i = 0; i < 12; i++) spawn({ x: tx + 0.5, y: ty + 0.5, vx: rnd(-5, 5), vy: rnd(-7, 1), g: 30, life: rnd(0.5, 0.9), r: rnd(0.06, 0.14), col: '#5a6375', shape: 'r', sp: 'p_chunk' });
 }
 function updateState(dt, cz) {
   const absorb = P.frozen ? 0 : (P.thawed ? 2 : 1);
@@ -529,7 +535,7 @@ function updateState(dt, cz) {
 }
 function die(reason) {
   if (P.dead) return; P.puddle = (reason === 'Spotted.' || P.inWater) ? { x: P.x, y: P.y + P.hh } : null; P.dead = true; P.deadT = 0.9; deaths++; toast(reason, 1.3); SFX.dead();
-  for (let i = 0; i < 16; i++) spawn({ x: P.x, y: P.y, vx: rnd(-6, 6), vy: rnd(-9, 2), g: 30, life: rnd(0.5, 1), r: rnd(0.06, 0.16), col: bodyColor() });
+  for (let i = 0; i < 16; i++) spawn({ x: P.x, y: P.y, vx: rnd(-6, 6), vy: rnd(-9, 2), g: 30, life: rnd(0.5, 1), r: rnd(0.06, 0.16), col: bodyColor(), sp: 'p_splat' });
 }
 function sunbeamServe(n) { // Sky Wolf earn standard: 30 a day per game (SUNBEAM_EARN_POLICY.md)
   let grant = 0;
@@ -575,7 +581,7 @@ function updateChops(dt) {
     const aheadX = Math.floor(nx + c.dir * c.hw), footY = Math.floor(c.y + c.hh - 0.1);
     if (isSolidCh(tileAt(aheadX, footY)) || !isSolidCh(tileAt(aheadX, footY + 1))) { if (c.mode === 'patrol') c.dir = -c.dir; }
     else c.x = nx;
-    c.anim += dt * (c.mode === 'patrol' ? 4 : 9);
+    c.anim += dt * 1000 / FRAME_MS[c.mode];
     if (!P.dead && Math.abs(P.x - c.x) < P.hw + c.hw && Math.abs(P.y - c.y) < P.hh + c.hh) die('Grabbed.');
   }
 }
@@ -607,12 +613,12 @@ function rayLen(x0, y0, ang, max) { // for drawing cones
 
 // ───────────────────────────── 7. PARTICLES & TOASTS ───────────────
 function spawn(o) { const p = Object.assign({ x: 0, y: 0, vx: 0, vy: 0, g: 0, life: 0.6, r: 0.06, col: '#fff', shape: 'c', grow: 0 }, o); p.max = p.life; parts.push(p); if (parts.length > 500) parts.splice(0, parts.length - 500); }
-const droplet = (x, y, soy = 0) => spawn({ x, y, vx: rnd(-2.5, 2.5), vy: rnd(-3, 0), g: 30, life: 0.6, r: 0.05, col: soy > 0.3 ? '#4a2a12' : '#4696dc' });
-const steam = (x, y) => spawn({ x, y, vx: rnd(-0.4, 0.4), vy: rnd(-1.6, -0.8), life: rnd(0.7, 1.2), r: 0.1, grow: 0.35, col: 'rgba(255,255,255,0.55)' });
-const frost = (x, y) => spawn({ x, y, vx: rnd(-0.5, 0.5), vy: rnd(-0.8, 0.2), life: rnd(0.5, 1), r: 0.04, col: '#e6f6ff', shape: 's' });
-const bubble = (x, y) => spawn({ x, y, vx: rnd(-0.3, 0.3), vy: rnd(-2, -1), life: rnd(0.5, 1.2), r: 0.05, col: 'rgba(220,240,255,0.7)', shape: 'o' });
+const droplet = (x, y, soy = 0) => spawn({ x, y, vx: rnd(-2.5, 2.5), vy: rnd(-3, 0), g: 30, life: 0.6, r: 0.05, col: soy > 0.3 ? '#4a2a12' : '#4696dc', sp: soy > 0.3 ? '' : 'p_droplet' });
+const steam = (x, y) => spawn({ x, y, vx: rnd(-0.4, 0.4), vy: rnd(-1.6, -0.8), life: rnd(0.7, 1.2), r: 0.1, grow: 0.35, col: 'rgba(255,255,255,0.55)', sp: 'p_steam' });
+const frost = (x, y) => spawn({ x, y, vx: rnd(-0.5, 0.5), vy: rnd(-0.8, 0.2), life: rnd(0.5, 1), r: 0.04, col: '#e6f6ff', shape: 's', sp: 'p_frost' });
+const bubble = (x, y) => spawn({ x, y, vx: rnd(-0.3, 0.3), vy: rnd(-2, -1), life: rnd(0.5, 1.2), r: 0.05, col: 'rgba(220,240,255,0.7)', shape: 'o', sp: 'p_bubble' });
 const wisp = (x, y) => spawn({ x, y, vx: rnd(-0.3, 0.3), vy: rnd(-1.4, -0.7), life: rnd(0.8, 1.3), r: 0.12, col: '#7fbf5f', shape: 'w' });
-const spark = (x, y) => spawn({ x, y, vx: rnd(-0.6, 0.6), vy: rnd(-2.5, -1), g: 2, life: rnd(0.3, 0.7), r: 0.035, col: '#ff9a3c' });
+const spark = (x, y) => spawn({ x, y, vx: rnd(-0.6, 0.6), vy: rnd(-2.5, -1), g: 2, life: rnd(0.3, 0.7), r: 0.035, col: '#ff9a3c', sp: 'p_spark' });
 function ambient(dt) {
   for (const z of world.zones) {
     if (rnd() > dt * 1.4) continue;
@@ -699,13 +705,13 @@ function drawGrate(tx, ty) {
 }
 function drawWater(tx, ty) {
   const surf = tileAt(tx, ty - 1) !== '~'; const s = surf ? (spr('water_surface') || spr('water_body')) : spr('water_body');
-  if (s) { drawSpr(s, tx, ty, 1, 1, animT * 5); return; }
+  if (s) { drawSpr(s, tx, ty, 1, 1, animT * 1000 / FRAME_MS.water); return; }
   ctx.fillStyle = 'rgba(70,150,220,0.55)'; ctx.fillRect(tx, ty, 1, 1);
   if (surf) { ctx.strokeStyle = 'rgba(200,230,255,0.8)'; ctx.lineWidth = 0.05; ctx.beginPath(); for (let i = 0; i <= 4; i++) { const x = tx + i / 4, y = ty + 0.06 + Math.sin(animT * 4 + x * 5) * 0.03; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); }
 }
 function drawPool(tx, ty, kind) {
   const s = spr(kind === 'soy' ? 'pool_soy' : 'pool_brine');
-  if (s) { drawSpr(s, tx, ty, 1, 1); if (kind === 'brine' && spr('pool_brine_bubbles')) drawSpr(spr('pool_brine_bubbles'), tx, ty, 1, 1, animT * 5); return; }
+  if (s) { drawSpr(s, tx, ty, 1, 1); if (kind === 'brine' && spr('pool_brine_bubbles')) drawSpr(spr('pool_brine_bubbles'), tx, ty, 1, 1, animT * 1000 / FRAME_MS.brine); return; }
   ctx.fillStyle = kind === 'soy' ? '#3a1f0e' : '#5a7832'; ctx.fillRect(tx, ty, 1, 1);
   ctx.fillStyle = kind === 'soy' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.08)'; ctx.fillRect(tx + 0.1, ty + 0.08, 0.8, 0.06);
 }
@@ -718,7 +724,7 @@ function drawFreezer(tx, ty) {
 }
 function drawPan(tx, ty) {
   const s = spr('pan_slab'), gl = spr('pan_glow');
-  if (s) { if (gl) drawSpr(gl, tx, ty, 1, 1, animT * 8); drawSpr(s, tx, ty, 1, 1); return; }
+  if (s) { if (gl) drawSpr(gl, tx, ty, 1, 1, animT * 1000 / FRAME_MS.pan); drawSpr(s, tx, ty, 1, 1); return; }
   const grd = ctx.createLinearGradient(0, ty + 0.1, 0, ty + 0.72); grd.addColorStop(0, 'rgba(255,122,30,0)'); grd.addColorStop(1, 'rgba(255,122,30,0.45)');
   ctx.fillStyle = grd; ctx.fillRect(tx, ty + 0.1, 1, 0.62);
   ctx.strokeStyle = 'rgba(255,170,80,0.5)'; ctx.lineWidth = 0.03; ctx.beginPath();
@@ -783,7 +789,7 @@ function drawEyes() {
 function drawChops() {
   for (const c of world.chops) {
     const s = spr('chopsticks_' + c.mode);
-    if (s) { ctx.save(); ctx.translate(c.x, c.y); ctx.scale(c.dir < 0 ? 1 : -1, 1); drawSpr(s, -0.375, -0.625, 0.75, 1.25, c.anim); ctx.restore(); continue; }
+    if (s) { ctx.save(); ctx.translate(c.x, c.y); ctx.scale(c.dir < 0 ? -1 : 1, 1); drawSpr(s, -0.375, -0.625, 0.75, 1.25, c.anim); ctx.restore(); continue; }
     const pinch = c.mode === 'chase' ? 0.08 + Math.abs(Math.sin(c.anim * 2)) * 0.2 : c.mode === 'flee' ? 0.3 : 0.14 + Math.sin(c.anim) * 0.05;
     const lean = c.mode === 'chase' ? c.dir * 0.18 : c.mode === 'flee' ? -c.dir * 0.2 : 0;
     ctx.strokeStyle = '#d2a86a'; ctx.lineWidth = 0.09; ctx.lineCap = 'round'; ctx.beginPath();
@@ -865,7 +871,9 @@ function drawFace(cx, cy) {
 function drawParts() {
   for (const p of parts) {
     const a = clamp(p.life / p.max, 0, 1); ctx.globalAlpha = a; ctx.fillStyle = p.col; ctx.strokeStyle = p.col;
-    if (p.shape === 'r') ctx.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+    const ps = p.sp && spr(p.sp);
+    if (ps) { const w = p.r * 2.6, h = w * ps.fh / ps.fw; drawSpr(ps, p.x - w / 2, p.y - h / 2, w, h); }
+    else if (p.shape === 'r') ctx.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
     else if (p.shape === 's') { ctx.lineWidth = 0.025; ctx.beginPath(); ctx.moveTo(p.x - p.r, p.y); ctx.lineTo(p.x + p.r, p.y); ctx.moveTo(p.x, p.y - p.r); ctx.lineTo(p.x, p.y + p.r); ctx.stroke(); }
     else if (p.shape === 'o') { ctx.lineWidth = 0.02; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.stroke(); }
     else if (p.shape === 'w' && spr('p_stink')) { const w = p.r * 2.4; drawSpr(spr('p_stink'), p.x - w / 2, p.y - w * 4 / 3, w, w * 4 / 3); }
@@ -961,14 +969,14 @@ function showTitle() {
 }
 function showRecipe(i) {
   mode = 'card'; cardLevel = i; loadLevel(i); overlay.classList.remove('hidden'); const L = LEVELS[i];
-  card.innerHTML = `<div class="eyebrow">TONIGHT'S DISH · ${i + 1} / ${LEVELS.length}</div><h2>${L.dish}</h2><p class="sub">${L.sub}</p>
+  card.innerHTML = `<div class="eyebrow">TONIGHT'S DISH · ${i + 1} / ${LEVELS.length}</div>${dishImg(i)}<h2>${L.dish}</h2><p class="sub">${L.sub}</p>
     <div class="chips"><span class="chip" style="opacity:.6;border:0">ARRIVE</span>${recipeChips(L)}</div>
     <div class="hint">${L.hint}</div>
     <div class="row"><button class="act" data-act="start">COOK</button><button class="act ghost" data-act="title">MENU</button></div>`;
 }
 function showServed() {
   overlay.classList.remove('hidden'); const L = world.L, st = stateLabel();
-  card.innerHTML = `<div class="eyebrow">SERVED</div><h2>${L.dish}</h2>
+  card.innerHTML = `<div class="eyebrow">SERVED</div>${dishImg(world.idx)}<h2>${L.dish}</h2>
     <div class="chips">${recipeChips(L)}</div>
     <p class="stats">Arrived ${st.main}${st.tags.length ? ' · ' + st.tags.join(' · ') : ''}<br>${levelTime.toFixed(1)}s · ${deaths} respawn${deaths === 1 ? '' : 's'}${best[world.idx] && best[world.idx] < +levelTime.toFixed(1) ? ` · best ${best[world.idx]}s` : ' · new best'}</p>
     <div class="row">${world.idx + 1 < LEVELS.length ? `<button class="act" data-act="next">NEXT DISH</button>` : `<button class="act" data-act="title">THAT'S THE MENU</button>`}<button class="act ghost" data-act="restart">AGAIN</button><button class="act ghost" data-act="title">MENU</button></div>`;
