@@ -1,0 +1,141 @@
+# TOFU — asset checklist
+
+Complete: 68 base PNGs + 68 @2x PNGs + editable wordmark.svg. Every export listed below.
+
+- [x] `bg_counter.png` — 512 × 512. Periodic seamless texture; peak-to-peak channel variation 2/255.
+- [x] `bg_counter@2x.png` — 1024 × 1024. Periodic seamless texture; peak-to-peak channel variation 2/255.
+- [x] `bowl.png` — 64 × 64. As specified.
+- [x] `bowl@2x.png` — 128 × 128. As specified.
+- [x] `bowl_ring.png` — 96 × 96. Only baked glow; transparent center, green success cue.
+- [x] `bowl_ring@2x.png` — 192 × 192. Only baked glow; transparent center, green success cue.
+- [x] `btn_jump.png` — 160 × 160. As specified.
+- [x] `btn_jump@2x.png` — 320 × 320. As specified.
+- [x] `btn_squeeze.png` — 160 × 160. As specified.
+- [x] `btn_squeeze@2x.png` — 320 × 320. As specified.
+- [x] `chip_firm.png` — 40 × 40. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_firm@2x.png` — 80 × 80. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_fried.png` — 40 × 40. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_fried@2x.png` — 80 × 80. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_frozen.png` — 40 × 40. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_frozen@2x.png` — 80 × 80. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_plain.png` — 40 × 40. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_plain@2x.png` — 80 × 80. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_rinse.png` — 40 × 40. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_rinse@2x.png` — 80 × 80. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_silken.png` — 40 × 40. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_silken@2x.png` — 80 × 80. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_soy.png` — 40 × 40. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_soy@2x.png` — 80 × 80. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_stinky.png` — 40 × 40. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chip_stinky@2x.png` — 80 × 80. Monochrome #f3efe6; 3px strokes. Fried shape is monochrome per UI contract.
+- [x] `chopsticks_chase_4f.png` — 192 × 80; 4 frames, 48 × 80 each. 4 alternating-foot poses; right-facing. Suggested 80ms/frame.
+- [x] `chopsticks_chase_4f@2x.png` — 384 × 160; 4 frames, 96 × 160 each. 4 alternating-foot poses; right-facing. Suggested 80ms/frame.
+- [x] `chopsticks_flee_4f.png` — 192 × 80; 4 frames, 48 × 80 each. 4 alternating-foot poses; right-facing. Suggested 90ms/frame.
+- [x] `chopsticks_flee_4f@2x.png` — 384 × 160; 4 frames, 96 × 160 each. 4 alternating-foot poses; right-facing. Suggested 90ms/frame.
+- [x] `chopsticks_patrol_4f.png` — 192 × 80; 4 frames, 48 × 80 each. 4 alternating-foot poses; right-facing. Suggested 160ms/frame.
+- [x] `chopsticks_patrol_4f@2x.png` — 384 × 160; 4 frames, 96 × 160 each. 4 alternating-foot poses; right-facing. Suggested 160ms/frame.
+- [x] `dish_agedashi.png` — 256 × 192. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_agedashi@2x.png` — 512 × 384. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_braised.png` — 256 × 192. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_braised@2x.png` — 512 × 384. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_choudoufu.png` — 256 × 192. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_choudoufu@2x.png` — 512 × 384. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_dougan.png` — 256 × 192. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_dougan@2x.png` — 512 × 384. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_hiyayakko.png` — 256 × 192. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_hiyayakko@2x.png` — 512 × 384. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_korid.png` — 256 × 192. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_korid@2x.png` — 512 × 384. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_plated.png` — 256 × 192. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_plated@2x.png` — 512 × 384. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_special.png` — 256 × 192. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `dish_special@2x.png` — 512 × 384. Transparent finished dish; centered and bottom aligned at y=180.
+- [x] `eye_block_3f.png` — 192 × 64; 3 frames, 64 × 64 each. Open / half / closed, iris LEFT. Blink poses, not continuous 3-frame loop.
+- [x] `eye_block_3f@2x.png` — 384 × 128; 3 frames, 128 × 128 each. Open / half / closed, iris LEFT. Blink poses, not continuous 3-frame loop.
+- [x] `face_cold.png` — 64 × 64. As specified.
+- [x] `face_cold@2x.png` — 128 × 128. As specified.
+- [x] `face_dead.png` — 64 × 64. As specified.
+- [x] `face_dead@2x.png` — 128 × 128. As specified.
+- [x] `face_happy.png` — 64 × 64. As specified.
+- [x] `face_happy@2x.png` — 128 × 128. As specified.
+- [x] `face_hot.png` — 64 × 64. As specified.
+- [x] `face_hot@2x.png` — 128 × 128. As specified.
+- [x] `face_neutral.png` — 64 × 64. As specified.
+- [x] `face_neutral@2x.png` — 128 × 128. As specified.
+- [x] `face_sneak.png` — 64 × 64. As specified.
+- [x] `face_sneak@2x.png` — 128 × 128. As specified.
+- [x] `face_strain.png` — 64 × 64. As specified.
+- [x] `face_strain@2x.png` — 128 × 128. As specified.
+- [x] `floor_freezer.png` — 64 × 64. As specified.
+- [x] `floor_freezer@2x.png` — 128 × 128. As specified.
+- [x] `icon_192.png` — 192 × 192. Artwork within center 80%; transparent rounded corners.
+- [x] `icon_192@2x.png` — 384 × 384. Artwork within center 80%; transparent rounded corners.
+- [x] `icon_512.png` — 512 × 512. Artwork within center 80%; transparent rounded corners.
+- [x] `icon_512@2x.png` — 1024 × 1024. Artwork within center 80%; transparent rounded corners.
+- [x] `icon_maskable_512.png` — 512 × 512. Artwork within center 80%; opaque full-bleed maskable background.
+- [x] `icon_maskable_512@2x.png` — 1024 × 1024. Artwork within center 80%; opaque full-bleed maskable background.
+- [x] `label_zone.png` — 48 × 14. Optional empty label pill; labels supplied by game.
+- [x] `label_zone@2x.png` — 96 × 28. Optional empty label pill; labels supplied by game.
+- [x] `p_bubble.png` — 12 × 12. As specified.
+- [x] `p_bubble@2x.png` — 24 × 24. As specified.
+- [x] `p_chunk.png` — 20 × 20. As specified.
+- [x] `p_chunk@2x.png` — 40 × 40. As specified.
+- [x] `p_droplet.png` — 16 × 16. As specified.
+- [x] `p_droplet@2x.png` — 32 × 32. As specified.
+- [x] `p_frost.png` — 16 × 16. As specified.
+- [x] `p_frost@2x.png` — 32 × 32. As specified.
+- [x] `p_spark.png` — 12 × 12. As specified.
+- [x] `p_spark@2x.png` — 24 × 24. As specified.
+- [x] `p_splat.png` — 24 × 24. As specified.
+- [x] `p_splat@2x.png` — 48 × 48. As specified.
+- [x] `p_steam.png` — 32 × 32. As specified.
+- [x] `p_steam@2x.png` — 64 × 64. As specified.
+- [x] `p_stink.png` — 24 × 32. As specified.
+- [x] `p_stink@2x.png` — 48 × 64. As specified.
+- [x] `pan_glow_3f.png` — 192 × 64; 3 frames, 64 × 64 each. 3 frames; emissive orange rim and shimmer, no baked halo. Suggested 100ms/frame.
+- [x] `pan_glow_3f@2x.png` — 384 × 128; 3 frames, 128 × 128 each. 3 frames; emissive orange rim and shimmer, no baked halo. Suggested 100ms/frame.
+- [x] `pan_slab.png` — 64 × 64. Top 36px transparent; slab fills lower 28px.
+- [x] `pan_slab@2x.png` — 128 × 128. Top 36px transparent; slab fills lower 28px.
+- [x] `pool_brine.png` — 64 × 64. As specified.
+- [x] `pool_brine@2x.png` — 128 × 128. As specified.
+- [x] `pool_brine_bubbles_4f.png` — 256 × 64; 4 frames, 64 × 64 each. 4 frames; rising bubbles fade on wrap; suggested 160ms/frame.
+- [x] `pool_brine_bubbles_4f@2x.png` — 512 × 128; 4 frames, 128 × 128 each. 4 frames; rising bubbles fade on wrap; suggested 160ms/frame.
+- [x] `pool_soy.png` — 64 × 64. As specified.
+- [x] `pool_soy@2x.png` — 128 × 128. As specified.
+- [x] `screenshot_frame.png` — 1080 × 1920. Optional portrait template; alpha window x=78,y=254,w=924,h=1512; insert gameplay behind.
+- [x] `screenshot_frame@2x.png` — 2160 × 3840. Optional portrait template; alpha window x=78,y=254,w=924,h=1512; insert gameplay behind.
+- [x] `shadow_tile.png` — 64 × 64. Optional tileable diagonal hatch included.
+- [x] `shadow_tile@2x.png` — 128 × 128. Optional tileable diagonal hatch included.
+- [x] `store_feature.png` — 1024 × 500. Full-bleed marketing image; exact tagline. @2x is resampled from generated master.
+- [x] `store_feature@2x.png` — 2048 × 1000. Full-bleed marketing image; exact tagline. @2x is resampled from generated master.
+- [x] `tile_crack.png` — 64 × 64. As specified.
+- [x] `tile_crack@2x.png` — 128 × 128. As specified.
+- [x] `tile_grate.png` — 64 × 64. As specified.
+- [x] `tile_grate@2x.png` — 128 × 128. As specified.
+- [x] `tile_knife.png` — 64 × 64. Tip-up interpretation: blade above bottom handle, with a 4px tip margin.
+- [x] `tile_knife@2x.png` — 128 × 128. Tip-up interpretation: blade above bottom handle, with a 4px tip margin.
+- [x] `tile_wall.png` — 64 × 64. Exact 64px tile; 8px top band with dark 2px border.
+- [x] `tile_wall@2x.png` — 128 × 128. Exact 64px tile; 8px top band with dark 2px border.
+- [x] `tile_wall_top.png` — 64 × 64. Optional cutting-board top included.
+- [x] `tile_wall_top@2x.png` — 128 × 128. Optional cutting-board top included.
+- [x] `tofu_firm.png` — 96 × 96. Faceless body; baseline y=88.
+- [x] `tofu_firm@2x.png` — 192 × 192. Faceless body; baseline y=88.
+- [x] `tofu_fried.png` — 96 × 96. Faceless body; baseline y=88.
+- [x] `tofu_fried@2x.png` — 192 × 192. Faceless body; baseline y=88.
+- [x] `tofu_frozen.png` — 96 × 96. Faceless body; baseline y=88.
+- [x] `tofu_frozen@2x.png` — 192 × 192. Faceless body; baseline y=88.
+- [x] `tofu_plain.png` — 96 × 96. Faceless body; baseline y=88.
+- [x] `tofu_plain@2x.png` — 192 × 192. Faceless body; baseline y=88.
+- [x] `tofu_puddle.png` — 64 × 16. As specified.
+- [x] `tofu_puddle@2x.png` — 128 × 32. As specified.
+- [x] `tofu_silken.png` — 96 × 96. Faceless body; baseline y=88; silken alpha 90%.
+- [x] `tofu_silken@2x.png` — 192 × 192. Faceless body; baseline y=88; silken alpha 90%.
+- [x] `tofu_spongy.png` — 96 × 96. Faceless body; baseline y=88.
+- [x] `tofu_spongy@2x.png` — 192 × 192. Faceless body; baseline y=88.
+- [x] `water_body.png` — 64 × 64. Tileable translucent water; 60% base alpha.
+- [x] `water_body@2x.png` — 128 × 128. Tileable translucent water; 60% base alpha.
+- [x] `water_surface_4f.png` — 256 × 64; 4 frames, 64 × 64 each. 4 frames; seamless phase steps; suggested 140ms/frame.
+- [x] `water_surface_4f@2x.png` — 512 × 128; 4 frames, 128 × 128 each. 4 frames; seamless phase steps; suggested 140ms/frame.
+- [x] `wordmark.png` — 1024 × 320. Custom vector lettering; bowl-shaped U; O counter transparent.
+- [x] `wordmark.svg` — 1024 × 320. Editable vector paths; no font dependency.
+- [x] `wordmark@2x.png` — 2048 × 640. Custom vector lettering; bowl-shaped U; O counter transparent.

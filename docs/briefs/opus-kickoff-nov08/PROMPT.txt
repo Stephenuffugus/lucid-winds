@@ -1,0 +1,28 @@
+Build tonight, autonomously, without asking me anything at any point, in this order, each from its plan (the plans are in the repo root
+of /workspaces/lucid-winds, branch add-sproing-jumper; read each plan whole before its first step and follow its STEPS in order and its
+LAWS without exception):
+1. Tomato Man THE PRESSURE from TOMATO_MAN_PRESSURE_BUILD_PLAN.md (steps 1 to 9). Its lane is a clone INSIDE lucid-winds
+   (/workspaces/lucid-winds/work/Tomato_Man, branch sunstruck); if origin/sunstruck is older than c0d71173 (THE WALK) the plan tells you
+   to stop that lane and say so in START-HERE.md, then go on with 2.
+2. TOFU milestone 1 from TOFU_BUILD_PLAN.md (steps 0 to 6). The art is unpacked at /workspaces/tofu-drop/pack/; the design is
+   /workspaces/tofu-drop/HANDOFF.md; if the game's index.html is not on the box, step 0 says to build v0.1 from the handoff first.
+3. Nothing in Pixel Petri (work/tiny-world): part 2 is built and merged, and it waits for Stephen's own look. Do not run its suites.
+Two lanes at most, and only when they are independent: Tomato Man and TOFU touch different folders, so one agent may build TOFU while
+you build Tomato Man; no review agents, no mutant runs, no third lane. Every agent works the way you do: Bash only (cat, sed, grep,
+python3 scripts in its scratchpad), never the Read, Edit or Write tools, never an image opened, never a question to me, absolute paths in
+every command (parallel shells share one cwd), and the same commit and push after every step.
+
+The laws in one breath: after every step run only the one check the plan names (seconds, no browser), nothing more; a visual step
+gets ONE screenshot of that screen, measured from the shell and written as "shot taken, not opened"; the one probe runs once at the
+step the plan names; never re-run a green; never run a suite to prove a test. Commit after every green step with the two attribution
+lines and push the branch at once (add-sproing-jumper for lucid-winds; sunstruck for the Tomato Man clone): a commit that is pushed can
+never be lost, and the box can stop at any minute. Never push main of any repo and never run a deploy: each plan ends with a deploy
+script run once with DRY=1 and its `! bash ...` line written into START-HERE.md for me. Update each plan's STATE block and add one line to
+START-HERE.md per step; no essays, no QUESTIONS entries, the DECISIONS blocks are mine to answer tomorrow. No dashes of any kind and no
+exclamation marks in player copy, 48 px targets, never change a saved id or key. Usage is short tonight (about a tenth of the month):
+read what the plan points at and nothing more, write once, do not re-read whole files to check what you wrote.
+
+The box dies 12 hours after boot: read `date -u -d @$(awk '/btime/{print $2}' /proc/stat)`, add 12 h, and stop 40 minutes before it
+with STATE and START-HERE written and everything pushed, whatever step you are on. If a step would need a permission I have not given
+(a push to main, a deploy, a commit outside the working directory), skip it, write its line for me, and go on. If a plan finishes
+early, go to the next; if the box runs out, the next session resumes from the first step not DONE.

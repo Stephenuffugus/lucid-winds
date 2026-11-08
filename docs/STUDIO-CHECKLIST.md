@@ -62,6 +62,8 @@ Each is built at its default if you say nothing; say the word and the plan chang
 
 - [ ] Start the session with the Tomato Man repo added as a working directory (`claude --add-dir /workspaces/Tomato_Man`), then paste docs/briefs/opus-kickoff-nov07/PROMPT.txt (you)  
 - [x] Chapter 1 Sunforge v5.2, the obsidian shards, the heating rest, the notch and lit seam, How 05: LIVE 8 Nov by your line (Fable)  
+- [ ] Tomato Man THE PRESSURE (his 8 Nov notes: fair lunge, lesson levels, pressure everywhere, cooling resources, finds on the route, progressive worlds): planned, the overnight builds it, your line after (Fable)  
+- [ ] TOFU m1 (the new tofu platformer; Astra's art in hand; the game file still yours to drop or Opus rebuilds v0.1): planned, the overnight builds it, your line after (Fable)  
 - [ ] Sunforge v5.3 THE SKINS (Obsidian, Bright, Clay, Painted; unlocks; one Sunbreaker theme on every screen): built 8 Nov, waits for your line `! bash /home/codespace/sf-drafts/deploy-sunforge-v3.sh` (Fable)  
 - [x] Chapter 2 Flatulence Fighter m4, the six pad plates, the ring, moving calls, the cards, the lesson line, and m5 (a miss is a strike): LIVE 7 Nov by your line (Fable)  
 - [x] Chapter 3 Keepsies m4, the circle and reticles at 154 px, the snap card, the chalk, the chip: LIVE 8 Nov by your line (Fable)  
