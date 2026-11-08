@@ -1,6 +1,6 @@
 /* Tomato Man's real gameplay in numbers (6 Nov): THE SEED TOSS and SUN CRITTERS through the game's own update, clock held, no image opened.
  *   (cd /workspaces/Tomato_Man && python3 -m http.server 8778 >/dev/null 2>&1 &)     serve the clone first
- *   node tools/tomato-man-tests/gameplay.mjs [seed|critters|run|runbot|hero|planet|split]
+ *   node tools/tomato-man-tests/gameplay.mjs [seed|critters|run|runbot|hero|planet|split|levels]
  * Ends GAMEPLAY OK or GAMEPLAY FAILED. One browser at a time on this box. */
 import { createRequire } from 'node:module';
 const require = createRequire('/workspaces/sws-tools/package.json');
@@ -183,6 +183,82 @@ if (only === 'split') {
     const best = (box) => { let bi = -1, bm = 1e9; for (let c = 1; c <= 4; c++) { const cell = cellPx(c); let n = 0, s = 0; for (let i = 0; i < cell.length; i += 4) { if (cell[i + 3] < 250) continue; n++; s += Math.abs(box[i] - cell[i]) + Math.abs(box[i + 1] - cell[i + 1]) + Math.abs(box[i + 2] - cell[i + 2]); } const m = s / n; if (m < bm) { bm = m; bi = c; } } return bi; };
     const seq = []; for (const st of [0, 14, 28, 42]) { r.stride = st; seq.push(best(grab())); } return seq; });
   say(wo.join(',') === '1,3,2,4', 'walking north the frames land 1,3,2,4 by the stride (left, right, left, right): ' + wo.join(','));
+}
+if (only === 'levels') {
+  /* THE PRESSURE step 8 (8 Nov, TOMATO_MAN_PRESSURE_BUILD_PLAN.md): the level bot plays all 26 levels through the real update at 60 Hz,
+     the clock held. It plans a route on a 20 px grid where shade is cheap and sun dear (A* every 0.3 s, the shade moves with the sun),
+     takes the finds and pickups beside each leg, waits in shade until cool before a crossing, dashes or uses SPF across a wide one,
+     drops a shade or tosses a seed ahead when it runs hot, escapes a locked lunge ring (a dash, or a seed into it) and pins a hunting
+     scorpion with a seed. Up to three tries a level (the second waits cooler, the third skips the extras); per level: finished or
+     where it burned, finds, time against par. Then ?lab=1 must still load. */
+  await ev(() => { window.__lvBot = (i, tryN) => {
+    const T = __TM, P = T.P, st = T.stick; T.hold(true); T.startLevel(i); const r = T._run(), L = r.L, f = r.feel;
+    const cap = Math.max(100, L.par * 4), CS = 20, GW = Math.ceil(L.worldW / CS), GH = Math.ceil(L.worldH / CS), N = GW * GH;
+    const sunCost = tryN === 1 ? 6 : 10, waitExp = tryN === 1 ? 8 : 1, D = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+    const key = k => { dispatchEvent(new KeyboardEvent('keydown', { key: k })); dispatchEvent(new KeyboardEvent('keyup', { key: k })); };
+    const cx = c => (c % GW) * CS + CS / 2, cy = c => Math.floor(c / GW) * CS + CS / 2, cellOf = (x, y) => Math.min(GH - 1, Math.max(0, Math.floor(y / CS))) * GW + Math.min(GW - 1, Math.max(0, Math.floor(x / CS)));
+    let sh = new Map();
+    const flag = c => { let v = sh.get(c); if (v === undefined) { const x = cx(c), y = cy(c); v = (T.shadedGeom(x, y) ? 1 : 0) | ((r.hot || []).some(h => D(x, y, h[0], h[1]) < h[2] + 8) ? 2 : 0); sh.set(c, v); } return v; };
+    const G = new Float64Array(N), from = new Int32Array(N), shut = new Uint8Array(N);
+    const plan = (tx, ty) => { sh = new Map(); G.fill(Infinity); from.fill(-1); shut.fill(0); const s = cellOf(P.x, P.y), g = cellOf(tx, ty);
+      const hp = [], hv = []; const push = (c, v) => { hp.push(c); hv.push(v); let k = hp.length - 1; while (k > 0) { const p = (k - 1) >> 1; if (hv[p] <= hv[k]) break; [hp[p], hp[k]] = [hp[k], hp[p]]; [hv[p], hv[k]] = [hv[k], hv[p]]; k = p; } };
+      const pop = () => { const c = hp[0], lc = hp.pop(), lv = hv.pop(); if (hp.length) { hp[0] = lc; hv[0] = lv; let k = 0; for (;;) { const a = 2 * k + 1, b = a + 1; let m = k; if (a < hp.length && hv[a] < hv[m]) m = a; if (b < hp.length && hv[b] < hv[m]) m = b; if (m === k) break; [hp[m], hp[k]] = [hp[k], hp[m]]; [hv[m], hv[k]] = [hv[k], hv[m]]; k = m; } } return c; };
+      G[s] = 0; push(s, D(P.x, P.y, tx, ty) / CS); let n = 0;
+      while (hp.length && n < 60000) { const c = pop(); if (shut[c]) continue; shut[c] = 1; n++; if (c === g) break; const x = c % GW, y = (c / GW) | 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; const nx = x + dx, ny = y + dy; if (nx < 1 || ny < 1 || nx >= GW - 1 || ny >= GH - 1) continue; const nc = ny * GW + nx; if (shut[nc]) continue;
+          const fl = flag(nc), len = dx && dy ? 1.414 : 1, gg = G[c] + len * ((fl & 1) ? 1 : sunCost) + ((fl & 2) ? 30 * len : 0);
+          if (gg < G[nc]) { G[nc] = gg; from[nc] = c; push(nc, gg + Math.hypot(nx - g % GW, ny - ((g / GW) | 0))); } } }
+      if (from[g] < 0 && g !== s) return [s, g]; const out = [g]; let c = g; while (c !== s && from[c] >= 0) { c = from[c]; out.push(c); } return out.reverse(); };
+    /* the route: the checkpoints in order and the exit; the finds and pickups each on its nearest leg, in order along it */
+    const must = [...L.checkpoints.filter(c => D(c[0], c[1], L.start[0], L.start[1]) > 80).map(c => ({ x: c[0], y: c[1], must: 1 })), { x: L.exit[0], y: L.exit[1], must: 1, exit: 1 }];
+    const legs = []; let a = { x: L.start[0], y: L.start[1] }; for (const m of must) { legs.push({ a, b: m, xs: [] }); a = m; }
+    if (tryN < 3) for (const o of [...r.finds.filter(q => !q.got).map(q => ({ x: q.x, y: q.y, find: q })), ...(r.pickups || []).map(q => ({ x: q.x, y: q.y, pick: q }))]) {
+      let bl = null, bd = 1e9, bt = 0; for (const lg of legs) { const vx = lg.b.x - lg.a.x, vy = lg.b.y - lg.a.y, ll = vx * vx + vy * vy || 1, t = Math.max(0, Math.min(1, ((o.x - lg.a.x) * vx + (o.y - lg.a.y) * vy) / ll)), d = D(o.x, o.y, lg.a.x + vx * t, lg.a.y + vy * t); if (d < bd) { bd = d; bl = lg; bt = t; } }
+      o.t = bt; bl.xs.push(o); }
+    const tg = []; for (const lg of legs) { lg.xs.sort((p, q) => p.t - q.t); tg.push(...lg.xs, lg.b); }
+    let ti = 0, path = [], pi = 0, replan = 0, t = 0, tossCd = 0, bestD = 1e9, bestAt = 0, waitT = 0, deaths = 0, stuck = null; const deathAt = [];
+    const done = o => o.find ? o.find.got : o.pick ? o.pick.got : (!o.exit && D(P.x, P.y, o.x, o.y) < 60);
+    while (T._mode() === 'play' && t < cap) {
+      while (ti < tg.length - 1 && done(tg[ti])) { ti++; replan = 0; bestD = 1e9; bestAt = t; }
+      const o = tg[ti], dT = D(P.x, P.y, o.x, o.y);
+      if (dT < bestD - 20) { bestD = dT; bestAt = t; }
+      if (t - bestAt > (o.must ? 25 : 8)) { if (o.must) { stuck = [Math.round(P.x), Math.round(P.y)]; break; } ti++; bestD = 1e9; bestAt = t; continue; }
+      if (t >= replan) { replan = t + 0.3; path = plan(o.x, o.y); pi = 0; }
+      let bi = pi, bd2 = 1e9; for (let q = pi; q < Math.min(path.length, pi + 12); q++) { const d = D(P.x, P.y, cx(path[q]), cy(path[q])); if (d < bd2) { bd2 = d; bi = q; } } pi = bi;
+      const la = path[Math.min(path.length - 1, pi + 3)], ax = pi + 3 >= path.length - 1 ? o.x : cx(la), ay = pi + 3 >= path.length - 1 ? o.y : cy(la);
+      let dx = ax - P.x, dy = ay - P.y, m = Math.hypot(dx, dy) || 1; dx /= m; dy /= m;
+      const inShade = T.shadedGeom(P.x, P.y), immune = r.screenT > 0 || r.darkT > 0;
+      let sunLen = 0, edge = false; for (let q = pi + 1; q < path.length; q++) { const s1 = flag(path[q]) & 1; if (!s1) { sunLen += CS; if (q <= pi + 3) edge = true; } else if (sunLen) break; else if (q > pi + 3) break; }
+      let go = true;
+      if (inShade && edge && !immune) { const need = P.exp + sunLen / f.maxSpeed * f.burnSun; if (P.exp > waitExp && waitT < 4) { go = false; waitT += 1 / 60; } else { waitT = 0; if (need > 95 && sunLen > 150 && r.charges.spf > 0) key('e'); } }
+      else waitT = 0;
+      st.active = go; st.dx = dx * st.max; st.dy = dy * st.max;
+      const dashOk = P.dashCd <= 0 || P.dashStock > 0; tossCd -= 1 / 60;
+      const lg = r.lunge;
+      if (lg && lg.state !== 'idle' && lg.locked && !immune && D(P.x, P.y, lg.zx, lg.zy) < lg.reach + 18) {   // a locked ring on him: out of it, a dash or a seed
+        let ex = P.x - lg.zx, ey = P.y - lg.zy, em = Math.hypot(ex, ey); if (em < 4) { ex = dx; ey = dy; em = 1; } st.active = true; st.dx = ex / em * st.max; st.dy = ey / em * st.max;
+        if (dashOk) key(' '); else if (r.seeds > 0 && tossCd <= 0) { T.toss(); tossCd = 0.5; } }
+      else if (!inShade && !immune && go) {
+        const need = P.exp + sunLen / f.maxSpeed * f.burnSun;
+        if (need > 90 && dashOk && sunLen > 40) key(' ');
+        else if (P.exp > 60 && r.charges.shade > 0 && sunLen > 40) key('q');
+        else if (need > 110 && r.seeds > 1 && tossCd <= 0 && sunLen > 200) { T.toss(); tossCd = 1; } }
+      for (const c of r.critters) if (r.seeds > 0 && tossCd <= 0 && c.state === 'hunt' && c.pin <= 0 && D(P.x, P.y, c.x, c.y) < 200) {   // a hunting scorpion: pin it
+        const sx = st.dx, sy = st.dy; st.dx = (c.x - P.x); st.dy = (c.y - P.y); const q = Math.hypot(st.dx, st.dy) || 1; st.dx = st.dx / q * st.max; st.dy = st.dy / q * st.max; st.active = true; T.toss(); tossCd = 0.6; st.dx = sx; st.dy = sy; break; }
+      const px = P.x, py = P.y; T.update(1 / 60); t += 1 / 60;
+      if (r.deaths > deaths) { deaths = r.deaths; deathAt.push([Math.round(px), Math.round(py)]); replan = 0; bestD = 1e9; bestAt = t; }
+    }
+    st.active = false; st.dx = st.dy = 0;
+    return { i, name: L.name, w: L.world, win: T._mode() === 'win', t: +r.t.toFixed(1), par: L.par, deaths: r.deaths, deathAt: deathAt.slice(0, 3), stuck, finds: r.finds.filter(q => q.got).length, nf: r.finds.length, picks: (r.pickups || []).filter(q => q.got).length, np: (r.pickups || []).length, beams: r.beamsGot, lunge: !!r.lunge, crit: r.critters.length };
+  }; });
+  const n = await ev(() => __TM.LEVELS.length); const rows = []; let fin = 0;
+  for (let i = 0; i < n; i++) { let q = null; for (let k = 1; k <= 3; k++) { q = await ev((i, k) => window.__lvBot(i, k), i, k); q.tries = k; if (q.win) break; }
+    rows.push(q); if (q.win) fin++;
+    console.log(String(i).padStart(2) + ' ' + q.name.padEnd(22) + ' w' + q.w + ' ' + (q.win ? 'FINISHED ' + q.t + ' s par ' + q.par + (q.t <= q.par ? ' under' : ' over') : 'NOT FINISHED ' + (q.stuck ? 'stuck at ' + q.stuck.join(',') : 'time ' + q.t + ' s')) + ', try ' + q.tries + ', burns ' + q.deaths + (q.deathAt.length ? ' at ' + q.deathAt.map(p => p.join(',')).join(' ') : '') + ', finds ' + q.finds + '/' + q.nf + ', pickups ' + q.picks + '/' + q.np + ', aloe ' + q.beams + (q.lunge ? ', lunge' : '') + (q.crit ? ', critters ' + q.crit : '')); }
+  say(fin === n, 'the bot finishes ' + fin + ' of ' + n + ' levels within three tries');
+  await page.goto('http://localhost:8778/?tmtest=1&lab=1', { waitUntil: 'networkidle0', timeout: 90000 }); await new Promise(r => setTimeout(r, 600));
+  const lab = await ev(() => { const b = document.getElementById('labBtn'); if (!b || b.style.display !== 'block') return { btn: false }; b.click(); const el = document.getElementById('lab'); return { btn: true, show: !!el && el.classList.contains('show') }; });
+  say(lab.btn && lab.show, '?lab=1 still loads: the LAB button stands and opens the lab (' + JSON.stringify(lab) + ')');
 }
 say(errs.length === 0, 'page errors ' + errs.length + ' ' + errs.slice(0, 3).join(' | ').slice(0, 300));
 console.log(bad ? 'GAMEPLAY FAILED ' + bad : 'GAMEPLAY OK');
