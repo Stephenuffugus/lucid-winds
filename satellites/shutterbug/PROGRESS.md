@@ -1781,3 +1781,9 @@ shipped: FLAG_WIND 32 (FLAGS_KNOWN 63, C.FLAGS 63, level.windy); windFor sets fe
 gates: lint green; H-wind-1 green; the share code tests' unknown flag at bit 6; redwatch anchors 684; the fast harness alone 10526 assertions 0 failing (H-reach-6's 10 ms budget flaked once at 10.41 ms in a full run, green alone three times)
 shots: none (streaks are a stand in for her window_wind)
 line: `! bash /home/codespace/sb-drafts/sb-m2-19/deploy-sb-m2-19.sh`
+
+## sb-m2-20 (8 Nov 2026, Fable): round 11 code, the collapsing staircase
+shipped: FLAG_R11 64 (FLAGS_KNOWN 127, C.FLAGS 127, level.r11); r11Pieces places one 'stair' piece {x0,row,dir,n} after r9Pieces (rooms from a house's room 2 and free play; the run nearest the loot; every step free with a free cell above and air under; marked for later pieces); s.crumb holds the run's one counter (step k reads it k*STAIR_GAP_F behind): the landing skips a step at or past SHELF_CRACK_F, the counter starts when the bug stands on any step and resets at (n-1)*GAP + CRACK + BACK; render draws crumbling_shelf frames per step.
+gates: lint green; H-r11-1 green; H-v2-1 at bit 7; redwatch anchors 684; the fast harness alone 10532 assertions 0 failing
+shots: none (the shelf's frames stand in for staircase_step)
+line: `! bash /home/codespace/sb-drafts/sb-m2-20/deploy-sb-m2-20.sh` (ships sb-m2-19 too)
