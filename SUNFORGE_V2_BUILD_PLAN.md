@@ -80,3 +80,5 @@ script; the lock delay line went live on main 3a3a4a37e). `DRY=1 bash ...` once.
 1. The code drawn outline stays under her lit seam at half alpha (default yes; the other choice: her seam alone).
 2. The spent core frame is not wired to anything (default); it could show for 0.4 s after a crush.
 3. Ring 12 is cold slate now under the brass file name (hers; nothing to decide unless he wants brass back).
+
+## LIVE 8 Nov ~01:23 UTC by his line (lucid-winds main 003507efd, source 2403070e0; lucidwinds.com/satellites/ring-stacker/ serves it)

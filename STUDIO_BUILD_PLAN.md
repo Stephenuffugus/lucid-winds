@@ -48,7 +48,7 @@ one commit as its own command, last.
 
 | # | State | Night | Note |
 |---|---|---|---|
-| 1 | DONE, waits for his line | 7 Nov (Fable, daytime) | v5.2 at 2403070e0; `! bash /home/codespace/sf-drafts/deploy-sunforge-m3.sh` |
+| 1 | LIVE 8 Nov ~01:23 UTC | 7 Nov (Fable, daytime) | Sunforge v5.2 (2403070e0) on lucid-winds main 003507efd, his line |
 | 2 | LIVE 7 Nov ~22:15 UTC | 7 Nov (Fable, daytime) | m4 (3d8c92165) and m5 (a miss is a strike, his ruling; 5fb6ecb5e) on lucid-winds main 692ca6b87 by his one line |
 | 3 | LIVE 8 Nov ~01:17 UTC | 7 Nov (Fable, daytime) | Keepsies m4 (3ba0a05cc, build 20261107a) on lucid-winds main 7619bc46c, his line |
 | 4 | LIVE 7 Nov ~18:05 UTC | 7 Nov (Fable, daytime) | sunstruck 5097685, carried by milestone B's line (its own line never ran and is stale) |
