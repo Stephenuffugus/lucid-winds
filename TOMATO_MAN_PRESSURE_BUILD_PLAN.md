@@ -50,6 +50,7 @@ The laws of TOMATO_MAN_BUILD_PLAN.md bind (the readability contract, the copy la
 | Step | State | Commit | Note |
 |---|---|---|---|
 | 1 | DONE 8 Nov | ac865c2 | fair lunge: ring follows half the warning then locks solid (cue "now"), strike never chases, reach clamped to 110 px at runtime for levels, daily and run, dash inside a locked ring = 0.35 s immunity; check OK; shot taken, not opened (7405 ring red px, no page errors) |
+| 2 | DONE 8 Nov | 398fcd6 | Dawn Ribbon the lesson (four 100 px crossings, Exposure bar called out, aloe in a crossing, find under an awning, checkpoint explained, par 20); Sliver Step the tools (210 px dash gap, placed scorpion over a 120 px gap, first SPF pickup before a 260 px gap, par 24); lesson coach marks fire in place; minimal L.pickups (spf/shade/ice, drawn disc) built here for the SPF lesson, step 4 extends it; shoot.mjs gained screen tools; check OK; two shots taken, not opened (107 KB, 116 KB, no page errors) |
 
 ## THE STEPS
 

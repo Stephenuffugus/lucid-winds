@@ -52,6 +52,7 @@ const SCREENS = {
   daily: async () => { await ev("__TM.hold(true); __TM.startDaily(); __TM.seek(3)"); },
   pause: async () => { await ev("__TM.hold(true); __TM.startLevel(0); __TM.seek(2); __TM.togglePause()"); },
   first: async () => { await ev("__TM.hold(true); __TM.startLevel(0); __TM.seek(2.5)"); },
+  tools: async () => { await ev("__TM.hold(true); __TM.startLevel(1); __TM.seek(2.5)"); },   // THE PRESSURE step 2: Sliver Step's opening (the tools lesson)
   ne: async () => { await ev("__TM.look('tomato','sunhat'); __TM.hold(true); __TM.startLevel(1); __TM.seek(1.5)"); await wait(900);
     await ev("var r=__TM._run(); __TM.P.face=-Math.PI/4; __TM.P.vx=130; __TM.P.vy=-130; r.idleT=0; __TM.render()"); },
   acts: async () => { await ev("__TM.look('tomato','sunhat'); __TM.hold(true); __TM.startLevel(1); __TM.seek(1.5)"); await wait(900);
