@@ -202,6 +202,27 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
 .go-btns{position:absolute; left:50px; right:50px; top:726px; display:flex; flex-direction:column; gap:12px}
 #go-hint{position:absolute; left:40px; right:40px; top:900px; display:none; font:500 18px/1.35 'Space Grotesk',sans-serif; color:#c8d5e8; text-align:center}
 #b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
+/* ---- skins (v3): the title pill top right (the arcade pill's twin), the chips, the tiles, the unlock toast ---- */
+.swsback{min-height:64px}
+#b-skins{left:auto; right:10px; padding:0 16px 0 12px}
+canvas.skc{width:30px; height:30px; border-radius:4px; flex:none}
+.sk-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; margin:0 0 16px}
+.sk-tile{position:relative; display:flex; flex-direction:column; align-items:center; gap:6px; padding:11px 10px 12px; border-radius:12px; border:1px solid rgba(130,151,165,.55);
+  background:linear-gradient(180deg,#263442,#182431); color:#fff5cb; cursor:pointer; text-align:center; transition:transform .06s ease, filter .12s ease}
+.sk-tile canvas{width:216px; height:162px; max-width:100%; border-radius:6px; display:block; background:#080d15}
+.sk-tile .skn{font:900 28px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:.5px; text-transform:uppercase; margin-top:4px}
+.sk-tile .sks{font:600 20px/1.25 'Space Grotesk',sans-serif; color:#c8d5e8; min-height:50px}
+.sk-tile.cur{box-shadow:0 0 0 3px #dfff4f, 0 0 18px rgba(223,255,79,.3)} .sk-tile.cur .sks{color:#dfff4f}
+.sk-tile.locked{opacity:.5} .sk-tile.locked canvas{filter:grayscale(.55)}
+.sk-tile:active{transform:translateY(2px); filter:brightness(1.15)}
+#toast{position:absolute; left:50%; top:656px; transform:translateX(-50%) translateY(14px); display:flex; align-items:center; gap:14px; padding:10px 20px 10px 12px; border-radius:12px;
+  background:rgba(8,13,21,.93); border:2px solid #dfff4f; color:#fff5cb; opacity:0; pointer-events:none; z-index:35; transition:opacity .25s ease, transform .25s ease; white-space:nowrap}
+#toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+#toast canvas{width:48px; height:48px; border-radius:5px}
+#toast span{display:flex; flex-direction:column; gap:3px; text-align:left}
+#toast b{font:900 18px/1 'Barlow Condensed','Space Grotesk',sans-serif; letter-spacing:1.5px; color:#dfff4f}
+#toast #toast-name{font:900 30px/1 'Barlow Condensed','Space Grotesk',sans-serif; text-transform:uppercase}
+#toast small{font:600 18px/1.1 'Space Grotesk',sans-serif; color:#c8d5e8}
 </style>
 <meta name="description" content="Stick falling pieces to the golden sun and finish rings to crush them inward.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/ring-stacker/">
@@ -218,6 +239,7 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
   <!-- TITLE: Astra's plate carries the wordmark and the hero gyre; the live menu sits in its band (step 2) -->
   <div class="screen on" id="s-title">
     <button class="swsback" id="sws-back" type="button" aria-label="Back to the arcade"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>Back to the arcade</button>
+    <button class="swsback" id="b-skins" type="button" aria-label="Skins"><canvas class="skc" width="64" height="64" aria-hidden="true"></canvas>Skins</button>
     <div id="t-word" aria-hidden="true">SUNFORGE</div>
     <div id="t-tag">Build. Turn. Collapse.</div>
     <div class="t-modes">
@@ -249,6 +271,7 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
     <button class="cbtn sk" id="c-down" aria-label="Down"><svg class="ic" aria-hidden="true"><use href="#i-down"/></svg></button>
     <button class="cbtn sk" id="c-rot" aria-label="Turn"><svg class="ic" aria-hidden="true"><use href="#i-rotate"/></svg></button>
     <div id="coach" role="status">Close the ring. Drop it on the sun.</div>
+    <div id="toast" role="status" aria-live="polite"><canvas id="toast-cell" width="64" height="64" aria-hidden="true"></canvas><span><b>NEW SKIN</b><span id="toast-name">Bright</span><small>Wear it from Skins on the menu</small></span></div>
     <button id="slambtn" aria-label="Slam"><svg class="ic" aria-hidden="true"><use href="#i-rotate"/></svg><span>SLAM</span></button>
   </div>
 
@@ -258,6 +281,7 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
     <div class="stack">
       <button class="btn primary" id="p-resume">Resume</button>
       <button class="btn" id="p-retry"><svg class="ic" aria-hidden="true"><use href="#i-retry"/></svg>Retry</button>
+      <button class="btn" id="p-skins"><canvas class="skc" width="64" height="64" aria-hidden="true"></canvas>Skins</button>
       <button class="btn" id="p-menu"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg>Menu</button>
     </div>
   </div></div>
@@ -281,9 +305,18 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
     <div class="settingline"><span><svg class="ic" aria-hidden="true"><use href="#i-ghost"/></svg>Ghost piece</span><div class="toggle on" id="tg-ghost" role="switch" aria-label="Ghost piece"><b></b></div></div>
     <div class="settingline"><span><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg>Reduced motion</span><div class="toggle" id="tg-reduce" role="switch" aria-label="Reduced motion"><b></b></div></div>
     <div style="height:8px"></div>
+    <button class="btn sm" id="b-skins2" style="max-width:420px;margin:0 auto 12px"><canvas class="skc" width="64" height="64" aria-hidden="true"></canvas>Skins</button>
     <button class="btn sm" id="b-install" style="max-width:420px;margin:0 auto 12px"><svg class="ic" aria-hidden="true"><use href="#i-install"/></svg>Add to Home Screen</button>
     <button class="btn ghost sm" id="set-back" style="max-width:420px;margin:0 auto"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>Back</button>
     <div class="foot" id="buildstamp"></div>
+  </div></div>
+
+  <!-- SKINS (v3): four tiles built from the SKINS table, each a live sample of its twelve ring cells -->
+  <div class="screen" id="s-skins"><div class="pad">
+    <h2 class="sc-h">Skins</h2>
+    <p class="howmodes">How the cells are cast. Break rings to unlock more.</p>
+    <div class="sk-grid" id="sk-grid"></div>
+    <button class="btn ghost sm" id="sk-back" style="max-width:420px;margin:auto auto 0"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>Back</button>
   </div></div>
 
   <!-- OVER / RESULT (step 6): Astra's card frame over the player's real gyre, the stats in her bands -->
@@ -403,7 +436,7 @@ function loadArt(set,done){
     im.src=set[k]+'?v='+ART_V; IMG[k]=im; })(k); }
   if(!left&&done)done();
 }
-loadArt(ART_FIRST,function(){ loadArt(ART); });
+loadArt(ART_FIRST,function(){ loadArt(ART,function(){ paintSkinChips(); if(curScreen==='s-skins')paintSkinTiles(); }); });   // the chips and tiles redraw once Obsidian's sheets are in
 
 /* ---------- audio ---------- */
 var AC=null;
@@ -871,6 +904,7 @@ function nextRingStage(){
   var pts=(RMAX+2-D)*100*chain;
   G.score+=pts; G.rings++; G.quotaDone++;
   PROG.ringsEver++; saveProg();
+  unlockCheck(false);
   if(chain>G.chainBest)G.chainBest=chain;
   SFX.ring(chain-1);
   G.floats.push({x:270,y:PANEL.y+PANEL.h-96,txt:'RING '+D+((chain>1&&!art('chain2'))?' · CHAIN x'+chain:'')+' +'+pts,life:1.1,big:true});   // at the window's foot, off the action
@@ -1420,6 +1454,35 @@ function pauseGame(){ if(curScreen!=='s-play'||!G||G.over)return; show('s-pause'
 function resumeGame(){ if(!G||G.over){ show('s-title'); return; } show('s-play'); running=true; lastTs=0; requestAnimationFrame(loop); }
 document.addEventListener('visibilitychange',function(){ if(document.hidden)pauseGame(); });
 
+/* ---------- skins UI (v3): the unlocks, the chips on the Skins buttons, the tiles, the toast ---------- */
+function unlockCheck(quiet){ var i,got=[];
+  for(i=0;i<SKINS.length;i++){ var sk=SKINS[i], ru=sk.rule; if(!ru||SKS.un[sk.key])continue;
+    var v=ru.kind==='ever'?PROG.ringsEver:(ru.kind==='run'&&G?G.rings:0);
+    if(v>=ru.n){ SKS.un[sk.key]=1; got.push(sk); } }
+  if(got.length){ saveSkins(); paintSkinChips(); if(!quiet)toast(got[got.length-1]); }
+  return got; }
+var toastT=null;
+function toast(sk){ var el=$('toast'); if(!el)return; var c=$('toast-cell');
+  if(c){ var g=c.getContext('2d'); g.clearRect(0,0,64,64); var sp=cellSprite(1,15,sk); if(sp)g.drawImage(sp,0,0,64,64); else { g.fillStyle=sk.cols[1]; g.fillRect(0,0,64,64); } }
+  $('toast-name').textContent=sk.name; el.style.transition=SET.reduce?'none':''; el.classList.add('on'); SFX.win();
+  if(toastT)clearTimeout(toastT); toastT=setTimeout(function(){ el.classList.remove('on'); },2600); }
+function paintSkinChips(){ var cs=document.querySelectorAll('canvas.skc'),i; for(i=0;i<cs.length;i++){ var g=cs[i].getContext('2d'); g.clearRect(0,0,64,64);
+  var sp=cellSprite(1,15); if(sp)g.drawImage(sp,0,0,64,64); else { g.fillStyle=RC(1); g.fillRect(0,0,64,64); } } }
+var skinsFrom='s-title';
+function openSkins(){ skinsFrom=curScreen; paintSkinTiles(); show('s-skins'); }
+function buildSkinTiles(){ var grid=$('sk-grid'); if(!grid)return; var h='',i;
+  for(i=0;i<SKINS.length;i++){ var sk=SKINS[i]; h+='<button class="sk-tile" id="sk-'+sk.key+'" data-skin="'+sk.key+'" type="button"><canvas width="432" height="324" aria-hidden="true"></canvas><span class="skn">'+sk.name+'</span><span class="sks"></span></button>'; }
+  grid.innerHTML=h;
+  grid.addEventListener('click',function(e){ var b=e.target; while(b&&b!==grid&&!(b.getAttribute&&b.getAttribute('data-skin')))b=b.parentNode; if(!b||b===grid)return;
+    if(setSkin(b.getAttribute('data-skin'))){ SFX.ui(); paintSkinTiles(); paintSkinChips(); } else SFX.bad(); }); }
+function paintSkinTiles(){ var i,d;
+  for(i=0;i<SKINS.length;i++){ var sk=SKINS[i], b=$('sk-'+sk.key); if(!b)continue; var open=skinOpen(sk), cur=sk.key===SK.key;
+    b.classList.toggle('cur',cur); b.classList.toggle('locked',!open); b.setAttribute('aria-pressed',cur?'true':'false');
+    b.querySelector('.sks').textContent=cur?'Equipped':(open?'Tap to wear':sk.rule.text);
+    var c=b.querySelector('canvas'), g=c.getContext('2d'); g.fillStyle='#080d15'; g.fillRect(0,0,432,324);
+    for(d=1;d<=12;d++){ var sp=cellSprite(d,15,sk), x=((d-1)%4)*108+2, y=Math.floor((d-1)/4)*108+2; if(sp)g.drawImage(sp,x,y,104,104); else { g.fillStyle=sk.cols[d]; g.fillRect(x,y,104,104); } } } }
+buildSkinTiles();
+
 /* ---------- screens ---------- */
 var curScreen='s-title';
 function show(id){ var s=document.querySelectorAll('.screen'); for(var i=0;i<s.length;i++)s[i].classList.remove('on'); var el=$(id); if(el)el.classList.add('on'); curScreen=id;
@@ -1456,6 +1519,10 @@ tap('b-how',function(){ SFX.ui(); show('s-how'); });
 tap('b-set',function(){ SFX.ui(); show('s-set'); });
 tap('how-back',function(){ SFX.ui(); show('s-title'); });
 tap('set-back',function(){ SFX.ui(); show('s-title'); });
+tap('b-skins',function(){ SFX.ui(); openSkins(); });
+tap('b-skins2',function(){ SFX.ui(); openSkins(); });
+tap('p-skins',function(){ SFX.ui(); openSkins(); });
+tap('sk-back',function(){ SFX.ui(); show(skinsFrom==='s-pause'?'s-pause':(skinsFrom==='s-set'?'s-set':'s-title')); });
 tap('b-pause',function(){ SFX.ui(); pauseGame(); });
 tap('p-resume',function(){ SFX.ui(); resumeGame(); });
 tap('p-retry',function(){ SFX.ui(); if(G&&!G.over)endRunQuiet(); newGame(G?G.mode:'journey'); });
@@ -1542,7 +1609,7 @@ window._sbCapEarn=function(n,tag){
   return grant;
 };
 
-fit(); paintTitle();
+fit(); paintTitle(); unlockCheck(true); paintSkinChips();
 
 /* ---------- headless dev hook + machine-proof bot ---------- */
 if(/[?&]rstest=1/.test(location.search)){
@@ -1650,6 +1717,8 @@ if(/[?&]rstest=1/.test(location.search)){
     freeze:function(){ running=false; return true; },
     art:function(k,on){ if(IMG[k])IMG[k]._ok=!!on; skinCaches(); _tint={}; render.pat=null; render(); return !!IMG[k]; },
     skin:function(k){ setSkin(k,true); render(); return SK.key; },
+    unlock:function(k){ var i; for(i=0;i<SKINS.length;i++){ if(k==='all'||SKINS[i].key===k)SKS.un[SKINS[i].key]=1; } paintSkinTiles(); return true; },
+    skins:function(){ return { cur:SK.key, un:SKS.un, toast:$('toast').classList.contains('on'), from:skinsFrom, screen:curScreen }; },
     probe:function(){ /* the colour at each ring's cell centre along the +x radius and the share of that cell's pixels off its median (the pattern) */
       var out=[],d,i; for(i=0;i<40;i++)render();
       for(d=1;d<=RMAX;d++){ var p=cellPx(C+d,C), w=Math.max(2,Math.round((VCELL-4)*DPR)), x0=Math.round((p.x+2)*DPR), y0=Math.round((p.y+2)*DPR);
