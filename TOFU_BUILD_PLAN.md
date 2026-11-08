@@ -54,6 +54,7 @@ hand played). Astra's art pack came the same day.
 ## STATE (the builder updates this block; one line per step)
 | Step | State | Commit | Note |
 |---|---|---|---|
+| 0 | DONE 8 Nov | cb6d1d7b4 | Short path: his /workspaces/tofu-drop/index.html copied as is; 133 pack files flat in assets/ (store art left out); check.js passes all but 17 [copy] faults (16 copy law, 1 zoom viewport) for step 1; shoot.mjs written, not yet run |
 
 ## THE STEPS
 
