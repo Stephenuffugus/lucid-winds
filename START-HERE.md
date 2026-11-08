@@ -1,6 +1,7 @@
 # START HERE
 
 ## 8 Nov (Fable, afternoon): DUCTUS IN THE STUDIO, THE THREE LINES RUN, THE SHUTTERBUG GATES RUN AGAIN
+- SHUTTERBUG sb-m2-23 LIVE 17:57 UTC by his line (lucid-winds main 661dd5897; lucidwinds.com serves BUILD sb-m2-23, shutterbug-v45, sw.js?v=45; the deploy blob passed the lint and the fast harness, 10532 assertions). Nothing waits on a line.
 - The arcade's apps page with DUCTUS LIVE 17:50 UTC by his line (lucid-winds main 5458fdf01, lucidwinds.com/portal/apps.html read back).
 - The arcade's apps page mirror with DUCTUS regenerated (17:45 UTC) and its art copied; his line `! bash /home/codespace/ductus-drafts/deploy-apps-page.sh` (two paths onto main from git objects, DRY OK).
 - DUCTUS LIVE (17:42 UTC): https://skywolfstudio.com/ductus/ and its Pen & Paper card on the hub (37 apps). The box had no Firebase login and `firebase login` refuses a non TTY, so the login ran under `script` (a pseudo terminal) with its stdin on a FIFO: he opened the link on his phone, pasted the code into the chat, Fable fed it in. The login is saved on this box now (configstore), so later studio deploys are one line.

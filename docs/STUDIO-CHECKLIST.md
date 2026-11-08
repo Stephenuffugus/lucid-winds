@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 8 Nov 2026, 17:50 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 8 Nov 2026, 17:57 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 1. The art, in this order (you, then Astra)
 
@@ -66,7 +66,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Tomato Man THE PRESSURE (his 8 Nov notes: fair lunge, lesson levels, pressure everywhere, cooling resources, finds on the route, progressive worlds): built 8 Nov 09:21 UTC by the overnight (sunstruck 55b909d), LIVE 8 Nov 15:45 UTC by your line (Fable)  
 - [x] TOFU m1 (the new tofu platformer, your v0.1 file with Astra's art wired, all eight levels served by the bot): built 8 Nov 09:21 UTC by the overnight (lucid-winds 9776b6006, stamp 20261109a), LIVE 8 Nov 15:50 UTC by your line (Fable)  
 - [x] Sunforge v5.3 THE SKINS (Obsidian, Bright, Clay, Painted; unlocks; one Sunbreaker theme on every screen): built 8 Nov, LIVE 8 Nov 15:55 UTC by your line (Fable)  
-- [ ] Shutterbug sb-m2-23 (the death card off the fallen bug; the stick pad above the Polaroid, a mid strip landing had its ring hidden under the photo; the input gate taught the 4 Nov down pull; death, input 198 ok, lint green): STAMPED 8 Nov 17:10 UTC (ad9ab9844, shutterbug-v45), waits for your line `! bash /home/codespace/sb-drafts/sb-m2-23/deploy-sb-m2-23.sh` (it merges main into the branch first) (Fable)  
+- [x] Shutterbug sb-m2-23 (the death card off the fallen bug; the stick pad above the Polaroid, a mid strip landing had its ring hidden under the photo; the input gate taught the 4 Nov down pull; death, input 198 ok, lint green): STAMPED 8 Nov 17:10 UTC (ad9ab9844, shutterbug-v45), LIVE 8 Nov 17:57 UTC by your line (Fable)  
 - [x] DUCTUS m1 + v2 (your alphabet forge in the STUDIO: the studio shell, share target, worker, its own art, Pen & Paper on the hub; v2 shares a hand by link; engine 20/20 and browser 21/21 green): built 8 Nov 16:50 UTC, SWS-apps main 0fe0d69, LIVE 8 Nov 17:42 UTC at skywolfstudio.com/ductus/ after your Firebase sign in (Fable)  
 - [x] Chapter 2 Flatulence Fighter m4, the six pad plates, the ring, moving calls, the cards, the lesson line, and m5 (a miss is a strike): LIVE 7 Nov by your line (Fable)  
 - [x] Chapter 3 Keepsies m4, the circle and reticles at 154 px, the snap card, the chalk, the chip: LIVE 8 Nov by your line (Fable)  
@@ -97,6 +97,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Tomato Man THE PRESSURE (the fair lunge, the two teaching levels, pressure on nearly every level, aloe and pickups, the finds in the shade with a compass, worlds open in turn, harder by world): LIVE 8 Nov 15:45 UTC, main 7c794c84b, Tomato_Man main 55b909da (you ran the line); the levels bot says finishable, your thumbs say if it is hard enough  
 - [x] TOFU m1 (the tofu platformer with Astra's art, the portal row beside Sunforge): LIVE 8 Nov 15:50 UTC, main 8beed537b, lucidwinds.com/satellites/tofu/ (you ran the line); a Pixel Petri deploy is safe now  
 - [x] Sunforge v5.3 THE SKINS (Obsidian, Bright, Clay, Painted, the unlocks, one Sunbreaker theme on every screen): LIVE 8 Nov 15:55 UTC, main ae3043b7e, lucidwinds.com/satellites/ring-stacker/ (you ran the line; nothing waits on a line now)  
+- [x] Shutterbug sb-m2-23 (the death card off the fallen bug, the stick pad above the Polaroid): LIVE 8 Nov 17:57 UTC, main 661dd5897, lucidwinds.com/satellites/shutterbug/ serves BUILD sb-m2-23, shutterbug-v45 (you ran the line; the deploy blob passed the lint and the fast harness, 10532 assertions); nothing waits on a line now  
 - [x] DUCTUS in the Studio: LIVE 8 Nov 17:42 UTC, skywolfstudio.com/ductus/ and its Pen & Paper card on the hub (you signed the box in to Firebase from your phone through the chat, the line ran); the arcade's apps page mirror next (Fable)  
 - [x] Every line of 7 Nov run, one at a time, by 8 Nov 01:20 UTC (you)  
 - [ ] Play each game on the Pixel after its line and write your notes in one message; Fable turns them into the next chapter (you)  
