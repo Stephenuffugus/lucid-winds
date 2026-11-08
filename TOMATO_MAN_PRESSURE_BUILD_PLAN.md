@@ -51,6 +51,7 @@ The laws of TOMATO_MAN_BUILD_PLAN.md bind (the readability contract, the copy la
 |---|---|---|---|
 | 1 | DONE 8 Nov | ac865c2 | fair lunge: ring follows half the warning then locks solid (cue "now"), strike never chases, reach clamped to 110 px at runtime for levels, daily and run, dash inside a locked ring = 0.35 s immunity; check OK; shot taken, not opened (7405 ring red px, no page errors) |
 | 2 | DONE 8 Nov | 398fcd6 | Dawn Ribbon the lesson (four 100 px crossings, Exposure bar called out, aloe in a crossing, find under an awning, checkpoint explained, par 20); Sliver Step the tools (210 px dash gap, placed scorpion over a 120 px gap, first SPF pickup before a 260 px gap, par 24); lesson coach marks fire in place; minimal L.pickups (spf/shade/ice, drawn disc) built here for the SPF lesson, step 4 extends it; shoot.mjs gained screen tools; check OK; two shots taken, not opened (107 KB, 116 KB, no page errors) |
+| 3 | DONE 8 Nov | 3e5cb08 | PRESSURE table a world: every level from Cloud Ferry carries its world's fair lunge unless it has its own (Eclipse keeps its own); critters by place in world (li%4 fixed, placed ones counted: W0 one from level 2, W1 one, W2 two, W3 two plus mirage, W4 three); sun 150/s W0 to W1, 170/s from W2; the run has its world's lunge from the start and between flares, scorpions from mile 1; check OK |
 
 ## THE STEPS
 
