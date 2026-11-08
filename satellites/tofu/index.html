@@ -2,13 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1c1e24">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="description" content="TOFU — you have no properties of your own. You become what you soak in. Every level is a recipe; you are the ingredient.">
+<meta name="description" content="TOFU: you have no properties of your own. You become what you soak in. Every level is a recipe; you are the ingredient.">
 <title>TOFU</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon_192.png">
+<!-- Same origin Sunbeam SDK (guarded; the game runs with it missing) -->
+<script src="/sunbeam-sdk.js?v=7"></script>
+<script>window.Sunbeam&&Sunbeam.init({gameId:"tofu"}).catch(function(){});</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231c1e24'/%3E%3Crect x='10' y='14' width='44' height='36' rx='9' fill='%23f6f1e7'/%3E%3Ccircle cx='26' cy='31' r='3' fill='%231c1e24'/%3E%3Ccircle cx='38' cy='31' r='3' fill='%231c1e24'/%3E%3C/svg%3E">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -24,8 +29,8 @@ html,body{height:100%;background:#1c1e24;overflow:hidden;font-family:system-ui,-
 .chip{font-size:11px;font-weight:800;letter-spacing:.08em;padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(10,11,16,.55);color:#cfc8bb;transition:all .2s}
 .chip.ok{border-color:#7ddc8a;color:#9af0a5;background:rgba(60,160,80,.28)}
 .chip.bad{border-color:#ff5a5a;color:#ff9a9a;background:rgba(160,40,40,.28)}
-.icoBtn{pointer-events:auto;width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(10,11,16,.55);color:#f3efe6;font-size:20px;line-height:1}
-#hint{position:absolute;left:50%;top:52px;transform:translateX(-50%);font-size:12px;opacity:0;background:rgba(10,11,16,.6);padding:6px 12px;border-radius:10px;max-width:80vw;text-align:center;transition:opacity .4s;line-height:1.4}
+.icoBtn{pointer-events:auto;width:48px;height:48px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(10,11,16,.55);color:#f3efe6;font-size:20px;line-height:1}
+#hint{position:absolute;left:50%;top:64px;transform:translateX(-50%);font-size:16px;opacity:0;background:rgba(10,11,16,.6);padding:6px 12px;border-radius:10px;max-width:80vw;text-align:center;transition:opacity .4s;line-height:1.4}
 #hint.show{opacity:.95}
 .bottom{position:absolute;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:flex-end}
 .status{text-shadow:0 1px 2px #000;min-width:140px}
@@ -48,16 +53,16 @@ html,body{height:100%;background:#1c1e24;overflow:hidden;font-family:system-ui,-
 .card h1{font-size:clamp(56px,16vw,96px);font-weight:900;letter-spacing:.18em;line-height:1;margin:6px 0 0}
 .card h2{font-size:clamp(28px,8vw,44px);font-weight:900;letter-spacing:.12em;margin:4px 0 8px}
 .card .eyebrow{font-size:11px;letter-spacing:.3em;opacity:.6;font-weight:700}
-.card .tag{opacity:.8;font-size:14px;line-height:1.5;margin:8px auto 0;max-width:420px}
-.card .sub{opacity:.7;font-size:13px;margin:0 auto 10px;max-width:420px;line-height:1.5}
-.card .hint{opacity:.85;font-size:13px;background:rgba(255,255,255,.06);border-radius:12px;padding:10px 14px;margin:14px auto;max-width:440px;line-height:1.5}
+.card .tag{opacity:.8;font-size:17px;line-height:1.5;margin:8px auto 0;max-width:420px}
+.card .sub{opacity:.7;font-size:16px;margin:0 auto 10px;max-width:420px;line-height:1.5}
+.card .hint{opacity:.85;font-size:16px;background:rgba(255,255,255,.06);border-radius:12px;padding:10px 14px;margin:14px auto;max-width:440px;line-height:1.5}
 .card .chips{justify-content:center;margin:10px 0}
 .card .chip{font-size:12px;padding:6px 12px}
 .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
-.act{pointer-events:auto;border:0;border-radius:14px;padding:14px 22px;font-weight:900;letter-spacing:.1em;font-size:14px;background:#f6f1e7;color:#1c1e24;min-width:120px}
+.act{pointer-events:auto;border:0;border-radius:14px;padding:14px 22px;font-weight:900;letter-spacing:.1em;font-size:14px;background:#f6f1e7;color:#1c1e24;min-width:120px;min-height:48px}
 .act.ghost{background:rgba(255,255,255,.1);color:#f3efe6}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px;margin:14px 0 6px;max-height:40vh;overflow:auto;padding:2px}
-.dishBtn{pointer-events:auto;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#f3efe6;border-radius:12px;padding:10px 8px;text-align:left}
+.dishBtn{pointer-events:auto;min-height:48px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#f3efe6;border-radius:12px;padding:10px 8px;text-align:left}
 .dishBtn b{display:block;font-size:11px;letter-spacing:.1em}
 .dishBtn span{display:block;font-size:10px;opacity:.6;margin-top:3px;letter-spacing:.05em}
 .dishBtn em{display:block;font-size:10px;opacity:.5;margin-top:3px;font-style:normal}
@@ -68,8 +73,11 @@ html,body{height:100%;background:#1c1e24;overflow:hidden;font-family:system-ui,-
 .blob:before{left:26px}.blob:after{right:26px}
 @keyframes wob{0%,100%{transform:scale(1,1)}30%{transform:scale(1.06,.94)}60%{transform:scale(.96,1.05)}}
 .wordmark{max-width:min(420px,80%);display:block;margin:0 auto}
-.foot{font-size:11px;opacity:.45;margin-top:14px;line-height:1.6}
-.stats{font-size:13px;opacity:.75;margin:4px 0 6px}
+.foot{font-size:16px;opacity:.55;margin-top:14px;line-height:1.6}
+.chip.ok:after,.dishBtn.done b:after{content:"";display:inline-block;width:4px;height:8px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg);margin-left:7px;vertical-align:1px}
+.land{display:none;font-size:16px;opacity:.7;margin:10px auto 0;max-width:420px;line-height:1.5}
+@media (orientation:portrait) and (max-width:820px){.land{display:block}}
+.stats{font-size:16px;opacity:.75;margin:4px 0 6px}
 </style>
 </head>
 <body>
@@ -77,7 +85,7 @@ html,body{height:100%;background:#1c1e24;overflow:hidden;font-family:system-ui,-
 
 <div id="hud" class="hidden">
   <div class="top">
-    <div class="dish"><span id="dishName">—</span><small id="dishSub"></small></div>
+    <div class="dish"><span id="dishName"></span><small id="dishSub"></small></div>
     <div class="chips" id="chips"></div>
     <button class="icoBtn" id="menuBtn" aria-label="Menu">≡</button>
   </div>
@@ -94,7 +102,7 @@ html,body{height:100%;background:#1c1e24;overflow:hidden;font-family:system-ui,-
       <button class="btn big" id="jumpBtn">JUMP</button>
     </div>
   </div>
-  <div class="stickHint" id="stickHint">◀ DRAG ▶</div>
+  <div class="stickHint" id="stickHint">DRAG</div>
 </div>
 
 <div id="overlay"><div class="card" id="card"></div></div>
@@ -159,7 +167,7 @@ const LEVELS = [
   '#.p........##..##..........#',
   '############################']},
 { dish: 'HIYAYAKKO', sub: 'Chilled silken tofu. Soft enough to slip through anything.', recipe: ['SILKEN'],
-  hint: 'Soak in water to go SILKEN. Silken slips through grates — but can barely jump.',
+  hint: 'Soak in water to go SILKEN. Silken slips through grates, but can barely jump.',
   map: [
   '############################',
   '#................g.........#',
@@ -202,8 +210,8 @@ const LEVELS = [
   '#################~~~~~~~####',
   '#################~~~~~~~####',
   '############################']},
-{ dish: 'KORI-DOFU', sub: 'Frozen tofu. Hard as a brick — for a while.', recipe: ['FROZEN'],
-  hint: 'Stand in the freezer. FROZEN tofu smashes cracked blocks and shrugs off knives. It thaws — move.',
+{ dish: 'KORI DOFU', sub: 'Frozen tofu. Hard as a brick, for a while.', recipe: ['FROZEN'],
+  hint: 'Stand in the freezer. FROZEN tofu smashes cracked blocks and shrugs off knives. It thaws, so move.',
   map: [
   '############################',
   '#..........................#',
@@ -215,8 +223,8 @@ const LEVELS = [
   '#..............c...........#',
   '#.p...***......c.kkk....b..#',
   '############################']},
-{ dish: 'BRAISED', sub: 'Soy-dark and firm.', recipe: ['SOY', 'FIRM'],
-  hint: 'Soak in soy to go dark. Dark tofu hides in shadow. Eyes blink — cross the light when they do. Salt firms you up.',
+{ dish: 'BRAISED', sub: 'Soy dark and firm.', recipe: ['SOY', 'FIRM'],
+  hint: 'Soak in soy to go dark. Dark tofu hides in shadow. Eyes blink. Cross the light when they do. Salt firms you up.',
   map: [
   '############################',
   '#..........................#',
@@ -229,7 +237,7 @@ const LEVELS = [
   '#####sss####################',
   '############################']},
 { dish: 'CHOU DOUFU', sub: 'Stinky tofu. An acquired taste.', recipe: ['STINKY'],
-  hint: 'Soak in the brine. Chopsticks won’t touch STINKY tofu. Water rinses the stink off — mind the puddle.',
+  hint: 'Soak in the brine. Chopsticks won’t touch STINKY tofu. Water rinses the stink off, so mind the puddle.',
   map: [
   '############################',
   '#..........................#',
@@ -239,8 +247,8 @@ const LEVELS = [
   '#..........................#',
   '#.p..ff........x...~~~..b..#',
   '############################']},
-{ dish: 'CHEF’S SPECIAL', sub: 'Fried, soy-dark, and served under watch.', recipe: ['FRIED', 'SOY'],
-  hint: 'Everything you’ve learned. Thawed tofu is SPONGY — it soaks twice as fast.',
+{ dish: 'CHEF’S SPECIAL', sub: 'Fried, soy dark, and served under watch.', recipe: ['FRIED', 'SOY'],
+  hint: 'Everything you’ve learned. Thawed tofu is SPONGY: it soaks twice as fast.',
   map: [
   '################################',
   '#..........#...................#',
@@ -267,22 +275,28 @@ const ASSET_FILES = [
   'eye_block_3f','shadow_tile','bg_counter','chopsticks_patrol_4f','chopsticks_chase_4f','chopsticks_flee_4f',
   'btn_jump','btn_squeeze','wordmark'
 ];
-const IMG = {};
-function loadAssets() {
-  if (typeof Image === 'undefined') return;
-  for (const name of ASSET_FILES) {
-    const m = name.match(/_(\d+)f$/); const frames = m ? +m[1] : 1; const key = name.replace(/_\d+f$/, '');
-    const img = new Image();
-    img.onload = () => { IMG[key] = { img, frames, fw: img.naturalWidth / frames, fh: img.naturalHeight }; onAsset(key); };
-    img.onerror = () => {};
-    img.src = 'assets/' + name + '.png';
-  }
+const ART_V = 1; // bump with every art change so the host's hard cache never serves old art
+const HI = (typeof devicePixelRatio === 'number' ? devicePixelRatio : 1) >= 2; // @2x only on dense screens
+const assetUrl = name => 'assets/' + name + (HI ? '@2x' : '') + '.png?v=' + ART_V;
+const IMG = {}, WANT = {}, FILE_OF = {};
+for (const name of ASSET_FILES) FILE_OF[name.replace(/_\d+f$/, '')] = name;
+function loadAsset(key) { // each asset on its first use; the drawn fallback stands in meanwhile
+  if (WANT[key]) return; WANT[key] = 1;
+  const name = FILE_OF[key]; if (!name || typeof Image === 'undefined') return;
+  const m = name.match(/_(\d+)f$/); const frames = m ? +m[1] : 1;
+  const img = new Image();
+  img.onload = () => { IMG[key] = { img, frames, fw: img.naturalWidth / frames, fh: img.naturalHeight }; onAsset(key); };
+  img.onerror = () => {};
+  img.src = assetUrl(name);
 }
-const spr = key => IMG[key] || null;
+function loadAssets() { loadAsset('btn_jump'); loadAsset('btn_squeeze'); }
+const spr = key => { if (!WANT[key]) loadAsset(key); return IMG[key] || null; };
 function drawSpr(s, x, y, w, h, frame = 0) { const f = Math.floor(frame) % s.frames; ctx.drawImage(s.img, f * s.fw, 0, s.fw, s.fh, x, y, w, h); }
 function onAsset(key) {
-  if (key === 'btn_jump') { jumpBtn.style.backgroundImage = 'url(assets/btn_jump.png)'; jumpBtn.textContent = ''; }
-  if (key === 'btn_squeeze') { pressBtn.style.backgroundImage = 'url(assets/btn_squeeze.png)'; pressBtn.textContent = ''; }
+  const art = (b, k) => { b.style.backgroundImage = 'url(' + assetUrl(k) + ')'; b.style.backgroundSize = '100% 100%'; b.style.borderColor = 'transparent'; b.textContent = ''; };
+  if (key === 'btn_jump') art(jumpBtn, 'btn_jump');
+  if (key === 'btn_squeeze') art(pressBtn, 'btn_squeeze');
+  if (key === 'wordmark' && mode === 'title') showTitle();
 }
 
 // ───────────────────────────── 4. STATE ────────────────────────────
@@ -361,8 +375,8 @@ function rejectReason(items) {
   switch (bad.r) {
     case 'PLAIN': return P.fried ? 'Too crispy.' : P.frozen ? 'Too cold.' : P.f < TH.silken ? 'Too soft.' : P.f > TH.firm ? 'Too firm.' : P.soy >= 0.3 ? 'Too dark.' : 'Too... something.';
     case 'SILKEN': return 'Too firm.'; case 'FIRM': return 'Too soft.'; case 'FRIED': return 'Not fried.';
-    case 'FROZEN': return P.thawed ? 'Thawed!' : 'Not frozen.'; case 'SOY': return 'Needs soy.';
-    case 'STINKY': return 'Too clean.'; case 'RINSE': return 'Rinse first!';
+    case 'FROZEN': return P.thawed ? 'Thawed.' : 'Not frozen.'; case 'SOY': return 'Needs soy.';
+    case 'STINKY': return 'Too clean.'; case 'RINSE': return 'Rinse first.';
   }
   return 'Not quite.';
 }
@@ -376,7 +390,7 @@ function stateLabel() {
   const tags = []; let main;
   if (P.frozen) main = 'FROZEN'; else if (P.fried) main = 'FRIED'; else if (P.f < TH.silken) main = 'SILKEN';
   else if (P.f > TH.firm) main = 'FIRM'; else if (P.thawed) main = 'SPONGY'; else main = 'PLAIN';
-  if (P.soy >= TH.flavor) tags.push('SOY-DARK'); else if (P.soy > 0.2) tags.push('soy ' + Math.round(P.soy * 100) + '%');
+  if (P.soy >= TH.flavor) tags.push('SOY DARK'); else if (P.soy > 0.2) tags.push('soy ' + Math.round(P.soy * 100) + '%');
   if (P.stink >= TH.flavor) tags.push('STINKY'); else if (P.stink >= TH.stinkClean) tags.push('whiffy');
   if (P.thawed && main !== 'SPONGY') tags.push('spongy ×2');
   if (P.frozen) tags.push(P.frozenT.toFixed(1) + 's');
@@ -489,7 +503,7 @@ function updateState(dt, cz) {
     if (P.frozen) P.frozenT -= CFG.cold.thawOnPan * dt;
     else {
       P.heat += CFG.heat.gain * dt;
-      if (!P.fried && P.heat >= CFG.heat.fryAt) { P.fried = true; P.soggy = 0; SFX.fry(); toast('Puffed!'); for (let i = 0; i < 10; i++) steam(P.x + rnd(-0.4, 0.4), P.y - P.hh); squash(1.3, 1.3); }
+      if (!P.fried && P.heat >= CFG.heat.fryAt) { P.fried = true; P.soggy = 0; SFX.fry(); toast('Puffed.'); for (let i = 0; i < 10; i++) steam(P.x + rnd(-0.4, 0.4), P.y - P.hh); squash(1.3, 1.3); }
       if (P.heat >= CFG.heat.burnAt) return die('Overcooked.');
     }
     if (rnd() < dt * 10) steam(P.x + rnd(-P.hw, P.hw), P.y + P.hh);
@@ -501,7 +515,7 @@ function updateState(dt, cz) {
   if (P.frozen) {
     P.frozenT -= dt * (liquid ? CFG.cold.thawInLiquid : 1);
     if (rnd() < dt * 2) frost(P.x + rnd(-P.hw, P.hw), P.y + rnd(-P.hh, P.hh));
-    if (P.frozenT <= 0) { P.frozen = false; P.thawed = true; P.thawedT = CFG.cold.thawedTime; toast('Thawed — spongy!'); for (let i = 0; i < 6; i++) droplet(P.x + rnd(-0.3, 0.3), P.y + P.hh); }
+    if (P.frozenT <= 0) { P.frozen = false; P.thawed = true; P.thawedT = CFG.cold.thawedTime; toast('Thawed and spongy.'); for (let i = 0; i < 6; i++) droplet(P.x + rnd(-0.3, 0.3), P.y + P.hh); }
   } else if (P.thawed) { P.thawedT -= dt; if (P.thawedT <= 0) P.thawed = false; }
   if (P.pressing) {
     P.f = Math.min(1, P.f + CFG.soak.press * dt);
@@ -515,9 +529,20 @@ function die(reason) {
   if (P.dead) return; P.dead = true; P.deadT = 0.9; deaths++; toast(reason, 1.3); SFX.dead();
   for (let i = 0; i < 16; i++) spawn({ x: P.x, y: P.y, vx: rnd(-6, 6), vy: rnd(-9, 2), g: 30, life: rnd(0.5, 1), r: rnd(0.06, 0.16), col: bodyColor() });
 }
+function sunbeamServe(n) { // Sky Wolf earn standard: 30 a day per game (SUNBEAM_EARN_POLICY.md)
+  let grant = 0;
+  try { const k = 'sw_sb_tofu'; let s = {}; try { s = JSON.parse(localStorage.getItem(k) || '{}'); } catch (e) {}
+    const d = Math.floor(Date.now() / 864e5); if (s.d !== d) s = { d, n: 0 };
+    grant = Math.min(n, Math.max(0, 30 - (s.n || 0)));
+    if (grant > 0) { s.n = (s.n || 0) + grant; localStorage.setItem(k, JSON.stringify(s)); }
+  } catch (e) {}
+  try { if (grant > 0 && window.Sunbeam && window.Sunbeam.earn) window.Sunbeam.earn(grant, 'tofu_serve').catch(() => {}); } catch (e) {}
+  return grant;
+}
 function serve() {
   mode = 'served'; SFX.served(); progress = Math.max(progress, world.idx + 1);
   const t = +levelTime.toFixed(1); if (!best[world.idx] || t < best[world.idx]) best[world.idx] = t; save();
+  sunbeamServe(5);
   const b = world.bowl;
   for (let i = 0; i < 40; i++) spawn({ x: b.x + 0.5, y: b.y + 0.6, vx: rnd(-7, 7), vy: rnd(-12, -3), g: 22, life: rnd(0.8, 1.6), r: rnd(0.05, 0.11), col: ['#7ddc8a', '#f6f1e7', '#e7b65a', '#8fc3ef', '#ff9a9a'][i % 5], shape: 'r' });
   setTimeout(showServed, 700);
@@ -549,7 +574,7 @@ function updateChops(dt) {
     if (isSolidCh(tileAt(aheadX, footY)) || !isSolidCh(tileAt(aheadX, footY + 1))) { if (c.mode === 'patrol') c.dir = -c.dir; }
     else c.x = nx;
     c.anim += dt * (c.mode === 'patrol' ? 4 : 9);
-    if (!P.dead && Math.abs(P.x - c.x) < P.hw + c.hw && Math.abs(P.y - c.y) < P.hh + c.hh) die('Grabbed!');
+    if (!P.dead && Math.abs(P.x - c.x) < P.hw + c.hw && Math.abs(P.y - c.y) < P.hh + c.hh) die('Grabbed.');
   }
 }
 function updateEyes(dt) {
@@ -565,7 +590,7 @@ function updateEyes(dt) {
     if (visibility() > CFG.eye.visLimit) { e.seeing = true; seen = true; }
   }
   spotted = clamp(spotted + (seen ? CFG.eye.fill : -CFG.eye.drain) * dt, 0, 1);
-  if (spotted >= 1) { spotted = 0; die('Spotted!'); }
+  if (spotted >= 1) { spotted = 0; die('Spotted.'); }
 }
 function los(x0, y0, x1, y1) {
   const d = Math.hypot(x1 - x0, y1 - y0), n = Math.ceil(d / 0.2), sx = Math.floor(x0), sy = Math.floor(y0);
@@ -826,11 +851,11 @@ function drawParts() {
   ctx.globalAlpha = 1;
 }
 function drawToasts() {
-  ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.font = '800 14px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.font = '800 16px system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (const t of toasts) {
     const k = t.t / t.dur, a = k < 0.15 ? k / 0.15 : k > 0.75 ? (1 - k) / 0.25 : 1;
     const sx = cam.ox + t.x * cam.ts, sy = cam.oy + (t.y - k * 0.6) * cam.ts, w = ctx.measureText(t.text).width + 18;
-    ctx.globalAlpha = a; ctx.fillStyle = 'rgba(10,11,16,0.8)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(sx - w / 2, sy - 13, w, 26, 8) : ctx.rect(sx - w / 2, sy - 13, w, 26); ctx.fill();
+    ctx.globalAlpha = a; ctx.fillStyle = 'rgba(10,11,16,0.8)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(sx - w / 2, sy - 15, w, 30, 8) : ctx.rect(sx - w / 2, sy - 15, w, 30); ctx.fill();
     ctx.fillStyle = '#f3efe6'; ctx.fillText(t.text, sx, sy);
   }
   ctx.restore();
@@ -885,7 +910,7 @@ const SFX = (() => {
 function toggleMute() { muted = !muted; save(); }
 
 // ───────────────────────────── 10. UI & FLOW ───────────────────────
-const RECIPE_LABEL = { PLAIN: 'PLAIN', SILKEN: 'SILKEN', FIRM: 'FIRM', FRIED: 'FRIED', FROZEN: 'FROZEN', SOY: 'SOY-DARK', STINKY: 'STINKY', RINSE: 'RINSE!' };
+const RECIPE_LABEL = { PLAIN: 'PLAIN', SILKEN: 'SILKEN', FIRM: 'FIRM', FRIED: 'FRIED', FROZEN: 'FROZEN', SOY: 'SOY DARK', STINKY: 'STINKY', RINSE: 'RINSE' };
 let lastChips = '', lastState = '', lastTags = '';
 function hud() {
   if (mode !== 'play' && mode !== 'served') { hudEl.classList.add('hidden'); return; } hudEl.classList.remove('hidden');
@@ -894,19 +919,20 @@ function hud() {
   el.barFirm.style.width = (P.f * 100) + '%';
   const flav = [['SOY', P.soy, '#4a2a12'], ['STINK', P.stink, '#7fbf5f'], ['HEAT', P.heat, '#ff7a1e'], ['COLD', P.cold, '#aadcff']].sort((a, b) => b[1] - a[1])[0];
   el.barFlav.style.width = (clamp(flav[1], 0, 1) * 100) + '%'; el.barFlav.style.background = flav[2]; el.barFlavLabel.textContent = flav[1] > 0.02 ? flav[0] : 'FLAVOR';
-  const rc = recipeCheck(); const html = rc.items.map(i => `<span class="chip ${i.ok ? 'ok' : i.r === 'RINSE' ? 'bad' : ''}">${RECIPE_LABEL[i.r]} ${i.ok ? '✓' : '·'}</span>`).join('');
+  const rc = recipeCheck(); const html = rc.items.map(i => `<span class="chip ${i.ok ? 'ok' : i.r === 'RINSE' ? 'bad' : ''}">${RECIPE_LABEL[i.r]}${i.ok ? '' : ' ·'}</span>`).join('');
   if (html !== lastChips) { el.chips.innerHTML = html; lastChips = html; }
 }
 function recipeChips(L) { return L.recipe.map(r => `<span class="chip">${RECIPE_LABEL[r]}</span>`).join(''); }
 function showTitle() {
   mode = 'title'; overlay.classList.remove('hidden'); if (!world) loadLevel(0);
-  const wm = spr('wordmark') ? `<img class="wordmark" src="assets/wordmark.png" alt="TOFU">` : `<div class="blob"></div><h1>TOFU</h1>`;
+  const wm = spr('wordmark') ? `<img class="wordmark" src="${assetUrl('wordmark')}" alt="TOFU">` : `<div class="blob"></div><h1>TOFU</h1>`;
   card.innerHTML = `<div class="eyebrow">LUCID WINDS · TEST KITCHEN</div>${wm}
     <p class="tag">You have no properties of your own.<br>You become what you soak in.</p>
     <p class="sub">Every level is a recipe. You are the ingredient.</p>
-    <div class="grid">${LEVELS.map((L, i) => { const locked = i > progress && !DEV; const done = i < progress; return `<button class="dishBtn ${locked ? 'locked' : ''} ${done ? 'done' : ''}" data-act="pick" data-i="${i}" ${locked ? 'disabled' : ''}><b>${locked ? '🔒 ' : done ? '✓ ' : ''}${L.dish}</b><span>arrive: ${L.recipe.map(r => RECIPE_LABEL[r]).join(' + ')}</span>${best[i] ? `<em>best ${best[i]}s</em>` : ''}</button>`; }).join('')}</div>
-    <div class="row"><button class="act" data-act="pick" data-i="${Math.min(progress, LEVELS.length - 1)}">${progress ? 'CONTINUE' : 'START'}</button><button class="act ghost" data-act="mute">${muted ? '🔇 SOUND OFF' : '🔊 SOUND ON'}</button></div>
-    <p class="foot">touch: left side drag to move · JUMP · hold SQUEEZE<br>keys: ← → / A D move · space jump · S squeeze · R restart · M mute</p>`;
+    <div class="grid">${LEVELS.map((L, i) => { const locked = i > progress && !DEV; const done = i < progress; return `<button class="dishBtn ${locked ? 'locked' : ''} ${done ? 'done' : ''}" data-act="pick" data-i="${i}" ${locked ? 'disabled' : ''}><b>${L.dish}${locked ? ' · LOCKED' : ''}</b><span>arrive: ${L.recipe.map(r => RECIPE_LABEL[r]).join(' + ')}</span>${best[i] ? `<em>best ${best[i]}s</em>` : ''}</button>`; }).join('')}</div>
+    <div class="row"><button class="act" data-act="pick" data-i="${Math.min(progress, LEVELS.length - 1)}">${progress ? 'CONTINUE' : 'START'}</button><button class="act ghost" data-act="mute">${muted ? 'SOUND OFF' : 'SOUND ON'}</button></div>
+    <p class="land">Best played sideways. Turn your phone for a wider kitchen.</p>
+    <p class="foot">Touch: drag on the left side to move, tap JUMP, hold SQUEEZE.<br>Keys: arrows or A and D to move, space to jump, S to squeeze, R to restart, M to mute.</p>`;
 }
 function showRecipe(i) {
   mode = 'card'; cardLevel = i; loadLevel(i); overlay.classList.remove('hidden'); const L = LEVELS[i];
@@ -917,7 +943,7 @@ function showRecipe(i) {
 }
 function showServed() {
   overlay.classList.remove('hidden'); const L = world.L, st = stateLabel();
-  card.innerHTML = `<div class="eyebrow">SERVED</div><h2>${L.dish} ✓</h2>
+  card.innerHTML = `<div class="eyebrow">SERVED</div><h2>${L.dish}</h2>
     <div class="chips">${recipeChips(L)}</div>
     <p class="stats">Arrived ${st.main}${st.tags.length ? ' · ' + st.tags.join(' · ') : ''}<br>${levelTime.toFixed(1)}s · ${deaths} respawn${deaths === 1 ? '' : 's'}${best[world.idx] && best[world.idx] < +levelTime.toFixed(1) ? ` · best ${best[world.idx]}s` : ' · new best'}</p>
     <div class="row">${world.idx + 1 < LEVELS.length ? `<button class="act" data-act="next">NEXT DISH</button>` : `<button class="act" data-act="title">THAT'S THE MENU</button>`}<button class="act ghost" data-act="restart">AGAIN</button><button class="act ghost" data-act="title">MENU</button></div>`;
@@ -925,7 +951,7 @@ function showServed() {
 function showPaused() {
   mode = 'paused'; overlay.classList.remove('hidden'); input.press = false; stick.id = null;
   card.innerHTML = `<div class="eyebrow">PAUSED</div><h2>${world.L.dish}</h2><div class="chips">${recipeChips(world.L)}</div><div class="hint">${world.L.hint}</div>
-    <div class="row"><button class="act" data-act="resume">RESUME</button><button class="act ghost" data-act="restart">RESTART</button><button class="act ghost" data-act="mute">${muted ? '🔇' : '🔊'}</button><button class="act ghost" data-act="title">MENU</button></div>`;
+    <div class="row"><button class="act" data-act="resume">RESUME</button><button class="act ghost" data-act="restart">RESTART</button><button class="act ghost" data-act="mute">${muted ? 'SOUND OFF' : 'SOUND ON'}</button><button class="act ghost" data-act="title">MENU</button></div>`;
 }
 function refreshCard() { if (mode === 'title') showTitle(); else if (mode === 'paused') showPaused(); }
 function startLevel(i) { loadLevel(i); mode = 'play'; overlay.classList.add('hidden'); lastChips = lastState = lastTags = ''; el.dishName.textContent = LEVELS[i].dish; el.dishSub.textContent = 'arrive: ' + LEVELS[i].recipe.map(r => RECIPE_LABEL[r]).join(' + '); showHint(LEVELS[i].hint); }
@@ -943,13 +969,8 @@ overlay.addEventListener('click', e => {
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'play') showPaused(); });
 
-// PWA manifest (runtime, so the file stays single). Swap icons for assets/icon_*.png when Astra delivers.
-try {
-  const base = location.href.split(/[?#]/)[0];
-  const man = { name: 'TOFU', short_name: 'TOFU', start_url: base, scope: base.replace(/[^/]*$/, ''), display: 'standalone', orientation: 'landscape', background_color: '#1c1e24', theme_color: '#1c1e24',
-    icons: [{ src: new URL('assets/icon_192.png', base).href, sizes: '192x192', type: 'image/png' }, { src: new URL('assets/icon_512.png', base).href, sizes: '512x512', type: 'image/png' }, { src: new URL('assets/icon_maskable_512.png', base).href, sizes: '512x512', type: 'image/png', purpose: 'maskable' }] };
-  const link = document.createElement('link'); link.rel = 'manifest'; link.href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(man)); document.head.appendChild(link);
-} catch (e) {}
+// PWA: manifest.webmanifest beside the page; the service worker is network first (sw.js)
+try { if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=1').catch(() => {}); } catch (e) {}
 
 // ───────────────────────────── LOOP ────────────────────────────────
 const STEP = 1 / 120; let last = performance.now(), acc = 0;
