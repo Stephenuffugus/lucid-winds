@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 8 Nov 2026, 01:13 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 8 Nov 2026, 01:17 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 1. The art, in this order (you, then Astra)
 
@@ -62,7 +62,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Start the session with the Tomato Man repo added as a working directory (`claude --add-dir /workspaces/Tomato_Man`), then paste docs/briefs/opus-kickoff-nov07/PROMPT.txt (you)  
 - [x] Chapter 1 Sunforge v5.2, the obsidian shards, the heating rest, the notch and lit seam, How 05 (Fable, 7 Nov; waits for your line)  
 - [x] Chapter 2 Flatulence Fighter m4, the six pad plates, the ring, moving calls, the cards, the lesson line, and m5 (a miss is a strike): LIVE 7 Nov by your line (Fable)  
-- [x] Chapter 3 Keepsies m4, the circle and reticles at 154 px, the snap card, the chalk, the chip (Fable, 7 Nov; waits for your line)  
+- [x] Chapter 3 Keepsies m4, the circle and reticles at 154 px, the snap card, the chalk, the chip: LIVE 8 Nov by your line (Fable)  
 - [x] Chapter 4 Tomato Man A, canopies you walk under, the walk fixed, the seed and critter art in: LIVE 7 Nov under milestone B's line (Fable)  
 - [x] Chapter 5 Tomato Man B, THE RUN, with chapter 8 (her run art) inside it, sunstruck 1125c0d4 (Fable, 7 Nov)  
 - [x] Chapter 6 Shutterbug R10, film stocks, rank, keepsakes (sb-m2-13), the four verbs (sb-m2-15) (Fable, 7 Nov)  
@@ -84,7 +84,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Tomato Man Planet Tomató (a tomato moon crosses the Dunes and the Eclipse once a level; ride its shadow): LIVE 7 Nov, main d5b3a7a75 (you ran the line)  
 - [x] Tomato Man THE SPLIT and the walk order (two lanes of awnings, shades on their own clocks, the feet alternate): LIVE 8 Nov, main b07c49c06 (you ran the line)  
 - [x] Shutterbug sb-m2-19 and 20 (round 11 code: THE CROSSWIND and THE COLLAPSING STAIRCASE; the shelf's frames, streaks and the dive's whoosh stand in for Astra's art): LIVE 8 Nov, main 758cac4db (you ran the line)  
-- [ ] Keepsies m4 (Astra's round 3 on the new shot: her hold circle, the reticle at 154, the snap card, the chalk breaks, the chip): `! bash /home/codespace/kp-drafts/deploy-keepsies-m4.sh` (you)  
+- [x] Keepsies m4 (Astra's round 3 on the new shot: her hold circle, the reticle at 154, the snap card, the chalk breaks, the chip): LIVE 8 Nov, main 7619bc46c (you ran the line)  
 - [ ] Sunforge v5.2 (Astra's obsidian shards, the heating rest, the notch and lit seam, How 05): `! bash /home/codespace/sf-drafts/deploy-sunforge-m3.sh` (you)  
 - [ ] Run each deploy line Opus left at the top of START-HERE.md, one at a time at an idle prompt (you)  
 - [ ] Play each game on the Pixel after its line and write your notes in one message; Fable turns them into the next chapter (you)  

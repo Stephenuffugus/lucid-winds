@@ -50,7 +50,7 @@ one commit as its own command, last.
 |---|---|---|---|
 | 1 | DONE, waits for his line | 7 Nov (Fable, daytime) | v5.2 at 2403070e0; `! bash /home/codespace/sf-drafts/deploy-sunforge-m3.sh` |
 | 2 | LIVE 7 Nov ~22:15 UTC | 7 Nov (Fable, daytime) | m4 (3d8c92165) and m5 (a miss is a strike, his ruling; 5fb6ecb5e) on lucid-winds main 692ca6b87 by his one line |
-| 3 | DONE, waits for his line | 7 Nov (Fable, daytime) | m4 at 3ba0a05cc; `! bash /home/codespace/kp-drafts/deploy-keepsies-m4.sh` |
+| 3 | LIVE 8 Nov ~01:17 UTC | 7 Nov (Fable, daytime) | Keepsies m4 (3ba0a05cc, build 20261107a) on lucid-winds main 7619bc46c, his line |
 | 4 | LIVE 7 Nov ~18:05 UTC | 7 Nov (Fable, daytime) | sunstruck 5097685, carried by milestone B's line (its own line never ran and is stale) |
 | 5 | LIVE 7 Nov ~18:05 UTC | 7 Nov (Fable, daytime) | sunstruck 1125c0d4 (B0 to B7, with chapter 8 inside) on lucid-winds main b3c737e20 and Tomato_Man main |
 | 6 | LIVE 7 Nov ~22:25 UTC through sb-m2-18 | 7 Nov (Fable, daytime) | sb-m2-13 and 15 on main 5bfb72309; sb-m2-16 (the moves taught), 17 (the Loom and the Wasp) and 18 (the phases) on main e5dfd0c44, his one line; sb-m2-19 (the crosswind) and sb-m2-20 (the collapsing staircase), round 11 code, LIVE 8 Nov ~01:13 UTC on main 758cac4db by his one line |
