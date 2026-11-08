@@ -45,7 +45,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Flatulence Fighter: the medals' names; the table card's line; the lesson's move beat once Fable explains it (you)  
 - [ ] Keepsies: the five foot ring, the flick's own direction, the circle's size, the place phase, the camera during a shot, the skyline; the statues (the limestone shapes Astra draws in round 4, or her figures); the title drops "Thirteen marbles in a cross"; the name; the ladder's rungs; the Arena's numbers; Meshy, paid (you)  
 - [ ] Sunforge: pause, fonts, the guided first ring, overload, the slam sound, the name; and the m2 pick (SLAM by swipe, chapter skies, the hold outline, overload, a weekly gyre, the store listing) (you)  
-- [x] Pixel Petri: THE LIVING YEAR built 8 Nov (seasons, weather, the Season power, two switches; tiny-world main 5d4d0b7; suites then your Pixel, then the deploy line); still yours: free everywhere or packs first, the commercial's timing, Penny's pack, Q51 (Fable)
+- [x] Pixel Petri: THE LIVING YEAR LIVE 8 Nov 05:25 UTC by your line (20261108a, tiny-world dc334d5; the suites still running behind it; push dc334d5 to the private main as one line); still yours: free everywhere or packs first, the commercial's timing, Penny's pack, Q51 (Fable)
 - [ ] Pixel Petri: the first expansion (Many Peoples, Themed Packs), free everywhere or packs first, the commercial's timing, Penny's pack (you)  
 - [ ] Say if the new fart sounds are funny; if not, a pack of recorded ones (CC0) is the next step (you)
 
