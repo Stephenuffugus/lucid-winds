@@ -45,7 +45,8 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Flatulence Fighter: the medals' names; the table card's line; the lesson's move beat once Fable explains it (you)  
 - [ ] Keepsies: the five foot ring, the flick's own direction, the circle's size, the place phase, the camera during a shot, the skyline; the statues (the limestone shapes Astra draws in round 4, or her figures); the title drops "Thirteen marbles in a cross"; the name; the ladder's rungs; the Arena's numbers; Meshy, paid (you)  
 - [ ] Sunforge: pause, fonts, the guided first ring, overload, the slam sound, the name; and the m2 pick (SLAM by swipe, chapter skies, the hold outline, overload, a weekly gyre, the store listing) (you)  
-- [ ] Pixel Petri: the first expansion (the Living Year, Many Peoples, Themed Packs), free everywhere or packs first, the commercial's timing, Penny's pack (you)  
+- [x] Pixel Petri: THE LIVING YEAR built 8 Nov (seasons, weather, the Season power, two switches; tiny-world main 5d4d0b7; suites then your Pixel, then the deploy line); still yours: free everywhere or packs first, the commercial's timing, Penny's pack, Q51 (Fable)
+- [ ] Pixel Petri: the first expansion (Many Peoples, Themed Packs), free everywhere or packs first, the commercial's timing, Penny's pack (you)  
 - [ ] Say if the new fart sounds are funny; if not, a pack of recorded ones (CC0) is the next step (you)
 
 ## 3. The one plan (Fable)
@@ -61,6 +62,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 
 - [ ] Start the session with the Tomato Man repo added as a working directory (`claude --add-dir /workspaces/Tomato_Man`), then paste docs/briefs/opus-kickoff-nov07/PROMPT.txt (you)  
 - [x] Chapter 1 Sunforge v5.2, the obsidian shards, the heating rest, the notch and lit seam, How 05: LIVE 8 Nov by your line (Fable)  
+- [ ] Sunforge v5.3 THE SKINS (Obsidian, Bright, Clay, Painted; unlocks; one Sunbreaker theme on every screen): built 8 Nov, waits for your line `! bash /home/codespace/sf-drafts/deploy-sunforge-v3.sh` (Fable)  
 - [x] Chapter 2 Flatulence Fighter m4, the six pad plates, the ring, moving calls, the cards, the lesson line, and m5 (a miss is a strike): LIVE 7 Nov by your line (Fable)  
 - [x] Chapter 3 Keepsies m4, the circle and reticles at 154 px, the snap card, the chalk, the chip: LIVE 8 Nov by your line (Fable)  
 - [x] Chapter 4 Tomato Man A, canopies you walk under, the walk fixed, the seed and critter art in: LIVE 7 Nov under milestone B's line (Fable)  
