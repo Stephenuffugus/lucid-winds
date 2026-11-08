@@ -55,6 +55,7 @@ hand played). Astra's art pack came the same day.
 | Step | State | Commit | Note |
 |---|---|---|---|
 | 0 | DONE 8 Nov | cb6d1d7b4 | Short path: his /workspaces/tofu-drop/index.html copied as is; 133 pack files flat in assets/ (store art left out); check.js passes all but 17 [copy] faults (16 copy law, 1 zoom viewport) for step 1; shoot.mjs written, not yet run |
+| 1 | DONE 8 Nov | b4c725c93 | sw.js (tofu-v1, ring-stacker pattern), manifest.webmanifest (./, any), icons/, Sunbeam init + 5 a serve under 30 a day, ART_V 1 and @2x on dense screens each on first use, every ! and dash and emoji out of player copy, 48 px targets, 16 px body copy, zoom allowed, landscape hint; check OK; title shot taken, not opened (cream card y 167 to 602 CSS px, only page error the local 404 of /sunbeam-sdk.js) |
 
 ## THE STEPS
 
