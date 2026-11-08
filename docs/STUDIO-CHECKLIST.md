@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 8 Nov 2026, 15:46 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 8 Nov 2026, 15:50 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 1. The art, in this order (you, then Astra)
 
@@ -63,7 +63,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Start the session with the Tomato Man repo added as a working directory (`claude --add-dir /workspaces/Tomato_Man`), then paste docs/briefs/opus-kickoff-nov07/PROMPT.txt (you)  
 - [x] Chapter 1 Sunforge v5.2, the obsidian shards, the heating rest, the notch and lit seam, How 05: LIVE 8 Nov by your line (Fable)  
 - [x] Tomato Man THE PRESSURE (his 8 Nov notes: fair lunge, lesson levels, pressure everywhere, cooling resources, finds on the route, progressive worlds): built 8 Nov 09:21 UTC by the overnight (sunstruck 55b909d), LIVE 8 Nov 15:45 UTC by your line (Fable)  
-- [ ] TOFU m1 (the new tofu platformer, your v0.1 file with Astra's art wired, all eight levels served by the bot): built 8 Nov 09:21 UTC by the overnight (lucid-winds 9776b6006, stamp 20261109a), waits for your line `! bash /home/codespace/tofu-drafts/deploy-tofu-m1.sh`, run it BEFORE any Pixel Petri deploy (both rewrite the portal) (Fable)  
+- [x] TOFU m1 (the new tofu platformer, your v0.1 file with Astra's art wired, all eight levels served by the bot): built 8 Nov 09:21 UTC by the overnight (lucid-winds 9776b6006, stamp 20261109a), LIVE 8 Nov 15:50 UTC by your line (Fable)  
 - [ ] Sunforge v5.3 THE SKINS (Obsidian, Bright, Clay, Painted; unlocks; one Sunbreaker theme on every screen): built 8 Nov, waits for your line `! bash /home/codespace/sf-drafts/deploy-sunforge-v3.sh` (Fable)  
 - [x] Chapter 2 Flatulence Fighter m4, the six pad plates, the ring, moving calls, the cards, the lesson line, and m5 (a miss is a strike): LIVE 7 Nov by your line (Fable)  
 - [x] Chapter 3 Keepsies m4, the circle and reticles at 154 px, the snap card, the chalk, the chip: LIVE 8 Nov by your line (Fable)  
@@ -92,6 +92,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Sunforge v5.2 (Astra's obsidian shards, the heating rest, the notch and lit seam, How 05): LIVE 8 Nov, main 003507efd (you ran the line)  
 - [x] Shutterbug sb-m2-21 HOTFIX (the crosswind's breath threw an error at the first blow in Attic rooms; a wrong name in the sound call): LIVE 8 Nov, main 88d0e4e1b (you ran the line; nothing waits on a line now)  
 - [x] Tomato Man THE PRESSURE (the fair lunge, the two teaching levels, pressure on nearly every level, aloe and pickups, the finds in the shade with a compass, worlds open in turn, harder by world): LIVE 8 Nov 15:45 UTC, main 7c794c84b, Tomato_Man main 55b909da (you ran the line); the levels bot says finishable, your thumbs say if it is hard enough  
+- [x] TOFU m1 (the tofu platformer with Astra's art, the portal row beside Sunforge): LIVE 8 Nov 15:50 UTC, main 8beed537b, lucidwinds.com/satellites/tofu/ (you ran the line); a Pixel Petri deploy is safe now  
 - [x] Every line of 7 Nov run, one at a time, by 8 Nov 01:20 UTC (you)  
 - [ ] Play each game on the Pixel after its line and write your notes in one message; Fable turns them into the next chapter (you)  
 - [ ] Open Tomato Man with ?lab=1 and fix one level you hate; Copy JSON and paste it to Fable (you)  
