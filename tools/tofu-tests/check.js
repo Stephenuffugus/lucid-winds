@@ -1,0 +1,109 @@
+'use strict';
+/* The one node only check for TOFU (satellites/tofu/index.html in lucid-winds, branch add-sproing-jumper), seconds,
+ * no browser. THE TESTING LAW (TOFU_BUILD_PLAN.md): this runs after every step; a browser shot is taken once per
+ * visual step with tools/tofu-tests/shoot.mjs. Made in step 0 from tools/tomato-man-tests/check.js.
+ *
+ *   node tools/tofu-tests/check.js            the game page
+ *   node tools/tofu-tests/check.js <file>     another copy of the page
+ *
+ * What it proves: every <script> block parses (vm); the style blocks' braces balance; every local file the page names
+ * (assets/..., icons/..., og/..., sw.js, manifest.webmanifest) exists and no raster has a side over 1600 px; no store art
+ * (screenshot_frame, store_feature) is named; no emoji outside comments; no dash of any kind and no exclamation mark in
+ * player copy (markup text and the script's quoted prose strings); the save keys survive (tofu.progress, tofu.best,
+ * tofu.mute); the viewport allows zoom; the web manifest beside the page parses. Copy law and zoom faults are tagged
+ * [copy] (step 1 clears them). Ends TOFU CHECK OK or TOFU CHECK FAILED. */
+const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm');
+const PAGE = path.resolve(process.argv[2] || '/workspaces/lucid-winds/satellites/tofu/index.html');
+const html = fs.readFileSync(PAGE, 'utf8');
+const DIR = path.dirname(PAGE);
+const fails = [];
+const fail = m => fails.push(m);
+const copyFail = m => fails.push('[copy] ' + m);
+const decode = s => s.replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+  .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)));
+
+/* 1. every script block parses */
+let parsed = 0;
+for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+  if (/\bsrc=/.test(m[1]) || /type\s*=\s*["'](?!(text|application)\/javascript)/.test(m[1])) continue;
+  if (!m[2].trim()) continue;
+  try { new vm.Script(m[2], { filename: 'tofu-block-' + (parsed + 1) }); parsed++; }
+  catch (e) { fail('script block ' + (parsed + 1) + ' does not parse: ' + e.message); }
+}
+if (!parsed) fail('no inline script block found');
+
+/* 2. the style blocks' braces balance */
+for (const m of html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)) {
+  const css = m[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/url\([^)]*\)/g, 'url()').replace(/"[^"]*"|'[^']*'/g, '""');
+  let depth = 0, line = 1, bad = 0;
+  for (const ch of css) { if (ch === '\n') line++; if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth < 0) { bad = line; break; } } }
+  if (bad || depth !== 0) fail('style block braces do not balance (depth ' + depth + (bad ? ', closes too early at line ' + bad : '') + ')');
+}
+
+/* 3. the local files the page names exist; rasters under 1600 px a side; no store art named */
+function dims(p) {
+  const b = fs.readFileSync(p);
+  if (b.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return [b.readUInt32BE(16), b.readUInt32BE(20)];
+  if (b.slice(0, 4).toString() === 'RIFF' && b.slice(8, 12).toString() === 'WEBP') {
+    const k = b.slice(12, 16).toString();
+    if (k === 'VP8X') return [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)];
+    if (k === 'VP8 ') return [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff];
+    if (k === 'VP8L') { const x = b.readUInt32LE(21); return [1 + (x & 0x3fff), 1 + ((x >> 14) & 0x3fff)]; }
+  }
+  if (b[0] === 0xff && b[1] === 0xd8) { let i = 2; while (i < b.length) { if (b[i] !== 0xff) { i++; continue; } const mk = b[i + 1]; if (mk >= 0xc0 && mk <= 0xcf && mk !== 0xc4 && mk !== 0xc8 && mk !== 0xcc) return [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)]; i += 2 + b.readUInt16BE(i + 2); } }
+  return null;
+}
+const named = new Set([...html.matchAll(/["'(`]((?:\.\/)?(?:(?:assets|icons|og)\/[^"'`)?#\s$]+|sw\.js|manifest\.webmanifest))/g)].map(m => m[1].replace(/^\.\//, '')).filter(n => /\.[a-z0-9]+$/i.test(n)));
+for (const rel of named) {
+  if (/(^|\/)store\/|screenshot_frame|store_feature/.test(rel)) { fail('store art named by the page (it never ships): ' + rel); continue; }
+  const p = path.join(DIR, rel);
+  if (!fs.existsSync(p)) { fail('the page names a missing file: ' + rel); continue; }
+  if (/\.(png|webp|jpe?g)$/i.test(rel) ) { const d = dims(p); if (d && Math.max(d[0], d[1]) > 1600) fail('raster over 1600 px a side: ' + rel + ' ' + d.join('x')); }
+}
+
+/* 4. no emoji but in comments; no dash or exclamation mark in player copy */
+const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{27C0}-\u{27FF}\u{2B00}-\u{2BFF}\u{23E9}-\u{23FA}\u{25A0}-\u{25FF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{FE0F}]/u;
+const lines = html.split('\n');
+let inBlockComment = false, inHtmlComment = false;
+const bodyStart = html.indexOf('<body'), scriptStart = html.indexOf('<script', bodyStart);
+const bodyLine = html.slice(0, bodyStart).split('\n').length, scriptLine = scriptStart < 0 ? Infinity : html.slice(0, scriptStart).split('\n').length;
+lines.forEach((raw, i) => {
+  const ln = i + 1, line = decode(raw), t = line.trim();
+  if (inHtmlComment) { if (t.indexOf('-->') >= 0) inHtmlComment = false; return; }
+  if (t.startsWith('<!--') && t.indexOf('-->') < 0) { inHtmlComment = true; return; }
+  if (inBlockComment) { if (t.indexOf('*/') >= 0) inBlockComment = false; return; }
+  if (t.startsWith('/*') && t.indexOf('*/') < 0) { inBlockComment = true; return; }
+  if (t.startsWith('//') || t.startsWith('/*') || t.startsWith('*') || t.startsWith('<!--')) return;
+  const code = line.replace(/\/\/ .*$/, '').replace(/\/\*.*?\*\//g, '').replace(/<!--.*?-->/g, '');
+  if (EMOJI.test(code)) copyFail('emoji at line ' + ln + ': ' + t.slice(0, 120));
+  if (ln >= bodyLine && ln < scriptLine) {
+    const text = code.replace(/<[^>]*>/g, ' ');
+    if (/[—–]|\s-\s|![\s<"]|!$/.test(text)) copyFail('a dash or an exclamation mark in player copy at line ' + ln + ': ' + text.trim().slice(0, 120));
+  } else if (ln >= scriptLine) {
+    for (const m of code.matchAll(/(["'`])((?:(?!\1)[^\\\n]|\\.)*)\1/g)) {
+      const s = m[2].replace(/\$\{[^}]*\}/g, ' ').replace(/<[^>]*>/g, ' ');
+      if (!/[A-Za-z]{2}/.test(s) || s.indexOf(' ') < 0 || /[=(){}\[\];|]/.test(s)) continue;
+      if (/[—–]|\s-\s|!/.test(s)) copyFail('a dash or an exclamation mark in a player string at line ' + ln + ': ' + s.trim().slice(0, 100));
+    }
+  }
+});
+
+/* 5. the save keys survive (law 6) */
+for (const k of ['tofu.progress', 'tofu.best', 'tofu.mute']) if (html.indexOf("'" + k + "'") < 0) fail('a save key is gone: ' + k);
+
+/* 6. zoom allowed */
+const vp = (html.match(/<meta name="viewport" content="([^"]*)"/) || [])[1] || '';
+if (/maximum-scale=1|user-scalable=no/.test(vp)) copyFail('the viewport disables zoom: ' + vp);
+
+/* 7. the web manifest beside the page parses */
+const mf = path.join(DIR, 'manifest.webmanifest');
+if (fs.existsSync(mf)) { try { JSON.parse(fs.readFileSync(mf, 'utf8')); } catch (e) { fail('manifest.webmanifest does not parse: ' + e.message); } }
+
+console.log('tofu check: ' + parsed + ' script blocks parse, ' + named.size + ' local files named');
+if (fails.length) {
+  for (const f of fails) console.log('  FAIL ' + f);
+  const nc = fails.filter(f => f.startsWith('[copy] ')).length;
+  console.log('TOFU CHECK FAILED (' + fails.length + ': ' + nc + ' copy law, ' + (fails.length - nc) + ' other)');
+  process.exit(1);
+}
+console.log('TOFU CHECK OK');
