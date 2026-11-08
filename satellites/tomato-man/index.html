@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- BUILD: THE PRESSURE, 8 Nov 2026 (TOMATO_MAN_PRESSURE_BUILD_PLAN.md steps 1 to 8: the fair lunge, Dawn Ribbon and Sliver Step teach, pressure on nearly every level, aloe cools and SPF, shade, ice and seed pods are pickups, the finds sit in the shade with a compass, worlds open in turn, par x0.85 from world 2). On top of THE WALK c0d71173. ART_V 20261108a unchanged (no new images); sw CACHE tomato-man-v16. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0b1626">
@@ -43,6 +44,8 @@
   #play-ui{position:fixed;inset:0;pointer-events:none;} #play-ui.hidden{display:none;}
   .panel{position:absolute;font-weight:800;text-shadow:0 2px 0 rgba(0,0,0,.3);}
   #heatWrap{top:calc(env(safe-area-inset-top,8px) + 4px);left:14px;width:42%;max-width:230px;}
+  #heatWrap.callout{outline:3px solid #ffd23f;outline-offset:3px;border-radius:10px;animation:tmCallout .8s ease-in-out infinite alternate}
+  @keyframes tmCallout{from{outline-color:#ffd23f}to{outline-color:rgba(255,210,63,.25)}}
   #heatWrap .lbl{font-size:11px;opacity:.9;margin:2px 0 4px 2px;text-transform:uppercase;letter-spacing:.05em;}
   #heatBar{height:14px;border-radius:8px;background:rgba(255,255,255,.16);overflow:hidden;border:2px solid rgba(0,0,0,.25);}
   #heatFill{height:100%;width:0%;border-radius:6px;background:#ffd23f;transition:width .05s linear;}
@@ -60,7 +63,7 @@
     display:flex;flex-direction:column;gap:10px;pointer-events:auto;align-items:flex-end;}
   .btn{width:66px;height:66px;border-radius:50%;border:3px solid rgba(255,255,255,.5);background:rgba(35,49,74,.62);
     color:#fff;font-weight:900;font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-  .btn:active{transform:scale(.93);} .btn .c{font-size:11px;opacity:.85;margin-top:2px;} .btn.empty{opacity:.3;}
+  .btn:active{transform:scale(.93);} .btn .c{font-size:11px;opacity:.85;margin-top:2px;} .btn.empty{opacity:.3;} .btn.got{animation:btnGot .6s ease-out} @keyframes btnGot{0%{transform:scale(1.25);filter:brightness(1.5)}100%{transform:scale(1);filter:none}}
   .btn.hidden{display:none;}
   #bDash{width:82px;height:82px;font-size:13px;}
   #pauseBtn{position:absolute;top:calc(env(safe-area-inset-top,8px) + 6px);right:14px;width:38px;height:38px;border-radius:10px;
@@ -178,7 +181,7 @@
   .card .lname{font:400 16px 'Bree Serif',Georgia,serif}
   .card .rec{display:flex;align-items:center;gap:4px;color:var(--ink);margin-top:6px;letter-spacing:0}
   .card .rec .sock{width:22px;height:22px} .card .rec .sock.off{opacity:.25;filter:grayscale(1)}
-  .card .rec .lmedal{width:26px;height:26px;margin-left:4px} .card .rec .lbest{margin-left:auto;font-weight:700;font-size:13px}
+  .card .lfind{font-size:16px;font-weight:700;color:var(--inkSoft);margin-top:4px} .card .rec .lmedal{width:26px;height:26px;margin-left:4px} .card .rec .lbest{margin-left:auto;font-weight:700;font-size:13px}
   #builderCanvas{border:14px solid transparent;border-image:url(art/ui/builder_frame_frame.png?v=20261107a) 28 fill / 14px stretch;box-sizing:content-box}
   /* How to Play: four picture cards first, every rule one tap further */
   .htQuick{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px;margin:6px 0 10px}
@@ -324,7 +327,7 @@
 <div id="map" class="overlay">
   <div class="backRow"><div class="iconbtn" id="mapBack" role="button" aria-label="Back"><svg class="mk" aria-hidden="true"><use href="#tm-back"/></svg></div></div>
   <h2 class="title">Choose a World</h2>
-  <div class="sub2">Clear levels to unlock the next world.</div>
+  <div class="sub2">Clear every level of a world to open the next.</div>
   <div class="menuCol" id="worldList" style="max-width:380px"></div>
   <div class="pad"></div>
 </div>
@@ -663,7 +666,8 @@ const BASE_FEEL={
   // THE RUN (7 Nov, Stephen: "almost like a top scrolling shooter"): the screen climbs on its own, the burn line at its foot, seeds are the gun
   runScroll:80, runScrollRamp:5, runScrollCap:200, runLineH:48, runFire:0.33, runSeedRange:260, runPouch:6, runRegen:1.5,
   runMoteFrom:30, runMoteEvery:6, runMoteSpeed:120, runMoteSting:30, runGullEvery:14, runGullSpeed:180, runCrabSting:20, runMile:6000, runFlare:20, runDark:3,   // a mile is 600 m of climb (6,000 px): the sun flares every 30 to 60 s
-  pickupR:24,
+  pickupR:24, aloeCool:25, podSeeds:3,   // THE PRESSURE step 4: an aloe takes 25 off Exposure; a seed pod gives three seeds
+  lungeLockFrac:0.5, lungeReach:110, lungeGrace:0.35,   // THE FAIR LUNGE (8 Nov): the ring follows him for half its warning then locks; reach at most 110 px; a dash from inside a locked ring is immune 0.35 s
 };
 function FEEL(){ const u=save.upgrades; const f={...BASE_FEEL};
   f.burnSun=[150,128,112,100][u.thicker_skin||0];
@@ -770,33 +774,38 @@ const WORLDS=[
 // ===================== LEVELS (campaign — 20 hand-authored, solvability-verified) =====================
 // 5 worlds x 4 levels. world: 0-based. Tunable data — edit freely on a phone.
 let LEVELS=[
-{"name":"Dawn Ribbon","sub":"the sun is up and the floor sways with the shade","worldW":2000,"worldH":2600,"start":[1000,2480],"exit":[1000,150],"sun":{"azC":1.57,"azAmp":0.42,"azSpeed":0.45,"elev":0.55},"shade":2,"spf":0,"par":24,"casters":[["R",840,2440,360,90,440],["R",900,2090,340,66,440],["R",780,1790,340,66,440],["R",900,1500,340,66,460],["R",1020,1220,340,66,460],["R",880,940,340,66,460],["R",780,680,340,66,440],["R",900,410,340,66,440],["R",860,150,360,70,400]],"clouds":[],"checkpoints":[[1010,2475],[1070,1533],[950,713]],"beams":[[1320,1700],[600,1010]],"world":0},
-{"name":"Sliver Step","sub":"when the sun swings, a gap opens, dash it","worldW":2000,"worldH":2600,"start":[1000,2480],"exit":[1000,150],"sun":{"azC":1.57,"azAmp":0.46,"azSpeed":0.5,"elev":0.58},"shade":3,"spf":0,"par":32,"casters":[["R",840,2440,360,90,440],["R",900,2090,340,66,440],["R",820,1810,340,66,440],["R",980,1260,330,64,440],["R",860,980,340,66,460],["R",1000,700,340,66,460],["R",880,400,340,66,440],["R",900,200,340,66,420],["R",860,150,300,60,380]],"clouds":[],"checkpoints":[[1010,2475],[1010,1290],[1030,730]],"beams":[[1280,1560],[700,900]],"world":0},
-{"name":"Cloud Ferry","sub":"the shade quits, catch the morning cloud across","worldW":2200,"worldH":2600,"start":[760,2480],"exit":[1480,150],"sun":{"azC":1.57,"azAmp":0.4,"azSpeed":0.45,"elev":0.6},"shade":2,"spf":0,"par":36,"casters":[["R",600,2440,340,90,440],["R",620,2110,320,66,440],["R",560,1820,320,66,440],["R",600,1560,320,64,440],["R",1320,1560,320,64,440],["R",1360,1280,320,66,460],["R",1300,1000,320,66,460],["R",1380,720,320,66,440],["R",1320,420,320,66,420],["R",1320,150,340,70,400]],"clouds":[{"x":760,"y":1500,"r":165,"vx":80,"minx":760,"maxx":1380}],"checkpoints":[[770,2475],[755,1593],[1480,1593]],"beams":[[1060,1430],[1080,1720]],"world":0},
-{"name":"The Rising Tide","sub":"ribbon, sliver, and a long ride to the flag","worldW":2200,"worldH":2900,"start":[1100,2780],"exit":[1100,160],"sun":{"azC":1.57,"azAmp":0.4,"azSpeed":0.52,"elev":0.6},"shade":3,"spf":0,"par":48,"casters":[["R",940,2740,360,90,440],["R",1000,2380,340,66,440],["R",900,2110,340,66,440],["R",1020,1540,330,64,440],["R",860,1500,360,66,460],["R",960,420,360,66,460],["R",1000,250,340,66,420],["R",940,150,340,70,400]],"clouds":[{"x":1080,"y":948,"r":165,"vy":-80,"miny":300,"maxy":948}],"checkpoints":[[1110,2775],[1090,1560],[1010,453]],"beams":[[1340,1980],[820,900],[1320,560]],"world":0},
-{"name":"Sand Underfoot","sub":"orange means gone","worldW":2200,"worldH":2600,"start":[1100,2460],"exit":[1100,160],"sun":{"azC":1.57,"azAmp":0.45,"azSpeed":0.5,"elev":0.85},"shade":2,"spf":1,"par":40,"casters":[["R",920,2400,360,70,440],["R",940,2120,340,64,440],["R",900,1840,340,64,440],["R",960,1560,340,64,440],["U",1100,1340,95,0,360],["R",920,1060,340,64,460],["R",980,780,340,64,460],["R",900,520,340,64,440],["R",940,220,360,70,420]],"movers":[],"clouds":[],"hot":[[1300,2120,80],[900,1560,80],[1280,780,80],[1140,420,70]],"pops":[],"checkpoints":[[1100,2440],[1100,1340],[1080,540]],"beams":[[1340,1980],[820,1180],[1330,400]],"world":1},
-{"name":"Popsicle Run","sub":"keep the cold close","worldW":2000,"worldH":2800,"start":[1000,2660],"exit":[1000,160],"sun":{"azC":1.57,"azAmp":0.4,"azSpeed":0.55,"elev":0.9},"shade":2,"spf":1,"par":46,"casters":[["R",860,2620,300,70,420],["R",880,2120,260,64,420],["R",870,1620,260,64,420],["R",880,1120,260,64,420],["R",870,620,260,64,420],["R",880,220,300,70,400]],"movers":[],"clouds":[],"hot":[[1140,1870,70],[860,1370,70],[1140,870,70]],"pops":[[1000,2150],[1000,1650],[1000,650]],"checkpoints":[[1000,2640],[1000,1150],[1000,250]],"beams":[[1140,2370],[860,870],[1140,400]],"world":1},
-{"name":"Cart Convoy","sub":"never trust still ground","worldW":2400,"worldH":2700,"start":[1200,2560],"exit":[1200,180],"sun":{"azC":1.57,"azAmp":0.5,"azSpeed":0.5,"elev":0.9},"shade":3,"spf":2,"par":62,"casters":[["R",1040,2520,340,70,440],["R",460,2160,300,64,440],["R",1640,1820,300,64,440],["R",440,1460,300,64,440],["R",1660,1120,300,64,440],["R",520,760,300,64,440],["R",1040,280,360,70,420]],"movers":[{"x":1000,"y":2360,"w":240,"d":60,"sh":440,"vx":120,"minx":440,"maxx":1960},{"x":1200,"y":2000,"w":240,"d":60,"sh":440,"vx":-110,"minx":460,"maxx":1940},{"x":1100,"y":1660,"w":240,"d":60,"sh":440,"vx":120,"minx":440,"maxx":1960},{"x":1100,"y":1300,"w":240,"d":60,"sh":440,"vx":-110,"minx":460,"maxx":1940},{"x":1100,"y":960,"w":240,"d":60,"sh":440,"vx":115,"minx":440,"maxx":1960},{"x":1000,"y":560,"w":240,"d":60,"sh":460,"vx":-110,"minx":460,"maxx":1700}],"clouds":[],"hot":[[1200,2300,90],[760,2120,70],[1500,1640,80],[800,1280,80],[1500,940,80]],"pops":[[600,1480]],"checkpoints":[[1200,2540],[600,1480],[1120,300]],"beams":[[1269,2145],[300,1980],[2050,1640]],"world":1},
-{"name":"High Noon","sub":"every charge counts","worldW":2600,"worldH":3000,"start":[1300,2860],"exit":[1300,180],"sun":{"azC":1.57,"azAmp":0.6,"azSpeed":0.6,"elev":0.96},"shade":3,"spf":2,"par":78,"casters":[["R",1140,2820,340,70,440],["R",1160,2300,260,64,440],["R",1150,1780,260,64,440],["R",520,1360,300,64,440],["R",1780,940,300,64,440],["R",1160,720,280,64,440],["R",1140,260,360,70,420]],"movers":[{"x":1100,"y":1560,"w":240,"d":60,"sh":460,"vx":120,"minx":480,"maxx":2120},{"x":1200,"y":1160,"w":240,"d":60,"sh":460,"vx":-110,"minx":480,"maxx":2120},{"x":1200,"y":860,"w":240,"d":60,"sh":460,"vx":115,"minx":480,"maxx":2120}],"clouds":[{"x":1300,"y":760,"r":150,"vy":-70,"miny":360,"maxy":760}],"hot":[[1420,2540,70],[1180,2030,70],[900,640,90],[1700,560,90],[1300,500,80]],"pops":[[1300,2320],[1300,1800]],"checkpoints":[[1300,2840],[1280,1780],[1900,960],[1300,300]],"beams":[[1300,2540],[501,1287],[2099,867]],"world":1},
-{"name":"Low Tide Arches","sub":"Wade up the wilting arches, stand still and the shade droops away.","worldW":2000,"worldH":2500,"start":[1000,2360],"exit":[1000,180],"sun":{"azC":1.57,"azAmp":0.45,"azSpeed":0.5,"elev":0.66},"shade":2,"spf":0,"ice":1,"par":30,"casters":[["R",820,2310,360,90,440],["R",830,2220,360,70,430],["R",850,1940,340,60,430],["R",870,1380,340,60,430],["R",850,820,340,60,430],["R",790,540,340,60,440],["R",820,300,360,70,420]],"wilts":[{"x":810,"y":1660,"w":340,"d":60,"sh":430,"camp":3.2},{"x":810,"y":1100,"w":340,"d":60,"sh":440,"camp":3}],"checkpoints":[[1000,2340],[980,1660],[1020,820]],"beams":[[1320,1520],[680,1100],[1300,640]],"world":2},
-{"name":"The Mirror Channel","sub":"Board the rising cloud and cross the bright shallows.","worldW":2200,"worldH":2600,"start":[1100,2460],"exit":[1100,200],"sun":{"azC":1.57,"azAmp":0.5,"azSpeed":0.55,"elev":0.72},"shade":3,"spf":0,"ice":1,"par":38,"casters":[["R",920,2410,360,90,440],["R",930,2300,360,70,440],["R",940,1700,340,60,440],["R",910,900,340,60,440],["R",920,340,360,70,430]],"wilts":[{"x":930,"y":2000,"w":340,"d":60,"sh":440,"camp":3},{"x":910,"y":620,"w":340,"d":60,"sh":440,"camp":3}],"clouds":[{"x":1100,"y":1640,"r":165,"vy":-70,"miny":900,"maxy":1640}],"checkpoints":[[1100,2440],[1110,1700],[1080,900]],"beams":[[1380,2000],[1380,1320],[1380,560]],"world":2},
-{"name":"Slackwater Maze","sub":"Two carts, no parking, sip the ice when the lane lines up.","worldW":2400,"worldH":2700,"start":[1200,2560],"exit":[1200,220],"sun":{"azC":1.57,"azAmp":0.62,"azSpeed":0.6,"elev":0.78},"shade":3,"spf":1,"ice":2,"par":52,"casters":[["R",1020,2510,360,90,440],["R",1010,2400,380,70,440],["R",1000,1900,380,60,440],["R",1500,1500,380,60,440],["R",1490,1000,380,60,440],["R",1010,700,380,60,450],["R",1020,260,400,70,430]],"wilts":[{"x":1030,"y":2150,"w":360,"d":60,"sh":440,"camp":3},{"x":1520,"y":1250,"w":360,"d":60,"sh":440,"camp":3},{"x":1030,"y":460,"w":360,"d":60,"sh":450,"camp":3}],"movers":[{"x":1300,"y":1680,"w":240,"d":60,"sh":440,"vx":90,"minx":1150,"maxx":1750},{"x":1450,"y":880,"w":240,"d":60,"sh":450,"vx":-95,"minx":1000,"maxx":1600}],"checkpoints":[[1200,2540],[1690,1500],[1200,700]],"beams":[[1480,2150],[1000,1700],[1490,460]],"world":2},
-{"name":"Spring Tide","sub":"Highest sun, widest sweep, everything the pools can throw.","worldW":2400,"worldH":2900,"start":[1200,2760],"exit":[1200,220],"sun":{"azC":1.57,"azAmp":0.7,"azSpeed":0.62,"elev":0.82},"shade":4,"spf":1,"ice":2,"par":70,"casters":[["R",1020,2710,360,90,440],["R",1010,2600,380,70,430],["R",1030,2380,380,60,430],["R",1020,1940,380,60,430],["R",1480,1560,380,60,440],["R",1490,1340,380,60,440],["R",1490,640,380,60,440],["R",1010,260,400,70,430],["R",730,1140,340,60,440]],"wilts":[{"x":1010,"y":2160,"w":380,"d":60,"sh":430,"camp":2.8},{"x":1010,"y":420,"w":360,"d":60,"sh":450,"camp":2.8}],"movers":[{"x":1300,"y":1740,"w":240,"d":60,"sh":430,"vx":95,"minx":1180,"maxx":1720},{"x":1450,"y":500,"w":240,"d":60,"sh":450,"vx":-95,"minx":1000,"maxx":1650}],"clouds":[{"x":1670,"y":1300,"r":165,"vy":-72,"miny":660,"maxy":1300}],"hot":[[1450,2480,90],[1300,1000,100],[1500,1100,90]],"pops":[[1670,1560],[900,1180]],"checkpoints":[[1200,2740],[1670,1560],[1680,640]],"beams":[[1500,2380],[1980,1340],[900,500]],"world":2},
-{"name":"Windward Steps","sub":"lean into the dusk, ride the ripple","world":3,"worldW":2200,"worldH":2520,"start":[970,2376],"exit":[1020,200],"sun":{"azC":1.5708,"azAmp":0.55,"azSpeed":0.5,"elev":0.55},"wind":{"ax":55,"ay":0,"spin":0.16},"shade":2,"spf":0,"par":30,"casters":[["R",790,2340,360,72,440,0,1],["R",1130,2150,360,72,440,0.9,1.25],["R",630,1960,360,72,440,1.8,0.8],["R",1130,1770,360,72,440,2.7,1.1],["R",630,1580,360,72,440,0.45,0.9],["R",1130,1390,360,72,440,0.9,1.25],["R",630,1200,360,72,440,1.8,0.8],["R",1130,1010,360,72,440,2.7,1.1],["R",630,820,360,72,440,0.45,0.9],["R",1130,630,360,72,440,0.9,1.25],["R",630,440,360,72,440,1.8,0.8],["R",1130,270,360,72,440,2.7,1.1],["U",1330,1480,90,1.57,360],["U",640,1060,90,1.57,340]],"clouds":[{"x":600,"y":1300,"r":150,"vx":65,"minx":450,"maxx":1000}],"movers":[],"hot":[],"checkpoints":[[970,2376],[810,1616],[810,476]],"beams":[[1340,1500],[650,1060]]},
-{"name":"Raking Light","sub":"the sun slides sideways; an elevator of cloud","world":3,"worldW":2300,"worldH":2620,"start":[1080,2417],"exit":[1180,170],"sun":{"azC":1.42,"azAmp":0.6,"azSpeed":0.55,"elev":0.52},"wind":{"ax":-60,"ay":0,"spin":0.2},"shade":2,"spf":1,"ice":1,"par":40,"casters":[["R",890,2380,380,74,470,0,1],["R",1204,2200,380,74,470,0.9,1.25],["R",704,2020,380,74,470,1.8,0.8],["R",1204,1840,380,74,470,2.7,1.1],["R",704,1660,380,74,470,0.45,0.9],["R",1204,1060,380,74,470,0.9,1.25],["R",704,880,380,74,470,1.8,0.8],["R",1204,700,380,74,470,2.7,1.1],["R",704,520,380,74,470,0.45,0.9],["R",1204,340,380,74,470,0.9,1.25],["R",704,210,380,74,470,1.8,0.8],["U",1500,1400,95,1.4,360]],"clouds":[{"x":1080,"y":1480,"r":170,"vy":-78,"miny":1090,"maxy":1700},{"x":560,"y":980,"r":140,"vx":60,"minx":430,"maxx":920}],"movers":[],"hot":[],"pops":[[1300,2000]],"checkpoints":[[1080,2417],[894,1697],[1394,377]],"beams":[[1500,1400],[700,900]]},
-{"name":"The Long Reach","sub":"fast light, a cart that climbs the dune","world":3,"worldW":2200,"worldH":2560,"start":[1005,2396],"exit":[1005,220],"sun":{"azC":1.5708,"azAmp":0.7,"azSpeed":0.62,"elev":0.5},"wind":{"ax":70,"ay":0,"spin":0.22},"shade":3,"spf":1,"ice":1,"par":46,"casters":[["R",820,2360,370,72,455,0,1],["R",1134,2175,370,72,455,0.9,1.25],["R",634,1990,370,72,455,1.8,0.8],["R",1134,1805,370,72,455,2.7,1.1],["R",634,1620,370,72,455,0.45,0.9],["R",1134,980,370,72,455,0.9,1.25],["R",634,800,370,72,455,1.8,0.8],["R",1134,620,370,72,455,2.7,1.1],["R",634,440,370,72,455,0.45,0.9],["R",1134,280,370,72,455,0.9,1.25],["U",1480,1240,95,1.57,360]],"movers":[{"x":835,"y":1620,"w":340,"d":64,"sh":455,"vy":-70,"miny":1040,"maxy":1660},{"x":1300,"y":1250,"w":230,"d":60,"sh":430,"vx":95,"minx":1150,"maxx":1850}],"clouds":[{"x":600,"y":1340,"r":150,"vx":60,"minx":450,"maxx":950}],"hot":[[1300,2100,90]],"pops":[[1319,1841]],"checkpoints":[[1005,2396],[819,1656],[1319,316]],"beams":[[1533,1283],[680,1100],[1371,377]]},
-{"name":"Dusk Gauntlet","sub":"two ferries, a wilting rest, and the burning horizon","world":3,"worldW":2500,"worldH":2760,"start":[1020,2516],"exit":[1220,200],"sun":{"azC":1.7,"azAmp":0.66,"azSpeed":0.6,"elev":0.52},"wind":{"ax":-65,"ay":0,"spin":0.24,"gust":{"amp":40,"period":3.2}},"shade":4,"spf":1,"ice":1,"par":58,"casters":[["R",840,2480,360,72,450,0,1],["R",1170,2300,360,72,450,0.9,1.25],["R",670,2120,360,72,450,1.8,0.8],["R",1170,1940,360,72,450,2.7,1.1],["R",670,1760,360,72,450,0.45,0.9],["R",1170,1140,360,72,450,0.9,1.25],["R",670,960,360,72,450,1.8,0.8],["R",1170,780,360,72,450,2.7,1.1],["R",670,420,360,72,450,0.45,0.9],["R",1170,250,360,72,450,0.9,1.25],["U",1600,1480,95,1.7,360]],"movers":[{"x":855,"y":1760,"w":340,"d":64,"sh":450,"vy":-72,"miny":1140,"maxy":1760}],"clouds":[{"x":1020,"y":640,"r":165,"vy":-60,"miny":470,"maxy":820},{"x":1700,"y":1450,"r":150,"vx":-70,"minx":1300,"maxx":1950}],"wilts":[{"x":1500,"y":1500,"w":300,"d":64,"sh":420,"camp":3}],"hot":[[1250,2300,95],[760,900,90]],"pops":[[1370,816],[850,996]],"checkpoints":[[1020,2516],[1350,1176],[850,456]],"beams":[[1600,1570],[700,1900],[1450,650],[1404,344]]},
-{"name":"Umbra's Edge","sub":"the sun learns your name","worldW":2000,"worldH":2500,"start":[1000,2360],"exit":[1000,160],"sun":{"azC":1.5708,"azAmp":0.3,"azSpeed":0.45,"elev":0.66,"lunge":{"period":7,"warn":1.4,"dur":2.2,"reach":160}},"shade":2,"spf":0,"par":30,"casters":[["R",820,2310,360,90,440,0,1],["R",580,2240,340,70,460,0.9,1.25],["R",1080,1940,340,70,460,1.8,0.8],["R",580,1640,340,70,460,2.7,1.1],["R",1080,1340,340,70,460,0.45,0.9],["R",580,1040,340,70,460,0.9,1.25],["R",1080,740,340,70,460,1.8,0.8],["R",580,420,340,70,440,2.7,1.1],["R",830,150,340,70,400,0,1]],"checkpoints":[[1000,2340],[1250,1340],[750,440]],"beams":[[1320,1500],[700,940],[1300,500]],"world":4},
-{"name":"Eclipse Run","sub":"wait for the dark, then fly","worldW":2200,"worldH":2700,"start":[1100,2560],"exit":[1100,160],"sun":{"azC":1.5708,"azAmp":0.32,"azSpeed":0.5,"elev":0.7,"dark":{"period":8,"dur":2.4},"lunge":{"period":7.5,"warn":1.4,"dur":2.2,"reach":165}},"shade":2,"spf":2,"par":42,"casters":[["R",920,2510,360,90,440,0,1],["R",680,2460,340,70,470,0.9,1.25],["R",1180,2180,340,70,470,1.8,0.8],["R",680,1900,340,70,470,2.7,1.1],["R",1180,1620,340,70,470,0.45,0.9],["R",1180,700,340,70,470,0.9,1.25],["R",680,420,340,70,470,1.8,0.8],["R",930,150,340,70,420,0,1],["R",680,1160,340,70,470,2.7,1.1]],"checkpoints":[[850,2495],[1350,1620],[850,420]],"beams":[[1500,2180],[1282,1000],[1480,420]],"world":4},
-{"name":"Wilted Crown","sub":"nowhere left to hide","worldW":2100,"worldH":2600,"start":[1050,2460],"exit":[1050,160],"sun":{"azC":1.5708,"azAmp":0.4,"azSpeed":0.55,"elev":0.72,"lunge":{"period":6,"warn":1.3,"dur":2.3,"reach":165}},"shade":2,"spf":1,"ice":1,"par":46,"casters":[["R",870,2410,360,90,440,0,1],["R",650,2360,300,60,460,0.9,1.25],["R",1150,2110,300,60,460,1.8,0.8],["R",650,1860,300,60,460,2.7,1.1],["R",1150,1610,300,60,460,0.45,0.9],["R",650,1360,300,60,460,0.9,1.25],["R",1150,1110,300,60,460,1.8,0.8],["R",650,860,300,60,460,2.7,1.1],["R",1150,610,300,60,460,0.45,0.9],["R",650,360,300,60,460,0.9,1.25],["R",900,150,300,60,420,0,1]],"wilts":[{"x":760,"y":1860,"w":520,"d":80,"sh":480,"camp":3},{"x":760,"y":1110,"w":520,"d":80,"sh":480,"camp":3},{"x":760,"y":610,"w":520,"d":80,"sh":480,"camp":2.5}],"hot":[[1240,2230,70],[860,1480,70],[1250,980,70]],"pops":[[1300,1610],[1300,610]],"checkpoints":[[1050,2440],[800,1360],[800,360]],"beams":[[1400,2110],[700,1110],[1400,360]],"world":4},
-{"name":"The Angry Sun","sub":"climb into the eye of the eclipse","worldW":2400,"worldH":2900,"start":[1200,2760],"exit":[1200,140],"sun":{"azC":1.5708,"azAmp":0.45,"azSpeed":0.6,"elev":0.86,"dark":{"period":11,"dur":2},"lunge":{"period":5.5,"warn":1.1,"dur":2.6,"reach":180}},"shade":3,"spf":2,"ice":1,"par":74,"casters":[["R",1020,2710,360,90,440,0,1],["R",770,2640,360,70,500,0.9,1.25],["R",1270,2430,360,70,500,1.8,0.8],["R",770,2220,360,70,500,2.7,1.1],["R",1270,2010,360,70,500,0.45,0.9],["R",770,1800,360,70,500,0.9,1.25],["R",1270,1590,360,70,500,1.8,0.8],["R",770,1380,360,70,500,2.7,1.1],["R",1270,1170,360,70,500,0.45,0.9],["R",770,960,360,70,500,0.9,1.25],["R",1270,750,360,70,500,1.8,0.8],["R",770,540,360,70,500,2.7,1.1],["R",1270,330,360,70,500,0.45,0.9],["R",1020,150,360,70,440,0,1]],"movers":[{"x":900,"y":760,"w":240,"d":60,"sh":480,"vx":100,"minx":600,"maxx":1700}],"clouds":[{"x":1560,"y":1500,"r":170,"vy":-80,"miny":1000,"maxy":1600}],"hot":[[1200,2500,80],[980,1900,80],[1420,1300,80],[1100,700,80],[1300,400,80]],"pops":[[950,1800],[950,960],[1450,330]],"checkpoints":[[1200,2740],[1450,1590],[950,540]],"beams":[[1429,2257],[760,1380],[1429,787],[840,330]],"world":4},
-{"name":"High Sun Gaps","sub":"the shadows only join when the sun stands straight up","worldW":1700,"worldH":2300,"start":[850,2180],"exit":[850,150],"sun":{"azC":1.5708,"azAmp":0.55,"azSpeed":0.5,"elev":0.95},"shade":2,"spf":1,"par":42,"casters":[["R",670,2140,360,70,440],["R",690,1810,340,66,470],["R",690,1480,340,66,470],["R",690,1150,340,66,470],["R",690,820,340,66,470],["R",690,470,340,66,470],["R",670,150,360,70,420]],"checkpoints":[[850,2175],[850,1180],[850,500]],"beams":[[1090,1650],[560,1320],[1090,980]],"world":1},
-{"name":"The Moat","sub":"no shade crosses the burning sand, so bring your own","worldW":1700,"worldH":2400,"start":[850,2280],"exit":[850,150],"sun":{"azC":1.5708,"azAmp":0.3,"azSpeed":0.5,"elev":1.05},"shade":4,"spf":1,"par":44,"casters":[["R",670,2240,360,70,440],["R",690,1980,340,66,300],["R",690,1240,340,66,300],["R",690,780,340,66,320],["R",670,150,360,70,420]],"checkpoints":[[850,2275],[850,1180],[850,760]],"beams":[[1090,1700],[560,1500]],"world":1},
-{"name":"Around the Umbrella","sub":"can't go through, so go around into the shade","world":0,"worldW":1500,"worldH":1750,"start":[750,1650],"exit":[750,150],"sun":{"azC":1.5708,"azAmp":0.5,"azSpeed":0.5,"elev":0.62},"shade":2,"spf":0,"par":30,"casters":[["R",570,1610,360,90,320],["R",700,940,260,64,150],["R",560,480,360,80,300],["R",570,150,360,80,300]],"checkpoints":[[750,1645],[700,530]],"beams":[[790,1120],[600,690],[300,980]]},
-{"name":"The Long Way Round","sub":"can't cut through, round it into the shade","world":1,"worldW":1500,"worldH":1750,"start":[750,1650],"exit":[750,150],"sun":{"azC":1.5708,"azAmp":0.56,"azSpeed":0.6,"elev":0.68},"shade":2,"spf":1,"par":40,"casters":[["R",570,1610,360,90,350],["R",520,940,260,64,170],["R",560,470,360,80,300],["R",570,150,360,80,300]],"hot":[[1060,1000,70],[300,760,70]],"checkpoints":[[750,1645],[730,520]],"beams":[[790,1100],[560,690]]},
-{"name":"Reef Ferry","sub":"ride the tide-cart, then round the big awning","world":2,"worldW":2200,"worldH":2600,"start":[640,2460],"exit":[1480,300],"sun":{"azC":1.57,"azAmp":0.44,"azSpeed":0.5,"elev":0.72},"shade":2,"spf":0,"ice":1,"par":40,"casters":[["R",460,2400,360,80,440],["U",640,2120,95,1.57,360],["U",640,1840,95,1.57,360],["U",1460,2060,95,1.57,360],["R",1120,1180,620,80,500],["U",1480,720,95,1.57,360],["R",1300,300,360,80,440]],"movers":[{"x":1360,"y":1900,"w":240,"d":60,"sh":440,"vx":-120,"minx":560,"maxx":1560}],"checkpoints":[[640,2460],[640,1700],[1460,1780],[1480,760]],"beams":[[1080,1740],[1748,1300],[900,2050]]},
-{"name":"The Long Dark","sub":"cross the blackout maze while the sun blinks","world":4,"worldW":1900,"worldH":2600,"start":[980,2460],"exit":[980,220],"sun":{"azC":1.57,"azAmp":0.24,"azSpeed":0.5,"elev":1.2,"dark":{"period":4,"dur":2.7}},"shade":2,"spf":1,"ice":0,"par":60,"casters":[["R",510,415,300,80,460,0.9,1.25],["R",800,2400,360,90,470,0,1],["R",490,1780,340,90,490,1.8,0.8],["R",990,1160,340,90,490,2.7,1.1],["R",990,300,340,90,490,0.45,0.9],["R",800,150,360,90,460,0,1]],"checkpoints":[[980,2460],[790,1660],[1130,1040],[660,460]],"beams":[[1150,2050],[790,1420],[1150,900]]}
+{"name":"Dawn Ribbon","sub":"the lesson: the sun burns, the shade keeps you","worldW":2000,"worldH":2600,"start":[1000,2480],"exit":[1000,150],"sun":{"azC":1.57,"azAmp":0.25,"azSpeed":0.45,"elev":0.9},"shade":0,"spf":0,"par":20,"casters":[["R",820,2400,360,100,440],["R",820,1885,360,66,600],["R",820,1243,360,66,500],["R",820,680,360,66,440],["R",820,120,360,110,400]],"clouds":[],"checkpoints":[[1000,2470],[1000,1200],[1000,640]],"beams":[[1000,1360],[1000,795]],"world":0},
+{"name":"Sliver Step","sub":"the tools: a dash, a seed and a little sunproof","worldW":2000,"worldH":2600,"start":[1000,2480],"exit":[1000,150],"sun":{"azC":1.57,"azAmp":0.25,"azSpeed":0.5,"elev":0.9},"shade":0,"spf":0,"par":24,"casters":[["R",820,2400,360,100,440],["R",820,1775,360,66,500],["R",820,1192,360,66,500],["R",820,469,360,66,440]],"clouds":[],"critters":[{"x":1000,"y":1318,"ax":820,"ay":1318,"bx":1180,"by":1318}],"pickups":[{"x":1000,"y":860,"kind":"spf"}],"checkpoints":[[1000,2470],[1000,1150],[1000,500]],"beams":[[1000,1960],[1000,660]],"world":0},
+{"name":"Cloud Ferry","sub":"the shade quits, catch the morning cloud across","worldW":2200,"worldH":2600,"start":[760,2480],"exit":[1480,150],"sun":{"azC":1.57,"azAmp":0.4,"azSpeed":0.45,"elev":0.6},"shade":0,"spf":0,"par":36,"pickups":[{"x":810,"y":1553,"kind":"shade"},{"x":1540,"y":753,"kind":"shade"}],"casters":[["R",600,2440,340,90,440],["R",620,2110,320,66,440],["R",560,1820,320,66,440],["R",600,1560,320,64,440],["R",1320,1560,320,64,440],["R",1360,1280,320,66,460],["R",1300,1000,320,66,460],["R",1380,720,320,66,440],["R",1320,420,320,66,420],["R",1320,150,340,70,400]],"clouds":[{"x":760,"y":1500,"r":165,"vx":80,"minx":760,"maxx":1380}],"checkpoints":[[770,2475],[755,1593],[1480,1593]],"beams":[[1060,1430],[1080,1720]],"world":0},
+{"name":"The Rising Tide","sub":"ribbon, sliver, and a long ride to the flag","worldW":2200,"worldH":2900,"start":[1100,2780],"exit":[1100,160],"sun":{"azC":1.57,"azAmp":0.4,"azSpeed":0.52,"elev":0.6},"shade":0,"spf":0,"par":48,"pickups":[{"x":1170,"y":2413,"kind":"shade"},{"x":1145,"y":1520,"kind":"shade"},{"x":1065,"y":413,"kind":"shade"}],"casters":[["R",940,2740,360,90,440],["R",1000,2380,340,66,440],["R",900,2110,340,66,440],["R",1020,1540,330,64,440],["R",860,1500,360,66,460],["R",960,420,360,66,460],["R",1000,250,340,66,420],["R",940,150,340,70,400]],"clouds":[{"x":1080,"y":948,"r":165,"vy":-80,"miny":300,"maxy":948}],"checkpoints":[[1110,2775],[1090,1560],[1010,453]],"beams":[[1340,1980],[820,900],[1320,560]],"world":0},
+{"name":"Sand Underfoot","sub":"orange means gone","worldW":2200,"worldH":2600,"start":[1100,2460],"exit":[1100,160],"sun":{"azC":1.57,"azAmp":0.45,"azSpeed":0.5,"elev":0.85},"shade":0,"spf":1,"par":40,"pickups":[{"x":1070,"y":1872,"kind":"shade"},{"x":1155,"y":1300,"kind":"pod"},{"x":1150,"y":812,"kind":"shade"}],"casters":[["R",920,2400,360,70,440],["R",940,2120,340,64,440],["R",900,1840,340,64,440],["R",960,1560,340,64,440],["U",1100,1340,95,0,360],["R",920,1060,340,64,460],["R",980,780,340,64,460],["R",900,520,340,64,440],["R",940,220,360,70,420]],"movers":[],"clouds":[],"hot":[[1300,2120,80],[900,1560,80],[1280,780,80],[1140,420,70]],"pops":[],"checkpoints":[[1100,2440],[1100,1340],[1080,540]],"beams":[[1340,1980],[820,1180],[1330,400]],"world":1},
+{"name":"Popsicle Run","sub":"keep the cold close","worldW":2000,"worldH":2800,"start":[1000,2660],"exit":[1000,160],"sun":{"azC":1.57,"azAmp":0.4,"azSpeed":0.55,"elev":0.9},"shade":0,"spf":1,"par":46,"pickups":[{"x":1080,"y":2152,"kind":"shade"},{"x":1055,"y":1110,"kind":"pod"},{"x":1055,"y":210,"kind":"shade"}],"casters":[["R",860,2620,300,70,420],["R",880,2120,260,64,420],["R",870,1620,260,64,420],["R",880,1120,260,64,420],["R",870,620,260,64,420],["R",880,220,300,70,400]],"movers":[],"clouds":[],"hot":[[1140,1870,70],[860,1370,70],[1140,870,70]],"pops":[[1000,2150],[1000,1650],[1000,650]],"checkpoints":[[1000,2640],[1000,1150],[1000,250]],"beams":[[1140,2370],[860,870],[1140,400]],"world":1},
+{"name":"Cart Convoy","sub":"never trust still ground","worldW":2400,"worldH":2700,"start":[1200,2560],"exit":[1200,180],"sun":{"azC":1.57,"azAmp":0.5,"azSpeed":0.5,"elev":0.9},"shade":1,"spf":1,"par":62,"pickups":[{"x":610,"y":2192,"kind":"shade"},{"x":655,"y":1440,"kind":"spf"},{"x":1810,"y":1152,"kind":"pod"},{"x":1175,"y":260,"kind":"shade"}],"casters":[["R",1040,2520,340,70,440],["R",460,2160,300,64,440],["R",1640,1820,300,64,440],["R",440,1460,300,64,440],["R",1660,1120,300,64,440],["R",520,760,300,64,440],["R",1040,280,360,70,420]],"movers":[{"x":1000,"y":2360,"w":240,"d":60,"sh":440,"vx":120,"minx":440,"maxx":1960},{"x":1200,"y":2000,"w":240,"d":60,"sh":440,"vx":-110,"minx":460,"maxx":1940},{"x":1100,"y":1660,"w":240,"d":60,"sh":440,"vx":120,"minx":440,"maxx":1960},{"x":1100,"y":1300,"w":240,"d":60,"sh":440,"vx":-110,"minx":460,"maxx":1940},{"x":1100,"y":960,"w":240,"d":60,"sh":440,"vx":115,"minx":440,"maxx":1960},{"x":1000,"y":560,"w":240,"d":60,"sh":460,"vx":-110,"minx":460,"maxx":1700}],"clouds":[],"hot":[[1200,2300,90],[760,2120,70],[1500,1640,80],[800,1280,80],[1500,940,80]],"pops":[[600,1480]],"checkpoints":[[1200,2540],[600,1480],[1120,300]],"beams":[[1269,2145],[300,1980],[2050,1640]],"world":1},
+{"name":"High Noon","sub":"every charge counts","worldW":2600,"worldH":3000,"start":[1300,2860],"exit":[1300,180],"sun":{"azC":1.57,"azAmp":0.6,"azSpeed":0.6,"elev":0.96},"shade":1,"spf":1,"par":78,"pickups":[{"x":1360,"y":2332,"kind":"shade"},{"x":670,"y":1392,"kind":"spf"},{"x":1955,"y":920,"kind":"pod"},{"x":1355,"y":260,"kind":"shade"}],"casters":[["R",1140,2820,340,70,440],["R",1160,2300,260,64,440],["R",1150,1780,260,64,440],["R",520,1360,300,64,440],["R",1780,940,300,64,440],["R",1160,720,280,64,440],["R",1140,260,360,70,420]],"movers":[{"x":1100,"y":1560,"w":240,"d":60,"sh":460,"vx":120,"minx":480,"maxx":2120},{"x":1200,"y":1160,"w":240,"d":60,"sh":460,"vx":-110,"minx":480,"maxx":2120},{"x":1200,"y":860,"w":240,"d":60,"sh":460,"vx":115,"minx":480,"maxx":2120}],"clouds":[{"x":1300,"y":760,"r":150,"vy":-70,"miny":360,"maxy":760}],"hot":[[1420,2540,70],[1180,2030,70],[900,640,90],[1700,560,90],[1300,500,80]],"pops":[[1300,2320],[1300,1800]],"checkpoints":[[1300,2840],[1280,1780],[1900,960],[1300,300]],"beams":[[1300,2540],[501,1287],[2099,867]],"world":1},
+{"name":"Low Tide Arches","sub":"Wade up the wilting arches, stand still and the shade droops away.","worldW":2000,"worldH":2500,"start":[1000,2360],"exit":[1000,180],"sun":{"azC":1.57,"azAmp":0.45,"azSpeed":0.5,"elev":0.66},"shade":0,"spf":0,"ice":1,"par":30,"pickups":[{"x":1035,"y":1620,"kind":"shade"},{"x":980,"y":1130,"kind":"pod"},{"x":960,"y":570,"kind":"shade"}],"casters":[["R",820,2310,360,90,440],["R",830,2220,360,70,430],["R",850,1940,340,60,430],["R",870,1380,340,60,430],["R",850,820,340,60,430],["R",790,540,340,60,440],["R",820,300,360,70,420]],"wilts":[{"x":810,"y":1660,"w":340,"d":60,"sh":430,"camp":3.2},{"x":810,"y":1100,"w":340,"d":60,"sh":440,"camp":3}],"checkpoints":[[1000,2340],[980,1660],[1020,820]],"beams":[[1320,1520],[680,1100],[1300,640]],"world":2},
+{"name":"The Mirror Channel","sub":"Board the rising cloud and cross the bright shallows.","worldW":2200,"worldH":2600,"start":[1100,2460],"exit":[1100,200],"sun":{"azC":1.57,"azAmp":0.5,"azSpeed":0.55,"elev":0.72},"shade":1,"spf":0,"ice":1,"par":38,"pickups":[{"x":1100,"y":2030,"kind":"shade"},{"x":1135,"y":860,"kind":"pod"},{"x":1100,"y":375,"kind":"shade"}],"casters":[["R",920,2410,360,90,440],["R",930,2300,360,70,440],["R",940,1700,340,60,440],["R",910,900,340,60,440],["R",920,340,360,70,430]],"wilts":[{"x":930,"y":2000,"w":340,"d":60,"sh":440,"camp":3},{"x":910,"y":620,"w":340,"d":60,"sh":440,"camp":3}],"clouds":[{"x":1100,"y":1640,"r":165,"vy":-70,"miny":900,"maxy":1640}],"checkpoints":[[1100,2440],[1110,1700],[1080,900]],"beams":[[1380,2000],[1380,1320],[1380,560]],"world":2},
+{"name":"Slackwater Maze","sub":"Two carts, no parking, sip the ice when the lane lines up.","worldW":2400,"worldH":2700,"start":[1200,2560],"exit":[1200,220],"sun":{"azC":1.57,"azAmp":0.62,"azSpeed":0.6,"elev":0.78},"shade":1,"spf":1,"ice":1,"par":52,"pickups":[{"x":1210,"y":2180,"kind":"shade"},{"x":1745,"y":1460,"kind":"ice"},{"x":1680,"y":1030,"kind":"pod"},{"x":1210,"y":490,"kind":"shade"}],"casters":[["R",1020,2510,360,90,440],["R",1010,2400,380,70,440],["R",1000,1900,380,60,440],["R",1500,1500,380,60,440],["R",1490,1000,380,60,440],["R",1010,700,380,60,450],["R",1020,260,400,70,430]],"wilts":[{"x":1030,"y":2150,"w":360,"d":60,"sh":440,"camp":3},{"x":1520,"y":1250,"w":360,"d":60,"sh":440,"camp":3},{"x":1030,"y":460,"w":360,"d":60,"sh":450,"camp":3}],"movers":[{"x":1300,"y":1680,"w":240,"d":60,"sh":440,"vx":90,"minx":1150,"maxx":1750},{"x":1450,"y":880,"w":240,"d":60,"sh":450,"vx":-95,"minx":1000,"maxx":1600}],"checkpoints":[[1200,2540],[1690,1500],[1200,700]],"beams":[[1480,2150],[1000,1700],[1490,460]],"world":2},
+{"name":"Spring Tide","sub":"Highest sun, widest sweep, everything the pools can throw.","worldW":2400,"worldH":2900,"start":[1200,2760],"exit":[1200,220],"sun":{"azC":1.57,"azAmp":0.7,"azSpeed":0.62,"elev":0.82},"shade":1,"spf":1,"ice":1,"par":70,"pickups":[{"x":1200,"y":2190,"kind":"shade"},{"x":1725,"y":1520,"kind":"ice"},{"x":970,"y":1170,"kind":"pod"},{"x":1190,"y":450,"kind":"shade"}],"casters":[["R",1020,2710,360,90,440],["R",1010,2600,380,70,430],["R",1030,2380,380,60,430],["R",1020,1940,380,60,430],["R",1480,1560,380,60,440],["R",1490,1340,380,60,440],["R",1490,640,380,60,440],["R",1010,260,400,70,430],["R",730,1140,340,60,440]],"wilts":[{"x":1010,"y":2160,"w":380,"d":60,"sh":430,"camp":2.8},{"x":1010,"y":420,"w":360,"d":60,"sh":450,"camp":2.8}],"movers":[{"x":1300,"y":1740,"w":240,"d":60,"sh":430,"vx":95,"minx":1180,"maxx":1720},{"x":1450,"y":500,"w":240,"d":60,"sh":450,"vx":-95,"minx":1000,"maxx":1650}],"clouds":[{"x":1670,"y":1300,"r":165,"vy":-72,"miny":660,"maxy":1300}],"hot":[[1450,2480,90],[1300,1000,100],[1500,1100,90]],"pops":[[1670,1560],[900,1180]],"checkpoints":[[1200,2740],[1670,1560],[1680,640]],"beams":[[1500,2380],[1980,1340],[900,500]],"world":2},
+{"name":"Windward Steps","sub":"lean into the dusk, ride the ripple","world":3,"worldW":2200,"worldH":2520,"start":[970,2376],"exit":[1020,200],"sun":{"azC":1.5708,"azAmp":0.55,"azSpeed":0.5,"elev":0.55},"wind":{"ax":55,"ay":0,"spin":0.16},"shade":0,"spf":0,"par":30,"pickups":[{"x":1310,"y":1806,"kind":"shade"},{"x":710,"y":1060,"kind":"pod"},{"x":865,"y":436,"kind":"shade"}],"casters":[["R",790,2340,360,72,440,0,1],["R",1130,2150,360,72,440,0.9,1.25],["R",630,1960,360,72,440,1.8,0.8],["R",1130,1770,360,72,440,2.7,1.1],["R",630,1580,360,72,440,0.45,0.9],["R",1130,1390,360,72,440,0.9,1.25],["R",630,1200,360,72,440,1.8,0.8],["R",1130,1010,360,72,440,2.7,1.1],["R",630,820,360,72,440,0.45,0.9],["R",1130,630,360,72,440,0.9,1.25],["R",630,440,360,72,440,1.8,0.8],["R",1130,270,360,72,440,2.7,1.1],["U",1330,1480,90,1.57,360],["U",640,1060,90,1.57,340]],"clouds":[{"x":600,"y":1300,"r":150,"vx":65,"minx":450,"maxx":1000}],"movers":[],"hot":[],"checkpoints":[[970,2376],[810,1616],[810,476]],"beams":[[1340,1500],[650,1060]]},
+{"name":"Raking Light","sub":"the sun slides sideways; an elevator of cloud","world":3,"worldW":2300,"worldH":2620,"start":[1080,2417],"exit":[1180,170],"sun":{"azC":1.42,"azAmp":0.6,"azSpeed":0.55,"elev":0.52},"wind":{"ax":-60,"ay":0,"spin":0.2},"shade":0,"spf":1,"ice":1,"par":40,"pickups":[{"x":894,"y":2057,"kind":"shade"},{"x":1394,"y":1097,"kind":"pod"},{"x":1449,"y":337,"kind":"shade"}],"casters":[["R",890,2380,380,74,470,0,1],["R",1204,2200,380,74,470,0.9,1.25],["R",704,2020,380,74,470,1.8,0.8],["R",1204,1840,380,74,470,2.7,1.1],["R",704,1660,380,74,470,0.45,0.9],["R",1204,1060,380,74,470,0.9,1.25],["R",704,880,380,74,470,1.8,0.8],["R",1204,700,380,74,470,2.7,1.1],["R",704,520,380,74,470,0.45,0.9],["R",1204,340,380,74,470,0.9,1.25],["R",704,210,380,74,470,1.8,0.8],["U",1500,1400,95,1.4,360]],"clouds":[{"x":1080,"y":1480,"r":170,"vy":-78,"miny":1090,"maxy":1700},{"x":560,"y":980,"r":140,"vx":60,"minx":430,"maxx":920}],"movers":[],"hot":[],"pops":[[1300,2000]],"checkpoints":[[1080,2417],[894,1697],[1394,377]],"beams":[[1500,1400],[700,900]]},
+{"name":"The Long Reach","sub":"fast light, a cart that climbs the dune","world":3,"worldW":2200,"worldH":2560,"start":[1005,2396],"exit":[1005,220],"sun":{"azC":1.5708,"azAmp":0.7,"azSpeed":0.62,"elev":0.5},"wind":{"ax":70,"ay":0,"spin":0.22},"shade":1,"spf":1,"ice":1,"par":46,"pickups":[{"x":819,"y":2026,"kind":"shade"},{"x":1319,"y":1016,"kind":"pod"},{"x":819,"y":476,"kind":"shade"}],"casters":[["R",820,2360,370,72,455,0,1],["R",1134,2175,370,72,455,0.9,1.25],["R",634,1990,370,72,455,1.8,0.8],["R",1134,1805,370,72,455,2.7,1.1],["R",634,1620,370,72,455,0.45,0.9],["R",1134,980,370,72,455,0.9,1.25],["R",634,800,370,72,455,1.8,0.8],["R",1134,620,370,72,455,2.7,1.1],["R",634,440,370,72,455,0.45,0.9],["R",1134,280,370,72,455,0.9,1.25],["U",1480,1240,95,1.57,360]],"movers":[{"x":835,"y":1620,"w":340,"d":64,"sh":455,"vy":-70,"miny":1040,"maxy":1660},{"x":1300,"y":1250,"w":230,"d":60,"sh":430,"vx":95,"minx":1150,"maxx":1850}],"clouds":[{"x":600,"y":1340,"r":150,"vx":60,"minx":450,"maxx":950}],"hot":[[1300,2100,90]],"pops":[[1319,1841]],"checkpoints":[[1005,2396],[819,1656],[1319,316]],"beams":[[1533,1283],[680,1100],[1371,377]]},
+{"name":"Dusk Gauntlet","sub":"two ferries, a wilting rest, and the burning horizon","world":3,"worldW":2500,"worldH":2760,"start":[1020,2516],"exit":[1220,200],"sun":{"azC":1.7,"azAmp":0.66,"azSpeed":0.6,"elev":0.52},"wind":{"ax":-65,"ay":0,"spin":0.24,"gust":{"amp":40,"period":3.2}},"shade":1,"spf":1,"ice":1,"par":58,"pickups":[{"x":850,"y":2156,"kind":"shade"},{"x":850,"y":1796,"kind":"shade"},{"x":920,"y":996,"kind":"pod"},{"x":905,"y":416,"kind":"shade"}],"casters":[["R",840,2480,360,72,450,0,1],["R",1170,2300,360,72,450,0.9,1.25],["R",670,2120,360,72,450,1.8,0.8],["R",1170,1940,360,72,450,2.7,1.1],["R",670,1760,360,72,450,0.45,0.9],["R",1170,1140,360,72,450,0.9,1.25],["R",670,960,360,72,450,1.8,0.8],["R",1170,780,360,72,450,2.7,1.1],["R",670,420,360,72,450,0.45,0.9],["R",1170,250,360,72,450,0.9,1.25],["U",1600,1480,95,1.7,360]],"movers":[{"x":855,"y":1760,"w":340,"d":64,"sh":450,"vy":-72,"miny":1140,"maxy":1760}],"clouds":[{"x":1020,"y":640,"r":165,"vy":-60,"miny":470,"maxy":820},{"x":1700,"y":1450,"r":150,"vx":-70,"minx":1300,"maxx":1950}],"wilts":[{"x":1500,"y":1500,"w":300,"d":64,"sh":420,"camp":3}],"hot":[[1250,2300,95],[760,900,90]],"pops":[[1370,816],[850,996]],"checkpoints":[[1020,2516],[1350,1176],[850,456]],"beams":[[1600,1570],[700,1900],[1450,650],[1404,344]]},
+{"name":"Umbra's Edge","sub":"the sun learns your name","worldW":2000,"worldH":2500,"start":[1000,2360],"exit":[1000,160],"sun":{"azC":1.5708,"azAmp":0.3,"azSpeed":0.45,"elev":0.66,"lunge":{"period":7,"warn":1.4,"dur":2.2,"reach":160}},"shade":0,"spf":0,"par":30,"pickups":[{"x":1250,"y":1975,"kind":"shade"},{"x":1305,"y":1300,"kind":"pod"},{"x":1250,"y":775,"kind":"shade"}],"casters":[["R",820,2310,360,90,440,0,1],["R",580,2240,340,70,460,0.9,1.25],["R",1080,1940,340,70,460,1.8,0.8],["R",580,1640,340,70,460,2.7,1.1],["R",1080,1340,340,70,460,0.45,0.9],["R",580,1040,340,70,460,0.9,1.25],["R",1080,740,340,70,460,1.8,0.8],["R",580,420,340,70,440,2.7,1.1],["R",830,150,340,70,400,0,1]],"checkpoints":[[1000,2340],[1250,1340],[750,440]],"beams":[[1320,1500],[700,940],[1300,500]],"world":4},
+{"name":"Eclipse Run","sub":"wait for the dark, then fly","worldW":2200,"worldH":2700,"start":[1100,2560],"exit":[1100,160],"sun":{"azC":1.5708,"azAmp":0.32,"azSpeed":0.5,"elev":0.7,"dark":{"period":8,"dur":2.4},"lunge":{"period":7.5,"warn":1.4,"dur":2.2,"reach":165}},"shade":1,"spf":1,"par":42,"pickups":[{"x":1350,"y":2215,"kind":"shade"},{"x":1405,"y":1580,"kind":"pod"},{"x":1350,"y":735,"kind":"spf"}],"casters":[["R",920,2510,360,90,440,0,1],["R",680,2460,340,70,470,0.9,1.25],["R",1180,2180,340,70,470,1.8,0.8],["R",680,1900,340,70,470,2.7,1.1],["R",1180,1620,340,70,470,0.45,0.9],["R",1180,700,340,70,470,0.9,1.25],["R",680,420,340,70,470,1.8,0.8],["R",930,150,340,70,420,0,1],["R",680,1160,340,70,470,2.7,1.1]],"checkpoints":[[850,2495],[1350,1620],[850,420]],"beams":[[1500,2180],[1282,1000],[1480,420]],"world":4},
+{"name":"Wilted Crown","sub":"nowhere left to hide","worldW":2100,"worldH":2600,"start":[1050,2460],"exit":[1050,160],"sun":{"azC":1.5708,"azAmp":0.4,"azSpeed":0.55,"elev":0.72,"lunge":{"period":6,"warn":1.3,"dur":2.3,"reach":165}},"shade":0,"spf":1,"ice":1,"par":46,"pickups":[{"x":1020,"y":1900,"kind":"shade"},{"x":1020,"y":1150,"kind":"pod"},{"x":1370,"y":640,"kind":"shade"}],"casters":[["R",870,2410,360,90,440,0,1],["R",650,2360,300,60,460,0.9,1.25],["R",1150,2110,300,60,460,1.8,0.8],["R",650,1860,300,60,460,2.7,1.1],["R",1150,1610,300,60,460,0.45,0.9],["R",650,1360,300,60,460,0.9,1.25],["R",1150,1110,300,60,460,1.8,0.8],["R",650,860,300,60,460,2.7,1.1],["R",1150,610,300,60,460,0.45,0.9],["R",650,360,300,60,460,0.9,1.25],["R",900,150,300,60,420,0,1]],"wilts":[{"x":760,"y":1860,"w":520,"d":80,"sh":480,"camp":3},{"x":760,"y":1110,"w":520,"d":80,"sh":480,"camp":3},{"x":760,"y":610,"w":520,"d":80,"sh":480,"camp":2.5}],"hot":[[1240,2230,70],[860,1480,70],[1250,980,70]],"pops":[[1300,1610],[1300,610]],"checkpoints":[[1050,2440],[800,1360],[800,360]],"beams":[[1400,2110],[700,1110],[1400,360]],"world":4},
+{"name":"The Angry Sun","sub":"climb into the eye of the eclipse","worldW":2400,"worldH":2900,"start":[1200,2760],"exit":[1200,140],"sun":{"azC":1.5708,"azAmp":0.45,"azSpeed":0.6,"elev":0.86,"dark":{"period":11,"dur":2},"lunge":{"period":5.5,"warn":1.1,"dur":2.6,"reach":180}},"shade":1,"spf":1,"ice":1,"par":74,"pickups":[{"x":1450,"y":2465,"kind":"shade"},{"x":1020,"y":1835,"kind":"spf"},{"x":1450,"y":1205,"kind":"pod"},{"x":1005,"y":500,"kind":"shade"}],"casters":[["R",1020,2710,360,90,440,0,1],["R",770,2640,360,70,500,0.9,1.25],["R",1270,2430,360,70,500,1.8,0.8],["R",770,2220,360,70,500,2.7,1.1],["R",1270,2010,360,70,500,0.45,0.9],["R",770,1800,360,70,500,0.9,1.25],["R",1270,1590,360,70,500,1.8,0.8],["R",770,1380,360,70,500,2.7,1.1],["R",1270,1170,360,70,500,0.45,0.9],["R",770,960,360,70,500,0.9,1.25],["R",1270,750,360,70,500,1.8,0.8],["R",770,540,360,70,500,2.7,1.1],["R",1270,330,360,70,500,0.45,0.9],["R",1020,150,360,70,440,0,1]],"movers":[{"x":900,"y":760,"w":240,"d":60,"sh":480,"vx":100,"minx":600,"maxx":1700}],"clouds":[{"x":1560,"y":1500,"r":170,"vy":-80,"miny":1000,"maxy":1600}],"hot":[[1200,2500,80],[980,1900,80],[1420,1300,80],[1100,700,80],[1300,400,80]],"pops":[[950,1800],[950,960],[1450,330]],"checkpoints":[[1200,2740],[1450,1590],[950,540]],"beams":[[1429,2257],[760,1380],[1429,787],[840,330]],"world":4},
+{"name":"High Sun Gaps","sub":"the shadows only join when the sun stands straight up","worldW":1700,"worldH":2300,"start":[850,2180],"exit":[850,150],"sun":{"azC":1.5708,"azAmp":0.55,"azSpeed":0.5,"elev":0.95},"shade":0,"spf":1,"par":42,"pickups":[{"x":860,"y":1843,"kind":"shade"},{"x":905,"y":1140,"kind":"pod"},{"x":905,"y":460,"kind":"shade"}],"casters":[["R",670,2140,360,70,440],["R",690,1810,340,66,470],["R",690,1480,340,66,470],["R",690,1150,340,66,470],["R",690,820,340,66,470],["R",690,470,340,66,470],["R",670,150,360,70,420]],"checkpoints":[[850,2175],[850,1180],[850,500]],"beams":[[1090,1650],[560,1320],[1090,980]],"world":1},
+{"name":"The Moat","sub":"no shade crosses the burning sand, so bring your own","worldW":1700,"worldH":2400,"start":[850,2280],"exit":[850,150],"sun":{"azC":1.5708,"azAmp":0.3,"azSpeed":0.5,"elev":1.05},"shade":1,"spf":1,"par":44,"pickups":[{"x":860,"y":2013,"kind":"shade"},{"x":860,"y":1273,"kind":"shade"},{"x":905,"y":1140,"kind":"pod"},{"x":905,"y":720,"kind":"shade"}],"casters":[["R",670,2240,360,70,440],["R",690,1980,340,66,300],["R",690,1240,340,66,300],["R",690,780,340,66,320],["R",670,150,360,70,420]],"checkpoints":[[850,2275],[850,1180],[850,760]],"beams":[[1090,1700],[560,1500]],"world":1},
+{"name":"Around the Umbrella","sub":"can't go through, so go around into the shade","world":0,"worldW":1500,"worldH":1750,"start":[750,1650],"exit":[750,150],"sun":{"azC":1.5708,"azAmp":0.5,"azSpeed":0.5,"elev":0.62},"shade":0,"spf":0,"par":30,"pickups":[{"x":830,"y":972,"kind":"shade"},{"x":755,"y":490,"kind":"shade"}],"casters":[["R",570,1610,360,90,320],["R",700,940,260,64,150],["R",560,480,360,80,300],["R",570,150,360,80,300]],"checkpoints":[[750,1645],[700,530]],"beams":[[790,1120],[600,690],[300,980]]},
+{"name":"The Long Way Round","sub":"can't cut through, round it into the shade","world":1,"worldW":1500,"worldH":1750,"start":[750,1650],"exit":[750,150],"sun":{"azC":1.5708,"azAmp":0.56,"azSpeed":0.6,"elev":0.68},"shade":0,"spf":1,"par":40,"pickups":[{"x":650,"y":972,"kind":"shade"},{"x":785,"y":480,"kind":"pod"},{"x":715,"y":480,"kind":"shade"}],"casters":[["R",570,1610,360,90,350],["R",520,940,260,64,170],["R",560,470,360,80,300],["R",570,150,360,80,300]],"hot":[[1060,1000,70],[300,760,70]],"checkpoints":[[750,1645],[730,520]],"beams":[[790,1100],[560,690]]},
+{"name":"Reef Ferry","sub":"ride the tide-cart, then round the big awning","world":2,"worldW":2200,"worldH":2600,"start":[640,2460],"exit":[1480,300],"sun":{"azC":1.57,"azAmp":0.44,"azSpeed":0.5,"elev":0.72},"shade":0,"spf":0,"ice":1,"par":40,"pickups":[{"x":1460,"y":2060,"kind":"shade"},{"x":1515,"y":1740,"kind":"pod"},{"x":1430,"y":1220,"kind":"shade"}],"casters":[["R",460,2400,360,80,440],["U",640,2120,95,1.57,360],["U",640,1840,95,1.57,360],["U",1460,2060,95,1.57,360],["R",1120,1180,620,80,500],["U",1480,720,95,1.57,360],["R",1300,300,360,80,440]],"movers":[{"x":1360,"y":1900,"w":240,"d":60,"sh":440,"vx":-120,"minx":560,"maxx":1560}],"checkpoints":[[640,2460],[640,1700],[1460,1780],[1480,760]],"beams":[[1080,1740],[1748,1300],[900,2050]]},
+{"name":"The Long Dark","sub":"cross the blackout maze while the sun blinks","world":4,"worldW":1900,"worldH":2600,"start":[980,2460],"exit":[980,220],"sun":{"azC":1.57,"azAmp":0.24,"azSpeed":0.5,"elev":1.2,"dark":{"period":4,"dur":2.7}},"shade":0,"spf":1,"ice":0,"par":60,"pickups":[{"x":845,"y":1620,"kind":"shade"},{"x":1185,"y":1000,"kind":"pod"},{"x":1160,"y":345,"kind":"shade"}],"casters":[["R",510,415,300,80,460,0.9,1.25],["R",800,2400,360,90,470,0,1],["R",490,1780,340,90,490,1.8,0.8],["R",990,1160,340,90,490,2.7,1.1],["R",990,300,340,90,490,0.45,0.9],["R",800,150,360,90,460,0,1]],"checkpoints":[[980,2460],[790,1660],[1130,1040],[660,460]],"beams":[[1150,2050],[790,1420],[1150,900]]}
 ];
+/* THE PRESSURE step 7 (Stephen, 8 Nov: "all levels harder"), harder fairly, by world, once at load so the lab sees and saves the same:
+   par (the gold medal's time) x0.85 from the Tide Pools; the sun's sweep 10 percent faster in the Dunes and the Eclipse. Checkpoints keep
+   every level fair: a burn puts him back at the last one with his seeds full. Level ids, the save and every saved key unchanged. */
+const HARDER={parK:[1,1,0.85,0.85,0.85], sweepK:[1,1,1,1.1,1.1]};
+LEVELS.forEach(L=>{ const w=L.world||0; L.par=Math.round(L.par*HARDER.parK[w]); L.sun.azSpeed=+(L.sun.azSpeed*HARDER.sweepK[w]).toFixed(3); });
 /* per-world hidden collectibles: shells (beach worlds), ice cream (the blaze), gems (dunes and eclipse). 3 per campaign level. */
 const COLLECT=[
   {name:'Seashell',plural:'Seashells',kind:'shell'},   // W0 Morning Tide
@@ -806,14 +815,34 @@ const COLLECT=[
   {name:'Gem',plural:'Buried Gems',kind:'gem'},        // W4 Eclipse
 ];
 function collectOf(w){ return COLLECT[w%COLLECT.length]; }
-const FINDS={0:[[1620,1788],[1668,1452],[1788,636]],1:[[1620,1860],[1644,1452],[1740,660]],2:[[228,1812],[204,1188],[228,924]],3:[[1692,1932],[516,1524],[468,900]],4:[[1572,1788],[1596,1212],[612,708]],5:[[1404,1860],[612,1332],[1404,828]],6:[[180,1860],[156,1236],[2244,828]],7:[[852,2052],[348,1380],[2364,756]],8:[[1548,1740],[444,1164],[1572,900]],9:[[1644,1860],[1644,1260],[612,660]],10:[[1764,1788],[2244,1260],[2268,900]],11:[[1788,2076],[2244,1356],[2268,1044]],12:[[1812,1644],[1884,1140],[84,636]],13:[[204,1788],[204,1428],[252,636]],14:[[2004,1668],[2004,1188],[2172,660]],15:[[2076,1812],[2340,1212],[2436,948]],16:[[1476,1692],[1476,1116],[1476,780]],17:[[1572,1932],[1572,1380],[1572,660]],18:[[540,1716],[420,1356],[420,636]],19:[[708,2052],[1860,1476],[708,708]],20:[[1332,1524],[1332,1212],[1332,564]],21:[[1212,1836],[1212,1092],[1212,612]],22:[[228,1236],[1188,756],[348,420]],23:[[1284,1260],[276,780],[324,420]],24:[[1908,1908],[1932,1524],[2100,804]],25:[[468,1716],[1428,1212],[1452,924]]};
+const PICKUP_NAME={spf:'SPF',shade:'SHADE',ice:'ICE',pod:'SEEDS'}, PICKUP_COL={spf:'#ffe7a0',shade:'#9fd6c0',ice:'#bfe6ff',pod:'#c9e3a0'};   // THE PRESSURE step 4: a seed pod (+3) is a pickup in the levels
+/* THE PRESSURE step 5 (Stephen, 8 Nov: the unlockables he could not find): every find sits in the shade the level is played through, inside or
+   just off an awning (within 90 px of it, a checkpoint or a pickup), shaded at the sun's two ends and its centre, off hot sand, and the
+   first of each level beside the start awning in view from the start. The indices are the save's, so a find already taken stays taken. */
+const FINDS={0:[[850,2480],[920,1200],[920,640]],1:[[850,2480],[920,1150],[920,500]],2:[[640,2390],[750,1500],[1460,750]],3:[[980,2690],[1140,1440],[1130,460]],4:[[980,2370],[1100,1420],[1000,540]],5:[[910,2540],[920,1150],[920,250]],6:[[1110,2440],[520,1480],[1250,290]],7:[[1210,2740],[1200,1780],[1220,300]],8:[[850,2360],[980,1210],[880,570]],9:[[950,2460],[1030,1700],[1000,900]],10:[[1050,2560],[1610,1500],[1120,700]],11:[[1050,2760],[1590,1560],[1600,640]],12:[[820,2380],[710,1140],[840,360]],13:[[930,2420],[950,1640],[780,900]],14:[[910,2280],[740,1670],[1260,370]],15:[[870,2520],[770,1800],[1450,730]],16:[[850,2360],[700,1020],[670,440]],17:[[950,2560],[1270,1620],[770,420]],18:[[900,2460],[720,1360],[720,360]],19:[[1050,2760],[840,1380],[870,540]],20:[[700,2180],[770,1180],[770,500]],21:[[700,2280],[770,1180],[770,760]],22:[[600,1650],[750,970],[620,530]],23:[[600,1650],[570,970],[710,400]],24:[[490,2460],[1350,1220],[1400,760]],25:[[830,2460],[710,1660],[580,460]]};
 function levelId(L,idx){ return WORLDS[L.world].key+'_'+idx; }
 LEVELS.forEach((L,i)=>{ L.finds=FINDS[i]||[]; });
+const FIND_COL={shell:'#f28ab0',cone:'#ffb35c',gem:'#37b6e0'}, FIND_WORD={shell:'shells',cone:'ice creams',gem:'gems'};   // the compass and the level card
 const WORLD_REWARD=['shell_crown','cone_hat','cool_shades','gem_crown','eclipse_halo']; // exclusive hat per world
 function worldFindsComplete(w){ const lv=levelsOfWorld(w); if(!lv.length) return false;
   return lv.every(o=>{ const a=save.finds[levelId(o.L,o.i)]||[]; const n=(o.L.finds||[]).length; if(!n) return false;
     for(let i=0;i<n;i++) if(!a[i]) return false; return true; }); }
 function levelsOfWorld(w){ return LEVELS.map((L,i)=>({L,i})).filter(o=>o.L.world===w); }
+/* THE PRESSURE step 3 (Stephen, 8 Nov: "that pressure on nearly every level and early"): one row a world. From Morning Tide's third
+   level every level carries the world's fair lunge unless it has its own (the Eclipse keeps its own lunges and dark windows; its row is
+   the run's), lead seconds before the first; critters by the level's place IN ITS WORLD (one from Morning Tide's second level, the placed
+   ones counted); the sun burns 150/s in the first two worlds and 170/s from the Tide Pools (Thicker Skin scales it); shade cools 200/s. */
+const PRESSURE=[
+  {lunge:{period:16,warn:1.6,dur:2.0,reach:100,lead:6}, critters:1, burn:150},   // Morning Tide: one lunge a crossing
+  {lunge:{period:14,warn:1.5,dur:2.0,reach:100,lead:5}, critters:1, burn:150},   // Midday Blaze
+  {lunge:{period:13,warn:1.5,dur:2.2,reach:105,lead:5}, critters:2, burn:170},   // Tide Pools
+  {lunge:{period:12,warn:1.4,dur:2.2,reach:110,lead:5}, critters:2, burn:170},   // Dunes at Dusk, and the mirage
+  {lunge:{period:10,warn:1.4,dur:2.2,reach:110,lead:4}, critters:3, burn:170},   // Eclipse
+];
+function placeInWorld(L,i){ const k=levelsOfWorld(L.world||0).findIndex(o=>o.i===i); return k<0?0:k; }
+function pressureLunge(L,i){ const w=L.world||0; if(w>=4||(w===0&&placeInWorld(L,i)<2)) return null; return {...PRESSURE[w].lunge}; }
+function sunBurnFor(w){ return Math.round(FEEL().burnSun*PRESSURE[w%5].burn/150); }
+function runLunge(w,lead){ const s=PRESSURE[w%5].lunge; return {...s,timer:Math.max(0,s.period-lead),state:'idle',zx:P.x,zy:P.y,calm:0}; }
 
 /* ===================== PROCEDURAL GENERATOR (endless / daily) ===================== */
 // Builds a solvable-by-construction vertical level by stacking overlapping shade bands.
@@ -896,26 +925,31 @@ function runBandNext(){ const g=run.gen, L=run.L, f=run.feel, r=(a,b)=>a+g.rnd()
   if(g.rnd()<0.4) run.beams.push({x:cx+r(-w/3,w/3),y:y-60,got:false,t:g.rnd()*6});
   if(g.rnd()<0.25) run.pods.push({x:cx+r(-w/2,w/2),y:y+r(70,150),got:false});
   if(g.rnd()<0.2) run.pops.push({x:cx+r(-50,50),y:y-40,got:false});
+  if(g.rnd()<0.1+0.03*W+(g.diff-1)*0.02){ const k=g.rnd(); run.pickups.push({x:cx+r(-w/3,w/3),y:y+32,kind:k<0.5?'spf':(k<0.8||W<2?'shade':'ice'),got:false}); }   // THE PRESSURE: SPF, shade and ice on the run's shade, by its budget
   if(W>=1&&g.rnd()<0.25) run.hot.push([clamp(cx+(g.rnd()<0.5?-1:1)*r(260,420),120,L.worldW-120),y+120,60]);
   // the critters, by the world: a scorpion on the lane between the bands, a crab on this band's front edge, one mirage from the Dunes
   const budget=0.6+W*0.25+(g.diff-1)*0.15;
-  if(W>=1&&g.rnd()<budget*0.6){ const hx=clamp(cx-g.side*r(120,260),160,L.worldW-160), hy=y+120;
+  if((W>=1||L.start[1]-y>=BASE_FEEL.runMile)&&g.rnd()<budget*0.6){   // THE PRESSURE: a critter budget from mile 1
+    const hx=clamp(cx-g.side*r(120,260),160,L.worldW-160), hy=y+120;
     run.critters.push({kind:'scorpion',x:hx,y:hy,hx,hy,ax:Math.max(80,hx-150),ay:hy,bx:Math.min(L.worldW-80,hx+150),by:hy,dir:1,state:'patrol',pin:0,sink:0,rise:0,lostT:0,face:0,t:0,hits:0}); }
   if(W>=2&&g.rnd()<budget*0.35) run.critters.push({kind:'crab',x:cx-w/2,y:y+74,ax:cx-w/2,bx:cx+w/2,dir:1,state:'crab',pin:0,sink:0,rise:0,hits:0,flipped:false,cool:0,face:0,t:0,lostT:0});
   if(W>=3&&!run.critters.some(c=>c.kind==='mirage')) run.critters.push({kind:'mirage',x:P.x,y:P.y,on:false,fade:0,cool:0,born:0,pin:0,t:0,state:'mirage',sink:0,rise:0});
+  if((roll<0.5||g.n<6)&&L.casters[L.casters.length-1][5]>1&&L.start[1]-y>=(g.fm+0.5)*BASE_FEEL.runMile){   // THE PRESSURE step 5: one find a mile, in a band's awning shade (never a wilting one), the world's collectible
+    let fx=cx+g.side*(w/2-40); const busy=x=>[...run.beams,...run.pods,...run.pops,...run.pickups].some(o=>Math.abs(o.x-x)<50&&Math.abs(o.y-(y+32))<70);
+    if(busy(fx)) fx=cx-g.side*(w/2-40); if(!busy(fx)){ g.fm++; run.finds.push({x:fx,y:y+32,i:run.finds.length,got:false,kind:collectOf(W).kind}); } }
   g.prev={x:cx-w/2,y,w,d:64,sh:440}; g.cx=cx; g.y-=240; g.n++; }
 function startRun(seed,daily){ const L=genRun(seed); if(daily){ L.name='Daily Run'; L.sub='Seed '+seedWord(daily)+'. Everyone runs the same sand today.'; }
   endlessWorld=0; startLevel(0,{level:L,endless:true,daily:daily||0}); const f=run.feel;
-  run.isRun=true; run.planet=null; run.gen={rnd:mulberry32(seed|0),y:L.start[1]-40-240,cx:L.worldW/2,side:1,n:0,world:0,diff:1,fi:0,prev:{x:L.worldW/2-180,y:L.start[1]-40,w:360,d:70,sh:440}};
+  run.isRun=true; run.planet=null; run.gen={fm:0,rnd:mulberry32(seed|0),y:L.start[1]-40-240,cx:L.worldW/2,side:1,n:0,world:0,diff:1,fi:0,prev:{x:L.worldW/2-180,y:L.start[1]-40,w:360,d:70,sh:440}};
   cam.y=clamp(P.y-(H-f.runLineH-160),0,Math.max(0,L.worldH-H)); run.graceT=Math.max(run.graceT||0,1.5);   // he starts 160 px over the burn line with a breath and a half before it bites
   run.scroll=f.runScroll; run.scrollY=cam.y; run.dist=0; run.miles=0; run.pods=[]; run.motes=[]; run.gulls=[]; run.seeds=f.runPouch; run.regenT=0; run.fireT=0; run.fireId=null;
-  run.moteT=f.runMoteEvery; run.gullT=f.runGullEvery; run.flareT=0; run.worldMask=1; run.pins=0; run.cacti=[]; run.decor=[];
+  run.moteT=f.runMoteEvery; run.gullT=f.runGullEvery; run.flareT=0; run.lunge=runLunge(0,8); run.worldMask=1; run.pins=0; run.cacti=[]; run.decor=[];
   for(let i=0;i<14;i++) runBandNext(); sync();
   ['sun_wind_up','sun_lunge','sun_recovery','ring_boss','lane','angry_glare','angry_wind_up','angry_lunge','angry_panting','corona','umb_states','wilt_solid','cloud_platform',
    'mote','gull_fly','gull_swoop','gull_hit','gull_knocked','gull_carry','crab_walk','crab_pinned','crab_flipped','burn_line','seed_pod','run_card_ornament'].forEach(need); needWorld(1); }
 function startFlare(){ const f=run.feel; run.flareT=f.runFlare; run.lunge={period:5.5,warn:1.1,dur:2.4,reach:160+run.miles*4,timer:0,state:'idle',zx:P.x,zy:P.y,calm:0};
   toast('mile '+run.miles+', the sun flares','#ff6a2c'); jShake(0.2); SFX.burn&&spawnRing(P.x,P.y,'255,120,40',120,0.6); }
-function shiftWorld(){ const w=(run.L.world+1)%5; run.L.world=w; run.gen.world=w; if(w===0) run.gen.diff++; run.worldMask|=1<<w;
+function shiftWorld(){ const w=(run.L.world+1)%5; run.L.world=w; run.gen.world=w; run.feel.burnSun=sunBurnFor(w); if(w===0) run.gen.diff++; run.worldMask|=1<<w;
   applyTheme(w); needWorld(w); needWorld((w+1)%5); run.wind=w===3?{ax:55,ay:0,spin:0.16}:null; startMusic(w); toast(WORLDS[w].name,'var(--leaf)'); }
 function spawnMotes(){ const f=run.feel, L=run.L, n=3+Math.floor(Math.random()*3), top=cam.y-20, W4=L.world;
   if(W4>=2&&Math.random()<0.5){ const slots=7, gap=Math.floor(clamp((P.x-cam.x)/W*slots,0,slots-1));   // a wall with one gap, nearest him
@@ -935,7 +969,7 @@ function updateGulls(dt){ const f=run.feel, L=run.L; if(L.world>=1||run.gen.diff
     if(gl.x<cam.x-100||gl.x>cam.x+W+100) gl.dead=true; }
   if(run.gulls.some(g=>g.dead)) run.gulls=run.gulls.filter(g=>!g.dead); }
 function pruneBelow(yl){ const L=run.L; L.casters=L.casters.filter(c=>c[2]<yl); run.walls=[]; run.movers=run.movers.filter(m=>m.y<yl); run.clouds=run.clouds.filter(c=>c.y<yl);
-  run.wilts=run.wilts.filter(w=>w.y<yl); run.beams=run.beams.filter(b=>b.y<yl); run.pops=run.pops.filter(p=>p.y<yl); run.pods=run.pods.filter(p=>p.y<yl);
+  run.wilts=run.wilts.filter(w=>w.y<yl); run.beams=run.beams.filter(b=>b.y<yl); run.pops=run.pops.filter(p=>p.y<yl); run.pods=run.pods.filter(p=>p.y<yl); run.pickups=(run.pickups||[]).filter(p=>p.y<yl); run.finds=run.finds.filter(f=>f.y<yl);
   for(let i=run.hot.length-1;i>=0;i--) if(run.hot[i][1]>=yl) run.hot.splice(i,1);
   run.critters=run.critters.filter(c=>c.kind==='mirage'||c.y<yl); run.saplings=run.saplings.filter(s=>s.y<yl); }
 function endRun(){ mode='win'; const f=run.feel, L=run.L; SFX.win(); stopMusic(); freeze=0; run.fireId=null;
@@ -948,10 +982,10 @@ function endRun(){ mode='win'; const f=run.feel, L=run.L; SFX.win(); stopMusic()
   addBeams(earn);
   $('winTitle').textContent='THE SUN WON'; $('winMedal').innerHTML='';
   $('winTime').innerHTML=`${m.toLocaleString()} m, ${WORLDS[world].name}`+(isNewBest?`  <span style="color:var(--beam)">NEW BEST</span>`:(save.runBest?`  <span style="opacity:.7">best ${save.runBest.toLocaleString()} m</span>`:''));
-  $('winDeaths').innerHTML=`${mk('aloe')} ${stars}  ·  ${pinned} pinned`;
+  $('winDeaths').innerHTML=`${mk('aloe')} ${stars}  ·  ${pinned} pinned`+(run.findsRun?`  ·  ${run.findsRun} ${run.findsRun===1?'treasure':'treasures'}`:'');
   $('winEarn').innerHTML=`<div class="earnLine">+ ${earn} aloe ${mk('aloe')}</div>`+(nw?`<div class="earnLine">${nw===1?'a new world reached':nw+' new worlds reached'}</div>`:'');
   $('winNext').style.display='none';
-  run.winInfo={name:L.name, world, t:run.t, par:0, medal:'bronze', isNewBest, deaths:0, finds:{have:0,total:0}, kind:collectOf(world).kind, endless:true, daily:!!dailyKey, run:true, m, stars, pinned};
+  run.winInfo={name:L.name, world, t:run.t, par:0, medal:'bronze', isNewBest, deaths:0, finds:{have:0,total:0}, kind:collectOf(world).kind, endless:true, daily:!!dailyKey, run:true, m, stars, pinned, fr:run.findsRun};
   run.winInfo.at=performance.now(); need('hero_victory_big'); need('cactus_wave'); need(dailyKey?'share_daily':'share_result');
   $('play-ui').classList.add('hidden'); showScreen('win'); updateWallet(); drawWinCard(); }
 
@@ -1035,7 +1069,7 @@ let cam={x:0,y:0};
 let freeze=0; // freeze-frame timer (juice)
 
 function startLevel(i,opts){ opts=opts||{}; const L=opts.level||LEVELS[i]; li=(opts.level?li:i); endless=!!opts.endless; dailyKey=opts.daily||0;
-  const ch=startCharges(L); const feel=FEEL();
+  const ch=startCharges(L); const feel=FEEL(); if(!opts.level) feel.burnSun=sunBurnFor(L.world||0);   // THE PRESSURE: the sun burns harder from the Tide Pools
   // tag umbrella casters with facing index for wind re-tilt
   let fi=0; const facings={}; for(const c of L.casters){ if(c[0]==='U'){ c.__fi=fi; facings[fi]=c[4]; fi++; } }
   run={ L,t:0,act:null,hotAt:-9,az:L.sun.azC,deaths:0,screenT:0,darkT:0,slowT:0,shake:0,lastSafe:true,grazeT:0,sinceSafe:0,graceT:1.0,
@@ -1046,8 +1080,9 @@ function startLevel(i,opts){ opts=opts||{}; const L=opts.level||LEVELS[i]; li=(o
         hot:(L.hot||[]),
         wilts:(L.wilts||[]).map(w=>({...w,campT:0,closed:false,regrow:0})),
         pops:(L.pops||[]).map(p=>({x:p[0],y:p[1],got:false})),
+        pickups:(L.pickups||[]).map(p=>({x:p.x,y:p.y,kind:p.kind,got:false})),   // THE PRESSURE: SPF, SHADE and ICE you pick up on the route (step 2 the lesson's SPF; step 4 the rest)
         wind:L.wind||null,
-        lunge:L.sun.lunge?{...L.sun.lunge,timer:0,state:'idle',zx:0,zy:0}:null,
+        lunge:(()=>{ const s=L.sun.lunge||(opts.level?null:pressureLunge(L,i)); return s?{...s,timer:s.lead?s.period-s.lead:0,state:'idle',zx:0,zy:0}:null; })(),   // THE PRESSURE: the level's own lunge, or its world's
         dark:L.sun.dark?{...L.sun.dark,timer:0}:null,
         beams:(L.beams||[]).map(b=>({x:b[0],y:b[1],got:false,t:Math.random()*6})),
         findId: endless?null:levelId(L,li),
@@ -1082,7 +1117,7 @@ function startLevel(i,opts){ opts=opts||{}; const L=opts.level||LEVELS[i]; li=(o
 /* m2 step 9: the moving world's art, loaded with the level that uses it */
 function needLevel(L){ need('cactus_blink'); if(L.wind) need('cactus_wind'); if(L.world===3||L.world===4) PLANET_KEYS.forEach(need);
   if((L.wilts||[]).length) need('wilt_solid'); if((L.casters||[]).some(c=>c[0]==='U')) need('umb_states');
-  if(L.sun&&L.sun.lunge){ need('sun_wind_up'); need('sun_lunge'); need('sun_recovery'); need('ring_boss'); need('lane'); }
+  if((L.sun&&L.sun.lunge)||(run&&run.lunge)){ need('sun_wind_up'); need('sun_lunge'); need('sun_recovery'); need('ring_boss'); need('lane'); }
   if(L.sun&&L.sun.dark) need('ring_safe'); }
 /* her cactus spectators: two per level, one each side of the route, near enough to its line to stand at the screen's
    edges, clear of casters, carts, pickups and the decor; scenery only (no shade, no collision) */
@@ -1129,7 +1164,7 @@ function toast(msg,col){ const t=$('toast'); t.innerHTML=`<span class="tdot" sty
   t.style.transition='none'; t.style.opacity='1'; requestAnimationFrame(()=>{ t.style.transition='opacity .7s'; t.style.opacity='0'; }); }
 let cueKey='~';
 function cueNow(){ const L=run.L;
-  if(run.lunge&&run.lunge.state==='warn') return ['boss-target',run.seeds>0?'lunge coming, toss a seed':'lunge coming',1];
+  if(run.lunge&&run.lunge.state==='warn') return ['boss-target',run.lunge.locked?(run.seeds>0?'now, dash or toss a seed':'now, dash'):'lunge coming',1];
   for(const wlt of run.wilts) if(!wlt.closed&&wlt.under&&wlt.campT/(wlt.camp||3)>=0.25) return ['awning-warning','shade wilting',1];
   if(run.darkT>0) return ['eclipse-window','eclipse, cross now',0];
   if(run.act&&run.act.k==='cooling') return ['cooling','cooling down',0];
@@ -1157,6 +1192,8 @@ function jShake(a){ if(!save.settings.reduce) run.shake=Math.max(run.shake,a); }
 function popSquash(sx,sy){ P.sx=sx; P.sy=sy; }
 function collectFind(fnd){ fnd.got=true; run.findsRun++;
   const cd=collectOf(run.L.world);
+  if(run.isRun){ addBeams(12); SFX.pop(); spawnParts(fnd.x,fnd.y,22,'255,225,150',160,0.65); spawnRing(fnd.x,fnd.y,'255,225,150',52); floatText(fnd.x,fnd.y-6,'+12','255,230,150'); popSquash(0.78,1.26);
+    const rc=COLLECT.find(c=>c.kind===fnd.kind)||cd; toast(mk(rc.kind)+' '+rc.name+', +12','var(--beam)'); return; }   // THE PRESSURE step 5: a run find pays aloe and counts on the run card, nothing in the save
   let arr=save.finds[run.findId]; if(!arr){ arr=[]; save.finds[run.findId]=arr; } arr[fnd.i]=true;
   const total=run.finds.length, have=run.finds.filter(f=>f.got).length;
   addBeams(12);                                                    // bonus aloe per find (addBeams persists)
@@ -1192,6 +1229,7 @@ bind('bDash',queueDash); bind('bSeed',toss); bind('bShade',drop); bind('bScreen'
 function queueDash(){ if(P.dashCd<=0||P.dashStock>0) doDash(); else dashBuf=run.feel.inputBuffer; }
 function doDash(){ const f=run.feel; if(P.dashStock>0){P.dashStock--;} else { if(P.dashCd>0) return; P.dashCd=f.dashCd; }
   P.dashT=f.dashDur; dashBuf=0; run.dashUses=(run.dashUses||0)+1; SFX.dash();
+  const lg=run.lunge; if(lg&&lg.locked&&lg.state!=='idle'&&dist(P.x,P.y,lg.zx,lg.zy)<lg.reach) run.lungeGraceT=f.lungeGrace;   // the perfect time the sign promises
   const mv=mvVec(); if(Math.hypot(mv.x,mv.y)>0.05) P.face=Math.atan2(mv.y,mv.x);
   P.sx=1.4;P.sy=0.7; // stretch along axis
   spawnParts(P.x,P.y,9,'255,185,95',115,0.34); spawnRing(P.x,P.y,'255,195,110',30,0.28); jShake(0.08); fxAt('dash_puff',P.x,P.y+8,72,0.33); // dash burst
@@ -1230,9 +1268,12 @@ function updateSeeds(dt){ const f=run.feel;
 /* SUN CRITTERS (6 Nov): things that live in the light and chase him across it. He cannot hurt them; he loses them by reaching shade, and a seed pins one for two seconds.
    A sand scorpion walks a lane in the sun square across his route, charges when he steps into the light within sight, and stops at the edge of any shadow (it lives in the light), sinks, and comes back to its lane. So a crossing is timed against it.
    A heat mirage walks his own last steps a third of a second behind him while he is in the sun: stop or double back and it catches him, so a crossing is a commitment; shade dissolves it.
-   They come in by the world, never in Morning Tide, never in a custom level (the lab tests the shade). No LEVELS data: a scorpion's home comes from the level's shape, seeded, so a level always has the same ones. Placeholder art, drawn in code. */
-function makeCritters(L,opts){ const out=[]; if(!L||opts.level||L.world===0&&!endless) return out;
-  const j=li%4, w=L.world||0, nS=w===1?(j>=1?1:0):w===2?(j>=1?2:1):w===3?2:3, rnd=mulberry32(((L.worldW*7+L.worldH*11+w*97+j*13)|0)+5);
+   They come by the level's place in its world (PRESSURE, from Morning Tide's second level), never in a custom level (the lab tests the shade). No LEVELS data: a scorpion's home comes from the level's shape, seeded, so a level always has the same ones. Placeholder art, drawn in code. */
+function makeCritters(L,opts){ const out=[]; if(!L) return out;
+  /* THE PRESSURE step 2: a critter the level places itself (Sliver Step's lone scorpion that guards the seed lesson) */
+  if(!endless) for(const c of (L.critters||[])) out.push({kind:'scorpion',x:c.x,y:c.y,hx:c.x,hy:c.y,ax:c.ax,ay:c.ay,bx:c.bx,by:c.by,dir:1,state:'patrol',pin:0,sink:0,rise:0,lostT:0,face:0,t:0});
+  if(opts.level) return out;
+  const w=L.world||0, j=placeInWorld(L,li), nS=Math.max(0,(w===0&&j<1?0:PRESSURE[w].critters)-out.length), rnd=mulberry32(((L.worldW*7+L.worldH*11+w*97+j*13)|0)+5);
   const keep=[L.start,L.exit,...(L.checkpoints||[])], homes=[], route=[L.start,...(L.checkpoints||[]).filter(c=>c[0]!==L.start[0]||c[1]!==L.start[1]),L.exit];
   const blocked=(x,y)=>shadedGeom(x,y)||(L.casters||[]).some(c=>c[0]==='R'?(x>c[1]-16&&x<c[1]+c[3]+16&&y>c[2]-16&&y<c[2]+c[4]+16):dist(x,y,c[1],c[2])<c[3]+16);
   /* a scorpion's lane crosses the route: a sun lane between two shadows the player has to cross, walked square to his way, spread along the level */
@@ -1244,7 +1285,7 @@ function makeCritters(L,opts){ const out=[]; if(!L||opts.level||L.world===0&&!en
     if(a+b<80) continue;
     homes.push({x,y,ax:x-nx*a,ay:y-ny*a,bx:x+nx*b,by:y+ny*b}); }
   for(const h of homes) out.push({kind:'scorpion',x:h.x,y:h.y,hx:h.x,hy:h.y,ax:h.ax,ay:h.ay,bx:h.bx,by:h.by,dir:1,state:'patrol',pin:0,sink:0,rise:0,lostT:0,face:0,t:0});
-  if(w>=3&&j>=1) out.push({kind:'mirage',x:L.start[0],y:L.start[1],on:false,fade:0,cool:0,born:0,pin:0,t:0,state:'mirage',sink:0,rise:0});
+  if(w===3||(w>=4&&j>=1)) out.push({kind:'mirage',x:L.start[0],y:L.start[1],on:false,fade:0,cool:0,born:0,pin:0,t:0,state:'mirage',sink:0,rise:0});
   return out; }
 function pinCritter(c){ c.pin=run.feel.pinFor; SFX.sprout(); spawnRing(c.x,c.y,'150,230,120',46,0.35); spawnParts(c.x,c.y,10,'130,190,90',110,0.4); floatText(c.x,c.y-18,'PINNED','170,235,130'); run.pins=(run.pins||0)+1; }
 function stingBy(c,amount){ P.exp=clamp(P.exp+amount,0,run.feel.burnThreshold); SFX.sting(); fxAt('sting',P.x,P.y,72,0.18); jShake(0.16); screenFlash('255,120,50',0.22); floatText(P.x,P.y-24,'STING','255,150,90'); spawnParts(P.x,P.y,10,'255,120,60',150,0.4); run.stings=(run.stings||0)+1; }
@@ -1388,6 +1429,7 @@ function spf(){ if(run.charges.spf>0&&run.screenT<=0){ run.screenT=run.feel.spfD
 function ice(){ if(run.charges.ice>0&&run.slowT<=0){ run.slowT=3.0; run.charges.ice--; SFX.ice(); sync(); } else SFX.deny(); }
 function sync(){ setC('bSeed','cSeed',run.seeds); setC('bShade','cShade',run.charges.shade); setC('bScreen','cScreen',run.charges.spf); setC('bIce','cIce',run.charges.ice); }
 function setC(b,s,n){ $(s).textContent=n; $(b).classList.toggle('empty',n<=0); }
+function hudGot(kind){ const b=$({spf:'bScreen',shade:'bShade',ice:'bIce',pod:'bSeed'}[kind]); if(!b) return; b.classList.remove('got'); void b.offsetWidth; b.classList.add('got'); }   // THE PRESSURE: the button you just filled pulses, so the HUD says what you hold
 function mvVec(){ if(stick.active){ let x=stick.dx/stick.max,y=stick.dy/stick.max; const m=Math.hypot(x,y);
     const dz=0.18; if(m<dz) return {x:0,y:0}; const n=(m-dz)/(1-dz)/m; return {x:x*n,y:y*n}; }
   let x=0,y=0; if(keys['arrowleft']||keys['a'])x--; if(keys['arrowright']||keys['d'])x++;
@@ -1414,7 +1456,7 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
     run.scroll=Math.min(f.runScrollCap,f.runScroll+f.runScrollRamp*Math.floor(run.t/20)); run.scrollY-=run.scroll*dt;
     while(run.gen.y>run.scrollY-H*1.5) runBandNext();
     run.dist=Math.max(run.dist,L.start[1]-P.y); const mile=Math.floor(run.dist/f.runMile); if(mile>run.miles){ run.miles=mile; startFlare(); }
-    if(run.flareT>0){ run.flareT-=dt; if(run.flareT<=0){ run.flareT=0; run.lunge=null; run.darkT=f.runDark; shiftWorld(); } }
+    if(run.flareT>0){ run.flareT-=dt; if(run.flareT<=0){ run.flareT=0; run.darkT=f.runDark; shiftWorld(); run.lunge=runLunge(run.L.world,PRESSURE[run.L.world].lunge.lead+f.runDark); } }   // THE PRESSURE: the world's lunge between flares
     run.regenT+=dt; if(run.seeds<f.runPouch&&run.regenT>=f.runRegen){ run.regenT=0; run.seeds++; sync(); }
     if((run.fireId!=null||keys['r'])&&run.seeds>0){ run.fireT-=dt; if(run.fireT<=0){ run.fireT=f.runFire; toss(); } } else run.fireT=0;
     updateMotes(dt); updateGulls(dt);
@@ -1477,12 +1519,12 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
   let lungeBurn=0;
   if(run.lunge&&run.lunge.calm>0){ const lg=run.lunge; lg.calm-=dt; lg.state='idle'; if(lg.calm<=0){ lg.calm=0; lg.timer=0; } }
   else if(run.lunge){ const lg=run.lunge; lg.timer+=dt; const cyc=lg.period;
-    const ph=lg.timer%cyc;
-    if(ph<lg.warn){ lg.state='warn'; lg.zx=P.x; lg.zy=P.y; }
-    else if(ph<lg.warn+lg.dur){ lg.state='strike'; // lethal zone dives toward telegraphed spot then chases a bit
-      const k=(ph-lg.warn)/lg.dur; lg.zx=lerp(lg.zx,P.x,0.04); lg.zy=lerp(lg.zy,P.y,0.04);
-      if(dist(P.x,P.y,lg.zx,lg.zy)<lg.reach && run.screenT<=0 && run.darkT<=0 && run.graceT<=0) lungeBurn=420; }
-    else lg.state='idle'; }
+    const ph=lg.timer%cyc; if(lg.reach>f.lungeReach) lg.reach=f.lungeReach;
+    if(ph<lg.warn){ lg.state='warn'; lg.locked=ph>=lg.warn*f.lungeLockFrac; if(!lg.locked){ lg.zx=P.x; lg.zy=P.y; } }   // follows him for the first half, then locks
+    else if(ph<lg.warn+lg.dur){ lg.state='strike'; lg.locked=true;   // the strike never chases: it lands where the ring locked
+      if(dist(P.x,P.y,lg.zx,lg.zy)<lg.reach && run.screenT<=0 && run.darkT<=0 && run.graceT<=0 && !(run.lungeGraceT>0)) lungeBurn=420; }
+    else { lg.state='idle'; lg.locked=false; } }
+  if(run.lungeGraceT>0) run.lungeGraceT-=dt;
 
   updateSeeds(dt);
   if(run.cacti&&run.cacti.length&&run.t>=run.blinkNext){ run.blinkI=Math.floor(run.crnd()*run.cacti.length); run.blinkAt=run.t; run.blinkNext=run.t+4+run.crnd()*5; }
@@ -1509,6 +1551,7 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
   for(const b of run.beams){ b.t+=dt; b.lit=!shadedGeom(b.x,b.y); if(!b.got && dist(P.x,P.y,b.x,b.y)<pr+P.r){   // 6 Nov (Stephen): grab it in the shade too; the sun only makes it glow
       b.got=true; run.beamsGot++; run.combo++; run.comboT=comboWindow();
       const mult=comboMult(run.combo), near=P.exp>55?2:1, val=Math.round(ECON.beamValue*mult*near);
+      if(P.exp>0) floatText(b.x,b.y+16,'COOLER','150,230,255'); P.exp=Math.max(0,P.exp-f.aloeCool);   // THE PRESSURE: aloe cools you
       run.beamScore+=val; run.comboMax=Math.max(run.comboMax,mult);
       SFX.beam(run.combo); spawnParts(b.x,b.y,14,'140,240,180',150,0.6); fxAt('collect_burst',b.x,b.y,78,0.32);
       spawnRing(b.x,b.y,'150,245,190',30+mult*7); floatText(b.x,b.y-4,'+'+val, mult>1?'255,214,90':'150,245,190');
@@ -1517,6 +1560,9 @@ function update(dt){ const L=run.L, f=run.feel; run.t+=dt;
   run.comboT-=dt; if(run.comboT<=0&&run.combo>0){ run.combo=Math.max(0,run.combo-comboNotch()); run.comboT=run.combo>0?comboWindow():0; }
   for(const p of run.pops){ if(!p.got && dist(P.x,P.y,p.x,p.y)<40+P.r){ p.got=true; P.dashCd=0; P.dashStock++; SFX.pop();  // forgiving grab (was 26): a near-miss still counts
       spawnParts(p.x,p.y,16,'120,200,255',150,0.55); spawnRing(p.x,p.y,'130,205,255',40); floatText(p.x,p.y-4,'+DASH','130,205,255'); popSquash(0.8,1.24); jShake(0.12); toast('+dash','#7fd0ff'); } }
+  for(const p of (run.pickups||[])){ if(!p.got && dist(P.x,P.y,p.x,p.y)<30+P.r && (p.kind==='pod'||run.charges[p.kind]!==undefined)){ p.got=true;
+      if(p.kind==='pod') run.seeds=Math.min((run.isRun?f.runPouch:f.seedsALevel)+f.podSeeds,run.seeds+f.podSeeds); else run.charges[p.kind]++; sync(); SFX.pop(); hudGot(p.kind);
+      const nm=p.kind==='pod'?'3 SEEDS':(PICKUP_NAME[p.kind]||p.kind); spawnParts(p.x,p.y,16,'255,214,120',150,0.55); spawnRing(p.x,p.y,'255,224,150',40); floatText(p.x,p.y-4,'+'+nm,'255,230,160'); popSquash(0.8,1.24); toast('+'+nm,'#ffd23f'); } }
   // ---- collectibles (seashells / ice-cream / gems — persist across runs) ----
   for(const fnd of run.finds){ if(!fnd.got && dist(P.x,P.y,fnd.x,fnd.y)<pr+P.r+22) collectFind(fnd); }  // forgiving grab so tucked-away finds are actually gettable
 
@@ -1550,6 +1596,7 @@ function burn(){ if(run.coolerBox){ run.coolerBox=false; P.exp=0; P.vx=0;P.vy=0;
   SFX.burn(); spawnParts(P.x,P.y,24,'255,80,40',190,0.75); spawnRing(P.x,P.y,'255,95,55',72,0.5); screenFlash('255,55,30',0.55);
   run.burnFx={x:P.x,y:P.y,t:0}; run.respawnT=save.settings.reduce?0:0.4;
   run.seeds=run.feel.seedsALevel; run.tosses.length=0; sync(); resetCritters();
+  for(const p of (run.pickups||[])) if(p.got&&(p.kind==='pod'||run.charges[p.kind]<=0)) p.got=false;   // a pickup he spent comes back with him (a pod always: his seeds reset)
   run.combo=0; run.act=null; P.exp=0; P.x=run.cp.x; P.y=run.cp.y; P.vx=0;P.vy=0; P.dashT=0; P.dashCd=0; P.dashStock=0; run.sinceSafe=0; run.spawnAt=run.t;
   run.screenT=Math.max(run.screenT,run.feel.respawnGrace); run.trail.length=0; fxAt('respawn_flash',P.x,P.y,96,0.4); }
 
@@ -1620,7 +1667,7 @@ function drawPostcard(c,w,vf,cf){ if(vf==null) vf=3; if(cf==null) cf=2; const g=
     band(B[0],'DAILY CHALLENGE',bree(46)); band(B[1],d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear()+'   seed '+seedWord(dailyKey||dateKey())+'   rules '+RULES_V,atk(30));
     band(B[2],w.run?(w.m.toLocaleString()+' m   '+WORLDS[w.world].name):('Time '+w.t.toFixed(1)+' s   '+burns),atk(42)); return; }
   if(w.run){ const orn=A('run_card_ornament'); if(orn){ const ow=640*S, oh=80*S, ox2=(B[0][0]+B[0][2]/2)*S-ow/2, oy2=(B[0][1]+B[0][3]/2)*S-oh/2; g.drawImage(orn,ox2,oy2,ow,oh); band(B[0],'THE SUN WON',bree(30)); } else band(B[0],'THE SUN WON',bree(44));   // her line band, the words in its empty middle
-    band(B[1],w.m.toLocaleString()+' m   '+WORLDS[w.world].name+(w.isNewBest?'   new best':''),atk(40)); band(B[2],w.stars+' aloe   '+w.pinned+' pinned',atk(34)); return; }
+    band(B[1],w.m.toLocaleString()+' m   '+WORLDS[w.world].name+(w.isNewBest?'   new best':''),atk(40)); band(B[2],w.stars+' aloe   '+w.pinned+' pinned'+(w.fr?'   '+w.fr+(w.fr===1?' treasure':' treasures'):''),atk(34)); return; }
   band(B[0],w.endless?'Shadow Run':w.name,bree(44));
   const md=A('m_'+w.medal), ms=62*S;
   band(B[1],'Time '+w.t.toFixed(1)+' s'+(w.endless?'':'   par '+w.par+' s')+(w.isNewBest?'   new best':''),atk(40));
@@ -1785,6 +1832,11 @@ function render(){ const inPlay=(screen==='play');
     ctx.fillStyle='#7a5230'; ctx.fillRect(x,y,m.w,m.d);
     ctx.fillStyle='#e8c06a'; ctx.fillRect(x,y,m.w,7);
     ctx.fillStyle='#2a2a2a'; ctx.beginPath(); ctx.arc(x+14,y+m.d,6,0,TAU); ctx.arc(x+m.w-14,y+m.d,6,0,TAU); ctx.fill(); }
+  // THE PRESSURE pickups (drawn, no art): a sun cream disc with its word
+  for(const p of (run.pickups||[])){ if(p.got)continue; const x=p.x+ox,y=p.y+oy+Math.sin(nowT*4+p.y)*3, col=PICKUP_COL[p.kind]||'#ffd23f';
+    ctx.fillStyle='rgba(30,20,10,.35)'; ctx.beginPath(); ctx.ellipse(x,y+20,16,6,0,0,TAU); ctx.fill();
+    ctx.fillStyle=col; ctx.strokeStyle='#3a2410'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(x,y,19,0,TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#3a2410'; ctx.font='bold 12px "Atkinson Hyperlegible",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(PICKUP_NAME[p.kind]||'',x,y+1); ctx.textAlign='left'; ctx.textBaseline='alphabetic'; }
   // popsicle pickups
   const popA=A('popsicle');
   for(const p of run.pops){ if(p.got)continue; const x=p.x+ox,y=p.y+oy,bob=Math.sin(nowT*4+p.x)*3;
@@ -1812,7 +1864,7 @@ function render(){ const inPlay=(screen==='play');
       ctx.strokeStyle='rgba(130,190,150,.5)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(x,y,8.5,0,TAU); ctx.stroke(); } }
 
   // collectibles (world-themed hidden treasure — shells / ice-cream / gems)
-  for(const fnd of run.finds){ if(fnd.got) continue; drawFindIcon(fnd.x+ox, fnd.y+oy+Math.sin(nowT*3+fnd.x*0.05)*3, collectOf(L.world).kind); }
+  for(const fnd of run.finds){ if(fnd.got) continue; drawFindIcon(fnd.x+ox, fnd.y+oy+Math.sin(nowT*3+fnd.x*0.05)*3, fnd.kind||collectOf(L.world).kind); }
 
   // checkpoints
   const cpA=A('checkpoints');
@@ -1842,9 +1894,10 @@ function render(){ const inPlay=(screen==='play');
   if(run.lunge && run.lunge.state!=='idle'){ const lg=run.lunge; const x=lg.zx+ox,y=lg.zy+oy, rb=A('ring_boss');
     if(lg.state==='warn'&&rb&&WORLD_FIT.boss_telegraph){ const ph=lg.timer%lg.period, f=save.settings.reduce?0:clamp(Math.floor(ph/lg.warn*4),0,3), k=lg.reach/WORLD_FIT.boss_telegraph;
       ctx.drawImage(rb,f*256,0,256,256,x-128*k,y-128*k,256*k,256*k);
+      if(lg.locked){ ctx.strokeStyle='rgba(255,60,40,.95)'; ctx.lineWidth=5; ctx.beginPath(); ctx.arc(x,y,lg.reach,0,TAU); ctx.stroke(); }
       const ln=A('lane'); if(ln){ const sp=sunXY(), ang=Math.atan2(y-sp.y,x-sp.x), d0=58+39, lw=78, lh=lw*ln.height/ln.width;   // just off the sun's disc, toward the zone
         ctx.save(); ctx.translate(sp.x+Math.cos(ang)*d0,sp.y+Math.sin(ang)*d0); ctx.rotate(ang); ctx.globalAlpha=0.9; ctx.drawImage(ln,-lw/2,-lh/2,lw,lh); ctx.restore(); } }
-    else if(lg.state==='warn'){ ctx.strokeStyle='rgba(255,60,40,.8)'; ctx.lineWidth=4; ctx.setLineDash([6,6]); ctx.beginPath(); ctx.arc(x,y,lg.reach,0,TAU); ctx.stroke(); ctx.setLineDash([]); }
+    else if(lg.state==='warn'){ ctx.strokeStyle='rgba(255,60,40,.8)'; ctx.lineWidth=lg.locked?5:4; if(!lg.locked) ctx.setLineDash([6,6]); ctx.beginPath(); ctx.arc(x,y,lg.reach,0,TAU); ctx.stroke(); ctx.setLineDash([]); }
     else { const rg=ctx.createRadialGradient(x,y,0,x,y,lg.reach); rg.addColorStop(0,'rgba(255,120,40,.7)'); rg.addColorStop(1,'rgba(255,40,20,0)');
       ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(x,y,lg.reach,0,TAU); ctx.fill(); } }
 
@@ -1899,6 +1952,11 @@ function render(){ const inPlay=(screen==='play');
   if(ex<0||ex>W||ey<0||ey>H){ const ax=clamp(ex,40,W-40),ay=clamp(ey,40,H-40),ang=Math.atan2(ey-H/2,ex-W/2);
     ctx.save(); ctx.translate(ax,ay); ctx.rotate(ang); ctx.fillStyle='rgba(79,181,106,.95)';
     ctx.beginPath(); ctx.moveTo(16,0); ctx.lineTo(-10,-10); ctx.lineTo(-10,10); ctx.closePath(); ctx.fill(); ctx.restore(); }
+  // THE PRESSURE step 5, the compass: the nearest find not yet taken, within 420 px of him and off the screen, gets an arrow at the edge in its colour
+  { let nf=null, nd=420; for(const f of run.finds){ if(f.got) continue; const d=dist(P.x,P.y,f.x,f.y); if(d<nd){ nd=d; nf=f; } }
+    if(nf){ const fx=nf.x+ox, fy=nf.y+oy; if(fx<0||fx>W||fy<0||fy>H){ const ax=clamp(fx,34,W-34), ay=clamp(fy,90,H-120), ang=Math.atan2(fy-ay,fx-ax), pu=1+0.08*Math.sin(nowT*5);
+      ctx.save(); ctx.translate(ax,ay); ctx.rotate(ang); ctx.scale(pu,pu); ctx.fillStyle=FIND_COL[nf.kind||collectOf(L.world).kind]||'#ffd23f'; ctx.strokeStyle='rgba(43,42,32,.85)'; ctx.lineWidth=3; ctx.lineJoin='round';
+      ctx.beginPath(); ctx.moveTo(18,0); ctx.lineTo(-10,-13); ctx.lineTo(-4,0); ctx.lineTo(-10,13); ctx.closePath(); ctx.stroke(); ctx.fill(); ctx.restore(); } } }
 
   sunToken(run.lunge);
 }
@@ -2140,8 +2198,13 @@ function showScreen(name){ screen=name||'play'; if(name==='title') drawTitleRun(
 function stopMusicMaybe(name){ if(name==='title'||name==='map'||name==='shop'||name==='builder'||name==='settings'||name==='levels'||name==='howto') stopMusic(); }
 function updateWallet(){ $('walletN').textContent=save.beams; const sw=$('shopWallet'); if(sw) sw.textContent=save.beams+' aloe'; }
 
-// world unlocking: world w unlocked if previous world has >=1 cleared level (or w==0)
-function worldUnlocked(w){ if(w===0) return true; const prev=levelsOfWorld(w-1); return prev.some(o=>save.stars[levelId(o.L,o.i)]); }
+/* THE PRESSURE step 6 (Stephen, 8 Nov: worlds opened progressively, not all at once): a world opens when the world before is COMPLETE,
+   every one of its levels starred. A save already past that keeps what it has: a world with a starred level stays open (never lock a
+   world the player has played). Levels inside a world still open one after another (unlockedLevel). */
+function worldCleared(w){ const lv=levelsOfWorld(w); return { got:lv.filter(o=>save.stars[levelId(o.L,o.i)]).length, tot:lv.length }; }
+function worldUnlocked(w){ if(w===0) return true;
+  if(levelsOfWorld(w).some(o=>save.stars[levelId(o.L,o.i)])) return true;   // played under the old rule: keep it
+  const c=worldCleared(w-1); return c.tot>0&&c.got===c.tot&&worldUnlocked(w-1); }
 function unlockedLevel(i){ const L=LEVELS[i]; const wl=levelsOfWorld(L.world); const pos=wl.findIndex(o=>o.i===i);
   if(!worldUnlocked(L.world)) return false; if(pos===0) return true; const prev=wl[pos-1]; return !!save.stars[levelId(prev.L,prev.i)]; }
 
@@ -2155,7 +2218,7 @@ function buildWorldMap(){ const list=$('worldList'); list.innerHTML='';
     const done100=unlocked&&worldFindsComplete(wi);
     const c=document.createElement('div'); c.className='worldCard'+(unlocked?'':' locked'); c.title=w.sub;
     c.style.backgroundImage=`url(${CARD_SRC[wi]}?v=${ART_V})`;      // her postcard; the name rides in her band
-    c.innerHTML=`<span class="wchip">${unlocked?`${em} ${fGot}/${fTot}${done100?', hat earned':''}`:mk('lock')+' Locked'}</span><span class="wname"><span>${w.name}</span><span class="wprog">${unlocked?(cleared+'/'+lv.length+' cleared · '+stars+' '+mk('star')):'clear a level in '+(wi>0?WORLDS[wi-1].name:'')}</span></span>`;
+    c.innerHTML=`<span class="wchip">${unlocked?`${em} ${fGot}/${fTot}${done100?', hat earned':''}`:mk('lock')+' Locked'}</span><span class="wname"><span>${w.name}</span><span class="wprog">${unlocked?(cleared+'/'+lv.length+' cleared · '+stars+' '+mk('star')):(wi>0?(()=>{ const c=worldCleared(wi-1); return c.got+' of '+c.tot+' levels to open, clear all of '+WORLDS[wi-1].name; })():'')}</span></span>`;
     if(unlocked) c.addEventListener('click',()=>{SFX.click();openWorld(wi);});
     list.appendChild(c); }); }
 let curWorld=0;
@@ -2166,7 +2229,7 @@ function openWorld(wi){ curWorld=wi; $('lvlWorldName').textContent=WORLDS[wi].na
     const kind=collectOf(L.world).kind, got=save.finds[id]||[], nF=(L.finds||[]).length;
     const socks=Array.from({length:nF},(_,k)=>`<img class="sock${got[k]?'':' off'}" src="${SOCK[kind]}?v=${ART_V}" alt="">`).join('');
     const md=['','bronze','silver','gold'][st]||'', medal=md?`<img class="lmedal" src="${MEDAL[md]}?v=${ART_V}" alt="${md} medal">`:'';
-    b.innerHTML=`<span class="lname">${L.name}</span><small>${L.sub}</small>${unlocked?`<div class="rec">${socks}${medal}<span class="lbest">${save.best[id]?save.best[id].toFixed(1)+'s':'Play'}</span></div>`:'<div class="rec">'+mk('lock')+' clear the one before</div>'}`;
+    b.innerHTML=`<span class="lname">${L.name}</span><small>${L.sub}</small>${unlocked?`<div class="rec">${socks}${medal}<span class="lbest">${save.best[id]?save.best[id].toFixed(1)+'s':'Play'}</span></div>${nF?`<div class="lfind">${nF} ${FIND_WORD[kind]||'treasures'} hidden, ${got.slice(0,nF).filter(Boolean).length} found</div>`:''}`:'<div class="rec">'+mk('lock')+' clear the one before</div>'}`;
     if(unlocked) b.addEventListener('click',()=>{SFX.click();startLevel(i);});
     grid.appendChild(o.b=b); });
   showScreen('levels'); }
@@ -2250,9 +2313,10 @@ const HOWTO=[
   {i:'shell',t:'Hidden treasure',b:'Every level hides 3 collectibles: shells, ice cream or gems, depending on the world. The level shows how many you’ve found; grab all 3 to 100% it. Some are tucked away.'},
   {i:'star',t:'Beat your time',b:'Your best time shows while you play, race yourself. A gold medal needs no burns AND finishing under the target time.'},
   {i:'check',t:'Flag & checkpoints',b:'Reach the green flag at the top to win. Ringed dots are checkpoints, touch them so a burn sends you back there, not to the start.'},
+  {i:'star',t:'Worlds open in turn',b:'Levels open one after another. Clear every level of a world, one star is enough, and the next world opens.'},
   {i:'sun',t:'Hot sand',b:'Glowing orange patches scorch you even out of direct sun. Don’t linger on them.'},
   {i:'shade',t:'Clouds & carts',b:'Cloud and cart shadows drift across the map. Step aboard and let them ferry you over the bright gaps.'},
-  {i:'sun',t:'Late game trouble',b:'Striped awnings wilt if you camp under them; the Angry Sun lunges where you’re standing (move when it flashes); an eclipse makes everything dark and safe for a moment, so fly.'},
+  {i:'sun',t:'Late game trouble',b:'Striped awnings wilt if you camp under them; the Angry Sun lunges where its ring locks (move off it, or dash at the flash); an eclipse makes everything dark and safe for a moment, so fly.'},
 ];
 const HOWTO_QUICK=[{i:'sun',b:'The sun burns you. Stay out of it.'},{i:'shade',b:'Shade is safe ground, and it moves with the sun.'},
   {i:'move',b:'Drag your left thumb to walk.'},{i:'dash',b:'Tap DASH to cross a thin strip of sun fast.'}];
@@ -2277,23 +2341,27 @@ function coach(text,ic,d){ const c=$('coach'); if(!c) return; const lf=$('lvlFla
              sh:run&&run.charges?run.charges.shade:0, sp:run&&run.charges?run.charges.spf:0,
              ic2:run&&run.charges?run.charges.ice:0, da:run?(run.dashUses||0):0, tu:run?(run.tossUses||0):0};
   coachHideT=d?12:5.2; }
-function hideCoach(){ const c=$('coach'); if(c) c.classList.remove('show'); coachHideT=0; coachDone=null; }
+function hideCoach(){ const c=$('coach'); if(c) c.classList.remove('show'); coachHideT=0; coachDone=null; coachLesson=false; const hw=$('heatWrap'); if(hw) hw.classList.remove('callout'); }
 const TUT=[
   {id:'move', ic:'move', x:'Stay in the shade. Move with your left thumb.', t:()=>run.t<3,
     d:s=>dist(P.x,P.y,s.x,s.y)>70},
   {id:'shade', ic:'shade', x:'You’re on shade, safe ground. It slides with the sun, so ride it upward.', t:()=>run.t>1.6 && shadedGeom(P.x,P.y)},
-  {id:'aloe', ic:'aloe', x:'A glowing aloe. Dash into the sunlight to grab it, then dash back to shade.', t:()=>run.beams.some(b=>!b.got&&b.lit&&dist(P.x,P.y,b.x,b.y)<230),
+  {id:'sun', ic:'sun', lesson:true, callout:'heatWrap', x:'The sun burns. Keep to the shade. Out in the light your Exposure bar fills, and when it is full you burn.', t:()=>run.t>1.2&&!run.isRun&&sunGapAhead()!==null},
+  {id:'aloe', ic:'aloe', lesson:true, x:'Aloe cools you. Grab it on your way across the sun.', t:()=>run.beams.some(b=>!b.got&&b.lit&&dist(P.x,P.y,b.x,b.y)<230),
     d:()=>run.beams.some(b=>b.got)},
-  {id:'find', ic:'shell', x:'Hidden treasure. Grab all 3 in a level to 100% it, some are off the beaten path.', t:()=>run.finds.some(f=>!f.got&&dist(P.x,P.y,f.x,f.y)<250)},
-  {id:'dash', ic:'dash', x:'A thin strip of sun ahead? Tap DASH and cross it fast.', t:()=>run.t>6,
+  {id:'find', ic:'shell', lesson:true, x:()=>{ const c=collectOf(run.L.world), n=c.name.toLowerCase(); return (/^[aeiou]/.test(n)?'An ':'A ')+n+'. Three hide in every level. Find them all in every level of a world to win its hat.'; }, t:()=>!run.isRun&&run.finds.some(f=>!f.got&&dist(P.x,P.y,f.x,f.y)<250)},
+  {id:'dash', ic:'dash', lesson:true, x:'Too far to walk. Tap DASH at the edge of the shade and cross it fast.', t:()=>{ const g=sunGapAhead(); return (g!==null&&g>=170)||(run.t>14&&LEVELS.indexOf(run.L)>0); },
     d:s=>(run.dashUses||0)>s.da},
   {id:'shadeDrop', ic:'shade-ready', x:'No shade ahead? Tap SHADE to drop your own.', t:()=>run.charges.shade>0 && run.t>4 && !shadedGeom(P.x,P.y),
     d:s=>run.charges.shade<s.sh},
+  {id:'seedPin', ic:'shade-ready', lesson:true, x:'A scorpion guards this gap. Tap SEED as it crosses your path to pin it, then go.', t:()=>shadedGeom(P.x,P.y)&&run.critters.some(c=>c.kind==='scorpion'&&dist(P.x,P.y,c.x,c.y)<330),
+    d:s=>(run.tossUses||0)>(s.tu||0)},
+  {id:'spfPickup', ic:'spf', lesson:true, x:'SPF. Take it, then tap SPF to be sunproof for a moment and cross the wide sun.', t:()=>(run.pickups||[]).some(p=>!p.got&&p.kind==='spf'&&dist(P.x,P.y,p.x,p.y)<230)},
   {id:'seed', ic:'shade-ready', x:'Tap SEED to throw a seed ahead of you. A sapling grows where it lands and shades you for three seconds.', t:()=>run.seeds>0 && run.t>3 && !run.lastSafe && P.exp>=25,
     d:s=>(run.tossUses||0)>(s.tu||0)},
   {id:'critter', ic:'sun', x:'A sand scorpion. It hunts you in the light. Reach shade to lose it, or throw a seed to pin it.', t:()=>run.critters.some(c=>c.state==='hunt')},
   {id:'mirage', ic:'sun', x:'A heat mirage walks your last steps. Do not turn back in the sun. Reach shade.', t:()=>run.critters.some(c=>c.kind==='mirage'&&c.on)},
-  {id:'checkpoint', ic:'check', x:'Checkpoint. Burn now and you respawn right here.', t:()=>run.cpHit.some(Boolean)},
+  {id:'checkpoint', ic:'check', lesson:true, x:'Checkpoint. Burn now and you start again right here, with your seeds back.', t:()=>run.cpHit.some((h,i)=>h&&i>0)},
   {id:'burn', ic:'sun', x:'Burned. Keep an eye on the Exposure bar, reach shade before it fills.', t:()=>run.deaths>0},
   {id:'hot', ic:'sun', x:'Orange sand scorches you even off the sun. Don’t stand on it.', t:()=>run.hot.length>0 && run.t>1.2},
   {id:'spf', ic:'spf', x:'You have SPF. Pop it for a few seconds of sunproofing to cross the open.', t:()=>run.charges.spf>0 && run.t>2,
@@ -2305,10 +2373,21 @@ const TUT=[
   {id:'umbrella', ic:'umbrella-turn', x:'Wind turns the umbrellas, and their shade swings with them.', t:()=>run.wind&&run.wind.spin&&run.L.casters.some(c=>c[0]==='U')&&run.t>1.5},
   {id:'ice', ic:'ice', x:'ICE slows the sun’s sweep. Sip it when the timing is brutal.', t:()=>run.charges.ice>0 && run.t>2,
     d:s=>run.charges.ice<s.ic2},
-  {id:'lunge', ic:'boss-target', x:'The Angry Sun is winding up a lunge. Move off the flashing ring, or throw a seed into it.', t:()=>run.lunge&&run.lunge.state==='warn'},
+  {id:'lunge', ic:'boss-target', x:'The Angry Sun is winding up a lunge. Move off the ring once it locks, dash at the flash, or throw a seed into it.', t:()=>run.lunge&&run.lunge.state==='warn'},
   {id:'eclipse', ic:'eclipse-window', x:'Eclipse. Everything is dark and safe for a moment, so sprint.', t:()=>run.darkT>0},
 ];
+/* THE PRESSURE step 2: how much open sun lies straight ahead of him (north, the way every lesson runs), or null when he is not
+   at a shade's edge. The lesson marks fire where the thing is, not on a timer. */
+function sunGapAhead(){ if(!run||!shadedGeom(P.x,P.y)) return null; let e=0;
+  for(let d=10;d<=110;d+=10) if(!shadedGeom(P.x,P.y-d)){ e=d; break; } if(!e) return null;
+  for(let d=e;d<=e+420;d+=10) if(shadedGeom(P.x,P.y-d)) return d-e; return 999; }
+let coachLesson=false, coachAge=0;
 function checkTut(dt){
+  coachAge+=dt;
+  if(mode==='play'&&run&&!(coachLesson&&coachAge<1.6)){
+    for(const s of TUT){ if(!s.lesson||save.tut[s.id]) continue; let ok=false; try{ ok=s.t(); }catch(e){}
+      if(ok){ save.tut[s.id]=true; persist(); hideCoach(); coach(typeof s.x==='function'?s.x():s.x,s.ic,s.d); coachLesson=true; coachAge=0; coachGapT=0;
+        if(s.callout){ const el=$(s.callout); if(el) el.classList.add('callout'); } return; } } }
   if(coachHideT>0){
     // performable tip: dismiss the moment the player DOES it (small linger)
     if(coachDone && mode==='play' && run){ let did=false; try{ did=coachDone(coachSnap); }catch(e){}
@@ -2316,7 +2395,7 @@ function checkTut(dt){
     coachHideT-=dt; if(coachHideT<=0){ hideCoach(); coachGapT=5.0; } return; }
   if(coachGapT>0){ if(mode==='play') coachGapT-=dt; return; }   // breathing room between marks
   if(mode!=='play'||!run) return;
-  for(const s of TUT){ if(!save.tut[s.id]){ let ok=false; try{ ok=s.t(); }catch(e){} if(ok){ save.tut[s.id]=true; persist(); coach(s.x,s.ic,s.d); break; } } } }
+  for(const s of TUT){ if(!s.lesson&&!save.tut[s.id]){ let ok=false; try{ ok=s.t(); }catch(e){} if(ok){ save.tut[s.id]=true; persist(); coach(typeof s.x==='function'?s.x():s.x,s.ic,s.d); coachAge=0; break; } } } }
 
 /* ----- pause ----- */
 function togglePause(){ if(screen!=='play') return; if(mode==='play'){ mode='paused'; showScreen('pause'); stopMusic(); }
@@ -2414,7 +2493,7 @@ if ('serviceWorker' in navigator && !window.SWS_EMBED) {
   <div class="lrow top"><button id="labPrev">&lt;</button><div class="lname" id="labName"></div><button id="labNext">&gt;</button><button id="labClose" class="warn">Close</button></div>
   <canvas id="labCv"></canvas>
   <div class="lrow"><button id="labPlay" class="on">Play it</button><button id="labSave">Save here</button><button id="labRevert">Shipped</button><button id="labCopy">Copy JSON</button><button id="labShare">Share</button></div>
-  <div class="lrow" id="labTools"><button data-t="move" class="on">Move</button><button data-t="R">+Awning</button><button data-t="U">+Umbrella</button><button data-t="beam">+Star</button><button data-t="cp">+Checkpoint</button><button data-t="del" class="warn">Delete</button></div>
+  <div class="lrow" id="labTools"><button data-t="move" class="on">Move</button><button data-t="R">+Awning</button><button data-t="U">+Umbrella</button><button data-t="beam">+Star</button><button data-t="cp">+Checkpoint</button><button data-t="find">Finds (F)</button><button data-t="del" class="warn">Delete</button></div>
   <div class="lrow"><label>time <input type="range" id="labT" min="0" max="40" step="0.25" value="0"><span id="labTv">0 s</span></label><label>sun dir <input type="range" id="labAz" min="0" max="6.28" step="0.01"></label></div>
   <div class="lrow"><label>swing <input type="range" id="labAmp" min="0" max="1.3" step="0.01"></label><label>speed <input type="range" id="labSpd" min="0.05" max="1.4" step="0.01"></label><label>height <input type="range" id="labEl" min="0.2" max="1.45" step="0.01"></label></div>
   <textarea id="labJson" readonly></textarea>
@@ -2447,6 +2526,7 @@ if ('serviceWorker' in navigator && !window.SWS_EMBED) {
   function items(){ const out=[]; L.casters.forEach((c,i)=>out.push(c[0]==='R'?{k:'R',i,ref:c,x:c[1],y:c[2],w:c[3],h:c[4]}:{k:'U',i,ref:c,x:c[1]-c[3],y:c[2]-c[3],w:c[3]*2,h:c[3]*2}));
     (L.beams||[]).forEach((b,i)=>out.push({k:'beam',i,ref:b,x:b[0]-30,y:b[1]-30,w:60,h:60}));
     (L.checkpoints||[]).forEach((c,i)=>out.push({k:'cp',i,ref:c,x:c[0]-40,y:c[1]-40,w:80,h:80}));
+    (L.finds||[]).forEach((f,i)=>out.push({k:'find',i,ref:f,x:f[0]-24,y:f[1]-24,w:48,h:48}));
     out.push({k:'start',ref:L.start,x:L.start[0]-40,y:L.start[1]-40,w:80,h:80}); out.push({k:'exit',ref:L.exit,x:L.exit[0]-40,y:L.exit[1]-40,w:80,h:80});
     return out; }
   function star(x,y,r){ g.beginPath(); for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rr=i%2?r*0.45:r; g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr); } g.closePath(); g.fill(); }
@@ -2463,6 +2543,7 @@ if ('serviceWorker' in navigator && !window.SWS_EMBED) {
       else if(it.k==='U'){ g.fillStyle='#ff6a2c'; g.beginPath(); g.arc(s[0]+it.w*sc/2,s[1]+it.h*sc/2,it.w*sc/2,0,Math.PI*2); g.fill(); }
       else if(it.k==='beam'){ g.fillStyle='#4fe08a'; star(s[0]+30*sc,s[1]+30*sc,Math.max(5,30*sc)); }
       else if(it.k==='cp'){ g.strokeStyle='#4fe08a'; g.lineWidth=2; g.beginPath(); g.arc(s[0]+40*sc,s[1]+40*sc,Math.max(5,40*sc),0,Math.PI*2); g.stroke(); }
+      else if(it.k==='find'){ g.fillStyle=({0:'#f28ab0',1:'#ffb35c',2:'#f28ab0'})[L.world]||'#37b6e0'; g.beginPath(); g.arc(s[0]+24*sc,s[1]+24*sc,Math.max(6,20*sc),0,Math.PI*2); g.fill(); g.fillStyle='#2b2a20'; g.font='700 11px system-ui'; g.fillText(String(it.i+1),s[0]+24*sc-3,s[1]+24*sc+4); }
       else if(it.k==='start'){ g.fillStyle='#214a4a'; g.beginPath(); g.arc(s[0]+40*sc,s[1]+40*sc,Math.max(6,14*sc),0,Math.PI*2); g.fill(); }
       else { g.fillStyle='#1f8a3a'; g.fillRect(s[0]+40*sc-2,s[1]+40*sc-14,3,18); g.fillRect(s[0]+40*sc,s[1]+40*sc-14,12,8); }
       if(sel&&sel.k===it.k&&sel.ref===it.ref){ g.strokeStyle='#fff'; g.lineWidth=2; g.strokeRect(s[0]-2,s[1]-2,it.w*sc+4,it.h*sc+4);
@@ -2476,6 +2557,9 @@ if ('serviceWorker' in navigator && !window.SWS_EMBED) {
     else if(tool==='U'){ const c=['U',wx,wy,90,az(),300]; L.casters.push(c); sel={k:'U',ref:c}; setTool('move'); }
     else if(tool==='beam'){ L.beams=L.beams||[]; const b=[wx,wy]; L.beams.push(b); sel={k:'beam',ref:b}; setTool('move'); }
     else if(tool==='cp'){ const c=[wx,wy]; L.checkpoints.push(c); sel={k:'cp',ref:c}; setTool('move'); }
+    else if(tool==='find'){ L.finds=L.finds||[]; let f;   // FINDS (key F): places the three, then moves the nearest one to the tap; saved with the level
+      if(L.finds.length<3){ f=[wx,wy]; L.finds.push(f); } else { f=L.finds.reduce((a,b)=>Math.hypot(b[0]-wx,b[1]-wy)<Math.hypot(a[0]-wx,a[1]-wy)?b:a); f[0]=wx; f[1]=wy; }
+      sel={k:'find',ref:f}; }
     else { const it=pick(w[0],w[1]); sel=it?{k:it.k,ref:it.ref}:null;
       if(it){ const s=W2S(it.x,it.y); const onHandle=it.k==='R'&&(e.clientX-r.left)>s[0]+it.w*sc-16&&(e.clientY-r.top)>s[1]+it.h*sc-16;
         drag={it,lx:w[0],ly:w[1],resize:onHandle}; } }
@@ -2493,6 +2577,7 @@ if ('serviceWorker' in navigator && !window.SWS_EMBED) {
     if(sel.k==='R'||sel.k==='U') L.casters.splice(L.casters.indexOf(c),1);
     else if(sel.k==='beam') L.beams.splice(L.beams.indexOf(c),1);
     else if(sel.k==='cp'&&L.checkpoints.length>1) L.checkpoints.splice(L.checkpoints.indexOf(c),1);
+    else if(sel.k==='find') L.finds.splice(L.finds.indexOf(c),1);
     sel=null; draw(); }
   $('labT').oninput=e=>{ t=+e.target.value; $('labTv').textContent=t.toFixed(2)+' s'; draw(); };
   $('labAz').oninput=e=>{ L.sun.azC=+e.target.value; draw(); }; $('labAmp').oninput=e=>{ L.sun.azAmp=+e.target.value; draw(); };
@@ -2507,6 +2592,7 @@ if ('serviceWorker' in navigator && !window.SWS_EMBED) {
     if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(()=>{ $('labCopy').textContent='Copied'; setTimeout(()=>{ $('labCopy').textContent='Copy JSON'; },1200); }).catch(()=>{}); };
   $('labShare').onclick=()=>{ if(navigator.share) navigator.share({title:'Tomato Man level '+L.name,text:json()}).catch(()=>{}); else $('labCopy').onclick(); };
   addEventListener('resize',()=>{ if($('lab').classList.contains('show')){ fit(); draw(); } });
+  addEventListener('keydown',e=>{ if($('lab').classList.contains('show')&&e.key&&e.key.toLowerCase()==='f'){ setTool('find'); draw(); } });
   window.__TM_LAB={open,close,json,level:()=>L,saved:()=>saved,setTool,add:(k,x,y)=>{ setTool(k); cv.dispatchEvent(new PointerEvent('pointerdown',{clientX:x,clientY:y,pointerId:1,bubbles:true})); }};
 })();
 </script>
