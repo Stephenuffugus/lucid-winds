@@ -88,7 +88,8 @@ const cam = createCamera();
 const renderer = createRenderer(cv, { ...data.art, overlays: data.sprites.weaponOverlayPx, gearById: Object.fromEntries(data.gear.map((g) => [g.id, g])) }, cam);
 // Sound (14 §7 T6, src/audio): silent until the first touch anywhere.
 const audio = createAudio(data);
-document.addEventListener('pointerdown', () => audio.unlock(), true);
+// pointerdown wakes the context; pointerup and click are the gestures a phone lets a song start on (9 Oct 2026)
+for (const ev of ['pointerdown', 'pointerup', 'click']) document.addEventListener(ev, () => audio.unlock(), true);
 // The game's own commands (H2 review round, 5 Oct 2026): her first world's starter (newWorld), the one left in her hand when the
 // world was saved let go again (useSim), the first world's UFO (the loop). They are given as hers are, with their sounds, counts and
 // the Scrapbook, but they are no answer to her, so nothing they say is pulled at once (withSound): as before H2, the HUD's pull or the
@@ -304,11 +305,29 @@ undoB.onclick = guard(() => {
 const showUndo = () => undoB.classList.toggle('off', !(sim && (sim.w.undo.length || swapBack)));
 // Clear (in the menu now, 02 §1): at once; Undo brings the world back whole.
 document.getElementById('clearW').textContent = str('ui.clearWorld');
-// Sound settings (14 §7 T6), per device: sound, music, quiet surprises (loud sounds softened).
+// Sound settings (14 §7 T6), per device: a slider each for sounds and music (9 Oct 2026, Stephen: "sfx and music have
+// their own sliders"; a slider at 0 is off, and a new phone starts with sounds well under the music), quiet surprises
+// (loud sounds softened).
 document.getElementById('soundLbl').textContent = str('ui.sound');
-const soundBs = { sndB: 'sfx', musB: 'music', quietB: 'quiet' };
-function showSound() { const s = audio.settings; for (const [id, k] of Object.entries(soundBs)) document.getElementById(id).textContent = fill(str('ui.snd.' + k), { state: str(s[k] ? 'ui.on' : 'ui.off') }); }
+const soundBs = { quietB: 'quiet' };
+const levelRs = { sfxR: 'sfx', musicR: 'music' };
+function showSound() {
+  const s = audio.settings;
+  for (const [id, k] of Object.entries(soundBs)) document.getElementById(id).textContent = fill(str('ui.snd.' + k), { state: str(s[k] ? 'ui.on' : 'ui.off') });
+  for (const [id, k] of Object.entries(levelRs)) {
+    const pct = s[k] ? Math.round((s[k + 'Level'] ?? 1) * 100) : 0;
+    const r = document.getElementById(id);
+    if (document.activeElement !== r) r.value = String(pct);
+    document.getElementById(id.replace('R', 'V')).textContent = pct ? pct + '%' : str('ui.off');
+  }
+}
 for (const [id, k] of Object.entries(soundBs)) document.getElementById(id).onclick = () => { audio.unlock(); audio.set(k, !audio.settings[k]); showSound(); audio.sfx('ui_tap'); };
+for (const [id, k] of Object.entries(levelRs)) {
+  const r = document.getElementById(id);
+  document.getElementById(id.replace('R', 'L')).textContent = str('ui.vol.' + k);
+  r.oninput = () => { audio.unlock(); audio.setLevel(k, Number(r.value) / 100); showSound(); };
+  r.onchange = () => { if (k === 'sfx') audio.sfx('ui_tap'); };
+}
 showSound();
 // THE MUSIC PLAYER (23 Sep 2026, Stephen: "just like Jimothy"): every song, a switch each; locked ones say how far off
 // they are and can be listened to while the menu is open. Drawn again on every tap, and when the menu opens.
@@ -383,6 +402,34 @@ landB.onclick = guard(() => {
   audio.sfx('ui_tap');
 });
 showLand();
+// Design 20 (THE LIVING YEAR): the parent's Seasons and Weather switches, the land switch's law (this world's, a `setting`
+// command, saved with the world, written at once). Shown only where the game has them.
+const yearBox = document.getElementById('yearBox'), seasonsB = document.getElementById('seasonsB'), weatherB = document.getElementById('weatherB');
+yearBox.hidden = !(data.rules.flags.seasons || data.rules.flags.weather);
+document.getElementById('seasonsLead').textContent = str('ui.seasons.lead');
+document.getElementById('weatherLead').textContent = str('ui.weather.lead');
+function showYear() {
+  const s = !sim || sim.w.seasonsOn !== false, wx = !sim || sim.w.weatherOn !== false;
+  seasonsB.textContent = fill(str('ui.seasons'), { state: str(s ? 'ui.on' : 'ui.off') });
+  seasonsB.setAttribute('aria-pressed', String(s));
+  weatherB.textContent = fill(str('ui.weather'), { state: str(wx ? 'ui.on' : 'ui.off') });
+  weatherB.setAttribute('aria-pressed', String(wx));
+  seasonsB.hidden = !data.rules.flags.seasons; weatherB.hidden = !data.rules.flags.weather;
+  document.getElementById('seasonsLead').hidden = seasonsB.hidden; document.getElementById('weatherLead').hidden = weatherB.hidden;
+}
+seasonsB.onclick = guard(() => {
+  sim.command({ t: 'setting', key: 'seasons', value: !sim.w.seasonsOn });
+  showYear();
+  saver.save();
+  audio.sfx('ui_tap');
+});
+weatherB.onclick = guard(() => {
+  sim.command({ t: 'setting', key: 'weather', value: sim.w.weatherOn ? 'off' : 'auto' });
+  showYear();
+  saver.save();
+  audio.sfx('ui_tap');
+});
+showYear();
 
 // Snapshot (14 §3): one per world. A tap keeps this moment (its picture becomes the button); a hold (ui.snapHoldMs, the
 // button fills while held) goes back to it, and Undo comes forward again. Kept with the world's saves.
@@ -543,11 +590,39 @@ async function init() {
   if (Q.has('counts')) showCounts(); // the card this device keeps (14 §7 T14): nothing leaves the phone
   if (store && !Q.has('seed') && !Q.has('size')) {
     const id = await store.current().catch(() => null);
-    if (id && (await openWorld(id))) return;
+    if (id && (await openWorld(id))) { maybeIntro(); return; }
   }
   // The first world on this device gets the first-world settings; one made while others are saved is a later world.
   const others = store ? await store.rows().catch(() => []) : [];
   newWorld(null, others.length ? 'later' : 'first');
+  maybeIntro();
+}
+// The first open card (9 Oct 2026, Stephen, after a Pioneer said they had no idea what to do): once per device, over the
+// living world, and the ? beside the menu brings it back. Nothing in it touches the sim.
+const INTRO = 'tw_intro';
+function showIntro() {
+  const el = document.getElementById('intro');
+  document.getElementById('introTitle').textContent = str('intro.title');
+  document.getElementById('introBody').textContent = str('intro.body');
+  document.getElementById('introGo').textContent = str('intro.go');
+  el.classList.add('on');
+}
+function closeIntro(open) {
+  document.getElementById('intro').classList.remove('on');
+  try { localStorage.setItem(INTRO, '1'); } catch (e) { /* private mode */ }
+  if (open) { const t = document.getElementById('tray'); if (t) t.classList.remove('folded'); try { localStorage.setItem('tw_tray_folded', '0'); } catch (e) { /* private mode */ } }
+}
+function maybeIntro() {
+  let seen = false;
+  try { seen = localStorage.getItem(INTRO) === '1'; } catch (e) { /* private mode */ }
+  if (!seen && !Q.has('bench') && !Q.has('seed')) showIntro();
+}
+{
+  const h = document.getElementById('help');
+  h.setAttribute('aria-label', str('intro.help')); h.textContent = '?';
+  h.onclick = () => showIntro();
+  document.getElementById('introGo').onclick = () => closeIntro(true);
+  document.getElementById('introX').onclick = () => closeIntro(false);
 }
 // ?bench (design 14 §7 T2): the named stress workload (src/dev/bench.json "t2") played at 1x with drawing, for the
 // frame-time distribution on a real phone. Nothing is saved. After the warm-up it records every frame's interval and
@@ -644,7 +719,7 @@ for (const d of data.rules.world.dayChoices) {
 document.getElementById('menu').onclick = () => {
   for (const o of sizesEl.children) o.classList.toggle('on', o.dataset.size === pick);
   for (const o of daysEl.children) o.classList.toggle('on', +o.dataset.day === dayPick);
-  openSheet(); listWorlds(); showSongs(); showLand();
+  openSheet(); listWorlds(); showSongs(); showLand(); showYear();
 };
 document.getElementById('cancelNew').onclick = () => closeSheet();
 // The menu's own way out: Cancel and Start belong to New world, and nothing simply shut the sheet.

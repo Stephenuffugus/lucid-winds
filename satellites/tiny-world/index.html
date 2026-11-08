@@ -382,6 +382,7 @@ svg.dg.n1{width:.279em}
   <div class="row files"><button id="exportB"></button><button id="importB"></button></div>
   <div class="row files"><button id="clearW"></button></div>
   <div id="landBox"><p class="lbl" id="landLbl"></p><p class="lbl" id="landLead"></p><div class="row land"><button id="landB"></button></div></div>
+  <div id="yearBox"><p class="lbl" id="seasonsLead"></p><div class="row land"><button id="seasonsB"></button></div><p class="lbl" id="weatherLead"></p><div class="row land"><button id="weatherB"></button></div></div>
   <p class="lbl" id="soundLbl"></p>
   <div class="row vol"><span id="sfxL"></span><input type="range" id="sfxR" min="0" max="100" step="5" aria-labelledby="sfxL"><b id="sfxV"></b></div>
   <div class="row vol"><span id="musicL"></span><input type="range" id="musicR" min="0" max="100" step="5" aria-labelledby="musicL"><b id="musicV"></b></div>
@@ -409,13 +410,13 @@ a blank page. main.js sets window.__twStarted once every module has loaded, and 
   setTimeout(show, 30000); // a slow phone on a slow line can take a while; main.js also takes the panel down when it starts
 })();
 </script>
-<script type="module" src="./20261009i/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
+<script type="module" src="./20261108a/src/main.js" onerror="window.__twBootFail && window.__twBootFail()"></script>
 <!-- Offline play for the installed app: sw.js keeps one version's files (its head says how). tools/deploy-arcade.mjs
 writes the stamp into `stamp` below; the repo's copy has none, so a dev server installs no worker unless the URL says
 ?sw. ?nosw never installs one. -->
 <script>
 (function () {
-  var stamp = '20261009i', q = location.search;
+  var stamp = '20261108a', q = location.search;
   if (!('serviceWorker' in navigator) || /[?&]nosw\b/.test(q) || !/^https?:$/.test(location.protocol)) return;
   if (!stamp && !/[?&]sw\b/.test(q)) return;
   addEventListener('load', function () {

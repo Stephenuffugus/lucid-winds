@@ -63,6 +63,10 @@ export function worldHash(w) {
   // Design 19 A8: the parent's Living Land switch, only while it has the land resting (on is every world's default, and every
   // world recorded before it keeps its hash): two worlds that differ only in it play on differently a minute later.
   if (w.R.flags.landSwitch && !w.landOn) h.str('landOff');
+  // Design 20: the season clock's skips, the pass's count and the ground the season holds, and the sky, only while a switch is
+  // on (off is the sim's default, so every recorded world keeps its hash).
+  if (w.R.flags.seasons && w.seasonsOn) { h.str('seasons').num(w.seasonShift).num(w.seasonN).num(w.snowN); for (let i = 0; i < w.under.length; i++) h.num(w.under[i]); }
+  if (w.R.flags.weather && w.weatherOn) h.str('weather').num(w.weather).num(w.weatherT);
   for (let i = 0; i < w.terr.length; i++) h.num(w.terr[i]);
   for (let i = 0; i < w.eaten.length; i++) h.num(w.eaten[i]);
   h.num(w.structs.length);

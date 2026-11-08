@@ -17,10 +17,10 @@ import { newGear } from './content.js';
 import { markTiles, HAND_KEY } from './reactions.js';
 import { agesOf, planOf } from './village.js';
 
-export const SAVE_V = 13;
+export const SAVE_V = 14;
 export const SAVE_KIND = 'tiny-world';
 // World-wide numbers, in this order in rec.num (booleans as 0/1).
-const NUM = ['tick', 'time', 'rng', 'rainT', 'shake', 'nextId', 'thingSerial', 'topo', 'logSeq', 'safe', 'fullSaid', 'eatenN', 'stamp', 'fireSpent', 'landN', 'keepWater'];
+const NUM = ['tick', 'time', 'rng', 'rainT', 'shake', 'nextId', 'thingSerial', 'topo', 'logSeq', 'safe', 'fullSaid', 'eatenN', 'stamp', 'fireSpent', 'landN', 'keepWater', 'seasonShift', 'weather', 'weatherT', 'seasonN', 'snowN']; // (v14, design 20: the last five)
 const NI = Object.fromEntries(NUM.map((k, i) => [k, i]));
 // Per thing in rec.things: type (index into tables.things), tx, ty, occ, food, cd, manned (NaN: never manned),
 // handle, cooked (v3, design 14 §5: food a campfire has cooked), who and day (v4, design 14 §7 T11: the creature
@@ -49,6 +49,7 @@ export function snapshot(w) {
   num[NI.safe] = w.safe ? 1 : 0; num[NI.fullSaid] = w.fullSaid ? 1 : 0; num[NI.eatenN] = w.eatenN; num[NI.stamp] = P.stamp;
   num[NI.landN] = w.landN; num[NI.keepWater] = w.keepWater; // design 19 A1: the land's changes this minute (its cap), and the water baseline (A2b)
   num[NI.fireSpent] = w.fireSpent; // how much of this fire's allowance is gone (15 A5): a loaded fire kept spreading without it
+  num[NI.seasonShift] = w.seasonShift; num[NI.weather] = w.weather; num[NI.weatherT] = w.weatherT; num[NI.seasonN] = w.seasonN; num[NI.snowN] = w.snowN; // design 20
   const thingTypes = [], tIdx = {}, thingNames = [], things = new Float64Array(w.structs.length * THING);
   w.structs.forEach((s, k) => {
     if (!own(tIdx, s.type)) { tIdx[s.type] = thingTypes.length; thingTypes.push(s.type); }
@@ -87,7 +88,7 @@ export function snapshot(w) {
     v: SAVE_V, kind: SAVE_KIND, cols: w.cols, rows: w.rows, T: w.T, seed: w.seed,
     // Safe is in num. `land` (design 19 A8): the parent's Living Land switch, a key of the settings, so a world saved before it
     // (no key) opens with its land alive, and no save bump (the settings object is read key by key: world.js worldSettings).
-    settings: { daySec: w.daySec, gentle: GENTLE[w.gentle], petsSafe: w.petsSafe, first: w.first, land: w.landOn },
+    settings: { daySec: w.daySec, gentle: GENTLE[w.gentle], petsSafe: w.petsSafe, first: w.first, land: w.landOn, seasons: w.seasonsOn, weather: w.weatherOn ? 'auto' : 'off' }, // (design 20: the two switches, v14)
     tables: { kinds: C.kinds.slice(), terrain: C.TERR.map((t) => t.id), things: thingTypes },
     thingNames,
     // The village (design 14 §7 item 13): the claimed tiles and the job board, or null when no flag was ever
@@ -100,6 +101,7 @@ export function snapshot(w) {
     // The land's memory (design 19 A1): how long each tile has been its kind, and how long she keeps what she
     // painted; null while every tile is zero, which is every world from before it.
     age: anyOf(w.age) ? w.age.slice() : null, hold: anyOf(w.hold) ? w.hold.slice() : null,
+    under: anyOf(w.under) ? w.under.slice() : null, // design 20: the ground the season's snow and ice cover (null while the season holds nothing)
     // Fire, as pairs (tile, seconds left), and the terrain that turns back later, as triples (tile, seconds, terrain
     // index): both small, both saved exactly, so a world loads still burning and the ice still melts when it should.
     burn: burnPairs(w), tmr: tmrTriples(w),
@@ -184,6 +186,17 @@ export const MIGRATIONS = {
   // days and nothing has changed by itself yet. landN and keepWater 0 (appended to the numbers, as fireSpent was).
   // bubbleT zero: nobody in a v12 world was ever in a rescue bubble. No `land` in its settings (design 19 A8, the
   // parent's switch, written by v13 worlds from A8 on): read as on, the default, as for a v13 world saved before A8.
+  // v14 (design 20, THE LIVING YEAR): ONE bump for the whole design (the law of v12). Five numbers appended (no skips, a clear
+  // sky, no seconds left so the first step draws a spell, no ice and no snow this pass); `under` null (the season holds no tile yet);
+  // the two switches OFF in its settings: the law of every migration is that an old world plays on EXACTLY as it did (save-check holds
+  // the recorded v1 and v3 worlds to their hashes), so the year reaches a saved world when its player turns a switch under This world
+  // or taps the new Season power (which switches Seasons on). New worlds (the presets) start with both on. QUESTIONS Q51.
+  13: (r) => {
+    if (!(r.num instanceof Float64Array)) throw saveError('damaged', 'numbers');
+    const num = new Float64Array(r.num.length + 5);
+    num.set(r.num);
+    return { ...r, v: 14, num, under: null, settings: { ...r.settings, seasons: false, weather: 'off' } };
+  },
   12: (r) => {
     if (!(r.num instanceof Float64Array)) throw saveError('damaged', 'numbers');
     const n = r.store ? r.store.nSlots : 0, num = new Float64Array(r.num.length + 2);
@@ -246,6 +259,7 @@ export function check(C, rec) {
   const set = rec.settings;
   if (!set || !C.rules.world.dayChoices.includes(set.daySec) || !GENTLE.includes(set.gentle) || typeof set.petsSafe !== 'boolean' || typeof set.first !== 'boolean') return 'settings';
   if (set.land !== undefined && typeof set.land !== 'boolean') return 'settings'; // (design 19 A8: absent in a world saved before the switch)
+  if (typeof set.seasons !== 'boolean' || (set.weather !== 'auto' && set.weather !== 'off')) return 'settings'; // (design 20, v14: always written)
   const nT = rec.cols * rec.rows, tb = rec.tables;
   if (!tb || !strs(tb.kinds) || !strs(tb.terrain) || !strs(tb.things)) return 'tables';
   if (!isT(rec.num, Float64Array, NUM.length) || !rec.num.every(Number.isFinite)) return 'numbers';
@@ -257,7 +271,9 @@ export function check(C, rec) {
   const eN = num[NI.eatenN];
   if (!isInt(eN, 0, nT) || !isT(rec.eatenList, Int32Array, eN) || rec.eatenList.some((i) => i < 0 || i >= nT)) return 'grass';
   if (rec.wear !== null && rec.wear !== undefined && !isT(rec.wear, Uint8Array, nT)) return 'worn ground'; // (design 18 A15: null in a world with no paths worn into it)
-  for (const k of ['age', 'hold']) if (rec[k] !== null && rec[k] !== undefined && !isT(rec[k], Uint8Array, nT)) return 'land memory'; // (design 19 A1)
+  for (const k of ['age', 'hold', 'under']) if (rec[k] !== null && rec[k] !== undefined && !isT(rec[k], Uint8Array, nT)) return 'land memory'; // (design 19 A1; design 20 `under`)
+  if (rec.under && rec.under.some((t) => t > tb.terrain.length)) return 'land memory'; // (a covered ground is a terrain of the table, +1)
+  if (!isInt(num[NI.seasonShift], 0, MAX_INT) || !isInt(num[NI.weather], 0, 5) || !(num[NI.weatherT] >= 0) || !isInt(num[NI.seasonN], 0, nT) || !isInt(num[NI.snowN], 0, nT)) return 'numbers'; // (design 20)
   if (!isT(rec.things, Float64Array) || rec.things.length % THING) return 'things';
   if (!Array.isArray(rec.thingNames) || rec.thingNames.length !== rec.things.length / THING ||
       rec.thingNames.some((n) => n !== null && typeof n !== 'string')) return 'thing names';
@@ -354,6 +370,7 @@ export function restore(C, rec) {
   w.eatenList.set(rec.eatenList); w.eatenN = rec.eatenList.length;
   if (rec.wear) { w.wear.set(rec.wear); for (let i = 0; i < w.nTiles; i++) if (w.wear[i]) w.wearN++; } // (design 18 A15)
   if (rec.age) w.age.set(rec.age); if (rec.hold) w.hold.set(rec.hold); // (design 19 A1)
+  if (rec.under) w.under.set(rec.under); // (design 20)
   for (let k = 0; k < w.eatenN; k++) w.eatenIn[w.eatenList[k]] = 1;
   // Things, in their order, in placeStruct()'s shape. A thing that is gone from the content is dropped.
   for (let k = 0; k < rec.things.length; k += THING) {
@@ -393,6 +410,7 @@ export function restore(C, rec) {
   w.tick = num[NI.tick]; w.time = num[NI.time]; w.rng.s = num[NI.rng] | 0; w.rainT = num[NI.rainT]; w.shake = num[NI.shake];
   w.fireSpent = num[NI.fireSpent] || 0;
   w.landN = num[NI.landN] || 0; w.keepWater = num[NI.keepWater] || 0; // (design 19 A1)
+  w.seasonShift = num[NI.seasonShift] || 0; w.weather = num[NI.weather] || 0; w.weatherT = num[NI.weatherT] || 0; w.seasonN = num[NI.seasonN] || 0; w.snowN = num[NI.snowN] || 0; // (design 20)
   w.nextId = num[NI.nextId]; w.thingSerial = num[NI.thingSerial]; w.topo = num[NI.topo]; w.logSeq = num[NI.logSeq];
   w.safe = num[NI.safe] === 1; w.fullSaid = num[NI.fullSaid] === 1;
   w.lastLog = rec.lastLog && typeof rec.lastLog.key === 'string' ? rec.lastLog : null;

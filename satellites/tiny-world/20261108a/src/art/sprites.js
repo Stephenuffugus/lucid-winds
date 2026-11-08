@@ -21,11 +21,14 @@ export function sprite(name, over) {
   const c = watchCanvas(document.createElement('canvas'));
   c.width = c.height = 8;
   const x = c.getContext('2d');
+  // Design 20 (render.js seasonThing): `over._cap` = how many top rows are painted white, snow on a winter canopy. Every drawn pixel
+  // of those rows is white whatever its letter; the rows below keep the recolour. The key holds it, so a capped look is its own slot.
+  const cap = over && over._cap > 0 ? over._cap : 0;
   SPR[name].forEach((row, j) => {
     for (let i = 0; i < 8; i++) {
       const ch = row[i];
       if (ch === '.' || !ch) continue;
-      x.fillStyle = (over && over[ch]) || PAL[ch];
+      x.fillStyle = j < cap ? PAL.w : (over && over[ch]) || PAL[ch];
       x.fillRect(i, j, 1, 1);
     }
   });
