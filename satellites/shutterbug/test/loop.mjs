@@ -21,7 +21,7 @@
  *
  * Watched red by X_LEAVES_OVERLAY, MOMENT_TWICE, FAB_OVER_SHEET, BANK_FULL_RATE, SHARE_CLOSE_TO_PLAY, PERF_OVER_PAIRS,
  * EDGE_BANKED_UNDER_SHEET, CARD_UNDER_SHEET, COPIED_STICKS and BANK_LINE_BARE. */
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, GAME, GAME_PATH, sleep, leaveRoom, openSheet } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, GAME, GAME_PATH, sleep, leaveRoom, openSheet, pastStory } from './harness.mjs';
 import { readFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
@@ -146,6 +146,7 @@ try {
     }
   }
   await tap(page, '#cleartitle');
+  await pastStory(page);   /* the first clear's title is the bug's story first (sb-m1-18): real taps through it, as the house gate does */
   await clean('the clear card\'s Title');
   l = await look();
   R.say(l.recentShown, 'after the first clear the title shows Recent rooms');

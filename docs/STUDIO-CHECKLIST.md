@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 8 Nov 2026, 17:12 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 8 Nov 2026, 17:32 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 1. The art, in this order (you, then Astra)
 
@@ -108,7 +108,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Shutterbug Play listing: real captures in Astra's six frames, the Play build, the Console upload, assetlinks (Opus, then you)  
 - [ ] Flatulence Fighter and Sunforge listings if they are a go (Opus, then you)  
 - [x] Shutterbug: the browser checks reach their assertions again (the harness taps past the bug's story and scrolls a control under the fold into view; boot, play, pwa, save green alone, 8 Nov 15:35) (Fable)  
-- [ ] Shutterbug: fans that matter; the thirteen other browser gates not rerun since the harness fix (make, layout, reveal, capture, sprites, loot, audio, share, loop, pause, fight, compare, house), one alone at a time (Opus)  
+- [ ] Shutterbug: fans that matter; the browser gates since the harness fix: pause green (taught the first clear's story); layout RED for real (the fleet chip sits over a title control at 390x844 and 360x780 once the title has grown); loop runs to a clear count question (the save holds 4, the gate expects 3); ten gates not yet rerun (make, reveal, capture, sprites, loot, audio, share, fight, compare, house), one alone at a time; satellites/shutterbug/PROGRESS.md (Opus)  
 - [ ] Keepsies: the four screens Astra drew in round 2 (level up, chores, clay pool, the case); the shot tool's end game loop; the 240 design bank; the grails through Meshy (Opus, you)  
 - [ ] Tomato Man: the squirt, if you still want it (you)  
 - [ ] Dewball: the store pack back, the store kit with real captures, the v37 stamp and its line, the Console listing, the Meshy build out (Astra, Opus, you)  

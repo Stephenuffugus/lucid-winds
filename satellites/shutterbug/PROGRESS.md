@@ -1813,3 +1813,9 @@ cause (real, found by the input gate once the harness ran again): #polaroid sits
 fix: #stick .pad z-index 2 (the control under the thumb above the minimap; the ring's clear centre still shows the photo through it)
 test (stale, not the game): the input gate predates the 4 Nov down pull (IN.D 1024, on at 28 px): 30 px down now reads D alone, and sliding over B pulls down as well as right; the test's IN gained D, the down case expects D, the slide case masks D (steer) and still proves R and never B
 gates alone: input OK (198 ok), death OK, lint OK; line: `! bash /home/codespace/sb-drafts/sb-m2-23/deploy-sb-m2-23.sh` (the sb-m2-22 line is retired, its stamp was never run)
+
+## the other browser gates, rerun alone after the harness fix (8 Nov 2026 17:30 UTC, Fable)
+- pause: red on the first clear's story (the title after a clear is the bug's story first; the back gesture landed on it and the gate expected the title). Test taught pastStory after the back: PAUSE OK (75 ok).
+- loop: the same story red, taught the same way (pastStory after the clear card's Title); then it runs on to a REAL question: "Develop plays the photographed room and its clear banks too (clears 3, the save holds 4)", the save counts one clear more than the gate expects, and the gate then dies at a missing #cleartitle. Not resolved: is a clear counted twice somewhere (the house, the print, the develop path), or does the gate's count predate a feature. Next session reads ui.clear's counting.
+- layout: 315 ok, two REAL reds at 390x844 and 360x780: "on the title the fleet chip is on top and clear of the title's controls" fails, the fleet's feedback chip sits over a title control once the title has grown (Darkroom, album, trophies after a clear); and at 320x568 the clear card's chip line (cut in the log, read the gate). The chip's yield logic and the grown title need a look on a phone.
+- not yet rerun: make, reveal, capture, sprites, loot, audio, share, fight, compare, house.

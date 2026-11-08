@@ -36,7 +36,7 @@
  * PAUSED_IN_MIDDLE, PAUSED_NO_ROW, PAUSE_ROW_SPILLS, PAUSED_STALE_HERO, PAUSED_NOT_REPLACED, CODE_BAD_STRANDS, REVEAL_AWAY_ENDS,
  * REVEAL_AWAY_RUNS and REVEAL_AWAY_STUCK. */
 import { readFileSync } from 'node:fs';
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, sleep, GAME } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, centre, sleep, GAME, pastStory } from './harness.mjs';
 
 const R = reporter('PAUSE');
 const srv = await serve();
@@ -220,6 +220,7 @@ try {
     const c0 = await look(page), cs = await page.evaluate(() => getComputedStyle(document.getElementById('clearshare')).backgroundColor);
     R.say(cs === PAPER, 'the clear card\'s Share this room is drawn in the card\'s Paper, not the browser\'s grey (' + cs + ')');
     await escape(page);
+    await pastStory(page);   /* the first clear's title is the bug's story first (sb-m1-18): real taps through it */
     const c1 = await look(page);
     R.say(c0.screen === 'clear' && c1.screen === 'title' && c1.on.length === 0 && !c1.state && c1.watch === '',
       'back on the clear card is Title: the title with nothing over it (screen ' + c0.screen + ' then ' + c1.screen + ', on: ' + onText(c1) + ')');
