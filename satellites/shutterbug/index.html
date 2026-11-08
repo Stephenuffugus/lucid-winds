@@ -913,7 +913,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        Astra's mark for BOSS_SECOND_TELL_S and BOSS_SECOND_EVERY_S a cycle; under BOSS_RAGE_PCT of its HP a cycle runs 3/4
        as long (the fight gets faster as it erodes). Attic's dust cloud drifts at BOSS_DUST_CPS cells a second, Frost's breath
        blows, Deep's whip rises and holds, Bramble's pods roll and Ember's flame crawls along the floor */
-    BOSS_SECOND_EVERY_S: 4, BOSS_SECOND_TELL_S: 0.9, BOSS_RAGE_PCT: 50, BOSS_RAGE_ICE_COLUMNS: 5, BOSS_RAGE_SPARKS: 2, BOSS_RAGE_SPEED: 1.5, BOSS_RAGE_RING_CELLS: 2 /* round 11 phases (Stephen: two or three phases): under half its HP every guardian's attack grows */, WIND_FIRST_S: 3, WIND_PERIOD_S: 6, WIND_BLOW_S: 1.2, WIND_TELL_S: 0.5 /* round 11 crosswind (sb-m2-19): the first blow, the quiet between blows, a blow, the streaks before it */, BOSS_DUST_LIFE_S: 6, BOSS_DUST_CPS: 1, BOSS_BREATH_LIFE_S: 1.2, BOSS_WHIP_RISE_S: 0.3, BOSS_WHIP_HOLD_S: 0.4,
+    BOSS_SECOND_EVERY_S: 4, BOSS_SECOND_TELL_S: 0.9, BOSS_RAGE_PCT: 50, BOSS_RAGE_ICE_COLUMNS: 5, BOSS_RAGE_SPARKS: 2, BOSS_RAGE_SPEED: 1.5, BOSS_RAGE_RING_CELLS: 2 /* round 11 phases (Stephen: two or three phases): under half its HP every guardian's attack grows */, WIND_FIRST_S: 3, WIND_PERIOD_S: 6, WIND_BLOW_S: 1.2, WIND_TELL_S: 0.5 /* round 11 crosswind (sb-m2-19): the first blow, the quiet between blows, a blow, the streaks before it */, STAIR_GAP_S: 0.5, STAIR_MIN: 3, STAIR_MAX: 5 /* round 11 staircase (sb-m2-20): each step goes this long after the last; the run's length */, BOSS_DUST_LIFE_S: 6, BOSS_DUST_CPS: 1, BOSS_BREATH_LIFE_S: 1.2, BOSS_WHIP_RISE_S: 0.3, BOSS_WHIP_HOLD_S: 0.4,
     BOSS_POD_LIFE_S: 5, BOSS_POD_CPS: 2, BOSS_FLAME_LIFE_S: 3, BOSS_FLAME_CPS: 1.5,
     STOMP_GRACE_S: 0.5 /* W3: a stomped enemy's contact off the hero */,
     /* the second monsters (2 Nov): the bunny's roll, the owl's swoop, the crab's shell, the puff's cloud, the beetle's trail */
@@ -1282,7 +1282,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      and their code: nothing that was shared changes. */
   var V = 2, HEADER = 6, HEADER2 = 9, HEX = '0123456789abcdef';
   /* what this client knows of v2's three bytes (raised only by the lane that builds what a value means) */
-  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAG_BESTIARY = 2, FLAG_R9 = 4, FLAG_R10 = 8, FLAG_VERBS = 16, FLAG_WIND = 32 /* round 11 (sb-m2-19): the window crosswind in Attic rooms */, FLAGS_KNOWN = FLAG_KEYS | FLAG_BESTIARY | FLAG_R9 | FLAG_R10 | FLAG_VERBS | FLAG_WIND;   /* bit 4: round 10's four verbs, the lobber, dropper, shellback and splitter (sb-m2-15): a code made before it keeps its room */   /* bit 3: round 10's keepsakes (7 Nov): a code made before it keeps its room */   /* FLAGS bit 0: the exit locked by keys; bit 1: the second monsters (2 Nov); bit 2: round 9's third and fourth monsters, room pieces and floors (6 Nov): a code made before it keeps its room */
+  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAG_BESTIARY = 2, FLAG_R9 = 4, FLAG_R10 = 8, FLAG_VERBS = 16, FLAG_WIND = 32 /* round 11 (sb-m2-19): the window crosswind in Attic rooms */, FLAG_R11 = 64 /* round 11 pieces (sb-m2-20): the collapsing staircase; the swinging strands when their art lands. Bit 7 is the last of the byte: the next flag needs a v3 record */, FLAGS_KNOWN = FLAG_KEYS | FLAG_BESTIARY | FLAG_R9 | FLAG_R10 | FLAG_VERBS | FLAG_WIND | FLAG_R11;   /* bit 4: round 10's four verbs, the lobber, dropper, shellback and splitter (sb-m2-15): a code made before it keeps its room */   /* bit 3: round 10's keepsakes (7 Nov): a code made before it keeps its room */   /* FLAGS bit 0: the exit locked by keys; bit 1: the second monsters (2 Nov); bit 2: round 9's third and fourth monsters, room pieces and floors (6 Nov): a code made before it keeps its room */
   function headOf(v) { return v === 1 ? HEADER : HEADER2; }
   /* a v2 header holding a byte this client does not know (a biome past BIOME_MAX, rules past RULES_MAX, a flag bit
      outside FLAGS_KNOWN): such a code is a newer client's, never 'bad' and never built */
@@ -1633,7 +1633,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return fromJSON(j);
   }
   function daily(day) { var n = DAILY_CFG.length; return dailyAt(DAILY_CFG[((day % n) + n) % n]); }
-  SB.record = { V: V, daily: daily, dailyAt: dailyAt, DAILY_N: DAILY_N, DAILY_SKIP: DAILY_SKIP, DAILY_CYCLE: DAILY_CFG.length, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, FLAG_R10: FLAG_R10, FLAG_VERBS: FLAG_VERBS, FLAG_WIND: FLAG_WIND, FLAG_BESTIARY: FLAG_BESTIARY, FLAG_R9: FLAG_R9, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
+  SB.record = { V: V, daily: daily, dailyAt: dailyAt, DAILY_N: DAILY_N, DAILY_SKIP: DAILY_SKIP, DAILY_CYCLE: DAILY_CFG.length, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, FLAG_R10: FLAG_R10, FLAG_VERBS: FLAG_VERBS, FLAG_WIND: FLAG_WIND, FLAG_R11: FLAG_R11, FLAG_BESTIARY: FLAG_BESTIARY, FLAG_R9: FLAG_R9, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
     encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows, parseCode: parseCode, linkOf: linkOf,
     saveDefaults: saveDefaults, validateSave: validateSave, loadSave: loadSave,
     runValid: runValid, runFresh: runFresh, runEnter: runEnter, runClear: runClear, runDie: runDie, runRetry: runRetry,
@@ -2153,6 +2153,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     level.r10 = rec.v >= 2 && (rec.flags & SB.record.FLAG_R10) !== 0 ? 1 : 0;   /* round 10's keepsake (7 Nov) */
     level.verbs = rec.v >= 2 && (rec.flags & SB.record.FLAG_VERBS) !== 0 ? 1 : 0;   /* round 10's four verbs (sb-m2-15) */
     level.windy = rec.v >= 2 && (rec.flags & SB.record.FLAG_WIND) !== 0 ? 1 : 0;   /* round 11's crosswind (sb-m2-19) */
+    level.r11 = rec.v >= 2 && (rec.flags & SB.record.FLAG_R11) !== 0 ? 1 : 0;   /* round 11's pieces, the staircase (sb-m2-20) */
     /* m2 step 3: the floors' landings and the tripod, before the features (they see any film tab a landing carved) */
     var carvedL = SB.features.landings(level);
     var settled = settle(level, SB.features.place(level, opts, carvedL ? SB.reach.graph(level) : fixed.g));
@@ -4240,6 +4241,35 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (y = 0; y < top; y++) for (x = 0; x < w; x++) { q = y * w + x; if (level.solid[q] !== 1 && level.plat[q] !== 1) { if (x < half) L++; else if (x >= w - half) Rr++; } }
     f.wind = { dir: L >= Rr ? 1 : -1, from: L >= Rr ? 0 : w - 1 };
   }
+  /* round 11 (sb-m2-20), THE COLLAPSING STAIRCASE (Stephen: "kind of sounds cool"; Astra's idea c): under FLAG_R11, in the rooms the
+     round 9 pieces may take (free play, a house from its room 2; pieces() already keeps out of a first room and the guardian's), one
+     run of STAIR_MIN to STAIR_MAX one cell one way steps rising one over, one up from a standable cell of the furniture, every step a
+     free cell with a free cell above and air under it, off the climb like every piece, the run whose top is nearest the room's loot.
+     When a bug stands on any step the chain starts and the steps give way bottom first, each STAIR_GAP_S after the last (the shelf's
+     crack and fall), and the whole run is back SHELF_BACK_S after the last went. Astra's shelf frames stand in for staircase_step. */
+  function r11Pieces(level, opts, out, free, mark) {
+    var T = SB.TUNING, w = level.w, h = level.h, n = w * h, ri = opts ? opts.roomIndex | 0 : 0, f = level.features, k, x, y, q;
+    if (ri && ri < 2) return;
+    var rng = SB.rng.mulberry32((level.seed ^ 0x52390011) >>> 0);
+    for (k = 0; k < out.length; k++) { var pc = out[k]; if (pc.kind === 'belt' || pc.kind === 'shelf') mark(pc.x0 - 1, pc.row - 1, pc.x0 + pc.len, pc.row + 1); else if (pc.kind === 'strip') mark(pc.x0 - 1, pc.row - 1, pc.x0 + T.STRIP_CELLS + T.STRIP_TRAVEL, pc.row + 1); else if (typeof pc.cell === 'number') mark(pc.cell % w - 1, Math.floor(pc.cell / w) - T.FAN_ROWS - 1, pc.cell % w + 1, Math.floor(pc.cell / w) + 1); }
+    var solidOr = function (q2) { return q2 >= 0 && q2 < n && (level.solid[q2] === 1 || level.plat[q2] === 1); };
+    var lootAt = []; if (typeof f.chest === 'number' && f.chest >= 0) lootAt.push(f.chest); for (k = 0; f.specks && k < f.specks.length; k++) lootAt.push(f.specks[k]);
+    var lootD = function (q2) { var b = 99, qx = q2 % w, qy = (q2 - qx) / w; for (var i = 0; i < lootAt.length; i++) b = Math.min(b, Math.max(Math.abs(lootAt[i] % w - qx), Math.abs(Math.floor(lootAt[i] / w) - qy))); return b; };
+    var cands = [], best = 99;
+    for (y = 2; y < h - 1; y++) for (x = 0; x < w; x++) {
+      q = y * w + x; if (!free(q) || !solidOr(q + w)) continue;
+      for (var dir = -1; dir <= 1; dir += 2) for (var len = T.STAIR_MAX; len >= T.STAIR_MIN; len--) {
+        var ok = true;
+        for (k = 0; k < len && ok; k++) { var sx = x + dir * (k + 1), sy = y - 1 - k; ok = sx >= 0 && sx < w && sy >= 1 && free(sy * w + sx) && free((sy - 1) * w + sx) && !solidOr(sy * w + sx + w); }
+        if (!ok) continue;
+        var d = lootD((y - len) * w + x + dir * len); if (d < best) { best = d; cands = []; } if (d === best) cands.push({ kind: 'stair', x0: x + dir, row: y - 1, dir: dir, n: len });
+        break;
+      }
+    }
+    if (!cands.length) return;
+    var pick = cands[rng.int(cands.length)]; out.push(pick);
+    for (k = 0; k < pick.n; k++) mark(pick.x0 + pick.dir * k - 1, pick.row - k - 1, pick.x0 + pick.dir * k + 1, pick.row - k + 1);
+  }
   function r9Pieces(level, opts, out, free, mark, stands) {
     var T = SB.TUNING, w = level.w, h = level.h, n = w * h, ri = opts ? opts.roomIndex | 0 : 0, want = ri ? (ri >= 4 ? 2 : ri >= 2 ? 1 : 0) : 1, f = level.features, x, y, k, c;
     if (!want) return;
@@ -4350,6 +4380,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (fan) out.push(fan);
     }
     if (level.r9) r9Pieces(level, opts, out, free, mark, st);
+    if (level.r11) r11Pieces(level, opts, out, free, mark);
     windFor(level, opts);
     for (k = 0; k < out.length; k++) out[k].phase = 0;
     level.pieces = out.length ? out : null;
@@ -4485,7 +4516,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       /* m2 step 3: the tripod (free play, the Daily Room, a level code: opts.checkpoint; never a house run) */
       cp: opts.checkpoint && level.tripod >= 0 ? { idx: level.tripod, lit: 0, at: -1 } : null,
       /* round 9 step 5: each piece's shelf count (0 whole), only in a room with a shelf; hashed after the schema */
-      crumb: level.pieces && level.pieces.some(function (pc) { return pc.kind === 'shelf'; }) ? level.pieces.map(function () { return 0; }) : null
+      crumb: level.pieces && level.pieces.some(function (pc) { return pc.kind === 'shelf' || pc.kind === 'stair'; }) ? level.pieces.map(function () { return 0; }) : null
     };
     /* the guardian's moths (HOUSE-B): BOSS_MOTH_COUNT enemy slots made here, after the level's, each a dead moth
        (HP 0: never moved, touched or drawn) until a shed fills it; step never allocates one */
@@ -5593,6 +5624,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
       /* m2 step 4: the moving film strip is a one way top too, where it stands this step */
       if (!landed && lv.pieces && h.dive !== 2) for (var pi = 0; pi < lv.pieces.length && !landed; pi++) {
         var pc = lv.pieces[pi];
+        if (pc.kind === 'stair') {   /* round 11: each step of the staircase is a one way top until its turn in the chain */
+          for (var sk = 0; sk < pc.n; sk++) {
+            if (PC && PC[pi] - sk * K.STAIR_GAP_F >= K.SHELF_CRACK_F) continue;
+            var stop2 = (pc.row - sk) * CS, ssx2 = (pc.x0 + pc.dir * sk) * CS, sov2 = Math.min(h.x + HW, ssx2 + CS) - Math.max(h.x, ssx2);
+            if (prevFeet <= stop2 && feet > stop2 && (sov2 >= K.OVERLAP_SUB || (h.ground && sov2 > 0))) { h.y = stop2 - HH; h.vy = 0; return 1; }
+          }
+          continue;
+        }
         if (pc.kind === 'shelf') {   /* round 9: the shelf is a one way top until it gives way */
           if (PC && PC[pi] >= K.SHELF_CRACK_F) continue;
           var stop = pc.row * CS, ssx = pc.x0 * CS, sov = Math.min(h.x + HW, ssx + pc.len * CS) - Math.max(h.x, ssx);
@@ -5763,7 +5802,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var landed = moveY(h, lv, K, h.wall !== 0 && !h.sticky && h.vy > 0 ? Math.floor(h.vy / K.WALL_SLIDE_DIV) : h.vy);
     /* round 9: a shelf cracks under a standing bug and counts on: it gives way at SHELF_CRACK, whole again SHELF_BACK after */
     if (s.crumb) for (var ci = 0; ci < lv.pieces.length; ci++) {
-      var cp2 = lv.pieces[ci]; if (cp2.kind !== 'shelf') continue;
+      var cp2 = lv.pieces[ci]; if (cp2.kind !== 'shelf' && cp2.kind !== 'stair') continue;
+      if (cp2.kind === 'stair') {   /* round 11: one counter for the run; step k reads it STAIR_GAP_F * k behind */
+        if (s.crumb[ci] > 0) { s.crumb[ci]++; if (s.crumb[ci] >= (cp2.n - 1) * K.STAIR_GAP_F + K.SHELF_CRACK_F + K.SHELF_BACK_F) s.crumb[ci] = 0; }
+        else for (var sk2 = 0; sk2 < cp2.n; sk2++) { var scx = (cp2.x0 + cp2.dir * sk2) * K.CELL_SUB; if (h.y + K.HERO_H_SUB === (cp2.row - sk2) * K.CELL_SUB && h.x + K.HERO_W_SUB > scx && h.x < scx + K.CELL_SUB) { s.crumb[ci] = 1; break; } }
+        continue;
+      }
       if (s.crumb[ci] > 0) { s.crumb[ci]++; if (s.crumb[ci] >= K.SHELF_CRACK_F + K.SHELF_BACK_F) s.crumb[ci] = 0; }
       else if (h.y + K.HERO_H_SUB === cp2.row * K.CELL_SUB && h.x + K.HERO_W_SUB > cp2.x0 * K.CELL_SUB && h.x < (cp2.x0 + cp2.len) * K.CELL_SUB) s.crumb[ci] = 1;
     }
@@ -6279,7 +6323,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      (1, Q221) stay in the core for a v2 RULES 1 code, but capture does not write them until their fallbacks, their
      extra film on bare walls and their build time are fixed */
   C.RULES = 0;
-  C.FLAGS = 63;   /* sb-m2-19: every capture's Attic rooms breathe too (bit 5) */   /* sb-m2-15: every capture meets the four verbs too (bit 4) */   /* R10: every capture rolls a keepsake too */   /* SB.record.FLAG_KEYS | FLAG_BESTIARY | FLAG_R9: every capture locks its exit with keys and meets the second monsters (2 Nov) and round 9's (6 Nov); a literal, since the room model loads this block without core-record */
+  C.FLAGS = 127;   /* sb-m2-20: every capture may hold a staircase too (bit 6) */   /* sb-m2-19: every capture's Attic rooms breathe too (bit 5) */   /* sb-m2-15: every capture meets the four verbs too (bit 4) */   /* R10: every capture rolls a keepsake too */   /* SB.record.FLAG_KEYS | FLAG_BESTIARY | FLAG_R9: every capture locks its exit with keys and meets the second monsters (2 Nov) and round 9's (6 Nov); a literal, since the room model loads this block without core-record */
   C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 15, GREEN_LO: 70, DEEP_LO: 170, EMBER_LO: 285, C_MIN: 12, S_MIN: 9, WARM_C_MIN: 16, WARM_S_MIN: 30, MIN_PCT: 10 });
   C.hueBand = function (r, g, b) {
     var K = C.HUE, mx = Math.max(r, g, b), d = mx - Math.min(r, g, b), band;
@@ -9216,6 +9260,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var sp4 = lv.pieces[spi], rm4 = R.reduced();
       if (sp4.kind === 'belt') { for (var bi4 = 0; bi4 < sp4.len; bi4++) spr(ctx, 'conveyor.' + (sp4.dir > 0 ? 'right' : 'left') + (rm4 ? 0 : (s.frame * 12 / SB.TUNING.STEP_HZ | 0) & 3), (sp4.x0 + bi4) * C, (sp4.row + 1) * C - cam); }
       else if (sp4.kind === 'shelf') { var sf4 = SB.pieceAt.shelfFrame(s.crumb ? s.crumb[spi] : 0); for (var bj4 = 0; bj4 < sp4.len; bj4++) spr(ctx, 'crumbling_shelf.' + sf4, (sp4.x0 + bj4) * C, sp4.row * C - cam); }
+      else if (sp4.kind === 'stair') { for (var sk4 = 0; sk4 < sp4.n; sk4++) spr(ctx, 'crumbling_shelf.' + SB.pieceAt.shelfFrame(s.crumb ? s.crumb[spi] - sk4 * SB.K.STAIR_GAP_F : 0), (sp4.x0 + sp4.dir * sk4) * C, (sp4.row - sk4) * C - cam); }   /* round 11: the staircase, the shelf's frames until her staircase_step */
       else if (sp4.kind === 'lamp') {
         /* Astra's centre pose turned about her ceiling pivot by the sim's own swing, so what you see is what hits */
         var lam4 = SB.pieceAt.lampAt(sp4, s.frame, lv.w), lr4 = A['swinging_lamp.centre'], pvx4 = (sp4.cell % lv.w) * C + (C >> 1), pvy4 = Math.floor(sp4.cell / lv.w) * C - cam;

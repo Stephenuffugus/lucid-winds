@@ -6036,7 +6036,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   /* the validator */
   const g2 = v2Of(sj, 4);
   const refuse = [['biome 6', { biome: 6 }], ['biome -1', { biome: -1 }], ['biome 1.5', { biome: 1.5 }], ['rules 2 (reserved for the next rules, not this client\'s)', { rules: 2 }], ['rules 9', { rules: 9 }],
-    ['flags bit 6', { flags: 64 }],   /* bit 5 is round 11's crosswind (sb-m2-19); */   /* bit 0 is the keys', bit 1 the second monsters' (2 Nov), bit 2 round 9's (6 Nov), bit 3 round 10's keepsakes (7 Nov) and bit 4 its four verbs (sb-m2-15), all known */ ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
+    ['flags bit 7', { flags: 128 }],   /* bit 5 is round 11's crosswind (sb-m2-19), bit 6 its pieces (sb-m2-20); bit 7 is the last of the byte */   /* bit 0 is the keys', bit 1 the second monsters' (2 Nov), bit 2 round 9's (6 Nov), bit 3 round 10's keepsakes (7 Nov) and bit 4 its four verbs (sb-m2-15), all known */ ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
   for (const [why, o] of refuse) t.ok(SB.record.validate(Object.assign({}, g2, o)) !== null, 'validate refuses a v2 record with ' + why);
   t.ok(SB.record.validate(Object.assign({}, sj, { biome: 3 })) !== null, 'validate refuses a v1 record carrying a biome');
   t.eq(SB.record.validate(g2), null, 'validate accepts the v2 sample room with biome 4 (control)');
@@ -6045,7 +6045,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.ok(SB.record.decode('v1.' + gb.toString('base64url')) === null && SB.record.decode('v2.' + v1b.toString('base64url')) === null, 'decode refuses a v1. prefix on a v2 record and a v2. prefix on a v1 record');
   t.ok(SB.record.decode(gb.toString('base64url')) !== null && SB.record.decode(gb.toString('base64url')).biome === 4, 'a bare v2 payload decodes with its biome');
   const at = (k, v) => { const b = Buffer.from(gb); b[k] = v; return b; };
-  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 6', at(8, 64)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
+  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
   for (const [why, b] of newer) {
     t.eq(SB.record.parseCode(code2(b)).why, 'newer', 'parseCode answers newer on a v2 code with ' + why);
     t.eq(SB.record.decode(code2(b)), null, 'decode never builds a v2 record with ' + why);
@@ -6055,7 +6055,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.eq(SB.record.parseCode(at(0, 3).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v3 payload (no prefix), as on its v3. code');
   t.eq(SB.record.parseCode('https://x.example/s/#' + at(0, 7).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v7 payload after a link\'s #');
   t.ok(SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode(at(0, 200).toString('base64url')).why === 'bad', 'garbage and a bare payload with version byte 200 still read as bad (control)');
-  t.eq(SB.record.parseCode(code2(at(8, 64).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length; bit 6, since bit 5 is the crosswind\'s from sb-m2-19)');
+  t.eq(SB.record.parseCode(code2(at(8, 128).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length; bit 7, the byte\'s last; bits 5 and 6 are the crosswind\'s and round 11\'s pieces)');
   t.eq(SB.record.parseCode(code2(gb.subarray(0, 300))).why, 'bad', 'a truncated v2 code with known bytes reads as bad (control)');
   t.ok(SB.record.parseCode(code2(gb)).rec && SB.record.parseCode(code2(gb)).rec.biome === 4, 'a v2 code with RULES 0 and no flags opens (control)');
   /* the build: the biome byte names the biome; RULES 0 is today's rules on the same grid */
@@ -6711,6 +6711,27 @@ group('H-wind-1', 'the crosswind (round 11, sb-m2-19): with FLAG_WIND an Attic r
   t.ok(best && best.dx >= K.CELL_SUB * 0.6 && best.dx <= K.CELL_SUB * 1.5 && best.still === 0 && best.vx1 === 0, 'standing still it is carried ' + (best.dx / K.CELL_SUB).toFixed(2) + ' cells toward the far side over one blow, ' + best.still + ' between blows, and left with no speed of its own');
   const sA = SB.sim.create(noBit); for (let k = 0; k < F + B; k++) SB.sim.step(sA, 0); const sB = SB.sim.create(noBit); for (let k = 0; k < F - 1; k++) SB.sim.step(sB, 0); const xb = sB.hero.x; for (let k = 0; k < B + 1; k++) SB.sim.step(sB, 0);
   t.ok(sB.hero.x === xb && SB.sim.windV(K) >= 1, 'without the bit the same room leaves a still bug where it stands');
+});
+
+group('H-r11-1', 'the collapsing staircase (round 11, sb-m2-20): with FLAG_R11 a room may hold one run of STAIR_MIN to STAIR_MAX one cell steps rising one over one up through free cells from a standable cell (never without the bit, never in a first room); a bug standing on a step starts the chain: the steps give way bottom first STAIR_GAP_F apart, the bug on the first falls when it goes, and the run is whole again SHELF_BACK_F after the last', t => {
+  const K = SB.K, T = SB.TUNING, stairs = [];
+  for (const f of FIXTURES) for (const b of [1, 2, 3, 4, 5]) { const j = Object.assign({}, f.fx.record, { v: 2, biome: b, rules: 0, flags: SB.record.FLAGS_KNOWN }); const lv = SB.pipeline.build(SB.record.fromJSON(j), {}); if (lv.needsCrop || !lv.pieces) continue; const st = lv.pieces.find(p => p.kind === 'stair'); if (st) stairs.push({ j, lv, st, pi: lv.pieces.indexOf(st) }); }
+  t.ok(stairs.length > 0, stairs.length + ' staircases across the fixtures and biomes');
+  const shape = stairs.every(o => { const { lv, st } = o; if (st.n < T.STAIR_MIN || st.n > T.STAIR_MAX || Math.abs(st.dir) !== 1) return false; for (let k = 0; k < st.n; k++) { const cx = st.x0 + st.dir * k, cy = st.row - k; if (cx < 0 || cx >= lv.w || cy < 1) return false; const q = cy * lv.w + cx; if (lv.solid[q] || lv.plat[q] || lv.solid[q - lv.w] || lv.plat[q - lv.w] || lv.solid[q + lv.w] === 1 || lv.plat[q + lv.w] === 1) return false; } const ax = st.x0 - st.dir, ay = st.row + 1, aq = ay * lv.w + ax; return ax >= 0 && ax < lv.w && !lv.solid[aq] && !lv.plat[aq] && (lv.solid[aq + lv.w] === 1 || lv.plat[aq + lv.w] === 1); });
+  t.ok(shape, 'every run is 3 to 5 steps, each a free cell with a free cell above and air under, rising one over one up from a standable cell');
+  const o = stairs[0];
+  const noBit = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, o.j, { flags: SB.record.FLAGS_KNOWN & ~SB.record.FLAG_R11 })), {});
+  const first = SB.pipeline.build(SB.record.fromJSON(o.j), { roomIndex: 0, firstRoom: true });
+  t.ok(!(noBit.pieces || []).some(p => p.kind === 'stair') && !(first.pieces || []).some(p => p.kind === 'stair'), 'none without the bit, none in a first room');
+  const s = SB.sim.create(o.lv), CS = K.CELL_SUB, st = o.st, h = s.hero; s.immortal = 1;
+  h.x = st.x0 * CS + ((CS - K.HERO_W_SUB) >> 1); h.y = st.row * CS - K.HERO_H_SUB; h.vx = 0; h.vy = 0; h.ground = 1;
+  SB.sim.step(s, 0); const c1 = s.crumb ? s.crumb[o.pi] : -1, y1 = h.y;
+  let fellAt = -1; for (let k = 0; k < K.SHELF_CRACK_F + K.SHELF_FALL_F + 10; k++) { SB.sim.step(s, 0); if (fellAt < 0 && h.y > y1) fellAt = k + 1; }
+  t.ok(c1 === 1 && fellAt >= K.SHELF_CRACK_F - 1 && fellAt <= K.SHELF_CRACK_F + 2, 'standing on the first step starts the chain (crumb ' + c1 + ') and the bug falls when it gives way (' + fellAt + ' steps later; SHELF_CRACK_F ' + K.SHELF_CRACK_F + ')');
+  const c = s.crumb[o.pi], fr = k => SB.pieceAt.shelfFrame(c - k * K.STAIR_GAP_F), frames = Array.from({ length: st.n }, (_, k) => fr(k));
+  t.ok(fr(0) === 'gone' && fr(1) === 'cracked' && fr(2) === 'whole', 'the steps go bottom first, STAIR_GAP_F apart: at count ' + c + ' the run reads ' + frames.join(','));
+  for (let k = 0; k < (st.n - 1) * K.STAIR_GAP_F + K.SHELF_BACK_F; k++) SB.sim.step(s, 0);
+  t.ok(s.crumb[o.pi] === 0, 'and the run is whole again SHELF_BACK_F after the last step went');
 });
 
 group('H-boss-14', 'the phases (round 11, sb-m2-18; Stephen: two or three phases): the hit that takes a guardian under half its HP raises RAGE once; raged, the Rime Mass marks five columns not three, the Kiln throws two more sparks, the Thorn Heart\'s pods roll 1.5x, the Moth Mother\'s shed brings a dust cloud, the Loom drops two strands, the Wasp a pair of darts; above half nothing of it', t => {
