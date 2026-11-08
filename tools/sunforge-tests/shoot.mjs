@@ -6,7 +6,10 @@
  *   node tools/sunforge-tests/shoot.mjs <outdir>                 every screen
  *   node tools/sunforge-tests/shoot.mjs <outdir> play            one screen
  *   W=360 H=780 node tools/sunforge-tests/shoot.mjs <outdir> play     the same on a narrower phone
- * Screens: title how settings play almost crush pause zen11 crush9 gameover daily share first (share writes the two composed 1080 PNGs). Chrome lives in /workspaces/sws-tools. One
+ * Screens: title how settings play almost crush pause zen11 crush9 gameover daily share first (share writes the two composed 1080 PNGs),
+ * skin-bright skin-clay skin-painted (the play fixture wearing that skin), skins (the Skins screen, everything unlocked). PROBE=1 prints,
+ * after every shot, the board's pixels read in page (RS_DEV.probe: each ring's colour along the +x radius and its pattern share) on a
+ * four ring board at the big cell size, then on the full eleven ring board. Chrome lives in /workspaces/sws-tools. One
  * browser at a time. The fleet's song card and feedback tip are closed before every shot. */
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
@@ -47,12 +50,22 @@ const SCREENS = {
   crush9: async () => { await ev("RS_DEV.start('zen',7); RS_DEV.fill(8,0.85,4); RS_DEV.seedRing(9,11,2); RS_DEV.step(1/60,150); RS_DEV.put('T',10,-2,2); RS_DEV.drop(); RS_DEV.step(1/60,10)"); },
   share: async () => { await ev("RS_DEV.start('journey',42); RS_DEV.fill(10,0.82,8); RS_DEV.end()"); await savePng('share-square'); await ev("RS_DEV.start('daily'); RS_DEV.fill(7,0.8,9); RS_DEV.end()"); await savePng('share-daily'); },
   first: async () => { await ev("localStorage.removeItem('rs_prog'); location.reload()"); await wait(1500); await later(); await ev("document.getElementById('b-journey').click()"); await wait(300); await ev("RS_DEV.freeze(); RS_DEV.render()"); },
+  'skin-bright': async () => { await ev("RS_DEV.start('journey',42); RS_DEV.skin('bright'); for(var i=0;i<6;i++){ RS_DEV.slam(); RS_DEV.flush(); } RS_DEV.step(1/60,20)"); },
+  'skin-clay': async () => { await ev("RS_DEV.start('journey',42); RS_DEV.skin('clay'); for(var i=0;i<6;i++){ RS_DEV.slam(); RS_DEV.flush(); } RS_DEV.step(1/60,20)"); },
+  'skin-painted': async () => { await ev("RS_DEV.start('journey',42); RS_DEV.skin('painted'); for(var i=0;i<6;i++){ RS_DEV.slam(); RS_DEV.flush(); } RS_DEV.step(1/60,20)"); },
+  skins: async () => { await ev("RS_DEV.unlock('all'); document.getElementById('b-skins').click()"); },
+};
+const probe = async () => {
+  if (!process.env.PROBE) return;
+  const a = await ev("RS_DEV.fill(4,1,1); RS_DEV.probe()"); console.log('  probe 4 rings: ' + JSON.stringify(a));
+  const b = await ev("RS_DEV.fill(11,1,1); RS_DEV.probe()"); console.log('  probe 11 rings: ' + JSON.stringify(b));
 };
 for (const name of Object.keys(SCREENS)) {
   if (!want(name)) continue;
   await fresh();
   await SCREENS[name]();
   await shot(name);
+  if (/^(play|skin-)/.test(name)) await probe();
 }
 await browser.close();
 console.log(errs.length ? 'PAGE ERRORS: ' + errs.join(' ; ') : 'no page errors');

@@ -95,7 +95,7 @@ lines.forEach((raw, i) => {
 });
 
 /* 5. the saved keys and the Sunbeam ids survive (law 5) */
-for (const k of ["'rs_set'", "'rs_prog'", "'rs_daily'", "'rs_ziphint'", "'sw_sb_ringstacker'", 'gameId:"ringstacker"', "'ringstacker:level'", "'ringstacker:daily'"]) {
+for (const k of ["'rs_set'", "'rs_prog'", "'rs_daily'", "'rs_ziphint'", "'rs_skins'", "'sw_sb_ringstacker'", 'gameId:"ringstacker"', "'ringstacker:level'", "'ringstacker:daily'"]) {
   if (html.indexOf(k) < 0) fail('a saved key or Sunbeam id is gone: ' + k);
 }
 

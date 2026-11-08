@@ -488,8 +488,71 @@ var PKEYS=['I','O','T','S','Z','J','L'];
    outside crushes inward, every surviving cell recolors to its new ring — the
    whole gyre visibly flows one color-band toward the core. */
 var RING_COL=[ '#fff5cb', '#ffd84a', '#9961e8', '#2dd5da', '#f15370', '#bced55', '#477dd9', '#ff9947', '#c8d5e8', '#ba4fbe', '#39bc8a', '#a8a1e8', '#d5a36b' ];
-function ringColOf(x,y){ var d=cheb(x,y); return RING_COL[d]||RING_COL[RMAX]; }
+function ringColOf(x,y){ return RC(cheb(x,y)); }
 function hexA(h,a){ var n=parseInt(h.slice(1),16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
+/* ---------- SKINS (v3): how a cell is drawn. OBSIDIAN is Astra's layered art (the default and the fallback, untouched);
+   the others are painted by code at 64 px into the same cache, keyed by skin, ring and neighbour mask. Every ring
+   colour read (frames, the almost outline, shards, the inward flow, the gyre on the cards, the fallback fill) goes
+   through RC(d), the active skin's palette. rs_skins (a new key: cur, un) holds the worn skin and the unlocked set; it
+   gates nothing but the look. A rule is a play milestone the game already counts. ---------- */
+var SKINS=[
+  { key:'obsidian', name:'Obsidian', rule:null, cols:RING_COL },
+  { key:'bright', name:'Bright', rule:{kind:'ever',n:1,text:'Break your first ring.'},
+    cols:['#fff5cb','#ffd60a','#ff8a1f','#ff3b4e','#ff3fc3','#c04cff','#7d5cff','#4a6dff','#1fa3ff','#14d8d8','#1dd67a','#7be02c','#d5ef2b'],
+    cell:paintBright, fall:fallBright, rest:restBright, ghost:'#ffffff' }
+];
+var SKS={ cur:'obsidian', un:{} };
+(function(){ try{ var k=JSON.parse(LS.g('rs_skins')||'{}'); if(typeof k.cur==='string')SKS.cur=k.cur; if(k.un&&typeof k.un==='object')SKS.un=k.un; }catch(e){} })();
+function saveSkins(){ LS.s('rs_skins', JSON.stringify(SKS)); }
+function skinByKey(k){ for(var i=0;i<SKINS.length;i++)if(SKINS[i].key===k)return SKINS[i]; return SKINS[0]; }
+function skinOpen(sk){ return !sk.rule||!!SKS.un[sk.key]; }
+var SK=skinByKey(SKS.cur); if(!skinOpen(SK)){ SK=SKINS[0]; SKS.cur=SK.key; }
+function RC(d){ var c=SK.cols; return c[d]||c[RMAX]; }
+function skinCaches(){ CELLC={}; FALLC={}; _flow={}; HUDC={}; }
+function setSkin(k,force){ var sk=skinByKey(k); if(!force&&!skinOpen(sk))return false; SK=sk; SKS.cur=sk.key; if(!force)saveSkins(); skinCaches(); return true; }
+/* the painters' small kit: colours as hex, mixed toward black or white; the rim on the exposed sides and inner corners
+   (mask bits 1 top, 2 right, 4 bottom, 8 left; 16, 32, 64, 128 the inner corners TL, TR, BR, BL) */
+function mk64(){ var c=document.createElement('canvas'); c.width=c.height=64; return c; }
+function rgbOf(h){ var n=parseInt(h.slice(1),16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+function mix(h,t,k){ var a=rgbOf(h), b=rgbOf(t); return 'rgb('+Math.round(a[0]+(b[0]-a[0])*k)+','+Math.round(a[1]+(b[1]-a[1])*k)+','+Math.round(a[2]+(b[2]-a[2])*k)+')'; }
+function dark(h,k){ return mix(h,'#000000',k); }
+function light(h,k){ return mix(h,'#ffffff',k); }
+function rimSides(g,m,col,w){ g.fillStyle=col; if(m&1)g.fillRect(0,0,64,w); if(m&2)g.fillRect(64-w,0,w,64); if(m&4)g.fillRect(0,64-w,64,w); if(m&8)g.fillRect(0,0,w,64);
+  var c=w+1; if(m&16)g.fillRect(0,0,c,c); if(m&32)g.fillRect(64-c,0,c,c); if(m&64)g.fillRect(64-c,64-c,c,c); if(m&128)g.fillRect(0,64-c,c,c); }
+function gloss(g,top,shade){ var gr=g.createLinearGradient(0,0,0,64); gr.addColorStop(0,'rgba(255,255,255,'+top+')'); gr.addColorStop(0.42,'rgba(255,255,255,'+(top*0.3).toFixed(3)+')');
+  gr.addColorStop(0.46,'rgba(255,255,255,0)'); gr.addColorStop(0.74,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(0,0,0,'+shade+')'); g.fillStyle=gr; g.fillRect(0,0,64,64); }
+/* BRIGHT: one saturated flat colour per ring on a hue ladder from the sun's yellow outward, a glossy top light, a dark
+   rim on exposed sides only (a ring stays one band), and a pattern per ring in a darker tone of its own hue so no two
+   rings read alike without colour: plain, dots, bars, checks, diagonals, rings, posts, diamonds, hatch, chevrons,
+   triangles, stars. The patterns tile at 64 so a band's pattern runs on across its cells. */
+function paintBright(g,d,m,sk){
+  var col=sk.cols[d]||sk.cols[RMAX], pat=(d-1)%12, i,j,cx,cy;
+  g.fillStyle=col; g.fillRect(0,0,64,64);
+  g.fillStyle=g.strokeStyle=dark(col,0.5); g.globalAlpha=0.28; g.lineCap='butt';
+  if(pat===1){ for(i=0;i<3;i++)for(j=0;j<3;j++){ g.beginPath(); g.arc((i+0.5)*64/3,(j+0.5)*64/3,5.5,0,6.2832); g.fill(); } }
+  else if(pat===2){ g.fillRect(0,14,64,10); g.fillRect(0,40,64,10); }
+  else if(pat===3){ for(i=0;i<4;i++)for(j=0;j<4;j++){ if((i+j)&1)g.fillRect(i*16,j*16,16,16); } }
+  else if(pat===4){ g.lineWidth=6; for(i=-5;i<=5;i++){ g.beginPath(); g.moveTo(i*16-8,72); g.lineTo(i*16+72,-8); g.stroke(); } }
+  else if(pat===5){ g.lineWidth=5; g.beginPath(); g.arc(32,32,9,0,6.2832); g.stroke(); g.beginPath(); g.arc(32,32,22,0,6.2832); g.stroke(); }
+  else if(pat===6){ g.fillRect(14,0,10,64); g.fillRect(40,0,10,64); }
+  else if(pat===7){ for(i=0;i<2;i++)for(j=0;j<2;j++){ cx=16+i*32; cy=16+j*32; g.beginPath(); g.moveTo(cx,cy-11); g.lineTo(cx+11,cy); g.lineTo(cx,cy+11); g.lineTo(cx-11,cy); g.closePath(); g.fill(); } }
+  else if(pat===8){ g.lineWidth=3; for(i=-5;i<=5;i++){ g.beginPath(); g.moveTo(i*16-8,72); g.lineTo(i*16+72,-8); g.stroke(); g.beginPath(); g.moveTo(i*16-8,-8); g.lineTo(i*16+72,72); g.stroke(); } }
+  else if(pat===9){ g.lineWidth=5; for(j=0;j<2;j++){ g.beginPath(); g.moveTo(2,12+j*28); g.lineTo(32,28+j*28); g.lineTo(62,12+j*28); g.stroke(); } }
+  else if(pat===10){ for(i=0;i<3;i++){ cx=(i+0.5)*64/3; g.beginPath(); g.moveTo(cx,16); g.lineTo(cx+10,44); g.lineTo(cx-10,44); g.closePath(); g.fill(); } }
+  else if(pat===11){ for(i=0;i<2;i++)for(j=0;j<2;j++){ cx=16+i*32; cy=16+j*32; g.beginPath();
+    for(var q=0;q<8;q++){ var r=(q&1)?4.5:11.5, a=q*Math.PI/4-Math.PI/2; g.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r); } g.closePath(); g.fill(); } }
+  g.globalAlpha=1;
+  gloss(g,0.5,0.22);
+  rimSides(g,m,dark(col,0.48),3);
+  g.fillStyle='rgba(255,255,255,0.55)'; if(m&1)g.fillRect(3,3,58,1.5); if(m&8)g.fillRect(3,3,1.5,58);
+}
+function fallBright(g){ g.fillStyle='#f4f6fa'; g.fillRect(0,0,64,64); gloss(g,0.6,0.16); rimSides(g,15,'#263442',3); g.fillStyle='rgba(255,255,255,0.7)'; g.fillRect(3,3,58,1.5); g.fillRect(3,3,1.5,58); }
+function restBright(g){ g.fillStyle='rgba(223,255,79,0.55)'; g.fillRect(0,0,64,64); rimSides(g,15,'#dfff4f',3); }
+/* the skin's falling cell, resting overlay and ghost; OBSIDIAN uses Astra's images and the code fallback as before */
+var FALLC={};
+function skinFalling(){ if(!SK.fall)return art('falling'); var c=FALLC[SK.key+'f']; if(!c){ c=mk64(); SK.fall(c.getContext('2d'),SK); FALLC[SK.key+'f']=c; } return c; }
+function skinResting(){ if(!SK.rest)return art('resting'); var c=FALLC[SK.key+'r']; if(!c){ c=mk64(); SK.rest(c.getContext('2d'),SK); FALLC[SK.key+'r']=c; } return c; }
+function skinGhost(lost){ if(lost)return ghostLost(); return SK.ghost?tintedGhost(SK.ghost):art('ghost'); }
 
 var G=null, running=false, lastTs=0;
 
@@ -847,8 +910,10 @@ function cellPx(x,y){ return { x:PCX+(x-C)*VPITCH-VCELL/2, y:PCY+(y-C)*VPITCH-VC
    same ring sides meet round a missing diagonal (the trim rotates, the face and the mark never do), then the ring's
    upright dark mark. Each ring and neighbour pattern is composed ONCE at 64 px and then drawn as one image. */
 var CELLC={};
-function cellSprite(d,mask){
-  var key=d*256+mask, c=CELLC[key]; if(c)return c;
+function cellSprite(d,mask,sk){
+  sk=sk||SK;
+  var key=sk.key+':'+(d*256+mask), c=CELLC[key]; if(c)return c;
+  if(sk.cell){ c=mk64(); sk.cell(c.getContext('2d'),d,mask,sk); CELLC[key]=c; return c; }   // v3: a code painted skin
   var faces=art('faces'), trim=art('trim'), marks=art('marks'); if(!faces||!trim||!marks)return null;
   c=document.createElement('canvas'); c.width=c.height=64; var g=c.getContext('2d'), f=(d-1)%12, k;
   g.drawImage(faces,f*64,0,64,64,0,0,64,64);
@@ -876,11 +941,11 @@ function drawGyre(g,x,y,size,grid){
   g.save(); g.beginPath(); g.rect(x,y,size,size); g.clip();
   g.fillStyle='#080e15'; g.fillRect(x,y,size,size);
   g.lineWidth=Math.max(1,cs*0.06);
-  for(d=1;d<=E;d++){ var hw=(d+0.5)*cs; g.strokeStyle=hexA(RING_COL[d],0.2); g.strokeRect(ox-hw,oy-hw,hw*2,hw*2); }
+  for(d=1;d<=E;d++){ var hw=(d+0.5)*cs; g.strokeStyle=hexA(RC(d),0.2); g.strokeRect(ox-hw,oy-hw,hw*2,hw*2); }
   for(yy=0;yy<N;yy++)for(xx=0;xx<N;xx++){
     if(!grid[yy][xx])continue; d=cheb(xx,yy);
     var sp=cellSprite(d,cellMask(xx,yy,d,grid)), px=ox+(xx-C)*cs-cs/2, py=oy+(yy-C)*cs-cs/2;
-    if(sp)g.drawImage(sp,px,py,cs,cs); else { g.fillStyle=RING_COL[d]||RING_COL[RMAX]; g.fillRect(px+0.5,py+0.5,cs-1,cs-1); }
+    if(sp)g.drawImage(sp,px,py,cs,cs); else { g.fillStyle=RC(d); g.fillRect(px+0.5,py+0.5,cs-1,cs-1); }
   }
   var cst=art('core_states');
   if(cst){ var bs=cs*2; g.drawImage(cst,0,0,256,256,ox-bs/2,oy-bs/2,bs,bs); } else { g.fillStyle='#fff5cb'; g.fillRect(ox-cs/2,oy-cs/2,cs,cs); }
@@ -920,10 +985,10 @@ function tintedGhost(col){ if(_tint[col])return _tint[col]; var gi=art('ghost');
 function ghostLost(){ return tintedGhost('#f15370'); }
 /* Astra's inward flow strip (a white mask) in the broken ring's colour, once per ring */
 var _flow={};
-function flowTint(d){ if(_flow[d])return _flow[d]; var fm=art('flow'); if(!fm)return null;
+function flowTint(d){ var fk=SK.key+d; if(_flow[fk])return _flow[fk]; var fm=art('flow'); if(!fm)return null;
   var c=document.createElement('canvas'); c.width=1536; c.height=256; var x=c.getContext('2d');
-  x.drawImage(fm,0,0); x.globalCompositeOperation='source-in'; x.fillStyle=RING_COL[d]||RING_COL[RMAX]; x.fillRect(0,0,1536,256);
-  _flow[d]=c; return c; }
+  x.drawImage(fm,0,0); x.globalCompositeOperation='source-in'; x.fillStyle=RC(d); x.fillRect(0,0,1536,256);
+  _flow[fk]=c; return c; }
 /* the live words over a plate's blank centre: display type, cream, a dark edge so it reads over anything */
 function plateText(t,x,y){ ctx.save(); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font='900 44px '+DSF;
   ctx.lineWidth=6; ctx.strokeStyle='rgba(8,13,21,0.9)'; ctx.strokeText(t,x,y); ctx.fillStyle='#fff5cb'; ctx.fillText(t,x,y); ctx.restore(); }
@@ -969,7 +1034,7 @@ function render(){
     var done=0, rc=RINGS[d-1];
     for(i=0;i<rc.length;i++)if(G.grid[rc[i][1]][rc[i][0]])done++;
     var frac=done/rc.length;
-    ctx.strokeStyle=hexA(RING_COL[d], (plate?0.10:0.18)+frac*(plate?0.5:0.72));
+    ctx.strokeStyle=hexA(RC(d), (plate?0.10:0.18)+frac*(plate?0.5:0.72));
     ctx.lineWidth=frac>=1?2.5:(frac>0.6?1.6:1);
     rr(p0.x-2,p0.y-2,w+4,w+4,7); ctx.stroke();
   }
@@ -982,7 +1047,7 @@ function render(){
   }
   function drawRingCell(px,py,d,mask,alpha){
     var sp=cellSprite(d,mask);
-    if(!sp){ drawCell(px,py,RING_COL[d]||RING_COL[RMAX],alpha); return; }
+    if(!sp){ drawCell(px,py,RC(d),alpha); return; }
     if(alpha!==undefined)ctx.globalAlpha=alpha;
     ctx.drawImage(sp,px-0.5,py-0.5,VPITCH,VPITCH);
     if(alpha!==undefined)ctx.globalAlpha=1;
@@ -1004,7 +1069,7 @@ function render(){
   // the almost ring: its outline lit steady in its own colour, an acid notch on its one missing cell (no strobe)
   if(AR&&!G.popAnim&&!G.slideAnim){
     var a0=cellPx(C-AR.d,C-AR.d), aw=(2*AR.d+1)*VPITCH-1, lit=art('litseam');
-    ctx.strokeStyle=hexA(RING_COL[AR.d],lit?0.5:0.95); ctx.lineWidth=3; rr(a0.x-2.5,a0.y-2.5,aw+5,aw+5,8); ctx.stroke();
+    ctx.strokeStyle=hexA(RC(AR.d),lit?0.5:0.95); ctx.lineWidth=3; rr(a0.x-2.5,a0.y-2.5,aw+5,aw+5,8); ctx.stroke();
     // v2: her lit seam (authored along the top edge) on every edge of the band's cells that borders another ring or
     // the gap, rotated in quarter turns, steady (no strobe); the code outline stays under it at half
     if(lit){ var arc=RINGS[AR.d-1], li, lm, lk;
@@ -1097,7 +1162,7 @@ function render(){
   if(G.cur&&SET.ghost&&!G.over){
     var gd=stickDrop();
     var gc=cellsOf(G.cur.x,gd.y,G.cur.rot,G.cur.k);
-    var gimg=gd.stick?art('ghost'):ghostLost();
+    var gimg=skinGhost(!gd.stick);
     for(i=0;i<4;i++){ if(gc[i][1]<0)continue; var gp=cellPx(gc[i][0],gc[i][1]);
       if(gimg){ ctx.globalAlpha=0.75; ctx.drawImage(gimg,gp.x-0.5,gp.y-0.5,VPITCH,VPITCH); ctx.globalAlpha=1; continue; }
       ctx.strokeStyle=gd.stick?'rgba(238,240,246,0.3)':'rgba(255,93,108,0.55)';
@@ -1111,14 +1176,14 @@ function render(){
     else if(ntc)ctx.drawImage(ntc,nq.x-0.5,nq.y-0.5,VPITCH,VPITCH); else { ctx.strokeStyle='#dfff4f'; ctx.lineWidth=2; rr(nq.x+3,nq.y+3,VCELL-6,VCELL-6,4); ctx.stroke(); } }
   // falling piece
   if(G.cur&&!G.over){
-    var pc=cellsOf(G.cur.x,G.cur.y,G.cur.rot,G.cur.k), fimg=art('falling'), stk=art('streak');
+    var pc=cellsOf(G.cur.x,G.cur.y,G.cur.rot,G.cur.k), fimg=skinFalling(), stk=art('streak');
     if(stk&&!SET.reduce){ var sfr=Math.floor(G.t*1000/35)%6;
       for(i=0;i<4;i++){ var qx=pc[i][0], qy=pc[i][1]; if(qy<0||qy>=N)continue;
         if((qx>0&&G.grid[qy][qx-1])||(qx<N-1&&G.grid[qy][qx+1])){ var sq=cellPx(qx,qy);
           ctx.globalAlpha=0.8; ctx.drawImage(stk,sfr*64,0,64,128,sq.x-0.5,sq.y-VPITCH,VPITCH,VPITCH*2); ctx.globalAlpha=1; } } }
     // v2 (Astra, the blocks): a falling cell is cold intact silver; while its lock clock runs it heats to her resting frame
     // (an ease over the delay; a move or turn resets the clock, so it cools again); reduced motion holds the hot frame
-    var heat=G.lockT>0 ? (SET.reduce ? 1 : 0.5-0.5*Math.cos(Math.min(1,G.lockT/LOCK_DELAY)*Math.PI)) : 0, rimg=art('resting');
+    var heat=G.lockT>0 ? (SET.reduce ? 1 : 0.5-0.5*Math.cos(Math.min(1,G.lockT/LOCK_DELAY)*Math.PI)) : 0, rimg=skinResting();
     var restA=G.lockT>0&&!SET.reduce&&!rimg ? 0.62+0.38*Math.abs(Math.cos(G.lockT*Math.PI/LOCK_DELAY*1.5)) : 1;   // the old breath only without her frame
     ctx.globalAlpha=restA;
     for(i=0;i<4;i++){ if(pc[i][1]<0)continue; var pp=cellPx(pc[i][0],pc[i][1]);
@@ -1169,12 +1234,12 @@ function render(){
 var HUDC={};
 function hudSet(id,v,prop){ if(HUDC[id]===v)return; HUDC[id]=v; var el=$(id); if(el)el[prop||'textContent']=v; }
 function drawPreview(id,k,alpha){
-  var key=k+'|'+alpha+'|'+(art('falling')?1:0); if(HUDC[id]===key)return; HUDC[id]=key;
+  var key=k+'|'+alpha+'|'+SK.key+(skinFalling()?1:0); if(HUDC[id]===key)return; HUDC[id]=key;
   var cvp=$(id); if(!cvp)return; var g=cvp.getContext('2d'); g.clearRect(0,0,cvp.width,cvp.height); if(!k)return;
   var sh=SHAPES[k][0], minx=9,maxx=-9,miny=9,maxy=-9,i;
   for(i=0;i<4;i++){ minx=Math.min(minx,sh[i][0]); maxx=Math.max(maxx,sh[i][0]); miny=Math.min(miny,sh[i][1]); maxy=Math.max(maxy,sh[i][1]); }
   var cols=maxx-minx+1, rows=maxy-miny+1, cs=Math.min((cvp.width-8)/cols,(cvp.height-8)/rows, cvp.height*0.42);
-  var ox=(cvp.width-cols*cs)/2, oy=(cvp.height-rows*cs)/2, fi=art('falling');
+  var ox=(cvp.width-cols*cs)/2, oy=(cvp.height-rows*cs)/2, fi=skinFalling();
   g.globalAlpha=alpha;
   for(i=0;i<4;i++){ var x=ox+(sh[i][0]-minx)*cs, y=oy+(sh[i][1]-miny)*cs;
     if(fi)g.drawImage(fi,x,y,cs,cs); else { g.fillStyle=PCOLS[k]; g.fillRect(x+1,y+1,cs-2,cs-2); } }
@@ -1489,7 +1554,18 @@ if(/[?&]rstest=1/.test(location.search)){
     render:function(){ render(); return true; },
     /* the shot tool's handles (tools/sunforge-tests/shoot.mjs) */
     freeze:function(){ running=false; return true; },
-    art:function(k,on){ if(IMG[k])IMG[k]._ok=!!on; CELLC={}; _tint={}; _flow={}; render.pat=null; render(); return !!IMG[k]; },
+    art:function(k,on){ if(IMG[k])IMG[k]._ok=!!on; skinCaches(); _tint={}; render.pat=null; render(); return !!IMG[k]; },
+    skin:function(k){ setSkin(k,true); render(); return SK.key; },
+    probe:function(){ /* the colour at each ring's cell centre along the +x radius and the share of that cell's pixels off its median (the pattern) */
+      var out=[],d,i; for(i=0;i<40;i++)render();
+      for(d=1;d<=RMAX;d++){ var p=cellPx(C+d,C), w=Math.max(2,Math.round((VCELL-4)*DPR)), x0=Math.round((p.x+2)*DPR), y0=Math.round((p.y+2)*DPR);
+        var id=ctx.getImageData(x0,y0,w,w).data, n=w*w, rs=[],gs=[],bs=[];
+        for(i=0;i<n;i++){ rs.push(id[i*4]); gs.push(id[i*4+1]); bs.push(id[i*4+2]); }
+        rs.sort(function(a,b){return a-b;}); gs.sort(function(a,b){return a-b;}); bs.sort(function(a,b){return a-b;});
+        var mr=rs[n>>1], mg=gs[n>>1], mb=bs[n>>1], off=0;
+        for(i=0;i<n;i++){ if(Math.abs(id[i*4]-mr)+Math.abs(id[i*4+1]-mg)+Math.abs(id[i*4+2]-mb)>60)off++; }
+        out.push({d:d, rgb:[mr,mg,mb], pat:Math.round(100*off/n), px:Math.round(VCELL)}); }
+      return out; },
     step:function(dt,n,drop){ dt=dt||1/60; for(var i=0;i<(n||1);i++){ if(!drop&&G)G.dropT=0; tick(dt); } render(); return true; },
     flush:function(){ var g=400; while(G&&(G.popAnim||G.slideAnim)&&g--)stepAnims(0.05); render(); return true; },
     seedRing:function(d,gx,gy){ var rc=RINGS[d-1],i; for(i=0;i<rc.length;i++){ if(rc[i][0]===gx&&rc[i][1]===gy)continue; G.grid[rc[i][1]][rc[i][0]]='#fff'; } render(); return true; },
