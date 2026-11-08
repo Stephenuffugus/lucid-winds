@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 8 Nov 2026, 16:52 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 8 Nov 2026, 17:12 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 1. The art, in this order (you, then Astra)
 
@@ -66,7 +66,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Tomato Man THE PRESSURE (his 8 Nov notes: fair lunge, lesson levels, pressure everywhere, cooling resources, finds on the route, progressive worlds): built 8 Nov 09:21 UTC by the overnight (sunstruck 55b909d), LIVE 8 Nov 15:45 UTC by your line (Fable)  
 - [x] TOFU m1 (the new tofu platformer, your v0.1 file with Astra's art wired, all eight levels served by the bot): built 8 Nov 09:21 UTC by the overnight (lucid-winds 9776b6006, stamp 20261109a), LIVE 8 Nov 15:50 UTC by your line (Fable)  
 - [x] Sunforge v5.3 THE SKINS (Obsidian, Bright, Clay, Painted; unlocks; one Sunbreaker theme on every screen): built 8 Nov, LIVE 8 Nov 15:55 UTC by your line (Fable)  
-- [ ] Shutterbug sb-m2-22 (the death card measures both docks and slides off the fallen bug; the 320x568 death gate green, lint and the fast harness green): STAMPED 8 Nov 16:40 UTC (e93477e0c, shutterbug-v44), waits for your line `! bash /home/codespace/sb-drafts/sb-m2-22/deploy-sb-m2-22.sh` (it merges main into the branch first) (Fable)  
+- [ ] Shutterbug sb-m2-23 (the death card off the fallen bug; the stick pad above the Polaroid, a mid strip landing had its ring hidden under the photo; the input gate taught the 4 Nov down pull; death, input 198 ok, lint green): STAMPED 8 Nov 17:10 UTC (ad9ab9844, shutterbug-v45), waits for your line `! bash /home/codespace/sb-drafts/sb-m2-23/deploy-sb-m2-23.sh` (it merges main into the branch first) (Fable)  
 - [ ] DUCTUS m1 + v2 (your alphabet forge in the STUDIO: the studio shell, share target, worker, its own art, Pen & Paper on the hub; v2 shares a hand by link; engine 20/20 and browser 21/21 green): built 8 Nov 16:50 UTC, SWS-apps main 0fe0d69, waits for your line `! bash /home/codespace/ductus-drafts/deploy-ductus-m1.sh` (the first run prints a one time Firebase sign in, then run it again) (Fable)  
 - [x] Chapter 2 Flatulence Fighter m4, the six pad plates, the ring, moving calls, the cards, the lesson line, and m5 (a miss is a strike): LIVE 7 Nov by your line (Fable)  
 - [x] Chapter 3 Keepsies m4, the circle and reticles at 154 px, the snap card, the chalk, the chip: LIVE 8 Nov by your line (Fable)  
@@ -108,7 +108,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Shutterbug Play listing: real captures in Astra's six frames, the Play build, the Console upload, assetlinks (Opus, then you)  
 - [ ] Flatulence Fighter and Sunforge listings if they are a go (Opus, then you)  
 - [x] Shutterbug: the browser checks reach their assertions again (the harness taps past the bug's story and scrolls a control under the fold into view; boot, play, pwa, save green alone, 8 Nov 15:35) (Fable)  
-- [ ] Shutterbug: fans that matter; two gates now fail for real: death (at 320x568 the death card covers the bug on row 11, the card grew with the tripod button) and input (8: the stick fixture and the stick words predate the round 10 verbs), see satellites/shutterbug/PROGRESS.md (Opus)  
+- [ ] Shutterbug: fans that matter; the thirteen other browser gates not rerun since the harness fix (make, layout, reveal, capture, sprites, loot, audio, share, loop, pause, fight, compare, house), one alone at a time (Opus)  
 - [ ] Keepsies: the four screens Astra drew in round 2 (level up, chores, clay pool, the case); the shot tool's end game loop; the 240 design bank; the grails through Meshy (Opus, you)  
 - [ ] Tomato Man: the squirt, if you still want it (you)  
 - [ ] Dewball: the store pack back, the store kit with real captures, the v37 stamp and its line, the Console listing, the Meshy build out (Astra, Opus, you)  
