@@ -559,7 +559,7 @@ function stopMusic(){ if(Audio2.musicTimer){ clearInterval(Audio2.musicTimer); A
    through A(key): null until it has loaded, so every draw keeps its code drawn fallback. One ART_V token on every URL.
    The first visit loads the title, the HUD, the pickups, the sun and Morning Tide; a world's ground, horizon and decor
    load when that world is first shown (needWorld), the Angry Sun with the Eclipse world, the share frames on a share. */
-const ART_V='20261107c';   // THE HERO's sheets and heads (Astra, 7 Nov) over THE RUN's art
+const ART_V='20261108a';   // THE WALK (Astra, 8 Nov): the four walk cells redrawn in all seventy sheets; before it THE HERO's sheets and heads (7 Nov)
 const WORLD_DIRS=['morning_tide','midday_blaze','tide_pools','dunes_at_dusk','eclipse'];
 const ASSET_PATHS={
   menu:'art/ui/menu_plate.webp', logo_sand:'art/ui/logo_on_sand.svg', logo_dark:'art/ui/logo_on_dark.svg',
@@ -1907,7 +1907,7 @@ function render(){ const inPlay=(screen==='play');
    28 across (the collider stays radius 14; his legs and arms overhang it). Cells: 0 idle, 1 to 4 the walk at 8 fps,
    5 and 6 the dash at 12 fps, 7 a hop. Standing still for half a second he turns to face you. */
 /* TM HERO SOCKETS (lucid-winds tools/tomato-man-tests/astra_in.py writes this line) */
-const HAT_ANCHOR={"s":[[128,41],[128,41],[128,41],[129,41],[128,42],[128,56],[129,61],[129,39]],"se":[[131,40],[133,44],[134,48],[136,52],[136,54],[141,63],[153,64],[137,43]],"e":[[129,46],[129,46],[129,46],[129,46],[129,46],[140,60],[156,65],[133,39]],"ne":[[129,42],[129,43],[135,46],[136,46],[136,47],[144,58],[157,51],[135,40]],"n":[[129,51],[129,51],[129,51],[130,51],[129,52],[130,63],[131,46],[129,40]],"victory":[[128,51],[128,51],[128,50],[128,51]],"respawn":[[128,114],[128,72],[128,51],[128,49]],"cooling":[[128,66],[128,56],[128,55],[128,47]],"shade_drop":[[128,49],[128,49],[128,51],[128,50]]};
+const HAT_ANCHOR={"s":[[128,41],[128,41],[128,41],[128,41],[128,41],[128,56],[129,61],[129,39]],"se":[[131,40],[131,40],[131,40],[131,40],[131,40],[141,63],[153,64],[137,43]],"e":[[129,46],[129,46],[129,46],[129,46],[129,46],[140,60],[156,65],[133,39]],"ne":[[129,42],[129,42],[129,42],[129,42],[129,42],[144,58],[157,51],[135,40]],"n":[[129,51],[129,51],[129,51],[129,51],[129,51],[130,63],[131,46],[129,40]],"victory":[[128,51],[128,51],[128,50],[128,51]],"respawn":[[128,114],[128,72],[128,51],[128,49]],"cooling":[[128,66],[128,56],[128,55],[128,47]],"shade_drop":[[128,49],[128,49],[128,51],[128,50]]};
 /* /TM HERO SOCKETS */
 /* TM WORLD FITS (lucid-winds tools/tomato-man-tests/astra_in.py writes this line) */
 const WORLD_FIT={"wilt":[1,0,652,144,664,163],"umb":[384,144.5],"sunK":1.1,"boss_telegraph":114.0,"safe_window":114.0};
@@ -1924,7 +1924,7 @@ const HERO_FLIP={sw:1,w:1,nw:1}, HAT_DIR={s:'s',se:'e',e:'e',ne:'n',n:'n',nw:'n'
    down, left, left, right (1,2,3,4) and the north cells left, left, right, right, so played in order each step landed twice on one
    foot, a limp. These orders alternate the feet. The east, south east and north east cells are contact, pass, contact, pass with the
    same foot leading both contacts (a gallop in the art itself, for Astra's next round); their order stays. */
-const WALK_ORDER={s:[1,2,4,3],n:[1,3,2,4],e:[1,2,3,4],se:[1,2,3,4],ne:[1,2,3,4]};
+const WALK_ORDER={s:[1,2,3,4],n:[1,2,3,4],e:[1,2,3,4],se:[1,2,3,4],ne:[1,2,3,4]};   // 8 Nov (Astra's walk round): one strict cycle in every bearing, left contact, right pass, right contact, left pass; the south 1,2,4,3 and north 1,3,2,4 compensations for the old drawings are gone
 const heroTmp=document.createElement('canvas'); heroTmp.width=heroTmp.height=128; const heroTx=heroTmp.getContext('2d');
 /* 7 Nov (Stephen: "when I'm walking forward it doesn't quite look right"): the bearing came straight from the velocity, so a
    thumb a little off centre flipped n, ne, nw every frame and the hat jumped with it. Now the last bearing holds unless the
