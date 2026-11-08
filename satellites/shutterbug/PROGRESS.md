@@ -1807,3 +1807,9 @@ death card lead (15:43, not fixed): ui.showDeath docks the card at `top: 3%` and
 cause: ui.showDeath measured only the top dock and added .low on any overlap without measuring it; at 320x568 with the tripod button the card covers a bug on the middle rows from one dock and misses by one pixel from the other
 fix: both docks measured, the one that clears wins, else the one covering less, then the card slides away from the hero by the remaining overlap plus 2 px, inside the stage (inline top or bottom, reset on every death)
 gates: death OK alone (29 ok, every row at 320x568 and 412x915); lint, icons, astra pass; the fast sim harness OK alone; sw CACHE and BUILD unchanged, so the next step stamps it and writes the line
+
+## sb-m2-23 (8 Nov 2026 17:10 UTC, Fable): the pad above the Polaroid, the input gate taught the down pull; STAMPED (sb-m2-23, shutterbug-v45, sw.js?v=45), supersedes the unrun sb-m2-22 stamp
+cause (real, found by the input gate once the harness ran again): #polaroid sits centred in the strip at z 1 and the pad had no z, so a thumb landing mid strip (where stickAt lands) had the pad's top right arc drawn UNDER the photo (c9c7c0 paper where the ring's 4a4a52 belongs); polaroidFit only hides the photo where it touches the idle hint, never the pad
+fix: #stick .pad z-index 2 (the control under the thumb above the minimap; the ring's clear centre still shows the photo through it)
+test (stale, not the game): the input gate predates the 4 Nov down pull (IN.D 1024, on at 28 px): 30 px down now reads D alone, and sliding over B pulls down as well as right; the test's IN gained D, the down case expects D, the slide case masks D (steer) and still proves R and never B
+gates alone: input OK (198 ok), death OK, lint OK; line: `! bash /home/codespace/sb-drafts/sb-m2-23/deploy-sb-m2-23.sh` (the sb-m2-22 line is retired, its stamp was never run)

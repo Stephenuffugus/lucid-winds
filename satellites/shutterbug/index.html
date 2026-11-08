@@ -600,7 +600,8 @@ body.playing #reserve, body:has(#death.on) #reserve { display: none; }
    right), drawn at her 116 and 52 CSS px with nearest neighbour: a ring with a clear centre, the pad's inner ring Glare
    while it steers, the knob's own chevron the way it reads; no up or down marks */
 #stick .pad { position: absolute; left: 0; top: 0; width: 116px; height: 116px; margin: -58px 0 0 -58px; display: none;
-  background: var(--stick-pad-idle) 0 0 / 116px 116px no-repeat; image-rendering: pixelated; pointer-events: none; }
+  background: var(--stick-pad-idle) 0 0 / 116px 116px no-repeat; image-rendering: pixelated; pointer-events: none;
+  z-index: 2; /* sb-m2-23: above the Polaroid (z 1, centred in the strip): a thumb landing mid strip had the pad's ring hidden under the photo */ }
 #stick .pad.l, #stick .pad.r, #stick .pad.d { background-image: var(--stick-pad-active); }
 #stick.on .pad { display: block; }
 body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad, body:has(#swap.on) #stick .pad { display: none; }   /* nothing drawn under the cards (STICKR; the swap card since W2R) */
@@ -1087,7 +1088,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-22';
+  SB.BUILD = 'sb-m2-23';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -12789,7 +12790,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=44').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=45').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.

@@ -43,7 +43,8 @@ const SHOTS = process.env.SB_SHOTS || '';
 const R = reporter('INPUT');
 const srv = await serve();
 const browser = await launch();
-const IN = { L: 1, R: 2, A: 4, B: 8, A_TAP: 16, B_TAP: 32 };
+const IN = { L: 1, R: 2, A: 4, B: 8, A_TAP: 16, B_TAP: 32, D: 1024 };   /* D: the stick pulled down (4 Nov), 28 px on, 16 off */
+const steer = w => w & ~IN.D;   /* the sideways reading with the down pull masked */
 const f0 = v => v.toFixed(0);
 
 async function room(w, h, { query = '', mirror = false } = {}) {
@@ -284,13 +285,13 @@ try {
     if (SHOTS) await page.screenshot({ path: join(SHOTS, 'stick-' + tg + '-full-left.png') });
     await f.end(); await rest();
 
-    /* up and down read nothing */
+    /* up reads nothing; down past 28 px is the down pull (D, 4 Nov: with A on a one way it drops through) and nothing else */
     f = await landStick(page, c.x, c.y);
     await f.slide(0, -60);
     const wUp = await word(), gUp = await look(page);
     await f.slide(0, 30);
     const wDown = await word();
-    R.say(wUp === 0 && wDown === 0, tg + ': a 60 px push straight up is word 0, and 30 px down too (words ' + wUp + ', ' + wDown + ')');
+    R.say(wUp === 0 && wDown === IN.D, tg + ': a 60 px push straight up is word 0, and 30 px down is the down pull alone (words ' + wUp + ', ' + wDown + ')');
     R.say(gUp.padShown && Math.abs(gUp.knob.cy - gUp.pad.cy) < 1 && Math.abs(gUp.knob.cx - gUp.pad.cx) < 1, tg + ': pushed up, the knob stays in the pad\'s row and centre (knob ' + f0(gUp.knob.cx - gUp.pad.cx) + ',' + f0(gUp.knob.cy - gUp.pad.cy) + ' from the pad\'s centre)');
     await f.end(); await rest();
 
@@ -306,7 +307,7 @@ try {
     const wFar = await word();
     await f.end();
     const wOff = await word();
-    R.say(wIn === IN.R && wB === IN.R && wRoom === IN.R && wFar === IN.R, tg + ': slid over B and up over the room it still steers right, and B stays 0 (words ' + [wIn, wB, wRoom, wFar].join(', ') + ')');
+    R.say(steer(wIn) === IN.R && steer(wB) === IN.R && steer(wRoom) === IN.R && steer(wFar) === IN.R, tg + ': slid over B and up over the room it still steers right, and B stays 0 (the down pull may ride along over B; words ' + [wIn, wB, wRoom, wFar].join(', ') + ')');
     R.say(wOff === 0, tg + ': lifted over the room it is nothing (word ' + wOff + ')');
     await rest();
 
