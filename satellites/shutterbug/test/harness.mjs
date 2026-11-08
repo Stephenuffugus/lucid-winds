@@ -114,6 +114,11 @@ export async function ready(page, opts = {}) {
   await page.waitForFunction(() => window.SB_DEV && typeof window.SB_DEV.screen === 'function', { timeout: 30000 });
   /* the develop reveal (T0.14) has its own gate; every other gate goes from the sample tap straight to play */
   if (!opts.reveal) await page.evaluate(() => window.SB_DEV.revealSkip && window.SB_DEV.revealSkip(true));
+  /* the bug's story (sb-m1-18) takes the title's place on the first load after a clear, and the save lives in the one
+     browser's localStorage, so every page a gate opens after its first clear boots into the story: fourteen gates died
+     at "no visible element for #sample" (8 Nov). Real taps through its cards until the title is up, unless a gate asks
+     to see the story itself (opts.story). */
+  if (!opts.story) await pastStory(page);
 }
 
 export function reporter(name) {
@@ -151,7 +156,13 @@ export async function pastStory(page) {
 }
 
 export async function tap(page, sel) {
-  const c = await centre(page, sel);
+  let c = await centre(page, sel);
+  /* the title scrolls once a save has clears (1055 px of it, the Darkroom and the album on it; a 568 px phone shows
+     half): a thumb scrolls a control under the fold into view before it taps, so the harness does the same (8 Nov) */
+  if (c && !c.inView) {
+    await page.evaluate((sel) => { document.querySelector(sel).scrollIntoView({ block: 'center', inline: 'nearest' }); }, sel);
+    c = await centre(page, sel);
+  }
   if (!c) throw new Error('no visible element for ' + sel);
   if (!c.onTop) throw new Error('a thumb at the centre of ' + sel + ' lands on ' + c.topName);
   await page.touchscreen.tap(c.x, c.y);

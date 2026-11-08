@@ -101,7 +101,8 @@ Each is built at its default if you say nothing; say the word and the plan chang
 
 - [ ] Shutterbug Play listing: real captures in Astra's six frames, the Play build, the Console upload, assetlinks (Opus, then you)  
 - [ ] Flatulence Fighter and Sunforge listings if they are a go (Opus, then you)  
-- [ ] Shutterbug: fans that matter; fix the browser checks: fourteen gates die at a missing #sample element (test/harness.mjs tap; the game itself runs clean), found 8 Nov (Opus)  
+- [x] Shutterbug: the browser checks reach their assertions again (the harness taps past the bug's story and scrolls a control under the fold into view; boot, play, pwa, save green alone, 8 Nov 15:35) (Fable)  
+- [ ] Shutterbug: fans that matter; two gates now fail for real: death (at 320x568 the death card covers the bug on row 11, the card grew with the tripod button) and input (8: the stick fixture and the stick words predate the round 10 verbs), see satellites/shutterbug/PROGRESS.md (Opus)  
 - [ ] Keepsies: the four screens Astra drew in round 2 (level up, chores, clay pool, the case); the shot tool's end game loop; the 240 design bank; the grails through Meshy (Opus, you)  
 - [ ] Tomato Man: the squirt, if you still want it (you)  
 - [ ] Dewball: the store pack back, the store kit with real captures, the v37 stamp and its line, the Console listing, the Meshy build out (Astra, Opus, you)  
