@@ -11800,8 +11800,20 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var hd = SB.render.drawn.hero, cv = document.getElementById('view'), dc = document.getElementById('death');
     dc.classList.remove('low'); dc.classList.add('on');
     if (hd && hd.key !== null) {
-      var vr = cv.getBoundingClientRect(), k = vr.height / cv.height, top = vr.top + hd.y * k, cr = dc.getBoundingClientRect();
-      if (top < cr.bottom && top + hd.h * k > cr.top) dc.classList.add('low');
+      /* both docks measured, the one that clears the fallen hero wins, else the one that covers less of him (8 Nov: at
+         320x568 the card with the tripod button covered a bug on the middle rows and the low dock was never measured) */
+      var vr = cv.getBoundingClientRect(), k = vr.height / cv.height, top = vr.top + hd.y * k, bot = top + hd.h * k;
+      var over = function () { var cr = dc.getBoundingClientRect(); return Math.max(0, Math.min(bot, cr.bottom) - Math.max(top, cr.top)); };
+      dc.style.top = ''; dc.style.bottom = '';
+      var hi = over();
+      if (hi > 0) { dc.classList.add('low'); if (over() >= hi) dc.classList.remove('low'); }
+      /* a sliver left (the 320x568 gate: one pixel): the card slides away from the hero by that much, inside the stage */
+      var left = over();
+      if (left > 0) {
+        var cr2 = dc.getBoundingClientRect(), pad = left + 2;
+        if (dc.classList.contains('low')) { if (cr2.bottom + pad <= vr.bottom) dc.style.bottom = (vr.bottom - cr2.bottom + pad) + 'px'; }
+        else if (cr2.top - pad >= vr.top) dc.style.top = (cr2.top - pad - vr.top) + 'px';
+      }
     }
     ui.screen = 'dead'; document.body.classList.remove('playing'); };
   ui.hideDeath = function () { document.getElementById('death').classList.remove('on'); };
