@@ -35,8 +35,10 @@
    Latin woff2 by tools/sunforge-tests/astra_in.py, served from here so the game stays offline. */
 @font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:900;font-display:swap;src:url(assets/fonts/barlow-condensed-black.woff2?v=20261107a) format('woff2')}
 @font-face{font-family:'Space Grotesk';font-style:normal;font-weight:300 700;font-display:swap;src:url(assets/fonts/space-grotesk.woff2?v=20261107a) format('woff2')}
-:root{ --bg:#0e1018; --panel:#171a26; --line:#2a2e40; --ink:#eef0f6; --muted:#8d90a8;
-  --gold:#ffd76a; --teal:#4ac8b4; --rose:#e07a9a; }
+/* Sunbreaker tokens (v3, one system for every screen): void, sky, graphite, rim, cream, secondary, acid, coral. The old
+   names stay as aliases of these so nothing that still reads them drifts back to the old navy and gold. */
+:root{ --void:#080d15; --sky:#182431; --graphite:#263442; --rim:rgba(130,151,165,.55); --cream:#fff5cb; --ink2:#c8d5e8; --acid:#dfff4f; --coral:#f15370;
+  --bg:#080d15; --panel:#182431; --line:rgba(130,151,165,.55); --ink:#fff5cb; --muted:#8297a5; --gold:#dfff4f; --teal:#dfff4f; --rose:#f15370; }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0}
 html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:none;
   font-family:"Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--ink); user-select:none; -webkit-user-select:none}
@@ -44,42 +46,34 @@ html,body{height:100%; background:#000; overflow:hidden; overscroll-behavior:non
   background:#080d15}
 #stage{position:relative; flex:none; width:540px; height:960px; transform-origin:center center; background:var(--bg); overflow:hidden; box-shadow:0 0 60px #000a}
 canvas#game{position:absolute; inset:0; width:540px; height:960px; display:block; touch-action:none}
-.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20; background:linear-gradient(180deg,#131624 0%, #0c0e16 100%)}
+.screen{position:absolute; inset:0; display:none; flex-direction:column; z-index:20; background:linear-gradient(180deg,#182431 0%, #080d15 100%)}
 .screen.on{display:flex}
 #s-play{background:transparent; pointer-events:none}
 #s-play .tbtn,#s-play .cbtn,#s-play #slambtn{pointer-events:auto}
 #s-play .hf{pointer-events:none}
 .pad{padding:26px; flex:1; width:100%; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch} /* width:100%: .screen.center otherwise shrinks the pad to content and the result-screen buttons collapse narrow */
 .center{align-items:center; justify-content:center; text-align:center}
-.title-word{font-size:46px; line-height:1.05; font-weight:800; letter-spacing:1px;
-  background:linear-gradient(120deg,#7ee0cc,#ffd76a 55%,#e07a9a); -webkit-background-clip:text; background-clip:text; color:transparent;
-  text-shadow:0 4px 26px rgba(120,220,200,0.15)}
-.title-sub{color:var(--muted); font-size:13px; letter-spacing:4px; margin-top:10px; text-transform:uppercase}
-.ribbon{margin-top:14px; color:var(--ink); font-size:14px; opacity:.85; max-width:400px; line-height:1.55}
 /* ⛔ 72px minimums are STAGE px: the 540x960 stage scales ~0.72 on phones, so
    72 CSS renders ~52 real px. Do NOT "simplify" back to 48 — it renders ~35. */
 .btn{display:flex; align-items:center; justify-content:center; gap:10px; min-height:72px; width:100%;
-  border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,#1d2130,#14161f); color:var(--ink);
+  border:1px solid var(--rim); border-radius:12px; background:linear-gradient(180deg,#263442,#182431); color:var(--cream);
   font-size:23px; font-weight:700; letter-spacing:.4px; cursor:pointer; transition:transform .06s ease, filter .12s ease}
 .btn:active{transform:translateY(2px) scale(.99); filter:brightness(1.15)}
-.btn.primary{background:linear-gradient(180deg,#ffd76a,#d8a437); color:#241a04; border-color:#ffe49a; box-shadow:0 4px 0 #8a6a1e, 0 8px 20px #0006}
+.btn.primary{background:var(--acid); color:var(--void); border-color:#efff9a; box-shadow:0 4px 0 #6d7d1f, 0 8px 20px #0006}
 .btn.sm{min-height:72px; font-size:22px}
-.btn.ghost{background:#12141c; color:var(--muted)}
+.btn.ghost{background:#0f1620; color:var(--ink2)}
 .row{display:flex; gap:12px; width:100%}
 .row>.btn{flex:1}
 .stack{display:flex; flex-direction:column; gap:12px; width:100%; max-width:420px; margin:0 auto}
-h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
-.helprow{display:flex; gap:12px; align-items:flex-start; margin:10px 0; font-size:14px; line-height:1.5}
-.helprow .hi{font-size:16px; font-weight:800; width:32px; height:32px; line-height:30px; text-align:center; flex:none; color:var(--gold); background:#10151f; border:1px solid var(--teal); border-radius:50%}
-.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:18px 16px; border:1px solid var(--line); border-radius:14px; background:#12141c}
-.toggle{width:64px; height:36px; border-radius:20px; background:#22263a; position:relative; cursor:pointer; border:1px solid var(--line)}
+.settingline{display:flex; align-items:center; justify-content:space-between; width:100%; max-width:420px; margin:0 auto 12px; padding:18px 16px; border:1px solid var(--rim); border-radius:12px; background:rgba(24,36,49,.9)}
+.toggle{width:64px; height:36px; border-radius:20px; background:#0f1620; position:relative; cursor:pointer; border:1px solid var(--rim)}
 .toggle::after{content:""; position:absolute; top:-18px; bottom:-18px; left:-10px; right:-10px}
-.toggle.on{background:#3a6f5f}
-.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:var(--ink); transition:left .15s}
-.toggle.on b{left:31px; background:#dffff0}
+.toggle.on{background:#3b4a1f; border-color:#dfff4f}
+.toggle b{position:absolute; top:3px; left:3px; width:28px; height:28px; border-radius:50%; background:#c8d5e8; transition:left .15s}
+.toggle.on b{left:31px; background:#dfff4f}
 .foot{margin-top:auto; padding-top:16px; text-align:center; color:var(--muted); font-size:11px}
 .tbtn{position:absolute; top:calc(env(safe-area-inset-top,0px) + 10px); width:72px; height:72px; border-radius:12px;
-  border:1px solid var(--line); background:rgba(14,16,24,0.75); color:var(--ink); font-size:20px; cursor:pointer;
+  border:1px solid var(--rim); background:rgba(24,36,49,0.85); color:var(--cream); font-size:20px; cursor:pointer;
   display:flex; align-items:center; justify-content:center; z-index:30}
 #b-home{left:10px}
 /* the way home, on the TITLE screen only. The portal opens this card as a top
@@ -92,22 +86,19 @@ h2.sc-h{font-size:24px; color:var(--gold); font-weight:800; margin-bottom:4px}
   background:rgba(8,13,21,0.86); color:#c8d5e8; font-size:18px; font-weight:700;
   letter-spacing:.5px; display:flex; align-items:center; gap:7px; cursor:pointer}
 .swsback:active{filter:brightness(1.35)}
-.cbtn{position:absolute; width:118px; height:96px; border-radius:18px; border:1px solid var(--line);
-  background:linear-gradient(180deg,rgba(30,34,48,.92),rgba(18,20,30,.92)); color:var(--ink); font-size:34px; cursor:pointer;
+.cbtn{position:absolute; width:118px; height:96px; border-radius:18px; border:1px solid var(--rim);
+  background:linear-gradient(180deg,rgba(38,52,66,.92),rgba(24,36,49,.92)); color:var(--cream); font-size:34px; cursor:pointer;
   display:flex; align-items:center; justify-content:center; z-index:30}
 .cbtn:active{filter:brightness(1.3)}
 #slambtn{position:absolute; left:50%; transform:translateX(-50%); bottom:calc(126px + env(safe-area-inset-bottom,0px)); width:250px; height:72px; border-radius:18px;
-  border:1px solid #ffe49a; background:linear-gradient(180deg,#ffd76a,#d8a437); color:#241a04; font-size:20px; font-weight:800; letter-spacing:2px;
-  cursor:pointer; z-index:30; box-shadow:0 4px 0 #8a6a1e, 0 8px 20px #0006}
+  border:1px solid #efff9a; background:#dfff4f; color:#080d15; font-size:20px; font-weight:800; letter-spacing:2px;
+  cursor:pointer; z-index:30; box-shadow:0 4px 0 #6d7d1f, 0 8px 20px #0006}
 #slambtn:active{transform:translateX(-50%) translateY(3px)}
 #b-hold{width:72px; height:72px; font-size:24px}
-.go-score{font-size:58px; font-weight:800; color:var(--gold); line-height:1; font-variant-numeric:tabular-nums}
-.go-lab{font-size:13px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-top:4px}
-.pill{display:inline-block; padding:5px 14px; border-radius:20px; background:#1b1e2c; border:1px solid var(--line); color:var(--gold); font-weight:800; font-size:13px; margin-top:8px}
 button{touch-action:manipulation; font-family:inherit}
 .ic{width:1em; height:1em; flex:none; display:inline-block; vertical-align:-0.14em}
 /* ---- Sunbreaker shell (step 2): void, graphite and acid; the title is Astra's plate with the live menu in its band ---- */
-#s-title{background:var(--a-first_frame, linear-gradient(180deg,#131624 0%, #080d15 100%)) center top/540px 960px no-repeat, #080d15}
+#s-title{background:var(--a-first_frame, linear-gradient(180deg,#182431 0%, #080d15 100%)) center top/540px 960px no-repeat, #080d15}
 #t-word{position:absolute; left:0; right:0; top:84px; text-align:center; font:900 92px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#fff5cb; letter-spacing:1px; font-style:italic}
 #stage.has-first_frame #t-word{display:none}
 #t-tag{position:absolute; left:104px; top:718px; height:32px; padding:0 12px; background:#080e15; color:#fff5cb;
@@ -127,9 +118,6 @@ button{touch-action:manipulation; font-family:inherit}
 .t-row .btn{position:absolute; top:0; width:168px; min-height:72px; height:72px; font-size:21px}
 #b-how{left:9px} #b-music{left:186px} #b-set{left:363px}
 .btn .ic{font-size:26px}
-.btn{background:linear-gradient(180deg,#263442,#182431); border:1px solid rgba(130,151,165,.55); border-radius:12px; color:#fff5cb}
-.btn.primary{background:#dfff4f; color:#080d15; border-color:#efff9a; box-shadow:0 4px 0 #6d7d1f, 0 8px 20px #0006}
-.btn.ghost{background:#0f1620; color:#c8d5e8}
 h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#dfff4f; letter-spacing:.5px; margin:8px 0 14px; text-transform:uppercase}
 .howrow{display:flex; gap:16px; align-items:center; margin:0 0 14px}
 .howimg{flex:none; width:236px; height:131px; border-radius:10px; border:1px solid rgba(130,151,165,.4); background:#080e15 center/cover no-repeat}
@@ -139,7 +127,11 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
 .settingline span{display:flex; align-items:center; gap:12px}
 .settingline .ic{font-size:26px; color:#dfff4f}
 .foot{font-size:16px; color:#8297a5}
-#s-how,#s-set,#s-go{background:linear-gradient(180deg,#182431 0%, #080d15 100%)}
+#s-how,#s-set,#s-go,#s-skins{background:linear-gradient(180deg,#182431 0%, #080d15 100%)}
+/* the menus share the board's material (v3): Astra's play plate dimmed under the void gradient, so the title, the board
+   and every menu are one machine; the gradient stays dark enough for the lines to read */
+#stage.has-play_plate #s-how, #stage.has-play_plate #s-set, #stage.has-play_plate #s-go, #stage.has-play_plate #s-skins{
+  background:linear-gradient(180deg,rgba(24,36,49,.84) 0%, rgba(8,13,21,.94) 100%), var(--a-play_plate) center/540px 960px no-repeat, #080d15}
 /* ---- the play HUD (step 4): Astra's frames as nine slices (her insets 18 18 18 34 at 2x, so 9 9 9 17 here; the lower
    strip holds the acid cuts and is never stretched), her 96 px control skins at 100 stage px, SLAM 328x94 (250x72 CSS px
    on a 412 wide phone). Until a skin loads the drawn look stays and the svg icon shows. ---- */
@@ -201,7 +193,7 @@ h2.sc-h{font:900 40px/1 'Barlow Condensed','Space Grotesk',sans-serif; color:#df
 #go-line #go-sun{color:#dfff4f}
 .go-btns{position:absolute; left:50px; right:50px; top:726px; display:flex; flex-direction:column; gap:12px}
 #go-hint{position:absolute; left:40px; right:40px; top:900px; display:none; font:500 18px/1.35 'Space Grotesk',sans-serif; color:#c8d5e8; text-align:center}
-#b-music.playing{border-color:#ffd76a; box-shadow:0 0 0 2px rgba(255,215,106,.3),0 0 16px rgba(255,215,106,.4)}
+#b-music.playing{border-color:#dfff4f; box-shadow:0 0 0 2px rgba(223,255,79,.3),0 0 16px rgba(223,255,79,.4)}
 /* ---- skins (v3): the title pill top right (the arcade pill's twin), the chips, the tiles, the unlock toast ---- */
 .swsback{min-height:64px}
 #b-skins{left:auto; right:10px; padding:0 16px 0 12px}
@@ -1254,8 +1246,8 @@ function render(){
   if(minLockY<=3){
     var wA=(0.22+0.14*Math.sin(G.t*6))*(1-minLockY/4);
     var wg=ctx.createLinearGradient(0,PANEL.y-4,0,PANEL.y+72);
-    wg.addColorStop(0,'rgba(255,93,108,'+wA.toFixed(3)+')');
-    wg.addColorStop(1,'rgba(255,93,108,0)');
+    wg.addColorStop(0,'rgba(241,83,112,'+wA.toFixed(3)+')');
+    wg.addColorStop(1,'rgba(241,83,112,0)');
     ctx.fillStyle=wg; ctx.fillRect(PANEL.x,PANEL.y,PANEL.w,76);
   }
   // core — the golden SUN everything rings around
@@ -1293,7 +1285,7 @@ function render(){
     var gimg=skinGhost(!gd.stick);
     for(i=0;i<4;i++){ if(gc[i][1]<0)continue; var gp=cellPx(gc[i][0],gc[i][1]);
       if(gimg){ ctx.globalAlpha=0.75; ctx.drawImage(gimg,gp.x-0.5,gp.y-0.5,VPITCH,VPITCH); ctx.globalAlpha=1; continue; }
-      ctx.strokeStyle=gd.stick?'rgba(238,240,246,0.3)':'rgba(255,93,108,0.55)';
+      ctx.strokeStyle=gd.stick?'rgba(255,245,203,0.35)':'rgba(241,83,112,0.6)';
       ctx.lineWidth=1.5; rr(gp.x+1,gp.y+1,VCELL-2,VCELL-2,5); ctx.stroke(); }
   }
   // the almost ring's notch, after the ghost so the gap always shows acid (step 7 shot)
@@ -1353,8 +1345,9 @@ function render(){
   ctx.restore();
   // floats
   for(i=0;i<G.floats.length;i++){ var f=G.floats[i]; ctx.globalAlpha=Math.max(0,Math.min(1,f.life));
-    ctx.fillStyle=f.big?'#ffd76a':'#eef0f6'; ctx.font=f.big?('900 34px '+DSF):('700 22px '+UIF);
-    ctx.fillText(f.txt, f.x, f.y); }
+    ctx.font=f.big?('900 34px '+DSF):('700 22px '+UIF);
+    ctx.lineWidth=f.big?5:3; ctx.strokeStyle='rgba(8,13,21,0.85)'; ctx.strokeText(f.txt, f.x, f.y);   // a dark edge: the words sit over bright skins too
+    ctx.fillStyle=f.big?'#fff5cb':'#c8d5e8'; ctx.fillText(f.txt, f.x, f.y); }
   ctx.globalAlpha=1;
   ctx.restore();
 }
