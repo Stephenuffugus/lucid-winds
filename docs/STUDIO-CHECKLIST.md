@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 8 Nov 2026, 17:42 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 8 Nov 2026, 17:45 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 1. The art, in this order (you, then Astra)
 
@@ -116,7 +116,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Pixel Petri: Fable plans the first milestone (THE LIVING YEAR by default) in the tiny-world repo once Astra's round 1 is back; the commercial after it (Fable, Opus, you)  
 - [ ] Music Studio: your musician friend's feedback, the grid cells, the name, the sound library drawer, sample storage, the store shots (you)  
 - [ ] Loaf: your pair sheet verdict and the corpus photos, which start milestone B (you)
-- [ ] DUCTUS on the arcade's apps page after the hub line: `node scripts/make-apps-page.mjs` in lucid-winds and a line for portal/apps.html (Fable)  
+- [ ] DUCTUS on the arcade's apps page: regenerated from the live hub catalogue (37 apps, a new Want to make something by hand? section) with its art copy, waits for your line `! bash /home/codespace/ductus-drafts/deploy-apps-page.sh` (Fable)  
 
 ### Done before 7 Nov
 
