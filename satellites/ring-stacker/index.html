@@ -499,7 +499,10 @@ var SKINS=[
   { key:'obsidian', name:'Obsidian', rule:null, cols:RING_COL },
   { key:'bright', name:'Bright', rule:{kind:'ever',n:1,text:'Break your first ring.'},
     cols:['#fff5cb','#ffd60a','#ff8a1f','#ff3b4e','#ff3fc3','#c04cff','#7d5cff','#4a6dff','#1fa3ff','#14d8d8','#1dd67a','#7be02c','#d5ef2b'],
-    cell:paintBright, fall:fallBright, rest:restBright, ghost:'#ffffff' }
+    cell:paintBright, fall:fallBright, rest:restBright, ghost:'#ffffff' },
+  { key:'clay', name:'Clay', rule:{kind:'run',n:5,text:'Break 5 rings in one run.'},
+    cols:['#fff5cb','#c9972b','#b5452f','#8a9a6b','#e8dcc0','#b5651d','#5e6b73','#d9b98a','#6b3a5b','#5e7a3a','#a0522d','#ede5d0','#6e4a2e'],
+    cell:paintClay, fall:fallClay, rest:restClay, ghost:'#e8dcc0' }
 ];
 var SKS={ cur:'obsidian', un:{} };
 (function(){ try{ var k=JSON.parse(LS.g('rs_skins')||'{}'); if(typeof k.cur==='string')SKS.cur=k.cur; if(k.un&&typeof k.un==='object')SKS.un=k.un; }catch(e){} })();
@@ -546,6 +549,52 @@ function paintBright(g,d,m,sk){
   rimSides(g,m,dark(col,0.48),3);
   g.fillStyle='rgba(255,255,255,0.55)'; if(m&1)g.fillRect(3,3,58,1.5); if(m&8)g.fillRect(3,3,1.5,58);
 }
+/* CLAY: twelve earth glazes alternating warm and cool, light and dark from the sun out (ochre, brick, sage, cream,
+   rust, slate, sand, plum, moss, sienna, bone, umber), matte: a soft bevel (light top left, shade bottom right, no
+   gloss), a deterministic speckle whose density changes by ring, a thumbprint dent or two, and a stamped or scored
+   pattern per ring. The rim is the clay's own darker edge on exposed sides only. */
+function paintClay(g,d,m,sk){
+  var col=sk.cols[d]||sk.cols[RMAX], r=mulberry32(97+d*31), pat=(d-1)%12, i,n,x,y,q;
+  g.fillStyle=col; g.fillRect(0,0,64,64);
+  // the glaze is never flat: two soft blotches of its own tone
+  for(i=0;i<3;i++){ var bx=r()*64, by=r()*64, bg=g.createRadialGradient(bx,by,2,bx,by,26+r()*14);
+    bg.addColorStop(0,i&1?'rgba(255,255,255,0.12)':'rgba(0,0,0,0.12)'); bg.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=bg; g.fillRect(0,0,64,64); }
+  // speckle: a different density per ring, dark grains and a few light ones
+  n=10+((d*7)%5)*9;
+  for(i=0;i<n;i++){ x=r()*64; y=r()*64; q=r(); g.fillStyle=q<0.75?'rgba(40,24,12,'+(0.22+q*0.3).toFixed(2)+')':'rgba(255,245,225,0.35)'; g.beginPath(); g.arc(x,y,0.8+r()*1.4,0,6.2832); g.fill(); }
+  // a thumbprint dent or two: a soft hollow with a light rim on its lower edge
+  for(i=0;i<1+(d%2);i++){ var tx=12+r()*40, ty=12+r()*40, ta=r()*Math.PI; g.save(); g.translate(tx,ty); g.rotate(ta);
+    var tg=g.createRadialGradient(0,0,1,0,0,11); tg.addColorStop(0,'rgba(0,0,0,0.2)'); tg.addColorStop(0.8,'rgba(0,0,0,0.05)'); tg.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=tg; g.beginPath(); g.ellipse(0,0,11,8,0,0,6.2832); g.fill();
+    g.strokeStyle='rgba(255,255,255,0.18)'; g.lineWidth=1.5; g.beginPath(); g.ellipse(0,1,10,7,0,0.3,2.8); g.stroke(); g.restore(); }
+  // the stamp or score per ring: a groove is a dark line with a light line under it
+  function score(x1,y1,x2,y2,w){ g.lineCap='round'; g.lineWidth=w; g.strokeStyle='rgba(0,0,0,0.3)'; g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
+    g.strokeStyle='rgba(255,255,255,0.22)'; g.beginPath(); g.moveTo(x1,y1+w*0.7); g.lineTo(x2,y2+w*0.7); g.stroke(); }
+  function stamp(fn){ g.lineWidth=3.5; g.lineCap='round'; g.strokeStyle='rgba(0,0,0,0.3)'; g.beginPath(); fn(); g.stroke();
+    g.save(); g.translate(0,2); g.strokeStyle='rgba(255,255,255,0.2)'; g.beginPath(); fn(); g.stroke(); g.restore(); }
+  if(pat===1){ score(0,34,64,34,4); }
+  else if(pat===2){ stamp(function(){ g.arc(32,32,13,0,6.2832); }); }
+  else if(pat===3){ for(i=0;i<3;i++){ x=(i+0.5)*64/3; g.fillStyle='rgba(0,0,0,0.28)'; g.beginPath(); g.arc(x,32,4,0,6.2832); g.fill(); g.fillStyle='rgba(255,255,255,0.2)'; g.beginPath(); g.arc(x,34.5,4,0.2,2.9); g.fill(); } }
+  else if(pat===4){ score(-4,68,68,-4,4); }
+  else if(pat===5){ score(32,6,32,58,3.5); score(6,32,58,32,3.5); }
+  else if(pat===6){ stamp(function(){ g.rect(18,18,28,28); }); }
+  else if(pat===7){ score(0,22,64,22,3.5); score(0,44,64,44,3.5); }
+  else if(pat===8){ stamp(function(){ g.moveTo(10,42); g.lineTo(32,18); g.lineTo(54,42); }); }
+  else if(pat===9){ stamp(function(){ g.moveTo(0,36); for(i=0;i<=64;i+=4)g.lineTo(i,32+Math.sin(i/64*6.2832*2)*6); }); }
+  else if(pat===10){ stamp(function(){ g.arc(32,32,16,0,6.2832); g.moveTo(38,32); g.arc(32,32,6,0,6.2832); }); }
+  else if(pat===11){ score(21,0,21,64,3); score(43,0,43,64,3); score(0,21,64,21,3); score(0,43,64,43,3); }
+  // the matte bevel: light from the top left, shade to the bottom right, soft
+  var bv=g.createLinearGradient(0,0,64,64); bv.addColorStop(0,'rgba(255,255,255,0.2)'); bv.addColorStop(0.5,'rgba(255,255,255,0)'); bv.addColorStop(0.55,'rgba(0,0,0,0)'); bv.addColorStop(1,'rgba(0,0,0,0.24)');
+  g.fillStyle=bv; g.fillRect(0,0,64,64);
+  rimSides(g,m,dark(col,0.42),3);
+  g.fillStyle='rgba(255,255,255,0.28)'; if(m&1)g.fillRect(3,3,58,2); if(m&8)g.fillRect(3,3,2,58);
+  g.fillStyle='rgba(0,0,0,0.18)'; if(m&4)g.fillRect(3,59,58,2); if(m&2)g.fillRect(59,3,2,58);
+}
+function fallClay(g){ var r=mulberry32(5),i; g.fillStyle='#8c7f72'; g.fillRect(0,0,64,64);
+  for(i=0;i<40;i++){ g.fillStyle=r()<0.7?'rgba(40,30,20,0.3)':'rgba(255,245,225,0.3)'; g.beginPath(); g.arc(r()*64,r()*64,0.8+r()*1.4,0,6.2832); g.fill(); }
+  var bv=g.createLinearGradient(0,0,64,64); bv.addColorStop(0,'rgba(255,255,255,0.22)'); bv.addColorStop(0.5,'rgba(255,255,255,0)'); bv.addColorStop(1,'rgba(0,0,0,0.26)'); g.fillStyle=bv; g.fillRect(0,0,64,64);
+  rimSides(g,15,'#4a403a',3); g.fillStyle='rgba(255,255,255,0.3)'; g.fillRect(3,3,58,2); g.fillRect(3,3,2,58); }
+function restClay(g){ g.fillStyle='rgba(201,106,58,0.78)'; g.fillRect(0,0,64,64); var k=g.createRadialGradient(32,32,4,32,32,40); k.addColorStop(0,'rgba(255,150,60,0.5)'); k.addColorStop(1,'rgba(255,150,60,0)'); g.fillStyle=k; g.fillRect(0,0,64,64); rimSides(g,15,'#7a2e12',3); }
 function fallBright(g){ g.fillStyle='#f4f6fa'; g.fillRect(0,0,64,64); gloss(g,0.6,0.16); rimSides(g,15,'#263442',3); g.fillStyle='rgba(255,255,255,0.7)'; g.fillRect(3,3,58,1.5); g.fillRect(3,3,1.5,58); }
 function restBright(g){ g.fillStyle='rgba(223,255,79,0.55)'; g.fillRect(0,0,64,64); rimSides(g,15,'#dfff4f',3); }
 /* the skin's falling cell, resting overlay and ghost; OBSIDIAN uses Astra's images and the code fallback as before */
