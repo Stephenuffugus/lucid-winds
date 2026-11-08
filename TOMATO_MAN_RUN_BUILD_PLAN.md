@@ -224,6 +224,18 @@ LINE: `! bash /home/codespace/tm-drafts/deploy-tomato-man-planet.sh` (on top of 
 ## RULINGS 3 (Stephen's Pixel notes, 7 Nov ~23:15 UTC, after the Hero and Planet Tomató lines)
 "The tomato man levels are getting a little better. Going under the awnings is cool but we need more space in between each of the shadows. So have the shadows be split left to right? So you have to dash across the desert more, make it so they might be moving at different times and different intervals. Also the walking animation still looks a little wonky."
 
+## CHAPTER 13 (8 Nov ~06:30 UTC): THE WALK, Astra's round wired, sunstruck c0d7117 (waits for his line)
+- Astra's walk pack (his upload 8 Nov 04:44 UTC; vault astra-tomato-man-walk-nov08; docs/briefs/tomato-man/the-walk/astra/): the four walk
+  cells redrawn as ONE strict cycle in all seventy sheets (left contact, right pass, right contact, left pass; the far leg stays darker and
+  trades the lead; no head bob; cells 0, 5, 6, 7 the downloaded drawings at the same pivots; lossless VP8L, 1024 by 512). Her ASSESSMENT:
+  the limp and the gallop were inconsistent leg identity across the cells.
+- Wired: the 70 sheets over art/hero/ (sha256: 70 changed, the 20 other hero files untouched); WALK_ORDER 1,2,3,4 in every bearing (the
+  south 1,2,4,3 and north 1,3,2,4 compensations gone, as her NOTES ask); the walk cells' hat seats = the idle seat (her anchors.json; cells
+  0, 5, 6, 7 matched the live table); ART_V 20261108a; sw CACHE tomato-man-v15. The west mirror timing kept (her note: alternating contacts
+  either way). check.js TM CHECK OK; gameplay.mjs hero GAMEPLAY OK (0 page errors). No image opened: his Pixel is the look.
+- LINE (one line, at an idle prompt): `! bash /home/codespace/tm-drafts/deploy-tomato-man-walk.sh` (DRY OK on Tomato_Man main 1d461e6c and
+  lucid-winds main bf88b92e3's tomato tree 4753cf4d).
+
 ## CHAPTER 12 LIVE 8 Nov ~00:55 UTC by his line (lucid-winds main b07c49c06, Tomato_Man main 1d461e6c; both hosts serve it)
 
 ## CHAPTER 12 (7 Nov ~23:52 UTC): THE SPLIT and the walk order, sunstruck 1d461e6
