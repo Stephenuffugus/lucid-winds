@@ -12259,7 +12259,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   var ML = { st: null, kind: '', until: -1, jumped: false };
   /* round 11 (sb-m2-19): the crosswind's breath, once at each blow's first frame (the sim has no event bit left; the clock is the frame's) */
   var WC = { st: null, ph: 0 };
-  function windCue(st) { var lv = G.level; if (!lv || !lv.features || !lv.features.wind) return; if (st !== WC.st) { WC.st = st; WC.ph = 0; } var ph = SB.sim.windPhase(lv, st.frame); if (ph === 2 && WC.ph !== 2) au.sfx('dive'); WC.ph = ph; }   /* the dive's whoosh stands in for the inhale until a wind sound is written */
+  function windCue(st) { var lv = G.level; if (!lv || !lv.features || !lv.features.wind) return; if (st !== WC.st) { WC.st = st; WC.ph = 0; } var ph = SB.sim.windPhase(lv, st.frame); if (ph === 2 && WC.ph !== 2) SB.audio.sfx('dive'); WC.ph = ph; }   /* the dive's whoosh stands in for the inhale until a wind sound is written; SB.audio, not the event loop's local au (sb-m2-21 hotfix: a ReferenceError at the first blow) */
   function onOneWay(h, lv, K) {
     var CS = K.CELL_SUB, r = Math.floor((h.y + K.HERO_H_SUB) / CS), c0 = Math.floor(h.x / CS), c1 = Math.floor((h.x + K.HERO_W_SUB - 1) / CS), w = lv.w, c, plat = false;
     if (r < 0 || r + 1 >= lv.h) return false;
