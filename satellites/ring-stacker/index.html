@@ -336,7 +336,7 @@ canvas.skc{width:30px; height:30px; border-radius:4px; flex:none}
 <script>
 (function(){
 "use strict";
-var BUILD="v5.2";
+var BUILD="v5.3";
 function $(id){ return document.getElementById(id); }
 function icon(n){ return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'; }
 var UIF='"Space Grotesk",system-ui,sans-serif', DSF='"Barlow Condensed","Space Grotesk",'+UIF;
@@ -1554,7 +1554,7 @@ if(/[?&]rsdev=1/.test(location.search)){
 /* ---------- add to home screen (Dewball pattern) ---------- */
 (function(){
   var btn=$('b-install'); if(!btn)return;
-  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=11'); }catch(e){} }
+  if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js?v=12'); }catch(e){} }
   function standalone(){ return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||!!window.navigator.standalone; }
   if(standalone()){ btn.style.display='none'; return; }
   var deferred=null;
