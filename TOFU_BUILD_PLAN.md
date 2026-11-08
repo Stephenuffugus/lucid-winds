@@ -13,8 +13,9 @@ hand played). Astra's art pack came the same day.
   64 px face layers with eyes at (24,30) and (40,30), strips without gutters, `eye_block_3f` as three blink poses to mirror, chopsticks
   facing right, chips monochrome #f3efe6, `bowl_ring` the only baked glow, `screenshot_frame` a 1080 by 1920 surround with its window).
   `assets/CHECKLIST.md` lists every file. The zip itself is `/workspaces/tofu-drop/tofu-astra-assets.zip` (sha256 f9617a5a...).
-- THE GAME SOURCE IS NOT HERE. The handoff names `index.html` and `ASTRA_ASSETS.md`; neither came with the drop and neither is on his
-  Drive. Step 0 says what to do either way.
+- THE GAME SOURCE: Stephen dropped it at 08:55 UTC on 8 Nov; it is `/workspaces/tofu-drop/index.html` (his upload index_14.html, the
+  v0.1 of the handoff, `TOFU.recipeCheck` in it). Step 0 takes the short path. `ASTRA_ASSETS.md` is still not here; the pack's README,
+  manifest and checklist stand in for it.
 
 ## THE LANE
 - Home: `satellites/tofu/` in lucid-winds on branch add-sproing-jumper: `index.html` (one file), `assets/` (the pack's PNGs, flat, as the
