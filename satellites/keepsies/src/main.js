@@ -9,45 +9,45 @@
  * DIRECTIONS BEFORE PLAY. The rules card is shown before the first match of the
  * mode, which is a studio standard and not a preference.
  */
-import { detectQuality, forceQuality } from './render/quality.js?v=20261106a';
-import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261106a';
-import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261106a';
-import { lookFit } from './core/framing.js?v=20261106a';
-import { POUCH_MOUTH, POUCH, HEIRLOOM, HORIZON } from './render/plates.js?v=20261106a';
-import { buildRingerGround } from './render/arenaEnv.js?v=20261106a';
-import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261106a';
-import { attachCameraControls } from './input/cameraCtl.js?v=20261106a';
-import { createKnuckle } from './input/knuckle.js?v=20261106a';
-import { createPullback } from './input/pullback.js?v=20261106a';
-import { attachPlacement } from './input/placement.js?v=20261106a';
-import * as AUDIO from './audio/synth.js?v=20261106a';
-import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261106a';
-import { createRinger } from './game/ringer.js?v=20261106a';
-import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261106a';
-import { launchSpeed } from './core/snap.js?v=20261106a';
-import { clamp, len2, DEG, wrapPi } from './core/dmath.js?v=20261106a';
-import * as SAVE from './meta/save.js?v=20261106a';
-import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261106a';
-import { playPotCeremony } from './render/ceremony.js?v=20261106a';
+import { detectQuality, forceQuality } from './render/quality.js?v=20261107a';
+import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261107a';
+import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261107a';
+import { lookFit } from './core/framing.js?v=20261107a';
+import { POUCH_MOUTH, POUCH, HEIRLOOM, HORIZON } from './render/plates.js?v=20261107a';
+import { buildRingerGround } from './render/arenaEnv.js?v=20261107a';
+import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261107a';
+import { attachCameraControls } from './input/cameraCtl.js?v=20261107a';
+import { createKnuckle } from './input/knuckle.js?v=20261107a';
+import { createPullback } from './input/pullback.js?v=20261107a';
+import { attachPlacement } from './input/placement.js?v=20261107a';
+import * as AUDIO from './audio/synth.js?v=20261107a';
+import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261107a';
+import { createRinger } from './game/ringer.js?v=20261107a';
+import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261107a';
+import { launchSpeed } from './core/snap.js?v=20261107a';
+import { clamp, len2, DEG, wrapPi } from './core/dmath.js?v=20261107a';
+import * as SAVE from './meta/save.js?v=20261107a';
+import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261107a';
+import { playPotCeremony } from './render/ceremony.js?v=20261107a';
 import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
-  from './meta/collection.js?v=20261106a';
-import * as MARBLEMESH from './render/marbleMesh.js?v=20261106a';
-import { bodySpec } from './core/marbleBody.js?v=20261106a';
-import { createEconomy } from './meta/economy.js?v=20261106a';
-import { createDrops } from './meta/drops.js?v=20261106a';
-import * as RANSOM from './meta/ransom.js?v=20261106a';
-import * as PROG from './meta/progression.js?v=20261106a';
-import { createOnboarding, dustyLine } from './meta/beats.js?v=20261106a';
+  from './meta/collection.js?v=20261107a';
+import * as MARBLEMESH from './render/marbleMesh.js?v=20261107a';
+import { bodySpec } from './core/marbleBody.js?v=20261107a';
+import { createEconomy } from './meta/economy.js?v=20261107a';
+import { createDrops } from './meta/drops.js?v=20261107a';
+import * as RANSOM from './meta/ransom.js?v=20261107a';
+import * as PROG from './meta/progression.js?v=20261107a';
+import { createOnboarding, dustyLine } from './meta/beats.js?v=20261107a';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
-  from './game/match.js?v=20261106a';
-import { makeRng } from './core/rng.js?v=20261106a';
-import { makeMarbleMaterial } from './render/marbleMesh.js?v=20261106a';
-import { art, loadIcons, ic } from './render/art.js?v=20261106a';
-import { face } from './render/portraits.js?v=20261106a';
-import * as PROV from './meta/provenance.js?v=20261106a';
-import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261106a';
-import { makeStatueMesh, makeMoveMarks, markGhost, disposeStatueMesh } from './render/statues.js?v=20261106a';
-import { SHAPES, SHAPE_ORDER, PER_PLAYER, MOVE_MAX, scaleFor, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261106a';
+  from './game/match.js?v=20261107a';
+import { makeRng } from './core/rng.js?v=20261107a';
+import { makeMarbleMaterial } from './render/marbleMesh.js?v=20261107a';
+import { art, loadIcons, ic } from './render/art.js?v=20261107a';
+import { face } from './render/portraits.js?v=20261107a';
+import * as PROV from './meta/provenance.js?v=20261107a';
+import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261107a';
+import { makeStatueMesh, makeMoveMarks, markGhost, disposeStatueMesh } from './render/statues.js?v=20261107a';
+import { SHAPES, SHAPE_ORDER, PER_PLAYER, MOVE_MAX, scaleFor, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261107a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -89,12 +89,13 @@ const HOUSE_RULES = [
 const RING_WORD = { 5: 'Five foot', 7: 'Seven foot', 10: 'Ten foot', 13: 'Thirteen foot' };
 /* Astra's HUD and tier plates (step 5), as style sheet variables set once at boot through art() */
 const ART_VARS = {
-  '--pip-empty': 'ui/pip_empty.svg', '--pip-lit': 'ui/pip_lit.svg', '--chip': 'ui/player_chip_r2.png',
+  '--pip-empty': 'ui/pip_empty.svg', '--pip-lit': 'ui/pip_lit.svg', '--chip': 'ui/player_chip_r3.png',
   '--level-strip': 'ui/level_up_strip.png', '--pot-cloth': 'ui/pot_cloth_r2.png', '--shadow-dark': 'env/shadow_dark.png', '--contact-lift': 'ui/contact_lift.png',
   '--hr-on': 'ui/house_rule_on.svg', '--hr-off': 'ui/house_rule_off.svg', '--voice': 'ui/voice_bubble.svg',
   '--toast': 'ui/technique_toast.svg', '--result': 'ui/result_card.svg', '--scope': 'ui/minimap_frame.svg',
   '--tray': 'ui/tray.png', '--tile-idle': 'ui/tile_idle.png', '--tile-pressed': 'ui/tile_pressed.png', '--tile-drag': 'ui/tile_dragging.png', '--not-here': 'ui/not_here_chip.png',
   '--ret-a': 'ui/reticle_settling.svg', '--ret-b': 'ui/reticle_settled.svg', '--aim-dash': 'ui/aim_dash.svg', '--aim-cap': 'ui/aim_cap.svg',
+  '--hold-a': 'ui/hold_circle.svg', '--hold-b': 'ui/hold_circle_braced.svg', '--spin-marks': 'ui/spin_marks.svg', '--dial-cue': 'ui/dial_cue.svg',   /* m4, Astra round 3 */
   '--tier-common': 'ui/tier_common_tile.png', '--tier-uncommon': 'ui/tier_uncommon_tile.png', '--tier-rare': 'ui/tier_rare_tile.png',
   '--tier-epic': 'ui/tier_epic_tile.png', '--tier-grail': 'ui/tier_grail_tile.png',
   '--pill-common': 'ui/tier_common_pill.png', '--pill-uncommon': 'ui/tier_uncommon_pill.png', '--pill-rare': 'ui/tier_rare_pill.png',
@@ -120,7 +121,7 @@ async function boot() {
   for (const el of document.querySelectorAll('[data-art]')) el.style.backgroundImage = 'url(' + art(el.dataset.art) + ')';
   // and every plate the style sheet draws (step 5, the HUD and the tiers) is a variable made here
   for (const k in ART_VARS) document.documentElement.style.setProperty(k, 'url(' + art(ART_VARS[k]) + ')');
-  const res = await fetch('src/data/tuning.json?v=20261106a');
+  const res = await fetch('src/data/tuning.json?v=20261107a');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
   G.save = SAVE.load();
@@ -130,10 +131,10 @@ async function boot() {
   AUDIO.configure(G.tuning);
   AUDIO.setEnabled(G.save.settings.sound !== false);
 
-  const cat = await fetch('src/data/marbles.json?v=20261106a');
+  const cat = await fetch('src/data/marbles.json?v=20261107a');
   if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
   G.catalog = await cat.json();
-  const dt = await fetch('src/data/droptables.json?v=20261106a');
+  const dt = await fetch('src/data/droptables.json?v=20261107a');
   if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
   G.dropTables = await dt.json();
 
@@ -1626,8 +1627,44 @@ function hideSpyglass() {
   if (el) el.hidden = true;
 }
 
+/* m4 (Astra round 3): the reticle's geometry. Loose: eight 29 degree arcs every 45 degrees from the top at radius r
+   (her reticle_settling at 71.65); settled: the full ring at 33.15 and her tick, faded in. Keyline under chalk. */
+function reticlePath(r, full) {
+  if (full) return 'M' + (77 + r) + ' 77A' + r + ' ' + r + ' 0 1 1 ' + (77 - r) + ' 77A' + r + ' ' + r + ' 0 1 1 ' + (77 + r) + ' 77';
+  let d = '';
+  for (let k = 0; k < 8; k++) {
+    const a0 = (-90 + 45 * k) * Math.PI / 180, a1 = a0 + 29 * Math.PI / 180;
+    d += 'M' + (77 + r * Math.cos(a0)).toFixed(3) + ' ' + (77 + r * Math.sin(a0)).toFixed(3) + 'A' + r + ' ' + r + ' 0 0 1 ' + (77 + r * Math.cos(a1)).toFixed(3) + ' ' + (77 + r * Math.sin(a1)).toFixed(3);
+  }
+  return d;
+}
+function drawReticle(el, r, settled) {
+  if (!el._svg) {
+    el.innerHTML = '<svg viewBox="0 0 154 154" aria-hidden="true">' +
+      '<path class="rk" fill="none" stroke="#121710" stroke-width="3" stroke-linecap="round" opacity="0.72"/>' +
+      '<path class="rc" fill="none" stroke="#eadfc9" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>' +
+      '<g class="tick" opacity="0"><path d="M72 101l4 4 7-8" fill="none" stroke="#121710" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>' +
+      '<path d="M72 101l4 4 7-8" fill="none" stroke="#c6a34b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g></svg>';
+    el._svg = el.firstChild; el._k = el._svg.querySelector('.rk'); el._c = el._svg.querySelector('.rc'); el._t = el._svg.querySelector('.tick');
+  }
+  const rr = Math.round(r * 100) / 100, key = rr + (settled ? 's' : 'l');
+  if (el._key !== key) {
+    el._key = key;
+    const d = reticlePath(rr, settled);
+    el._k.setAttribute('d', d); el._c.setAttribute('d', d); el._c.setAttribute('opacity', settled ? '1' : '0.8');
+    el._t.setAttribute('opacity', settled ? '1' : '0');
+  }
+}
+/* m4: the dial cue (slide sideways to turn) shows beside the circle for the first three turns of this phone */
+function dialCueTurns() { try { return parseInt(localStorage.getItem('kp_dial_cue') || '0', 10) || 0; } catch (e) { return 0; } }
+function dialCueCount() { try { localStorage.setItem('kp_dial_cue', String(dialCueTurns() + 1)); } catch (e) {} }
+
 function onBrace(st) {
   if (!G.R || (G.screen !== 'match' && G.screen !== 'calib')) return;
+  // m4: her braced circle while the thumb is down; a brace that ends counts a turn for the dial cue
+  const gr = $('grabRing');
+  if (gr) { if (gr.classList.contains('braced') && !st.bracing) dialCueCount(); gr.classList.toggle('braced', !!st.bracing); }
+  const dc = $('dialCue'); if (dc && st.bracing) dc.hidden = true;
   if (st.bracing && G.R.state.phase === 'place') G.R.commitPlace();
   const t = G.R.tawOnScreen(G.rig);
   const ret = $('reticle'), line = $('aimline');
@@ -1643,19 +1680,17 @@ function onBrace(st) {
      up to four times, which drew a big gold hoop around a sixteen pixel marble
      and swallowed the thing you are actually looking at. It is scaled from the
      grab radius now, so at a full brace the ring sits just outside your thumb. */
-  /* m3 step 3: inside the circle, wide at 0.95 of it, settled at 0.45 */
-  const px = t.grabR * clamp(0.45 + (st.coneDeg - G.tuning.snap.coneTightDeg) / (G.tuning.snap.coneWideDeg - G.tuning.snap.coneTightDeg) * 0.5, 0.3, 0.95);
-  // Astra's reticle draws its ring at 27 of 96: the box is sized so the ring stands where the drawn one did
-  const S = px * 2 / 0.5625;
+  /* m3 step 3: inside the circle, wide at 0.95 of it, settled at 0.45. m4 (Astra round 3): her rings drawn inline in a
+     fixed 154 px box centred on the shooter; the ring's radius moves from 71.65 (loose, her eight broken arcs) to
+     33.15 (settled, the full ring and its tick), the chalk 1.5 and the keyline 3 CSS px never scale */
+  const kk = clamp((st.coneDeg - G.tuning.snap.coneTightDeg) / (G.tuning.snap.coneWideDeg - G.tuning.snap.coneTightDeg), 0, 1);
   ret.hidden = false;
+  ret.style.left = (t.x - 77) + 'px';
+  ret.style.top = (t.y - 77) + 'px';
+  drawReticle(ret, 33.15 + kk * (71.65 - 33.15), st.settle01 > 0.98);
   // a brace is the player saying they have read it: the guidance line and any toast go the
   // moment a thumb goes down, and come back when it lifts
   $('toast').hidden = true; $('say').hidden = true;
-  ret.style.left = (t.x - S / 2) + 'px';
-  ret.style.top = (t.y - S / 2) + 'px';
-  ret.style.width = ret.style.height = S + 'px';
-  // settling (her broken ring) until the hold has settled, then settled (the full ring and its tick)
-  ret.classList.toggle('settled', st.settle01 > 0.98);
   // the warming shimmer, while the taw is being rubbed
   if (st.warmed && !G.warming) { G.warming = true; AUDIO.startWarming(); }
   else if (!st.warmed && G.warming) { G.warming = false; AUDIO.stopWarming(); }
@@ -1772,14 +1807,19 @@ function updateCalibTarget() {
   G.ground.target.visible = G.ground.target.material.opacity > 0;
 }
 function updateGrabRing() {
-  const el = $('grabRing');
+  const el = $('grabRing'), dc = $('dialCue');
   const t = mayBrace() ? G.R.tawOnScreen(G.rig) : null;
-  if (!t) { el.hidden = true; return; }
+  if (!t) { el.hidden = true; if (dc) dc.hidden = true; return; }
   el.hidden = false;
   const d = 2 * t.grabR;
   el.style.width = el.style.height = d + 'px';
   el.style.left = (t.x - t.grabR) + 'px';
   el.style.top = (t.y - t.grabR) + 'px';
+  el.classList.toggle('spin', !!(G.tuning.snap.spinMarks));   // m4: her spin marks ship off (a third ring competes with the aim)
+  if (dc) {   // m4: the dial cue at the circle's right edge, the first three turns, never while braced
+    const show = !el.classList.contains('braced') && dialCueTurns() < 3 && G.screen === 'match';
+    dc.hidden = !show; if (show) { dc.style.left = (t.x + t.grabR + 6) + 'px'; dc.style.top = (t.y - 24) + 'px'; }
+  }
 }
 
 function updateAimUi() {

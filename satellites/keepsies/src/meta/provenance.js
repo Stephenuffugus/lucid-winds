@@ -9,7 +9,7 @@
  * AFTER its result transaction has settled the pot, and a buy back writes `reclaimed`. No previous owner is
  * ever made up (Astra: "Do not invent previous owners as if they were actual players").
  */
-import * as SAVE from './save.js?v=20261106a';
+import * as SAVE from './save.js?v=20261107a';
 
 export const KINDS = ['owned', 'won', 'lost', 'reclaimed', 'showcased'];
 let n = 0;

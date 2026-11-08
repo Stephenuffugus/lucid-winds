@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#0d100c">
 <meta name="description" content="Snap real marbles for keeps in the playground game and a marble battle arena, and risk the most beautiful thing you own.">
 <title>Keepsies</title>
-<link rel="manifest" href="manifest.json?v=20261106a">
-<link rel="icon" href="icon-192.png?v=20261106a">
-<link rel="apple-touch-icon" href="icon-192.png?v=20261106a">
+<link rel="manifest" href="manifest.json?v=20261107a">
+<link rel="icon" href="icon-192.png?v=20261107a">
+<link rel="apple-touch-icon" href="icon-192.png?v=20261107a">
 <style>
 :root{
   --dirt:#4a3f31; --bg:#0d100c; --chalk:#e8dcc8; --brass:#c8a84b;
@@ -86,8 +86,8 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 #results .card{background:transparent;border:1px solid transparent;border-image:var(--result) 24 fill / 12px stretch}
 #spyglass{border:1px solid transparent;border-image:var(--scope) 24 / 10px stretch}
 /* the player chips: her chip's frame (its drawn dots stay out of the slices) behind the name and her pips */
-/* m3 step 11, B2: her chip, 176 by 56, nine slice 24; the seven pips on her centres (16 + 24k, 39) at that width, and evenly on a narrower phone, where the middle gap stands for the far arm */
-#scores .side{position:relative;display:block;flex:0 1 calc(50% - 16px);max-width:176px;height:56px;box-sizing:border-box;min-width:0;padding:0;
+/* m3 step 11, B2; m4 round 3: her chip redrawn at 152 by 56 (304 by 112 source), nine slice 24; the seven pips at her centres (16 + 20k, 39) */
+#scores .side{position:relative;display:block;flex:0 1 calc(50% - 16px);max-width:152px;height:56px;box-sizing:border-box;min-width:0;padding:0;
   border:12px solid transparent;border-image:var(--chip) 24 fill / 12px stretch;background:none}
 #scores .who{position:absolute;left:-2px;right:-2px;top:-5px;height:15px;line-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #scores .side.them{padding:0}
@@ -98,8 +98,9 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 .sock.full{background:var(--pip-lit) center/100% 100% no-repeat;border:0}
 #calibDots{width:180px;height:48px;background-size:100% 100%;background-repeat:no-repeat}
 /* the reticle: settling (her broken ring), then settled (the full ring and its tick) */
-#reticle{border:0 !important;border-radius:0;background:var(--ret-a) center/100% 100% no-repeat}
-#reticle.settled{background-image:var(--ret-b)}
+/* m4 (Astra round 3): the reticle is a fixed 154 px box with her rings drawn inline by code (the radius moves, the strokes never scale) */
+#reticle{border:0 !important;border-radius:0;background:none;width:154px;height:154px}
+#reticle svg{display:block;width:154px;height:154px}
 /* the tiers on every card: her frame and mark over the render, the word under the name */
 .tile::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;
   border:1px solid transparent;border-image:var(--tier-common) 32 / 16px stretch}
@@ -190,7 +191,7 @@ button .lbl,button .ic,button .hrIc{pointer-events:none}
 /* while statues are placed or moved, the tray IS the bottom of the screen: the shot's controls step aside */
 body.statuing #corners,body.statuing #houseRules,body.statuing #aimNudge,body.statuing #scopeBtn,body.statuing #moveStatue,body.statuing #say{display:none}
 /* the render sits INSIDE her frame (its edges carry her dark fill, which cropped the marble when it lay over it) */
-.tile canvas{position:absolute;left:12px;top:21px;width:calc(100% - 24px);height:calc(100% - 33px);object-fit:contain}   /* her content box */
+.tile canvas{position:absolute;left:13px;top:22px;width:70px;height:61px;object-fit:contain}   /* her content box, round 3: [13, 22, 70, 61] CSS in the 96 tile */
 .tile .cnt{z-index:3}
 /* the HUD's three buttons keep one line each with their icons */
 #corners button{white-space:nowrap;letter-spacing:.04em;font-size:.74rem;padding-left:8px;padding-right:8px}
@@ -478,7 +479,12 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
   max-width:88%;text-align:center;font-size:.82rem;line-height:1.3;color:var(--chalk);
   background:rgba(13,16,12,.62);border-radius:8px;padding:6px 12px}
 #reticle{position:absolute;border:2px solid rgba(232,220,200,.8);border-radius:50%}
-#grabRing{position:fixed;box-sizing:border-box;border:2px dashed rgba(232,220,200,.34);border-radius:50%;pointer-events:none}
+.snapWords{display:flex;justify-content:space-around;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#98a086;margin:2px 0 6px}
+/* m4 (Astra round 3): the hold circle is her chalk invitation (an open centre, a dark keyline), braced when the thumb is down; the spin marks only when tuning asks */
+#grabRing{position:fixed;box-sizing:border-box;border:0;border-radius:50%;pointer-events:none;background:var(--hold-a) center/100% 100% no-repeat}
+#grabRing.braced{background-image:var(--hold-b)}
+#grabRing.spin::after{content:'';position:absolute;inset:0;background:var(--spin-marks) center/100% 100% no-repeat}
+#dialCue{position:fixed;width:48px;height:48px;pointer-events:none;background:var(--dial-cue) center/100% 100% no-repeat;opacity:.9}
 /* the spyglass: a square viewfinder over a narrow lens render of the same dirt, looking down the
    aim line to the mib the shot is pointed at; the bracket is the cone's width at that range */
 #spyglass{position:absolute;left:50%;transform:translateX(-50%);width:180px;height:180px;border:2px solid var(--brass);
@@ -609,6 +615,7 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
 </div>
 
 <div id="grabRing" hidden></div>
+<div id="dialCue" hidden></div>
 <div id="aimline" hidden></div>
 <div id="aimcap" hidden></div>
 <div id="hud" hidden>
@@ -748,30 +755,9 @@ button.sticky{position:sticky;top:calc(-24px + env(safe-area-inset-top,0px));z-i
      works and deviating makes the ball go off line too") -->
 <div id="snapCard" class="veil" hidden>
   <h2>The snap</h2>
-  <svg id="snapArt" viewBox="0 0 320 150" aria-hidden="true">
-    <rect x="0" y="0" width="320" height="150" rx="12" fill="#1a1d17"/>
-    <line x1="60" y1="118" x2="60" y2="22" stroke="#c8a84b" stroke-width="2" stroke-dasharray="4 4"/>
-    <circle cx="60" cy="118" r="13" fill="#7fb0d6" stroke="#e8dcc8" stroke-width="1.5"/>
-    <circle cx="60" cy="118" r="21" fill="none" stroke="#c8a84b" stroke-width="2"/>
-    <circle cx="60" cy="24" r="6" fill="#e0b060"/>
-    <path d="M60 104 L60 60" stroke="#e8dcc8" stroke-width="4" stroke-linecap="round"/>
-    <path d="M52 68 L60 58 L68 68" fill="none" stroke="#e8dcc8" stroke-width="4" stroke-linecap="round"/>
-    <text x="60" y="142" font-size="10" fill="#e8dcc8" text-anchor="middle" font-family="system-ui">straight up the line</text>
-    <line x1="180" y1="118" x2="180" y2="22" stroke="#c8a84b" stroke-width="2" stroke-dasharray="4 4"/>
-    <circle cx="180" cy="118" r="13" fill="#7fb0d6" stroke="#e8dcc8" stroke-width="1.5"/>
-    <circle cx="180" cy="24" r="6" fill="#e0b060"/>
-    <path d="M180 104 L204 62" stroke="#d86a5a" stroke-width="4" stroke-linecap="round"/>
-    <path d="M194 66 L206 58 L206 71" fill="none" stroke="#d86a5a" stroke-width="4" stroke-linecap="round"/>
-    <line x1="180" y1="118" x2="162" y2="24" stroke="#d86a5a" stroke-width="1.5" stroke-dasharray="3 4"/>
-    <line x1="180" y1="118" x2="198" y2="24" stroke="#d86a5a" stroke-width="1.5" stroke-dasharray="3 4"/>
-    <text x="196" y="142" font-size="10" fill="#e8dcc8" text-anchor="middle" font-family="system-ui">off the line, a wild one</text>
-    <circle cx="286" cy="60" r="13" fill="#7fb0d6" stroke="#e8dcc8" stroke-width="1.5"/>
-    <circle cx="286" cy="70" r="3" fill="#c8a84b"/>
-    <text x="286" y="96" font-size="9" fill="#98a086" text-anchor="middle" font-family="system-ui">low, backspin</text>
-    <circle cx="286" cy="118" r="13" fill="#7fb0d6" stroke="#e8dcc8" stroke-width="1.5"/>
-    <circle cx="286" cy="108" r="3" fill="#c8a84b"/>
-    <text x="286" y="142" font-size="9" fill="#98a086" text-anchor="middle" font-family="system-ui">high, follow</text>
-  </svg>
+  <!-- m4: Astra's round 3 snap card, three panels: hold, turn, flick; the words stay in code -->
+  <svg id="snapArt" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 150"><path d="M106.5 16v118M213.5 16v118" fill="none" stroke="#74684f" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="0.6" vector-effect="non-scaling-stroke" /><path d="M56.0313 58.1589 A29 29 0 1 1 49.9687 58.1589" fill="none" stroke="#eadfc9" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.7" vector-effect="non-scaling-stroke" /><path d="M163.0313 58.1589 A29 29 0 1 1 156.9687 58.1589" fill="none" stroke="#eadfc9" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.7" vector-effect="non-scaling-stroke" /><path d="M270.0313 58.1589 A29 29 0 1 1 263.9687 58.1589" fill="none" stroke="#eadfc9" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.7" vector-effect="non-scaling-stroke" /><path d="M53 57V28" fill="none" stroke="#eadfc9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6" vector-effect="non-scaling-stroke" /><g transform="translate(53 87)" opacity="1"><path d="M-9 25 C-13 18-13 10-12 4 L-11-9 C-10-23 10-24 11-9 L12 8 C19 10 20 17 16 28" fill="#39392c" fill-opacity=".72" stroke="#eadfc9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-5-8Q0-12 5-8M-6 9Q0 12 6 9" fill="none" stroke="#eadfc9" stroke-width="1" opacity=".5"/></g><path d="M160 56V24" fill="none" stroke="#eadfc9" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.25" vector-effect="non-scaling-stroke" stroke-dasharray="3 5"/><path d="M160 56L182 28" fill="none" stroke="#c6a34b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="1" vector-effect="non-scaling-stroke" /><path d="M182 28l-1 7M182 28l-7 2" fill="none" stroke="#c6a34b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="1" vector-effect="non-scaling-stroke" /><g transform="translate(151 87)" opacity="0.28"><path d="M-9 25 C-13 18-13 10-12 4 L-11-9 C-10-23 10-24 11-9 L12 8 C19 10 20 17 16 28" fill="#39392c" fill-opacity=".72" stroke="#eadfc9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-5-8Q0-12 5-8M-6 9Q0 12 6 9" fill="none" stroke="#eadfc9" stroke-width="1" opacity=".5"/></g><g transform="translate(173 87)" opacity="1"><path d="M-9 25 C-13 18-13 10-12 4 L-11-9 C-10-23 10-24 11-9 L12 8 C19 10 20 17 16 28" fill="#39392c" fill-opacity=".72" stroke="#eadfc9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-5-8Q0-12 5-8M-6 9Q0 12 6 9" fill="none" stroke="#eadfc9" stroke-width="1" opacity=".5"/></g><path d="M139 130h40M139 130l5-4M139 130l5 4M179 130l-5-4M179 130l-5 4" fill="none" stroke="#c6a34b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="1" vector-effect="non-scaling-stroke" /><g transform="translate(267 92)" opacity="0.22"><path d="M-9 25 C-13 18-13 10-12 4 L-11-9 C-10-23 10-24 11-9 L12 8 C19 10 20 17 16 28" fill="#39392c" fill-opacity=".72" stroke="#eadfc9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-5-8Q0-12 5-8M-6 9Q0 12 6 9" fill="none" stroke="#eadfc9" stroke-width="1" opacity=".5"/></g><g transform="translate(267 58)" opacity="1"><path d="M-9 25 C-13 18-13 10-12 4 L-11-9 C-10-23 10-24 11-9 L12 8 C19 10 20 17 16 28" fill="#39392c" fill-opacity=".72" stroke="#eadfc9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-5-8Q0-12 5-8M-6 9Q0 12 6 9" fill="none" stroke="#eadfc9" stroke-width="1" opacity=".5"/></g><path d="M291 104V28M291 28l-5 7M291 28l5 7" fill="none" stroke="#c6a34b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="1" vector-effect="non-scaling-stroke" /><path d="M259 122v-7M267 125v-8M275 122v-7" fill="none" stroke="#eadfc9" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" opacity="0.55" vector-effect="non-scaling-stroke" /></svg>
+  <div class="snapWords" aria-hidden="true"><span>hold</span><span>slide to turn</span><span>flick up</span></div>
   <ul class="rules snapRules">
     <li><b>Line it up first.</b> The gold line is where the shot goes. Turn it with the arrows, by dragging the dirt, or by sliding your thumb sideways on the shooter. Zoom shows it land.</li>
     <li><b>Hold still.</b> Thumb in the circle. The ring goes gold when your aim has settled.</li>
@@ -831,6 +817,6 @@ window._sbCapEarn=function(n,tag){
   return granted;
 };
 </script>
-<script type="module" src="src/main.js?v=20261106a"></script>
+<script type="module" src="src/main.js?v=20261107a"></script>
 </body>
 </html>

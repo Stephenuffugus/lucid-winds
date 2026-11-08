@@ -11,8 +11,8 @@
  * with like. Nothing in the copy ever shames it, and nothing in the game is
  * closed off by it.
  */
-import { clamp, len2, atan2, DEG } from '../core/dmath.js?v=20261106a';
-import { makeAim } from '../core/snap.js?v=20261106a';
+import { clamp, len2, atan2, DEG } from '../core/dmath.js?v=20261107a';
+import { makeAim } from '../core/snap.js?v=20261107a';
 
 /** How far back you have to drag for a full power shot, in CSS pixels. */
 const FULL_DRAG_PX = 190;

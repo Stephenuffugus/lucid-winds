@@ -18,8 +18,8 @@
  * a player cannot understand is indistinguishable from a bug, so every one of
  * them says which rule it was and what would fix it.
  */
-import * as SAVE from '../meta/save.js?v=20261106a';
-import { TIER_ORDER, tierRank } from '../meta/tiers.js?v=20261106a';
+import * as SAVE from '../meta/save.js?v=20261107a';
+import { TIER_ORDER, tierRank } from '../meta/tiers.js?v=20261107a';
 
 /**
  * May these two stakes be played against each other?
