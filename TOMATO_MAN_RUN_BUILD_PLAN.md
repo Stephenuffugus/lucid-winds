@@ -224,7 +224,9 @@ LINE: `! bash /home/codespace/tm-drafts/deploy-tomato-man-planet.sh` (on top of 
 ## RULINGS 3 (Stephen's Pixel notes, 7 Nov ~23:15 UTC, after the Hero and Planet Tomató lines)
 "The tomato man levels are getting a little better. Going under the awnings is cool but we need more space in between each of the shadows. So have the shadows be split left to right? So you have to dash across the desert more, make it so they might be moving at different times and different intervals. Also the walking animation still looks a little wonky."
 
-## CHAPTER 13 (8 Nov ~06:30 UTC): THE WALK, Astra's round wired, sunstruck c0d7117 (waits for his line)
+## CHAPTER 13 LIVE 8 Nov ~08:50 UTC by his line (lucid-winds main ee52a004e, Tomato_Man main c0d71173; both hosts serve 050d13ff0c0e)
+
+## CHAPTER 13 (8 Nov ~06:30 UTC): THE WALK, Astra's round wired, sunstruck c0d7117
 - Astra's walk pack (his upload 8 Nov 04:44 UTC; vault astra-tomato-man-walk-nov08; docs/briefs/tomato-man/the-walk/astra/): the four walk
   cells redrawn as ONE strict cycle in all seventy sheets (left contact, right pass, right contact, left pass; the far leg stays darker and
   trades the lead; no head bob; cells 0, 5, 6, 7 the downloaded drawings at the same pivots; lossless VP8L, 1024 by 512). Her ASSESSMENT:
