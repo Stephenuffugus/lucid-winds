@@ -5,6 +5,7 @@
  *   node tools/tofu-tests/shoot.mjs <outdir> title                 the title
  *   LEVEL=4 node tools/tofu-tests/shoot.mjs <outdir> card          the recipe card of level index 4 (?level=4)
  *   LEVEL=1 node tools/tofu-tests/shoot.mjs <outdir> play          level index 1 in play (TOFU.go), SETTLE ms after
+ *   JS='...' runs after TOFU.go in play; PROBE='...' is evaluated just before the shot and printed
  *   W=360 H=780 ... a narrower phone; Q=extra=1 adds to the query; then pkill -f "http.server 8791"
  * Prints the shot's path, its size, and the page errors (or "no page errors"). */
 import { createRequire } from 'node:module';
@@ -30,11 +31,12 @@ await wait(800);
 const SCREENS = {
   title: async () => {},
   card: async () => {},
-  play: async () => { await ev('TOFU.go(' + LEVEL + ')'); await wait(SETTLE); },
+  play: async () => { await ev('TOFU.go(' + LEVEL + ')'); if (process.env.JS) await ev(process.env.JS); await wait(SETTLE); },
 };
 if (!SCREENS[only]) { console.log('unknown screen ' + only); await browser.close(); process.exit(1); }
 await SCREENS[only]();
 await wait(400);
+if (process.env.PROBE) console.log('probe: ' + JSON.stringify(await ev(process.env.PROBE)));
 const file = `${out}/${only}${only === 'title' ? '' : '-' + LEVEL}.png`;
 await page.screenshot({ path: file, type: 'png' });
 console.log(file + ' (shot taken, not opened)');

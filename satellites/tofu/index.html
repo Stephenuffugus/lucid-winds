@@ -27,6 +27,8 @@ html,body{height:100%;background:#1c1e24;overflow:hidden;font-family:system-ui,-
 .dish small{display:block;font-weight:600;letter-spacing:.04em;opacity:.65;font-size:10px;margin-top:2px}
 .chips{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:60vw}
 .chip{font-size:11px;font-weight:800;letter-spacing:.08em;padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(10,11,16,.55);color:#cfc8bb;transition:all .2s}
+.chip .ci{display:inline-block;width:14px;height:14px;margin-right:5px;vertical-align:-2px;background:currentColor;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.card .chip .ci{width:16px;height:16px}
 .chip.ok{border-color:#7ddc8a;color:#9af0a5;background:rgba(60,160,80,.28)}
 .chip.bad{border-color:#ff5a5a;color:#ff9a9a;background:rgba(160,40,40,.28)}
 .icoBtn{pointer-events:auto;width:48px;height:48px;border-radius:10px;border:1px solid rgba(255,255,255,.18);background:rgba(10,11,16,.55);color:#f3efe6;font-size:20px;line-height:1}
@@ -273,7 +275,7 @@ const ASSET_FILES = [
   'tile_wall','tile_wall_top','tile_crack','tile_grate','tile_knife','water_body','water_surface_4f',
   'pool_soy','pool_brine','pool_brine_bubbles_4f','floor_freezer','pan_slab','pan_glow_3f','bowl','bowl_ring',
   'eye_block_3f','shadow_tile','bg_counter','chopsticks_patrol_4f','chopsticks_chase_4f','chopsticks_flee_4f',
-  'btn_jump','btn_squeeze','wordmark'
+  'btn_jump','btn_squeeze','wordmark','label_zone','p_stink'
 ];
 const ART_V = 1; // bump with every art change so the host's hard cache never serves old art
 const HI = (typeof devicePixelRatio === 'number' ? devicePixelRatio : 1) >= 2; // @2x only on dense screens
@@ -526,7 +528,7 @@ function updateState(dt, cz) {
   if (P.stink > 0.25 && rnd() < dt * 7 * P.stink) wisp(P.x + rnd(-P.hw, P.hw), P.y - P.hh);
 }
 function die(reason) {
-  if (P.dead) return; P.dead = true; P.deadT = 0.9; deaths++; toast(reason, 1.3); SFX.dead();
+  if (P.dead) return; P.puddle = (reason === 'Spotted.' || P.inWater) ? { x: P.x, y: P.y + P.hh } : null; P.dead = true; P.deadT = 0.9; deaths++; toast(reason, 1.3); SFX.dead();
   for (let i = 0; i < 16; i++) spawn({ x: P.x, y: P.y, vx: rnd(-6, 6), vy: rnd(-9, 2), g: 30, life: rnd(0.5, 1), r: rnd(0.06, 0.16), col: bodyColor() });
 }
 function sunbeamServe(n) { // Sky Wolf earn standard: 30 a day per game (SUNBEAM_EARN_POLICY.md)
@@ -744,7 +746,18 @@ function drawBowl(tx, ty) {
 }
 function drawLabels() {
   const names = { s: 'SOY', f: 'BRINE', '*': 'FREEZER', o: 'HOT PAN' };
-  for (const z of world.zones) { if (!names[z.ch] || tileAt(z.x - 1, z.y) === z.ch) continue; textAt(z.x + 0.05, z.y - 0.22, names[z.ch], Math.max(9, cam.ts * 0.22), 'rgba(243,239,230,0.55)', 'left', 800); }
+  const pill = spr('label_zone');
+  for (const z of world.zones) {
+    if (!names[z.ch] || tileAt(z.x - 1, z.y) === z.ch) continue; const px = Math.max(9, cam.ts * 0.22);
+    if (pill) {
+      ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.font = `800 ${px}px system-ui,sans-serif`; ctx.globalAlpha = 0.9;
+      const h = px * 1.6, w = Math.max(h, ctx.measureText(names[z.ch]).width + px * 1.1), x0 = cam.ox + (z.x + 0.05) * cam.ts - px * 0.55, y0 = cam.oy + (z.y - 0.22) * cam.ts - h / 2;
+      const im = pill.img, sh = im.naturalHeight, sw = im.naturalWidth, cap = sh / 2, dc = h / 2;
+      ctx.drawImage(im, 0, 0, cap, sh, x0, y0, dc, h); ctx.drawImage(im, cap, 0, sw - 2 * cap, sh, x0 + dc, y0, w - 2 * dc, h); ctx.drawImage(im, sw - cap, 0, cap, sh, x0 + w - dc, y0, dc, h);
+      ctx.restore();
+    }
+    textAt(z.x + 0.05, z.y - 0.22, names[z.ch], px, pill ? '#f3efe6' : 'rgba(243,239,230,0.55)', 'left', 800);
+  }
 }
 function drawShadows() {
   const s = spr('shadow_tile');
@@ -779,6 +792,7 @@ function drawChops() {
     if (c.mode === 'flee') { ctx.fillStyle = '#4696dc'; ctx.beginPath(); ctx.arc(c.x + 0.25, c.y - c.hh - 0.1, 0.06, 0, Math.PI * 2); ctx.fill(); }
   }
 }
+const BODY_FOOT = { tofu_plain: [64, 64], tofu_silken: [76, 44], tofu_firm: [60, 68], tofu_fried: [76, 76], tofu_frozen: [64, 64], tofu_spongy: [64, 64] }; // the pack's footprints in its 96 px canvas, baseline y 88
 function bodyKey() { return P.frozen ? 'tofu_frozen' : P.fried ? 'tofu_fried' : P.f < TH.silken ? 'tofu_silken' : P.f > TH.firm ? 'tofu_firm' : P.thawed ? 'tofu_spongy' : 'tofu_plain'; }
 function bodyColor() {
   let r = 246, g = 241, b = 231;
@@ -796,14 +810,17 @@ function faceKey() {
   if (P.frozen) return 'face_cold'; if (visibility() < CFG.eye.visLimit) return 'face_sneak'; if (P.happyT > 0) return 'face_happy'; return 'face_neutral';
 }
 function drawPlayer() {
-  if (P.dead) return;
+  if (P.dead) { drawPuddle(); return; }
   const n = P.jig.length, pts = [], shiver = P.frozen ? rnd(-0.015, 0.015) : 0, cx = P.x + shiver, cy = P.y, bump = P.fried ? 0.045 : 0;
   for (let i = 0; i < n; i++) { const th = i / n * Math.PI * 2, j = P.jig[i], b = bump * Math.sin(th * 6 + animT * 2); pts.push({ x: cx + Math.cos(th) * (P.hw * P.sx + b) + j.ox, y: cy + Math.sin(th) * (P.hh * P.sy + b) + j.oy }); }
   const hidden = visibility() < CFG.eye.visLimit && tileAt(Math.floor(P.x), Math.floor(P.y)) === 'd';
   ctx.save(); ctx.globalAlpha = hidden ? 0.42 : (P.f < TH.silken && !P.fried && !P.frozen ? 0.9 : 1);
   if (P.onGround && P.f < TH.silken && !P.frozen) { const pd = spr('tofu_puddle'); if (pd) drawSpr(pd, cx - P.hw * 1.5, cy + P.hh - 0.12, P.hw * 3, 0.25); else { ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.ellipse(cx, cy + P.hh, P.hw * 1.45, 0.07, 0, 0, Math.PI * 2); ctx.fill(); } }
-  blobPath(pts); const s = spr(bodyKey());
-  if (s) { ctx.save(); ctx.clip(); const bw = P.hw * P.sx * 2.4, bh = P.hh * P.sy * 2.4; drawSpr(s, cx - bw / 2, cy - bh / 2 + 0.05, bw, bh); ctx.restore(); blobPath(pts); }
+  blobPath(pts); const bk = bodyKey(), s = spr(bk);
+  if (s) { // the footprint fills the blob with a little overscan, so the clip, not the art's edge, makes the outline
+    ctx.save(); ctx.clip(); const ft = BODY_FOOT[bk], scx = P.hw * P.sx * 2.16 / ft[0], scy = P.hh * P.sy * 2.16 / ft[1];
+    drawSpr(s, cx - 48 * scx, cy - (88 - ft[1] / 2) * scy, 96 * scx, 96 * scy); ctx.restore(); blobPath(pts);
+  }
   else { ctx.fillStyle = bodyColor(); ctx.fill(); }
   if (P.soy > 0.02) { ctx.fillStyle = `rgba(74,42,18,${0.78 * P.soy})`; ctx.fill(); }
   if (P.stink > 0.1) { ctx.fillStyle = `rgba(127,191,95,${0.22 * P.stink})`; ctx.fill(); }
@@ -822,10 +839,16 @@ function drawPlayer() {
   }
   if (spotted > 0.05) { ctx.fillStyle = `rgba(255,70,70,${0.6 + 0.4 * Math.sin(animT * 20)})`; ctx.fillRect(cx - 0.3, cy - P.hh - 0.5, 0.6 * spotted, 0.08); }
 }
+function drawPuddle() {
+  const pd = P.puddle; if (!pd) return; const s = spr('tofu_puddle'), a = clamp(P.deadT / 0.9, 0, 1), w = 1.1 * (1.4 - 0.4 * a), h = w / 4;
+  ctx.save(); ctx.globalAlpha = 0.5 + 0.5 * a;
+  if (s) drawSpr(s, pd.x - w / 2, pd.y - h, w, h); else { ctx.fillStyle = 'rgba(246,241,231,0.6)'; ctx.beginPath(); ctx.ellipse(pd.x, pd.y - h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.fill(); }
+  ctx.restore();
+}
 function drawFace(cx, cy) {
   const key = faceKey(), s = spr(key), lookX = clamp(P.vx * 0.015, -0.07, 0.07) + P.face * 0.03, lookY = clamp(P.vy * 0.008, -0.05, 0.05);
   const fx = cx + lookX, fy = cy + lookY - 0.04;
-  if (s) { const w = P.hw * 1.7, h = P.hh * 1.7; drawSpr(s, fx - w / 2, fy - h / 2, w, h); return; }
+  if (s) { const eyeY = fy - P.hh * P.sy * 0.18, kx = P.hw * P.sx * 0.84 / 16, ky = Math.min(kx, P.hh * P.sy * 0.75 / 12); drawSpr(s, fx - 32 * kx, eyeY - 30 * ky, 64 * kx, 64 * ky); return; }
   const ex = P.hw * 0.42, ey = -P.hh * 0.18, r = Math.min(0.075, P.hw * 0.18); ctx.fillStyle = '#262932'; ctx.strokeStyle = '#262932'; ctx.lineWidth = 0.04; ctx.lineCap = 'round';
   if (key === 'face_strain') { ctx.beginPath(); for (const d of [-1, 1]) { ctx.moveTo(fx + d * ex - d * 0.07, fy + ey - 0.06); ctx.lineTo(fx + d * ex + d * 0.02, fy + ey); ctx.lineTo(fx + d * ex - d * 0.07, fy + ey + 0.06); } ctx.stroke(); }
   else if (key === 'face_sneak') { ctx.beginPath(); for (const d of [-1, 1]) { ctx.moveTo(fx + d * ex - 0.07, fy + ey); ctx.lineTo(fx + d * ex + 0.07, fy + ey); } ctx.stroke(); }
@@ -845,6 +868,7 @@ function drawParts() {
     if (p.shape === 'r') ctx.fillRect(p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
     else if (p.shape === 's') { ctx.lineWidth = 0.025; ctx.beginPath(); ctx.moveTo(p.x - p.r, p.y); ctx.lineTo(p.x + p.r, p.y); ctx.moveTo(p.x, p.y - p.r); ctx.lineTo(p.x, p.y + p.r); ctx.stroke(); }
     else if (p.shape === 'o') { ctx.lineWidth = 0.02; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.stroke(); }
+    else if (p.shape === 'w' && spr('p_stink')) { const w = p.r * 2.4; drawSpr(spr('p_stink'), p.x - w / 2, p.y - w * 4 / 3, w, w * 4 / 3); }
     else if (p.shape === 'w') { ctx.lineWidth = 0.035; ctx.beginPath(); for (let i = 0; i <= 4; i++) { const y = p.y - i * p.r * 0.5, x = p.x + Math.sin(i * 1.6 + animT * 6) * p.r * 0.5; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); }
     else { ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); }
   }
@@ -910,6 +934,7 @@ const SFX = (() => {
 function toggleMute() { muted = !muted; save(); }
 
 // ───────────────────────────── 10. UI & FLOW ───────────────────────
+const chipIco = r => `<i class="ci" style="--m:url(${assetUrl('chip_' + r.toLowerCase())})"></i>`; // chip_* are monochrome; the mask takes the chip's colour
 const RECIPE_LABEL = { PLAIN: 'PLAIN', SILKEN: 'SILKEN', FIRM: 'FIRM', FRIED: 'FRIED', FROZEN: 'FROZEN', SOY: 'SOY DARK', STINKY: 'STINKY', RINSE: 'RINSE' };
 let lastChips = '', lastState = '', lastTags = '';
 function hud() {
@@ -919,10 +944,10 @@ function hud() {
   el.barFirm.style.width = (P.f * 100) + '%';
   const flav = [['SOY', P.soy, '#4a2a12'], ['STINK', P.stink, '#7fbf5f'], ['HEAT', P.heat, '#ff7a1e'], ['COLD', P.cold, '#aadcff']].sort((a, b) => b[1] - a[1])[0];
   el.barFlav.style.width = (clamp(flav[1], 0, 1) * 100) + '%'; el.barFlav.style.background = flav[2]; el.barFlavLabel.textContent = flav[1] > 0.02 ? flav[0] : 'FLAVOR';
-  const rc = recipeCheck(); const html = rc.items.map(i => `<span class="chip ${i.ok ? 'ok' : i.r === 'RINSE' ? 'bad' : ''}">${RECIPE_LABEL[i.r]}${i.ok ? '' : ' ·'}</span>`).join('');
+  const rc = recipeCheck(); const html = rc.items.map(i => `<span class="chip ${i.ok ? 'ok' : i.r === 'RINSE' ? 'bad' : ''}">${chipIco(i.r)}${RECIPE_LABEL[i.r]}${i.ok ? '' : ' ·'}</span>`).join('');
   if (html !== lastChips) { el.chips.innerHTML = html; lastChips = html; }
 }
-function recipeChips(L) { return L.recipe.map(r => `<span class="chip">${RECIPE_LABEL[r]}</span>`).join(''); }
+function recipeChips(L) { return L.recipe.map(r => `<span class="chip">${chipIco(r)}${RECIPE_LABEL[r]}</span>`).join(''); }
 function showTitle() {
   mode = 'title'; overlay.classList.remove('hidden'); if (!world) loadLevel(0);
   const wm = spr('wordmark') ? `<img class="wordmark" src="${assetUrl('wordmark')}" alt="TOFU">` : `<div class="blob"></div><h1>TOFU</h1>`;
