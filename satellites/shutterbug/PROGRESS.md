@@ -1775,3 +1775,9 @@ gates: lint green; H-boss-8, 11, 12, 13, 14 green; redwatch anchors 684; the fas
 shots: none (numbers in existing attacks; her rage tells come with round 11's art)
 line: `! bash /home/codespace/sb-drafts/sb-m2-18/deploy-sb-m2-18.sh`
 LIVE 7 Nov ~22:25 UTC by his line (lucid-winds main e5dfd0c44; lucidwinds.com/satellites/shutterbug/ serves BUILD sb-m2-18, sw.js?v=40, shutterbug-v40); ships sb-m2-16 and 17 too
+
+## sb-m2-19 (8 Nov 2026, Fable): round 11 code, the crosswind
+shipped: FLAG_WIND 32 (FLAGS_KNOWN 63, C.FLAGS 63, level.windy); windFor sets features.wind {dir, from} in Attic rooms (not lastRoom) from the more open upper half; windPhase(lv, frame) 0/1/2 from WIND_FIRST_S 3, WIND_PERIOD_S 6, WIND_BLOW_S 1.2, WIND_TELL_S 0.5; the hero step adds windV (CELL_SUB/WIND_BLOW_F) through moveX while blowing (no dash, dive, sticky, knock); R.wind streaks (10 moving while blowing, 4 still in the tell; under reduced motion still); windCue plays 'dive' at each blow; the lesson 'wind' once (copy windHead/windLine; hints.wind).
+gates: lint green; H-wind-1 green; the share code tests' unknown flag at bit 6; redwatch anchors 684; the fast harness alone 10526 assertions 0 failing (H-reach-6's 10 ms budget flaked once at 10.41 ms in a full run, green alone three times)
+shots: none (streaks are a stand in for her window_wind)
+line: `! bash /home/codespace/sb-drafts/sb-m2-19/deploy-sb-m2-19.sh`
