@@ -18,7 +18,7 @@
 // actually matches (a visible event, not a loop), and the target list is a typed array reused every time.
 import { ent, spawn, goalMove, G_NONE, CLIMBED, HOPPED } from './ents.js';
 import { storyRow, STI } from './story.js';
-import { log, setTerrain, removeStruct, placeStruct, inB, capOf, climeAt, isNight, asleep, wake, favourite, pass, flies, SLEEP_DAWN, SLEEP_DUSK, landLives } from './world.js';
+import { log, setTerrain, removeStruct, placeStruct, inB, capOf, climeAt, isNight, asleep, wake, favourite, pass, flies, SLEEP_DAWN, SLEEP_DUSK, landLives, seasonOf, weatherOf, SEASONS, WEATHER } from './world.js';
 import { rebuildGear, equipOn, GEAR_SLOTS } from './content.js';
 import { allowed, SRC } from './harm.js';
 import { addFx } from './fx.js';
@@ -976,6 +976,10 @@ function needsOk(w, row, x, y) {
   // Design 19 A4: hot or cold where it is happening, derived from the map (world.js climeAt: near lava or fire, near snow or ice).
   if (n.hot !== undefined) { const i = tileIndex(w, x, y); if (i < 0 || (climeAt(w, i) > 0) !== n.hot) return false; }
   if (n.cold !== undefined) { const i = tileIndex(w, x, y); if (i < 0 || (climeAt(w, i) < 0) !== n.cold) return false; }
+  // Design 20 (THE LIVING YEAR): the season (spring, summer, autumn, winter; never with the switch off) and the sky now (clear,
+  // rain, storm, snow, fog, drought; clear with the switch off).
+  if (n.season !== undefined) { const s = seasonOf(w); if (s < 0 || SEASONS[s] !== n.season) return false; }
+  if (n.weather !== undefined && WEATHER[weatherOf(w)] !== n.weather) return false;
   return true;
 }
 // The tile under a point, or -1 off the map (design 19 A3: needs.ground and needs.days read it).
@@ -2553,7 +2557,7 @@ export function fireTick(w, dt) {
     // Spread to a neighbour, on the sim's own random stream so two worlds burn the same way.
     // Design 15 C1: some ground catches faster than others (tall grass, `catch` in terrain.json).
     const burning = w.C.TERR[w.terr[i]];
-    if (w.rng.float() < F.spread * (burning.catch || 1) * dt && !(w.R.flags.fireCap && w.fireSpent >= F.maxTilesPerIgnition)) {
+    if (w.rng.float() < F.spread * (burning.catch || 1) * w.fireM * dt && !(w.R.flags.fireCap && w.fireSpent >= F.maxTilesPerIgnition)) { // (design 20: twice in a dry spell, w.fireM)
       const tx = i % w.cols, ty = (i / w.cols) | 0, d = Math.floor(w.rng.float() * 4);
       const nx = tx + (d === 0 ? 1 : d === 1 ? -1 : 0), ny = ty + (d === 2 ? 1 : d === 3 ? -1 : 0);
       if (inB(w, nx, ny)) {

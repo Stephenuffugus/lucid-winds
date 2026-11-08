@@ -307,6 +307,37 @@
   0
  ],
  "_edgeMix": "Ground meets ground along a coast, not a ruled line: how many pixels deep a tile may borrow its neighbour colour. The DEPTH varies along the edge (a fixed depth draws a dotted halo and makes the rectangle more legible, not less). Length is the maximum depth; [] or absent = hard edges, the way it was.",
+ "season": {
+  "_note": "Design 20, THE LIVING YEAR (render.js; LIVING-YEAR-BUILD-PLAN.md; bible 01 §1, 05). The look of the ground and the trees by season. Summer has no entry: it is the game as it was, byte for byte, and so is a world with its Seasons switch off (seasonOf -1). ground: for every terrain tagged plant and not liquid (grass, meadow, clover, tallgrass, moss, the crops; never water, sand, rock, snow, ice, path, dirt), each pixel's colour is mixed toward `mix` by `w` and then scaled per channel by `mul` (r, g, b), the shifted colours cached per season. canopy: the sprites whose canopy letters (g light green, G dark green) are recoloured by `over`, or in autumn by one of `tints` per tree, picked by its tile's hash, so a wood is golds, oranges and reds and never one colour (pines and palms keep their green). cap: in winter, how many top rows of the sprite are painted white (snow on the crown). blossom: in spring the fruit letter r of the sprites named turns to blossom pink. leaves: autumn's drifting leaves over a clear sky (n over the view, fall px/s, sway px/s sideways, their colours).",
+  "spring": {
+   "ground": { "mix": "#d8e85a", "w": 0.18, "mul": [1, 1.03, 0.92] },
+   "blossom": { "sprites": ["appletree"], "over": { "r": "#f2a0b5" } }
+  },
+  "autumn": {
+   "ground": { "mix": "#d4a832", "w": 0.42, "mul": [1.02, 1, 0.9] },
+   "canopy": ["tree", "appletree"],
+   "tints": [
+    { "g": "#e8c43a", "G": "#b8891c" },
+    { "g": "#e8842a", "G": "#b05818" },
+    { "g": "#d44a30", "G": "#8e2e1c" },
+    { "g": "#d9a040", "G": "#9c6a1e" },
+    { "g": "#c8782a", "G": "#8a4a18" }
+   ],
+   "leaves": { "n": 20, "fall": 9, "sway": 5, "cols": ["#e8c43a", "#e8842a", "#d44a30"] }
+  },
+  "winter": {
+   "ground": { "mix": "#b8c4c8", "w": 0.45, "mul": [1, 0.96, 1] },
+   "canopy": ["tree", "appletree", "pine"],
+   "over": { "g": "#3d6b3a", "G": "#24462a" },
+   "cap": { "tree": 1, "appletree": 1, "pine": 2 }
+  }
+ },
+ "weather": {
+  "_note": "Design 20 (render.js; bible 05: snow as slow white dots, fog as a full canvas 20% white wash with three drifting darker bands). Drawn over the night layer where the rain streaks are; rain and the storm's shadow keep their own drawing. snow: n dots over the view, falling `fall` px/s with `sway` px/s of sideways wobble, in col. fog: the wash colour and its alpha, and the bands' colour, alpha, count and drift (px/s). drought: the warm tint over the view and its alpha.",
+  "snow": { "n": 60, "fall": 14, "sway": 4, "col": "#ffffff" },
+  "fog": { "wash": "#ffffff", "alpha": 0.2, "band": "#b8c4cc", "bandAlpha": 0.16, "bands": 3, "drift": 5 },
+  "drought": { "tint": "#ffd070", "alpha": 0.09 }
+ },
  "cardArt": { "_note": "His cards (1 and 2 Oct 2026; src/ui/cardart.js, the lead's draft THE CARD LOOK): each section of the Scrapbook's cards is a frame in its own colour (base, light: the bevel's lit side, dark: its shaded side) with a little pattern (motif: rows of x and ., repeated round all four sides); deck is the back of a card she has not turned yet. ink: the frame's outline, and the soft edge drawn round an animal on a card so a white one shows on the ice (inkAlpha). hours: the light laid over a card's picture at that hour (none by day; nightCast: how bright the animals stay at night).", "ink": "#1a120c", "inkAlpha": 0.55, "nightCast": 0.86,
   "kinds": {
    "catch": { "base": "#a8452f", "light": "#d36c4e", "dark": "#6b281b", "motif": ["x...", ".x.x", "..x.", "...."] },

@@ -1,6 +1,7 @@
 // Header (day, population chips) and the status line.
 import { url } from '../art/sprites.js';
 import { str, fill, inSentence } from './text.js';
+import { seasonOf, SEASONS } from '../sim/world.js'; // design 20: the season beside the day
 
 export function createHud({ data, status, news }) {
   const dayEl = document.getElementById('day'), countsEl = document.getElementById('counts');
@@ -11,7 +12,9 @@ export function createHud({ data, status, news }) {
   // note of 4 Oct 2026: Move's, while she chooses where; main.js pins it), so the info line neither takes it nor takes it down.
   function update(sim, selected, keepLine = false) {
     const w = sim.w, R = w.R, S = w.C.S, frac = (w.time % w.daySec) / w.daySec;
-    dayEl.textContent = fill(str('ui.day'), { n: Math.floor(w.time / w.daySec) + 1, night: frac > R.nightFrac ? str('ui.night') : '' });
+    const season = seasonOf(w); // design 20: -1 with the world's Seasons switch off, and the line reads as it always did
+    dayEl.textContent = season < 0 ? fill(str('ui.day'), { n: Math.floor(w.time / w.daySec) + 1, night: frac > R.nightFrac ? str('ui.night') : '' })
+      : fill(str('ui.daySeason'), { n: Math.floor(w.time / w.daySec) + 1, season: str('ui.season.' + SEASONS[season]), night: frac > R.nightFrac ? str('ui.night') : '' });
     const n = {};
     for (let k = 0; k < w.count; k++) { const kind = w.E.kind[w.order[k]]; n[kind] = (n[kind] || 0) + 1; }
     const sig = JSON.stringify(n);

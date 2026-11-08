@@ -57,7 +57,7 @@ export function createTray({ data, status, getSim, guard = (fn) => fn, onTool = 
   const FAV = { id: 'fav', name: str('tab.fav'), list: () => [...fav].map((k) => byKey.get(k)) };
   const REC = { id: 'recent', name: str('tab.recent'), list: () => recent.map((k) => byKey.get(k)) };
   const tabs = () => [...(fav.size ? [FAV] : []), ...(recent.length ? [REC] : []), ...CATS];
-  let cat = CATS.find((c) => c.id === data.tray.default.tab), expanded = false;
+  let cat = CATS.find((c) => c.id === data.tray.default.tab);
   const HAND = { cat: 'hand', id: 'hand' };
   let tool = HAND;
   const setTool = (t) => {
@@ -132,7 +132,7 @@ export function createTray({ data, status, getSim, guard = (fn) => fn, onTool = 
       b.className = 'tab' + (c === cat ? ' on' : '') + (c === FAV ? ' star' : '');
       b.textContent = c.name;
       b.onclick = () => {
-        cat = c; expanded = false;
+        cat = c;
         fold(false); // a tab tap always shows what is in it: a fold is never a dead end
         build();
         itemsEl.scrollLeft = 0;
@@ -152,10 +152,12 @@ export function createTray({ data, status, getSim, guard = (fn) => fn, onTool = 
       setTool(on ? HAND : { cat: 'power', id: 'erase' });
       status.post(str(on ? 'hint.hand' : 'hint.erase'));
     }));
-    const items = cat.list ? cat.list() : cat.shelf && !expanded ? cat.shelf.map((k) => byKey.get(cat.id + ':' + k)) : cat.items;
+    // 9 Oct 2026, Stephen: "the expand button for each tray is kind of dumb and annoying and then when I click it I lose
+    // my place. Maybe we need to just remove it and every tray be fully open." So: every tab shows all of itself.
+    const items = cat.list ? cat.list() : cat.items;
     // A tab with only a few tiles reads left to right, not down the columns: the Village tab's two words came
     // out as "Not here" above "Let them build", which is the no before the yes (Stephen's tester, Sep 20).
-    itemsEl.classList.toggle('few', items.length + 2 <= 6 && !cat.shelf);
+    itemsEl.classList.toggle('few', items.length + 2 <= 6);
     for (const it of items) {
       const name = it.use === 'toggle' ? toggleName(it.p) : it.name, key = it.cat + ':' + it.id;
       const lk = locked(it.cat, it.id); // the Pi rail before the unlock: shown, dimmed, a badge, and a tap asks
@@ -181,10 +183,6 @@ export function createTray({ data, status, getSim, guard = (fn) => fn, onTool = 
       });
       if (lk) { const bd = document.createElement('span'); bd.className = 'pibadge'; bd.textContent = str('pi.badge'); tile.appendChild(bd); }
       itemsEl.appendChild(tile);
-    }
-    if (cat.shelf) { // Everything / Fewer
-      const t = mkItem('item more', url('ui_more'), str(expanded ? 'ui.fewer' : 'ui.everything'), () => { expanded = !expanded; refresh(); if (!expanded) itemsEl.scrollLeft = 0; });
-      itemsEl.appendChild(t);
     }
   }
   // Columns at least ui.trayCol.min wide, as many whole ones as fit, and ui.trayCol.peek of the next one: a column that

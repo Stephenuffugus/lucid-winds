@@ -10,6 +10,8 @@ import { addFx } from './fx.js';
 import { allowed, SRC } from './harm.js';
 import { emit, EVI, POWER_EV } from './events.js';
 import { reactPower, reactPlaced } from './reactions.js';
+import { seasonChanged } from './season.js'; // design 20: the Season power
+import { seasonOf, SEASONS } from './world.js';
 
 // A thing the WORLD puts down (a crystal Bless grows, what a seed comes up as) meets what is round it exactly as
 // one the child puts down does. Before this the shiniest thing in the game appeared beside a crow and the crow
@@ -186,7 +188,15 @@ export function useInstant(w, id) {
   const P = w.C.P[id], S = w.C.S, E = w.E;
   reactPower(w, id, w.W / 2, w.H / 2); // design 15 A6: rain is a power too, and rows may answer it
   if (POWER_EV[id]) emit(w, EVI[POWER_EV[id]], -1, -1, 0);
-  if (id === 'rain') {
+  if (id === 'season') { // design 20 (01 §13 "Season skip"): the next season now; with the switch off, the switch goes on first
+    if (!w.R.flags.seasons) return;
+    if (!w.seasonsOn) { w.seasonsOn = true; log(w, 'log.seasonsOn'); return; }
+    const S = w.R.season, day = (w.time / w.daySec) | 0;
+    w.seasonShift += S.days - ((day + w.seasonShift) % S.days); // to the first day of the next season
+    const s = seasonOf(w);
+    seasonChanged(w, s);
+    log(w, 'log.seasonTo.' + SEASONS[s]);
+  } else if (id === 'rain') {
     w.rainT = P.sec;
     for (let i = 0; i < w.eaten.length; i++) if (w.eaten[i] > 0) { w.eaten[i] = 0; markDirty(w, i); }
     w.eatenN = 0; w.eatenIn.fill(0); // nothing is regrowing any more

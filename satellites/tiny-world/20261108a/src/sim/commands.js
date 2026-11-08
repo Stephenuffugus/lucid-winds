@@ -10,6 +10,7 @@ import { setPos } from './spatial.js';
 import { nearPoint } from './query.js';
 import { CELL } from './spatial.js';
 import { usePower, useInstant } from './powers.js';
+import { thawAll } from './season.js'; // design 20
 import { note, undo, creatureOp, thingOp, tileOp } from './undo.js';
 import { rescueFor, releaseBubbles } from './land.js';
 
@@ -329,6 +330,11 @@ export function command(w, c) {
       // landLives); nothing it already changed changes back. Either way the water count is counted afresh at the next step
       // (land.js), as a world loaded from a save counts it, so a world switched on again plays on as its save would.
       else if (c.key === 'land' && w.R.flags.landSwitch) { w.landOn = !!c.value; if (w.land) w.land.keepLive = -1; log(w, w.landOn ? 'log.landOn' : 'log.landOff'); }
+      // Design 20 (THE LIVING YEAR): the parent's Seasons and Weather switches, the land switch's law (this world's, saved in its
+      // settings). Seasons off takes the season's snow and ice back at once (season.js thawAll) and the world is summer's from
+      // then on; weather off clears the sky (the Storm power's clouds are its own and go on).
+      else if (c.key === 'seasons' && w.R.flags.seasons) { w.seasonsOn = !!c.value; if (!w.seasonsOn) thawAll(w); log(w, w.seasonsOn ? 'log.seasonsOn' : 'log.seasonsOff'); }
+      else if (c.key === 'weather' && w.R.flags.weather) { w.weatherOn = c.value === true || c.value === 'auto'; if (!w.weatherOn) { w.weather = 0; w.weatherT = 0; } log(w, w.weatherOn ? 'log.weatherOn' : 'log.weatherOff'); }
       return;
     case 'undo': // takes back the latest step of the player's (undo.js)
       undo(w);

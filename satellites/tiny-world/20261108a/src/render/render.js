@@ -1,7 +1,7 @@
 // Canvas renderer: terrain canvas, y-sorted things and creatures, night, weather and effects.
 // Reads sim state; never writes it. Draws in logical pixels; CSS scales the canvas by an integer.
 import { sprite, palette, tileHash, atlasRef, atlasImage, watchCanvas, restored, repaintSprites } from '../art/sprites.js';
-import { flies, inWater, climeAt } from '../sim/world.js';
+import { flies, inWater, climeAt, seasonOf, weatherOf, SEASONS, W_CLEAR, W_SNOW, W_FOG, W_DROUGHT } from '../sim/world.js'; // design 20: the season and the sky, read only
 import { ent, G_TAKE } from '../sim/ents.js';
 import { heartAt } from '../ui/find.js'; // design 19 A6: the heart that says here it is (DOM free: the fixture reads the same beat)
 
@@ -30,6 +30,32 @@ export function createRenderer(cv, art, cam) {
   const stats = { chunkRedraws: 0, findHearts: 0 }; // for tools: how many chunk canvases were drawn, and frames a find's heart was drawn in (A6)
   const rgb = new Map(); // '#rrggbb' -> [r, g, b]
   const col = (c) => { let v = rgb.get(c); if (!v) { const n = parseInt(c.slice(1), 16); v = [(n >> 16) & 255, (n >> 8) & 255, n & 255]; rgb.set(c, v); } return v; };
+  // Design 20, THE LIVING YEAR: the ground by season (art.season.<name>.ground). Every pixel of PLANT ground (a terrain tagged plant
+  // and not liquid: the grass, the meadow, the clover, the tall grass, the moss, the crops; never the water, the sand, the rock, the
+  // snow, the ice, the path or the dirt) is mixed toward the season's colour and scaled per channel, the result cached per season by
+  // colour string, so drawChunk costs one Map lookup more a pixel. Summer has no entry and seasons off is -1: both take col() itself,
+  // so the game draws exactly as it did. When the season turns, every chunk is drawn again (frame(), as syncTerrain does on an epoch).
+  let season = -1, seasonSeen = -2, shiftDef = null, shiftMap = null;
+  const shiftMaps = [new Map(), new Map(), new Map(), new Map()], ONE = [1, 1, 1];
+  const plantDef = new Map(); // terrain def -> whether the season's shift reaches it
+  const isPlant = (def) => { let p = plantDef.get(def); if (p === undefined) { const tg = def.tags || []; p = tg.indexOf('plant') >= 0 && tg.indexOf('liquid') < 0 && tg.indexOf('water') < 0; plantDef.set(def, p); } return p; };
+  function shifted(c) {
+    let v = shiftMap.get(c);
+    if (!v) {
+      const b = col(c), m = col(shiftDef.mix), wg = shiftDef.w || 0, mul = shiftDef.mul || ONE;
+      v = [0, 0, 0];
+      for (let i = 0; i < 3; i++) v[i] = Math.max(0, Math.min(255, Math.round((b[i] * (1 - wg) + m[i] * wg) * mul[i])));
+      shiftMap.set(c, v);
+    }
+    return v;
+  }
+  function setSeason(s) {
+    seasonSeen = season = s;
+    const sea = s >= 0 && art.season ? art.season[SEASONS[s]] : null;
+    shiftDef = sea && sea.ground && sea.ground.mix ? sea.ground : null;
+    shiftMap = shiftDef ? shiftMaps[s] : null;
+    for (const c of chunks) c.ok.fill(false);
+  }
 
   function resize(w) {
     world = w;
@@ -73,6 +99,7 @@ export function createRenderer(cv, art, cam) {
       // the pads or the fronds gone) until it grows back, the way the lawn does under sheep.
       const bare = w.eaten[i] > 0 && def.bare ? def.bare : null;
       const cols = t === w.C.tid.grass && w.eaten[i] > 0 ? art.eatenGrass : bare ? bare.cols || def.cols : def.cols, ph = def.anim ? p : 0, rock = t === w.C.tid.rock;
+      const plantT = shiftMap !== null && isPlant(def); // design 20: this tile's ground takes the season's colour
       if (def.anim) anim = true;
       // Design 15 C1: tall grass. Blades two or three pixels high standing anywhere up each tile, scattered by
       // the hash of their own column (not a pattern: every third pixel in a row reads as woven matting, and all
@@ -111,7 +138,7 @@ export function createRenderer(cv, art, cam) {
       const groundPh = blade ? 0 : ph; // a swaying terrain moves its blades, not the ground under them
       for (let j = 0; j < 8; j++) for (let k = 0; k < 8; k++) {
         const r = tileHash(tx * 8 + k, ty * 8 + j, groundPh);
-        let cc = cols[r < 0.6 ? 0 : r < 0.82 ? 1 : 2];
+        let cc = cols[r < 0.6 ? 0 : r < 0.82 ? 1 : 2], plant = plantT;
         if (frayed) {
           const gx = tx * 8 + k, gy = ty * 8 + j;
           // How deep this stretch of edge bleeds: coarse, so neighbouring pixels agree and it reads as a run.
@@ -121,7 +148,7 @@ export function createRenderer(cv, art, cam) {
           else if (eR && 7 - k < deep(2, gy)) nb = eR;
           else if (eU && j < deep(3, gx)) nb = eU;
           else if (eD && 7 - j < deep(4, gx)) nb = eD;
-          if (nb) { const nc = nb.cols; cc = nc[r < 0.6 ? 0 : r < 0.82 ? 1 : 2]; }
+          if (nb) { const nc = nb.cols; cc = nc[r < 0.6 ? 0 : r < 0.82 ? 1 : 2]; plant = shiftMap !== null && isPlant(nb); } // (a borrowed pixel is its owner's ground)
         }
         if (blade) {
           // Each column of pixels may carry one blade, two or three high, standing anywhere up the tile: keeping
@@ -152,7 +179,7 @@ export function createRenderer(cv, art, cam) {
         if (glint && k === (j * 3 + 1) % 8 && j === ((tx + ty) % 3) + 2) cc = glint; // and one hard one on glass
         if (rock) { if (j === 7) cc = art.rockBottom; else if (j === 0) cc = art.rockTop; }
         if (padAt) { const pc = padAt(k, j); if (pc) cc = pc; }
-        const v = col(cc), o = (((ty - ty0) * 8 + j) * tw * 8 + (tx - tx0) * 8 + k) * 4;
+        const v = plant ? shifted(cc) : col(cc), o = (((ty - ty0) * 8 + j) * tw * 8 + (tx - tx0) * 8 + k) * 4;
         d[o] = v[0]; d[o + 1] = v[1]; d[o + 2] = v[2]; d[o + 3] = 255;
       }
     }
@@ -172,7 +199,25 @@ export function createRenderer(cv, art, cam) {
   // Water and lava shimmer: four phases, stepped every half second of real time (chunks keep all four).
   function animate(w, dt) {
     animT += dt;
+    frameDt = dt; skyT += dt; // design 20: how far the snow and the leaves fall this frame, and the sky's own clock for their sway and the fog's drift (real time, never the sim's)
     if (animT > 0.5) { animT = 0; animPhase = (animPhase + 1) % 4; }
+  }
+  // Design 20, THE LIVING YEAR: the sky's particles (art.weather.snow, art.season.autumn.leaves). Fixed arrays of world px pairs,
+  // filled on the spell's first frame over the whole view (a sky already full, not a front arriving from the top edge), then each
+  // falls at its rate with a sideways sway and is set down again at the top of the view when it leaves it. Cosmetic rand only.
+  let frameDt = 0, skyT = 0, snowOn = false, leafOn = false;
+  const SNOW_MAX = 120, LEAF_MAX = 60, snow = new Float32Array(SNOW_MAX * 2), leaf = new Float32Array(LEAF_MAX * 2);
+  function drift(P, n, fall, sway, rnd, rx, ry, rw, rh, fresh) {
+    for (let i = 0; i < n; i++) {
+      let x = P[i * 2], y = P[i * 2 + 1];
+      if (fresh) { x = rx + rnd() * rw; y = ry + rnd() * rh; }
+      else {
+        y += fall * frameDt; x += Math.sin(skyT * 1.7 + i * 1.3) * sway * frameDt;
+        if (y > ry + rh || x < rx - 2 || x > rx + rw + 2) { y = ry - 1 - rnd() * 3; x = rx + rnd() * rw; } // out at the bottom or the side: back at the top
+        else if (y < ry - 4) y = ry + rnd() * rh; // (the view jumped: scattered again, not a sky emptied)
+      }
+      P[i * 2] = x; P[i * 2 + 1] = y;
+    }
   }
 
   // Where a creature is drawn: between its last two sim positions, unless it jumped (a drop or a snap).
@@ -293,6 +338,44 @@ export function createRenderer(cv, art, cam) {
   const defRef = new Map(); // thing definition -> [atlas slot, atlas slot when eaten bare]
   function thingOf(d) { let r = defRef.get(d); if (!r) { r = [atlasRef(d.spr, d.over), d.empty ? atlasRef(d.empty) : null,
     d.orient ? atlasRef(d.orient.v, d.over) : null, d.orient ? atlasRef(d.orient.x, d.over) : null]; defRef.set(d, r); } return r; }
+  // Design 20, THE LIVING YEAR: the trees by season (art.season). In autumn the canopies named turn gold, orange and red, each tree
+  // its own tint by its tile's hash, so a wood is never one colour (pines and palms keep their green); in winter they are dulled
+  // dark green with snow on their top rows (sprites.js `_cap`); in spring the fruit trees' r pixels are blossom. Each look is one
+  // atlas slot, made once per thing definition, season and tint and kept here keyed by the season, so the turn of the year costs
+  // nothing but the lookup and the shared def.over is never touched. Summer and seasons off take thingOf's own slots.
+  const seasonRefs = new Map(); // thing def -> per season: null (its summer look), or a list of thingOf-shaped slot rows, one per tint
+  function seasonOver(spr, sea, v) {
+    let over = null;
+    if (sea.canopy && sea.canopy.indexOf(spr) >= 0) {
+      over = sea.tints ? sea.tints[v % sea.tints.length] : sea.over || null;
+      if (sea.cap && sea.cap[spr] > 0) over = { ...(over || {}), _cap: sea.cap[spr] };
+    }
+    if (sea.blossom && sea.blossom.sprites && sea.blossom.sprites.indexOf(spr) >= 0) over = { ...(over || {}), ...sea.blossom.over };
+    return over;
+  }
+  function seasonThing(d, s, tx, ty) {
+    let per = seasonRefs.get(d);
+    if (per === undefined) {
+      per = [null, null, null, null];
+      const r = thingOf(d);
+      for (let k = 0; k < 4 && art.season; k++) {
+        const sea = art.season[SEASONS[k]];
+        if (!sea) continue;
+        const nv = sea.tints ? sea.tints.length : 1, list = [];
+        let any = false;
+        for (let v = 0; v < nv; v++) {
+          const o1 = seasonOver(d.spr, sea, v), o2 = d.empty ? seasonOver(d.empty, sea, v) : null;
+          if (o1 || o2) any = true;
+          list.push([o1 ? atlasRef(d.spr, d.over ? { ...d.over, ...o1 } : o1) : r[0], o2 ? atlasRef(d.empty, o2) : r[1], r[2], r[3]]);
+        }
+        per[k] = any ? list : null;
+      }
+      seasonRefs.set(d, per);
+    }
+    const list = per[s];
+    if (!list) return null;
+    return list.length > 1 ? list[Math.floor(tileHash(tx, ty, 13) * list.length) % list.length] : list[0];
+  }
   // A thing with `orient` picks its look from its own kind beside it (Stephen's tester, Sep 20: a fence has to
   // go up and down as well as across). Render only: the sim never sees it, so no hash moves and no save changes.
   function orientRef(w, s, r) {
@@ -380,6 +463,7 @@ export function createRenderer(cv, art, cam) {
     const T = w.T, W = w.W, H = w.H, lag = (1 - k) * w.R.tickSec, time = w.time - lag;
     const age = (f) => Math.max(0, f.t + lag); // effect time left, as of this frame
     syncTerrain(w);
+    if (seasonOf(w) !== seasonSeen) setSeason(seasonOf(w)); // design 20: the season turned (or the switch): the ground's colours change, so every chunk is drawn again
     // At whole-number zoom the canvas holds logical pixels and CSS scales it up by the zoom (image-rendering:
     // pixelated): crisp, and zoom² fewer pixels to fill than drawing at device resolution. At far zoom it holds
     // device pixels. Then the area outside the world, then the world through the camera.
@@ -527,7 +611,7 @@ export function createRenderer(cv, art, cam) {
       if (it.e !== undefined) { if (far) drawDot(w, it.e, k, z); else if (ui) drawMarked(w, it.e, sel, k, time, lag, ui); else drawEnt(w, it.e, sel, k, time, lag); } // slot 0 is a creature too
       else if (it.f) { bonesRef = bonesRef || atlasRef('bones'); ctx.globalAlpha = Math.min(1, age(it.f)); ctx.drawImage(ATL, bonesRef.sx, bonesRef.sy, 8, 8, Math.round(it.f.x) - 4, Math.round(it.f.y) - 7, 8, 8); ctx.globalAlpha = 1; }
       else {
-        const s = it.s, d = s.def, y = s.ty * T, r = thingOf(d), ref = d.food && s.food < 1 ? r[1] : d.orient ? orientRef(w, s, r) : r[0];
+        const s = it.s, d = s.def, y = s.ty * T, r = (season >= 0 && seasonThing(d, season, s.tx, s.ty)) || thingOf(d), ref = d.food && s.food < 1 ? r[1] : d.orient ? orientRef(w, s, r) : r[0];
         let x = s.tx * T;
         // Everything wiggles when it is poked (design 17: once a poke makes a hen lay, she will poke EVERYTHING, and
         // silence from eight things in ten teaches her that poking is broken). And an egg about to hatch rocks.
@@ -594,6 +678,44 @@ export function createRenderer(cv, art, cam) {
     if (w.rainT > 0) { // 70 streaks over the part of the world in view
       const rx = Math.max(0, vx0), ry = Math.max(0, vy0), rw = Math.min(W, vx1) - rx, rh = Math.min(H, vy1) - ry;
       ctx.fillStyle = art.rain; for (let i = 0; i < 70; i++) ctx.fillRect((rx + rand() * rw) | 0, (ry + rand() * rh) | 0, 1, 3);
+    }
+    // Design 20, THE LIVING YEAR: the sky (bible 05; art.weather). Snow: slow white dots over the view. Fog: a 20% white wash with
+    // three slightly darker bands drifting down it. A dry spell: a faint warm tint. And autumn under a clear sky: a few gold and
+    // orange leaves drifting down (art.season.autumn.leaves). Rain and the storm's shadow keep their own drawing above. Read from the
+    // sim's weather (weatherOf, 0 with the switch off) and season; nothing here is written back.
+    {
+      const wk = weatherOf(w), WA = art.weather || null, rnd = typeof rand === 'function' ? rand : Math.random;
+      const wx = Math.max(0, vx0), wy = Math.max(0, vy0), ww = Math.min(W, vx1) - wx, wh = Math.min(H, vy1) - wy;
+      if (ww > 0 && wh > 0) {
+        const SN = WA && wk === W_SNOW ? WA.snow : null;
+        if (SN) {
+          const n = Math.min(SNOW_MAX, SN.n | 0);
+          drift(snow, n, SN.fall || 14, SN.sway || 0, rnd, wx, wy, ww, wh, !snowOn);
+          ctx.fillStyle = SN.col || '#ffffff';
+          for (let i = 0; i < n; i++) ctx.fillRect(Math.round(snow[i * 2]), Math.round(snow[i * 2 + 1]), 1, 1);
+        }
+        snowOn = !!SN;
+        const FG = WA && wk === W_FOG ? WA.fog : null;
+        if (FG) {
+          ctx.globalAlpha = FG.alpha || 0.2; ctx.fillStyle = FG.wash || '#ffffff'; ctx.fillRect(wx, wy, ww, wh);
+          const nb = FG.bands || 3, bh = Math.max(2, Math.round(wh / (nb * 3))), drift2 = (FG.drift || 5) * skyT;
+          ctx.globalAlpha = FG.bandAlpha || 0.15; ctx.fillStyle = FG.band || '#b8c4cc';
+          for (let b = 0; b < nb; b++) {
+            const yb = wy + Math.round((((drift2 + (b * wh) / nb) % wh) + wh) % wh);
+            ctx.fillRect(wx, yb, ww, Math.min(bh, wy + wh - yb));
+          }
+          ctx.globalAlpha = 1;
+        }
+        const DR = WA && wk === W_DROUGHT ? WA.drought : null;
+        if (DR) { ctx.globalAlpha = DR.alpha || 0.09; ctx.fillStyle = DR.tint || '#ffd070'; ctx.fillRect(wx, wy, ww, wh); ctx.globalAlpha = 1; }
+        const LV = season === 2 && wk === W_CLEAR && art.season && art.season.autumn ? art.season.autumn.leaves : null;
+        if (LV) {
+          const n = Math.min(LEAF_MAX, LV.n | 0), cols = LV.cols || ['#e8842a'];
+          drift(leaf, n, LV.fall || 9, LV.sway || 0, rnd, wx, wy, ww, wh, !leafOn);
+          for (let i = 0; i < n; i++) { ctx.fillStyle = cols[i % cols.length]; ctx.fillRect(Math.round(leaf[i * 2]), Math.round(leaf[i * 2 + 1]), i & 1 ? 1 : 2, 1); }
+        }
+        leafOn = !!LV;
+      }
     }
     let bolts = 0; // Smite on an army: only bolts in view, at most 300, drawn over the part of the sky in view
     let bubbles = 0; // (his note, 4 Oct 2026: bubbles from the wands, at most BUBBLES_MAX in a frame)

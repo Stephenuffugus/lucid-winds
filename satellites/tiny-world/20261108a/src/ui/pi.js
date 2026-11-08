@@ -20,6 +20,10 @@ export const FN_BASE = 'https://us-central1-focus-grove-fffa8.cloudfunctions.net
 export const OWNED_KEY = 'tw_pi_owned';
 export const SANDBOX_KEY = 'tw_pi_sandbox';       // '1' sandbox (test Pi), '0' real; unset: the test host sandboxes
 export const SCOPES = ['username', 'payments'];
+// the Testnet app also asks for her wallet address: Pi pays the five testers App to User and refuses without it
+// (9 Oct: missing_scope, "User hasn't authorized wallet_address scope for you to access the public key"). The real
+// app never pays anyone, so it asks for nothing more than the listing rules need.
+export const SCOPES_TEST = ['username', 'payments', 'wallet_address'];
 export const FREE_ALWAYS = new Set(['hand', 'power:erase']); // the Hand and Erase are tools, never content
 
 export function railFor(hostname, params) {
@@ -28,6 +32,10 @@ export function railFor(hostname, params) {
 }
 export function gameIdFor(hostname) {
   return String(hostname || '').toLowerCase().endsWith(TEST_HOST_SUFFIX) ? GAME_TEST : GAME;
+}
+// what sign in asks for: the test host adds the wallet address (the tester payout), the real host does not
+export function scopesFor(hostname) {
+  return String(hostname || '').toLowerCase().endsWith(TEST_HOST_SUFFIX) ? SCOPES_TEST : SCOPES;
 }
 export function sandboxFor(hostname, flag) {
   if (flag === '1') return true;
@@ -48,11 +56,11 @@ export function isLocked(rail, owned, free, cat, id) {
 }
 
 export function createPi({ data, str, hostname = '', params = null, storage = null, say = () => {}, onChange = () => {} }) {
-  const rail = railFor(hostname, params), game = gameIdFor(hostname), free = freeSet(data.tray);
+  const rail = railFor(hostname, params), game = gameIdFor(hostname), scopes = scopesFor(hostname), free = freeSet(data.tray);
   const read = (k) => { try { return storage ? storage.getItem(k) : null; } catch (e) { return null; } };
   const write = (k, v) => { try { if (storage) storage.setItem(k, v); } catch (e) { /* private mode */ } };
   const P = {
-    rail, game, free,
+    rail, game, scopes, free,
     owned: rail === 'pi' && read(OWNED_KEY) === '1',
     user: null, sdk: false, checking: false, sandbox: rail === 'pi' && sandboxFor(hostname, read(SANDBOX_KEY)),
     get active() { return rail === 'pi'; },
@@ -88,7 +96,7 @@ export function createPi({ data, str, hostname = '', params = null, storage = nu
     const Pi = globalThis.Pi;
     if (!Pi || !P.sdk) return null;
     try {
-      const auth = await Pi.authenticate(SCOPES, (payment) => recover(payment));
+      const auth = await Pi.authenticate(scopes, (payment) => recover(payment));
       P.user = { uid: auth.user.uid, username: auth.user.username, token: auth.accessToken };
     } catch (e) { P.user = null; return null; }
     await P.refreshOwned();

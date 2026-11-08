@@ -23,12 +23,26 @@ export function worldSettings(C, given) {
     // Design 19 A8 (Astra M4): the parent's Living Land switch, on unless the world was given it off. No preset carries it: every
     // world starts with its land alive, and every world saved before the switch existed had one (a save's is a boolean: save.js check).
     land: g.land !== false,
+    // Design 20 (THE LIVING YEAR): seasons and weather, the parent's two other switches. Only a boolean (or 'auto'/'off') given
+    // counts: the sim's own defaults (rules.world.sim) have both off, so the tools' worlds are the worlds they were; the presets
+    // turn them on; a save written before them is migrated to OFF (save.js MIGRATIONS[13]: an old world plays on as it did).
+    seasons: typeof g.seasons === 'boolean' ? g.seasons : d.seasons,
+    weather: g.weather === 'auto' || g.weather === 'off' ? g.weather : d.weather,
   };
 }
 // Design 19 A8 (flag `landSwitch`): is the land alive in this world? Off (the parent's switch, w.landOn, saved with the world), the
 // land rests: its pass (the ground changing by itself, and the land rows it raises), its arrivals (a row that waits on the ground's
 // days) and its migrations (the `migrate` verb) stop, and nothing already changed changes back.
 export const landLives = (w) => !w.R.flags.landSwitch || w.landOn;
+// Design 20, THE LIVING YEAR (sim/season.js). The season is read from the clock: whole days over rules.season.days, plus the
+// Season power's skips (w.seasonShift, in days), mod four, spring first; -1 with the switch (or the flag) off, which every reader takes as
+// "no season" (the summer look, every multiplier 1). The sky is one of WEATHER (w.weather), clear with the switch off.
+export const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
+export const WEATHER = ['clear', 'rain', 'storm', 'snow', 'fog', 'drought'];
+export const W_CLEAR = 0, W_RAIN = 1, W_STORM = 2, W_SNOW = 3, W_FOG = 4, W_DROUGHT = 5;
+export const seasonAt = (w, time) => (((((time / w.daySec) | 0) + w.seasonShift) / w.R.season.days) | 0) % 4; // (seasonShift: whole DAYS the Season power added, so a skipped-to season still lasts its eight days)
+export const seasonOf = (w) => (w.R.flags.seasons && w.seasonsOn ? seasonAt(w, w.time) : -1);
+export const weatherOf = (w) => (w.R.flags.weather && w.weatherOn ? w.weather : W_CLEAR);
 
 // A village's job board and what it remembers, as a world starts it and as a Clear leaves it (one list, so the two
 // never drift apart). Every field it will ever carry is here from the start (design 18 A15's law).
@@ -62,6 +76,12 @@ export function createWorld(C, { cols, rows, seed, settings }) {
     // per day scales with it, anything in seconds does not), Gentle as an index into GENTLE, Pets safe, first world.
     daySec: set.daySec, gentle: GENTLE.indexOf(set.gentle), petsSafe: set.petsSafe, first: set.first,
     landOn: set.land, // design 19 A8: the parent's Living Land switch for THIS world (landLives); a Clear keeps it, as it keeps the others
+    // Design 20 (THE LIVING YEAR, sim/season.js): the two switches; the Season power's skips; the sky and its seconds left; what
+    // the season's snow and ice cover (terrain id + 1, 0 = not the season's); the pass's ice (or thaw) and snow counts this pass (its caps); and two
+    // scratch readings a step takes once (not saved, not hashed): cold night, and how fast fire spreads.
+    seasonsOn: set.seasons, weatherOn: set.weather === 'auto', seasonShift: 0, weather: 0, weatherT: 0, under: new Uint8Array(n), seasonN: 0, snowN: 0,
+    coldNight: false, fireM: 1,
+    snowOn: C.TERR.map((t) => (C.rules.season.snowOn.indexOf(t.id) >= 0 ? 1 : 0)), // the ground snow settles on, by terrain id
     tick: 0, // steps simulated since the world was created; Clear does not reset it
     fx: [], fxN: 0, // effect records; the first fxN are live (fx.js)
     dt: C.rules.tickSec, tgt: new Float64Array(2), // the step length and a step's target point (ai/move.js step())
@@ -131,6 +151,7 @@ export function resetWorld(w) {
   w.terr.fill(w.C.tid.grass); w.eaten.fill(0); w.grid.fill(null); w.eatenN = 0; w.eatenIn.fill(0);
   w.wear.fill(0); w.wearN = 0; // (a Clear takes the paths with it)
   w.age.fill(0); w.hold.fill(0); w.landN = 0; w.keepWater = 0; if (w.land) w.land.keepLive = -1; // (design 19: and the land's memory, and its water count)
+  w.seasonShift = 0; w.weather = 0; w.weatherT = 0; w.under.fill(0); w.seasonN = 0; w.snowN = 0; w.coldNight = false; w.fireM = 1; // (design 20: a cleared world starts in spring under a clear sky; its two switches stay)
   w.burn.fill(0); w.burnN = 0; w.tmr.length = 0; w.fireSpent = 0;
   w.claim.fill(0); w.claimN = 0; w.vg = freshVillage();
   if (w.rx) { w.rx.cool.clear(); w.rx.chain.length = 0; w.rx.depth = 0; w.rx.lastTile = new Int32Array(w.cap).fill(-1); }
@@ -512,6 +533,7 @@ export function setTerrain(w, tx, ty, t) {
   w.terr[i] = t; w.topo++;
   w.eaten[i] = 0;
   w.age[i] = 0; // design 19 A1: the one door every ground change goes through, so a tile's age is its age as this kind
+  w.under[i] = 0; // design 20: and whatever changes a tile, the season no longer holds it (season.js writes `under` after this)
   markDirty(w, i);
   // Design 15 C1: ground that grows into other ground (crops) sets its own clock going, and any clock the tile
   // was already running is dropped, so a tile is never waiting on two of them.

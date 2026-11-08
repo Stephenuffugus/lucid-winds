@@ -17,6 +17,7 @@ import { story, storyOf, STI, NO, kindIcon } from './story.js';
 import { reactPlaced, reactPower, layEgg, climbDown } from './reactions.js';
 import { fireTick, reactEnter, reactClock, reactBeam, reactEat } from './reactions.js';
 import { landTick, namedNear, groundMay, bubbleTick } from './land.js';
+import { seasonTurn, seasonTick, weatherTick, growMul, foodMul, breedMul, coldNight, fireMul } from './season.js'; // design 20, THE LIVING YEAR
 import { villageTick, finishBuild , equipVillager, worn, fadePaths, birdAte } from './village.js';
 import { command, handLanded } from './commands.js';
 
@@ -52,19 +53,28 @@ export function update(w, dt) {
     reactClock(w, night ? 'dusk' : 'dawn');
     if (!night) { visitor(w); fadePaths(w); } // (design 18 E3: the worn ground fades a little every morning)
   }
+  // Design 20 (THE LIVING YEAR, season.js): the season's turn, then the sky, both before the fire (rain puts it out, a dry spell
+  // spreads it), and the step's two readings: cold night (creature(): hunger rises as on snow) and how fast fire spreads.
+  seasonTurn(w, dt);
+  weatherTick(w, dt);
+  w.coldNight = coldNight(w); w.fireM = fireMul(w);
   fireTick(w, dt);
   landTick(w); // design 19 A2: the living land, once a game minute, sliced (land.js)
+  seasonTick(w); // design 20: the winter pass (shore ice, settled snow) and the spring thaw, once a game minute, sliced (season.js)
   stormTick(w, dt);
   villageTick(w, dt); // the village's job board (14 §7 item 13)
 
   // Eaten grass regrows: the listed tiles only (the same countdown per tile as sweeping every tile; only the
   // order the renderer hears about regrown tiles in changes).
   const eaten = w.eaten, list = w.eatenList, inList = w.eatenIn;
+  // Design 20: by season, rain and dry spell (season.js growMul: spring twice as fast, winter and a dry spell not at all, rain
+  // three times as fast); 1 with the switches off, so every recorded world regrows as it did.
+  const gm = growMul(w), fm = foodMul(w);
   let ne = 0;
   for (let k = 0; k < w.eatenN; k++) {
     const i = list[k];
     if (eaten[i] > 0) {
-      eaten[i] -= dt;
+      eaten[i] -= dt * gm;
       if (eaten[i] <= 0) { eaten[i] = 0; markDirty(w, i); inList[i] = 0; continue; }
       list[ne++] = i;
     } else inList[i] = 0; // zeroed by Rain or new terrain since it was listed
@@ -76,7 +86,7 @@ export function update(w, dt) {
   const structs = w.structs;
   for (let k = 0; k < structs.length; k++) {
     const s = structs[k];
-    if (s.def.food && s.food < R.food.max) s.food += dt / R.food.regrowSec;
+    if (s.def.food && s.food < R.food.max) s.food += (dt / R.food.regrowSec) * fm; // (design 20: autumn twice, winter and a dry spell not at all)
     if (s.def.hatch && R.flags.eggs && (!s.cooked || s.def.perish)) { // design 17: an egg, on its own clock (saved and hashed as every thing's cd is); (design 19 G3.1: bones a campfire cooked still turn to ground)
       s.cd += dt;
       // No room for another yet: it waits, well short of the last few seconds in which an egg ROCKS (render.js), so
@@ -157,7 +167,7 @@ export function creature(w, e, dt, night) {
   // Design 19 A7 (flag waterRescue): one she named floating in its rescue bubble (land.js bubbleTick, which may take it to water
   // now): its hunger, its starving and the dry ground under it wait, and it stays where it floats.
   const bub = E.bubbleT[e] > 0 && bubbleTick(w, e);
-  const k = tileOf(w, e), t = k < 0 ? -1 : w.terr[k], wet = inWater(w, e), cold = (C.TERR[t] || {}).cold && !sp.snow; // t: terrAt()
+  const k = tileOf(w, e), t = k < 0 ? -1 : w.terr[k], wet = inWater(w, e), cold = !sp.snow && ((C.TERR[t] || {}).cold || (w.coldNight && !E.inside[e])); // t: terrAt() (design 20: a winter night is cold ground everywhere, indoors excepted)
   if (!bub) E.hunger[e] = Math.min(N.hungerMax, E.hunger[e] + sp.hr * dt * (cold ? N.coldHunger : 1) * (E.inside[e] ? N.insideHunger : 1));
   // Design 19, his calls of 30 Sep (flag `shoreKeeps`): one that keeps to the water and its edge (the crayfish, creatures.json `shore`)
   // lives on the bones it finds there, and the water it stands in feeds it as it feeds a fish only once it is desperate (past
@@ -821,7 +831,7 @@ function goMate(w, e) {
     const b = full ? -1 : spawn(w, kind, E.x[e], E.y[e], true);
     // Design 15 C1: a meadow is where things pair off. A pair standing in the flowers is ready again sooner,
     // so a flock on a meadow raises about half as many young again as one on plain grass.
-    const cd = breedCdOf(w, kind) / (R.flags.meadow && onFlowers(w, e) ? R.breed.meadowMul : 1);
+    const cd = breedCdOf(w, kind) / (R.flags.meadow && onFlowers(w, e) ? R.breed.meadowMul : 1) / breedMul(w); // (design 20: spring ×1.5)
     E.breedCd[e] = E.breedCd[o] = cd; E.hunger[e] += R.breed.hungerCost; E.hunger[o] += R.breed.hungerCost; E.goalKind[e] = 0;
     if (b >= 0) {
       E.hunger[b] = R.breed.babyHunger;
