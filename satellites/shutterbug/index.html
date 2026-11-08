@@ -1087,7 +1087,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-20';
+  SB.BUILD = 'sb-m2-21';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -12259,7 +12259,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   var ML = { st: null, kind: '', until: -1, jumped: false };
   /* round 11 (sb-m2-19): the crosswind's breath, once at each blow's first frame (the sim has no event bit left; the clock is the frame's) */
   var WC = { st: null, ph: 0 };
-  function windCue(st) { var lv = G.level; if (!lv || !lv.features || !lv.features.wind) return; if (st !== WC.st) { WC.st = st; WC.ph = 0; } var ph = SB.sim.windPhase(lv, st.frame); if (ph === 2 && WC.ph !== 2) au.sfx('dive'); WC.ph = ph; }   /* the dive's whoosh stands in for the inhale until a wind sound is written */
+  function windCue(st) { var lv = G.level; if (!lv || !lv.features || !lv.features.wind) return; if (st !== WC.st) { WC.st = st; WC.ph = 0; } var ph = SB.sim.windPhase(lv, st.frame); if (ph === 2 && WC.ph !== 2) SB.audio.sfx('dive'); WC.ph = ph; }   /* the dive's whoosh stands in for the inhale until a wind sound is written; SB.audio, not the event loop's local au (sb-m2-21 hotfix: a ReferenceError at the first blow) */
   function onOneWay(h, lv, K) {
     var CS = K.CELL_SUB, r = Math.floor((h.y + K.HERO_H_SUB) / CS), c0 = Math.floor(h.x / CS), c1 = Math.floor((h.x + K.HERO_W_SUB - 1) / CS), w = lv.w, c, plat = false;
     if (r < 0 || r + 1 >= lv.h) return false;
@@ -12777,7 +12777,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=42').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=43').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.
