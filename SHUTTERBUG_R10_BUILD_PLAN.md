@@ -25,7 +25,7 @@ The deploy wrapper pattern: /home/codespace/sb-drafts/sb-m2-12/deploy-sb-m2-12.s
 first, then tools/shutterbug-tests/deploy.sh with the stamp). The browser gates in test/ are red since before R9 on a
 stale #sample: not tonight's job.
 
-## HOTFIX sb-m2-21 (84536f6bb, 8 Nov ~01:31 UTC, NOT YET LIVE): the crosswind's breath called au.sfx, but au is a local of the event loop's function (line ~12676), so the first blow in an Attic room under FLAG_WIND (every new capture, every house Attic room) threw a ReferenceError in the UI's frame hook; now SB.audio.sfx('dive'). The harness never runs the UI; the browser gates would have caught it but they all die first at a missing #sample element. LINE: `! bash /home/codespace/sb-drafts/sb-m2-21/deploy-sb-m2-21.sh`
+## HOTFIX sb-m2-21 LIVE 8 Nov ~01:49 UTC by his line, rerun after the first run tripped H-rep-6's 50 ms budget under a stray redwatch browser run (lucid-winds main 88d0e4e1b; lucidwinds.com/satellites/shutterbug/ serves BUILD sb-m2-21, sw.js?v=43, shutterbug-v43). Stamped 84536f6bb: the crosswind's breath called au.sfx, but au is a local of the event loop's function (line ~12676), so the first blow in an Attic room under FLAG_WIND (every new capture, every house Attic room) threw a ReferenceError in the UI's frame hook; now SB.audio.sfx('dive'). The harness never runs the UI; the browser gates would have caught it but they all die first at a missing #sample element. LINE: `! bash /home/codespace/sb-drafts/sb-m2-21/deploy-sb-m2-21.sh`
 
 ## LIVE 8 Nov ~01:13 UTC by his line (lucid-winds main 758cac4db; lucidwinds.com/satellites/shutterbug/ serves BUILD sb-m2-20, sw.js?v=42, shutterbug-v42): sb-m2-19 (the crosswind) and 20 (the collapsing staircase) in one push
 

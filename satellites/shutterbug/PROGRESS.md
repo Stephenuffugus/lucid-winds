@@ -1793,4 +1793,5 @@ LIVE 8 Nov ~01:13 UTC by his line (lucid-winds main 758cac4db; lucidwinds.com/sa
 shipped: windCue calls SB.audio.sfx('dive') (au was the event loop's local; a ReferenceError at the first blow in any windy Attic room since sb-m2-19/20 went live at 01:12 UTC)
 gates: lint green; the fast harness unchanged (no sim change); the browser gates: fourteen red on the missing #sample element (test/harness.mjs tap), the play loop zero page errors
 line: `! bash /home/codespace/sb-drafts/sb-m2-21/deploy-sb-m2-21.sh`
+LIVE 8 Nov ~01:49 UTC by his line, rerun after the first run tripped H-rep-6's 50 ms budget under a stray redwatch browser run (lucid-winds main 88d0e4e1b; lucidwinds.com/satellites/shutterbug/ serves BUILD sb-m2-21, sw.js?v=43, shutterbug-v43)
 lesson: a UI change needs one browser run in the room it changes; the harness never executes the UI
