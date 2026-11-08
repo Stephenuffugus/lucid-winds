@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 8 Nov 2026, 00:55 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 8 Nov 2026, 01:13 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 1. The art, in this order (you, then Astra)
 
@@ -67,7 +67,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Chapter 5 Tomato Man B, THE RUN, with chapter 8 (her run art) inside it, sunstruck 1125c0d4 (Fable, 7 Nov)  
 - [x] Chapter 6 Shutterbug R10, film stocks, rank, keepsakes (sb-m2-13), the four verbs (sb-m2-15) (Fable, 7 Nov)  
 - [x] Chapter 7 Shutterbug round 10 art wired, sb-m2-14 (Fable, 7 Nov)  
-- [x] Shutterbug round 11 code before her art: the Loom and the Wasp live (sb-m2-17), the guardians' phases (sb-m2-18), the crosswind (sb-m2-19) and the collapsing staircase (sb-m2-20) wait for your one line; the swinging strands wait for round 11's art (Fable, 7 and 8 Nov)  
+- [x] Shutterbug round 11 code before her art: the Loom and the Wasp live (sb-m2-17), the guardians' phases (sb-m2-18), the crosswind (sb-m2-19) and the collapsing staircase (sb-m2-20): LIVE 8 Nov by your line; the swinging strands wait for round 11's art (Fable, 7 and 8 Nov)  
 - [x] Chapter 10 Tomato Man The Hero wired, sunstruck d5e80d9: LIVE 7 Nov by your line (Fable)  
 - [x] Chapter 11 Tomato Man Planet Tomató (the moon crosses the Dunes and the Eclipse once a level, its shadow is shade; the cue, a coach mark, a How card): LIVE 7 Nov by your line (Fable)  
 - [x] Chapter 12 Tomato Man THE SPLIT and the walk order (two lanes of awnings in the Dunes and the Eclipse, each shade on its own clock; the walk frames alternate the feet): LIVE 8 Nov by your line (Fable)  
@@ -83,7 +83,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Tomato Man The Hero (the thirteen produce bodies on the tomato's rig; her builder heads): LIVE 7 Nov, main 1c2388105 (you ran the line)  
 - [x] Tomato Man Planet Tomató (a tomato moon crosses the Dunes and the Eclipse once a level; ride its shadow): LIVE 7 Nov, main d5b3a7a75 (you ran the line)  
 - [x] Tomato Man THE SPLIT and the walk order (two lanes of awnings, shades on their own clocks, the feet alternate): LIVE 8 Nov, main b07c49c06 (you ran the line)  
-- [ ] Shutterbug sb-m2-19 and 20 (round 11 code: THE CROSSWIND, Attic rooms breathe every six seconds and push you a cell; THE COLLAPSING STAIRCASE, a run of hanging steps that go bottom first when you stand on one; the shelf's frames, streaks and the dive's whoosh stand in for Astra's art): `! bash /home/codespace/sb-drafts/sb-m2-20/deploy-sb-m2-20.sh` (you)  
+- [x] Shutterbug sb-m2-19 and 20 (round 11 code: THE CROSSWIND and THE COLLAPSING STAIRCASE; the shelf's frames, streaks and the dive's whoosh stand in for Astra's art): LIVE 8 Nov, main 758cac4db (you ran the line)  
 - [ ] Keepsies m4 (Astra's round 3 on the new shot: her hold circle, the reticle at 154, the snap card, the chalk breaks, the chip): `! bash /home/codespace/kp-drafts/deploy-keepsies-m4.sh` (you)  
 - [ ] Sunforge v5.2 (Astra's obsidian shards, the heating rest, the notch and lit seam, How 05): `! bash /home/codespace/sf-drafts/deploy-sunforge-m3.sh` (you)  
 - [ ] Run each deploy line Opus left at the top of START-HERE.md, one at a time at an idle prompt (you)  

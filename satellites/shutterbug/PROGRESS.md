@@ -1787,3 +1787,4 @@ shipped: FLAG_R11 64 (FLAGS_KNOWN 127, C.FLAGS 127, level.r11); r11Pieces places
 gates: lint green; H-r11-1 green; H-v2-1 at bit 7; redwatch anchors 684; the fast harness alone 10532 assertions 0 failing
 shots: none (the shelf's frames stand in for staircase_step)
 line: `! bash /home/codespace/sb-drafts/sb-m2-20/deploy-sb-m2-20.sh` (ships sb-m2-19 too)
+LIVE 8 Nov ~01:13 UTC by his line (lucid-winds main 758cac4db; lucidwinds.com/satellites/shutterbug/ serves BUILD sb-m2-20, sw.js?v=42, shutterbug-v42)
