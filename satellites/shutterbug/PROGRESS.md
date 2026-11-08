@@ -1788,3 +1788,9 @@ gates: lint green; H-r11-1 green; H-v2-1 at bit 7; redwatch anchors 684; the fas
 shots: none (the shelf's frames stand in for staircase_step)
 line: `! bash /home/codespace/sb-drafts/sb-m2-20/deploy-sb-m2-20.sh` (ships sb-m2-19 too)
 LIVE 8 Nov ~01:13 UTC by his line (lucid-winds main 758cac4db; lucidwinds.com/satellites/shutterbug/ serves BUILD sb-m2-20, sw.js?v=42, shutterbug-v42)
+
+## sb-m2-21 (8 Nov 2026, Fable): hotfix, the crosswind's breath
+shipped: windCue calls SB.audio.sfx('dive') (au was the event loop's local; a ReferenceError at the first blow in any windy Attic room since sb-m2-19/20 went live at 01:12 UTC)
+gates: lint green; the fast harness unchanged (no sim change); the browser gates: fourteen red on the missing #sample element (test/harness.mjs tap), the play loop zero page errors
+line: `! bash /home/codespace/sb-drafts/sb-m2-21/deploy-sb-m2-21.sh`
+lesson: a UI change needs one browser run in the room it changes; the harness never executes the UI

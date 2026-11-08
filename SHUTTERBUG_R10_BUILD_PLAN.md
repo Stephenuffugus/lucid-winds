@@ -25,6 +25,8 @@ The deploy wrapper pattern: /home/codespace/sb-drafts/sb-m2-12/deploy-sb-m2-12.s
 first, then tools/shutterbug-tests/deploy.sh with the stamp). The browser gates in test/ are red since before R9 on a
 stale #sample: not tonight's job.
 
+## HOTFIX sb-m2-21 (84536f6bb, 8 Nov ~01:31 UTC, NOT YET LIVE): the crosswind's breath called au.sfx, but au is a local of the event loop's function (line ~12676), so the first blow in an Attic room under FLAG_WIND (every new capture, every house Attic room) threw a ReferenceError in the UI's frame hook; now SB.audio.sfx('dive'). The harness never runs the UI; the browser gates would have caught it but they all die first at a missing #sample element. LINE: `! bash /home/codespace/sb-drafts/sb-m2-21/deploy-sb-m2-21.sh`
+
 ## LIVE 8 Nov ~01:13 UTC by his line (lucid-winds main 758cac4db; lucidwinds.com/satellites/shutterbug/ serves BUILD sb-m2-20, sw.js?v=42, shutterbug-v42): sb-m2-19 (the crosswind) and 20 (the collapsing staircase) in one push
 
 ## ROUND 11 CODE, THE COLLAPSING STAIRCASE (sb-m2-20, f8a29580b, 8 Nov ~00:48 UTC): under a new record bit FLAG_R11 (64, the byte's second to last; bit 7 is the last, the next flag needs a v3 record) the rooms that take round 9's pieces may hold one run of three to five one cell steps rising diagonally from the furniture, off the climb; stand on any step and they give way bottom first half a second apart with the shelf's crack and fall, back four seconds after the last. The shelf's frames stand in for her staircase_step. H-r11-1. ONE line ships 19 and 20: `! bash /home/codespace/sb-drafts/sb-m2-20/deploy-sb-m2-20.sh`. The swinging strands join FLAG_R11 when their art lands (the knot the bug rides needs her five swing frames to read).
