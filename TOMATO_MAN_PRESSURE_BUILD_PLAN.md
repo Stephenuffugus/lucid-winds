@@ -49,6 +49,7 @@ The laws of TOMATO_MAN_BUILD_PLAN.md bind (the readability contract, the copy la
 ## STATE (the builder updates this block; one line per step)
 | Step | State | Commit | Note |
 |---|---|---|---|
+| 1 | DONE 8 Nov | ac865c2 | fair lunge: ring follows half the warning then locks solid (cue "now"), strike never chases, reach clamped to 110 px at runtime for levels, daily and run, dash inside a locked ring = 0.35 s immunity; check OK; shot taken, not opened (7405 ring red px, no page errors) |
 
 ## THE STEPS
 
