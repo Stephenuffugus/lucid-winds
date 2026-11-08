@@ -913,7 +913,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
        Astra's mark for BOSS_SECOND_TELL_S and BOSS_SECOND_EVERY_S a cycle; under BOSS_RAGE_PCT of its HP a cycle runs 3/4
        as long (the fight gets faster as it erodes). Attic's dust cloud drifts at BOSS_DUST_CPS cells a second, Frost's breath
        blows, Deep's whip rises and holds, Bramble's pods roll and Ember's flame crawls along the floor */
-    BOSS_SECOND_EVERY_S: 4, BOSS_SECOND_TELL_S: 0.9, BOSS_RAGE_PCT: 50, BOSS_RAGE_ICE_COLUMNS: 5, BOSS_RAGE_SPARKS: 2, BOSS_RAGE_SPEED: 1.5, BOSS_RAGE_RING_CELLS: 2 /* round 11 phases (Stephen: two or three phases): under half its HP every guardian's attack grows */, BOSS_DUST_LIFE_S: 6, BOSS_DUST_CPS: 1, BOSS_BREATH_LIFE_S: 1.2, BOSS_WHIP_RISE_S: 0.3, BOSS_WHIP_HOLD_S: 0.4,
+    BOSS_SECOND_EVERY_S: 4, BOSS_SECOND_TELL_S: 0.9, BOSS_RAGE_PCT: 50, BOSS_RAGE_ICE_COLUMNS: 5, BOSS_RAGE_SPARKS: 2, BOSS_RAGE_SPEED: 1.5, BOSS_RAGE_RING_CELLS: 2 /* round 11 phases (Stephen: two or three phases): under half its HP every guardian's attack grows */, WIND_FIRST_S: 3, WIND_PERIOD_S: 6, WIND_BLOW_S: 1.2, WIND_TELL_S: 0.5 /* round 11 crosswind (sb-m2-19): the first blow, the quiet between blows, a blow, the streaks before it */, BOSS_DUST_LIFE_S: 6, BOSS_DUST_CPS: 1, BOSS_BREATH_LIFE_S: 1.2, BOSS_WHIP_RISE_S: 0.3, BOSS_WHIP_HOLD_S: 0.4,
     BOSS_POD_LIFE_S: 5, BOSS_POD_CPS: 2, BOSS_FLAME_LIFE_S: 3, BOSS_FLAME_CPS: 1.5,
     STOMP_GRACE_S: 0.5 /* W3: a stomped enemy's contact off the hero */,
     /* the second monsters (2 Nov): the bunny's roll, the owl's swoop, the crab's shell, the puff's cloud, the beetle's trail */
@@ -1282,7 +1282,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      and their code: nothing that was shared changes. */
   var V = 2, HEADER = 6, HEADER2 = 9, HEX = '0123456789abcdef';
   /* what this client knows of v2's three bytes (raised only by the lane that builds what a value means) */
-  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAG_BESTIARY = 2, FLAG_R9 = 4, FLAG_R10 = 8, FLAG_VERBS = 16, FLAGS_KNOWN = FLAG_KEYS | FLAG_BESTIARY | FLAG_R9 | FLAG_R10 | FLAG_VERBS;   /* bit 4: round 10's four verbs, the lobber, dropper, shellback and splitter (sb-m2-15): a code made before it keeps its room */   /* bit 3: round 10's keepsakes (7 Nov): a code made before it keeps its room */   /* FLAGS bit 0: the exit locked by keys; bit 1: the second monsters (2 Nov); bit 2: round 9's third and fourth monsters, room pieces and floors (6 Nov): a code made before it keeps its room */
+  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAG_BESTIARY = 2, FLAG_R9 = 4, FLAG_R10 = 8, FLAG_VERBS = 16, FLAG_WIND = 32 /* round 11 (sb-m2-19): the window crosswind in Attic rooms */, FLAGS_KNOWN = FLAG_KEYS | FLAG_BESTIARY | FLAG_R9 | FLAG_R10 | FLAG_VERBS | FLAG_WIND;   /* bit 4: round 10's four verbs, the lobber, dropper, shellback and splitter (sb-m2-15): a code made before it keeps its room */   /* bit 3: round 10's keepsakes (7 Nov): a code made before it keeps its room */   /* FLAGS bit 0: the exit locked by keys; bit 1: the second monsters (2 Nov); bit 2: round 9's third and fourth monsters, room pieces and floors (6 Nov): a code made before it keeps its room */
   function headOf(v) { return v === 1 ? HEADER : HEADER2; }
   /* a v2 header holding a byte this client does not know (a biome past BIOME_MAX, rules past RULES_MAX, a flag bit
      outside FLAGS_KNOWN): such a code is a newer client's, never 'bad' and never built */
@@ -1459,7 +1459,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return { v: 1, dp: 0, collection: [], prints: [], pool: { jump: [], dive: [], charm: [] },
       unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
       settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false, stock: 0 },   /* R10: the film stock picked at develop, 0 Auto, 1 to 5 a biome */
-      onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0, hold: false, drop: false, tripod: false } },   /* sb-m2-16: hold, drop, tripod, the moves taught once */
+      onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0, hold: false, drop: false, tripod: false, wind: false } },   /* sb-m2-16: hold, drop, tripod, the moves taught once */
       run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0, albumPages: 0, albumBiomes: 0, curios: 0, curioSets: 0 }, trophies: [], trophySeen: 0, album: [], curios: [],
       log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false, days: 0 }, best: {}, quarantine: null, rank: 0 };   /* R10: the rank last granted (its rewards given) */
   }
@@ -1633,7 +1633,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return fromJSON(j);
   }
   function daily(day) { var n = DAILY_CFG.length; return dailyAt(DAILY_CFG[((day % n) + n) % n]); }
-  SB.record = { V: V, daily: daily, dailyAt: dailyAt, DAILY_N: DAILY_N, DAILY_SKIP: DAILY_SKIP, DAILY_CYCLE: DAILY_CFG.length, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, FLAG_R10: FLAG_R10, FLAG_VERBS: FLAG_VERBS, FLAG_BESTIARY: FLAG_BESTIARY, FLAG_R9: FLAG_R9, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
+  SB.record = { V: V, daily: daily, dailyAt: dailyAt, DAILY_N: DAILY_N, DAILY_SKIP: DAILY_SKIP, DAILY_CYCLE: DAILY_CFG.length, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, FLAG_R10: FLAG_R10, FLAG_VERBS: FLAG_VERBS, FLAG_WIND: FLAG_WIND, FLAG_BESTIARY: FLAG_BESTIARY, FLAG_R9: FLAG_R9, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
     encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows, parseCode: parseCode, linkOf: linkOf,
     saveDefaults: saveDefaults, validateSave: validateSave, loadSave: loadSave,
     runValid: runValid, runFresh: runFresh, runEnter: runEnter, runClear: runClear, runDie: runDie, runRetry: runRetry,
@@ -2100,7 +2100,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       rec: rec, pal: pal, w: w, h: h, seed: SB.record.seedOf(rec), biome: biomeFor(rec, pal, n, opts),
       negative: negative, L: L, solid: solid, plat: plat, tab: z(), slick: z(), sticky: z(), trap: z(),
       otsuT: otsuT, landmarks: landmarks, spawn: spawn, exit: -1, beacon: { idx: -1, cells: new Int32Array(0) },
-      features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null },
+      features: { ladder: null, pocket: null, door: null, specks: [], chest: null, scroll: null, blueprint: null, enemies: [], trap: null, boss: null, wind: null },
       repair: { tabs: 0, passes: 0, changedFrac: 0 }, degraded: [], needsCrop: false, exitTop: et, climb: climb ? 1 : 0
     };
     level.light = light ? Int32Array.from(light) : new Int32Array(0);
@@ -2152,6 +2152,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     level.r9 = rec.v >= 2 && (rec.flags & SB.record.FLAG_R9) !== 0 ? 1 : 0;   /* round 9's monsters, room pieces and floors (6 Nov) */
     level.r10 = rec.v >= 2 && (rec.flags & SB.record.FLAG_R10) !== 0 ? 1 : 0;   /* round 10's keepsake (7 Nov) */
     level.verbs = rec.v >= 2 && (rec.flags & SB.record.FLAG_VERBS) !== 0 ? 1 : 0;   /* round 10's four verbs (sb-m2-15) */
+    level.windy = rec.v >= 2 && (rec.flags & SB.record.FLAG_WIND) !== 0 ? 1 : 0;   /* round 11's crosswind (sb-m2-19) */
     /* m2 step 3: the floors' landings and the tripod, before the features (they see any film tab a landing carved) */
     var carvedL = SB.features.landings(level);
     var settled = settle(level, SB.features.place(level, opts, carvedL ? SB.reach.graph(level) : fixed.g));
@@ -4227,6 +4228,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
      with them on and off; only the lamp may hang over an arc (its swing is timed and a stand is always safe): its box keeps a
      cell off every stand. The belt lies on three to six floor cells on solid, the shelf hangs in the air beside a ledge or a
      wall nearest the room's loot, the gust stands on a floor cell, in a shaft when one fits */
+  /* round 11 (sb-m2-19), THE CROSSWIND (Stephen, 7 Nov: "some kind of diversity, a feel change"; Astra's idea f, a crosswind from bright
+     windows): in an Attic room under FLAG_WIND the window side breathes: WIND_FIRST_S in and every WIND_PERIOD_S after, a WIND_BLOW_S
+     crosswind carries the bug about a cell toward the far side (the sim's wind step; the walls still walls), told WIND_TELL_S ahead by
+     faint streaks. The window side is the side whose upper half is more open (the photo's light). Never in a house's guardian room.
+     Outside the level hash, as the verbs are; without the bit nothing changes. */
+  function windFor(level, opts) {
+    var f = level.features; f.wind = null;
+    if (!level.windy || (level.biome | 0) !== 0 || (opts && opts.lastRoom)) return;
+    var w = level.w, h = level.h, half = w >> 1, top = h >> 1, L = 0, Rr = 0, x, y, q;
+    for (y = 0; y < top; y++) for (x = 0; x < w; x++) { q = y * w + x; if (level.solid[q] !== 1 && level.plat[q] !== 1) { if (x < half) L++; else if (x >= w - half) Rr++; } }
+    f.wind = { dir: L >= Rr ? 1 : -1, from: L >= Rr ? 0 : w - 1 };
+  }
   function r9Pieces(level, opts, out, free, mark, stands) {
     var T = SB.TUNING, w = level.w, h = level.h, n = w * h, ri = opts ? opts.roomIndex | 0 : 0, want = ri ? (ri >= 4 ? 2 : ri >= 2 ? 1 : 0) : 1, f = level.features, x, y, k, c;
     if (!want) return;
@@ -4337,6 +4350,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (fan) out.push(fan);
     }
     if (level.r9) r9Pieces(level, opts, out, free, mark, st);
+    windFor(level, opts);
     for (k = 0; k < out.length; k++) out[k].phase = 0;
     level.pieces = out.length ? out : null;
     return level.pieces;
@@ -4893,6 +4907,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
      the Moth Mother's shed brings a dust cloud with it, the Rime Mass drops BOSS_RAGE_ICE_COLUMNS columns, the Anemone's ring reaches
      BOSS_RAGE_RING_CELLS farther, the Thorn Heart's pods roll BOSS_RAGE_SPEED faster, the Kiln throws BOSS_RAGE_SPARKS more sparks and its
      flame runs faster, the Loom drops a second strand toward itself, the Wasp throws a pair of darts; every cycle 3/4 as long (above) */
+  /* round 11 (sb-m2-19): the crosswind's clock, from the frame alone: 0 quiet, 1 the tell (WIND_TELL_F before a blow), 2 blowing */
+  function windPhase(lv, frame) { var K = SB.K, f = lv && lv.features && lv.features.wind; if (!f) return 0; var cyc = K.WIND_PERIOD_F + K.WIND_BLOW_F, tt = frame - K.WIND_FIRST_F, m = ((tt % cyc) + cyc) % cyc; if (tt >= 0 && m < K.WIND_BLOW_F) return 2; if (tt < 0 ? tt >= -K.WIND_TELL_F : m >= cyc - K.WIND_TELL_F) return 1; return 0; }
+  function windV(K) { return Math.max(1, Math.round(K.CELL_SUB / K.WIND_BLOW_F)); }
   function bossRaged(s) { var B = s.boss; return !!B && B.hp * 100 < B.hpMax * SB.TUNING.BOSS_RAGE_PCT;
   }
   function bossTell(s) { var K = SB.K; if (s.boss && (s.boss.cycle & 1)) return K.BOSS_SECOND_TELL_F; return [K.BOSS_TELEGRAPH_F, K.BOSS_ICICLE_TELEGRAPH_F, K.BOSS_RING_TELL_F, K.BOSS_THORN_TELL_F, K.BOSS_SPARK_TELEGRAPH_F][s.biome | 0] || K.BOSS_TELEGRAPH_F; }
@@ -5734,7 +5751,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
       var rsx = stripX(rp, s.frame - 1), rdx = stripX(rp, s.frame) - rsx;
       if (h.y + K.HERO_H_SUB === rp.row * K.CELL_SUB && h.x + K.HERO_W_SUB > rsx && h.x < rsx + SB.TUNING.STRIP_CELLS * K.CELL_SUB && rdx && boxFree(lv, K, h.x + rdx, h.y)) h.x += rdx;
     }
-    moveX(h, lv, K);
+    /* round 11 (sb-m2-19): the crosswind while it blows, WIND_V a step toward the far side (a cell over a blow); a dash, a dive, a sticky
+       wall and a knockback are not pushed; the walls still walls (moveX keeps the push's wall stop) */
+    var wf = lv.features && lv.features.wind, wv = wf && windPhase(lv, s.frame) === 2 && !(h.dash > 0) && !h.dive && !h.sticky && h.knock === 0 ? wf.dir * windV(K) : 0;
+    if (wv) { var vx0 = h.vx; h.vx = vx0 + wv; moveX(h, lv, K); if (h.vx === vx0 + wv) h.vx = vx0; }
+    else moveX(h, lv, K);
     if (knocked && h.knock === 0) h.vx = 0;   /* the knockback's last push spent: it ends at rest, 2 cells in KNOCK_FRAMES (the fourth review: vx ran on and the hero slid 42 px) */
     /* stopped at the edge, or by a wall; a press that cannot move at all is no dash, and keeps no i frames (the third
        review: a hero drumming B at a wall was invulnerable in place) */
@@ -6051,7 +6072,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     FIELDS: FIELDS, serialize: serialize, hash: hash, solidAt: solidAt, platAt: platAt, hurt: hurt, liveEnemy: liveEnemy, hpOf: hpOf, trapTouch: trapTouch,
     WPN: WPN, BUILT: BUILT, slotOf: slotOf, PROJ_KIND: Object.freeze({ BOOMERANG: BOOMERANG, SHOCK: SHOCK, POP: POP, TRAIL: TRAIL, EMBER: EMBER, FLASH: FLASH, DART: DART, RING: RING, KICK: KICK, SNAP: SNAP, FROST: FROST, STOMP: STOMP, DUST: DUST, PULL: PULL, SAVE: SAVE, BICE: BICE, BRING: BRING, BTHORN: BTHORN, BSPARK: BSPARK, BWARN: BWARN, PUFFC: PUFFC, CTRAIL: CTRAIL, BDUST: BDUST, BBREATH: BBREATH, BWHIP: BWHIP, BPOD: BPOD, BFLAME: BFLAME, PELLET: PELLET, BWEB: BWEB, BPUFF: BPUFF, BDART: BDART }), shockFront: shockFront, spawn: spawn, free: free, drawWeapon: drawWeapon,
     CHOICE: CHOICE, LOOT: { SPECK: LOOT_SPECK, SCROLL: LOOT_SCROLL, BLUEPRINT: LOOT_BLUEPRINT, KEY: LOOT_KEY, CURIO: LOOT_CURIO }, keysLeft: keysLeft, keysOf: keysOf, STAT: { VIGOR: VIGOR, FOCUS: FOCUS, GRIT: GRIT }, STAT_OF_BIOME: STAT_OF_BIOME, pickScroll: pickScroll,
-    hurtBoss: hurtBoss, shedSlot: shedSlot, setPool: setPool, bossEvery: bossEvery, bossRaged: bossRaged };
+    hurtBoss: hurtBoss, shedSlot: shedSlot, setPool: setPool, bossEvery: bossEvery, bossRaged: bossRaged, windPhase: windPhase, windV: windV };
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="shell-capture" data-tool>
@@ -6258,7 +6279,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      (1, Q221) stay in the core for a v2 RULES 1 code, but capture does not write them until their fallbacks, their
      extra film on bare walls and their build time are fixed */
   C.RULES = 0;
-  C.FLAGS = 31;   /* sb-m2-15: every capture meets the four verbs too (bit 4) */   /* R10: every capture rolls a keepsake too */   /* SB.record.FLAG_KEYS | FLAG_BESTIARY | FLAG_R9: every capture locks its exit with keys and meets the second monsters (2 Nov) and round 9's (6 Nov); a literal, since the room model loads this block without core-record */
+  C.FLAGS = 63;   /* sb-m2-19: every capture's Attic rooms breathe too (bit 5) */   /* sb-m2-15: every capture meets the four verbs too (bit 4) */   /* R10: every capture rolls a keepsake too */   /* SB.record.FLAG_KEYS | FLAG_BESTIARY | FLAG_R9: every capture locks its exit with keys and meets the second monsters (2 Nov) and round 9's (6 Nov); a literal, since the room model loads this block without core-record */
   C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 15, GREEN_LO: 70, DEEP_LO: 170, EMBER_LO: 285, C_MIN: 12, S_MIN: 9, WARM_C_MIN: 16, WARM_S_MIN: 30, MIN_PCT: 10 });
   C.hueBand = function (r, g, b) {
     var K = C.HUE, mx = Math.max(r, g, b), d = mx - Math.min(r, g, b), band;
@@ -9136,6 +9157,22 @@ body.sb-modal .lwfb-fab { display: none !important; }
       md.push({ key: key + '.' + fr, x: x - camX, y: y });
     }
   };
+  /* round 11 (sb-m2-19): the crosswind's cue, sparse one px streaks in Paper crossing the view the wind's way while it blows (ten), faint and
+     still in the half second before it (four); drawn under reduced motion too (it is information), unmoving then. Her window_wind sheet
+     replaces the streaks when round 11's art lands. */
+  R.wind = function (s, lv, camX) {
+    R.drawn.wind = 0;
+    if (!SB.ui || SB.ui.screen !== 'play' || !lv.features || !lv.features.wind) return;
+    var ph = SB.sim.windPhase(lv, s.frame); if (!ph) return;
+    var dir = lv.features.wind.dir, n = ph === 2 ? 10 : 4, span = R.viewW + 32, hspan = viewH, moving = ph === 2 && !R.reduced(), i, hsh, x, y;
+    ctx.save(); ctx.globalAlpha = ph === 2 ? 0.7 : 0.35; ctx.fillStyle = '#f2efe6';
+    for (i = 0; i < n; i++) {
+      hsh = Math.imul((lv.seed | 0) ^ Math.imul(i + 7, 0x9e3779b1), 0x85ebca6b) >>> 0; hsh = (hsh ^ (hsh >>> 15)) >>> 0;
+      x = ((hsh % span) + (moving ? s.frame * 5 * dir : 0)) % span; x = ((x % span) + span) % span; y = (hsh >>> 10) % hspan;
+      ctx.fillRect(camX + x - 16, y, 6, 1); R.drawn.wind++;
+    }
+    ctx.restore();
+  };
   /* one frame: the blit at the camera, the beacon, the hero (a Sun rectangle with an Ink outline until T0.17) */
   R.draw = function (s, lv, now) {
     var K = SB.K, P = SB.palette, C = K.CELL;
@@ -9245,6 +9282,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       R.drawn.beacon = { key: bk, x: ex - camX, y: ey, w: C, h: C };
     } else R.drawn.beacon = null;
     R.motes(s, lv, camX);
+    R.wind(s, lv, camX);
     /* the trap field (T1.4b): every cell of it, spikes standing in the on half of the period and sunk in the other,
        crushers down in the stroke (mid stroke its first and last 6 steps) and up otherwise; in the off half's last 6
        steps a Magenta frame on each of its cells beats the rhythm (the field's own cells: its rectangle holds tabs, solids
@@ -10315,7 +10353,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     rankNames: ['Shutterbug', 'Snapshot', 'Focus Puller', 'Darkroom Hand', 'Exposure', 'Lensman', 'Developer', 'Enlarger', 'Archivist', 'The Light'],
     rankLine: '{xp} XP', rankNext: '{n} to {rank}', rankTop: 'the top of the ladder', rankGain: '{n} XP this room, {m} to {rank}', rankUp: 'Rank up: {rank}. {gift}', rankUpPlate: 'Rank up: {rank}',
     /* sb-m2-16 (R10 step 5): the moves taught once each, in the strip's banner */
-    holdHead: 'Hold jump', holdLine: 'Hold the jump button down to go higher', dropHead: 'Drop through', dropLine: 'Hold down and press jump to drop through this ledge', tripodHead: 'The tripod', tripodLine: 'A fall brings you back here',
+    holdHead: 'Hold jump', holdLine: 'Hold the jump button down to go higher', dropHead: 'Drop through', dropLine: 'Hold down and press jump to drop through this ledge', tripodHead: 'The tripod', tripodLine: 'A fall brings you back here', windHead: 'The crosswind', windLine: 'The window breathes: lean into it, or ride it',
     rankGiftStock: '{name} film is yours.', rankGiftLook: 'A new look is yours, worn now.', rankGiftNone: '',
     /* R10 keepsakes: thirty small photographs hidden on the furniture, six a biome */
     curioHead: 'A keepsake', curioNames: ['The Dusty Globe', 'A Doll\'s Eye', 'The Stopped Clock', 'Grandmother\'s Fan', 'The Tin Soldier', 'A Moth in Amber', 'The Frozen Key', 'A Snow Globe', 'The Blue Bottle', 'The Icicle Comb', 'A Lost Mitten', 'The Last Match', 'The Glass Float', 'A Ship in a Bottle', 'The Anchor Charm', 'A Pearl Button', 'The Diver\'s Watch', 'The Conch', 'The Seed Packet', 'A Pressed Fern', 'The Garden Gnome', 'The Watering Can', 'A Snail Shell', 'The Thorn Crown', 'The Brass Lantern', 'A Matchbook', 'The Kiln Key', 'The Ash Jar', 'A Red Thread', 'The Coal Heart'], curioCount: 'Keepsakes {n} of 30', curioNone: 'None found yet. One hides on the furniture of some rooms, off the climb', curioUnknown: 'Not found', curioSet: 'The {biome} set is complete, its frame is yours, worn now',
@@ -12174,6 +12212,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
      room: HOLD on the first landing after a jump, DROP the first time the bug stands on a one way with open air under it,
      TRIPOD when the checkpoint lights. Three seconds each, after the wall lesson's turn. UI only: the sim never sees it */
   var ML = { st: null, kind: '', until: -1, jumped: false };
+  /* round 11 (sb-m2-19): the crosswind's breath, once at each blow's first frame (the sim has no event bit left; the clock is the frame's) */
+  var WC = { st: null, ph: 0 };
+  function windCue(st) { var lv = G.level; if (!lv || !lv.features || !lv.features.wind) return; if (st !== WC.st) { WC.st = st; WC.ph = 0; } var ph = SB.sim.windPhase(lv, st.frame); if (ph === 2 && WC.ph !== 2) au.sfx('dive'); WC.ph = ph; }   /* the dive's whoosh stands in for the inhale until a wind sound is written */
   function onOneWay(h, lv, K) {
     var CS = K.CELL_SUB, r = Math.floor((h.y + K.HERO_H_SUB) / CS), c0 = Math.floor(h.x / CS), c1 = Math.floor((h.x + K.HERO_W_SUB - 1) / CS), w = lv.w, c, plat = false;
     if (r < 0 || r + 1 >= lv.h) return false;
@@ -12190,11 +12231,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (!H.tripod && (st.ev & EV.CHECK)) show('tripod');
       else if (!H.hold && ML.jumped && (st.ev & EV.LAND)) show('hold');
       else if (!H.drop && h.ground && onOneWay(h, lv, SB.K)) show('drop');
+      else if (!H.wind && lv.features && lv.features.wind && SB.sim.windPhase(lv, f) === 2) show('wind');   /* round 11: the crosswind, at its first blow */
     }
     return f < ML.until ? ML.kind : '';
   }
   ui.guardian = function (st) {
     var C = ui.COPY, play = ui.screen === 'play', head = '', line = '', key = '';
+    if (st && play) windCue(st);
     var wl = st && st.hero && play ? wallLesson(st) : '', ml = st && st.hero && play ? moveLesson(st) : '';
     /* a bug with no jump weapon that hurts is told where one is, and the line stays until it has one (the house review) */
     var j = st && st.hero && st.hero.slots[0] ? SB.TUNING.WEAPONS[SB.sim.WPN[st.hero.slots[0]]] : null, armed = !!(j && j.dmg > 0);

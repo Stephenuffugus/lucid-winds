@@ -6036,7 +6036,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   /* the validator */
   const g2 = v2Of(sj, 4);
   const refuse = [['biome 6', { biome: 6 }], ['biome -1', { biome: -1 }], ['biome 1.5', { biome: 1.5 }], ['rules 2 (reserved for the next rules, not this client\'s)', { rules: 2 }], ['rules 9', { rules: 9 }],
-    ['flags bit 5', { flags: 32 }],   /* bit 0 is the keys', bit 1 the second monsters' (2 Nov), bit 2 round 9's (6 Nov), bit 3 round 10's keepsakes (7 Nov) and bit 4 its four verbs (sb-m2-15), all known */ ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
+    ['flags bit 6', { flags: 64 }],   /* bit 5 is round 11's crosswind (sb-m2-19); */   /* bit 0 is the keys', bit 1 the second monsters' (2 Nov), bit 2 round 9's (6 Nov), bit 3 round 10's keepsakes (7 Nov) and bit 4 its four verbs (sb-m2-15), all known */ ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
   for (const [why, o] of refuse) t.ok(SB.record.validate(Object.assign({}, g2, o)) !== null, 'validate refuses a v2 record with ' + why);
   t.ok(SB.record.validate(Object.assign({}, sj, { biome: 3 })) !== null, 'validate refuses a v1 record carrying a biome');
   t.eq(SB.record.validate(g2), null, 'validate accepts the v2 sample room with biome 4 (control)');
@@ -6045,7 +6045,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.ok(SB.record.decode('v1.' + gb.toString('base64url')) === null && SB.record.decode('v2.' + v1b.toString('base64url')) === null, 'decode refuses a v1. prefix on a v2 record and a v2. prefix on a v1 record');
   t.ok(SB.record.decode(gb.toString('base64url')) !== null && SB.record.decode(gb.toString('base64url')).biome === 4, 'a bare v2 payload decodes with its biome');
   const at = (k, v) => { const b = Buffer.from(gb); b[k] = v; return b; };
-  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 5', at(8, 32)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
+  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 6', at(8, 64)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
   for (const [why, b] of newer) {
     t.eq(SB.record.parseCode(code2(b)).why, 'newer', 'parseCode answers newer on a v2 code with ' + why);
     t.eq(SB.record.decode(code2(b)), null, 'decode never builds a v2 record with ' + why);
@@ -6055,7 +6055,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.eq(SB.record.parseCode(at(0, 3).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v3 payload (no prefix), as on its v3. code');
   t.eq(SB.record.parseCode('https://x.example/s/#' + at(0, 7).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v7 payload after a link\'s #');
   t.ok(SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode(at(0, 200).toString('base64url')).why === 'bad', 'garbage and a bare payload with version byte 200 still read as bad (control)');
-  t.eq(SB.record.parseCode(code2(at(8, 32).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length; bit 5, since bit 4 is the verbs\' from sb-m2-15)');
+  t.eq(SB.record.parseCode(code2(at(8, 64).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length; bit 6, since bit 5 is the crosswind\'s from sb-m2-19)');
   t.eq(SB.record.parseCode(code2(gb.subarray(0, 300))).why, 'bad', 'a truncated v2 code with known bytes reads as bad (control)');
   t.ok(SB.record.parseCode(code2(gb)).rec && SB.record.parseCode(code2(gb)).rec.biome === 4, 'a v2 code with RULES 0 and no flags opens (control)');
   /* the build: the biome byte names the biome; RULES 0 is today's rules on the same grid */
@@ -6688,6 +6688,29 @@ group('H-boss-13', 'the Cobweb Loom and the Lantern Wasp (round 11, sb-m2-17): i
   const k0 = awake(found.a0.lv); let shed = false; for (let k = 0; k < 1500 && !shed; k++) { SB.sim.step(k0, 0); if (k0.ev & EV.SHED) shed = true; }
   const k0e = awake(found.e0.lv); let spark = false; for (let k = 0; k < 1500 && !spark; k++) { SB.sim.step(k0e, 0); if (k0e.proj.some(p => p.live && p.kind === P.BSPARK)) spark = true; }
   t.ok(shed && spark, 'a kind 0 room under the flag keeps the Moth Mother\'s shed (' + shed + ') and the Cinder Kiln\'s sparks (' + spark + ')');
+});
+
+group('H-wind-1', 'the crosswind (round 11, sb-m2-19): with FLAG_WIND an Attic room has features.wind from its open side (never without the bit, in another biome, or in a house\'s guardian room); the clock runs quiet, tell, blow from WIND_FIRST_F; a bug standing still is carried toward the far side over a blow and not between blows; in a replay without the bit nothing moves', t => {
+  const K = SB.K, found = [];
+  for (const f of FIXTURES) { const j = Object.assign({}, f.fx.record, { v: 2, biome: 1, rules: 0, flags: SB.record.FLAGS_KNOWN }); const lv = SB.pipeline.build(SB.record.fromJSON(j), {}); if (!lv.needsCrop) found.push({ j, lv }); }
+  t.ok(found.length > 0 && found.every(o => o.lv.features.wind && Math.abs(o.lv.features.wind.dir) === 1), 'every Attic fixture under the bit has a wind with a side (' + found.map(o => o.lv.features.wind.dir).join(' ') + ')');
+  const o = found[0];
+  const noBit = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, o.j, { flags: SB.record.FLAGS_KNOWN & ~SB.record.FLAG_WIND })), {});
+  const frost = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, o.j, { biome: 2 })), {});
+  const last = SB.pipeline.build(SB.record.fromJSON(o.j), { roomIndex: 5, lastRoom: true });
+  t.ok(!noBit.features.wind && !frost.features.wind && !last.features.wind, 'none without the bit, in a Frost room, or in a house\'s guardian room');
+  const F = K.WIND_FIRST_F, B = K.WIND_BLOW_F, Pq = K.WIND_PERIOD_F, Tl = K.WIND_TELL_F, wp = fr => SB.sim.windPhase(o.lv, fr);
+  t.ok(wp(F - Tl - 1) === 0 && wp(F - Tl) === 1 && wp(F - 1) === 1 && wp(F) === 2 && wp(F + B - 1) === 2 && wp(F + B) === 0 && wp(F + B + Pq - Tl) === 1 && wp(F + B + Pq) === 2, 'quiet, the tell, the blow, quiet, the tell, the next blow, all on the clock (' + [F, B, Pq, Tl].join('/') + ' frames)');
+  /* a bug standing still, settled on its floor: x before the first blow, after it, and after the quiet that follows */
+  let best = null;
+  for (const q of found) { const s = SB.sim.create(q.lv), ph = () => SB.sim.windPhase(q.lv, s.frame); let k = 0;
+    while (ph() !== 2 && k++ < F + 5) SB.sim.step(s, 0); const x0 = s.hero.x, g = s.hero.ground;   /* the step before the sim's own clock says blow */
+    k = 0; while (ph() === 2 && k++ < B + 5) SB.sim.step(s, 0); const x1 = s.hero.x, vx1 = s.hero.vx;
+    k = 0; while (ph() !== 2 && k++ < Pq + B) SB.sim.step(s, 0); const x2 = s.hero.x;   /* the quiet and the tell, to the next blow */
+    const dx = (x1 - x0) * q.lv.features.wind.dir; if (!best || dx > best.dx) best = { dx, still: x2 - x1, g, vx1, dead: !!(s.ev & SB.sim.EV.DEAD) }; if (best.dx >= K.CELL_SUB * 0.6) break; }
+  t.ok(best && best.dx >= K.CELL_SUB * 0.6 && best.dx <= K.CELL_SUB * 1.5 && best.still === 0 && best.vx1 === 0, 'standing still it is carried ' + (best.dx / K.CELL_SUB).toFixed(2) + ' cells toward the far side over one blow, ' + best.still + ' between blows, and left with no speed of its own');
+  const sA = SB.sim.create(noBit); for (let k = 0; k < F + B; k++) SB.sim.step(sA, 0); const sB = SB.sim.create(noBit); for (let k = 0; k < F - 1; k++) SB.sim.step(sB, 0); const xb = sB.hero.x; for (let k = 0; k < B + 1; k++) SB.sim.step(sB, 0);
+  t.ok(sB.hero.x === xb && SB.sim.windV(K) >= 1, 'without the bit the same room leaves a still bug where it stands');
 });
 
 group('H-boss-14', 'the phases (round 11, sb-m2-18; Stephen: two or three phases): the hit that takes a guardian under half its HP raises RAGE once; raged, the Rime Mass marks five columns not three, the Kiln throws two more sparks, the Thorn Heart\'s pods roll 1.5x, the Moth Mother\'s shed brings a dust cloud, the Loom drops two strands, the Wasp a pair of darts; above half nothing of it', t => {
