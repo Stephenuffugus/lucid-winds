@@ -502,7 +502,10 @@ var SKINS=[
     cell:paintBright, fall:fallBright, rest:restBright, ghost:'#ffffff' },
   { key:'clay', name:'Clay', rule:{kind:'run',n:5,text:'Break 5 rings in one run.'},
     cols:['#fff5cb','#c9972b','#b5452f','#8a9a6b','#e8dcc0','#b5651d','#5e6b73','#d9b98a','#6b3a5b','#5e7a3a','#a0522d','#ede5d0','#6e4a2e'],
-    cell:paintClay, fall:fallClay, rest:restClay, ghost:'#e8dcc0' }
+    cell:paintClay, fall:fallClay, rest:restClay, ghost:'#e8dcc0' },
+  { key:'painted', name:'Painted', rule:{kind:'ever',n:25,text:'Break 25 rings in all.'},
+    cols:['#fff5cb','#f2c230','#e4572e','#2e9e9a','#d45a8a','#9bc53d','#3b5bdb','#f0902a','#e8e4d6','#b23a8e','#2e8b57','#9d8fe0','#8f4e2a'],
+    cell:paintPainted, fall:fallPainted, rest:restPainted, ghost:'#fff5cb' }
 ];
 var SKS={ cur:'obsidian', un:{} };
 (function(){ try{ var k=JSON.parse(LS.g('rs_skins')||'{}'); if(typeof k.cur==='string')SKS.cur=k.cur; if(k.un&&typeof k.un==='object')SKS.un=k.un; }catch(e){} })();
@@ -595,6 +598,48 @@ function fallClay(g){ var r=mulberry32(5),i; g.fillStyle='#8c7f72'; g.fillRect(0
   var bv=g.createLinearGradient(0,0,64,64); bv.addColorStop(0,'rgba(255,255,255,0.22)'); bv.addColorStop(0.5,'rgba(255,255,255,0)'); bv.addColorStop(1,'rgba(0,0,0,0.26)'); g.fillStyle=bv; g.fillRect(0,0,64,64);
   rimSides(g,15,'#4a403a',3); g.fillStyle='rgba(255,255,255,0.3)'; g.fillRect(3,3,58,2); g.fillRect(3,3,2,58); }
 function restClay(g){ g.fillStyle='rgba(201,106,58,0.78)'; g.fillRect(0,0,64,64); var k=g.createRadialGradient(32,32,4,32,32,40); k.addColorStop(0,'rgba(255,150,60,0.5)'); k.addColorStop(1,'rgba(255,150,60,0)'); g.fillStyle=k; g.fillRect(0,0,64,64); rimSides(g,15,'#7a2e12',3); }
+/* PAINTED: gouache on a gesso ground. Strokes with bristle texture in the ring's colour, each a little off in tone, laid
+   in a direction and dab style that changes per ring (long horizontals, verticals, the two diagonals, cross hatch,
+   round dabs, short ticks, sweeps, curls, stipple, a wide single swipe, a basket weave), and a darker painted outline
+   on exposed sides only, slightly uneven like a brush. Strokes run edge to edge so a band's paint carries on. */
+function stroke(g,x1,y1,x2,y2,w,col,r){ // one brush stroke: the body, then four thin bristle lines in lighter and darker tones
+  var dx=x2-x1, dy=y2-y1, L=Math.sqrt(dx*dx+dy*dy)||1, nx=-dy/L, ny=dx/L, k;
+  g.lineCap='round'; g.lineJoin='round';
+  g.strokeStyle=col; g.lineWidth=w; g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
+  for(k=0;k<4;k++){ var o=(r()-0.5)*w*0.9, lt=r()<0.5; g.strokeStyle=lt?'rgba(255,255,255,0.22)':'rgba(0,0,0,0.16)'; g.lineWidth=0.9+r()*0.8;
+    g.beginPath(); g.moveTo(x1+nx*o,y1+ny*o); g.lineTo(x2+nx*o,y2+ny*o); g.stroke(); }
+}
+function tone(col,r){ var k=r(); return k<0.33?light(col,0.08+r()*0.1):(k<0.66?dark(col,0.06+r()*0.1):col); }
+function paintPainted(g,d,m,sk){
+  var col=sk.cols[d]||sk.cols[RMAX], r=mulberry32(211+d*17), pat=(d-1)%12, i,j,y,x;
+  g.fillStyle=light(col,0.3); g.fillRect(0,0,64,64);                       // the ground shows through the gaps
+  g.fillStyle='rgba(0,0,0,0.05)'; for(i=0;i<60;i++){ g.fillRect(r()*64,r()*64,1.5,1.5); }   // gesso tooth
+  if(pat===0||pat===1){ for(y=-4;y<72;y+=9+r()*3){ var s1=r()*8; stroke(g,-6+s1,y,70-s1,y+(r()-0.5)*3,9+r()*3,tone(col,r),r); } }      // long horizontals (1 the sun's ring, 2 the same with the outline below)
+  else if(pat===2){ for(x=-4;x<72;x+=9+r()*3){ stroke(g,x,-6,x+(r()-0.5)*3,70,9+r()*3,tone(col,r),r); } }                               // verticals
+  else if(pat===3){ for(i=-6;i<=6;i++){ var o3=i*11; stroke(g,-10+o3,74,74+o3,-10,9+r()*3,tone(col,r),r); } }                        // diagonal up
+  else if(pat===4){ for(i=-6;i<=6;i++){ var o4=i*11; stroke(g,-10+o4,-10,74+o4,74,9+r()*3,tone(col,r),r); } }                        // diagonal down
+  else if(pat===5){ for(y=-4;y<72;y+=12){ stroke(g,-6,y,70,y+(r()-0.5)*3,7,tone(col,r),r); } for(x=-4;x<72;x+=12){ stroke(g,x,-6,x+(r()-0.5)*3,70,5,tone(col,r),r); } }   // cross hatch
+  else if(pat===6){ for(i=0;i<22;i++){ var cx=r()*64, cy=r()*64, rr6=6+r()*5; g.fillStyle=tone(col,r); g.beginPath(); g.ellipse(cx,cy,rr6,rr6*0.75,r()*3,0,6.2832); g.fill();
+    g.fillStyle='rgba(255,255,255,0.14)'; g.beginPath(); g.ellipse(cx-2,cy-2,rr6*0.5,rr6*0.3,r()*3,0,6.2832); g.fill(); } }            // round dabs
+  else if(pat===7){ for(i=0;i<40;i++){ var tx=r()*64, ty=r()*64, ta=(r()-0.5)*0.9; stroke(g,tx-7,ty-Math.sin(ta)*7,tx+7,ty+Math.sin(ta)*7,5+r()*2,tone(col,r),r); } }   // short ticks
+  else if(pat===8){ for(i=0;i<5;i++){ var sy=6+i*13; g.lineWidth=11; g.strokeStyle=tone(col,r); g.beginPath(); g.moveTo(-6,sy+6); g.quadraticCurveTo(32,sy-8,70,sy+6); g.stroke();
+    g.strokeStyle='rgba(255,255,255,0.2)'; g.lineWidth=1.2; g.beginPath(); g.moveTo(-6,sy+3); g.quadraticCurveTo(32,sy-11,70,sy+3); g.stroke(); } }        // sweeps
+  else if(pat===9){ for(i=0;i<9;i++){ var kx=r()*64, ky=r()*64, kr=5+r()*4; g.strokeStyle=tone(col,r); g.lineWidth=5; g.beginPath(); g.arc(kx,ky,kr,r()*3,r()*3+4.5); g.stroke(); }
+    g.fillStyle=col; g.globalAlpha=0.35; g.fillRect(0,0,64,64); g.globalAlpha=1; }                                                    // curls
+  else if(pat===10){ g.fillStyle=col; g.globalAlpha=0.55; g.fillRect(0,0,64,64); g.globalAlpha=1; for(i=0;i<140;i++){ g.fillStyle=tone(col,r); g.beginPath(); g.arc(r()*64,r()*64,1.6+r()*2.2,0,6.2832); g.fill(); } }   // stipple
+  else { for(i=0;i<4;i++)for(j=0;j<4;j++){ var wx=i*16, wy=j*16, hz=(i+j)&1; if(hz)stroke(g,wx-1,wy+8,wx+17,wy+8,13,tone(col,r),r); else stroke(g,wx+8,wy-1,wx+8,wy+17,13,tone(col,r),r); } }   // basket weave
+  // the painted outline on exposed sides: a darker tone, the line a little uneven
+  var ok=dark(col,0.55); g.strokeStyle=ok; g.lineCap='round'; g.lineJoin='round';
+  function edge(x1,y1,x2,y2){ var k; g.lineWidth=3.2; g.beginPath(); g.moveTo(x1,y1); for(k=1;k<=4;k++){ var t=k/4; g.lineTo(x1+(x2-x1)*t+(r()-0.5)*1.4,y1+(y2-y1)*t+(r()-0.5)*1.4); } g.stroke(); }
+  if(m&1)edge(0,1.6,64,1.6); if(m&2)edge(62.4,0,62.4,64); if(m&4)edge(0,62.4,64,62.4); if(m&8)edge(1.6,0,1.6,64);
+  g.fillStyle=ok; if(m&16)g.fillRect(0,0,5,5); if(m&32)g.fillRect(59,0,5,5); if(m&64)g.fillRect(59,59,5,5); if(m&128)g.fillRect(0,59,5,5);
+}
+function fallPainted(g){ var r=mulberry32(3),i; g.fillStyle='#efe9d8'; g.fillRect(0,0,64,64);
+  g.fillStyle='rgba(0,0,0,0.06)'; for(i=0;i<70;i++)g.fillRect(r()*64,r()*64,1.5,1.5);
+  g.strokeStyle='rgba(60,60,70,0.55)'; g.lineWidth=1.2; for(i=0;i<7;i++){ g.beginPath(); g.moveTo(8+i*7,56); g.lineTo(8+i*7+14,42); g.stroke(); }   // pencil hatching in the lower corner
+  g.strokeStyle='#4a4a56'; g.lineWidth=2.2; g.lineJoin='round'; g.beginPath(); g.moveTo(3,3.5); g.lineTo(61,2.5); g.lineTo(60.5,61); g.lineTo(2.5,60.5); g.closePath(); g.stroke();
+  g.strokeStyle='rgba(74,74,86,0.4)'; g.lineWidth=1; g.beginPath(); g.moveTo(5,6); g.lineTo(59,5); g.stroke(); }
+function restPainted(g){ var r=mulberry32(9); stroke(g,-4,32,68,30,34,'rgba(223,255,79,0.75)',r); g.strokeStyle='#1c1c24'; g.lineWidth=3.5; g.lineJoin='round'; g.beginPath(); g.moveTo(2.5,3); g.lineTo(61.5,2); g.lineTo(61,61.5); g.lineTo(2,61); g.closePath(); g.stroke(); }
 function fallBright(g){ g.fillStyle='#f4f6fa'; g.fillRect(0,0,64,64); gloss(g,0.6,0.16); rimSides(g,15,'#263442',3); g.fillStyle='rgba(255,255,255,0.7)'; g.fillRect(3,3,58,1.5); g.fillRect(3,3,1.5,58); }
 function restBright(g){ g.fillStyle='rgba(223,255,79,0.55)'; g.fillRect(0,0,64,64); rimSides(g,15,'#dfff4f',3); }
 /* the skin's falling cell, resting overlay and ghost; OBSIDIAN uses Astra's images and the code fallback as before */
