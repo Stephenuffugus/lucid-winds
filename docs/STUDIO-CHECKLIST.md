@@ -134,10 +134,12 @@ Each is built at its default if you say nothing; say the word and the plan chang
 
 ## 6. After the build
 
-- [ ] Shutterbug Play listing: real captures in Astra's six frames, the Play build, the Console upload, assetlinks (Opus, then you)  
+- [ ] Shutterbug Play listing: the six shots reshot 10 Nov from sb-m2-24, the description brought up to the game, the readiness check all green; the aab 1.0.0 is built and vaulted; left: your go, the Console upload, assetlinks (you)  
 - [ ] Flatulence Fighter and Sunforge listings if they are a go (Opus, then you)  
 - [x] Shutterbug: the browser checks reach their assertions again (the harness taps past the bug's story and scrolls a control under the fold into view; boot, play, pwa, save green alone, 8 Nov 15:35) (Fable)  
-- [ ] Shutterbug: fans that matter; the browser gates since the harness fix: pause green (taught the first clear's story); layout RED for real (the fleet chip sits over a title control at 390x844 and 360x780 once the title has grown); loop runs to a clear count question (the save holds 4, the gate expects 3); ten gates not yet rerun (make, reveal, capture, sprites, loot, audio, share, fight, compare, house), one alone at a time; satellites/shutterbug/PROGRESS.md (Opus)  
+- [x] Shutterbug sb-m2-24 BUILT 10 Nov: every browser gate green again (25 of 25 run alone; save failed once in the long run and passed four times alone), node check green, 684 anchors (Fable)  
+- [ ] Shutterbug sb-m2-24: run `! bash /home/codespace/sb-drafts/sb-m2-24/deploy-sb-m2-24.sh` (also puts the fleet chip seat fix on main) (you)  
+- [ ] Shutterbug: play five minutes on your Pixel, then say go or no go on the Play submission; the room name is clipped on phones 360 px wide and under (you)  
 - [ ] Keepsies: the four screens Astra drew in round 2 (level up, chores, clay pool, the case); the shot tool's end game loop; the 240 design bank; the grails through Meshy (Opus, you)  
 - [ ] Tomato Man: the squirt, if you still want it (you)  
 - [ ] Dewball: the store pack back, the store kit with real captures, the v37 stamp and its line, the Console listing, the Meshy build out (Astra, Opus, you)  
