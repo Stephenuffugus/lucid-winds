@@ -21,7 +21,7 @@ Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt
 - [ ] Still out from before, when a slot frees: [Sixfold](https://drive.google.com/drive/folders/1_oNXfJWWox5-vz8CJUEx5PE7O-QMO6hm), [Aura Farm](https://drive.google.com/drive/folders/19G9FuxQEIJ2XfOi_sFE0edkFVYQ-MIkj), [Orb Orchard](https://drive.google.com/drive/folders/1Wo7AtBoFvg0ONNU7NSbdVVWF6m0mRaY4), [Dewball store kit](https://drive.google.com/drive/folders/19CCGoJDoG27NxRya3YFHiZRSjrCz2rrp) (you)  
 - [ ] Three Sisters, the next decks: Astra deferred the Stained Glass Chapel and the Observatory in round two; a round three brief when you want more decks (you say, Fable writes)  
 - [ ] Chess: the backgrounds and boards pack you asked for on 25 Oct; no brief written yet (you say, Fable writes)  
-- [ ] TOFU round 2: waits on your idea (section 2); its art list follows the idea (you, Fable)  
+- [ ] TOFU round 2, ALL the assets for the new idea (your word 10 Nov: "Tofu needs all the assets built"): every preparation of the tofu, every enemy with its eating frames, the tells, the levels' pieces; the Astra brief follows the design write up (Fable writes, you send)  
 - [ ] Upload each zip into a Fable session as it comes back (or drop it in the game's Drive folder and say so); Fable vaults it, unpacks it and adds its wiring chapter to the one plan (you, then Fable)
 
 ### Back and planned
@@ -52,7 +52,8 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Pixel Petri: THE LIVING YEAR LIVE 8 Nov 05:25 UTC by your line (20261108a, tiny-world dc334d5; the suites still running behind it; push dc334d5 to the private main as one line); still yours: free everywhere or packs first, the commercial's timing, Penny's pack, Q51 (Fable)
 - [ ] Pixel Petri: the first expansion (Many Peoples, Themed Packs), free everywhere or packs first, the commercial's timing, Penny's pack (you)  
 - [ ] Say if the new fart sounds are funny; if not, a pack of recorded ones (CC0) is the next step (you)
-- [ ] TOFU: your new idea, dropped into a Fable session; Fable turns it into a plan and an Astra list (you)  
+- [x] TOFU: your idea, 10 Nov: a Kirby's Dream Land feel where you cook or prepare yourself differently and the enemies EAT you; how you are prepared is your weapon and how they eat you is the hit; you budget your own body to get every enemy and still survive the level, countering each enemy with the right preparation (you)  
+- [ ] TOFU: Fable writes it up as TOFU_M2 design (the preparations, which enemy each counters, the body budget, what a level asks) with the open questions for you, before any build (Fable, then you)  
 - [ ] Three Sisters: your Pixel verdict on the painted deck, both boards; the hub's crops are 30 to 35 px, the standalone's 40 (you)  
 - [ ] A standing allow rule for the deploy lines (`bash /home/codespace/*-drafts/deploy-*.sh`), so Fable runs them and stops handing them back; yes or no (you)  
 - [ ] The box's disk (2.8 GB free of 32 on 10 Nov): which of dewball-drafts (942 MB), sb-drafts (929 MB) and old session transcripts (982 MB) may go (you)  
