@@ -1,5 +1,10 @@
 # START HERE
 
+## 10 Nov (Fable, night): SHUTTERBUG sb-m2-24 BUILT AND PUSHED, TOFU THE EATERS AND THE HUNT BUILT; TWO LINES WAIT ON HIM
+- SHUTTERBUG sb-m2-24 (944c4205e, pushed): all 25 browser gates green run alone (save failed once inside the long full run, 4 of 4 alone), node check green, 684 anchors. His line: `! bash /home/codespace/sb-drafts/sb-m2-24/deploy-sb-m2-24.sh` (step 1 puts root music-unlocks.js on main, then merge, then deploy.sh; DRY tested). Store shots reshot from this build, listing copy current, `node scripts/twa_ready.mjs shutterbug` all green (needs scratch/shots/ and a server on 8777). Left for Play: his go, the Console upload, assetlinks. Known: the room name clips at 360 px and under.
+- TOFU: Astra's round two pack back and vaulted (astra-tofu-round2-nov10; unpacked /home/codespace/tofu-drafts/r2). THE EATERS built behind `?eat=1` (fed0a767f) and THE HUNT (8c2d0e8b7): seven levels, six eaters, six bites, preparations stack, the n slot fits three bites or fewer. Bots: `tools/tofu-tests/eaters.mjs` (server on 8791 in satellites/tofu). His line: `! bash /home/codespace/tofu-drafts/deploy-tofu-eaters.sh`. He wants it "so fun and completely unique"; next his Pixel verdict, then bigger levels with routes, the Critic, bite marks, the market.
+- Nobody has LOOKED at the TOFU shots or the new Shutterbug store shots (sheets sent to him). The full Shutterbug check's last step (redwatch-browser) runs for hours: do not wait on it.
+
 ## 10 Nov (Fable, later): TOFU THE EATERS DESIGNED, ASTRA'S ROUND TWO READY TO SEND, THE TOFU LEVEL LAB BUILT
 - His idea (10 Nov): a Kirby's Dream Land feel, he prepares himself differently, the enemies eat him, his body is the budget. Written as `TOFU_M2_DESIGN.md` (six bites; each eater has one preparation it cannot stomach, one bite and beaten, else two bites; the bite takes the preparation; eight calls of his at their defaults). Nothing of it is built.
 - ASTRA: `docs/briefs/tofu/round-2/` (the brief + KICKOFF-PROMPT.txt), both in Drive Astra / Tofu Round 2 (The Eaters), folder 1aOGo9e_odDDkxCXI1CL0dy5u63Z1eaLI. He pastes the kickoff and attaches the brief.
