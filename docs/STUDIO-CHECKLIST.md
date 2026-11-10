@@ -139,7 +139,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Flatulence Fighter and Sunforge listings if they are a go (Opus, then you)  
 - [x] Shutterbug: the browser checks reach their assertions again (the harness taps past the bug's story and scrolls a control under the fold into view; boot, play, pwa, save green alone, 8 Nov 15:35) (Fable)  
 - [x] Shutterbug sb-m2-24 BUILT 10 Nov: every browser gate green again (25 of 25 run alone; save failed once in the long run and passed four times alone), node check green, 684 anchors (Fable)  
-- [ ] Shutterbug sb-m2-24: run `! bash /home/codespace/sb-drafts/sb-m2-24/deploy-sb-m2-24.sh` (also puts the fleet chip seat fix on main) (you)  
+- [x] Shutterbug sb-m2-24 and the fleet chip seat fix: LIVE 10 Nov, main ecbccd50b, the live page byte identical to the stamp (you ran the line)  
 - [ ] Shutterbug: play five minutes on your Pixel, then say go or no go on the Play submission; the room name is clipped on phones 360 px wide and under (you)  
 - [ ] Keepsies: the four screens Astra drew in round 2 (level up, chores, clay pool, the case); the shot tool's end game loop; the 240 design bank; the grails through Meshy (Opus, you)  
 - [ ] Tomato Man: the squirt, if you still want it (you)  
