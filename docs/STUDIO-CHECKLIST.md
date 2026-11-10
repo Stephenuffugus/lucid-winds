@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 8 Nov 2026, 17:57 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 10 Nov 2026, 17:00 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 1. The art, in this order (you, then Astra)
 
@@ -15,9 +15,13 @@ Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt
 - [ ] Flatulence Fighter round 3, the moving call's travel accent, the final teaching cards, a result line, IDEAS: [Astra / Flatulence Fighter / Round 3](https://drive.google.com/drive/folders/1ZP52O4yxsaJogYj22uusAX2qyzjTlh3O) (you)  
 - [ ] Sunforge round 3, only if you want any of chapter skies, the hold outline, overload, a weekly gyre: [Astra / Sunforge / Round 3](https://drive.google.com/drive/folders/1oZg8rD3G2y7ERX3Zm0se5McD9r4h4mWe) (you)  
 - [ ] Shutterbug round 11, the four yeses (the collapsing staircase, the swinging web strands, the window crosswind, the guardians' rage tells) and the Loom and Wasp arena pieces, her ideas last: [Astra / Shutterbug / Round 11](https://drive.google.com/drive/folders/1ukat54v_fLwi-Js-S_JqbgWfeJB_g-oU) (you)  
-- [ ] Tomato Man The Walk (small): the four walk cells as one strict cycle that alternates the feet, in the tomato's five sheets and under the thirteen heads; the side views gallop in the art today: [Astra / Tomato Man / The Walk](https://drive.google.com/drive/folders/19RuMksHJHAQtdoIq2Uy_1TpSs1mmorWJ) (you)  
+- [x] Tomato Man The Walk: back 8 Nov, vaulted, wired and LIVE 8 Nov (Astra, Fable)  
+- [x] Three Sisters round two (premium cards): uploaded 10 Nov, vaulted, LIVE the same day on both boards (Astra, Fable)  
 - [ ] Pixel Petri round 1, THE LIVING YEAR (seasons, weather, eggs, sleep, migration, the marks), IDEAS first: [Astra / Pixel Petri](https://drive.google.com/drive/folders/1SAbhhQGta1tbX1oBz0QyK66nwaC_dhb7) (you)  
 - [ ] Still out from before, when a slot frees: [Sixfold](https://drive.google.com/drive/folders/1_oNXfJWWox5-vz8CJUEx5PE7O-QMO6hm), [Aura Farm](https://drive.google.com/drive/folders/19G9FuxQEIJ2XfOi_sFE0edkFVYQ-MIkj), [Orb Orchard](https://drive.google.com/drive/folders/1Wo7AtBoFvg0ONNU7NSbdVVWF6m0mRaY4), [Dewball store kit](https://drive.google.com/drive/folders/19CCGoJDoG27NxRya3YFHiZRSjrCz2rrp) (you)  
+- [ ] Three Sisters, the next decks: Astra deferred the Stained Glass Chapel and the Observatory in round two; a round three brief when you want more decks (you say, Fable writes)  
+- [ ] Chess: the backgrounds and boards pack you asked for on 25 Oct; no brief written yet (you say, Fable writes)  
+- [ ] TOFU round 2: waits on your idea (section 2); its art list follows the idea (you, Fable)  
 - [ ] Upload each zip into a Fable session as it comes back (or drop it in the game's Drive folder and say so); Fable vaults it, unpacks it and adds its wiring chapter to the one plan (you, then Fable)
 
 ### Back and planned
@@ -48,6 +52,10 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Pixel Petri: THE LIVING YEAR LIVE 8 Nov 05:25 UTC by your line (20261108a, tiny-world dc334d5; the suites still running behind it; push dc334d5 to the private main as one line); still yours: free everywhere or packs first, the commercial's timing, Penny's pack, Q51 (Fable)
 - [ ] Pixel Petri: the first expansion (Many Peoples, Themed Packs), free everywhere or packs first, the commercial's timing, Penny's pack (you)  
 - [ ] Say if the new fart sounds are funny; if not, a pack of recorded ones (CC0) is the next step (you)
+- [ ] TOFU: your new idea, dropped into a Fable session; Fable turns it into a plan and an Astra list (you)  
+- [ ] Three Sisters: your Pixel verdict on the painted deck, both boards; the hub's crops are 30 to 35 px, the standalone's 40 (you)  
+- [ ] A standing allow rule for the deploy lines (`bash /home/codespace/*-drafts/deploy-*.sh`), so Fable runs them and stops handing them back; yes or no (you)  
+- [ ] The box's disk (2.8 GB free of 32 on 10 Nov): which of dewball-drafts (942 MB), sb-drafts (929 MB) and old session transcripts (982 MB) may go (you)  
 - [ ] DUCTUS (your 8 Nov sprint): the name, the category (Pen & Paper, new, or School), beta off after your Pixel pass, free with the tip jar or 0.99 on Play too, the m2 pick (link, Lineage, GM pack recommended), the daily leaderboard yes or no, an Astra art round; DUCTUS_BUILD_PLAN.md (you)  
 
 ## 3. The one plan (Fable)
@@ -78,6 +86,9 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Chapter 10 Tomato Man The Hero wired, sunstruck d5e80d9: LIVE 7 Nov by your line (Fable)  
 - [x] Chapter 11 Tomato Man Planet Tomató (the moon crosses the Dunes and the Eclipse once a level, its shadow is shade; the cue, a coach mark, a How card): LIVE 7 Nov by your line (Fable)  
 - [x] Chapter 12 Tomato Man THE SPLIT and the walk order (two lanes of awnings in the Dunes and the Eclipse, each shade on its own clock; the walk frames alternate the feet): LIVE 8 Nov by your line (Fable)  
+- [x] Three Sisters round two on the standalone (painted crops, four faces, medallion seals, morning and rain tables): LIVE 10 Nov, main 753e9ed52 (Fable)  
+- [x] Three Sisters Part 2, the hub's own board on the same painted deck (Customize: DECK): LIVE 10 Nov, main e9d047424 (Fable)  
+- [ ] Shutterbug: the no browser gate is RED on the branch since sb-m2-23 (two redwatch anchors lost, DEATH_CARD_FIXED and PAD_CSS_RING); re anchor them (Fable)  
 - [ ] Chapters 9 on, the new packs' wiring as each lands: Keepsies round 4, FF round 3, Sunforge round 3, Pixel Petri round 1, Shutterbug round 11 (Fable writes, Opus builds)  
 - [ ] If the box dies mid chapter, the next night starts the same kickoff and resumes from the first step not DONE (you, Opus)
 
@@ -100,10 +111,19 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Shutterbug sb-m2-23 (the death card off the fallen bug, the stick pad above the Polaroid): LIVE 8 Nov 17:57 UTC, main 661dd5897, lucidwinds.com/satellites/shutterbug/ serves BUILD sb-m2-23, shutterbug-v45 (you ran the line; the deploy blob passed the lint and the fast harness, 10532 assertions); nothing waits on a line now  
 - [x] DUCTUS in the Studio: LIVE 8 Nov 17:42 UTC, skywolfstudio.com/ductus/ and its Pen & Paper card on the hub (you signed the box in to Firebase from your phone through the chat, the line ran); the arcade's apps page mirror next (Fable)  
 - [x] Every line of 7 Nov run, one at a time, by 8 Nov 01:20 UTC (you)  
+- [ ] Three Sisters: play lucidwinds.com (GAME tab) and lucidwinds.com/play/set.html; try Settings, Table on the standalone and Customize, DECK on the hub (you)  
+- [ ] TOFU m1, Tomato Man THE PRESSURE, Sunforge THE SKINS, Shutterbug sb-m2-23, DUCTUS: LIVE since 8 Nov, none has your Pixel notes yet (you)  
 - [ ] Play each game on the Pixel after its line and write your notes in one message; Fable turns them into the next chapter (you)  
 - [ ] Open Tomato Man with ?lab=1 and fix one level you hate; Copy JSON and paste it to Fable (you)  
 - [ ] Shutterbug: open the Darkroom, play a room, Play it again, share one to a friend (you)  
 - [ ] Keepsies: play the new shot and the STATUES chip, place two, move one (you)
+
+## 5b. Levels you make by hand (you, with Fable's tools)
+
+- [ ] Tomato Man: the level lab exists (open with ?lab=1, edit, Copy JSON, paste it to Fable); 26 levels, the bot finishes all of them, your hand is what makes them good (you)  
+- [ ] TOFU: eight levels live inside the page and there is NO editor yet; Fable builds a level lab like Tomato Man's before you can hand make any (Fable, then you)  
+- [ ] Shutterbug: rooms come from photos, so no hand levels; the house and guardian arenas are tuned in code (say if you want a room lab)  
+- [ ] Name the other games you mean to make levels for; each needs its lab checked or built first (you, Fable)
 
 ## 6. After the build
 
