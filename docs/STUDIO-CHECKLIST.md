@@ -126,6 +126,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] TOFU: the level lab BUILT 10 Nov (paint tiles, PLAY at once, COPY the text; lab test 9 green) (Fable)  
 - [x] TOFU: the lab LIVE 10 Nov, main 9321e99bc (you ran the line)  
 - [x] TOFU THE EATERS, a first taste BUILT 10 Nov (six eaters, six bites, four levels, behind ?eat=1; bots green; commit fed0a767f) (Fable)  
+- [x] TOFU THE HUNT BUILT 10 Nov, your yes: three levels where the eaters hunt you while you prepare and a slot only a tofu of three bites or fewer fits (Fable)  
 - [ ] TOFU THE EATERS: run `! bash /home/codespace/tofu-drafts/deploy-tofu-eaters.sh`, then play lucidwinds.com/satellites/tofu/?eat=1 and say if being eaten is fun (you)  
 - [ ] TOFU: open lucidwinds.com/satellites/tofu/?lab=1, make a dish, COPY, paste the text to Fable (you)  
 - [ ] Shutterbug: rooms come from photos, so no hand levels; the house and guardian arenas are tuned in code (say if you want a room lab)  
