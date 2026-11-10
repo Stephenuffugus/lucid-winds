@@ -38,6 +38,7 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { serve, launch, newPage, gotoGame, ready, reporter, GAME } from './harness.mjs';
 
+const DBG = +process.env.SB_DBG || 3;
 const R = reporter('SPRITES');
 const HEX = ['0b0a0f', '1f1a1d', '4a4a52', '8a8a90', 'c9c7c0', 'f2efe6', 'fbfbff', '6b3f2a', 'e07a2b', 'c8302f', 'd83a9b', '2f5fd0', '3fb8b4', '3f9a3a', 'f2d13f', 'f0dcb0'];
 const ON = new Set(HEX.map(h => '#' + h));
@@ -100,7 +101,7 @@ try {
   const runs = []; let cur = null, n = 0;
   for (const f of seq.map(f => f.replace(/[<*]/g, ''))) { if (f === cur) n++; else { if (cur) runs.push([cur, n]); cur = f; n = 1; } }
   runs.push([cur, n]);
-  const inner = runs.slice(1, -1).filter(r => r[0].startsWith('hero.run'));
+  const inner = runs.slice(1, -1).filter(r => /^hero(_big)?\.run/.test(r[0]));
   R.say(inner.length >= 3 && inner.every(r => r[1] === 5), 'running, each frame holds 5 steps (12 fps): ' + runs.map(r => r[0].replace('hero.', '') + ' ' + r[1]).join(', '));
 
   /* the moth flutters at 12 fps too: its frame holds 5 steps (the fourth review: it held 8) */
@@ -150,8 +151,8 @@ try {
   }
   await page.keyboard.up('KeyZ');
   const stretch = sq.filter(f => f.squash < 0), squash = sq.filter(f => f.squash > 0);
-  const stOk = stretch.length >= 5 && stretch.every(f => /^hero_stretch\.stretch<?$/.test(f.key) && f.w === 10 && f.h === 18 && f.x === f.hx + 1 && f.y === f.hy - 2 && f.n > 40 && f.bad.length === 0);
-  const sqOk = squash.length >= 5 && squash.every(f => /^hero_squash\.squash<?$/.test(f.key) && f.w === 14 && f.h === 14 && f.x === f.hx - 1 && f.y === f.hy + 2 && f.n > 40 && f.bad.length === 0);
+  const stOk = stretch.length >= 5 && stretch.every(f => /^hero(_big)?_stretch\.stretch<?$/.test(f.key) && ((f.w === 10 && f.h === 18 && f.x === f.hx + 1 && f.y === f.hy - 2) || (f.w === 14 && f.h === 28 && f.x === f.hx - 1 && f.y === f.hy - 12)) && f.n > 40 && f.bad.length === 0);
+  const sqOk = squash.length >= 5 && squash.every(f => /^hero(_big)?_squash\.squash<?$/.test(f.key) && ((f.w === 14 && f.h === 14 && f.x === f.hx - 1 && f.y === f.hy + 2) || (f.w === 20 && f.h === 20 && f.x === f.hx - 4 && f.y === f.hy - 4)) && f.n > 40 && f.bad.length === 0);
   R.say(stOk && sqOk, 'the takeoff draws hero_stretch 10x18 for ' + stretch.length + ' steps and the landing hero_squash 14x14 for ' + squash.length + ', 1:1 in the old transform\'s rects, every opaque pixel the frame (' + [...new Set(sq.map(f => f.key + ' ' + f.w + 'x' + f.h + ' at ' + (f.x - f.hx) + ',' + (f.y - f.hy) + (f.bad.length ? ' ' + f.bad.length + ' differ' : '')))].join('; ') + ')');
 
   /* ART2: the dash's own lean: hero_dash for its steps on the ground, the Glare copy through its i frames, every opaque
@@ -160,7 +161,7 @@ try {
   await page.keyboard.down('KeyX'); await page.evaluate(() => window.SB_DEV.step(1)); await page.keyboard.up('KeyX');
   const dsh = [];
   for (let k = 0; k < 6; k++) { const h = await heroNow(page); dsh.push(Object.assign(h, heroEq(h))); await page.evaluate(() => window.SB_DEV.step(1)); }
-  const dshOn = dsh.filter(f => f.key && f.key.startsWith('hero_dash.'));
+  const dshOn = dsh.filter(f => f.key && /^hero(_big)?_dash\./.test(f.key));
   R.say(dshOn.length >= 4 && dshOn.some(f => f.key.endsWith('*')) && dshOn.some(f => !f.key.endsWith('*')) && dshOn.every(f => f.n > 40 && f.bad.length === 0),
     'a dash draws hero_dash, lit through its i frames then plain, every opaque pixel the frame (' + dsh.map(f => f.key + (f.bad.length ? ' ' + f.bad.length + ' differ' : '')).join(', ') + ')');
 
@@ -170,8 +171,8 @@ try {
   await page.evaluate(() => { const st = window.SB.game.state; st.hero.iframes = 0; st.hero.dashI = 0; st.hero.hearts = Math.max(st.hero.hearts, 3); st.enemies.push({ kind: 1, x: st.hero.x, y: st.hero.y, vx: 0, vy: 0, hp: 4, state: 0, timer: 0, dir: 1, home: 0, elite: 0, frozen: 0, stunned: 0, hurt: 0 }); });
   const hurt = [];
   for (let k = 0; k < 24; k++) { const it = await page.evaluate(() => { window.SB_DEV.step(1); return window.SB.game.state.hero.iframes; }); const h = await heroNow(page); hurt.push(Object.assign({ it }, h, h.key ? heroEq(h) : { n: 0, bad: [] })); }
-  const hit0 = hurt.findIndex(f => f.it > 0), posed = hurt.filter(f => f.key && f.key.startsWith('hero_hurt.')), HF = hurt[hit0] ? hurt[hit0].it : 0;
-  R.say(hit0 >= 0 && posed.length >= 6 && posed.every(f => f.it > HF - 16 && f.n > 40 && f.bad.length === 0) && hurt.some(f => f.key && f.it > 0 && f.it <= HF - 16 && !f.key.startsWith('hero_hurt.')),
+  const hit0 = hurt.findIndex(f => f.it > 0), posed = hurt.filter(f => f.key && /^hero(_big)?_hurt\./.test(f.key)), HF = hurt[hit0] ? hurt[hit0].it : 0;
+  R.say(hit0 >= 0 && posed.length >= 6 && posed.every(f => f.it > HF - 16 && f.n > 40 && f.bad.length === 0) && hurt.some(f => f.key && f.it > 0 && f.it <= HF - 16 && !/^hero(_big)?_hurt\./.test(f.key)),
     'a hit draws hero_hurt.recoil for ' + posed.length + ' shown steps of its first 16, every opaque pixel the frame, then the plain frames (' + hurt.map(f => (f.key ? f.key.replace('hero.', '').replace('hero_hurt.', 'H:') : '-') + '@' + f.it).join(' ') + ')');
 
   /* ART2: the drop in: a fresh room, its first 24 steps the three beats of hero_dropin, 8 steps each (8 fps), then idle */
@@ -179,7 +180,7 @@ try {
   const drop = [];
   for (let k = 0; k < 26; k++) { const h = await heroNow(page); drop.push(Object.assign(h, heroEq(h))); await page.evaluate(() => window.SB_DEV.step(1)); }
   const dropWant = ['descending', 'contact', 'settled'].flatMap(b => Array(8).fill(b));
-  R.say(drop.slice(0, 24).every((f, i) => f.key && f.key.replace(/[<*]/g, '') === 'hero_dropin.' + dropWant[i] && f.n > 40 && f.bad.length === 0) && /^hero\.idle/.test(drop[24].key),
+  R.say(drop.slice(0, 24).every((f, i) => f.key && f.key.replace(/[<*]/g, '').replace('hero_big', 'hero') === 'hero_dropin.' + dropWant[i] && f.n > 40 && f.bad.length === 0) && /^hero(_big)?\.idle/.test(drop[24].key),
     'a room opens on the drop in: ' + drop.map(f => (f.key || '-').replace('hero_dropin.', '').replace('hero.', '')).join(' ') + (drop.some(f => f.bad.length) ? ' (pixels differ)' : '') + ', every opaque pixel the frame');
 
   /* the perf guard, the loop running with the moth live */
@@ -220,8 +221,8 @@ try {
         n++; if (h !== '#' + HEX[parseInt(ch, 16)]) bad.push(x + ',' + y + ' ' + h + ' not ' + HEX[parseInt(ch, 16)]);
       }
     }
-    /* at least 60: the hero, set down at the elite's home, covers part of a cell centred one */
-    R.say(keyOk && placeOk && n >= 60 && bad.length === 0, 'biome ' + b + ': the ' + kind + ' elite drawn as ' + (r ? r.key + ' at ' + r.x + ',' + r.y + ' ' + r.w + 'x' + r.h + ' in its box ' + r.box.x + ',' + r.box.y + ' (' + an + (an !== 'cell' && rest ? ', at rest on its row\'s ' + (an === 'top' ? 'ceiling ' : 'floor ') + got.el.row : '') + ')' : 'nothing (keys: ' + got.rc.enemies.map(e => e.key).join(' ') + ')')
+    /* at least 24: the hero (16x24 since round 9), set down at the elite's home, covers much of a cell centred one */
+    R.say(keyOk && placeOk && n >= 24 && bad.length === 0, 'biome ' + b + ': the ' + kind + ' elite drawn as ' + (r ? r.key + ' at ' + r.x + ',' + r.y + ' ' + r.w + 'x' + r.h + ' in its box ' + r.box.x + ',' + r.box.y + ' (' + an + (an !== 'cell' && rest ? ', at rest on its row\'s ' + (an === 'top' ? 'ceiling ' : 'floor ') + got.el.row : '') + ')' : 'nothing (keys: ' + got.rc.enemies.map(e => e.key).join(' ') + ')')
       + ', ' + n + ' opaque pixels equal its frame on the canvas' + (bad.length ? ' (' + bad.length + ' differ: ' + bad.slice(0, 3).join('; ') + ')' : ''));
   }
 
@@ -285,8 +286,9 @@ try {
         return { px: o, y0, phase: G.state.traps.phase };
       }, col.best.top, col.best.n, tph);
       const rows = stretchRows('crusher.' + ph, (col.best.n - 1) * 16).concat(frameOf('crusher.' + ph));
-      const e = eqRows(rows, got.px, 16);
-      R.say(got.y0 >= 0 && e.n > 0 && e.bad.length === 0, 'a ' + col.best.n + ' cell crusher column in phase ' + ph + ' (trap phase ' + tph + '): the cells above the bottom are row 0 of crusher.' + ph + ' stretched, the bottom cell the whole frame, ' + e.n + ' pixels' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, 3).join('; ') + ')' : ''));
+      /* round 5 (Astra) drew the banks: a column's top cell wears frame c's top face (2 rows) and a column in a bank is shaft_joined with an Ink rail on the bank's outer sides, so the top two rows and the two side columns are the bank's, not the frame's */
+      const e = eqRows(rows, got.px, 16, (x, y) => y < 2 || x === 0 || x === 15);
+      R.say(got.y0 >= 0 && e.n > 0 && e.bad.length === 0, 'a ' + col.best.n + ' cell crusher column in phase ' + ph + ' (trap phase ' + tph + '): the cells above the bottom are row 0 of crusher.' + ph + ' stretched, the bottom cell the whole frame, ' + e.n + ' pixels' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, DBG).join('; ') + ')' : ''));
     }
   }
 
@@ -306,7 +308,7 @@ try {
       return { px: o, y };
     }, fr);
     const e = sp2 ? eqRows(frameOf('speck.' + fr), sp2.px, 16) : { n: 0, bad: ['no speck'] };
-    R.say(!!sp2 && e.n > 0 && e.bad.length === 0, 'the sample room\'s speck draws speck.' + fr + (fr === 'b' ? ' with its glint on the beat' : ' off the beat') + ', ' + e.n + ' pixels' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, 3).join('; ') + ')' : ''));
+    R.say(!!sp2 && e.n > 0 && e.bad.length === 0, 'the sample room\'s speck draws speck.' + fr + (fr === 'b' ? ' with its glint on the beat' : ' off the beat') + ', ' + e.n + ' pixels' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, DBG).join('; ') + ')' : ''));
   }
 
   /* ART3 f, the biome's air: saturated-blobs built under each biome, the enemies, loot and trap cleared, the hero set
@@ -357,7 +359,7 @@ try {
     }, fixture, b);
     const r2 = rows.flatMap(r => { const w2 = [...r].map(c => c + c).join(''); return [w2, w2]; });
     const e = rv.px ? eqRows(r2, rv.px, 48) : { n: 0, bad: ['no badge drawn'] };
-    R.say(rv.ok && rv.bd && rv.bd.key === 'icon_biomes.' + nm && e.n > 0 && e.bad.length === 0, 'biome ' + b + ': the develop reveal draws icon_biomes.' + nm + ' at 2x (48 px) at the view\'s top, ' + e.n + ' pixels on the canvas' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, 3).join('; ') + ')' : ''));
+    R.say(rv.ok && rv.bd && rv.bd.key === 'icon_biomes.' + nm && e.n > 0 && e.bad.length === 0, 'biome ' + b + ': the develop reveal draws icon_biomes.' + nm + ' at 2x (48 px) at the view\'s top, ' + e.n + ' pixels on the canvas' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, DBG).join('; ') + ')' : ''));
     await page.evaluate(() => { if (window.SB.ui.reveal.on) window.SB.ui.endReveal(); });
   }
 
@@ -390,14 +392,14 @@ try {
     const overHero = (x, y) => gq.bx + x >= hr.x - 1 && gq.bx + x <= hr.x + hr.w && gq.by + y >= hr.y - 1 && gq.by + y <= hr.y + hr.h;
     /* cell 7 is struck off: its 16 px are not the body's; the dotted outline sits on the rect's edge pixels */
     const e = rows ? eqRows(rows, gq.body, 80, (x, y) => overHero(x, y) || (Math.floor(x / 16) === 2 && Math.floor(y / 16) === 1) || x === 0 || y === 0 || x === 79 || y === 63) : { n: 0, bad: ['no body'] };
-    R.say(!!rows && gq.boss.live === 19 && e.n > 0 && e.bad.length === 0, 'the guardian awake draws its 19 live cells as ' + key + ', ' + e.n + ' pixels on the canvas' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, 3).join('; ') + ')' : ''));
+    R.say(!!rows && gq.boss.live === 19 && e.n > 0 && e.bad.length === 0, 'the guardian awake draws its 19 live cells as ' + key + ', ' + e.n + ' pixels on the canvas' + (e.bad.length ? ' (' + e.bad.length + ' differ: ' + e.bad.slice(0, DBG).join('; ') + ')' : ''));
     const lamp = gq.lamp ? eqRows(frameOf('fx_beacon_light.light_0'), gq.lamp, 16) : { n: 0, bad: ['no lamp'] };
     R.say(!!gq.beacon && gq.beacon.dark && gq.beacon.key === 'fx_beacon_light.light_0' && lamp.n > 0 && lamp.bad.length === 0, 'while it stands the lamp is fx_beacon_light.light_0, the dark lamp, ' + lamp.n + ' pixels' + (lamp.bad.length ? ' (' + lamp.bad.slice(0, 3).join('; ') + ')' : ''));
     const tl = eqRows(frameOf('boss_moth_shed.telegraph'), gq.tell, 48);
     R.say(gq.boss.tell === 'telegraph' && tl.n > 0 && tl.bad.length === 0, 'the shed\'s tell draws boss_moth_shed.telegraph in its box, ' + tl.n + ' pixels' + (tl.bad.length ? ' (' + tl.bad.slice(0, 3).join('; ') + ')' : ''));
     const hk = hr.key || '', hrows = frameOf(hk);
     const he = hrows ? eqRows(hrows, gq.heroPx, hr.w) : { n: 0, bad: ['no hero frame ' + hk] };
-    R.say(/^hero_colours\.umber_/.test(hk) && he.n > 0 && he.bad.length === 0, 'the bug worn in skin 1 draws ' + hk + ', ' + he.n + ' pixels on the canvas' + (he.bad.length ? ' (' + he.bad.slice(0, 3).join('; ') + ')' : ''));
+    R.say(/^hero_colours(_big)?\.umber_/.test(hk) && he.n > 0 && he.bad.length === 0, 'the bug worn in skin 1 draws ' + hk + ', ' + he.n + ' pixels on the canvas' + (he.bad.length ? ' (' + he.bad.slice(0, 3).join('; ') + ')' : ''));
   }
 
   R.say(errors.length === 0, 'zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));

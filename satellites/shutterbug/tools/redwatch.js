@@ -1168,7 +1168,7 @@ const MUTANTS = [
     gates: [{ gate: 'fight', expect: '412: Title through the pause card ends the sitting' }] },
   { name: 'DEATH_KEEPS_PICKUP', task: 'W1', file: 'page', find: "  ui.showDeath = function () {\n", repl: "  ui.showDeath = function () {\n    if (G.state) G.gear = G.state.hero.slots.slice();\n",
     gates: [{ gate: 'fight', expect: '412: a death after the chest' }] },
-  { name: 'ROOM_OPTS_MISSING', task: 'W1', file: 'page', find: "    roomOpts: function () { var o = { loadout: (G.entry || [0, 0, 0]).map(function (c) { return c > 0 ? SB.sim.WPN[c] : null; }) }; if (G.room) { o.roomIndex = G.room; o.carry = G.carry; if (G.room === SB.TUNING.HOUSE_ROOMS) o.lastRoom = true; } return o; },", repl: "    roomOpts: function () { return {}; },",   /* re anchored at HOUSE-B (room 5's lastRoom) */
+  { name: 'ROOM_OPTS_MISSING', task: 'W1', file: 'page', find: "    roomOpts: function () { var o = { loadout: (G.entry || [0, 0, 0]).map(function (c) { return c > 0 ? SB.sim.WPN[c] : null; }) }; if (G.room) { o.roomIndex = G.room; o.carry = G.carry; if (G.room === SB.TUNING.HOUSE_ROOMS) o.lastRoom = true; } if (G.pool !== undefined) { o.pool = G.pool; o.checkpoint = G.cpOn; } return o; },", repl: "    roomOpts: function () { return {}; },",   /* re anchored at HOUSE-B (room 5's lastRoom) */
     gates: [{ gate: 'fight', expect: '412: the recording replayed on a fresh sim made from SB_DEV.roomOpts()' }] },
 
   /* LEVELS (Q180, Stephen's ruling 31 Oct, "Floor becomes the ledge"): the floor and ceiling fallbacks, the 24 row

@@ -43,7 +43,7 @@ const COPY = (() => {
 const TRAITS = vm.runInNewContext('(' + SRC.match(/ui\.TRAITS = (\{[^;]*\});/)[1] + ')');
 const SPR = vm.runInNewContext(SRC.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1] + '\n;SPRITES');
 const RGB = SBN.palette.RGB, BUILT = SBN.TUNING.WEAPONS_BUILT;
-const WPN = ['', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7', 'J8', 'D1'];
+const WPN = SBN.sim.WPN;
 const iconPx = id => SPR.icon_weapons.frames[id].split('/').map(r => [...r].map(c => c === '.' ? null : RGB[parseInt(c, 16)].join(','))).flat();
 /* the gate's own comparison line (8.6): the new weapon's differences from yours, at most two, lift, holds, both sides,
    reach, damage; none, cmpOther */
@@ -88,6 +88,10 @@ const setRoom = (page) => page.evaluate((str, W, FLOOR, cx) => {
   st.chest.idx = FLOOR * W + cx; st.chest.open = 0; st.loot.length = 0; st.enemies.length = 0;
   st.enemies.push({ kind: 1, x: 18 * 4096, y: 30 * 4096, vx: 0, vy: 0, hp: 4, state: 0, timer: 0, dir: 1, home: 30 * W + 18, elite: 0, frozen: 0, stunned: 0, hurt: 0 });   /* a live moth, to see it held */
   st.hero.slots[0] = 1; st.hero.slots[1] = 9;
+  /* this gate is the jump slot's swap: its rooms wear the jump weapons and the Anvil Boots as the chest's pool (a
+     liberty: the unhashed pool; today's pool also holds the dive weapons and the charms, an empty charm slot takes
+     one with no card) */
+  Object.defineProperty(st, 'pool', { value: [1, 9, 2, 3, 4, 5, 6, 7, 8], enumerable: false, writable: true, configurable: true });
   window.__s0 = structuredClone(st);
   window.SB_DEV.step(0);
   return { ok: !!ok, screen: window.SB_DEV.screen() };
@@ -195,7 +199,7 @@ try {
       w + ': a real tap on Take with the stick thumb down equips ' + nu + ' on the next step with the pick and equip voices (' + t1.heard.join(', ') + '), the card gone, the pickup card naming ' + JSON.stringify(t1.got));
     R.say(px.length === 576 && px.every((c, i) => c === want[i]), w + ': the jump box\'s 576 pixels are ' + nu + '\'s glyph (icon_weapons.' + nu + ') decoded here');
     if (w === 412) {
-      const rep = await page.evaluate(() => { const s = window.SB.sim.attach(structuredClone(window.__s0), window.SB.game.level); const words = window.SB.sim.rle.decode(window.SB.input.recording()); for (const wd of words) window.SB.sim.step(s, wd); return { same: window.SB.sim.hash(s) === window.SB_DEV.hash(), take: words.some(wd => ((wd >> 6) & 15) === window.SB.sim.CHOICE.TAKE) }; });
+      const rep = await page.evaluate(() => { const s = window.SB.sim.attach(structuredClone(window.__s0), window.SB.game.level); Object.defineProperty(s, 'pool', { value: window.SB.game.state.pool, enumerable: false, writable: true, configurable: true }); const words = window.SB.sim.rle.decode(window.SB.input.recording()); for (const wd of words) window.SB.sim.step(s, wd); return { same: window.SB.sim.hash(s) === window.SB_DEV.hash(), take: words.some(wd => ((wd >> 6) & 15) === window.SB.sim.CHOICE.TAKE) }; });
       R.say(rep.same && rep.take, '412: the recording carries the TAKE and, replayed on the kept first state, reaches the live hash (' + JSON.stringify(rep) + ')');
     }
 
@@ -222,7 +226,7 @@ try {
       await page.keyboard.down('ArrowLeft');
       let laid = false, rp = null;
       for (let k = 0; k < 120 && !laid; k++) {
-        laid = await page.evaluate(() => { const st = window.SB.game.state, c = window.SB.sim.attach(structuredClone(st), window.SB.game.level); window.SB.sim.step(c, window.SB.sim.IN.L); if (!c.room.compare || !st.hero.ground) return false; st.room.offerWait = 1; st.room.grace = 0; return true; });
+        laid = await page.evaluate(() => { const st = window.SB.game.state, c = window.SB.sim.attach(structuredClone(st), window.SB.game.level); Object.defineProperty(c, 'pool', { value: st.pool, enumerable: false, writable: true, configurable: true }); window.SB.sim.step(c, window.SB.sim.IN.L); if (!c.room.compare || !st.hero.ground) return false; st.room.offerWait = 1; st.room.grace = 0; return true; });
         rp = await page.evaluate(() => { const p = window.__step(1); p.offer = !!window.SB.game.state.scrollsOffered; return p; });
       }
       await page.keyboard.up('ArrowLeft');
@@ -237,7 +241,7 @@ try {
       /* the worst angle (13.2's shot): the bug dropping in at the room's top beside the chest (laid at row 2): no dock in
          the room clears it at 320, so the card hangs deep over the strip, the bug in sight, A's and B's circles bare,
          Pause still Pause's */
-      await page.evaluate(() => { window.SB_DEV.hold(true); window.SB_DEV.loadRecord(window.__rec); const s = window.SB.game.state; s.loot.length = 0; s.enemies.length = 0; s.hero.slots[0] = 1; s.hero.slots[1] = 9; s.hero.x = 3 * 4096 + 512; s.hero.y = 2 * 4096; s.chest.idx = 2 * 24 + 4; s.chest.open = 0; window.SB_DEV.step(0); });
+      await page.evaluate(() => { window.SB_DEV.hold(true); window.SB_DEV.loadRecord(window.__rec); const s = window.SB.game.state; s.loot.length = 0; s.enemies.length = 0; s.hero.slots[0] = 1; s.hero.slots[1] = 9; Object.defineProperty(s, 'pool', { value: [1, 9, 2, 3, 4, 5, 6, 7, 8], enumerable: false, writable: true, configurable: true }); s.hero.x = 3 * 4096 + 512; s.hero.y = 2 * 4096; s.chest.idx = 2 * 24 + 4; s.chest.open = 0; window.SB_DEV.step(0); });
       await page.keyboard.down('ArrowRight'); let q = null; for (let k = 0; k < 60; k++) { q = await stepN(page, 1); if (q.compare) break; } await page.keyboard.up('ArrowRight');
       await stepN(page, 2);
       const dp = await page.evaluate(() => {

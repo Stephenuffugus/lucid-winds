@@ -132,9 +132,11 @@ const stillSteps = trace => trace.map((p, k) => k > 0 && p.x === trace[k - 1].x 
 /* the recording's answers, and its replay on the room's first state against the live hash */
 const replayOf = page => page.evaluate(() => {
   const words = window.SB.sim.rle.decode(window.SB.input.recording()), C = window.SB.sim.CHOICE, s = window.SB.sim.attach(structuredClone(window.__s0), window.SB.game.level);
+  /* the Darkroom's pool rides the state unhashed and unenumerable (a clone drops it): the replay wears the live room's */
+  Object.defineProperty(s, 'pool', { value: window.SB.game.state.pool, enumerable: false, writable: true, configurable: true });
   for (const wd of words) window.SB.sim.step(s, wd);
   const ch = words.map(wd => (wd >> 6) & 15).filter(Boolean);
-  return { a: ch.filter(c => c === C.A).length, take: ch.filter(c => c === C.TAKE).length, other: ch.filter(c => c !== C.A && c !== C.TAKE).length, same: window.SB.sim.hash(s) === window.SB_DEV.hash() };
+  return { a: ch.filter(c => c === C.A).length, take: ch.filter(c => c === C.TAKE).length, other: ch.filter(c => c !== C.A && c !== C.TAKE).length, same: window.SB.sim.hash(s) === window.SB_DEV.hash(), diff: (() => { const out = []; const d = (x, y, p) => { if (out.length > 10) return; if (x && typeof x === 'object') { for (const k of new Set([...Object.keys(x), ...Object.keys(y || {})])) d(x[k], y ? y[k] : undefined, p + '.' + k); } else if (x !== y) out.push(p + ' live ' + x + ' replay ' + y); }; d(JSON.parse(JSON.stringify(window.SB.game.state)), JSON.parse(JSON.stringify(s)), 's'); return out.join('; '); })() };
 });
 
 try {
@@ -144,8 +146,9 @@ try {
     R.say(s0.ok && s0.screen === 'play' && s0.loot.length === 2 && s0.loot[0][0] === 2 && s0.loot[0][1] === FLOOR * W + SCROLL && s0.loot[1][0] === 3 && s0.chest === FLOOR * W + CHEST,
       w + ': the room loads, its loot the scroll at (16, 46) and the blueprint set at (21, 46), its chest set at (23, 46)');
     const bpCell = await cellOf(page, BP, FLOOR), scCell = await cellOf(page, SCROLL, FLOOR);
-    R.say(!!bpCell && bpCell.isOpen && !!scCell && scCell.colours > 1,
-      w + ': the blueprint is not drawn: its cell is the open floor alone (' + (bpCell ? bpCell.colours + ' colour, ' + bpCell.first + ', the floor ' + bpCell.open : 'out of view') + '), where the scroll\'s cell shows its sprite (' + (scCell ? scCell.colours : 0) + ' colours)');
+    /* the blueprint shows since 2 Nov (the Darkroom prints it: R.LOOT_SHOWN), as the scroll does */
+    R.say(!!bpCell && bpCell.colours > 1 && !!scCell && scCell.colours > 1,
+      w + ': the blueprint is drawn on its cell (' + (bpCell ? bpCell.colours + ' colour, ' + bpCell.first + ', the floor ' + bpCell.open : 'out of view') + '), where the scroll\'s cell shows its sprite (' + (scCell ? scCell.colours : 0) + ' colours)');
 
     /* the walk: a real thumb held 20 px right on the stick (QUESTIONS Q140), one step at a time; a real tap on A as the chest opens */
     const trace = [await page.evaluate(() => window.__probe())];
@@ -168,8 +171,8 @@ try {
     /* (the offer opening on landing, never in the air, is H-loot-3's: this walk never leaves the floor) */
     R.say(scrollAt > 0 && trace[scrollAt].heard.includes('pickup') && offerAt > scrollAt && !!trace[offerAt + 1] && !trace[offerAt + 1].offered,
       w + ': the scroll is taken with its pickup voice (step ' + scrollAt + '), its offer opens (step ' + offerAt + ') and the shell answers it on the next word');
-    R.say(bpAt > 0 && trace[bpAt].heard.length === 0 && trace[trace.length - 1].carried.includes(FLOOR * W + BP),
-      w + ': the blueprint is taken in silence (step ' + bpAt + ', voices: ' + (bpAt > 0 ? trace[bpAt].heard.join(', ') || 'none' : 'never taken') + ') and the sim still carries it');
+    R.say(bpAt > 0 && trace[bpAt].heard.includes('pickup') && trace[trace.length - 1].carried.includes(FLOOR * W + BP),
+      w + ': the blueprint is taken with its pickup voice (step ' + bpAt + ', voices: ' + (bpAt > 0 ? trace[bpAt].heard.join(', ') || 'none' : 'never taken') + ') and the sim still carries it');
     const ch = chestAt > 0 ? trace[chestAt] : null;
     R.say(!!ch && ch.heard.includes('chest') && ch.dp === 15 && ch.dpn === '15' && ch.plus === '+15' && !!plus && plus.seen && plus.text === '+15',
       w + ': the chest opens with its chest voice and pays 15: the count reads ' + (ch ? ch.dpn : 'nothing') + ' at once and a handwritten ' + (plus ? plus.text : 'nothing') + ' shows under it (faded in by ' + (plus ? plus.at : 0) + ' ms)');
@@ -186,10 +189,10 @@ try {
       w + ': the chest opens no compare (its weapon goes into an empty slot) and a real tap on A as it opens jumps on the very next step (vy ' + (next ? next.vy : '?') + ', ' + (next ? next.heard.join(', ') || 'silent' : '') + ')');
     R.say(still.length === 1 && still[0] === offerAt + 1 && trace[trace.length - 1].x >= END,
       w + ': the world holds still for exactly the one step the scroll\'s answer rides (steps ' + still.join(', ') + ', the answer at ' + (offerAt + 1) + ') and moves on every other to the room\'s edge');
-    R.say(!heard.includes('pick') && heard.filter(n => n === 'pickup').length === 1 && heard.filter(n => n === 'chest').length === 1 && heard.filter(n => n === 'equip').length === 1 && ctx === 'running',
-      w + ': no pick voice sounds; one pickup, one chest and one equip voice (' + (heard.join(', ') || 'none') + ', the context ' + ctx + ')');
+    R.say(!heard.includes('pick') && heard.filter(n => n === 'pickup').length === 2 && heard.filter(n => n === 'chest').length === 1 && heard.filter(n => n === 'equip').length === 1 && ctx === 'running',
+      w + ': no pick voice sounds; two pickups (the scroll, the blueprint), one chest and one equip voice (' + (heard.join(', ') || 'none') + ', the context ' + ctx + ')');
     const rp = await replayOf(page);
-    R.say(rp.a === 1 && rp.take === 0 && rp.other === 0 && rp.same, w + ': the recording carries the one answer (' + rp.a + ' A, ' + rp.take + ' TAKE) and replays on the room\'s first state to the live hash (' + rp.same + ')');
+    R.say(rp.a === 1 && rp.take === 0 && rp.other === 0 && rp.same, w + ': the recording carries the one answer (' + rp.a + ' A, ' + rp.take + ' TAKE) and replays on the room\'s first state to the live hash (' + rp.same + (rp.same ? '' : ': ' + rp.diff) + ')');
     R.say(errors.length === 0, w + ': no page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
     await page.close();
   }
@@ -258,7 +261,7 @@ try {
     const asNeighbour = !!cell && ((!!left && cell.px === left.px) || (!!right && cell.px === right.px));
     R.say(light && got.ok && got.screen === 'play' && got.loot.some(l => l[0] === 3 && l[1] === bp && !l[2]),
       '412: the room places its own blueprint, on the Sun cell (' + bx + ', ' + by + ') with Paper either side (the page\'s loot ' + JSON.stringify(got.loot) + ')');
-    R.say(asNeighbour, '412: the hidden blueprint\'s cell is drawn as its row neighbours are, with no notch and no yellow (the cell ' + (cell ? cell.first : 'out of view') + ', left ' + (left ? left.first : '?') + ', right ' + (right ? right.first : '?') + ', the open Ash ' + (cell ? cell.ash : '?') + ')');
+    R.say(!!cell && !asNeighbour, '412: the room\'s own blueprint shows on its cell (since 2 Nov), drawn as neither row neighbour is (the cell ' + (cell ? cell.first : 'out of view') + ', left ' + (left ? left.first : '?') + ', right ' + (right ? right.first : '?') + ', the open Ash ' + (cell ? cell.ash : '?') + ')');
     R.say(errors.length === 0, '412 blueprint room: no page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
     await page.close();
   }

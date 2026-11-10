@@ -255,7 +255,7 @@ try {
     const made = await page.evaluate(j => { const SB = window.SB, rec = SB.record.fromJSON(Object.assign({}, j, { v: 2, biome: 4, rules: 0, flags: 0 }));
       const lv = SB.pipeline.build(rec, {}), bytes = SB.record.pack(rec);
       const bump = (k, v) => { const b = Uint8Array.from(bytes); b[k] = v; return 'v2.' + SB.rng.b64urlEncode(b); };
-      return { link: SB.record.linkOf(location.origin, location.pathname, rec), hash: SB.pipeline.levelHash(lv), biome: lv.biome, rules9: bump(7, 9), flag0: bump(8, 1) }; }, sj);
+      return { link: SB.record.linkOf(location.origin, location.pathname, rec), hash: SB.pipeline.levelHash(lv), biome: lv.biome, rules9: bump(7, 9), flag0: bump(8, 128) }; }, sj);
     const v = await newPage(browser, { width: 412, height: 915 });
     await v.page.goto(made.link); await ready(v.page);
     const vcard = await v.page.evaluate(() => document.getElementById('devcard').classList.contains('on'));
@@ -271,7 +271,7 @@ try {
       if (nw.errors.length) v.errors.push(...nw.errors);
       await nw.page.close();
     }
-    R.say(newerMsg.every(m => m.shown && m.text === m.newer && !m.card), 'biome: a v2 code with RULES 9, and one with flag bit 0, open nothing and say "' + (newerMsg[0] && newerMsg[0].newer) + '" (' + newerMsg.map(m => m.text).join(' | ') + ')');
+    R.say(newerMsg.every(m => m.shown && m.text === m.newer && !m.card), 'biome: a v2 code with RULES 9, and one with the one flag bit no build knows (128), open nothing and say "' + (newerMsg[0] && newerMsg[0].newer) + '" (' + newerMsg.map(m => m.text).join(' | ') + ')');
     R.say(v.errors.length === 0, 'biome: the v2 page has zero page errors' + (v.errors.length ? ' (' + v.errors.join(' ; ') + ')' : ''));
     await v.page.close();
   }

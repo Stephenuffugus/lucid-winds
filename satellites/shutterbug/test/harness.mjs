@@ -176,7 +176,8 @@ export async function fromPause(page, sel) {
   if (await page.evaluate(() => window.SB_DEV.screen()) === 'play') await tap(page, '#pause');
   return tap(page, sel);
 }
-export const leaveRoom = page => fromPause(page, '#pausetitle');
+/* a title that follows a clear is the bug's story the first time (sb-m1-18): leaveRoom ends on the title past it (10 Nov) */
+export const leaveRoom = async page => { const c = await fromPause(page, '#pausetitle'); await pastStory(page); return c; };
 export const openSheet = page => fromPause(page, '#pauseshare');
 
 /* A finger put down at (x, y) and left down: returns Puppeteer's TouchHandle (`move`, `end`). */

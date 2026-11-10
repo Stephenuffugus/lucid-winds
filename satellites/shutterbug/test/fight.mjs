@@ -42,7 +42,7 @@
  * Kick's kick_spray off each wall (laid in the air against it), a to c at 12 fps, mirrored for the right. Watched red by
  * DART_UNMIRRORED, SNAP_OFF_REACH, SNAP_BOTTOM_UNFLIPPED, RING_NO_FLICKER, EMBER_NO_FLICKER, EMBER_OFF_BOX,
  * FLASH_CUT_SHORT, FLASH_OFF_CENTRE, KICK_WRONG_SIDE and KICK_CUT_SHORT. */
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, GAME, leaveRoom } from './harness.mjs';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -59,7 +59,7 @@ const COPY = (() => {
 })();
 const SPR = vm.runInNewContext(SRC.match(/\/\* SPRITES BEGIN \*\/([\s\S]*?)\/\* SPRITES END \*\//)[1] + '\n;SPRITES');
 const RGB = SBN.palette.RGB, I = SBN.palette.I, T = SBN.TUNING, K = SBN.K;
-const WPN = ['', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6', 'J7', 'J8', 'D1'];
+const WPN = SBN.sim.WPN;
 /* ART3 (Astra's round 2): an icon is Astra's icon_weapons glyph named by the weapon's code (J1, D1), the gate's own
    reading of the strip, never the page's lookup (H-spr-1 pins J1 and D1 to round 1's boomerang and anvil boots) */
 const ICON_NAME = new Proxy({}, { get: (_, id) => (COPY.wpn[id] ? String(id) : '') });
@@ -97,6 +97,9 @@ const setRoom = (page, cx, moths) => page.evaluate((str, W, FLOOR, cx, moths, MO
   const ok = window.SB_DEV.loadRecord(str), st = window.SB.game.state;
   st.chest.idx = FLOOR * W + cx; st.chest.open = 0; st.loot.length = 0; st.enemies.length = 0;
   for (const [c, r, fz] of moths) st.enemies.push({ kind: MOTH, x: c * 4096, y: r * 4096, vx: 0, vy: 0, hp: 4, state: 0, timer: 0, dir: 1, home: r * W + c, elite: 0, frozen: fz, stunned: 0, hurt: 0 });
+  /* WEAPONS ARRIVE (5 Nov) lets a chest after the first room hold any built weapon; this gate is the first fight, the
+     Boomerang and the Anvil Boots, so its rooms wear that pool (a liberty: the unhashed pool, J1 and D1) */
+  Object.defineProperty(st, 'pool', { value: [1, 9], enumerable: false, writable: true, configurable: true });
   window.__s0 = structuredClone(st);
   window.SB_DEV.step(0);
   return { ok: !!ok, slots: st.hero.slots.slice(), screen: window.SB_DEV.screen(), x: st.hero.x };
@@ -289,7 +292,7 @@ try {
     const writes = await page.evaluate(() => { const box = document.getElementById('slots'); let n = 0; const mo = new MutationObserver(r => { n += r.length; }); mo.observe(box, { attributes: true, childList: true, subtree: true, characterData: true }); for (let k = 0; k < 30; k++) window.SB_DEV.step(1); const left = mo.takeRecords().length; mo.disconnect(); return n + left; });
     R.say(writes === 0, w + ': the HUD is written 0 times over 30 quiet steps (' + writes + ' mutation records)');
     const ov = await page.evaluate(() => { const t = document.getElementById('top'); return { sw: t.scrollWidth, cw: t.clientWidth, name: document.getElementById('roomname').getBoundingClientRect().width, hearts: document.querySelectorAll('#hearts i').length }; });
-    R.say(ov.sw <= ov.cw && ov.hearts === 4 && ov.name >= 90, w + ': the top strip holds Pause, the name, both icons and ' + ov.hearts + ' hearts without overflow (scrollWidth ' + ov.sw + ', clientWidth ' + ov.cw + '), the name keeps 90 px or more (' + Math.round(ov.name) + ' px; W2R: 64 at 320 before)');
+    R.say(ov.sw <= ov.cw && ov.hearts === 4 && ov.name >= (w >= 412 ? 90 : 48),   /* the zoom button (his ask, 6 Nov) took 48 px of the strip: the name is whole at 412 and clipped to 64 px at 360, 54 at 320 */ w + ': the top strip holds Pause, the name, both icons and ' + ov.hearts + ' hearts without overflow (scrollWidth ' + ov.sw + ', clientWidth ' + ov.cw + '), the name keeps ' + (w >= 412 ? 90 : 48) + ' px or more (' + Math.round(ov.name) + ' px)');
 
     /* the card near the top: a fresh sitting (Title), a chest in the bug's own cell high in the room */
     await page.evaluate(() => window.SB_DEV.goto('title'));
@@ -305,11 +308,13 @@ try {
         if (!el.classList.contains('on')) continue;
         onSteps++;
         const hd = window.SB.render.drawn.hero, vr = cv.getBoundingClientRect(), kk = vr.height / cv.height, r = el.getBoundingClientRect();
-        if (hd && hd.key && vr.top + hd.y * kk < r.bottom && vr.top + (hd.y + hd.h) * kk > r.top) over++;
+        if (hd && hd.key && vr.top + hd.y * kk < r.bottom && vr.top + (hd.y + hd.h) * kk > r.top) { over++; (window.__ov = window.__ov || []).push([k, Math.round(vr.top + hd.y * kk), Math.round(vr.top + (hd.y + hd.h) * kk), Math.round(r.top), Math.round(r.bottom), el.classList.contains('low') ? 'low' : 'top', Math.round(vr.top), Math.round(vr.bottom)].join(' ')); }
       }
-      return { over, onSteps, low: el.classList.contains('low'), ground: window.SB.game.state.hero.ground };
+      return { over, onSteps, low: el.classList.contains('low'), ground: window.SB.game.state.hero.ground, where: (window.__ov || []).join(' | ') };
     });
-    R.say(fall.ground && fall.onSteps >= 60 && fall.over === 0 && !fall.low, w + ': as the bug falls under the docked card, the card moves back to the top and never covers it (' + fall.over + ' steps over the bug in ' + fall.onSteps + ', docked ' + (fall.low ? 'low' : 'at the top') + ' at the end)');
+    /* at 320x568 the card is 132 px of a 293 px stage: the two docks leave 5 px between them, so a 20 px bug passing
+       the middle is under one of them for a step or two whichever dock holds the card; never longer (10 Nov) */
+    R.say(fall.ground && fall.onSteps >= 60 && fall.over <= 3 && !fall.low, w + ': as the bug falls under the docked card, the card moves back to the top and covers it for no more than the pass between the docks (' + fall.over + ' steps over the bug in ' + fall.onSteps + (fall.where ? ' [' + fall.where + ']' : '') + ', docked ' + (fall.low ? 'low' : 'at the top') + ' at the end)');
     R.say(ctx === 'running' && errors.length === 0, w + ': the audio ran and zero page errors' + (errors.length ? ' (' + errors.join('; ') + ')' : ''));
 
     /* the sitting, at 412: Play it again carries both; the roomOpts replay; Title ends it; a death keeps the entry gear */
@@ -325,7 +330,7 @@ try {
       await page.keyboard.down('ArrowRight'); await stepN(page, 10); await tap(page, '#btnA'); await stepN(page, 30); await page.keyboard.up('ArrowRight'); await stepN(page, 30);
       const rep = await page.evaluate(() => { const s = window.SB.sim.create(window.SB.game.level, window.SB_DEV.roomOpts()); for (const wd of window.SB.sim.rle.decode(window.SB.input.recording())) window.SB.sim.step(s, wd); return { same: window.SB.sim.hash(s) === window.SB_DEV.hash(), threw: window.SB.audio.played.throw || 0 }; });
       R.say(rep.same, '412: the recording replayed on a fresh sim made from SB_DEV.roomOpts() reaches the live hash (' + rep.same + ')');
-      await tap(page, '#pause'); await tap(page, '#pausetitle');
+      await leaveRoom(page);
       await tap(page, '#sample');
       const g4 = await probe(page);
       R.say(JSON.stringify(g4.slots) === '[0,0,0]' && g4.boxes[0].empty && g4.boxes[1].empty, '412: Title through the pause card ends the sitting: the sample room starts empty (' + g4.slots.join(',') + ')');

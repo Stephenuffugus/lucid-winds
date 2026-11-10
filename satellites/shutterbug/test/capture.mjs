@@ -446,12 +446,12 @@ try {
     const got = await page.evaluate(() => {
       const SB = window.SB, l = window.SB_DEV.level(), st = window.SB_DEV.state(), rec = l ? SB.record.decode(l.code) : null;
       return { screen: window.SB_DEV.screen(), code: l && l.code, v: rec && rec.v, byte: rec && rec.biome, rules: rec && rec.rules, flags: rec && rec.flags, derived: rec ? SB.pipeline.biomeOf(rec.pal, rec.pal.length) : -1,
-        biome: st ? st.biome : -1, kinds: st ? st.enemies.filter(e => e.kind > 0).map(e => e.kind) : [], CRAWLER: SB.features.CRAWLER };
+        known: SB.record.FLAGS_KNOWN, biome: st ? st.biome : -1, kinds: st ? st.enemies.filter(e => e.kind > 0).map(e => e.kind) : [], CRAWLER: SB.features.CRAWLER };
     });
-    R.say(rest.needsCrop === false && got.screen === 'play' && got.v === 2 && got.byte === 4 && got.rules === 0 && got.flags === 0,
-      'biome: a sage walled room develops at the default box as a v2 record with biome byte 4 (Overgrowth), RULES 0 (today\'s rules, Q222), no flags (screen ' + got.screen + ', v ' + got.v + ', biome byte ' + got.byte + ', rules ' + got.rules + ', flags ' + got.flags + ')');
-    R.say(got.biome === 3 && got.derived === 0 && got.kinds.length > 0 && got.kinds.every(k => k === got.CRAWLER),
-      'biome: the room plays as Overgrowth with its thorn crawlers, where its grid alone is Attic (biome ' + got.biome + ', the grid\'s own rule ' + got.derived + ', enemy kinds ' + JSON.stringify(got.kinds) + ')');
+    R.say(rest.needsCrop === false && got.screen === 'play' && got.v === 2 && got.byte === 4 && got.rules === 0 && got.flags === got.known,
+      'biome: a sage walled room develops at the default box as a v2 record with biome byte 4 (Overgrowth), RULES 0 (today\'s rules, Q222), every flag this build knows (screen ' + got.screen + ', v ' + got.v + ', biome byte ' + got.byte + ', rules ' + got.rules + ', flags ' + got.flags + ')');
+    R.say(got.biome === 3 && got.derived !== 3 && got.derived >= 0 && got.kinds.length > 0 && got.kinds.includes(got.CRAWLER),
+      'biome: the room plays as Overgrowth with a thorn crawler in its cast (the bestiary flags add the others), where its grid alone is another biome (biome ' + got.biome + ', the grid\'s own rule ' + got.derived + ', enemy kinds ' + JSON.stringify(got.kinds) + ')');
     writeFileSync(join(TMP, 'sage-record.json'), JSON.stringify({ code: got.code }));
     let nb = null;
     try { nb = JSON.parse(execFileSync('node', [join(GAME, 'harness.js'), '--record-json', join(TMP, 'sage-record.json')], { encoding: 'utf8' }).trim().split('\n').pop()); } catch (e) { nb = { error: String(e.message).slice(0, 200) }; }

@@ -41,6 +41,8 @@ import { readFileSync } from 'node:fs';
 import { serve, launch, newPage, gotoGame, ready, reporter, tap, pastStory, GAME } from './harness.mjs';
 
 const R = reporter('HOUSE');
+/* the strip's name steps down to fit beside the hearts, the keys, the weapons and the zoom button (COPY.roomOf, roomOfShort, roomOfTiny): any fitted form of the room is the room */
+const roomIs = (name, n) => ['Room ' + n + ' of 5', 'Room ' + n + '/5', n + '/5'].includes(name), lastIs = name => name === 'The last room' || name === 'Last room' || name === '5/5';
 const SAMPLE = JSON.parse(readFileSync(join(GAME, 'fixtures', 'sample-room.json'), 'utf8')).record, ROOM = SAMPLE.rows;
 const TMP = '/tmp/claude-1000/shutterbug-house'; mkdirSync(TMP, { recursive: true });
 const PHOTO = join(TMP, 'room-900x1600.png');
@@ -184,7 +186,7 @@ try {
   await fromRecent(page);
   s = await look(page);
   const room1 = s.code;
-  R.say(s.screen === 'play' && s.name === 'Room 1 of 5' && s.run.rooms.length === 1 && s.stored.run && s.stored.run.rooms.length === 1 && s.hero.hearts === 4,
+  R.say(s.screen === 'play' && roomIs(s.name, 1) && s.run.rooms.length === 1 && s.stored.run && s.stored.run.rooms.length === 1 && s.hero.hearts === 4,
     'a recent room from the doorway plays as Room 1 of 5, the run saved with it before a step (strip "' + s.name + '", ' + (s.stored.run ? s.stored.run.rooms.length : 0) + ' room stored)');
   const dp1 = await speck(page), w0 = s.dp;
   await climb(page);
@@ -219,12 +221,19 @@ try {
   await tap(page, '#develop');
   await playing(page);
   s = await look(page);
-  R.say(s.screen === 'play' && s.name === 'Room 2 of 5' && s.enemies >= 2 && s.run.rooms.length === 2, 'Choose a photo at the doorway plays room 2: the strip reads "' + s.name + '", ' + s.enemies + ' enemies (its floor 2)');
+  R.say(s.screen === 'play' && roomIs(s.name, 2) && s.enemies >= 2 && s.run.rooms.length === 2, 'Choose a photo at the doorway plays room 2: the strip reads "' + s.name + '", ' + s.enemies + ' enemies (its floor 2)');
   R.say(s.pausetitle === 'Leave the house', 'in a house the pause card\'s Title reads "' + s.pausetitle + '"');
   const w2 = s.dp;
   /* a moth's hit, then the clear: one heart back */
   /* two hits, so the heart back leaves the bug short of its cap and room 3 starts below a fresh bug's hearts */
-  const hit = await page.evaluate(() => { const h0 = window.SB_DEV.state().hero.hearts; for (let k = 0; k < 6000 && window.SB_DEV.state().hero.hearts > h0 - 2; k += 10) window.SB_DEV.step(10); return { h0, h1: window.SB_DEV.state().hero.hearts }; });
+  /* (10 Nov) today's cast need not reach an idle bug (the bestiary's verbs hold their posts): what the wait leaves, a moth
+     laid on the bug gives, a liberty, one hit at a time, the moth taken away after */
+  const hit = await page.evaluate(() => { const D = window.SB_DEV, h0 = D.state().hero.hearts; for (let k = 0; k < 600 && D.state().hero.hearts > h0 - 2; k += 10) D.step(10);
+    for (let n = 0; n < 4 && D.state().hero.hearts > h0 - 2; n++) { const st = window.SB.game.state, h = st.hero, was = h.hearts; h.iframes = 0; h.dashI = 0;
+      const m = { kind: 1, x: h.x, y: h.y, vx: 0, vy: 0, hp: 4, state: 0, timer: 0, dir: 1, home: 0, elite: 0, frozen: 0, stunned: 0, hurt: 0 }; st.enemies.push(m);
+      for (let k = 0; k < 30 && st.hero.hearts === was; k++) D.step(1);
+      const at = st.enemies.indexOf(m); if (at >= 0) st.enemies.splice(at, 1); }
+    return { h0, h1: D.state().hero.hearts }; });
   const dp2 = await speck(page);
   await climb(page);
   s = await look(page);
@@ -251,9 +260,13 @@ try {
   /* room 3: the carried hearts, an elite; then a death */
   await fromRecent(page);
   s = await look(page);
-  R.say(s.name === 'Room 3 of 5' && s.hero.hearts === JSON.parse(hero2).hearts && s.hero.hearts < s.hero.heartsMax && s.elites >= 1 && s.enemies >= 3, 'room 3 starts with the carried ' + s.hero.hearts + ' hearts, ' + s.enemies + ' enemies and ' + s.elites + ' elite (strip "' + s.name + '")');
+  R.say(roomIs(s.name, 3) && s.hero.hearts === JSON.parse(hero2).hearts && s.hero.hearts < s.hero.heartsMax && s.elites >= 1 && s.enemies >= 3, 'room 3 starts with the carried ' + s.hero.hearts + ' hearts, ' + s.enemies + ' enemies and ' + s.elites + ' elite (strip "' + s.name + '")');
   const rooms3 = JSON.stringify(s.run.rooms), lostDp = await speck(page);
-  const died = await page.evaluate(() => { for (let k = 0; k < 9000 && window.SB_DEV.screen() === 'play'; k += 30) window.SB_DEV.step(30); return window.SB_DEV.screen(); });
+  const died = await page.evaluate(() => { const D = window.SB_DEV; for (let k = 0; k < 900 && D.screen() === 'play'; k += 30) D.step(30);
+    for (let n = 0; n < 12 && D.screen() === 'play'; n++) { const st = window.SB.game.state, h = st.hero, was = h.hearts; h.iframes = 0; h.dashI = 0;   /* the same liberty: a moth laid on the bug until it falls */
+      st.enemies.push({ kind: 1, x: h.x, y: h.y, vx: 0, vy: 0, hp: 4, state: 0, timer: 0, dir: 1, home: 0, elite: 0, frozen: 0, stunned: 0, hurt: 0 });
+      for (let k = 0; k < 30 && D.screen() === 'play' && st.hero.hearts === was; k++) D.step(1); }
+    return D.screen(); });
   const dc = await page.evaluate(() => { const $ = id => document.getElementById(id), vis = id => !$(id).hidden && $(id).getBoundingClientRect().height > 0;
     return { head: $('deathhead').textContent, lost: vis('deathlost') ? $('deathlost').textContent : null, btn: ['deathagain', 'deathretry', 'deathnew', 'deathtitle'].filter(vis), run: window.SB.save.doc.run, stored: JSON.parse(localStorage.getItem('shutterbug.v1')).run }; });
   R.say(died === 'dead' && dc.head === 'The house is lost' && dc.lost === (lostDp === 1 ? 'Lost 1 dead pixel' : 'Lost ' + lostDp + ' dead pixels') && dc.btn.join() === 'deathretry,deathnew,deathtitle',
@@ -272,14 +285,14 @@ try {
   /* Retry House from that title: the same rooms so far, a fresh bug */
   await tap(page, '#housego');
   s = await look(page);
-  R.say(s.screen === 'play' && s.name === 'Room 1 of 5' && s.code === room1 && s.hero.hearts === 4 && s.hero.heartsMax === 4 && JSON.stringify(s.run.rooms) === rooms3 && s.run.at === 0 && s.run.lost === 0,
+  R.say(s.screen === 'play' && roomIs(s.name, 1) && s.code === room1 && s.hero.hearts === 4 && s.hero.heartsMax === 4 && JSON.stringify(s.run.rooms) === rooms3 && s.run.at === 0 && s.run.lost === 0,
     'Retry House replays room 1 (the same grid) with a fresh bug (' + (s.hero && s.hero.hearts) + ' hearts), the same ' + (s.run ? s.run.rooms.length : 0) + ' rooms kept');
   await climb(page);
   s = await look(page);
   R.say(s.screen === 'door' && s.enter === 'Play room 2' && s.shown[0] === 'doorenter', 'after the retried room 1 the doorway offers Play room 2 first ("' + s.enter + '")');
   await tap(page, '#doorenter');
   s = await look(page);
-  R.say(s.name === 'Room 2 of 5' && s.code === s.codes[1] && JSON.stringify(s.run.rooms) === rooms3, 'Play room 2 replays the saved room 2, its grid (the rooms kept: ' + (s.run ? s.run.rooms.length : 0) + ')');
+  R.say(roomIs(s.name, 2) && s.code === s.codes[1] && JSON.stringify(s.run.rooms) === rooms3, 'Play room 2 replays the saved room 2, its grid (the rooms kept: ' + (s.run ? s.run.rooms.length : 0) + ')');
   await climb(page);
 
   /* Leave the house, then Continue after a reload */
@@ -292,11 +305,11 @@ try {
   R.say(s.screen === 'door' && s.head === 'Room 2 of 5 cleared' && s.enter === 'Play room 3', 'Continue the house after a reload: "' + s.head + '", "' + s.enter + '"');
   await tap(page, '#doorenter');
   s = await look(page);
-  R.say(s.name === 'Room 3 of 5', 'Play room 3 plays as Room 3 of 5 ("' + s.name + '")');
+  R.say(roomIs(s.name, 3), 'Play room 3 plays as Room 3 of 5 ("' + s.name + '")');
   await climb(page);
   await fromRecent(page);
   s = await look(page);
-  R.say(s.name === 'Room 4 of 5' && s.enemies >= 4 && s.elites >= 1, 'room 4: "' + s.name + '", ' + s.enemies + ' enemies, ' + s.elites + ' elite');
+  R.say(roomIs(s.name, 4) && s.enemies >= 4 && s.elites >= 1, 'room 4: "' + s.name + '", ' + s.enemies + ' enemies, ' + s.elites + ' elite');
   await climb(page);
   s = await look(page);
   R.say(s.next === 'The last room is next', 'room 4\'s doorway: "' + s.next + '"');
@@ -305,7 +318,7 @@ try {
   /* HOUSE-B: the guardian asleep in its place, outlined, the beacon dark, the intro's words over the room; the pips */
   await page.evaluate(() => window.SB_DEV.step(1));
   const g0 = await guardOf(page), p5 = await pipsOf(page);
-  R.say(s.name === 'The last room' && !!g0.boss && g0.boss.phase === 0 && g0.boss.live === 20 && !!g0.drawn && g0.drawn.outline && g0.beacon === 'fx_beacon_light.light_0' && g0.banner && s.elites === 0,
+  R.say(lastIs(s.name) && !!g0.boss && g0.boss.phase === 0 && g0.boss.live === 20 && !!g0.drawn && g0.drawn.outline && g0.beacon === 'fx_beacon_light.light_0' && g0.banner && s.elites === 0,
     'room 5 ("' + s.name + '"): the guardian asleep and outlined in its place (' + JSON.stringify(g0.boss) + '), the beacon dark (' + g0.beacon + '), the intro\'s words shown (' + g0.banner + '), no photo elite');
   R.say(p5.pipped && p5.w === 100 && p5.vars.join() === pipWant(5).join() && p5.words === 'The last room',
     'room 5\'s strip draws the run pips (' + p5.vars.join(' ') + ', ' + p5.w + ' px) and keeps "' + p5.words + '" as its words for a screen reader');
@@ -395,7 +408,7 @@ try {
     await scrollTap(b.page, '#deathretry');
     const rt = await look(b.page), rfit = await b.page.evaluate(() => { const el = document.getElementById('roomname'); return el.scrollWidth <= el.clientWidth && el.clientWidth > 0; });
     /* room 1 by any of its fitted forms (HOUSE-ART3: at 320 the biome badge leaves a fresh bug's name Room 1/5) */
-    R.say(rt.screen === 'play' && ['Room 1 of 5', 'Room 1/5'].includes(rt.name) && rfit && rt.code === rt.codes[0] && rt.hero.hearts === 4, '320x568: Retry House on the death card replays room 1 with a fresh bug ("' + rt.name + '", ' + (rfit ? 'fits' : 'cut') + ', ' + (rt.hero && rt.hero.hearts) + ' hearts)');
+    R.say(rt.screen === 'play' && roomIs(rt.name, 1) && rfit && rt.code === rt.codes[0] && rt.hero.hearts === 4, '320x568: Retry House on the death card replays room 1 with a fresh bug ("' + rt.name + '", ' + (rfit ? 'fits' : 'cut') + ', ' + (rt.hero && rt.hero.hearts) + ' hearts)');
     R.say(b.errors.length === 0, '320x568: zero page errors' + (b.errors.length ? ' (' + b.errors.join(' ; ') + ')' : ''));
     await b.page.close();
   }
@@ -434,14 +447,14 @@ try {
     await b.page.reload(); await ready(b.page); await b.page.evaluate(() => window.SB_DEV.hold(true));
     await b.page.evaluate(() => window.SB_DEV.goto('sample')); await playing(b.page);
     const w1 = await b.page.evaluate(() => { window.SB_DEV.step(60); return window.SB_DEV.guardian(); });
-    R.say(w1.skin === 1 && /^hero_colours\.umber_/.test(w1.hero || ''), 'after a reload a room draws the bug in its umber skin (' + w1.hero + ')');
+    R.say(w1.skin === 1 && /^hero_colours(_big)?\.umber_/.test(w1.hero || ''), 'after a reload a room draws the bug in its umber skin (' + w1.hero + ')');
     await b.page.evaluate(() => window.SB.ui.toTitle());
     await scrollTap(b.page, '#settingsbtn');
     await scrollTap(b.page, '#lookhero button[data-look="hero.sun"]');
     await scrollTap(b.page, '#settitle');
     await b.page.evaluate(() => window.SB_DEV.goto('sample')); await playing(b.page);
     const w2 = await b.page.evaluate(() => { window.SB_DEV.step(60); return window.SB_DEV.guardian(); });
-    R.say(w2.skin === 0 && /^hero\./.test(w2.hero || ''), 'the Look row wears the approved bug again, in the room (' + w2.hero + ')');
+    R.say(w2.skin === 0 && /^hero(_big)?\./.test(w2.hero || ''), 'the Look row wears the approved bug again, in the room (' + w2.hero + ')');
     R.say(b.errors.length === 0, '412x915 (looks): zero page errors' + (b.errors.length ? ' (' + b.errors.join(' ; ') + ')' : ''));
     await b.page.close();
   }
