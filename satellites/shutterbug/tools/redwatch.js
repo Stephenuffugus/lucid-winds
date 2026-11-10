@@ -367,7 +367,7 @@ const MUTANTS = [
   { name: 'LADDER_GAP_4', task: 'T1.2a', file: 'page', find: 'if (dy < 1 || dy > T.LADDER_STACK_ROWS) continue;', repl: 'if (dy < 1 || dy > T.LADDER_STACK_ROWS + 1) continue;',
     gates: [{ gate: 'harness', only: 'H-feat-1', expect: 'every one of' }] },
   /* the fourth review (T0.16, T0.17), before sb-m0-3 */
-  { name: 'DEATH_CARD_FIXED', task: 'review 4', file: 'page', find: '      if (top < cr.bottom && top + hd.h * k > cr.top) dc.classList.add(\'low\');\n', repl: '',   /* re anchored after the M1 review's measured dock */
+  { name: 'DEATH_CARD_FIXED', task: 'review 4', file: 'page', find: '      if (hi > 0) { dc.classList.add(\'low\'); if (over() >= hi) dc.classList.remove(\'low\'); }\n', repl: '',   /* re anchored 10 Nov on sb-m2-23's two measured docks */
     gates: [{ gate: 'death', expect: 'a death high in the room' }] },
   { name: 'ROTATE_RUNS', task: 'review 4', file: 'page', find: "    var run = !held && !SIDEWAYS.matches && !!G.state && SB.ui.screen === 'play';", repl: "    var run = !held && !!G.state && SB.ui.screen === 'play';",
     gates: [{ gate: 'layout', expect: 'turned sideways mid room the loop holds' }] },
@@ -1437,7 +1437,7 @@ const MUTANTS = [
     gates: [{ gate: "sprites", expect: "biome 3: the room name's badge is icon_biomes.overgrowth" }] },
   { name: "REVEAL_NO_BADGE", task: 'ART3', file: "page", find: "    ctx.drawImage(atlas, br.x, br.y, br.w, br.h, bx, 8, 48, 48);\n", repl: "",
     gates: [{ gate: "sprites", expect: "biome 0: the develop reveal draws icon_biomes.attic at 2x" }] },
-  { name: "PAD_CSS_RING", task: 'ART3', file: "page", find: "  background: var(--stick-pad-idle) 0 0 / 116px 116px no-repeat; image-rendering: pixelated; pointer-events: none; }", repl: "  border: 2px solid rgba(11,10,15,0.45); background: rgba(11,10,15,0.08); border-radius: 50%; pointer-events: none; }",
+  { name: "PAD_CSS_RING", task: 'ART3', file: "page", find: "  background: var(--stick-pad-idle) 0 0 / 116px 116px no-repeat; image-rendering: pixelated; pointer-events: none;\n", repl: "  border: 2px solid rgba(11,10,15,0.45); background: rgba(11,10,15,0.08); border-radius: 50%; pointer-events: none;\n",   /* re anchored 10 Nov: sb-m2-23 put the z-index on the next line */
     gates: [{ gate: "input", expect: "412x915: held neutral, the pad is stick_pad.idle at 116 css px" }] },
   { name: "PAD_NEVER_ACTIVE", task: 'ART3', file: "page", find: "#stick .pad.l, #stick .pad.r, #stick .pad.d { background-image: var(--stick-pad-active); }", repl: "",   /* re anchored at sb-m1-22 */
     gates: [{ gate: "input", expect: "412x915: steering R, the pad is stick_pad.active" }] },
