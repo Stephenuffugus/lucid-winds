@@ -1,0 +1,141 @@
+TOFU, ROUND TWO: THE EATERS. EVERY ASSET FOR THE NEW GAME INSIDE THE GAME (10 Nov 2026)
+
+Your first pack shipped. TOFU is live at https://lucidwinds.com/satellites/tofu/ wearing your bodies, faces, stations,
+dishes and chips. Thank you. This round is bigger: Stephen has a new core idea for the game and it needs a whole cast.
+Fable wires your zip from the zip alone, so write as if no one can ask you a follow up.
+
+HOW TO WORK (Stephen's standing order; it binds this pack)
+- No tests. No checks. No validation scripts, no pixel audits, no reports about reports. The art is the deliverable.
+- Look at each sheet ONCE with your own eyes when it is done, fix what is wrong, move on.
+- One IDEAS file, written first. One contact sheet per section. One zip. If something is ambiguous, pick the reading
+  that ships and write one line about it in NOTES.md. Do not stop to ask.
+- Do not play the live game: it spends your session for nothing. Your own round one pack is the style. Its files are
+  public, for reference only:
+  https://lucidwinds.com/satellites/tofu/assets/tofu_plain@2x.png
+  https://lucidwinds.com/satellites/tofu/assets/tofu_fried@2x.png
+  https://lucidwinds.com/satellites/tofu/assets/chopsticks_patrol_4f@2x.png
+  https://lucidwinds.com/satellites/tofu/assets/bg_counter@2x.png
+  https://lucidwinds.com/satellites/tofu/assets/dish_agedashi@2x.png
+
+1. THE IDEA, IN STEPHEN'S WORDS
+"The core concept of preparing yourself different gives me kind of a Kirby's Dream Land idea where I can cook or prepare
+myself differently and enemies eat me so I have to figure out how to budget myself to get all the enemies and survive
+the level while properly countering the enemies. My weapon is how I prepare myself and then how they eat me."
+
+Kirby inhales an enemy and takes its power. Tofu is the other way round: the enemy eats the tofu, and what the tofu was
+when it bit is what happens to the eater. The tofu is six bites. Each eater has one preparation it cannot stomach:
+bitten in that state it takes one bite and is beaten; bitten in any other state it takes two and comes back happy. The
+bite takes the preparation with it, so the player prepares again at a station (water, press, pan, freezer, soy, brine;
+all drawn by you in round one) before the next eater. The bowl at the end wants a dish AND enough tofu left to serve.
+
+The feel to hit: Kirby's Dream Land. Round, soft, big readable faces, enemies you like even while they eat you, a
+bright storybook world. Nobody bleeds; a beaten eater is funny, never hurt. Keep everything in the look of your round
+one pack: the same line weight, the same cream, soy brown, pan orange and freezer blue, one light from the upper left.
+
+2. WHAT TO SEND BACK
+One zip named tofu-astra-pack-r2.zip:
+  IDEAS.md        written FIRST, one page: your ideas for this game (section 3). Nothing in it is built without
+                  Stephen's yes, so say what you really think.
+  NOTES.md        one line per judgment call.
+  ASSET_MANIFEST.json   every file with its pixel size and, for a strip, its frame width and frame count (the format
+                  of your round one manifest).
+  assets/         FLAT, every PNG at base size and again at @2x (name@2x.png), as in round one. RGBA, real alpha,
+                  sRGB, no text drawn into any picture, no trademarked characters, nothing that looks like Kirby
+                  himself or any Nintendo creature.
+  sheets/         one contact sheet JPEG per section below (A to H), for Stephen's eye.
+Names in lower snake case EXACTLY as listed; the code reads these names. Strips are horizontal, no gutters, every
+frame the same width, the creature facing RIGHT (the code mirrors), its feet on the same baseline in every frame.
+
+3. IDEAS.md (first, before any art)
+One page, plain words:
+- Is the pairing table in section 4 the right six? If you would swap an eater or its counter, say which and why; the
+  test is that a seven year old guesses the counter from the picture alone.
+- Two more eaters you would add, each with its counter and its one line joke.
+- What the world should be. The first game is a kitchen counter. Our working guess for this one is the dining room and
+  the night market beyond it. Say better if you see better.
+- One idea for the boss (section 4, THE CRITIC) and one for how a level ends.
+- Anything in this brief you disagree with.
+Then draw the brief as written; your swaps are extra, complete or not at all.
+
+4. THE CAST
+
+A. THE EATERS (the main ask). Six creatures. Each on a 128 x 128 frame (the tofu is 64 wide at full size; an eater is
+   about one and a half tofus wide, GULPER about two), feet at y 120. For EACH eater, these strips:
+     <name>_idle_4f.png      breathing or pacing, a loop
+     <name>_tell_3f.png      the warning before it eats; this is the most important strip, it must read at a glance
+     <name>_eat_4f.png       the bite itself, mouth work; the code puts the tofu in front of it
+     <name>_happy_3f.png     chewing, pleased with itself (it ate the wrong thing for us)
+     <name>_beaten_5f.png    its counter landing: the joke, frame by frame, ending on a held last frame
+     <name>_rest.png         one frame, beaten and harmless, something the tofu can walk past or stand on
+   The six, with what beats each (the beaten strip shows exactly this):
+     gulper     a round body that is mostly mouth; it INHALES from a distance, cheeks puffing in the tell.
+                Beaten by FROZEN tofu: brain freeze, it clutches its head, eyes cross, tips over.
+     pecker     a small fat kitchen bird; it dives from above. Tell: a head tilt and an open beak.
+                Beaten by FIRM tofu: the beak bends like a noodle, stars, it wobbles off.
+     tongue     a toad sitting in a clay pot; a long tongue shoots along the floor. Tell: the throat swells.
+                Beaten by FRIED tofu: a burned tongue held out and fanned, steam, it sinks into its pot.
+                Also tongue_shot_3f.png, 192 x 32 frames: the tongue extending, tip to the right.
+     sniffer    a low hound that is mostly snout; it follows a scent and charges. Tell: the nose lights and twitches.
+                Beaten by STINKY tofu: one sniff, the eyes water, it faints flat on its back, legs up.
+     slurper    a soft glistening slug; it sticks on and drinks slowly. Tell: it glistens and rears up.
+                Beaten by SOY tofu (salt): it puckers and shrivels to a raisin with eyes.
+     chopsticks ALREADY DRAWN in round one (patrol, chase, flee). Add only: chopsticks_tell_3f.png (the tips open with
+                a click), chopsticks_eat_4f.png (pinch and lift), chopsticks_happy_3f.png, chopsticks_beaten_5f.png
+                (SILKEN tofu slips out; they cross, tangle and knot), chopsticks_rest.png. The same 48 x 80 frame as your round one chopsticks strips.
+
+B. THE CRITIC (the boss). A large, proud, well dressed eater with a napkin, a fork and a tiny notebook. 256 x 256
+   frames, feet at y 240. critic_idle_4f, critic_card_3f (it holds up a blank card; the code draws the course on it),
+   critic_eat_4f, critic_happy_3f, critic_wince_4f (one wrong mouthful: hot, cold, salty; draw three, critic_wince_hot_4f,
+   critic_wince_cold_4f, critic_wince_salt_4f), critic_beaten_6f (it writes a glowing review, bows, leaves), critic_rest.
+
+C. THE TOFU, BITTEN. The bodies of round one stay. Add:
+   bite_mark_1.png, bite_mark_2.png, bite_mark_3.png   96 x 96 overlays in the bodies' frame: a crescent bitten out of
+       the upper right corner, two bites, three bites. Draw them as alpha masks in cream with a darker bitten edge so
+       the code can lay them over any body.
+   Six more faces in the 64 x 64 face frame of round one (eyes near 24,30 and 40,30): face_bitten (a yelp), face_smug
+       (the counter worked), face_worried (an eater is near), face_tiny (few bites left, brave), face_dizzy,
+       face_proud (served).
+   p_crumb.png 16 x 16 and p_crumb_big.png 24 x 24, cream crumbs.
+
+D. THE COUNTERS, as effects. 128 x 128 frames, six frames each, drawn to sit over an eater's head:
+   fx_brain_freeze_6f, fx_burn_steam_6f, fx_stink_faint_6f, fx_salt_pucker_6f, fx_beak_bend_6f, fx_slip_tangle_6f.
+   And fx_chomp_4f (a bite happening, teeth marks and crumbs) and fx_star_pop_5f (an eater beaten).
+
+E. THE HUD AND THE CARDS
+   bite_pip_full.png, bite_pip_empty.png, bite_pip_lost_3f.png   48 x 48, a little cube of tofu; six sit in a row.
+   chip_gulper, chip_pecker, chip_tongue, chip_sniffer, chip_slurper, chip_chopsticks, chip_critic   40 x 40,
+       monochrome #f3efe6 like your round one chips; each also as chip_<name>_done (the same with a small tick).
+   meet_gulper, meet_pecker, meet_tongue, meet_sniffer, meet_slurper, meet_chopsticks, meet_critic   600 x 400
+       cards, no text: the eater on the left, the preparation that beats it on the right, the joke between them.
+       This card is how a player learns a counter, so it must say it without a word.
+   counter_chart.png   900 x 1200, all six pairings as one storybook page, no text.
+   star_1.png, star_2.png, star_3.png, star_empty.png   96 x 96.
+   results_plate.png   900 x 600, a plate and a napkin with room in the middle for the code's numbers.
+
+F. NEW PIECES FOR LEVELS. 64 x 64 tiles in the round one tile style unless a size is given:
+   tile_curd.png (a block of fresh curd, a bite restored), tile_curd_glow_3f, tile_gap_low.png (a one tile slot only
+   a small tofu fits; draw the slot's frame), tile_perch.png (where a pecker sits), tile_pot.png (the tongue's clay
+   pot, 96 x 96), tile_den.png (a mouse hole style arch an eater comes out of, 96 x 96), tile_table_leg.png,
+   tile_tablecloth.png and tile_tablecloth_edge.png (the dining room's ground), tile_lantern.png and
+   tile_stall_awning.png (the night market), tile_oneway.png (a thin shelf you can jump up through).
+
+G. THE WORLD. Two worlds, three parallax layers each, 1600 x 900, soft and far (the play sits in front of them):
+   bg_dining_far, bg_dining_mid, bg_dining_near     a dining room at tofu's eye level: chair legs like tree trunks,
+                                                     a tablecloth sky, plates like moons.
+   bg_market_far, bg_market_mid, bg_market_near     a night market: lanterns, steam, stalls, warm windows.
+   The near layer is mostly transparent with a few big soft shapes. No text on any sign.
+
+H. THE STORE
+   store_feature_r2.png 1024 x 500 (the tofu, small and brave, facing the gulper's open mouth; no text) and
+   dish_bitten.png 256 x 256 (a dish served with a bite out of it, for the results screen).
+
+5. SIZES AND RULES, ONCE
+- Base and @2x of everything. Strips: frame width as given, height the same as one frame.
+- Every eater must be readable at 64 px tall on a phone: the tell and the beaten joke most of all. Squint test each.
+- One eater, one silhouette. No two eaters share an outline; a player must name it from its shadow.
+- Colour says nothing alone: a tell is always a pose change, never only a glow.
+- Under 60 MB.
+
+6. IF YOU RUN OUT OF ROOM
+Finish sections in this order and stop cleanly at a section's end: A, C, E, D, B, F, G, H. A complete A is worth more
+than half of everything.
