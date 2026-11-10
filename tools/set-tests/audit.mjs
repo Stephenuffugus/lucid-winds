@@ -21,10 +21,19 @@ const BAD = /[!‐-―]|[A-Za-z]-[A-Za-z]| - /;
   F(/^Card 1: [123] (corn|bean|squash)( shapes)?, (gold|blue|rose) \((sun|wave|leaf) seal\), (solid|striped|empty) fill$/.test(t.label || ''), `the accessible name reads the four traits (${t.label})`);
   F(!BAD.test((t.text || '').replace(/\s+/g, ' ')), 'no exclamation marks and no dashes in the table copy');
   const a0 = await p.evaluate(() => window.__ts.audio().created); F(a0 === 0, 'no audio context before a gesture');
+  // round two (10 Nov): painted crops by default, four faces dealt three each, medallion seals, the table by the clock
+  const r2 = await p.evaluate(() => { const cards = [...document.querySelectorAll('.ts-card')]; const count = {}; cards.forEach((c) => { const f = (c.className.match(/face-([abcd])/) || [])[1]; count[f] = (count[f] || 0) + 1; });
+    return { count, seals: [...document.querySelectorAll('.ts-seal.medal')].filter((i) => /\/t2\/ui\/seals\/seal_(gold|blue|rose)_64\.webp/.test(i.src)).length, imgs: document.querySelectorAll('.ts-symbols img').length, painted: [...document.querySelectorAll('.ts-symbols img')].filter((i) => i.src.indexOf('/t2/glyphs/painted/') > 0).length, face: getComputedStyle(cards[0]).backgroundImage, table: document.querySelector('.ts-table').className, inks: window.__ts.settings().inks }; });
+  F(r2.inks === 'painted' && r2.imgs >= 12 && r2.painted === r2.imgs, `round two: every crop is painted by default (${r2.painted} of ${r2.imgs}, inks ${r2.inks})`);
+  F(Object.keys(r2.count).sort().join('') === 'abcd' && Object.values(r2.count).every((n) => n === 3) && /card_face_[abcd]\.webp/.test(r2.face), `round two: four faces dealt three each and painted on the cards (${JSON.stringify(r2.count)})`);
+  F(r2.seals === 12, `round two: twelve medallion seals (${r2.seals})`);
+  F(/^ts-table (lamp|morning|rain)$/.test(r2.table), `round two: the table follows the clock (${r2.table})`);
   // b. a trio found by real taps: the count climbs, the three leave, the board refills, the first card takes focus
   const trio = await p.evaluate(() => window.__ts.trio()); F(!!trio, 'a trio exists on the dealt board');
+  const fb = await p.evaluate(() => window.__ts.faces());
   if (trio) { for (const i of trio) { await tapCard(p, i); await sleep(120); } if (SHOTS) await p.screenshot({ path: `${SHOTS}/trio-412.png` }); await sleep(900);
-    const s = await p.evaluate(() => Object.assign(window.__ts.state(), { n: document.querySelectorAll('.ts-card').length, focused: (document.activeElement || {}).className })); F(s.found === 1 && s.n === 12 && s.deck === 66 && s.selected.length === 0, `a real trio counts and the board refills (${JSON.stringify(s)})`); }
+    const s = await p.evaluate(() => Object.assign(window.__ts.state(), { n: document.querySelectorAll('.ts-card').length, focused: (document.activeElement || {}).className })); F(s.found === 1 && s.n === 12 && s.deck === 66 && s.selected.length === 0, `a real trio counts and the board refills (${JSON.stringify(s)})`);
+    const fa = await p.evaluate(() => window.__ts.faces()); F(fb.length === 12 && JSON.stringify(fa) === JSON.stringify(fb), `round two: a refilled slot keeps its face (${fb.join('')} then ${fa.join('')})`); }
   const a1 = await p.evaluate(() => window.__ts.audio().created); F(a1 === 1, 'one audio context after the taps');
   // c. a wrong trio stays on the table and is explained by the trait that failed; the next tap clears it
   const bad = await p.evaluate(() => { for (let i = 0; i < 12; i++) for (let j = i + 1; j < 12; j++) for (let k = j + 1; k < 12; k++) if (window.__ts.failed(i, j, k).length) return [i, j, k]; return null; });
@@ -38,6 +47,10 @@ const BAD = /[!‐-―]|[A-Za-z]-[A-Za-z]| - /;
   await tapText(p, '.gcr button', 'Settings'); await sleep(300);
   F(await p.evaluate(() => document.getElementById('ts-settings').classList.contains('open')), 'the settings sheet opens (' + (await p.evaluate(() => [...document.querySelectorAll('.gcr button')].map((b) => b.textContent).join('|') + ' sheet ' + document.getElementById('ts-settings').className)) + ')');
   if (SHOTS) await p.screenshot({ path: `${SHOTS}/settings-412.png` });
+  await tapText(p, '#ts-plain', 'Off'); await sleep(200);
+  const pl = await p.evaluate(() => ({ medal: document.querySelectorAll('.ts-seal.medal').length, flat: [...document.querySelectorAll('.ts-seal')].filter((i) => i.src.indexOf('/t1/ui/seal_') > 0).length, face: getComputedStyle(document.querySelector('.ts-card')).backgroundImage }));
+  F(pl.medal === 0 && pl.flat === 12 && pl.face === 'none', `round two: plain surfaces bring back the flat seals and drop the painted face (${JSON.stringify(pl)})`);
+  await tapText(p, '#ts-plain', 'On'); await sleep(200);
   await tapText(p, '#ts-larger', 'Off'); await tapText(p, '#ts-labels', 'Off'); await tapText(p, '#ts-motion', 'Follows'); await sleep(200);
   await tapText(p, '#ts-close', 'Done'); await sleep(200);
   await p.reload({ waitUntil: 'networkidle0' }); await p.waitForSelector('.ts-card'); await sleep(500);

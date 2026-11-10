@@ -6,14 +6,22 @@
 // a wrong trio explained by the trait that failed (never shaken, never red, never charged), the fx frames as extra
 // feedback only, four cues made in the page (her WAVs are the reference), and the display settings she specified: inks,
 // plain surfaces, larger cards, full labels, reduced motion, sound. The hub's inline copy (index.html Block 12) is Part 2.
+// 10 Nov 2026, round two (Astra's Premium Cards return of 25 Oct, cut to assets/games/set/t2 by scripts/cut_set_pack_r2.py,
+// additive, nothing in t1 replaced): the painted botanical crops are the default inks (the flat ink stays a setting), four
+// face variants dealt one per slot and kept as a slot refills (never a cue: dealt by their own RNG, never the Daily's),
+// her medallion seals on the painted faces (the flat seals on plain surfaces), the morning and rain tables picked by the
+// clock or by a setting, and her found glow under a found trio. The woodcut corn is a review sample and is not shipped.
 (function(){
   'use strict';
   var G = window._G;
   var _e = G.e, _st = G.st, ms = G.ms, mm = G.mm, mc = G.mc, sm = G.sm, _sr = G.sr;
 
-  var BUILD = 't1.0';                                   // shown in Settings; every art URL carries it
-  var ART = '/assets/games/set/t1/';
+  var BUILD = 't2.0';                                   // shown in Settings; every art URL carries it
+  var ART = '/assets/games/set/t1/';                    // her first pack (25 Oct), untouched
+  var ART2 = '/assets/games/set/t2/';                   // her round two, beside it
   var art = function(rel){ return ART + rel + '?v=' + BUILD; };
+  var art2 = function(rel){ return ART2 + rel + '?v=' + BUILD; };
+  var FACES = ['a', 'b', 'c', 'd'];                     // the four face variants: cosmetic only, never a cue
   var SHAPES = ['corn', 'bean', 'squash'];              // the stable trait IDs: shape 0..2
   var COLOURS = ['blue', 'gold', 'rose'];               // colour 0..2, the order the saved Daily records always used (B G R)
   var SEALS = { blue: 'wave', gold: 'sun', rose: 'leaf' };
@@ -60,10 +68,14 @@
 
   // ── the display settings (free, before the first puzzle, never earned) ──
   var SET_KEY = 'lw_set_display_v1';
-  var SET = { v: 1, inks: 'botanical', plain: false, larger: false, labels: false, motion: 'auto', sound: true };
+  var SET = { v: 2, inks: 'painted', table: 'auto', plain: false, larger: false, labels: false, motion: 'auto', sound: true };
   function loadSettings(){ try{ var d = JSON.parse(localStorage.getItem(SET_KEY) || 'null'); if (!d || typeof d !== 'object') return;
-    if (['botanical','clear','mono'].indexOf(d.inks) >= 0) SET.inks = d.inks; SET.plain = d.plain === true; SET.larger = d.larger === true; SET.labels = d.labels === true;
+    if (['painted','botanical','clear','mono'].indexOf(d.inks) >= 0) SET.inks = d.inks;
+    if (!(d.v >= 2) && SET.inks === 'botanical') SET.inks = 'painted';   // a v1 record holds the first pack's default; the painted crops are the default now, migrated once
+    if (['auto','lamp','morning','rain'].indexOf(d.table) >= 0) SET.table = d.table;
+    SET.plain = d.plain === true; SET.larger = d.larger === true; SET.labels = d.labels === true;
     if (['auto','off','on'].indexOf(d.motion) >= 0) SET.motion = d.motion; SET.sound = d.sound !== false; }catch(e){} }
+  function tableScene(){ if (SET.table !== 'auto') return SET.table; var h = new Date().getHours(); return (h >= 6 && h < 15) ? 'morning' : (h >= 21 || h < 6) ? 'rain' : 'lamp'; }   // the clock picks her scene: the window by day, the lamp by evening, rain at night
   function saveSettings(){ try{ localStorage.setItem(SET_KEY, JSON.stringify(SET)); }catch(e){} }
   function motionOff(){ if (SET.motion === 'off') return true; if (SET.motion === 'on') return false; try{ return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }catch(e){ return false; } }
 
@@ -85,6 +97,8 @@
   // ── the look (her plates, her sizes) ──
   var CSS = [
     '.ts-table{position:relative;max-width:560px;margin:0 auto;padding:10px 10px 18px;border-radius:18px;background:#17251d url("' + art('table/table_main.webp') + '") center top/cover no-repeat;overflow:hidden}',
+    '.ts-table.morning{background-image:url("' + art2('table/table_morning.webp') + '")}',
+    '.ts-table.rain{background-image:url("' + art2('table/table_rain.webp') + '")}',
     '.ts-table:before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(10,18,14,.58),rgba(10,18,14,.58));pointer-events:none}',
     '.ts-table>*{position:relative}',
     '.ts-modes{display:flex;justify-content:center;gap:8px;margin:4px auto 8px}',
@@ -100,16 +114,19 @@
     '.ts-board.large{grid-template-columns:repeat(2,minmax(0,1fr))}',
     '.ts-card{position:relative;min-width:0;min-height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:36px 8px 16px;border:3px solid transparent;border-radius:16px;color:#18291f;background:transparent url("' + art('cards/card_face.webp') + '") center/100% 100% no-repeat;box-shadow:0 3px 0 #b89a6a,0 8px 14px rgba(0,0,0,.45);touch-action:manipulation;transition:transform 120ms ease,box-shadow 120ms ease;isolation:isolate;cursor:pointer;font:inherit}',
     '.ts-card[aria-pressed="true"]{background-image:url("' + art('cards/card_selected.webp') + '");border-color:#f6e7c6;box-shadow:0 0 0 2px #17231d,0 6px 0 #b89a6a,0 14px 20px rgba(0,0,0,.5);transform:translateY(-4px) perspective(600px) rotateX(3deg)}',
+    FACES.map(function(f){ return '.ts-card.face-' + f + '{background-image:url("' + art2('cards/card_face_' + f + '.webp') + '")}.ts-card.face-' + f + '[aria-pressed="true"]{background-image:url("' + art2('cards/card_selected_' + f + '.webp') + '")}'; }).join('\n'),
     '.ts-nomotion .ts-card,.ts-nomotion .ts-card[aria-pressed="true"]{transition:none;transform:none}',
     '.ts-seal{position:absolute;left:13px;top:11px;width:26px;height:26px;background:#fff7e7;border-radius:5px;padding:2px}',
+    '.ts-seal.medal{background:none;border-radius:50%;padding:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}',
     '.ts-check{display:none;position:absolute;right:11px;top:9px;width:26px;height:26px;background:#fff7e7;border-radius:5px;padding:2px}',
     '.ts-card[aria-pressed="true"] .ts-check{display:block}',
     '.ts-symbols{display:flex;flex-direction:column;align-items:center;gap:2px;padding:3px;background:#fff7e7;border-radius:8px}',
     '.ts-symbols img{display:block;width:40px;height:40px;flex-shrink:0}',
     '.ts-board.large .ts-card{min-height:230px}.ts-board.large .ts-symbols img{width:48px;height:48px}',
     '.ts-board.plain .ts-card{background:#fff7e7;border-color:#77664c;box-shadow:none}.ts-board.plain .ts-card[aria-pressed="true"]{border:4px double #17231d}.ts-board.plain .ts-symbols{background:transparent}',
+    '.ts-board.plain .ts-card[class*="face-"]{background-image:none}',
     '.ts-label{max-width:100%;font:13px/1.35 system-ui,sans-serif;background:#fff7e7;padding:6px 8px;border-radius:4px;overflow-wrap:anywhere;text-align:center}',
-    '.ts-card.found{filter:brightness(1.12)}.ts-card.flying{transition:transform 260ms ease-in,opacity 260ms ease-in;opacity:.2;pointer-events:none}',
+    '.ts-card.found{filter:brightness(1.12)}.ts-card.found:after{content:"";position:absolute;inset:-4%;z-index:-1;background:url("' + art2('ui/found_glow.webp') + '") center/100% 100% no-repeat;pointer-events:none}.ts-card.flying{transition:transform 260ms ease-in,opacity 260ms ease-in;opacity:.2;pointer-events:none}',
     '.ts-fx{position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;transform:translate(-50%,-50%);pointer-events:none;z-index:4}',
     '.ts-line{min-height:22px;margin:4px 8px 0;text-align:center;color:#e8dcc8;font-family:Georgia,serif;font-size:.95rem;font-weight:700}',
     '.ts-line.why{color:#f5c451}',
@@ -159,6 +176,7 @@
     var sheet = document.createElement('div'); sheet.className = 'ts-sheet'; sheet.id = 'ts-settings'; sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-label', 'Display and sound settings');
     sheet.innerHTML = '<div class="ts-sheet-in"><h2>Settings</h2>' +
       '<div class="ts-row"><span>Inks</span><button class="ts-tg wide" id="ts-inks"></button></div>' +
+      '<div class="ts-row"><span>Table</span><button class="ts-tg wide" id="ts-table"></button></div>' +
       '<div class="ts-row"><span>Plain surfaces</span><button class="ts-tg" id="ts-plain"></button></div>' +
       '<div class="ts-row"><span>Larger cards</span><button class="ts-tg" id="ts-larger"></button></div>' +
       '<div class="ts-row"><span>Full labels</span><button class="ts-tg" id="ts-labels"></button></div>' +
@@ -173,7 +191,11 @@
     document.body.appendChild(results);
 
     // game state in the mount closure
-    var deck = [], board = [], selected = [], found = 0, locked = false, won = false, mode = 'classic', startAt = 0, timerIv = 0, dailyTarget = DAILY_TARGET;
+    var deck = [], board = [], faces = [], selected = [], found = 0, locked = false, won = false, mode = 'classic', startAt = 0, timerIv = 0, dailyTarget = DAILY_TARGET;
+    function dealFaces(n){   // one face a..d per slot, dealt balanced then shuffled by its own RNG (never the Daily's); a slot keeps its face when it refills
+      var out = [], i, j, t; for (i = 0; i < n; i++) out.push(FACES[i % 4]);
+      for (i = out.length - 1; i > 0; i--) { j = Math.floor(Math.random() * (i + 1)); t = out[i]; out[i] = out[j]; out[j] = t; }
+      return out; }
 
     function stopTimer(){ if (timerIv) { clearInterval(timerIv); timerIv = 0; } }
     function startTimer(){ stopTimer(); startAt = Date.now(); table.querySelector('#ts-timerwrap').style.display = ''; var tt = table.querySelector('#ts-timer'); timerIv = setInterval(function(){ tt.textContent = fmtSecs((Date.now() - startAt) / 1000); }, 500); }
@@ -182,16 +204,18 @@
     function applySettings(){
       grid.className = 'ts-board' + (SET.larger ? ' large' : '') + (SET.plain ? ' plain' : '');
       container.classList.toggle('ts-nomotion', motionOff());
-      var inks = { botanical: 'Botanical', clear: 'Alternate', mono: 'Monochrome' }, mo = { auto: 'Follows the phone', off: 'Reduced', on: 'Full' };
-      sheet.querySelector('#ts-inks').textContent = inks[SET.inks]; sheet.querySelector('#ts-motion').textContent = mo[SET.motion];
+      table.className = 'ts-table ' + tableScene();
+      var inks = { painted: 'Painted', botanical: 'Flat ink', clear: 'Alternate', mono: 'Monochrome' }, tb = { auto: 'Follows the clock', lamp: 'Evening lamp', morning: 'Morning window', rain: 'Rain on the glass' }, mo = { auto: 'Follows the phone', off: 'Reduced', on: 'Full' };
+      sheet.querySelector('#ts-inks').textContent = inks[SET.inks]; sheet.querySelector('#ts-table').textContent = tb[SET.table]; sheet.querySelector('#ts-motion').textContent = mo[SET.motion];
       var tg = function(id, on, label){ var b = sheet.querySelector(id); b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.textContent = label || (on ? 'On' : 'Off'); };
       tg('#ts-plain', SET.plain); tg('#ts-larger', SET.larger); tg('#ts-labels', SET.labels); tg('#ts-sound', SET.sound);
     }
-    function glyph(card){ return art('glyphs/' + SET.inks + '/' + SHAPES[card.shape] + '_' + COLOURS[card.color] + '_' + card.shading + '.webp'); }
+    function glyph(card){ var n = SHAPES[card.shape] + '_' + COLOURS[card.color] + '_' + card.shading + '.webp'; return SET.inks === 'painted' ? art2('glyphs/painted/' + n) : art('glyphs/' + SET.inks + '/' + n); }
+    function sealSrc(card){ return SET.plain ? art('ui/seal_' + COLOURS[card.color] + '.webp') : art2('ui/seals/seal_' + COLOURS[card.color] + '_64.webp'); }   // her medallion on a painted face, the flat seal on plain surfaces
     function makeCard(card, idx){
-      var b = document.createElement('button'); b.type = 'button'; b.className = 'ts-card'; b.dataset.idx = idx;
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'ts-card face-' + (faces[idx] || 'a'); b.dataset.idx = idx;
       b.setAttribute('aria-label', 'Card ' + (idx + 1) + ': ' + describe(card)); b.setAttribute('aria-pressed', selected.indexOf(idx) >= 0 ? 'true' : 'false');
-      var h = '<img class="ts-seal" src="' + art('ui/seal_' + COLOURS[card.color] + '.webp') + '" alt="" draggable="false">' +
+      var h = '<img class="ts-seal' + (SET.plain ? '' : ' medal') + '" src="' + sealSrc(card) + '" alt="" draggable="false">' +
               '<img class="ts-check" src="' + art('ui/check.webp') + '" alt="" draggable="false"><span class="ts-symbols" aria-hidden="true">';
       for (var n = 0; n < card.number; n++) h += '<img src="' + glyph(card) + '" alt="" width="40" height="40" draggable="false">';
       h += '</span>' + (SET.labels ? '<span class="ts-label" aria-hidden="true">' + describe(card) + '</span>' : '');
@@ -230,8 +254,8 @@
           if (!motionOff()) picked.forEach(function(i){ var e = cards[i]; if (!e) return; var r = e.getBoundingClientRect(); e.classList.add('flying'); e.style.transform = 'translate(' + (pile.left - r.left) + 'px,' + (pile.top - r.top) + 'px) scale(.3)'; });
           setTimeout(function(){
             var removed = picked.slice().sort(function(x, y){ return y - x; });
-            if (board.length <= 12) removed.forEach(function(i){ if (deck.length > 0) board[i] = deck.pop(); else board.splice(i, 1); });
-            else removed.forEach(function(i){ board.splice(i, 1); });
+            if (board.length <= 12) removed.forEach(function(i){ if (deck.length > 0) board[i] = deck.pop(); else { board.splice(i, 1); faces.splice(i, 1); } });   // a refilled slot keeps its face
+            else removed.forEach(function(i){ board.splice(i, 1); faces.splice(i, 1); });
             selected = []; locked = false;
             if (mode === 'daily' && found >= dailyTarget) { finishDaily(); return; }
             renderBoard(); SFX.deal();
@@ -268,7 +292,7 @@
     }
     function startRound(m){
       mode = m; deck = (m === 'daily') ? createDeck(mulberry32(dayNum() + 77001)) : createDeck();
-      board = []; selected = []; found = 0; locked = false; won = false;
+      board = []; faces = dealFaces(12); selected = []; found = 0; locked = false; won = false;
       if (_st) _st();
       for (var i = 0; i < 12; i++) board.push(deck.pop());
       if (m === 'daily') startTimer(); else { stopTimer(); table.querySelector('#ts-timerwrap').style.display = 'none'; }
@@ -285,13 +309,14 @@
     window._setNew = function(){ startRound('classic'); say('Find three cards where each trait is all the same or all different.'); };
     window._setDaily = function(){ startRound('daily'); var rec = dailyLoad(); say(rec && rec.done ? 'A practice run. Today is locked in at ' + fmtSecs(rec.secs) + '.' : 'The same deck for everyone today. Find ' + dailyTarget + ' trios, fast.'); };
     window._setRestart = function(){ if (mode === 'daily') window._setDaily(); else window._setNew(); };
-    window._setHint = function(){ if (deck.length === 0) { say('The deck is empty.'); return; } for (var i = 0; i < 3 && deck.length > 0; i++) board.push(deck.pop()); selected = []; renderBoard(); SFX.deal(); say('Three cards added. ' + deck.length + ' remain.'); };
+    window._setHint = function(){ if (deck.length === 0) { say('The deck is empty.'); return; } for (var i = 0; i < 3 && deck.length > 0; i++) { board.push(deck.pop()); faces.push(FACES[Math.floor(Math.random() * 4)]); } selected = []; renderBoard(); SFX.deal(); say('Three cards added. ' + deck.length + ' remain.'); };
 
     table.querySelector('#ts-mode-classic').onclick = function(){ window._setNew(); };
     table.querySelector('#ts-mode-daily').onclick = function(){ window._setDaily(); };
     sheet.querySelector('#ts-close').onclick = function(){ sheet.classList.remove('open'); };
-    sheet.querySelector('#ts-inks').onclick = function(){ SET.inks = SET.inks === 'botanical' ? 'clear' : SET.inks === 'clear' ? 'mono' : 'botanical'; saveSettings(); applySettings(); renderBoard(); };
-    sheet.querySelector('#ts-plain').onclick = function(){ SET.plain = !SET.plain; saveSettings(); applySettings(); };
+    sheet.querySelector('#ts-inks').onclick = function(){ SET.inks = SET.inks === 'painted' ? 'botanical' : SET.inks === 'botanical' ? 'clear' : SET.inks === 'clear' ? 'mono' : 'painted'; saveSettings(); applySettings(); renderBoard(); };
+    sheet.querySelector('#ts-table').onclick = function(){ SET.table = SET.table === 'auto' ? 'lamp' : SET.table === 'lamp' ? 'morning' : SET.table === 'morning' ? 'rain' : 'auto'; saveSettings(); applySettings(); };
+    sheet.querySelector('#ts-plain').onclick = function(){ SET.plain = !SET.plain; saveSettings(); applySettings(); renderBoard(); };   // the seals change with the surface
     sheet.querySelector('#ts-larger').onclick = function(){ SET.larger = !SET.larger; saveSettings(); applySettings(); };
     sheet.querySelector('#ts-labels').onclick = function(){ SET.labels = !SET.labels; saveSettings(); applySettings(); renderBoard(); };
     sheet.querySelector('#ts-motion').onclick = function(){ SET.motion = SET.motion === 'auto' ? 'off' : SET.motion === 'off' ? 'on' : 'auto'; saveSettings(); applySettings(); };
@@ -300,7 +325,7 @@
 
     if (/[?&]sstest=1(&|$)/.test(location.search)) {
       window.__ts = { board: function(){ return board.slice(); }, trio: function(){ return findPheno(board); }, state: function(){ return { found: found, deck: deck.length, mode: mode, won: won, selected: selected.slice(), locked: locked }; },
-        settings: function(){ return SET; }, setDailyTarget: function(n){ dailyTarget = n; }, audio: function(){ return { created: SFX.created, started: SFX.started }; }, failed: function(i, j, k){ return failedTraits(board[i], board[j], board[k]); } };
+        settings: function(){ return SET; }, faces: function(){ return faces.slice(); }, setDailyTarget: function(n){ dailyTarget = n; }, audio: function(){ return { created: SFX.created, started: SFX.started }; }, failed: function(i, j, k){ return failedTraits(board[i], board[j], board[k]); } };
     }
     applySettings(); renderControls(); window._setNew();
   };
