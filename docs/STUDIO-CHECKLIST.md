@@ -124,7 +124,8 @@ Each is built at its default if you say nothing; say the word and the plan chang
 
 - [ ] Tomato Man: the level lab exists (open with ?lab=1, edit, Copy JSON, paste it to Fable); 26 levels, the bot finishes all of them, your hand is what makes them good (you)  
 - [x] TOFU: the level lab BUILT 10 Nov (paint tiles, PLAY at once, COPY the text; lab test 9 green) (Fable)  
-- [ ] TOFU: run the line `! bash /home/codespace/ts-drafts/deploy-tofu-lab.sh`, then open lucidwinds.com/satellites/tofu/?lab=1, make a dish, COPY, paste the text to Fable (you)  
+- [x] TOFU: the lab LIVE 10 Nov, main 9321e99bc (you ran the line)  
+- [ ] TOFU: open lucidwinds.com/satellites/tofu/?lab=1, make a dish, COPY, paste the text to Fable (you)  
 - [ ] Shutterbug: rooms come from photos, so no hand levels; the house and guardian arenas are tuned in code (say if you want a room lab)  
 - [ ] Name the other games you mean to make levels for; each needs its lab checked or built first (you, Fable)
 
