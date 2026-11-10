@@ -345,6 +345,49 @@ const EAT_LEVELS = [
   '#............................................#',
   '#.p..~~.....x....***......G....ooo......T..b.#',
   '##############################################']},
+// THE HUNT: the eaters come for the tofu while it prepares, and a slot (n) only a tofu of three bites or fewer fits.
+{ dish: 'ON THE SCENT', sub: 'The hound has your scent and it will not wait.', recipe: ['STINKY'], eat: true, keep: 3, meet: ['sniffer'],
+  hint: 'Get to the brine before the hound gets to you. If it charges early, jump it and soak while it catches its breath. Its bite takes the stink, and the bowl wants you STINKY, so soak again.',
+  map: [
+  '##############################',
+  '#............................#',
+  '#............................#',
+  '#............................#',
+  '#............................#',
+  '#............................#',
+  '#............................#',
+  '#............................#',
+  '#............................#',
+  '#.p......ff..........S....b..#',
+  '##############################']},
+{ dish: 'SMALL ENOUGH', sub: 'The way to the bowl is a slot only a small tofu fits.', recipe: ['PLAIN'], eat: true, keep: 2, meet: ['chopsticks', 'pecker', 'tongue'],
+  hint: 'Three bites or fewer fit the slot. Feed all three eaters the right thing and you will be just small enough.',
+  map: [
+  '########################################',
+  '#...................................#..#',
+  '#...................................#..#',
+  '#...................................#..#',
+  '#................V..................#..#',
+  '#...................................#..#',
+  '#...................................#..#',
+  '#...................................#..#',
+  '#...................................#..#',
+  '#.p..~~.....x............ooo.....T..n.b#',
+  '########################################']},
+{ dish: 'RUSH HOUR', sub: 'Everything here hunts.', recipe: ['FIRM'], eat: true, keep: 2, meet: ['sniffer', 'slurper', 'gulper'],
+  hint: 'Brine first, the hound is fastest. Then the soy for the slug. Freeze on the ledge and drop in on the Gulper. The slot wants three bites or fewer.',
+  map: [
+  '####################################',
+  '#..............................#...#',
+  '#..............................#...#',
+  '#..............................#...#',
+  '#..............................#...#',
+  '#..............................#...#',
+  '#..............................#...#',
+  '#..................***.........#...#',
+  '#.................######.......#...#',
+  '#.p.ff..ss....U.S#######...G...n.b.#',
+  '####################################']},
 ];
 const EAT = qs.has('eat'), EAT_FROM = LEVELS.length; if (EAT) for (const l of EAT_LEVELS) LEVELS.push(l);
 
@@ -365,7 +408,7 @@ const ASSET_FILES = [
   'tongue_idle_4f','tongue_tell_3f','tongue_eat_4f','tongue_happy_3f','tongue_beaten_5f','tongue_shot_3f','sniffer_idle_4f','sniffer_tell_3f','sniffer_eat_4f','sniffer_happy_3f','sniffer_beaten_5f',
   'slurper_idle_4f','slurper_tell_3f','slurper_eat_4f','slurper_happy_3f','slurper_beaten_5f','chopsticks_tell_3f','chopsticks_eat_4f','chopsticks_happy_3f','chopsticks_beaten_5f',
   'fx_brain_freeze_6f','fx_beak_bend_6f','fx_burn_steam_6f','fx_stink_faint_6f','fx_salt_pucker_6f','fx_slip_tangle_6f','fx_chomp_4f','fx_star_pop_5f',
-  'bite_pip_full','bite_pip_empty','face_bitten','face_smug','face_worried','face_tiny','p_crumb','tile_curd','tile_perch','bg_dining_far','bg_dining_mid'
+  'bite_pip_full','bite_pip_empty','face_bitten','face_smug','face_worried','face_tiny','p_crumb','tile_curd','tile_perch','tile_gap_low','bg_dining_far','bg_dining_mid'
 ];
 const DISH_ART = ['dish_plated','dish_hiyayakko','dish_dougan','dish_agedashi','dish_korid','dish_braised','dish_choudoufu','dish_special']; // by level
 const dishImg = i => DISH_ART[i] ? `<img class="dish" src="${assetUrl(DISH_ART[i])}" alt="" onerror="this.remove()">` : '';
@@ -455,8 +498,8 @@ function anyTile(pred) {
   return false;
 }
 const tileAt = (tx, ty) => (tx < 0 || ty < 0 || tx >= world.W || ty >= world.H) ? '#' : world.grid[ty][tx];
-const isSolidCh = ch => ch === '#' || ch === 'c' || ch === '<' || ch === '>' || ch === 'g';
-const solidForPlayer = ch => ch === '#' || ch === 'c' || ch === '<' || ch === '>' || (ch === 'g' && !grateOpen);
+const isSolidCh = ch => ch === '#' || ch === 'c' || ch === '<' || ch === '>' || ch === 'g' || ch === 'n';
+const solidForPlayer = ch => ch === '#' || ch === 'c' || ch === '<' || ch === '>' || (ch === 'g' && !grateOpen) || (ch === 'n' && P.bites > 3);   // n: a slot for a tofu of three bites or fewer
 
 // Recipe requirements — the bowl's judgement.
 const REQ = {
@@ -470,7 +513,7 @@ const REQ = {
 };
 function recipeCheck() {
   const items = world.L.recipe.map(r => ({ r, ok: REQ[r](P) }));
-  if (!world.L.recipe.includes('STINKY') && P.stink >= TH.stinkClean) items.push({ r: 'RINSE', ok: false });
+  if (!world.eat && !world.L.recipe.includes('STINKY') && P.stink >= TH.stinkClean) items.push({ r: 'RINSE', ok: false });   // among the eaters stink is a weapon, a whiff left over is no fault
   return { items, ok: items.every(i => i.ok) };
 }
 function rejectReason(items) {
@@ -585,6 +628,7 @@ function collideAxis(axis, delta) {
   for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
     const ch = tileAt(tx, ty); if (!solidForPlayer(ch)) continue;
     if (ch === 'c' && P.frozen && speed > CFG.smashSpeed) { smash(tx, ty); continue; }
+    if (ch === 'n' && axis === 'x' && rejectCd <= 0) { toast('Too big. Three bites or fewer.', 1.6); SFX.reject(); rejectCd = 1.6; }
     if (axis === 'x') { P.x = delta > 0 ? tx - P.hw - EPS : tx + 1 + P.hw + EPS; P.vx = 0; }
     else { P.y = delta > 0 ? ty - P.hh - EPS : ty + 1 + P.hh + EPS; P.vy = 0; }
     return true;
@@ -752,13 +796,14 @@ function updateEaters(dt) {
         else { e.tip = Math.max(0, e.tip - 20 * dt); if (e.tip <= 0) { e.st = 'idle'; e.t = 0; e.cd = 1.4; } }
         break;
       case 'sniffer':
-        if (e.st === 'idle') { e.anim = e.t * 6; if (!walk(e, e.dir * 1.6, dt)) e.dir = -e.dir; if (can && adx < 7 && Math.abs(dy) < 1.2 && sees()) { e.dir = sgn(dx) || e.dir; tell(e); } }
+        if (e.st === 'idle') { e.anim = e.t * 6; const scent = !P.dead && adx < 16 && adx > 0.3 && Math.abs(dy) < 1.2; if (scent) e.dir = sgn(dx);   // it follows the scent the whole floor long
+          if (!walk(e, e.dir * (scent ? 2.2 : 1.6), dt) && !scent) e.dir = -e.dir; if (can && adx < 7 && Math.abs(dy) < 1.2 && sees()) { e.dir = sgn(dx) || e.dir; tell(e); } }
         else if (e.st === 'tell') { if (e.t > 0.6) { e.st = 'eat'; e.t = 0; } }
         else { e.anim = e.t * 10; const ok = walk(e, e.dir * 8, dt); if (touching(e)) bite(e); else if (!ok || e.t > 1.5) { e.st = 'idle'; e.t = 0; e.cd = 1.2; } }
         break;
       case 'slurper':
-        if (e.st === 'idle') { e.anim = e.t * 6; if (adx < 7 && Math.abs(dy) < 1.2 && adx > 0.2) { e.dir = sgn(dx); walk(e, e.dir * 0.9, dt); } if (can && adx < 1.8 && Math.abs(dy) < 1.2) tell(e); }
-        else if (e.st === 'tell') { if (e.t > 0.3 && touching(e, 0.05)) bite(e); else if (adx > 2.4) { e.st = 'idle'; e.t = 0; e.cd = 0.3; } }   // reared up, it holds the pose and sticks to whatever touches it: jump it or feed it
+        if (e.st === 'idle') { e.anim = e.t * 6; if (adx < 12 && Math.abs(dy) < 1.2 && adx > 0.2) { e.dir = sgn(dx); walk(e, e.dir * 0.9, dt); } if (can && adx < 1.8 && Math.abs(dy) < 1.2) tell(e); }
+        else if (e.st === 'tell') { if (adx > 0.2) { e.dir = sgn(dx); walk(e, e.dir * 0.6, dt); } if (e.t > 0.3 && touching(e, 0.05)) bite(e); else if (adx > 2.4) { e.st = 'idle'; e.t = 0; e.cd = 0.3; } }   // reared up, it holds the pose and sticks to whatever touches it: jump it or feed it
         break;
       case 'chopsticks': {
         const stinky = P.stink >= TH.stinkScare;
@@ -885,6 +930,7 @@ function drawTiles() {
       case 'o': drawPan(tx, ty); break;
       case 'k': drawKnife(tx, ty); break;
       case 'b': drawBowl(tx, ty); break;
+      case 'n': { const s = spr('tile_gap_low'); ctx.fillStyle = 'rgba(8,8,12,0.75)'; ctx.fillRect(tx, ty, 1, 1); if (s) drawSpr(s, tx, ty, 1, 1); else { ctx.strokeStyle = '#e7b65a'; ctx.lineWidth = 0.08; ctx.strokeRect(tx + 0.06, ty + 0.06, 0.88, 0.88); } break; }
     }
   }
 }
@@ -1308,7 +1354,7 @@ const T = window.TOFU, $ = id => document.getElementById(id);
 const TILES = [['#', 'wall', '#6b7280'], ['.', 'air', '#1c1e24'], ['p', 'start', '#f6f1e7'], ['b', 'bowl', '#7ddc8a'], ['~', 'water', '#5aa9e6'], ['s', 'soy', '#6b3d1a'],
   ['f', 'brine', '#7fbf5f'], ['*', 'ice', '#aadcff'], ['o', 'pan', '#ff7a1e'], ['k', 'knife', '#d9dde3'], ['g', 'grate', '#9aa3ad'], ['c', 'crack', '#b08a5a'],
   ['d', 'shade', '#3a3350'], ['<', 'eye L', '#e7b65a'], ['>', 'eye R', '#e7b65a'], ['x', 'sticks', '#c0504d'],
-  ['G', 'gulper', '#e58fb0'], ['V', 'bird', '#f0c060'], ['T', 'toad', '#5f9f4f'], ['S', 'hound', '#b08a5a'], ['U', 'slug', '#9ad0c0'], ['u', 'curd', '#fffbe8']];
+  ['G', 'gulper', '#e58fb0'], ['V', 'bird', '#f0c060'], ['T', 'toad', '#5f9f4f'], ['S', 'hound', '#b08a5a'], ['U', 'slug', '#9ad0c0'], ['u', 'curd', '#fffbe8'], ['n', 'slot', '#e7b65a']];
 const COL = {}; TILES.forEach(t => { COL[t[0]] = t[2]; });
 const RECIPES = ['PLAIN', 'SILKEN', 'FIRM', 'FRIED', 'FROZEN', 'SOY', 'STINKY'];
 const GAME_COUNT = T.LEVELS.length;   // the shipped dishes; the lab's level lives in the slot after them

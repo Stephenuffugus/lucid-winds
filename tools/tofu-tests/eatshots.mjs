@@ -7,7 +7,7 @@ const b = await puppeteer.launch({ args: ['--no-sandbox', '--disable-gpu'] });
 function until(lv, phases) {
   const T = window.TOFU, P = T.P, W = () => T.world, ea = k => W().eaters.find(e => e.kind === k); T.go(T.EAT_FROM + lv);
   for (const ph of phases) { let t = 0; const u = new Function('P', 'ea', 'W', 'return ' + ph.u);
-    while (!u(P, ea, W) && t < ph.max) { T.input.move = ph.m; T.input.press = !!ph.pr; T.step(1 / 120); t += 1 / 120; } }
+    while (!u(P, ea, W) && t < ph.max) { T.input.move = ph.m; T.input.press = !!ph.pr; if (ph.j && P.onGround) { const tx = Math.floor(P.x + P.hw + 0.6), ty = Math.floor(P.y + P.hh - 0.1); if (W().grid[ty][tx] === '#') T.input.jumpQueued = true; } T.step(1 / 120); t += 1 / 120; } }
   T.input.move = 0; T.input.press = false; T.mode = 'served';
   return { x: P.x, bites: P.bites, eaters: W().eaters.map(e => e.kind + ':' + e.st).join(' ') };
 }
@@ -19,6 +19,10 @@ const SHOTS = [
   ['e2-toad-tongue', 1, [{ m: 0, pr: 1, u: 'P.f>=0.95', max: 3 }, { m: 1, u: 'P.x>=8.5', max: 4 }, { m: 0, u: "ea('pecker').st==='beaten'", max: 6 }, { m: 1, u: "P.zone==='o'&&P.onGround", max: 5 }, { m: 0, u: 'P.fried', max: 2 }, { m: 1, u: 'P.x>=18.6', max: 5 }, { m: 0, u: "ea('tongue').st==='eat'&&ea('tongue').tip>2.5", max: 4 }]],
   ['e3-slug-and-hound', 2, [{ m: 1, u: "P.zone==='s'", max: 4 }, { m: 0, u: 'P.soy>=0.9', max: 4 }, { m: 1, u: "P.zone==='f'", max: 4 }, { m: 0, u: 'P.stink>=0.9', max: 4 }, { m: 1, u: "ea('sniffer').st==='eat'", max: 12 }]],
   ['e4-end-small', 3, [{ m: 1, u: 'P.inWater', max: 4 }, { m: 0, u: "ea('chopsticks').st==='beaten'", max: 8 }, { m: 1, u: "P.zone==='*'&&P.x>=18", max: 8 }, { m: 0, u: 'P.frozen', max: 4 }, { m: 1, u: "ea('gulper').st==='beaten'", max: 8 }, { m: 1, u: "P.zone==='o'&&P.onGround", max: 6 }, { m: 0, u: 'P.fried', max: 2 }, { m: 1, u: "ea('tongue').st==='beaten'&&ea('tongue').t>0.5", max: 8 }]],
+  ['e5-hound-charge', 4, [{ m: 1, u: "P.zone==='f'", max: 4 }, { m: 0, u: "ea('sniffer').st==='eat'&&Math.abs(ea('sniffer').x-P.x)<4", max: 8 }]],
+  ['e6-too-big', 5, [{ m: 1, u: 'P.x>=35.3', max: 12 }]],
+  ['e6-small-enough', 5, [{ m: 1, u: 'P.inWater', max: 4 }, { m: 0, u: "ea('chopsticks').st==='beaten'", max: 8 }, { m: 1, u: 'P.x>=8.5&&P.onGround', max: 5 }, { m: 0, pr: 1, u: 'P.f>=0.95', max: 3 }, { m: 1, u: 'P.x>=16.5', max: 6 }, { m: 0, u: "ea('pecker').st==='beaten'", max: 6 }, { m: 1, u: "P.zone==='o'&&P.onGround", max: 6 }, { m: 0, u: 'P.fried', max: 2 }, { m: 1, u: "ea('tongue').st==='beaten'", max: 8 }, { m: 1, u: 'P.x>=36.4', max: 6 }]],
+  ['e7-ledge-frozen', 6, [{ m: 1, u: "P.zone==='f'", max: 4 }, { m: 0, u: "ea('sniffer').st==='beaten'", max: 8 }, { m: 1, u: "P.zone==='s'", max: 4 }, { m: 0, u: "ea('slurper').st==='beaten'", max: 12 }, { m: 1, j: 1, u: 'P.x>=19.6&&P.onGround&&P.y<8', max: 8 }, { m: 0, u: 'P.frozen', max: 4 }, { m: 1, u: "ea('gulper').st==='tell'", max: 6 }]],
 ];
 const errs = [];
 for (const [vw, vh, tag] of [[915, 412, 'land'], [412, 915, 'port']]) {

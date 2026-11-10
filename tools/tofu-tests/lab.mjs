@@ -12,7 +12,7 @@ await p.goto(BASE, { waitUntil: 'networkidle2' }); await sleep(500);
 F(await p.evaluate(() => document.getElementById('lab').classList.contains('hidden') && !window.TOFU.lab), 'without ?lab=1 the lab is hidden and never starts');
 await p.goto(BASE + '?lab=1', { waitUntil: 'networkidle2' }); await sleep(600);
 const o = await p.evaluate(() => ({ open: !document.getElementById('lab').classList.contains('hidden'), cells: document.getElementById('labgrid').children.length, pal: document.getElementById('labpal').children.length, overlay: document.getElementById('overlay').classList.contains('hidden') }));
-F(o.open && o.cells === 28 * 11 && o.pal === 22 && o.overlay, `the lab opens on a blank kitchen with twenty two tiles (${JSON.stringify(o)})`);
+F(o.open && o.cells === 28 * 11 && o.pal === 23 && o.overlay, `the lab opens on a blank kitchen with twenty three tiles (${JSON.stringify(o)})`);
 await p.select('#labload', '3'); await sleep(300);   // AGEDASHI
 const l = await p.evaluate(() => ({ dish: window.TOFU.lab.level.dish, rows: window.TOFU.lab.level.map.length, rec: window.TOFU.lab.level.recipe.join() }));
 F(l.dish === 'AGEDASHI 2' && l.rows === 13 && l.rec === 'FRIED', `a shipped dish loads as a copy (${JSON.stringify(l)})`);
