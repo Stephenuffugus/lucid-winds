@@ -567,9 +567,12 @@ function sunbeamServe(n) { // Sky Wolf earn standard: 30 a day per game (SUNBEAM
   return grant;
 }
 function serve() {
-  mode = 'served'; SFX.served(); progress = Math.max(progress, world.idx + 1);
-  const t = +levelTime.toFixed(1); if (!best[world.idx] || t < best[world.idx]) best[world.idx] = t; save();
-  sunbeamServe(5);
+  mode = 'served'; SFX.served();
+  if (!world.L.lab) {   // a level from the lab (?lab=1) never touches progress, best times or sunbeams
+    progress = Math.max(progress, world.idx + 1);
+    const t = +levelTime.toFixed(1); if (!best[world.idx] || t < best[world.idx]) best[world.idx] = t; save();
+    sunbeamServe(5);
+  }
   const b = world.bowl;
   for (let i = 0; i < 40; i++) spawn({ x: b.x + 0.5, y: b.y + 0.6, vx: rnd(-7, 7), vy: rnd(-12, -3), g: 22, life: rnd(0.8, 1.6), r: rnd(0.05, 0.11), col: ['#7ddc8a', '#f6f1e7', '#e7b65a', '#8fc3ef', '#ff9a9a'][i % 5], shape: 'r' });
   setTimeout(showServed, 700);
@@ -1040,6 +1043,130 @@ requestAnimationFrame(frame);
 
 // Debug / team hook: open the console and poke at TOFU.P, TOFU.CFG, TOFU.go(3)
 window.TOFU = { CFG, LEVELS, P, get world() { return world; }, input, step, frame, loadLevel, startLevel, go: i => startLevel(i), get mode() { return mode; }, set mode(m) { mode = m; }, recipeCheck, stateLabel };
+})();
+</script>
+<!-- THE LEVEL LAB (10 Nov 2026): open the page with ?lab=1. Paint a kitchen on the grid, PLAY it at once, COPY it as text in
+     the game's own LEVELS format and paste it to Fable. Nothing here runs without ?lab=1; a lab level never touches
+     progress, best times or sunbeams. The draft is kept in localStorage tofu.lab. -->
+<style>
+#lab{position:fixed;inset:0;z-index:50;background:#14161b;color:#f3efe6;display:flex;flex-direction:column;touch-action:auto;-webkit-user-select:none;user-select:none;font-size:16px}
+#lab.hidden{display:none}
+#lab .lrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:6px 8px}
+#lab button,#lab select,#lab input{min-height:48px;min-width:48px;border-radius:10px;border:1px solid rgba(255,255,255,.22);background:#23262e;color:#f3efe6;font:inherit;font-weight:700;padding:0 10px}
+#lab input[type=text]{flex:1;min-width:120px;font-weight:500;-webkit-user-select:text;user-select:text}
+#lab button.on{background:#f6f1e7;color:#14161b;border-color:#fff}
+#lab .pal button{padding:0;width:48px;font-size:12px;line-height:1.1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+#lab .pal i{display:block;width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.25)}
+#labwrap{flex:1;overflow:auto;padding:8px;background:#0e1014;touch-action:pan-x pan-y}
+#labwrap.paint{touch-action:none}
+#labgrid{display:grid;gap:1px;width:max-content}
+#labgrid b{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;border-radius:3px;color:#14161b}
+#labtext{width:100%;height:120px;background:#0e1014;color:#cfe0c2;border:1px solid rgba(255,255,255,.2);border-radius:10px;font:12px/1.25 ui-monospace,monospace;padding:8px;-webkit-user-select:text;user-select:text}
+#labmsg{padding:0 10px 6px;min-height:22px;color:#e7b65a}
+#labback{position:fixed;left:50%;top:max(8px,env(safe-area-inset-top));transform:translateX(-50%);z-index:40;min-height:48px;min-width:96px;border-radius:24px;border:1px solid rgba(255,255,255,.3);background:rgba(10,11,16,.75);color:#f3efe6;font-weight:800;letter-spacing:.08em}
+#labback.hidden{display:none}
+</style>
+<div id="lab" class="hidden">
+  <div class="lrow">
+    <select id="labload" aria-label="Start from"></select>
+    <button id="labmode">PAINT</button>
+    <button id="labw-">W-</button><button id="labw+">W+</button><button id="labh-">H-</button><button id="labh+">H+</button>
+    <span id="labsize"></span>
+  </div>
+  <div class="lrow pal" id="labpal"></div>
+  <div id="labwrap" class="paint"><div id="labgrid"></div></div>
+  <div class="lrow"><input type="text" id="labdish" placeholder="Dish name" maxlength="24"><span id="labrec" class="lrow" style="padding:0"></span></div>
+  <div class="lrow"><input type="text" id="labhint" placeholder="Hint shown on the card" maxlength="160"></div>
+  <div class="lrow"><button id="labplay" class="on">PLAY</button><button id="labcopy">COPY</button><button id="labread">READ TEXT</button><button id="labquit">GAME</button></div>
+  <div id="labmsg"></div>
+  <div class="lrow"><textarea id="labtext" spellcheck="false" placeholder="COPY writes the level here. Paste a level here and press READ TEXT."></textarea></div>
+</div>
+<button id="labback" class="hidden">LAB</button>
+<script>
+(() => {
+'use strict';
+if (!new URLSearchParams(location.search).has('lab') || !window.TOFU) return;
+const T = window.TOFU, $ = id => document.getElementById(id);
+const TILES = [['#', 'wall', '#6b7280'], ['.', 'air', '#1c1e24'], ['p', 'start', '#f6f1e7'], ['b', 'bowl', '#7ddc8a'], ['~', 'water', '#5aa9e6'], ['s', 'soy', '#6b3d1a'],
+  ['f', 'brine', '#7fbf5f'], ['*', 'ice', '#aadcff'], ['o', 'pan', '#ff7a1e'], ['k', 'knife', '#d9dde3'], ['g', 'grate', '#9aa3ad'], ['c', 'crack', '#b08a5a'],
+  ['d', 'shade', '#3a3350'], ['<', 'eye L', '#e7b65a'], ['>', 'eye R', '#e7b65a'], ['x', 'sticks', '#c0504d']];
+const COL = {}; TILES.forEach(t => { COL[t[0]] = t[2]; });
+const RECIPES = ['PLAIN', 'SILKEN', 'FIRM', 'FRIED', 'FROZEN', 'SOY', 'STINKY'];
+const GAME_COUNT = T.LEVELS.length;   // the shipped dishes; the lab's level lives in the slot after them
+let L = null, brush = '#', painting = true, down = false;
+const blank = () => { const W = 28, H = 11, rows = []; for (let y = 0; y < H; y++) rows.push(y === 0 || y === H - 1 ? '#'.repeat(W) : '#' + '.'.repeat(W - 2) + '#'); const r = rows[H - 2].split(''); r[2] = 'p'; r[W - 4] = 'b'; rows[H - 2] = r.join(''); return { dish: 'NEW DISH', sub: 'Made in the lab.', recipe: ['PLAIN'], hint: '', map: rows }; };
+const clone = l => ({ dish: l.dish, sub: l.sub || 'Made in the lab.', recipe: l.recipe.slice(), hint: l.hint || '', map: l.map.slice() });
+const say = m => { $('labmsg').textContent = m; };
+const keep = () => { try { localStorage.setItem('tofu.lab', JSON.stringify(L)); } catch (e) {} };
+function norm() { const W = Math.max.apply(null, L.map.map(r => r.length)); L.map = L.map.map(r => r.padEnd(W, '#')); }
+function drawGrid() {
+  norm(); const g = $('labgrid'), W = L.map[0].length, H = L.map.length; g.style.gridTemplateColumns = 'repeat(' + W + ',30px)'; g.textContent = '';
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const c = document.createElement('b'), ch = L.map[y][x]; c.dataset.x = x; c.dataset.y = y; c.style.background = COL[ch] || '#000'; c.textContent = ch === '.' || ch === '#' ? '' : ch; g.appendChild(c); }
+  $('labsize').textContent = W + ' x ' + H; $('labdish').value = L.dish; $('labhint').value = L.hint;
+  Array.from($('labrec').children).forEach(b => b.classList.toggle('on', L.recipe.indexOf(b.dataset.r) >= 0));
+}
+function put(x, y) {
+  if (y < 0 || y >= L.map.length || x < 0 || x >= L.map[0].length) return;
+  if (brush === 'p' || brush === 'b') L.map = L.map.map(r => r.split(brush).join('.'));   // one start, one bowl
+  const r = L.map[y].split(''); if (r[x] === brush) return; r[x] = brush; L.map[y] = r.join('');
+  if (brush === 'p' || brush === 'b') drawGrid(); else { const c = $('labgrid').children[y * L.map[0].length + x]; c.style.background = COL[brush]; c.textContent = brush === '.' || brush === '#' ? '' : brush; }
+  keep();
+}
+const cellAt = e => { const t = document.elementFromPoint(e.clientX, e.clientY); return t && t.parentNode === $('labgrid') ? t : null; };
+function toText() {
+  const q = s => "'" + String(s).replace(/\\/g, '\\\\').replace(/'/g, '’') + "'";
+  return '{ dish: ' + q(L.dish) + ', sub: ' + q(L.sub) + ', recipe: [' + L.recipe.map(q).join(', ') + '],\n  hint: ' + q(L.hint) + ',\n  map: [\n' + L.map.map(r => '  ' + q(r)).join(',\n') + ']},';
+}
+function fromText(t) {
+  const rows = []; const body = (t.match(/map\s*:\s*\[([\s\S]*?)\]/) || [])[1] || t;
+  body.replace(/['"]([#.~sf*okgcbpd<>x]{3,})['"]/g, (m, r) => { rows.push(r); return m; });
+  if (rows.length < 3) { t.split('\n').forEach(r => { r = r.trim(); if (/^[#.~sf*okgcbpd<>x]{3,}$/.test(r)) rows.push(r); }); }
+  if (rows.length < 3) return false;
+  const one = k => (t.match(new RegExp(k + "\\s*:\\s*'([^']*)'")) || [])[1];
+  const rec = ((t.match(/recipe\s*:\s*\[([^\]]*)\]/) || [])[1] || '').split(',').map(s => s.replace(/[^A-Z]/g, '')).filter(s => RECIPES.indexOf(s) >= 0);
+  L = { dish: one('dish') || L.dish, sub: one('sub') || 'Made in the lab.', recipe: rec.length ? rec : L.recipe, hint: one('hint') || '', map: rows };
+  return true;
+}
+function check() {
+  const flat = L.map.join(''); const np = flat.split('p').length - 1, nb = flat.split('b').length - 1;
+  if (np !== 1) return 'Place one start.'; if (nb !== 1) return 'Place one bowl.'; if (!L.recipe.length) return 'Pick what the bowl wants.';
+  return '';
+}
+function open() { T.mode = 'title'; document.getElementById('overlay').classList.add('hidden'); $('lab').classList.remove('hidden'); $('labback').classList.add('hidden'); drawGrid(); }
+function play() {
+  const bad = check(); if (bad) { say(bad); return; }
+  L.dish = $('labdish').value.trim() || 'NEW DISH'; L.hint = $('labhint').value.trim(); keep();
+  const lv = clone(L); lv.lab = true; lv.hint = lv.hint || 'A lab level.'; T.LEVELS[GAME_COUNT] = lv;
+  $('lab').classList.add('hidden'); $('labback').classList.remove('hidden'); T.go(GAME_COUNT);
+}
+// build the controls
+TILES.forEach(t => { const b = document.createElement('button'); b.dataset.t = t[0]; b.innerHTML = '<i style="background:' + t[2] + '"></i>' + t[1]; if (t[0] === brush) b.classList.add('on'); $('labpal').appendChild(b); });
+RECIPES.forEach(r => { const b = document.createElement('button'); b.dataset.r = r; b.textContent = r; $('labrec').appendChild(b); });
+const sel = $('labload'); [['', 'Start from'], ['blank', 'Blank kitchen']].concat(T.LEVELS.slice(0, GAME_COUNT).map((l, i) => [String(i), (i + 1) + ' ' + l.dish])).forEach(o => { const e = document.createElement('option'); e.value = o[0]; e.textContent = o[1]; sel.appendChild(e); });
+sel.onchange = () => { if (sel.value === '') return; L = sel.value === 'blank' ? blank() : clone(T.LEVELS[+sel.value]); if (sel.value !== 'blank') L.dish = L.dish + ' 2'; sel.value = ''; keep(); drawGrid(); say('Loaded.'); };
+$('labpal').onclick = e => { const b = e.target.closest('button'); if (!b) return; brush = b.dataset.t; Array.from($('labpal').children).forEach(x => x.classList.toggle('on', x === b)); };
+$('labrec').onclick = e => { const b = e.target.closest('button'); if (!b) return; const i = L.recipe.indexOf(b.dataset.r); if (i >= 0) L.recipe.splice(i, 1); else L.recipe.push(b.dataset.r); b.classList.toggle('on', i < 0); keep(); };
+$('labmode').onclick = () => { painting = !painting; $('labmode').textContent = painting ? 'PAINT' : 'SCROLL'; $('labwrap').classList.toggle('paint', painting); };
+const wrap = $('labwrap');
+wrap.addEventListener('pointerdown', e => { if (!painting) return; const c = cellAt(e); if (!c) return; down = true; put(+c.dataset.x, +c.dataset.y); e.preventDefault(); });
+wrap.addEventListener('pointermove', e => { if (!painting || !down) return; const c = cellAt(e); if (c) put(+c.dataset.x, +c.dataset.y); });
+addEventListener('pointerup', () => { down = false; }); addEventListener('pointercancel', () => { down = false; });
+$('labw+').onclick = () => { if (L.map[0].length >= 80) return; L.map = L.map.map((r, y) => r.slice(0, -1) + ((y === 0 || y === L.map.length - 1) ? '#' : '.') + '#'); keep(); drawGrid(); };
+$('labw-').onclick = () => { if (L.map[0].length <= 12) return; L.map = L.map.map(r => r.slice(0, -2) + '#'); keep(); drawGrid(); };
+$('labh+').onclick = () => { if (L.map.length >= 40) return; const W = L.map[0].length; L.map.splice(1, 0, '#' + '.'.repeat(W - 2) + '#'); keep(); drawGrid(); };
+$('labh-').onclick = () => { if (L.map.length <= 6) return; L.map.splice(1, 1); keep(); drawGrid(); };
+$('labdish').oninput = () => { L.dish = $('labdish').value; keep(); }; $('labhint').oninput = () => { L.hint = $('labhint').value; keep(); };
+$('labplay').onclick = play;
+$('labcopy').onclick = () => { L.dish = $('labdish').value.trim() || 'NEW DISH'; L.hint = $('labhint').value.trim(); const t = toText(); $('labtext').value = t; try { navigator.clipboard.writeText(t).then(() => say('Copied. Paste it to Fable.'), () => say('Select the text below and copy it.')); } catch (e) { say('Select the text below and copy it.'); } };
+$('labread').onclick = () => { if (fromText($('labtext').value)) { keep(); drawGrid(); say('Read ' + L.map.length + ' rows.'); } else say('No level found in that text.'); };
+$('labquit').onclick = () => { location.search = ''; };
+$('labback').onclick = open;
+// the lab owns its own touches and keys: the game's document level handlers never see them
+['touchmove', 'touchstart', 'keydown', 'keyup', 'contextmenu'].forEach(ev => $('lab').addEventListener(ev, e => e.stopPropagation(), { passive: true }));
+try { const d = JSON.parse(localStorage.getItem('tofu.lab') || 'null'); if (d && d.map && d.map.length >= 3) L = d; } catch (e) {}
+if (!L) L = blank();
+T.lab = { open, play, get level() { return L; }, toText, fromText, put: (x, y, t) => { brush = t; put(x, y); } };
+open(); say('Pick a tile, paint, then PLAY. COPY gives the text for Fable.');
 })();
 </script>
 </body>
