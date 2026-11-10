@@ -1361,6 +1361,22 @@
     /* Card shape SVGs */
     .shape-row{display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;}
     .shape-svg{width:100%;max-width:38px;height:auto;aspect-ratio:1/1;transition:opacity 0.3s ease;}
+    /* ── THE PAINTED DECK (Part 2, 10 Nov 2026): Astra's round two faces, medallion seals and painted crops, the same files
+       /play/set.html plays (assets/games/set/t2). The face is a CSS variable set per card and !important, so no theme,
+       colour-blind pattern or selected/correct background shorthand paints over her card. ── */
+    .card-grid .grove-card.painted,#tut-grid .tut-card.painted{background-color:transparent!important;background-image:var(--ts-face)!important;background-size:100% 100%!important;background-repeat:no-repeat!important;background-position:center!important;border:3px solid transparent!important;border-radius:0;box-shadow:none!important;filter:drop-shadow(0 3px 5px rgba(0,0,0,.45));padding:24% 5% 8%;gap:0;justify-content:center;animation:none;}
+    .card-grid .grove-card.painted.wrong{border-color:rgba(139,46,46,.6)!important;}
+    .card-grid .grove-card.painted.selected,#tut-grid .tut-card.painted.tut-selected{background-image:var(--ts-sel)!important;filter:drop-shadow(0 0 10px rgba(200,168,75,.6)) drop-shadow(0 4px 6px rgba(0,0,0,.45));transform:translateY(-3px);}
+    .card-grid .grove-card.painted.correct{background-image:var(--ts-sel)!important;}
+    .card-grid .grove-card.painted .cb-marker{display:none;}
+    .grove-card.painted .ts-seal,.tut-card.painted .ts-seal{position:absolute;left:9%;top:6.5%;width:22%;max-width:32px;height:auto;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));pointer-events:none;}
+    .grove-card.painted .ts-symbols,.tut-card.painted .ts-symbols{display:flex;flex-direction:column;align-items:center;gap:2px;padding:3px;background:#fff7e7;border-radius:8px;}
+    .ts-glyph{display:block;width:clamp(24px,8.4vw,40px);height:clamp(24px,8.4vw,40px);flex-shrink:0;}
+    .card-grid.cols4 .ts-glyph,#tut-grid.cols4 .ts-glyph{width:clamp(16px,5.6vw,32px);height:clamp(16px,5.6vw,32px);}
+    .card-grid.cols5 .ts-glyph,#tut-grid.cols5 .ts-glyph{width:clamp(12px,4.3vw,26px);height:clamp(12px,4.3vw,26px);}
+    .card-grid.painted{background:#17251d url("assets/games/set/t1/table/table_main.webp?v=t2.0") center top/cover no-repeat!important;box-shadow:inset 0 0 0 100vmax rgba(10,18,14,.35)!important;}
+    .deck-option{background:rgba(13,16,12,0.5);border:1px solid rgba(74,124,53,0.2);border-radius:6px;padding:0.3rem 0.6rem;cursor:pointer;font-size:0.55rem;color:var(--muted);transition:all 0.2s;}
+    .deck-option.active{border-color:var(--sage);color:var(--sage);background:rgba(74,124,53,0.1);}
 
     /* ── CONTROLS ── */
     .game-controls{display:flex;gap:0.25rem;margin-bottom:0.2rem;flex-wrap:wrap;flex-shrink:0;}
@@ -7711,6 +7727,11 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
       <input type="color" class="cust-color" id="cc3" value="#c07070" onchange="updateTheme()" />
     </div>
     <div class="cust-row">
+      <span class="cust-label">DECK</span>
+      <div class="deck-option active" data-deck="painted" onclick="setDeck(this,true)">🌽 Painted (Astra's Seed Catalogue)</div>
+      <div class="deck-option" data-deck="shapes" onclick="setDeck(this,false)">◇ Shapes (your colours and shapes below)</div>
+    </div>
+    <div class="cust-row">
       <span class="cust-label">SHAPES</span>
       <div class="shape-option active" data-set="grow" onclick="setShapes(this,'grow')">🌱 Grow (Clover · Pot · Droplet)</div>
       <div class="shape-option" data-set="classic" onclick="setShapes(this,'classic')">♦ Classic (Diamond · Oval · Squiggle)</div>
@@ -14038,6 +14059,42 @@ document.addEventListener('keydown', function(e) {
   };
   var activeShapeSet = 'grow';
 
+  // ── THE PAINTED DECK (Part 2, 10 Nov 2026) ──
+  // Astra's Seed Catalogue round two, the same files /play/set.html plays (assets/games/set/t2, cut by
+  // scripts/cut_set_pack_r2.py): a painted face per card (four variants, dealt one per slot by their own RNG and kept
+  // as a slot refills, never a cue), her medallion seal top left as the colour's second channel, one to three painted
+  // crops on the quiet #fff7e7 backing. Shape by index in the active set (0 corn, 1 bean, 2 squash), colour 0 blue
+  // 1 gold 2 rose, fill by name. The SVG shapes stay as the other deck (Customize: DECK).
+  var TS_ART = 'assets/games/set/t2/', TS_BUILD = 't2.0';
+  var TS_SHAPES = ['corn','bean','squash'], TS_COLOURS = ['blue','gold','rose'], TS_FACES = ['a','b','c','d'];
+  var paintedDeck = true;
+  try { paintedDeck = localStorage.getItem('lw_set_painted') !== '0'; } catch(e) {}
+  var boardFaces = [];
+  function tsArt(rel){ return TS_ART + rel + '?v=' + TS_BUILD; }
+  function dealFaces(n){
+    var out = [], i, j, t;
+    for (i = 0; i < n; i++) out.push(TS_FACES[i % 4]);
+    for (i = out.length - 1; i > 0; i--) { j = Math.floor(Math.random() * (i + 1)); t = out[i]; out[i] = out[j]; out[j] = t; }
+    return out;
+  }
+  function tsGlyph(card){
+    var si = (typeof card.shape === 'number') ? card.shape : SHAPE_SETS[activeShapeSet].indexOf(card.shape);
+    if (si < 0 || si > 2) si = 0;
+    return tsArt('glyphs/painted/' + TS_SHAPES[si] + '_' + TS_COLOURS[card.color] + '_' + card.shading + '.webp');
+  }
+  function tsPaintCard(el, card, face) {
+    el.classList.add('painted');
+    el.style.setProperty('--ts-face', 'url("' + tsArt('cards/card_face_' + face + '.webp') + '")');
+    el.style.setProperty('--ts-sel', 'url("' + tsArt('cards/card_selected_' + face + '.webp') + '")');
+    var seal = document.createElement('img'); seal.className = 'ts-seal'; seal.alt = ''; seal.draggable = false;
+    seal.src = tsArt('ui/seals/seal_' + TS_COLOURS[card.color] + '_64.webp'); el.appendChild(seal);
+    var sym = document.createElement('div'); sym.className = 'ts-symbols'; var gh = '', g = tsGlyph(card);
+    for (var n = 0; n < card.number; n++) gh += '<img class="ts-glyph" src="' + g + '" alt="" draggable="false">';
+    sym.innerHTML = gh; el.appendChild(sym);
+  }
+  function tsGridCols(n){ return paintedDeck ? (n > 15 ? 5 : n > 12 ? 4 : 3) : (n > 12 ? 5 : n > 9 ? 4 : 3); }   // her crops need the width: three columns for twelve
+  function tsGridClasses(grid, cols){ grid.classList.toggle('painted', paintedDeck); grid.classList.toggle('cols4', cols === 4); grid.classList.toggle('cols5', cols === 5); }
+
   function getColors(){ return [
     document.getElementById('cc1').value,
     document.getElementById('cc2').value,
@@ -14154,9 +14211,11 @@ document.addEventListener('keydown', function(e) {
     grid.innerHTML = '';
 
     // Adjust columns for board size
-    if (board.length > 12) grid.style.gridTemplateColumns = 'repeat(5,1fr)';
-    else if (board.length > 9) grid.style.gridTemplateColumns = 'repeat(4,1fr)';
-    else grid.style.gridTemplateColumns = 'repeat(3,1fr)';
+    var cols = tsGridCols(board.length);
+    grid.style.gridTemplateColumns = 'repeat(' + cols + ',1fr)';
+    tsGridClasses(grid, cols);
+    var dopts = document.querySelectorAll('.deck-option');
+    for (var di = 0; di < dopts.length; di++) dopts[di].classList.toggle('active', (dopts[di].getAttribute('data-deck') === 'painted') === paintedDeck);
 
     board.forEach(function(card, idx) {
       var el = document.createElement('div');
@@ -14172,14 +14231,18 @@ document.addEventListener('keydown', function(e) {
       marker.textContent = cbMarkers[card.color];
       el.appendChild(marker);
 
-      var shapesHtml = '';
-      for (var n = 0; n < card.number; n++) {
-        shapesHtml += renderShape(card.shape, colors[card.color], card.shading);
+      if (paintedDeck) {   // Part 2: her painted face, seal and crops
+        tsPaintCard(el, card, boardFaces[idx] || 'a');
+      } else {
+        var shapesHtml = '';
+        for (var n = 0; n < card.number; n++) {
+          shapesHtml += renderShape(card.shape, colors[card.color], card.shading);
+        }
+        var row = document.createElement('div');
+        row.className = 'shape-row';
+        row.innerHTML = shapesHtml;
+        el.appendChild(row);
       }
-      var row = document.createElement('div');
-      row.className = 'shape-row';
-      row.innerHTML = shapesHtml;
-      el.appendChild(row);
       grid.appendChild(el);
     });
 
@@ -14301,12 +14364,12 @@ document.addEventListener('keydown', function(e) {
           // Only replace from deck if board would drop below 12
           if (board.length <= 12) {
             removed.forEach(function(i) {
-              if (deck.length > 0) board[i] = deck.pop();
-              else board.splice(i, 1);
+              if (deck.length > 0) board[i] = deck.pop();   // a refilled slot keeps its painted face
+              else { board.splice(i, 1); boardFaces.splice(i, 1); }
             });
           } else {
             // Board has >12 cards (from +3) — just remove, don't refill
-            removed.forEach(function(i) { board.splice(i, 1); });
+            removed.forEach(function(i) { board.splice(i, 1); boardFaces.splice(i, 1); });
           }
           selected = [];
           renderBoard();
@@ -14333,6 +14396,7 @@ document.addEventListener('keydown', function(e) {
   window.newGame = function() {
     deck = createDeck();
     board = [];
+    boardFaces = dealFaces(12);
     selected = [];
     phenosFound = 0;
     won = false;
@@ -14356,7 +14420,7 @@ document.addEventListener('keydown', function(e) {
 
   window.addCards = function() {
     if (deck.length === 0) { setMsg('Deck is empty!', 'hint'); return; }
-    for (var i = 0; i < 3 && deck.length > 0; i++) board.push(deck.pop());
+    for (var i = 0; i < 3 && deck.length > 0; i++) { board.push(deck.pop()); boardFaces.push(TS_FACES[Math.floor(Math.random() * 4)]); }
     selected = [];
     renderBoard();
     setMsg('+3 cards added. ' + deck.length + ' remaining.', 'hint');
@@ -14928,8 +14992,9 @@ document.addEventListener('keydown', function(e) {
     function tRenderGrid() {
       var grid = document.getElementById('tut-grid');
       if (!grid) return;
-      var cols = tBoard.length > 12 ? 5 : tBoard.length > 9 ? 4 : 3;
+      var cols = tsGridCols(tBoard.length);
       grid.style.gridTemplateColumns = 'repeat('+cols+',1fr)';
+      tsGridClasses(grid, cols);
       grid.innerHTML = '';
       tBoard.forEach(function(card, idx) {
         var el = document.createElement('div');
@@ -14937,12 +15002,16 @@ document.addEventListener('keydown', function(e) {
         el.dataset.idx = idx;
         if (tSelected.indexOf(idx) >= 0) el.classList.add('tut-selected');
         el.onclick = function() { tSelectCard(idx); };
-        var shapes = '';
-        var _tutShapes = SHAPE_SETS[activeShapeSet] || ['clover','pot','droplet'];
         var _tutShade = ['solid','striped','empty'];
-        try { for(var n=0;n<card.number;n++) shapes += renderShape(_tutShapes[card.shape], colors[card.color], _tutShade[card.shading]); }
-        catch(e) { shapes = '?'; }
-        el.innerHTML = '<div class="shape-row">'+shapes+'</div>';
+        if (paintedDeck) {   // Part 2: the practice cards wear the painted deck too (a fixed face per slot)
+          try { tsPaintCard(el, { color: card.color, shape: card.shape, number: card.number, shading: _tutShade[card.shading] }, TS_FACES[idx % 4]); } catch(e) {}
+        } else {
+          var shapes = '';
+          var _tutShapes = SHAPE_SETS[activeShapeSet] || ['clover','pot','droplet'];
+          try { for(var n=0;n<card.number;n++) shapes += renderShape(_tutShapes[card.shape], colors[card.color], _tutShade[card.shading]); }
+          catch(e) { shapes = '?'; }
+          el.innerHTML = '<div class="shape-row">'+shapes+'</div>';
+        }
         grid.appendChild(el);
       });
       document.getElementById('tut-score').textContent = tScore;
@@ -15192,6 +15261,15 @@ document.addEventListener('keydown', function(e) {
     document.documentElement.style.setProperty('--set-c1', document.getElementById('cc1').value);
     document.documentElement.style.setProperty('--set-c2', document.getElementById('cc2').value);
     document.documentElement.style.setProperty('--set-c3', document.getElementById('cc3').value);
+    renderBoard();
+  };
+
+  window.setDeck = function(el, on) {   // Customize: DECK. Painted (hers) or Shapes (the SVG set with the player's colours)
+    paintedDeck = !!on;
+    try { localStorage.setItem('lw_set_painted', on ? '1' : '0'); } catch(e) {}
+    if (boardFaces.length < board.length) boardFaces = boardFaces.concat(dealFaces(board.length - boardFaces.length));
+    selected = [];
+    if (hintActive) clearHint();
     renderBoard();
   };
 
