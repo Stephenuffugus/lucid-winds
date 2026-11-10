@@ -21,7 +21,7 @@ Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt
 - [ ] Still out from before, when a slot frees: [Sixfold](https://drive.google.com/drive/folders/1_oNXfJWWox5-vz8CJUEx5PE7O-QMO6hm), [Aura Farm](https://drive.google.com/drive/folders/19G9FuxQEIJ2XfOi_sFE0edkFVYQ-MIkj), [Orb Orchard](https://drive.google.com/drive/folders/1Wo7AtBoFvg0ONNU7NSbdVVWF6m0mRaY4), [Dewball store kit](https://drive.google.com/drive/folders/19CCGoJDoG27NxRya3YFHiZRSjrCz2rrp) (you)  
 - [ ] Three Sisters, the next decks: Astra deferred the Stained Glass Chapel and the Observatory in round two; a round three brief when you want more decks (you say, Fable writes)  
 - [ ] Chess: the backgrounds and boards pack you asked for on 25 Oct; no brief written yet (you say, Fable writes)  
-- [ ] TOFU round 2, THE EATERS, ALL the assets for your 10 Nov idea (six eaters with tell, eat, happy and beaten strips, the Critic boss, the bitten tofu, counter effects, the bite meter and cards, level pieces, two worlds, IDEAS first): READY TO SEND, paste KICKOFF-PROMPT.txt and attach the brief: [Astra / Tofu Round 2 (The Eaters)](https://drive.google.com/drive/folders/1aOGo9e_odDDkxCXI1CL0dy5u63Z1eaLI) (you)  
+- [x] TOFU round 2, THE EATERS: Astra's pack BACK 10 Nov (239 files, clean), vaulted (astra-tofu-round2-nov10), unpacked outside git (Fable)  
 - [ ] Upload each zip into a Fable session as it comes back (or drop it in the game's Drive folder and say so); Fable vaults it, unpacks it and adds its wiring chapter to the one plan (you, then Fable)
 
 ### Back and planned
@@ -125,6 +125,8 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Tomato Man: the level lab exists (open with ?lab=1, edit, Copy JSON, paste it to Fable); 26 levels, the bot finishes all of them, your hand is what makes them good (you)  
 - [x] TOFU: the level lab BUILT 10 Nov (paint tiles, PLAY at once, COPY the text; lab test 9 green) (Fable)  
 - [x] TOFU: the lab LIVE 10 Nov, main 9321e99bc (you ran the line)  
+- [x] TOFU THE EATERS, a first taste BUILT 10 Nov (six eaters, six bites, four levels, behind ?eat=1; bots green; commit fed0a767f) (Fable)  
+- [ ] TOFU THE EATERS: run `! bash /home/codespace/tofu-drafts/deploy-tofu-eaters.sh`, then play lucidwinds.com/satellites/tofu/?eat=1 and say if being eaten is fun (you)  
 - [ ] TOFU: open lucidwinds.com/satellites/tofu/?lab=1, make a dish, COPY, paste the text to Fable (you)  
 - [ ] Shutterbug: rooms come from photos, so no hand levels; the house and guardian arenas are tuned in code (say if you want a room lab)  
 - [ ] Name the other games you mean to make levels for; each needs its lab checked or built first (you, Fable)
