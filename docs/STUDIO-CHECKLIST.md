@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 10 Nov 2026, 17:00 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 10 Nov 2026, 17:30 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 1. The art, in this order (you, then Astra)
 
@@ -21,7 +21,7 @@ Every handoff is two files in its Drive folder, the brief and KICKOFF-PROMPT.txt
 - [ ] Still out from before, when a slot frees: [Sixfold](https://drive.google.com/drive/folders/1_oNXfJWWox5-vz8CJUEx5PE7O-QMO6hm), [Aura Farm](https://drive.google.com/drive/folders/19G9FuxQEIJ2XfOi_sFE0edkFVYQ-MIkj), [Orb Orchard](https://drive.google.com/drive/folders/1Wo7AtBoFvg0ONNU7NSbdVVWF6m0mRaY4), [Dewball store kit](https://drive.google.com/drive/folders/19CCGoJDoG27NxRya3YFHiZRSjrCz2rrp) (you)  
 - [ ] Three Sisters, the next decks: Astra deferred the Stained Glass Chapel and the Observatory in round two; a round three brief when you want more decks (you say, Fable writes)  
 - [ ] Chess: the backgrounds and boards pack you asked for on 25 Oct; no brief written yet (you say, Fable writes)  
-- [ ] TOFU round 2, ALL the assets for the new idea (your word 10 Nov: "Tofu needs all the assets built"): every preparation of the tofu, every enemy with its eating frames, the tells, the levels' pieces; the Astra brief follows the design write up (Fable writes, you send)  
+- [ ] TOFU round 2, THE EATERS, ALL the assets for your 10 Nov idea (six eaters with tell, eat, happy and beaten strips, the Critic boss, the bitten tofu, counter effects, the bite meter and cards, level pieces, two worlds, IDEAS first): READY TO SEND, paste KICKOFF-PROMPT.txt and attach the brief: [Astra / Tofu Round 2 (The Eaters)](https://drive.google.com/drive/folders/1aOGo9e_odDDkxCXI1CL0dy5u63Z1eaLI) (you)  
 - [ ] Upload each zip into a Fable session as it comes back (or drop it in the game's Drive folder and say so); Fable vaults it, unpacks it and adds its wiring chapter to the one plan (you, then Fable)
 
 ### Back and planned
@@ -53,7 +53,8 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Pixel Petri: the first expansion (Many Peoples, Themed Packs), free everywhere or packs first, the commercial's timing, Penny's pack (you)  
 - [ ] Say if the new fart sounds are funny; if not, a pack of recorded ones (CC0) is the next step (you)
 - [x] TOFU: your idea, 10 Nov: a Kirby's Dream Land feel where you cook or prepare yourself differently and the enemies EAT you; how you are prepared is your weapon and how they eat you is the hit; you budget your own body to get every enemy and still survive the level, countering each enemy with the right preparation (you)  
-- [ ] TOFU: Fable writes it up as TOFU_M2 design (the preparations, which enemy each counters, the body budget, what a level asks) with the open questions for you, before any build (Fable, then you)  
+- [x] TOFU: written up as TOFU_M2_DESIGN.md, THE EATERS (you are six bites; each eater has one preparation it cannot stomach; the bite takes the preparation with it; the bowl wants a dish and enough of you left) (Fable)  
+- [ ] TOFU, your eight calls in TOFU_M2_DESIGN.md, each built at its default if you say nothing: six bites; a wrong bite costs two; the bite strips your preparation; beating every eater is the second star, not the door; one hidden curd gives a bite back; smaller fits gaps; the names (you)  
 - [ ] Three Sisters: your Pixel verdict on the painted deck, both boards; the hub's crops are 30 to 35 px, the standalone's 40 (you)  
 - [ ] A standing allow rule for the deploy lines (`bash /home/codespace/*-drafts/deploy-*.sh`), so Fable runs them and stops handing them back; yes or no (you)  
 - [ ] The box's disk (2.8 GB free of 32 on 10 Nov): which of dewball-drafts (942 MB), sb-drafts (929 MB) and old session transcripts (982 MB) may go (you)  
@@ -89,7 +90,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [x] Chapter 12 Tomato Man THE SPLIT and the walk order (two lanes of awnings in the Dunes and the Eclipse, each shade on its own clock; the walk frames alternate the feet): LIVE 8 Nov by your line (Fable)  
 - [x] Three Sisters round two on the standalone (painted crops, four faces, medallion seals, morning and rain tables): LIVE 10 Nov, main 753e9ed52 (Fable)  
 - [x] Three Sisters Part 2, the hub's own board on the same painted deck (Customize: DECK): LIVE 10 Nov, main e9d047424 (Fable)  
-- [ ] Shutterbug: the no browser gate is RED on the branch since sb-m2-23 (two redwatch anchors lost, DEATH_CARD_FIXED and PAD_CSS_RING); re anchor them (Fable)  
+- [x] Shutterbug: the two redwatch anchors lost in sb-m2-23 re anchored 10 Nov, 684 rows find their code (Fable)  
 - [ ] Chapters 9 on, the new packs' wiring as each lands: Keepsies round 4, FF round 3, Sunforge round 3, Pixel Petri round 1, Shutterbug round 11 (Fable writes, Opus builds)  
 - [ ] If the box dies mid chapter, the next night starts the same kickoff and resumes from the first step not DONE (you, Opus)
 
@@ -122,7 +123,8 @@ Each is built at its default if you say nothing; say the word and the plan chang
 ## 5b. Levels you make by hand (you, with Fable's tools)
 
 - [ ] Tomato Man: the level lab exists (open with ?lab=1, edit, Copy JSON, paste it to Fable); 26 levels, the bot finishes all of them, your hand is what makes them good (you)  
-- [ ] TOFU: eight levels live inside the page and there is NO editor yet; Fable builds a level lab like Tomato Man's before you can hand make any (Fable, then you)  
+- [x] TOFU: the level lab BUILT 10 Nov (paint tiles, PLAY at once, COPY the text; lab test 9 green) (Fable)  
+- [ ] TOFU: run the line `! bash /home/codespace/ts-drafts/deploy-tofu-lab.sh`, then open lucidwinds.com/satellites/tofu/?lab=1, make a dish, COPY, paste the text to Fable (you)  
 - [ ] Shutterbug: rooms come from photos, so no hand levels; the house and guardian arenas are tuned in code (say if you want a room lab)  
 - [ ] Name the other games you mean to make levels for; each needs its lab checked or built first (you, Fable)
 
