@@ -95,6 +95,9 @@ html,body{height:100%;background:#1c1e24;overflow:hidden;font-family:system-ui,-
 /* a short screen (a phone held sideways): the buttons sit side by side and the status shrinks so the kitchen stays in view */
 @media (max-height:400px){.pad{flex-direction:row;gap:8px}.btn,.btn.big{width:80px;height:80px;font-size:12px}.state{font-size:17px}.tags{margin-bottom:3px}.bar{width:96px;height:7px}.dish small{display:none}#hint{top:58px}.stickHint{bottom:calc(max(10px,env(safe-area-inset-bottom)) + 70px)}}
 .stats{font-size:16px;opacity:.75;margin:4px 0 6px}
+.meets{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:6px 0}
+.meet{width:min(260px,44vw);height:auto;aspect-ratio:3/2;border-radius:12px}
+.stars{display:block;width:96px;height:96px;margin:2px auto 0}
 </style>
 </head>
 <body>
@@ -281,6 +284,70 @@ const LEVELS = [
   '################################']},
 ];
 
+// THE EATERS, a first taste (only with ?eat=1). An eater bites the tofu: bitten in the one preparation it cannot stomach it takes
+// one bite and is beaten, bitten in any other it takes two and every preparation with them. The tofu is six bites.
+// Eaters:  G gulper (FROZEN)  V pecker (FIRM)  T toad (FRIED)  S sniffer (STINKY)  U slurper (SOY)  x chopsticks (SILKEN)   u fresh curd
+// keep = the bites the bowl wants left; meet = the cards shown before the level.
+const EAT_LEVELS = [
+{ dish: 'COLD SHOULDER', sub: 'The Gulper inhales whatever comes near.', recipe: ['PLAIN'], eat: true, keep: 3, meet: ['gulper'],
+  hint: 'Stand in the freezer first, then let the Gulper have you. Cold tofu hurts its head.',
+  map: [
+  '############################',
+  '#..........................#',
+  '#..........................#',
+  '#..........................#',
+  '#..........................#',
+  '#..........................#',
+  '#..........................#',
+  '#..........................#',
+  '#..........................#',
+  '#.p....***.........G....b..#',
+  '############################']},
+{ dish: 'BEAK AND TONGUE', sub: 'A bird above, a toad ahead.', recipe: ['PLAIN'], eat: true, keep: 3, meet: ['pecker', 'tongue'],
+  hint: 'Squeeze to go FIRM before the bird dives. Cross the pan to go FRIED before the toad sees you. A bite takes one preparation with it.',
+  map: [
+  '############################',
+  '#..........................#',
+  '#..........................#',
+  '#..........................#',
+  '#.......V..................#',
+  '#..........................#',
+  '#..u.......................#',
+  '#..##......................#',
+  '#..........................#',
+  '#.p...........ooo......T.b.#',
+  '############################']},
+{ dish: 'SALT AND STINK', sub: 'A slug in the way and a hound on the scent.', recipe: ['FIRM'], eat: true, keep: 3, meet: ['slurper', 'sniffer'],
+  hint: 'Soak in the soy for the slug and in the brine for the hound. Carry both at once. Water rinses them off, so jump the puddle.',
+  map: [
+  '################################',
+  '#..............................#',
+  '#..............................#',
+  '#..............................#',
+  '#..............................#',
+  '#..............................#',
+  '#..............................#',
+  '#..............................#',
+  '#..............................#',
+  '#.p.ss.ff...~~.....U......S..b.#',
+  '################################']},
+{ dish: 'FULL TABLE', sub: 'Three eaters, and the bowl wants you fried.', recipe: ['FRIED'], eat: true, keep: 2, meet: ['chopsticks', 'gulper', 'tongue'],
+  hint: 'Three eaters, three preparations. The bowl wants you FRIED, so the pan is worth a second visit.',
+  map: [
+  '##############################################',
+  '#............................................#',
+  '#............................................#',
+  '#............................................#',
+  '#............................................#',
+  '#............................................#',
+  '#............................................#',
+  '#............................................#',
+  '#............................................#',
+  '#.p..~~.....x....***......G....ooo......T..b.#',
+  '##############################################']},
+];
+const EAT = qs.has('eat'), EAT_FROM = LEVELS.length; if (EAT) for (const l of EAT_LEVELS) LEVELS.push(l);
+
 // ───────────────────────────── 3. ASSETS ───────────────────────────
 // Optional art. Everything below is drawn procedurally if the PNG is missing.
 // Drop files named like these into ./assets/ and they take over (see ASTRA_ASSETS.md).
@@ -292,14 +359,20 @@ const ASSET_FILES = [
   'eye_block_3f','shadow_tile','bg_counter','chopsticks_patrol_4f','chopsticks_chase_4f','chopsticks_flee_4f',
   'btn_jump','btn_squeeze','wordmark','label_zone','p_stink',
   'p_droplet','p_splat','p_steam','p_frost','p_bubble','p_spark','p_chunk',
-  'dish_plated','dish_hiyayakko','dish_dougan','dish_agedashi','dish_korid','dish_braised','dish_choudoufu','dish_special'
+  'dish_plated','dish_hiyayakko','dish_dougan','dish_agedashi','dish_korid','dish_braised','dish_choudoufu','dish_special',
+  // round two, the eaters
+  'gulper_idle_4f','gulper_tell_3f','gulper_eat_4f','gulper_happy_3f','gulper_beaten_5f','pecker_idle_4f','pecker_tell_3f','pecker_eat_4f','pecker_happy_3f','pecker_beaten_5f',
+  'tongue_idle_4f','tongue_tell_3f','tongue_eat_4f','tongue_happy_3f','tongue_beaten_5f','tongue_shot_3f','sniffer_idle_4f','sniffer_tell_3f','sniffer_eat_4f','sniffer_happy_3f','sniffer_beaten_5f',
+  'slurper_idle_4f','slurper_tell_3f','slurper_eat_4f','slurper_happy_3f','slurper_beaten_5f','chopsticks_tell_3f','chopsticks_eat_4f','chopsticks_happy_3f','chopsticks_beaten_5f',
+  'fx_brain_freeze_6f','fx_beak_bend_6f','fx_burn_steam_6f','fx_stink_faint_6f','fx_salt_pucker_6f','fx_slip_tangle_6f','fx_chomp_4f','fx_star_pop_5f',
+  'bite_pip_full','bite_pip_empty','face_bitten','face_smug','face_worried','face_tiny','p_crumb','tile_curd','tile_perch','bg_dining_far','bg_dining_mid'
 ];
 const DISH_ART = ['dish_plated','dish_hiyayakko','dish_dougan','dish_agedashi','dish_korid','dish_braised','dish_choudoufu','dish_special']; // by level
 const dishImg = i => DISH_ART[i] ? `<img class="dish" src="${assetUrl(DISH_ART[i])}" alt="" onerror="this.remove()">` : '';
 const FRAME_MS = { water: 140, brine: 160, pan: 100, patrol: 160, chase: 80, flee: 90 }; // Astra's strip timings
-const ART_V = 1; // bump with every art change so the host's hard cache never serves old art
+const ART_V = 2; // bump with every art change so the host's hard cache never serves old art
 const HI = (typeof devicePixelRatio === 'number' ? devicePixelRatio : 1) >= 2; // @2x only on dense screens
-const assetUrl = name => 'assets/' + name + (HI ? '@2x' : '') + '.png?v=' + ART_V;
+const assetUrl = name => 'assets/' + name + (HI && name.indexOf('bg_dining') !== 0 ? '@2x' : '') + '.png?v=' + ART_V;   // the dining room's big layers ship at base size only
 const IMG = {}, WANT = {}, FILE_OF = {};
 for (const name of ASSET_FILES) FILE_OF[name.replace(/_\d+f$/, '')] = name;
 function loadAsset(key) { // each asset on its first use; the drawn fallback stands in meanwhile
@@ -324,7 +397,7 @@ function onAsset(key) {
 // ───────────────────────────── 4. STATE ────────────────────────────
 const canvas = $('#c'), ctx = canvas.getContext('2d');
 const hudEl = $('#hud'), overlay = $('#overlay'), card = $('#card');
-const jumpBtn = $('#jumpBtn'), pressBtn = $('#pressBtn'), menuBtn = $('#menuBtn'), hintEl = $('#hint');
+const statusEl = $('.status'), jumpBtn = $('#jumpBtn'), pressBtn = $('#pressBtn'), menuBtn = $('#menuBtn'), hintEl = $('#hint');
 const el = { dishName: $('#dishName'), dishSub: $('#dishSub'), chips: $('#chips'), stateMain: $('#stateMain'), stateTags: $('#stateTags'), barFirm: $('#barFirm'), barFlav: $('#barFlav'), barFlavLabel: $('#barFlavLabel') };
 
 let dpr = 1, mode = 'title', world = null, cardLevel = 0;
@@ -339,12 +412,17 @@ function save() { try { localStorage.setItem('tofu.progress', progress); localSt
 
 function loadLevel(i) {
   const L = LEVELS[i]; const H = L.map.length; const W = Math.max(...L.map.map(r => r.length));
-  world = { idx: i, L, W, H, grid: L.map.map(r => r.padEnd(W, '#').split('')), eyes: [], chops: [], bowl: null, spawn: { x: 1, y: 1 }, zones: [] };
+  const eatL = !!L.eat || /[GVTSUu]/.test(L.map.join(''));
+  world = { idx: i, L, W, H, grid: L.map.map(r => r.padEnd(W, '#').split('')), eyes: [], chops: [], bowl: null, spawn: { x: 1, y: 1 }, zones: [],
+    eat: eatL, keep: eatL ? (L.keep || 1) : 0, eaters: [], curds: [], fx: [], stars: 0 };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const ch = world.grid[y][x];
     if (ch === 'p') { world.spawn = { x, y }; world.grid[y][x] = '.'; }
     else if (ch === '<' || ch === '>') world.eyes.push({ x: x + 0.5, y: y + 0.5, dir: ch === '<' ? -1 : 1, t: rnd(3), open: true, seeing: false });
+    else if (ch === 'x' && eatL) { world.eaters.push(mkEater('chopsticks', x, y)); world.grid[y][x] = '.'; }
     else if (ch === 'x') { world.chops.push({ x: x + 0.5, y: y + 1 - 0.55, dir: -1, hw: 0.28, hh: 0.55, mode: 'patrol', anim: 0 }); world.grid[y][x] = '.'; }
+    else if (EATER_OF[ch]) { world.eaters.push(mkEater(EATER_OF[ch], x, y)); world.grid[y][x] = '.'; }
+    else if (ch === 'u') { world.curds.push({ x, y, got: false }); world.grid[y][x] = '.'; }
     else if (ch === 'b') world.bowl = { x, y };
     if ('sf*o~'.includes(ch)) world.zones.push({ x, y, ch });
   }
@@ -354,7 +432,8 @@ function loadLevel(i) {
 function resetPlayer() {
   Object.assign(P, { x: world.spawn.x + 0.5, y: world.spawn.y + 0.5, vx: 0, vy: 0, hw: 0.4, hh: 0.4,
     f: 0.5, soy: 0, stink: 0, heat: 0, cold: 0, fried: false, soggy: 0, frozen: false, frozenT: 0, thawed: false, thawedT: 0,
-    onGround: false, coyote: 0, jumpBuf: 0, swimCd: 0, face: 1, dead: false, deadT: 0, sx: 1, sy: 1, inWater: false, zone: '.', pressing: false, happyT: 0 });
+    onGround: false, coyote: 0, jumpBuf: 0, swimCd: 0, face: 1, dead: false, deadT: 0, sx: 1, sy: 1, inWater: false, zone: '.', pressing: false, happyT: 0,
+    bites: 6, safeT: 0, smugT: 0, hurtT: 0, worry: false });
   P.jig = Array.from({ length: CFG.blob.points }, () => ({ ox: 0, oy: 0, vx: 0, vy: 0 }));
   updateDims(true);
 }
@@ -362,6 +441,7 @@ function updateDims(snap) {
   let w = lerp(0.95, 0.76, P.f), h = lerp(0.6, 0.84, P.f);
   if (P.fried) { w = Math.min(1, w * 1.2); h = Math.min(1, h * 1.25); }
   if (P.frozen) { w = 0.8; h = 0.8; }
+  if (world && world.eat) { const k = 0.58 + 0.07 * P.bites; w *= k; h *= k; }   // the tofu is as big as the bites it has left
   const bottom = P.y + P.hh; P.hw = w / 2; P.hh = h / 2;
   if (!snap) { P.y = bottom - P.hh; unstick(); }
 }
@@ -428,7 +508,7 @@ function visibility() { // how visible we are to eyes right now
 
 // ───────────────────────────── 5. PHYSICS ──────────────────────────
 function step(dt) {
-  if (P.dead) { P.deadT -= dt; if (P.deadT <= 0) { resetPlayer(); spotted = 0; } return; }
+  if (P.dead) { P.deadT -= dt; if (P.deadT <= 0) { if (world.eat) { const d = deaths, t = levelTime; loadLevel(world.idx); deaths = d; levelTime = t; } else resetPlayer(); spotted = 0; } return; }   // an eaters level starts over whole: the eaters and the bites come back
   levelTime += dt;
   P.coyote = Math.max(0, P.coyote - dt); P.jumpBuf = Math.max(0, P.jumpBuf - dt); P.swimCd = Math.max(0, P.swimCd - dt);
   P.happyT = Math.max(0, P.happyT - dt); rejectCd = Math.max(0, rejectCd - dt);
@@ -479,23 +559,24 @@ function step(dt) {
   grateOpen = silk || anyTile(ch => ch === 'g');
   const wasGround = P.onGround; P.onGround = false;
   collideAxis('x', P.vx * dt);
-  const vyBefore = P.vy;
+  const vyBefore = P.vy, botBefore = P.y + P.hh;
   const hitY = collideAxis('y', P.vy * dt);
   if (hitY && vyBefore > 0) {
     if (P.fried && vyBefore > 5) { P.vy = -vyBefore * 0.5; squash(1.25, 0.75); SFX.land(); jiggle(vyBefore); }
     else { P.onGround = true; if (!wasGround) { const s = 0.3 * (1 - 0.6 * P.f); squash(1 + s, 1 - s); if (vyBefore > 4) { SFX.land(); jiggle(vyBefore); } } }
   }
+  if (world.eat && vyBefore >= 0) standOnBeaten(botBefore);
   if (wasGround && !P.onGround && P.vy >= 0) P.coyote = CFG.coyote;
 
   // hazards & goal
   if (!P.frozen && anyTile((ch, tx, ty) => ch === 'k' && P.y + P.hh > ty + 0.3)) return die('Sliced.');
   if (P.y > world.H + 2) return die('Dropped.');
-  const rc = recipeCheck(); recipeOk = rc.ok; if (recipeOk) P.happyT = 0.3;
+  const rc = recipeCheck(), enough = P.bites >= world.keep; recipeOk = rc.ok && enough; if (recipeOk) P.happyT = 0.3;
   if (anyTile(ch => ch === 'b')) {
-    if (rc.ok) return serve();
-    if (rejectCd <= 0) { toast(rejectReason(rc.items)); SFX.reject(); rejectCd = 1.1; const b = world.bowl; P.vx = (P.x < b.x + 0.5 ? -1 : 1) * 5; P.vy = -5; P.onGround = false; }
+    if (recipeOk) return serve();
+    if (rejectCd <= 0) { toast(rc.ok ? 'Not enough of you left.' : rejectReason(rc.items)); SFX.reject(); rejectCd = 1.1; const b = world.bowl; P.vx = (P.x < b.x + 0.5 ? -1 : 1) * 5; P.vy = -5; P.onGround = false; }
   }
-  updateChops(dt); updateEyes(dt); updateJiggle(dt, ax); ambient(dt);
+  updateChops(dt); if (world.eat) updateEaters(dt); updateEyes(dt); updateJiggle(dt, ax); ambient(dt);
 }
 function collideAxis(axis, delta) {
   if (axis === 'x') P.x += delta; else P.y += delta;
@@ -568,7 +649,8 @@ function sunbeamServe(n) { // Sky Wolf earn standard: 30 a day per game (SUNBEAM
 }
 function serve() {
   mode = 'served'; SFX.served();
-  if (!world.L.lab) {   // a level from the lab (?lab=1) never touches progress, best times or sunbeams
+  if (world.eat) { const all = world.eaters.length > 0 && world.eaters.every(e => e.st === 'beaten'); world.stars = 1 + (all ? 1 : 0) + (all && P.bites > world.keep ? 1 : 0); }
+  if (!world.L.lab && !world.L.eat) {   // a level from the lab (?lab=1) never touches progress, best times or sunbeams
     progress = Math.max(progress, world.idx + 1);
     const t = +levelTime.toFixed(1); if (!best[world.idx] || t < best[world.idx]) best[world.idx] = t; save();
     sunbeamServe(5);
@@ -605,6 +687,101 @@ function updateChops(dt) {
     else c.x = nx;
     c.anim += dt * 1000 / FRAME_MS[c.mode];
     if (!P.dead && Math.abs(P.x - c.x) < P.hw + c.hw && Math.abs(P.y - c.y) < P.hh + c.hh) die('Grabbed.');
+  }
+}
+// The eaters. One base: idle, tell, eat, then happy (it ate the wrong thing for us) or beaten (it bit its counter).
+const EATER_OF = { G: 'gulper', V: 'pecker', T: 'tongue', S: 'sniffer', U: 'slurper' };
+const EATER_BOX = { gulper: [0.7, 0.6], pecker: [0.4, 0.4], tongue: [0.45, 0.55], sniffer: [0.65, 0.35], slurper: [0.6, 0.3], chopsticks: [0.28, 0.55] };   // half width, half height
+const EATER_REST = { gulper: [0.7, 1.25], pecker: [0.4, 0.9], tongue: [0.45, 0.9], sniffer: [0.7, 0.65], slurper: [0.25, 0.5], chopsticks: [0.3, 1.1] };   // beaten: half width and height of what is left to stand on
+const COUNTER = { gulper: 'FROZEN', pecker: 'FIRM', tongue: 'FRIED', sniffer: 'STINKY', slurper: 'SOY', chopsticks: 'SILKEN' };
+const COUNTER_FX = { gulper: 'fx_brain_freeze', pecker: 'fx_beak_bend', tongue: 'fx_burn_steam', sniffer: 'fx_stink_faint', slurper: 'fx_salt_pucker', chopsticks: 'fx_slip_tangle' };
+const BEATEN_SAY = { gulper: 'Brain freeze.', pecker: 'Bent beak.', tongue: 'Burned tongue.', sniffer: 'Out cold.', slurper: 'Too salty.', chopsticks: 'Slipped away.' };
+function mkEater(kind, x, y) { const b = EATER_BOX[kind]; return { kind, x: x + 0.5, y: y + 1 - b[1], hx: x + 0.5, hy: y + 1 - b[1], hw: b[0], hh: b[1], dir: -1, st: 'idle', t: 0, anim: 0, cd: 0, mode: 'patrol', tip: 0, ux: 0, uy: 0 }; }
+function strip(r) { if (r === 'FROZEN') { P.frozen = false; P.frozenT = 0; P.cold = 0; P.thawed = false; } else if (r === 'FRIED') { P.fried = false; P.heat = 0; P.soggy = 0; } else if (r === 'STINKY') P.stink = 0; else if (r === 'SOY') P.soy = 0; else P.f = 0.5; }
+function fxAt(key, x, y, frames, size) { world.fx.push({ key, x, y, t: 0, frames, size: size || 1.6 }); }
+function crumbs(n) { for (let i = 0; i < n; i++) spawn({ x: P.x, y: P.y, vx: rnd(-4, 4), vy: rnd(-7, -1), g: 30, life: rnd(0.5, 0.9), r: rnd(0.05, 0.1), col: bodyColor(), shape: 'r', sp: i % 3 ? 'p_crumb' : '' }); }
+function bite(e) {
+  if (P.dead || P.safeT > 0 || mode !== 'play') return false;
+  const want = COUNTER[e.kind], right = REQ[want](P);
+  if (right) { P.bites -= 1; strip(want); e.st = 'beaten'; P.smugT = 1.3; toast(BEATEN_SAY[e.kind], 1.6); SFX.counter(); fxAt(COUNTER_FX[e.kind], e.x, e.y - e.hh - 0.7, 6); fxAt('fx_star_pop', e.x, e.y, 5, 2); }
+  else { P.bites -= 2; for (const r of ['FROZEN', 'FRIED', 'STINKY', 'SOY', 'FIRM']) strip(r); e.st = 'happy'; P.hurtT = 0.9; toast('It liked that.', 1.4); SFX.chomp(); }
+  e.t = 0; e.anim = 0; e.tip = 0; e.mode = 'patrol'; P.safeT = right ? 0.8 : 1.3; crumbs(right ? 6 : 12); fxAt('fx_chomp', P.x, P.y, 4, 1.4);
+  const away = sgn(P.x - e.x) || -e.dir; P.vx = away * (right ? 3 : 6); P.vy = right ? -5 : -7; P.onGround = false; squash(0.8, 1.2);
+  if (P.bites <= 0) { P.bites = 0; die('Eaten.'); }
+  updateDims(false); return true;
+}
+const touching = (e, pad = 0) => Math.abs(P.x - e.x) < P.hw + e.hw + pad && Math.abs(P.y - e.y) < P.hh + e.hh + pad;
+function walk(e, v, dt) { // along a floor, never into a wall or off an edge
+  const nx = e.x + v * dt, d = sgn(v), ax = Math.floor(nx + d * e.hw), fy = Math.floor(e.y + e.hh - 0.1);
+  if (isSolidCh(tileAt(ax, fy)) || !isSolidCh(tileAt(ax, fy + 1))) return false; e.x = nx; return true;
+}
+function tell(e) { e.st = 'tell'; e.t = 0; SFX.tell(); }
+function updateEaters(dt) {
+  P.safeT = Math.max(0, P.safeT - dt); P.smugT = Math.max(0, P.smugT - dt); P.hurtT = Math.max(0, P.hurtT - dt); P.worry = false;
+  for (const c of world.curds) if (!c.got && P.bites < 6 && Math.abs(P.x - c.x - 0.5) < P.hw + 0.4 && Math.abs(P.y - c.y - 0.5) < P.hh + 0.4) { c.got = true; P.bites++; updateDims(false); toast('A bite back.'); SFX.counter(); }
+  for (let i = world.fx.length - 1; i >= 0; i--) { const f = world.fx[i]; f.t += dt; if (f.t * 12 >= f.frames) world.fx.splice(i, 1); }
+  for (const e of world.eaters) {
+    e.t += dt; e.cd = Math.max(0, e.cd - dt);
+    if (e.st === 'beaten') { e.anim = Math.min(4, e.t * 10); if (!isSolidCh(tileAt(Math.floor(e.x), Math.floor(e.y + e.hh + 0.05)))) e.y += 9 * dt; continue; }
+    const home = () => { const dx = e.hx - e.x, dy = e.hy - e.y, d = Math.hypot(dx, dy); if (d < 0.1) { e.x = e.hx; e.y = e.hy; return true; } e.x += dx / d * 5 * dt; e.y += dy / d * 5 * dt; return false; };
+    if (e.st === 'happy') { e.anim = e.t * 8; if (e.kind === 'pecker') home(); if (e.t > 1.5) { e.st = e.kind === 'pecker' ? 'back' : 'idle'; e.t = 1; e.cd = 1.2; } continue; }
+    const dx = P.x - e.x, dy = P.y - e.y, adx = Math.abs(dx), can = !P.dead && e.cd <= 0, sees = () => los(e.x, e.y, P.x, P.y);
+    if (e.st === 'tell') { P.worry = true; e.anim = Math.min(2, e.t * 8); }
+    switch (e.kind) {
+      case 'gulper':
+        if (e.st === 'idle') { e.anim = e.t * 6; e.dir = sgn(dx) || e.dir; if (can && adx < 4.5 && Math.abs(dy) < 1.6 && sees()) tell(e); }
+        else if (e.st === 'tell') { if (e.t > 0.7) { e.st = 'eat'; e.t = 0; } }
+        else { e.anim = e.t * 10;   // the inhale: it drags the tofu in; a run on the ground outpaces it, a jump does not
+          if (adx < 6 && Math.abs(dy) < 2.5 && !P.dead && sees()) { collideAxis('x', -sgn(dx) * 3.4 * dt); if (rnd() < dt * 30) spawn({ x: P.x + rnd(-2, 2) * 0.3 - sgn(dx) * rnd(0, adx), y: e.y + rnd(-0.5, 0.5), vx: -sgn(dx) * 9, vy: 0, life: 0.25, r: 0.03, col: 'rgba(255,255,255,0.7)' }); }
+          if (touching(e)) bite(e); else if (e.t > 1.6) { e.st = 'idle'; e.t = 0; e.cd = 1.3; } }
+        break;
+      case 'pecker':
+        if (e.st === 'idle') { e.anim = e.t * 6; e.dir = sgn(dx) || e.dir; if (can && adx < 3.2 && dy > 0.5 && dy < 8 && sees()) tell(e); }
+        else if (e.st === 'tell') { if (e.t > 0.6) { const d = Math.hypot(dx, dy) || 1; e.ux = dx / d; e.uy = dy / d; e.st = 'eat'; e.t = 0; } }
+        else if (e.st === 'eat') { e.anim = e.t * 10; e.x += e.ux * 15 * dt; e.y += e.uy * 15 * dt;
+          if (touching(e)) bite(e); else if (e.t > 1 || isSolidCh(tileAt(Math.floor(e.x), Math.floor(e.y + e.hh)))) { e.st = 'back'; e.t = 0; } }
+        else { e.anim = e.t * 6; if (e.t > 0.45 && home()) { e.st = 'idle'; e.t = 0; e.cd = 1; } }   // back: a beat on the floor, then up to the perch
+        break;
+      case 'tongue':
+        if (e.st === 'idle') { e.anim = e.t * 6; e.dir = sgn(dx) || e.dir; if (can && adx < 5 && Math.abs(dy) < 0.7 && sees()) tell(e); }
+        else if (e.st === 'tell') { if (e.t > 0.7) { e.st = 'eat'; e.t = 0; e.tip = 0; } }
+        else if (e.st === 'eat') { e.anim = e.t * 10; e.tip += 16 * dt;
+          const reach = (P.x - e.x) * e.dir;
+          if (Math.abs(P.y - e.y) < P.hh + 0.3 && reach > 0 && reach < e.tip + P.hw) { if (!bite(e)) { e.st = 'back'; e.t = 0; } }
+          else if (e.tip >= 5.5 || isSolidCh(tileAt(Math.floor(e.x + e.dir * e.tip), Math.floor(e.y)))) { e.st = 'back'; e.t = 0; } }
+        else { e.tip = Math.max(0, e.tip - 20 * dt); if (e.tip <= 0) { e.st = 'idle'; e.t = 0; e.cd = 1.4; } }
+        break;
+      case 'sniffer':
+        if (e.st === 'idle') { e.anim = e.t * 6; if (!walk(e, e.dir * 1.6, dt)) e.dir = -e.dir; if (can && adx < 7 && Math.abs(dy) < 1.2 && sees()) { e.dir = sgn(dx) || e.dir; tell(e); } }
+        else if (e.st === 'tell') { if (e.t > 0.6) { e.st = 'eat'; e.t = 0; } }
+        else { e.anim = e.t * 10; const ok = walk(e, e.dir * 8, dt); if (touching(e)) bite(e); else if (!ok || e.t > 1.5) { e.st = 'idle'; e.t = 0; e.cd = 1.2; } }
+        break;
+      case 'slurper':
+        if (e.st === 'idle') { e.anim = e.t * 6; if (adx < 7 && Math.abs(dy) < 1.2 && adx > 0.2) { e.dir = sgn(dx); walk(e, e.dir * 0.9, dt); } if (can && adx < 1.8 && Math.abs(dy) < 1.2) tell(e); }
+        else if (e.st === 'tell') { if (e.t > 0.3 && touching(e, 0.05)) bite(e); else if (adx > 2.4) { e.st = 'idle'; e.t = 0; e.cd = 0.3; } }   // reared up, it holds the pose and sticks to whatever touches it: jump it or feed it
+        break;
+      case 'chopsticks': {
+        const stinky = P.stink >= TH.stinkScare;
+        if (e.st === 'idle') { let v = CFG.chop.patrol; e.mode = 'patrol';
+          if (stinky && adx < CFG.chop.fleeRange) { e.dir = -sgn(dx) || e.dir; v = CFG.chop.flee; e.mode = 'flee'; }
+          else if (adx < CFG.chop.senseRange && Math.abs(dy) < 2.5 && !P.dead) { e.dir = sgn(dx) || e.dir; v = CFG.chop.chase; e.mode = 'chase'; }
+          if (!walk(e, e.dir * v, dt) && e.mode === 'patrol') e.dir = -e.dir;
+          e.anim += dt * 1000 / FRAME_MS[e.mode];
+          if (can && e.mode !== 'flee' && touching(e, 0.3)) tell(e); }
+        else if (e.st === 'tell') { if (e.t > 0.35) { if (!touching(e, 0.4) || !bite(e)) { e.st = 'idle'; e.t = 0; e.cd = 0.4; } } }
+        break; }
+    }
+  }
+}
+function standOnBeaten(botBefore) { // what is left of a beaten eater is a step; the fainted hound's belly is a spring
+  for (const e of world.eaters) {
+    if (e.st !== 'beaten' || e.t < 0.5) continue;
+    const r = EATER_REST[e.kind], top = e.y + e.hh - r[1], bot = P.y + P.hh;
+    if (Math.abs(P.x - e.x) > r[0] + P.hw * 0.5 || botBefore > top + 0.12 || bot < top) continue;
+    P.y = top - P.hh;
+    if (e.kind === 'sniffer') { P.vy = -CFG.jumpV * 1.35; squash(0.8, 1.25); SFX.jump(); }
+    else { P.vy = 0; P.onGround = true; }
+    return;
   }
 }
 function updateEyes(dt) {
@@ -678,11 +855,17 @@ function draw(dt) {
   if (!world) return;
   if (mode === 'play') layout(dt);
   ctx.save(); ctx.translate(cam.ox, cam.oy); ctx.scale(cam.ts, cam.ts);
-  drawBg(); drawTiles(); drawLabels(); drawShadows(); drawCones(); drawEyes(); drawChops(); drawPlayer(); drawParts();
+  drawBg(); drawTiles(); drawLabels(); drawShadows(); drawCones(); drawEyes(); drawChops(); if (world.eat) drawEaters(); drawPlayer(); if (world.eat) drawFx(); drawParts();
   ctx.restore();
-  drawToasts();
+  drawToasts(); if (world.eat && (mode === 'play' || mode === 'served')) drawPips();
 }
 function drawBg() {
+  if (world.eat) { // the dining room: one far picture that covers the level, a middle layer that drifts a little
+    const far = spr('bg_dining_far');
+    if (far) { const k = Math.max(world.W / 16, world.H / 9), w = 16 * k, h = 9 * k, x = (world.W - w) / 2, y = world.H - h;
+      drawSpr(far, x, y, w, h); const mid = spr('bg_dining_mid'); if (mid) drawSpr(mid, x - (cam.x - world.W / 2) * 0.06, y, w, h);
+      ctx.fillStyle = 'rgba(24,20,30,0.38)'; ctx.fillRect(0, 0, world.W, world.H); return; }
+  }
   const bg = spr('bg_counter');
   if (bg) { for (let y = 0; y < world.H; y += 8) for (let x = 0; x < world.W; x += 8) drawSpr(bg, x, y, 8, 8); }
   else { ctx.fillStyle = '#23262e'; ctx.fillRect(0, 0, world.W, world.H); ctx.strokeStyle = 'rgba(255,255,255,0.035)'; ctx.lineWidth = 0.02; ctx.beginPath(); for (let x = 0; x <= world.W; x++) { ctx.moveTo(x, 0); ctx.lineTo(x, world.H); } for (let y = 0; y <= world.H; y++) { ctx.moveTo(0, y); ctx.lineTo(world.W, y); } ctx.stroke(); }
@@ -820,6 +1003,37 @@ function drawChops() {
     if (c.mode === 'flee') { ctx.fillStyle = '#4696dc'; ctx.beginPath(); ctx.arc(c.x + 0.25, c.y - c.hh - 0.1, 0.06, 0, Math.PI * 2); ctx.fill(); }
   }
 }
+const EATER_D = { gulper: 2.0, pecker: 1.5, tongue: 1.6, sniffer: 1.7, slurper: 1.6 };   // the 128 px frame's side in tiles; feet at y 120
+const EATER_COL = { gulper: '#e58fb0', pecker: '#f0c060', tongue: '#7fbf5f', sniffer: '#b08a5a', slurper: '#9ad0c0', chopsticks: '#d2a86a' };
+function drawEaters() {
+  for (const c of world.curds) { if (c.got) continue; const s = spr('tile_curd'), bob = Math.sin(animT * 3 + c.x) * 0.05; if (s) drawSpr(s, c.x + 0.1, c.y + 0.15 + bob, 0.8, 0.8); else { ctx.fillStyle = '#f6f1e7'; ctx.fillRect(c.x + 0.25, c.y + 0.3 + bob, 0.5, 0.5); } }
+  for (const e of world.eaters) {
+    const foot = e.y + e.hh, face = e.dir < 0 ? -1 : 1;
+    if (e.kind === 'pecker') { const s = spr('tile_perch'); if (s) drawSpr(s, e.hx - 0.5, e.hy + e.hh - 0.72, 1, 1); else { ctx.fillStyle = '#8a6a4a'; ctx.fillRect(e.hx - 0.4, e.hy + e.hh, 0.8, 0.12); } }
+    if (e.kind === 'tongue' && e.tip > 0.05 && (e.st === 'eat' || e.st === 'back')) {
+      const s = spr('tongue_shot'); ctx.save(); ctx.translate(e.x, e.y); ctx.scale(face, 1);
+      if (s) drawSpr(s, 0.25, -0.18, e.tip, 0.36, 2); else { ctx.fillStyle = '#ff8fa0'; ctx.fillRect(0.25, -0.08, e.tip, 0.16); } ctx.restore();
+    }
+    const part = e.st === 'back' ? 'idle' : e.st;
+    if (e.kind === 'chopsticks') {
+      const s = spr('chopsticks_' + (part === 'idle' ? e.mode : part));
+      if (s) { ctx.save(); ctx.translate(e.x, e.y); ctx.scale(face, 1); drawSpr(s, -0.375, -0.625, 0.75, 1.25, e.anim); ctx.restore(); continue; }
+    } else {
+      const s = spr(e.kind + '_' + part), D = EATER_D[e.kind];
+      if (s) { ctx.save(); ctx.translate(e.x, foot); ctx.scale(face, 1); drawSpr(s, -D / 2, -D * 120 / 128, D, D, e.anim); ctx.restore(); continue; }
+    }
+    ctx.fillStyle = EATER_COL[e.kind]; ctx.globalAlpha = e.st === 'beaten' ? 0.5 : 1; ctx.beginPath(); ctx.ellipse(e.x, e.y, e.hw, e.hh * (e.st === 'tell' ? 1.2 : 1), 0, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+  }
+}
+function drawFx() { for (const f of world.fx) { const s = spr(f.key); if (s) drawSpr(s, f.x - f.size / 2, f.y - f.size / 2, f.size, f.size, Math.min(f.frames - 1, f.t * 12)); } }
+function drawPips() { // the bite meter: six cubes beside the state readout (the top belongs to the hint), the ones the bowl wants marked
+  ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const st = statusEl.getBoundingClientRect(), n = 6, sz = innerWidth < 500 ? 21 : 26, gap = 3, x0 = st.right + 12, y0 = st.bottom - sz - 8, full = spr('bite_pip_full'), empty = spr('bite_pip_empty');
+  for (let i = 0; i < n; i++) { const x = x0 + i * (sz + gap), on = i < P.bites, s = on ? full : empty;
+    if (s) ctx.drawImage(s.img, x, y0, sz, sz); else { ctx.fillStyle = on ? '#f6f1e7' : 'rgba(255,255,255,0.18)'; ctx.fillRect(x + 3, y0 + 3, sz - 6, sz - 6); }
+    if (i < world.keep) { ctx.fillStyle = on ? '#7ddc8a' : '#ff7a7a'; ctx.fillRect(x + 4, y0 + sz + 2, sz - 8, 3); } }
+  ctx.restore();
+}
 const BODY_FOOT = { tofu_plain: [64, 64], tofu_silken: [76, 44], tofu_firm: [60, 68], tofu_fried: [76, 76], tofu_frozen: [64, 64], tofu_spongy: [64, 64] }; // the pack's footprints in its 96 px canvas, baseline y 88
 function bodyKey() { return P.frozen ? 'tofu_frozen' : P.fried ? 'tofu_fried' : P.f < TH.silken ? 'tofu_silken' : P.f > TH.firm ? 'tofu_firm' : P.thawed ? 'tofu_spongy' : 'tofu_plain'; }
 function bodyColor() {
@@ -834,15 +1048,15 @@ function blobPath(pts) {
   ctx.closePath();
 }
 function faceKey() {
-  if (P.dead) return 'face_dead'; if (P.pressing) return 'face_strain'; if (P.heat > 0.15 && P.zone === 'o') return 'face_hot';
-  if (P.frozen) return 'face_cold'; if (visibility() < CFG.eye.visLimit) return 'face_sneak'; if (P.happyT > 0) return 'face_happy'; return 'face_neutral';
+  if (P.dead) return 'face_dead'; if (P.hurtT > 0) return 'face_bitten'; if (P.smugT > 0) return 'face_smug'; if (P.pressing) return 'face_strain'; if (P.worry) return 'face_worried'; if (P.heat > 0.15 && P.zone === 'o') return 'face_hot';
+  if (P.frozen) return 'face_cold'; if (visibility() < CFG.eye.visLimit) return 'face_sneak'; if (P.happyT > 0) return 'face_happy'; return world && world.eat && P.bites <= 2 ? 'face_tiny' : 'face_neutral';
 }
 function drawPlayer() {
   if (P.dead) { drawPuddle(); return; }
   const n = P.jig.length, pts = [], shiver = P.frozen ? rnd(-0.015, 0.015) : 0, cx = P.x + shiver, cy = P.y, bump = P.fried ? 0.045 : 0;
   for (let i = 0; i < n; i++) { const th = i / n * Math.PI * 2, j = P.jig[i], b = bump * Math.sin(th * 6 + animT * 2); pts.push({ x: cx + Math.cos(th) * (P.hw * P.sx + b) + j.ox, y: cy + Math.sin(th) * (P.hh * P.sy + b) + j.oy }); }
   const hidden = visibility() < CFG.eye.visLimit && tileAt(Math.floor(P.x), Math.floor(P.y)) === 'd';
-  ctx.save(); ctx.globalAlpha = hidden ? 0.42 : (P.f < TH.silken && !P.fried && !P.frozen ? 0.9 : 1);
+  ctx.save(); ctx.globalAlpha = hidden ? 0.42 : (P.f < TH.silken && !P.fried && !P.frozen ? 0.9 : 1); if (P.safeT > 0 && Math.floor(animT * 16) % 2) ctx.globalAlpha *= 0.55;
   if (P.onGround && P.f < TH.silken && !P.frozen) { const pd = spr('tofu_puddle'); if (pd) drawSpr(pd, cx - P.hw * 1.5, cy + P.hh - 0.12, P.hw * 3, 0.25); else { ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.beginPath(); ctx.ellipse(cx, cy + P.hh, P.hw * 1.45, 0.07, 0, 0, Math.PI * 2); ctx.fill(); } }
   blobPath(pts); const bk = bodyKey(), s = spr(bk);
   if (s) { // the footprint fills the blob with a little overscan, so the clip, not the art's edge, makes the outline
@@ -957,6 +1171,8 @@ const SFX = (() => {
     jump: () => tone(260, 540, 0.1, 'square', 0.05), land: () => tone(140, 90, 0.08, 'sine', 0.08), swim: () => tone(300, 200, 0.1, 'sine', 0.05),
     fry: () => noise(0.35, 0.12, 2200), freeze: () => tone(1100, 1900, 0.25, 'sine', 0.07), smash: () => noise(0.22, 0.25, 420),
     served: () => { tone(523, 523, 0.12, 'triangle'); setTimeout(() => tone(659, 659, 0.12, 'triangle'), 120); setTimeout(() => tone(784, 1046, 0.3, 'triangle'), 240); },
+    tell: () => tone(520, 760, 0.09, 'square', 0.04), chomp: () => { noise(0.14, 0.22, 700); tone(180, 90, 0.16, 'square', 0.06); },
+    counter: () => { tone(660, 990, 0.12, 'triangle', 0.1); setTimeout(() => tone(990, 1320, 0.18, 'triangle', 0.08), 110); },
     dead: () => tone(300, 70, 0.4, 'sawtooth', 0.08), reject: () => tone(220, 170, 0.18, 'triangle', 0.08),
     press: () => { const t = performance.now(); if (t - lastPress > 180) { lastPress = t; tone(170, 120, 0.07, 'sine', 0.035); } },
   };
@@ -984,22 +1200,24 @@ function showTitle() {
   card.innerHTML = `<div class="eyebrow">LUCID WINDS · TEST KITCHEN</div>${wm}
     <p class="tag">You have no properties of your own.<br>You become what you soak in.</p>
     <p class="sub">Every level is a recipe. You are the ingredient.</p>
-    <div class="grid">${LEVELS.map((L, i) => { const locked = i > progress && !DEV; const done = i < progress; return `<button class="dishBtn ${locked ? 'locked' : ''} ${done ? 'done' : ''}" data-act="pick" data-i="${i}" ${locked ? 'disabled' : ''}><b>${L.dish}${locked ? ' · LOCKED' : ''}</b><span>arrive: ${L.recipe.map(r => RECIPE_LABEL[r]).join(' + ')}</span>${best[i] ? `<em>best ${best[i]}s</em>` : ''}</button>`; }).join('')}</div>
+    <div class="grid">${LEVELS.map((L, i) => { const eat = EAT && i >= EAT_FROM, locked = i > progress && !DEV && !eat; const done = i < progress && !eat; return `<button class="dishBtn ${locked ? 'locked' : ''} ${done ? 'done' : ''}" data-act="pick" data-i="${i}" ${locked ? 'disabled' : ''}><b>${L.dish}${locked ? ' · LOCKED' : ''}</b><span>arrive: ${L.recipe.map(r => RECIPE_LABEL[r]).join(' + ')}</span>${best[i] ? `<em>best ${best[i]}s</em>` : ''}</button>`; }).join('')}</div>
     <div class="row"><button class="act" data-act="pick" data-i="${Math.min(progress, LEVELS.length - 1)}">${progress ? 'CONTINUE' : 'START'}</button><button class="act ghost" data-act="mute">${muted ? 'SOUND OFF' : 'SOUND ON'}</button></div>
     <p class="land">Best played sideways. Turn your phone for a wider kitchen.</p>
     <p class="foot">Touch: drag on the left side to move, tap JUMP, hold SQUEEZE.<br>Keys: arrows or A and D to move, space to jump, S to squeeze, R to restart, M to mute.</p>`;
 }
 function showRecipe(i) {
   mode = 'card'; cardLevel = i; loadLevel(i); overlay.classList.remove('hidden'); const L = LEVELS[i];
-  card.innerHTML = `<div class="eyebrow">TONIGHT'S DISH · ${i + 1} / ${LEVELS.length}</div>${dishImg(i)}<h2>${L.dish}</h2><p class="sub">${L.sub}</p>
-    <div class="chips"><span class="chip" style="opacity:.6;border:0">ARRIVE</span>${recipeChips(L)}</div>
+  const meet = (L.meet || []).map(k => `<img class="meet" src="${assetUrl('meet_' + k)}" alt="" onerror="this.remove()">`).join('');
+  card.innerHTML = `<div class="eyebrow">${L.eat ? 'THE EATERS · ' + (i - EAT_FROM + 1) + ' / ' + EAT_LEVELS.length : "TONIGHT'S DISH · " + (i + 1) + ' / ' + EAT_FROM}</div>${dishImg(i)}<h2>${L.dish}</h2><p class="sub">${L.sub}</p>${meet ? '<div class="meets">' + meet + '</div>' : ''}
+    <div class="chips"><span class="chip" style="opacity:.6;border:0">ARRIVE</span>${recipeChips(L)}${L.eat ? '<span class="chip">' + (L.keep || 1) + ' OF 6 BITES LEFT</span>' : ''}</div>
     <div class="hint">${L.hint}</div>
     <div class="row"><button class="act" data-act="start">COOK</button><button class="act ghost" data-act="title">MENU</button></div>`;
 }
 function showServed() {
   overlay.classList.remove('hidden'); const L = world.L, st = stateLabel();
-  card.innerHTML = `<div class="eyebrow">SERVED</div>${dishImg(world.idx)}<h2>${L.dish}</h2>
-    <div class="chips">${recipeChips(L)}</div>
+  const beat = world.eat ? world.eaters.filter(e => e.st === 'beaten').length : 0;
+  card.innerHTML = `<div class="eyebrow">SERVED</div>${dishImg(world.idx)}${world.eat ? `<img class="stars" src="${assetUrl('star_' + world.stars)}" alt="${world.stars} of 3 stars">` : ''}<h2>${L.dish}</h2>
+    <div class="chips">${recipeChips(L)}</div>${world.eat ? `<p class="stats">Eaters beaten ${beat} of ${world.eaters.length} · ${P.bites} of 6 bites left</p>` : ''}
     <p class="stats">Arrived ${st.main}${st.tags.length ? ' · ' + st.tags.join(' · ') : ''}<br>${levelTime.toFixed(1)}s · ${deaths} respawn${deaths === 1 ? '' : 's'}${best[world.idx] && best[world.idx] < +levelTime.toFixed(1) ? ` · best ${best[world.idx]}s` : ' · new best'}</p>
     <div class="row">${world.idx + 1 < LEVELS.length ? `<button class="act" data-act="next">NEXT DISH</button>` : `<button class="act" data-act="title">THAT'S THE MENU</button>`}<button class="act ghost" data-act="restart">AGAIN</button><button class="act ghost" data-act="title">MENU</button></div>`;
 }
@@ -1009,7 +1227,7 @@ function showPaused() {
     <div class="row"><button class="act" data-act="resume">RESUME</button><button class="act ghost" data-act="restart">RESTART</button><button class="act ghost" data-act="mute">${muted ? 'SOUND OFF' : 'SOUND ON'}</button><button class="act ghost" data-act="title">MENU</button></div>`;
 }
 function refreshCard() { if (mode === 'title') showTitle(); else if (mode === 'paused') showPaused(); }
-function startLevel(i) { loadLevel(i); mode = 'play'; overlay.classList.add('hidden'); lastChips = lastState = lastTags = ''; el.dishName.textContent = LEVELS[i].dish; el.dishSub.textContent = 'arrive: ' + LEVELS[i].recipe.map(r => RECIPE_LABEL[r]).join(' + '); showHint(LEVELS[i].hint); }
+function startLevel(i) { loadLevel(i); mode = 'play'; overlay.classList.add('hidden'); lastChips = lastState = lastTags = ''; el.dishName.textContent = LEVELS[i].dish; el.dishSub.textContent = 'arrive: ' + LEVELS[i].recipe.map(r => RECIPE_LABEL[r]).join(' + ') + (world.eat && world.keep > 1 ? ', ' + world.keep + ' bites left' : ''); showHint(LEVELS[i].hint); }
 function restartLevel() { startLevel(world.idx); }
 function nextLevel() { if (world.idx + 1 < LEVELS.length) showRecipe(world.idx + 1); else showTitle(); }
 function resume() { mode = 'play'; overlay.classList.add('hidden'); }
@@ -1018,14 +1236,14 @@ function showHint(t) { hintEl.textContent = t; hintEl.classList.add('show'); cle
 overlay.addEventListener('click', e => {
   const b = e.target.closest ? e.target.closest('[data-act]') : null; if (!b) return; SFX.unlock();
   const act = b.dataset.act, i = +b.dataset.i;
-  if (act === 'pick') { if (i <= progress || DEV) showRecipe(i); }
+  if (act === 'pick') { if (i <= progress || DEV || (EAT && i >= EAT_FROM)) showRecipe(i); }
   else if (act === 'start') startLevel(cardLevel); else if (act === 'title') showTitle(); else if (act === 'next') nextLevel();
   else if (act === 'resume') resume(); else if (act === 'restart') restartLevel(); else if (act === 'mute') { toggleMute(); refreshCard(); }
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'play') showPaused(); });
 
 // PWA: manifest.webmanifest beside the page; the service worker is network first (sw.js)
-try { if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=1').catch(() => {}); } catch (e) {}
+try { if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=2').catch(() => {}); } catch (e) {}
 
 // ───────────────────────────── LOOP ────────────────────────────────
 const STEP = 1 / 120; let last = performance.now(), acc = 0;
@@ -1038,11 +1256,11 @@ function frame(now) {
 }
 addEventListener('resize', () => { resize(); if (world) layout(null); });
 resize(); loadAssets();
-if (qs.has('level')) { const i = clamp(+qs.get('level') || 0, 0, LEVELS.length - 1); showRecipe(i); } else showTitle();
+if (qs.has('level')) { const i = clamp(+qs.get('level') || 0, 0, LEVELS.length - 1); showRecipe(i); } else if (EAT) showRecipe(EAT_FROM); else showTitle();
 requestAnimationFrame(frame);
 
 // Debug / team hook: open the console and poke at TOFU.P, TOFU.CFG, TOFU.go(3)
-window.TOFU = { CFG, LEVELS, P, get world() { return world; }, input, step, frame, loadLevel, startLevel, go: i => startLevel(i), get mode() { return mode; }, set mode(m) { mode = m; }, recipeCheck, stateLabel };
+window.TOFU = { EAT_FROM, bite, CFG, LEVELS, P, get world() { return world; }, input, step, frame, loadLevel, startLevel, go: i => startLevel(i), get mode() { return mode; }, set mode(m) { mode = m; }, recipeCheck, stateLabel };
 })();
 </script>
 <!-- THE LEVEL LAB (10 Nov 2026): open the page with ?lab=1. Paint a kitchen on the grid, PLAY it at once, COPY it as text in
@@ -1089,7 +1307,8 @@ if (!new URLSearchParams(location.search).has('lab') || !window.TOFU) return;
 const T = window.TOFU, $ = id => document.getElementById(id);
 const TILES = [['#', 'wall', '#6b7280'], ['.', 'air', '#1c1e24'], ['p', 'start', '#f6f1e7'], ['b', 'bowl', '#7ddc8a'], ['~', 'water', '#5aa9e6'], ['s', 'soy', '#6b3d1a'],
   ['f', 'brine', '#7fbf5f'], ['*', 'ice', '#aadcff'], ['o', 'pan', '#ff7a1e'], ['k', 'knife', '#d9dde3'], ['g', 'grate', '#9aa3ad'], ['c', 'crack', '#b08a5a'],
-  ['d', 'shade', '#3a3350'], ['<', 'eye L', '#e7b65a'], ['>', 'eye R', '#e7b65a'], ['x', 'sticks', '#c0504d']];
+  ['d', 'shade', '#3a3350'], ['<', 'eye L', '#e7b65a'], ['>', 'eye R', '#e7b65a'], ['x', 'sticks', '#c0504d'],
+  ['G', 'gulper', '#e58fb0'], ['V', 'bird', '#f0c060'], ['T', 'toad', '#5f9f4f'], ['S', 'hound', '#b08a5a'], ['U', 'slug', '#9ad0c0'], ['u', 'curd', '#fffbe8']];
 const COL = {}; TILES.forEach(t => { COL[t[0]] = t[2]; });
 const RECIPES = ['PLAIN', 'SILKEN', 'FIRM', 'FRIED', 'FROZEN', 'SOY', 'STINKY'];
 const GAME_COUNT = T.LEVELS.length;   // the shipped dishes; the lab's level lives in the slot after them
