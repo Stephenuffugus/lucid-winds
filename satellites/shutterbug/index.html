@@ -622,6 +622,9 @@ body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad, body:has(#swap
 #strip.mirror #btnB { right: auto; left: calc(var(--res) + var(--btn)); }
 @media (max-width: 389px) { #strip { --btn: 56px; } }
 @media (max-width: 359px) { #strip { --res: 0px; } #reserve { display: none; } }
+/* under 360 px there is no reserved box, and the clear card (taller since the tripod and the print buttons) reaches the chip's
+   only seat: the fleet's chip rests while the clear card is up, as it does on the death card (10 Nov) */
+@media (max-width: 359px) { body:has(#clear.on) #sws-music-chip, body:has(#clear.on) #sws-music-pill { display: none !important; } }
 /* Q62's alternative, ?edge=1: on phones 412 wide and over the verbs (and the mirrored stick) keep 32 px off the right
    edge, out of Android's back swipe strip */
 #strip { --edge: 0px; }

@@ -276,7 +276,9 @@
     for (x = 10; x + 97 <= W - 10; x += 48) spots.push({ css: 'left:' + x + 'px;' + T, x: x + 48, y: 34 });
     /* the chip is 97px wide: score its whole footprint (left end, centre, right end), worst point wins */
     /* the chip is 97x48: score a 3x3 grid over its footprint, worst point wins (a centre line alone let it clip a title's top) */
-    function footprint(sp) { var worst = 0, dx, dy, sc; for (dy = -16; dy <= 16; dy += 16) for (dx = -40; dx <= 40; dx += 40) { sc = occupancy(sp.x + dx, sp.y + dy); if (sc > worst) worst = sc; if (worst >= 3) return worst; } return worst; }
+    /* 10 Nov 2026: the grid reaches the chip's real edges (it sampled 80x32 of a 97x48 chip, so a seat whose rim lay on a
+       button still scored free: Shutterbug's title after a clear, the chip 5 px into the album button and over a room tile) */
+    function footprint(sp) { var worst = 0, dx, dy, sc, i, j, DX = [-47, -24, 0, 24, 47], DY = [-23, 0, 23]; for (j = 0; j < 3; j++) for (i = 0; i < 5; i++) { dx = DX[i]; dy = DY[j]; sc = occupancy(sp.x + dx, sp.y + dy); if (sc > worst) worst = sc; if (worst >= 3) return worst; } return worst; }
     var best = spots[0], bestScore = Infinity, cur = null, curScore = Infinity;
     for (i = 0; i < spots.length; i++) {
       sc = footprint(spots[i]);
@@ -323,7 +325,7 @@
         { css: 'left:10px;top:' + Math.round(H * 0.75 - 24) + 'px;', x: 58, y: H * 0.75 }, { css: 'right:10px;top:' + Math.round(H * 0.75 - 24) + 'px;', x: W - 58, y: H * 0.75 }];
       for (x = 10; x + 97 <= W - 130; x += 48) spots.push({ css: 'left:' + x + 'px;' + B, x: x + 48, y: H - 34 });
       for (x = 10; x + 97 <= W - 10; x += 48) spots.push({ css: 'left:' + x + 'px;' + T, x: x + 48, y: 34 });
-      for (var i = 0; i < spots.length; i++) { var worst = 0, dx, dy, sc; for (dy = -16; dy <= 16; dy += 16) for (dx = -40; dx <= 40; dx += 40) { sc = occupancy(spots[i].x + dx, spots[i].y + dy); if (sc > worst) worst = sc; } out.push({ css: spots[i].css, score: worst }); }
+      for (var i = 0; i < spots.length; i++) { var worst = 0, dx, dy, sc; for (dy = -23; dy <= 23; dy += 23) for (dx = -47; dx <= 47; dx += 23.5) { sc = occupancy(spots[i].x + dx, spots[i].y + dy); if (sc > worst) worst = sc; } out.push({ css: spots[i].css, score: worst }); }
       return out;
   }
   function reseatDebug() { reseat(); return S.chip ? S.chip.getAttribute('data-corner') : null; }

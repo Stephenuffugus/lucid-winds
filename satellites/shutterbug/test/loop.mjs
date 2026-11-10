@@ -82,7 +82,9 @@ try {
   };
   const clearRoom = async () => {
     const before = await look();
-    await page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(2); });
+    /* KEYS (2 Nov): a photographed room may lock its exit until its keys are in hand; the hero is set down on each key first
+       (goto('key') does nothing in a room without one) */
+    await page.evaluate(() => { for (let i = 0; i < 6; i++) { window.SB_DEV.goto('key'); window.SB_DEV.step(2); } window.SB_DEV.goto('exit'); window.SB_DEV.step(2); });
     const after = await look();
     return { dp: before.st.room.dp, before, after };
   };
@@ -173,7 +175,7 @@ try {
   await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 15000 }).catch(() => {});
   const c3 = await clearRoom();
   banked += Math.floor(c3.dp * 0.5);
-  R.say(c3.before.screen === 'play' && c3.after.screen === 'clear' && c3.after.save.stats.clears === 4 && c3.after.save.dp === banked, 'Develop plays the photographed room and its clear banks too (clears ' + c3.after.save.stats.clears + ', the save holds ' + c3.after.save.dp + ')');
+  R.say(c3.before.screen === 'play' && c3.after.screen === 'clear' && c3.after.save.stats.clears === 4 && c3.after.save.dp === banked, 'Develop plays the photographed room and its clear banks too (before ' + c3.before.screen + ', after ' + c3.after.screen + ', clears ' + c3.after.save.stats.clears + ', the save holds ' + c3.after.save.dp + ' dead pixels, want ' + banked + ')');
   await tap(page, '#cleartitle');
   await clean('the clear card\'s Title after a photo');
 

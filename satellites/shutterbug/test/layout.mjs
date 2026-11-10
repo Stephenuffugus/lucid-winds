@@ -331,7 +331,8 @@ try {
           await page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(3); });
           const cleared = await page.evaluate(() => window.SB_DEV.screen()) === 'clear';
           const chipC = cleared ? await chipNow(page, true) : null;
-          R.say(cleared && chipClear(chipC, BAR) && chipC.bottomSeat && Math.abs(chipC.gap - (GLYPH_LIFT + BAR)) < 0.5,
+          if (w < 360) R.say(cleared && chipC === null, tg + ': under 360 px (no reserved box) the fleet\'s chip rests while the clear card is up (it ' + chipText(chipC) + ')');
+          else R.say(cleared && chipClear(chipC, BAR) && chipC.bottomSeat && Math.abs(chipC.gap - (GLYPH_LIFT + BAR)) < 0.5,
             tg + ': on the clear card the fleet\'s chip ' + chipText(chipC) + ' (want its bottom seat, the reserved box, 58 px up), on top and clear of the card');
           if (cleared) { await tap(page, '#cleartitle'); await pastStory(page); }
           await bandSay(page, tg, 'the title after a room');
