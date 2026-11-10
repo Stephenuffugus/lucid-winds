@@ -424,6 +424,8 @@ body:not(.playing) #floorname { display: none; }
 #roomname.pipped::before { content: ''; display: inline-block; width: 100px; height: 20px; vertical-align: middle; image-rendering: pixelated;
   background: var(--pip1) 0 0 / 20px 20px no-repeat, var(--pip2) 20px 0 / 20px 20px no-repeat, var(--pip3) 40px 0 / 20px 20px no-repeat,
     var(--pip4) 60px 0 / 20px 20px no-repeat, var(--pip5) 80px 0 / 20px 20px no-repeat; }
+/* under 340 px the zoom button (6 Nov) left the five pips 87 of their 100 px: in a house the biome badge rests there */
+@media (max-width: 339px) { #top:has(#roomname.pipped) #biomebadge { display: none; } }
 #doorpips { display: flex; gap: 4px; justify-content: center; margin: 0 0 8px; }
 #doorpips i { width: 20px; height: 20px; display: block; background: 0 0 / 20px 20px no-repeat; image-rendering: pixelated; }
 /* the guardian's intro (the 2 s outline): the last room's words over the room's top, Paper on Ink, no tap taken */
@@ -622,6 +624,9 @@ body:not(.playing) #stick .pad, body:has(#paused.on) #stick .pad, body:has(#swap
 #strip.mirror #btnB { right: auto; left: calc(var(--res) + var(--btn)); }
 @media (max-width: 389px) { #strip { --btn: 56px; } }
 @media (max-width: 359px) { #strip { --res: 0px; } #reserve { display: none; } }
+/* under 360 px there is no reserved box, and the clear card (taller since the tripod and the print buttons) reaches the chip's
+   only seat: the fleet's chip rests while the clear card is up, as it does on the death card (10 Nov) */
+@media (max-width: 359px) { body:has(#clear.on) #sws-music-chip, body:has(#clear.on) #sws-music-pill { display: none !important; } }
 /* Q62's alternative, ?edge=1: on phones 412 wide and over the verbs (and the mirrored stick) keep 32 px off the right
    edge, out of Android's back swipe strip */
 #strip { --edge: 0px; }
@@ -1088,7 +1093,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-23';
+  SB.BUILD = 'sb-m2-24';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -6410,6 +6415,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (e.held) { if (age >= e.steps) { JFX.splice(i, 1); continue; } if (rm || (age >> 1) & 1) halo(ctx, 'key.a', e.x, e.y - cam); spr(ctx, 'key.a', e.x, e.y - cam); continue; }
       var fr = Math.floor(age * e.fps / HZ);
       if (fr >= e.n) { JFX.splice(i, 1); continue; }
+      if (fr < 0) continue;   /* a clock set back under a live effect (a gate's liberty) draws nothing, never a throw */
       spr(ctx, e.key + '.' + e.clip + '_' + (rm ? 1 : fr), e.x, e.y - cam);
     }
   }
@@ -11367,7 +11373,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
        room to room until Title; the room starts with it and keeps what it walked in with (Again after a death) */
     if (!SB.TUNING.KEEP_GEAR) G.gear = [0, 0, 0];
     G.found = [];   /* WEAPONS ARRIVE: the weapons not found yet that this room put in a slot, kept on its clear */
-    G.state = SB.sim.create(lv, { loadout: G.gear, carry: G.carry, lastRoom: room === T.HOUSE_ROOMS, pool: first ? ui.owned() : ui.chestPool(), checkpoint: G.mode !== 'house' }); G.entry = G.gear.slice(); G.banked = false;
+    G.pool = first ? ui.owned() : ui.chestPool(); G.cpOn = G.mode !== 'house';
+    G.state = SB.sim.create(lv, { loadout: G.gear, carry: G.carry, lastRoom: room === T.HOUSE_ROOMS, pool: G.pool, checkpoint: G.cpOn }); G.entry = G.gear.slice(); G.banked = false;
     if (!opts.notFirst && !ui.firstRoomDone) { ui.firstRoomDone = true; SB.save.doc.onboarding.firstRoomDone = true; SB.save.commit(); }
     else if (!opts.notFirst) ui.firstRoomDone = true;
     SB.render.buildStatic(lv);
@@ -11519,11 +11526,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.gotFollow = function () {
     var el = document.getElementById('got'), hd = SB.render.drawn.hero;
     if (!el || !el.classList.contains('on') || !hd || hd.key === null) return;
-    var vc = document.getElementById('view'), vr = vc.getBoundingClientRect(), k = vr.height / vc.height, top = vr.top + hd.y * k, bot = top + hd.h * k, cr = el.getBoundingClientRect(), pad = 16;   /* the drawn box is the last frame's: a falling bug moves up to 12 px a step */
+    var vc = document.getElementById('view'), vr = vc.getBoundingClientRect(), k = vr.height / vc.height, top = vr.top + hd.y * k, bot = top + hd.h * k, cr = el.getBoundingClientRect(), pad = 28;   /* the drawn box is the last frame's: a falling bug moves up to 12 px a step (16 until 10 Nov: the 24 px bug of round 9 slipped under it for two steps) */
     if (!(top - pad < cr.bottom && bot + pad > cr.top)) return;
     var low = el.classList.contains('low'), h = cr.height, st = document.getElementById('stage').getBoundingClientRect();
     var oTop = low ? st.top + 16 : st.bottom - 8 - h;   /* the other dock's box */
-    if (!(top - pad < oTop + h && bot + pad > oTop)) el.classList.toggle('low', !low);
+    if (!(top - pad < oTop + h && bot + pad > oTop)) { el.classList.toggle('low', !low); return; }
+    /* both docks within the pad of the bug (a short stage: 320x568, the camera holding the bug mid stage): the dock that
+       covers less of the drawn box wins (10 Nov: the low card sat over a falling bug for 39 steps of 90) */
+    var ov = function (a) { return Math.max(0, Math.min(bot, a + h) - Math.max(top, a)); };
+    if (ov(oTop) < ov(cr.top)) el.classList.toggle('low', !low);
   };
   /* the sounds of the slots' fires, by the equipped weapon (9): '' sounds nothing on the fire (the Flashbulb sounds on
      its burst, BURST; Skyhook never fires) */
@@ -12790,7 +12801,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=45').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=46').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.
@@ -12859,7 +12870,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     heroFrame: function () { return SB.render.drawn.hero.key; },
     spriteRects: function () { return SB.render.rects(G.level); },
     /* the room's first state's options (docs/WEAPONS-V1.md 6.5), so a gate or a phone report replays the room exactly */
-    roomOpts: function () { var o = { loadout: (G.entry || [0, 0, 0]).map(function (c) { return c > 0 ? SB.sim.WPN[c] : null; }) }; if (G.room) { o.roomIndex = G.room; o.carry = G.carry; if (G.room === SB.TUNING.HOUSE_ROOMS) o.lastRoom = true; } return o; },
+    roomOpts: function () { var o = { loadout: (G.entry || [0, 0, 0]).map(function (c) { return c > 0 ? SB.sim.WPN[c] : null; }) }; if (G.room) { o.roomIndex = G.room; o.carry = G.carry; if (G.room === SB.TUNING.HOUSE_ROOMS) o.lastRoom = true; } if (G.pool !== undefined) { o.pool = G.pool; o.checkpoint = G.cpOn; } return o; },
     samplePixels: function (n) { return SB.render.samplePixels(G.level, n || 64); },
     backdropProbe: function () { return SB.render.backdropProbe(G.level); },
     atlas: function () { var o = {}; for (var k in SB.render.atlas) o[k] = SB.render.atlas[k]; return o; },
