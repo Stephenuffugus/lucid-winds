@@ -327,7 +327,18 @@ try {
   /* the exit while it stands: no clear */
   const shut = await page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(3); return { screen: window.SB_DEV.screen(), beacon: window.SB_DEV.guardian().beacon }; });
   R.say(shut.screen === 'play' && shut.beacon === 'fx_beacon_light.light_0', 'the exit stays shut and the beacon dark while the guardian stands (' + shut.screen + ', ' + shut.beacon + ')');
+  /* sb-m2-26 (Stephen, 11 Nov: "a boss with no way to attack it"): a bug with no jump weapon that hurts sees the banner in
+     its need colour, the chest line, and the arrow turned toward the chest; armed, all three go */
+  const need = await page.evaluate(() => { const D = window.SB_DEV, gb = document.getElementById('guardbanner'), ga = document.getElementById('guardarrow');
+    const empty = !D.state().hero.slots[0]; D.step(1);
+    const pre = { empty, shown: !gb.hidden, need: gb.classList.contains('need'), line: gb.querySelector('span').textContent, arrow: !ga.hidden && ga.getBoundingClientRect().height > 0, turn: ga.style.transform, chest: D.level().features ? D.level().features.chest : null };
+    return pre; });
+  if (process.env.SB_SHOT_DIR) await page.screenshot({ path: process.env.SB_SHOT_DIR + '/guard-need.png' });
+  if (need.empty) R.say(need.shown && need.need && need.line === 'Open the chest for a weapon that reaches it' && need.arrow && /^rotate\(-?\d+deg\)$/.test(need.turn), 'unarmed before the guardian: the banner in its need colour, the chest line, the arrow turned to the chest (' + JSON.stringify(need) + ')');
+  else R.say(!need.need && !need.arrow, 'armed before the guardian: no need colour, no arrow (' + JSON.stringify(need) + ')');
   const fight = await kill(page);
+  { const after = await page.evaluate(() => ({ need: document.getElementById('guardbanner').classList.contains('need'), arrow: !document.getElementById('guardarrow').hidden }));
+    R.say(!after.need && !after.arrow, 'with the Boomerang in hand the need colour and the arrow are gone (' + JSON.stringify(after) + ')'); }
   R.say(fight.woke && fight.wakeFx && !fight.bannerAfter && fight.intro > 0, 'it wakes after its intro: fx_boss_wake drawn on the body, the words gone, the intro sound played (' + JSON.stringify({ woke: fight.woke, fx: fight.wakeFx, banner: fight.bannerAfter, intro: fight.intro }) + ')');
   R.say(fight.down && fight.hits >= 5 && fight.chips > 0 && fight.hitSound > 0, 'real jumps throw the Boomerang into it until it falls: ' + fight.hits + ' hits, fx_boss_chip drawn ' + fight.chips + ' times, the hit sound ' + fight.hitSound + ' times (' + fight.throws + ' throws)');
   R.say(fight.downFx && fight.dp >= 60 && fight.light.slice(0, 4).join() === 'fx_beacon_light.light_0,fx_beacon_light.light_1,fx_beacon_light.light_2,fx_beacon_light.light_3' && /^beacon\.[ab]$/.test(fight.light[4] || ''),

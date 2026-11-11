@@ -6736,17 +6736,20 @@ group('H-r11-1', 'the collapsing staircase (round 11, sb-m2-20): with FLAG_R11 a
 
 group('H-open-1', 'no enemy walled in (sb-m2-25, Stephen 11 Nov): with FLAG_OPEN every ramp enemy stands on a cell the spawn\'s air reaches (four ways through cells that are not solid, the test\'s own flood); without the bit the room is the one a code made before it built', t => {
   const flood = lv => { const w = lv.w, n = w * lv.h, seen = new Uint8Array(n), st = [lv.spawn]; seen[lv.spawn] = 1; while (st.length) { const c = st.pop(), x = c % w; for (const d of [-1, 1, -w, w]) { const q = c + d; if (q < 0 || q >= n || seen[q] || lv.solid[q] || (d === -1 && x === 0) || (d === 1 && x === w - 1)) continue; seen[q] = 1; st.push(q); } } return seen; };
-  let rooms = 0, ramped = 0, shut = 0, oldShut = 0, same = 0, pairs = 0;
+  let rooms = 0, ramped = 0, shut = 0, oldShut = 0, same = 0, pairs = 0; let onKey = 0, oldOnKey = 0;
   for (let day = 20000; day < 20040; day++) for (const opts of [{ firstRoom: false }, { roomIndex: 3 }, { roomIndex: 5, lastRoom: true }]) {
     const j = SB.record.toJSON(SB.record.daily(day)), lv = SB.pipeline.build(SB.record.fromJSON(j), opts); if (lv.needsCrop) continue;
     rooms++; const seen = flood(lv);
     for (const e of lv.features.enemies) if (e.ramp) { ramped++; if (!seen[e.idx]) shut++; }
+    if (lv.features.keys && lv.features.curio >= 0 && lv.features.keys.includes(lv.features.curio)) onKey++;
     const old = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, j, { flags: j.flags & ~SB.record.FLAG_OPEN })), opts), os = flood(old); let o = 0;
     for (const e of old.features.enemies) if (e.ramp && !os[e.idx]) o++;
+    if (old.features.keys && old.features.curio >= 0 && old.features.keys.includes(old.features.curio)) oldOnKey++;
     oldShut += o; if (!o) { pairs++; if (old.features.enemies.map(e => e.kind + ':' + e.idx).join() === lv.features.enemies.map(e => e.kind + ':' + e.idx).join()) same++; }
   }
   t.ok(rooms >= 60 && ramped > rooms, rooms + ' daily rooms built, ' + ramped + ' ramp enemies laid');
   t.eq(shut, 0, 'ramp enemies on a cell the spawn\'s air does not reach');
+  t.eq(onKey, 0, 'rooms whose keepsake sits on a key\'s cell (sb-m2-26; ' + oldOnKey + ' without the bit)');
   t.ok(oldShut > 0, 'without the bit the same rooms wall in ' + oldShut + ' (the rule changes something, and an older code keeps its room)');
   const CAP = require('./tools/room-model.js').captureOf(PAGE, SB);
   t.ok(SB.record.FLAGS_KNOWN === 255 && CAP.FLAGS === 255, 'every capture and daily carries the bit (FLAGS_KNOWN ' + SB.record.FLAGS_KNOWN + ', capture ' + CAP.FLAGS + ')');
