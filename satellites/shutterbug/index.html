@@ -1093,7 +1093,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-24';
+  SB.BUILD = 'sb-m2-25';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -1288,7 +1288,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      and their code: nothing that was shared changes. */
   var V = 2, HEADER = 6, HEADER2 = 9, HEX = '0123456789abcdef';
   /* what this client knows of v2's three bytes (raised only by the lane that builds what a value means) */
-  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAG_BESTIARY = 2, FLAG_R9 = 4, FLAG_R10 = 8, FLAG_VERBS = 16, FLAG_WIND = 32 /* round 11 (sb-m2-19): the window crosswind in Attic rooms */, FLAG_R11 = 64 /* round 11 pieces (sb-m2-20): the collapsing staircase; the swinging strands when their art lands. Bit 7 is the last of the byte: the next flag needs a v3 record */, FLAGS_KNOWN = FLAG_KEYS | FLAG_BESTIARY | FLAG_R9 | FLAG_R10 | FLAG_VERBS | FLAG_WIND | FLAG_R11;   /* bit 4: round 10's four verbs, the lobber, dropper, shellback and splitter (sb-m2-15): a code made before it keeps its room */   /* bit 3: round 10's keepsakes (7 Nov): a code made before it keeps its room */   /* FLAGS bit 0: the exit locked by keys; bit 1: the second monsters (2 Nov); bit 2: round 9's third and fourth monsters, room pieces and floors (6 Nov): a code made before it keeps its room */
+  var BIOME_MAX = 5, RULES_MAX = 1, FLAG_KEYS = 1, FLAG_BESTIARY = 2, FLAG_R9 = 4, FLAG_R10 = 8, FLAG_VERBS = 16, FLAG_WIND = 32 /* round 11 (sb-m2-19): the window crosswind in Attic rooms */, FLAG_R11 = 64 /* round 11 pieces (sb-m2-20): the collapsing staircase; the swinging strands when their art lands. Bit 7 is the last of the byte */, FLAG_OPEN = 128 /* sb-m2-25: no ramp enemy in a walled off cell (Stephen, 11 Nov: "it may still trap a random enemy in a blank square"); the byte is full: the next flag needs a v3 record */, FLAGS_KNOWN = FLAG_KEYS | FLAG_BESTIARY | FLAG_R9 | FLAG_R10 | FLAG_VERBS | FLAG_WIND | FLAG_R11 | FLAG_OPEN;   /* bit 4: round 10's four verbs, the lobber, dropper, shellback and splitter (sb-m2-15): a code made before it keeps its room */   /* bit 3: round 10's keepsakes (7 Nov): a code made before it keeps its room */   /* FLAGS bit 0: the exit locked by keys; bit 1: the second monsters (2 Nov); bit 2: round 9's third and fourth monsters, room pieces and floors (6 Nov): a code made before it keeps its room */
   function headOf(v) { return v === 1 ? HEADER : HEADER2; }
   /* a v2 header holding a byte this client does not know (a biome past BIOME_MAX, rules past RULES_MAX, a flag bit
      outside FLAGS_KNOWN): such a code is a newer client's, never 'bad' and never built */
@@ -1639,7 +1639,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return fromJSON(j);
   }
   function daily(day) { var n = DAILY_CFG.length; return dailyAt(DAILY_CFG[((day % n) + n) % n]); }
-  SB.record = { V: V, daily: daily, dailyAt: dailyAt, DAILY_N: DAILY_N, DAILY_SKIP: DAILY_SKIP, DAILY_CYCLE: DAILY_CFG.length, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, FLAG_R10: FLAG_R10, FLAG_VERBS: FLAG_VERBS, FLAG_WIND: FLAG_WIND, FLAG_R11: FLAG_R11, FLAG_BESTIARY: FLAG_BESTIARY, FLAG_R9: FLAG_R9, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
+  SB.record = { V: V, daily: daily, dailyAt: dailyAt, DAILY_N: DAILY_N, DAILY_SKIP: DAILY_SKIP, DAILY_CYCLE: DAILY_CFG.length, BIOME_MAX: BIOME_MAX, RULES_MAX: RULES_MAX, FLAGS_KNOWN: FLAGS_KNOWN, FLAG_KEYS: FLAG_KEYS, FLAG_R10: FLAG_R10, FLAG_VERBS: FLAG_VERBS, FLAG_WIND: FLAG_WIND, FLAG_R11: FLAG_R11, FLAG_OPEN: FLAG_OPEN, FLAG_BESTIARY: FLAG_BESTIARY, FLAG_R9: FLAG_R9, validate: validate, fromJSON: fromJSON, toJSON: toJSON, pack: pack, unpack: unpack,
     encode: encode, decode: decode, seedOf: seedOf, rowsToPal: rowsToPal, palToRows: palToRows, parseCode: parseCode, linkOf: linkOf,
     saveDefaults: saveDefaults, validateSave: validateSave, loadSave: loadSave,
     runValid: runValid, runFresh: runFresh, runEnter: runEnter, runClear: runClear, runDie: runDie, runRetry: runRetry,
@@ -2159,7 +2159,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     level.r10 = rec.v >= 2 && (rec.flags & SB.record.FLAG_R10) !== 0 ? 1 : 0;   /* round 10's keepsake (7 Nov) */
     level.verbs = rec.v >= 2 && (rec.flags & SB.record.FLAG_VERBS) !== 0 ? 1 : 0;   /* round 10's four verbs (sb-m2-15) */
     level.windy = rec.v >= 2 && (rec.flags & SB.record.FLAG_WIND) !== 0 ? 1 : 0;   /* round 11's crosswind (sb-m2-19) */
-    level.r11 = rec.v >= 2 && (rec.flags & SB.record.FLAG_R11) !== 0 ? 1 : 0;   /* round 11's pieces, the staircase (sb-m2-20) */
+    level.r11 = rec.v >= 2 && (rec.flags & SB.record.FLAG_R11) !== 0 ? 1 : 0;
+    level.openOnly = rec.v >= 2 && (rec.flags & SB.record.FLAG_OPEN) !== 0 ? 1 : 0;   /* sb-m2-25: ramp enemies only where the hero's air reaches */   /* round 11's pieces, the staircase (sb-m2-20) */
     /* m2 step 3: the floors' landings and the tripod, before the features (they see any film tab a landing carved) */
     var carvedL = SB.features.landings(level);
     var settled = settle(level, SB.features.place(level, opts, carvedL ? SB.reach.graph(level) : fixed.g));
@@ -3885,8 +3886,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
       for (var q = c + w; q < n && !level.solid[q] && !level.plat[q]; q += w) out.push(q);
       return Int32Array.from(out);
     };
+    /* sb-m2-25 (FLAG_OPEN): the cells the spawn's air reaches (four ways through cells that are not solid); a ramp enemy
+       laid outside them sat walled in where no one could meet it (about one enemy in eight before this) */
+    var reach = null;
+    if (level.openOnly) {
+      reach = new Uint8Array(n); var rs = [level.spawn], rc, rx, rd, rq, RD = [-1, 1, -w, w]; reach[level.spawn] = 1;
+      while (rs.length) { rc = rs.pop(); rx = rc % w; for (rd = 0; rd < 4; rd++) { rq = rc + RD[rd]; if (rq < 0 || rq >= n || reach[rq] || level.solid[rq] || (rd === 0 && rx === 0) || (rd === 1 && rx === w - 1)) continue; reach[rq] = 1; rs.push(rq); } }
+    }
     var ok = function (c, kind) {
-      if (c < w || c >= n - w || level.solid[c] || level.plat[c] || level.trap[c] || near[c] || keep[c]) return false;
+      if (c < w || c >= n - w || level.solid[c] || level.plat[c] || level.trap[c] || near[c] || keep[c] || (reach && !reach[c])) return false;
       if (kind === CRAWLER || kind === SPARK) { if (!standable(level, c)) return false; }
       else if (kind === ICICLE && !level.solid[c - w] && !level.plat[c - w]) return false;
       else if (level.r9 && !kindFits(level, kind, c)) return false;
@@ -6329,7 +6337,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      (1, Q221) stay in the core for a v2 RULES 1 code, but capture does not write them until their fallbacks, their
      extra film on bare walls and their build time are fixed */
   C.RULES = 0;
-  C.FLAGS = 127;   /* sb-m2-20: every capture may hold a staircase too (bit 6) */   /* sb-m2-19: every capture's Attic rooms breathe too (bit 5) */   /* sb-m2-15: every capture meets the four verbs too (bit 4) */   /* R10: every capture rolls a keepsake too */   /* SB.record.FLAG_KEYS | FLAG_BESTIARY | FLAG_R9: every capture locks its exit with keys and meets the second monsters (2 Nov) and round 9's (6 Nov); a literal, since the room model loads this block without core-record */
+  C.FLAGS = 255;   /* sb-m2-25: every capture keeps its ramp enemies in reach (bit 7) */   /* sb-m2-20: every capture may hold a staircase too (bit 6) */   /* sb-m2-19: every capture's Attic rooms breathe too (bit 5) */   /* sb-m2-15: every capture meets the four verbs too (bit 4) */   /* R10: every capture rolls a keepsake too */   /* SB.record.FLAG_KEYS | FLAG_BESTIARY | FLAG_R9: every capture locks its exit with keys and meets the second monsters (2 Nov) and round 9's (6 Nov); a literal, since the room model loads this block without core-record */
   C.HUE = Object.freeze({ FROST_L: 170, ATTIC_LO: 15, GREEN_LO: 70, DEEP_LO: 170, EMBER_LO: 285, C_MIN: 12, S_MIN: 9, WARM_C_MIN: 16, WARM_S_MIN: 30, MIN_PCT: 10 });
   C.hueBand = function (r, g, b) {
     var K = C.HUE, mx = Math.max(r, g, b), d = mx - Math.min(r, g, b), band;
@@ -12801,7 +12809,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=46').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=47').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.
