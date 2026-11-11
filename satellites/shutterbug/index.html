@@ -433,6 +433,10 @@ body:not(.playing) #floorname { display: none; }
   background: var(--ink); color: var(--paper); padding: 8px 14px; text-align: center; z-index: 2; box-shadow: 0 3px 0 rgba(0,0,0,0.25); }
 #guardbanner b { display: block; font-size: 1.05rem; } #guardbanner span { display: block; font-size: 0.9rem; margin-top: 2px; }
 #guardbanner[hidden] { display: none; }
+/* sb-m2-26 (Stephen, 11 Nov: "a boss with no way to attack it"): a bug with no weapon that reaches the guardian gets the banner in Gold and an arrow that turns toward the room's chest, which holds the Boomerang */
+#guardbanner.need { background: var(--sun); color: var(--ink); }
+#guardarrow { display: block; width: 0; height: 0; margin: 8px auto 2px; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 18px solid currentColor; }
+#guardarrow[hidden] { display: none; }
 #guardbanner.low { top: auto; bottom: 12px; }   /* docked away from a bug in the view's top part (2 Nov: it hid the shut exit) */
 /* the house clear card's prize (Astra's card_house_clear, 144x140 at 2x: the prize in its opening, fx_unlock over it,
    the caption in its 98x14 area at (23,100)) */
@@ -786,7 +790,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
 <main id="play" class="screen" aria-label="Play">
   <div id="top"><button id="pause" type="button" data-aria="pause"><i aria-hidden="true"></i></button><i id="biomebadge" aria-hidden="true" hidden></i><span id="roomname"></span><span id="keys" aria-label="Keys" hidden></span><span id="hearts" aria-label="Hearts"></span></div>
   <div id="stage"><canvas id="view" width="384" height="640"></canvas>
-    <div id="guardbanner" role="status" hidden><b data-copy="lastRoom"></b><span data-copy="guardHint"></span></div>
+    <div id="guardbanner" role="status" hidden><b data-copy="lastRoom"></b><span data-copy="guardHint"></span><i id="guardarrow" aria-hidden="true" hidden></i></div>
     <div id="paused" role="dialog" data-aria="paused"><h2 data-copy="paused"></h2>
       <div class="trio"><button id="resume" type="button" data-copy="resume"></button>
       <button id="pauseshare" type="button" data-copy="shareTitle"></button>
@@ -1093,7 +1097,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-25';
+  SB.BUILD = 'sb-m2-26';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -4098,6 +4102,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var g = SB.reach.trapGraph(level, SB.reach.graph(level)), d = SB.reach.distances(g, level.spawn, level.exit), back = returnable(level, g, 3 * g.n);
     var claim = new Uint8Array(n), off = function (q) { if (typeof q === 'number' && q >= 0 && q < n) claim[q] = 1; };
     off(level.spawn); off(level.exit); off(f.chest); off(f.scroll); off(f.blueprint);
+    if (level.openOnly) off(f.curio);   /* sb-m2-26 (Stephen, 11 Nov: "a keepsake on top of a key and I couldn't see the key"): keys() never knew the keepsake's cell (16 of 747 daily rooms); under FLAG_OPEN it is claimed */
     for (k = 0; f.specks && k < f.specks.length; k++) off(f.specks[k]);
     for (k = 0; level.beacon && k < level.beacon.cells.length; k++) off(level.beacon.cells[k]);
     if (f.door) { var dr = f.door.rect; for (y = dr[1]; y <= dr[3]; y++) for (x = dr[0]; x <= dr[2]; x++) claim[y * w + x] = 1; }
@@ -4106,7 +4111,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (k = 0; f.enemies && k < f.enemies.length; k++) { off(f.enemies[k].idx); homes.push(f.enemies[k].idx); }
     /* the room's other loot keeps a cell of air round it, so a key never sits beside the chest or the scroll */
     var near = new Uint8Array(n), ring = function (q) { if (typeof q !== 'number' || q < 0 || q >= n) return; for (var yy = -1; yy <= 1; yy++) for (var xx = -1; xx <= 1; xx++) { var qx = q % w + xx, qy = Math.floor(q / w) + yy; if (qx >= 0 && qx < w && qy >= 0 && qy < h) near[qy * w + qx] = 1; } };
-    ring(f.chest); ring(f.scroll); ring(f.blueprint);
+    ring(f.chest); ring(f.scroll); ring(f.blueprint); if (level.openOnly) ring(f.curio);
     for (k = 0; f.specks && k < f.specks.length; k++) ring(f.specks[k]);
     var spawnRow = Math.floor(level.spawn / w), max = opts && opts.firstRoom ? 1 : T.KEYS_MAX;
     var spot = function (q) {
@@ -10482,7 +10487,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* A TIME TO BEAT (5 Nov): the clear's time and best, a time sent with a link, the strip's line, the share sheet's line */
     timeYours: 'Your time {t}', timeBestNew: 'Your time {t}, your best yet', timeBestWas: 'Your time {t}. Your best {b}',
     beatWon: 'You beat the {b} you were sent', beatShort: 'The time to beat is {b}', beatStrip: 'To beat {b}', shareTime: 'Your best time, {t}, goes with the link',
-    keysFind: 'Find {n} keys', keysFind1: 'Find the key', keysOpen: 'They open the exit', keysOpen1: 'It opens the exit', keysLocked: 'The exit is locked', keysMore: '{n} more keys', keysMore1: '1 more key', keysOf: '{n} of {max} keys', guardHintChest: 'Open the chest for a weapon', prizeNew: 'New: {name}', prizeLabel: 'Your prize, {name}',
+    keysFind: 'Find {n} keys', keysFind1: 'Find the key', keysOpen: 'They open the exit', keysOpen1: 'It opens the exit', keysLocked: 'The exit is locked', keysMore: '{n} more keys', keysMore1: '1 more key', keysOf: '{n} of {max} keys', guardHintChest: 'Open the chest for a weapon that reaches it', prizeNew: 'New: {name}', prizeLabel: 'Your prize, {name}',
     setLook: 'Look', lookHero: 'Bug', lookFrame: 'Frame', lookWear: 'Wear {name}',
     look_hero_sun: 'Sun bug', look_hero_umber: 'Umber bug', look_hero_teal: 'Teal bug', look_hero_lapis: 'Lapis bug', look_hero_pinstripe: 'Pinstripe bug',
     look_hero_domino: 'Domino bug', look_hero_crescent: 'Crescent bug', look_hero_argyle: 'Argyle bug',
@@ -12260,7 +12265,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   ui.drawLook = drawLook;
   /* the guardian's intro words over the room while it sleeps (the 2 s outline): The last room, Beat the guardian to
      light the exit; hidden from its wake. Toggled only on a change, never rebuilt in a step */
-  var bannerOn = false, bannerKey = '', lockedUntil = -1;
+  var bannerOn = false, bannerKey = '', lockedUntil = -1, bannerNeed = false, arrowDeg = null;
   /* THE WALL JUMP, TAUGHT (sb-m1-14; Stephen, 3 Nov: if you don't know you can wall jump you get stuck in a pit, get
      pissed off and never open the game again). Two lines in this banner, below its guardian and keys words: the first
      time the bug clings to a plain wall, how to kick off it (until a wall jump is done once, saved in
@@ -12337,6 +12342,15 @@ body.sb-modal .lwfb-fab { display: none !important; }
       document.getElementById('guardbanner').classList.toggle('low', low);
     }
     if (on !== bannerOn) { bannerOn = on; document.getElementById('guardbanner').hidden = !on; }
+    /* sb-m2-26: unarmed before the guardian, the banner turns Gold and its arrow points from the bug to the chest */
+    var need = on && key === 'gfalse', ga = document.getElementById('guardarrow'), ch = need && st.level && st.level.features ? st.level.features.chest : -1;
+    if (need !== bannerNeed) { bannerNeed = need; document.getElementById('guardbanner').classList.toggle('need', need); }
+    if (need && typeof ch === 'number' && ch >= 0) {
+      var CSg = SB.K.CELL_SUB, wg = st.level.w, dxg = (ch % wg) * CSg + (CSg >> 1) - (st.hero.x + (SB.K.HERO_W_SUB >> 1)), dyg = Math.floor(ch / wg) * CSg + (CSg >> 1) - (st.hero.y + (SB.K.HERO_H_SUB >> 1));
+      var deg = Math.round(Math.atan2(dyg, dxg) * 180 / Math.PI / 15) * 15 + 90;
+      if (deg !== arrowDeg) { arrowDeg = deg; ga.style.transform = 'rotate(' + deg + 'deg)'; }
+      if (ga.hidden) ga.hidden = false;
+    } else if (!ga.hidden) { ga.hidden = true; arrowDeg = null; }
   };
   /* the strip's keys (2 Nov): one hud_key a key, full once taken, the newest popping; hidden in a room without keys */
   var keysWas = '';
@@ -12809,7 +12823,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=47').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=48').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.
