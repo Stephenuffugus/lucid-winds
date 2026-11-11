@@ -118,7 +118,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Play each game on the Pixel after its line and write your notes in one message; Fable turns them into the next chapter (you)  
 - [ ] Open Tomato Man with ?lab=1 and fix one level you hate; Copy JSON and paste it to Fable (you)  
 - [x] Shutterbug sb-m2-25 (no enemy walled in a blank square, your 11 Nov note: it was 1 room in 5, now none): LIVE 11 Nov, main fe56bdc9f, the live page byte identical to the stamp, shutterbug-v47 (you ran the line)  
-- [ ] Shutterbug sb-m2-26 (the unarmed guardian banner points at the chest; no key under a keepsake): run `! bash /home/codespace/sb-drafts/sb-m2-26/deploy-sb-m2-26.sh` (you)  
+- [x] Shutterbug sb-m2-26 (the unarmed guardian banner points at the chest; no key under a keepsake): LIVE 11 Nov, main 3e4385999, the live page byte identical to the stamp, shutterbug-v48 (your line)  
 - [x] Shutterbug on Play: your go, 11 Nov; the upload set is in your files (you)  
 - [ ] Shutterbug on Play: upload in the Console, then paste Fable the App signing SHA-256 for assetlinks (you)  
 - [ ] Shutterbug, what brings players back: pick from the daily photo prompt, beat my run, the weekly house and guardian keepsake, three medals, a daily streak (you)  
