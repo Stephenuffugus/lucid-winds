@@ -117,6 +117,8 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] TOFU m1, Tomato Man THE PRESSURE, Sunforge THE SKINS, Shutterbug sb-m2-23, DUCTUS: LIVE since 8 Nov, none has your Pixel notes yet (you)  
 - [ ] Play each game on the Pixel after its line and write your notes in one message; Fable turns them into the next chapter (you)  
 - [ ] Open Tomato Man with ?lab=1 and fix one level you hate; Copy JSON and paste it to Fable (you)  
+- [ ] Shutterbug sb-m2-25 (no enemy walled in a blank square, your 11 Nov note: it was 1 room in 5, now none): run `! bash /home/codespace/sb-drafts/sb-m2-25/deploy-sb-m2-25.sh` (you)  
+- [ ] Shutterbug on Play: your go or no go (you liked it 11 Nov; that was not yet a go) (you)  
 - [ ] Shutterbug: open the Darkroom, play a room, Play it again, share one to a friend (you)  
 - [ ] Keepsies: play the new shot and the STATUES chip, place two, move one (you)
 

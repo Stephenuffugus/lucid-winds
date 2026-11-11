@@ -1310,8 +1310,9 @@ const MUTANTS = [
       { gate: 'capture', expect: 'biome: the room plays as Overgrowth with its thorn crawlers' }] },
   { name: 'RULES_UNKNOWN_ACCEPTED', task: 'BIOME', file: 'page', find: 'b[7] > RULES_MAX || ', repl: '',
     gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a v2 code with RULES 9' }] },
-  { name: 'FLAGS_UNKNOWN_ACCEPTED', task: 'BIOME', file: 'page', find: ' || (b[8] & ~FLAGS_KNOWN) !== 0);', repl: ');',
-    gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'parseCode answers newer on a v2 code with flags bit 4' }] },   /* re anchored at sb-m1-7: bit 0 is the keys', at sb-m1-11 bit 1 the second monsters', at sb-m2-13 bit 3 the keepsakes */
+  { name: 'RAMP_WALLED_IN', task: 'R9', file: 'page', find: ' || keep[c] || (reach && !reach[c])) return false;', repl: ' || keep[c]) return false;',
+    gates: [{ gate: 'harness', only: 'H-open-1', expect: 'ramp enemies on a cell the spawn\'s air does not reach' }] },   /* sb-m2-25 */
+  /* FLAGS_UNKNOWN_ACCEPTED retired at sb-m2-25: FLAG_OPEN took bit 7, the flags byte holds no unknown bit, so nothing can go red on it until a v3 record */
   { name: 'V1_CHANGED', task: 'BIOME', file: 'page', find: '    return biomeOf(pal, n);\n  }\n  /* Frost (DESIGN 7)', repl: '    return 0;\n  }\n  /* Frost (DESIGN 7)',
     gates: [{ gate: 'harness', only: 'H-v2-1', expect: 'every fixture builds the level or the refusal it built on 42fc8b19a' }] },
   { name: 'V1_CODE_CHANGED', task: 'BIOME', file: 'page', find: 'grids = r.mode === 2 ? 2 : 1, head = headOf(r.v);', repl: 'grids = r.mode === 2 ? 2 : 1, head = HEADER2;',

@@ -6036,7 +6036,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   /* the validator */
   const g2 = v2Of(sj, 4);
   const refuse = [['biome 6', { biome: 6 }], ['biome -1', { biome: -1 }], ['biome 1.5', { biome: 1.5 }], ['rules 2 (reserved for the next rules, not this client\'s)', { rules: 2 }], ['rules 9', { rules: 9 }],
-    ['flags bit 7', { flags: 128 }],   /* bit 5 is round 11's crosswind (sb-m2-19), bit 6 its pieces (sb-m2-20); bit 7 is the last of the byte */   /* bit 0 is the keys', bit 1 the second monsters' (2 Nov), bit 2 round 9's (6 Nov), bit 3 round 10's keepsakes (7 Nov) and bit 4 its four verbs (sb-m2-15), all known */ ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
+    /* sb-m2-25: bit 7 is known now (FLAG_OPEN), so the byte holds no unknown bit; the next flag is a v3 record */   /* bit 5 is round 11's crosswind (sb-m2-19), bit 6 its pieces (sb-m2-20); bit 7 is the last of the byte */   /* bit 0 is the keys', bit 1 the second monsters' (2 Nov), bit 2 round 9's (6 Nov), bit 3 round 10's keepsakes (7 Nov) and bit 4 its four verbs (sb-m2-15), all known */ ['flags 256', { flags: 256 }], ['biome as a string', { biome: '3' }]];
   for (const [why, o] of refuse) t.ok(SB.record.validate(Object.assign({}, g2, o)) !== null, 'validate refuses a v2 record with ' + why);
   t.ok(SB.record.validate(Object.assign({}, sj, { biome: 3 })) !== null, 'validate refuses a v1 record carrying a biome');
   t.eq(SB.record.validate(g2), null, 'validate accepts the v2 sample room with biome 4 (control)');
@@ -6045,7 +6045,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.ok(SB.record.decode('v1.' + gb.toString('base64url')) === null && SB.record.decode('v2.' + v1b.toString('base64url')) === null, 'decode refuses a v1. prefix on a v2 record and a v2. prefix on a v1 record');
   t.ok(SB.record.decode(gb.toString('base64url')) !== null && SB.record.decode(gb.toString('base64url')).biome === 4, 'a bare v2 payload decodes with its biome');
   const at = (k, v) => { const b = Buffer.from(gb); b[k] = v; return b; };
-  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['flags bit 7', at(8, 128)], ['biome 6', at(6, 6)]];
+  const newer = [['RULES 9', at(7, 9)], ['RULES 2 (reserved, unknown to this client)', at(7, 2)], ['biome 6', at(6, 6)]];
   for (const [why, b] of newer) {
     t.eq(SB.record.parseCode(code2(b)).why, 'newer', 'parseCode answers newer on a v2 code with ' + why);
     t.eq(SB.record.decode(code2(b)), null, 'decode never builds a v2 record with ' + why);
@@ -6055,7 +6055,7 @@ group('H-v2-1', 'record v2 (Q220): v1 codes, every fixture and its levels unchan
   t.eq(SB.record.parseCode(at(0, 3).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v3 payload (no prefix), as on its v3. code');
   t.eq(SB.record.parseCode('https://x.example/s/#' + at(0, 7).toString('base64url')).why, 'newer', 'parseCode answers newer on a bare v7 payload after a link\'s #');
   t.ok(SB.record.parseCode('hello there').why === 'bad' && SB.record.parseCode(at(0, 200).toString('base64url')).why === 'bad', 'garbage and a bare payload with version byte 200 still read as bad (control)');
-  t.eq(SB.record.parseCode(code2(at(8, 128).subarray(0, 300))).why, 'newer', 'a flagged v2 code reads as newer from its header alone (a newer flag may change the body\'s length; bit 7, the byte\'s last; bits 5 and 6 are the crosswind\'s and round 11\'s pieces)');
+  t.eq(SB.record.parseCode(code2(at(7, 9).subarray(0, 300))).why, 'newer', 'a v2 code with an unknown byte reads as newer from its header alone (a newer rule may change the body\'s length; RULES 9; since sb-m2-25 the flags byte holds no unknown bit)');
   t.eq(SB.record.parseCode(code2(gb.subarray(0, 300))).why, 'bad', 'a truncated v2 code with known bytes reads as bad (control)');
   t.ok(SB.record.parseCode(code2(gb)).rec && SB.record.parseCode(code2(gb)).rec.biome === 4, 'a v2 code with RULES 0 and no flags opens (control)');
   /* the build: the biome byte names the biome; RULES 0 is today's rules on the same grid */
@@ -6732,6 +6732,24 @@ group('H-r11-1', 'the collapsing staircase (round 11, sb-m2-20): with FLAG_R11 a
   t.ok(fr(0) === 'gone' && fr(1) === 'cracked' && fr(2) === 'whole', 'the steps go bottom first, STAIR_GAP_F apart: at count ' + c + ' the run reads ' + frames.join(','));
   for (let k = 0; k < (st.n - 1) * K.STAIR_GAP_F + K.SHELF_BACK_F; k++) SB.sim.step(s, 0);
   t.ok(s.crumb[o.pi] === 0, 'and the run is whole again SHELF_BACK_F after the last step went');
+});
+
+group('H-open-1', 'no enemy walled in (sb-m2-25, Stephen 11 Nov): with FLAG_OPEN every ramp enemy stands on a cell the spawn\'s air reaches (four ways through cells that are not solid, the test\'s own flood); without the bit the room is the one a code made before it built', t => {
+  const flood = lv => { const w = lv.w, n = w * lv.h, seen = new Uint8Array(n), st = [lv.spawn]; seen[lv.spawn] = 1; while (st.length) { const c = st.pop(), x = c % w; for (const d of [-1, 1, -w, w]) { const q = c + d; if (q < 0 || q >= n || seen[q] || lv.solid[q] || (d === -1 && x === 0) || (d === 1 && x === w - 1)) continue; seen[q] = 1; st.push(q); } } return seen; };
+  let rooms = 0, ramped = 0, shut = 0, oldShut = 0, same = 0, pairs = 0;
+  for (let day = 20000; day < 20040; day++) for (const opts of [{ firstRoom: false }, { roomIndex: 3 }, { roomIndex: 5, lastRoom: true }]) {
+    const j = SB.record.toJSON(SB.record.daily(day)), lv = SB.pipeline.build(SB.record.fromJSON(j), opts); if (lv.needsCrop) continue;
+    rooms++; const seen = flood(lv);
+    for (const e of lv.features.enemies) if (e.ramp) { ramped++; if (!seen[e.idx]) shut++; }
+    const old = SB.pipeline.build(SB.record.fromJSON(Object.assign({}, j, { flags: j.flags & ~SB.record.FLAG_OPEN })), opts), os = flood(old); let o = 0;
+    for (const e of old.features.enemies) if (e.ramp && !os[e.idx]) o++;
+    oldShut += o; if (!o) { pairs++; if (old.features.enemies.map(e => e.kind + ':' + e.idx).join() === lv.features.enemies.map(e => e.kind + ':' + e.idx).join()) same++; }
+  }
+  t.ok(rooms >= 60 && ramped > rooms, rooms + ' daily rooms built, ' + ramped + ' ramp enemies laid');
+  t.eq(shut, 0, 'ramp enemies on a cell the spawn\'s air does not reach');
+  t.ok(oldShut > 0, 'without the bit the same rooms wall in ' + oldShut + ' (the rule changes something, and an older code keeps its room)');
+  const CAP = require('./tools/room-model.js').captureOf(PAGE, SB);
+  t.ok(SB.record.FLAGS_KNOWN === 255 && CAP.FLAGS === 255, 'every capture and daily carries the bit (FLAGS_KNOWN ' + SB.record.FLAGS_KNOWN + ', capture ' + CAP.FLAGS + ')');
 });
 
 group('H-boss-14', 'the phases (round 11, sb-m2-18; Stephen: two or three phases): the hit that takes a guardian under half its HP raises RAGE once; raged, the Rime Mass marks five columns not three, the Kiln throws two more sparks, the Thorn Heart\'s pods roll 1.5x, the Moth Mother\'s shed brings a dust cloud, the Loom drops two strands, the Wasp a pair of darts; above half nothing of it', t => {
