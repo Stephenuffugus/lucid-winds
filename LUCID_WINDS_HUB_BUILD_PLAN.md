@@ -48,14 +48,16 @@ Local server for every gate: `python3 -m http.server 8777 --bind 127.0.0.1` from
 - One queue (`window.LW_POPQ`): a popup asks to show, the queue shows one, the next waits for it to close.
   Order: beta notice, sign in prompts, explainers, offers, toasts.
 - Toasts close themselves after 6 s. The "omens" toast must not outlive that.
-- The cinematic does not start until the beta notice is acknowledged (beat 1's words are lost today).
+- The cinematic's words already wait for the beta notice (`_gatedStart`, `index.html:74706`). Leave that alone.
 - The music offer keeps Stephen's 23 Oct ruling (an offer, top right, never a surprise) and gains three
   rules: not during onboarding, not over a running game, and it closes itself as "Not now" after 12 s.
 - Gate: at no moment do two queue popups show; `first_run.mjs` frames list one overlay at a time.
 - Look: the first screen at 2 s and the gift plant screen, once each.
 
 ## R4. The signed out greenhouse and the Identity Terminal
-- When auth resolves to no user and local plants exist, draw the greenhouse (today the grid has 0 children).
+- Root cause: on a null user `_nukeGameUI()` (`index.html:49917`) clears the grid, and the dismiss button's
+  `closeSWSIdModal()` (`:11247`) never redraws. Fix: when the modal is dismissed and local plants exist, call
+  `renderGreenhouse()`. Do not change what `_nukeGameUI` clears on a real sign out.
 - Identity Terminal: every target 48 px tall, the dismiss link a real button, the password rule the same as
   onboarding's, plain words in the onboarding's voice (no "protocol", "assets detected", "initialize").
 - Gate: `seed_return.js` state, no session: `.greenhouse-plant` count is 14 or more without a manual call.
@@ -86,6 +88,45 @@ Local server for every gate: `python3 -m http.server 8777 --bind 127.0.0.1` from
 - Account deletion: a callable `deleteAccount` (vault, its subcollections, the player's wildDrops, then the
   auth user), a button under Settings with a typed confirmation, and `legal/delete-account.html` for the
   Play form. The functions deploy is his.
+
+## R9. Desktop gets a column
+- At 1366 wide the header is a 680 px column while the banner and the plant grid span the screen (two cards
+  of 680 px). Above 700 px of width, hold the whole app in one centred column (max 480 px) with the tab's
+  painted background filling the rest. Phone widths must not change by a pixel.
+- Gate: at 1366x768 `#greenhouse-grid` is no wider than 480 px and at least one whole plant card is on
+  screen; at 412 and 360 the grid width is what it was.
+- Look: the greenhouse at 1366, once.
+
+## R10. No text under 12 px on the main screens
+- Measured 12 Nov: nursery 14 of 24 visible strings under 12 px (three at 8.9), the picker 10 of 11 ("Try
+  it!" is 5.2), the greenhouse level line 10.2. Raise each to 12 px or more; where a chip cannot hold it,
+  shorten the words, never the type.
+- One commit per screen (greenhouse, nursery, picker). One look per screen.
+
+## The plant packets (WAIT ON STEPHEN'S WORD: they change how plants look)
+Shots 16 to 19 in the audit folder. Plants are one-of-one and come from their hash; none of these may change
+which traits a hash resolves to, only how a trait is drawn. Astra's round one target frames should land
+before V3 and V4. V1 and V2 are plain defects and can go first if he says so.
+- **V1. Soft edges on aura backdrops.** Aurora Borealis, Ethereal Veil, Poison Miasma, Tidal Pool, Moonlit,
+  Golden Hour, Frost Crystal, Deep Sea, and the Porcelain and Holographic mutation panels paint a hard edged
+  box. One shared mask (a radial fade to transparent) on the aura backdrop group fixes all ten. Keep Time
+  Crystal and Poison Miasma inside the 70 unit canvas.
+- **V2. Constellation and Silhouette must be visible on a black card.** A rim light or brighter star points
+  so the plant's shape reads. Constellation is the rarest mutation (byte 0xFF) and today it is the hardest
+  plant to see.
+- **V3. The plant fills its card.** In the grid a plant is 95x129 in a 187x254 card. Target: the plant takes
+  at least 60% of the card's height; "Ready to breed" becomes a small mark, not a line on every card.
+- **V4. The grade shows on the grid card**, in the grade's colour.
+- Gate for each: `tools/hub-tests/` gains one sheet script that draws one plant with every aura and every
+  mutation (the audit's scratch version did this); ONE look at that sheet per packet.
+
+## Before any public push (not repairs; each needs its own plan and his yes)
+- **S1. The shared map.** `firestore-rules-8.txt:485` lets any signed in client create a wild drop with any
+  hash and delete any drop. Build the two functions already on the migrations list, `dropToWild` (checks the
+  plant against `mintLog` and the daily cap) and `harvestWildPlant` (checks range and rules), then set
+  `allow create, delete: if false` for clients. The functions deploy and the rules deploy are his.
+- **G1. Guest first** (audit call 2). Anonymous Firebase sign in at the gift plant; `linkWithCredential` when
+  the player chooses to save. Rules and functions check only `request.auth.uid`, so nothing migrates.
 
 ## The end
 Run `tools/hub-tests/game_sweep.mjs` once. It read 98 clean of 102 on 12 Nov; the four that were not are

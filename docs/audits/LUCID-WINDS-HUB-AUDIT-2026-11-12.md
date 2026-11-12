@@ -20,7 +20,7 @@ What holds it back, in order:
 2. A new player downloads about 53 MB before the first screen, nearly all of it oversized button art.
 3. Popups stack on every screen and never leave on their own.
 4. A new player must hand over an email and password before playing anything.
-5. The plants, the thing the whole game is about, are the weakest art on the screen.
+5. The plants are shown badly: small, boxed by their auras, and the rarest ones are the hardest to see.
 6. The picker holds 102 games of very uneven finish, six of which ask a portrait app to turn sideways.
 7. Three things block a Play listing outright: no account deletion, real money buttons with no Play rail,
    and a cannabis plant on the Puzzles banner.
@@ -51,9 +51,9 @@ Measured fix: the 18 biggest become 0.55 MB as 384 px WebP (38.3 MB before). The
 18.8 MB and become 1.2 MB at 1080 px; today they draw half finished in the picker (shot 08).
 
 **A4. Popups stack and stay.** (shots 01, 03, 04, 13)
-First run: the beta notice sits on top while the cinematic plays underneath, so beat 1's words are gone by the
-time it is dismissed. The music offer then stays on screen until answered and covers the gift plant and the
-line "This one began with you". Later screens add the "73 omens" toast (it never left during a four minute
+First run: the beta notice is the first thing read (the cinematic's words do wait for it; see the second
+pass). The music offer then stays on screen until answered and covers the gift plant and the line "This one
+began with you". Later screens add the "73 omens" toast (it never left during a four minute
 sweep), the Identity Terminal, the morning report, the Pollen explainer, a "wild plants detected" toast and,
 inside studio games, a "you unlocked a song" sheet. In a studio game the playable area was about a third of
 the screen.
@@ -77,9 +77,12 @@ Shrouded Ammonite of Vinegar". (shots 06, 07)
 
 ## C. The look
 
-**C1. The plants are the weakest art on screen.** (shot 07) Flat vector shapes in a few colours, an aura made
-of hard edged see-through rectangles, stray vertical lines. Around them sit painted backgrounds, painted
-buttons and ornate frames. The collectible should be the richest thing in the frame and it is the plainest.
+**C1. The plants are let down by how they are shown, not by how they are drawn.** (shots 07, 16 to 19)
+CORRECTED in the second pass. Seen forty at a time on a plain ground the plants have real variety and charm:
+teacup, boot and birdhouse pots, raccoons and cranes, moons and light shafts. What hurts them: they are drawn
+small inside heavy frames, their flat vector style sits inside painted chrome, eight auras paint a hard edged
+box behind the plant, two mutations make the plant nearly invisible on a black card, and a Cosmic does not
+look rarer than a Common. Details in the second pass.
 **C2. Five art styles share one screen.** Jewel toned painted icons in the top bar, carved stone tiles in the
 nav, parchment cards for actions and the nursery, dithered pixel painting in the Hut, and a banner set whose
 members do not match each other.
@@ -139,3 +142,60 @@ from this site). 98 launched clean.
 6. Play v1 with no purchases at all (a rail that hides money), or wire Play Billing?
 
 A scan of tracked files for live Stripe keys, webhook secrets, private keys and GitHub tokens found none.
+
+## Second pass, same day (deeper checks, and two corrections)
+
+### Corrections to the first pass
+1. **The cinematic does wait for the beta notice.** `_gatedStart` (`index.html:74706`) holds beat 1's words
+   until `lw_beta_ack` is set. The first pass said the words were lost. They are not. What stands: the notice
+   is the first thing read, and the popups stack.
+2. **"The plants are the weakest art" was too harsh and too broad.** It was judged from two plants in small
+   cards. Forty plants on one sheet (shot 16) say otherwise. The narrower findings are P1 to P4 below.
+
+### The plants (shots 16 to 19)
+The rarity table in CLAUDE.md is true: 60,000 hashes through the live engine gave Common 33.77%, Uncommon
+31.82%, Rare 22.93%, Epic 9.48%, Legendary 1.70%, Mythic 0.25%, Cosmic 0.03%. A plant's SVG is about 117 KB
+of markup and draws in 3 ms.
+- **P1. Two mutations hide the plant.** Constellation (byte 0xFF, the rarest, about 1 mint in 220) and
+  Silhouette draw the plant as a near black shape on a black card. Both of the Constellation plants found
+  graded Mythic and Cosmic, so the rarest reward is the one a player can barely see. (shot 17, left two)
+- **P2. Eight auras paint a hard edged box.** Aurora Borealis, Ethereal Veil, Poison Miasma, Tidal Pool,
+  Moonlit, Golden Hour, Frost Crystal, Deep Sea. The Porcelain and Holographic mutations add a box too. Time
+  Crystal and Poison Miasma also draw outside the 70 unit canvas. (shot 18)
+- **P3. Eight auras barely show in a still.** Starfall, Storm Wraith, Shimmer, Rain, Cherry Blossom, Pollen
+  Drift, Dandelion Seeds, Chain Lightning. Some animate; none reads at grid size.
+- **P4. Rarity does not read.** Nothing on the grid card says Common or Cosmic, and a Legendary is not
+  visibly grander than a Common.
+
+### Root causes found
+- **A2, the empty greenhouse.** On a null user `_nukeGameUI()` (`index.html:49917`) clears the grid. The
+  Identity Terminal's dismiss button calls `closeSWSIdModal()` (`:11247`), which never redraws. The newer slot
+  banner is not reset by the nuke, so it still reads 14 / 14. Fix: redraw on dismiss when local plants exist.
+
+### New findings
+- **N1. The shared map is not safe from a hostile player (launch blocker for any public push).** In
+  `firestore-rules-8.txt:485` a signed in client may create a wild drop with any hash, and any signed in
+  client may delete any drop. Nothing checks a dropped plant against `mintLog`. The rules file marks this as a
+  TODO ("move harvest to Cloud Function") and `dropToWild` and `harvestWildPlant` are already on the planned
+  migrations list. Everything else on the money path is sound: `hashLedger` and the mint counters are server
+  only, `mintLog` is admin write only.
+- **N2. Desktop is broken.** (shot 20) At 1366 wide the header is a 680 px column, the book and backpack
+  float at the far right, the banner spans the screen, and the plant grid is two cards of 680 px each, so no
+  plant is visible without scrolling. Anyone who opens lucidwinds.com on a computer sees this.
+- **N3. On a small phone the first screen shows half of two plants.** (shot 21) At 360 by 640 the cards start
+  64% of the way down.
+- **N4. Small text.** Under 12 px: 14 of 24 visible strings in the nursery (three at 8.9 px), 10 of 11 in
+  the picker ("Try it!" is 5.2 px), the level line in the greenhouse (10.2 px).
+- **N5. Guest first would be cheap.** Every rule and every function checks only `request.auth.uid`. An
+  anonymous Firebase sign in has a uid, and linking an email later keeps it, so nothing migrates. One caution:
+  anonymous accounts are free to make, so anything a new account is given can be farmed; the server mint caps
+  are per account.
+- **N6. Store paperwork.** The privacy page offers deletion by email only and does not name Stripe or
+  NOWPayments; its contact is a personal Gmail. `assetlinks.json` has six packages and no Lucid Winds entry.
+  The manifest has no screenshots.
+
+### Checked and fine
+- An offline relaunch boots: service worker active, 122 images, none broken.
+- A 60 plant greenhouse draws in 126 ms with the processor slowed four times. Scrolling it ran at 13 frames a
+  second in that test, worst frame 183 ms; headless overstates this, so confirm on a slow phone.
+- No leaked keys in tracked files.
