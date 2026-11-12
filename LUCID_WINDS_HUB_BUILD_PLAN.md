@@ -95,6 +95,8 @@ Local server for every gate: `python3 -m http.server 8777 --bind 127.0.0.1` from
 ## R8. Play readiness (only after Stephen answers audit calls 4 and 6)
 - A play rail: when the hub runs inside the Play wrapper (the test Shutterbug's `twa_ready` uses), every
   price and payment button is hidden.
+- The same rail hides "Tip Jar and About"'s tip jar. Settings (with Privacy Policy and Terms) must be
+  reachable from the greenhouse by a visible control; the audit could not find one.
 - Account deletion: a callable `deleteAccount` (vault, its subcollections, the player's wildDrops, then the
   auth user), a button under Settings with a typed confirmation, and `legal/delete-account.html` for the
   Play form. The functions deploy is his.

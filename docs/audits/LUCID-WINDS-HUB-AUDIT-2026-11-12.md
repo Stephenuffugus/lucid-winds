@@ -223,3 +223,15 @@ greenhouse; the mint worked and the numbers added up (30 earned, one plant minte
   for an account. The arcade's card also says "patent-pending art engine": that marking should only stand if
   an application is on file.
 - Not reached in this pass: the compost confirmation and the settings menu (my calls did not open them).
+
+## Loose ends from the last checks
+- **The live hub is the audited file.** `https://lucidwinds.com/index.html` and the branch's `index.html` have the
+  same SHA-256, so every finding above applies to production as it stands.
+- **Search and sharing tags are in order.** Title, description, canonical, a 1200x630 share image, the manifest
+  link; zoom is not disabled.
+- **Buttons have accessible names.** Greenhouse 16 of 16, plant card 7 of 7 (the picture only action buttons
+  carry aria labels; they still show no words).
+- **Where is Settings?** The settings menu holds Sound, Colorblind Mode, Reduce Effects, How to Play, Privacy
+  Policy, Terms of Service and "Tip Jar and About". No control with an inline handler opens it from any of the
+  four tabs in the signed out test state. Confirm on a phone how a player reaches it; Play expects the privacy
+  policy to be reachable in the app. "Tip Jar" must be hidden on a Play rail (R8).
