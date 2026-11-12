@@ -51,6 +51,9 @@ Local server for every gate: `python3 -m http.server 8777 --bind 127.0.0.1` from
 - The cinematic's words already wait for the beta notice (`_gatedStart`, `index.html:74706`). Leave that alone.
 - The music offer keeps Stephen's 23 Oct ruling (an offer, top right, never a surprise) and gains three
   rules: not during onboarding, not over a running game, and it closes itself as "Not now" after 12 s.
+- The mint is the case that matters most (audit shots 23, 24): the bloom card shows first and alone; the
+  LEVEL UP overlay waits until it is closed; the first mint explainer comes last, or becomes one line on the
+  bloom card. Today the explainer covers the plant and the level up is drawn through it.
 - Gate: at no moment do two queue popups show; `first_run.mjs` frames list one overlay at a time.
 - Look: the first screen at 2 s and the gift plant screen, once each.
 
@@ -74,6 +77,13 @@ Local server for every gate: `python3 -m http.server 8777 --bind 127.0.0.1` from
 - The "PLANTS: n / n" banner uses the hub's own type.
 - Share, Details, Breed and Compost get a word under each picture.
 - Entries marked coming soon, wip or in development are hidden from the picker unless dev mode is unlocked.
+
+## R11. The mint button says what it does
+- Sunbeam modal (`#lw-sunbeam-modal`, audit shot 22): the mint control is a picture with no words and the
+  only labelled button is CLOSE. Put a labelled button under the picture ("BLOOM YOUR PLANT", 48 px tall,
+  calling the same `_mintFromQueue()`), shown only when a plant is ready. When one is ready the line above
+  reads "1 plant ready" and not "Next plant: 0/30".
+- Look: the modal with 30 banked, once.
 
 ## R7. The web root
 - `.htaccess`: answer 404 for `*.md`, `functions/`, `firestore-rules-*.txt`, `*.rules.json`, `docs/`,

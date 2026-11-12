@@ -199,3 +199,27 @@ of markup and draws in 3 ms.
 - A 60 plant greenhouse draws in 126 ms with the processor slowed four times. Scrolling it ran at 13 frames a
   second in that test, worst frame 183 ms; headless overstates this, so confirm on a slow phone.
 - No leaked keys in tracked files.
+
+## Third pass, same day: the reward moment (shots 22 to 26)
+
+The whole game builds to one moment: 30 Sunbeams become a plant. Walked signed out with room in the
+greenhouse; the mint worked and the numbers added up (30 earned, one plant minted, two level ups paid 50 more).
+- **M1. The mint button has no words.** (shot 22) In the Sunbeam modal the button that mints is a painted
+  picture (`_mintFromQueue()` on the image). The only button with a word on it is CLOSE. The line above it
+  reads "Next plant: 0/30" with an empty bar while 30 are banked and a plant is ready.
+- **M2. The first mint is hidden twice.** (shots 23, 24) Within three seconds an explainer ("A plant from
+  your attention", three paragraphs) covers the new plant completely. When it is dismissed, the LEVEL UP
+  overlay is drawn through the bloom card: "WILD TAB" lies across the plant's name and the unlock text across
+  the haiku. The player meets the plant third.
+- **M3. The reveal holds back the payoff.** (shot 25) The plant is drawn about 200 px wide, inside its aura's
+  hard box, with "Inspect in your Greenhouse to discover its grade". For a collectible the grade is the
+  payoff, and the reveal sends the player elsewhere to find it. Showing it here is a design call (Stephen's).
+- **Breeding is the best system screen in the hub.** (shot 26, left) Two DNA cards, an offspring rarity bar
+  from 600 simulated crosses, a pairing score and a forecast. Dense, and the grade is shown here.
+- **The character page reads as empty.** (shot 26) Class, tools, effects, companion, showcase and milestones
+  are all there, in text so dim and small the page looks blank.
+- **"Just wanna play games?" opens the arcade** (`/portal/`), which says "160+ free games. No install, no
+  account" and pitches Lucid Winds in three clear lines. The hub's own first screen pitches nothing and asks
+  for an account. The arcade's card also says "patent-pending art engine": that marking should only stand if
+  an application is on file.
+- Not reached in this pass: the compost confirmation and the settings menu (my calls did not open them).
