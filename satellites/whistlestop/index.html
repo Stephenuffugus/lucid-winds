@@ -211,6 +211,8 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 #testPanel.on{display:block}
 .swatch{width:34px;height:34px;border-radius:10px;border:3px solid var(--ink);flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
+/* the soundtrack held (musicSync sets the class): its chip, pill and toast stay hidden whatever its reseat writes */
+.sws-music-held #sws-music-chip,.sws-music-held #sws-music-pill,.sws-music-held #sws-music-toast{display:none!important}
 </style>
 <script id="musicFirst">/* THE SOUNDTRACK'S MANNERS, 20261113b (Play queue). On a new player's FIRST launch (never launched, no
    save) the studio soundtrack script is held from here with its own SWS_MUSIC_HOLD flag: no song card, pill or
@@ -4447,8 +4449,14 @@ function startDemo() {
    the Music button lives on the title and How screens. A first launch stays held until the first break: a puzzle
    solved, or the first way out of a rug; that break shows the waiting song. */
 var MUSIC = { first: window.SWS_MUSIC_HOLD === true, want: false, sent: window.SWS_MUSIC_HOLD === true, t: 0 };
+/* ⛔ hold() hides the chip with an inline display:none, and the script's own reseat rewrites the chip's whole style
+   attribute when it finds a better corner: on a held list the Music button came straight back over the first row
+   (seen at 412 x 915 on the second launch). A class on the root and an !important rule keep the chip, the pill and
+   the toast hidden whatever the reseat writes (the rule is in the stylesheet); the card itself still shows when a
+   break reveals it. */
 function musicSync() {
   var on = MUSIC.want || MUSIC.first;
+  try { document.documentElement.classList.toggle('sws-music-held', on); } catch (e) {}
   try { var m = window.SWSMusic; if (m && m.hold && on !== MUSIC.sent) { m.hold(on); MUSIC.sent = on; } } catch (e) {}
 }
 function musicHold(on) { MUSIC.want = !!on; musicSync(); }
