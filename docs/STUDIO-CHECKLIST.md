@@ -22,6 +22,7 @@ Your calls from the night:
 - [ ] Create-A on your phone: open /next/?fps=1 and play a battle; say the number it shows (the one thing the box could not measure) (you)  
 - [ ] Dewball on Play: the kit is in store/dewball-play. Yours: price, the name ("Dewball: Roll and Grow" or plain "Dewball"), hide Sunbeams and the song unlocks in the app or not, audience, and a real icon (the placeholder is a spotted ball close to a famous game's egg) (you)  
 - [ ] Lucid Winds hub: the settings menu opened from the greenhouse still shows the card game's own items (New Game, Add 3 Cards); hide them there or give the hub its own menu (you)  
+- [ ] CrazyGames: three ZIPs wait for a developer account of yours (the Money board below has the steps) (you)  
 
 ## Money: the board (the publishing agent keeps this; say "run the publisher")
 
@@ -32,7 +33,8 @@ Thirteen games have sat built and checked for two ad networks since 2 Sep. Both 
 - [ ] itch.io, the Jimothy page: it still says "hand-painted" (read on the live page 13 Nov). Fable gives you the corrected text; you paste it into the page (you, 3 minutes)  
 - [ ] Shutterbug on Play: the Console upload, then paste the signing SHA-256 (already below) (you)  
 - [ ] Shutterbug: the Reddit feedback post (already below) (you)  
-- [x] CrazyGames: the third builder target (their SDK v3) and three ZIPs built and checked 13 Nov: Garden Guard, Nova Bloom, Bloom Breaker; next for you: the developer account, then publish/CRAZYGAMES.md has the form answers (Opus)  
+- [x] CrazyGames: the third builder target (their SDK v3) and three ZIPs built and checked 13 Nov: Garden Guard, Nova Bloom, Bloom Breaker (Opus)  
+- [ ] CrazyGames: make the developer account at developer.crazygames.com, upload the three ZIPs (publish/dist/*-crazygames.zip; Fable sent them to you 13 Nov), play one round of each on their QA page, then fill the form from publish/CRAZYGAMES.md (you, 20 minutes)  
 - [ ] The first finished promo clip with its caption, for you to post (Opus)  
 - [ ] Poki: they prefer exclusivity; decide after the first numbers come in from the other networks (you, later)  
 - [ ] Sixfold: the Play kit is made (store/sixfold-play) and four of its five code blockers are closed in the build that waits on your line; left: the database rules and sign in, the music licence, your price (you, then Opus)  

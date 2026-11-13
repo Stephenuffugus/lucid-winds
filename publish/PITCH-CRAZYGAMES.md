@@ -66,7 +66,7 @@ Keyboard and mouse native, a run that escalates, four modes including a three mi
 daily. Their action shelf is the busiest one they have.
 
 **3. Bloom Breaker** *(`bloom-breaker`, 0.23 MB, brick breaker)*
-Sixty hand built levels, twenty four powerups and a boss, and it loads in a fraction of a
+Sixty levels, twenty four powerups and a boss, and it loads in a fraction of a
 second on a school Chromebook, which is a real CrazyGames requirement: they ask that a
 game run smoothly on 4 GB of RAM.
 
@@ -90,7 +90,7 @@ three to CrazyGames.
 The three I have in mind are Garden Guard, a cozy tower defence with nine botanical
 towers and a wave ladder, Nova Bloom, a twin stick starfield where every enemy you clear
 plants a flower that charges your bomb, and Bloom Breaker, a brick breaker with sixty
-hand built levels, twenty four powerups and a boss. All three are self contained, they
+levels, twenty four powerups and a boss. All three are self contained, they
 hold a steady frame rate on a cheap laptop, and they land straight in play with no splash
 screen and no login.
 
