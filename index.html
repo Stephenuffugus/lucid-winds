@@ -40706,7 +40706,8 @@ document.addEventListener('keydown', function(e) {
       var _tutActive = _tutVal && _tutVal !== 'done';
       if (!_tutActive && gh.length >= 2 && !localStorage.getItem('lw_first_mint_v1')) {
         localStorage.setItem('lw_first_mint_v1', '1');
-        setTimeout(function(){
+        setTimeout(function _lwFirstMintExplain(){
+          if ((window._lwBloomUp && window._lwBloomUp()) || (window._lwLevelUpBusy && window._lwLevelUpBusy()) || document.getElementById('lw-confirm-modal')) { setTimeout(_lwFirstMintExplain, 700); return; }
           if (window._lwConfirm) {
             window._lwConfirm({
               title: '<span class="lwe lwe-sparkle"></span> A PLANT FROM YOUR ATTENTION',
@@ -46449,6 +46450,12 @@ document.addEventListener('keydown', function(e) {
   window._lwConfirm = function(opts, onYes, onNo) {
     // Block modals while onboarding auth form is active
     if (document.body.classList.contains('ob-active')) return;
+    // Hub R3c: a fresh bloom card shows alone, and its level up comes next; any dialog waits its turn
+    // (a dialog that had to wait also waits for any dialog already up, so two waiting dialogs never replace each other)
+    if ((window._lwBloomUp && window._lwBloomUp()) || (window._lwLevelUpBusy && window._lwLevelUpBusy()) || (opts && opts.__lwWaited && document.getElementById('lw-confirm-modal'))) {
+      if (opts) opts.__lwWaited = true;
+      var _cA = arguments; setTimeout(function(){ window._lwConfirm.apply(null, _cA); }, 700); return;
+    }
     var prev = document.getElementById('lw-confirm-modal');
     if (prev) { try { prev.remove(); } catch(e) {} }
     var title = opts.title || 'CONFIRM';
@@ -64598,6 +64605,8 @@ window.openSunbeamModal=function(){
   ov.innerHTML=h;document.body.appendChild(ov);
 };
 // ═══ MINT CELEBRATION — epic reveal when plant blooms ═══
+// Hub R3c: the bloom card shows first and alone. The level up and the first mint explainer wait for it.
+window._lwBloomUp=function(){ return !!window._lwMintingInFlight || !!document.querySelector('#pw-win-overlay[data-bloom]'); };
 function _showMintCelebration(fullHash){
   // Defer during onboarding — black overlay was blocking the cinematic
   if(document.body.classList.contains('ob-active')){
@@ -64617,7 +64626,7 @@ function _showMintCelebration(fullHash){
   else if(gh.length>=10)tip='Serious collector. Drop a plant in the Wild to claim territory.';
   else if(gh.length>=5)tip='Collection growing! Check your Terra Grade scores.';
   else if(gh.length>=2)tip='Two plants! Try cross-breeding in the Nursery.';
-  var ov=document.createElement('div');ov.id='pw-win-overlay';
+  var ov=document.createElement('div');ov.id='pw-win-overlay';ov.setAttribute('data-bloom','1');
   // 2026-05-07: dropped backdrop-filter on outer overlay (the prev May 06
   // fix removed the inner filter:brightness+blur but left this in place,
   // and Stephen still saw wireframe-look mints). Solid 95% bg looks the
@@ -72417,9 +72426,11 @@ window._lwSpawnParticles=function(container,opts){
   setTimeout(function(){if(layer.parentNode)layer.parentNode.removeChild(layer);},3500);
 };
 
+window._lwLevelUpBusy=function(){ return _luBusy || _luQueue.length>0; };
 function _luProcessQueue(){
   if(_luQueue.length===0){_luBusy=false;return;}
   _luBusy=true;
+  if(window._lwBloomUp && window._lwBloomUp()){ setTimeout(_luProcessQueue,700); return; }
   var item=_luQueue.shift();
   var ov=document.getElementById('lu-overlay');
   if(!ov){
