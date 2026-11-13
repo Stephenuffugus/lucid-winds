@@ -547,6 +547,27 @@ try {
     p = await played();
     R.say(p.screen === 'play' && p.byte === s.photo + 1, 'roll: From my photo climbs the photo\'s own biome (byte ' + p.byte + ', the vote ' + (s.photo + 1) + ')');
     await leaveRoom(page);
+    /* sb-m2-28: the roll shows the player's own photo, large, as a Polaroid above the tiles, its paper on the lit tile's
+       biome; the phone's back (a real Escape, Chrome's close request) goes one screen back: the roll to the crop with the
+       same photo (the roll's print wiped), the crop to the title (the photo let go), never out of the game */
+    s = await toRoll(0.999);
+    const pr = await page.evaluate(() => {
+      const pol = document.getElementById('rollpol'), c = document.getElementById('rollprint'), r = c.getBoundingClientRect(), tl = document.getElementById('rolltiles').getBoundingClientRect();
+      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let lit = 0; for (let i = 3; i < d.length; i += 4) if (d[i] === 255) lit++;
+      return { shown: !pol.hidden && r.height > 0, h: c.offsetHeight, w: c.offsetWidth, above: r.bottom <= tl.top, filled: lit / (c.width * c.height), biome: pol.getAttribute('data-biome'), watch: window.SB_DEV.backWatch() };
+    });
+    R.say(pr.shown && pr.h >= 300 && Math.abs(pr.w * 2 - pr.h) < 2 && pr.above && pr.filled > 0.99 && ['attic', 'frost', 'deep', 'overgrowth', 'ember'].includes(pr.biome) && pr.watch === 'roll',
+      'roll: the player\'s photo shows above the tiles, ' + pr.w.toFixed(0) + 'x' + pr.h.toFixed(0) + ' (300 or more tall at 412x915), drawn edge to edge (' + (pr.filled * 100).toFixed(1) + '%), its paper on ' + pr.biome + ', back watched for ' + (pr.watch || 'nothing'));
+    await page.keyboard.press('Escape'); await sleep(150);
+    const bk1 = await page.evaluate(() => { const c = document.getElementById('rollprint'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let any = 0; for (let i = 3; i < d.length; i += 4) if (d[i]) { any = 1; break; }
+      return { screen: window.SB_DEV.screen(), alive: window.SB_DEV.photoAlive(), wiped: !any, on: window.SB_DEV.roll().on, watch: window.SB_DEV.backWatch() }; });
+    await sleep(3000);   /* past the roll's own landing and hold: a back that left its timers running would climb now */
+    const bk1b = await page.evaluate(() => window.SB_DEV.screen());
+    R.say(bk1.screen === 'crop' && bk1b === 'crop' && bk1.alive && bk1.wiped && !bk1.on && bk1.watch === 'crop',
+      'roll: back on the roll returns to the crop with the same photo, the roll stopped and its print wiped (screen ' + bk1.screen + ' then ' + bk1b + ', photo ' + (bk1.alive ? 'kept' : 'gone') + ', print ' + (bk1.wiped ? 'wiped' : 'KEPT') + ', back watched for ' + (bk1.watch || 'nothing') + ')');
+    await page.keyboard.press('Escape'); await sleep(150);
+    const bk2 = await page.evaluate(() => ({ screen: window.SB_DEV.screen(), alive: window.SB_DEV.photoAlive(), watch: window.SB_DEV.backWatch() }));
+    R.say(bk2.screen === 'title' && !bk2.alive && !bk2.watch, 'roll: back on the crop is its Title: the title, the photo let go, no watcher left (screen ' + bk2.screen + ', photo ' + (bk2.alive ? 'KEPT' : 'gone') + ')');
     /* reduced motion: no sweep, the landing at once */
     await page.evaluate(() => { window.SB.settings.reducedMotion = true; });
     s = await toRoll(0.999);

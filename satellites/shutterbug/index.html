@@ -10624,7 +10624,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return true;
   };
   /* the back gesture (Q94, his ruling): in a room it opens the pause card; on the card it resumes; on the share sheet it
-     closes it; on the clear and death cards it is Title; on the title (and Settings, the crop screen, the develop card)
+     closes it; on the clear and death cards it is Title; on the title (and Settings and the develop card)
      it leaves, as before. One CloseWatcher at a time, for the screen showing, made on each switch with the old one
      destroyed first, so it always takes a group of its own and one back closes one screen. No history entry, so the
      fleet exit's history.back and an installed app's back on the title are untouched (Q62's (c) is not built). Where
@@ -10636,7 +10636,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* 3 Nov: the screens built after Q94 (none had a watcher, so back closed the installed app): back is Title, as on
        the cards; the story's back ends it (seen), else the title would open it again. Settings keeps Q94's leave */
     darkroom: function () { ui.show('title'); }, album: function () { ui.show('title'); }, trophies: function () { ui.show('title'); },
-    daily: function () { ui.show('title'); }, story: function () { ui.storySkip(); }
+    daily: function () { ui.show('title'); }, story: function () { ui.storySkip(); },
+    /* sb-m2-28: the crop screen's back is its own Title (Back to the doorway in a house), and the biome roll's back is
+       the crop again, the same photo and box, so a phone's back goes one screen back, never out of the game */
+    crop: function () { document.getElementById('croptitle').click(); }, roll: function () { ui.rollBack(); }
   };
   var watcher = null, watching = '';
   function armBack(name) {
@@ -11326,6 +11329,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('rollchoose').hidden = true; document.getElementById('rollphoto').hidden = false;
     rollSay(ui.COPY.rollPick);
   }
+  ui.rollBack = function () { rollClear(); RL.on = false; RL.tok++; rollPrint(false); ui.show('crop'); };
   ui.rollDev = {
     with: function (fn) { RL.rand = typeof fn === 'function' ? fn : null; },
     state: function () { return { on: RL.on, photo: RL.photo, target: RL.target, at: RL.at, hops: RL.hops, landed: RL.landed, choosing: RL.choosing, no: Object.keys(RL.no).map(Number), runs: RL.runs, landMs: RL.tl ? RL.tl - RL.t0 : -1 }; }
