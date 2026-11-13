@@ -207,6 +207,11 @@ try {
         stick: { x: sb.left, y: sb.top, w: sb.width, h: sb.height } };
     });
     const ctg = tag + ' on the clear card';
+    /* sb-m2-28: the frame's Dead pixels count is never half under the card (it read "ixels 5" past the card's edge): it is
+       either clear of the card or hidden with it */
+    const dpc = await page.evaluate(() => { const d = document.getElementById('dp'), c = document.getElementById('clear').getBoundingClientRect(), r = d.getBoundingClientRect();
+      const vis = getComputedStyle(d).visibility !== 'hidden' && r.width > 0, over = r.left < c.right && c.left < r.right && r.top < c.bottom && c.top < r.bottom; return { vis, over, box: [r.left, r.top, r.width, r.height].map(v => v.toFixed(0)).join(',') }; });
+    R.say(!dpc.vis || !dpc.over, ctg + ': the frame\'s Dead pixels count is not half under the card (' + (dpc.vis ? 'shown at ' + dpc.box + (dpc.over ? ', UNDER the card\'s edge' : ', clear of the card') : 'hidden with the card') + ')');
     if (w >= 360) {
       R.say(cl.screen === 'clear' && !!cl.res && Math.abs(cl.res.x) < 0.5 && Math.abs(cl.res.w - RES) < 0.5 && Math.abs(cl.res.h - RES) < 0.5 && Math.abs(cl.res.y + cl.res.h - cl.vh) < 0.5,
         ctg + ': the reserved box is back, the bottom left 120x120 (' + (cl.res ? [cl.res.x, cl.res.y, cl.res.w, cl.res.h].map(v => v.toFixed(0)).join(',') : 'missing') + ', screen ' + cl.screen + ')');

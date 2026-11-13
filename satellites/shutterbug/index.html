@@ -556,6 +556,9 @@ body:not(.playing) #floorname { display: none; }
    strip's count the death lost is struck through */
 #death.house .duo { flex-direction: column; } #death.house .duo button { flex: none; }
 #dp.lost #dpn { text-decoration: line-through; }
+/* sb-m2-28: under the clear card the frame's count is covered whole, never half: it peeked out past the card's edge
+   ("ixels 5"); the card says what the room banked */
+body:has(#clear.on) #dp { visibility: hidden; }
 /* the doorway's hearts: the strip's sprites, the one back at this doorway ringed in Sun (a placeholder for Astra's) */
 #doorhearts:not([hidden]) { display: flex; justify-content: center; gap: 6px; }
 #doorhearts i { width: 18px; height: 16px; display: block; background: var(--heart-full) 0 0 / 18px 16px no-repeat; image-rendering: pixelated; }
