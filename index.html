@@ -59645,6 +59645,9 @@ function _checkPendingRewards(){
   }catch(e){}
 }
 function _toast(m,opts,_t0){if(opts&&opts.sticky){return _lwStickyToast(m,opts);}var e=document.getElementById('w-toast');if(!e)return;
+  // Hub R14: #w-toast is written inside #panel-wild, which is display:none on every other tab, so every plain toast
+  // on the Greenhouse, Nursery and Games tabs drew nothing (the exposure note below says it should work from any tab)
+  if(e.parentNode!==document.body)document.body.appendChild(e);
   // Hub R14: a toast never lands on a dialog's buttons. If it answers a tap made on the dialog it shows at once,
   // high on the screen; any other toast waits for the dialog to close (at most 60 s, then it is stale and dropped).
   var _dlg=window._lwDialogUp&&window._lwDialogUp();
