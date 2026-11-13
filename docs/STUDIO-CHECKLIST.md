@@ -8,12 +8,15 @@ As of 13 Nov 2026, 08:30 UTC. The order: you get the art (1), you make your call
 
 Astra's hub kit came back and is in the vault. Opus built it into the real hub behind a switch, so it can be judged with real plants and not her blurry mockups; Fable looked at every screen. Today, her kit and a hybrid, side by side, with what is still wrong: https://claude.ai/artifact/ULCFeHPUFTC4stDLERD1m4
 
+- [ ] The short way, if you want everything that waits at once (the four privacy pages, the hub with R13 and the preview, Create-A, Sixfold, Keepsies m5, then Shutterbug): `! bash /home/codespace/lw-drafts/deploy-all-waiting.sh` It runs the same checked lines one after another and stops at the first that fails. Leave one out with SKIP, for example `! SKIP="create-a" bash /home/codespace/lw-drafts/deploy-all-waiting.sh` (you)  
 - [ ] Put the preview on lucidwinds.com (with no flag the hub is unchanged; it carries the R13 repairs, so run it INSTEAD of the hub R13 line in the next section): `! bash /home/codespace/lw-drafts/deploy-hub-skin-preview.sh` Then on the Pixel: lucidwinds.com/?skin=bloom,cards,banners,actions,layout (the hybrid), ?skin=astra (all of her kit), ?skin=off (today) (you)  
 - [ ] Call 1: is the hybrid the direction? Her bloom reveal, plant card, greenhouse tile, action tiles and the collection moved up into the first screen; our painted top bar, stone nav and rooms. On a yes, Opus builds it into the hub properly (you)  
 - [ ] Call 2: the grade on the card's frame with the season as a small mark (the preview), or the painted seasonal corners kept and the grade shown as glow and word only (you)  
 - [ ] Call 3: name the grade at the bloom reveal (hers), or keep "inspect in your greenhouse to discover" (you)  
 - [ ] Call 4: the banners: hers (they match, plainer), or today's with one new Puzzles banner painted to match (you)  
 - [ ] Call 5: a second round for Astra on the nav, the top bar and the Wild buttons, which came back as plain line icons; or stop here (you)  
+- [ ] Keepsies m5, THE FIGURES (the fourteen Meshy figures stand on the dirt as the statues, the four grails show their sculpt inside the glass; 2.7 MB of figures, fetched only when a match has statues, nothing new on a first visit; 24 gates green, shots looked at): `! bash /home/codespace/kp-drafts/deploy-keepsies-m5.sh` Then play a match with STATUES on, and open a grail in the collection (you)  
+- [ ] Keepsies m5, your calls: which figure stands for which statue shape (the Arch stays a brick gate with a figure sitting on it, because no figure has a hole a marble can pass through); the figures keep their own colours, so whose statue it is shows only as chalk marks on the dirt; the low quality tier keeps the plain shapes; a grail shows its sculpt in the inspect view only, not in a match; the boba cup still has faint dark streaks under its lid (a texture re-bake would fix it) (you)  
 - [ ] The disk is at 5.5 GB free (was 794 MB) and nothing was lost: cold drafts sit in the vault (release box-archive-20261113), and Blender (1.3 GB) now fetches itself onto the scratch disk when a forge script calls it. One line makes the cleanup run by itself at every session start: `! bash /home/codespace/lw-drafts/install-disk-prune-hook.sh` (you)  
 - [ ] The disk, your word: keep session transcripts 10 days and not 30 (stops about 2 GB of growth; say yes and Fable sets it). When it fills again the lasting fix is a slim container image (frees 6 to 7 GB, needs a planned rebuild) (you)  
 
@@ -71,7 +74,7 @@ The Lucid Winds hub was audited on 12 Nov (read only, three passes). The page wi
 - [ ] Shutterbug: the Reddit feedback post, draft in docs/briefs/shutterbug/REDDIT-FEEDBACK-POST-NOV13.md; one sub a day, r/playmygame first (you)  
 - [ ] Decide: make the GitHub repository private. It is public, with the project notes and Claude's name on the commits (you)  
 - [x] Meshy, Keepsies: the four grails (koi, the astronomer, the drowned knight, the ember dragon) and the fourteen statue figures made from Astra's pictures 13 Nov, 540 credits, vaulted (meshy-keepsies-grails-20261113, meshy-keepsies-statues-20261113) (Fable)  
-- [ ] Keepsies: fit the eighteen figures into the game, the grails inside their marbles and the statues on the dirt (Fable plans, Opus)  
+- [x] Keepsies: the eighteen figures fitted into the game, the grails inside their marbles and the statues on the dirt: BUILT 13 Nov as m5 (Opus), checked (Fable); waits on your line in the afternoon section (Fable plans, Opus)  
 - [ ] Meshy: 1,164 monthly credits still expire Mon 30 Nov, 23:37 UTC. Dewball is fully modeled (296 of 296 kinds), so name the game they go to, or ask Astra for new pictures (you)  
 
 ## 1. The art, in this order (you, then Astra)
