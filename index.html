@@ -59626,9 +59626,11 @@ window._lwCardUp=function(){
   }catch(e){}
   return false;
 };
-function _lwStickyToast(m,opts){
-  // Hub R13: a sticky toast never lands on a card; it waits until the card is closed, then has its own 6 s
-  if(window._lwCardUp()){ setTimeout(function(){ _lwStickyToast(m,opts); },800); return null; }
+function _lwStickyToast(m,opts,_clear){
+  // Hub R13: a sticky toast never lands on a card; it waits until the card is closed, then has its own 6 s.
+  // The way must stay clear for one more beat, so a card that was waiting on the same card goes first.
+  if(window._lwCardUp() || document.querySelector('#lw-music-ask.on')){ setTimeout(function(){ _lwStickyToast(m,opts,0); },800); return null; }
+  if(!_clear){ setTimeout(function(){ _lwStickyToast(m,opts,1); },900); return null; }
   var stack=document.getElementById('w-toast-stack');
   if(!stack){
     stack=document.createElement('div');stack.id='w-toast-stack';
@@ -87256,7 +87258,10 @@ function _showMorningReport(){
   if(lines.length===0)return;
 
   // Delay to let app settle
-  setTimeout(function(){
+  setTimeout(function _lwMorningWhenClear(){
+    // Hub R13: the overnight report waits for any card already up (the account card, a dialog) instead of
+    // opening under it and timing out unseen; its 12 s starts when it is really on screen
+    if(window._lwCardUp && window._lwCardUp()){ setTimeout(_lwMorningWhenClear,700); return; }
     var ov=document.createElement('div');
     ov.id='morning-report';
     ov.style.cssText='position:fixed;inset:0;z-index:99995;background:rgba(5,8,4,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;animation:panelFadeIn 0.4s ease;';
@@ -104747,8 +104752,10 @@ window.LW_Comp = (function(){
   var askTimer=null;
   function busy(){ var b=document.body; if(!b) return true; if(b.classList.contains('ob-active') || b.classList.contains('lw-tutorial-pending') || b.classList.contains('game-active')) return true;
     var ob=document.getElementById('pw-onboard'); if(ob && getComputedStyle(ob).display!=='none') return true; return false; }
+  /* Hub R13: the offer also waits for any card (the account card, the overnight report, a dialog); a card is not a reason to answer Not now */
+  function cardUp(){ return !!(window._lwCardUp && window._lwCardUp()); }
   function notNow(){ if(askTimer){ clearInterval(askTimer); askTimer=null; } remember(); hide(); }
-  function showAsk(){ if(!window.LW_MUSIC || !LW_MUSIC.play) return; if(LW_MUSIC.state && LW_MUSIC.state.playing) return; if(busy()){ setTimeout(function(){ if(!betaUp()) showAsk(); }, 2000); return; }
+  function showAsk(){ if(!window.LW_MUSIC || !LW_MUSIC.play) return; if(LW_MUSIC.state && LW_MUSIC.state.playing) return; if(busy() || cardUp()){ setTimeout(function(){ if(!betaUp()) showAsk(); }, 2000); return; }
     box.classList.add('on'); var t0=Date.now();
     askTimer=setInterval(function(){ if(!box.classList.contains('on')){ clearInterval(askTimer); askTimer=null; return; } if(Date.now()-t0>=12000 || busy()) notNow(); }, 500); }
   document.getElementById('lw-music-yes').addEventListener('click',function(){ if(askTimer){ clearInterval(askTimer); askTimer=null; } remember(); hide();
