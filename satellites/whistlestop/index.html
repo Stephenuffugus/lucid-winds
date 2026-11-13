@@ -212,6 +212,13 @@ html,body{margin:0;padding:0;height:100%;background:var(--floor);color:var(--ink
 .swatch{width:34px;height:34px;border-radius:10px;border:3px solid var(--ink);flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
+<script id="musicFirst">/* THE SOUNDTRACK'S MANNERS, 20261113b (Play queue). On a new player's FIRST launch (never launched, no
+   save) the studio soundtrack script is held from here with its own SWS_MUSIC_HOLD flag: no song card, pill or
+   toast over the first screen. The game lets it go at its first break (musicBreak). From the second launch on the
+   script boots as it does in every other game. /music-unlocks.js itself is not edited. */
+(function(){ try{ var n=+(localStorage.getItem("whistlestop_launches")||0)||0;
+  localStorage.setItem("whistlestop_launches",String(n+1));
+  if(n<1&&!localStorage.getItem("lw_whistlestop_v1")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
 <script src="/music-unlocks.js?v=20260916c" defer></script>
 </head>
 <body>
@@ -2451,7 +2458,7 @@ function suitePurity(T, src) {
 
 
 /* ========================= 10. THE GAME'S STATE ========================= */
-var STAMP = '20261113a';
+var STAMP = '20261113b';
 var REDUCED = false;
 var G = {
   mode: 'build',          /* build or puzzle */
@@ -4433,6 +4440,29 @@ function startDemo() {
   measureChrome();
   fitView();
 }
+/* ⛔ THE SOUNDTRACK'S MANNERS (Play queue, 20261113b). The round Music button sat over the top left of the
+   puzzle list and over the board's right edge, and on a first launch the song card slid over the title two seconds
+   in. The shared script is driven with its own controls: held while a rug is open (a puzzle or the sandbox, the win
+   card included), held on the two lists (twelve puzzles fill a phone, and the button took a row wherever it sat), so
+   the Music button lives on the title and How screens. A first launch stays held until the first break: a puzzle
+   solved, or the first way out of a rug; that break shows the waiting song. */
+var MUSIC = { first: window.SWS_MUSIC_HOLD === true, want: false, sent: window.SWS_MUSIC_HOLD === true, t: 0 };
+function musicSync() {
+  var on = MUSIC.want || MUSIC.first;
+  try { var m = window.SWSMusic; if (m && m.hold && on !== MUSIC.sent) { m.hold(on); MUSIC.sent = on; } } catch (e) {}
+}
+function musicHold(on) { MUSIC.want = !!on; musicSync(); }
+/* a break: the first one lets a first launch go, and every one shows a song that waited (one earned mid play is
+   held in the script's pending list, not toasted over the board). `still` says the break is still on screen. */
+function musicBreak(still) {
+  MUSIC.first = false; musicSync();
+  clearTimeout(MUSIC.t);
+  MUSIC.t = setTimeout(function () {
+    try { var m = window.SWSMusic; if ((!still || still()) && m && m.reveal) m.reveal(); } catch (e) {}
+  }, 1400);
+}
+/* the script is deferred: a hold asked for before it ran is sent once it has (sent = what the script holds now) */
+document.addEventListener('DOMContentLoaded', musicSync);
 function showScreen(name) {
   var i;
   for (i = 0; i < SCREENS.length; i++) {
@@ -4445,6 +4475,8 @@ function showScreen(name) {
   else if (name !== 'Play') G.demo = false;
   chromeFor(name);
   if (name !== 'Play') { hideHandles(); el('winCard').classList.remove('on'); }
+  musicHold(name === 'Play' || name === 'Select' || name === 'Sand');
+  if (was === 'Play' && name !== 'Play') musicBreak(function () { return G.screen === name; });
 }
 function chromeFor(name) {
   var play = name === 'Play', build = play && G.mode === 'build';
@@ -4577,6 +4609,7 @@ function onWin() {
   el('winCard').classList.add('on');
   if (!V.userMoved) fitView();
   AUDIO.play('chime');
+  musicBreak(function () { return G.screen === 'Play' && el('winCard').classList.contains('on'); });
 }
 function renderPuzzleList() {
   var list = el('puzzleList');
