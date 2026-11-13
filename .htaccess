@@ -185,3 +185,16 @@
 
 # ── 6. DISABLE DIRECTORY LISTING ──
 Options -Indexes
+
+# ── 7. THE REPO IS NOT THE SITE (Hub R7, 13 Nov 2026) ──
+# The web root is the repo, so notes, plans, rules files, tools and dev pages answered 200 on lucidwinds.com.
+# These answer 404 instead. RedirectMatch (mod_alias) and not RewriteRule, because satellites/wild-wardens has
+# its own RewriteEngine, which would switch root rewrite rules off below it; alias rules still apply there.
+# Kept open on purpose, grepped 13 Nov: /LICENSE.md (the hub's about panel links it), *-IDEAS-BRIEF.md
+# (section 5's downloads, e.g. /dl/TUMBLE-IDEAS-BRIEF.md) and satellites/letter-launch/docs/ (that game IS its
+# docs folder: satellites/letter-launch/index.html redirects there). Nothing served loads from the rest.
+RedirectMatch 404 "^/(?!LICENSE\.md$)(?!.*-IDEAS-BRIEF\.md$).*\.md$"
+RedirectMatch 404 "^/(functions|docs|plans|tools|scripts|store)(/.*)?$"
+RedirectMatch 404 "^/(firestore-rules-[^/]*\.txt|[^/]*\.rules\.json)$"
+RedirectMatch 404 "^/(nuke|audit|dual-preview|leaf-audit)\.html$"
+RedirectMatch 404 "^/satellites/(?!letter-launch/docs(/|$))[^/]+/(docs|tools|test|fixtures)(/.*)?$"
