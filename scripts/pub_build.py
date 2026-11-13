@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Publisher build pipeline: turn a satellite game into a clean ZIP for an
-HTML5 game network (GameDistribution / GameMonetize).
+HTML5 game network (GameDistribution / GameMonetize / CrazyGames).
 
   python3 scripts/pub_build.py <satellite-dir> --target gd|gm [--game-id ID]
+  python3 scripts/pub_build.py <satellite-dir> --target crazygames
+
+CrazyGames needs no game id (their SDK knows the game by the page it runs on).
+publish/CRAZYGAMES.md says what that target adds and why.
 
 What it does to the copy (never the source):
   1. strips the Sunbeam economy (script tag + init; all game-side calls are
@@ -116,6 +120,187 @@ window.__pubAd = function(){
 };
 </script>
 """
+
+# CrazyGames, SDK v3, read from their own docs on 2026-11-13:
+#   https://docs.crazygames.com/sdk/intro/       (the tag, init, environments)
+#   https://docs.crazygames.com/sdk/game/        (gameplayStart/Stop, loadingStart/Stop, happytime, settings)
+#   https://docs.crazygames.com/sdk/video-ads/   (requestAd, adStarted/adFinished/adError)
+#   https://docs.crazygames.com/requirements/ads/ and /requirements/technical/
+# The tag goes in the head before the game code, as their intro page writes it. The
+# adapter after it never lets the game depend on the SDK: if the script is blocked or
+# the environment is "disabled" (any host that is not theirs or localhost, where every
+# call throws), each call below is a no-op and the game plays on.
+# What it does, all of it from those pages:
+#   init first, and nothing else until init resolves
+#   loadingStart/loadingStop around the page load, only when the page is still loading
+#   gameplayStart when play begins or resumes, gameplayStop at every break; both are
+#     idempotent, so a start never follows a start
+#   a midgame ad only at the round end the other two targets already use, after the
+#     stop; the UI is blocked from the request until adFinished or adError (their ads
+#     page: "Block the UI until either an adFinished or adError event occurs"), audio is
+#     muted only once adStarted fires and comes back on finish AND on error, plus a 60 s
+#     safety release so a lost callback can never freeze the game
+#   game.settings.muteAudio honoured and kept above the game's own sound toggle
+#   happytime only on a whole game win (Bloom Breaker's winGame), never per level
+# No rewarded ads: no game offers a reward through the other two targets.
+CG_SDK = """
+<script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+<script type="text/javascript">
+(function(){
+  var cg = null, playing = false, wantPlay = false, adBusy = false, reason = '';
+  var adMute = false, setMute = false, ctxs = [], releaseT = null, blocker = null;
+  window.__pubAdLast = 0; window.__pubAdCalls = 0; window.__pubAdBreaks = 0;
+  window.__cgCtxs = ctxs;
+  function call(fn){ if (!cg) return; try { fn(cg); } catch (e) {} }
+
+  /* audio: every AudioContext the game makes is remembered, and resume() is refused
+     while an ad plays or the site asks for silence */
+  var AC = window.AudioContext || window.webkitAudioContext, acResume = null;
+  if (AC) {
+    acResume = AC.prototype.resume;
+    AC.prototype.resume = function(){
+      if (adMute || setMute) return Promise.resolve();
+      return acResume.apply(this, arguments);
+    };
+    var W = function(o){ var c = (o === undefined) ? new AC() : new AC(o); ctxs.push(c); return c; };
+    W.prototype = AC.prototype;
+    if (window.AudioContext) window.AudioContext = W;
+    if (window.webkitAudioContext) window.webkitAudioContext = W;
+  }
+  function applyMute(){
+    var m = adMute || setMute, i, els;
+    for (i = 0; i < ctxs.length; i++) {
+      var c = ctxs[i];
+      try {
+        if (m && c.state === 'running') { c.__cgSus = true; c.suspend(); }
+        else if (!m && c.__cgSus) { c.__cgSus = false; acResume.call(c); }
+      } catch (e) {}
+    }
+    els = document.querySelectorAll('audio,video');
+    for (i = 0; i < els.length; i++) {
+      try {
+        if (m && !els[i].paused) { els[i].__cgWas = true; els[i].pause(); }
+        else if (!m && els[i].__cgWas) { els[i].__cgWas = false; var p = els[i].play(); if (p && p.catch) p.catch(function(){}); }
+      } catch (e) {}
+    }
+  }
+
+  /* the UI is blocked from the ad request until the ad is over or has failed */
+  function block(on){
+    if (on && !blocker && document.body) {
+      blocker = document.createElement('div');
+      blocker.setAttribute('aria-hidden', 'true');
+      blocker.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;z-index:2147483647;background:rgba(0,0,0,.35)';
+      document.body.appendChild(blocker);
+    } else if (!on && blocker) {
+      if (blocker.parentNode) blocker.parentNode.removeChild(blocker);
+      blocker = null;
+    }
+  }
+  ['keydown', 'keyup', 'keypress'].forEach(function(k){
+    window.addEventListener(k, function(e){ if (adBusy) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+  });
+
+  window.__cgStart = function(){
+    wantPlay = true;
+    if (playing || adBusy || !cg) return;
+    playing = true; reason = '';
+    call(function(s){ s.game.gameplayStart(); });
+  };
+  window.__cgStop = function(why){
+    wantPlay = false; reason = why || 'hook';
+    if (!playing) return;
+    playing = false;
+    call(function(s){ s.game.gameplayStop(); });
+  };
+  window.__cgHappy = function(){ call(function(s){ s.game.happytime(); }); };
+
+  function adDone(){
+    if (!adBusy) return;
+    adBusy = false; window.__pubPaused = false;
+    if (releaseT) { clearTimeout(releaseT); releaseT = null; }
+    adMute = false; applyMute(); block(false);
+  }
+  /* the round end hook: stop first, then a midgame. The SDK keeps its own three minute
+     spacing and answers a request that is too early with adError (adCooldown), so the
+     request is made at every round end and their pacing decides. */
+  window.__pubAd = function(){
+    window.__pubAdCalls++;
+    window.__cgStop('break');
+    if (!cg || adBusy) return;
+    adBusy = true; window.__pubPaused = true; block(true);
+    releaseT = setTimeout(adDone, 60000);
+    try {
+      cg.ad.requestAd('midgame', {
+        adStarted: function(){ window.__pubAdLast = Date.now(); window.__pubAdBreaks++; adMute = true; applyMute(); },
+        adFinished: adDone,
+        adError: adDone
+      });
+    } catch (e) { adDone(); }
+  };
+
+  /* pause screens: a visible element whose id names a pause (not a button) is a break;
+     when it goes away after a pause, play resumes. Nova Bloom pauses inline, with no
+     function a hook could find, so this is the one rule that covers all three. */
+  function pauseVisible(){
+    var els = document.querySelectorAll('[id*="pause" i]'), i;
+    for (i = 0; i < els.length; i++) {
+      var e = els[i];
+      if (e.tagName === 'BUTTON' || /btn|button/i.test(e.id)) continue;
+      var r = e.getBoundingClientRect(), st = getComputedStyle(e);
+      if (r.width > 0 && r.height > 0 && st.display !== 'none' && st.visibility !== 'hidden' && +st.opacity > 0.05) return true;
+    }
+    return false;
+  }
+  setInterval(function(){
+    if (adBusy) return;
+    var pv = false; try { pv = pauseVisible(); } catch (e) {}
+    if (pv && playing) window.__cgStop('pause');
+    else if (!pv && !playing && reason === 'pause') window.__cgStart();
+  }, 300);
+
+  /* a game with no start function the builder could hook starts on the first input
+     after a break */
+  ['pointerdown', 'keydown'].forEach(function(k){
+    window.addEventListener(k, function(){
+      if (window.__cgStartOnInput && !adBusy && !playing && reason !== 'pause') window.__cgStart();
+    }, true);
+  });
+
+  try {
+    var S = window.CrazyGames && window.CrazyGames.SDK;
+    if (S && typeof S.init === 'function') {
+      S.init().then(function(){
+        var env = S.environment;
+        if (env !== 'local' && env !== 'crazygames') return;   /* "disabled": every call throws */
+        cg = S;
+        var loading = document.readyState !== 'complete';
+        if (loading) call(function(s){ s.game.loadingStart(); });
+        try {
+          setMute = !!(S.game.settings && S.game.settings.muteAudio); applyMute();
+          S.game.addSettingsChangeListener(function(n){ setMute = !!(n && n.muteAudio); applyMute(); });
+        } catch (e) {}
+        function loaded(){
+          if (loading) call(function(s){ s.game.loadingStop(); });
+          if (wantPlay) { wantPlay = false; window.__cgStart(); }
+        }
+        if (loading) window.addEventListener('load', loaded); else loaded();
+      }).catch(function(){});
+    }
+  } catch (e) {}
+})();
+</script>
+<style>body{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}</style>
+"""
+
+# CrazyGames wants gameplayStart whenever play begins or resumes and gameplayStop at
+# every break (docs.crazygames.com/sdk/game/). These are the fleet's own names for those
+# moments; only the first declaration of each is hooked, and only in a crazygames build.
+CG_START = ['startLevel', 'startEndless', 'startGame', 'startMode', 'startRun',
+            'resumeGame', 'advanceLevel', 'nextLevel', 'restartLevel']
+CG_STOP = ['levelClear', 'levelComplete', 'completeLevel', 'pauseGame', 'toMenu',
+           'showMenu', 'goMenu', 'backToMenu']
+CG_HAPPY = ['winGame']     # a whole game won; their docs: not for every level
 
 # Three handles, because the fleet ships the same button three different ways and each
 # one was found by looking at a built page rather than by reading the source:
@@ -352,8 +537,17 @@ def build(src_dir, target, game_id):
     html = re.sub(r'<link rel="canonical"[^>]*/?>\n?', '', html)
     html = re.sub(r'<meta (?:property|name)="(?:og:url|og:image|twitter:image|twitter:url)"[^>]*/?>\n?', '', html)
 
+    # 3b. CrazyGames only (the other two targets build exactly as before): the studio
+    #     never claims "hand built" or "hand made" in copy that goes out, and Bloom
+    #     Breaker's meta description still says "60 hand built levels". Text and
+    #     attributes only; script and style bodies are left alone.
+    if target == 'crazygames':
+        HAND = r'\bhand[- ](?:built|made|painted|drawn|crafted)\s+'
+        pieces = re.split(r'(<script[\s\S]*?</script>|<style[\s\S]*?</style>)', html)
+        html = ''.join(p if i % 2 else re.sub(HAND, '', p, flags=re.I) for i, p in enumerate(pieces))
+
     # 4. SDK + exit-hider, injected right after <head>
-    sdk = (GM_SDK if target == 'gm' else GD_SDK).replace('%GAME_ID%', game_id)
+    sdk = {'gm': GM_SDK, 'gd': GD_SDK, 'crazygames': CG_SDK}[target].replace('%GAME_ID%', game_id)
     # ⭐ the last of the economy, and the only part that survives a static strip.
     #    `window._sbCapEarn` is defined INSIDE each game, not in the SDK we remove, and it
     #    keeps its own daily cap in localStorage. So a publisher build still counted the
@@ -430,6 +624,35 @@ def build(src_dir, target, game_id):
               + (f', plus the defeat function `{defeat_hook}`' if defeat_hook else ''))
     hooked = hook_name is not None
 
+    # 5b. CrazyGames only: gameplay start and stop at the game's own moments. The round
+    #     end needs no hook of its own: __pubAd stops gameplay before it asks for the ad.
+    if target == 'crazygames':
+        def _hook(fn, code):
+            for pat in (r'(function\s+%s\s*\([^)]*\)\s*\{)' % fn,
+                        r'((?:var|let|const)\s+%s\s*=\s*function\s*\([^)]*\)\s*\{)' % fn,
+                        r'((?:var|let|const)\s+%s\s*=\s*\([^)]*\)\s*=>\s*\{)' % fn):
+                # no `name: function` here: Garden Guard's sound table has a
+                # `levelClear:function(){` that plays a chime, not a game moment
+                if re.search(pat, html):
+                    return re.sub(pat, lambda m: m.group(1) + code, html, count=1), True
+            return html, False
+        starts, stops, happy = [], [], []
+        for fn in CG_START:
+            html, ok = _hook(fn, 'try{window.__cgStart&&window.__cgStart();}catch(e){}')
+            if ok: starts.append(fn)
+        for fn in CG_STOP:
+            html, ok = _hook(fn, "try{window.__cgStop&&window.__cgStop('hook');}catch(e){}")
+            if ok: stops.append(fn)
+        for fn in CG_HAPPY:
+            html, ok = _hook(fn, 'try{window.__cgHappy&&window.__cgHappy();}catch(e){}')
+            if ok: happy.append(fn)
+        if not starts:
+            html = html.replace('</head>', '<script>window.__cgStartOnInput=true;</script></head>', 1)
+        print('crazygames gameplayStart at: ' + (', '.join(starts) or 'first input after a break (no start function found)'))
+        print('crazygames gameplayStop at: ' + ', '.join(stops + ['the round end before the ad', 'a visible pause screen']))
+        if happy:
+            print('crazygames happytime at: ' + ', '.join(happy))
+
     # 6. networks forbid links or branding pointing at our own portal: neutralize
     #    any remaining our-domain URL inside JS/HTML string literals (share links,
     #    canvas watermarks). Structured tags were stripped above; this is the sweep.
@@ -491,7 +714,7 @@ def build(src_dir, target, game_id):
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('src')
-    ap.add_argument('--target', choices=['gd', 'gm'], required=True)
+    ap.add_argument('--target', choices=['gd', 'gm', 'crazygames'], required=True)
     ap.add_argument('--game-id', default='REPLACE_WITH_GAME_ID')
     a = ap.parse_args()
     build(a.src, a.target, a.game_id)

@@ -32,7 +32,7 @@ Thirteen games have sat built and checked for two ad networks since 2 Sep. Both 
 - [ ] itch.io, the Jimothy page: it still says "hand-painted" (read on the live page 13 Nov). Fable gives you the corrected text; you paste it into the page (you, 3 minutes)  
 - [ ] Shutterbug on Play: the Console upload, then paste the signing SHA-256 (already below) (you)  
 - [ ] Shutterbug: the Reddit feedback post (already below) (you)  
-- [ ] CrazyGames: the third builder target (their SDK) and the three ZIPs: Garden Guard, Nova Bloom and one more (Opus)  
+- [x] CrazyGames: the third builder target (their SDK v3) and three ZIPs built and checked 13 Nov: Garden Guard, Nova Bloom, Bloom Breaker; next for you: the developer account, then publish/CRAZYGAMES.md has the form answers (Opus)  
 - [ ] The first finished promo clip with its caption, for you to post (Opus)  
 - [ ] Poki: they prefer exclusivity; decide after the first numbers come in from the other networks (you, later)  
 - [ ] Sixfold: the Play kit is made (store/sixfold-play) and four of its five code blockers are closed in the build that waits on your line; left: the database rules and sign in, the music licence, your price (you, then Opus)  

@@ -74,8 +74,9 @@ const ORIGIN = `http://127.0.0.1:${PORT}`;
 
 const html = readFileSync(join(root, "index.html"), "utf8");
 const SDK_URL = target === "gm" ? "https://api.gamemonetize.com/sdk.js"
+              : target === "crazygames" ? "https://sdk.crazygames.com/crazygames-sdk-v3.js"
                                 : "https://html5.api.gamedistribution.com/main.min.js";
-const OPTS = target === "gm" ? "SDK_OPTIONS" : "GD_OPTIONS";
+const OPTS = target === "gm" ? "SDK_OPTIONS" : target === "crazygames" ? "CrazyGames.SDK" : "GD_OPTIONS";
 
 const fail = [], warn = [], note = {};
 const A = (ok, id, msg) => { if (!ok) fail.push(`${id}  ${msg}`); return ok; };
@@ -86,7 +87,8 @@ A(html.includes(SDK_URL), "C1", `SDK url ${SDK_URL} missing from index.html`);
 A(html.includes(OPTS), "C2", `window.${OPTS} block missing`);
 const gid = (html.match(/"gameId":\s*"([^"]*)"/) || html.match(/gameId:\s*"([^"]*)"/) || [])[1];
 note.gameId = gid;
-A(!!gid, "C3", "no gameId in the SDK options");
+/* CrazyGames has no game id: their SDK knows the game by the page it is served on */
+if (target !== "crazygames") A(!!gid, "C3", "no gameId in the SDK options");
 
 const browser = await puppeteer.launch({ headless: "new",
   args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--mute-audio"] });
