@@ -542,6 +542,18 @@ body:not(.playing) #floorname { display: none; }
 #title:has(#house:not([hidden])) .art { padding-top: 4px; } #title:has(#house:not([hidden])) .photo { height: 80px; }
 #title:has(#house:not([hidden])) .polaroid { padding-bottom: 16px; } #title:has(#house:not([hidden])) .tag { margin-top: 8px; }
 #title:has(#housego:not([hidden])) .tag { display: none; }
+/* sb-m2-28: the returning title (Your collection shown) fits a 412x915 screen through Settings and the build line once its
+   one time hints have gone (it ran 1095 px, 1155 with them): no tagline (the logo says it), a lower logo print, 8 px
+   between controls, the big buttons 52 tall (48 is the floor), the build line closer; Play stays first and whole */
+#title:has(#grpcoll:not([hidden])) .actions { gap: 8px; margin-top: 6px; }
+#title:has(#grpcoll:not([hidden])) .tag { display: none; }
+#title:has(#grpcoll:not([hidden])) .art { margin-bottom: 4px; }
+#title:has(#grpcoll:not([hidden])) .photo { height: 42px; }
+#title:has(#grpcoll:not([hidden])) .polaroid:not(.framed) { padding: 6px 6px 10px; }
+#title:has(#grpcoll:not([hidden])) .grp { margin-top: 2px; }
+#title:has(#grpcoll:not([hidden])) .big { min-height: 52px; }
+#title:has(#grpcoll:not([hidden])) #recent p { margin: 0 0 4px; }
+#title:has(#grpcoll:not([hidden])) #build { padding-top: 4px; }
 /* the doorway (the clear card's place in a house), the house's start and its clear: one card on a screen of its own */
 #door { flex-direction: column; align-items: center; justify-content: center; overflow-y: auto; background: var(--soot);
   padding: calc(12px + var(--sat)) calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal)); }
@@ -10936,7 +10948,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function seatChipIn(name) {
     var c = document.getElementById('sws-music-chip'), scr = document.getElementById(name);
     if (!c || !scr || c.parentNode === scr) return;
-    scr.appendChild(c);
+    scr.insertBefore(c, scr.firstElementChild ? scr.firstElementChild.nextSibling : null);   /* after the exit (Settings' bar): read and tabbed in that order, never the screen's last control */
   }
   ui.seatChip = function () { seatChipIn(ui.screen === 'settings' ? 'settings' : 'title'); };
   ['title', 'settings'].forEach(function (id) {

@@ -38,7 +38,7 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, pastStory, GAME } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, pastStory, sleep, GAME } from './harness.mjs';
 
 const R = reporter('HOUSE');
 /* the strip's name steps down to fit beside the hearts, the keys, the weapons and the zoom button (COPY.roomOf, roomOfShort, roomOfTiny): any fitted form of the room is the room */
@@ -207,6 +207,27 @@ try {
   R.say(grp.shownLabels && grp.labels.join() === 'Play,Your collection' && grp.ordered && grp.last === 'settingsbtn',
     'the returning title reads in two groups, ' + grp.labels.join(' then ') + ', the code row after them and Settings last (in order ' + grp.ordered + ', last ' + grp.last + ')');
   R.say(grp.inView, 'at 412x915 every Play control (' + grp.play.join(', ') + ') and the Your collection label are on screen unscrolled (the label ends at ' + grp.collBottom + ')');
+  /* sb-m2-28: the returning title's height. As it stands (its one time hints showing or not) no two of its rows overlap;
+     with the hints gone the whole title, Settings and the build line too, fits 412x915 with no scroll; at 360x740 every
+     Play control is on screen unscrolled */
+  const tall = await page.evaluate(() => {
+    const t = document.getElementById('title'); t.scrollTop = 0;
+    const rows = [...t.querySelectorAll('.art, .actions > *, #house > *, #build')].filter(e => e.getClientRects().length && e.id !== 'house').map(e => { const r = e.getBoundingClientRect(); return { id: e.id || e.className, top: r.top, bottom: r.bottom }; }).sort((a, b) => a.top - b.top);
+    const over = rows.filter((r, k) => k > 0 && r.top < rows[k - 1].bottom - 0.5).map(r => r.id);
+    const hints = [...t.querySelectorAll('.what')].filter(e => !e.hidden), withH = t.scrollHeight;
+    hints.forEach(e => { e.hidden = true; });
+    const noH = t.scrollHeight, client = t.clientHeight, setB = document.getElementById('build').getBoundingClientRect().bottom;
+    hints.forEach(e => { e.hidden = false; });
+    return { over, hints: hints.map(e => e.id), withH, noH, client, setB: Math.round(setB) };
+  });
+  R.say(tall.over.length === 0, 'the returning title\'s rows never overlap (' + (tall.over.length ? 'over: ' + tall.over.join(', ') : 'none') + '; ' + tall.withH + ' px with the hints ' + (tall.hints.join(', ') || 'none') + ')');
+  R.say(tall.noH <= tall.client, 'with its one time hints gone the returning title fits 412x915 through Settings and the build line with no scroll (' + tall.noH + ' px in ' + tall.client + ', the build line ends at ' + tall.setB + ')');
+  await page.setViewport({ width: 360, height: 740, deviceScaleFactor: 3, isMobile: true, hasTouch: true }); await sleep(300);
+  const narrow = await page.evaluate(() => { const t = document.getElementById('title'); t.scrollTop = 0;
+    const play = ['housego', 'housestart', 'dailybtn', 'shoot', 'choose', 'sample'].filter(id => document.getElementById(id).getClientRects().length > 0);
+    return { play, out: play.filter(id => document.getElementById(id).getBoundingClientRect().bottom > innerHeight), low: Math.round(document.getElementById('sample').getBoundingClientRect().bottom) }; });
+  await page.setViewport({ width: 412, height: 915, deviceScaleFactor: 3, isMobile: true, hasTouch: true }); await sleep(300);
+  R.say(narrow.out.length === 0 && narrow.play.length >= 4, 'at 360x740 every Play control is on screen unscrolled (' + narrow.play.join(', ') + ', the sample link ends at ' + narrow.low + (narrow.out.length ? '; below: ' + narrow.out.join(', ') : '') + ')');
 
   /* the house's start */
   const wHouse = await page.evaluate(() => window.SB.save.doc.dp);
