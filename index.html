@@ -104955,9 +104955,9 @@ window.LW_Comp = (function(){
     var off=(navigator.onLine===false);
     for(var i=0;i<BTN.length;i++){
       var b=document.getElementById(BTN[i][0]), m=document.getElementById(BTN[i][1]); if(!b) continue;
-      if(off){ if(!b.disabled){ b.disabled=true; b.setAttribute('data-lw-offline','1'); }
+      if(off){ if(!b.disabled){ b.disabled=true; b.setAttribute('data-lw-offline','1'); b.style.opacity='0.45'; }
         if(m && !m.textContent){ m.textContent=MSG; m.setAttribute('data-lw-offline','1'); } }
-      else { if(b.getAttribute('data-lw-offline')){ b.disabled=false; b.removeAttribute('data-lw-offline'); }
+      else { if(b.getAttribute('data-lw-offline')){ b.disabled=false; b.removeAttribute('data-lw-offline'); b.style.opacity=''; }
         if(m && m.getAttribute('data-lw-offline')){ if(m.textContent===MSG) m.textContent=''; m.removeAttribute('data-lw-offline'); } }
     }
   }
