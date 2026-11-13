@@ -175,6 +175,8 @@
     img.setAttribute('data-sk-fit', '1');
     var t = (c.y - b.vy) / b.vh * 100, l = (c.x - b.vx) / b.vw * 100;
     var bt = (b.vy + b.vh - c.y - c.h) / b.vh * 100, rt = (b.vx + b.vw - c.x - c.w) / b.vw * 100;
+    // keep clear of the raster's own canvas edge, which shows as a faint rounded outline on the midnight card
+    if (t < 2) t = 2; if (l < 2.5) l = 2.5; if (rt < 2.5) rt = 2.5; if (bt < 1) bt = 1;
     img.style.objectViewBox = 'inset(' + t.toFixed(2) + '% ' + rt.toFixed(2) + '% ' + bt.toFixed(2) + '% ' + l.toFixed(2) + '%)';
     img.style.objectFit = 'contain'; img.style.objectPosition = '50% 100%';
   }
@@ -210,11 +212,12 @@
       if (wellFormed(cand)) { seg = cand; break; }
     }
     if (!seg) return;
-    var id = 'skAuraM' + (++MASKN), cx = b.x + b.w / 2, cy = b.y + b.h * 0.5, r = Math.max(b.w, b.h) * 0.72 + 6;
+    var id = 'skAuraM' + (++MASKN), cx = b.x + b.w / 2, cy = b.y + b.h * 0.5, r = Math.max(b.w, b.h, 40) * 1.1 + 14;
     var mk = '<defs><radialGradient id="' + id + 'g" gradientUnits="userSpaceOnUse" cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(1) + '">' +
       '<stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient>' +
+      '<filter id="' + id + 'f" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter>' +
       '<mask id="' + id + '" maskUnits="userSpaceOnUse" x="-200" y="-200" width="470" height="495"><rect x="-200" y="-200" width="470" height="495" fill="url(#' + id + 'g)"/></mask></defs>';
-    try { svg.innerHTML = full.substr(0, st) + mk + '<g mask="url(#' + id + ')">' + seg + '</g>' + full.substr(st + len); } catch (e) {}
+    try { svg.innerHTML = full.substr(0, st) + mk + '<g mask="url(#' + id + ')"><g filter="url(#' + id + 'f)">' + seg + '</g></g>' + full.substr(st + len); } catch (e) {}
   }
 
   var reduce = false;
@@ -271,6 +274,7 @@
       else { try { if (window._restartCurrentGame) window._restartCurrentGame(); } catch (x) {} }
     });
     ov.appendChild(root);
+    try { var hubPlant = ov.querySelector('#mint-plant-reveal'); if (hubPlant) hubPlant.innerHTML = ''; } catch (e) {}
     try {
       var bb = plantBounds(hash, genOf(id.plant)), ps = root.querySelector('.skb-plant svg');
       softAura(ps, hash, genOf(id.plant), bb); fitSvg(ps, cropOf(bb, false));

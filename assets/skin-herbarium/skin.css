@@ -62,8 +62,8 @@ html.sk-bloom #pw-win-overlay[data-sk-hash]>:not(.skb){display:none!important}
 .skb-cosmic .skb-aura{box-shadow:0 0 80px 20px rgba(191,239,255,.14)}
 .skb-beam{position:absolute;left:30%;width:40%;top:18%;height:36%;z-index:1;pointer-events:none;background:linear-gradient(180deg,var(--gm),rgba(0,0,0,0) 85%);clip-path:polygon(38% 0,62% 0,100% 100%,0 100%);opacity:.9}
 .skb-common .skb-beam,.skb-uncommon .skb-beam{display:none}
-.skb-plant{position:absolute;left:12%;width:76%;top:23.5%;height:30.3%;display:block;z-index:2;-webkit-mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent),linear-gradient(180deg,transparent,#000 7%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent),linear-gradient(180deg,transparent,#000 7%);mask-composite:intersect}
-.skb-plant svg{width:100%!important;height:100%!important;max-width:none;display:block}
+.skb-plant{position:absolute;left:12%;width:76%;top:23.5%;height:30.3%;display:block;z-index:2;overflow:visible}
+.skb-plant svg{width:100%!important;height:100%!important;max-width:none;display:block;overflow:visible}
 .skb-orbit-glow{position:absolute;left:5.6%;width:88.8%;top:22.3%;height:32.9%;border-radius:50%;box-shadow:0 0 12px 1px rgba(191,239,255,.30),inset 0 0 30px rgba(191,239,255,.22);z-index:1;pointer-events:none;animation:skbBreathe 5s ease-in-out infinite}
 @keyframes skbTwinkle{0%,100%{opacity:.15;transform:scale(.6)}50%{opacity:1;transform:scale(1.15)}}
 @keyframes skbBreathe{0%,100%{opacity:.55}50%{opacity:1}}
@@ -95,9 +95,9 @@ html.sk-cards .skc-archwrap .skc-arch{max-width:none!important;max-height:none!i
 .skc-arch path{stroke:var(--skg);opacity:.5}
 html.sk-cards .greenhouse-plant[data-sk-hash] .skc-topmark{position:absolute;top:5px;left:50%;transform:translateX(-50%);line-height:0;z-index:2}
 html.sk-cards .greenhouse-plant[data-sk-hash] .skc-season{position:absolute;top:6px;right:9px;line-height:0;z-index:2}
-html.sk-cards .greenhouse-plant[data-sk-hash]>svg,html.sk-cards .greenhouse-plant[data-sk-hash] .gh-svg-lazy{position:relative;z-index:1;width:100%!important;height:106px!important;max-width:none!important;flex:0 0 auto;margin:0!important;background:none!important;overflow:hidden}
+html.sk-cards .greenhouse-plant[data-sk-hash]>svg,html.sk-cards .greenhouse-plant[data-sk-hash] .gh-svg-lazy{position:relative;z-index:1;width:100%!important;height:106px!important;max-width:none!important;flex:0 0 auto;margin:0!important;background:none!important;overflow:visible}
 html.sk-cards .greenhouse-plant[data-sk-hash] .gh-svg-lazy svg{width:100%!important;height:100%!important}
-html.sk-cards .greenhouse-plant[data-sk-hash]>svg{-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent),linear-gradient(180deg,transparent,#000 6%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent),linear-gradient(180deg,transparent,#000 6%);mask-composite:intersect}
+html.sk-cards .greenhouse-plant[data-sk-hash] svg[data-sk-fit]{overflow:visible!important}
 html.sk-cards .greenhouse-plant[data-sk-hash] .gh-name{position:relative;z-index:1;margin-top:4px;font-family:var(--lw-name)!important;font-size:14px!important;line-height:1.2!important;color:var(--lw-cream)!important}
 html.sk-cards .greenhouse-plant[data-sk-hash] .gh-name *{font-size:inherit!important;font-family:inherit!important}
 html.sk-cards .greenhouse-plant[data-sk-hash] .gh-name .np-top,html.sk-cards .greenhouse-plant[data-sk-hash] .gh-name .np-realm,html.sk-cards .greenhouse-plant[data-sk-hash] .gh-name .np-title{display:none!important}
@@ -114,7 +114,8 @@ html.sk-cards .cs-card-front[class*="skg-"]{background:radial-gradient(ellipse 4
 html.sk-cards .cs-card-front[class*="skg-"] .skc-archwrap{position:absolute;left:9%;right:9%;top:21%;bottom:32%;pointer-events:none;z-index:0}
 html.sk-cards .cs-card-front[class*="skg-"] .cf-ea,html.sk-cards .cs-card-front[class*="skg-"] .cf-rarity-symbol{display:none!important}
 html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window,html.sk-cards .cs-card-front[class*="skg-"] .cf-name-zone,html.sk-cards .cs-card-front[class*="skg-"] .cf-haiku-zone{position:relative;z-index:1}
-html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent),linear-gradient(180deg,transparent,#000 6%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent),linear-gradient(180deg,transparent,#000 6%);mask-composite:intersect}
+html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window{overflow:visible;border:0!important;outline:0!important;box-shadow:none!important;background:none!important}
+html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window>img,html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window>svg{border:0!important;outline:0!important;box-shadow:none!important;background:none!important}
 html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window>svg,html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window>img{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important}
 html.sk-cards .cs-card-front[class*="skg-"] .cf-name{color:var(--lw-cream)!important;font-family:var(--lw-name)!important;text-shadow:none}
 html.sk-cards .cs-card-front[class*="skg-"] .cf-haiku{font-style:normal;font-size:16px;color:var(--lw-cream)}
@@ -177,4 +178,4 @@ html.sk-topbar #kb-compendium{background-image:url('data:image/svg+xml,%3Csvg xm
 html.sk-topbar #bpi{background-image:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"%3E%3Cg transform="translate(12.8 12.8) scale(1.0)"%3E%3Crect x="22" y="34" width="56" height="51" rx="12" fill="none" stroke="%23F4EBD6" stroke-width="5"/%3E%3Cpath d="M36 34V23Q50 9 64 23V34M36 52H64" fill="none" stroke="%23F4EBD6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/%3E%3C/g%3E%3C/svg%3E')!important}
 html.sk-topbar #kb-avatar{background-image:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"%3E%3Cg transform="translate(12.8 12.8) scale(1.0)"%3E%3Ccircle cx="50" cy="31" r="16" fill="none" stroke="%23F4EBD6" stroke-width="5"/%3E%3Cpath d="M16 84Q18 55 50 55Q82 55 84 84Z" fill="none" stroke="%23F4EBD6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/%3E%3C/g%3E%3C/svg%3E')!important}
 /* the detail card's separate aura layer: a soft round glow, never a band with hard ends */
-html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window>svg.cs-aura-overlay{-webkit-mask-image:radial-gradient(ellipse 40% 46% at 50% 56%,#000 45%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 40% 46% at 50% 56%,#000 45%,rgba(0,0,0,0) 100%)}
+html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window>svg.cs-aura-overlay{filter:blur(5px);-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 52%,#000 58%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 52%,#000 58%,rgba(0,0,0,0) 100%)}
