@@ -478,8 +478,8 @@ const MUTANTS = [
   /* ROCKER_NO_ADOPT became STICK_NO_ADOPT at Q140 */
   { name: 'STICK_NO_ADOPT', task: 'STICK', file: 'page', find: '      if (k === 0) { setDir(stickPtrs.length ? dirOf(stickAt[stickPtrs[0]], null) : null); setDown(stickPtrs.length ? downOf(stickAt[stickPtrs[0]], false) : false); }', repl: '      if (k === 0) { setDir(null); setDown(false); }',   /* re anchored at sb-m1-22 */
     gates: [{ gate: 'play', expect: 'the first lifted, the thumb still down takes over from its own landing point' }] },
-  { name: 'CHIP_OVER_PLAY', task: 'T0.8b review', file: 'page', find: "    document.body.classList.toggle('playing', name === 'play' || name === 'crop');", repl: '',
-    gates: [{ gate: 'play', expect: "in play the fleet's chip, pill, card and toast are hidden" }] },
+  /* CHIP_OVER_PLAY retired at sb-m2-28: the chip lives in the title or Settings and is hidden with them, so no rule of play's
+     can put it over a room (the play gate's row still reads it hidden); the pill, card and toast keep the playing rule */
   { name: 'BEACON_PULSE_BY_FRAME', task: 'T0.8b review', file: 'page', find: 'pulse = ((now === undefined ? performance.now() : now) / 400) | 0;', repl: 'pulse = (pulse + 1) | 0;',
     gates: [{ gate: 'play', expect: 'the beacon pulses by the clock' }] },
   { name: 'LIGHT_TIE_TO_SMALLER', task: 'T0.8b review', file: 'page', find: 'if (peak > bestPeak) { bestPeak = peak; light = lights[i]; }', repl: 'if (peak >= bestPeak) { bestPeak = peak; light = lights[i]; }',
@@ -806,10 +806,8 @@ const MUTANTS = [
     gates: [{ gate: 'loop', expect: 'round 1: two quick copies say Copied' }] },
   { name: 'DEATH_CARD_TALL', task: 'M1R', file: 'page', find: '@media (max-height: 700px) { #death .duo { flex-direction: row; }', repl: '@media (max-height: 1px) { #death .duo { flex-direction: row; }',
     gates: [{ gate: 'death', expect: 'at 320x568 the death card clears the fallen bug' }] },
-  { name: 'CHIP_ON_DEATH', task: 'M1R', file: 'page', find: 'body:has(#death.on) #sws-music-card, body:has(#death.on) #sws-music-pill, body:has(#death.on) #sws-music-toast, body:has(#death.on) #sws-music-chip { display: none !important; }', repl: '',
-    /* re anchored 31 Oct 22:50 UTC (the lead): STICKR's death card box check (test/death.mjs, "the reserved box stays
-       released, the chip hidden") now runs first and fails on this mutant for the same behaviour, the chip over the card */
-    gates: [{ gate: 'death', expect: 'on the death card the reserved box stays released, the chip hidden' }] },
+  /* CHIP_ON_DEATH retired at sb-m2-28: the chip's one seat is the title's and Settings' top row, hidden with the room under
+     the death card whatever its rule says (the death gate's row still reads it hidden) */
   /* SPECK_IN_FILM and SPARK_UNOUTLINED re anchored in ART1 on Astra's speck.a and spark.a (Q160) */
   { name: 'SPECK_IN_FILM', task: 'M1R', file: 'page', find: "a: '................/................/................/.......0......../......080......./.....088800.....", repl: "a: '................/................/................/.......0......../......080......./.....08f800.....",   /* re anchored at ART3 (round 2's speck) */
     gates: [{ gate: 'harness', only: 'H-spr-1', expect: 'speck.a holds no Film' }] },
@@ -852,21 +850,20 @@ const MUTANTS = [
     gates: [{ gate: 'layout', expect: '412x915 an Android app window (display mode minimal-ui, env 0): the page is marked .navpad' }] },
   { name: 'SCROLLERS_PAD_PAST_BAR', task: 'NOTE1R', file: 'page', find: ':root.navpad #title, :root.navpad #settings { bottom: var(--sab); padding-bottom: 16px; }\n', repl: '',
     gates: [{ gate: 'layout', expect: '320x568 the app mark (?navpad, env 0): the title as it opens draws no control in the bottom 48 px' }] },
-  { name: 'CHIP_LIFT_DROPPED', task: 'NOTE1R', file: 'page', find: ':root.navpad #sws-music-chip, :root.navpad #sws-music-pill', repl: ':root.navpad #sws-music-pill',
-    gates: [{ gate: 'layout', expect: "412x915 the app mark (?navpad, env 0): on the clear card the fleet's chip ends" }] },
+  /* CHIP_LIFT_DROPPED, CHIP_LIFT_ADDS and CHIPSILL_DROPPED retired at sb-m2-28: the chip no longer sits on the clear card
+     or in a bottom seat (its one seat is the title's and Settings' top row), so its lift and the sill that steered the
+     include's bottom seat watch nothing; the sill is gone, the pill's and the song card's lifts keep their rows */
   { name: 'PILL_LIFT_DROPPED', task: 'NOTE1R', file: 'page', find: ', :root.navpad #sws-music-pill, ', repl: ', ',
     gates: [{ gate: 'layout', expect: "412x915 the app mark (?navpad, env 0): folded by a real touch, the song's pill ends" }] },
   { name: 'CARD_LIFT_DROPPED', task: 'NOTE1R', file: 'page', find: ', :root.navpad #sws-music-card { margin-bottom', repl: ' { margin-bottom',
     gates: [{ gate: 'layout', expect: '412x915 the app mark (?navpad, env 0): a song waiting from another game opens its card' }] },
-  { name: 'CHIP_LIFT_ADDS', task: 'NOTE1R', file: 'page', find: 'margin-bottom: calc(var(--sab) - env(safe-area-inset-bottom, 0px)); }', repl: 'margin-bottom: var(--sab); }',
-    gates: [{ gate: 'layout', expect: "412x915 the app mark with env 48 (the floor never adds to it): on the clear card the fleet's chip ends" }] },
-  { name: 'CHIPSILL_DROPPED', task: 'NOTE1R', file: 'page', find: ':root.navpad #title.on ~ #chipsill, :root.navpad #settings.on ~ #chipsill { display: block; }\n', repl: '',
-    gates: [{ gate: 'layout', expect: "390x844 the app mark (?navpad, env 0): at once on the title after a room the fleet's chip ends" }] },
-  /* the at once reseat: without it the clear card's seat stays put on the title for the include's 1.5 s (either size, so
-     an include timer that lands in the gate's measure window at one of them cannot turn the row) */
-  { name: 'CHIP_SEAT_LATE', task: 'NOTE1R', file: 'page', find: "    if (name === 'title' || name === 'settings') ui.seatChip();\n", repl: '',
-    gates: [{ gate: 'layout', expect: ["390x844 the app mark (?navpad, env 0): at once on the title after a room the fleet's chip ends",
-      "360x780 the app mark (?navpad, env 0): at once on the title after a room the fleet's chip ends"] }] },
+  /* the seat as a screen shows (sb-m2-28: the chip is moved into the title or Settings): without it the chip stays in the
+     title it arrived in, so Settings shows none */
+  { name: 'CHIP_SEAT_LATE', task: 'sb-m2-28', file: 'page', find: "    if (name === 'title' || name === 'settings') ui.seatChip();\n", repl: '',
+    gates: [{ gate: 'layout', expect: ["390x844 the app mark (?navpad, env 0): on Settings the fleet's chip", "360x780 the app mark (?navpad, env 0): on Settings the fleet's chip"] }] },
+  /* sb-m2-28: the chip's one seat; without the rule the include's own fixed seat comes back, off the title's top row */
+  { name: 'CHIP_SEAT_FLOATS', task: 'sb-m2-28', file: 'page', find: '.screen > #sws-music-chip { position: absolute !important;', repl: '.screen > #sws-music-chip { position: fixed;',
+    gates: [{ gate: 'layout', expect: ["412x915: on the title the fleet chip sits in the top row", "360x780: on the title the fleet chip sits in the top row"] }] },
 
   /* Stephen's playtest of 31 Oct, note 5, his ruling "Dead pixels only" (QUESTIONS Q92): the chest pays its 15 with a
      handwritten +15 that stops nothing, M1 shows no sheet (the shell answers the sim's offer and compare on the next

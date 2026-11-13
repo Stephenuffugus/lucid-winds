@@ -704,13 +704,19 @@ body:has(#death.on) #sws-music-card, body:has(#death.on) #sws-music-pill, body:h
    reported the margin is 0). A dragged chip or card is placed by its top and does not move. Drop this in the change
    that teaches music-unlocks.js the mark, or the lift doubles */
 :root.navpad #sws-music-chip, :root.navpad #sws-music-pill, :root.navpad #sws-music-card { margin-bottom: calc(var(--sab) - env(safe-area-inset-bottom, 0px)); }
-/* the include still scores a bottom seat in the bar's band, 48 px under where the lift draws the chip, so on the title
-   and Settings (where content can sit over that band) the band reads as taken (a pointer cursor, which the include
-   counts as a control) and the include seats the chip by its own scoring elsewhere; in a room's clear card the lifted
-   seat is the strip's reserved box, free by design. Transparent, and under the phone's buttons on the phone. A sibling
-   rule, so no :has() on body: the screens precede it in the page (the layout gate's chip checks hold that order) */
-#chipsill { display: none; position: fixed; left: 0; right: 0; bottom: 0; height: var(--sab); cursor: pointer; }
-:root.navpad #title.on ~ #chipsill, :root.navpad #settings.on ~ #chipsill { display: block; }
+/* sb-m2-28 ONE SEAT FOR THE CHIP (the builder's look at sb-m2-27: on the clear card it sat over the strip's bottom left,
+   on the title over the build line and the Album row). The include places a fixed chip by its own corner search and
+   reseats it as screens change; here the page takes it into the screen showing, the title or Settings, at the right end
+   of the top row (beside the exit, beside Settings' Title), where nothing else sits. It scrolls with that screen, so it
+   never covers a control or a line, and every other screen (the clear card, a doorway, the album) shows no chip: the
+   title is one tap away. The include's inline seat and lift lose to these rules; a drag of it is not started here, so
+   no saved drag spills onto the other games of the site */
+.screen > #sws-music-chip { position: absolute !important; top: calc(12px + var(--sat)) !important; right: calc(16px + var(--sar)) !important;
+  left: auto !important; bottom: auto !important; margin: 0 !important; z-index: 1 !important; }
+#settings > #sws-music-chip { top: calc(10px + var(--sat)) !important; }
+.screen:not(.on) > #sws-music-chip { display: none !important; }
+#sws-music-chip.swsm-tight { width: auto !important; min-width: 96px !important; padding: 0 16px !important; font-size: 14px !important; }
+#sws-music-chip.swsm-tight::after { content: ' Music'; }
 /* the fleet's feedback fab, if the host ever injects it, never sits over a card or a sheet (section 1.6, T1.13) */
 body.sb-modal .lwfb-fab { display: none !important; }
 
@@ -855,7 +861,6 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <p id="rollsay" aria-live="polite"></p>
   <div id="rollbar"><button id="rollchoose" type="button" data-copy="rollChoose"></button><button id="rollphoto" type="button" data-copy="rollPhoto" hidden></button></div>
 </main>
-<div id="chipsill" aria-hidden="true"></div>
 <input id="fileshoot" type="file" accept="image/*" capture="environment" hidden>
 <input id="filechoose" type="file" accept="image/*" hidden>
 <main id="play" class="screen" aria-label="Play">
@@ -10904,7 +10909,6 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.body.classList.toggle('playing', name === 'play' || name === 'crop');
     if (name === 'roll') document.body.classList.add('playing');   /* sb-m2-27 S5: the roll follows the crop, the chip hidden as there */
     if (name === 'title' || name === 'settings') ui.seatChip();
-    else if (name === 'door') ui.seatChip();   /* the house's doorway is a screen of its own, seated as the title (Q200) */
     if (name === 'play') SB.render.fit();
   };
   /* under the mark the fleet's chip takes its seat on the title and Settings at once, not at the include's own reseat
@@ -10912,10 +10916,20 @@ body.sb-modal .lwfb-fab { display: none !important; }
      clear card's seat in the strip's reserved box sat on Settings on the title after a room in a Pixel 9 app window:
      Q91). In a room the include reseats the hidden chip on its own timers, so it reaches the clear card in that seat.
      SWSMusic.reseat is the include's public reseat on demand; it never moves a chip the player has dragged */
-  ui.seatChip = function () {
-    if (!document.documentElement.classList.contains('navpad') || !window.SWSMusic || typeof window.SWSMusic.reseat !== 'function') return;
-    try { window.SWSMusic.reseat(); } catch (e) { /* the include's own business; its timers reseat it anyway */ }
-  };
+  /* sb-m2-28: the chip's one seat, the top row of the title or Settings (the CSS above); it is moved into the screen
+     showing as that screen shows, and into the title the moment the include adds it (whatever screen is up then).
+     A press on it starts no drag (stopped on its way down, in the screen's capture), so a tap still opens the player */
+  function seatChipIn(name) {
+    var c = document.getElementById('sws-music-chip'), scr = document.getElementById(name);
+    if (!c || !scr || c.parentNode === scr) return;
+    scr.appendChild(c);
+  }
+  ui.seatChip = function () { seatChipIn(ui.screen === 'settings' ? 'settings' : 'title'); };
+  ['title', 'settings'].forEach(function (id) {
+    document.getElementById(id).addEventListener('pointerdown', function (e) { if (e.target && e.target.id === 'sws-music-chip') e.stopPropagation(); }, true);
+  });
+  if (window.MutationObserver) new MutationObserver(function () { if (document.getElementById('sws-music-chip') && document.getElementById('sws-music-chip').parentNode === document.body) ui.seatChip(); })
+    .observe(document.body, { childList: true });
 
   ui.fillCopy = function (root) {
     var els = (root || document).querySelectorAll('[data-copy]');

@@ -94,7 +94,7 @@ const installProbes = page => page.evaluate(() => {
     const c = document.getElementById('sws-music-chip');
     if (!c || getComputedStyle(c).display === 'none') return null;
     const r = c.getBoundingClientRect(), scr = document.querySelector('.screen.on'), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    const covers = [...scr.querySelectorAll(CTRL)].filter(e => { if (!shown(e)) return false; const b = e.getBoundingClientRect(); return b.left < r.right && r.left < b.right && b.top < r.bottom && r.top < b.bottom; }).map(nameOf);
+    const covers = [...scr.querySelectorAll(CTRL)].filter(e => { if (e === c || !shown(e)) return false;   /* sb-m2-28: the chip sits in the screen, never counted over itself */ const b = e.getBoundingClientRect(); return b.left < r.right && r.left < b.right && b.top < r.bottom && r.top < b.bottom; }).map(nameOf);
     const seat = c.getAttribute('data-corner') || '';
     return { gap: innerHeight - r.bottom, box: [r.left, r.top, r.width, r.height].map(v => v.toFixed(0)).join(','), bottomSeat: /bottom:/.test(seat), onTop: !!t && (t === c || c.contains(t)), covers };
   };
@@ -121,14 +121,17 @@ try {
       const box = el => { const r = el.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; };
       const topAt = el => { const r = el.getBoundingClientRect(), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!t && (t === el || el.contains(t)); };
       const exit = document.getElementById('exit'), chip = document.getElementById('sws-music-chip');
-      const ctrls = [...document.querySelectorAll('#title button, #title a')].filter(e => getComputedStyle(e).display !== 'none').map(box);
-      return { exit: box(exit), exitTop: topAt(exit), chip: chip && getComputedStyle(chip).display !== 'none' ? box(chip) : null, chipTop: chip ? topAt(chip) : false, ctrls };
+      const ctrls = [...document.querySelectorAll('#title button, #title a')].filter(e => e !== chip && getComputedStyle(e).display !== 'none').map(box);
+      return { exit: box(exit), exitTop: topAt(exit), chip: chip && getComputedStyle(chip).display !== 'none' ? box(chip) : null, chipTop: chip ? topAt(chip) : false, chipIn: !!chip && document.getElementById('title').contains(chip), vw: innerWidth, ctrls };
     });
     R.say(title.exit.w >= 48 && title.exit.h >= 48 && title.exitTop, tag + ': the exit control is ' + title.exit.w.toFixed(0) + 'x' + title.exit.h.toFixed(0) + ' and on top');
     if (title.chip) {
       const clear = title.ctrls.every(c => !overlap(c, title.chip));
       console.log('  info  ' + tag + ': the fleet chip on the title at ' + [title.chip.x, title.chip.y, title.chip.w, title.chip.h].map(v => v.toFixed(0)).join(',') + (title.chipTop ? ', on top' : ', NOT on top'));
       R.say(title.chipTop && clear, tag + ': on the title the fleet chip is on top and clear of the title\'s controls');
+      /* sb-m2-28: its one seat, the title's top row at the right end (beside the exit), inside the title so it scrolls with it */
+      R.say(title.chipIn && Math.abs(title.chip.y - title.exit.y) < 1 && Math.abs(title.vw - 16 - (title.chip.x + title.chip.w)) < 1 && title.chip.x >= title.exit.x + title.exit.w + 8,
+        tag + ': on the title the fleet chip sits in the top row, at the right end beside the exit (chip ' + [title.chip.x, title.chip.y].map(v => v.toFixed(0)).join(',') + ', the exit ' + [title.exit.x, title.exit.y, title.exit.w].map(v => v.toFixed(0)).join(',') + (title.chipIn ? ', in the title' : ', NOT in the title') + ')');
     } else console.log('  info  ' + tag + ': no fleet chip on the title (the catalogue did not place one)');
 
     await page.evaluate(() => window.SB_DEV.hold(true));
@@ -282,6 +285,7 @@ try {
         }
         /* the title and Settings, each scrolled to its end */
         const titleScrolls = await scrollEnd(page, 'title');
+        if (marked) { const cs = await chipNow(page); R.say(!!cs && cs.covers.length === 0, tg + ': the title scrolled to its end, the fleet\'s chip scrolls with it and covers nothing (it ' + chipText(cs) + ')'); }
         const title = await low(page, '#title button, #title a, #title input, #build');
         R.say(title.length > 0 && title[0].gap >= BAR - 0.5, tg + ': the title' + (titleScrolls ? ', scrolled to its end,' : '') + ' ends every control and the build line 48 px or more above the bottom (lowest: ' + lowText(title) + ')');
         await tap(page, '#settingsbtn');
@@ -331,9 +335,9 @@ try {
           await page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(3); });
           const cleared = await page.evaluate(() => window.SB_DEV.screen()) === 'clear';
           const chipC = cleared ? await chipNow(page, true) : null;
-          if (w < 360) R.say(cleared && chipC === null, tg + ': under 360 px (no reserved box) the fleet\'s chip rests while the clear card is up (it ' + chipText(chipC) + ')');
-          else R.say(cleared && chipClear(chipC, BAR) && chipC.bottomSeat && Math.abs(chipC.gap - (GLYPH_LIFT + BAR)) < 0.5,
-            tg + ': on the clear card the fleet\'s chip ' + chipText(chipC) + ' (want its bottom seat, the reserved box, 58 px up), on top and clear of the card');
+          /* sb-m2-28: the chip's one seat is the title's and Settings' top row; the clear card shows none (it sat over the
+             strip's bottom left and the card's edge) */
+          R.say(cleared && chipC === null, tg + ': on the clear card the fleet\'s chip rests, its seat the title\'s top row (it ' + chipText(chipC) + ')');
           if (cleared) { await tap(page, '#cleartitle'); await pastStory(page); }
           await bandSay(page, tg, 'the title after a room');
           const chipA = await chipNow(page);
@@ -385,8 +389,8 @@ try {
         R.say(padsAre(t.pads, c.lift) && g.glyphs.every(v => Math.abs(v - want) < 0.5) && g.rows === wantR,
           tg + ': every rule that reads --sab holds its ' + c.lift + ' px value (' + padsText(t.pads) + '), the drawn controls end ' + g.glyphs.map(v => v.toFixed(0)).join(', ') + ' px up (want ' + want + '), VIEW_ROWS ' + g.rows + ' (want ' + wantR + ')');
         await page.evaluate(() => { window.SB_DEV.goto('exit'); window.SB_DEV.step(3); });
-        const chip = await page.evaluate(() => window.SB_DEV.screen()) === 'clear' ? await chipNow(page, true) : null;
-        R.say(!!chip && chip.bottomSeat && Math.abs(chip.gap - want) < 0.5, tg + ': on the clear card the fleet\'s chip ' + chipText(chip) + ' (want a bottom seat ' + want + ' px up, 10 over the bar as the glyphs)');
+        const onClear = await page.evaluate(() => window.SB_DEV.screen()) === 'clear', chip = onClear ? await chipNow(page, true) : 'no clear card';
+        R.say(onClear && chip === null, tg + ': on the clear card the fleet\'s chip rests (sb-m2-28: its seat is the title\'s top row; it ' + (chip === null ? 'is not shown' : typeof chip === 'string' ? chip : chipText(chip)) + ')');
         R.say(s.errors.length === 0, tg + ': zero page errors' + errs(s));
         await s.close();
       }
