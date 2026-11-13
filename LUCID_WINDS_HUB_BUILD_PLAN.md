@@ -120,9 +120,11 @@ Local server for every gate: `python3 -m http.server 8777 --bind 127.0.0.1` from
   shorten the words, never the type.
 - One commit per screen (greenhouse, nursery, picker). One look per screen.
 
-## R14. Found on the skin walk, 13 Nov (the hub's own; the same with no flag; not built)
+## R14. Found on the skin walk, 13 Nov (the hub's own; the same with no flag). BUILT 13 Nov, head 983cf91b7, waits on `deploy-hub-r14.sh` (after the preview line)
 
 Each is a repair, one commit each, after the skin preview line has run (index.html is one file; do not stack them under it).
+
+Built as R14.1 to R14.7d: both raw markup toasts (pouch, first watering); `_lwDialogUp` inside `_lwCardUp`; `#w-toast` moved to body (it lived in `#panel-wild`, so plain toasts drew nothing on the other tabs); one toast slot with a queue (a repeat dropped, two may wait); the GPS banner only on `body.tab-wild`; `--lw-nav-room` on every panel (the DOCUMENT scrolls, proved with touch drags to the true bottom); a chain of level ups folds into one card; the music offer hides for a card; `_lwConfirm` queues during onboarding; offline sign up dimmed with a line; "Just wanna play games?" stays. Left: a chained level up still fires one ceremony toast per grant (swallowed by the queue); item 5's settings menu is his call.
 
 1. The Field Pouch's first open prints raw HTML as words: `toggle()` near index.html:76453 hands `LW_XP.grantOnce('disc_backpack', ...)` an `<img ...>` string as its label and the XP toast shows it as text. Pass plain words ("+5 XP, Field Pouch. Carry seeds and plants here.").
 2. The omens toast still lands on the compost confirm dialog (R13 made it wait for cards, not for `_lwConfirm` dialogs). Same family: `#w-toast` on a dialog's buttons; the "Wild plants detected nearby!" toast and the first visit POLLEN card stack on entering the Wild tab.
