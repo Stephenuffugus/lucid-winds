@@ -108,6 +108,26 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #cropseek { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; image-rendering: pixelated; }
 #crop.seeking #develop { opacity: 0.6; }
 #cropfrom { position: absolute; border: 2px dashed var(--paper); opacity: 0.5; pointer-events: none; }
+/* sb-m2-27 S5 THE BIOME ROLL (Stephen, 13 Nov: "it could be rolled so they would see the selection go across the different
+   biomes"): five tiles in their own colours, a Sun ring sweeping across them and landing; Choose makes them buttons */
+#roll { flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: var(--ink); color: var(--paper);
+  padding: calc(16px + var(--sat)) 16px calc(16px + var(--sab)); }
+#roll h2 { margin: 0; font-size: 1.3rem; }
+#rolltiles { display: flex; gap: 6px; width: 100%; max-width: 420px; padding: 0 4px; box-sizing: border-box; }
+#rolltiles button { flex: 1; min-width: 0; min-height: 96px; padding: 6px 1px; border: 2px solid var(--ink); border-radius: 10px; color: var(--glare);
+  font-size: clamp(0.56rem, 2.6vw, 0.72rem); letter-spacing: -0.01em; font-weight: 700; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+#rolltiles button i { width: 48px; height: 48px; max-width: 100%; background: center / contain no-repeat; image-rendering: pixelated; }
+#rolltiles .attic { background: #6b3f2a; } #rolltiles .frost { background: #fbfbff; color: var(--ink); } #rolltiles .deep { background: #2f5fd0; }
+#rolltiles .overgrowth { background: #3f9a3a; } #rolltiles .ember { background: #c8302f; }
+#rolltiles button.lit { outline: 4px solid var(--sun); outline-offset: 2px; }
+#roll.landed #rolltiles button:not(.lit) { opacity: 0.45; }
+#rolltiles button.dim { opacity: 0.35; }
+#rolltiles span { white-space: nowrap; }
+#roll.choosing #rolltiles button:not(.dim) { box-shadow: 0 0 0 2px var(--paper); }
+#rollsay { margin: 0; min-height: 1.4em; text-align: center; font-size: 1.05rem; }
+#rollbar { display: flex; gap: 12px; width: 100%; max-width: 420px; }
+#rollbar button { flex: 1; min-height: 56px; border-radius: 12px; border: 2px solid var(--slate); background: transparent; color: var(--paper); font-weight: 700; }
+#rollbar button[hidden] { display: none; }
 #crop.nothing #retake { background: var(--sun); color: var(--ink); border-color: var(--sun); }
 #crop.stuck #develop { background: transparent; color: var(--ash); border: 2px dashed var(--slate); }
 #cropsay { margin: 0 16px 8px; min-height: 1em; color: var(--pewter); font-size: 0.75rem; }
@@ -787,6 +807,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <div id="stocks" role="radiogroup" data-aria="film"></div>
   <div id="cropbar"><button id="retake" type="button" data-copy="retake"></button><button id="develop" class="big" type="button" data-copy="develop"></button></div>
   <p id="cropsay" aria-live="polite"></p>
+</main>
+<main id="roll" class="screen" aria-label="The biome">
+  <h2 data-copy="rollHead"></h2>
+  <div id="rolltiles" role="radiogroup" data-aria="rollHead"></div>
+  <p id="rollsay" aria-live="polite"></p>
+  <div id="rollbar"><button id="rollchoose" type="button" data-copy="rollChoose"></button><button id="rollphoto" type="button" data-copy="rollPhoto" hidden></button></div>
 </main>
 <div id="chipsill" aria-hidden="true"></div>
 <input id="fileshoot" type="file" accept="image/*" capture="environment" hidden>
@@ -10408,6 +10434,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     nothingHint: 'Tap Retake for another photo.',
     badPhoto: 'That photo did not open. Try another.',
     photoRoom: 'Your room',
+    rollHead: 'The biome', rollStop: 'Tap to stop', rollLanded: '{name}. Tap to climb.', rollChoose: 'Choose', rollPhoto: 'From my photo', rollPick: 'Tap a biome to climb it', rollNo: 'This room does not climb as {name}.',
     death: 'The bug fell out of the picture', toTripod: 'Back to the tripod', floorFurniture: 'The furniture', floorCeiling: 'The ceiling',
     dp: 'Dead pixels', dpGain: '+{n}',
     shareTitle: 'Share this room',
@@ -10829,6 +10856,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the fleet's chip, pill, card and toast hide while a room runs (Q48's addendum) and on the crop screen, where the
        chip sat over the photo a drag starts on (t15-crop) */
     document.body.classList.toggle('playing', name === 'play' || name === 'crop');
+    if (name === 'roll') document.body.classList.add('playing');   /* sb-m2-27 S5: the roll follows the crop, the chip hidden as there */
     if (name === 'title' || name === 'settings') ui.seatChip();
     else if (name === 'door') ui.seatChip();   /* the house's doorway is a screen of its own, seated as the title (Q200) */
     if (name === 'play') SB.render.fit();
@@ -11141,8 +11169,128 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (L && L.phase === 'none' && L.pick === CR.token && JSON.stringify(L.from) === JSON.stringify(CR.crop)) { refused(CR.last, L.boxes.length > 0); return; }
       seekStart(CR.last); return;
     }
+    if (rollWanted()) { rollStart(); return; }
     ui.startRoom(CR.lastRec, ui.COPY.photoRoom, { level: CR.last, photo: { src: CR.src, crop: CR.crop }, ms: CR.ms });
   }
+
+  /* ------------------------------------------------ sb-m2-27 S5: THE BIOME ROLL (Stephen, 13 Nov) */
+  /* After Develop and before the reveal: the five biomes as tiles, a Sun ring sweeping across them, slowing, landing in
+     about ROLL_MS; a tap anywhere stops it early on the tile it would have landed on. The roll is random with the photo's
+     own biome (the capture's hue vote, already in the record's biome byte) ROLL_PHOTO_W times as likely as each other.
+     Choose turns the tiles into buttons (free), or From my photo takes the vote. The result is written to the record's
+     biome byte (1 to 5), so replays, the album, a recent room and a friend's code all build the same biome; the format
+     does not change. It runs for a photographed or chosen room (and each new room of a house) only: never the first
+     room ever (DESIGN 5.3's first minute, its plain Attic rules), never a Daily, a code, a recent or the sample room
+     (none of them develops here), and not while a film stock is picked (the stock already chose). A biome whose build
+     refuses this box is skipped by the roll and refused by Choose. The random source is injectable (SB_DEV.rollWith) so
+     a gate lands where it says. Reduced motion: no sweep, the result at once. */
+  var ROLL_MS = 1500, ROLL_HOLD_MS = 1200, ROLL_PHOTO_W = 2;
+  var RL = { rand: null, on: false, tok: 0, timers: [], photo: 0, target: -1, at: -1, landed: false, choosing: false, hops: 0, built: {}, no: {}, runs: 0, t0: 0, tl: 0 };
+  function rollWanted() {
+    var d = SB.save.doc;
+    return !!(ui.firstRoomDone && CR.lastRec && CR.lastRec.v === 2 && CR.lastRec.biome >= 1 && CR.lastRec.biome <= SB.record.BIOME_MAX && !(d && (d.settings.stock | 0) > 0));
+  }
+  function rollOpts() {
+    var hs = HS.on && !!HS.run, room = hs ? HS.run.at + 1 : 0;
+    return hs ? { roomIndex: room, lastRoom: room === SB.TUNING.HOUSE_ROOMS } : { firstRoom: false };
+  }
+  /* biome k (0..4): the record with its byte, and its level (null when the build refuses); the photo's own is the crop's */
+  function rollBuild(k) {
+    if (RL.built[k]) return RL.built[k];
+    var rec = SB.record.fromJSON(SB.record.toJSON(CR.lastRec)); rec.biome = k + 1;
+    var lv = k === RL.photo && !(HS.on && HS.run) ? CR.last : SB.pipeline.build(rec, rollOpts());
+    if (lv.needsCrop) { RL.no[k] = true; return null; }
+    RL.built[k] = { rec: rec, lv: lv }; return RL.built[k];
+  }
+  /* the weighted pick: r in [0, 1) over the weights, the photo's first, then the others in order; a refusing biome weighs 0 */
+  ui.rollPick = function (r, photo, no) {
+    var B = SB.record.BIOME_MAX, order = [photo], w = [], sum = 0, k;
+    for (k = 0; k < B; k++) if (k !== photo) order.push(k);
+    for (k = 0; k < B; k++) { w[k] = no && no[order[k]] ? 0 : order[k] === photo ? ROLL_PHOTO_W : 1; sum += w[k]; }
+    var x = r * sum;
+    for (k = 0; k < B; k++) { if (x < w[k]) return order[k]; x -= w[k]; }
+    return photo;
+  };
+  function rollClear() { RL.timers.forEach(clearTimeout); RL.timers = []; }
+  function rollLight(k) {
+    RL.at = k;
+    var bs = document.getElementById('rolltiles').children;
+    for (var i = 0; i < bs.length; i++) { bs[i].classList.toggle('lit', i === k); bs[i].setAttribute('aria-checked', String(i === k)); }
+  }
+  function rollSay(s) { document.getElementById('rollsay').textContent = s; }
+  function rollStart() {
+    var C = ui.COPY, B = SB.palette.BIOMES, h = '';
+    rollClear(); RL.tok++; RL.on = true; RL.landed = false; RL.choosing = false; RL.built = {}; RL.no = {}; RL.hops = 0; RL.at = -1;
+    RL.photo = CR.lastRec.biome - 1; RL.runs++; RL.t0 = performance.now(); RL.tl = 0;
+    for (var k = 0; k < B.length; k++) h += '<button type="button" role="radio" aria-checked="false" class="' + B[k] + '" data-biome="' + k + '"><i style="background-image:var(--film-' + B[k] + '-ready)"></i><span>' + C.stockNames[k] + '</span></button>';
+    document.getElementById('rolltiles').innerHTML = h;
+    document.getElementById('roll').classList.remove('choosing'); document.getElementById('roll').classList.remove('landed');
+    document.getElementById('rollchoose').hidden = false; document.getElementById('rollphoto').hidden = true;
+    rollSay(C.rollStop);
+    ui.show('roll');
+    /* a name wider than its tile (Overgrowth at 320 px) steps its own size down until it fits */
+    [].forEach.call(document.querySelectorAll('#rolltiles span'), function (sp) {
+      var w = sp.parentNode.clientWidth - 4, fs = parseFloat(getComputedStyle(sp).fontSize);
+      for (var n = 0; n < 8 && sp.scrollWidth > w; n++) { fs *= 0.92; sp.style.fontSize = fs + 'px'; }
+    });
+    /* the target: picked, and built with the room's own options before the sweep (a refusing biome is skipped) */
+    var rand = RL.rand || Math.random, tk;
+    for (var tries = 0; tries < B.length; tries++) { tk = ui.rollPick(rand(), RL.photo, RL.no); if (rollBuild(tk)) break; }
+    if (!RL.built[tk]) tk = RL.photo;
+    RL.target = tk;
+    if (SB.render.reduced()) { rollLand(); return; }
+    /* the sweep: from the first tile, HOPS hops (12 to 16, ending on the target), each wait longer than the last (the
+       waits grow as the square of the hop's place), scaled to ROLL_MS in all */
+    var hops = 12 + ((tk - 12) % 5 + 5) % 5, base = [], sum = 0, i, tok = RL.tok;
+    for (i = 0; i < hops; i++) { base.push(1 + 6 * Math.pow((i + 1) / hops, 2)); sum += base[i]; }
+    rollLight(0);
+    var at = 0;
+    for (i = 0; i < hops; i++) {
+      at += base[i] * ROLL_MS / sum;
+      RL.timers.push(setTimeout(function () { if (RL.tok !== tok || RL.landed || RL.choosing) return; RL.hops++; rollLight(RL.hops % 5); if (RL.hops >= hops) rollLand(); }, at));
+    }
+  }
+  function rollLand() {
+    if (!RL.on || RL.landed) return;
+    rollClear(); RL.landed = true; RL.tl = performance.now(); rollLight(RL.target); document.getElementById('roll').classList.add('landed');
+    rollSay(ui.COPY.rollLanded.replace('{name}', ui.COPY.stockNames[RL.target]));
+    var tok = RL.tok;
+    RL.timers.push(setTimeout(function () { if (RL.tok === tok && !RL.choosing) rollGo(RL.target); }, ROLL_HOLD_MS));
+  }
+  function rollGo(k) {
+    var b = RL.built[k] || rollBuild(k); if (!b) return false;
+    rollClear(); RL.on = false; RL.tok++;
+    return ui.startRoom(b.rec, ui.COPY.photoRoom, { level: HS.on && HS.run ? null : b.lv, photo: { src: CR.src, crop: CR.crop }, ms: CR.ms });
+  }
+  function rollChoose() {
+    rollClear(); RL.choosing = true; RL.landed = true;
+    var bs = document.getElementById('rolltiles').children;
+    for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('dim', !!RL.no[i]);
+    document.getElementById('roll').classList.add('choosing'); document.getElementById('roll').classList.remove('landed');
+    document.getElementById('rollchoose').hidden = true; document.getElementById('rollphoto').hidden = false;
+    rollSay(ui.COPY.rollPick);
+  }
+  ui.rollDev = {
+    with: function (fn) { RL.rand = typeof fn === 'function' ? fn : null; },
+    state: function () { return { on: RL.on, photo: RL.photo, target: RL.target, at: RL.at, hops: RL.hops, landed: RL.landed, choosing: RL.choosing, no: Object.keys(RL.no).map(Number), runs: RL.runs, landMs: RL.tl ? RL.tl - RL.t0 : -1 }; }
+  };
+  ui.rollWire = function () {
+    var el = document.getElementById('roll');
+    el.addEventListener('click', function (e) {
+      if (!RL.on) return;
+      var b = e.target.closest ? e.target.closest('button') : null, id = b ? b.id : '';
+      if (id === 'rollchoose') { rollChoose(); return; }
+      if (id === 'rollphoto') { rollGo(RL.photo); return; }
+      if (RL.choosing) {
+        if (!b || !b.hasAttribute('data-biome')) return;
+        var k = b.getAttribute('data-biome') | 0;
+        rollLight(k);
+        if (!rollGo(k)) { b.classList.add('dim'); rollSay(ui.COPY.rollNo.replace('{name}', ui.COPY.stockNames[k])); }
+        return;
+      }
+      if (!RL.landed) rollLand(); else rollGo(RL.target);   /* a tap mid sweep stops it on its landing; once landed, climbs now */
+    });
+  };
 
   /* ------------------------------------------------ the auto crop (QUESTIONS Q96 ruling 3, Stephen 31 Oct; Q181) */
   /* Develop on a refusing box: the boxes nearest the player's framing (SB.capture.seekBoxes, the cause's way)
@@ -11346,6 +11494,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('filechoose').addEventListener('change', onFile);
     document.getElementById('retake').addEventListener('click', function () { openPicker(CR.from || 'filechoose'); });
     document.getElementById('develop').addEventListener('click', develop);
+    ui.rollWire();   /* sb-m2-27 S5 */
     document.getElementById('stocks').addEventListener('click', function (e) {   /* R10: pick a film, the preview rebuilds with it */
       var b = e.target.closest ? e.target.closest('.stock') : null; if (!b) return;
       var k = b.getAttribute('data-stock') | 0, d = SB.save.doc; if (!d) return;
@@ -12871,6 +13020,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   window.SB_DEV = {
     build: SB.BUILD,
     screen: function () { return SB.ui.screen; },
+    rollWith: function (fn) { SB.ui.rollDev.with(fn); },   /* sb-m2-27 S5: the roll's random source (null: Math.random) */
+    roll: function () { return SB.ui.rollDev.state(); },
     backWatch: function () { return SB.ui.backWatched(); },   /* the screen the armed back watcher serves, '' for none (Q94) */
     frames: function () { return loop.steps; },
     state: function () { return G.state ? structuredClone(G.state) : null; },

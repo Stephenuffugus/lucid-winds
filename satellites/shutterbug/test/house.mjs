@@ -218,8 +218,12 @@ try {
   const [chooser2] = await Promise.all([page.waitForFileChooser({ timeout: 10000 }), scrollTap(page, '#doorchoose')]);
   await chooser2.accept([PHOTO]);
   await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 15000 }, d1).catch(() => {});
+  await page.evaluate(() => window.SB_DEV.rollWith(() => 0));   /* sb-m2-27 S5: a house room rolls its biome; r 0 lands on the photo's own vote */
+  const rolls0 = await page.evaluate(() => window.SB_DEV.roll().runs);
   await tap(page, '#develop');
   await playing(page);
+  const rolled = await page.evaluate(() => window.SB_DEV.roll());
+  R.say(rolled.runs === rolls0 + 1 && rolled.landed && rolled.target === rolled.photo, 'a house room rolls its biome after Develop, landing on the photo\'s own (rolls ' + rolls0 + ' to ' + rolled.runs + ', on ' + rolled.target + ')');
   s = await look(page);
   R.say(s.screen === 'play' && roomIs(s.name, 2) && s.enemies >= 2 && s.run.rooms.length === 2, 'Choose a photo at the doorway plays room 2: the strip reads "' + s.name + '", ' + s.enemies + ' enemies (its floor 2)');
   R.say(s.pausetitle === 'Leave the house', 'in a house the pause card\'s Title reads "' + s.pausetitle + '"');

@@ -114,6 +114,9 @@ export async function ready(page, opts = {}) {
   await page.waitForFunction(() => window.SB_DEV && typeof window.SB_DEV.screen === 'function', { timeout: 30000 });
   /* the develop reveal (T0.14) has its own gate; every other gate goes from the sample tap straight to play */
   if (!opts.reveal) await page.evaluate(() => window.SB_DEV.revealSkip && window.SB_DEV.revealSkip(true));
+  /* sb-m2-27 S5: the biome roll lands where a gate says; by default on the photo's own vote (r 0), the biome every gate
+     knew before the roll, so a gate that never asks about the roll reads the room it always read */
+  await page.evaluate(() => window.SB_DEV.rollWith && window.SB_DEV.rollWith(() => 0));
   /* the bug's story (sb-m1-18) takes the title's place on the first load after a clear, and the save lives in the one
      browser's localStorage, so every page a gate opens after its first clear boots into the story: fourteen gates died
      at "no visible element for #sample" (8 Nov). Real taps through its cards until the title is up, unless a gate asks

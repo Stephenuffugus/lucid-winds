@@ -50,7 +50,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, leaveRoom } from './harness.mjs';
+import { serve, launch, newPage, gotoGame, ready, reporter, tap, sleep, leaveRoom, pastStory } from './harness.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url)), GAME = join(HERE, '..');
 /* the photo is the sample room painted: its palette grid laid exactly over the default crop (the room is known to be
@@ -441,6 +441,7 @@ try {
     await (await page.$('#filechoose')).uploadFile(sagePng);
     await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
     const rest = await page.evaluate(() => window.SB_DEV.overlay());
+    await page.evaluate(() => window.SB_DEV.rollWith(() => 0));   /* sb-m2-27: a save with a room rolls; r 0 lands on the photo's own vote */
     await tap(page, '#develop');
     await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 15000 }).catch(() => {});
     const got = await page.evaluate(() => {
@@ -457,6 +458,112 @@ try {
     try { nb = JSON.parse(execFileSync('node', [join(GAME, 'harness.js'), '--record-json', join(TMP, 'sage-record.json')], { encoding: 'utf8' }).trim().split('\n').pop()); } catch (e) { nb = { error: String(e.message).slice(0, 200) }; }
     R.say(nb && nb.valid === true && nb.v === 2 && nb.biome === 3 && nb.rules === 0, 'biome: the same code built in Node is the v2 Overgrowth room by today\'s rules (Node ' + JSON.stringify(nb) + ')');
     R.say(errors.length === 0, 'biome: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
+  /* THE BIOME ROLL (sb-m2-27 S5, Stephen 13 Nov): a returning player's photographed room, after Develop and before the
+     reveal, rolls the biome: five named tiles, a sweep of 12 or more hops landing in about 1.5 s on the pick the injected
+     random gives (the photo's own biome twice as likely as each other), the record's biome byte the landed biome; a tap
+     mid sweep stops it on that same tile at once; Choose then a tile climbs that biome, From my photo the vote; reduced
+     motion lands at once with no sweep; a recent room and the sample room never roll; the first room ever never rolls */
+  {
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base);
+    await ready(page);
+    await page.evaluate(() => localStorage.clear());   /* a brand new player: the earlier pages' rooms are in this browser's save */
+    await gotoGame(page, srv.base);
+    await ready(page);
+    const input = await page.$('#filechoose');
+    /* the first room ever: a photo, no roll (DESIGN 5.3's first minute), then cleared */
+    {
+      const d = await page.evaluate(() => window.SB_DEV.overlay().decodes);
+      await input.uploadFile(PHOTO);
+      await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
+      await tap(page, '#develop');
+      await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 10000 }).catch(() => {});
+    }
+    const firstRuns = await page.evaluate(() => window.SB_DEV.roll().runs), firstAt = await page.evaluate(() => window.SB_DEV.screen());
+    R.say(firstAt === 'play' && firstRuns === 0, 'roll: a brand new player\'s first photographed room plays with no roll (screen ' + firstAt + ', rolls ' + firstRuns + ')');
+    await page.evaluate(() => { const D = window.SB_DEV; for (let k = 0; k < 3; k++) { D.goto('key'); D.step(1); } D.goto('exit'); D.step(2); });
+    await page.waitForFunction(() => window.SB_DEV.screen() === 'clear', { timeout: 5000 }).catch(() => {});
+    await tap(page, '#cleartitle');
+    await pastStory(page);
+    const toRoll = async r => {
+      await page.evaluate(r => window.SB_DEV.rollWith(r === null ? null : () => r), r);
+      const d = await page.evaluate(() => window.SB_DEV.overlay().decodes);
+      await input.uploadFile(PHOTO);
+      await page.waitForFunction(d => window.SB_DEV.overlay().decodes > d && window.SB_DEV.overlay().full, { timeout: 10000 }, d).catch(() => {});
+      await tap(page, '#develop');
+      await page.waitForFunction(() => window.SB_DEV.screen() === 'roll', { timeout: 8000 }).catch(() => {});
+      return page.evaluate(() => Object.assign(window.SB_DEV.roll(), { screen: window.SB_DEV.screen(), names: [...document.querySelectorAll('#rolltiles button')].map(b => b.textContent) }));
+    };
+    const played = async () => {
+      await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 10000 }).catch(() => {});
+      return page.evaluate(() => { const SB = window.SB, l = window.SB_DEV.level(), st = window.SB_DEV.state(), rec = l ? SB.record.decode(l.code) : null;
+        return { screen: window.SB_DEV.screen(), byte: rec ? rec.biome : -1, biome: st ? st.biome : -1, lv: SB.game.level ? SB.game.level.biome : -1 }; });
+    };
+    /* the sweep, landing on the last of the order (r 0.999) */
+    let s = await toRoll(0.999);
+    const want = await page.evaluate(s => window.SB.ui.rollPick(0.999, s.photo, {}), s);
+    R.say(s.screen === 'roll' && s.names.join() === 'Attic,Frost,Deep,Overgrowth,Ember' && s.runs === firstRuns + 1 && want !== s.photo,
+      'roll: Develop on a returning player\'s photo opens the roll, five named tiles (' + s.names.join(', ') + '; the photo\'s own biome ' + s.photo + ', the pick ' + want + ')');
+    await page.waitForFunction(() => window.SB_DEV.roll().landed, { timeout: 5000 }).catch(() => {});
+    s = await page.evaluate(() => window.SB_DEV.roll());
+    R.say(s.landed && s.hops >= 12 && s.at === want && s.target === want && s.landMs >= 1300 && s.landMs <= 2600,
+      'roll: the ring sweeps ' + s.hops + ' hops and lands on the pick (' + s.at + ', want ' + want + ') in ' + Math.round(s.landMs) + ' ms (about 1.5 s)');
+    let p = await played();
+    R.say(p.screen === 'play' && p.byte === want + 1 && p.biome === want && p.lv === want,
+      'roll: the room plays the landed biome, written to the record\'s biome byte (byte ' + p.byte + ', the sim\'s biome ' + p.biome + ', want ' + (want + 1) + ')');
+    /* the weights: 600 evenly spaced draws, the photo's own biome 200 of them, each other 100 */
+    const counts = await page.evaluate(ph => { const c = [0, 0, 0, 0, 0]; for (let i = 0; i < 600; i++) c[window.SB.ui.rollPick((i + 0.5) / 600, ph, {})]++; return c; }, s.photo);
+    R.say(counts.every((n, k) => n === (k === s.photo ? 200 : 100)), 'roll: the photo\'s own biome is twice as likely as each other (600 draws: ' + counts.join(', ') + ')');
+    const skip = await page.evaluate(ph => { const no = {}; no[(ph + 1) % 5] = true; const c = [0, 0, 0, 0, 0]; for (let i = 0; i < 500; i++) c[window.SB.ui.rollPick((i + 0.5) / 500, ph, no)]++; return c; }, s.photo);
+    R.say(skip[(s.photo + 1) % 5] === 0 && skip[s.photo] === 200, 'roll: a biome whose build refuses the box is never landed on (' + skip.join(', ') + ')');
+    await leaveRoom(page);
+    /* a tap mid sweep: landed at once on the same pick */
+    s = await toRoll(0.5);
+    const want2 = await page.evaluate(s => window.SB.ui.rollPick(0.5, s.photo, {}), s);
+    await tap(page, '#rollsay');
+    s = await page.evaluate(() => window.SB_DEV.roll());
+    R.say(s.landed && s.hops < 12 && s.at === want2 && s.landMs < 1300, 'roll: a tap mid sweep stops it at once on the tile it would have landed on (' + s.at + ', want ' + want2 + ', after ' + s.hops + ' hops, ' + Math.round(s.landMs) + ' ms)');
+    p = await played();
+    R.say(p.screen === 'play' && p.byte === want2 + 1, 'roll: then it climbs that biome (byte ' + p.byte + ')');
+    await leaveRoom(page);
+    /* Choose, a tile: that biome */
+    s = await toRoll(0);
+    await tap(page, '#rollchoose');
+    const pick = (s.photo + 2) % 5;
+    const ch = await page.evaluate(() => ({ st: window.SB_DEV.roll(), photoBtn: !document.getElementById('rollphoto').hidden, chooseBtn: !document.getElementById('rollchoose').hidden }));
+    R.say(ch.st.choosing && ch.photoBtn && !ch.chooseBtn, 'roll: Choose stops the roll and offers the tiles and From my photo');
+    await sleep(1500);   /* past the hold a landing would have: choosing waits for the player */
+    R.say(await page.evaluate(() => window.SB_DEV.screen()) === 'roll', 'roll: while choosing nothing climbs by itself');
+    await tap(page, '#rolltiles button[data-biome="' + pick + '"]');
+    p = await played();
+    R.say(p.screen === 'play' && p.byte === pick + 1 && p.biome === pick, 'roll: Choose then ' + ['Attic', 'Frost', 'Deep', 'Overgrowth', 'Ember'][pick] + ' climbs it (byte ' + p.byte + ', biome ' + p.biome + ')');
+    await leaveRoom(page);
+    /* Choose, From my photo: the vote */
+    s = await toRoll(0.999);
+    await tap(page, '#rollchoose');
+    await tap(page, '#rollphoto');
+    p = await played();
+    R.say(p.screen === 'play' && p.byte === s.photo + 1, 'roll: From my photo climbs the photo\'s own biome (byte ' + p.byte + ', the vote ' + (s.photo + 1) + ')');
+    await leaveRoom(page);
+    /* reduced motion: no sweep, the landing at once */
+    await page.evaluate(() => { window.SB.settings.reducedMotion = true; });
+    s = await toRoll(0.999);
+    R.say(s.landed && s.hops === 0 && s.at === s.target, 'roll: under reduced motion it lands at once with no sweep (' + s.hops + ' hops, on ' + s.at + ')');
+    await played();
+    await page.evaluate(() => { window.SB.settings.reducedMotion = null; });
+    await leaveRoom(page);
+    /* a recent room and the sample room never roll */
+    const runs0 = await page.evaluate(() => window.SB_DEV.roll().runs);
+    await tap(page, '#recentlist button');
+    p = await played();
+    await leaveRoom(page);
+    await tap(page, '#sample');
+    const p2 = await played();
+    const runs1 = await page.evaluate(() => window.SB_DEV.roll().runs);
+    R.say(p.screen === 'play' && p2.screen === 'play' && runs1 === runs0, 'roll: a recent room and the sample room play with no roll (rolls ' + runs0 + ' to ' + runs1 + ')');
+    R.say(errors.length === 0, 'roll: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
 } finally {

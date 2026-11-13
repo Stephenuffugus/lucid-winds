@@ -171,6 +171,7 @@ try {
   const [ch2] = await Promise.all([page.waitForFileChooser({ timeout: 10000 }), tap(page, '#choose')]);
   await ch2.accept([PHOTO]);
   await page.waitForFunction(() => window.SB_DEV.screen() === 'crop' && window.SB_DEV.overlay().full, { timeout: 20000 }).catch(() => {});
+  await page.evaluate(() => window.SB_DEV.rollWith(() => 0));   /* sb-m2-27 S5: the biome roll lands on the photo's own vote */
   await tap(page, '#develop');
   await page.waitForFunction(() => window.SB_DEV.screen() === 'play', { timeout: 15000 }).catch(() => {});
   const c3 = await clearRoom();
