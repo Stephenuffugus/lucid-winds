@@ -72499,8 +72499,20 @@ function _showLevelUp(level,reason){
   var rankEntry=null;
   for(var i=0;i<RANKS.length;i++){if(RANKS[i].lvl===level){rankEntry=RANKS[i];break;}}
   if(!rankEntry)return;
+  // Hub R14: one mint can carry a new player across several levels (a first Epic is 18 XP plus the first plant
+  // and first Epic milestones, about 83 XP, past Level 2 at 19 and Level 3 at 51). A level that arrives while
+  // another is still waiting folds into it: ONE card for the highest level, listing what unlocked on the way.
+  var _lq=_luQueue.length?_luQueue[_luQueue.length-1]:null;
+  if(_lq&&level>_lq.level){
+    _lq.from=_lq.from||_lq.level; _lq.level=level; _lq.title=rankEntry.title;
+    _lq.unlocks=_lq.unlocks||(_lq.unlock?[{lvl:_lq.from,u:_lq.unlock}]:[]);
+    if(LEVEL_UNLOCKS[level])_lq.unlocks.push({lvl:level,u:LEVEL_UNLOCKS[level]});
+    _lq.unlock=LEVEL_UNLOCKS[level]||null;
+    return;
+  }
   _luQueue.push({level:level,title:rankEntry.title,unlock:LEVEL_UNLOCKS[level]||null,reason:reason});
-  if(!_luBusy)_luProcessQueue();
+  // a short gather so the grants of one moment (a bloom and its milestones) land in the same card
+  if(!_luBusy){_luBusy=true;setTimeout(_luProcessQueue,300);}
 }
 // ═══ CELEBRATION PARTICLE FACTORY ═══
 // Stephen wants real visual celebrations, not emoji. Builds inline SVG
@@ -72614,6 +72626,8 @@ function _luProcessQueue(){
   var mileSubtitle=document.getElementById('lu-subtitle-text');
   var mileLabel=document.getElementById('lu-label-txt');
   var mile=(window.LW_TREE_MILESTONES&&window.LW_TREE_MILESTONES[item.level])||null;
+  // Hub R14: a folded chain keeps a milestone it passed through (Level 10 inside 9 to 11)
+  if(!mile&&item.from&&window.LW_TREE_MILESTONES){for(var _ml=item.level-1;_ml>=item.from;_ml--){if(window.LW_TREE_MILESTONES[_ml]){mile=window.LW_TREE_MILESTONES[_ml];break;}}}
   if(mile&&mile.hero){
     if(mileHero){mileHero.src=mile.hero;mileHero.style.display='block';}
     if(mileLabel)mileLabel.textContent='A MILESTONE';
@@ -72624,8 +72638,20 @@ function _luProcessQueue(){
     if(mileLabel)mileLabel.textContent='LEVEL UP';
     if(mileSubtitle)mileSubtitle.style.display='none';
   }
+  // Hub R14: a folded chain says so under the title ("Levels 2 to 4")
+  if(item.from&&mileSubtitle&&!(mile&&mile.hero&&mile.subtitle)){mileSubtitle.textContent='Levels '+item.from+' to '+item.level;mileSubtitle.style.display='block';}
   var unlockCard=document.getElementById('lu-unlock-card');
-  if(item.unlock){
+  var _ud=document.getElementById('lu-unlock-desc'); if(_ud)_ud.style.whiteSpace='';
+  if(item.unlocks&&item.unlocks.length>1){
+    var _un=[],_us=[];for(var _ui=0;_ui<item.unlocks.length;_ui++){_un.push(item.unlocks[_ui].u.title);_us.push('Level '+item.unlocks[_ui].lvl+', '+item.unlocks[_ui].u.title+'. '+item.unlocks[_ui].u.desc);}
+    document.getElementById('lu-unlock-name').textContent=_un.join(' \u00b7 ');
+    _ud.textContent=_us.join('\n'); _ud.style.whiteSpace='pre-line';
+    unlockCard.style.display='block';
+  } else if(item.unlocks&&item.unlocks.length===1){
+    document.getElementById('lu-unlock-name').textContent=item.unlocks[0].u.title;
+    _ud.textContent=item.unlocks[0].u.desc;
+    unlockCard.style.display='block';
+  } else if(item.unlock){
     document.getElementById('lu-unlock-name').textContent=item.unlock.title;
     document.getElementById('lu-unlock-desc').textContent=item.unlock.desc;
     unlockCard.style.display='block';
