@@ -63671,7 +63671,9 @@ window.G=G;          // expose so rules-modal + other helpers can look up game m
 // External (iframe) studio games (entries with an `ext:` URL) must NOT show
 // inside Pi Browser — Pi forbids external content / redirects. This predicate
 // hides them there while leaving them visible in the web/PWA build.
-function _gHiddenHere(g){if(!g)return false;var extExternal=g.ext&&g.ext.charAt(0)!=='/';return !!((extExternal||g.newtab)&&document.body.classList.contains('pi-browser'));}
+// Hub R6: coming soon (wip) and in development (beta) entries are for testers: hidden unless dev mode is unlocked
+function _gDevUnlocked(){try{return localStorage.getItem('lw_dev_unlocked')==='1';}catch(e){return false;}}
+function _gHiddenHere(g){if(!g)return false;if((g.wip||g.beta)&&!_gDevUnlocked())return true;var extExternal=g.ext&&g.ext.charAt(0)!=='/';return !!((extExternal||g.newtab)&&document.body.classList.contains('pi-browser'));}
 // ── Studio earn bridge (cross-origin postMessage) ─────────────────────
 // External studio games (the `ext:` entries) run on their OWN origin, so
 // their Sunbeam SDK earns can't reach this wallet (per-origin localStorage —
