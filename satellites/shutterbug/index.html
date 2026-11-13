@@ -450,6 +450,9 @@ body:not(.playing) #floorname { display: none; }
 .grp[hidden] { display: none; }
 #grpcoll { margin-top: 10px; }
 #collrow { display: flex; justify-content: center; gap: 24px; }
+/* sb-m2-27 S3: three words get one line each, the first time each shows (a flag in the save), never a popup */
+.what { margin: -6px 0 0; font-size: 0.85rem; color: var(--ash); text-align: center; } .what[hidden] { display: none; }
+#clearwhat { margin: 0; color: var(--slate); }
 #collrow:not(:has(button:not([hidden]))) { display: none; }
 /* sb-m2-27 S1 (Stephen, 13 Nov: "I don't think it explains what a house is"): one Ash line under Start a house, a sibling so the button keeps its words */
 #househint { margin: -6px 0 0; text-align: center; color: var(--ash); font-size: 0.9rem; }
@@ -727,7 +730,9 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <button id="sample" type="button" data-copy="sample"></button>
     <h3 id="grpcoll" class="grp" data-copy="grpColl" hidden></h3>
     <p id="rankline" hidden><i id="rankbadge"></i><span id="rankname"></span><span id="rankbar"><i></i></span><small id="ranknext"></small></p>
+    <p id="rankwhat" class="what" hidden></p>
     <button id="darkroombtn" class="big" type="button" hidden><canvas id="darkroombadge" width="24" height="24"></canvas><span><b data-copy="darkroomLink"></b><small id="darkroomstate"></small></span></button>
+    <p id="darkroomwhat" class="what" hidden></p>
     <div id="collrow"><button id="albumbtn" type="button" data-copy="albumLink" hidden></button>
     <button id="trophiesbtn" type="button" data-copy="trophiesLink" hidden></button></div>
     <div id="codebox" hidden><input id="levelcode" type="text" data-aria="levelCode" autocomplete="off" spellcheck="false"><button id="pastecode" type="button" data-copy="codePaste"></button><button id="playcode" type="button" data-copy="codePlay"></button></div>
@@ -849,6 +854,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <button id="pausetitle" type="button" data-copy="toTitle"></button></div></div>
     <div id="clear" role="dialog" data-aria="roomClear"><h2 data-copy="roomClear"></h2>
       <p id="clearbank" hidden></p>
+      <p id="clearwhat" class="what" hidden></p>
       <p id="cleartime" hidden></p>
       <p id="clearbeat" hidden></p>
       <p id="clearkept" hidden></p>
@@ -1521,7 +1527,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return { v: 1, dp: 0, collection: [], prints: [], pool: { jump: [], dive: [], charm: [] },
       unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
       settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false, stock: 0, vibrate: true },   /* R10: the film stock picked at develop, 0 Auto, 1 to 5 a biome */
-      onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0, hold: false, drop: false, tripod: false, wind: false } },   /* sb-m2-16: hold, drop, tripod, the moves taught once */
+      onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0, hold: false, drop: false, tripod: false, wind: false }, seen: { dp: false, darkroom: false, rank: false } },   /* sb-m2-16: hold, drop, tripod, the moves taught once */
       run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0, albumPages: 0, albumBiomes: 0, curios: 0, curioSets: 0 }, trophies: [], trophySeen: 0, album: [], curios: [],
       log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false, days: 0 }, best: {}, quarantine: null, rank: 0 };   /* R10: the rank last granted (its rewards given) */
   }
@@ -10517,7 +10523,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the house (DESIGN 8, QUESTIONS Q200; docs/PROGRESSION-PROPOSAL-OCT31.md 2.3's words) */
     houseStart: 'Start a house', houseContinue: 'Continue the house', houseContinueAt: 'Continue room {n} of {of}', houseCount: 'Houses cleared {n}', freePlay: 'Free play',
     roomOf: 'Room {n} of {of}', lastRoom: 'The last room', roomOfShort: 'Room {n}/{of}', roomOfTiny: '{n}/{of}', lastRoomShort: 'Last room',
-    houseNew: 'A new house', houseRooms: 'Five rooms, each one tougher than the last.', houseHint: 'Five of your rooms in a row. A guardian waits in the last one.', grpPlay: 'Play', grpColl: 'Your collection',
+    houseNew: 'A new house', houseRooms: 'Five rooms, each one tougher than the last.', houseHint: 'Five of your rooms in a row. A guardian waits in the last one.', grpPlay: 'Play', grpColl: 'Your collection', whatDp: 'Dead pixels are what a room leaves you. The Darkroom spends them on weapons.', whatDarkroom: 'Prints you find in rooms become weapons here.', whatRank: '{rank} is your next rank. Clears, keys and houses earn XP.',
     houseStake: 'Clear all five to win the {name}. Lose every heart and the house starts over.', houseStakeAll: 'Lose every heart and the house starts over.', shootFirst: 'Shoot the first room',
     doorCleared: 'Room {n} of {of} cleared', doorTougher: 'Room {n} is tougher', doorLast: 'The last room is next', enterRoom: 'Play room {n}',
     doorHearts: '{n} of {max} hearts, one back', doorHeartsFull: '{n} of {max} hearts', cropBack: 'Back',
@@ -10868,7 +10874,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (name === 'trophies') drawTrophies();
     if (name === 'album') drawAlbum();
     if (name === 'crop' && ui.drawStocks) ui.drawStocks();   /* R10: the film stocks, fresh for the rank */
-    if (name === 'title') { document.getElementById('grpcoll').hidden = !ui.firstRoomDone; document.getElementById('codebox').hidden = !ui.firstRoomDone; document.getElementById('darkroombtn').hidden = !ui.firstRoomDone; document.getElementById('albumbtn').hidden = !ui.firstRoomDone; trophyLink(); darkroomLink(); drawRecent(); HS.on = false; drawHouse(); drawDailyBtn(); ui.applyLook(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
+    if (name === 'title') { document.getElementById('grpcoll').hidden = !ui.firstRoomDone; document.getElementById('codebox').hidden = !ui.firstRoomDone; document.getElementById('darkroombtn').hidden = !ui.firstRoomDone; document.getElementById('albumbtn').hidden = !ui.firstRoomDone; trophyLink(); darkroomLink(); drawRecent(); HS.on = false; drawHouse(); drawDailyBtn(); ui.applyLook(); titleWhat(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
     if (name === 'settings') fillSettings();
     if (name === 'title') { SB.render.dropPhoto(); G.photoRecord = null; }   /* m2 step 1: the room's photo goes on Title */
     if (name === 'crop') document.getElementById('croptitle').textContent = HS.on && HS.run ? ui.COPY.cropBack : ui.COPY.toTitle;
@@ -12032,6 +12038,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (k < 1) requestAnimationFrame(tick);
     })(t0);
   };
+  /* sb-m2-27 S3: a word's one line, shown the first time its word shows and then remembered as seen (onboarding.seen) */
+  ui.what = function (id, key, show, text) {
+    var el = document.getElementById(id), d = SB.save.doc; if (!el) return;
+    var seen = d && d.onboarding.seen;
+    if (!show || !seen || seen[key]) { el.hidden = true; return; }
+    el.textContent = text; el.hidden = false; seen[key] = true; SB.save.commit();
+  };
   ui.applySettings = function () {
     var st = SB.save.doc.settings;
     if (ui.zoomSync) ui.zoomSync();
@@ -12608,6 +12621,11 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('housestart').classList.toggle('sealed', n > 0);   /* HOUSE-B: icon_house's checked seal once a house is cleared */
   }
   ui.drawHouse = drawHouse;
+  function titleWhat() {   /* sb-m2-27 S3 */
+    var d = SB.save.doc, r = d ? ui.rankInfo(d) : null;
+    ui.what('darkroomwhat', 'darkroom', !document.getElementById('darkroombtn').hidden, ui.COPY.whatDarkroom);
+    ui.what('rankwhat', 'rank', !document.getElementById('rankline').hidden && !!(r && r.next), r && r.next ? ui.COPY.whatRank.replace('{rank}', r.next) : '');
+  }
   /* a new house, from the title (a saved one is replaced only when the player says so), the death card or the clear card */
   ui.houseStart = function () {
     var doc = SB.save.doc;
@@ -12770,6 +12788,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       dailyClear();
       ui.lastHash = SB.sim.hash(G.state);
       bank.textContent = n < dp ? ui.COPY.bankedOf.replace('{n}', n).replace('{of}', dp) : n === 1 ? ui.COPY.bankedOne : ui.COPY.banked.replace('{n}', n); bank.hidden = n <= 0;
+      ui.what('clearwhat', 'dp', n > 0, ui.COPY.whatDp);   /* sb-m2-27 S3 */
       SB.Wallet.moment('first_clear', { mode: G.mode });
     }
     document.getElementById('clear').classList.add('on'); ui.screen = 'clear'; document.body.classList.remove('playing');

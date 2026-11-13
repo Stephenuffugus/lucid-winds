@@ -167,9 +167,22 @@ try {
 
   /* a first free play room cleared: the title then leads with Start a house */
   await tap(page, '#sample');
+  await speck(page);   /* sb-m2-27 S3: a speck first, so the first clear banks and its card has dead pixels to explain */
   await climb(page);
+  /* sb-m2-27 S3: the first clear card that banks says once what dead pixels are */
+  const cw = await page.evaluate(() => ({ bank: !document.getElementById('clearbank').hidden, what: !document.getElementById('clearwhat').hidden, text: document.getElementById('clearwhat').textContent, seen: window.SB.save.doc.onboarding.seen.dp }));
+  R.say(cw.bank && cw.what && cw.seen && cw.text === 'Dead pixels are what a room leaves you. The Darkroom spends them on weapons.',
+    'the first clear that banks says once what dead pixels are: "' + cw.text + '" (bank shown ' + cw.bank + ', remembered ' + cw.seen + ')');
   await tap(page, '#cleartitle');
   await pastStory(page);
+  /* sb-m2-27 S3: the first returning title says once what the Darkroom is and what the next rank is, then remembers */
+  const what1 = await page.evaluate(() => ({ dk: document.getElementById('darkroomwhat').hidden ? null : document.getElementById('darkroomwhat').textContent,
+    rk: document.getElementById('rankwhat').hidden ? null : document.getElementById('rankwhat').textContent, next: window.SB.ui.rankInfo(window.SB.save.doc).next }));
+  await tap(page, '#settingsbtn'); await tap(page, '#settitle');
+  const what2 = await page.evaluate(() => ({ dk: !document.getElementById('darkroomwhat').hidden, rk: !document.getElementById('rankwhat').hidden, seen: window.SB.save.doc.onboarding.seen }));
+  R.say(what1.dk === 'Prints you find in rooms become weapons here.' && what1.rk === what1.next + ' is your next rank. Clears, keys and houses earn XP.' && what1.next === 'Snapshot',
+    'the first title after a clear explains the Darkroom ("' + what1.dk + '") and the next rank ("' + what1.rk + '")');
+  R.say(!what2.dk && !what2.rk && what2.seen.darkroom && what2.seen.rank, 'seen once, the two lines are gone from the next title (the save remembers ' + JSON.stringify(what2.seen) + ')');
   const t1 = await page.evaluate(() => {
     const r = id => document.getElementById(id).getBoundingClientRect(), vis = id => !document.getElementById(id).hidden;
     return { house: vis('house'), go: vis('housego'), count: vis('housecount'), first: r('housestart').top < r('shoot').top, free: document.getElementById('freeplay').textContent };
