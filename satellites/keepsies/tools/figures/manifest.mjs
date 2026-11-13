@@ -60,6 +60,9 @@ if (rep && dir) {
   const rows = Object.values(R).sort((a, b) => a.id.localeCompare(b.id)).map(r => {
     const file = r.id + '.glb';
     const bytes = statSync(join(dir, file)).size;
+    // the triangles as packed (a figure gltfpack simplified has a different count from Blender's report)
+    const b = readFileSync(join(dir, file)), jl = b.readUInt32LE(12), J = JSON.parse(b.subarray(20, 20 + jl).toString());
+    r.triangles = J.meshes.reduce((t, m) => t + m.primitives.reduce((u, p) => u + J.accessors[p.indices].count / 3, 0), 0);
     return { id: r.id, name: NAMES[r.id] || r.id, file, bytes, triangles: r.triangles, texture: r.texture,
       archetype: r.grail ? 'grail' : (ARCHETYPE[r.id] || null), fit: r.grail ? null : fitFor(r.id, r.bounds), bounds: r.bounds };
   });

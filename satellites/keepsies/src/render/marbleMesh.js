@@ -189,7 +189,7 @@ void main(){
   // m5: a grail in the inspect view is a SHELL around its sculpt: the glass thins toward the middle of the view
   // and stays whole at the bending edge, so the figure shows through and the edge still reads as glass
   float a = uOpacity;
-  if (uShell > 0.5) { float e = 1.0 - max(dot(N, V), 0.0); a = mix(uOpacity, 1.0, smoothstep(0.35, 0.92, e)); }
+  if (uShell > 0.5) { float e = 1.0 - max(dot(N, V), 0.0); a = mix(uOpacity, 1.0, smoothstep(0.45, 0.95, e)); }
   gl_FragColor = vec4(col, a);
 }`;
 

@@ -49,6 +49,54 @@ function ownerBars(owner, centre, box, n, mat) {
   return g;
 }
 
+/**
+ * m5 second pass: the Arch is a BUILT thing (it keeps its stone under a figure, render/figures.js), so its stone
+ * is dressed blocks, not a grey slab beside the textured toys: a small sandstone texture drawn once in a canvas
+ * (no download), coursed blocks with mortar and a grain, mapped by box projection at 32 mm a tile so the courses
+ * run on across the legs and the lintel.
+ */
+let blockTex = null;
+function archStone() {
+  if (blockTex || typeof document === 'undefined') return blockTex;
+  const N = 256, c = document.createElement('canvas');
+  c.width = c.height = N;
+  const g = c.getContext('2d');
+  let seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  g.fillStyle = '#6a5e4c'; g.fillRect(0, 0, N, N);                 // the mortar
+  const rows = 4, rh = N / rows;
+  for (let r = 0; r < rows; r++) {
+    const off = (r % 2) * N / 4;
+    for (let k = -1; k < 3; k++) {
+      const x = off + k * N / 2, v = 150 + Math.floor(rnd() * 34);
+      g.fillStyle = 'rgb(' + (v + 22) + ',' + (v + 6) + ',' + (v - 22) + ')';
+      g.fillRect(x + 3, r * rh + 3, N / 2 - 6, rh - 6);
+      g.fillStyle = 'rgba(255,240,210,0.16)'; g.fillRect(x + 3, r * rh + 3, N / 2 - 6, 3);   // a lit top edge
+      g.fillStyle = 'rgba(40,30,20,0.18)'; g.fillRect(x + 3, r * rh + rh - 6, N / 2 - 6, 3);   // a shaded foot
+    }
+  }
+  for (let i = 0; i < 2600; i++) {                                    // the grain
+    const a = rnd() * 0.16, d = rnd() < 0.5;
+    g.fillStyle = d ? 'rgba(60,45,30,' + a + ')' : 'rgba(255,245,225,' + a + ')';
+    g.fillRect(Math.floor(rnd() * N), Math.floor(rnd() * N), 1 + Math.floor(rnd() * 2), 1);
+  }
+  blockTex = new THREE.CanvasTexture(c);
+  blockTex.colorSpace = THREE.SRGBColorSpace; blockTex.wrapS = blockTex.wrapT = THREE.RepeatWrapping; blockTex.anisotropy = 4;
+  return blockTex;
+}
+/** Box projection: each face takes the two axes it spans, in the statue's own metres, 32 mm a tile. */
+function boxUv(geo, at) {
+  const P = geo.attributes.position, Nn = geo.attributes.normal, uv = geo.attributes.uv, T = 0.032;
+  for (let i = 0; i < P.count; i++) {
+    const x = P.getX(i) + at[0], y = P.getY(i) + at[1], z = P.getZ(i) + at[2];
+    const nx = Math.abs(Nn.getX(i)), ny = Math.abs(Nn.getY(i)), nz = Math.abs(Nn.getZ(i));
+    if (nx >= ny && nx >= nz) uv.setXY(i, z / T, y / T);
+    else if (ny >= nz) uv.setXY(i, x / T, z / T);
+    else uv.setXY(i, x / T, y / T);
+  }
+  uv.needsUpdate = true;
+}
+
 function partMesh(p, mat) {
   let g;
   if (p.box) g = new THREE.BoxGeometry(p.box.hx * 2, p.box.hy * 2, p.box.hz * 2);
@@ -65,11 +113,12 @@ export function makeStatueMesh(statue, opts) {
   const o = opts || {};
   const S = SHAPES[statue.shape];
   const group = new THREE.Group();
+  const arch = statue.shape === 'arch', map = arch ? archStone() : null;
   const mat = new THREE.MeshStandardMaterial({
-    color: statue.owner === 1 ? STONE_P1 : STONE, roughness: 0.92, metalness: 0,
+    color: map ? (statue.owner === 1 ? 0xb9ad9c : 0xd6cab6) : (statue.owner === 1 ? STONE_P1 : STONE), map, roughness: 0.92, metalness: 0,
     transparent: !!o.ghost, opacity: o.ghost ? 0.6 : 1
   });
-  const parts = S.parts.map((p) => { const m = partMesh(p, mat); group.add(m); return m; });
+  const parts = S.parts.map((p) => { const m = partMesh(p, mat); if (map) boxUv(m.geometry, p.at); group.add(m); return m; });
   // m3 step 10: her footprint decals, one drawing per state: r 108 of 256 px is the shape's own footprint radius
   const half = S.foot * 128 / 108;
   const ring = dirtDecal('env/footprint_allowed.png', half, 0.0013, 0.9);

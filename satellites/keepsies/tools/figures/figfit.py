@@ -29,6 +29,7 @@ def args():
     p.add_argument('--out', required=True)
     p.add_argument('--only', default='')
     p.add_argument('--tex', type=int, default=512)
+    p.add_argument('--q', type=int, default=80, help='JPEG quality')
     p.add_argument('--budget', default='', help='id=triangles,... overrides (a figure whose UV atlas splits more vertices gets fewer triangles to stay near 200 KB)')
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
     return p.parse_args(argv)
@@ -172,13 +173,13 @@ def measure(ob):
     return out
 
 
-def export(ob, path):
+def export(ob, path, q=80):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     bpy.ops.object.select_all(action='DESELECT')
     ob.select_set(True)
     bpy.context.view_layer.objects.active = ob
     bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', use_selection=True, export_apply=True,
-                              export_yup=True, export_image_format='JPEG', export_image_quality=80,
+                              export_yup=True, export_image_format='JPEG', export_image_quality=q,
                               export_materials='EXPORT', export_normals=True, export_texcoords=True,
                               export_colors=False, export_attributes=False, export_tangents=False,
                               export_animations=False, export_cameras=False, export_lights=False,
@@ -213,7 +214,7 @@ def main():
         shade(ob)
         m = material(ob, fid, a.tex)
         out = os.path.join(a.out, 'fit', fid + '.glb')
-        export(ob, out)
+        export(ob, out, a.q)
         report[fid] = {'id': fid, 'grail': fid in GRAILS, 'trisIn': t_in, 'triangles': t_out, 'budget': budget,
                        'weld': w, 'texture': m['texture'], 'materials': m['materials'], 'bounds': measure(ob)}
         json.dump(report, open(rp, 'w'), indent=1)

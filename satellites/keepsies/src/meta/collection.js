@@ -117,7 +117,7 @@ export function createTurntable(stage, tuning) {
       if (entry.tier === 'grail' && entry.render && entry.render.type === 'glb') {
         const m = mesh.material;
         m.transparent = true; m.depthWrite = false;
-        m.uniforms.uShell.value = 1; m.uniforms.uOpacity.value = 0.34;
+        m.uniforms.uShell.value = 1; m.uniforms.uOpacity.value = 0.16;
         mesh.renderOrder = 2;
         addGrailFigure(mesh, entry.id, () => S.mesh === mesh);
       }
@@ -131,6 +131,7 @@ export function createTurntable(stage, tuning) {
       if (!S.mesh) return;
       scene.remove(S.mesh);
       S.mesh.material.dispose();
+      S.mesh.traverse((n) => { if (n.userData.figureOwnMat && n.material) n.material.dispose(); });   // m5: a grail's lit sculpt owns its materials (its geometry is shared)
       S.mesh = null;
       S.entry = null;
     },

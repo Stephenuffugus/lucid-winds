@@ -1168,6 +1168,7 @@ function startMatch(opts) {
   G.R = createRinger({
     tuning: G.tuning,
     seed: G.matchSeed,
+    statues: o.statues || undefined,   // m5: a staged setup record (a look, a replay): these stand before the lag
     skipLag: !!o.calibrating,
     bare: !!o.calibrating,
     forceFirst: o.calibrating ? 0 : o.forceFirst,
@@ -1208,7 +1209,7 @@ function startMatch(opts) {
   G.over = false;
   syncStatues();
   // STATUES (step 9): the players place two each BEFORE the lag; the lag waits for the fourth
-  if ((G.R.match.houseRules || {}).statues && !o.calibrating) { beginStatues(); updateHud(); return; }
+  if ((G.R.match.houseRules || {}).statues && !o.calibrating && !(o.statues && o.statues.length)) { beginStatues(); updateHud(); return; }
   lagAndFrame();
 }
 
@@ -1518,6 +1519,8 @@ function endMatch() {
   for (const [, mesh] of G.meshes) { G.stage.scene.remove(mesh); mesh.material.dispose(); }
   for (const [, sh] of G.shadows) { G.stage.scene.remove(sh); sh.material.dispose(); sh.geometry.dispose(); }
   G.meshes.clear(); G.shadows.clear(); G.prev.clear();
+  // m5: a match ended during the placement gives back the view it borrowed (LOOK stayed held into the next match)
+  if (G.statuesPlacing) G.topDown = !!G.topDownBefore;
   clearTimeout(G.stTimer); G.statuesPlacing = null; if (G.moving) endMove();
   for (const m of G.statueMeshes || []) { G.stage.scene.remove(m); disposeStatueMesh(m); }
   G.statueMeshes = []; dropGhost(); $('statueTray').hidden = true; document.body.classList.remove('statuing');

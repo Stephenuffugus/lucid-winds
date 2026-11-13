@@ -53,6 +53,7 @@ export function nextFigureFor(seed, statues, shape) {
   for (const s of statues || []) if (s.shape === shape) k++;
   return pick(seed, shape, k);
 }
+const GRAIL_GLOW = { default: { color: 0xfff4e0, k: 1.1 }, the_ember_dragon: { color: 0xff8a3c, k: 1.7 }, koi: { color: 0xffffff, k: 0.3 } };
 export function tileUrl(id) { return 'assets/figures/' + id + '.tile.png' + Q; }
 
 let manP = null, loaderP = null;
@@ -144,9 +145,21 @@ export function addGrailFigure(mesh, id, still) {
   loadFigure(id).then((t) => {
     if (!t || !still()) return;
     const b = t.row.bounds, w = b.max[0] - b.min[0], h = b.max[1] - b.min[1], d = b.max[2] - b.min[2];
-    const s = Math.min(1.5 / Math.max(w, h, d), 1.9 / Math.sqrt(w * w + h * h + d * d));   // the first look: 1.64 / diagonal left the koi a small fish in a big bowl
+    // second look (13 Nov): the sculpt is the thing you look at, its longest side about 62% of the marble's diameter
+    // (1.25 of 2); its box's corners may touch the glass, the sculpt's own corners never do
+    const s = Math.min(1.25 / Math.max(w, h, d), 2.0 / Math.sqrt(w * w + h * h + d * d));
     const c = copyOf(t, false);
-    c.traverse((n) => { if (n.isMesh) { n.castShadow = false; n.receiveShadow = false; } });
+    /* LIT FROM WITHIN: behind the glass a dark sculpt read as a dark lump (the Astronomer, the Knight, the Dragon),
+       so its own texture glows back a part of itself, a lift of its exposure; the Ember Dragon glows like an ember */
+    const glow = GRAIL_GLOW[id] || GRAIL_GLOW.default;
+    c.traverse((n) => {
+      if (!n.isMesh) return;
+      n.castShadow = false; n.receiveShadow = false;
+      const m = n.material.clone();
+      m.emissiveMap = m.map; m.emissive = new THREE.Color(glow.color).multiplyScalar(glow.k);
+      m.roughness = 0.6;
+      n.material = m; n.userData.figureOwnMat = true;
+    });
     const holder = new THREE.Group();
     holder.scale.setScalar(s);
     holder.position.set(-(b.min[0] + b.max[0]) / 2 * s, -(b.min[1] + b.max[1]) / 2 * s, -(b.min[2] + b.max[2]) / 2 * s);

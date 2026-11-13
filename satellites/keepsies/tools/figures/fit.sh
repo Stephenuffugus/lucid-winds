@@ -15,12 +15,24 @@ mkdir -p "$WORK/fit" "$WORK/bin" "$GAME/assets/figures"
 if [ ! -x "$WORK/bin/gltfpack" ]; then
   unzip -o -q /home/codespace/dewball-drafts/dl-gltfpack/gltfpack-ubuntu.zip -d "$WORK/bin"; chmod +x "$WORK/bin/gltfpack"
 fi
+# m5 second pass: these figures skip Blender's decimate and are simplified by gltfpack instead (-si), which keeps
+# the UV seams whole: Blender's collapse broke Moon Moo's texture into blotches on the flank and left dark faceted
+# streaks on the boba cup. id=ratio of the raw ~20,000 triangles (0.2 is about 4,000).
+# Their textures also go to 1024 px at JPEG 60: Meshy's atlas is hundreds of tiny islands, and at 512 px the colours
+# of neighbouring islands bleed across every border (the streaks and the blotches); 1024 halves the bleed and the
+# lower quality keeps both under 200 KB (Moon Moo 199,888 bytes).
+SIMPLIFY="moon_moo=0.2 boba_buddy=0.2"
+HIRES="moon_moo,boba_buddy"
+NODEC=$(for kv in $SIMPLIFY; do printf '%s=1000000,' "${kv%%=*}"; done)
 if [ "${SKIP_BLENDER:-0}" != "1" ]; then
-  blender -b --factory-startup -P "$HERE/figfit.py" -- --in "$RAW" --out "$WORK" ${ONLY:+--only "$ONLY"}
+  blender -b --factory-startup -P "$HERE/figfit.py" -- --in "$RAW" --out "$WORK" --budget "$NODEC" ${ONLY:+--only "$ONLY"}
+  blender -b --factory-startup -P "$HERE/figfit.py" -- --in "$RAW" --out "$WORK" --budget "$NODEC" --only "$HIRES" --tex 1024 --q 60
 fi
 for f in "$WORK"/fit/*.glb; do
   id=$(basename "$f" .glb)
-  "$WORK/bin/gltfpack" -i "$f" -o "$GAME/assets/figures/$id.glb" -kn -km >/dev/null
+  SI=""
+  for kv in $SIMPLIFY; do [ "${kv%%=*}" = "$id" ] && SI="-si ${kv#*=}"; done
+  "$WORK/bin/gltfpack" -i "$f" -o "$GAME/assets/figures/$id.glb" -kn -km $SI >/dev/null
 done
 python3 "$HERE/thumbs.py" "$RAW" "$GAME/assets/figures" void_loaf moon_moo mothlight dumpster_duke boba_buddy bolt_buddy snacktopus moss_boss boo_brew quarter_eater save_point tiny_tyrant book_wyrm pickle_wizard
 node "$HERE/manifest.mjs" "$WORK/fit-report.json" "$GAME/assets/figures"
