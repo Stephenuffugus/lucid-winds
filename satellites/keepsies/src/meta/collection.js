@@ -14,14 +14,15 @@
  * here as data.
  */
 import * as THREE from 'three';
-import { makeMarbleMesh } from '../render/marbleMesh.js?v=20261107a';
-import { bodySpec } from '../core/marbleBody.js?v=20261107a';
+import { makeMarbleMesh } from '../render/marbleMesh.js?v=20261113a';
+import { addGrailFigure } from '../render/figures.js?v=20261113a';
+import { bodySpec } from '../core/marbleBody.js?v=20261113a';
 
-export { TIER_ORDER, TIER_LABEL } from './tiers.js?v=20261107a';
-import { TIER_ORDER } from './tiers.js?v=20261107a';
+export { TIER_ORDER, TIER_LABEL } from './tiers.js?v=20261113a';
+import { TIER_ORDER } from './tiers.js?v=20261113a';
 // the word ladders live in a file with no imports so they can be measured
 // against the catalogue in Node, where three.js cannot follow
-export { hardnessWord, weightWord } from './words.js?v=20261107a';
+export { hardnessWord, weightWord } from './words.js?v=20261113a';
 
 
 /**
@@ -112,6 +113,14 @@ export function createTurntable(stage, tuning) {
       // one place in the game where the marble is a portrait, not an object
       mesh.scale.setScalar(1.0);
       mesh.position.set(0, 0, 0);
+      // m5: a grail shows its sculpt inside the glass (render/figures.js loads it only now, never on a first visit)
+      if (entry.tier === 'grail' && entry.render && entry.render.type === 'glb') {
+        const m = mesh.material;
+        m.transparent = true; m.depthWrite = false;
+        m.uniforms.uShell.value = 1; m.uniforms.uOpacity.value = 0.34;
+        mesh.renderOrder = 2;
+        addGrailFigure(mesh, entry.id, () => S.mesh === mesh);
+      }
       scene.add(mesh);
       S.mesh = mesh;
       S.spin = 0.6;
