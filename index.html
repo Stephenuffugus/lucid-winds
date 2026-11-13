@@ -72649,10 +72649,12 @@ function _luProcessQueue(){
   if(item.from&&mileSubtitle&&!(mile&&mile.hero&&mile.subtitle)){mileSubtitle.textContent='Levels '+item.from+' to '+item.level;mileSubtitle.style.display='block';}
   var unlockCard=document.getElementById('lu-unlock-card');
   var _ud=document.getElementById('lu-unlock-desc'); if(_ud)_ud.style.whiteSpace='';
+  var _ul0=unlockCard&&unlockCard.querySelector('.lu-unlock-label'); if(_ul0)_ul0.textContent='NEW UNLOCK';
   if(item.unlocks&&item.unlocks.length>1){
     // short: one line per unlock (the long words are in each tab's own first visit)
     var _us=[];for(var _ui=0;_ui<item.unlocks.length;_ui++){_us.push('Level '+item.unlocks[_ui].lvl+' \u00b7 '+item.unlocks[_ui].u.title);}
     document.getElementById('lu-unlock-name').textContent=item.unlocks.length+' new things';
+    var _ul=unlockCard.querySelector('.lu-unlock-label'); if(_ul)_ul.textContent='NEW UNLOCKS';
     _ud.textContent=_us.join('\n'); _ud.style.whiteSpace='pre-line';
     unlockCard.style.display='block';
   } else if(item.unlocks&&item.unlocks.length===1){
