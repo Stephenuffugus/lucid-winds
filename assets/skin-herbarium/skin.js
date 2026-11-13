@@ -410,5 +410,27 @@
       }).observe(D.body, { childList:true, subtree:true });
     } catch (e) {}
   }
-  if (D.readyState === 'loading') D.addEventListener('DOMContentLoaded', start); else start();
+  // ═══ 7. sk-layout: measure the fixed bars so the greenhouse and nursery content starts right under
+  //    the top bar and can scroll clear of the nav (CSS reads the numbers) ═══
+  function measureLayout(){
+    if (!on('layout')) return;
+    try {
+      var kb = D.getElementById('pw-keeper-bar'), nav = D.querySelector('.fg-bottomnav'), vh = window.innerHeight;
+      var kbBottom = 0, navH = 0, r;
+      if (kb && getComputedStyle(kb).display !== 'none') { r = kb.getBoundingClientRect(); if (r.height > 0 && r.top < 40) kbBottom = r.bottom; }
+      if (nav && getComputedStyle(nav).display !== 'none') { r = nav.getBoundingClientRect(); if (r.height > 0 && r.top < vh) navH = vh - r.top; }
+      var gh = D.getElementById('panel-greenhouse'), top = 0;
+      if (gh && gh.offsetParent !== null) top = gh.getBoundingClientRect().top;
+      H.style.setProperty('--sk-gh-pad', Math.max(8, Math.round(kbBottom - top + 6)) + 'px');
+      H.style.setProperty('--sk-nav-room', Math.round(navH + 34) + 'px');
+    } catch (e) {}
+  }
+  function startLayout(){
+    if (!on('layout')) return;
+    measureLayout();
+    window.addEventListener('resize', measureLayout);
+    setInterval(measureLayout, 1200);
+  }
+
+  if (D.readyState === 'loading') D.addEventListener('DOMContentLoaded', function(){ start(); startLayout(); }); else { start(); startLayout(); }
 })();
