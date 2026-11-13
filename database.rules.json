@@ -18,6 +18,26 @@
           ".validate": false
         }
       }
+    },
+    "sixfold": {
+      "lobby": {
+        ".read": true,
+        "$uid": {
+          ".write": true
+        }
+      },
+      "friends": {
+        "$code": {
+          ".read": "$code.matches(/^[A-HJ-NP-Z2-9]{4}$/)",
+          ".write": "$code.matches(/^[A-HJ-NP-Z2-9]{4}$/)"
+        }
+      },
+      "duels": {
+        "$id": {
+          ".read": true,
+          ".write": true
+        }
+      }
     }
   }
 }
