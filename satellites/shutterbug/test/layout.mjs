@@ -309,6 +309,17 @@ try {
         const onCrop = await page.waitForFunction(() => window.SB_DEV.screen() === 'crop', { timeout: 20000 }).then(() => true).catch(() => false);
         const crop = onCrop ? await low(page, '#retake, #develop') : [];
         R.say(onCrop && crop.length === 2 && crop.every(c => c.gap >= BAR - 0.5), tg + ': on the crop screen Retake and Develop end ' + (crop.map(c => c.id + ' ' + c.gap.toFixed(0)).join(', ') || 'nowhere (no crop screen)') + ' px above the bottom (48 or more)');
+        /* sb-m2-28: the film row reads at a glance: each locked film its name, a pixel lock and its rank in 12 px or more,
+           nothing spilling past its tile, the six tiles on one line (at 360 and wider; 320 is printed) */
+        if (onCrop && cond.query) {
+          const fr = await page.evaluate(() => { const ts = [...document.querySelectorAll('#stocks .stock')];
+            return ts.map(b => { const s = b.querySelector('small'), n = b.querySelector('b'), r = b.getBoundingClientRect(), lk = s ? getComputedStyle(s, '::before') : null;
+              return { name: n ? n.textContent : '', locked: b.classList.contains('locked'), rank: s ? s.textContent : '', px: s ? parseFloat(getComputedStyle(s).fontSize) : 0, lock: lk ? lk.width + 'x' + lk.height : '', top: Math.round(r.top),
+                spill: [n, s].filter(Boolean).some(e => e.scrollWidth > b.clientWidth + 0.5 || e.getBoundingClientRect().left < r.left - 0.5 || e.getBoundingClientRect().right > r.right + 0.5) }; }); });
+          const lk = fr.filter(f => f.locked), ok = fr.length === 6 && lk.length > 0 && lk.every(f => f.name && f.rank && f.px >= 12 && f.lock === '10px x 12px'.replace(' x ', 'x')) && fr.every(f => !f.spill && f.top === fr[0].top);
+          const txt = tg + ': the film row, one line of six tiles, each locked film its name, a pixel lock and its rank in 12 px or more, nothing spilling (' + lk.map(f => f.name + ' ' + f.rank + ' ' + f.px + 'px' + (f.spill ? ' SPILLS' : '')).join(', ') + (fr.every(f => f.top === fr[0].top) ? '' : ', NOT one line') + ')';
+          if (w >= 360) R.say(ok, txt); else console.log('  info  ' + txt + (ok ? '' : ' (under 360, not held)'));
+        }
         if (onCrop) await tap(page, '#croptitle');
         /* play: the sample room, held */
         await page.evaluate(() => { window.SB_DEV.hold(true); document.getElementById('title').scrollTop = 0; });

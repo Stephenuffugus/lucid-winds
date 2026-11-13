@@ -109,11 +109,19 @@ button:active:not(:disabled), button.press:not(:disabled) { transform: scale(0.9
 #tighter { position: absolute; left: 0; right: 0; top: 40%; margin: 0; padding: 10px; text-align: center; background: var(--brick); color: var(--glare); font-weight: 700; }
 #cropbar { display: flex; gap: 12px; padding: 10px 16px 14px; }
 /* R10 FILM STOCKS: six film boxes above Develop (Auto and the five biomes); placeholder tiles with the biome badge until Astra's boxes */
-#stocks { display: flex; gap: 6px; padding: 8px 12px 0; }
+#stocks { display: flex; gap: 3px; padding: 8px 6px 0; }
 #stocks .stock { flex: 1; min-width: 0; min-height: 48px; padding: 3px 1px; border: 1px solid var(--ash); border-radius: 8px; background: var(--paper); color: var(--ink); font-size: 0.7rem; font-weight: 700; line-height: 1.1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
 #stocks .stock i { width: 48px; height: 48px; max-width: 100%; background: center / contain no-repeat; image-rendering: pixelated; }   /* R10 art: Astra's 48 px film box; the locked state is her own sheet with its lock */
 #stocks .stock.on { border: 2px solid var(--amber); background: var(--film); }
-#stocks .stock.locked { color: var(--pewter); background: var(--ash); } #stocks .stock.locked small { font-size: 0.7rem; font-weight: 400; }
+/* sb-m2-28: a locked film reads at a glance, dark with a dashed edge: its name, a small pixel lock, and the rank that opens
+   it in 12 px Film (it was 11 px Pewter on Ash, "Frost at Focus Puller" hard to read); the name steps its own size down
+   to fit its tile (ui.drawStocks), the rank wraps a word a line, and the row stays one line of tiles at 360 */
+#stocks .stock b { display: block; max-width: 100%; white-space: nowrap; font-weight: 700; }
+#stocks .stock.locked { flex-grow: 1.8; padding: 3px 0; color: var(--paper); background: var(--soot); border: 1px dashed var(--pewter); justify-content: flex-start; }   /* an open film needs only its box and a short name: a locked one takes the wider share for its rank */
+#stocks .stock.locked i { width: 36px; height: 36px; opacity: 0.8; }
+#stocks .stock.locked small { display: flex; flex-direction: column; align-items: center; gap: 2px; max-width: 100%; font-size: 12px; font-weight: 400; letter-spacing: -0.03em; line-height: 1.1; color: var(--film); text-align: center; }
+#stocks .stock.locked small::before { content: ''; width: 10px; height: 12px; flex: none; image-rendering: pixelated;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 5 6' shape-rendering='crispEdges'%3E%3Cpath fill='%23f0dcb0' d='M1 0h3v1H1zM0 1h1v2H0zM4 1h1v2H4zM0 3h5v3H0z'/%3E%3Cpath fill='%231f1a1d' d='M2 4h1v1H2z'/%3E%3C/svg%3E") center / 10px 12px no-repeat; }
 #retake { min-height: 56px; flex: 0 0 auto; padding: 0 20px; border-radius: 12px; border: 2px solid var(--slate); background: transparent; color: var(--paper); font-weight: 700; }
 #develop { flex: 1 1 auto; background: var(--sun); color: var(--ink); }
 #cropseek { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; image-rendering: pixelated; }
@@ -12468,10 +12476,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var cur = d ? d.settings.stock | 0 : 0, h = '';
     for (var k = 0; k <= 5; k++) {
       var open = ui.stockOpen(d, k), nm = k ? C.stockNames[k - 1] : C.stockAuto;
-      h += '<button type="button" class="stock' + (k === cur ? ' on' : '') + (open ? '' : ' locked') + '" data-stock="' + k + '" role="radio" aria-checked="' + (k === cur) + '"' + (open ? '' : ' aria-disabled="true"') + '>'
-        + '<i style="background-image:var(--film-' + (k ? B[k - 1] : 'auto') + (open ? '-ready' : '-locked-locked') + ')"></i>' + nm + (open ? '' : '<small>' + C.stockLocked.replace('{rank}', C.rankNames[SB.TUNING.RANK_STOCK_AT[k]]) + '</small>') + '</button>';   /* R10 art: her film box, locked with her lock */
+      h += '<button type="button" class="stock' + (k === cur ? ' on' : '') + (open ? '' : ' locked') + '" data-stock="' + k + '" role="radio" aria-checked="' + (k === cur) + '"' + (open ? '' : ' aria-disabled="true" aria-label="' + C.stockSays.replace('{name}', nm).replace('{rank}', C.rankNames[SB.TUNING.RANK_STOCK_AT[k]]) + '"') + '>'
+        + '<i style="background-image:var(--film-' + (k ? B[k - 1] : 'auto') + (open ? '-ready' : '-locked-locked') + ')"></i><b>' + nm + '</b>' + (open ? '' : '<small>' + C.rankNames[SB.TUNING.RANK_STOCK_AT[k]] + '</small>') + '</button>';   /* R10 art: her film box, locked with her lock */
     }
     row.innerHTML = h;
+    /* sb-m2-28: once the row is laid out, a name wider than its tile (Overgrowth at 360) steps its own size down to fit */
+    requestAnimationFrame(function () {
+      [].forEach.call(row.querySelectorAll('.stock b'), function (n) {
+        n.style.fontSize = ''; var w = n.parentNode.clientWidth - 4, fs = parseFloat(getComputedStyle(n).fontSize);
+        for (var j = 0; j < 10 && w > 0 && n.scrollWidth > w; j++) { fs *= 0.92; n.style.fontSize = fs + 'px'; }
+      });
+    });
   };
   /* the trophies earned and not yet on the save's list, appended (the caller commits) */
   ui.trophyCheck = function () {
