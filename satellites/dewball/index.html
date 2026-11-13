@@ -5022,6 +5022,11 @@
     camera.lookAt(bx+R._lax,r*0.9,bz+R._laz);
     var fovT=R.dashT>0?(save.reduceMotion?65:72):62;
     camera.fov+=(fovT-camera.fov)*Math.min(1,dt*6);
+    /* ⛔ THE BLACK POLYGON (Play readiness item 9, found 13 Nov in a 126 m shot of The Whole World): the planet's sky
+       sphere is 4.2 bounds wide (170 km) and the far plane was a fixed 200 km, so once the endgame camera pulls back
+       (44 km at 126 m) the far side of the sky lies past the far plane, is clipped, and the clear colour shows through
+       as a black many sided hole behind the planet. On a globe the far plane reaches past the far side of the sky. */
+    camera.far=GLOBE?Math.max(200000,camera.position.length()+W.bound*4.2+5000):200000;
     camera.updateProjectionMatrix();
   }
   var _lastSize="", _lastTime="", _lastGoalLbl="", _thV=null;
