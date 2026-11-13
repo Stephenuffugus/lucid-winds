@@ -2,7 +2,26 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 13 Nov 2026, 03:15 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 13 Nov 2026, 08:30 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+
+## Overnight 13 Nov: what waits for you
+
+Opus built all of this while you slept; Fable checked each build (ran its tests, looked at its screens) and wrote the lines. Nothing is live until you run its line. Four lines, any order, one at a time, each at an idle prompt.
+
+- [ ] Shutterbug sb-m2-28 (the clean pass, the biome roll with your photo on it, the film row, back, Install): `! bash /home/codespace/sb-drafts/sb-m2-28/deploy-sb-m2-28.sh` It waits for the box to go quiet by itself (you)  
+- [ ] Sixfold (the friend room, a 30 second round clock, emotes and the call, the Play fixes): `! bash /home/codespace/lw-drafts/deploy-sixfold-friend-room.sh` Then both phones close the Sixfold tab and open it again (you)  
+- [ ] Create-A (her prototype untouched at /satellites/create-a/ and the new build beside it at /satellites/create-a/next/, both unlisted): `! bash /home/codespace/lw-drafts/deploy-create-a.sh` (you)  
+- [ ] Lucid Winds hub, the leftover repairs (one card at a time on a returning start, Settings reachable, the worker's cache): `! bash /home/codespace/lw-drafts/deploy-hub-r13.sh` (you)  
+
+Your calls from the night:
+
+- [ ] Shutterbug: the roll's Choose button lets anyone pick any biome, while the film row unlocks biomes by rank. Fable's pick: Choose offers only the films you have unlocked, the roll can land anywhere (you)  
+- [ ] Sixfold on Play: the kit is in store/sixfold-play (listing, eight shots, feature graphic, READINESS.md). Yours: price (suggested $0.99), audience (suggested 13 and over), whether Find a rival and Sunbeams stay in the app, the support address on the privacy page, where the five music tracks came from and their licence, and the database rules with sign in before strangers play (you)  
+- [ ] Sixfold kit papers: the Data safety text and the app's start address need a small update to match the new build; the corrected text is in /home/codespace/lw-drafts/sixfold-kit-draft/. Say yes and Fable applies it (you)  
+- [ ] Create-A, with her: how she is credited; listed on the arcade or a private link; the names the builders made up (four kitchen judges, six bosses, the star goals) to keep, rename or drop; which packs of new things she wants; the balance ideas in work/create-a/HANDOFF.md (you and her)  
+- [ ] Create-A on your phone: open /next/?fps=1 and play a battle; say the number it shows (the one thing the box could not measure) (you)  
+- [ ] Dewball on Play: the kit is in store/dewball-play. Yours: price, the name ("Dewball: Roll and Grow" or plain "Dewball"), hide Sunbeams and the song unlocks in the app or not, audience, and a real icon (the placeholder is a spotted ball close to a famous game's egg) (you)  
+- [ ] Lucid Winds hub: the settings menu opened from the greenhouse still shows the card game's own items (New Game, Add 3 Cards); hide them there or give the hub its own menu (you)  
 
 ## Money: the board (the publishing agent keeps this; say "run the publisher")
 
@@ -16,13 +35,14 @@ Thirteen games have sat built and checked for two ad networks since 2 Sep. Both 
 - [ ] CrazyGames: the third builder target (their SDK) and the three ZIPs: Garden Guard, Nova Bloom and one more (Opus)  
 - [ ] The first finished promo clip with its caption, for you to post (Opus)  
 - [ ] Poki: they prefer exclusivity; decide after the first numbers come in from the other networks (you, later)  
-- [ ] Sixfold: once you and Jessie have played it, its store kit and network build (Opus), then where it is sold (you)  
+- [ ] Sixfold: the Play kit is made (store/sixfold-play) and four of its five code blockers are closed in the build that waits on your line; left: the database rules and sign in, the music licence, your price (you, then Opus)  
+- [ ] Dewball: the Play kit is made (store/dewball-play: listing, eight landscape shots, READINESS.md; all ten Play gates pass); left: a real icon, the first screen (a song card covers the world row), your calls above (you, then Opus)  
 
 ## 0. Now, 13 Nov: the hub, Shutterbug, Meshy
 
 The Lucid Winds hub was audited on 12 Nov (read only, three passes). The page with the shots: https://claude.ai/artifact/GhRuThtynvvpPifnsDKkww . The files: docs/audits/LUCID-WINDS-HUB-AUDIT-2026-11-12.md, LUCID_WINDS_HUB_BUILD_PLAN.md, LUCID_WINDS_PUBLISH_PLAN.md, LUCID_WINDS_PRELAUNCH_PLAN.md.
 
-- [ ] Sixfold two player: BUILT 13 Nov (Opus), checked (Fable): Play a friend with a four character code, and live Find a rival; it was written months ago and never switched on. Two lines for you, one at a time, each at an idle prompt. First `! bash /home/codespace/lw-drafts/deploy-sixfold-rules.sh` (adds Sixfold's rules to the database, then plays one test duel and prints PASS). Then `! bash /home/codespace/lw-drafts/deploy-sixfold-multiplayer.sh`. Then you and Jessie open lucidwinds.com/satellites/sixfold/ on two phones: Ranked Duel, Play a friend, one taps Get a code, the other types it (you)  
+- [x] Sixfold two player: LIVE 13 Nov (your two lines; lucid-winds main a63f73e6d). You and Jessie played it on two phones and it worked; your notes became the friend room above  
 - [x] Lucid Winds hub audit, findings, repair plan, publishing plan, pre-launch designs (Fable)  
 - [x] Lucid Winds, Astra round one (her own review, one style, the plant card, the bloom reveal): [Astra / Lucid Winds Hub Round 1](https://drive.google.com/drive/folders/1ZlZ9_hvohSvASg8u9_1TbNJCbE4KpuIq); you said Astra is working, 13 Nov (you, Astra)  
 - [ ] Lucid Winds, the map: ask for the free key at carto.com/basemaps/apikey (choose commercial; it comes by e-mail, no account) and send it to Fable. The Wild map has shown "API KEY REQUIRED" since 25 Sep (you)  
@@ -182,7 +202,7 @@ Each is built at its default if you say nothing; say the word and the plan chang
 - [ ] Shutterbug: play five minutes on your Pixel, then say go or no go on the Play submission; the room name is clipped on phones 360 px wide and under (you)  
 - [ ] Keepsies: the four screens Astra drew in round 2 (level up, chores, clay pool, the case); the shot tool's end game loop; the 240 design bank; the grails through Meshy (Opus, you)  
 - [ ] Tomato Man: the squirt, if you still want it (you)  
-- [ ] Dewball: the store pack back, the store kit with real captures, the v37 stamp and its line, the Console listing, the Meshy build out (Astra, Opus, you)  
+- [ ] Dewball: the store kit with real captures is made 13 Nov (store/dewball-play); still to come: Astra's identity pack (icon, wordmark), the fixes in its READINESS.md, the v37 stamp and its line, the Console listing (Astra, Opus, you)  
 - [ ] Pixel Petri: Fable plans the first milestone (THE LIVING YEAR by default) in the tiny-world repo once Astra's round 1 is back; the commercial after it (Fable, Opus, you)  
 - [ ] Music Studio: your musician friend's feedback, the grid cells, the name, the sound library drawer, sample storage, the store shots (you)  
 - [ ] Loaf: your pair sheet verdict and the corpus photos, which start milestone B (you)
