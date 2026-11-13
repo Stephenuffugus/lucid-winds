@@ -8,13 +8,13 @@ As of 13 Nov 2026, 08:30 UTC. The order: you get the art (1), you make your call
 
 Astra's hub kit came back and is in the vault. Opus built it into the real hub behind a switch, so it can be judged with real plants and not her blurry mockups; Fable looked at every screen. Today, her kit and a hybrid, side by side, with what is still wrong: https://claude.ai/artifact/ULCFeHPUFTC4stDLERD1m4
 
-- [ ] Put the preview on lucidwinds.com (with no flag the hub is unchanged; it carries the R13 repairs, so run it INSTEAD of the hub R13 line in the next section): `! bash /home/codespace/lw-drafts/deploy-hub-skin-preview.sh` Then on the Pixel: lucidwinds.com/?skin=bloom,cards,banners,actions (the hybrid), ?skin=astra (all of her kit), ?skin=off (today) (you)  
-- [ ] Call 1: is the hybrid the direction? Her bloom reveal, plant card, greenhouse tile and action tiles; our painted top bar, stone nav and rooms. On a yes, Opus builds it into the hub properly (you)  
+- [ ] Put the preview on lucidwinds.com (with no flag the hub is unchanged; it carries the R13 repairs, so run it INSTEAD of the hub R13 line in the next section): `! bash /home/codespace/lw-drafts/deploy-hub-skin-preview.sh` Then on the Pixel: lucidwinds.com/?skin=bloom,cards,banners,actions,layout (the hybrid), ?skin=astra (all of her kit), ?skin=off (today) (you)  
+- [ ] Call 1: is the hybrid the direction? Her bloom reveal, plant card, greenhouse tile, action tiles and the collection moved up into the first screen; our painted top bar, stone nav and rooms. On a yes, Opus builds it into the hub properly (you)  
 - [ ] Call 2: the grade on the card's frame with the season as a small mark (the preview), or the painted seasonal corners kept and the grade shown as glow and word only (you)  
 - [ ] Call 3: name the grade at the bloom reveal (hers), or keep "inspect in your greenhouse to discover" (you)  
 - [ ] Call 4: the banners: hers (they match, plainer), or today's with one new Puzzles banner painted to match (you)  
 - [ ] Call 5: a second round for Astra on the nav, the top bar and the Wild buttons, which came back as plain line icons; or stop here (you)  
-- [ ] The disk is at 4.3 GB free (was 794 MB) and nothing was lost: cold drafts sit in the vault (release box-archive-20261113). One line makes the cleanup run by itself at every session start: `! bash /home/codespace/lw-drafts/install-disk-prune-hook.sh` (you)  
+- [ ] The disk is at 5.5 GB free (was 794 MB) and nothing was lost: cold drafts sit in the vault (release box-archive-20261113), and Blender (1.3 GB) now fetches itself onto the scratch disk when a forge script calls it. One line makes the cleanup run by itself at every session start: `! bash /home/codespace/lw-drafts/install-disk-prune-hook.sh` (you)  
 - [ ] The disk, your word: keep session transcripts 10 days and not 30 (stops about 2 GB of growth; say yes and Fable sets it). When it fills again the lasting fix is a slim container image (frees 6 to 7 GB, needs a planned rebuild) (you)  
 
 ## Overnight 13 Nov: what waits for you
@@ -44,7 +44,7 @@ Thirteen games have sat built and checked for two ad networks since 2 Sep. Both 
 
 - [ ] GameMonetize: make the developer account at gamemonetize.com, add a game called Bloom Breaker, send Fable the game id it gives you. Fable rebuilds the ZIP with it and hands you the file and the reply to Marian, ready to paste (you, 15 minutes)  
 - [ ] GameDistribution: the same at gamedistribution.com for Sabina's thread; send the game id (you, 15 minutes)  
-- [ ] itch.io, the Jimothy page: it still says "hand-painted" (read on the live page 13 Nov). Fable gives you the corrected text; you paste it into the page (you, 3 minutes)  
+- [ ] itch.io, the Jimothy page (stephenuffugus.itch.io/jimothy-the-jumping-nugget, read 13 Nov): two swaps in the description. Change "hand-painted from a real Seattle neighbourhood up" to "built from a real Seattle neighbourhood up", and "six painted Seattle neighbourhoods" to "six Seattle neighbourhoods". Nothing else on the page claims it (you, 3 minutes)  
 - [ ] Shutterbug on Play: the Console upload, then paste the signing SHA-256 (already below) (you)  
 - [ ] Shutterbug: the Reddit feedback post (already below) (you)  
 - [x] CrazyGames: the third builder target (their SDK v3) and three ZIPs built and checked 13 Nov: Garden Guard, Nova Bloom, Bloom Breaker (Opus)  

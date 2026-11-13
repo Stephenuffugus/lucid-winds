@@ -120,6 +120,16 @@ Local server for every gate: `python3 -m http.server 8777 --bind 127.0.0.1` from
   shorten the words, never the type.
 - One commit per screen (greenhouse, nursery, picker). One look per screen.
 
+## R14. Found on the skin walk, 13 Nov (the hub's own; the same with no flag; not built)
+
+Each is a repair, one commit each, after the skin preview line has run (index.html is one file; do not stack them under it).
+
+1. The Field Pouch's first open prints raw HTML as words: `toggle()` near index.html:76453 hands `LW_XP.grantOnce('disc_backpack', ...)` an `<img ...>` string as its label and the XP toast shows it as text. Pass plain words ("+5 XP, Field Pouch. Carry seeds and plants here.").
+2. The omens toast still lands on the compost confirm dialog (R13 made it wait for cards, not for `_lwConfirm` dialogs). Same family: `#w-toast` on a dialog's buttons; the "Wild plants detected nearby!" toast and the first visit POLLEN card stack on entering the Wild tab.
+3. The stone nav and the HIDE chip cover the last row of the greenhouse and the Nursery's WATER and ACCELERATE labels: the scrolling panels need bottom padding of the nav's real height. (The skin's `sk-layout` part does this under the flag; do it for everyone.)
+4. One mint on a level 1 player with a full greenhouse grants three level ups in a row (3, 4, 5), three full screen cards after one bloom. Check whether a real new player can meet this; if so, fold a chain into one card ("Level 5", with what unlocked).
+5. From R13's notes, still open: the settings menu shows the card game's own items (his call); "Just wanna play games?" leaves the sign in card at 22 s; the music offer does not hide for a card that arrives after it; `_lwConfirm` drops dialogs during onboarding; an offline start offers Create Account.
+
 ## The plant packets (WAIT ON STEPHEN'S WORD: they change how plants look)
 Shots 16 to 19 in the audit folder. Plants are one-of-one and come from their hash; none of these may change
 which traits a hash resolves to, only how a trait is drawn. Astra's round one target frames should land
