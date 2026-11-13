@@ -5476,7 +5476,7 @@
   }
   function isPortrait(){ return window.innerHeight>window.innerWidth; }
   function syncModeUI(){
-    var fb=$("mFull"), ib=$("mInstall"), inst=standalone();
+    var fb=$("mFull"), ib=$("mInstall"), inst=standalone()||!!window.SWS_IN_TWA;   // the Play app is installed (its rotate tip too)
     // Horizon-mode button only where fullscreen can actually happen. On an iPhone in
     // Safari it cannot, and once installed we are already fullscreen, so hide it in
     // both cases rather than offer a button that lies.
