@@ -1021,3 +1021,17 @@ back from GitHub equal to `SHA256SUMS` (270) and `SHA256SUMS` itself equal. Then
 `a88e9a65c` on main (219 paths under satellites/dewball, from `afa458f65`), tag `dewball-v36`; both origins serve
 sw.js, index.html and assets/3d/index.json byte equal to the commit (one probe each). The orientation change above
 is NOT in it.
+
+## dewball-v37, the Play readiness defects, 13 Nov 2026 (built, waits on his line)
+
+From store/dewball-play/READINESS.md, only the items with no decision in them. (1) The song card: on a new player's
+first launch the soundtrack script is held with its own `SWS_MUSIC_HOLD` flag (set in the head from
+`dewball_launches` and an empty grove), and the first result card releases it and calls `SWSMusic.reveal()` 1.4 s
+later; every run holds it (`SWSMusic.hold(true)` in startWorld, released at the result card and the menu), so the
+"New song" pill and the chip never sit where the left thumb rolls; a song earned mid run waits for the next result
+card. /music-unlocks.js is unchanged. (2) "Add to Home Screen" and "Horizon mode" hidden when `SWS_IN_TWA`.
+(7) The Keys line on the menu shows only after a keydown (remembered in `dewball_kb`). (9) The ball's shadow disc
+fades out on a planet as its radius goes from 0.2 to 0.3 of the planet's (`shadowFit`). (11) No more request for
+`assets/ground-<world>.jpg` unless a world says `groundArt:1`. (14) The orientation copy above rides along.
+**Stamp:** sw.js CACHE `dewball-v37`, ASSET_V and `sw.js?v=` 24 → 25. Line:
+`/home/codespace/dewball-drafts/deploy-dewball-v37.sh` (files only, leaves privacy.html to its own line).
