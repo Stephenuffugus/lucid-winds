@@ -59638,7 +59638,12 @@ function _checkPendingRewards(){
     }).catch(function(e){if(window._swsLog)_swsLog('Pending rewards err: '+e.message,'warn');});
   }catch(e){}
 }
-function _toast(m,opts){if(opts&&opts.sticky){return _lwStickyToast(m,opts);}var e=document.getElementById('w-toast');if(!e)return;if(opts&&opts.html)e.innerHTML=m;else e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';if(opts&&opts.interactive)e.style.pointerEvents='auto';else e.style.pointerEvents='none';clearTimeout(_tt);var dur=(opts&&typeof opts.duration==='number')?opts.duration:3500;if(dur>6000)dur=6000;_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';e.style.pointerEvents='none';},dur);}
+function _toast(m,opts,_t0){if(opts&&opts.sticky){return _lwStickyToast(m,opts);}var e=document.getElementById('w-toast');if(!e)return;
+  // Hub R14: a toast never lands on a dialog's buttons. If it answers a tap made on the dialog it shows at once,
+  // high on the screen; any other toast waits for the dialog to close (at most 60 s, then it is stale and dropped).
+  var _dlg=window._lwDialogUp&&window._lwDialogUp();
+  if(_dlg&&!(Date.now()-(window._lwLastTapAt||0)<1500)){var _w0=_t0||Date.now();if(Date.now()-_w0<60000)setTimeout(function(){_toast(m,opts,_w0);},600);return;}
+  e.style.top=_dlg?'calc(9% + env(safe-area-inset-top,0px))':'38%';if(opts&&opts.html)e.innerHTML=m;else e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';if(opts&&opts.interactive)e.style.pointerEvents='auto';else e.style.pointerEvents='none';clearTimeout(_tt);var dur=(opts&&typeof opts.duration==='number')?opts.duration:3500;if(dur>6000)dur=6000;_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';e.style.pointerEvents='none';},dur);}
 // Sticky toast variant — stays on screen until the player taps its X.
 // Used for the boot "what happened / what's nearby" notices that Jesse
 // could not read before they auto-faded. Stacks vertically so multiple
@@ -59647,9 +59652,23 @@ function _toast(m,opts){if(opts&&opts.sticky){return _lwStickyToast(m,opts);}var
 // Hub R13: is a card up that a toast must not cover (its title, its buttons)? The onboarding, the beta notice,
 // the account card, the overnight report, a dialog, the bloom card, the level up, the Sunbeam modal,
 // the keeper page and the settings menu.
+// Hub R14: any dialog with buttons (the compost confirm, a shop or info modal), not only _lwConfirm's. Full screen
+// views that happen to be called modals (the carousel, the market, plant details, print) are places, not dialogs.
+(function(){ try{ document.addEventListener('pointerdown',function(){ window._lwLastTapAt=Date.now(); },true); }catch(e){} })();
+window._lwDialogUp=function(){
+  try{
+    var skip={'plant-gallery-modal':1,'market-modal':1,'plant-details-modal':1,'print-modal':1};
+    var list=document.querySelectorAll('#compost-confirm-modal,.lw-modal-backdrop,[id$="-modal"]');
+    for(var i=0;i<list.length;i++){ var el=list[i]; if(skip[el.id]) continue; if(!el.querySelector('button')) continue;
+      var r=el.getBoundingClientRect(); if(r.height<innerHeight*0.5||r.width<innerWidth*0.5) continue;
+      var cs=getComputedStyle(el); if(cs.display!=='none' && cs.visibility!=='hidden' && +cs.opacity>0.05) return true; }
+  }catch(e){}
+  return false;
+};
 window._lwCardUp=function(){
   try{
     var b=document.body; if(!b) return true; if(b.classList.contains('ob-active')) return true;
+    if(window._lwDialogUp()) return true;
     var sel=['#pw-onboard','#lw-beta-modal','#sws-id-modal.open','#morning-report','#lw-confirm-modal','#pw-win-overlay','#lu-overlay.open','#lw-sunbeam-modal','#cinematic-reveal.open','#pw-character.open','#settings-overlay'];
     for(var i=0;i<sel.length;i++){ var el=document.querySelector(sel[i]); if(!el) continue; var cs=getComputedStyle(el);
       if(cs.display!=='none' && cs.visibility!=='hidden' && +cs.opacity>0.05 && el.getBoundingClientRect().height>0) return true; }
@@ -59679,8 +59698,22 @@ function _lwStickyToast(m,opts,_clear){
   x.onclick=function(){card.style.opacity='0';card.style.transform='translateY(-6px)';setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card);var s=document.getElementById('w-toast-stack');if(s&&!s.children.length&&s.parentNode)s.parentNode.removeChild(s);},220);};
   card.appendChild(txt);card.appendChild(x);stack.appendChild(card);
   setTimeout(function(){card.style.opacity='1';card.style.transform='translateY(0)';},10);
-  setTimeout(function(){if(card.parentNode)x.onclick();},6000);
+  card._lwLeft=6000; _lwStickyWatch();
   return card;
+}
+// Hub R14: a toast already up when a card or dialog arrives steps aside (hidden, its clock stopped) and comes back
+// after the card closes, so the card is always seen first and alone.
+var _lwStickyTimer=null;
+function _lwStickyWatch(){
+  if(_lwStickyTimer) return;
+  _lwStickyTimer=setInterval(function(){
+    var s=document.getElementById('w-toast-stack');
+    if(!s||!s.children.length){ clearInterval(_lwStickyTimer); _lwStickyTimer=null; return; }
+    var up=window._lwCardUp(); s.style.visibility=up?'hidden':'';
+    if(up) return;
+    for(var i=s.children.length-1;i>=0;i--){ var c=s.children[i]; if(typeof c._lwLeft!=='number') continue;
+      c._lwLeft-=250; if(c._lwLeft<=0){ c._lwLeft=null; var b=c.querySelector('button'); if(b&&b.onclick) b.onclick(); } }
+  },250);
 }
 
 // Simulated wind direction retained for dispersal math (_wd is read by
