@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 13 Nov 2026, 02:30 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 13 Nov 2026, 02:10 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 0. Now, 13 Nov: the hub, Shutterbug, Meshy
 
@@ -12,7 +12,9 @@ The Lucid Winds hub was audited on 12 Nov (read only, three passes). The page wi
 - [x] Lucid Winds, Astra round one (her own review, one style, the plant card, the bloom reveal): [Astra / Lucid Winds Hub Round 1](https://drive.google.com/drive/folders/1ZlZ9_hvohSvASg8u9_1TbNJCbE4KpuIq); you said Astra is working, 13 Nov (you, Astra)  
 - [ ] Lucid Winds, the map: ask for the free key at carto.com/basemaps/apikey (choose commercial; it comes by e-mail, no account) and send it to Fable. The Wild map has shown "API KEY REQUIRED" since 25 Sep (you)  
 - [x] Lucid Winds, the repairs: BUILT 13 Nov (Opus, 20 commits) and checked (Fable): a new player's first load fell from 53 MB to under 2 MB beyond the page, first paint from 6 s to half a second; toasts leave, the bloom card shows alone, the mint button has words, a signed out greenhouse draws, desktop holds a column, no text under 12 px on the main screens; 99 of 102 games launch clean, the same three outside misses as before (Opus, Fable)  
-- [ ] Lucid Winds, two lines for you, one at a time, each at an idle prompt. First `! bash /home/codespace/lw-drafts/deploy-hub-repairs.sh` and wait for LIVE; then `! bash /home/codespace/lw-drafts/deploy-hub-webroot.sh` (it watches the home page and puts the old file back by itself if anything breaks). Then open lucidwinds.com on the Pixel (you)  
+- [x] Lucid Winds, the repaired hub is LIVE: 13 Nov, main 68edf3ed2 (your line). Read back on lucidwinds.com as a new player: 46 requests and 1.5 MB over the wire (was 107 and 53 MB), first paint 0.7 s, nothing broken (you, Fable)  
+- [ ] Lucid Winds, the second line, at an idle prompt: `! bash /home/codespace/lw-drafts/deploy-hub-webroot.sh` (closes the notes and tools on the site; it watches the home page and puts the old file back by itself if anything breaks) (you)  
+- [ ] Lucid Winds: open lucidwinds.com on the Pixel and say what you see (you)  
 - [ ] Lucid Winds: paste the Firestore rules from the Firebase console to Fable, so the repo says which file is live (you)  
 - [ ] Lucid Winds, your calls: guest first or the account form first; fix how plants are shown; what the Play build holds; Play v1 with no purchases; show the grade at the bloom reveal (you)  
 - [ ] Shutterbug: the Reddit feedback post, draft in docs/briefs/shutterbug/REDDIT-FEEDBACK-POST-NOV13.md; one sub a day, r/playmygame first (you)  
