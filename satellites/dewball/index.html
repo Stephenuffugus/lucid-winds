@@ -3511,8 +3511,9 @@
         scene.add(new THREE.Mesh(mergeParts(rp),sharedMat));
       }
     }
-    // art-pack hook: assets/ground-<worldId>.jpg overrides the procedural tile
-    (function(){ var im=new Image(); im.onload=function(){ var t=new THREE.CanvasTexture(im);
+    // art-pack hook: assets/ground-<worldId>.jpg overrides the procedural tile. ⛔ No such tile exists yet, and asking
+    // for one was a 404 on every world start (Play readiness item 11): a world asks only once it says groundArt:1.
+    if(W.groundArt) (function(){ var im=new Image(); im.onload=function(){ var t=new THREE.CanvasTexture(im);
         t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.copy(gtex.repeat); gmesh.material.map=t; gmesh.material.needsUpdate=true; };
       im.src="assets/ground-"+W.id+".jpg"; })();
     // ---- COMPOSED scatter -> instanced meshes ----
