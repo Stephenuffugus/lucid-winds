@@ -7,7 +7,8 @@ const OUT = '/workspaces/lucid-winds/store/dewball-play/icon-candidates/'; fs.mk
 const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-dev-shm-usage', '--enable-unsafe-swiftshader', '--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist'] });
 const p = await browser.newPage(); await p.setViewport({ width: 512, height: 512, deviceScaleFactor: 1 });
 p.on('pageerror', e => console.log('pageerror', e.message));
-for (const c of [1, 2, 3]) for (const mask of [0, 1]) {
+const LIST = process.argv.slice(2).map(Number).filter(Boolean); /* node icon-candidates.mjs 4 5 renders only those */
+for (const c of (LIST.length ? LIST : [1, 2, 3, 4, 5])) for (const mask of [0, 1]) {
   await p.goto('http://127.0.0.1:8777/store/dewball-play/icon-candidates-src.html?c=' + c + '&mask=' + mask, { waitUntil: 'load' });
   await p.waitForFunction('window.DONE', { timeout: 60000 });
   const f = OUT + 'candidate-' + c + (mask ? '-maskable' : '') + '-512.png';

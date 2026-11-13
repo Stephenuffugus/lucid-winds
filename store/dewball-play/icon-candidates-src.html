@@ -53,5 +53,40 @@ if(C===3){ /* the ball rolling a trail of dew across the ground */
   for(var i=0;i<6;i++){ var a=-0.0-0.075*i, sz=0.13-0.014*i, dd=drop(sz); dd.position.set(Math.sin(a)*9,Math.cos(a)*9-9+sz*0.7,0.55+i*0.3); sc.add(dd); }
   cam.position.set(-0.2,1.6,7.0/k); cam.lookAt(-0.1,0.5,0);
 }
+if(C===4||C===5){ /* the plain dew drop ball: the Dew skin's own pale blue, no pattern, one highlight, a soft inner glow */
+  function glowTex(inner,outer){ var c=document.createElement('canvas'); c.width=c.height=256; var g=c.getContext('2d');
+    var r=g.createRadialGradient(128,128,0,128,128,128); r.addColorStop(0,inner); r.addColorStop(1,outer); g.fillStyle=r; g.fillRect(0,0,256,256); return new THREE.CanvasTexture(c); }
+  function sprite(tex,s,x,y,z,add){ var m=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false,blending:add?THREE.AdditiveBlending:THREE.NormalBlending})); m.scale.set(s,s,1); m.position.set(x,y,z); sc.add(m); return m; }
+  function dewBall(r,x,y,z){
+    var m=new THREE.Mesh(new THREE.SphereGeometry(r,64,48),new THREE.MeshPhongMaterial({color:0xa9dcea,emissive:0x2a5866,shininess:200,specular:0xffffff,transparent:true,opacity:0.93}));
+    m.position.set(x,y,z); sc.add(m);
+    sprite(glowTex('rgba(234,252,255,0.55)','rgba(127,184,200,0)'),r*1.5,x+r*0.08,y-r*0.12,z+r*0.4,true);          /* the inner glow */
+    sprite(glowTex('rgba(255,255,255,1)','rgba(255,255,255,0)'),r*0.42,x-r*0.36,y+r*0.4,z+r*0.95,true);            /* the one highlight */
+    sprite(glowTex('rgba(255,255,255,0.7)','rgba(255,255,255,0)'),r*0.12,x+r*0.42,y-r*0.5,z+r*0.85,true);          /* a small glint opposite */
+    return m; }
+  sc.children.length=0;
+  sc.add(new THREE.HemisphereLight(0xcfe6ff,0x22361c,0.6)); var dl4=new THREE.DirectionalLight(0xfff2d8,0.7); dl4.position.set(-4,6,5); sc.add(dl4);
+  if(C===4){
+    sc.background=bgTex('#091626','#16302e','rgba(150,210,230,0.22)');
+    var g4=new THREE.Mesh(new THREE.SphereGeometry(9,64,48),new THREE.MeshLambertMaterial({map:grassTex()})); g4.position.set(0,-9,0); sc.add(g4);
+    sprite(glowTex('rgba(150,220,240,0.35)','rgba(150,220,240,0)'),3.4,0,1.0,-0.6,true);                          /* the halo behind */
+    dewBall(1,0,0.98,0);
+    cam.position.set(0,1.5,6.6/k); cam.lookAt(0,0.75,0);
+  } else {
+    sc.background=bgTex('#0d100c','#0f1a12','rgba(122,179,86,0.18)');
+    sprite(glowTex('rgba(150,220,240,0.3)','rgba(150,220,240,0)'),3.2,0.35,0.35,-0.6,true);
+    dewBall(0.95,0.35,0.3,0);
+    /* a short curved trail of tiny dew beads behind it */
+    for(var j=0;j<6;j++){ var a=4.0-j*0.13, rr=1.12+j*0.3, bs=0.11-j*0.013;
+      var bd=new THREE.Mesh(new THREE.SphereGeometry(bs,24,16),new THREE.MeshPhongMaterial({color:0xa9dcea,emissive:0x2a5866,shininess:200,specular:0xffffff}));
+      bd.position.set(0.35+Math.cos(a)*rr,0.3+Math.sin(a)*rr,-0.1); sc.add(bd); }
+    /* one clover leaf touching it: three rounded leaflets and a stem */
+    var lm=new THREE.MeshLambertMaterial({color:0x7ab356,side:THREE.DoubleSide});
+    for(var q=0;q<3;q++){ var lf=new THREE.Mesh(new THREE.SphereGeometry(0.2,24,16),lm); lf.scale.set(1,0.18,0.78);
+      var an=q*2.094+0.3; lf.position.set(0.98+Math.cos(an)*0.17,-0.5,0.42+Math.sin(an)*0.17); lf.rotation.y=-an; lf.rotation.x=0.9; sc.add(lf); }
+    var st=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.4,8),lm); st.position.set(1.08,-0.7,0.45); st.rotation.z=0.5; sc.add(st);
+    cam.position.set(0,0.9,6.2/k); cam.lookAt(0.2,0.05,0);
+  }
+}
 R.render(sc,cam); window.DONE=true;
 </script>
