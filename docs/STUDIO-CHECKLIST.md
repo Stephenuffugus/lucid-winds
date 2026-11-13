@@ -6,12 +6,13 @@ As of 13 Nov 2026, 08:30 UTC. The order: you get the art (1), you make your call
 
 ## Overnight 13 Nov: what waits for you
 
-Opus built all of this while you slept; Fable checked each build (ran its tests, looked at its screens) and wrote the lines. Nothing is live until you run its line. Four lines, any order, one at a time, each at an idle prompt.
+Opus built all of this while you slept; Fable checked each build (ran its tests, looked at its screens) and wrote the lines. Nothing is live until you run its line. Five lines, any order, one at a time, each at an idle prompt.
 
 - [ ] Shutterbug sb-m2-28 (the clean pass, the biome roll with your photo on it, the film row, back, Install): `! bash /home/codespace/sb-drafts/sb-m2-28/deploy-sb-m2-28.sh` It waits for the box to go quiet by itself (you)  
 - [ ] Sixfold (the friend room, a 30 second round clock, emotes and the call, the Play fixes): `! bash /home/codespace/lw-drafts/deploy-sixfold-friend-room.sh` Then both phones close the Sixfold tab and open it again (you)  
 - [ ] Create-A (her prototype untouched at /satellites/create-a/ and the new build beside it at /satellites/create-a/next/, both unlisted): `! bash /home/codespace/lw-drafts/deploy-create-a.sh` (you)  
 - [ ] Lucid Winds hub, the leftover repairs (one card at a time on a returning start, Settings reachable, the worker's cache): `! bash /home/codespace/lw-drafts/deploy-hub-r13.sh` (you)  
+- [ ] Privacy pages for Whistlestop, Doohickey, Strata and Wardian (each then passes every Play gate; the Play queue is publish/PLAY-QUEUE.md): `! bash /home/codespace/lw-drafts/deploy-privacy-four.sh` (you)  
 
 Your calls from the night:
 
