@@ -59698,6 +59698,9 @@ function _lwStickyToast(m,opts,_clear){
   // Hub R13: sit just under the top bar's buttons (the empty band above the grid), two lines wide, never over a control
   try{ var kb=document.getElementById('pw-keeper-bar'), kr=kb&&kb.getBoundingClientRect(); stack.style.width='min(88%,340px)';
     stack.style.top=(kr&&kr.height>0&&getComputedStyle(kb).display!=='none'&&kr.bottom<innerHeight*0.4)?Math.round(kr.bottom+8)+'px':'13%'; }catch(e){}
+  // Hub R14: and never on the GPS banner's ENABLE GPS / STAY IN DEMO buttons: below it when it is up
+  try{ var gb=document.getElementById('gps-recovery-banner'), gr=gb&&gb.getBoundingClientRect();
+    if(gr&&gr.height>0&&getComputedStyle(gb).display!=='none'&&gr.bottom<innerHeight*0.5&&gr.bottom+8>parseFloat(stack.style.top||'0')) stack.style.top=Math.round(gr.bottom+8)+'px'; }catch(e){}
   var card=document.createElement('div');card.className='w-toast-sticky';
   card.style.cssText='position:relative;display:flex;align-items:center;gap:6px;background:linear-gradient(180deg,rgba(22,28,18,0.98),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.32);border-left:3px solid rgba(200,168,75,0.65);border-radius:12px;padding:0.55rem 0.4rem 0.55rem 0.95rem;font-family:DM Mono,monospace;font-size:0.62rem;font-weight:500;color:var(--cream);line-height:1.55;box-shadow:0 12px 40px rgba(0,0,0,0.6),0 0 0 1px rgba(74,124,53,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);pointer-events:auto;opacity:0;transform:translateY(-6px);transition:opacity 0.25s ease,transform 0.25s ease;';
   var txt=document.createElement('div');txt.style.cssText='flex:1 1 auto;min-width:0;text-align:left;';
