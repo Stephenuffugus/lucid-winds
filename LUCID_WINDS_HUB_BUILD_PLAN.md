@@ -147,6 +147,57 @@ before V3 and V4. V1 and V2 are plain defects and can go first if he says so.
 - Gate for each: `tools/hub-tests/` gains one sheet script that draws one plant with every aura and every
   mutation (the audit's scratch version did this); ONE look at that sheet per packet.
 
+## The herbarium hybrid (WAITS ON STEPHEN'S FIVE CALLS of 13 Nov; replaces V3 and V4, sharpens V1 and V2)
+
+Astra's round one kit was built into the hub as a flag only skin on 13 Nov (`assets/skin-herbarium/skin.css` and
+`skin.js`, loader before `</head>`, `?skin=bloom,cards,banners,actions,layout` is the hybrid). He judges it from
+https://claude.ai/artifact/ULCFeHPUFTC4stDLERD1m4 and on the Pixel. The skin is laid OVER the hub (a
+MutationObserver, a 1.2 s measure loop, CSS that hides hub nodes): right for judging, wrong for shipping. On his
+yes, each packet below moves ONE part out of the skin into index.html proper, shoots it beside the skin's shot of
+the same plant, and deletes that part from the skin. When the last is in, the loader and the folder go.
+
+His calls decide the switches: (2) grade on the frame with season as a small mark [the skin], or painted seasonal
+corners kept with the grade as glow and word; (3) the reveal names the grade [the skin] or keeps "inspect to
+discover"; (4) her banners, or today's plus one new Puzzles banner.
+
+- **H1. Soft auras in the renderer (V1, for real).** Some auras are a full canvas rect
+  (`<rect width=70 height=95 fill=url(#aura...)>`) and band stacks; that is the hard box. Fade them inside
+  `_generatePlantSVG` (one shared radial mask on the aura group), keeping each aura's own colours. The skin only
+  blurs them from outside and loses half an aurora. Bump whatever key the cached plant PNGs use, so the detail
+  card's baked boxes regenerate.
+- **H2. Fit by drawn bounds.** Plants draw small inside their canvas. Give the renderer's callers one helper that
+  returns the drawn bounds of pot, stem, leaves, bloom and companion (auras and faint washes left out), used by
+  the tile, the detail card and the reveal (cap 2.2x, base on the ground line). The skin measures the DOM for this.
+- **H3. The bloom reveal.** Build her layout inside `_showMintCelebration` itself: stage, pedestal, arch ending on
+  the pedestal, grade word and mark, name, "EA n", haiku, two real buttons, the grade's stage light (sage, green,
+  blue, violet, gold halo, rose, blue white with the orbit kept inside the stage). The overlay holds a hidden copy
+  of the plant (`#mint-plant-reveal`) with the same gradient ids; a second plant in the overlay loses its pot fill
+  until that copy is emptied. Fix it at the source (one plant in the overlay). Decide the tip line's place.
+- **H4. The greenhouse tile.** Grade word, mark and colour (border and faint glow), the season per call 2, the plant
+  fitted (H2), "Ready to breed" as a small mark, and a place for the synergy icons row the skin hides.
+- **H5. The detail card front.** Arch, grade and season at the top, EA under the haiku, the card centred between
+  the close row and the actions. V2 lands here: the Constellation veil and the Silhouette backlight from her kit
+  (`assets/cards/constellation-veil.png`, `silhouette-backlight.png` in the vaulted zip), shot on a real 0xFF plant.
+- **H6. The greenhouse layout.** The count on one line, the first row directly under the top bar (the skin gets
+  y 265 of 915; today 420). The GROW YOUR NAME button draws nothing yet keeps 70 px: give it a visible place or
+  remove it (his call).
+- **H7. The four action tiles**, with words, Compost in coral on red.
+- **H8. The banners**, per call 4. Her set maps seven of nine (no Math or Words category today); three baked titles
+  differ from the live names (Patterns, Studio Games, Dice).
+- NOT in the hybrid: her flat nav and top bar icons (ours stay), and every empty rectangle in her kit (CSS).
+
+Gate for each: parse_blocks, then ONE shot of that screen beside the skin's, same plant. The fixed plants (seed a
+returning player with these, in this order): Common d5cc9f4f1b13b04e399098edc9ca988b9af5ac03de8ccfe8305c49698f7cddd5,
+197593d99fc67e531282572c435151074c4e35b14e94c44fce65eec8f6aaf345, a8abd91fd1b6a0f61d26ee61179d32cd33b48194be25ffc7be3764d1a845e0aa,
+d4923613c79dd82ce1c44fdbfd87139be654aabcd2b00445d9d0fa54b1ddb521; Uncommon 9f2d7436148a90474a43ac6dd9145fba794469e51a32a3b6952633395eb9c801,
+2ec51a75797870f801e58b179076ab09f83bde5d79ced9048743b424233fdcc6; Rare 6710fe81ca474848f32d707601e3fb4bb2066ac8914ee43dbb1622d5d3512b45,
+e1ff16a7fce30c3575a410c275d421b318531b07ea23a61342f8f3895aa4f435; Epic 3934d3e95c352276789d7e1baeaae7f866035a2d930f063f89f7ad342c724a14,
+19499b2d5fee2f51ff3a67b070a1883fa942ccf5e9cd0198839e6982ecade5bf; Legendary 20b4e6aac97da301f015cab19207e82ebff72dd98509a25cdfdc933f75fe1f85 (the detail shot),
+4ea8446f4be76158f85113d37c7871d11d4c28c784a69e208f6bcb80f77d4e26; Mythic 9e61ca99c169065239fb0dee31f0d2e560c51f0d3f9ef62b5ffd2130ce022d1d;
+Cosmic eefac9d1eef4659f51fe849c0e5cda18b175c0adac39981742ddbbd9b0d3be48. Reveals: Common
+65d09eaa8906fa2dd534afacbe671a36e5f6525c9635159a3048acd5ce3a30a1, Legendary 299c8915bded819f6acc82f935b6b08c46708098ccc17d74f72b453cb892ac98,
+Cosmic with a two line name efb43aaf27c4432652fd6f57fdd58c95823ca92a6254c6e583ce6412c731a5b9.
+
 ## Before any public push (not repairs; each needs its own plan and his yes)
 - **S1. The shared map.** `firestore-rules-8.txt:485` lets any signed in client create a wild drop with any
   hash and delete any drop. Build the two functions already on the migrations list, `dropToWild` (checks the
