@@ -233,6 +233,13 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 #hallEmpty[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
+<script id="musicFirst">/* THE SOUNDTRACK'S MANNERS, 20261113b (Play queue). On a new player's FIRST launch (never launched, no
+   save) the studio soundtrack script is held from here with its own SWS_MUSIC_HOLD flag: no song card, pill or
+   toast over the first screen. The game lets it go at its first break (musicBreak). From the second launch on the
+   script boots as it does in every other game. /music-unlocks.js itself is not edited. */
+(function(){ try{ var n=+(localStorage.getItem("strata_launches")||0)||0;
+  localStorage.setItem("strata_launches",String(n+1));
+  if(n<1&&!localStorage.getItem("lw_strata_v1")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
 <script src="/music-unlocks.js?v=20260907c" defer></script>
 </head>
 <body>
@@ -1568,7 +1575,7 @@ function conditionWord(outN, cracked, total) {
 
 
 /* ========================= 16. THE GAME'S STATE ========================= */
-var STAMP = '20261113a';
+var STAMP = '20261113b';
 var REDUCED = false;
 var G = {
   screen: 'Title', mode: 'dig',
@@ -2840,6 +2847,28 @@ function saveNow() {
 
 /* ========================= 21. SCREENS ========================= */
 var SCREENS = ['Title', 'How', 'Mount', 'Hall', 'Journal'];
+/* ⛔ THE SOUNDTRACK'S MANNERS (Play queue, 20261113b). The shared script (/music-unlocks.js, not edited) is
+   driven with its own controls: held while a site is open (digging, and mounting on the bench), held in the hall
+   and the journal (a full screen of plinths and rows, no free corner), so the Music button lives on the title and
+   How screens. A first launch stays held until the first break: a specimen kept, or the first way out of a dig;
+   that break shows the waiting song. */
+var MUSIC = { first: window.SWS_MUSIC_HOLD === true, want: false, sent: window.SWS_MUSIC_HOLD === true, t: 0 };
+function musicSync() {
+  var on = MUSIC.want || MUSIC.first;
+  try { var m = window.SWSMusic; if (m && m.hold && on !== MUSIC.sent) { m.hold(on); MUSIC.sent = on; } } catch (e) {}
+}
+function musicHold(on) { MUSIC.want = !!on; musicSync(); }
+/* a break: the first one lets a first launch go, and every one shows a song that waited (one earned mid play is
+   held in the script's pending list, not toasted over the board). `still` says the break is still on screen. */
+function musicBreak(still) {
+  MUSIC.first = false; musicSync();
+  clearTimeout(MUSIC.t);
+  MUSIC.t = setTimeout(function () {
+    try { var m = window.SWSMusic; if ((!still || still()) && m && m.reveal) m.reveal(); } catch (e) {}
+  }, 1400);
+}
+/* the script is deferred: a hold asked for before it ran is sent once it has (sent = what the script holds now) */
+document.addEventListener('DOMContentLoaded', musicSync);
 function showScreen(name) {
   var i;
   for (i = 0; i < SCREENS.length; i++) {
@@ -2850,6 +2879,9 @@ function showScreen(name) {
   G.screen = name;
   if (name === 'Title' && was === 'Dig') startDemo();
   refreshChrome();
+  var digging = name === 'Dig' || name === 'Mount';
+  musicHold(digging || name === 'Hall' || name === 'Journal');
+  if ((was === 'Dig' || was === 'Mount') && !digging) musicBreak(function () { return G.screen === name; });
 }
 function refreshChrome() {
   var digging = G.screen === 'Dig';
