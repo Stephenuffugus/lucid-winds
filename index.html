@@ -7285,6 +7285,26 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
     #lw-offline-banner .lw-ob-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:none;background:transparent;color:var(--muted);font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;-webkit-tap-highlight-color:transparent;}
     #lw-offline-banner .lw-ob-x:active{background:rgba(200,168,75,0.12);}
   </style>
+<style id="lw-r9-desktop">
+/* Hub R9: above 700 px of width the whole app sits in one centred 480 px column; the tab's painted
+   background (#tab-bg-*, fixed and full screen) fills the rest. Phone widths never reach this block.
+   --lw-gut is the empty margin on each side of the column; right/left-anchored fixed controls add it. */
+@media (min-width: 701px) {
+  :root { --lw-gut: calc((100vw - 480px) / 2); }
+  /* the panels' own top padding already clears most of the top bar; the wrapper's 5.5rem on top of it pushed
+     the first plant card below a 768 px tall screen */
+  body:not(.game-active) .game-wrap { padding-top: 70px; }
+  body:not(.tab-game) .game-wrap { padding-bottom: 0; }
+  .grove-panel { max-width: 480px; margin-left: auto !important; margin-right: auto !important; box-sizing: border-box; }
+  #pw-keeper-bar { max-width: 480px !important; left: var(--lw-gut) !important; right: auto !important; width: 480px !important; margin: 0 !important; box-sizing: border-box; }
+  .fg-bottomnav, #wild-nav { max-width: 480px !important; left: var(--lw-gut) !important; right: auto !important; width: 480px !important; margin: 0 !important; }
+  #bpi { right: calc(var(--lw-gut) + 6px) !important; }
+  #kb-compendium { right: calc(var(--lw-gut) + 78px) !important; }
+  body.tab-wild #kb-compendium { right: calc(var(--lw-gut) + 74px) !important; }
+  #dfb { right: calc(var(--lw-gut) + 10px) !important; }
+  #ffb { left: calc(var(--lw-gut) + 10px) !important; }
+}
+</style>
 </head>
 <body>
   <!-- ═══ BOOT SPLASH — sprout emerging from seed; covers all UI until app ready ═══ -->
