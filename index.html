@@ -64566,8 +64566,10 @@ window.openSunbeamModal=function(){
   // Progress toward next plant (hidden during tutorial-mint to keep it clean)
   if(!_tutMint){
     h+='<div style="margin-bottom:0.8rem;">';
-    h+='<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-bottom:4px;">Next plant: '+prog+'/'+cost+'</div>';
-    h+='<div style="height:6px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,rgba(200,168,75,0.65),rgba(240,208,144,0.8));border-radius:3px;transition:width 0.3s;"></div></div>';
+    // Hub R11: with a plant banked the line says so, not "Next plant: 0/30" over an empty bar
+    if(ready>0)h+='<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--gold);margin-bottom:4px;">'+ready+' plant'+(ready>1?'s':'')+' ready'+(prog>0?' \u00b7 next: '+prog+'/'+cost:'')+'</div>';
+    else h+='<div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--muted);margin-bottom:4px;">Next plant: '+prog+'/'+cost+'</div>';
+    h+='<div style="height:6px;background:rgba(122,179,86,0.08);border-radius:3px;overflow:hidden;"><div style="height:100%;width:'+(ready>0?100:pct)+'%;background:linear-gradient(90deg,rgba(200,168,75,0.65),rgba(240,208,144,0.8));border-radius:3px;transition:width 0.3s;"></div></div>';
     h+='</div>';
   }
   // Bloom button (plants bloom from sunlight — botanical verb replaces
@@ -64585,6 +64587,8 @@ window.openSunbeamModal=function(){
     h+='<button id="lw-mint-now-btn" onclick="window._mintFromQueue();var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" aria-label="Photosynthesize a plant" style="position:relative;width:100%;aspect-ratio:2/1;padding:0;margin-bottom:0.5rem;border:1.5px solid rgba(200,168,75,0.55);border-radius:14px;background:url(assets/btn-photosynthesize-v1.webp) center/cover no-repeat,linear-gradient(180deg,rgba(46,38,18,0.55),rgba(28,24,12,0.7));cursor:pointer;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,0.45),inset 0 0 0 1px rgba(240,208,144,0.12);">'
       +(ready>1?'<span style="position:absolute;top:8px;right:10px;min-width:28px;height:28px;padding:0 8px;border-radius:14px;background:rgba(13,16,12,0.82);border:1.5px solid rgba(200,168,75,0.6);color:var(--gold);font-family:Bebas Neue,sans-serif;font-size:0.85rem;letter-spacing:0.04em;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 2px rgba(0,0,0,0.85);">\u00d7'+ready+'</span>':'')
       +'</button>';
+    // Hub R11: the picture alone said nothing; the button under it says what it does
+    h+='<button id="lw-mint-now-label" onclick="window._mintFromQueue();var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();" style="width:100%;min-height:48px;padding:0.6rem;margin-bottom:0.4rem;border:1.5px solid rgba(200,168,75,0.7);border-radius:10px;background:linear-gradient(180deg,#e3c46a,#c8a84b);color:#0d100c;font-family:Bebas Neue,sans-serif;font-size:1.05rem;letter-spacing:0.1em;cursor:pointer;">BLOOM YOUR PLANT</button>';
   }else{
     h+='<div style="width:100%;padding:0.6rem 0.5rem;margin-bottom:0.4rem;border:1.5px solid rgba(122,179,86,0.18);border-radius:10px;background:rgba(26,31,23,0.5);text-align:center;"><div style="font-family:Bebas Neue,sans-serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.08em;">PLAY A GAME TO EARN SUNBEAMS</div><div style="font-family:DM Mono,monospace;font-size:0.42rem;color:var(--cream);margin-top:4px;opacity:0.85;">'+cost+' Sunbeams grows 1 unique plant. Win or progress in any mini-game.</div><button onclick="var m=document.getElementById(\'lw-sunbeam-modal\');if(m)m.remove();if(window.switchTab)switchTab(\'game\');" style="margin-top:8px;padding:8px 18px;border:1.5px solid rgba(122,179,86,0.55);border-radius:8px;background:linear-gradient(180deg,rgba(122,179,86,0.25),rgba(60,90,40,0.35));color:var(--sage);font-family:Bebas Neue,sans-serif;font-size:0.7rem;letter-spacing:0.1em;cursor:pointer;min-height:42px;">START PLAYING</button></div>';
   }
