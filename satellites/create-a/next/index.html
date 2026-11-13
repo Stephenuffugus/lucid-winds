@@ -77,7 +77,8 @@ h2{font-size:22px;margin:22px 0 8px}
 .cre.geared .pa{bottom:84px}
 .crb .bd{position:absolute;top:6px;right:6px}
 .crb .bd .ic{width:26px;height:26px}
-.crb .md{position:absolute;top:8px;left:8px;width:16px;height:16px;border-radius:50%;border:2.5px solid var(--ink)}
+.crb .md{position:absolute;top:6px;left:6px;width:36px;height:36px;border-radius:50%;border:2.5px solid var(--ink);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:17px;line-height:1;color:#fff}
+.crb .md canvas,.cre.newest .crb .md canvas{width:50px;height:50px;flex:none;aspect-ratio:auto}
 .pa{position:absolute;right:12px;bottom:22px;width:40%;justify-content:center;min-height:52px;font-size:18px;display:flex;align-items:center;gap:6px}
 .pa .ic{width:26px;height:26px}
 .wide{width:100%;margin-top:14px;font-size:18px}
@@ -95,7 +96,12 @@ h2{font-size:22px;margin:22px 0 8px}
 #ptabs{display:flex;gap:6px;padding:0 10px;flex:none}
 #ptabs button{flex:1;min-height:64px;padding:2px 4px 0;border-radius:16px 16px 0 0;box-shadow:none;border-bottom:none;background:#efe7f7;display:flex;align-items:center;justify-content:center;gap:4px;font-size:16px}
 #ptabs button.on{background:#fff}
+#pick>.top{order:1}#pick>#pgrid{order:2}#pick>#ptabs{order:3}#pick>.foot{order:4}
+#pick #ptabs{padding-bottom:6px;border-top:3px solid var(--ink);background:var(--bg)}#pick #ptabs button{border-radius:0 0 16px 16px;border-top:none;border-bottom:3px solid var(--ink)}
 #ptabs canvas{width:46px;height:46px;flex:none}
+#ptabs button{min-width:0}
+@media (max-width:400px){#pick #ptabs canvas{width:36px;height:36px}#pick #ptabs button{font-size:15px;gap:2px}}
+@media (max-width:380px){#editor #slots{gap:2px;padding-left:6px;padding-right:6px}}
 #pgrid{grid-template-columns:repeat(3,1fr)}
 #pgrid.fitted{display:flex;flex-wrap:wrap;justify-content:center;align-content:space-evenly}
 #pgrid.fitted .card{flex:none;font-size:17px}
@@ -162,7 +168,7 @@ button.pressed,button:active{transform:translateY(3px) scale(.97);box-shadow:0 1
 #stage{flex:none;margin:0 10px;height:clamp(250px,44vh,440px);border:3px solid var(--ink);border-radius:22px;background:radial-gradient(circle at 50% 38%,#fff 0,#e8f6ff 58%,#d5ecff 100%);box-shadow:0 5px 0 var(--ink);position:relative;overflow:hidden}
 #ed{width:100%;height:100%;touch-action:none;display:block}
 #stage .sm{position:absolute;padding:2px 10px 2px 6px;font-size:15px;border-radius:14px;box-shadow:0 3px 0 var(--ink);background:rgba(255,255,255,.94)}
-#undo{left:8px;top:8px}#remix{right:8px;top:8px}#del{left:8px;bottom:10px}
+#undo{left:8px;bottom:10px}#remix{right:8px;top:8px}#del{left:8px;top:8px}
 #undo:disabled{opacity:.35}
 #szbox{position:absolute;right:8px;bottom:10px;display:flex;flex-direction:column;gap:8px}
 #szbox .ib{background:rgba(255,255,255,.94);box-shadow:0 3px 0 var(--ink);border-radius:14px}
@@ -270,7 +276,9 @@ button.pressed,button:active{transform:translateY(3px) scale(.97);box-shadow:0 1
 #mbox p{font-weight:500;margin:6px 0}
 #mbox h3 .ic{display:inline-block;width:30px;height:30px;vertical-align:-5px;margin-right:6px}#mbox p .ic{width:20px;height:20px}#mbox .ic.dim{opacity:.3}
 #mbox .b{display:flex;gap:8px;margin-top:12px}
-#mbox .b button{flex:1}
+#mbox .b button{flex:1;min-height:52px;font-size:18px;display:flex;align-items:center;justify-content:center;gap:6px;line-height:1.15;padding:8px 6px}
+#mbox .b:not(.col) button .ic{width:24px;height:24px}
+#mbox .b button .ic{margin-right:0;flex:none}
 .pick{display:flex;gap:8px;overflow-x:auto;padding:6px 2px 8px}
 .pick button{flex:none;width:64px;height:64px;padding:2px;font-size:28px}
 .pick button.on{background:var(--yellow)}
@@ -278,13 +286,17 @@ button.pressed,button:active{transform:translateY(3px) scale(.97);box-shadow:0 1
 .grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0}
 .grid6 button{padding:2px 0;font-size:22px;min-height:48px;border-radius:12px;box-shadow:0 2px 0 var(--ink)}
 .grid6 button.on{background:var(--yellow)}
+.grid6.words{grid-template-columns:repeat(4,1fr)}
+.grid6.words button{font-size:14px;padding:2px}
+.pick.wrap{flex-wrap:wrap;justify-content:center;overflow:visible}
 button.sw{flex:none;width:48px!important;height:48px!important;border-radius:50%;padding:0}
 button.sw.on{outline:3px solid var(--ink);outline-offset:2px}
 #mbox img{width:236px;height:auto}
 #mbox .cardimg{width:min(100%,300px,48vh);display:block;margin:0 auto;border-radius:18px}
-#mbox.sharebox .b{margin-top:10px}#mbox.sharebox .big2{min-height:52px;font-size:18px}#mbox.sharebox .wide{margin-top:10px;min-height:52px}#mbox .b.two button{flex:1 1 0;min-width:0;padding:6px 4px;font-size:16px;white-space:nowrap;gap:5px}@media (max-width:380px){#mbox .b.two button{font-size:15px}}#mbox .b.two .ic{width:24px;height:24px}
+#mbox.sharebox .b{margin-top:10px}#mbox.sharebox .big2{min-height:52px;font-size:18px}#mbox.sharebox .wide{margin-top:10px;min-height:52px}#mbox .b.two button{flex:1 1 0;min-width:0;padding:6px 4px;font-size:16px;white-space:nowrap;gap:5px}@media (max-width:380px){#mbox .b.two button{font-size:17px;min-height:52px}}#mbox .b.two .ic{width:24px;height:24px}
 #mbox textarea{margin-top:10px}
 #mbox.pedia{max-width:440px;display:flex;flex-direction:column;height:90vh;padding:12px}
+.pedia>.plist{order:2}.pedia>.ptabs2{order:3}.pedia>button,.pedia>.b{order:4}
 .pstars{display:flex;align-items:center;justify-content:center;gap:1px;flex:none}.pstars .ic{width:24px;height:24px}.pstars .dim{opacity:.22}.pstars b{margin-left:8px;font-size:15px;white-space:nowrap}@media (max-width:380px){.pstars .ic{width:20px;height:20px}}
 .ptabs2{display:flex;gap:6px;margin:8px 0;flex:none}.ptabs2 button{flex:1;min-width:0;padding:4px 2px;display:flex;flex-direction:column;align-items:center;font-size:14px;line-height:1.1;box-shadow:0 3px 0 var(--ink)}.ptabs2 button.on{background:#fff3b8}
 .ptabs2 small{font-weight:500;font-size:14px}
@@ -322,6 +334,7 @@ button.sw.on{outline:3px solid var(--ink);outline-offset:2px}
 .goal .gs2{display:flex;flex:none}.goal .ic{width:30px;height:30px}.goal.got{background:#fff3b8}
 .foes{display:flex;justify-content:center;gap:4px;flex-wrap:wrap}.foes canvas{width:58px;height:58px}
 .bigboss{width:170px;height:170px;display:block;margin:0 auto}
+.winhero{width:min(130px,18vh);height:auto;display:block;margin:0 auto}
 #team{position:absolute;left:10px;bottom:22px;display:none;gap:8px}
 #team button{width:66px;height:76px;padding:2px;border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;position:relative}
 #team button canvas{width:56px;height:52px}#team button.on{background:#ffd93d;transform:translateY(-6px)}#team button.rest{opacity:.5;background:#e9e2f2}
@@ -427,7 +440,9 @@ const MODES=[
 const RNG={s:(Date.now()^0x9e3779b9)>>>0,seed(n){this.s=(n>>>0)||1},next(){let x=this.s=(this.s+0x6D2B79F5)>>>0;x=Math.imul(x^(x>>>15),x|1);x^=x+Math.imul(x^(x>>>7),x|61);return((x^(x>>>14))>>>0)/4294967296}};
 const rand=()=>RNG.next();
 const rnd=a=>a[rand()*a.length|0];
-const TESTMODE=/[?&]test=1/.test(location.search);
+/* ?test=1&monkey=<seed>: the random tapper (see runMonkey); it uses the real save path but its own database and keys, never the child's */
+const MONKEY=/[?&]test=1/.test(location.search)&&(location.search.match(/[?&]monkey=(\d+)/)||[])[1]||null,MK=MONKEY?'monkey.':'';
+const TESTMODE=/[?&]test=1/.test(location.search)&&!MONKEY;
 
 /* ================= 2 RIG TOOLS (drawing helpers) ================= */
 const PC={};const P=d=>PC[d]||(PC[d]=new Path2D(d));
@@ -896,14 +911,14 @@ function partInfo(k,d){
 }
 
 /* ================= 5 SYSTEMS: saves ================= */
-const SAVE_KEY='createA_v2';
+const SAVE_KEY=MK+'createA_v2';
 /* The save, schema 4: {v:4, at, creations[], modes[], found{}, broken[], v2seen{}}. Schema 4 (M3) adds to a creation snack and ride (ids of
    other creations, absent when none), rec{} (its Playground records), found.parts{} (thing.slot, filled from the creations on load) and found.labs{} (what the test labs discovered). A schema 3 save reads as is, nothing dropped.
    Kept in IndexedDB (db 'createA', store 'kv', key 'save'); localStorage 'createA_v3' is the fallback when IndexedDB is missing or fails.
    'createA_v2' (the prototype's key, published beside this build) is only ever READ: its creations are merged in once each, by id, and it is left in place.
    Nothing is ever dropped: an entry that cannot be read goes to broken[] ("could not open") with the reason, and stays in the save. */
 /* Schema 5 (M4) adds adv{stars{stageId:1..3}, friends{biomeId:1}, team[ids]}: a schema 4 save opens with an empty adv and nothing else changed. */
-const SCHEMA=5,LS3='createA_v3',DBN='createA';
+const SCHEMA=5,LS3=MK+'createA_v3',DBN=MONKEY?'createA_monkey':'createA';
 function cleanAdv(a){const o={stars:{},friends:{},team:[],got:{}};if(!a||typeof a!=='object')return o;
  if(a.got&&typeof a.got==='object')Object.keys(a.got).forEach(k=>{const n=a.got[k]|0;if(n>0&&n<8)o.got[k]=n});
  if(a.stars&&typeof a.stars==='object')Object.keys(a.stars).forEach(k=>{const n=+a.stars[k];if(n>=1&&n<=3)o.stars[k]=Math.round(n)});
@@ -1040,21 +1055,21 @@ function cry(cr){if(!SET.snd||!cr||!cr.parts)return;
 }
 
 /* settings live on the device, apart from the creations: sound and vibration, both on by default */
-const SET=(()=>{let s={snd:1,vib:1};try{const r=JSON.parse(localStorage.getItem('createA_settings')||'{}');if(r&&typeof r==='object'){if(r.snd===0)s.snd=0;if(r.vib===0)s.vib=0}}catch(e){}return s})();
-function saveSet(){try{localStorage.setItem('createA_settings',JSON.stringify(SET))}catch(e){}}
-function buzz(p){if(!SET.vib)return;try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+const SET=(()=>{let s={snd:1,vib:1};try{const r=JSON.parse(localStorage.getItem(MK+'createA_settings')||'{}');if(r&&typeof r==='object'){if(r.snd===0)s.snd=0;if(r.vib===0)s.vib=0}}catch(e){}return s})();
+function saveSet(){try{localStorage.setItem(MK+'createA_settings',JSON.stringify(SET))}catch(e){}}
+function buzz(p){if(!SET.vib)return;try{const ua=navigator.userActivation;if(navigator.vibrate&&(!ua||ua.hasBeenActive))navigator.vibrate(p)}catch(e){}}
 document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('button');if(!b||b.disabled)return;b.classList.add('pressed');buzz(8);sfx('tick');const up=()=>{b.classList.remove('pressed');document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up)};document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up)},true);
 function settingsModal(){const b=openModal();h(b,'h3','Settings');
  const tg=(key,on,off,label)=>{const x=h(b,'button',null,'toggle'+(SET[key]?' on':''));const draw=()=>{x.innerHTML=svgIcon(SET[key]?on:off)+'<span>'+label+'</span><span class="sw"></span>';x.classList.toggle('on',!!SET[key])};draw();x.onclick=()=>{SET[key]=SET[key]?0:1;saveSet();draw();if(key==='snd'&&SET.snd)sfx('pick');if(key==='vib')buzz(40)}};
  tg('snd','sound','mute','Sound');tg('vib','buzz','buzz','Vibration');
- if(installEv){const ib=h(b,'button','Put it on my home screen','toggle');ib.insertAdjacentHTML('afterbegin',svgIcon('home'));ib.onclick=()=>{const e=installEv;installEv=null;ib.remove();try{e.prompt()}catch(x){}}}
+ if(installEv){const ib=h(b,'button','Put it on my home screen','toggle');ib.insertAdjacentHTML('afterbegin',svgIcon('home'));ib.onclick=()=>{const e=installEv;installEv=null;ib.remove();try{const q=e.prompt();if(q&&q.catch)q.catch(()=>{})}catch(x){}}}
  savesBlock(b);h(b,'button','Done','wide go').onclick=closeModal}
 function show(id){document.querySelectorAll('.screen').forEach(s=>{const was=s.classList.contains('on'),on=s.id===id;s.classList.toggle('on',on);if(on&&!was){s.classList.remove('enter');void s.offsetWidth;s.classList.add('enter')}})}
 /* a toast never lands on a control: over the title bar, over the stats row, or in the gap between buttons */
 function toastSpot(){const vw=window.innerWidth,Q=s=>{const e=$(s);if(!e)return null;const q=e.getBoundingClientRect();return q.width&&q.height?q:null};
  if($('#modal').classList.contains('on')){const b=Q('#mbox');return{l:12,t:8,w:vw-24,h:b?Math.max(36,Math.min(64,b.top-14)):48}}
  const on=document.querySelector('.screen.on'),id=on&&on.id;
- if(id==='editor'){const st=Q('#stats');if(st)return{l:st.left+2,t:st.top+3,w:st.width-4,h:st.height-6};const u=Q('#undo'),m=Q('#remix');if(u&&m)return{l:u.right+6,t:u.top,w:m.left-u.right-12,h:u.height}}
+ if(id==='editor'){const st=Q('#stats');if(st)return{l:st.left+2,t:st.top+3,w:st.width-4,h:st.height-6};const u=Q('#del'),m=Q('#remix');if(u&&m)return{l:u.right+6,t:u.top,w:m.left-u.right-12,h:u.height}}
  if(id==='pick'||id==='mix'){const tp=Q('#'+id+' .top'),bk=Q('#'+id+' .top button');if(tp&&bk)return{l:bk.right+8,t:tp.top+5,w:tp.right-bk.right-18,h:tp.height-10}}
  if(id==='play'){const hl=Q('#hudL');return{l:12,t:(hl?hl.bottom:60)+8,w:vw-24,h:44}}
  return{l:12,t:8,w:vw-24-60,h:48}}
@@ -1155,11 +1170,11 @@ function renderHome(){
  const fresh=!S.creations.length;$('#first').classList.toggle('on',fresh);$('#full').classList.toggle('off',fresh);
  if(fresh){if(!firstPicDone){firstPicDone=true;const s=Object.assign(MANNERS[0].f(['unicorn','cupcake']),{sz:{}}),w=el('canvas','world'),hc=sprite(s,400);hc.className='hero';$('#first').prepend(w);$('#firstPic').append(hc)}requestAnimationFrame(firstWorld);return}
  const g=$('#modes');g.innerHTML='';
- allModes().forEach(m=>{const b=el('button','mode');b.style.background=m.color;if(MODEPIC[m.id])b.append(sprite(pure(MODEPIC[m.id]),160));else h(b,'span',m.emoji,'em');h(b,'span','Create '+m.name);b.onclick=()=>openPicker(m.id,null);g.append(b)});
+ allModes().forEach(m=>{const b=el('button','mode');b.style.background=m.color;if(MODEPIC[m.id])b.append(sprite(pure(MODEPIC[m.id]),160));else h(b,'span',emojiOK()?m.emoji:String(m.name||'?').charAt(0).toUpperCase(),'em');h(b,'span','Create '+m.name);b.onclick=()=>openPicker(m.id,null);g.append(b)});
  const add=el('button','mode addmode');add.insertAdjacentHTML('beforeend',svgIcon('plus'));h(add,'span','Make your own mode');add.onclick=modeModal;g.append(add);
  const ga=$('#gallery');ga.innerHTML='';
  S.creations.forEach((cr,i)=>{const w=el('div','cre'+(i===0?' newest':'')),b=el('button','crb');b.append(sprite(cr,i===0?320:200));h(b,'span',nameOf(cr),'nm');
-  const md=h(b,'span',null,'md');md.style.background=modeOf(cr.m).color;if(cr.fr){const q=h(b,'span',null,'bd');q.innerHTML=svgIcon('mail')}
+  const md=h(b,'span',null,'md'),mo=modeOf(cr.m);md.style.background=mo.color;md.setAttribute('aria-label',mo.name);if(MODEPIC[mo.id])md.append(thumbCopy(MODEPIC[mo.id],'head'));else h(md,'span',emojiOK()?mo.emoji:String(mo.name||'?').charAt(0).toUpperCase());if(cr.fr){const q=h(b,'span',null,'bd');q.innerHTML=svgIcon('mail')}
   b.onclick=()=>{if(Date.now()-HOLD.end<450)return;openEditor(cr)};b.addEventListener('pointerdown',e=>holdStart(e,w,i));b.addEventListener('contextmenu',e=>e.preventDefault());w.append(b);
   if(i===0){const pa=el('button','go pa');pa.innerHTML=svgIcon('play')+'Play again';pa.onclick=()=>{if(fights(cr.m)){openEditor(cr);battleModal(cr)}else startPlay('person',cr)};w.append(pa)}
   if(fights(cr.m)){const gs=el('div','gs');gs.append(gearSlot(cr,'snack',renderHome),gearSlot(cr,'ride',renderHome));w.append(gs);w.classList.add('geared')}
@@ -1221,14 +1236,17 @@ function restoreModal(){const b=openModal();h(b,'h3','Bring saves back');h(b,'p'
  const ta=h(b,'textarea');ta.placeholder='CAS1.…';
  const r=h(b,'div',null,'b');h(r,'button','Cancel').onclick=closeModal;h(r,'button','Bring back','go').onclick=()=>take(ta.value)}
 const EMO=['👾','🧟','🦸','🧙','🦖','👻','🎃','🧜','🛸','🏰','⚽','🎸','👑','🌈','🧚','🐲','🤠','🥷','🧸','🎪','💎','🪐','🍄','🎁'];
+/* a word for each mode picture, read aloud by a screen reader and shown instead on a device that cannot draw emoji (a box with nothing in it tells a child nothing) */
+const EMO_W=['Alien','Zombie','Hero','Wizard','Dino','Ghost','Pumpkin','Mermaid','UFO','Castle','Ball','Guitar','Crown','Rainbow','Fairy','Dragon','Cowboy','Ninja','Teddy','Circus','Gem','Planet','Mushroom','Gift'];
+let emojiOK_=null;function emojiOK(){if(emojiOK_!==null)return emojiOK_;try{const cv=document.createElement('canvas');cv.width=cv.height=32;const c=cv.getContext('2d');c.textBaseline='top';c.font='26px sans-serif';c.fillText('\u{1F47E}',2,2);const d=c.getImageData(0,0,32,32).data;let col=0;for(let i=0;i<d.length;i+=4)if(d[i+3]>40&&(Math.abs(d[i]-d[i+1])>30||Math.abs(d[i+1]-d[i+2])>30))col++;emojiOK_=col>8}catch(e){emojiOK_=true}return emojiOK_}
 function modeModal(){
  const b=openModal();let em=EMO[0],col=COLORS[6],fight=true;
  h(b,'h3','Make your own mode');h(b,'p','What do you want to create?');
  const inp=h(b,'input');inp.maxLength=14;inp.placeholder='Monsters, Heroes, Snacks…';
- const eg=h(b,'div',null,'grid6');EMO.forEach(e=>{const x=h(eg,'button',e);if(e===em)x.classList.add('on');x.onclick=()=>{em=e;eg.querySelectorAll('button').forEach(q=>q.classList.toggle('on',q===x))}});
- const cg=h(b,'div',null,'pick');COLORS.forEach(c=>{const x=h(cg,'button','','sw');x.style.background=c;if(c===col)x.classList.add('on');x.onclick=()=>{col=c;cg.querySelectorAll('button').forEach(q=>q.classList.toggle('on',q===x))}});
+ const eok=emojiOK(),eg=h(b,'div',null,'grid6'+(eok?'':' words'));EMO.forEach((e,i)=>{const x=h(eg,'button',eok?e:EMO_W[i]);x.setAttribute('aria-label',EMO_W[i]);if(e===em)x.classList.add('on');x.onclick=()=>{em=e;eg.querySelectorAll('button').forEach(q=>q.classList.toggle('on',q===x))}});
+ const cg=h(b,'div',null,'pick wrap');COLORS.forEach(c=>{const x=h(cg,'button','','sw');x.style.background=c;if(c===col)x.classList.add('on');x.onclick=()=>{col=c;cg.querySelectorAll('button').forEach(q=>q.classList.toggle('on',q===x))}});
  h(b,'p','What happens when you test it?');const fr=h(b,'div',null,'b');fr.style.marginTop='4px';
- const f1=h(fr,'button','⚔️ It battles'),f2=h(fr,'button','🧑 A person tries it');const fu=()=>{f1.style.background=fight?'#ffd93d':'#fff';f2.style.background=fight?'#fff':'#ffd93d'};fu();f1.onclick=()=>{fight=true;fu()};f2.onclick=()=>{fight=false;fu()};
+ const f1=h(fr,'button'),f2=h(fr,'button');f1.innerHTML=svgIcon('swords')+'It battles';f2.innerHTML=svgIcon('friend')+'A person tries it';const fu=()=>{f1.style.background=fight?'#ffd93d':'#fff';f2.style.background=fight?'#fff':'#ffd93d'};fu();f1.onclick=()=>{fight=true;fu()};f2.onclick=()=>{fight=false;fu()};
  const r=h(b,'div',null,'b');h(r,'button','Cancel').onclick=closeModal;
  h(r,'button','Create!','go').onclick=()=>{let n=inp.value.trim();if(!n){toast('Give your mode a name!');return}if(isRude(n))n='My Mode';const m={id:'c'+Date.now().toString(36),name:n,emoji:em,color:col,fight:fight};S.modes.push(m);persist();closeModal();beep(660,.15);openPicker(m.id,null)};
 }
@@ -1364,7 +1382,7 @@ function cardOf(cr,link){
  c.fillStyle=INK;c.font="800 22px 'Baloo 2',sans-serif";[['heart',k.hp],['shoe',k.spd],['star',k.atk.dmg+k.pow]].forEach((q,i)=>{drawIcon(c,q[0],46+i*98,345,26);c.fillStyle=INK;c.fillText(q[1],64+i*98,346)});
  const gr=gearOf(cr)||{},rows=(gr.snack?[['snack',nameOf(gr.snack)]]:[]).concat(gr.ride?[['ride',nameOf(gr.ride)]]:[]).concat(k.cb.map(x=>['star',x.n]));SLOTS.forEach(s=>{const id=cr.parts[s];if(s==='body'||!has(id,s))return;const d=T[id][s],f=partFx(s,d);rows.push([f?f.ic:'spark',d.pw])});
  c.font="700 15px 'Baloo 2',sans-serif";rows.slice(0,6).forEach((q,i)=>{const x=34+(i%2)*156,y=380+Math.floor(i/2)*27;drawIcon(c,q[0],x+8,y,18);c.fillStyle=INK;c.fillText(q[1],x+22,y+1,124)});
- c.font="500 12px 'Baloo 2',sans-serif";c.globalAlpha=.6;c.fillStyle=INK;c.fillText('Create-A · '+(MODES.some(x=>x.id===m.id)?'':m.emoji+' ')+m.name,34,464);c.globalAlpha=1;return cv;
+ c.font="500 12px 'Baloo 2',sans-serif";c.globalAlpha=.6;c.fillStyle=INK;c.fillText('Create-A · '+(MODES.some(x=>x.id===m.id)||!emojiOK()?'':m.emoji+' ')+m.name,34,464);c.globalAlpha=1;return cv;
 }
 /* Share: the card is the screen, and the whole modal fits the phone with Done in view (the card shrinks to the room left);
    the raw code is folded behind Copy code and only shown if copying fails */
@@ -1382,7 +1400,7 @@ function shareModal(cr,invite){
   const fallback=()=>{try{const a=el('a');a.href=card.toDataURL('image/png');a.download=fname;document.body.append(a);a.click();a.remove();toast('Saved!','check');sfx('pick')}catch(e){toast('Hold the picture to save it')}};
   try{card.toBlob(bl=>{let f=null;try{f=bl&&new File([bl],fname,{type:'image/png'})}catch(e){}if(f&&navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});else fallback()},'image/png')}catch(e){fallback()}};
  const cp=h(r2,'button','Copy code','big2');cp.style.background='var(--purple)';cp.style.color='#fff';cp.insertAdjacentHTML('afterbegin',svgIcon('copy'));
- let ta=null;const showCode=()=>{if(ta)return;ta=el('textarea');ta.readOnly=true;ta.value=code;ta.onclick=()=>ta.select();r2.after(ta);ta.select()};
+ let ta=null;const showCode=()=>{if(ta)return;img.style.width='min(100%,300px,calc((90vh - '+(room+100)+'px) * '+(card.width/card.height).toFixed(4)+'))';ta=el('textarea');ta.readOnly=true;ta.value=code;ta.onclick=()=>ta.select();r2.after(ta);ta.select()};
  cp.onclick=()=>{let ok=false;const t=el('textarea');t.value=code;t.style.cssText='position:fixed;left:-999px;top:0;opacity:0';document.body.append(t);t.select();try{ok=document.execCommand('copy')}catch(e){}t.remove();
   const done=y=>{if(y){toast('Copied!','check');sfx('pick')}else{toast('Hold the code to copy it');showCode()}};try{navigator.clipboard.writeText(code).then(()=>done(true),()=>done(ok))}catch(e){done(ok)}};
  if(invite)h(b,'p','Send the link or the code to a friend. Add theirs back to bring them as your buddy!');
@@ -1466,7 +1484,7 @@ $('#name').addEventListener('input',e=>{if(Date.now()-ED.typing>1500)snap();ED.t
 $('#name').addEventListener('change',checkName);$('#name').addEventListener('blur',checkName);
 $('#name').addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur()});
 $('#back').onclick=()=>{checkName();goHome()};
-$('#del').onclick=()=>{const b=openModal(),cv=sprite(ED.cr,200);cv.style.width='120px';b.append(cv);h(b,'h3','Delete '+nameOf(ED.cr)+'?');h(b,'p','It will be gone forever!');const r=h(b,'div',null,'b');h(r,'button','Keep it','go').onclick=closeModal;const d=h(r,'button','Delete');d.style.background='#ff5d73';d.style.color='#fff';d.onclick=()=>{S.creations=S.creations.filter(c=>c!==ED.cr);closeModal();goHome()}};
+$('#del').onclick=()=>{const b=openModal(),cv=sprite(ED.cr,200);cv.style.width='120px';b.append(cv);h(b,'h3','Delete '+nameOf(ED.cr)+'?');h(b,'p','It will be gone forever!');const r=h(b,'div',null,'b');h(r,'button','Keep it','go').onclick=closeModal;const d=h(r,'button','Delete');d.style.background='#ff5d73';d.style.color='#fff';d.onclick=()=>{if(window.__mkDel)window.__mkDel(ED.cr.id);S.creations=S.creations.filter(c=>c!==ED.cr);closeModal();goHome()}};
 $('#bTest').onclick=()=>startPlay(fights(ED.cr.m)?'test':'person',ED.cr);
 $('#bBattle').onclick=()=>battleModal(ED.cr);
 $('#bShare').onclick=()=>shareModal(ED.cr);
@@ -1760,7 +1778,7 @@ function renderKitchen(){const c=gc,s=G.ps,ty=H*.5;s.fy=Math.min(H*.79,H-170);
  // the judges stand behind the counter
  JUDGES.forEach((j,i)=>{const on=s.ph==='act'&&s.turn===i,v=s.shown.indexOf(i)>=0?s.ver.v[i]:null,x=W*KJX[i];const tint=v&&v.key.endsWith('.hot')?'#ff8a7a':v&&(v.key.endsWith('.cold'))?'#a8d8ff':null;
   kid(x,ty+22,on?8:0,{arms:on||s.ph==='say'&&v&&v.stars===3?'up':'down',mouth:on||v?'open':'smile',tint:tint,shirt:j[2],hair:j[3],hat:j[4],s:Math.min(1.25,W/330)});
-  if(v){bubble(c,x,ty-148,v.say,W/4+14);for(let k=0;k<3;k++){c.globalAlpha=k<v.stars?1:.25;drawIcon(c,'star',x+(k-1)*22,ty-186,22)}c.globalAlpha=1}});
+  if(v){bubble(c,x,ty-148,v.say,W/4-4,W<440?14:15);for(let k=0;k<3;k++){c.globalAlpha=k<v.stars?1:.25;drawIcon(c,'star',x+(k-1)*22,ty-186,22)}c.globalAlpha=1}});
  c.strokeStyle=INK;c.lineWidth=3;R(c,-10,ty,W+20,26,0,'#e9b872');R(c,-10,ty+26,W+20,H-ty,0,'#f7d9a8');Ln(c,'M0,'+(ty+26)+' H'+W,INK,3);
  // the plate and the food
  const sz=Math.min(230,W*.52);c.fillStyle='#fff';c.strokeStyle='#ff5d73';c.lineWidth=4;c.beginPath();c.ellipse(W/2,s.fy,sz*.6,sz*.15,0,0,7);c.fill();c.stroke();
@@ -1971,7 +1989,7 @@ function stageStars(G2){return G2.adv.st.goals.filter(g=>goalMet(g,G2)).length}
 function advWin(){const g=G,st=g.adv.st,n=stageStars(g);g.adv.won=true;g.adv.stars=n;if(g.sim)return;g.stop=true;
  if(st.id!=='daily'){const m=st.goals.reduce((q,k,i)=>q|(goalMet(k,g)?1<<i:0),0),all=(S.adv.got[st.id]|0)|m;S.adv.got[st.id]=all;S.adv.stars[st.id]=Math.max(S.adv.stars[st.id]||0,n,[0,1,2].filter(i=>all&(1<<i)).length)}persist();sfx('win');buzz([40,60,40]);
  overOpen=true;const b=openModal();h(b,'h3',st.boss?'You made a friend!':'Stage clear!');
- if(st.boss){const bc=bossCr(st.b),cv=sprite(bc,260);cv.className='bigboss';b.append(cv)}
+ if(st.boss){const bc=bossCr(st.b),cv=sprite(bc,260);cv.className='bigboss';b.append(cv)}else{const cv=sprite(g.cr,240);cv.className='winhero';b.append(cv)}
  const ws=h(b,'div',null,'winstars');for(let i=0;i<3;i++){ws.insertAdjacentHTML('beforeend',svgIcon('star',i<n?'pop':'dim'));const ic=ws.lastElementChild;if(i<n)ic.style.animationDelay=(.25+i*.3)+'s'}
  const gl=h(b,'div',null,'goals');st.goals.forEach(k=>gl.append(goalRow(k,goalMet(k,g))));cssConfetti();
  const done=f=>()=>{overOpen=false;closeModal();releaseG(g);G=null;$('#team').style.display='none';f()};
@@ -2347,9 +2365,40 @@ async function boot(){if(TESTMODE){renderHome();return}STORE.db=await STORE.open
 /* a link with #c=<code>: show what it is and ask; the hash is cleared so a reload does not ask again */
 function linkIn(){const hs=location.hash||'';if(hs.indexOf('#c=')!==0)return;const code=hs.slice(3);try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}addFriendModal(code)}
 window.addEventListener('hashchange',linkIn);
-if('serviceWorker' in navigator&&location.protocol!=='file:'&&!TESTMODE)window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(()=>{})});
+if('serviceWorker' in navigator&&location.protocol!=='file:'&&!TESTMODE&&!MONKEY)window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(()=>{})});
 boot();
 if(TESTMODE&&!/[?&]noh=1/.test(location.search))setTimeout(runHarness,50);
+if(MONKEY)setTimeout(()=>runMonkey(+MONKEY,/[?&]check=1/.test(location.search)),400);
+/* the monkey: a seeded random tapper for 120 s (?secs= to change). It taps visible controls and canvas points, drags,
+   holds, presses back and types names. Every creation it ever sees must still be in the save after a reload unless the
+   real Delete flow (with its confirmation) removed it. Results on window.__monkey; ?check=1 after a reload compares. */
+async function runMonkey(seed,check){
+ const R=mulberry(seed>>>0||1),pick=l=>l[Math.floor(R()*l.length)],wait=ms=>new Promise(r=>setTimeout(r,ms));
+ const out={seed:seed,errors:[],taps:0,drags:0,holds:0,backs:0,names:0,deleted:[],done:false};window.__monkey=out;
+ window.addEventListener('error',e=>out.errors.push('error: '+(e.message||e)));window.addEventListener('unhandledrejection',e=>out.errors.push('rejection: '+(e.reason&&e.reason.message||e.reason)));
+ const box=el('div');box.id='monkey';box.style.cssText='position:fixed;left:8px;bottom:8px;z-index:99;background:rgba(59,42,74,.85);color:#fff;font:700 13px monospace;padding:4px 8px;border-radius:8px;pointer-events:none';document.body.append(box);
+ if(check){let exp=[];try{exp=JSON.parse(localStorage.getItem('monkey.expect')||'[]')}catch(e){}const have=new Set(S.creations.map(c=>c.id)),miss=exp.filter(id=>!have.has(id));
+  Object.assign(out,{done:true,check:true,expected:exp.length,have:have.size,missing:miss});box.textContent='monkey check: '+(miss.length?miss.length+' MISSING':'all '+exp.length+' kept');return out}
+ if(!S.creations.length){[['shark','donut'],['cat','pizza'],['robot','bee'],['dragon','penguin','taco']].forEach((pk,i)=>{const r=MANNERS[i%5].f(pk.slice());S.creations.push({id:'mk'+i,m:['animal','food','object','animal'][i],n:mkName(pk),auto:1,best:0,picks:pk,parts:r.parts,col:r.col,sz:{}})});persist();renderHome()}
+ const seen=new Set(),del=new Set();window.__mkDel=id=>{del.add(id);out.deleted.push(id)};
+ const vis=e=>{const b=e.getBoundingClientRect();if(b.width<4||b.height<4||b.bottom<0||b.top>innerHeight||b.right<0||b.left>innerWidth)return null;const x=Math.min(innerWidth-2,Math.max(2,b.left+b.width/2)),y=Math.min(innerHeight-2,Math.max(2,b.top+b.height/2)),at=document.elementFromPoint(x,y);return at&&(at===e||e.contains(at))?{x:x,y:y,b:b}:null};
+ const pev=(tg,type,x,y)=>tg.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerId:1,pointerType:'touch',isPrimary:true,buttons:type==='pointerup'?0:1}));
+ const NAMES=['Zork','Fluffy','Mr Sparkle Pants the Third','','a','Bob Bob Bob Bob Bob Bob Bob','Sharky 2'];
+ const T0=Date.now(),secs=+((location.search.match(/[?&]secs=(\d+)/)||[])[1]||120);
+ out.screens={};while(Date.now()-T0<secs*1000){S.creations.forEach(c=>seen.add(c.id));{const sc=document.querySelector('#modal.on')?'modal':(document.querySelector('.screen.on')||{}).id||'?';out.screens[sc]=(out.screens[sc]||0)+1}
+  const r=R(),ctr=[...document.querySelectorAll('button,input:not([type=file]),textarea,canvas,.crb')].map(e=>({e:e,v:vis(e)})).filter(q=>q.v);
+  try{if(r<.08){out.backs++;const bk=ctr.filter(q=>/^(back|pBack|mBack|aBack|quit)$/.test(q.e.id)||/Back|Cancel|Done|No thanks|Home/.test(q.e.textContent||''));if(bk.length)pick(bk).e.click();else document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))}
+   else if(r<.15){const ins=ctr.filter(q=>(q.e.tagName==='INPUT'||q.e.tagName==='TEXTAREA')&&!q.e.readOnly);if(ins.length){out.names++;const q=pick(ins);q.e.focus();q.e.value=pick(NAMES);q.e.dispatchEvent(new Event('input',{bubbles:true}));if(R()<.5){q.e.dispatchEvent(new Event('change',{bubbles:true}));q.e.blur()}}}
+   else if(r<.21){const sc=[...document.querySelectorAll('#mbox,#mbox .plist,#home,#pgrid,#tray,#amap,#mgrid')].filter(e=>e.scrollHeight>e.clientHeight+4&&e.getBoundingClientRect().height>40&&e.offsetParent!==null);if(sc.length){out.scrolls=(out.scrolls||0)+1;const e=pick(sc);e.scrollTop=R()*(e.scrollHeight-e.clientHeight)}}
+   else if(r<.32){const cs=ctr.filter(q=>q.e.tagName==='CANVAS');if(cs.length){out.drags++;const q=pick(cs),b=q.v.b;let x=b.left+R()*b.width,y=b.top+R()*b.height;const tg=q.e;pev(tg,'pointerdown',x,y);const n=2+Math.floor(R()*8);for(let i=0;i<n;i++){await wait(30);x+=(R()-.5)*120;y+=(R()-.5)*120;pev(tg,'pointermove',x,y);pev(window,'pointermove',x,y)}pev(tg,'pointerup',x,y);pev(window,'pointerup',x,y);if(R()<.5)tg.click()}}
+   else if(r<.36){const toys=ctr.filter(q=>q.e.classList.contains('crb'));if(toys.length){out.holds++;const q=pick(toys);pev(q.e,'pointerdown',q.v.x,q.v.y);await wait(500+R()*300);pev(q.e,'pointerup',q.v.x,q.v.y);pev(window,'pointerup',q.v.x,q.v.y)}}
+   else{let bs=ctr.filter(q=>q.e.tagName!=='CANVAS');const gos=bs.filter(q=>q.e.classList.contains('go')||/^(pgrid|mgrid|modes)$/.test(q.e.parentElement&&q.e.parentElement.id));if(gos.length&&R()<.35)bs=gos;if(bs.length){out.taps++;const q=pick(bs);pev(q.e,'pointerdown',q.v.x,q.v.y);pev(q.e,'pointerup',q.v.x,q.v.y);q.e.click()}}}catch(e){out.errors.push('monkey: '+e.message)}
+  box.textContent='monkey '+seed+'  '+Math.round((Date.now()-T0)/1000)+'s  taps '+out.taps+'  errors '+out.errors.length;
+  await wait(120+R()*260)}
+ S.creations.forEach(c=>seen.add(c.id));const exp=[...seen].filter(id=>!del.has(id));
+ flushSave();await writeSave(S,STORE.db);try{localStorage.setItem('monkey.expect',JSON.stringify(exp))}catch(e){}
+ const have=new Set(S.creations.map(c=>c.id));Object.assign(out,{done:true,expected:exp.length,count:S.creations.length,lostLive:exp.filter(id=>!have.has(id))});
+ box.textContent='monkey '+seed+' done: taps '+out.taps+', errors '+out.errors.length+', creations '+S.creations.length;return out}
 /* ?fps=1: a tiny readout for the owner (frames a second and the slowest frame of the last half second); nothing else changes */
 if(/[?&]fps=1/.test(location.search)){const fb=el('div');fb.id='fps';fb.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:4px;z-index:99;background:rgba(59,42,74,.8);color:#fff;font:700 13px monospace;padding:2px 8px;border-radius:8px;pointer-events:none';document.body.append(fb);
  let n=0,t0=0,last=0,worst=0;requestAnimationFrame(function f(ts){if(last){worst=Math.max(worst,ts-last);n++}last=ts;if(!t0)t0=ts;if(ts-t0>=500){fb.textContent=Math.round(n*1000/(ts-t0))+' fps  worst '+Math.round(worst)+' ms';n=0;t0=ts;worst=0}requestAnimationFrame(f)})}
