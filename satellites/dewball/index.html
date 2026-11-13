@@ -247,6 +247,7 @@
            white-space:normal; max-width:calc(100vw - 28px); word-wrap:break-word; text-align:center; }
   #toast.show { opacity:1; }
   #hint { color:#a7ad95; font-size:.82rem; }
+  #hintKeys.hidden { display:none; }
   .howp { text-align:left; color:#e8dcc8; font-size:.84rem; line-height:1.55; }
 </style>
 <meta name="description" content="Roll a sticky ball through seven worlds and grow from a crumb to a planet.">
@@ -308,7 +309,7 @@
   </div>
   <div id="rotateTip" class="hidden">Turn your phone sideways for horizon mode. Bigger world, no browser bar.</div>
   <button class="btn ghost" id="mExit">◄ Sky Wolf Studio Arcade</button>
-  <div id="hint">Touch: left half = roll &middot; right half = camera &middot; double tap right = flip around<br>Keys: WASD roll &middot; Q/E turn &middot; R/F tilt &middot; SPACE dash</div>
+  <div id="hint">Touch: left half = roll &middot; right half = camera &middot; double tap right = flip around<span id="hintKeys" class="hidden"><br>Keys: WASD roll &middot; Q/E turn &middot; R/F tilt &middot; SPACE dash</span></div>
 </div>
 
 <!-- HOW TO ROLL -->
@@ -4275,7 +4276,13 @@
   // ---------- input ----------
   var keys={}, touchL=null, touchR=null, rTapArm=0;
   function _inBtn(t,id){ var tg=t.target; try{ return !!(tg&&tg.closest&&tg.closest("#"+id)); }catch(e){ return false; } }
+  /* the menu's Keys line only for a player who has a keyboard: a phone never sees WASD (Play readiness item 7).
+     Remembered, so a laptop player sees it on the next launch from the first frame. */
+  var kbSeen=false; try{ kbSeen=localStorage.getItem("dewball_kb")==="1"; }catch(e){}
+  function showKeysHint(remember){ kbSeen=true; var k=$("hintKeys"); if(k) k.classList.remove("hidden");
+    if(remember){ try{ localStorage.setItem("dewball_kb","1"); }catch(e){} } }
   function wireInput(){
+    if(kbSeen) showKeysHint(false);
     var el=document.body;
     el.addEventListener("touchstart",function(ev){
       if(!playing||paused) return;
@@ -4312,7 +4319,7 @@
           if(Date.now()-touchR.t0<250 && Math.abs(touchR.x-touchR.ox)+Math.abs(touchR.y-touchR.oy)<12) rTapArm=Date.now();
           touchR=null; $("stickR").style.display="none"; } } }
     el.addEventListener("touchend",tEnd); el.addEventListener("touchcancel",tEnd);
-    window.addEventListener("keydown",function(e){ keys[e.key]=true;
+    window.addEventListener("keydown",function(e){ keys[e.key]=true; if(!kbSeen) showKeysHint(true);
       if(e.key===" "&&playing&&!paused){ tryDash(); e.preventDefault(); } });
     window.addEventListener("keyup",function(e){ keys[e.key]=false; });
     $("dashBtn").addEventListener("click",tryDash);
