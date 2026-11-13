@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="STRATA">
-<link rel="manifest" href="./manifest.webmanifest?v=20260907c">
-<link rel="apple-touch-icon" href="./icon-192.png?v=20260907c">
-<link rel="icon" href="./icon-192.png?v=20260907c">
+<link rel="manifest" href="./manifest.webmanifest?v=20261113b">
+<link rel="apple-touch-icon" href="./icon-192.png?v=20261113b">
+<link rel="icon" href="./icon-192.png?v=20261113b">
 <link rel="canonical" href="https://lucidwinds.com/satellites/strata/">
 <style>
 /*  STRATA
@@ -232,8 +232,17 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
 #hallEmpty{color:var(--paper);margin:0 auto calc(24px + var(--safeB))}
 #hallEmpty[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
+/* the soundtrack held (musicSync sets the class): its chip, pill and toast stay hidden whatever its reseat writes */
+.sws-music-held #sws-music-chip,.sws-music-held #sws-music-pill,.sws-music-held #sws-music-toast{display:none!important}
 </style>
-<script src="/music-unlocks.js?v=20260907c" defer></script>
+<script id="musicFirst">/* THE SOUNDTRACK'S MANNERS, 20261113b (Play queue). On a new player's FIRST launch (never launched, no
+   save) the studio soundtrack script is held from here with its own SWS_MUSIC_HOLD flag: no song card, pill or
+   toast over the first screen. The game lets it go at its first break (musicBreak). From the second launch on the
+   script boots as it does in every other game. /music-unlocks.js itself is not edited. */
+(function(){ try{ var n=+(localStorage.getItem("strata_launches")||0)||0;
+  localStorage.setItem("strata_launches",String(n+1));
+  if(n<1&&!localStorage.getItem("lw_strata_v1")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
+<script src="/music-unlocks.js?v=20261113b" defer></script>
 </head>
 <body>
 <h1 style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0">STRATA</h1>
@@ -271,6 +280,7 @@ input[type=text]{width:100%;min-height:48px;border:3px solid var(--ink);border-r
       <p class="lede">Brush the dust away. Something is under there.</p>
       <p class="lede">The chisel is quicker, and it cracks a bone if you rest on one. The pick cracks anything it touches.</p>
       <p class="lede">Trace a freed bone along its length to lift it out. Mount it, name it, and hang it up.</p>
+      <a class="btn ghost" id="lnkPrivacy" href="privacy.html?v=20261113b" style="display:flex;align-items:center;justify-content:center;text-decoration:none">PRIVACY</a>
       <button class="btn ghost" id="btnHowBack">BACK</button>
     </div>
   </div>
@@ -1567,7 +1577,7 @@ function conditionWord(outN, cracked, total) {
 
 
 /* ========================= 16. THE GAME'S STATE ========================= */
-var STAMP = '20260907c';
+var STAMP = '20261113b';
 var REDUCED = false;
 var G = {
   screen: 'Title', mode: 'dig',
@@ -2839,6 +2849,34 @@ function saveNow() {
 
 /* ========================= 21. SCREENS ========================= */
 var SCREENS = ['Title', 'How', 'Mount', 'Hall', 'Journal'];
+/* ⛔ THE SOUNDTRACK'S MANNERS (Play queue, 20261113b). The shared script (/music-unlocks.js, not edited) is
+   driven with its own controls: held while a site is open (digging, and mounting on the bench), held in the hall
+   and the journal (a full screen of plinths and rows, no free corner), so the Music button lives on the title and
+   How screens. A first launch stays held until the first break: a specimen kept, or the first way out of a dig;
+   that break shows the waiting song. */
+var MUSIC = { first: window.SWS_MUSIC_HOLD === true, want: false, sent: window.SWS_MUSIC_HOLD === true, t: 0 };
+/* ⛔ hold() hides the chip with an inline display:none, and the script's own reseat rewrites the chip's whole style
+   attribute when it finds a better corner: on a held list the Music button came straight back over the first row
+   (seen at 412 x 915 on the second launch). A class on the root and an !important rule keep the chip, the pill and
+   the toast hidden whatever the reseat writes (the rule is in the stylesheet); the card itself still shows when a
+   break reveals it. */
+function musicSync() {
+  var on = MUSIC.want || MUSIC.first;
+  try { document.documentElement.classList.toggle('sws-music-held', on); } catch (e) {}
+  try { var m = window.SWSMusic; if (m && m.hold && on !== MUSIC.sent) { m.hold(on); MUSIC.sent = on; } } catch (e) {}
+}
+function musicHold(on) { MUSIC.want = !!on; musicSync(); }
+/* a break: the first one lets a first launch go, and every one shows a song that waited (one earned mid play is
+   held in the script's pending list, not toasted over the board). `still` says the break is still on screen. */
+function musicBreak(still) {
+  MUSIC.first = false; musicSync();
+  clearTimeout(MUSIC.t);
+  MUSIC.t = setTimeout(function () {
+    try { var m = window.SWSMusic; if ((!still || still()) && m && m.reveal) m.reveal(); } catch (e) {}
+  }, 1400);
+}
+/* the script is deferred: a hold asked for before it ran is sent once it has (sent = what the script holds now) */
+document.addEventListener('DOMContentLoaded', musicSync);
 function showScreen(name) {
   var i;
   for (i = 0; i < SCREENS.length; i++) {
@@ -2849,6 +2887,9 @@ function showScreen(name) {
   G.screen = name;
   if (name === 'Title' && was === 'Dig') startDemo();
   refreshChrome();
+  var digging = name === 'Dig' || name === 'Mount';
+  musicHold(digging || name === 'Hall' || name === 'Journal');
+  if ((was === 'Dig' || was === 'Mount') && !digging) musicBreak(function () { return G.screen === name; });
 }
 function refreshChrome() {
   var digging = G.screen === 'Dig';

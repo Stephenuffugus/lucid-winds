@@ -12,13 +12,14 @@
    Bump SHELL_VERSION on every deploy, AND the ?v= on the registration in
    index.html in lockstep — this host edge-pins bare sw.js URLs for 7 days. */
 
-const SHELL_VERSION = "wardian-shell-20260915a";
+const SHELL_VERSION = "wardian-shell-20261113b";
 const SFX_CACHE     = "wardian-unused-v1"; // no recorded audio: every sound is synthesised
 const NAV_TIMEOUT_MS = 8000;
 
 const SHELL_ASSETS = [
   "./",
   "./index.html",
+  "./privacy.html",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -78,6 +79,13 @@ self.addEventListener("fetch", event => {
   // Navigations: network-first with a no-cache refetch, a timeout backstop,
   // then the shell cache, then a real offline page.
   if (req.mode === "navigate") {
+    /* ⛔ A NAVIGATION IS SAVED UNDER ITS OWN PAGE. Every page load used to be saved as ./index.html, which was
+       harmless while the game was the only page; with privacy.html beside it, one tap on PRIVACY online put the
+       privacy page in the game's place and an offline relaunch drew it. The start URL (a path ending in / or in
+       index.html, whatever its query) is the game; any other page is itself, keyed by its path without the query,
+       and offline it is answered from its own entry or the offline page, never from the game's. */
+    const isGame = /\/(index\.html)?$/.test(url.pathname);
+    const key = isGame ? "./index.html" : url.origin + url.pathname;
     event.respondWith(
       Promise.race([
         fetch(req.url, { cache: "no-cache", credentials: "same-origin" })
@@ -85,7 +93,7 @@ self.addEventListener("fetch", event => {
             if (res && res.redirected) return Response.redirect(res.url);
             if (res && res.ok) {
               const copy = res.clone();
-              caches.open(SHELL_VERSION).then(c => c.put("./index.html", copy)).catch(() => {});
+              caches.open(SHELL_VERSION).then(c => c.put(key, copy)).catch(() => {});
               return res;
             }
             return res || null;
@@ -93,10 +101,10 @@ self.addEventListener("fetch", event => {
           .catch(() => null),
         navTimeout(NAV_TIMEOUT_MS)
       ]).then(res =>
-        res ||
-        caches.match("./index.html").then(hit =>
-          hit || caches.match("./").then(h2 => h2 || offlineFallback())
-        )
+        res || (isGame
+          ? caches.match("./index.html").then(hit =>
+              hit || caches.match("./").then(h2 => h2 || offlineFallback()))
+          : caches.match(key).then(hit => hit || offlineFallback()))
       )
     );
     return;
