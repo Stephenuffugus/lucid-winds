@@ -19,6 +19,7 @@ const NAV_TIMEOUT_MS = 8000;
 const SHELL_ASSETS = [
   "./",
   "./index.html",
+  "./privacy.html",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
