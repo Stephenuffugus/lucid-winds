@@ -7329,6 +7329,30 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
 .gp-cat-count{font-size:12px !important;}
 .gp-chev{font-size:12px !important;}
 </style>
+<script>
+/* Hub skin preview, flag only (Astra's herbarium kit, round one). ?skin=astra turns every part on,
+   ?skin=bloom,cards,banners a subset, ?skin=off clears. Remembered in localStorage lw_skin.
+   With no flag and nothing stored this block adds no class and loads nothing. */
+(function(){
+  var PARTS=['bloom','cards','actions','banners','nav','topbar'];
+  var v=null,m,i,j;
+  try{m=/[?&]skin=([^&#]*)/.exec(location.search);if(m)v=decodeURIComponent(m[1]).toLowerCase();}catch(e){}
+  if(v!==null){
+    if(v==='off'||v===''||v==='none'){try{localStorage.removeItem('lw_skin');}catch(e){}v='';}
+    else{try{localStorage.setItem('lw_skin',v);}catch(e){}}
+  }else{try{v=localStorage.getItem('lw_skin')||'';}catch(e){v='';}}
+  if(!v)return;
+  var want=(v==='astra'||v==='all'||v==='on')?PARTS:v.split(','),on=[];
+  for(i=0;i<want.length;i++){var w=String(want[i]).replace(/^\s+|\s+$/g,'');for(j=0;j<PARTS.length;j++){if(PARTS[j]===w&&on.indexOf(w)<0)on.push(w);}}
+  if(!on.length)return;
+  var d=document.documentElement;
+  for(i=0;i<on.length;i++)d.className+=' sk-'+on[i];
+  window.LW_SKIN=on.join(',');
+  var base='assets/skin-herbarium/',q='?v=20261113a',hd=document.getElementsByTagName('head')[0];
+  var l=document.createElement('link');l.rel='stylesheet';l.href=base+'skin.css'+q;hd.appendChild(l);
+  var sc=document.createElement('script');sc.src=base+'skin.js'+q;sc.defer=true;hd.appendChild(sc);
+})();
+</script>
 </head>
 <body>
   <!-- ═══ BOOT SPLASH — sprout emerging from seed; covers all UI until app ready ═══ -->
@@ -42291,6 +42315,7 @@ document.addEventListener('keydown', function(e) {
         var _bornTs = plant.born || (plant.date ? new Date(plant.date).getTime() : 0);
         if (_bornTs && (Date.now() - _bornTs) < 86400000) cls += ' gh-new';
         el.className = cls;
+        if (document.documentElement.className.indexOf('sk-cards') >= 0) el.setAttribute('data-sk-hash', plant.hash); // skin preview hook (flag only)
         el.style.cursor = 'pointer';
         // Tap opens full-screen carousel — flip lives there, not here
         (function(idx, p) {
@@ -64716,6 +64741,7 @@ function _showMintCelebration(fullHash){
   else if(gh.length>=5)tip='Collection growing! Check your Terra Grade scores.';
   else if(gh.length>=2)tip='Two plants! Try cross-breeding in the Nursery.';
   var ov=document.createElement('div');ov.id='pw-win-overlay';ov.setAttribute('data-bloom','1');
+  if(document.documentElement.className.indexOf('sk-bloom')>=0)ov.setAttribute('data-sk-hash',fullHash); // skin preview hook (flag only)
   // 2026-05-07: dropped backdrop-filter on outer overlay (the prev May 06
   // fix removed the inner filter:brightness+blur but left this in place,
   // and Stephen still saw wireframe-look mints). Solid 95% bg looks the
