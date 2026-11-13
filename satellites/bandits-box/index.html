@@ -462,7 +462,7 @@ body.squint .lid{transform:scaleY(.62);}
   padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
   overflow-y:auto;}
 #home.on{display:block;}
-#home h2{margin:4px 6px 14px;font-size:11px;letter-spacing:.24em;text-transform:lowercase;
+#home h2{margin:4px 6px 14px;min-height:44px;line-height:44px;margin-top:0;font-size:11px;letter-spacing:.24em;text-transform:lowercase;
   color:var(--dim);font-weight:600;}
 #homeGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:10px;}
 .card{border-radius:18px;border:1px solid var(--edge);background:var(--slate);
@@ -598,6 +598,13 @@ body.calm .card:active{transform:none;}
 </style>
 <meta name="description" content="A quiet box of fidget toys that feel real under your finger. No ads, nothing to unlock.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/bandits-box/">
+<script id="musicFirst">/* THE SOUNDTRACK'S MANNERS, 20261113b (Play queue). On a new player's FIRST launch (never launched, no
+   save) the studio soundtrack script is held from here with its own SWS_MUSIC_HOLD flag: no song card, pill or
+   toast over the first screen. The game lets it go at its first break (musicBreak). From the second launch on the
+   script boots as it does in every other game. /music-unlocks.js itself is not edited. */
+(function(){ try{ var n=+(localStorage.getItem("banditsbox_launches")||0)||0;
+  localStorage.setItem("banditsbox_launches",String(n+1));
+  if(n<1&&!localStorage.getItem("bandit-set")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
 <script src="/music-unlocks.js" defer></script>
 </head>
 <body>
@@ -5088,6 +5095,7 @@ function begin(){
   started=true;
   intro.style.opacity='0';
   setTimeout(function(){ intro.style.display='none'; relayout(); },520);
+  musicScene();
   try{ startAudio(); }catch(e){ console.warn(e); try{ updateAudioStatus(); }catch(e2){} }
 }
 ['pointerdown','touchstart','mousedown','click'].forEach(function(ev){
@@ -5102,6 +5110,50 @@ window.addEventListener('keydown',function(e){
   else if(S.big) setBig(false);
 });
 $('#audioWarn').addEventListener('click',safe(function(){ startAudio(); }));
+/* ⛔ THE SOUNDTRACK'S MANNERS (Play queue, 20261113b). On a first launch the studio song card slid up over the
+   bottom of the first screen two seconds in, and the round Music button sat on whatever toy was open. The shared
+   script (/music-unlocks.js, not edited) is driven with its own controls: held while a toy is out (the whole stage
+   is something to touch, so there is no free corner on it) and while settings are open; the Music button shows on
+   the toy shelf, in the band beside "pick a toy", and on the splash. A first launch stays held until the first
+   quiet moment after a minute of real touching (finger time, not clock time), and that moment shows the waiting
+   song; every later quiet moment after another minute shows a song that waited, if one did. */
+var MUSIC = { first: window.SWS_MUSIC_HOLD === true, want: false, sent: window.SWS_MUSIC_HOLD === true, t: 0 };
+function musicSync() {
+  var on = MUSIC.want || MUSIC.first;
+  try { var m = window.SWSMusic; if (m && m.hold && on !== MUSIC.sent) { m.hold(on); MUSIC.sent = on; } } catch (e) {}
+}
+function musicHold(on) { MUSIC.want = !!on; musicSync(); }
+/* a break: the first one lets a first launch go, and every one shows a song that waited (one earned mid play is
+   held in the script's pending list, not toasted over the board). `still` says the break is still on screen. */
+function musicBreak(still) {
+  MUSIC.first = false; musicSync();
+  clearTimeout(MUSIC.t);
+  MUSIC.t = setTimeout(function () {
+    try { var m = window.SWSMusic; if ((!still || still()) && m && m.reveal) m.reveal(); } catch (e) {}
+  }, 1400);
+}
+/* the script is deferred: a hold asked for before it ran is sent once it has (sent = what the script holds now) */
+document.addEventListener('DOMContentLoaded', musicSync);
+var TOUCH = { last: 0, ms: 0 };
+function touchMark() { var n = Date.now(); if (n - TOUCH.last < 1500) TOUCH.ms += n - TOUCH.last; TOUCH.last = n; }
+document.addEventListener('pointerdown', touchMark, true);
+document.addEventListener('pointermove', function (e) { if (e.buttons || e.pointerType === 'touch') touchMark(); }, true);
+function musicScene() {
+  var shelf = homeEl.classList.contains('on') && !sheet.classList.contains('on');
+  musicHold(started && !shelf);
+}
+function musicQuiet() {
+  musicScene();
+  var toyOut = started && !homeEl.classList.contains('on') && !sheet.classList.contains('on');
+  if (toyOut && TOUCH.ms >= 60000 && Date.now() - TOUCH.last > 3500) {
+    TOUCH.ms = 0;
+    musicBreak(function () { return Date.now() - TOUCH.last > 3500 && !homeEl.classList.contains('on'); });
+  }
+}
+setInterval(musicQuiet, 500);
+try { var musicMO = new MutationObserver(musicScene);
+  musicMO.observe(homeEl, { attributes: true, attributeFilter: ['class'] });
+  musicMO.observe(sheet, { attributes: true, attributeFilter: ['class'] }); } catch (e) {}
 document.addEventListener('pointerdown',wake,{passive:true});
 document.addEventListener('gesturestart',function(e){ e.preventDefault(); });
 // a long press is a legitimate move here (squeezing, holding a stretch),
@@ -5255,7 +5307,7 @@ loadS().then(function(){ applyS();
   if(location.protocol==='file:') return;
   if(!('serviceWorker' in navigator)) return;
   window.addEventListener('load',function(){
-    try{ navigator.serviceWorker.register('./sw.js?v=5'); }catch(e){}
+    try{ navigator.serviceWorker.register('./sw.js?v=6'); }catch(e){}
   });
 })();
 </script>
