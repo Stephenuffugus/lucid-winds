@@ -11,7 +11,8 @@ manifest is in order (standalone, portrait, 512 maskable icon) and an offline re
 Free to install. Pi stays on the Pi listing; the web keeps Stripe.
 
 ## Gate 1: the hub is fit to be seen (repairs; `LUCID_WINDS_HUB_BUILD_PLAN.md` R1 to R7, R9, R10)
-- The map works (R1). The first load is under 6 MB (R2). One popup at a time (R3).
+- The map works (R1): a free CARTO key covers 1,000,000 tile requests a month, roughly 30,000 map views.
+  Past that it is $500 a month, so before a large launch price the map against another provider. The first load is under 6 MB (R2). One popup at a time (R3).
 - A signed out player sees their plants (R4). No internal files on the domain (R7).
 - Desktop holds a column (R9). No text under 12 px on the main screens (R10).
 

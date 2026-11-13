@@ -27,6 +27,11 @@ These eight packets are repairs. None changes a design, the economy or a rule of
 Local server for every gate: `python3 -m http.server 8777 --bind 127.0.0.1` from the repo root.
 
 ## R1. The Wild map (needs Stephen: a CARTO key, or his word to change provider)
+- Facts, read from CARTO's own pages on 13 Nov: since 25 Sep 2026 raster tiles need a key. A key is free and
+  is e-mailed from carto.com/basemaps/apikey (no account). Free for commercial use up to 1,000,000 tile
+  requests a calendar month; above that $500 a month. The key goes on the URL as `?key=...`. It can be locked
+  to lucidwinds.com in their dashboard, and should be, because a key in a web page is public. Their terms cap
+  browser caching of tiles at 30 days: give `lw-tiles-v2` a 30 day expiry.
 - `index.html:52630` `TILES`, used at `:53511`. Put the key in one constant; build the URL from it.
 - Add a `tileerror` handler: on error swap the tile for a plain dark square, never a provider message.
 - `sw.js`: `TILE_CACHE` `lw-tiles-v1` to `lw-tiles-v2`, so phones drop the stored placeholders.
