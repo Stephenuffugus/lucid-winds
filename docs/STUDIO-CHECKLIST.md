@@ -2,7 +2,21 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 10 Nov 2026, 17:30 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 13 Nov 2026, 00:45 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+
+## 0. Now, 13 Nov: the hub, Shutterbug, Meshy
+
+The Lucid Winds hub was audited on 12 Nov (read only, three passes). The page with the shots: https://claude.ai/artifact/GhRuThtynvvpPifnsDKkww . The files: docs/audits/LUCID-WINDS-HUB-AUDIT-2026-11-12.md, LUCID_WINDS_HUB_BUILD_PLAN.md, LUCID_WINDS_PUBLISH_PLAN.md, LUCID_WINDS_PRELAUNCH_PLAN.md.
+
+- [x] Lucid Winds hub audit, findings, repair plan, publishing plan, pre-launch designs (Fable)  
+- [x] Lucid Winds, Astra round one (her own review, one style, the plant card, the bloom reveal): [Astra / Lucid Winds Hub Round 1](https://drive.google.com/drive/folders/1ZlZ9_hvohSvASg8u9_1TbNJCbE4KpuIq); you said Astra is working, 13 Nov (you, Astra)  
+- [ ] Lucid Winds, the map: ask for the free key at carto.com/basemaps/apikey (choose commercial; it comes by e-mail, no account) and send it to Fable. The Wild map has shown "API KEY REQUIRED" since 25 Sep (you)  
+- [ ] Lucid Winds, the repairs (the image diet, one popup at a time, the mint button, the signed out greenhouse, desktop, small text, the web root): building on the branch since 13 Nov (Opus); then your deploy lines (you)  
+- [ ] Lucid Winds: paste the Firestore rules from the Firebase console to Fable, so the repo says which file is live (you)  
+- [ ] Lucid Winds, your calls: guest first or the account form first; fix how plants are shown; what the Play build holds; Play v1 with no purchases; show the grade at the bloom reveal (you)  
+- [ ] Shutterbug: the Reddit feedback post, draft in docs/briefs/shutterbug/REDDIT-FEEDBACK-POST-NOV13.md; one sub a day, r/playmygame first (you)  
+- [ ] Decide: make the GitHub repository private. It is public, with the project notes and Claude's name on the commits (you)  
+- [ ] Meshy: 1,665 monthly credits expire Mon 30 Nov, 23:37 UTC. The Dewball list sized to what is left by 24 Nov (Fable); your go to spend them (you)  
 
 ## 1. The art, in this order (you, then Astra)
 
