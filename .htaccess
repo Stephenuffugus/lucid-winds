@@ -146,7 +146,9 @@
   # Lock down browser features — only allow what we use
   Header set Permissions-Policy "geolocation=(self), camera=(), microphone=(), payment=(self)"
   # 2026-11-04: the Music Studio's Hum and Sampler need the microphone, on the studio itself, the arcade shell
-  # (play/song.html) and Lucid Winds (index.html), which frame it. Every other page keeps microphone=().
+  # (play/song.html) and Lucid Winds (index.html), which frame it. <Files> matches by file NAME, so EVERY index.html
+  # on the site (padlab/, satellites/*/) also gets microphone=(self) (checked live 4 Nov); the browser still asks the
+  # player first. Pages with other names keep microphone=().
   <Files "studio.html">
     Header set Permissions-Policy "geolocation=(self), camera=(), microphone=(self), payment=(self)"
   </Files>
@@ -183,3 +185,16 @@
 
 # ── 6. DISABLE DIRECTORY LISTING ──
 Options -Indexes
+
+# ── 7. THE REPO IS NOT THE SITE (Hub R7, 13 Nov 2026) ──
+# The web root is the repo, so notes, plans, rules files, tools and dev pages answered 200 on lucidwinds.com.
+# These answer 404 instead. RedirectMatch (mod_alias) and not RewriteRule, because satellites/wild-wardens has
+# its own RewriteEngine, which would switch root rewrite rules off below it; alias rules still apply there.
+# Kept open on purpose, grepped 13 Nov: /LICENSE.md (the hub's about panel links it), *-IDEAS-BRIEF.md
+# (section 5's downloads, e.g. /dl/TUMBLE-IDEAS-BRIEF.md) and satellites/letter-launch/docs/ (that game IS its
+# docs folder: satellites/letter-launch/index.html redirects there). Nothing served loads from the rest.
+RedirectMatch 404 "^/(?!LICENSE\.md$)(?!.*-IDEAS-BRIEF\.md$).*\.md$"
+RedirectMatch 404 "^/(functions|docs|plans|tools|scripts|store)(/.*)?$"
+RedirectMatch 404 "^/(firestore-rules-[^/]*\.txt|[^/]*\.rules\.json)$"
+RedirectMatch 404 "^/(nuke|audit|dual-preview|leaf-audit)\.html$"
+RedirectMatch 404 "^/satellites/(?!letter-launch/docs(/|$))[^/]+/(docs|tools|test|fixtures)(/.*)?$"
