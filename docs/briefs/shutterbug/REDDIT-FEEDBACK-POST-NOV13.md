@@ -23,8 +23,9 @@ I'm one person and I'm about to put it on Google Play. Before I do, I want to kn
 after the first few rooms. Three honest questions:
 
 1. After your first room, did you want to photograph a second one? If not, what stopped you?
-2. What would you come back tomorrow for: a room of the day everyone plays, sharing your room with a friend
-   as a code, an album to complete, harder guardians, something else?
+2. What would you come back tomorrow for: a daily photo prompt everyone shoots, beating a friend's run on the
+   same room, a weekly house with its own guardian and keepsake, medals on every room, a daily streak,
+   something else?
 3. What confused you or felt unfair in the first two minutes?
 
 Blunt answers are the useful ones. Thank you for playing.
@@ -52,6 +53,9 @@ deserves answers from him while it is alive.
   hand drawn or made without AI, and if someone asks directly, answer straight ("I use AI tools in my
   pipeline; the design, the direction and every decision are mine"). Several game subs remove posts that hide
   it once someone finds out, and a thread that turns into that argument costs more than the feedback is worth.
+
+Question 2 lists the five ideas already on the studio checklist (the open retention pick), so every answer
+maps to something that is designed and waiting.
 
 ## What to do with the answers
 Count them, do not argue with them. Three people naming the same missing thing is a build item. The open
