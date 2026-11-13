@@ -59656,7 +59656,27 @@ function _toast(m,opts,_t0){if(opts&&opts.sticky){return _lwStickyToast(m,opts);
   // high on the screen; any other toast waits for the dialog to close (at most 60 s, then it is stale and dropped).
   var _dlg=window._lwDialogUp&&window._lwDialogUp();
   if(_dlg&&!(Date.now()-(window._lwLastTapAt||0)<1500)){var _w0=_t0||Date.now();if(Date.now()-_w0<60000)setTimeout(function(){_toast(m,opts,_w0);},600);return;}
-  e.style.top=_dlg?'calc(9% + env(safe-area-inset-top,0px))':'38%';if(opts&&opts.html)e.innerHTML=m;else e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';if(opts&&opts.interactive)e.style.pointerEvents='auto';else e.style.pointerEvents='none';clearTimeout(_tt);var dur=(opts&&typeof opts.duration==='number')?opts.duration:3500;if(dur>6000)dur=6000;_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';e.style.pointerEvents='none';},dur);}
+  // Hub R14: toasts take turns in ONE slot, under the top bar (where the sticky toast sits), never over the first row of
+  // tiles or the PLANTS count. One showing: the next waits its turn. A burst is capped: a repeat of a toast already
+  // showing or waiting is dropped, and at most two wait; anything past that is dropped (a burst of five shows three).
+  var _now=Date.now();
+  if(_now<_lwToastUntil){
+    if(m===_lwToastCur) return;
+    for(var _qi=0;_qi<_lwToastQ.length;_qi++){ if(_lwToastQ[_qi][0]===m) return; }
+    if(_lwToastQ.length<2) _lwToastQ.push([m,opts]);
+    return;
+  }
+  var _top='13%';
+  try{ var kb=document.getElementById('pw-keeper-bar'), kr=kb&&kb.getBoundingClientRect();
+    if(kr&&kr.height>0&&getComputedStyle(kb).display!=='none'&&kr.bottom<innerHeight*0.4) _top=Math.round(kr.bottom+8)+'px';
+    var gb=document.getElementById('gps-recovery-banner'), gr=gb&&gb.getBoundingClientRect();
+    if(gr&&gr.height>0&&getComputedStyle(gb).display!=='none'&&gr.bottom<innerHeight*0.5) _top=Math.round(gr.bottom+8)+'px'; }catch(_e){}
+  e.style.top=_dlg?'calc(9% + env(safe-area-inset-top,0px))':_top;
+  if(opts&&opts.html)e.innerHTML=m;else e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,0) scale(1)';if(opts&&opts.interactive)e.style.pointerEvents='auto';else e.style.pointerEvents='none';clearTimeout(_tt);var dur=(opts&&typeof opts.duration==='number')?opts.duration:3500;if(dur>6000)dur=6000;
+  _lwToastCur=m; _lwToastUntil=_now+dur+350; window._lwToastUntil=_lwToastUntil; try{ _lwStickyWatch(); }catch(_e){}
+  _tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,0) scale(0.95)';e.style.pointerEvents='none';
+    setTimeout(function(){ _lwToastCur=null; var nx=_lwToastQ.shift(); if(nx) _toast(nx[0],nx[1]); },350);},dur);}
+var _lwToastQ=[],_lwToastCur=null,_lwToastUntil=0;
 // Sticky toast variant — stays on screen until the player taps its X.
 // Used for the boot "what happened / what's nearby" notices that Jesse
 // could not read before they auto-faded. Stacks vertically so multiple
@@ -59691,7 +59711,7 @@ window._lwCardUp=function(){
 function _lwStickyToast(m,opts,_clear){
   // Hub R13: a sticky toast never lands on a card; it waits until the card is closed, then has its own 6 s.
   // The way must stay clear for one more beat, so a card that was waiting on the same card goes first.
-  if(window._lwCardUp() || document.querySelector('#lw-music-ask.on')){ setTimeout(function(){ _lwStickyToast(m,opts,0); },800); return null; }
+  if(window._lwCardUp() || document.querySelector('#lw-music-ask.on') || Date.now()<(window._lwToastUntil||0)){ setTimeout(function(){ _lwStickyToast(m,opts,0); },800); return null; }
   if(!_clear){ setTimeout(function(){ _lwStickyToast(m,opts,1); },900); return null; }
   var stack=document.getElementById('w-toast-stack');
   if(!stack){
@@ -59725,7 +59745,7 @@ function _lwStickyWatch(){
   _lwStickyTimer=setInterval(function(){
     var s=document.getElementById('w-toast-stack');
     if(!s||!s.children.length){ clearInterval(_lwStickyTimer); _lwStickyTimer=null; return; }
-    var up=window._lwCardUp(); s.style.visibility=up?'hidden':'';
+    var up=window._lwCardUp() || Date.now()<(window._lwToastUntil||0); s.style.visibility=up?'hidden':'';
     if(up) return;
     for(var i=s.children.length-1;i>=0;i--){ var c=s.children[i]; if(typeof c._lwLeft!=='number') continue;
       c._lwLeft-=250; if(c._lwLeft<=0){ c._lwLeft=null; var b=c.querySelector('button'); if(b&&b.onclick) b.onclick(); } }
