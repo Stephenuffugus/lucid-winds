@@ -59656,7 +59656,9 @@ function _toast(m,opts,_t0,_fromQ){if(opts&&opts.sticky){return _lwStickyToast(m
   // high on the screen; any other toast waits for the dialog to close (at most 60 s, then it is stale and dropped).
   // (R14.7: and any full screen card, the level up, the bloom card, a dialog: _lwCardUp, R13's own wait)
   var _dlg=window._lwCardUp&&window._lwCardUp();
-  if(_dlg&&!(Date.now()-(window._lwLastTapAt||0)<1500)){var _w0=_t0||Date.now();if(Date.now()-_w0<60000)setTimeout(function(){_toast(m,opts,_w0,_fromQ);},600);else if(_fromQ){var _nx=_lwToastQ.shift();if(_nx)_toast(_nx[0],_nx[1],0,1);}return;}
+  // a level up or bloom card on its way (or up) is never answered by a tap: the toast waits for it
+  var _hard=(window._lwLevelUpBusy&&window._lwLevelUpBusy())||(window._lwBloomUp&&window._lwBloomUp())||!!document.querySelector('#lu-overlay.open');
+  if(_hard||(_dlg&&!(Date.now()-(window._lwLastTapAt||0)<1500))){var _w0=_t0||Date.now();if(Date.now()-_w0<60000)setTimeout(function(){_toast(m,opts,_w0,_fromQ);},600);else if(_fromQ){var _nx=_lwToastQ.shift();if(_nx)_toast(_nx[0],_nx[1],0,1);}return;}
   // Hub R14: toasts take turns in ONE slot, under the top bar (where the sticky toast sits), never over the first row of
   // tiles or the PLANTS count. One showing: the next waits its turn. A burst is capped: a repeat of a toast already
   // showing or waiting is dropped, and at most two wait; anything past that is dropped (a burst of five shows three).
