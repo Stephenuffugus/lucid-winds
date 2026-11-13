@@ -7305,6 +7305,14 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
   #ffb { left: calc(var(--lw-gut) + 10px) !important; }
 }
 </style>
+<style id="lw-r10-greenhouse">
+/* Hub R10: no text under 12 px on the greenhouse (the top bar and the nav tab ride on every screen) */
+.ea-knot .ea-num{font-size:max(12px,0.62rem) !important;}
+#pw-keeper-bar .kb-rank{font-size:12px !important;letter-spacing:0 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#kb-sunbeams .kb-static-label,#kb-hut .kb-static-label,#kb-dew .kb-static-label{font-size:12px !important;letter-spacing:0.1em !important;}
+#kb-beta-badge{font-size:12px !important;}
+.fg-nav-min{font-size:12px !important;}
+</style>
 </head>
 <body>
   <!-- ═══ BOOT SPLASH — sprout emerging from seed; covers all UI until app ready ═══ -->
@@ -72052,7 +72060,7 @@ function updateKeeperBar(){
     }
   } catch(e) {}
   var lvlDisplay=_formatLevelDisplay();
-  var rank=document.getElementById('kb-rank');if(rank)rank.textContent=lvlDisplay+' \u00b7 '+r.title+' \u00b7 '+inLevel+' / '+levelSpan+' XP'+rankExtra;
+  var rank=document.getElementById('kb-rank');if(rank){rank.textContent=lvlDisplay+' \u00b7 '+inLevel+'/'+levelSpan+' XP \u00b7 '+r.title+rankExtra;rank.title=rank.textContent;} // Hub R10: 12 px type; XP first so a long title is what gets cut
   var name=document.getElementById('kb-name');if(name)name.textContent=_getDisplayName();
   // Ascend button — shows when L100 hit
   _updateAscendBtn();
