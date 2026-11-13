@@ -52,10 +52,121 @@
     } catch (e) {}
     try { if (window.getPlantName) out.name = window.getPlantName(hash); } catch (e) {}
     try { if (window.getHaiku) out.haiku = window.getHaiku(hash); } catch (e) {}
-    try { if (window.getSeasonInfo) out.sea = window.getSeasonInfo(window.hashToTraits(hash), out.plant); } catch (e) {}
     return out;
   }
   window.LW_SKIN_GRADE = function(hash){ return identity(hash).grade; }; // for the preview probes
+
+  // ── Seasons: one small drawn mark each (no emoji, so it renders everywhere) ──
+  var SEASONS = [
+    { n:'Spring', c:'#E8A0BF', d:'<g fill="C"><circle cx="12" cy="6.2" r="3.6"/><circle cx="17.5" cy="10.2" r="3.6"/><circle cx="15.4" cy="16.8" r="3.6"/><circle cx="8.6" cy="16.8" r="3.6"/><circle cx="6.5" cy="10.2" r="3.6"/></g><circle cx="12" cy="12" r="2.4" fill="#0B1718"/>' },
+    { n:'Summer', c:'#D4A843', d:'<circle cx="12" cy="12" r="4.6" fill="C"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" stroke="C" stroke-width="2" stroke-linecap="round" fill="none"/>' },
+    { n:'Autumn', c:'#D4842A', d:'<path d="M4.5 19.5C4.5 10.5 10.5 4 20 4C20 13.5 13.5 19.5 4.5 19.5Z" fill="C"/><path d="M4.5 19.5L14.5 9.5M9.5 14.5h3.5M12 12V8.5" stroke="#0B1718" stroke-width="1.4" stroke-linecap="round" fill="none"/>' },
+    { n:'Winter', c:'#A0C4E8', d:'<path d="M12 2.5v19M3.8 7.2l16.4 9.6M3.8 16.8l16.4-9.6M9.6 4.2L12 6.4l2.4-2.2M9.6 19.8L12 17.6l2.4 2.2M3.9 10.6l3 .9-.8 3M20.1 13.4l-3-.9.8-3M3.9 13.4l3-.9-.8-3M20.1 10.6l-3 .9.8 3" stroke="C" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' }
+  ];
+  function seasonMark(i, px){
+    var se = SEASONS[i] || SEASONS[0];
+    return '<svg class="sk-season-mark" viewBox="0 0 24 24" width="' + px + '" height="' + px + '" aria-hidden="true" focusable="false">' + se.d.replace(/="C"/g, '="' + se.c + '"') + '</svg>';
+  }
+  function seasonOf(hash){ try { var t = window.hashToTraits(hash); return ((t && typeof t.season === 'number') ? t.season : 0) % 4; } catch (e) { return 0; } }
+
+  // ── The reveal frame, drawn here so nothing crosses the text: arch sides end on the pedestal,
+  //    the Cosmic orbit sits between the grade word and the pedestal's lower edge ──
+  function frameSvg(g){
+    var c = (G[g] || G.common).c, gi = ORDER.indexOf(g), f = '';
+    f += '<svg class="skb-frame" viewBox="0 0 1080 2400" preserveAspectRatio="none" aria-hidden="true" focusable="false">';
+    f += '<rect x="37.8" y="37.8" width="1004.4" height="2324.4" rx="43.2" fill="none" stroke="' + c + '" stroke-width="3"/>';
+    if (gi >= 4) f += '<rect x="47.8" y="47.8" width="984.4" height="2304.4" rx="39.2" fill="none" stroke="' + c + '" stroke-width="1"/>';
+    f += '<path d="M129.6 1272V842.4A410.4 410.4 0 0 1 950.4 842.4V1272" fill="none" stroke="' + c + '" stroke-width="2" stroke-linecap="round"/>';
+    f += '<g transform="translate(491.4 108) scale(0.972)">' + (G[g] || G.common).m.replace(/="C"/g, '="' + c + '"') + '</g>';
+    if (g === 'cosmic') {
+      f += '<ellipse cx="540" cy="930" rx="480" ry="395" fill="none" stroke="' + c + '" stroke-width="1.6" opacity=".85"/>';
+      var a, k, px, py, st = '';
+      for (k = 0; k < 7; k++) {
+        a = (k / 7) * Math.PI * 2 - Math.PI / 2 + 0.45;
+        px = 540 + 480 * Math.cos(a); py = 930 + 395 * Math.sin(a);
+        st += '<path transform="translate(' + px.toFixed(1) + ' ' + py.toFixed(1) + ')" d="M0 -16Q2 -2 16 0Q2 2 0 16Q-2 2 -16 0Q-2 -2 0 -16" fill="' + c + '"/>';
+      }
+      f += '<g class="skb-orbit-stars">' + st + '</g>';
+    }
+    f += '</svg>';
+    return f;
+  }
+
+  // ── Fit each plant by what it actually draws (pot, stem, leaves, bloom, companion),
+  //    ignoring the aura layer and far-flung specks. Capped at 2.2x. ──
+  var FIT = {};
+  var SKIP = { DEFS:1, CLIPPATH:1, MASK:1, PATTERN:1, SYMBOL:1, FILTER:1, MARKER:1, LINEARGRADIENT:1, RADIALGRADIENT:1 };
+  function hidden(el, stop){
+    while (el && el !== stop) { if (SKIP[String(el.tagName).toUpperCase()]) return true; el = el.parentNode; }
+    return false;
+  }
+  function plantBounds(hash, gen){
+    var key = hash + '|' + (gen || 1);
+    if (FIT.hasOwnProperty(key)) return FIT[key];
+    var box = null, host = null;
+    try {
+      host = D.createElement('div');
+      host.style.cssText = 'position:absolute;left:-12000px;top:0;width:280px;height:380px;visibility:hidden;pointer-events:none;contain:strict;';
+      var ov = { skipAura: true }; if (gen && gen > 1) ov.chimerGen = gen;
+      host.innerHTML = window._generatePlantSVG(hash, 280, 1, ov);
+      D.body.appendChild(host);
+      var svg = host.querySelector('svg');
+      var vb = (svg.getAttribute('viewBox') || '0 0 70 95').split(/[\s,]+/);
+      var vx = +vb[0], vy = +vb[1], vw = +vb[2], vh = +vb[3];
+      var sr = svg.getBoundingClientRect();
+      var kx = vw / sr.width, ky = vh / sr.height, area = sr.width * sr.height;
+      var els = svg.querySelectorAll('path,ellipse,circle,rect,polygon,polyline,line,image,text,use');
+      var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, n = 0, i, r, a;
+      for (i = 0; i < els.length; i++) {
+        if (hidden(els[i], svg)) continue;
+        if (els[i].getAttribute('opacity') === '0') continue;
+        r = els[i].getBoundingClientRect(); a = r.width * r.height;
+        if (r.width <= 0 && r.height <= 0) continue;
+        if (a > area * 0.45) continue;                                                  // full-canvas washes
+        if (a < area * 0.002 && Math.max(r.width, r.height) < sr.width * 0.07) continue; // specks and particles
+        if (r.left < x0) x0 = r.left; if (r.top < y0) y0 = r.top;
+        if (r.right > x1) x1 = r.right; if (r.bottom > y1) y1 = r.bottom; n++;
+      }
+      if (n) box = { x: vx + (x0 - sr.left) * kx, y: vy + (y0 - sr.top) * ky, w: (x1 - x0) * kx, h: (y1 - y0) * ky, vx: vx, vy: vy, vw: vw, vh: vh };
+    } catch (e) { box = null; }
+    try { if (host && host.parentNode) host.parentNode.removeChild(host); } catch (e) {}
+    FIT[key] = box;
+    return box;
+  }
+  window.LW_SKIN_BOUNDS = plantBounds; // for the preview probes
+  // the crop: padded bounds, bottom kept on the pot, never smaller than canvas/2.2 (so a sprout is not blown up)
+  function cropOf(b, clamp){
+    if (!b) return null;
+    var w = b.w * 1.1 + 2, h = b.h * 1.06 + 2;
+    var minW = b.vw / 2.2, minH = b.vh / 2.2;
+    if (w < minW) w = minW; if (h < minH) h = minH;
+    var cx = b.x + b.w / 2, bottom = b.y + b.h + 0.8;
+    var c = { x: cx - w / 2, y: bottom - h, w: w, h: h };
+    if (clamp) {
+      if (c.x < b.vx) { c.w -= (b.vx - c.x); c.x = b.vx; }
+      if (c.y < b.vy) { c.h -= (b.vy - c.y); c.y = b.vy; }
+      if (c.x + c.w > b.vx + b.vw) c.w = b.vx + b.vw - c.x;
+      if (c.y + c.h > b.vy + b.vh) c.h = b.vy + b.vh - c.y;
+    }
+    return c;
+  }
+  function isCanvas(svg){ var v = (svg.getAttribute('viewBox') || '').replace(/\s+/g, ' '); return v === '0 0 70 95'; }
+  function fitSvg(svg, c){
+    if (!svg || !c) return;
+    if (!svg.getAttribute('data-sk-fit')) { if (!isCanvas(svg)) return; svg.setAttribute('data-sk-fit', '1'); }
+    svg.setAttribute('viewBox', c.x.toFixed(2) + ' ' + c.y.toFixed(2) + ' ' + c.w.toFixed(2) + ' ' + c.h.toFixed(2));
+    svg.setAttribute('preserveAspectRatio', 'xMidYMax meet');
+  }
+  function fitImg(img, c, b){
+    if (!img || !c || !b || img.getAttribute('data-sk-fit')) return;
+    if (!('objectViewBox' in img.style)) return;
+    img.setAttribute('data-sk-fit', '1');
+    var t = (c.y - b.vy) / b.vh * 100, l = (c.x - b.vx) / b.vw * 100;
+    var bt = (b.vy + b.vh - c.y - c.h) / b.vh * 100, rt = (b.vx + b.vw - c.x - c.w) / b.vw * 100;
+    img.style.objectViewBox = 'inset(' + t.toFixed(2) + '% ' + rt.toFixed(2) + '% ' + bt.toFixed(2) + '% ' + l.toFixed(2) + '%)';
+    img.style.objectFit = 'contain'; img.style.objectPosition = '50% 100%';
+  }
+  function genOf(p){ return p && p.generation ? p.generation : 1; }
 
   var reduce = false;
   try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -76,9 +187,10 @@
     var h = '';
     h += '<div class="skb-stage">';
     h +=   '<div class="skb-aura" aria-hidden="true"></div>';
-    h +=   '<img class="skb-frame" src="' + BASE + 'reveal/' + g + '.svg" alt="" aria-hidden="true">';
+    h +=   '<div class="skb-beam" aria-hidden="true"></div>';
+    h +=   frameSvg(g);
     if (gi >= 3) h += '<div class="skb-glints" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>';
-    if (g === 'cosmic') h += '<div class="skb-orbit" aria-hidden="true"></div>';
+    if (g === 'cosmic') h += '<div class="skb-orbit-glow" aria-hidden="true"></div>';
     h +=   '<div class="skb-brand">LUCID WINDS</div>';
     h +=   '<div class="skb-kicker">' + cost + ' SUNBEAMS BECOME ONE PLANT</div>';
     h +=   '<div class="skb-title">' + esc(title) + '</div>';
@@ -110,23 +222,35 @@
       else { try { if (window._restartCurrentGame) window._restartCurrentGame(); } catch (x) {} }
     });
     ov.appendChild(root);
+    try { fitSvg(root.querySelector('.skb-plant svg'), cropOf(plantBounds(hash, genOf(id.plant)), false)); } catch (e) {}
   }
 
   // ═══ 2. sk-cards: greenhouse grid tile + carousel card front ═══
-  var GRID_ARCH = '<svg class="skc-arch" viewBox="0 0 480 640" preserveAspectRatio="none" aria-hidden="true"><path d="M57.6 416V297.6A182.4 182.4 0 0 1 422.4 297.6V416" fill="none" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>';
+  var GRID_ARCH = '<svg class="skc-arch" viewBox="0 0 400 500" preserveAspectRatio="none" aria-hidden="true"><path d="M16 498V196A184 184 0 0 1 384 196V498" fill="none" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>';
   var DETAIL_ARCH = '<svg class="skc-arch" viewBox="0 0 400 500" preserveAspectRatio="xMidYMax meet" aria-hidden="true"><path d="M16 498V196A184 184 0 0 1 384 196V498" fill="none" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>';
   function setGradeClass(el, g){
     for (var i = 0; i < ORDER.length; i++) el.classList.remove('skg-' + ORDER[i]);
     el.classList.add('skg-' + g);
   }
+  function fitTile(el, hash){
+    var svgs = el.querySelectorAll('svg'), i, c = null;
+    for (i = 0; i < svgs.length; i++) {
+      if (svgs[i].getAttribute('data-sk-fit') || !isCanvas(svgs[i])) continue;
+      if (!c) { var p = plantOf(hash); c = cropOf(plantBounds(hash, genOf(p)), false); if (!c) return; }
+      fitSvg(svgs[i], c);
+    }
+  }
   function skinTile(el){
     var hash = el.getAttribute('data-sk-hash'); if (!hash) return;
+    fitTile(el, hash);
     if (el.querySelector('.skc-foot')) return;
     var id = identity(hash), g = id.grade;
     setGradeClass(el, g);
     var eaEl = el.querySelector('.ea-num');
     var ea = eaEl ? eaEl.textContent : id.ea;
     var top = D.createElement('div'); top.className = 'skc-topmark'; top.innerHTML = mark(g, 18);
+    var sea = D.createElement('div'); sea.className = 'skc-season'; var si = seasonOf(hash);
+    sea.innerHTML = seasonMark(si, 16); sea.setAttribute('title', SEASONS[si].n); el.appendChild(sea);
     var arch = D.createElement('div'); arch.className = 'skc-archwrap'; arch.innerHTML = GRID_ARCH;
     var foot = D.createElement('div'); foot.className = 'skc-foot';
     foot.innerHTML = '<span class="skc-grade">' + mark(g, 14) + g.toUpperCase() + '</span><span class="skc-ea">EA ' + esc(ea) + '</span>';
@@ -135,10 +259,20 @@
     var nm = el.querySelector('.gh-name');
     if (nm && nm.nextSibling) el.insertBefore(foot, nm.nextSibling); else el.appendChild(foot);
   }
+  function fitFront(art, hash){
+    var p = plantOf(hash), b = plantBounds(hash, genOf(p)), c = cropOf(b, true), i;
+    if (!c) return;
+    var kids = art.children;
+    for (i = 0; i < kids.length; i++) {
+      if (String(kids[i].tagName).toLowerCase() === 'svg') fitSvg(kids[i], c);
+      else if (String(kids[i].tagName).toLowerCase() === 'img') fitImg(kids[i], c, b);
+    }
+  }
   function skinFront(front){
-    if (front.querySelector('.skc-dgrade')) return;
     var art = front.querySelector('.cf-art-window[data-plant-hash]'); if (!art) return;
     var hash = art.getAttribute('data-plant-hash');
+    fitFront(art, hash);
+    if (front.querySelector('.skc-dgrade')) return;
     var id = identity(hash), g = id.grade;
     setGradeClass(front, g);
     var eaEl = front.querySelector('.cf-ea');
@@ -146,7 +280,9 @@
     var arch = D.createElement('div'); arch.className = 'skc-archwrap'; arch.innerHTML = DETAIL_ARCH;
     var dg = D.createElement('div'); dg.className = 'skc-dgrade'; dg.innerHTML = mark(g, 26) + '<span>' + g.toUpperCase() + '</span>';
     var de = D.createElement('div'); de.className = 'skc-dea'; de.textContent = 'EA ' + ea;
-    if (id.sea && id.sea.emblem) { var se = D.createElement('span'); se.className = 'skc-season'; se.textContent = id.sea.emblem + (id.sea.name ? ' ' + id.sea.name : ''); de.appendChild(se); }
+    var si = seasonOf(hash), ds = D.createElement('div'); ds.className = 'skc-dseason';
+    ds.innerHTML = seasonMark(si, 18) + '<span style="color:' + SEASONS[si].c + '">' + SEASONS[si].n + '</span>';
+    front.appendChild(ds);
     front.insertBefore(arch, front.firstChild); // not inside the art window: the hub hot-swaps its content to a PNG
     front.appendChild(dg);
     var hz = front.querySelector('.cf-haiku-zone');
