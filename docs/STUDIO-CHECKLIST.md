@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 13 Nov 2026, 02:25 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 13 Nov 2026, 03:15 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## Money: the board (the publishing agent keeps this; say "run the publisher")
 
@@ -16,11 +16,13 @@ Thirteen games have sat built and checked for two ad networks since 2 Sep. Both 
 - [ ] CrazyGames: the third builder target (their SDK) and the three ZIPs: Garden Guard, Nova Bloom and one more (Opus)  
 - [ ] The first finished promo clip with its caption, for you to post (Opus)  
 - [ ] Poki: they prefer exclusivity; decide after the first numbers come in from the other networks (you, later)  
+- [ ] Sixfold: once you and Jessie have played it, its store kit and network build (Opus), then where it is sold (you)  
 
 ## 0. Now, 13 Nov: the hub, Shutterbug, Meshy
 
 The Lucid Winds hub was audited on 12 Nov (read only, three passes). The page with the shots: https://claude.ai/artifact/GhRuThtynvvpPifnsDKkww . The files: docs/audits/LUCID-WINDS-HUB-AUDIT-2026-11-12.md, LUCID_WINDS_HUB_BUILD_PLAN.md, LUCID_WINDS_PUBLISH_PLAN.md, LUCID_WINDS_PRELAUNCH_PLAN.md.
 
+- [ ] Sixfold two player: BUILT 13 Nov (Opus), checked (Fable): Play a friend with a four character code, and live Find a rival; it was written months ago and never switched on. Two lines for you, one at a time, each at an idle prompt. First `! bash /home/codespace/lw-drafts/deploy-sixfold-rules.sh` (adds Sixfold's rules to the database, then plays one test duel and prints PASS). Then `! bash /home/codespace/lw-drafts/deploy-sixfold-multiplayer.sh`. Then you and Jessie open lucidwinds.com/satellites/sixfold/ on two phones: Ranked Duel, Play a friend, one taps Get a code, the other types it (you)  
 - [x] Lucid Winds hub audit, findings, repair plan, publishing plan, pre-launch designs (Fable)  
 - [x] Lucid Winds, Astra round one (her own review, one style, the plant card, the bloom reveal): [Astra / Lucid Winds Hub Round 1](https://drive.google.com/drive/folders/1ZlZ9_hvohSvASg8u9_1TbNJCbE4KpuIq); you said Astra is working, 13 Nov (you, Astra)  
 - [ ] Lucid Winds, the map: ask for the free key at carto.com/basemaps/apikey (choose commercial; it comes by e-mail, no account) and send it to Fable. The Wild map has shown "API KEY REQUIRED" since 25 Sep (you)  
