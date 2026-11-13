@@ -127,6 +127,13 @@ html,body{margin:0;padding:0;height:100%;background:var(--room);color:var(--crea
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
+<script id="musicFirst">/* THE SOUNDTRACK'S MANNERS, 20261113b (Play queue). On a new player's FIRST launch (never launched, no
+   save) the studio soundtrack script is held from here with its own SWS_MUSIC_HOLD flag: no song card, pill or
+   toast over the first screen. The game lets it go at its first break (musicBreak). From the second launch on the
+   script boots as it does in every other game. /music-unlocks.js itself is not edited. */
+(function(){ try{ var n=+(localStorage.getItem("wardian_launches")||0)||0;
+  localStorage.setItem("wardian_launches",String(n+1));
+  if(n<1&&!localStorage.getItem("lw_wardian_v1")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
 <script src="/music-unlocks.js?v=20260915a" defer></script>
 </head>
 <body>
@@ -2379,7 +2386,7 @@ function draw(state) {
 }
 
 /* ========================= 17. INPUT ========================= */
-var STAMP = '20261113a';
+var STAMP = '20261113b';
 var PREFERS_STILL = false;
 var G = null, RAF = 0, LAST = 0, SHIVER = 0, MISTED_AT = 0, MONTAGE = null, FRAMES = 0;
 /* ⛔ ONE clock on the page. The HUD read Date.now() while the jar's light came
@@ -2403,6 +2410,7 @@ function doMist(sx, sy) {
   if (now - MISTED_AT < CONFIG.MIST_COOLDOWN_S * 1000) return false;
   MISTED_AT = now;
   mist(G);
+  if (G.fresh) { G.fresh = 0; el('firstLine').classList.add('gone'); saveSoon(); }
   puff(sx === undefined ? JAR_W / 2 : unwx(sx), sy === undefined ? 40 : unwy(sy), 26);
   SFX.play('mist');
   haptic(12);
@@ -3379,6 +3387,50 @@ function runCatchUp() {
     per: Math.max(4, Math.min(90, Math.ceil(n / (CONFIG.CATCHUP_MONTAGE_MS / 16)))) };
 }
 
+/* ⛔ THE SOUNDTRACK'S MANNERS (Play queue, 20261113b). The shared script (/music-unlocks.js, not edited) is
+   driven with its own controls. While a finger is on the jar, and for four seconds after, nothing of it is on screen
+   (held); in a quiet moment and on the menus its Music button takes its seat bottom left, which this layout keeps
+   for it. A first launch stays held until the first quiet moment after a minute of real touching (finger time, not
+   clock time), and that moment shows the waiting song; every later quiet moment after another minute of touching
+   shows a song that waited, if one did. */
+var MUSIC = { first: window.SWS_MUSIC_HOLD === true, want: false, sent: window.SWS_MUSIC_HOLD === true, t: 0 };
+function musicSync() {
+  var on = MUSIC.want || MUSIC.first;
+  try { var m = window.SWSMusic; if (m && m.hold && on !== MUSIC.sent) { m.hold(on); MUSIC.sent = on; } } catch (e) {}
+}
+function musicHold(on) { MUSIC.want = !!on; musicSync(); }
+/* a break: the first one lets a first launch go, and every one shows a song that waited (one earned mid play is
+   held in the script's pending list, not toasted over the board). `still` says the break is still on screen. */
+function musicBreak(still) {
+  MUSIC.first = false; musicSync();
+  clearTimeout(MUSIC.t);
+  MUSIC.t = setTimeout(function () {
+    try { var m = window.SWSMusic; if ((!still || still()) && m && m.reveal) m.reveal(); } catch (e) {}
+  }, 1400);
+}
+/* the script is deferred: a hold asked for before it ran is sent once it has (sent = what the script holds now) */
+document.addEventListener('DOMContentLoaded', musicSync);
+var TOUCH = { last: -1e9, ms: 0 };
+function touchMark() { var n = Date.now(); if (n - TOUCH.last < 1500) TOUCH.ms += n - TOUCH.last; TOUCH.last = n; musicScene(); }
+function musicMenu() { return !!document.querySelector('.screen.on, .sheet.on'); }
+function musicScene() {
+  var busy = Date.now() - TOUCH.last < 4000 || !el('btnEditDone').hidden;
+  musicHold(!musicMenu() && busy);
+}
+function musicQuiet() {
+  musicScene();
+  if (!musicMenu() && TOUCH.ms >= 60000 && Date.now() - TOUCH.last > 3500) {
+    TOUCH.ms = 0;
+    musicBreak(function () { return Date.now() - TOUCH.last > 3500; });
+  }
+}
+function musicBind() {
+  var cv = el('jar');
+  cv.addEventListener('pointerdown', touchMark);
+  cv.addEventListener('pointermove', function (e) { if (e.buttons || e.pointerType === 'touch') touchMark(); });
+  setInterval(musicQuiet, 500);
+}
+
 function boot() {
   V.cv = el('jar');
   V.ctx = V.cv.getContext('2d');
@@ -3391,6 +3443,7 @@ function boot() {
   SFX.on = !!SETTINGS.sound;
   fitCanvas();
   bindInput();
+  musicBind();
   if (SETTINGS.hemi) G.hemi = SETTINGS.hemi;
   REDUCED = PREFERS_STILL || !SETTINGS.motion;
   runCatchUp();
@@ -3402,9 +3455,11 @@ function boot() {
   window.addEventListener('devicemotion', tiltHandler);
   setInterval(weatherTick, 60000);
   if (!G.fresh) el('firstLine').classList.add('gone');
+  /* ⛔ the first hint stays up until the first mist (doMist takes it down): it used to go after six seconds, and a
+     stranger who had not read it in time was left with a quiet jar and no idea what it wanted (Play queue) */
   else setTimeout(function () {
+    if (!G.fresh) return;
     el('firstLine').textContent = 'Swipe down to mist. Tap the glass to say hello.';
-    setTimeout(function () { el('firstLine').classList.add('gone'); G.fresh = 0; saveSoon(); }, 6000);
   }, 3400);
   window.addEventListener('resize', function () { fitCanvas(); });
   window.addEventListener('orientationchange', function () { setTimeout(fitCanvas, 120); });
