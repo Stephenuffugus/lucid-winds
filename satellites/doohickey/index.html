@@ -177,6 +177,13 @@ html,body{margin:0;padding:0;height:100%;background:var(--paper);color:var(--ink
 #testPanel.on{display:block}
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important}}
 </style>
+<script id="musicFirst">/* THE SOUNDTRACK'S MANNERS, 20261113b (Play queue). On a new player's FIRST launch (never launched, no
+   save) the studio soundtrack script is held from here with its own SWS_MUSIC_HOLD flag: no song card, pill or
+   toast over the first screen. The game lets it go at its first break (musicBreak). From the second launch on the
+   script boots as it does in every other game. /music-unlocks.js itself is not edited. */
+(function(){ try{ var n=+(localStorage.getItem("doohickey_launches")||0)||0;
+  localStorage.setItem("doohickey_launches",String(n+1));
+  if(n<1&&!localStorage.getItem("lw_doohickey_v1")) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
 <script src="/music-unlocks.js?v=20260915a" defer></script>
 </head>
 <body>
@@ -2879,7 +2886,7 @@ function drawScene(ctx, world, level, touched) {
 }
 
 /* ========================= 17. THE GAME ========================= */
-var STAMP = '20261113a';
+var STAMP = '20261113b';
 var G = {
   screen: 'title', levelId: 0, machine: newMachine(), world: null, level: null,
   running: false, touched: [], result: null, runT: 0, sandbox: -1
@@ -2895,8 +2902,31 @@ function toast(msg) {
 }
 function haptic(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
 
+/* ⛔ THE SOUNDTRACK'S MANNERS (Play queue, 20261113b). The round Music button sat on the last row of the level
+   list, and on a first launch the song card slid over the title two seconds in. The shared script is driven with
+   its own controls: held while a board is open (building, running and the win card), held on the level list and
+   the sandbox list (a list fills a phone and the button took a row), so the Music button lives on the title and
+   How screens. A first launch stays held until the first break: a machine that works, or the first way out of a
+   board; that break shows the waiting song. */
+var MUSIC = { first: window.SWS_MUSIC_HOLD === true, want: false, sent: window.SWS_MUSIC_HOLD === true, t: 0 };
+function musicSync() {
+  var on = MUSIC.want || MUSIC.first;
+  try { var m = window.SWSMusic; if (m && m.hold && on !== MUSIC.sent) { m.hold(on); MUSIC.sent = on; } } catch (e) {}
+}
+function musicHold(on) { MUSIC.want = !!on; musicSync(); }
+/* a break: the first one lets a first launch go, and every one shows a song that waited (one earned mid play is
+   held in the script's pending list, not toasted over the board). `still` says the break is still on screen. */
+function musicBreak(still) {
+  MUSIC.first = false; musicSync();
+  clearTimeout(MUSIC.t);
+  MUSIC.t = setTimeout(function () {
+    try { var m = window.SWSMusic; if ((!still || still()) && m && m.reveal) m.reveal(); } catch (e) {}
+  }, 1400);
+}
+/* the script is deferred: a hold asked for before it ran is sent once it has (sent = what the script holds now) */
+document.addEventListener('DOMContentLoaded', musicSync);
 function showScreen(name) {
-  var all = ['scrTitle', 'scrSelect', 'scrSand', 'scrHow'], i;
+  var all = ['scrTitle', 'scrSelect', 'scrSand', 'scrHow'], i, was = G.screen;
   for (i = 0; i < all.length; i++) el(all[i]).classList.toggle('on', 'scr' + name === all[i]);
   G.screen = name === 'Build' ? 'build' : name.toLowerCase();
   var inBuild = (name === 'Build');
@@ -2910,6 +2940,8 @@ function showScreen(name) {
   el('btnMenu').hidden = !inBuild;
   el('partCount').hidden = !inBuild || G.running;
   fitCanvas();
+  musicHold(inBuild || name === 'Select' || name === 'Sand');
+  if (was === 'build' && !inBuild) musicBreak(function () { return G.screen === name.toLowerCase(); });
 }
 
 function startLevel(id) {
@@ -3065,6 +3097,7 @@ function onWin() {
   el('winLine').textContent = G.result.parts + ' parts, par ' + G.level.par;
   el('winCard').classList.add('on');
   haptic(24);
+  musicBreak(function () { return G.screen === 'build' && el('winCard').classList.contains('on'); });
 }
 
 function frame(ts) {
