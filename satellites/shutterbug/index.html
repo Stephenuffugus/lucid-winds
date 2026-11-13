@@ -124,6 +124,19 @@ button:active:not(:disabled), button.press:not(:disabled) { transform: scale(0.9
 #roll { flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: var(--ink); color: var(--paper);
   padding: calc(16px + var(--sat)) 16px calc(16px + var(--sab)); }
 #roll h2 { margin: 0; font-size: 1.3rem; }
+/* sb-m2-28: the player's own photo above the tiles, a Polaroid (the title's paper, padding and tilt), so the screen reads
+   as "your photo is becoming a room"; its paper takes a little of the colour of the tile the ring is on (no fade under
+   reduced motion). The print is the crop box as framed, drawn from the photo at once and wiped when the roll ends */
+#roll { overflow-y: auto; justify-content: safe center; }
+#rollpol { flex: none; padding: 10px 10px 34px; }
+#rollpol[hidden] { display: none; }
+#rollprint { display: block; height: clamp(150px, calc(100dvh - 480px), 440px); width: auto; aspect-ratio: 1 / 2; background: var(--ink); }
+#roll:not(.still) #rollpol { transition: background-color 120ms linear; }
+#rollpol[data-biome="attic"] { background: color-mix(in srgb, var(--paper) 52%, #6b3f2a); }
+#rollpol[data-biome="frost"] { background: color-mix(in srgb, var(--paper) 45%, #9fd0ff); }
+#rollpol[data-biome="deep"] { background: color-mix(in srgb, var(--paper) 52%, #2f5fd0); }
+#rollpol[data-biome="overgrowth"] { background: color-mix(in srgb, var(--paper) 52%, #3f9a3a); }
+#rollpol[data-biome="ember"] { background: color-mix(in srgb, var(--paper) 52%, #c8302f); }
 #rolltiles { display: flex; gap: 6px; width: 100%; max-width: 420px; padding: 0 4px; box-sizing: border-box; }
 #rolltiles button { flex: 1; min-width: 0; min-height: 96px; padding: 6px 1px; border: 2px solid var(--ink); border-radius: 10px; color: var(--glare);
   font-size: clamp(0.56rem, 2.6vw, 0.72rem); letter-spacing: -0.01em; font-weight: 700; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
@@ -836,6 +849,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <p id="cropsay" aria-live="polite"></p>
 </main>
 <main id="roll" class="screen" aria-label="The biome">
+  <div id="rollpol" class="polaroid" hidden><canvas id="rollprint" width="160" height="320" role="img" data-aria="rollPrint"></canvas></div>
   <h2 data-copy="rollHead"></h2>
   <div id="rolltiles" role="radiogroup" data-aria="rollHead"></div>
   <p id="rollsay" aria-live="polite"></p>
@@ -10462,7 +10476,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     nothingHint: 'Tap Retake for another photo.',
     badPhoto: 'That photo did not open. Try another.',
     photoRoom: 'Your room',
-    rollHead: 'The biome', rollStop: 'Tap to stop', rollLanded: '{name}. Tap to climb.', rollChoose: 'Choose', rollPhoto: 'From my photo', rollPick: 'Tap a biome to climb it', rollNo: 'This room does not climb as {name}.',
+    rollHead: 'The biome', rollPrint: 'Your photo', rollStop: 'Tap to stop', rollLanded: '{name}. Tap to climb.', rollChoose: 'Choose', rollPhoto: 'From my photo', rollPick: 'Tap a biome to climb it', rollNo: 'This room does not climb as {name}.',
     death: 'The bug fell out of the picture', toTripod: 'Back to the tripod', floorFurniture: 'The furniture', floorCeiling: 'The ceiling',
     dp: 'Dead pixels', dpGain: '+{n}',
     shareTitle: 'Share this room',
@@ -11245,6 +11259,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
     RL.at = k;
     var bs = document.getElementById('rolltiles').children;
     for (var i = 0; i < bs.length; i++) { bs[i].classList.toggle('lit', i === k); bs[i].setAttribute('aria-checked', String(i === k)); }
+    var pol = document.getElementById('rollpol');
+    if (k >= 0) pol.setAttribute('data-biome', SB.palette.BIOMES[k]); else pol.removeAttribute('data-biome');
+  }
+  /* sb-m2-28: the print on the roll screen, the crop of the player's photo (hidden when the photo is gone); wiped as the
+     roll ends, so no copy of the photo outlives it (the photo's own rule, SB_DEV.photoAlive) */
+  function rollPrint(on) {
+    var pc = document.getElementById('rollprint'), pol = document.getElementById('rollpol'), g = pc.getContext('2d'), ok = false;
+    g.clearRect(0, 0, pc.width, pc.height);
+    if (on && CR.src && CR.crop) {
+      try { g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(CR.src, CR.crop.x, CR.crop.y, CR.crop.w, CR.crop.h, 0, 0, pc.width, pc.height); ok = true; } catch (e) { ok = false; }
+    }
+    pol.hidden = !ok;
   }
   function rollSay(s) { document.getElementById('rollsay').textContent = s; }
   function rollStart() {
@@ -11254,6 +11280,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     for (var k = 0; k < B.length; k++) h += '<button type="button" role="radio" aria-checked="false" class="' + B[k] + '" data-biome="' + k + '"><i style="background-image:var(--film-' + B[k] + '-ready)"></i><span>' + C.stockNames[k] + '</span></button>';
     document.getElementById('rolltiles').innerHTML = h;
     document.getElementById('roll').classList.remove('choosing'); document.getElementById('roll').classList.remove('landed');
+    document.getElementById('roll').classList.toggle('still', SB.render.reduced()); rollLight(-1); rollPrint(true);
     document.getElementById('rollchoose').hidden = false; document.getElementById('rollphoto').hidden = true;
     rollSay(C.rollStop);
     ui.show('roll');
@@ -11288,7 +11315,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   }
   function rollGo(k) {
     var b = RL.built[k] || rollBuild(k); if (!b) return false;
-    rollClear(); RL.on = false; RL.tok++;
+    rollClear(); RL.on = false; RL.tok++; rollPrint(false);
     return ui.startRoom(b.rec, ui.COPY.photoRoom, { level: HS.on && HS.run ? null : b.lv, photo: { src: CR.src, crop: CR.crop }, ms: CR.ms });
   }
   function rollChoose() {
