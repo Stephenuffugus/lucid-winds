@@ -2546,7 +2546,7 @@
       background:rgba(10,13,9,0.75); border:1px solid rgba(200,168,75,0.22);
       color:var(--cream); font-family:'DM Mono',monospace; font-size:0.55rem;
       padding:0.48rem 0.8rem; border-radius:6px; width:100%; box-sizing:border-box;
-      margin-bottom:0.7rem; outline:none;
+      margin-bottom:0.7rem; outline:none; min-height:48px; font-size:16px;
       transition:border-color 0.2s;
     }
     .sws-id-input:focus{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(200,168,75,0.12); }
@@ -2556,7 +2556,7 @@
       box-shadow:0 0 18px rgba(200,168,75,0.18);
       color:var(--cream); font-family:'Bebas Neue',sans-serif;
       font-size:0.72rem; letter-spacing:0.14em;
-      padding:0.5rem 1.4rem; border-radius:7px; cursor:pointer; width:100%;
+      padding:0.5rem 1.4rem; border-radius:7px; cursor:pointer; width:100%; min-height:48px;
       transition:all 0.22s cubic-bezier(0.16,1,0.3,1);
     }
     .sws-id-submit:hover{
@@ -2564,8 +2564,8 @@
       box-shadow:0 0 32px rgba(200,168,75,0.38); border-color:var(--gold);
     }
     .sws-id-dismiss{
-      background:none; border:none; color:rgba(140,140,130,0.45);
-      font-family:'DM Mono',monospace; font-size:0.48rem; cursor:pointer;
+      background:rgba(26,31,23,0.5); border:1px solid rgba(122,179,86,0.3); border-radius:7px; color:var(--sage);
+      font-family:'DM Mono',monospace; font-size:0.8rem; cursor:pointer; min-height:48px;
       margin-top:0.6rem; display:block; width:100%;
       transition:color 0.18s;
     }
@@ -2600,7 +2600,7 @@
 
     /* ── set-78: SWS ID tab row & account badge — CSS VAR ALIGNED ── */
     .sws-id-tab-row{display:flex;gap:0;margin-bottom:1rem;border-radius:7px;overflow:hidden;border:1px solid rgba(200,168,75,0.22);}
-    .sws-id-tab{flex:1;padding:0.35rem 0;font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--sage);background:var(--black);border:none;cursor:pointer;transition:all 0.2s;opacity:0.6;}
+    .sws-id-tab{flex:1;min-height:48px;padding:0.35rem 0;font-family:'Bebas Neue',sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--sage);background:var(--black);border:none;cursor:pointer;transition:all 0.2s;opacity:0.6;}
     .sws-id-tab.active{background:rgba(200,168,75,0.12);color:var(--gold);opacity:1;}
     .sws-id-fields{display:flex;flex-direction:column;gap:0;}
     .sws-id-label{font-family:'DM Mono',monospace;font-size:0.42rem;letter-spacing:0.1em;color:var(--gold);opacity:0.65;margin-bottom:0.15rem;text-align:left;}
@@ -11183,16 +11183,16 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
   <div class="sws-id-card">
 
     <!-- Asset count — always visible before auth, trust signal -->
-    <div class="sws-id-eyebrow">⬡ SWS CLOUD PROTOCOL</div>
-    <h2 class="sws-id-title">Identity<br><em style="font-style:italic;color:var(--gold);">Terminal</em></h2>
-    <div class="sws-id-asset-count" id="sws-id-asset-count">⬡ 0 BOTANICAL ASSETS DETECTED</div>
+    <div class="sws-id-eyebrow">YOUR LUCID WINDS ACCOUNT</div>
+    <h2 class="sws-id-title">Keep your<br><em style="font-style:italic;color:var(--gold);">garden safe</em></h2>
+    <div class="sws-id-asset-count" id="sws-id-asset-count">No plants on this device yet</div>
 
     <!-- INPUT STATE -->
     <div id="sws-id-input-state">
       <!-- Tab row: INITIALIZE ID / RECOVER CONNECTION -->
       <div class="sws-id-tab-row">
-        <button type="button" class="sws-id-tab active" id="sws-tab-register" onclick="swsShowTab('register')">⊕ INITIALIZE ID</button>
-        <button type="button" class="sws-id-tab" id="sws-tab-login" onclick="swsShowTab('login')">↺ RECOVER</button>
+        <button type="button" class="sws-id-tab active" id="sws-tab-register" onclick="swsShowTab('register')">NEW ACCOUNT</button>
+        <button type="button" class="sws-id-tab" id="sws-tab-login" onclick="swsShowTab('login')">SIGN IN</button>
       </div>
 
       <!-- AUTH FORM — e.preventDefault() guards all paths -->
@@ -11200,26 +11200,26 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
 
         <!-- INITIALIZE ID fields -->
         <div id="sws-register-fields" class="sws-id-fields">
-          <p class="sws-id-subtitle">Create your SWS Identity to anchor your Plant collection across all devices.</p>
-          <div class="sws-id-label">ACCOUNT NAME</div>
-          <input class="sws-id-input" type="text" id="sws-reg-name" placeholder="YourGroveName" autocomplete="username" style="margin-bottom:0.55rem;"/>
-          <div class="sws-id-label">EMAIL ADDRESS</div>
-          <input class="sws-id-input" type="email" id="sws-reg-email" placeholder="your@identity.com" autocomplete="email" style="margin-bottom:0.55rem;"/>
+          <p class="sws-id-subtitle">Make an account and your plants follow you to any phone or computer.</p>
+          <div class="sws-id-label">YOUR NAME</div>
+          <input class="sws-id-input" type="text" id="sws-reg-name" placeholder="Your name" autocomplete="username" style="margin-bottom:0.55rem;"/>
+          <div class="sws-id-label">EMAIL</div>
+          <input class="sws-id-input" type="email" id="sws-reg-email" placeholder="you@example.com" autocomplete="email" style="margin-bottom:0.55rem;"/>
           <div class="sws-id-label">PASSWORD</div>
-          <input class="sws-id-input" type="password" id="sws-reg-pass" placeholder="Min. 8 characters" autocomplete="new-password" style="margin-bottom:0.2rem;"/>
+          <input class="sws-id-input" type="password" id="sws-reg-pass" placeholder="6 or more characters" autocomplete="new-password" style="margin-bottom:0.2rem;"/>
         </div>
 
         <!-- RECOVER CONNECTION fields -->
         <div id="sws-login-fields" class="sws-id-fields" style="display:none;">
-          <p class="sws-id-subtitle">Re-establish your connection. Your local collection is always safe — this confirms your identity.</p>
-          <div class="sws-id-label">EMAIL ADDRESS</div>
-          <input class="sws-id-input" type="email" id="sws-log-email" placeholder="your@identity.com" autocomplete="email" style="margin-bottom:0.55rem;"/>
+          <p class="sws-id-subtitle">Sign in to bring your garden back. The plants on this device stay safe either way.</p>
+          <div class="sws-id-label">EMAIL</div>
+          <input class="sws-id-input" type="email" id="sws-log-email" placeholder="you@example.com" autocomplete="email" style="margin-bottom:0.55rem;"/>
           <div class="sws-id-label">PASSWORD</div>
           <input class="sws-id-input" type="password" id="sws-log-pass" placeholder="Your password" autocomplete="current-password" style="margin-bottom:0.2rem;"/>
         </div>
 
         <div id="sws-id-error" style="font-family:'DM Mono',monospace;font-size:0.48rem;color:rgba(180,80,80,0.9);margin-bottom:0.4rem;min-height:0.8rem;margin-top:0.3rem;"></div>
-        <button type="button" class="sws-id-submit" id="sws-id-submit-btn" onclick="submitSWSId(event)">⬡ INITIALIZE IDENTITY</button>
+        <button type="button" class="sws-id-submit" id="sws-id-submit-btn" onclick="submitSWSId(event)">CREATE ACCOUNT</button>
       </form>
 
       <!-- SOCIAL LOGIN — disabled for now -->
@@ -11244,14 +11244,14 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
       </div>
       </div>
 
-      <button type="button" class="sws-id-dismiss" onclick="closeSWSIdModal()">dismiss — I'll sync later</button>
+      <button type="button" class="sws-id-dismiss" onclick="closeSWSIdModal()">Not now, keep playing</button>
     </div>
 
     <!-- SUCCESS STATE -->
     <div class="sws-id-success" id="sws-id-success-state">
       <div class="sws-id-checkmark">✓</div>
-      <div class="sws-id-secured-title">IDENTITY SECURED</div>
-      <div class="sws-id-secured-sub" id="sws-id-secured-sub">Your SWS ID has been registered.<br>Your collection is now anchored.</div>
+      <div class="sws-id-secured-title">Your garden is saved</div>
+      <div class="sws-id-secured-sub" id="sws-id-secured-sub">Your plants now follow you to any device.</div>
     </div>
 
   </div>
@@ -51897,6 +51897,9 @@ document.addEventListener('keydown', function(e) {
       _vaultHydrated = false;
       _hideOverlay('');
       _nukeGameUI();
+      // Hub R4: a signed out player's plants live on this device; the nuke above emptied the grid while the
+      // banner still counted them. A real sign out purges storage first, so this draws nothing then.
+      _lwRedrawLocalPlants();
     }
   });
 
@@ -52013,13 +52016,13 @@ document.addEventListener('keydown', function(e) {
       if (logF) logF.style.display = 'none';
       if (regT) regT.classList.add('active');
       if (logT) logT.classList.remove('active');
-      if (btn)  btn.textContent = '⬡ INITIALIZE IDENTITY';
+      if (btn)  btn.textContent = 'CREATE ACCOUNT';
     } else {
       if (regF) regF.style.display = 'none';
       if (logF) logF.style.display = 'flex';
       if (logT) logT.classList.add('active');
       if (regT) regT.classList.remove('active');
-      if (btn)  btn.textContent = '↺ RECOVER CONNECTION';
+      if (btn)  btn.textContent = 'SIGN IN';
     }
   };
 
@@ -52028,7 +52031,7 @@ document.addEventListener('keydown', function(e) {
     var gh = loadGreenhouse ? loadGreenhouse() : [];
     var cnt = gh.length;
     var countEl = document.getElementById('sws-id-asset-count');
-    if (countEl) countEl.textContent = '⬡ ' + cnt + ' BOTANICAL ASSET' + (cnt === 1 ? '' : 'S') + ' DETECTED LOCALLY';
+    if (countEl) countEl.textContent = cnt ? (cnt + ' plant' + (cnt === 1 ? '' : 's') + ' on this device') : 'No plants on this device yet';
     var inputState = document.getElementById('sws-id-input-state');
     var successState = document.getElementById('sws-id-success-state');
     if (inputState) inputState.style.display = 'block';
@@ -52055,9 +52058,16 @@ document.addEventListener('keydown', function(e) {
     }, 350);
   };
 
+  function _lwRedrawLocalPlants() {
+    try {
+      var gh = (typeof loadGreenhouse === 'function') ? loadGreenhouse() : [];
+      if (gh && gh.length && typeof window.renderGreenhouse === 'function') window.renderGreenhouse();
+    } catch (e) {}
+  }
   window.closeSWSIdModal = function() {
     _clearModalHistory('sws-id-modal');
     _fadeClose('sws-id-modal');
+    _lwRedrawLocalPlants();   // Hub R4: dismissing must never leave the greenhouse empty
   };
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -52100,7 +52110,7 @@ document.addEventListener('keydown', function(e) {
       btn.innerHTML = '<span class="lw-spinner" style="padding:0;gap:0.2rem;display:inline-flex;vertical-align:middle;"><span class="lw-spinner-leaf" style="width:5px;height:5px;"></span><span class="lw-spinner-leaf" style="width:5px;height:5px;"></span><span class="lw-spinner-leaf" style="width:5px;height:5px;"></span></span> ' + (text || '');
       btn.style.opacity = '0.7';
     } else {
-      btn.textContent = text || '⬡ INITIALIZE IDENTITY';
+      btn.textContent = text || (_swsMode === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT');
       btn.style.opacity = '1';
     }
   }
@@ -52150,9 +52160,9 @@ document.addEventListener('keydown', function(e) {
       var email = (document.getElementById('sws-reg-email') ? document.getElementById('sws-reg-email').value : '').trim().toLowerCase();
       var pass  = (document.getElementById('sws-reg-pass')  ? document.getElementById('sws-reg-pass').value  : '');
 
-      if (!name  || name.length < 2)     { _swsSetError('⚠ Account name must be at least 2 characters.'); return; }
-      if (!email || !emailRx.test(email)){ _swsSetError('⚠ Enter a valid email address.'); return; }
-      if (!pass  || pass.length < 8)     { _swsSetError('⚠ Password must be at least 8 characters.'); return; }
+      if (!name  || name.length < 2)     { _swsSetError('Your name needs 2 or more letters.'); return; }
+      if (!email || !emailRx.test(email)){ _swsSetError('That email does not look right.'); return; }
+      if (!pass  || pass.length < 6)     { _swsSetError('Password needs 6+ characters.'); return; }
 
       // ── DEVICE LOCK: one account per device ──
       var _existingAcct = localStorage.getItem('fg_account_email');
@@ -52206,11 +52216,11 @@ document.addEventListener('keydown', function(e) {
         .catch(function(err) {
           _hydrationTriggeredByLogin = false;
           _loginCallback = null;
-          _swsSetLoading(false, '⬡ INITIALIZE IDENTITY');
+          _swsSetLoading(false, 'CREATE ACCOUNT');
           if (err.code === 'auth/email-already-in-use') {
-            _swsSetError('⚠ Email already registered. Use RECOVER to log in.');
+            _swsSetError('That email already has an account. Tap SIGN IN.');
           } else if (err.code === 'auth/weak-password') {
-            _swsSetError('⚠ Password must be at least 8 characters.');
+            _swsSetError('Password needs 6+ characters.');
           } else if (err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed') {
             _swsSetError('⚠ Auth not enabled. Enable Email/Password in Firebase Console → Authentication.');
           } else {
@@ -52246,7 +52256,7 @@ document.addEventListener('keydown', function(e) {
         .catch(function(err) {
           _hydrationTriggeredByLogin = false;
           _loginCallback = null;
-          _swsSetLoading(false, '↺ RECOVER CONNECTION');
+          _swsSetLoading(false, 'SIGN IN');
           if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
             // Could be a Google-only account — check and redirect
             firebase.auth().fetchSignInMethodsForEmail(logEmail)
@@ -52289,13 +52299,13 @@ document.addEventListener('keydown', function(e) {
     var successState = document.getElementById('sws-id-success-state');
     var subEl        = document.getElementById('sws-id-secured-sub');
     if (inputState) inputState.style.display = 'none';
-    var actionLabel = action === 'registered' ? 'IDENTITY INITIALIZED' :
-                      action === 'recovered'  ? 'CONNECTION RECOVERED' : 'AUTHENTICATED';
+    var actionLabel = action === 'registered' ? 'ACCOUNT MADE' :
+                      action === 'recovered'  ? 'WELCOME BACK' : 'SIGNED IN';
     if (subEl) subEl.innerHTML =
       '<strong style="color:var(--gold);">' + actionLabel + '</strong><br>' +
       '<span style="color:var(--sage);font-family:DM Mono,monospace;font-size:0.5rem;">' +
         (name || '') + ' · ' + (email || '') +
-      '</span><br><br>Your botanical collection is anchored.';
+      '</span><br><br>Your plants are saved to your account.';
     if (successState) successState.classList.add('show');
     _haptic('sync');
     if (navigator.vibrate) { try { navigator.vibrate([30, 60, 20]); } catch(e2){} }
