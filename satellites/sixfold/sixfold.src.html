@@ -542,6 +542,22 @@
   .ll-row .ll-r{color:var(--washi-dim);font-variant-numeric:tabular-nums}
   .ll-note{font-size:10px;color:var(--washi-dim);text-align:center;margin-top:6px;font-style:italic}
   .modetag.ranked{background:linear-gradient(180deg,#b98a2e,#8a6420);color:#fff;border-color:#0003}
+  .duel .close{margin-top:10px;font-family:var(--ui);font-weight:700;font-size:13px;padding:11px 26px;min-height:48px;border-radius:11px;
+    border:1px solid #ffffff28;cursor:pointer;color:var(--washi);background:#ffffff12}
+  /* Play a friend */
+  .friendbox{display:flex;flex-direction:column;align-items:stretch;gap:9px;width:100%}
+  .friendbox .fb-t{font-weight:800;font-size:14px;color:var(--washi);text-align:center}
+  .friendbox .fb-s,.friendbox .fb-or{font-size:11px;color:var(--washi-dim);text-align:center}
+  .fb-join{display:flex;gap:8px}
+  .fb-join input{flex:1;min-width:0;min-height:48px;box-sizing:border-box;font-family:var(--disp);font-weight:800;font-size:22px;letter-spacing:.3em;
+    text-align:center;text-transform:uppercase;color:var(--washi);background:#0006;border:1px solid #ffffff33;border-radius:12px;padding:6px 10px}
+  .fb-join input:focus{outline:2px solid var(--gold);outline-offset:1px}
+  .duel-actions button{min-height:48px}
+  .friendcode{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--washi-dim)}
+  .friendcode b{font-family:var(--disp);font-size:44px;letter-spacing:.22em;color:var(--gold);text-transform:none;line-height:1.1;user-select:all}
+  .netmsg{background:#cf41301a;border:1px solid #cf413055;border-radius:13px;padding:12px;text-align:center;width:100%;max-width:340px;box-sizing:border-box}
+  .netmsg .so-t{font-weight:700;font-size:13px;color:var(--washi)}
+  .netmsg .so-s{font-size:12px;color:var(--washi);margin:4px 0 2px}
   /* PvP result extras (rendered inside #resultscreen) */
   .pvp-rank{display:flex;flex-direction:column;align-items:center;gap:7px;margin:6px 0;width:100%;max-width:320px}
   .pvp-delta{font-family:var(--disp);font-weight:800;font-size:26px}
@@ -597,7 +613,7 @@
   /*__ANIM_CSS__*/
 </style>
 <script>
-/* ===== Sky Wolf Studio embed protocol =====
+/* ===== Sky Wolf Studios embed protocol =====
    The portal (lucidwinds.com/portal/) frames games with ?embed=1 and
    listens for {sws:'ready'} and {sws:'close'}.
    Rules when embedded:
@@ -618,11 +634,23 @@
   if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
 })();
 </script>
-<!-- Lucid Winds / Sky Wolf Studio — Sunbeam SDK (cross-game currency).
+<!-- Lucid Winds / Sky Wolf Studios — Sunbeam SDK (cross-game currency).
      Async + fully optional: if it fails to load (offline / opened standalone),
      window.Sunbeam is simply undefined and the game is unaffected. Earning is
      post-match only (off the fair-play combat path). Fires `sunbeam-ready` on load
      so the glue can init once it's available. -->
+<!-- Online play: the studio's Firebase project (public web config, safe to ship).
+     NO SDK here: firebase-net.js fetches it only when a player opens online play,
+     so the page boots and plays offline exactly as before. -->
+<script>
+  window.SIXFOLD_FIREBASE={
+    apiKey:"AIzaSyBAE_JvPixhHwt4ziu8LdZ7HAszd9T58zY",
+    authDomain:"focus-grove-fffa8.firebaseapp.com",
+    databaseURL:"https://focus-grove-fffa8-default-rtdb.firebaseio.com",
+    projectId:"focus-grove-fffa8",
+    appId:"1:739627513827:web:3d4088a90fd388730652d6"
+  };
+</script>
 <script async src="https://lucidwinds.com/sunbeam-sdk.js?v=2"
         onload="try{window.dispatchEvent(new Event('sunbeam-ready'))}catch(e){}"
         onerror="try{window.__sunbeamFailed=1}catch(e){}"></script>
@@ -638,12 +666,12 @@
   <header>
     <h1>SIX<span class="dot">·</span>FOLD</h1>
     <span class="tag">stance duel</span>
-    <span class="beambal" id="beambal" title="Sunbeams, cosmetic currency">☀ 0</span>
+    <span class="beambal" id="beambal" title="Sunbeams — cosmetic currency">☀ 0</span>
   </header>
 
   <div class="foebar">
     <div class="who">
-      <span class="fn" id="foename"> · </span>
+      <span class="fn" id="foename">—</span>
       <span class="stars" id="foestars"></span>
       <span class="tell" id="foetell"></span>
     </div>
@@ -663,7 +691,7 @@
       <div class="hp" id="php"></div>
       <div class="ribbon" id="pribbon"></div>
       <div class="barwrap"><span class="barlbl">unpred</span>
-        <div class="bar" id="pbar"><div class="bar-fill"></div><span class="bar-num"> · </span></div></div>
+        <div class="bar" id="pbar"><div class="bar-fill"></div><span class="bar-num">—</span></div></div>
     </div>
     <div class="fighter" id="af">
       <div class="nm" id="aname">Ronin</div>
@@ -671,7 +699,7 @@
       <div class="hp" id="ahp"></div>
       <div class="ribbon" id="aribbon"></div>
       <div class="barwrap"><span class="barlbl">unpred</span>
-        <div class="bar" id="abar"><div class="bar-fill"></div><span class="bar-num"> · </span></div></div>
+        <div class="bar" id="abar"><div class="bar-fill"></div><span class="bar-num">—</span></div></div>
     </div>
   </div>
 
@@ -689,7 +717,7 @@
   </div>
 
   <div class="meter">
-    <div class="resolve" id="presolve" title="Resolve, buys information, never force">資 <span class="rpips"></span></div>
+    <div class="resolve" id="presolve" title="Resolve — buys information, never force">資 <span class="rpips"></span></div>
     <button class="spendbtn" id="insightbtn">Insight <span class="c">1</span></button>
     <button class="spendbtn" id="foresightbtn">Foresight <span class="c">2</span></button>
     <span class="aimeter" id="aimeter"></span>
@@ -790,7 +818,7 @@
   <div class="overlay" id="duelscreen" aria-hidden="true" role="dialog" aria-label="Ranked Duel"></div>
 
   <!-- Title / home screen — the cinematic front door (populated by glue) -->
-  <div id="title" aria-hidden="true" role="dialog" aria-label="SIXFOLD · title"></div>
+  <div id="title" aria-hidden="true" role="dialog" aria-label="SIXFOLD — title"></div>
 
   <!-- First-run / on-demand how-to guide -->
   <div class="overlay" id="howto" aria-hidden="true" role="dialog" aria-label="How to play">
@@ -920,7 +948,7 @@
   function addSunbeams(n){ if(!n)return; sunbeams+=n; saveSunbeams(); updateSunbeamUI(); }
   function spendSunbeams(n){ if(sunbeams<n)return false; sunbeams-=n; saveSunbeams(); updateSunbeamUI(); return true; }
 
-  /* ---- Lucid Winds / Sky Wolf Studio — Sunbeam SDK (cross-game economy) ----
+  /* ---- Lucid Winds / Sky Wolf Studios — Sunbeam SDK (cross-game economy) ----
      SEPARATE from SIXFOLD's local cosmetic sunbeams: this mints the ECOSYSTEM
      currency into the player's Lucid Winds vault on a win, so playing SIXFOLD
      (in the portal or standalone) earns toward the constellation wallet. Fully
@@ -1069,7 +1097,7 @@
     nodeEls.forEach((el,j)=>el.classList.toggle("aiming",j===i));
     if(Stage.toStance)Stage.toStance("P",i);      // pre-pivot for anticipation
     $("verdict").textContent="Strike?";
-    $("sub").textContent=STANCES[i].n+" · tap again";
+    $("sub").textContent=STANCES[i].n+" — tap again";
   }
   function preview(i){
     if(busy||over)return;
@@ -1091,7 +1119,7 @@
   /* ---- round flow (engine-driven) ---- */
   const VERDICT={clean:"CLEAN!",glance:"Glance",whiff:"Whiff",clash:"Clash"};
   function subText(o){
-    if(o.bind) return o.winner? (o.winner==="P"?"bind won, a cut":"bind lost, grazed") : "blades spark, locked";
+    if(o.bind) return o.winner? (o.winner==="P"?"bind won — a cut":"bind lost — grazed") : "blades spark — locked";
     return {clean:o.winner==="P"?"you struck deep":"you got opened up",
       glance:o.winner==="P"?"a grazing cut":"grazed you",
       whiff:"blades pass, nothing",clash:"stances mirror"}[o.kind];
@@ -1161,7 +1189,7 @@
     g.bus.on("info-revealed",({side,action,payload})=>{
       if(side==="P") applyReveal(action,payload);
       // if you paid Insight to expose the foe's meter, you also catch it spending
-      else if(side==="A" && aiResolveVisible && action==="FORESIGHT") showToast("foe spends Foresight, reading you 👁");
+      else if(side==="A" && aiResolveVisible && action==="FORESIGHT") showToast("foe spends Foresight — reading you 👁");
     });
     g.bus.on("round-revealed",({pPick,aPick,outcome})=>{
       showAiPick(aPick,pPick);
@@ -1176,7 +1204,7 @@
       const vEl=$("verdict"); vEl.classList.toggle("read",read);
       vEl.textContent= read ? "READ!" : (outcome.bind && outcome.winner ? "BIND!" : VERDICT[outcome.kind]);
       const early=game.state().playerHist.length<=3;   // coach the clockwise rule early
-      $("sub").textContent= read ? "you read it, clean!" : (misread ? "you had the read, strike one BEFORE their stance" : (early?teachReason(pPick,aPick):subText(outcome)));
+      $("sub").textContent= read ? "you read it — clean!" : (misread ? "you had the read — strike one BEFORE their stance" : (early?teachReason(pPick,aPick):subText(outcome)));
       const hub=$("hub"); hub.classList.remove("flash-clean","flash-glance","flash-read","flash-whiff"); void hub.offsetWidth;
       if(read)hub.classList.add("flash-read");
       else if(outcome.winner&&outcome.kind==="clean")hub.classList.add("flash-clean");
@@ -1257,7 +1285,7 @@
     saveStats();
   }
   function showResult(win,summary,beams,ascentInfo){
-    const tell=summary.tell||"well hidden, no clear tell";
+    const tell=summary.tell||"well hidden — no clear tell";
     const streakChip=streak>1?`<div class="chip streak"><b>×${streak}</b><span>win streak</span></div>`:"";
     const readsChip=matchReads>0?`<div class="chip reads"><b>🎯 ${matchReads}</b><span>${matchReads===1?"read":"reads"} landed</span></div>`:"";
     const comboChip=bestCombo>=3?`<div class="chip"><b>🔥 ×${bestCombo}</b><span>best combo</span></div>`:"";
@@ -1340,7 +1368,7 @@
   }
   function hintResolveOnce(){
     try{ if(localStorage.getItem("sixfold_resolvehint"))return; localStorage.setItem("sixfold_resolvehint","1"); }catch(e){}
-    showToast("資 Resolve ready; Insight reads their habits · Foresight glimpses their next stance");
+    showToast("資 Resolve ready — Insight reads their habits · Foresight glimpses their next stance");
   }
   function applyReveal(action,payload){
     if(action==="FORESIGHT"&&payload.predict){
@@ -1352,7 +1380,7 @@
       foresightNode=payload.predict.pick;
       foresightStrike=null;
       nodeEls[foresightNode].classList.add("foresight");           // foe's likely stance
-      showToast("Foresight: foe likely "+STANCES[foresightNode].n+" · read the wheel and punish it");
+      showToast("Foresight: foe likely "+STANCES[foresightNode].n+" — read the wheel and punish it");
     }else if(action==="INSIGHT"){
       aiResolveVisible=true;
       Readout.render(game.state().playerHist,game.state().aiHist,game.state().outcomes,{aiRibbonK:10});
@@ -1374,10 +1402,10 @@
     if(!taught){
       try{localStorage.setItem("sixfold_predicthint","1");}catch(e){}
       predictNudge._m=true;
-      showToast("⚠ They're reading you, your picks are forming a pattern. Mix it up to break the read.");
+      showToast("⚠ They're reading you — your picks are forming a pattern. Mix it up to break the read.");
     }else if(!predictNudge._m){
       predictNudge._m=true;
-      showToast("⚠ Getting readable, vary your stances");
+      showToast("⚠ Getting readable — vary your stances");
     }
   }
   function clearForesight(){
@@ -1389,7 +1417,7 @@
     let first=false;
     try{ first=!localStorage.getItem("sixfold_readhint"); if(first)localStorage.setItem("sixfold_readhint","1"); }catch(e){}
     // the big on-screen READ! stamp carries repeat reads; only the first teaches
-    if(first) showToast("🎯 READ! That's the skill, predict, counter, win. Reading beats luck.");
+    if(first) showToast("🎯 READ! That's the skill — predict, counter, win. Reading beats luck.");
   }
 
   function ribbonOpts(){
@@ -1448,7 +1476,7 @@
   function mirrorTeachOnce(){
     if(isPvP||foeId!=="mirror")return;
     try{ if(localStorage.getItem("sixfold_mirrorhint"))return; localStorage.setItem("sixfold_mirrorhint","1"); }catch(e){}
-    setTimeout(()=>showToast("🪞 This foe copies your LAST stance, beat it by countering your own previous move."), reduced()?0:600);
+    setTimeout(()=>showToast("🪞 This foe copies your LAST stance — beat it by countering your own previous move."), reduced()?0:600);
   }
   function dailySeed(){ const d=new Date(); return (d.getUTCFullYear()*1e4+(d.getUTCMonth()+1)*100+d.getUTCDate())>>>0; }
 
@@ -1460,10 +1488,12 @@
       $("foename").textContent=pvpOpp.name;
       const t=Rank.tierFor(pvpOpp.rating);
       $("foestars").textContent=t.glyph+" "+t.name;
-      $("foetell").textContent= pvpOpp.kind==="sentinel"
+      $("foetell").textContent= pvpOpp.friend
+        ? "Friend · friendly duel, unranked · charms rest, pure wheel"
+        : pvpOpp.kind==="sentinel"
         ? "Sentinel · practice bot at your "+t.name+" rank · reduced rank stakes"
         : "Live rival · "+t.name+" tier · charms rest, pure wheel";
-      mt.textContent="Ranked"; mt.classList.add("comp","ranked");
+      mt.textContent=pvpOpp.friend?"Friendly":"Ranked"; mt.classList.add("comp","ranked");
       $("compbanner").classList.toggle("show",false);
       return;
     }
@@ -1537,7 +1567,7 @@
     const box=$("arenas"); if(box){[...box.children].forEach(c=>c.classList.toggle("sel",c._arena===id));} }
   // per-arena lighting tint on the FIGHTERS so they pick up each scene's colour
   // temperature instead of looking pasted on. Grouped by biome mood; deliberately
-  // SUBTLE (brightness/saturation/warmth only, no hue-rotate that would skew art).
+  // SUBTLE (brightness/saturation/warmth only — no hue-rotate that would skew art).
   const TINT_WARM="saturate(1.09) brightness(.95) sepia(.12)";       // fire/sunset/autumn
   const TINT_COOL="saturate(.98) brightness(1.02) contrast(1.03)";   // ice/water/sky
   const TINT_NIGHT="saturate(.95) brightness(.9) contrast(1.05)";    // dark/eerie
@@ -1595,14 +1625,14 @@
       o._arena=id;
       o.textContent=THEMES[id].glyph+" "+THEMES[id].name+(open?"":" 🔒");
       o.style.fontSize="11px";o.style.width="auto";o.style.padding="0 9px";
-      o.onclick=open?(()=>setArena(id)):(()=>showToast(THEMES[id].name+", unlock in the Ascent ⛰"));
+      o.onclick=open?(()=>setArena(id)):(()=>showToast(THEMES[id].name+" — unlock in the Ascent ⛰"));
       box.appendChild(o);
     });
   }
 
   /* ---- THE ASCENT: single-player campaign ladder ----
      Climb a fixed sequence of foes; each win unlocks a fighter or arena (cosmetic
-     reward only, never changes combat odds; difficulty is a fair, symmetric knob).
+     reward only — never changes combat odds; difficulty is a fair, symmetric knob).
      Casual stays a fully open sandbox; the Ascent is the structured progression. */
   // The tower. You begin with the Ronin + the Dojo; every rung unlocks a fighter
   // or arena (cosmetic only). Difficulty is the single fair, symmetric knob.
@@ -1695,7 +1725,7 @@
   let ascentRun=-1; // index of the rung being fought, or -1 for free play
   function saveAscent(){try{localStorage.setItem("sixfold_ascent",String(ascentCleared));}catch(e){}}
   function ascentStars(d){const n=Math.round(d*4)+1;return "★".repeat(n)+"☆".repeat(5-n);}
-  function rewardLabel(r){return r.type==="title"?("Title, "+r.name):((r.type==="skin"?"Unlock fighter: ":"Unlock arena: ")+r.name);}
+  function rewardLabel(r){return r.type==="title"?("Title — "+r.name):((r.type==="skin"?"Unlock fighter: ":"Unlock arena: ")+r.name);}
   function openAscent(){renderAscent();const o=$("ascent");o.classList.add("show");o.setAttribute("aria-hidden","false");
     const cur=o.querySelector(".rung.cur")||o.querySelector(".rung"); if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:"center"});}
   function closeAscent(){$("ascent").classList.remove("show");$("ascent").setAttribute("aria-hidden","true");}
@@ -1747,7 +1777,7 @@
     renderSkinPicker();                                   // keep the customizer in sync
     if(!game || over || introPlaying) renderFighter("P"); // reflect now when not mid-duel
     const live=(game && !over && !introPlaying);
-    showToast("Playing as "+Skins.get(id).name+(live?", from your next duel":""));
+    showToast("Playing as "+Skins.get(id).name+(live?" — from your next duel":""));
     renderCollection();                                  // refresh the equipped highlight
   }
   function renderCollection(){
@@ -1783,7 +1813,7 @@
     const winRate=stats.matches?Math.round(stats.wins/stats.matches*100):0;
     const earned=unlockedSkinSet().size, total=collectionEntries().length;
     let favI=-1,favN=0; stats.stance.forEach((c,i)=>{ if(c>favN){favN=c;favI=i;} });
-    const fav=favI<0?", ":(STANCES[favI].g+" "+STANCES[favI].n);
+    const fav=favI<0?"—":(STANCES[favI].g+" "+STANCES[favI].n);
     const stat=(v,l,cls)=>`<div class="pstat ${cls||""}"><b>${v}</b><span>${l}</span></div>`;
     $("profile").innerHTML=
       `<div class="hero profile"><h2>PROFILE</h2>`+
@@ -1792,7 +1822,7 @@
         stat(winRate+"%","win rate")+
         stat(bestStreak,"best streak","gold")+
         stat(ladder.tier().glyph+" "+ladder.tier().name,"ranked tier","gold")+
-        stat(ladder.wins+", "+ladder.losses,"ranked W; L")+
+        stat(ladder.wins+"–"+ladder.losses,"ranked W–L")+
         stat("🎯 "+lifetimeReads,"reads landed","gold")+
         stat(stats.bestUnpred+"%","best unpred")+
         stat(earned+" / "+total,"fighters")+
@@ -1808,7 +1838,7 @@
   function dailyChallenge(){ // foe/diff/arena are a pure function of today's date
     const seed=dailySeed(), ids=Personalities.ids(), arenas=Object.keys(THEMES);
     return { foe: ids[seed%ids.length],
-      diff: Math.round((0.4+((Math.floor(seed/7))%11)/10*0.5)*100)/100,   // fair 0.40 to 0.90 band
+      diff: Math.round((0.4+((Math.floor(seed/7))%11)/10*0.5)*100)/100,   // fair 0.40–0.90 band
       arena: arenas[Math.floor(seed/3)%arenas.length] };
   }
   let dailyState=(function(){try{return JSON.parse(localStorage.getItem("sixfold_daily")||"{}")||{};}catch(e){return{};}})();
@@ -1869,8 +1899,8 @@
   function shareDaily(){
     const s=dailyState; if(!s.date){showToast("Play today's duel first");return;}
     const txt="SIXFOLD Daily "+s.date+"\n"+(s.win?"⚔ Victory":"☠ Defeat")+" · "+s.rounds+" rounds · "+s.unpred+"% unread · "+s.streak+"🔥\nstephenuffugus.github.io/sixfold";
-    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(()=>showToast("Copied, share your duel"),()=>showToast("⚔ "+s.date));
-    else showToast("⚔ Daily "+s.date+", "+(s.win?"Victory":"Defeat"));
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(()=>showToast("Copied — share your duel"),()=>showToast("⚔ "+s.date));
+    else showToast("⚔ Daily "+s.date+" — "+(s.win?"Victory":"Defeat"));
   }
   function openDaily(){ renderDaily(); const o=$("dailyscreen"); o.classList.add("show"); o.setAttribute("aria-hidden","false"); }
   function closeDaily(){ const o=$("dailyscreen"); o.classList.remove("show"); o.setAttribute("aria-hidden","true"); refreshDailyPrompt(); }
@@ -1906,7 +1936,7 @@
     ascentRun=-1; modeId="daily"; foeId=c.foe; difficulty=c.diff;
     closeDaily(); hideResult(); setArena(c.arena,true); updateFoeBar(); newGame();
   }
-  // home-screen Daily nudge, the return hook, surfaced instead of buried
+  // home-screen Daily nudge — the return hook, surfaced instead of buried
   function refreshDailyPrompt(){
     const el=$("dailyprompt"); if(!el)return;
     if(dailyState.date===utcKey(0)){ el.style.display="none"; return; }   // already played today
@@ -1918,13 +1948,37 @@
 
   /* ---- RANKED DUEL (PvP): live head-to-head + Tier ladder ----
      Transport-agnostic: matchmaking + the duel channel go through Net (LocalMock
-     today, Firebase later). Rank rewards OUTCOMES of symmetric duels only, never
+     today, Firebase later). Rank rewards OUTCOMES of symmetric duels only — never
      the combat math. A Sentinel (no-opponent fallback) is a fair AI at the player's
      rank, clearly labelled, at reduced rank stakes (can't be farmed). */
   const nowMs=()=>{ try{ return Date.now(); }catch(e){ return 0; } };
+  // Online identity for THIS page load. (Rank.playerId is seeded the same on every
+  // fresh install, so it cannot tell two phones apart on the wire.)
+  const netId="n"+Math.random().toString(36).slice(2,10)+nowMs().toString(36);
+  function netName(){ return (ladder.name && ladder.name!=="You") ? ladder.name : "Rival"; }
+  let onlineGen=0;      // bumps whenever the player leaves an online step, so late answers are ignored
+  function goOnline(){
+    if(typeof FirebaseNet==="undefined" || !FirebaseNet.connect){ const e=new Error("not-configured"); e.reason="not-configured"; return Promise.reject(e); }
+    return FirebaseNet.connect();
+  }
+  // online play failed: say why in plain words and put the duel menu back.
+  // A ranked search can still fall back to a Sentinel, which needs no network.
+  function onlineFailed(err, sentinelOk){
+    if(pvpSearch){ try{pvpSearch.cancel();}catch(e){} pvpSearch=null; }
+    const msg=(typeof FirebaseNet!=="undefined" && FirebaseNet.friendlyError) ? FirebaseNet.friendlyError(err) : "Online play is not available.";
+    setDuelControls("idle");
+    setDuelStatus(`<div class="netmsg"><div class="so-t">Online play is not available</div><div class="so-s">${msg}</div>`+
+      (sentinelOk?`<div class="so-btns" style="margin-top:8px"><button class="primary" id="sooffline">Duel a Sentinel</button></div>`:"")+`</div>`);
+    const b=$("sooffline"); if(b) b.onclick=offlineSentinel;
+  }
+  function offlineSentinel(){
+    const s=Net.LocalMock().findMatch({rating:ladder.rating, name:netName(), tier:ladder.tier().name});
+    const sess=s.acceptSentinel(); s.cancel();
+    if(sess) acceptMatch(sess.meta, sess);
+  }
   function openDuel(){ renderDuel(); const o=$("duelscreen"); o.classList.add("show"); o.setAttribute("aria-hidden","false"); }
-  function closeDuel(){ if(pvpSearch){pvpSearch.cancel();pvpSearch=null;} const o=$("duelscreen"); o.classList.remove("show"); o.setAttribute("aria-hidden","true"); }
-  // honest "your standing" panel · REAL earned data only (peak / current / record /
+  function closeDuel(){ onlineGen++; if(pvpSearch){pvpSearch.cancel();pvpSearch=null;} const o=$("duelscreen"); o.classList.remove("show"); o.setAttribute("aria-hidden","true"); }
+  // honest "your standing" panel — REAL earned data only (peak / current / record /
   // placement). No invented rivals: the global leaderboard arrives with cloud play.
   function standingRows(){
     const t=ladder.tier(), peakT=Rank.tierFor(ladder.peak);
@@ -1942,7 +1996,7 @@
       : (t.isTop ? `Peak rank` : `${t.toNext} to ${t.next}`);
     $("duelscreen").innerHTML=
       `<div class="hero duel"><h2>RANKED DUEL</h2>`+
-      `<div class="ll-note" style="margin:-2px 0 4px">Live rivals arrive with cloud play — sharpen up against Sentinels (practice bots at your rank) now.</div>`+
+      `<div class="ll-note" style="margin:-2px 0 4px">Find a rival searches for live players near your rank. Nobody around? A Sentinel, a practice bot at your rank, steps in. Play a friend is unranked.</div>`+
       `<div class="tiercard">`+
         `<div class="tierbadge"><span class="tg">${t.glyph}</span><span class="tn">${t.name}<small>${ladder.rating} rating · ${next}</small></span></div>`+
         `<div class="rankbar"><i style="width:${Math.round(t.progress*100)}%"></i></div>`+
@@ -1952,7 +2006,7 @@
       `<div class="duelstatus" id="duelstatus"></div>`+
       `<div class="duel-actions" id="duelactions"></div>`+
       `<div class="ladderlist"><div class="ll-h">Your standing</div>${standingRows()}`+
-        `<div class="ll-note">Global leaderboard & live rivals arrive with cloud play. No fake opponents here.</div></div>`+
+        `<div class="ll-note">A global leaderboard comes later. No fake opponents here.</div></div>`+
       `<button class="close" id="duelclose">Close</button></div>`;
     $("duelclose").onclick=closeDuel;
     setDuelControls("idle");
@@ -1960,37 +2014,115 @@
   function setDuelStatus(html){ const el=$("duelstatus"); if(el) el.innerHTML=html||""; }
   function setDuelControls(state){
     const box=$("duelactions"); if(!box)return;
+    const stop=()=>{ onlineGen++; if(pvpSearch){pvpSearch.cancel();pvpSearch=null;} };
     if(state==="idle"){
-      box.innerHTML=`<button class="primary" id="findbtn">Find a rival ⚔</button>`;
+      box.innerHTML=`<button class="primary" id="findbtn">Find a rival ⚔</button><button id="friendbtn">Play a friend</button>`;
       $("findbtn").onclick=startSearch;
+      $("friendbtn").onclick=()=>{ stop(); setDuelStatus(""); setDuelControls("friend"); };
     }else if(state==="searching"){
       box.innerHTML=`<button id="cancelbtn">Cancel search</button>`;
-      $("cancelbtn").onclick=()=>{ if(pvpSearch){pvpSearch.cancel();pvpSearch=null;} setDuelStatus(""); setDuelControls("idle"); };
+      $("cancelbtn").onclick=()=>{ stop(); setDuelStatus(""); setDuelControls("idle"); };
+    }else if(state==="friend"){
+      box.innerHTML=`<div class="friendbox">`+
+        `<div class="fb-t">Play a friend</div>`+
+        `<div class="fb-s">One of you gets a code, the other types it in. Friendly duels are unranked, so no rating moves.</div>`+
+        `<button class="primary" id="fhost">Get a code</button>`+
+        `<div class="fb-or">or type your friend's code</div>`+
+        `<div class="fb-join"><input id="fcode" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" aria-label="Friend's code"><button id="fjoin">Join</button></div>`+
+        `<button id="fback">Back</button></div>`;
+      $("fhost").onclick=()=>hostFriend(null);
+      $("fjoin").onclick=joinFriend;
+      const inp=$("fcode"); if(inp && inp.addEventListener) inp.addEventListener("keydown",(e)=>{ if(e && e.key==="Enter") joinFriend(); });
+      $("fback").onclick=()=>{ stop(); setDuelStatus(""); setDuelControls("idle"); };
+    }else if(state==="friendwait"){
+      box.innerHTML=`<button id="cancelbtn">Cancel</button>`;
+      $("cancelbtn").onclick=()=>{ stop(); setDuelStatus(""); setDuelControls("friend"); };
     }
   }
+  const connectingLine=()=>`<div class="searchline"><span class="spinner"></span><span>Connecting to online play…</span></div>`;
   function startSearch(){
-    if(pvpSearch)pvpSearch.cancel();
+    if(pvpSearch)pvpSearch.cancel(); pvpSearch=null;
     pvpResolved=false; offerCount=0;
+    const gen=++onlineGen;
     setDuelControls("searching");
-    const t=ladder.tier();
-    setDuelStatus(`<div class="searchline"><span class="spinner"></span><span>Searching for a ${t.name} rival…</span></div>`);
-    pvpSearch=Net.findMatch({rating:ladder.rating, name:ladder.name, selfId:ladder.playerId, tier:t.name});
-    pvpSearch.onState(onSearchState);
+    setDuelStatus(connectingLine());
+    goOnline().then(()=>{
+      if(gen!==onlineGen)return;
+      const t=ladder.tier();
+      setDuelStatus(`<div class="searchline"><span class="spinner"></span><span>Searching for a ${t.name} rival…</span></div>`);
+      pvpSearch=Net.findMatch({rating:ladder.rating, name:netName(), selfId:netId, tier:t.name});
+      pvpSearch.onState((s)=>{ if(gen===onlineGen) onSearchState(s); });
+    },(e)=>{ if(gen===onlineGen) onlineFailed(e,true); });
+  }
+  /* ---- Play a friend: a private lobby at sixfold/friends/<CODE>. Same presence,
+     claim and commit-reveal relay as the public lobby; never a Sentinel; unranked. */
+  let friendCode=null;
+  function pickFreeCode(db,tries){
+    const c=FirebaseNet.newFriendCode();
+    return db.ref(FirebaseNet.friendRoot(c)+"/lobby").get().then((snap)=>{
+      const v=snap&&snap.val&&snap.val();
+      return (v && Object.keys(v).length && (tries|0)<6) ? pickFreeCode(db,(tries|0)+1) : c;
+    });
+  }
+  function hostFriend(code){
+    if(pvpSearch){pvpSearch.cancel();pvpSearch=null;}
+    pvpResolved=false;
+    const gen=++onlineGen;
+    setDuelControls("friendwait"); setDuelStatus(connectingLine());
+    goOnline().then((db)=> gen!==onlineGen ? null : (code || pickFreeCode(db)))
+      .then((c)=>{ if(gen===onlineGen && c) runFriendSearch(c,"host",gen); },
+        (e)=>{ if(gen===onlineGen) onlineFailed(e,false); });
+  }
+  function joinFriend(){
+    const inp=$("fcode"), code=FirebaseNet.normalizeCode(inp?inp.value:"");
+    if(!code){
+      setDuelStatus(`<div class="netmsg"><div class="so-s">A code is 4 letters or numbers, like K7QX. Ask your friend to read it out again.</div></div>`);
+      return;
+    }
+    if(pvpSearch){pvpSearch.cancel();pvpSearch=null;}
+    pvpResolved=false;
+    const gen=++onlineGen;
+    setDuelControls("friendwait"); setDuelStatus(connectingLine());
+    goOnline().then(()=>{ if(gen===onlineGen) runFriendSearch(code,"join",gen); },
+      (e)=>{ if(gen===onlineGen) onlineFailed(e,false); });
+  }
+  function runFriendSearch(code,role,gen){
+    friendCode=code;
+    setDuelControls("friendwait");
+    setDuelStatus(role==="host"
+      ? `<div class="friendcode">Your code<b>${code}</b></div>`+
+        `<div class="searchsub">Your friend taps Play a friend and types this code.</div>`+
+        `<div class="searchline"><span class="spinner"></span><span>Waiting for your friend…</span></div>`
+      : `<div class="searchline"><span class="spinner"></span><span>Joining ${code}…</span></div>`);
+    pvpSearch=FirebaseNet.friendBackend(code).findMatch({rating:ladder.rating, name:netName(), selfId:netId, role});
+    pvpSearch.onState((s)=>{
+      if(gen!==onlineGen)return;
+      if(s.state==="matched"){ acceptMatch(s.opponent, s.session); }
+      else if(s.state==="friend-missing"||s.state==="friend-timeout"){
+        pvpSearch=null; setDuelControls("friend");
+        setDuelStatus(`<div class="netmsg"><div class="so-s">`+(s.state==="friend-missing"
+          ? `Nobody is waiting with code <b>${code}</b>. Check the code with your friend, or tap Get a code and send them yours.`
+          : `Your friend did not join within 10 minutes. Get a new code when you are both ready.`)+`</div></div>`);
+      }
+      else if(s.state==="error"){ onlineFailed({reason:s.reason},false); }
+    });
   }
   function onSearchState(s){
     if(s.state==="searching"){
       const widen = s.half===Infinity ? "anyone online" : ("±"+s.half+" rating");
       setDuelStatus(`<div class="searchline"><span class="spinner"></span><span>Searching… (${widen})</span></div>`+
-        `<div class="searchsub">${Math.round(s.elapsedMs/1000)}s — widening the net</div>`);
+        `<div class="searchsub">${Math.round(s.elapsedMs/1000)}s, widening the net</div>`);
     }else if(s.state==="matched"){
       acceptMatch(s.opponent, s.session);
+    }else if(s.state==="error"){
+      onlineFailed({reason:s.reason},true);
     }else if(s.state==="sentinel-offer"){
       setDuelControls("searching");
       offerCount++;
       const honest = offerCount>1
-        ? `No human players are online yet — that's coming with cloud play. A <b>Sentinel</b> (a practice bot at your ${ladder.tier().name} rank) is your opponent for now. You still climb, with less rank at risk.`
-        : `Face a <b>Sentinel</b> — a practice bot tuned to your ${s.opponent.tierName||ladder.tier().name} rank. You still climb, but you risk less rank than against a human.`;
-      setDuelStatus(`<div class="sentineloffer"><div class="so-t">No live rivals online right now</div>`+
+        ? `No other players are searching right now. A <b>Sentinel</b> (a practice bot at your ${ladder.tier().name} rank) is your opponent for now. You still climb, with less rank at risk.`
+        : `Face a <b>Sentinel</b>, a practice bot tuned to your ${s.opponent.tierName||ladder.tier().name} rank. You still climb, but you risk less rank than against a human.`;
+      setDuelStatus(`<div class="sentineloffer"><div class="so-t">No live rivals searching right now</div>`+
         `<div class="so-s">${honest}</div>`+
         `<div class="so-btns"><button class="primary" id="sokeep">Face Sentinel</button>`+
         (offerCount>1?"":`<button id="sowait">Keep searching</button>`)+`</div></div>`);
@@ -2009,26 +2141,35 @@
     const arenas=[...unlockedArenaSet()]; setArena(arenas.length?rid(arenas):"dojo",true);
     closeDuel(); hideResult();
     newGame();
-    // teach the pillar ONCE, proudly: ranked is pure, only your own reads help.
+    // teach the pillar ONCE, proudly: ranked is pure — only your own reads help.
     let taughtPillar=false; try{ taughtPillar=!!localStorage.getItem("sixfold_rankedpillar"); }catch(e){}
     if(!taughtPillar){
       try{localStorage.setItem("sixfold_rankedpillar","1");}catch(e){}
-      setTimeout(()=>showToast("⚔ Ranked is pure, assist charms rest. Only your own reads (Insight · Foresight) help here."), reduced()?0:500);
+      setTimeout(()=>showToast(opponent.friend
+        ? "⚔ Friendly duel with "+opponent.name+". Unranked, and assist charms rest: only your own reads help."
+        : "⚔ Ranked is pure: assist charms rest. Only your own reads (Insight · Foresight) help here."), reduced()?0:500);
     }else{
-      setTimeout(()=>showToast(opponent.kind==="sentinel"
-        ? "👻 Sentinel engaged, "+opponent.name+" · reduced stakes"
-        : "⚔ Rival found, "+opponent.name), reduced()?0:500);
+      setTimeout(()=>showToast(opponent.friend
+        ? "⚔ Friendly duel with "+opponent.name+" · unranked"
+        : opponent.kind==="sentinel"
+        ? "👻 Sentinel engaged: "+opponent.name+" · reduced stakes"
+        : "⚔ Rival found: "+opponent.name), reduced()?0:500);
     }
   }
-  // Abandoning a LIVE, in-progress ranked duel counts as a loss, no free dodge.
+  // Abandoning a LIVE, in-progress ranked duel counts as a loss — no free dodge.
   // (Closes the "navigate away while losing -> eat no rating" exploit.)
   function abandonPvp(){
     if(pvpResolved)return; pvpResolved=true;
+    if(pvpOpp && pvpOpp.friend){   // a friendly duel is unranked: leaving costs no rating
+      if(pvpSession){ try{pvpSession.close();}catch(e){} }
+      showToast("Friendly duel left");
+      return;
+    }
     const opp=pvpOpp||{rating:ladder.rating,kind:"live",id:null};
     ladder.applyResult(false,{rating:opp.rating,kind:opp.kind,id:opp.id},nowMs());
     savePvp();
     if(pvpSession){ try{pvpSession.close();}catch(e){} }
-    showToast("Ranked duel abandoned, counted as a loss");
+    showToast("Ranked duel abandoned: counted as a loss");
   }
   function leavePvp(){
     if(pvpSession){ try{pvpSession.close();}catch(e){} }
@@ -2042,6 +2183,14 @@
     opts=opts||{};
     $("rematch").style.display="none";
     recordMatchStats(win,summary);                 // ranked duels count toward lifetime stats too
+    if(pvpOpp && pvpOpp.friend){
+      // FRIENDLY duel: unranked. No rating change, no ranked sunbeams, no Lucid
+      // Winds mint (two friends must not be able to farm each other).
+      if(pvpSession){ try{pvpSession.close();}catch(e){} }
+      setTimeout(()=>{ Sfx.play(win?"victory":"defeat"); buzz(win?[0,45,45,45]:130); }, reduced()?0:950);
+      setTimeout(()=>{ showFriendResult(win,summary); }, reduced()?0:2000);
+      return;
+    }
     const opp = pvpOpp || {rating:ladder.rating, kind:"live", id:null};
     // stakesKind lets a disconnect-award resolve at REDUCED stakes (can't be farmed)
     const stakesKind = opts.stakesKind || opp.kind;
@@ -2094,16 +2243,35 @@
     on("pvpNext",()=>{ hideResult(); openDuel(); startSearch(); });
     on("pvpDone",()=>{ hideResult(); leavePvp(); });
   }
+  function showFriendResult(win,summary){
+    const name=pvpOpp?pvpOpp.name:"Friend", code=friendCode;
+    $("resultscreen").innerHTML=
+      `<div class="hero result ${win?"win":"lose"}">`+
+        `<div class="result-word">${win?"VICTORY":"DEFEAT"}</div>`+
+        `<div class="result-flavor">vs ${name} · friendly duel, unranked</div>`+
+        `<div class="stat-chips">`+
+          `<div class="chip"><b>${summary.rounds}</b><span>rounds</span></div>`+
+          `<div class="chip"><b>${summary.unpredictabilityPct}%</b><span>unpred</span></div>`+
+        `</div>`+
+        `<div class="result-actions">`+(code?`<button class="primary" id="pvpAgain">Play again · ${code}</button>`:"")+`<button id="pvpDone">Done</button></div>`+
+      `</div>`;
+    const rs=$("resultscreen"); rs.setAttribute("aria-hidden","false"); if(rs.offsetWidth!==undefined) void rs.offsetWidth; rs.classList.add("show");
+    if(win)victoryBurst();
+    const on=(id,fn)=>{const el=$(id); if(el) el.onclick=fn;};
+    // both friends tap Play again: they meet again in the same private lobby
+    on("pvpAgain",()=>{ hideResult(); openDuel(); setDuelControls("friend"); hostFriend(code); });
+    on("pvpDone",()=>{ hideResult(); leavePvp(); });
+  }
   function handlePvpDisconnect(){
     if(over||pvpResolved||!isPvP)return;
-    showToast("⚠ Rival disconnected, duel awarded to you");
+    showToast("⚠ Rival disconnected: duel awarded to you");
     over=true; busy=true; matchWinner="P";
     $("roundlbl").textContent="Match over"; $("verdict").textContent="VICTORY"; $("verdict").style.color=getCss("--gold"); $("sub").textContent="rival fled the duel";
     const st=game?game.state():{round:1,playerHist:[]};
     const summary={winner:"P",rounds:st.round,unpredictabilityPct:Readout.unpredictabilityPct(st.playerHist||[]),difficulty,worstRound:0,tell:""};
     // a local drop can't be authoritative (the bus dying mid-duel decides nothing
     // real until Phase 2 makes results server-authoritative w/ a reconnect grace),
-    // so award the win at REDUCED stakes, discourages rage-quit-to-feed-wins.
+    // so award the win at REDUCED stakes — discourages rage-quit-to-feed-wins.
     pvpMatchOver(true,summary,{stakesKind:"sentinel"});
   }
 
@@ -2157,7 +2325,7 @@
     const charms=[{id:null,name:"None",glyph:"∅"}].concat(Object.values(Assists.CHARMS));
     charms.forEach(c=>{
       const o=document.createElement("div");o.className="opt"+((Assists.current()?Assists.current().id:null)===c.id?" sel":"");
-      o.textContent=c.glyph;o.title=c.name+(c.effect?", "+c.effect:"");
+      o.textContent=c.glyph;o.title=c.name+(c.effect?" — "+c.effect:"");
       o.onclick=()=>{Assists.equip(c.id);syncSel(box,o);updateCharmUI();applyCompass();updateFoeBar();};
       box.appendChild(o);
     });
@@ -2166,7 +2334,7 @@
   function updateCharmUI(){
     const mode=Engine.MODES[modeId], active=Assists.active(mode), equipped=Assists.current();
     $("charmhint").textContent = (!mode.honorsAssists && equipped)
-      ? equipped.name+" is INERT here, "+mode.id+" is competitive."
+      ? equipped.name+" is INERT here — "+mode.id+" is competitive."
       : "Charms go inert the moment a match is ranked, seeded, or PvP.";
   }
   function applyCompass(){
@@ -2186,7 +2354,7 @@
       const open=unlocked.has(s.id);
       const o=document.createElement("div");o.className="opt"+(s.id===player.skin?" sel":"")+(open?"":" lock");
       o.textContent=s.name+(open?"":" 🔒");o.style.fontSize="11px";o.style.width="auto";o.style.padding="0 8px";
-      o.onclick=open?(()=>{player.skin=s.id;syncSel(skins,o);renderFighter("P");}):(()=>showToast(s.name+", unlock in the Ascent ⛰"));
+      o.onclick=open?(()=>{player.skin=s.id;syncSel(skins,o);renderFighter("P");}):(()=>showToast(s.name+" — unlock in the Ascent ⛰"));
       skins.appendChild(o);
     });
   }
@@ -2210,7 +2378,7 @@
   // Forge click: if not owned, try to buy with sunbeams; once owned, select it.
   function tryBuyOrSelect(key,cost,apply,box,o){
     if(!boughtCosmetics.has(key)){
-      if(!spendSunbeams(cost)){ showToast("Need ☀"+cost+", win duels & trials to earn sunbeams"); return; }
+      if(!spendSunbeams(cost)){ showToast("Need ☀"+cost+" — win duels & trials to earn sunbeams"); return; }
       boughtCosmetics.add(key); saveShop();
       o.classList.remove("buy"); const pr=o.querySelector(".price"); if(pr)pr.remove();
       showToast("Forged ✦ −☀"+cost);
@@ -2222,7 +2390,7 @@
   function showToast(t){const el=$("toast");el.textContent=t;el.classList.add("show");clearTimeout(showToast._t);showToast._t=setTimeout(()=>el.classList.remove("show"),2600);}
 
   /* ---- TITLE / HOME screen: the cinematic front door + mode hub ---- */
-  // Menu track. The owner's standout/hero track drops in HERE when provided · 
+  // Menu track. The owner's standout/hero track drops in HERE when provided —
   // swap MENU_MUSIC for its id and it becomes the title/Champion accent.
   const MENU_MUSIC="lastbreath1";
   function menuMusic(){ return "music/"+MENU_MUSIC+".mp3"; }
@@ -2348,7 +2516,7 @@
 })();
 </script>
 <script>
-/* ===== Sky Wolf Studio host-music handshake =====
+/* ===== Sky Wolf Studios host-music handshake =====
    When embedded in the portal jukebox, the studio soundtrack may own the audio.
    The portal posts {sws:'host-music', on:true} => silence OUR music (studio
    wins), on:false => play ours. We wrap Music.setEnabled so the game's own
