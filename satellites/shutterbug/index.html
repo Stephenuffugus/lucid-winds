@@ -60,6 +60,17 @@ body { overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: 
 button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .screen { position: fixed; inset: 0; display: none; }
 .screen.on { display: flex; }
+/* sb-m2-27 S4 (Stephen, 13 Nov: "clean and easy flowing"): every button answers the finger, a 3% shrink and a shade
+   in about 80 ms (.press is set by the page on pointerdown: a touch's :active is not reliable on phones); the room's
+   own controls (#top, the strip's drawn verbs) are left as they are. A screen that opens fades in over 150 ms */
+button { transition: transform 80ms ease-out, filter 80ms ease-out; }
+button:active:not(:disabled), button.press:not(:disabled) { transform: scale(0.97); filter: brightness(0.88); }
+#top button, #top button:active, #top button.press { transform: none; filter: none; transition: none; }
+.screen.fadein { animation: sbfade 150ms ease-out; }
+@keyframes sbfade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .screen.fadein { animation: none; } button { transition: none; } }
+#clearxp { display: block; height: 4px; margin: 6px 0 0; background: var(--slate); border-radius: 2px; overflow: hidden; }
+#clearxp i { display: block; height: 100%; width: 0; background: var(--sun); }
 
 /* the title: everything in flow, the exit first (satellites/_EXIT-AUDIT.md: never floated) */
 #title { flex-direction: column; align-items: center; overflow-y: auto;
@@ -788,6 +799,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <label class="row"><input id="setmusic" type="checkbox"><span data-copy="setMusic"></span></label>
   <label class="row"><input id="setphoto" type="checkbox"><span data-copy="setPhoto"></span></label>
   <label class="row"><input id="setzoom" type="checkbox"><span data-copy="setZoom"></span></label>
+  <label class="row"><input id="setvibe" type="checkbox"><span data-copy="setVibe"></span></label>
   <div id="setlook" class="row" hidden><span data-copy="setLook"></span>
     <div class="lookset"><p data-copy="lookHero"></p><div id="lookhero" role="radiogroup" data-aria="lookHero"></div></div>
     <div class="lookset"><p data-copy="lookFrame"></p><div id="lookframe" role="radiogroup" data-aria="lookFrame"></div></div></div>
@@ -1498,7 +1510,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function saveDefaults() {
     return { v: 1, dp: 0, collection: [], prints: [], pool: { jump: [], dive: [], charm: [] },
       unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
-      settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false, stock: 0 },   /* R10: the film stock picked at develop, 0 Auto, 1 to 5 a biome */
+      settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false, stock: 0, vibrate: true },   /* R10: the film stock picked at develop, 0 Auto, 1 to 5 a biome */
       onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0, hold: false, drop: false, tripod: false, wind: false } },   /* sb-m2-16: hold, drop, tripod, the moves taught once */
       run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0, albumPages: 0, albumBiomes: 0, curios: 0, curioSets: 0 }, trophies: [], trophySeen: 0, album: [], curios: [],
       log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false, days: 0 }, best: {}, quarantine: null, rank: 0 };   /* R10: the rank last granted (its rewards given) */
@@ -10456,7 +10468,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     tr_curio6: 'Six keepsakes', trg_curio6: 'Find six keepsakes', tr_curio30: 'Every keepsake', trg_curio30: 'Find all thirty keepsakes', tr_set1: 'A set', trg_set1: 'Complete one biome\'s keepsakes', tr_set5: 'Every set', trg_set5: 'Complete all five sets',
     levelCode: 'Level code', codePaste: 'Paste', codePlay: 'Play',
     settingsLink: 'Settings', settings: 'Settings', recentRooms: 'Recent rooms', recentRoom: 'A recent room',
-    setMirror: 'Mirror the controls', setSound: 'Sound', setMusic: 'Music', setPhoto: 'Photo behind the room', setZoom: 'Zoom: close', setMotion: 'Reduced motion',
+    setMirror: 'Mirror the controls', setSound: 'Sound', setMusic: 'Music', setPhoto: 'Photo behind the room', setZoom: 'Zoom: close', setVibe: 'Vibration', setMotion: 'Reduced motion',
     motionOs: 'As the phone says', motionOn: 'On', motionOff: 'Off',
     saveDamaged: 'A damaged save was set aside. You can copy it from Settings.',
     setInstall: 'Install to the home screen to keep your rooms', install: 'Install',
@@ -10852,6 +10864,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (name === 'crop') document.getElementById('croptitle').textContent = HS.on && HS.run ? ui.COPY.cropBack : ui.COPY.toTitle;
     var all = document.querySelectorAll('.screen');
     for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === name);
+    ui.fadeIn(name);   /* sb-m2-27 S4 */
     ui.screen = name;
     /* the fleet's chip, pill, card and toast hide while a room runs (Q48's addendum) and on the crop screen, where the
        chip sat over the photo a drag starts on (t15-crop) */
@@ -11495,6 +11508,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('retake').addEventListener('click', function () { openPicker(CR.from || 'filechoose'); });
     document.getElementById('develop').addEventListener('click', develop);
     ui.rollWire();   /* sb-m2-27 S5 */
+    ui.pressWire();   /* sb-m2-27 S4 */
     document.getElementById('stocks').addEventListener('click', function (e) {   /* R10: pick a film, the preview rebuilds with it */
       var b = e.target.closest ? e.target.closest('.stock') : null; if (!b) return;
       var k = b.getAttribute('data-stock') | 0, d = SB.save.doc; if (!d) return;
@@ -11950,6 +11964,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('setmusic').checked = !!st.music;
     document.getElementById('setphoto').checked = st.photoBehind !== false;
     document.getElementById('setzoom').checked = !!st.zoom;
+    document.getElementById('setvibe').checked = st.vibrate !== false;
     document.getElementById('setmotion').value = st.reducedMotion === null ? 'os' : st.reducedMotion ? 'on' : 'off';
     document.getElementById('setdamaged').hidden = !SB.save.quarantined;
     drawLook();
@@ -11961,6 +11976,52 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('setperf').textContent = ui.COPY.perf + ': ' + (ms >= 0 ? ms.toFixed(1) + ' ms p95' : ui.COPY.perfNone) + ', ' + ui.COPY.perfHash + ' ' + (ui.lastHash || ui.COPY.perfHashNone);
     document.getElementById('setbuild').textContent = ui.COPY.build + ' ' + SB.BUILD.replace(/-/g, ' ');
   }
+  /* sb-m2-27 S4: a short vibration (navigator.vibrate where it exists, Settings' Vibration on); a screen's 150 ms fade
+     in (title, the cards and the lists: never the room, its reveal or the crop, never under reduced motion); the
+     pressed state on every button by pointer (the room's own controls left alone). None of it touches the sim */
+  ui.buzz = function (ms) {
+    var d = SB.save.doc; if (d && d.settings.vibrate === false) return;
+    try { if (navigator.vibrate) navigator.vibrate(ms || 12); } catch (e) { /* silent */ }
+  };
+  var FADES = { title: 1, door: 1, album: 1, trophies: 1, settings: 1, darkroom: 1, daily: 1, story: 1, roll: 1 };
+  ui.fadeIn = function (name) {
+    var el = document.getElementById(name); if (!el) return;
+    el.classList.remove('fadein');
+    if (!FADES[name] || SB.render.reduced()) return;
+    void el.offsetWidth; el.classList.add('fadein');
+    clearTimeout(el.sbFadeT); el.sbFadeT = setTimeout(function () { el.classList.remove('fadein'); }, 200);
+  };
+  ui.pressWire = function () {
+    var on = null, off = function () { if (on) { var b = on; on = null; setTimeout(function () { b.classList.remove('press'); }, 80); } };
+    document.addEventListener('pointerdown', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('button') : null;
+      if (!b || b.disabled || b.closest('#top')) return;
+      off(); on = b; b.classList.add('press');
+    }, true);
+    ['pointerup', 'pointercancel'].forEach(function (k) { document.addEventListener(k, off, true); });
+    document.addEventListener('click', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('button') : null;
+      if (b && !b.disabled && !b.closest('#top')) ui.buzz(10);
+    }, true);
+  };
+  /* the clear card's XP: the bar fills from where the room started and the numbers count up over XP_COUNT_MS (at once
+     under reduced motion); the words it ends on are the rank line's own */
+  var XP_COUNT_MS = 600;
+  ui.xpCount = function (el, r, gain) {
+    var C = ui.COPY, L = SB.TUNING.RANK_XP, span = r.next ? L[r.i + 1] - L[r.i] : 1, f1 = r.frac, f0 = r.next ? Math.max(0, (r.xp - gain - L[r.i]) / span) : 1;
+    var txt = function (n) { return C.rankGain.replace('{n}', n).replace('{m}', r.toNext + gain - n).replace('{rank}', r.next || C.rankTop); };
+    el.innerHTML = '<span></span><b id="clearxp"><i></i></b>';
+    var sp = el.firstChild, bar = el.lastChild.firstChild, tok = (el.sbXpTok = (el.sbXpTok | 0) + 1);
+    if (SB.render.reduced() || gain <= 0) { sp.textContent = txt(gain); bar.style.width = Math.round(f1 * 100) + '%'; return; }
+    var t0 = performance.now();
+    sp.textContent = txt(0); bar.style.width = Math.round(f0 * 100) + '%';
+    (function tick(now) {
+      if (el.sbXpTok !== tok) return;
+      var k = Math.min(1, (now - t0) / XP_COUNT_MS), e = 1 - (1 - k) * (1 - k);
+      sp.textContent = txt(Math.round(gain * e)); bar.style.width = (100 * (f0 + (f1 - f0) * e)).toFixed(1) + '%';
+      if (k < 1) requestAnimationFrame(tick);
+    })(t0);
+  };
   ui.applySettings = function () {
     var st = SB.save.doc.settings;
     if (ui.zoomSync) ui.zoomSync();
@@ -12304,7 +12365,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (ups.length && ui.lastRankUp) {   /* R10 art: the rank up on Astra's plate (the words in its text rectangle [10,3,108,10]), the gift under it */
       el.classList.add('rankup'); el.innerHTML = '<b class="plate"></b><span></span>';
       el.firstChild.textContent = C.rankUpPlate.replace('{rank}', ui.lastRankUp.rank); el.lastChild.textContent = ui.lastRankUp.gift;
-    } else { el.classList.remove('rankup'); el.textContent = ups.length ? ups[ups.length - 1] : C.rankGain.replace('{n}', r.xp - xpBefore).replace('{m}', r.toNext).replace('{rank}', r.next || C.rankTop); }
+    } else { el.classList.remove('rankup'); if (ups.length) el.textContent = ups[ups.length - 1]; else ui.xpCount(el, r, r.xp - xpBefore); }   /* sb-m2-27 S4: counted up */
     el.hidden = false;
   };
   ui.drawRank = function () {
@@ -12623,7 +12684,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      room 1 again); rooms 2 to 5 at x1 (DESIGN 8). Q201 */
   function houseClear() {
     if (!G.banked) {
-      G.banked = true;
+      G.banked = true; ui.buzz(15);   /* sb-m2-27 S4: the house room's clear */
       var dp = G.state.room.dp, doc = SB.save.doc, n = HS.run.at === 0 ? Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT) : dp, total = HS.run.dp + n;
       doc.stats.clears++; SB.save.addRecent(G.record); if (n > 0) SB.Wallet.earn(n, 'house');
       if (!G.roomHit) doc.stats.flawless = (doc.stats.flawless | 0) + 1;
@@ -12683,7 +12744,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var gotEl = document.getElementById('got'); if (gotEl) { clearTimeout(gotEl.sbGotT); gotEl.classList.remove('on'); }   /* WEAPONS ARRIVE: the pickup card's keep line goes when the clear says Yours now */
     if (G.mode === 'house' && HS.run) return houseClear();   /* in a house the doorway replaces the clear card (Q200) */
     if (G.record && SB.save.doc && !G.banked) {
-      G.banked = true;
+      G.banked = true; ui.buzz(15);   /* sb-m2-27 S4: the clear */
       var dp = G.state.room.dp, n = Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT), bank = document.getElementById('clearbank');
       SB.save.doc.stats.clears++; SB.save.addRecent(G.record); if (n > 0) SB.Wallet.earn(n, 'clear');
       if (!G.roomHit) SB.save.doc.stats.flawless = (SB.save.doc.stats.flawless | 0) + 1;
@@ -12804,7 +12865,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     syncModal();
     document.getElementById('settitle').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
     var setBool = function (id, key) { document.getElementById(id).addEventListener('change', function () { SB.save.doc.settings[key] = this.checked; SB.save.commit(); ui.applySettings(); }); };
-    setBool('setmirror', 'mirror'); setBool('setsound', 'sound'); setBool('setmusic', 'music'); setBool('setphoto', 'photoBehind'); setBool('setzoom', 'zoom');
+    setBool('setmirror', 'mirror'); setBool('setsound', 'sound'); setBool('setmusic', 'music'); setBool('setphoto', 'photoBehind'); setBool('setzoom', 'zoom'); setBool('setvibe', 'vibrate');
     document.getElementById('setmotion').addEventListener('change', function () { SB.save.doc.settings.reducedMotion = this.value === 'os' ? null : this.value === 'on'; SB.save.commit(); });
     document.getElementById('setcopy').addEventListener('click', function () { var el = document.getElementById('setexport'); try { navigator.clipboard.writeText(el.value).catch(function () { el.select(); }); } catch (e) { el.select(); } });
     document.getElementById('setimportgo').addEventListener('click', function () {
@@ -12888,7 +12949,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (ev & EV.DIVE) au.sfx('dive');
       if (ev & EV.LAND) au.sfx('land', G.state.hero.shake > 0);
       if (ev & EV.HIT) { au.sfx('hit'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); SB.ui.hurtFlash(); G.roomHit = true; }
-      if (ev & EV.CLEAR) au.sfx('beacon');
+      if (ev & EV.CLEAR) { au.sfx('beacon'); SB.ui.buzz(15); }   /* sb-m2-27 S4: the exit */
       if ((ev & EV.PICKUP) && SB.render.lootTaken(G.state) > seen) au.sfx('pickup');   /* the hidden blueprint is taken in silence (Q92) */
       if (ev & EV.CHEST) au.sfx('chest');
       /* the count's gain under it on a chest's step or a kill's (+15, +3, +10: docs/WEAPONS-V1.md 10) */
@@ -12905,7 +12966,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (ev & EV.BOSS_HIT) au.sfx('bossHit');
       if (ev & EV.TELL) au.sfx('bossTell');
       if (ev & EV.BOSS_DOWN) au.sfx('beacon');
-      if (ev & EV.KEY) { SB.ui.keys(G.state); SB.ui.tally('keys'); if (SB.sim.keysLeft(G.state) === 0) au.sfx('beacon'); }   /* the last key lights the lamp */
+      if (ev & EV.KEY) { SB.ui.buzz(12); SB.ui.keys(G.state); SB.ui.tally('keys'); if (SB.sim.keysLeft(G.state) === 0) au.sfx('beacon'); }   /* the last key lights the lamp */
       if (ev & EV.SAVED) { au.sfx('saved'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); }   /* a charm took the hit */
       if (ev & EV.CHECK) au.sfx('pick');   /* m2 step 3: the tripod lit */
       if (ev & EV.RESPAWN) SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax);   /* back at the tripod, every heart */
