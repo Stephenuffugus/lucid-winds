@@ -60,6 +60,17 @@ body { overflow: hidden; -webkit-tap-highlight-color: transparent; user-select: 
 button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .screen { position: fixed; inset: 0; display: none; }
 .screen.on { display: flex; }
+/* sb-m2-27 S4 (Stephen, 13 Nov: "clean and easy flowing"): every button answers the finger, a 3% shrink and a shade
+   in about 80 ms (.press is set by the page on pointerdown: a touch's :active is not reliable on phones); the room's
+   own controls (#top, the strip's drawn verbs) are left as they are. A screen that opens fades in over 150 ms */
+button { transition: transform 80ms ease-out, filter 80ms ease-out; }
+button:active:not(:disabled), button.press:not(:disabled) { transform: scale(0.97); filter: brightness(0.88); }
+#top button, #top button:active, #top button.press { transform: none; filter: none; transition: none; }
+.screen.fadein { animation: sbfade 150ms ease-out; }
+@keyframes sbfade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .screen.fadein { animation: none; } button { transition: none; } }
+#clearxp { display: block; height: 4px; margin: 6px 0 0; background: var(--slate); border-radius: 2px; overflow: hidden; }
+#clearxp i { display: block; height: 100%; width: 0; background: var(--sun); }
 
 /* the title: everything in flow, the exit first (satellites/_EXIT-AUDIT.md: never floated) */
 #title { flex-direction: column; align-items: center; overflow-y: auto;
@@ -98,16 +109,57 @@ button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-
 #tighter { position: absolute; left: 0; right: 0; top: 40%; margin: 0; padding: 10px; text-align: center; background: var(--brick); color: var(--glare); font-weight: 700; }
 #cropbar { display: flex; gap: 12px; padding: 10px 16px 14px; }
 /* R10 FILM STOCKS: six film boxes above Develop (Auto and the five biomes); placeholder tiles with the biome badge until Astra's boxes */
-#stocks { display: flex; gap: 6px; padding: 8px 12px 0; }
+#stocks { display: flex; gap: 3px; padding: 8px 6px 0; }
 #stocks .stock { flex: 1; min-width: 0; min-height: 48px; padding: 3px 1px; border: 1px solid var(--ash); border-radius: 8px; background: var(--paper); color: var(--ink); font-size: 0.7rem; font-weight: 700; line-height: 1.1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
 #stocks .stock i { width: 48px; height: 48px; max-width: 100%; background: center / contain no-repeat; image-rendering: pixelated; }   /* R10 art: Astra's 48 px film box; the locked state is her own sheet with its lock */
 #stocks .stock.on { border: 2px solid var(--amber); background: var(--film); }
-#stocks .stock.locked { color: var(--pewter); background: var(--ash); } #stocks .stock.locked small { font-size: 0.7rem; font-weight: 400; }
+/* sb-m2-28: a locked film reads at a glance, dark with a dashed edge: its name, a small pixel lock, and the rank that opens
+   it in 12 px Film (it was 11 px Pewter on Ash, "Frost at Focus Puller" hard to read); the name steps its own size down
+   to fit its tile (ui.drawStocks), the rank wraps a word a line, and the row stays one line of tiles at 360 */
+#stocks .stock b { display: block; max-width: 100%; font-weight: 700; white-space: nowrap; }
+#stocks .stock.locked { flex-grow: 1.8; padding: 3px 0; color: var(--paper); background: var(--soot); border: 1px dashed var(--pewter); justify-content: flex-start; }   /* an open film needs only its box and a short name: a locked one takes the wider share for its rank */
+#stocks .stock.locked i { width: 36px; height: 36px; opacity: 0.8; }
+#stocks .stock.locked small { display: flex; flex-direction: column; align-items: center; gap: 2px; max-width: 100%; font-size: 12px; font-weight: 400; letter-spacing: -0.03em; line-height: 1.1; color: var(--film); text-align: center; }
+#stocks .stock.locked small::before { content: ''; width: 10px; height: 12px; flex: none; image-rendering: pixelated;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 5 6' shape-rendering='crispEdges'%3E%3Cpath fill='%23f0dcb0' d='M1 0h3v1H1zM0 1h1v2H0zM4 1h1v2H4zM0 3h5v3H0z'/%3E%3Cpath fill='%231f1a1d' d='M2 4h1v1H2z'/%3E%3C/svg%3E") center / 10px 12px no-repeat; }
 #retake { min-height: 56px; flex: 0 0 auto; padding: 0 20px; border-radius: 12px; border: 2px solid var(--slate); background: transparent; color: var(--paper); font-weight: 700; }
 #develop { flex: 1 1 auto; background: var(--sun); color: var(--ink); }
 #cropseek { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; image-rendering: pixelated; }
 #crop.seeking #develop { opacity: 0.6; }
 #cropfrom { position: absolute; border: 2px dashed var(--paper); opacity: 0.5; pointer-events: none; }
+/* sb-m2-27 S5 THE BIOME ROLL (Stephen, 13 Nov: "it could be rolled so they would see the selection go across the different
+   biomes"): five tiles in their own colours, a Sun ring sweeping across them and landing; Choose makes them buttons */
+#roll { flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: var(--ink); color: var(--paper);
+  padding: calc(16px + var(--sat)) 16px calc(16px + var(--sab)); }
+#roll h2 { margin: 0; font-size: 1.3rem; }
+/* sb-m2-28: the player's own photo above the tiles, a Polaroid (the title's paper, padding and tilt), so the screen reads
+   as "your photo is becoming a room"; its paper takes a little of the colour of the tile the ring is on (no fade under
+   reduced motion). The print is the crop box as framed, drawn from the photo at once and wiped when the roll ends */
+#roll { overflow-y: auto; justify-content: safe center; }
+#rollpol { flex: none; padding: 10px 10px 34px; }
+#rollpol[hidden] { display: none; }
+#rollprint { display: block; height: clamp(150px, calc(100dvh - 480px), 440px); width: auto; aspect-ratio: 1 / 2; background: var(--ink); }
+#roll:not(.still) #rollpol { transition: background-color 120ms linear; }
+#rollpol[data-biome="attic"] { background: color-mix(in srgb, var(--paper) 52%, #6b3f2a); }
+#rollpol[data-biome="frost"] { background: color-mix(in srgb, var(--paper) 45%, #9fd0ff); }
+#rollpol[data-biome="deep"] { background: color-mix(in srgb, var(--paper) 52%, #2f5fd0); }
+#rollpol[data-biome="overgrowth"] { background: color-mix(in srgb, var(--paper) 52%, #3f9a3a); }
+#rollpol[data-biome="ember"] { background: color-mix(in srgb, var(--paper) 52%, #c8302f); }
+#rolltiles { display: flex; gap: 6px; width: 100%; max-width: 420px; padding: 0 4px; box-sizing: border-box; }
+#rolltiles button { flex: 1; min-width: 0; min-height: 96px; padding: 6px 1px; border: 2px solid var(--ink); border-radius: 10px; color: var(--glare);
+  font-size: clamp(0.56rem, 2.6vw, 0.72rem); letter-spacing: -0.01em; font-weight: 700; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+#rolltiles button i { width: 48px; height: 48px; max-width: 100%; background: center / contain no-repeat; image-rendering: pixelated; }
+#rolltiles .attic { background: #6b3f2a; } #rolltiles .frost { background: #fbfbff; color: var(--ink); } #rolltiles .deep { background: #2f5fd0; }
+#rolltiles .overgrowth { background: #3f9a3a; } #rolltiles .ember { background: #c8302f; }
+#rolltiles button.lit { outline: 4px solid var(--sun); outline-offset: 2px; }
+#roll.landed #rolltiles button:not(.lit) { opacity: 0.45; }
+#rolltiles button.dim { opacity: 0.35; }
+#rolltiles span { white-space: nowrap; }
+#roll.choosing #rolltiles button:not(.dim) { box-shadow: 0 0 0 2px var(--paper); }
+#rollsay { margin: 0; min-height: 1.4em; text-align: center; font-size: 1.05rem; }
+#rollbar { display: flex; gap: 12px; width: 100%; max-width: 420px; }
+#rollbar button { flex: 1; min-height: 56px; border-radius: 12px; border: 2px solid var(--slate); background: transparent; color: var(--paper); font-weight: 700; }
+#rollbar button[hidden] { display: none; }
 #crop.nothing #retake { background: var(--sun); color: var(--ink); border-color: var(--sun); }
 #crop.stuck #develop { background: transparent; color: var(--ash); border: 2px dashed var(--slate); }
 #cropsay { margin: 0 16px 8px; min-height: 1em; color: var(--pewter); font-size: 0.75rem; }
@@ -412,6 +464,19 @@ body:not(.playing) #floorname { display: none; }
 #housestart { background: var(--sun); color: var(--ink); } #housego { background: var(--sun); color: var(--ink); }
 #housego:not([hidden]) ~ #housestart { background: var(--paper); }
 #housecount { margin: 0; text-align: center; color: var(--ash); font-size: 0.9rem; }
+/* sb-m2-27 S2 (Stephen, 13 Nov: "clean and easy flowing"): a returning title in two groups under quiet labels, Play
+   (the house, the Daily, the free play buttons, the sample) then Your collection (the rank, the Darkroom, the Album and
+   Trophies side by side), the code row, Recent rooms and Settings after; a new player's title keeps its two buttons */
+.grp { margin: 6px 0 -4px; color: var(--ash); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.grp[hidden] { display: none; }
+#grpcoll { margin-top: 10px; }
+#collrow { display: flex; justify-content: center; gap: 24px; }
+/* sb-m2-27 S3: three words get one line each, the first time each shows (a flag in the save), never a popup */
+.what { margin: -6px 0 0; font-size: 0.85rem; color: var(--ash); text-align: center; } .what[hidden] { display: none; }
+#clearwhat { margin: 0; color: var(--slate); }
+#collrow:not(:has(button:not([hidden]))) { display: none; }
+/* sb-m2-27 S1 (Stephen, 13 Nov: "I don't think it explains what a house is"): one Ash line under Start a house, a sibling so the button keeps its words */
+#househint { margin: -6px 0 0; text-align: center; color: var(--ash); font-size: 0.9rem; }
 /* HOUSE-B: Astra's icon_house on Start a house (24 px at 1:1), its checked seal once a house is cleared */
 #housestart::before { content: ''; display: inline-block; width: 24px; height: 24px; margin: 0 8px 0 0; vertical-align: -6px;
   background: var(--icon-house-house) 0 0 / 24px 24px no-repeat; image-rendering: pixelated; }
@@ -477,6 +542,18 @@ body:not(.playing) #floorname { display: none; }
 #title:has(#house:not([hidden])) .art { padding-top: 4px; } #title:has(#house:not([hidden])) .photo { height: 80px; }
 #title:has(#house:not([hidden])) .polaroid { padding-bottom: 16px; } #title:has(#house:not([hidden])) .tag { margin-top: 8px; }
 #title:has(#housego:not([hidden])) .tag { display: none; }
+/* sb-m2-28: the returning title (Your collection shown) fits a 412x915 screen through Settings and the build line once its
+   one time hints have gone (it ran 1095 px, 1155 with them): no tagline (the logo says it), a lower logo print, 8 px
+   between controls, the big buttons 52 tall (48 is the floor), the build line closer; Play stays first and whole */
+#title:has(#grpcoll:not([hidden])) .actions { gap: 8px; margin-top: 6px; }
+#title:has(#grpcoll:not([hidden])) .tag { display: none; }
+#title:has(#grpcoll:not([hidden])) .art { margin-bottom: 4px; }
+#title:has(#grpcoll:not([hidden])) .photo { height: 42px; }
+#title:has(#grpcoll:not([hidden])) .polaroid:not(.framed) { padding: 6px 6px 10px; }
+#title:has(#grpcoll:not([hidden])) .grp { margin-top: 2px; }
+#title:has(#grpcoll:not([hidden])) .big { min-height: 52px; }
+#title:has(#grpcoll:not([hidden])) #recent p { margin: 0 0 4px; }
+#title:has(#grpcoll:not([hidden])) #build { padding-top: 4px; }
 /* the doorway (the clear card's place in a house), the house's start and its clear: one card on a screen of its own */
 #door { flex-direction: column; align-items: center; justify-content: center; overflow-y: auto; background: var(--soot);
   padding: calc(12px + var(--sat)) calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal)); }
@@ -499,6 +576,9 @@ body:not(.playing) #floorname { display: none; }
    strip's count the death lost is struck through */
 #death.house .duo { flex-direction: column; } #death.house .duo button { flex: none; }
 #dp.lost #dpn { text-decoration: line-through; }
+/* sb-m2-28: under the clear card the frame's count is covered whole, never half: it peeked out past the card's edge
+   ("ixels 5"); the card says what the room banked */
+body:has(#clear.on) #dp { visibility: hidden; }
 /* the doorway's hearts: the strip's sprites, the one back at this doorway ringed in Sun (a placeholder for Astra's) */
 #doorhearts:not([hidden]) { display: flex; justify-content: center; gap: 6px; }
 #doorhearts i { width: 18px; height: 16px; display: block; background: var(--heart-full) 0 0 / 18px 16px no-repeat; image-rendering: pixelated; }
@@ -549,7 +629,10 @@ body:not(.playing) #floorname { display: none; }
 #settings textarea { width: 100%; min-height: 72px; resize: vertical; }
 #settings button.act { min-height: 48px; border-radius: 10px; border: 2px solid var(--paper); background: transparent; color: var(--paper); font-weight: 700; }
 #setdamaged { color: var(--sun); font-weight: 700; margin: 0; } #setperf, #setbuild { color: var(--ash); font-size: 0.85rem; margin: 0; }
-#setinstall { display: flex; align-items: center; gap: 10px; margin: 0; } #install { min-height: 48px; }
+#setinstall { display: flex; align-items: center; gap: 10px; margin: 0; } #setinstall span { flex: 1 1 auto; }
+/* sb-m2-28: Install is a real button when the browser offers the install (it was the browser's grey box with Paper text
+   on it, so it read as an empty control; now Paper on the dark, as Copy the save); without the offer it is hidden and the line says how to add the game */
+#install { flex: none; min-height: 48px; min-width: 96px; padding: 0 16px; border-radius: 10px; border: 2px solid var(--paper); background: transparent; color: var(--paper); font-weight: 700; }   /* as Settings' other buttons (.act) */
 #again { background: var(--paper); color: var(--ink); }
 #pausetitle, #cleartitle, #deathtitle { background: transparent; color: var(--ink); }
 #pauseshare, #clearshare { background: var(--paper); color: var(--ink); }   /* Share this room in the card's Paper, never the browser's grey (the review of Q94) */
@@ -647,13 +730,19 @@ body:has(#death.on) #sws-music-card, body:has(#death.on) #sws-music-pill, body:h
    reported the margin is 0). A dragged chip or card is placed by its top and does not move. Drop this in the change
    that teaches music-unlocks.js the mark, or the lift doubles */
 :root.navpad #sws-music-chip, :root.navpad #sws-music-pill, :root.navpad #sws-music-card { margin-bottom: calc(var(--sab) - env(safe-area-inset-bottom, 0px)); }
-/* the include still scores a bottom seat in the bar's band, 48 px under where the lift draws the chip, so on the title
-   and Settings (where content can sit over that band) the band reads as taken (a pointer cursor, which the include
-   counts as a control) and the include seats the chip by its own scoring elsewhere; in a room's clear card the lifted
-   seat is the strip's reserved box, free by design. Transparent, and under the phone's buttons on the phone. A sibling
-   rule, so no :has() on body: the screens precede it in the page (the layout gate's chip checks hold that order) */
-#chipsill { display: none; position: fixed; left: 0; right: 0; bottom: 0; height: var(--sab); cursor: pointer; }
-:root.navpad #title.on ~ #chipsill, :root.navpad #settings.on ~ #chipsill { display: block; }
+/* sb-m2-28 ONE SEAT FOR THE CHIP (the builder's look at sb-m2-27: on the clear card it sat over the strip's bottom left,
+   on the title over the build line and the Album row). The include places a fixed chip by its own corner search and
+   reseats it as screens change; here the page takes it into the screen showing, the title or Settings, at the right end
+   of the top row (beside the exit, beside Settings' Title), where nothing else sits. It scrolls with that screen, so it
+   never covers a control or a line, and every other screen (the clear card, a doorway, the album) shows no chip: the
+   title is one tap away. The include's inline seat and lift lose to these rules; a drag of it is not started here, so
+   no saved drag spills onto the other games of the site */
+.screen > #sws-music-chip { position: absolute !important; top: calc(12px + var(--sat)) !important; right: calc(16px + var(--sar)) !important;
+  left: auto !important; bottom: auto !important; margin: 0 !important; z-index: 1 !important; }
+#settings > #sws-music-chip { top: calc(10px + var(--sat)) !important; }
+.screen:not(.on) > #sws-music-chip { display: none !important; }
+#sws-music-chip.swsm-tight { width: auto !important; min-width: 96px !important; padding: 0 16px !important; font-size: 14px !important; }
+#sws-music-chip.swsm-tight::after { content: ' Music'; }
 /* the fleet's feedback fab, if the host ever injects it, never sits over a card or a sheet (section 1.6, T1.13) */
 body.sb-modal .lwfb-fab { display: none !important; }
 
@@ -673,21 +762,26 @@ body.sb-modal .lwfb-fab { display: none !important; }
   </div>
   <div class="actions">
     <p id="codemsg" role="status" hidden></p>
+    <h3 id="grpplay" class="grp" data-copy="grpPlay" hidden></h3>
     <div id="house" hidden><button id="housego" class="big" type="button" data-copy="houseContinue" hidden></button>
       <button id="housestart" class="big" type="button" data-copy="houseStart"></button>
+      <p id="househint" data-copy="houseHint"></p>
       <p id="housecount" hidden></p>
       <button id="dailybtn" class="big" type="button" hidden><canvas id="dailybadge" width="24" height="24"></canvas><span><b data-copy="dailyHead"></b><small id="dailystate"></small></span></button>
-      <button id="darkroombtn" class="big" type="button" hidden><canvas id="darkroombadge" width="24" height="24"></canvas><span><b data-copy="darkroomLink"></b><small id="darkroomstate"></small></span></button>
-      <p id="freeplay" data-copy="freePlay"></p>
-      <p id="rankline" hidden><i id="rankbadge"></i><span id="rankname"></span><span id="rankbar"><i></i></span><small id="ranknext"></small></p></div>
+      <p id="freeplay" data-copy="freePlay"></p></div>
     <button id="shoot" class="big" type="button" data-copy="shoot"></button>
     <button id="choose" class="big" type="button" data-copy="choose"></button>
     <p id="soon" role="status" hidden></p>
     <button id="sample" type="button" data-copy="sample"></button>
+    <h3 id="grpcoll" class="grp" data-copy="grpColl" hidden></h3>
+    <p id="rankline" hidden><i id="rankbadge"></i><span id="rankname"></span><span id="rankbar"><i></i></span><small id="ranknext"></small></p>
+    <p id="rankwhat" class="what" hidden></p>
+    <button id="darkroombtn" class="big" type="button" hidden><canvas id="darkroombadge" width="24" height="24"></canvas><span><b data-copy="darkroomLink"></b><small id="darkroomstate"></small></span></button>
+    <p id="darkroomwhat" class="what" hidden></p>
+    <div id="collrow"><button id="albumbtn" type="button" data-copy="albumLink" hidden></button>
+    <button id="trophiesbtn" type="button" data-copy="trophiesLink" hidden></button></div>
     <div id="codebox" hidden><input id="levelcode" type="text" data-aria="levelCode" autocomplete="off" spellcheck="false"><button id="pastecode" type="button" data-copy="codePaste"></button><button id="playcode" type="button" data-copy="codePlay"></button></div>
     <div id="recent" hidden><p data-copy="recentRooms"></p><div id="recentlist"></div></div>
-    <button id="albumbtn" type="button" data-copy="albumLink" hidden></button>
-    <button id="trophiesbtn" type="button" data-copy="trophiesLink" hidden></button>
     <button id="settingsbtn" type="button" data-copy="settingsLink"></button>
   </div>
   <p id="build"></p>
@@ -698,6 +792,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <h2 id="doorhead"></h2>
     <p id="doorhearts" hidden></p>
     <p id="doorbank" hidden></p>
+    <p id="doorstake" hidden></p>
     <p id="doorkept" hidden></p>
     <p id="doorprint" hidden></p>
     <p id="doornext" hidden></p>
@@ -764,11 +859,12 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <label class="row"><input id="setmusic" type="checkbox"><span data-copy="setMusic"></span></label>
   <label class="row"><input id="setphoto" type="checkbox"><span data-copy="setPhoto"></span></label>
   <label class="row"><input id="setzoom" type="checkbox"><span data-copy="setZoom"></span></label>
+  <label class="row"><input id="setvibe" type="checkbox"><span data-copy="setVibe"></span></label>
   <div id="setlook" class="row" hidden><span data-copy="setLook"></span>
     <div class="lookset"><p data-copy="lookHero"></p><div id="lookhero" role="radiogroup" data-aria="lookHero"></div></div>
     <div class="lookset"><p data-copy="lookFrame"></p><div id="lookframe" role="radiogroup" data-aria="lookFrame"></div></div></div>
   <label class="row"><span data-copy="setMotion"></span><select id="setmotion"><option value="os" data-copy="motionOs"></option><option value="on" data-copy="motionOn"></option><option value="off" data-copy="motionOff"></option></select></label>
-  <p id="setinstall"><span data-copy="setInstall"></span> <button id="install" type="button" data-copy="install" hidden></button></p>
+  <p id="setinstall"><span id="setinstalltext"></span> <button id="install" type="button" data-copy="install" hidden></button></p>
   <textarea id="setexport" readonly data-aria="setExport"></textarea>
   <button id="setcopy" class="act" type="button" data-copy="setCopy"></button>
   <textarea id="setimport" data-aria="setImportBox"></textarea>
@@ -784,7 +880,13 @@ body.sb-modal .lwfb-fab { display: none !important; }
   <div id="cropbar"><button id="retake" type="button" data-copy="retake"></button><button id="develop" class="big" type="button" data-copy="develop"></button></div>
   <p id="cropsay" aria-live="polite"></p>
 </main>
-<div id="chipsill" aria-hidden="true"></div>
+<main id="roll" class="screen" aria-label="The biome">
+  <div id="rollpol" class="polaroid" hidden><canvas id="rollprint" width="160" height="320" role="img" data-aria="rollPrint"></canvas></div>
+  <h2 data-copy="rollHead"></h2>
+  <div id="rolltiles" role="radiogroup" data-aria="rollHead"></div>
+  <p id="rollsay" aria-live="polite"></p>
+  <div id="rollbar"><button id="rollchoose" type="button" data-copy="rollChoose"></button><button id="rollphoto" type="button" data-copy="rollPhoto" hidden></button></div>
+</main>
 <input id="fileshoot" type="file" accept="image/*" capture="environment" hidden>
 <input id="filechoose" type="file" accept="image/*" hidden>
 <main id="play" class="screen" aria-label="Play">
@@ -797,6 +899,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       <button id="pausetitle" type="button" data-copy="toTitle"></button></div></div>
     <div id="clear" role="dialog" data-aria="roomClear"><h2 data-copy="roomClear"></h2>
       <p id="clearbank" hidden></p>
+      <p id="clearwhat" class="what" hidden></p>
       <p id="cleartime" hidden></p>
       <p id="clearbeat" hidden></p>
       <p id="clearkept" hidden></p>
@@ -1097,7 +1200,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     '554444444444344344444444', '777777144444344344444444', '111111144444344344444444', '777777777777777777777777'
   ]);
 
-  SB.BUILD = 'sb-m2-26';
+  SB.BUILD = 'sb-m2-28';
 })(globalThis.SB || (globalThis.SB = {}));
 </script>
 <script id="core-rng" data-core>
@@ -1468,8 +1571,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   function saveDefaults() {
     return { v: 1, dp: 0, collection: [], prints: [], pool: { jump: [], dive: [], charm: [] },
       unlocks: { negative: false, double: false, openHouse: false, daily: false, startPick: null },
-      settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false, stock: 0 },   /* R10: the film stock picked at develop, 0 Auto, 1 to 5 a biome */
-      onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0, hold: false, drop: false, tripod: false, wind: false } },   /* sb-m2-16: hold, drop, tripod, the moves taught once */
+      settings: { mirror: false, sound: true, music: true, reducedMotion: null, photoBehind: true, zoom: false, stock: 0, vibrate: true },   /* R10: the film stock picked at develop, 0 Auto, 1 to 5 a biome */
+      onboarding: { firstRoomDone: false, revealSeen: false, storySeen: false, hints: { rocker: false, jump: false, dive: false, wall: false, specks: 0, hold: false, drop: false, tripod: false, wind: false }, seen: { dp: false, darkroom: false, rank: false } },   /* sb-m2-16: hold, drop, tripod, the moves taught once */
       run: null, recent: [], moments: {}, stats: { clears: 0, houseClears: 0, deaths: 0, bestClimbFrames: null, wallJumps: 0, keys: 0, flawless: 0, albumPages: 0, albumBiomes: 0, curios: 0, curioSets: 0 }, trophies: [], trophySeen: 0, album: [], curios: [],
       log: { runs: [] }, cosmetics: { hero: 0, frame: 0, owned: [] }, daily: { date: null, done: false, days: 0 }, best: {}, quarantine: null, rank: 0 };   /* R10: the rank last granted (its rewards given) */
   }
@@ -10404,6 +10507,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     nothingHint: 'Tap Retake for another photo.',
     badPhoto: 'That photo did not open. Try another.',
     photoRoom: 'Your room',
+    rollHead: 'The biome', rollPrint: 'Your photo', rollStop: 'Tap to stop', rollLanded: '{name}. Tap to climb.', rollChoose: 'Choose', rollPhoto: 'From my photo', rollPick: 'Tap a biome to climb it', rollNo: 'This room does not climb as {name}.',
     death: 'The bug fell out of the picture', toTripod: 'Back to the tripod', floorFurniture: 'The furniture', floorCeiling: 'The ceiling',
     dp: 'Dead pixels', dpGain: '+{n}',
     shareTitle: 'Share this room',
@@ -10425,10 +10529,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
     tr_curio6: 'Six keepsakes', trg_curio6: 'Find six keepsakes', tr_curio30: 'Every keepsake', trg_curio30: 'Find all thirty keepsakes', tr_set1: 'A set', trg_set1: 'Complete one biome\'s keepsakes', tr_set5: 'Every set', trg_set5: 'Complete all five sets',
     levelCode: 'Level code', codePaste: 'Paste', codePlay: 'Play',
     settingsLink: 'Settings', settings: 'Settings', recentRooms: 'Recent rooms', recentRoom: 'A recent room',
-    setMirror: 'Mirror the controls', setSound: 'Sound', setMusic: 'Music', setPhoto: 'Photo behind the room', setZoom: 'Zoom: close', setMotion: 'Reduced motion',
+    setMirror: 'Mirror the controls', setSound: 'Sound', setMusic: 'Music', setPhoto: 'Photo behind the room', setZoom: 'Zoom: close', setVibe: 'Vibration', setMotion: 'Reduced motion',
     motionOs: 'As the phone says', motionOn: 'On', motionOff: 'Off',
     saveDamaged: 'A damaged save was set aside. You can copy it from Settings.',
-    setInstall: 'Install to the home screen to keep your rooms', install: 'Install',
+    setInstall: 'Install to the home screen to keep your rooms', setInstallHow: 'To keep your rooms, add the game to your home screen from the browser menu.', install: 'Install',
     setExport: 'Your save', setCopy: 'Copy the save', setImportBox: 'Paste a save here', setImportGo: 'Load the pasted save',
     importConfirm: 'Replace your save?', importBad: 'That save did not open.', perf: 'Performance', perfHash: 'last room',
     perfNone: 'not measured yet', perfHashNone: 'not played yet',
@@ -10464,7 +10568,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the house (DESIGN 8, QUESTIONS Q200; docs/PROGRESSION-PROPOSAL-OCT31.md 2.3's words) */
     houseStart: 'Start a house', houseContinue: 'Continue the house', houseContinueAt: 'Continue room {n} of {of}', houseCount: 'Houses cleared {n}', freePlay: 'Free play',
     roomOf: 'Room {n} of {of}', lastRoom: 'The last room', roomOfShort: 'Room {n}/{of}', roomOfTiny: '{n}/{of}', lastRoomShort: 'Last room',
-    houseNew: 'A new house', houseRooms: 'Five rooms, each one tougher than the last.', shootFirst: 'Shoot the first room',
+    houseNew: 'A new house', houseRooms: 'Five rooms, each one tougher than the last.', houseHint: 'Five of your rooms in a row. A guardian waits in the last one.', grpPlay: 'Play', grpColl: 'Your collection', whatDp: 'Dead pixels are what a room leaves you. The Darkroom spends them on weapons.', whatDarkroom: 'Prints you find in rooms become weapons here.', whatRank: '{rank} is your next rank. Clears, keys and houses earn XP.',
+    houseStake: 'Clear all five to win the {name}. Lose every heart and the house starts over.', houseStakeAll: 'Lose every heart and the house starts over.', shootFirst: 'Shoot the first room',
     doorCleared: 'Room {n} of {of} cleared', doorTougher: 'Room {n} is tougher', doorLast: 'The last room is next', enterRoom: 'Play room {n}',
     doorHearts: '{n} of {max} hearts, one back', doorHeartsFull: '{n} of {max} hearts', cropBack: 'Back',
     useRecent: 'Use a recent room', noRecent: 'No recent rooms yet.', leaveHouse: 'Leave the house',
@@ -10550,7 +10655,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     return true;
   };
   /* the back gesture (Q94, his ruling): in a room it opens the pause card; on the card it resumes; on the share sheet it
-     closes it; on the clear and death cards it is Title; on the title (and Settings, the crop screen, the develop card)
+     closes it; on the clear and death cards it is Title; on the title (and Settings and the develop card)
      it leaves, as before. One CloseWatcher at a time, for the screen showing, made on each switch with the old one
      destroyed first, so it always takes a group of its own and one back closes one screen. No history entry, so the
      fleet exit's history.back and an installed app's back on the title are untouched (Q62's (c) is not built). Where
@@ -10562,7 +10667,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* 3 Nov: the screens built after Q94 (none had a watcher, so back closed the installed app): back is Title, as on
        the cards; the story's back ends it (seen), else the title would open it again. Settings keeps Q94's leave */
     darkroom: function () { ui.show('title'); }, album: function () { ui.show('title'); }, trophies: function () { ui.show('title'); },
-    daily: function () { ui.show('title'); }, story: function () { ui.storySkip(); }
+    daily: function () { ui.show('title'); }, story: function () { ui.storySkip(); },
+    /* sb-m2-28: the crop screen's back is its own Title (Back to the doorway in a house), and the biome roll's back is
+       the crop again, the same photo and box, so a phone's back goes one screen back, never out of the game */
+    crop: function () { document.getElementById('croptitle').click(); }, roll: function () { ui.rollBack(); }
   };
   var watcher = null, watching = '';
   function armBack(name) {
@@ -10814,18 +10922,19 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (name === 'trophies') drawTrophies();
     if (name === 'album') drawAlbum();
     if (name === 'crop' && ui.drawStocks) ui.drawStocks();   /* R10: the film stocks, fresh for the rank */
-    if (name === 'title') { document.getElementById('codebox').hidden = !ui.firstRoomDone; document.getElementById('darkroombtn').hidden = !ui.firstRoomDone; document.getElementById('albumbtn').hidden = !ui.firstRoomDone; trophyLink(); darkroomLink(); drawRecent(); HS.on = false; drawHouse(); drawDailyBtn(); ui.applyLook(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
+    if (name === 'title') { document.getElementById('grpcoll').hidden = !ui.firstRoomDone; document.getElementById('codebox').hidden = !ui.firstRoomDone; document.getElementById('darkroombtn').hidden = !ui.firstRoomDone; document.getElementById('albumbtn').hidden = !ui.firstRoomDone; trophyLink(); darkroomLink(); drawRecent(); HS.on = false; drawHouse(); drawDailyBtn(); ui.applyLook(); titleWhat(); }   /* DESIGN 5.3: the first screen is two buttons and a small link; the title is outside any house (its run stays saved) */
     if (name === 'settings') fillSettings();
     if (name === 'title') { SB.render.dropPhoto(); G.photoRecord = null; }   /* m2 step 1: the room's photo goes on Title */
     if (name === 'crop') document.getElementById('croptitle').textContent = HS.on && HS.run ? ui.COPY.cropBack : ui.COPY.toTitle;
     var all = document.querySelectorAll('.screen');
     for (var i = 0; i < all.length; i++) all[i].classList.toggle('on', all[i].id === name);
+    ui.fadeIn(name);   /* sb-m2-27 S4 */
     ui.screen = name;
     /* the fleet's chip, pill, card and toast hide while a room runs (Q48's addendum) and on the crop screen, where the
        chip sat over the photo a drag starts on (t15-crop) */
     document.body.classList.toggle('playing', name === 'play' || name === 'crop');
+    if (name === 'roll') document.body.classList.add('playing');   /* sb-m2-27 S5: the roll follows the crop, the chip hidden as there */
     if (name === 'title' || name === 'settings') ui.seatChip();
-    else if (name === 'door') ui.seatChip();   /* the house's doorway is a screen of its own, seated as the title (Q200) */
     if (name === 'play') SB.render.fit();
   };
   /* under the mark the fleet's chip takes its seat on the title and Settings at once, not at the include's own reseat
@@ -10833,10 +10942,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
      clear card's seat in the strip's reserved box sat on Settings on the title after a room in a Pixel 9 app window:
      Q91). In a room the include reseats the hidden chip on its own timers, so it reaches the clear card in that seat.
      SWSMusic.reseat is the include's public reseat on demand; it never moves a chip the player has dragged */
-  ui.seatChip = function () {
-    if (!document.documentElement.classList.contains('navpad') || !window.SWSMusic || typeof window.SWSMusic.reseat !== 'function') return;
-    try { window.SWSMusic.reseat(); } catch (e) { /* the include's own business; its timers reseat it anyway */ }
-  };
+  /* sb-m2-28: the chip's one seat, the top row of the title or Settings (the CSS above); it is moved into the screen
+     showing as that screen shows, and into the title the moment the include adds it (whatever screen is up then).
+     A press on it starts no drag (stopped at the chip before the include's own listener), so a tap still opens the player */
+  function seatChipIn(name) {
+    var c = document.getElementById('sws-music-chip'), scr = document.getElementById(name);
+    if (!c || !scr || c.parentNode === scr) return;
+    if (!c.sbSeated) { c.sbSeated = true; c.addEventListener('pointerdown', function (e) { e.stopImmediatePropagation(); }, true); }   /* before the include's drag (a capture listener runs first at its target) */
+    scr.insertBefore(c, scr.firstElementChild ? scr.firstElementChild.nextSibling : null);   /* after the exit (Settings' bar): read and tabbed in that order, never the screen's last control */
+  }
+  ui.seatChip = function () { seatChipIn(ui.screen === 'settings' ? 'settings' : 'title'); };
+  if (window.MutationObserver) new MutationObserver(function () { if (document.getElementById('sws-music-chip') && document.getElementById('sws-music-chip').parentNode === document.body) ui.seatChip(); })
+    .observe(document.body, { childList: true });
 
   ui.fillCopy = function (root) {
     var els = (root || document).querySelectorAll('[data-copy]');
@@ -11136,8 +11253,142 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (L && L.phase === 'none' && L.pick === CR.token && JSON.stringify(L.from) === JSON.stringify(CR.crop)) { refused(CR.last, L.boxes.length > 0); return; }
       seekStart(CR.last); return;
     }
+    if (rollWanted()) { rollStart(); return; }
     ui.startRoom(CR.lastRec, ui.COPY.photoRoom, { level: CR.last, photo: { src: CR.src, crop: CR.crop }, ms: CR.ms });
   }
+
+  /* ------------------------------------------------ sb-m2-27 S5: THE BIOME ROLL (Stephen, 13 Nov) */
+  /* After Develop and before the reveal: the five biomes as tiles, a Sun ring sweeping across them, slowing, landing in
+     about ROLL_MS; a tap anywhere stops it early on the tile it would have landed on. The roll is random with the photo's
+     own biome (the capture's hue vote, already in the record's biome byte) ROLL_PHOTO_W times as likely as each other.
+     Choose turns the tiles into buttons (free), or From my photo takes the vote. The result is written to the record's
+     biome byte (1 to 5), so replays, the album, a recent room and a friend's code all build the same biome; the format
+     does not change. It runs for a photographed or chosen room (and each new room of a house) only: never the first
+     room ever (DESIGN 5.3's first minute, its plain Attic rules), never a Daily, a code, a recent or the sample room
+     (none of them develops here), and not while a film stock is picked (the stock already chose). A biome whose build
+     refuses this box is skipped by the roll and refused by Choose. The random source is injectable (SB_DEV.rollWith) so
+     a gate lands where it says. Reduced motion: no sweep, the result at once. */
+  var ROLL_MS = 1500, ROLL_HOLD_MS = 1200, ROLL_PHOTO_W = 2;
+  var RL = { rand: null, on: false, tok: 0, timers: [], photo: 0, target: -1, at: -1, landed: false, choosing: false, hops: 0, built: {}, no: {}, runs: 0, t0: 0, tl: 0 };
+  function rollWanted() {
+    var d = SB.save.doc;
+    return !!(ui.firstRoomDone && CR.lastRec && CR.lastRec.v === 2 && CR.lastRec.biome >= 1 && CR.lastRec.biome <= SB.record.BIOME_MAX && !(d && (d.settings.stock | 0) > 0));
+  }
+  function rollOpts() {
+    var hs = HS.on && !!HS.run, room = hs ? HS.run.at + 1 : 0;
+    return hs ? { roomIndex: room, lastRoom: room === SB.TUNING.HOUSE_ROOMS } : { firstRoom: false };
+  }
+  /* biome k (0..4): the record with its byte, and its level (null when the build refuses); the photo's own is the crop's */
+  function rollBuild(k) {
+    if (RL.built[k]) return RL.built[k];
+    var rec = SB.record.fromJSON(SB.record.toJSON(CR.lastRec)); rec.biome = k + 1;
+    var lv = k === RL.photo && !(HS.on && HS.run) ? CR.last : SB.pipeline.build(rec, rollOpts());
+    if (lv.needsCrop) { RL.no[k] = true; return null; }
+    RL.built[k] = { rec: rec, lv: lv }; return RL.built[k];
+  }
+  /* the weighted pick: r in [0, 1) over the weights, the photo's first, then the others in order; a refusing biome weighs 0 */
+  ui.rollPick = function (r, photo, no) {
+    var B = SB.record.BIOME_MAX, order = [photo], w = [], sum = 0, k;
+    for (k = 0; k < B; k++) if (k !== photo) order.push(k);
+    for (k = 0; k < B; k++) { w[k] = no && no[order[k]] ? 0 : order[k] === photo ? ROLL_PHOTO_W : 1; sum += w[k]; }
+    var x = r * sum;
+    for (k = 0; k < B; k++) { if (x < w[k]) return order[k]; x -= w[k]; }
+    return photo;
+  };
+  function rollClear() { RL.timers.forEach(clearTimeout); RL.timers = []; }
+  function rollLight(k) {
+    RL.at = k;
+    var bs = document.getElementById('rolltiles').children;
+    for (var i = 0; i < bs.length; i++) { bs[i].classList.toggle('lit', i === k); bs[i].setAttribute('aria-checked', String(i === k)); }
+    var pol = document.getElementById('rollpol');
+    if (k >= 0) pol.setAttribute('data-biome', SB.palette.BIOMES[k]); else pol.removeAttribute('data-biome');
+  }
+  /* sb-m2-28: the print on the roll screen, the crop of the player's photo (hidden when the photo is gone); wiped as the
+     roll ends, so no copy of the photo outlives it (the photo's own rule, SB_DEV.photoAlive) */
+  function rollPrint(on) {
+    var pc = document.getElementById('rollprint'), pol = document.getElementById('rollpol'), g = pc.getContext('2d'), ok = false;
+    g.clearRect(0, 0, pc.width, pc.height);
+    if (on && CR.src && CR.crop) {
+      try { g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; g.drawImage(CR.src, CR.crop.x, CR.crop.y, CR.crop.w, CR.crop.h, 0, 0, pc.width, pc.height); ok = true; } catch (e) { ok = false; }
+    }
+    pol.hidden = !ok;
+  }
+  function rollSay(s) { document.getElementById('rollsay').textContent = s; }
+  function rollStart() {
+    var C = ui.COPY, B = SB.palette.BIOMES, h = '';
+    rollClear(); RL.tok++; RL.on = true; RL.landed = false; RL.choosing = false; RL.built = {}; RL.no = {}; RL.hops = 0; RL.at = -1;
+    RL.photo = CR.lastRec.biome - 1; RL.runs++; RL.t0 = performance.now(); RL.tl = 0;
+    for (var k = 0; k < B.length; k++) h += '<button type="button" role="radio" aria-checked="false" class="' + B[k] + '" data-biome="' + k + '"><i style="background-image:var(--film-' + B[k] + '-ready)"></i><span>' + C.stockNames[k] + '</span></button>';
+    document.getElementById('rolltiles').innerHTML = h;
+    document.getElementById('roll').classList.remove('choosing'); document.getElementById('roll').classList.remove('landed');
+    document.getElementById('roll').classList.toggle('still', SB.render.reduced()); rollLight(-1); rollPrint(true);
+    document.getElementById('rollchoose').hidden = false; document.getElementById('rollphoto').hidden = true;
+    rollSay(C.rollStop);
+    ui.show('roll');
+    /* a name wider than its tile (Overgrowth at 320 px) steps its own size down until it fits */
+    [].forEach.call(document.querySelectorAll('#rolltiles span'), function (sp) {
+      var w = sp.parentNode.clientWidth - 4, fs = parseFloat(getComputedStyle(sp).fontSize);
+      for (var n = 0; n < 8 && sp.scrollWidth > w; n++) { fs *= 0.92; sp.style.fontSize = fs + 'px'; }
+    });
+    /* the target: picked, and built with the room's own options before the sweep (a refusing biome is skipped) */
+    var rand = RL.rand || Math.random, tk;
+    for (var tries = 0; tries < B.length; tries++) { tk = ui.rollPick(rand(), RL.photo, RL.no); if (rollBuild(tk)) break; }
+    if (!RL.built[tk]) tk = RL.photo;
+    RL.target = tk;
+    if (SB.render.reduced()) { rollLand(); return; }
+    /* the sweep: from the first tile, HOPS hops (12 to 16, ending on the target), each wait longer than the last (the
+       waits grow as the square of the hop's place), scaled to ROLL_MS in all */
+    var hops = 12 + ((tk - 12) % 5 + 5) % 5, base = [], sum = 0, i, tok = RL.tok;
+    for (i = 0; i < hops; i++) { base.push(1 + 6 * Math.pow((i + 1) / hops, 2)); sum += base[i]; }
+    rollLight(0);
+    var at = 0;
+    for (i = 0; i < hops; i++) {
+      at += base[i] * ROLL_MS / sum;
+      RL.timers.push(setTimeout(function () { if (RL.tok !== tok || RL.landed || RL.choosing) return; RL.hops++; rollLight(RL.hops % 5); if (RL.hops >= hops) rollLand(); }, at));
+    }
+  }
+  function rollLand() {
+    if (!RL.on || RL.landed) return;
+    rollClear(); RL.landed = true; RL.tl = performance.now(); rollLight(RL.target); document.getElementById('roll').classList.add('landed');
+    rollSay(ui.COPY.rollLanded.replace('{name}', ui.COPY.stockNames[RL.target]));
+    var tok = RL.tok;
+    RL.timers.push(setTimeout(function () { if (RL.tok === tok && !RL.choosing) rollGo(RL.target); }, ROLL_HOLD_MS));
+  }
+  function rollGo(k) {
+    var b = RL.built[k] || rollBuild(k); if (!b) return false;
+    rollClear(); RL.on = false; RL.tok++; rollPrint(false);
+    return ui.startRoom(b.rec, ui.COPY.photoRoom, { level: HS.on && HS.run ? null : b.lv, photo: { src: CR.src, crop: CR.crop }, ms: CR.ms });
+  }
+  function rollChoose() {
+    rollClear(); RL.choosing = true; RL.landed = true;
+    var bs = document.getElementById('rolltiles').children;
+    for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('dim', !!RL.no[i]);
+    document.getElementById('roll').classList.add('choosing'); document.getElementById('roll').classList.remove('landed');
+    document.getElementById('rollchoose').hidden = true; document.getElementById('rollphoto').hidden = false;
+    rollSay(ui.COPY.rollPick);
+  }
+  ui.rollBack = function () { rollClear(); RL.on = false; RL.tok++; rollPrint(false); ui.show('crop'); };
+  ui.rollDev = {
+    with: function (fn) { RL.rand = typeof fn === 'function' ? fn : null; },
+    state: function () { return { on: RL.on, photo: RL.photo, target: RL.target, at: RL.at, hops: RL.hops, landed: RL.landed, choosing: RL.choosing, no: Object.keys(RL.no).map(Number), runs: RL.runs, landMs: RL.tl ? RL.tl - RL.t0 : -1 }; }
+  };
+  ui.rollWire = function () {
+    var el = document.getElementById('roll');
+    el.addEventListener('click', function (e) {
+      if (!RL.on) return;
+      var b = e.target.closest ? e.target.closest('button') : null, id = b ? b.id : '';
+      if (id === 'rollchoose') { rollChoose(); return; }
+      if (id === 'rollphoto') { rollGo(RL.photo); return; }
+      if (RL.choosing) {
+        if (!b || !b.hasAttribute('data-biome')) return;
+        var k = b.getAttribute('data-biome') | 0;
+        rollLight(k);
+        if (!rollGo(k)) { b.classList.add('dim'); rollSay(ui.COPY.rollNo.replace('{name}', ui.COPY.stockNames[k])); }
+        return;
+      }
+      if (!RL.landed) rollLand(); else rollGo(RL.target);   /* a tap mid sweep stops it on its landing; once landed, climbs now */
+    });
+  };
 
   /* ------------------------------------------------ the auto crop (QUESTIONS Q96 ruling 3, Stephen 31 Oct; Q181) */
   /* Develop on a refusing box: the boxes nearest the player's framing (SB.capture.seekBoxes, the cause's way)
@@ -11341,6 +11592,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('filechoose').addEventListener('change', onFile);
     document.getElementById('retake').addEventListener('click', function () { openPicker(CR.from || 'filechoose'); });
     document.getElementById('develop').addEventListener('click', develop);
+    ui.rollWire();   /* sb-m2-27 S5 */
+    ui.pressWire();   /* sb-m2-27 S4 */
     document.getElementById('stocks').addEventListener('click', function (e) {   /* R10: pick a film, the preview rebuilds with it */
       var b = e.target.closest ? e.target.closest('.stock') : null; if (!b) return;
       var k = b.getAttribute('data-stock') | 0, d = SB.save.doc; if (!d) return;
@@ -11789,13 +12042,24 @@ body.sb-modal .lwfb-fab { display: none !important; }
     thumbs(list, rs, ui.COPY.recentRoom, function (rec) { ui.startRoom(rec, ui.COPY.recentRoom); });
   }
   /* the settings screen (T1.10, section 2.4): every toggle writes the save at once */
+  /* sb-m2-28: Settings' install row: the button only while the browser holds an install offer, else one plain line on
+     adding the game by hand; none at all once the game runs as an installed app */
+  ui.installShow = function () {
+    var row = document.getElementById('setinstall'), b = document.getElementById('install'), C = ui.COPY, mm = function (q) { return !!(window.matchMedia && window.matchMedia(q).matches); };
+    if (!row || !b) return;
+    row.hidden = !!navigator.standalone || mm('(display-mode: standalone)') || mm('(display-mode: fullscreen)') || mm('(display-mode: minimal-ui)');
+    b.hidden = !ui.installPrompt;
+    document.getElementById('setinstalltext').textContent = ui.installPrompt ? C.setInstall : C.setInstallHow;
+  };
   function fillSettings() {
+    ui.installShow();
     var st = SB.save.doc.settings, p95 = function (a) { if (!a.length) return 0; var b = a.slice().sort(function (x, y) { return x - y; }); return b[Math.min(b.length - 1, Math.floor(b.length * 0.95))]; };
     document.getElementById('setmirror').checked = !!st.mirror;
     document.getElementById('setsound').checked = !!st.sound;
     document.getElementById('setmusic').checked = !!st.music;
     document.getElementById('setphoto').checked = st.photoBehind !== false;
     document.getElementById('setzoom').checked = !!st.zoom;
+    document.getElementById('setvibe').checked = st.vibrate !== false;
     document.getElementById('setmotion').value = st.reducedMotion === null ? 'os' : st.reducedMotion ? 'on' : 'off';
     document.getElementById('setdamaged').hidden = !SB.save.quarantined;
     drawLook();
@@ -11807,6 +12071,59 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('setperf').textContent = ui.COPY.perf + ': ' + (ms >= 0 ? ms.toFixed(1) + ' ms p95' : ui.COPY.perfNone) + ', ' + ui.COPY.perfHash + ' ' + (ui.lastHash || ui.COPY.perfHashNone);
     document.getElementById('setbuild').textContent = ui.COPY.build + ' ' + SB.BUILD.replace(/-/g, ' ');
   }
+  /* sb-m2-27 S4: a short vibration (navigator.vibrate where it exists, Settings' Vibration on); a screen's 150 ms fade
+     in (title, the cards and the lists: never the room, its reveal or the crop, never under reduced motion); the
+     pressed state on every button by pointer (the room's own controls left alone). None of it touches the sim */
+  ui.buzz = function (ms) {
+    var d = SB.save.doc; if (d && d.settings.vibrate === false) return;
+    try { if (navigator.vibrate) navigator.vibrate(ms || 12); } catch (e) { /* silent */ }
+  };
+  var FADES = { title: 1, door: 1, album: 1, trophies: 1, settings: 1, darkroom: 1, daily: 1, story: 1, roll: 1 };
+  ui.fadeIn = function (name) {
+    var el = document.getElementById(name); if (!el) return;
+    el.classList.remove('fadein');
+    if (!FADES[name] || SB.render.reduced()) return;
+    void el.offsetWidth; el.classList.add('fadein');
+    clearTimeout(el.sbFadeT); el.sbFadeT = setTimeout(function () { el.classList.remove('fadein'); }, 200);
+  };
+  ui.pressWire = function () {
+    var on = null, off = function () { if (on) { var b = on; on = null; setTimeout(function () { b.classList.remove('press'); }, 80); } };
+    document.addEventListener('pointerdown', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('button') : null;
+      if (!b || b.disabled || b.closest('#top')) return;
+      off(); on = b; b.classList.add('press');
+    }, true);
+    ['pointerup', 'pointercancel'].forEach(function (k) { document.addEventListener(k, off, true); });
+    document.addEventListener('click', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('button') : null;
+      if (b && !b.disabled && !b.closest('#top')) ui.buzz(10);
+    }, true);
+  };
+  /* the clear card's XP: the bar fills from where the room started and the numbers count up over XP_COUNT_MS (at once
+     under reduced motion); the words it ends on are the rank line's own */
+  var XP_COUNT_MS = 600;
+  ui.xpCount = function (el, r, gain) {
+    var C = ui.COPY, L = SB.TUNING.RANK_XP, span = r.next ? L[r.i + 1] - L[r.i] : 1, f1 = r.frac, f0 = r.next ? Math.max(0, (r.xp - gain - L[r.i]) / span) : 1;
+    var txt = function (n) { return C.rankGain.replace('{n}', n).replace('{m}', r.toNext + gain - n).replace('{rank}', r.next || C.rankTop); };
+    el.innerHTML = '<span></span><b id="clearxp"><i></i></b>';
+    var sp = el.firstChild, bar = el.lastChild.firstChild, tok = (el.sbXpTok = (el.sbXpTok | 0) + 1);
+    if (SB.render.reduced() || gain <= 0) { sp.textContent = txt(gain); bar.style.width = Math.round(f1 * 100) + '%'; return; }
+    var t0 = performance.now();
+    sp.textContent = txt(0); bar.style.width = Math.round(f0 * 100) + '%';
+    (function tick(now) {
+      if (el.sbXpTok !== tok) return;
+      var k = Math.min(1, (now - t0) / XP_COUNT_MS), e = 1 - (1 - k) * (1 - k);
+      sp.textContent = txt(Math.round(gain * e)); bar.style.width = (100 * (f0 + (f1 - f0) * e)).toFixed(1) + '%';
+      if (k < 1) requestAnimationFrame(tick);
+    })(t0);
+  };
+  /* sb-m2-27 S3: a word's one line, shown the first time its word shows and then remembered as seen (onboarding.seen) */
+  ui.what = function (id, key, show, text) {
+    var el = document.getElementById(id), d = SB.save.doc; if (!el) return;
+    var seen = d && d.onboarding.seen;
+    if (!show || !seen || seen[key]) { el.hidden = true; return; }
+    el.textContent = text; el.hidden = false; seen[key] = true; SB.save.commit();
+  };
   ui.applySettings = function () {
     var st = SB.save.doc.settings;
     if (ui.zoomSync) ui.zoomSync();
@@ -12150,7 +12467,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     if (ups.length && ui.lastRankUp) {   /* R10 art: the rank up on Astra's plate (the words in its text rectangle [10,3,108,10]), the gift under it */
       el.classList.add('rankup'); el.innerHTML = '<b class="plate"></b><span></span>';
       el.firstChild.textContent = C.rankUpPlate.replace('{rank}', ui.lastRankUp.rank); el.lastChild.textContent = ui.lastRankUp.gift;
-    } else { el.classList.remove('rankup'); el.textContent = ups.length ? ups[ups.length - 1] : C.rankGain.replace('{n}', r.xp - xpBefore).replace('{m}', r.toNext).replace('{rank}', r.next || C.rankTop); }
+    } else { el.classList.remove('rankup'); if (ups.length) el.textContent = ups[ups.length - 1]; else ui.xpCount(el, r, r.xp - xpBefore); }   /* sb-m2-27 S4: counted up */
     el.hidden = false;
   };
   ui.drawRank = function () {
@@ -12169,10 +12486,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var cur = d ? d.settings.stock | 0 : 0, h = '';
     for (var k = 0; k <= 5; k++) {
       var open = ui.stockOpen(d, k), nm = k ? C.stockNames[k - 1] : C.stockAuto;
-      h += '<button type="button" class="stock' + (k === cur ? ' on' : '') + (open ? '' : ' locked') + '" data-stock="' + k + '" role="radio" aria-checked="' + (k === cur) + '"' + (open ? '' : ' aria-disabled="true"') + '>'
-        + '<i style="background-image:var(--film-' + (k ? B[k - 1] : 'auto') + (open ? '-ready' : '-locked-locked') + ')"></i>' + nm + (open ? '' : '<small>' + C.stockLocked.replace('{rank}', C.rankNames[SB.TUNING.RANK_STOCK_AT[k]]) + '</small>') + '</button>';   /* R10 art: her film box, locked with her lock */
+      h += '<button type="button" class="stock' + (k === cur ? ' on' : '') + (open ? '' : ' locked') + '" data-stock="' + k + '" role="radio" aria-checked="' + (k === cur) + '"' + (open ? '' : ' aria-disabled="true" aria-label="' + C.stockSays.replace('{name}', nm).replace('{rank}', C.rankNames[SB.TUNING.RANK_STOCK_AT[k]]) + '"') + '>'
+        + '<i style="background-image:var(--film-' + (k ? B[k - 1] : 'auto') + (open ? '-ready' : '-locked-locked') + ')"></i><b>' + nm + '</b>' + (open ? '' : '<small>' + C.rankNames[SB.TUNING.RANK_STOCK_AT[k]] + '</small>') + '</button>';   /* R10 art: her film box, locked with her lock */
     }
     row.innerHTML = h;
+    /* sb-m2-28: once the row is laid out, a name wider than its tile (Overgrowth at 360) steps its own size down to fit */
+    requestAnimationFrame(function () {
+      [].forEach.call(row.querySelectorAll('.stock b'), function (n) {
+        n.style.fontSize = ''; var w = n.parentNode.clientWidth - 4, fs = parseFloat(getComputedStyle(n).fontSize);
+        for (var j = 0; j < 10 && w > 0 && n.scrollWidth > w; j++) { fs *= 0.92; n.style.fontSize = fs + 'px'; }
+      });
+    });
   };
   /* the trophies earned and not yet on the save's list, appended (the caller commits) */
   ui.trophyCheck = function () {
@@ -12376,12 +12700,18 @@ body.sb-modal .lwfb-fab { display: none !important; }
     ui.drawRank();   /* R10 */
     var n = doc.stats.houseClears | 0, cnt = document.getElementById('housecount'), go = document.getElementById('housego'), run = doc.run, C = ui.COPY;
     document.getElementById('house').hidden = !(doc.stats.clears > 0);
+    document.getElementById('grpplay').hidden = !(doc.stats.clears > 0);   /* sb-m2-27 S2 */
     go.hidden = !run;
     go.textContent = !run ? C.houseContinue : run.lost ? C.retryHouse : C.houseContinueAt.replace('{n}', run.at + 1).replace('{of}', SB.TUNING.HOUSE_ROOMS);
     cnt.textContent = C.houseCount.replace('{n}', n); cnt.hidden = n < 1;
     document.getElementById('housestart').classList.toggle('sealed', n > 0);   /* HOUSE-B: icon_house's checked seal once a house is cleared */
   }
   ui.drawHouse = drawHouse;
+  function titleWhat() {   /* sb-m2-27 S3 */
+    var d = SB.save.doc, r = d ? ui.rankInfo(d) : null;
+    ui.what('darkroomwhat', 'darkroom', !document.getElementById('darkroombtn').hidden, ui.COPY.whatDarkroom);
+    ui.what('rankwhat', 'rank', !document.getElementById('rankline').hidden && !!(r && r.next), r && r.next ? ui.COPY.whatRank.replace('{rank}', r.next) : '');
+  }
   /* a new house, from the title (a saved one is replaced only when the player says so), the death card or the clear card */
   ui.houseStart = function () {
     var doc = SB.save.doc;
@@ -12412,6 +12742,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
     bank.textContent = cleared ? (info.dp === 1 ? C.houseSumOne : C.houseSum).replace('{rooms}', of).replace('{n}', info.dp)
       : at === 0 ? C.houseRooms : raw !== null && raw !== undefined && raw > run.last ? C.bankedOf.replace('{n}', run.last).replace('{of}', raw) : plural(run.last, 'bankedOne', 'banked');
     bank.hidden = !cleared && at > 0 && !run.last && !raw;   /* a doorway that banked nothing says nothing of it */
+    /* sb-m2-27 S1: the new house's stake in the game's own terms: the clear's prize (the next look on the ladder, lookWin's),
+       and a death's Retry House from room 1 (runRetry) */
+    var stake = $('doorstake'), np = !cleared && at === 0 && SB.save.doc ? SB.record.lookPrize(SB.record.lookValid(SB.save.doc.cosmetics)) : null;
+    stake.textContent = np ? C.houseStake.replace('{name}', C['look_' + np.replace('.', '_')]) : C.houseStakeAll; stake.hidden = cleared || at > 0;
     nx.textContent = at > 0 && !cleared ? (at + 1 === of ? C.doorLast : C.doorTougher.replace('{n}', at + 1)) : ''; nx.hidden = !nx.textContent;
     doorHearts($('doorhearts'), at > 0 && !cleared ? run.hero : null, HS.back);
     var saved = !cleared && run && run.rooms.length > at;
@@ -12465,7 +12799,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
      room 1 again); rooms 2 to 5 at x1 (DESIGN 8). Q201 */
   function houseClear() {
     if (!G.banked) {
-      G.banked = true;
+      G.banked = true; ui.buzz(15);   /* sb-m2-27 S4: the house room's clear */
       var dp = G.state.room.dp, doc = SB.save.doc, n = HS.run.at === 0 ? Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT) : dp, total = HS.run.dp + n;
       doc.stats.clears++; SB.save.addRecent(G.record); if (n > 0) SB.Wallet.earn(n, 'house');
       if (!G.roomHit) doc.stats.flawless = (doc.stats.flawless | 0) + 1;
@@ -12525,7 +12859,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     var gotEl = document.getElementById('got'); if (gotEl) { clearTimeout(gotEl.sbGotT); gotEl.classList.remove('on'); }   /* WEAPONS ARRIVE: the pickup card's keep line goes when the clear says Yours now */
     if (G.mode === 'house' && HS.run) return houseClear();   /* in a house the doorway replaces the clear card (Q200) */
     if (G.record && SB.save.doc && !G.banked) {
-      G.banked = true;
+      G.banked = true; ui.buzz(15);   /* sb-m2-27 S4: the clear */
       var dp = G.state.room.dp, n = Math.floor(dp * SB.TUNING.DP_FREE_PLAY_MULT), bank = document.getElementById('clearbank');
       SB.save.doc.stats.clears++; SB.save.addRecent(G.record); if (n > 0) SB.Wallet.earn(n, 'clear');
       if (!G.roomHit) SB.save.doc.stats.flawless = (SB.save.doc.stats.flawless | 0) + 1;
@@ -12540,6 +12874,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       dailyClear();
       ui.lastHash = SB.sim.hash(G.state);
       bank.textContent = n < dp ? ui.COPY.bankedOf.replace('{n}', n).replace('{of}', dp) : n === 1 ? ui.COPY.bankedOne : ui.COPY.banked.replace('{n}', n); bank.hidden = n <= 0;
+      ui.what('clearwhat', 'dp', n > 0, ui.COPY.whatDp);   /* sb-m2-27 S3 */
       SB.Wallet.moment('first_clear', { mode: G.mode });
     }
     document.getElementById('clear').classList.add('on'); ui.screen = 'clear'; document.body.classList.remove('playing');
@@ -12638,7 +12973,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('trback').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
     document.getElementById('dkback').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
     document.getElementById('levelcode').placeholder = ui.COPY.levelCode;   /* the field says what it takes (t110: an empty white box) */
-    document.getElementById('install').addEventListener('click', function () { var ip = ui.installPrompt; if (ip) { ui.installPrompt = null; this.hidden = true; try { ip.prompt(); } catch (e) { /* silent */ } } });
+    document.getElementById('install').addEventListener('click', function () { var ip = ui.installPrompt; if (ip) { ui.installPrompt = null; ui.installShow(); try { ip.prompt(); } catch (e) { /* silent */ } } });
     document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });
     document.getElementById('qrtoggle').addEventListener('click', function () { ui.toggleQR(); });
     var mo = new MutationObserver(syncModal);
@@ -12646,7 +12981,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     syncModal();
     document.getElementById('settitle').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
     var setBool = function (id, key) { document.getElementById(id).addEventListener('change', function () { SB.save.doc.settings[key] = this.checked; SB.save.commit(); ui.applySettings(); }); };
-    setBool('setmirror', 'mirror'); setBool('setsound', 'sound'); setBool('setmusic', 'music'); setBool('setphoto', 'photoBehind'); setBool('setzoom', 'zoom');
+    setBool('setmirror', 'mirror'); setBool('setsound', 'sound'); setBool('setmusic', 'music'); setBool('setphoto', 'photoBehind'); setBool('setzoom', 'zoom'); setBool('setvibe', 'vibrate');
     document.getElementById('setmotion').addEventListener('change', function () { SB.save.doc.settings.reducedMotion = this.value === 'os' ? null : this.value === 'on'; SB.save.commit(); });
     document.getElementById('setcopy').addEventListener('click', function () { var el = document.getElementById('setexport'); try { navigator.clipboard.writeText(el.value).catch(function () { el.select(); }); } catch (e) { el.select(); } });
     document.getElementById('setimportgo').addEventListener('click', function () {
@@ -12730,7 +13065,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (ev & EV.DIVE) au.sfx('dive');
       if (ev & EV.LAND) au.sfx('land', G.state.hero.shake > 0);
       if (ev & EV.HIT) { au.sfx('hit'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); SB.ui.hurtFlash(); G.roomHit = true; }
-      if (ev & EV.CLEAR) au.sfx('beacon');
+      if (ev & EV.CLEAR) { au.sfx('beacon'); SB.ui.buzz(15); }   /* sb-m2-27 S4: the exit */
       if ((ev & EV.PICKUP) && SB.render.lootTaken(G.state) > seen) au.sfx('pickup');   /* the hidden blueprint is taken in silence (Q92) */
       if (ev & EV.CHEST) au.sfx('chest');
       /* the count's gain under it on a chest's step or a kill's (+15, +3, +10: docs/WEAPONS-V1.md 10) */
@@ -12747,7 +13082,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       if (ev & EV.BOSS_HIT) au.sfx('bossHit');
       if (ev & EV.TELL) au.sfx('bossTell');
       if (ev & EV.BOSS_DOWN) au.sfx('beacon');
-      if (ev & EV.KEY) { SB.ui.keys(G.state); SB.ui.tally('keys'); if (SB.sim.keysLeft(G.state) === 0) au.sfx('beacon'); }   /* the last key lights the lamp */
+      if (ev & EV.KEY) { SB.ui.buzz(12); SB.ui.keys(G.state); SB.ui.tally('keys'); if (SB.sim.keysLeft(G.state) === 0) au.sfx('beacon'); }   /* the last key lights the lamp */
       if (ev & EV.SAVED) { au.sfx('saved'); SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax); }   /* a charm took the hit */
       if (ev & EV.CHECK) au.sfx('pick');   /* m2 step 3: the tripod lit */
       if (ev & EV.RESPAWN) SB.ui.hearts(G.state.hero.hearts, G.state.hero.heartsMax);   /* back at the tripod, every heart */
@@ -12823,7 +13158,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
   /* the PWA (section 1.5, T1.11): the worker registered on load with its stamp (?v= moves with sw.js's CACHE and the
      page's BUILD), never inside a frame or with ?embed=1 (SWS_EMBED); an update never reloads the page; the browser's
      install offer waits behind Settings' Install */
-  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=48').catch(function () {}); } catch (e) { /* silent */ } });
+  if (!window.SWS_EMBED && navigator.serviceWorker) window.addEventListener('load', function () { try { navigator.serviceWorker.register('./sw.js?v=50').catch(function () {}); } catch (e) { /* silent */ } });
   /* ⛔ A STALE PAGE HEALS ITSELF (sb-m1-13; Jessie's phone, 2 Nov: sb-m1-12 was live and hers kept an older build). A
      worker, the game's own or the site's root one when the arcade frames the game, answers with its saved copy when the
      network is slow or the CDN answers 429, so one phone can sit on an old build while every other has the new one.
@@ -12851,7 +13186,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       }).catch(function () { /* silent: the saved copy still plays */ });
     } catch (e) { /* silent */ }
   })();
-  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); SB.ui.installPrompt = e; document.getElementById('install').hidden = false; });
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); SB.ui.installPrompt = e; SB.ui.installShow(); });
   SB.input.initStrip();
   window.addEventListener('resize', function () { var s = SB.ui.screen; if (s === 'play' || s === 'pause' || s === 'share' || s === 'clear' || s === 'dead') { SB.render.fit(); draw(); if (s === 'pause') SB.ui.placePaused(); } });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { if (G.state) { SB.render.fit(); draw(); } });
@@ -12862,6 +13197,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
   window.SB_DEV = {
     build: SB.BUILD,
     screen: function () { return SB.ui.screen; },
+    rollWith: function (fn) { SB.ui.rollDev.with(fn); },   /* sb-m2-27 S5: the roll's random source (null: Math.random) */
+    roll: function () { return SB.ui.rollDev.state(); },
     backWatch: function () { return SB.ui.backWatched(); },   /* the screen the armed back watcher serves, '' for none (Q94) */
     frames: function () { return loop.steps; },
     state: function () { return G.state ? structuredClone(G.state) : null; },
