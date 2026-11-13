@@ -5102,7 +5102,9 @@
   function musicHold(on){ try{ var m=window.SWSMusic; if(m&&m.hold) m.hold(!!on||musicFirst); }catch(e){} }
   function musicBreak(){ musicFirst=false; musicHold(false);
     clearTimeout(musicBreak._t);
-    musicBreak._t=setTimeout(function(){ try{ if(!playing&&window.SWSMusic&&SWSMusic.reveal) SWSMusic.reveal(); }catch(e){} },1400); }
+    /* a short landscape screen has no room for the song card beside the result card (it covered Roll Again in the
+       915 x 412 shot): there it lands folded, as the script's own "New song" pill, and opens on a tap */
+    musicBreak._t=setTimeout(function(){ try{ if(!playing&&window.SWSMusic&&SWSMusic.reveal&&SWSMusic.reveal()&&innerHeight<560&&SWSMusic.fold) SWSMusic.fold(); }catch(e){} },1400); }
   function setPause(p){ paused=p;
     // the notification slot holds while paused: hidden now, back with its time left
     var te=$("toast"); if(te&&NOTE.cur) te.classList[p?"remove":"add"]("show");
