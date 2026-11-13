@@ -104637,10 +104637,17 @@ window.LW_Comp = (function(){
   var box=document.getElementById('lw-music-ask'); if(!box) return;
   function remember(){ try{ localStorage.setItem('lw_music_greeted','1'); }catch(e){} }
   function hide(){ box.classList.remove('on'); }
-  function showAsk(){ if(!window.LW_MUSIC || !LW_MUSIC.play) return; if(LW_MUSIC.state && LW_MUSIC.state.playing) return; box.classList.add('on'); }
-  document.getElementById('lw-music-yes').addEventListener('click',function(){ remember(); hide();
+  /* Hub R3b: never during onboarding, never over a running game, and it answers itself "Not now" after 12 s */
+  var askTimer=null;
+  function busy(){ var b=document.body; if(!b) return true; if(b.classList.contains('ob-active') || b.classList.contains('lw-tutorial-pending') || b.classList.contains('game-active')) return true;
+    var ob=document.getElementById('pw-onboard'); if(ob && getComputedStyle(ob).display!=='none') return true; return false; }
+  function notNow(){ if(askTimer){ clearInterval(askTimer); askTimer=null; } remember(); hide(); }
+  function showAsk(){ if(!window.LW_MUSIC || !LW_MUSIC.play) return; if(LW_MUSIC.state && LW_MUSIC.state.playing) return; if(busy()){ setTimeout(function(){ if(!betaUp()) showAsk(); }, 2000); return; }
+    box.classList.add('on'); var t0=Date.now();
+    askTimer=setInterval(function(){ if(!box.classList.contains('on')){ clearInterval(askTimer); askTimer=null; return; } if(Date.now()-t0>=12000 || busy()) notNow(); }, 500); }
+  document.getElementById('lw-music-yes').addEventListener('click',function(){ if(askTimer){ clearInterval(askTimer); askTimer=null; } remember(); hide();
     try{ var tr=LW_MUSIC.tracks||[], idx=0; for(var i=0;i<tr.length;i++){ if(tr[i] && tr[i].id==='the-waiting-dojo'){ idx=i; break; } } LW_MUSIC.play(idx); }catch(e){} });
-  document.getElementById('lw-music-no').addEventListener('click',function(){ remember(); hide(); });
+  document.getElementById('lw-music-no').addEventListener('click',function(){ notNow(); });
   /* a beat after load, so the card lands over a settled page */
   /* the beta notice owns the first moment (it sits at the top z); the offer comes once it is gone */
   function betaUp(){ var m=document.querySelector('#lw-beta-modal, .lw-beta-modal'); if(!m) return false; var cs=getComputedStyle(m); return cs.display!=='none' && cs.visibility!=='hidden' && m.getBoundingClientRect().height>0; }
