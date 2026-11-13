@@ -1,0 +1,57 @@
+<!doctype html><meta charset="utf-8"><title>Dewball icon candidates</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style>
+</head><body>
+<script src="/satellites/dewball/three.min.js"></script>
+<script>
+/* Dewball icon candidates (13 Nov 2026). Drawn with the game's own three.js, the game's own Dew skin (the canvas
+   texture below is skinTexture() from index.html, Dew colours c1 0xcfeee6, c2 0x7fb8c8, rim 0xeafcff) and the
+   studio palette (#0d100c, sage #7ab356, gold #c8a84b). ?c=1|2|3, &mask=1 shrinks the subject into the maskable
+   safe circle (radius 40%). Rendered by store/dewball-play/icon-candidates.mjs. */
+var Q=new URLSearchParams(location.search), C=+(Q.get('c')||1), MASK=Q.get('mask')==='1', S=512;
+function dewTex(){ var c=document.createElement('canvas'); c.width=c.height=128; var g=c.getContext('2d');
+  g.fillStyle='#cfeee6'; g.fillRect(0,0,128,128); g.fillStyle='#7fb8c8';
+  for(var i=0;i<9;i++) for(var ox=-128;ox<=128;ox+=128) for(var oy=-128;oy<=128;oy+=128){ g.beginPath(); g.arc((i*47)%128+ox,(i*71+23)%128+oy,11+(i%3)*5,0,7); g.fill(); }   /* the same spots, drawn wrapped so the icon shows no seam */
+  g.fillStyle='#eafcff'; g.globalAlpha=0.5; g.beginPath(); g.arc(36,32,14,0,7); g.fill(); g.globalAlpha=1;
+  var t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,1); return t; }
+function bgTex(top,bot,glow){ var c=document.createElement('canvas'); c.width=c.height=512; var g=c.getContext('2d');
+  var l=g.createLinearGradient(0,0,0,512); l.addColorStop(0,top); l.addColorStop(1,bot); g.fillStyle=l; g.fillRect(0,0,512,512);
+  if(glow){ var r=g.createRadialGradient(256,300,10,256,300,300); r.addColorStop(0,glow); r.addColorStop(1,'rgba(0,0,0,0)'); g.fillStyle=r; g.fillRect(0,0,512,512); }
+  for(var i=0;i<40;i++){ var x=(i*137)%512, y=(i*89)%240; g.fillStyle='rgba(232,220,200,'+(0.15+(i%4)*0.12)+')'; g.fillRect(x,y,2,2); }
+  return new THREE.CanvasTexture(c); }
+function grassTex(){ var c=document.createElement('canvas'); c.width=c.height=256; var g=c.getContext('2d');
+  g.fillStyle='#3f6e32'; g.fillRect(0,0,256,256); var sd=7;
+  function rn(){ sd=(sd*16807)%2147483647; return sd/2147483647; }
+  for(var i=0;i<1400;i++){ g.fillStyle=rn()<0.5?'#4c8239':'#33592a'; g.fillRect(rn()*256,rn()*256,2,3); }
+  var t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(8,4); return t; }
+var R=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true}); R.setPixelRatio(1); R.setSize(S,S);
+document.body.appendChild(R.domElement);
+var sc=new THREE.Scene(), cam=new THREE.PerspectiveCamera(30,1,0.1,200);
+sc.add(new THREE.HemisphereLight(0xcfe6ff,0x22361c,0.55)); var dl=new THREE.DirectionalLight(0xfff2d8,0.62); dl.position.set(-4,6,5); sc.add(dl);
+var k=MASK?0.74:1;   /* the maskable subject is drawn smaller, inside the safe circle */
+function ball(r){ var m=new THREE.Mesh(new THREE.SphereGeometry(r,48,32),new THREE.MeshPhongMaterial({map:dewTex(),shininess:28,specular:0x1c2b30})); m.rotation.set(-0.75,-0.6,0.15); return m; }
+function drop(s){ /* a dew bead: a sphere sat a little flat */ var g=new THREE.SphereGeometry(1,32,24);
+  g.scale(1,0.82,1); var m=new THREE.Mesh(g,new THREE.MeshPhongMaterial({color:0x9fdcf5,emissive:0x15394a,shininess:180,specular:0xffffff,transparent:true,opacity:0.9}));
+  m.scale.setScalar(s); return m; }
+if(C===1){ /* the Dew ball on a little world */
+  sc.background=bgTex('#0b1a2a','#1d3b3a','rgba(200,168,75,0.35)');
+  var pl=new THREE.Mesh(new THREE.SphereGeometry(3.2,64,48),new THREE.MeshLambertMaterial({map:grassTex()})); pl.position.set(0,-3.2-0.0,0); sc.add(pl);
+  var b=ball(1); b.position.set(0,0.94,0); sc.add(b);
+  cam.position.set(0,1.35,8.6/k); cam.lookAt(0,0.25,0);
+}
+if(C===2){ /* the ball with a dew drop highlight */
+  sc.background=bgTex('#0d100c','#14261c','rgba(122,179,86,0.35)');
+  var b2=ball(1); sc.add(b2);
+  var d=drop(0.17); d.position.set(0.36,0.5,0.86); d.lookAt(0.72,1,1.72); sc.add(d);
+  var d2=drop(0.09); d2.position.set(-0.46,0.18,0.92); sc.add(d2);
+  var d3=drop(0.06); d3.position.set(0.12,-0.42,0.94); sc.add(d3);
+  cam.position.set(0,0.35,5.6/k); cam.lookAt(0,0.12,0);
+}
+if(C===3){ /* the ball rolling a trail of dew across the ground */
+  sc.background=bgTex('#10202c','#0d100c','rgba(200,168,75,0.45)');
+  var gr=new THREE.Mesh(new THREE.SphereGeometry(9,64,48),new THREE.MeshLambertMaterial({map:grassTex()})); gr.position.set(0,-9,0); sc.add(gr);
+  var b3=ball(0.85); b3.position.set(0.45,0.8,0); sc.add(b3);
+  for(var i=0;i<6;i++){ var a=-0.0-0.075*i, sz=0.13-0.014*i, dd=drop(sz); dd.position.set(Math.sin(a)*9,Math.cos(a)*9-9+sz*0.7,0.55+i*0.3); sc.add(dd); }
+  cam.position.set(-0.2,1.6,7.0/k); cam.lookAt(-0.1,0.5,0);
+}
+R.render(sc,cam); window.DONE=true;
+</script>
