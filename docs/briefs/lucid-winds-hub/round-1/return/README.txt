@@ -1,0 +1,1 @@
+Astra's return for the hub round one brief, received 13 Nov 2026 (her words, unedited). The art itself is in the private vault: release astra-lucid-winds-hub-r1-nov13, sha256 8ba2d9fe46fad28e7218d0c273e6f6177087a590bd0fbac97ff89ab8577bac2a. What was built from it: the flag only skin in assets/skin-herbarium (see LUCID_WINDS_HUB_BUILD_PLAN.md, "The herbarium hybrid").
