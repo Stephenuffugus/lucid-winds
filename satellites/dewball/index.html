@@ -251,6 +251,14 @@
 </style>
 <meta name="description" content="Roll a sticky ball through seven worlds and grow from a crumb to a planet.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/dewball/">
+<script>/* THE SONG CARD, dewball-v37 (Play readiness item 1). On a new player's FIRST launch the studio soundtrack script
+   is held (its own SWS_MUSIC_HOLD flag, read when it boots): no card over the world row on the first screen, no chip.
+   The first result card lets it go and shows the waiting song (musicBreak in the game). The second launch, or a player
+   who has finished a run before, gets the script exactly as every other game does. */
+(function(){ try{ var n=+(localStorage.getItem("dewball_launches")||0)||0, s=null;
+  localStorage.setItem("dewball_launches",String(n+1));
+  try{ s=JSON.parse(localStorage.getItem("dewball_save")||"null"); }catch(e){ s=null; }
+  if(n<1&&!(s&&s.grove&&s.grove.length)) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
 <script src="/music-unlocks.js" defer></script>
 </head>
 <body>
@@ -5063,9 +5071,18 @@
     $("pauseOv").classList.add("hidden"); $("skins").classList.add("hidden"); $("collect").classList.add("hidden");
     $("hud").classList.add("on");
     $("dashBtn").classList.remove("ready");
+    musicHold(true);
     if(!TEST){ lastFrame=0; }
     meshWorld();
   }
+  /* the soundtrack script's chrome (card, "New song" pill, chip, toast) is HELD while a run is on: the pill and the
+     chip seat themselves bottom left, which is where the left thumb rolls. A song earned mid run waits in pending and
+     shows at the next break. On a first launch it stays held until the first result card (see the head). */
+  var musicFirst=window.SWS_MUSIC_HOLD===true;
+  function musicHold(on){ try{ var m=window.SWSMusic; if(m&&m.hold) m.hold(!!on||musicFirst); }catch(e){} }
+  function musicBreak(){ musicFirst=false; musicHold(false);
+    clearTimeout(musicBreak._t);
+    musicBreak._t=setTimeout(function(){ try{ if(!playing&&window.SWSMusic&&SWSMusic.reveal) SWSMusic.reveal(); }catch(e){} },1400); }
   function setPause(p){ paused=p;
     // the notification slot holds while paused: hidden now, back with its time left
     var te=$("toast"); if(te&&NOTE.cur) te.classList[p?"remove":"add"]("show");
@@ -5115,7 +5132,7 @@
     var b3=document.createElement("button"); b3.className="btn ghost"; b3.textContent="Worlds";
     b3.onclick=function(){ $("result").classList.add("hidden"); showMenu(); }; btns.appendChild(b3);
     if(quit){ $("result").classList.add("hidden"); showMenu(); }
-    else $("result").classList.remove("hidden");
+    else { $("result").classList.remove("hidden"); musicBreak(); }
     if(stars>0&&!W.zen) winFanfare();
   }
   function unlockedWorld(i){
@@ -5127,6 +5144,7 @@
   function showMenu(){
     playing=false; paused=false;
     $("menu").classList.remove("hidden"); $("hud").classList.remove("on");
+    musicHold(false);
     buildWorldRow();
   }
   function buildWorldRow(){
