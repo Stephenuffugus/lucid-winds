@@ -94,11 +94,23 @@
 
   // ── Fit each plant by what it actually draws (pot, stem, leaves, bloom, companion),
   //    ignoring the aura layer and far-flung specks. Capped at 2.2x. ──
-  var FIT = {};
+  var FIT = {}, MASKN = 0;
   var SKIP = { DEFS:1, CLIPPATH:1, MASK:1, PATTERN:1, SYMBOL:1, FILTER:1, MARKER:1, LINEARGRADIENT:1, RADIALGRADIENT:1 };
   function hidden(el, stop){
     while (el && el !== stop) { if (SKIP[String(el.tagName).toUpperCase()]) return true; el = el.parentNode; }
     return false;
+  }
+  function colorAlpha(v){
+    if (!v || v === 'none' || v === 'transparent') return 0;
+    var m = /rgba?\(([^)]*)\)/.exec(v); if (!m) return 1;
+    var parts = m[1].split(','); return parts.length > 3 ? parseFloat(parts[3]) : 1;
+  }
+  function alphaOf(el, stop){
+    var cs = window.getComputedStyle(el), a = 1, n = el;
+    var paint = Math.max(colorAlpha(cs.fill) * parseFloat(cs.fillOpacity || 1), colorAlpha(cs.stroke) * parseFloat(cs.strokeOpacity || 1));
+    if (/^url/.test(cs.fill) || /^url/.test(cs.stroke)) paint = Math.max(paint, 0.6);
+    while (n && n !== stop) { a *= parseFloat(window.getComputedStyle(n).opacity || 1); n = n.parentNode; }
+    return a * paint;
   }
   function plantBounds(hash, gen){
     var key = hash + '|' + (gen || 1);
@@ -119,7 +131,7 @@
       var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, n = 0, i, r, a;
       for (i = 0; i < els.length; i++) {
         if (hidden(els[i], svg)) continue;
-        if (els[i].getAttribute('opacity') === '0') continue;
+        if (alphaOf(els[i], svg) < 0.35) continue;
         r = els[i].getBoundingClientRect(); a = r.width * r.height;
         if (r.width <= 0 && r.height <= 0) continue;
         if (a > area * 0.45) continue;                                                  // full-canvas washes
@@ -167,6 +179,43 @@
     img.style.objectFit = 'contain'; img.style.objectPosition = '50% 100%';
   }
   function genOf(p){ return p && p.generation ? p.generation : 1; }
+  // The aura is the one block the displayed svg has and its skipAura twin lacks. Wrap that block
+  // in a soft round mask so the atmosphere never ends in a hard edge, whatever the crop.
+  function wellFormed(seg){
+    try {
+      var d = new DOMParser().parseFromString('<svg xmlns="http://www.w3.org/2000/svg">' + seg + '</svg>', 'image/svg+xml');
+      return !d.getElementsByTagName('parsererror').length;
+    } catch (e) { return false; }
+  }
+  function softAura(svg, hash, gen, b){
+    if (!svg || !b || svg.getAttribute('data-sk-aura')) return;
+    svg.setAttribute('data-sk-aura', '1');
+    var ref = null;
+    try {
+      var ov = { skipAura: true }; if (gen && gen > 1) ov.chimerGen = gen;
+      var tmp = D.createElement('div');
+      tmp.innerHTML = window._generatePlantSVG(hash, parseFloat(svg.getAttribute('width')) || 95, 1, ov);
+      ref = tmp.firstElementChild ? tmp.firstElementChild.innerHTML : null;
+    } catch (e) { ref = null; }
+    if (ref == null) return;
+    var full = svg.innerHTML; if (full.length <= ref.length) return;
+    var p = 0, q = 0, L = full.length, R = ref.length;
+    while (p < R && full.charCodeAt(p) === ref.charCodeAt(p)) p++;
+    while (q < R && full.charCodeAt(L - 1 - q) === ref.charCodeAt(R - 1 - q)) q++;
+    var len = L - R, lo = R - q, st, seg = null;
+    for (st = Math.min(p, R); st >= Math.max(lo, 0); st--) {
+      if (full.charAt(st) !== '<') continue;
+      var cand = full.substr(st, len);
+      if (full.substr(0, st) + full.substr(st + len) !== ref) continue; // exactly the aura, nothing else
+      if (wellFormed(cand)) { seg = cand; break; }
+    }
+    if (!seg) return;
+    var id = 'skAuraM' + (++MASKN), cx = b.x + b.w / 2, cy = b.y + b.h * 0.5, r = Math.max(b.w, b.h) * 0.72 + 6;
+    var mk = '<defs><radialGradient id="' + id + 'g" gradientUnits="userSpaceOnUse" cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(1) + '">' +
+      '<stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient>' +
+      '<mask id="' + id + '" maskUnits="userSpaceOnUse" x="-200" y="-200" width="470" height="495"><rect x="-200" y="-200" width="470" height="495" fill="url(#' + id + 'g)"/></mask></defs>';
+    try { svg.innerHTML = full.substr(0, st) + mk + '<g mask="url(#' + id + ')">' + seg + '</g>' + full.substr(st + len); } catch (e) {}
+  }
 
   var reduce = false;
   try { reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
@@ -222,7 +271,10 @@
       else { try { if (window._restartCurrentGame) window._restartCurrentGame(); } catch (x) {} }
     });
     ov.appendChild(root);
-    try { fitSvg(root.querySelector('.skb-plant svg'), cropOf(plantBounds(hash, genOf(id.plant)), false)); } catch (e) {}
+    try {
+      var bb = plantBounds(hash, genOf(id.plant)), ps = root.querySelector('.skb-plant svg');
+      softAura(ps, hash, genOf(id.plant), bb); fitSvg(ps, cropOf(bb, false));
+    } catch (e) {}
   }
 
   // ═══ 2. sk-cards: greenhouse grid tile + carousel card front ═══
@@ -236,7 +288,8 @@
     var svgs = el.querySelectorAll('svg'), i, c = null;
     for (i = 0; i < svgs.length; i++) {
       if (svgs[i].getAttribute('data-sk-fit') || !isCanvas(svgs[i])) continue;
-      if (!c) { var p = plantOf(hash); c = cropOf(plantBounds(hash, genOf(p)), false); if (!c) return; }
+      if (!c) { var p = plantOf(hash), g0 = genOf(p), b0 = plantBounds(hash, g0); c = cropOf(b0, false); if (!c) return; }
+      softAura(svgs[i], hash, g0, b0);
       fitSvg(svgs[i], c);
     }
   }
@@ -264,7 +317,7 @@
     if (!c) return;
     var kids = art.children;
     for (i = 0; i < kids.length; i++) {
-      if (String(kids[i].tagName).toLowerCase() === 'svg') fitSvg(kids[i], c);
+      if (String(kids[i].tagName).toLowerCase() === 'svg') { if (!/cs-aura-overlay/.test(kids[i].getAttribute('class') || '')) softAura(kids[i], hash, genOf(p), b); fitSvg(kids[i], c); }
       else if (String(kids[i].tagName).toLowerCase() === 'img') fitImg(kids[i], c, b);
     }
   }
