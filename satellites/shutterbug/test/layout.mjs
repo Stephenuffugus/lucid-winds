@@ -451,6 +451,24 @@ try {
     R.say(errors.length === 0, '800x360 ' + (coarse ? 'coarse' : 'fine') + ': zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
     await page.close();
   }
+  /* sb-m2-28: a real touch dragged 60 px on the chip moves nothing and saves no drag for the site's other games (a page of
+     its own: the touches would otherwise run into the size loop's next tap) */
+  {
+    const { page, errors } = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(page, srv.base); await ready(page);
+    await page.waitForFunction(() => !!document.getElementById('sws-music-chip'), { timeout: 8000 }).catch(() => {});
+    await sleep(300);
+    const c0 = await page.evaluate(() => { const c = document.getElementById('sws-music-chip'); if (!c) return null; const r = c.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; });
+    if (c0) {
+      const cx = c0.x + c0.w / 2, cy = c0.y + c0.h / 2;
+      await page.touchscreen.touchStart(cx, cy); await page.touchscreen.touchMove(cx - 30, cy + 30); await page.touchscreen.touchMove(cx - 60, cy + 60); await page.touchscreen.touchEnd();
+      await sleep(200);
+      const dr = await page.evaluate(() => { const c = document.getElementById('sws-music-chip'), r = c.getBoundingClientRect(); let saved = null; try { saved = localStorage.getItem('sws_music_chip_pos'); } catch (e) {} return { x: r.left, y: r.top, saved }; });
+      R.say(Math.abs(dr.x - c0.x) < 0.5 && Math.abs(dr.y - c0.y) < 0.5 && !dr.saved, '412x915: a drag on the chip moves it nowhere and saves no drag (at ' + dr.x.toFixed(0) + ',' + dr.y.toFixed(0) + (dr.saved ? ', SAVED ' + dr.saved : '') + ')');
+    } else console.log('  info  412x915: no fleet chip on the title for the drag (the catalogue did not place one)');
+    R.say(errors.length === 0, '412x915 the chip drag: zero page errors' + (errors.length ? ' (' + errors.join(' ; ') + ')' : ''));
+    await page.close();
+  }
 } finally {
   await browser.close();
   await srv.close();

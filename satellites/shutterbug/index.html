@@ -10944,16 +10944,14 @@ body.sb-modal .lwfb-fab { display: none !important; }
      SWSMusic.reseat is the include's public reseat on demand; it never moves a chip the player has dragged */
   /* sb-m2-28: the chip's one seat, the top row of the title or Settings (the CSS above); it is moved into the screen
      showing as that screen shows, and into the title the moment the include adds it (whatever screen is up then).
-     A press on it starts no drag (stopped on its way down, in the screen's capture), so a tap still opens the player */
+     A press on it starts no drag (stopped at the chip before the include's own listener), so a tap still opens the player */
   function seatChipIn(name) {
     var c = document.getElementById('sws-music-chip'), scr = document.getElementById(name);
     if (!c || !scr || c.parentNode === scr) return;
+    if (!c.sbSeated) { c.sbSeated = true; c.addEventListener('pointerdown', function (e) { e.stopImmediatePropagation(); }, true); }   /* before the include's drag (a capture listener runs first at its target) */
     scr.insertBefore(c, scr.firstElementChild ? scr.firstElementChild.nextSibling : null);   /* after the exit (Settings' bar): read and tabbed in that order, never the screen's last control */
   }
   ui.seatChip = function () { seatChipIn(ui.screen === 'settings' ? 'settings' : 'title'); };
-  ['title', 'settings'].forEach(function (id) {
-    document.getElementById(id).addEventListener('pointerdown', function (e) { if (e.target && e.target.id === 'sws-music-chip') e.stopPropagation(); }, true);
-  });
   if (window.MutationObserver) new MutationObserver(function () { if (document.getElementById('sws-music-chip') && document.getElementById('sws-music-chip').parentNode === document.body) ui.seatChip(); })
     .observe(document.body, { childList: true });
 
