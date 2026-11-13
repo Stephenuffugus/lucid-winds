@@ -39,12 +39,13 @@ html.sk-bloom #pw-win-overlay[data-sk-hash]>:not(.skb){display:none!important}
 .skb-title{position:absolute;top:13.7%;left:6%;right:6%;text-align:center;font:400 clamp(22px,6.4cqw,34px)/1.15 var(--lw-name);color:var(--lw-cream);z-index:4}
 .skb-grade{position:absolute;top:19.1%;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:6px;font:700 max(13px,3.6cqw)/1.2 var(--lw-ui);letter-spacing:.08em;color:var(--g);z-index:4}
 .skb-grade .sk-mark{width:max(18px,5.4cqw);height:max(18px,5.4cqw)}
-.skb-plant{position:absolute;left:16.67%;width:66.67%;top:23.4%;height:29.4%;display:flex;align-items:flex-end;justify-content:center;z-index:2}
+.skb-plant{position:absolute;left:16.67%;width:66.67%;top:25.1%;height:29.4%;display:flex;align-items:flex-end;justify-content:center;z-index:2}
 .skb-plant svg{width:100%!important;height:100%!important;max-width:100%;overflow:visible;display:block}
 .skb-pedestal{position:absolute;left:7.78%;width:77.78%;top:50.6%;height:7.78%;z-index:1}
-.skb-name{position:absolute;top:57.6%;left:8%;right:8%;text-align:center;font:400 clamp(22px,6.3cqw,32px)/1.12 var(--lw-name);color:var(--lw-cream);z-index:4}
-.skb-ea{position:absolute;top:63.7%;left:0;right:0;text-align:center;font:500 max(12px,3.3cqw)/1.3 var(--lw-data);letter-spacing:.06em;color:var(--g);z-index:4}
-.skb-haiku{position:absolute;top:68.4%;left:9%;right:9%;text-align:center;font:400 clamp(16px,4.3cqw,21px)/1.5 var(--lw-name);color:var(--lw-cream);z-index:4}
+.skb-id{position:absolute;top:57.9%;left:7%;right:7%;bottom:20.5%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;z-index:4}
+.skb-name{font:400 clamp(20px,5.5cqw,30px)/1.12 var(--lw-name);color:var(--lw-cream);max-width:100%;overflow-wrap:anywhere}
+.skb-ea{margin-top:2.4cqw;font:500 max(12px,3.3cqw)/1.3 var(--lw-data);letter-spacing:.06em;color:var(--g)}
+.skb-haiku{margin-top:5.2cqw;font:400 clamp(16px,4.2cqw,21px)/1.5 var(--lw-name);color:var(--lw-cream)}
 .skb-actions{position:absolute;top:80.9%;left:8.33%;right:8.33%;display:flex;flex-direction:column;gap:2.8cqw;z-index:5}
 .skb-btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;height:12.9cqw;border-radius:12px;font:500 clamp(16px,4.1cqw,20px)/1.2 var(--lw-ui);cursor:pointer;-webkit-tap-highlight-color:transparent}
 .skb-primary{background:var(--lw-brass);border:1px solid var(--lw-brass);color:var(--lw-midnight)}
@@ -73,6 +74,7 @@ html.sk-bloom #pw-win-overlay[data-sk-hash]>:not(.skb){display:none!important}
 .skb-name{animation:skbRise .5s ease 1.0s both}
 .skb-ea{animation:skbRise .5s ease 1.15s both}
 .skb-haiku{animation:skbRise .6s ease 1.35s both}
+.skb-title{text-shadow:0 0 10px var(--lw-midnight),0 0 4px var(--lw-midnight)}
 .skb-actions{animation:skbRise .5s ease 1.7s both}
 .skb-cosmic .skb-plant{animation-duration:1.6s}
 .skb-still *,.skb-still{animation:none!important}
@@ -83,13 +85,14 @@ html.sk-bloom #pw-win-overlay[data-sk-hash]>:not(.skb){display:none!important}
 /* ═══ 2. sk-cards: the grid tile ═══
    Design call for Stephen: her frames are per GRADE, today's are per SEASON. Under sk-cards the heavy
    seasonal corner art goes; the small season emblem row the tile already has stays (made readable). */
-html.sk-cards .greenhouse-plant[data-sk-hash]{background:radial-gradient(ellipse 46% 34% at 50% 40%,var(--skg-a),rgba(11,23,24,0) 100%),var(--lw-midnight)!important;background-image:radial-gradient(ellipse 46% 34% at 50% 40%,var(--skg-a),rgba(11,23,24,0) 100%)!important;background-color:var(--lw-midnight)!important;border:1px solid var(--skg)!important;border-radius:12px!important;box-shadow:inset 0 0 0 4px var(--lw-midnight),inset 0 0 0 5px rgba(182,201,183,.12)!important;justify-content:flex-start!important;padding:16% 6% 5%!important;gap:2px}
+html.sk-cards .greenhouse-plant[data-sk-hash]{background:radial-gradient(ellipse 46% 34% at 50% 40%,var(--skg-a),rgba(11,23,24,0) 100%),var(--lw-midnight)!important;background-image:radial-gradient(ellipse 46% 34% at 50% 40%,var(--skg-a),rgba(11,23,24,0) 100%)!important;background-color:var(--lw-midnight)!important;border:1px solid var(--skg)!important;border-radius:12px!important;box-shadow:inset 0 0 0 4px var(--lw-midnight),inset 0 0 0 5px rgba(182,201,183,.12)!important;justify-content:flex-start!important;padding:12% 5% 4%!important;gap:2px}
 html.sk-cards .greenhouse-plant[data-sk-hash] .ea-knot,html.sk-cards .greenhouse-plant[data-sk-hash] .gh-slot,html.sk-cards .greenhouse-plant[data-sk-hash] .cf-rarity-symbol--grid{display:none!important}
 html.sk-cards .greenhouse-plant[data-sk-hash] .skc-archwrap{position:absolute;inset:0;pointer-events:none;z-index:0}
 html.sk-cards .greenhouse-plant[data-sk-hash] .skc-arch{width:100%;height:100%;display:block}
 .skc-arch path{stroke:var(--skg);opacity:.55}
 html.sk-cards .greenhouse-plant[data-sk-hash] .skc-topmark{position:absolute;top:3.2%;left:50%;transform:translateX(-50%);line-height:0;z-index:1}
-html.sk-cards .greenhouse-plant[data-sk-hash]>svg,html.sk-cards .greenhouse-plant[data-sk-hash] .gh-svg-lazy,html.sk-cards .greenhouse-plant[data-sk-hash] .gh-svg-lazy svg{position:relative;z-index:1;width:78%!important;height:auto!important;max-height:52%;flex:0 0 auto}
+html.sk-cards .greenhouse-plant[data-sk-hash]>svg,html.sk-cards .greenhouse-plant[data-sk-hash] .gh-svg-lazy{position:relative;z-index:1;width:auto!important;height:58%!important;max-width:92%;flex:0 0 auto}
+html.sk-cards .greenhouse-plant[data-sk-hash] .gh-svg-lazy svg{width:100%!important;height:100%!important}
 html.sk-cards .greenhouse-plant[data-sk-hash] .gh-svg-lazy{aspect-ratio:95/120;background:none!important}
 html.sk-cards .greenhouse-plant[data-sk-hash] .gh-name{position:relative;z-index:1;margin-top:4%;font-family:var(--lw-name)!important;font-size:14px!important;line-height:1.2!important;color:var(--lw-cream)!important}
 html.sk-cards .greenhouse-plant[data-sk-hash] .gh-name *{font-size:inherit!important;font-family:inherit!important}
@@ -103,7 +106,7 @@ html.sk-cards .greenhouse-plant[data-sk-hash]>div[style*="DM Mono"] img{width:16
 
 /* ═══ 2b. sk-cards: the carousel card front ═══ */
 html.sk-cards .cs-card-front.skg-common,html.sk-cards .cs-card-front[class*="skg-"]{background:radial-gradient(ellipse 44% 30% at 50% 44%,var(--skg-a),rgba(11,23,24,0) 100%),var(--lw-midnight)!important;background-size:auto!important;border:1.5px solid var(--skg)!important;border-radius:16px!important;box-shadow:inset 0 0 0 6px var(--lw-midnight),inset 0 0 0 7px rgba(182,201,183,.14)!important}
-html.sk-cards .cs-card-front[class*="skg-"] .skc-archwrap{position:absolute;inset:0;pointer-events:none;z-index:0}
+html.sk-cards .cs-card-front[class*="skg-"] .skc-archwrap{position:absolute;left:9%;right:9%;top:21%;bottom:32%;pointer-events:none;z-index:0}
 html.sk-cards .cs-card-front[class*="skg-"] .skc-arch{width:100%;height:100%;display:block}
 html.sk-cards .cs-card-front[class*="skg-"] .cf-ea,html.sk-cards .cs-card-front[class*="skg-"] .cf-rarity-symbol{display:none!important}
 html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window,html.sk-cards .cs-card-front[class*="skg-"] .cf-name-zone,html.sk-cards .cs-card-front[class*="skg-"] .cf-haiku-zone{position:relative;z-index:1}
@@ -151,7 +154,7 @@ html.sk-nav .fg-nav-btn#nav-btn-wild{background-image:url('data:image/svg+xml,%3
 html.sk-nav .fg-nav-btn#nav-btn-wild.active{background-image:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="93 15 70 70"%3E%3Cg transform="translate(93 15) scale(0.7)"%3E%3Ccircle cx="50" cy="50" r="35" fill="none" stroke="%23D8B76C" stroke-width="5"/%3E%3Cpath d="M63 26L55 58L28 73L41 42Z" fill="none" stroke="%23D8B76C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/%3E%3Cpath d="M50 10L50 19" fill="none" stroke="%23D8B76C" stroke-width="3" stroke-linecap="round"/%3E%3Cpath d="M50 81L50 90" fill="none" stroke="%23D8B76C" stroke-width="3" stroke-linecap="round"/%3E%3C/g%3E%3C/svg%3E')!important}
 
 /* ═══ 6. sk-topbar: her top bar icons on calm tiles (counters stay live) ═══ */
-html.sk-topbar #kb-sunbeams,html.sk-topbar #kb-hut,html.sk-topbar #kb-dew{background-color:var(--lw-surface)!important;border:1px solid var(--lw-sage)!important;border-radius:12px!important;background-repeat:no-repeat!important;background-position:50% 22%!important;background-size:46% auto!important;overflow:hidden}
+html.sk-topbar #kb-sunbeams,html.sk-topbar #kb-hut,html.sk-topbar #kb-dew{background-color:var(--lw-surface)!important;border:1px solid var(--lw-sage)!important;border-radius:12px!important;background-repeat:no-repeat!important;background-position:50% 22%!important;background-size:46% auto!important}
 html.sk-topbar #kb-sunbeams{border-color:var(--lw-brass)!important}
 html.sk-topbar #kb-sunbeams>img,html.sk-topbar #kb-hut>img,html.sk-topbar #kb-dew>img,html.sk-topbar #kb-compendium>img{visibility:hidden!important}
 html.sk-topbar #kb-sunbeams .kb-static-label,html.sk-topbar #kb-hut .kb-static-label,html.sk-topbar #kb-dew .kb-static-label,html.sk-topbar #kb-sunbeams .kb-bloom-label{font-family:var(--lw-ui)!important;font-size:12px!important;letter-spacing:.04em!important;color:var(--lw-sage)!important;text-shadow:none!important}
@@ -167,3 +170,12 @@ html.sk-topbar #kb-dew{background-image:url('data:image/svg+xml,%3Csvg xmlns="ht
 html.sk-topbar #kb-compendium{background-image:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"%3E%3Cg transform="translate(12.8 12.8) scale(1.0)"%3E%3Cpath d="M50 26Q31 14 13 22V80Q31 72 50 84Q70 72 88 80V22Q69 14 50 26V84M23 37L40 40M23 49L40 52M61 40L78 36" fill="none" stroke="%23F4EBD6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/%3E%3C/g%3E%3C/svg%3E')!important}
 html.sk-topbar #bpi{background-image:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"%3E%3Cg transform="translate(12.8 12.8) scale(1.0)"%3E%3Crect x="22" y="34" width="56" height="51" rx="12" fill="none" stroke="%23F4EBD6" stroke-width="5"/%3E%3Cpath d="M36 34V23Q50 9 64 23V34M36 52H64" fill="none" stroke="%23F4EBD6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/%3E%3C/g%3E%3C/svg%3E')!important}
 html.sk-topbar #kb-avatar{background-image:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"%3E%3Cg transform="translate(12.8 12.8) scale(1.0)"%3E%3Ccircle cx="50" cy="31" r="16" fill="none" stroke="%23F4EBD6" stroke-width="5"/%3E%3Cpath d="M16 84Q18 55 50 55Q82 55 84 84Z" fill="none" stroke="%23F4EBD6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/%3E%3C/g%3E%3C/svg%3E')!important}
+html.sk-cards .skc-archwrap .skc-arch{max-width:none!important;max-height:none!important;width:100%!important;height:100%!important;transform:none!important}
+/* the hub's cached PNG of the plant carries a dark square behind it; on the midnight card it read as a box */
+html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window>img{mix-blend-mode:normal}
+/* the renderer paints some auras as a full-canvas rect; her rule is "never a hard box": feather the canvas edge */
+html.sk-bloom .skb-plant>svg,
+html.sk-cards .greenhouse-plant[data-sk-hash]>svg,html.sk-cards .greenhouse-plant[data-sk-hash] .gh-svg-lazy>svg,
+html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window>svg,html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window>img{
+ -webkit-mask-image:radial-gradient(ellipse 60% 58% at 50% 50%,#000 58%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 60% 58% at 50% 50%,#000 58%,rgba(0,0,0,0) 100%)}
+html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window>svg,html.sk-cards .cs-card-front[class*="skg-"] .cf-art-window>img{-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 60%,rgba(0,0,0,0) 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 60%,rgba(0,0,0,0) 100%)}

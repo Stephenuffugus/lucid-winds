@@ -85,9 +85,11 @@
     h +=   '<div class="skb-grade">' + mark(g, 22) + '<span>' + g.toUpperCase() + '</span></div>';
     h +=   '<svg class="skb-pedestal" viewBox="0 0 900 200" aria-hidden="true"><ellipse cx="450" cy="115" rx="420" ry="70" fill="#102523"/><rect x="30" y="65" width="840" height="50" fill="#183630"/><ellipse cx="450" cy="65" rx="420" ry="53" fill="#2C4942" stroke="#B6C9B7" stroke-width="2"/></svg>';
     h +=   '<div class="skb-plant">' + svg + '</div>';
-    h +=   '<div class="skb-name">' + esc(id.name || 'Unknown Specimen') + '</div>';
-    h +=   '<div class="skb-ea">ONE OF ONE&nbsp;&nbsp;/&nbsp;&nbsp;EA ' + esc(id.ea) + '</div>';
+    h +=   '<div class="skb-id">';
+    h +=     '<div class="skb-name">' + esc(id.name || 'Unknown Specimen') + '</div>';
+    h +=     '<div class="skb-ea">ONE OF ONE&nbsp;&nbsp;/&nbsp;&nbsp;EA ' + esc(id.ea) + '</div>';
     if (hk) h += '<div class="skb-haiku">' + esc(hk.line1) + '<br>' + esc(hk.line2) + '<br>' + esc(hk.line3) + '</div>';
+    h +=   '</div>';
     h +=   '<div class="skb-actions">';
     h +=     '<button type="button" class="skb-btn skb-primary" data-act="gh">View in Greenhouse</button>';
     h +=     '<button type="button" class="skb-btn skb-secondary" data-act="play">Keep playing</button>';
@@ -112,7 +114,7 @@
 
   // ═══ 2. sk-cards: greenhouse grid tile + carousel card front ═══
   var GRID_ARCH = '<svg class="skc-arch" viewBox="0 0 480 640" preserveAspectRatio="none" aria-hidden="true"><path d="M57.6 416V297.6A182.4 182.4 0 0 1 422.4 297.6V416" fill="none" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>';
-  var DETAIL_ARCH = '<svg class="skc-arch" viewBox="0 0 1080 1620" preserveAspectRatio="none" aria-hidden="true"><path d="M129.6 1053V702A410.4 410.4 0 0 1 950.4 702V1053" fill="none" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>';
+  var DETAIL_ARCH = '<svg class="skc-arch" viewBox="0 0 400 500" preserveAspectRatio="xMidYMax meet" aria-hidden="true"><path d="M16 498V196A184 184 0 0 1 384 196V498" fill="none" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>';
   function setGradeClass(el, g){
     for (var i = 0; i < ORDER.length; i++) el.classList.remove('skg-' + ORDER[i]);
     el.classList.add('skg-' + g);
@@ -145,7 +147,7 @@
     var dg = D.createElement('div'); dg.className = 'skc-dgrade'; dg.innerHTML = mark(g, 26) + '<span>' + g.toUpperCase() + '</span>';
     var de = D.createElement('div'); de.className = 'skc-dea'; de.textContent = 'EA ' + ea;
     if (id.sea && id.sea.emblem) { var se = D.createElement('span'); se.className = 'skc-season'; se.textContent = id.sea.emblem + (id.sea.name ? ' ' + id.sea.name : ''); de.appendChild(se); }
-    front.insertBefore(arch, front.firstChild);
+    front.insertBefore(arch, front.firstChild); // not inside the art window: the hub hot-swaps its content to a PNG
     front.appendChild(dg);
     var hz = front.querySelector('.cf-haiku-zone');
     if (hz && hz.parentNode === front) front.insertBefore(de, hz.nextSibling); else front.appendChild(de);
