@@ -247,10 +247,21 @@
            white-space:normal; max-width:calc(100vw - 28px); word-wrap:break-word; text-align:center; }
   #toast.show { opacity:1; }
   #hint { color:#a7ad95; font-size:.82rem; }
+  #hintKeys.hidden { display:none; }
+  .sws-music-held #sws-music-chip, .sws-music-held #sws-music-pill, .sws-music-held #sws-music-card,
+  .sws-music-held #sws-music-toast { display:none !important; }
   .howp { text-align:left; color:#e8dcc8; font-size:.84rem; line-height:1.55; }
 </style>
 <meta name="description" content="Roll a sticky ball through seven worlds and grow from a crumb to a planet.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/dewball/">
+<script>/* THE SONG CARD, dewball-v37 (Play readiness item 1). On a new player's FIRST launch the studio soundtrack script
+   is held (its own SWS_MUSIC_HOLD flag, read when it boots): no card over the world row on the first screen, no chip.
+   The first result card lets it go and shows the waiting song (musicBreak in the game). The second launch, or a player
+   who has finished a run before, gets the script exactly as every other game does. */
+(function(){ try{ var n=+(localStorage.getItem("dewball_launches")||0)||0, s=null;
+  localStorage.setItem("dewball_launches",String(n+1));
+  try{ s=JSON.parse(localStorage.getItem("dewball_save")||"null"); }catch(e){ s=null; }
+  if(n<1&&!(s&&s.grove&&s.grove.length)) window.SWS_MUSIC_HOLD=true; }catch(e){} })();</script>
 <script src="/music-unlocks.js" defer></script>
 </head>
 <body>
@@ -300,7 +311,7 @@
   </div>
   <div id="rotateTip" class="hidden">Turn your phone sideways for horizon mode. Bigger world, no browser bar.</div>
   <button class="btn ghost" id="mExit">◄ Sky Wolf Studio Arcade</button>
-  <div id="hint">Touch: left half = roll &middot; right half = camera &middot; double tap right = flip around<br>Keys: WASD roll &middot; Q/E turn &middot; R/F tilt &middot; SPACE dash</div>
+  <div id="hint">Touch: left half = roll &middot; right half = camera &middot; double tap right = flip around<span id="hintKeys" class="hidden"><br>Keys: WASD roll &middot; Q/E turn &middot; R/F tilt &middot; SPACE dash</span></div>
 </div>
 
 <!-- HOW TO ROLL -->
@@ -3502,8 +3513,9 @@
         scene.add(new THREE.Mesh(mergeParts(rp),sharedMat));
       }
     }
-    // art-pack hook: assets/ground-<worldId>.jpg overrides the procedural tile
-    (function(){ var im=new Image(); im.onload=function(){ var t=new THREE.CanvasTexture(im);
+    // art-pack hook: assets/ground-<worldId>.jpg overrides the procedural tile. ⛔ No such tile exists yet, and asking
+    // for one was a 404 on every world start (Play readiness item 11): a world asks only once it says groundArt:1.
+    if(W.groundArt) (function(){ var im=new Image(); im.onload=function(){ var t=new THREE.CanvasTexture(im);
         t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.copy(gtex.repeat); gmesh.material.map=t; gmesh.material.needsUpdate=true; };
       im.src="assets/ground-"+W.id+".jpg"; })();
     // ---- COMPOSED scatter -> instanced meshes ----
@@ -4264,10 +4276,24 @@
     scene.add(ballRoot);
   }
 
+  /* the blob shadow is a FLAT disc laid at the ball's foot. On a planet the ground curves away under it, and once the
+     ball rivals the planet (The Whole World at the end of a good run) the disc's rim stands off the globe as a large
+     black polygon behind the ball (Play readiness item 9). Fade it out while the disc's radius goes from a fifth to
+     three tenths of the planet's radius; flat worlds never get near their own size. */
+  function shadowFit(r){ var sh=ballRoot._shadow, s=R.D*0.52, k=1, q;
+    sh.scale.setScalar(s); sh.position.y=-r+0.6;
+    if(GLOBE){ q=s/GLOBE.R; k=q<=0.2?1:(q>=0.3?0:(0.3-q)/0.1); }
+    sh.visible=k>0; sh.material.opacity=0.28*k; }
   // ---------- input ----------
   var keys={}, touchL=null, touchR=null, rTapArm=0;
   function _inBtn(t,id){ var tg=t.target; try{ return !!(tg&&tg.closest&&tg.closest("#"+id)); }catch(e){ return false; } }
+  /* the menu's Keys line only for a player who has a keyboard: a phone never sees WASD (Play readiness item 7).
+     Remembered, so a laptop player sees it on the next launch from the first frame. */
+  var kbSeen=false; try{ kbSeen=localStorage.getItem("dewball_kb")==="1"; }catch(e){}
+  function showKeysHint(remember){ kbSeen=true; var k=$("hintKeys"); if(k) k.classList.remove("hidden");
+    if(remember){ try{ localStorage.setItem("dewball_kb","1"); }catch(e){} } }
   function wireInput(){
+    if(kbSeen) showKeysHint(false);
     var el=document.body;
     el.addEventListener("touchstart",function(ev){
       if(!playing||paused) return;
@@ -4304,7 +4330,7 @@
           if(Date.now()-touchR.t0<250 && Math.abs(touchR.x-touchR.ox)+Math.abs(touchR.y-touchR.oy)<12) rTapArm=Date.now();
           touchR=null; $("stickR").style.display="none"; } } }
     el.addEventListener("touchend",tEnd); el.addEventListener("touchcancel",tEnd);
-    window.addEventListener("keydown",function(e){ keys[e.key]=true;
+    window.addEventListener("keydown",function(e){ keys[e.key]=true; if(!kbSeen) showKeysHint(true);
       if(e.key===" "&&playing&&!paused){ tryDash(); e.preventDefault(); } });
     window.addEventListener("keyup",function(e){ keys[e.key]=false; });
     $("dashBtn").addEventListener("click",tryDash);
@@ -4632,8 +4658,7 @@
     } else ballRoot.position.set(R.x,r,R.z);
     ballMesh.scale.setScalar(r);
     feelTick(dt,r);
-    ballRoot._shadow.scale.setScalar(R.D*0.52);
-    ballRoot._shadow.position.y=-r+0.6;
+    shadowFit(r);
     buryPass();
     stepMovers(dt);
     // gate sink animation (globe gates sink along their posts' normals in globeSync)
@@ -4999,6 +5024,11 @@
     camera.lookAt(bx+R._lax,r*0.9,bz+R._laz);
     var fovT=R.dashT>0?(save.reduceMotion?65:72):62;
     camera.fov+=(fovT-camera.fov)*Math.min(1,dt*6);
+    /* ⛔ THE BLACK POLYGON (Play readiness item 9, found 13 Nov in a 126 m shot of The Whole World): the planet's sky
+       sphere is 4.2 bounds wide (170 km) and the far plane was a fixed 200 km, so once the endgame camera pulls back
+       (44 km at 126 m) the far side of the sky lies past the far plane, is clipped, and the clear colour shows through
+       as a black many sided hole behind the planet. On a globe the far plane reaches past the far side of the sky. */
+    camera.far=GLOBE?Math.max(200000,camera.position.length()+W.bound*4.2+5000):200000;
     camera.updateProjectionMatrix();
   }
   var _lastSize="", _lastTime="", _lastGoalLbl="", _thV=null;
@@ -5063,9 +5093,25 @@
     $("pauseOv").classList.add("hidden"); $("skins").classList.add("hidden"); $("collect").classList.add("hidden");
     $("hud").classList.add("on");
     $("dashBtn").classList.remove("ready");
+    musicHold(true);
     if(!TEST){ lastFrame=0; }
     meshWorld();
   }
+  /* the soundtrack script's chrome (card, "New song" pill, chip, toast) is HELD while a run is on: the pill and the
+     chip seat themselves bottom left, which is where the left thumb rolls. A song earned mid run waits in pending and
+     shows at the next break. On a first launch it stays held until the first result card (see the head). */
+  var musicFirst=window.SWS_MUSIC_HOLD===true;
+  /* ⛔ hold() hides the chip with an inline display:none, but the script's own reseat (every 20 s, on resize and
+     rotation) rewrites the chip's whole style attribute and the button came back over the play area. A class on the
+     root and one !important rule in this page's stylesheet keep the chip, pill, card and toast hidden while held. */
+  function musicHold(on){ var v=!!on||musicFirst;
+    try{ document.documentElement.classList[v?"add":"remove"]("sws-music-held"); }catch(e){}
+    try{ var m=window.SWSMusic; if(m&&m.hold) m.hold(v); }catch(e){} }
+  function musicBreak(){ musicFirst=false; musicHold(false);
+    clearTimeout(musicBreak._t);
+    /* a short landscape screen has no room for the song card beside the result card (it covered Roll Again in the
+       915 x 412 shot): there it lands folded, as the script's own "New song" pill, and opens on a tap */
+    musicBreak._t=setTimeout(function(){ try{ if(!playing&&window.SWSMusic&&SWSMusic.reveal&&SWSMusic.reveal()&&innerHeight<560&&SWSMusic.fold) SWSMusic.fold(); }catch(e){} },1400); }
   function setPause(p){ paused=p;
     // the notification slot holds while paused: hidden now, back with its time left
     var te=$("toast"); if(te&&NOTE.cur) te.classList[p?"remove":"add"]("show");
@@ -5115,7 +5161,7 @@
     var b3=document.createElement("button"); b3.className="btn ghost"; b3.textContent="Worlds";
     b3.onclick=function(){ $("result").classList.add("hidden"); showMenu(); }; btns.appendChild(b3);
     if(quit){ $("result").classList.add("hidden"); showMenu(); }
-    else $("result").classList.remove("hidden");
+    else { $("result").classList.remove("hidden"); musicBreak(); }
     if(stars>0&&!W.zen) winFanfare();
   }
   function unlockedWorld(i){
@@ -5127,6 +5173,7 @@
   function showMenu(){
     playing=false; paused=false;
     $("menu").classList.remove("hidden"); $("hud").classList.remove("on");
+    musicHold(false);
     buildWorldRow();
   }
   function buildWorldRow(){
@@ -5211,7 +5258,7 @@
   //  colours land as written, so a painted texel must too (an sRGB map would
   //  be decoded and come out darker than the primitive it replaces).
   // =====================================================================
-  var ASSET_V="24";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
+  var ASSET_V="25";            // ⛔ bump with sw.js CACHE and the sw.js?v= on every shipped change
   /* ball diameters. ⛔ 8 first: the near set is rebuilt each quarter of this radius, so a model popped in at 6 to 8
      ball widths, mid screen, and Stephen saw it (10 Oct: "some things load a little slow when i get close to them").
      16: the swap at 12 to 16 widths, half the size on screen. Measured (perf.mjs): triangles +2% to +30%, the worst
@@ -5443,7 +5490,7 @@
   }
   function isPortrait(){ return window.innerHeight>window.innerWidth; }
   function syncModeUI(){
-    var fb=$("mFull"), ib=$("mInstall"), inst=standalone();
+    var fb=$("mFull"), ib=$("mInstall"), inst=standalone()||!!window.SWS_IN_TWA;   // the Play app is installed (its rotate tip too)
     // Horizon-mode button only where fullscreen can actually happen. On an iPhone in
     // Safari it cannot, and once installed we are already fullscreen, so hide it in
     // both cases rather than offer a button that lies.
@@ -5456,8 +5503,13 @@
     // Share-sheet instructions. Hidden only when pointless: already installed, or
     // running inside the portal iframe where the parent owns the install.
     ib.classList[(inst||SWS_EMBED)?"add":"remove"]("hidden");
-    // only nudge people who would actually gain something: portrait, touch, not installed
-    var nudge=isPortrait() && ("ontouchstart" in window) && !isFs() && !inst;
+    // only nudge people who would actually gain something: portrait, touch, not already fullscreen.
+    // ⚖️ 2 Nov 2026, Stephen: "they should be able to play either way but its recommended in landscape". The manifest
+    // no longer locks an installed app (or the Play app) to landscape, so it gets the nudge too, without the browser bar
+    // promise (it has none).
+    var nudge=isPortrait() && ("ontouchstart" in window) && !isFs();
+    $("rotateTip").textContent=inst?"Dewball plays best sideways. Turn your phone for a wider world."
+                                   :"Turn your phone sideways for horizon mode. Bigger world, no browser bar.";
     $("rotateTip").classList[nudge?"remove":"add"]("hidden");
   }
 
@@ -5466,7 +5518,7 @@
   // the portal iframe (the parent owns that scope) and on file:// (probe runs).
   if("serviceWorker" in navigator && !SWS_EMBED && location.protocol.indexOf("http")===0){
     window.addEventListener("load", function(){
-      navigator.serviceWorker.register("sw.js?v=24")["catch"](function(){});
+      navigator.serviceWorker.register("sw.js?v=25")["catch"](function(){});
     });
   }
   var deferredPrompt=null;
@@ -5487,7 +5539,7 @@
       return;
     }
     alert(iOS()
-      ? "To add Dewball to your Home Screen:\n\nTap the Share button, then Add to Home Screen.\n\nIt opens fullscreen in landscape, with no browser bar."
+      ? "To add Dewball to your Home Screen:\n\nTap the Share button, then Add to Home Screen.\n\nIt opens fullscreen, with no browser bar. It plays best sideways."
       : "To add Dewball to your Home Screen:\n\nOpen the browser menu, then Add to Home Screen or Install.");
   }
 
@@ -5513,6 +5565,9 @@
       $("mMute").textContent="Sound: "+(muted?"Off":"On"); };
     $("mExit").onclick=function(){ if(window.SWS_IN_TWA) return; if(window.SWS_EXIT)window.SWS_EXIT(); };
     if(window.SWS_IN_TWA) $("mExit").style.display="none";   // the Play app has no arcade to go back to
+    // the Play app is installed and already fullscreen: "Add to Home Screen" would be a dead button and Horizon mode
+    // would ask for a fullscreen it has (style beats syncModeUI's class toggles)
+    if(window.SWS_IN_TWA){ $("mInstall").style.display="none"; $("mFull").style.display="none"; }
     $("pResume").onclick=function(){ setPause(false); };
     $("pRestart").onclick=function(){ setPause(false); startWorld(WIDX); };
     $("pQuit").onclick=function(){ setPause(false);
@@ -5580,7 +5635,7 @@
          it was parked beside (the shot rigs' one tick at the end did exactly that) */
       syncBall:function(){ if(!R) return; var r=R.D/2;
         if(GLOBE) ballRoot.position.set(0,r,0); else ballRoot.position.set(R.x,r,R.z);
-        ballMesh.scale.setScalar(r); ballRoot.scale.set(1,1,1); ballRoot._shadow.scale.setScalar(R.D*0.52); ballRoot._shadow.position.y=-r+0.6;
+        ballMesh.scale.setScalar(r); ballRoot.scale.set(1,1,1); shadowFit(r);
         updateHUD(true); },
       /* ⛔⛔ THE CAMERA NEVER TURNS IN TEST MODE, so a headless shot cannot be
          aimed by driving. readInput's camera assist — the thing that swings the

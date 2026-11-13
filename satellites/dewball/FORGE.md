@@ -1003,3 +1003,37 @@ lucidwinds.com, the web copy's Sunbeams and feedback form; the email inside the 
 with SwiftShader and, when a menu draws no canvas, taps the first open world card offline) opened Crumb Country with
 the network off (looked at: the ball, the crumbs, the HUD, the first hints). same.sh SAME_PASS, sign_test SIGN_PASS.
 Still his: price, listing copy, the landscape only manifest, and the store pictures from the real game.
+
+## Either way round, sideways recommended, 2 Nov 2026 (his call; NOT in dewball-v36, for the next release)
+
+Stephen: "they should be able to play either way but its recommended in landscape". The manifest's `orientation` is
+`any` (it was `landscape`, which would have locked the Play app and an installed copy sideways). The rotate tip now
+shows in portrait on a touch screen whether or not the game is installed; installed (the Play app included) it reads
+"Dewball plays best sideways. Turn your phone for a wider world." (no browser bar to promise away); in a browser it
+keeps the horizon mode line. The iPhone install note no longer says it opens in landscape. copy_check COPY_PASS,
+same.sh SAME_PASS. Ships with the next stamp (v36's deploy script is pinned to `afa458f65`, before this).
+
+## dewball-v36 LIVE, 2 Nov 2026
+
+Deployed by his own command (`deploy-dewball-v36.sh`, the script in plans/dewball/deploy/): **the vault first**,
+release `meshy-dewball-w567-20261101` in `Stephenuffugus/lucid-winds-vault`, 271 files; every asset's sha256 read
+back from GitHub equal to `SHA256SUMS` (270) and `SHA256SUMS` itself equal. Then the files only commit
+`a88e9a65c` on main (219 paths under satellites/dewball, from `afa458f65`), tag `dewball-v36`; both origins serve
+sw.js, index.html and assets/3d/index.json byte equal to the commit (one probe each). The orientation change above
+is NOT in it.
+
+## dewball-v37, the Play readiness defects, 13 Nov 2026 (built, waits on his line)
+
+From store/dewball-play/READINESS.md, only the items with no decision in them. (1) The song card: on a new player's
+first launch the soundtrack script is held with its own `SWS_MUSIC_HOLD` flag (set in the head from
+`dewball_launches` and an empty grove), and the first result card releases it and calls `SWSMusic.reveal()` 1.4 s
+later; every run holds it (`SWSMusic.hold(true)` in startWorld, released at the result card and the menu), so the
+"New song" pill and the chip never sit where the left thumb rolls; a song earned mid run waits for the next result
+card. /music-unlocks.js is unchanged. (2) "Add to Home Screen" and "Horizon mode" hidden when `SWS_IN_TWA`.
+(7) The Keys line on the menu shows only after a keydown (remembered in `dewball_kb`). (9) The black polygon behind
+the planet was the sky sphere clipped by a fixed 200 km far plane: on a globe the far plane now reaches past the sky
+(seen gone at 126 m); the shadow disc also fades out as its radius goes from 0.2 to 0.3 of the planet's (`shadowFit`).
+On a short landscape screen the song card lands folded as its pill (it covered Roll Again). (11) No more request for
+`assets/ground-<world>.jpg` unless a world says `groundArt:1`. (14) The orientation copy above rides along.
+**Stamp:** sw.js CACHE `dewball-v37`, ASSET_V and `sw.js?v=` 24 → 25. Line:
+`/home/codespace/dewball-drafts/deploy-dewball-v37.sh` (files only, leaves privacy.html to its own line).
