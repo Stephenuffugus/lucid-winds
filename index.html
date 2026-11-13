@@ -72647,8 +72647,9 @@ function _luProcessQueue(){
   var unlockCard=document.getElementById('lu-unlock-card');
   var _ud=document.getElementById('lu-unlock-desc'); if(_ud)_ud.style.whiteSpace='';
   if(item.unlocks&&item.unlocks.length>1){
-    var _un=[],_us=[];for(var _ui=0;_ui<item.unlocks.length;_ui++){_un.push(item.unlocks[_ui].u.title);_us.push('Level '+item.unlocks[_ui].lvl+', '+item.unlocks[_ui].u.title+'. '+item.unlocks[_ui].u.desc);}
-    document.getElementById('lu-unlock-name').textContent=_un.join(' \u00b7 ');
+    // short: one line per unlock (the long words are in each tab's own first visit)
+    var _us=[];for(var _ui=0;_ui<item.unlocks.length;_ui++){_us.push('Level '+item.unlocks[_ui].lvl+' \u00b7 '+item.unlocks[_ui].u.title);}
+    document.getElementById('lu-unlock-name').textContent=item.unlocks.length+' new things';
     _ud.textContent=_us.join('\n'); _ud.style.whiteSpace='pre-line';
     unlockCard.style.display='block';
   } else if(item.unlocks&&item.unlocks.length===1){
