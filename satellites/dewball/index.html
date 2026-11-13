@@ -5536,6 +5536,9 @@
       $("mMute").textContent="Sound: "+(muted?"Off":"On"); };
     $("mExit").onclick=function(){ if(window.SWS_IN_TWA) return; if(window.SWS_EXIT)window.SWS_EXIT(); };
     if(window.SWS_IN_TWA) $("mExit").style.display="none";   // the Play app has no arcade to go back to
+    // the Play app is installed and already fullscreen: "Add to Home Screen" would be a dead button and Horizon mode
+    // would ask for a fullscreen it has (style beats syncModeUI's class toggles)
+    if(window.SWS_IN_TWA){ $("mInstall").style.display="none"; $("mFull").style.display="none"; }
     $("pResume").onclick=function(){ setPause(false); };
     $("pRestart").onclick=function(){ setPause(false); startWorld(WIDX); };
     $("pQuit").onclick=function(){ setPause(false);
