@@ -7329,6 +7329,30 @@ body.lw-bp-open .bp-extra-row > button{min-height:48px!important;}
 .gp-cat-count{font-size:12px !important;}
 .gp-chev{font-size:12px !important;}
 </style>
+<script>
+/* Hub skin preview, flag only (Astra's herbarium kit, round one). ?skin=astra turns every part on,
+   ?skin=bloom,cards,banners a subset, ?skin=off clears. Remembered in localStorage lw_skin.
+   With no flag and nothing stored this block adds no class and loads nothing. */
+(function(){
+  var PARTS=['bloom','cards','actions','banners','nav','topbar','layout'];
+  var v=null,m,i,j;
+  try{m=/[?&]skin=([^&#]*)/.exec(location.search);if(m)v=decodeURIComponent(m[1]).toLowerCase();}catch(e){}
+  if(v!==null){
+    if(v==='off'||v===''||v==='none'){try{localStorage.removeItem('lw_skin');}catch(e){}v='';}
+    else{try{localStorage.setItem('lw_skin',v);}catch(e){}}
+  }else{try{v=localStorage.getItem('lw_skin')||'';}catch(e){v='';}}
+  if(!v)return;
+  var want=(v==='astra'||v==='all'||v==='on')?PARTS:v.split(','),on=[];
+  for(i=0;i<want.length;i++){var w=String(want[i]).replace(/^\s+|\s+$/g,'');for(j=0;j<PARTS.length;j++){if(PARTS[j]===w&&on.indexOf(w)<0)on.push(w);}}
+  if(!on.length)return;
+  var d=document.documentElement;
+  for(i=0;i<on.length;i++)d.className+=' sk-'+on[i];
+  window.LW_SKIN=on.join(',');
+  var base='assets/skin-herbarium/',q='?v=20261113a',hd=document.getElementsByTagName('head')[0];
+  var l=document.createElement('link');l.rel='stylesheet';l.href=base+'skin.css'+q;hd.appendChild(l);
+  var sc=document.createElement('script');sc.src=base+'skin.js'+q;sc.defer=true;hd.appendChild(sc);
+})();
+</script>
 </head>
 <body>
   <!-- ═══ BOOT SPLASH — sprout emerging from seed; covers all UI until app ready ═══ -->
@@ -8422,6 +8446,8 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
   <div id="pw-character">
     <button class="cs-close" onclick="PW_UI.closeCharacter()">✕</button>
     <div class="cs-header"><div class="cs-avatar" id="cs-avatar"><span class="lwe lwe-bloom" style="width:1.8em;height:1.8em;"></span></div><div style="flex:1;min-width:0;"><div class="cs-name" id="cs-name" onclick="PW_UI.editName()" style="cursor:pointer;" title="Tap to edit">Keeper</div><div class="cs-title" id="cs-title">◈ Seedling · Level 1</div><div class="cs-xp-bar"><div class="cs-xp-fill" id="cs-xp-fill" style="width:0%;"></div></div><div class="cs-xp-text" id="cs-xp-text">0 / 25 XP → Level 2</div></div></div>
+    <!-- Hub R13: the settings menu (sound, colorblind, how to play, privacy, terms) had no way in from the four tabs; it opens from here -->
+    <button type="button" onclick="PW_UI.closeCharacter();if(window.toggleSettingsMenu)toggleSettingsMenu();" style="display:block;width:100%;min-height:48px;margin:0 0 0.6rem;border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;background:rgba(26,36,22,0.55);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.12em;cursor:pointer;">SETTINGS</button>
     <div class="cs-section"><div class="cs-section-title">CLASS</div><div id="cs-class-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">TOOLS</div><div id="cs-tool-body" class="cs-tool-grid"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE EFFECTS</div><div id="cs-effects-body"></div></div>
@@ -15271,6 +15297,8 @@ document.addEventListener('keydown', function(e) {
   // Settings gear dropdown
   window.toggleSettingsMenu = function() {
     var ov = document.getElementById('settings-overlay');
+    // Hub R13: the overlay is written inside the game tab, so it drew nothing on the other tabs; it lives on body
+    if (ov && ov.parentNode !== document.body) document.body.appendChild(ov);
     if (ov) ov.style.display = ov.style.display === 'none' ? 'block' : 'none';
     // Refresh perf-lite toggle label so it reflects the stored state
     var b = document.getElementById('perf-lite-btn');
@@ -42287,6 +42315,7 @@ document.addEventListener('keydown', function(e) {
         var _bornTs = plant.born || (plant.date ? new Date(plant.date).getTime() : 0);
         if (_bornTs && (Date.now() - _bornTs) < 86400000) cls += ' gh-new';
         el.className = cls;
+        if (document.documentElement.className.indexOf('sk-cards') >= 0) el.setAttribute('data-sk-hash', plant.hash); // skin preview hook (flag only)
         el.style.cursor = 'pointer';
         // Tap opens full-screen carousel — flip lives there, not here
         (function(idx, p) {
@@ -59615,13 +59644,32 @@ function _toast(m,opts){if(opts&&opts.sticky){return _lwStickyToast(m,opts);}var
 // could not read before they auto-faded. Stacks vertically so multiple
 // boot messages don't overwrite each other (the single #w-toast node +
 // shared _tt timer made consecutive boot toasts stomp one another).
-function _lwStickyToast(m,opts){
+// Hub R13: is a card up that a toast must not cover (its title, its buttons)? The onboarding, the beta notice,
+// the account card, the overnight report, a dialog, the bloom card, the level up, the Sunbeam modal,
+// the keeper page and the settings menu.
+window._lwCardUp=function(){
+  try{
+    var b=document.body; if(!b) return true; if(b.classList.contains('ob-active')) return true;
+    var sel=['#pw-onboard','#lw-beta-modal','#sws-id-modal.open','#morning-report','#lw-confirm-modal','#pw-win-overlay','#lu-overlay.open','#lw-sunbeam-modal','#cinematic-reveal.open','#pw-character.open','#settings-overlay'];
+    for(var i=0;i<sel.length;i++){ var el=document.querySelector(sel[i]); if(!el) continue; var cs=getComputedStyle(el);
+      if(cs.display!=='none' && cs.visibility!=='hidden' && +cs.opacity>0.05 && el.getBoundingClientRect().height>0) return true; }
+  }catch(e){}
+  return false;
+};
+function _lwStickyToast(m,opts,_clear){
+  // Hub R13: a sticky toast never lands on a card; it waits until the card is closed, then has its own 6 s.
+  // The way must stay clear for one more beat, so a card that was waiting on the same card goes first.
+  if(window._lwCardUp() || document.querySelector('#lw-music-ask.on')){ setTimeout(function(){ _lwStickyToast(m,opts,0); },800); return null; }
+  if(!_clear){ setTimeout(function(){ _lwStickyToast(m,opts,1); },900); return null; }
   var stack=document.getElementById('w-toast-stack');
   if(!stack){
     stack=document.createElement('div');stack.id='w-toast-stack';
     stack.style.cssText='position:fixed;top:13%;left:50%;transform:translateX(-50%);z-index:1000001;display:flex;flex-direction:column;gap:8px;align-items:stretch;width:auto;max-width:88%;pointer-events:none;';
     document.body.appendChild(stack);
   }
+  // Hub R13: sit just under the top bar's buttons (the empty band above the grid), two lines wide, never over a control
+  try{ var kb=document.getElementById('pw-keeper-bar'), kr=kb&&kb.getBoundingClientRect(); stack.style.width='min(88%,340px)';
+    stack.style.top=(kr&&kr.height>0&&getComputedStyle(kb).display!=='none'&&kr.bottom<innerHeight*0.4)?Math.round(kr.bottom+8)+'px':'13%'; }catch(e){}
   var card=document.createElement('div');card.className='w-toast-sticky';
   card.style.cssText='position:relative;display:flex;align-items:center;gap:6px;background:linear-gradient(180deg,rgba(22,28,18,0.98),rgba(13,16,12,0.99));border:1.5px solid rgba(200,168,75,0.32);border-left:3px solid rgba(200,168,75,0.65);border-radius:12px;padding:0.55rem 0.4rem 0.55rem 0.95rem;font-family:DM Mono,monospace;font-size:0.62rem;font-weight:500;color:var(--cream);line-height:1.55;box-shadow:0 12px 40px rgba(0,0,0,0.6),0 0 0 1px rgba(74,124,53,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);pointer-events:auto;opacity:0;transform:translateY(-6px);transition:opacity 0.25s ease,transform 0.25s ease;';
   var txt=document.createElement('div');txt.style.cssText='flex:1 1 auto;min-width:0;text-align:left;';
@@ -64693,6 +64741,7 @@ function _showMintCelebration(fullHash){
   else if(gh.length>=5)tip='Collection growing! Check your Terra Grade scores.';
   else if(gh.length>=2)tip='Two plants! Try cross-breeding in the Nursery.';
   var ov=document.createElement('div');ov.id='pw-win-overlay';ov.setAttribute('data-bloom','1');
+  if(document.documentElement.className.indexOf('sk-bloom')>=0)ov.setAttribute('data-sk-hash',fullHash); // skin preview hook (flag only)
   // 2026-05-07: dropped backdrop-filter on outer overlay (the prev May 06
   // fix removed the inner filter:brightness+blur but left this in place,
   // and Stephen still saw wireframe-look mints). Solid 95% bg looks the
@@ -87240,7 +87289,10 @@ function _showMorningReport(){
   if(lines.length===0)return;
 
   // Delay to let app settle
-  setTimeout(function(){
+  setTimeout(function _lwMorningWhenClear(){
+    // Hub R13: the overnight report waits for any card already up (the account card, a dialog) instead of
+    // opening under it and timing out unseen; its 12 s starts when it is really on screen
+    if(window._lwCardUp && window._lwCardUp()){ setTimeout(_lwMorningWhenClear,700); return; }
     var ov=document.createElement('div');
     ov.id='morning-report';
     ov.style.cssText='position:fixed;inset:0;z-index:99995;background:rgba(5,8,4,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;animation:panelFadeIn 0.4s ease;';
@@ -104731,8 +104783,10 @@ window.LW_Comp = (function(){
   var askTimer=null;
   function busy(){ var b=document.body; if(!b) return true; if(b.classList.contains('ob-active') || b.classList.contains('lw-tutorial-pending') || b.classList.contains('game-active')) return true;
     var ob=document.getElementById('pw-onboard'); if(ob && getComputedStyle(ob).display!=='none') return true; return false; }
+  /* Hub R13: the offer also waits for any card (the account card, the overnight report, a dialog); a card is not a reason to answer Not now */
+  function cardUp(){ return !!(window._lwCardUp && window._lwCardUp()); }
   function notNow(){ if(askTimer){ clearInterval(askTimer); askTimer=null; } remember(); hide(); }
-  function showAsk(){ if(!window.LW_MUSIC || !LW_MUSIC.play) return; if(LW_MUSIC.state && LW_MUSIC.state.playing) return; if(busy()){ setTimeout(function(){ if(!betaUp()) showAsk(); }, 2000); return; }
+  function showAsk(){ if(!window.LW_MUSIC || !LW_MUSIC.play) return; if(LW_MUSIC.state && LW_MUSIC.state.playing) return; if(busy() || cardUp()){ setTimeout(function(){ if(!betaUp()) showAsk(); }, 2000); return; }
     box.classList.add('on'); var t0=Date.now();
     askTimer=setInterval(function(){ if(!box.classList.contains('on')){ clearInterval(askTimer); askTimer=null; return; } if(Date.now()-t0>=12000 || busy()) notNow(); }, 500); }
   document.getElementById('lw-music-yes').addEventListener('click',function(){ if(askTimer){ clearInterval(askTimer); askTimer=null; } remember(); hide();

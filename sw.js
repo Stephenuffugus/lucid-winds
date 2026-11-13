@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 var CACHE_VERSION = 'lw-v40';
-var ASSET_CACHE = 'lw-assets-v23';
+var ASSET_CACHE = 'lw-assets-v24';   // Hub R13: v24 drops the pre image diet set; saved pages are carried over in activate
 var GAME_CACHE = 'lw-games-v20';
 var TILE_CACHE = 'lw-tiles-v1';
 var TILE_MAX_ENTRIES = 1000; // ~25 km² at zoom 16 — fits comfortably
@@ -34,16 +34,44 @@ var OFFLINE_PAGE = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
   + '<a href="/portal/">Back to the arcade</a>'
   + '</main></body></html>';
 
+// Hub R13 (13 Nov): the hub part is what index.html requests in its first 25 s, measured on a cold
+// first visit and on a returning start at 412x915 after the image diet. Left out: index.html (the
+// navigation rule saves it), anything stamped ?v=LW_VERSION (the stamp moves every release, so a
+// listed copy could never match), and scripts the fetch rules below never answer from the cache.
 var PRECACHE = [
-  '/assets/backgrounds/bg-game-540x960.jpg',
-  '/assets/backgrounds/bg-greenhouse-540x960.jpg',
-  '/assets/backgrounds/bg-nursery-540x960.jpg',
-  '/assets/backgrounds/bg-wild-540x960.jpg',
-  '/assets/onboarding/splash-seed-540x960.jpg',
+  '/word-banks.js',
+  '/assets/splash-seed-v2.webp',
   '/assets/onboarding/cinema-beat1-weight-540x960.jpg',
   '/assets/onboarding/cinema-beat2-glint-540x960.jpg',
   '/assets/onboarding/cinema-beat3-tendril-540x960.jpg',
-  '/word-banks.js',
+  '/assets/backgrounds/bg-greenhouse-540x960.jpg',
+  '/assets/btn-install-v2.webp?v=apr27',
+  '/assets/btn-sunbeams-v2.webp',
+  '/assets/btn-shop-v2.webp',
+  '/assets/btn-dew-v2.webp',
+  '/assets/btn-compendium.webp?v=4',
+  '/portal-assets/music-thumb.webp',
+  '/assets/games/wild/nav-game-v5.png',
+  '/assets/games/wild/nav-greenhouse-v5.png',
+  '/assets/games/wild/nav-nursery-v5.png',
+  '/assets/games/wild/nav-wild-v5.png',
+  '/assets/games/wild/backpack-closed-v4.png',
+  '/assets/fx/bloom-sun.webp',
+  '/assets/fx/bloom-sprout.webp',
+  '/assets/fx/leaf-gold.webp',
+  '/assets/fx/butterfly-purple.webp',
+  '/assets/nursery/seed-stage-0.webp',
+  '/assets/nursery/seed-stage-1.webp',
+  '/assets/nursery/seed-stage-2.webp',
+  '/assets/nursery/seed-stage-3.webp',
+  '/assets/icons/dna.webp',
+  '/assets/icons/microscope.webp',
+  '/assets/icons/icon-48x48.webp',
+  '/assets/cards/fronts/card-front-spring.png',
+  '/assets/cards/fronts/card-front-summer.png',
+  '/assets/cards/fronts/card-front-autumn.png',
+  '/assets/cards/fronts/card-front-winter.png',
+  '/assets/mysterybox.webp',
   // ── /play/ shell core (2026-06-29) ──
   // The portal jukebox and standalone /play/<game>.html shells all pull
   // these four. The big one is shared.css (~315 KB) — render-weight that,
@@ -53,9 +81,10 @@ var PRECACHE = [
   // ?v stamps must match the shells' <link>/<script> tags; if they drift,
   // runtime cache-first below self-heals (just not pre-warmed). Keep in sync
   // on a shared.css / shell.js / shell.css / sunbeam-sdk.js version bump.
-  '/shared.css?v=20260718',
-  '/play/shell.css?v=12',
-  '/play/shell.js?v=26',
+  // Hub R13: restamped to what the shells load on 13 Nov (the list still named July's stamps)
+  '/shared.css?v=20260905',
+  '/play/shell.css?v=15',
+  '/play/shell.js?v=37',
   '/sunbeam-sdk.js?v=7'
 ];
 
@@ -75,11 +104,35 @@ self.addEventListener('install', function(event) {
   );
 });
 
+// Hub R13: before an old asset cache is dropped, its saved pages (ok HTML only) move to the new one,
+// so a phone that updates and then goes offline still opens the hub and the arcade. Images refill on use.
+function _carrySavedPages() {
+  return caches.keys().then(function(names) {
+    var old = names.filter(function(n) { return n.indexOf('lw-assets-') === 0 && n !== ASSET_CACHE; });
+    if (!old.length) return;
+    return caches.open(ASSET_CACHE).then(function(dst) {
+      return Promise.all(old.map(function(n) {
+        return caches.open(n).then(function(src) {
+          return src.keys().then(function(reqs) {
+            return Promise.all(reqs.map(function(rq) {
+              return src.match(rq).then(function(res) {
+                var ct = (res && res.headers.get('content-type')) || '';
+                if (!res || !res.ok || ct.indexOf('text/html') === -1) return;
+                return dst.match(rq).then(function(have) { if (!have) return dst.put(rq, res); });
+              });
+            }));
+          });
+        });
+      }));
+    });
+  }).catch(function() {});
+}
+
 // ── ACTIVATE: clean old cache versions ──
 self.addEventListener('activate', function(event) {
   var keep = [ASSET_CACHE, GAME_CACHE, TILE_CACHE];
   event.waitUntil(
-    caches.keys().then(function(names) {
+    _carrySavedPages().then(function() { return caches.keys(); }).then(function(names) {
       return Promise.all(
         names.filter(function(name) {
           // ⛔ caches.keys() is ORIGIN-wide, not scope-wide. This used to delete
