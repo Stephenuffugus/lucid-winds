@@ -5413,6 +5413,8 @@
     .gp-cat-banner{display:block;width:100%;height:auto;object-fit:cover;}
     .gp-cat-text-fallback{display:none;align-items:center;gap:8px;padding:10px 12px;flex:1;}
     .gp-cat-text-fallback.show{display:flex;}
+    /* Hub R6: Color Garden's thumbnail is a white colouring page, a white box among painted thumbs. */
+    .fk2-thumb img[src*="thumbs/colorgarden"]{filter:invert(0.9) sepia(0.85) saturate(1.6) brightness(0.95);}
     /* IN DEVELOPMENT has no banner ON PURPOSE — it is the workbench row.
        A dashed hazard edge makes the missing art read as intent. */
     .gp-cat[data-cat="indev"] .gp-cat-hdr{background:rgba(20,18,10,0.7);border-top:1px dashed rgba(200,168,75,0.4);border-bottom:1px dashed rgba(200,168,75,0.4);}
@@ -79287,6 +79289,7 @@ function _spotlight(el){
   // so it renders above the mask. iOS Safari also needs willChange to
   // honor z-index on contain:layout elements (greenhouse plants).
   _spot.style.cssText='position:fixed;z-index:1000011;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.72);pointer-events:none;transition:all 0.3s ease;';
+  if(el.id==='dfb'||el.id==='ffb')_spot.style.borderRadius='50%';   // Hub R6: round medallions get a round spotlight, not a box
   _spot.style.top=(r.top-8)+'px';_spot.style.left=(r.left-8)+'px';
   _spot.style.width=(r.width+16)+'px';_spot.style.height=(r.height+16)+'px';
   document.body.appendChild(_spot);
