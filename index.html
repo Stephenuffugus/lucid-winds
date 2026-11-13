@@ -57540,7 +57540,7 @@ function _waterOwnPlant(p,mk){
   var _waterXP=3;
   try{if(window.LW_COMPANION){_waterXP=Math.ceil(_waterXP*window.LW_COMPANION.getCompanionMult('waterEfficiency'));}}catch(e){}
   if(window.PW_grantXP)PW_grantXP(_waterXP,'water_care');
-  try{if(window.LW_XP)window.LW_XP.grantOnce('first_water',10,'first_of_kind','<img src="assets/fx/drop-blue.webp" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83d\udca7&apos;;"> +10 XP, first watering. Plants remember kindness.');}catch(e){}
+  try{if(window.LW_XP)window.LW_XP.grantOnce('first_water',10,'first_of_kind','\ud83d\udca7 +10 XP, first watering. Plants remember kindness.');}catch(e){}
   if(window._LW_toolXP)window._LW_toolXP('can',3);
   if(window.LW_Log)window.LW_Log.write('wild_watered',{hash:p.hash});
   try { if (window.LW_Events) window.LW_Events.incCounter('rainfall', 3, 'Rainfall', 'day'); } catch(e){}
@@ -76450,7 +76450,7 @@ var SC=[{c:1,k:'seed1'},{c:5,k:'seed5'},{c:10,k:'seed10'},{c:15,k:'seed15'},{c:2
 function xp(){var c=8;try{if(window._LW_toolMod){var _ps=window._LW_toolMod('pouch');if(_ps)c=_ps;}}catch(e){}for(var i=1;i<SL.length;i++){var s=SL[i];if(s.k==='slot2'||s.k==='slot3')continue;if(st.unlocks[s.k]){if(s.dy){var td=new Date().toISOString().split('T')[0];if(st.daily!==td)c++;}else c++;}}return Math.min(c,25);} // cap at 25 — matches item pouch cap (single mental model). Was 12 when base pouch was 3; balance pass 2026-04-26 bumped base to 8.
 function xc(){var c=5;for(var i=SC.length-1;i>=0;i--){if(st.unlocks[SC[i].k]){c=SC[i].c;break;}}return c;} // Stephen 2026-05-03: default 1→5. Pouch starts at 5; the auto "expand to 5" milestone after first forage was unnecessary text.
 function init(){var el=document.getElementById('bpi');if(el){var s=el.querySelector('svg');if(s)s.remove();}render();}
-function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','<img src="assets/backpack-64x64.png" alt="" style="width:24px;height:24px;object-fit:contain;vertical-align:-5px;display:inline-block;" onerror="this.outerHTML=&apos;\ud83c\udf92&apos;;"> +5 XP, Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
+function toggle(){if(_o)close();else{try{if(window.LW_XP)window.LW_XP.grantOnce('disc_backpack',5,'discover_backpack','\ud83c\udf92 +5 XP, Field Pouch. Carry seeds and plants here.');}catch(e){}open();}}
 function open(){_o=true;hap();var el=document.getElementById('bpi');if(el){el.style.backgroundImage="url('assets/games/wild/backpack-open-v4.png')";}var bpe=document.getElementById('bpe');bpe.classList.add('open');document.body.classList.add('lw-bp-open');
 // 2026-05-08: ITEMS / SEEDS split. Default to ITEMS so mystery boxes +
 // curiosities are visible up-front; SEEDS tab is one tap away.
