@@ -46571,6 +46571,8 @@ document.addEventListener('keydown', function(e) {
     h += '</div></div>';
     m.innerHTML = h;
     document.body.appendChild(m);
+    // Hub R14.7d: one popup at a time: a plain toast already up gives way to the dialog (it was only a passing note)
+    try { var _wt = document.getElementById('w-toast'); if (_wt && +getComputedStyle(_wt).opacity > 0.05) { _wt.style.opacity = '0'; _wt.style.pointerEvents = 'none'; } } catch(e) {}
     try { _haptic('tab'); } catch(e) {}
     // Scope lookups to m so duplicate-modal races can't misbind.
     var dismiss = function() { try { m.remove(); } catch(e) {} if (onNo) onNo(); };
