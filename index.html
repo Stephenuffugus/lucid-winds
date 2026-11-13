@@ -2877,6 +2877,8 @@
       box-shadow:0 0 16px rgba(122,179,86,0.2);
     }
     .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(102px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);background-color:#0d100c;}
+    /* Hub R14: room under every scrolling panel for the nav as it really stands (its height, the Pi chrome under it, the HIDE chip above it), measured by the R14 script near engagement.js */
+    .grove-panel{padding-bottom:var(--lw-nav-room,calc(5rem + env(safe-area-inset-bottom, 0px)));}
     /* Nursery tight layout — even tighter top so action row sits flush
        under the keeper bar. */
     .grove-panel.nur-tight{padding-top:calc(94px + env(safe-area-inset-top, 0px));}
@@ -104880,6 +104882,27 @@ window.LW_Comp = (function(){
 })();
 </script>
 
+<script>
+/* Hub R14: the stone nav and its HIDE chip covered the last row of the greenhouse and the Nursery's WATER and
+   ACCELERATE labels. The page (the document) is what scrolls; every .grove-panel gets bottom padding equal to the
+   room the nav really takes from the bottom of the screen, plus the chip and a 12 px breath (--lw-nav-room).
+   Measured while the nav is open (a minimized nav keeps the open room, so nothing jumps when it is hidden). */
+(function(){
+  var last='';
+  function measure(){
+    try{
+      var n=document.querySelector('.fg-bottomnav'); if(!n) return;
+      if(getComputedStyle(n).display==='none' || n.classList.contains('minimized')) return;
+      var r=n.getBoundingClientRect(); if(!(r.height>0)) return;
+      var chip=n.querySelector('.fg-nav-min'), ch=0; if(chip){ var cr=chip.getBoundingClientRect(); if(cr.height>0) ch=Math.max(0, r.top-cr.top); }
+      var v=Math.round(Math.max(0, window.innerHeight-r.top)+ch+12)+'px';
+      if(v!==last){ last=v; document.documentElement.style.setProperty('--lw-nav-room', v); }
+    }catch(e){}
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', measure); else measure();
+  window.addEventListener('resize', measure); setInterval(measure, 2000);
+})();
+</script>
 <!-- Engagement system: lifetime achievements + daily/weekly challenges. Data + tracking only. UI is separate. -->
 <script src="engagement.js"></script>
 <script>
