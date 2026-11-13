@@ -8,8 +8,8 @@
  * is legal and broken when it is not (the tray also says "Not here" in words: never by colour alone).
  */
 import * as THREE from 'three';
-import { SHAPES } from '../core/statues.js?v=20261107a';
-import { art } from './art.js?v=20261107a';
+import { SHAPES } from '../core/statues.js?v=20261113a';
+import { art } from './art.js?v=20261113a';
 
 const STONE = 0x8f877b, STONE_P1 = 0x7d7468;
 const INK = 0xeadfc9;
@@ -49,6 +49,54 @@ function ownerBars(owner, centre, box, n, mat) {
   return g;
 }
 
+/**
+ * m5 second pass: the Arch is a BUILT thing (it keeps its stone under a figure, render/figures.js), so its stone
+ * is dressed blocks, not a grey slab beside the textured toys: a small sandstone texture drawn once in a canvas
+ * (no download), coursed blocks with mortar and a grain, mapped by box projection at 32 mm a tile so the courses
+ * run on across the legs and the lintel.
+ */
+let blockTex = null;
+function archStone() {
+  if (blockTex || typeof document === 'undefined') return blockTex;
+  const N = 256, c = document.createElement('canvas');
+  c.width = c.height = N;
+  const g = c.getContext('2d');
+  let seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  g.fillStyle = '#6a5e4c'; g.fillRect(0, 0, N, N);                 // the mortar
+  const rows = 4, rh = N / rows;
+  for (let r = 0; r < rows; r++) {
+    const off = (r % 2) * N / 4;
+    for (let k = -1; k < 3; k++) {
+      const x = off + k * N / 2, v = 150 + Math.floor(rnd() * 34);
+      g.fillStyle = 'rgb(' + (v + 22) + ',' + (v + 6) + ',' + (v - 22) + ')';
+      g.fillRect(x + 3, r * rh + 3, N / 2 - 6, rh - 6);
+      g.fillStyle = 'rgba(255,240,210,0.16)'; g.fillRect(x + 3, r * rh + 3, N / 2 - 6, 3);   // a lit top edge
+      g.fillStyle = 'rgba(40,30,20,0.18)'; g.fillRect(x + 3, r * rh + rh - 6, N / 2 - 6, 3);   // a shaded foot
+    }
+  }
+  for (let i = 0; i < 2600; i++) {                                    // the grain
+    const a = rnd() * 0.16, d = rnd() < 0.5;
+    g.fillStyle = d ? 'rgba(60,45,30,' + a + ')' : 'rgba(255,245,225,' + a + ')';
+    g.fillRect(Math.floor(rnd() * N), Math.floor(rnd() * N), 1 + Math.floor(rnd() * 2), 1);
+  }
+  blockTex = new THREE.CanvasTexture(c);
+  blockTex.colorSpace = THREE.SRGBColorSpace; blockTex.wrapS = blockTex.wrapT = THREE.RepeatWrapping; blockTex.anisotropy = 4;
+  return blockTex;
+}
+/** Box projection: each face takes the two axes it spans, in the statue's own metres, 32 mm a tile. */
+function boxUv(geo, at) {
+  const P = geo.attributes.position, Nn = geo.attributes.normal, uv = geo.attributes.uv, T = 0.032;
+  for (let i = 0; i < P.count; i++) {
+    const x = P.getX(i) + at[0], y = P.getY(i) + at[1], z = P.getZ(i) + at[2];
+    const nx = Math.abs(Nn.getX(i)), ny = Math.abs(Nn.getY(i)), nz = Math.abs(Nn.getZ(i));
+    if (nx >= ny && nx >= nz) uv.setXY(i, z / T, y / T);
+    else if (ny >= nz) uv.setXY(i, x / T, z / T);
+    else uv.setXY(i, x / T, y / T);
+  }
+  uv.needsUpdate = true;
+}
+
 function partMesh(p, mat) {
   let g;
   if (p.box) g = new THREE.BoxGeometry(p.box.hx * 2, p.box.hy * 2, p.box.hz * 2);
@@ -65,11 +113,12 @@ export function makeStatueMesh(statue, opts) {
   const o = opts || {};
   const S = SHAPES[statue.shape];
   const group = new THREE.Group();
+  const arch = statue.shape === 'arch', map = arch ? archStone() : null;
   const mat = new THREE.MeshStandardMaterial({
-    color: statue.owner === 1 ? STONE_P1 : STONE, roughness: 0.92, metalness: 0,
+    color: map ? (statue.owner === 1 ? 0xb9ad9c : 0xd6cab6) : (statue.owner === 1 ? STONE_P1 : STONE), map, roughness: 0.92, metalness: 0,
     transparent: !!o.ghost, opacity: o.ghost ? 0.6 : 1
   });
-  for (const p of S.parts) group.add(partMesh(p, mat));
+  const parts = S.parts.map((p) => { const m = partMesh(p, mat); if (map) boxUv(m.geometry, p.at); group.add(m); return m; });
   // m3 step 10: her footprint decals, one drawing per state: r 108 of 256 px is the shape's own footprint radius
   const half = S.foot * 128 / 108;
   const ring = dirtDecal('env/footprint_allowed.png', half, 0.0013, 0.9);
@@ -79,11 +128,17 @@ export function makeStatueMesh(statue, opts) {
   // A3: the owner's chalk bars on the top and front faces (the shapes are symmetric about y, so the visual turns to show its front to the near side; the colliders stay)
   const bars = new THREE.MeshBasicMaterial({ color: INK, transparent: true, depthWrite: false, opacity: o.ghost ? 0.7 : 0.95 });
   const P = OWNER_MM[statue.shape], own = statue.owner === 0 ? 0 : 1;
-  group.add(ownerBars(own, P.top_center, P.top_box, [0, 1, 0], bars));
+  const top = ownerBars(own, P.top_center, P.top_box, [0, 1, 0], bars);
+  group.add(top);
   const fn = statue.shape === 'orb' ? [0, P.front_center[1] - 32, P.front_center[2]] : [0, 0, -1];   // the orb's front is on the ball, its normal from the ball's centre
-  group.add(ownerBars(own, P.front_center, P.front_box, fn, bars));
+  const front = ownerBars(own, P.front_center, P.front_box, fn, bars);
+  group.add(front);
+  // m5: when a figure stands here instead of the stone, the owner's chalk goes on the dirt in front of it
+  const dirtBars = ownerBars(own, [0, 1.6, -(S.foot * 1000 + 9)], [16, 16], [0, 1, 0], bars);
+  dirtBars.visible = false;
+  group.add(dirtBars);
   group.rotation.y = Math.PI;
-  group.userData = { ring, broken, mat };
+  group.userData = { ring, broken, mat, parts, bars: { top, front }, dirtBars, shape: statue.shape };
   group.position.set(statue.x, 0, statue.z);
   return group;
 }
@@ -105,5 +160,10 @@ export function markGhost(group, ok) {
 
 /** Give a statue mesh's memory back. */
 export function disposeStatueMesh(group) {
-  group.traverse((n) => { if (n.geometry) n.geometry.dispose(); if (n.material) n.material.dispose(); });
+  group.userData.disposed = true;
+  // m5: a figure's geometry and material are shared by every statue that wears it (render/figures.js); a ghost's material is its own
+  group.traverse((n) => {
+    if (n.userData.figureShared) { if (n.userData.figureOwnMat && n.material) n.material.dispose(); return; }
+    if (n.geometry) n.geometry.dispose(); if (n.material) n.material.dispose();
+  });
 }

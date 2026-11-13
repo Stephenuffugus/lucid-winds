@@ -41,6 +41,7 @@ uniform vec3 uLight;
 uniform float uFresnel;
 uniform float uGloss;
 uniform float uOpacity;
+uniform float uShell;
 uniform float uVaneCount;
 uniform float uVaneWidth;
 uniform float uBandScale;
@@ -185,7 +186,11 @@ void main(){
     col += uSkin * pow(1.0 - max(dot(N, V), 0.0), uFresnel) * 0.18;
   }
 
-  gl_FragColor = vec4(col, uOpacity);
+  // m5: a grail in the inspect view is a SHELL around its sculpt: the glass thins toward the middle of the view
+  // and stays whole at the bending edge, so the figure shows through and the edge still reads as glass
+  float a = uOpacity;
+  if (uShell > 0.5) { float e = 1.0 - max(dot(N, V), 0.0); a = mix(uOpacity, 1.0, smoothstep(0.45, 0.95, e)); }
+  gl_FragColor = vec4(col, a);
 }`;
 
 const MODES = {
@@ -226,6 +231,7 @@ export function makeMarbleMaterial(render, tuning, uid) {
       uEdgeDark: { value: 0.62 },
       uGloss: { value: recipe === 'clay' ? 12 : (recipe === 'steel' ? 120 : 54) },
       uOpacity: { value: 1 },
+      uShell: { value: 0 },
       uVaneCount: { value: (render && render.vaneCount) || 3 },
       uVaneWidth: { value: 0.34 },
       uBandScale: { value: 9 },
