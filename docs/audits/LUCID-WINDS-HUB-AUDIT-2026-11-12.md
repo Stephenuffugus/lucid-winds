@@ -235,3 +235,30 @@ greenhouse; the mint worked and the numbers added up (30 earned, one plant minte
   Policy, Terms of Service and "Tip Jar and About". No control with an inline handler opens it from any of the
   four tabs in the signed out test state. Confirm on a phone how a player reaches it; Play expects the privacy
   policy to be reachable in the app. "Tip Jar" must be hidden on a Play rail (R8).
+
+## Fourth pass, 13 Nov: the server code (read, not run)
+
+`functions/earnHashes.js`, `mintPlant.js`, `claimPending.js` and the hub's two call sites.
+
+**Sound:** every write is a Firestore transaction; the ledger, the mint counter and the rate buckets are server
+only fields the rules will not let a client change; the plant hash is made on the server from crypto random
+bytes; `mintLog` is admin write only.
+
+**What a launch should not ship with:**
+- **F1. Earning is self reported.** The client states the amount; the server only rate limits it (200 a call,
+  300 a minute, 5,000 a day). Anyone with a browser console can grant themselves Sunbeams without playing.
+  The mint cap bounds the result at 30 signed plants a day per account. Proof of play (`startGame` and a
+  nonce) is on the migrations list and not built. `claimPending` is the same shape, capped at 50 a day.
+- **F2. A refused mint still mints.** `window.mintPlant` (`index.html:42585` region) falls back to a local,
+  unsigned plant whenever the server call fails OR refuses: signed out, offline, the 60 second gap, the daily
+  cap, or too few Sunbeams on the server. So the server's caps do not limit what a greenhouse holds; a double
+  tap gives one signed plant and one unsigned plant while the server charges once, and the server's balance
+  drifts above the phone's. Honest players will collect unsigned plants without knowing (two blooms inside a
+  minute, a tunnel, a flaky hotel network), and those are the plants a marketplace, an NFT extract or a
+  "mintLog only" map rule will later refuse.
+- **F3. No App Check.** The callables accept any signed in caller. App Check would make scripted calls from
+  outside the real page much harder. One option per function and one init call on the client.
+- **F4. A lost reply can pay twice.** An earn whose reply is lost is queued and retried with no idempotency
+  key. Small, and in the player's favour.
+- The 60 second gap between mints refuses an honest player who has two plants ready, with the words "Slow
+  down". Worth shortening when F2 is fixed.

@@ -78,8 +78,31 @@ farm from paying out.
 
 **Stephen's part:** the functions deploy; later, the Play Console fields.
 
+## S2. The mint and the earn (added 13 Nov, from the fourth pass)
+
+**Today.** A mint the server refuses or cannot answer is made locally and unsigned (`window.mintPlant`,
+`index.html:42585` region). Earning is self reported and only rate limited. No App Check.
+
+**The change, in the order it pays off.**
+1. *Signed in and refused:* no local plant. Keep the Sunbeams and the ready plant, say when it can bloom ("Your
+   next bloom is ready in 40 s"). *Offline or the call failed:* keep the ready plant queued and mint it when
+   the server answers. *Signed out:* local plants as today, until G1 makes every player a signed in guest.
+2. Shorten the gap between mints (60 s today). It is a bot limit, not part of the economy table; 10 s still
+   stops a script and no longer refuses a player with two plants ready. Stephen's number.
+3. App Check on every callable (`enforceAppCheck: true`) with the web provider initialised in the hub.
+4. An idempotency key on `earnHashes` (the client sends a random id per earn; the server ignores a repeat).
+5. Proof of play (`startGame` returns a nonce, `earnHashes` spends it), as the migrations plan already says.
+
+**The unsigned plants already out there.** Stephen, 13 Nov: resets are fine while almost nobody plays. The
+clean answer is one reset before launch, after step 1 ships, so every plant in every greenhouse has a mint
+log row. His call; if he would rather keep his own plants, a one time admin script can write mint log rows
+for a named account.
+
+**Stephen's part:** the functions deploy; turning App Check on in the Firebase console; the number for the gap.
+
 ## What each costs, roughly
-S1 tier 1: two functions, twelve call sites, one rules change. The largest of the three.
+S1 tier 1: two functions, twelve call sites, one rules change. The largest of the four.
+S2 steps 1 to 4: one client wrapper, two small function changes, one console switch. Small. Step 5 is large.
 G1: one sign in call, one link flow, three prompts, a few gates. Medium.
 R8: one function, one settings screen, one web page, one rail. Medium.
 None of them changes the economy table in CLAUDE.md.
