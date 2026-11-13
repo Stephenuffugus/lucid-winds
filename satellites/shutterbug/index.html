@@ -412,6 +412,8 @@ body:not(.playing) #floorname { display: none; }
 #housestart { background: var(--sun); color: var(--ink); } #housego { background: var(--sun); color: var(--ink); }
 #housego:not([hidden]) ~ #housestart { background: var(--paper); }
 #housecount { margin: 0; text-align: center; color: var(--ash); font-size: 0.9rem; }
+/* sb-m2-27 S1 (Stephen, 13 Nov: "I don't think it explains what a house is"): one Ash line under Start a house, a sibling so the button keeps its words */
+#househint { margin: -6px 0 0; text-align: center; color: var(--ash); font-size: 0.9rem; }
 /* HOUSE-B: Astra's icon_house on Start a house (24 px at 1:1), its checked seal once a house is cleared */
 #housestart::before { content: ''; display: inline-block; width: 24px; height: 24px; margin: 0 8px 0 0; vertical-align: -6px;
   background: var(--icon-house-house) 0 0 / 24px 24px no-repeat; image-rendering: pixelated; }
@@ -675,6 +677,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <p id="codemsg" role="status" hidden></p>
     <div id="house" hidden><button id="housego" class="big" type="button" data-copy="houseContinue" hidden></button>
       <button id="housestart" class="big" type="button" data-copy="houseStart"></button>
+      <p id="househint" data-copy="houseHint"></p>
       <p id="housecount" hidden></p>
       <button id="dailybtn" class="big" type="button" hidden><canvas id="dailybadge" width="24" height="24"></canvas><span><b data-copy="dailyHead"></b><small id="dailystate"></small></span></button>
       <button id="darkroombtn" class="big" type="button" hidden><canvas id="darkroombadge" width="24" height="24"></canvas><span><b data-copy="darkroomLink"></b><small id="darkroomstate"></small></span></button>
@@ -698,6 +701,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <h2 id="doorhead"></h2>
     <p id="doorhearts" hidden></p>
     <p id="doorbank" hidden></p>
+    <p id="doorstake" hidden></p>
     <p id="doorkept" hidden></p>
     <p id="doorprint" hidden></p>
     <p id="doornext" hidden></p>
@@ -10464,7 +10468,8 @@ body.sb-modal .lwfb-fab { display: none !important; }
     /* the house (DESIGN 8, QUESTIONS Q200; docs/PROGRESSION-PROPOSAL-OCT31.md 2.3's words) */
     houseStart: 'Start a house', houseContinue: 'Continue the house', houseContinueAt: 'Continue room {n} of {of}', houseCount: 'Houses cleared {n}', freePlay: 'Free play',
     roomOf: 'Room {n} of {of}', lastRoom: 'The last room', roomOfShort: 'Room {n}/{of}', roomOfTiny: '{n}/{of}', lastRoomShort: 'Last room',
-    houseNew: 'A new house', houseRooms: 'Five rooms, each one tougher than the last.', shootFirst: 'Shoot the first room',
+    houseNew: 'A new house', houseRooms: 'Five rooms, each one tougher than the last.', houseHint: 'Five of your rooms in a row. A guardian waits in the last one.',
+    houseStake: 'Clear all five to win the {name}. Lose every heart and the house starts over.', houseStakeAll: 'Lose every heart and the house starts over.', shootFirst: 'Shoot the first room',
     doorCleared: 'Room {n} of {of} cleared', doorTougher: 'Room {n} is tougher', doorLast: 'The last room is next', enterRoom: 'Play room {n}',
     doorHearts: '{n} of {max} hearts, one back', doorHeartsFull: '{n} of {max} hearts', cropBack: 'Back',
     useRecent: 'Use a recent room', noRecent: 'No recent rooms yet.', leaveHouse: 'Leave the house',
@@ -12412,6 +12417,10 @@ body.sb-modal .lwfb-fab { display: none !important; }
     bank.textContent = cleared ? (info.dp === 1 ? C.houseSumOne : C.houseSum).replace('{rooms}', of).replace('{n}', info.dp)
       : at === 0 ? C.houseRooms : raw !== null && raw !== undefined && raw > run.last ? C.bankedOf.replace('{n}', run.last).replace('{of}', raw) : plural(run.last, 'bankedOne', 'banked');
     bank.hidden = !cleared && at > 0 && !run.last && !raw;   /* a doorway that banked nothing says nothing of it */
+    /* sb-m2-27 S1: the new house's stake in the game's own terms: the clear's prize (the next look on the ladder, lookWin's),
+       and a death's Retry House from room 1 (runRetry) */
+    var stake = $('doorstake'), np = !cleared && at === 0 && SB.save.doc ? SB.record.lookPrize(SB.record.lookValid(SB.save.doc.cosmetics)) : null;
+    stake.textContent = np ? C.houseStake.replace('{name}', C['look_' + np.replace('.', '_')]) : C.houseStakeAll; stake.hidden = cleared || at > 0;
     nx.textContent = at > 0 && !cleared ? (at + 1 === of ? C.doorLast : C.doorTougher.replace('{n}', at + 1)) : ''; nx.hidden = !nx.textContent;
     doorHearts($('doorhearts'), at > 0 && !cleared ? run.hero : null, HS.back);
     var saved = !cleared && run && run.rooms.length > at;
