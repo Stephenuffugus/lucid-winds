@@ -2,7 +2,7 @@
 
 The one list the studio runs from, in the order things happen. Stephen's Google Doc "Studio checklist" in Drive Astra is this file with live checkboxes; the repo copy is docs/STUDIO-CHECKLIST.md. When a line changes here, the Doc is replaced in the same session (export the Doc as markdown first to carry his ticks; upload this file as markdown; trash the one it replaces). Older checklists are erased, his order of 7 Nov.
 
-As of 13 Nov 2026, 08:30 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
+As of 13 Nov 2026, 19:30 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
 ## 13 Nov afternoon: Astra's Lucid Winds kit, and the disk
 
