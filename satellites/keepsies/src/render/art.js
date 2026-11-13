@@ -9,7 +9,7 @@
  * body; `ic(name)` is a 24 unit drawing in currentColor, sized by its wrapper (the 48 px target is the
  * button around it, never the drawing).
  */
-export const ART_V = '?v=20261107a';
+export const ART_V = '?v=20261113a';
 
 /** The served URL of an art file under assets/, e.g. art('env/dirt_albedo.webp'). */
 export function art(path) { return 'assets/' + path + ART_V; }

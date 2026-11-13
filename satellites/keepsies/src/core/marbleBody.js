@@ -5,7 +5,7 @@
  * (damage, charge, the ice tiles that break under a density class over 4000)
  * gets a number that means something.
  */
-import { PI, clamp } from './dmath.js?v=20261107a';
+import { PI, clamp } from './dmath.js?v=20261113a';
 
 /**
  * @typedef {{id:string, class:string, diameterMm:number,

@@ -51,7 +51,7 @@
  * ⛔ Nothing here touches the accuracy cone. DESIGN 9.6: never rubber-band aim. A closer
  * camera lets you SEE the marble and turn to face it; it does not make the thumb steadier.
  */
-import { sin, cos, atan, atan2, len2, clamp, DEG, PI } from './dmath.js?v=20261107a';
+import { sin, cos, atan, atan2, len2, clamp, DEG, PI } from './dmath.js?v=20261113a';
 
 /**
  * @param {object} inp

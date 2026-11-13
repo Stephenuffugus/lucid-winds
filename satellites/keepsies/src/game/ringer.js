@@ -18,19 +18,19 @@ import {
   createWorld, disposeWorld, addSurface, addMarble, removeMarble, impulse, place,
   step, atRest, specOf, positionOf, velocityOf, ringDistance, resolved,
   snapshot, restore, setTimestep, addStatue, removeStatue
-} from '../core/physics.js?v=20261107a';
-import { SHAPES, legal, aiPlacement, blocks, legalSpots } from '../core/statues.js?v=20261107a';
-import { makeStreams, makeRng } from '../core/rng.js?v=20261107a';
-import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20261107a';
-import { STARTER_ENTRIES, CROSS_MIX } from '../core/marbleBody.js?v=20261107a';
-import { sin, cos, atan2, len2, clamp, DEG } from '../core/dmath.js?v=20261107a';
-import { frameFor, watchFor } from '../core/framing.js?v=20261107a';
+} from '../core/physics.js?v=20261113a';
+import { SHAPES, legal, aiPlacement, blocks, legalSpots } from '../core/statues.js?v=20261113a';
+import { makeStreams, makeRng } from '../core/rng.js?v=20261113a';
+import { aimToImpulse, makeAim, dirFromDeg, powerForSpeed } from '../core/snap.js?v=20261113a';
+import { STARTER_ENTRIES, CROSS_MIX } from '../core/marbleBody.js?v=20261113a';
+import { sin, cos, atan2, len2, clamp, DEG } from '../core/dmath.js?v=20261113a';
+import { frameFor, watchFor } from '../core/framing.js?v=20261113a';
 import {
   createMatch, skipLag, resolveLag, mayPlace, placeTaw, fireShot, resolveShot,
   summary, edgePosition, PHASE, DEFAULT_HOUSE_RULES, moveStatueTurn
-} from '../core/rules-ringer.js?v=20261107a';
-import { plan } from './ai.js?v=20261107a';
-import { detect as detectTechniques } from '../core/techniques.js?v=20261107a';
+} from '../core/rules-ringer.js?v=20261113a';
+import { plan } from './ai.js?v=20261113a';
+import { detect as detectTechniques } from '../core/techniques.js?v=20261113a';
 
 const RING_FT = { 5: '5ft', 7: '7ft', 10: '10ft', 13: '13ft' };
 

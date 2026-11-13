@@ -3,10 +3,10 @@
  * bigger. Doesn't have to be the size of the marble. That's so stupid."
  * Before m3 (docs/m3/INPUT.md): 51 px across in a match, the 16 px floor times 1.6; 184 to 200 in calibration; 61% of it read as full spin.
  */
-import { T, clock, makeGame, ev, playTouch, D, mainSrc } from './inputlab.mjs?v=20261107a';
+import { T, clock, makeGame, ev, playTouch, D, mainSrc } from './inputlab.mjs?v=20261113a';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ROOT } from './inputlab.mjs?v=20261107a';
+import { ROOT } from './inputlab.mjs?v=20261113a';
 
 let fails = 0;
 const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };

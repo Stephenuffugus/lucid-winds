@@ -13,7 +13,7 @@
  *
  * A statue is { shape, x, z, owner } and the list is part of the match's setup record.
  */
-import { len2 } from './dmath.js?v=20261107a';
+import { len2 } from './dmath.js?v=20261113a';
 
 export const FOOT = 0.3048;
 export const GRID = FOOT / 2;            // statues snap to a half foot grid
