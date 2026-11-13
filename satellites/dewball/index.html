@@ -248,6 +248,8 @@
   #toast.show { opacity:1; }
   #hint { color:#a7ad95; font-size:.82rem; }
   #hintKeys.hidden { display:none; }
+  .sws-music-held #sws-music-chip, .sws-music-held #sws-music-pill, .sws-music-held #sws-music-card,
+  .sws-music-held #sws-music-toast { display:none !important; }
   .howp { text-align:left; color:#e8dcc8; font-size:.84rem; line-height:1.55; }
 </style>
 <meta name="description" content="Roll a sticky ball through seven worlds and grow from a crumb to a planet.">
@@ -5099,7 +5101,12 @@
      chip seat themselves bottom left, which is where the left thumb rolls. A song earned mid run waits in pending and
      shows at the next break. On a first launch it stays held until the first result card (see the head). */
   var musicFirst=window.SWS_MUSIC_HOLD===true;
-  function musicHold(on){ try{ var m=window.SWSMusic; if(m&&m.hold) m.hold(!!on||musicFirst); }catch(e){} }
+  /* ⛔ hold() hides the chip with an inline display:none, but the script's own reseat (every 20 s, on resize and
+     rotation) rewrites the chip's whole style attribute and the button came back over the play area. A class on the
+     root and one !important rule in this page's stylesheet keep the chip, pill, card and toast hidden while held. */
+  function musicHold(on){ var v=!!on||musicFirst;
+    try{ document.documentElement.classList[v?"add":"remove"]("sws-music-held"); }catch(e){}
+    try{ var m=window.SWSMusic; if(m&&m.hold) m.hold(v); }catch(e){} }
   function musicBreak(){ musicFirst=false; musicHold(false);
     clearTimeout(musicBreak._t);
     /* a short landscape screen has no room for the song card beside the result card (it covered Roll Again in the
