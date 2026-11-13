@@ -161,6 +161,9 @@ try {
   await page.evaluate(() => window.SB_DEV.hold(true));
   const fresh = await page.evaluate(() => ({ house: !document.getElementById('house').hidden, shoot: !document.getElementById('shoot').hidden }));
   R.say(!fresh.house && fresh.shoot, 'a fresh title shows its two buttons and no house (DESIGN 5.3; house shown ' + fresh.house + ')');
+  /* sb-m2-27 S2: a brand new player's title does not change: its two buttons, the sample link and Settings, no group labels */
+  const freshCtl = await page.evaluate(() => [...document.querySelectorAll('#title button, #title h3, #title input')].filter(e => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden').map(e => e.id));
+  R.say(freshCtl.join() === 'exit,shoot,choose,sample,settingsbtn', 'a fresh title keeps exactly its two buttons, the sample link and Settings, no group label (' + freshCtl.join(', ') + ')');
 
   /* a first free play room cleared: the title then leads with Start a house */
   await tap(page, '#sample');
@@ -172,10 +175,33 @@ try {
     return { house: vis('house'), go: vis('housego'), count: vis('housecount'), first: r('housestart').top < r('shoot').top, free: document.getElementById('freeplay').textContent };
   });
   R.say(t1.house && !t1.go && !t1.count && t1.first && t1.free === 'Free play', 'after a first clear Start a house leads the title, Free play below it, no Continue the house and no Houses cleared yet (' + JSON.stringify(t1) + ')');
+  /* sb-m2-27 S1: the house explains itself under its button, a sibling (the button keeps its words) */
+  const hint = await page.evaluate(() => { const h = document.getElementById('househint'), b = document.getElementById('housestart');
+    return { text: h.textContent, below: h.getBoundingClientRect().top >= b.getBoundingClientRect().bottom, btn: b.textContent, sib: h.previousElementSibling === b }; });
+  R.say(hint.text === 'Five of your rooms in a row. A guardian waits in the last one.' && hint.below && hint.sib && hint.btn === 'Start a house',
+    'under Start a house one line says what a house is: "' + hint.text + '" (the button still "' + hint.btn + '")');
+  /* sb-m2-27 S2: the returning title in two groups, Play then Your collection, the code row, Recent rooms, Settings last; at
+     412x915 every Play control and the Your collection label on screen with the title unscrolled */
+  const grp = await page.evaluate(() => {
+    const t = document.getElementById('title'); t.scrollTop = 0;
+    const shown = id => { const e = document.getElementById(id); return e && e.getClientRects().length > 0; }, top = id => document.getElementById(id).getBoundingClientRect().top;
+    const play = ['housego', 'housestart', 'dailybtn', 'shoot', 'choose', 'sample'].filter(shown);
+    const order = ['grpplay', 'housestart', 'shoot', 'choose', 'sample', 'grpcoll', 'darkroombtn', 'albumbtn', 'codebox', 'settingsbtn'];
+    return { play, labels: [document.getElementById('grpplay').textContent, document.getElementById('grpcoll').textContent], shownLabels: shown('grpplay') && shown('grpcoll'),
+      inView: play.concat(['grpcoll']).every(id => document.getElementById(id).getBoundingClientRect().bottom <= innerHeight), collBottom: Math.round(document.getElementById('grpcoll').getBoundingClientRect().bottom),
+      ordered: order.every((id, k) => k === 0 || top(order[k - 1]) < top(id)), last: [...t.querySelectorAll('button')].filter(e => e.getClientRects().length).pop().id };
+  });
+  R.say(grp.shownLabels && grp.labels.join() === 'Play,Your collection' && grp.ordered && grp.last === 'settingsbtn',
+    'the returning title reads in two groups, ' + grp.labels.join(' then ') + ', the code row after them and Settings last (in order ' + grp.ordered + ', last ' + grp.last + ')');
+  R.say(grp.inView, 'at 412x915 every Play control (' + grp.play.join(', ') + ') and the Your collection label are on screen unscrolled (the label ends at ' + grp.collBottom + ')');
 
   /* the house's start */
   const wHouse = await page.evaluate(() => window.SB.save.doc.dp);
   await tap(page, '#housestart');
+  /* sb-m2-27 S1: the new house's card names the stake: the prize and the start over */
+  const stake = await page.evaluate(() => ({ text: document.getElementById('doorstake').textContent, shown: !document.getElementById('doorstake').hidden, rooms: document.getElementById('doorbank').textContent }));
+  R.say(stake.shown && stake.rooms === 'Five rooms, each one tougher than the last.' && /^Clear all five to win the .+\. Lose every heart and the house starts over\.$/.test(stake.text),
+    'the new house card says what is at stake under "' + stake.rooms + '": "' + stake.text + '"');
   let s = await look(page);
   R.say(s.screen === 'door' && s.head === 'A new house' && s.shoot === 'Shoot the first room' && s.shown.join() === 'doorshoot,doorchoose,doorrecent,doorleave' && s.run && s.run.at === 0 && s.run.rooms.length === 0,
     'Start a house opens the house\'s card: A new house, Shoot the first room, Choose a photo, Use a recent room, Leave the house; a run saved at room 0 (' + s.head + '; ' + s.shown.join(', ') + ')');
@@ -371,6 +397,12 @@ try {
   await tap(page, '#doortitle');
   const tc = await page.evaluate(() => ({ count: document.getElementById('housecount').hidden ? null : document.getElementById('housecount').textContent, go: !document.getElementById('housego').hidden }));
   R.say(tc.count === 'Houses cleared 1' && !tc.go, 'the title says "' + tc.count + '" and offers no Continue the house');
+  /* sb-m2-27 S2: the fuller title after a house (Houses cleared, the Daily Room open) still holds every Play control and the
+     Your collection label on a 412x915 screen unscrolled */
+  const full = await page.evaluate(() => { const t = document.getElementById('title'); t.scrollTop = 0;
+    const ids = ['housego', 'housestart', 'housecount', 'dailybtn', 'shoot', 'choose', 'sample', 'grpcoll'].filter(id => document.getElementById(id).getClientRects().length > 0);
+    return { ids, h: innerHeight, out: ids.filter(id => document.getElementById(id).getBoundingClientRect().bottom > innerHeight) }; });
+  R.say(full.ids.includes('dailybtn') && full.out.length === 0, 'with a house cleared and the Daily Room open every Play control and the Your collection label are still on screen at ' + full.h + ' px (' + full.ids.join(', ') + (full.out.length ? '; below: ' + full.out.join(', ') : '') + ')');
   /* HOUSE-B: the title wears the frame and seals the house icon, kept after a reload; Settings' Look row */
   await page.reload(); await ready(page); await page.evaluate(() => window.SB_DEV.hold(true));
   const tlk = await titleLook(page);
