@@ -59542,7 +59542,7 @@ function _checkPendingRewards(){
     }).catch(function(e){if(window._swsLog)_swsLog('Pending rewards err: '+e.message,'warn');});
   }catch(e){}
 }
-function _toast(m,opts){if(opts&&opts.sticky){return _lwStickyToast(m,opts);}var e=document.getElementById('w-toast');if(!e)return;if(opts&&opts.html)e.innerHTML=m;else e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';if(opts&&opts.interactive)e.style.pointerEvents='auto';else e.style.pointerEvents='none';clearTimeout(_tt);var dur=(opts&&typeof opts.duration==='number')?opts.duration:3500;_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';e.style.pointerEvents='none';},dur);}
+function _toast(m,opts){if(opts&&opts.sticky){return _lwStickyToast(m,opts);}var e=document.getElementById('w-toast');if(!e)return;if(opts&&opts.html)e.innerHTML=m;else e.textContent=m;e.style.opacity='1';e.style.transform='translate(-50%,-50%) scale(1)';if(opts&&opts.interactive)e.style.pointerEvents='auto';else e.style.pointerEvents='none';clearTimeout(_tt);var dur=(opts&&typeof opts.duration==='number')?opts.duration:3500;if(dur>6000)dur=6000;_tt=setTimeout(function(){e.style.opacity='0';e.style.transform='translate(-50%,-50%) scale(0.95)';e.style.pointerEvents='none';},dur);}
 // Sticky toast variant — stays on screen until the player taps its X.
 // Used for the boot "what happened / what's nearby" notices that Jesse
 // could not read before they auto-faded. Stacks vertically so multiple
@@ -59564,6 +59564,7 @@ function _lwStickyToast(m,opts){
   x.onclick=function(){card.style.opacity='0';card.style.transform='translateY(-6px)';setTimeout(function(){if(card.parentNode)card.parentNode.removeChild(card);var s=document.getElementById('w-toast-stack');if(s&&!s.children.length&&s.parentNode)s.parentNode.removeChild(s);},220);};
   card.appendChild(txt);card.appendChild(x);stack.appendChild(card);
   setTimeout(function(){card.style.opacity='1';card.style.transform='translateY(0)';},10);
+  setTimeout(function(){if(card.parentNode)x.onclick();},6000);
   return card;
 }
 
