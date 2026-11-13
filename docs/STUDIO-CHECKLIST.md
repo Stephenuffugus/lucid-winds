@@ -4,14 +4,27 @@ The one list the studio runs from, in the order things happen. Stephen's Google 
 
 As of 13 Nov 2026, 08:30 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
+## 13 Nov afternoon: Astra's Lucid Winds kit, and the disk
+
+Astra's hub kit came back and is in the vault. Opus built it into the real hub behind a switch, so it can be judged with real plants and not her blurry mockups; Fable looked at every screen. Today, her kit and a hybrid, side by side, with what is still wrong: https://claude.ai/artifact/ULCFeHPUFTC4stDLERD1m4
+
+- [ ] Put the preview on lucidwinds.com (with no flag the hub is unchanged; it carries the R13 repairs, so run it INSTEAD of the hub R13 line in the next section): `! bash /home/codespace/lw-drafts/deploy-hub-skin-preview.sh` Then on the Pixel: lucidwinds.com/?skin=bloom,cards,banners,actions (the hybrid), ?skin=astra (all of her kit), ?skin=off (today) (you)  
+- [ ] Call 1: is the hybrid the direction? Her bloom reveal, plant card, greenhouse tile and action tiles; our painted top bar, stone nav and rooms. On a yes, Opus builds it into the hub properly (you)  
+- [ ] Call 2: the grade on the card's frame with the season as a small mark (the preview), or the painted seasonal corners kept and the grade shown as glow and word only (you)  
+- [ ] Call 3: name the grade at the bloom reveal (hers), or keep "inspect in your greenhouse to discover" (you)  
+- [ ] Call 4: the banners: hers (they match, plainer), or today's with one new Puzzles banner painted to match (you)  
+- [ ] Call 5: a second round for Astra on the nav, the top bar and the Wild buttons, which came back as plain line icons; or stop here (you)  
+- [ ] The disk is at 4.3 GB free (was 794 MB) and nothing was lost: cold drafts sit in the vault (release box-archive-20261113). One line makes the cleanup run by itself at every session start: `! bash /home/codespace/lw-drafts/install-disk-prune-hook.sh` (you)  
+- [ ] The disk, your word: keep session transcripts 10 days and not 30 (stops about 2 GB of growth; say yes and Fable sets it). When it fills again the lasting fix is a slim container image (frees 6 to 7 GB, needs a planned rebuild) (you)  
+
 ## Overnight 13 Nov: what waits for you
 
-Opus built all of this while you slept; Fable checked each build (ran its tests, looked at its screens) and wrote the lines. Nothing is live until you run its line. Five lines, any order, one at a time, each at an idle prompt.
+Opus built all of this while you slept; Fable checked each build (ran its tests, looked at its screens) and wrote the lines. Nothing is live until you run its line. Five lines, any order (but see the hub line), one at a time, each at an idle prompt.
 
 - [ ] Shutterbug sb-m2-28 (the clean pass, the biome roll with your photo on it, the film row, back, Install): `! bash /home/codespace/sb-drafts/sb-m2-28/deploy-sb-m2-28.sh` It waits for the box to go quiet by itself (you)  
 - [ ] Sixfold (the friend room, a 30 second round clock, emotes and the call, the Play fixes): `! bash /home/codespace/lw-drafts/deploy-sixfold-friend-room.sh` Then both phones close the Sixfold tab and open it again (you)  
 - [ ] Create-A (her prototype untouched at /satellites/create-a/ and the new build beside it at /satellites/create-a/next/, both unlisted): `! bash /home/codespace/lw-drafts/deploy-create-a.sh` (you)  
-- [ ] Lucid Winds hub, the leftover repairs (one card at a time on a returning start, Settings reachable, the worker's cache): `! bash /home/codespace/lw-drafts/deploy-hub-r13.sh` (you)  
+- [ ] Lucid Winds hub, the leftover repairs (one card at a time on a returning start, Settings reachable, the worker's cache): now carried by the preview line in the section above. To ship the repairs alone, run this one FIRST, never after the preview line: `! bash /home/codespace/lw-drafts/deploy-hub-r13.sh` (you)  
 - [ ] Privacy pages for Whistlestop, Doohickey, Strata and Wardian (each then passes every Play gate; the Play queue is publish/PLAY-QUEUE.md): `! bash /home/codespace/lw-drafts/deploy-privacy-four.sh` (you)  
 
 Your calls from the night:
