@@ -2879,6 +2879,10 @@
     .grove-panel{display:none;overflow-y:visible;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:calc(102px + env(safe-area-inset-top, 0px));padding-bottom:calc(5rem + env(safe-area-inset-bottom, 0px));min-height:calc(100vh - 5.5rem);background-color:#0d100c;}
     /* Hub R14: room under every scrolling panel for the nav as it really stands (its height, the Pi chrome under it, the HIDE chip above it), measured by the R14 script near engagement.js */
     .grove-panel{padding-bottom:var(--lw-nav-room,calc(5rem + env(safe-area-inset-bottom, 0px)));}
+    /* Hub R14.6: the GPS banner (ENABLE GPS / STAY IN DEMO) belongs to the Wild tab. switchTab sets body.tab-wild, so off
+       Wild it is hidden and on return it is back; and a full screen card (bloom, level up, dialog) is never under it. */
+    body:not(.tab-wild) #gps-recovery-banner{display:none!important;}
+    body:has(#lu-overlay.open) #gps-recovery-banner,body:has(#pw-win-overlay) #gps-recovery-banner,body:has(#lw-confirm-modal) #gps-recovery-banner,body:has(#compost-confirm-modal) #gps-recovery-banner{visibility:hidden!important;}
     /* Nursery tight layout — even tighter top so action row sits flush
        under the keeper bar. */
     .grove-panel.nur-tight{padding-top:calc(94px + env(safe-area-inset-top, 0px));}
@@ -53897,7 +53901,7 @@ function _showGpsBanner(){
   _gpsDenied=true;
   var b=document.createElement('div');
   b.id='gps-recovery-banner';
-  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:rgba(13,16,12,0.95);border-bottom:1.5px solid var(--sage,#7ab356);padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top,0px));font-family:DM Mono,monospace;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.35s ease;';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99990;background:rgba(13,16,12,0.95);border-bottom:1.5px solid var(--sage,#7ab356);padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top,0px));font-family:DM Mono,monospace;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:panelFadeIn 0.35s ease;';
   var inner='<div style="max-width:500px;margin:0 auto;">';
   inner+='<div style="color:var(--gold,#c8a84b);font-size:0.78rem;font-weight:700;letter-spacing:0.06em;margin-bottom:6px;">\u26A0 GPS UNAVAILABLE</div>';
   inner+='<div style="color:var(--cream,#e8dcc8);font-size:0.65rem;line-height:1.5;margin-bottom:12px;opacity:0.85;">Location is needed to plant, harvest, and collect feral seeds in the Wild. You are currently in demo mode.</div>';
