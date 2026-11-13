@@ -8422,6 +8422,8 @@ setTimeout(function(){ try{ window._lwSyncGHSlotCounts(); }catch(e){} }, 5000);
   <div id="pw-character">
     <button class="cs-close" onclick="PW_UI.closeCharacter()">✕</button>
     <div class="cs-header"><div class="cs-avatar" id="cs-avatar"><span class="lwe lwe-bloom" style="width:1.8em;height:1.8em;"></span></div><div style="flex:1;min-width:0;"><div class="cs-name" id="cs-name" onclick="PW_UI.editName()" style="cursor:pointer;" title="Tap to edit">Keeper</div><div class="cs-title" id="cs-title">◈ Seedling · Level 1</div><div class="cs-xp-bar"><div class="cs-xp-fill" id="cs-xp-fill" style="width:0%;"></div></div><div class="cs-xp-text" id="cs-xp-text">0 / 25 XP → Level 2</div></div></div>
+    <!-- Hub R13: the settings menu (sound, colorblind, how to play, privacy, terms) had no way in from the four tabs; it opens from here -->
+    <button type="button" onclick="PW_UI.closeCharacter();if(window.toggleSettingsMenu)toggleSettingsMenu();" style="display:block;width:100%;min-height:48px;margin:0 0 0.6rem;border:1.5px solid rgba(200,168,75,0.4);border-radius:10px;background:rgba(26,36,22,0.55);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:0.12em;cursor:pointer;">SETTINGS</button>
     <div class="cs-section"><div class="cs-section-title">CLASS</div><div id="cs-class-body"></div></div>
     <div class="cs-section"><div class="cs-section-title">TOOLS</div><div id="cs-tool-body" class="cs-tool-grid"></div></div>
     <div class="cs-section"><div class="cs-section-title">ACTIVE EFFECTS</div><div id="cs-effects-body"></div></div>
@@ -15271,6 +15273,8 @@ document.addEventListener('keydown', function(e) {
   // Settings gear dropdown
   window.toggleSettingsMenu = function() {
     var ov = document.getElementById('settings-overlay');
+    // Hub R13: the overlay is written inside the game tab, so it drew nothing on the other tabs; it lives on body
+    if (ov && ov.parentNode !== document.body) document.body.appendChild(ov);
     if (ov) ov.style.display = ov.style.display === 'none' ? 'block' : 'none';
     // Refresh perf-lite toggle label so it reflects the stored state
     var b = document.getElementById('perf-lite-btn');
