@@ -9,45 +9,46 @@
  * DIRECTIONS BEFORE PLAY. The rules card is shown before the first match of the
  * mode, which is a studio standard and not a preference.
  */
-import { detectQuality, forceQuality } from './render/quality.js?v=20261107a';
-import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261107a';
-import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261107a';
-import { lookFit } from './core/framing.js?v=20261107a';
-import { POUCH_MOUTH, POUCH, HEIRLOOM, HORIZON } from './render/plates.js?v=20261107a';
-import { buildRingerGround } from './render/arenaEnv.js?v=20261107a';
-import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261107a';
-import { attachCameraControls } from './input/cameraCtl.js?v=20261107a';
-import { createKnuckle } from './input/knuckle.js?v=20261107a';
-import { createPullback } from './input/pullback.js?v=20261107a';
-import { attachPlacement } from './input/placement.js?v=20261107a';
-import * as AUDIO from './audio/synth.js?v=20261107a';
-import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261107a';
-import { createRinger } from './game/ringer.js?v=20261107a';
-import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261107a';
-import { launchSpeed } from './core/snap.js?v=20261107a';
-import { clamp, len2, DEG, wrapPi } from './core/dmath.js?v=20261107a';
-import * as SAVE from './meta/save.js?v=20261107a';
-import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261107a';
-import { playPotCeremony } from './render/ceremony.js?v=20261107a';
+import { detectQuality, forceQuality } from './render/quality.js?v=20261113a';
+import { createStage, createOrbitRig, resize, draw, drawScene, drawInset, THREE } from './render/scene.js?v=20261113a';
+import { spyglassFor, scopePxPerM } from './core/spyglass.js?v=20261113a';
+import { lookFit } from './core/framing.js?v=20261113a';
+import { POUCH_MOUTH, POUCH, HEIRLOOM, HORIZON } from './render/plates.js?v=20261113a';
+import { buildRingerGround } from './render/arenaEnv.js?v=20261113a';
+import { makeMarbleMesh, makeContactShadow, placeContactShadow } from './render/marbleMesh.js?v=20261113a';
+import { attachCameraControls } from './input/cameraCtl.js?v=20261113a';
+import { createKnuckle } from './input/knuckle.js?v=20261113a';
+import { createPullback } from './input/pullback.js?v=20261113a';
+import { attachPlacement } from './input/placement.js?v=20261113a';
+import * as AUDIO from './audio/synth.js?v=20261113a';
+import { initPhysics, positionOf, specOf, velocityOf, place, removeMarble } from './core/physics.js?v=20261113a';
+import { createRinger } from './game/ringer.js?v=20261113a';
+import { RINGER_TECHNIQUES } from './core/techniques.js?v=20261113a';
+import { launchSpeed } from './core/snap.js?v=20261113a';
+import { clamp, len2, DEG, wrapPi } from './core/dmath.js?v=20261113a';
+import * as SAVE from './meta/save.js?v=20261113a';
+import { createCalibration, calibrationFrom } from './meta/onboarding.js?v=20261113a';
+import { playPotCeremony } from './render/ceremony.js?v=20261113a';
 import { createTurntable, createThumbnailer, useMaterialFactory, groupForGrid, starterGrant, provenance, hardnessWord, weightWord, TIER_ORDER, TIER_LABEL }
-  from './meta/collection.js?v=20261107a';
-import * as MARBLEMESH from './render/marbleMesh.js?v=20261107a';
-import { bodySpec } from './core/marbleBody.js?v=20261107a';
-import { createEconomy } from './meta/economy.js?v=20261107a';
-import { createDrops } from './meta/drops.js?v=20261107a';
-import * as RANSOM from './meta/ransom.js?v=20261107a';
-import * as PROG from './meta/progression.js?v=20261107a';
-import { createOnboarding, dustyLine } from './meta/beats.js?v=20261107a';
+  from './meta/collection.js?v=20261113a';
+import * as MARBLEMESH from './render/marbleMesh.js?v=20261113a';
+import { bodySpec } from './core/marbleBody.js?v=20261113a';
+import { createEconomy } from './meta/economy.js?v=20261113a';
+import { createDrops } from './meta/drops.js?v=20261113a';
+import * as RANSOM from './meta/ransom.js?v=20261113a';
+import * as PROG from './meta/progression.js?v=20261113a';
+import { createOnboarding, dustyLine } from './meta/beats.js?v=20261113a';
 import { tierMatchOk, matchTheirStake, escrow, settle, recoverOnBoot, potUp, currentPot }
-  from './game/match.js?v=20261107a';
-import { makeRng } from './core/rng.js?v=20261107a';
-import { makeMarbleMaterial } from './render/marbleMesh.js?v=20261107a';
-import { art, loadIcons, ic } from './render/art.js?v=20261107a';
-import { face } from './render/portraits.js?v=20261107a';
-import * as PROV from './meta/provenance.js?v=20261107a';
-import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261107a';
-import { makeStatueMesh, makeMoveMarks, markGhost, disposeStatueMesh } from './render/statues.js?v=20261107a';
-import { SHAPES, SHAPE_ORDER, PER_PLAYER, MOVE_MAX, scaleFor, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261107a';
+  from './game/match.js?v=20261113a';
+import { makeRng } from './core/rng.js?v=20261113a';
+import { makeMarbleMaterial } from './render/marbleMesh.js?v=20261113a';
+import { art, loadIcons, ic } from './render/art.js?v=20261113a';
+import { face } from './render/portraits.js?v=20261113a';
+import * as PROV from './meta/provenance.js?v=20261113a';
+import { marbleCard, matchCard, shareCanvas } from './render/share.js?v=20261113a';
+import { makeStatueMesh, makeMoveMarks, markGhost, disposeStatueMesh } from './render/statues.js?v=20261113a';
+import { figureFor, nextFigureFor, tileUrl, dressStatue } from './render/figures.js?v=20261113a';
+import { SHAPES, SHAPE_ORDER, PER_PLAYER, MOVE_MAX, scaleFor, snap as snapGrid, legal as statueLegal, legalSpots } from './core/statues.js?v=20261113a';
 
 const $ = (id) => document.getElementById(id);
 const TEST = /[?&]keepsiestest=1/.test(location.search);
@@ -121,7 +122,7 @@ async function boot() {
   for (const el of document.querySelectorAll('[data-art]')) el.style.backgroundImage = 'url(' + art(el.dataset.art) + ')';
   // and every plate the style sheet draws (step 5, the HUD and the tiers) is a variable made here
   for (const k in ART_VARS) document.documentElement.style.setProperty(k, 'url(' + art(ART_VARS[k]) + ')');
-  const res = await fetch('src/data/tuning.json?v=20261107a');
+  const res = await fetch('src/data/tuning.json?v=20261113a');
   if (!res.ok) throw new Error('tuning.json did not load: ' + res.status);
   G.tuning = await res.json();
   G.save = SAVE.load();
@@ -131,10 +132,10 @@ async function boot() {
   AUDIO.configure(G.tuning);
   AUDIO.setEnabled(G.save.settings.sound !== false);
 
-  const cat = await fetch('src/data/marbles.json?v=20261107a');
+  const cat = await fetch('src/data/marbles.json?v=20261113a');
   if (!cat.ok) throw new Error('marbles.json did not load: ' + cat.status);
   G.catalog = await cat.json();
-  const dt = await fetch('src/data/droptables.json?v=20261107a');
+  const dt = await fetch('src/data/droptables.json?v=20261113a');
   if (!dt.ok) throw new Error('droptables.json did not load: ' + dt.status);
   G.dropTables = await dt.json();
 
@@ -1163,9 +1164,10 @@ function beginMatch(opts) {
 function startMatch(opts) {
   endMatch();
   const o = opts || {};
+  G.matchSeed = o.seed || (Date.now() & 0x7fffffff);   // m5: the statues' figures are picked from it
   G.R = createRinger({
     tuning: G.tuning,
-    seed: o.seed || (Date.now() & 0x7fffffff),
+    seed: G.matchSeed,
     skipLag: !!o.calibrating,
     bare: !!o.calibrating,
     forceFirst: o.calibrating ? 0 : o.forceFirst,
@@ -1225,10 +1227,26 @@ function lagAndFrame() {
 
 /* ----------------------------------------------------------- the statues */
 
+/**
+ * m5, THE FIGURES: the statues wear Meshy's sculpts (render/figures.js) on the medium and high tiers; the low
+ * tier keeps the code shapes (sixty frames on a low phone first). ?figures=1 or 0 overrides, for a tester.
+ */
+function figuresOn() {
+  const want = new URLSearchParams(location.search).get('figures');
+  if (want === '1') return true;
+  if (want === '0') return false;
+  return !!G.tier && G.tier.name !== 'low';
+}
+
 /** One stone mesh per statue in the match's record (rebuilt after a place or a move). */
 function syncStatues() {
   for (const m of G.statueMeshes || []) { G.stage.scene.remove(m); disposeStatueMesh(m); }
-  G.statueMeshes = (G.R ? G.R.statues() : []).map(s => { const g = makeStatueMesh(s); G.stage.scene.add(g); return g; });
+  const list = G.R ? G.R.statues() : [];
+  G.statueMeshes = list.map((s, i) => {
+    const g = makeStatueMesh(s);
+    if (figuresOn()) dressStatue(g, s.shape, figureFor(G.matchSeed, list, i));
+    G.stage.scene.add(g); return g;
+  });
   const box = $('stBadges');
   box.textContent = '';
   (G.R ? G.R.statues() : []).forEach((s, i) => {
@@ -1279,6 +1297,10 @@ function ghostAt(shape, cx, cy) {
     dropGhost();
     G.stGhost = makeStatueMesh({ shape, x: at.x, z: at.z, owner: 0 }, { ghost: true });
     G.stGhost.userData.shape = shape;
+    if (figuresOn()) {
+      const all = G.R.statues();
+      dressStatue(G.stGhost, shape, G.moving && G.moving.index != null ? figureFor(G.matchSeed, all, G.moving.index) : nextFigureFor(G.matchSeed, all, shape), { ghost: true });
+    }
     G.stage.scene.add(G.stGhost);
   }
   G.stGhost.position.set(at.x, 0, at.z);
@@ -1329,6 +1351,13 @@ function paintTray() {
   const P = G.statuesPlacing, mv = G.moving;
   const mine = P ? P.placed % 2 === 0 : !!mv;
   for (const b of $('stTiles').querySelectorAll('button')) b.disabled = !P || !mine;
+  // m5: each tile shows the figure its next statue will wear
+  if (P && figuresOn() && G.R) {
+    for (const b of $('stTiles').querySelectorAll('button')) {
+      const img = b.querySelector('img.fig'), id = nextFigureFor(G.matchSeed, G.R.statues(), b.dataset.shape);
+      if (img && id) { const u = tileUrl(id); if (img.getAttribute('src') !== u) img.src = u; b.classList.add('hasFig'); }
+    }
+  }
   $('stTiles').hidden = !P;
   $('stConfirm').disabled = !G.stPending;
   $('stUndo').disabled = !G.stPending && !mv;
@@ -1417,7 +1446,9 @@ function attachStatues(canvas) {
   for (const shape of SHAPE_ORDER) {
     const b = document.createElement('button');
     b.type = 'button'; b.id = 'st-' + shape; b.className = 'stTile';
-    b.innerHTML = ic(shape) + '<span class="lbl">' + SHAPES[shape].name + '</span>';
+    b.innerHTML = ic(shape) + '<img class="fig" alt="" draggable="false"><span class="lbl">' + SHAPES[shape].name + '</span>';
+    b.dataset.shape = shape;
+    b.querySelector('img.fig').onerror = () => b.classList.remove('hasFig');
     b.addEventListener('pointerdown', (e) => {
       if (!G.statuesPlacing || G.statuesPlacing.placed % 2 !== 0) return;
       e.preventDefault();
@@ -2520,6 +2551,17 @@ function installDevHook() {
       return { azimuthDeg, elevationDeg: st.elevationDeg, distance, clamped: !st.allowUnder };
     },
     followShot() { G.freeCam = false; },
+    /** m5: point the free camera at a spot (a look beside a figure, the worst angle on purpose) */
+    camTarget(x, y, z) {
+      G.freeCam = true;
+      const st = G.rig.state;
+      st.pivot = null; st.wantTarget = null; st.wantElevation = null;
+      st.target.set(x, y, z);
+      G.rig.update(1 / 60);
+      return true;
+    },
+    /** m5: which figure each statue wears, once it has loaded (null while the code shape shows) */
+    statueFigures: () => (G.statueMeshes || []).map(g => g.userData.figure || null),
     /** The live mibs, in the world and on the screen, so a driver can AIM the way a thumb does. */
     mibs() {
       if (!G.R) return [];

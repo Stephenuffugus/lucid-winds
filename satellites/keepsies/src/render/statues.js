@@ -8,8 +8,8 @@
  * is legal and broken when it is not (the tray also says "Not here" in words: never by colour alone).
  */
 import * as THREE from 'three';
-import { SHAPES } from '../core/statues.js?v=20261107a';
-import { art } from './art.js?v=20261107a';
+import { SHAPES } from '../core/statues.js?v=20261113a';
+import { art } from './art.js?v=20261113a';
 
 const STONE = 0x8f877b, STONE_P1 = 0x7d7468;
 const INK = 0xeadfc9;
@@ -69,7 +69,7 @@ export function makeStatueMesh(statue, opts) {
     color: statue.owner === 1 ? STONE_P1 : STONE, roughness: 0.92, metalness: 0,
     transparent: !!o.ghost, opacity: o.ghost ? 0.6 : 1
   });
-  for (const p of S.parts) group.add(partMesh(p, mat));
+  const parts = S.parts.map((p) => { const m = partMesh(p, mat); group.add(m); return m; });
   // m3 step 10: her footprint decals, one drawing per state: r 108 of 256 px is the shape's own footprint radius
   const half = S.foot * 128 / 108;
   const ring = dirtDecal('env/footprint_allowed.png', half, 0.0013, 0.9);
@@ -79,11 +79,17 @@ export function makeStatueMesh(statue, opts) {
   // A3: the owner's chalk bars on the top and front faces (the shapes are symmetric about y, so the visual turns to show its front to the near side; the colliders stay)
   const bars = new THREE.MeshBasicMaterial({ color: INK, transparent: true, depthWrite: false, opacity: o.ghost ? 0.7 : 0.95 });
   const P = OWNER_MM[statue.shape], own = statue.owner === 0 ? 0 : 1;
-  group.add(ownerBars(own, P.top_center, P.top_box, [0, 1, 0], bars));
+  const top = ownerBars(own, P.top_center, P.top_box, [0, 1, 0], bars);
+  group.add(top);
   const fn = statue.shape === 'orb' ? [0, P.front_center[1] - 32, P.front_center[2]] : [0, 0, -1];   // the orb's front is on the ball, its normal from the ball's centre
-  group.add(ownerBars(own, P.front_center, P.front_box, fn, bars));
+  const front = ownerBars(own, P.front_center, P.front_box, fn, bars);
+  group.add(front);
+  // m5: when a figure stands here instead of the stone, the owner's chalk goes on the dirt in front of it
+  const dirtBars = ownerBars(own, [0, 1.6, -(S.foot * 1000 + 9)], [16, 16], [0, 1, 0], bars);
+  dirtBars.visible = false;
+  group.add(dirtBars);
   group.rotation.y = Math.PI;
-  group.userData = { ring, broken, mat };
+  group.userData = { ring, broken, mat, parts, bars: { top, front }, dirtBars, shape: statue.shape };
   group.position.set(statue.x, 0, statue.z);
   return group;
 }
@@ -105,5 +111,10 @@ export function markGhost(group, ok) {
 
 /** Give a statue mesh's memory back. */
 export function disposeStatueMesh(group) {
-  group.traverse((n) => { if (n.geometry) n.geometry.dispose(); if (n.material) n.material.dispose(); });
+  group.userData.disposed = true;
+  // m5: a figure's geometry and material are shared by every statue that wears it (render/figures.js); a ghost's material is its own
+  group.traverse((n) => {
+    if (n.userData.figureShared) { if (n.userData.figureOwnMat && n.material) n.material.dispose(); return; }
+    if (n.geometry) n.geometry.dispose(); if (n.material) n.material.dispose();
+  });
 }
