@@ -459,10 +459,12 @@ body.squint .lid{transform:scaleY(.62);}
 
 /* ---------- home grid ---------- */
 #home{position:fixed;inset:0;z-index:62;display:none;background:var(--ink);
-  padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom));
+  padding:calc(14px + env(safe-area-inset-top)) 14px calc(72px + env(safe-area-inset-bottom));
   overflow-y:auto;}
+/* the 72 px at the foot of the shelf is the Music button's seat (Play queue, 20261113b): the last row of toys
+   scrolls clear of it */
 #home.on{display:block;}
-#home h2{margin:4px 6px 14px;min-height:44px;line-height:44px;margin-top:0;font-size:11px;letter-spacing:.24em;text-transform:lowercase;
+#home h2{margin:4px 6px 14px;font-size:11px;letter-spacing:.24em;text-transform:lowercase;
   color:var(--dim);font-weight:600;}
 #homeGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:10px;}
 .card{border-radius:18px;border:1px solid var(--edge);background:var(--slate);
@@ -595,6 +597,8 @@ body.calm .card:active{transform:none;}
   .rip{animation-duration:.25s;}
   #glow{display:none;}
 }
+/* the soundtrack held (musicSync sets the class): its chip, pill and toast stay hidden whatever its reseat writes */
+.sws-music-held #sws-music-chip,.sws-music-held #sws-music-pill,.sws-music-held #sws-music-toast{display:none!important}
 </style>
 <meta name="description" content="A quiet box of fidget toys that feel real under your finger. No ads, nothing to unlock.">
 <link rel="canonical" href="https://lucidwinds.com/satellites/bandits-box/">
@@ -5114,12 +5118,18 @@ $('#audioWarn').addEventListener('click',safe(function(){ startAudio(); }));
    bottom of the first screen two seconds in, and the round Music button sat on whatever toy was open. The shared
    script (/music-unlocks.js, not edited) is driven with its own controls: held while a toy is out (the whole stage
    is something to touch, so there is no free corner on it) and while settings are open; the Music button shows on
-   the toy shelf, in the band beside "pick a toy", and on the splash. A first launch stays held until the first
+   the toy shelf, in the seat kept free at its foot, and on the splash. A first launch stays held until the first
    quiet moment after a minute of real touching (finger time, not clock time), and that moment shows the waiting
    song; every later quiet moment after another minute shows a song that waited, if one did. */
 var MUSIC = { first: window.SWS_MUSIC_HOLD === true, want: false, sent: window.SWS_MUSIC_HOLD === true, t: 0 };
+/* ⛔ hold() hides the chip with an inline display:none, and the script's own reseat rewrites the chip's whole style
+   attribute when it finds a better corner: on a held list the Music button came straight back over the first row
+   (seen at 412 x 915 on the second launch). A class on the root and an !important rule keep the chip, the pill and
+   the toast hidden whatever the reseat writes (the rule is in the stylesheet); the card itself still shows when a
+   break reveals it. */
 function musicSync() {
   var on = MUSIC.want || MUSIC.first;
+  try { document.documentElement.classList.toggle('sws-music-held', on); } catch (e) {}
   try { var m = window.SWSMusic; if (m && m.hold && on !== MUSIC.sent) { m.hold(on); MUSIC.sent = on; } } catch (e) {}
 }
 function musicHold(on) { MUSIC.want = !!on; musicSync(); }
@@ -5139,7 +5149,9 @@ function touchMark() { var n = Date.now(); if (n - TOUCH.last < 1500) TOUCH.ms +
 document.addEventListener('pointerdown', touchMark, true);
 document.addEventListener('pointermove', function (e) { if (e.buttons || e.pointerType === 'touch') touchMark(); }, true);
 function musicScene() {
-  var shelf = homeEl.classList.contains('on') && !sheet.classList.contains('on');
+  /* a shelf that scrolls (a short phone: 360 x 740 has seven rows showing) has no seat that stays free, and the
+     button sat on the cradle; there it is held as well, and the splash keeps it */
+  var shelf = homeEl.classList.contains('on') && !sheet.classList.contains('on') && homeEl.scrollHeight <= homeEl.clientHeight + 2;
   musicHold(started && !shelf);
 }
 function musicQuiet() {
