@@ -4,6 +4,19 @@ The one list the studio runs from, in the order things happen. Stephen's Google 
 
 As of 13 Nov 2026, 02:25 UTC. The order: you get the art (1), you make your calls (2), Fable finishes the one plan (3), Opus builds it, all night and more nights if needed (4), you run the lines and play (5), then the listings and the rest (6). Who does each line is in brackets: **you**, **Astra**, **Opus** (builds), **Fable** (plans).
 
+## Money: the board (the publishing agent keeps this; say "run the publisher")
+
+Thirteen games have sat built and checked for two ad networks since 2 Sep. Both networks wrote to you first. Each waits on one sign up of yours. Your part of everything below is about half an hour in total.
+
+- [ ] GameMonetize: make the developer account at gamemonetize.com, add a game called Bloom Breaker, send Fable the game id it gives you. Fable rebuilds the ZIP with it and hands you the file and the reply to Marian, ready to paste (you, 15 minutes)  
+- [ ] GameDistribution: the same at gamedistribution.com for Sabina's thread; send the game id (you, 15 minutes)  
+- [ ] itch.io, the Jimothy page: it still says "hand-painted" (read on the live page 13 Nov). Fable gives you the corrected text; you paste it into the page (you, 3 minutes)  
+- [ ] Shutterbug on Play: the Console upload, then paste the signing SHA-256 (already below) (you)  
+- [ ] Shutterbug: the Reddit feedback post (already below) (you)  
+- [ ] CrazyGames: the third builder target (their SDK) and the three ZIPs: Garden Guard, Nova Bloom and one more (Opus)  
+- [ ] The first finished promo clip with its caption, for you to post (Opus)  
+- [ ] Poki: they prefer exclusivity; decide after the first numbers come in from the other networks (you, later)  
+
 ## 0. Now, 13 Nov: the hub, Shutterbug, Meshy
 
 The Lucid Winds hub was audited on 12 Nov (read only, three passes). The page with the shots: https://claude.ai/artifact/GhRuThtynvvpPifnsDKkww . The files: docs/audits/LUCID-WINDS-HUB-AUDIT-2026-11-12.md, LUCID_WINDS_HUB_BUILD_PLAN.md, LUCID_WINDS_PUBLISH_PLAN.md, LUCID_WINDS_PRELAUNCH_PLAN.md.
