@@ -609,7 +609,10 @@ body:has(#clear.on) #dp { visibility: hidden; }
 #settings textarea { width: 100%; min-height: 72px; resize: vertical; }
 #settings button.act { min-height: 48px; border-radius: 10px; border: 2px solid var(--paper); background: transparent; color: var(--paper); font-weight: 700; }
 #setdamaged { color: var(--sun); font-weight: 700; margin: 0; } #setperf, #setbuild { color: var(--ash); font-size: 0.85rem; margin: 0; }
-#setinstall { display: flex; align-items: center; gap: 10px; margin: 0; } #install { min-height: 48px; }
+#setinstall { display: flex; align-items: center; gap: 10px; margin: 0; } #setinstall span { flex: 1 1 auto; }
+/* sb-m2-28: Install is a real button when the browser offers the install (it was the browser's grey box with Paper text
+   on it, so it read as an empty control; now Paper on the dark, as Copy the save); without the offer it is hidden and the line says how to add the game */
+#install { flex: none; min-height: 48px; min-width: 96px; padding: 0 16px; border-radius: 10px; border: 2px solid var(--paper); background: transparent; color: var(--paper); font-weight: 700; }   /* as Settings' other buttons (.act) */
 #again { background: var(--paper); color: var(--ink); }
 #pausetitle, #cleartitle, #deathtitle { background: transparent; color: var(--ink); }
 #pauseshare, #clearshare { background: var(--paper); color: var(--ink); }   /* Share this room in the card's Paper, never the browser's grey (the review of Q94) */
@@ -841,7 +844,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     <div class="lookset"><p data-copy="lookHero"></p><div id="lookhero" role="radiogroup" data-aria="lookHero"></div></div>
     <div class="lookset"><p data-copy="lookFrame"></p><div id="lookframe" role="radiogroup" data-aria="lookFrame"></div></div></div>
   <label class="row"><span data-copy="setMotion"></span><select id="setmotion"><option value="os" data-copy="motionOs"></option><option value="on" data-copy="motionOn"></option><option value="off" data-copy="motionOff"></option></select></label>
-  <p id="setinstall"><span data-copy="setInstall"></span> <button id="install" type="button" data-copy="install" hidden></button></p>
+  <p id="setinstall"><span id="setinstalltext"></span> <button id="install" type="button" data-copy="install" hidden></button></p>
   <textarea id="setexport" readonly data-aria="setExport"></textarea>
   <button id="setcopy" class="act" type="button" data-copy="setCopy"></button>
   <textarea id="setimport" data-aria="setImportBox"></textarea>
@@ -10509,7 +10512,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     setMirror: 'Mirror the controls', setSound: 'Sound', setMusic: 'Music', setPhoto: 'Photo behind the room', setZoom: 'Zoom: close', setVibe: 'Vibration', setMotion: 'Reduced motion',
     motionOs: 'As the phone says', motionOn: 'On', motionOff: 'Off',
     saveDamaged: 'A damaged save was set aside. You can copy it from Settings.',
-    setInstall: 'Install to the home screen to keep your rooms', install: 'Install',
+    setInstall: 'Install to the home screen to keep your rooms', setInstallHow: 'To keep your rooms, add the game to your home screen from the browser menu.', install: 'Install',
     setExport: 'Your save', setCopy: 'Copy the save', setImportBox: 'Paste a save here', setImportGo: 'Load the pasted save',
     importConfirm: 'Replace your save?', importBad: 'That save did not open.', perf: 'Performance', perfHash: 'last room',
     perfNone: 'not measured yet', perfHashNone: 'not played yet',
@@ -12021,7 +12024,17 @@ body.sb-modal .lwfb-fab { display: none !important; }
     thumbs(list, rs, ui.COPY.recentRoom, function (rec) { ui.startRoom(rec, ui.COPY.recentRoom); });
   }
   /* the settings screen (T1.10, section 2.4): every toggle writes the save at once */
+  /* sb-m2-28: Settings' install row: the button only while the browser holds an install offer, else one plain line on
+     adding the game by hand; none at all once the game runs as an installed app */
+  ui.installShow = function () {
+    var row = document.getElementById('setinstall'), b = document.getElementById('install'), C = ui.COPY, mm = function (q) { return !!(window.matchMedia && window.matchMedia(q).matches); };
+    if (!row || !b) return;
+    row.hidden = !!navigator.standalone || mm('(display-mode: standalone)') || mm('(display-mode: fullscreen)') || mm('(display-mode: minimal-ui)');
+    b.hidden = !ui.installPrompt;
+    document.getElementById('setinstalltext').textContent = ui.installPrompt ? C.setInstall : C.setInstallHow;
+  };
   function fillSettings() {
+    ui.installShow();
     var st = SB.save.doc.settings, p95 = function (a) { if (!a.length) return 0; var b = a.slice().sort(function (x, y) { return x - y; }); return b[Math.min(b.length - 1, Math.floor(b.length * 0.95))]; };
     document.getElementById('setmirror').checked = !!st.mirror;
     document.getElementById('setsound').checked = !!st.sound;
@@ -12935,7 +12948,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
     document.getElementById('trback').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
     document.getElementById('dkback').addEventListener('click', function () { SB.save.flush(); ui.show('title'); });
     document.getElementById('levelcode').placeholder = ui.COPY.levelCode;   /* the field says what it takes (t110: an empty white box) */
-    document.getElementById('install').addEventListener('click', function () { var ip = ui.installPrompt; if (ip) { ui.installPrompt = null; this.hidden = true; try { ip.prompt(); } catch (e) { /* silent */ } } });
+    document.getElementById('install').addEventListener('click', function () { var ip = ui.installPrompt; if (ip) { ui.installPrompt = null; ui.installShow(); try { ip.prompt(); } catch (e) { /* silent */ } } });
     document.getElementById('clearshare').addEventListener('click', function () { ui.openShare(); });
     document.getElementById('qrtoggle').addEventListener('click', function () { ui.toggleQR(); });
     var mo = new MutationObserver(syncModal);
@@ -13148,7 +13161,7 @@ body.sb-modal .lwfb-fab { display: none !important; }
       }).catch(function () { /* silent: the saved copy still plays */ });
     } catch (e) { /* silent */ }
   })();
-  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); SB.ui.installPrompt = e; document.getElementById('install').hidden = false; });
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); SB.ui.installPrompt = e; SB.ui.installShow(); });
   SB.input.initStrip();
   window.addEventListener('resize', function () { var s = SB.ui.screen; if (s === 'play' || s === 'pause' || s === 'share' || s === 'clear' || s === 'dead') { SB.render.fit(); draw(); if (s === 'pause') SB.ui.placePaused(); } });
   if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { if (G.state) { SB.render.fit(); draw(); } });

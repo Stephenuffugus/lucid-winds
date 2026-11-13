@@ -127,5 +127,27 @@ try {
   R.say(navs === 3, 'the new worker causes no navigation of its own (' + navs + ' main frame navigations for the gate\'s own 3)');
   delete process.env.SB_PAGE; delete process.env.SB_SW;
   R.say(errors.slice(0, before).length === 0, 'zero page errors online' + (before ? ' (' + errors.slice(0, before).join(' ; ') + ')' : ''));
+  /* sb-m2-28: Settings' install row never shows an empty control: with no install offer the button is hidden and the
+     line says how to add the game by hand; with one (a beforeinstallprompt, faked here) the button shows its word in
+     Paper with a Paper rim on the dark (as Copy the save), 48 px or more, beside the install line */
+  {
+    const s = await newPage(browser, { width: 412, height: 915 });
+    await gotoGame(s.page, srv.base); await ready(s.page);
+    await tap(s.page, '#settingsbtn');
+    const row = () => s.page.evaluate(() => { const b = document.getElementById('install'), r = b.getBoundingClientRect(), cs = getComputedStyle(b);
+      return { row: !document.getElementById('setinstall').hidden, shown: !b.hidden && r.height > 0, h: r.height, text: b.textContent, fg: cs.color, bg: cs.backgroundColor, rim: cs.borderTopWidth, ground: getComputedStyle(document.getElementById('settings')).backgroundColor, line: document.getElementById('setinstalltext').textContent, C: window.SB.ui.COPY }; });
+    await s.page.evaluate(() => { window.SB.ui.installPrompt = null; window.SB.ui.installShow(); });
+    const no = await row();
+    R.say(no.row && !no.shown && no.line === no.C.setInstallHow, 'Settings with no install offer: no Install button, the line says "' + no.line + '"');
+    await s.page.evaluate(() => { const e = new Event('beforeinstallprompt', { cancelable: true }); e.prompt = () => Promise.resolve(); window.dispatchEvent(e); });
+    const yes = await row();
+    R.say(yes.shown && yes.h >= 48 && yes.text === yes.C.install && yes.fg === 'rgb(242, 239, 230)' && yes.bg === 'rgba(0, 0, 0, 0)' && yes.rim === '2px' && yes.line === yes.C.setInstall,
+      'Settings with an install offer: Install shows its word (' + yes.text + ', ' + yes.fg + ' on ' + yes.bg + ' over ' + yes.ground + ', a ' + yes.rim + ' rim, ' + yes.h.toFixed(0) + ' px) beside "' + yes.line + '"');
+    await tap(s.page, '#install');
+    const used = await row();
+    R.say(!used.shown && used.line === used.C.setInstallHow, 'a tap on Install spends the offer: the button goes and the line says how to add the game');
+    R.say(s.errors.length === 0, 'Settings\' install row: zero page errors' + (s.errors.length ? ' (' + s.errors.join(' ; ') + ')' : ''));
+    await s.page.close();
+  }
 } finally { await browser.close(); await srv.close(); }
 R.finish();
