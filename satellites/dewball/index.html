@@ -4273,6 +4273,14 @@
     scene.add(ballRoot);
   }
 
+  /* the blob shadow is a FLAT disc laid at the ball's foot. On a planet the ground curves away under it, and once the
+     ball rivals the planet (The Whole World at the end of a good run) the disc's rim stands off the globe as a large
+     black polygon behind the ball (Play readiness item 9). Fade it out while the disc's radius goes from a fifth to
+     three tenths of the planet's radius; flat worlds never get near their own size. */
+  function shadowFit(r){ var sh=ballRoot._shadow, s=R.D*0.52, k=1, q;
+    sh.scale.setScalar(s); sh.position.y=-r+0.6;
+    if(GLOBE){ q=s/GLOBE.R; k=q<=0.2?1:(q>=0.3?0:(0.3-q)/0.1); }
+    sh.visible=k>0; sh.material.opacity=0.28*k; }
   // ---------- input ----------
   var keys={}, touchL=null, touchR=null, rTapArm=0;
   function _inBtn(t,id){ var tg=t.target; try{ return !!(tg&&tg.closest&&tg.closest("#"+id)); }catch(e){ return false; } }
@@ -4647,8 +4655,7 @@
     } else ballRoot.position.set(R.x,r,R.z);
     ballMesh.scale.setScalar(r);
     feelTick(dt,r);
-    ballRoot._shadow.scale.setScalar(R.D*0.52);
-    ballRoot._shadow.position.y=-r+0.6;
+    shadowFit(r);
     buryPass();
     stepMovers(dt);
     // gate sink animation (globe gates sink along their posts' normals in globeSync)
@@ -5613,7 +5620,7 @@
          it was parked beside (the shot rigs' one tick at the end did exactly that) */
       syncBall:function(){ if(!R) return; var r=R.D/2;
         if(GLOBE) ballRoot.position.set(0,r,0); else ballRoot.position.set(R.x,r,R.z);
-        ballMesh.scale.setScalar(r); ballRoot.scale.set(1,1,1); ballRoot._shadow.scale.setScalar(R.D*0.52); ballRoot._shadow.position.y=-r+0.6;
+        ballMesh.scale.setScalar(r); ballRoot.scale.set(1,1,1); shadowFit(r);
         updateHUD(true); },
       /* ⛔⛔ THE CAMERA NEVER TURNS IN TEST MODE, so a headless shot cannot be
          aimed by driving. readInput's camera assist — the thing that swings the
